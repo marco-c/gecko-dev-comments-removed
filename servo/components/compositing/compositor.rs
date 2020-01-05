@@ -22,7 +22,6 @@ use windowing::PinchZoomWindowEvent;
 use azure::azure_hl::SourceSurfaceMethods;
 use azure::azure_hl;
 use std::cmp;
-use geom::matrix::identity;
 use geom::point::{Point2D, TypedPoint2D};
 use geom::rect::Rect;
 use geom::size::TypedSize2D;
@@ -159,7 +158,7 @@ impl IOCompositor {
             context: rendergl::RenderContext::new(CompositorTask::create_graphics_context(),
                                                   show_debug_borders),
             root_pipeline: None,
-            scene: Scene::new(window_size.as_f32().to_untyped(), identity()),
+            scene: Scene::new(window_size.as_f32().to_untyped()),
             window_size: window_size,
             hidpi_factor: hidpi_factor,
             composite_ready: false,
@@ -543,26 +542,41 @@ impl IOCompositor {
         }));
     }
 
+
+    pub fn move_layer(&self,
+                      pipeline_id: PipelineId,
+                      layer_id: LayerId,
+                      origin: TypedPoint2D<DevicePixel, f32>)
+                      -> bool {
+        match self.find_layer_with_pipeline_and_layer_id(pipeline_id, layer_id) {
+            Some(ref layer) => {
+                if layer.extra_data.borrow().wants_scroll_events == WantsScrollEvents {
+                    events::clamp_scroll_offset_and_scroll_layer(layer.clone(),
+                                                                 TypedPoint2D(0f32, 0f32) - origin,
+                                                                 self.window_size.as_f32(),
+                                                                 self.device_pixels_per_page_px());
+                }
+                true
+            }
+            None => false,
+        }
+    }
+
     fn scroll_layer_to_fragment_point_if_necessary(&mut self,
                                                    pipeline_id: PipelineId,
                                                    layer_id: LayerId) {
         let device_pixels_per_page_px = self.device_pixels_per_page_px();
-        let window_size = self.window_size.as_f32();
-        let needs_recomposite = match self.scene.root {
-            Some(ref mut root_layer) => {
-                self.fragment_point.take().map_or(false, |fragment_point| {
-                    let fragment_point = fragment_point * device_pixels_per_page_px.get();
-                    events::move(root_layer.clone(),
-                                 pipeline_id,
-                                 layer_id,
-                                 Point2D::from_untyped(&fragment_point),
-                                 window_size)
-                })
-            }
-            None => fail!("Compositor: Tried to scroll to fragment without root layer."),
-        };
+        match self.fragment_point.take() {
+            Some(point) => {
+                let point = point * device_pixels_per_page_px.get();
+                if !self.move_layer(pipeline_id, layer_id, Point2D::from_untyped(&point)) {
+                    fail!("Compositor: Tried to scroll to fragment with unknown layer.");
+                }
 
-        self.recomposite_if(needs_recomposite);
+                self.recomposite = true;
+            }
+            None => {}
+        };
     }
 
     fn set_layer_origin(&mut self,
@@ -610,30 +624,13 @@ impl IOCompositor {
                                 pipeline_id: PipelineId,
                                 layer_id: LayerId,
                                 point: Point2D<f32>) {
-
         let device_pixels_per_page_px = self.device_pixels_per_page_px();
         let device_point = point * device_pixels_per_page_px.get();
-        let window_size = self.window_size.as_f32();
-
-        let (ask, move): (bool, bool) = match self.scene.root {
-            Some(ref layer) if layer.extra_data.borrow().pipeline.id == pipeline_id => {
-                (true,
-                 events::move(layer.clone(),
-                              pipeline_id,
-                              layer_id,
-                              Point2D::from_untyped(&device_point),
-                              window_size))
-            }
-            Some(_) | None => {
-                self.fragment_point = Some(point);
-
-                (false, false)
-            }
-        };
-
-        if ask {
-            self.recomposite_if(move);
+        if self.move_layer(pipeline_id, layer_id, Point2D::from_untyped(&device_point)) {
+            self.recomposite = true;
             self.send_buffer_requests_for_all_layers();
+        } else {
+            self.fragment_point = Some(point);
         }
     }
 
@@ -697,7 +694,7 @@ impl IOCompositor {
     }
 
     fn on_resize_window_event(&mut self, new_size: TypedSize2D<DevicePixel, uint>) {
-        // A size change could also mean a resolution change.
+        
         let new_hidpi_factor = self.window.hidpi_factor();
         if self.hidpi_factor != new_hidpi_factor {
             self.hidpi_factor = new_hidpi_factor;
@@ -750,12 +747,14 @@ impl IOCompositor {
                               cursor: TypedPoint2D<DevicePixel, i32>) {
         let mut scroll = false;
         let window_size = self.window_size.as_f32();
+        let scene_scale = self.device_pixels_per_page_px();
         match self.scene.root {
             Some(ref mut layer) => {
                 scroll = events::handle_scroll_event(layer.clone(),
                                                      delta,
                                                      cursor.as_f32(),
-                                                     window_size) || scroll;
+                                                     window_size,
+                                                     scene_scale) || scroll;
             }
             None => { }
         }
@@ -779,7 +778,7 @@ impl IOCompositor {
 
     fn update_zoom_transform(&mut self) {
         let scale = self.device_pixels_per_page_px();
-        self.scene.transform = identity().scale(scale.get(), scale.get(), 1f32);
+        self.scene.scale = scale.get();
     }
 
     fn on_zoom_window_event(&mut self, magnification: f32) {
@@ -798,20 +797,22 @@ impl IOCompositor {
 
         self.update_zoom_transform();
 
-        // Scroll as needed
+        
         let window_size = self.window_size.as_f32();
         let page_delta: TypedPoint2D<PagePx, f32> = TypedPoint2D(
             window_size.width.get() * (viewport_zoom.inv() - old_viewport_zoom.inv()).get() * 0.5,
             window_size.height.get() * (viewport_zoom.inv() - old_viewport_zoom.inv()).get() * 0.5);
 
         let delta = page_delta * self.device_pixels_per_page_px();
-        let cursor = TypedPoint2D(-1f32, -1f32);  // Make sure this hits the base layer.
+        let cursor = TypedPoint2D(-1f32, -1f32);  
+        let scene_scale = self.device_pixels_per_page_px();
         match self.scene.root {
             Some(ref mut layer) => {
                 events::handle_scroll_event(layer.clone(),
                                             delta,
                                             cursor,
-                                            window_size);
+                                            window_size,
+                                            scene_scale);
             }
             None => { }
         }
@@ -843,8 +844,8 @@ impl IOCompositor {
                 (layer.extra_data.borrow().pipeline.render_chan.clone(), Vec::new())
             });
 
-            // All the BufferRequests are in layer/device coordinates, but the render task
-            // wants to know the page coordinates. We scale them before sending them.
+            
+            
             for request in layer_requests.mut_iter() {
                 request.page_rect = request.page_rect / scale.get();
             }
@@ -880,15 +881,15 @@ impl IOCompositor {
         self.scene.get_buffer_requests(&mut layers_and_requests,
                                        Rect(TypedPoint2D(0f32, 0f32), self.window_size.as_f32()));
 
-        // Return unused tiles first, so that they can be reused by any new BufferRequests.
+        
         self.send_back_unused_buffers();
 
         if layers_and_requests.len() == 0 {
             return;
         }
 
-        // We want to batch requests for each pipeline to avoid race conditions
-        // when handling the resulting BufferRequest responses.
+        
+        
         let pipeline_requests =
             self.convert_buffer_requests_to_pipeline_requests_map(layers_and_requests);
 
@@ -923,9 +924,9 @@ impl IOCompositor {
     fn composite(&mut self) {
         profile(time::CompositingCategory, self.time_profiler_chan.clone(), || {
             debug!("compositor: compositing");
-            // Adjust the layer dimensions as necessary to correspond to the size of the window.
+            
             self.scene.size = self.window_size.as_f32().to_untyped();
-            // Render the scene.
+            
             match self.scene.root {
                 Some(ref layer) => {
                     self.scene.background_color.r = layer.extra_data.borrow().background_color.r;
@@ -939,20 +940,20 @@ impl IOCompositor {
         });
 
         if self.opts.output_file.is_some() {
-            // If we aren't ready to produce image output, we will wait until the next composite.
+            
             if !self.is_ready_to_render_image_output() {
                 return;
             }
 
-            // We must read from the back buffer (ie, before self.window.present()) as
-            // OpenGL ES 2 does not have glReadBuffer().
+            
+            
             let (width, height) = (self.window_size.width.get(), self.window_size.height.get());
             let path = from_str::<Path>(self.opts.output_file.get_ref().as_slice()).unwrap();
             let mut pixels = gl2::read_pixels(0, 0,
                                               width as gl2::GLsizei,
                                               height as gl2::GLsizei,
                                               gl2::RGB, gl2::UNSIGNED_BYTE);
-            // flip image vertically (texture is upside down)
+            
             let orig_pixels = pixels.clone();
             let stride = width * 3;
             for y in range(0, height) {
