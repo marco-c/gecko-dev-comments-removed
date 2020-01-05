@@ -152,6 +152,8 @@ private:
     
     bool    IsSingletonHeader(nsHttpAtom header);
     
+    bool    IsIgnoreMultipleHeader(nsHttpAtom header);
+    
     
     bool    TrackEmptyHeader(nsHttpAtom header);
 
@@ -222,7 +224,22 @@ nsHttpHeaderArray::IsSingletonHeader(nsHttpAtom header)
            header == nsHttp::If_Unmodified_Since         ||
            header == nsHttp::From                        ||
            header == nsHttp::Location                    ||
-           header == nsHttp::Max_Forwards;
+           header == nsHttp::Max_Forwards                ||
+           
+           
+           IsIgnoreMultipleHeader(header);
+}
+
+
+
+inline bool nsHttpHeaderArray::IsIgnoreMultipleHeader(nsHttpAtom header)
+{
+    
+    
+    
+    
+    
+    return header == nsHttp::Strict_Transport_Security;
 }
 
 inline bool
