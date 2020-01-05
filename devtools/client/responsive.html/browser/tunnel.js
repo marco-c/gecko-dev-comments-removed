@@ -414,6 +414,9 @@ MessageManagerTunnel.prototype = {
     "Finder:",
     
     "InlineSpellChecker:",
+    
+    "Social:",
+    "PageMetadata:",
   ],
 
   INNER_TO_OUTER_MESSAGE_PREFIXES: [
@@ -423,6 +426,9 @@ MessageManagerTunnel.prototype = {
     "Findbar:",
     
     "Finder:",
+    
+    "Social:",
+    "PageMetadata:",
   ],
 
   OUTER_TO_INNER_FRAME_SCRIPTS: [
