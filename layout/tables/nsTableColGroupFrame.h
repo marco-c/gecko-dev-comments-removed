@@ -17,14 +17,10 @@ class nsTableColFrame;
 
 
 
-
-
 class nsTableColGroupFrame final : public nsContainerFrame
 {
 public:
   NS_DECL_FRAMEARENA_HELPERS
-
-  
 
   
 
@@ -33,6 +29,17 @@ public:
 
   friend nsTableColGroupFrame* NS_NewTableColGroupFrame(nsIPresShell* aPresShell,
                                                         nsStyleContext* aContext);
+
+  
+  virtual void Init(nsIContent*       aContent,
+                    nsContainerFrame* aParent,
+                    nsIFrame*         aPrevInFlow) override
+  {
+    nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
+    if (!aPrevInFlow) {
+      mWritingMode = GetTableFrame()->GetWritingMode();
+    }
+  }
 
   nsTableFrame* GetTableFrame() const
   {
@@ -115,9 +122,6 @@ public:
 
 
   virtual nsIAtom* GetType() const override;
-
-  virtual mozilla::WritingMode GetWritingMode() const override
-    { return GetTableFrame()->GetWritingMode(); }
 
   
 

@@ -688,8 +688,6 @@ protected:
   
   void FireDOMEvent(const nsAString& aDOMEventName, nsIContent *aContent = nullptr);
 
-  mozilla::WritingMode GetWritingModeDeferringToRootElem() const;
-
 private:
   void BoxReflow(nsBoxLayoutState& aState,
                  nsPresContext*    aPresContext,

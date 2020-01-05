@@ -92,6 +92,13 @@ nsTableCellFrame::Init(nsIContent*       aContent,
     int32_t           colIndex;
     cellFrame->GetColIndex(colIndex);
     SetColIndex(colIndex);
+  } else {
+    
+    
+    
+    
+    
+    mWritingMode = GetTableFrame()->GetWritingMode();
   }
 }
 

@@ -3610,6 +3610,8 @@ nsStyleVisibility::CalcDifference(const nsStyleVisibility& aNewData) const
     
     
     
+    
+    
     hint |= nsChangeHint_ReconstructFrame;
   } else {
     if ((mImageOrientation != aNewData.mImageOrientation)) {

@@ -788,9 +788,14 @@ public:
   
 
 
-  virtual mozilla::WritingMode GetWritingMode() const {
-    return mozilla::WritingMode(StyleContext());
-  }
+
+
+
+
+
+
+
+  mozilla::WritingMode GetWritingMode() const { return mWritingMode; }
 
   
 
@@ -3589,6 +3594,11 @@ private:
   }
 
 protected:
+  
+
+
+  inline void PropagateRootElementWritingMode(mozilla::WritingMode aRootElemWM);
+
   void MarkInReflow() {
 #ifdef DEBUG_dbaron_off
     
@@ -3627,6 +3637,9 @@ protected:
     uint32_t     mType;
     VisualDeltas mVisualDeltas;
   } mOverflow;
+
+  
+  mozilla::WritingMode mWritingMode;
 
   
   
