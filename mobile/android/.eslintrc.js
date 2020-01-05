@@ -1,12 +1,11 @@
 "use strict";
 
 module.exports = {
-  env: {
-    "browser": true
-  },
-  globals: {
-    "Components": false,
+  extends: [
+    "plugin:mozilla/recommended"
+  ],
 
+  globals: {
     
     "AddonManager": false,
     "AppConstants": false,
@@ -32,7 +31,6 @@ module.exports = {
     "UserAgentOverrides": 0,
     "XPCOMUtils": false,
     "ctypes": false,
-    "dump": false,
     "exports": false,
     "importScripts": false,
     "module": false,
@@ -42,79 +40,41 @@ module.exports = {
     "Iterator": false 
   },
   rules: {
-    "global-strict": "off", 
-    "no-underscore-dangle": "off", 
-
-    
-    
-    "camelcase": "off",
-    "comma-dangle": "off",
-    "comma-spacing": "off",
-
     
     
     "complexity": ["error", 31],
 
+    
+    
+    "block-spacing": "off",
+    "brace-style": "off",
+    "comma-spacing": "off",
     "consistent-return": "off",
-    "curly": "off",
-    "dot-notation": "off",
-    "eqeqeq": "off",
+    "eol-last": "off",
     "key-spacing": "off",
-    "new-cap": "off",
-    "no-caller": "off",
-    "no-constant-condition": "off",
+    "keyword-spacing": "off",
+    "no-else-return": "off",
     "no-empty": "off",
     "no-extra-bind": "off",
     "no-extra-semi": "off",
-    "no-loop-func": "off",
+    "no-lonely-if": "off",
     "no-multi-spaces": "off",
+    "no-native-reassign": "off",
+    "no-nested-ternary": "off",
     "no-new-object": "off",
     "no-octal": "off",
-    "no-return-assign": "off",
-    "no-shadow": "off",
+    "no-redeclare": "off",
     "no-trailing-spaces": "off",
+    "no-useless-call": "off",
+    "no-useless-concat": "off",
+    "no-useless-return": "off",
+    "no-undef": "off",
     "no-unused-vars": "off",
-    "no-use-before-define": "off",
+    "object-shorthand": "off",
     "quotes": "off", 
-    "semi": "off",
+    "space-before-blocks": "off",
+    "space-before-function-paren": "off",
     "space-infix-ops": "off",
-    "space-unary-ops": "off", 
-    "strict": "off"
+    "spaced-comment": "off",
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
 };
