@@ -442,6 +442,17 @@ XRE_API(nsresult,
 XRE_API(GeckoProcessType,
         XRE_GetProcessType, ())
 
+
+
+
+
+XRE_API(bool,
+        XRE_IsE10sParentProcess, ())
+
+
+
+
+
 XRE_API(bool,
         XRE_IsParentProcess, ())
 
