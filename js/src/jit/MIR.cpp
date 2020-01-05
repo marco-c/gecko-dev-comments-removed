@@ -2390,8 +2390,7 @@ MPhi::foldsTernary(TempAllocator& alloc)
     
     
     if (testArg->type() == MIRType::Int32 && c->numberToDouble() == 0) {
-        if (DeadIfUnused(testArg))
-            testArg->setGuardRangeBailoutsUnchecked();
+        testArg->setGuardRangeBailoutsUnchecked();
 
         
         if (trueDef == c && !c->block()->dominates(block()))
@@ -4394,8 +4393,7 @@ MCompare::tryFoldEqualOperands(bool* result)
             return false;
     }
 
-    if (DeadIfUnused(lhs()))
-        lhs()->setGuardRangeBailoutsUnchecked();
+    lhs()->setGuardRangeBailoutsUnchecked();
 
     *result = (jsop() == JSOP_STRICTEQ);
     return true;
