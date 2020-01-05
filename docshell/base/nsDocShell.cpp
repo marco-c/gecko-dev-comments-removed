@@ -9838,11 +9838,35 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   
   
   if (!targetDocShell) {
-    nsCOMPtr<Element> requestingElement =
-      mScriptGlobal->AsOuter()->GetFrameElementInternal();
-    nsISupports* requestingContext = requestingElement;
-    if (!requestingContext) {
-      requestingContext = ToSupports(mScriptGlobal);
+    nsCOMPtr<Element> requestingElement;
+    nsISupports* requestingContext = nullptr;
+
+    if (contentType == nsIContentPolicy::TYPE_DOCUMENT) {
+      if (XRE_IsContentProcess()) {
+        
+        
+        
+        requestingContext = ToSupports(mScriptGlobal);
+      } else {
+        
+        
+        
+        requestingElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
+        requestingContext = requestingElement;
+      }
+    } else {
+      requestingElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
+      requestingContext = requestingElement;
+
+#ifdef DEBUG
+      
+      nsCOMPtr<nsIDocument> requestingDoc = requestingElement->OwnerDoc();
+      nsCOMPtr<nsIDocShell> elementDocShell = requestingDoc->GetDocShell();
+
+      
+      MOZ_ASSERT(mItemType == elementDocShell->ItemType(),
+                "subframes should have the same docshell type as their parent");
+#endif
     }
 
     
@@ -9874,7 +9898,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     
     
     nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(requestingContext);
-    NS_ENSURE_TRUE(docShell, NS_OK);
+    
+    
+    
     if (docShell) {
       nsIDocument* document = docShell->GetDocument();
       NS_ENSURE_TRUE(document, NS_OK);
