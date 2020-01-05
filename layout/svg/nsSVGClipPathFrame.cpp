@@ -149,43 +149,41 @@ nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
   MOZ_ASSERT(maskDT->GetFormat() == SurfaceFormat::A8);
 
   
-  {
-    
-    
-    
-    mMatrixForChildren = GetClipPathTransform(aClippedFrame) * aMatrix;
+  
+  
+  
+  mMatrixForChildren = GetClipPathTransform(aClippedFrame) * aMatrix;
 
+  
+  nsSVGClipPathFrame* clipPathThatClipsClipPath =
+    nsSVGEffects::GetEffectProperties(this).GetClipPathFrame(nullptr);
+  nsSVGUtils::MaskUsage maskUsage;
+  nsSVGUtils::DetermineMaskUsage(this, true, maskUsage);
+
+  if (maskUsage.shouldApplyClipPath) {
+    clipPathThatClipsClipPath->ApplyClipPath(aMaskContext, aClippedFrame,
+                                             aMatrix);
+  } else if (maskUsage.shouldGenerateClipMaskLayer) {
+    Matrix maskTransform;
+    RefPtr<SourceSurface> mask =
+      clipPathThatClipsClipPath->GetClipMask(aMaskContext, aClippedFrame,
+                                             aMatrix, &maskTransform);
+    aMaskContext.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0,
+                                       mask, maskTransform);
     
-    nsSVGClipPathFrame* clipPathThatClipsClipPath =
-      nsSVGEffects::GetEffectProperties(this).GetClipPathFrame(nullptr);
-    nsSVGUtils::MaskUsage maskUsage;
-    nsSVGUtils::DetermineMaskUsage(this, true, maskUsage);
-
-    if (maskUsage.shouldApplyClipPath) {
-      clipPathThatClipsClipPath->ApplyClipPath(aMaskContext, aClippedFrame,
-                                               aMatrix);
-    } else if (maskUsage.shouldGenerateClipMaskLayer) {
-      Matrix maskTransform;
-      RefPtr<SourceSurface> mask =
-        clipPathThatClipsClipPath->GetClipMask(aMaskContext, aClippedFrame,
-                                               aMatrix, &maskTransform);
-      aMaskContext.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0,
-                                         mask, maskTransform);
-      
-      
-    }
-
     
-    for (nsIFrame* kid = mFrames.FirstChild(); kid;
-         kid = kid->GetNextSibling()) {
-      result &= PaintFrameIntoMask(kid, aClippedFrame, aMaskContext, aMatrix);
-    }
+  }
 
-    if (maskUsage.shouldGenerateClipMaskLayer) {
-      aMaskContext.PopGroupAndBlend();
-    } else if (maskUsage.shouldApplyClipPath) {
-      aMaskContext.PopClip();
-    }
+  
+  for (nsIFrame* kid = mFrames.FirstChild(); kid;
+       kid = kid->GetNextSibling()) {
+    result &= PaintFrameIntoMask(kid, aClippedFrame, aMaskContext, aMatrix);
+  }
+
+  if (maskUsage.shouldGenerateClipMaskLayer) {
+    aMaskContext.PopGroupAndBlend();
+  } else if (maskUsage.shouldApplyClipPath) {
+    aMaskContext.PopClip();
   }
 
   
