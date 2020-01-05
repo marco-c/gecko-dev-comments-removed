@@ -317,9 +317,18 @@ class CFGTableSwitch : public CFGControlInstruction
 
 
 
+
+
+
+
 class CFGCompare : public CFGAryControlInstruction<2>
 {
-    CFGCompare(CFGBlock* succ1, CFGBlock* succ2)
+    const size_t truePopAmount_;
+    const size_t falsePopAmount_;
+
+    CFGCompare(CFGBlock* succ1, size_t truePopAmount, CFGBlock* succ2, size_t falsePopAmount)
+      : truePopAmount_(truePopAmount),
+        falsePopAmount_(falsePopAmount)
     {
         replaceSuccessor(0, succ1);
         replaceSuccessor(1, succ2);
@@ -327,13 +336,42 @@ class CFGCompare : public CFGAryControlInstruction<2>
 
   public:
     CFG_CONTROL_HEADER(Compare);
-    TRIVIAL_CFG_NEW_WRAPPERS
+
+    static CFGCompare* NewFalseBranchIsDefault(TempAllocator& alloc, CFGBlock* case_,
+                                               CFGBlock* default_)
+    {
+        
+        
+        return new(alloc) CFGCompare(case_, 2, default_, 2);
+    }
+
+    static CFGCompare* NewFalseBranchIsNextCompare(TempAllocator& alloc, CFGBlock* case_,
+                                                   CFGBlock* nextCompare)
+    {
+        
+        
+        
+        return new(alloc) CFGCompare(case_, 2, nextCompare, 1);
+    }
+
+    static CFGCompare* CopyWithNewTargets(TempAllocator& alloc, CFGCompare* old,
+                                          CFGBlock* succ1, CFGBlock* succ2)
+    {
+        return new(alloc) CFGCompare(succ1, old->truePopAmount(), succ2, old->falsePopAmount());
+    }
+
 
     CFGBlock* trueBranch() const {
         return getSuccessor(0);
     }
     CFGBlock* falseBranch() const {
         return getSuccessor(1);
+    }
+    size_t truePopAmount() const {
+        return truePopAmount_;
+    }
+    size_t falsePopAmount() const {
+        return falsePopAmount_;
     }
 };
 
