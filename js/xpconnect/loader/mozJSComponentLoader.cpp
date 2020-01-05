@@ -715,16 +715,10 @@ mozJSComponentLoader::ObjectForLocation(ComponentLoaderInfo& aInfo,
         
         LOG(("Slow loading %s\n", nativePath.get()));
 
-        
-        
-        
-        
-        
         CompileOptions options(cx);
         options.setNoScriptRval(mReuseLoaderGlobal ? false : true)
                .setVersion(JSVERSION_LATEST)
-               .setFileAndLine(nativePath.get(), 1)
-               .setSourceIsLazy(!mReuseLoaderGlobal);
+               .setFileAndLine(nativePath.get(), 1);
 
         if (realFile) {
 #ifdef HAVE_PR_MEMMAP
