@@ -33,6 +33,15 @@ pub type DevicePoint = TypedPoint2D<f32, DevicePixel>;
 pub type DeviceSize = TypedSize2D<f32, DevicePixel>;
 
 
+
+
+pub type LayoutPixel = LayerPixel;
+
+pub type LayoutRect = LayerRect;
+pub type LayoutPoint = LayerPoint;
+pub type LayoutSize = LayerSize;
+
+
 #[derive(Hash, Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd)]
 pub struct LayerPixel;
 
@@ -65,6 +74,7 @@ pub type WorldSize = TypedSize2D<f32, WorldPixel>;
 pub type WorldPoint4D = TypedPoint4D<f32, WorldPixel>;
 
 
+pub type LayoutTransform = TypedMatrix4D<f32, LayoutPixel, LayoutPixel>;
 pub type LayerTransform = TypedMatrix4D<f32, LayerPixel, LayerPixel>;
 pub type LayerToScrollTransform = TypedMatrix4D<f32, LayerPixel, ScrollLayerPixel>;
 pub type ScrollToLayerTransform = TypedMatrix4D<f32, ScrollLayerPixel, LayerPixel>;
@@ -80,3 +90,4 @@ pub fn device_length(value: f32, device_pixel_ratio: f32) -> DeviceIntLength {
 pub fn as_scroll_parent_rect(rect: &LayerRect) -> ScrollLayerRect {
     ScrollLayerRect::from_untyped(&rect.to_untyped())
 }
+
