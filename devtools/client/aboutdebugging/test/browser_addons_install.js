@@ -23,7 +23,7 @@ add_task(function* () {
 });
 
 add_task(function* () {
-  let { tab, document, window } = yield openAboutDebugging("addons");
+  let { tab, document } = yield openAboutDebugging("addons");
   yield waitForInitialAddonList(document);
 
   
@@ -33,9 +33,9 @@ add_task(function* () {
 
   
   let MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(window);
+  MockFilePicker.init(null);
   let file = getSupportsFile("addons/bad/manifest.json");
-  MockFilePicker.setFiles([file.file]);
+  MockFilePicker.returnFiles = [file.file];
 
   
   document.getElementById("load-addon-from-file").click();
