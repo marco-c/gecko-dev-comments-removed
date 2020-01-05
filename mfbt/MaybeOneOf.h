@@ -4,15 +4,20 @@
 
 
 
+
+
+
+
+
 #ifndef mozilla_MaybeOneOf_h
 #define mozilla_MaybeOneOf_h
 
-#include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Move.h"
 #include "mozilla/TemplateLib.h"
 
-#include <new>    
+#include <new> 
+#include <stddef.h> 
 
 namespace mozilla {
 
@@ -25,10 +30,26 @@ namespace mozilla {
 
 
 
+
+
+
+
+
+
 template<class T1, class T2>
-class MaybeOneOf
+class MOZ_NON_PARAM MaybeOneOf
 {
-  AlignedStorage<tl::Max<sizeof(T1), sizeof(T2)>::value> storage;
+  static constexpr size_t StorageAlignment =
+    tl::Max<alignof(T1), alignof(T2)>::value;
+  static constexpr size_t StorageSize =
+    tl::Max<sizeof(T1), sizeof(T2)>::value;
+
+  alignas(StorageAlignment) unsigned char storage[StorageSize];
+
+  
+  
+  void* data() { return storage; }
+  const void* data() const { return storage; }
 
   enum State { None, SomeT1, SomeT2 } state;
   template <class T, class Ignored = void> struct Type2State {};
@@ -37,14 +58,14 @@ class MaybeOneOf
   T& as()
   {
     MOZ_ASSERT(state == Type2State<T>::result);
-    return *(T*)storage.addr();
+    return *static_cast<T*>(data());
   }
 
   template <class T>
   const T& as() const
   {
     MOZ_ASSERT(state == Type2State<T>::result);
-    return *(T*)storage.addr();
+    return *static_cast<const T*>(data());
   }
 
 public:
@@ -66,7 +87,7 @@ public:
     }
   }
 
-  MaybeOneOf &operator=(MaybeOneOf&& rhs)
+  MaybeOneOf& operator=(MaybeOneOf&& rhs)
   {
     MOZ_ASSERT(this != &rhs, "Self-move is prohibited");
     this->~MaybeOneOf();
@@ -84,7 +105,7 @@ public:
   {
     MOZ_ASSERT(state == None);
     state = Type2State<T>::result;
-    ::new (storage.addr()) T(Forward<Args>(aArgs)...);
+    ::new (data()) T(Forward<Args>(aArgs)...);
   }
 
   template <class T>
