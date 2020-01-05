@@ -78,13 +78,11 @@ public:
 
 
 
-
-  already_AddRefed<SourceSurface>
-    GetClipMask(gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
-                const gfxMatrix& aMatrix, Matrix* aMaskTransform,
-                SourceSurface* aExtraMask = nullptr,
-                const Matrix& aExtraMasksTransform = Matrix(),
-                DrawResult* aResult = nullptr);
+  mozilla::Pair<DrawResult, RefPtr<SourceSurface>>
+  GetClipMask(gfxContext& aReferenceContext, nsIFrame* aClippedFrame,
+              const gfxMatrix& aMatrix, Matrix* aMaskTransform,
+              SourceSurface* aExtraMask = nullptr,
+              const Matrix& aExtraMasksTransform = Matrix());
 
   
 

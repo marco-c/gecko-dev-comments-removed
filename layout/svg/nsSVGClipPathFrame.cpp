@@ -165,11 +165,12 @@ nsSVGClipPathFrame::PaintClipMask(gfxContext& aMaskContext,
                                              aMatrix);
   } else if (maskUsage.shouldGenerateClipMaskLayer) {
     Matrix maskTransform;
-    RefPtr<SourceSurface> mask =
+    RefPtr<SourceSurface> maskSurface;
+    Tie(result, maskSurface) =
       clipPathThatClipsClipPath->GetClipMask(aMaskContext, aClippedFrame,
                                              aMatrix, &maskTransform);
     aMaskContext.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0,
-                                       mask, maskTransform);
+                                       maskSurface, maskTransform);
     
     
   }
@@ -222,15 +223,17 @@ nsSVGClipPathFrame::PaintFrameIntoMask(nsIFrame *aFrame,
 
   nsSVGUtils::MaskUsage maskUsage;
   nsSVGUtils::DetermineMaskUsage(aFrame, true, maskUsage);
+  DrawResult result = DrawResult::SUCCESS;
   if (maskUsage.shouldApplyClipPath) {
     clipPathThatClipsChild->ApplyClipPath(aTarget, aClippedFrame, aMatrix);
   } else if (maskUsage.shouldGenerateClipMaskLayer) {
     Matrix maskTransform;
-    RefPtr<SourceSurface> mask =
+    RefPtr<SourceSurface> maskSurface;
+    Tie(result, maskSurface) =
       clipPathThatClipsChild->GetClipMask(aTarget, aClippedFrame,
                                           aMatrix, &maskTransform);
     aTarget.PushGroupForBlendBack(gfxContentType::ALPHA, 1.0,
-                               mask, maskTransform);
+                                  maskSurface, maskTransform);
     
     
   }
@@ -247,7 +250,7 @@ nsSVGClipPathFrame::PaintFrameIntoMask(nsIFrame *aFrame,
   
   
   
-  DrawResult result = frame->PaintSVG(aTarget, toChildsUserSpace);
+  result &= frame->PaintSVG(aTarget, toChildsUserSpace);
 
   if (maskUsage.shouldGenerateClipMaskLayer) {
     aTarget.PopGroupAndBlend();
@@ -258,33 +261,26 @@ nsSVGClipPathFrame::PaintFrameIntoMask(nsIFrame *aFrame,
   return result;
 }
 
-already_AddRefed<SourceSurface>
+mozilla::Pair<DrawResult, RefPtr<SourceSurface>>
 nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
                                 nsIFrame* aClippedFrame,
                                 const gfxMatrix& aMatrix,
                                 Matrix* aMaskTransform,
                                 SourceSurface* aExtraMask,
-                                const Matrix& aExtraMasksTransform,
-                                DrawResult* aResult)
+                                const Matrix& aExtraMasksTransform)
 {
   MOZ_ASSERT(!IsTrivial(), "Caller needs to use ApplyClipPath");
 
   IntPoint offset;
   RefPtr<DrawTarget> maskDT = CreateClipMask(aReferenceContext, offset);
   if (!maskDT) {
-    if (aResult) {
-      *aResult = DrawResult::SUCCESS;
-    }
-    return nullptr;
+    return MakePair(DrawResult::SUCCESS, RefPtr<SourceSurface>());
   }
 
   RefPtr<gfxContext> maskContext = gfxContext::CreateOrNull(maskDT);
   if (!maskContext) {
     gfxCriticalError() << "SVGClipPath context problem " << gfx::hexa(maskDT);
-    if (aResult) {
-      *aResult = DrawResult::TEMPORARY_ERROR;
-    }
-    return nullptr;
+    return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<SourceSurface>());
   }
   maskContext->SetMatrix(aReferenceContext.CurrentMatrix() *
                          gfxMatrix::Translation(-offset));
@@ -292,11 +288,9 @@ nsSVGClipPathFrame::GetClipMask(gfxContext& aReferenceContext,
   DrawResult result = PaintClipMask(*maskContext, aClippedFrame, aMatrix,
                                     aMaskTransform, aExtraMask,
                                     aExtraMasksTransform);
-  if (aResult) {
-    *aResult = result;
-  }
 
-  return maskDT->Snapshot();
+  RefPtr<SourceSurface> surface = maskDT->Snapshot();
+  return MakePair(result, Move(surface));
 }
 
 bool
