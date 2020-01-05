@@ -936,7 +936,7 @@ element.isInteractable = function(el) {
 
 
 element.isPointerInteractable = function(el) {
-  let tree = element.getInteractableElementTree(el);
+  let tree = element.getInteractableElementTree(el, el.ownerDocument);
   return tree.length > 0;
 };
 
@@ -953,44 +953,61 @@ element.isPointerInteractable = function(el) {
 
 
 
-element.getInteractableElementTree = function(el) {
-  let doc = el.ownerDocument;
+element.getInViewCentrePoint = function(rect, win) {
+  const {max, min} = Math;
+
+  let x = {
+    left: max(0, min(rect.x, rect.x + rect.width)),
+    right: min(win.innerWidth, max(rect.x, rect.x + rect.width)),
+  };
+  let y = {
+    top: max(0, min(rect.y, rect.y + rect.height)),
+    bottom: min(win.innerHeight, max(rect.y, rect.y + rect.height)),
+  };
+
+  return {
+    x: (x.left + x.right) / 2,
+    y: (y.top + y.bottom) / 2,
+  };
+};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+element.getInteractableElementTree = function(el, doc) {
   let win = doc.defaultView;
 
   
-  
+  if (element.isDisconnected(el, win)) {
+    return [];
+  }
 
   
-  let box = el.getBoundingClientRect();
-  let visible = {
-    width: Math.max(box.x, box.x + box.width) - win.innerWidth,
-    height: Math.max(box.y, box.y + box.height) - win.innerHeight,
-  };
+  let rects = el.getClientRects();
+  if (rects.length == 0) {
+    return [];
+  }
 
   
-  let offset = {
-    vertical: visible.width / 2.0,
-    horizontal: visible.height / 2.0,
-  };
-
-  
-  let centre = {
-    x: box.x + offset.horizontal,
-    y: box.y + offset.vertical,
-  };
+  let centre = element.getInViewCentrePoint(rects[0], win);
 
   
   let tree = doc.elementsFromPoint(centre.x, centre.y);
 
   
-  let rv = [];
-  for (let el of tree) {
-    if (win.getComputedStyle(el).opacity === "1") {
-      rv.push(el);
-    }
-  }
-
-  return rv;
+  return tree.filter(el => win.getComputedStyle(el).opacity === "1");
 };
 
 
