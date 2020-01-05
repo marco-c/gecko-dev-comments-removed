@@ -355,6 +355,14 @@ public:
 
 
 
+
+
+  virtual MediaConduitErrorCode EnableRTPStreamIdExtension(bool enabled, uint8_t id) = 0;
+
+  
+
+
+
   virtual unsigned short SendingWidth() = 0;
 
   virtual unsigned short SendingHeight() = 0;
