@@ -769,9 +769,10 @@ function _computeKeyCodeFromChar(aChar)
 
 
 
-function synthesizeKey(aKey, aEvent, aWindow = window)
+
+function synthesizeKey(aKey, aEvent, aWindow = window, aCallback)
 {
-  var TIP = _getTIP(aWindow);
+  var TIP = _getTIP(aWindow, aCallback);
   if (!TIP) {
     return;
   }
