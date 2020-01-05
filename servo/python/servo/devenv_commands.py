@@ -1,5 +1,5 @@
 from __future__ import print_function, unicode_literals
-from os import path, getcwd
+from os import path, getcwd, listdir
 
 import subprocess
 
@@ -76,3 +76,25 @@ class MachCommands(CommandBase):
              category='devenv')
     def rust_root(self):
         print(self.config["tools"]["rust-root"])
+
+    @Command('grep',
+             description='`git grep` for selected directories.',
+             category='devenv')
+    @CommandArgument(
+        'params', default=None, nargs='...',
+        help="Command-line arguments to be passed through to `git grep`")
+    def grep(self, params):
+        if not params:
+            params = []
+        
+        tests_dirs = listdir('tests')
+        
+        tests_dirs = filter(lambda dir: dir != 'wpt', tests_dirs)
+        
+        root_dirs = ['components', 'ports', 'python', 'etc', 'resources']
+        
+        tests_dirs_abs = [path.join(self.context.topdir, 'tests', s) for s in tests_dirs]
+        root_dirs_abs = [path.join(self.context.topdir, s) for s in root_dirs]
+        
+        grep_paths = root_dirs_abs + tests_dirs_abs
+        return subprocess.call(["git"] + ["grep"] + params + ['--'] + grep_paths, env=self.build_env())
