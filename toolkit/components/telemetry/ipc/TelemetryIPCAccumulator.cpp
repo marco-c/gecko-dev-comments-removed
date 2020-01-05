@@ -27,6 +27,7 @@ using mozilla::Telemetry::ScalarActionType;
 using mozilla::Telemetry::ScalarAction;
 using mozilla::Telemetry::KeyedScalarAction;
 using mozilla::Telemetry::ScalarVariant;
+using mozilla::Telemetry::ChildEventData;
 
 namespace TelemetryIPCAccumulator = mozilla::TelemetryIPCAccumulator;
 
@@ -51,6 +52,7 @@ StaticAutoPtr<nsTArray<Accumulation>> gHistogramAccumulations;
 StaticAutoPtr<nsTArray<KeyedAccumulation>> gKeyedHistogramAccumulations;
 StaticAutoPtr<nsTArray<ScalarAction>> gChildScalarsActions;
 StaticAutoPtr<nsTArray<KeyedScalarAction>> gChildKeyedScalarsActions;
+StaticAutoPtr<nsTArray<ChildEventData>> gChildEvents;
 
 
 
@@ -62,7 +64,8 @@ static StaticMutex gTelemetryIPCAccumulatorMutex;
 
 namespace {
 
-void DoArmIPCTimerMainThread(const StaticMutexAutoLock& lock)
+void
+DoArmIPCTimerMainThread(const StaticMutexAutoLock& lock)
 {
   MOZ_ASSERT(NS_IsMainThread());
   gIPCTimerArming = false;
@@ -81,7 +84,8 @@ void DoArmIPCTimerMainThread(const StaticMutexAutoLock& lock)
   }
 }
 
-void ArmIPCTimer(const StaticMutexAutoLock& lock)
+void
+ArmIPCTimer(const StaticMutexAutoLock& lock)
 {
   if (gIPCTimerArmed || gIPCTimerArming) {
     return;
@@ -171,6 +175,26 @@ TelemetryIPCAccumulator::RecordChildKeyedScalarAction(mozilla::Telemetry::Scalar
   ArmIPCTimer(locker);
 }
 
+void
+TelemetryIPCAccumulator::RecordChildEvent(double timestamp,
+                                          const nsACString& category,
+                                          const nsACString& method,
+                                          const nsACString& object,
+                                          const mozilla::Maybe<nsCString>& value,
+                                          const nsTArray<mozilla::Telemetry::EventExtraEntry>& extra)
+{
+  StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
+  if (!gChildEvents) {
+    gChildEvents = new nsTArray<ChildEventData>();
+  }
+  
+  gChildEvents->AppendElement(ChildEventData{timestamp, nsCString(category),
+                                             nsCString(method), nsCString(object),
+                                             value,
+                                             nsTArray<mozilla::Telemetry::EventExtraEntry>(extra)});
+  ArmIPCTimer(locker);
+}
+
 
 
 
@@ -183,6 +207,8 @@ SendAccumulatedData(TActor* ipcActor)
   nsTArray<KeyedAccumulation> keyedAccumulationsToSend;
   nsTArray<ScalarAction> scalarsToSend;
   nsTArray<KeyedScalarAction> keyedScalarsToSend;
+  nsTArray<ChildEventData> eventsToSend;
+
   {
     StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
     if (gHistogramAccumulations) {
@@ -197,6 +223,9 @@ SendAccumulatedData(TActor* ipcActor)
     }
     if (gChildKeyedScalarsActions) {
       keyedScalarsToSend.SwapElements(*gChildKeyedScalarsActions);
+    }
+    if (gChildEvents) {
+      eventsToSend.SwapElements(*gChildEvents);
     }
   }
 
@@ -217,6 +246,10 @@ SendAccumulatedData(TActor* ipcActor)
   if (keyedScalarsToSend.Length()) {
     mozilla::Unused <<
       NS_WARN_IF(!ipcActor->SendUpdateChildKeyedScalars(keyedScalarsToSend));
+  }
+  if (eventsToSend.Length()) {
+    mozilla::Unused <<
+      NS_WARN_IF(!ipcActor->SendRecordChildEvents(eventsToSend));
   }
 }
 
@@ -260,6 +293,7 @@ TelemetryIPCAccumulator::DeInitializeGlobalState()
   gKeyedHistogramAccumulations = nullptr;
   gChildScalarsActions = nullptr;
   gChildKeyedScalarsActions = nullptr;
+  gChildEvents = nullptr;
 }
 
 void
