@@ -99,10 +99,11 @@ JSObject::finalize(js::FreeOp* fop)
                 
                 
                 
+                MOZ_ASSERT(elements->numShiftedElements() == 0);
                 fop->freeLater(elements);
             }
         } else {
-            fop->free_(elements);
+            fop->free_(nobj->getUnshiftedElementsHeader());
         }
     }
 

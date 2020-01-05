@@ -1971,8 +1971,10 @@ RelocateCell(Zone* zone, TenuredCell* src, AllocKind thingKind, size_t thingSize
             NativeObject* dstNative = &dstObj->as<NativeObject>();
 
             
-            if (srcNative->hasFixedElements())
-                dstNative->setFixedElements();
+            if (srcNative->hasFixedElements()) {
+                uint32_t numShifted = srcNative->getElementsHeader()->numShiftedElements();
+                dstNative->setFixedElements(numShifted);
+            }
 
             
             

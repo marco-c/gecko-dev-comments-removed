@@ -440,11 +440,11 @@ Nursery::setSlotsForwardingPointer(HeapSlot* oldSlots, HeapSlot* newSlots, uint3
 
 void
 Nursery::setElementsForwardingPointer(ObjectElements* oldHeader, ObjectElements* newHeader,
-                                      uint32_t nelems)
+                                      uint32_t capacity)
 {
     
     setForwardingPointer(oldHeader->elements(), newHeader->elements(),
-                         nelems > ObjectElements::VALUES_PER_HEADER);
+                         capacity > 0);
 }
 
 #ifdef DEBUG
