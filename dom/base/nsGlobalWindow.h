@@ -911,6 +911,7 @@ public:
 
   
   bool IsSecureContext() const;
+  bool IsSecureContextIfOpenerIgnored() const;
 
   void GetSidebar(mozilla::dom::OwningExternalOrWindowProxy& aResult,
                   mozilla::ErrorResult& aRv);
@@ -1753,9 +1754,16 @@ private:
 
   void DisconnectEventTargetObjects();
 
+
+  enum class SecureContextFlags {
+    eDefault,
+    eIgnoreOpener
+  };
   
   
-  bool ComputeIsSecureContext(nsIDocument* aDocument);
+  bool ComputeIsSecureContext(nsIDocument* aDocument,
+                              SecureContextFlags aFlags =
+                                SecureContextFlags::eDefault);
 
   
   friend class nsPIDOMWindow<mozIDOMWindowProxy>;
@@ -1792,6 +1800,7 @@ protected:
   bool                          mHavePendingClose : 1;
   bool                          mHadOriginalOpener : 1;
   bool                          mOriginalOpenerWasSecureContext : 1;
+  bool                          mIsSecureContextIfOpenerIgnored : 1;
   bool                          mIsPopupSpam : 1;
 
   
