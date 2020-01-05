@@ -1,5 +1,5 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
+
+
 
 const modules = [
   "addonutils.js",
@@ -28,7 +28,6 @@ const modules = [
   "stages/declined.js",
   "stages/enginesync.js",
   "status.js",
-  "userapi.js",
   "util.js",
 ];
 
