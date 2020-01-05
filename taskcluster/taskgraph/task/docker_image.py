@@ -9,7 +9,6 @@ import os
 import urllib2
 
 from . import base
-from .. import GECKO
 from taskgraph.util.docker import (
     docker_image,
     generate_context_hash,
@@ -18,6 +17,7 @@ from taskgraph.util.docker import (
 from taskgraph.util.templates import Templates
 
 logger = logging.getLogger(__name__)
+GECKO = os.path.realpath(os.path.join(__file__, '..', '..', '..', '..'))
 
 
 
