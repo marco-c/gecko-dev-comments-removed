@@ -2,7 +2,8 @@
 
 
 
-use azure::azure_hl::{DrawTarget};
+use azure::azure_hl::DrawTarget;
+use azure::azure::AzGLContext;
 use geom::rect::Rect;
 use geom::size::Size2D;
 
@@ -34,6 +35,7 @@ pub enum RenderState {
 
 
 pub trait Compositor {
+    fn get_gl_context(&self) -> AzGLContext;
     fn paint(&self, layer_buffer_set: LayerBufferSet, new_size: Size2D<uint>);
     fn set_render_state(&self, render_state: RenderState);
 }
