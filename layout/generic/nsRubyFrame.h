@@ -10,8 +10,7 @@
 #define nsRubyFrame_h___
 
 #include "nsInlineFrame.h"
-
-class nsRubyBaseContainerFrame;
+#include "RubyUtils.h"
 
 
 
@@ -43,10 +42,8 @@ public:
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
-  void GetBlockLeadings(nscoord& aStartLeading, nscoord& aEndLeading)
-  {
-    aStartLeading = mBStartLeading;
-    aEndLeading = mBEndLeading;
+  mozilla::RubyBlockLeadings GetBlockLeadings() const {
+    return mLeadings;
   }
 
 protected:
@@ -65,8 +62,7 @@ protected:
 
   
   
-  nscoord mBStartLeading;
-  nscoord mBEndLeading;
+  mozilla::RubyBlockLeadings mLeadings;
 };
 
 #endif 
