@@ -59,30 +59,24 @@ return  (function(modules) {
 	  getGeneratedLocation,
 	  getOriginalLocation,
 	  getOriginalSourceText,
+	  hasMappedSource,
 	  applySourceMap,
 	  clearSourceMaps
-	} = __webpack_require__(84);
+	} = __webpack_require__(9);
+
+	const { workerUtils: { workerHandler } } = __webpack_require__(6);
 
 	
 	
-	const publicInterface = {
+	self.onmessage = workerHandler({
 	  getOriginalURLs,
 	  getGeneratedLocation,
 	  getOriginalLocation,
 	  getOriginalSourceText,
+	  hasMappedSource,
 	  applySourceMap,
 	  clearSourceMaps
-	};
-
-	self.onmessage = function (msg) {
-	  const { id, method, args } = msg.data;
-	  const response = publicInterface[method].apply(undefined, args);
-	  if (response instanceof Promise) {
-	    response.then(val => self.postMessage({ id, response: val }), err => self.postMessage({ id, error: err }));
-	  } else {
-	    self.postMessage({ id, response });
-	  }
-	};
+	});
 
  },
 
@@ -121,45 +115,33 @@ return  (function(modules) {
 	}
 
 	
+	const contentMap = {
+	  "js": "text/javascript",
+	  "jsm": "text/javascript",
+	  "ts": "text/typescript",
+	  "tsx": "text/typescript-jsx",
+	  "jsx": "text/jsx",
+	  "coffee": "text/coffeescript",
+	  "elm": "text/elm",
+	  "cljs": "text/x-clojure"
+	};
+
+	
 
 
 
 
 
-
-	function isJavaScript(url, contentType = "") {
-	  return url && /\.(jsm|js)?$/.test(trimUrlQuery(url)) || contentType.includes("javascript");
-	}
 
 	function getContentType(url) {
-	  if (isJavaScript(url)) {
-	    return "text/javascript";
+	  url = trimUrlQuery(url);
+	  let dot = url.lastIndexOf(".");
+	  if (dot >= 0) {
+	    let name = url.substring(dot + 1);
+	    if (name in contentMap) {
+	      return contentMap[name];
+	    }
 	  }
-
-	  if (url.match(/ts$/)) {
-	    return "text/typescript";
-	  }
-
-	  if (url.match(/tsx$/)) {
-	    return "text/typescript-jsx";
-	  }
-
-	  if (url.match(/jsx$/)) {
-	    return "text/jsx";
-	  }
-
-	  if (url.match(/coffee$/)) {
-	    return "text/coffeescript";
-	  }
-
-	  if (url.match(/elm$/)) {
-	    return "text/elm";
-	  }
-
-	  if (url.match(/cljs$/)) {
-	    return "text/x-clojure";
-	  }
-
 	  return "text/plain";
 	}
 
@@ -168,7 +150,8 @@ return  (function(modules) {
 	  generatedToOriginalId,
 	  isOriginalId,
 	  isGeneratedId,
-	  getContentType
+	  getContentType,
+	  contentMapForTesting: contentMap
 	};
 
  },
@@ -506,84 +489,122 @@ return  (function(modules) {
 
 
  },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
+
+ function(module, exports, __webpack_require__) {
+
+	const networkRequest = __webpack_require__(7);
+	const workerUtils = __webpack_require__(8);
+
+	module.exports = {
+	  networkRequest,
+	  workerUtils
+	};
+
+ },
+
+ function(module, exports) {
+
+	function networkRequest(url, opts) {
+	  return new Promise((resolve, reject) => {
+	    const req = new XMLHttpRequest();
+
+	    req.addEventListener("readystatechange", () => {
+	      if (req.readyState === XMLHttpRequest.DONE) {
+	        if (req.status === 200) {
+	          resolve({ content: req.responseText });
+	        } else {
+	          resolve(req.statusText);
+	        }
+	      }
+	    });
+
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+	    
+
+	    req.open("GET", url);
+	    req.send();
+	  });
+	}
+
+	module.exports = networkRequest;
+
+ },
+
+ function(module, exports) {
+
+	
+
+	function WorkerDispatcher() {
+	  this.msgId = 1;
+	  this.worker = null;
+	}
+
+	WorkerDispatcher.prototype = {
+	  start(url) {
+	    this.worker = new Worker(url);
+	    this.worker.onerror = () => {
+	      console.error(`Error in worker ${url}`);
+	    };
+	  },
+
+	  stop() {
+	    if (!this.worker) {
+	      return;
+	    }
+
+	    this.worker.terminate();
+	    this.worker = null;
+	  },
+
+	  task(method) {
+	    return (...args) => {
+	      return new Promise((resolve, reject) => {
+	        const id = this.msgId++;
+	        this.worker.postMessage({ id, method, args });
+
+	        const listener = ({ data: result }) => {
+	          if (result.id !== id) {
+	            return;
+	          }
+
+	          this.worker.removeEventListener("message", listener);
+	          if (result.error) {
+	            reject(result.error);
+	          } else {
+	            resolve(result.response);
+	          }
+	        };
+
+	        this.worker.addEventListener("message", listener);
+	      });
+	    };
+	  }
+	};
+
+	function workerHandler(publicInterface) {
+	  return function workerHandler(msg) {
+	    const { id, method, args } = msg.data;
+	    const response = publicInterface[method].apply(undefined, args);
+	    if (response instanceof Promise) {
+	      response.then(val => self.postMessage({ id, response: val }), err => self.postMessage({ id, error: err }));
+	    } else {
+	      self.postMessage({ id, response });
+	    }
+	  };
+	}
+
+	module.exports = {
+	  WorkerDispatcher,
+	  workerHandler
+	};
+
+ },
 
  function(module, exports, __webpack_require__) {
 
@@ -670,6 +691,7 @@ return  (function(modules) {
 
 	    return {
 	      sourceId: generatedToOriginalId(location.sourceId, url),
+	      sourceUrl: url,
 	      line,
 	      column
 	    };
@@ -706,6 +728,21 @@ return  (function(modules) {
 	  };
 	})();
 
+	let hasMappedSource = (() => {
+	  var _ref6 = _asyncToGenerator(function* (location) {
+	    if (isOriginalId(location.sourceId)) {
+	      return true;
+	    }
+
+	    const loc = yield getOriginalLocation(location);
+	    return loc.sourceId !== location.sourceId;
+	  });
+
+	  return function hasMappedSource(_x7) {
+	    return _ref6.apply(this, arguments);
+	  };
+	})();
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
 
 	
@@ -713,12 +750,12 @@ return  (function(modules) {
 
 
 
-	const networkRequest = __webpack_require__(85);
+	const { networkRequest } = __webpack_require__(6);
 
-	const { parse } = __webpack_require__(86);
-	const path = __webpack_require__(93);
-	const { SourceMapConsumer, SourceMapGenerator } = __webpack_require__(94);
-	const assert = __webpack_require__(105);
+	const { parse } = __webpack_require__(10);
+	const path = __webpack_require__(17);
+	const { SourceMapConsumer, SourceMapGenerator } = __webpack_require__(18);
+	const assert = __webpack_require__(29);
 	const {
 	  originalToGeneratedId,
 	  generatedToOriginalId,
@@ -813,42 +850,9 @@ return  (function(modules) {
 	  getOriginalLocation,
 	  getOriginalSourceText,
 	  applySourceMap,
-	  clearSourceMaps
+	  clearSourceMaps,
+	  hasMappedSource
 	};
-
- },
-
- function(module, exports) {
-
-	function networkRequest(url, opts) {
-	  return new Promise((resolve, reject) => {
-	    const req = new XMLHttpRequest();
-
-	    req.addEventListener("readystatechange", () => {
-	      if (req.readyState === XMLHttpRequest.DONE) {
-	        if (req.status === 200) {
-	          resolve({ content: req.responseText });
-	        } else {
-	          resolve(req.statusText);
-	        }
-	      }
-	    });
-
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-
-	    req.open("GET", url);
-	    req.send();
-	  });
-	}
-
-	module.exports = networkRequest;
 
  },
 
@@ -877,8 +881,8 @@ return  (function(modules) {
 
 	'use strict';
 
-	var punycode = __webpack_require__(87);
-	var util = __webpack_require__(89);
+	var punycode = __webpack_require__(11);
+	var util = __webpack_require__(13);
 
 	exports.parse = urlParse;
 	exports.resolve = urlResolve;
@@ -953,7 +957,7 @@ return  (function(modules) {
 	      'gopher:': true,
 	      'file:': true
 	    },
-	    querystring = __webpack_require__(90);
+	    querystring = __webpack_require__(14);
 
 	function urlParse(url, parseQueryString, slashesDenoteHost) {
 	  if (url && util.isObject(url) && url instanceof Url) return url;
@@ -2121,7 +2125,7 @@ return  (function(modules) {
 
 	}(this));
 
-	}.call(exports, __webpack_require__(88)(module), (function() { return this; }())))
+	}.call(exports, __webpack_require__(12)(module), (function() { return this; }())))
 
  },
 
@@ -2167,8 +2171,8 @@ return  (function(modules) {
 
 	'use strict';
 
-	exports.decode = exports.parse = __webpack_require__(91);
-	exports.encode = exports.stringify = __webpack_require__(92);
+	exports.decode = exports.parse = __webpack_require__(15);
+	exports.encode = exports.stringify = __webpack_require__(16);
 
 
  },
@@ -2365,9 +2369,9 @@ return  (function(modules) {
 
 
 
-	exports.SourceMapGenerator = __webpack_require__(95).SourceMapGenerator;
-	exports.SourceMapConsumer = __webpack_require__(101).SourceMapConsumer;
-	exports.SourceNode = __webpack_require__(104).SourceNode;
+	exports.SourceMapGenerator = __webpack_require__(19).SourceMapGenerator;
+	exports.SourceMapConsumer = __webpack_require__(25).SourceMapConsumer;
+	exports.SourceNode = __webpack_require__(28).SourceNode;
 
 
  },
@@ -2381,10 +2385,10 @@ return  (function(modules) {
 
 
 
-	var base64VLQ = __webpack_require__(96);
-	var util = __webpack_require__(98);
-	var ArraySet = __webpack_require__(99).ArraySet;
-	var MappingList = __webpack_require__(100).MappingList;
+	var base64VLQ = __webpack_require__(20);
+	var util = __webpack_require__(22);
+	var ArraySet = __webpack_require__(23).ArraySet;
+	var MappingList = __webpack_require__(24).MappingList;
 
 	
 
@@ -2821,7 +2825,7 @@ return  (function(modules) {
 
 
 
-	var base64 = __webpack_require__(97);
+	var base64 = __webpack_require__(21);
 
 	
 	
@@ -3433,7 +3437,7 @@ return  (function(modules) {
 
 
 
-	var util = __webpack_require__(98);
+	var util = __webpack_require__(22);
 	var has = Object.prototype.hasOwnProperty;
 
 	
@@ -3543,7 +3547,7 @@ return  (function(modules) {
 
 
 
-	var util = __webpack_require__(98);
+	var util = __webpack_require__(22);
 
 	
 
@@ -3628,11 +3632,11 @@ return  (function(modules) {
 
 
 
-	var util = __webpack_require__(98);
-	var binarySearch = __webpack_require__(102);
-	var ArraySet = __webpack_require__(99).ArraySet;
-	var base64VLQ = __webpack_require__(96);
-	var quickSort = __webpack_require__(103).quickSort;
+	var util = __webpack_require__(22);
+	var binarySearch = __webpack_require__(26);
+	var ArraySet = __webpack_require__(23).ArraySet;
+	var base64VLQ = __webpack_require__(20);
+	var quickSort = __webpack_require__(27).quickSort;
 
 	function SourceMapConsumer(aSourceMap) {
 	  var sourceMap = aSourceMap;
@@ -4953,8 +4957,8 @@ return  (function(modules) {
 
 
 
-	var SourceMapGenerator = __webpack_require__(95).SourceMapGenerator;
-	var util = __webpack_require__(98);
+	var SourceMapGenerator = __webpack_require__(19).SourceMapGenerator;
+	var util = __webpack_require__(22);
 
 	
 	
