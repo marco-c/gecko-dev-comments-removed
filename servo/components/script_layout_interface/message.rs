@@ -126,6 +126,8 @@ pub struct ScriptReflow {
     pub script_join_chan: Sender<()>,
     
     pub query_type: ReflowQueryType,
+    
+    pub dom_count: u32,
 }
 
 impl Drop for ScriptReflow {
