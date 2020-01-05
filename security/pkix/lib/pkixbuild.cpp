@@ -311,7 +311,7 @@ BuildForward(TrustDomain& trustDomain,
 
     
     
-    return trustDomain.IsChainValid(chain, time);
+    return trustDomain.IsChainValid(chain, time, requiredPolicy);
   }
 
   if (subject.endEntityOrCA == EndEntityOrCA::MustBeCA) {

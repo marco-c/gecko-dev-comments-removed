@@ -138,8 +138,10 @@ CSTrustDomain::CheckRevocation(EndEntityOrCA endEntityOrCA,
 }
 
 Result
-CSTrustDomain::IsChainValid(const DERArray& certChain, Time time)
+CSTrustDomain::IsChainValid(const DERArray& certChain, Time time,
+                            const CertPolicyId& requiredPolicy)
 {
+  MOZ_ASSERT(requiredPolicy.IsAnyPolicy());
   
   if (certChain.GetLength() == 0) {
     return Result::FATAL_ERROR_LIBRARY_FAILURE;

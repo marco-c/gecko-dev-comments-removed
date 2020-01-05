@@ -36,7 +36,8 @@ OCSPVerificationTrustDomain::FindIssuer(Input, IssuerChecker&, Time)
 }
 
 Result
-OCSPVerificationTrustDomain::IsChainValid(const DERArray&, Time)
+OCSPVerificationTrustDomain::IsChainValid(const DERArray&, Time,
+                                          const CertPolicyId&)
 {
   
   return Result::FATAL_ERROR_LIBRARY_FAILURE;
