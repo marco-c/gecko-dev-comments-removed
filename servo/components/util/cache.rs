@@ -12,8 +12,6 @@ use rand;
 use std::slice::Iter;
 use std::default::Default;
 
-#[cfg(test)]
-use std::cell::Cell;
 
 pub struct HashCache<K, V> {
     entries: HashMap<K, V, DefaultState<SipHasher>>,
@@ -54,19 +52,6 @@ impl<K, V> HashCache<K,V>
     pub fn evict_all(&mut self) {
         self.entries.clear();
     }
-}
-
-#[test]
-fn test_hashcache() {
-    let mut cache: HashCache<usize, Cell<&str>> = HashCache::new();
-
-    cache.insert(1, Cell::new("one"));
-    assert!(cache.find(&1).is_some());
-    assert!(cache.find(&2).is_none());
-
-    cache.find_or_create(&2, |_v| { Cell::new("two") });
-    assert!(cache.find(&1).is_some());
-    assert!(cache.find(&2).is_some());
 }
 
 pub struct LRUCache<K, V> {
@@ -182,38 +167,4 @@ impl<K:Clone+Eq+Hash,V:Clone> SimpleHashCache<K,V> {
             *slot = None
         }
     }
-}
-
-#[test]
-fn test_lru_cache() {
-    let one = Cell::new("one");
-    let two = Cell::new("two");
-    let three = Cell::new("three");
-    let four = Cell::new("four");
-
-    
-    let mut cache: LRUCache<usize,Cell<&str>> = LRUCache::new(2); 
-    cache.insert(1, one);    
-    cache.insert(2, two);    
-    cache.insert(3, three);  
-
-    assert!(cache.find(&1).is_none());  
-    assert!(cache.find(&3).is_some());  
-    assert!(cache.find(&2).is_some());  
-
-    
-    cache.insert(4, four); 
-
-    assert!(cache.find(&1).is_none());  
-    assert!(cache.find(&2).is_some());  
-    assert!(cache.find(&3).is_none());  
-    assert!(cache.find(&4).is_some());  
-
-    
-    cache.find_or_create(&1, |_| { Cell::new("one") }); 
-
-    assert!(cache.find(&1).is_some()); 
-    assert!(cache.find(&2).is_none()); 
-    assert!(cache.find(&3).is_none()); 
-    assert!(cache.find(&4).is_some()); 
 }

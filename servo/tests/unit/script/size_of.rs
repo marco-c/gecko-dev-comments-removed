@@ -2,14 +2,14 @@
 
 
 
-use dom::characterdata::CharacterData;
-use dom::element::Element;
-use dom::eventtarget::EventTarget;
-use dom::htmldivelement::HTMLDivElement;
-use dom::htmlelement::HTMLElement;
-use dom::htmlspanelement::HTMLSpanElement;
-use dom::node::Node;
-use dom::text::Text;
+use script::dom::characterdata::CharacterData;
+use script::dom::element::Element;
+use script::dom::eventtarget::EventTarget;
+use script::dom::htmldivelement::HTMLDivElement;
+use script::dom::htmlelement::HTMLElement;
+use script::dom::htmlspanelement::HTMLSpanElement;
+use script::dom::node::Node;
+use script::dom::text::Text;
 
 use std::mem::size_of;
 
