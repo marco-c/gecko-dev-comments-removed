@@ -151,9 +151,6 @@ public:
   PluginState GetPluginState();
   void SetPluginState(PluginState state);
 
-  
-  void ImportFlagsToPrefs(uint32_t flag);
-
   bool HasSameNameAndMimes(const nsPluginTag *aPluginTag) const;
   const nsCString& GetNiceFileName() override;
 
