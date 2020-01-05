@@ -1798,7 +1798,7 @@ js::ToUint16Slow(JSContext* cx, const HandleValue v, uint16_t* out)
 
 
 bool
-js::ToIndex(JSContext* cx, JS::HandleValue v, uint64_t* index)
+js::ToIndex(JSContext* cx, JS::HandleValue v, const unsigned errorNumber, uint64_t* index)
 {
     
     if (v.isUndefined()) {
@@ -1816,7 +1816,7 @@ js::ToIndex(JSContext* cx, JS::HandleValue v, uint64_t* index)
     
     
     if (integerIndex < 0 || integerIndex >= DOUBLE_INTEGRAL_PRECISION_LIMIT) {
-        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_INDEX);
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, errorNumber);
         return false;
     }
 
