@@ -480,6 +480,9 @@ APZCTreeManager::PrepareNodeForLayer(const LayerMetricsWrapper& aLayer,
 
   RefPtr<HitTestingTreeNode> node = nullptr;
   if (!needsApzc) {
+    
+    
+    
     node = RecycleOrCreateNode(aState, nullptr, aLayersId);
     AttachNodeToTree(node, aParent, aNextSibling);
     node->SetHitTestData(
@@ -674,6 +677,9 @@ APZCTreeManager::PrepareNodeForLayer(const LayerMetricsWrapper& aLayer,
         GetEventRegionsOverride(aParent, aLayer));
   }
 
+  
+  
+  
   node->SetScrollbarData(aLayer.GetScrollbarTargetContainerId(),
                          aLayer.GetScrollbarDirection(),
                          aLayer.GetScrollThumbLength(),

@@ -172,6 +172,13 @@ protected:
   friend class layout::RenderFrameParent;
 
 private:
+  
+  
+  void UpdateHitTestingTree(Layer* aLayer, const char* aWhy) {
+    mUpdateHitTestingTree = true;
+  }
+
+private:
   RefPtr<HostLayerManager> mLayerManager;
   CompositorBridgeParentBase* mCompositorBridge;
 
@@ -216,8 +223,11 @@ private:
   
 
   bool mDestroyed;
-
   bool mIPCOpen;
+
+  
+  
+  bool mUpdateHitTestingTree;
 };
 
 } 

@@ -172,6 +172,27 @@ public:
 
   
   
+  bool HitTestingInfoIsEqual(const SimpleLayerAttributes& aOther) const {
+    if (mIsScrollbarContainer != aOther.mIsScrollbarContainer) {
+      return false;
+    }
+    if (mScrollbarTargetContainerId != aOther.mScrollbarTargetContainerId) {
+      return false;
+    }
+    if (mScrollbarDirection != aOther.mScrollbarDirection) {
+      return false;
+    }
+    if (FixedPositionScrollContainerId() != aOther.FixedPositionScrollContainerId()) {
+      return false;
+    }
+    if (mTransform != aOther.mTransform) {
+      return false;
+    }
+    return true;
+  }
+
+  
+  
   
 
   const gfx::IntRect& LayerBounds() const {
