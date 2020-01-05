@@ -103,6 +103,11 @@ WebGLBuffer::BufferData(GLenum target, size_t size, const void* data, GLenum usa
 {
     const char funcName[] = "bufferData";
 
+    
+    
+    if (!CheckedInt<GLsizeiptr>(size).isValid())
+        return ErrorOutOfMemory("%s: bad size", funcName);
+
     if (!ValidateBufferUsageEnum(mContext, funcName, usage))
         return;
 
