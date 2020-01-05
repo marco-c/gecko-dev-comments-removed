@@ -20,12 +20,12 @@
 #include "nsIURI.h"
 #include "nsIContentViewer.h"
 #include "nsIObserverService.h"
-#include "prclist.h"
 #include "mozilla/Services.h"
 #include "nsTArray.h"
 #include "nsCOMArray.h"
 #include "nsDocShell.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/LinkedList.h"
 #include "nsISHEntry.h"
 #include "nsISHTransaction.h"
 #include "nsISHistoryListener.h"
@@ -49,7 +49,7 @@ static const char* kObservedPrefs[] = {
 
 static int32_t gHistoryMaxSize = 50;
 
-static PRCList gSHistoryList;
+static LinkedList<nsSHistory> gSHistoryList;
 
 
 int32_t nsSHistory::sHistoryMaxTotalViewers = -1;
@@ -239,13 +239,11 @@ nsSHistory::nsSHistory()
   , mRootDocShell(nullptr)
 {
   
-  PR_APPEND_LINK(this, &gSHistoryList);
+  gSHistoryList.insertBack(this);
 }
 
 nsSHistory::~nsSHistory()
 {
-  
-  PR_REMOVE_LINK(this);
 }
 
 NS_IMPL_ADDREF(nsSHistory)
@@ -357,8 +355,6 @@ nsSHistory::Startup()
     }
   }
 
-  
-  PR_INIT_CLIST(&gSHistoryList);
   return NS_OK;
 }
 
@@ -1186,9 +1182,7 @@ nsSHistory::GloballyEvictContentViewers()
 
   nsTArray<TransactionAndDistance> transactions;
 
-  PRCList* listEntry = PR_LIST_HEAD(&gSHistoryList);
-  while (listEntry != &gSHistoryList) {
-    nsSHistory* shist = static_cast<nsSHistory*>(listEntry);
+  for (auto shist : gSHistoryList) {
 
     
     
@@ -1249,7 +1243,6 @@ nsSHistory::GloballyEvictContentViewers()
     
     
     transactions.AppendElements(shTransactions);
-    listEntry = PR_NEXT_LINK(shist);
   }
 
   
