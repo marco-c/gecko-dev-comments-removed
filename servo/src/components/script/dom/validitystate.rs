@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{Reflector, BindingObject, Reflectable};
+use dom::bindings::utils::{Reflectable, Reflector};
 use dom::bindings::codegen::ValidityStateBinding;
 use js::jsapi::{JSContext, JSObject};
 
@@ -70,9 +70,7 @@ impl Reflectable for ValidityState {
     fn wrap_object_shared(@mut self, cx: *JSContext, scope: *JSObject) -> *JSObject {
         ValidityStateBinding::Wrap(cx, scope, self)
     }
-}
 
-impl BindingObject for ValidityState {
     fn GetParentObject(&self, _cx: *JSContext) -> Option<@mut Reflectable> {
         None
     }
