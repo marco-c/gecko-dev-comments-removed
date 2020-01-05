@@ -8139,9 +8139,10 @@ nsGlobalWindow::Open(const nsAString& aUrl, const nsAString& aName,
 
 nsresult
 nsGlobalWindow::Open(const nsAString& aUrl, const nsAString& aName,
-                     const nsAString& aOptions, nsPIDOMWindowOuter **_retval)
+                     const nsAString& aOptions, nsIDocShellLoadInfo* aLoadInfo,
+                     nsPIDOMWindowOuter **_retval)
 {
-  FORWARD_TO_OUTER(Open, (aUrl, aName, aOptions, _retval),
+  FORWARD_TO_OUTER(Open, (aUrl, aName, aOptions, aLoadInfo, _retval),
                    NS_ERROR_NOT_INITIALIZED);
   return OpenInternal(aUrl, aName, aOptions,
                       false,          
@@ -8150,6 +8151,7 @@ nsGlobalWindow::Open(const nsAString& aUrl, const nsAString& aName,
                       false,          
                       true,           
                       nullptr, nullptr,  
+                      aLoadInfo,
                       _retval);
 }
 
@@ -8165,6 +8167,7 @@ nsGlobalWindow::OpenJS(const nsAString& aUrl, const nsAString& aName,
                       true,           
                       true,           
                       nullptr, nullptr,  
+                      nullptr,        
                       _retval);
 }
 
@@ -8183,7 +8186,8 @@ nsGlobalWindow::OpenDialog(const nsAString& aUrl, const nsAString& aName,
                       true,                    
                       false,                   
                       true,                    
-                      nullptr, aExtraArgument,    
+                      nullptr, aExtraArgument, 
+                      nullptr,                 
                       _retval);
 }
 
@@ -8202,6 +8206,7 @@ nsGlobalWindow::OpenNoNavigate(const nsAString& aUrl,
                       false,          
                       false,          
                       nullptr, nullptr,  
+                      nullptr,        
                       _retval);
 
 }
@@ -8230,6 +8235,7 @@ nsGlobalWindow::OpenDialogOuter(JSContext* aCx, const nsAString& aUrl,
                         false,            
                         true,                
                         argvArray, nullptr,  
+                        nullptr,          
                         getter_AddRefs(dialog));
   return dialog.forget();
 }
@@ -9314,6 +9320,7 @@ nsGlobalWindow::ShowModalDialogOuter(const nsAString& aUrl,
                         true,           
                         true,           
                         nullptr, argHolder, 
+                        nullptr,        
                         getter_AddRefs(dlgWin));
   nsContentUtils::SetMicroTaskLevel(oldMicroTaskLevel);
   LeaveModalState();
@@ -11793,6 +11800,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
                              bool aDoJSFixups, bool aNavigate,
                              nsIArray *argv,
                              nsISupports *aExtraArgument,
+                             nsIDocShellLoadInfo* aLoadInfo,
                              nsPIDOMWindowOuter **aReturn)
 {
   MOZ_ASSERT(IsOuterWindow());
@@ -11936,6 +11944,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
                                 aDialog, aNavigate, argv,
                                 isPopupSpamWindow,
                                 forceNoOpener,
+                                aLoadInfo,
                                 getter_AddRefs(domReturn));
     } else {
       
@@ -11957,6 +11966,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
                                 aDialog, aNavigate, aExtraArgument,
                                 isPopupSpamWindow,
                                 forceNoOpener,
+                                aLoadInfo,
                                 getter_AddRefs(domReturn));
 
     }

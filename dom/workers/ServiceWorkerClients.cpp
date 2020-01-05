@@ -613,6 +613,7 @@ private:
                            
                            
                             false,
+                            nullptr,
                            getter_AddRefs(newWindow));
       nsCOMPtr<nsPIDOMWindowOuter> pwindow = nsPIDOMWindowOuter::From(newWindow);
       pwindow.forget(aWindow);

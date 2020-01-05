@@ -953,6 +953,7 @@ public:
        mozilla::ErrorResult& aError);
   nsresult Open(const nsAString& aUrl, const nsAString& aName,
                 const nsAString& aOptions,
+                nsIDocShellLoadInfo* aLoadInfo,
                 nsPIDOMWindowOuter **_retval) override;
   mozilla::dom::Navigator* GetNavigator(mozilla::ErrorResult& aError);
   nsIDOMNavigator* GetNavigator() override;
@@ -1485,6 +1486,7 @@ private:
                         bool aNavigate,
                         nsIArray *argv,
                         nsISupports *aExtraArgument,
+                        nsIDocShellLoadInfo* aLoadInfo,
                         nsPIDOMWindowOuter **aReturn);
 
 public:
