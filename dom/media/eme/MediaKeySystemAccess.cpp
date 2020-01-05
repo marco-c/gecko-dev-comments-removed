@@ -640,8 +640,7 @@ GetSupportedCapabilities(const CodecType aCodecType,
     
     
     const bool isMP4 =
-      DecoderTraits::IsMP4TypeAndEnabled(contentType.Type().AsString(),
-                                         aDiagnostics);
+      DecoderTraits::IsMP4SupportedType(contentType, aDiagnostics);
     if (isMP4 && !aKeySystem.mMP4.IsSupported()) {
       EME_LOG("MediaKeySystemConfiguration (label='%s') "
               "MediaKeySystemMediaCapability('%s','%s') unsupported; "

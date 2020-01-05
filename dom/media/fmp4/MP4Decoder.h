@@ -32,8 +32,9 @@ public:
 
   
   
-  static bool CanHandleMediaType(const MediaContentType& aType,
-                                 DecoderDoctorDiagnostics* aDiagnostics);
+  
+  static bool IsSupportedType(const MediaContentType& aContentType,
+                              DecoderDoctorDiagnostics* aDiagnostics);
 
   
   

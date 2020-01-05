@@ -56,8 +56,10 @@ public:
   
   static bool IsSupportedInVideoDocument(const nsACString& aType);
 
-  static bool IsMP4TypeAndEnabled(const nsACString& aType,
-                                  DecoderDoctorDiagnostics* aDiagnostics);
+  
+  
+  static bool IsMP4SupportedType(const MediaContentType& aType,
+                                 DecoderDoctorDiagnostics* aDiagnostics);
 };
 
 } 
