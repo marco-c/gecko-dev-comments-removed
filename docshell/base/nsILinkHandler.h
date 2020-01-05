@@ -62,12 +62,14 @@ public:
 
 
 
+
   NS_IMETHOD OnLinkClickSync(nsIContent* aContent,
                              nsIURI* aURI,
                              const char16_t* aTargetSpec,
                              const nsAString& aFileName,
                              nsIInputStream* aPostDataStream = 0,
                              nsIInputStream* aHeadersDataStream = 0,
+                             bool aNoOpenerImplied = false,
                              nsIDocShell** aDocShell = 0,
                              nsIRequest** aRequest = 0) = 0;
 
