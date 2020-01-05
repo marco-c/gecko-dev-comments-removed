@@ -15,9 +15,8 @@ Components.utils.import("resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 var satchelFormListener = {
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIFormSubmitObserver,
-                                            Ci.nsIDOMEventListener,
-                                            Ci.nsIObserver,
-                                            Ci.nsISupportsWeakReference]),
+                                           Ci.nsIObserver,
+                                           Ci.nsISupportsWeakReference]),
 
     debug: true,
     enabled: true,
@@ -25,9 +24,9 @@ var satchelFormListener = {
 
     init() {
         Services.obs.addObserver(this, "earlyformsubmit");
+        Services.obs.addObserver(this, "xpcom-shutdown");
         Services.prefs.addObserver("browser.formfill.", this);
         this.updatePrefs();
-        addEventListener("unload", this, false);
     },
 
     updatePrefs() {
@@ -72,37 +71,22 @@ var satchelFormListener = {
 
     
 
-    handleEvent(e) {
-        switch (e.type) {
-            case "unload":
-                Services.obs.removeObserver(this, "earlyformsubmit");
-                Services.prefs.removeObserver("browser.formfill.", this);
-                break;
-
-            default:
-                this.log("Oops! Unexpected event: " + e.type);
-                break;
-        }
-    },
-
-    
-
     observe(subject, topic, data) {
-        if (topic == "nsPref:changed")
+        if (topic == "nsPref:changed") {
             this.updatePrefs();
-        else
+        } else if (topic == "xpcom-shutdown") {
+            Services.obs.removeObserver(this, "earlyformsubmit");
+            Services.obs.removeObserver(this, "xpcom-shutdown");
+            Services.prefs.removeObserver("browser.formfill.", this);
+        } else {
             this.log("Oops! Unexpected notification: " + topic);
+        }
     },
 
     
 
     notify(form, domWin, actionURI, cancelSubmit) {
         try {
-            
-            
-            
-            if (domWin.top != content)
-                return;
             if (!this.enabled)
                 return;
 
