@@ -69,7 +69,8 @@ function toggleNetworkDetails() {
 
 
 function toggleStatistics() {
-  return (dispatch, getState) => dispatch(openStatistics(!getState().ui.statisticsOpen));
+  return (dispatch, getState) =>
+    dispatch(openStatistics(!getState().ui.statisticsOpen));
 }
 
 module.exports = {
