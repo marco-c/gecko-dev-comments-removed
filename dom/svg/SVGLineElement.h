@@ -7,7 +7,7 @@
 #ifndef mozilla_dom_SVGLineElement_h
 #define mozilla_dom_SVGLineElement_h
 
-#include "SVGGeometryElement.h"
+#include "nsSVGPathGeometryElement.h"
 #include "nsSVGLength2.h"
 
 nsresult NS_NewSVGLineElement(nsIContent **aResult,
@@ -16,7 +16,7 @@ nsresult NS_NewSVGLineElement(nsIContent **aResult,
 namespace mozilla {
 namespace dom {
 
-typedef SVGGeometryElement SVGLineElementBase;
+typedef nsSVGPathGeometryElement SVGLineElementBase;
 
 class SVGLineElement final : public SVGLineElementBase
 {

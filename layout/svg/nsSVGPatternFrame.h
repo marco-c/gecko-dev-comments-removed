@@ -15,11 +15,11 @@
 
 class nsIFrame;
 class nsSVGLength2;
+class nsSVGPathGeometryFrame;
 class nsSVGViewBox;
 
 namespace mozilla {
 class SVGAnimatedPreserveAspectRatio;
-class SVGGeometryFrame;
 class nsSVGAnimatedTransformList;
 } 
 
@@ -142,7 +142,7 @@ private:
   
   
   
-  SVGGeometryFrame                 *mSource;
+  nsSVGPathGeometryFrame           *mSource;
   nsAutoPtr<gfxMatrix>              mCTM;
 
 protected:

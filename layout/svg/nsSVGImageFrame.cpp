@@ -13,10 +13,10 @@
 #include "nsLayoutUtils.h"
 #include "imgINotificationObserver.h"
 #include "nsSVGEffects.h"
+#include "nsSVGPathGeometryFrame.h"
 #include "mozilla/dom/SVGSVGElement.h"
 #include "nsSVGUtils.h"
 #include "SVGContentUtils.h"
-#include "SVGGeometryFrame.h"
 #include "SVGImageContext.h"
 #include "mozilla/dom/SVGImageElement.h"
 #include "nsContentUtils.h"
@@ -46,7 +46,7 @@ private:
   nsSVGImageFrame *mFrame;
 };
 
-class nsSVGImageFrame : public SVGGeometryFrame
+class nsSVGImageFrame : public nsSVGPathGeometryFrame
                       , public nsIReflowCallback
 {
   friend nsIFrame*
@@ -54,7 +54,7 @@ class nsSVGImageFrame : public SVGGeometryFrame
 
 protected:
   explicit nsSVGImageFrame(nsStyleContext* aContext)
-    : SVGGeometryFrame(aContext)
+    : nsSVGPathGeometryFrame(aContext)
     , mReflowCallbackPosted(false)
   {
     EnableVisibilityTracking();
@@ -154,7 +154,7 @@ nsSVGImageFrame::Init(nsIContent*       aContent,
   NS_ASSERTION(aContent->IsSVGElement(nsGkAtoms::image),
                "Content is not an SVG image!");
 
-  SVGGeometryFrame::Init(aContent, aParent, aPrevInFlow);
+  nsSVGPathGeometryFrame::Init(aContent, aParent, aPrevInFlow);
 
   if (GetStateBits() & NS_FRAME_IS_NONDISPLAY) {
     
@@ -240,8 +240,8 @@ nsSVGImageFrame::AttributeChanged(int32_t         aNameSpaceID,
     }
   }
 
-  return SVGGeometryFrame::AttributeChanged(aNameSpaceID,
-                                            aAttribute, aModType);
+  return nsSVGPathGeometryFrame::AttributeChanged(aNameSpaceID,
+                                                  aAttribute, aModType);
 }
 
 void
@@ -250,13 +250,13 @@ nsSVGImageFrame::OnVisibilityChange(Visibility aNewVisibility,
 {
   nsCOMPtr<nsIImageLoadingContent> imageLoader = do_QueryInterface(mContent);
   if (!imageLoader) {
-    SVGGeometryFrame::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
+    nsSVGPathGeometryFrame::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
     return;
   }
 
   imageLoader->OnVisibilityChange(aNewVisibility, aNonvisibleAction);
 
-  SVGGeometryFrame::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
+  nsSVGPathGeometryFrame::OnVisibilityChange(aNewVisibility, aNonvisibleAction);
 }
 
 gfx::Matrix

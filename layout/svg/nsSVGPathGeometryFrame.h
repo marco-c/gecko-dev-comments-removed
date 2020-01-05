@@ -3,8 +3,8 @@
 
 
 
-#ifndef __SVGGEOMETRYFRAME_H__
-#define __SVGGEOMETRYFRAME_H__
+#ifndef __NS_SVGPATHGEOMETRYFRAME_H__
+#define __NS_SVGPATHGEOMETRYFRAME_H__
 
 #include "mozilla/Attributes.h"
 #include "gfxMatrix.h"
@@ -16,14 +16,13 @@
 #include "nsSVGUtils.h"
 
 namespace mozilla {
-class SVGGeometryFrame;
 namespace gfx {
 class DrawTarget;
 } 
 } 
 
 class gfxContext;
-class nsDisplaySVGGeometry;
+class nsDisplaySVGPathGeometry;
 class nsIAtom;
 class nsIFrame;
 class nsIPresShell;
@@ -33,30 +32,25 @@ class nsSVGMarkerProperty;
 
 struct nsRect;
 
-nsIFrame*
-NS_NewSVGGeometryFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
-
-namespace mozilla {
-
-class SVGGeometryFrame : public nsFrame
-                       , public nsISVGChildFrame
+class nsSVGPathGeometryFrame : public nsFrame
+                             , public nsISVGChildFrame
 {
   typedef mozilla::gfx::DrawTarget DrawTarget;
 
   friend nsIFrame*
-  ::NS_NewSVGGeometryFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
+  NS_NewSVGPathGeometryFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
-  friend class ::nsDisplaySVGGeometry;
+  friend class nsDisplaySVGPathGeometry;
 
 protected:
-  explicit SVGGeometryFrame(nsStyleContext* aContext)
+  explicit nsSVGPathGeometryFrame(nsStyleContext* aContext)
     : nsFrame(aContext)
   {
      AddStateBits(NS_FRAME_SVG_LAYOUT | NS_FRAME_MAY_BE_TRANSFORMED);
   }
 
 public:
-  NS_DECL_QUERYFRAME_TARGET(SVGGeometryFrame)
+  NS_DECL_QUERYFRAME_TARGET(nsSVGPathGeometryFrame)
   NS_DECL_QUERYFRAME
   NS_DECL_FRAMEARENA_HELPERS
 
@@ -89,7 +83,7 @@ public:
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override
   {
-    return MakeFrameName(NS_LITERAL_STRING("SVGGeometry"), aResult);
+    return MakeFrameName(NS_LITERAL_STRING("SVGPathGeometry"), aResult);
   }
 #endif
 
@@ -147,8 +141,7 @@ private:
   
 
 
-  static MarkerProperties GetMarkerProperties(SVGGeometryFrame *aFrame);
+  static MarkerProperties GetMarkerProperties(nsSVGPathGeometryFrame *aFrame);
 };
-} 
 
 #endif 

@@ -16,9 +16,9 @@
 #include "nsSVGUtils.h"
 
 class gfxContext;
+class nsSVGPathGeometryFrame;
 
 namespace mozilla {
-class SVGGeometryFrame;
 namespace dom {
 class SVGSVGElement;
 } 
@@ -84,19 +84,19 @@ public:
   
   nsresult PaintMark(gfxContext& aContext,
                      const gfxMatrix& aToMarkedFrameUserSpace,
-                     SVGGeometryFrame *aMarkedFrame,
+                     nsSVGPathGeometryFrame *aMarkedFrame,
                      nsSVGMark *aMark,
                      float aStrokeWidth);
 
   SVGBBox GetMarkBBoxContribution(const Matrix &aToBBoxUserspace,
                                   uint32_t aFlags,
-                                  SVGGeometryFrame *aMarkedFrame,
+                                  nsSVGPathGeometryFrame *aMarkedFrame,
                                   const nsSVGMark *aMark,
                                   float aStrokeWidth);
 
 private:
   
-  SVGGeometryFrame *mMarkedFrame;
+  nsSVGPathGeometryFrame *mMarkedFrame;
   float mStrokeWidth, mX, mY, mAutoAngle;
   bool mIsStart;  
 
@@ -112,7 +112,7 @@ private:
   {
   public:
     AutoMarkerReferencer(nsSVGMarkerFrame *aFrame,
-                         SVGGeometryFrame *aMarkedFrame
+                         nsSVGPathGeometryFrame *aMarkedFrame
                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
     ~AutoMarkerReferencer();
   private:
