@@ -434,7 +434,7 @@ class WinArtifactJob(ArtifactJob):
 
 
 JOB_DETAILS = {
-    'android-api-15-opt': (AndroidArtifactJob, ('public/build/target.apk',
+    'android-api-15-opt': (AndroidArtifactJob, ('(public/build/fennec-(.*)\.android-arm.apk|public/build/target.apk)',
                                                 None)),
     'android-api-15-debug': (AndroidArtifactJob, ('public/build/target.apk',
                                                   None)),
