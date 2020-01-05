@@ -4775,6 +4775,8 @@ pref("extensions.webextensions.keepStorageOnUninstall", false);
 pref("extensions.webextensions.keepUuidOnUninstall", false);
 
 pref("extensions.webextensions.identity.redirectDomain", "extensions.allizom.org");
+
+pref("extensions.webextensions.themes.enabled", false);
 pref("extensions.webextensions.remote", false);
 
 
