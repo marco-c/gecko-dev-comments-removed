@@ -410,6 +410,13 @@ var FormAutofillContent = {
         continue;
       }
 
+      
+      
+      
+      if (this.getFormHandler(field)) {
+        continue;
+      }
+
       let formLike = FormLikeFactory.createFromField(field);
       if (!forms.some(form => form.rootElement === formLike.rootElement)) {
         forms.push(formLike);
