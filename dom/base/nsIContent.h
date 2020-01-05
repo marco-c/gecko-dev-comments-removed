@@ -247,7 +247,7 @@ public:
   
 
 
-  virtual bool IsInChromeDocument();
+  virtual bool IsInChromeDocument() const;
 
   
 

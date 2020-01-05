@@ -562,7 +562,7 @@ IsNativeAnonymousImplementationOfPseudoElement(nsIContent* aContent)
 }
 
  bool
-StyleChildrenIterator::IsNeeded(Element* aElement)
+StyleChildrenIterator::IsNeeded(const Element* aElement)
 {
   
   
