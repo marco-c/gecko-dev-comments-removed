@@ -3996,6 +3996,13 @@ public:
     mElement->NotifyMediaStreamTrackRemoved(aTrack);
   }
 
+  void NotifyActive() override
+  {
+    LOG(LogLevel::Debug, ("%p, mSrcStream %p became active",
+                          mElement, mElement->mSrcStream.get()));
+    mElement->CheckAutoplayDataReady();
+  }
+
   void NotifyInactive() override
   {
     LOG(LogLevel::Debug, ("%p, mSrcStream %p became inactive",
@@ -4468,6 +4475,12 @@ void HTMLMediaElement::PlaybackEnded()
 
   Pause();
 
+  if (mSrcStream) {
+    
+    
+    mAutoplaying = true;
+  }
+
   FireTimeUpdate(false);
   DispatchAsyncEvent(NS_LITERAL_STRING("ended"));
 }
@@ -4912,6 +4925,7 @@ bool HTMLMediaElement::CanActivateAutoplay()
   
   
   
+  
 
   if (!HasAttr(kNameSpaceID_None, nsGkAtoms::autoplay) || !mAutoplayEnabled) {
     return false;
@@ -4935,7 +4949,8 @@ bool HTMLMediaElement::CanActivateAutoplay()
 
   bool hasData =
     (mDecoder && mReadyState >= nsIDOMHTMLMediaElement::HAVE_ENOUGH_DATA) ||
-    mSrcStream || mMediaSource;
+    (mSrcStream && mSrcStream->Active()) ||
+    mMediaSource;
 
   return hasData;
 }
