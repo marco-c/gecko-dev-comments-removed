@@ -186,7 +186,11 @@ pref("dom.enable_performance_observer", false);
 #endif
 
 
+#ifdef NIGHTLY_BUILD
 pref("dom.requestIdleCallback.enabled", true);
+#else
+pref("dom.requestIdleCallback.enabled", false);
+#endif
 
 
 pref("dom.gamepad.enabled", true);
@@ -818,11 +822,7 @@ pref("gfx.logging.peak-texture-usage.enabled", false);
 
 pref("gfx.ycbcr.accurate-conversion", false);
 
-#ifdef MOZ_ENABLE_WEBRENDER
 pref("gfx.webrender.enabled", true);
-#else
-pref("gfx.webrender.enabled", false);
-#endif
 
 pref("accessibility.browsewithcaret", false);
 pref("accessibility.warn_on_browsewithcaret", true);
@@ -1168,7 +1168,7 @@ pref("dom.require_user_interaction_for_beforeunload", true);
 
 pref("dom.disable_open_during_load",                false);
 pref("dom.popup_maximum",                           20);
-pref("dom.popup_allowed_events", "change click dblclick mouseup pointerup notificationclick reset submit touchend");
+pref("dom.popup_allowed_events", "change click dblclick mouseup notificationclick reset submit touchend");
 pref("dom.disable_open_click_delay", 1000);
 
 pref("dom.storage.enabled", true);
@@ -1193,11 +1193,8 @@ pref("dom.forms.number", true);
 pref("dom.forms.color", true);
 
 
+
 pref("dom.forms.datetime", false);
-
-
-
-pref("dom.forms.datetime.others", false);
 
 
 pref("dom.forms.datetime.timepicker", false);
@@ -1589,9 +1586,6 @@ pref("network.http.spdy.default-hpack-buffer", 65536);
 
 pref("network.http.altsvc.enabled", true);
 pref("network.http.altsvc.oe", true);
-
-
-pref("security.tls.enable_0rtt_data", true);
 
 pref("network.http.diagnostics", false);
 
@@ -2911,7 +2905,7 @@ pref("dom.ipc.plugins.forcedirect.enabled", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
-pref("dom.ipc.processCount", 4);
+pref("dom.ipc.processCount", 2);
 #else
 pref("dom.ipc.processCount", 1);
 #endif
@@ -4208,7 +4202,13 @@ pref("intl.ime.use_simple_context_on_password_field", true);
 pref("intl.ime.use_simple_context_on_password_field", false);
 #endif
 
+# enable new platform fontlist for linux on GTK platforms
+# temporary pref to allow flipping back to the existing
+# gfxPangoFontGroup/gfxFontconfigUtils code for handling system fonts
+
 #ifdef MOZ_WIDGET_GTK
+pref("gfx.font_rendering.fontconfig.fontlist.enabled", true);
+
 
 pref("gfx.font_rendering.fontconfig.max_generic_substitutions", 3);
 #endif
@@ -5209,11 +5209,8 @@ pref("browser.safebrowsing.provider.google.reportMalwareMistakeURL", "https://%L
 pref("browser.safebrowsing.provider.google4.pver", "4");
 pref("browser.safebrowsing.provider.google4.lists", "goog-badbinurl-proto,goog-downloadwhite-proto,goog-phish-proto,googpub-phish-proto,goog-malware-proto,goog-unwanted-proto");
 pref("browser.safebrowsing.provider.google4.updateURL", "https://safebrowsing.googleapis.com/v4/threatListUpdates:fetch?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%");
-#ifdef NIGHTLY_BUILD
-pref("browser.safebrowsing.provider.google4.gethashURL", "https://safebrowsing.googleapis.com/v4/fullHashes:find?$ct=application/x-protobuf&key=%GOOGLE_API_KEY%");
-#else
+
 pref("browser.safebrowsing.provider.google4.gethashURL", "");
-#endif // NIGHTLY_BUILD
 pref("browser.safebrowsing.provider.google4.reportURL", "https://safebrowsing.google.com/safebrowsing/diagnostic?client=%NAME%&hl=%LOCALE%&site=");
 pref("browser.safebrowsing.provider.google4.reportPhishMistakeURL", "https://%LOCALE%.phish-error.mozilla.com/?hl=%LOCALE%&url=");
 pref("browser.safebrowsing.provider.google4.reportMalwareMistakeURL", "https://%LOCALE%.malware-error.mozilla.com/?hl=%LOCALE%&url=");
@@ -5645,6 +5642,7 @@ pref("fuzzing.enabled", false);
 pref("layers.advanced.border-layers", false);
 #ifdef MOZ_ENABLE_WEBRENDER
 pref("layers.advanced.caret-layers", true);
+pref("layers.advanced.boxshadow-outer-layers", false);
 #else
 pref("layers.advanced.caret-layers", false);
 #endif
