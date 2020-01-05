@@ -426,7 +426,8 @@ impl EventTarget {
         if !rv || handler.get().is_null() {
             
             unsafe {
-                report_pending_exception(cx, self.reflector().get_jsobject().get());
+                let _ac = JSAutoCompartment::new(cx, self.reflector().get_jsobject().get());
+                report_pending_exception(cx);
             }
             
             return None;
