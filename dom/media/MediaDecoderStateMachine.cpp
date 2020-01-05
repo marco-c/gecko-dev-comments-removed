@@ -278,7 +278,6 @@ protected:
 
 
 
-
 class MediaDecoderStateMachine::DecodeMetadataState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -345,7 +344,6 @@ private:
 
   MozPromiseRequestHolder<MediaDecoderReader::MetadataPromise> mMetadataRequest;
 };
-
 
 
 
@@ -453,7 +451,6 @@ public:
 private:
   SeekJob mPendingSeek;
 };
-
 
 
 
@@ -766,7 +763,6 @@ private:
 
 
 
-
 class MediaDecoderStateMachine::SeekingState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -942,7 +938,6 @@ private:
 
 
 
-
 class MediaDecoderStateMachine::BufferingState
   : public MediaDecoderStateMachine::StateObject
 {
@@ -1010,7 +1005,6 @@ private:
   
   const uint32_t mBufferingWait = 15;
 };
-
 
 
 
