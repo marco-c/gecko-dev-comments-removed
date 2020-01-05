@@ -155,7 +155,7 @@ function* openTab(aURL) {
   return {tab, browser};
 }
 
-function* assignCookiesUnderFirstParty(aURL, aFirstParty, aCookieValue){
+function* assignCookiesUnderFirstParty(aURL, aFirstParty, aCookieValue) {
   
   
   let tabInfo = yield openTabInFirstParty(aURL, aFirstParty);
