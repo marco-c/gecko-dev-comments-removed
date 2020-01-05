@@ -437,7 +437,8 @@ class JSObject : public js::gc::Cell
     }
 
     
-    bool splicePrototype(JSContext* cx, const js::Class* clasp, js::Handle<js::TaggedProto> proto);
+    static bool splicePrototype(JSContext* cx, js::HandleObject obj, const js::Class* clasp,
+                                js::Handle<js::TaggedProto> proto);
 
     
 

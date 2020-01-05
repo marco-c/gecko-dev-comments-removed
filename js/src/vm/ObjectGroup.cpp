@@ -265,19 +265,18 @@ JSObject::shouldSplicePrototype(JSContext* cx)
     return isSingleton();
 }
 
-bool
-JSObject::splicePrototype(JSContext* cx, const Class* clasp, Handle<TaggedProto> proto)
+ bool
+JSObject::splicePrototype(JSContext* cx, HandleObject obj, const Class* clasp,
+                          Handle<TaggedProto> proto)
 {
-    MOZ_ASSERT(cx->compartment() == compartment());
-
-    RootedObject self(cx, this);
+    MOZ_ASSERT(cx->compartment() == obj->compartment());
 
     
 
 
 
 
-    MOZ_ASSERT(self->isSingleton());
+    MOZ_ASSERT(obj->isSingleton());
 
     
     MOZ_ASSERT_IF(proto.isObject(), !IsWindow(proto.toObject()));
@@ -286,7 +285,7 @@ JSObject::splicePrototype(JSContext* cx, const Class* clasp, Handle<TaggedProto>
         return false;
 
     
-    RootedObjectGroup group(cx, JSObject::getGroup(cx, self));
+    RootedObjectGroup group(cx, JSObject::getGroup(cx, obj));
     if (!group)
         return false;
     RootedObjectGroup protoGroup(cx, nullptr);
