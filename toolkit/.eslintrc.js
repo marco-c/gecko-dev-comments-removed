@@ -67,9 +67,6 @@ module.exports = {
     "no-debugger": "error",
 
     
-    "no-delete-var": "error",
-
-    
     "no-dupe-args": "error",
 
     
