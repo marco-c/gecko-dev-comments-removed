@@ -84,14 +84,14 @@ function ModuleResolveExport(exportName, resolveSet = [], exportStarSet = [])
     }
 
     
-    _DefineDataProperty(resolveSet, resolveSet.length, {module: module, exportName: exportName});
+    _DefineDataProperty(resolveSet, resolveSet.length, {module, exportName});
 
     
     let localExportEntries = module.localExportEntries;
     for (let i = 0; i < localExportEntries.length; i++) {
         let e = localExportEntries[i];
         if (exportName === e.exportName)
-            return {module: module, bindingName: e.localName};
+            return {module, bindingName: e.localName};
     }
 
     
