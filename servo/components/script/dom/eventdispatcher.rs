@@ -113,17 +113,21 @@ pub fn dispatch_event(target: &EventTarget,
     assert!(event.GetCurrentTarget().is_none());
 
     
+    event.mark_as_dispatching();
+
+    
     event.set_target(target_override.unwrap_or(target));
 
     if event.stop_propagation() {
         
         
+
+        
+        event.clear_dispatching_flags();
+
         
         return !event.DefaultPrevented();
     }
-
-    
-    event.mark_as_dispatching();
 
     
     
