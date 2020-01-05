@@ -4,501 +4,566 @@
 
 
 
-window.COLORS = [
-  "#0088cc",
-  "#5b5fff",
-  "#b82ee5",
-  "#ed2655",
-  "#f13c00",
-  "#d97e00",
-  "#2cbb0f",
-  "#0072ab",
-];
 
-window.MIN_TRACE_TIME = 100000; 
+"use strict";
 
+(function (exports, window) {
 
-window.State = (function () {
-  return class {
-    constructor() {
+  
+
+  const COLORS = exports.COLORS = [
+    "#0088cc",
+    "#5b5fff",
+    "#b82ee5",
+    "#ed2655",
+    "#f13c00",
+    "#d97e00",
+    "#2cbb0f",
+    "#0072ab",
+  ];
+
+  
+  const State = exports.State = (function () {
+    return class State {
+      constructor(rawTraces, windowWidth) {
+        
+        this.traces = null;
+
+        
+        this.minimumTraceTime = 100000;
+
+        
+        
+        this.minTime = Infinity;
+        this.maxTime = 0;
+
+        
+        this.startSelection = 0;
+        this.endSelection = 0;
+
+        
+        this.windowWidth = windowWidth;
+
+        
+        
+        this.grabbingLeft = false;
+        this.grabbingRight = false;
+        this.grabbingSlider = false;
+
+        
+        
+        this.colorIndex = 0;
+        this.categoryToColor = Object.create(null);
+
+        this.initialize(rawTraces);
+      }
+
       
-      this.traces = null;
+      initialize(rawTraces) {
+        this.traces = rawTraces.filter(t => t.endTime - t.startTime >= this.minimumTraceTime);
+
+        this.traces.sort((t1, t2) => {
+          let cmp = t1.startTime - t2.startTime;
+          if (cmp !== 0) {
+            return cmp;
+          }
+
+          return t1.endTime - t2.endTime;
+        });
+
+        this.findMinTime();
+        this.normalizeTimes();
+        this.removeIdleTime();
+        this.findMaxTime();
+
+        this.startSelection = 3 * this.maxTime / 8;
+        this.endSelection = 5 * this.maxTime / 8;
+      }
+
+      
+      findMinTime() {
+        this.minTime = this.traces.reduce((min, t) => Math.min(min, t.startTime),
+                                          Infinity);
+      }
+
+      
+      findMaxTime() {
+        this.maxTime = this.traces.reduce((max, t) => Math.max(max, t.endTime),
+                                          0);
+      }
 
       
       
-      this.minTime = Infinity;
-      this.maxTime = 0;
-
-      
-      this.startSelection = 0;
-      this.endSelection = 0;
-
-      
-      this.windowWidth = window.innerWidth;
-
-      
-      
-      this.grabbingLeft = false;
-      this.grabbingRight = false;
-      this.grabbingSlider = false;
+      normalizeTimes() {
+        for (let i = 0; i < this.traces.length; i++) {
+          let trace = this.traces[i];
+          trace.startTime -= this.minTime;
+          trace.endTime -= this.minTime;
+        }
+        this.minTime = 0;
+      }
 
       
       
-      this.colorIndex = 0;
-      this.categoryToColor = Object.create(null);
+      removeIdleTime() {
+        let totalIdleTime = 0;
+        let lastEndTime = null;
 
-      this.initialize();
-    }
+        for (let i = 0; i < this.traces.length; i++) {
+          let trace = this.traces[i];
 
-    
-    initialize() {
-      this.traces = TRACES.filter(t => t.endTime - t.startTime >= MIN_TRACE_TIME);
-      window.TRACES = null;
+          if (lastEndTime !== null && trace.startTime > lastEndTime) {
+            totalIdleTime += trace.startTime - lastEndTime;
+          }
 
-      this.traces.sort((t1, t2) => {
-        let cmp = t1.startTime - t2.startTime;
-        if (cmp !== 0) {
-          return cmp;
+          lastEndTime = trace.endTime;
+
+          trace.startTime -= totalIdleTime;
+          trace.endTime -= totalIdleTime;
+        }
+      }
+
+      
+      
+      getColorForCategory(category) {
+        let result = this.categoryToColor[category];
+        if (!result) {
+          result = COLORS[this.colorIndex++ % COLORS.length];
+          this.categoryToColor[category] = result;
+        }
+        return result;
+      }
+
+      
+      pxToNs(px) {
+        return px / this.windowWidth * this.maxTime;
+      }
+
+      
+      nsToPx(ns) {
+        return ns / this.maxTime * this.windowWidth
+      }
+
+      
+      nsToSelectionPx(ns) {
+        return ns / (this.endSelection - this.startSelection) * this.windowWidth;
+      }
+
+      
+      updateStartSelection(position) {
+        this.startSelection = clamp(this.pxToNs(position),
+                                    this.minTime,
+                                    this.endSelection);
+      }
+
+      
+      updateEndSelection(position) {
+        this.endSelection = clamp(this.pxToNs(position),
+                                  this.startSelection,
+                                  this.maxTime);
+      }
+
+      
+      moveSelection(movement) {
+        let delta = clamp(this.pxToNs(movement),
+                          -this.startSelection,
+                          this.maxTime - this.endSelection);
+
+        this.startSelection += delta;
+        this.endSelection += delta;
+      }
+
+      
+      zoomSelection(zoom) {
+        const increment = this.maxTime / 1000;
+
+        this.startSelection = clamp(this.startSelection - zoom * increment,
+                                    this.minTime,
+                                    this.endSelection);
+
+        this.endSelection = clamp(this.endSelection + zoom * increment,
+                                  this.startSelection,
+                                  this.maxTime);
+      }
+
+      
+      getTracesInSelection() {
+        const tracesInSelection = [];
+
+        for (let i = 0; i < state.traces.length; i++) {
+          let trace = state.traces[i];
+
+          if (trace.endTime < state.startSelection) {
+            continue;
+          }
+
+          if (trace.startTime > state.endSelection) {
+            break;
+          }
+
+          tracesInSelection.push(trace);
         }
 
-        return t1.endTime - t2.endTime;
+        return tracesInSelection;
+      }
+    };
+  }());
+
+  
+
+  
+  const clamp = exports.clamp = (value, min, max) => {
+    return Math.max(Math.min(value, max), min);
+  };
+
+  
+  const closestPowerOfTen = exports.closestPowerOfTen = n => {
+    let powerOfTen = 1;
+    let diff = Math.abs(n - powerOfTen);
+
+    while (true) {
+      let nextPowerOfTen = powerOfTen * 10;
+      let nextDiff = Math.abs(n - nextPowerOfTen);
+
+      if (nextDiff > diff) {
+        return powerOfTen;
+      }
+
+      diff = nextDiff;
+      powerOfTen = nextPowerOfTen;
+    }
+  };
+
+  
+  
+  const selectIncrement = exports.selectIncrement = (range, maxTicks) => {
+    let increment = closestPowerOfTen(range / 10);
+    while (range / increment > maxTicks) {
+      increment *= 2;
+    }
+    return increment;
+  };
+
+  
+  const traceCategory = exports.traceCategory = trace => {
+    return Object.keys(trace.category)[0];
+  };
+
+  
+
+  if (!window) {
+    return;
+  }
+
+  
+  
+  
+  
+
+  const state = exports.state = new State(window.TRACES, window.innerWidth);
+
+  
+
+  window.document.body.innerHTML = "";
+
+  const sliderContainer = window.document.createElement("div");
+  sliderContainer.id = "slider";
+  window.document.body.appendChild(sliderContainer);
+
+  const leftGrabby = window.document.createElement("span");
+  leftGrabby.className = "grabby";
+  sliderContainer.appendChild(leftGrabby);
+
+  const sliderViewport = window.document.createElement("span");
+  sliderViewport.id = "slider-viewport";
+  sliderContainer.appendChild(sliderViewport);
+
+  const rightGrabby = window.document.createElement("span");
+  rightGrabby.className = "grabby";
+  sliderContainer.appendChild(rightGrabby);
+
+  const tracesContainer = window.document.createElement("div");
+  tracesContainer.id = "traces";
+  window.document.body.appendChild(tracesContainer);
+
+  
+
+  
+  const withRender = fn => function () {
+    fn.apply(null, arguments);
+    render();
+  };
+
+  window.addEventListener("resize", withRender(() => {
+    state.windowWidth = window.innerWidth;
+  }));
+
+  window.addEventListener("mouseup", () => {
+    state.grabbingSlider = state.grabbingLeft = state.grabbingRight = false;
+  });
+
+  leftGrabby.addEventListener("mousedown", () => {
+    state.grabbingLeft = true;
+  });
+
+  rightGrabby.addEventListener("mousedown", () => {
+    state.grabbingRight = true;
+  });
+
+  sliderViewport.addEventListener("mousedown", () => {
+    state.grabbingSlider = true;
+  });
+
+  window.addEventListener("mousemove", event => {
+    if (state.grabbingSlider) {
+      state.moveSelection(event.movementX);
+      event.preventDefault();
+      render();
+    } else if (state.grabbingLeft) {
+      state.updateStartSelection(event.clientX);
+      event.preventDefault();
+      render();
+    } else if (state.grabbingRight) {
+      state.updateEndSelection(event.clientX);
+      event.preventDefault();
+      render();
+    }
+  });
+
+  sliderContainer.addEventListener("wheel", withRender(event => {
+    state.zoomSelection(event.deltaY);
+  }));
+
+  
+
+  
+  
+  const oncePerAnimationFrame = fn => {
+    let animationId = null;
+    return () => {
+      if (animationId !== null) {
+        return;
+      }
+
+      animationId = window.requestAnimationFrame(() => {
+        fn();
+        animationId = null;
       });
+    };
+  };
 
-      this.findMinTime();
-      this.normalizeTimes();
-      this.removeIdleTime();
-      this.findMaxTime();
-
-      this.startSelection = 3 * this.maxTime / 8;
-      this.endSelection = 5 * this.maxTime / 8;
-    }
-
-    
-    findMinTime() {
-      this.minTime = this.traces.reduce((min, t) => Math.min(min, t.startTime),
-                                        Infinity);
-    }
-
-    
-    findMaxTime() {
-      this.maxTime = this.traces.reduce((max, t) => Math.max(max, t.endTime),
-                                        0);
-    }
-
-    
-    
-    normalizeTimes() {
-      for (let i = 0; i < this.traces.length; i++) {
-        let trace = this.traces[i];
-        trace.startTime -= this.minTime;
-        trace.endTime -= this.minTime;
+  
+  const oncePerWindowWidth = fn => {
+    let lastWidth = null;
+    return () => {
+      if (state.windowWidth !== lastWidth) {
+        fn();
+        lastWidth = state.windowWidth;
       }
-      this.minTime = 0;
+    };
+  };
+
+  
+  const render = oncePerAnimationFrame(() => {
+    renderSlider();
+    renderTraces();
+  });
+
+  
+  const renderSlider = () => {
+    let selectionDelta = state.endSelection - state.startSelection;
+
+    
+    sliderViewport.style.width = state.nsToPx(selectionDelta) - 6 + "px";
+    leftGrabby.style.marginLeft = state.nsToPx(state.startSelection) + "px";
+    rightGrabby.style.rightMargin = state.nsToPx(state.maxTime - state.endSelection) + "px";
+
+    renderSliderTicks();
+  };
+
+  
+  const renderSliderTicks = oncePerWindowWidth(() => {
+    let oldTicks = Array.from(window.document.querySelectorAll(".slider-tick"));
+    for (let tick of oldTicks) {
+      tick.remove();
     }
 
+    let increment = selectIncrement(state.maxTime, 20);
+    let px = state.nsToPx(increment);
+    let ms = 0;
+    for (let i = 0; i < state.windowWidth; i += px) {
+      let tick = window.document.createElement("div");
+      tick.className = "slider-tick";
+      tick.textContent = ms + " ms";
+      tick.style.left = i + "px";
+      window.document.body.appendChild(tick);
+      ms += increment / 1000000;
+    }
+  });
+
+  
+  const renderTraces = () => {
+    renderTracesTicks();
+
+    let tracesToRender = state.getTracesInSelection();
+
     
     
-    removeIdleTime() {
-      let totalIdleTime = 0;
-      let lastEndTime = null;
-
-      for (let i = 0; i < this.traces.length; i++) {
-        let trace = this.traces[i];
-
-        if (lastEndTime !== null && trace.startTime > lastEndTime) {
-          totalIdleTime += trace.startTime - lastEndTime;
-        }
-
-        lastEndTime = trace.endTime;
-
-        trace.startTime -= totalIdleTime;
-        trace.endTime -= totalIdleTime;
-      }
+    
+    let rows = Array.from(tracesContainer.querySelectorAll(".outer"));
+    while (rows.length > tracesToRender.length) {
+      rows.pop().remove();
+    }
+    while (rows.length < tracesToRender.length) {
+      let elem = makeTraceTemplate();
+      tracesContainer.appendChild(elem);
+      rows.push(elem);
     }
 
-    
-    
-    getColorForCategory(category) {
-      let result = this.categoryToColor[category];
-      if (!result) {
-        result = COLORS[this.colorIndex++ % COLORS.length];
-        this.categoryToColor[category] = result;
-      }
-      return result;
+    for (let i = 0; i < tracesToRender.length; i++) {
+      renderTrace(tracesToRender[i], rows[i]);
     }
   };
-}());
 
-window.state = new State();
-
-
-
-
-window.closestPowerOfTen = n => {
-  let powerOfTen = 1;
-  let diff = Math.abs(n - powerOfTen);
-
-  while (true) {
-    let nextPowerOfTen = powerOfTen * 10;
-    let nextDiff = Math.abs(n - nextPowerOfTen);
-
-    if (nextDiff > diff) {
-      return powerOfTen;
+  
+  const renderTracesTicks = () => {
+    let oldTicks = Array.from(tracesContainer.querySelectorAll(".traces-tick"));
+    for (let tick of oldTicks) {
+      tick.remove();
     }
 
-    diff = nextDiff;
-    powerOfTen = nextPowerOfTen;
-  }
-};
+    let selectionDelta = state.endSelection - state.startSelection;
+    let increment = selectIncrement(selectionDelta, 10);
+    let px = state.nsToPx(increment);
+    let offset = state.startSelection % increment;
+    let time = state.startSelection - offset + increment;
 
+    while (time < state.endSelection) {
+      let tick = document.createElement("div");
+      tick.className = "traces-tick";
+      tick.textContent = Math.round(time / 1000000) + " ms";
+      tick.style.left = state.nsToSelectionPx(time - state.startSelection) + "px";
+      tracesContainer.appendChild(tick);
 
+      time += increment;
+    }
+  };
 
-window.selectIncrement = (range, maxTicks) => {
-  let increment = closestPowerOfTen(range / 10);
-  while (range / increment > maxTicks) {
-    increment *= 2;
-  }
-  return increment;
-};
+  
+  const makeTraceTemplate = () => {
+    let outer = window.document.createElement("div");
+    outer.className = "outer";
 
+    let inner = window.document.createElement("div");
+    inner.className = "inner";
 
-window.traceCategory = trace => {
-  return Object.keys(trace.category)[0];
-};
+    let tooltip = window.document.createElement("div");
+    tooltip.className = "tooltip";
 
+    let header = window.document.createElement("h3");
+    header.className = "header";
+    tooltip.appendChild(header);
 
+    let duration = window.document.createElement("h4");
+    duration.className = "duration";
+    tooltip.appendChild(duration);
 
-document.body.innerHTML = "";
+    let pairs = window.document.createElement("dl");
 
-window.sliderContainer = document.createElement("div");
-sliderContainer.id = "slider";
-document.body.appendChild(sliderContainer);
+    let timeStartLabel = window.document.createElement("dt");
+    timeStartLabel.textContent = "Start:"
+    pairs.appendChild(timeStartLabel);
 
-window.leftGrabby = document.createElement("span");
-leftGrabby.className = "grabby";
-sliderContainer.appendChild(leftGrabby);
+    let timeStartValue = window.document.createElement("dd");
+    timeStartValue.className = "start";
+    pairs.appendChild(timeStartValue);
 
-window.sliderViewport = document.createElement("span");
-sliderViewport.id = "slider-viewport";
-sliderContainer.appendChild(sliderViewport);
+    let timeEndLabel = window.document.createElement("dt");
+    timeEndLabel.textContent = "End:"
+    pairs.appendChild(timeEndLabel);
 
-window.rightGrabby = document.createElement("span");
-rightGrabby.className = "grabby";
-sliderContainer.appendChild(rightGrabby);
+    let timeEndValue = window.document.createElement("dd");
+    timeEndValue.className = "end";
+    pairs.appendChild(timeEndValue);
 
-window.tracesContainer = document.createElement("div");
-tracesContainer.id = "traces";
-document.body.appendChild(tracesContainer);
+    let urlLabel = window.document.createElement("dt");
+    urlLabel.textContent = "URL:";
+    pairs.appendChild(urlLabel);
 
+    let urlValue = window.document.createElement("dd");
+    urlValue.className = "url";
+    pairs.appendChild(urlValue);
 
+    let iframeLabel = window.document.createElement("dt");
+    iframeLabel.textContent = "iframe?";
+    pairs.appendChild(iframeLabel);
 
+    let iframeValue = window.document.createElement("dd");
+    iframeValue.className = "iframe";
+    pairs.appendChild(iframeValue);
 
-window.withRender = fn => (...args) => {
-  fn(...args);
-  render();
-};
+    let incrementalLabel = window.document.createElement("dt");
+    incrementalLabel.textContent = "Incremental?";
+    pairs.appendChild(incrementalLabel);
 
-window.addEventListener("resize", withRender(() => {
-  state.windowWidth = window.innerWidth;
-}));
+    let incrementalValue = window.document.createElement("dd");
+    incrementalValue.className = "incremental";
+    pairs.appendChild(incrementalValue);
 
-window.addEventListener("mouseup", () => {
-  state.grabbingSlider = state.grabbingLeft = state.grabbingRight = false;
-});
+    tooltip.appendChild(pairs);
+    outer.appendChild(tooltip);
+    outer.appendChild(inner);
+    return outer;
+  };
 
-leftGrabby.addEventListener("mousedown", () => {
-  state.grabbingLeft = true;
-});
+  
+  
+  
+  
+  
+  
+  
+  const renderTrace = (trace, elem) => {
+    let inner = elem.querySelector(".inner");
+    inner.style.width = state.nsToSelectionPx(trace.endTime - trace.startTime) + "px";
+    inner.style.marginLeft = state.nsToSelectionPx(trace.startTime - state.startSelection) + "px";
 
-rightGrabby.addEventListener("mousedown", () => {
-  state.grabbingRight = true;
-});
+    let category = traceCategory(trace);
+    inner.textContent = category;
+    inner.style.backgroundColor = state.getColorForCategory(category);
 
-sliderViewport.addEventListener("mousedown", () => {
-  state.grabbingSlider = true;
-});
+    let header = elem.querySelector(".header");
+    header.textContent = category;
 
-window.addEventListener("mousemove", event => {
-  let ratio = event.clientX / state.windowWidth;
-  let relativeTime = ratio * state.maxTime;
-  let absTime = state.minTime + relativeTime;
-  absTime = Math.min(state.maxTime, absTime);
-  absTime = Math.max(state.minTime, absTime);
+    let duration = elem.querySelector(".duration");
+    duration.textContent = (trace.endTime - trace.startTime) / 1000000 + " ms";
 
-  if (state.grabbingSlider) {
-    let delta = event.movementX / state.windowWidth * state.maxTime;
-    if (delta < 0) {
-      delta = Math.max(-state.startSelection, delta);
+    let timeStartValue = elem.querySelector(".start");
+    timeStartValue.textContent = trace.startTime / 1000000 + " ms";
+
+    let timeEndValue = elem.querySelector(".end");
+    timeEndValue.textContent = trace.endTime / 1000000 + " ms";
+
+    if (trace.metadata) {
+      let urlValue = elem.querySelector(".url");
+      urlValue.textContent = trace.metadata.url;
+      urlValue.removeAttribute("hidden");
+
+      let iframeValue = elem.querySelector(".iframe");
+      iframeValue.textContent = trace.metadata.iframe.RootWindow ? "No" : "Yes";
+      iframeValue.removeAttribute("hidden");
+
+      let incrementalValue = elem.querySelector(".incremental");
+      incrementalValue.textContent = trace.metadata.incremental.Incremental ? "Yes" : "No";
+      incrementalValue.removeAttribute("hidden");
     } else {
-      delta = Math.min(state.maxTime - state.endSelection, delta);
-    }
-
-    state.startSelection += delta;
-    state.endSelection += delta;
-    render();
-  } else if (state.grabbingLeft) {
-    state.startSelection = Math.min(absTime, state.endSelection);
-    render();
-  } else if (state.grabbingRight) {
-    state.endSelection = Math.max(absTime, state.startSelection);
-    render();
-  }
-});
-
-sliderContainer.addEventListener("wheel", withRender(event => {
-  let increment = state.maxTime / 1000;
-
-  state.startSelection -= event.deltaY * increment
-  state.startSelection = Math.max(0, state.startSelection);
-  state.startSelection = Math.min(state.startSelection, state.endSelection);
-
-  state.endSelection += event.deltaY * increment;
-  state.endSelection = Math.min(state.maxTime, state.endSelection);
-  state.endSelection = Math.max(state.startSelection, state.endSelection);
-}));
-
-
-
-
-
-window.oncePerAnimationFrame = fn => {
-  let animationId = null;
-  return () => {
-    if (animationId !== null) {
-      return;
-    }
-
-    animationId = requestAnimationFrame(() => {
-      fn();
-      animationId = null;
-    });
-  };
-};
-
-
-window.oncePerWindowWidth = fn => {
-  let lastWidth = null;
-  return () => {
-    if (state.windowWidth !== lastWidth) {
-      fn();
-      lastWidth = state.windowWidth;
+      elem.querySelector(".url").setAttribute("hidden", "");
+      elem.querySelector(".iframe").setAttribute("hidden", "");
+      elem.querySelector(".incremental").setAttribute("hidden", "");
     }
   };
-};
 
+  render();
 
-window.render = oncePerAnimationFrame(() => {
-  renderSlider();
-  renderTraces();
-});
-
-
-window.renderSlider = () => {
-  let selectionDelta = state.endSelection - state.startSelection;
-
-  leftGrabby.style.marginLeft = (state.startSelection / state.maxTime) * state.windowWidth + "px";
-
-  
-  sliderViewport.style.width = (selectionDelta / state.maxTime) * state.windowWidth - 6 + "px";
-
-  rightGrabby.style.rightMargin = (state.maxTime - state.endSelection) / state.maxTime
-                                * state.windowWidth + "px";
-
-  renderSliderTicks();
-};
-
-
-window.renderSliderTicks = oncePerWindowWidth(() => {
-  let oldTicks = Array.from(document.querySelectorAll(".slider-tick"));
-  for (let tick of oldTicks) {
-    tick.remove();
-  }
-
-  let increment = selectIncrement(state.maxTime, 20);
-  let px = increment / state.maxTime * state.windowWidth;
-  let ms = 0;
-  for (let i = 0; i < state.windowWidth; i += px) {
-    let tick = document.createElement("div");
-    tick.className = "slider-tick";
-    tick.textContent = ms + " ms";
-    tick.style.left = i + "px";
-    document.body.appendChild(tick);
-    ms += increment / 1000000;
-  }
-});
-
-
-window.renderTraces = () => {
-  renderTracesTicks();
-
-  let tracesToRender = [];
-  for (let i = 0; i < state.traces.length; i++) {
-    let trace = state.traces[i];
-
-    if (trace.endTime < state.startSelection || trace.startTime > state.endSelection) {
-      continue;
-    }
-
-    tracesToRender.push(trace);
-  }
-
-  
-  
-  
-  let rows = Array.from(tracesContainer.querySelectorAll(".outer"));
-  while (rows.length > tracesToRender.length) {
-    rows.pop().remove();
-  }
-  while (rows.length < tracesToRender.length) {
-    let elem = makeTraceTemplate();
-    tracesContainer.appendChild(elem);
-    rows.push(elem);
-  }
-
-  for (let i = 0; i < tracesToRender.length; i++) {
-    renderTrace(tracesToRender[i], rows[i]);
-  }
-};
-
-
-window.renderTracesTicks = () => {
-  let oldTicks = Array.from(tracesContainer.querySelectorAll(".traces-tick"));
-  for (let tick of oldTicks) {
-    tick.remove();
-  }
-
-  let selectionDelta = state.endSelection - state.startSelection;
-  let increment = selectIncrement(selectionDelta, 10);
-  let px = increment / selectionDelta * state.windowWidth;
-  let offset = state.startSelection % increment;
-  let time = state.startSelection - offset + increment;
-
-  while (time < state.endSelection) {
-    let tick = document.createElement("div");
-    tick.className = "traces-tick";
-    tick.textContent = Math.round(time / 1000000) + " ms";
-    tick.style.left = (time - state.startSelection) / selectionDelta * state.windowWidth + "px";
-    tracesContainer.appendChild(tick);
-
-    time += increment;
-  }
-};
-
-
-window.makeTraceTemplate = () => {
-  let outer = document.createElement("div");
-  outer.className = "outer";
-
-  let inner = document.createElement("div");
-  inner.className = "inner";
-
-  let tooltip = document.createElement("div");
-  tooltip.className = "tooltip";
-
-  let header = document.createElement("h3");
-  header.className = "header";
-  tooltip.appendChild(header);
-
-  let duration = document.createElement("h4");
-  duration.className = "duration";
-  tooltip.appendChild(duration);
-
-  let pairs = document.createElement("dl");
-
-  let timeStartLabel = document.createElement("dt");
-  timeStartLabel.textContent = "Start:"
-  pairs.appendChild(timeStartLabel);
-
-  let timeStartValue = document.createElement("dd");
-  timeStartValue.className = "start";
-  pairs.appendChild(timeStartValue);
-
-  let timeEndLabel = document.createElement("dt");
-  timeEndLabel.textContent = "End:"
-  pairs.appendChild(timeEndLabel);
-
-  let timeEndValue = document.createElement("dd");
-  timeEndValue.className = "end";
-  pairs.appendChild(timeEndValue);
-
-  let urlLabel = document.createElement("dt");
-  urlLabel.textContent = "URL:";
-  pairs.appendChild(urlLabel);
-
-  let urlValue = document.createElement("dd");
-  urlValue.className = "url";
-  pairs.appendChild(urlValue);
-
-  let iframeLabel = document.createElement("dt");
-  iframeLabel.textContent = "iframe?";
-  pairs.appendChild(iframeLabel);
-
-  let iframeValue = document.createElement("dd");
-  iframeValue.className = "iframe";
-  pairs.appendChild(iframeValue);
-
-  let incrementalLabel = document.createElement("dt");
-  incrementalLabel.textContent = "Incremental?";
-  pairs.appendChild(incrementalLabel);
-
-  let incrementalValue = document.createElement("dd");
-  incrementalValue.className = "incremental";
-  pairs.appendChild(incrementalValue);
-
-  tooltip.appendChild(pairs);
-  outer.appendChild(tooltip);
-  outer.appendChild(inner);
-  return outer;
-};
-
-
-
-
-
-
-
-
-window.renderTrace = (trace, elem) => {
-  let inner = elem.querySelector(".inner");
-  inner.style.width = (trace.endTime - trace.startTime) / (state.endSelection - state.startSelection)
-                    * state.windowWidth + "px";
-  inner.style.marginLeft = (trace.startTime - state.startSelection)
-                         / (state.endSelection - state.startSelection)
-                         * state.windowWidth + "px";
-
-  let category = traceCategory(trace);
-  inner.textContent = category;
-  inner.style.backgroundColor = state.getColorForCategory(category);
-
-  let header = elem.querySelector(".header");
-  header.textContent = category;
-
-  let duration = elem.querySelector(".duration");
-  duration.textContent = (trace.endTime - trace.startTime) / 1000000 + " ms";
-
-  let timeStartValue = elem.querySelector(".start");
-  timeStartValue.textContent = trace.startTime / 1000000 + " ms";
-
-  let timeEndValue = elem.querySelector(".end");
-  timeEndValue.textContent = trace.endTime / 1000000 + " ms";
-
-  if (trace.metadata) {
-    let urlValue = elem.querySelector(".url");
-    urlValue.textContent = trace.metadata.url;
-    urlValue.removeAttribute("hidden");
-
-    let iframeValue = elem.querySelector(".iframe");
-    iframeValue.textContent = trace.metadata.iframe.RootWindow ? "No" : "Yes";
-    iframeValue.removeAttribute("hidden");
-
-    let incrementalValue = elem.querySelector(".incremental");
-    incrementalValue.textContent = trace.metadata.incremental.Incremental ? "Yes" : "No";
-    incrementalValue.removeAttribute("hidden");
-  } else {
-    elem.querySelector(".url").setAttribute("hidden", "");
-    elem.querySelector(".iframe").setAttribute("hidden", "");
-    elem.querySelector(".incremental").setAttribute("hidden", "");
-  }
-};
-
-render();
+}(typeof exports === "object" ? exports : window,
+  typeof window === "object" ? window : null));
