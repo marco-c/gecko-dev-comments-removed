@@ -1658,6 +1658,7 @@ class MOZ_STACK_CLASS ModuleValidator
 
     
     ModuleGenerator       mg_;
+    ExportVector          exports_;
     MutableAsmJSMetadata  asmJSMetadata_;
 
     
@@ -2141,7 +2142,7 @@ class MOZ_STACK_CLASS ModuleValidator
 
         
         
-        if (!mg_.addFuncExport(Move(fieldChars), func.index()))
+        if (!exports_.emplaceBack(Move(fieldChars), func.index(), DefinitionKind::Function))
             return false;
 
         
@@ -2355,6 +2356,9 @@ class MOZ_STACK_CLASS ModuleValidator
     SharedModule finish() {
         if (!arrayViews_.empty())
             mg_.initMemoryUsage(atomicsPresent_ ? MemoryUsage::Shared : MemoryUsage::Unshared);
+
+        if (!mg_.setExports(Move(exports_)))
+            return nullptr;
 
         asmJSMetadata_->usesSimd = simdPresent_;
 
