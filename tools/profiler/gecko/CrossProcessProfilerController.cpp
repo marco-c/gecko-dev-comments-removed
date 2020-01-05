@@ -7,7 +7,6 @@
 #include "mozilla/Move.h"
 #include "mozilla/ProfilerTypes.h"
 #include "nsIProfiler.h"
-#include "nsIProfileSaveEvent.h"
 #include "nsISupports.h"
 #include "nsIObserver.h"
 #include "nsProfiler.h"
@@ -21,7 +20,6 @@ static const char* sObserverTopics[] = {
   "profiler-paused",
   "profiler-resumed",
   "profiler-subprocess-gather",
-  "profiler-subprocess",
 };
 
 
@@ -85,10 +83,6 @@ CrossProcessProfilerController::CrossProcessProfilerController(
 
 CrossProcessProfilerController::~CrossProcessProfilerController()
 {
-  if (!mProfile.IsEmpty()) {
-    nsProfiler::GetOrCreate()->OOPExitProfile(mProfile);
-  }
-
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
   if (obs) {
     size_t length = ArrayLength(sObserverTopics);
@@ -128,19 +122,6 @@ CrossProcessProfilerController::Observe(nsISupports* aSubject,
     nsProfiler::GetOrCreate()->WillGatherOOPProfile();
     mProcess->SendGatherProfile();
   }
-  else if (!strcmp(aTopic, "profiler-subprocess")) {
-    
-    
-    
-    
-    nsCOMPtr<nsIProfileSaveEvent> pse = do_QueryInterface(aSubject);
-    if (pse) {
-      if (!mProfile.IsEmpty()) {
-        pse->AddSubProfile(mProfile.get());
-        mProfile.Truncate();
-      }
-    }
-  }
   
   
   
@@ -166,12 +147,11 @@ CrossProcessProfilerController::RecvProfile(const nsCString& aProfile,
                                             bool aIsExitProfile)
 {
   
-  mProfile = aProfile;
-  
-  
-  
-  
-  nsProfiler::GetOrCreate()->GatheredOOPProfile();
+  if (aIsExitProfile) {
+    nsProfiler::GetOrCreate()->OOPExitProfile(aProfile);
+  } else {
+    nsProfiler::GetOrCreate()->GatheredOOPProfile(aProfile);
+  }
 }
 
 } 
