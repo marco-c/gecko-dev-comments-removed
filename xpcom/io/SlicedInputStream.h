@@ -39,7 +39,14 @@ public:
 private:
   ~SlicedInputStream();
 
+  void
+  SetSourceStream(nsIInputStream* aInputStream);
+
   nsCOMPtr<nsIInputStream> mInputStream;
+
+  
+  nsICloneableInputStream* mWeakCloneableInputStream;
+
   uint64_t mStart;
   uint64_t mLength;
   uint64_t mCurPos;
