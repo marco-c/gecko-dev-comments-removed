@@ -167,12 +167,11 @@ FormData.prototype = {
         
         return FormDB.insertValue(this.fieldname, this.value,
                                   this.hours_to_us(this.date));
-      } else {
-        
-
-
-
       }
+      
+
+
+
     });
   },
 

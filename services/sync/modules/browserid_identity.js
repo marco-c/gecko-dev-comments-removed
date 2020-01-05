@@ -407,9 +407,8 @@ this.BrowserIDManager.prototype = {
       
       
       return "99999999999999999999999999";
-    } else {
-      return null;
     }
+    return null;
   },
 
   set syncKey(value) {
