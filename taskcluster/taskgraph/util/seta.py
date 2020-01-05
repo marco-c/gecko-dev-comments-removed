@@ -1,6 +1,7 @@
 import json
 import logging
 import requests
+from collections import defaultdict
 from redo import retry
 from requests import exceptions
 
@@ -11,9 +12,11 @@ headers = {
 
 
 SETA_PROJECTS = ['mozilla-inbound', 'autoland']
-PROJECT_SCHEDULE_ALL_EVERY = {'mozilla-inbound': 5, 'autoland': 5}
+PROJECT_SCHEDULE_ALL_EVERY_PUSHES = {'mozilla-inbound': 5, 'autoland': 5}
+PROJECT_SCHEDULE_ALL_EVERY_MINUTES = {'mozilla-inbound': 60, 'autoland': 60}
 
 SETA_ENDPOINT = "https://seta.herokuapp.com/data/setadetails/?branch=%s"
+PUSH_ENDPOINT = "https://hg.mozilla.org/integration/%s/json-pushes/?startID=%d&endID=%d"
 
 
 class SETA(object):
@@ -24,14 +27,14 @@ class SETA(object):
     def __init__(self):
         
         self.low_value_tasks = {}
+        
+        self.push_dates = defaultdict(dict)
+        
+        self.failed_json_push_calls = []
 
     def query_low_value_tasks(self, project):
         
         
-        if project not in SETA_PROJECTS:
-            logger.debug("SETA is not enabled for project `{}`".format(project))
-            return []
-
         logger.debug("Querying SETA service for low-value tasks on {}".format(project))
         low_value_tasks = []
 
@@ -76,11 +79,92 @@ class SETA(object):
 
         return low_value_tasks
 
-    def is_low_value_task(self, label, project, pushlog_id):
-        schedule_all_every = PROJECT_SCHEDULE_ALL_EVERY.get(project, 5)
+    def minutes_between_pushes(self, project, cur_push_id, cur_push_date):
+        
+        
+        min_between_pushes = PROJECT_SCHEDULE_ALL_EVERY_MINUTES.get(project, 60)
+        prev_push_id = cur_push_id - 1
+
+        
+        self.push_dates[project].update({cur_push_id: cur_push_date})
+
+        
+        prev_push_date = self.push_dates[project].get(prev_push_id, 0)
+
+        
+        if cur_push_date > 0 and prev_push_date > 0:
+            return (cur_push_date - prev_push_date) / 60
+
+        
+        
+        
+        if prev_push_id in self.failed_json_push_calls:
+            return min_between_pushes
+
+        url = PUSH_ENDPOINT % (project, cur_push_id - 2, prev_push_id)
+
+        try:
+            logger.debug("Retrieving datetime of previous push")
+            response = retry(requests.get, attempts=2, sleeptime=10,
+                             args=(url, ),
+                             kwargs={'timeout': 5, 'headers': headers})
+            prev_push_date = json.loads(response.content).get(str(prev_push_id), {}).get('date', 0)
+
+            
+            self.push_dates[project].update({prev_push_id: prev_push_date})
+
+            
+            if cur_push_date > 0 and prev_push_date > 0:
+                min_between_pushes = (cur_push_date - prev_push_date) / 60
+
+        
+        except exceptions.Timeout:
+            logger.warning("json-pushes timeout, treating task as high value")
+            self.failed_json_push_calls.append(prev_push_id)
+
+        
+        
+        except exceptions.ConnectionError:
+            logger.warning("json-pushes connection error, treating task as high value")
+            self.failed_json_push_calls.append(prev_push_id)
+
+        
+        
+        except exceptions.HTTPError:
+            logger.warning("Bad Http response, treating task as high value")
+            self.failed_json_push_calls.append(prev_push_id)
+
+        
+        except ValueError as error:
+            logger.warning("Invalid JSON, possible server error: {}".format(error))
+            self.failed_json_push_calls.append(prev_push_id)
+
+        
+        except exceptions.RequestException as error:
+            logger.warning(error)
+            self.failed_json_push_calls.append(prev_push_id)
+
+        return min_between_pushes
+
+    def is_low_value_task(self, label, project, pushlog_id, push_date):
+        
+        if project not in SETA_PROJECTS:
+            logger.debug("SETA is not enabled for project `{}`".format(project))
+            return False
+
+        schedule_all_every = PROJECT_SCHEDULE_ALL_EVERY_PUSHES.get(project, 5)
         
         if int(pushlog_id) % schedule_all_every == 0:
             return False
+
+        
+        
+        if self.minutes_between_pushes(
+                project,
+                int(pushlog_id),
+                int(push_date)) >= PROJECT_SCHEDULE_ALL_EVERY_MINUTES.get(project, 60):
+            return False
+
         
         if project not in self.low_value_tasks:
             self.low_value_tasks[project] = self.query_low_value_tasks(project)
