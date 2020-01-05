@@ -281,10 +281,10 @@ RecordManager.prototype = {
 
 
 
-this.CollectionKeyManager = function CollectionKeyManager(lastModified, default_, collections) {
-  this.lastModified = lastModified || 0;
-  this._default = default_ || null;
-  this._collections = collections || {};
+this.CollectionKeyManager = function CollectionKeyManager() {
+  this.lastModified = 0;
+  this._collections = {};
+  this._default = null;
 
   this._log = Log.repository.getLogger("Sync.CollectionKeyManager");
 }
@@ -292,19 +292,6 @@ this.CollectionKeyManager = function CollectionKeyManager(lastModified, default_
 
 
 CollectionKeyManager.prototype = {
-
-  
-
-
-
-  clone() {
-    const newCollections = {};
-    for (let c in this._collections) {
-      newCollections[c] = this._collections[c];
-    }
-
-    return new CollectionKeyManager(this.lastModified, this._default, newCollections);
-  },
 
   
   
@@ -382,7 +369,8 @@ CollectionKeyManager.prototype = {
 
 
   newKeys: function(collections) {
-    let newDefaultKeyBundle = this.newDefaultKeyBundle();
+    let newDefaultKey = new BulkKeyBundle(DEFAULT_KEYBUNDLE_NAME);
+    newDefaultKey.generateRandom();
 
     let newColls = {};
     if (collections) {
@@ -392,7 +380,7 @@ CollectionKeyManager.prototype = {
         newColls[c] = b;
       });
     }
-    return [newDefaultKeyBundle, newColls];
+    return [newDefaultKey, newColls];
   },
 
   
@@ -404,57 +392,6 @@ CollectionKeyManager.prototype = {
     [newDefaultKey, newColls] = this.newKeys(collections);
 
     return this._makeWBO(newColls, newDefaultKey);
-  },
-
-  
-
-
-
-
-  newDefaultKeyBundle() {
-    const key = new BulkKeyBundle(DEFAULT_KEYBUNDLE_NAME);
-    key.generateRandom();
-    return key;
-  },
-
-  
-
-
-  generateDefaultKey() {
-    this._default = this.newDefaultKeyBundle();
-  },
-
-  
-
-
-
-  hasKeysFor(collections) {
-    
-    for (let collection of collections) {
-      if (!this._collections[collection]) {
-        return false;
-      }
-    }
-    return true;
-  },
-
-  
-
-
-
-
-  ensureKeysFor(collections) {
-    const newKeys = Object.assign({}, this._collections);
-    for (let c of collections) {
-      if (newKeys[c]) {
-        continue;  
-      }
-
-      const b = new BulkKeyBundle(c);
-      b.generateRandom();
-      newKeys[c] = b;
-    }
-    return new CollectionKeyManager(this.lastModified, this._default, newKeys);
   },
 
   
@@ -487,6 +424,9 @@ CollectionKeyManager.prototype = {
   
   setContents: function setContents(payload, modified) {
 
+    if (!modified)
+      throw "No modified time provided to setContents.";
+
     let self = this;
 
     this._log.info("Setting collection keys contents. Our last modified: " +
@@ -516,7 +456,9 @@ CollectionKeyManager.prototype = {
         if (v) {
           let keyObj = new BulkKeyBundle(k);
           keyObj.keyPairB64 = v;
-          newCollections[k] = keyObj;
+          if (keyObj) {
+            newCollections[k] = keyObj;
+          }
         }
       }
     }
@@ -527,11 +469,8 @@ CollectionKeyManager.prototype = {
     let sameColls = collComparison.same;
 
     if (sameDefault && sameColls) {
-      self._log.info("New keys are the same as our old keys!");
-      if (modified) {
-        self._log.info("Bumped local modified time.");
-        self.lastModified = modified;
-      }
+      self._log.info("New keys are the same as our old keys! Bumped local modified time.");
+      self.lastModified = modified;
       return false;
     }
 
@@ -543,10 +482,8 @@ CollectionKeyManager.prototype = {
     this._collections = newCollections;
 
     
-    if (modified) {
-      self._log.info("Bumping last modified to " + modified);
-      self.lastModified = modified;
-    }
+    self._log.info("Bumping last modified to " + modified);
+    self.lastModified = modified;
 
     return sameDefault ? collComparison.changed : true;
   },
