@@ -133,6 +133,15 @@ class MozPromise : public MozPromiseRefcountable
 {
   static const uint32_t sMagic = 0xcecace11;
 
+  
+  
+  template <typename T,
+    typename R = typename Conditional<IsExclusive, T&&, const T&>::Type>
+  static R MaybeMove(T& aX)
+  {
+    return static_cast<R>(aX);
+  }
+
 public:
   typedef ResolveValueT ResolveValueType;
   typedef RejectValueT RejectValueType;
@@ -449,9 +458,9 @@ protected:
     }
 
   protected:
-    virtual already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) = 0;
+    virtual already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) = 0;
 
-    void DoResolveOrReject(const ResolveOrRejectValue& aValue)
+    void DoResolveOrReject(ResolveOrRejectValue& aValue)
     {
       PROMISE_ASSERT(mMagic1 == sMagic && mMagic2 == sMagic);
       MOZ_DIAGNOSTIC_ASSERT(mResponseTarget->IsCurrentThreadIn());
@@ -549,13 +558,15 @@ protected:
     }
 
   protected:
-    already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
+    already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
     {
       RefPtr<MozPromise> completion;
       if (aValue.IsResolve()) {
-        completion = InvokeCallbackMethod(mThisVal.get(), mResolveMethod, aValue.ResolveValue());
+        completion = InvokeCallbackMethod(
+          mThisVal.get(), mResolveMethod, MaybeMove(aValue.ResolveValue()));
       } else {
-        completion = InvokeCallbackMethod(mThisVal.get(), mRejectMethod, aValue.RejectValue());
+        completion = InvokeCallbackMethod(
+          mThisVal.get(), mRejectMethod, MaybeMove(aValue.RejectValue()));
       }
 
       
@@ -598,10 +609,10 @@ protected:
     }
 
   protected:
-    already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
+    already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
     {
-      RefPtr<MozPromise> completion =
-        InvokeCallbackMethod(mThisVal.get(), mResolveRejectMethod, aValue);
+      RefPtr<MozPromise> completion = InvokeCallbackMethod(
+        mThisVal.get(), mResolveRejectMethod, MaybeMove(aValue));
 
       
       
@@ -645,7 +656,7 @@ protected:
     }
 
   protected:
-    already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
+    already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
     {
       
       
@@ -654,9 +665,11 @@ protected:
       
       RefPtr<MozPromise> completion;
       if (aValue.IsResolve()) {
-        completion = InvokeCallbackMethod(mResolveFunction.ptr(), &ResolveFunction::operator(), aValue.ResolveValue());
+        completion = InvokeCallbackMethod(mResolveFunction.ptr(),
+          &ResolveFunction::operator(), MaybeMove(aValue.ResolveValue()));
       } else {
-        completion = InvokeCallbackMethod(mRejectFunction.ptr(), &RejectFunction::operator(), aValue.RejectValue());
+        completion = InvokeCallbackMethod(mRejectFunction.ptr(),
+          &RejectFunction::operator(), MaybeMove(aValue.RejectValue()));
       }
 
       
@@ -700,7 +713,7 @@ protected:
     }
 
   protected:
-    already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
+    already_AddRefed<MozPromise> DoResolveOrRejectInternal(ResolveOrRejectValue& aValue) override
     {
       
       
@@ -710,7 +723,7 @@ protected:
       RefPtr<MozPromise> completion =
         InvokeCallbackMethod(mResolveRejectFunction.ptr(),
                              &ResolveRejectFunction::operator(),
-                             aValue);
+                             MaybeMove(aValue));
 
       
       
@@ -950,7 +963,8 @@ public:
 
 protected:
   bool IsPending() const { return mValue.IsNothing(); }
-  const ResolveOrRejectValue& Value() const
+
+  ResolveOrRejectValue& Value()
   {
     
     
@@ -976,9 +990,9 @@ protected:
   {
     MOZ_ASSERT(!IsPending());
     if (mValue.IsResolve()) {
-      aOther->Resolve(mValue.ResolveValue(), "<chained promise>");
+      aOther->Resolve(MaybeMove(mValue.ResolveValue()), "<chained promise>");
     } else {
-      aOther->Reject(mValue.RejectValue(), "<chained promise>");
+      aOther->Reject(MaybeMove(mValue.RejectValue()), "<chained promise>");
     }
   }
 
