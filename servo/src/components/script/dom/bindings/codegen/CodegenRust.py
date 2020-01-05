@@ -4616,7 +4616,7 @@ class CGBindingRoot(CGThing):
                           'dom::node::{AbstractNode, Node, Text}', 
                           'dom::document::{Document, AbstractDocument}', 
                           'dom::element::{Element, HTMLHeadElement, HTMLHtmlElement}', 
-                          'dom::element::{HTMLDivElement}', 
+                          'dom::element::{HTMLDivElement, HTMLSpanElement}', 
                           'dom::htmlanchorelement::HTMLAnchorElement', 
                           'dom::htmlelement::HTMLElement', 
                           'dom::htmldocument::HTMLDocument', 
