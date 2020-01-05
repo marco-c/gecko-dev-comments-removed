@@ -885,10 +885,8 @@ moz_gtk_text_view_paint(cairo_t *cr, GdkRectangle* rect,
     gtk_style_context_get_padding(style_frame, state_flags, &padding);
     ReleaseStyleContext(style_frame);
 
-    
-    
     GtkStyleContext* style =
-        ClaimStyleContext(MOZ_GTK_TEXT_VIEW_TEXT, direction, state_flags);
+        ClaimStyleContext(MOZ_GTK_TEXT_VIEW, direction, state_flags);
 
     gint xthickness = border.left + padding.left;
     gint ythickness = border.top + padding.top;
@@ -1327,9 +1325,17 @@ moz_gtk_resizer_paint(cairo_t *cr, GdkRectangle* rect,
                       GtkWidgetState* state,
                       GtkTextDirection direction)
 {
-    GtkStyleContext* style =
-        ClaimStyleContext(MOZ_GTK_RESIZER, GTK_TEXT_DIR_LTR,
-                          GetStateFlagsFromGtkWidgetState(state));
+    GtkStyleContext* style;
+
+    
+    
+    
+    
+    style = ClaimStyleContext(MOZ_GTK_TEXT_VIEW, GTK_TEXT_DIR_LTR,
+                              GetStateFlagsFromGtkWidgetState(state));
+    
+    
+    gtk_style_context_add_class(style, GTK_STYLE_CLASS_GRIP);
 
     
     
