@@ -205,7 +205,9 @@ add_task(function* test_tags() {
 
   
   PlacesUtils.asContainer(tagsNode).containerOpen = true;
-  let tag = tagsNode.getChild(0);
+  
+  let tagPosition = AppConstants.NIGHTLY_BUILD ? 7 : 0;
+  let tag = tagsNode.getChild(tagPosition);
   PO._places.selectNode(tag);
   is(PO._places.selectedNode.title, "test",
      "The created tag has been properly selected");
