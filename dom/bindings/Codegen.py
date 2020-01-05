@@ -5341,12 +5341,6 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             
             
             
-            
-            
-            
-            
-            
-            
             if isCallbackReturnValue == "JSImpl":
                 
                 
@@ -5368,6 +5362,14 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
                     globalObj = js::GetGlobalForObjectCrossCompartment(unwrappedVal);
                     """,
                     sourceDescription=sourceDescription)
+            elif isCallbackReturnValue == "Callback":
+                getPromiseGlobal = dedent(
+                    """
+                    // We basically want our entry global here.  Play it safe
+                    // and use GetEntryGlobal() to get it, with whatever
+                    // principal-clamping it ends up doing.
+                    globalObj = GetEntryGlobal()->GetGlobalJSObject();
+                    """)
             else:
                 getPromiseGlobal = ""
 
