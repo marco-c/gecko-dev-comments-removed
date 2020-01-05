@@ -11,6 +11,13 @@
 
 #include "mozilla/TypeTraits.h"
 
+namespace mozilla {
+
+
+void AssertIsMainThreadOrServoFontMetricsLocked();
+
+} 
+
 #ifdef MOZ_STYLO
 # define MOZ_DECL_STYLO_CHECK_METHODS \
   bool IsGecko() const { return !IsServo(); } \
