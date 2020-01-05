@@ -56,7 +56,6 @@
 #include "nsSize.h"
 #include "nsCheapSets.h"
 #include "mozilla/dom/ImageBitmapSource.h"
-#include "mozilla/dom/Timeout.h"
 
 #define DEFAULT_HOME_PAGE "www.mozilla.org"
 #define PREF_BROWSER_STARTUP_HOMEPAGE "browser.startup.homepage"
@@ -122,7 +121,6 @@ struct RequestInit;
 class RequestOrUSVString;
 class Selection;
 class SpeechSynthesis;
-class Timeout;
 class U2F;
 class VRDisplay;
 class VREventObserver;
@@ -149,6 +147,69 @@ NS_CreateJSTimeoutHandler(JSContext* aCx, nsGlobalWindow *aWindow,
                           mozilla::ErrorResult& aError);
 
 extern const js::Class OuterWindowProxyClass;
+
+
+
+
+
+
+struct nsTimeout final
+  : mozilla::LinkedListElement<nsTimeout>
+{
+private:
+  ~nsTimeout();
+
+public:
+  nsTimeout();
+
+  NS_DECL_CYCLE_COLLECTION_NATIVE_CLASS(nsTimeout)
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(nsTimeout)
+
+  nsresult InitTimer(uint32_t aDelay);
+
+  bool HasRefCntOne();
+
+  
+  RefPtr<nsGlobalWindow> mWindow;
+
+  
+  nsCOMPtr<nsITimer> mTimer;
+
+  
+  bool mCleared;
+
+  
+  bool mRunning;
+
+  
+  bool mIsInterval;
+
+  
+  uint32_t mPublicId;
+
+  
+  uint32_t mInterval;
+
+  
+  
+  
+  
+  mozilla::TimeStamp mWhen;
+  
+  mozilla::TimeDuration mTimeRemaining;
+
+  
+  uint32_t mFiringDepth;
+
+  uint32_t mNestingLevel;
+
+  
+  
+  PopupControlState mPopupState;
+
+  
+  nsCOMPtr<nsIScriptTimeoutHandler> mScriptHandler;
+};
 
 struct IdleObserverHolder
 {
@@ -1440,9 +1501,9 @@ public:
   
   
   
-  nsresult SetTimeoutOrInterval(nsIScriptTimeoutHandler* aHandler,
-                                int32_t interval, bool aIsInterval,
-                                int32_t* aReturn);
+  nsresult SetTimeoutOrInterval(nsIScriptTimeoutHandler *aHandler,
+                                int32_t interval,
+                                bool aIsInterval, int32_t* aReturn);
   int32_t SetTimeoutOrInterval(JSContext* aCx,
                                mozilla::dom::Function& aFunction,
                                int32_t aTimeout,
@@ -1451,25 +1512,27 @@ public:
   int32_t SetTimeoutOrInterval(JSContext* aCx, const nsAString& aHandler,
                                int32_t aTimeout, bool aIsInterval,
                                mozilla::ErrorResult& aError);
-  void ClearTimeoutOrInterval(int32_t aTimerId);
+  void ClearTimeoutOrInterval(int32_t aTimerID);
 
   
   nsresult ResetTimersForNonBackgroundWindow();
 
   
-  void RunTimeout(mozilla::dom::Timeout* aTimeout);
+  void RunTimeout(nsTimeout *aTimeout);
   void RunTimeout() { RunTimeout(nullptr); }
   
-  bool RunTimeoutHandler(mozilla::dom::Timeout* aTimeout, nsIScriptContext* aScx);
+  bool RunTimeoutHandler(nsTimeout* aTimeout, nsIScriptContext* aScx);
   
-  bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout, const TimeStamp& now,
+  bool RescheduleTimeout(nsTimeout* aTimeout, const TimeStamp& now,
                          bool aRunningPendingTimeouts);
 
   void ClearAllTimeouts();
   
   
-  void InsertTimeoutIntoList(mozilla::dom::Timeout* aTimeout);
+  void InsertTimeoutIntoList(nsTimeout *aTimeout);
   static void TimerCallback(nsITimer *aTimer, void *aClosure);
+  static void TimerNameCallback(nsITimer* aTimer, void* aClosure, char* aBuf,
+                                size_t aLen);
 
   
   already_AddRefed<nsIDocShellTreeOwner> GetTreeOwner();
@@ -1796,7 +1859,7 @@ protected:
   RefPtr<mozilla::dom::BarProp> mPersonalbar;
   RefPtr<mozilla::dom::BarProp> mStatusbar;
   RefPtr<mozilla::dom::BarProp> mScrollbars;
-  RefPtr<nsDOMWindowUtils>      mWindowUtils;
+  RefPtr<nsDOMWindowUtils>    mWindowUtils;
   nsString                      mStatus;
   nsString                      mDefaultStatus;
   RefPtr<nsGlobalWindowObserver> mObserver; 
@@ -1821,13 +1884,13 @@ protected:
   
   
   
-  mozilla::LinkedList<mozilla::dom::Timeout> mTimeouts;
+  mozilla::LinkedList<nsTimeout> mTimeouts;
   
   
   
-  mozilla::dom::Timeout*      mTimeoutInsertionPoint;
-  uint32_t                    mTimeoutPublicIdCounter;
-  uint32_t                    mTimeoutFiringDepth;
+  nsTimeout*                    mTimeoutInsertionPoint;
+  uint32_t                      mTimeoutPublicIdCounter;
+  uint32_t                      mTimeoutFiringDepth;
   RefPtr<mozilla::dom::Location> mLocation;
   RefPtr<nsHistory>           mHistory;
   RefPtr<mozilla::dom::CustomElementRegistry> mCustomElements;
