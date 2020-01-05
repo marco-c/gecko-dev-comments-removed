@@ -442,7 +442,7 @@ def build(objdir, target_name, debug, debugger, kind_name=None,
             flags.append("{}BorrowedOrNull".format(ty))
             flags.append("--raw-line")
             flags.append("pub type {0}BorrowedOrNull<'a> = \
-::gecko_bindings::sugar::ownership::Borrowed<'a, {0}>;".format(ty))
+Option<&'a {0}>;".format(ty))
             flags.append("--blacklist-type")
             flags.append("{}Borrowed".format(ty))
             flags.append("--raw-line")
@@ -459,7 +459,7 @@ def build(objdir, target_name, debug, debugger, kind_name=None,
             flags.append("{}BorrowedOrNull".format(ty))
             flags.append("--raw-line")
             flags.append("pub type {0}BorrowedOrNull<'a> = \
-::gecko_bindings::sugar::ownership::Borrowed<'a, {0}>;".format(ty))
+Option<&'a {0}>;".format(ty))
             
             
             
@@ -489,12 +489,12 @@ def build(objdir, target_name, debug, debugger, kind_name=None,
             flags.append("--blacklist-type")
             flags.append("{}BorrowedOrNull".format(ty))
             flags.append("--raw-line")
-            flags.append("pub type {0}BorrowedOrNull<'a> = ::gecko_bindings::sugar::ownership::Borrowed<'a, {0}>;"
+            flags.append("pub type {0}BorrowedOrNull<'a> = Option<&'a {0}>;"
                          .format(ty))
             flags.append("--blacklist-type")
             flags.append("{}BorrowedMutOrNull".format(ty))
             flags.append("--raw-line")
-            flags.append("pub type {0}BorrowedMutOrNull<'a> = ::gecko_bindings::sugar::ownership::BorrowedMut<'a, {0}>;"
+            flags.append("pub type {0}BorrowedMutOrNull<'a> = Option<&'a mut {0}>;"
                          .format(ty))
             flags.append("--blacklist-type")
             flags.append("{}OwnedOrNull".format(ty))
