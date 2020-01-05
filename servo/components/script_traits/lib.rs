@@ -417,6 +417,15 @@ pub enum TouchpadPressurePhase {
 pub struct TimerEventRequest(pub IpcSender<TimerEvent>, pub TimerSource, pub TimerEventId, pub MsDuration);
 
 
+#[derive(Deserialize, Serialize)]
+pub enum TimerSchedulerMsg {
+    
+    Request(TimerEventRequest),
+    
+    Exit,
+}
+
+
 
 
 #[derive(Deserialize, Serialize)]
@@ -479,7 +488,7 @@ pub struct InitialScriptState {
     
     pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
     
-    pub scheduler_chan: IpcSender<TimerEventRequest>,
+    pub scheduler_chan: IpcSender<TimerSchedulerMsg>,
     
     pub resource_threads: ResourceThreads,
     
@@ -770,7 +779,7 @@ pub struct WorkerGlobalScopeInit {
     
     pub constellation_chan: IpcSender<ScriptMsg>,
     
-    pub scheduler_chan: IpcSender<TimerEventRequest>,
+    pub scheduler_chan: IpcSender<TimerSchedulerMsg>,
     
     pub worker_id: WorkerId,
     
