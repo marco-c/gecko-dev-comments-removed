@@ -223,15 +223,103 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
 
 
-  remove: Task.async(function* (syncId, options = {}) {
-    let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
-    if (guid in ROOT_GUID_TO_SYNC_ID) {
-      BookmarkSyncLog.warn(`remove: Refusing to remove root ${syncId}`);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  remove: Task.async(function* (syncIds) {
+    if (!syncIds.length) {
       return null;
     }
-    return PlacesUtils.bookmarks.remove(guid, Object.assign({}, options, {
-      source: SOURCE_SYNC,
-    }));
+
+    let folderGuids = [];
+    for (let syncId of syncIds) {
+      if (syncId in ROOT_SYNC_ID_TO_GUID) {
+        BookmarkSyncLog.warn(`remove: Refusing to remove root ${syncId}`);
+        continue;
+      }
+      let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
+      let bookmarkItem = yield PlacesUtils.bookmarks.fetch(guid);
+      if (!bookmarkItem) {
+        BookmarkSyncLog.trace(`remove: Item ${guid} already removed`);
+        continue;
+      }
+      let kind = yield getKindForItem(bookmarkItem);
+      if (kind == BookmarkSyncUtils.KINDS.FOLDER) {
+        folderGuids.push(bookmarkItem.guid);
+        continue;
+      }
+      let wasRemoved = yield deleteSyncedAtom(bookmarkItem);
+      if (wasRemoved) {
+         BookmarkSyncLog.trace(`remove: Removed item ${guid} with ` +
+                               `kind ${kind}`);
+      }
+    }
+
+    for (let guid of folderGuids) {
+      let bookmarkItem = yield PlacesUtils.bookmarks.fetch(guid);
+      if (!bookmarkItem) {
+        BookmarkSyncLog.trace(`remove: Folder ${guid} already removed`);
+        continue;
+      }
+      let wasRemoved = yield deleteSyncedFolder(bookmarkItem);
+      if (wasRemoved) {
+        BookmarkSyncLog.trace(`remove: Removed folder ${bookmarkItem.guid}`);
+      }
+    }
+
+    
+    
+    
+    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: remove",
+      db => pullSyncChanges(db));
+  }),
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  touch: Task.async(function* (syncId) {
+    PlacesUtils.SYNC_BOOKMARK_VALIDATORS.syncId(syncId);
+    let guid = BookmarkSyncUtils.syncIdToGuid(syncId);
+
+    let bookmarkItem = yield PlacesUtils.bookmarks.fetch(guid);
+    if (!bookmarkItem) {
+      return null;
+    }
+    let kind = yield getKindForItem(bookmarkItem);
+    if (kind == BookmarkSyncUtils.KINDS.FOLDER) {
+      
+      
+      
+      
+      
+      
+      
+      return null;
+    }
+    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: touch",
+      db => touchSyncBookmark(db, bookmarkItem));
   }),
 
   
@@ -560,7 +648,7 @@ function validateChangeRecord(changeRecord, behavior) {
 
 
 
-var fetchAllChildren = Task.async(function* (db, parentGuid) {
+var fetchChildGuids = Task.async(function* (db, parentGuid) {
   let rows = yield db.executeCached(`
     SELECT guid
     FROM moz_bookmarks
@@ -1392,6 +1480,27 @@ var pullSyncChanges = Task.async(function* (db) {
   return changeRecords;
 });
 
+var touchSyncBookmark = Task.async(function* (db, bookmarkItem) {
+  if (BookmarkSyncLog.level <= Log.Level.Trace) {
+    BookmarkSyncLog.trace(
+      `touch: Reviving item "${bookmarkItem.guid}" and marking parent ` +
+      BookmarkSyncUtils.guidToSyncId(bookmarkItem.parentGuid) + ` as modified`);
+  }
+
+  
+  
+  yield db.executeCached(`
+    UPDATE moz_bookmarks SET
+      syncChangeCounter = syncChangeCounter + 1
+    WHERE guid IN (:guid, :parentGuid)`,
+    { guid: bookmarkItem.guid, parentGuid: bookmarkItem.parentGuid });
+
+  
+  
+  
+  return pullSyncChanges(db);
+});
+
 var dedupeSyncBookmark = Task.async(function* (db, localGuid, remoteGuid,
                                                remoteParentGuid) {
   let rows = yield db.executeCached(`
@@ -1477,6 +1586,88 @@ var dedupeSyncBookmark = Task.async(function* (db, localGuid, remoteGuid,
   }
 
   return changeRecords;
+});
+
+
+
+var deleteSyncedFolder = Task.async(function* (bookmarkItem) {
+  
+  
+  
+  
+  let db = yield PlacesUtils.promiseDBConnection();
+  let childGuids = yield fetchChildGuids(db, bookmarkItem.guid);
+  if (!childGuids.length) {
+    
+    return deleteSyncedAtom(bookmarkItem);
+  }
+
+  if (BookmarkSyncLog.level <= Log.Level.Trace) {
+    BookmarkSyncLog.trace(
+      `deleteSyncedFolder: Moving ${JSON.stringify(childGuids)} children of ` +
+      `"${bookmarkItem.guid}" to grandparent
+      "${BookmarkSyncUtils.guidToSyncId(bookmarkItem.parentGuid)}" before ` +
+      `deletion`);
+  }
+
+  
+  for (let guid of childGuids) {
+    yield PlacesUtils.bookmarks.update({
+      guid,
+      parentGuid: bookmarkItem.parentGuid,
+      index: PlacesUtils.bookmarks.DEFAULT_INDEX,
+      
+      
+      
+      
+      
+      
+      
+      
+      source: PlacesUtils.bookmarks.SOURCES.SYNC_REPARENT_REMOVED_FOLDER_CHILDREN,
+    });
+  }
+
+  
+  try {
+    yield PlacesUtils.bookmarks.remove(bookmarkItem.guid, {
+      preventRemovalOfNonEmptyFolders: true,
+      
+      
+      source: SOURCE_SYNC,
+    });
+  } catch (e) {
+    
+    
+    
+    
+    
+    
+    
+    
+    BookmarkSyncLog.trace(`deleteSyncedFolder: Error removing parent ` +
+                          `${bookmarkItem.guid} after reparenting children`, e);
+    return false;
+  }
+
+  return true;
+});
+
+
+var deleteSyncedAtom = Task.async(function* (bookmarkItem) {
+  try {
+    yield PlacesUtils.bookmarks.remove(bookmarkItem.guid, {
+      preventRemovalOfNonEmptyFolders: true,
+      source: SOURCE_SYNC,
+    });
+  } catch (ex) {
+    
+    BookmarkSyncLog.trace(`deleteSyncedAtom: Error removing ` +
+                          bookmarkItem.guid, ex);
+    return false;
+  }
+
+  return true;
 });
 
 
