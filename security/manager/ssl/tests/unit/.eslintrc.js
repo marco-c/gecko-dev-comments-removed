@@ -1,5 +1,5 @@
 "use strict";
 
-module.exports = { 
+module.exports = {
   "extends": "plugin:mozilla/xpcshell-test"
 };

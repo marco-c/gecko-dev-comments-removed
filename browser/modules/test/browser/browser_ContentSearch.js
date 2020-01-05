@@ -8,7 +8,6 @@ const TEST_CONTENT_SCRIPT_BASENAME = "contentSearch.js";
 
 var gMsgMan;
 
-
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/components/search/test/head.js",
   this);

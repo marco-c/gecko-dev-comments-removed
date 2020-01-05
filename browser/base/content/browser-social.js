@@ -6,7 +6,6 @@
 
 
 
-
 var SocialUI,
     SocialShare,
     SocialActivationListener;

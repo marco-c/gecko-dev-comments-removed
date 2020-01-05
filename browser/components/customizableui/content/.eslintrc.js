@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = {  
+module.exports = {
   "env": {
     "mozilla/browser-window": true,
   },

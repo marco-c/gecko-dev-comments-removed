@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = { 
+module.exports = {
   "extends": "../../components/extensions/.eslintrc.js",
 
   "globals": {
