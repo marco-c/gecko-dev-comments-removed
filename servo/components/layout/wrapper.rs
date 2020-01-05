@@ -36,13 +36,14 @@
 use css::node_style::StyledNode;
 use util::{LayoutDataAccess, LayoutDataWrapper, PrivateLayoutData};
 
-use script::dom::bindings::codegen::InheritTypes::{HTMLIFrameElementDerived};
+use script::dom::bindings::codegen::InheritTypes::{HTMLIFrameElementDerived, HTMLInputElementDerived};
 use script::dom::bindings::codegen::InheritTypes::{HTMLImageElementDerived, TextDerived};
 use script::dom::bindings::js::JS;
 use script::dom::element::{Element, HTMLAreaElementTypeId, HTMLAnchorElementTypeId};
 use script::dom::element::{HTMLLinkElementTypeId, LayoutElementHelpers, RawLayoutElementHelpers};
 use script::dom::htmliframeelement::HTMLIFrameElement;
 use script::dom::htmlimageelement::{HTMLImageElement, LayoutHTMLImageElementHelpers};
+use script::dom::htmlinputelement::{HTMLInputElement, LayoutHTMLInputElementHelpers};
 use script::dom::node::{DocumentNodeTypeId, ElementNodeTypeId, Node, NodeTypeId};
 use script::dom::node::{LayoutNodeHelpers, RawLayoutNodeHelpers, SharedLayoutData, TextNodeTypeId};
 use script::dom::text::Text;
@@ -184,11 +185,15 @@ impl<'ln> TLayoutNode for LayoutNode<'ln> {
 
     fn text(&self) -> String {
         unsafe {
-            if !self.get().is_text() {
+            if self.get().is_text() {
+                let text: JS<Text> = self.get_jsmanaged().transmute_copy();
+                (*text.unsafe_get()).characterdata.data.deref().borrow().clone()
+            } else if self.get().is_htmlinputelement() {
+                let input: JS<HTMLInputElement> = self.get_jsmanaged().transmute_copy();
+                input.get_value_for_layout()
+            } else {
                 fail!("not text!")
             }
-            let text: JS<Text> = self.get_jsmanaged().transmute_copy();
-            (*text.unsafe_get()).characterdata.data.deref().borrow().clone()
         }
     }
 }
@@ -567,19 +572,12 @@ impl<'ln> TLayoutNode for ThreadSafeLayoutNode<'ln> {
                 return get_content(&after_style.get_box().content)
             }
         }
-
-        unsafe {
-            if !self.get().is_text() {
-                fail!("not text!")
-            }
-            let text: JS<Text> = self.get_jsmanaged().transmute_copy();
-            (*text.unsafe_get()).characterdata.data.deref().borrow().clone()
-        }
+        self.node.text()
     }
 }
 
 impl<'ln> ThreadSafeLayoutNode<'ln> {
-    
+    /// Creates a new `ThreadSafeLayoutNode` from the given `LayoutNode`.
     pub fn new<'a>(node: &LayoutNode<'a>) -> ThreadSafeLayoutNode<'a> {
         ThreadSafeLayoutNode {
             node: node.clone(),
@@ -587,8 +585,8 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         }
     }
 
-    
-    
+    /// Creates a new `ThreadSafeLayoutNode` for the same `LayoutNode`
+    /// with a different pseudo-element type.
     fn with_pseudo(&self, pseudo: PseudoElementType) -> ThreadSafeLayoutNode<'ln> {
         ThreadSafeLayoutNode {
             node: self.node.clone(),
@@ -596,7 +594,7 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         }
     }
 
-    
+    /// Returns the next sibling of this node. Unsafe and private because this can lead to races.
     unsafe fn next_sibling(&self) -> Option<ThreadSafeLayoutNode<'ln>> {
         if self.pseudo.is_before() {
             return self.get_jsmanaged().first_child_ref().map(|node| self.new_with_this_lifetime(&node))
@@ -605,7 +603,7 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         self.get_jsmanaged().next_sibling_ref().map(|node| self.new_with_this_lifetime(&node))
     }
 
-    
+    /// Returns an iterator over this node's children.
     pub fn children(&self) -> ThreadSafeLayoutNodeChildrenIterator<'ln> {
         ThreadSafeLayoutNodeChildrenIterator {
             current_node: self.first_child(),
@@ -613,15 +611,15 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         }
     }
 
-    
+    /// If this is an element, accesses the element data. Fails if this is not an element node.
     #[inline]
     pub fn as_element(&self) -> ThreadSafeLayoutElement<'ln> {
         unsafe {
             assert!(self.get_jsmanaged().is_element_for_layout());
             let elem: JS<Element> = self.get_jsmanaged().transmute_copy();
             let element = elem.unsafe_get();
-            
-            
+            // FIXME(pcwalton): Workaround until Rust gets multiple lifetime parameters on
+            // implementations.
             ThreadSafeLayoutElement {
                 element: &mut *element,
             }
@@ -665,7 +663,7 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         layout_data_wrapper_ref.data.after_style.is_some()
     }
 
-    
+    /// Borrows the layout data immutably. Fails on a conflicting borrow.
     #[inline(always)]
     pub fn borrow_layout_data<'a>(&'a self) -> Ref<'a,Option<LayoutDataWrapper>> {
         unsafe {
@@ -673,7 +671,7 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         }
     }
 
-    
+    /// Borrows the layout data mutably. Fails on a conflicting borrow.
     #[inline(always)]
     pub fn mutate_layout_data<'a>(&'a self) -> RefMut<'a,Option<LayoutDataWrapper>> {
         unsafe {
@@ -681,9 +679,9 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         }
     }
 
-    
-    
-    
+    /// Traverses the tree in postorder.
+    ///
+    /// TODO(pcwalton): Offer a parallel version with a compatible API.
     pub fn traverse_postorder_mut<T:PostorderNodeMutTraversal>(&mut self, traversal: &mut T)
                                   -> bool {
         if traversal.should_prune(self) {
@@ -717,12 +715,12 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
                         return false
                     }
 
-                    
-                    
-                    
-                    
-                    
-                    
+                    // NB: See the rules for `white-space` here:
+                    //
+                    //    http://www.w3.org/TR/CSS21/text.html#propdef-white-space
+                    //
+                    // If you implement other values for this property, you will almost certainly
+                    // want to update this check.
                     match self.style().get_inheritedtext().white_space {
                         white_space::normal => true,
                         _ => false,
@@ -730,6 +728,26 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
                 }
             }
             _ => false
+        }
+    }
+
+    pub fn get_input_value(&self) -> String {
+        unsafe {
+            if !self.get().is_htmlinputelement() {
+                fail!("not an input element!")
+            }
+            let input: JS<HTMLInputElement> = self.get_jsmanaged().transmute_copy();
+            input.get_value_for_layout()
+        }
+    }
+
+    pub fn get_input_size(&self) -> u32 {
+        unsafe {
+            if !self.get().is_htmlinputelement() {
+                fail!("not an input element!")
+            }
+            let input: JS<HTMLInputElement> = self.get_jsmanaged().transmute_copy();
+            input.get_size_for_layout()
         }
     }
 }
