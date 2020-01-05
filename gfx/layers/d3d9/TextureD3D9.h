@@ -357,6 +357,9 @@ public:
 
   virtual gfx::SurfaceFormat GetFormat() const override { return gfx::SurfaceFormat::YUV; }
 
+  
+  virtual YUVColorSpace GetYUVColorSpace() const override { return YUVColorSpace::BT601; }
+
   virtual bool Lock() override;
   virtual void Unlock() override;
   virtual gfx::IntSize GetSize() const override { return mSize; }
