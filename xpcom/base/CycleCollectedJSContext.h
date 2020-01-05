@@ -224,12 +224,10 @@ private:
                                         JS::HandleObject aAllocationSite,
                                         JS::HandleObject aIncumbentGlobal,
                                         void* aData);
-#ifdef SPIDERMONKEY_PROMISE
   static void PromiseRejectionTrackerCallback(JSContext* aCx,
                                               JS::HandleObject aPromise,
                                               PromiseRejectionHandlingState state,
                                               void* aData);
-#endif 
 
   virtual void TraceNativeBlackRoots(JSTracer* aTracer) { };
   void TraceNativeGrayRoots(JSTracer* aTracer);
@@ -406,7 +404,6 @@ public:
 
   
   
-#ifdef SPIDERMONKEY_PROMISE
   
   
   
@@ -417,13 +414,6 @@ public:
   
   
   JS::PersistentRooted<JS::GCVector<JSObject*, 0, js::SystemAllocPolicy>> mConsumedRejections;
-#else
-  
-  
-  
-  nsTArray<nsCOMPtr<nsISupports >> mUncaughtRejections;
-  nsTArray<nsCOMPtr<nsISupports  >> mConsumedRejections;
-#endif 
   nsTArray<nsCOMPtr<nsISupports  >> mUncaughtRejectionObservers;
 
 private:

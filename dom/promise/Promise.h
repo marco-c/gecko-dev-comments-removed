@@ -21,17 +21,6 @@
 #include "js/TypeDecls.h"
 #include "jspubtd.h"
 
-
-
-
-
-
-#define DOM_PROMISE_DEPRECATED_REPORTING !SPIDERMONKEY_PROMISE
-
-#if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-#include "mozilla/dom/workers/bindings/WorkerHolder.h"
-#endif 
-
 class nsIGlobalObject;
 
 namespace mozilla {
@@ -40,88 +29,36 @@ namespace dom {
 class AnyCallback;
 class DOMError;
 class MediaStreamError;
-class PromiseCallback;
 class PromiseInit;
 class PromiseNativeHandler;
 class PromiseDebugging;
-
-class Promise;
-
-#if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-class PromiseReportRejectWorkerHolder : public workers::WorkerHolder
-{
-  
-  
-  
-  Promise* MOZ_NON_OWNING_REF mPromise;
-
-public:
-  explicit PromiseReportRejectWorkerHolder(Promise* aPromise)
-    : mPromise(aPromise)
-  {
-    MOZ_ASSERT(mPromise);
-  }
-
-  virtual bool
-  Notify(workers::Status aStatus) override;
-};
-#endif 
 
 #define NS_PROMISE_IID \
   { 0x1b8d6215, 0x3e67, 0x43ba, \
     { 0x8a, 0xf9, 0x31, 0x5e, 0x8f, 0xce, 0x75, 0x65 } }
 
 class Promise : public nsISupports,
-#ifndef SPIDERMONKEY_PROMISE
-                
-                
-                
-                public nsWrapperCache,
-#endif 
                 public SupportsWeakPtr<Promise>
 {
-  friend class NativePromiseCallback;
-  friend class PromiseReactionJob;
-  friend class PromiseResolverTask;
   friend class PromiseTask;
-#if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-  friend class PromiseReportRejectWorkerHolder;
-#endif 
   friend class PromiseWorkerProxy;
   friend class PromiseWorkerProxyRunnable;
-  friend class RejectPromiseCallback;
-  friend class ResolvePromiseCallback;
-  friend class PromiseResolveThenableJob;
-  friend class FastPromiseResolveThenableJob;
-  friend class WrapperPromiseCallback;
 
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_PROMISE_IID)
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-#ifdef SPIDERMONKEY_PROMISE
-  
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(Promise)
-#else 
-  NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(Promise)
-#endif 
   MOZ_DECLARE_WEAKREFERENCE_TYPENAME(Promise)
 
   
   
   
   
-#ifdef SPIDERMONKEY_PROMISE
   static already_AddRefed<Promise>
   Create(nsIGlobalObject* aGlobal, ErrorResult& aRv);
 
   
   static void ReportRejectedPromise(JSContext* aCx, JS::HandleObject aPromise);
-#else
-  static already_AddRefed<Promise>
-  Create(nsIGlobalObject* aGlobal, ErrorResult& aRv,
-         
-         JS::Handle<JSObject*> aDesiredProto = nullptr);
-#endif 
 
   typedef void (Promise::*MaybeFunc)(JSContext* aCx,
                                      JS::Handle<JS::Value> aValue);
@@ -183,7 +120,6 @@ public:
     return mGlobal;
   }
 
-#ifdef SPIDERMONKEY_PROMISE
   bool
   WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto,
              JS::MutableHandle<JSObject*> aWrapper);
@@ -220,95 +156,17 @@ public:
     return mPromiseObj;
   }
 
-#else 
-  JSObject* PromiseObj()
-  {
-    return GetWrapper();
-  }
-
-  virtual JSObject*
-  WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
-
-  static already_AddRefed<Promise>
-  Constructor(const GlobalObject& aGlobal, PromiseInit& aInit,
-              ErrorResult& aRv, JS::Handle<JSObject*> aDesiredProto);
-
-  static void
-  Resolve(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-          JS::Handle<JS::Value> aValue,
-          JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv);
-
-  static already_AddRefed<Promise>
-  Resolve(nsIGlobalObject* aGlobal, JSContext* aCx,
-          JS::Handle<JS::Value> aValue, ErrorResult& aRv);
-
-  static void
-  Reject(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-         JS::Handle<JS::Value> aValue,
-         JS::MutableHandle<JS::Value> aRetval, ErrorResult& aRv);
-
-  static already_AddRefed<Promise>
-  Reject(nsIGlobalObject* aGlobal, JSContext* aCx,
-         JS::Handle<JS::Value> aValue, ErrorResult& aRv);
-
-  void
-  Then(JSContext* aCx,
-       
-       
-       JS::Handle<JSObject*> aCalleeGlobal,
-       AnyCallback* aResolveCallback, AnyCallback* aRejectCallback,
-       JS::MutableHandle<JS::Value> aRetval,
-       ErrorResult& aRv);
-
-  void
-  Catch(JSContext* aCx,
-        AnyCallback* aRejectCallback,
-        JS::MutableHandle<JS::Value> aRetval,
-        ErrorResult& aRv);
-
-  static void
-  All(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-      JS::Handle<JS::Value> aIterable, JS::MutableHandle<JS::Value> aRetval,
-      ErrorResult& aRv);
-
-  static already_AddRefed<Promise>
-  All(const GlobalObject& aGlobal,
-      const nsTArray<RefPtr<Promise>>& aPromiseList, ErrorResult& aRv);
-
-  static void
-  Race(const GlobalObject& aGlobal, JS::Handle<JS::Value> aThisv,
-       JS::Handle<JS::Value> aIterable, JS::MutableHandle<JS::Value> aRetval,
-       ErrorResult& aRv);
-
-  static bool
-  PromiseSpecies(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
-#endif 
-
   void AppendNativeHandler(PromiseNativeHandler* aRunnable);
 
   JSObject* GlobalJSObject() const;
 
   JSCompartment* Compartment() const;
 
-#ifndef SPIDERMONKEY_PROMISE
-  
-  uint64_t GetID();
-#endif 
-
-#ifndef SPIDERMONKEY_PROMISE
-  enum JSCallbackSlots {
-    SLOT_PROMISE = 0,
-    SLOT_DATA
-  };
-#endif 
-
-#ifdef SPIDERMONKEY_PROMISE
   
   
   static already_AddRefed<Promise>
   CreateFromExisting(nsIGlobalObject* aGlobal,
                      JS::Handle<JSObject*> aPromiseObj);
-#endif 
 
   enum class PromiseState {
     Pending,
@@ -332,99 +190,7 @@ protected:
   
   void CreateWrapper(JS::Handle<JSObject*> aDesiredProto, ErrorResult& aRv);
 
-#ifndef SPIDERMONKEY_PROMISE
-  
-  
-  
-  void CallInitFunction(const GlobalObject& aGlobal, PromiseInit& aInit,
-                        ErrorResult& aRv);
-
-  
-  
-  
-  
-  
-  static void NewPromiseCapability(JSContext* aCx, nsIGlobalObject* aGlobal,
-                                   JS::Handle<JS::Value> aConstructor,
-                                   bool aForceCallbackCreation,
-                                   PromiseCapability& aCapability,
-                                   ErrorResult& aRv);
-
-  bool IsPending()
-  {
-    return mResolvePending;
-  }
-
-  void GetDependentPromises(nsTArray<RefPtr<Promise>>& aPromises);
-
-  bool IsLastInChain() const
-  {
-    return mIsLastInChain;
-  }
-
-  void SetNotifiedAsUncaught()
-  {
-    mWasNotifiedAsUncaught = true;
-  }
-
-  bool WasNotifiedAsUncaught() const
-  {
-    return mWasNotifiedAsUncaught;
-  }
-#endif 
-
 private:
-#ifndef SPIDERMONKEY_PROMISE
-  friend class PromiseDebugging;
-
-  void SetState(PromiseState aState)
-  {
-    MOZ_ASSERT(mState == Pending);
-    MOZ_ASSERT(aState != Pending);
-    mState = aState;
-  }
-
-  void SetResult(JS::Handle<JS::Value> aValue)
-  {
-    mResult = aValue;
-  }
-
-  
-  
-  
-  
-  void TriggerPromiseReactions();
-
-  void Settle(JS::Handle<JS::Value> aValue, Promise::PromiseState aState);
-  void MaybeSettle(JS::Handle<JS::Value> aValue, Promise::PromiseState aState);
-
-  void AppendCallbacks(PromiseCallback* aResolveCallback,
-                       PromiseCallback* aRejectCallback);
-
-#if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-  
-  
-  
-  void MaybeReportRejected();
-
-  void MaybeReportRejectedOnce() {
-    MaybeReportRejected();
-    RemoveWorkerHolder();
-    mResult.setUndefined();
-  }
-#endif 
-
-  void MaybeResolveInternal(JSContext* aCx,
-                            JS::Handle<JS::Value> aValue);
-  void MaybeRejectInternal(JSContext* aCx,
-                           JS::Handle<JS::Value> aValue);
-
-  void ResolveInternal(JSContext* aCx,
-                       JS::Handle<JS::Value> aValue);
-  void RejectInternal(JSContext* aCx,
-                      JS::Handle<JS::Value> aValue);
-#endif 
-
   template <typename T>
   void MaybeSomething(T& aArgument, MaybeFunc aFunc) {
     MOZ_ASSERT(PromiseObj()); 
@@ -441,92 +207,11 @@ private:
     (this->*aFunc)(cx, val);
   }
 
-#ifndef SPIDERMONKEY_PROMISE
-  
-  static bool
-  JSCallback(JSContext *aCx, unsigned aArgc, JS::Value *aVp);
-
-  static bool
-  ThenableResolverCommon(JSContext* aCx, uint32_t  aTask,
-                         unsigned aArgc, JS::Value* aVp);
-  static bool
-  JSCallbackThenableResolver(JSContext *aCx, unsigned aArgc, JS::Value *aVp);
-  static bool
-  JSCallbackThenableRejecter(JSContext *aCx, unsigned aArgc, JS::Value *aVp);
-
-  static JSObject*
-  CreateFunction(JSContext* aCx, Promise* aPromise, int32_t aTask);
-
-  static JSObject*
-  CreateThenableFunction(JSContext* aCx, Promise* aPromise, uint32_t aTask);
-
-#if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-  void RemoveWorkerHolder();
-#endif 
-
-  
-  
-  bool CaptureStack(JSContext* aCx, JS::Heap<JSObject*>& aTarget);
-#endif 
-
   void HandleException(JSContext* aCx);
 
   RefPtr<nsIGlobalObject> mGlobal;
 
-#ifndef SPIDERMONKEY_PROMISE
-  nsTArray<RefPtr<PromiseCallback> > mResolveCallbacks;
-  nsTArray<RefPtr<PromiseCallback> > mRejectCallbacks;
-
-  JS::Heap<JS::Value> mResult;
-  
-  
-  JS::Heap<JSObject*> mAllocationStack;
-  
-  
-  
-  
-  JS::Heap<JSObject*> mRejectionStack;
-  
-  
-  
-  
-  JS::Heap<JSObject*> mFullfillmentStack;
-  PromiseState mState;
-
-#if defined(DOM_PROMISE_DEPRECATED_REPORTING)
-  bool mHadRejectCallback;
-
-  
-  
-  
-  
-  nsAutoPtr<PromiseReportRejectWorkerHolder> mWorkerHolder;
-#endif 
-
-  bool mTaskPending;
-  bool mResolvePending;
-
-  
-  
-  
-  bool mIsLastInChain;
-
-  
-  
-  bool mWasNotifiedAsUncaught;
-
-  
-  TimeStamp mCreationTimestamp;
-
-  
-  TimeStamp mSettlementTimestamp;
-
-  
-  
-  uint64_t mID;
-#else 
   JS::Heap<JSObject*> mPromiseObj;
-#endif 
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(Promise, NS_PROMISE_IID)

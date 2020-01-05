@@ -52,37 +52,17 @@ public:
                                    JS::MutableHandle<JSObject*> aStack,
                                    ErrorResult& aRv);
 
-#ifndef SPIDERMONKEY_PROMISE
-  static void GetDependentPromises(GlobalObject&,
-                                   JS::Handle<JSObject*> aPromise,
-                                   nsTArray<RefPtr<Promise>>& aPromises,
-                                   ErrorResult& aRv);
-  static double GetPromiseLifetime(GlobalObject&,
-                                   JS::Handle<JSObject*> aPromise,
-                                   ErrorResult& aRv);
-  static double GetTimeToSettle(GlobalObject&, JS::Handle<JSObject*> aPromise,
-                                ErrorResult& aRv);
-#endif 
-
   
   static void AddUncaughtRejectionObserver(GlobalObject&,
                                            UncaughtRejectionObserver& aObserver);
   static bool RemoveUncaughtRejectionObserver(GlobalObject&,
                                               UncaughtRejectionObserver& aObserver);
 
-#ifdef SPIDERMONKEY_PROMISE
   
   static void AddUncaughtRejection(JS::HandleObject);
   
   
   static void AddConsumedRejection(JS::HandleObject);
-#else
-  
-  static void AddUncaughtRejection(Promise&);
-  
-  
-  static void AddConsumedRejection(Promise&);
-#endif 
   
   
   static void FlushUncaughtRejections();

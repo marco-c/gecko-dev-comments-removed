@@ -306,13 +306,11 @@ ToJSValue(JSContext* aCx,
   return ToJSValue(aCx, *aArgument, aValue);
 }
 
-#ifdef SPIDERMONKEY_PROMISE
 
 MOZ_MUST_USE bool
 ToJSValue(JSContext* aCx,
           Promise& aArgument,
           JS::MutableHandle<JS::Value> aValue);
-#endif 
 
 
 template <typename T>

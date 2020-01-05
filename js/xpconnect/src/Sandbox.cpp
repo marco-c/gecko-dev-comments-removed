@@ -1206,13 +1206,6 @@ xpc::CreateSandboxObject(JSContext* cx, MutableHandleValue vp, nsISupports* prin
 
         if (!options.globalProperties.DefineInSandbox(cx, sandbox))
             return NS_ERROR_XPC_UNEXPECTED;
-
-#ifndef SPIDERMONKEY_PROMISE
-        
-        
-        if (!dom::PromiseBinding::GetConstructorObject(cx))
-            return NS_ERROR_XPC_UNEXPECTED;
-#endif 
     }
 
     
