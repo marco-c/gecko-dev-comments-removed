@@ -40,7 +40,7 @@ impl StyleSheetListMethods for StyleSheetList {
     }
 
     
-    fn Item(&self, index: u32) -> Option<Root<StyleSheet>> {
+    fn Item(&self, _index: u32) -> Option<Root<StyleSheet>> {
         None
         
     }
