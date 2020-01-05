@@ -3,6 +3,7 @@
 
 
 #![feature(plugin)]
+#![cfg_attr(test, feature(core_intrinsics))]
 #![plugin(string_cache_plugin)]
 
 extern crate app_units;

@@ -28,6 +28,7 @@ use string_cache::Atom;
 use style::animation::PropertyAnimation;
 use style::media_queries::MediaQueryList;
 use style::stylesheets::Stylesheet;
+use style::viewport::ViewportRule;
 use url::Url;
 pub use dom::node::TrustedNodeAddress;
 
@@ -38,6 +39,9 @@ pub enum Msg {
 
     
     LoadStylesheet(Url, MediaQueryList, PendingAsyncLoad, Box<StylesheetLoadResponder + Send>),
+
+    
+    AddMetaViewport(ViewportRule),
 
     
     SetQuirksMode,
