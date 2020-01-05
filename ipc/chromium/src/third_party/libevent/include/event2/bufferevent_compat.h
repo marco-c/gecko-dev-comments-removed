@@ -25,8 +25,8 @@
 
 
 
-#ifndef _EVENT2_BUFFEREVENT_COMPAT_H_
-#define _EVENT2_BUFFEREVENT_COMPAT_H_
+#ifndef EVENT2_BUFFEREVENT_COMPAT_H_INCLUDED_
+#define EVENT2_BUFFEREVENT_COMPAT_H_INCLUDED_
 
 #define evbuffercb bufferevent_data_cb
 #define everrorcb bufferevent_event_cb

@@ -24,8 +24,8 @@
 
 
 
-#ifndef _EVENT2_EVENT_KEYVALQ_STRUCT_H_
-#define _EVENT2_EVENT_KEYVALQ_STRUCT_H_
+#ifndef EVENT2_KEYVALQ_STRUCT_H_INCLUDED_
+#define EVENT2_KEYVALQ_STRUCT_H_INCLUDED_
 
 #ifdef __cplusplus
 extern "C" {
@@ -34,7 +34,7 @@ extern "C" {
 
 
 #ifndef TAILQ_ENTRY
-#define _EVENT_DEFINED_TQENTRY
+#define EVENT_DEFINED_TQENTRY_
 #define TAILQ_ENTRY(type)						\
 struct {								\
 	struct type *tqe_next;	/* next element */			\
@@ -43,7 +43,7 @@ struct {								\
 #endif 
 
 #ifndef TAILQ_HEAD
-#define _EVENT_DEFINED_TQHEAD
+#define EVENT_DEFINED_TQHEAD_
 #define TAILQ_HEAD(name, type)			\
 struct name {					\
 	struct type *tqh_first;			\
@@ -65,11 +65,11 @@ struct evkeyval {
 TAILQ_HEAD (evkeyvalq, evkeyval);
 
 
-#ifdef _EVENT_DEFINED_TQENTRY
+#ifdef EVENT_DEFINED_TQENTRY_
 #undef TAILQ_ENTRY
 #endif
 
-#ifdef _EVENT_DEFINED_TQHEAD
+#ifdef EVENT_DEFINED_TQHEAD_
 #undef TAILQ_HEAD
 #endif
 

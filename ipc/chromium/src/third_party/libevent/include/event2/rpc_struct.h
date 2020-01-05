@@ -24,8 +24,8 @@
 
 
 
-#ifndef _EVENT2_RPC_STRUCT_H_
-#define _EVENT2_RPC_STRUCT_H_
+#ifndef EVENT2_RPC_STRUCT_H_INCLUDED_
+#define EVENT2_RPC_STRUCT_H_INCLUDED_
 
 #ifdef __cplusplus
 extern "C" {

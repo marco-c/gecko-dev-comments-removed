@@ -24,8 +24,10 @@
 
 
 
-#ifndef _EVENT2_LISTENER_H_
-#define _EVENT2_LISTENER_H_
+#ifndef EVENT2_LISTENER_H_INCLUDED_
+#define EVENT2_LISTENER_H_INCLUDED_
+
+#include <event2/visibility.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -71,6 +73,30 @@ typedef void (*evconnlistener_errorcb)(struct evconnlistener *, void *);
 #define LEV_OPT_THREADSAFE		(1u<<4)
 
 
+#define LEV_OPT_DISABLED		(1u<<5)
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define LEV_OPT_DEFERRED_ACCEPT		(1u<<6)
+
+
+
+
+
+
+
+
+#define LEV_OPT_REUSEABLE_PORT		(1u<<7)
 
 
 
@@ -87,6 +113,9 @@ typedef void (*evconnlistener_errorcb)(struct evconnlistener *, void *);
 
 
 
+
+
+EVENT2_EXPORT_SYMBOL
 struct evconnlistener *evconnlistener_new(struct event_base *base,
     evconnlistener_cb cb, void *ptr, unsigned flags, int backlog,
     evutil_socket_t fd);
@@ -105,34 +134,42 @@ struct evconnlistener *evconnlistener_new(struct event_base *base,
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct evconnlistener *evconnlistener_new_bind(struct event_base *base,
     evconnlistener_cb cb, void *ptr, unsigned flags, int backlog,
     const struct sockaddr *sa, int socklen);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evconnlistener_free(struct evconnlistener *lev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int evconnlistener_enable(struct evconnlistener *lev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int evconnlistener_disable(struct evconnlistener *lev);
 
 
+EVENT2_EXPORT_SYMBOL
 struct event_base *evconnlistener_get_base(struct evconnlistener *lev);
 
 
+EVENT2_EXPORT_SYMBOL
 evutil_socket_t evconnlistener_get_fd(struct evconnlistener *lev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evconnlistener_set_cb(struct evconnlistener *lev,
     evconnlistener_cb cb, void *arg);
 
 
+EVENT2_EXPORT_SYMBOL
 void evconnlistener_set_error_cb(struct evconnlistener *lev,
     evconnlistener_errorcb errorcb);
 

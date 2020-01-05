@@ -23,8 +23,8 @@
 
 
 
-#ifndef _CHANGELIST_H_
-#define _CHANGELIST_H_
+#ifndef CHANGELIST_INTERNAL_H_INCLUDED_
+#define CHANGELIST_INTERNAL_H_INCLUDED_
 
 
 
@@ -62,6 +62,7 @@ struct event_change {
 
 	ev_uint8_t read_change;
 	ev_uint8_t write_change;
+	ev_uint8_t close_change;
 };
 
 
@@ -82,20 +83,20 @@ struct event_change {
 #define EVENT_CHANGELIST_FDINFO_SIZE sizeof(int)
 
 
-void event_changelist_init(struct event_changelist *changelist);
+void event_changelist_init_(struct event_changelist *changelist);
 
 
 
-void event_changelist_remove_all(struct event_changelist *changelist,
+void event_changelist_remove_all_(struct event_changelist *changelist,
     struct event_base *base);
 
-void event_changelist_freemem(struct event_changelist *changelist);
+void event_changelist_freemem_(struct event_changelist *changelist);
 
 
-int event_changelist_add(struct event_base *base, evutil_socket_t fd, short old, short events,
+int event_changelist_add_(struct event_base *base, evutil_socket_t fd, short old, short events,
     void *p);
 
-int event_changelist_del(struct event_base *base, evutil_socket_t fd, short old, short events,
+int event_changelist_del_(struct event_base *base, evutil_socket_t fd, short old, short events,
     void *p);
 
 #endif

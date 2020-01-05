@@ -24,8 +24,8 @@
 
 
 
-#ifndef _EVENT2_BUFFEREVENT_H_
-#define _EVENT2_BUFFEREVENT_H_
+#ifndef EVENT2_BUFFEREVENT_H_INCLUDED_
+#define EVENT2_BUFFEREVENT_H_INCLUDED_
 
 
 
@@ -73,16 +73,18 @@
 
 
 
+
+#include <event2/visibility.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include <event2/event-config.h>
-#ifdef _EVENT_HAVE_SYS_TYPES_H
+#ifdef EVENT__HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#ifdef _EVENT_HAVE_SYS_TIME_H
+#ifdef EVENT__HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
@@ -109,7 +111,7 @@ extern "C" {
 
 
 struct bufferevent
-#ifdef _EVENT_IN_DOXYGEN
+#ifdef EVENT_IN_DOXYGEN_
 {}
 #endif
 ;
@@ -131,6 +133,9 @@ struct sockaddr;
 
 
 typedef void (*bufferevent_data_cb)(struct bufferevent *bev, void *ctx);
+
+
+
 
 
 
@@ -181,6 +186,7 @@ enum bufferevent_options {
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct bufferevent *bufferevent_socket_new(struct event_base *base, evutil_socket_t fd, int options);
 
 
@@ -202,7 +208,8 @@ struct bufferevent *bufferevent_socket_new(struct event_base *base, evutil_socke
 
 
 
-int bufferevent_socket_connect(struct bufferevent *, struct sockaddr *, int);
+EVENT2_EXPORT_SYMBOL
+int bufferevent_socket_connect(struct bufferevent *, const struct sockaddr *, int);
 
 struct evdns_base;
 
@@ -231,6 +238,7 @@ struct evdns_base;
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_socket_connect_hostname(struct bufferevent *,
     struct evdns_base *, int, const char *, int);
 
@@ -242,6 +250,7 @@ int bufferevent_socket_connect_hostname(struct bufferevent *,
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_socket_get_dns_error(struct bufferevent *bev);
 
 
@@ -255,11 +264,13 @@ int bufferevent_socket_get_dns_error(struct bufferevent *bev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_base_set(struct event_base *base, struct bufferevent *bufev);
 
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct event_base *bufferevent_get_base(struct bufferevent *bev);
 
 
@@ -271,6 +282,7 @@ struct event_base *bufferevent_get_base(struct bufferevent *bev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_priority_set(struct bufferevent *bufev, int pri);
 
 
@@ -278,7 +290,18 @@ int bufferevent_priority_set(struct bufferevent *bufev, int pri);
 
 
 
+EVENT2_EXPORT_SYMBOL
+int bufferevent_get_priority(const struct bufferevent *bufev);
 
+
+
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
 void bufferevent_free(struct bufferevent *bufev);
 
 
@@ -296,6 +319,7 @@ void bufferevent_free(struct bufferevent *bufev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_setcb(struct bufferevent *bufev,
     bufferevent_data_cb readcb, bufferevent_data_cb writecb,
     bufferevent_event_cb eventcb, void *cbarg);
@@ -307,18 +331,42 @@ void bufferevent_setcb(struct bufferevent *bufev,
 
 
 
+
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
+void bufferevent_getcb(struct bufferevent *bufev,
+    bufferevent_data_cb *readcb_ptr,
+    bufferevent_data_cb *writecb_ptr,
+    bufferevent_event_cb *eventcb_ptr,
+    void **cbarg_ptr);
+
+
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
 int bufferevent_setfd(struct bufferevent *bufev, evutil_socket_t fd);
 
 
 
 
 
+EVENT2_EXPORT_SYMBOL
 evutil_socket_t bufferevent_getfd(struct bufferevent *bufev);
 
 
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct bufferevent *bufferevent_get_underlying(struct bufferevent *bufev);
 
 
@@ -334,6 +382,7 @@ struct bufferevent *bufferevent_get_underlying(struct bufferevent *bufev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_write(struct bufferevent *bufev,
     const void *data, size_t size);
 
@@ -347,6 +396,7 @@ int bufferevent_write(struct bufferevent *bufev,
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_write_buffer(struct bufferevent *bufev, struct evbuffer *buf);
 
 
@@ -360,6 +410,7 @@ int bufferevent_write_buffer(struct bufferevent *bufev, struct evbuffer *buf);
 
 
 
+EVENT2_EXPORT_SYMBOL
 size_t bufferevent_read(struct bufferevent *bufev, void *data, size_t size);
 
 
@@ -370,6 +421,7 @@ size_t bufferevent_read(struct bufferevent *bufev, void *data, size_t size);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_read_buffer(struct bufferevent *bufev, struct evbuffer *buf);
 
 
@@ -381,6 +433,7 @@ int bufferevent_read_buffer(struct bufferevent *bufev, struct evbuffer *buf);
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct evbuffer *bufferevent_get_input(struct bufferevent *bufev);
 
 
@@ -395,6 +448,7 @@ struct evbuffer *bufferevent_get_input(struct bufferevent *bufev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct evbuffer *bufferevent_get_output(struct bufferevent *bufev);
 
 
@@ -405,6 +459,7 @@ struct evbuffer *bufferevent_get_output(struct bufferevent *bufev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_enable(struct bufferevent *bufev, short event);
 
 
@@ -415,6 +470,7 @@ int bufferevent_enable(struct bufferevent *bufev, short event);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_disable(struct bufferevent *bufev, short event);
 
 
@@ -423,6 +479,7 @@ int bufferevent_disable(struct bufferevent *bufev, short event);
 
 
 
+EVENT2_EXPORT_SYMBOL
 short bufferevent_get_enabled(struct bufferevent *bufev);
 
 
@@ -451,6 +508,7 @@ short bufferevent_get_enabled(struct bufferevent *bufev);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_set_timeouts(struct bufferevent *bufev,
     const struct timeval *timeout_read, const struct timeval *timeout_write);
 
@@ -472,6 +530,7 @@ int bufferevent_set_timeouts(struct bufferevent *bufev,
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_setwatermark(struct bufferevent *bufev, short events,
     size_t lowmark, size_t highmark);
 
@@ -479,13 +538,55 @@ void bufferevent_setwatermark(struct bufferevent *bufev, short events,
 
 
 
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
+int bufferevent_getwatermark(struct bufferevent *bufev, short events,
+    size_t *lowmark, size_t *highmark);
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
 void bufferevent_lock(struct bufferevent *bufev);
 
 
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_unlock(struct bufferevent *bufev);
+
+
+
+
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
+void bufferevent_incref(struct bufferevent *bufev);
+
+
+
+
+
+
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
+int bufferevent_decref(struct bufferevent *bufev);
 
 
 
@@ -510,9 +611,53 @@ enum bufferevent_flush_mode {
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_flush(struct bufferevent *bufev,
     short iotype,
     enum bufferevent_flush_mode mode);
+
+
+
+
+
+enum bufferevent_trigger_options {
+	
+	BEV_TRIG_IGNORE_WATERMARKS = (1<<16),
+
+	
+	BEV_TRIG_DEFER_CALLBACKS = BEV_OPT_DEFER_CALLBACKS
+
+	
+
+};
+
+
+
+
+
+
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
+void bufferevent_trigger(struct bufferevent *bufev, short iotype,
+    int options);
+
+
+
+
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
+void bufferevent_trigger_event(struct bufferevent *bufev, short what,
+    int options);
 
 
 
@@ -569,6 +714,7 @@ typedef enum bufferevent_filter_result (*bufferevent_filter_cb)(
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct bufferevent *
 bufferevent_filter_new(struct bufferevent *underlying,
 		       bufferevent_filter_cb input_filter,
@@ -588,6 +734,7 @@ bufferevent_filter_new(struct bufferevent *underlying,
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_pair_new(struct event_base *base, int options,
     struct bufferevent *pair[2]);
 
@@ -595,6 +742,7 @@ int bufferevent_pair_new(struct event_base *base, int options,
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct bufferevent *bufferevent_pair_get_partner(struct bufferevent *bev);
 
 
@@ -628,6 +776,7 @@ struct bufferevent_rate_limit_group;
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct ev_token_bucket_cfg *ev_token_bucket_cfg_new(
 	size_t read_rate, size_t read_burst,
 	size_t write_rate, size_t write_burst,
@@ -638,6 +787,7 @@ struct ev_token_bucket_cfg *ev_token_bucket_cfg_new(
 
 
 
+EVENT2_EXPORT_SYMBOL
 void ev_token_bucket_cfg_free(struct ev_token_bucket_cfg *cfg);
 
 
@@ -651,6 +801,7 @@ void ev_token_bucket_cfg_free(struct ev_token_bucket_cfg *cfg);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_set_rate_limit(struct bufferevent *bev,
     struct ev_token_bucket_cfg *cfg);
 
@@ -671,6 +822,7 @@ int bufferevent_set_rate_limit(struct bufferevent *bev,
 
 
 
+EVENT2_EXPORT_SYMBOL
 struct bufferevent_rate_limit_group *bufferevent_rate_limit_group_new(
 	struct event_base *base,
 	const struct ev_token_bucket_cfg *cfg);
@@ -679,6 +831,7 @@ struct bufferevent_rate_limit_group *bufferevent_rate_limit_group_new(
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_rate_limit_group_set_cfg(
 	struct bufferevent_rate_limit_group *,
 	const struct ev_token_bucket_cfg *);
@@ -699,6 +852,7 @@ int bufferevent_rate_limit_group_set_cfg(
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_rate_limit_group_set_min_share(
 	struct bufferevent_rate_limit_group *, size_t);
 
@@ -706,6 +860,7 @@ int bufferevent_rate_limit_group_set_min_share(
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_rate_limit_group_free(struct bufferevent_rate_limit_group *);
 
 
@@ -718,10 +873,12 @@ void bufferevent_rate_limit_group_free(struct bufferevent_rate_limit_group *);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_add_to_rate_limit_group(struct bufferevent *bev,
     struct bufferevent_rate_limit_group *g);
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_remove_from_rate_limit_group(struct bufferevent *bev);
 
 
@@ -731,17 +888,51 @@ int bufferevent_remove_from_rate_limit_group(struct bufferevent *bev);
 
 
 
+EVENT2_EXPORT_SYMBOL
+int bufferevent_set_max_single_read(struct bufferevent *bev, size_t size);
 
 
 
 
+
+
+
+
+EVENT2_EXPORT_SYMBOL
+int bufferevent_set_max_single_write(struct bufferevent *bev, size_t size);
+
+
+EVENT2_EXPORT_SYMBOL
+ev_ssize_t bufferevent_get_max_single_read(struct bufferevent *bev);
+
+
+EVENT2_EXPORT_SYMBOL
+ev_ssize_t bufferevent_get_max_single_write(struct bufferevent *bev);
+
+
+
+
+
+
+
+
+
+
+
+
+EVENT2_EXPORT_SYMBOL
 ev_ssize_t bufferevent_get_read_limit(struct bufferevent *bev);
+EVENT2_EXPORT_SYMBOL
 ev_ssize_t bufferevent_get_write_limit(struct bufferevent *bev);
 
 
+EVENT2_EXPORT_SYMBOL
 ev_ssize_t bufferevent_get_max_to_read(struct bufferevent *bev);
+EVENT2_EXPORT_SYMBOL
 ev_ssize_t bufferevent_get_max_to_write(struct bufferevent *bev);
 
+EVENT2_EXPORT_SYMBOL
+const struct ev_token_bucket_cfg *bufferevent_get_token_bucket_cfg(const struct bufferevent * bev);
 
 
 
@@ -751,8 +942,11 @@ ev_ssize_t bufferevent_get_max_to_write(struct bufferevent *bev);
 
 
 
+
+EVENT2_EXPORT_SYMBOL
 ev_ssize_t bufferevent_rate_limit_group_get_read_limit(
 	struct bufferevent_rate_limit_group *);
+EVENT2_EXPORT_SYMBOL
 ev_ssize_t bufferevent_rate_limit_group_get_write_limit(
 	struct bufferevent_rate_limit_group *);
 
@@ -771,7 +965,9 @@ ev_ssize_t bufferevent_rate_limit_group_get_write_limit(
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_decrement_read_limit(struct bufferevent *bev, ev_ssize_t decr);
+EVENT2_EXPORT_SYMBOL
 int bufferevent_decrement_write_limit(struct bufferevent *bev, ev_ssize_t decr);
 
 
@@ -788,8 +984,10 @@ int bufferevent_decrement_write_limit(struct bufferevent *bev, ev_ssize_t decr);
 
 
 
+EVENT2_EXPORT_SYMBOL
 int bufferevent_rate_limit_group_decrement_read(
 	struct bufferevent_rate_limit_group *, ev_ssize_t);
+EVENT2_EXPORT_SYMBOL
 int bufferevent_rate_limit_group_decrement_write(
 	struct bufferevent_rate_limit_group *, ev_ssize_t);
 
@@ -801,6 +999,7 @@ int bufferevent_rate_limit_group_decrement_write(
 
 
 
+EVENT2_EXPORT_SYMBOL
 void bufferevent_rate_limit_group_get_totals(
     struct bufferevent_rate_limit_group *grp,
     ev_uint64_t *total_read_out, ev_uint64_t *total_written_out);
@@ -810,6 +1009,7 @@ void bufferevent_rate_limit_group_get_totals(
 
 
 
+EVENT2_EXPORT_SYMBOL
 void
 bufferevent_rate_limit_group_reset_totals(
 	struct bufferevent_rate_limit_group *grp);

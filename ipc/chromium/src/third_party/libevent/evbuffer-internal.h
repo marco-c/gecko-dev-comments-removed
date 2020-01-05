@@ -24,15 +24,17 @@
 
 
 
-#ifndef _EVBUFFER_INTERNAL_H_
-#define _EVBUFFER_INTERNAL_H_
+#ifndef EVBUFFER_INTERNAL_H_INCLUDED_
+#define EVBUFFER_INTERNAL_H_INCLUDED_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "event2/event-config.h"
+#include "evconfig-private.h"
 #include "event2/util.h"
+#include "event2/event_struct.h"
 #include "util-internal.h"
 #include "defer-internal.h"
 
@@ -41,7 +43,7 @@ extern "C" {
 
 #define EVBUFFER_CB_NODEFER 2
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #endif
 #include <sys/queue.h>
@@ -49,7 +51,7 @@ extern "C" {
 
 
 
-#if _EVENT_SIZEOF_VOID_P < 8
+#if EVENT__SIZEOF_VOID_P < 8
 #define MIN_BUFFER_SIZE	512
 #else
 #define MIN_BUFFER_SIZE	1024
@@ -59,7 +61,7 @@ extern "C" {
 
 struct evbuffer_cb_entry {
 	
-	TAILQ_ENTRY(evbuffer_cb_entry) next;
+	LIST_ENTRY(evbuffer_cb_entry) next;
 	
 
 
@@ -106,7 +108,7 @@ struct evbuffer {
 
 	size_t n_del_for_cb;
 
-#ifndef _EVENT_DISABLE_THREAD_SUPPORT
+#ifndef EVENT__DISABLE_THREAD_SUPPORT
 	
 	void *lock;
 #endif
@@ -125,7 +127,7 @@ struct evbuffer {
 
 
 	unsigned deferred_cbs : 1;
-#ifdef WIN32
+#ifdef _WIN32
 	
 	unsigned is_overlapped : 1;
 #endif
@@ -133,7 +135,7 @@ struct evbuffer {
 	ev_uint32_t flags;
 
 	
-	struct deferred_cb_queue *cb_queue;
+	struct event_base *cb_queue;
 
 	
 
@@ -143,22 +145,22 @@ struct evbuffer {
 
 	
 
-	struct deferred_cb deferred;
+	struct event_callback deferred;
 
 	
-	TAILQ_HEAD(evbuffer_cb_queue, evbuffer_cb_entry) callbacks;
+	LIST_HEAD(evbuffer_cb_queue, evbuffer_cb_entry) callbacks;
 
 	
 
 	struct bufferevent *parent;
 };
 
-#if _EVENT_SIZEOF_OFF_T < _EVENT_SIZEOF_SIZE_T
+#if EVENT__SIZEOF_OFF_T < EVENT__SIZEOF_SIZE_T
 typedef ev_ssize_t ev_misalign_t;
 #define EVBUFFER_CHAIN_MAX ((size_t)EV_SSIZE_MAX)
 #else
 typedef ev_off_t ev_misalign_t;
-#if _EVENT_SIZEOF_OFF_T > _EVENT_SIZEOF_SIZE_T
+#if EVENT__SIZEOF_OFF_T > EVENT__SIZEOF_SIZE_T
 #define EVBUFFER_CHAIN_MAX EV_SIZE_MAX
 #else
 #define EVBUFFER_CHAIN_MAX ((size_t)EV_SSIZE_MAX)
@@ -184,8 +186,8 @@ struct evbuffer_chain {
 
 	
 	unsigned flags;
-#define EVBUFFER_MMAP		0x0001	/**< memory in buffer is mmaped */
-#define EVBUFFER_SENDFILE	0x0002	/**< a chain used for sendfile */
+#define EVBUFFER_FILESEGMENT	0x0001  /**< A chain used for a file segment */
+#define EVBUFFER_SENDFILE	0x0002	/**< a chain used with sendfile */
 #define EVBUFFER_REFERENCE	0x0004	/**< a chain with a mem reference */
 #define EVBUFFER_IMMUTABLE	0x0008	/**< read-only chain */
 	
@@ -196,6 +198,11 @@ struct evbuffer_chain {
 	
 
 #define EVBUFFER_DANGLING	0x0040
+	
+#define EVBUFFER_MULTICAST	0x0080
+
+	
+	int refcnt;
 
 	
 
@@ -209,16 +216,62 @@ struct evbuffer_chain {
 
 
 
-
-struct evbuffer_chain_fd {
-	int fd;	
+struct evbuffer_chain_reference {
+	evbuffer_ref_cleanup_cb cleanupfn;
+	void *extra;
 };
 
 
 
-struct evbuffer_chain_reference {
-	evbuffer_ref_cleanup_cb cleanupfn;
-	void *extra;
+struct evbuffer_chain_file_segment {
+	struct evbuffer_file_segment *segment;
+#ifdef _WIN32
+	
+	HANDLE view_handle;
+#endif
+};
+
+
+struct evbuffer_file_segment {
+	void *lock; 
+	int refcnt; 
+	unsigned flags; 
+
+	
+	unsigned can_sendfile : 1;
+	unsigned is_mapping : 1;
+
+	
+	int fd;
+	
+	void *mapping;
+#ifdef _WIN32
+	
+	HANDLE mapping_handle;
+#endif
+	
+
+	char *contents;
+	
+	ev_off_t file_offset;
+	
+
+	ev_off_t mmap_offset;
+	
+	ev_off_t length;
+	
+	evbuffer_file_segment_cleanup_cb cleanup_cb;
+	
+	void *cleanup_cb_arg;
+};
+
+
+
+struct evbuffer_multicast_parent {
+	
+	struct evbuffer *source;
+	
+	struct evbuffer_chain *parent;
 };
 
 #define EVBUFFER_CHAIN_SIZE sizeof(struct evbuffer_chain)
@@ -247,29 +300,29 @@ struct evbuffer_chain_reference {
 	} while (0)
 
 
-void _evbuffer_incref(struct evbuffer *buf);
+void evbuffer_incref_(struct evbuffer *buf);
 
-void _evbuffer_incref_and_lock(struct evbuffer *buf);
-
-
-void _evbuffer_chain_pin(struct evbuffer_chain *chain, unsigned flag);
-
-void _evbuffer_chain_unpin(struct evbuffer_chain *chain, unsigned flag);
+void evbuffer_incref_and_lock_(struct evbuffer *buf);
 
 
-void _evbuffer_decref_and_unlock(struct evbuffer *buffer);
+void evbuffer_chain_pin_(struct evbuffer_chain *chain, unsigned flag);
+
+void evbuffer_chain_unpin_(struct evbuffer_chain *chain, unsigned flag);
+
+
+void evbuffer_decref_and_unlock_(struct evbuffer *buffer);
 
 
 
-int _evbuffer_expand_fast(struct evbuffer *, size_t, int);
-
-
+int evbuffer_expand_fast_(struct evbuffer *, size_t, int);
 
 
 
 
 
-int _evbuffer_read_setup_vecs(struct evbuffer *buf, ev_ssize_t howmuch,
+
+
+int evbuffer_read_setup_vecs_(struct evbuffer *buf, ev_ssize_t howmuch,
     struct evbuffer_iovec *vecs, int n_vecs, struct evbuffer_chain ***chainp,
     int exact);
 
@@ -282,9 +335,14 @@ int _evbuffer_read_setup_vecs(struct evbuffer *buf, ev_ssize_t howmuch,
 
 
 
-void evbuffer_set_parent(struct evbuffer *buf, struct bufferevent *bev);
+void evbuffer_set_parent_(struct evbuffer *buf, struct bufferevent *bev);
 
-void evbuffer_invoke_callbacks(struct evbuffer *buf);
+void evbuffer_invoke_callbacks_(struct evbuffer *buf);
+
+
+int evbuffer_get_callbacks_(struct evbuffer *buffer,
+    struct event_callback **cbs,
+    int max_cbs);
 
 #ifdef __cplusplus
 }

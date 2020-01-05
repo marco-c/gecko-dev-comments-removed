@@ -24,14 +24,16 @@
 
 
 
-#ifndef _EVENT_INTERNAL_H_
-#define _EVENT_INTERNAL_H_
+#ifndef EVENT_INTERNAL_H_INCLUDED_
+#define EVENT_INTERNAL_H_INCLUDED_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "event2/event-config.h"
+#include "evconfig-private.h"
+
 #include <time.h>
 #include <sys/queue.h>
 #include "event2/event_struct.h"
@@ -43,18 +45,42 @@ extern "C" {
 
 
 
-#define ev_signal_next	_ev.ev_signal.ev_signal_next
-#define ev_io_next	_ev.ev_io.ev_io_next
-#define ev_io_timeout	_ev.ev_io.ev_timeout
+#define ev_signal_next	ev_.ev_signal.ev_signal_next
+#define ev_io_next	ev_.ev_io.ev_io_next
+#define ev_io_timeout	ev_.ev_io.ev_timeout
 
 
-#define ev_ncalls	_ev.ev_signal.ev_ncalls
-#define ev_pncalls	_ev.ev_signal.ev_pncalls
+#define ev_ncalls	ev_.ev_signal.ev_ncalls
+#define ev_pncalls	ev_.ev_signal.ev_pncalls
+
+#define ev_pri ev_evcallback.evcb_pri
+#define ev_flags ev_evcallback.evcb_flags
+#define ev_closure ev_evcallback.evcb_closure
+#define ev_callback ev_evcallback.evcb_cb_union.evcb_callback
+#define ev_arg ev_evcallback.evcb_arg
 
 
-#define EV_CLOSURE_NONE 0
-#define EV_CLOSURE_SIGNAL 1
-#define EV_CLOSURE_PERSIST 2
+
+
+
+
+
+
+#define EV_CLOSURE_EVENT 0
+
+#define EV_CLOSURE_EVENT_SIGNAL 1
+
+#define EV_CLOSURE_EVENT_PERSIST 2
+
+#define EV_CLOSURE_CB_SELF 3
+
+#define EV_CLOSURE_CB_FINALIZE 4
+
+#define EV_CLOSURE_EVENT_FINALIZE 5
+
+
+#define EV_CLOSURE_EVENT_FINALIZE_FREE 6
+
 
 
 struct eventop {
@@ -99,7 +125,7 @@ struct eventop {
 	size_t fdinfo_len;
 };
 
-#ifdef WIN32
+#ifdef _WIN32
 
 
 
@@ -110,6 +136,7 @@ struct eventop {
 
 
 #ifdef EVMAP_USE_HT
+#define HT_NO_CACHE_HASH_VALUES
 #include "ht-internal.h"
 struct event_map_entry;
 HT_HEAD(event_io_map, event_map_entry);
@@ -159,13 +186,24 @@ struct event_changelist {
 	int changes_size;
 };
 
-#ifndef _EVENT_DISABLE_DEBUG_MODE
+#ifndef EVENT__DISABLE_DEBUG_MODE
 
-extern int _event_debug_mode_on;
-#define EVENT_DEBUG_MODE_IS_ON() (_event_debug_mode_on)
+extern int event_debug_mode_on_;
+#define EVENT_DEBUG_MODE_IS_ON() (event_debug_mode_on_)
 #else
 #define EVENT_DEBUG_MODE_IS_ON() (0)
 #endif
+
+TAILQ_HEAD(evcallback_list, event_callback);
+
+
+struct event_once {
+	LIST_ENTRY(event_once) next_once;
+	struct event ev;
+
+	void (*cb)(evutil_socket_t, short, void *);
+	void *arg;
+};
 
 struct event_base {
 	
@@ -187,9 +225,15 @@ struct event_base {
 	
 	int virtual_event_count;
 	
+	int virtual_event_count_max;
+	
 	int event_count;
 	
+	int event_count_max;
+	
 	int event_count_active;
+	
+	int event_count_active_max;
 
 	
 
@@ -207,13 +251,22 @@ struct event_base {
 	int running_loop;
 
 	
+
+
+
+	int n_deferreds_queued;
+
+	
 	
 
 
 
-	struct event_list *activequeues;
+	struct evcallback_list *activequeues;
 	
 	int nactivequeues;
+	
+
+	struct evcallback_list active_later_queue;
 
 	
 
@@ -226,20 +279,10 @@ struct event_base {
 	int n_common_timeouts_allocated;
 
 	
-
-	struct deferred_cb_queue defer_queue;
-
-	
 	struct event_io_map io;
 
 	
 	struct event_signal_map sigmap;
-
-	
-	struct event_list eventqueue;
-
-	
-	struct timeval event_tv;
 
 	
 	struct min_heap timeheap;
@@ -248,36 +291,40 @@ struct event_base {
 
 	struct timeval tv_cache;
 
-#if defined(_EVENT_HAVE_CLOCK_GETTIME) && defined(CLOCK_MONOTONIC)
+	struct evutil_monotonic_timer monotonic_timer;
+
 	
 
 	struct timeval tv_clock_diff;
 	
 	time_t last_updated_clock_diff;
-#endif
 
-#ifndef _EVENT_DISABLE_THREAD_SUPPORT
+#ifndef EVENT__DISABLE_THREAD_SUPPORT
 	
 	
 	unsigned long th_owner_id;
 	
 	void *th_base_lock;
 	
-	struct event *current_event;
-	
 
 	void *current_event_cond;
 	
 	int current_event_waiters;
 #endif
+	
+	struct event_callback *current_event;
 
-#ifdef WIN32
+#ifdef _WIN32
 	
 	struct event_iocp_port *iocp;
 #endif
 
 	
 	enum event_base_config_flag flags;
+
+	struct timeval max_dispatch_time;
+	int max_dispatch_callbacks;
+	int limit_callbacks_after_prio;
 
 	
 	
@@ -291,6 +338,14 @@ struct event_base {
 	struct event th_notify;
 	
 	int (*th_notify_fn)(struct event_base *base);
+
+	
+
+	struct evutil_weakrand_state weakrand_seed;
+
+	
+	LIST_HEAD(once_event_list, event_once) once_events;
+
 };
 
 struct event_config_entry {
@@ -305,12 +360,14 @@ struct event_config {
 	TAILQ_HEAD(event_configq, event_config_entry) entries;
 
 	int n_cpus_hint;
+	struct timeval max_dispatch_interval;
+	int max_dispatch_callbacks;
+	int limit_callbacks_after_prio;
 	enum event_method_feature require_features;
 	enum event_base_config_flag flags;
 };
 
 
-#if defined(_EVENT_HAVE_SYS_QUEUE_H) && !defined(_EVENT_HAVE_TAILQFOREACH)
 #ifndef TAILQ_FIRST
 #define	TAILQ_FIRST(head)		((head)->tqh_first)
 #endif
@@ -336,33 +393,87 @@ struct event_config {
 	(listelm)->field.tqe_prev = &(elm)->field.tqe_next;		\
 } while (0)
 #endif
-#endif 
 
 #define N_ACTIVE_CALLBACKS(base)					\
-	((base)->event_count_active + (base)->defer_queue.active_count)
+	((base)->event_count_active)
 
-int _evsig_set_handler(struct event_base *base, int evsignal,
+int evsig_set_handler_(struct event_base *base, int evsignal,
 			  void (*fn)(int));
-int _evsig_restore_handler(struct event_base *base, int evsignal);
+int evsig_restore_handler_(struct event_base *base, int evsignal);
+
+int event_add_nolock_(struct event *ev,
+    const struct timeval *tv, int tv_is_absolute);
 
 
-void event_active_nolock(struct event *ev, int res, short count);
-
-
-void event_base_add_virtual(struct event_base *base);
-void event_base_del_virtual(struct event_base *base);
-
-
+#define EVENT_DEL_NOBLOCK 0
 
 
 
+#define EVENT_DEL_BLOCK 1
 
 
-void event_base_assert_ok(struct event_base *base);
+
+#define EVENT_DEL_AUTOBLOCK 2
+
+
+#define EVENT_DEL_EVEN_IF_FINALIZING 3
+int event_del_nolock_(struct event *ev, int blocking);
+int event_remove_timer_nolock_(struct event *ev);
+
+void event_active_nolock_(struct event *ev, int res, short count);
+int event_callback_activate_(struct event_base *, struct event_callback *);
+int event_callback_activate_nolock_(struct event_base *, struct event_callback *);
+int event_callback_cancel_(struct event_base *base,
+    struct event_callback *evcb);
+
+void event_callback_finalize_nolock_(struct event_base *base, unsigned flags, struct event_callback *evcb, void (*cb)(struct event_callback *, void *));
+void event_callback_finalize_(struct event_base *base, unsigned flags, struct event_callback *evcb, void (*cb)(struct event_callback *, void *));
+int event_callback_finalize_many_(struct event_base *base, int n_cbs, struct event_callback **evcb, void (*cb)(struct event_callback *, void *));
+
+
+void event_active_later_(struct event *ev, int res);
+void event_active_later_nolock_(struct event *ev, int res);
+int event_callback_activate_later_nolock_(struct event_base *base,
+    struct event_callback *evcb);
+int event_callback_cancel_nolock_(struct event_base *base,
+    struct event_callback *evcb, int even_if_finalizing);
+void event_callback_init_(struct event_base *base,
+    struct event_callback *cb);
+
+
+void event_base_add_virtual_(struct event_base *base);
+void event_base_del_virtual_(struct event_base *base);
+
+
+
+
+
+
+
+void event_base_assert_ok_(struct event_base *base);
+void event_base_assert_ok_nolock_(struct event_base *base);
+
+
+
+
+
+
+
+
+
+
+int event_base_foreach_event_nolock_(struct event_base *base,
+    event_base_foreach_event_cb cb, void *arg);
+
+
+
+
+
+
+void event_disable_debug_mode(void);
 
 #ifdef __cplusplus
 }
 #endif
 
 #endif 
-

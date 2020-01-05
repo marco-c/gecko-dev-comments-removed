@@ -24,6 +24,7 @@
 
 
 
+#include "evconfig-private.h"
 #include <stdint.h>
 
 #include <sys/param.h>

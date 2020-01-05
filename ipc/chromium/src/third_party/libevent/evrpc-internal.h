@@ -24,9 +24,10 @@
 
 
 
-#ifndef _EVRPC_INTERNAL_H_
-#define _EVRPC_INTERNAL_H_
+#ifndef EVRPC_INTERNAL_H_INCLUDED_
+#define EVRPC_INTERNAL_H_INCLUDED_
 
+#include "event2/http.h"
 #include "http-internal.h"
 
 struct evrpc;
@@ -56,7 +57,7 @@ TAILQ_HEAD(evrpc_hook_list, evrpc_hook);
 struct evrpc_hook_ctx;
 TAILQ_HEAD(evrpc_pause_list, evrpc_hook_ctx);
 
-struct _evrpc_hooks {
+struct evrpc_hooks_ {
 	
 	struct evrpc_hook_list in_hooks;
 	struct evrpc_hook_list out_hooks;
@@ -69,7 +70,7 @@ struct _evrpc_hooks {
 #define paused_requests common.pause_requests
 
 struct evrpc_base {
-	struct _evrpc_hooks common;
+	struct evrpc_hooks_ common;
 
 	
 	struct evhttp* http_server;
@@ -79,11 +80,11 @@ struct evrpc_base {
 };
 
 struct evrpc_req_generic;
-void evrpc_reqstate_free(struct evrpc_req_generic* rpc_state);
+void evrpc_reqstate_free_(struct evrpc_req_generic* rpc_state);
 
 
 struct evrpc_pool {
-	struct _evrpc_hooks common;
+	struct evrpc_hooks_ common;
 
 	struct event_base *base;
 
@@ -117,14 +118,14 @@ struct evrpc_hook_meta {
 };
 
 
-static void evrpc_hook_associate_meta(struct evrpc_hook_meta **pctx,
+static void evrpc_hook_associate_meta_(struct evrpc_hook_meta **pctx,
     struct evhttp_connection *evcon);
 
 
-static struct evrpc_hook_meta *evrpc_hook_meta_new(void);
+static struct evrpc_hook_meta *evrpc_hook_meta_new_(void);
 
 
-static void evrpc_hook_context_free(struct evrpc_hook_meta *ctx);
+static void evrpc_hook_context_free_(struct evrpc_hook_meta *ctx);
 
 
 

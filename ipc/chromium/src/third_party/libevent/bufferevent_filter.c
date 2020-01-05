@@ -26,11 +26,13 @@
 
 
 
+#include "evconfig-private.h"
+
 #include <sys/types.h>
 
 #include "event2/event-config.h"
 
-#ifdef _EVENT_HAVE_SYS_TIME_H
+#ifdef EVENT__HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
@@ -38,11 +40,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#ifdef _EVENT_HAVE_STDARG_H
+#ifdef EVENT__HAVE_STDARG_H
 #include <stdarg.h>
 #endif
 
-#ifdef WIN32
+#ifdef _WIN32
 #include <winsock2.h>
 #endif
 
@@ -59,6 +61,7 @@
 
 static int be_filter_enable(struct bufferevent *, short);
 static int be_filter_disable(struct bufferevent *, short);
+static void be_filter_unlink(struct bufferevent *);
 static void be_filter_destruct(struct bufferevent *);
 
 static void be_filter_readcb(struct bufferevent *, void *);
@@ -68,6 +71,9 @@ static int be_filter_flush(struct bufferevent *bufev,
     short iotype, enum bufferevent_flush_mode mode);
 static int be_filter_ctrl(struct bufferevent *, enum bufferevent_ctrl_op, union bufferevent_ctrl_data *);
 
+static void bufferevent_filtered_inbuf_cb(struct evbuffer *buf,
+    const struct evbuffer_cb_info *cbinfo, void *arg);
+
 static void bufferevent_filtered_outbuf_cb(struct evbuffer *buf,
     const struct evbuffer_cb_info *info, void *arg);
 
@@ -76,6 +82,8 @@ struct bufferevent_filtered {
 
 	
 	struct bufferevent *underlying;
+	
+	struct evbuffer_cb_entry *inbuf_cb;
 	
 	struct evbuffer_cb_entry *outbuf_cb;
 	
@@ -97,8 +105,9 @@ const struct bufferevent_ops bufferevent_ops_filter = {
 	evutil_offsetof(struct bufferevent_filtered, bev.bev),
 	be_filter_enable,
 	be_filter_disable,
+	be_filter_unlink,
 	be_filter_destruct,
-	_bufferevent_generic_adj_timeouts,
+	bufferevent_generic_adj_timeouts_,
 	be_filter_flush,
 	be_filter_ctrl,
 };
@@ -180,13 +189,13 @@ bufferevent_filter_new(struct bufferevent *underlying,
 	if (!bufev_f)
 		return NULL;
 
-	if (bufferevent_init_common(&bufev_f->bev, underlying->ev_base,
+	if (bufferevent_init_common_(&bufev_f->bev, underlying->ev_base,
 				    &bufferevent_ops_filter, tmp_options) < 0) {
 		mm_free(bufev_f);
 		return NULL;
 	}
 	if (options & BEV_OPT_THREADSAFE) {
-		bufferevent_enable_locking(downcast(bufev_f), NULL);
+		bufferevent_enable_locking_(downcast(bufev_f), NULL);
 	}
 
 	bufev_f->underlying = underlying;
@@ -199,25 +208,28 @@ bufferevent_filter_new(struct bufferevent *underlying,
 	bufferevent_setcb(bufev_f->underlying,
 	    be_filter_readcb, be_filter_writecb, be_filter_eventcb, bufev_f);
 
+	bufev_f->inbuf_cb = evbuffer_add_cb(downcast(bufev_f)->input,
+		bufferevent_filtered_inbuf_cb, bufev_f);
+	evbuffer_cb_clear_flags(downcast(bufev_f)->input, bufev_f->inbuf_cb,
+		EVBUFFER_CB_ENABLED);
+
 	bufev_f->outbuf_cb = evbuffer_add_cb(downcast(bufev_f)->output,
 	   bufferevent_filtered_outbuf_cb, bufev_f);
 
-	_bufferevent_init_generic_timeout_cbs(downcast(bufev_f));
-	bufferevent_incref(underlying);
+	bufferevent_init_generic_timeout_cbs_(downcast(bufev_f));
+	bufferevent_incref_(underlying);
 
 	bufferevent_enable(underlying, EV_READ|EV_WRITE);
-	bufferevent_suspend_read(underlying, BEV_SUSPEND_FILT_READ);
+	bufferevent_suspend_read_(underlying, BEV_SUSPEND_FILT_READ);
 
 	return downcast(bufev_f);
 }
 
 static void
-be_filter_destruct(struct bufferevent *bev)
+be_filter_unlink(struct bufferevent *bev)
 {
 	struct bufferevent_filtered *bevf = upcast(bev);
 	EVUTIL_ASSERT(bevf);
-	if (bevf->free_context)
-		bevf->free_context(bevf->context);
 
 	if (bevf->bev.options & BEV_OPT_CLOSE_ON_FREE) {
 		
@@ -236,12 +248,25 @@ be_filter_destruct(struct bufferevent *bev)
 			if (bevf->underlying->errorcb == be_filter_eventcb)
 				bufferevent_setcb(bevf->underlying,
 				    NULL, NULL, NULL, NULL);
-			bufferevent_unsuspend_read(bevf->underlying,
+			bufferevent_unsuspend_read_(bevf->underlying,
 			    BEV_SUSPEND_FILT_READ);
 		}
 	}
+}
 
-	_bufferevent_del_generic_timeout_cbs(bev);
+static void
+be_filter_destruct(struct bufferevent *bev)
+{
+	struct bufferevent_filtered *bevf = upcast(bev);
+	EVUTIL_ASSERT(bevf);
+	if (bevf->free_context)
+		bevf->free_context(bevf->context);
+
+	if (bevf->inbuf_cb)
+		evbuffer_remove_cb_entry(bev->input, bevf->inbuf_cb);
+
+	if (bevf->outbuf_cb)
+		evbuffer_remove_cb_entry(bev->output, bevf->outbuf_cb);
 }
 
 static int
@@ -253,7 +278,7 @@ be_filter_enable(struct bufferevent *bev, short event)
 
 	if (event & EV_READ) {
 		BEV_RESET_GENERIC_READ_TIMEOUT(bev);
-		bufferevent_unsuspend_read(bevf->underlying,
+		bufferevent_unsuspend_read_(bevf->underlying,
 		    BEV_SUSPEND_FILT_READ);
 	}
 	return 0;
@@ -267,7 +292,7 @@ be_filter_disable(struct bufferevent *bev, short event)
 		BEV_DEL_GENERIC_WRITE_TIMEOUT(bev);
 	if (event & EV_READ) {
 		BEV_DEL_GENERIC_READ_TIMEOUT(bev);
-		bufferevent_suspend_read(bevf->underlying,
+		bufferevent_suspend_read_(bevf->underlying,
 		    BEV_SUSPEND_FILT_READ);
 	}
 	return 0;
@@ -336,7 +361,8 @@ be_filter_process_output(struct bufferevent_filtered *bevf,
 
 	
 
-	evbuffer_cb_set_flags(bufev->output, bevf->outbuf_cb, 0);
+	evbuffer_cb_clear_flags(bufev->output, bevf->outbuf_cb,
+	    EVBUFFER_CB_ENABLED);
 
 	do {
 		int processed = 0;
@@ -367,10 +393,9 @@ be_filter_process_output(struct bufferevent_filtered *bevf,
 			
 			!be_underlying_writebuf_full(bevf,state));
 
-		if (processed &&
-		    evbuffer_get_length(bufev->output) <= bufev->wm_write.low) {
+		if (processed) {
 			
-			_bufferevent_run_writecb(bufev);
+			bufferevent_trigger_nolock_(bufev, EV_WRITE, 0);
 
 			if (res == BEV_OK &&
 			    (bufev->enabled & EV_WRITE) &&
@@ -403,68 +428,145 @@ bufferevent_filtered_outbuf_cb(struct evbuffer *buf,
 		int processed_any = 0;
 		
 
-		_bufferevent_incref_and_lock(bev);
+		bufferevent_incref_and_lock_(bev);
 		be_filter_process_output(bevf, BEV_NORMAL, &processed_any);
-		_bufferevent_decref_and_unlock(bev);
+		bufferevent_decref_and_unlock_(bev);
+	}
+}
+
+static void
+be_filter_read_nolock_(struct bufferevent *underlying, void *me_)
+{
+	struct bufferevent_filtered *bevf = me_;
+	enum bufferevent_filter_result res;
+	enum bufferevent_flush_mode state;
+	struct bufferevent *bufev = downcast(bevf);
+	struct bufferevent_private *bufev_private = BEV_UPCAST(bufev);
+	int processed_any = 0;
+
+	
+	EVUTIL_ASSERT(bufev_private->refcnt >= 0);
+
+	
+	if (bufev_private->refcnt > 0) {
+
+		if (bevf->got_eof)
+			state = BEV_FINISHED;
+		else
+			state = BEV_NORMAL;
+
+		
+		res = be_filter_process_input(bevf, state, &processed_any);
+		(void)res;
+
+		
+
+
+		if (processed_any) {
+			bufferevent_trigger_nolock_(bufev, EV_READ, 0);
+			if (evbuffer_get_length(underlying->input) > 0 &&
+				be_readbuf_full(bevf, state)) {
+				
+
+
+
+
+				evbuffer_cb_set_flags(bufev->input, bevf->inbuf_cb,
+					EVBUFFER_CB_ENABLED);
+			}
+		}
 	}
 }
 
 
 static void
-be_filter_readcb(struct bufferevent *underlying, void *_me)
+bufferevent_filtered_inbuf_cb(struct evbuffer *buf,
+    const struct evbuffer_cb_info *cbinfo, void *arg)
 {
-	struct bufferevent_filtered *bevf = _me;
-	enum bufferevent_filter_result res;
+	struct bufferevent_filtered *bevf = arg;
 	enum bufferevent_flush_mode state;
-	struct bufferevent *bufev = downcast(bevf);
-	int processed_any = 0;
+	struct bufferevent *bev = downcast(bevf);
 
-	_bufferevent_incref_and_lock(bufev);
+	BEV_LOCK(bev);
 
 	if (bevf->got_eof)
 		state = BEV_FINISHED;
 	else
 		state = BEV_NORMAL;
 
-	
-	res = be_filter_process_input(bevf, state, &processed_any);
-	(void)res;
 
-	
+	if (!be_readbuf_full(bevf, state)) {
+		
 
 
-	if (processed_any &&
-	    evbuffer_get_length(bufev->input) >= bufev->wm_read.low)
-		_bufferevent_run_readcb(bufev);
 
-	_bufferevent_decref_and_unlock(bufev);
+		evbuffer_cb_clear_flags(bev->input, bevf->inbuf_cb,
+			EVBUFFER_CB_ENABLED);
+		if (evbuffer_get_length(bevf->underlying->input) > 0)
+			be_filter_read_nolock_(bevf->underlying, bevf);
+	}
+
+	BEV_UNLOCK(bev);
+}
+
+
+static void
+be_filter_readcb(struct bufferevent *underlying, void *me_)
+{
+	struct bufferevent_filtered *bevf = me_;
+	struct bufferevent *bev = downcast(bevf);
+
+	BEV_LOCK(bev);
+
+	be_filter_read_nolock_(underlying, me_);
+
+	BEV_UNLOCK(bev);
 }
 
 
 
 static void
-be_filter_writecb(struct bufferevent *underlying, void *_me)
+be_filter_writecb(struct bufferevent *underlying, void *me_)
 {
-	struct bufferevent_filtered *bevf = _me;
+	struct bufferevent_filtered *bevf = me_;
 	struct bufferevent *bev = downcast(bevf);
+	struct bufferevent_private *bufev_private = BEV_UPCAST(bev);
 	int processed_any = 0;
 
-	_bufferevent_incref_and_lock(bev);
-	be_filter_process_output(bevf, BEV_NORMAL, &processed_any);
-	_bufferevent_decref_and_unlock(bev);
+	BEV_LOCK(bev);
+
+	
+	EVUTIL_ASSERT(bufev_private->refcnt >= 0);
+
+	
+	if (bufev_private->refcnt > 0) {
+		be_filter_process_output(bevf, BEV_NORMAL, &processed_any);
+	}
+
+	BEV_UNLOCK(bev);
 }
 
 
 static void
-be_filter_eventcb(struct bufferevent *underlying, short what, void *_me)
+be_filter_eventcb(struct bufferevent *underlying, short what, void *me_)
 {
-	struct bufferevent_filtered *bevf = _me;
+	struct bufferevent_filtered *bevf = me_;
 	struct bufferevent *bev = downcast(bevf);
+	struct bufferevent_private *bufev_private = BEV_UPCAST(bev);
 
-	_bufferevent_incref_and_lock(bev);
+	BEV_LOCK(bev);
+
 	
-	_bufferevent_run_eventcb(bev, what);
-	_bufferevent_decref_and_unlock(bev);
+	EVUTIL_ASSERT(bufev_private->refcnt >= 0);
+
+	
+	if (bufev_private->refcnt > 0) {
+
+		
+		bufferevent_run_eventcb_(bev, what, 0);
+	}
+
+	BEV_UNLOCK(bev);
 }
 
 static int
@@ -475,7 +577,7 @@ be_filter_flush(struct bufferevent *bufev,
 	int processed_any = 0;
 	EVUTIL_ASSERT(bevf);
 
-	_bufferevent_incref_and_lock(bufev);
+	bufferevent_incref_and_lock_(bufev);
 
 	if (iotype & EV_READ) {
 		be_filter_process_input(bevf, mode, &processed_any);
@@ -487,7 +589,7 @@ be_filter_flush(struct bufferevent *bufev,
 	
 	bufferevent_flush(bevf->underlying, iotype, mode);
 
-	_bufferevent_decref_and_unlock(bufev);
+	bufferevent_decref_and_unlock_(bufev);
 
 	return processed_any;
 }
@@ -502,10 +604,20 @@ be_filter_ctrl(struct bufferevent *bev, enum bufferevent_ctrl_op op,
 		bevf = upcast(bev);
 		data->ptr = bevf->underlying;
 		return 0;
-	case BEV_CTRL_GET_FD:
 	case BEV_CTRL_SET_FD:
+		bevf = upcast(bev);
+
+		if (bevf->underlying &&
+			bevf->underlying->be_ops &&
+			bevf->underlying->be_ops->ctrl) {
+		    return (bevf->underlying->be_ops->ctrl)(bevf->underlying, op, data);
+		}
+
+	case BEV_CTRL_GET_FD:
 	case BEV_CTRL_CANCEL_ALL:
 	default:
 		return -1;
 	}
+
+	return -1;
 }

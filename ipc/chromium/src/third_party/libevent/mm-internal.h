@@ -23,8 +23,8 @@
 
 
 
-#ifndef _EVENT_MM_INTERNAL_H
-#define _EVENT_MM_INTERNAL_H
+#ifndef MM_INTERNAL_H_INCLUDED_
+#define MM_INTERNAL_H_INCLUDED_
 
 #include <sys/types.h>
 
@@ -32,13 +32,39 @@
 extern "C" {
 #endif
 
-#ifndef _EVENT_DISABLE_MM_REPLACEMENT
+#ifndef EVENT__DISABLE_MM_REPLACEMENT
+
+
+
+
+
+
+
 
 
 
 void *event_mm_malloc_(size_t sz);
+
+
+
+
+
+
+
+
+
 void *event_mm_calloc_(size_t count, size_t size);
-char *event_mm_strdup_(const char *s);
+
+
+
+
+
+
+
+
+
+char *event_mm_strdup_(const char *str);
+
 void *event_mm_realloc_(void *p, size_t sz);
 void event_mm_free_(void *p);
 #define mm_malloc(sz) event_mm_malloc_(sz)

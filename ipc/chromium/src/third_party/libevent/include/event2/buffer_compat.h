@@ -24,8 +24,10 @@
 
 
 
-#ifndef _EVENT2_BUFFER_COMPAT_H_
-#define _EVENT2_BUFFER_COMPAT_H_
+#ifndef EVENT2_BUFFER_COMPAT_H_INCLUDED_
+#define EVENT2_BUFFER_COMPAT_H_INCLUDED_
+
+#include <event2/visibility.h>
 
 
 
@@ -45,6 +47,7 @@
 
 
 
+EVENT2_EXPORT_SYMBOL
 char *evbuffer_readline(struct evbuffer *buffer);
 
 
@@ -88,6 +91,7 @@ typedef void (*evbuffer_cb)(struct evbuffer *buffer, size_t old_len, size_t new_
 
 
 
+EVENT2_EXPORT_SYMBOL
 void evbuffer_setcb(struct evbuffer *buffer, evbuffer_cb cb, void *cbarg);
 
 
@@ -99,6 +103,7 @@ void evbuffer_setcb(struct evbuffer *buffer, evbuffer_cb cb, void *cbarg);
 
 
 
+EVENT2_EXPORT_SYMBOL
 unsigned char *evbuffer_find(struct evbuffer *buffer, const unsigned char *what, size_t len);
 
 

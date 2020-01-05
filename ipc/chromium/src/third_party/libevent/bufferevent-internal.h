@@ -23,20 +23,33 @@
 
 
 
-#ifndef _BUFFEREVENT_INTERNAL_H_
-#define _BUFFEREVENT_INTERNAL_H_
+#ifndef BUFFEREVENT_INTERNAL_H_INCLUDED_
+#define BUFFEREVENT_INTERNAL_H_INCLUDED_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #include "event2/event-config.h"
+#include "event2/event_struct.h"
+#include "evconfig-private.h"
 #include "event2/util.h"
 #include "defer-internal.h"
 #include "evthread-internal.h"
 #include "event2/thread.h"
 #include "ratelim-internal.h"
 #include "event2/bufferevent_struct.h"
+
+#include "ipv6-internal.h"
+#ifdef _WIN32
+#include <ws2tcpip.h>
+#endif
+#ifdef EVENT__HAVE_NETINET_IN_H
+#include <netinet/in.h>
+#endif
+#ifdef EVENT__HAVE_NETINET_IN6_H
+#include <netinet/in6.h>
+#endif
 
 
 
@@ -65,7 +78,7 @@ typedef ev_uint16_t bufferevent_suspend_flags;
 
 struct bufferevent_rate_limit_group {
 	
-	TAILQ_HEAD(rlim_group_member_list, bufferevent_private) members;
+	LIST_HEAD(rlim_group_member_list, bufferevent_private) members;
 	
 	struct ev_token_bucket rate_limit;
 	struct ev_token_bucket_cfg rate_limit_cfg;
@@ -103,6 +116,10 @@ struct bufferevent_rate_limit_group {
 	
 
 	struct event master_refill_event;
+
+	
+	struct evutil_weakrand_state weakrand_seed;
+
 	
 
 
@@ -116,7 +133,7 @@ struct bufferevent_rate_limit {
 
 
 
-	TAILQ_ENTRY(bufferevent_private) next_in_group;
+	LIST_ENTRY(bufferevent_private) next_in_group;
 	
 
 	struct bufferevent_rate_limit_group *group;
@@ -177,7 +194,7 @@ struct bufferevent_private {
 	int dns_error;
 
 	
-	struct deferred_cb deferred;
+	struct event_callback deferred;
 
 	
 	enum bufferevent_options options;
@@ -190,7 +207,29 @@ struct bufferevent_private {
 	void *lock;
 
 	
+
+	ev_ssize_t max_single_read;
+
+	
+
+	ev_ssize_t max_single_write;
+
+	
 	struct bufferevent_rate_limit *rate_limiting;
+
+	
+
+
+
+
+
+
+	union {
+		struct sockaddr_in6 in6;
+		struct sockaddr_in in;
+	} conn_address;
+
+	struct evdns_getaddrinfo_request *dns_request;
 };
 
 
@@ -240,6 +279,11 @@ struct bufferevent_ops {
 
 	
 
+	void (*unlink)(struct bufferevent *);
+
+	
+
+
 
 	void (*destruct)(struct bufferevent *);
 
@@ -262,7 +306,7 @@ extern const struct bufferevent_ops bufferevent_ops_pair;
 #define BEV_IS_FILTER(bevp) ((bevp)->be_ops == &bufferevent_ops_filter)
 #define BEV_IS_PAIR(bevp) ((bevp)->be_ops == &bufferevent_ops_pair)
 
-#ifdef WIN32
+#ifdef _WIN32
 extern const struct bufferevent_ops bufferevent_ops_async;
 #define BEV_IS_ASYNC(bevp) ((bevp)->be_ops == &bufferevent_ops_async)
 #else
@@ -270,26 +314,26 @@ extern const struct bufferevent_ops bufferevent_ops_async;
 #endif
 
 
-int bufferevent_init_common(struct bufferevent_private *, struct event_base *, const struct bufferevent_ops *, enum bufferevent_options options);
+int bufferevent_init_common_(struct bufferevent_private *, struct event_base *, const struct bufferevent_ops *, enum bufferevent_options options);
 
 
 
-void bufferevent_suspend_read(struct bufferevent *bufev, bufferevent_suspend_flags what);
+void bufferevent_suspend_read_(struct bufferevent *bufev, bufferevent_suspend_flags what);
 
 
-void bufferevent_unsuspend_read(struct bufferevent *bufev, bufferevent_suspend_flags what);
+void bufferevent_unsuspend_read_(struct bufferevent *bufev, bufferevent_suspend_flags what);
 
 
 
-void bufferevent_suspend_write(struct bufferevent *bufev, bufferevent_suspend_flags what);
+void bufferevent_suspend_write_(struct bufferevent *bufev, bufferevent_suspend_flags what);
 
 
-void bufferevent_unsuspend_write(struct bufferevent *bufev, bufferevent_suspend_flags what);
+void bufferevent_unsuspend_write_(struct bufferevent *bufev, bufferevent_suspend_flags what);
 
 #define bufferevent_wm_suspend_read(b) \
-	bufferevent_suspend_read((b), BEV_SUSPEND_WM)
+	bufferevent_suspend_read_((b), BEV_SUSPEND_WM)
 #define bufferevent_wm_unsuspend_read(b) \
-	bufferevent_unsuspend_read((b), BEV_SUSPEND_WM)
+	bufferevent_unsuspend_read_((b), BEV_SUSPEND_WM)
 
 
 
@@ -303,53 +347,79 @@ void bufferevent_unsuspend_write(struct bufferevent *bufev, bufferevent_suspend_
 
 
 
-int bufferevent_disable_hard(struct bufferevent *bufev, short event);
+int bufferevent_disable_hard_(struct bufferevent *bufev, short event);
 
 
 
-int bufferevent_enable_locking(struct bufferevent *bufev, void *lock);
-
-void bufferevent_incref(struct bufferevent *bufev);
+int bufferevent_enable_locking_(struct bufferevent *bufev, void *lock);
 
 
-void _bufferevent_incref_and_lock(struct bufferevent *bufev);
+#define bufferevent_incref_(bufev) bufferevent_incref(bufev)
 
 
-int bufferevent_decref(struct bufferevent *bufev);
-
-
-int _bufferevent_decref_and_unlock(struct bufferevent *bufev);
+void bufferevent_incref_and_lock_(struct bufferevent *bufev);
 
 
 
-void _bufferevent_run_readcb(struct bufferevent *bufev);
-
-
-void _bufferevent_run_writecb(struct bufferevent *bufev);
-
-
-void _bufferevent_run_eventcb(struct bufferevent *bufev, short what);
+#define bufferevent_decref_(bufev) bufferevent_decref(bufev)
 
 
 
-int _bufferevent_add_event(struct event *ev, const struct timeval *tv);
+int bufferevent_decref_and_unlock_(struct bufferevent *bufev);
 
 
+
+void bufferevent_run_readcb_(struct bufferevent *bufev, int options);
+
+
+void bufferevent_run_writecb_(struct bufferevent *bufev, int options);
+
+
+
+void bufferevent_run_eventcb_(struct bufferevent *bufev, short what, int options);
 
 
 
 
 
-
-void _bufferevent_init_generic_timeout_cbs(struct bufferevent *bev);
-
-
-int _bufferevent_del_generic_timeout_cbs(struct bufferevent *bev);
+static inline void bufferevent_trigger_nolock_(struct bufferevent *bufev, short iotype, int options);
 
 
 
+static inline void
+bufferevent_trigger_nolock_(struct bufferevent *bufev, short iotype, int options)
+{
+	if ((iotype & EV_READ) && ((options & BEV_TRIG_IGNORE_WATERMARKS) ||
+	    evbuffer_get_length(bufev->input) >= bufev->wm_read.low))
+		bufferevent_run_readcb_(bufev, options);
+	if ((iotype & EV_WRITE) && ((options & BEV_TRIG_IGNORE_WATERMARKS) ||
+	    evbuffer_get_length(bufev->output) <= bufev->wm_write.low))
+		bufferevent_run_writecb_(bufev, options);
+}
 
-int _bufferevent_generic_adj_timeouts(struct bufferevent *bev);
+
+
+int bufferevent_add_event_(struct event *ev, const struct timeval *tv);
+
+
+
+
+
+
+
+
+void bufferevent_init_generic_timeout_cbs_(struct bufferevent *bev);
+
+
+
+
+int bufferevent_generic_adj_timeouts_(struct bufferevent *bev);
+int bufferevent_generic_adj_existing_timeouts_(struct bufferevent *bev);
+
+enum bufferevent_options bufferevent_get_options_(struct bufferevent *bev);
+
+const struct sockaddr*
+bufferevent_socket_get_conn_address_(struct bufferevent *bev);
 
 
 
@@ -375,9 +445,9 @@ int _bufferevent_generic_adj_timeouts(struct bufferevent *bev);
 
 #define BEV_UPCAST(b) EVUTIL_UPCAST((b), struct bufferevent_private, bev)
 
-#ifdef _EVENT_DISABLE_THREAD_SUPPORT
-#define BEV_LOCK(b) _EVUTIL_NIL_STMT
-#define BEV_UNLOCK(b) _EVUTIL_NIL_STMT
+#ifdef EVENT__DISABLE_THREAD_SUPPORT
+#define BEV_LOCK(b) EVUTIL_NIL_STMT_
+#define BEV_UNLOCK(b) EVUTIL_NIL_STMT_
 #else
 
 #define BEV_LOCK(b) do {						\
@@ -395,12 +465,14 @@ int _bufferevent_generic_adj_timeouts(struct bufferevent *bev);
 
 
 
-int _bufferevent_decrement_write_buckets(struct bufferevent_private *bev,
+int bufferevent_decrement_write_buckets_(struct bufferevent_private *bev,
     ev_ssize_t bytes);
-int _bufferevent_decrement_read_buckets(struct bufferevent_private *bev,
+int bufferevent_decrement_read_buckets_(struct bufferevent_private *bev,
     ev_ssize_t bytes);
-ev_ssize_t _bufferevent_get_read_max(struct bufferevent_private *bev);
-ev_ssize_t _bufferevent_get_write_max(struct bufferevent_private *bev);
+ev_ssize_t bufferevent_get_read_max_(struct bufferevent_private *bev);
+ev_ssize_t bufferevent_get_write_max_(struct bufferevent_private *bev);
+
+int bufferevent_ratelim_init_(struct bufferevent_private *bev);
 
 #ifdef __cplusplus
 }

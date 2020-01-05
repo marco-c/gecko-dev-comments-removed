@@ -23,8 +23,8 @@
 
 
 
-#ifndef _RATELIM_INTERNAL_H_
-#define _RATELIM_INTERNAL_H_
+#ifndef RATELIM_INTERNAL_H_INCLUDED_
+#define RATELIM_INTERNAL_H_INCLUDED_
 
 #ifdef __cplusplus
 extern "C" {
@@ -65,13 +65,13 @@ struct ev_token_bucket_cfg {
 
 
 
-int ev_token_bucket_update(struct ev_token_bucket *bucket,
+int ev_token_bucket_update_(struct ev_token_bucket *bucket,
     const struct ev_token_bucket_cfg *cfg,
     ev_uint32_t current_tick);
 
 
 
-ev_uint32_t ev_token_bucket_get_tick(const struct timeval *tv,
+ev_uint32_t ev_token_bucket_get_tick_(const struct timeval *tv,
     const struct ev_token_bucket_cfg *cfg);
 
 
@@ -79,12 +79,12 @@ ev_uint32_t ev_token_bucket_get_tick(const struct timeval *tv,
 
 
 
-int ev_token_bucket_init(struct ev_token_bucket *bucket,
+int ev_token_bucket_init_(struct ev_token_bucket *bucket,
     const struct ev_token_bucket_cfg *cfg,
     ev_uint32_t current_tick,
     int reinitialize);
 
-int bufferevent_remove_from_rate_limit_group_internal(struct bufferevent *bev,
+int bufferevent_remove_from_rate_limit_group_internal_(struct bufferevent *bev,
     int unsuspend);
 
 

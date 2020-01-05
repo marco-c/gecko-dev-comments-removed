@@ -24,8 +24,8 @@
 
 
 
-#ifndef _TESTUTILS_H
-#define _TESTUTILS_H
+#ifndef REGRESS_TESTUTILS_H_INCLUDED_
+#define REGRESS_TESTUTILS_H_INCLUDED_
 
 #include "event2/dns.h"
 
@@ -34,6 +34,7 @@ struct regress_dns_server_table {
 	const char *anstype;
 	const char *ans;
 	int seen;
+	int lower;
 };
 
 struct evdns_server_port *

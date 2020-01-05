@@ -23,17 +23,19 @@
 
 
 
-#ifndef _TINYTEST_H
-#define _TINYTEST_H
+#ifndef TINYTEST_H_INCLUDED_
+#define TINYTEST_H_INCLUDED_
 
 
 #define TT_FORK  (1<<0)
 
 #define TT_SKIP  (1<<1)
 
-#define _TT_ENABLED  (1<<2)
+#define TT_ENABLED_  (1<<2)
 
-#define TT_FIRST_USER_FLAG (1<<3)
+#define TT_OFF_BY_DEFAULT  (1<<3)
+
+#define TT_FIRST_USER_FLAG (1<<4)
 
 typedef void (*testcase_fn)(void *);
 
@@ -64,22 +66,33 @@ struct testgroup_t {
 };
 #define END_OF_GROUPS { NULL, NULL}
 
+struct testlist_alias_t {
+	const char *name;
+	const char **tests;
+};
+#define END_OF_ALIASES { NULL, NULL }
 
-void _tinytest_set_test_failed(void);
 
-void _tinytest_set_test_skipped(void);
+void tinytest_set_test_failed_(void);
 
-int _tinytest_get_verbosity(void);
+void tinytest_set_test_skipped_(void);
+
+int tinytest_get_verbosity_(void);
 
 
-int _tinytest_set_flag(struct testgroup_t *, const char *, unsigned long);
+int tinytest_set_flag_(struct testgroup_t *, const char *, int set, unsigned long);
+
+char *tinytest_format_hex_(const void *, unsigned long);
 
 
 #define tinytest_skip(groups, named) \
-	_tinytest_set_flag(groups, named, TT_SKIP)
+	tinytest_set_flag_(groups, named, 1, TT_SKIP)
 
 
 int testcase_run_one(const struct testgroup_t *,const struct testcase_t *);
+
+void tinytest_set_aliases(const struct testlist_alias_t *aliases);
+
 
 
 int tinytest_main(int argc, const char **argv, struct testgroup_t *groups);

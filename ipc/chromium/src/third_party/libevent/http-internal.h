@@ -7,8 +7,8 @@
 
 
 
-#ifndef _HTTP_INTERNAL_H_
-#define _HTTP_INTERNAL_H_
+#ifndef HTTP_INTERNAL_H_INCLUDED_
+#define HTTP_INTERNAL_H_INCLUDED_
 
 #include "event2/event_struct.h"
 #include "util-internal.h"
@@ -29,20 +29,12 @@ enum message_read_status {
 	DATA_TOO_LONG = -3
 };
 
-enum evhttp_connection_error {
-	EVCON_HTTP_TIMEOUT,
-	EVCON_HTTP_EOF,
-	EVCON_HTTP_INVALID_HEADER,
-	EVCON_HTTP_BUFFER_ERROR,
-	EVCON_HTTP_REQUEST_CANCEL
-};
-
 struct evbuffer;
 struct addrinfo;
 struct evhttp_request;
 
 
-#define _EVHTTP_REQ_UNKNOWN (1<<15)
+#define EVHTTP_REQ_UNKNOWN_ (1<<15)
 
 enum evhttp_connection_state {
 	EVCON_DISCONNECTED,	
@@ -70,22 +62,30 @@ struct evhttp_connection {
 	struct event retry_ev;		
 
 	char *bind_address;		
-	u_short bind_port;		
+	ev_uint16_t bind_port;		
 
 	char *address;			
-	u_short port;
+	ev_uint16_t port;
 
 	size_t max_headers_size;
 	ev_uint64_t max_body_size;
 
 	int flags;
-#define EVHTTP_CON_INCOMING	0x0001	/* only one request on it ever */
-#define EVHTTP_CON_OUTGOING	0x0002  /* multiple requests possible */
-#define EVHTTP_CON_CLOSEDETECT  0x0004  /* detecting if persistent close */
+#define EVHTTP_CON_INCOMING	0x0001       /* only one request on it ever */
+#define EVHTTP_CON_OUTGOING	0x0002       /* multiple requests possible */
+#define EVHTTP_CON_CLOSEDETECT	0x0004   /* detecting if persistent close */
 
-	int timeout;			
+#define EVHTTP_CON_AUTOFREE	EVHTTP_CON_PUBLIC_FLAGS_END
+
+
+#define EVHTTP_CON_READING_ERROR	(EVHTTP_CON_AUTOFREE << 1)
+
+	struct timeval timeout;		
 	int retry_cnt;			
 	int retry_max;			
+	struct timeval initial_retry_timeout; 
+
+
 
 	enum evhttp_connection_state state;
 
@@ -100,10 +100,11 @@ struct evhttp_connection {
 	void (*closecb)(struct evhttp_connection *, void *);
 	void *closecb_arg;
 
-	struct deferred_cb read_more_deferred_cb;
+	struct event_callback read_more_deferred_cb;
 
 	struct event_base *base;
 	struct evdns_base *dns_base;
+	int ai_family;
 };
 
 
@@ -152,10 +153,12 @@ struct evhttp {
 	
 	char *vhost_pattern;
 
-	int timeout;
+	struct timeval timeout;
 
 	size_t default_max_headers_size;
 	ev_uint64_t default_max_body_size;
+	int flags;
+	const char *default_content_type;
 
 	
 
@@ -165,6 +168,8 @@ struct evhttp {
 
 	void (*gencb)(struct evhttp_request *req, void *);
 	void *gencbarg;
+	struct bufferevent* (*bevcb)(struct event_base *, void *);
+	void *bevcbarg;
 
 	struct event_base *base;
 };
@@ -172,24 +177,29 @@ struct evhttp {
 
 
 
-void evhttp_connection_reset(struct evhttp_connection *);
+void evhttp_connection_reset_(struct evhttp_connection *);
 
 
-int evhttp_connection_connect(struct evhttp_connection *);
+int evhttp_connection_connect_(struct evhttp_connection *);
 
+enum evhttp_request_error;
 
-void evhttp_connection_fail(struct evhttp_connection *,
-    enum evhttp_connection_error error);
+void evhttp_connection_fail_(struct evhttp_connection *,
+    enum evhttp_request_error error);
 
 enum message_read_status;
 
-enum message_read_status evhttp_parse_firstline(struct evhttp_request *, struct evbuffer*);
-enum message_read_status evhttp_parse_headers(struct evhttp_request *, struct evbuffer*);
+enum message_read_status evhttp_parse_firstline_(struct evhttp_request *, struct evbuffer*);
+enum message_read_status evhttp_parse_headers_(struct evhttp_request *, struct evbuffer*);
 
-void evhttp_start_read(struct evhttp_connection *);
+void evhttp_start_read_(struct evhttp_connection *);
+void evhttp_start_write_(struct evhttp_connection *);
 
 
-void evhttp_response_code(struct evhttp_request *, int, const char *);
-void evhttp_send_page(struct evhttp_request *, struct evbuffer *);
+void evhttp_response_code_(struct evhttp_request *, int, const char *);
+void evhttp_send_page_(struct evhttp_request *, struct evbuffer *);
+
+int evhttp_decode_uri_internal(const char *uri, size_t length,
+    char *ret, int decode_plus);
 
 #endif 

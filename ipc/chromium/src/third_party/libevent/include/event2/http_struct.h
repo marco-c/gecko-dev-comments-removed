@@ -24,8 +24,8 @@
 
 
 
-#ifndef _EVENT2_HTTP_STRUCT_H_
-#define _EVENT2_HTTP_STRUCT_H_
+#ifndef EVENT2_HTTP_STRUCT_H_INCLUDED_
+#define EVENT2_HTTP_STRUCT_H_INCLUDED_
 
 
 
@@ -39,10 +39,10 @@ extern "C" {
 #endif
 
 #include <event2/event-config.h>
-#ifdef _EVENT_HAVE_SYS_TYPES_H
+#ifdef EVENT__HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
-#ifdef _EVENT_HAVE_SYS_TIME_H
+#ifdef EVENT__HAVE_SYS_TIME_H
 #include <sys/time.h>
 #endif
 
@@ -120,6 +120,28 @@ struct {
 
 
 	void (*chunk_cb)(struct evhttp_request *, void *);
+
+	
+
+
+
+
+	int (*header_cb)(struct evhttp_request *, void *);
+
+	
+
+
+
+
+
+	void (*error_cb)(enum evhttp_request_error, void *);
+
+	
+
+
+
+	void (*on_complete_cb)(struct evhttp_request *, void *);
+	void *on_complete_cb_arg;
 };
 
 #ifdef __cplusplus
