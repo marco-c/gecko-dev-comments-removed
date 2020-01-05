@@ -186,30 +186,32 @@ pub type NonNullJSNative =
 pub fn do_create_interface_objects(cx: *mut JSContext, global: *mut JSObject,
                                    receiver: *mut JSObject,
                                    proto_proto: *mut JSObject,
-                                   proto_class: &'static JSClass,
+                                   proto_class: Option<&'static JSClass>,
                                    constructor: Option<(NonNullJSNative, &'static str, u32)>,
                                    dom_class: *const DOMClass,
                                    members: &'static NativeProperties)
                                    -> *mut JSObject {
-    let proto = create_interface_prototype_object(cx, global, proto_proto,
-                                                  proto_class, members);
-
     unsafe {
-        JS_SetReservedSlot(proto, DOM_PROTO_INSTANCE_CLASS_SLOT,
-                           PrivateValue(dom_class as *const libc::c_void));
-    }
+        let proto = match proto_class {
+            Some(proto_class) => {
+                let proto = create_interface_prototype_object(cx, global, proto_proto,
+                                                              proto_class, members);
+                JS_SetReservedSlot(proto, DOM_PROTO_INSTANCE_CLASS_SLOT,
+                                   PrivateValue(dom_class as *const libc::c_void));
+                proto
+            },
+            None => ptr::null_mut()
+        };
 
-    match constructor {
-        Some((native, name, nargs)) => {
+        if let Some((native, name, nargs)) = constructor {
             let s = CString::new(name).unwrap();
             create_interface_object(cx, global, receiver,
                                     native, nargs, proto,
                                     members, s.as_ptr())
-        },
-        None => (),
-    }
+        }
 
-    proto
+        proto
+    }
 }
 
 

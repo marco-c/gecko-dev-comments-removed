@@ -162,10 +162,12 @@ class Descriptor(DescriptorProvider):
         self.concreteType = ifaceName
         self.register = desc.get('register', True)
         self.outerObjectHook = desc.get('outerObjectHook', 'None')
+        self.proxy = False
 
         
         
-        self.concrete = desc.get('concrete', True)
+        self.concrete = (not self.interface.isCallback() and
+                         desc.get('concrete', True))
 
         self.operations = {
             'IndexedGetter': None,
@@ -190,7 +192,6 @@ class Descriptor(DescriptorProvider):
                 addOperation('Stringifier', m)
 
         if self.concrete:
-            self.proxy = False
             iface = self.interface
             while iface:
                 for m in iface.members:
