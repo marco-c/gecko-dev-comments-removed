@@ -414,9 +414,8 @@ AddDynamicCodeLocationTag(ProfileBuffer* aBuffer, const char* aStr)
 static const int SAMPLER_MAX_STRING_LENGTH = 128;
 
 static void
-AddPseudoEntry(PS::LockRef aLock, ProfileBuffer* aBuffer,
-               volatile js::ProfileEntry& entry, PseudoStack* stack,
-               void* lastpc)
+AddPseudoEntry(ProfileBuffer* aBuffer, volatile js::ProfileEntry& entry,
+               PseudoStack* stack, void* lastpc)
 {
   
   
@@ -429,9 +428,7 @@ AddPseudoEntry(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   const char* sampleLabel = entry.label();
-  bool includeDynamicString = !gPS->FeaturePrivacy(aLock);
-  const char* dynamicString =
-    includeDynamicString ? entry.getDynamicString() : nullptr;
+  const char* dynamicString = entry.getDynamicString();
   char combinedStringBuffer[SAMPLER_MAX_STRING_LENGTH];
 
   if (entry.isCopyLabel() || dynamicString) {
@@ -516,8 +513,8 @@ struct AutoWalkJSStack
 };
 
 static void
-MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
-                       TickSample* aSample, NativeStack& aNativeStack)
+MergeStacksIntoProfile(ProfileBuffer* aBuffer, TickSample* aSample,
+                       NativeStack& aNativeStack)
 {
   NotNull<PseudoStack*> pseudoStack = aSample->mThreadInfo->Stack();
   volatile js::ProfileEntry* pseudoFrames = pseudoStack->mStack;
@@ -648,7 +645,7 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
     if (pseudoStackAddr > jsStackAddr && pseudoStackAddr > nativeStackAddr) {
       MOZ_ASSERT(pseudoIndex < pseudoCount);
       volatile js::ProfileEntry& pseudoFrame = pseudoFrames[pseudoIndex];
-      AddPseudoEntry(aLock, aBuffer, pseudoFrame, pseudoStack, nullptr);
+      AddPseudoEntry(aBuffer, pseudoFrame, pseudoStack, nullptr);
       pseudoIndex++;
       continue;
     }
@@ -762,7 +759,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                thread,  nullptr);
 #endif
 
-  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
+  MergeStacksIntoProfile(aBuffer, aSample, nativeStack);
 }
 #endif
 
@@ -832,11 +829,30 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                                       pc_array + nativeStack.count,
                                       nativeStack.size - nativeStack.count);
 
-  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
+  MergeStacksIntoProfile(aBuffer, aSample, nativeStack);
 }
 #endif
 
 #ifdef USE_LUL_STACKWALK
+
+
+#if defined(MOZ_HAVE_ASAN_BLACKLIST)
+MOZ_ASAN_BLACKLIST static void
+ASAN_memcpy(void* aDst, const void* aSrc, size_t aLen)
+{
+  
+  
+  
+  
+  char* dst = static_cast<char*>(aDst);
+  const char* src = static_cast<const char*>(aSrc);
+
+  for (size_t i = 0; i < aLen; i++) {
+    dst[i] = src[i];
+  }
+}
+#endif
+
 static void
 DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                   TickSample* aSample)
@@ -900,7 +916,20 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
     stackImg.mLen       = nToCopy;
     stackImg.mStartAvma = start;
     if (nToCopy > 0) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+#if defined(MOZ_HAVE_ASAN_BLACKLIST)
+      ASAN_memcpy(&stackImg.mContents[0], (void*)start, nToCopy);
+#else
       memcpy(&stackImg.mContents[0], (void*)start, nToCopy);
+#endif
       (void)VALGRIND_MAKE_MEM_DEFINED(&stackImg.mContents[0], nToCopy);
     }
   }
@@ -932,7 +961,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
 
   nativeStack.count = framesUsed;
 
-  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
+  MergeStacksIntoProfile(aBuffer, aSample, nativeStack);
 
   
   
@@ -940,6 +969,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   lul->mStats.mCFI     += framesUsed - 1 - scannedFramesAcquired;
   lul->mStats.mScanned += scannedFramesAcquired;
 }
+
 #endif
 
 static void
@@ -947,7 +977,7 @@ DoSampleStackTrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
                    TickSample* aSample)
 {
   NativeStack nativeStack = { nullptr, nullptr, 0, 0 };
-  MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
+  MergeStacksIntoProfile(aBuffer, aSample, nativeStack);
 
   if (gPS->FeatureLeaf(aLock)) {
     aBuffer->addTag(ProfileBufferEntry::NativeLeafAddr((void*)aSample->mPC));
@@ -2856,6 +2886,18 @@ profiler_time()
   return delta.ToMilliseconds();
 }
 
+bool
+profiler_is_active_and_not_in_privacy_mode()
+{
+  
+
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  return gPS->IsActive(lock) && !gPS->FeaturePrivacy(lock);
+}
+
 UniqueProfilerBacktrace
 profiler_get_backtrace()
 {
@@ -2918,16 +2960,9 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
   MOZ_ASSERT(outputSize >= 2);
   char *bound = output + outputSize - 2;
   output[0] = output[1] = '\0';
-
   PseudoStack *pseudoStack = tlsPseudoStack.get();
   if (!pseudoStack) {
     return;
-  }
-
-  bool includeDynamicString = true;
-  {
-    PS::AutoLock lock(gPSMutex);
-    includeDynamicString = !gPS->FeaturePrivacy(lock);
   }
 
   volatile js::ProfileEntry *pseudoFrames = pseudoStack->mStack;
@@ -2935,8 +2970,7 @@ profiler_get_backtrace_noalloc(char *output, size_t outputSize)
 
   for (uint32_t i = 0; i < pseudoCount; i++) {
     const char* label = pseudoFrames[i].label();
-    const char* dynamicString =
-      includeDynamicString ? pseudoFrames[i].getDynamicString() : nullptr;
+    const char* dynamicString = pseudoFrames[i].getDynamicString();
     size_t labelLength = strlen(label);
     if (dynamicString) {
       
