@@ -82,6 +82,8 @@ public:
   
   
   
+  
+  
   nsStringBuffer* StringBuffer() const
   {
     MOZ_ASSERT(!mIsNull, "Caller should have checked IsNull() first");
@@ -101,6 +103,9 @@ public:
     return mLength;
   }
 
+  
+  
+  
   void SetStringBuffer(nsStringBuffer* aStringBuffer, uint32_t aLength)
   {
     MOZ_ASSERT(mString.isNothing(), "We already have a string?");
@@ -168,7 +173,18 @@ public:
       if (StringBufferLength() == 0) {
         aString.Truncate();
       } else {
-        StringBuffer()->ToString(StringBufferLength(), aString);
+        
+        
+        nsStringBuffer* buf = StringBuffer();
+        uint32_t len = StringBufferLength();
+        auto chars = static_cast<char16_t*>(buf->Data());
+        if (chars[len] == '\0') {
+          
+          buf->ToString(len, aString);
+        } else {
+          
+          aString.Assign(chars, len);
+        }
       }
     } else {
       aString = AsAString();
