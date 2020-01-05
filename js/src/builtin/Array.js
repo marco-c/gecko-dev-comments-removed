@@ -937,6 +937,7 @@ function ArraySpecies() {
     
     return this;
 }
+_SetCanonicalName(ArraySpecies, "get [Symbol.species]");
 
 
 function ArraySpeciesCreate(originalArray, length) {

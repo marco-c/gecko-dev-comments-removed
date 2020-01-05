@@ -1616,3 +1616,4 @@ function ArrayBufferSpecies() {
     
     return this;
 }
+_SetCanonicalName(ArrayBufferSpecies, "get [Symbol.species]");
