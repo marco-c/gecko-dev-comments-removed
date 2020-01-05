@@ -110,6 +110,10 @@ Converter.prototype = {
     this.channel = request;
     this.channel.contentType = "text/html";
     this.channel.contentCharset = "UTF-8";
+    
+    
+    
+    this.channel.loadInfo.resetPrincipalsToNullPrincipal();
 
     this.listener.onStartRequest(this.channel, context);
   },
