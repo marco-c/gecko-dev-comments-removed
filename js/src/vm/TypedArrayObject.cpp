@@ -231,10 +231,8 @@ JS_FOR_EACH_TYPED_ARRAY(OBJECT_MOVED_TYPED_ARRAY)
 
     
     
-    if (nbytes > 0) {
-        nursery.maybeSetForwardingPointer(trc, oldObj->elements(), newObj->elements(),
-                                          nbytes >= sizeof(uintptr_t));
-    }
+    nursery.maybeSetForwardingPointer(trc, oldObj->elements(), newObj->elements(),
+                                      nbytes >= sizeof(uintptr_t));
 
     return newObj->hasInlineElements() ? 0 : nbytes;
 }
