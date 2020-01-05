@@ -37,7 +37,6 @@
 #include "nsIDOMNode.h"                 
 #include "nsIDocument.h"                
 #include "nsIEditor.h"                  
-#include "nsIEditorIMESupport.h"
 #include "nsIEditorMailSupport.h"       
 #include "nsIFocusManager.h"            
 #include "nsIFormControl.h"             

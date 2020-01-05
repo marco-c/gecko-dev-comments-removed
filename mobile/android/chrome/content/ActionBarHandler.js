@@ -233,9 +233,9 @@ var ActionBarHandler = {
   _clearSelection: function(element = this._targetElement, win = this._contentWindow) {
     
     if (element) {
-      let imeSupport = this._getEditor(element, win).QueryInterface(Ci.nsIEditorIMESupport);
-      if (imeSupport.composing) {
-        imeSupport.forceCompositionEnd();
+      let editor = this._getEditor(element, win);
+      if (editor.composing) {
+        editor.forceCompositionEnd();
       }
       element.blur();
     }
@@ -346,9 +346,8 @@ var ActionBarHandler = {
         if (element) {
           
           
-          let imeSupport = ActionBarHandler._getEditor(element, win).
-            QueryInterface(Ci.nsIEditorIMESupport);
-          if (imeSupport.composing) {
+          let editor = ActionBarHandler._getEditor(element, win)
+          if (editor.composing) {
             element.blur();
             element.focus();
           }

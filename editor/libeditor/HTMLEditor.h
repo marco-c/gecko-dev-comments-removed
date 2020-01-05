@@ -104,6 +104,9 @@ public:
   Element* GetSelectionContainer();
 
   
+  NS_IMETHOD GetPreferredIMEState(widget::IMEState* aState) override;
+
+  
   NS_IMETHOD GetIsDocumentEditable(bool* aIsDocumentEditable) override;
   NS_IMETHOD BeginningOfDocument() override;
   virtual nsresult HandleKeyPressEvent(nsIDOMKeyEvent* aKeyEvent) override;
@@ -123,9 +126,6 @@ public:
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED
   NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED
-
-  
-  NS_IMETHOD GetPreferredIMEState(widget::IMEState* aState) override;
 
   
   NS_DECL_NSIHTMLEDITOR

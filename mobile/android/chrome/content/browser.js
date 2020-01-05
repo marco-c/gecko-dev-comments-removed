@@ -4851,9 +4851,8 @@ var FormAssistant = {
         
         
         try {
-          let imeEditor = editableElement.editor.QueryInterface(Ci.nsIEditorIMESupport);
-          if (imeEditor.composing)
-            imeEditor.forceCompositionEnd();
+          if (editableElement.editor.composing)
+            editableElement.editor.forceCompositionEnd();
         } catch (e) {}
 
         editableElement.setUserInput(aData);

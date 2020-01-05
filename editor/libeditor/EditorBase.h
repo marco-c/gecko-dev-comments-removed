@@ -141,8 +141,7 @@ struct IMEState;
 
 
 
-class EditorBase : public nsIEditor
-                 , public nsIEditorIMESupport
+class EditorBase : public nsIEditorIMESupport
                  , public nsSupportsWeakReference
                  , public nsIPhonetic
 {
