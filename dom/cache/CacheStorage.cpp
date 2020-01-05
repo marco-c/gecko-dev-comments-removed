@@ -76,14 +76,7 @@ IsTrusted(const PrincipalInfo& aPrincipalInfo, bool aTestingPrefEnabled)
   }
 
   
-  
-  
-  
-  
-  
-  if (NS_WARN_IF(aPrincipalInfo.type() != PrincipalInfo::TContentPrincipalInfo ||
-                 aPrincipalInfo.get_ContentPrincipalInfo().attrs().mAppId ==
-                 nsIScriptSecurityManager::UNKNOWN_APP_ID)) {
+  if (NS_WARN_IF(aPrincipalInfo.type() != PrincipalInfo::TContentPrincipalInfo)) {
     return false;
   }
 
