@@ -6,13 +6,59 @@
 
 
 
-#ifndef jit_ppc_AtomicOperations_ppc_h
-#define jit_ppc_AtomicOperations_ppc_h
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#ifndef jit_none_AtomicOperations_feeling_lucky_h
+#define jit_none_AtomicOperations_feeling_lucky_h
 
 #include "mozilla/Assertions.h"
 #include "mozilla/Types.h"
 
-#if defined(__clang__) || defined(__GNUC__)
+
+
+
+#if defined(__ppc__) || defined(__PPC__)
+#  define GNUC_COMPATIBLE
+#endif
+
+#if defined(__ppc64__) ||  defined (__PPC64__) || defined(__ppc64le__) || defined (__PPC64LE__)
+#  define HAS_64BIT_LOCKFREE
+#  define GNUC_COMPATIBLE
+#endif
+
+#ifdef __sparc__
+#  define GNUC_COMPATIBLE
+#  ifdef  __LP64__
+#    define HAS_64BIT_ATOMICS
+#    define HAS_64BIT_LOCKFREE
+#  endif
+#endif
+
+#ifdef __alpha__
+#  define GNUC_COMPATIBLE
+#endif
+
+#ifdef __hppa__
+#  define GNUC_COMPATIBLE
+#endif
+
+#ifdef __sh__
+#  define GNUC_COMPATIBLE
+#endif
 
 
 
@@ -25,6 +71,11 @@
 
 
 
+
+
+
+
+#ifdef GNUC_COMPATIBLE
 
 inline bool
 js::jit::AtomicOperations::isLockfree8()
@@ -33,8 +84,7 @@ js::jit::AtomicOperations::isLockfree8()
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int8_t), 0));
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int16_t), 0));
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int32_t), 0));
-#  if defined(__ppc64__) ||  defined (__PPC64__) || \
-    defined(__ppc64le__) || defined (__PPC64LE__)
+#  ifdef HAS_64BIT_LOCKFREE
     MOZ_ASSERT(__atomic_always_lock_free(sizeof(int64_t), 0));
 #  endif
     return true;
@@ -100,7 +150,9 @@ template<typename T>
 inline T
 js::jit::AtomicOperations::fetchAddSeqCst(T* addr, T val)
 {
+#ifndef HAS_64BIT_ATOMICS
     static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
+#endif
 # ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
     return __sync_fetch_and_add(addr, val);
 # else
@@ -112,7 +164,9 @@ template<typename T>
 inline T
 js::jit::AtomicOperations::fetchSubSeqCst(T* addr, T val)
 {
+#ifndef HAS_64BIT_ATOMICS
     static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
+#endif
 # ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
     return __sync_fetch_and_sub(addr, val);
 # else
@@ -124,7 +178,9 @@ template<typename T>
 inline T
 js::jit::AtomicOperations::fetchAndSeqCst(T* addr, T val)
 {
+#ifndef HAS_64BIT_ATOMICS
     static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
+#endif
 # ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
     return __sync_fetch_and_and(addr, val);
 # else
@@ -136,7 +192,9 @@ template<typename T>
 inline T
 js::jit::AtomicOperations::fetchOrSeqCst(T* addr, T val)
 {
+#ifndef HAS_64BIT_ATOMICS
     static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
+#endif
 # ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
     return __sync_fetch_and_or(addr, val);
 # else
@@ -148,7 +206,9 @@ template<typename T>
 inline T
 js::jit::AtomicOperations::fetchXorSeqCst(T* addr, T val)
 {
+#ifndef HAS_64BIT_ATOMICS
     static_assert(sizeof(T) <= 4, "not available for 8-byte values yet");
+#endif
 # ifdef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
     return __sync_fetch_and_xor(addr, val);
 # else
@@ -233,12 +293,15 @@ js::jit::RegionLock::release(void* addr)
 # endif
 }
 
-# undef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
-
 #elif defined(ENABLE_SHARED_ARRAY_BUFFER)
 
 # error "Either disable JS shared memory, use GCC or Clang, or add code here"
 
 #endif
+
+#undef ATOMICS_IMPLEMENTED_WITH_SYNC_INTRINSICS
+#undef GNUC_COMPATIBLE
+#undef HAS_64BIT_ATOMICS
+#undef HAS_64BIT_LOCKFREE
 
 #endif 
