@@ -108,6 +108,8 @@ public:
   inline bool IsApplicable() const;
   inline bool HasRules() const;
 
+  virtual bool IsModified() const = 0;
+
   
   enum DocumentAssociationMode {
     
