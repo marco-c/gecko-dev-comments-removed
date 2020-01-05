@@ -9,7 +9,7 @@
 #![license = "MPL"]
 
 extern crate gfx;
-extern crate script;
+extern crate script_traits;
 extern crate servo_msg = "msg";
 extern crate servo_net = "net";
 extern crate servo_util = "util";
@@ -26,9 +26,16 @@ use servo_msg::constellation_msg::Failure;
 use servo_net::image_cache_task::ImageCacheTask;
 use servo_util::opts::Opts;
 use servo_util::time::TimeProfilerChan;
-use script::layout_interface::{LayoutChan, Msg};
-use script::script_task::ScriptChan;
-use std::comm::{Sender, Receiver};
+use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel};
+use std::comm::Sender;
+
+
+pub enum LayoutControlMsg {
+    ExitNowMsg,
+}
+
+
+pub struct LayoutControlChan(pub Sender<LayoutControlMsg>);
 
 
 
@@ -36,11 +43,11 @@ pub trait LayoutTaskFactory {
     
     fn create(_phantom: Option<&mut Self>,
               id: PipelineId,
-              port: Receiver<Msg>,
-              chan: LayoutChan,
+              chan: OpaqueScriptLayoutChannel,
+              pipeline_port: Receiver<LayoutControlMsg>,
               constellation_chan: ConstellationChan,
               failure_msg: Failure,
-              script_chan: ScriptChan,
+              script_chan: ScriptControlChan,
               render_chan: RenderChan,
               img_cache_task: ImageCacheTask,
               font_cache_task: FontCacheTask,
