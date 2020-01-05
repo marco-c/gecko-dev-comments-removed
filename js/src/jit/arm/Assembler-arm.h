@@ -1237,7 +1237,7 @@ class Assembler : public AssemblerShared
     
     BufferOffset allocEntry(size_t numInst, unsigned numPoolEntries,
                             uint8_t* inst, uint8_t* data, ARMBuffer::PoolEntry* pe = nullptr,
-                            bool markAsBranch = false, bool loadToPC = false);
+                            bool loadToPC = false);
 
     Instruction* editSrc(BufferOffset bo) {
         return m_buffer.getInst(bo);
@@ -1427,12 +1427,24 @@ class Assembler : public AssemblerShared
     
     size_t bytesNeeded() const;
 
+#ifdef JS_DISASM_ARM
     
     
     BufferOffset writeInst(uint32_t x);
 
     
     BufferOffset writeBranchInst(uint32_t x, Label* documentation = nullptr);
+
+#else
+    
+    MOZ_ALWAYS_INLINE BufferOffset writeInst(uint32_t x) {
+        return m_buffer.putInt(x);
+    }
+
+    MOZ_ALWAYS_INLINE BufferOffset writeBranchInst(uint32_t x, Label* documentation = nullptr) {
+        return m_buffer.putInt(x);
+    }
+#endif
 
     
     
