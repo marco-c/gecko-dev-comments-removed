@@ -1794,6 +1794,21 @@ function getSourceActor(sources, URL) {
 
 
 
+
+
+
+
+
+function getPacket(client, requestType, args) {
+  return new Promise(resolve => {
+    client[requestType](...args, packet => resolve(packet));
+  });
+}
+
+
+
+
+
 function simulateMessageLinkClick(element, expectedLink) {
   let deferred = promise.defer();
 

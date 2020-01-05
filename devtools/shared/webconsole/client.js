@@ -183,20 +183,16 @@ WebConsoleClient.prototype = {
 
 
 
-
-
   getCachedMessages: function (types, onResponse) {
     let packet = {
       to: this._actor,
       type: "getCachedMessages",
       messageTypes: types,
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -209,12 +205,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "inspectProperties",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -262,7 +256,7 @@ WebConsoleClient.prototype = {
       selectedNodeActor: options.selectedNodeActor,
       selectedObjectActor: options.selectedObjectActor,
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
@@ -272,7 +266,8 @@ WebConsoleClient.prototype = {
   evaluateJSAsync: function (string, onResponse, options = {}) {
     
     if (!this.traits.evaluateJSAsync) {
-      return this.evaluateJS(string, onResponse, options);
+      this.evaluateJS(string, onResponse, options);
+      return;
     }
 
     let packet = {
@@ -286,23 +281,12 @@ WebConsoleClient.prototype = {
       selectedObjectActor: options.selectedObjectActor,
     };
 
-    return new Promise((resolve, reject) => {
-      this._client.request(packet, response => {
-        
-        
-        if (this.pendingEvaluationResults) {
-          this.pendingEvaluationResults.set(response.resultID, resp => {
-            if (onResponse) {
-              onResponse(resp);
-            }
-            if (resp.error) {
-              reject(resp);
-            } else {
-              resolve(resp);
-            }
-          });
-        }
-      });
+    this._client.request(packet, response => {
+      
+      
+      if (this.pendingEvaluationResults) {
+        this.pendingEvaluationResults.set(response.resultID, onResponse);
+      }
     });
   },
 
@@ -343,8 +327,6 @@ WebConsoleClient.prototype = {
 
 
 
-
-
   autocomplete: function (string, cursor, onResponse, frameActor) {
     let packet = {
       to: this._actor,
@@ -353,13 +335,10 @@ WebConsoleClient.prototype = {
       cursor: cursor,
       frameActor: frameActor,
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
-
 
 
   clearMessagesCache: function () {
@@ -367,12 +346,10 @@ WebConsoleClient.prototype = {
       to: this._actor,
       type: "clearMessagesCache",
     };
-    return this._client.request(packet);
+    this._client.request(packet);
   },
 
   
-
-
 
 
 
@@ -386,12 +363,10 @@ WebConsoleClient.prototype = {
       type: "getPreferences",
       preferences: preferences,
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -405,12 +380,10 @@ WebConsoleClient.prototype = {
       type: "setPreferences",
       preferences: preferences,
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -423,12 +396,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "getRequestHeaders",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -441,12 +412,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "getRequestCookies",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -459,12 +428,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "getRequestPostData",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -477,12 +444,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "getResponseHeaders",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -495,12 +460,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "getResponseCookies",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -513,12 +476,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "getResponseContent",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -531,12 +492,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "getEventTimings",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -549,12 +508,10 @@ WebConsoleClient.prototype = {
       to: actor,
       type: "getSecurityInfo",
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -568,12 +525,10 @@ WebConsoleClient.prototype = {
       type: "sendHTTPRequest",
       request: data
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -589,12 +544,10 @@ WebConsoleClient.prototype = {
       type: "startListeners",
       listeners: listeners,
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
-
-
 
 
 
@@ -610,7 +563,7 @@ WebConsoleClient.prototype = {
       type: "stopListeners",
       listeners: listeners,
     };
-    return this._client.request(packet, onResponse);
+    this._client.request(packet, onResponse);
   },
 
   
