@@ -68,7 +68,7 @@ public abstract class ActivityStreamContextMenu
         this.onUrlOpenListener = onUrlOpenListener;
         this.onUrlOpenInBackgroundListener = onUrlOpenInBackgroundListener;
     }
-    
+
     
 
 
