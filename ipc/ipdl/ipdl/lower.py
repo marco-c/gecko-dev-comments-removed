@@ -392,26 +392,6 @@ def _protocolErrorBreakpoint(msg):
     return StmtExpr(ExprCall(ExprVar('mozilla::ipc::ProtocolErrorBreakpoint'),
                              args=[ msg ]))
 
-def _ipcFatalError(name, msg):
-    if isinstance(name, str):
-        name = ExprLiteral.String(name)
-    if isinstance(msg, str):
-        msg = ExprLiteral.String(msg)
-    return StmtExpr(ExprCall(ExprVar('FatalError'),
-                             args=[ name, msg ]))
-
-def _ipcFatalErrorWithClassname(name, msg, p, isparent):
-    if isinstance(name, str):
-        name = ExprLiteral.String(name)
-    if isinstance(msg, str):
-        msg = ExprLiteral.String(msg)
-    if p.decl.type.isToplevel():
-        return StmtExpr(ExprCall(ExprVar('mozilla::ipc::FatalError'),
-                                 args=[ name, msg, isparent ]))
-    else:
-        return StmtExpr(ExprCall(ExprSelect(p.managerVar(), '->', 'FatalError'),
-                                 [ name, msg ]))
-
 def _printWarningMessage(msg):
     if isinstance(msg, str):
         msg = ExprLiteral.String(msg)
@@ -3378,32 +3358,14 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
         self.cls.addstmt(Label.PRIVATE)
 
         
-        msgparam = ExprVar('aMsg')
         actorname = _actorName(p.name, self.side)
-        fatalerror = MethodDefn(MethodDecl(
-            'FatalError',
-            params=[ Decl(Type('char', const=1, ptrconst=1), msgparam.name) ],
-            const=1, never_inline=1))
-        if self.side is 'parent':
-            isparent = ExprLiteral.TRUE
-        else:
-            isparent = ExprLiteral.FALSE
-        fatalerror.addstmts([
-            _ipcFatalError(actorname, msgparam)
+        protocolname = MethodDefn(MethodDecl(
+            'ProtocolName', params=[],
+            const=1, virtual=1, ret=Type('char', const=1, ptr=1)))
+        protocolname.addstmts([
+            StmtReturn(ExprLiteral.String(actorname))
         ])
-        self.cls.addstmts([ fatalerror, Whitespace.NL ])
-
-        protocolnameparam = ExprVar('aProtocolName')
-
-        fatalerrorwithclassname = MethodDefn(MethodDecl(
-            'FatalError',
-            params=[ Decl(Type('char', const=1, ptrconst=1), protocolnameparam.name),
-                     Decl(Type('char', const=1, ptrconst=1), msgparam.name) ],
-            const=1))
-        fatalerrorwithclassname.addstmts([
-            _ipcFatalErrorWithClassname(protocolnameparam, msgparam, self.protocol, isparent)
-        ])
-        self.cls.addstmts([ fatalerrorwithclassname, Whitespace.NL ])
+        self.cls.addstmts([ protocolname, Whitespace.NL ])
 
         
         whyvar = ExprVar('why')

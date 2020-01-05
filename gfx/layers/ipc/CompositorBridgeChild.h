@@ -50,7 +50,7 @@ class CompositorBridgeChild final : public PCompositorBridgeChild,
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(CompositorBridgeChild, override);
 
-  explicit CompositorBridgeChild(LayerManager *aLayerManager);
+  explicit CompositorBridgeChild(ClientLayerManager *aLayerManager);
 
   void Destroy();
 
@@ -69,7 +69,7 @@ public:
 
   static RefPtr<CompositorBridgeChild> CreateRemote(
     const uint64_t& aProcessToken,
-    LayerManager* aLayerManager,
+    ClientLayerManager* aLayerManager,
     Endpoint<PCompositorBridgeChild>&& aEndpoint);
 
   
@@ -134,7 +134,7 @@ public:
                                        TextureFlags aFlags,
                                        uint64_t aSerial) override;
 
-  virtual void FatalError(const char* const aName, const char* const aMsg) const override;
+  virtual void HandleFatalError(const char* aName, const char* aMsg) const override;
 
   
 
@@ -282,7 +282,7 @@ private:
     uint32_t mAPZCId;
   };
 
-  RefPtr<LayerManager> mLayerManager;
+  RefPtr<ClientLayerManager> mLayerManager;
   
   
   RefPtr<CompositorBridgeParent> mCompositorBridgeParent;

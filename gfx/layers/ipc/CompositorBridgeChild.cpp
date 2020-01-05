@@ -74,7 +74,7 @@ static StaticRefPtr<CompositorBridgeChild> sCompositorBridge;
 
 Atomic<int32_t> KnowsCompositor::sSerialCounter(0);
 
-CompositorBridgeChild::CompositorBridgeChild(LayerManager *aLayerManager)
+CompositorBridgeChild::CompositorBridgeChild(ClientLayerManager *aLayerManager)
   : mLayerManager(aLayerManager)
   , mCanSend(false)
   , mFwdTransactionId(0)
@@ -256,7 +256,7 @@ CompositorBridgeChild::InitSameProcess(widget::CompositorWidget* aWidget,
 
  RefPtr<CompositorBridgeChild>
 CompositorBridgeChild::CreateRemote(const uint64_t& aProcessToken,
-                                    LayerManager* aLayerManager,
+                                    ClientLayerManager* aLayerManager,
                                     Endpoint<PCompositorBridgeChild>&& aEndpoint)
 {
   RefPtr<CompositorBridgeChild> child = new CompositorBridgeChild(aLayerManager);
@@ -526,8 +526,7 @@ CompositorBridgeChild::RecvDidComposite(const uint64_t& aId, const uint64_t& aTr
 {
   if (mLayerManager) {
     MOZ_ASSERT(aId == 0);
-    RefPtr<ClientLayerManager> m = mLayerManager->AsClientLayerManager();
-    MOZ_ASSERT(m);
+    RefPtr<ClientLayerManager> m = mLayerManager;
     m->DidComposite(aTransactionId, aCompositeStart, aCompositeEnd);
   } else if (aId != 0) {
     RefPtr<dom::TabChild> child = dom::TabChild::GetFrom(aId);
@@ -1125,7 +1124,7 @@ CompositorBridgeChild::WillEndTransaction()
 }
 
 void
-CompositorBridgeChild::FatalError(const char* const aName, const char* const aMsg) const
+CompositorBridgeChild::HandleFatalError(const char* aName, const char* aMsg) const
 {
   dom::ContentChild::FatalErrorIfNotUsingGPUProcess(aName, aMsg, OtherPid());
 }

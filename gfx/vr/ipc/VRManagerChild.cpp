@@ -15,12 +15,9 @@
 #include "mozilla/dom/VREventObserver.h"
 #include "mozilla/dom/WindowBinding.h" 
 #include "mozilla/dom/ContentChild.h"
+#include "mozilla/dom/GamepadManager.h"
 #include "mozilla/layers/TextureClient.h"
 #include "nsContentUtils.h"
-
-#ifdef MOZ_GAMEPAD
-#include "mozilla/dom/GamepadManager.h"
-#endif
 
 using layers::TextureClient;
 
@@ -473,14 +470,12 @@ VRManagerChild::RecvNotifyVRVSync(const uint32_t& aDisplayID)
 bool
 VRManagerChild::RecvGamepadUpdate(const GamepadChangeEvent& aGamepadEvent)
 {
-#ifdef MOZ_GAMEPAD
   
   
   
   if (mGamepadManager) {
       mGamepadManager->Update(aGamepadEvent);
   }
-#endif
 
   return true;
 }
@@ -573,7 +568,7 @@ VRManagerChild::RemoveListener(dom::VREventObserver* aObserver)
 }
 
 void
-VRManagerChild::FatalError(const char* const aName, const char* const aMsg) const
+VRManagerChild::HandleFatalError(const char* aName, const char* aMsg) const
 {
   dom::ContentChild::FatalErrorIfNotUsingGPUProcess(aName, aMsg, OtherPid());
 }
