@@ -28,7 +28,6 @@ const {getFormDataSections,
        getUriHostPort,
        getUriHost,
        loadCauseString} = require("./request-utils");
-const Actions = require("./actions/index");
 
 loader.lazyServiceGetter(this, "clipboardHelper",
   "@mozilla.org/widget/clipboardhelper;1", "nsIClipboardHelper");
@@ -89,19 +88,6 @@ const CONTENT_MIME_TYPE_ABBREVIATIONS = {
 };
 
 
-function storeWatcher(initialValue, reduceValue, onChange) {
-  let currentValue = initialValue;
-
-  return () => {
-    const newValue = reduceValue(currentValue);
-    if (newValue !== currentValue) {
-      onChange(newValue, currentValue);
-      currentValue = newValue;
-    }
-  };
-}
-
-
 
 
 
@@ -122,7 +108,7 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
   
 
 
-  initialize: function (store) {
+  initialize: function () {
     dumpn("Initializing the RequestsMenuView");
 
     let widgetParentEl = $("#requests-menu-contents");
@@ -141,6 +127,7 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     });
     $("#requests-menu-contents").addEventListener("scroll", this._onScroll, true);
 
+    Prefs.filters.forEach(type => this.filterOn(type));
     this.sortContents((a, b) => Sorters.waterfall(a.attachment, b.attachment));
 
     this.allowFocusOnRightClick = true;
@@ -153,6 +140,9 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
     this.requestsMenuSortEvent = getKeyWithEvent(this.sortBy.bind(this));
     this.requestsMenuSortKeyboardEvent = getKeyWithEvent(this.sortBy.bind(this), true);
+    this.requestsMenuFilterEvent = getKeyWithEvent(this.filterOn.bind(this));
+    this.requestsMenuFilterKeyboardEvent = getKeyWithEvent(
+      this.filterOn.bind(this), true);
     this.reqeustsMenuClearEvent = this.clear.bind(this);
     this._onContextShowing = this._onContextShowing.bind(this);
     this._onContextNewTabCommand = this.openRequestInTab.bind(this);
@@ -186,6 +176,10 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       this.requestsMenuSortEvent, false);
     $("#toolbar-labels").addEventListener("keydown",
       this.requestsMenuSortKeyboardEvent, false);
+    $("#requests-menu-filter-buttons").addEventListener("click",
+      this.requestsMenuFilterEvent, false);
+    $("#requests-menu-filter-buttons").addEventListener("keydown",
+      this.requestsMenuFilterKeyboardEvent, false);
     $("#requests-menu-clear-button").addEventListener("click",
       this.reqeustsMenuClearEvent, false);
     $("#network-request-popup").addEventListener("popupshowing",
@@ -200,21 +194,6 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       "command", this._onContextCopyImageAsDataUriCommand, false);
     $("#toggle-raw-headers").addEventListener("click",
       this.toggleRawHeadersEvent, false);
-
-    this.unsubscribeStore = store.subscribe(storeWatcher(
-      null,
-      () => store.getState().filters.types,
-      (newTypes) => {
-        this._activeFilters = newTypes
-          .toSeq()
-          .filter((checked, key) => checked)
-          .keySeq()
-          .toArray();
-        this.reFilterRequests();
-      }
-    ));
-
-    Prefs.filters.forEach(type => store.dispatch(Actions.toggleFilter(type)));
 
     window.once("connected", this._onConnect.bind(this));
   },
@@ -281,6 +260,10 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       this.requestsMenuSortEvent, false);
     $("#toolbar-labels").removeEventListener("keydown",
       this.requestsMenuSortKeyboardEvent, false);
+    $("#requests-menu-filter-buttons").removeEventListener("click",
+      this.requestsMenuFilterEvent, false);
+    $("#requests-menu-filter-buttons").removeEventListener("keydown",
+      this.requestsMenuFilterKeyboardEvent, false);
     $("#requests-menu-clear-button").removeEventListener("click",
       this.reqeustsMenuClearEvent, false);
     this.freetextFilterBox.removeEventListener("input",
@@ -323,8 +306,6 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
       this.cloneSelectedRequestEvent, false);
     $("#toggle-raw-headers").removeEventListener("click",
       this.toggleRawHeadersEvent, false);
-
-    this.unsubscribeStore();
   },
 
   
@@ -669,6 +650,97 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
     this.filterContents(this._filterPredicate);
     this.refreshSummary();
     this.refreshZebra();
+  },
+
+  
+
+
+
+
+
+
+  filterOn: function (type = "all") {
+    if (type === "all") {
+      
+      
+      
+      
+      if (this._activeFilters.indexOf("all") !== -1) {
+        return;
+      }
+
+      
+      
+      
+      
+      this._activeFilters.slice().forEach(this._disableFilter, this);
+    } else if (this._activeFilters.indexOf(type) === -1) {
+      this._enableFilter(type);
+    } else {
+      this._disableFilter(type);
+    }
+
+    this.reFilterRequests();
+  },
+
+  
+
+
+
+
+
+  filterOnlyOn: function (type = "all") {
+    this._activeFilters.slice().forEach(this._disableFilter, this);
+    this.filterOn(type);
+  },
+
+  
+
+
+
+
+
+
+
+  _disableFilter: function (type) {
+    
+    this._activeFilters.splice(this._activeFilters.indexOf(type), 1);
+
+    
+    let target = $("#requests-menu-filter-" + type + "-button");
+    target.removeAttribute("checked");
+
+    
+    if (this._activeFilters.length === 0) {
+      this._enableFilter("all");
+    }
+  },
+
+  
+
+
+
+
+
+
+
+  _enableFilter: function (type) {
+    
+    if (!Object.keys(Filters).includes(type)) {
+      return;
+    }
+
+    
+    this._activeFilters.push(type);
+
+    
+    let target = $("#requests-menu-filter-" + type + "-button");
+    target.setAttribute("checked", true);
+
+    
+    if (type !== "all" && this._activeFilters.indexOf("all") !== -1) {
+      this._disableFilter("all");
+    }
   },
 
   

@@ -28,12 +28,6 @@ const {getFormDataSections,
        getUriHostPort} = require("./request-utils");
 const {L10N} = require("./l10n");
 const {RequestsMenuView} = require("./requests-menu-view");
-const {ToolbarView} = require("./toolbar-view");
-const {configureStore} = require("./store");
-const Actions = require("./actions/index");
-
-
-var gStore = configureStore();
 
 
 const WDA_DEFAULT_VERIFY_INTERVAL = 50;
@@ -94,8 +88,8 @@ var NetMonitorView = {
   initialize: function () {
     this._initializePanes();
 
-    this.Toolbar.initialize(gStore);
-    this.RequestsMenu.initialize(gStore);
+    this.Toolbar.initialize();
+    this.RequestsMenu.initialize();
     this.NetworkDetails.initialize();
     this.CustomRequest.initialize();
   },
@@ -298,6 +292,56 @@ var NetMonitorView = {
   _collapsePaneString: "",
   _expandPaneString: "",
   _editorPromises: new Map()
+};
+
+
+
+
+function ToolbarView() {
+  dumpn("ToolbarView was instantiated");
+
+  this._onTogglePanesPressed = this._onTogglePanesPressed.bind(this);
+}
+
+ToolbarView.prototype = {
+  
+
+
+  initialize: function () {
+    dumpn("Initializing the ToolbarView");
+
+    this._detailsPaneToggleButton = $("#details-pane-toggle");
+    this._detailsPaneToggleButton.addEventListener("mousedown",
+      this._onTogglePanesPressed, false);
+  },
+
+  
+
+
+  destroy: function () {
+    dumpn("Destroying the ToolbarView");
+
+    this._detailsPaneToggleButton.removeEventListener("mousedown",
+      this._onTogglePanesPressed, false);
+  },
+
+  
+
+
+  _onTogglePanesPressed: function () {
+    let requestsMenu = NetMonitorView.RequestsMenu;
+    let selectedIndex = requestsMenu.selectedIndex;
+
+    
+    
+    if (selectedIndex == -1 && requestsMenu.itemCount) {
+      requestsMenu.selectedIndex = 0;
+    } else {
+      requestsMenu.selectedIndex = -1;
+    }
+  },
+
+  _detailsPaneToggleButton: null
 };
 
 
@@ -1447,8 +1491,7 @@ PerformanceStatisticsView.prototype = {
     });
 
     chart.on("click", (_, item) => {
-      
-      gStore.dispatch(Actions.enableFilterOnly(item.label));
+      NetMonitorView.RequestsMenu.filterOnlyOn(item.label);
       NetMonitorView.showNetworkInspectorView();
     });
 

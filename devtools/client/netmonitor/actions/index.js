@@ -3,6 +3,6 @@
 
 "use strict";
 
-const filters = require("./filters");
-
-module.exports = Object.assign({}, filters);
+module.exports = {
+  
+};

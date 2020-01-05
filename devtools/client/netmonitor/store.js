@@ -4,10 +4,17 @@
 "use strict";
 
 const createStore = require("devtools/client/shared/redux/create-store");
-const reducers = require("./reducers/index");
+const reducers = require("devtools/client/netmonitor/reducers/index");
 
 function configureStore() {
-  return createStore()(reducers);
+  const initialState = {
+      
+  };
+
+  return createStore()(
+    reducers,
+    initialState
+  );
 }
 
 exports.configureStore = configureStore;
