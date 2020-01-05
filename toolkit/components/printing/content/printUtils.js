@@ -202,16 +202,6 @@ var PrintUtils = {
 
 
 
-
-
-
-
-
-
-
-
-
-
   printPreview(aListenerObj) {
     
     
@@ -230,9 +220,7 @@ var PrintUtils = {
       
       
       
-      this._sourceBrowser = this._shouldSimplify ?
-        this._listener.getSimplifiedPrintPreviewBrowser() :
-        this._listener.getPrintPreviewBrowser();
+      this._sourceBrowser = this._listener.getPrintPreviewBrowser();
       this._sourceBrowser.collapsed = true;
 
       
@@ -319,7 +307,7 @@ var PrintUtils = {
       return {};
     }
 
-    return this._currentPPBrowser.docShell.printPreview;
+    return this._listener.getPrintPreviewBrowser().docShell.printPreview;
   },
 
   get inPrintPreview() {
@@ -513,41 +501,13 @@ var PrintUtils = {
     this._shouldSimplify = shouldSimplify;
   },
 
-  
-
-
-
-
-
-
-
-
-
-
-  _ppBrowsers: new Set(),
-  _currentPPBrowser: null,
-
   enterPrintPreview() {
     
     
     
     
     
-    let ppBrowser = this._shouldSimplify ?
-      this._listener.getSimplifiedPrintPreviewBrowser() :
-      this._listener.getPrintPreviewBrowser();
-    this._ppBrowsers.add(ppBrowser);
-
-    
-    
-    
-    let oldPPBrowser = null;
-    let changingPrintPreviewBrowsers = false;
-    if (this._currentPPBrowser && ppBrowser != this._currentPPBrowser) {
-      changingPrintPreviewBrowsers = true;
-      oldPPBrowser = this._currentPPBrowser;
-    }
-    this._currentPPBrowser = ppBrowser;
+    let ppBrowser = this._listener.getPrintPreviewBrowser();
     let mm = ppBrowser.messageManager;
     let defaultPrinterName = this.getDefaultPrinterName();
 
@@ -555,7 +515,6 @@ var PrintUtils = {
       mm.sendAsyncMessage("Printing:Preview:Enter", {
         windowID: browser.outerWindowID,
         simplifiedMode: simplified,
-        changingBrowsers: changingPrintPreviewBrowsers,
         defaultPrinterName,
       });
     };
@@ -586,7 +545,7 @@ var PrintUtils = {
         
         spMM.sendAsyncMessage("Printing:Preview:ParseDocument", {
           URL: this._originalURL,
-          windowID: oldPPBrowser.outerWindowID,
+          windowID: this._sourceBrowser.outerWindowID,
         });
 
         
@@ -618,10 +577,6 @@ var PrintUtils = {
 
       let printPreviewTB = document.getElementById("print-preview-toolbar");
       if (printPreviewTB) {
-        if (message.data.changingBrowsers) {
-          printPreviewTB.destroy();
-          printPreviewTB.initialize(ppBrowser);
-        }
         printPreviewTB.updateToolbar();
         ppBrowser.collapsed = false;
         ppBrowser.focus();
@@ -678,12 +633,9 @@ var PrintUtils = {
   },
 
   exitPrintPreview() {
-    for (let browser of this._ppBrowsers) {
-      let browserMM = browser.messageManager;
-      browserMM.sendAsyncMessage("Printing:Preview:Exit");
-    }
-    this._ppBrowsers.clear();
-    this._currentPPBrowser = null;
+    let ppBrowser = this._listener.getPrintPreviewBrowser();
+    let browserMM = ppBrowser.messageManager;
+    browserMM.sendAsyncMessage("Printing:Preview:Exit");
     window.removeEventListener("keydown", this.onKeyDownPP, true);
     window.removeEventListener("keypress", this.onKeyPressPP, true);
 
@@ -693,8 +645,7 @@ var PrintUtils = {
 
     
     let printPreviewTB = document.getElementById("print-preview-toolbar");
-    printPreviewTB.destroy();
-    printPreviewTB.remove();
+    this._listener.getNavToolbox().parentNode.removeChild(printPreviewTB);
 
     let fm = Components.classes["@mozilla.org/focus-manager;1"]
                        .getService(Components.interfaces.nsIFocusManager);
