@@ -1221,7 +1221,8 @@ pref("security.mixed_content.block_active_content", true);
 
 pref("security.insecure_password.ui.enabled", true);
 
-pref("security.insecure_field_warning.contextual.enabled", false);
+
+pref("security.insecure_field_warning.contextual.enabled", true);
 
 
 pref("security.cert_pinning.enforcement_level", 1);
