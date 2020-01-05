@@ -202,10 +202,11 @@ task_description_schema = Schema({
         Required('env', default={}): {basestring: taskref_or_string},
 
         
-        'command': [taskref_or_string],
+        
+        Optional('command'): [taskref_or_string],
 
         
-        'max-run-time': int,
+        Required('max-run-time'): int,
 
         
         Optional('retry-exit-status'): int,
@@ -214,7 +215,7 @@ task_description_schema = Schema({
         Required('implementation'): 'generic-worker',
 
         
-        'command': [taskref_or_string],
+        Required('command'): [taskref_or_string],
 
         
         
@@ -239,7 +240,7 @@ task_description_schema = Schema({
         Required('env', default={}): {basestring: taskref_or_string},
 
         
-        'max-run-time': int,
+        Required('max-run-time'): int,
 
         
         Optional('os-groups', default=[]): [basestring],
@@ -248,14 +249,14 @@ task_description_schema = Schema({
 
         
         
-        'buildername': basestring,
-        'sourcestamp': {
+        Required('buildername'): basestring,
+        Required('sourcestamp'): {
             'branch': basestring,
             Optional('revision'): basestring,
             Optional('repository'): basestring,
             Optional('project'): basestring,
         },
-        'properties': {
+        Required('properties'): {
             'product': basestring,
             Extra: basestring,  
         },
@@ -344,6 +345,28 @@ task_description_schema = Schema({
             
             Required('paths'): [basestring],
         }],
+    }, {
+        Required('implementation'): 'push-apk-breakpoint',
+        Required('payload'): object,
+
+    }, {
+        Required('implementation'): 'push-apk',
+
+        
+        Required('upstream-artifacts'): [{
+            
+            Required('taskId'): taskref_or_string,
+
+            
+            Required('taskType'): basestring,
+
+            
+            Required('paths'): [basestring],
+        }],
+
+        
+        Required('google-play-track'): Any('production', 'beta', 'alpha', 'invalid'),
+        Required('dry-run', default=True): bool,
     }),
 })
 
@@ -381,6 +404,7 @@ GROUP_NAMES = {
     'TW32': 'Toolchain builds for Windows 32-bits',
     'TW64': 'Toolchain builds for Windows 64-bits',
     'SM-tc': 'Spidermonkey builds',
+    'pub': 'APK publishing',
 }
 UNKNOWN_GROUP_NAME = "Treeherder group {} has no name; add it to " + __file__
 
@@ -595,6 +619,22 @@ def build_balrog_payload(config, task, task_def):
     task_def['payload'] = {
         'upstreamArtifacts':  worker['upstream-artifacts']
     }
+
+
+@payload_builder('push-apk')
+def build_push_apk_payload(config, task, task_def):
+    worker = task['worker']
+
+    task_def['payload'] = {
+        'dry_run': worker['dry-run'],
+        'upstreamArtifacts':  worker['upstream-artifacts'],
+        'google_play_track': worker['google-play-track'],
+    }
+
+
+@payload_builder('push-apk-breakpoint')
+def build_push_apk_breakpoint_payload(config, task, task_def):
+    task_def['payload'] = task['worker']['payload']
 
 
 @payload_builder('native-engine')
