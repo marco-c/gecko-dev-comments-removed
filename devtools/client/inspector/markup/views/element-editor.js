@@ -447,6 +447,13 @@ ElementEditor.prototype = {
       this._editedAttributeObserver = null;
     }
 
+    let activeElement = this.markup.doc.activeElement;
+    if (!activeElement || !activeElement.inplaceEditor) {
+      
+      
+      return;
+    }
+
     let container = this.markup.getContainer(this.node);
 
     let activeAttrs = [...this.attrList.childNodes]
