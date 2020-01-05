@@ -502,20 +502,16 @@ nsTableCellFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       if (aBuilder->IsForEventDelivery() ||
           !StyleBackground()->IsTransparent(this) ||
           StyleDisplay()->mAppearance) {
-        if (!tableFrame->IsBorderCollapse()) {
+        if (!tableFrame->IsBorderCollapse() ||
+            aBuilder->IsAtRootOfPseudoStackingContext() ||
+            aBuilder->IsForEventDelivery()) {
+          
+          
+          
           nsDisplayBackgroundImage::AppendBackgroundItemsToTop(aBuilder,
               this,
               GetRectRelativeToSelf(),
               aLists.BorderBackground());
-        } else if (aBuilder->IsAtRootOfPseudoStackingContext() ||
-                   aBuilder->IsForEventDelivery()) {
-          
-          
-          
-          nsDisplayTableItem* item =
-            new (aBuilder) nsDisplayTableCellBackground(aBuilder, this);
-          aLists.BorderBackground()->AppendNewToTop(item);
-          item->UpdateForFrameBackground(this);
         } else {
           
           
