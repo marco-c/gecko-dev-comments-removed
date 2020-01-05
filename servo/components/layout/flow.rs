@@ -510,6 +510,17 @@ pub trait MutableOwnedFlowUtils {
     
     
     fn set_absolute_descendants(&mut self, abs_descendants: AbsoluteDescendants);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn take_applicable_absolute_descendants(&mut self,
+                                            absolute_descendants: &mut AbsoluteDescendants);
 }
 
 #[derive(RustcEncodable, PartialEq, Debug)]
@@ -731,6 +742,7 @@ impl AbsoluteDescendants {
     pub fn push(&mut self, given_descendant: FlowRef) {
         self.descendant_links.push(AbsoluteDescendantInfo {
             flow: given_descendant,
+            has_reached_containing_block: false,
         });
     }
 
@@ -749,29 +761,38 @@ impl AbsoluteDescendants {
             iter: self.descendant_links.iter_mut(),
         }
     }
+
+    
+    pub fn mark_as_having_reached_containing_block(&mut self) {
+        for descendant_info in self.descendant_links.iter_mut() {
+            descendant_info.has_reached_containing_block = true
+        }
+    }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 #[derive(Clone)]
 pub struct AbsoluteDescendantInfo {
     
     flow: FlowRef,
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    has_reached_containing_block: bool,
 }
 
 pub struct AbsoluteDescendantIter<'a> {
@@ -1414,6 +1435,36 @@ impl MutableOwnedFlowUtils for FlowRef {
         let this = self.clone();
         let base = mut_base(flow_ref::deref_mut(self));
         base.abs_descendants = abs_descendants;
+        for descendant_link in base.abs_descendants.descendant_links.iter_mut() {
+            debug_assert!(!descendant_link.has_reached_containing_block);
+            let descendant_base = mut_base(flow_ref::deref_mut(&mut descendant_link.flow));
+            descendant_base.absolute_cb.set(this.clone());
+        }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn take_applicable_absolute_descendants(&mut self,
+                                            absolute_descendants: &mut AbsoluteDescendants) {
+        let mut applicable_absolute_descendants = AbsoluteDescendants::new();
+        for absolute_descendant in absolute_descendants.descendant_links.iter() {
+            if absolute_descendant.has_reached_containing_block {
+                applicable_absolute_descendants.push(absolute_descendant.flow.clone());
+            }
+        }
+        absolute_descendants.descendant_links.retain(|descendant| {
+            !descendant.has_reached_containing_block
+        });
+
+        let this = self.clone();
+        let base = mut_base(flow_ref::deref_mut(self));
+        base.abs_descendants = applicable_absolute_descendants;
         for descendant_link in base.abs_descendants.iter() {
             let descendant_base = mut_base(descendant_link);
             descendant_base.absolute_cb.set(this.clone());
