@@ -504,9 +504,6 @@ public:
   static bool CanCallerAccess(nsPIDOMWindowInner* aWindow);
 
   
-  static bool CallerHasPermission(JSContext* aCx, const nsAString& aPerm);
-
-  
 
 
 
@@ -2019,7 +2016,7 @@ public:
 
 
 
-  static bool IsCutCopyAllowed();
+  static bool IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal);
 
   
 

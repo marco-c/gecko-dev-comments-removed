@@ -2077,22 +2077,6 @@ nsContentUtils::CanCallerAccess(nsPIDOMWindowInner* aWindow)
 
 
 bool
-nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
-{
-  
-  if (IsSystemCaller(aCx)) {
-    return true;
-  }
-
-  JSCompartment* c = js::GetContextCompartment(aCx);
-  nsIPrincipal* p = nsJSPrincipals::get(JS_GetCompartmentPrincipals(c));
-
-  
-  return BasePrincipal::Cast(p)->AddonHasPermission(aPerm);
-}
-
-
-bool
 nsContentUtils::InProlog(nsINode *aNode)
 {
   NS_PRECONDITION(aNode, "missing node to nsContentUtils::InProlog");
@@ -6856,14 +6840,14 @@ nsContentUtils::IsRequestFullScreenAllowed()
 
 
 bool
-nsContentUtils::IsCutCopyAllowed()
+nsContentUtils::IsCutCopyAllowed(nsIPrincipal* aSubjectPrincipal)
 {
   if ((!IsCutCopyRestricted() && EventStateManager::IsHandlingUserInput()) ||
-      IsCallerChrome()) {
+      IsSystemPrincipal(aSubjectPrincipal)) {
     return true;
   }
 
-  return BasePrincipal::Cast(SubjectPrincipal())->AddonHasPermission(NS_LITERAL_STRING("clipboardWrite"));
+  return BasePrincipal::Cast(aSubjectPrincipal)->AddonHasPermission(NS_LITERAL_STRING("clipboardWrite"));
 }
 
 

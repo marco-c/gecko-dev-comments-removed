@@ -2805,7 +2805,12 @@ nsHTMLDocument::EditingStateChanged()
     
     ErrorResult errorResult;
     Unused << ExecCommand(NS_LITERAL_STRING("insertBrOnReturn"), false,
-                          NS_LITERAL_STRING("false"), CallerType::NonSystem,
+                          NS_LITERAL_STRING("false"),
+                          
+                          
+                          
+                          
+                          *NodePrincipal(),
                           errorResult);
 
     if (errorResult.Failed()) {
@@ -3134,7 +3139,7 @@ bool
 nsHTMLDocument::ExecCommand(const nsAString& commandID,
                             bool doShowUI,
                             const nsAString& value,
-                            CallerType aCallerType,
+                            nsIPrincipal& aSubjectPrincipal,
                             ErrorResult& rv)
 {
   
@@ -3164,7 +3169,7 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
   
   
   if (isCutCopy) {
-    if (!nsContentUtils::IsCutCopyAllowed()) {
+    if (!nsContentUtils::IsCutCopyAllowed(&aSubjectPrincipal)) {
       
       
       nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
@@ -3194,7 +3199,7 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
   }
 
   bool restricted = commandID.LowerCaseEqualsLiteral("paste");
-  if (restricted && aCallerType != CallerType::System) {
+  if (restricted && !nsContentUtils::IsSystemPrincipal(&aSubjectPrincipal)) {
     return false;
   }
 
@@ -3260,7 +3265,7 @@ nsHTMLDocument::ExecCommand(const nsAString& commandID,
 
 bool
 nsHTMLDocument::QueryCommandEnabled(const nsAString& commandID,
-                                    CallerType aCallerType,
+                                    nsIPrincipal& aSubjectPrincipal,
                                     ErrorResult& rv)
 {
   nsAutoCString cmdToDispatch;
@@ -3272,12 +3277,12 @@ nsHTMLDocument::QueryCommandEnabled(const nsAString& commandID,
   bool isCutCopy = commandID.LowerCaseEqualsLiteral("cut") ||
                    commandID.LowerCaseEqualsLiteral("copy");
   if (isCutCopy) {
-    return nsContentUtils::IsCutCopyAllowed();
+    return nsContentUtils::IsCutCopyAllowed(&aSubjectPrincipal);
   }
 
   
   bool restricted = commandID.LowerCaseEqualsLiteral("paste");
-  if (restricted && aCallerType != CallerType::System) {
+  if (restricted && !nsContentUtils::IsSystemPrincipal(&aSubjectPrincipal)) {
     return false;
   }
 
@@ -3460,6 +3465,9 @@ nsHTMLDocument::QueryCommandSupported(const nsAString& commandID,
       return false;
     }
     if (nsContentUtils::IsCutCopyRestricted()) {
+      
+      
+      
       if (commandID.LowerCaseEqualsLiteral("cut") ||
           commandID.LowerCaseEqualsLiteral("copy")) {
         return false;
