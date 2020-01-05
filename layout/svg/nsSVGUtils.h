@@ -198,8 +198,7 @@ public:
 
 
 
-
-  static nsSVGDisplayContainerFrame* GetNearestSVGViewport(nsIFrame *aFrame);
+  static nsIFrame* GetNearestSVGParent(nsIFrame *aFrame);
 
   
 
