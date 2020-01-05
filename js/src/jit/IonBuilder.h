@@ -337,7 +337,7 @@ class IonBuilder
 
     
     AbortReasonOr<Ok> inTryDense(bool* emitted, MDefinition* obj, MDefinition* id);
-    AbortReasonOr<Ok> inTryFold(bool* emitted, MDefinition* obj, MDefinition* id);
+    AbortReasonOr<Ok> hasTryNotDefined(bool* emitted, MDefinition* obj, MDefinition* id, bool ownProperty);
 
     
     TypedObjectPrediction typedObjectPrediction(MDefinition* typedObj);
@@ -857,7 +857,7 @@ class IonBuilder
     JSObject* testSingletonProperty(JSObject* obj, jsid id);
     JSObject* testSingletonPropertyTypes(MDefinition* obj, jsid id);
 
-    AbortReasonOr<bool> testNotDefinedProperty(MDefinition* obj, jsid id);
+    AbortReasonOr<bool> testNotDefinedProperty(MDefinition* obj, jsid id, bool ownProperty = false);
 
     uint32_t getDefiniteSlot(TemporaryTypeSet* types, PropertyName* name, uint32_t* pnfixed);
     MDefinition* convertUnboxedObjects(MDefinition* obj);
