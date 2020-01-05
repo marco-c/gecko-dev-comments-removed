@@ -1569,6 +1569,318 @@ BytecodeEmitter::TDZCheckCache::noteTDZCheck(BytecodeEmitter* bce, JSAtom* name,
     return true;
 }
 
+class MOZ_STACK_CLASS TryEmitter
+{
+  public:
+    enum Kind {
+        TryCatch,
+        TryCatchFinally,
+        TryFinally
+    };
+    enum ShouldUseRetVal {
+        UseRetVal,
+        DontUseRetVal
+    };
+    enum ShouldUseControl {
+        UseControl,
+        DontUseControl,
+    };
+
+  private:
+    BytecodeEmitter* bce_;
+    Kind kind_;
+    ShouldUseRetVal retValKind_;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    Maybe<TryFinallyControl> controlInfo_;
+
+    int depth_;
+    unsigned noteIndex_;
+    ptrdiff_t tryStart_;
+    JumpList catchAndFinallyJump_;
+    JumpTarget tryEnd_;
+    JumpTarget finallyStart_;
+
+    enum State {
+        Start,
+        Try,
+        TryEnd,
+        Catch,
+        CatchEnd,
+        Finally,
+        FinallyEnd,
+        End
+    };
+    State state_;
+
+    bool hasCatch() const {
+        return kind_ == TryCatch || kind_ == TryCatchFinally;
+    }
+    bool hasFinally() const {
+        return kind_ == TryCatchFinally || kind_ == TryFinally;
+    }
+
+  public:
+    TryEmitter(BytecodeEmitter* bce, Kind kind, ShouldUseRetVal retValKind = UseRetVal,
+               ShouldUseControl controlKind = UseControl)
+      : bce_(bce),
+        kind_(kind),
+        retValKind_(retValKind),
+        depth_(0),
+        noteIndex_(0),
+        tryStart_(0),
+        state_(Start)
+    {
+        if (controlKind == UseControl)
+            controlInfo_.emplace(bce_, hasFinally() ? StatementKind::Finally : StatementKind::Try);
+        finallyStart_.offset = 0;
+    }
+
+    bool emitJumpOverCatchAndFinally() {
+        if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
+            return false;
+        return true;
+    }
+
+    bool emitTry() {
+        MOZ_ASSERT(state_ == Start);
+
+        
+        
+        
+        
+        
+        
+        
+        depth_ = bce_->stackDepth;
+
+        
+        if (!bce_->newSrcNote(SRC_TRY, &noteIndex_))
+            return false;
+        if (!bce_->emit1(JSOP_TRY))
+            return false;
+        tryStart_ = bce_->offset();
+
+        state_ = Try;
+        return true;
+    }
+
+  private:
+    bool emitTryEnd() {
+        MOZ_ASSERT(state_ == Try);
+        MOZ_ASSERT(depth_ == bce_->stackDepth);
+
+        
+        if (hasFinally() && controlInfo_) {
+            if (!bce_->emitJump(JSOP_GOSUB, &controlInfo_->gosubs))
+                return false;
+        }
+
+        
+        if (!bce_->setSrcNoteOffset(noteIndex_, 0, bce_->offset() - tryStart_ + JSOP_TRY_LENGTH))
+            return false;
+
+        
+        if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
+            return false;
+
+        if (!bce_->emitJumpTarget(&tryEnd_))
+            return false;
+
+        return true;
+    }
+
+  public:
+    bool emitCatch() {
+        if (state_ == Try) {
+            if (!emitTryEnd())
+                return false;
+        } else {
+            MOZ_ASSERT(state_ == Catch);
+            if (!emitCatchEnd(true))
+                return false;
+        }
+
+        MOZ_ASSERT(bce_->stackDepth == depth_);
+
+        if (retValKind_ == UseRetVal) {
+            
+            
+            
+            
+            if (!bce_->emit1(JSOP_UNDEFINED))
+                return false;
+            if (!bce_->emit1(JSOP_SETRVAL))
+                return false;
+        }
+
+        state_ = Catch;
+        return true;
+    }
+
+  private:
+    bool emitCatchEnd(bool hasNext) {
+        MOZ_ASSERT(state_ == Catch);
+
+        if (!controlInfo_)
+            return true;
+
+        
+        if (hasFinally()) {
+            if (!bce_->emitJump(JSOP_GOSUB, &controlInfo_->gosubs))
+                return false;
+            MOZ_ASSERT(bce_->stackDepth == depth_);
+        }
+
+        
+        
+        if (!bce_->emitJump(JSOP_GOTO, &catchAndFinallyJump_))
+            return false;
+
+        
+        
+        if (controlInfo_->guardJump.offset != -1) {
+            if (!bce_->emitJumpTargetAndPatch(controlInfo_->guardJump))
+                return false;
+            controlInfo_->guardJump.offset = -1;
+
+            
+            
+            if (!hasNext) {
+                if (!bce_->emit1(JSOP_EXCEPTION))
+                    return false;
+                if (!bce_->emit1(JSOP_THROW))
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+  public:
+    bool emitFinally(Maybe<uint32_t> finallyPos = Nothing()) {
+        MOZ_ASSERT(hasFinally());
+
+        if (state_ == Try) {
+            if (!emitTryEnd())
+                return false;
+        } else {
+            MOZ_ASSERT(state_ == Catch);
+            if (!emitCatchEnd(false))
+                return false;
+        }
+
+        MOZ_ASSERT(bce_->stackDepth == depth_);
+
+        if (!bce_->emitJumpTarget(&finallyStart_))
+            return false;
+
+        if (controlInfo_) {
+            
+            
+            bce_->patchJumpsToTarget(controlInfo_->gosubs, finallyStart_);
+
+            
+            controlInfo_->setEmittingSubroutine();
+        }
+        if (finallyPos) {
+            if (!bce_->updateSourceCoordNotes(finallyPos.value()))
+                return false;
+        }
+        if (!bce_->emit1(JSOP_FINALLY))
+            return false;
+
+        if (retValKind_ == UseRetVal) {
+            if (!bce_->emit1(JSOP_GETRVAL))
+                return false;
+
+            
+            
+            
+            
+            if (!bce_->emit1(JSOP_UNDEFINED))
+                return false;
+            if (!bce_->emit1(JSOP_SETRVAL))
+                return false;
+        }
+
+        state_ = Finally;
+        return true;
+    }
+
+  private:
+    bool emitFinallyEnd() {
+        MOZ_ASSERT(state_ == Finally);
+
+        if (retValKind_ == UseRetVal) {
+            if (!bce_->emit1(JSOP_SETRVAL))
+                return false;
+        }
+
+        if (!bce_->emit1(JSOP_RETSUB))
+            return false;
+
+        bce_->hasTryFinally = true;
+        return true;
+    }
+
+  public:
+    bool emitEnd() {
+        if (state_ == Catch) {
+            MOZ_ASSERT(!hasFinally());
+            if (!emitCatchEnd(false))
+                return false;
+        } else {
+            MOZ_ASSERT(state_ == Finally);
+            MOZ_ASSERT(hasFinally());
+            if (!emitFinallyEnd())
+                return false;
+        }
+
+        MOZ_ASSERT(bce_->stackDepth == depth_);
+
+        
+        
+        if (!bce_->emit1(JSOP_NOP))
+            return false;
+
+        
+        if (!bce_->emitJumpTargetAndPatch(catchAndFinallyJump_))
+            return false;
+
+        
+        
+        if (hasCatch()) {
+            if (!bce_->tryNoteList.append(JSTRY_CATCH, depth_, tryStart_, tryEnd_.offset))
+                return false;
+        }
+
+        
+        
+        
+        if (hasFinally()) {
+            if (!bce_->tryNoteList.append(JSTRY_FINALLY, depth_, tryStart_, finallyStart_.offset))
+                return false;
+        }
+
+        state_ = End;
+        return true;
+    }
+};
+
 class MOZ_STACK_CLASS IfThenElseEmitter
 {
     BytecodeEmitter* bce_;
@@ -6085,57 +6397,28 @@ BytecodeEmitter::emitCatch(ParseNode* pn)
 MOZ_NEVER_INLINE bool
 BytecodeEmitter::emitTry(ParseNode* pn)
 {
-    
-    
-    
-    
-    
-    
-    TryFinallyControl controlInfo(this, pn->pn_kid3 ? StatementKind::Finally : StatementKind::Try);
+    ParseNode* catchList = pn->pn_kid2;
+    ParseNode* finallyNode = pn->pn_kid3;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    int depth = stackDepth;
+    TryEmitter::Kind kind;
+    if (catchList) {
+        if (finallyNode)
+            kind = TryEmitter::TryCatchFinally;
+        else
+            kind = TryEmitter::TryCatch;
+    } else {
+        MOZ_ASSERT(finallyNode);
+        kind = TryEmitter::TryFinally;
+    }
+    TryEmitter tryCatch(this, kind);
 
-    
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_TRY, &noteIndex))
-        return false;
-    if (!emit1(JSOP_TRY))
+    if (!tryCatch.emitTry())
         return false;
 
-    ptrdiff_t tryStart = offset();
     if (!emitTree(pn->pn_kid1))
         return false;
-    MOZ_ASSERT(depth == stackDepth);
 
     
-    if (pn->pn_kid3) {
-        if (!emitJump(JSOP_GOSUB, &controlInfo.gosubs))
-            return false;
-    }
-
-    
-    if (!setSrcNoteOffset(noteIndex, 0, offset() - tryStart + JSOP_TRY_LENGTH))
-        return false;
-
-    
-    JumpList catchJump;
-    if (!emitJump(JSOP_GOTO, &catchJump))
-        return false;
-
-    JumpTarget tryEnd;
-    if (!emitJumpTarget(&tryEnd))
-        return false;
-
-    
-    ParseNode* catchList = pn->pn_kid2;
     if (catchList) {
         MOZ_ASSERT(catchList->isKind(PNK_CATCHLIST));
 
@@ -6165,110 +6448,26 @@ BytecodeEmitter::emitTry(ParseNode* pn)
         
         
         for (ParseNode* pn3 = catchList->pn_head; pn3; pn3 = pn3->pn_next) {
-            MOZ_ASSERT(this->stackDepth == depth);
-
-            
-            
-            
-            
-            if (!emit1(JSOP_UNDEFINED))
-                return false;
-            if (!emit1(JSOP_SETRVAL))
+            if (!tryCatch.emitCatch())
                 return false;
 
             
             MOZ_ASSERT(pn3->isKind(PNK_LEXICALSCOPE));
             if (!emitTree(pn3))
                 return false;
-
-            
-            if (pn->pn_kid3) {
-                if (!emitJump(JSOP_GOSUB, &controlInfo.gosubs))
-                    return false;
-                MOZ_ASSERT(this->stackDepth == depth);
-            }
-
-            
-            
-            if (!emitJump(JSOP_GOTO, &catchJump))
-                return false;
-
-            
-            
-            if (controlInfo.guardJump.offset != -1) {
-                if (!emitJumpTargetAndPatch(controlInfo.guardJump))
-                    return false;
-                controlInfo.guardJump.offset = -1;
-
-                
-                
-                if (!pn3->pn_next) {
-                    if (!emit1(JSOP_EXCEPTION))
-                        return false;
-                    if (!emit1(JSOP_THROW))
-                        return false;
-                }
-            }
         }
     }
 
-    MOZ_ASSERT(this->stackDepth == depth);
-
     
-    JumpTarget finallyStart{ 0 };
-    if (pn->pn_kid3) {
-        if (!emitJumpTarget(&finallyStart))
+    if (finallyNode) {
+        if (!tryCatch.emitFinally(Some(finallyNode->pn_pos.begin)))
             return false;
 
-        
-        
-        patchJumpsToTarget(controlInfo.gosubs, finallyStart);
-
-        
-        controlInfo.setEmittingSubroutine();
-        if (!updateSourceCoordNotes(pn->pn_kid3->pn_pos.begin))
+        if (!emitTree(finallyNode))
             return false;
-        if (!emit1(JSOP_FINALLY))
-            return false;
-        if (!emit1(JSOP_GETRVAL))
-            return false;
-
-        
-        
-        
-        
-        if (!emit1(JSOP_UNDEFINED))
-            return false;
-        if (!emit1(JSOP_SETRVAL))
-            return false;
-
-        if (!emitTree(pn->pn_kid3))
-            return false;
-        if (!emit1(JSOP_SETRVAL))
-            return false;
-        if (!emit1(JSOP_RETSUB))
-            return false;
-        hasTryFinally = true;
-        MOZ_ASSERT(this->stackDepth == depth);
     }
 
-    
-    if (!emit1(JSOP_NOP))
-        return false;
-
-    
-    if (!emitJumpTargetAndPatch(catchJump))
-        return false;
-
-    
-    
-    if (catchList && !tryNoteList.append(JSTRY_CATCH, depth, tryStart, tryEnd.offset))
-        return false;
-
-    
-    
-    
-    if (pn->pn_kid3 && !tryNoteList.append(JSTRY_FINALLY, depth, tryStart, finallyStart.offset))
+    if (!tryCatch.emitEnd())
         return false;
 
     return true;
@@ -8052,17 +8251,15 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
     int depth = stackDepth;
     MOZ_ASSERT(depth >= 2);
 
-    JumpList send;
-    if (!emitJump(JSOP_GOTO, &send))                             
+    TryEmitter tryCatch(this, TryEmitter::TryCatchFinally, TryEmitter::DontUseRetVal,
+                        TryEmitter::DontUseControl);
+    if (!tryCatch.emitJumpOverCatchAndFinally())                 
         return false;
 
-    
-    unsigned noteIndex;
-    if (!newSrcNote(SRC_TRY, &noteIndex))
-        return false;
     JumpTarget tryStart{ offset() };
-    if (!emit1(JSOP_TRY))                                        
+    if (!tryCatch.emitTry())                                     
         return false;
+
     MOZ_ASSERT(this->stackDepth == depth);
 
     
@@ -8073,17 +8270,9 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
     if (!emitYieldOp(JSOP_YIELD))                                
         return false;
 
-    
-    if (!setSrcNoteOffset(noteIndex, 0, offset() - tryStart.offset))
-        return false;
-    if (!emitJump(JSOP_GOTO, &send))                             
+    if (!tryCatch.emitCatch())                                   
         return false;
 
-    JumpTarget tryEnd;
-    if (!emitJumpTarget(&tryEnd))                                
-        return false;
-
-    
     stackDepth = uint32_t(depth);                                
     if (!emit1(JSOP_EXCEPTION))                                  
         return false;
@@ -8131,32 +8320,15 @@ BytecodeEmitter::emitYieldStar(ParseNode* iter, ParseNode* gen)
         return false;
 
     
+    if (!tryCatch.emitFinally())
+         return false;
 
-    JumpTarget finallyStart{ 0 };
-    if (!emitJumpTarget(&finallyStart))
-        return false;
-    if (!emit1(JSOP_FINALLY))                                    
-        return false;
     if (!emitDupAt(3))                                           
         return false;
     if (!emitIteratorClose(Some(tryStart)))                      
         return false;
-    if (!emit1(JSOP_RETSUB))                                     
-        return false;
 
-    
-
-    
-    if (!emit1(JSOP_NOP))
-        return false;
-    size_t tryStartOffset = tryStart.offset + JSOP_TRY_LENGTH;
-    if (!tryNoteList.append(JSTRY_CATCH, depth, tryStartOffset, tryEnd.offset))
-        return false;
-    if (!tryNoteList.append(JSTRY_FINALLY, depth, tryStartOffset, finallyStart.offset))
-        return false;
-
-    
-    if (!emitJumpTargetAndPatch(send))                           
+    if (!tryCatch.emitEnd())
         return false;
 
     
