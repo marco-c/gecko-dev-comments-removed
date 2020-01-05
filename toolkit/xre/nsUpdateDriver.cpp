@@ -24,7 +24,6 @@
 #include "mozilla/Preferences.h"
 #include "nsPrintfCString.h"
 #include "mozilla/DebugOnly.h"
-#include "mozilla/Printf.h"
 
 #ifdef XP_MACOSX
 #include "nsILocalFileMac.h"
@@ -407,15 +406,18 @@ AppendToLibPath(const char *pathToAppend)
 {
   char *pathValue = getenv(LD_LIBRARY_PATH_ENVVAR_NAME);
   if (nullptr == pathValue || '\0' == *pathValue) {
-    
-    char *s = Smprintf("%s=%s", LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend).release();
+    char *s = PR_smprintf("%s=%s", LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend);
     PR_SetEnv(s);
   } else if (!strstr(pathValue, pathToAppend)) {
-    
-    char *s = Smprintf("%s=%s" PATH_SEPARATOR "%s",
-                       LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend, pathValue).release();
+    char *s = PR_smprintf("%s=%s" PATH_SEPARATOR "%s",
+                    LD_LIBRARY_PATH_ENVVAR_NAME, pathToAppend, pathValue);
     PR_SetEnv(s);
   }
+
+  
+  
+  
+  
 }
 #endif
 
@@ -704,12 +706,23 @@ ApplyUpdate(nsIFile *greDir, nsIFile *updateDir, nsIFile *appDir, int appArgc,
   
   
   
+  if (restart && !IsRecursivelyWritable(installDirPath.get())) {
+    if (!LaunchElevatedUpdate(argc, argv, outpid)) {
+      LOG(("Failed to launch elevated update!"));
+      exit(1);
+    }
+    exit(0);
+  }
+
   if (isStaged) {
     
     LaunchChildMac(argc, argv);
   } else {
     
     LaunchChildMac(argc, argv, outpid);
+  }
+  if (restart) {
+    exit(0);
   }
 #else
   if (isStaged) {
