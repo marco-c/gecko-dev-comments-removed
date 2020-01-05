@@ -83,6 +83,7 @@ class ObjectBox;
     F(THROW) \
     F(DEBUGGER) \
     F(GENERATOR) \
+    F(INITIALYIELD) \
     F(YIELD) \
     F(YIELD_STAR) \
     F(GENEXP) \
@@ -201,6 +202,7 @@ IsTypeofKind(ParseNodeKind kind)
 {
     return PNK_TYPEOFNAME <= kind && kind <= PNK_TYPEOFEXPR;
 }
+
 
 
 
