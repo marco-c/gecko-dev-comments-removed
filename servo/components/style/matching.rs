@@ -197,6 +197,7 @@ impl StyleSharingCandidate {
     
     
     
+    #[allow(unsafe_code)]
     fn new<'le, E: TElement<'le>>(element: &E) -> Option<StyleSharingCandidate> {
         let parent_element = match element.parent_element() {
             None => return None,

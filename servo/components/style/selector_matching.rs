@@ -2,6 +2,9 @@
 
 
 
+
+#![allow(unsafe_code)]
+
 use cssparser::{Parser, SourcePosition};
 use dom::TElement;
 use log;
