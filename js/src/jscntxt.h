@@ -894,6 +894,20 @@ struct JSContext : public JS::RootingContext,
 
     
     js::ThreadLocalData<uintptr_t> jitStackLimitNoInterrupt;
+
+    
+    js::ThreadLocalData<JSGetIncumbentGlobalCallback> getIncumbentGlobalCallback;
+    js::ThreadLocalData<JSEnqueuePromiseJobCallback> enqueuePromiseJobCallback;
+    js::ThreadLocalData<void*> enqueuePromiseJobCallbackData;
+
+    js::ThreadLocalData<JSPromiseRejectionTrackerCallback> promiseRejectionTrackerCallback;
+    js::ThreadLocalData<void*> promiseRejectionTrackerCallbackData;
+
+    JSObject* getIncumbentGlobal(JSContext* cx);
+    bool enqueuePromiseJob(JSContext* cx, js::HandleFunction job, js::HandleObject promise,
+                           js::HandleObject incumbentGlobal);
+    void addUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
+    void removeUnhandledRejectedPromise(JSContext* cx, js::HandleObject promise);
 }; 
 
 inline JS::Result<>
