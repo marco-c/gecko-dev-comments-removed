@@ -282,8 +282,6 @@ var interfaceNamesInGlobalScope =
 
     "DeviceProximityEvent",
 
-    { name: "DeviceStorageAreaChangedEvent", desktop: false},
-
     { name: "DeviceStorageAreaListener", desktop: false},
 
     { name: "DeviceStorage", desktop: false},
