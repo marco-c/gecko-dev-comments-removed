@@ -17,7 +17,7 @@ var histograms = {
   PLACES_DATABASE_SIZE_PER_PAGE_B: val => do_check_true(val > 0),
   PLACES_EXPIRATION_STEPS_TO_CLEAN2: val => do_check_true(val > 1),
   
-  PLACES_IDLE_FRECENCY_DECAY_TIME_MS: val => do_check_true(val > 0),
+  PLACES_IDLE_FRECENCY_DECAY_TIME_MS: val => do_check_true(val >= 0),
   PLACES_IDLE_MAINTENANCE_TIME_MS: val => do_check_true(val > 0),
   
   
