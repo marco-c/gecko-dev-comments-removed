@@ -168,8 +168,12 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
     if (len == 0) {
       return false;
     }
-    str->SetLength(len - 1); 
+
+    
+    
+    str->SetLength(len);
     GetLocaleInfoEx(localeName, lcType, (WCHAR*)str->BeginWriting(), len);
+    str->SetLength(len - 1); 
 
     
     
@@ -215,8 +219,12 @@ OSPreferences::ReadDateTimePattern(DateTimeFormatStyle aDateStyle,
     if (len == 0) {
       return false;
     }
-    str->SetLength(len - 1);
+
+    
+    
+    str->SetLength(len);
     GetLocaleInfoEx(localeName, lcType, (WCHAR*)str->BeginWriting(), len);
+    str->SetLength(len - 1);
 
     
     
