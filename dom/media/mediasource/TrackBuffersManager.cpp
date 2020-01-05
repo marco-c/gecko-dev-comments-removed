@@ -960,7 +960,7 @@ TrackBuffersManager::OnDemuxerInitDone(nsresult)
   
   
   AbstractThread::MainThread()->Dispatch(NewRunnableMethod<int64_t>
-                                         (mParentDecoder,
+                                         (mParentDecoder.get(),
                                           &MediaSourceDecoder::SetInitialDuration,
                                           duration ? duration : -1));
 
