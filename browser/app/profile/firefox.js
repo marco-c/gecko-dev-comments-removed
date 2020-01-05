@@ -685,7 +685,11 @@ pref("browser.preferences.search", false);
 
 
 
+#if defined(NIGHTLY_BUILD)
+pref("browser.preferences.offlineGroup.enabled", false);
+#else
 pref("browser.preferences.offlineGroup.enabled", true);
+#endif
 
 pref("browser.download.show_plugins_in_list", true);
 pref("browser.download.hide_plugins_without_extensions", true);

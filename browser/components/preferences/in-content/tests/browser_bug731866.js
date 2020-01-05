@@ -21,6 +21,16 @@ function checkElements(expectedPane) {
         element.id === "drmGroup") {
       continue;
     }
+
+    
+    
+    
+    if (element.id == "offlineGroup" &&
+        !SpecialPowers.getBoolPref("browser.preferences.offlineGroup.enabled")) {
+      is_element_hidden(element, "Disabled offlineGroup should be hidden");
+      continue;
+    }
+
     let attributeValue = element.getAttribute("data-category");
     let suffix = " (id=" + element.id + ")";
     if (attributeValue == "pane" + expectedPane) {
