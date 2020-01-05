@@ -393,11 +393,18 @@ fn clamp_unit_f32(val: f32) -> u8 {
     
     
     
-    clamp_256_f32(val * 256.)
+    
+    
+    
+    
+    
+    
+    
+    clamp_floor_256_f32(val * 255.)
 }
 
-fn clamp_256_f32(val: f32) -> u8 {
-    val.floor().max(0.).min(255.) as u8
+fn clamp_floor_256_f32(val: f32) -> u8 {
+    val.round().max(0.).min(255.) as u8
 }
 
 #[inline]
@@ -449,8 +456,8 @@ fn parse_rgb_components_rgb(arguments: &mut Parser) -> Result<(u8, u8, u8, bool)
     
     match try!(arguments.next()) {
         Token::Number(NumericValue { value: v, .. }) => {
-            red = clamp_256_f32(v);
-            green = clamp_256_f32(match try!(arguments.next()) {
+            red = clamp_floor_256_f32(v);
+            green = clamp_floor_256_f32(match try!(arguments.next()) {
                 Token::Number(NumericValue { value: v, .. }) => v,
                 Token::Comma => {
                     uses_commas = true;
@@ -461,7 +468,7 @@ fn parse_rgb_components_rgb(arguments: &mut Parser) -> Result<(u8, u8, u8, bool)
             if uses_commas {
                 try!(arguments.expect_comma());
             }
-            blue = clamp_256_f32(try!(arguments.expect_number()));
+            blue = clamp_floor_256_f32(try!(arguments.expect_number()));
         }
         Token::Percentage(ref v) => {
             red = clamp_unit_f32(v.unit_value);
