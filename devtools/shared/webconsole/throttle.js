@@ -228,12 +228,11 @@ NetworkThrottleListener.prototype = {
 
 
 
-function NetworkThrottleQueue(meanBPS, maxBPS,
-                              roundTripTimeMean, roundTripTimeMax) {
+function NetworkThrottleQueue(meanBPS, maxBPS, latencyMean, latencyMax) {
   this.meanBPS = meanBPS;
   this.maxBPS = maxBPS;
-  this.roundTripTimeMean = roundTripTimeMean;
-  this.roundTripTimeMax = roundTripTimeMax;
+  this.latencyMean = latencyMean;
+  this.latencyMax = latencyMax;
 
   this.pendingRequests = new Set();
   this.downloadQueue = [];
@@ -276,7 +275,7 @@ NetworkThrottleQueue.prototype = {
 
   start: function (throttleListener) {
     this.pendingRequests.add(throttleListener);
-    let delay = this.random(this.roundTripTimeMean, this.roundTripTimeMax);
+    let delay = this.random(this.latencyMean, this.latencyMax);
     if (delay > 0) {
       setTimeout(() => this.allowDataFrom(throttleListener), delay);
     } else {
@@ -365,7 +364,7 @@ NetworkThrottleQueue.prototype = {
 
 
 
-function NetworkThrottleManager({roundTripTimeMean, roundTripTimeMax,
+function NetworkThrottleManager({latencyMean, latencyMax,
                                  downloadBPSMean, downloadBPSMax,
                                  uploadBPSMean, uploadBPSMax}) {
   if (downloadBPSMax <= 0 && downloadBPSMean <= 0) {
@@ -373,7 +372,7 @@ function NetworkThrottleManager({roundTripTimeMean, roundTripTimeMax,
   } else {
     this.downloadQueue =
       new NetworkThrottleQueue(downloadBPSMean, downloadBPSMax,
-                               roundTripTimeMean, roundTripTimeMax);
+                               latencyMean, latencyMax);
   }
   if (uploadBPSMax <= 0 && uploadBPSMean <= 0) {
     this.uploadQueue = null;
