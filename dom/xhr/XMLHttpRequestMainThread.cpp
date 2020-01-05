@@ -2697,11 +2697,12 @@ XMLHttpRequestMainThread::InitiateFetch(nsIInputStream* aUploadStream,
   
   
   
+  
   nsAutoCString contentType;
   if (NS_FAILED(mChannel->GetContentType(contentType)) ||
       contentType.IsEmpty() ||
       contentType.Equals(UNKNOWN_CONTENT_TYPE)) {
-    mChannel->SetContentType(NS_LITERAL_CSTRING("application/xml"));
+    mChannel->SetContentType(NS_LITERAL_CSTRING("text/xml"));
   }
 
   
