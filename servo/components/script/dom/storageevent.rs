@@ -2,7 +2,6 @@
 
 
 
-use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::EventBinding::{EventMethods};
 use dom::bindings::codegen::Bindings::StorageEventBinding;
 use dom::bindings::codegen::Bindings::StorageEventBinding::{StorageEventMethods};
@@ -19,10 +18,10 @@ use util::str::DOMString;
 #[dom_struct]
 pub struct StorageEvent {
     event: Event,
-    key: DOMRefCell<Option<DOMString>>,
-    oldValue: DOMRefCell<Option<DOMString>>,
-    newValue: DOMRefCell<Option<DOMString>>,
-    url: DOMRefCell<DOMString>,
+    key: Option<DOMString>,
+    oldValue: Option<DOMString>,
+    newValue: Option<DOMString>,
+    url: DOMString,
     storageArea: MutNullableHeap<JS<Storage>>
 }
 
@@ -36,10 +35,10 @@ impl StorageEvent {
                          storageArea: Option<&Storage>) -> StorageEvent {
         StorageEvent {
             event: Event::new_inherited(type_id),
-            key: DOMRefCell::new(key),
-            oldValue: DOMRefCell::new(oldValue),
-            newValue: DOMRefCell::new(newValue),
-            url: DOMRefCell::new(url),
+            key: key,
+            oldValue: oldValue,
+            newValue: newValue,
+            url: url,
             storageArea: MutNullableHeap::new(storageArea.map(JS::from_ref))
         }
     }
@@ -90,22 +89,22 @@ impl StorageEvent {
 impl StorageEventMethods for StorageEvent {
     
     fn GetKey(&self) -> Option<DOMString> {
-        self.key.borrow().clone()
+        self.key.clone()
     }
 
     
     fn GetOldValue(&self) -> Option<DOMString> {
-        self.oldValue.borrow().clone()
+        self.oldValue.clone()
     }
 
     
     fn GetNewValue(&self) -> Option<DOMString> {
-        self.newValue.borrow().clone()
+        self.newValue.clone()
     }
 
     
     fn Url(&self) -> DOMString {
-        self.url.borrow().clone()
+        self.url.clone()
     }
 
     
