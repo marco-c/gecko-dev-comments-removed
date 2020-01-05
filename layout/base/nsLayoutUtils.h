@@ -1454,10 +1454,9 @@ public:
 
 
 
-
   static nscoord AddPercents(nscoord aCurrent, float aPercent)
   {
-    if (aPercent > 0.0f && aCurrent > 0) {
+    if (aPercent > 0.0f) {
       return MOZ_UNLIKELY(aPercent >= 1.0f) ? nscoord_MAX
         : NSToCoordRound(float(aCurrent) / (1.0f - aPercent));
     }
