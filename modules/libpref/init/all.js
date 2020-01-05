@@ -433,7 +433,7 @@ pref("media.navigator.video.use_tmmbr", false);
 pref("media.navigator.audio.use_fec", true);
 pref("media.navigator.video.red_ulpfec_enabled", false);
 
-pref("media.peerconnection.dtmf.enabled", true);
+pref("media.peerconnection.dtmf.enabled", false);
 
 pref("media.webrtc.debug.trace_mask", 0);
 pref("media.webrtc.debug.multi_log", false);
@@ -2135,6 +2135,7 @@ pref("security.notification_enable_delay", 500);
 
 pref("security.csp.enable", true);
 pref("security.csp.experimentalEnabled", false);
+pref("security.csp.enableStrictDynamic", true);
 
 
 pref("security.signed_content.CSP.default", "script-src 'self'; style-src 'self'");
@@ -5030,6 +5031,13 @@ pref("dom.forms.inputmode", true);
 pref("dom.mozInputMethod.enabled", false);
 
 pref("dom.flyweb.enabled", false);
+
+
+#ifdef MOZ_B2G_RIL
+pref("dom.icc.enabled", true);
+#else
+pref("dom.icc.enabled", false);
+#endif
 
 
 pref("dom.mapped_arraybuffer.enabled", true);

@@ -123,6 +123,7 @@ nsCSPTokenizer::tokenizeCSPPolicy(const nsAString &aPolicyString,
 
 
 bool nsCSPParser::sCSPExperimentalEnabled = false;
+bool nsCSPParser::sStrictDynamicEnabled = false;
 
 nsCSPParser::nsCSPParser(cspTokens& aTokens,
                          nsIURI* aSelfURI,
@@ -131,6 +132,7 @@ nsCSPParser::nsCSPParser(cspTokens& aTokens,
  : mCurChar(nullptr)
  , mEndChar(nullptr)
  , mHasHashOrNonce(false)
+ , mStrictDynamic(false)
  , mUnsafeInlineKeywordSrc(nullptr)
  , mChildSrc(nullptr)
  , mFrameSrc(nullptr)
@@ -144,6 +146,7 @@ nsCSPParser::nsCSPParser(cspTokens& aTokens,
   if (!initialized) {
     initialized = true;
     Preferences::AddBoolVarCache(&sCSPExperimentalEnabled, "security.csp.experimentalEnabled");
+    Preferences::AddBoolVarCache(&sStrictDynamicEnabled, "security.csp.enableStrictDynamic");
   }
   CSPPARSERLOG(("nsCSPParser::nsCSPParser"));
 }
@@ -529,6 +532,22 @@ nsCSPParser::keywordSource()
   
   if (CSP_IsKeyword(mCurToken, CSP_SELF)) {
     return CSP_CreateHostSrcFromURI(mSelfURI);
+  }
+
+  if (CSP_IsKeyword(mCurToken, CSP_STRICT_DYNAMIC)) {
+    
+    if (!sStrictDynamicEnabled) {
+      return nullptr;
+    }
+    if (!CSP_IsDirective(mCurDir[0], nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE)) {
+      
+      const char16_t* params[] = { u"strict-dynamic" };
+      logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringStrictDynamic",
+                               params, ArrayLength(params));
+      return nullptr;
+    }
+    mStrictDynamic = true;
+    return new nsCSPKeywordSrc(CSP_KeywordToEnum(mCurToken));
   }
 
   if (CSP_IsKeyword(mCurToken, CSP_UNSAFE_INLINE)) {
@@ -1187,6 +1206,7 @@ nsCSPParser::directive()
   
   
   mHasHashOrNonce = false;
+  mStrictDynamic = false;
   mUnsafeInlineKeywordSrc = nullptr;
 
   
@@ -1201,11 +1221,43 @@ nsCSPParser::directive()
   }
 
   
-  
-  
-  if ((cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
-       cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE)) &&
-      mHasHashOrNonce && mUnsafeInlineKeywordSrc) {
+  if (mStrictDynamic) {
+    MOZ_ASSERT(cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE),
+               "strict-dynamic only allowed within script-src");
+    for (uint32_t i = 0; i < srcs.Length(); i++) {
+      
+      
+      
+      
+      
+      srcs[i]->invalidate();
+      
+      nsAutoString srcStr;
+      srcs[i]->toString(srcStr);
+      
+      
+      
+      if (!srcStr.EqualsASCII(CSP_EnumToKeyword(CSP_STRICT_DYNAMIC)) &&
+          !srcStr.EqualsASCII(CSP_EnumToKeyword(CSP_UNSAFE_EVAL)) &&
+          !StringBeginsWith(NS_ConvertUTF16toUTF8(srcStr), NS_LITERAL_CSTRING("'nonce-")) &&
+          !StringBeginsWith(NS_ConvertUTF16toUTF8(srcStr), NS_LITERAL_CSTRING("'sha")))
+      {
+        const char16_t* params[] = { srcStr.get() };
+        logWarningErrorToConsole(nsIScriptError::warningFlag, "ignoringSrcForStrictDynamic",
+                                 params, ArrayLength(params));
+      }
+    }
+    
+    
+    if (!mHasHashOrNonce) {
+      const char16_t* params[] = { mCurDir[0].get() };
+      logWarningErrorToConsole(nsIScriptError::warningFlag, "strictDynamicButNoHashOrNonce",
+                               params, ArrayLength(params));
+    }
+  }
+  else if (mHasHashOrNonce && mUnsafeInlineKeywordSrc &&
+           (cspDir->equals(nsIContentSecurityPolicy::SCRIPT_SRC_DIRECTIVE) ||
+            cspDir->equals(nsIContentSecurityPolicy::STYLE_SRC_DIRECTIVE))) {
     mUnsafeInlineKeywordSrc->invalidate();
     
     const char16_t* params[] = { u"'unsafe-inline'" };

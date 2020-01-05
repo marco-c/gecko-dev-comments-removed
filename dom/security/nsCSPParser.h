@@ -112,6 +112,7 @@ class nsCSPParser {
                 bool aDeliveredViaMetaTag);
 
     static bool sCSPExperimentalEnabled;
+    static bool sStrictDynamicEnabled;
 
     ~nsCSPParser();
 
@@ -237,7 +238,9 @@ class nsCSPParser {
     nsTArray<nsString> mCurDir;
 
     
+    
     bool               mHasHashOrNonce; 
+    bool               mStrictDynamic;  
     nsCSPKeywordSrc*   mUnsafeInlineKeywordSrc; 
 
     
