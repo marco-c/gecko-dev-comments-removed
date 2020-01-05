@@ -114,15 +114,33 @@ pub struct KeyframesStep {
     
     
     pub value: KeyframesStepValue,
+    
+    
+    
+    
+    pub declared_timing_function: bool,
 }
 
 impl KeyframesStep {
     #[inline]
     fn new(percentage: KeyframePercentage,
            value: KeyframesStepValue) -> Self {
+        let declared_timing_function = match value {
+            KeyframesStepValue::Declarations(ref declarations) => {
+                declarations.iter().any(|prop_decl| {
+                    match *prop_decl {
+                        PropertyDeclaration::AnimationTimingFunction(..) => true,
+                        _ => false,
+                    }
+                })
+            }
+            _ => false,
+        };
+
         KeyframesStep {
             start_percentage: percentage,
             value: value,
+            declared_timing_function: declared_timing_function,
         }
     }
 }

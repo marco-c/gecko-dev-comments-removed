@@ -626,7 +626,9 @@ where Impl: SelectorImplExt,
             
             
             let mut timing_function = style.get_box().animation_timing_function_mod(index);
-            if from_style.get_box().animation_timing_function_count() != 0 {
+            if last_keyframe.declared_timing_function {
+                
+                
                 timing_function = from_style.get_box().animation_timing_function_at(0);
             }
 
