@@ -12,5 +12,5 @@ if(opts.extra) {
 window.keepMeAlive = function() {
   
   
-  return 1;
+  return times2(4);
 }
