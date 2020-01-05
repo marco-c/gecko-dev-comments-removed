@@ -11,6 +11,9 @@ Cu.import("resource://gre/modules/osfile.jsm");
 
 const MAX_NAME_LENGTH = 64;
 
+
+
+
 const libModules = ctypes.libraryName("modules-test");
 const libUnicode = ctypes.libraryName("modμles-test");
 const libLongName = "lorem_ipsum_dolor_sit_amet_consectetur_adipiscing_elit_Fusce_sit_amet_tellus_non_magna_euismod_vestibulum_Vivamus_turpis_duis.dll"
