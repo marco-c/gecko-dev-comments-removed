@@ -122,7 +122,7 @@ struct nsCharProps2 {
 
 namespace mozilla {
 namespace unicode {
-enum class Script : int16_t {
+enum class Script {
   COMMON = 0,
   INHERITED = 1,
   ARABIC = 2,
