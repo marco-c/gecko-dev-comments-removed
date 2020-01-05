@@ -29,8 +29,7 @@ import com.robotium.solo.Solo;
 
 
 public class ToolbarComponent extends BaseComponent {
-
-    private static final String URL_HTTP_PREFIX = "http://";
+    public static final String URL_HTTP_PREFIX = "http://";
 
     
     
