@@ -38,7 +38,7 @@ extern crate url;
 mod script_msg;
 pub mod webdriver_msg;
 
-use bluetooth_traits::BluetoothMethodMsg;
+use bluetooth_traits::BluetoothRequest;
 use devtools_traits::{DevtoolScriptControlMsg, ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::Size2D;
 use euclid::length::Length;
@@ -445,7 +445,7 @@ pub struct InitialScriptState {
     
     pub resource_threads: ResourceThreads,
     
-    pub bluetooth_thread: IpcSender<BluetoothMethodMsg>,
+    pub bluetooth_thread: IpcSender<BluetoothRequest>,
     
     pub image_cache_thread: ImageCacheThread,
     

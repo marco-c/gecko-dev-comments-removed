@@ -17,7 +17,7 @@
 
 
 
-use bluetooth_traits::BluetoothMethodMsg;
+use bluetooth_traits::BluetoothRequest;
 use devtools;
 use devtools_traits::{DevtoolScriptControlMsg, DevtoolsPageInfo};
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
@@ -343,7 +343,7 @@ pub struct ScriptThread {
     
     resource_threads: ResourceThreads,
     
-    bluetooth_thread: IpcSender<BluetoothMethodMsg>,
+    bluetooth_thread: IpcSender<BluetoothRequest>,
 
     
     port: Receiver<MainThreadScriptMsg>,

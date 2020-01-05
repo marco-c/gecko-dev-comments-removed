@@ -2,6 +2,7 @@
 
 
 
+use bluetooth_traits::{BluetoothResponseListener, BluetoothResponseResult};
 use net_traits::{Action, FetchResponseListener, FetchResponseMsg};
 use script_runtime::{CommonScriptMsg, ScriptChan};
 use script_runtime::ScriptThreadEventCategory::NetworkEvent;
@@ -36,6 +37,13 @@ impl<Listener: PreInvoke + Send + 'static> NetworkListener<Listener> {
 
 impl<Listener: FetchResponseListener + PreInvoke + Send + 'static> NetworkListener<Listener> {
     pub fn notify_fetch(&self, action: FetchResponseMsg) {
+        self.notify(action);
+    }
+}
+
+
+impl<Listener: BluetoothResponseListener + PreInvoke + Send + 'static> NetworkListener<Listener> {
+    pub fn notify_response(&self, action: BluetoothResponseResult) {
         self.notify(action);
     }
 }

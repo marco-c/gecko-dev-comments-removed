@@ -3,7 +3,7 @@
 
 
 use app_units::Au;
-use bluetooth_traits::BluetoothMethodMsg;
+use bluetooth_traits::BluetoothRequest;
 use cssparser::Parser;
 use devtools_traits::{ScriptToDevtoolsControlMsg, TimelineMarker, TimelineMarkerType};
 use dom::bindings::callback::ExceptionHandling;
@@ -203,7 +203,7 @@ pub struct Window {
 
     
     #[ignore_heap_size_of = "channels are hard"]
-    bluetooth_thread: IpcSender<BluetoothMethodMsg>,
+    bluetooth_thread: IpcSender<BluetoothRequest>,
 
     
     fragment_name: DOMRefCell<Option<String>>,
@@ -304,7 +304,7 @@ impl Window {
         self.browsing_context.get().unwrap()
     }
 
-    pub fn bluetooth_thread(&self) -> IpcSender<BluetoothMethodMsg> {
+    pub fn bluetooth_thread(&self) -> IpcSender<BluetoothRequest> {
         self.bluetooth_thread.clone()
     }
 
@@ -1521,7 +1521,7 @@ impl Window {
                image_cache_chan: ImageCacheChan,
                image_cache_thread: ImageCacheThread,
                resource_threads: ResourceThreads,
-               bluetooth_thread: IpcSender<BluetoothMethodMsg>,
+               bluetooth_thread: IpcSender<BluetoothRequest>,
                mem_profiler_chan: mem::ProfilerChan,
                time_profiler_chan: ProfilerChan,
                devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,

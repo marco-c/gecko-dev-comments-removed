@@ -10,7 +10,7 @@
 
 
 use backtrace::Backtrace;
-use bluetooth_traits::BluetoothMethodMsg;
+use bluetooth_traits::BluetoothRequest;
 use canvas::canvas_paint_thread::CanvasPaintThread;
 use canvas::webgl_paint_thread::WebGLPaintThread;
 use canvas_traits::CanvasMsg;
@@ -121,7 +121,7 @@ pub struct Constellation<Message, LTF, STF> {
     devtools_chan: Option<Sender<DevtoolsControlMsg>>,
 
     
-    bluetooth_thread: IpcSender<BluetoothMethodMsg>,
+    bluetooth_thread: IpcSender<BluetoothRequest>,
 
     
     swmanager_chan: Option<IpcSender<ServiceWorkerMsg>>,
@@ -199,7 +199,7 @@ pub struct InitialConstellationState {
     
     pub devtools_chan: Option<Sender<DevtoolsControlMsg>>,
     
-    pub bluetooth_thread: IpcSender<BluetoothMethodMsg>,
+    pub bluetooth_thread: IpcSender<BluetoothRequest>,
     
     pub image_cache_thread: ImageCacheThread,
     
@@ -1095,7 +1095,7 @@ impl<Message, LTF, STF> Constellation<Message, LTF, STF>
         }
 
         debug!("Exiting bluetooth thread.");
-        if let Err(e) = self.bluetooth_thread.send(BluetoothMethodMsg::Exit) {
+        if let Err(e) = self.bluetooth_thread.send(BluetoothRequest::Exit) {
             warn!("Exit bluetooth thread failed ({})", e);
         }
 
