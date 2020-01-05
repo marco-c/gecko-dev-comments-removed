@@ -577,8 +577,13 @@ BufferTextureHost::EnsureWrappingTextureSource()
 {
   MOZ_ASSERT(!mHasIntermediateBuffer);
 
-  if (mFirstSource) {
+  if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
     return true;
+  }
+  
+  if (mFirstSource) {
+    mNeedsFullUpdate = true;
+    mFirstSource = nullptr;
   }
 
   if (!mCompositor) {
