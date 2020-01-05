@@ -3,8 +3,8 @@
 
 
 
-#ifndef nsCollationMacUC_h_
-#define nsCollationMacUC_h_
+#ifndef nsCollation_h_
+#define nsCollation_h_
 
 #include "mozilla/Attributes.h"
 #include "nsICollation.h"
@@ -13,10 +13,10 @@
 
 #include "unicode/ucol.h"
 
-class nsCollationMacUC final : public nsICollation {
+class nsCollation final : public nsICollation {
 
 public:
-  nsCollationMacUC();
+  nsCollation();
 
   
   NS_DECL_ISUPPORTS
@@ -25,7 +25,7 @@ public:
   NS_DECL_NSICOLLATION
 
 protected:
-  ~nsCollationMacUC();
+  ~nsCollation();
 
   nsresult ConvertStrength(const int32_t aStrength,
                            UCollationStrength* aStrengthOut,

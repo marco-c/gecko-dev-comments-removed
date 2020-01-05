@@ -12,8 +12,6 @@
 #include "nsCOMPtr.h"
 #include "mozilla/Attributes.h"
 
-class nsIUnicodeEncoder;
-
 
 
 class nsCollationFactory final : public nsICollationFactory {
@@ -25,26 +23,6 @@ public:
   NS_DECL_NSICOLLATIONFACTORY
 
   nsCollationFactory() {}
-};
-
-
-struct nsCollation {
-
-public: 
-
-  nsCollation();
-  
-  ~nsCollation();
-
-  
-  nsresult NormalizeString(const nsAString& stringIn, nsAString& stringOut);
-
-  
-  nsresult SetCharset(const char* aCharset);
-  nsresult UnicodeToChar(const nsAString& aSrc, char** dst);
-
-protected:
-  nsCOMPtr <nsIUnicodeEncoder>            mEncoder;
 };
 
 #endif  
