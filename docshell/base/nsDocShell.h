@@ -63,6 +63,7 @@
 #include "nsIThrottlingService.h"
 
 namespace mozilla {
+enum class TaskCategory;
 namespace dom {
 class EventTarget;
 class PendingGlobalHistoryEntry;
@@ -1074,6 +1075,11 @@ private:
   
   void FirePageHideNotificationInternal(bool aIsUnload,
                                         bool aSkipCheckingDynEntries);
+
+  
+  nsresult DispatchToTabGroup(const char* aName,
+                              mozilla::TaskCategory aCategory,
+                              already_AddRefed<nsIRunnable>&& aRunnable);
 
 #ifdef DEBUG
   
