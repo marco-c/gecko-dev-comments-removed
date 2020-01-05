@@ -3149,9 +3149,11 @@ nsc_CommonFinalize(CK_VOID_PTR pReserved, PRBool isFIPS)
 
     BL_SetForkState(PR_FALSE);
 
+#ifndef NSS_TEST_BUILD
     
 
     BL_Unload();
+#endif
 
     
     SECOID_Shutdown();

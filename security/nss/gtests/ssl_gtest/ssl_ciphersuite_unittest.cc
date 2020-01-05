@@ -130,14 +130,20 @@ class TlsCipherSuiteTestBase : public TlsConnectTestBase {
 
     
     uint16_t actual;
-    EXPECT_TRUE(client_->cipher_suite(&actual) && actual == cipher_suite_);
-    EXPECT_TRUE(server_->cipher_suite(&actual) && actual == cipher_suite_);
+    EXPECT_TRUE(client_->cipher_suite(&actual));
+    EXPECT_EQ(cipher_suite_, actual);
+    EXPECT_TRUE(server_->cipher_suite(&actual));
+    EXPECT_EQ(cipher_suite_, actual);
     SSLAuthType auth;
-    EXPECT_TRUE(client_->auth_type(&auth) && auth == auth_type_);
-    EXPECT_TRUE(server_->auth_type(&auth) && auth == auth_type_);
+    EXPECT_TRUE(client_->auth_type(&auth));
+    EXPECT_EQ(auth_type_, auth);
+    EXPECT_TRUE(server_->auth_type(&auth));
+    EXPECT_EQ(auth_type_, auth);
     SSLKEAType kea;
-    EXPECT_TRUE(client_->kea_type(&kea) && kea == kea_type_);
-    EXPECT_TRUE(server_->kea_type(&kea) && kea == kea_type_);
+    EXPECT_TRUE(client_->kea_type(&kea));
+    EXPECT_EQ(kea_type_, kea);
+    EXPECT_TRUE(server_->kea_type(&kea));
+    EXPECT_EQ(kea_type_, kea);
   }
 
   

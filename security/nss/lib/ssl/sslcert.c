@@ -13,42 +13,91 @@
 #include "nss.h"      
 #include "prinit.h"   
 
-static const PRCallOnceType pristineCallOnce;
-static PRCallOnceType setupServerCAListOnce;
+
+
+
+static struct {
+    PRCallOnceType setup;
+    CERTDistNames *names;
+} ssl_server_ca_list;
 
 static SECStatus
-serverCAListShutdown(void *appData, void *nssData)
+ssl_ServerCAListShutdown(void *appData, void *nssData)
 {
-    PORT_Assert(ssl3_server_ca_list);
-    if (ssl3_server_ca_list) {
-        CERT_FreeDistNames(ssl3_server_ca_list);
-        ssl3_server_ca_list = NULL;
+    PORT_Assert(ssl_server_ca_list.names);
+    if (ssl_server_ca_list.names) {
+        CERT_FreeDistNames(ssl_server_ca_list.names);
     }
-    setupServerCAListOnce = pristineCallOnce;
+    PORT_Memset(&ssl_server_ca_list, 0, sizeof(ssl_server_ca_list));
     return SECSuccess;
 }
 
 static PRStatus
-serverCAListSetup(void *arg)
+ssl_SetupCAListOnce(void *arg)
 {
     CERTCertDBHandle *dbHandle = (CERTCertDBHandle *)arg;
-    SECStatus rv = NSS_RegisterShutdown(serverCAListShutdown, NULL);
+    SECStatus rv = NSS_RegisterShutdown(ssl_ServerCAListShutdown, NULL);
     PORT_Assert(SECSuccess == rv);
     if (SECSuccess == rv) {
-        ssl3_server_ca_list = CERT_GetSSLCACerts(dbHandle);
+        ssl_server_ca_list.names = CERT_GetSSLCACerts(dbHandle);
         return PR_SUCCESS;
     }
     return PR_FAILURE;
 }
 
+SECStatus
+ssl_SetupCAList(sslSocket *ss)
+{
+    if (PR_SUCCESS != PR_CallOnceWithArg(&ssl_server_ca_list.setup,
+                                         &ssl_SetupCAListOnce,
+                                         (void *)(ss->dbHandle))) {
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+        return SECFailure;
+    }
+    return SECSuccess;
+}
+
+SECStatus
+ssl_GetCertificateRequestCAs(sslSocket *ss, unsigned int *calen,
+                             SECItem **names, unsigned int *nnames)
+{
+    SECItem *name;
+    CERTDistNames *ca_list;
+    unsigned int i;
+
+    *calen = 0;
+    *names = NULL;
+    *nnames = 0;
+
+    
+    ca_list = ss->ssl3.ca_list;
+    if (!ca_list) {
+        if (ssl_SetupCAList(ss) != SECSuccess) {
+            return SECFailure;
+        }
+        ca_list = ssl_server_ca_list.names;
+    }
+
+    if (ca_list != NULL) {
+        *names = ca_list->names;
+        *nnames = ca_list->nnames;
+    }
+
+    for (i = 0, name = *names; i < *nnames; i++, name++) {
+        *calen += 2 + name->len;
+    }
+    return SECSuccess;
+}
+
 sslServerCert *
-ssl_NewServerCert(const sslServerCertType *certType)
+ssl_NewServerCert()
 {
     sslServerCert *sc = PORT_ZNew(sslServerCert);
     if (!sc) {
         return NULL;
     }
-    memcpy(&sc->certType, certType, sizeof(sc->certType));
+    sc->authTypes = 0;
+    sc->namedCurve = NULL;
     sc->serverCert = NULL;
     sc->serverCertChain = NULL;
     sc->certStatusArray = NULL;
@@ -61,10 +110,13 @@ ssl_CopyServerCert(const sslServerCert *oc)
 {
     sslServerCert *sc;
 
-    sc = ssl_NewServerCert(&oc->certType);
+    sc = ssl_NewServerCert();
     if (!sc) {
         return NULL;
     }
+
+    sc->authTypes = oc->authTypes;
+    sc->namedCurve = oc->namedCurve;
 
     if (oc->serverCert && oc->serverCertChain) {
         sc->serverCert = CERT_DupCertificate(oc->serverCert);
@@ -129,9 +181,9 @@ ssl_FreeServerCert(sslServerCert *sc)
     PORT_ZFree(sc, sizeof(*sc));
 }
 
-sslServerCert *
-ssl_FindServerCert(const sslSocket *ss,
-                   const sslServerCertType *certType)
+const sslServerCert *
+ssl_FindServerCert(const sslSocket *ss, SSLAuthType authType,
+                   const sslNamedGroupDef *namedCurve)
 {
     PRCList *cursor;
 
@@ -139,66 +191,19 @@ ssl_FindServerCert(const sslSocket *ss,
          cursor != &ss->serverCerts;
          cursor = PR_NEXT_LINK(cursor)) {
         sslServerCert *cert = (sslServerCert *)cursor;
-        if (cert->certType.authType != certType->authType) {
+        if (!SSL_CERT_IS(cert, authType)) {
             continue;
         }
-        switch (cert->certType.authType) {
-            case ssl_auth_ecdsa:
-            case ssl_auth_ecdh_rsa:
-            case ssl_auth_ecdh_ecdsa:
-                
+        if (SSL_CERT_IS_EC(cert)) {
+            
 
-                if (certType->namedCurve &&
-                    cert->certType.namedCurve != certType->namedCurve) {
-                    continue;
-                }
-                break;
-            default:
-                break;
+            if (namedCurve && cert->namedCurve != namedCurve) {
+                continue;
+            }
         }
         return cert;
     }
     return NULL;
-}
-
-sslServerCert *
-ssl_FindServerCertByAuthType(const sslSocket *ss, SSLAuthType authType)
-{
-    sslServerCertType certType;
-    certType.authType = authType;
-    
-
-    certType.namedCurve = NULL;
-    return ssl_FindServerCert(ss, &certType);
-}
-
-SECStatus
-ssl_OneTimeCertSetup(sslSocket *ss, const sslServerCert *sc)
-{
-    if (PR_SUCCESS != PR_CallOnceWithArg(&setupServerCAListOnce,
-                                         &serverCAListSetup,
-                                         (void *)(ss->dbHandle))) {
-        return SECFailure;
-    }
-    return SECSuccess;
-}
-
-
-
-static void
-ssl_PopulateCertType(sslServerCertType *certType, SSLAuthType authType,
-                     CERTCertificate *cert, sslKeyPair *keyPair)
-{
-    certType->authType = authType;
-    switch (authType) {
-        case ssl_auth_ecdsa:
-        case ssl_auth_ecdh_rsa:
-        case ssl_auth_ecdh_ecdsa:
-            certType->namedCurve = ssl_ECPubKey2NamedGroup(keyPair->pubKey);
-            break;
-        default:
-            break;
-    }
 }
 
 static SECStatus
@@ -232,21 +237,43 @@ ssl_PopulateServerCert(sslServerCert *sc, CERTCertificate *cert,
 static SECStatus
 ssl_PopulateKeyPair(sslServerCert *sc, sslKeyPair *keyPair)
 {
-    
     if (sc->serverKeyPair) {
         ssl_FreeKeyPair(sc->serverKeyPair);
+        sc->serverKeyPair = NULL;
     }
     if (keyPair) {
+        KeyType keyType = SECKEY_GetPublicKeyType(keyPair->pubKey);
+        PORT_Assert(keyType == SECKEY_GetPrivateKeyType(keyPair->privKey));
+
+        if (keyType == ecKey) {
+            sc->namedCurve = ssl_ECPubKey2NamedGroup(keyPair->pubKey);
+            if (!sc->namedCurve) {
+                
+                PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
+                return SECFailure;
+            }
+        }
+
         
         sc->serverKeyBits = SECKEY_PublicKeyStrengthInBits(keyPair->pubKey);
         if (sc->serverKeyBits == 0) {
+            PORT_SetError(SEC_ERROR_INVALID_ARGS);
             return SECFailure;
         }
 
         SECKEY_CacheStaticFlags(keyPair->privKey);
         sc->serverKeyPair = ssl_GetKeyPairRef(keyPair);
+
+        if (SSL_CERT_IS(sc, ssl_auth_rsa_decrypt)) {
+            
+
+            if (ssl_MaybeSetSessionTicketKeyPair(keyPair) != SECSuccess) {
+                return SECFailure;
+            }
+        }
     } else {
         sc->serverKeyPair = NULL;
+        sc->namedCurve = NULL;
     }
     return SECSuccess;
 }
@@ -281,12 +308,39 @@ ssl_PopulateSignedCertTimestamps(sslServerCert *sc,
     return SECSuccess;
 }
 
-static SECStatus
-ssl_ConfigCert(sslSocket *ss, CERTCertificate *cert,
-               sslKeyPair *keyPair, const SSLExtraServerCertData *data)
+
+
+
+static void
+ssl_ClearMatchingCerts(sslSocket *ss, sslAuthTypeMask authTypes,
+                       const sslNamedGroupDef *namedCurve)
 {
-    sslServerCert *oldsc;
-    sslServerCertType certType;
+    PRCList *cursor = PR_NEXT_LINK(&ss->serverCerts);
+
+    while (cursor != &ss->serverCerts) {
+        sslServerCert *sc = (sslServerCert *)cursor;
+        cursor = PR_NEXT_LINK(cursor);
+        if ((sc->authTypes & authTypes) == 0) {
+            continue;
+        }
+        
+        if (namedCurve != NULL && sc->namedCurve != namedCurve) {
+            continue;
+        }
+
+        sc->authTypes &= ~authTypes;
+        if (sc->authTypes == 0) {
+            PR_REMOVE_LINK(&sc->link);
+            ssl_FreeServerCert(sc);
+        }
+    }
+}
+
+static SECStatus
+ssl_ConfigCert(sslSocket *ss, sslAuthTypeMask authTypes,
+               CERTCertificate *cert, sslKeyPair *keyPair,
+               const SSLExtraServerCertData *data)
+{
     SECStatus rv;
     sslServerCert *sc = NULL;
     int error_code = SEC_ERROR_NO_MEMORY;
@@ -294,34 +348,26 @@ ssl_ConfigCert(sslSocket *ss, CERTCertificate *cert,
     PORT_Assert(cert);
     PORT_Assert(keyPair);
     PORT_Assert(data);
-    PORT_Assert(data->authType != ssl_auth_null);
+    PORT_Assert(authTypes);
 
-    if (!cert || !keyPair || !data || data->authType == ssl_auth_null) {
+    if (!cert || !keyPair || !data || !authTypes) {
         error_code = SEC_ERROR_INVALID_ARGS;
         goto loser;
     }
 
-    ssl_PopulateCertType(&certType, data->authType, cert, keyPair);
-
-    
-
-    oldsc = ssl_FindServerCert(ss, &certType);
-    if (oldsc) {
-        PR_REMOVE_LINK(&oldsc->link);
-        ssl_FreeServerCert(oldsc);
-    }
-    sc = ssl_NewServerCert(&certType);
+    sc = ssl_NewServerCert();
     if (!sc) {
         goto loser;
     }
 
+    sc->authTypes = authTypes;
     rv = ssl_PopulateServerCert(sc, cert, data->certChain);
     if (rv != SECSuccess) {
         goto loser;
     }
     rv = ssl_PopulateKeyPair(sc, keyPair);
     if (rv != SECSuccess) {
-        error_code = SEC_ERROR_INVALID_ARGS;
+        error_code = PORT_GetError();
         goto loser;
     }
     rv = ssl_PopulateOCSPResponses(sc, data->stapledOCSPResponses);
@@ -332,23 +378,12 @@ ssl_ConfigCert(sslSocket *ss, CERTCertificate *cert,
     if (rv != SECSuccess) {
         goto loser;
     }
+    ssl_ClearMatchingCerts(ss, sc->authTypes, sc->namedCurve);
     PR_APPEND_LINK(&sc->link, &ss->serverCerts);
-
-    
-    rv = ssl_OneTimeCertSetup(ss, sc);
-    if (rv != SECSuccess) {
-        PR_REMOVE_LINK(&sc->link);
-        error_code = PORT_GetError();
-        goto loser;
-    }
     return SECSuccess;
 
 loser:
-    if (sc) {
-        ssl_FreeServerCert(sc);
-    }
-    
-
+    ssl_FreeServerCert(sc);
     PORT_SetError(error_code);
     return SECFailure;
 }
@@ -388,108 +423,49 @@ ssl_GetEcdhAuthType(CERTCertificate *cert)
 
 
 
-static SECStatus
-ssl_ConfigRsaPkcs1CertByUsage(sslSocket *ss, CERTCertificate *cert,
-                              sslKeyPair *keyPair,
-                              SSLExtraServerCertData *data)
+static sslAuthTypeMask
+ssl_GetCertificateAuthTypes(CERTCertificate *cert, SSLAuthType targetAuthType)
 {
-    SECStatus rv = SECFailure;
-
-    PRBool ku_sig = (PRBool)(cert->keyUsage & KU_DIGITAL_SIGNATURE);
-    PRBool ku_enc = (PRBool)(cert->keyUsage & KU_KEY_ENCIPHERMENT);
-
-    if ((data->authType == ssl_auth_rsa_sign && ku_sig) ||
-        (data->authType == ssl_auth_rsa_pss && ku_sig) ||
-        (data->authType == ssl_auth_rsa_decrypt && ku_enc)) {
-        return ssl_ConfigCert(ss, cert, keyPair, data);
-    }
-
-    if (data->authType != ssl_auth_null || !(ku_sig || ku_enc)) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
-    }
-
-    if (ku_sig) {
-        data->authType = ssl_auth_rsa_sign;
-        rv = ssl_ConfigCert(ss, cert, keyPair, data);
-        if (rv != SECSuccess) {
-            return rv;
-        }
-
-        
-        data->authType = ssl_auth_rsa_pss;
-        rv = ssl_ConfigCert(ss, cert, keyPair, data);
-        if (rv != SECSuccess) {
-            return rv;
-        }
-    }
-
-    if (ku_enc) {
-        
-
-
-        data->authType = ssl_auth_rsa_decrypt;
-        rv = ssl_ConfigCert(ss, cert, keyPair, data);
-        if (rv != SECSuccess) {
-            return rv;
-        }
-    }
-
-    return rv;
-}
-
-
-
-
-
-
-
-
-static SECStatus
-ssl_ConfigCertByUsage(sslSocket *ss, CERTCertificate *cert,
-                      sslKeyPair *keyPair, const SSLExtraServerCertData *data)
-{
-    SECStatus rv = SECFailure;
-    SSLExtraServerCertData arg;
+    sslAuthTypeMask authTypes = 0;
     SECOidTag tag;
-
-    PORT_Assert(data);
-    
-    memcpy(&arg, data, sizeof(arg));
 
     tag = SECOID_GetAlgorithmTag(&cert->subjectPublicKeyInfo.algorithm);
     switch (tag) {
         case SEC_OID_X500_RSA_ENCRYPTION:
         case SEC_OID_PKCS1_RSA_ENCRYPTION:
-            return ssl_ConfigRsaPkcs1CertByUsage(ss, cert, keyPair, &arg);
+            if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
+                authTypes |= 1 << ssl_auth_rsa_sign;
+                
+                authTypes |= 1 << ssl_auth_rsa_pss;
+            }
+
+            if (cert->keyUsage & KU_KEY_ENCIPHERMENT) {
+                
+
+
+                authTypes |= 1 << ssl_auth_rsa_decrypt;
+            }
+            break;
 
         case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
             if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
-                arg.authType = ssl_auth_rsa_pss;
+                authTypes |= 1 << ssl_auth_rsa_pss;
             }
             break;
 
         case SEC_OID_ANSIX9_DSA_SIGNATURE:
             if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
-                arg.authType = ssl_auth_dsa;
+                authTypes |= 1 << ssl_auth_dsa;
             }
             break;
 
         case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
+            if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
+                authTypes |= 1 << ssl_auth_ecdsa;
+            }
+            
             if (cert->keyUsage & KU_KEY_ENCIPHERMENT) {
-                if ((cert->keyUsage & KU_DIGITAL_SIGNATURE) &&
-                    arg.authType == ssl_auth_null) {
-                    
-                    arg.authType = ssl_auth_ecdsa;
-                    rv = ssl_ConfigCert(ss, cert, keyPair, &arg);
-                    if (rv != SECSuccess) {
-                        return rv;
-                    }
-                }
-
-                arg.authType = ssl_GetEcdhAuthType(cert);
-            } else if (cert->keyUsage & KU_DIGITAL_SIGNATURE) {
-                arg.authType = ssl_auth_ecdsa;
+                authTypes |= 1 << ssl_GetEcdhAuthType(cert);
             }
             break;
 
@@ -498,26 +474,32 @@ ssl_ConfigCertByUsage(sslSocket *ss, CERTCertificate *cert,
     }
 
     
-    if (arg.authType == ssl_auth_null) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
+    if (targetAuthType != ssl_auth_null) {
+        authTypes &= 1 << targetAuthType;
     }
-    
-    if (data && data->authType != ssl_auth_null &&
-        data->authType != arg.authType) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
-    }
-    return ssl_ConfigCert(ss, cert, keyPair, &arg);
+    return authTypes;
 }
 
 
 static sslKeyPair *
-ssl_MakeKeyPairForCert(SECKEYPrivateKey *key, SECKEYPublicKey *pubKey)
+ssl_MakeKeyPairForCert(SECKEYPrivateKey *key, CERTCertificate *cert)
 {
     sslKeyPair *keyPair = NULL;
+    SECKEYPublicKey *pubKey = NULL;
     SECKEYPrivateKey *privKeyCopy = NULL;
     PK11SlotInfo *bestSlot;
+
+    pubKey = CERT_ExtractPublicKey(cert);
+    if (!pubKey) {
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
+        return NULL;
+    }
+
+    if (SECKEY_GetPublicKeyType(pubKey) != SECKEY_GetPrivateKeyType(key)) {
+        SECKEY_DestroyPublicKey(pubKey);
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return NULL;
+    }
 
     if (key->pkcs11Slot) {
         bestSlot = PK11_ReferenceSlot(key->pkcs11Slot);
@@ -545,10 +527,8 @@ ssl_MakeKeyPairForCert(SECKEYPrivateKey *key, SECKEYPublicKey *pubKey)
         if (privKeyCopy) {
             SECKEY_DestroyPrivateKey(privKeyCopy);
         }
-        
-        if (pubKey) {
-            SECKEY_DestroyPublicKey(pubKey);
-        }
+        SECKEY_DestroyPublicKey(pubKey);
+        PORT_SetError(SEC_ERROR_NO_MEMORY);
     }
     return keyPair;
 }
@@ -566,12 +546,12 @@ SSL_ConfigServerCert(PRFileDesc *fd, CERTCertificate *cert,
                      const SSLExtraServerCertData *data, unsigned int data_len)
 {
     sslSocket *ss;
-    SECKEYPublicKey *pubKey;
     sslKeyPair *keyPair;
     SECStatus rv;
     SSLExtraServerCertData dataCopy = {
         ssl_auth_null, NULL, NULL, NULL
     };
+    sslAuthTypeMask authTypes;
 
     ss = ssl_FindSocket(fd);
     if (!ss) {
@@ -591,21 +571,23 @@ SSL_ConfigServerCert(PRFileDesc *fd, CERTCertificate *cert,
         PORT_Memcpy(&dataCopy, data, data_len);
     }
 
-    pubKey = CERT_ExtractPublicKey(cert);
-    if (!pubKey) {
+    authTypes = ssl_GetCertificateAuthTypes(cert, dataCopy.authType);
+    if (!authTypes) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
 
-    keyPair = ssl_MakeKeyPairForCert(key, pubKey);
+    keyPair = ssl_MakeKeyPairForCert(key, cert);
     if (!keyPair) {
-        
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
         return SECFailure;
     }
 
-    rv = ssl_ConfigCertByUsage(ss, cert, keyPair, &dataCopy);
+    rv = ssl_ConfigCert(ss, authTypes, cert, keyPair, &dataCopy);
     ssl_FreeKeyPair(keyPair);
-    return rv;
+    if (rv != SECSuccess) {
+        return SECFailure;
+    }
+    return SECSuccess;
 }
 
 
@@ -630,164 +612,147 @@ SSL_ConfigSecureServer(PRFileDesc *fd, CERTCertificate *cert,
 
 
 static PRBool
-ssl_CertSuitableForAuthType(CERTCertificate *cert, SSLAuthType authType)
+ssl_CertSuitableForAuthType(CERTCertificate *cert, sslAuthTypeMask authTypes)
 {
     SECOidTag tag = SECOID_GetAlgorithmTag(&cert->subjectPublicKeyInfo.algorithm);
-    switch (authType) {
-        case ssl_auth_rsa_decrypt:
-        case ssl_auth_rsa_sign:
-            return tag == SEC_OID_X500_RSA_ENCRYPTION ||
-                   tag == SEC_OID_PKCS1_RSA_ENCRYPTION;
-        case ssl_auth_dsa:
-            return tag == SEC_OID_ANSIX9_DSA_SIGNATURE;
-        case ssl_auth_ecdsa:
-        case ssl_auth_ecdh_rsa:
-        case ssl_auth_ecdh_ecdsa:
-            return tag == SEC_OID_ANSIX962_EC_PUBLIC_KEY;
-        case ssl_auth_null:
-        case ssl_auth_kea:
-        case ssl_auth_rsa_pss: 
-            return PR_FALSE;
+    sslAuthTypeMask mask = 0;
+    switch (tag) {
+        case SEC_OID_X500_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_RSA_ENCRYPTION:
+            mask |= 1 << ssl_auth_rsa_decrypt;
+            mask |= 1 << ssl_auth_rsa_sign;
+            break;
+        case SEC_OID_ANSIX9_DSA_SIGNATURE:
+            mask |= 1 << ssl_auth_dsa;
+            break;
+        case SEC_OID_ANSIX962_EC_PUBLIC_KEY:
+            mask |= 1 << ssl_auth_ecdsa;
+            mask |= 1 << ssl_auth_ecdh_rsa;
+            mask |= 1 << ssl_auth_ecdh_ecdsa;
+            break;
         default:
-            PORT_Assert(0);
-            return PR_FALSE;
+            break;
     }
+    PORT_Assert(authTypes);
+    
+    return (authTypes & ~mask) == 0;
 }
 
 
 
+
 static sslServerCert *
-ssl_FindOrMakeCertType(sslSocket *ss, SSLAuthType authType)
+ssl_FindCertWithMask(sslSocket *ss, sslAuthTypeMask authTypes)
+{
+    PRCList *cursor;
+
+    for (cursor = PR_NEXT_LINK(&ss->serverCerts);
+         cursor != &ss->serverCerts;
+         cursor = PR_NEXT_LINK(cursor)) {
+        sslServerCert *cert = (sslServerCert *)cursor;
+        if (cert->authTypes == authTypes) {
+            return cert;
+        }
+    }
+    return NULL;
+}
+
+
+
+
+static sslServerCert *
+ssl_FindOrMakeCert(sslSocket *ss, sslAuthTypeMask authTypes)
 {
     sslServerCert *sc;
-    sslServerCertType certType;
 
-    certType.authType = authType;
     
 
-    certType.namedCurve = NULL;
-    sc = ssl_FindServerCert(ss, &certType);
+
+
+
+
+    sc = ssl_FindCertWithMask(ss, authTypes);
     if (sc) {
         PR_REMOVE_LINK(&sc->link);
         return sc;
     }
 
-    return ssl_NewServerCert(&certType);
-}
-
-static void
-ssl_RemoveCertAndKeyByAuthType(sslSocket *ss, SSLAuthType authType)
-{
-    sslServerCert *sc;
-
-    sc = ssl_FindServerCertByAuthType(ss, authType);
-    if (sc) {
-        (void)ssl_PopulateServerCert(sc, NULL, NULL);
-        (void)ssl_PopulateKeyPair(sc, NULL);
-        
-
-
-        
-
-    }
-}
-
-static SECStatus
-ssl_AddCertAndKeyByAuthType(sslSocket *ss, SSLAuthType authType,
-                            CERTCertificate *cert,
-                            const CERTCertificateList *certChainOpt,
-                            sslKeyPair *keyPair)
-{
-    sslServerCert *sc;
-    SECStatus rv;
-
-    if (!ssl_CertSuitableForAuthType(cert, authType)) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        return SECFailure;
-    }
-
-    sc = ssl_FindOrMakeCertType(ss, authType);
-    if (!sc) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return SECFailure;
-    }
-    rv = ssl_PopulateKeyPair(sc, keyPair);
-    if (rv != SECSuccess) {
-        PORT_SetError(SEC_ERROR_INVALID_ARGS);
-        goto loser;
-    }
     
 
+    ssl_ClearMatchingCerts(ss, authTypes, NULL);
 
-    ssl_PopulateCertType(&sc->certType, authType, cert, keyPair);
-    rv = ssl_PopulateServerCert(sc, cert, certChainOpt);
-    if (rv != SECSuccess) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        goto loser;
+    sc = ssl_NewServerCert();
+    if (sc) {
+        sc->authTypes = authTypes;
     }
-    PR_APPEND_LINK(&sc->link, &ss->serverCerts);
-    return ssl_OneTimeCertSetup(ss, sc);
-loser:
-    ssl_FreeServerCert(sc);
-    return SECFailure;
+    return sc;
 }
 
-static SECStatus
-ssl_AddCertsByKEA(sslSocket *ss, CERTCertificate *cert,
-                  const CERTCertificateList *certChainOpt,
-                  SECKEYPrivateKey *key, SSLKEAType certType)
+static sslAuthTypeMask
+ssl_KeaTypeToAuthTypeMask(SSLKEAType keaType)
 {
-    SECKEYPublicKey *pubKey;
-    sslKeyPair *keyPair;
-    SECStatus rv;
-
-    pubKey = CERT_ExtractPublicKey(cert);
-    if (!pubKey) {
-        return SECFailure;
-    }
-
-    keyPair = ssl_MakeKeyPairForCert(key, pubKey);
-    if (!keyPair) {
-        
-
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return SECFailure;
-    }
-
-    switch (certType) {
+    switch (keaType) {
         case ssl_kea_rsa:
-            rv = ssl_AddCertAndKeyByAuthType(ss, ssl_auth_rsa_decrypt,
-                                             cert, certChainOpt, keyPair);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            rv = ssl_AddCertAndKeyByAuthType(ss, ssl_auth_rsa_sign,
-                                             cert, certChainOpt, keyPair);
-            break;
+            return (1 << ssl_auth_rsa_decrypt) |
+                   (1 << ssl_auth_rsa_sign);
 
         case ssl_kea_dh:
-            rv = ssl_AddCertAndKeyByAuthType(ss, ssl_auth_dsa,
-                                             cert, certChainOpt, keyPair);
-            break;
+            return 1 << ssl_auth_dsa;
 
         case ssl_kea_ecdh:
-            rv = ssl_AddCertAndKeyByAuthType(ss, ssl_auth_ecdsa,
-                                             cert, certChainOpt, keyPair);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            rv = ssl_AddCertAndKeyByAuthType(ss, ssl_GetEcdhAuthType(cert),
-                                             cert, certChainOpt, keyPair);
-            break;
+            return (1 << ssl_auth_ecdsa) |
+                   (1 << ssl_auth_ecdh_rsa) |
+                   (1 << ssl_auth_ecdh_ecdsa);
 
         default:
             PORT_SetError(SEC_ERROR_INVALID_ARGS);
-            rv = SECFailure;
-            break;
+    }
+    return 0;
+}
+
+static SECStatus
+ssl_AddCertChain(sslSocket *ss, CERTCertificate *cert,
+                 const CERTCertificateList *certChainOpt,
+                 SECKEYPrivateKey *key, sslAuthTypeMask authTypes)
+{
+    sslServerCert *sc;
+    sslKeyPair *keyPair;
+    SECStatus rv;
+    PRErrorCode err = SEC_ERROR_NO_MEMORY;
+
+    if (!ssl_CertSuitableForAuthType(cert, authTypes)) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
     }
 
+    sc = ssl_FindOrMakeCert(ss, authTypes);
+    if (!sc) {
+        goto loser;
+    }
+
+    rv = ssl_PopulateServerCert(sc, cert, certChainOpt);
+    if (rv != SECSuccess) {
+        goto loser;
+    }
+
+    keyPair = ssl_MakeKeyPairForCert(key, cert);
+    if (!keyPair) {
+        return SECFailure;
+    }
+    rv = ssl_PopulateKeyPair(sc, keyPair);
     ssl_FreeKeyPair(keyPair);
-    return rv;
+    if (rv != SECSuccess) {
+        err = PORT_GetError();
+        goto loser;
+    }
+
+    PR_APPEND_LINK(&sc->link, &ss->serverCerts);
+    return SECSuccess;
+
+loser:
+    ssl_FreeServerCert(sc);
+    PORT_SetError(err);
+    return SECFailure;
 }
 
 
@@ -797,6 +762,7 @@ SSL_ConfigSecureServerWithCertChain(PRFileDesc *fd, CERTCertificate *cert,
                                     SECKEYPrivateKey *key, SSLKEAType certType)
 {
     sslSocket *ss;
+    sslAuthTypeMask authTypes;
 
     ss = ssl_FindSocket(fd);
     if (!ss) {
@@ -808,52 +774,25 @@ SSL_ConfigSecureServerWithCertChain(PRFileDesc *fd, CERTCertificate *cert,
         return SECFailure;
     }
 
+    authTypes = ssl_KeaTypeToAuthTypeMask(certType);
+    if (!authTypes) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
+
     if (!cert) {
-        switch (certType) {
-            case ssl_kea_rsa:
-                ssl_RemoveCertAndKeyByAuthType(ss, ssl_auth_rsa_decrypt);
-                ssl_RemoveCertAndKeyByAuthType(ss, ssl_auth_rsa_sign);
-                break;
+        sslServerCert *sc = ssl_FindCertWithMask(ss, authTypes);
+        if (sc) {
+            (void)ssl_PopulateServerCert(sc, NULL, NULL);
+            (void)ssl_PopulateKeyPair(sc, NULL);
+            
 
-            case ssl_kea_dh:
-                ssl_RemoveCertAndKeyByAuthType(ss, ssl_auth_dsa);
-                break;
 
-            case ssl_kea_ecdh:
-                ssl_RemoveCertAndKeyByAuthType(ss, ssl_auth_ecdsa);
-                ssl_RemoveCertAndKeyByAuthType(ss, ssl_auth_ecdh_rsa);
-                ssl_RemoveCertAndKeyByAuthType(ss, ssl_auth_ecdh_ecdsa);
-                break;
-
-            default:
-                PORT_SetError(SEC_ERROR_INVALID_ARGS);
-                return SECFailure;
         }
         return SECSuccess;
     }
 
-    return ssl_AddCertsByKEA(ss, cert, certChainOpt, key, certType);
-}
-
-static SECStatus
-ssl_SetOCSPResponsesInSlot(sslSocket *ss, SSLAuthType authType,
-                           const SECItemArray *responses)
-{
-    sslServerCert *sc;
-    SECStatus rv;
-
-    sc = ssl_FindOrMakeCertType(ss, authType);
-    if (!sc) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
-        return SECFailure;
-    }
-    rv = ssl_PopulateOCSPResponses(sc, responses);
-    if (rv == SECSuccess) {
-        PR_APPEND_LINK(&sc->link, &ss->serverCerts);
-    } else {
-        ssl_FreeServerCert(sc);
-    }
-    return rv;
+    return ssl_AddCertChain(ss, cert, certChainOpt, key, authTypes);
 }
 
 
@@ -862,6 +801,8 @@ SSL_SetStapledOCSPResponses(PRFileDesc *fd, const SECItemArray *responses,
                             SSLKEAType certType)
 {
     sslSocket *ss;
+    sslServerCert *sc;
+    sslAuthTypeMask authTypes;
     SECStatus rv;
 
     ss = ssl_FindSocket(fd);
@@ -871,49 +812,28 @@ SSL_SetStapledOCSPResponses(PRFileDesc *fd, const SECItemArray *responses,
         return SECFailure;
     }
 
-    switch (certType) {
-        case ssl_kea_rsa:
-            rv = ssl_SetOCSPResponsesInSlot(ss, ssl_auth_rsa_decrypt, responses);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            return ssl_SetOCSPResponsesInSlot(ss, ssl_auth_rsa_sign, responses);
-
-        case ssl_kea_dh:
-            return ssl_SetOCSPResponsesInSlot(ss, ssl_auth_dsa, responses);
-
-        case ssl_kea_ecdh:
-            rv = ssl_SetOCSPResponsesInSlot(ss, ssl_auth_ecdsa, responses);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            rv = ssl_SetOCSPResponsesInSlot(ss, ssl_auth_ecdh_rsa, responses);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            return ssl_SetOCSPResponsesInSlot(ss, ssl_auth_ecdh_ecdsa, responses);
-
-        default:
-            SSL_DBG(("%d: SSL[%d]: invalid cert type in SSL_SetStapledOCSPResponses",
-                     SSL_GETPID(), fd));
-            PORT_SetError(SEC_ERROR_INVALID_ARGS);
-            return SECFailure;
-    }
-}
-
-static SECStatus
-ssl_SetSignedTimestampsInSlot(sslSocket *ss, SSLAuthType authType,
-                              const SECItem *scts)
-{
-    sslServerCert *sc;
-    SECStatus rv;
-
-    sc = ssl_FindOrMakeCertType(ss, authType);
-    if (!sc) {
-        PORT_SetError(SEC_ERROR_NO_MEMORY);
+    authTypes = ssl_KeaTypeToAuthTypeMask(certType);
+    if (!authTypes) {
+        SSL_DBG(("%d: SSL[%d]: invalid cert type in SSL_SetStapledOCSPResponses",
+                 SSL_GETPID(), fd));
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
         return SECFailure;
     }
-    rv = ssl_PopulateSignedCertTimestamps(sc, scts);
+
+    if (!responses) {
+        sc = ssl_FindCertWithMask(ss, authTypes);
+        if (sc) {
+            (void)ssl_PopulateOCSPResponses(sc, NULL);
+        }
+        return SECSuccess;
+    }
+
+    sc = ssl_FindOrMakeCert(ss, authTypes);
+    if (!sc) {
+        return SECFailure;
+    }
+
+    rv = ssl_PopulateOCSPResponses(sc, responses);
     if (rv == SECSuccess) {
         PR_APPEND_LINK(&sc->link, &ss->serverCerts);
     } else {
@@ -928,6 +848,8 @@ SSL_SetSignedCertTimestamps(PRFileDesc *fd, const SECItem *scts,
                             SSLKEAType certType)
 {
     sslSocket *ss;
+    sslServerCert *sc;
+    sslAuthTypeMask authTypes;
     SECStatus rv;
 
     ss = ssl_FindSocket(fd);
@@ -937,34 +859,34 @@ SSL_SetSignedCertTimestamps(PRFileDesc *fd, const SECItem *scts,
         return SECFailure;
     }
 
-    switch (certType) {
-        case ssl_kea_rsa:
-            rv = ssl_SetSignedTimestampsInSlot(ss, ssl_auth_rsa_decrypt, scts);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            return ssl_SetSignedTimestampsInSlot(ss, ssl_auth_rsa_sign, scts);
-
-        case ssl_kea_dh:
-            return ssl_SetSignedTimestampsInSlot(ss, ssl_auth_dsa, scts);
-
-        case ssl_kea_ecdh:
-            rv = ssl_SetSignedTimestampsInSlot(ss, ssl_auth_ecdsa, scts);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            rv = ssl_SetSignedTimestampsInSlot(ss, ssl_auth_ecdh_rsa, scts);
-            if (rv != SECSuccess) {
-                return SECFailure;
-            }
-            return ssl_SetSignedTimestampsInSlot(ss, ssl_auth_ecdh_ecdsa, scts);
-
-        default:
-            SSL_DBG(("%d: SSL[%d]: invalid cert type in SSL_SetSignedCertTimestamps",
-                     SSL_GETPID(), fd));
-            PORT_SetError(SEC_ERROR_INVALID_ARGS);
-            return SECFailure;
+    authTypes = ssl_KeaTypeToAuthTypeMask(certType);
+    if (!authTypes) {
+        SSL_DBG(("%d: SSL[%d]: invalid cert type in SSL_SetSignedCertTimestamps",
+                 SSL_GETPID(), fd));
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
     }
+
+    if (!scts) {
+        sc = ssl_FindCertWithMask(ss, authTypes);
+        if (sc) {
+            (void)ssl_PopulateSignedCertTimestamps(sc, NULL);
+        }
+        return SECSuccess;
+    }
+
+    sc = ssl_FindOrMakeCert(ss, authTypes);
+    if (!sc) {
+        return SECFailure;
+    }
+
+    rv = ssl_PopulateSignedCertTimestamps(sc, scts);
+    if (rv == SECSuccess) {
+        PR_APPEND_LINK(&sc->link, &ss->serverCerts);
+    } else {
+        ssl_FreeServerCert(sc);
+    }
+    return rv;
 }
 
 

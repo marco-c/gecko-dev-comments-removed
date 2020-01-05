@@ -921,6 +921,19 @@ SSL_ConfigSecureServerWithCertChain(PRFileDesc *fd, CERTCertificate *cert,
 
 
 
+
+
+SSL_IMPORT SECStatus
+SSL_SetSessionTicketKeyPair(SECKEYPublicKey *pubKey, SECKEYPrivateKey *privKey);
+
+
+
+
+
+
+
+
+
 SSL_IMPORT SECStatus SSL_ConfigServerSessionIDCache(int maxCacheEntries,
                                                     PRUint32 timeout,
                                                     PRUint32 ssl3_timeout,

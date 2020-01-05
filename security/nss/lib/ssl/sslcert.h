@@ -15,24 +15,19 @@
 
 
 
+typedef PRUint16 sslAuthTypeMask;
+PR_STATIC_ASSERT(sizeof(sslAuthTypeMask) * 8 >= ssl_auth_size);
 
+typedef struct sslServerCertStr {
+    PRCList link; 
 
-
-
-
-typedef struct sslServerCertTypeStr {
-    SSLAuthType authType;
+    
+    sslAuthTypeMask authTypes;
     
 
 
 
     const sslNamedGroupDef *namedCurve;
-} sslServerCertType;
-
-typedef struct sslServerCertStr {
-    PRCList link; 
-
-    sslServerCertType certType; 
 
     
     CERTCertificate *serverCert;
@@ -48,12 +43,18 @@ typedef struct sslServerCertStr {
     SECItem signedCertTimestamps;
 } sslServerCert;
 
-extern sslServerCert *ssl_NewServerCert(const sslServerCertType *slot);
+#define SSL_CERT_IS(c, t) ((c)->authTypes & (1 << (t)))
+#define SSL_CERT_IS_ONLY(c, t) ((c)->authTypes == (1 << (t)))
+#define SSL_CERT_IS_EC(c)                         \
+    ((c)->authTypes & ((1 << ssl_auth_ecdsa) |    \
+                       (1 << ssl_auth_ecdh_rsa) | \
+                       (1 << ssl_auth_ecdh_ecdsa)))
+
+extern sslServerCert *ssl_NewServerCert();
 extern sslServerCert *ssl_CopyServerCert(const sslServerCert *oc);
-extern sslServerCert *ssl_FindServerCert(const sslSocket *ss,
-                                         const sslServerCertType *slot);
-extern sslServerCert *ssl_FindServerCertByAuthType(const sslSocket *ss,
-                                                   SSLAuthType authType);
+extern const sslServerCert *ssl_FindServerCert(
+    const sslSocket *ss, SSLAuthType authType,
+    const sslNamedGroupDef *namedCurve);
 extern void ssl_FreeServerCert(sslServerCert *sc);
 
 #endif 

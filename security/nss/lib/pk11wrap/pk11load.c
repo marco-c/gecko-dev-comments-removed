@@ -17,6 +17,10 @@
 #include "secerr.h"
 #include "prenv.h"
 #include "utilparst.h"
+#include "prio.h"
+#include "prprf.h"
+#include <stdio.h>
+#include "prsystem.h"
 
 #define DEBUG_MODULE 1
 
@@ -350,6 +354,7 @@ SECMOD_SetRootCerts(PK11SlotInfo *slot, SECMODModule *mod)
     }
 }
 
+#ifndef NSS_TEST_BUILD
 static const char *my_shlib_name =
     SHLIB_PREFIX "nss" SHLIB_VERSION "." SHLIB_SUFFIX;
 static const char *softoken_shlib_name =
@@ -358,11 +363,6 @@ static const PRCallOnceType pristineCallOnce;
 static PRCallOnceType loadSoftokenOnce;
 static PRLibrary *softokenLib;
 static PRInt32 softokenLoadCount;
-
-#include "prio.h"
-#include "prprf.h"
-#include <stdio.h>
-#include "prsystem.h"
 
 
 
@@ -380,6 +380,10 @@ softoken_LoadDSO(void)
     }
     return PR_FAILURE;
 }
+#else
+CK_RV NSC_GetFunctionList(CK_FUNCTION_LIST_PTR *pFunctionList);
+char **NSC_ModuleDBFunc(unsigned long function, char *parameters, void *args);
+#endif
 
 
 
@@ -400,6 +404,9 @@ secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
 
     
     if (mod->internal && (mod->dllName == NULL)) {
+#ifdef NSS_TEST_BUILD
+        entry = (CK_C_GetFunctionList)NSC_GetFunctionList;
+#else
         
 
 
@@ -420,10 +427,15 @@ secmod_LoadPKCS11Module(SECMODModule *mod, SECMODModule **oldModule)
 
         if (!entry)
             return SECFailure;
+#endif
 
         if (mod->isModuleDB) {
             mod->moduleDBFunc = (CK_C_GetFunctionList)
+#ifdef NSS_TEST_BUILD
+                NSC_ModuleDBFunc;
+#else
                 PR_FindSymbol(softokenLib, "NSC_ModuleDBFunc");
+#endif
         }
 
         if (mod->moduleDBOnly) {
@@ -601,6 +613,7 @@ SECMOD_UnloadModule(SECMODModule *mod)
 
 
     if (mod->internal && (mod->dllName == NULL)) {
+#ifndef NSS_TEST_BUILD
         if (0 == PR_ATOMIC_DECREMENT(&softokenLoadCount)) {
             if (softokenLib) {
                 disableUnload = PR_GetEnvSecure("NSS_DISABLE_UNLOAD");
@@ -616,6 +629,7 @@ SECMOD_UnloadModule(SECMODModule *mod)
             }
             loadSoftokenOnce = pristineCallOnce;
         }
+#endif
         return SECSuccess;
     }
 
