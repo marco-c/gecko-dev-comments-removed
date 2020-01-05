@@ -729,7 +729,6 @@ public:
   };
   SlowScriptResponse ShowSlowScriptDialog();
 
-#ifdef MOZ_GAMEPAD
   
   void AddGamepad(uint32_t aIndex, mozilla::dom::Gamepad* aGamepad);
   void RemoveGamepad(uint32_t aIndex);
@@ -738,7 +737,6 @@ public:
   void SetHasSeenGamepadInput(bool aHasSeen);
   bool HasSeenGamepadInput();
   void SyncGamepadState();
-#endif
 
   
   
@@ -1760,11 +1758,9 @@ protected:
   
   
   bool                   mHasVREvents : 1;
-#ifdef MOZ_GAMEPAD
   nsCheapSet<nsUint32HashKey> mGamepadIndexSet;
   nsRefPtrHashtable<nsUint32HashKey, mozilla::dom::Gamepad> mGamepads;
   bool mHasSeenGamepadInput;
-#endif
 
   
   bool                   mNotifiedIDDestroyed : 1;

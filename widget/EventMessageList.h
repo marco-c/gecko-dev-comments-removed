@@ -427,7 +427,6 @@ NS_EVENT_MESSAGE(eMediaRecorderDataAvailable)
 NS_EVENT_MESSAGE(eMediaRecorderWarning)
 NS_EVENT_MESSAGE(eMediaRecorderStop)
 
-#ifdef MOZ_GAMEPAD
 
 NS_EVENT_MESSAGE(eGamepadButtonDown)
 NS_EVENT_MESSAGE(eGamepadButtonUp)
@@ -436,7 +435,6 @@ NS_EVENT_MESSAGE(eGamepadConnected)
 NS_EVENT_MESSAGE(eGamepadDisconnected)
 NS_EVENT_MESSAGE_FIRST_LAST(eGamepadEvent,
                             eGamepadButtonDown, eGamepadDisconnected)
-#endif
 
 
 NS_EVENT_MESSAGE(eEditorInput)
