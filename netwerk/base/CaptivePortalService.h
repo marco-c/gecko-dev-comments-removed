@@ -34,6 +34,10 @@ public:
   nsresult Initialize();
   nsresult Start();
   nsresult Stop();
+
+  
+  
+  void SetStateInChild(int32_t aState);
 private:
   virtual ~CaptivePortalService();
   nsresult PerformCheck();

@@ -2,7 +2,7 @@
 
 
 
-#include "CaptivePortalService.h"
+#include "mozilla/net/CaptivePortalService.h"
 #include "mozilla/Services.h"
 #include "mozilla/Preferences.h"
 #include "nsIObserverService.h"
@@ -56,7 +56,7 @@ CaptivePortalService::PerformCheck()
   if (mRequestInProgress || !mInitialized || !mStarted) {
     return NS_OK;
   }
-
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
   nsresult rv;
   if (!mCaptivePortalDetector) {
     mCaptivePortalDetector =
@@ -77,6 +77,7 @@ nsresult
 CaptivePortalService::RearmTimer()
 {
   
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
   if (mTimer) {
     mTimer->Cancel();
   }
@@ -96,10 +97,16 @@ CaptivePortalService::RearmTimer()
 nsresult
 CaptivePortalService::Initialize()
 {
-  if (mInitialized || XRE_GetProcessType() != GeckoProcessType_Default) {
+  if (mInitialized) {
     return NS_OK;
   }
   mInitialized = true;
+
+  
+  
+  if (XRE_GetProcessType() != GeckoProcessType_Default) {
+    return NS_OK;
+  }
 
   nsCOMPtr<nsIObserverService> observerService =
     mozilla::services::GetObserverService();
@@ -118,6 +125,11 @@ CaptivePortalService::Start()
 {
   if (!mInitialized) {
     return NS_ERROR_NOT_INITIALIZED;
+  }
+
+  if (XRE_GetProcessType() != GeckoProcessType_Default) {
+    
+    return NS_OK;
   }
 
   if (mStarted) {
@@ -149,6 +161,11 @@ CaptivePortalService::Stop()
 {
   LOG(("CaptivePortalService::Stop\n"));
 
+  if (XRE_GetProcessType() != GeckoProcessType_Default) {
+    
+    return NS_OK;
+  }
+
   if (!mStarted) {
     return NS_OK;
   }
@@ -164,6 +181,17 @@ CaptivePortalService::Stop()
   }
   mCaptivePortalDetector = nullptr;
   return NS_OK;
+}
+
+void
+CaptivePortalService::SetStateInChild(int32_t aState)
+{
+  
+  
+  MOZ_ASSERT(XRE_GetProcessType() != GeckoProcessType_Default);
+
+  mState = aState;
+  mLastChecked = TimeStamp::Now();
 }
 
 
@@ -186,6 +214,11 @@ NS_IMETHODIMP
 CaptivePortalService::RecheckCaptivePortal()
 {
   LOG(("CaptivePortalService::RecheckCaptivePortal\n"));
+
+  if (XRE_GetProcessType() != GeckoProcessType_Default) {
+    
+    return NS_OK;
+  }
 
   
   
@@ -215,6 +248,7 @@ CaptivePortalService::Notify(nsITimer *aTimer)
 {
   LOG(("CaptivePortalService::Notify\n"));
   MOZ_ASSERT(aTimer == mTimer);
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
 
   PerformCheck();
 
@@ -243,6 +277,11 @@ CaptivePortalService::Observe(nsISupports *aSubject,
                               const char * aTopic,
                               const char16_t * aData)
 {
+  if (XRE_GetProcessType() != GeckoProcessType_Default) {
+    
+    return NS_OK;
+  }
+
   LOG(("CaptivePortalService::Observe() topic=%s\n", aTopic));
   if (!strcmp(aTopic, kOpenCaptivePortalLoginEvent)) {
     
@@ -265,6 +304,15 @@ CaptivePortalService::Observe(nsISupports *aSubject,
     mLastChecked = TimeStamp::Now();
     mSlackCount = 0;
   }
+
+  
+  
+  nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
+  if (observerService) {
+    nsCOMPtr<nsICaptivePortalService> cps(this);
+    observerService->NotifyObservers(cps, NS_IPC_CAPTIVE_PORTAL_SET_STATE, nullptr);
+  }
+
   return NS_OK;
 }
 
@@ -275,6 +323,7 @@ NS_IMETHODIMP
 CaptivePortalService::Prepare()
 {
   LOG(("CaptivePortalService::Prepare\n"));
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
   
   if (mCaptivePortalDetector) {
     mCaptivePortalDetector->FinishPreparation(kInterfaceName);
@@ -286,6 +335,7 @@ NS_IMETHODIMP
 CaptivePortalService::Complete(bool success)
 {
   LOG(("CaptivePortalService::Complete(success=%d) mState=%d\n", success, mState));
+  MOZ_ASSERT(XRE_GetProcessType() == GeckoProcessType_Default);
   mLastChecked = TimeStamp::Now();
   if ((mState == UNKNOWN || mState == NOT_CAPTIVE) && success) {
     mState = NOT_CAPTIVE;
