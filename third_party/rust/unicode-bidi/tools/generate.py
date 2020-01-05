@@ -197,8 +197,8 @@ if __name__ == "__main__":
     os.chdir("../src/") 
     r = "tables.rs"
     
-    fetch("BidiTest.txt")
-    fetch("BidiCharacterTest.txt")
+    
+    
 
     if os.path.exists(r):
         os.remove(r)

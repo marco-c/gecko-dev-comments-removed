@@ -1,0 +1,8 @@
+
+
+template <typename... T>
+struct B {
+    
+    
+    static const long c = sizeof...(T);
+};

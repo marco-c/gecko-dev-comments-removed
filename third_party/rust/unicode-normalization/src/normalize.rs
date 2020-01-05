@@ -103,6 +103,7 @@ pub fn compose(a: char, b: char) -> Option<char> {
 }
 
 
+
 const S_BASE: u32 = 0xAC00;
 const L_BASE: u32 = 0x1100;
 const V_BASE: u32 = 0x1161;
@@ -145,12 +146,15 @@ fn compose_hangul(a: char, b: char) -> Option<char> {
     let l = a as u32;
     let v = b as u32;
     
-    if L_BASE <= l && l < (L_BASE + L_COUNT) && V_BASE <= v && v < (V_BASE + V_COUNT) {
+    if L_BASE <= l && l < (L_BASE + L_COUNT) 
+        && V_BASE <= v && v < (V_BASE + V_COUNT) { 
         let r = S_BASE + (l - L_BASE) * N_COUNT + (v - V_BASE) * T_COUNT;
         return unsafe { Some(transmute(r)) };
     }
     
-    if S_BASE <= l && l <= (S_BASE+S_COUNT-T_COUNT) && T_BASE <= v && v < (T_BASE+T_COUNT) {
+    if S_BASE <= l && l <= (S_BASE+S_COUNT-T_COUNT) 
+        && T_BASE <= v && v < (T_BASE+T_COUNT) 
+        && (l - S_BASE) % T_COUNT == 0 { 
         let r = l + (v - T_BASE);
         return unsafe { Some(transmute(r)) };
     }

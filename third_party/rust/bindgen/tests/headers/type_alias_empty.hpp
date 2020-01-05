@@ -1,0 +1,10 @@
+
+
+
+
+
+template<typename T, T Val>
+struct integral_constant {};
+
+template<bool B>
+using bool_constant = integral_constant<bool, B>;

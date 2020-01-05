@@ -1,0 +1,13 @@
+
+
+
+@interface Foo
+@end
+
+struct FooStruct {
+  Foo *foo;
+};
+
+void fooFunc(Foo *foo);
+
+static const Foo *kFoo;

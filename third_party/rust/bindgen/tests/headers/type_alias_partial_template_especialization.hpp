@@ -1,0 +1,7 @@
+
+template <typename A> using MaybeWrapped = A;
+
+template<class T>
+class Rooted {
+  MaybeWrapped<T> ptr;
+};

@@ -1,0 +1,9 @@
+
+
+namespace foo {
+namespace bar {
+
+typedef int Baz;
+
+}
+}

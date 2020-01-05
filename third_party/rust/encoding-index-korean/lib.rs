@@ -1,0 +1,21 @@
+
+
+
+
+
+
+
+#![cfg_attr(test, feature(test))]
+
+#[cfg(test)]
+#[macro_use]
+extern crate encoding_index_tests;
+
+
+
+
+
+
+
+pub mod euc_kr;
+

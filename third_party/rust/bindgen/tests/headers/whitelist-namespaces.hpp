@@ -1,0 +1,10 @@
+
+
+namespace outer {
+  namespace inner {
+    struct Helper {};
+  }
+  struct Test {
+    inner::Helper helper;
+  };
+}

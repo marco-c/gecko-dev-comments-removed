@@ -138,6 +138,7 @@ pub fn process_text(text: &str, level: Option<u8>) -> BidiInfo {
 
 pub fn is_ltr(level: u8) -> bool { level % 2 == 0 }
 
+#[inline]
 
 
 

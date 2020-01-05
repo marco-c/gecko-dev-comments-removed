@@ -1,0 +1,11 @@
+
+
+namespace foo {
+  inline namespace bar {
+    using Ty = int;
+  };
+};
+
+class Bar {
+  foo::Ty baz;
+};

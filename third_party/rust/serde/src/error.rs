@@ -1,30 +1,7 @@
 
-use core::any::TypeId;
 use core::fmt::{Debug, Display};
 
 
-
-#[cfg(feature = "unstable")]
-pub trait Error: Debug + Display + ::core::marker::Reflect {
-    
-    
-    
-    
-    
-    fn description(&self) -> &str;
-
-    
-    fn cause(&self) -> Option<&Error> { None }
-
-    
-    #[doc(hidden)]
-    fn type_id(&self) -> TypeId where Self: 'static {
-        TypeId::of::<Self>()
-    }
-}
-
-
-#[cfg(not(feature = "unstable"))]
 pub trait Error: Debug + Display {
     
     
@@ -35,10 +12,4 @@ pub trait Error: Debug + Display {
 
     
     fn cause(&self) -> Option<&Error> { None }
-
-    
-    #[doc(hidden)]
-    fn type_id(&self) -> TypeId where Self: 'static {
-        TypeId::of::<()>()
-    }
 }

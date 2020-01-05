@@ -1,5 +1,99 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[cfg(feature = "std")]
 use std::error;
 #[cfg(not(feature = "std"))]
@@ -8,13 +102,32 @@ use error;
 #[cfg(all(not(feature = "std"), feature = "collections"))]
 use collections::{String, Vec};
 
-use core::fmt;
+use core::fmt::{self, Display};
+use core::marker::PhantomData;
 
 
 
+#[doc(hidden)]
 pub mod impls;
 pub mod value;
 mod from_primitive;
+
+
+#[doc(hidden)]
+pub mod private;
+#[cfg(any(feature = "std", feature = "collections"))]
+mod content;
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -22,107 +135,229 @@ mod from_primitive;
 
 pub trait Error: Sized + error::Error {
     
-    #[cfg(any(feature = "std", feature = "collections"))]
-    fn custom<T: Into<String>>(msg: T) -> Self;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn custom<T: Display>(msg: T) -> Self;
 
     
-    #[cfg(all(not(feature = "std"), not(feature = "collections")))]
-    fn custom<T: Into<&'static str>>(msg: T) -> Self;
-
     
-    fn end_of_stream() -> Self;
-
     
-    fn invalid_type(ty: Type) -> Self {
-        Error::custom(format!("Invalid type. Expected `{:?}`", ty))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn invalid_type(unexp: Unexpected, exp: &Expected) -> Self {
+        struct InvalidType<'a> {
+            unexp: Unexpected<'a>,
+            exp: &'a Expected,
+        }
+        impl<'a> Display for InvalidType<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "invalid type: {}, expected {}", self.unexp, self.exp)
+            }
+        }
+        Error::custom(InvalidType { unexp: unexp, exp: exp })
     }
 
     
-    fn invalid_value(msg: &str) -> Self {
-        Error::custom(format!("Invalid value: {}", msg))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn invalid_value(unexp: Unexpected, exp: &Expected) -> Self {
+        struct InvalidValue<'a> {
+            unexp: Unexpected<'a>,
+            exp: &'a Expected,
+        }
+        impl<'a> Display for InvalidValue<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "invalid value: {}, expected {}", self.unexp, self.exp)
+            }
+        }
+        Error::custom(InvalidValue { unexp: unexp, exp: exp })
     }
 
     
     
     
     
-    fn invalid_length(len: usize) -> Self {
-        Error::custom(format!("Invalid length: {}", len))
+    
+    
+    
+    
+    
+    fn invalid_length(len: usize, exp: &Expected) -> Self {
+        struct InvalidLength<'a> {
+            len: usize,
+            exp: &'a Expected,
+        }
+        impl<'a> Display for InvalidLength<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "invalid length {}, expected {}", self.len, self.exp)
+            }
+        }
+        Error::custom(InvalidLength { len: len, exp: exp })
     }
 
     
-    fn unknown_variant(field: &str) -> Self {
-        Error::custom(format!("Unknown variant `{}`", field))
+    
+    fn unknown_variant(variant: &str, expected: &'static [&'static str]) -> Self {
+        struct UnknownVariant<'a> {
+            variant: &'a str,
+            expected: &'static [&'static str],
+        }
+        impl<'a> Display for UnknownVariant<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                if self.expected.is_empty() {
+                    write!(formatter,
+                           "unknown variant `{}`, there are no variants",
+                           self.variant)
+                } else {
+                    write!(formatter,
+                           "unknown variant `{}`, expected {}",
+                           self.variant,
+                           OneOf { names: self.expected })
+                }
+            }
+        }
+        Error::custom(UnknownVariant { variant: variant, expected: expected })
     }
 
     
-    fn unknown_field(field: &str) -> Self {
-        Error::custom(format!("Unknown field `{}`", field))
+    
+    fn unknown_field(field: &str, expected: &'static [&'static str]) -> Self {
+        struct UnknownField<'a> {
+            field: &'a str,
+            expected: &'static [&'static str],
+        }
+        impl<'a> Display for UnknownField<'a> {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                if self.expected.is_empty() {
+                    write!(formatter,
+                           "unknown field `{}`, there are no fields",
+                           self.field)
+                } else {
+                    write!(formatter,
+                           "unknown field `{}`, expected {}",
+                           self.field,
+                           OneOf { names: self.expected })
+                }
+            }
+        }
+        Error::custom(UnknownField { field: field, expected: expected })
     }
 
+    
+    
     
     fn missing_field(field: &'static str) -> Self {
-        Error::custom(format!("Missing field `{}`", field))
+        struct MissingField {
+            field: &'static str,
+        }
+        impl Display for MissingField {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "missing field `{}`", self.field)
+            }
+        }
+        Error::custom(MissingField { field: field })
     }
 
     
     
     fn duplicate_field(field: &'static str) -> Self {
-        Error::custom(format!("Duplicate field `{}`", field))
+        struct DuplicateField {
+            field: &'static str,
+        }
+        impl Display for DuplicateField {
+            fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+                write!(formatter, "duplicate field `{}`", self.field)
+            }
+        }
+        Error::custom(DuplicateField { field: field })
     }
 }
 
 
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-pub enum Type {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[derive(Clone, PartialEq, Debug)]
+pub enum Unexpected<'a> {
     
-    Bool,
+    Bool(bool),
 
     
-    Usize,
+    
+    Unsigned(u64),
 
     
-    U8,
+    
+    Signed(i64),
 
     
-    U16,
+    
+    Float(f64),
 
     
-    U32,
+    Char(char),
 
     
-    U64,
+    Str(&'a str),
 
     
-    Isize,
-
-    
-    I8,
-
-    
-    I16,
-
-    
-    I32,
-
-    
-    I64,
-
-    
-    F32,
-
-    
-    F64,
-
-    
-    Char,
-
-    
-    Str,
-
-    
-    String,
+    Bytes(&'a [u8]),
 
     
     Unit,
@@ -131,94 +366,162 @@ pub enum Type {
     Option,
 
     
+    NewtypeStruct,
+
+    
     Seq,
 
     
     Map,
 
     
-    UnitStruct,
-
-    
-    NewtypeStruct,
-
-    
-    TupleStruct,
-
-    
-    Struct,
-
-    
-    FieldName,
-
-    
-    Tuple,
-
-    
     Enum,
-
-    
-    VariantName,
-
-    
-    StructVariant,
-
-    
-    TupleVariant,
 
     
     UnitVariant,
 
     
-    Bytes,
+    NewtypeVariant,
+
+    
+    TupleVariant,
+
+    
+    StructVariant,
+
+    
+    
+    
+    
+    
+    Other(&'a str),
 }
 
-impl fmt::Display for Type {
+impl<'a> fmt::Display for Unexpected<'a> {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
-        let display = match *self {
-            Type::Bool          => "bool",
-            Type::Usize         => "usize",
-            Type::U8            => "u8",
-            Type::U16           => "u16",
-            Type::U32           => "u32",
-            Type::U64           => "u64",
-            Type::Isize         => "isize",
-            Type::I8            => "i8",
-            Type::I16           => "i16",
-            Type::I32           => "i32",
-            Type::I64           => "i64",
-            Type::F32           => "f32",
-            Type::F64           => "f64",
-            Type::Char          => "char",
-            Type::Str           => "str",
-            Type::String        => "string",
-            Type::Unit          => "unit",
-            Type::Option        => "option",
-            Type::Seq           => "seq",
-            Type::Map           => "map",
-            Type::UnitStruct    => "unit struct",
-            Type::NewtypeStruct => "newtype struct",
-            Type::TupleStruct   => "tuple struct",
-            Type::Struct        => "struct",
-            Type::FieldName     => "field name",
-            Type::Tuple         => "tuple",
-            Type::Enum          => "enum",
-            Type::VariantName   => "variant name",
-            Type::StructVariant => "struct variant",
-            Type::TupleVariant  => "tuple variant",
-            Type::UnitVariant   => "unit variant",
-            Type::Bytes         => "bytes",
-        };
-        display.fmt(formatter)
+        use self::Unexpected::*;
+        match *self {
+            Bool(b) => write!(formatter, "boolean `{}`", b),
+            Unsigned(i) => write!(formatter, "integer `{}`", i),
+            Signed(i) => write!(formatter, "integer `{}`", i),
+            Float(f) => write!(formatter, "floating point `{}`", f),
+            Char(c) => write!(formatter, "character `{}`", c),
+            Str(s) => write!(formatter, "string {:?}", s),
+            Bytes(_) => write!(formatter, "byte array"),
+            Unit => write!(formatter, "unit value"),
+            Option => write!(formatter, "Option value"),
+            NewtypeStruct => write!(formatter, "newtype struct"),
+            Seq => write!(formatter, "sequence"),
+            Map => write!(formatter, "map"),
+            Enum => write!(formatter, "enum"),
+            UnitVariant => write!(formatter, "unit variant"),
+            NewtypeVariant => write!(formatter, "newtype variant"),
+            TupleVariant => write!(formatter, "tuple variant"),
+            StructVariant => write!(formatter, "struct variant"),
+            Other(other) => formatter.write_str(other),
+        }
     }
 }
 
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait Expected {
+    
+    
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result;
+}
+
+impl<T> Expected for T where T: Visitor {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        self.expecting(formatter)
+    }
+}
+
+impl<'a> Expected for &'a str {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        formatter.write_str(self)
+    }
+}
+
+impl<'a> Display for Expected + 'a {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        Expected::fmt(self, formatter)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 pub trait Deserialize: Sized {
     
-    fn deserialize<D>(deserializer: &mut D) -> Result<Self, D::Error>
+    
+    
+    
+    
+    
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
         where D: Deserializer;
 }
 
@@ -236,146 +539,399 @@ pub trait Deserialize: Sized {
 
 
 
-pub trait Deserializer {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait DeserializeSeed: Sized {
+    
+    type Value;
+
+    
+    
+    fn deserialize<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
+        where D: Deserializer;
+}
+
+impl<T> DeserializeSeed for PhantomData<T>
+    where T: Deserialize
+{
+    type Value = T;
+
+    #[inline]
+    fn deserialize<D>(self, deserializer: D) -> Result<T, D::Error>
+        where D: Deserializer
+    {
+        T::deserialize(deserializer)
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait Deserializer: Sized {
+    
     
     type Error: Error;
 
     
-    fn deserialize<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    
+    
+    
+    
+    
+    
+    
+    
+    fn deserialize<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    fn deserialize_bool<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_bool<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_usize<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_u8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_u8<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_u16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_u16<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_u32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_u32<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_u64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    fn deserialize_u64<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_i8<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_isize<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_i16<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_i8<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_i32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_i16<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_i64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_i32<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_f32<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    fn deserialize_i64<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_f64<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
-    
-    fn deserialize_f32<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor;
-
-    
-    fn deserialize_f64<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor;
-
-    
-    fn deserialize_char<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor;
-
-    
-    fn deserialize_str<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor;
-
-    
-    fn deserialize_string<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor;
-
-    
-    fn deserialize_unit<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_char<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
     
     
-    fn deserialize_option<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor;
-
     
     
-    fn deserialize_seq<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor;
-
     
     
-    fn deserialize_seq_fixed_size<V>(&mut self,
-                                     len: usize,
-                                     visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_str<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
     
     
-    fn deserialize_bytes<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    
+    
+    
+    
+    fn deserialize_string<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
     
-    fn deserialize_map<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    
+    
+    
+    
+    
+    fn deserialize_bytes<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
     
-    fn deserialize_unit_struct<V>(&mut self,
+    
+    
+    
+    
+    
+    fn deserialize_byte_buf<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
+
+    
+    
+    
+    
+    
+    fn deserialize_option<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
+
+    
+    fn deserialize_unit<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
+
+    
+    
+    fn deserialize_unit_struct<V>(self,
                                   name: &'static str,
                                   visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
     
-    
-    fn deserialize_newtype_struct<V>(&mut self,
+    fn deserialize_newtype_struct<V>(self,
                                      name: &'static str,
                                      visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
+    fn deserialize_seq<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
+
     
-    fn deserialize_tuple_struct<V>(&mut self,
+    
+    fn deserialize_seq_fixed_size<V>(self,
+                                     len: usize,
+                                     visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
+
+    
+    
+    fn deserialize_tuple<V>(self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
+
+    
+    
+    fn deserialize_tuple_struct<V>(self,
                                    name: &'static str,
                                    len: usize,
                                    visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
+    fn deserialize_map<V>(self, visitor: V) -> Result<V::Value, Self::Error>
+        where V: Visitor;
+
     
-    fn deserialize_struct<V>(&mut self,
+    
+    fn deserialize_struct<V>(self,
                              name: &'static str,
                              fields: &'static [&'static str],
                              visitor: V) -> Result<V::Value, Self::Error>
@@ -383,225 +939,292 @@ pub trait Deserializer {
 
     
     
-    
-    fn deserialize_struct_field<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    fn deserialize_struct_field<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 
     
     
-    fn deserialize_tuple<V>(&mut self, len: usize, visitor: V) -> Result<V::Value, Self::Error>
-        where V: Visitor;
-
-    
-    
-    
-    fn deserialize_enum<V>(&mut self,
+    fn deserialize_enum<V>(self,
                            name: &'static str,
                            variants: &'static [&'static str],
                            visitor: V) -> Result<V::Value, Self::Error>
-        where V: EnumVisitor;
+        where V: Visitor;
 
     
     
-    fn deserialize_ignored_any<V>(&mut self, visitor: V) -> Result<V::Value, Self::Error>
+    
+    
+    fn deserialize_ignored_any<V>(self, visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 }
 
 
 
 
-pub trait Visitor {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+pub trait Visitor: Sized {
     
-    type Value: Deserialize;
+    type Value;
 
     
-    fn visit_bool<E>(&mut self, v: bool) -> Result<Self::Value, E>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result;
+
+    
+    fn visit_bool<E>(self, v: bool) -> Result<Self::Value, E>
         where E: Error,
     {
-        let _ = v;
-        Err(Error::invalid_type(Type::Bool))
+        Err(Error::invalid_type(Unexpected::Bool(v), &self))
     }
 
     
-    fn visit_isize<E>(&mut self, v: isize) -> Result<Self::Value, E>
+    fn visit_i8<E>(self, v: i8) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_i64(v as i64)
     }
 
     
-    fn visit_i8<E>(&mut self, v: i8) -> Result<Self::Value, E>
+    fn visit_i16<E>(self, v: i16) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_i64(v as i64)
     }
 
     
-    fn visit_i16<E>(&mut self, v: i16) -> Result<Self::Value, E>
+    fn visit_i32<E>(self, v: i32) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_i64(v as i64)
     }
 
     
-    fn visit_i32<E>(&mut self, v: i32) -> Result<Self::Value, E>
+    fn visit_i64<E>(self, v: i64) -> Result<Self::Value, E>
         where E: Error,
     {
-        self.visit_i64(v as i64)
+        Err(Error::invalid_type(Unexpected::Signed(v), &self))
     }
 
     
-    fn visit_i64<E>(&mut self, v: i64) -> Result<Self::Value, E>
-        where E: Error,
-    {
-        let _ = v;
-        Err(Error::invalid_type(Type::I64))
-    }
-
-    
-    fn visit_usize<E>(&mut self, v: usize) -> Result<Self::Value, E>
+    fn visit_u8<E>(self, v: u8) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_u64(v as u64)
     }
 
     
-    fn visit_u8<E>(&mut self, v: u8) -> Result<Self::Value, E>
+    fn visit_u16<E>(self, v: u16) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_u64(v as u64)
     }
 
     
-    fn visit_u16<E>(&mut self, v: u16) -> Result<Self::Value, E>
+    fn visit_u32<E>(self, v: u32) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_u64(v as u64)
     }
 
     
-    fn visit_u32<E>(&mut self, v: u32) -> Result<Self::Value, E>
+    fn visit_u64<E>(self, v: u64) -> Result<Self::Value, E>
         where E: Error,
     {
-        self.visit_u64(v as u64)
+        Err(Error::invalid_type(Unexpected::Unsigned(v), &self))
     }
 
     
-    fn visit_u64<E>(&mut self, v: u64) -> Result<Self::Value, E>
-        where E: Error,
-    {
-        let _ = v;
-        Err(Error::invalid_type(Type::U64))
-    }
-
-    
-    fn visit_f32<E>(&mut self, v: f32) -> Result<Self::Value, E>
+    fn visit_f32<E>(self, v: f32) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_f64(v as f64)
     }
 
     
-    fn visit_f64<E>(&mut self, v: f64) -> Result<Self::Value, E>
+    fn visit_f64<E>(self, v: f64) -> Result<Self::Value, E>
         where E: Error,
     {
-        let _ = v;
-        Err(Error::invalid_type(Type::F64))
+        Err(Error::invalid_type(Unexpected::Float(v), &self))
     }
 
     
     #[inline]
-    fn visit_char<E>(&mut self, v: char) -> Result<Self::Value, E>
+    fn visit_char<E>(self, v: char) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_str(::utils::encode_utf8(v).as_str())
     }
 
     
-    fn visit_str<E>(&mut self, v: &str) -> Result<Self::Value, E>
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
         where E: Error,
     {
-        let _ = v;
-        Err(Error::invalid_type(Type::Str))
+        Err(Error::invalid_type(Unexpected::Str(v), &self))
     }
 
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     #[cfg(any(feature = "std", feature = "collections"))]
-    fn visit_string<E>(&mut self, v: String) -> Result<Self::Value, E>
+    fn visit_string<E>(self, v: String) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_str(&v)
     }
 
     
-    fn visit_unit<E>(&mut self) -> Result<Self::Value, E>
+    fn visit_unit<E>(self) -> Result<Self::Value, E>
         where E: Error,
     {
-        Err(Error::invalid_type(Type::Unit))
+        Err(Error::invalid_type(Unexpected::Unit, &self))
     }
 
     
-    #[inline]
-    fn visit_unit_struct<E>(&mut self, name: &'static str) -> Result<Self::Value, E>
+    fn visit_none<E>(self) -> Result<Self::Value, E>
         where E: Error,
     {
-        let _ = name;
-        self.visit_unit()
+        Err(Error::invalid_type(Unexpected::Option, &self))
     }
 
     
-    fn visit_none<E>(&mut self) -> Result<Self::Value, E>
-        where E: Error,
-    {
-        Err(Error::invalid_type(Type::Option))
-    }
-
-    
-    fn visit_some<D>(&mut self, deserializer: &mut D) -> Result<Self::Value, D::Error>
+    fn visit_some<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
         where D: Deserializer,
     {
         let _ = deserializer;
-        Err(Error::invalid_type(Type::Option))
+        Err(Error::invalid_type(Unexpected::Option, &self))
     }
 
     
-    fn visit_newtype_struct<D>(&mut self, deserializer: &mut D) -> Result<Self::Value, D::Error>
+    fn visit_newtype_struct<D>(self, deserializer: D) -> Result<Self::Value, D::Error>
         where D: Deserializer,
     {
         let _ = deserializer;
-        Err(Error::invalid_type(Type::NewtypeStruct))
+        Err(Error::invalid_type(Unexpected::NewtypeStruct, &self))
     }
 
     
-    fn visit_seq<V>(&mut self, visitor: V) -> Result<Self::Value, V::Error>
+    fn visit_seq<V>(self, visitor: V) -> Result<Self::Value, V::Error>
         where V: SeqVisitor,
     {
         let _ = visitor;
-        Err(Error::invalid_type(Type::Seq))
+        Err(Error::invalid_type(Unexpected::Seq, &self))
     }
 
     
-    fn visit_map<V>(&mut self, visitor: V) -> Result<Self::Value, V::Error>
+    fn visit_map<V>(self, visitor: V) -> Result<Self::Value, V::Error>
         where V: MapVisitor,
     {
         let _ = visitor;
-        Err(Error::invalid_type(Type::Map))
+        Err(Error::invalid_type(Unexpected::Map, &self))
     }
 
     
-    fn visit_bytes<E>(&mut self, v: &[u8]) -> Result<Self::Value, E>
+    fn visit_enum<V>(self, visitor: V) -> Result<Self::Value, V::Error>
+        where V: EnumVisitor,
+    {
+        let _ = visitor;
+        Err(Error::invalid_type(Unexpected::Enum, &self))
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn visit_bytes<E>(self, v: &[u8]) -> Result<Self::Value, E>
         where E: Error,
     {
         let _ = v;
-        Err(Error::invalid_type(Type::Bytes))
+        Err(Error::invalid_type(Unexpected::Bytes(v), &self))
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[cfg(any(feature = "std", feature = "collections"))]
-    fn visit_byte_buf<E>(&mut self, v: Vec<u8>) -> Result<Self::Value, E>
+    fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
         where E: Error,
     {
         self.visit_bytes(&v)
@@ -616,15 +1239,28 @@ pub trait Visitor {
 
 pub trait SeqVisitor {
     
+    
     type Error: Error;
 
     
     
-    fn visit<T>(&mut self) -> Result<Option<T>, Self::Error>
-        where T: Deserialize;
+    
+    
+    
+    fn visit_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, Self::Error>
+        where T: DeserializeSeed;
 
     
-    fn end(&mut self) -> Result<(), Self::Error>;
+    
+    
+    
+    
+    #[inline]
+    fn visit<T>(&mut self) -> Result<Option<T>, Self::Error>
+        where T: Deserialize
+    {
+        self.visit_seed(PhantomData)
+    }
 
     
     #[inline]
@@ -637,15 +1273,17 @@ impl<'a, V> SeqVisitor for &'a mut V where V: SeqVisitor {
     type Error = V::Error;
 
     #[inline]
+    fn visit_seed<T>(&mut self, seed: T) -> Result<Option<T::Value>, V::Error>
+        where T: DeserializeSeed
+    {
+        (**self).visit_seed(seed)
+    }
+
+    #[inline]
     fn visit<T>(&mut self) -> Result<Option<T>, V::Error>
         where T: Deserialize
     {
         (**self).visit()
-    }
-
-    #[inline]
-    fn end(&mut self) -> Result<(), V::Error> {
-        (**self).end()
     }
 
     #[inline]
@@ -661,18 +1299,40 @@ impl<'a, V> SeqVisitor for &'a mut V where V: SeqVisitor {
 
 pub trait MapVisitor {
     
+    
     type Error: Error;
 
     
     
+    
+    
+    
+    fn visit_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
+        where K: DeserializeSeed;
+
+    
+    
+    
+    
+    fn visit_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
+        where V: DeserializeSeed;
+
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
-    fn visit<K, V>(&mut self) -> Result<Option<(K, V)>, Self::Error>
-        where K: Deserialize,
-              V: Deserialize,
+    fn visit_seed<K, V>(&mut self, kseed: K, vseed: V) -> Result<Option<(K::Value, V::Value)>, Self::Error>
+        where K: DeserializeSeed,
+              V: DeserializeSeed
     {
-        match try!(self.visit_key()) {
+        match try!(self.visit_key_seed(kseed)) {
             Some(key) => {
-                let value = try!(self.visit_value());
+                let value = try!(self.visit_value_seed(vseed));
                 Ok(Some((key, value)))
             }
             None => Ok(None)
@@ -681,32 +1341,71 @@ pub trait MapVisitor {
 
     
     
+    
+    
+    
+    #[inline]
     fn visit_key<K>(&mut self) -> Result<Option<K>, Self::Error>
-        where K: Deserialize;
+        where K: Deserialize
+    {
+        self.visit_key_seed(PhantomData)
+    }
 
     
+    
+    
+    
+    #[inline]
     fn visit_value<V>(&mut self) -> Result<V, Self::Error>
-        where V: Deserialize;
+        where V: Deserialize
+    {
+        self.visit_value_seed(PhantomData)
+    }
 
     
-    fn end(&mut self) -> Result<(), Self::Error>;
+    
+    
+    
+    
+    #[inline]
+    fn visit<K, V>(&mut self) -> Result<Option<(K, V)>, Self::Error>
+        where K: Deserialize,
+              V: Deserialize,
+    {
+        self.visit_seed(PhantomData, PhantomData)
+    }
 
     
     #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         (0, None)
     }
-
-    
-    fn missing_field<V>(&mut self, field: &'static str) -> Result<V, Self::Error>
-        where V: Deserialize,
-    {
-        Err(Error::missing_field(field))
-    }
 }
 
 impl<'a, V_> MapVisitor for &'a mut V_ where V_: MapVisitor {
     type Error = V_::Error;
+
+    #[inline]
+    fn visit_key_seed<K>(&mut self, seed: K) -> Result<Option<K::Value>, Self::Error>
+        where K: DeserializeSeed
+    {
+        (**self).visit_key_seed(seed)
+    }
+
+    #[inline]
+    fn visit_value_seed<V>(&mut self, seed: V) -> Result<V::Value, Self::Error>
+        where V: DeserializeSeed
+    {
+        (**self).visit_value_seed(seed)
+    }
+
+    #[inline]
+    fn visit_seed<K, V>(&mut self, kseed: K, vseed: V) -> Result<Option<(K::Value, V::Value)>, Self::Error>
+        where K: DeserializeSeed,
+              V: DeserializeSeed
+    {
+        (**self).visit_seed(kseed, vseed)
+    }
 
     #[inline]
     fn visit<K, V>(&mut self) -> Result<Option<(K, V)>, V_::Error>
@@ -731,11 +1430,6 @@ impl<'a, V_> MapVisitor for &'a mut V_ where V_: MapVisitor {
     }
 
     #[inline]
-    fn end(&mut self) -> Result<(), V_::Error> {
-        (**self).end()
-    }
-
-    #[inline]
     fn size_hint(&self) -> (usize, Option<usize>) {
         (**self).size_hint()
     }
@@ -745,41 +1439,107 @@ impl<'a, V_> MapVisitor for &'a mut V_ where V_: MapVisitor {
 
 
 
-pub trait EnumVisitor {
+
+pub trait EnumVisitor: Sized {
     
-    type Value;
+    
+    type Error: Error;
+    
+    
+    type Variant: VariantVisitor<Error=Self::Error>;
 
     
-    fn visit<V>(&mut self, visitor: V) -> Result<Self::Value, V::Error>
-        where V: VariantVisitor;
+    
+    
+    
+    fn visit_variant_seed<V>(self, seed: V) -> Result<(V::Value, Self::Variant), Self::Error>
+        where V: DeserializeSeed;
+
+    
+    
+    
+    
+    #[inline]
+    fn visit_variant<V>(self) -> Result<(V, Self::Variant), Self::Error>
+        where V: Deserialize
+    {
+        self.visit_variant_seed(PhantomData)
+    }
 }
 
 
 
 
-
-pub trait VariantVisitor {
+pub trait VariantVisitor: Sized {
+    
     
     type Error: Error;
 
     
-    fn visit_variant<V>(&mut self) -> Result<V, Self::Error>
-        where V: Deserialize;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn visit_unit(self) -> Result<(), Self::Error>;
 
     
-    fn visit_unit(&mut self) -> Result<(), Self::Error> {
-        Err(Error::invalid_type(Type::UnitVariant))
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn visit_newtype_seed<T>(self, seed: T) -> Result<T::Value, Self::Error>
+        where T: DeserializeSeed;
+
+    
+    
+    
+    
+    
+    #[inline]
+    fn visit_newtype<T>(self) -> Result<T, Self::Error>
+        where T: Deserialize
+    {
+        self.visit_newtype_seed(PhantomData)
     }
 
     
     
-    fn visit_newtype<T>(&mut self) -> Result<T, Self::Error>
-        where T: Deserialize;
-
     
     
     
-    fn visit_tuple<V>(&mut self,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn visit_tuple<V>(self,
                       len: usize,
                       visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
@@ -787,44 +1547,56 @@ pub trait VariantVisitor {
     
     
     
-    fn visit_struct<V>(&mut self,
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn visit_struct<V>(self,
                        fields: &'static [&'static str],
                        visitor: V) -> Result<V::Value, Self::Error>
         where V: Visitor;
 }
 
-impl<'a, T> VariantVisitor for &'a mut T where T: VariantVisitor {
-    type Error = T::Error;
 
-    fn visit_variant<V>(&mut self) -> Result<V, T::Error>
-        where V: Deserialize
-    {
-        (**self).visit_variant()
-    }
 
-    fn visit_unit(&mut self) -> Result<(), T::Error> {
-        (**self).visit_unit()
-    }
 
-    fn visit_newtype<D>(&mut self) -> Result<D, T::Error>
-        where D: Deserialize,
-    {
-        (**self).visit_newtype()
-    }
 
-    fn visit_tuple<V>(&mut self,
-                      len: usize,
-                      visitor: V) -> Result<V::Value, T::Error>
-        where V: Visitor,
-    {
-        (**self).visit_tuple(len, visitor)
-    }
 
-    fn visit_struct<V>(&mut self,
-                       fields: &'static [&'static str],
-                       visitor: V) -> Result<V::Value, T::Error>
-        where V: Visitor,
-    {
-        (**self).visit_struct(fields, visitor)
+
+
+
+
+struct OneOf {
+    names: &'static [&'static str],
+}
+
+impl Display for OneOf {
+    fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+        match self.names.len() {
+            0 => panic!(), 
+            1 => write!(formatter, "`{}`", self.names[0]),
+            2 => write!(formatter, "`{}` or `{}`", self.names[0], self.names[1]),
+            _ => {
+                try!(write!(formatter, "one of "));
+                for (i, alt) in self.names.iter().enumerate() {
+                    if i > 0 {
+                        try!(write!(formatter, ", "));
+                    }
+                    try!(write!(formatter, "`{}`", alt));
+                }
+                Ok(())
+            }
+        }
     }
 }

@@ -1,15 +1,53 @@
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use core::{ops, fmt, char, iter, slice};
 use core::fmt::Write;
 
 use ser;
 
 #[cfg(any(feature = "std", feature = "collections"))]
-pub use self::bytebuf::{ByteBuf, ByteBufVisitor};
+pub use self::bytebuf::ByteBuf;
+
+#[cfg(any(feature = "std", feature = "collections"))]
+#[doc(hidden)] 
+pub use self::bytebuf::ByteBufVisitor;
 
 #[cfg(feature = "collections")]
 use collections::Vec;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -65,7 +103,7 @@ impl<'a> ops::Deref for Bytes<'a> {
 
 impl<'a> ser::Serialize for Bytes<'a> {
     #[inline]
-    fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
         where S: ser::Serializer
     {
         serializer.serialize_bytes(self.bytes)
@@ -86,6 +124,24 @@ mod bytebuf {
     #[cfg(feature = "collections")]
     use collections::{String, Vec};
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[derive(Clone, Default, Eq, Hash, PartialEq, PartialOrd, Ord)]
     pub struct ByteBuf {
@@ -168,7 +224,7 @@ mod bytebuf {
     }
 
     impl ser::Serialize for ByteBuf {
-        fn serialize<S>(&self, serializer: &mut S) -> Result<(), S::Error>
+        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
             where S: ser::Serializer
         {
             serializer.serialize_bytes(self)
@@ -181,15 +237,19 @@ mod bytebuf {
     impl de::Visitor for ByteBufVisitor {
         type Value = ByteBuf;
 
+        fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
+            formatter.write_str("byte array")
+        }
+
         #[inline]
-        fn visit_unit<E>(&mut self) -> Result<ByteBuf, E>
+        fn visit_unit<E>(self) -> Result<ByteBuf, E>
             where E: de::Error,
         {
             Ok(ByteBuf::new())
         }
 
         #[inline]
-        fn visit_seq<V>(&mut self, mut visitor: V) -> Result<ByteBuf, V::Error>
+        fn visit_seq<V>(self, mut visitor: V) -> Result<ByteBuf, V::Error>
             where V: de::SeqVisitor,
         {
             let (len, _) = visitor.size_hint();
@@ -199,32 +259,30 @@ mod bytebuf {
                 values.push(value);
             }
 
-            try!(visitor.end());
-
             Ok(ByteBuf::from(values))
         }
 
         #[inline]
-        fn visit_bytes<E>(&mut self, v: &[u8]) -> Result<ByteBuf, E>
+        fn visit_bytes<E>(self, v: &[u8]) -> Result<ByteBuf, E>
             where E: de::Error,
         {
             Ok(ByteBuf::from(v))
         }
 
         #[inline]
-        fn visit_byte_buf<E>(&mut self, v: Vec<u8>) -> Result<ByteBuf, E>
+        fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<ByteBuf, E>
             where E: de::Error,
         {
             Ok(ByteBuf::from(v))
         }
 
-        fn visit_str<E>(&mut self, v: &str) -> Result<ByteBuf, E>
+        fn visit_str<E>(self, v: &str) -> Result<ByteBuf, E>
             where E: de::Error,
         {
             Ok(ByteBuf::from(v))
         }
 
-        fn visit_string<E>(&mut self, v: String) -> Result<ByteBuf, E>
+        fn visit_string<E>(self, v: String) -> Result<ByteBuf, E>
             where E: de::Error,
         {
             Ok(ByteBuf::from(v))
@@ -233,10 +291,10 @@ mod bytebuf {
 
     impl de::Deserialize for ByteBuf {
         #[inline]
-        fn deserialize<D>(deserializer: &mut D) -> Result<ByteBuf, D::Error>
+        fn deserialize<D>(deserializer: D) -> Result<ByteBuf, D::Error>
             where D: de::Deserializer
         {
-            deserializer.deserialize_bytes(ByteBufVisitor)
+            deserializer.deserialize_byte_buf(ByteBufVisitor)
         }
     }
 }

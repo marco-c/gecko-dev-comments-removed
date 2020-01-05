@@ -4,7 +4,7 @@
 macro_rules! forward_to_deserialize_method {
     ($func:ident($($arg:ty),*)) => {
         #[inline]
-        fn $func<__V>(&mut self, $(_: $arg,)* visitor: __V) -> ::std::result::Result<__V::Value, Self::Error>
+        fn $func<__V>(self, $(_: $arg,)* visitor: __V) -> ::std::result::Result<__V::Value, Self::Error>
             where __V: $crate::de::Visitor
         {
             self.deserialize(visitor)
@@ -18,38 +18,10 @@ macro_rules! forward_to_deserialize_method {
 macro_rules! forward_to_deserialize_method {
     ($func:ident($($arg:ty),*)) => {
         #[inline]
-        fn $func<__V>(&mut self, $(_: $arg,)* visitor: __V) -> ::core::result::Result<__V::Value, Self::Error>
+        fn $func<__V>(self, $(_: $arg,)* visitor: __V) -> ::core::result::Result<__V::Value, Self::Error>
             where __V: $crate::de::Visitor
         {
             self.deserialize(visitor)
-        }
-    };
-}
-
-#[cfg(feature = "std")]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! forward_to_deserialize_enum {
-    () => {
-        #[inline]
-        fn deserialize_enum<__V>(&mut self, _: &str, _: &[&str], _: __V) -> ::std::result::Result<__V::Value, Self::Error>
-            where __V: $crate::de::EnumVisitor
-        {
-            Err($crate::de::Error::invalid_type($crate::de::Type::Enum))
-        }
-    };
-}
-
-#[cfg(not(feature = "std"))]
-#[doc(hidden)]
-#[macro_export]
-macro_rules! forward_to_deserialize_enum {
-    () => {
-        #[inline]
-        fn deserialize_enum<__V>(&mut self, _: &str, _: &[&str], _: __V) -> ::core::result::Result<__V::Value, Self::Error>
-            where __V: $crate::de::EnumVisitor
-        {
-            Err($crate::de::Error::invalid_type($crate::de::Type::Enum))
         }
     };
 }
@@ -59,9 +31,6 @@ macro_rules! forward_to_deserialize_enum {
 macro_rules! forward_to_deserialize_helper {
     (bool) => {
         forward_to_deserialize_method!{deserialize_bool()}
-    };
-    (usize) => {
-        forward_to_deserialize_method!{deserialize_usize()}
     };
     (u8) => {
         forward_to_deserialize_method!{deserialize_u8()}
@@ -74,9 +43,6 @@ macro_rules! forward_to_deserialize_helper {
     };
     (u64) => {
         forward_to_deserialize_method!{deserialize_u64()}
-    };
-    (isize) => {
-        forward_to_deserialize_method!{deserialize_isize()}
     };
     (i8) => {
         forward_to_deserialize_method!{deserialize_i8()}
@@ -120,6 +86,9 @@ macro_rules! forward_to_deserialize_helper {
     (bytes) => {
         forward_to_deserialize_method!{deserialize_bytes()}
     };
+    (byte_buf) => {
+        forward_to_deserialize_method!{deserialize_byte_buf()}
+    };
     (map) => {
         forward_to_deserialize_method!{deserialize_map()}
     };
@@ -141,13 +110,55 @@ macro_rules! forward_to_deserialize_helper {
     (tuple) => {
         forward_to_deserialize_method!{deserialize_tuple(usize)}
     };
+    (enum) => {
+        forward_to_deserialize_method!{deserialize_enum(&'static str, &'static [&'static str])}
+    };
     (ignored_any) => {
         forward_to_deserialize_method!{deserialize_ignored_any()}
     };
-    (enum) => {
-        forward_to_deserialize_enum!();
-    };
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
