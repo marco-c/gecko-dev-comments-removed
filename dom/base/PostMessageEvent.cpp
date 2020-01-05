@@ -150,9 +150,7 @@ PostMessageEvent::Run()
                           EmptyString(), source, nullptr);
 
   nsTArray<RefPtr<MessagePort>> ports = TakeTransferredPorts();
-
-  event->SetPorts(new MessagePortList(static_cast<dom::Event*>(event.get()),
-                                      ports));
+  event->SetPorts(Move(ports));
 
   
   
