@@ -3,8 +3,7 @@
 
 
 use app_units::Au;
-use style::attr::{AttrValue, parse_length};
-use util::str::LengthOrPercentageOrAuto;
+use style::attr::{AttrValue, LengthOrPercentageOrAuto, parse_length};
 
 #[test]
 fn test_parse_double() {
