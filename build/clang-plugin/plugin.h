@@ -53,3 +53,14 @@ typedef ASTConsumer *ASTConsumerPtr;
 #endif
 
 #endif
+
+
+
+
+#ifdef CLANG_TIDY
+#include "../ClangTidy.h"
+typedef clang::tidy::ClangTidyCheck BaseCheck;
+typedef clang::tidy::ClangTidyContext ContextType;
+#else
+#include "BaseCheck.h"
+#endif
