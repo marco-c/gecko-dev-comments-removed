@@ -50,7 +50,6 @@ Cu.import("resource://gre/modules/NotificationDB.jsm");
   ["TelemetryStopwatch", "resource://gre/modules/TelemetryStopwatch.jsm"],
   ["Translation", "resource:///modules/translation/Translation.jsm"],
   ["UITour", "resource:///modules/UITour.jsm"],
-  ["URLBarZoom", "resource:///modules/URLBarZoom.jsm"],
   ["UpdateUtils", "resource://gre/modules/UpdateUtils.jsm"],
   ["Weave", "resource://services-sync/main.js"],
   ["fxAccounts", "resource://gre/modules/FxAccounts.jsm"],
@@ -622,7 +621,7 @@ var gPopupBlockerObserver = {
 
   showAllBlockedPopups: function (aBrowser)
   {
-    aBrowser.retrieveListOfBlockedPopups().then(popups => {
+    let popups = aBrowser.retrieveListOfBlockedPopups().then(popups => {
       for (let i = 0; i < popups.length; i++) {
         if (popups[i].popupWindowURIspec)
           aBrowser.unblockPopup(i);
@@ -797,6 +796,7 @@ function _loadURIWithFlags(browser, uri, params) {
   let referrer = params.referrerURI;
   let referrerPolicy = ('referrerPolicy' in params ? params.referrerPolicy :
                         Ci.nsIHttpChannel.REFERRER_POLICY_DEFAULT);
+  let charset = params.charset;
   let postData = params.postData;
 
   let wasRemote = browser.isRemoteBrowser;
@@ -3104,6 +3104,7 @@ function populateMirrorTabMenu(popup) {
   if (!Services.prefs.getBoolPref("browser.casting.enabled")) {
     return;
   }
+  let videoEl = this.target;
   let doc = popup.ownerDocument;
   let services = CastingApps.getServicesForMirroring();
   services.forEach(service => {
@@ -3575,17 +3576,9 @@ const BrowserSearch = {
       return;
     }
 
-    let openSearchPageIfFieldIsNotActive = function(aSearchBar) {
+    let focusUrlBarIfSearchFieldIsNotActive = function(aSearchBar) {
       if (!aSearchBar || document.activeElement != aSearchBar.textbox.inputField) {
-        let url = gBrowser.currentURI.spec.toLowerCase();
-        let mm = gBrowser.selectedBrowser.messageManager;
-        let newTabRemoted = Services.prefs.getBoolPref("browser.newtabpage.remote");
-        let localNewTabEnabled = url === "about:newtab" && !newTabRemoted && NewTabUtils.allPages.enabled;
-        if (url === "about:home" || localNewTabEnabled) {
-          ContentSearch.focusInput(mm);
-        } else {
-          openUILinkIn("about:home", "current");
-        }
+        focusAndSelectUrlBar();
       }
     };
 
@@ -3594,7 +3587,7 @@ const BrowserSearch = {
     let focusSearchBar = () => {
       searchBar = this.searchBar;
       searchBar.select();
-      openSearchPageIfFieldIsNotActive(searchBar);
+      focusUrlBarIfSearchFieldIsNotActive(searchBar);
     };
     if (placement && placement.area == CustomizableUI.AREA_PANEL) {
       
@@ -3614,7 +3607,7 @@ const BrowserSearch = {
         FullScreen.showNavToolbox();
       searchBar.select();
     }
-    openSearchPageIfFieldIsNotActive(searchBar);
+    focusUrlBarIfSearchFieldIsNotActive(searchBar);
   },
 
   
@@ -4456,13 +4449,16 @@ var XULBrowserWindow = {
       }
 
       URLBarSetURI(aLocationURI);
+
       BookmarkingUI.onLocationChange();
+
       gIdentityHandler.onLocationChange();
+
       SocialUI.updateState();
+
       UITour.onLocationChange(location);
+
       gTabletModePageCounter.inc();
-      ReaderParent.updateReaderButton(gBrowser.selectedBrowser);
-      URLBarZoom.updateZoomButton(gBrowser.selectedBrowser, "browser-fullZoom:location-change");
 
       
       var shouldDisableFind = function shouldDisableFind(aDocument) {
@@ -4516,6 +4512,7 @@ var XULBrowserWindow = {
       }
     }
     UpdateBackForwardCommands(gBrowser.webNavigation);
+    ReaderParent.updateReaderButton(gBrowser.selectedBrowser);
 
     gGestureSupport.restoreRotationState();
 
@@ -5638,7 +5635,7 @@ function handleDroppedLink(event, urlOrLinks, name)
   
   let inBackground = false;
   if (event) {
-    inBackground = Services.prefs.getBoolPref("browser.tabs.loadInBackground");
+    let inBackground = Services.prefs.getBoolPref("browser.tabs.loadInBackground");
     if (event.shiftKey)
       inBackground = !inBackground;
   }
