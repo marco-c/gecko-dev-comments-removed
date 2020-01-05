@@ -12,6 +12,7 @@
 #include "mozilla/ServoBindingTypes.h"
 #include "mozilla/StyleSheet.h"
 #include "mozilla/StyleSheetInfo.h"
+#include "mozilla/URLExtraData.h"
 #include "nsStringFwd.h"
 
 namespace mozilla {
@@ -33,6 +34,13 @@ struct ServoStyleSheetInner : public StyleSheetInfo
                        const dom::SRIMetadata& aIntegrity);
 
   RefPtr<const RawServoStyleSheet> mSheet;
+  
+  
+  
+  
+  
+  
+  RefPtr<URLExtraData> mURLData;
 };
 
 
