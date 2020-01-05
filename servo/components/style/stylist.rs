@@ -87,6 +87,10 @@ pub struct Stylist {
 
     
     
+    is_cleared: bool,
+
+    
+    
     element_map: PerPseudoElementSelectorMap,
 
     
@@ -164,12 +168,14 @@ impl<'a> ExtraStyleData<'a> {
 
 impl Stylist {
     
+    
     #[inline]
     pub fn new(device: Device) -> Self {
         let mut stylist = Stylist {
             viewport_constraints: None,
             device: Arc::new(device),
             is_device_dirty: true,
+            is_cleared: true,
             quirks_mode: QuirksMode::NoQuirks,
 
             element_map: PerPseudoElementSelectorMap::new(),
@@ -225,16 +231,58 @@ impl Stylist {
     
     
     
-    pub fn update<'a>(&mut self,
-                      doc_stylesheets: &[Arc<Stylesheet>],
-                      guards: &StylesheetGuards,
-                      ua_stylesheets: Option<&UserAgentStylesheets>,
-                      stylesheets_changed: bool,
-                      author_style_disabled: bool,
-                      extra_data: &mut ExtraStyleData<'a>) -> bool {
+    
+    
+    
+    
+    
+    
+    pub fn clear(&mut self) {
+        if self.is_cleared {
+            return
+        }
+
+        self.is_cleared = true;
+
+        self.viewport_constraints = None;
+        
+        self.is_device_dirty = true;
+        
+        self.element_map = PerPseudoElementSelectorMap::new();
+        self.pseudos_map = Default::default();
+        self.animations.clear(); 
+        self.precomputed_pseudo_element_decls = Default::default();
+        self.rules_source_order = 0;
+        
+        self.dependencies.clear();
+        self.selectors_for_cache_revalidation = SelectorMap::new();
+        self.num_selectors = 0;
+        self.num_declarations = 0;
+        
+        
+    }
+
+    
+    
+    
+    
+    
+    
+    pub fn rebuild<'a>(&mut self,
+                       doc_stylesheets: &[Arc<Stylesheet>],
+                       guards: &StylesheetGuards,
+                       ua_stylesheets: Option<&UserAgentStylesheets>,
+                       stylesheets_changed: bool,
+                       author_style_disabled: bool,
+                       extra_data: &mut ExtraStyleData<'a>) -> bool {
+        debug_assert!(!self.is_cleared || self.is_device_dirty);
+
+        self.is_cleared = false;
+
         if !(self.is_device_dirty || stylesheets_changed) {
             return false;
         }
+
         self.num_rebuilds += 1;
 
         let cascaded_rule = ViewportRule {
@@ -251,20 +299,9 @@ impl Stylist {
                 .account_for_viewport_rule(constraints);
         }
 
-        self.element_map = PerPseudoElementSelectorMap::new();
-        self.pseudos_map = Default::default();
-        self.animations = Default::default();
         SelectorImpl::each_eagerly_cascaded_pseudo_element(|pseudo| {
             self.pseudos_map.insert(pseudo, PerPseudoElementSelectorMap::new());
         });
-
-        self.precomputed_pseudo_element_decls = Default::default();
-        self.rules_source_order = 0;
-        self.dependencies.clear();
-        self.animations.clear();
-        self.selectors_for_cache_revalidation = SelectorMap::new();
-        self.num_selectors = 0;
-        self.num_declarations = 0;
 
         extra_data.clear_font_faces();
 
@@ -300,6 +337,27 @@ impl Stylist {
 
         self.is_device_dirty = false;
         true
+    }
+
+    
+    
+    pub fn update<'a>(&mut self,
+                      doc_stylesheets: &[Arc<Stylesheet>],
+                      guards: &StylesheetGuards,
+                      ua_stylesheets: Option<&UserAgentStylesheets>,
+                      stylesheets_changed: bool,
+                      author_style_disabled: bool,
+                      extra_data: &mut ExtraStyleData<'a>) -> bool {
+        debug_assert!(!self.is_cleared || self.is_device_dirty);
+
+        
+        
+        if !(self.is_device_dirty || stylesheets_changed) {
+            return false;
+        }
+        self.clear();
+        self.rebuild(doc_stylesheets, guards, ua_stylesheets, stylesheets_changed,
+                     author_style_disabled, extra_data)
     }
 
     fn add_stylesheet<'a>(&mut self, stylesheet: &Stylesheet, guard: &SharedRwLockReadGuard,
