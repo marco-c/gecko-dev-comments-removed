@@ -1460,7 +1460,8 @@ class StringSegmentRange
 {
     
     
-    Rooted<StringVector> stack;
+    using StackVector = JS::GCVector<JSString*, 16>;
+    Rooted<StackVector> stack;
     RootedLinearString cur;
 
     bool settle(JSString* str) {
@@ -1476,7 +1477,7 @@ class StringSegmentRange
 
   public:
     explicit StringSegmentRange(JSContext* cx)
-      : stack(cx, StringVector(cx)), cur(cx)
+      : stack(cx, StackVector(cx)), cur(cx)
     {}
 
     MOZ_MUST_USE bool init(JSString* str) {
