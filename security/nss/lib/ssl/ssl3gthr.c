@@ -32,7 +32,6 @@ ssl3_InitGather(sslGather *gs)
     gs->readOffset = 0;
     gs->dtlsPacketOffset = 0;
     gs->dtlsPacket.len = 0;
-    gs->rejectV2Records = PR_FALSE;
     status = sslBuffer_Grow(&gs->buf, 4096);
     return status;
 }
@@ -149,10 +148,7 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags, ssl2Gather *ssl2gs)
             case GS_HEADER:
                 
 
-
-                if (!ssl2gs ||
-                    ss->gs.rejectV2Records ||
-                    ssl3_isLikelyV3Hello(gs->hdr)) {
+                if (!ssl2gs || ssl3_isLikelyV3Hello(gs->hdr)) {
                     
 
 
@@ -187,7 +183,7 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags, ssl2Gather *ssl2gs)
                 
                 if (!v2HdrLength &&
                     gs->remainder > (MAX_FRAGMENT_LENGTH + 2048)) {
-                    SSL3_SendAlert(ss, alert_fatal, record_overflow);
+                    SSL3_SendAlert(ss, alert_fatal, unexpected_message);
                     gs->state = GS_INIT;
                     PORT_SetError(SSL_ERROR_RX_RECORD_TOO_LONG);
                     return SECFailure;
@@ -209,28 +205,13 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags, ssl2Gather *ssl2gs)
 
 
                 if (v2HdrLength) {
-                    
-
-                    if (gs->remainder < SSL_HL_CLIENT_HELLO_HBYTES) {
-                        SSL3_SendAlert(ss, alert_fatal, illegal_parameter);
-                        PORT_SetError(SSL_ERROR_RX_MALFORMED_CLIENT_HELLO);
-                        return SECFailure;
-                    }
-
-                    PORT_Assert(lbp);
                     gs->inbuf.len = 5 - v2HdrLength;
                     PORT_Memcpy(lbp, gs->hdr + v2HdrLength, gs->inbuf.len);
                     gs->remainder -= gs->inbuf.len;
                     lbp += gs->inbuf.len;
                 }
 
-                if (gs->remainder > 0) {
-                    break; 
-                }
-
-            
-
-
+                break; 
 
             case GS_DATA:
                 
@@ -238,10 +219,6 @@ ssl3_GatherData(sslSocket *ss, sslGather *gs, int flags, ssl2Gather *ssl2gs)
 
                 SSL_TRC(10, ("%d: SSL[%d]: got record of %d bytes",
                              SSL_GETPID(), ss->fd, gs->inbuf.len));
-
-                
-                ss->gs.rejectV2Records = PR_TRUE;
-
                 gs->state = GS_INIT;
                 return 1;
         }

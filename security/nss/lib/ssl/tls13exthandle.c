@@ -256,10 +256,11 @@ tls13_ClientHandleKeyShareXtn(const sslSocket *ss, TLSExtensionData *xtnData, PR
     PORT_Assert(PR_CLIST_IS_EMPTY(&xtnData->remoteKeyShares));
 
     PORT_Assert(!ss->sec.isServer);
-
-    
     if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        PORT_SetError(SSL_ERROR_EXTENSION_DISALLOWED_FOR_VERSION);
+        
+
+
+        PORT_SetError(SEC_ERROR_LIBRARY_FAILURE);
         return SECFailure;
     }
 
@@ -692,8 +693,7 @@ tls13_ClientHandlePreSharedKeyXtn(const sslSocket *ss, TLSExtensionData *xtnData
 
     
     if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        PORT_SetError(SSL_ERROR_EXTENSION_DISALLOWED_FOR_VERSION);
-        return SECFailure;
+        return SECSuccess;
     }
 
     rv = ssl3_ExtConsumeHandshakeNumber(ss, &index, 2, &data->data, &data->len);
@@ -1129,8 +1129,7 @@ tls13_HandleShortHeaderXtn(
 
     
     if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
-        PORT_SetError(SSL_ERROR_EXTENSION_DISALLOWED_FOR_VERSION);
-        return SECFailure;
+        return SECSuccess;
     }
 
     
