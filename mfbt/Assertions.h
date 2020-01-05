@@ -18,23 +18,28 @@
 #include "mozilla/Likely.h"
 #include "mozilla/MacroArgs.h"
 #include "mozilla/StaticAnalysisFunctions.h"
+#include "mozilla/Types.h"
 #ifdef MOZ_DUMP_ASSERTION_STACK
 #include "nsTraceRefcnt.h"
 #endif
 
-#if defined(MOZ_CRASHREPORTER) && defined(MOZILLA_INTERNAL_API) && \
-    !defined(MOZILLA_EXTERNAL_LINKAGE) && defined(__cplusplus)
-namespace CrashReporter {
+#if defined(MOZ_HAS_MOZGLUE) || defined(MOZILLA_INTERNAL_API)
 
 
 
 
 
 
-void AnnotateMozCrashReason(const char* aReason);
-} 
+MOZ_BEGIN_EXTERN_C
+extern MFBT_DATA const char* gMozCrashReason;
+MOZ_END_EXTERN_C
 
-#  define MOZ_CRASH_ANNOTATE(...) CrashReporter::AnnotateMozCrashReason(__VA_ARGS__)
+static inline void
+AnnotateMozCrashReason(const char* reason)
+{
+  gMozCrashReason = reason;
+}
+#  define MOZ_CRASH_ANNOTATE(...) AnnotateMozCrashReason(__VA_ARGS__)
 #else
 #  define MOZ_CRASH_ANNOTATE(...) do { /* nothing */ } while (0)
 #endif
