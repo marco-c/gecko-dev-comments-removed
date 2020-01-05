@@ -517,6 +517,14 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
   } else {
     max_framerate = DEFAULT_VIDEO_MAX_FRAMERATE;
   }
+  
+  mSendingFramerate = SelectSendFrameRate(codecConfig,
+                                          max_framerate,
+                                          mSendingWidth,
+                                          mSendingHeight);
+
+  
+  mNegotiatedMaxBitrate = codecConfig->mTias / 1000;
 
   
   
@@ -524,20 +532,29 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
   if (mSendingWidth != 0) {
     
     
+    bool resolutionChanged;
+    {
+      MutexAutoLock lock(mCodecMutex);
+      resolutionChanged = !mCurSendCodecConfig->ResolutionEquals(*codecConfig);
+    }
 
-    
-    
-    
-    
-    width = mSendingWidth;
-    height = mSendingHeight;
-    
+    if (resolutionChanged) {
+      
+      
+      
+      mLastWidth = 0;
+      mLastHeight = 0;
+      mSendingWidth = 0;
+      mSendingHeight = 0;
+    } else {
+      
+      
+      
+      width = mSendingWidth;
+      height = mSendingHeight;
+      
+    }
   }
-  mSendingFramerate = std::max(mSendingFramerate,
-                               static_cast<unsigned int>(max_framerate));
-
-  
-  mNegotiatedMaxBitrate = codecConfig->mTias / 1000;
 
   for (size_t idx = streamCount - 1; streamCount > 0; idx--, streamCount--) {
     webrtc::VideoStream video_stream;
@@ -550,10 +567,11 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     
     video_stream.width = width >> idx;
     video_stream.height = height >> idx;
-    video_stream.max_framerate = max_framerate;
+    video_stream.max_framerate = mSendingFramerate;
     auto& simulcastEncoding = codecConfig->mSimulcastEncodings[idx];
     
     video_stream.temporal_layer_thresholds_bps.clear();
+    
     video_stream.max_bitrate_bps = MinIgnoreZero(simulcastEncoding.constraints.maxBr,
                                                  kDefaultMaxBitrate_bps);
     video_stream.max_bitrate_bps = MinIgnoreZero((int) mPrefMaxBitrate*1000,
@@ -569,11 +587,18 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     if (video_stream.target_bitrate_bps < video_stream.min_bitrate_bps) {
       video_stream.target_bitrate_bps = video_stream.min_bitrate_bps;
     }
+    
+    
+    if (mSendingWidth) { 
+      SelectBitrates(video_stream.width, video_stream.height,
+                     simulcastEncoding.constraints.maxBr,
+                     mLastFramerateTenths, video_stream);
+    }
 
     video_stream.max_qp = kQpMax;
     video_stream.SetRid(simulcastEncoding.rid);
     simulcast_config.jsScaleDownBy = simulcastEncoding.constraints.scaleDownBy;
-    simulcast_config.jsMaxBitrate = simulcastEncoding.constraints.maxBr;
+    simulcast_config.jsMaxBitrate = simulcastEncoding.constraints.maxBr; 
 
     if (codecConfig->mName == "H264") {
       if (codecConfig->mEncodingConstraints.maxMbps > 0) {
@@ -844,7 +869,6 @@ WebrtcVideoConduit::InitMain()
       {
         if (temp >= 0) {
           mPrefMaxBitrate = temp;
-          mNegotiatedMaxBitrate = temp; 
         }
       }
       if (mMinBitrate != 0 && mMinBitrate < kViEMinCodecBitrate) {
@@ -1452,8 +1476,10 @@ WebrtcVideoConduit::SelectSendResolution(unsigned short width,
     changed = true;
   }
 
-  
-  unsigned int framerate = SelectSendFrameRate(mSendingFramerate);
+  unsigned int framerate = SelectSendFrameRate(mCurSendCodecConfig,
+                                               mSendingFramerate,
+                                               mSendingWidth,
+                                               mSendingHeight);
   if (mSendingFramerate != framerate) {
     CSFLogDebug(logTag, "%s: framerate changing to %u (from %u)",
                 __FUNCTION__, framerate, mSendingFramerate);
@@ -1535,9 +1561,12 @@ WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
     uint32_t new_height = (height / simStream.jsScaleDownBy);
     video_stream.width = width;
     video_stream.height = height;
+    
+    
     video_stream.max_framerate = mSendingFramerate;
     SelectBitrates(video_stream.width, video_stream.height,
-                   MinIgnoreZero(mNegotiatedMaxBitrate, simStream.jsMaxBitrate),
+                   
+                   simStream.jsMaxBitrate,
                    mLastFramerateTenths, video_stream);
     CSFLogVerbose(logTag, "%s: new_width=%" PRIu32 " new_height=%" PRIu32,
                   __FUNCTION__, new_width, new_height);
@@ -1574,32 +1603,27 @@ WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
   return NS_OK;
 }
 
-
 unsigned int
-WebrtcVideoConduit::SelectSendFrameRate(unsigned int framerate) const
+WebrtcVideoConduit::SelectSendFrameRate(const VideoCodecConfig* codecConfig,
+                                        unsigned int old_framerate,
+                                        unsigned short sending_width,
+                                        unsigned short sending_height) const
 {
-  mCodecMutex.AssertCurrentThreadOwns();
-  unsigned int new_framerate = framerate;
+  unsigned int new_framerate = old_framerate;
 
   
-  if (mCurSendCodecConfig && mCurSendCodecConfig->mEncodingConstraints.maxMbps)
+  if (codecConfig && codecConfig->mEncodingConstraints.maxMbps)
   {
-    unsigned int cur_fs, mb_width, mb_height, max_fps;
+    unsigned int cur_fs, mb_width, mb_height;
 
-    mb_width = (mSendingWidth + 15) >> 4;
-    mb_height = (mSendingHeight + 15) >> 4;
+    mb_width = (sending_width + 15) >> 4;
+    mb_height = (sending_height + 15) >> 4;
 
     cur_fs = mb_width * mb_height;
     if (cur_fs > 0) { 
-      max_fps = mCurSendCodecConfig->mEncodingConstraints.maxMbps / cur_fs;
-      if (max_fps < mSendingFramerate) {
-        new_framerate = max_fps;
-      }
+      new_framerate = codecConfig->mEncodingConstraints.maxMbps / cur_fs;
 
-      if (mCurSendCodecConfig->mEncodingConstraints.maxFps != 0 &&
-          mCurSendCodecConfig->mEncodingConstraints.maxFps < mSendingFramerate) {
-        new_framerate = mCurSendCodecConfig->mEncodingConstraints.maxFps;
-      }
+      new_framerate = MinIgnoreZero(new_framerate, codecConfig->mEncodingConstraints.maxFps);
     }
   }
   return new_framerate;

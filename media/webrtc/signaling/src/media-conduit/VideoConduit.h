@@ -189,7 +189,10 @@ public:
 
 
 
-  unsigned int SelectSendFrameRate(unsigned int framerate) const;
+  unsigned int SelectSendFrameRate(const VideoCodecConfig* codecConfig,
+                                   unsigned int old_framerate,
+                                   unsigned short sending_width,
+                                   unsigned short sending_height) const;
 
   
 

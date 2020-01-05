@@ -42,6 +42,18 @@ public:
       scaleDownBy == constraints.scaleDownBy;
   }
 
+  
+
+
+  bool ResolutionEquals(const EncodingConstraints& constraints) const
+  {
+    return
+      maxWidth == constraints.maxWidth &&
+      maxHeight == constraints.maxHeight &&
+      maxFs == constraints.maxFs &&
+      scaleDownBy == constraints.scaleDownBy;
+  }
+
   uint32_t maxWidth;
   uint32_t maxHeight;
   uint32_t maxFps;
