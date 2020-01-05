@@ -14835,7 +14835,6 @@ nsGlobalWindow::TabGroupOuter()
   
   
   
-  
   if (!mTabGroup) {
     
     
