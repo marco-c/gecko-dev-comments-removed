@@ -1,6 +1,9 @@
-#[doc="Applies the appropriate CSS style to boxes."]
+
+
+
 
 use au = gfx::geometry;
+use dom::node::{Node, NodeTree};
 use dom::element::*;
 use layout::base::{RenderBox, SpecifiedStyle, RenderBoxTree};
 use layout::context::LayoutContext;
@@ -16,7 +19,7 @@ trait ResolveMethods<T> {
 }
 
 impl CSSValue<CSSBackgroundColor> : ResolveMethods<CSSBackgroundColor> {
-    pure fn initial() -> CSSBackgroundColor { return BgTransparent; }
+    pure fn initial() -> CSSBackgroundColor { return BgColorTransparent; }
 }
 
 impl CSSValue<CSSDisplay> : ResolveMethods<CSSDisplay> {
@@ -33,111 +36,90 @@ impl CSSValue<CSSFontSize> : ResolveMethods<CSSFontSize> {
 
 
 struct StyleApplicator {
-    box: @RenderBox,
+    node: Node,
     reflow: fn~(),
 }
 
-// TODO: normalize this into a normal preorder tree traversal function
-fn apply_style(layout_ctx: &LayoutContext, box: @RenderBox, reflow: fn~()) {
+
+fn apply_style(layout_ctx: &LayoutContext, node: Node, reflow: fn~()) {
     let applicator = StyleApplicator {
-        box: box,
+        node: node,
         reflow: reflow
     };
 
     applicator.apply_css_style(layout_ctx);
 }
 
-// TODO: this is misleadingly-named. It is actually trying to resolve CSS 'inherit' values.
 
-#[doc="A wrapper around a set of functions that can be applied as a top-down traversal of layout
-       boxes."]
-fn inheritance_wrapper(layout_ctx: &LayoutContext, box : @RenderBox, reflow: fn~()) {
+
+
+
+
+fn inheritance_wrapper(layout_ctx: &LayoutContext, node : Node, reflow: fn~()) {
     let applicator = StyleApplicator {
-        box: box,
+        node: node,
         reflow: reflow
     };
-    applicator.apply_style(layout_ctx);
+    applicator.resolve_style(layout_ctx);
 }
 
-/*
-fn resolve_fontsize(box : @RenderBox) {
-    // TODO: complete this
-    return
-}
 
-fn resolve_height(box : @RenderBox) -> au {
-    let style = box.node.get_style();
-    let inherit_val = match box.tree.parent {
-        None => au(0),
-        Some(parent) => parent.data.computed_size.height
-    };
 
-    box.appearance.height = match style.height {
-        Initial => style.height.initial(),
-        Inherit => inherit_val,
-        Specified(val) => match val { // BoxSizing
-            BoxPercent(*) | BoxAuto | BoxLength(Px(_)) => val,
-            BoxLength(Em(n)) => BoxLength(Px(n * box.appearance.font_size.abs()))
-        }
-    }
-}
 
-fn resolve_width(box : @RenderBox) {
-    let style = box.node.get_specified_style();
-    let inherit_val = match box.tree.parent {
-        None => style.height.initial(),
-        Some(node) => node.appearance.width
-    };
 
-    box.appearance.width = match style.width {
-        Initial => style.width.initial(),
-        Inherit => inherit_val,
-        Specified(val) => match val { // BoxSizing
-            BoxPercent(*) | BoxAuto | BoxLength(Px(_)) => val,
-            BoxLength(Em(n)) => BoxLength(Px(n * box.appearance.font_size.abs()))
-        }
-    }
-}*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 impl StyleApplicator {
     fn apply_css_style(layout_ctx: &LayoutContext) {
         let reflow = copy self.reflow;
 
-        do RenderBoxTree.each_child(self.box) |child| {
+        do NodeTree.each_child(self.node) |child| {
             inheritance_wrapper(layout_ctx, child, reflow); true
         }
     }
 
-    #[doc="Applies CSS style to a layout box.
+    
 
-      Get the specified style and apply the existing traits to a
-      layout box.  If a trait does not exist, calculate the default
-      value for the given type of element and use that instead.
 
-     "]
-    fn apply_style(layout_ctx: &LayoutContext) {
 
-        // Right now, we only handle images.
-        do self.box.node.read |node| {
-            match node.kind {
-              ~dom::node::Element(element) => {
-                match element.kind {
-                  ~HTMLImageElement(*) => {
-                    let url = element.get_attr(~"src");
-                    
-                    if url.is_some() {
-                        
-                        
-                        let new_url = make_url(option::unwrap(url), Some(copy layout_ctx.doc_url));
-                        self.box.data.background_image = Some(ImageHolder(new_url, layout_ctx.image_cache, self.reflow))
-                    };
-                  }
-                  _ => {  }
-                }
-              }
-              _ => {  }
-            }
-        }
+
+
+    fn resolve_style(_layout_ctx: &LayoutContext) {
+        
     }
 }
 
