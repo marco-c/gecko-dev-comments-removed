@@ -8,10 +8,10 @@
 use cookie_rs;
 use net_traits::CookieSource;
 use net_traits::pub_domains::is_pub_domain;
+use servo_url::ServoUrl;
 use std::borrow::ToOwned;
 use std::net::{Ipv4Addr, Ipv6Addr};
 use time::{Tm, now, at, Duration};
-use url::Url;
 
 
 
@@ -28,7 +28,7 @@ pub struct Cookie {
 
 impl Cookie {
     
-    pub fn new_wrapped(mut cookie: cookie_rs::Cookie, request: &Url, source: CookieSource)
+    pub fn new_wrapped(mut cookie: cookie_rs::Cookie, request: &ServoUrl, source: CookieSource)
                        -> Option<Cookie> {
         
         let (persistent, expiry_time) = match (&cookie.max_age, &cookie.expires) {
@@ -145,7 +145,7 @@ impl Cookie {
     }
 
     
-    pub fn appropriate_for_url(&self, url: &Url, source: CookieSource) -> bool {
+    pub fn appropriate_for_url(&self, url: &ServoUrl, source: CookieSource) -> bool {
         let domain = url.host_str();
         if self.host_only {
             if self.cookie.domain.as_ref().map(String::as_str) != domain {

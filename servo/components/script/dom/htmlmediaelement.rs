@@ -35,11 +35,11 @@ use net_traits::request::{CredentialsMode, Destination, RequestInit, Type as Req
 use network_listener::{NetworkListener, PreInvoke};
 use script_thread::{Runnable, ScriptThread};
 use servo_atoms::Atom;
+use servo_url::ServoUrl;
 use std::cell::Cell;
 use std::sync::{Arc, Mutex};
 use task_source::TaskSource;
 use time::{self, Timespec, Duration};
-use url::Url;
 
 struct HTMLMediaElementContext {
     
@@ -53,7 +53,7 @@ struct HTMLMediaElementContext {
     
     next_progress_event: Timespec,
     
-    url: Url,
+    url: ServoUrl,
     
     have_metadata: bool,
     
@@ -164,7 +164,7 @@ impl PreInvoke for HTMLMediaElementContext {
 }
 
 impl HTMLMediaElementContext {
-    fn new(elem: &HTMLMediaElement, url: Url) -> HTMLMediaElementContext {
+    fn new(elem: &HTMLMediaElement, url: ServoUrl) -> HTMLMediaElementContext {
         HTMLMediaElementContext {
             elem: Trusted::new(elem),
             data: vec![],
@@ -437,7 +437,7 @@ impl HTMLMediaElement {
     }
 
     
-    fn resource_selection_algorithm_sync(&self, base_url: Url) {
+    fn resource_selection_algorithm_sync(&self, base_url: ServoUrl) {
         
 
         
@@ -814,11 +814,11 @@ impl Runnable for FireSimpleEventTask {
 
 struct ResourceSelectionTask {
     elem: Trusted<HTMLMediaElement>,
-    base_url: Url,
+    base_url: ServoUrl,
 }
 
 impl ResourceSelectionTask {
-    fn new(elem: &HTMLMediaElement, url: Url) -> ResourceSelectionTask {
+    fn new(elem: &HTMLMediaElement, url: ServoUrl) -> ResourceSelectionTask {
         ResourceSelectionTask {
             elem: Trusted::new(elem),
             base_url: url,
@@ -885,5 +885,5 @@ enum ResourceSelectionMode {
 
 enum Resource {
     Object,
-    Url(Url),
+    Url(ServoUrl),
 }

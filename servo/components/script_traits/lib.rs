@@ -31,9 +31,9 @@ extern crate rustc_serialize;
 extern crate serde;
 #[macro_use]
 extern crate serde_derive;
+extern crate servo_url;
 extern crate style_traits;
 extern crate time;
-extern crate url;
 
 mod script_msg;
 pub mod webdriver_msg;
@@ -64,11 +64,11 @@ use net_traits::storage_thread::StorageType;
 use profile_traits::mem;
 use profile_traits::time as profile_time;
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
+use servo_url::ServoUrl;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::mpsc::{Receiver, Sender};
 use style_traits::{PagePx, UnsafeNode, ViewportPx};
-use url::Url;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 
 pub use script_msg::{LayoutMsg, ScriptMsg, EventResult, LogEntry};
@@ -131,7 +131,7 @@ pub enum LayoutControlMsg {
 #[derive(Clone, Deserialize, Serialize)]
 pub struct LoadData {
     
-    pub url: Url,
+    pub url: ServoUrl,
     
     #[serde(deserialize_with = "::hyper_serde::deserialize",
             serialize_with = "::hyper_serde::serialize")]
@@ -145,12 +145,12 @@ pub struct LoadData {
     
     pub referrer_policy: Option<ReferrerPolicy>,
     
-    pub referrer_url: Option<Url>,
+    pub referrer_url: Option<ServoUrl>,
 }
 
 impl LoadData {
     
-    pub fn new(url: Url, referrer_policy: Option<ReferrerPolicy>, referrer_url: Option<Url>) -> LoadData {
+    pub fn new(url: ServoUrl, referrer_policy: Option<ReferrerPolicy>, referrer_url: Option<ServoUrl>) -> LoadData {
         LoadData {
             url: url,
             method: Method::Get,
@@ -247,7 +247,7 @@ pub enum ConstellationControlMsg {
     },
     
     
-    DispatchStorageEvent(PipelineId, StorageType, Url, Option<String>, Option<String>, Option<String>),
+    DispatchStorageEvent(PipelineId, StorageType, ServoUrl, Option<String>, Option<String>, Option<String>),
     
     
     FramedContentChanged(PipelineId, FrameId),
@@ -682,7 +682,7 @@ pub enum ConstellationMsg {
     
     GetPipelineTitle(PipelineId),
     
-    InitLoadUrl(Url),
+    InitLoadUrl(ServoUrl),
     
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
     
@@ -730,7 +730,7 @@ pub struct WorkerGlobalScopeInit {
 #[derive(Deserialize, Serialize, Clone)]
 pub struct WorkerScriptLoadOrigin {
     
-    pub referrer_url: Option<Url>,
+    pub referrer_url: Option<ServoUrl>,
     
     pub referrer_policy: Option<ReferrerPolicy>,
     

@@ -11,6 +11,7 @@ use net_traits::image_cache_thread::{ImageCacheChan, ImageCacheCommand, ImageCac
 use net_traits::image_cache_thread::{ImageCacheResult, ImageOrMetadataAvailable, ImageResponse, UsePlaceholder};
 use net_traits::image_cache_thread::ImageResponder;
 use net_traits::request::{Destination, RequestInit, Type as RequestType};
+use servo_url::ServoUrl;
 use std::borrow::ToOwned;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
@@ -20,7 +21,6 @@ use std::mem;
 use std::sync::Arc;
 use std::sync::mpsc::{Receiver, Sender, channel};
 use threadpool::ThreadPool;
-use url::Url;
 use util::resource_files::resources_dir_path;
 use util::thread::spawn_named;
 use webrender_traits;
@@ -49,7 +49,7 @@ struct PendingLoad {
 
     
     
-    url: Arc<Url>
+    url: ServoUrl,
 }
 
 enum LoadResult {
@@ -59,7 +59,7 @@ enum LoadResult {
 }
 
 impl PendingLoad {
-    fn new(url: Arc<Url>) -> PendingLoad {
+    fn new(url: ServoUrl) -> PendingLoad {
         PendingLoad {
             bytes: vec!(),
             metadata: None,
@@ -83,7 +83,7 @@ struct AllPendingLoads {
 
     
     
-    url_to_load_key: HashMap<Arc<Url>, LoadKey>,
+    url_to_load_key: HashMap<ServoUrl, LoadKey>,
 
     
     keygen: LoadKeyGenerator,
@@ -118,7 +118,7 @@ impl AllPendingLoads {
     }
 
     
-    fn get_by_url(&self, url: &Url) -> Option<&PendingLoad> {
+    fn get_by_url(&self, url: &ServoUrl) -> Option<&PendingLoad> {
         self.url_to_load_key.get(url).
             and_then(|load_key|
                 self.loads.get(load_key)
@@ -133,7 +133,7 @@ impl AllPendingLoads {
             })
     }
 
-    fn get_cached(&mut self, url: Arc<Url>) -> (CacheResult, LoadKey, &mut PendingLoad) {
+    fn get_cached(&mut self, url: ServoUrl) -> (CacheResult, LoadKey, &mut PendingLoad) {
         match self.url_to_load_key.entry(url.clone()) {
             Occupied(url_entry) => {
                 let load_key = url_entry.get();
@@ -255,7 +255,7 @@ struct ImageCache {
     pending_loads: AllPendingLoads,
 
     
-    completed_loads: HashMap<Arc<Url>, CompletedLoad>,
+    completed_loads: HashMap<ServoUrl, CompletedLoad>,
 
     
     placeholder_image: Option<Arc<Image>>,
@@ -498,7 +498,7 @@ impl ImageCache {
         };
 
         let completed_load = CompletedLoad::new(image_response.clone());
-        self.completed_loads.insert(pending_load.url, completed_load);
+        self.completed_loads.insert(pending_load.url.into(), completed_load);
 
         for listener in pending_load.listeners {
             listener.notify(image_response.clone());
@@ -511,23 +511,21 @@ impl ImageCache {
     
     
     fn request_image(&mut self,
-                     url: Url,
+                     url: ServoUrl,
                      result_chan: ImageCacheChan,
                      responder: Option<ImageResponder>,
                      send_metadata_msg: bool) {
         let image_listener = ImageListener::new(result_chan, responder, send_metadata_msg);
-        
-        let ref_url = Arc::new(url);
 
         
-        match self.completed_loads.get(&ref_url) {
+        match self.completed_loads.get(&url) {
             Some(completed_load) => {
                 
                 image_listener.notify(completed_load.image_response.clone());
             }
             None => {
                 
-                let (cache_result, load_key, mut pending_load) = self.pending_loads.get_cached(ref_url.clone());
+                let (cache_result, load_key, mut pending_load) = self.pending_loads.get_cached(url.clone());
                 pending_load.add_listener(image_listener);
                 match cache_result {
                     CacheResult::Miss => {
@@ -535,11 +533,13 @@ impl ImageCache {
                         
                         
                         
+                        
+                        
                         let request = RequestInit {
-                            url: (*ref_url).clone(),
+                            url: url.clone(),
                             type_: RequestType::Image,
                             destination: Destination::Image,
-                            origin: (*ref_url).clone(),
+                            origin: url.clone(),
                             .. RequestInit::default()
                         };
 
@@ -578,9 +578,9 @@ impl ImageCache {
     }
 
     fn get_image_if_available(&mut self,
-                                   url: Url,
-                                   placeholder: UsePlaceholder, )
-                                   -> Result<Arc<Image>, ImageState> {
+                              url: ServoUrl,
+                              placeholder: UsePlaceholder, )
+                              -> Result<Arc<Image>, ImageState> {
        let img_or_metadata = self.get_image_or_meta_if_available(url, placeholder);
        match img_or_metadata {
             Ok(ImageOrMetadataAvailable::ImageAvailable(image)) => Ok(image),
@@ -590,7 +590,7 @@ impl ImageCache {
     }
 
     fn get_image_or_meta_if_available(&mut self,
-                                      url: Url,
+                                      url: ServoUrl,
                                       placeholder: UsePlaceholder)
                                       -> Result<ImageOrMetadataAvailable, ImageState> {
         match self.completed_loads.get(&url) {
@@ -624,9 +624,9 @@ impl ImageCache {
     }
 
     fn store_decode_image(&mut self,
-                          ref_url: Url,
+                          ref_url: ServoUrl,
                           loaded_bytes: Vec<u8>) {
-        let (cache_result, load_key, _) = self.pending_loads.get_cached(Arc::new(ref_url));
+        let (cache_result, load_key, _) = self.pending_loads.get_cached(ref_url.clone());
         assert!(cache_result == CacheResult::Miss);
         let action = ResponseAction::DataAvailable(loaded_bytes);
         let _ = self.progress_sender.send(ResourceLoadInfo {

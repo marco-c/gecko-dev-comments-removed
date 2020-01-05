@@ -14,11 +14,11 @@ use net_traits::image::base::Image;
 use profile_traits::mem;
 use profile_traits::time;
 use script_traits::{AnimationState, ConstellationMsg, EventResult};
+use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
 use std::sync::mpsc::{Receiver, Sender};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
-use url::Url;
 use webrender;
 use webrender_traits;
 
@@ -76,7 +76,7 @@ pub enum Msg {
     
     ChangePageTitle(PipelineId, Option<String>),
     
-    ChangePageUrl(PipelineId, Url),
+    ChangePageUrl(PipelineId, ServoUrl),
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
@@ -102,7 +102,7 @@ pub enum Msg {
     
     IsReadyToSaveImageReply(bool),
     
-    NewFavicon(Url),
+    NewFavicon(ServoUrl),
     
     HeadParsed,
     

@@ -20,9 +20,9 @@ use msg::constellation_msg::{PipelineId, TraversalDirection};
 use net_traits::CoreResourceMsg;
 use net_traits::storage_thread::StorageType;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
+use servo_url::ServoUrl;
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
-use url::Url;
 
 
 #[derive(Deserialize, Serialize)]
@@ -62,7 +62,7 @@ pub enum LogEntry {
 pub enum ScriptMsg {
     
     
-    BroadcastStorageEvent(PipelineId, StorageType, Url, Option<String>, Option<String>, Option<String>),
+    BroadcastStorageEvent(PipelineId, StorageType, ServoUrl, Option<String>, Option<String>, Option<String>),
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
@@ -95,7 +95,7 @@ pub enum ScriptMsg {
     
     JointSessionHistoryLength(PipelineId, IpcSender<u32>),
     
-    NewFavicon(Url),
+    NewFavicon(ServoUrl),
     
     NodeStatus(Option<String>),
     
@@ -113,7 +113,7 @@ pub enum ScriptMsg {
     
     SetDocumentState(PipelineId, DocumentState),
     
-    SetFinalUrl(PipelineId, Url),
+    SetFinalUrl(PipelineId, ServoUrl),
     
     Alert(PipelineId, String, IpcSender<bool>),
     
@@ -137,9 +137,9 @@ pub enum ScriptMsg {
     PipelineExited(PipelineId),
     
     
-    ForwardDOMMessage(DOMMessage, Url),
+    ForwardDOMMessage(DOMMessage, ServoUrl),
     
-    RegisterServiceWorker(ScopeThings, Url),
+    RegisterServiceWorker(ScopeThings, ServoUrl),
     
     Exit
 }
@@ -148,7 +148,7 @@ pub enum ScriptMsg {
 #[derive(Deserialize, Serialize, Clone)]
 pub struct ScopeThings {
     
-    pub script_url: Url,
+    pub script_url: ServoUrl,
     
     pub worker_load_origin: WorkerScriptLoadOrigin,
     
@@ -175,11 +175,11 @@ pub struct SWManagerSenders {
 #[derive(Deserialize, Serialize)]
 pub enum ServiceWorkerMsg {
     
-    RegisterServiceWorker(ScopeThings, Url),
+    RegisterServiceWorker(ScopeThings, ServoUrl),
     
-    Timeout(Url),
+    Timeout(ServoUrl),
     
-    ForwardDOMMessage(DOMMessage, Url),
+    ForwardDOMMessage(DOMMessage, ServoUrl),
     
     Exit,
 }

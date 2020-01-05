@@ -3,7 +3,7 @@
 
 
 use ipc_channel::ipc::IpcSender;
-use url::Url;
+use servo_url::ServoUrl;
 
 #[derive(Copy, Clone, Deserialize, Serialize, HeapSizeOf)]
 pub enum StorageType {
@@ -15,25 +15,25 @@ pub enum StorageType {
 #[derive(Deserialize, Serialize)]
 pub enum StorageThreadMsg {
     
-    Length(IpcSender<usize>, Url, StorageType),
+    Length(IpcSender<usize>, ServoUrl, StorageType),
 
     
-    Key(IpcSender<Option<String>>, Url, StorageType, u32),
+    Key(IpcSender<Option<String>>, ServoUrl, StorageType, u32),
 
     
-    Keys(IpcSender<Vec<String>>, Url, StorageType),
+    Keys(IpcSender<Vec<String>>, ServoUrl, StorageType),
 
     
-    GetItem(IpcSender<Option<String>>, Url, StorageType, String),
+    GetItem(IpcSender<Option<String>>, ServoUrl, StorageType, String),
 
     
-    SetItem(IpcSender<Result<(bool, Option<String>), ()>>, Url, StorageType, String, String),
+    SetItem(IpcSender<Result<(bool, Option<String>), ()>>, ServoUrl, StorageType, String, String),
 
     
-    RemoveItem(IpcSender<Option<String>>, Url, StorageType, String),
+    RemoveItem(IpcSender<Option<String>>, ServoUrl, StorageType, String),
 
     
-    Clear(IpcSender<bool>, Url, StorageType),
+    Clear(IpcSender<bool>, ServoUrl, StorageType),
 
     
     Exit(IpcSender<()>)

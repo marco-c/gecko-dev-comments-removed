@@ -2,8 +2,9 @@
 
 
 
+use servo_url::ServoUrl;
 use std::sync::Arc;
-use url::{Host, Url};
+use url::Host;
 use url::Origin as UrlOrigin;
 
 
@@ -22,7 +23,7 @@ impl Origin {
     }
 
     
-    pub fn new(url: &Url) -> Origin {
+    pub fn new(url: &ServoUrl) -> Origin {
         Origin {
             inner: Arc::new(url.origin()),
         }

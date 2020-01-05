@@ -4,8 +4,8 @@
 
 use image::base::{Image, ImageMetadata};
 use ipc_channel::ipc::{self, IpcSender};
+use servo_url::ServoUrl;
 use std::sync::Arc;
-use url::Url;
 
 
 
@@ -74,27 +74,27 @@ pub enum ImageCacheCommand {
     
     
     
-    RequestImage(Url, ImageCacheChan, Option<ImageResponder>),
+    RequestImage(ServoUrl, ImageCacheChan, Option<ImageResponder>),
 
     
     
     
     
-    RequestImageAndMetadata(Url, ImageCacheChan, Option<ImageResponder>),
+    RequestImageAndMetadata(ServoUrl, ImageCacheChan, Option<ImageResponder>),
 
     
     
     
     
-    GetImageIfAvailable(Url, UsePlaceholder, IpcSender<Result<Arc<Image>, ImageState>>),
+    GetImageIfAvailable(ServoUrl, UsePlaceholder, IpcSender<Result<Arc<Image>, ImageState>>),
 
     
     
-    GetImageOrMetadataIfAvailable(Url, UsePlaceholder, IpcSender<Result<ImageOrMetadataAvailable, ImageState>>),
+    GetImageOrMetadataIfAvailable(ServoUrl, UsePlaceholder, IpcSender<Result<ImageOrMetadataAvailable, ImageState>>),
 
     
     
-    StoreDecodeImage(Url, Vec<u8>),
+    StoreDecodeImage(ServoUrl, Vec<u8>),
 
     
     Exit(IpcSender<()>),
@@ -124,7 +124,7 @@ impl ImageCacheThread {
 
     
     pub fn request_image(&self,
-                         url: Url,
+                         url: ServoUrl,
                          result_chan: ImageCacheChan,
                          responder: Option<ImageResponder>) {
         let msg = ImageCacheCommand::RequestImage(url, result_chan, responder);
@@ -134,7 +134,7 @@ impl ImageCacheThread {
     
     
     pub fn request_image_and_metadata(&self,
-                                      url: Url,
+                                      url: ServoUrl,
                                       result_chan: ImageCacheChan,
                                       responder: Option<ImageResponder>) {
         let msg = ImageCacheCommand::RequestImageAndMetadata(url, result_chan, responder);
@@ -142,7 +142,7 @@ impl ImageCacheThread {
     }
 
     
-    pub fn find_image(&self, url: Url, use_placeholder: UsePlaceholder)
+    pub fn find_image(&self, url: ServoUrl, use_placeholder: UsePlaceholder)
                                   -> Result<Arc<Image>, ImageState> {
         let (sender, receiver) = ipc::channel().unwrap();
         let msg = ImageCacheCommand::GetImageIfAvailable(url, use_placeholder, sender);
@@ -152,7 +152,9 @@ impl ImageCacheThread {
 
     
     
-    pub fn find_image_or_metadata(&self, url: Url, use_placeholder: UsePlaceholder)
+    
+    
+    pub fn find_image_or_metadata(&self, url: ServoUrl, use_placeholder: UsePlaceholder)
                                   -> Result<ImageOrMetadataAvailable, ImageState> {
         let (sender, receiver) = ipc::channel().unwrap();
         let msg = ImageCacheCommand::GetImageOrMetadataIfAvailable(url, use_placeholder, sender);
@@ -162,8 +164,8 @@ impl ImageCacheThread {
 
     
     pub fn store_complete_image_bytes(&self,
-                                   url: Url,
-                                   image_data: Vec<u8>) {
+                                      url: ServoUrl,
+                                      image_data: Vec<u8>) {
         let msg = ImageCacheCommand::StoreDecodeImage(url, image_data);
         let _ = self.chan.send(msg);
     }

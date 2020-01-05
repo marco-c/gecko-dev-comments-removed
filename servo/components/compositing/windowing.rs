@@ -13,9 +13,9 @@ use gfx_traits::DevicePixel;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::net_error_list::NetError;
 use script_traits::{MouseButton, TouchEventType, TouchId, TouchpadPressurePhase};
+use servo_url::ServoUrl;
 use std::fmt::{Debug, Error, Formatter};
 use style_traits::cursor::Cursor;
-use url::Url;
 use util::geometry::ScreenPx;
 
 #[derive(Clone)]
@@ -123,7 +123,7 @@ pub trait WindowMethods {
     
     fn set_page_title(&self, title: Option<String>);
     
-    fn set_page_url(&self, url: Url);
+    fn set_page_url(&self, url: ServoUrl);
     
     fn status(&self, Option<String>);
     
@@ -160,5 +160,5 @@ pub trait WindowMethods {
     fn supports_clipboard(&self) -> bool;
 
     
-    fn set_favicon(&self, url: Url);
+    fn set_favicon(&self, url: ServoUrl);
 }
