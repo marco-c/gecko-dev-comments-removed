@@ -301,10 +301,6 @@ class TenuredCell : public Cell
     MOZ_ALWAYS_INLINE void copyMarkBitsFrom(const TenuredCell* src);
 
     
-    
-    static MOZ_ALWAYS_INLINE bool isNullLike(const Cell* thing) { return !thing; }
-
-    
     inline Arena* arena() const;
     inline AllocKind getAllocKind() const;
     inline JS::TraceKind getTraceKind() const;
@@ -1285,7 +1281,7 @@ TenuredCell::isInsideZone(JS::Zone* zone) const
 TenuredCell::readBarrier(TenuredCell* thing)
 {
     MOZ_ASSERT(!CurrentThreadIsIonCompiling());
-    MOZ_ASSERT(!isNullLike(thing));
+    MOZ_ASSERT(thing);
 
     
     
@@ -1318,7 +1314,6 @@ AssertSafeToSkipBarrier(TenuredCell* thing);
 TenuredCell::writeBarrierPre(TenuredCell* thing)
 {
     MOZ_ASSERT(!CurrentThreadIsIonCompiling());
-    MOZ_ASSERT_IF(thing, !isNullLike(thing));
     if (!thing)
         return;
 

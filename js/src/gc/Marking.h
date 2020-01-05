@@ -416,14 +416,6 @@ ToMarkable(Cell* cell)
 
 
 
-MOZ_ALWAYS_INLINE bool
-IsNullTaggedPointer(void* p)
-{
-    return uintptr_t(p) <= LargestTaggedNullCellPointer;
-}
-
-
-
 template <typename S, typename T>
 struct RewrapTaggedPointer{};
 #define DECLARE_REWRAP(S, T, method, prefix) \
