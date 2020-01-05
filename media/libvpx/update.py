@@ -41,6 +41,9 @@ def apply_patches():
     
     os.system("patch -p1 < rename_duplicate_files.patch")
     os.system("mv libvpx/vpx_dsp/x86/loopfilter_sse2.c libvpx/vpx_dsp/x86/loopfilter_intrin_sse2.c")
+    
+    
+    os.system("patch -p1 < vp9_svc.patch")
 
 
 def update_readme(commit):
