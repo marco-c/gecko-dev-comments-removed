@@ -557,7 +557,7 @@ trait PrivateMatchMethods: TElement {
 
         
         if let Some(old) = old_values {
-            self.accumulate_damage(restyle.unwrap(), &old, &new_values, pseudo);
+            self.accumulate_damage(&context.shared, restyle.unwrap(), &old, &new_values, pseudo);
         }
 
         
@@ -677,10 +677,16 @@ trait PrivateMatchMethods: TElement {
     
     #[cfg(feature = "gecko")]
     fn accumulate_damage(&self,
+                         shared_context: &SharedStyleContext,
                          restyle: &mut RestyleData,
                          old_values: &Arc<ComputedValues>,
                          new_values: &Arc<ComputedValues>,
                          pseudo: Option<&PseudoElement>) {
+        
+        if shared_context.traversal_flags.for_reconstruct() {
+            return;
+        }
+
         
         
         if restyle.damage_handled.contains(RestyleDamage::reconstruct()) {
@@ -705,6 +711,7 @@ trait PrivateMatchMethods: TElement {
     
     #[cfg(feature = "servo")]
     fn accumulate_damage(&self,
+                         _shared_context: &SharedStyleContext,
                          restyle: &mut RestyleData,
                          old_values: &Arc<ComputedValues>,
                          new_values: &Arc<ComputedValues>,
@@ -1109,7 +1116,7 @@ pub trait MatchMethods : TElement {
                     let old_values = data.get_styles_mut()
                                          .and_then(|s| s.primary.values.take());
                     if let Some(old) = old_values {
-                        self.accumulate_damage(data.restyle_mut(), &old,
+                        self.accumulate_damage(shared_context, data.restyle_mut(), &old,
                                                shared_style.values(), None);
                     }
 
