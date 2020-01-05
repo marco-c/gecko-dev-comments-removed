@@ -1,10 +1,13 @@
 var elem = document.documentElement.firstChild;
 
-var start = (new Date()).getTime();
-for (var i = 0; i < 1000000; i++) {
+var start = new Date()
+var count = 1000000;
+for (var i = 0; i < count; i++) {
   var a = elem.nodeType;
 }
-window.alert((new Date()).getTime() - start);
+var stop = new Date()
+window.alert((stop - start) / count * 1e6);
+
 
 
 
