@@ -31,7 +31,7 @@ struct nsQuoteNode : public nsGenConNode {
     NS_ASSERTION(aContentIndex <= INT32_MAX, "out of range");
   }
 
-  virtual bool InitTextFrame(nsGenConList* aList, 
+  virtual bool InitTextFrame(nsGenConList* aList,
           nsIFrame* aPseudoFrame, nsIFrame* aTextFrame) override;
 
   
@@ -70,7 +70,7 @@ struct nsQuoteNode : public nsGenConNode {
 
 class nsQuoteList : public nsGenConList {
 private:
-  nsQuoteNode* FirstNode() { return static_cast<nsQuoteNode*>(mFirstNode); }
+  nsQuoteNode* FirstNode() { return static_cast<nsQuoteNode*>(mList.getFirst()); }
 public:
   
   
@@ -82,7 +82,7 @@ public:
   nsQuoteNode* Prev(nsQuoteNode* aNode) {
     return static_cast<nsQuoteNode*>(nsGenConList::Prev(aNode));
   }
-  
+
   void RecalcAll();
 #ifdef DEBUG
   void PrintChain();
