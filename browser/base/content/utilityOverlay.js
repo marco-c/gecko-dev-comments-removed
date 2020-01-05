@@ -178,6 +178,7 @@ function whereToOpenLink( e, ignoreButton, ignoreAlt )
 
 
 
+
 function openUILinkIn(url, where, aAllowThirdPartyFixup, aPostData, aReferrerURI) {
   var params;
 
@@ -226,19 +227,6 @@ function openLinkIn(url, where, params) {
   var aForceAboutBlankViewerInCurrent =
       params.forceAboutBlankViewerInCurrent;
 
-  
-  var w = getTopWin();
-
-  if ((where == "tab" || where == "tabshifted") &&
-      w && !w.toolbar.visible) {
-    w = getTopWin(true);
-    aRelatedToCurrent = false;
-  }
-
-  
-  
-  var aCurrentBrowser = params.currentBrowser || (w && w.gBrowser.selectedBrowser);
-
   if (where == "save") {
     
 
@@ -255,6 +243,21 @@ function openLinkIn(url, where, params) {
       saveURL(url, null, null, true, true, aNoReferrer ? null : aReferrerURI, aInitiatingDoc);
     }
     return;
+  }
+
+  
+  let w;
+  if (where == "current" && params.targetBrowser) {
+    w = params.targetBrowser.ownerGlobal;
+  } else {
+    w = getTopWin();
+  }
+  
+  
+  if ((where == "tab" || where == "tabshifted") &&
+      w && !w.toolbar.visible) {
+    w = getTopWin(true);
+    aRelatedToCurrent = false;
   }
 
   if (!w || where == "window") {
@@ -310,45 +313,47 @@ function openLinkIn(url, where, params) {
     return;
   }
 
-  let loadInBackground = where == "current" ? false : aInBackground;
-  if (loadInBackground == null) {
-    loadInBackground = aFromChrome ?
-                         false :
-                         getBoolPref("browser.tabs.loadInBackground");
-  }
-
-  let uriObj;
-  if (where == "current") {
-    try {
-      uriObj = Services.io.newURI(url, null, null);
-    } catch (e) {}
-  }
-
   
-  
-  
-  
-  let tab = aCurrentBrowser.getTabBrowser().getTabForBrowser(aCurrentBrowser);
-  if (where == "current" && tab.pinned &&
-      !aAllowPinnedTabHostChange) {
-    try {
-      
-      if (!uriObj || (!uriObj.schemeIs("javascript") &&
-                      aCurrentBrowser.currentURI.host != uriObj.host)) {
-        where = "tab";
-        loadInBackground = false;
-      }
-    } catch (err) {
-      where = "tab";
-      loadInBackground = false;
-    }
-  }
 
   
   
   w.focus();
 
-  let browserUsedForLoad = null;
+  let targetBrowser;
+  let loadInBackground;
+  let uriObj;
+
+  if (where == "current") {
+    targetBrowser = params.targetBrowser || w.gBrowser.selectedBrowser;
+    loadInBackground = false;
+
+    try {
+      uriObj = Services.io.newURI(url, null, null);
+    } catch (e) {}
+
+    if (w.gBrowser.getTabForBrowser(targetBrowser).pinned &&
+        !aAllowPinnedTabHostChange) {
+      try {
+        
+        if (!uriObj || (!uriObj.schemeIs("javascript") &&
+                        targetBrowser.currentURI.host != uriObj.host)) {
+          where = "tab";
+          loadInBackground = false;
+        }
+      } catch (err) {
+        where = "tab";
+        loadInBackground = false;
+      }
+    }
+  } else {
+    
+    loadInBackground = aInBackground;
+    if (loadInBackground == null) {
+      loadInBackground =
+        aFromChrome ? false : getBoolPref("browser.tabs.loadInBackground");
+    }
+  }
+
   switch (where) {
   case "current":
     let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
@@ -374,17 +379,16 @@ function openLinkIn(url, where, params) {
     }
 
     if (aForceAboutBlankViewerInCurrent) {
-      aCurrentBrowser.createAboutBlankContentViewer(aPrincipal);
+      targetBrowser.createAboutBlankContentViewer(aPrincipal);
     }
 
-    aCurrentBrowser.loadURIWithFlags(url, {
+    targetBrowser.loadURIWithFlags(url, {
       flags: flags,
       referrerURI: aNoReferrer ? null : aReferrerURI,
       referrerPolicy: aReferrerPolicy,
       postData: aPostData,
       userContextId: aUserContextId
     });
-    browserUsedForLoad = aCurrentBrowser;
     break;
   case "tabshifted":
     loadInBackground = !loadInBackground;
@@ -404,14 +408,13 @@ function openLinkIn(url, where, params) {
       userContextId: aUserContextId,
       originPrincipal: aPrincipal,
     });
-    browserUsedForLoad = tabUsedForLoad.linkedBrowser;
+    targetBrowser = tabUsedForLoad.linkedBrowser;
     break;
   }
 
   
-  if (browserUsedForLoad &&
-      browserUsedForLoad == browserUsedForLoad.getTabBrowser().selectedBrowser) {
-    browserUsedForLoad.focus();
+  if (targetBrowser == w.gBrowser.selectedBrowser) {
+    targetBrowser.focus();
   }
 
   if (!loadInBackground && w.isBlankPageURL(url)) {
