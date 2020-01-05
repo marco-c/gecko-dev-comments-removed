@@ -47,7 +47,6 @@ include protocol PVideoDecoderManager;
 include protocol PFlyWebPublishedServer;
 include DOMTypes;
 include JavaScriptTypes;
-include IPCBlob;
 include IPCStream;
 include PTabContext;
 include URIParams;
@@ -64,6 +63,7 @@ include MemoryReportTypes;
 // are put into different UnifiedProtocolsXX.cpp files.
 // XXX Remove this once bug 1069073 is fixed
 include "mozilla/dom/PContentBridgeParent.h";
+include "mozilla/layers/WebRenderMessageUtils.h";
 
 using GeoPosition from "nsGeoPositionIPCSerialiser.h";
 using AlertNotificationType from "mozilla/AlertNotificationIPCSerializer.h";
@@ -96,6 +96,7 @@ using mozilla::Telemetry::KeyedAccumulation from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::ScalarAction from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::KeyedScalarAction from "mozilla/TelemetryComms.h";
 using mozilla::Telemetry::ChildEventData from "mozilla/TelemetryComms.h";
+using mozilla::wr::PipelineId from "mozilla/webrender/WebRenderTypes.h";
 
 union ChromeRegistryItem
 {
@@ -196,7 +197,7 @@ struct AndroidSystemInfo
 
 struct GetFilesResponseSuccess
 {
-  IPCBlob[] blobs;
+  PBlob[] blobs;
 };
 
 struct GetFilesResponseFailure
@@ -212,7 +213,7 @@ union GetFilesResponseResult
 
 struct FileCreationSuccessResult
 {
-  IPCBlob blob;
+  PBlob blob;
 };
 
 struct FileCreationErrorResult
@@ -229,7 +230,7 @@ union FileCreationResult
 struct BlobURLRegistrationData
 {
     nsCString url;
-    IPCBlob blob;
+    PBlob blob;
     Principal principal;
 };
 
@@ -270,8 +271,6 @@ struct XPCOMInitData
     ContentDeviceData contentDeviceData;
     GfxInfoFeatureStatus[] gfxFeatureStatus;
     DataStorageEntry[] dataStorage;
-    nsCString[] appLocales;
-    nsCString[] requestedLocales;
 };
 
 /**
@@ -429,9 +428,6 @@ child:
 
     async UpdateDictionaryList(nsString[] dictionaries);
 
-    async UpdateAppLocales(nsCString[] appLocales);
-    async UpdateRequestedLocales(nsCString[] requestedLocales);
-
     // nsIPermissionManager messages
     async AddPermission(Permission permission);
 
@@ -583,7 +579,7 @@ child:
 
     async GetFilesResponse(nsID aID, GetFilesResponseResult aResult);
 
-    async BlobURLRegistration(nsCString aURI, IPCBlob aBlob,
+    async BlobURLRegistration(nsCString aURI, PBlob aBlob,
                               Principal aPrincipal);
 
     async BlobURLUnregistration(nsCString aURI);
@@ -624,9 +620,8 @@ parent:
 
     sync CreateChildProcess(IPCTabContext context,
                             ProcessPriority priority,
-                            TabId openerTabId,
-                            TabId tabId)
-        returns (ContentParentId cpId, bool isForBrowser);
+                            TabId openerTabId)
+        returns (ContentParentId cpId, bool isForBrowser, TabId tabId);
     sync BridgeToChildProcess(ContentParentId cpId)
         returns (Endpoint<PContentBridgeParent> endpoint);
 
@@ -916,10 +911,15 @@ parent:
     sync KeygenProvideContent()
         returns (nsString aAttribute, nsString[] aContent);
 
-    /** Clear RemoteFrameInfo of the given tab id. */
-    async UnregisterRemoteFrame(TabId tabId,
-                                ContentParentId cpId,
-                                bool aMarkedDestroying);
+    /**
+     * Tell the chrome process there is an creation of PBrowser.
+     * return a system-wise unique Id.
+     */
+    sync AllocateTabId(TabId openerTabId, IPCTabContext context, ContentParentId cpId)
+        returns (TabId tabId);
+    async DeallocateTabId(TabId tabId,
+                          ContentParentId cpId,
+                          bool aMarkedDestroying);
 
     /**
      * Tell the chrome process there is a destruction of PBrowser(Tab)
@@ -1082,7 +1082,7 @@ parent:
                                int64_t lastModified, bool aExistenceCheck,
                                bool aIsFromNsIFile);
 
-     async StoreAndBroadcastBlobURLRegistration(nsCString url, IPCBlob blob,
+     async StoreAndBroadcastBlobURLRegistration(nsCString url, PBlob blob,
                                                 Principal principal);
 
      async UnstoreAndBroadcastBlobURLUnregistration(nsCString url);
@@ -1109,6 +1109,8 @@ parent:
 
     async AddMemoryReport(MemoryReport aReport);
     async FinishMemoryReport(uint32_t aGeneration);
+
+    async AllocPipelineId() returns (PipelineId pipelineId);
 
 both:
      async AsyncMessage(nsString aMessage, CpowEntry[] aCpows,

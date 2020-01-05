@@ -46,7 +46,6 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/FileCreatorHelper.h"
 #include "mozilla/dom/FileSystemSecurity.h"
-#include "mozilla/dom/IPCBlobUtils.h"
 #include "mozilla/dom/ExternalHelperAppParent.h"
 #include "mozilla/dom/GetFilesHelper.h"
 #include "mozilla/dom/GeolocationBinding.h"
@@ -78,7 +77,6 @@
 #include "mozilla/ipc/PChildToParentStreamParent.h"
 #include "mozilla/ipc/TestShellParent.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
-#include "mozilla/intl/LocaleService.h"
 #include "mozilla/jsipc/CrossProcessObjectWrappers.h"
 #include "mozilla/layers/PAPZParent.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -277,7 +275,6 @@ using namespace mozilla::gfx;
 using namespace mozilla::gmp;
 using namespace mozilla::hal;
 using namespace mozilla::ipc;
-using namespace mozilla::intl;
 using namespace mozilla::layers;
 using namespace mozilla::layout;
 using namespace mozilla::net;
@@ -568,8 +565,6 @@ static const char* sObserverTopics[] = {
   "a11y-init-or-shutdown",
 #endif
   "cacheservice:empty-cache",
-  "intl:app-locales-changed",
-  "intl:requested-locales-changed",
 };
 
 
@@ -910,9 +905,9 @@ mozilla::ipc::IPCResult
 ContentParent::RecvCreateChildProcess(const IPCTabContext& aContext,
                                       const hal::ProcessPriority& aPriority,
                                       const TabId& aOpenerTabId,
-                                      const TabId& aTabId,
                                       ContentParentId* aCpId,
-                                      bool* aIsForBrowser)
+                                      bool* aIsForBrowser,
+                                      TabId* aTabId)
 {
 #if 0
   if (!CanOpenBrowser(aContext)) {
@@ -943,8 +938,12 @@ ContentParent::RecvCreateChildProcess(const IPCTabContext& aContext,
   ContentProcessManager *cpm = ContentProcessManager::GetSingleton();
   cpm->AddContentProcess(cp, this->ChildID());
 
-  if (cpm->AddGrandchildProcess(this->ChildID(), cp->ChildID()) &&
-      cpm->RegisterRemoteFrame(aTabId, aOpenerTabId, aContext, cp->ChildID())) {
+  if (cpm->AddGrandchildProcess(this->ChildID(), cp->ChildID())) {
+    
+    *aTabId = AllocateTabId(aOpenerTabId, aContext, cp->ChildID());
+    if (*aTabId == 0) {
+      return IPC_FAIL_NO_REASON(this);
+    }
     return IPC_OK();
   }
 
@@ -1176,7 +1175,7 @@ ContentParent::CreateBrowser(const TabContext& aContext,
 
   ProcessPriority initialPriority = GetInitialProcessPriority(aFrameElement);
   bool isInContentProcess = !XRE_IsParentProcess();
-  TabId tabId(nsContentUtils::GenerateTabId());
+  TabId tabId;
 
   nsIDocShell* docShell = GetOpenerDocShellHelper(aFrameElement);
   TabId openerTabId;
@@ -1194,7 +1193,7 @@ ContentParent::CreateBrowser(const TabContext& aContext,
   if (isInContentProcess) {
     MOZ_ASSERT(aContext.IsMozBrowserElement());
     constructorSender = CreateContentBridgeParent(aContext, initialPriority,
-                                                  openerTabId, tabId);
+                                                  openerTabId, &tabId);
   } else {
     if (aOpenerContentParent) {
       constructorSender = aOpenerContentParent;
@@ -1205,11 +1204,9 @@ ContentParent::CreateBrowser(const TabContext& aContext,
         return nullptr;
       }
     }
-    ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
-    cpm->RegisterRemoteFrame(tabId,
-                             openerTabId,
-                             aContext.AsIPCTabContext(),
-                             constructorSender->ChildID());
+    tabId = AllocateTabId(openerTabId,
+                          aContext.AsIPCTabContext(),
+                          constructorSender->ChildID());
   }
   if (constructorSender) {
     nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
@@ -1269,7 +1266,7 @@ ContentParent::CreateBrowser(const TabContext& aContext,
 ContentParent::CreateContentBridgeParent(const TabContext& aContext,
                                          const hal::ProcessPriority& aPriority,
                                          const TabId& aOpenerTabId,
-                                         const TabId& aTabId)
+                                          TabId* aTabId)
 {
   MOZ_ASSERT(aTabId);
 
@@ -1279,9 +1276,9 @@ ContentParent::CreateContentBridgeParent(const TabContext& aContext,
   if (!child->SendCreateChildProcess(aContext.AsIPCTabContext(),
                                      aPriority,
                                      aOpenerTabId,
-                                     aTabId,
                                      &cpId,
-                                     &isForBrowser)) {
+                                     &isForBrowser,
+                                     aTabId)) {
     return nullptr;
   }
   if (cpId == 0) {
@@ -2177,9 +2174,6 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
 
   spellChecker->GetDictionaryList(&xpcomInit.dictionaries());
 
-  LocaleService::GetInstance()->GetAppLocalesAsLangTags(xpcomInit.appLocales());
-  LocaleService::GetInstance()->GetRequestedLocales(xpcomInit.requestedLocales());
-
   nsCOMPtr<nsIClipboard> clipboard(do_GetService("@mozilla.org/widget/clipboard;1"));
   MOZ_ASSERT(clipboard, "No clipboard?");
 
@@ -2779,16 +2773,6 @@ ContentParent::Observe(nsISupports* aSubject,
 #endif
   else if (!strcmp(aTopic, "cacheservice:empty-cache")) {
     Unused << SendNotifyEmptyHTTPCache();
-  }
-  else if (!strcmp(aTopic, "intl:app-locales-changed")) {
-    nsTArray<nsCString> appLocales;
-    LocaleService::GetInstance()->GetAppLocalesAsLangTags(appLocales);
-    Unused << SendUpdateAppLocales(appLocales);
-  }
-  else if (!strcmp(aTopic, "intl:requested-locales-changed")) {
-    nsTArray<nsCString> requestedLocales;
-    LocaleService::GetInstance()->GetRequestedLocales(requestedLocales);
-    Unused << SendUpdateRequestedLocales(requestedLocales);
   }
   return NS_OK;
 }
@@ -4215,8 +4199,27 @@ ContentParent::NotifyUpdatedDictionaries()
   }
 }
 
+ TabId
+ContentParent::AllocateTabId(const TabId& aOpenerTabId,
+                             const IPCTabContext& aContext,
+                             const ContentParentId& aCpId)
+{
+  TabId tabId;
+  if (XRE_IsParentProcess()) {
+    ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+    tabId = cpm->AllocateTabId(aOpenerTabId, aContext, aCpId);
+  }
+  else {
+    ContentChild::GetSingleton()->SendAllocateTabId(aOpenerTabId,
+                                                      aContext,
+                                                      aCpId,
+                                                      &tabId);
+  }
+  return tabId;
+}
+
  void
-ContentParent::UnregisterRemoteFrame(const TabId& aTabId,
+ContentParent::DeallocateTabId(const TabId& aTabId,
                                const ContentParentId& aCpId,
                                bool aMarkedDestroying)
 {
@@ -4226,19 +4229,32 @@ ContentParent::UnregisterRemoteFrame(const TabId& aTabId,
 
     cp->NotifyTabDestroyed(aTabId, aMarkedDestroying);
 
-    ContentProcessManager::GetSingleton()->UnregisterRemoteFrame(aCpId, aTabId);
+    ContentProcessManager::GetSingleton()->DeallocateTabId(aCpId, aTabId);
   } else {
-    ContentChild::GetSingleton()->SendUnregisterRemoteFrame(aTabId, aCpId,
+    ContentChild::GetSingleton()->SendDeallocateTabId(aTabId, aCpId,
                                                       aMarkedDestroying);
   }
 }
 
 mozilla::ipc::IPCResult
-ContentParent::RecvUnregisterRemoteFrame(const TabId& aTabId,
+ContentParent::RecvAllocateTabId(const TabId& aOpenerTabId,
+                                 const IPCTabContext& aContext,
+                                 const ContentParentId& aCpId,
+                                 TabId* aTabId)
+{
+  *aTabId = AllocateTabId(aOpenerTabId, aContext, aCpId);
+  if (!(*aTabId)) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
+ContentParent::RecvDeallocateTabId(const TabId& aTabId,
                                    const ContentParentId& aCpId,
                                    const bool& aMarkedDestroying)
 {
-  UnregisterRemoteFrame(aTabId, aCpId, aMarkedDestroying);
+  DeallocateTabId(aTabId, aCpId, aMarkedDestroying);
   return IPC_OK();
 }
 
@@ -4856,13 +4872,10 @@ ContentParent::BroadcastBlobURLRegistration(const nsACString& aURI,
 
   for (auto* cp : AllProcesses(eLive)) {
     if (cp != aIgnoreThisCP) {
-      IPCBlob ipcBlob;
-      nsresult rv = IPCBlobUtils::Serialize(aBlobImpl, cp, ipcBlob);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        break;
+      PBlobParent* blobParent = cp->GetOrCreateActorForBlobImpl(aBlobImpl);
+      if (blobParent) {
+        Unused << cp->SendBlobURLRegistration(uri, blobParent, principal);
       }
-
-      Unused << cp->SendBlobURLRegistration(uri, ipcBlob, principal);
     }
   }
 }
@@ -4882,10 +4895,11 @@ ContentParent::BroadcastBlobURLUnregistration(const nsACString& aURI,
 
 mozilla::ipc::IPCResult
 ContentParent::RecvStoreAndBroadcastBlobURLRegistration(const nsCString& aURI,
-                                                        const IPCBlob& aBlob,
+                                                        PBlobParent* aBlobParent,
                                                         const Principal& aPrincipal)
 {
-  RefPtr<BlobImpl> blobImpl = IPCBlobUtils::Deserialize(aBlob);
+  RefPtr<BlobImpl> blobImpl =
+    static_cast<BlobParent*>(aBlobParent)->GetBlobImpl();
   if (NS_WARN_IF(!blobImpl)) {
     return IPC_FAIL_NO_REASON(this);
   }
@@ -5267,6 +5281,18 @@ ContentParent::RecvClassifyLocal(const URIParams& aURI, const nsCString& aTables
 }
 
 mozilla::ipc::IPCResult
+ContentParent::RecvAllocPipelineId(RefPtr<AllocPipelineIdPromise>&& aPromise)
+{
+  GPUProcessManager* pm = GPUProcessManager::Get();
+  if (!pm) {
+    aPromise->Reject(PromiseRejectReason::HandlerRejected, __func__);
+    return IPC_OK();
+  }
+  aPromise->Resolve(wr::AsPipelineId(pm->AllocateLayerTreeId()), __func__);
+  return IPC_OK();
+}
+
+mozilla::ipc::IPCResult
 ContentParent::RecvFileCreationRequest(const nsID& aID,
                                        const nsString& aFullPath,
                                        const nsString& aType,
@@ -5301,17 +5327,13 @@ ContentParent::RecvFileCreationRequest(const nsID& aID,
 
   MOZ_ASSERT(blobImpl);
 
-  IPCBlob ipcBlob;
-  rv = IPCBlobUtils::Serialize(blobImpl, this, ipcBlob);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    if (!SendFileCreationResponse(aID, FileCreationErrorResult(rv))) {
-      return IPC_FAIL_NO_REASON(this);
-    }
-
-    return IPC_OK();
+  BlobParent* blobParent = BlobParent::GetOrCreate(this, blobImpl);
+  if (NS_WARN_IF(!blobParent)) {
+    return IPC_FAIL_NO_REASON(this);
   }
 
-  if (!SendFileCreationResponse(aID, FileCreationSuccessResult(ipcBlob))) {
+  if (!SendFileCreationResponse(aID,
+                                FileCreationSuccessResult(blobParent, nullptr))) {
     return IPC_FAIL_NO_REASON(this);
   }
 

@@ -279,9 +279,9 @@ public:
   virtual mozilla::ipc::IPCResult RecvCreateChildProcess(const IPCTabContext& aContext,
                                                          const hal::ProcessPriority& aPriority,
                                                          const TabId& aOpenerTabId,
-                                                         const TabId& aTabId,
                                                          ContentParentId* aCpId,
-                                                         bool* aIsForBrowser) override;
+                                                         bool* aIsForBrowser,
+                                                         TabId* aTabId) override;
 
   virtual mozilla::ipc::IPCResult RecvBridgeToChildProcess(const ContentParentId& aCpId,
                                                            Endpoint<PContentBridgeParent>* aEndpoint) override;
@@ -350,10 +350,15 @@ public:
 
   jsipc::CPOWManager* GetCPOWManager() override;
 
+  static TabId
+  AllocateTabId(const TabId& aOpenerTabId,
+                const IPCTabContext& aContext,
+                const ContentParentId& aCpId);
+
   static void
-  UnregisterRemoteFrame(const TabId& aTabId,
-                        const ContentParentId& aCpId,
-                        bool aMarkedDestroying);
+  DeallocateTabId(const TabId& aTabId,
+                  const ContentParentId& aCpId,
+                  bool aMarkedDestroying);
 
   void ReportChildAlreadyBlocked();
 
@@ -484,9 +489,14 @@ public:
   SendPBlobConstructor(PBlobParent* aActor,
                        const BlobConstructorParams& aParams) override;
 
-  virtual mozilla::ipc::IPCResult RecvUnregisterRemoteFrame(const TabId& aTabId,
-                                                            const ContentParentId& aCpId,
-                                                            const bool& aMarkedDestroying) override;
+  virtual mozilla::ipc::IPCResult RecvAllocateTabId(const TabId& aOpenerTabId,
+                                                    const IPCTabContext& aContext,
+                                                    const ContentParentId& aCpId,
+                                                    TabId* aTabId) override;
+
+  virtual mozilla::ipc::IPCResult RecvDeallocateTabId(const TabId& aTabId,
+                                                      const ContentParentId& aCpId,
+                                                      const bool& aMarkedDestroying) override;
 
   virtual mozilla::ipc::IPCResult RecvNotifyTabDestroying(const TabId& aTabId,
                                                           const ContentParentId& aCpId) override;
@@ -575,7 +585,7 @@ public:
 
   virtual mozilla::ipc::IPCResult
   RecvStoreAndBroadcastBlobURLRegistration(const nsCString& aURI,
-                                           const IPCBlob& aBlob,
+                                           PBlobParent* aBlobParent,
                                            const Principal& aPrincipal) override;
 
   virtual mozilla::ipc::IPCResult
@@ -646,6 +656,9 @@ public:
                     nsresult* aRv,
                     nsTArray<nsCString>* aResults) override;
 
+  virtual mozilla::ipc::IPCResult
+  RecvAllocPipelineId(RefPtr<AllocPipelineIdPromise>&& aPromise) override;
+
   
   void ForceTabPaint(TabParent* aTabParent, uint64_t aLayerObserverEpoch);
 
@@ -684,7 +697,7 @@ private:
   static ContentBridgeParent* CreateContentBridgeParent(const TabContext& aContext,
                                                         const hal::ProcessPriority& aPriority,
                                                         const TabId& aOpenerTabId,
-                                                        const TabId& aTabId);
+                                                         TabId* aTabId);
 
   
   
