@@ -16,14 +16,16 @@ namespace mozilla {
 
 class ServoStyleSheet;
 namespace css {
+class GroupRule;
 class Rule;
 } 
 
 class ServoCSSRuleList final : public dom::CSSRuleList
 {
 public:
-  ServoCSSRuleList(ServoStyleSheet* aStyleSheet,
-                   already_AddRefed<ServoCssRules> aRawRules);
+  explicit ServoCSSRuleList(already_AddRefed<ServoCssRules> aRawRules);
+  void SetParentRule(css::GroupRule* aParentRule);
+  void SetStyleSheet(StyleSheet* aSheet);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ServoCSSRuleList, dom::CSSRuleList)
@@ -57,8 +59,12 @@ private:
   template<typename Func>
   void EnumerateInstantiatedRules(Func aCallback);
 
+  void DropAllRules();
+
   
-  ServoStyleSheet* mStyleSheet;
+  ServoStyleSheet* mStyleSheet = nullptr;
+  
+  css::GroupRule* mParentRule = nullptr;
   RefPtr<ServoCssRules> mRawRules;
   
   
