@@ -296,39 +296,37 @@ fn http_fetch(request: Rc<Request>,
               authentication_fetch_flag: bool) -> Response {
 
     
-    let mut response: Option<Rc<RefCell<Response>>> = None;
+    let mut response: Option<Rc<Response>> = None;
 
     
-    let mut actual_response: Option<Rc<RefCell<Response>>> = None;
+    let mut actual_response: Option<Rc<Response>> = None;
 
     
     if !request.skip_service_worker.get() && !request.is_service_worker_global_scope {
 
         
         if let Some(ref res) = response {
-            let resp = res.borrow();
 
             
-            actual_response = match resp.internal_response {
+            actual_response = match res.internal_response {
                 Some(ref internal_res) => Some(internal_res.clone()),
                 None => Some(res.clone())
             };
 
             
-            if (resp.response_type == ResponseType::Opaque &&
+            if (res.response_type == ResponseType::Opaque &&
                 request.mode != RequestMode::NoCORS) ||
-               (resp.response_type == ResponseType::OpaqueRedirect &&
+               (res.response_type == ResponseType::OpaqueRedirect &&
                 request.redirect_mode != RedirectMode::Manual) ||
-               resp.response_type == ResponseType::Error {
+               res.response_type == ResponseType::Error {
                 return Response::network_error();
             }
         }
 
         
         if let Some(ref res) = actual_response {
-            let mut resp = res.borrow_mut();
-            if resp.url_list.is_empty() {
-                resp.url_list = request.url_list.borrow().clone();
+            if res.url_list.borrow().is_empty() {
+                *res.url_list.borrow_mut() = request.url_list.borrow().clone();
             }
         }
 
@@ -370,7 +368,7 @@ fn http_fetch(request: Rc<Request>,
                 if preflight_result.response_type == ResponseType::Error {
                     return Response::network_error();
                 }
-                response = Some(Rc::new(RefCell::new(preflight_result)));
+                response = Some(Rc::new(preflight_result));
             }
         }
 
@@ -394,13 +392,13 @@ fn http_fetch(request: Rc<Request>,
             return Response::network_error();
         }
 
-        response = Some(Rc::new(RefCell::new(fetch_result)));
+        response = Some(Rc::new(fetch_result));
         actual_response = response.clone();
     }
 
     
-    let actual_response = Rc::try_unwrap(actual_response.unwrap()).ok().unwrap().into_inner();
-    let response = Rc::try_unwrap(response.unwrap()).ok().unwrap();
+    let actual_response = Rc::try_unwrap(actual_response.unwrap()).ok().unwrap();
+    let mut response = Rc::try_unwrap(response.unwrap()).ok().unwrap();
 
     match actual_response.status.unwrap() {
 
@@ -445,7 +443,7 @@ fn http_fetch(request: Rc<Request>,
 
                 
                 RedirectMode::Manual => {
-                    *response.borrow_mut() = actual_response.to_filtered(ResponseType::Opaque);
+                    response = actual_response.to_filtered(ResponseType::Opaque);
                 }
 
                 
@@ -495,7 +493,7 @@ fn http_fetch(request: Rc<Request>,
             
             
             if cors_flag {
-                return response.into_inner();
+                return response;
             }
 
             
@@ -530,8 +528,6 @@ fn http_fetch(request: Rc<Request>,
 
         _ => { }
     }
-
-    let response = response.into_inner();
 
     
     if authentication_fetch_flag {
@@ -793,7 +789,7 @@ fn http_network_fetch(request: Rc<Request>,
     };
 
     
-    response.url_list = request.url_list.borrow().clone();
+    *response.url_list.borrow_mut() = request.url_list.borrow().clone();
 
     
 

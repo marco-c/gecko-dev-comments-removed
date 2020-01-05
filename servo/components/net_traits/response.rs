@@ -67,7 +67,7 @@ pub struct Response {
     pub response_type: ResponseType,
     pub termination_reason: Option<TerminationReason>,
     pub url: Option<Url>,
-    pub url_list: Vec<Url>,
+    pub url_list: RefCell<Vec<Url>>,
     
     pub status: Option<StatusCode>,
     pub headers: Headers,
@@ -76,7 +76,7 @@ pub struct Response {
     pub https_state: HttpsState,
     
     
-    pub internal_response: Option<Rc<RefCell<Response>>>,
+    pub internal_response: Option<Rc<Response>>,
 }
 
 impl Response {
@@ -85,7 +85,7 @@ impl Response {
             response_type: ResponseType::Error,
             termination_reason: None,
             url: None,
-            url_list: vec![],
+            url_list: RefCell::new(vec![]),
             status: None,
             headers: Headers::new(),
             body: ResponseBody::Empty,
