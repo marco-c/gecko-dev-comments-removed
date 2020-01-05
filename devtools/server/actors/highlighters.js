@@ -245,6 +245,13 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
         return;
       }
 
+      
+      
+      if (event.shiftKey) {
+        events.emit(this._walker, "picker-node-previewed", this._findAndAttachElement(event));
+        return;
+      }
+
       this._stopPickerListeners();
       this._isPicking = false;
       if (this._autohide) {
@@ -351,16 +358,6 @@ var HighlighterActor = exports.HighlighterActor = protocol.ActorClassWithSpec(hi
     this._startPickerListeners();
 
     return null;
-  },
-
-  
-
-
-  pickAndFocus: function() {
-    
-    let pickResults = this.pick();
-    this._highlighterEnv.window.focus();
-    return pickResults;
   },
 
   _findAndAttachElement: function (event) {
