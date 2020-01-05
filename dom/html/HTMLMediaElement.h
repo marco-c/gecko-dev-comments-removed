@@ -1273,6 +1273,7 @@ protected:
 
   
   bool IsAllowedToPlay();
+  bool IsAllowedToPlayByAudioChannel();
 
   
   void MaybeDoLoad();

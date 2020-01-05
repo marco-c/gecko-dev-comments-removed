@@ -4986,7 +4986,7 @@ bool HTMLMediaElement::CanActivateAutoplay()
     return false;
   }
 
-  if (!IsAllowedToPlay()) {
+  if (!IsAllowedToPlayByAudioChannel()) {
     return false;
   }
 
@@ -6051,6 +6051,12 @@ HTMLMediaElement::IsAllowedToPlay()
     return false;
   }
 
+  return IsAllowedToPlayByAudioChannel();
+}
+
+bool
+HTMLMediaElement::IsAllowedToPlayByAudioChannel()
+{
   
   
   if (mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
