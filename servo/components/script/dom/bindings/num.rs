@@ -9,7 +9,7 @@ use num::Float;
 use std::ops::Deref;
 
 
-#[derive(JSTraceable,Clone,Eq,PartialEq)]
+#[derive(JSTraceable, Clone, Eq, PartialEq)]
 pub struct Finite<T: Float>(T);
 
 unsafe impl<T: Float> Zeroable for Finite<T> {}

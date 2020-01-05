@@ -78,12 +78,12 @@ pub enum Direction {
 
 
 
-#[cfg(target_os="macos")]
+#[cfg(target_os = "macos")]
 fn is_control_key(mods: KeyModifiers) -> bool {
     mods.contains(SUPER) && !mods.contains(CONTROL | ALT)
 }
 
-#[cfg(not(target_os="macos"))]
+#[cfg(not(target_os = "macos"))]
 fn is_control_key(mods: KeyModifiers) -> bool {
     mods.contains(CONTROL) && !mods.contains(SUPER | ALT)
 }

@@ -333,10 +333,10 @@ fn args_fail(msg: &str) -> ! {
 
 
 
-#[cfg(target_os="android")]
+#[cfg(target_os = "android")]
 static FORCE_CPU_PAINTING: bool = true;
 
-#[cfg(not(target_os="android"))]
+#[cfg(not(target_os = "android"))]
 static FORCE_CPU_PAINTING: bool = false;
 
 enum UserAgent {
@@ -359,15 +359,15 @@ fn default_user_agent_string(agent: UserAgent) -> String {
     }.to_owned()
 }
 
-#[cfg(target_os="android")]
+#[cfg(target_os = "android")]
 const DEFAULT_USER_AGENT: UserAgent = UserAgent::Android;
 
 
 
-#[cfg(target_os="gonk")]
+#[cfg(target_os = "gonk")]
 const DEFAULT_USER_AGENT: UserAgent = UserAgent::Gonk;
 
-#[cfg(not(any(target_os="android", target_os="gonk")))]
+#[cfg(not(any(target_os = "android", target_os = "gonk")))]
 const DEFAULT_USER_AGENT: UserAgent = UserAgent::Desktop;
 
 pub fn default_opts() -> Opts {

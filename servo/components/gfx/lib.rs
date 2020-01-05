@@ -3,12 +3,12 @@
 
 
 #![feature(arc_weak)]
-#![cfg_attr(any(target_os="linux", target_os = "android"), feature(box_raw))]
+#![cfg_attr(any(target_os = "linux", target_os = "android"), feature(box_raw))]
 #![feature(box_syntax)]
 #![feature(custom_attribute)]
 #![feature(custom_derive)]
 #![feature(hashmap_hasher)]
-#![cfg_attr(any(target_os="linux", target_os = "android"), feature(heap_api))]
+#![cfg_attr(any(target_os = "linux", target_os = "android"), feature(heap_api))]
 #![feature(mpsc_select)]
 #![feature(plugin)]
 #![feature(str_char)]
@@ -55,23 +55,23 @@ extern crate canvas_traits;
 extern crate harfbuzz;
 
 
-#[cfg(any(target_os="linux", target_os = "android"))]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 extern crate fontconfig;
 
-#[cfg(any(target_os="linux", target_os = "android"))]
+#[cfg(any(target_os = "linux", target_os = "android"))]
 extern crate freetype;
 
 
-#[cfg(target_os="macos")] extern crate core_foundation;
-#[cfg(target_os="macos")] extern crate core_graphics;
-#[cfg(target_os="macos")] extern crate core_text;
+#[cfg(target_os = "macos")] extern crate core_foundation;
+#[cfg(target_os = "macos")] extern crate core_graphics;
+#[cfg(target_os = "macos")] extern crate core_text;
 
 pub use paint_context::PaintContext;
 
 
 mod paint_context;
 
-#[path="display_list/mod.rs"]
+#[path = "display_list/mod.rs"]
 pub mod display_list;
 pub mod paint_task;
 
@@ -85,7 +85,7 @@ pub mod font_template;
 mod filters;
 
 
-#[path="platform/mod.rs"]
+#[path = "platform/mod.rs"]
 pub mod platform;
 
 
