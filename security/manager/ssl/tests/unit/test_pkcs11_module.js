@@ -105,6 +105,8 @@ function run_test() {
         "Spot check: actual and expected internal 'slot' names should be equal");
   throws(() => gModuleDB.findSlotByName("Not Present"), /NS_ERROR_FAILURE/,
          "Non-present 'slot' should not be findable by name via the module DB");
+  throws(() => gModuleDB.findSlotByName(""), /NS_ERROR_ILLEGAL_VALUE/,
+         "nsIPKCS11ModuleDB.findSlotByName should throw given an empty name");
 
   
   let pkcs11 = Cc["@mozilla.org/security/pkcs11;1"].getService(Ci.nsIPKCS11);
