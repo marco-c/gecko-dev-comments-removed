@@ -203,9 +203,7 @@ ReadFuncBinaryString(nsIInputStream* in,
 }
 
 nsresult
-FileReader::DoOnLoadEnd(nsresult aStatus,
-                        nsAString& aSuccessEvent,
-                        nsAString& aTerminationEvent)
+FileReader::DoOnLoadEnd(nsresult aStatus)
 {
   
   nsCOMPtr<nsIAsyncInputStream> stream;
@@ -223,13 +221,9 @@ FileReader::DoOnLoadEnd(nsresult aStatus,
   
   
   if (mDataLen != mTotal) {
-    DispatchError(NS_ERROR_FAILURE, aTerminationEvent);
     FreeFileData();
     return NS_ERROR_FAILURE;
   }
-
-  aSuccessEvent = NS_LITERAL_STRING(LOAD_STR);
-  aTerminationEvent = NS_LITERAL_STRING(LOADEND_STR);
 
   nsresult rv = NS_OK;
   switch (mDataFormat) {
@@ -541,10 +535,10 @@ FileReader::ClearProgressEventTimer()
 }
 
 void
-FileReader::DispatchError(nsresult rv, nsAString& finalEvent)
+FileReader::DispatchError(nsresult aRv)
 {
   
-  switch (rv) {
+  switch (aRv) {
   case NS_ERROR_FILE_NOT_FOUND:
     mError = new DOMError(GetOwner(), NS_LITERAL_STRING("NotFoundError"));
     break;
@@ -558,7 +552,7 @@ FileReader::DispatchError(nsresult rv, nsAString& finalEvent)
 
   
   DispatchProgressEvent(NS_LITERAL_STRING(ERROR_STR));
-  DispatchProgressEvent(finalEvent);
+  DispatchProgressEvent(NS_LITERAL_STRING(LOADEND_STR));
 }
 
 nsresult
@@ -655,19 +649,21 @@ FileReader::OnLoadEnd(nsresult aStatus)
   
   mReadyState = DONE;
 
-  nsAutoString successEvent, termEvent;
-  nsresult rv = DoOnLoadEnd(aStatus, successEvent, termEvent);
-  NS_ENSURE_SUCCESS(rv, rv);
-
-  
-  if (NS_FAILED(aStatus)) {
-    DispatchError(aStatus, termEvent);
+  nsresult rv = DoOnLoadEnd(aStatus);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    DispatchError(rv);
     return NS_OK;
   }
 
   
-  DispatchProgressEvent(successEvent);
-  DispatchProgressEvent(termEvent);
+  if (NS_FAILED(aStatus)) {
+    DispatchError(aStatus);
+    return NS_OK;
+  }
+
+  
+  DispatchProgressEvent(NS_LITERAL_STRING(LOAD_STR));
+  DispatchProgressEvent(NS_LITERAL_STRING(LOADEND_STR));
 
   return NS_OK;
 }
