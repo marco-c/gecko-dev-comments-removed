@@ -737,7 +737,18 @@ public:
 
 
   nsIContent* UpdateViewportScrollbarStylesOverride();
-  const ScrollbarStyles& GetViewportScrollbarStylesOverride()
+
+  
+
+
+
+
+
+  nsIContent* GetViewportScrollbarStylesOverrideNode() const {
+    return mViewportScrollbarOverrideNode;
+  }
+
+  const ScrollbarStyles& GetViewportScrollbarStylesOverride() const
   {
     return mViewportStyleScrollbar;
   }
@@ -1385,7 +1396,16 @@ protected:
 
   nscolor               mBodyTextColor;
 
+  
+  
+  
+  
+  
+  
+  
+  nsIContent* MOZ_NON_OWNING_REF mViewportScrollbarOverrideNode;
   ScrollbarStyles       mViewportStyleScrollbar;
+
   uint8_t               mFocusRingWidth;
 
   bool mExistThrottledUpdates;

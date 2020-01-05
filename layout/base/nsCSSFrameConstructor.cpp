@@ -8495,6 +8495,11 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
       (!aContainer && aChild->IsElement())) {
     
     
+    
+    
+    
+    
+    
     presContext->UpdateViewportScrollbarStylesOverride();
   }
 

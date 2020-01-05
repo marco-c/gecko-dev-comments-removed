@@ -1837,6 +1837,24 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
     SetParentIsContent(false);
   }
 
+#ifdef DEBUG
+  
+  
+  
+  if (document) {
+    nsIPresShell* presShell = document->GetShell();
+    if (presShell) {
+      nsPresContext* presContext = presShell->GetPresContext();
+      if (presContext) {
+        MOZ_ASSERT(this !=
+                   presContext->GetViewportScrollbarStylesOverrideNode(),
+                   "Leaving behind a raw pointer to this node (as having "
+                   "propagated scrollbar styles) - that's dangerous...");
+      }
+    }
+  }
+#endif
+
   
   
   
