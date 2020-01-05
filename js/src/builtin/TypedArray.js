@@ -1668,3 +1668,10 @@ function ArrayBufferSpecies() {
     return this;
 }
 _SetCanonicalName(ArrayBufferSpecies, "get [Symbol.species]");
+
+
+function SharedArrayBufferSpecies() {
+    
+    return this;
+}
+_SetCanonicalName(SharedArrayBufferSpecies, "get [Symbol.species]");
