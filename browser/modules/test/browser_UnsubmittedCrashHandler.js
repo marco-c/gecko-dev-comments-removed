@@ -198,11 +198,20 @@ add_task(function* setup() {
   let oldServerURL = env.get("MOZ_CRASHREPORTER_URL");
   env.set("MOZ_CRASHREPORTER_URL", SERVER_URL);
 
+  
+  
+  
+  
+  
+  
+  
+  UnsubmittedCrashHandler.uninit();
   yield SpecialPowers.pushPrefEnv({
     set: [
       ["browser.crashReports.unsubmittedCheck.enabled", true],
     ],
   });
+  UnsubmittedCrashHandler.init();
 
   registerCleanupFunction(function() {
     gNotificationBox = null;

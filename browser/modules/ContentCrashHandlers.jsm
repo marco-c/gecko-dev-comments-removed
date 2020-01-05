@@ -353,6 +353,10 @@ this.UnsubmittedCrashHandler = {
       Services.prefs.getBranch("browser.crashReports.unsubmittedCheck.");
   },
 
+  get enabled() {
+    return this.prefs.getBoolPref("enabled");
+  },
+
   
   
   
@@ -371,9 +375,12 @@ this.UnsubmittedCrashHandler = {
 
     this.initialized = true;
 
-    let shouldCheck = this.prefs.getBoolPref("enabled");
-
-    if (shouldCheck) {
+    
+    
+    
+    
+    
+    if (this.enabled) {
       if (this.prefs.prefHasUserValue("suppressUntilDate")) {
         if (this.prefs.getCharPref("suppressUntilDate") > this.dateString()) {
           
@@ -399,6 +406,10 @@ this.UnsubmittedCrashHandler = {
     }
 
     this.initialized = false;
+
+    if (!this.enabled) {
+      return;
+    }
 
     if (this.suppressed) {
       this.suppressed = false;
