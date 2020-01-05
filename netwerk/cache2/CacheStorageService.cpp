@@ -931,6 +931,21 @@ NS_IMETHODIMP CacheStorageService::GetIoTarget(nsIEventTarget** aEventTarget)
   return NS_OK;
 }
 
+NS_IMETHODIMP CacheStorageService::AsyncVisitAllStorages(
+  nsICacheStorageVisitor* aVisitor,
+  bool aVisitEntries)
+{
+  LOG(("CacheStorageService::AsyncVisitAllStorages [cb=%p]", aVisitor));
+  NS_ENSURE_FALSE(mShutdown, NS_ERROR_NOT_INITIALIZED);
+
+  
+  RefPtr<WalkDiskCacheRunnable> event =
+    new WalkDiskCacheRunnable(nullptr, aVisitEntries, aVisitor);
+  return event->Walk();
+
+  return NS_OK;
+}
+
 
 
 namespace {

@@ -264,6 +264,8 @@ public:
   static bool RecordMatchesLoadContextInfo(CacheIndexRecord *aRec,
                                            nsILoadContextInfo *aInfo)
   {
+    MOZ_ASSERT(aInfo);
+
     if (!aInfo->IsPrivate() &&
         GetOriginAttrsHash(*aInfo->OriginAttributesPtr()) == aRec->mOriginAttrsHash &&
         aInfo->IsAnonymous() == !!(aRec->mFlags & kAnonymousMask)) {
@@ -665,6 +667,7 @@ public:
   
   static nsresult GetEntryFileCount(uint32_t *_retval);
 
+  
   
   
   static nsresult GetCacheStats(nsILoadContextInfo *aInfo, uint32_t *aSize, uint32_t *aCount);
