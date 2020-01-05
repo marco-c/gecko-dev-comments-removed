@@ -4707,7 +4707,9 @@ HTMLMediaElement::UpdateReadyStateInternal()
   }
 
   enum NextFrameStatus nextFrameStatus = NextFrameStatus();
-  if (nextFrameStatus == NEXT_FRAME_UNAVAILABLE) {
+  if (nextFrameStatus == NEXT_FRAME_UNAVAILABLE ||
+      (nextFrameStatus == NEXT_FRAME_UNAVAILABLE_BUFFERING &&
+       mWaitingForKey == WAITING_FOR_KEY)) {
     if (mWaitingForKey != NOT_WAITING_FOR_KEY) {
       
       
