@@ -37,6 +37,7 @@ define(function (require, exports, module) {
       delim: React.PropTypes.string,
       
       mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+      objectLink: React.PropTypes.func,
     },
 
     render: wrapRender(function () {

@@ -33,6 +33,7 @@ define(function (require, exports, module) {
       
       mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
       provider: React.PropTypes.object,
+      objectLink: React.PropTypes.func,
     },
 
     getLength: function (grip) {

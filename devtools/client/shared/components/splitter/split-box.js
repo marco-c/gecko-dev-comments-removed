@@ -22,6 +22,10 @@ const SplitBox = React.createClass({
     
     initialSize: PropTypes.number,
     
+    initialWidth: PropTypes.number,
+    
+    initialHeight: PropTypes.number,
+    
     startPanel: PropTypes.any,
     
     minSize: PropTypes.number,
@@ -34,7 +38,9 @@ const SplitBox = React.createClass({
     
     splitterSize: PropTypes.number,
     
-    vert: PropTypes.bool
+    vert: PropTypes.bool,
+    
+    style: PropTypes.object,
   },
 
   getDefaultProps() {

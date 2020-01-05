@@ -31,6 +31,9 @@ define(function (require, exports, module) {
       object: React.PropTypes.object.isRequired,
       
       mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+      objectLink: React.PropTypes.func,
+      onDOMNodeMouseOver: React.PropTypes.func,
+      onDOMNodeMouseOut: React.PropTypes.func,
     },
 
     getTextContent: function (grip) {

@@ -30,6 +30,8 @@ define(function (require, exports, module) {
     propTypes: {
       
       mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
+      objectLink: React.PropTypes.func,
+      object: React.PropTypes.array.isRequired,
     },
 
     getTitle: function (object, context) {
@@ -169,6 +171,12 @@ define(function (require, exports, module) {
 
   let ItemRep = React.createFactory(React.createClass({
     displayName: "ItemRep",
+
+    propTypes: {
+      object: React.PropTypes.any.isRequired,
+      delim: React.PropTypes.string.isRequired,
+      mode: React.PropTypes.symbol,
+    },
 
     render: wrapRender(function () {
       const { Rep } = createFactories(require("./rep"));
