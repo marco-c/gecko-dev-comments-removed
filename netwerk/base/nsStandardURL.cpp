@@ -420,127 +420,212 @@ nsStandardURL::InvalidateCache(bool invalidateCachedFile)
 }
 
 
- inline bool
-nsStandardURL::IsValidOfBase(unsigned char c, const uint32_t base) {
-    MOZ_ASSERT(base == 8 || base == 10 || base == 16, "invalid base");
-    if ('0' <= c && c <= '7') {
-        return true;
-    } else if (c == '8' || c== '9') {
-        return base != 8;
-    } else if (('a' <= c && c <= 'f') || ('A' <= c && c <= 'F')) {
-        return base == 16;
+
+
+
+
+
+
+
+inline int32_t
+ValidateIPv4Number(const nsCSubstring& host,
+                   int32_t bases[4], int32_t dotIndex[3],
+                   bool& onlyBase10, int32_t& length)
+{
+    MOZ_ASSERT(length <= (int32_t)host.Length());
+    if (length <= 0) {
+        return -1;
     }
-    return false;
+
+    bool lastWasNumber = false; 
+    int32_t dotCount = 0;
+    onlyBase10 = true;
+
+    for (int32_t i = 0; i < length; i++) {
+        char current = host[i];
+        if (current == '.') {
+            if (!lastWasNumber) { 
+                return -1;
+            }
+
+            if (dotCount > 0 && i == (length - 1)) { 
+                length--;
+                return dotCount;
+            }
+
+            if (dotCount > 2) {
+                return -1;
+            }
+            lastWasNumber = false;
+            dotIndex[dotCount] = i;
+            dotCount ++;
+        } else if (current == 'X' || current == 'x') {
+            if (!lastWasNumber ||                       
+                i == (length - 1) ||                    
+                (dotCount == 0 && i != 1) ||            
+                host[i-1] != '0' ||                     
+                                                        
+                (dotCount > 0 && host[i - 2] != '.')) { 
+                return -1;
+            }
+            lastWasNumber = false;
+            bases[dotCount] = 16;
+            onlyBase10 = false;
+
+        } else if (current == '0') {
+            if (i < length - 1 &&                 
+                host[i + 1] != '.' &&             
+                (i == 0 || host[i - 1] == '.')) { 
+                                                  
+                bases[dotCount] = 8;              
+                onlyBase10 = false;
+            }
+            lastWasNumber = true;
+
+        } else if (current >= '1' && current <= '7') {
+            lastWasNumber = true;
+
+        } else if (current >= '8' && current <= '9') {
+            if (bases[dotCount] == 8) {
+                return -1;
+            }
+            lastWasNumber = true;
+
+        } else if ((current >= 'a' && current <= 'f') ||
+                   (current >= 'A' && current <= 'F')) {
+            if (bases[dotCount] != 16) {
+                return -1;
+            }
+            lastWasNumber = true;
+
+        } else {
+            return -1;
+        }
+    }
+
+    return dotCount;
 }
 
- inline nsresult
-nsStandardURL::ParseIPv4Number(nsCString &input, uint32_t &number)
+inline nsresult
+ParseIPv4Number10(const nsCSubstring& input, uint32_t& number, uint32_t maxNumber)
 {
-    if (input.Length() == 0) {
-        return NS_ERROR_FAILURE;
+    uint64_t value = 0;
+    const char* current = input.BeginReading();
+    const char* end = input.EndReading();
+    for (; current < end; ++current) {
+        char c = *current;
+        MOZ_ASSERT(c >= '0' && c <= '9');
+        value *= 10;
+        value += c - '0';
     }
-    uint32_t base;
-    uint32_t prefixLength = 0;
-
-    if (input[0] == '0') {
-        if (input.Length() == 1) {
-            base = 10;
-        } else if (input[1] == 'x' || input[1] == 'X') {
-            base = 16;
-            prefixLength = 2;
-        } else {
-            base = 8;
-            prefixLength = 1;
-        }
-    } else {
-        base = 10;
-    }
-    if (prefixLength == input.Length()) {
-        return NS_ERROR_FAILURE;
-    }
-    
-    while (prefixLength < input.Length() && input[prefixLength] == '0') {
-        prefixLength++;
-    }
-    
-    if (prefixLength == input.Length()) {
-        number = 0;
+    if (value <= maxNumber) {
+        number = value;
         return NS_OK;
     }
+
     
-    if (input.Length() - prefixLength > 16) {
-        return NS_ERROR_FAILURE;
+    number = 0;
+    return NS_ERROR_FAILURE;
+}
+
+inline nsresult
+ParseIPv4Number(const nsCSubstring& input, int32_t base, uint32_t& number, uint32_t maxNumber)
+{
+    
+    uint64_t value = 0;
+    const char* current = input.BeginReading();
+    const char* end = input.EndReading();
+    switch(base) {
+      case 16:
+        ++current;
+        MOZ_FALLTHROUGH;
+      case 8:
+        ++current;
+        break;
+      case 10:
+      default:
+        break;
     }
-    for (uint32_t i = prefixLength; i < input.Length(); ++i) {
-        if (!IsValidOfBase(input[i], base)) {
-          return NS_ERROR_FAILURE;
+    for (; current < end; ++current) {
+        value *= base;
+        char c = *current;
+        MOZ_ASSERT((base == 10 && isdigit(c)) ||
+                   (base == 8 && c >= '0' && c <= '7') ||
+                   (base == 16 && isxdigit(c)));
+        if (isdigit(c)) {
+            value += c - '0';
+        } else if (c >= 'a' && c <= 'f') {
+            value += c - 'a' + 10;
+        } else if (c >= 'A' && c <= 'F') {
+            value += c - 'A' + 10;
         }
     }
-    const char* fmt = "";
-    switch (base) {
-        case 8:
-            fmt = "%llo";
-            break;
-        case 10:
-            fmt = "%lli";
-            break;
-        case 16:
-            fmt = "%llx";
-            break;
-        default:
-            return NS_ERROR_FAILURE;
+
+    if (value <= maxNumber) {
+        number = value;
+        return NS_OK;
     }
-    uint64_t number64;
-    if (PR_sscanf(input.get(), fmt, &number64) == 1 &&
-        number64 <= 0xffffffffu) {
-      number = number64;
-      return NS_OK;
-    }
+
+    
+    number = 0;
     return NS_ERROR_FAILURE;
 }
 
 
  nsresult
-nsStandardURL::NormalizeIPv4(const nsCSubstring &host, nsCString &result)
+nsStandardURL::NormalizeIPv4(const nsCSubstring& host, nsCString& result)
 {
-    if (host.Length() == 0 ||
-        host[0] < '0' || '9' < host[0] || 
-        FindInReadable(NS_LITERAL_CSTRING(".."), host)) {
+    int32_t bases[4] = {10,10,10,10};
+    bool onlyBase10 = true;           
+    int32_t dotIndex[3];              
+
+    
+    
+    int32_t length = static_cast<int32_t>(host.Length());
+    int32_t dotCount = ValidateIPv4Number(host, bases, dotIndex,
+                                          onlyBase10, length);
+    if (dotCount < 0 || length <= 0) {
         return NS_ERROR_FAILURE;
     }
 
-    nsTArray<nsCString> parts;
-    if (!ParseString(host, '.', parts) ||
-        parts.Length() == 0 ||
-        parts.Length() > 4) {
-        return NS_ERROR_FAILURE;
-    }
-    uint32_t n = 0;
-    nsTArray<int32_t> numbers;
-    for (uint32_t i = 0; i < parts.Length(); ++i) {
-        if (NS_FAILED(ParseIPv4Number(parts[i], n))) {
-            return NS_ERROR_FAILURE;
-        }
-        numbers.AppendElement(n);
-    }
-    uint32_t ipv4 = numbers.LastElement();
+    
     static const uint32_t upperBounds[] = {0xffffffffu, 0xffffffu,
                                            0xffffu,     0xffu};
-    if (ipv4 > upperBounds[numbers.Length() - 1]) {
+    uint32_t ipv4;
+    int32_t start = (dotCount > 0 ? dotIndex[dotCount-1] + 1 : 0);
+
+    nsresult res;
+    
+    res = (onlyBase10 ?
+           ParseIPv4Number10(Substring(host, start, length - start),
+                             ipv4, upperBounds[dotCount]) :
+           ParseIPv4Number(Substring(host, start, length - start),
+                           bases[dotCount],
+                           ipv4, upperBounds[dotCount]));
+    if (NS_FAILED(res)) {
         return NS_ERROR_FAILURE;
     }
-    for (uint32_t i = 0; i < numbers.Length() - 1; ++i) {
-        if (numbers[i] > 255) {
-          return NS_ERROR_FAILURE;
+
+    int32_t lastUsed = -1;
+    for (int32_t i = 0; i < dotCount; i++) {
+        uint32_t number;
+        start = lastUsed + 1;
+        lastUsed = dotIndex[i];
+        res = (onlyBase10 ?
+               ParseIPv4Number10(Substring(host, start, lastUsed - start),
+                                 number, 255) :
+               ParseIPv4Number(Substring(host, start, lastUsed - start),
+                               bases[i], number, 255));
+        if (NS_FAILED(res)) {
+            return NS_ERROR_FAILURE;
         }
-        ipv4 += numbers[i] << (8 * (3 - i));
+        ipv4 += number << (8 * (3 - i));
     }
 
     uint8_t ipSegments[4];
     NetworkEndian::writeUint32(ipSegments, ipv4);
     result = nsPrintfCString("%d.%d.%d.%d", ipSegments[0], ipSegments[1],
                                             ipSegments[2], ipSegments[3]);
-
     return NS_OK;
 }
 
