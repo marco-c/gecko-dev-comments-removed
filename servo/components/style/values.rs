@@ -12,9 +12,7 @@ use url::Url;
 
 
 
-
-
-pub trait AuExtensionMethods {
+pub trait LocalToCss {
     
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write;
 
@@ -29,9 +27,18 @@ pub trait AuExtensionMethods {
     }
 }
 
-impl AuExtensionMethods for Au {
+impl LocalToCss for Au {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         write!(dest, "{}px", self.to_f64_px())
+    }
+}
+
+impl LocalToCss for Url {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        try!(dest.write_str("url(\""));
+        try!(write!(CssStringWriter::new(dest), "{}", self));
+        try!(dest.write_str("\")"));
+        Ok(())
     }
 }
 
@@ -67,22 +74,6 @@ macro_rules! define_numbered_css_keyword_enum {
     }
 }
 
-
-
-pub trait LocalToCss {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write;
-}
-
-impl LocalToCss for Url {
-    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
-        try!(dest.write_str("url(\""));
-        try!(write!(CssStringWriter::new(dest), "{}", self));
-        try!(dest.write_str("\")"));
-        Ok(())
-    }
-}
-
-
 pub type CSSFloat = f32;
 
 pub const FONT_MEDIUM_PX: i32 = 16;
@@ -99,7 +90,7 @@ pub mod specified {
     use std::fmt;
     use std::ops::Mul;
     use style_traits::values::specified::AllowedNumericType;
-    use super::AuExtensionMethods;
+    use super::LocalToCss;
     use super::computed::{TContext, ToComputedValue};
     use super::{CSSFloat, FONT_MEDIUM_PX};
     use url::Url;
@@ -1569,7 +1560,7 @@ pub mod computed {
     use properties::ComputedValues;
     use properties::style_struct_traits::Font;
     use std::fmt;
-    use super::AuExtensionMethods;
+    use super::LocalToCss;
     use super::specified::AngleOrCorner;
     use super::{CSSFloat, specified};
     use url::Url;
