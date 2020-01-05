@@ -1690,6 +1690,10 @@ bool
 js::StartPromiseTask(JSContext* cx, UniquePtr<PromiseTask> task)
 {
     
+    if (!CanUseExtraThreads())
+        return task->executeAndFinish(cx);
+
+    
     
     
     

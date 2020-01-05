@@ -403,6 +403,8 @@ StartOffThreadWasmCompile(wasm::IonCompileTask* task);
 
 
 
+
+
 bool
 StartPromiseTask(JSContext* cx, UniquePtr<PromiseTask> task);
 

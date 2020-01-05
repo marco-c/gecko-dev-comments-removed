@@ -165,6 +165,10 @@ class PromiseTask : public JS::AsyncTask
     
     
     virtual void execute() = 0;
+
+    
+    
+    bool executeAndFinish(JSContext* cx);
 };
 
 bool
