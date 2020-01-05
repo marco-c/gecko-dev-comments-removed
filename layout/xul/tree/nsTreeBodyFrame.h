@@ -462,7 +462,7 @@ protected:
   
   nsresult CreateTimer(const mozilla::LookAndFeel::IntID aID,
                        nsTimerCallbackFunc aFunc, int32_t aType,
-                       nsITimer** aTimer);
+                       nsITimer** aTimer, const char* aName);
 
   static void OpenCallback(nsITimer *aTimer, void *aClosure);
 
