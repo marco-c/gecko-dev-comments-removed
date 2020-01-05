@@ -98,7 +98,6 @@
 #include <intrin.h>
 #include <math.h>
 #include "cairo/cairo-features.h"
-#include "mozilla/WindowsVersion.h"
 #include "mozilla/WindowsDllBlocklist.h"
 #include "mozilla/mscom/MainThreadRuntime.h"
 #include "mozilla/widget/AudioSession.h"
@@ -3125,9 +3124,7 @@ XREMain::XRE_mainInit(bool* aExitFlag)
     
     
 
-    if (IsVistaOrLater()) {
-      CreateThread(nullptr, 0, &InitDwriteBG, nullptr, 0, nullptr);
-    }
+    CreateThread(nullptr, 0, &InitDwriteBG, nullptr, 0, nullptr);
   }
 #endif
 
@@ -4852,7 +4849,7 @@ enum {
   kE10sDisabledForAddons = 7,
   kE10sForceDisabled = 8,
   
-  kE10sDisabledForOperatingSystem = 10,
+  
 };
 
 const char* kAccessibilityLastRunDatePref = "accessibility.lastLoadDate";
@@ -4896,7 +4893,7 @@ MultiprocessBlockPolicy() {
 
 #if defined(XP_WIN)
   
-  if (!IsVistaOrLater()) {
+  if (false) { 
     bool disabledForA11y = false;
     
 
@@ -4930,19 +4927,6 @@ MultiprocessBlockPolicy() {
     }
   }
 #endif
-
-  
-
-
-#if defined(XP_WIN)
-  if (!IsVistaOrLater()) {
-    nsAdoptingCString channelName = Preferences::GetDefaultCString("app.update.channel");
-    if (channelName.EqualsLiteral("release") || channelName.EqualsLiteral("esr")) {
-      gMultiprocessBlockPolicy = kE10sDisabledForOperatingSystem;
-      return gMultiprocessBlockPolicy;
-    }
-  }
-#endif 
 
   
 
