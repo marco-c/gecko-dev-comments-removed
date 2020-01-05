@@ -1569,7 +1569,7 @@ PlacesToolbar.prototype = {
       
       let translateY = this._cachedMouseMoveEvent.clientY - aEvent.clientY;
       let translateX = this._cachedMouseMoveEvent.clientX - aEvent.clientX;
-      if ((translateY) >= Math.abs(translateX/2)) {
+      if ((translateY) >= Math.abs(translateX / 2)) {
         
         aEvent.preventDefault();
         

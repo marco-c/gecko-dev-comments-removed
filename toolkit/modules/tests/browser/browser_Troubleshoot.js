@@ -510,7 +510,7 @@ function validateObject_object(obj, schema) {
   
   for (let prop in obj)
     if (!(prop in schema.properties))
-      throw validationErr("Object has property "+prop+" not in schema", obj, schema);
+      throw validationErr("Object has property " + prop + " not in schema", obj, schema);
 }
 
 function validateObject_array(array, schema) {

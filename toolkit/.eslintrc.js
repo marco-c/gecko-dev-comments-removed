@@ -179,7 +179,7 @@ module.exports = {
     
 
     
-    
+    "space-infix-ops": ["error", { "int32Hint": true }],
 
     
     

@@ -21,7 +21,7 @@ function check_crash_list(crashes) {
     "about:crashes lists correct number of crash reports");
   
   if (crashlinks.length == crashes.length) {
-    for (let i=0; i<crashes.length; i++) {
+    for (let i = 0; i < crashes.length; i++) {
       Assert.equal(crashlinks[i].id, crashes[i].id, i + ": crash ID is correct");
       if (crashes[i].pending) {
         

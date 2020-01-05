@@ -41,7 +41,7 @@ function timeDaysAgo(numDays) {
 }
 
 
-function makeVisit(index, daysAgo, isTyped, domain=TEST_URL) {
+function makeVisit(index, daysAgo, isTyped, domain = TEST_URL) {
   let {
     TRANSITION_TYPED,
     TRANSITION_LINK

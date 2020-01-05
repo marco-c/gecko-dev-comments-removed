@@ -130,7 +130,7 @@ function test()
 
 
 
-function promiseTabLoadEvent(aTab, aURL, aEventType="load")
+function promiseTabLoadEvent(aTab, aURL, aEventType = "load")
 {
   return new Promise(resolve => {
     info("Wait tab event: " + aEventType);

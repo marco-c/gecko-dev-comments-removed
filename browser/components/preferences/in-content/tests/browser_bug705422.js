@@ -18,13 +18,13 @@ function initTest() {
     cm.removeAll();
 
     
-    var vals = [[searchTerm+".com", dummyTerm, dummyTerm],           
-                [searchTerm+".org", dummyTerm, dummyTerm],           
-                [dummyTerm+".com", searchTerm, dummyTerm],           
-                [dummyTerm+".edu", searchTerm+dummyTerm, dummyTerm], 
-                [dummyTerm+".net", dummyTerm, searchTerm],           
-                [dummyTerm+".org", dummyTerm, searchTerm+dummyTerm], 
-                [dummyTerm+".int", dummyTerm, dummyTerm]];           
+    var vals = [[searchTerm + ".com", dummyTerm, dummyTerm],           
+                [searchTerm + ".org", dummyTerm, dummyTerm],           
+                [dummyTerm + ".com", searchTerm, dummyTerm],           
+                [dummyTerm + ".edu", searchTerm + dummyTerm, dummyTerm], 
+                [dummyTerm + ".net", dummyTerm, searchTerm],           
+                [dummyTerm + ".org", dummyTerm, searchTerm + dummyTerm], 
+                [dummyTerm + ".int", dummyTerm, dummyTerm]];           
 
     
     const matches = 6;
@@ -37,8 +37,8 @@ function initTest() {
     
     for (v in vals) {
         let [host, name, value] = vals[v];
-        var cookieUri = ios.newURI("http://"+host, null, null);
-        cookieSvc.setCookieString(cookieUri, null, name+"="+value+";", null);
+        var cookieUri = ios.newURI("http://" + host, null, null);
+        cookieSvc.setCookieString(cookieUri, null, name + "=" + value + ";", null);
     }
 
     
@@ -51,7 +51,7 @@ function initTest() {
 
 function isDisabled(win, expectation) {
     var disabled = win.document.getElementById("removeAllCookies").disabled;
-    is(disabled, expectation, "Remove all cookies button has correct state: "+(expectation?"disabled":"enabled"));
+    is(disabled, expectation, "Remove all cookies button has correct state: " + (expectation ? "disabled" : "enabled"));
 }
 
 function runTest(win, searchTerm, cookies, matches) {
@@ -87,7 +87,7 @@ function runTest(win, searchTerm, cookies, matches) {
     EventUtils.synthesizeMouseAtCenter(deleteButton, {}, win);
 
     
-    is(win.gCookiesWindow._view.rowCount, matches-1, "Deleted selected cookie");
+    is(win.gCookiesWindow._view.rowCount, matches - 1, "Deleted selected cookie");
 
     
     EventUtils.synthesizeMouse(tree.body, rect.x + rect.width / 2, rect.y + rect.height / 2, {}, win);
@@ -101,7 +101,7 @@ function runTest(win, searchTerm, cookies, matches) {
     EventUtils.synthesizeMouseAtCenter(deleteButton, {}, win);
 
     
-    is(win.gCookiesWindow._view.rowCount, matches-3, "Deleted selected two adjacent cookies");
+    is(win.gCookiesWindow._view.rowCount, matches - 3, "Deleted selected two adjacent cookies");
 
     
     isDisabled(win, false);
@@ -116,7 +116,7 @@ function runTest(win, searchTerm, cookies, matches) {
 
     
     win.gCookiesWindow.setFilter("");
-    is(win.gCookiesWindow._view.rowCount, cookies-matches, "Unmatched cookies remain");
+    is(win.gCookiesWindow._view.rowCount, cookies - matches, "Unmatched cookies remain");
 
     
     isDisabled(win, false);

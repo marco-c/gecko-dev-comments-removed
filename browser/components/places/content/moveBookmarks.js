@@ -28,7 +28,7 @@ var gMoveBookmarksDialog = {
 
     if (!PlacesUIUtils.useAsyncTransactions) {
       let transactions = [];
-      for (var i=0; i < this._nodes.length; i++) {
+      for (var i = 0; i < this._nodes.length; i++) {
         
         if (this._nodes[i].parent.itemId == selectedFolderId)
           continue;

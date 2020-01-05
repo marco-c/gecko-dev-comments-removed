@@ -207,7 +207,7 @@ XPCOMUtils.defineLazyGetter(this, "Barriers", () => {
 
 
 
-function ConnectionData(connection, identifier, options={}) {
+function ConnectionData(connection, identifier, options = {}) {
   this._log = Log.repository.getLoggerWithMessagePrefix("Sqlite.Connection",
                                                         identifier + ": ");
   this._log.info("Opened");
@@ -407,7 +407,7 @@ ConnectionData.prototype = Object.freeze({
     });
   },
 
-  clone: function (readOnly=false) {
+  clone: function (readOnly = false) {
     this.ensureOpen();
 
     this._log.debug("Request to clone connection.");
@@ -471,7 +471,7 @@ ConnectionData.prototype = Object.freeze({
     return this._deferredClose.promise;
   },
 
-  executeCached: function (sql, params=null, onRow=null) {
+  executeCached: function (sql, params = null, onRow = null) {
     this.ensureOpen();
 
     if (!sql) {
@@ -505,7 +505,7 @@ ConnectionData.prototype = Object.freeze({
     });
   },
 
-  execute: function (sql, params=null, onRow=null) {
+  execute: function (sql, params = null, onRow = null) {
     if (typeof(sql) != "string") {
       throw new Error("Must define SQL to execute as a string: " + sql);
     }
@@ -1133,7 +1133,7 @@ function wrapStorageConnection(options) {
 
 
 
-function OpenedConnection(connection, identifier, options={}) {
+function OpenedConnection(connection, identifier, options = {}) {
   
   
   
@@ -1233,7 +1233,7 @@ OpenedConnection.prototype = Object.freeze({
 
 
 
-  clone: function (readOnly=false) {
+  clone: function (readOnly = false) {
     return this._connectionData.clone(readOnly);
   },
 
@@ -1299,7 +1299,7 @@ OpenedConnection.prototype = Object.freeze({
 
 
 
-  executeCached: function (sql, params=null, onRow=null) {
+  executeCached: function (sql, params = null, onRow = null) {
     if (isInvalidBoundLikeQuery(sql)) {
       throw new Error("Please enter a LIKE clause with bindings");
     }
@@ -1321,7 +1321,7 @@ OpenedConnection.prototype = Object.freeze({
 
 
 
-  execute: function (sql, params=null, onRow=null) {
+  execute: function (sql, params = null, onRow = null) {
     if (isInvalidBoundLikeQuery(sql)) {
       throw new Error("Please enter a LIKE clause with bindings");
     }
@@ -1373,7 +1373,7 @@ OpenedConnection.prototype = Object.freeze({
 
 
 
-  executeTransaction: function (func, type=this.TRANSACTION_DEFERRED) {
+  executeTransaction: function (func, type = this.TRANSACTION_DEFERRED) {
     if (this.TRANSACTION_TYPES.indexOf(type) == -1) {
       throw new Error("Unknown transaction type: " + type);
     }

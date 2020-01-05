@@ -101,7 +101,7 @@ jwcryptoClass.prototype = {
 
 
 
-  getExpiration: function(duration=DURATION_MS, localtimeOffsetMsec=0, now=Date.now()) {
+  getExpiration: function(duration = DURATION_MS, localtimeOffsetMsec = 0, now = Date.now()) {
     return now + localtimeOffsetMsec + duration;
   },
 

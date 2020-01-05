@@ -294,7 +294,7 @@ CaptivePortalDetector.prototype = {
   },
 
   _applyDetection: function _applyDetection() {
-    debug('enter applyDetection('+ this._runningRequest.interfaceName + ')');
+    debug('enter applyDetection(' + this._runningRequest.interfaceName + ')');
 
     
     if (this._runningRequest.hasOwnProperty('callback')) {

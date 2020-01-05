@@ -252,7 +252,7 @@ IDService.prototype = {
 
 
 
-  _fetchWellKnownFile: function _fetchWellKnownFile(aDomain, aCallback, aScheme='https') {
+  _fetchWellKnownFile: function _fetchWellKnownFile(aDomain, aCallback, aScheme = 'https') {
     
     let url = aScheme + '://' + aDomain + "/.well-known/browserid";
     log("_fetchWellKnownFile:", url);
@@ -278,7 +278,7 @@ IDService.prototype = {
         if (! (idpParams.provisioning &&
             idpParams.authentication &&
             idpParams['public-key'])) {
-          let errStr= "Invalid well-known file from: " + aDomain;
+          let errStr = "Invalid well-known file from: " + aDomain;
           log("_fetchWellKnownFile:", errStr);
           return aCallback(errStr);
         }

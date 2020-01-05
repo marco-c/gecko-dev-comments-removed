@@ -175,7 +175,7 @@ function removeAllChildNodes(node) {
 
 
 function padToTwoDigits(n) {
-  return (n > 9) ? n: "0" + n;
+  return (n > 9) ? n : "0" + n;
 }
 
 

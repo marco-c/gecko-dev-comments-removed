@@ -183,8 +183,8 @@ $(function()
     
     thePKT_SIGNUP.sendMessage("initL10N", {
             tos: [
-                'https://'+ pocketHost +'/tos?s=ffi&t=tos&tv=panel_tryit',
-                'https://'+ pocketHost +'/privacy?s=ffi&t=privacypolicy&tv=panel_tryit'
+                'https://' + pocketHost + '/tos?s=ffi&t=tos&tv=panel_tryit',
+                'https://' + pocketHost + '/privacy?s=ffi&t=privacypolicy&tv=panel_tryit'
             ]
         }, function(resp) {
         window.pocketStrings = resp.strings;

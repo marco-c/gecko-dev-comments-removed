@@ -188,7 +188,7 @@ function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
 
 
 
-function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID=0)
+function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0)
 {
   if (!aBrowser) {
     throw "Must have a browser when calling saveBrowser";
@@ -1134,7 +1134,7 @@ function validateFileName(aFileName)
 
     
     
-    if (processed.replace(/_/g, "").length <= processed.length/2) {
+    if (processed.replace(/_/g, "").length <= processed.length / 2) {
       
       
       

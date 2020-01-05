@@ -519,7 +519,7 @@ this.PlacesUtils = {
 
 
 
-  validateItemProperties(validators, props, behavior={}) {
+  validateItemProperties(validators, props, behavior = {}) {
     if (!props)
       throw new Error("Input should be a valid object");
     
@@ -923,11 +923,11 @@ this.PlacesUtils = {
         
         if (parts.length != 1 && parts.length % 2)
           break;
-        for (let i = 0; i < parts.length; i=i+2) {
+        for (let i = 0; i < parts.length; i = i + 2) {
           let uriString = parts[i];
           let titleString = "";
-          if (parts.length > i+1)
-            titleString = parts[i+1];
+          if (parts.length > i + 1)
+            titleString = parts[i + 1];
           else {
             
             try {
@@ -2145,7 +2145,7 @@ var Keywords = {
 
 
 
-  fetch(keywordOrEntry, onResult=null) {
+  fetch(keywordOrEntry, onResult = null) {
     if (typeof(keywordOrEntry) == "string")
       keywordOrEntry = { keyword: keywordOrEntry };
 

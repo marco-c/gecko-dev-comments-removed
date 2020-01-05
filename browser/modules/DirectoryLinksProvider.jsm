@@ -88,7 +88,7 @@ const DEFAULT_TOTAL_FREQUENCY_CAP = 10;
 
 
 
-const DEFAULT_PRUNE_TIME_DELTA = 10*24*60*60*1000;
+const DEFAULT_PRUNE_TIME_DELTA = 10 * 24 * 60 * 60 * 1000;
 
 
 const MIN_VISIBLE_HISTORY_TILES = 8;
@@ -106,7 +106,7 @@ const INADJACENCY_SOURCE = "chrome://browser/content/newtab/newTab.inadjacent.js
 const FAKE_SUGGESTED_BLOCK_URL = "ignore://suggested_block";
 
 
-const AFTER_SUGGESTED_BLOCK_DECAY_TIME = 24*60*60*1000;
+const AFTER_SUGGESTED_BLOCK_DECAY_TIME = 24 * 60 * 60 * 1000;
 
 
 
@@ -331,7 +331,7 @@ var DirectoryLinksProvider = {
 
 
 
-  _fetchAndCacheLinksIfNecessary: function DirectoryLinksProvider_fetchAndCacheLinksIfNecessary(forceDownload=false) {
+  _fetchAndCacheLinksIfNecessary: function DirectoryLinksProvider_fetchAndCacheLinksIfNecessary(forceDownload = false) {
     if (this._downloadDeferred) {
       
       return this._downloadDeferred.promise;

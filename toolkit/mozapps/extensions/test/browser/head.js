@@ -551,7 +551,7 @@ function promiseAddonsByIDs(aIDs) {
 
 
 
-function install_addon(path, cb, pathPrefix=TESTROOT) {
+function install_addon(path, cb, pathPrefix = TESTROOT) {
   let p = new Promise((resolve, reject) => {
     AddonManager.getInstallForURL(pathPrefix + path, (install) => {
       install.addListener({

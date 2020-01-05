@@ -2132,7 +2132,7 @@ var CustomizableUIInternal = {
     aWindow.gNavToolbox.dispatchEvent(evt);
   },
 
-  dispatchToolboxEvent: function(aEventType, aDetails={}, aWindow=null) {
+  dispatchToolboxEvent: function(aEventType, aDetails = {}, aWindow = null) {
     if (aWindow) {
       this._dispatchToolboxEventToWindow(aEventType, aDetails, aWindow);
       return;
@@ -3535,7 +3535,7 @@ this.CustomizableUI = {
 
 
 
-  getPlacementOfWidget: function(aWidgetId, aOnlyRegistered=true, aDeadAreas=false) {
+  getPlacementOfWidget: function(aWidgetId, aOnlyRegistered = true, aDeadAreas = false) {
     return CustomizableUIInternal.getPlacementOfWidget(aWidgetId, aOnlyRegistered, aDeadAreas);
   },
   
@@ -3706,7 +3706,7 @@ this.CustomizableUI = {
 
 
 
-  dispatchToolboxEvent: function(aEvent, aDetails={}, aWindow=null) {
+  dispatchToolboxEvent: function(aEvent, aDetails = {}, aWindow = null) {
     CustomizableUIInternal.dispatchToolboxEvent(aEvent, aDetails, aWindow);
   },
 

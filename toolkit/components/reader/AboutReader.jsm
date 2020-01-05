@@ -513,7 +513,7 @@ AboutReader.prototype = {
       return;
     }
     
-    let averageLuxValue = this._totalLux/luxValuesSize;
+    let averageLuxValue = this._totalLux / luxValuesSize;
 
     this._updateColorScheme(averageLuxValue);
     
@@ -691,7 +691,7 @@ AboutReader.prototype = {
       }
 
       
-      if (img.naturalWidth >= bodyWidth/2) {
+      if (img.naturalWidth >= bodyWidth / 2) {
         img.setAttribute("moz-reader-center", true);
       } else {
         img.removeAttribute("moz-reader-center");

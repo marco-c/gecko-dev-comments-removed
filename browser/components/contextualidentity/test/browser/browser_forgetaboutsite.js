@@ -137,7 +137,7 @@ function* test_cookie_cleared() {
     let value = USER_CONTEXTS[userContextId];
 
     
-    tabs[userContextId] = yield* openTabInUserContext(TEST_URL+ "file_reflect_cookie_into_title.html?" + value, userContextId);
+    tabs[userContextId] = yield* openTabInUserContext(TEST_URL + "file_reflect_cookie_into_title.html?" + value, userContextId);
 
     
     yield BrowserTestUtils.removeTab(tabs[userContextId].tab);
@@ -242,7 +242,7 @@ function* test_storage_cleared() {
     let value = USER_CONTEXTS[userContextId];
 
     
-    let tabInfo = yield* openTabInUserContext(TEST_URL+ "file_set_storages.html?" + value, userContextId);
+    let tabInfo = yield* openTabInUserContext(TEST_URL + "file_set_storages.html?" + value, userContextId);
 
     
     yield ContentTask.spawn(tabInfo.browser, { userContext: USER_CONTEXTS[userContextId] }, function* (arg) {
@@ -285,7 +285,7 @@ function* test_storage_cleared() {
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    let tabInfo = yield* openTabInUserContext(TEST_URL+ "file_set_storages.html", userContextId);
+    let tabInfo = yield* openTabInUserContext(TEST_URL + "file_set_storages.html", userContextId);
 
     
     yield ContentTask.spawn(tabInfo.browser, null, function* () {

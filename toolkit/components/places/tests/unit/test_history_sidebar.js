@@ -36,7 +36,7 @@ function* task_add_normalized_visit(aURI, aTime, aDayOffset) {
                        previousDateObj.getTimezoneOffset()) * 60 * 1000;
   
   var PRTimeWithOffset = (previousDateObj.getTime() - DSTCorrection) * 1000;
-  var timeInMs = new Date(PRTimeWithOffset/1000);
+  var timeInMs = new Date(PRTimeWithOffset / 1000);
   print("Adding visit to " + aURI.spec + " at " + timeInMs);
   yield PlacesTestUtils.addVisits({
     uri: aURI,
@@ -54,7 +54,7 @@ function days_for_x_months_ago(aNowObj, aMonths) {
   oldTime.setMinutes(0);
   oldTime.setSeconds(0);
   
-  return parseInt((aNowObj - oldTime) / (1000*60*60*24)) + 2;
+  return parseInt((aNowObj - oldTime) / (1000 * 60 * 60 * 24)) + 2;
 }
 
 var nowObj = new Date();
@@ -87,13 +87,13 @@ function* task_fill_history() {
   
   for (let i = 0; i < containers.length; i++) {
     let container = containers[i];
-    var testURI = uri("http://mirror"+i+".mozilla.com/b");
+    var testURI = uri("http://mirror" + i + ".mozilla.com/b");
     yield task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
-    testURI = uri("http://mirror"+i+".mozilla.com/a");
+    testURI = uri("http://mirror" + i + ".mozilla.com/a");
     yield task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
-    testURI = uri("http://mirror"+i+".google.com/b");
+    testURI = uri("http://mirror" + i + ".google.com/b");
     yield task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
-    testURI = uri("http://mirror"+i+".google.com/a");
+    testURI = uri("http://mirror" + i + ".google.com/a");
     yield task_add_normalized_visit(testURI, nowObj.getTime(), container.offset);
     
     

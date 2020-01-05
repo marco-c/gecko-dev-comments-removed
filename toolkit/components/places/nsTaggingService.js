@@ -110,7 +110,7 @@ TaggingService.prototype = {
 
 
 
-  _convertInputMixedTagsArray(aTags, trim=false) {
+  _convertInputMixedTagsArray(aTags, trim = false) {
     
     return aTags.filter(tag => tag !== undefined)
                 .map(idOrName => {
@@ -299,7 +299,7 @@ TaggingService.prototype = {
 
     var tags = [];
     var bookmarkIds = PlacesUtils.bookmarks.getBookmarkIdsForURI(aURI);
-    for (var i=0; i < bookmarkIds.length; i++) {
+    for (var i = 0; i < bookmarkIds.length; i++) {
       var folderId = PlacesUtils.bookmarks.getFolderIdForItem(bookmarkIds[i]);
       if (this._tagFolders[folderId])
         tags.push(this._tagFolders[folderId]);
@@ -619,8 +619,8 @@ TagAutoCompleteSearch.prototype = {
       searchString.lastIndexOf(";"));
     var before = '';
     if (index != -1) {
-      before = searchString.slice(0, index+1);
-      searchString = searchString.slice(index+1);
+      before = searchString.slice(0, index + 1);
+      searchString = searchString.slice(index + 1);
       
       var m = searchString.match(/\s+/);
       if (m) {

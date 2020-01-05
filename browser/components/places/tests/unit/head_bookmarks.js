@@ -120,7 +120,7 @@ const NUMBER_OF_TRIES = 30;
 
 
 
-var waitForResolvedPromise = Task.async(function* (promiseFn, timeoutMsg, tryCount=NUMBER_OF_TRIES) {
+var waitForResolvedPromise = Task.async(function* (promiseFn, timeoutMsg, tryCount = NUMBER_OF_TRIES) {
   let tries = 0;
   do {
     try {

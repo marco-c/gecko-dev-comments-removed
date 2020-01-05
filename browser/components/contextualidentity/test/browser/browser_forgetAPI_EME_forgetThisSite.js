@@ -191,7 +191,7 @@ add_task(function* test_EME_forgetThisSite() {
 
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    tabs[userContextId] = yield* openTabInUserContext(TEST_URL+ "empty_file.html", userContextId);
+    tabs[userContextId] = yield* openTabInUserContext(TEST_URL + "empty_file.html", userContextId);
 
     
     emeSessionIds[userContextId] = yield setupEMEKey(tabs[userContextId].browser);
@@ -208,7 +208,7 @@ add_task(function* test_EME_forgetThisSite() {
   
   for (let userContextId of Object.keys(USER_CONTEXTS)) {
     
-    tabs[userContextId] = yield* openTabInUserContext(TEST_URL+ "empty_file.html", userContextId);
+    tabs[userContextId] = yield* openTabInUserContext(TEST_URL + "empty_file.html", userContextId);
 
     
     yield checkEMEKey(tabs[userContextId].browser, emeSessionIds[userContextId]);

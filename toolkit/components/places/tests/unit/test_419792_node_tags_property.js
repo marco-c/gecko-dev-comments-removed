@@ -27,7 +27,7 @@ function run_test() {
                                         bmsvc.DEFAULT_INDEX, "");
 
   
-  var node = toolbarNode.getChild(toolbarNode.childCount-1);
+  var node = toolbarNode.getChild(toolbarNode.childCount - 1);
   do_check_eq(node.itemId, bookmarkId);
 
   

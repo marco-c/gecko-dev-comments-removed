@@ -101,7 +101,7 @@ function LinksStorage() {
     
     
     Components.utils.reportError(
-      "Unable to migrate the newTab storage to the current version. "+
+      "Unable to migrate the newTab storage to the current version. " +
       "Restarting from scratch.\n" + ex);
     this.clear();
   }
@@ -428,10 +428,10 @@ var PinnedLinks = {
     let links = this.links;
     links[index] = null;
     
-    let i=links.length-1;
+    let i = links.length - 1;
     while (i >= 0 && links[i] == null)
       i--;
-    links.splice(i +1);
+    links.splice(i + 1);
     this.save();
   },
 
@@ -1021,7 +1021,7 @@ var Links = {
 
 
 
-  _adjustSiteMapAndNotify: function(aLink, increment=true) {
+  _adjustSiteMapAndNotify: function(aLink, increment = true) {
     for (let [provider, cache] of this._providers) {
       
       if (cache.linkMap.get(aLink.url)) {
@@ -1144,7 +1144,7 @@ var Links = {
 
 
 
-  onLinkChanged: function Links_onLinkChanged(aProvider, aLink, aIndex=-1, aDeleted=false) {
+  onLinkChanged: function Links_onLinkChanged(aProvider, aLink, aIndex = -1, aDeleted = false) {
     if (!("url" in aLink))
       throw new Error("Changed links must have a url property");
 

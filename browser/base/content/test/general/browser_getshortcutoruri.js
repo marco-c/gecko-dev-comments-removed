@@ -8,7 +8,7 @@ function getPostDataString(aIS) {
   var dataLines = sis.read(aIS.available()).split("\n");
 
   
-  return dataLines[dataLines.length-1];
+  return dataLines[dataLines.length - 1];
 }
 
 function keywordResult(aURL, aPostData, aIsUnsafe) {

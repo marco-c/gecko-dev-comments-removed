@@ -405,7 +405,7 @@ var Bookmarks = Object.freeze({
 
 
 
-  remove(guidOrInfo, options={}) {
+  remove(guidOrInfo, options = {}) {
     let info = guidOrInfo;
     if (!info)
       throw new Error("Input should be a valid object");
@@ -468,7 +468,7 @@ var Bookmarks = Object.freeze({
 
 
 
-  eraseEverything: function(options={}) {
+  eraseEverything: function(options = {}) {
     return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: eraseEverything",
       db => db.executeTransaction(function* () {
         const folderGuids = [this.toolbarGuid, this.menuGuid, this.unfiledGuid,
@@ -546,7 +546,7 @@ var Bookmarks = Object.freeze({
 
 
 
-  fetch(guidOrInfo, onResult=null) {
+  fetch(guidOrInfo, onResult = null) {
     if (onResult && typeof onResult != "function")
       throw new Error("onResult callback must be a valid function");
     let info = guidOrInfo;
@@ -560,7 +560,7 @@ var Bookmarks = Object.freeze({
       v => v.hasOwnProperty("guid"),
       v => v.hasOwnProperty("parentGuid") && v.hasOwnProperty("index"),
       v => v.hasOwnProperty("url")
-    ].reduce((old, fn) => old + fn(info)|0, 0);
+    ].reduce((old, fn) => old + fn(info) | 0, 0);
     if (conditionsCount != 1)
       throw new Error(`Unexpected number of conditions provided: ${conditionsCount}`);
 
@@ -691,7 +691,7 @@ var Bookmarks = Object.freeze({
 
 
 
-  reorder(parentGuid, orderedChildrenGuids, options={}) {
+  reorder(parentGuid, orderedChildrenGuids, options = {}) {
     let info = { guid: parentGuid, source: this.SOURCES.DEFAULT };
     info = validateBookmarkObject(info, { guid: { required: true } });
 

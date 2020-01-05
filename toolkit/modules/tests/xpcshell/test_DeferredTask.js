@@ -60,13 +60,13 @@ add_test(function test_arm_delay_respected()
   new DeferredTask(function () {
     executed1 = true;
     do_check_false(executed2);
-  }, 1*T).arm();
+  }, 1 * T).arm();
 
   new DeferredTask(function () {
     executed2 = true;
     do_check_true(executed1);
     run_next_test();
-  }, 2*T).arm();
+  }, 2 * T).arm();
 });
 
 
@@ -77,14 +77,14 @@ add_test(function test_arm_delay_notrestarted()
   let executed = false;
 
   
-  let deferredTask = new DeferredTask(() => { executed = true; }, 4*T);
+  let deferredTask = new DeferredTask(() => { executed = true; }, 4 * T);
   deferredTask.arm();
 
   
-  do_timeout(2*T, () => deferredTask.arm());
+  do_timeout(2 * T, () => deferredTask.arm());
 
   
-  do_timeout(5*T, function () {
+  do_timeout(5 * T, function () {
     do_check_true(executed);
     run_next_test();
   });
@@ -155,19 +155,19 @@ add_test(function test_arm_async()
 
   
   let deferredTask = new DeferredTask(function* () {
-    yield promiseTimeout(4*T);
+    yield promiseTimeout(4 * T);
     if (!finishedExecution) {
       finishedExecution = true;
     } else if (!finishedExecutionAgain) {
       finishedExecutionAgain = true;
     }
-  }, 2*T);
+  }, 2 * T);
   deferredTask.arm();
 
   
   
   
-  do_timeout(4*T, function () {
+  do_timeout(4 * T, function () {
     do_check_true(deferredTask.isRunning);
     do_check_false(finishedExecution);
     deferredTask.arm();
@@ -175,19 +175,19 @@ add_test(function test_arm_async()
 
   
   
-  do_timeout(7*T, function () {
+  do_timeout(7 * T, function () {
     do_check_false(deferredTask.isRunning);
     do_check_true(finishedExecution);
   });
 
   
-  do_timeout(10*T, function () {
+  do_timeout(10 * T, function () {
     do_check_true(deferredTask.isRunning);
     do_check_false(finishedExecutionAgain);
   });
 
   
-  do_timeout(13*T, function () {
+  do_timeout(13 * T, function () {
     do_check_false(deferredTask.isRunning);
     do_check_true(finishedExecutionAgain);
     run_next_test();
@@ -202,14 +202,14 @@ add_test(function test_disarm()
   
   let deferredTask = new DeferredTask(function () {
     do_throw("This task should not run.");
-  }, 2*T);
+  }, 2 * T);
   deferredTask.arm();
 
   
-  do_timeout(1*T, () => deferredTask.disarm());
+  do_timeout(1 * T, () => deferredTask.disarm());
 
   
-  do_timeout(3*T, run_next_test);
+  do_timeout(3 * T, run_next_test);
 });
 
 
@@ -219,19 +219,19 @@ add_test(function test_disarm_delay_restarted()
 {
   let executed = false;
 
-  let deferredTask = new DeferredTask(() => { executed = true; }, 4*T);
+  let deferredTask = new DeferredTask(() => { executed = true; }, 4 * T);
   deferredTask.arm();
 
-  do_timeout(2*T, function () {
+  do_timeout(2 * T, function () {
     deferredTask.disarm();
     deferredTask.arm();
   });
 
-  do_timeout(5*T, function () {
+  do_timeout(5 * T, function () {
     do_check_false(executed);
   });
 
-  do_timeout(7*T, function () {
+  do_timeout(7 * T, function () {
     do_check_true(executed);
     run_next_test();
   });
@@ -247,19 +247,19 @@ add_test(function test_disarm_async()
 
   let deferredTask = new DeferredTask(function* () {
     deferredTask.arm();
-    yield promiseTimeout(2*T);
+    yield promiseTimeout(2 * T);
     finishedExecution = true;
-  }, 1*T);
+  }, 1 * T);
   deferredTask.arm();
 
-  do_timeout(2*T, function () {
+  do_timeout(2 * T, function () {
     do_check_true(deferredTask.isRunning);
     do_check_true(deferredTask.isArmed);
     do_check_false(finishedExecution);
     deferredTask.disarm();
   });
 
-  do_timeout(4*T, function () {
+  do_timeout(4 * T, function () {
     do_check_false(deferredTask.isRunning);
     do_check_false(deferredTask.isArmed);
     do_check_true(finishedExecution);
@@ -278,18 +278,18 @@ add_test(function test_disarm_immediate_async()
   let deferredTask = new DeferredTask(function* () {
     do_check_false(executed);
     executed = true;
-    yield promiseTimeout(2*T);
-  }, 1*T);
+    yield promiseTimeout(2 * T);
+  }, 1 * T);
   deferredTask.arm();
 
-  do_timeout(2*T, function () {
+  do_timeout(2 * T, function () {
     do_check_true(deferredTask.isRunning);
     do_check_false(deferredTask.isArmed);
     deferredTask.arm();
     deferredTask.disarm();
   });
 
-  do_timeout(4*T, function () {
+  do_timeout(4 * T, function () {
     do_check_true(executed);
     do_check_false(deferredTask.isRunning);
     do_check_false(deferredTask.isArmed);
@@ -329,10 +329,10 @@ add_test(function test_finalize()
   let deferredTask = new DeferredTask(function () {
     do_check_false(timePassed);
     executed = true;
-  }, 2*T);
+  }, 2 * T);
   deferredTask.arm();
 
-  do_timeout(1*T, () => { timePassed = true; });
+  do_timeout(1 * T, () => { timePassed = true; });
 
   
   deferredTask.finalize().then(function () {
@@ -372,10 +372,10 @@ add_test(function test_finalize_executes_entirely()
       
       
       
-      do_timeout(3*T, () => { timePassed = true; });
+      do_timeout(3 * T, () => { timePassed = true; });
     }
 
-    yield promiseTimeout(1*T);
+    yield promiseTimeout(1 * T);
 
     
     if (executed) {
@@ -384,7 +384,7 @@ add_test(function test_finalize_executes_entirely()
     } else {
       executed = true;
     }
-  }, 2*T);
+  }, 2 * T);
 
   deferredTask.arm();
 });

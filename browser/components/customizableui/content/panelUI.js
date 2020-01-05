@@ -221,7 +221,7 @@ const PanelUI = {
 
 
 
-  ensureReady: function(aCustomizing=false) {
+  ensureReady: function(aCustomizing = false) {
     if (this._readyPromise) {
       return this._readyPromise;
     }

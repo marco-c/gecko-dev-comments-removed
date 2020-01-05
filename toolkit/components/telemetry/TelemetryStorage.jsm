@@ -75,7 +75,7 @@ const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 
 
 
-function PingReadError(message="Error reading the ping file", becauseNoSuchFile = false) {
+function PingReadError(message = "Error reading the ping file", becauseNoSuchFile = false) {
   Error.call(this, message);
   let error = new Error();
   this.name = "PingReadError";
@@ -90,7 +90,7 @@ PingReadError.prototype.constructor = PingReadError;
 
 
 
-function PingParseError(message="Error parsing ping content") {
+function PingParseError(message = "Error parsing ping content") {
   Error.call(this, message);
   let error = new Error();
   this.name = "PingParseError";

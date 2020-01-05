@@ -2073,7 +2073,7 @@ UnifiedComplete.prototype = {
 
 
 
-  finishSearch: function (notify=false) {
+  finishSearch: function (notify = false) {
     TelemetryStopwatch.cancel(TELEMETRY_1ST_RESULT, this);
     TelemetryStopwatch.cancel(TELEMETRY_6_FIRST_RESULTS, this);
     

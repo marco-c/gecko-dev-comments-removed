@@ -1956,7 +1956,7 @@ Engine.prototype = {
     let height = parseInt(aElement.getAttribute("height"), 10);
     let isPrefered = width == 16 && height == 16;
 
-    if (isNaN(width) || isNaN(height) || width <= 0 || height <=0) {
+    if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
       LOG("OpenSearch image element must have positive width and height.");
       return;
     }
@@ -3786,8 +3786,8 @@ SearchService.prototype = {
         
         
         
-        if (orderNumber && !this.__sortedEngines[orderNumber-1]) {
-          this.__sortedEngines[orderNumber-1] = engine;
+        if (orderNumber && !this.__sortedEngines[orderNumber - 1]) {
+          this.__sortedEngines[orderNumber - 1] = engine;
           addedEngines[engine.name] = engine;
         } else {
           

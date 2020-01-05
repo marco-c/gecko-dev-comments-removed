@@ -268,7 +268,7 @@ let BrowserUsageTelemetry = {
 
 
 
-  recordSearch(engine, source, details={}) {
+  recordSearch(engine, source, details = {}) {
     const isOneOff = !!details.isOneOff;
 
     if (isOneOff) {

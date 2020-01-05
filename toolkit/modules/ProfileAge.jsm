@@ -71,7 +71,7 @@ this.ProfileAge.prototype = {
 
 
 
-  getTimes: function (file="times.json") {
+  getTimes: function (file = "times.json") {
     if (this._times) {
       return Promise.resolve(this._times);
     }
@@ -86,7 +86,7 @@ this.ProfileAge.prototype = {
 
 
 
-  readTimes: function (file="times.json") {
+  readTimes: function (file = "times.json") {
     return CommonUtils.readJSON(this.getPath(file));
   },
 
@@ -94,7 +94,7 @@ this.ProfileAge.prototype = {
 
 
 
-  writeTimes: function (contents, file="times.json") {
+  writeTimes: function (contents, file = "times.json") {
     return CommonUtils.writeJSON(contents, this.getPath(file));
   },
 
@@ -102,7 +102,7 @@ this.ProfileAge.prototype = {
 
 
 
-  computeAndPersistCreated: function (existingContents, file="times.json") {
+  computeAndPersistCreated: function (existingContents, file = "times.json") {
     let path = this.getPath(file);
     function onOldest(oldest) {
       let contents = existingContents || {};
@@ -185,7 +185,7 @@ this.ProfileAge.prototype = {
 
 
 
-  recordProfileReset: function (time=Date.now(), file="times.json") {
+  recordProfileReset: function (time = Date.now(), file = "times.json") {
     return this.getTimes(file).then(
       times => {
         times.reset = time;

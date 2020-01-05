@@ -650,11 +650,11 @@ var gAdvancedPane = {
       var radiogroup = document.getElementById("updateRadioGroup");
 
       if (!enabledPref.value)   
-        radiogroup.value="manual";    
+        radiogroup.value = "manual";    
       else if (autoPref.value)  
-        radiogroup.value="auto";      
+        radiogroup.value = "auto";      
       else                      
-        radiogroup.value="checkOnly"; 
+        radiogroup.value = "checkOnly"; 
 
       var canCheck = Components.classes["@mozilla.org/updates/update-service;1"].
                        getService(Components.interfaces.nsIApplicationUpdateService).

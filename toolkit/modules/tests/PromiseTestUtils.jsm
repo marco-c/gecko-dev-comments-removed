@@ -220,7 +220,7 @@ this.PromiseTestUtils = {
       
       Assert.ok(false,
                 `A promise chain failed to handle a rejection:` +
-                ` ${rejection.message} - rejection date: ${rejection.date}`+
+                ` ${rejection.message} - rejection date: ${rejection.date}` +
                 ` - stack: ${rejection.stack}`);
     }
   },

@@ -42,7 +42,7 @@ add_task(function* test() {
     let cookie = USER_CONTEXTS[userContextId];
 
     
-    let tab = openTabInUserContext(BASE_URI+"?"+cookie, userContextId);
+    let tab = openTabInUserContext(BASE_URI + "?" + cookie, userContextId);
 
     
     yield BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab));
@@ -55,7 +55,7 @@ add_task(function* test() {
     
     
     
-    let tab = openTabInUserContext(BASE_URI+"?foo", 9999);
+    let tab = openTabInUserContext(BASE_URI + "?foo", 9999);
     yield BrowserTestUtils.browserLoaded(gBrowser.getBrowserForTab(tab));
     gBrowser.removeTab(tab);
   }

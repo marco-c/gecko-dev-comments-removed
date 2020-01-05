@@ -59,7 +59,7 @@ const BackgroundPageThumbs = {
 
 
 
-  capture: function (url, options={}) {
+  capture: function (url, options = {}) {
     if (!PageThumbs._prefEnabled()) {
       if (options.onDone)
         schedule(() => options.onDone(url));
@@ -94,7 +94,7 @@ const BackgroundPageThumbs = {
 
 
 
-  captureIfMissing: Task.async(function* (url, options={}) {
+  captureIfMissing: Task.async(function* (url, options = {}) {
     
     
     

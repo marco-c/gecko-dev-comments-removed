@@ -54,7 +54,7 @@ add_task(function* test_cookie_getCookiesWithOriginAttributes() {
     let value = USER_CONTEXTS[userContextId];
 
     
-    tabs[userContextId] = yield* openTabInUserContext(TEST_URL+ "file_reflect_cookie_into_title.html?" + value, userContextId);
+    tabs[userContextId] = yield* openTabInUserContext(TEST_URL + "file_reflect_cookie_into_title.html?" + value, userContextId);
 
     
     yield BrowserTestUtils.removeTab(tabs[userContextId].tab);

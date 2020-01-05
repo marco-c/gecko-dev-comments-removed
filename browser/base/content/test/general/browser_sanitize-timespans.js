@@ -99,7 +99,7 @@ function* onHistoryReady() {
   let formHistoryPromise = promiseFormHistoryRemoved();
 
   
-  s.range = [now_uSec - 10*60*1000000, now_uSec];
+  s.range = [now_uSec - 10 * 60 * 1000000, now_uSec];
   yield s.sanitize();
   s.range = null;
 
@@ -207,7 +207,7 @@ function* onHistoryReady() {
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
-  s.range = [now_uSec - 70*60*1000000, now_uSec];
+  s.range = [now_uSec - 70 * 60 * 1000000, now_uSec];
   yield s.sanitize();
   s.range = null;
 
@@ -294,7 +294,7 @@ function* onHistoryReady() {
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
-  s.range = [now_uSec - 130*60*1000000, now_uSec];
+  s.range = [now_uSec - 130 * 60 * 1000000, now_uSec];
   yield s.sanitize();
   s.range = null;
 
@@ -365,7 +365,7 @@ function* onHistoryReady() {
   formHistoryPromise = promiseFormHistoryRemoved();
 
   
-  s.range = [now_uSec - 250*60*1000000, now_uSec];
+  s.range = [now_uSec - 250 * 60 * 1000000, now_uSec];
   yield s.sanitize();
   s.range = null;
 
