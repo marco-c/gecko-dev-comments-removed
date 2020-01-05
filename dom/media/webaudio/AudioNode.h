@@ -222,6 +222,19 @@ public:
   virtual const char* NodeType() const = 0;
 
 private:
+  
+  
+  
+  
+  
+  
+  
+  
+  template<typename DestinationType, typename Predicate>
+  bool DisconnectMatchingDestinationInputs(DestinationType& aDestination,
+                                           uint32_t aDestinationIndex,
+                                           Predicate aPredicate);
+
   virtual void LastRelease() override
   {
     
@@ -231,7 +244,7 @@ private:
   
   void DisconnectFromGraph();
   bool DisconnectFromOutputIfConnected(AudioNode& aDestination, uint32_t aOutputIndex, uint32_t aInputIndex);
-  bool DisconnectFromParamIfConnected(AudioParam& aDestination, uint32_t aOutputIndex, uint32_t aInputIndex);
+  bool DisconnectFromOutputIfConnected(AudioParam& aDestination, uint32_t aOutputIndex, uint32_t aInputIndex);
 
 protected:
   
