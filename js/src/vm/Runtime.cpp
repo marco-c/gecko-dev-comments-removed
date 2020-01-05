@@ -375,12 +375,7 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
     
     AutoLockForExclusiveAccess lock(this);
 
-    
-    
-    
-    JSContext* cx = unsafeContextFromAnyThread();
-    rtSizes->object += mallocSizeOf(cx);
-
+    rtSizes->object += mallocSizeOf(this);
     rtSizes->atomsTable += atoms(lock).sizeOfIncludingThis(mallocSizeOf);
 
     if (!parentRuntime) {
@@ -389,11 +384,13 @@ JSRuntime::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf, JS::Runtim
         rtSizes->atomsTable += permanentAtoms->sizeOfIncludingThis(mallocSizeOf);
     }
 
-    rtSizes->contexts += cx->sizeOfExcludingThis(mallocSizeOf);
-
-    rtSizes->temporary += cx->tempLifoAlloc().sizeOfExcludingThis(mallocSizeOf);
-
-    rtSizes->interpreterStack += cx->interpreterStack().sizeOfExcludingThis(mallocSizeOf);
+    for (const CooperatingContext& target : cooperatingContexts()) {
+        JSContext* cx = target.context();
+        rtSizes->contexts += mallocSizeOf(cx);
+        rtSizes->contexts += cx->sizeOfExcludingThis(mallocSizeOf);
+        rtSizes->temporary += cx->tempLifoAlloc().sizeOfExcludingThis(mallocSizeOf);
+        rtSizes->interpreterStack += cx->interpreterStack().sizeOfExcludingThis(mallocSizeOf);
+    }
 
     for (ZoneGroupsIter group(this); !group.done(); group.next()) {
         ZoneGroupCaches& caches = group->caches();
