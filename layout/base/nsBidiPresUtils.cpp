@@ -1909,18 +1909,24 @@ nsBidiPresUtils::CalculateCharType(nsBidi* aBidiEngine,
 
   aCharType = eCharType_OtherNeutral;
 
-  for (offset = aOffset; offset < aCharTypeLimit; offset++) {
+  int32_t charLen;
+  for (offset = aOffset; offset < aCharTypeLimit; offset += charLen) {
     
     
     
-    if (IS_HEBREW_CHAR(aText[offset]) ) {
+    charLen = 1;
+    uint32_t ch = aText[offset];
+    if (IS_HEBREW_CHAR(ch) ) {
       charType = eCharType_RightToLeft;
-    }
-    else if (IS_ARABIC_ALPHABETIC(aText[offset]) ) {
+    } else if (IS_ARABIC_ALPHABETIC(ch) ) {
       charType = eCharType_RightToLeftArabic;
-    }
-    else {
-      aBidiEngine->GetCharTypeAt(offset, &charType);
+    } else {
+      if (NS_IS_HIGH_SURROGATE(ch) && offset + 1 < aCharTypeLimit &&
+          NS_IS_LOW_SURROGATE(aText[offset + 1])) {
+        ch = SURROGATE_TO_UCS4(ch, aText[offset + 1]);
+        charLen = 2;
+      }
+      charType = GetBidiCat(ch);
     }
 
     if (!CHARTYPE_IS_WEAK(charType) ) {

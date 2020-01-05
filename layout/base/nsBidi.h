@@ -535,15 +535,6 @@ public:
 
 
 
-  nsresult GetCharTypeAt(int32_t aCharIndex,  nsCharType* aType);
-
-  
-
-
-
-
-
-
 
 
 
