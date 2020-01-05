@@ -86,6 +86,9 @@ class MathCache
 extern JSObject*
 InitMathClass(JSContext* cx, HandleObject obj);
 
+extern uint64_t
+GenerateRandomSeed();
+
 
 
 extern void
