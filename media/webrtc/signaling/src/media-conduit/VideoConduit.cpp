@@ -537,8 +537,7 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
                                static_cast<unsigned int>(max_framerate));
 
   
-  
-  
+  mNegotiatedMaxBitrate = codecConfig->mTias / 1000;
 
   for (size_t idx = streamCount - 1; streamCount > 0; idx--, streamCount--) {
     webrtc::VideoStream video_stream;
