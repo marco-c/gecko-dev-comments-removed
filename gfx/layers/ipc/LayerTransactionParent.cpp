@@ -616,6 +616,13 @@ LayerTransactionParent::RecvUpdate(const TransactionInfo& aInfo,
     }
   }
 
+  
+  for (const auto& op : aInfo.paints()) {
+    if (!ReceiveCompositableUpdate(op, replyv)) {
+      return IPC_FAIL_NO_REASON(this);
+    }
+  }
+
   mCompositorBridge->ShadowLayersUpdated(this, aInfo, updateHitTestingTree);
 
   {
