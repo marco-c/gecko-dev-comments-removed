@@ -656,7 +656,7 @@ Instance::callExport(JSContext* cx, uint32_t funcIndex, CallArgs args)
             return false;
     }
 
-    if (args.isConstructing()) {
+    if (isAsmJS() && args.isConstructing()) {
         
         
         
