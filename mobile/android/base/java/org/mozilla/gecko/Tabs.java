@@ -1172,6 +1172,10 @@ public class Tabs implements BundleEventListener {
         return tabToSelect;
     }
 
+    
+
+
+
     public Tab addTab() {
         return loadUrl(getHomepageForNewTab(mAppContext), Tabs.LOADURL_NEW_TAB);
     }
@@ -1338,20 +1342,35 @@ public class Tabs implements BundleEventListener {
         EventDispatcher.getInstance().dispatch("Tab:Move", data);
     }
 
+    
+
+
+    public static boolean hasHomepage(Context context) {
+        return !TextUtils.isEmpty(getHomepage(context));
+    }
+
+    
+
+
+
+
+
+
     @NonNull
-    public static String getHomepageForNewTab(Context context) {
+    private static String getHomepageForNewTab(Context context) {
         final SharedPreferences preferences = GeckoSharedPrefs.forApp(context);
         final boolean forEveryNewTab = preferences.getBoolean(GeckoPreferences.PREFS_HOMEPAGE_FOR_EVERY_NEW_TAB, false);
 
-        if (forEveryNewTab) {
-            final String homePage = getHomepage(context);
-            if (TextUtils.isEmpty(homePage)) {
-                return AboutPages.HOME;
-            } else {
-                return homePage;
-            }
-        }
-        return AboutPages.HOME;
+        return forEveryNewTab ? getHomepageForStartupTab(context) : AboutPages.HOME;
+    }
+
+    
+
+
+    @NonNull
+    public static String getHomepageForStartupTab(Context context) {
+        final String homepage = Tabs.getHomepage(context);
+        return TextUtils.isEmpty(homepage) ? AboutPages.HOME : homepage;
     }
 
     @Nullable
