@@ -131,7 +131,6 @@ class GamepadManager final : public nsIObserver,
   
   
   nsTArray<GamepadEventChannelChild *> mChannelChildren;
-  gfx::VRManagerChild* mVRChannelChild;
 
  private:
 
