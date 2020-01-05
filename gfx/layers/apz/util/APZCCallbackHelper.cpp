@@ -341,6 +341,21 @@ APZCCallbackHelper::InitializeRootDisplayport(nsIPresShell* aPresShell)
   uint32_t presShellId;
   FrameMetrics::ViewID viewId;
   if (APZCCallbackHelper::GetOrCreateScrollIdentifiers(content, &presShellId, &viewId)) {
+    nsPresContext* pc = aPresShell->GetPresContext();
+    
+    MOZ_ASSERT(!pc || pc->IsRootContentDocument() || !pc->GetParentPresContext());
+    nsIFrame* frame = aPresShell->GetRootScrollFrame();
+    if (!frame) {
+      frame = aPresShell->GetRootFrame();
+    }
+    nsRect baseRect;
+    if (frame) {
+      baseRect =
+        nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(frame));
+    } else if (pc) {
+      baseRect = nsRect(nsPoint(0, 0), pc->GetVisibleArea().Size());
+    }
+    nsLayoutUtils::SetDisplayPortBaseIfNotSet(content, baseRect);
     
     
     nsLayoutUtils::SetDisplayPortMargins(content, aPresShell, ScreenMargin(), 0,
