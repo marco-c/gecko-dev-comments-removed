@@ -104,11 +104,12 @@ function MarkupView(inspector, frame, controllerWindow) {
     Services.prefs.getIntPref(ATTR_COLLAPSE_LENGTH_PREF);
 
   
-  
-  this.popup = new AutocompletePopup(inspector.toolbox.doc, {
+  let options = {
     autoSelect: true,
     theme: "auto",
-  });
+  };
+
+  this.popup = new AutocompletePopup(inspector.toolbox, options);
 
   this.undo = new UndoStack();
   this.undo.installController(controllerWindow);
@@ -184,10 +185,9 @@ MarkupView.prototype = {
   },
 
   _initTooltips: function () {
-    
-    this.eventDetailsTooltip = new HTMLTooltip(this.toolbox.doc,
+    this.eventDetailsTooltip = new HTMLTooltip(this.toolbox,
       {type: "arrow"});
-    this.imagePreviewTooltip = new HTMLTooltip(this.toolbox.doc,
+    this.imagePreviewTooltip = new HTMLTooltip(this.toolbox,
       {type: "arrow", useXulWrapper: "true"});
     this._enableImagePreviewTooltip();
   },

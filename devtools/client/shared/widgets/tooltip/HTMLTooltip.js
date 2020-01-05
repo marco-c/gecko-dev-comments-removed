@@ -207,7 +207,7 @@ const getRelativeRect = function (node, relativeTo) {
 
 
 
-function HTMLTooltip(toolboxDoc, {
+function HTMLTooltip(toolbox, {
     type = "normal",
     autofocus = false,
     consumeOutsideClicks = true,
@@ -216,7 +216,7 @@ function HTMLTooltip(toolboxDoc, {
   } = {}) {
   EventEmitter.decorate(this);
 
-  this.doc = toolboxDoc;
+  this.doc = toolbox.doc;
   this.type = type;
   this.autofocus = autofocus;
   this.consumeOutsideClicks = consumeOutsideClicks;

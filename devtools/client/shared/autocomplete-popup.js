@@ -29,10 +29,10 @@ let itemIdCounter = 0;
 
 
 
-function AutocompletePopup(toolboxDoc, options = {}) {
+function AutocompletePopup(toolbox, options = {}) {
   EventEmitter.decorate(this);
 
-  this._document = toolboxDoc;
+  this._document = toolbox.doc;
 
   this.autoSelect = options.autoSelect || false;
   this.position = options.position || "bottom";
@@ -51,7 +51,7 @@ function AutocompletePopup(toolboxDoc, options = {}) {
   }
 
   
-  this._tooltip = new HTMLTooltip(this._document);
+  this._tooltip = new HTMLTooltip(toolbox);
   this._tooltip.panel.classList.add(
     "devtools-autocomplete-popup",
     "devtools-monospace",

@@ -41,6 +41,56 @@ const POPUP_EVENTS = ["shown", "hidden", "showing", "hiding"];
 
 
 
+function OptionsStore(defaults, options) {
+  this.defaults = defaults || {};
+  this.options = options || {};
+}
+
+OptionsStore.prototype = {
+  
+
+
+
+
+
+  get: function (name) {
+    if (typeof this.options[name] !== "undefined") {
+      return this.options[name];
+    }
+    return this.defaults[name];
+  }
+};
+
+
+
+
+var PanelFactory = {
+  
+
+
+
+
+
+
+  get: function (doc, options) {
+    
+    let panel = doc.createElement("panel");
+    panel.setAttribute("hidden", true);
+    panel.setAttribute("ignorekeys", true);
+    panel.setAttribute("animate", false);
+
+    panel.setAttribute("consumeoutsideclicks",
+                       options.get("consumeOutsideClick"));
+    panel.setAttribute("noautofocus", options.get("noAutoFocus"));
+    panel.setAttribute("type", "arrow");
+    panel.setAttribute("level", "top");
+
+    panel.setAttribute("class", "devtools-tooltip theme-tooltip-panel");
+    doc.querySelector("window").appendChild(panel);
+
+    return panel;
+  }
+};
 
 
 
@@ -87,21 +137,26 @@ const POPUP_EVENTS = ["shown", "hidden", "showing", "hiding"];
 
 
 
-function Tooltip(doc, {
-  consumeOutsideClick = false,
-  closeOnKeys = [ESCAPE_KEYCODE],
-  noAutoFocus = true,
-  closeOnEvents = [],
-  } = {}) {
+
+
+
+
+
+
+
+
+
+function Tooltip(doc, options) {
   EventEmitter.decorate(this);
 
   this.doc = doc;
-  this.consumeOutsideClick = consumeOutsideClick;
-  this.closeOnKeys = closeOnKeys;
-  this.noAutoFocus = noAutoFocus;
-  this.closeOnEvents = closeOnEvents;
-
-  this.panel = this._createPanel();
+  this.options = new OptionsStore({
+    consumeOutsideClick: false,
+    closeOnKeys: [ESCAPE_KEYCODE],
+    noAutoFocus: true,
+    closeOnEvents: []
+  }, options);
+  this.panel = PanelFactory.get(doc, this.options);
 
   
   
@@ -130,7 +185,7 @@ function Tooltip(doc, {
     }
 
     this.emit("keypress", event.keyCode);
-    if (this.closeOnKeys.indexOf(event.keyCode) !== -1 &&
+    if (this.options.get("closeOnKeys").indexOf(event.keyCode) !== -1 &&
         this.isShown()) {
       event.stopPropagation();
       this.hide();
@@ -140,7 +195,8 @@ function Tooltip(doc, {
 
   
   this.hide = this.hide.bind(this);
-  for (let {emitter, event, useCapture} of this.closeOnEvents) {
+  let closeOnEvents = this.options.get("closeOnEvents");
+  for (let {emitter, event, useCapture} of closeOnEvents) {
     for (let add of ["addEventListener", "on"]) {
       if (add in emitter) {
         emitter[add](event, this.hide, useCapture);
@@ -235,7 +291,8 @@ Tooltip.prototype = {
     let win = this.doc.querySelector("window");
     win.removeEventListener("keypress", this._onKeyPress, false);
 
-    for (let {emitter, event, useCapture} of this.closeOnEvents) {
+    let closeOnEvents = this.options.get("closeOnEvents");
+    for (let {emitter, event, useCapture} of closeOnEvents) {
       for (let remove of ["removeEventListener", "off"]) {
         if (remove in emitter) {
           emitter[remove](event, this.hide, useCapture);
@@ -383,27 +440,6 @@ Tooltip.prototype = {
     this.content = iframe;
 
     return def.promise;
-  },
-
-  
-
-
-  _createPanel() {
-    let panel = this.doc.createElement("panel");
-    panel.setAttribute("hidden", true);
-    panel.setAttribute("ignorekeys", true);
-    panel.setAttribute("animate", false);
-
-    panel.setAttribute("consumeoutsideclicks",
-                       this.consumeOutsideClick);
-    panel.setAttribute("noautofocus", this.noAutoFocus);
-    panel.setAttribute("type", "arrow");
-    panel.setAttribute("level", "top");
-
-    panel.setAttribute("class", "devtools-tooltip theme-tooltip-panel");
-    this.doc.querySelector("window").appendChild(panel);
-
-    return panel;
   }
 };
 

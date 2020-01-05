@@ -175,8 +175,7 @@ function SelectorAutocompleter(inspector, inputNode) {
     onClick: this._onSearchPopupClick,
   };
 
-  
-  this.searchPopup = new AutocompletePopup(inspector._toolbox.doc, options);
+  this.searchPopup = new AutocompletePopup(inspector._toolbox, options);
 
   this.searchBox.addEventListener("input", this.showSuggestions, true);
   this.searchBox.addEventListener("keypress", this._onSearchKeypress, true);
