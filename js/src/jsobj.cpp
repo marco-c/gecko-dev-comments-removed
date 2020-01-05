@@ -1149,38 +1149,15 @@ GetScriptArrayObjectElements(JSContext* cx, HandleObject obj, MutableHandle<GCVe
 {
     MOZ_ASSERT(!obj->isSingleton());
     MOZ_ASSERT(obj->is<ArrayObject>() || obj->is<UnboxedArrayObject>());
+    MOZ_ASSERT(!obj->isIndexed());
 
     size_t length = GetAnyBoxedOrUnboxedArrayLength(obj);
     if (!values.appendN(MagicValue(JS_ELEMENTS_HOLE), length))
         return false;
 
-    if (obj->nonProxyIsExtensible()) {
-        MOZ_ASSERT_IF(obj->is<ArrayObject>(), obj->as<ArrayObject>().slotSpan() == 0);
-
-        size_t initlen = GetAnyBoxedOrUnboxedInitializedLength(obj);
-        for (size_t i = 0; i < initlen; i++)
-            values[i].set(GetAnyBoxedOrUnboxedDenseElement(obj, i));
-    } else {
-        
-        
-        ArrayObject* aobj = &obj->as<ArrayObject>();
-        for (Shape::Range<NoGC> r(aobj->lastProperty()); !r.empty(); r.popFront()) {
-            Shape& shape = r.front();
-            if (shape.propid() == NameToId(cx->names().length))
-                continue;
-            MOZ_ASSERT(shape.isDataDescriptor());
-
-            
-            
-            
-            
-            if (shape.propid() == NameToId(cx->names().raw))
-                continue;
-
-            uint32_t index = JSID_TO_INT(shape.propid());
-            values[index].set(aobj->getSlot(shape.slot()));
-        }
-    }
+    size_t initlen = GetAnyBoxedOrUnboxedInitializedLength(obj);
+    for (size_t i = 0; i < initlen; i++)
+        values[i].set(GetAnyBoxedOrUnboxedDenseElement(obj, i));
 
     return true;
 }
