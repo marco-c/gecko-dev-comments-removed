@@ -467,9 +467,9 @@ private:
 
   void DeviceChangedCallback();
   
-  void StartStream();
+  bool StartStream();
   friend class AsyncCubebTask;
-  void Init();
+  bool Init();
   
   static const uint32_t ChannelCount = 2;
   
