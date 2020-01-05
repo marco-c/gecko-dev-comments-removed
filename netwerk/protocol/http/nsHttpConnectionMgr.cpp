@@ -100,6 +100,7 @@ nsHttpConnectionMgr::nsHttpConnectionMgr()
 nsHttpConnectionMgr::~nsHttpConnectionMgr()
 {
     LOG(("Destroying nsHttpConnectionMgr @%p\n", this));
+    MOZ_ASSERT(mCoalescingHash.Count() == 0);
     if (mTimeoutTick)
         mTimeoutTick->Cancel();
 }
@@ -559,101 +560,6 @@ nsHttpConnectionMgr::ClearConnectionHistory()
     return NS_OK;
 }
 
-
-nsHttpConnectionMgr::nsConnectionEntry *
-nsHttpConnectionMgr::LookupPreferredHash(nsHttpConnectionMgr::nsConnectionEntry *ent)
-{
-    nsConnectionEntry *preferred = nullptr;
-    uint32_t len = ent->mCoalescingKeys.Length();
-    for (uint32_t i = 0; !preferred && (i < len); ++i) {
-        preferred = mSpdyPreferredHash.Get(ent->mCoalescingKeys[i]);
-    }
-    return preferred;
-}
-
-void
-nsHttpConnectionMgr::StorePreferredHash(nsHttpConnectionMgr::nsConnectionEntry *ent)
-{
-    if (ent->mCoalescingKeys.IsEmpty()) {
-        return;
-    }
-
-    ent->mInPreferredHash = true;
-    uint32_t len = ent->mCoalescingKeys.Length();
-    for (uint32_t i = 0; i < len; ++i) {
-        mSpdyPreferredHash.Put(ent->mCoalescingKeys[i], ent);
-    }
-}
-
-void
-nsHttpConnectionMgr::RemovePreferredHash(nsHttpConnectionMgr::nsConnectionEntry *ent)
-{
-    if (!ent->mInPreferredHash || ent->mCoalescingKeys.IsEmpty()) {
-        return;
-    }
-
-    ent->mInPreferredHash = false;
-    uint32_t len = ent->mCoalescingKeys.Length();
-    for (uint32_t i = 0; i < len; ++i) {
-        mSpdyPreferredHash.Remove(ent->mCoalescingKeys[i]);
-    }
-}
-
-
-
-
-
-
-nsHttpConnectionMgr::nsConnectionEntry *
-nsHttpConnectionMgr::LookupConnectionEntry(nsHttpConnectionInfo *ci,
-                                           nsHttpConnection *conn,
-                                           nsHttpTransaction *trans)
-{
-    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-    if (!ci)
-        return nullptr;
-
-    nsConnectionEntry *ent = mCT.Get(ci->HashKey());
-
-    
-    
-    if (!ent || !ent->mUsingSpdy || ent->mCoalescingKeys.IsEmpty())
-        return ent;
-
-    
-    
-    
-    nsConnectionEntry *preferred = LookupPreferredHash(ent);
-    if (!preferred || (preferred == ent))
-        return ent;
-
-    if (conn) {
-        
-        
-        if (preferred->mActiveConns.Contains(conn))
-            return preferred;
-        if (preferred->mIdleConns.Contains(conn))
-            return preferred;
-    }
-
-    if (trans) {
-        if (preferred->mUrgentStartQ.Contains(trans, PendingComparator())) {
-            return preferred;
-        }
-
-        nsTArray<RefPtr<PendingTransactionInfo>> *infoArray;
-        if (preferred->mPendingTransactionTable.Get(
-            trans->TopLevelOuterContentWindowId(), &infoArray)) {
-            if (infoArray->Contains(trans, PendingComparator())) {
-                return preferred;
-            }
-        }
-    }
-
-    
-    return ent;
-}
-
 nsresult
 nsHttpConnectionMgr::CloseIdleConnection(nsHttpConnection *conn)
 {
@@ -661,11 +567,11 @@ nsHttpConnectionMgr::CloseIdleConnection(nsHttpConnection *conn)
     LOG(("nsHttpConnectionMgr::CloseIdleConnection %p conn=%p",
          this, conn));
 
-    if (!conn->ConnectionInfo())
+    if (!conn->ConnectionInfo()) {
         return NS_ERROR_UNEXPECTED;
+    }
 
-    nsConnectionEntry *ent = LookupConnectionEntry(conn->ConnectionInfo(),
-                                                   conn, nullptr);
+    nsConnectionEntry *ent = mCT.Get(conn->ConnectionInfo()->HashKey());
 
     RefPtr<nsHttpConnection> deleteProtector(conn);
     if (!ent || !ent->mIdleConns.RemoveElement(conn))
@@ -689,8 +595,7 @@ nsHttpConnectionMgr::RemoveIdleConnection(nsHttpConnection *conn)
         return NS_ERROR_UNEXPECTED;
     }
 
-    nsConnectionEntry *ent = LookupConnectionEntry(conn->ConnectionInfo(),
-                                                   conn, nullptr);
+    nsConnectionEntry *ent = mCT.Get(conn->ConnectionInfo()->HashKey());
 
     if (!ent || !ent->mIdleConns.RemoveElement(conn)) {
         return NS_ERROR_UNEXPECTED;
@@ -698,6 +603,178 @@ nsHttpConnectionMgr::RemoveIdleConnection(nsHttpConnection *conn)
 
     mNumIdleConns--;
     return NS_OK;
+}
+
+nsHttpConnection *
+nsHttpConnectionMgr::FindCoalescableConnectionByHashKey(nsConnectionEntry *ent,
+                                                        const nsCString &key,
+                                                        bool justKidding)
+{
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+    MOZ_ASSERT(ent->mConnInfo);
+    nsHttpConnectionInfo *ci = ent->mConnInfo;
+
+    nsTArray<nsWeakPtr> *listOfWeakConns =  mCoalescingHash.Get(key);
+    if (!listOfWeakConns) {
+        return nullptr;
+    }
+
+    uint32_t listLen = listOfWeakConns->Length();
+    for (uint32_t j = 0; j < listLen; ) {
+
+        RefPtr<nsHttpConnection> potentialMatch = do_QueryReferent(listOfWeakConns->ElementAt(j));
+        if (!potentialMatch) {
+            
+            LOG(("FindCoalescableConnectionByHashKey() found old conn %p that has null weak ptr - removing\n",
+                 listOfWeakConns->ElementAt(j).get()));
+            if (j != listLen - 1) {
+                listOfWeakConns->Elements()[j] = listOfWeakConns->Elements()[listLen - 1];
+            }
+            listOfWeakConns->RemoveElementAt(listLen - 1);
+            MOZ_ASSERT(listOfWeakConns->Length() == listLen - 1);
+            listLen--;
+            continue; 
+        }
+
+        bool couldJoin;
+        if (justKidding) {
+            couldJoin = potentialMatch->TestJoinConnection(ci->GetOrigin(), ci->OriginPort());
+        } else {
+            couldJoin = potentialMatch->JoinConnection(ci->GetOrigin(), ci->OriginPort());
+        }
+        if (couldJoin) {
+            LOG(("FindCoalescableConnectionByHashKey() found hashtable match %p for key %s of CI %s join ok\n",
+                 potentialMatch.get(), key.get(), ci->HashKey().get()));
+            return potentialMatch.get();
+        } else {
+            LOG(("FindCoalescableConnectionByHashKey() found hashtable match %p for key %s of CI %s join failed\n",
+                 potentialMatch.get(), key.get(), ci->HashKey().get()));
+        }
+        ++j; 
+    }
+
+    if (!listLen) { 
+        LOG(("FindCoalescableConnectionByHashKey() removing empty list element\n"));
+        mCoalescingHash.Remove(key);
+    }
+    return nullptr;
+}
+
+static void
+BuildOriginFrameHashKey(nsACString &newKey, nsHttpConnectionInfo *ci,
+                        const nsACString &host, int32_t port)
+{
+    newKey.Assign(host);
+    if (ci->GetAnonymous()) {
+        newKey.AppendLiteral("~A:");
+    } else {
+        newKey.AppendLiteral("~.:");
+    }
+    newKey.AppendInt(port);
+    newKey.AppendLiteral("/[");
+    nsAutoCString suffix;
+    ci->GetOriginAttributes().CreateSuffix(suffix);
+    newKey.Append(suffix);
+    newKey.AppendLiteral("]viaORIGIN.FRAME");
+}
+
+nsHttpConnection *
+nsHttpConnectionMgr::FindCoalescableConnection(nsConnectionEntry *ent,
+                                               bool justKidding)
+{
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+    MOZ_ASSERT(ent->mConnInfo);
+    nsHttpConnectionInfo *ci = ent->mConnInfo;
+    LOG(("FindCoalescableConnection %s\n", ci->HashKey().get()));
+    
+    nsCString newKey;
+    BuildOriginFrameHashKey(newKey, ci, ci->GetOrigin(), ci->OriginPort());
+    nsHttpConnection *conn =
+        FindCoalescableConnectionByHashKey(ent, newKey, justKidding);
+    if (conn) {
+        LOG(("FindCoalescableConnection(%s) match conn %p on frame key %s\n",
+             ci->HashKey().get(), conn, newKey.get()));
+        return conn;
+    }
+
+    
+    
+    uint32_t keyLen = ent->mCoalescingKeys.Length();
+    for (uint32_t i = 0; i < keyLen; ++i) {
+        conn = FindCoalescableConnectionByHashKey(ent, ent->mCoalescingKeys[i], justKidding);
+        if (conn) {
+            LOG(("FindCoalescableConnection(%s) match conn %p on dns key %s\n",
+                 ci->HashKey().get(), conn, ent->mCoalescingKeys[i].get()));
+            return conn;
+        }
+    }
+
+    LOG(("FindCoalescableConnection(%s) no matching conn\n", ci->HashKey().get()));
+    return nullptr;
+}
+
+void
+nsHttpConnectionMgr::UpdateCoalescingForNewConn(nsHttpConnection *conn,
+                                                nsConnectionEntry *ent)
+{
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+    MOZ_ASSERT(conn);
+    MOZ_ASSERT(conn->ConnectionInfo());
+    MOZ_ASSERT(ent);
+    MOZ_ASSERT(mCT.Get(conn->ConnectionInfo()->HashKey()) == ent);
+
+    nsHttpConnection *existingConn = FindCoalescableConnection(ent, true);
+    if (existingConn) {
+        LOG(("UpdateCoalescingForNewConn() found active conn that could have served newConn\n"
+             "graceful close of conn=%p to migrate to %p\n", conn, existingConn));
+        conn->DontReuse();
+        return;
+    }
+
+    
+    
+    if (!conn->CanDirectlyActivate()) {
+        return;
+    }
+
+    uint32_t keyLen = ent->mCoalescingKeys.Length();
+    for (uint32_t i = 0;i < keyLen; ++i) {
+        LOG(("UpdateCoalescingForNewConn() registering conn %p %s under key %s\n",
+             conn, conn->ConnectionInfo()->HashKey().get(), ent->mCoalescingKeys[i].get()));
+        nsTArray<nsWeakPtr> *listOfWeakConns =  mCoalescingHash.Get(ent->mCoalescingKeys[i]);
+        if (!listOfWeakConns) {
+            LOG(("UpdateCoalescingForNewConn() need new list element\n"));
+            listOfWeakConns = new nsTArray<nsWeakPtr>(1);
+            mCoalescingHash.Put(ent->mCoalescingKeys[i], listOfWeakConns);
+        }
+        listOfWeakConns->AppendElement(
+            do_GetWeakReference(static_cast<nsISupportsWeakReference*>(conn)));
+    }
+
+    
+    
+    for (int32_t index = ent->mHalfOpens.Length() - 1; index >= 0; --index) {
+        LOG(("UpdateCoalescingForNewConn() forcing halfopen abandon %p\n",
+             ent->mHalfOpens[index]));
+        ent->mHalfOpens[index]->Abandon();
+    }
+
+    if (ent->mActiveConns.Length() > 1) {
+        
+        
+        
+        
+        
+        
+        for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
+            nsHttpConnection *otherConn = ent->mActiveConns[index];
+            if (otherConn != conn) {
+                LOG(("UpdateCoalescingForNewConn() shutting down connection (%p) because new "
+                     "spdy connection (%p) takes precedence\n", otherConn, conn));
+                otherConn->DontReuse();
+            }
+        }
+    }
 }
 
 
@@ -712,87 +789,25 @@ nsHttpConnectionMgr::ReportSpdyConnection(nsHttpConnection *conn,
                                           bool usingSpdy)
 {
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-
-    nsConnectionEntry *ent = LookupConnectionEntry(conn->ConnectionInfo(),
-                                                   conn, nullptr);
-
-    if (!ent)
+    if (!conn->ConnectionInfo()) {
         return;
-
-    if (!usingSpdy)
+    }
+    nsConnectionEntry *ent = mCT.Get(conn->ConnectionInfo()->HashKey());
+    if (!ent || !usingSpdy) {
         return;
+    }
 
     ent->mUsingSpdy = true;
     mNumSpdyActiveConns++;
 
+    
     uint32_t ttl = conn->TimeToLive();
     uint64_t timeOfExpire = NowInSeconds() + ttl;
-    if (!mTimer || timeOfExpire < mTimeOfNextWakeUp)
+    if (!mTimer || timeOfExpire < mTimeOfNextWakeUp) {
         PruneDeadConnectionsAfter(ttl);
-
-    
-    
-    
-    
-    
-    nsConnectionEntry *joinedConnection;
-    nsConnectionEntry *preferred = LookupPreferredHash(ent);
-
-    LOG(("ReportSpdyConnection %p,%s conn %p prefers %p,%s\n",
-         ent, ent->mConnInfo->Origin(), conn, preferred,
-         preferred ? preferred->mConnInfo->Origin() : ""));
-
-    if (!preferred) {
-        
-        StorePreferredHash(ent);
-        preferred = ent;
-    } else if ((preferred != ent) &&
-               (joinedConnection = GetSpdyPreferredEnt(ent)) &&
-               (joinedConnection != ent)) {
-        
-        
-        
-        
-        
-
-        LOG(("ReportSpdyConnection graceful close of conn=%p ent=%p to "
-                 "migrate to preferred (desharding)\n", conn, ent));
-        conn->DontReuse();
-    } else if (preferred != ent) {
-        LOG (("ReportSpdyConnection preferred host may be in false start or "
-              "may have insufficient cert. Leave mapping in place but do not "
-              "abandon this connection yet."));
     }
 
-    if ((preferred == ent) && conn->CanDirectlyActivate()) {
-        
-
-        
-        
-        for (int32_t index = ent->mHalfOpens.Length() - 1;
-             index >= 0; --index) {
-            LOG(("ReportSpdyConnection forcing halfopen abandon %p\n",
-                 ent->mHalfOpens[index]));
-            ent->mHalfOpens[index]->Abandon();
-        }
-
-        if (ent->mActiveConns.Length() > 1) {
-            
-            
-            
-            
-            
-            
-            for (uint32_t index = 0; index < ent->mActiveConns.Length(); ++index) {
-                nsHttpConnection *otherConn = ent->mActiveConns[index];
-                if (otherConn != conn) {
-                    LOG(("ReportSpdyConnection shutting down connection (%p) because new "
-                         "spdy connection (%p) takes precedence\n", otherConn, conn));
-                    otherConn->DontReuse();
-                }
-            }
-        }
-    }
+    UpdateCoalescingForNewConn(conn, ent);
 
     nsresult rv = ProcessPendingQ(ent->mConnInfo);
     if (NS_FAILED(rv)) {
@@ -806,108 +821,6 @@ nsHttpConnectionMgr::ReportSpdyConnection(nsHttpConnection *conn,
              "failed to post event (%08x)\n", conn, ent,
              static_cast<uint32_t>(rv)));
     }
-}
-
-nsHttpConnectionMgr::nsConnectionEntry *
-nsHttpConnectionMgr::GetSpdyPreferredEnt(nsConnectionEntry *aOriginalEntry)
-{
-    if (!gHttpHandler->IsSpdyEnabled() ||
-        !gHttpHandler->CoalesceSpdy() ||
-        aOriginalEntry->mConnInfo->GetNoSpdy() ||
-        aOriginalEntry->mCoalescingKeys.IsEmpty()) {
-        return nullptr;
-    }
-
-    nsConnectionEntry *preferred = LookupPreferredHash(aOriginalEntry);
-
-    
-    if (preferred == aOriginalEntry)
-        return aOriginalEntry;
-
-    
-    
-    if (!preferred || !preferred->mUsingSpdy)
-        return nullptr;
-
-    
-    
-    
-    
-
-    nsHttpConnection *activeSpdy = nullptr;
-
-    for (uint32_t index = 0; index < preferred->mActiveConns.Length(); ++index) {
-        if (preferred->mActiveConns[index]->CanDirectlyActivate()) {
-            activeSpdy = preferred->mActiveConns[index];
-            break;
-        }
-    }
-
-    if (!activeSpdy) {
-        
-        
-        RemovePreferredHash(preferred);
-        LOG(("nsHttpConnectionMgr::GetSpdyPreferredEnt "
-             "preferred host mapping %s to %s removed due to inactivity.\n",
-             aOriginalEntry->mConnInfo->Origin(),
-             preferred->mConnInfo->Origin()));
-
-        return nullptr;
-    }
-
-    
-    nsresult rv;
-    bool isJoined = false;
-
-    nsCOMPtr<nsISupports> securityInfo;
-    nsCOMPtr<nsISSLSocketControl> sslSocketControl;
-    nsAutoCString negotiatedNPN;
-
-    activeSpdy->GetSecurityInfo(getter_AddRefs(securityInfo));
-    if (!securityInfo) {
-        NS_WARNING("cannot obtain spdy security info");
-        return nullptr;
-    }
-
-    sslSocketControl = do_QueryInterface(securityInfo, &rv);
-    if (NS_FAILED(rv)) {
-        NS_WARNING("sslSocketControl QI Failed");
-        return nullptr;
-    }
-
-    
-    const SpdyInformation *info = gHttpHandler->SpdyInfo();
-    for (uint32_t index = SpdyInformation::kCount;
-         NS_SUCCEEDED(rv) && index > 0; --index) {
-        if (info->ProtocolEnabled(index - 1)) {
-            rv = sslSocketControl->JoinConnection(info->VersionString[index - 1],
-                                                  aOriginalEntry->mConnInfo->GetOrigin(),
-                                                  aOriginalEntry->mConnInfo->OriginPort(),
-                                                  &isJoined);
-            if (NS_SUCCEEDED(rv) && isJoined) {
-                break;
-            }
-        }
-    }
-
-    if (NS_FAILED(rv) || !isJoined) {
-        LOG(("nsHttpConnectionMgr::GetSpdyPreferredEnt "
-             "Host %s cannot be confirmed to be joined "
-             "with %s connections. rv=%" PRIx32 " isJoined=%d",
-             preferred->mConnInfo->Origin(), aOriginalEntry->mConnInfo->Origin(),
-             static_cast<uint32_t>(rv), isJoined));
-        Telemetry::Accumulate(Telemetry::SPDY_NPN_JOIN, false);
-        return nullptr;
-    }
-
-    
-    LOG(("nsHttpConnectionMgr::GetSpdyPreferredEnt "
-         "Host %s has cert valid for %s connections, "
-         "so %s will be coalesced with %s",
-         preferred->mConnInfo->Origin(), aOriginalEntry->mConnInfo->Origin(),
-         aOriginalEntry->mConnInfo->Origin(), preferred->mConnInfo->Origin()));
-    Telemetry::Accumulate(Telemetry::SPDY_NPN_JOIN, true);
-    return preferred;
 }
 
 
@@ -1047,6 +960,9 @@ nsHttpConnectionMgr::ProcessPendingQForEntry(nsConnectionEntry *ent, bool consid
          ent->mIdleConns.Length(), ent->mUrgentStartQ.Length(),
          ent->PendingQLength()));
 
+    if (!ent->mUrgentStartQ.Length() && !ent->mPendingTransactionTable.Count()) {
+        return false;
+    }
     ProcessSpdyPendingQ(ent);
 
     bool dispatchedSuccessfully = false;
@@ -1458,7 +1374,7 @@ nsHttpConnectionMgr::TryDispatchTransaction(nsConnectionEntry *ent,
     
 
     if (!(caps & NS_HTTP_DISALLOW_SPDY) && gHttpHandler->IsSpdyEnabled()) {
-        RefPtr<nsHttpConnection> conn = GetSpdyPreferredConn(ent);
+        RefPtr<nsHttpConnection> conn = GetSpdyActiveConn(ent);
         if (conn) {
             if ((caps & NS_HTTP_ALLOW_KEEPALIVE) || !conn->IsExperienced()) {
                 LOG(("   dispatch to spdy: [conn=%p]\n", conn.get()));
@@ -1776,17 +1692,6 @@ nsHttpConnectionMgr::ProcessNewTransaction(nsHttpTransaction *trans)
     nsConnectionEntry *ent =
         GetOrCreateConnectionEntry(ci, !!trans->TunnelProvider());
 
-    
-    
-    nsConnectionEntry *preferredEntry = GetSpdyPreferredEnt(ent);
-    if (preferredEntry && (preferredEntry != ent)) {
-        LOG(("nsHttpConnectionMgr::ProcessNewTransaction trans=%p "
-             "redirected via coalescing from %s to %s\n", trans,
-             ent->mConnInfo->Origin(), preferredEntry->mConnInfo->Origin()));
-
-        ent = preferredEntry;
-    }
-
     ReportProxyTelemetry(ent);
 
     
@@ -2005,11 +1910,10 @@ nsHttpConnectionMgr::DispatchSpdyPendingQ(nsTArray<RefPtr<PendingTransactionInfo
 
 
 
-
 void
 nsHttpConnectionMgr::ProcessSpdyPendingQ(nsConnectionEntry *ent)
 {
-    nsHttpConnection *conn = GetSpdyPreferredConn(ent);
+    nsHttpConnection *conn = GetSpdyActiveConn(ent);
     if (!conn || !conn->CanDirectlyActivate()) {
         return;
     }
@@ -2040,60 +1944,68 @@ nsHttpConnectionMgr::OnMsgProcessAllSpdyPendingQ(int32_t, ARefBase *)
     }
 }
 
+
+
 nsHttpConnection *
-nsHttpConnectionMgr::GetSpdyPreferredConn(nsConnectionEntry *ent)
+nsHttpConnectionMgr::GetSpdyActiveConn(nsConnectionEntry *ent)
 {
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
     MOZ_ASSERT(ent);
 
-    nsConnectionEntry *preferred = GetSpdyPreferredEnt(ent);
-    
-    if (preferred) {
-        
-        ent->mUsingSpdy = true;
-    } else {
-        preferred = ent;
-    }
-
-    if (!preferred->mUsingSpdy) {
-        return nullptr;
-    }
-
-    nsHttpConnection *rv = nullptr;
-    uint32_t activeLen = preferred->mActiveConns.Length();
+    nsHttpConnection *experienced = nullptr;
+    nsHttpConnection *noExperience = nullptr;
+    uint32_t activeLen = ent->mActiveConns.Length();
+    nsHttpConnectionInfo *ci = ent->mConnInfo;
     uint32_t index;
 
     
     
     for (index = 0; index < activeLen; ++index) {
-        nsHttpConnection *tmp = preferred->mActiveConns[index];
-        if (tmp->CanDirectlyActivate() && tmp->IsExperienced()) {
-            rv = tmp;
-            break;
+        nsHttpConnection *tmp = ent->mActiveConns[index];
+        if (tmp->CanDirectlyActivate()) {
+            if (tmp->IsExperienced()) {
+                experienced = tmp;
+                break;
+            }
+            noExperience = tmp; 
         }
     }
 
     
-    if (rv) {
+    if (experienced) {
         for (index = 0; index < activeLen; ++index) {
-            nsHttpConnection *tmp = preferred->mActiveConns[index];
+            nsHttpConnection *tmp = ent->mActiveConns[index];
             
-            if (tmp != rv) {
+            if (tmp != experienced) {
                 tmp->DontReuse();
             }
         }
-        return rv;
+        LOG(("GetSpdyActiveConn() request for ent %p %s "
+             "found an active experienced connection %p in native connection entry\n",
+             ent, ci->HashKey().get(), experienced));
+        return experienced;
+    }
+
+    if (noExperience) {
+        LOG(("GetSpdyActiveConn() request for ent %p %s "
+             "found an active but inexperienced connection %p in native connection entry\n",
+             ent, ci->HashKey().get(), noExperience));
+        return noExperience;
     }
 
     
-    for (index = 0; index < activeLen; ++index) {
-        nsHttpConnection *tmp = preferred->mActiveConns[index];
-        if (tmp->CanDirectlyActivate()) {
-            rv = tmp;
-            break;
-        }
+    
+    nsHttpConnection *existingConn = FindCoalescableConnection(ent, false);
+    if (existingConn) {
+        LOG(("GetSpdyActiveConn() request for ent %p %s "
+             "found an active connection %p in the coalescing hashtable\n",
+             ent, ci->HashKey().get(), existingConn));
+        return existingConn;
     }
-    return rv;
+
+    LOG(("GetSpdyActiveConn() request for ent %p %s "
+         "did not find an active connection\n", ent, ci->HashKey().get()));
+    return nullptr;
 }
 
 
@@ -2174,6 +2086,7 @@ nsHttpConnectionMgr::OnMsgShutdown(int32_t, ARefBase *param)
       mTrafficTimer->Cancel();
       mTrafficTimer = nullptr;
     }
+    mCoalescingHash.Clear();
 
     
     nsCOMPtr<nsIRunnable> runnable =
@@ -2213,8 +2126,10 @@ nsHttpConnectionMgr::OnMsgReschedTransaction(int32_t priority, ARefBase *param)
     RefPtr<nsHttpTransaction> trans = static_cast<nsHttpTransaction *>(param);
     trans->SetPriority(priority);
 
-    nsConnectionEntry *ent = LookupConnectionEntry(trans->ConnectionInfo(),
-                                                   nullptr, trans);
+    if (!trans->ConnectionInfo()) {
+        return;
+    }
+    nsConnectionEntry *ent = mCT.Get(trans->ConnectionInfo()->HashKey());
 
     if (ent) {
         int32_t caps = trans->Caps();
@@ -2258,9 +2173,10 @@ nsHttpConnectionMgr::OnMsgCancelTransaction(int32_t reason, ARefBase *param)
     if (conn && !trans->IsDone()) {
         conn->CloseTransaction(trans, closeCode);
     } else {
-        nsConnectionEntry *ent =
-            LookupConnectionEntry(trans->ConnectionInfo(), nullptr, trans);
-
+        nsConnectionEntry *ent = nullptr;
+        if (trans->ConnectionInfo()) {
+            ent = mCT.Get(trans->ConnectionInfo()->HashKey());
+        }
         if (ent) {
             uint32_t caps = trans->Caps();
             int32_t transIndex;
@@ -2602,8 +2518,9 @@ nsHttpConnectionMgr::OnMsgReclaimConnection(int32_t, ARefBase *param)
     
     
 
-    nsConnectionEntry *ent = LookupConnectionEntry(conn->ConnectionInfo(),
-                                                   conn, nullptr);
+    nsConnectionEntry *ent = conn->ConnectionInfo() ?
+        mCT.Get(conn->ConnectionInfo()->HashKey()) : nullptr;
+
     if (!ent) {
         
         
@@ -2740,7 +2657,6 @@ nsHttpConnectionMgr::OnMsgUpdateParam(int32_t inParam, ARefBase *)
 nsHttpConnectionMgr::nsConnectionEntry::~nsConnectionEntry()
 {
     MOZ_COUNT_DTOR(nsConnectionEntry);
-    gHttpHandler->ConnMgr()->RemovePreferredHash(this);
 }
 
 
@@ -2966,13 +2882,6 @@ nsHttpConnectionMgr::OnMsgSpeculativeConnect(int32_t, ARefBase *param)
 
     nsConnectionEntry *ent =
         GetOrCreateConnectionEntry(args->mTrans->ConnectionInfo(), false);
-
-    
-    
-    
-    nsConnectionEntry *preferredEntry = GetSpdyPreferredEnt(ent);
-    if (preferredEntry)
-        ent = preferredEntry;
 
     uint32_t parallelSpeculativeConnectLimit =
         gHttpHandler->ParallelSpeculativeConnectLimit();
@@ -3574,6 +3483,33 @@ nsHalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream *out)
 }
 
 
+
+void
+nsHttpConnectionMgr::RegisterOriginCoalescingKey(nsHttpConnection *conn,
+                                                 const nsACString &host,
+                                                 int32_t port)
+{
+    MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
+    nsHttpConnectionInfo *ci = conn ? conn->ConnectionInfo() : nullptr;
+    if (!ci || !conn->CanDirectlyActivate()) {
+        return;
+    }
+
+    nsCString newKey;
+    BuildOriginFrameHashKey(newKey, ci, host, port);
+    nsTArray<nsWeakPtr> *listOfWeakConns =  mCoalescingHash.Get(newKey);
+    if (!listOfWeakConns) {
+        listOfWeakConns = new nsTArray<nsWeakPtr>(1);
+        mCoalescingHash.Put(newKey, listOfWeakConns);
+    }
+    listOfWeakConns->AppendElement(do_GetWeakReference(static_cast<nsISupportsWeakReference*>(conn)));
+
+    LOG(("nsHttpConnectionMgr::RegisterOriginCoalescingKey "
+         "Established New Coalescing Key %s to %p %s\n",
+         newKey.get(), conn, ci->HashKey().get()));
+}
+
+
 NS_IMETHODIMP
 nsHttpConnectionMgr::nsHalfOpenSocket::OnTransportStatus(nsITransport *trans,
                                                          nsresult status,
@@ -3650,7 +3586,7 @@ nsHttpConnectionMgr::nsHalfOpenSocket::OnTransportStatus(nsITransport *trans,
                 nsAutoCString suffix;
                 mEnt->mConnInfo->GetOriginAttributes().CreateSuffix(suffix);
                 newKey->Append(suffix);
-                newKey->Append(']');
+                newKey->AppendLiteral("]viaDNS");
                 LOG(("nsHttpConnectionMgr::nsHalfOpenSocket::OnTransportStatus "
                      "STATUS_CONNECTING_TO Established New Coalescing Key # %d for host "
                      "%s [%s]", i, mEnt->mConnInfo->Origin(), newKey->get()));
@@ -3751,6 +3687,12 @@ ConnectionHandle::TakeHttpConnection()
     return mConn.forget();
 }
 
+already_AddRefed<nsHttpConnection>
+ConnectionHandle::HttpConnection()
+{
+    RefPtr<nsHttpConnection> rv(mConn);
+    return rv.forget();
+}
 
 
 
@@ -3758,7 +3700,6 @@ nsHttpConnectionMgr::
 nsConnectionEntry::nsConnectionEntry(nsHttpConnectionInfo *ci)
     : mConnInfo(ci)
     , mUsingSpdy(false)
-    , mInPreferredHash(false)
     , mPreferIPv4(false)
     , mPreferIPv6(false)
     , mUsedForConnection(false)
@@ -3774,7 +3715,7 @@ nsHttpConnectionMgr::nsConnectionEntry::AvailableForDispatchNow()
     }
 
     return gHttpHandler->ConnMgr()->
-        GetSpdyPreferredConn(this) ? true : false;
+        GetSpdyActiveConn(this) ? true : false;
 }
 
 bool
@@ -3828,9 +3769,10 @@ void
 nsHttpConnectionMgr::ResetIPFamilyPreference(nsHttpConnectionInfo *ci)
 {
     MOZ_ASSERT(PR_GetCurrentThread() == gSocketThread);
-    nsConnectionEntry *ent = LookupConnectionEntry(ci, nullptr, nullptr);
-    if (ent)
+    nsConnectionEntry *ent = mCT.Get(ci->HashKey());
+    if (ent) {
         ent->ResetIPFamilyPreference();
+    }
 }
 
 uint32_t
@@ -4021,7 +3963,7 @@ nsHttpConnectionMgr::MoveToWildCardConnEntry(nsHttpConnectionInfo *specificCI,
          "change CI from %s to %s\n", proxyConn, specificCI->HashKey().get(),
          wildCardCI->HashKey().get()));
 
-    nsConnectionEntry *ent = LookupConnectionEntry(specificCI, proxyConn, nullptr);
+    nsConnectionEntry *ent = mCT.Get(specificCI->HashKey());
     LOG(("nsHttpConnectionMgr::MakeConnEntryWildCard conn %p using ent %p (spdy %d)\n",
          proxyConn, ent, ent ? ent->mUsingSpdy : 0));
 

@@ -32,6 +32,9 @@ public:
 
   static ASpdySession *NewSpdySession(uint32_t version, nsISocketTransport *, bool);
 
+  virtual bool TestJoinConnection(const nsACString &hostname, int32_t port) = 0;
+  virtual bool JoinConnection(const nsACString &hostname, int32_t port) = 0;
+
   
   
   

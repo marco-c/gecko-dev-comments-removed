@@ -1022,6 +1022,7 @@ Http2Stream::ConvertResponseHeaders(Http2Decompressor *decompressor,
 
   nsresult errcode;
   httpResponseCode = statusString.ToInteger(&errcode);
+  LOG3(("Http2Stream::ConvertResponseHeaders %p response code %d\n", this, httpResponseCode));
   if (mIsTunnel) {
     LOG3(("Http2Stream %p Tunnel Response code %d", this, httpResponseCode));
     if ((httpResponseCode / 100) != 2) {
@@ -1033,6 +1034,11 @@ Http2Stream::ConvertResponseHeaders(Http2Decompressor *decompressor,
     
     LOG3(("Http2Stream::ConvertResponseHeaders %p Error - status == 101\n", this));
     return NS_ERROR_ILLEGAL_VALUE;
+  }
+
+  if (httpResponseCode == 421) {
+    
+    mSession->Received421(mTransaction->ConnectionInfo());
   }
 
   if (aHeadersIn.Length() && aHeadersOut.Length()) {

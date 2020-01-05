@@ -222,6 +222,9 @@ public:
     
     virtual uint32_t Version();
 
+    bool TestJoinConnection(const nsACString &hostname, int32_t port);
+    bool JoinConnection(const nsACString &hostname, int32_t port);
+
 private:
     
     enum TCPKeepaliveConfig {

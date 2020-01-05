@@ -247,18 +247,12 @@ private:
         
         
         
-        
-        
-        
-        
         nsTArray<nsCString> mCoalescingKeys;
 
         
         
         
         bool mUsingSpdy : 1;
-
-        bool mInPreferredHash : 1;
 
         
         
@@ -307,6 +301,7 @@ private:
 
 public:
     static nsAHttpConnection *MakeConnectionHandle(nsHttpConnection *aWrapped);
+    void RegisterOriginCoalescingKey(nsHttpConnection *, const nsACString &host, int32_t port);
 
 private:
 
@@ -519,15 +514,13 @@ private:
                                             PendingTransactionInfo *pendingTransInfo);
 
     
-    nsConnectionEntry *GetSpdyPreferredEnt(nsConnectionEntry *aOriginalEntry);
-    nsConnectionEntry *LookupPreferredHash(nsConnectionEntry *ent);
-    void               StorePreferredHash(nsConnectionEntry *ent);
-    void               RemovePreferredHash(nsConnectionEntry *ent);
-    nsHttpConnection  *GetSpdyPreferredConn(nsConnectionEntry *ent);
-    nsDataHashtable<nsCStringHashKey, nsConnectionEntry *>   mSpdyPreferredHash;
-    nsConnectionEntry *LookupConnectionEntry(nsHttpConnectionInfo *ci,
-                                             nsHttpConnection *conn,
-                                             nsHttpTransaction *trans);
+    
+    nsClassHashtable<nsCStringHashKey, nsTArray<nsWeakPtr> > mCoalescingHash;
+
+    nsHttpConnection *FindCoalescableConnection(nsConnectionEntry *ent, bool justKidding);
+    nsHttpConnection *FindCoalescableConnectionByHashKey(nsConnectionEntry *ent, const nsCString &key, bool justKidding);
+    void UpdateCoalescingForNewConn(nsHttpConnection *conn, nsConnectionEntry *ent);
+    nsHttpConnection *GetSpdyActiveConn(nsConnectionEntry *ent);
 
     void               ProcessSpdyPendingQ(nsConnectionEntry *ent);
     void               DispatchSpdyPendingQ(nsTArray<RefPtr<PendingTransactionInfo>> &pendingQ,

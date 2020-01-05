@@ -50,6 +50,8 @@ public:
   bool CanReuse() override { return !mShouldGoAway && !mClosed; }
   bool RoomForMoreStreams() override;
   uint32_t SpdyVersion() override;
+  bool TestJoinConnection(const nsACString &hostname, int32_t port) override;
+  bool JoinConnection(const nsACString &hostname, int32_t port) override;
 
   
   
@@ -89,7 +91,8 @@ public:
     FRAME_TYPE_WINDOW_UPDATE = 0x8,
     FRAME_TYPE_CONTINUATION  = 0x9,
     FRAME_TYPE_ALTSVC        = 0xA,
-    FRAME_TYPE_LAST          = 0xB
+    FRAME_TYPE_ORIGIN        = 0xB,
+    FRAME_TYPE_LAST          = 0xC
   };
 
   
@@ -185,6 +188,7 @@ public:
   static nsresult RecvWindowUpdate(Http2Session *);
   static nsresult RecvContinuation(Http2Session *);
   static nsresult RecvAltSvc(Http2Session *);
+  static nsresult RecvOrigin(Http2Session *);
 
   char       *EnsureOutputBuffer(uint32_t needed);
 
@@ -242,6 +246,9 @@ public:
   MOZ_MUST_USE nsresult WriteSegmentsAgain(nsAHttpSegmentWriter *, uint32_t , uint32_t *, bool *) override final;
   MOZ_MUST_USE bool Do0RTT() override final { return true; }
   MOZ_MUST_USE nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) override final;
+
+  
+  void Received421(nsHttpConnectionInfo *ci);
 
 private:
 
@@ -507,6 +514,10 @@ private:
   bool mAttemptingEarlyData;
   
   nsTArray<uint32_t> m0RTTStreams;
+
+  bool TestOriginFrame(const nsACString &name, int32_t port);
+  bool mOriginFrameActivated;
+  nsDataHashtable<nsCStringHashKey, bool> mOriginFrame;
 
 private:
 
