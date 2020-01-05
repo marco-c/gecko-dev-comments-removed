@@ -72,10 +72,6 @@ var _themeIDBeingDisabled = null;
 
 
 
-var _fallbackThemeData = null;
-
-
-
 
 (function() {
   let wasThemeSelected = _prefs.getBoolPref("isThemeSelected", false);
@@ -97,19 +93,6 @@ var _fallbackThemeData = null;
 this.LightweightThemeManager = {
   get name() {
     return "LightweightThemeManager";
-  },
-
-  set fallbackThemeData(data) {
-    if (data && Object.getOwnPropertyNames(data).length) {
-      _fallbackThemeData = Object.assign({}, data);
-      if (PERSIST_ENABLED) {
-        LightweightThemeImageOptimizer.purge();
-        _persistImages(_fallbackThemeData, () => {});
-      }
-    } else {
-      _fallbackThemeData = null;
-    }
-    return _fallbackThemeData;
   },
 
   
@@ -139,8 +122,6 @@ this.LightweightThemeManager = {
 
   get currentThemeForDisplay() {
     var data = this.currentTheme;
-    if (!data && _fallbackThemeData)
-      data = _fallbackThemeData;
 
     if (data && PERSIST_ENABLED) {
       for (let key in PERSIST_FILES) {
