@@ -1097,7 +1097,10 @@ nsSVGUtils::GetBBox(nsIFrame *aFrame, uint32_t aFlags)
   }
   gfxRect bbox;
   nsISVGChildFrame *svg = do_QueryFrame(aFrame);
-  if (svg || aFrame->IsSVGText()) {
+  const bool hasSVGLayout = aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT;
+  if (hasSVGLayout || aFrame->IsSVGText() ||
+      
+      (svg && !(aFlags & eUseFrameBoundsForOuterSVG))) {
     
     
     

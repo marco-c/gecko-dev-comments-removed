@@ -403,7 +403,11 @@ public:
     eBBoxIncludeStroke         = 1 << 2,
     eBBoxIncludeStrokeGeometry = 1 << 3,
     eBBoxIncludeMarkers        = 1 << 4,
-    eBBoxIncludeClipped        = 1 << 5
+    eBBoxIncludeClipped        = 1 << 5,
+    
+    
+    
+    eUseFrameBoundsForOuterSVG = 1 << 6
   };
   
 
