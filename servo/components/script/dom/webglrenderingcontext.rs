@@ -2,13 +2,12 @@
 
 
 
-use canvas_traits::
-            {CanvasMsg, CanvasWebGLMsg, CanvasCommonMsg, WebGLError,
-             WebGLShaderParameter, WebGLFramebufferBindingRequest};
 use canvas_traits::WebGLError::*;
-use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::
-            {self, WebGLContextAttributes, WebGLRenderingContextMethods};
+use canvas_traits::{CanvasMsg, CanvasWebGLMsg, CanvasCommonMsg, WebGLError};
+use canvas_traits::{WebGLShaderParameter, WebGLFramebufferBindingRequest};
 use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::WebGLRenderingContextConstants as constants;
+use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::{WebGLRenderingContextMethods};
+use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::{self, WebGLContextAttributes};
 use dom::bindings::codegen::InheritTypes::NodeCast;
 use dom::bindings::codegen::UnionTypes::ImageDataOrHTMLImageElementOrHTMLCanvasElementOrHTMLVideoElement;
 
