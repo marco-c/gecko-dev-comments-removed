@@ -2752,11 +2752,7 @@ pref("layout.css.text-justify.enabled", true);
 
 
 
-#if defined(MOZ_B2G) || !defined(RELEASE_OR_BETA)
 pref("layout.css.float-logical-values.enabled", true);
-#else
-pref("layout.css.float-logical-values.enabled", false);
-#endif
 
 
 pref("layout.css.image-orientation.enabled", true);
