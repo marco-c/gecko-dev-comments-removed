@@ -222,6 +222,20 @@ pub struct ConstantSpec {
     pub value: ConstantVal
 }
 
+impl ConstantSpec {
+    
+    pub fn get_value(&self) -> JSVal {
+        match self.value {
+            NullVal => NullValue(),
+            IntVal(i) => Int32Value(i),
+            UintVal(u) => UInt32Value(u),
+            DoubleVal(d) => DoubleValue(d),
+            BoolVal(b) => BooleanValue(b),
+            VoidVal => UndefinedValue(),
+        }
+    }
+}
+
 
 pub struct NativePropertyHooks {
     
@@ -349,17 +363,9 @@ fn CreateInterfaceObject(cx: *mut JSContext, global: *mut JSObject, receiver: *m
 /// Fails on JSAPI failure.
 fn DefineConstants(cx: *mut JSContext, obj: *mut JSObject, constants: &'static [ConstantSpec]) {
     for spec in constants.iter() {
-        let jsval = match spec.value {
-            NullVal => NullValue(),
-            IntVal(i) => Int32Value(i),
-            UintVal(u) => UInt32Value(u),
-            DoubleVal(d) => DoubleValue(d),
-            BoolVal(b) => BooleanValue(b),
-            VoidVal => UndefinedValue(),
-        };
         unsafe {
             assert!(JS_DefineProperty(cx, obj, spec.name.as_ptr() as *const libc::c_char,
-                                      jsval, None, None,
+                                      spec.get_value(), None, None,
                                       JSPROP_ENUMERATE | JSPROP_READONLY |
                                       JSPROP_PERMANENT) != 0);
         }
