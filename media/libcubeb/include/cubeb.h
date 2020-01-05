@@ -417,7 +417,13 @@ typedef void (* cubeb_log_callback)(char const * fmt, ...);
 
 
 
-CUBEB_EXPORT int cubeb_init(cubeb ** context, char const * context_name);
+
+
+
+
+
+CUBEB_EXPORT int cubeb_init(cubeb ** context, char const * context_name,
+                                              char const * backend_name);
 
 
 

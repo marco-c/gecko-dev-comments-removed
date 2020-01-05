@@ -148,6 +148,41 @@ make_sized_audio_channel_layout(size_t sz)
     return std::unique_ptr<AudioChannelLayout, decltype(&free)>(acl, free);
 }
 
+struct mixing_wrapper {
+  virtual void downmix(void * output_buffer, long output_frames,
+                       cubeb_channel_layout output_layout,
+                       cubeb_channel_layout mixing_layout) = 0;
+  virtual ~mixing_wrapper() {};
+};
+
+template <typename T>
+struct mixing_impl : public mixing_wrapper {
+
+  typedef std::function<void(T * const, long, T *,
+                             unsigned int, unsigned int,
+                             cubeb_channel_layout, cubeb_channel_layout)> downmix_func;
+
+  mixing_impl(downmix_func dmfunc) {
+    downmix_wrapper = dmfunc;
+  }
+
+  ~mixing_impl() {}
+
+  void downmix(void * output_buffer, long output_frames,
+               cubeb_channel_layout output_layout,
+               cubeb_channel_layout mixing_layout) override {
+    uint32_t output_channels = CUBEB_CHANNEL_LAYOUT_MAPS[output_layout].channels;
+    uint32_t using_channels = CUBEB_CHANNEL_LAYOUT_MAPS[mixing_layout].channels;
+    T* out = static_cast<T *>(output_buffer);
+    
+    
+    downmix_wrapper(out, output_frames, out, output_channels, using_channels,
+                    output_layout, mixing_layout);
+  }
+
+  downmix_func downmix_wrapper;
+};
+
 enum io_side {
   INPUT,
   OUTPUT,
@@ -218,6 +253,8 @@ struct cubeb_stream {
   std::atomic<bool> buffer_size_change_state{ false };
   AudioDeviceID aggregate_device_id = 0;    
   AudioObjectID plugin_id = 0;              
+  
+  std::unique_ptr<mixing_wrapper> mixing;
 };
 
 bool has_input(cubeb_stream * stm)
@@ -434,6 +471,29 @@ is_extra_input_needed(cubeb_stream * stm)
          stm->available_input_frames.load() < minimum_resampling_input_frames(stm);
 }
 
+static void
+audiounit_mix_output_buffer(cubeb_stream * stm,
+                            void * output_buffer,
+                            long output_frames)
+{
+  
+  
+  
+
+  cubeb_stream_params mixed_params = {
+    stm->output_stream_params.format,
+    stm->output_stream_params.rate,
+    CUBEB_CHANNEL_LAYOUT_MAPS[stm->context->layout].channels,
+    stm->context->layout
+  };
+
+  
+  if (cubeb_should_downmix(&stm->output_stream_params, &mixed_params)) {
+    stm->mixing->downmix(output_buffer, output_frames,
+                         stm->output_stream_params.layout, mixed_params.layout);
+  }
+}
+
 static OSStatus
 audiounit_output_callback(void * user_ptr,
                           AudioUnitRenderActionFlags * ,
@@ -546,6 +606,10 @@ audiounit_output_callback(void * user_ptr,
       cubeb_pan_stereo_buffer_int((short*)output_buffer, outframes, panning);
     }
   }
+
+  
+  audiounit_mix_output_buffer(stm, output_buffer, output_frames);
+
   return noErr;
 }
 
@@ -1240,6 +1304,16 @@ audio_stream_desc_init(AudioStreamBasicDescription * ss,
   ss->mReserved = 0;
 
   return CUBEB_OK;
+}
+
+void
+audiounit_init_mixed_buffer(cubeb_stream * stm)
+{
+  if (stm->output_desc.mFormatFlags & kAudioFormatFlagIsFloat) {
+    stm->mixing.reset(new mixing_impl<float>(&cubeb_downmix_float));
+  } else { 
+    stm->mixing.reset(new mixing_impl<short>(&cubeb_downmix_short));
+  }
 }
 
 static int
@@ -2218,6 +2292,7 @@ audiounit_configure_output(cubeb_stream * stm)
   }
 
   audiounit_layout_init(stm, OUTPUT);
+  audiounit_init_mixed_buffer(stm);
 
   LOG("(%p) Output audiounit init successfully.", stm);
   return CUBEB_OK;

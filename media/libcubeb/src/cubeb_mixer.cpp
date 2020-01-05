@@ -81,7 +81,7 @@ cubeb_layout_map const CUBEB_CHANNEL_LAYOUT_MAPS[CUBEB_LAYOUT_MAX] = {
 };
 
 static int const CHANNEL_ORDER_TO_INDEX[CUBEB_LAYOUT_MAX][CHANNEL_MAX] = {
- 
+
   { -1, -1, -1, -1,  -1,  -1,   -1,  -1,   -1,  -1 }, 
   { -1,  0,  1, -1,  -1,  -1,   -1,  -1,   -1,  -1 }, 
   { -1,  0,  1, -1,  -1,  -1,   -1,  -1,   -1,   2 }, 
@@ -199,6 +199,53 @@ static float const DOWNMIX_MATRIX_3F2_LFE[SUPPORTED_LAYOUT_NUM][MAX_OUTPUT_CHANN
 };
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 template<typename T>
 bool
 downmix_3f2(T const * const in, unsigned long inframes, T * out, cubeb_channel_layout in_layout, cubeb_channel_layout out_layout)
@@ -214,20 +261,25 @@ downmix_3f2(T const * const in, unsigned long inframes, T * out, cubeb_channel_l
   
   assert(out_channels <= in_channels);
 
-  long out_index = 0;
   auto & downmix_matrix = DOWNMIX_MATRIX_3F2_LFE[out_layout - CUBEB_LAYOUT_MONO]; 
-  for (unsigned long i = 0; i < inframes * in_channels; i += in_channels) {
+  unsigned long out_index = 0;
+  for (unsigned long i = 0 ; i < inframes * in_channels; i += in_channels) {
     for (unsigned int j = 0; j < out_channels; ++j) {
-      out[out_index + j] = 0; 
+      T sample = 0;
       for (unsigned int k = 0 ; k < INPUT_CHANNEL_NUM ; ++k) {
         
         
         
         T data = (in_layout == CUBEB_LAYOUT_3F2_LFE) ? in[i + k] : (k == 3) ? 0 : in[i + ((k < 3) ? k : k - 1)];
-        out[out_index + j] += downmix_matrix[j][k] * data;
+        sample += downmix_matrix[j][k] * data;
       }
+      out[out_index + j] = sample;
     }
+#if defined(USE_AUDIOUNIT)
+    out_index += in_channels;
+#else
     out_index += out_channels;
+#endif
   }
 
   return true;
@@ -238,6 +290,13 @@ template<class T>
 bool
 mix_remap(T const * const in, unsigned long inframes, T * out, cubeb_channel_layout in_layout, cubeb_channel_layout out_layout) {
   assert(in_layout != out_layout);
+
+  
+  
+  if (in == out) {
+    return false;
+  }
+
   unsigned int in_channels = CUBEB_CHANNEL_LAYOUT_MAPS[in_layout].channels;
   unsigned int out_channels = CUBEB_CHANNEL_LAYOUT_MAPS[out_layout].channels;
 
@@ -256,8 +315,7 @@ mix_remap(T const * const in, unsigned long inframes, T * out, cubeb_channel_lay
     return false;
   }
 
-  long out_index = 0;
-  for (unsigned long i = 0; i < inframes * in_channels; i += in_channels) {
+  for (unsigned long i = 0, out_index = 0; i < inframes * in_channels; i += in_channels, out_index += out_channels) {
     for (unsigned int j = 0; j < out_channels; ++j) {
       cubeb_channel channel = CHANNEL_INDEX_TO_ORDER[out_layout][j];
       uint32_t channel_mask = 1 << channel;
@@ -270,7 +328,6 @@ mix_remap(T const * const in, unsigned long inframes, T * out, cubeb_channel_lay
         out[out_index + j] = 0;
       }
     }
-    out_index += out_channels;
   }
 
   return true;
@@ -282,12 +339,15 @@ void
 downmix_fallback(T const * const in, unsigned long inframes, T * out, unsigned int in_channels, unsigned int out_channels)
 {
   assert(in_channels >= out_channels);
-  long out_index = 0;
-  for (unsigned long i = 0; i < inframes * in_channels; i += in_channels) {
+
+  if (in_channels == out_channels && in == out) {
+    return;
+  }
+
+  for (unsigned long i = 0, out_index = 0; i < inframes * in_channels; i += in_channels, out_index += out_channels) {
     for (unsigned int j = 0; j < out_channels; ++j) {
       out[out_index + j] = in[i + j];
     }
-    out_index += out_channels;
   }
 }
 
@@ -307,6 +367,11 @@ cubeb_downmix(T const * const in, long inframes, T * out,
     if (downmix_3f2(in, inframes, out, in_layout, out_layout)) {
       return;
     }
+
+  
+#if defined(USE_AUDIOUNIT)
+  return;
+#endif
 
     if (mix_remap(in, inframes, out, in_layout, out_layout)) {
       return;
@@ -376,13 +441,21 @@ cubeb_should_downmix(cubeb_stream_params const * stream, cubeb_stream_params con
   return mixer->channels < stream->channels ||
          
          mixer->layout == CUBEB_LAYOUT_UNDEFINED ||  
-         (stream->layout == CUBEB_LAYOUT_3F2 &&        
+         (stream->layout == CUBEB_LAYOUT_3F2 &&      
           (mixer->layout == CUBEB_LAYOUT_2F2_LFE ||
            mixer->layout == CUBEB_LAYOUT_3F1_LFE));
 }
 
 void
 cubeb_downmix_float(float * const in, long inframes, float * out,
+                    unsigned int in_channels, unsigned int out_channels,
+                    cubeb_channel_layout in_layout, cubeb_channel_layout out_layout)
+{
+  cubeb_downmix(in, inframes, out, in_channels, out_channels, in_layout, out_layout);
+}
+
+void
+cubeb_downmix_short(short * const in, long inframes, short * out,
                     unsigned int in_channels, unsigned int out_channels,
                     cubeb_channel_layout in_layout, cubeb_channel_layout out_layout)
 {
