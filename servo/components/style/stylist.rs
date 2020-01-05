@@ -624,6 +624,18 @@ impl Stylist {
     }
 }
 
+impl Drop for Stylist {
+    fn drop(&mut self) {
+        
+        
+        
+        
+        
+        
+        unsafe { self.rule_tree.gc(); }
+    }
+}
+
 
 
 
