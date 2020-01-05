@@ -185,3 +185,11 @@ impl<A: ToComputedValue, B: ToComputedValue> ToComputedValue for Either<A, B> {
         }
     }
 }
+
+
+
+define_css_keyword_enum!(ExtremumLength:
+                         "max-content" => MaxContent,
+                         "min-content" => MinContent,
+                         "fit-content" => FitContent,
+                         "fill-available" => FillAvailable);
