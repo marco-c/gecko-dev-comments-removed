@@ -25,7 +25,7 @@ struct User {
 }
 
 
-const FT_ALIGNMENT: usize = 0;
+const FT_ALIGNMENT: usize = 1;
 
 extern fn ft_alloc(mem: FT_Memory, req_size: c_long) -> *mut c_void {
     unsafe {
