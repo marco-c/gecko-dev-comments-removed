@@ -195,7 +195,7 @@ public:
   
   
   
-  virtual RefPtr<MediaRawData> PacketOutAsMediaRawData();
+  virtual already_AddRefed<MediaRawData> PacketOutAsMediaRawData();
 
   
   
