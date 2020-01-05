@@ -27,6 +27,7 @@ class CompositableForwarder;
 class CompositableChild;
 class PCompositableChild;
 class TextureClientRecycleAllocator;
+class ContentClientRemote;
 
 
 
@@ -159,6 +160,8 @@ public:
 
 
   virtual void RemoveTexture(TextureClient* aTexture);
+
+  virtual ContentClientRemote* AsContentClientRemote() { return nullptr; }
 
   static RefPtr<CompositableClient> FromIPDLActor(PCompositableChild* aActor);
 
