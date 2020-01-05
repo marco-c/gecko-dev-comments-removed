@@ -15,7 +15,6 @@ this.EXPORTED_SYMBOLS = [
   "waitForZeroTimer",
   "promiseZeroTimer",
   "promiseNamedTimer",
-  "add_identity_test",
   "MockFxaStorageManager",
   "AccountState", 
   "sumHistogram",
@@ -259,32 +258,6 @@ this.encryptPayload = function encryptPayload(cleartext) {
     IV: "irrelevant",
     hmac: fakeSHA256HMAC(cleartext, CryptoUtils.makeHMACKey("")),
   };
-}
-
-
-
-
-
-
-
-
-
-
-
-this.add_identity_test = function(test, testFunction) {
-  function note(what) {
-    let msg = "running test " + testFunction.name + " with " + what + " identity manager";
-    test.do_print(msg);
-  }
-  let ns = {};
-  Cu.import("resource://services-sync/service.js", ns);
-  test.add_task(async function() {
-    note("FxAccounts");
-    let oldIdentity = Status._authManager;
-    Status.__authManager = ns.Service.identity = new BrowserIDManager();
-    await testFunction();
-    Status.__authManager = ns.Service.identity = oldIdentity;
-  });
 }
 
 this.sumHistogram = function(name, options = {}) {
