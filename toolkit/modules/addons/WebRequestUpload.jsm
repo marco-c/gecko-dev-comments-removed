@@ -15,207 +15,309 @@ const Cr = Components.results;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
+const {
+  DefaultMap,
+} = ExtensionUtils;
+
+const BinaryInputStream = Components.Constructor(
+  "@mozilla.org/binaryinputstream;1", "nsIBinaryInputStream",
+  "setInputStream");
+const ConverterInputStream = Components.Constructor(
+  "@mozilla.org/intl/converter-input-stream;1", "nsIConverterInputStream",
+  "init");
+
 var WebRequestUpload;
 
+
+
+
+
+
+
+
+
+function mapToObject(map) {
+  let result = {};
+  for (let [key, value] of map) {
+    result[key] = value;
+  }
+  return result;
+}
+
+
+
+
+
+
+
+
 function rewind(stream) {
+  
+  
+  stream.QueryInterface(Ci.nsISeekableStream);
+
   try {
-    if (stream instanceof Ci.nsISeekableStream) {
-      stream.seek(0, 0);
-    }
+    stream.seek(0, 0);
   } catch (e) {
     
+    Cu.reportError(e);
   }
 }
 
+
+
+
+
+
+
+
+function* getStreams(outerStream) {
+  
+  
+  
+  let unbuffered = outerStream;
+  if (outerStream instanceof Ci.nsIStreamBufferAccess) {
+    unbuffered = outerStream.unbufferedStream;
+  }
+
+  if (unbuffered instanceof Ci.nsIMultiplexInputStream) {
+    let count = unbuffered.count;
+    for (let i = 0; i < count; i++) {
+      yield unbuffered.getStream(i);
+    }
+  } else {
+    yield outerStream;
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 function parseFormData(stream, channel, lenient = false) {
-  const BUFFER_SIZE = 8192; 
-
-  let mimeStream = null;
-
-  if (stream instanceof Ci.nsIMIMEInputStream && stream.data) {
-    mimeStream = stream;
-    stream = stream.data;
-  }
-  let multiplexStream = null;
-  if (stream instanceof Ci.nsIMultiplexInputStream) {
-    multiplexStream = stream;
-  }
+  const BUFFER_SIZE = 8192;
 
   let touchedStreams = new Set();
 
+  
+
+
+
+
+
+
+
+
+
+
   function createTextStream(stream) {
-    let textStream = Cc["@mozilla.org/intl/converter-input-stream;1"].createInstance(Ci.nsIConverterInputStream);
-    textStream.init(stream, "UTF-8", 0, lenient ? textStream.DEFAULT_REPLACEMENT_CHARACTER : 0);
-    if (stream instanceof Ci.nsISeekableStream) {
-      touchedStreams.add(stream);
+    if (!(stream instanceof Ci.nsISeekableStream)) {
+      return null;
     }
-    return textStream;
+
+    touchedStreams.add(stream);
+    return ConverterInputStream(
+      stream, "UTF-8", 0,
+      lenient ? Ci.nsIConverterInputStream.DEFAULT_REPLACEMENT_CHARACTER
+              : 0);
   }
 
-  let streamIdx = 0;
-  function nextTextStream() {
-    for (; streamIdx < multiplexStream.count;) {
-      let currentStream = multiplexStream.getStream(streamIdx++);
-      if (currentStream instanceof Ci.nsIStringInputStream) {
-        touchedStreams.add(multiplexStream);
-        return createTextStream(currentStream);
+  
+
+
+
+
+
+
+
+
+
+  function readString(stream, length = BUFFER_SIZE) {
+    let data = {};
+    stream.readString(length, data);
+    return data.value;
+  }
+
+  
+
+
+
+
+
+
+
+  function* getTextStreams(outerStream) {
+    for (let stream of getStreams(outerStream)) {
+      if (stream instanceof Ci.nsIStringInputStream) {
+        touchedStreams.add(outerStream);
+        yield createTextStream(stream);
       }
     }
-    return null;
   }
 
-  let textStream;
-  if (multiplexStream) {
-    textStream = nextTextStream();
-  } else {
-    textStream = createTextStream(mimeStream || stream);
-  }
+  
 
-  if (!textStream) {
-    return null;
-  }
 
-  function readString() {
-    if (textStream) {
-      let textBuffer = {};
-      textStream.readString(BUFFER_SIZE, textBuffer);
-      return textBuffer.value;
-    }
-    return "";
-  }
 
-  function multiplexRead() {
-    let str = readString();
-    if (!str) {
-      textStream = nextTextStream();
-      if (textStream) {
-        str = multiplexRead();
+
+
+
+
+  function* readAllStrings(outerStream) {
+    for (let textStream of getTextStreams(outerStream)) {
+      let str;
+      while ((str = readString(textStream))) {
+        yield str;
       }
     }
-    return str;
   }
 
-  let readChunk;
-  if (multiplexStream) {
-    readChunk = multiplexRead;
-  } else {
-    readChunk = readString;
-  }
+  
 
-  function appendFormData(formData, name, value) {
-    if (name in formData) {
-      formData[name].push(value);
-    } else {
-      formData[name] = [value];
+
+
+
+
+
+
+
+
+
+
+  function* getParts(stream, boundary, tail = "") {
+    for (let chunk of readAllStrings(stream)) {
+      chunk = tail + chunk;
+
+      let parts = chunk.split(boundary);
+      tail = parts.pop();
+
+      yield* parts;
+    }
+
+    if (tail) {
+      yield tail;
     }
   }
 
-  function parseMultiPart(firstChunk, boundary = "") {
-    let formData = Object.create(null);
+  
 
-    if (!boundary) {
-      let match = firstChunk.match(/^--\S+/);
+
+
+
+
+
+
+
+  function parseMultiPart(stream, boundary) {
+    let formData = new DefaultMap(() => []);
+
+    let unslash = str => str.replace(/\\"/g, '"');
+
+    for (let part of getParts(stream, boundary, "\r\n")) {
+      if (part === "--\r\n") {
+        break;
+      }
+
+      let match = part.match(/^\r\nContent-Disposition: form-data; name="(.*)"\r\n(?:Content-Type: (\S+))?.*\r\n/i);
       if (!match) {
-        return null;
+        continue;
       }
-      boundary = match[0];
-    }
 
-    let unslash = (s) => s.replace(/\\"/g, '"');
-    let tail = "";
-    for (let chunk = firstChunk;
-         chunk || tail;
-         chunk = readChunk()) {
-      let parts;
-      if (chunk) {
-        chunk = tail + chunk;
-        parts = chunk.split(boundary);
-        tail = parts.pop();
+      let [header, name, contentType] = match;
+      let value = "";
+      if (contentType) {
+        let fileName;
+        
+        
+        
+        
+        
+        match = name.match(/^(.*[^\\])"; filename="(.*)/);
+        if (match) {
+          [, name, fileName] = match;
+        }
+
+        if (fileName) {
+          value = unslash(fileName);
+        }
       } else {
-        parts = [tail];
-        tail = "";
+        value = part.slice(header.length);
       }
 
-      for (let part of parts) {
-        let match = part.match(/^\r\nContent-Disposition: form-data; name="(.*)"\r\n(?:Content-Type: (\S+))?.*\r\n/i);
-        if (!match) {
-          continue;
-        }
-        let [header, name, contentType] = match;
-        if (contentType) {
-          let fileName;
-          
-          
-          
-          
-          
-          match = name.match(/^(.*[^\\])"; filename="(.*)/);
-          if (match) {
-            [, name, fileName] = match;
-          }
-          appendFormData(formData, unslash(name), fileName ? unslash(fileName) : "");
-        } else {
-          appendFormData(formData, unslash(name), part.slice(header.length, -2));
-        }
-      }
+      formData.get(unslash(name)).push(value);
     }
 
     return formData;
   }
 
-  function parseUrlEncoded(firstChunk) {
-    let formData = Object.create(null);
+  
 
-    let tail = "";
-    for (let chunk = firstChunk;
-         chunk || tail;
-         chunk = readChunk()) {
-      let pairs;
-      if (chunk) {
-        chunk = tail + chunk.trim();
-        pairs = chunk.split("&");
-        tail = pairs.pop();
-      } else {
-        chunk = tail;
-        tail = "";
-        pairs = [chunk];
-      }
-      for (let pair of pairs) {
-        let [name, value] = pair.replace(/\+/g, " ").split("=").map(decodeURIComponent);
-        appendFormData(formData, name, value);
-      }
+
+
+
+
+
+  function parseUrlEncoded(stream) {
+    let formData = new DefaultMap(() => []);
+
+    for (let part of getParts(stream, "&")) {
+      let [name, value] = part.replace(/\+/g, " ").split("=").map(decodeURIComponent);
+      formData.get(name).push(value);
     }
 
     return formData;
   }
 
   try {
-    let chunk = readChunk();
+    let headers;
+    if (stream instanceof Ci.nsIMIMEInputStream && stream.data) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
 
-    if (multiplexStream) {
-      touchedStreams.add(multiplexStream);
-      return parseMultiPart(chunk);
+      headers = readString(createTextStream(stream),
+                           stream.available() - stream.data.available());
+
+      rewind(stream);
+      stream = stream.data;
     }
+
     let contentType;
-    if (/^Content-Type:/i.test(chunk)) {
-      contentType = chunk.replace(/^Content-Type:\s*/i, "");
-      chunk = chunk.slice(chunk.indexOf("\r\n\r\n") + 4);
-    } else {
-      try {
-        contentType = channel.getRequestHeader("Content-Type");
-      } catch (e) {
-        Cu.reportError(e);
-        return null;
-      }
+    try {
+      contentType = channel.getRequestHeader("Content-Type");
+    } catch (e) {
+      let match = /^Content-Type:\s+(.+)/i.exec(headers);
+      contentType = match && match[1];
     }
 
-    let match = contentType.match(/^(?:multipart\/form-data;\s*boundary=(\S*)|application\/x-www-form-urlencoded\s)/i);
+    let match = /^(?:multipart\/form-data;\s*boundary=(\S*)|(application\/x-www-form-urlencoded))/i.exec(contentType);
     if (match) {
       let boundary = match[1];
       if (boundary) {
-        return parseMultiPart(chunk, boundary);
+        return parseMultiPart(stream, `\r\n--${boundary}`);
       }
-      return parseUrlEncoded(chunk);
+
+      if (match[2]) {
+        return parseUrlEncoded(stream);
+      }
     }
   } finally {
     for (let stream of touchedStreams) {
@@ -226,10 +328,31 @@ function parseFormData(stream, channel, lenient = false) {
   return null;
 }
 
-function createFormData(stream, channel) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function createFormData(stream, channel, lenient) {
+  if (!(stream instanceof Ci.nsISeekableStream)) {
+    return null;
+  }
+
   try {
-    rewind(stream);
-    return parseFormData(stream, channel);
+    let formData = parseFormData(stream, channel, lenient);
+    if (formData) {
+      return mapToObject(formData);
+    }
   } catch (e) {
     Cu.reportError(e);
   } finally {
@@ -238,84 +361,89 @@ function createFormData(stream, channel) {
   return null;
 }
 
-function convertRawData(outerStream) {
-  let raw = [];
-  let totalBytes = 0;
 
-  
-  function readAll(stream) {
-    let unbuffered = stream.unbufferedStream || stream;
-    if (unbuffered instanceof Ci.nsIFileInputStream) {
-      raw.push({file: "<file>"}); 
-      return true;
+
+
+
+
+
+
+
+
+
+function* getRawDataChunked(outerStream, maxRead = WebRequestUpload.MAX_RAW_BYTES) {
+  for (let stream of getStreams(outerStream)) {
+    
+    
+    
+    let unbuffered = stream;
+    if (stream instanceof Ci.nsIStreamBufferAccess) {
+      unbuffered = stream.unbufferedStream;
     }
-    rewind(stream);
 
-    let binaryStream = Cc["@mozilla.org/binaryinputstream;1"].createInstance(Ci.nsIBinaryInputStream);
-    binaryStream.setInputStream(stream);
-    const MAX_BYTES = WebRequestUpload.MAX_RAW_BYTES;
+    
+    
+    if (unbuffered instanceof Ci.nsIFileInputStream) {
+      
+      yield {file: "<file>"};
+      continue;
+    }
+
     try {
-      for (let available; (available = binaryStream.available());) {
-        let size = Math.min(MAX_BYTES - totalBytes, available);
-        let bytes = new ArrayBuffer(size);
-        binaryStream.readArrayBuffer(size, bytes);
-        let chunk = {bytes};
-        raw.push(chunk);
-        totalBytes += size;
+      let binaryStream = BinaryInputStream(stream);
+      let available;
+      while ((available = binaryStream.available())) {
+        let buffer = new ArrayBuffer(Math.min(maxRead, available));
+        binaryStream.readArrayBuffer(buffer.byteLength, buffer);
 
-        if (totalBytes >= MAX_BYTES) {
-          if (size < available) {
-            chunk.truncated = true;
-            chunk.originalSize = available;
-            return false;
-          }
-          break;
+        maxRead -= buffer.byteLength;
+
+        let chunk = {bytes: buffer};
+
+        if (buffer.byteLength < available) {
+          chunk.truncated = true;
+          chunk.originalSize = available;
+        }
+
+        yield chunk;
+
+        if (maxRead <= 0) {
+          return;
         }
       }
     } finally {
       rewind(stream);
     }
-    return true;
   }
-
-  let unbuffered = outerStream;
-  if (outerStream instanceof Ci.nsIStreamBufferAccess) {
-    unbuffered = outerStream.unbufferedStream;
-  }
-
-  if (unbuffered instanceof Ci.nsIMultiplexInputStream) {
-    for (let i = 0, count = unbuffered.count; i < count; i++) {
-      if (!readAll(unbuffered.getStream(i))) {
-        break;
-      }
-    }
-  } else {
-    readAll(outerStream);
-  }
-
-  return raw;
 }
 
 WebRequestUpload = {
   createRequestBody(channel) {
-    let requestBody = null;
     if (channel instanceof Ci.nsIUploadChannel && channel.uploadStream) {
       try {
-        let stream = channel.uploadStream.QueryInterface(Ci.nsISeekableStream);
+        let stream = channel.uploadStream;
+
         let formData = createFormData(stream, channel);
         if (formData) {
-          requestBody = {formData};
-        } else {
-          requestBody = {raw: convertRawData(stream), lenientFormData: createFormData(stream, channel, true)};
+          return {formData};
         }
+
+        
+        
+        
+        return {
+          raw: Array.from(getRawDataChunked(stream)),
+          lenientFormData: createFormData(stream, channel, true),
+        };
       } catch (e) {
         Cu.reportError(e);
-        requestBody = {error: e.message || String(e)};
+        return {error: e.message || String(e)};
       }
-      requestBody = Object.freeze(requestBody);
     }
-    return requestBody;
+
+    return null;
   },
 };
 
-XPCOMUtils.defineLazyPreferenceGetter(WebRequestUpload, "MAX_RAW_BYTES", "webextensions.webRequest.requestBodyMaxRawBytes");
+XPCOMUtils.defineLazyPreferenceGetter(WebRequestUpload, "MAX_RAW_BYTES",
+                                      "webextensions.webRequest.requestBodyMaxRawBytes");
