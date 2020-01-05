@@ -19,6 +19,7 @@
 #include "mozilla/widget/WidgetMessageUtils.h"
 
 #include "gfxPlatform.h"
+#include "gfxPrefs.h"
 #include "qcms.h"
 
 #ifdef DEBUG
@@ -820,21 +821,25 @@ nsXPLookAndFeel::GetColorImpl(ColorID aID, bool aUseStandinsForNativeColors,
   }
 
   if (sUseNativeColors && NS_SUCCEEDED(NativeGetColor(aID, aResult))) {
-    if ((gfxPlatform::GetCMSMode() == eCMSMode_All) &&
-         !IsSpecialColor(aID, aResult)) {
-      qcms_transform *transform = gfxPlatform::GetCMSInverseRGBTransform();
-      if (transform) {
-        uint8_t color[3];
-        color[0] = NS_GET_R(aResult);
-        color[1] = NS_GET_G(aResult);
-        color[2] = NS_GET_B(aResult);
-        qcms_transform_data(transform, color, color, 1);
-        aResult = NS_RGB(color[0], color[1], color[2]);
-      }
-    }
-
     if (!mozilla::ServoStyleSet::IsInServoTraversal()) {
       MOZ_ASSERT(NS_IsMainThread());
+      
+      
+      
+      gfxPrefs::GetSingleton();
+      if ((gfxPlatform::GetCMSMode() == eCMSMode_All) &&
+           !IsSpecialColor(aID, aResult)) {
+        qcms_transform *transform = gfxPlatform::GetCMSInverseRGBTransform();
+        if (transform) {
+          uint8_t color[3];
+          color[0] = NS_GET_R(aResult);
+          color[1] = NS_GET_G(aResult);
+          color[2] = NS_GET_B(aResult);
+          qcms_transform_data(transform, color, color, 1);
+          aResult = NS_RGB(color[0], color[1], color[2]);
+        }
+      }
+
       CACHE_COLOR(aID, aResult);
     }
     return NS_OK;
