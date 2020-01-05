@@ -62,7 +62,7 @@ class GamepadManager final : public nsIObserver,
   
   
   void NewButtonEvent(uint32_t aIndex, GamepadServiceType aServiceType, uint32_t aButton,
-                      bool aPressed, double aValue);
+                      bool aPressed, bool aTouched, double aValue);
 
   
   
