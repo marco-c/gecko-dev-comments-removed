@@ -27,7 +27,8 @@ class GroupRule;
 
 #define DECL_STYLE_RULE_INHERIT                            \
   DECL_STYLE_RULE_INHERIT_NO_DOMRULE                       \
-  virtual nsIDOMCSSRule* GetDOMRule() override;
+  virtual nsIDOMCSSRule* GetDOMRule() override;        \
+  virtual nsIDOMCSSRule* GetExistingDOMRule() override;
 
 class Rule : public nsISupports {
 protected:
@@ -114,6 +115,9 @@ public:
   
   
   virtual nsIDOMCSSRule* GetDOMRule() = 0;
+
+  
+  virtual nsIDOMCSSRule* GetExistingDOMRule() = 0;
 
   
   nsresult GetParentRule(nsIDOMCSSRule** aParentRule);
