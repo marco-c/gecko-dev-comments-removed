@@ -4,7 +4,6 @@
 
 "use strict";
 
-const { Cu } = require("chrome");
 const { extend } = require("sdk/core/heritage");
 const { AutoRefreshHighlighter } = require("./auto-refresh");
 const {
@@ -46,11 +45,7 @@ const GRID_GAP_PATTERN_STROKE_STYLE = "#9370DB";
 
 
 
-const gCachedGridPattern = new WeakMap();
-
-const ROW_KEY = {};
-
-const COLUMN_KEY = {};
+const gCachedGridPattern = new Map();
 
 
 
@@ -98,9 +93,6 @@ function CssGridHighlighter(highlighterEnv) {
 
   this.markup = new CanvasFrameAnonymousContentHelper(this.highlighterEnv,
     this._buildMarkup.bind(this));
-
-  this.onNavigate = this.onNavigate.bind(this);
-  this.highlighterEnv.on("navigate", this.onNavigate);
 }
 
 CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
@@ -211,9 +203,9 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
   },
 
   destroy() {
-    this.highlighterEnv.off("navigate", this.onNavigate);
-    this.markup.destroy();
     AutoRefreshHighlighter.prototype.destroy.call(this);
+    this.markup.destroy();
+    gCachedGridPattern.clear();
   },
 
   getElement(id) {
@@ -235,10 +227,9 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-
-  getGridGapPattern(dimension) {
-    if (gCachedGridPattern.has(dimension)) {
-      return gCachedGridPattern.get(dimension);
+  getGridGapPattern(dimensionType) {
+    if (gCachedGridPattern.has(dimensionType)) {
+      return gCachedGridPattern.get(dimensionType);
     }
 
     
@@ -251,7 +242,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     ctx.beginPath();
     ctx.translate(.5, .5);
 
-    if (dimension === COLUMN_KEY) {
+    if (dimensionType === COLUMNS) {
       ctx.moveTo(0, 0);
       ctx.lineTo(GRID_GAP_PATTERN_WIDTH, GRID_GAP_PATTERN_HEIGHT);
     } else {
@@ -263,17 +254,8 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     ctx.stroke();
 
     let pattern = ctx.createPattern(canvas, "repeat");
-    gCachedGridPattern.set(dimension, pattern);
+    gCachedGridPattern.set(dimensionType, pattern);
     return pattern;
-  },
-
-  
-
-
-
-  onNavigate() {
-    gCachedGridPattern.delete(ROW_KEY);
-    gCachedGridPattern.delete(COLUMN_KEY);
   },
 
   _show() {
@@ -620,12 +602,11 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   renderGridGap(linePos, startPos, endPos, breadth, dimensionType) {
     this.ctx.save();
+    this.ctx.fillStyle = this.getGridGapPattern(dimensionType);
 
     if (dimensionType === COLUMNS) {
-      this.ctx.fillStyle = this.getGridGapPattern(COLUMN_KEY);
       this.ctx.fillRect(linePos, startPos, breadth, endPos - startPos);
     } else {
-      this.ctx.fillStyle = this.getGridGapPattern(ROW_KEY);
       this.ctx.fillRect(startPos, linePos, endPos - startPos, breadth);
     }
 
@@ -729,10 +710,6 @@ exports.CssGridHighlighter = CssGridHighlighter;
 
 
 function stringifyGridFragments(fragments = []) {
-  if (fragments[0] && Cu.isDeadWrapper(fragments[0])) {
-    return {};
-  }
-
   return JSON.stringify(fragments.map(getStringifiableFragment));
 }
 
