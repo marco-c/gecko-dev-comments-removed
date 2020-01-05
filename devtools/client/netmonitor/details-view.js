@@ -24,12 +24,12 @@ const {
   getFormDataSections,
   getUrlBaseName,
   getUrlQuery,
-  getUrlHost,
   parseQueryString,
 } = require("./request-utils");
 const { createFactory } = require("devtools/client/shared/vendor/react");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const Provider = createFactory(require("devtools/client/shared/vendor/react-redux").Provider);
+const SecurityPanel = createFactory(require("./shared/components/security-panel"));
 const TimingsPanel = createFactory(require("./shared/components/timings-panel"));
 
 
@@ -93,6 +93,13 @@ DetailsView.prototype = {
   initialize: function (store) {
     dumpn("Initializing the DetailsView");
 
+    this._securityPanelNode = $("#react-security-tabpanel-hook");
+
+    ReactDOM.render(Provider(
+      { store },
+      SecurityPanel()
+    ), this._securityPanelNode);
+
     this._timingsPanelNode = $("#react-timings-tabpanel-hook");
 
     ReactDOM.render(Provider(
@@ -145,6 +152,7 @@ DetailsView.prototype = {
 
   destroy: function () {
     dumpn("Destroying the DetailsView");
+    ReactDOM.unmountComponentAtNode(this._securityPanelNode);
     ReactDOM.unmountComponentAtNode(this._timingsPanelNode);
     this.sidebar.destroy();
     $("tabpanels", this.widget).removeEventListener("select",
@@ -254,10 +262,6 @@ DetailsView.prototype = {
         
         case 3:
           yield view._setResponseBody(src.url, src.responseContent);
-          break;
-        
-        case 5:
-          yield view._setSecurityInfo(src.securityInfo, src.url);
           break;
         
         case 6:
@@ -715,112 +719,6 @@ DetailsView.prototype = {
 
     window.emit(EVENTS.RESPONSE_HTML_PREVIEW_DISPLAYED);
     return undefined;
-  }),
-
-  
-
-
-
-
-
-
-
-
-
-  _setSecurityInfo: Task.async(function* (securityInfo, url) {
-    if (!securityInfo) {
-      
-      
-      
-      
-      
-      
-      return;
-    }
-
-    
-
-
-
-
-
-
-
-
-
-    function setValue(selector, value) {
-      let label = $(selector);
-      if (!value) {
-        label.setAttribute("value", L10N.getStr(
-          "netmonitor.security.notAvailable"));
-        label.setAttribute("tooltiptext", label.getAttribute("value"));
-      } else {
-        label.setAttribute("value", value);
-        label.setAttribute("tooltiptext", value);
-      }
-    }
-
-    let errorbox = $("#security-error");
-    let infobox = $("#security-information");
-
-    if (securityInfo.state === "secure" || securityInfo.state === "weak") {
-      infobox.hidden = false;
-      errorbox.hidden = true;
-
-      
-      let cipher = $("#security-warning-cipher");
-
-      if (securityInfo.state === "weak") {
-        cipher.hidden = securityInfo.weaknessReasons.indexOf("cipher") === -1;
-      } else {
-        cipher.hidden = true;
-      }
-
-      let enabledLabel = L10N.getStr("netmonitor.security.enabled");
-      let disabledLabel = L10N.getStr("netmonitor.security.disabled");
-
-      
-      setValue("#security-protocol-version-value",
-        securityInfo.protocolVersion);
-      setValue("#security-ciphersuite-value", securityInfo.cipherSuite);
-
-      
-      let domain = getUrlHost(url);
-      let hostHeader = L10N.getFormatStr("netmonitor.security.hostHeader",
-        domain);
-      setValue("#security-info-host-header", hostHeader);
-
-      
-      setValue("#security-http-strict-transport-security-value",
-                securityInfo.hsts ? enabledLabel : disabledLabel);
-
-      setValue("#security-public-key-pinning-value",
-                securityInfo.hpkp ? enabledLabel : disabledLabel);
-
-      
-      let cert = securityInfo.cert;
-      setValue("#security-cert-subject-cn", cert.subject.commonName);
-      setValue("#security-cert-subject-o", cert.subject.organization);
-      setValue("#security-cert-subject-ou", cert.subject.organizationalUnit);
-
-      setValue("#security-cert-issuer-cn", cert.issuer.commonName);
-      setValue("#security-cert-issuer-o", cert.issuer.organization);
-      setValue("#security-cert-issuer-ou", cert.issuer.organizationalUnit);
-
-      setValue("#security-cert-validity-begins", cert.validity.start);
-      setValue("#security-cert-validity-expires", cert.validity.end);
-
-      setValue("#security-cert-sha1-fingerprint", cert.fingerprint.sha1);
-      setValue("#security-cert-sha256-fingerprint", cert.fingerprint.sha256);
-    } else {
-      infobox.hidden = true;
-      errorbox.hidden = false;
-
-      
-      let plain = new DOMParser().parseFromString(securityInfo.errorMessage,
-        "text/html");
-      setValue("#security-error-message", plain.body.textContent);
-    }
   }),
 
   _dataSrc: null,

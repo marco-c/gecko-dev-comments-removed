@@ -98,6 +98,8 @@ define(function (require, exports, module) {
       
       header: PropTypes.bool,
       
+      expandableStrings: PropTypes.bool,
+      
       columns: PropTypes.arrayOf(PropTypes.shape({
         id: PropTypes.string.isRequired,
         title: PropTypes.string,
@@ -111,6 +113,7 @@ define(function (require, exports, module) {
         renderRow: null,
         provider: ObjectProvider,
         expandedNodes: new Set(),
+        expandableStrings: true,
         columns: []
       };
     },
@@ -179,7 +182,7 @@ define(function (require, exports, module) {
         return [];
       }
 
-      let provider = this.props.provider;
+      let { expandableStrings, provider } = this.props;
       let children = provider.getChildren(parent) || [];
 
       
@@ -201,7 +204,7 @@ define(function (require, exports, module) {
         
         let value = provider.getValue(child);
 
-        if (isLongString(value)) {
+        if (expandableStrings && isLongString(value)) {
           hasChildren = true;
         }
 
