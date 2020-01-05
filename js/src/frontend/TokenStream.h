@@ -489,10 +489,9 @@ class MOZ_STACK_CLASS TokenStream
         bool sawOctalEscape:1;  
         bool hadError:1;        
                                 
-        bool hitOOM:1;          
 
         Flags()
-          : isEOF(), isDirtyLine(), sawOctalEscape(), hadError(), hitOOM()
+          : isEOF(), isDirtyLine(), sawOctalEscape(), hadError()
         {}
     };
 
@@ -1019,7 +1018,7 @@ class MOZ_STACK_CLASS TokenStream
         }
     }
 
-    void updateLineInfoForEOL();
+    MOZ_MUST_USE MOZ_ALWAYS_INLINE bool updateLineInfoForEOL();
     void updateFlagsForEOL();
 
     const Token& nextToken() const {
