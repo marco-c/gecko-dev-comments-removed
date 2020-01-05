@@ -8,11 +8,12 @@
 
 use css::matching::{ApplicableDeclarationsCache, StyleSharingCandidateCache};
 
+use canvas_traits::CanvasMsg;
+use msg::compositor_msg::LayerId;
 use geom::{Rect, Size2D};
 use gfx::display_list::OpaqueNode;
 use gfx::font_cache_task::FontCacheTask;
 use gfx::font_context::FontContext;
-use msg::compositor_msg::LayerId;
 use msg::constellation_msg::ConstellationChan;
 use net_traits::image::base::Image;
 use net_traits::image_cache_task::{ImageCacheChan, ImageCacheTask, ImageState};
@@ -22,7 +23,7 @@ use std::cell::Cell;
 use std::collections::HashMap;
 use std::collections::hash_state::DefaultState;
 use std::ptr;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::sync::mpsc::{channel, Sender};
 use style::selector_matching::Stylist;
 use url::Url;
@@ -102,6 +103,9 @@ pub struct SharedLayoutContext {
     
     
     pub new_animations_sender: Sender<Animation>,
+
+    
+    pub canvas_layers_sender: Sender<(LayerId, Option<Arc<Mutex<Sender<CanvasMsg>>>>)>,
 
     
     pub visible_rects: Arc<HashMap<LayerId, Rect<Au>, DefaultState<FnvHasher>>>,

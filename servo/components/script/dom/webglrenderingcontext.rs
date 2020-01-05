@@ -3,7 +3,7 @@
 
 
 use canvas::webgl_paint_task::WebGLPaintTask;
-use canvas::canvas_msg::{CanvasMsg, CanvasWebGLMsg, CanvasCommonMsg};
+use canvas_traits::{CanvasMsg, CanvasWebGLMsg, CanvasCommonMsg};
 use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding;
 use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::{ WebGLRenderingContextMethods, WebGLRenderingContextConstants};
 use dom::bindings::global::{GlobalRef, GlobalField};

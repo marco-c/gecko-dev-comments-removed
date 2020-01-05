@@ -2,7 +2,7 @@
 
 
 
-use canvas::canvas_msg::CanvasMsg;
+use canvas_traits::CanvasMsg;
 use dom::attr::Attr;
 use dom::attr::AttrHelpers;
 use dom::bindings::codegen::Bindings::HTMLCanvasElementBinding;

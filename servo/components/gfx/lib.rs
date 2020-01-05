@@ -38,6 +38,9 @@ extern crate skia;
 extern crate time;
 extern crate url;
 
+extern crate gfx_traits;
+extern crate canvas_traits;
+
 
 
 extern crate harfbuzz;
@@ -59,8 +62,6 @@ pub use paint_context::PaintContext;
 
 mod paint_context;
 
-
-pub mod color;
 #[path="display_list/mod.rs"]
 pub mod display_list;
 pub mod paint_task;

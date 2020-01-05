@@ -1,0 +1,9 @@
+
+
+
+
+#![crate_name = "gfx_traits"]
+#![crate_type = "rlib"]
+extern crate azure;
+
+pub mod color;

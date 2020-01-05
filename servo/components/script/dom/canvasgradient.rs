@@ -3,7 +3,7 @@
 
 
 use cssparser::RGBA;
-use canvas::canvas_paint_task::{CanvasGradientStop, FillOrStrokeStyle, LinearGradientStyle, RadialGradientStyle};
+use canvas_traits::{CanvasGradientStop, FillOrStrokeStyle, LinearGradientStyle, RadialGradientStyle};
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::CanvasGradientBinding;
 use dom::bindings::codegen::Bindings::CanvasGradientBinding::CanvasGradientMethods;
