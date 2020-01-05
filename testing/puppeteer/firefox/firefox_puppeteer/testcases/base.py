@@ -87,9 +87,6 @@ class BaseFirefoxTestCase(unittest.TestCase, Puppeteer):
             self.marionette.restart(in_app=True)
 
         
-        self.marionette.set_context('chrome')
-
-        
         self.browser = self.windows.switch_to(lambda win: type(win) is BrowserWindow)
 
     def setUp(self, *args, **kwargs):
