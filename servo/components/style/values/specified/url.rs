@@ -101,7 +101,7 @@ impl SpecifiedUrl {
                 
                 
                 
-                println!("stylo: skipping declaration without ParserContextExtraData");
+                warn!("stylo: skipping declaration without ParserContextExtraData");
                 return Err(())
             },
         };
