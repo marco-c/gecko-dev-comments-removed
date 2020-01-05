@@ -71,7 +71,7 @@ protected:
   friend class nsDisplayXULTextBox;
   
   
-  bool UpdateAccesskey(AutoWeakFrame& aWeakThis);
+  bool UpdateAccesskey(WeakFrame& aWeakThis);
   void UpdateAccessTitle();
   void UpdateAccessIndex();
 

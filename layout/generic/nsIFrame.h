@@ -3828,16 +3828,23 @@ public:
 
 
 
-class AutoWeakFrame {
+class WeakFrame;
+class AutoWeakFrame
+{
 public:
-  AutoWeakFrame() : mPrev(nullptr), mFrame(nullptr) { }
+  explicit AutoWeakFrame()
+    : mPrev(nullptr), mFrame(nullptr) {}
 
-  AutoWeakFrame(const AutoWeakFrame& aOther) : mPrev(nullptr), mFrame(nullptr)
+  AutoWeakFrame(const AutoWeakFrame& aOther)
+    : mPrev(nullptr), mFrame(nullptr)
   {
     Init(aOther.GetFrame());
   }
 
-  MOZ_IMPLICIT AutoWeakFrame(nsIFrame* aFrame) : mPrev(nullptr), mFrame(nullptr)
+  MOZ_IMPLICIT AutoWeakFrame(const WeakFrame& aOther);
+
+  MOZ_IMPLICIT AutoWeakFrame(nsIFrame* aFrame)
+    : mPrev(nullptr), mFrame(nullptr)
   {
     Init(aFrame);
   }
@@ -3864,7 +3871,7 @@ public:
 
   void Clear(nsIPresShell* aShell) {
     if (aShell) {
-      aShell->RemoveWeakFrame(this);
+      aShell->RemoveAutoWeakFrame(this);
     }
     mFrame = nullptr;
     mPrev = nullptr;
@@ -3883,10 +3890,73 @@ public:
     Clear(mFrame ? mFrame->PresContext()->GetPresShell() : nullptr);
   }
 private:
+  
+  void* operator new(size_t) = delete;
+  void* operator new[](size_t) = delete;
+  void operator delete(void*) = delete;
+  void operator delete[](void*) = delete;
+
   void Init(nsIFrame* aFrame);
 
   AutoWeakFrame*  mPrev;
-  nsIFrame*     mFrame;
+  nsIFrame*       mFrame;
+};
+
+
+
+
+class WeakFrame
+{
+public:
+  WeakFrame() : mFrame(nullptr) {}
+
+  WeakFrame(const WeakFrame& aOther) : mFrame(nullptr)
+  {
+    Init(aOther.GetFrame());
+  }
+
+  MOZ_IMPLICIT WeakFrame(const AutoWeakFrame& aOther) : mFrame(nullptr)
+  {
+    Init(aOther.GetFrame());
+  }
+
+  MOZ_IMPLICIT WeakFrame(nsIFrame* aFrame) : mFrame(nullptr)
+  {
+    Init(aFrame);
+  }
+
+  ~WeakFrame()
+  {
+    Clear(mFrame ? mFrame->PresContext()->GetPresShell() : nullptr);
+  }
+
+  WeakFrame& operator=(WeakFrame& aOther) {
+    Init(aOther.GetFrame());
+    return *this;
+  }
+
+  WeakFrame& operator=(nsIFrame* aFrame) {
+    Init(aFrame);
+    return *this;
+  }
+
+  nsIFrame* operator->() { return mFrame; }
+  operator nsIFrame*() { return mFrame; }
+
+  void Clear(nsIPresShell* aShell) {
+    if (aShell) {
+      aShell->RemoveWeakFrame(this);
+    }
+    mFrame = nullptr;
+  }
+
+  bool IsAlive() { return !!mFrame; }
+  nsIFrame* GetFrame() const { return mFrame; }
+
+private:
+  void Init(nsIFrame* aFrame);
+
+  nsIFrame* mFrame;
 };
 
 inline bool

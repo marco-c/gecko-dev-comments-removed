@@ -121,7 +121,7 @@ protected:
 
 private:
   
-  AutoWeakFrame mCurrCtrlFrame;
+  WeakFrame mCurrCtrlFrame;
   int32_t mCaretOffset;
   HyperTextAccessible* mAccWithCaret;
 };

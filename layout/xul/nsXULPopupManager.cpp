@@ -1264,11 +1264,10 @@ nsXULPopupManager::HidePopupsInList(const nsTArray<nsMenuPopupFrame *> &aFrames)
 {
   
   
-  
-  nsTArray<AutoWeakFrame> weakPopups(aFrames.Length());
+  nsTArray<WeakFrame> weakPopups(aFrames.Length());
   uint32_t f;
   for (f = 0; f < aFrames.Length(); f++) {
-    AutoWeakFrame* wframe = weakPopups.AppendElement();
+    WeakFrame* wframe = weakPopups.AppendElement();
     if (wframe)
       *wframe = aFrames[f];
   }

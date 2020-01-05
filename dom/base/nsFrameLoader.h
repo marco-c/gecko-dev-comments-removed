@@ -329,7 +329,7 @@ private:
 
   
   
-  AutoWeakFrame mDetachedSubdocFrame;
+  WeakFrame mDetachedSubdocFrame;
   
   
   

@@ -1130,7 +1130,7 @@ nsListBoxBodyFrame::GetFirstItemBox(int32_t aOffset, bool* aCreated)
   mBottomFrame = mTopFrame;
 
   if (mTopFrame) {
-    return mTopFrame->IsXULBoxFrame() ? mTopFrame : nullptr;
+    return mTopFrame->IsXULBoxFrame() ? mTopFrame.GetFrame() : nullptr;
   }
 
   
@@ -1138,7 +1138,7 @@ nsListBoxBodyFrame::GetFirstItemBox(int32_t aOffset, bool* aCreated)
   mBottomFrame = mTopFrame;
 
   if (mTopFrame && mRowsToPrepend <= 0) {
-    return mTopFrame->IsXULBoxFrame() ? mTopFrame : nullptr;
+    return mTopFrame->IsXULBoxFrame() ? mTopFrame.GetFrame() : nullptr;
   }
 
   
@@ -1187,7 +1187,7 @@ nsListBoxBodyFrame::GetFirstItemBox(int32_t aOffset, bool* aCreated)
 
       mBottomFrame = mTopFrame;
 
-      return mTopFrame->IsXULBoxFrame() ? mTopFrame : nullptr;
+      return mTopFrame->IsXULBoxFrame() ? mTopFrame.GetFrame() : nullptr;
     } else
       return GetFirstItemBox(++aOffset, 0);
   }
