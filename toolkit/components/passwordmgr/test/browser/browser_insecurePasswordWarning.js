@@ -13,21 +13,21 @@ const WARNING_PATTERN = [{
 add_task(function* testInsecurePasswordWarning() {
   let warningPatternHandler;
 
-  function messageHandler(msg) {
+  function messageHandler(msgObj) {
     function findWarningPattern(msg) {
       return WARNING_PATTERN.find(patternPair => {
         return msg.indexOf(patternPair.msg) !== -1;
       });
     }
 
-    let warning = findWarningPattern(msg.message);
+    let warning = findWarningPattern(msgObj.message);
 
     
     if (warning) {
       
       
       ok(warningPatternHandler, "Invoke a valid warning message handler");
-      warningPatternHandler(warning, msg.message);
+      warningPatternHandler(warning, msgObj.message);
     }
   }
   Services.console.registerListener(messageHandler);

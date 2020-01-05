@@ -82,7 +82,7 @@ add_task(function* test_annos_expire_policy() {
   
   setMaxPages(0);
 
-  let now = getExpirablePRTime();
+  now = getExpirablePRTime();
   
   for (let i = 0; i < 5; i++) {
     let pageURI = uri("http://item_anno." + i + ".mozilla.org/");

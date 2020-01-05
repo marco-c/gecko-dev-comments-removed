@@ -11,16 +11,16 @@ function test() {
 
   
   tabA = gBrowser.addTab(testPage);
-  gBrowser.tabContainer.addEventListener("TabClose", function(aEvent) {
+  gBrowser.tabContainer.addEventListener("TabClose", function(firstTabCloseEvent) {
     gBrowser.tabContainer.removeEventListener("TabClose", arguments.callee, true);
-    ok(!aEvent.detail.adoptedBy, "This was a normal tab close");
+    ok(!firstTabCloseEvent.detail.adoptedBy, "This was a normal tab close");
 
     
     tabB = gBrowser.addTab(testPage);
-    gBrowser.tabContainer.addEventListener("TabClose", function(aEvent) {
+    gBrowser.tabContainer.addEventListener("TabClose", function(secondTabCloseEvent) {
       gBrowser.tabContainer.removeEventListener("TabClose", arguments.callee, true);
       executeSoon(function() {
-        ok(aEvent.detail.adoptedBy, "This was a tab closed by moving");
+        ok(secondTabCloseEvent.detail.adoptedBy, "This was a tab closed by moving");
 
         
         newWin.close();

@@ -89,10 +89,10 @@ function createLoginsFragment(url, content, elementQuery) {
 
 
 function checkLoginItems(logins, items) {
-  function findDuplicates(loginList) {
+  function findDuplicates(unfilteredLoginList) {
     var seen = new Set();
     var duplicates = new Set();
-    for (let login of loginList) {
+    for (let login of unfilteredLoginList) {
       if (seen.has(login.username)) {
         duplicates.add(login.username);
       }

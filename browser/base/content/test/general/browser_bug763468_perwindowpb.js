@@ -57,11 +57,11 @@ function test() {
   testOnWindow({}, function(aWin) {
     doTest(false, aWin, function() {
       
-      testOnWindow({private: true}, function(aWin) {
-        doTest(true, aWin, function() {
+      testOnWindow({private: true}, function(aWin2) {
+        doTest(true, aWin2, function() {
           
-          testOnWindow({}, function(aWin) {
-            doTest(false, aWin, finish);
+          testOnWindow({}, function(aWin3) {
+            doTest(false, aWin3, finish);
           });
         });
       });

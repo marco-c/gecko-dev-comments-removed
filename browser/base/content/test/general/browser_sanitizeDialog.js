@@ -584,7 +584,7 @@ add_task(function* test_offline_cache() {
 
   var cacheListener = {
     onCacheEntryCheck: function() { return Ci.nsICacheEntryOpenCallback.ENTRY_WANTED; },
-    onCacheEntryAvailable: function (entry, isnew, appcache, status) {
+    onCacheEntryAvailable: function (entry, isnew, unused, status) {
       is(status, Cr.NS_OK);
       var stream = entry.openOutputStream(0);
       var content = "content";
@@ -899,8 +899,8 @@ function promiseAddFormEntryWithMinutesAgo(aMinutesAgo) {
   return new Promise((resolve, reject) =>
     FormHistory.update({ op: "add", fieldname: name, value: "dummy", firstUsed: timestamp },
                        { handleError: function (error) {
-                           reject();
                            throw new Error("Error occurred updating form history: " + error);
+                           reject();
                          },
                          handleCompletion: function (reason) {
                            resolve(name);
@@ -919,8 +919,8 @@ function formNameExists(name)
     FormHistory.count({ fieldname: name },
                       { handleResult: result => count = result,
                         handleError: function (error) {
-                          reject(error);
                           throw new Error("Error occurred searching form history: " + error);
+                          reject(error);
                         },
                         handleCompletion: function (reason) {
                           if (!reason) {
@@ -950,8 +950,8 @@ function* blankSlate() {
         }
       },
       handleError(error) {
-        reject(error);
         throw new Error("Error occurred updating form history: " + error);
+        reject(error);
       }
     });
   });
