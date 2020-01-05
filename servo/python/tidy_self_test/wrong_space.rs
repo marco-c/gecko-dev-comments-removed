@@ -1,0 +1,7 @@
+
+
+
+
+pub struct TestStruct( 
+    pub testMember1: usize,
+	pub testMember2: bool,);
