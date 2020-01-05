@@ -30,8 +30,7 @@ ManagerId::Create(nsIPrincipal* aPrincipal, ManagerId** aManagerIdOut)
   nsresult rv = QuotaManager::GetInfoFromPrincipal(aPrincipal,
                                                    nullptr,   
                                                    nullptr,   
-                                                   &quotaOrigin,
-                                                   nullptr);  
+                                                   &quotaOrigin);
   if (NS_WARN_IF(NS_FAILED(rv))) { return rv; }
 
   RefPtr<ManagerId> ref = new ManagerId(aPrincipal, quotaOrigin);
