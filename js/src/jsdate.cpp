@@ -2588,32 +2588,19 @@ FormatDate(JSContext* cx, double utcTime, FormatSpec format, MutableHandleValue 
 
         double localTime = LocalTime(utcTime);
 
-        
-
-
-
-        int minutes = (int) floor((localTime - utcTime) / msPerMinute);
-
-        
-        int offset = (minutes / 60) * 100 + minutes % 60;
-
-        
-
-
-
-
-
-
-
-
-
-
-        
-        PRMJTime prtm = ToPRMJTime(utcTime);
+        int offset = 0;
         char tzbuf[100];
-        bool usetz;
-        size_t tzlen = PRMJ_FormatTime(tzbuf, sizeof tzbuf, "(%Z)", &prtm);
-        if (tzlen != 0) {
+        bool usetz = false;
+        if (format == FormatSpec::DateTime || format == FormatSpec::Time) {
+            
+
+
+
+            int minutes = (int) floor((localTime - utcTime) / msPerMinute);
+
+            
+            offset = (minutes / 60) * 100 + minutes % 60;
+
             
 
 
@@ -2621,20 +2608,35 @@ FormatDate(JSContext* cx, double utcTime, FormatSpec format, MutableHandleValue 
 
 
 
-            usetz = true;
-            for (size_t i = 0; i < tzlen; i++) {
-                char16_t c = tzbuf[i];
-                if (c > 127 || !(isalnum(c) || c == ' ' || c == '(' || c == ')' || c == '.')) {
-                    usetz = false;
-                    break;
+
+
+
+
+            
+            PRMJTime prtm = ToPRMJTime(utcTime);
+            size_t tzlen = PRMJ_FormatTime(tzbuf, sizeof tzbuf, "(%Z)", &prtm);
+            if (tzlen != 0) {
+                
+
+
+
+
+
+
+                usetz = true;
+                for (size_t i = 0; i < tzlen; i++) {
+                    char16_t c = tzbuf[i];
+                    if (c > 127 || !(isalnum(c) || c == ' ' || c == '(' || c == ')' || c == '.')) {
+                        usetz = false;
+                        break;
+                    }
                 }
-            }
 
-            
-            if (tzbuf[0] != '(' || tzbuf[1] == ')')
-                usetz = false;
-        } else
-            usetz = false;
+                
+                if (tzbuf[0] != '(' || tzbuf[1] == ')')
+                    usetz = false;
+            }
+        }
 
         char buf[100];
         switch (format) {
