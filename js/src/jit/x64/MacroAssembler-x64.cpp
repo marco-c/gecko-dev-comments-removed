@@ -93,17 +93,16 @@ MacroAssemblerX64::convertInt64ToFloat32(Register64 input, FloatRegister output)
 bool
 MacroAssemblerX64::convertUInt64ToDoubleNeedsTemp()
 {
-    return false;
+    return true;
 }
 
 void
 MacroAssemblerX64::convertUInt64ToDouble(Register64 input, FloatRegister output, Register temp)
 {
-    MOZ_ASSERT(temp == Register::Invalid());
-
     
     zeroDouble(output);
 
+    
     
     
     Label done;
@@ -118,7 +117,11 @@ MacroAssemblerX64::convertUInt64ToDouble(Register64 input, FloatRegister output,
 
     ScratchRegisterScope scratch(asMasm());
     mov(input.reg, scratch);
+    mov(input.reg, temp);
     shrq(Imm32(1), scratch);
+    andq(Imm32(1), temp);
+    orq(temp, scratch);
+
     vcvtsq2sd(scratch, output, output);
     vaddsd(output, output, output);
 
@@ -128,12 +131,9 @@ MacroAssemblerX64::convertUInt64ToDouble(Register64 input, FloatRegister output,
 void
 MacroAssemblerX64::convertUInt64ToFloat32(Register64 input, FloatRegister output, Register temp)
 {
-    MOZ_ASSERT(temp == Register::Invalid());
-
     
     zeroFloat32(output);
 
-    
     
     Label done;
     Label isSigned;
@@ -147,7 +147,11 @@ MacroAssemblerX64::convertUInt64ToFloat32(Register64 input, FloatRegister output
 
     ScratchRegisterScope scratch(asMasm());
     mov(input.reg, scratch);
+    mov(input.reg, temp);
     shrq(Imm32(1), scratch);
+    andq(Imm32(1), temp);
+    orq(temp, scratch);
+
     vcvtsq2ss(scratch, output, output);
     vaddss(output, output, output);
 
