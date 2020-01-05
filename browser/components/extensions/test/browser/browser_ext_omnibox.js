@@ -2,6 +2,12 @@
 
 "use strict";
 
+
+
+
+
+
+
 function* setup() {
   const SUGGEST_URLBAR_PREF = "browser.urlbar.suggest.searches";
   Services.prefs.setBoolPref(SUGGEST_URLBAR_PREF, false);
@@ -221,8 +227,6 @@ add_task(function* () {
 
   yield setup();
   yield extension.startup();
-
-  yield SimpleTest.promiseFocus(window);
 
   yield testInputEvents();
 
