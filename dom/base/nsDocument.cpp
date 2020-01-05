@@ -3144,27 +3144,32 @@ nsDocument::SetContentType(const nsAString& aContentType)
   SetContentTypeInternal(NS_ConvertUTF16toUTF8(aContentType));
 }
 
-nsresult
-nsDocument::GetAllowPlugins(bool * aAllowPlugins)
+bool
+nsDocument::GetAllowPlugins()
 {
   
   nsCOMPtr<nsIDocShell> docShell(mDocumentContainer);
 
   if (docShell) {
-    docShell->GetAllowPlugins(aAllowPlugins);
+    bool allowPlugins = false;
+    docShell->GetAllowPlugins(&allowPlugins);
+    if (!allowPlugins) {
+      return false;
+    }
 
     
     
-    if (*aAllowPlugins)
-      *aAllowPlugins = !(mSandboxFlags & SANDBOXED_PLUGINS);
+    if (mSandboxFlags & SANDBOXED_PLUGINS) {
+      return false;
+    }
   }
 
-  if (*aAllowPlugins) {
-    FlashClassification classification = DocumentFlashClassification();
-    *aAllowPlugins = (classification != FlashClassification::Denied);
+  FlashClassification classification = DocumentFlashClassification();
+  if (classification == FlashClassification::Denied) {
+    return false;
   }
 
-  return NS_OK;
+  return true;
 }
 
 bool
@@ -13141,6 +13146,9 @@ nsDocument::ComputeFlashClassification()
     classification = PrincipalFlashClassification(isTopLevel);
   } else {
     nsCOMPtr<nsIDocument> parentDocument = GetParentDocument();
+    if (!parentDocument) {
+      return FlashClassification::Denied;
+    }
     FlashClassification parentClassification =
       parentDocument->DocumentFlashClassification();
 

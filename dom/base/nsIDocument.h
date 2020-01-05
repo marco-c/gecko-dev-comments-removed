@@ -881,7 +881,7 @@ public:
   
 
 
-  virtual nsresult GetAllowPlugins (bool* aAllowPlugins) = 0;
+  virtual bool GetAllowPlugins () = 0;
 
   
 
