@@ -31,11 +31,14 @@ window {
 
 
 
-.devtools-main-content {
+#inspector-main-content {
   
 
 
   height: calc(100% - 1px);
+  
+
+  min-width: 125px;
   display: flex;
   flex-direction: column;
   flex: 1 1 auto;
@@ -50,9 +53,18 @@ window {
 }
 
 
-#inspector-splitter-box .uncontrolled {
+#inspector-splitter-box .uncontrolled,
+#inspector-splitter-box .controlled {
   min-height: 50px;
   min-width: 50px;
+  overflow-x: hidden;
+}
+
+
+
+
+.inspector-tabpanel {
+  min-width: 200px;
 }
 
 #inspector-splitter-box .controlled.pane-collapsed {
@@ -171,12 +183,8 @@ window {
   font: message-box;
 }
 
-
-
-
 #inspector-sidebar-container {
   overflow: hidden;
-  min-width: 50px;
   position: relative;
   height: 100%;
 }
