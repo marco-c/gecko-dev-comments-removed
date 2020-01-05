@@ -7,6 +7,7 @@
 #ifndef js_GCAPI_h
 #define js_GCAPI_h
 
+#include "mozilla/TimeStamp.h"
 #include "mozilla/Vector.h"
 
 #include "js/GCAnnotations.h"
@@ -287,8 +288,8 @@ class GarbageCollectionEvent
     
     
     struct Collection {
-        double startTimestamp;
-        double endTimestamp;
+        mozilla::TimeStamp startTimestamp;
+        mozilla::TimeStamp endTimestamp;
     };
 
     

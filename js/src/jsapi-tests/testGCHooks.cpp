@@ -2,6 +2,7 @@
 
 
 
+#include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
 
 #include "js/GCAPI.h"

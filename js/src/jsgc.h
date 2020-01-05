@@ -12,6 +12,7 @@
 #include "mozilla/Atomics.h"
 #include "mozilla/EnumeratedArray.h"
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/TimeStamp.h"
 #include "mozilla/TypeTraits.h"
 
 #include "js/GCAPI.h"
@@ -947,7 +948,7 @@ class GCParallelTask
     } state;
 
     
-    uint64_t duration_;
+    mozilla::TimeDuration duration_;
 
     explicit GCParallelTask(const GCParallelTask&) = delete;
 
@@ -970,7 +971,7 @@ class GCParallelTask
     virtual ~GCParallelTask();
 
     
-    int64_t duration() const { return duration_; }
+    mozilla::TimeDuration duration() const { return duration_; }
 
     
     bool start();

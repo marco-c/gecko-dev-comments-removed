@@ -9,6 +9,7 @@
 #define gc_Nursery_h
 
 #include "mozilla/EnumeratedArray.h"
+#include "mozilla/TimeStamp.h"
 
 #include "jsalloc.h"
 #include "jspubtd.h"
@@ -310,7 +311,7 @@ class Nursery
     double previousPromotionRate_;
 
     
-    int64_t profileThreshold_;
+    mozilla::TimeDuration profileThreshold_;
     bool enableProfiling_;
 
     
@@ -327,11 +328,14 @@ class Nursery
         KeyCount
     };
 
-    using ProfileTimes = mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount, int64_t>;
+    using ProfileTimes =
+        mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount, mozilla::TimeStamp>;
+    using ProfileDurations =
+        mozilla::EnumeratedArray<ProfileKey, ProfileKey::KeyCount, mozilla::TimeDuration>;
 
     ProfileTimes startTimes_;
-    ProfileTimes profileTimes_;
-    ProfileTimes totalTimes_;
+    ProfileDurations profileDurations_;
+    ProfileDurations totalDurations_;
     uint64_t minorGcCount_;
 
     
@@ -461,7 +465,7 @@ class Nursery
     void endProfile(ProfileKey key);
     void maybeStartProfile(ProfileKey key);
     void maybeEndProfile(ProfileKey key);
-    static void printProfileTimes(const ProfileTimes& times);
+    static void printProfileDurations(const ProfileDurations& times);
 
     friend class TenuringTracer;
     friend class gc::MinorCollectionTracer;
