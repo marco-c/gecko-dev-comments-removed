@@ -33,10 +33,6 @@
 #include "prerror.h"
 #include "seccomon.h"
 
-namespace mozilla {
-class NeckoOriginAttributes;
-}
-
 namespace mozilla { namespace pkix {
 struct CertID;
 } } 
@@ -64,9 +60,8 @@ public:
   
   
   
-  
   bool Get(const mozilla::pkix::CertID& aCertID,
-           const NeckoOriginAttributes& aOriginAttributes,
+           const char* aFirstPartyDomain,
             mozilla::pkix::Result& aResult,
             mozilla::pkix::Time& aValidThrough);
 
@@ -81,9 +76,8 @@ public:
   
   
   
-  
   mozilla::pkix::Result Put(const mozilla::pkix::CertID& aCertID,
-                            const NeckoOriginAttributes& aOriginAttributes,
+                            const char* aFirstPartyDomain,
                             mozilla::pkix::Result aResult,
                             mozilla::pkix::Time aThisUpdate,
                             mozilla::pkix::Time aValidThrough);
@@ -104,7 +98,7 @@ private:
     {
     }
     mozilla::pkix::Result Init(const mozilla::pkix::CertID& aCertID,
-                               const NeckoOriginAttributes& aOriginAttributes);
+                               const char* aFirstPartyDomain);
 
     mozilla::pkix::Result mResult;
     mozilla::pkix::Time mThisUpdate;
@@ -118,7 +112,7 @@ private:
   };
 
   bool FindInternal(const mozilla::pkix::CertID& aCertID,
-                    const NeckoOriginAttributes& aOriginAttributes,
+                    const char* aFirstPartyDomain,
                      size_t& index,
                     const MutexAutoLock& aProofOfLock);
   void MakeMostRecentlyUsed(size_t aIndex, const MutexAutoLock& aProofOfLock);

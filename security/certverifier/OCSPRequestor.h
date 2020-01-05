@@ -10,15 +10,11 @@
 #include "CertVerifier.h"
 #include "secmodt.h"
 
-namespace mozilla {
-class NeckoOriginAttributes;
-}
-
 namespace mozilla { namespace psm {
 
 
 Result DoOCSPRequest(const UniquePLArenaPool& arena, const char* url,
-                     const NeckoOriginAttributes& originAttributes,
+                     const char* firstPartyDomain,
                      const SECItem* encodedRequest, PRIntervalTime timeout,
                      bool useGET,
               SECItem*& encodedResponse);

@@ -327,12 +327,9 @@ function add_tls_server_setup(serverBinName, certsPath) {
 
 
 
-
-
 function add_connection_test(aHost, aExpectedResult,
                              aBeforeConnect, aWithSecurityInfo,
-                             aAfterStreamOpen,
-                              aOriginAttributes) {
+                             aAfterStreamOpen, aFirstPartyDomain) {
   const REMOTE_PORT = 8443;
 
   function Connection(host) {
@@ -348,8 +345,8 @@ function add_connection_test(aHost, aExpectedResult,
     
     this.transport.connectionFlags |= Ci.nsISocketTransport.DISABLE_IPV6;
     this.transport.setEventSink(this, this.thread);
-    if (aOriginAttributes) {
-      this.transport.originAttributes = aOriginAttributes;
+    if (aFirstPartyDomain) {
+      this.transport.firstPartyDomain = aFirstPartyDomain;
     }
     this.inputStream = null;
     this.outputStream = null;

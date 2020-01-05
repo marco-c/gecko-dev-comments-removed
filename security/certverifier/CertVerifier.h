@@ -11,7 +11,6 @@
 #include "CTVerifyResult.h"
 #include "OCSPCache.h"
 #include "ScopedNSSTypes.h"
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
 #include "pkix/pkixtypes.h"
@@ -110,8 +109,7 @@ public:
                     Flags flags = 0,
      const SECItem* stapledOCSPResponse = nullptr,
      const SECItem* sctsFromTLS = nullptr,
-     const NeckoOriginAttributes& originAttributes =
-                      NeckoOriginAttributes(),
+     const char* firstPartyDomain = nullptr,
     SECOidTag* evOidPolicy = nullptr,
     OCSPStaplingStatus* ocspStaplingStatus = nullptr,
     KeySizeStatus* keySizeStatus = nullptr,
@@ -129,8 +127,7 @@ public:
              UniqueCERTCertList& builtChain,
         bool saveIntermediatesInPermanentDatabase = false,
         Flags flags = 0,
-        const NeckoOriginAttributes& originAttributes =
-                      NeckoOriginAttributes(),
+        const char* firstPartyDomain = nullptr,
     SECOidTag* evOidPolicy = nullptr,
     OCSPStaplingStatus* ocspStaplingStatus = nullptr,
     KeySizeStatus* keySizeStatus = nullptr,

@@ -1497,7 +1497,7 @@ VerifyCertAtTime(nsIX509Cert* aCert,
                                                resultChain,
                                                false, 
                                                aFlags,
-                                               NeckoOriginAttributes(),
+                                               nullptr, 
                                                &evOidPolicy);
   } else {
     result = certVerifier->VerifyCert(nssCert.get(), aUsage, aTime,
@@ -1507,7 +1507,7 @@ VerifyCertAtTime(nsIX509Cert* aCert,
                                       aFlags,
                                       nullptr, 
                                       nullptr, 
-                                      NeckoOriginAttributes(),
+                                      nullptr, 
                                       &evOidPolicy);
   }
 
