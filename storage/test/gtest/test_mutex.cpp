@@ -15,18 +15,17 @@ using namespace mozilla::storage;
 
 
 
-void
-test_AutoLock()
+TEST(storage_mutex, AutoLock)
 {
   int lockTypes[] = {
     SQLITE_MUTEX_FAST,
     SQLITE_MUTEX_RECURSIVE,
   };
-  for (int lockType : lockTypes) {
+  for (size_t i = 0; i < ArrayLength(lockTypes); i++) {
     
     
     SQLiteMutex mutex("TestMutex");
-    sqlite3_mutex *inner = sqlite3_mutex_alloc(lockType);
+    sqlite3_mutex *inner = sqlite3_mutex_alloc(lockTypes[i]);
     do_check_true(inner);
     mutex.initWithMutex(inner);
 
@@ -43,18 +42,17 @@ test_AutoLock()
   }
 }
 
-void
-test_AutoUnlock()
+TEST(storage_mutex, AutoUnlock)
 {
   int lockTypes[] = {
     SQLITE_MUTEX_FAST,
     SQLITE_MUTEX_RECURSIVE,
   };
-  for (int lockType : lockTypes) {
+  for (size_t i = 0; i < ArrayLength(lockTypes); i++) {
     
     
     SQLiteMutex mutex("TestMutex");
-    sqlite3_mutex *inner = sqlite3_mutex_alloc(lockType);
+    sqlite3_mutex *inner = sqlite3_mutex_alloc(lockTypes[i]);
     do_check_true(inner);
     mutex.initWithMutex(inner);
 
@@ -74,12 +72,3 @@ test_AutoUnlock()
   }
 }
 
-void (*gTests[])(void) = {
-  test_AutoLock,
-  test_AutoUnlock,
-};
-
-const char *file = __FILE__;
-#define TEST_NAME "SQLiteMutex"
-#define TEST_FILE file
-#include "storage_test_harness_tail.h"

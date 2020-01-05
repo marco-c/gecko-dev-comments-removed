@@ -32,8 +32,15 @@ public:
 
 
 
-void
-test_service_initialization_on_background_thread()
+
+
+
+
+
+
+
+
+TEST(storage_service_init_background_thread_DeathTest, Test)
 {
   nsCOMPtr<nsIRunnable> event = new ServiceInitializer();
   do_check_true(event);
@@ -47,12 +54,3 @@ test_service_initialization_on_background_thread()
   
   do_check_success(thread->Shutdown());
 }
-
-void (*gTests[])(void) = {
-  test_service_initialization_on_background_thread,
-};
-
-const char *file = __FILE__;
-#define TEST_NAME "Background Thread Initialization"
-#define TEST_FILE file
-#include "storage_test_harness_tail.h"

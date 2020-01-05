@@ -9,11 +9,9 @@
 
 
 
-void
-test_TrueAsyncStatement()
+TEST(storage_true_async, TrueAsyncStatement)
 {
-  
-  hook_sqlite_mutex();
+  HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
@@ -73,9 +71,10 @@ test_TrueAsyncStatement()
 
 
 
-void
-test_AsyncCancellation()
+TEST(storage_true_async, AsyncCancellation)
 {
+  HookSqliteMutex hook;
+
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
 
   
@@ -144,9 +143,9 @@ test_AsyncCancellation()
 
 
 
-void test_AsyncDestructorFinalizesOnAsyncThread()
+TEST(storage_true_async, AsyncDestructorFinalizesOnAsyncThread)
 {
-  
+  HookSqliteMutex hook;
 
   nsCOMPtr<mozIStorageConnection> db(getMemoryDatabase());
   watch_for_mutex_use_on_this_thread();
@@ -173,14 +172,3 @@ void test_AsyncDestructorFinalizesOnAsyncThread()
   blocking_async_close(db);
 }
 
-void (*gTests[])(void) = {
-  
-  test_TrueAsyncStatement,
-  test_AsyncCancellation,
-  test_AsyncDestructorFinalizesOnAsyncThread
-};
-
-const char *file = __FILE__;
-#define TEST_NAME "true async statement"
-#define TEST_FILE file
-#include "storage_test_harness_tail.h"
