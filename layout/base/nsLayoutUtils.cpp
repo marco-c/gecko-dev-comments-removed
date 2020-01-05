@@ -4795,6 +4795,8 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
   result = NSCoordSaturatingAdd(result, coordOutsideSize);
   pctTotal += pctOutsideSize;
 
+  const bool shouldAddPercent = aType == nsLayoutUtils::PREF_ISIZE ||
+                                (aFlags & nsLayoutUtils::ADD_PERCENTS);
   nscoord size;
   if (aType == nsLayoutUtils::MIN_ISIZE &&
       (((aStyleSize.HasPercent() || aStyleMaxSize.HasPercent()) &&
@@ -4811,23 +4813,29 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
   } else if (GetAbsoluteCoord(aStyleSize, size) ||
              GetIntrinsicCoord(aStyleSize, aRenderingContext, aFrame,
                                PROP_WIDTH, size)) {
-    result = nsLayoutUtils::AddPercents(aType, size + coordOutsideSize,
-                                        pctOutsideSize);
+    result = size + coordOutsideSize;
+    if (shouldAddPercent) {
+      result = nsLayoutUtils::AddPercents(result, pctOutsideSize);
+    }
   } else {
     
     
     
     
     
-    result = nsLayoutUtils::AddPercents(aType, result, pctTotal);
+    if (shouldAddPercent) {
+      result = nsLayoutUtils::AddPercents(result, pctTotal);
+    }
   }
 
   nscoord maxSize = aFixedMaxSize ? *aFixedMaxSize : 0;
   if (aFixedMaxSize ||
       GetIntrinsicCoord(aStyleMaxSize, aRenderingContext, aFrame,
                         PROP_MAX_WIDTH, maxSize)) {
-    maxSize = nsLayoutUtils::AddPercents(aType, maxSize + coordOutsideSize,
-                                         pctOutsideSize);
+    maxSize += coordOutsideSize;
+    if (shouldAddPercent) {
+      maxSize = nsLayoutUtils::AddPercents(maxSize, pctOutsideSize);
+    }
     if (result > maxSize) {
       result = maxSize;
     }
@@ -4837,14 +4845,18 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
   if (aFixedMinSize ||
       GetIntrinsicCoord(aStyleMinSize, aRenderingContext, aFrame,
                         PROP_MIN_WIDTH, minSize)) {
-    minSize = nsLayoutUtils::AddPercents(aType, minSize + coordOutsideSize,
-                                         pctOutsideSize);
+    minSize += coordOutsideSize;
+    if (shouldAddPercent) {
+      minSize = nsLayoutUtils::AddPercents(minSize, pctOutsideSize);
+    }
     if (result < minSize) {
       result = minSize;
     }
   }
 
-  min = nsLayoutUtils::AddPercents(aType, min, pctTotal);
+  if (shouldAddPercent) {
+    min = nsLayoutUtils::AddPercents(min, pctTotal);
+  }
   if (result < min) {
     result = min;
   }
@@ -4861,9 +4873,9 @@ AddIntrinsicSizeOffset(nsRenderingContext* aRenderingContext,
                                                      : devSize.width);
     
     themeSize += aOffsets.hMargin;
-    themeSize = nsLayoutUtils::AddPercents(aType, themeSize,
-                                           aOffsets.hPctMargin);
-
+    if (shouldAddPercent) {
+      themeSize = nsLayoutUtils::AddPercents(themeSize, aOffsets.hPctMargin);
+    }
     if (themeSize > result || !canOverride) {
       result = themeSize;
     }
