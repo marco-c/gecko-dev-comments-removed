@@ -260,7 +260,7 @@ RecordReflowStatus(bool aChildIsBlock, nsReflowStatus aFrameReflowStatus)
   
   uint32_t newS = record[index];
   if (NS_INLINE_IS_BREAK(aFrameReflowStatus)) {
-    if (NS_INLINE_IS_BREAK_BEFORE(aFrameReflowStatus)) {
+    if (aFrameReflowStatus.IsInlineBreakBefore()) {
       newS |= 1;
     }
     else if (aFrameReflowStatus.IsIncomplete()) {
@@ -1668,7 +1668,7 @@ nsBlockFrame::ComputeFinalSize(const ReflowInput& aReflowInput,
       aState.mReflowStatus.SetOverflowIncomplete();
     }
   } else if (aReflowInput.AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
-             !NS_INLINE_IS_BREAK_BEFORE(aState.mReflowStatus) &&
+             !aState.mReflowStatus.IsInlineBreakBefore() &&
              aState.mReflowStatus.IsComplete()) {
     
     
@@ -3579,7 +3579,7 @@ nsBlockFrame::ReflowBlockFrame(BlockReflowInput& aState,
     RecordReflowStatus(true, frameReflowStatus);
 #endif
 
-    if (NS_INLINE_IS_BREAK_BEFORE(frameReflowStatus)) {
+    if (frameReflowStatus.IsInlineBreakBefore()) {
       
       *aKeepReflowGoing = false;
       if (ShouldAvoidBreakInside(aState.mReflowInput)) {
@@ -4078,7 +4078,7 @@ nsBlockFrame::DoReflowInlineFrames(BlockReflowInput& aState,
            LineReflowStatus::RedoNoPull != lineReflowStatus) {
     
     
-    if (!NS_INLINE_IS_BREAK_BEFORE(aState.mReflowStatus)) {
+    if (!aState.mReflowStatus.IsInlineBreakBefore()) {
       if (!PlaceLine(aState, aLineLayout, aLine, aFloatStateBeforeLine,
                      aFloatAvailableSpace.mRect, aAvailableSpaceBSize,
                      aKeepReflowGoing)) {
@@ -4192,7 +4192,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
     MOZ_ASSERT(StyleClear::None != breakType ||
                StyleClear::None != aState.mFloatBreakType, "bad break type");
 
-    if (NS_INLINE_IS_BREAK_BEFORE(frameReflowStatus)) {
+    if (frameReflowStatus.IsInlineBreakBefore()) {
       
       if (aFrame == aLine->mFirstChild) {
         

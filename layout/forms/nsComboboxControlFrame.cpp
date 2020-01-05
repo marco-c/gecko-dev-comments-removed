@@ -897,7 +897,7 @@ nsComboboxControlFrame::Reflow(nsPresContext*          aPresContext,
 
   mButtonFrame->SetRect(buttonRect, containerSize);
 
-  if (!NS_INLINE_IS_BREAK_BEFORE(aStatus) &&
+  if (!aStatus.IsInlineBreakBefore() &&
       !aStatus.IsFullyComplete()) {
     
     

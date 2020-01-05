@@ -3171,7 +3171,7 @@ nsTableFrame::ReflowChildren(TableReflowInput& aReflowInput,
       
       
       if (isPaginated &&
-          (NS_INLINE_IS_BREAK_BEFORE(aStatus) ||
+          (aStatus.IsInlineBreakBefore() ||
            (aStatus.IsComplete() &&
             (NS_UNCONSTRAINEDSIZE != kidReflowInput.AvailableHeight()) &&
             kidReflowInput.AvailableHeight() < desiredSize.Height()))) {

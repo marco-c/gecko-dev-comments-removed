@@ -803,8 +803,8 @@ nsInlineFrame::ReflowInlineFrame(nsPresContext* aPresContext,
   bool reflowingFirstLetter = lineLayout->GetFirstLetterStyleOK();
   bool pushedFrame;
   lineLayout->ReflowFrame(aFrame, aStatus, nullptr, pushedFrame);
-  
-  if (NS_INLINE_IS_BREAK_BEFORE(aStatus)) {
+
+  if (aStatus.IsInlineBreakBefore()) {
     if (aFrame != mFrames.FirstChild()) {
       
       

@@ -265,7 +265,7 @@ nsFirstLetterFrame::Reflow(nsPresContext*          aPresContext,
     }
   }
 
-  if (!NS_INLINE_IS_BREAK_BEFORE(aReflowStatus)) {
+  if (!aReflowStatus.IsInlineBreakBefore()) {
     
     
     if (aReflowStatus.IsComplete()) {

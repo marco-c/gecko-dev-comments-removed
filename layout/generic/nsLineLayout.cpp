@@ -1028,7 +1028,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
 #ifdef DEBUG
   
   
-  if (!NS_INLINE_IS_BREAK_BEFORE(aReflowStatus)) {
+  if (!aReflowStatus.IsInlineBreakBefore()) {
     if ((CRAZY_SIZE(reflowOutput.ISize(lineWM)) ||
          CRAZY_SIZE(reflowOutput.BSize(lineWM))) &&
         !LineContainerFrame()->GetParent()->IsCrazySizeAssertSuppressed()) {
@@ -1067,7 +1067,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
     *aMetrics = reflowOutput;
   }
 
-  if (!NS_INLINE_IS_BREAK_BEFORE(aReflowStatus)) {
+  if (!aReflowStatus.IsInlineBreakBefore()) {
     
     
     

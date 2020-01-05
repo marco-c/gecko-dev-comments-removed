@@ -929,7 +929,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
        aFloat->BSize(wm) + floatMargin.BStartEnd(wm) >
        ContentBEnd() - floatPos.B(wm)) ||
       reflowStatus.IsTruncated() ||
-      NS_INLINE_IS_BREAK_BEFORE(reflowStatus)) {
+      reflowStatus.IsInlineBreakBefore()) {
     PushFloatPastBreak(aFloat);
     return false;
   }

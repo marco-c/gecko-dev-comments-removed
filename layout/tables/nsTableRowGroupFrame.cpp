@@ -1211,7 +1211,7 @@ nsTableRowGroupFrame::SplitRowGroup(nsPresContext*           aPresContext,
           
           
           if (rowMetrics.Height() > availSize.height ||
-              (NS_INLINE_IS_BREAK_BEFORE(aStatus) && !aRowForcedPageBreak)) {
+              (aStatus.IsInlineBreakBefore() && !aRowForcedPageBreak)) {
             
             if (isTopOfPage) {
               
