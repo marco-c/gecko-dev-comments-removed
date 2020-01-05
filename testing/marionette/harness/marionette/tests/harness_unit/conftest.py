@@ -1,11 +1,13 @@
 
 
 
+
 import pytest
 
 from mock import Mock, MagicMock
 
 from marionette_driver.marionette import Marionette
+from marionette.runner.httpd import FixtureServer
 
 
 @pytest.fixture(scope='module')
@@ -82,6 +84,14 @@ def mach_parsed_kwargs(logger):
         'workspace': None,
         'logger': logger,
     }
+
+
+@pytest.fixture
+def mock_httpd(request):
+    """ Mock httpd instance """
+    httpd = MagicMock(spec=FixtureServer)
+    return httpd
+
 
 @pytest.fixture
 def mock_marionette(request):
