@@ -748,107 +748,64 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         if (!GetPrototypeFromConstructor(cx, newTarget, &proto))
             return nullptr;
 
-        if (dataObj->is<ArrayBufferObjectMaybeShared>()) {
-            HandleArrayBufferObjectMaybeShared buffer = dataObj.as<ArrayBufferObjectMaybeShared>();
-
-            
-            uint32_t bufferByteLength;
-            uint32_t byteOffset;
-            int32_t length;
-            if (!getConstructorArgsForBuffer(cx, buffer, args, &bufferByteLength, &byteOffset,
-                                             &length))
-            {
-                return nullptr;
-            }
-
-            return fromBufferSameCompartment(cx, buffer, bufferByteLength, byteOffset, length,
-                                             proto);
-        }
-
-        RootedArrayBufferObjectMaybeShared buffer(cx);
-        if (!checkedUnwrapArrayBuffer(cx, dataObj, &buffer))
-            return nullptr;
-
-        
-        uint32_t bufferByteLength;
-        uint32_t byteOffset;
-        int32_t length;
-        if (!getConstructorArgsForBuffer(cx, buffer, args, &bufferByteLength, &byteOffset,
-                                         &length))
-        {
-            return nullptr;
-        }
-
-        return fromBufferWrapped(cx, buffer, bufferByteLength, byteOffset, length, proto);
-    }
-
-    
-    
-    
-    static bool
-    getConstructorArgsForBuffer(JSContext* cx,
-                                HandleArrayBufferObjectMaybeShared bufferMaybeUnwrapped,
-                                const CallArgs& args, uint32_t* bufferByteLengthPtr,
-                                uint32_t* byteOffsetPtr, int32_t* lengthPtr)
-    {
         int32_t byteOffset = 0;
         if (args.hasDefined(1)) {
             
             if (!ToInt32(cx, args[1], &byteOffset))
-                return false;
+                return nullptr;
             if (byteOffset < 0) {
                 JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                           JSMSG_TYPED_ARRAY_NEGATIVE_ARG,
                                           "1");
-                return false;
+                return nullptr;
             }
 
             
             if (byteOffset % sizeof(NativeType) != 0) {
                 JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                           JSMSG_TYPED_ARRAY_CONSTRUCT_BOUNDS);
-                return false;
+                return nullptr;
             }
         }
-
-        
-        if (bufferMaybeUnwrapped->isDetached()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
-            return false;
-        }
-
-        
-        uint32_t bufferByteLength = bufferMaybeUnwrapped->byteLength();
 
         int32_t length = -1;
         if (args.hasDefined(2)) {
             
             if (!ToInt32(cx, args[2], &length))
-                return false;
+                return nullptr;
             if (length < 0) {
                 JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
                                           JSMSG_TYPED_ARRAY_NEGATIVE_ARG,
                                           "2");
-                return false;
+                return nullptr;
             }
-
-            
         }
 
-        *bufferByteLengthPtr = bufferByteLength;
-        *byteOffsetPtr = uint32_t(byteOffset);
-        *lengthPtr = length;
-        return true;
+        
+        if (dataObj->is<ArrayBufferObjectMaybeShared>()) {
+            HandleArrayBufferObjectMaybeShared buffer = dataObj.as<ArrayBufferObjectMaybeShared>();
+            return fromBufferSameCompartment(cx, buffer, byteOffset, length, proto);
+        }
+        return fromBufferWrapped(cx, dataObj, byteOffset, length, proto);
     }
 
     
     
     
     static bool
-    computeAndCheckLength(JSContext* cx, uint32_t bufferByteLength, uint32_t byteOffset,
-                          int32_t lengthInt, uint32_t* length)
+    computeAndCheckLength(JSContext* cx, HandleArrayBufferObjectMaybeShared bufferMaybeUnwrapped,
+                          uint32_t byteOffset, int32_t lengthInt, uint32_t* length)
     {
         MOZ_ASSERT(byteOffset % sizeof(NativeType) == 0);
+
+        
+        if (bufferMaybeUnwrapped->isDetached()) {
+           JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
+           return false;
+        }
+
+        
+        uint32_t bufferByteLength = bufferMaybeUnwrapped->byteLength();
 
         
         if (byteOffset > bufferByteLength) {
@@ -904,28 +861,20 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         return true;
     }
 
+    
+    
+    
     static JSObject*
-    fromBufferSameCompartment(JSContext* cx,
-                              HandleArrayBufferObjectMaybeShared bufferMaybeDetached,
-                              uint32_t bufferByteLength, uint32_t byteOffset, int32_t lengthInt,
-                              HandleObject proto)
+    fromBufferSameCompartment(JSContext* cx, HandleArrayBufferObjectMaybeShared buffer,
+                              uint32_t byteOffset, int32_t lengthInt, HandleObject proto)
     {
+        
         uint32_t length;
-        if (!computeAndCheckLength(cx, bufferByteLength, byteOffset, lengthInt, &length))
+        if (!computeAndCheckLength(cx, buffer, byteOffset, lengthInt, &length))
             return nullptr;
 
         
-        
-        
-        
-        
-        if (bufferMaybeDetached->isDetached()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
-            return nullptr;
-        }
-        MOZ_ASSERT(bufferMaybeDetached->byteLength() == bufferByteLength);
-
-        return makeInstance(cx, bufferMaybeDetached, byteOffset, length, proto);
+        return makeInstance(cx, buffer, byteOffset, length, proto);
     }
 
     
@@ -943,25 +892,26 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     
     
     static JSObject*
-    fromBufferWrapped(JSContext* cx,
-                      HandleArrayBufferObjectMaybeShared unwrappedBufferMaybeDetached,
-                      uint32_t bufferByteLength, uint32_t byteOffset, int32_t lengthInt,
+    fromBufferWrapped(JSContext* cx, HandleObject bufobj, uint32_t byteOffset, int32_t lengthInt,
                       HandleObject proto)
     {
-        uint32_t length;
-        if (!computeAndCheckLength(cx, bufferByteLength, byteOffset, lengthInt, &length))
-            return nullptr;
-
-        
-        
-        
-        
-        
-        if (unwrappedBufferMaybeDetached->isDetached()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
+        JSObject* unwrapped = CheckedUnwrap(bufobj);
+        if (!unwrapped) {
+            ReportAccessDenied(cx);
             return nullptr;
         }
-        MOZ_ASSERT(unwrappedBufferMaybeDetached->byteLength() == bufferByteLength);
+
+        if (!unwrapped->is<ArrayBufferObjectMaybeShared>()) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
+            return nullptr;
+        }
+
+        RootedArrayBufferObjectMaybeShared unwrappedBuffer(cx);
+        unwrappedBuffer = &unwrapped->as<ArrayBufferObjectMaybeShared>();
+
+        uint32_t length;
+        if (!computeAndCheckLength(cx, unwrappedBuffer, byteOffset, lengthInt, &length))
+            return nullptr;
 
         
         
@@ -973,14 +923,13 @@ class TypedArrayObjectTemplate : public TypedArrayObject
 
         RootedObject typedArray(cx);
         {
-            JSAutoCompartment ac(cx, unwrappedBufferMaybeDetached);
+            JSAutoCompartment ac(cx, unwrappedBuffer);
 
             RootedObject wrappedProto(cx, protoRoot);
             if (!cx->compartment()->wrap(cx, &wrappedProto))
                 return nullptr;
 
-            typedArray =
-                makeInstance(cx, unwrappedBufferMaybeDetached, byteOffset, length, wrappedProto);
+            typedArray = makeInstance(cx, unwrappedBuffer, byteOffset, length, wrappedProto);
             if (!typedArray)
                 return nullptr;
         }
@@ -989,25 +938,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject
             return nullptr;
 
         return typedArray;
-    }
-
-    static bool
-    checkedUnwrapArrayBuffer(JSContext* cx, HandleObject bufobj,
-                             MutableHandleArrayBufferObjectMaybeShared buffer)
-    {
-        JSObject* unwrapped = CheckedUnwrap(bufobj);
-        if (!unwrapped) {
-            ReportAccessDenied(cx);
-            return false;
-        }
-
-        if (!unwrapped->is<ArrayBufferObjectMaybeShared>()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
-            return false;
-        }
-
-        buffer.set(&unwrapped->as<ArrayBufferObjectMaybeShared>());
-        return true;
     }
 
   public:
@@ -1022,27 +952,9 @@ class TypedArrayObjectTemplate : public TypedArrayObject
 
         if (bufobj->is<ArrayBufferObjectMaybeShared>()) {
             HandleArrayBufferObjectMaybeShared buffer = bufobj.as<ArrayBufferObjectMaybeShared>();
-
-            if (buffer->isDetached()) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                          JSMSG_TYPED_ARRAY_DETACHED);
-                return nullptr;
-            }
-
-            return fromBufferSameCompartment(cx, buffer, buffer->byteLength(), byteOffset,
-                                             lengthInt, nullptr);
+            return fromBufferSameCompartment(cx, buffer, byteOffset, lengthInt, nullptr);
         }
-
-        RootedArrayBufferObjectMaybeShared buffer(cx);
-        if (!checkedUnwrapArrayBuffer(cx, bufobj, &buffer))
-            return nullptr;
-
-        if (buffer->isDetached()) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
-            return nullptr;
-        }
-
-        return fromBufferWrapped(cx, buffer, buffer->byteLength(), byteOffset, lengthInt, nullptr);
+        return fromBufferWrapped(cx, bufobj, byteOffset, lengthInt, nullptr);
     }
 
     static bool

@@ -134,6 +134,33 @@ for (let {buffer} of createBuffers()) {
 }
 
 
+for (let {buffer, detach} of createBuffers()) {
+    let byteOffset = 0;
+    let length = ValueThrowing();
+
+    detach();
+    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), ExpectedError);
+}
+
+
+
+for (let {buffer, detach} of createBuffers()) {
+    let byteOffset = ValueReturning(0, detach);
+    let length = ValueThrowing();
+
+    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), ExpectedError);
+}
+
+
+
+for (let {buffer, detach} of createBuffers()) {
+    let byteOffset = 0;
+    let length = ValueThrowing(detach);
+
+    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), ExpectedError);
+}
+
+
 for (let {buffer, detach} of createBuffers([1, 9])) {
     let byteOffset = 0;
 
@@ -166,27 +193,12 @@ for (let {buffer, detach} of createBuffers()) {
 }
 
 
-for (let {buffer, detach} of createBuffers()) {
-    let byteOffset = 0;
-
-    detach();
-    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, poisonedValue), TypeError);
-}
-
-
-for (let {buffer, detach} of createBuffers()) {
-    let byteOffset = ValueReturning(0, detach);
-
-    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, poisonedValue), TypeError);
-}
-
-
 
 for (let {buffer, detach} of createBuffers()) {
     let byteOffset = 64;
     let length = ValueReturning(0, detach);
 
-    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), RangeError);
+    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), TypeError);
 }
 
 
@@ -195,7 +207,23 @@ for (let {buffer, detach} of createBuffers()) {
     let byteOffset = 0;
     let length = ValueReturning(64, detach);
 
-    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), RangeError);
+    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), TypeError);
+}
+
+
+for (let {buffer, detach} of createBuffers()) {
+    let byteOffset = ValueReturning(0, detach);
+    let length = 0;
+
+    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), TypeError);
+}
+
+
+for (let {buffer, detach} of createBuffers()) {
+    let byteOffset = 0;
+    let length = ValueReturning(0, detach);
+
+    assertThrowsInstanceOf(() => new Int32Array(buffer, byteOffset, length), TypeError);
 }
 
 if (typeof reportCompare === "function")
