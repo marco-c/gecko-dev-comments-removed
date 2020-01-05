@@ -68,6 +68,9 @@ add_task(function* setup() {
   Services.search.moveEngine(engineOneOff, 0);
 
   
+  yield SpecialPowers.pushPrefEnv({"set": [["toolkit.telemetry.enabled", true]]});
+
+  
   registerCleanupFunction(function* () {
     Services.search.currentEngine = originalEngine;
     Services.search.removeEngine(engineDefault);
@@ -78,6 +81,7 @@ add_task(function* setup() {
 add_task(function* test_plainQuery() {
   
   Services.telemetry.clearScalars();
+  let search_hist = getSearchCountsHistogram();
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -94,12 +98,16 @@ add_task(function* test_plainQuery() {
   Assert.equal(Object.keys(scalars[SCALAR_SEARCHBAR]).length, 1,
                "This search must only increment one entry in the scalar.");
 
+  
+  checkKeyedHistogram(search_hist, 'other-MozSearch.searchbar', 1);
+
   yield BrowserTestUtils.removeTab(tab);
 });
 
 add_task(function* test_oneOff() {
   
   Services.telemetry.clearScalars();
+  let search_hist = getSearchCountsHistogram();
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:blank");
 
@@ -119,12 +127,16 @@ add_task(function* test_oneOff() {
   Assert.equal(Object.keys(scalars[SCALAR_SEARCHBAR]).length, 1,
                "This search must only increment one entry in the scalar.");
 
+  
+  checkKeyedHistogram(search_hist, 'other-MozSearch2.searchbar', 1);
+
   yield BrowserTestUtils.removeTab(tab);
 });
 
 add_task(function* test_suggestion() {
   
   Services.telemetry.clearScalars();
+  let search_hist = getSearchCountsHistogram();
 
   
   
@@ -154,6 +166,9 @@ add_task(function* test_suggestion() {
   checkKeyedScalar(scalars, SCALAR_SEARCHBAR, "search_suggestion", 1);
   Assert.equal(Object.keys(scalars[SCALAR_SEARCHBAR]).length, 1,
                "This search must only increment one entry in the scalar.");
+
+  
+  checkKeyedHistogram(search_hist, 'other-' + suggestionEngine.name + '.searchbar', 1);
 
   Services.search.currentEngine = previousEngine;
   Services.search.removeEngine(suggestionEngine);

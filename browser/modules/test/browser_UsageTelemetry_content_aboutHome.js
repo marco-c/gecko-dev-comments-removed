@@ -28,6 +28,9 @@ add_task(function* setup() {
   Services.search.moveEngine(engineOneOff, 0);
 
   
+  yield SpecialPowers.pushPrefEnv({"set": [["toolkit.telemetry.enabled", true]]});
+
+  
   registerCleanupFunction(function* () {
     Services.search.currentEngine = originalEngine;
     Services.search.removeEngine(engineDefault);
@@ -38,6 +41,7 @@ add_task(function* setup() {
 add_task(function* test_abouthome_simpleQuery() {
   
   Services.telemetry.clearScalars();
+  let search_hist = getSearchCountsHistogram();
 
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser);
 
@@ -66,6 +70,9 @@ add_task(function* test_abouthome_simpleQuery() {
   checkKeyedScalar(scalars, SCALAR_ABOUT_HOME, "search_enter", 1);
   Assert.equal(Object.keys(scalars[SCALAR_ABOUT_HOME]).length, 1,
                "This search must only increment one entry in the scalar.");
+
+  
+  checkKeyedHistogram(search_hist, 'other-MozSearch.abouthome', 1);
 
   yield BrowserTestUtils.removeTab(tab);
 });
