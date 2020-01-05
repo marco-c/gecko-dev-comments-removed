@@ -2954,11 +2954,7 @@ pref("svg.marker-improvements.enabled", true);
 
 pref("svg.new-getBBox.enabled", false);
 
-#ifdef RELEASE_OR_BETA
-pref("svg.transform-box.enabled", false);
-#else
 pref("svg.transform-box.enabled", true);
-#endif // RELEASE_OR_BETA
 
 
 pref("font.default.ar", "sans-serif");
