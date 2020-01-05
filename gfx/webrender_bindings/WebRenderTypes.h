@@ -9,6 +9,20 @@
 #include "mozilla/webrender/webrender_ffi.h"
 #include "mozilla/Maybe.h"
 
+
+
+
+
+
+
+
+
+
+
+
+
+#define MOZ_USE_RENDER_THREAD false
+
 typedef mozilla::Maybe<WrImageMask> MaybeImageMask;
 
 namespace mozilla {
@@ -91,6 +105,10 @@ struct ByteBuffer
       free(mData);
     }
   }
+
+  const Range<uint8_t> AsSlice() const { return Range<uint8_t>(mData, mLength); }
+
+  Range<uint8_t> AsSlice() { return Range<uint8_t>(mData, mLength); }
 
   bool operator==(const ByteBuffer& other) const {
     return mLength == other.mLength &&
