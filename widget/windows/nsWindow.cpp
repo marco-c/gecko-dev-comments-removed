@@ -1704,15 +1704,6 @@ void nsWindow::SetThemeRegion()
 
 
 void nsWindow::RegisterTouchWindow() {
-  if (!WinUtils::IsTouchDeviceSupportPresent() &&
-      !Preferences::GetBool("test.force_register_touch_windows", false)) {
-    
-    
-    
-    
-    
-    return;
-  }
   mTouchWindow = true;
   mGesture.RegisterTouchWindow(mWnd);
   ::EnumChildWindows(mWnd, nsWindow::RegisterTouchForDescendants, 0);
@@ -4334,20 +4325,6 @@ nsWindow::DispatchMouseEvent(EventMessage aEventMessage, WPARAM wParam,
 
   ModifierKeyState modifierKeyState;
   modifierKeyState.InitInputEvent(event);
-
-  
-  
-  
-  
-  
-  
-  
-  if (aEventMessage == eContextMenu && aIsContextMenuKey && event.IsShift() &&
-      NativeKey::LastKeyMSG().message == WM_SYSKEYDOWN &&
-      NativeKey::LastKeyMSG().wParam == VK_F10) {
-    event.mModifiers &= ~MODIFIER_SHIFT;
-  }
-
   event.button    = aButton;
   event.inputSource = aInputSource;
   if (aPointerInfo) {
