@@ -675,15 +675,15 @@ impl LayoutTask {
     
     
     
-    fn make_on_image_available_cb(&self) -> @ImageResponder {
+    fn make_on_image_available_cb(&self) -> ~ImageResponder:Send {
         
         
         
         
-        @LayoutImageResponder {
+        ~LayoutImageResponder {
             id: self.id.clone(),
             script_chan: self.script_chan.clone(),
-        } as @ImageResponder
+        } as ~ImageResponder:Send
     }
 
     
