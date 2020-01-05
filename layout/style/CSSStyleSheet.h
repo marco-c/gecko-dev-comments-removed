@@ -156,6 +156,8 @@ public:
 
   void SetOwnerRule(css::ImportRule* aOwnerRule) { mOwnerRule = aOwnerRule;  }
   css::ImportRule* GetOwnerRule() const { return mOwnerRule; }
+  
+  using StyleSheet::GetOwnerRule;
 
   nsXMLNameSpaceMap* GetNameSpaceMap() const { return mInner->mNameSpaceMap; }
 
@@ -195,13 +197,6 @@ public:
   void SetInRuleProcessorCache() { mInRuleProcessorCache = true; }
 
   
-  NS_IMETHOD GetParentStyleSheet(nsIDOMStyleSheet** aParentStyleSheet) final;
-  NS_IMETHOD GetMedia(nsIDOMMediaList** aMedia) final;
-
-  
-  NS_DECL_NSIDOMCSSSTYLESHEET
-
-  
   
   static bool RebuildChildList(css::Rule* aRule, void* aBuilder);
 
@@ -214,7 +209,6 @@ public:
   }
 
   
-  using GetParentStyleSheet;
   nsMediaList* Media() final;
 
   
@@ -222,9 +216,6 @@ public:
   
   
   nsIDOMCSSRule* GetDOMOwnerRule() const final;
-  using StyleSheet::GetCssRules;
-  using StyleSheet::InsertRule;
-  using StyleSheet::DeleteRule;
 
   
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;

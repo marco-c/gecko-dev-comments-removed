@@ -51,11 +51,13 @@ public:
   RawServoStyleSheet* RawSheet() const { return mSheet; }
 
   
-  NS_IMETHOD GetParentStyleSheet(nsIDOMStyleSheet** aParentStyleSheet) final;
-  NS_IMETHOD GetMedia(nsIDOMMediaList** aMedia) final;
+  nsMediaList* Media() final;
 
   
-  NS_DECL_NSIDOMCSSSTYLESHEET
+  
+  
+  
+  nsIDOMCSSRule* GetDOMOwnerRule() const final;
 
   void WillDirty() {}
   void DidDirty() {}
