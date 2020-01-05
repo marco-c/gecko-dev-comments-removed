@@ -33,11 +33,23 @@ using namespace mozilla;
 
 nsLineBox::nsLineBox(nsIFrame* aFrame, int32_t aCount, bool aIsBlock)
   : mFirstChild(aFrame)
+  , mWritingMode()
   , mContainerSize(-1, -1)
   , mBounds(WritingMode()) 
                            
-
+  , mFrames()
+  , mAscent()
+  , mAllFlags(0)
+  , mData(nullptr)
 {
+  
+  
+  
+  static_assert(sizeof(mFrames) >= sizeof(mChildCount), "nsLineBox init #1");
+  static_assert(sizeof(mAllFlags) >= sizeof(mFlags), "nsLineBox init #2");
+  static_assert(sizeof(mData) >= sizeof(mBlockData), "nsLineBox init #3");
+  static_assert(sizeof(mData) >= sizeof(mInlineData), "nsLineBox init #4");
+
   MOZ_COUNT_CTOR(nsLineBox);
 #ifdef DEBUG
   ++ctorCount;

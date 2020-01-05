@@ -216,7 +216,6 @@ public:
   {
     void* result = mFrameArena.AllocateByFrameID(aID, aSize);
     RecordAlloc(result);
-    memset(result, 0, aSize);
     return result;
   }
 
@@ -237,7 +236,6 @@ public:
   {
     void* result = mFrameArena.AllocateByObjectID(aID, aSize);
     RecordAlloc(result);
-    memset(result, 0, aSize);
     return result;
   }
 
