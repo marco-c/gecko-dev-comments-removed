@@ -119,7 +119,7 @@ Readability.prototype = {
   
   
   REGEXPS: {
-    unlikelyCandidates: /banner|combx|comment|community|disqus|extra|foot|header|menu|modal|related|remark|rss|share|shoutbox|sidebar|skyscraper|sponsor|ad-break|agegate|pagination|pager|popup/i,
+    unlikelyCandidates: /banner|combx|comment|community|disqus|extra|foot|header|legends|menu|modal|related|remark|rss|shoutbox|sidebar|skyscraper|sponsor|ad-break|agegate|pagination|pager|popup/i,
     okMaybeItsACandidate: /and|article|body|column|main|shadow/i,
     positive: /article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story/i,
     negative: /hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|modal|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,
@@ -473,6 +473,12 @@ Readability.prototype = {
 
     
     
+    this._forEachNode(articleContent.children, function(topCandidate) {
+      this._cleanMatchedNodes(topCandidate, /share/);
+    });
+
+    
+    
     if (articleContent.getElementsByTagName('h2').length === 1)
       this._clean(articleContent, "h2");
 
@@ -662,9 +668,6 @@ Readability.prototype = {
 
     var pageCacheHtml = page.innerHTML;
 
-    
-    this._articleDir = doc.documentElement.getAttribute("dir");
-
     while (true) {
       var stripUnlikelyCandidates = this._flagIsActive(this.FLAG_STRIP_UNLIKELYS);
 
@@ -812,6 +815,7 @@ Readability.prototype = {
 
       var topCandidate = topCandidates[0] || null;
       var neededToCreateTopCandidate = false;
+      var parentOfTopCandidate;
 
       
       
@@ -838,7 +842,7 @@ Readability.prototype = {
         
         
         
-        var parentOfTopCandidate = topCandidate.parentNode;
+        parentOfTopCandidate = topCandidate.parentNode;
         var lastScore = topCandidate.readability.contentScore;
         
         var scoreThreshold = lastScore / 3;
@@ -864,7 +868,9 @@ Readability.prototype = {
         articleContent.id = "readability-content";
 
       var siblingScoreThreshold = Math.max(10, topCandidate.readability.contentScore * 0.2);
-      var siblings = topCandidate.parentNode.children;
+      
+      parentOfTopCandidate = topCandidate.parentNode;
+      var siblings = parentOfTopCandidate.children;
 
       for (var s = 0, sl = siblings.length; s < sl; s++) {
         var sibling = siblings[s];
@@ -968,6 +974,18 @@ Readability.prototype = {
           return null;
         }
       } else {
+        
+        var ancestors = [parentOfTopCandidate, topCandidate].concat(this._getNodeAncestors(parentOfTopCandidate));
+        this._someNode(ancestors, function(ancestor) {
+          if (!ancestor.tagName)
+            return false;
+          var articleDir = ancestor.getAttribute("dir");
+          if (articleDir) {
+            this._articleDir = articleDir;
+            return true;
+          }
+          return false;
+        });
         return articleContent;
       }
     }
@@ -1693,6 +1711,25 @@ Readability.prototype = {
       }
       return false;
     });
+  },
+
+  
+
+
+
+
+
+
+  _cleanMatchedNodes: function(e, regex) {
+    var endOfSearchMarkerNode = this._getNextNode(e, true);
+    var next = this._getNextNode(e);
+    while (next && next != endOfSearchMarkerNode) {
+      if (regex.test(next.className + " " + next.id)) {
+        next = this._removeAndGetNext(next);
+      } else {
+        next = this._getNextNode(next);
+      }
+    }
   },
 
   
