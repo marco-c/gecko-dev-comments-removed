@@ -11,6 +11,9 @@ Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
+XPCOMUtils.defineLazyServiceGetter(
+    this, "env", "@mozilla.org/process/environment;1", "nsIEnvironment");
+
 const MARIONETTE_CONTRACT_ID = "@mozilla.org/marionette;1";
 const MARIONETTE_CID = Components.ID("{786a1369-dca5-4adc-8486-33d23c88010a}");
 
@@ -48,6 +51,7 @@ const LOG_LEVELS = new class extends Map {
 
 
 
+const ENV_ENABLED = "MOZ_MARIONETTE";
 
 
 
@@ -57,7 +61,11 @@ const LOG_LEVELS = new class extends Map {
 
 
 
-const ENV_PREF_VAR = "MOZ_MARIONETTE_PREF_STATE_ACROSS_RESTARTS";
+
+
+
+
+const ENV_PRESERVE_PREFS = "MOZ_MARIONETTE_PREF_STATE_ACROSS_RESTARTS";
 
 const ServerSocket = CC("@mozilla.org/network/server-socket;1",
     "nsIServerSocket",
@@ -112,8 +120,7 @@ const prefs = {
 };
 
 function MarionetteComponent() {
-  
-  
+  this.enabled = env.exists(ENV_ENABLED);
   this.running = false;
 
   
@@ -193,7 +200,7 @@ MarionetteComponent.prototype.observe = function (subject, topic, data) {
       
       Services.obs.addObserver(this, "sessionstore-windows-restored");
 
-      prefs.readFromEnvironment(ENV_PREF_VAR);
+      prefs.readFromEnvironment(ENV_PRESERVE_PREFS);
 
       if (this.enabled) {
         
