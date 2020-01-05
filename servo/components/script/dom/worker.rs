@@ -57,9 +57,9 @@ impl Worker {
                            WorkerBinding::Wrap)
     }
 
-    // http://www.whatwg.org/html/#dom-worker
+    
     pub fn Constructor(global: &GlobalRef, scriptURL: DOMString) -> Fallible<Temporary<Worker>> {
-        // Step 2-4.
+        
         let worker_url = match UrlParser::new().base_url(&global.get_url())
                 .parse(scriptURL.as_slice()) {
             Ok(url) => url,
@@ -99,7 +99,7 @@ impl Worker {
 }
 
 impl Worker {
-    // Creates a trusted address to the object, and roots it. Always pair this with a release()
+    
     pub fn addref(&self) -> TrustedWorkerAddress {
         let refcount = self.refcount.get();
         if refcount == 0 {
@@ -149,15 +149,7 @@ impl<'a> WorkerMethods for JSRef<'a, Worker> {
         Ok(())
     }
 
-    fn GetOnmessage(self) -> Option<EventHandlerNonNull> {
-        let eventtarget: JSRef<EventTarget> = EventTargetCast::from_ref(self);
-        eventtarget.get_event_handler_common("message")
-    }
-
-    fn SetOnmessage(self, listener: Option<EventHandlerNonNull>) {
-        let eventtarget: JSRef<EventTarget> = EventTargetCast::from_ref(self);
-        eventtarget.set_event_handler_common("message", listener)
-    }
+    event_handler!(message, GetOnmessage, SetOnmessage)
 }
 
 impl Reflectable for Worker {
