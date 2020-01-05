@@ -38,11 +38,6 @@ add_task(function* testGetAllPermissionDetailsForBrowser() {
     label: "Use the Camera",
     state: SitePermissions.ALLOW,
     scope: SitePermissions.SCOPE_PERSISTENT,
-    availableStates: [
-      { id: SitePermissions.UNKNOWN, label: "Always Ask" },
-      { id: SitePermissions.ALLOW, label: "Allow" },
-      { id: SitePermissions.BLOCK, label: "Block" },
-    ]
   });
 
   
@@ -52,19 +47,12 @@ add_task(function* testGetAllPermissionDetailsForBrowser() {
   camera = permissions.find(({id}) => id === "camera");
   Assert.equal(camera, undefined);
 
-  
-
   let cookie = permissions.find(({id}) => id === "cookie");
   Assert.deepEqual(cookie, {
     id: "cookie",
     label: "Set Cookies",
     state: SitePermissions.ALLOW_COOKIES_FOR_SESSION,
     scope: SitePermissions.SCOPE_PERSISTENT,
-    availableStates: [
-      { id: SitePermissions.ALLOW, label: "Allow" },
-      { id: SitePermissions.ALLOW_COOKIES_FOR_SESSION, label: "Allow for Session" },
-      { id: SitePermissions.BLOCK, label: "Block" },
-    ]
   });
 
   let popup = permissions.find(({id}) => id === "popup");
@@ -73,10 +61,6 @@ add_task(function* testGetAllPermissionDetailsForBrowser() {
     label: "Open Pop-up Windows",
     state: SitePermissions.BLOCK,
     scope: SitePermissions.SCOPE_PERSISTENT,
-    availableStates: [
-      { id: SitePermissions.ALLOW, label: "Allow" },
-      { id: SitePermissions.BLOCK, label: "Block" },
-    ]
   });
 
   let geo = permissions.find(({id}) => id === "geo");
@@ -85,11 +69,6 @@ add_task(function* testGetAllPermissionDetailsForBrowser() {
     label: "Access Your Location",
     state: SitePermissions.ALLOW,
     scope: SitePermissions.SCOPE_SESSION,
-    availableStates: [
-      { id: SitePermissions.UNKNOWN, label: "Always Ask" },
-      { id: SitePermissions.ALLOW, label: "Allow" },
-      { id: SitePermissions.BLOCK, label: "Block" },
-    ]
   });
 
   SitePermissions.remove(uri, "cookie");

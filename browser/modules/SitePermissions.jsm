@@ -199,34 +199,6 @@ this.SitePermissions = {
 
 
 
-
-
-
-
-
-  getPermissionDetails(id, scope, state = this.getDefault(id)) {
-    let availableStates = this.getAvailableStates(id).map(val => {
-      return { id: val, label: this.getStateLabel(val) };
-    });
-    return {id, label: this.getPermissionLabel(id), state, scope, availableStates};
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   getAllForBrowser(browser) {
     let permissions = {};
 
@@ -251,9 +223,15 @@ this.SitePermissions = {
 
 
 
+
+
+
+
+
+
   getAllPermissionDetailsForBrowser(browser) {
     return this.getAllForBrowser(browser).map(({id, scope, state}) =>
-      this.getPermissionDetails(id, scope, state));
+      ({id, scope, state, label: this.getPermissionLabel(id)}));
   },
 
   
@@ -493,25 +471,48 @@ this.SitePermissions = {
 
 
 
-
-  getStateLabel(state, scope = null) {
+  getMultichoiceStateLabel(state) {
     switch (state) {
       case this.UNKNOWN:
-        return gStringBundle.GetStringFromName("alwaysAsk");
+        return gStringBundle.GetStringFromName("state.multichoice.alwaysAsk");
       case this.ALLOW:
-        if (scope && scope != this.SCOPE_PERSISTENT)
-          return gStringBundle.GetStringFromName("allowTemporarily");
-        return gStringBundle.GetStringFromName("allow");
+        return gStringBundle.GetStringFromName("state.multichoice.allow");
       case this.ALLOW_COOKIES_FOR_SESSION:
-        return gStringBundle.GetStringFromName("allowForSession");
+        return gStringBundle.GetStringFromName("state.multichoice.allowForSession");
       case this.BLOCK:
-        if (scope && scope != this.SCOPE_PERSISTENT)
-          return gStringBundle.GetStringFromName("blockTemporarily");
-        return gStringBundle.GetStringFromName("block");
+        return gStringBundle.GetStringFromName("state.multichoice.block");
       default:
         return null;
     }
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+  getCurrentStateLabel(state, scope = null) {
+    switch (state) {
+      case this.ALLOW:
+        if (scope && scope != this.SCOPE_PERSISTENT)
+          return gStringBundle.GetStringFromName("state.current.allowedTemporarily");
+        return gStringBundle.GetStringFromName("state.current.allowed");
+      case this.ALLOW_COOKIES_FOR_SESSION:
+        return gStringBundle.GetStringFromName("state.current.allowedForSession");
+      case this.BLOCK:
+        if (scope && scope != this.SCOPE_PERSISTENT)
+          return gStringBundle.GetStringFromName("state.current.blockedTemporarily");
+        return gStringBundle.GetStringFromName("state.current.blocked");
+      default:
+        return null;
+    }
+  },
 };
 
 var gPermissionObject = {
