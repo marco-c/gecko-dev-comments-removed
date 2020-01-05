@@ -13,7 +13,6 @@ use canvas_traits::CanvasMsg;
 use devtools_traits::{ScriptToDevtoolsControlMsg, WorkerId};
 use euclid::point::Point2D;
 use euclid::size::Size2D;
-use gfx_traits::LayerId;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{PipelineId, TraversalDirection};
@@ -114,7 +113,7 @@ pub enum ScriptMsg {
     
     Alert(PipelineId, String, IpcSender<bool>),
     
-    ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>, bool),
+    ScrollFragmentPoint(PipelineId, Point2D<f32>, bool),
     
     
     SetTitle(PipelineId, Option<String>),

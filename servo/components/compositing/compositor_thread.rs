@@ -8,7 +8,6 @@ use SendableFrameTree;
 use compositor::CompositingReason;
 use euclid::point::Point2D;
 use euclid::size::Size2D;
-use gfx_traits::LayerId;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Image, Key, KeyModifiers, KeyState, PipelineId};
 use profile_traits::mem;
@@ -72,7 +71,7 @@ pub enum Msg {
     ShutdownComplete,
 
     
-    ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>, bool),
+    ScrollFragmentPoint(PipelineId, Point2D<f32>, bool),
     
     ChangePageTitle(PipelineId, Option<String>),
     

@@ -7,13 +7,10 @@
 
 #![allow(unsafe_code)]
 
-use app_units::Au;
-use euclid::Rect;
 use fnv::FnvHasher;
 use gfx::display_list::WebRenderImageInfo;
 use gfx::font_cache_thread::FontCacheThread;
 use gfx::font_context::FontContext;
-use gfx_traits::LayerId;
 use heapsize::HeapSizeOf;
 use ipc_channel::ipc;
 use net_traits::image::base::Image;
@@ -86,9 +83,6 @@ pub struct SharedLayoutContext {
 
     
     pub font_cache_thread: Mutex<FontCacheThread>,
-
-    
-    pub visible_rects: Arc<HashMap<LayerId, Rect<Au>, BuildHasherDefault<FnvHasher>>>,
 
     
     pub webrender_image_cache: Arc<RwLock<HashMap<(Url, UsePlaceholder),

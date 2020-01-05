@@ -23,7 +23,6 @@ pub mod color;
 pub mod print_tree;
 
 use range::RangeIndex;
-use std::fmt::{self, Debug, Formatter};
 use std::sync::atomic::{ATOMIC_USIZE_INIT, AtomicUsize, Ordering};
 
 
@@ -78,56 +77,6 @@ pub enum ScrollPolicy {
     Scrollable,
     
     FixedPosition,
-}
-
-#[derive(Clone, PartialEq, Eq, Copy, Hash, Deserialize, Serialize, HeapSizeOf)]
-pub struct LayerId(
-    
-    LayerType,
-    
-    usize,
-    
-    
-    usize
-);
-
-impl Debug for LayerId {
-    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
-        let LayerId(layer_type, id, companion) = *self;
-        let type_string = match layer_type {
-            LayerType::FragmentBody => "-FragmentBody",
-            LayerType::OverflowScroll => "-OverflowScroll",
-            LayerType::BeforePseudoContent => "-BeforePseudoContent",
-            LayerType::AfterPseudoContent => "-AfterPseudoContent",
-        };
-
-        write!(f, "{}{}-{}", id, type_string, companion)
-    }
-}
-
-impl LayerId {
-    
-    pub fn null() -> LayerId {
-        LayerId(LayerType::FragmentBody, 0, 0)
-    }
-
-    pub fn new_of_type(layer_type: LayerType, fragment_id: usize) -> LayerId {
-        LayerId(layer_type, fragment_id, 0)
-    }
-
-    pub fn companion_layer_id(&self) -> LayerId {
-        let LayerId(layer_type, id, companion) = *self;
-        LayerId(layer_type, id, companion + 1)
-    }
-
-    pub fn original(&self) -> LayerId {
-        let LayerId(layer_type, id, _) = *self;
-        LayerId(layer_type, id, 0)
-    }
-
-    pub fn kind(&self) -> LayerType {
-        self.0
-    }
 }
 
 
