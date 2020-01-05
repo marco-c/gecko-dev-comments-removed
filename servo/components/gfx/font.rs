@@ -18,6 +18,7 @@ use style::properties::style_structs::Font as FontStyle;
 use text::Shaper;
 use text::glyph::{GlyphId, GlyphStore};
 use text::shaping::ShaperMethods;
+use unicode_script::Script;
 use util::cache::HashCache;
 use util::geometry::Au;
 
@@ -117,6 +118,8 @@ pub struct ShapingOptions {
     pub letter_spacing: Option<Au>,
     
     pub word_spacing: Au,
+    
+    pub script: Script,
     
     pub flags: ShapingFlags,
 }
