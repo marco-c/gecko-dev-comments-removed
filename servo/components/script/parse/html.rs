@@ -2,6 +2,8 @@
 
 
 
+#![allow(unsafe_blocks)]
+
 use dom::attr::AttrHelpers;
 use dom::bindings::codegen::Bindings::NodeBinding::NodeMethods;
 use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast, HTMLScriptElementCast};
