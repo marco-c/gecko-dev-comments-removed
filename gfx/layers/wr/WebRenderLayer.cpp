@@ -41,7 +41,7 @@ WebRenderLayer::GetImageKey()
 }
 
 Maybe<WrImageMask>
-WebRenderLayer::BuildWrMaskLayer(bool aUnapplyLayerTransform)
+WebRenderLayer::BuildWrMaskLayer(const StackingContextHelper* aUnapplySc)
 {
   if (GetLayer()->GetMaskLayer()) {
     WebRenderLayer* maskLayer = ToWebRenderLayer(GetLayer()->GetMaskLayer());
@@ -49,11 +49,10 @@ WebRenderLayer::BuildWrMaskLayer(bool aUnapplyLayerTransform)
     
     
     
+    
     gfx::Matrix4x4 transform = maskLayer->GetLayer()->GetTransform();
-    if (aUnapplyLayerTransform) {
-      gfx::Rect bounds = IntRectToRect(GetLayer()->GetVisibleRegion().GetBounds().ToUnknownRect());
-      transform = transform.PreTranslate(-bounds.x, -bounds.y, 0);
-      transform = transform * GetLayer()->GetTransform().Inverse();
+    if (aUnapplySc) {
+      transform = transform * aUnapplySc->TransformToParentSC();
     }
 
     return maskLayer->RenderMaskLayer(transform);

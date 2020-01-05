@@ -64,9 +64,15 @@ public:
   
   WrRect ToRelativeWrRectRounded(const LayoutDeviceRect& aRect) const;
 
+  
+  
+  gfx::Matrix4x4 TransformToParentSC() const;
+
 private:
   wr::DisplayListBuilder* mBuilder;
   LayerPoint mOrigin;
+  WrPoint mOffsetToParent;
+  gfx::Matrix4x4 mTransform;
 };
 
 } 

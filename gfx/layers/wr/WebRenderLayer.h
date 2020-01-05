@@ -55,7 +55,13 @@ protected:
   Maybe<LayerRect> ClipRect();
 
   void DumpLayerInfo(const char* aLayerType, const LayerRect& aRect);
-  Maybe<WrImageMask> BuildWrMaskLayer(bool aUnapplyLayerTransform);
+
+  
+  
+  
+  
+  
+  Maybe<WrImageMask> BuildWrMaskLayer(const StackingContextHelper* aUnapplySc);
 };
 
 } 
