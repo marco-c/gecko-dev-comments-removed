@@ -236,12 +236,6 @@ impl LayoutDataRef {
 }
 
 
-
-
-
-pub trait TLayoutData {}
-
-
 #[deriving(PartialEq,Encodable)]
 pub enum NodeTypeId {
     DoctypeNodeTypeId,
