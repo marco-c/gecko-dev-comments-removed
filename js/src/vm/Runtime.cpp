@@ -177,6 +177,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
     liveRuntimesCount++;
 
     
+    JS_INIT_CLIST(&onNewGlobalObjectWatchers());
 
     PodZero(&asmJSCacheOps);
     lcovOutput().init();
