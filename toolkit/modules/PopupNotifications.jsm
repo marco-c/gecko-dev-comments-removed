@@ -893,6 +893,14 @@ PopupNotifications.prototype = {
       notificationsToShow.forEach(function(n) {
         this._fireCallback(n, NOTIFICATION_EVENT_SHOWN);
       }, this);
+
+      
+      if (notificationsToShow.some(n => n.options.persistent)) {
+        this.panel.setAttribute("noautohide", "true");
+      } else {
+        this.panel.removeAttribute("noautohide");
+      }
+
       
       
       
