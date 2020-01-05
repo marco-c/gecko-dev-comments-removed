@@ -3,6 +3,10 @@ add_task(function* testBasicPrompt() {
   let updateParams = "showPrompt=1&promptWaitTime=0";
   gUseTestUpdater = true;
 
+  
+  
+  let extraWindow = yield BrowserTestUtils.openNewBrowserWindow();
+
   yield runUpdateTest(updateParams, 1, [
     {
       notificationId: "update-available",
@@ -19,4 +23,6 @@ add_task(function* testBasicPrompt() {
       }
     },
   ]);
+
+  yield BrowserTestUtils.closeWindow(extraWindow);
 });

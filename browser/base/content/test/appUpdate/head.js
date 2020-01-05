@@ -194,12 +194,7 @@ function runUpdateProcessingTest(updates, steps) {
   });
 }
 
-function processStep(step) {
-  if (typeof(step) == "function") {
-    return Task.spawn(step);
-  }
-
-  const {notificationId, button, beforeClick, cleanup} = step;
+function processStep({notificationId, button, beforeClick, cleanup}) {
   return Task.spawn(function*() {
 
     yield BrowserTestUtils.waitForEvent(PanelUI.notificationPanel, "popupshown");
@@ -213,11 +208,13 @@ function processStep(step) {
       return;
     }
 
-    let buttonEl = getNotificationButton(window, notificationId, button);
+    let notification = document.getElementById(`appMenu-${notificationId}-notification`);
+    is(notification.hidden, false, `${notificationId} notification is showing`);
     if (beforeClick) {
-      yield beforeClick();
+      yield Task.spawn(beforeClick);
     }
 
+    let buttonEl = document.getAnonymousElementByAttribute(notification, "anonid", button);
 
     buttonEl.click();
 
@@ -245,22 +242,6 @@ function waitForEvent(topic, status = null) {
       }
     }
   }, topic))
-}
-
-
-
-
-
-
-
-
-
-
-
-function getNotificationButton(win, notificationId, button) {
-  let notification = win.document.getElementById(`appMenu-${notificationId}-notification`);
-  is(notification.hidden, false, `${notificationId} notification is showing`);
-  return win.document.getAnonymousElementByAttribute(notification, "anonid", button);
 }
 
 
