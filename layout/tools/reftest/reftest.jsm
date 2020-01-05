@@ -701,7 +701,7 @@ function BuildConditionSandbox(aURL) {
     
     
     var navigator = gContainingWindow.navigator;
-    var testPlugin = navigator.plugins["Test Plug-in"];
+    var testPlugin = getTestPlugin("Test Plug-in");
     sandbox.haveTestPlugin = !!testPlugin;
 
     
