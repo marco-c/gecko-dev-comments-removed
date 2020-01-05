@@ -65,7 +65,7 @@ class MachCommands(MachCommandBase):
     @CommandArgument('tests', nargs='*',
         metavar='TEST',
         help=('Tests to run. Each test can be a single file or a directory. '
-              'Default test resolution relies on PYTHON_UNIT_TESTS.'))
+              'Default test resolution relies on PYTHON_UNITTEST_MANIFESTS.'))
     def python_test(self,
                     tests=[],
                     test_objects=None,
@@ -124,7 +124,7 @@ class MachCommands(MachCommandBase):
         if not test_objects:
             message = 'TEST-UNEXPECTED-FAIL | No tests collected'
             if not path_only:
-                message += ' (Not in PYTHON_UNIT_TESTS? Try --path-only?)'
+                message += ' (Not in PYTHON_UNITTEST_MANIFESTS? Try --path-only?)'
             self.log(logging.WARN, 'python-test', {}, message)
             return 1
 
