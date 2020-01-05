@@ -109,11 +109,6 @@ this.sidebarAction = class extends ExtensionAPI {
       }
     }
 
-    
-    if (AppConstants.RELEASE_OR_BETA) {
-      return;
-    }
-
     if (install && !Services.prefs.prefHasUserValue("extensions.sidebar-button.shown")) {
       Services.prefs.setBoolPref("extensions.sidebar-button.shown", true);
       
