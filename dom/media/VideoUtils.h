@@ -26,6 +26,7 @@
 #include "TimeUnits.h"
 #include "nsITimer.h"
 #include "nsCOMPtr.h"
+#include "VideoLimits.h"
 
 using mozilla::CheckedInt64;
 using mozilla::CheckedUint64;
@@ -140,13 +141,6 @@ CheckedInt64 TimeUnitToFrames(const media::TimeUnit& aTime, uint32_t aRate);
 
 
 nsresult SecondsToUsecs(double aSeconds, int64_t& aOutUsecs);
-
-
-
-
-
-static const int32_t MAX_VIDEO_WIDTH = 8192;
-static const int32_t MAX_VIDEO_HEIGHT = 4608;
 
 
 
