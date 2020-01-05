@@ -4680,10 +4680,15 @@ pref("layers.allow-d3d9-fallback", false);
 #endif
 
 
+pref("layers.shared-buffer-provider.enabled", true);
+
 #ifdef XP_WIN
 pref("layers.shared-buffer-provider.enabled", false);
-#else
-pref("layers.shared-buffer-provider.enabled", true);
+#endif
+
+#ifdef XP_MACOSX
+
+pref("layers.shared-buffer-provider.enabled", false);
 #endif
 
 
