@@ -12,6 +12,7 @@
 #include "Matrix.h"
 #include "Quaternion.h"
 #include "UserData.h"
+#include <vector>
 
 
 
@@ -782,6 +783,7 @@ public:
   virtual BackendType GetBackendType() const = 0;
 
   virtual bool IsRecording() const { return false; }
+  virtual bool IsCaptureDT() const { return false; }
 
   
 
@@ -1276,6 +1278,17 @@ protected:
 
 class DrawTargetCapture : public DrawTarget
 {
+public:
+  virtual bool IsCaptureDT() const { return true; }
+
+  
+
+
+
+
+  virtual bool ContainsOnlyColoredGlyphs(RefPtr<ScaledFont>& aScaledFont,
+                                         Color& aColor,
+                                         std::vector<Glyph>& aGlyphs) = 0;
 };
 
 class DrawEventRecorder : public RefCounted<DrawEventRecorder>
