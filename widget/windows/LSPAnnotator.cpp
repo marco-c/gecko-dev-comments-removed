@@ -11,11 +11,6 @@
 
 
 
-#if _WIN32_WINNT < 0x0600
-
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x0600
-#endif
 #include "nsICrashReporter.h"
 #include "nsISupportsImpl.h"
 #include "nsServiceManagerUtils.h"
