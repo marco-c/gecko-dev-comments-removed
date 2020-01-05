@@ -44,6 +44,7 @@ private:
   
   
   nsresult mStatus;
+  bool     mIPCOpen;
 };
 
 } 
