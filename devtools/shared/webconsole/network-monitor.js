@@ -1079,10 +1079,18 @@ NetworkMonitor.prototype = {
     }
 
     
-    let causeType = channel.loadInfo.externalContentPolicyType;
-    let loadingPrincipal = channel.loadInfo.loadingPrincipal;
-    let causeUri = loadingPrincipal ? loadingPrincipal.URI : null;
+    let causeType = Ci.nsIContentPolicy.TYPE_OTHER;
+    let causeUri = null;
     let stacktrace;
+
+    if (channel.loadInfo) {
+      causeType = channel.loadInfo.externalContentPolicyType;
+      const { loadingPrincipal } = channel.loadInfo;
+      if (loadingPrincipal && loadingPrincipal.URI) {
+        causeUri = loadingPrincipal.URI.spec;
+      }
+    }
+
     
     
     if (this.owner.stackTraceCollector) {
@@ -1091,7 +1099,7 @@ NetworkMonitor.prototype = {
 
     event.cause = {
       type: causeType,
-      loadingDocumentUri: causeUri ? causeUri.spec : null,
+      loadingDocumentUri: causeUri,
       stacktrace
     };
 
