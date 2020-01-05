@@ -3,7 +3,7 @@
 
 
 use app_units::Au;
-use cssparser::{Parser, ToCss};
+use cssparser::Parser;
 use env_logger;
 use euclid::Size2D;
 use parking_lot::RwLock;
@@ -46,6 +46,7 @@ use style::sequential;
 use style::string_cache::Atom;
 use style::stylesheets::{Origin, Stylesheet};
 use style::timer::Timer;
+use style_traits::ToCss;
 use url::Url;
 
 

@@ -7,9 +7,10 @@
 
 
 
-use cssparser::{Parser, ToCss, Token};
+use cssparser::{Parser, Token};
 use parser::Parse;
 use std::fmt;
+use style_traits::ToCss;
 use values::HasViewportPercentage;
 use values::computed::{CalcLengthOrPercentage, Context};
 use values::computed::{LengthOrPercentage as ComputedLengthOrPercentage, ToComputedValue};

@@ -2,7 +2,7 @@
 
 
 
-use cssparser::Parser;
+use cssparser::{Parser, ToCss};
 use selectors::parser::{Selector, ParserContext, parse_selector_list};
 use style::selector_impl::TheSelectorImpl;
 

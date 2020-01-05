@@ -2,8 +2,8 @@
 
 
 
-use cssparser::ToCss;
 use properties::{AppendableValue, DeclaredValue, PropertyDeclaration, Shorthand};
+use style_traits::ToCss;
 use values::specified::{BorderStyle, CSSColor};
 use std::fmt;
 

@@ -7,8 +7,8 @@
 
 
 
-use cssparser::ToCss;
 use std::fmt;
+use style_traits::ToCss;
 use values::computed::LengthOrPercentage;
 
 #[derive(Debug, Clone, PartialEq, Copy)]

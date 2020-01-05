@@ -4,7 +4,7 @@
 
 
 
-use cssparser::ToCss;
+use super::ToCss;
 
 macro_rules! define_cursor {
     ($( $css: expr => $variant: ident = $value: expr, )+) => {
