@@ -19,7 +19,10 @@ function runWithMSE(testFunction) {
 
     document.body.appendChild(el);
     SimpleTest.registerCleanupFunction(function () {
-      el.parentNode.removeChild(el);
+      el.remove();
+      
+      el.preload = "none";
+      el.src = null;
     });
 
     testFunction(ms, el);
