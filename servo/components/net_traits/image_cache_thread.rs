@@ -2,6 +2,7 @@
 
 
 
+use FetchResponseMsg;
 use image::base::{Image, ImageMetadata};
 use ipc_channel::ipc::{self, IpcSender};
 use servo_url::ServoUrl;
@@ -13,27 +14,45 @@ use std::sync::Arc;
 
 #[derive(Clone, Deserialize, Serialize)]
 pub struct ImageResponder {
-    sender: IpcSender<ImageResponse>,
+    id: PendingImageId,
+    sender: IpcSender<PendingImageResponse>,
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct PendingImageResponse {
+    pub response: ImageResponse,
+    pub id: PendingImageId,
 }
 
 impl ImageResponder {
-    pub fn new(sender: IpcSender<ImageResponse>) -> ImageResponder {
+    pub fn new(sender: IpcSender<PendingImageResponse>, id: PendingImageId) -> ImageResponder {
         ImageResponder {
             sender: sender,
+            id: id,
         }
     }
 
     pub fn respond(&self, response: ImageResponse) {
-        self.sender.send(response).unwrap()
+        
+        
+        
+        let _ = self.sender.send(PendingImageResponse {
+            response: response,
+            id: self.id,
+        });
     }
 }
 
 
+#[derive(Copy, Clone, PartialEq, Eq, Deserialize, Serialize, HeapSizeOf, Hash, Debug)]
+pub struct PendingImageId(pub u64);
+
+
 #[derive(PartialEq, Copy, Clone, Deserialize, Serialize)]
 pub enum ImageState {
-    Pending,
+    Pending(PendingImageId),
     LoadError,
-    NotRequested,
+    NotRequested(PendingImageId),
 }
 
 
@@ -57,44 +76,21 @@ pub enum ImageOrMetadataAvailable {
 }
 
 
-#[derive(Clone, Deserialize, Serialize)]
-pub struct ImageCacheChan(pub IpcSender<ImageCacheResult>);
-
-
-
-#[derive(Deserialize, Serialize)]
-pub struct ImageCacheResult {
-    pub responder: Option<ImageResponder>,
-    pub image_response: ImageResponse,
-}
-
-
 #[derive(Deserialize, Serialize)]
 pub enum ImageCacheCommand {
     
     
+    GetImageOrMetadataIfAvailable(ServoUrl,
+                                  UsePlaceholder,
+                                  CanRequestImages,
+                                  IpcSender<Result<ImageOrMetadataAvailable, ImageState>>),
+
     
-    RequestImage(ServoUrl, ImageCacheChan, Option<ImageResponder>),
+    AddListener(PendingImageId, ImageResponder),
 
     
     
-    
-    
-    RequestImageAndMetadata(ServoUrl, ImageCacheChan, Option<ImageResponder>),
-
-    
-    
-    
-    
-    GetImageIfAvailable(ServoUrl, UsePlaceholder, IpcSender<Result<Arc<Image>, ImageState>>),
-
-    
-    
-    GetImageOrMetadataIfAvailable(ServoUrl, UsePlaceholder, IpcSender<Result<ImageOrMetadataAvailable, ImageState>>),
-
-    
-    
-    StoreDecodeImage(ServoUrl, Vec<u8>),
+    StoreDecodeImage(PendingImageId, FetchResponseMsg),
 
     
     Exit(IpcSender<()>),
@@ -102,6 +98,15 @@ pub enum ImageCacheCommand {
 
 #[derive(Copy, Clone, PartialEq, Hash, Eq, Deserialize, Serialize)]
 pub enum UsePlaceholder {
+    No,
+    Yes,
+}
+
+
+
+
+#[derive(Copy, Clone, PartialEq, Deserialize, Serialize)]
+pub enum CanRequestImages {
     No,
     Yes,
 }
@@ -123,51 +128,40 @@ impl ImageCacheThread {
     }
 
     
-    pub fn request_image(&self, url: ServoUrl, result_chan: ImageCacheChan, responder: Option<ImageResponder>) {
-        let msg = ImageCacheCommand::RequestImage(url, result_chan, responder);
-        let _ = self.chan.send(msg);
-    }
-
-    
-    
-    pub fn request_image_and_metadata(&self,
-                                      url: ServoUrl,
-                                      result_chan: ImageCacheChan,
-                                      responder: Option<ImageResponder>) {
-        let msg = ImageCacheCommand::RequestImageAndMetadata(url, result_chan, responder);
-        let _ = self.chan.send(msg);
-    }
-
-    
-    pub fn find_image(&self, url: ServoUrl, use_placeholder: UsePlaceholder) -> Result<Arc<Image>, ImageState> {
-        let (sender, receiver) = ipc::channel().unwrap();
-        let msg = ImageCacheCommand::GetImageIfAvailable(url, use_placeholder, sender);
-        let _ = self.chan.send(msg);
-        try!(receiver.recv().map_err(|_| ImageState::LoadError))
-    }
-
-    
     
     
     
     pub fn find_image_or_metadata(&self,
                                   url: ServoUrl,
-                                  use_placeholder: UsePlaceholder)
+                                  use_placeholder: UsePlaceholder,
+                                  can_request: CanRequestImages)
                                   -> Result<ImageOrMetadataAvailable, ImageState> {
         let (sender, receiver) = ipc::channel().unwrap();
-        let msg = ImageCacheCommand::GetImageOrMetadataIfAvailable(url, use_placeholder, sender);
+        let msg = ImageCacheCommand::GetImageOrMetadataIfAvailable(url,
+                                                                   use_placeholder,
+                                                                   can_request,
+                                                                   sender);
         let _ = self.chan.send(msg);
         try!(receiver.recv().map_err(|_| ImageState::LoadError))
     }
 
     
-    pub fn store_complete_image_bytes(&self, url: ServoUrl, image_data: Vec<u8>) {
-        let msg = ImageCacheCommand::StoreDecodeImage(url, image_data);
-        let _ = self.chan.send(msg);
+    
+    pub fn add_listener(&self, id: PendingImageId, responder: ImageResponder) {
+        let msg = ImageCacheCommand::AddListener(id, responder);
+        self.chan.send(msg).expect("Image cache thread is not available");
+    }
+
+    
+    pub fn notify_pending_response(&self, id: PendingImageId, data: FetchResponseMsg) {
+        let msg = ImageCacheCommand::StoreDecodeImage(id, data);
+        self.chan.send(msg).expect("Image cache thread is not available");
     }
 
     
     pub fn exit(&self) {
+        
+        
         let (response_chan, response_port) = ipc::channel().unwrap();
         let _ = self.chan.send(ImageCacheCommand::Exit(response_chan));
         let _ = response_port.recv();
