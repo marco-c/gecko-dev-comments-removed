@@ -12,29 +12,20 @@ function init(aEvent) {
   if (aEvent.target != document)
     return;
 
-  try {
-    var distroId = Services.prefs.getCharPref("distribution.id");
-    if (distroId) {
-      var distroVersion = Services.prefs.getCharPref("distribution.version");
+  var distroId = Services.prefs.getCharPref("distribution.id", "");
+  if (distroId) {
+    var distroVersion = Services.prefs.getCharPref("distribution.version");
 
-      var distroIdField = document.getElementById("distributionId");
-      distroIdField.value = distroId + " - " + distroVersion;
-      distroIdField.style.display = "block";
+    var distroIdField = document.getElementById("distributionId");
+    distroIdField.value = distroId + " - " + distroVersion;
+    distroIdField.style.display = "block";
 
-      try {
-        
-        var distroAbout = Services.prefs.getComplexValue("distribution.about",
-          Components.interfaces.nsISupportsString);
-        var distroField = document.getElementById("distribution");
-        distroField.value = distroAbout;
-        distroField.style.display = "block";
-      } catch (ex) {
-        
-        Components.utils.reportError(ex);
-      }
+    var distroAbout = Services.prefs.getStringPref("distribution.about", "");
+    if (distroAbout) {
+      var distroField = document.getElementById("distribution");
+      distroField.value = distroAbout;
+      distroField.style.display = "block";
     }
-  } catch (e) {
-    
   }
 
   
