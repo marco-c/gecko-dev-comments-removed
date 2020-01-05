@@ -4543,9 +4543,6 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
   }
 
   
-  mBaselineFromLastReflow = flexContainerAscent;
-
-  
   
   
   
@@ -4566,6 +4563,16 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
       
       NS_FRAME_SET_INCOMPLETE(aStatus);
     }
+  }
+
+  
+  mBaselineFromLastReflow = flexContainerAscent;
+  mLastBaselineFromLastReflow = lines.getLast()->GetLastBaselineOffset();
+  if (mLastBaselineFromLastReflow == nscoord_MIN) {
+    
+    
+    mLastBaselineFromLastReflow =
+      desiredSizeInFlexWM.BSize(flexWM) - flexContainerAscent;
   }
 
   
