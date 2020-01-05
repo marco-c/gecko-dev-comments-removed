@@ -1721,7 +1721,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
 
 
 
-  uint8_t ComputedAlignSelf(nsStyleContext* aParent) const;
+  uint8_t UsedAlignSelf(nsStyleContext* aParent) const;
 
   
 
@@ -1738,7 +1738,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStylePosition
 
 
 
-  uint8_t ComputedJustifySelf(nsStyleContext* aParent) const;
+  uint8_t UsedJustifySelf(nsStyleContext* aParent) const;
 
   mozilla::Position mObjectPosition;    
   nsStyleSides  mOffset;                
