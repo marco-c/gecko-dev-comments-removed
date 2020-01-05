@@ -107,10 +107,6 @@ add_task(function* test_searchEngine_www_noautofill() {
 });
 
 add_task(function* test_searchEngine_different_scheme_noautofill() {
-
-  
-  return;
-
   Services.prefs.setBoolPref("browser.urlbar.autoFill.searchEngines", true);
   Services.search.addEngineWithDetails("PieSearch", "", "", "",
                                        "GET", "https://pie.search/");
