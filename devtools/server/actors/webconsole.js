@@ -527,7 +527,7 @@ WebConsoleActor.prototype =
 
 
   releaseActor: function (actor) {
-    this._actorPool.removeActor(actor.actorID);
+    this._actorPool.removeActor(actor);
   },
 
   
