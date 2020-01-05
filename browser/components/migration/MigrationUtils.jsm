@@ -9,6 +9,7 @@ this.EXPORTED_SYMBOLS = ["MigrationUtils", "MigratorPrototype"];
 const { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 const TOPIC_WILL_IMPORT_BOOKMARKS = "initial-migration-will-import-default-bookmarks";
 const TOPIC_DID_IMPORT_BOOKMARKS = "initial-migration-did-import-default-bookmarks";
+const TOPIC_PLACES_DEFAULTS_FINISHED = "places-browser-init-complete";
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
@@ -323,28 +324,35 @@ this.MigratorPrototype = {
 
     if (MigrationUtils.isStartupMigration && !this.startupOnlyMigrator) {
       MigrationUtils.profileStartup.doStartup();
-
       
       
       
       
-      const BOOKMARKS = MigrationUtils.resourceTypes.BOOKMARKS;
-      let migratingBookmarks = resources.some(r => r.type == BOOKMARKS);
-      if (migratingBookmarks) {
+      Task.spawn(function* () {
+        
         let browserGlue = Cc["@mozilla.org/browser/browserglue;1"].
                           getService(Ci.nsIObserver);
         browserGlue.observe(null, TOPIC_WILL_IMPORT_BOOKMARKS, "");
 
         
-        let onImportComplete = function() {
-          browserGlue.observe(null, TOPIC_DID_IMPORT_BOOKMARKS, "");
-          doMigrate();
-        };
-        BookmarkHTMLUtils.importFromURL(
-          "chrome://browser/locale/bookmarks.html", true).then(
-          onImportComplete, onImportComplete);
-        return;
-      }
+        yield BookmarkHTMLUtils.importFromURL(
+          "chrome://browser/locale/bookmarks.html", true).catch(r => r);
+
+        
+        
+        
+        let placesInitedPromise = new Promise(resolve => {
+          let onPlacesInited = function() {
+            Services.obs.removeObserver(onPlacesInited, TOPIC_PLACES_DEFAULTS_FINISHED);
+            resolve();
+          };
+          Services.obs.addObserver(onPlacesInited, TOPIC_PLACES_DEFAULTS_FINISHED, false);
+        });
+        browserGlue.observe(null, TOPIC_DID_IMPORT_BOOKMARKS, "");
+        yield placesInitedPromise;
+        doMigrate();
+      });
+      return;
     }
     doMigrate();
   },
