@@ -43,10 +43,10 @@ treecol {
   min-width: 26px;
 }
 
-
 .learnMore {
   margin-inline-start: 1.5em;
   font-weight: normal;
+  white-space: nowrap;
 }
 
 
