@@ -4178,7 +4178,9 @@ ContainerState::ProcessDisplayItems(nsDisplayList* aList)
                                              &scrolledClipRect,
                                              uniformColorPtr);
       } else if (item->ShouldFixToViewport(mBuilder) && itemClip.HasClip() &&
-                 item->AnimatedGeometryRootForScrollMetadata() != animatedGeometryRoot) {
+                 item->AnimatedGeometryRootForScrollMetadata() != animatedGeometryRoot &&
+                 !nsLayoutUtils::UsesAsyncScrolling(item->Frame())) {
+        
         
         
         
