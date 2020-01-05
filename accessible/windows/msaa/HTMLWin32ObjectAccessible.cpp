@@ -85,10 +85,7 @@ HTMLWin32ObjectAccessible::HTMLWin32ObjectAccessible(void* aHwnd,
     
     
     
-    HWND childWnd = ::GetWindow((HWND)aHwnd, GW_CHILD);
-    if (childWnd) {
-      mHwnd = childWnd;
-    }
+    mHwnd = ::GetWindow((HWND)aHwnd, GW_CHILD);
   }
 }
 

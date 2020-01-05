@@ -496,7 +496,9 @@ DocAccessibleParent::RecvGetWindowedPluginIAccessible(
   
   HWND childWnd = ::GetWindow(reinterpret_cast<HWND>(aHwnd), GW_CHILD);
   if (!childWnd) {
-    return IPC_FAIL(this, "GetWindow failed");
+    
+    
+    return IPC_OK();
   }
 
   IAccessible* rawAccPlugin = nullptr;
