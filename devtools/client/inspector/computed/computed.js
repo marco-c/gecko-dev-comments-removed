@@ -961,6 +961,9 @@ PropertyView.prototype = {
     
     
     this.nameNode.setAttribute("tabindex", "");
+    
+    
+    this.nameNode.setAttribute("dir", "ltr");
     this.nameNode.textContent = this.nameNode.title = this.name;
     
     this.onFocus = () => this.element.focus();
