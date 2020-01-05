@@ -56,6 +56,7 @@ public:
   class FlexLine;
   class FlexboxAxisTracker;
   struct StrutInfo;
+  struct CachedMeasuringReflowResult;
 
   
   void Init(nsIContent*       aContent,
@@ -65,6 +66,8 @@ public:
   void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                         const nsRect&           aDirtyRect,
                         const nsDisplayListSet& aLists) override;
+
+  void MarkIntrinsicISizesDirty() override;
 
   void Reflow(nsPresContext* aPresContext,
               ReflowOutput& aDesiredSize,
@@ -191,6 +194,18 @@ protected:
                                      nsIFrame* aChildFrame,
                                      const ReflowInput& aParentReflowInput,
                                      const FlexboxAxisTracker& aAxisTracker);
+
+  
+
+
+
+
+
+
+  const CachedMeasuringReflowResult& MeasureAscentAndHeightForFlexItem(
+    FlexItem& aItem,
+    nsPresContext* aPresContext,
+    ReflowInput& aChildReflowInput);
 
   
 
