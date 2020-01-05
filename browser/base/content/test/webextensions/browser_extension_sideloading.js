@@ -185,7 +185,7 @@ add_task(function* () {
   
   yield PanelUI.show();
 
-  let addons = document.getElementById("PanelUI-footer-addons");
+  let addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 4, "Have 4 menu entries for sideloaded extensions");
 
   
@@ -226,7 +226,7 @@ add_task(function* () {
   
   yield PanelUI.show();
 
-  addons = document.getElementById("PanelUI-footer-addons");
+  addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 3, "Have 3 menu entries for sideloaded extensions");
 
   
@@ -260,7 +260,7 @@ add_task(function* () {
   
   yield PanelUI.show();
 
-  addons = document.getElementById("PanelUI-footer-addons");
+  addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 2, "Have 2 menu entries for sideloaded extensions");
 
   
@@ -299,7 +299,7 @@ add_task(function* () {
   
   yield PanelUI.show();
 
-  addons = document.getElementById("PanelUI-footer-addons");
+  addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 1, "Have 1 menu entry for sideloaded extensions");
 
   

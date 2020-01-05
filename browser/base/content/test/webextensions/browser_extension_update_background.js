@@ -81,7 +81,7 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   
   yield PanelUI.show();
 
-  let addons = document.getElementById("PanelUI-footer-addons");
+  let addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 1, "Have a menu entry for the update");
 
   
@@ -121,7 +121,7 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   is(getBadgeStatus(), "", "Addon alert badge should be gone");
 
   yield PanelUI.show();
-  addons = document.getElementById("PanelUI-footer-addons");
+  addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 0, "Update menu entries should be gone");
   yield PanelUI.hide();
 
@@ -135,7 +135,7 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   
   yield PanelUI.show();
 
-  addons = document.getElementById("PanelUI-footer-addons");
+  addons = PanelUI.addonNotificationContainer;
   is(addons.children.length, 1, "Have a menu entry for the update");
 
   
