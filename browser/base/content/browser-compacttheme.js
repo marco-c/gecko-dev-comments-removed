@@ -67,7 +67,7 @@ var CompactTheme = {
     
     
     if (this.initialized) {
-      gBrowser.tabContainer._positionPinnedTabs();
+      gBrowser.tabContainer.themeLayoutChanged();
     }
   },
 
