@@ -839,6 +839,18 @@ nsSocketTransportService::Run()
 {
     SOCKET_LOG(("STS thread init %d sockets\n", gMaxCount));
 
+#if defined(XP_WIN)
+    
+    
+    
+    
+    
+    
+
+    char ignoredStackBuffer[255];
+    Unused << gethostname(ignoredStackBuffer, 255);
+#endif
+
     psm::InitializeSSLServerCertVerificationThreads();
 
     gSocketThread = PR_GetCurrentThread();
