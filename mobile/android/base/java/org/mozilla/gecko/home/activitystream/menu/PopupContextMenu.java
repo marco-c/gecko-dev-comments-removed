@@ -57,7 +57,9 @@ import org.mozilla.gecko.home.activitystream.model.Item;
 
         
         
-        if (AppConstants.Versions.preLollipop && "asus".equals(android.os.Build.MANUFACTURER)) {
+        
+        
+        if (AppConstants.Versions.preMarshmallow) {
             popupWindow.setHeight(ViewGroup.LayoutParams.WRAP_CONTENT);
             popupWindow.setWidth(ViewGroup.LayoutParams.WRAP_CONTENT);
         }
