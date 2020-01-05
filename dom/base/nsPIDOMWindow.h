@@ -88,6 +88,29 @@ enum class FullscreenReason
   ForForceExitFullscreen
 };
 
+namespace mozilla {
+namespace dom {
+
+
+
+
+enum class LargeAllocStatus : uint8_t
+{
+  
+  
+  
+  NONE,
+  SUCCESS,
+
+  
+  
+  
+  NON_GET,
+  NON_E10S,
+  NOT_ONLY_TOPLEVEL_IN_TABGROUP
+};
+} 
+} 
 
 
 
@@ -710,6 +733,8 @@ protected:
   
   
   bool mServiceWorkersTestingEnabled;
+
+  mozilla::dom::LargeAllocStatus mLargeAllocStatus; 
 };
 
 #define NS_PIDOMWINDOWINNER_IID \
@@ -940,6 +965,8 @@ public:
   bool GetServiceWorkersTestingEnabled();
 
   float GetDevicePixelRatio(mozilla::dom::CallerType aCallerType);
+
+  void SetLargeAllocStatus(mozilla::dom::LargeAllocStatus aStatus);
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsPIDOMWindowOuter, NS_PIDOMWINDOWOUTER_IID)
