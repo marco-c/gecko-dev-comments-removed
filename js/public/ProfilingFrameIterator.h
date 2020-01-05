@@ -11,6 +11,7 @@
 #include "mozilla/Maybe.h"
 
 #include "jsbytecode.h"
+#include "js/GCAPI.h"
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
 
@@ -39,6 +40,10 @@ struct ForEachTrackedOptimizationTypeInfoOp;
 
 
 
+
+
+
+
 class JS_PUBLIC_API(ProfilingFrameIterator)
 {
     JSRuntime* rt_;
@@ -49,6 +54,8 @@ class JS_PUBLIC_API(ProfilingFrameIterator)
     
     
     void* savedPrevJitTop_;
+
+    JS::AutoCheckCannotGC nogc_;
 
     static const unsigned StorageSpace = 8 * sizeof(void*);
     mozilla::AlignedStorage<StorageSpace> storage_;
