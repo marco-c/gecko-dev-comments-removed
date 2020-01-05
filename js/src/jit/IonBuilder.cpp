@@ -1507,8 +1507,10 @@ IonBuilder::visitBlock(const CFGBlock* cfgblock, MBasicBlock* mblock)
 
     
     
-    if (mblock->numPredecessors() == 1 && mblock->getPredecessor(0)->numSuccessors() == 1)
-        graph().moveBlockToEnd(mblock->getPredecessor(0));
+    if (mblock->numPredecessors() == 1 && mblock->getPredecessor(0)->numSuccessors() == 1) {
+        graph().removeBlockFromList(mblock->getPredecessor(0));
+        graph().addBlock(mblock->getPredecessor(0));
+    }
 
     if (!setCurrentAndSpecializePhis(mblock))
         return false;

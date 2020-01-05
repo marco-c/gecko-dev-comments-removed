@@ -4512,6 +4512,7 @@ jit::MarkLoopBlocks(MIRGraph& graph, MBasicBlock* header, bool* canOsr)
         
         if (!block->isMarked())
             continue;
+
         
         for (size_t p = 0, e = block->numPredecessors(); p != e; ++p) {
             MBasicBlock* pred = block->getPredecessor(p);
@@ -4546,7 +4547,7 @@ jit::MarkLoopBlocks(MIRGraph& graph, MBasicBlock* header, bool* canOsr)
 
                     
                     
-                    if (backedge->id() > block->id()) {
+                    if (innerBackedge->id() > block->id()) {
                         i = graph.poBegin(innerBackedge);
                         --i;
                     }
