@@ -41,7 +41,10 @@
 namespace js {
 
 class PropertyName;
-namespace jit { struct BaselineScript; }
+namespace jit {
+    struct BaselineScript;
+    enum class RoundingMode;
+}
 
 
 
@@ -1043,6 +1046,9 @@ enum class SymbolicAddress
     CurrentMemory,
     Limit
 };
+
+bool
+IsRoundingFunction(SymbolicAddress callee, jit::RoundingMode* mode);
 
 void*
 AddressOf(SymbolicAddress imm, JSContext* cx);

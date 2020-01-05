@@ -6955,6 +6955,7 @@ class LStringLength : public LInstructionHelper<1, 1, 0>
 };
 
 
+
 class LFloor : public LInstructionHelper<1, 1, 0>
 {
   public:
@@ -6964,6 +6965,7 @@ class LFloor : public LInstructionHelper<1, 1, 0>
         setOperand(0, num);
     }
 };
+
 
 
 class LFloorF : public LInstructionHelper<1, 1, 0>
@@ -6977,6 +6979,7 @@ class LFloorF : public LInstructionHelper<1, 1, 0>
 };
 
 
+
 class LCeil : public LInstructionHelper<1, 1, 0>
 {
   public:
@@ -6988,6 +6991,7 @@ class LCeil : public LInstructionHelper<1, 1, 0>
 };
 
 
+
 class LCeilF : public LInstructionHelper<1, 1, 0>
 {
   public:
@@ -6997,6 +7001,7 @@ class LCeilF : public LInstructionHelper<1, 1, 0>
         setOperand(0, num);
     }
 };
+
 
 
 class LRound : public LInstructionHelper<1, 1, 1>
@@ -7018,6 +7023,7 @@ class LRound : public LInstructionHelper<1, 1, 1>
 };
 
 
+
 class LRoundF : public LInstructionHelper<1, 1, 1>
 {
   public:
@@ -7033,6 +7039,36 @@ class LRoundF : public LInstructionHelper<1, 1, 1>
     }
     MRound* mir() const {
         return mir_->toRound();
+    }
+};
+
+
+
+class LNearbyInt : public LInstructionHelper<1, 1, 0>
+{
+  public:
+    LIR_HEADER(NearbyInt)
+
+    explicit LNearbyInt(const LAllocation& num) {
+        setOperand(0, num);
+    }
+    MNearbyInt* mir() const {
+        return mir_->toNearbyInt();
+    }
+};
+
+
+
+class LNearbyIntF : public LInstructionHelper<1, 1, 0>
+{
+  public:
+    LIR_HEADER(NearbyIntF)
+
+    explicit LNearbyIntF(const LAllocation& num) {
+        setOperand(0, num);
+    }
+    MNearbyInt* mir() const {
+        return mir_->toNearbyInt();
     }
 };
 

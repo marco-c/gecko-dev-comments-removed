@@ -874,6 +874,14 @@ enum class BarrierKind : uint32_t {
 
 enum ReprotectCode { Reprotect = true, DontReprotect = false };
 
+
+enum class RoundingMode {
+    Down,
+    Up,
+    NearestTiesToEven,
+    TowardsZero
+};
+
 } 
 } 
 
