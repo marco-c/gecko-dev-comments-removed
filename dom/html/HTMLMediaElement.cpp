@@ -1053,6 +1053,11 @@ private:
     }
 
     
+    if (!mOwner->HasAudio()) {
+      return false;
+    }
+
+    
     if (mOwner->HasAttr(kNameSpaceID_None, nsGkAtoms::loop)) {
       return true;
     }
@@ -7080,6 +7085,7 @@ HTMLMediaElement::SetMediaInfo(const MediaInfo& aInfo)
   const bool oldHasAudio = mMediaInfo.HasAudio();
   mMediaInfo = aInfo;
   if (aInfo.HasAudio() != oldHasAudio) {
+    UpdateAudioChannelPlayingState();
     NotifyAudioPlaybackChanged(
       AudioChannelService::AudibleChangedReasons::eDataAudibleChanged);
   }
