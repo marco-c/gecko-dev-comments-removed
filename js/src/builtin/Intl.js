@@ -1200,6 +1200,25 @@ function GetNumberOption(options, property, minimum, maximum, fallback) {
 
 
 
+var intlFallbackSymbolHolder = { value: undefined };
+
+
+
+
+
+
+
+function intlFallbackSymbol() {
+    var fallbackSymbol = intlFallbackSymbolHolder.value;
+    if (!fallbackSymbol)
+        intlFallbackSymbolHolder.value = fallbackSymbol = std_Symbol();
+    return fallbackSymbol;
+}
+
+
+
+
+
 
 
 
