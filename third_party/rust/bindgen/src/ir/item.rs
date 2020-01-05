@@ -3,18 +3,23 @@
 use super::annotations::Annotations;
 use super::context::{BindgenContext, ItemId, PartialType};
 use super::derive::{CanDeriveCopy, CanDeriveDebug, CanDeriveDefault};
+use super::dot::DotAttributes;
 use super::function::Function;
 use super::item_kind::ItemKind;
+use super::layout::Opaque;
 use super::module::Module;
-use super::traversal::{Trace, Tracer};
-use super::ty::{TemplateDeclaration, Type, TypeKind};
+use super::template::{AsNamed, TemplateParameters};
+use super::traversal::{EdgeKind, Trace, Tracer};
+use super::ty::{Type, TypeKind};
 use clang;
 use clang_sys;
 use parse::{ClangItemParser, ClangSubItemParser, ParseError, ParseResult};
 use std::cell::{Cell, RefCell};
 use std::collections::BTreeSet;
 use std::fmt::Write;
+use std::io;
 use std::iter;
+use regex;
 
 
 
@@ -65,7 +70,7 @@ pub trait ItemAncestors {
 }
 
 cfg_if! {
-    if #[cfg(debug_assertions)] {
+    if #[cfg(testing_only_extra_assertions)] {
         type DebugOnlyItemSet = ItemSet;
     } else {
         struct DebugOnlyItemSet;
@@ -118,10 +123,39 @@ impl<'a, 'b> Iterator for ItemAncestorsIter<'a, 'b>
         } else {
             self.item = item.parent_id();
 
-            debug_assert!(!self.seen.contains(&item.id()));
+            extra_assert!(!self.seen.contains(&item.id()));
             self.seen.insert(item.id());
 
             Some(item.id())
+        }
+    }
+}
+
+impl AsNamed for ItemId {
+    type Extra = ();
+
+    fn as_named(&self, ctx: &BindgenContext, _: &()) -> Option<ItemId> {
+        ctx.resolve_item(*self).as_named(ctx, &())
+    }
+}
+
+impl AsNamed for Item {
+    type Extra = ();
+
+    fn as_named(&self, ctx: &BindgenContext, _: &()) -> Option<ItemId> {
+        self.kind.as_named(ctx, self)
+    }
+}
+
+impl AsNamed for ItemKind {
+    type Extra = Item;
+
+    fn as_named(&self, ctx: &BindgenContext, item: &Item) -> Option<ItemId> {
+        match *self {
+            ItemKind::Type(ref ty) => ty.as_named(ctx, item),
+            ItemKind::Module(..) |
+            ItemKind::Function(..) |
+            ItemKind::Var(..) => None,
         }
     }
 }
@@ -183,9 +217,12 @@ impl Trace for Item {
     fn trace<T>(&self, ctx: &BindgenContext, tracer: &mut T, _extra: &())
         where T: Tracer,
     {
-        if self.is_hidden(ctx) {
-            return;
-        }
+        
+        
+        
+        
+        
+        
 
         match *self.kind() {
             ItemKind::Type(ref ty) => {
@@ -203,7 +240,7 @@ impl Trace for Item {
                 tracer.visit(fun.signature());
             }
             ItemKind::Var(ref var) => {
-                tracer.visit(var.ty());
+                tracer.visit_kind(var.ty(), EdgeKind::VarType);
             }
             ItemKind::Module(_) => {
                 
@@ -222,8 +259,14 @@ impl CanDeriveDebug for Item {
     type Extra = ();
 
     fn can_derive_debug(&self, ctx: &BindgenContext, _: ()) -> bool {
-        ctx.options().derive_debug &&
-        match self.kind {
+        if self.detect_derive_debug_cycle.get() {
+            return true;
+        }
+
+        self.detect_derive_debug_cycle.set(true);
+
+        let result = ctx.options().derive_debug &&
+                     match self.kind {
             ItemKind::Type(ref ty) => {
                 if self.is_opaque(ctx) {
                     ty.layout(ctx)
@@ -233,7 +276,11 @@ impl CanDeriveDebug for Item {
                 }
             }
             _ => false,
-        }
+        };
+
+        self.detect_derive_debug_cycle.set(false);
+
+        result
     }
 }
 
@@ -261,7 +308,13 @@ impl<'a> CanDeriveCopy<'a> for Item {
     type Extra = ();
 
     fn can_derive_copy(&self, ctx: &BindgenContext, _: ()) -> bool {
-        match self.kind {
+        if self.detect_derive_copy_cycle.get() {
+            return true;
+        }
+
+        self.detect_derive_copy_cycle.set(true);
+
+        let result = match self.kind {
             ItemKind::Type(ref ty) => {
                 if self.is_opaque(ctx) {
                     ty.layout(ctx)
@@ -271,7 +324,11 @@ impl<'a> CanDeriveCopy<'a> for Item {
                 }
             }
             _ => false,
-        }
+        };
+
+        self.detect_derive_copy_cycle.set(false);
+
+        result
     }
 
     fn can_derive_copy_in_array(&self, ctx: &BindgenContext, _: ()) -> bool {
@@ -344,6 +401,16 @@ pub struct Item {
     parent_id: ItemId,
     
     kind: ItemKind,
+    
+    
+    detect_derive_debug_cycle: Cell<bool>,
+    detect_derive_copy_cycle: Cell<bool>,
+}
+
+impl AsRef<ItemId> for Item {
+    fn as_ref(&self) -> &ItemId {
+        &self.id
+    }
 }
 
 impl Item {
@@ -364,26 +431,26 @@ impl Item {
             comment: comment,
             annotations: annotations.unwrap_or_default(),
             kind: kind,
+            detect_derive_debug_cycle: Cell::new(false),
+            detect_derive_copy_cycle: Cell::new(false),
         }
+    }
+
+    
+    pub fn new_opaque_type(with_id: ItemId,
+                           ty: &clang::Type,
+                           ctx: &mut BindgenContext)
+                           -> ItemId {
+        let ty = Opaque::from_clang_ty(ty);
+        let kind = ItemKind::Type(ty);
+        let parent = ctx.root_module();
+        ctx.add_item(Item::new(with_id, None, None, parent, kind), None, None);
+        with_id
     }
 
     
     pub fn id(&self) -> ItemId {
         self.id
-    }
-
-    
-    pub fn dot_attributes(&self, ctx: &BindgenContext) -> String {
-        format!("[fontname=\"courier\", label=< \
-                 <table border=\"0\"> \
-                 <tr><td>ItemId({})</td></tr> \
-                 <tr><td>name</td><td>{}</td></tr> \
-                 <tr><td>kind</td><td>{}</td></tr> \
-                 </table> \
-                 >]",
-                self.id.as_usize(),
-                self.name(ctx).get(),
-                self.kind.kind_name())
     }
 
     
@@ -487,181 +554,9 @@ impl Item {
     }
 
     
-    pub fn is_named(&self) -> bool {
-        self.as_type()
-            .map(|ty| ty.is_named())
-            .unwrap_or(false)
-    }
-
-    
     
     pub fn expect_function(&self) -> &Function {
         self.kind().expect_function()
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    fn signature_contains_named_type(&self,
-                                     ctx: &BindgenContext,
-                                     ty: &Type)
-                                     -> bool {
-        debug_assert!(ty.is_named());
-        self.expect_type().signature_contains_named_type(ctx, ty) ||
-        self.applicable_template_args(ctx).iter().any(|template| {
-            ctx.resolve_type(*template).signature_contains_named_type(ctx, ty)
-        })
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn applicable_template_args(&self,
-                                    ctx: &BindgenContext)
-                                    -> Vec<ItemId> {
-        let ty = match *self.kind() {
-            ItemKind::Type(ref ty) => ty,
-            _ => return vec![],
-        };
-
-        fn parent_contains(ctx: &BindgenContext,
-                           parent_template_args: &[ItemId],
-                           item: ItemId)
-                           -> bool {
-            let item_ty = ctx.resolve_type(item);
-            parent_template_args.iter().any(|parent_item| {
-                let parent_ty = ctx.resolve_type(*parent_item);
-                match (parent_ty.kind(), item_ty.kind()) {
-                    (&TypeKind::Named, &TypeKind::Named) => {
-                        parent_ty.name() == item_ty.name()
-                    }
-                    _ => false,
-                }
-            })
-        }
-
-        match *ty.kind() {
-            TypeKind::Named => vec![self.id()],
-            TypeKind::Array(inner, _) |
-            TypeKind::Pointer(inner) |
-            TypeKind::Reference(inner) |
-            TypeKind::ResolvedTypeRef(inner) => {
-                ctx.resolve_item(inner).applicable_template_args(ctx)
-            }
-            TypeKind::Alias(inner) => {
-                let parent_args = ctx.resolve_item(self.parent_id())
-                    .applicable_template_args(ctx);
-                let inner = ctx.resolve_item(inner);
-
-                
-                parent_args.iter()
-                    .cloned()
-                    .filter(|arg| {
-                        let arg = ctx.resolve_type(*arg);
-                        arg.is_named() &&
-                        inner.signature_contains_named_type(ctx, arg)
-                    })
-                    .collect()
-            }
-            
-            
-            TypeKind::TemplateAlias(_, ref args) |
-            TypeKind::TemplateInstantiation(_, ref args) => args.clone(),
-            
-            TypeKind::Comp(ref ci) if ci.is_template_specialization() => {
-                ci.template_args().iter().cloned().collect()
-            }
-            TypeKind::Comp(ref ci) => {
-                let mut parent_template_args =
-                    ctx.resolve_item(self.parent_id())
-                        .applicable_template_args(ctx);
-
-                for ty in ci.template_args() {
-                    if !parent_contains(ctx, &parent_template_args, *ty) {
-                        parent_template_args.push(*ty);
-                    }
-                }
-
-                parent_template_args
-            }
-            _ => vec![],
-        }
     }
 
     
@@ -692,6 +587,7 @@ impl Item {
         debug_assert!(ctx.in_codegen_phase(),
                       "You're not supposed to call this yet");
         self.annotations.opaque() ||
+        self.as_type().map_or(false, |ty| ty.is_opaque()) ||
         ctx.opaque_by_name(&self.canonical_path(ctx))
     }
 
@@ -721,7 +617,7 @@ impl Item {
         let mut item = self;
 
         loop {
-            debug_assert!(!targets_seen.contains(&item.id()));
+            extra_assert!(!targets_seen.contains(&item.id()));
             targets_seen.insert(item.id());
 
             if self.annotations().use_instead_of().is_some() {
@@ -731,18 +627,11 @@ impl Item {
             match *item.kind() {
                 ItemKind::Type(ref ty) => {
                     match *ty.kind() {
-                        
-                        
-                        TypeKind::Comp(ref ci)
-                            if ci.is_template_specialization() => {
-                            let specialized =
-                                ci.specialized_template().unwrap();
-                            item = ctx.resolve_item(specialized);
-                        }
-                        
-                        TypeKind::ResolvedTypeRef(inner) |
-                        TypeKind::TemplateInstantiation(inner, _) => {
+                        TypeKind::ResolvedTypeRef(inner) => {
                             item = ctx.resolve_item(inner);
+                        }
+                        TypeKind::TemplateInstantiation(ref inst) => {
+                            item = ctx.resolve_item(inst.template_definition());
                         }
                         _ => return item.id(),
                     }
@@ -857,7 +746,7 @@ impl Item {
 
         
         
-        if target.as_type().map_or(false, |ty| ty.is_named()) {
+        if target.is_named(ctx, &()) {
             return base_name;
         }
 
@@ -928,23 +817,45 @@ impl Item {
 
 pub type ItemSet = BTreeSet<ItemId>;
 
-impl TemplateDeclaration for ItemId {
-    fn template_params(&self, ctx: &BindgenContext) -> Option<Vec<ItemId>> {
+impl DotAttributes for Item {
+    fn dot_attributes<W>(&self,
+                         ctx: &BindgenContext,
+                         out: &mut W)
+                         -> io::Result<()>
+        where W: io::Write,
+    {
+        try!(writeln!(out,
+                      "<tr><td>{:?}</td></tr>
+                       <tr><td>name</td><td>{}</td></tr>",
+                      self.id,
+                      self.name(ctx).get()));
+        self.kind.dot_attributes(ctx, out)
+    }
+}
+
+impl TemplateParameters for ItemId {
+    fn self_template_params(&self,
+                            ctx: &BindgenContext)
+                            -> Option<Vec<ItemId>> {
         ctx.resolve_item_fallible(*self)
-            .and_then(|item| item.template_params(ctx))
+            .and_then(|item| item.self_template_params(ctx))
     }
 }
 
-impl TemplateDeclaration for Item {
-    fn template_params(&self, ctx: &BindgenContext) -> Option<Vec<ItemId>> {
-        self.kind.template_params(ctx)
+impl TemplateParameters for Item {
+    fn self_template_params(&self,
+                            ctx: &BindgenContext)
+                            -> Option<Vec<ItemId>> {
+        self.kind.self_template_params(ctx)
     }
 }
 
-impl TemplateDeclaration for ItemKind {
-    fn template_params(&self, ctx: &BindgenContext) -> Option<Vec<ItemId>> {
+impl TemplateParameters for ItemKind {
+    fn self_template_params(&self,
+                            ctx: &BindgenContext)
+                            -> Option<Vec<ItemId>> {
         match *self {
-            ItemKind::Type(ref ty) => ty.template_params(ctx),
+            ItemKind::Type(ref ty) => ty.self_template_params(ctx),
             
             
             
@@ -968,7 +879,7 @@ fn visit_child(cur: clang::Cursor,
         return CXChildVisit_Break;
     }
 
-    *result = Item::from_ty_with_id(id, ty, Some(cur), parent_id, ctx);
+    *result = Item::from_ty_with_id(id, ty, cur, parent_id, ctx);
 
     match *result {
         Ok(..) => CXChildVisit_Break,
@@ -1061,8 +972,8 @@ impl ClangItemParser for Item {
         
         {
             let applicable_cursor = cursor.definition().unwrap_or(cursor);
-            match Self::from_ty(&applicable_cursor.cur_type(),
-                                Some(applicable_cursor),
+            match Item::from_ty(&applicable_cursor.cur_type(),
+                                applicable_cursor,
                                 parent_id,
                                 ctx) {
                 Ok(ty) => return Ok(ty),
@@ -1104,7 +1015,7 @@ impl ClangItemParser for Item {
     }
 
     fn from_ty_or_ref(ty: clang::Type,
-                      location: Option<clang::Cursor>,
+                      location: clang::Cursor,
                       parent_id: Option<ItemId>,
                       ctx: &mut BindgenContext)
                       -> ItemId {
@@ -1124,7 +1035,7 @@ impl ClangItemParser for Item {
     
     fn from_ty_or_ref_with_id(potential_id: ItemId,
                               ty: clang::Type,
-                              location: Option<clang::Cursor>,
+                              location: clang::Cursor,
                               parent_id: Option<ItemId>,
                               ctx: &mut BindgenContext)
                               -> ItemId {
@@ -1136,16 +1047,20 @@ impl ClangItemParser for Item {
 
         if ctx.collected_typerefs() {
             debug!("refs already collected, resolving directly");
-            return Self::from_ty_with_id(potential_id,
+            return Item::from_ty_with_id(potential_id,
                                          &ty,
                                          location,
                                          parent_id,
                                          ctx)
-                .expect("Unable to resolve type");
+                .unwrap_or_else(|_| {
+                    Item::new_opaque_type(potential_id, &ty, ctx)
+                });
         }
 
-        if let Some(ty) =
-            ctx.builtin_or_resolved_ty(potential_id, parent_id, &ty, location) {
+        if let Some(ty) = ctx.builtin_or_resolved_ty(potential_id,
+                                                     parent_id,
+                                                     &ty,
+                                                     Some(location)) {
             debug!("{:?} already resolved: {:?}", ty, location);
             return ty;
         }
@@ -1168,14 +1083,13 @@ impl ClangItemParser for Item {
         potential_id
     }
 
-
     fn from_ty(ty: &clang::Type,
-               location: Option<clang::Cursor>,
+               location: clang::Cursor,
                parent_id: Option<ItemId>,
                ctx: &mut BindgenContext)
                -> Result<ItemId, ParseError> {
         let id = ctx.next_item_id();
-        Self::from_ty_with_id(id, ty, location, parent_id, ctx)
+        Item::from_ty_with_id(id, ty, location, parent_id, ctx)
     }
 
     
@@ -1188,11 +1102,31 @@ impl ClangItemParser for Item {
     
     fn from_ty_with_id(id: ItemId,
                        ty: &clang::Type,
-                       location: Option<clang::Cursor>,
+                       location: clang::Cursor,
                        parent_id: Option<ItemId>,
                        ctx: &mut BindgenContext)
                        -> Result<ItemId, ParseError> {
         use clang_sys::*;
+
+        debug!("Item::from_ty_with_id: {:?}\n\
+                \tty = {:?},\n\
+                \tlocation = {:?}",
+               id,
+               ty,
+               location);
+
+        if ty.kind() == clang_sys::CXType_Unexposed ||
+           location.cur_type().kind() == clang_sys::CXType_Unexposed {
+
+            if ty.is_associated_type() ||
+               location.cur_type().is_associated_type() {
+                return Ok(Item::new_opaque_type(id, ty, ctx));
+            }
+
+            if let Some(id) = Item::named_type(Some(id), location, ctx) {
+                return Ok(id);
+            }
+        }
 
         let decl = {
             let decl = ty.declaration();
@@ -1200,9 +1134,9 @@ impl ClangItemParser for Item {
         };
 
         let comment = decl.raw_comment()
-            .or_else(|| location.as_ref().and_then(|l| l.raw_comment()));
+            .or_else(|| location.raw_comment());
         let annotations = Annotations::new(&decl)
-            .or_else(|| location.as_ref().and_then(|l| Annotations::new(l)));
+            .or_else(|| Annotations::new(&location));
 
         if let Some(ref annotations) = annotations {
             if let Some(ref replaced) = annotations.use_instead_of() {
@@ -1211,7 +1145,7 @@ impl ClangItemParser for Item {
         }
 
         if let Some(ty) =
-            ctx.builtin_or_resolved_ty(id, parent_id, ty, location) {
+            ctx.builtin_or_resolved_ty(id, parent_id, ty, Some(location)) {
             return Ok(ty);
         }
 
@@ -1219,11 +1153,10 @@ impl ClangItemParser for Item {
         let mut valid_decl = decl.kind() != CXCursor_NoDeclFound;
         let declaration_to_look_for = if valid_decl {
             decl.canonical()
-        } else if location.is_some() &&
-                                                location.unwrap().kind() ==
+        } else if location.kind() ==
                                                 CXCursor_ClassTemplate {
             valid_decl = true;
-            location.unwrap()
+            location
         } else {
             decl
         };
@@ -1254,37 +1187,34 @@ impl ClangItemParser for Item {
                                        relevant_parent_id,
                                        ItemKind::Type(item)),
                              declaration,
-                             location);
+                             Some(location));
                 Ok(id)
             }
             Err(ParseError::Continue) => Err(ParseError::Continue),
             Err(ParseError::Recurse) => {
                 debug!("Item::from_ty recursing in the ast");
                 let mut result = Err(ParseError::Recurse);
-                if let Some(ref location) = location {
-                    
-                    
-                    
-                    
-                    
-                    if valid_decl {
-                        let finished = ctx.finish_parsing();
-                        assert_eq!(*finished.decl(), declaration_to_look_for);
-                    }
 
-                    location.visit(|cur| {
-                        visit_child(cur, id, ty, parent_id, ctx, &mut result)
-                    });
-
-                    if valid_decl {
-                        let partial_ty =
-                            PartialType::new(declaration_to_look_for, id);
-                        ctx.begin_parsing(partial_ty);
-                    }
+                
+                
+                
+                
+                
+                if valid_decl {
+                    let finished = ctx.finish_parsing();
+                    assert_eq!(*finished.decl(), declaration_to_look_for);
                 }
-                
-                
-                
+
+                location.visit(|cur| {
+                    visit_child(cur, id, ty, parent_id, ctx, &mut result)
+                });
+
+                if valid_decl {
+                    let partial_ty = PartialType::new(declaration_to_look_for,
+                                                      id);
+                    ctx.begin_parsing(partial_ty);
+                }
+
                 
                 
                 
@@ -1295,10 +1225,9 @@ impl ClangItemParser for Item {
                           id = {:?}; spelling = {}",
                           id,
                           ty.spelling());
-                    Ok(Self::named_type_with_id(id,
-                                                ty.spelling(),
-                                                relevant_parent_id,
-                                                ctx))
+                    Item::named_type(Some(id), location, ctx)
+                        .map(Ok)
+                        .unwrap_or(Err(ParseError::Recurse))
                 } else {
                     result
                 }
@@ -1316,40 +1245,161 @@ impl ClangItemParser for Item {
     
     
     
-    
-    
-    
-    
-    fn named_type_with_id<S>(id: ItemId,
-                             name: S,
-                             parent_id: ItemId,
-                             ctx: &mut BindgenContext)
-                             -> ItemId
-        where S: Into<String>,
-    {
+    fn named_type(with_id: Option<ItemId>,
+                  location: clang::Cursor,
+                  ctx: &mut BindgenContext)
+                  -> Option<ItemId> {
+        let ty = location.cur_type();
+
+        debug!("Item::named_type:\n\
+                \twith_id = {:?},\n\
+                \tty = {} {:?},\n\
+                \tlocation: {:?}",
+               with_id,
+               ty.spelling(),
+               ty,
+               location);
+
+        if ty.kind() != clang_sys::CXType_Unexposed {
+            
+            
+            
+            
+            return None;
+        }
+
+        let ty_spelling = ty.spelling();
+
         
         
-        let name = name.into().replace("const ", "").replace(".", "");
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
 
-        ctx.add_item(Item::new(id,
-                               None,
-                               None,
-                               parent_id,
-                               ItemKind::Type(Type::named(name))),
-                     None,
-                     None);
+        fn is_template_with_spelling(refd: &clang::Cursor,
+                                     spelling: &str)
+                                     -> bool {
+            lazy_static! {
+                static ref ANON_TYPE_PARAM_RE: regex::Regex =
+                    regex::Regex::new(r"^type\-parameter\-\d+\-\d+$").unwrap();
+            }
 
-        id
-    }
+            if refd.kind() != clang_sys::CXCursor_TemplateTypeParameter {
+                return false;
+            }
 
-    fn named_type<S>(name: S,
-                     parent_id: ItemId,
-                     ctx: &mut BindgenContext)
-                     -> ItemId
-        where S: Into<String>,
-    {
-        let id = ctx.next_item_id();
-        Self::named_type_with_id(id, name, parent_id, ctx)
+            let refd_spelling = refd.spelling();
+            refd_spelling == spelling ||
+                
+                (refd_spelling.is_empty() && ANON_TYPE_PARAM_RE.is_match(spelling.as_ref()))
+        }
+
+        let definition = if is_template_with_spelling(&location,
+                                                      &ty_spelling) {
+            
+            location
+        } else if location.kind() ==
+                                   clang_sys::CXCursor_TypeRef {
+            
+            match location.referenced() {
+                Some(refd) if is_template_with_spelling(&refd,
+                                                        &ty_spelling) => refd,
+                _ => return None,
+            }
+        } else {
+            
+            let mut definition = None;
+
+            location.visit(|child| {
+                let child_ty = child.cur_type();
+                if child_ty.kind() == clang_sys::CXCursor_TypeRef &&
+                   child_ty.spelling() == ty_spelling {
+                    match child.referenced() {
+                        Some(refd) if is_template_with_spelling(&refd, &ty_spelling) => {
+                            definition = Some(refd);
+                            return clang_sys::CXChildVisit_Break;
+                        }
+                        _ => {}
+                    }
+                }
+
+                clang_sys::CXChildVisit_Continue
+            });
+
+            if let Some(def) = definition {
+                def
+            } else {
+                return None;
+            }
+        };
+        assert!(is_template_with_spelling(&definition, &ty_spelling));
+
+        
+        
+        
+        
+        let parent = ctx.root_module();
+
+        if let Some(id) = ctx.get_named_type(&definition) {
+            if let Some(with_id) = with_id {
+                return Some(ctx.build_ty_wrapper(with_id, id, Some(parent), &ty));
+            } else {
+                return Some(id);
+            }
+        }
+
+        
+        
+        let name = ty_spelling.replace("const ", "")
+            .replace(".", "");
+
+        let id = with_id.unwrap_or_else(|| ctx.next_item_id());
+        let item = Item::new(id,
+                             None,
+                             None,
+                             parent,
+                             ItemKind::Type(Type::named(name)));
+        ctx.add_named_type(item, definition);
+        Some(id)
     }
 }
 

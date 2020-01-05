@@ -74,15 +74,15 @@ impl Emitter for JsonEmitter {
 
 
 #[derive(RustcEncodable)]
-struct Diagnostic<'a> {
+struct Diagnostic {
     
-    message: &'a str,
+    message: String,
     code: Option<DiagnosticCode>,
     
     level: &'static str,
     spans: Vec<DiagnosticSpan>,
     
-    children: Vec<Diagnostic<'a>>,
+    children: Vec<Diagnostic>,
     
     
     
@@ -148,12 +148,12 @@ struct DiagnosticCode {
     explanation: Option<&'static str>,
 }
 
-impl<'a> Diagnostic<'a> {
-    fn from_diagnostic_builder<'c>(db: &'c DiagnosticBuilder,
-                                   je: &JsonEmitter)
-                                   -> Diagnostic<'c> {
+impl Diagnostic {
+    fn from_diagnostic_builder(db: &DiagnosticBuilder,
+                               je: &JsonEmitter)
+                               -> Diagnostic {
         Diagnostic {
-            message: &db.message,
+            message: db.message(),
             code: DiagnosticCode::map_opt_string(db.code.clone(), je),
             level: db.level.to_str(),
             spans: DiagnosticSpan::from_multispan(&db.span, je),
@@ -164,9 +164,9 @@ impl<'a> Diagnostic<'a> {
         }
     }
 
-    fn from_sub_diagnostic<'c>(db: &'c SubDiagnostic, je: &JsonEmitter) -> Diagnostic<'c> {
+    fn from_sub_diagnostic(db: &SubDiagnostic, je: &JsonEmitter) -> Diagnostic {
         Diagnostic {
-            message: &db.message,
+            message: db.message(),
             code: None,
             level: db.level.to_str(),
             spans: db.render_span.as_ref()
@@ -296,7 +296,7 @@ impl DiagnosticSpanLine {
                          h_end: usize)
                          -> DiagnosticSpanLine {
         DiagnosticSpanLine {
-            text: fm.get_line(index).unwrap().to_owned(),
+            text: fm.get_line(index).unwrap_or("").to_owned(),
             highlight_start: h_start,
             highlight_end: h_end,
         }

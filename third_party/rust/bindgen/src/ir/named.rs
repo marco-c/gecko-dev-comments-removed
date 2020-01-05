@@ -87,12 +87,52 @@
 
 
 
-use std::collections::HashMap;
-use std::fmt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use super::context::{BindgenContext, ItemId};
-use super::item::ItemSet;
+use super::item::{Item, ItemSet};
+use super::template::{TemplateInstantiation, TemplateParameters};
 use super::traversal::{EdgeKind, Trace};
-use super::ty::{TemplateDeclaration, TypeKind};
+use super::ty::TypeKind;
+use std::collections::{HashMap, HashSet};
+use std::fmt;
 
 
 
@@ -124,7 +164,7 @@ pub trait MonotoneFramework: Sized + fmt::Debug {
     
     
     
-    type Output: From<Self>;
+    type Output: From<Self> + fmt::Debug;
 
     
     fn new(extra: Self::Extra) -> Self;
@@ -152,12 +192,8 @@ pub trait MonotoneFramework: Sized + fmt::Debug {
 }
 
 
-
-
-
-#[allow(dead_code)]
 pub fn analyze<Analysis>(extra: Analysis::Extra) -> Analysis::Output
-    where Analysis: MonotoneFramework
+    where Analysis: MonotoneFramework,
 {
     let mut analysis = Analysis::new(extra);
     let mut worklist = analysis.initial_worklist();
@@ -175,127 +211,451 @@ pub fn analyze<Analysis>(extra: Analysis::Extra) -> Analysis::Output
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[derive(Debug, Clone)]
-pub struct UsedTemplateParameters<'a> {
-    ctx: &'a BindgenContext<'a>,
-    used: ItemSet,
+pub struct UsedTemplateParameters<'ctx, 'gen>
+    where 'gen: 'ctx,
+{
+    ctx: &'ctx BindgenContext<'gen>,
+
+    
+    
+    used: HashMap<ItemId, Option<ItemSet>>,
+
     dependencies: HashMap<ItemId, Vec<ItemId>>,
+
+    
+    
+    
+    whitelisted_items: HashSet<ItemId>,
 }
 
-impl<'a> MonotoneFramework for UsedTemplateParameters<'a> {
+impl<'ctx, 'gen> UsedTemplateParameters<'ctx, 'gen> {
+    fn consider_edge(kind: EdgeKind) -> bool {
+        match kind {
+            
+            
+            
+            EdgeKind::TemplateArgument |
+            EdgeKind::BaseMember |
+            EdgeKind::Field |
+            EdgeKind::Constructor |
+            EdgeKind::VarType |
+            EdgeKind::FunctionReturn |
+            EdgeKind::FunctionParameter |
+            EdgeKind::TypeReference => true,
+
+            
+            
+            EdgeKind::InnerVar | EdgeKind::InnerType => false,
+
+            
+            
+            
+            
+            
+            
+            
+            EdgeKind::Method => false,
+
+            
+            
+            EdgeKind::TemplateDeclaration |
+            EdgeKind::TemplateParameterDefinition => false,
+
+            
+            
+            
+            
+            EdgeKind::Generic => false,
+        }
+    }
+
+    fn take_this_id_usage_set(&mut self, this_id: ItemId) -> ItemSet {
+        self.used
+            .get_mut(&this_id)
+            .expect("Should have a set of used template params for every item \
+                     id")
+            .take()
+            .expect("Should maintain the invariant that all used template param \
+                     sets are `Some` upon entry of `constrain`")
+    }
+
+    
+    
+    
+    
+    
+    fn constrain_instantiation_of_blacklisted_template(&self,
+                                                       this_id: ItemId,
+                                                       used_by_this_id: &mut ItemSet,
+                                                       instantiation: &TemplateInstantiation) {
+        trace!("    instantiation of blacklisted template, uses all template \
+                arguments");
+
+        let args = instantiation.template_arguments()
+            .into_iter()
+            .map(|a| {
+                a.into_resolver()
+                    .through_type_refs()
+                    .through_type_aliases()
+                    .resolve(self.ctx)
+                    .id()
+            })
+            .filter(|a| *a != this_id)
+            .flat_map(|a| {
+                self.used.get(&a)
+                    .expect("Should have a used entry for the template arg")
+                    .as_ref()
+                    .expect("Because a != this_id, and all used template \
+                             param sets other than this_id's are `Some`, \
+                             a's used template param set should be `Some`")
+                    .iter()
+                    .cloned()
+            });
+
+        used_by_this_id.extend(args);
+    }
+
+    
+    
+    fn constrain_instantiation(&self,
+                               this_id: ItemId,
+                               used_by_this_id: &mut ItemSet,
+                               instantiation: &TemplateInstantiation) {
+        trace!("    template instantiation");
+
+        let decl = self.ctx.resolve_type(instantiation.template_definition());
+        let args = instantiation.template_arguments();
+
+        let params = decl.self_template_params(self.ctx)
+            .unwrap_or(vec![]);
+
+        debug_assert!(this_id != instantiation.template_definition());
+        let used_by_def = self.used
+            .get(&instantiation.template_definition())
+            .expect("Should have a used entry for instantiation's template definition")
+            .as_ref()
+            .expect("And it should be Some because only this_id's set is None, and an \
+                     instantiation's template definition should never be the \
+                     instantiation itself");
+
+        for (arg, param) in args.iter().zip(params.iter()) {
+            trace!("      instantiation's argument {:?} is used if definition's \
+                    parameter {:?} is used",
+                   arg,
+                   param);
+
+            if used_by_def.contains(param) {
+                trace!("        param is used by template definition");
+
+                let arg = arg.into_resolver()
+                    .through_type_refs()
+                    .through_type_aliases()
+                    .resolve(self.ctx)
+                    .id();
+
+                if arg == this_id {
+                    continue;
+                }
+
+                let used_by_arg = self.used
+                    .get(&arg)
+                    .expect("Should have a used entry for the template arg")
+                    .as_ref()
+                    .expect("Because arg != this_id, and all used template \
+                             param sets other than this_id's are `Some`, \
+                             arg's used template param set should be \
+                             `Some`")
+                    .iter()
+                    .cloned();
+                used_by_this_id.extend(used_by_arg);
+            }
+        }
+    }
+
+    
+    
+    fn constrain_join(&self, used_by_this_id: &mut ItemSet, item: &Item) {
+        trace!("    other item: join with successors' usage");
+
+        item.trace(self.ctx, &mut |sub_id, edge_kind| {
+            
+            
+            
+            if sub_id == item.id() || !Self::consider_edge(edge_kind) {
+                return;
+            }
+
+            let used_by_sub_id = self.used
+                .get(&sub_id)
+                .expect("Should have a used set for the sub_id successor")
+                .as_ref()
+                .expect("Because sub_id != id, and all used template \
+                         param sets other than id's are `Some`, \
+                         sub_id's used template param set should be \
+                         `Some`")
+                        .iter()
+                        .cloned();
+
+            trace!("      union with {:?}'s usage: {:?}",
+                   sub_id,
+                   used_by_sub_id.clone().collect::<Vec<_>>());
+
+            used_by_this_id.extend(used_by_sub_id);
+        }, &());
+    }
+}
+
+impl<'ctx, 'gen> MonotoneFramework for UsedTemplateParameters<'ctx, 'gen> {
     type Node = ItemId;
-    type Extra = &'a BindgenContext<'a>;
-    type Output = ItemSet;
+    type Extra = &'ctx BindgenContext<'gen>;
+    type Output = HashMap<ItemId, ItemSet>;
 
-    fn new(ctx: &'a BindgenContext<'a>) -> UsedTemplateParameters<'a> {
+    fn new(ctx: &'ctx BindgenContext<'gen>)
+           -> UsedTemplateParameters<'ctx, 'gen> {
+        let mut used = HashMap::new();
         let mut dependencies = HashMap::new();
+        let whitelisted_items: HashSet<_> = ctx.whitelisted_items().collect();
 
-        for item in ctx.whitelisted_items() {
+        let whitelisted_and_blacklisted_items: ItemSet = whitelisted_items.iter()
+            .cloned()
+            .flat_map(|i| {
+                let mut reachable = vec![i];
+                i.trace(ctx, &mut |s, _| {
+                    reachable.push(s);
+                }, &());
+                reachable
+            })
+            .collect();
+
+        for item in whitelisted_and_blacklisted_items {
+            dependencies.entry(item).or_insert(vec![]);
+            used.entry(item).or_insert(Some(ItemSet::new()));
+
             {
                 
                 
-                let mut add_reverse_edge = |sub_item, _| {
-                    dependencies.entry(sub_item).or_insert(vec![]).push(item);
-                };
-                item.trace(ctx, &mut add_reverse_edge, &());
+                item.trace(ctx, &mut |sub_item: ItemId, _| {
+                    used.entry(sub_item).or_insert(Some(ItemSet::new()));
+                    dependencies.entry(sub_item)
+                        .or_insert(vec![])
+                        .push(item);
+                }, &());
             }
 
             
             
             
-            ctx.resolve_item_fallible(item)
-                .and_then(|item| item.as_type())
+            ctx.resolve_item(item)
+                .as_type()
                 .map(|ty| match ty.kind() {
-                    &TypeKind::TemplateInstantiation(decl, ref args) => {
-                        let decl = ctx.resolve_type(decl);
-                        let params = decl.template_params(ctx)
-                            .expect("a template instantiation's referenced \
-                                     template declaration should have template \
-                                     parameters");
+                    &TypeKind::TemplateInstantiation(ref inst) => {
+                        let decl = ctx.resolve_type(inst.template_definition());
+                        let args = inst.template_arguments();
+
+                        
+                        
+                        
+                        let params = decl.self_template_params(ctx)
+                            .unwrap_or(vec![]);
+
                         for (arg, param) in args.iter().zip(params.iter()) {
-                            dependencies.entry(*arg).or_insert(vec![]).push(*param);
+                            let arg = arg.into_resolver()
+                                .through_type_aliases()
+                                .through_type_refs()
+                                .resolve(ctx)
+                                .id();
+
+                            let param = param.into_resolver()
+                                .through_type_aliases()
+                                .through_type_refs()
+                                .resolve(ctx)
+                                .id();
+
+                            used.entry(arg).or_insert(Some(ItemSet::new()));
+                            used.entry(param).or_insert(Some(ItemSet::new()));
+
+                            dependencies.entry(arg)
+                                .or_insert(vec![])
+                                .push(param);
                         }
                     }
                     _ => {}
                 });
         }
 
+        if cfg!(feature = "testing_only_extra_assertions") {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            for item in whitelisted_items.iter() {
+                extra_assert!(used.contains_key(item));
+                extra_assert!(dependencies.contains_key(item));
+                item.trace(ctx, &mut |sub_item, _| {
+                    extra_assert!(used.contains_key(&sub_item));
+                    extra_assert!(dependencies.contains_key(&sub_item));
+                }, &())
+            }
+        }
+
         UsedTemplateParameters {
             ctx: ctx,
-            used: ItemSet::new(),
+            used: used,
             dependencies: dependencies,
+            whitelisted_items: whitelisted_items,
         }
     }
 
-    fn initial_worklist(&self) -> Vec<Self::Node> {
-        self.ctx.whitelisted_items().collect()
+    fn initial_worklist(&self) -> Vec<ItemId> {
+        
+        
+        self.ctx
+            .whitelisted_items()
+            .flat_map(|i| {
+                let mut reachable = vec![i];
+                i.trace(self.ctx, &mut |s, _| {
+                    reachable.push(s);
+                }, &());
+                reachable
+            })
+            .collect()
     }
 
-    fn constrain(&mut self, item: ItemId) -> bool {
-        let original_size = self.used.len();
+    fn constrain(&mut self, id: ItemId) -> bool {
+        
+        
+        extra_assert!(self.used.values().all(|v| v.is_some()));
 
-        item.trace(self.ctx, &mut |item, edge_kind| {
-            if edge_kind == EdgeKind::TemplateParameterDefinition {
-                
-                
-                return;
+        
+        
+        
+        
+        let mut used_by_this_id = self.take_this_id_usage_set(id);
+
+        trace!("constrain {:?}", id);
+        trace!("  initially, used set is {:?}", used_by_this_id);
+
+        let original_len = used_by_this_id.len();
+
+        let item = self.ctx.resolve_item(id);
+        let ty_kind = item.as_type().map(|ty| ty.kind());
+        match ty_kind {
+            
+            Some(&TypeKind::Named) => {
+                trace!("    named type, trivially uses itself");
+                used_by_this_id.insert(id);
             }
-
-            let ty_kind = self.ctx.resolve_item(item)
-                .as_type()
-                .map(|ty| ty.kind());
-
-            match ty_kind {
-                Some(&TypeKind::Named) => {
-                    
-                    self.used.insert(item);
-                },
-                Some(&TypeKind::TemplateInstantiation(decl, ref args)) => {
-                    
-                    
-                    
-                    let decl = self.ctx.resolve_type(decl);
-                    let params = decl.template_params(self.ctx)
-                        .expect("a template instantiation's referenced \
-                                 template declaration should have template \
-                                 parameters");
-                    for (arg, param) in args.iter().zip(params.iter()) {
-                        if self.used.contains(param) {
-                            if self.ctx.resolve_item(*arg).is_named() {
-                                self.used.insert(*arg);
-                            }
-                        }
-                    }
-                },
-                _ => return,
+            
+            
+            Some(&TypeKind::TemplateInstantiation(ref inst)) => {
+                if self.whitelisted_items.contains(&inst.template_definition()) {
+                    self.constrain_instantiation(id, &mut used_by_this_id, inst);
+                } else {
+                    self.constrain_instantiation_of_blacklisted_template(id,
+                                                                         &mut used_by_this_id,
+                                                                         inst);
+                }
             }
-        }, &());
+            
+            
+            _ => self.constrain_join(&mut used_by_this_id, item),
+        }
 
-        let new_size = self.used.len();
-        new_size != original_size
+        trace!("  finally, used set is {:?}", used_by_this_id);
+
+        let new_len = used_by_this_id.len();
+        assert!(new_len >= original_len,
+                "This is the property that ensures this function is monotone -- \
+                 if it doesn't hold, the analysis might never terminate!");
+
+        
+        debug_assert!(self.used[&id].is_none());
+        self.used.insert(id, Some(used_by_this_id));
+        extra_assert!(self.used.values().all(|v| v.is_some()));
+
+        new_len != original_len
     }
 
     fn each_depending_on<F>(&self, item: ItemId, mut f: F)
-        where F: FnMut(Self::Node)
+        where F: FnMut(ItemId),
     {
         if let Some(edges) = self.dependencies.get(&item) {
             for item in edges {
+                trace!("enqueue {:?} into worklist", item);
                 f(*item);
             }
         }
     }
 }
 
-impl<'a> From<UsedTemplateParameters<'a>> for ItemSet {
-    fn from(used_templ_params: UsedTemplateParameters) -> ItemSet {
+impl<'ctx, 'gen> From<UsedTemplateParameters<'ctx, 'gen>>
+    for HashMap<ItemId, ItemSet> {
+    fn from(used_templ_params: UsedTemplateParameters<'ctx, 'gen>) -> Self {
         used_templ_params.used
+            .into_iter()
+            .map(|(k, v)| (k, v.unwrap()))
+            .collect()
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::collections::{HashMap, HashSet};
     use super::*;
+    use std::collections::{HashMap, HashSet};
 
     
     
@@ -361,7 +721,7 @@ mod tests {
             g.0.insert(Node(8), vec![]);
             g
         }
-        
+
         fn reverse(&self) -> Graph {
             let mut reversed = Graph::default();
             for (node, edges) in self.0.iter() {
@@ -409,8 +769,9 @@ mod tests {
             
             
 
-            let original_size = self.reachable.entry(node).or_insert(HashSet::new()).len();
-            
+            let original_size =
+                self.reachable.entry(node).or_insert(HashSet::new()).len();
+
             for sub_node in self.graph.0[&node].iter() {
                 self.reachable.get_mut(&node).unwrap().insert(*sub_node);
 
@@ -429,7 +790,7 @@ mod tests {
         }
 
         fn each_depending_on<F>(&self, node: Node, mut f: F)
-            where F: FnMut(Node)
+            where F: FnMut(Node),
         {
             for dep in self.reversed.0[&node].iter() {
                 f(*dep);
@@ -450,19 +811,19 @@ mod tests {
         println!("reachable = {:#?}", reachable);
 
         fn nodes<A>(nodes: A) -> HashSet<Node>
-            where A: AsRef<[usize]>
+            where A: AsRef<[usize]>,
         {
             nodes.as_ref().iter().cloned().map(Node).collect()
         }
 
         let mut expected = HashMap::new();
-        expected.insert(Node(1), nodes([3,4,5,6,7,8]));
+        expected.insert(Node(1), nodes([3, 4, 5, 6, 7, 8]));
         expected.insert(Node(2), nodes([2]));
-        expected.insert(Node(3), nodes([3,4,5,6,7,8]));
-        expected.insert(Node(4), nodes([3,4,5,6,7,8]));
-        expected.insert(Node(5), nodes([3,4,5,6,7,8]));
+        expected.insert(Node(3), nodes([3, 4, 5, 6, 7, 8]));
+        expected.insert(Node(4), nodes([3, 4, 5, 6, 7, 8]));
+        expected.insert(Node(5), nodes([3, 4, 5, 6, 7, 8]));
         expected.insert(Node(6), nodes([8]));
-        expected.insert(Node(7), nodes([3,4,5,6,7,8]));
+        expected.insert(Node(7), nodes([3, 4, 5, 6, 7, 8]));
         expected.insert(Node(8), nodes([]));
         println!("expected = {:#?}", expected);
 

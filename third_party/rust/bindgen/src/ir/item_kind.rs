@@ -1,9 +1,12 @@
 
 
+use super::context::BindgenContext;
+use super::dot::DotAttributes;
 use super::function::Function;
 use super::module::Module;
 use super::ty::Type;
 use super::var::Var;
+use std::io;
 
 
 #[derive(Debug)]
@@ -38,8 +41,8 @@ impl ItemKind {
             ItemKind::Module(..) => "Module",
             ItemKind::Type(..) => "Type",
             ItemKind::Function(..) => "Function",
-            ItemKind::Var(..) => "Var"
-        }        
+            ItemKind::Var(..) => "Var",
+        }
     }
 
     
@@ -120,5 +123,25 @@ impl ItemKind {
     
     pub fn expect_var(&self) -> &Var {
         self.as_var().expect("Not a var")
+    }
+}
+
+impl DotAttributes for ItemKind {
+    fn dot_attributes<W>(&self,
+                         ctx: &BindgenContext,
+                         out: &mut W)
+                         -> io::Result<()>
+        where W: io::Write,
+    {
+        try!(writeln!(out,
+                      "<tr><td>kind</td><td>{}</td></tr>",
+                      self.kind_name()));
+
+        match *self {
+            ItemKind::Module(ref module) => module.dot_attributes(ctx, out),
+            ItemKind::Type(ref ty) => ty.dot_attributes(ctx, out),
+            ItemKind::Function(ref func) => func.dot_attributes(ctx, out),
+            ItemKind::Var(ref var) => var.dot_attributes(ctx, out),
+        }
     }
 }

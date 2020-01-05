@@ -37,6 +37,7 @@
 
 use ir::context::BindgenContext;
 use ir::item::{Item, ItemAncestors, ItemCanonicalName};
+use ir::template::TemplateParameters;
 use std::io;
 
 
@@ -85,7 +86,7 @@ pub fn generate_dummy_uses<W>(ctx: &mut BindgenContext,
                         
                         
                         
-                        item.applicable_template_args(ctx).is_empty()
+                        item.all_template_params(ctx).is_none()
                 } else {
                     false
                 }

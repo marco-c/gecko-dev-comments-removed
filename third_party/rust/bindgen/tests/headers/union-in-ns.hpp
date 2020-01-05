@@ -1,5 +1,0 @@
-
-
-union bar {
-  int baz;
-};

@@ -151,6 +151,15 @@ impl Annotation {
         }
     }
 
+    
+    pub fn is_line(&self) -> bool {
+        if let AnnotationType::MultilineLine(_) = self.annotation_type {
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn is_multiline(&self) -> bool {
         match self.annotation_type {
             AnnotationType::Multiline(_) |
@@ -161,6 +170,32 @@ impl Annotation {
         }
     }
 
+    pub fn len(&self) -> usize {
+        
+        if self.end_col > self.start_col {
+            self.end_col - self.start_col
+        } else {
+            self.start_col - self.end_col
+        }
+    }
+
+    pub fn has_label(&self) -> bool {
+        if let Some(ref label) = self.label {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            label.len() > 0
+        } else {
+            false
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -185,4 +220,5 @@ pub enum Style {
     NoStyle,
     ErrorCode,
     Level(Level),
+    Highlight,
 }

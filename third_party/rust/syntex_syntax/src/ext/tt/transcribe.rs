@@ -10,10 +10,9 @@
 use self::LockstepIterSize::*;
 
 use ast::Ident;
-use errors::{Handler, DiagnosticBuilder};
+use errors::Handler;
 use ext::tt::macro_parser::{NamedMatch, MatchedSeq, MatchedNonterminal};
-use parse::token::{self, MatchNt, SubstNt, Token, NtIdent};
-use parse::lexer::TokenAndSpan;
+use parse::token::{self, MatchNt, SubstNt, Token, NtIdent, NtTT};
 use syntax_pos::{Span, DUMMY_SP};
 use tokenstream::{self, TokenTree};
 use util::small_vector::SmallVector;
@@ -32,8 +31,8 @@ struct TtFrame {
 }
 
 #[derive(Clone)]
-pub struct TtReader<'a> {
-    pub sp_diag: &'a Handler,
+struct TtReader<'a> {
+    sp_diag: &'a Handler,
     
     stack: SmallVector<TtFrame>,
     
@@ -41,20 +40,15 @@ pub struct TtReader<'a> {
 
     repeat_idx: Vec<usize>,
     repeat_len: Vec<usize>,
-    
-    pub cur_tok: Token,
-    pub cur_span: Span,
-    
-    pub fatal_errs: Vec<DiagnosticBuilder<'a>>,
 }
 
 
 
 
-pub fn new_tt_reader(sp_diag: &Handler,
-                     interp: Option<HashMap<Ident, Rc<NamedMatch>>>,
-                     src: Vec<tokenstream::TokenTree>)
-                     -> TtReader {
+pub fn transcribe(sp_diag: &Handler,
+                  interp: Option<HashMap<Ident, Rc<NamedMatch>>>,
+                  src: Vec<tokenstream::TokenTree>)
+                  -> Vec<TokenTree> {
     let mut r = TtReader {
         sp_diag: sp_diag,
         stack: SmallVector::one(TtFrame {
@@ -73,13 +67,15 @@ pub fn new_tt_reader(sp_diag: &Handler,
         },
         repeat_idx: Vec::new(),
         repeat_len: Vec::new(),
-        
-        cur_tok: token::Eof,
-        cur_span: DUMMY_SP,
-        fatal_errs: Vec::new(),
     };
-    tt_next_token(&mut r); 
-    r
+
+    let mut tts = Vec::new();
+    let mut prev_span = DUMMY_SP;
+    while let Some(tt) = tt_next_token(&mut r, prev_span) {
+        prev_span = tt.span();
+        tts.push(tt);
+    }
+    tts
 }
 
 fn lookup_cur_matched_by_matched(r: &TtReader, start: Rc<NamedMatch>) -> Rc<NamedMatch> {
@@ -153,38 +149,24 @@ fn lockstep_iter_size(t: &TokenTree, r: &TtReader) -> LockstepIterSize {
 
 
 
-pub fn tt_next_token(r: &mut TtReader) -> TokenAndSpan {
-    
-    let ret_val = TokenAndSpan {
-        tok: r.cur_tok.clone(),
-        sp: r.cur_span.clone(),
-    };
+fn tt_next_token(r: &mut TtReader, prev_span: Span) -> Option<TokenTree> {
     loop {
-        let should_pop = match r.stack.last() {
-            None => {
-                assert_eq!(ret_val.tok, token::Eof);
-                return ret_val;
+        let should_pop = if let Some(frame) = r.stack.last() {
+            if frame.idx < frame.forest.len() {
+                break;
             }
-            Some(frame) => {
-                if frame.idx < frame.forest.len() {
-                    break;
-                }
-                !frame.dotdotdoted ||
-                    *r.repeat_idx.last().unwrap() == *r.repeat_len.last().unwrap() - 1
-            }
+            !frame.dotdotdoted || *r.repeat_idx.last().unwrap() == *r.repeat_len.last().unwrap() - 1
+        } else {
+            return None;
         };
 
         
         if should_pop {
             let prev = r.stack.pop().unwrap();
-            match r.stack.last_mut() {
-                None => {
-                    r.cur_tok = token::Eof;
-                    return ret_val;
-                }
-                Some(frame) => {
-                    frame.idx += 1;
-                }
+            if let Some(frame) = r.stack.last_mut() {
+                frame.idx += 1;
+            } else {
+                return None;
             }
             if prev.dotdotdoted {
                 r.repeat_idx.pop();
@@ -194,8 +176,7 @@ pub fn tt_next_token(r: &mut TtReader) -> TokenAndSpan {
             *r.repeat_idx.last_mut().unwrap() += 1;
             r.stack.last_mut().unwrap().idx = 0;
             if let Some(tk) = r.stack.last().unwrap().sep.clone() {
-                r.cur_tok = tk; 
-                return ret_val;
+                return Some(TokenTree::Token(prev_span, tk)); 
             }
         }
     }
@@ -231,7 +212,7 @@ pub fn tt_next_token(r: &mut TtReader) -> TokenAndSpan {
                             }
 
                             r.stack.last_mut().unwrap().idx += 1;
-                            return tt_next_token(r);
+                            return tt_next_token(r, prev_span);
                         }
                         r.repeat_len.push(len);
                         r.repeat_idx.push(0);
@@ -249,9 +230,7 @@ pub fn tt_next_token(r: &mut TtReader) -> TokenAndSpan {
                 r.stack.last_mut().unwrap().idx += 1;
                 match lookup_cur_matched(r, ident) {
                     None => {
-                        r.cur_span = sp;
-                        r.cur_tok = SubstNt(ident);
-                        return ret_val;
+                        return Some(TokenTree::Token(sp, SubstNt(ident)));
                         
                     }
                     Some(cur_matched) => if let MatchedNonterminal(ref nt) = *cur_matched {
@@ -260,15 +239,12 @@ pub fn tt_next_token(r: &mut TtReader) -> TokenAndSpan {
                             
                             
                             NtIdent(ref sn) => {
-                                r.cur_span = sn.span;
-                                r.cur_tok = token::Ident(sn.node);
-                                return ret_val;
+                                return Some(TokenTree::Token(sn.span, token::Ident(sn.node)));
                             }
+                            NtTT(ref tt) => return Some(tt.clone()),
                             _ => {
                                 
-                                r.cur_span = sp;
-                                r.cur_tok = token::Interpolated(nt.clone());
-                                return ret_val;
+                                return Some(TokenTree::Token(sp, token::Interpolated(nt.clone())));
                             }
                         }
                     } else {
@@ -289,11 +265,9 @@ pub fn tt_next_token(r: &mut TtReader) -> TokenAndSpan {
                 });
                 
             }
-            TokenTree::Token(sp, tok) => {
-                r.cur_span = sp;
-                r.cur_tok = tok;
+            tt @ TokenTree::Token(..) => {
                 r.stack.last_mut().unwrap().idx += 1;
-                return ret_val;
+                return Some(tt);
             }
         }
     }

@@ -1,9 +1,11 @@
 
 
 use super::context::{BindgenContext, ItemId};
+use super::dot::DotAttributes;
 use clang;
 use parse::{ClangSubItemParser, ParseError, ParseResult};
 use parse_one;
+use std::io;
 
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -53,6 +55,17 @@ impl Module {
     
     pub fn is_inline(&self) -> bool {
         self.kind == ModuleKind::Inline
+    }
+}
+
+impl DotAttributes for Module {
+    fn dot_attributes<W>(&self,
+                         _ctx: &BindgenContext,
+                         out: &mut W)
+                         -> io::Result<()>
+        where W: io::Write,
+    {
+        writeln!(out, "<tr><td>ModuleKind</td><td>{:?}</td></tr>", self.kind)
     }
 }
 

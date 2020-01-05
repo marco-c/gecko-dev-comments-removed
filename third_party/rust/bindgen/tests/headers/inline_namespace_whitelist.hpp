@@ -1,7 +1,0 @@
-
-
-namespace std {
-  inline namespace bar {
-    using string = const char*;
-  };
-};

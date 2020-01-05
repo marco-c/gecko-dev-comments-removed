@@ -1,12 +1,15 @@
 
 
 use super::context::{BindgenContext, ItemId};
+use super::dot::DotAttributes;
 use super::item::Item;
-use super::traversal::{Trace, Tracer};
+use super::traversal::{EdgeKind, Trace, Tracer};
 use super::ty::TypeKind;
 use clang;
 use clang_sys::CXCallingConv;
+use ir::derive::CanDeriveDebug;
 use parse::{ClangItemParser, ClangSubItemParser, ParseError, ParseResult};
+use std::io;
 use syntax::abi;
 
 
@@ -59,6 +62,23 @@ impl Function {
     }
 }
 
+impl DotAttributes for Function {
+    fn dot_attributes<W>(&self,
+                         _ctx: &BindgenContext,
+                         out: &mut W)
+                         -> io::Result<()>
+        where W: io::Write,
+    {
+        if let Some(ref mangled) = self.mangled_name {
+            try!(writeln!(out,
+                          "<tr><td>mangled name</td><td>{}</td></tr>",
+                          mangled));
+        }
+
+        Ok(())
+    }
+}
+
 
 #[derive(Debug)]
 pub struct FunctionSig {
@@ -91,12 +111,25 @@ fn get_abi(cc: CXCallingConv) -> Option<abi::Abi> {
 }
 
 
-pub fn cursor_mangling(cursor: &clang::Cursor) -> Option<String> {
+pub fn cursor_mangling(ctx: &BindgenContext,
+                       cursor: &clang::Cursor)
+                       -> Option<String> {
+    use clang_sys;
+    if !ctx.options().enable_mangling {
+        return None;
+    }
+
     
     
     
     if cursor.is_in_non_fully_specialized_template() {
         return None;
+    }
+
+    if let Ok(mut manglings) = cursor.cxx_manglings() {
+        if let Some(m) = manglings.pop() {
+            return Some(m);
+        }
     }
 
     let mut mangling = cursor.mangling();
@@ -105,8 +138,38 @@ pub fn cursor_mangling(cursor: &clang::Cursor) -> Option<String> {
     }
 
     
+    
+    
+    
     if cfg!(target_os = "macos") {
         mangling.remove(0);
+    }
+
+    if cursor.kind() == clang_sys::CXCursor_Destructor {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if mangling.ends_with("D0Ev") {
+            let new_len = mangling.len() - 4;
+            mangling.truncate(new_len);
+            mangling.push_str("D1Ev");
+        }
     }
 
     Some(mangling)
@@ -156,7 +219,8 @@ impl FunctionSig {
             CXCursor_FunctionDecl |
             CXCursor_Constructor |
             CXCursor_CXXMethod |
-            CXCursor_ObjCInstanceMethodDecl => {
+            CXCursor_ObjCInstanceMethodDecl |
+            CXCursor_ObjCClassMethodDecl => {
                 
                 
                 cursor.args()
@@ -167,8 +231,7 @@ impl FunctionSig {
                         let name = arg.spelling();
                         let name =
                             if name.is_empty() { None } else { Some(name) };
-                        let ty =
-                            Item::from_ty_or_ref(arg_ty, Some(*arg), None, ctx);
+                        let ty = Item::from_ty_or_ref(arg_ty, *arg, None, ctx);
                         (name, ty)
                     })
                     .collect()
@@ -179,10 +242,8 @@ impl FunctionSig {
                 let mut args = vec![];
                 cursor.visit(|c| {
                     if c.kind() == CXCursor_ParmDecl {
-                        let ty = Item::from_ty_or_ref(c.cur_type(),
-                                                      Some(c),
-                                                      None,
-                                                      ctx);
+                        let ty =
+                            Item::from_ty_or_ref(c.cur_type(), c, None, ctx);
                         let name = c.spelling();
                         let name =
                             if name.is_empty() { None } else { Some(name) };
@@ -196,13 +257,14 @@ impl FunctionSig {
 
         let is_method = cursor.kind() == CXCursor_CXXMethod;
         let is_constructor = cursor.kind() == CXCursor_Constructor;
-        if (is_constructor || is_method) &&
+        let is_destructor = cursor.kind() == CXCursor_Destructor;
+        if (is_constructor || is_destructor || is_method) &&
            cursor.lexical_parent() != cursor.semantic_parent() {
             
             return Err(ParseError::Continue);
         }
 
-        if is_method || is_constructor {
+        if is_method || is_constructor || is_destructor {
             let is_const = is_method && cursor.method_is_const();
             let is_virtual = is_method && cursor.method_is_virtual();
             let is_static = is_method && cursor.method_is_static();
@@ -220,17 +282,20 @@ impl FunctionSig {
             }
         }
 
-        let ty_ret_type = if cursor.kind() == CXCursor_ObjCInstanceMethodDecl {
-            try!(cursor.ret_type().ok_or(ParseError::Continue))
+        let ty_ret_type = if cursor.kind() == CXCursor_ObjCInstanceMethodDecl ||
+                             cursor.kind() == CXCursor_ObjCClassMethodDecl {
+            try!(ty.ret_type()
+                   .or_else(|| cursor.ret_type())
+                   .ok_or(ParseError::Continue))
         } else {
             try!(ty.ret_type().ok_or(ParseError::Continue))
         };
-        let ret = Item::from_ty_or_ref(ty_ret_type, None, None, ctx);
+        let ret = Item::from_ty_or_ref(ty_ret_type, cursor, None, ctx);
         let abi = get_abi(ty.call_conv());
 
         if abi.is_none() {
-            assert_eq!(cursor.kind(),
-                       CXCursor_ObjCInstanceMethodDecl,
+            assert!(cursor.kind() == CXCursor_ObjCInstanceMethodDecl ||
+                    cursor.kind() == CXCursor_ObjCClassMethodDecl,
                        "Invalid ABI for function signature")
         }
 
@@ -267,9 +332,9 @@ impl ClangSubItemParser for Function {
              -> Result<ParseResult<Self>, ParseError> {
         use clang_sys::*;
         match cursor.kind() {
-            
             CXCursor_FunctionDecl |
             CXCursor_Constructor |
+            CXCursor_Destructor |
             CXCursor_CXXMethod => {}
             _ => return Err(ParseError::Continue),
         };
@@ -285,7 +350,8 @@ impl ClangSubItemParser for Function {
             return Err(ParseError::Continue);
         }
 
-        if cursor.is_inlined_function() {
+        if !context.options().generate_inline_functions &&
+            cursor.is_inlined_function() {
             return Err(ParseError::Continue);
         }
 
@@ -296,15 +362,27 @@ impl ClangSubItemParser for Function {
         }
 
         
-        let sig = try!(Item::from_ty(&cursor.cur_type(),
-                                     Some(cursor),
-                                     None,
-                                     context));
+        let sig =
+            try!(Item::from_ty(&cursor.cur_type(), cursor, None, context));
 
-        let name = cursor.spelling();
+        let mut name = cursor.spelling();
         assert!(!name.is_empty(), "Empty function name?");
 
-        let mut mangled_name = cursor_mangling(&cursor);
+        if cursor.kind() == CXCursor_Destructor {
+            
+            
+            
+            if name.starts_with('~') {
+                name.remove(0);
+            }
+
+            
+            
+            
+            name.push_str("_destructor");
+        }
+
+        let mut mangled_name = cursor_mangling(context, &cursor);
         if mangled_name.as_ref() == Some(&name) {
             mangled_name = None;
         }
@@ -322,10 +400,34 @@ impl Trace for FunctionSig {
     fn trace<T>(&self, _: &BindgenContext, tracer: &mut T, _: &())
         where T: Tracer,
     {
-        tracer.visit(self.return_type());
+        tracer.visit_kind(self.return_type(), EdgeKind::FunctionReturn);
 
         for &(_, ty) in self.argument_types() {
-            tracer.visit(ty);
+            tracer.visit_kind(ty, EdgeKind::FunctionParameter);
+        }
+    }
+}
+
+
+
+
+
+
+
+
+impl CanDeriveDebug for FunctionSig {
+    type Extra = ();
+
+    fn can_derive_debug(&self, _ctx: &BindgenContext, _: ()) -> bool {
+        const RUST_DERIVE_FUNPTR_LIMIT: usize = 12;
+        if self.argument_types.len() > RUST_DERIVE_FUNPTR_LIMIT {
+            return false;
+        }
+
+        match self.abi {
+            Some(abi::Abi::C) |
+            None => true,
+            _ => false,
         }
     }
 }

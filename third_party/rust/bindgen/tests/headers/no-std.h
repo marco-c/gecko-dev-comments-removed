@@ -1,5 +1,0 @@
-
-struct foo {
-  int a, b;
-  void* bar;
-};

@@ -49,7 +49,7 @@ pub trait ClangItemParser: Sized {
 
     
     fn from_ty(ty: &clang::Type,
-               location: Option<clang::Cursor>,
+               location: clang::Cursor,
                parent: Option<ItemId>,
                ctx: &mut BindgenContext)
                -> Result<ItemId, ParseError>;
@@ -58,7 +58,7 @@ pub trait ClangItemParser: Sized {
     
     fn from_ty_with_id(id: ItemId,
                        ty: &clang::Type,
-                       location: Option<clang::Cursor>,
+                       location: clang::Cursor,
                        parent: Option<ItemId>,
                        ctx: &mut BindgenContext)
                        -> Result<ItemId, ParseError>;
@@ -66,7 +66,7 @@ pub trait ClangItemParser: Sized {
     
     
     fn from_ty_or_ref(ty: clang::Type,
-                      location: Option<clang::Cursor>,
+                      location: clang::Cursor,
                       parent_id: Option<ItemId>,
                       context: &mut BindgenContext)
                       -> ItemId;
@@ -75,26 +75,16 @@ pub trait ClangItemParser: Sized {
     
     fn from_ty_or_ref_with_id(potential_id: ItemId,
                               ty: clang::Type,
-                              location: Option<clang::Cursor>,
+                              location: clang::Cursor,
                               parent_id: Option<ItemId>,
                               context: &mut BindgenContext)
                               -> ItemId;
 
     
-    fn named_type<S>(name: S,
-                     parent: ItemId,
-                     context: &mut BindgenContext)
-                     -> ItemId
-        where S: Into<String>;
-
-    
-    
-    fn named_type_with_id<S>(id: ItemId,
-                             name: S,
-                             parent: ItemId,
-                             context: &mut BindgenContext)
-                             -> ItemId
-        where S: Into<String>;
+    fn named_type(with_id: Option<ItemId>,
+                  location: clang::Cursor,
+                  ctx: &mut BindgenContext)
+                  -> Option<ItemId>;
 
     
     fn builtin_type(kind: TypeKind,

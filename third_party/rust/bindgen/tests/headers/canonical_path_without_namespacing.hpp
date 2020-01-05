@@ -1,7 +1,0 @@
-
-
-namespace foo {
-  struct Bar {};
-}
-
-void baz(foo::Bar*);

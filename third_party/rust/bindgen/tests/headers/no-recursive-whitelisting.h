@@ -1,7 +1,0 @@
-
-
-struct Bar;
-
-struct Foo {
-  struct Bar* baz;
-};

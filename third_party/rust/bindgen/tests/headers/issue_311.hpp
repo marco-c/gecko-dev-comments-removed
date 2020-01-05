@@ -1,5 +1,0 @@
-
-
-struct jsval_layout {
-  struct {};
-};

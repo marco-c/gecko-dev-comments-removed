@@ -16,8 +16,8 @@ use ext::expand::{Expansion, ExpansionKind};
 use ext::tt::macro_parser::{Success, Error, Failure};
 use ext::tt::macro_parser::{MatchedSeq, MatchedNonterminal};
 use ext::tt::macro_parser::{parse, parse_failure_msg};
+use ext::tt::transcribe::transcribe;
 use parse::{Directory, ParseSess};
-use parse::lexer::new_tt_reader;
 use parse::parser::Parser;
 use parse::token::{self, NtTT, Token};
 use parse::token::Token::*;
@@ -113,13 +113,12 @@ fn generic_extension<'cx>(cx: &'cx ExtCtxt,
                     _ => cx.span_bug(sp, "malformed macro rhs"),
                 };
                 
-                let trncbr =
-                    new_tt_reader(&cx.parse_sess.span_diagnostic, Some(named_matches), rhs);
+                let tts = transcribe(&cx.parse_sess.span_diagnostic, Some(named_matches), rhs);
                 let directory = Directory {
                     path: cx.current_expansion.module.directory.clone(),
                     ownership: cx.current_expansion.directory_ownership,
                 };
-                let mut p = Parser::new(cx.parse_sess(), Box::new(trncbr), Some(directory), false);
+                let mut p = Parser::new(cx.parse_sess(), tts, Some(directory), false);
                 p.root_module_name = cx.current_expansion.module.mod_path.last()
                     .map(|id| (*id.name.as_str()).to_owned());
 
@@ -188,9 +187,7 @@ pub fn compile(sess: &ParseSess, def: &ast::MacroDef) -> SyntaxExtension {
     ];
 
     
-    let arg_reader = new_tt_reader(&sess.span_diagnostic, None, def.body.clone());
-
-    let argument_map = match parse(sess, arg_reader, &argument_gram, None) {
+    let argument_map = match parse(sess, def.body.clone(), &argument_gram, None) {
         Success(m) => m,
         Failure(sp, tok) => {
             let s = parse_failure_msg(tok);
@@ -353,9 +350,9 @@ impl FirstSets {
                     TokenTree::Token(sp, ref tok) => {
                         first.replace_with((sp, tok.clone()));
                     }
-                    TokenTree::Delimited(_, ref delimited) => {
+                    TokenTree::Delimited(span, ref delimited) => {
                         build_recur(sets, &delimited.tts[..]);
-                        first.replace_with((delimited.open_span,
+                        first.replace_with((delimited.open_tt(span).span(),
                                             Token::OpenDelim(delimited.delim)));
                     }
                     TokenTree::Sequence(sp, ref seq_rep) => {
@@ -413,8 +410,8 @@ impl FirstSets {
                     first.add_one((sp, tok.clone()));
                     return first;
                 }
-                TokenTree::Delimited(_, ref delimited) => {
-                    first.add_one((delimited.open_span,
+                TokenTree::Delimited(span, ref delimited) => {
+                    first.add_one((delimited.open_tt(span).span(),
                                    Token::OpenDelim(delimited.delim)));
                     return first;
                 }
@@ -606,8 +603,9 @@ fn check_matcher_core(sess: &ParseSess,
                     suffix_first = build_suffix_first();
                 }
             }
-            TokenTree::Delimited(_, ref d) => {
-                let my_suffix = TokenSet::singleton((d.close_span, Token::CloseDelim(d.delim)));
+            TokenTree::Delimited(span, ref d) => {
+                let my_suffix = TokenSet::singleton((d.close_tt(span).span(),
+                                                     Token::CloseDelim(d.delim)));
                 check_matcher_core(sess, first_sets, &d.tts, &my_suffix);
                 
                 last.replace_with_irrelevant();

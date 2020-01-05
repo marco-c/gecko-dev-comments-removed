@@ -14,6 +14,17 @@
 
 
 
+
+
+
+
+
+
+
+
+
+#![allow(unused_attributes)]
+
 #![cfg_attr(feature="clippy", feature(plugin))]
 #![cfg_attr(feature="clippy", plugin(clippy))]
 #![cfg_attr(feature="clippy", warn(clippy))]
@@ -21,17 +32,12 @@
 extern crate glob;
 
 use std::env;
-use std::fs;
+use std::fs::{self, File};
+use std::io::{Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command};
 
 use glob::{MatchOptions};
-
-
-
-
-
-
 
 
 fn contains<D: AsRef<Path>>(directory: D, files: &[String]) -> Option<PathBuf> {
@@ -46,8 +52,18 @@ fn run(command: &str, arguments: &[&str]) -> Option<String> {
 }
 
 
-fn run_llvm_config(arguments: &[&str]) -> Option<String> {
-    run(&env::var("LLVM_CONFIG_PATH").unwrap_or("llvm-config".into()), arguments)
+fn run_llvm_config(arguments: &[&str]) -> Result<String, String> {
+    match run(&env::var("LLVM_CONFIG_PATH").unwrap_or_else(|_| "llvm-config".into()), arguments) {
+        Some(output) => Ok(output),
+        None => {
+            let message = format!(
+                "couldn't execute `llvm-config {}`, set the LLVM_CONFIG_PATH environment variable \
+                to a path to a valid `llvm-config` executable",
+                arguments.join(" "),
+            );
+            Err(message)
+        },
+    }
 }
 
 
@@ -77,12 +93,57 @@ const SEARCH_WINDOWS: &'static [&'static str] = &[
 ];
 
 
-fn find(files: &[String], env: &str) -> Result<PathBuf, String> {
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+enum Library {
+    Dynamic,
+    Static,
+}
+
+impl Library {
+    
+    fn check(&self, file: &PathBuf) -> Result<(), String> {
+        if cfg!(any(target_os="freebsd", target_os="linux")) {
+            if *self == Library::Static {
+                return Ok(());
+            }
+            let mut file = try!(File::open(file).map_err(|e| e.to_string()));
+            let mut elf = [0; 5];
+            try!(file.read_exact(&mut elf).map_err(|e| e.to_string()));
+            if elf[..4] != [127, 69, 76, 70] {
+                return Err("invalid ELF header".into());
+            }
+            if cfg!(target_pointer_width="32") && elf[4] != 1 {
+                return Err("invalid ELF class (64-bit)".into());
+            }
+            if cfg!(target_pointer_width="64") && elf[4] != 2 {
+                return Err("invalid ELF class (32-bit)".into());
+            }
+            Ok(())
+        } else {
+            Ok(())
+        }
+    }
+}
+
+
+fn find(library: Library, files: &[String], env: &str) -> Result<PathBuf, String> {
+    let mut skipped = vec![];
+
+    
+    macro_rules! try_file {
+        ($file:expr) => ({
+            match library.check(&$file) {
+                Ok(_) => return Ok($file),
+                Err(message) => skipped.push(format!("({}: {})", $file.display(), message)),
+            }
+        });
+    }
+
     
     macro_rules! search_directory {
         ($directory:ident) => {
             if let Some(file) = contains(&$directory, files) {
-                return Ok(file);
+                try_file!(file);
             }
 
             // On Windows, `libclang.dll` is usually found in the LLVM `bin` directory while
@@ -92,7 +153,7 @@ fn find(files: &[String], env: &str) -> Result<PathBuf, String> {
             if cfg!(target_os="windows") && $directory.ends_with("lib") {
                 let sibling = $directory.parent().unwrap().join("bin");
                 if let Some(file) = contains(&sibling, files) {
-                    return Ok(file);
+                    try_file!(file);
                 }
             }
         }
@@ -105,15 +166,15 @@ fn find(files: &[String], env: &str) -> Result<PathBuf, String> {
 
     
     
-    if let Some(output) = run_llvm_config(&["--prefix"]) {
+    if let Ok(output) = run_llvm_config(&["--prefix"]) {
         let directory = Path::new(output.lines().next().unwrap()).to_path_buf();
         let bin = directory.join("bin");
         if let Some(file) = contains(&bin, files) {
-            return Ok(file);
+            try_file!(file);
         }
         let lib = directory.join("lib");
         if let Some(file) = contains(&lib, files) {
-            return Ok(file);
+            try_file!(file);
         }
     }
 
@@ -139,10 +200,11 @@ fn find(files: &[String], env: &str) -> Result<PathBuf, String> {
     }
 
     let message = format!(
-        "couldn't find any of {}, set the {} environment variable to a path where one of these \
-         files can be found",
+        "couldn't find any of [{}], set the {} environment variable to a path where one of these \
+         files can be found (skipped: [{}])",
         files.iter().map(|f| format!("'{}'", f)).collect::<Vec<_>>().join(", "),
         env,
+        skipped.join(", "),
     );
     Err(message)
 }
@@ -150,14 +212,19 @@ fn find(files: &[String], env: &str) -> Result<PathBuf, String> {
 
 
 pub fn find_shared_library() -> Result<PathBuf, String> {
-    let mut files = vec![];
+    let mut files = vec![format!("{}clang{}", env::consts::DLL_PREFIX, env::consts::DLL_SUFFIX)];
+    if cfg!(target_os="linux") {
+        
+        
+        
+        files.push("libclang.so.1".into());
+    }
     if cfg!(target_os="windows") {
         
         
         files.push("libclang.dll".into());
     }
-    files.push(format!("{}clang{}", env::consts::DLL_PREFIX, env::consts::DLL_SUFFIX));
-    find(&files, "LIBCLANG_PATH")
+    find(Library::Dynamic, &files, "LIBCLANG_PATH")
 }
 
 
@@ -167,10 +234,7 @@ fn get_library_name(path: &Path) -> Option<String> {
 
 
 fn get_llvm_libraries() -> Vec<String> {
-    run_llvm_config(&["--libs"]).expect(
-        "couldn't execute `llvm-config --libs`, set the LLVM_CONFIG_PATH environment variable to a \
-         path to an `llvm-config` executable"
-    ).split_whitespace().filter_map(|p| {
+    run_llvm_config(&["--libs"]).unwrap().split_whitespace().filter_map(|p| {
         
         
         if p.starts_with("-l") {
@@ -211,16 +275,19 @@ fn get_clang_libraries<P: AsRef<Path>>(directory: P) -> Vec<String> {
 
 #[cfg_attr(feature="runtime", allow(dead_code))]
 fn link_static() {
-    let file = find(&["libclang.a".into()], "LIBCLANG_STATIC_PATH").unwrap();
+    let file = find(Library::Static, &["libclang.a".into()], "LIBCLANG_STATIC_PATH").unwrap();
     let directory = file.parent().unwrap();
     print!("cargo:rustc-flags=");
 
     
     print!("-L {} ", directory.display());
-    for library in get_llvm_libraries() {
+    for library in get_clang_libraries(directory) {
         print!("-l static={} ", library);
     }
-    for library in get_clang_libraries(&directory) {
+
+    
+    print!("-L {} ", run_llvm_config(&["--libdir"]).unwrap().trim_right());
+    for library in get_llvm_libraries() {
         print!("-l static={} ", library);
     }
 

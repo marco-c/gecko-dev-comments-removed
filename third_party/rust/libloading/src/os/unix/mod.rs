@@ -1,4 +1,4 @@
-use util::cstr_cow_from_bytes;
+use util::{ensure_compatible_types, cstr_cow_from_bytes};
 
 use std::ffi::{CStr, OsStr};
 use std::{fmt, io, marker, mem, ptr};
@@ -147,6 +147,7 @@ impl Library {
     
     
     pub unsafe fn get<T>(&self, symbol: &[u8]) -> ::Result<Symbol<T>> {
+        ensure_compatible_types::<T, *mut raw::c_void>();
         let symbol = try!(cstr_cow_from_bytes(symbol));
         
         

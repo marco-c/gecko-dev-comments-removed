@@ -202,11 +202,11 @@ pub struct AngleBracketedParameterData {
     
     pub lifetimes: Vec<Lifetime>,
     
-    pub types: P<[P<Ty>]>,
+    pub types: Vec<P<Ty>>,
     
     
     
-    pub bindings: P<[TypeBinding]>,
+    pub bindings: Vec<TypeBinding>,
 }
 
 impl Into<Option<P<PathParameters>>> for AngleBracketedParameterData {
@@ -295,7 +295,7 @@ pub enum TraitBoundModifier {
     Maybe,
 }
 
-pub type TyParamBounds = P<[TyParamBound]>;
+pub type TyParamBounds = Vec<TyParamBound>;
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub struct TyParam {
@@ -312,7 +312,7 @@ pub struct TyParam {
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
 pub struct Generics {
     pub lifetimes: Vec<LifetimeDef>,
-    pub ty_params: P<[TyParam]>,
+    pub ty_params: Vec<TyParam>,
     pub where_clause: WhereClause,
     pub span: Span,
 }
@@ -342,7 +342,7 @@ impl Default for Generics {
     fn default() ->  Generics {
         Generics {
             lifetimes: Vec::new(),
-            ty_params: P::new(),
+            ty_params: Vec::new(),
             where_clause: WhereClause {
                 id: DUMMY_NODE_ID,
                 predicates: Vec::new(),
@@ -401,8 +401,8 @@ pub struct WhereRegionPredicate {
 pub struct WhereEqPredicate {
     pub id: NodeId,
     pub span: Span,
-    pub path: Path,
-    pub ty: P<Ty>,
+    pub lhs_ty: P<Ty>,
+    pub rhs_ty: P<Ty>,
 }
 
 
@@ -536,12 +536,19 @@ pub struct FieldPat {
     
     pub pat: P<Pat>,
     pub is_shorthand: bool,
+    pub attrs: ThinVec<Attribute>,
 }
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug, Copy)]
 pub enum BindingMode {
     ByRef(Mutability),
     ByValue(Mutability),
+}
+
+#[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
+pub enum RangeEnd {
+    Included,
+    Excluded,
 }
 
 #[derive(Clone, PartialEq, Eq, RustcEncodable, RustcDecodable, Hash, Debug)]
@@ -581,7 +588,7 @@ pub enum PatKind {
     
     Lit(P<Expr>),
     
-    Range(P<Expr>, P<Expr>),
+    Range(P<Expr>, P<Expr>, RangeEnd),
     
     
     Slice(Vec<P<Pat>>, Option<P<Pat>>, Vec<P<Pat>>),
@@ -813,6 +820,7 @@ pub struct Field {
     pub expr: P<Expr>,
     pub span: Span,
     pub is_shorthand: bool,
+    pub attrs: ThinVec<Attribute>,
 }
 
 pub type SpannedIdent = Spanned<Ident>;
@@ -860,7 +868,7 @@ pub enum ExprKind {
     
     InPlace(P<Expr>, P<Expr>),
     
-    Vec(Vec<P<Expr>>),
+    Array(Vec<P<Expr>>),
     
     
     
@@ -1354,9 +1362,9 @@ pub enum TyKind {
     
     Path(Option<QSelf>, Path),
     
-    ObjectSum(P<Ty>, TyParamBounds),
     
-    PolyTraitRef(TyParamBounds),
+    TraitObject(TyParamBounds),
+    
     
     ImplTrait(TyParamBounds),
     
