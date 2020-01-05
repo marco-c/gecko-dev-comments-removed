@@ -269,7 +269,9 @@ public class TwoLinePageRow extends LinearLayout
         
         final String pageURL = ReaderModeUtils.stripAboutReaderUrl(url);
 
-        if (bookmarkId < BrowserContract.Bookmarks.FAKE_PARTNER_BOOKMARKS_START) {
+        if (TextUtils.isEmpty(pageURL)) {
+            
+        } else if (bookmarkId < BrowserContract.Bookmarks.FAKE_PARTNER_BOOKMARKS_START) {
             mOngoingIconLoad = Icons.with(getContext())
                     .pageUrl(pageURL)
                     .skipNetwork()
