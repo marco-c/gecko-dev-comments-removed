@@ -1692,6 +1692,15 @@ class BaseCompiler
         return true;
     }
 
+    MOZ_MUST_USE bool popConstI64(int64_t& c) {
+        Stk& v = stk_.back();
+        if (v.kind() != Stk::ConstI64)
+            return false;
+        c = v.i64val();
+        stk_.popBack();
+        return true;
+    }
+
     
     
     
@@ -2197,10 +2206,11 @@ class BaseCompiler
                                                          JitStackAlignment);
     }
 
-    void endCall(FunctionCall& call, size_t stackSpace)
+    void endCall(FunctionCall& call)
     {
         size_t adjustment = call.stackArgAreaSize + call.frameAlignAdjustment;
-        masm.freeStack(stackSpace + adjustment);
+        if (adjustment)
+            masm.freeStack(adjustment);
 
         if (call.reloadMachineStateAfter) {
             loadFromFramePtr(WasmTlsReg, frameOffsetFromSlot(tlsSlot_, MIRType::Pointer));
@@ -2687,6 +2697,14 @@ class BaseCompiler
         *r0 = popI64();
 #else
         pop2xI64(r0, r1);
+#endif
+    }
+
+    bool rotate64NeedsTemp() const {
+#if defined(JS_CODEGEN_X86)
+        return true;
+#else
+        return false;
 #endif
     }
 
@@ -3987,18 +4005,23 @@ BaseCompiler::emitAddI32()
 void
 BaseCompiler::emitAddI64()
 {
-    
-    RegI64 r0, r1;
-    pop2xI64(&r0, &r1);
-    masm.add64(r1, r0);
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        masm.add64(Imm64(c), r);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64(&r0, &r1);
+        masm.add64(r1, r0);
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
 BaseCompiler::emitAddF64()
 {
-    
     RegF64 r0, r1;
     pop2xF64(&r0, &r1);
     masm.addDouble(r1, r0);
@@ -4009,7 +4032,6 @@ BaseCompiler::emitAddF64()
 void
 BaseCompiler::emitAddF32()
 {
-    
     RegF32 r0, r1;
     pop2xF32(&r0, &r1);
     masm.addFloat32(r1, r0);
@@ -4020,21 +4042,35 @@ BaseCompiler::emitAddF32()
 void
 BaseCompiler::emitSubtractI32()
 {
-    RegI32 r0, r1;
-    pop2xI32(&r0, &r1);
-    masm.sub32(r1, r0);
-    freeI32(r1);
-    pushI32(r0);
+    int32_t c;
+    if (popConstI32(c)) {
+        RegI32 r = popI32();
+        masm.sub32(Imm32(c), r);
+        pushI32(r);
+    } else {
+        RegI32 r0, r1;
+        pop2xI32(&r0, &r1);
+        masm.sub32(r1, r0);
+        freeI32(r1);
+        pushI32(r0);
+    }
 }
 
 void
 BaseCompiler::emitSubtractI64()
 {
-    RegI64 r0, r1;
-    pop2xI64(&r0, &r1);
-    masm.sub64(r1, r0);
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        masm.sub64(Imm64(c), r);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64(&r0, &r1);
+        masm.sub64(r1, r0);
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
@@ -4404,61 +4440,103 @@ BaseCompiler::emitCopysignF64()
 void
 BaseCompiler::emitOrI32()
 {
-    RegI32 r0, r1;
-    pop2xI32(&r0, &r1);
-    masm.or32(r1, r0);
-    freeI32(r1);
-    pushI32(r0);
+    int32_t c;
+    if (popConstI32(c)) {
+        RegI32 r = popI32();
+        masm.or32(Imm32(c), r);
+        pushI32(r);
+    } else {
+        RegI32 r0, r1;
+        pop2xI32(&r0, &r1);
+        masm.or32(r1, r0);
+        freeI32(r1);
+        pushI32(r0);
+    }
 }
 
 void
 BaseCompiler::emitOrI64()
 {
-    RegI64 r0, r1;
-    pop2xI64(&r0, &r1);
-    masm.or64(r1, r0);
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        masm.or64(Imm64(c), r);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64(&r0, &r1);
+        masm.or64(r1, r0);
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
 BaseCompiler::emitAndI32()
 {
-    RegI32 r0, r1;
-    pop2xI32(&r0, &r1);
-    masm.and32(r1, r0);
-    freeI32(r1);
-    pushI32(r0);
+    int32_t c;
+    if (popConstI32(c)) {
+        RegI32 r = popI32();
+        masm.and32(Imm32(c), r);
+        pushI32(r);
+    } else {
+        RegI32 r0, r1;
+        pop2xI32(&r0, &r1);
+        masm.and32(r1, r0);
+        freeI32(r1);
+        pushI32(r0);
+    }
 }
 
 void
 BaseCompiler::emitAndI64()
 {
-    RegI64 r0, r1;
-    pop2xI64(&r0, &r1);
-    masm.and64(r1, r0);
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        masm.and64(Imm64(c), r);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64(&r0, &r1);
+        masm.and64(r1, r0);
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
 BaseCompiler::emitXorI32()
 {
-    RegI32 r0, r1;
-    pop2xI32(&r0, &r1);
-    masm.xor32(r1, r0);
-    freeI32(r1);
-    pushI32(r0);
+    int32_t c;
+    if (popConstI32(c)) {
+        RegI32 r = popI32();
+        masm.xor32(Imm32(c), r);
+        pushI32(r);
+    } else {
+        RegI32 r0, r1;
+        pop2xI32(&r0, &r1);
+        masm.xor32(r1, r0);
+        freeI32(r1);
+        pushI32(r0);
+    }
 }
 
 void
 BaseCompiler::emitXorI64()
 {
-    RegI64 r0, r1;
-    pop2xI64(&r0, &r1);
-    masm.xor64(r1, r0);
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        masm.xor64(Imm64(c), r);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64(&r0, &r1);
+        masm.xor64(r1, r0);
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
@@ -4482,12 +4560,18 @@ BaseCompiler::emitShlI32()
 void
 BaseCompiler::emitShlI64()
 {
-    
-    RegI64 r0, r1;
-    pop2xI64ForShiftOrRotate(&r0, &r1);
-    masm.lshift64(lowPart(r1), r0);
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        masm.lshift64(Imm32(c & 63), r);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64ForShiftOrRotate(&r0, &r1);
+        masm.lshift64(lowPart(r1), r0);
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
@@ -4511,12 +4595,18 @@ BaseCompiler::emitShrI32()
 void
 BaseCompiler::emitShrI64()
 {
-    
-    RegI64 r0, r1;
-    pop2xI64ForShiftOrRotate(&r0, &r1);
-    masm.rshift64Arithmetic(lowPart(r1), r0);
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        masm.rshift64Arithmetic(Imm32(c & 63), r);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64ForShiftOrRotate(&r0, &r1);
+        masm.rshift64Arithmetic(lowPart(r1), r0);
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
@@ -4540,56 +4630,96 @@ BaseCompiler::emitShrU32()
 void
 BaseCompiler::emitShrU64()
 {
-    
-    RegI64 r0, r1;
-    pop2xI64ForShiftOrRotate(&r0, &r1);
-    masm.rshift64(lowPart(r1), r0);
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        masm.rshift64(Imm32(c & 63), r);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64ForShiftOrRotate(&r0, &r1);
+        masm.rshift64(lowPart(r1), r0);
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
 BaseCompiler::emitRotrI32()
 {
-    
-    RegI32 r0, r1;
-    pop2xI32ForShiftOrRotate(&r0, &r1);
-    masm.rotateRight(r1, r0, r0);
-    freeI32(r1);
-    pushI32(r0);
+    int32_t c;
+    if (popConstI32(c)) {
+        RegI32 r = popI32();
+        masm.rotateRight(Imm32(c & 31), r, r);
+        pushI32(r);
+    } else {
+        RegI32 r0, r1;
+        pop2xI32ForShiftOrRotate(&r0, &r1);
+        masm.rotateRight(r1, r0, r0);
+        freeI32(r1);
+        pushI32(r0);
+    }
 }
 
 void
 BaseCompiler::emitRotrI64()
 {
-    
-    RegI64 r0, r1;
-    pop2xI64ForShiftOrRotate(&r0, &r1);
-    masm.rotateRight64(lowPart(r1), r0, r0, maybeHighPart(r1));
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        RegI32 temp;
+        if (rotate64NeedsTemp())
+            temp = needI32();
+        masm.rotateRight64(Imm32(c & 63), r, r, temp);
+        if (temp != Register::Invalid())
+            freeI32(temp);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64ForShiftOrRotate(&r0, &r1);
+        masm.rotateRight64(lowPart(r1), r0, r0, maybeHighPart(r1));
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
 BaseCompiler::emitRotlI32()
 {
-    
-    RegI32 r0, r1;
-    pop2xI32ForShiftOrRotate(&r0, &r1);
-    masm.rotateLeft(r1, r0, r0);
-    freeI32(r1);
-    pushI32(r0);
+    int32_t c;
+    if (popConstI32(c)) {
+        RegI32 r = popI32();
+        masm.rotateLeft(Imm32(c & 31), r, r);
+        pushI32(r);
+    } else {
+        RegI32 r0, r1;
+        pop2xI32ForShiftOrRotate(&r0, &r1);
+        masm.rotateLeft(r1, r0, r0);
+        freeI32(r1);
+        pushI32(r0);
+    }
 }
 
 void
 BaseCompiler::emitRotlI64()
 {
-    
-    RegI64 r0, r1;
-    pop2xI64ForShiftOrRotate(&r0, &r1);
-    masm.rotateLeft64(lowPart(r1), r0, r0, maybeHighPart(r1));
-    freeI64(r1);
-    pushI64(r0);
+    int64_t c;
+    if (popConstI64(c)) {
+        RegI64 r = popI64();
+        RegI32 temp;
+        if (rotate64NeedsTemp())
+            temp = needI32();
+        masm.rotateLeft64(Imm32(c & 63), r, r, temp);
+        if (temp != Register::Invalid())
+            freeI32(temp);
+        pushI64(r);
+    } else {
+        RegI64 r0, r1;
+        pop2xI64ForShiftOrRotate(&r0, &r1);
+        masm.rotateLeft64(lowPart(r1), r0, r0, maybeHighPart(r1));
+        freeI64(r1);
+        pushI64(r0);
+    }
 }
 
 void
@@ -5743,9 +5873,13 @@ BaseCompiler::emitCall()
     else
         callDefinition(funcIndex, baselineCall);
 
-    endCall(baselineCall, stackSpace);
+    endCall(baselineCall);
+
+    
+    
 
     popValueStackBy(numArgs);
+    masm.freeStack(stackSpace);
 
     if (!IsVoid(sig.ret()))
         pushReturned(baselineCall, sig.ret());
@@ -5793,20 +5927,27 @@ BaseCompiler::emitCallIndirect(bool oldStyle)
     if (!emitCallArgs(sig.args(), baselineCall))
         return false;
 
-    if (oldStyle && !iter_.readOldCallIndirectCallee(&callee_))
-        return false;
+    if (oldStyle) {
+        if (!iter_.readOldCallIndirectCallee(&callee_))
+            return false;
+    }
 
     if (!iter_.readCallReturn(sig.ret()))
         return false;
 
     callIndirect(sigIndex, callee, baselineCall);
 
-    endCall(baselineCall, stackSpace);
+    endCall(baselineCall);
 
     
     
 
     popValueStackBy(oldStyle ? numArgs + 1 : numArgs);
+
+    
+    
+
+    masm.freeStack(stackSpace);
 
     if (!IsVoid(sig.ret()))
         pushReturned(baselineCall, sig.ret());
@@ -5834,9 +5975,13 @@ BaseCompiler::emitCommonMathCall(uint32_t lineOrBytecode, SymbolicAddress callee
 
     builtinCall(callee, baselineCall);
 
-    endCall(baselineCall, stackSpace);
+    endCall(baselineCall);
+
+    
+    
 
     popValueStackBy(numArgs);
+    masm.freeStack(stackSpace);
 
     pushReturned(baselineCall, retType);
 
@@ -6634,9 +6779,10 @@ BaseCompiler::emitGrowMemory()
     startCallArgs(baselineCall, stackArgAreaSize(SigI_));
     passArg(baselineCall, ValType::I32, peek(0));
     builtinInstanceMethodCall(SymbolicAddress::GrowMemory, instanceArg, baselineCall);
-    endCall(baselineCall, stackSpace);
+    endCall(baselineCall);
 
     popValueStackBy(numArgs);
+    masm.freeStack(stackSpace);
 
     pushReturned(baselineCall, ExprType::I32);
 
@@ -6663,7 +6809,7 @@ BaseCompiler::emitCurrentMemory()
 
     startCallArgs(baselineCall, stackArgAreaSize(Sig_));
     builtinInstanceMethodCall(SymbolicAddress::CurrentMemory, instanceArg, baselineCall);
-    endCall(baselineCall, 0);
+    endCall(baselineCall);
 
     pushReturned(baselineCall, ExprType::I32);
 
