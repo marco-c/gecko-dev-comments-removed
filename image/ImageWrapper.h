@@ -22,7 +22,6 @@ public:
   NS_DECL_IMGICONTAINER
 
   
-  nsresult GetNativeSizes(nsTArray<gfx::IntSize>& aNativeSizes) const override;
   virtual already_AddRefed<ProgressTracker> GetProgressTracker() override;
 
   virtual size_t

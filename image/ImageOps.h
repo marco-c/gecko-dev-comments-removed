@@ -9,7 +9,6 @@
 
 #include "nsCOMPtr.h"
 #include "nsRect.h"
-#include "ImageMetadata.h"
 
 class gfxDrawable;
 class imgIContainer;
@@ -25,23 +24,10 @@ namespace image {
 
 class Image;
 struct Orientation;
-class SourceBuffer;
 
 class ImageOps
 {
 public:
-  class ImageBuffer {
-  public:
-    NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageOps::ImageBuffer);
-  protected:
-    friend class ImageOps;
-
-    ImageBuffer() { }
-    virtual ~ImageBuffer() { }
-
-    virtual already_AddRefed<SourceBuffer> GetSourceBuffer() = 0;
-  };
-
   
 
 
@@ -96,39 +82,6 @@ public:
 
 
 
-  static already_AddRefed<ImageBuffer>
-  CreateImageBuffer(nsIInputStream* aInputStream);
-
-  
-
-
-
-
-
-
-
-
-  static nsresult
-  DecodeMetadata(nsIInputStream* aInputStream,
-                 const nsACString& aMimeType,
-                 ImageMetadata& aMetadata);
-
-  
-
-
-  static nsresult
-  DecodeMetadata(ImageBuffer* aBuffer,
-                 const nsACString& aMimeType,
-                 ImageMetadata& aMetadata);
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -136,21 +89,9 @@ public:
   static already_AddRefed<gfx::SourceSurface>
   DecodeToSurface(nsIInputStream* aInputStream,
                   const nsACString& aMimeType,
-                  uint32_t aFlags,
-                  Maybe<gfx::IntSize> aSize = Nothing());
-
-  
-
-
-  static already_AddRefed<gfx::SourceSurface>
-  DecodeToSurface(ImageBuffer* aBuffer,
-                  const nsACString& aMimeType,
-                  uint32_t aFlags,
-                  Maybe<gfx::IntSize> aSize = Nothing());
+                  uint32_t aFlags);
 
 private:
-  class ImageBufferImpl;
-
   
   virtual ~ImageOps() = 0;
 };
