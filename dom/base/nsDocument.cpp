@@ -2966,9 +2966,14 @@ nsIDocument::PrerenderHref(nsIURI* aHref)
 
   
   
+  if (!XRE_IsContentProcess()) {
+    return false;
+  }
+
   
   
-  if (docShell->GetIsProcessLocked()) {
+  
+  if (!docShell->GetIsOnlyToplevelInTabGroup()) {
     return false;
   }
 
