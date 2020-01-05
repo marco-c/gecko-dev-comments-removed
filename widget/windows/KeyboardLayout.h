@@ -664,6 +664,8 @@ private:
 
   static const MSG sEmptyMSG;
 
+  static MSG sLastKeyMSG;
+
   static bool IsEmptyMSG(const MSG& aMSG)
   {
     return !memcmp(&aMSG, &sEmptyMSG, sizeof(MSG));
@@ -673,6 +675,13 @@ private:
   {
     return mLastInstance && !IsEmptyMSG(mLastInstance->mRemovingMsg);
   }
+
+public:
+  
+
+
+
+  static const MSG& LastKeyMSG() { return sLastKeyMSG; }
 };
 
 class KeyboardLayout
