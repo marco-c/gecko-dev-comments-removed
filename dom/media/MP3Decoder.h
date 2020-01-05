@@ -10,7 +10,10 @@
 
 namespace mozilla {
 
-class MP3Decoder : public MediaDecoder {
+class MediaContentType;
+
+class MP3Decoder : public MediaDecoder
+{
 public:
   
   explicit MP3Decoder(MediaDecoderOwner* aOwner) : MediaDecoder(aOwner) {}
@@ -20,8 +23,7 @@ public:
   
   
   static bool IsEnabled();
-  static bool CanHandleMediaType(const nsACString& aType,
-                                 const nsAString& aCodecs);
+  static bool IsSupportedType(const MediaContentType& aContentType);
 };
 
 } 
