@@ -1082,6 +1082,8 @@ protected:
   bool mIsInEditAction;
   
   bool mHidingCaret;
+  
+  bool mSpellCheckerDictionaryUpdated;
 
   friend bool NSCanUnload(nsISupports* serviceMgr);
   friend class AutoRules;
