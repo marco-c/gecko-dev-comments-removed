@@ -944,20 +944,6 @@ TryAttachGetElemStub(JSContext* cx, JSScript* script, jsbytecode* pc, ICGetElem_
     RootedObject obj(cx, &lhs.toObject());
 
     
-    if (IsNativeDenseElementAccess(obj, rhs)) {
-        JitSpew(JitSpew_BaselineIC, "  Generating GetElem(Native[Int32] dense) stub");
-        ICGetElem_Dense::Compiler compiler(cx, stub->fallbackMonitorStub()->firstMonitorStub(),
-                                           obj->as<NativeObject>().lastProperty());
-        ICStub* denseStub = compiler.getStub(compiler.getStubSpace(script));
-        if (!denseStub)
-            return false;
-
-        stub->addNewStub(denseStub);
-        *attached = true;
-        return true;
-    }
-
-    
     if (obj->is<UnboxedArrayObject>() && rhs.isInt32() && rhs.toInt32() >= 0) {
         JitSpew(JitSpew_BaselineIC, "  Generating GetElem(UnboxedArray[Int32]) stub");
         ICGetElem_UnboxedArray::Compiler compiler(cx, stub->fallbackMonitorStub()->firstMonitorStub(),
@@ -1124,53 +1110,6 @@ ICGetElem_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     pushStubPayload(masm, R0.scratchReg());
 
     return tailCallVM(DoGetElemFallbackInfo, masm);
-}
-
-
-
-
-
-bool
-ICGetElem_Dense::Compiler::generateStubCode(MacroAssembler& masm)
-{
-    MOZ_ASSERT(engine_ == Engine::Baseline);
-
-    Label failure;
-    masm.branchTestObject(Assembler::NotEqual, R0, &failure);
-    masm.branchTestInt32(Assembler::NotEqual, R1, &failure);
-
-    AllocatableGeneralRegisterSet regs(availableGeneralRegs(2));
-    Register scratchReg = regs.takeAny();
-
-    
-    Register obj = masm.extractObject(R0, ExtractTemp0);
-    masm.loadPtr(Address(ICStubReg, ICGetElem_Dense::offsetOfShape()), scratchReg);
-    masm.branchTestObjShape(Assembler::NotEqual, obj, scratchReg, &failure);
-
-    
-    masm.loadPtr(Address(obj, NativeObject::offsetOfElements()), scratchReg);
-
-    
-    Register key = masm.extractInt32(R1, ExtractTemp1);
-
-    
-    Address initLength(scratchReg, ObjectElements::offsetOfInitializedLength());
-    masm.branch32(Assembler::BelowOrEqual, initLength, key, &failure);
-
-    
-    BaseObjectElementIndex element(scratchReg, key);
-    masm.branchTestMagic(Assembler::Equal, element, &failure);
-
-    
-    masm.loadValue(element, R0);
-
-    
-    EmitEnterTypeMonitorIC(masm);
-
-    
-    masm.bind(&failure);
-    EmitStubGuardFailure(masm);
-    return true;
 }
 
 
@@ -7145,18 +7084,6 @@ ICTypeUpdate_ObjectGroup::ICTypeUpdate_ObjectGroup(JitCode* stubCode, ObjectGrou
   : ICStub(TypeUpdate_ObjectGroup, stubCode),
     group_(group)
 { }
-
-ICGetElem_Dense::ICGetElem_Dense(JitCode* stubCode, ICStub* firstMonitorStub, Shape* shape)
-    : ICMonitoredStub(GetElem_Dense, stubCode, firstMonitorStub),
-      shape_(shape)
-{ }
-
- ICGetElem_Dense*
-ICGetElem_Dense::Clone(JSContext* cx, ICStubSpace* space, ICStub* firstMonitorStub,
-                       ICGetElem_Dense& other)
-{
-    return New<ICGetElem_Dense>(cx, space, other.jitCode(), firstMonitorStub, other.shape_);
-}
 
 ICGetElem_UnboxedArray::ICGetElem_UnboxedArray(JitCode* stubCode, ICStub* firstMonitorStub,
                                                ObjectGroup *group)
