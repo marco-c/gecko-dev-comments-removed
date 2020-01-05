@@ -25,7 +25,6 @@
 #include "nsStyleUtil.h"
 #include "nsDeviceContext.h"
 #include "nsStyleSet.h"
-#include "nsContentUtils.h"
 
 using namespace mozilla;
 
@@ -364,17 +363,6 @@ imgRequestProxy* nsCSSValue::GetImageValue(nsIDocument* aDocument) const
 {
   MOZ_ASSERT(mUnit == eCSSUnit_Image, "not an Image value");
   return mValue.mImage->mRequests.GetWeak(aDocument);
-}
-
-already_AddRefed<imgRequestProxy>
-nsCSSValue::GetPossiblyStaticImageValue(nsIDocument* aDocument,
-                                        nsPresContext* aPresContext) const
-{
-  imgRequestProxy* req = GetImageValue(aDocument);
-  if (aPresContext->IsDynamic()) {
-    return do_AddRef(req);
-  }
-  return nsContentUtils::GetStaticRequest(req);
 }
 
 nscoord nsCSSValue::GetFixedLength(nsPresContext* aPresContext) const
@@ -1218,8 +1206,7 @@ nsCSSValue::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
   
   MOZ_ASSERT((0 <= aProperty &&
               aProperty <= eCSSProperty_COUNT_no_shorthands) ||
-             aProperty == eCSSProperty_UNKNOWN ||
-             aProperty == eCSSProperty_DOM,
+             aProperty == eCSSProperty_UNKNOWN,
              "property ID out of range");
 
   nsCSSUnit unit = GetUnit();
@@ -1311,24 +1298,10 @@ nsCSSValue::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
     const nsCSSValue& functionName = array->Item(0);
     MOZ_ASSERT(functionName.GetUnit() == eCSSUnit_Enumerated,
                "Functions must have an enumerated name.");
+
+    
     
     const nsCSSKeyword functionId = functionName.GetKeywordValue();
-
-    
-    
-    if (functionId == eCSSKeyword_minmax &&
-        array->Count() == 3 &&
-        array->Item(1).GetUnit() == eCSSUnit_Auto &&
-        array->Item(2).GetUnit() == eCSSUnit_FlexFraction) {
-      array->Item(2).AppendToString(aProperty, aResult, aSerialization);
-      MOZ_ASSERT(aProperty == eCSSProperty_grid_template_columns ||
-                 aProperty == eCSSProperty_grid_template_rows ||
-                 aProperty == eCSSProperty_grid_auto_columns ||
-                 aProperty == eCSSProperty_grid_auto_rows);
-      return;
-    }
-
-    
     NS_ConvertASCIItoUTF16 ident(nsCSSKeywords::GetStringValue(functionId));
     
     
@@ -2444,8 +2417,7 @@ nsCSSRect::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
 
   if (eCSSProperty_border_image_slice == aProperty ||
       eCSSProperty_border_image_width == aProperty ||
-      eCSSProperty_border_image_outset == aProperty ||
-      eCSSProperty_DOM == aProperty) {
+      eCSSProperty_border_image_outset == aProperty) {
     NS_NAMED_LITERAL_STRING(space, " ");
 
     mTop.AppendToString(aProperty, aResult, aSerialization);
@@ -2895,24 +2867,7 @@ css::ImageValue::ImageValue(nsIURI* aURI, nsStringBuffer* aString,
                  do_AddRef(new PtrHolder<nsIURI>(aReferrer)),
                  do_AddRef(new PtrHolder<nsIPrincipal>(aOriginPrincipal)))
 {
-  Initialize(aDocument);
-}
-
-css::ImageValue::ImageValue(
-    nsStringBuffer* aString,
-    already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
-    already_AddRefed<PtrHolder<nsIURI>> aReferrer,
-    already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal)
-  : URLValueData(aString, Move(aBaseURI), Move(aReferrer),
-                 Move(aOriginPrincipal))
-{
-}
-
-void
-css::ImageValue::Initialize(nsIDocument* aDocument)
-{
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!mInitialized);
 
   
   
@@ -2922,16 +2877,12 @@ css::ImageValue::Initialize(nsIDocument* aDocument)
     loadingDoc = aDocument;
   }
 
-  loadingDoc->StyleImageLoader()->LoadImage(GetURI(), mOriginPrincipal,
-                                            mReferrer, this);
+  loadingDoc->StyleImageLoader()->LoadImage(aURI, aOriginPrincipal, aReferrer,
+                                            this);
 
   if (loadingDoc != aDocument) {
     aDocument->StyleImageLoader()->MaybeRegisterCSSImage(this);
   }
-
-#ifdef DEBUG
-  mInitialized = true;
-#endif
 }
 
 css::ImageValue::~ImageValue()

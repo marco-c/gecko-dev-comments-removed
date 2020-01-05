@@ -792,9 +792,8 @@ AddAndRemoveImageAssociations(nsFrame* aFrame,
           continue;
         }
 
-        if (imgRequestProxy* req = oldImage.GetImageData()) {
-          imageLoader->DisassociateRequestFromFrame(req, aFrame);
-        }
+        imageLoader->DisassociateRequestFromFrame(oldImage.GetImageData(),
+                                                   aFrame);
       }
     }
   }
@@ -809,9 +808,7 @@ AddAndRemoveImageAssociations(nsFrame* aFrame,
         continue;
       }
 
-      if (imgRequestProxy* req = newImage.GetImageData()) {
-        imageLoader->AssociateRequestToFrame(req, aFrame);
-      }
+      imageLoader->AssociateRequestToFrame(newImage.GetImageData(), aFrame);
     }
   }
 }
@@ -3977,13 +3974,13 @@ static FrameTarget DrillDownToSelectionFrame(nsIFrame* aFrame,
 
 static FrameTarget GetSelectionClosestFrameForLine(
                       nsBlockFrame* aParent,
-                      nsBlockFrame::LineIterator aLine,
+                      nsBlockFrame::line_iterator aLine,
                       nsPoint aPoint,
                       uint32_t aFlags)
 {
   nsIFrame *frame = aLine->mFirstChild;
   
-  if (aLine == aParent->LinesEnd())
+  if (aLine == aParent->end_lines())
     return DrillDownToSelectionFrame(aParent, true, aFlags);
   nsIFrame *closestFromIStart = nullptr, *closestFromIEnd = nullptr;
   nscoord closestIStart = aLine->IStart(), closestIEnd = aLine->IEnd();
@@ -4044,8 +4041,8 @@ static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
     return FrameTarget::Null();
 
   
-  nsBlockFrame::LineIterator firstLine = bf->LinesBegin();
-  nsBlockFrame::LineIterator end = bf->LinesEnd();
+  nsBlockFrame::line_iterator firstLine = bf->begin_lines();
+  nsBlockFrame::line_iterator end = bf->end_lines();
   if (firstLine == end) {
     nsIContent *blockContent = aFrame->GetContent();
     if (blockContent) {
@@ -4054,8 +4051,8 @@ static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
     }
     return FrameTarget::Null();
   }
-  nsBlockFrame::LineIterator curLine = firstLine;
-  nsBlockFrame::LineIterator closestLine = end;
+  nsBlockFrame::line_iterator curLine = firstLine;
+  nsBlockFrame::line_iterator closestLine = end;
   
   WritingMode wm = curLine->mWritingMode;
   LogicalPoint pt(wm, aPoint, curLine->mContainerSize);
@@ -4073,8 +4070,8 @@ static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
   }
 
   if (closestLine == end) {
-    nsBlockFrame::LineIterator prevLine = curLine.prev();
-    nsBlockFrame::LineIterator nextLine = curLine;
+    nsBlockFrame::line_iterator prevLine = curLine.prev();
+    nsBlockFrame::line_iterator nextLine = curLine;
     
     while (nextLine != end && nextLine->IsEmpty())
       ++nextLine;
@@ -4303,11 +4300,7 @@ nsIFrame::AssociateImage(const nsStyleImage& aImage, nsPresContext* aPresContext
     return;
   }
 
-  imgRequestProxy* req = aImage.GetImageData();
-  if (!req) {
-    return;
-  }
-
+  imgIRequest *req = aImage.GetImageData();
   mozilla::css::ImageLoader* loader =
     aPresContext->Document()->StyleImageLoader();
 

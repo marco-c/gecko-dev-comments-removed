@@ -36,10 +36,6 @@
 #include "nsLayoutUtils.h"
 #include "nsCoord.h"
 
-
-
-#include "mozilla/ServoBindings.h"
-
 using namespace mozilla;
 
 
@@ -472,24 +468,8 @@ const void* nsStyleContext::StyleData(nsStyleStructID aSID)
       mCachedInheritedData.mStyleStructs[aSID] = const_cast<void*>(newData);
     }
   } else {
+    
     newData = StyleStructFromServoComputedValues(aSID);
-
-    
-    switch (aSID) {
-#define STYLE_STRUCT(name_, checkdata_cb_)                                    \
-      case eStyleStruct_##name_: {                                            \
-        auto data = static_cast<const nsStyle##name_*>(newData);              \
-        const_cast<nsStyle##name_*>(data)->FinishStyle(PresContext());        \
-        break;                                                                \
-      }
-#include "nsStyleStructList.h"
-#undef STYLE_STRUCT
-      default:
-        MOZ_ASSERT_UNREACHABLE("unexpected nsStyleStructID value");
-        break;
-    }
-
-    
     AddStyleBit(nsCachedStyleData::GetBitForSID(aSID));
 
     

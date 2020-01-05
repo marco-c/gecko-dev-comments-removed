@@ -45,8 +45,10 @@ static_assert((((1 << nsStyleStructID_Length) - 1) &
                ~(NS_STYLE_INHERIT_MASK)) == 0,
               "Not enough bits in NS_STYLE_INHERIT_MASK");
 
- const int32_t nsStyleGridLine::kMinLine;
- const int32_t nsStyleGridLine::kMaxLine;
+
+
+const int32_t nsStyleGridLine::kMinLine = -10000;
+const int32_t nsStyleGridLine::kMaxLine = 10000;
 
 static bool
 EqualURIs(nsIURI *aURI1, nsIURI *aURI2)
@@ -89,21 +91,6 @@ EqualImages(imgIRequest *aImage1, imgIRequest* aImage2)
   aImage1->GetURI(getter_AddRefs(uri1));
   aImage2->GetURI(getter_AddRefs(uri2));
   return EqualURIs(uri1, uri2);
-}
-
-static bool
-DefinitelyEqualImages(nsStyleImageRequest* aRequest1,
-                      nsStyleImageRequest* aRequest2)
-{
-  if (aRequest1 == aRequest2) {
-    return true;
-  }
-
-  if (!aRequest1 || !aRequest2) {
-    return false;
-  }
-
-  return aRequest1->DefinitelyEquals(*aRequest2);
 }
 
 
@@ -449,15 +436,6 @@ nsStyleBorder::~nsStyleBorder()
   }
 }
 
-void
-nsStyleBorder::FinishStyle(nsPresContext* aPresContext)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aPresContext->StyleSet()->IsServo());
-
-  mBorderImageSource.ResolveImage(aPresContext);
-}
-
 nsMargin
 nsStyleBorder::GetImageOutset() const
 {
@@ -486,8 +464,8 @@ nsStyleBorder::GetImageOutset() const
 }
 
 void
-nsStyleBorder::Destroy(nsPresContext* aContext)
-{
+nsStyleBorder::Destroy(nsPresContext* aContext) {
+  UntrackImage(aContext);
   this->~nsStyleBorder();
   aContext->PresShell()->
     FreeByObjectID(eArenaObjectID_nsStyleBorder, this);
@@ -664,23 +642,12 @@ nsStyleList::~nsStyleList()
 
 nsStyleList::nsStyleList(const nsStyleList& aSource)
   : mListStylePosition(aSource.mListStylePosition)
-  , mListStyleImage(aSource.mListStyleImage)
   , mCounterStyle(aSource.mCounterStyle)
   , mQuotes(aSource.mQuotes)
   , mImageRegion(aSource.mImageRegion)
 {
+  SetListStyleImage(aSource.GetListStyleImage());
   MOZ_COUNT_CTOR(nsStyleList);
-}
-
-void
-nsStyleList::FinishStyle(nsPresContext* aPresContext)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aPresContext->StyleSet()->IsServo());
-
-  if (mListStyleImage && !mListStyleImage->IsResolved()) {
-    mListStyleImage->Resolve(aPresContext);
-  }
 }
 
 void
@@ -747,7 +714,7 @@ nsStyleList::CalcDifference(const nsStyleList& aNewData) const
   if (mListStylePosition != aNewData.mListStylePosition) {
     return nsChangeHint_ReconstructFrame;
   }
-  if (DefinitelyEqualImages(mListStyleImage, aNewData.mListStyleImage) &&
+  if (EqualImages(mListStyleImage, aNewData.mListStyleImage) &&
       mCounterStyle == aNewData.mCounterStyle) {
     if (mImageRegion.IsEqualInterior(aNewData.mImageRegion)) {
       return nsChangeHint(0);
@@ -820,7 +787,7 @@ nsStyleXUL::CalcDifference(const nsStyleXUL& aNewData) const
 
 
 
- const uint32_t nsStyleColumn::kMaxColumnCount;
+ const uint32_t nsStyleColumn::kMaxColumnCount = 1000;
 
 nsStyleColumn::nsStyleColumn(StyleStructContext aContext)
   : mColumnCount(NS_STYLE_COLUMN_COUNT_AUTO)
@@ -1202,18 +1169,11 @@ nsStyleSVGReset::nsStyleSVGReset(const nsStyleSVGReset& aSource)
 void
 nsStyleSVGReset::Destroy(nsPresContext* aContext)
 {
+  mMask.UntrackImages(aContext);
+
   this->~nsStyleSVGReset();
   aContext->PresShell()->
     FreeByObjectID(mozilla::eArenaObjectID_nsStyleSVGReset, this);
-}
-
-void
-nsStyleSVGReset::FinishStyle(nsPresContext* aPresContext)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aPresContext->StyleSet()->IsServo());
-
-  mMask.ResolveImages(aPresContext);
 }
 
 nsChangeHint
@@ -1912,174 +1872,6 @@ nsStyleGradient::HasCalc()
 
 
 
-
-
-
-
-
-
-class StyleImageRequestCleanupTask : public mozilla::Runnable
-{
-public:
-  typedef nsStyleImageRequest::Mode Mode;
-
-  StyleImageRequestCleanupTask(Mode aModeFlags,
-                               already_AddRefed<imgRequestProxy> aRequestProxy,
-                               already_AddRefed<css::ImageValue> aImageValue,
-                               already_AddRefed<ImageTracker> aImageTracker)
-    : mModeFlags(aModeFlags)
-    , mRequestProxy(aRequestProxy)
-    , mImageValue(aImageValue)
-    , mImageTracker(aImageTracker)
-  {
-  }
-
-  NS_IMETHOD Run() final
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    if (!mRequestProxy) {
-      return NS_OK;
-    }
-
-    MOZ_ASSERT(mImageTracker);
-
-    if (mModeFlags & Mode::Lock) {
-      mRequestProxy->UnlockImage();
-    }
-
-    if (mModeFlags & Mode::Discard) {
-      mRequestProxy->RequestDiscard();
-    }
-
-    if (mModeFlags & Mode::Track) {
-      mImageTracker->Remove(mRequestProxy);
-    }
-
-    return NS_OK;
-  }
-
-protected:
-  virtual ~StyleImageRequestCleanupTask() { MOZ_ASSERT(NS_IsMainThread()); }
-
-private:
-  Mode mModeFlags;
-  
-  
-  RefPtr<imgRequestProxy> mRequestProxy;
-  RefPtr<css::ImageValue> mImageValue;
-  RefPtr<ImageTracker> mImageTracker;
-};
-
-nsStyleImageRequest::nsStyleImageRequest(Mode aModeFlags,
-                                         imgRequestProxy* aRequestProxy,
-                                         css::ImageValue* aImageValue,
-                                         ImageTracker* aImageTracker)
-  : mRequestProxy(aRequestProxy)
-  , mImageValue(aImageValue)
-  , mImageTracker(aImageTracker)
-  , mModeFlags(aModeFlags)
-  , mResolved(true)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aRequestProxy);
-  MOZ_ASSERT(aImageValue);
-  MOZ_ASSERT(aImageTracker);
-
-  MaybeTrackAndLock();
-}
-
-nsStyleImageRequest::nsStyleImageRequest(
-    Mode aModeFlags,
-    nsStringBuffer* aURLBuffer,
-    already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
-    already_AddRefed<PtrHolder<nsIURI>> aReferrer,
-    already_AddRefed<PtrHolder<nsIPrincipal>> aPrincipal)
-  : mModeFlags(aModeFlags)
-  , mResolved(false)
-{
-  mImageValue = new css::ImageValue(aURLBuffer, Move(aBaseURI),
-                                    Move(aReferrer), Move(aPrincipal));
-}
-
-nsStyleImageRequest::~nsStyleImageRequest()
-{
-  
-  
-  
-  {
-    RefPtr<StyleImageRequestCleanupTask> task =
-        new StyleImageRequestCleanupTask(mModeFlags,
-                                         mRequestProxy.forget(),
-                                         mImageValue.forget(),
-                                         mImageTracker.forget());
-    if (NS_IsMainThread()) {
-      task->Run();
-    } else {
-      NS_DispatchToMainThread(task.forget());
-    }
-  }
-
-  MOZ_ASSERT(!mRequestProxy);
-  MOZ_ASSERT(!mImageValue);
-  MOZ_ASSERT(!mImageTracker);
-}
-
-bool
-nsStyleImageRequest::Resolve(nsPresContext* aPresContext)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!IsResolved(), "already resolved");
-
-  mResolved = true;
-
-  
-  
-  
-  
-  mImageValue->Initialize(aPresContext->Document());
-
-  nsCSSValue value;
-  value.SetImageValue(mImageValue);
-  mRequestProxy = value.GetPossiblyStaticImageValue(aPresContext->Document(),
-                                                    aPresContext);
-
-  if (!mRequestProxy) {
-    
-    return false;
-  }
-
-  mImageTracker = aPresContext->Document()->ImageTracker();
-  MaybeTrackAndLock();
-  return true;
-}
-
-void
-nsStyleImageRequest::MaybeTrackAndLock()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(IsResolved());
-  MOZ_ASSERT(mRequestProxy);
-  MOZ_ASSERT(mImageTracker);
-
-  if (mModeFlags & Mode::Track) {
-    mImageTracker->Add(mRequestProxy);
-  }
-
-  if (mModeFlags & Mode::Lock) {
-    mRequestProxy->LockImage();
-  }
-}
-
-bool
-nsStyleImageRequest::DefinitelyEquals(const nsStyleImageRequest& aOther) const
-{
-  return DefinitelyEqualURIs(mImageValue, aOther.mImageValue);
-}
-
-
-
-
 void
 CachedBorderImageData::SetCachedSVGViewportSize(
   const mozilla::Maybe<nsSize>& aSVGViewportSize)
@@ -2121,6 +1913,9 @@ CachedBorderImageData::GetSubImage(uint8_t aIndex)
 nsStyleImage::nsStyleImage()
   : mType(eStyleImageType_Null)
   , mCropRect(nullptr)
+#ifdef DEBUG
+  , mImageTracked(false)
+#endif
 {
   MOZ_COUNT_CTOR(nsStyleImage);
 }
@@ -2136,6 +1931,9 @@ nsStyleImage::~nsStyleImage()
 nsStyleImage::nsStyleImage(const nsStyleImage& aOther)
   : mType(eStyleImageType_Null)
   , mCropRect(nullptr)
+#ifdef DEBUG
+  , mImageTracked(false)
+#endif
 {
   
   
@@ -2159,7 +1957,7 @@ nsStyleImage::DoCopy(const nsStyleImage& aOther)
   SetNull();
 
   if (aOther.mType == eStyleImageType_Image) {
-    SetImageRequest(do_AddRef(aOther.mImage));
+    SetImageData(aOther.mImage);
   } else if (aOther.mType == eStyleImageType_Gradient) {
     SetGradientData(aOther.mGradient);
   } else if (aOther.mType == eStyleImageType_Element) {
@@ -2176,6 +1974,9 @@ nsStyleImage::DoCopy(const nsStyleImage& aOther)
 void
 nsStyleImage::SetNull()
 {
+  MOZ_ASSERT(!mImageTracked,
+             "Calling SetNull() with image tracked!");
+
   if (mType == eStyleImageType_Gradient) {
     mGradient->Release();
   } else if (mType == eStyleImageType_Image) {
@@ -2189,21 +1990,64 @@ nsStyleImage::SetNull()
 }
 
 void
-nsStyleImage::SetImageRequest(already_AddRefed<nsStyleImageRequest> aImage)
+nsStyleImage::SetImageData(imgRequestProxy* aImage)
 {
-  RefPtr<nsStyleImageRequest> image = aImage;
+  MOZ_ASSERT(!mImageTracked,
+             "Setting a new image without untracking the old one!");
+
+  NS_IF_ADDREF(aImage);
 
   if (mType != eStyleImageType_Null) {
     SetNull();
   }
 
-  if (image) {
-    mImage = image.forget().take();
+  if (aImage) {
+    mImage = aImage;
     mType = eStyleImageType_Image;
   }
   if (mCachedBIData) {
     mCachedBIData->PurgeCachedImages();
   }
+}
+
+void
+nsStyleImage::TrackImage(nsPresContext* aContext)
+{
+  
+  MOZ_ASSERT(!mImageTracked, "Already tracking image!");
+  MOZ_ASSERT(mType == eStyleImageType_Image,
+             "Can't track image when there isn't one!");
+
+  
+  nsIDocument* doc = aContext->Document();
+  if (doc) {
+    doc->ImageTracker()->Add(mImage);
+  }
+
+  
+#ifdef DEBUG
+  mImageTracked = true;
+#endif
+}
+
+void
+nsStyleImage::UntrackImage(nsPresContext* aContext)
+{
+  
+  MOZ_ASSERT(mImageTracked, "Image not tracked!");
+  MOZ_ASSERT(mType == eStyleImageType_Image,
+             "Can't untrack image when there isn't one!");
+
+  
+  nsIDocument* doc = aContext->Document();
+  if (doc) {
+    doc->ImageTracker()->Remove(mImage);
+  }
+
+  
+#ifdef DEBUG
+  mImageTracked = false;
+#endif
 }
 
 void
@@ -2270,13 +2114,8 @@ nsStyleImage::ComputeActualCropRect(nsIntRect& aActualCropRect,
     return false;
   }
 
-  imgRequestProxy* req = GetImageData();
-  if (!req) {
-    return false;
-  }
-
   nsCOMPtr<imgIContainer> imageContainer;
-  req->GetImage(getter_AddRefs(imageContainer));
+  mImage->GetImage(getter_AddRefs(imageContainer));
   if (!imageContainer) {
     return false;
   }
@@ -2308,11 +2147,7 @@ nsresult
 nsStyleImage::StartDecoding() const
 {
   if (mType == eStyleImageType_Image) {
-    imgRequestProxy* req = GetImageData();
-    if (!req) {
-      return NS_ERROR_FAILURE;
-    }
-    return req->StartDecoding();
+    return mImage->StartDecoding();
   }
   return NS_OK;
 }
@@ -2333,10 +2168,9 @@ nsStyleImage::IsOpaque() const
   }
 
   MOZ_ASSERT(mType == eStyleImageType_Image, "unexpected image type");
-  MOZ_ASSERT(GetImageData(), "should've returned earlier above");
 
   nsCOMPtr<imgIContainer> imageContainer;
-  GetImageData()->GetImage(getter_AddRefs(imageContainer));
+  mImage->GetImage(getter_AddRefs(imageContainer));
   MOZ_ASSERT(imageContainer, "IsComplete() said image container is ready");
 
   
@@ -2365,13 +2199,10 @@ nsStyleImage::IsComplete() const
     case eStyleImageType_Gradient:
     case eStyleImageType_Element:
       return true;
-    case eStyleImageType_Image: {
-      imgRequestProxy* req = GetImageData();
-      if (!req) {
-        return false;
-      }
+    case eStyleImageType_Image:
+    {
       uint32_t status = imgIRequest::STATUS_ERROR;
-      return NS_SUCCEEDED(req->GetImageStatus(&status)) &&
+      return NS_SUCCEEDED(mImage->GetImageStatus(&status)) &&
              (status & imgIRequest::STATUS_SIZE_AVAILABLE) &&
              (status & imgIRequest::STATUS_FRAME_COMPLETE);
     }
@@ -2390,13 +2221,10 @@ nsStyleImage::IsLoaded() const
     case eStyleImageType_Gradient:
     case eStyleImageType_Element:
       return true;
-    case eStyleImageType_Image: {
-      imgRequestProxy* req = GetImageData();
-      if (!req) {
-        return false;
-      }
+    case eStyleImageType_Image:
+    {
       uint32_t status = imgIRequest::STATUS_ERROR;
-      return NS_SUCCEEDED(req->GetImageStatus(&status)) &&
+      return NS_SUCCEEDED(mImage->GetImageStatus(&status)) &&
              !(status & imgIRequest::STATUS_ERROR) &&
              (status & imgIRequest::STATUS_LOAD_COMPLETE);
     }
@@ -2425,7 +2253,7 @@ nsStyleImage::operator==(const nsStyleImage& aOther) const
   }
 
   if (mType == eStyleImageType_Image) {
-    return DefinitelyEqualImages(mImage, aOther.mImage);
+    return EqualImages(mImage, aOther.mImage);
   }
 
   if (mType == eStyleImageType_Gradient) {
@@ -2625,10 +2453,11 @@ nsStyleImageLayers::HasLayerWithImage() const
 bool
 nsStyleImageLayers::IsInitialPositionForLayerType(Position aPosition, LayerType aType)
 {
-  if (aPosition.mXPosition.mPercent == 0.0f &&
+  float intialValue = nsStyleImageLayers::GetInitialPositionForLayerType(aType);
+  if (aPosition.mXPosition.mPercent == intialValue &&
       aPosition.mXPosition.mLength == 0 &&
       aPosition.mXPosition.mHasPercent &&
-      aPosition.mYPosition.mPercent == 0.0f &&
+      aPosition.mYPosition.mPercent == intialValue &&
       aPosition.mYPosition.mLength == 0 &&
       aPosition.mYPosition.mHasPercent) {
     return true;
@@ -2705,9 +2534,7 @@ nsStyleImageLayers::Size::DependsOnPositioningAreaSize(const nsStyleImage& aImag
 
   if (type == eStyleImageType_Image) {
     nsCOMPtr<imgIContainer> imgContainer;
-    if (imgRequestProxy* req = aImage.GetImageData()) {
-      req->GetImage(getter_AddRefs(imgContainer));
-    }
+    aImage.GetImageData()->GetImage(getter_AddRefs(imgContainer));
     if (imgContainer) {
       CSSIntSize imageSize;
       nsSize imageRatio;
@@ -2764,6 +2591,33 @@ nsStyleImageLayers::Size::operator==(const Size& aOther) const
          (mHeightType != eLengthPercentage || mHeight == aOther.mHeight);
 }
 
+bool
+nsStyleImageLayers::Repeat::IsInitialValue(LayerType aType) const
+{
+  if (aType == LayerType::Background) {
+    return mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT &&
+           mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
+  } else {
+    MOZ_ASSERT(aType == LayerType::Mask);
+    return mXRepeat == NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT &&
+           mYRepeat == NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT;
+  }
+}
+
+void
+nsStyleImageLayers::Repeat::SetInitialValues(LayerType aType)
+{
+  if (aType == LayerType::Background) {
+    mXRepeat = NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
+    mYRepeat = NS_STYLE_IMAGELAYER_REPEAT_REPEAT;
+  } else {
+    MOZ_ASSERT(aType == LayerType::Mask);
+
+    mXRepeat = NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT;
+    mYRepeat = NS_STYLE_IMAGELAYER_REPEAT_NO_REPEAT;
+  }
+}
+
 nsStyleImageLayers::Layer::Layer()
   : mClip(NS_STYLE_IMAGELAYER_CLIP_BORDER)
   , mAttachment(NS_STYLE_IMAGELAYER_ATTACHMENT_SCROLL)
@@ -2782,9 +2636,11 @@ nsStyleImageLayers::Layer::~Layer()
 void
 nsStyleImageLayers::Layer::Initialize(nsStyleImageLayers::LayerType aType)
 {
-  mRepeat.SetInitialValues();
+  mRepeat.SetInitialValues(aType);
 
-  mPosition.SetInitialPercentValues(0.0f);
+  float initialPositionValue =
+    nsStyleImageLayers::GetInitialPositionForLayerType(aType);
+  mPosition.SetInitialPercentValues(initialPositionValue);
 
   if (aType == LayerType::Background) {
     mOrigin = NS_STYLE_IMAGELAYER_ORIGIN_PADDING;
@@ -2912,18 +2768,12 @@ nsStyleBackground::~nsStyleBackground()
 void
 nsStyleBackground::Destroy(nsPresContext* aContext)
 {
+  
+  mImage.UntrackImages(aContext);
+
   this->~nsStyleBackground();
   aContext->PresShell()->
     FreeByObjectID(eArenaObjectID_nsStyleBackground, this);
-}
-
-void
-nsStyleBackground::FinishStyle(nsPresContext* aPresContext)
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aPresContext->StyleSet()->IsServo());
-
-  mImage.ResolveImages(aPresContext);
 }
 
 nsChangeHint
@@ -3109,7 +2959,7 @@ nsStyleDisplay::nsStyleDisplay(StyleStructContext aContext)
   , mOverflowY(NS_STYLE_OVERFLOW_VISIBLE)
   , mOverflowClipBox(NS_STYLE_OVERFLOW_CLIP_BOX_PADDING_BOX)
   , mResize(NS_STYLE_RESIZE_NONE)
-  , mOrient(StyleOrient::Inline)
+  , mOrient(NS_STYLE_ORIENT_INLINE)
   , mIsolation(NS_STYLE_ISOLATION_AUTO)
   , mTopLayer(NS_STYLE_TOP_LAYER_NONE)
   , mWillChangeBitField(0)
@@ -3577,7 +3427,7 @@ nsStyleContentData::operator==(const nsStyleContentData& aOther) const
 }
 
 void
-nsStyleContentData::TrackImage(ImageTracker* aImageTracker)
+nsStyleContentData::TrackImage(nsPresContext* aContext)
 {
   
   MOZ_ASSERT(!mImageTracked, "Already tracking image!");
@@ -3586,7 +3436,11 @@ nsStyleContentData::TrackImage(ImageTracker* aImageTracker)
   MOZ_ASSERT(mContent.mImage,
              "Can't track image when there isn't one!");
 
-  aImageTracker->Add(mContent.mImage);
+  
+  nsIDocument* doc = aContext->Document();
+  if (doc) {
+    doc->ImageTracker()->Add(mContent.mImage);
+  }
 
   
 #ifdef DEBUG
@@ -3595,7 +3449,7 @@ nsStyleContentData::TrackImage(ImageTracker* aImageTracker)
 }
 
 void
-nsStyleContentData::UntrackImage(ImageTracker* aImageTracker)
+nsStyleContentData::UntrackImage(nsPresContext* aContext)
 {
   
   MOZ_ASSERT(mImageTracked, "Image not tracked!");
@@ -3604,7 +3458,11 @@ nsStyleContentData::UntrackImage(ImageTracker* aImageTracker)
   MOZ_ASSERT(mContent.mImage,
              "Can't untrack image when there isn't one!");
 
-  aImageTracker->Remove(mContent.mImage);
+  
+  nsIDocument* doc = aContext->Document();
+  if (doc) {
+    doc->ImageTracker()->Remove(mContent.mImage);
+  }
 
   
 #ifdef DEBUG
@@ -3618,6 +3476,7 @@ nsStyleContentData::UntrackImage(ImageTracker* aImageTracker)
 
 
 nsStyleContent::nsStyleContent(StyleStructContext aContext)
+  : mMarkerOffset(eStyleUnit_Auto)
 {
   MOZ_COUNT_CTOR(nsStyleContent);
 }
@@ -3633,7 +3492,7 @@ nsStyleContent::Destroy(nsPresContext* aContext)
   
   for (auto& content : mContents) {
     if (content.mType == eStyleContentType_Image && content.mContent.mImage) {
-      content.UntrackImage(aContext->Document()->ImageTracker());
+      content.UntrackImage(aContext);
     }
   }
 
@@ -3642,7 +3501,8 @@ nsStyleContent::Destroy(nsPresContext* aContext)
 }
 
 nsStyleContent::nsStyleContent(const nsStyleContent& aSource)
-  : mContents(aSource.mContents)
+  : mMarkerOffset(aSource.mMarkerOffset)
+  , mContents(aSource.mContents)
   , mIncrements(aSource.mIncrements)
   , mResets(aSource.mResets)
 {
@@ -3671,6 +3531,10 @@ nsStyleContent::CalcDifference(const nsStyleContent& aNewData) const
       mIncrements != aNewData.mIncrements ||
       mResets != aNewData.mResets) {
     return nsChangeHint_ReconstructFrame;
+  }
+
+  if (mMarkerOffset != aNewData.mMarkerOffset) {
+    return NS_STYLE_HINT_REFLOW;
   }
 
   return nsChangeHint(0);
@@ -3985,8 +3849,8 @@ nsCursorImage::operator==(const nsCursorImage& aOther) const
 }
 
 nsStyleUserInterface::nsStyleUserInterface(StyleStructContext aContext)
-  : mUserInput(StyleUserInput::Auto)
-  , mUserModify(StyleUserModify::ReadOnly)
+  : mUserInput(NS_STYLE_USER_INPUT_AUTO)
+  , mUserModify(NS_STYLE_USER_MODIFY_READ_ONLY)
   , mUserFocus(StyleUserFocus::None)
   , mPointerEvents(NS_STYLE_POINTER_EVENTS_AUTO)
   , mCursor(NS_STYLE_CURSOR_AUTO)
@@ -4037,8 +3901,8 @@ nsStyleUserInterface::CalcDifference(const nsStyleUserInterface& aNewData) const
   }
 
   if (mUserInput != aNewData.mUserInput) {
-    if (StyleUserInput::None == mUserInput ||
-        StyleUserInput::None == aNewData.mUserInput) {
+    if (NS_STYLE_USER_INPUT_NONE == mUserInput ||
+        NS_STYLE_USER_INPUT_NONE == aNewData.mUserInput) {
       hint |= nsChangeHint_ReconstructFrame;
     } else {
       hint |= nsChangeHint_NeutralChange;
@@ -4060,7 +3924,7 @@ nsStyleUIReset::nsStyleUIReset(StyleStructContext aContext)
   : mUserSelect(StyleUserSelect::Auto)
   , mForceBrokenImageIcon(0)
   , mIMEMode(NS_STYLE_IME_MODE_AUTO)
-  , mWindowDragging(StyleWindowDragging::Default)
+  , mWindowDragging(NS_STYLE_WINDOW_DRAGGING_DEFAULT)
   , mWindowShadow(NS_STYLE_WINDOW_SHADOW_DEFAULT)
 {
   MOZ_COUNT_CTOR(nsStyleUIReset);

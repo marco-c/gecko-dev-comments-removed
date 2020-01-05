@@ -208,17 +208,8 @@ struct ImageValue final : public URLValueData
              nsIURI* aReferrer, nsIPrincipal* aOriginPrincipal,
              nsIDocument* aDocument);
 
-  
-  
-  ImageValue(nsStringBuffer* aString,
-             already_AddRefed<PtrHolder<nsIURI>> aBaseURI,
-             already_AddRefed<PtrHolder<nsIURI>> aReferrer,
-             already_AddRefed<PtrHolder<nsIPrincipal>> aOriginPrincipal);
-
   ImageValue(const ImageValue&) = delete;
   ImageValue& operator=(const ImageValue&) = delete;
-
-  void Initialize(nsIDocument* aDocument);
 
   
 
@@ -229,11 +220,6 @@ public:
   
 
   nsRefPtrHashtable<nsPtrHashKey<nsIDocument>, imgRequestProxy> mRequests;
-
-private:
-#ifdef DEBUG
-  bool mInitialized = false;
-#endif
 };
 
 struct GridNamedArea {
@@ -665,10 +651,6 @@ public:
     { return eCSSUnit_Point <= aUnit && aUnit <= eCSSUnit_Pixel; }
   bool      IsPixelLengthUnit() const
     { return IsPixelLengthUnit(mUnit); }
-  static bool IsPercentLengthUnit(nsCSSUnit aUnit)
-    { return aUnit == eCSSUnit_Percent; }
-  bool      IsPercentLengthUnit()
-    { return IsPercentLengthUnit(mUnit); }
   static bool IsFloatUnit(nsCSSUnit aUnit)
     { return eCSSUnit_Number <= aUnit; }
   bool      IsAngularUnit() const  
@@ -872,11 +854,6 @@ public:
   
   
   imgRequestProxy* GetImageValue(nsIDocument* aDocument) const;
-
-  
-  
-  already_AddRefed<imgRequestProxy> GetPossiblyStaticImageValue(
-      nsIDocument* aDocument, nsPresContext* aPresContext) const;
 
   nscoord GetFixedLength(nsPresContext* aPresContext) const;
   nscoord GetPixelLength() const;

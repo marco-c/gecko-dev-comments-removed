@@ -431,7 +431,7 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
   animation->iterations() = computedTiming.mIterations;
   animation->iterationStart() = computedTiming.mIterationStart;
   animation->direction() = static_cast<uint8_t>(timing.mDirection);
-  animation->fillMode() = static_cast<uint8_t>(computedTiming.mFill);
+  animation->fillMode() = static_cast<uint8_t>(timing.mFill);
   animation->property() = aProperty.mProperty;
   animation->playbackRate() = aAnimation->PlaybackRate();
   animation->data() = aData;
@@ -1307,7 +1307,7 @@ nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame)
   }
 
   const nsStyleUIReset* styleUI = aFrame->StyleUIReset();
-  if (styleUI->mWindowDragging == StyleWindowDragging::Default) {
+  if (styleUI->mWindowDragging == NS_STYLE_WINDOW_DRAGGING_DEFAULT) {
     
     
     return;
@@ -1362,7 +1362,7 @@ nsDisplayListBuilder::AdjustWindowDraggingRegion(nsIFrame* aFrame)
     transformedDevPixelBorderBox.Round();
     LayoutDeviceIntRect transformedDevPixelBorderBoxInt;
     if (transformedDevPixelBorderBox.ToIntRect(&transformedDevPixelBorderBoxInt)) {
-      if (styleUI->mWindowDragging == StyleWindowDragging::Drag) {
+      if (styleUI->mWindowDragging == NS_STYLE_WINDOW_DRAGGING_DRAG) {
         mWindowDraggingRegion.OrWith(transformedDevPixelBorderBoxInt);
       } else {
         mWindowNoDraggingRegion.OrWith(transformedDevPixelBorderBoxInt);
@@ -1777,13 +1777,9 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
 
   if (doBeginTransaction) {
     if (aCtx) {
-      if (!layerManager->BeginTransactionWithTarget(aCtx->ThebesContext())) {
-        return nullptr;
-      }
+      layerManager->BeginTransactionWithTarget(aCtx->ThebesContext());
     } else {
-      if (!layerManager->BeginTransaction()) {
-        return nullptr;
-      }
+      layerManager->BeginTransaction();
     }
   }
 
@@ -2600,18 +2596,15 @@ nsDisplayBackgroundImage::AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuil
                                                      nsIFrame* aFrame,
                                                      const nsRect& aBackgroundRect,
                                                      nsDisplayList* aList,
-                                                     bool aAllowWillPaintBorderOptimization,
-                                                     nsStyleContext* aStyleContext)
+                                                     bool aAllowWillPaintBorderOptimization)
 {
-  nsStyleContext* bgSC = aStyleContext;
+  nsStyleContext* bgSC = nullptr;
   const nsStyleBackground* bg = nullptr;
   nsRect bgRect = aBackgroundRect + aBuilder->ToReferenceFrame(aFrame);
   nsPresContext* presContext = aFrame->PresContext();
   bool isThemed = aFrame->IsThemed();
   if (!isThemed) {
-    if (!bgSC) {
-      bgSC = GetBackgroundStyleContext(aFrame);
-    }
+    bgSC = GetBackgroundStyleContext(aFrame);
     if (bgSC) {
       bg = bgSC->StyleBackground();
     }
@@ -2871,9 +2864,7 @@ nsDisplayBackgroundImage::ShouldCreateOwnLayer(nsDisplayListBuilder* aBuilder,
     if (image->GetType() == eStyleImageType_Image) {
       imgIRequest* imgreq = image->GetImageData();
       nsCOMPtr<imgIContainer> image;
-      if (imgreq &&
-          NS_SUCCEEDED(imgreq->GetImage(getter_AddRefs(image))) &&
-          image) {
+      if (NS_SUCCEEDED(imgreq->GetImage(getter_AddRefs(image))) && image) {
         bool animated = false;
         if (NS_SUCCEEDED(image->GetAnimated(&animated)) && animated) {
           return WHENEVER_POSSIBLE;
