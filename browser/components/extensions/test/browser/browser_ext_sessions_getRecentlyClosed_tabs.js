@@ -8,6 +8,9 @@ function expectedTabInfo(tab, window) {
     url: browser.currentURI.spec,
     title: browser.contentTitle,
     favIconUrl: window.gBrowser.getIcon(tab),
+    
+    
+    selected: undefined,
   };
 }
 

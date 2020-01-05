@@ -23,7 +23,7 @@ add_task(function* testDuplicateTab() {
             
             browser.test.assertEq(1, tab.index);
             
-            browser.test.assertTrue(tab.selected);
+            browser.test.assertTrue(tab.active);
             browser.test.notifyPass("tabs.duplicate");
           });
         });

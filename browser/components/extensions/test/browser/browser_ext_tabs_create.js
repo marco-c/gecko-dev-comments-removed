@@ -41,6 +41,9 @@ add_task(function* test_create_options() {
             active: true,
             pinned: false,
             url: "about:newtab",
+            
+            
+            selected: undefined,
           };
 
           let tests = [
