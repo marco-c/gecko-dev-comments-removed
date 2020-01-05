@@ -799,14 +799,6 @@ function handleRequest(req, res) {
     res.setHeader("x-client-port", req.remotePort);
   }
 
-  else if (u.pathname === "/statusphrase") {
-    
-    
-    res.writeHead("200 OK");
-    res.end(content);
-    return;
-  }
-
   res.setHeader('Content-Type', 'text/html');
   if (req.httpVersionMajor != 2) {
     res.setHeader('Connection', 'close');
