@@ -25,7 +25,6 @@
 #ifdef XP_WIN
 #include <process.h>
 #include "mozilla/ipc/WindowsMessageLoop.h"
-#include "mozilla/TlsAllocationTracker.h"
 #endif
 
 #include "nsAppDirectoryServiceDefs.h"
@@ -359,14 +358,6 @@ XRE_InitChildProcess(int aArgc,
 #endif
 
 #if defined(XP_WIN)
-#ifndef DEBUG
-  
-  
-  if (XRE_GetProcessType() == GeckoProcessType_Content) {
-    mozilla::InitTlsAllocationTracker();
-  }
-#endif
-
   
   
   
@@ -705,14 +696,6 @@ XRE_InitChildProcess(int aArgc,
 #endif
     }
   }
-
-#if defined(XP_WIN) && !defined(DEBUG)
-  
-  
-  if (XRE_GetProcessType() == GeckoProcessType_Content) {
-    mozilla::ShutdownTlsAllocationTracker();
-  }
-#endif
 
   Telemetry::DestroyStatisticsRecorder();
   return XRE_DeinitCommandLine();
