@@ -83,6 +83,16 @@ public:
   
   
   
+  
+  
+  
+  
+  
+  bool MightNeedBaseStyle() const;
+
+  
+  
+  
   uint32_t GetFirstFuncToAffectSandwich();
 
   
