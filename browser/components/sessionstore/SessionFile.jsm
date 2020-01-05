@@ -241,17 +241,19 @@ var SessionFileInternal = {
         Telemetry.getHistogramById("FX_SESSION_RESTORE_READ_FILE_MS").
           add(Date.now() - startMs);
         break;
-      } catch (ex if ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
-        exists = false;
-      } catch (ex if ex instanceof OS.File.Error) {
-        
-        
-        console.error("Could not read session file ", ex, ex.stack);
-        corrupted = true;
-      } catch (ex if ex instanceof SyntaxError) {
-        console.error("Corrupt session file (invalid JSON found) ", ex, ex.stack);
-        
-        corrupted = true;
+      } catch (ex) {
+          if (ex instanceof OS.File.Error && ex.becauseNoSuchFile) {
+            exists = false;
+          } else if (ex instanceof OS.File.Error) {
+            
+            
+            console.error("Could not read session file ", ex, ex.stack);
+            corrupted = true;
+          } else if (ex instanceof SyntaxError) {
+            console.error("Corrupt session file (invalid JSON found) ", ex, ex.stack);
+            
+            corrupted = true;
+          }
       } finally {
         if (exists) {
           noFilesFound = false;
@@ -382,7 +384,7 @@ var SessionFileInternal = {
   },
 
   _recordTelemetry: function(telemetry) {
-    for (let id of Object.keys(telemetry)){
+    for (let id of Object.keys(telemetry)) {
       let value = telemetry[id];
       let samples = [];
       if (Array.isArray(value)) {

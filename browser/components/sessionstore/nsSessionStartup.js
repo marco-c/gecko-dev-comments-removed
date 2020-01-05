@@ -173,35 +173,30 @@ SessionStartup.prototype = {
         
         
         this._previousSessionCrashed = !checkpoints["sessionstore-final-state-write-complete"];
+      } else if (noFilesFound) {
+        
+        
+        
+        
 
+        
+        
+        this._previousSessionCrashed = false;
       } else {
         
         
         
         
+        
+        
+        
+        
+        
+        let stateFlagPresent = (this._initialState.session &&
+                                this._initialState.session.state);
 
-        if (noFilesFound) {
-          
-          
-          this._previousSessionCrashed = false;
-
-        } else {
-          
-          
-          
-          
-          
-          
-          
-          
-          
-          let stateFlagPresent = (this._initialState.session &&
-                                  this._initialState.session.state);
-
-
-          this._previousSessionCrashed = !stateFlagPresent ||
-            (this._initialState.session.state == STATE_RUNNING_STR);
-        }
+        this._previousSessionCrashed = !stateFlagPresent ||
+          (this._initialState.session.state == STATE_RUNNING_STR);
       }
 
       

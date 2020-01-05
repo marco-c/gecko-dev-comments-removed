@@ -243,11 +243,14 @@ ContentRestoreInternal.prototype = {
       }
 
       return true;
-    } catch (ex if ex instanceof Ci.nsIException) {
-      
-      
-      return false;
+    } catch (ex) {
+      if (ex instanceof Ci.nsIException) {
+        
+        
+        return false;
+      }
     }
+    return null;
   },
 
   

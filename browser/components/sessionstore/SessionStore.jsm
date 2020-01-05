@@ -958,7 +958,7 @@ var SessionStoreInternal = {
 
 
   recordTelemetry: function (telemetry) {
-    for (let histogramId in telemetry){
+    for (let histogramId in telemetry) {
       Telemetry.getHistogramById(histogramId).add(telemetry[histogramId]);
     }
   },
@@ -1651,7 +1651,7 @@ var SessionStoreInternal = {
       yield promise;
       this._collectWindowData(win);
       progress.current++;
-    };
+    }
 
     
     
@@ -2858,6 +2858,7 @@ var SessionStoreInternal = {
       let tabState = TabState.collect(tab);
       return { index: tabState.index - 1, entries: tabState.entries }
     }
+    return null;
   },
 
   
@@ -3570,9 +3571,7 @@ var SessionStoreInternal = {
 
     
     TabStateCache.update(browser, {
-      
-      
-      history: {entries: [...tabData.entries], index: tabData.index},
+      history: {entries: tabData.entries, index: tabData.index},
       scroll: tabData.scroll || null,
       storage: tabData.storage || null,
       formdata: tabData.formdata || null,

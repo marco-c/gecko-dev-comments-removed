@@ -51,7 +51,7 @@ this.PrivacyFilter = Object.freeze({
     
     
     if (data.url && !PrivacyLevel.check(data.url)) {
-      return;
+      return null;
     }
 
     let retval = {};

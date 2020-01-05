@@ -29,7 +29,7 @@ add_task(function*() {
 
   
   yield setSelectedIndex(browser, {id: "modify06", index: 1});
-  yield setMultipleSelected(browser, {id: "modify07", indices: [0,1,2]});
+  yield setMultipleSelected(browser, {id: "modify07", indices: [0, 1, 2]});
 
   
   yield setInputChecked(browser, {id: "modify08", checked: true});

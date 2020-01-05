@@ -16,7 +16,7 @@ add_task(function* test() {
 
   
   
-  injectInlineScript(browser,'document.getElementById("test_id").value = "fail";');
+  injectInlineScript(browser, 'document.getElementById("test_id").value = "fail";');
   is(browser.contentDocument.getElementById("test_id").value, "ok",
      "CSP should block the inline script that modifies test_id");
 
