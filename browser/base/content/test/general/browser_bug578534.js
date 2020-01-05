@@ -2,27 +2,22 @@
 
 
 
-function test() {
+add_task(function* test() {
   let uriString = "http://example.com/";
   let cookieBehavior = "network.cookie.cookieBehavior";
   let uriObj = Services.io.newURI(uriString)
   let cp = Components.classes["@mozilla.org/cookie/permission;1"]
                      .getService(Components.interfaces.nsICookiePermission);
 
-  Services.prefs.setIntPref(cookieBehavior, 2);
-
+  yield SpecialPowers.pushPrefEnv({ set: [[ cookieBehavior, 2 ]] });
   cp.setAccess(uriObj, cp.ACCESS_ALLOW);
-  gBrowser.selectedTab = gBrowser.addTab(uriString);
-  waitForExplicitFinish();
-  BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser).then(onTabLoaded);
 
-  function onTabLoaded() {
-    is(gBrowser.selectedBrowser.contentWindow.navigator.cookieEnabled, true,
-       "navigator.cookieEnabled should be true");
-    
-    gBrowser.removeTab(gBrowser.selectedTab);
-    Services.prefs.setIntPref(cookieBehavior, 0);
-    cp.setAccess(uriObj, cp.ACCESS_DEFAULT);
-    finish();
-  }
-}
+  yield BrowserTestUtils.withNewTab({ gBrowser, url: uriString }, function* (browser) {
+    yield ContentTask.spawn(browser, null, function() {
+      is(content.navigator.cookieEnabled, true,
+         "navigator.cookieEnabled should be true");
+    });
+  });
+
+  cp.setAccess(uriObj, cp.ACCESS_DEFAULT);
+});
