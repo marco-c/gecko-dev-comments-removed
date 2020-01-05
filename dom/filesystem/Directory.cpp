@@ -239,18 +239,5 @@ Directory::GetFileSystem(ErrorResult& aRv)
   return mFileSystem;
 }
 
-
-bool
-Directory::ClonableToDifferentThreadOrProcess() const
-{
-  
-  
-  if (!mFileSystem) {
-    return true;
-  }
-
-  return mFileSystem->ClonableToDifferentThreadOrProcess();
-}
-
 } 
 } 
