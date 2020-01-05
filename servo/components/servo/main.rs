@@ -23,6 +23,7 @@ extern crate servo;
 extern crate compositing;
 
 extern crate net;
+extern crate net_traits;
 
 extern crate util;
 
@@ -36,7 +37,7 @@ extern crate android_glue;
 
 use std::rc::Rc;
 use util::opts;
-use net::resource_task;
+use net_traits::hosts;
 use servo::Browser;
 use compositing::windowing::WindowEvent;
 
@@ -52,7 +53,7 @@ fn main() {
     setup_logging();
 
     
-    resource_task::global_init();
+    hosts::global_init();
 
     let window = if opts::get().headless {
         None

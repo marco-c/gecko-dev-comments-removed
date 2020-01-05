@@ -2,15 +2,12 @@
 
 
 
-#![feature(box_raw)]
 #![feature(box_syntax)]
 #![feature(fnbox)]
 #![feature(mpsc_select)]
 #![feature(path_ext)]
 #![feature(plugin)]
 #![feature(vec_push_all)]
-
-#![plugin(regex_macros)]
 
 extern crate net_traits;
 extern crate cookie as cookie_rs;
@@ -28,8 +25,6 @@ extern crate util;
 extern crate time;
 extern crate url;
 extern crate uuid;
-
-extern crate regex;
 
 pub mod about_loader;
 pub mod file_loader;
