@@ -1,2 +1,0 @@
-
-var importedArgs = ['grow-memory.wast']; load(scriptdir + '../spec.js');
