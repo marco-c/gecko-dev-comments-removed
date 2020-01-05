@@ -136,6 +136,9 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   if (NS_FAILED(rv)) {
     policy->AddDir(rdwrcr, "/tmp");
   }
+
+  
+  policy->AddPrefix(rdwr, "/dev", "nvidia");
   mCommonContentPolicy.reset(policy);
 #endif
 }
