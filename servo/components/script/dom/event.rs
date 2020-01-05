@@ -172,67 +172,67 @@ impl Event {
     }
 }
 
-impl<'a> EventMethods for &'a Event {
+impl EventMethods for Event {
     
-    fn EventPhase(self) -> u16 {
+    fn EventPhase(&self) -> u16 {
         self.phase.get() as u16
     }
 
     
-    fn Type(self) -> DOMString {
+    fn Type(&self) -> DOMString {
         self.type_.borrow().clone()
     }
 
     
-    fn GetTarget(self) -> Option<Root<EventTarget>> {
+    fn GetTarget(&self) -> Option<Root<EventTarget>> {
         self.target.get().map(Root::from_rooted)
     }
 
     
-    fn GetCurrentTarget(self) -> Option<Root<EventTarget>> {
+    fn GetCurrentTarget(&self) -> Option<Root<EventTarget>> {
         self.current_target.get().map(Root::from_rooted)
     }
 
     
-    fn DefaultPrevented(self) -> bool {
+    fn DefaultPrevented(&self) -> bool {
         self.canceled.get()
     }
 
     
-    fn PreventDefault(self) {
+    fn PreventDefault(&self) {
         if self.cancelable.get() {
             self.canceled.set(true)
         }
     }
 
     
-    fn StopPropagation(self) {
+    fn StopPropagation(&self) {
         self.stop_propagation.set(true);
     }
 
     
-    fn StopImmediatePropagation(self) {
+    fn StopImmediatePropagation(&self) {
         self.stop_immediate.set(true);
         self.stop_propagation.set(true);
     }
 
     
-    fn Bubbles(self) -> bool {
+    fn Bubbles(&self) -> bool {
         self.bubbles.get()
     }
 
     
-    fn Cancelable(self) -> bool {
+    fn Cancelable(&self) -> bool {
         self.cancelable.get()
     }
 
     
-    fn TimeStamp(self) -> u64 {
+    fn TimeStamp(&self) -> u64 {
         self.timestamp
     }
 
     
-    fn InitEvent(self,
+    fn InitEvent(&self,
                  type_: DOMString,
                  bubbles: bool,
                  cancelable: bool) {
@@ -252,7 +252,7 @@ impl<'a> EventMethods for &'a Event {
     }
 
     
-    fn IsTrusted(self) -> bool {
+    fn IsTrusted(&self) -> bool {
         self.trusted.get()
     }
 }

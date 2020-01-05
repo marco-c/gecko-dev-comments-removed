@@ -33,44 +33,44 @@ impl DOMPoint {
     }
 }
 
-impl<'a> DOMPointMethods for &'a DOMPoint {
+impl DOMPointMethods for DOMPoint {
     
-    fn X(self) -> f64 {
+    fn X(&self) -> f64 {
         self.point.X()
     }
 
     
-    fn SetX(self, value: f64) {
+    fn SetX(&self, value: f64) {
         self.point.SetX(value);
     }
 
     
-    fn Y(self) -> f64 {
+    fn Y(&self) -> f64 {
         self.point.Y()
     }
 
     
-    fn SetY(self, value: f64) {
+    fn SetY(&self, value: f64) {
         self.point.SetY(value);
     }
 
     
-    fn Z(self) -> f64 {
+    fn Z(&self) -> f64 {
         self.point.Z()
     }
 
     
-    fn SetZ(self, value: f64) {
+    fn SetZ(&self, value: f64) {
         self.point.SetZ(value);
     }
 
     
-    fn W(self) -> f64 {
+    fn W(&self) -> f64 {
         self.point.W()
     }
 
     
-    fn SetW(self, value: f64) {
+    fn SetW(&self, value: f64) {
         self.point.SetW(value);
     }
 }

@@ -30,19 +30,19 @@ impl FileList {
     }
 }
 
-impl<'a> FileListMethods for &'a FileList {
+impl FileListMethods for FileList {
     
-    fn Length(self) -> u32 {
+    fn Length(&self) -> u32 {
         self.list.len() as u32
     }
 
     
-    fn Item(self, index: u32) -> Option<Root<File>> {
+    fn Item(&self, index: u32) -> Option<Root<File>> {
         Some(self.list[index as usize].root())
     }
 
     
-    fn IndexedGetter(self, index: u32, found: &mut bool) -> Option<Root<File>> {
+    fn IndexedGetter(&self, index: u32, found: &mut bool) -> Option<Root<File>> {
         let item = self.Item(index);
         *found = item.is_some();
         item

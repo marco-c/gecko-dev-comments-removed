@@ -86,19 +86,19 @@ impl UIEvent {
     }
 }
 
-impl<'a> UIEventMethods for &'a UIEvent {
+impl UIEventMethods for UIEvent {
     
-    fn GetView(self) -> Option<Root<Window>> {
+    fn GetView(&self) -> Option<Root<Window>> {
         self.view.get().map(Root::from_rooted)
     }
 
     
-    fn Detail(self) -> i32 {
+    fn Detail(&self) -> i32 {
         self.detail.get()
     }
 
     
-    fn InitUIEvent(self,
+    fn InitUIEvent(&self,
                    type_: DOMString,
                    can_bubble: bool,
                    cancelable: bool,

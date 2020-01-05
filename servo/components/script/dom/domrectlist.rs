@@ -32,14 +32,14 @@ impl DOMRectList {
     }
 }
 
-impl<'a> DOMRectListMethods for &'a DOMRectList {
+impl DOMRectListMethods for DOMRectList {
     
-    fn Length(self) -> u32 {
+    fn Length(&self) -> u32 {
         self.rects.len() as u32
     }
 
     
-    fn Item(self, index: u32) -> Option<Root<DOMRect>> {
+    fn Item(&self, index: u32) -> Option<Root<DOMRect>> {
         let rects = &self.rects;
         if index < rects.len() as u32 {
             Some(rects[index as usize].root())
@@ -49,7 +49,7 @@ impl<'a> DOMRectListMethods for &'a DOMRectList {
     }
 
     
-    fn IndexedGetter(self, index: u32, found: &mut bool) -> Option<Root<DOMRect>> {
+    fn IndexedGetter(&self, index: u32, found: &mut bool) -> Option<Root<DOMRect>> {
         *found = index < self.rects.len() as u32;
         self.Item(index)
     }

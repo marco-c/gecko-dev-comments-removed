@@ -58,9 +58,9 @@ impl URLSearchParams {
     }
 }
 
-impl<'a> URLSearchParamsMethods for &'a URLSearchParams {
+impl URLSearchParamsMethods for URLSearchParams {
     
-    fn Append(self, name: DOMString, value: DOMString) {
+    fn Append(&self, name: DOMString, value: DOMString) {
         
         self.list.borrow_mut().push((name, value));
         
@@ -68,7 +68,7 @@ impl<'a> URLSearchParamsMethods for &'a URLSearchParams {
     }
 
     
-    fn Delete(self, name: DOMString) {
+    fn Delete(&self, name: DOMString) {
         
         self.list.borrow_mut().retain(|&(ref k, _)| k != &name);
         
@@ -76,7 +76,7 @@ impl<'a> URLSearchParamsMethods for &'a URLSearchParams {
     }
 
     
-    fn Get(self, name: DOMString) -> Option<DOMString> {
+    fn Get(&self, name: DOMString) -> Option<DOMString> {
         let list = self.list.borrow();
         list.iter().filter_map(|&(ref k, ref v)| {
             if k == &name {
@@ -88,13 +88,13 @@ impl<'a> URLSearchParamsMethods for &'a URLSearchParams {
     }
 
     
-    fn Has(self, name: DOMString) -> bool {
+    fn Has(&self, name: DOMString) -> bool {
         let list = self.list.borrow();
         list.iter().find(|&&(ref k, _)| k == &name).is_some()
     }
 
     
-    fn Set(self, name: DOMString, value: DOMString) {
+    fn Set(&self, name: DOMString, value: DOMString) {
         let mut list = self.list.borrow_mut();
         let mut index = None;
         let mut i = 0;
@@ -118,7 +118,7 @@ impl<'a> URLSearchParamsMethods for &'a URLSearchParams {
     }
 
     
-    fn Stringifier(self) -> DOMString {
+    fn Stringifier(&self) -> DOMString {
         self.serialize(None)
     }
 }

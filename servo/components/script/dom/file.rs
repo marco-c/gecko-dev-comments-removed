@@ -39,9 +39,9 @@ impl File {
     }
 }
 
-impl<'a> FileMethods for &'a File {
+impl FileMethods for File {
     
-    fn Name(self) -> DOMString {
+    fn Name(&self) -> DOMString {
         self.name.clone()
     }
 }

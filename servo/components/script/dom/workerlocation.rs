@@ -36,49 +36,49 @@ impl WorkerLocation {
     }
 }
 
-impl<'a> WorkerLocationMethods for &'a WorkerLocation {
+impl WorkerLocationMethods for WorkerLocation {
     
-    fn Hash(self) -> USVString {
+    fn Hash(&self) -> USVString {
         UrlHelper::Hash(&self.url)
     }
 
     
-    fn Host(self) -> USVString {
+    fn Host(&self) -> USVString {
         UrlHelper::Host(&self.url)
     }
 
     
-    fn Hostname(self) -> USVString {
+    fn Hostname(&self) -> USVString {
         UrlHelper::Hostname(&self.url)
     }
 
     
-    fn Href(self) -> USVString {
+    fn Href(&self) -> USVString {
         UrlHelper::Href(&self.url)
     }
 
     
-    fn Pathname(self) -> USVString {
+    fn Pathname(&self) -> USVString {
         UrlHelper::Pathname(&self.url)
     }
 
     
-    fn Port(self) -> USVString {
+    fn Port(&self) -> USVString {
         UrlHelper::Port(&self.url)
     }
 
     
-    fn Protocol(self) -> USVString {
+    fn Protocol(&self) -> USVString {
         UrlHelper::Protocol(&self.url)
     }
 
     
-    fn Search(self) -> USVString {
+    fn Search(&self) -> USVString {
         UrlHelper::Search(&self.url)
     }
 
     
-    fn Stringifier(self) -> DOMString {
+    fn Stringifier(&self) -> DOMString {
         self.Href().0
     }
 }

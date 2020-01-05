@@ -47,24 +47,24 @@ impl CharacterData {
     }
 }
 
-impl<'a> CharacterDataMethods for &'a CharacterData {
+impl CharacterDataMethods for CharacterData {
     
-    fn Data(self) -> DOMString {
+    fn Data(&self) -> DOMString {
         self.data.borrow().clone()
     }
 
     
-    fn SetData(self, data: DOMString) {
+    fn SetData(&self, data: DOMString) {
         *self.data.borrow_mut() = data;
     }
 
     
-    fn Length(self) -> u32 {
+    fn Length(&self) -> u32 {
         self.data.borrow().chars().count() as u32
     }
 
     
-    fn SubstringData(self, offset: u32, count: u32) -> Fallible<DOMString> {
+    fn SubstringData(&self, offset: u32, count: u32) -> Fallible<DOMString> {
         let data = self.data.borrow();
         
         let length = data.chars().count() as u32;
@@ -78,22 +78,22 @@ impl<'a> CharacterDataMethods for &'a CharacterData {
     }
 
     
-    fn AppendData(self, data: DOMString) {
+    fn AppendData(&self, data: DOMString) {
         self.append_data(&*data);
     }
 
     
-    fn InsertData(self, offset: u32, arg: DOMString) -> ErrorResult {
+    fn InsertData(&self, offset: u32, arg: DOMString) -> ErrorResult {
         self.ReplaceData(offset, 0, arg)
     }
 
     
-    fn DeleteData(self, offset: u32, count: u32) -> ErrorResult {
+    fn DeleteData(&self, offset: u32, count: u32) -> ErrorResult {
         self.ReplaceData(offset, count, "".to_owned())
     }
 
     
-    fn ReplaceData(self, offset: u32, count: u32, arg: DOMString) -> ErrorResult {
+    fn ReplaceData(&self, offset: u32, count: u32, arg: DOMString) -> ErrorResult {
         
         let length = self.data.borrow().chars().count() as u32;
         if offset > length {
@@ -116,34 +116,34 @@ impl<'a> CharacterDataMethods for &'a CharacterData {
     }
 
     
-    fn Before(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+    fn Before(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
         NodeCast::from_ref(self).before(nodes)
     }
 
     
-    fn After(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+    fn After(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
         NodeCast::from_ref(self).after(nodes)
     }
 
     
-    fn ReplaceWith(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+    fn ReplaceWith(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
         NodeCast::from_ref(self).replace_with(nodes)
     }
 
     
-    fn Remove(self) {
+    fn Remove(&self) {
         let node = NodeCast::from_ref(self);
         node.remove_self();
     }
 
     
-    fn GetPreviousElementSibling(self) -> Option<Root<Element>> {
+    fn GetPreviousElementSibling(&self) -> Option<Root<Element>> {
         NodeCast::from_ref(self).preceding_siblings()
                                 .filter_map(ElementCast::to_root).next()
     }
 
     
-    fn GetNextElementSibling(self) -> Option<Root<Element>> {
+    fn GetNextElementSibling(&self) -> Option<Root<Element>> {
         NodeCast::from_ref(self).following_siblings()
                                 .filter_map(ElementCast::to_root).next()
     }

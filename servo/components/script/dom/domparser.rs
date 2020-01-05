@@ -44,9 +44,9 @@ impl DOMParser {
     }
 }
 
-impl<'a> DOMParserMethods for &'a DOMParser {
+impl DOMParserMethods for DOMParser {
     
-    fn ParseFromString(self,
+    fn ParseFromString(&self,
                        s: DOMString,
                        ty: DOMParserBinding::SupportedType)
                        -> Fallible<Root<Document>> {

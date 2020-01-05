@@ -73,39 +73,39 @@ impl DocumentType {
     }
 }
 
-impl<'a> DocumentTypeMethods for &'a DocumentType {
+impl DocumentTypeMethods for DocumentType {
     
-    fn Name(self) -> DOMString {
+    fn Name(&self) -> DOMString {
         self.name.clone()
     }
 
     
-    fn PublicId(self) -> DOMString {
+    fn PublicId(&self) -> DOMString {
         self.public_id.clone()
     }
 
     
-    fn SystemId(self) -> DOMString {
+    fn SystemId(&self) -> DOMString {
         self.system_id.clone()
     }
 
     
-    fn Before(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+    fn Before(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
         NodeCast::from_ref(self).before(nodes)
     }
 
     
-    fn After(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+    fn After(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
         NodeCast::from_ref(self).after(nodes)
     }
 
     
-    fn ReplaceWith(self, nodes: Vec<NodeOrString>) -> ErrorResult {
+    fn ReplaceWith(&self, nodes: Vec<NodeOrString>) -> ErrorResult {
         NodeCast::from_ref(self).replace_with(nodes)
     }
 
     
-    fn Remove(self) {
+    fn Remove(&self) {
         let node = NodeCast::from_ref(self);
         node.remove_self();
     }

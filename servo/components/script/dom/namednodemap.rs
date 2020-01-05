@@ -35,9 +35,9 @@ impl NamedNodeMap {
     }
 }
 
-impl<'a> NamedNodeMapMethods for &'a NamedNodeMap {
+impl NamedNodeMapMethods for NamedNodeMap {
     
-    fn Length(self) -> u32 {
+    fn Length(&self) -> u32 {
         let owner = self.owner.root();
         
         let owner = owner.r();
@@ -46,7 +46,7 @@ impl<'a> NamedNodeMapMethods for &'a NamedNodeMap {
     }
 
     
-    fn Item(self, index: u32) -> Option<Root<Attr>> {
+    fn Item(&self, index: u32) -> Option<Root<Attr>> {
         let owner = self.owner.root();
         
         let owner = owner.r();
@@ -55,7 +55,7 @@ impl<'a> NamedNodeMapMethods for &'a NamedNodeMap {
     }
 
     
-    fn GetNamedItem(self, name: DOMString) -> Option<Root<Attr>> {
+    fn GetNamedItem(&self, name: DOMString) -> Option<Root<Attr>> {
         let owner = self.owner.root();
         
         let owner = owner.r();
@@ -63,7 +63,7 @@ impl<'a> NamedNodeMapMethods for &'a NamedNodeMap {
     }
 
     
-    fn GetNamedItemNS(self, namespace: Option<DOMString>, local_name: DOMString)
+    fn GetNamedItemNS(&self, namespace: Option<DOMString>, local_name: DOMString)
                      -> Option<Root<Attr>> {
         let owner = self.owner.root();
         
@@ -73,7 +73,7 @@ impl<'a> NamedNodeMapMethods for &'a NamedNodeMap {
     }
 
     
-    fn RemoveNamedItem(self, name: DOMString) -> Fallible<Root<Attr>> {
+    fn RemoveNamedItem(&self, name: DOMString) -> Fallible<Root<Attr>> {
         let owner = self.owner.root();
         
         let owner = owner.r();
@@ -82,7 +82,7 @@ impl<'a> NamedNodeMapMethods for &'a NamedNodeMap {
     }
 
     
-    fn RemoveNamedItemNS(self, namespace: Option<DOMString>, local_name: DOMString)
+    fn RemoveNamedItemNS(&self, namespace: Option<DOMString>, local_name: DOMString)
                       -> Fallible<Root<Attr>> {
         let owner = self.owner.root();
         
@@ -92,20 +92,20 @@ impl<'a> NamedNodeMapMethods for &'a NamedNodeMap {
     }
 
     
-    fn IndexedGetter(self, index: u32, found: &mut bool) -> Option<Root<Attr>> {
+    fn IndexedGetter(&self, index: u32, found: &mut bool) -> Option<Root<Attr>> {
         let item = self.Item(index);
         *found = item.is_some();
         item
     }
 
     
-    fn NamedGetter(self, name: DOMString, found: &mut bool) -> Option<Root<Attr>> {
+    fn NamedGetter(&self, name: DOMString, found: &mut bool) -> Option<Root<Attr>> {
         let item = self.GetNamedItem(name);
         *found = item.is_some();
         item
     }
 
-    fn SupportedPropertyNames(self) -> Vec<DOMString> {
+    fn SupportedPropertyNames(&self) -> Vec<DOMString> {
         
         vec![]
     }

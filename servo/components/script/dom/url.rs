@@ -84,59 +84,59 @@ impl URL {
     }
 }
 
-impl<'a> URLMethods for &'a URL {
+impl URLMethods for URL {
     
-    fn Hash(self) -> USVString {
+    fn Hash(&self) -> USVString {
         UrlHelper::Hash(&self.url)
     }
 
     
-    fn Host(self) -> USVString {
+    fn Host(&self) -> USVString {
         UrlHelper::Host(&self.url)
     }
 
     
-    fn Hostname(self) -> USVString {
+    fn Hostname(&self) -> USVString {
         UrlHelper::Hostname(&self.url)
     }
 
     
-    fn Href(self) -> USVString {
+    fn Href(&self) -> USVString {
         UrlHelper::Href(&self.url)
     }
 
     
-    fn Password(self) -> USVString {
+    fn Password(&self) -> USVString {
         UrlHelper::Password(&self.url)
     }
 
     
-    fn Pathname(self) -> USVString {
+    fn Pathname(&self) -> USVString {
         UrlHelper::Pathname(&self.url)
     }
 
     
-    fn Port(self) -> USVString {
+    fn Port(&self) -> USVString {
         UrlHelper::Port(&self.url)
     }
 
     
-    fn Protocol(self) -> USVString {
+    fn Protocol(&self) -> USVString {
         UrlHelper::Protocol(&self.url)
     }
 
     
-    fn Search(self) -> USVString {
+    fn Search(&self) -> USVString {
         UrlHelper::Search(&self.url)
     }
 
     
-    fn Stringifier(self) -> DOMString {
+    fn Stringifier(&self) -> DOMString {
         self.Href().0
     }
 
     
-    fn Username(self) -> USVString {
+    fn Username(&self) -> USVString {
         UrlHelper::Username(&self.url)
     }
 }

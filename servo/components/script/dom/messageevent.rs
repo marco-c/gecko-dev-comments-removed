@@ -89,19 +89,19 @@ impl MessageEvent {
     }
 }
 
-impl<'a> MessageEventMethods for &'a MessageEvent {
+impl MessageEventMethods for MessageEvent {
     
-    fn Data(self, _cx: *mut JSContext) -> JSVal {
+    fn Data(&self, _cx: *mut JSContext) -> JSVal {
         self.data.get()
     }
 
     
-    fn Origin(self) -> DOMString {
+    fn Origin(&self) -> DOMString {
         self.origin.clone()
     }
 
     
-    fn LastEventId(self) -> DOMString {
+    fn LastEventId(&self) -> DOMString {
         self.lastEventId.clone()
     }
 }

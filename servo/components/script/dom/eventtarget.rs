@@ -284,9 +284,9 @@ impl EventTarget {
     }
 }
 
-impl<'a> EventTargetMethods for &'a EventTarget {
+impl EventTargetMethods for EventTarget {
     
-    fn AddEventListener(self,
+    fn AddEventListener(&self,
                         ty: DOMString,
                         listener: Option<Rc<EventListener>>,
                         capture: bool) {
@@ -312,7 +312,7 @@ impl<'a> EventTargetMethods for &'a EventTarget {
     }
 
     
-    fn RemoveEventListener(self,
+    fn RemoveEventListener(&self,
                            ty: DOMString,
                            listener: Option<Rc<EventListener>>,
                            capture: bool) {
@@ -336,7 +336,7 @@ impl<'a> EventTargetMethods for &'a EventTarget {
     }
 
     
-    fn DispatchEvent(self, event: &Event) -> Fallible<bool> {
+    fn DispatchEvent(&self, event: &Event) -> Fallible<bool> {
         if event.dispatching() || !event.initialized() {
             return Err(InvalidState);
         }

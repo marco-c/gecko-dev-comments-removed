@@ -28,14 +28,14 @@ impl Screen {
     }
 }
 
-impl<'a> ScreenMethods for &'a Screen {
+impl ScreenMethods for Screen {
     
-    fn ColorDepth(self) -> u32 {
+    fn ColorDepth(&self) -> u32 {
         24
     }
 
     
-    fn PixelDepth(self) -> u32 {
+    fn PixelDepth(&self) -> u32 {
         24
     }
 }

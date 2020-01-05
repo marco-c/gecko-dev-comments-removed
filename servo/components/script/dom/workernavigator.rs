@@ -31,39 +31,39 @@ impl WorkerNavigator {
     }
 }
 
-impl<'a> WorkerNavigatorMethods for &'a WorkerNavigator {
+impl WorkerNavigatorMethods for WorkerNavigator {
     
-    fn Product(self) -> DOMString {
+    fn Product(&self) -> DOMString {
         navigatorinfo::Product()
     }
 
     
-    fn TaintEnabled(self) -> bool {
+    fn TaintEnabled(&self) -> bool {
         navigatorinfo::TaintEnabled()
     }
 
     
-    fn AppName(self) -> DOMString {
+    fn AppName(&self) -> DOMString {
         navigatorinfo::AppName()
     }
 
     
-    fn AppCodeName(self) -> DOMString {
+    fn AppCodeName(&self) -> DOMString {
         navigatorinfo::AppCodeName()
     }
 
     
-    fn Platform(self) -> DOMString {
+    fn Platform(&self) -> DOMString {
         navigatorinfo::Platform()
     }
 
     
-    fn UserAgent(self) -> DOMString {
+    fn UserAgent(&self) -> DOMString {
         navigatorinfo::UserAgent()
     }
 
     
-    fn AppVersion(self) -> DOMString {
+    fn AppVersion(&self) -> DOMString {
         navigatorinfo::AppVersion()
     }
 }

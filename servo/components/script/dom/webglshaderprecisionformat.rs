@@ -38,19 +38,19 @@ impl WebGLShaderPrecisionFormat {
     }
 }
 
-impl<'a> WebGLShaderPrecisionFormatMethods for &'a WebGLShaderPrecisionFormat {
+impl WebGLShaderPrecisionFormatMethods for WebGLShaderPrecisionFormat {
     
-    fn RangeMin(self) -> i32 {
+    fn RangeMin(&self) -> i32 {
         self.range_min
     }
 
     
-    fn RangeMax(self) -> i32 {
+    fn RangeMax(&self) -> i32 {
         self.range_max
     }
 
     
-    fn Precision(self) -> i32 {
+    fn Precision(&self) -> i32 {
         self.precision
     }
 }

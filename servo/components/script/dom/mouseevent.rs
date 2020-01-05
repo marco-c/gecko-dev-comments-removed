@@ -114,54 +114,54 @@ impl MouseEvent {
     }
 }
 
-impl<'a> MouseEventMethods for &'a MouseEvent {
+impl MouseEventMethods for MouseEvent {
     
-    fn ScreenX(self) -> i32 {
+    fn ScreenX(&self) -> i32 {
         self.screen_x.get()
     }
 
     
-    fn ScreenY(self) -> i32 {
+    fn ScreenY(&self) -> i32 {
         self.screen_y.get()
     }
 
     
-    fn ClientX(self) -> i32 {
+    fn ClientX(&self) -> i32 {
         self.client_x.get()
     }
 
     
-    fn ClientY(self) -> i32 {
+    fn ClientY(&self) -> i32 {
         self.client_y.get()
     }
 
     
-    fn CtrlKey(self) -> bool {
+    fn CtrlKey(&self) -> bool {
         self.ctrl_key.get()
     }
 
     
-    fn ShiftKey(self) -> bool {
+    fn ShiftKey(&self) -> bool {
         self.shift_key.get()
     }
 
     
-    fn AltKey(self) -> bool {
+    fn AltKey(&self) -> bool {
         self.alt_key.get()
     }
 
     
-    fn MetaKey(self) -> bool {
+    fn MetaKey(&self) -> bool {
         self.meta_key.get()
     }
 
     
-    fn Button(self) -> i16 {
+    fn Button(&self) -> i16 {
         self.button.get()
     }
 
     
-    fn GetRelatedTarget(self) -> Option<Root<EventTarget>> {
+    fn GetRelatedTarget(&self) -> Option<Root<EventTarget>> {
         self.related_target.get().map(Root::from_rooted)
     }
 
@@ -170,7 +170,7 @@ impl<'a> MouseEventMethods for &'a MouseEvent {
     
     
     
-    fn Which(self) -> i32 {
+    fn Which(&self) -> i32 {
         if opts::experimental_enabled() {
             (self.button.get() + 1) as i32
         } else {
@@ -179,7 +179,7 @@ impl<'a> MouseEventMethods for &'a MouseEvent {
     }
 
     
-    fn InitMouseEvent(self,
+    fn InitMouseEvent(&self,
                       typeArg: DOMString,
                       canBubbleArg: bool,
                       cancelableArg: bool,

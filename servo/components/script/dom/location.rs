@@ -35,9 +35,9 @@ impl Location {
     }
 }
 
-impl<'a> LocationMethods for &'a Location {
+impl LocationMethods for Location {
     
-    fn Assign(self, url: DOMString) {
+    fn Assign(&self, url: DOMString) {
         let window = self.window.root();
         
         
@@ -48,57 +48,57 @@ impl<'a> LocationMethods for &'a Location {
     }
 
     
-    fn Hash(self) -> USVString {
+    fn Hash(&self) -> USVString {
         UrlHelper::Hash(&self.get_url())
     }
 
     
-    fn Href(self) -> USVString {
+    fn Href(&self) -> USVString {
         UrlHelper::Href(&self.get_url())
     }
 
     
-    fn Host(self) -> USVString {
+    fn Host(&self) -> USVString {
         UrlHelper::Host(&self.get_url())
     }
 
     
-    fn Hostname(self) -> USVString {
+    fn Hostname(&self) -> USVString {
         UrlHelper::Hostname(&self.get_url())
     }
 
     
-    fn Password(self) -> USVString {
+    fn Password(&self) -> USVString {
         UrlHelper::Password(&self.get_url())
     }
 
     
-    fn Pathname(self) -> USVString {
+    fn Pathname(&self) -> USVString {
         UrlHelper::Pathname(&self.get_url())
     }
 
     
-    fn Port(self) -> USVString {
+    fn Port(&self) -> USVString {
         UrlHelper::Port(&self.get_url())
     }
 
     
-    fn Protocol(self) -> USVString {
+    fn Protocol(&self) -> USVString {
         UrlHelper::Protocol(&self.get_url())
     }
 
     
-    fn Stringifier(self) -> DOMString {
+    fn Stringifier(&self) -> DOMString {
         self.Href().0
     }
 
     
-    fn Search(self) -> USVString {
+    fn Search(&self) -> USVString {
         UrlHelper::Search(&self.get_url())
     }
 
     
-    fn Username(self) -> USVString {
+    fn Username(&self) -> USVString {
         UrlHelper::Username(&self.get_url())
     }
 }

@@ -38,10 +38,10 @@ impl PerformanceTiming {
     }
 }
 
-impl<'a> PerformanceTimingMethods for &'a PerformanceTiming {
+impl PerformanceTimingMethods for PerformanceTiming {
     
     
-    fn NavigationStart(self) -> u64 {
+    fn NavigationStart(&self) -> u64 {
         self.navigationStart
     }
 }

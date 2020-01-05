@@ -68,19 +68,19 @@ impl ImageData {
     }
 }
 
-impl<'a> ImageDataMethods for &'a ImageData {
+impl ImageDataMethods for ImageData {
     
-    fn Width(self) -> u32 {
+    fn Width(&self) -> u32 {
         self.width
     }
 
     
-    fn Height(self) -> u32 {
+    fn Height(&self) -> u32 {
         self.height
     }
 
     
-    fn Data(self, _: *mut JSContext) -> *mut JSObject {
+    fn Data(&self, _: *mut JSContext) -> *mut JSObject {
         self.data.get()
     }
 }
