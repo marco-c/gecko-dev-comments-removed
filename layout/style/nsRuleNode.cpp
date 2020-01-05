@@ -1345,7 +1345,7 @@ static void SetStyleImage(nsStyleContext* aStyleContext,
       
 
       
-      bool isLocalRef = aValue.GetURLStructValue()->GetLocalURLFlag();
+      bool isLocalRef = aValue.GetURLStructValue()->IsLocalRef();
 
       
       bool isEqualExceptRef = false;

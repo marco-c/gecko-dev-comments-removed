@@ -134,7 +134,7 @@ public:
 
   nsIURI* GetURI() const;
 
-  bool GetLocalURLFlag() const { return mLocalURLFlag; }
+  bool IsLocalRef() const { return mIsLocalRef; }
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(URLValueData)
 
@@ -150,8 +150,7 @@ public:
 private:
   mutable bool mURIResolved;
   
-  
-  bool mLocalURLFlag;
+  bool mIsLocalRef;
 
 protected:
   virtual ~URLValueData() = default;
