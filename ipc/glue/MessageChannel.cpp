@@ -938,6 +938,10 @@ MessageChannel::OnMessageReceivedFromLink(Message&& aMsg)
             if (p->Msg().type() == aMsg.type() &&
                 p->Msg().routing_id() == aMsg.routing_id())
             {
+                
+                
+                
+                
                 compress = true;
                 MOZ_RELEASE_ASSERT(p->Msg().compress_type() == IPC::Message::COMPRESSION_ALL);
                 p->remove();
@@ -1538,7 +1542,7 @@ MessageChannel::RunMessage(MessageTask& aTask)
     Message& msg = aTask.Msg();
 
     if (!Connected()) {
-        ReportConnectionError("OnMaybeDequeueOne");
+        ReportConnectionError("RunMessage");
         return;
     }
 
@@ -1597,6 +1601,7 @@ MessageChannel::MessageTask::Run()
     return NS_OK;
 }
 
+
 nsresult
 MessageChannel::MessageTask::Cancel()
 {
@@ -1623,9 +1628,10 @@ MessageChannel::MessageTask::Post()
     MOZ_RELEASE_ASSERT(!mScheduled);
     MOZ_RELEASE_ASSERT(isInList());
 
+    mScheduled = true;
+
     RefPtr<MessageTask> self = this;
     mChannel->mWorkerLoop->PostTask(self.forget());
-    mScheduled = true;
 }
 
 void
