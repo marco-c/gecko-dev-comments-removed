@@ -1013,6 +1013,11 @@ DoSetElemFallback(JSContext* cx, BaselineFrame* frame, ICSetElem_Fallback* stub_
     if (attached)
         return true;
 
+    
+    
+    if (stub->state().maybeTransition())
+        stub->discardStubs(cx);
+
     if (stub->state().canAttachStub()) {
         SetPropIRGenerator gen(cx, script, pc, CacheKind::SetElem, stub->state().mode(),
                                &isTemporarilyUnoptimizable, objv, index, rhs);
