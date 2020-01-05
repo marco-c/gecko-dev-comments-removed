@@ -301,13 +301,25 @@ RTCStatsReport.prototype = {
   
   
   
+  
+  _specToLegacyFieldMapping: {
+        'inbound-rtp' : 'inboundrtp',
+        'outbound-rtp':'outboundrtp',
+        'candidate-pair':'candidatepair',
+        'local-candidate':'localcandidate',
+        'remote-candidate':'remotecandidate'
+  },
 
-  makeStatsPublic: function(warnNullable) {
+  makeStatsPublic: function(warnNullable, isLegacy) {
     let legacyProps = {};
     for (let key in this._report) {
+      let internal = Cu.cloneInto(this._report[key], this._win);
+      if (isLegacy) {
+        internal.type = this._specToLegacyFieldMapping[internal.type] || internal.type;
+      }
+      this.setInternal(key, internal);
       let value = Cu.cloneInto(this._report[key], this._win);
-      this.setInternal(key, value);
-
+      value.type = this._specToLegacyFieldMapping[value.type] || value.type;
       legacyProps[key] = {
         enumerable: true, configurable: false,
         get: Cu.exportFunction(function() {
@@ -356,6 +368,10 @@ function RTCPeerConnection() {
 
   this._hasStunServer = this._hasTurnServer = false;
   this._iceGatheredRelayCandidates = false;
+
+  
+  
+  this._onGetStatsIsLegacy = false;
 }
 RTCPeerConnection.prototype = {
   classDescription: "RTCPeerConnection",
@@ -1211,17 +1227,19 @@ RTCPeerConnection.prototype = {
   },
 
   getStats: function(selector, onSucc, onErr) {
-    if (typeof onSucc == "function" &&
+    let isLegacy = (typeof onSucc) == "function";
+    if (isLegacy &&
         this._warnDeprecatedStatsCallbacksNullable.warn) {
       this._warnDeprecatedStatsCallbacksNullable.warn();
       this._warnDeprecatedStatsCallbacksNullable.warn = null;
     }
-    return this._auto(onSucc, onErr, () => this._getStats(selector));
+    return this._auto(onSucc, onErr, () => this._getStats(selector, isLegacy));
   },
 
-  _getStats: async function(selector) {
+  _getStats: async function(selector, isLegacy) {
     
     return await this._chain(() => new Promise((resolve, reject) => {
+      this._onGetStatsIsLegacy = isLegacy;
       this._onGetStatsSuccess = resolve;
       this._onGetStatsFailure = reject;
       this._impl.getStats(selector);
@@ -1484,7 +1502,8 @@ PeerConnectionObserver.prototype = {
     let chromeobj = new RTCStatsReport(pc._win, dict);
     let webidlobj = pc._win.RTCStatsReport._create(pc._win, chromeobj);
     chromeobj.makeStatsPublic(pc._warnDeprecatedStatsCallbacksNullable &&
-                              pc._warnDeprecatedStatsAccessNullable);
+                              pc._warnDeprecatedStatsAccessNullable,
+                              pc._onGetStatsIsLegacy);
     pc._onGetStatsSuccess(webidlobj);
   },
 

@@ -6605,11 +6605,6 @@ var gIdentityHandler = {
 
   _state: 0,
 
-  
-
-
-  _permissionJustRemoved: false,
-
   get _isBroken() {
     return this._state & Ci.nsIWebProgressListener.STATE_IS_BROKEN;
   },
@@ -7305,6 +7300,9 @@ var gIdentityHandler = {
     this._identityPopup.hidden = false;
 
     
+    this._permissionReloadHint.setAttribute("hidden", "true");
+
+    
     this.refreshIdentityPopup();
 
     
@@ -7364,21 +7362,10 @@ var gIdentityHandler = {
   },
 
   onLocationChange() {
-    this._permissionJustRemoved = false;
-    this.updatePermissionHint();
-  },
+    this._permissionReloadHint.setAttribute("hidden", "true");
 
-  updatePermissionHint() {
-    if (!this._permissionList.hasChildNodes() && !this._permissionJustRemoved) {
+    if (!this._permissionList.hasChildNodes()) {
       this._permissionEmptyHint.removeAttribute("hidden");
-    } else {
-      this._permissionEmptyHint.setAttribute("hidden", "true");
-    }
-
-    if (this._permissionJustRemoved) {
-      this._permissionReloadHint.removeAttribute("hidden");
-    } else {
-      this._permissionReloadHint.setAttribute("hidden", "true");
     }
   },
 
@@ -7418,7 +7405,13 @@ var gIdentityHandler = {
       this._permissionList.appendChild(item);
     }
 
-    this.updatePermissionHint();
+    
+    if (!this._permissionList.hasChildNodes() &&
+        this._permissionReloadHint.hasAttribute("hidden")) {
+      this._permissionEmptyHint.removeAttribute("hidden");
+    } else {
+      this._permissionEmptyHint.setAttribute("hidden", "true");
+    }
   },
 
   _handleHeightChange(aFunction, aWillShowReloadHint) {
@@ -7464,8 +7457,9 @@ var gIdentityHandler = {
     let tooltiptext = gNavigatorBundle.getString("permissions.remove.tooltip");
     button.setAttribute("tooltiptext", tooltiptext);
     button.addEventListener("command", () => {
-      this._handleHeightChange(() =>
-        this._permissionList.removeChild(container), !this._permissionJustRemoved);
+      
+      this._handleHeightChange(() => this._permissionList.removeChild(container),
+                               this._permissionReloadHint.hasAttribute("hidden"));
       if (aPermission.inUse &&
           ["camera", "microphone", "screen"].includes(aPermission.id)) {
         let windowId = this._sharingState.windowId;
@@ -7490,8 +7484,8 @@ var gIdentityHandler = {
         mm.sendAsyncMessage("webrtc:StopSharing", windowId);
       }
       SitePermissions.remove(gBrowser.currentURI, aPermission.id);
-      this._permissionJustRemoved = true;
-      this.updatePermissionHint();
+
+      this._permissionReloadHint.removeAttribute("hidden");
 
       
       let histogram = Services.telemetry.getKeyedHistogramById("WEB_PERMISSION_CLEARED");
