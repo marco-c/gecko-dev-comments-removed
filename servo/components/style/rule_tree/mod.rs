@@ -124,7 +124,17 @@ impl RuleTree {
     pub unsafe fn gc(&self) {
         self.root.gc();
     }
+
+    
+    pub unsafe fn maybe_gc(&self) {
+        self.root.maybe_gc();
+    }
 }
+
+
+
+
+const RULE_TREE_GC_INTERVAL: usize = 300;
 
 struct RuleNode {
     
@@ -148,6 +158,14 @@ struct RuleNode {
 
     
     next_free: AtomicPtr<RuleNode>,
+
+    
+    
+    
+    
+    
+    
+    free_count: AtomicUsize,
 }
 
 unsafe impl Sync for RuleTree {}
@@ -169,6 +187,7 @@ impl RuleNode {
             next_sibling: AtomicPtr::new(ptr::null_mut()),
             prev_sibling: AtomicPtr::new(ptr::null_mut()),
             next_free: AtomicPtr::new(ptr::null_mut()),
+            free_count: AtomicUsize::new(0),
         }
     }
 
@@ -183,6 +202,7 @@ impl RuleNode {
             next_sibling: AtomicPtr::new(ptr::null_mut()),
             prev_sibling: AtomicPtr::new(ptr::null_mut()),
             next_free: AtomicPtr::new(FREE_LIST_SENTINEL),
+            free_count: AtomicUsize::new(0),
         }
     }
 
@@ -410,10 +430,12 @@ impl StrongRuleNode {
         debug_assert!(thread_state::get().is_layout() &&
                       !thread_state::get().is_worker());
 
+        
+        
         let me = &*self.ptr;
         debug_assert!(me.is_root());
 
-        let current = self.get().next_free.load(Ordering::SeqCst);
+        let current = me.next_free.load(Ordering::SeqCst);
         if current == FREE_LIST_SENTINEL {
             return None;
         }
@@ -453,7 +475,16 @@ impl StrongRuleNode {
             }
         }
 
+        me.free_count.store(0, Ordering::SeqCst);
+
         debug_assert!(me.next_free.load(Ordering::SeqCst) == FREE_LIST_SENTINEL);
+    }
+
+    unsafe fn maybe_gc(&self) {
+        debug_assert!(self.get().is_root(), "Can't call GC on a non-root node!");
+        if self.get().free_count.load(Ordering::SeqCst) > RULE_TREE_GC_INTERVAL {
+            self.gc();
+        }
     }
 }
 
@@ -519,8 +550,8 @@ impl Drop for StrongRuleNode {
             return;
         }
 
-        let free_list =
-            &unsafe { &*node.root.as_ref().unwrap().ptr() }.next_free;
+        let root = unsafe { &*node.root.as_ref().unwrap().ptr() };
+        let free_list = &root.next_free;
         loop {
             let next_free = free_list.load(Ordering::SeqCst);
             debug_assert!(!next_free.is_null());
@@ -533,6 +564,7 @@ impl Drop for StrongRuleNode {
                                            Ordering::SeqCst);
             if existing == next_free {
                 
+                root.free_count.fetch_add(1, Ordering::Relaxed);
                 break;
             }
         }
