@@ -162,16 +162,7 @@ nsStyleDisplay::HasFixedPosContainingBlockStyleInternal(
     return true;
   }
 
-  if (mozilla::ServoStyleSet::IsInServoTraversal()) {
-    
-    
-    
-    const ServoComputedValues* values =
-      aStyleContext->StyleSource().AsServoComputedValues();
-    return Servo_GetStyleEffects(values)->HasFilters();
-  } else {
-    return aStyleContext->StyleEffects()->HasFilters();
-  }
+  return aStyleContext->ThreadsafeStyleEffects()->HasFilters();
 }
 
 template<class StyleContextLike>
@@ -204,7 +195,7 @@ nsStyleDisplay::HasAbsPosContainingBlockStyleInternal(
 {
   
   
-  NS_ASSERTION(aStyleContext->StyleDisplay() == this,
+  NS_ASSERTION(aStyleContext->ThreadsafeStyleDisplay() == this,
                "unexpected aStyleContext");
   return IsAbsolutelyPositionedStyle() ||
          IsRelativelyPositionedStyle() ||
