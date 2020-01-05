@@ -356,6 +356,10 @@ protected:
   
   
   
+  
+  
+  
+  
   nsresult DoURILoad(nsIURI* aURI,
                      nsIURI* aOriginalURI,
                      bool aLoadReplace,

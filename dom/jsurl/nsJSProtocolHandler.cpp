@@ -161,6 +161,9 @@ nsresult nsJSThunk::EvaluateScript(nsIChannel *aChannel,
         aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
         if (loadInfo && loadInfo->GetForceInheritPrincipal()) {
             principal = loadInfo->PrincipalToInherit();
+            if (!principal) {
+                principal = loadInfo->TriggeringPrincipal();
+            }
         } else {
             
             NS_ASSERTION(!owner, "Non-principal owner?");

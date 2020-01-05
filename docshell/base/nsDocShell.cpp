@@ -1506,6 +1506,26 @@ nsDocShell::LoadURI(nsIURI* aURI,
     principalToInherit = nsNullPrincipal::CreateWithInheritedAttributes(this);
   }
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (!triggeringPrincipal) {
+    if (referrer) {
+      nsresult rv = CreatePrincipalFromReferrer(referrer,
+                                                getter_AddRefs(triggeringPrincipal));
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    else {
+      triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
+    }
+  }
+
   uint32_t flags = 0;
 
   if (inheritPrincipal) {
@@ -5329,7 +5349,8 @@ nsDocShell::LoadErrorPage(nsIURI* aURI, const char16_t* aURL,
 
   return InternalLoad(errorPageURI, nullptr, false, nullptr,
                       mozilla::net::RP_Default,
-                      nullptr, nullptr, INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL, EmptyString(),
+                      nsContentUtils::GetSystemPrincipal(), nullptr,
+                      INTERNAL_LOAD_FLAGS_NONE, EmptyString(),
                       nullptr, NullString(), nullptr, nullptr, LOAD_ERROR_PAGE,
                       nullptr, true, NullString(), this, nullptr, nullptr,
                       nullptr);
@@ -5372,42 +5393,46 @@ nsDocShell::Reload(uint32_t aReloadFlags)
   } else {
     nsCOMPtr<nsIDocument> doc(GetDocument());
 
+    if (!doc) {
+      return NS_OK;
+    }
+
     
     uint32_t flags = INTERNAL_LOAD_FLAGS_NONE;
     nsAutoString srcdoc;
-    nsIPrincipal* principal = nullptr;
-    nsAutoString contentTypeHint;
     nsCOMPtr<nsIURI> baseURI;
     nsCOMPtr<nsIURI> originalURI;
     bool loadReplace = false;
-    if (doc) {
-      principal = doc->NodePrincipal();
-      doc->GetContentType(contentTypeHint);
 
-      if (doc->IsSrcdocDocument()) {
-        doc->GetSrcdocData(srcdoc);
-        flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
-        baseURI = doc->GetBaseURI();
-      }
-      nsCOMPtr<nsIChannel> chan = doc->GetChannel();
-      if (chan) {
-        uint32_t loadFlags;
-        chan->GetLoadFlags(&loadFlags);
-        loadReplace = loadFlags & nsIChannel::LOAD_REPLACE;
-        nsCOMPtr<nsIHttpChannel> httpChan(do_QueryInterface(chan));
-        if (httpChan) {
-          httpChan->GetOriginalURI(getter_AddRefs(originalURI));
-        }
+    nsIPrincipal* triggeringPrincipal = doc->NodePrincipal();
+    nsAutoString contentTypeHint;
+    doc->GetContentType(contentTypeHint);
+
+    if (doc->IsSrcdocDocument()) {
+      doc->GetSrcdocData(srcdoc);
+      flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
+      baseURI = doc->GetBaseURI();
+    }
+    nsCOMPtr<nsIChannel> chan = doc->GetChannel();
+    if (chan) {
+      uint32_t loadFlags;
+      chan->GetLoadFlags(&loadFlags);
+      loadReplace = loadFlags & nsIChannel::LOAD_REPLACE;
+      nsCOMPtr<nsIHttpChannel> httpChan(do_QueryInterface(chan));
+      if (httpChan) {
+        httpChan->GetOriginalURI(getter_AddRefs(originalURI));
       }
     }
+
+    MOZ_ASSERT(triggeringPrincipal, "Need a valid triggeringPrincipal");
 
     rv = InternalLoad(mCurrentURI,
                       originalURI,
                       loadReplace,
                       mReferrerURI,
                       mReferrerPolicy,
-                      principal,
-                      principal,
+                      triggeringPrincipal,
+                      triggeringPrincipal,
                       flags,
                       EmptyString(),   
                       NS_LossyConvertUTF16toASCII(contentTypeHint).get(),
@@ -9655,19 +9680,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
                          nsIDocShell** aDocShell,
                          nsIRequest** aRequest)
 {
-  
-  
-  
-  
-  
-  
-  MOZ_ASSERT(aTriggeringPrincipal ||
-             (!aPrincipalToInherit ||
-              aPrincipalToInherit->GetIsNullPrincipal()));
-  MOZ_ASSERT(aPrincipalToInherit ||
-             (!aTriggeringPrincipal ||
-              aTriggeringPrincipal->GetIsNullPrincipal() ||
-              (aFlags & INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL)));
+  MOZ_ASSERT(aTriggeringPrincipal, "need a valid TriggeringPrincipal");
 
   nsresult rv = NS_OK;
   mOriginalUriString.Truncate();
@@ -9866,26 +9879,12 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   {
     bool inherits;
     
-    if (!principalToInherit && 
-        NS_SUCCEEDED(nsContentUtils::URIInheritsSecurityContext(aURI,
-                                                                &inherits)) &&
-        inherits) {
-      if (aLoadType != LOAD_NORMAL_EXTERNAL && 
-          (aFlags & INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL)) {
-        principalToInherit = GetInheritedPrincipal(true);
-      }
-
-      
-      
-      
-      
-      if (!principalToInherit && 
-          (nsContentUtils::IsSystemPrincipal(aTriggeringPrincipal) ||
-           (!aTriggeringPrincipal && !aReferrer))) {
-        
-        
-        principalToInherit = nsNullPrincipal::CreateWithInheritedAttributes(this);
-      }
+    if (aLoadType != LOAD_NORMAL_EXTERNAL && !principalToInherit &&
+        (aFlags & INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL) &&   
+         NS_SUCCEEDED(nsContentUtils::URIInheritsSecurityContext(aURI,
+                                                                 &inherits)) &&
+         inherits) {
+      principalToInherit = GetInheritedPrincipal(true);
     }
   }
 
@@ -10810,23 +10809,7 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   
   
   
-  
-  nsCOMPtr<nsIPrincipal> triggeringPrincipal = aTriggeringPrincipal;
-
-  
-  
-  MOZ_ASSERT(aContentPolicyType != nsIContentPolicy::TYPE_SUBDOCUMENT ||
-             triggeringPrincipal, "Need a valid triggeringPrincipal");
-
-  if (!triggeringPrincipal) {
-    if (aReferrerURI) {
-      rv = CreatePrincipalFromReferrer(aReferrerURI,
-                                       getter_AddRefs(triggeringPrincipal));
-      NS_ENSURE_SUCCESS(rv, rv);
-    } else {
-      triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
-    }
-  }
+  MOZ_ASSERT(aTriggeringPrincipal, "Need a valid triggeringPrincipal");
 
   bool isSandBoxed = mSandboxFlags & SANDBOXED_ORIGIN;
   
@@ -10863,9 +10846,9 @@ nsDocShell::DoURILoad(nsIURI* aURI,
 
   nsCOMPtr<nsILoadInfo> loadInfo =
     (aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT) ?
-      new LoadInfo(loadingWindow, triggeringPrincipal,
+      new LoadInfo(loadingWindow, aTriggeringPrincipal,
                    securityFlags) :
-      new LoadInfo(loadingPrincipal, triggeringPrincipal, loadingNode,
+      new LoadInfo(loadingPrincipal, aTriggeringPrincipal, loadingNode,
                    securityFlags, aContentPolicyType);
 
   if (aPrincipalToInherit) {
@@ -12487,6 +12470,14 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
     flags |= INTERNAL_LOAD_FLAGS_IS_SRCDOC;
   } else {
     srcdoc = NullString();
+  }
+
+  
+  
+  
+  
+  if (!triggeringPrincipal) {
+    triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
   }
 
   
