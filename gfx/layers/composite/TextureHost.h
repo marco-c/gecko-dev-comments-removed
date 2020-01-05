@@ -543,17 +543,6 @@ public:
   PTextureParent* GetIPDLActor();
 
   
-
-
-
-  virtual LayerRenderState GetRenderState()
-  {
-    
-    
-    return LayerRenderState();
-  }
-
-  
   
   virtual void OnShutdown() {}
 

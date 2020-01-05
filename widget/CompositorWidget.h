@@ -25,7 +25,6 @@ class Compositor;
 class LayerManager;
 class LayerManagerComposite;
 class Compositor;
-class Composer2D;
 } 
 namespace gfx {
 class DrawTarget;
@@ -201,17 +200,6 @@ public:
 
 
   virtual uint32_t GetGLFrameBufferFormat();
-
-  
-
-
-
-
-
-
-  virtual layers::Composer2D* GetComposer2D() {
-    return nullptr;
-  }
 
   
 
