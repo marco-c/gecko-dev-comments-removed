@@ -5,6 +5,8 @@
 
 
 #include "GroupedSHistory.h"
+
+#include "mozilla/dom/Promise.h"
 #include "TabParent.h"
 #include "PartialSHistory.h"
 
