@@ -53,6 +53,10 @@ task_description_schema = Schema({
 
     
     
+    Optional('index-paths'): [basestring],
+
+    
+    
     Optional('scopes'): [basestring],
 
     
@@ -855,6 +859,7 @@ def build_task(config, tasks):
             'task': task_def,
             'dependencies': task.get('dependencies', {}),
             'attributes': attributes,
+            'index-paths': task.get('index-paths'),
             'when': task.get('when', {}),
         }
 
