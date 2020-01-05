@@ -116,8 +116,7 @@ function run_test() {
   run_next_test();
 }
 
-
-add_task({ skip_if: () => true }, function* test_sort_date_site_grouping() {
+add_task(function* test_sort_date_site_grouping() {
   yield task_populateDB(testData);
 
   

@@ -949,10 +949,6 @@ nsresult
 nsNavHistory::AsciiHostNameFromHostString(const nsACString& aHostName,
                                           nsACString& aAscii)
 {
-  aAscii.Truncate();
-  if (aHostName.IsEmpty()) {
-    return NS_OK;
-  }
   
   nsAutoCString fakeURL("http://");
   fakeURL.Append(aHostName);
