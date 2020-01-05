@@ -338,6 +338,7 @@ struct ReflowInput : public SizeComputationInput {
   const ReflowInput* mParentReflowInput;
 
   
+  
   nsFloatManager* mFloatManager;
 
   

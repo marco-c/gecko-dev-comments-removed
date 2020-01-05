@@ -381,7 +381,11 @@ public:
 
 protected:
   
+
+  
+  
   nsFloatManager* mFloatManager;
+
   const nsStyleText* mStyleText; 
   const ReflowInput* mBlockReflowInput;
 

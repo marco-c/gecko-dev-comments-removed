@@ -979,28 +979,28 @@ nsAutoFloatManager::~nsAutoFloatManager()
       }
     }
 #endif
-
-    delete mNew;
   }
 }
 
 void
 nsAutoFloatManager::CreateFloatManager(nsPresContext *aPresContext)
 {
+  MOZ_ASSERT(!mNew, "Redundant call to CreateFloatManager!");
+
   
   
   
-  mNew = new nsFloatManager(aPresContext->PresShell(),
-                            mReflowInput.GetWritingMode());
+  mNew = MakeUnique<nsFloatManager>(aPresContext->PresShell(),
+                                    mReflowInput.GetWritingMode());
 
 #ifdef DEBUG
   if (nsBlockFrame::gNoisyFloatManager) {
     printf("constructed new float manager %p (replacing %p)\n",
-           mNew, mReflowInput.mFloatManager);
+           mNew.get(), mReflowInput.mFloatManager);
   }
 #endif
 
   
   mOld = mReflowInput.mFloatManager;
-  mReflowInput.mFloatManager = mNew;
+  mReflowInput.mFloatManager = mNew.get();
 }
