@@ -578,6 +578,11 @@ ContentChild::Init(MessageLoop* aIOLoop,
   GetIPCChannel()->SetChannelFlags(MessageChannel::REQUIRE_A11Y_REENTRY);
 #endif
 
+  
+  
+  
+  GetIPCChannel()->SendBuildID();
+
 #ifdef MOZ_X11
   
   

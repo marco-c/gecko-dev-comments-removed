@@ -153,6 +153,8 @@ class MessageChannel : HasResultCodes
     
     bool Send(Message* aMsg);
 
+    void SendBuildID();
+
     
     
     bool Echo(Message* aMsg);
