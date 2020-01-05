@@ -4,7 +4,7 @@
 
 
 
-use num::Float;
+use num_traits::Float;
 use std::ops::Deref;
 
 
