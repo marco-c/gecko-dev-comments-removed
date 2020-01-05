@@ -551,7 +551,7 @@ SplitCriticalEdgesForBlock(MIRGraph& graph, MBasicBlock* block)
 
         
         
-        MBasicBlock* split = MBasicBlock::NewSplitEdge(graph, block->info(), block, i, target);
+        MBasicBlock* split = MBasicBlock::NewSplitEdge(graph, block, i, target);
         if (!split)
             return false;
     }
