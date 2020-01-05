@@ -383,7 +383,6 @@ protected:
     int32_t                      mHTTPSProxyPort;
 
     
-    
     nsCString                    mSOCKSProxyTarget;
     int32_t                      mSOCKSProxyPort;
     int32_t                      mSOCKSProxyVersion;
