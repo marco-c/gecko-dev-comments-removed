@@ -6,17 +6,21 @@
 
 
 #[cfg(feature = "nightly")]
-use std::sync::atomic::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+use std::sync::atomic::{AtomicUsize, Ordering};
 #[cfg(not(feature = "nightly"))]
-use stable::{AtomicUsize, ATOMIC_USIZE_INIT, Ordering};
+use stable::{AtomicUsize, Ordering};
 use std::time::Instant;
 use std::ptr;
 use std::mem;
 use winapi;
 use kernel32;
 
+const STATE_UNPARKED: usize = 0;
+const STATE_PARKED: usize = 1;
+const STATE_TIMED_OUT: usize = 2;
+
 #[allow(non_snake_case)]
-struct KeyedEvent {
+pub struct KeyedEvent {
     handle: winapi::HANDLE,
     NtReleaseKeyedEvent: extern "system" fn(EventHandle: winapi::HANDLE,
                                             Key: winapi::PVOID,
@@ -42,51 +46,27 @@ impl KeyedEvent {
         (self.NtReleaseKeyedEvent)(self.handle, key, 0, ptr::null_mut())
     }
 
-    unsafe fn get() -> &'static KeyedEvent {
-        static KEYED_EVENT: AtomicUsize = ATOMIC_USIZE_INIT;
-
-        
-        let keyed_event = KEYED_EVENT.load(Ordering::Acquire);
-        if keyed_event != 0 {
-            return &*(keyed_event as *const KeyedEvent);
-        };
-
-        
-        let keyed_event = Box::into_raw(KeyedEvent::create());
-        match KEYED_EVENT.compare_exchange(0,
-                                           keyed_event as usize,
-                                           Ordering::Release,
-                                           Ordering::Relaxed) {
-            Ok(_) => &*(keyed_event as *const KeyedEvent),
-            Err(x) => {
-                
-                Box::from_raw(keyed_event);
-                &*(x as *const KeyedEvent)
-            }
-        }
-    }
-
     #[allow(non_snake_case)]
-    unsafe fn create() -> Box<KeyedEvent> {
+    pub unsafe fn create() -> Option<KeyedEvent> {
         let ntdll = kernel32::GetModuleHandleA(b"ntdll.dll\0".as_ptr() as winapi::LPCSTR);
         if ntdll.is_null() {
-            panic!("Could not get module handle for ntdll.dll");
+            return None;
         }
 
         let NtCreateKeyedEvent =
             kernel32::GetProcAddress(ntdll, b"NtCreateKeyedEvent\0".as_ptr() as winapi::LPCSTR);
         if NtCreateKeyedEvent.is_null() {
-            panic!("Entry point NtCreateKeyedEvent not found in ntdll.dll");
+            return None;
         }
         let NtReleaseKeyedEvent =
             kernel32::GetProcAddress(ntdll, b"NtReleaseKeyedEvent\0".as_ptr() as winapi::LPCSTR);
         if NtReleaseKeyedEvent.is_null() {
-            panic!("Entry point NtReleaseKeyedEvent not found in ntdll.dll");
+            return None;
         }
         let NtWaitForKeyedEvent =
             kernel32::GetProcAddress(ntdll, b"NtWaitForKeyedEvent\0".as_ptr() as winapi::LPCSTR);
         if NtWaitForKeyedEvent.is_null() {
-            panic!("Entry point NtWaitForKeyedEvent not found in ntdll.dll");
+            return None;
         }
 
         let NtCreateKeyedEvent: extern "system" fn(KeyedEventHandle: winapi::PHANDLE,
@@ -101,76 +81,37 @@ impl KeyedEvent {
                                         ptr::null_mut(),
                                         0);
         if status != winapi::STATUS_SUCCESS {
-            panic!("NtCreateKeyedEvent failed: {:x}", status);
+            return None;
         }
 
-        Box::new(KeyedEvent {
+        Some(KeyedEvent {
             handle: handle,
             NtReleaseKeyedEvent: mem::transmute(NtReleaseKeyedEvent),
             NtWaitForKeyedEvent: mem::transmute(NtWaitForKeyedEvent),
         })
     }
-}
 
-impl Drop for KeyedEvent {
-    fn drop(&mut self) {
-        unsafe {
-            let ok = kernel32::CloseHandle(self.handle);
-            debug_assert_eq!(ok, winapi::TRUE);
-        }
-    }
-}
-
-const STATE_UNPARKED: usize = 0;
-const STATE_PARKED: usize = 1;
-const STATE_TIMED_OUT: usize = 2;
-
-
-pub struct ThreadParker {
-    key: AtomicUsize,
-    keyed_event: &'static KeyedEvent,
-}
-
-impl ThreadParker {
-    pub fn new() -> ThreadParker {
-        
-        
-        
-        ThreadParker {
-            key: AtomicUsize::new(STATE_UNPARKED),
-            keyed_event: unsafe { KeyedEvent::get() },
-        }
+    pub unsafe fn prepare_park(&'static self, key: &AtomicUsize) {
+        key.store(STATE_PARKED, Ordering::Relaxed);
     }
 
-    
-    pub unsafe fn prepare_park(&self) {
-        self.key.store(STATE_PARKED, Ordering::Relaxed);
+    pub unsafe fn timed_out(&'static self, key: &AtomicUsize) -> bool {
+        key.load(Ordering::Relaxed) == STATE_TIMED_OUT
     }
 
-    
-    
-    pub unsafe fn timed_out(&self) -> bool {
-        self.key.load(Ordering::Relaxed) == STATE_TIMED_OUT
-    }
-
-    
-    
-    pub unsafe fn park(&self) {
-        let status = self.keyed_event.wait_for(self as *const _ as winapi::PVOID, ptr::null_mut());
+    pub unsafe fn park(&'static self, key: &AtomicUsize) {
+        let status = self.wait_for(key as *const _ as winapi::PVOID, ptr::null_mut());
         debug_assert_eq!(status, winapi::STATUS_SUCCESS);
     }
 
-    
-    
-    
-    pub unsafe fn park_until(&self, timeout: Instant) -> bool {
+    pub unsafe fn park_until(&'static self, key: &AtomicUsize, timeout: Instant) -> bool {
         let now = Instant::now();
         if timeout <= now {
             
             
             
-            if self.key.swap(STATE_TIMED_OUT, Ordering::Relaxed) == STATE_UNPARKED {
-                self.park();
+            if key.swap(STATE_TIMED_OUT, Ordering::Relaxed) == STATE_UNPARKED {
+                self.park(key);
                 return true;
             }
             return false;
@@ -186,12 +127,12 @@ impl ThreadParker {
             Some(x) => x,
             None => {
                 
-                self.park();
+                self.park(key);
                 return true;
             }
         };
 
-        let status = self.keyed_event.wait_for(self as *const _ as winapi::PVOID, &mut nt_timeout);
+        let status = self.wait_for(key as *const _ as winapi::PVOID, &mut nt_timeout);
         if status == winapi::STATUS_SUCCESS {
             return true;
         }
@@ -199,22 +140,34 @@ impl ThreadParker {
 
         
         
-        if self.key.swap(STATE_TIMED_OUT, Ordering::Relaxed) == STATE_UNPARKED {
-            self.park();
+        if key.swap(STATE_TIMED_OUT, Ordering::Relaxed) == STATE_UNPARKED {
+            self.park(key);
             return true;
         }
         false
     }
 
-    
-    
-    
-    pub unsafe fn unpark_lock(&self) -> UnparkHandle {
+    pub unsafe fn unpark_lock(&'static self, key: &AtomicUsize) -> UnparkHandle {
         
-        if self.key.swap(STATE_UNPARKED, Ordering::Relaxed) == STATE_PARKED {
-            UnparkHandle { thread_parker: self }
+        if key.swap(STATE_UNPARKED, Ordering::Relaxed) == STATE_PARKED {
+            UnparkHandle {
+                key: key,
+                keyed_event: self,
+            }
         } else {
-            UnparkHandle { thread_parker: ptr::null() }
+            UnparkHandle {
+                key: ptr::null(),
+                keyed_event: self,
+            }
+        }
+    }
+}
+
+impl Drop for KeyedEvent {
+    fn drop(&mut self) {
+        unsafe {
+            let ok = kernel32::CloseHandle(self.handle);
+            debug_assert_eq!(ok, winapi::TRUE);
         }
     }
 }
@@ -223,17 +176,16 @@ impl ThreadParker {
 
 
 pub struct UnparkHandle {
-    thread_parker: *const ThreadParker,
+    key: *const AtomicUsize,
+    keyed_event: &'static KeyedEvent,
 }
 
 impl UnparkHandle {
     
     
     pub unsafe fn unpark(self) {
-        if !self.thread_parker.is_null() {
-            let status = (*self.thread_parker)
-                .keyed_event
-                .release(self.thread_parker as winapi::PVOID);
+        if !self.key.is_null() {
+            let status = self.keyed_event.release(self.key as winapi::PVOID);
             debug_assert_eq!(status, winapi::STATUS_SUCCESS);
         }
     }
