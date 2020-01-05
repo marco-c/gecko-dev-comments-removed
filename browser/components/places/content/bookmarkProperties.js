@@ -340,10 +340,10 @@ var BookmarkPropertiesPanel = {
       
       if (this._itemType == BOOKMARK_ITEM) {
         this._element("locationField")
-            .addEventListener("input", this, false);
+            .addEventListener("input", this);
         if (this._isAddKeywordDialog) {
           this._element("keywordField")
-              .addEventListener("input", this, false);
+              .addEventListener("input", this);
         }
       }
     }
@@ -425,7 +425,7 @@ var BookmarkPropertiesPanel = {
     
     
     this._element("locationField")
-        .removeEventListener("input", this, false);
+        .removeEventListener("input", this);
   },
 
   onDialogAccept() {

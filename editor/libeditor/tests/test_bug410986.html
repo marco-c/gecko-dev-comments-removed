@@ -24,7 +24,7 @@
 var gPasteEvents = 0;
 document.getElementById("editor").addEventListener("paste", function() {
   ++gPasteEvents;
-}, false);
+});
 
 SimpleTest.waitForExplicitFinish();
 SimpleTest.waitForFocus(function() {

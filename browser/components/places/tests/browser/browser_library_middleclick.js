@@ -213,7 +213,7 @@ function test() {
   ok(PlacesUIUtils, "PlacesUIUtils in context");
 
   
-  gBrowser.tabContainer.addEventListener("TabOpen", gTabsListener, false);
+  gBrowser.tabContainer.addEventListener("TabOpen", gTabsListener);
   gBrowser.addTabsProgressListener(gTabsListener);
 
   
@@ -252,7 +252,7 @@ function runNextTest() {
     gLibrary.close();
 
     
-    gBrowser.tabContainer.removeEventListener("TabOpen", gTabsListener, false);
+    gBrowser.tabContainer.removeEventListener("TabOpen", gTabsListener);
     gBrowser.removeTabsProgressListener(gTabsListener);
 
     

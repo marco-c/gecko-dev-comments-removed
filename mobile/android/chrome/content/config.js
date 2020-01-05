@@ -120,7 +120,7 @@ var NewPrefDialog = {
 
     this._prefNameInputElt.focus();
 
-    window.addEventListener("keypress", this.handleKeypress, false);
+    window.addEventListener("keypress", this.handleKeypress);
   },
 
   
@@ -128,7 +128,7 @@ var NewPrefDialog = {
     this._newPrefsDialog.classList.remove("show");
     this._prefsShield.removeAttribute("shown");
 
-    window.removeEventListener("keypress", this.handleKeypress, false);
+    window.removeEventListener("keypress", this.handleKeypress);
   },
 
   
@@ -346,13 +346,13 @@ var AboutConfig = {
     
     if (currentSelection) {
       currentSelection.classList.remove("selected");
-      currentSelection.removeEventListener("keypress", this.handleKeypress, false);
+      currentSelection.removeEventListener("keypress", this.handleKeypress);
     }
 
     
     if (aSelection) {
       aSelection.classList.add("selected");
-      aSelection.addEventListener("keypress", this.handleKeypress, false);
+      aSelection.addEventListener("keypress", this.handleKeypress);
     }
   },
 
@@ -584,16 +584,14 @@ Pref.prototype = {
       this.li.addEventListener("click",
         function(aEvent) {
           AboutConfig.selected = AboutConfig.getLINodeForEvent(aEvent);
-        },
-        false
+        }
       );
 
       
       this.li.addEventListener("contextmenu",
         function(aEvent) {
           AboutConfig.contextMenuLINode = AboutConfig.getLINodeForEvent(aEvent);
-        },
-        false
+        }
       );
 
       this.li.setAttribute("contextmenu", "prefs-context-menu");

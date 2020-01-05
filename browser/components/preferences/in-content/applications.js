@@ -910,7 +910,7 @@ var gApplicationsPane = {
     setEventListener("actionColumn", "click", gApplicationsPane.sort);
 
     
-    window.addEventListener("unload", this, false);
+    window.addEventListener("unload", this);
 
     
     
@@ -946,7 +946,7 @@ var gApplicationsPane = {
   },
 
   destroy() {
-    window.removeEventListener("unload", this, false);
+    window.removeEventListener("unload", this);
     this._prefSvc.removeObserver(PREF_SHOW_PLUGINS_IN_LIST, this);
     this._prefSvc.removeObserver(PREF_HIDE_PLUGINS_WITHOUT_EXTENSIONS, this);
     this._prefSvc.removeObserver(PREF_FEED_SELECTED_APP, this);

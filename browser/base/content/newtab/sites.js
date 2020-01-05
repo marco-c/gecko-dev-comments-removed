@@ -292,9 +292,9 @@ Site.prototype = {
 
   _addEventHandlers: function Site_addEventHandlers() {
     
-    this._node.addEventListener("dragstart", this, false);
-    this._node.addEventListener("dragend", this, false);
-    this._node.addEventListener("mouseover", this, false);
+    this._node.addEventListener("dragstart", this);
+    this._node.addEventListener("dragend", this);
+    this._node.addEventListener("mouseover", this);
 
     
     
@@ -425,7 +425,7 @@ Site.prototype = {
   handleEvent: function Site_handleEvent(aEvent) {
     switch (aEvent.type) {
       case "mouseover":
-        this._node.removeEventListener("mouseover", this, false);
+        this._node.removeEventListener("mouseover", this);
         this._speculativeConnect();
         break;
       case "dragstart":

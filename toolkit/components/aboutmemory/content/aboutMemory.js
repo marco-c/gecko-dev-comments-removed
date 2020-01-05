@@ -1427,7 +1427,7 @@ function appendProcessAboutMemoryElements(aP, aN, aProcess, aTrees,
       document.documentElement.scrollTop =
         document.querySelector(event.target.href).offsetTop;
       event.preventDefault();
-    }, false);
+    });
 
     
     appendElementWithText(aP, "span", "", "\n");

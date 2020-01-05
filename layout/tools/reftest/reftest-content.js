@@ -485,7 +485,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements) {
         
         removeEventListener("MozAfterPaint", AfterPaintListener, false);
         if (contentRootElement) {
-            contentRootElement.removeEventListener("DOMAttrModified", AttrModifiedListener, false);
+            contentRootElement.removeEventListener("DOMAttrModified", AttrModifiedListener);
         }
         gExplicitPendingPaintsCompleteHook = null;
         gTimeoutHook = null;
@@ -645,7 +645,7 @@ function WaitForTestEnd(contentRootElement, inPrintMode, spellCheckedElements) {
     
     
     if (contentRootElement) {
-      contentRootElement.addEventListener("DOMAttrModified", AttrModifiedListener, false);
+      contentRootElement.addEventListener("DOMAttrModified", AttrModifiedListener);
     }
     gExplicitPendingPaintsCompleteHook = ExplicitPaintsCompleteListener;
     gTimeoutHook = RemoveListeners;

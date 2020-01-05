@@ -75,7 +75,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
  
  prefObserver.observe();
-}, false);
+});
 
 function openPrivateWindow() {
  

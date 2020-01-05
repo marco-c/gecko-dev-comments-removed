@@ -181,8 +181,8 @@ function* doTest(aBrowser) {
       };
 
       
-      audioTrack.addEventListener("load", trackListener, false);
-      audio.addEventListener("canplaythrough", audioListener, false);
+      audioTrack.addEventListener("load", trackListener);
+      audio.addEventListener("canplaythrough", audioListener);
 
       
       audioSource.setAttribute("src", audioURL + URLSuffix);
@@ -205,7 +205,7 @@ function* doTest(aBrowser) {
       };
 
       
-      video.addEventListener("canplaythrough", listener, false);
+      video.addEventListener("canplaythrough", listener);
 
       
       video.setAttribute("src", videoURL + URLSuffix);

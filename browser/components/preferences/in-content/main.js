@@ -40,7 +40,7 @@ var gMainPane = {
 
     
     this._updateUseCurrentButton();
-    window.addEventListener("focus", this._updateUseCurrentButton.bind(this), false);
+    window.addEventListener("focus", this._updateUseCurrentButton.bind(this));
 
     this.updateBrowserStartupLastSession();
 

@@ -116,9 +116,9 @@ function test() {
 
   function cleanup() {
     
-    gBrowser.tabContainer.removeEventListener("SSTabRestoring", onSSTabRestoring, false);
+    gBrowser.tabContainer.removeEventListener("SSTabRestoring", onSSTabRestoring);
     gBrowser.tabContainer.removeEventListener("SSTabRestored", onSSTabRestored, true);
-    gBrowser.tabContainer.removeEventListener("TabOpen", onTabOpen, false);
+    gBrowser.tabContainer.removeEventListener("TabOpen", onTabOpen);
     
     
     
@@ -129,9 +129,9 @@ function test() {
   }
 
   
-  gBrowser.tabContainer.addEventListener("SSTabRestoring", onSSTabRestoring, false);
+  gBrowser.tabContainer.addEventListener("SSTabRestoring", onSSTabRestoring);
   gBrowser.tabContainer.addEventListener("SSTabRestored", onSSTabRestored, true);
-  gBrowser.tabContainer.addEventListener("TabOpen", onTabOpen, false);
+  gBrowser.tabContainer.addEventListener("TabOpen", onTabOpen);
   
   ss.setBrowserState(JSON.stringify(state));
 }

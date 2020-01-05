@@ -140,7 +140,7 @@ const DownloadsPanel = {
     }
     this._state = this.kStateHidden;
 
-    window.addEventListener("unload", this.onWindowUnload, false);
+    window.addEventListener("unload", this.onWindowUnload);
 
     
     
@@ -175,7 +175,7 @@ const DownloadsPanel = {
       return;
     }
 
-    window.removeEventListener("unload", this.onWindowUnload, false);
+    window.removeEventListener("unload", this.onWindowUnload);
 
     
     this.hidePanel();
@@ -439,12 +439,12 @@ const DownloadsPanel = {
 
   _attachEventListeners() {
     
-    this.panel.addEventListener("keydown", this, false);
+    this.panel.addEventListener("keydown", this);
     
     
-    this.panel.addEventListener("keypress", this, false);
+    this.panel.addEventListener("keypress", this);
     
-    this.panel.addEventListener("popupshown", this, false);
+    this.panel.addEventListener("popupshown", this);
   },
 
   
@@ -452,9 +452,9 @@ const DownloadsPanel = {
 
 
   _unattachEventListeners() {
-    this.panel.removeEventListener("keydown", this, false);
-    this.panel.removeEventListener("keypress", this, false);
-    this.panel.removeEventListener("popupshown", this, false);
+    this.panel.removeEventListener("keydown", this);
+    this.panel.removeEventListener("keypress", this);
+    this.panel.removeEventListener("popupshown", this);
   },
 
   _onKeyPress(aEvent) {

@@ -70,8 +70,7 @@ exports.translateElement = translateElement;
 
 function onDocumentReady2Translate(event) {
   let document = event.target;
-  document.removeEventListener("DOMContentLoaded", onDocumentReady2Translate,
-                               false);
+  document.removeEventListener("DOMContentLoaded", onDocumentReady2Translate);
 
   translateElement(document);
 
@@ -108,8 +107,7 @@ function onContentWindow(document) {
     console.exception(e);
   }
   
-  document.addEventListener("DOMContentLoaded", onDocumentReady2Translate,
-                            false);
+  document.addEventListener("DOMContentLoaded", onDocumentReady2Translate);
 }
 
 

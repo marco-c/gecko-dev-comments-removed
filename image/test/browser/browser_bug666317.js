@@ -56,12 +56,12 @@ function forceDecodeImg() {
 function runAfterAsyncEvents(aCallback) {
   function handlePostMessage(aEvent) {
     if (aEvent.data == 'next') {
-      window.removeEventListener('message', handlePostMessage, false);
+      window.removeEventListener('message', handlePostMessage);
       aCallback();
     }
   }
 
-  window.addEventListener('message', handlePostMessage, false);
+  window.addEventListener('message', handlePostMessage);
 
   
   

@@ -161,7 +161,7 @@ function onStateRestored(aSubject, aTopic, aData) {
 
   let newWin = openDialog(location, "_blank", "chrome,all,dialog=no", "http://example.com");
   newWin.addEventListener("load", function(aEvent) {
-    newWin.removeEventListener("load", arguments.callee, false);
+    newWin.removeEventListener("load", arguments.callee);
 
     promiseBrowserLoaded(newWin.gBrowser.selectedBrowser).then(() => {
       
@@ -169,9 +169,9 @@ function onStateRestored(aSubject, aTopic, aData) {
         newWin.gBrowser.pinTab(newWin.gBrowser.selectedTab);
 
       newWin.addEventListener("unload", function () {
-        newWin.removeEventListener("unload", arguments.callee, false);
+        newWin.removeEventListener("unload", arguments.callee);
         onWindowUnloaded();
-      }, false);
+      });
       
       
       
@@ -196,7 +196,7 @@ function onStateRestored(aSubject, aTopic, aData) {
         newWin.BrowserTryToCloseWindow();
       }
     });
-  }, false);
+  });
 }
 
 
@@ -219,7 +219,7 @@ function onWindowUnloaded() {
   
   let newWin = openDialog(location, "_blank", "chrome,all,dialog=no", "about:mozilla");
   newWin.addEventListener("load", function(aEvent) {
-    newWin.removeEventListener("load", arguments.callee, false);
+    newWin.removeEventListener("load", arguments.callee);
 
     newWin.gBrowser.selectedBrowser.addEventListener("load", function () {
       newWin.gBrowser.selectedBrowser.removeEventListener("load", arguments.callee, true);
@@ -229,7 +229,7 @@ function onWindowUnloaded() {
       afterTestCleanup(newWin);
     }, true);
 
-  }, false);
+  });
 }
 
 function afterTestCleanup(aNewWin) {

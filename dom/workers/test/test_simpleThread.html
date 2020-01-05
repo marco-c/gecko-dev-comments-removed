@@ -41,7 +41,7 @@
         ok(false, "Unexpected message:" + event.data);
         SimpleTest.finish();
     }
-  }, false);
+  });
 
   var gotErrors = false;
   worker.onerror = function(event) {

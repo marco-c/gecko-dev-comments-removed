@@ -28,7 +28,7 @@ var pktPanelMessaging = (function() {
 			
 			
 
-		}, false);
+		});
 
 	}
 

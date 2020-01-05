@@ -14,13 +14,13 @@ function test() {
 
   let numVisBeforeHide, numVisAfterHide;
   gBrowser.tabContainer.addEventListener("TabSelect", function() {
-    gBrowser.tabContainer.removeEventListener("TabSelect", arguments.callee, false);
+    gBrowser.tabContainer.removeEventListener("TabSelect", arguments.callee);
 
     
     numVisBeforeHide = gBrowser.visibleTabs.length;
     gBrowser.hideTab(testTab);
     numVisAfterHide = gBrowser.visibleTabs.length;
-  }, false);
+  });
   gBrowser.removeTab(testTab, {animate: true});
 
   

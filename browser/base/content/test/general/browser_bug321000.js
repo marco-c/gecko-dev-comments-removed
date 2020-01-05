@@ -50,7 +50,7 @@ function test_paste(aCurrentTest) {
   var inputListener = {
     test: aCurrentTest,
     handleEvent(event) {
-      element.removeEventListener(event.type, this, false);
+      element.removeEventListener(event.type, this);
 
       is(element.value, this.test.expected, this.test.desc);
 
@@ -59,7 +59,7 @@ function test_paste(aCurrentTest) {
       setTimeout(next_test, 0);
     }
   }
-  element.addEventListener("input", inputListener, false);
+  element.addEventListener("input", inputListener);
 
   
   window.focus();
@@ -68,13 +68,13 @@ function test_paste(aCurrentTest) {
   
   info("About to focus " + element.id);
   element.addEventListener("focus", function() {
-    element.removeEventListener("focus", arguments.callee, false);
+    element.removeEventListener("focus", arguments.callee);
     executeSoon(function() {
       
       
       info("Pasting into " + element.id);
       EventUtils.synthesizeKey("v", { accelKey: true });
     });
-  }, false);
+  });
   element.focus();
 }

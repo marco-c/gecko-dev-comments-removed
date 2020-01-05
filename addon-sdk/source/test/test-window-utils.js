@@ -42,7 +42,7 @@ exports.testWindowTracker = function(assert, done) {
   assert.pass('window was created');
 
   myWindow.addEventListener("load", function onload() {
-    myWindow.removeEventListener("load", onload, false);
+    myWindow.removeEventListener("load", onload);
     assert.pass("test window has opened");
 
     
@@ -61,7 +61,7 @@ exports.testWindowTracker = function(assert, done) {
         }
       }
     });
-  }, false);
+  });
 };
 
 exports['test window watcher untracker'] = function(assert, done) {
@@ -148,10 +148,10 @@ exports['test window watcher unregs 4 loading wins'] = function(assert, done) {
       myWindow.addEventListener("unload", function() {
         
         done();
-      }, false);
+      });
       myWindow.close();
     }, 0);
-  }, false);
+  });
 }
 
 exports['test window watcher without untracker'] = function(assert, done) {
@@ -229,13 +229,13 @@ exports.testWindowIterator = function(assert, done) {
 
   
   window.addEventListener("load", function onload() {
-    window.addEventListener("load", onload, false);
+    window.addEventListener("load", onload);
     assert.ok(toArray(windowUtils.windowIterator()).indexOf(window) !== -1,
               "window is now in windowIterator()");
 
     
     close(window).then(done);
-  }, false);
+  });
 };
 
 exports.testIgnoreClosingWindow = function(assert, done) {
@@ -247,7 +247,7 @@ exports.testIgnoreClosingWindow = function(assert, done) {
   assert.equal(windows().length, 2, "Two windows open");
 
   window.addEventListener("load", function onload() {
-    window.addEventListener("load", onload, false);
+    window.addEventListener("load", onload);
 
     assert.equal(windows().length, 2, "Two windows open");
 
@@ -260,7 +260,7 @@ exports.testIgnoreClosingWindow = function(assert, done) {
 
     assert.equal(windows().length, 1, "Only one window open");
     checked = true;
-  }, false);
+  });
 };
 
 require("sdk/test").run(exports);

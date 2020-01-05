@@ -17,10 +17,10 @@ add_task(function* test_switchtab_decodeuri() {
   yield new Promise((resolve, reject) => {
     
     gBrowser.tabContainer.addEventListener("TabSelect", function select() {
-      gBrowser.tabContainer.removeEventListener("TabSelect", select, false);
+      gBrowser.tabContainer.removeEventListener("TabSelect", select);
       is(gBrowser.selectedTab, tab, "Should have switched to the right tab");
       resolve();
-    }, false);
+    });
     EventUtils.synthesizeKey("VK_RETURN", { });
   });
 

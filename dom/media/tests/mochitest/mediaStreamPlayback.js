@@ -196,12 +196,12 @@ LocalMediaStreamPlayback.prototype = Object.create(MediaStreamPlayback.prototype
 
 
         var endedCallback = () => {
-          this.mediaElement.removeEventListener('ended', endedCallback, false);
+          this.mediaElement.removeEventListener('ended', endedCallback);
           ok(true, "ended event successfully fired");
           resolve();
         };
 
-        this.mediaElement.addEventListener('ended', endedCallback, false);
+        this.mediaElement.addEventListener('ended', endedCallback);
         this.mediaStream.stop();
 
         

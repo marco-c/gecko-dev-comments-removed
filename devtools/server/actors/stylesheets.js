@@ -326,12 +326,12 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     let deferred = promise.defer();
 
     let onSheetLoaded = (event) => {
-      this.ownerNode.removeEventListener("load", onSheetLoaded, false);
+      this.ownerNode.removeEventListener("load", onSheetLoaded);
 
       deferred.resolve(this.rawSheet.cssRules);
     };
 
-    this.ownerNode.addEventListener("load", onSheetLoaded, false);
+    this.ownerNode.addEventListener("load", onSheetLoaded);
 
     
     this._cssRules = deferred.promise;

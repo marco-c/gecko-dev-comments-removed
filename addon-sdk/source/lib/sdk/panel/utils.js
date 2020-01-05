@@ -331,7 +331,7 @@ function make(document, options) {
   for (let event of ["popupshowing", "popuphiding", "popupshown", "popuphidden"])
     panel.addEventListener(event, onPanelStateChange);
 
-  panel.addEventListener("click", onPanelClick, false);
+  panel.addEventListener("click", onPanelClick);
 
   
   

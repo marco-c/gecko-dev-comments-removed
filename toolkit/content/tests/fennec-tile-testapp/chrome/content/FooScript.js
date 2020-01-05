@@ -208,7 +208,7 @@ BrowserView.prototype = {
       currentBrowser.mPanY = ws._viewingRect.y;
 
       
-      currentBrowser.removeEventListener("MozAfterPaint", this.handleMozAfterPaint, false);
+      currentBrowser.removeEventListener("MozAfterPaint", this.handleMozAfterPaint);
       currentBrowser.setAttribute("type", "content");
       currentBrowser.docShell.isOffScreenBrowser = false;
     }
@@ -219,7 +219,7 @@ BrowserView.prototype = {
       browser.docShell.isOffScreenBrowser = true;
 
     
-    browser.addEventListener("MozAfterPaint", this.handleMozAfterPaint, false);
+    browser.addEventListener("MozAfterPaint", this.handleMozAfterPaint);
 
     this._browser = browser;
 

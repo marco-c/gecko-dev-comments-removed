@@ -159,15 +159,15 @@ this.Tabs = function() {
 
   let registerListenersForWindow = function(window) {
     for (let topic of topics) {
-      window.addEventListener(topic, update, false);
+      window.addEventListener(topic, update);
     }
-    window.addEventListener("unload", unregisterListeners, false);
+    window.addEventListener("unload", unregisterListeners);
   };
 
   let unregisterListenersForWindow = function(window) {
-    window.removeEventListener("unload", unregisterListeners, false);
+    window.removeEventListener("unload", unregisterListeners);
     for (let topic of topics) {
-      window.removeEventListener(topic, update, false);
+      window.removeEventListener(topic, update);
     }
   };
 
@@ -180,13 +180,13 @@ this.Tabs = function() {
       switch (topic) {
         case "domwindowopened":
           let onLoad = () => {
-            subject.removeEventListener("load", onLoad, false);
+            subject.removeEventListener("load", onLoad);
             
             registerListenersForWindow(subject);
           };
 
           
-          subject.addEventListener("load", onLoad, false);
+          subject.addEventListener("load", onLoad);
           break;
       }
     }

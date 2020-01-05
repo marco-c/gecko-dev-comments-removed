@@ -53,7 +53,7 @@ var test = function (isContent) {
         
         
         window.setTimeout(function() {
-          div.addEventListener(eventType, event => handleEvent(event, prefVal), false);
+          div.addEventListener(eventType, event => handleEvent(event, prefVal));
           
           
           window.setTimeout(function () {

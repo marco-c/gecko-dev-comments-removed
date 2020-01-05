@@ -141,8 +141,8 @@ ToolSidebar.prototype = {
     this._allTabsBtn.appendChild(menuPopup);
 
     
-    tabs.addEventListener("overflow", this._onTabBoxOverflow, false);
-    tabs.addEventListener("underflow", this._onTabBoxUnderflow, false);
+    tabs.addEventListener("overflow", this._onTabBoxOverflow);
+    tabs.addEventListener("underflow", this._onTabBoxUnderflow);
 
     
     
@@ -163,8 +163,8 @@ ToolSidebar.prototype = {
 
     let tabs = this._tabbox.tabs;
 
-    tabs.removeEventListener("overflow", this._onTabBoxOverflow, false);
-    tabs.removeEventListener("underflow", this._onTabBoxUnderflow, false);
+    tabs.removeEventListener("overflow", this._onTabBoxOverflow);
+    tabs.removeEventListener("underflow", this._onTabBoxUnderflow);
 
     
     this._tabbox.insertBefore(tabs, this._tabbox.tabpanels);
@@ -211,7 +211,7 @@ ToolSidebar.prototype = {
 
     item.addEventListener("click", () => {
       this._tabbox.selectedTab = tab;
-    }, false);
+    });
 
     tab.allTabsMenuItem = item;
 

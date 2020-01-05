@@ -31,10 +31,10 @@ var Feedback = {
     
     
     function loadListener(event) {
-      browser.removeEventListener("DOMContentLoaded", loadListener, false);
+      browser.removeEventListener("DOMContentLoaded", loadListener);
       browser.contentDocument.dispatchEvent(new CustomEvent("FeedbackPrompted"));
     }
-    browser.addEventListener("DOMContentLoaded", loadListener, false);
+    browser.addEventListener("DOMContentLoaded", loadListener);
   },
 
   handleEvent: function(event) {

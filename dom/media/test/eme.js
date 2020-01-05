@@ -310,7 +310,7 @@ function SetupEME(test, token, params)
   ].forEach(function (e) {
     v.addEventListener(e, function(event) {
       Log(token, "" + e);
-    }, false);
+    });
   });
 
   

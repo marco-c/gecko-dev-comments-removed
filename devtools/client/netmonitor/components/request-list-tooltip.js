@@ -91,7 +91,7 @@ const setTooltipStackTraceContent = Task.async(function* (tooltip, requestItem) 
       
       tooltip.hide();
       NetMonitorController.viewSourceInDebugger(filename, lineNumber);
-    }, false);
+    });
 
     el.appendChild(frameEl);
   }

@@ -31,10 +31,10 @@ function contentLoaded(target) {
     
     
     if (event.target === target || event.target === target.contentDocument) {
-      target.removeEventListener("DOMContentLoaded", DOMContentLoaded, false);
+      target.removeEventListener("DOMContentLoaded", DOMContentLoaded);
       deferred.resolve(target);
     }
-  }, false);
+  });
   return deferred.promise;
 }
 

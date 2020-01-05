@@ -39,7 +39,7 @@ add_task(function* () {
     let win = content.wrappedJSObject;
     win.navigator.serviceWorker.addEventListener("message", function (event) {
       sendAsyncMessage(event.data);
-    }, false);
+    });
   });
 
   

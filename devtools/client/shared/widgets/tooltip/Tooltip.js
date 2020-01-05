@@ -119,7 +119,7 @@ function Tooltip(doc, {
       };
     })(eventName);
     this.panel.addEventListener("popup" + eventName,
-      this["_onPopup" + eventName], false);
+      this["_onPopup" + eventName]);
   }
 
   
@@ -136,7 +136,7 @@ function Tooltip(doc, {
       this.hide();
     }
   };
-  win.addEventListener("keypress", this._onKeyPress, false);
+  win.addEventListener("keypress", this._onKeyPress);
 
   
   this.hide = this.hide.bind(this);
@@ -229,11 +229,11 @@ Tooltip.prototype = {
 
     for (let eventName of POPUP_EVENTS) {
       this.panel.removeEventListener("popup" + eventName,
-        this["_onPopup" + eventName], false);
+        this["_onPopup" + eventName]);
     }
 
     let win = this.doc.querySelector("window");
-    win.removeEventListener("keypress", this._onKeyPress, false);
+    win.removeEventListener("keypress", this._onKeyPress);
 
     for (let {emitter, event, useCapture} of this.closeOnEvents) {
       for (let remove of ["removeEventListener", "off"]) {

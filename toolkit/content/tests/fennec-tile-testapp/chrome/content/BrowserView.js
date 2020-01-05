@@ -394,11 +394,11 @@ function() {
       let browserChanged = (currentBrowser !== browser);
 
       if (currentBrowser) {
-        currentBrowser.removeEventListener("MozAfterPaint", this.handleMozAfterPaint, false);
+        currentBrowser.removeEventListener("MozAfterPaint", this.handleMozAfterPaint);
 
         
         
-        currentBrowser.removeEventListener("FakeMozAfterSizeChange", this.handleMozAfterSizeChange, false);
+        currentBrowser.removeEventListener("FakeMozAfterSizeChange", this.handleMozAfterSizeChange);
         
 
         this.discardAllBatchOperations();
@@ -414,11 +414,11 @@ function() {
 
       this.beginBatchOperation();
 
-      browser.addEventListener("MozAfterPaint", this.handleMozAfterPaint, false);
+      browser.addEventListener("MozAfterPaint", this.handleMozAfterPaint);
 
       
       
-      browser.addEventListener("FakeMozAfterSizeChange", this.handleMozAfterSizeChange, false);
+      browser.addEventListener("FakeMozAfterSizeChange", this.handleMozAfterSizeChange);
       
 
       if (!skipZoom) {

@@ -76,7 +76,7 @@
   var firstTestDebugMessage = true;
 
   // listen for a messages from the mixed content test harness
-  window.addEventListener("message", receiveMessage, false);
+  window.addEventListener("message", receiveMessage);
   function receiveMessage(event) {
     if(firstTestDebugMessage) {
       log("blockActive set to "+blockActive);

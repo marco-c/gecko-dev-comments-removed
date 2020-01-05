@@ -148,7 +148,7 @@ DOMHelpers.prototype = {
                          .QueryInterface(Ci.nsIDocShell);
     let onReady = function (event) {
       if (event.target == window.document) {
-        docShell.chromeEventHandler.removeEventListener("DOMContentLoaded", onReady, false);
+        docShell.chromeEventHandler.removeEventListener("DOMContentLoaded", onReady);
         
         
         
@@ -160,7 +160,7 @@ DOMHelpers.prototype = {
          window.location.href == targetURL) {
       Services.tm.mainThread.dispatch(callback, 0);
     } else {
-      docShell.chromeEventHandler.addEventListener("DOMContentLoaded", onReady, false);
+      docShell.chromeEventHandler.addEventListener("DOMContentLoaded", onReady);
     }
   }
 };

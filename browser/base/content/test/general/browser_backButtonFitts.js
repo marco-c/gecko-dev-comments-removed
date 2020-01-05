@@ -13,9 +13,9 @@ add_task(function* () {
     
     
     content.addEventListener("popstate", function onPopState() {
-      content.removeEventListener("popstate", onPopState, false);
+      content.removeEventListener("popstate", onPopState);
       sendAsyncMessage("Test:PopStateOccurred", { location: content.document.location.href });
-    }, false);
+    });
   });
 
   window.maximize();

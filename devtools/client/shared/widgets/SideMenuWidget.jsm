@@ -56,9 +56,9 @@ this.SideMenuWidget = function SideMenuWidget(aNode, aOptions = {}) {
   this._list.setAttribute("with-item-checkboxes", this._showItemCheckboxes);
   this._list.setAttribute("with-group-checkboxes", this._showGroupCheckboxes);
   this._list.setAttribute("tabindex", "0");
-  this._list.addEventListener("contextmenu", e => this._showContextMenu(e), false);
-  this._list.addEventListener("keypress", e => this.emit("keyPress", e), false);
-  this._list.addEventListener("mousedown", e => this.emit("mousePress", e), false);
+  this._list.addEventListener("contextmenu", e => this._showContextMenu(e));
+  this._list.addEventListener("keypress", e => this.emit("keyPress", e));
+  this._list.addEventListener("mousedown", e => this.emit("mousePress", e));
   this._parent.appendChild(this._list);
 
   
@@ -709,7 +709,7 @@ function makeCheckbox(aParentNode, aOptions) {
   
   checkbox.addEventListener("mousedown", e => {
     e.stopPropagation();
-  }, false);
+  });
 
   
   
@@ -718,7 +718,7 @@ function makeCheckbox(aParentNode, aOptions) {
       description: aOptions.description || "item",
       checked: checkbox.checked
     });
-  }, false);
+  });
 
   aParentNode.appendChild(checkbox);
   return checkbox;

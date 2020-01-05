@@ -120,7 +120,7 @@
           parent.addEventListener("mousemove", firstMoveChild);
           synthesizeMouseAtCenter(childDiv, {type: "mousemove"}, window);
         }
-      }, false);
+      });
 
       function start() {
         addFullscreenChangeContinuation("enter", function() {

@@ -138,7 +138,7 @@ RuleEditor.prototype = {
       this.selectorText.addEventListener("click", event => {
         
         event.stopPropagation();
-      }, false);
+      });
 
       editableField({
         element: this.selectorText,
@@ -198,11 +198,11 @@ RuleEditor.prototype = {
         }
         
         this._ruleViewIsEditing = false;
-      }, false);
+      });
 
       this.element.addEventListener("mousedown", () => {
         this.doc.defaultView.focus();
-      }, false);
+      });
 
       
       editableItem({ element: this.closeBrace }, () => {
@@ -453,7 +453,7 @@ RuleEditor.prototype = {
 
     
     this.editor.input.addEventListener("paste",
-      blurOnMultipleProperties(this.rule.cssProperties), false);
+      blurOnMultipleProperties(this.rule.cssProperties));
   },
 
   

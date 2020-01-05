@@ -576,7 +576,7 @@ VariablesViewController.prototype = {
     
     
     if (aTarget.shouldPrefetch) {
-      aTarget.addEventListener("mouseover", aTarget.onexpand, false);
+      aTarget.addEventListener("mouseover", aTarget.onexpand);
     }
 
     

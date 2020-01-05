@@ -189,7 +189,7 @@ TextPropertyEditor.prototype = {
     this.filterProperty.addEventListener("click", event => {
       this.ruleEditor.ruleView.setFilterStyles("`" + this.prop.name + "`");
       event.stopPropagation();
-    }, false);
+    });
 
     
     
@@ -209,7 +209,7 @@ TextPropertyEditor.prototype = {
         if (event.target === this.nameContainer) {
           this.nameSpan.click();
         }
-      }, false);
+      });
 
       editableField({
         start: this._onStartEditing,
@@ -225,7 +225,7 @@ TextPropertyEditor.prototype = {
 
       
       this.nameContainer.addEventListener("paste",
-        blurOnMultipleProperties(this.cssProperties), false);
+        blurOnMultipleProperties(this.cssProperties));
 
       this.valueContainer.addEventListener("click", (event) => {
         
@@ -235,7 +235,7 @@ TextPropertyEditor.prototype = {
         if (event.target === this.valueContainer) {
           this.valueSpan.click();
         }
-      }, false);
+      });
 
       
       
@@ -261,12 +261,12 @@ TextPropertyEditor.prototype = {
             index: similarElements.indexOf(clickedEl)
           };
         }
-      }, false);
+      });
 
       this.valueSpan.addEventListener("mouseup", (event) => {
         this._clickedElementOptions = null;
         this._hasPendingClick = false;
-      }, false);
+      });
 
       this.valueSpan.addEventListener("click", (event) => {
         let target = event.target;
@@ -276,7 +276,7 @@ TextPropertyEditor.prototype = {
           event.preventDefault();
           this.browserWindow.openUILinkIn(target.href, "tab");
         }
-      }, false);
+      });
 
       editableField({
         start: this._onStartEditing,

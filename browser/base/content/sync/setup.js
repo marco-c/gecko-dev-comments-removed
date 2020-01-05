@@ -81,7 +81,7 @@ var gSyncSetup = {
       });
     };
     addRem(true);
-    window.addEventListener("unload", () => addRem(false), false);
+    window.addEventListener("unload", () => addRem(false));
 
     window.setTimeout(function() {
       

@@ -28,7 +28,7 @@
       window.setTimeout(onpaint.pop(), 0);
     }
   }
-  window.addEventListener("MozAfterPaint", paintListener, false);
+  window.addEventListener("MozAfterPaint", paintListener);
 
   function waitForPaints(callback, subdoc, flushMode) {
     

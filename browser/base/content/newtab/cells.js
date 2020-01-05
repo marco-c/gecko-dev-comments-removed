@@ -16,7 +16,7 @@ function Cell(aGrid, aNode) {
 
   
   ["dragenter", "dragover", "dragexit", "drop"].forEach(function (aType) {
-    this._node.addEventListener(aType, this, false);
+    this._node.addEventListener(aType, this);
   }, this);
 }
 

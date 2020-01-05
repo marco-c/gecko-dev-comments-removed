@@ -20,7 +20,7 @@
   var pframe = $("pframe");
 
   //disable bfcache
-  pframe.contentWindow.addEventListener("unload", function () { }, false);
+  pframe.contentWindow.addEventListener("unload", function () { });
 
   var loadState = 0;
   pframe.onload = function () {

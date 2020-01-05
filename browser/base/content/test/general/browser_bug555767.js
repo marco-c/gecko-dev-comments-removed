@@ -27,7 +27,7 @@
 
       
       function onTabClose(aEvent) {
-        gBrowser.tabContainer.removeEventListener("TabClose", onTabClose, false);
+        gBrowser.tabContainer.removeEventListener("TabClose", onTabClose);
         
         is(aEvent.originalTarget, testTab, "Got the TabClose event for the right tab");
         
@@ -36,7 +36,7 @@
         finish();
       }
       function onTabSelect(aEvent) {
-        gBrowser.tabContainer.removeEventListener("TabSelect", onTabSelect, false);
+        gBrowser.tabContainer.removeEventListener("TabSelect", onTabSelect);
         
         is(aEvent.originalTarget, baseTab, "Got the TabSelect event for the right tab");
         
@@ -45,8 +45,8 @@
       }
 
       
-      gBrowser.tabContainer.addEventListener("TabClose", onTabClose, false);
-      gBrowser.tabContainer.addEventListener("TabSelect", onTabSelect, false);
+      gBrowser.tabContainer.addEventListener("TabClose", onTabClose);
+      gBrowser.tabContainer.addEventListener("TabSelect", onTabSelect);
 
       
       EventUtils.synthesizeKey("VK_RETURN", {});

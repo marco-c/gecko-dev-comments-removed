@@ -159,5 +159,5 @@ function loaded() {
 
 
 window.addEventListener("load",
-                        function () { setTimeout(loaded, 1000); }, false);
+                        function () { setTimeout(loaded, 1000); });
 })();

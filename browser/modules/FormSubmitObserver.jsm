@@ -52,14 +52,14 @@ FormSubmitObserver.prototype =
     
     
     Services.obs.addObserver(this, "invalidformsubmit", false);
-    this._tab.addEventListener("pageshow", this, false);
-    this._tab.addEventListener("unload", this, false);
+    this._tab.addEventListener("pageshow", this);
+    this._tab.addEventListener("unload", this);
   },
 
   uninit() {
     Services.obs.removeObserver(this, "invalidformsubmit");
-    this._content.removeEventListener("pageshow", this, false);
-    this._content.removeEventListener("unload", this, false);
+    this._content.removeEventListener("pageshow", this);
+    this._content.removeEventListener("unload", this);
     this._mm = null;
     this._element = null;
     this._content = null;
@@ -134,11 +134,11 @@ FormSubmitObserver.prototype =
       element.focus();
 
       
-      element.addEventListener("input", this, false);
+      element.addEventListener("input", this);
 
       
       
-      element.addEventListener("blur", this, false);
+      element.addEventListener("blur", this);
 
       this._showPopup(element);
       break;
@@ -176,8 +176,8 @@ FormSubmitObserver.prototype =
 
 
   _onBlur(aEvent) {
-    aEvent.originalTarget.removeEventListener("input", this, false);
-    aEvent.originalTarget.removeEventListener("blur", this, false);
+    aEvent.originalTarget.removeEventListener("input", this);
+    aEvent.originalTarget.removeEventListener("blur", this);
     this._element = null;
     this._hidePopup();
   },

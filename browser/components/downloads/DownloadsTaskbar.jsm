@@ -147,7 +147,7 @@ this.DownloadsTaskbar = {
         
         this._taskbarProgress = null;
       }
-    }, false);
+    });
   },
 
   

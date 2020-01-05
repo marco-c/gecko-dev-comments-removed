@@ -768,7 +768,7 @@ exports["test:check worker API with page history"] = WorkerTest(
 
       
       browser.addEventListener("pagehide", function onpagehide() {
-        browser.removeEventListener("pagehide", onpagehide, false);
+        browser.removeEventListener("pagehide", onpagehide);
         
 
         worker.postMessage("message");
@@ -808,7 +808,7 @@ exports["test:check worker API with page history"] = WorkerTest(
           browser.goForward();
         }, 500);
 
-      }, false);
+      });
     });
 
   }
