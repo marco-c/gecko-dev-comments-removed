@@ -174,8 +174,6 @@ pub struct Request {
     pub body: RefCell<Option<Vec<u8>>>,
     
     pub is_service_worker_global_scope: bool,
-    
-                              
     pub window: Cell<Window>,
     
     pub keep_alive: Cell<bool>,

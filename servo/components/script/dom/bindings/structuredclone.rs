@@ -6,7 +6,7 @@
 
 
 use dom::bindings::error::{Error, Fallible};
-use dom::bindings::global::GlobalRef;
+use dom::globalscope::GlobalScope;
 use js::jsapi::{HandleValue, MutableHandleValue};
 use js::jsapi::{JSContext, JS_ReadStructuredClone, JS_STRUCTURED_CLONE_VERSION};
 use js::jsapi::{JS_ClearPendingException, JS_WriteStructuredClone};
@@ -60,7 +60,7 @@ impl StructuredCloneData {
     
     
     
-    fn read_clone(global: GlobalRef, data: *mut u64, nbytes: size_t, rval: MutableHandleValue) {
+    fn read_clone(global: &GlobalScope, data: *mut u64, nbytes: size_t, rval: MutableHandleValue) {
         unsafe {
             assert!(JS_ReadStructuredClone(global.get_cx(),
                                            data,
@@ -73,7 +73,7 @@ impl StructuredCloneData {
     }
 
     
-    pub fn read(self, global: GlobalRef, rval: MutableHandleValue) {
+    pub fn read(self, global: &GlobalScope, rval: MutableHandleValue) {
         match self {
             StructuredCloneData::Vector(mut vec_msg) => {
                 let nbytes = vec_msg.len();

@@ -4,7 +4,6 @@
 
 use dom::bindings::codegen::Bindings::NavigatorBinding;
 use dom::bindings::codegen::Bindings::NavigatorBinding::NavigatorMethods;
-use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{JS, MutNullableHeap, Root};
 use dom::bindings::reflector::{Reflector, Reflectable, reflect_dom_object};
 use dom::bindings::str::DOMString;
@@ -37,7 +36,7 @@ impl Navigator {
 
     pub fn new(window: &Window) -> Root<Navigator> {
         reflect_dom_object(box Navigator::new_inherited(),
-                           GlobalRef::Window(window),
+                           window,
                            NavigatorBinding::Wrap)
     }
 }
@@ -80,7 +79,7 @@ impl NavigatorMethods for Navigator {
 
     
     fn Bluetooth(&self) -> Root<Bluetooth> {
-        self.bluetooth.or_init(|| Bluetooth::new(self.global().r()))
+        self.bluetooth.or_init(|| Bluetooth::new(&self.global()))
     }
 
     
@@ -90,12 +89,12 @@ impl NavigatorMethods for Navigator {
 
     
     fn Plugins(&self) -> Root<PluginArray> {
-        self.plugins.or_init(|| PluginArray::new(self.global().r()))
+        self.plugins.or_init(|| PluginArray::new(&self.global()))
     }
 
     
     fn MimeTypes(&self) -> Root<MimeTypeArray> {
-        self.mime_types.or_init(|| MimeTypeArray::new(self.global().r()))
+        self.mime_types.or_init(|| MimeTypeArray::new(&self.global()))
     }
 
     
@@ -105,7 +104,9 @@ impl NavigatorMethods for Navigator {
 
     
     fn ServiceWorker(&self) -> Root<ServiceWorkerContainer> {
-        self.service_worker.or_init(|| ServiceWorkerContainer::new(self.global().r()))
+        self.service_worker.or_init(|| {
+            ServiceWorkerContainer::new(&self.global())
+        })
     }
 
     

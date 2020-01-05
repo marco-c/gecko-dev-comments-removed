@@ -3,7 +3,6 @@
 
 
 use dom::bindings::codegen::Bindings::MediaErrorBinding::{self, MediaErrorMethods};
-use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
 use dom::bindings::reflector::{Reflector, reflect_dom_object};
 use dom::window::Window;
@@ -24,7 +23,7 @@ impl MediaError {
 
     pub fn new(window: &Window, code: u16) -> Root<MediaError> {
         reflect_dom_object(box MediaError::new_inherited(code),
-                           GlobalRef::Window(window),
+                           window,
                            MediaErrorBinding::Wrap)
     }
 }
