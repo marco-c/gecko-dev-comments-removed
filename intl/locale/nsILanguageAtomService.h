@@ -35,8 +35,13 @@ class nsILanguageAtomService : public nsISupports
 
   virtual nsIAtom* GetLocaleLanguage() = 0;
 
-  virtual nsIAtom* GetLanguageGroup(nsIAtom *aLanguage,
-                                    nsresult *aError = nullptr) = 0;
+  virtual nsIAtom* GetLanguageGroup(nsIAtom* aLanguage,
+                                    nsresult* aError = nullptr) = 0;
+
+  
+  
+  virtual already_AddRefed<nsIAtom> GetUncachedLanguageGroup(nsIAtom* aLanguage,
+                                                             nsresult* aError = nullptr) const = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsILanguageAtomService,
