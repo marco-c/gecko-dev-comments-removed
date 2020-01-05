@@ -1177,6 +1177,7 @@ _cairo_truetype_reverse_cmap (cairo_scaled_font_t *scaled_font,
     uint16_t *end_code;
     uint16_t *delta;
     uint16_t *range_offset;
+    uint16_t *glyph_array;
     uint16_t  c;
 
     backend = scaled_font->backend;
@@ -1216,6 +1217,7 @@ _cairo_truetype_reverse_cmap (cairo_scaled_font_t *scaled_font,
     start_code = &(end_code[num_segments + 1]);
     delta = &(start_code[num_segments]);
     range_offset = &(delta[num_segments]);
+    glyph_array = &(range_offset[num_segments]);
 
     
     for (i = 0; i < num_segments; i++) {
