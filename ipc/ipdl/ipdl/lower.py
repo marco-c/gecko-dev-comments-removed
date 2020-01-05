@@ -1340,6 +1340,10 @@ with some new IPDL/C++ nodes that are tuned for C++ codegen."""
         md.returns = [ ret.accept(self) for ret in md.outParams ]
         MessageDecl.upgrade(md)
 
+    def visitTransitionStmt(self, ts):
+        name = ts.state.decl.progname
+        ts.state.decl.cxxname = name
+        ts.state.decl.cxxenum = ExprVar(self.protocolName +'::'+ name)
 
 
 
@@ -1546,7 +1550,13 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
         stateenum.addId(_errorState().name)
         if self.protocol.decl.type.hasReentrantDelete:
             stateenum.addId(_dyingState().name)
-        stateenum.addId(_startState().name, _nullState().name)
+        for ts in p.transitionStmts:
+            stateenum.addId(ts.state.decl.cxxname)
+        if len(p.transitionStmts):
+            startstate = p.transitionStmts[0].state.decl.cxxname
+        else:
+            startstate = _nullState().name
+        stateenum.addId(_startState().name, startstate)
 
         ns.addstmts([ StmtDecl(Decl(stateenum,'')), Whitespace.NL ])
 
@@ -1671,12 +1681,28 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
         usesend, sendvar = set(), ExprVar('Send__')
         userecv, recvvar = set(), ExprVar('Recv__')
 
+        def sameTrigger(trigger, actionexpr):
+            if trigger is ipdl.ast.SEND or trigger is ipdl.ast.CALL:
+                usesend.add('yes')
+                return ExprBinary(sendvar, '==', actionexpr)
+            else:
+                userecv.add('yes')
+                return ExprBinary(recvvar, '==',
+                                  actionexpr)
+
+        def stateEnum(s):
+            if s is ipdl.ast.State.DEAD:
+                return _deadState()
+            else:
+                return ExprVar(s.decl.cxxname)
+
         
         
         fromvar = ExprVar('from')
         triggervar = ExprVar('trigger')
         nextvar = ExprVar('next')
         msgexpr = ExprSelect(triggervar, '.', 'mMessage')
+        actionexpr = ExprSelect(triggervar, '.', 'mAction')
 
         transitionfunc = FunctionDefn(FunctionDecl(
             'Transition',
@@ -1685,6 +1711,39 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
             ret=Type.BOOL))
 
         fromswitch = StmtSwitch(fromvar)
+
+        for ts in self.protocol.transitionStmts:
+            msgswitch = StmtSwitch(msgexpr)
+
+            msgToTransitions = { }
+
+            for t in ts.transitions:
+                msgid = t.msg._md.msgId()
+
+                ifsametrigger = StmtIf(sameTrigger(t.trigger, actionexpr))
+                
+                for nextstate in t.toStates: break
+                ifsametrigger.addifstmts([
+                    StmtExpr(ExprAssn(ExprDeref(nextvar),
+                                      stateEnum(nextstate))),
+                    StmtReturn(ExprLiteral.TRUE)
+                ])
+
+                transitions = msgToTransitions.get(msgid, [ ])
+                transitions.append(ifsametrigger)
+                msgToTransitions[msgid] = transitions
+
+            for msgid, transitions in msgToTransitions.iteritems():
+                block = Block()
+                block.addstmts(transitions +[ StmtBreak() ])
+                msgswitch.addcase(CaseLabel(msgid), block)
+
+            msgblock = Block()
+            msgblock.addstmts([
+                msgswitch,
+                StmtBreak()
+            ])
+            fromswitch.addcase(CaseLabel(ts.state.decl.cxxname), msgblock)
 
         
         nullerrorblock = Block()
@@ -1741,6 +1800,13 @@ class _GenerateProtocolCode(ipdl.ast.Visitor):
         transitionfunc.addstmt(StmtDecl(Decl(Type('State'), fromvar.name),
                                         init=ExprDeref(nextvar)))
         transitionfunc.addstmt(fromswitch)
+        
+        
+        if self.protocol.transitionStmts:
+            transitionfunc.addstmts([
+                StmtExpr(ExprAssn(ExprDeref(nextvar), _errorState())),
+                StmtReturn(ExprLiteral.FALSE),
+            ])
 
         return transitionfunc
 
@@ -4084,15 +4150,12 @@ class _GenerateProtocolActorCode(ipdl.ast.Visitor):
 
         msgvar, stmts = self.makeMessage(md, errfnSendDtor, actorvar)
         sendok, sendstmts = self.sendAsync(md, msgvar, actorvar)
-        failif = StmtIf(ExprNot(sendok))
-        failif.addifstmt(StmtReturn.FALSE)
-
         method.addstmts(
             stmts
             + self.genVerifyMessage(md.decl.type.verify, md.params,
                                     errfnSendDtor, ExprVar('msg__'))
             + sendstmts
-            + [ failif, Whitespace.NL ]
+            + [ Whitespace.NL ]
             + self.dtorEpilogue(md, actor.var())
             + [ StmtReturn(sendok) ])
 
