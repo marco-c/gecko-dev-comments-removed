@@ -34,6 +34,7 @@
 #include <type_traits>
 
 class imgRequestProxy;
+class nsIAtom;
 class nsIContent;
 class nsIDocument;
 class nsIPrincipal;
@@ -491,6 +492,9 @@ enum nsCSSUnit {
 
   eCSSUnit_FontFamilyList = 58,   
 
+  
+  eCSSUnit_AtomIdent    = 60,     
+
   eCSSUnit_Integer      = 70,     
   eCSSUnit_Enumerated   = 71,     
 
@@ -880,6 +884,11 @@ public:
     return mValue.mFloatColor;
   }
 
+  nsIAtom* GetAtomValue() const {
+    MOZ_ASSERT(mUnit == eCSSUnit_AtomIdent);
+    return mValue.mAtom;
+  }
+
   void Reset()  
   {
     if (mUnit != eCSSUnit_Null)
@@ -964,6 +973,9 @@ public:
   static already_AddRefed<nsStringBuffer>
     BufferFromString(const nsString& aValue);
 
+  
+  void AtomizeIdentValue();
+
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
   static void
@@ -1008,6 +1020,7 @@ protected:
     
     nsStringBuffer* MOZ_OWNING_REF mString;
     nscolor    mColor;
+    nsIAtom* MOZ_OWNING_REF mAtom;
     Array* MOZ_OWNING_REF mArray;
     mozilla::css::URLValue* MOZ_OWNING_REF mURL;
     mozilla::css::ImageValue* MOZ_OWNING_REF mImage;
