@@ -337,12 +337,13 @@ class ExtensionPageContextParent extends ProxyContextParent {
   }
 
   get tabId() {
-    if (!apiManager.global.TabManager) {
-      return;  
+    let {getBrowserInfo} = apiManager.global;
+
+    if (getBrowserInfo) {
+      
+      return getBrowserInfo(this.xulBrowser).tabId;
     }
-    let {gBrowser} = this.xulBrowser.ownerGlobal;
-    let tab = gBrowser && gBrowser.getTabForBrowser(this.xulBrowser);
-    return tab && apiManager.global.TabManager.getId(tab);
+    return undefined;
   }
 
   onBrowserChange(browser) {

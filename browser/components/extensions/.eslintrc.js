@@ -8,6 +8,7 @@ module.exports = {
     "browserActionFor": true,
     "currentWindow": true,
     "EventEmitter": true,
+    "getBrowserInfo": true,
     "getCookieStoreIdForTab": true,
     "IconDetails": true,
     "makeWidgetId": true,
