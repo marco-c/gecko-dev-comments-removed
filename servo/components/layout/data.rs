@@ -2,19 +2,14 @@
 
 
 
-#![allow(unsafe_code)]
-
 use construct::{ConstructionItem, ConstructionResult};
 use incremental::RestyleDamage;
 use msg::constellation_msg::ConstellationChan;
 use parallel::DomParallelInfo;
 use script::dom::node::SharedLayoutData;
 use script::layout_interface::LayoutChan;
-use std::cell::{Ref, RefMut};
-use std::mem;
 use std::sync::Arc;
 use style::properties::ComputedValues;
-use wrapper::{LayoutNode, TLayoutNode};
 
 
 pub struct PrivateLayoutData {
@@ -95,41 +90,10 @@ impl LayoutDataWrapper {
     }
 }
 
-#[allow(dead_code)]
+#[allow(dead_code, unsafe_code)]
 fn static_assertion(x: Option<LayoutDataWrapper>) {
     unsafe {
         let _: Option<::script::dom::node::LayoutData> =
             ::std::intrinsics::transmute(x);
-    }
-}
-
-
-pub trait LayoutDataAccess {
-    
-    unsafe fn borrow_layout_data_unchecked(&self) -> *const Option<LayoutDataWrapper>;
-    
-    fn borrow_layout_data<'a>(&'a self) -> Ref<'a,Option<LayoutDataWrapper>>;
-    
-    fn mutate_layout_data<'a>(&'a self) -> RefMut<'a,Option<LayoutDataWrapper>>;
-}
-
-impl<'ln> LayoutDataAccess for LayoutNode<'ln> {
-    #[inline(always)]
-    unsafe fn borrow_layout_data_unchecked(&self) -> *const Option<LayoutDataWrapper> {
-        mem::transmute(self.get().layout_data_unchecked())
-    }
-
-    #[inline(always)]
-    fn borrow_layout_data<'a>(&'a self) -> Ref<'a,Option<LayoutDataWrapper>> {
-        unsafe {
-            mem::transmute(self.get().layout_data())
-        }
-    }
-
-    #[inline(always)]
-    fn mutate_layout_data<'a>(&'a self) -> RefMut<'a,Option<LayoutDataWrapper>> {
-        unsafe {
-            mem::transmute(self.get().layout_data_mut())
-        }
     }
 }
