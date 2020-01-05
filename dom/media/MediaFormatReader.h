@@ -185,6 +185,7 @@ private:
       , mWaitingForData(false)
       , mWaitingForKey(false)
       , mReceivedNewData(false)
+      , mFlushing(false)
       , mFlushed(true)
       , mDrainState(DrainState::None)
       , mNumOfConsecutiveError(0)
@@ -264,7 +265,7 @@ private:
 
     
     MozPromiseRequestHolder<MediaDataDecoder::DecodePromise> mDecodeRequest;
-    MozPromiseRequestHolder<MediaDataDecoder::FlushPromise> mFlushRequest;
+    bool mFlushing; 
     
     bool mFlushed;
     MozPromiseHolder<ShutdownPromise> mShutdownPromise;
@@ -342,7 +343,7 @@ private:
     
     void Flush()
     {
-      if (mFlushRequest.Exists() || mFlushed) {
+      if (mFlushing || mFlushed) {
         
         return;
       }
@@ -359,10 +360,11 @@ private:
         TrackType type = mType == MediaData::AUDIO_DATA
                          ? TrackType::kAudioTrack
                          : TrackType::kVideoTrack;
+        mFlushing = true;
         mDecoder->Flush()
           ->Then(mOwner->OwnerThread(), __func__,
                  [owner, type, this]() {
-                   mFlushRequest.Complete();
+                   mFlushing = false;
                    if (!mShutdownPromise.IsEmpty()) {
                      ShutdownDecoder();
                      return;
@@ -370,14 +372,13 @@ private:
                    owner->ScheduleUpdate(type);
                  },
                  [owner, type, this](const MediaResult& aError) {
-                   mFlushRequest.Complete();
+                   mFlushing = false;
                    if (!mShutdownPromise.IsEmpty()) {
                      ShutdownDecoder();
                      return;
                    }
                    owner->NotifyError(type, aError);
-                 })
-          ->Track(mFlushRequest);
+                 });
       }
       mFlushed = true;
     }
