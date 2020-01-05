@@ -193,8 +193,11 @@ gfxGDIFont::Initialize()
 
             
             
-            gfxFloat aspect = mMetrics->xHeight / mMetrics->emHeight;
-            mAdjustedSize = mStyle.GetAdjustedSize(aspect);
+            
+            if (mMetrics->xHeight > 0.0 && mMetrics->emHeight > 0.0) {
+                gfxFloat aspect = mMetrics->xHeight / mMetrics->emHeight;
+                mAdjustedSize = mStyle.GetAdjustedSize(aspect);
+            }
 
             
             ::DeleteObject(mFont);
