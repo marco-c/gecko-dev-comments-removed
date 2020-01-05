@@ -276,7 +276,7 @@ pub enum Msg {
     
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
     
-    RemoveIFrame(PipelineId, SubpageId),
+    RemoveIFrame(PipelineId),
     
     NewFavicon(Url),
     
