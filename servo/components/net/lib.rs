@@ -2,9 +2,9 @@
 
 
 
+#![feature(box_syntax)]
 #![feature(custom_attribute)]
 #![feature(custom_derive)]
-#![feature(box_syntax)]
 #![feature(fnbox)]
 #![feature(mpsc_select)]
 #![feature(plugin)]

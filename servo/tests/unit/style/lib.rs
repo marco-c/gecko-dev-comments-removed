@@ -3,8 +3,8 @@
 
 
 #![cfg(test)]
-#![feature(plugin)]
 #![feature(core_intrinsics)]
+#![feature(plugin)]
 
 extern crate app_units;
 extern crate cssparser;

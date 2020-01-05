@@ -13,7 +13,8 @@
 
 
 
-#![feature(plugin_registrar, quote, plugin, box_syntax, rustc_private, slice_patterns)]
+
+#![feature(box_syntax, plugin, plugin_registrar, quote, rustc_private, slice_patterns)]
 
 #![deny(unsafe_code)]
 
