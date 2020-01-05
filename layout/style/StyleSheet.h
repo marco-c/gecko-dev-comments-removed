@@ -19,6 +19,7 @@
 class nsIDocument;
 class nsINode;
 class nsIPrincipal;
+class nsMediaList;
 
 namespace mozilla {
 
@@ -123,11 +124,14 @@ public:
   
   
   
+  inline StyleSheet* GetParentStyleSheet() const;
   
+  virtual nsMediaList* Media() = 0;
   bool Disabled() const { return mDisabled; }
   
 
   
+  virtual nsIDOMCSSRule* GetDOMOwnerRule() const = 0;
   dom::CSSRuleList* GetCssRules(nsIPrincipal& aSubjectPrincipal,
                                 ErrorResult& aRv);
   uint32_t InsertRule(const nsAString& aRule, uint32_t aIndex,
@@ -136,6 +140,9 @@ public:
   void DeleteRule(uint32_t aIndex,
                   nsIPrincipal& aSubjectPrincipal,
                   ErrorResult& aRv);
+
+  
+  inline dom::ParentObject GetParentObject() const;
 
   
   NS_IMETHOD GetType(nsAString& aType) final;

@@ -214,26 +214,19 @@ public:
   }
 
   
-  CSSStyleSheet* GetParentStyleSheet() const { return mParent; }
-  nsMediaList* Media();
+  using GetParentStyleSheet;
+  nsMediaList* Media() final;
 
   
   
   
   
-  nsIDOMCSSRule* GetDOMOwnerRule() const;
+  nsIDOMCSSRule* GetDOMOwnerRule() const final;
   using StyleSheet::GetCssRules;
   using StyleSheet::InsertRule;
   using StyleSheet::DeleteRule;
 
   
-  dom::ParentObject GetParentObject() const {
-    if (mOwningNode) {
-      return dom::ParentObject(mOwningNode);
-    }
-
-    return dom::ParentObject(static_cast<nsIDOMCSSStyleSheet*>(mParent), mParent);
-  }
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
   void WillDirty();
