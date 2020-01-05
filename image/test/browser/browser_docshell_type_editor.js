@@ -9,8 +9,25 @@ const SIMPLE_HTML = "data:text/html,<html><head></head><body></body></html>";
 
 
 
+function getManifestDir() {
+  let path = getTestFilePath("browser_docshell_type_editor");
+  let file = Components.classes["@mozilla.org/file/local;1"]
+                       .createInstance(Components.interfaces.nsILocalFile);
+  file.initWithPath(path);
+  return file;
+}
+
+
+
+
+
+
 add_task(function* () {
   info("docshell of appType APP_TYPE_EDITOR can access privileged images.");
+
+  
+  let manifestDir = getManifestDir();
+  Components.manager.addBootstrappedManifestLocation(manifestDir);
 
   yield BrowserTestUtils.withNewTab({
     gBrowser,
@@ -28,6 +45,7 @@ add_task(function* () {
       is(rootDocShell.appType, Ci.nsIDocShell.APP_TYPE_EDITOR,
         "sanity check: appType after update should be type editor");
 
+
       return new Promise(resolve => {
         let doc = content.document;
         let image = doc.createElement("img");
@@ -44,14 +62,20 @@ add_task(function* () {
           resolve();
         }
         doc.body.appendChild(image);
-        image.src = "chrome://devtools/content/framework/dev-edition-promo/dev-edition-logo.png";
+        image.src = "chrome://test1/skin/privileged.png";
       });
     });
   });
+
+  Components.manager.removeBootstrappedManifestLocation(manifestDir);
 });
 
 add_task(function* () {
   info("docshell of appType APP_TYPE_UNKNOWN can *not* access privileged images.");
+
+  
+  let manifestDir = getManifestDir();
+  Components.manager.addBootstrappedManifestLocation(manifestDir);
 
   yield BrowserTestUtils.withNewTab({
     gBrowser,
@@ -85,8 +109,10 @@ add_task(function* () {
           resolve();
         }
         doc.body.appendChild(image);
-        image.src = "chrome://devtools/content/framework/dev-edition-promo/dev-edition-logo.png";
+        image.src = "chrome://test1/skin/privileged.png";
       });
     });
   });
+
+  Components.manager.removeBootstrappedManifestLocation(manifestDir);
 });
