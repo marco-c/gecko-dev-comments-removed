@@ -33,7 +33,7 @@ pub enum GlobalRoot<'a, 'b> {
 
 
 
-#[deriving(Encodable)]
+#[jstraceable]
 #[must_root]
 pub enum GlobalField {
     WindowField(JS<Window>),

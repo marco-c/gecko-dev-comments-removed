@@ -25,41 +25,32 @@
 
 
 
-
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflectable, Reflector};
-
 use js::jsapi::{JSObject, JSTracer, JS_CallTracer, JSTRACE_OBJECT};
 use js::jsval::JSVal;
 
 use libc;
-use std::mem;
+use std::rc::Rc;
 use std::cell::{Cell, RefCell};
-use serialize::{Encodable, Encoder};
 
+use url::Url;
+use servo_util::atom::Atom;
+use servo_util::namespace::Namespace;
+use msg::constellation_msg::{PipelineId, SubpageId, WindowSizeData};
+use net::image_cache_task::ImageCacheTask;
+use script_traits::ScriptControlChan;
+use std::collections::hashmap::HashMap;
+use collections::hash::Hash;
+use style::PropertyDeclarationBlock;
 
-
-
-
-
-fn get_jstracer<'a, S: Encoder<E>, E>(s: &'a mut S) -> &'a mut JSTracer {
-    unsafe {
-        mem::transmute(s)
+impl<T: Reflectable> JSTraceable for JS<T> {
+    fn trace(&self, trc: *mut JSTracer) {
+        trace_reflector(trc, "", self.reflector());
     }
 }
 
-impl<T: Reflectable+Encodable<S, E>, S: Encoder<E>, E> Encodable<S, E> for JS<T> {
-    fn encode(&self, s: &mut S) -> Result<(), E> {
-        trace_reflector(get_jstracer(s), "", self.reflector());
-        Ok(())
-    }
-}
-
-impl<S: Encoder<E>, E> Encodable<S, E> for Reflector {
-    fn encode(&self, _s: &mut S) -> Result<(), E> {
-        Ok(())
-    }
-}
+untraceable!(Reflector)
 
 
 pub trait JSTraceable {
@@ -120,12 +111,6 @@ impl<T> Untraceable<T> {
     }
 }
 
-impl<S: Encoder<E>, E, T> Encodable<S, E> for Untraceable<T> {
-    fn encode(&self, _s: &mut S) -> Result<(), E> {
-        Ok(())
-    }
-}
-
 impl<T> Deref<T> for Untraceable<T> {
     fn deref<'a>(&'a self) -> &'a T {
         &self.inner
@@ -165,28 +150,90 @@ impl<T> Deref<T> for Traceable<T> {
     }
 }
 
-impl<S: Encoder<E>, E, T: Encodable<S, E>> Encodable<S, E> for Traceable<RefCell<T>> {
-    fn encode(&self, s: &mut S) -> Result<(), E> {
-        self.borrow().encode(s)
+impl<T: JSTraceable> JSTraceable for RefCell<T> {
+    fn trace(&self, trc: *mut JSTracer) {
+        self.borrow().trace(trc)
     }
 }
 
-impl<S: Encoder<E>, E, T: Encodable<S, E>+Copy> Encodable<S, E> for Traceable<Cell<T>> {
-    fn encode(&self, s: &mut S) -> Result<(), E> {
-        self.deref().get().encode(s)
+impl<T: JSTraceable> JSTraceable for Rc<T> {
+    fn trace(&self, trc: *mut JSTracer) {
+        self.deref().trace(trc)
     }
 }
 
-impl<S: Encoder<E>, E> Encodable<S, E> for Traceable<*mut JSObject> {
-    fn encode(&self, s: &mut S) -> Result<(), E> {
-        trace_object(get_jstracer(s), "object", **self);
-        Ok(())
+impl<T: JSTraceable> JSTraceable for Box<T> {
+    fn trace(&self, trc: *mut JSTracer) {
+        (**self).trace(trc)
     }
 }
 
-impl<S: Encoder<E>, E> Encodable<S, E> for Traceable<JSVal> {
-    fn encode(&self, s: &mut S) -> Result<(), E> {
-        trace_jsval(get_jstracer(s), "val", **self);
-        Ok(())
+impl<T: JSTraceable+Copy> JSTraceable for Traceable<Cell<T>> {
+    fn trace(&self, trc: *mut JSTracer) {
+        self.deref().get().trace(trc)
+    }
+}
+
+
+impl<T: JSTraceable+Copy> JSTraceable for Cell<T> {
+    fn trace(&self, trc: *mut JSTracer) {
+        self.get().trace(trc)
+    }
+}
+
+impl JSTraceable for Traceable<*mut JSObject> {
+    fn trace(&self, trc: *mut JSTracer) {
+        trace_object(trc, "object", **self);
+    }
+}
+
+impl JSTraceable for Traceable<JSVal> {
+    fn trace(&self, trc: *mut JSTracer) {
+        trace_jsval(trc, "val", **self);
+    }
+}
+
+
+
+impl<T: JSTraceable> JSTraceable for Vec<T> {
+    #[inline]
+    fn trace(&self, trc: *mut JSTracer) {
+        for e in self.iter() {
+            e.trace(trc);
+        }
+    }
+}
+
+impl<T: JSTraceable> JSTraceable for Option<T> {
+    #[inline]
+    fn trace(&self, trc: *mut JSTracer) {
+        self.as_ref().map(|e| e.trace(trc));
+    }
+}
+
+impl<K: Eq+Hash, V: JSTraceable> JSTraceable for HashMap<K, V> {
+    #[inline]
+    fn trace(&self, trc: *mut JSTracer) {
+        for e in self.iter() {
+            e.val1().trace(trc);
+        }
+    }
+}
+
+untraceable!(bool, f32, f64, String, Url)
+untraceable!(uint, u8, u16, u32, u64)
+untraceable!(int, i8, i16, i32, i64)
+untraceable!(Untraceable<T>)
+untraceable!(ImageCacheTask, ScriptControlChan)
+untraceable!(Atom, Namespace)
+untraceable!(PropertyDeclarationBlock)
+
+
+untraceable!(SubpageId, WindowSizeData, PipelineId)
+
+impl<'a> JSTraceable for &'a str {
+    #[inline]
+    fn trace(&self, _: *mut JSTracer) {
+        
     }
 }

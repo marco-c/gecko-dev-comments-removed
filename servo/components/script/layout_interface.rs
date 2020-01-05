@@ -7,10 +7,12 @@
 
 
 use dom::bindings::js::JS;
+use dom::bindings::trace::JSTraceable;
 use dom::node::{Node, LayoutDataRef};
 
 use geom::point::Point2D;
 use geom::rect::Rect;
+use js::jsapi::JSTracer;
 use libc::c_void;
 use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel};
 use servo_msg::constellation_msg::WindowSizeData;
@@ -21,8 +23,6 @@ use std::comm::{channel, Receiver, Sender};
 use std::owned::BoxAny;
 use style::Stylesheet;
 use url::Url;
-
-use serialize::{Encodable, Encoder};
 
 
 pub enum Msg {
@@ -75,12 +75,12 @@ pub trait LayoutRPC {
 
 pub struct TrustedNodeAddress(pub *const c_void);
 
-impl<S: Encoder<E>, E> Encodable<S, E> for TrustedNodeAddress {
-    fn encode(&self, s: &mut S) -> Result<(), E> {
+impl JSTraceable for TrustedNodeAddress {
+    fn trace(&self, s: *mut JSTracer) {
         let TrustedNodeAddress(addr) = *self;
         let node = addr as *const Node;
         unsafe {
-            JS::from_raw(node).encode(s)
+            JS::from_raw(node).trace(s)
         }
     }
 }
@@ -95,7 +95,8 @@ pub struct HitTestResponse(pub UntrustedNodeAddress);
 pub struct MouseOverResponse(pub Vec<UntrustedNodeAddress>);
 
 
-#[deriving(PartialEq, PartialOrd, Eq, Ord, Encodable)]
+#[deriving(PartialEq, PartialOrd, Eq, Ord)]
+#[jstraceable]
 pub enum DocumentDamageLevel {
     
     ReflowDocumentDamage,
@@ -115,7 +116,7 @@ impl DocumentDamageLevel {
 
 
 
-#[deriving(Encodable)]
+#[jstraceable]
 pub struct DocumentDamage {
     
     pub root: TrustedNodeAddress,

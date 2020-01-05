@@ -35,10 +35,8 @@ use std::mem::replace;
 use std::rc::Rc;
 use url::Url;
 
-use serialize::{Encoder, Encodable};
 
-
-#[deriving(Encodable)]
+#[jstraceable]
 pub struct Page {
     
     pub id: PipelineId,
@@ -453,7 +451,7 @@ impl Page {
 }
 
 
-#[deriving(Encodable)]
+#[jstraceable]
 #[must_root]
 pub struct Frame {
     
@@ -463,7 +461,7 @@ pub struct Frame {
 }
 
 
-#[deriving(Encodable)]
+#[jstraceable]
 pub struct JSPageInfo {
     
     pub dom_static: GlobalStaticData,

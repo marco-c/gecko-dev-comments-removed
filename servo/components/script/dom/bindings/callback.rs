@@ -13,8 +13,6 @@ use js::jsval::{JSVal, UndefinedValue};
 
 use std::ptr;
 
-use serialize::{Encodable, Encoder};
-
 
 pub enum ExceptionHandling {
     
@@ -28,7 +26,8 @@ pub enum ExceptionHandling {
 }
 
 
-#[deriving(Clone,PartialEq,Encodable)]
+#[deriving(Clone,PartialEq)]
+#[jstraceable]
 pub struct CallbackFunction {
     object: CallbackObject
 }
@@ -44,7 +43,8 @@ impl CallbackFunction {
 }
 
 
-#[deriving(Clone,PartialEq,Encodable)]
+#[deriving(Clone,PartialEq)]
+#[jstraceable]
 pub struct CallbackInterface {
     object: CallbackObject
 }
@@ -52,7 +52,8 @@ pub struct CallbackInterface {
 
 
 #[allow(raw_pointer_deriving)]
-#[deriving(Clone,PartialEq,Encodable)]
+#[deriving(Clone,PartialEq)]
+#[jstraceable]
 struct CallbackObject {
     
     callback: Traceable<*mut JSObject>,

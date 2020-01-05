@@ -51,10 +51,11 @@ use std::rc::Rc;
 use std::time::duration::Duration;
 use time;
 
-#[deriving(PartialEq, Encodable, Eq)]
+#[deriving(PartialEq, Eq)]
+#[jstraceable]
 pub struct TimerId(i32);
 
-#[deriving(Encodable)]
+#[jstraceable]
 pub struct TimerHandle {
     handle: TimerId,
     pub data: TimerData,
@@ -74,7 +75,7 @@ impl TimerHandle {
     }
 }
 
-#[deriving(Encodable)]
+#[jstraceable]
 #[must_root]
 pub struct Window {
     eventtarget: EventTarget,
@@ -121,7 +122,7 @@ impl Drop for Window {
 
 
 
-#[deriving(Encodable)]
+#[jstraceable]
 pub struct TimerData {
     pub is_interval: bool,
     pub funval: Traceable<JSVal>,

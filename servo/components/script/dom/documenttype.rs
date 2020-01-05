@@ -13,7 +13,7 @@ use dom::node::{Node, DoctypeNodeTypeId, NodeHelpers};
 use servo_util::str::DOMString;
 
 
-#[deriving(Encodable)]
+#[jstraceable]
 #[must_root]
 pub struct DocumentType {
     pub node: Node,

@@ -64,14 +64,12 @@ use style::ComputedValues;
 use sync::Arc;
 use uuid;
 
-use serialize::{Encoder, Encodable};
 
 
 
 
 
-
-#[deriving(Encodable)]
+#[jstraceable]
 #[must_root]
 pub struct Node {
     
@@ -113,12 +111,6 @@ pub struct Node {
     unique_id: RefCell<String>,
 }
 
-impl<S: Encoder<E>, E> Encodable<S, E> for LayoutDataRef {
-    fn encode(&self, _s: &mut S) -> Result<(), E> {
-        Ok(())
-    }
-}
-
 impl NodeDerived for EventTarget {
     fn is_node(&self) -> bool {
         match self.type_id {
@@ -130,7 +122,7 @@ impl NodeDerived for EventTarget {
 
 bitflags! {
     #[doc = "Flags for node items."]
-    #[deriving(Encodable)]
+    #[jstraceable]
     flags NodeFlags: u8 {
         #[doc = "Specifies whether this node is in a document."]
         static IsInDoc = 0x01,
@@ -243,7 +235,8 @@ impl LayoutDataRef {
 }
 
 
-#[deriving(PartialEq,Encodable)]
+#[deriving(PartialEq)]
+#[jstraceable]
 pub enum NodeTypeId {
     DoctypeNodeTypeId,
     DocumentFragmentNodeTypeId,
