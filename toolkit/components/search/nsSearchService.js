@@ -2562,6 +2562,7 @@ Engine.prototype = {
 
 
 
+
   speculativeConnect: function SRCH_ENG_speculativeConnect(options) {
     if (!options || !options.window) {
       Cu.reportError("invalid options arg passed to nsISearchEngine.speculativeConnect");
@@ -2576,12 +2577,26 @@ Engine.prototype = {
                            .getInterface(Components.interfaces.nsIWebNavigation)
                            .QueryInterface(Components.interfaces.nsILoadContext);
 
-    connector.speculativeConnect(searchURI, callbacks);
+    
+    
+    
+    let attrs = options.originAttributes;
+
+    if (!attrs) {
+      attrs = options.window.document
+                            .docShell
+                            .getOriginAttributes();
+    }
+
+    let principal = Services.scriptSecurityManager
+                            .createCodebasePrincipal(searchURI, attrs);
+
+    connector.speculativeConnect2(searchURI, principal, callbacks);
 
     if (this.supportsResponseType(URLTYPE_SUGGEST_JSON)) {
       let suggestURI = this.getSubmission("dummy", URLTYPE_SUGGEST_JSON).uri;
       if (suggestURI.prePath != searchURI.prePath)
-        connector.speculativeConnect(suggestURI, callbacks);
+        connector.speculativeConnect2(suggestURI, principal, callbacks);
     }
   },
 };

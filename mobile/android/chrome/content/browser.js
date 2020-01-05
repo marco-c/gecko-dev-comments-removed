@@ -6166,7 +6166,8 @@ var SearchEngines = {
     });
 
     
-    Services.search.defaultEngine.speculativeConnect({window: window});
+    Services.search.defaultEngine.speculativeConnect({ window: window,
+                                                       originAttributes: {} });
   },
 
   
