@@ -310,7 +310,6 @@ private:
     
     
     
-    
     bool mDecodePending;
     bool mNeedDraining;
     bool mDraining;
