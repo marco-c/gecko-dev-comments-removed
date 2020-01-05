@@ -90,6 +90,28 @@ struct SPSData
 
 
 
+  uint8_t bit_depth_luma_minus8;
+
+  
+
+
+
+
+
+
+
+
+  uint8_t bit_depth_chroma_minus8;
+
+  
+
+
+
+
+
+
+
+
 
 
   bool separate_colour_plane_flag;
@@ -211,6 +233,14 @@ struct SPSData
 
 
   bool mb_adaptive_frame_field_flag;
+
+  
+
+
+
+
+
+  bool direct_8x8_inference_flag;
 
   
 
@@ -371,6 +401,7 @@ struct PPSData
   bool entropy_coding_mode_flag;
 
   
+
 
 
 
