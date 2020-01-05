@@ -149,7 +149,7 @@ class MediaQueryList;
 class GlobalObject;
 class NodeFilter;
 class NodeIterator;
-enum class OrientationType : uint32_t;
+enum class OrientationType : uint8_t;
 class ProcessingInstruction;
 class Promise;
 class StyleSheetList;
@@ -705,14 +705,6 @@ public:
   bool GetHasMixedDisplayContentBlocked()
   {
     return mHasMixedDisplayContentBlocked;
-  }
-
-  
-
-
-  void SetHasReferrerPolicyCSP(bool aHasReferrerPolicyCSP)
-  {
-    mHasReferrerPolicyCSP = aHasReferrerPolicyCSP;
   }
 
   
@@ -3045,9 +3037,10 @@ protected:
 #ifdef MOZILLA_INTERNAL_API
   
   mozilla::dom::VisibilityState mVisibilityState;
-  static_assert(sizeof(mozilla::dom::VisibilityState) == sizeof(uint32_t), "Error size of mVisibilityState and mDummy");
+  static_assert(sizeof(mozilla::dom::VisibilityState) == sizeof(uint8_t),
+                "Error size of mVisibilityState and mDummy");
 #else
-  uint32_t mDummy;
+  uint8_t mDummy;
 #endif
 
   
@@ -3087,9 +3080,6 @@ protected:
   
   
   bool mVisible : 1;
-
-  
-  bool mHasReferrerPolicyCSP : 1;
 
   
   
