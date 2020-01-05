@@ -2078,6 +2078,12 @@ PresShell::SetIgnoreFrameDestruction(bool aIgnore)
 void
 PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
 {
+  
+  
+  
+  FrameLayerBuilder::RemoveFrameFromLayerManager(aFrame, aFrame->DisplayItemData());
+  aFrame->DisplayItemData().Clear();
+
   if (!mIgnoreFrameDestruction) {
     mDocument->StyleImageLoader()->DropRequestsForFrame(aFrame);
 
@@ -2115,13 +2121,6 @@ PresShell::NotifyDestroyingFrame(nsIFrame* aFrame)
     }
 
     mFramesToDirty.RemoveEntry(aFrame);
-  } else {
-    
-    
-    
-    
-    mPresContext->PropertyTable()->
-      Delete(aFrame, FrameLayerBuilder::LayerManagerDataProperty());
   }
 }
 
@@ -8284,10 +8283,6 @@ PresShell::HandleEventInternal(WidgetEvent* aEvent,
         Telemetry::Accumulate(Telemetry::INPUT_EVENT_RESPONSE_COALESCED_MS,
                               lastMillis);
       }
-      sLastInputCreated = aEvent->mTimeStamp;
-    } else if (aEvent->mTimeStamp < sLastInputCreated) {
-      
-      
       sLastInputCreated = aEvent->mTimeStamp;
     }
     sLastInputProcessed = now;
