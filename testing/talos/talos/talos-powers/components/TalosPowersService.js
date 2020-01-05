@@ -91,7 +91,6 @@ TalosPowersService.prototype = {
 
 
 
-
   profilerBegin(data) {
     Services.profiler
             .StartProfiler(data.entries, data.interval,
