@@ -117,6 +117,7 @@ pref("browser.download.forbid_open_with", false);
 
 
 pref("dom.quotaManager.testing", false);
+pref("dom.select_popup_in_parent.enabled", false);
 
 
 pref("dom.indexedDB.enabled", true);
@@ -741,6 +742,13 @@ pref("gfx.downloadable_fonts.disable_cache", false);
 
 pref("gfx.downloadable_fonts.woff2.enabled", true);
 
+
+#ifdef RELEASE_OR_BETA
+pref("gfx.downloadable_fonts.otl_validation", false);
+#else
+pref("gfx.downloadable_fonts.otl_validation", true);
+#endif
+
 #ifdef ANDROID
 pref("gfx.bundled_fonts.enabled", true);
 pref("gfx.bundled_fonts.force-enabled", false);
@@ -1198,14 +1206,6 @@ pref("dom.forms.requestAutocomplete", false);
 
 
 pref("dom.forms.selectSearch", false);
-
-
-#ifdef XP_LINUX
-pref("dom.forms.select.customstyling", false);
-#else
-pref("dom.forms.select.customstyling", true);
-#endif
-pref("dom.select_popup_in_parent.enabled", false);
 
 
 pref("dom.input.dirpicker", false);
@@ -5599,8 +5599,6 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 
 
 pref("browser.storageManager.enabled", false);
-pref("browser.storageManager.pressureNotification.minIntervalMS", 1200000);
-pref("browser.storageManager.pressureNotification.usageThresholdGB", 5);
 pref("dom.IntersectionObserver.enabled", false);
 
 
