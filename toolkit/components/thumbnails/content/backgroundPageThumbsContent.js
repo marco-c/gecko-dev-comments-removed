@@ -189,6 +189,10 @@ const backgroundPageThumbsContent = {
   
   
   _loadAboutBlank: function _loadAboutBlank() {
+    
+    if (!docShell) {
+      return;
+    }
     this._webNav.loadURI("about:blank",
                          Ci.nsIWebNavigation.LOAD_FLAGS_STOP_CONTENT,
                          null, null, null);
