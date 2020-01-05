@@ -89,7 +89,18 @@
 
 
 
-#if defined(DEBUG) || (defined(NIGHTLY_BUILD) && !defined(MOZ_PROFILING))
+
+
+
+
+
+
+
+
+
+
+
+#if !defined(__MINGW32__) && (defined(DEBUG) || (defined(NIGHTLY_BUILD) && !defined(MOZ_PROFILING)))
 
 #include <thread>
 #define MOZ_WEAKPTR_DECLARE_THREAD_SAFETY_CHECK \
