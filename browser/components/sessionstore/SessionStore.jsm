@@ -3334,7 +3334,7 @@ var SessionStoreInternal = {
       }
     }
 
-    if (selectTab > 0) {
+    if (selectTab > 0 && selectTab <= tabs.length) {
       
       
       let currentIndex = tabbrowser.tabContainer.selectedIndex;
@@ -4404,7 +4404,7 @@ var SessionStoreInternal = {
           if (tIndex + 1 < window.selected)
             window.selected -= 1;
           else if (tIndex + 1 == window.selected)
-            pinnedWindowState.selected = pinnedWindowState.tabs.length + 2;
+            pinnedWindowState.selected = pinnedWindowState.tabs.length + 1;
             
 
           
