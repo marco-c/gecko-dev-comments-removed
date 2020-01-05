@@ -11,8 +11,8 @@ use geom::scale_factor::ScaleFactor;
 use geom::size::TypedSize2D;
 use layers::geometry::DevicePixel;
 use layers::platform::surface::NativeGraphicsMetadata;
-use servo_msg::constellation_msg::{Key, KeyState, KeyModifiers};
-use servo_msg::compositor_msg::{ReadyState, PaintState};
+use servo_msg::compositor_msg::{PaintState, ReadyState};
+use servo_msg::constellation_msg::{Key, KeyState, KeyModifiers, LoadData};
 use servo_util::geometry::ScreenPx;
 use std::fmt::{FormatError, Formatter, Show};
 use std::rc::Rc;
@@ -38,7 +38,11 @@ pub enum WindowEvent {
     
     IdleWindowEvent,
     
+    
     RefreshWindowEvent,
+    
+    
+    InitializeCompositingWindowEvent,
     
     ResizeWindowEvent(TypedSize2D<DevicePixel, uint>),
     
@@ -47,6 +51,7 @@ pub enum WindowEvent {
     MouseWindowEventClass(MouseWindowEvent),
     
     MouseWindowMoveEventClass(TypedPoint2D<DevicePixel, f32>),
+    
     
     ScrollWindowEvent(TypedPoint2D<DevicePixel, f32>, TypedPoint2D<DevicePixel, i32>),
     
@@ -66,6 +71,7 @@ impl Show for WindowEvent {
         match *self {
             IdleWindowEvent => write!(f, "Idle"),
             RefreshWindowEvent => write!(f, "Refresh"),
+            InitializeCompositingWindowEvent => write!(f, "InitializeCompositing"),
             ResizeWindowEvent(..) => write!(f, "Resize"),
             KeyEvent(..) => write!(f, "Key"),
             LoadUrlWindowEvent(..) => write!(f, "LoadUrl"),
@@ -92,6 +98,12 @@ pub trait WindowMethods {
     fn set_ready_state(&self, ready_state: ReadyState);
     
     fn set_paint_state(&self, paint_state: PaintState);
+    
+    fn set_page_title(&self, title: Option<String>);
+    
+    fn set_page_load_data(&self, load_data: LoadData);
+    
+    fn load_end(&self);
 
     
     fn hidpi_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;
@@ -106,5 +118,10 @@ pub trait WindowMethods {
     
     fn create_compositor_channel(_: &Option<Rc<Self>>)
                                  -> (Box<CompositorProxy+Send>, Box<CompositorReceiver>);
+
+    
+    
+    
+    fn prepare_for_composite(&self) -> bool;
 }
 

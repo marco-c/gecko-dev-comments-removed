@@ -19,7 +19,7 @@ pub enum PaintState {
     PaintingPaintState,
 }
 
-#[deriving(Eq, Ord, PartialEq, PartialOrd, Clone)]
+#[deriving(Eq, Ord, PartialEq, PartialOrd, Clone, Show)]
 pub enum ReadyState {
     
     Blank,
@@ -111,6 +111,8 @@ pub trait ScriptListener {
                              pipeline_id: PipelineId,
                              layer_id: LayerId,
                              point: Point2D<f32>);
+    
+    fn set_title(&mut self, pipeline_id: PipelineId, new_title: Option<String>);
     fn close(&mut self);
     fn dup(&mut self) -> Box<ScriptListener+'static>;
 }

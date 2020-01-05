@@ -205,6 +205,9 @@ pub enum Msg {
     PainterReadyMsg(PipelineId),
     ResizedWindowMsg(WindowSizeData),
     KeyEvent(Key, KeyState, KeyModifiers),
+    
+    
+    GetPipelineTitleMsg(PipelineId),
 }
 
 

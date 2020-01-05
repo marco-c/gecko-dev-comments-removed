@@ -25,7 +25,6 @@ pub enum cef_response_t {}
 pub enum cef_urlrequest_client_t {}
 pub enum cef_domnode_t {}
 pub enum cef_load_handler_t {}
-pub enum cef_request_context_t {}
 pub enum cef_browser_settings_t {}
 pub enum cef_v8context_t {}
 pub enum cef_v8exception_t {}
@@ -68,7 +67,7 @@ pub type CefBrowserSettings = cef_browser_settings_t;
 pub type CefScreenInfo = cef_screen_info_t;
 
 pub type cef_string_t = cef_string_utf16; 
-pub type cef_string_userfree_t = cef_string_t; 
+pub type cef_string_userfree_t = *mut cef_string_t; 
 
 pub struct cef_string_utf8 {
     pub str: *mut u8,
@@ -79,7 +78,7 @@ pub type cef_string_utf8_t = cef_string_utf8;
 pub type cef_string_userfree_utf8_t = cef_string_utf8;
 
 pub type cef_string_utf16_t = cef_string_utf16;
-pub type cef_string_userfree_utf16_t = cef_string_utf16;
+pub type cef_string_userfree_utf16_t = *mut cef_string_utf16;
 pub struct cef_string_utf16 {
     pub str: *mut c_ushort,
     pub length: size_t,
@@ -565,6 +564,8 @@ pub enum cef_log_severity_t {
 
 
 pub type cef_settings_t = cef_settings;
+
+#[repr(C)]
 pub struct cef_settings {
   
   
@@ -600,6 +601,14 @@ pub struct cef_settings {
   
   
   pub multi_threaded_message_loop: c_int,
+
+
+  
+  
+  
+  
+  
+  pub windowless_rendering_enabled: c_int,
 
   
   
@@ -666,12 +675,6 @@ pub struct cef_settings {
   
   
   pub log_severity: cef_log_severity_t,
-
-  
-  
-  
-  
-  pub release_dcheck_enabled: c_int,
 
   
   
@@ -763,6 +766,11 @@ pub struct cef_settings {
   
   
   pub background_color: cef_color_t,
+
+  
+  
+  
+  pub rendering_threads: c_int,
 }
 
 
@@ -799,11 +807,57 @@ pub type CefBase = *mut cef_base_t;
 
 
 pub type cef_window_info_t = cef_window_info;
+
+#[cfg(target_os="linux")]
 pub struct cef_window_info {
   pub x: c_uint,
   pub y: c_uint,
   pub width: c_uint,
   pub height: c_uint,
+
+  
+  
+  
+  pub parent_window: cef_window_handle_t,
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  pub windowless_rendering_enabled: c_int,
+
+  
+  
+  
+  
+  
+  
+  pub transparent_painting_enabled: c_int,
+
+  
+  
+  
+  pub window: cef_window_handle_t
+}
+
+#[cfg(target_os="macos")]
+pub struct cef_window_info {
+  pub window_name: cef_string_t,
+  pub x: c_uint,
+  pub y: c_uint,
+  pub width: c_uint,
+  pub height: c_uint,
+
+  
+  
+  
+  pub hidden: c_int,
 
   
   
