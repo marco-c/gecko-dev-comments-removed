@@ -90,8 +90,17 @@ private:
                                           const nsACString& aOriginNoSuffix,
                                           nsIPrincipal* aPrincipal);
 
+  enum class CreateMode {
+    
+    UseIfExistsNeverCreate,
+    
+    CreateAlways,
+    
+    CreateIfShouldPreload
+  };
+
   
-  nsresult GetStorageInternal(bool aCreate,
+  nsresult GetStorageInternal(CreateMode aCreate,
                               mozIDOMWindow* aWindow,
                               nsIPrincipal* aPrincipal,
                               const nsAString& aDocumentURI,
