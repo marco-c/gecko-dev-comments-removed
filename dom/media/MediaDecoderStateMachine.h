@@ -338,7 +338,6 @@ protected:
 
   
   
-  void Push(MediaData* aSample);
   void PushAudio(MediaData* aSample);
   void PushVideo(MediaData* aSample);
 

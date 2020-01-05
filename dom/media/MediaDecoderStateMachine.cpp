@@ -2569,28 +2569,6 @@ MediaDecoderStateMachine::PushVideo(MediaData* aSample)
 }
 
 void
-MediaDecoderStateMachine::Push(MediaData* aSample)
-{
-  MOZ_ASSERT(OnTaskQueue());
-  MOZ_ASSERT(aSample);
-
-  if (aSample->mType == MediaData::AUDIO_DATA) {
-    
-    
-    
-    AudioQueue().Push(aSample);
-  } else if (aSample->mType == MediaData::VIDEO_DATA) {
-    
-    
-    
-    aSample->As<VideoData>()->mFrameID = ++mCurrentFrameID;
-    VideoQueue().Push(aSample);
-  }
-
-  DispatchDecodeTasksIfNeeded();
-}
-
-void
 MediaDecoderStateMachine::OnAudioPopped(const RefPtr<MediaData>& aSample)
 {
   MOZ_ASSERT(OnTaskQueue());
