@@ -593,10 +593,6 @@ GeckoRestyleManager::UpdateOnlyAnimationStyles()
   tracker.Init(this);
 
   if (doCSS) {
-    
-    
-    
-    
     PresContext()->EffectCompositor()->AddStyleUpdatesTo(tracker);
   }
 
@@ -686,8 +682,7 @@ ElementForStyleContext(nsIContent* aParentContent,
 {
   
   NS_PRECONDITION(aPseudoType == CSSPseudoElementType::NotPseudo ||
-                  aPseudoType == CSSPseudoElementType::InheritingAnonBox ||
-                  aPseudoType == CSSPseudoElementType::NonInheritingAnonBox ||
+                  aPseudoType == CSSPseudoElementType::AnonBox ||
                   aPseudoType < CSSPseudoElementType::Count,
                   "Unexpected pseudo");
   
@@ -696,8 +691,7 @@ ElementForStyleContext(nsIContent* aParentContent,
     return aFrame->GetContent()->AsElement();
   }
 
-  if (aPseudoType == CSSPseudoElementType::InheritingAnonBox ||
-      aPseudoType == CSSPseudoElementType::NonInheritingAnonBox) {
+  if (aPseudoType == CSSPseudoElementType::AnonBox) {
     return nullptr;
   }
 
@@ -2492,11 +2486,6 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
     
     
     newContext = styleSet->ResolveStyleForPlaceholder();
-  } else if (pseudoType == CSSPseudoElementType::NonInheritingAnonBox) {
-    
-    
-    
-    newContext = styleSet->ResolveNonInheritingAnonymousBoxStyle(pseudoTag);
   }
   else {
     Element* element = ElementForStyleContext(mParentContent, aSelf, pseudoType);
@@ -2523,9 +2512,9 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
                                                 parentContext, oldContext,
                                                 rshint);
       }
-    } else if (pseudoType == CSSPseudoElementType::InheritingAnonBox) {
-      newContext = styleSet->ResolveInheritingAnonymousBoxStyle(pseudoTag,
-                                                                parentContext);
+    } else if (pseudoType == CSSPseudoElementType::AnonBox) {
+      newContext = styleSet->ResolveAnonymousBoxStyle(pseudoTag,
+                                                      parentContext);
     }
     else {
       if (pseudoTag) {
@@ -2845,14 +2834,9 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
     NS_ASSERTION(extraPseudoTag &&
                  !nsCSSAnonBoxes::IsNonElement(extraPseudoTag),
                  "extra style context is not pseudo element");
-    Element* element =
-      (extraPseudoType != CSSPseudoElementType::InheritingAnonBox &&
-       extraPseudoType != CSSPseudoElementType::NonInheritingAnonBox)
-      ? mContent->AsElement() : nullptr;
-    if (extraPseudoType == CSSPseudoElementType::NonInheritingAnonBox) {
-      newExtraContext =
-        styleSet->ResolveNonInheritingAnonymousBoxStyle(extraPseudoTag);
-    } else if (!MustRestyleSelf(aRestyleHint, element)) {
+    Element* element = extraPseudoType != CSSPseudoElementType::AnonBox
+                         ? mContent->AsElement() : nullptr;
+    if (!MustRestyleSelf(aRestyleHint, element)) {
       if (CanReparentStyleContext(aRestyleHint)) {
         newExtraContext =
           styleSet->ReparentStyleContext(oldExtraContext, newContext, element);
@@ -2872,9 +2856,9 @@ ElementRestyler::RestyleSelf(nsIFrame* aSelf,
                                                 newContext, oldExtraContext,
                                                 nsRestyleHint(0));
       }
-    } else if (extraPseudoType == CSSPseudoElementType::InheritingAnonBox) {
-      newExtraContext = styleSet->
-        ResolveInheritingAnonymousBoxStyle(extraPseudoTag, newContext);
+    } else if (extraPseudoType == CSSPseudoElementType::AnonBox) {
+      newExtraContext = styleSet->ResolveAnonymousBoxStyle(extraPseudoTag,
+                                                           newContext);
     } else {
       
       
