@@ -1,3 +1,5 @@
+"use strict";
+
 const StandardURL = Components.Constructor("@mozilla.org/network/standard-url;1",
                                            "nsIStandardURL",
                                            "init");
@@ -14,7 +16,7 @@ function symmetricEquality(expect, a, b)
     
 
     ["spec", "prePath", "scheme", "userPass", "username", "password",
-     "hostPort", "host", "path", "filePath", "param", "query",
+     "hostPort", "host", "path", "filePath", "query",
      "ref", "directory", "fileName", "fileBaseName", "fileExtension"]
       .map(function(prop) {
 	dump("Testing '"+ prop + "'\n");
@@ -436,5 +438,19 @@ add_test(function test_ipv4Normalize()
     do_check_eq(url.spec, spec);
   }
 
+  run_next_test();
+});
+
+add_test(function test_invalidHostChars() {
+  var url = stringToURL("http://example.org/");
+  for (let i = 0; i <= 0x20; i++) {
+    Assert.throws(() => { url.host = "a" + String.fromCharCode(i) + "b"; }, "Trying to set hostname containing char code: " + i);
+  }
+  for (let c of "@[]*<>|:\"") {
+    Assert.throws(() => { url.host = "a" + c; }, "Trying to set hostname containing char: " + c);
+  }
+
+  
+  
   run_next_test();
 });

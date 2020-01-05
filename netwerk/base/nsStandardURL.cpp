@@ -620,7 +620,7 @@ nsStandardURL::ValidIPv6orHostname(const char *host, uint32_t length)
     }
 
     const char *end = host + length;
-    if (end != net_FindCharInSet(host, end, "\t\n\v\f\r #/:?@[\\]")) {
+    if (end != net_FindCharInSet(host, end, CONTROL_CHARACTERS " #/:?@[\\]*<>|\"")) {
         
         
         
