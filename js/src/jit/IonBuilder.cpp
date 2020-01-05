@@ -6777,6 +6777,9 @@ IonBuilder::jsop_call(uint32_t argc, bool constructing)
         return false;
 
     
+    replaceMaybeFallbackFunctionGetter(nullptr);
+
+    
     JSFunction* target = nullptr;
     if (targets.length() == 1 && targets[0]->is<JSFunction>())
         target = &targets[0]->as<JSFunction>();
