@@ -141,6 +141,12 @@ this.ExtensionsUI = {
       }
 
       let strings = this._buildStrings(info);
+      
+      if (info.type == "update" && strings.msgs.length == 0) {
+        info.resolve();
+        return;
+      }
+
       this.showPermissionsPrompt(target, strings, info.icon).then(answer => {
         if (answer) {
           info.resolve();
