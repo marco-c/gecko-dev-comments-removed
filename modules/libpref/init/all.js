@@ -5055,6 +5055,9 @@ pref("dom.forms.inputmode", false);
 pref("dom.forms.inputmode", true);
 #endif
 
+
+pref("dom.mozInputMethod.enabled", false);
+
 pref("dom.flyweb.enabled", false);
 
 
@@ -5425,6 +5428,9 @@ pref("media.gmp.insecure.allow", false);
 pref("dom.audiochannel.mutedByDefault", false);
 
 
+pref("dom.dialog_element.enabled", false);
+
+
 #ifdef MOZ_SECUREELEMENT
 pref("dom.secureelement.enabled", false);
 #endif
@@ -5555,5 +5561,4 @@ pref("prompts.authentication_dialog_abuse_limit", 3);
 
 
 pref("browser.storageManager.enabled", false);
-
 pref("dom.IntersectionObserver.enabled", false);
