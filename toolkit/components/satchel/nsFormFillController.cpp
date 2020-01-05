@@ -900,7 +900,7 @@ nsFormFillController::MaybeStartControllingInput(nsIDOMHTMLInputElement* aInput)
     return;
 
   nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(aInput);
-  if (!formControl || !formControl->IsSingleLineTextControl(false))
+  if (!formControl || !formControl->IsSingleLineTextControl(true))
     return;
 
   bool isReadOnly = false;

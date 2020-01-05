@@ -2172,9 +2172,6 @@ pref("security.xcto_nosniff_block_images", false);
 pref("security.ssl.enable_ocsp_must_staple", true);
 
 
-pref("security.insecure_field_warning.contextual.enabled", false);
-
-
 pref("security.cert_pinning.enforcement_level", 0);
 
 

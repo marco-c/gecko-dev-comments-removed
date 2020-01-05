@@ -227,8 +227,7 @@ var LoginManagerParent = {
 
   doAutocompleteSearch: function({ formOrigin, actionOrigin,
                                    searchString, previousResult,
-                                   rect, requestId, isSecure, isPasswordField,
-                                   remote }, target) {
+                                   rect, requestId, isSecure, remote }, target) {
     
     
 
@@ -262,10 +261,6 @@ var LoginManagerParent = {
 
       
       
-      
-      if (isPasswordField) {
-        return true;
-      }
       return match && match.toLowerCase().startsWith(searchStringLower);
     });
 
