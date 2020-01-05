@@ -4720,7 +4720,7 @@ PresShell::RenderDocument(const nsRect& aRect, uint32_t aFlags,
       
       
       if (layerManager &&
-          (!layerManager->AsClientLayerManager() ||
+          (!layerManager->AsKnowsCompositor() ||
            XRE_IsParentProcess())) {
         flags |= PaintFrameFlags::PAINT_WIDGET_LAYERS;
       }
@@ -9217,7 +9217,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
   NS_ASSERTION(target == rootFrame ||
                desiredSize.ScrollableOverflow().IsEqualEdges(boundsRelativeToTarget),
                "non-root reflow roots must not have scrollable overflow");
-  NS_ASSERTION(status.IsEmpty(),
+  NS_ASSERTION(status == NS_FRAME_COMPLETE,
                "reflow roots should never split");
 
   target->SetSize(boundsRelativeToTarget.Size());
