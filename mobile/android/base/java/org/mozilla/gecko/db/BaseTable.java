@@ -10,6 +10,7 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.net.Uri;
 import android.util.Log;
+import java.util.Arrays;
 
 
 
@@ -37,7 +38,7 @@ public abstract class BaseTable implements Table {
     @Override
     public Cursor query(SQLiteDatabase db, Uri uri, int dbId, String[] columns, String selection, String[] selectionArgs, String sortOrder, String groupBy, String limit) {
         Cursor c = db.query(getTable(), columns, selection, selectionArgs, groupBy, null, sortOrder, limit);
-        log("query " + columns + " in " + selection + " = " + c);
+        log("query " + Arrays.toString(columns) + " in " + selection + " = " + c);
         return c;
     }
 
