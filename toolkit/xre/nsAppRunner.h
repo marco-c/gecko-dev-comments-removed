@@ -118,6 +118,9 @@ namespace mozilla {
 namespace startup {
 extern GeckoProcessType sChildProcessType;
 } 
+
+const char* PlatformBuildID();
+
 } 
 
 
