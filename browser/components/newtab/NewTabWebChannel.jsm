@@ -145,6 +145,10 @@ NewTabWebChannelImpl.prototype = {
 
 
   _getBrowserRefs() {
+    
+    if (!this._browsers) {
+      return [];
+    }
     let refs = [];
     for (let bRef of this._browsers) {
       
