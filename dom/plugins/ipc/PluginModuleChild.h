@@ -273,7 +273,6 @@ private:
 
     bool mIsChrome;
     bool mHasShutdown; 
-    Transport* mTransport;
 
     
     NP_PLUGINSHUTDOWN mShutdownFunc;
