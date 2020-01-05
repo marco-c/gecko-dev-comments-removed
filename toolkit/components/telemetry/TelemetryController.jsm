@@ -720,6 +720,9 @@ var Impl = {
     TelemetrySession.earlyInit(this._testMode);
 
     
+    TelemetrySend.earlyInit();
+
+    
     
     
     
@@ -735,10 +738,10 @@ var Impl = {
         this._initialized = true;
         TelemetryEnvironment.delayedInit();
 
-        yield TelemetrySend.setup(this._testMode);
-
         
         this._clientID = yield ClientID.getClientID();
+
+        yield TelemetrySend.setup(this._testMode);
 
         
         yield TelemetrySession.delayedInit();

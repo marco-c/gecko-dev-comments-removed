@@ -19,6 +19,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
 Cu.import("resource://gre/modules/Task.jsm", this);
+Cu.import("resource://gre/modules/ClientID.jsm");
 Cu.import("resource://gre/modules/Log.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/PromiseUtils.jsm");
@@ -45,6 +46,7 @@ const LOGGER_PREFIX = "TelemetrySend::";
 const PREF_BRANCH = "toolkit.telemetry.";
 const PREF_SERVER = PREF_BRANCH + "server";
 const PREF_UNIFIED = PREF_BRANCH + "unified";
+const PREF_ENABLED = PREF_BRANCH + "enabled";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 const PREF_OVERRIDE_OFFICIAL_CHECK = PREF_BRANCH + "send.overrideOfficialCheck";
 
@@ -174,6 +176,14 @@ this.TelemetrySend = {
 
   get pendingPingCount() {
     return TelemetrySendImpl.pendingPingCount;
+  },
+
+  
+
+
+
+  earlyInit() {
+    TelemetrySendImpl.earlyInit();
   },
 
   
@@ -549,13 +559,19 @@ var TelemetrySendImpl = {
   
   _overduePingCount: 0,
 
-  
-  
-  _overrideOfficialCheck: false,
-
   OBSERVER_TOPICS: [
     TOPIC_IDLE_DAILY,
   ],
+
+  OBSERVED_PREFERENCES: [
+    PREF_ENABLED,
+    PREF_FHR_UPLOAD_ENABLED,
+  ],
+
+  
+  get _overrideOfficialCheck() {
+    return Preferences.get(PREF_OVERRIDE_OFFICIAL_CHECK, false);
+  },
 
   get _log() {
     if (!this._logger) {
@@ -581,16 +597,26 @@ var TelemetrySendImpl = {
     this._testMode = testing;
   },
 
+  earlyInit() {
+    this._annotateCrashReport();
+  },
+
   async setup(testing) {
     this._log.trace("setup");
 
     this._testMode = testing;
     this._sendingEnabled = true;
-    this._overrideOfficialCheck = Preferences.get(PREF_OVERRIDE_OFFICIAL_CHECK, false);
 
     Services.obs.addObserver(this, TOPIC_IDLE_DAILY, false);
 
     this._server = Preferences.get(PREF_SERVER, undefined);
+
+    
+    
+    for (let pref of this.OBSERVED_PREFERENCES) {
+      Preferences.observe(pref, this._annotateCrashReport, this);
+    }
+    this._annotateCrashReport();
 
     
     try {
@@ -605,6 +631,35 @@ var TelemetrySendImpl = {
 
     
     SendScheduler.triggerSendingPings(true);
+  },
+
+  
+
+
+
+
+
+  _annotateCrashReport() {
+    try {
+      const cr = Cc["@mozilla.org/toolkit/crash-reporter;1"];
+      if (cr) {
+        const crs = cr.getService(Ci.nsICrashReporter);
+
+        let clientId = ClientID.getCachedClientID();
+        let server = this._server || Preferences.get(PREF_SERVER, undefined);
+
+        if (!this.sendingEnabled() || !TelemetryReportingPolicy.canUpload()) {
+          
+          crs.annotateCrashReport("TelemetryClientId", "");
+          crs.annotateCrashReport("TelemetryServerURL", "");
+        } else {
+          crs.annotateCrashReport("TelemetryClientId", clientId);
+          crs.annotateCrashReport("TelemetryServerURL", server);
+        }
+      }
+    } catch (e) {
+      
+    }
   },
 
   
@@ -638,6 +693,13 @@ var TelemetrySendImpl = {
   async shutdown() {
     this._shutdown = true;
 
+    for (let pref of this.OBSERVED_PREFERENCES) {
+      
+      
+      
+      Preferences.ignore(pref, this._annotateCrashReport, this);
+    }
+
     for (let topic of this.OBSERVER_TOPICS) {
       try {
         Services.obs.removeObserver(this, topic);
@@ -668,7 +730,6 @@ var TelemetrySendImpl = {
     this._shutdown = false;
     this._currentPings = new Map();
     this._overduePingCount = 0;
-    this._overrideOfficialCheck = Preferences.get(PREF_OVERRIDE_OFFICIAL_CHECK, false);
 
     const histograms = [
       "TELEMETRY_SUCCESS",
@@ -686,7 +747,10 @@ var TelemetrySendImpl = {
 
   notifyCanUpload() {
     
+    
     SendScheduler.triggerSendingPings(true);
+    this._annotateCrashReport();
+
     return this.promisePendingPingActivity();
   },
 
