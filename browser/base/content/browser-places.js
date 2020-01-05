@@ -1287,7 +1287,7 @@ var BookmarkingUI = {
     if (!this._shouldUpdateStarState()) {
       return this.STATUS_UNSTARRED;
     }
-    if (this._pendingStmt)
+    if (this._pendingUpdate)
       return this.STATUS_UPDATING;
     return this.button.hasAttribute("starred") ? this.STATUS_STARRED
                                                : this.STATUS_UNSTARRED;
@@ -1642,7 +1642,7 @@ var BookmarkingUI = {
   },
 
   _hasBookmarksObserver: false,
-  _itemIds: [],
+  _itemGuids: [],
   uninit: function BUI_uninit() {
     this._updateBookmarkPageMenuItem(true);
     CustomizableUI.removeListener(this);
@@ -1653,9 +1653,8 @@ var BookmarkingUI = {
       PlacesUtils.removeLazyBookmarkObserver(this);
     }
 
-    if (this._pendingStmt) {
-      this._pendingStmt.cancel();
-      delete this._pendingStmt;
+    if (this._pendingUpdate) {
+      delete this._pendingUpdate;
     }
   },
 
@@ -1667,43 +1666,42 @@ var BookmarkingUI = {
   },
 
   updateStarState: function BUI_updateStarState() {
-    
     this._uri = gBrowser.currentURI;
-    this._itemIds = [];
+    this._itemGuids = [];
+    let aItemGuids = [];
 
-    if (this._pendingStmt) {
-      this._pendingStmt.cancel();
-      delete this._pendingStmt;
-    }
+    
+    
+    let pendingUpdate = this._pendingUpdate = {};
 
-    this._pendingStmt = PlacesUtils.asyncGetBookmarkIds(this._uri, (aItemIds, aURI) => {
-      
-      if (!aURI.equals(this._uri)) {
-        Components.utils.reportError("BookmarkingUI did not receive current URI");
-        return;
-      }
+    PlacesUtils.bookmarks.fetch({url: this._uri}, b => aItemGuids.push(b.guid))
+      .catch(Components.utils.reportError)
+      .then(() => {
+         if (pendingUpdate != this._pendingUpdate) {
+           return;
+         }
 
-      
-      
-      
-      this._itemIds = this._itemIds.filter(
-        id => !aItemIds.includes(id)
-      ).concat(aItemIds);
+         
+         
+         
+         this._itemGuids = this._itemGuids.filter(
+           guid => !aItemGuids.includes(guid)
+         ).concat(aItemGuids);
 
-      this._updateStar();
+         this._updateStar();
 
-      
-      if (!this._hasBookmarksObserver) {
-        try {
-          PlacesUtils.addLazyBookmarkObserver(this);
-          this._hasBookmarksObserver = true;
-        } catch (ex) {
-          Components.utils.reportError("BookmarkingUI failed adding a bookmarks observer: " + ex);
-        }
-      }
+         
+         if (!this._hasBookmarksObserver) {
+           try {
+             PlacesUtils.addLazyBookmarkObserver(this);
+             this._hasBookmarksObserver = true;
+           } catch (ex) {
+             Components.utils.reportError("BookmarkingUI failed adding a bookmarks observer: " + ex);
+           }
+         }
 
-      delete this._pendingStmt;
-    });
+         delete this._pendingUpdate;
+       });
   },
 
   _updateStar: function BUI__updateStar() {
@@ -1715,7 +1713,7 @@ var BookmarkingUI = {
       return;
     }
 
-    if (this._itemIds.length > 0) {
+    if (this._itemGuids.length > 0) {
       this.broadcaster.setAttribute("starred", "true");
       this.broadcaster.setAttribute("buttontooltiptext", this._starredTooltip);
       if (this.button.getAttribute("overflowedItem") == "true") {
@@ -1735,7 +1733,7 @@ var BookmarkingUI = {
 
 
   _updateBookmarkPageMenuItem: function BUI__updateBookmarkPageMenuItem(forceReset) {
-    let isStarred = !forceReset && this._itemIds.length > 0;
+    let isStarred = !forceReset && this._itemGuids.length > 0;
     let label = isStarred ? "editlabel" : "bookmarklabel";
     if (this.broadcaster) {
       this.broadcaster.setAttribute("label", this.broadcaster.getAttribute(label));
@@ -1832,7 +1830,7 @@ var BookmarkingUI = {
     }
 
     
-    let isBookmarked = this._itemIds.length > 0;
+    let isBookmarked = this._itemGuids.length > 0;
 
     if (this._currentAreaType == CustomizableUI.TYPE_MENU_PANEL) {
       this._showSubview();
@@ -1846,7 +1844,7 @@ var BookmarkingUI = {
     }
 
     
-    if (!this._pendingStmt) {
+    if (!this._pendingUpdate) {
       if (!isBookmarked)
         this._showBookmarkedNotification();
       PlacesCommandHook.bookmarkCurrentPage(true);
@@ -1911,49 +1909,48 @@ var BookmarkingUI = {
   },
 
   
-  onItemAdded: function BUI_onItemAdded(aItemId, aParentId, aIndex, aItemType,
-                                        aURI) {
+  onItemAdded(aItemId, aParentId, aIndex, aItemType, aURI, aTitle, aDateAdded, aGuid) {
     if (aURI && aURI.equals(this._uri)) {
       
-      if (!this._itemIds.includes(aItemId)) {
-        this._itemIds.push(aItemId);
+      if (!this._itemGuids.includes(aGuid)) {
+        this._itemGuids.push(aGuid);
         
-        if (this._itemIds.length == 1) {
+        if (this._itemGuids.length == 1) {
           this._updateStar();
         }
       }
     }
   },
 
-  onItemRemoved: function BUI_onItemRemoved(aItemId) {
-    let index = this._itemIds.indexOf(aItemId);
+  onItemRemoved(aItemId, aParentId, aIndex, aItemType, aURI, aGuid) {
+    let index = this._itemGuids.indexOf(aGuid);
     
     if (index != -1) {
-      this._itemIds.splice(index, 1);
+      this._itemGuids.splice(index, 1);
       
-      if (this._itemIds.length == 0) {
+      if (this._itemGuids.length == 0) {
         this._updateStar();
       }
     }
   },
 
-  onItemChanged: function BUI_onItemChanged(aItemId, aProperty,
-                                            aIsAnnotationProperty, aNewValue) {
+  onItemChanged(aItemId, aProperty, aIsAnnotationProperty, aNewValue, aLastModified,
+                aItemType, aParentId, aGuid) {
     if (aProperty == "uri") {
-      let index = this._itemIds.indexOf(aItemId);
+      let index = this._itemGuids.indexOf(aGuid);
       
       
       if (index != -1 && aNewValue != this._uri.spec) {
-        this._itemIds.splice(index, 1);
+        this._itemGuids.splice(index, 1);
         
-        if (this._itemIds.length == 0) {
+        if (this._itemGuids.length == 0) {
           this._updateStar();
         }
       } else if (index == -1 && aNewValue == this._uri.spec) {
         
-        this._itemIds.push(aItemId);
+        this._itemGuids.push(aGuid);
         
-        if (this._itemIds.length == 1) {
+        if (this._itemGuids.length == 1) {
           this._updateStar();
         }
       }
@@ -1988,8 +1985,8 @@ var BookmarkingUI = {
       this._starButtonLabel = currentLabel;
 
     if (currentLabel == this._starButtonLabel) {
-      let desiredLabel = this._itemIds.length > 0 ? this._starButtonOverflowedStarredLabel
-                                                 : this._starButtonOverflowedLabel;
+      let desiredLabel = this._itemGuids.length > 0 ? this._starButtonOverflowedStarredLabel
+                                                    : this._starButtonOverflowedLabel;
       aNode.setAttribute("label", desiredLabel);
     }
   },
