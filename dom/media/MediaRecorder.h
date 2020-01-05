@@ -148,6 +148,9 @@ protected:
   
   
   nsTArray<RefPtr<Session> > mSessions;
+
+  nsCOMPtr<nsIDocument> mDocument;
+
   
   nsString mMimeType;
 
