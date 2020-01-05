@@ -76,11 +76,12 @@ impl CompositorData {
     }
 
     pub fn new_root(pipeline: CompositionPipeline,
+                    layer_id: LayerId,
                     epoch: Epoch,
                     cpu_painting: bool,
                     unrendered_color: Color) -> CompositorData {
         CompositorData::new(pipeline,
-                            LayerId::null(),
+                            layer_id,
                             epoch,
                             cpu_painting,
                             WantsScrollEvents,
@@ -92,8 +93,9 @@ impl CompositorData {
     
     
     pub fn add_child(layer: Rc<Layer<CompositorData>>,
-                     layer_properties: LayerProperties) {
-        let new_compositor_data = CompositorData::new(layer.extra_data.borrow().pipeline.clone(),
+                     layer_properties: LayerProperties,
+                     pipeline: CompositionPipeline) {
+        let new_compositor_data = CompositorData::new(pipeline,
                                                       layer_properties.id,
                                                       layer_properties.epoch,
                                                       layer.extra_data.borrow().cpu_painting,
@@ -163,34 +165,6 @@ impl CompositorData {
         layer.children().iter().map(get_child_buffer_request).any(|b| b) || redisplay
     }
 
-    
-    
-    
-    pub fn set_clipping_rect(layer: Rc<Layer<CompositorData>>,
-                             pipeline_id: PipelineId,
-                             layer_id: LayerId,
-                             new_rect: Rect<f32>)
-                             -> bool {
-        debug!("compositor_data: starting set_clipping_rect()");
-        match CompositorData::find_child_with_pipeline_and_layer_id(layer.clone(),
-                                                                    pipeline_id,
-                                                                    layer_id) {
-            Some(child_node) => {
-                debug!("compositor_data: node found for set_clipping_rect()");
-                *child_node.bounds.borrow_mut() = new_rect;
-                true
-            }
-            None => {
-                layer.children().iter()
-                    .any(|kid| CompositorData::set_clipping_rect(kid.clone(),
-                                                                 pipeline_id,
-                                                                 layer_id,
-                                                                 new_rect))
-
-            }
-        }
-    }
-
     pub fn update_layer(layer: Rc<Layer<CompositorData>>, layer_properties: LayerProperties) {
         layer.extra_data.borrow_mut().epoch = layer_properties.epoch;
         layer.extra_data.borrow_mut().unrendered_color = layer_properties.background_color;
@@ -205,19 +179,6 @@ impl CompositorData {
                                             TypedPoint2D(0f32, 0f32),
                                             TypedPoint2D(-1f32, -1f32),
                                             size);
-    }
-
-    fn find_child_with_pipeline_and_layer_id(layer: Rc<Layer<CompositorData>>,
-                                             pipeline_id: PipelineId,
-                                             layer_id: LayerId)
-                                             -> Option<Rc<Layer<CompositorData>>> {
-        for kid in layer.children().iter() {
-            if pipeline_id == kid.extra_data.borrow().pipeline.id &&
-               layer_id == kid.extra_data.borrow().id {
-                return Some(kid.clone());
-            }
-        }
-        return None
     }
 
     pub fn find_layer_with_pipeline_and_layer_id(layer: Rc<Layer<CompositorData>>,
@@ -319,4 +280,3 @@ impl CompositorData {
         }
     }
 }
-
