@@ -89,7 +89,7 @@ const kDownloadsStringsRequiringFormatting = {
 };
 
 const kDownloadsStringsRequiringPluralForm = {
-  otherDownloads2: true
+  otherDownloads3: true
 };
 
 const kPartialDownloadSuffix = ".part";
@@ -1520,12 +1520,11 @@ DownloadsSummaryData.prototype = {
       DownloadsCommon.summarizeDownloads(this._downloadsForSummary());
 
     this._description = DownloadsCommon.strings
-                                       .otherDownloads2(summary.numActive);
+                                       .otherDownloads3(summary.numDownloading);
     this._percentComplete = summary.percentComplete;
 
     
-    this._showingProgress = summary.numDownloading > 0 ||
-                            summary.numPaused > 0;
+    this._showingProgress = summary.numDownloading > 0;
 
     
     if (summary.rawTimeLeft == -1) {
