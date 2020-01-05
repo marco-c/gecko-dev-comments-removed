@@ -11,6 +11,7 @@
 #include "mozilla/StartupTimeline.h"
 #include "nsTArray.h"
 #include "nsStringGlue.h"
+#include "nsXULAppAPI.h"
 
 #include "mozilla/TelemetryHistogramEnums.h"
 #include "mozilla/TelemetryScalarEnums.h"
@@ -133,14 +134,14 @@ void AccumulateTimeDelta(ID id, TimeStamp start, TimeStamp end = TimeStamp::Now(
 
 
 
-void AccumulateChild(const nsTArray<Accumulation>& aAccumulations);
+void AccumulateChild(GeckoProcessType aProcessType, const nsTArray<Accumulation>& aAccumulations);
 
 
 
 
 
 
-void AccumulateChildKeyed(const nsTArray<KeyedAccumulation>& aAccumulations);
+void AccumulateChildKeyed(GeckoProcessType aProcessType, const nsTArray<KeyedAccumulation>& aAccumulations);
 
 
 
