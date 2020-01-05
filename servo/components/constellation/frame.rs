@@ -76,6 +76,13 @@ impl Frame {
     pub fn remove_forward_entries(&mut self) -> Vec<FrameState> {
         replace(&mut self.next, vec!())
     }
+
+    
+    pub fn update_current(&mut self, pipeline_id: PipelineId, entry: &FrameState) {
+        self.pipeline_id = pipeline_id;
+        self.instant = entry.instant;
+        self.url = entry.url.clone();
+    }
 }
 
 
@@ -97,6 +104,15 @@ pub struct FrameState {
 
     
     pub frame_id: FrameId,
+}
+
+impl FrameState {
+    
+    
+    pub fn replace_pipeline(&mut self, pipeline_id: PipelineId, url: ServoUrl) {
+        self.pipeline_id = Some(pipeline_id);
+        self.url = url;
+    }
 }
 
 
