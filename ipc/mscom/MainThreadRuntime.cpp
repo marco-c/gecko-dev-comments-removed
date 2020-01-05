@@ -10,7 +10,6 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/WindowsVersion.h"
 #include "nsDebug.h"
 #include "nsWindowsHelpers.h"
 
@@ -45,13 +44,6 @@ MainThreadRuntime::MainThreadRuntime()
   }
 
   
-  
-  if (!IsVistaOrLater()) {
-    mInitResult = S_OK;
-    return;
-  }
-
-  
   mInitResult = InitializeSecurity();
   MOZ_ASSERT(SUCCEEDED(mInitResult));
   if (FAILED(mInitResult)) {
@@ -67,12 +59,8 @@ MainThreadRuntime::MainThreadRuntime()
     return;
   }
 
-  
-  
-  ULONG_PTR exceptionSetting = IsWin7OrLater() ?
-                               COMGLB_EXCEPTION_DONOT_HANDLE_ANY :
-                               COMGLB_EXCEPTION_DONOT_HANDLE;
-  mInitResult = globalOpts->Set(COMGLB_EXCEPTION_HANDLING, exceptionSetting);
+  mInitResult = globalOpts->Set(COMGLB_EXCEPTION_HANDLING,
+                                COMGLB_EXCEPTION_DONOT_HANDLE_ANY);
   MOZ_ASSERT(SUCCEEDED(mInitResult));
 }
 
@@ -177,4 +165,3 @@ MainThreadRuntime::InitializeSecurity()
 
 } 
 } 
-
