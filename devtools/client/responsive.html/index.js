@@ -99,6 +99,9 @@ Object.defineProperty(window, "store", {
 
 
 
+
+
+
 function onDPRChange() {
   let dpr = window.devicePixelRatio;
   let mql = window.matchMedia(`(resolution: ${dpr}dppx)`);
