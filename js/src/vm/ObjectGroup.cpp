@@ -189,7 +189,7 @@ ObjectGroup::useSingletonForNewObject(JSContext* cx, JSScript* script, jsbytecod
 
 
 
-    if (script->isGenerator())
+    if (script->isStarGenerator() || script->isLegacyGenerator() || script->isAsync())
         return false;
     if (JSOp(*pc) != JSOP_NEW)
         return false;
