@@ -81,6 +81,10 @@ def mochitest_retrigger_action(parameters, input, task_group_id, task_id, task):
     new_task_definition['expires'] = json_time_from_now('30d')
 
     
+    for artifact in new_task_definition['payload'].get('artifacts', {}).values():
+        artifact['expires'] = new_task_definition['expires']
+
+    
     new_task_definition['payload']['command'] += ['--no-run-tests']
 
     custom_mach_command = [
