@@ -6,10 +6,9 @@ use ReferrerPolicy;
 use hyper::header::Headers;
 use hyper::method::Method;
 use msg::constellation_msg::PipelineId;
-use servo_url::ServoUrl;
+use servo_url::{ImmutableOrigin, ServoUrl};
 use std::cell::{Cell, RefCell};
 use std::default::Default;
-use url::Origin as UrlOrigin;
 
 
 #[derive(Copy, Clone, PartialEq, HeapSizeOf)]
@@ -55,10 +54,10 @@ pub enum Destination {
 }
 
 
-#[derive(Clone, PartialEq, Debug, HeapSizeOf)]
+#[derive(Clone, PartialEq, Debug, Serialize, Deserialize, HeapSizeOf)]
 pub enum Origin {
     Client,
-    Origin(UrlOrigin),
+    Origin(ImmutableOrigin),
 }
 
 

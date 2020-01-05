@@ -1729,7 +1729,7 @@ impl Node {
                 let document = Document::new(window, HasBrowsingContext::No,
                                              Some(document.url()),
                                              
-                                             document.origin().alias(),
+                                             document.origin().clone(),
                                              is_html_doc, None,
                                              None, DocumentActivity::Inactive,
                                              DocumentSource::NotFromParser, loader,
