@@ -1634,6 +1634,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsDocument)
     NS_IMPL_CYCLE_COLLECTION_DESCRIBE(nsDocument, tmp->mRefCnt.get())
   }
 
+  
+  
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE_SCRIPT_OBJECTS
+
   if (!nsINode::Traverse(tmp, cb)) {
     return NS_SUCCESS_INTERRUPTED_TRAVERSE;
   }
@@ -2962,14 +2966,9 @@ nsIDocument::PrerenderHref(nsIURI* aHref)
 
   
   
-  if (!XRE_IsContentProcess()) {
-    return false;
-  }
-
   
   
-  
-  if (!docShell->GetIsOnlyToplevelInTabGroup()) {
+  if (docShell->GetIsProcessLocked()) {
     return false;
   }
 
@@ -3651,16 +3650,6 @@ nsDocument::TryChannelCharset(nsIChannel *aChannel,
 already_AddRefed<nsIPresShell>
 nsDocument::CreateShell(nsPresContext* aContext, nsViewManager* aViewManager,
                         StyleSetHandle aStyleSet)
-{
-  
-  
-  
-  return doCreateShell(aContext, aViewManager, aStyleSet);
-}
-
-already_AddRefed<nsIPresShell>
-nsDocument::doCreateShell(nsPresContext* aContext,
-                          nsViewManager* aViewManager, StyleSetHandle aStyleSet)
 {
   NS_ASSERTION(!mPresShell, "We have a presshell already!");
 
