@@ -225,7 +225,7 @@ public:
   
   bool IsAvailableForSharing() const
   {
-    return !mClosed &&
+    return !mClosed && !mIsPrivateBrowsing &&
       (!mDidNotifyDataEnded || NS_SUCCEEDED(mNotifyDataEndedStatus));
   }
   
