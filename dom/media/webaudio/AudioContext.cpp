@@ -140,6 +140,7 @@ AudioContext::AudioContext(nsPIDOMWindowInner* aWindow,
   , mIsShutDown(false)
   , mCloseCalled(false)
   , mSuspendCalled(false)
+  , mIsDisconnecting(false)
 {
   bool mute = aWindow->AddAudioContext(this);
 
@@ -260,7 +261,9 @@ AudioContext::Constructor(const GlobalObject& aGlobal,
 
 bool AudioContext::CheckClosed(ErrorResult& aRv)
 {
-  if (mAudioContextState == AudioContextState::Closed) {
+  if (mAudioContextState == AudioContextState::Closed ||
+      mIsShutDown ||
+      mIsDisconnecting) {
     aRv.Throw(NS_ERROR_DOM_INVALID_STATE_ERR);
     return true;
   }
@@ -640,21 +643,31 @@ AudioContext::CurrentTime() const
   return stream->StreamTimeToSeconds(stream->GetCurrentTime());
 }
 
+void AudioContext::DisconnectFromOwner()
+{
+  mIsDisconnecting = true;
+  Shutdown();
+  DOMEventTargetHelper::DisconnectFromOwner();
+}
+
 void
 AudioContext::Shutdown()
 {
   mIsShutDown = true;
 
-  if (!mIsOffline) {
-    ErrorResult dummy;
-    RefPtr<Promise> ignored = Close(dummy);
-  }
+  
+  if (!mIsDisconnecting) {
+    if (!mIsOffline) {
+      IgnoredErrorResult dummy;
+      RefPtr<Promise> ignored = Close(dummy);
+    }
 
-  for (auto p : mPromiseGripArray) {
-    p->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
-  }
+    for (auto p : mPromiseGripArray) {
+      p->MaybeReject(NS_ERROR_DOM_INVALID_STATE_ERR);
+    }
 
-  mPromiseGripArray.Clear();
+    mPromiseGripArray.Clear();
+  }
 
   
   
