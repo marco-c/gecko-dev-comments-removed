@@ -314,7 +314,10 @@ private:
   
   
   
+  
   RefPtr<mozilla::dom::Promise> mReady;
+  
+  bool mResolveLazilyCreatedReadyPromise;
 
   
   
