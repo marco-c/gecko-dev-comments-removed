@@ -46,19 +46,6 @@ public:
   static already_AddRefed<MediaList> Create(StyleBackendType,
                                             const nsAString& aMedia);
 
-  
-
-
-  static already_AddRefed<MediaList> Create(StyleBackendType aBackendType) {
-    return Create(aBackendType, nsString());
-  }
-
-  
-
-
-  static already_AddRefed<MediaList> Create(const nsIDocument& aDocument,
-                                            const nsAString& aMedia);
-
   virtual already_AddRefed<MediaList> Clone() = 0;
 
   JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) final;
