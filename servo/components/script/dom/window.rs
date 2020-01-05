@@ -761,6 +761,11 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
 
     fn thaw(self) {
         self.timers.resume();
+
+        
+        
+        let document = self.Document().root();
+        document.r().title_changed();
     }
 
     fn freeze(self) {

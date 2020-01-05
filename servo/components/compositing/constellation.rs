@@ -606,6 +606,10 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
             script_chan.send(ConstellationControlMsg::UpdateSubpageId(parent_pipeline_id,
                                                                       subpage_id,
                                                                       new_subpage_id)).unwrap();
+
+            
+            
+            self.trigger_mozbrowserlocationchange(next_pipeline_id);
         }
     }
 
@@ -637,7 +641,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
     }
 
     fn handle_mozbrowser_event_msg(&mut self,
-                                   pipeline_id: PipelineId,
+                                   containing_pipeline_id: PipelineId,
                                    subpage_id: SubpageId,
                                    event_name: String,
                                    event_detail: Option<String>) {
@@ -645,13 +649,8 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
         
         
-        let pipeline = self.pipeline(pipeline_id);
-        let ScriptControlChan(ref script_channel) = pipeline.script_chan;
-        let event = ConstellationControlMsg::MozBrowserEvent(pipeline_id,
-                                                             subpage_id,
-                                                             event_name,
-                                                             event_detail);
-        script_channel.send(event).unwrap();
+        let pipeline = self.pipeline(containing_pipeline_id);
+        pipeline.trigger_mozbrowser_event(subpage_id, event_name, event_detail);
     }
 
     fn add_or_replace_pipeline_in_frame_tree(&mut self, frame_change: FrameChange) {
@@ -691,6 +690,10 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
         
         self.send_frame_tree_and_grant_paint_permission();
+
+        
+        
+        self.trigger_mozbrowserlocationchange(frame_change.new_pipeline_id);
 
         
         if let Some(evicted_frames) = evicted_frames {
@@ -859,6 +862,28 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
         for frame in self.current_frame_tree_iter(self.root_frame_id) {
             self.pipeline(frame.current).grant_paint_permission();
+        }
+    }
+
+    
+    fn trigger_mozbrowserlocationchange(&self, pipeline_id: PipelineId) {
+        if opts::experimental_enabled() {
+            
+            let event_info = {
+                let pipeline = self.pipeline(pipeline_id);
+
+                pipeline.parent_info.map(|(containing_pipeline_id, subpage_id)| {
+                    (containing_pipeline_id, subpage_id, pipeline.url.serialize())
+                })
+            };
+
+            
+            if let Some((containing_pipeline_id, subpage_id, url)) = event_info {
+                let parent_pipeline = self.pipeline(containing_pipeline_id);
+                parent_pipeline.trigger_mozbrowser_event(subpage_id,
+                                                         "mozbrowserlocationchange".to_owned(),
+                                                          Some(url));
+            }
         }
     }
 
