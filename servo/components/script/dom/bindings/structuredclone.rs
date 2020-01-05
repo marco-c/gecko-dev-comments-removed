@@ -12,11 +12,14 @@ use js::jsapi::{JSContext, JS_ReadStructuredClone, JS_STRUCTURED_CLONE_VERSION};
 use js::jsapi::{JS_ClearPendingException, JS_WriteStructuredClone};
 use libc::size_t;
 use std::ptr;
+use std::slice;
 
 
-pub struct StructuredCloneData {
-    data: *mut u64,
-    nbytes: size_t,
+pub enum StructuredCloneData {
+    
+    Struct(*mut u64, size_t),
+    
+    Vector(Vec<u8>)
 }
 
 impl StructuredCloneData {
@@ -39,24 +42,45 @@ impl StructuredCloneData {
             }
             return Err(Error::DataClone);
         }
-        Ok(StructuredCloneData {
-            data: data,
-            nbytes: nbytes,
-        })
+        Ok(StructuredCloneData::Struct(data, nbytes))
+    }
+
+    
+    pub fn move_to_arraybuffer(self) -> Vec<u8> {
+        match self {
+            StructuredCloneData::Struct(data, nbytes) => {
+                unsafe {
+                    slice::from_raw_parts(data as *mut u8, nbytes).to_vec()
+                }
+            }
+            StructuredCloneData::Vector(msg) => msg
+        }
     }
 
     
     
     
-    pub fn read(self, global: GlobalRef, rval: MutableHandleValue) {
+    fn read_clone(global: GlobalRef, data: *mut u64, nbytes: size_t, rval: MutableHandleValue) {
         unsafe {
             assert!(JS_ReadStructuredClone(global.get_cx(),
-                                           self.data,
-                                           self.nbytes,
+                                           data,
+                                           nbytes,
                                            JS_STRUCTURED_CLONE_VERSION,
                                            rval,
                                            ptr::null(),
                                            ptr::null_mut()));
+        }
+    }
+
+    
+    pub fn read(self, global: GlobalRef, rval: MutableHandleValue) {
+        match self {
+            StructuredCloneData::Vector(mut vec_msg) => {
+                let nbytes = vec_msg.len();
+                let data = vec_msg.as_mut_ptr() as *mut u64;
+                StructuredCloneData::read_clone(global, data, nbytes, rval);
+            }
+            StructuredCloneData::Struct(data, nbytes) => StructuredCloneData::read_clone(global, data, nbytes, rval)
         }
     }
 }

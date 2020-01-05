@@ -2,20 +2,23 @@
 
 
 
-use dom::abstractworker::{SimpleWorkerErrorHandler, WorkerScriptMsg};
+use dom::abstractworker::SimpleWorkerErrorHandler;
 use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::EventHandlerBinding::EventHandlerNonNull;
 use dom::bindings::codegen::Bindings::ServiceWorkerBinding::{ServiceWorkerMethods, ServiceWorkerState, Wrap};
+use dom::bindings::error::{ErrorResult, Error};
 use dom::bindings::global::GlobalRef;
 use dom::bindings::inheritance::Castable;
 use dom::bindings::js::Root;
 use dom::bindings::refcounted::Trusted;
-use dom::bindings::reflector::reflect_dom_object;
+use dom::bindings::reflector::{Reflectable, reflect_dom_object};
 use dom::bindings::str::USVString;
+use dom::bindings::structuredclone::StructuredCloneData;
 use dom::eventtarget::EventTarget;
+use js::jsapi::{HandleValue, JSContext};
 use script_thread::Runnable;
+use script_traits::{ScriptMsg, DOMMessage};
 use std::cell::Cell;
-use std::sync::mpsc::Sender;
 use url::Url;
 
 pub type TrustedServiceWorkerAddress = Trusted<ServiceWorker>;
@@ -24,28 +27,31 @@ pub type TrustedServiceWorkerAddress = Trusted<ServiceWorker>;
 pub struct ServiceWorker {
     eventtarget: EventTarget,
     script_url: DOMRefCell<String>,
+    scope_url: Url,
     state: Cell<ServiceWorkerState>,
-    #[ignore_heap_size_of = "Defined in std"]
-    sender: Option<Sender<(TrustedServiceWorkerAddress, WorkerScriptMsg)>>,
     skip_waiting: Cell<bool>
 }
 
 impl ServiceWorker {
     fn new_inherited(script_url: &str,
-                     skip_waiting: bool) -> ServiceWorker {
+                     skip_waiting: bool,
+                     scope_url: Url) -> ServiceWorker {
         ServiceWorker {
             eventtarget: EventTarget::new_inherited(),
-            sender: None,
             script_url: DOMRefCell::new(String::from(script_url)),
             state: Cell::new(ServiceWorkerState::Installing),
+            scope_url: scope_url,
             skip_waiting: Cell::new(skip_waiting)
         }
     }
 
-    pub fn new(global: GlobalRef,
-                script_url: &str,
+    pub fn install_serviceworker(global: GlobalRef,
+                script_url: Url,
+                scope_url: Url,
                 skip_waiting: bool) -> Root<ServiceWorker> {
-        reflect_dom_object(box ServiceWorker::new_inherited(script_url, skip_waiting), global, Wrap)
+        reflect_dom_object(box ServiceWorker::new_inherited(script_url.as_str(),
+                                                            skip_waiting,
+                                                            scope_url), global, Wrap)
     }
 
     pub fn dispatch_simple_error(address: TrustedServiceWorkerAddress) {
@@ -61,14 +67,6 @@ impl ServiceWorker {
     pub fn get_script_url(&self) -> Url {
         Url::parse(&self.script_url.borrow().clone()).unwrap()
     }
-
-    pub fn install_serviceworker(global: GlobalRef,
-                                 script_url: Url,
-                                 skip_waiting: bool) -> Root<ServiceWorker> {
-        ServiceWorker::new(global,
-                           script_url.as_str(),
-                           skip_waiting)
-    }
 }
 
 impl ServiceWorkerMethods for ServiceWorker {
@@ -80,6 +78,20 @@ impl ServiceWorkerMethods for ServiceWorker {
     
     fn ScriptURL(&self) -> USVString {
         USVString(self.script_url.borrow().clone())
+    }
+
+    
+    fn PostMessage(&self, cx: *mut JSContext, message: HandleValue) -> ErrorResult {
+        
+        if let ServiceWorkerState::Redundant = self.state.get() {
+            return Err(Error::InvalidState);
+        }
+        
+        let data = try!(StructuredCloneData::write(cx, message));
+        let msg_vec = DOMMessage(data.move_to_arraybuffer());
+        let _ = self.global().r().constellation_chan().send(ScriptMsg::ForwardDOMMessage(msg_vec,
+                                                                                         self.scope_url.clone()));
+        Ok(())
     }
 
     

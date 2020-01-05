@@ -137,6 +137,9 @@ pub enum ScriptMsg {
     
     PipelineExited(PipelineId),
     
+    
+    ForwardDOMMessage(DOMMessage, Url),
+    
     RegisterServiceWorker(ScopeThings, Url),
     
     Exit
@@ -160,6 +163,10 @@ pub struct ScopeThings {
 }
 
 
+#[derive(Deserialize, Serialize, Debug, Clone)]
+pub struct DOMMessage(pub Vec<u8>);
+
+
 pub struct SWManagerSenders {
     
     pub swmanager_sender: IpcSender<SWManagerMsg>,
@@ -175,6 +182,8 @@ pub enum ServiceWorkerMsg {
     
     Timeout(Url),
     
+    ForwardDOMMessage(DOMMessage, Url),
+    
     Exit,
 }
 
@@ -182,5 +191,6 @@ pub enum ServiceWorkerMsg {
 #[derive(Deserialize, Serialize)]
 pub enum SWManagerMsg {
     
-    OwnSender(IpcSender<ServiceWorkerMsg>),
+    OwnSender(IpcSender<ServiceWorkerMsg>)
+
 }

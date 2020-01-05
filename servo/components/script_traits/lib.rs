@@ -71,7 +71,7 @@ use util::ipc::OptionalOpaqueIpcSender;
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 
 pub use script_msg::{LayoutMsg, ScriptMsg, EventResult, LogEntry};
-pub use script_msg::{ServiceWorkerMsg, ScopeThings, SWManagerMsg, SWManagerSenders};
+pub use script_msg::{ServiceWorkerMsg, ScopeThings, SWManagerMsg, SWManagerSenders, DOMMessage};
 
 
 
@@ -212,7 +212,7 @@ pub enum ConstellationControlMsg {
     
     ReportCSSError(PipelineId, String, usize, usize, String),
     
-    Reload(PipelineId),
+    Reload(PipelineId)
 }
 
 impl fmt::Debug for ConstellationControlMsg {
@@ -241,7 +241,7 @@ impl fmt::Debug for ConstellationControlMsg {
             DispatchFrameLoadEvent { .. } => "DispatchFrameLoadEvent",
             FramedContentChanged(..) => "FramedContentChanged",
             ReportCSSError(..) => "ReportCSSError",
-            Reload(..) => "Reload",
+            Reload(..) => "Reload"
         })
     }
 }
