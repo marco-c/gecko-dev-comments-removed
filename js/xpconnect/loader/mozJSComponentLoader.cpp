@@ -733,11 +733,21 @@ mozJSComponentLoader::ObjectForLocation(ComponentLoaderInfo& aInfo,
         
         
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
         CompileOptions options(cx);
         options.setNoScriptRval(mReuseLoaderGlobal ? false : true)
                .setVersion(JSVERSION_LATEST)
                .setFileAndLine(nativePath.get(), 1)
-               .setSourceIsLazy(!mReuseLoaderGlobal);
+               .setSourceIsLazy(!mReuseLoaderGlobal && !!cache);
 
         if (realFile) {
 #ifdef HAVE_PR_MEMMAP
