@@ -139,17 +139,6 @@ function verify_cert(file, expectedError) {
   checkCertErrorGeneric(certDB, ee, expectedError, certificateUsageSSLServer);
 }
 
-
-function verify_non_tls_usage_succeeds(file) {
-  let ee = constructCertFromFile(file);
-  checkCertErrorGeneric(certDB, ee, PRErrorCodeSuccess,
-                        certificateUsageSSLClient);
-  checkCertErrorGeneric(certDB, ee, PRErrorCodeSuccess,
-                        certificateUsageEmailSigner);
-  checkCertErrorGeneric(certDB, ee, PRErrorCodeSuccess,
-                        certificateUsageEmailRecipient);
-}
-
 function load_cert(cert, trust) {
   let file = "bad_certs/" + cert + ".pem";
   addCertFromFile(certDB, file, trust);
@@ -305,17 +294,14 @@ function run_test() {
     
     let file = "test_onecrl/test-int-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
-    verify_non_tls_usage_succeeds(file);
 
     
     file = "bad_certs/other-issuer-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
-    verify_non_tls_usage_succeeds(file);
 
     
     file = "test_onecrl/same-issuer-ee.pem";
     verify_cert(file, SEC_ERROR_REVOKED_CERTIFICATE);
-    verify_non_tls_usage_succeeds(file);
 
     
     file = "bad_certs/default-ee.pem";
