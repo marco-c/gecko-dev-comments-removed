@@ -5,7 +5,6 @@
 
 package org.mozilla.gecko.util;
 
-import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.SysInfo;
 
 import android.content.Context;
@@ -81,11 +80,11 @@ public final class HardwareUtils {
     }
 
     public static boolean isARMSystem() {
-        return Build.CPU_ABI != null && Build.CPU_ABI.startsWith("arm");
+        return Build.CPU_ABI != null && Build.CPU_ABI.equals("armeabi-v7a");
     }
 
     public static boolean isX86System() {
-        return Build.CPU_ABI != null && Build.CPU_ABI.startsWith("x86");
+        return Build.CPU_ABI != null && Build.CPU_ABI.equals("x86");
     }
 
     
@@ -93,16 +92,10 @@ public final class HardwareUtils {
 
     public static boolean isSupportedSystem() {
         
-        
-        if (Build.VERSION.SDK_INT < AppConstants.Versions.MIN_SDK_VERSION) {
-            return false;
-        }
-
-        
         final boolean isSystemARM = isARMSystem();
         final boolean isSystemX86 = isX86System();
 
-        boolean isAppARM = BuildConfig.ANDROID_CPU_ARCH.startsWith("arm");
+        boolean isAppARM = BuildConfig.ANDROID_CPU_ARCH.startsWith("armeabi-v7a");
         boolean isAppX86 = BuildConfig.ANDROID_CPU_ARCH.startsWith("x86");
 
         
