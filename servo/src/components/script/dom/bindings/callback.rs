@@ -2,6 +2,8 @@
 
 
 
+
+
 use dom::bindings::js::JSRef;
 use dom::bindings::trace::Traceable;
 use dom::bindings::utils::{Reflectable, global_object_for_js_object};
@@ -13,6 +15,7 @@ use std::ptr;
 
 use serialize::{Encodable, Encoder};
 
+
 pub enum ExceptionHandling {
     
     ReportExceptions,
@@ -23,6 +26,7 @@ pub enum ExceptionHandling {
     
     RethrowExceptions
 }
+
 
 #[deriving(Clone,PartialEq,Encodable)]
 pub struct CallbackFunction {
@@ -39,35 +43,46 @@ impl CallbackFunction {
     }
 }
 
+
 #[deriving(Clone,PartialEq,Encodable)]
 pub struct CallbackInterface {
     object: CallbackObject
 }
 
+
+
 #[allow(raw_pointer_deriving)]
 #[deriving(Clone,PartialEq,Encodable)]
 struct CallbackObject {
+    
     callback: Traceable<*mut JSObject>,
 }
 
+
+
 pub trait CallbackContainer {
+    
     fn new(callback: *mut JSObject) -> Self;
+    
     fn callback(&self) -> *mut JSObject;
 }
 
 impl CallbackInterface {
+    
     pub fn callback(&self) -> *mut JSObject {
         *self.object.callback
     }
 }
 
 impl CallbackFunction {
+    
     pub fn callback(&self) -> *mut JSObject {
         *self.object.callback
     }
 }
 
 impl CallbackInterface {
+    
     pub fn new(callback: *mut JSObject) -> CallbackInterface {
         CallbackInterface {
             object: CallbackObject {
@@ -76,6 +91,9 @@ impl CallbackInterface {
         }
     }
 
+    
+    
+    
     pub fn GetCallableProperty(&self, cx: *mut JSContext, name: &str) -> Result<JSVal, ()> {
         let mut callable = UndefinedValue();
         unsafe {
@@ -93,6 +111,7 @@ impl CallbackInterface {
     }
 }
 
+
 pub fn WrapCallThisObject<T: Reflectable>(cx: *mut JSContext,
                                           p: &JSRef<T>) -> *mut JSObject {
     let mut obj = p.reflector().get_jsobject();
@@ -107,12 +126,17 @@ pub fn WrapCallThisObject<T: Reflectable>(cx: *mut JSContext,
     return obj;
 }
 
+
+
 pub struct CallSetup {
+    
     cx: *mut JSContext,
+    
     _handling: ExceptionHandling
 }
 
 impl CallSetup {
+    
     pub fn new<T: CallbackContainer>(callback: &T, handling: ExceptionHandling) -> CallSetup {
         let global = global_object_for_js_object(callback.callback()).root();
         let cx = global.root_ref().get_cx();
@@ -122,6 +146,7 @@ impl CallSetup {
         }
     }
 
+    
     pub fn GetContext(&self) -> *mut JSContext {
         self.cx
     }

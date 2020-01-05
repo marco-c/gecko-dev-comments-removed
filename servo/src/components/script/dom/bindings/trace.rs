@@ -2,6 +2,30 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflectable, Reflector};
 
@@ -37,9 +61,11 @@ impl<S: Encoder<E>, E> Encodable<S, E> for Reflector {
     }
 }
 
+
 pub trait JSTraceable {
     fn trace(&self, trc: *mut JSTracer);
 }
+
 
 pub fn trace_jsval(tracer: *mut JSTracer, description: &str, val: JSVal) {
     if !val.is_gcthing() {
@@ -57,10 +83,12 @@ pub fn trace_jsval(tracer: *mut JSTracer, description: &str, val: JSVal) {
     }
 }
 
+/// Trace the `JSObject` held by `reflector`.
 pub fn trace_reflector(tracer: *mut JSTracer, description: &str, reflector: &Reflector) {
     trace_object(tracer, description, reflector.get_jsobject())
 }
 
+/// Trace a `JSObject`.
 pub fn trace_object(tracer: *mut JSTracer, description: &str, obj: *mut JSObject) {
     unsafe {
         description.to_c_str().with_ref(|name| {
@@ -73,8 +101,9 @@ pub fn trace_object(tracer: *mut JSTracer, description: &str, obj: *mut JSObject
     }
 }
 
-/// Encapsulates a type that cannot easily have Encodable derived automagically,
+/// Encapsulates a type that cannot easily have `Encodable` derived automagically,
 /// but also does not need to be made known to the SpiderMonkey garbage collector.
+///
 /// Use only with types that are not associated with a JS reflector and do not contain
 /// fields of types associated with JS reflectors.
 ///
@@ -104,8 +133,10 @@ impl<T> Deref<T> for Untraceable<T> {
     }
 }
 
-/// Encapsulates a type that can be traced but is boxed in a type we don't control
-/// (such as RefCell). Wrap a field in Traceable and implement the Encodable trait
+/// Encapsulates a type that can be traced but is boxed in a type we don't
+/// control (such as `RefCell`).
+///
+/// Wrap a field in Traceable and implement the `Encodable` trait
 /// for that new concrete type to achieve magic compiler-derived trace hooks.
 ///
 /// We always prefer this, in case the contained type ever changes to something that should be traced.

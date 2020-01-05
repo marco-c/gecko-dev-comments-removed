@@ -2,38 +2,49 @@
 
 
 
+
+
 use std::from_str::FromStr;
 use std::hash::{Hash, sip};
 use std::path::BytesContainer;
 use std::str;
 
+
 #[deriving(Encodable,Clone,Eq,PartialEq)]
 pub struct ByteString(Vec<u8>);
 
 impl ByteString {
+    
     pub fn new(value: Vec<u8>) -> ByteString {
         ByteString(value)
     }
+
+    
+    
     pub fn as_str<'a>(&'a self) -> Option<&'a str> {
         let ByteString(ref vec) = *self;
         str::from_utf8(vec.as_slice())
     }
 
+    
     pub fn as_slice<'a>(&'a self) -> &'a [u8] {
         let ByteString(ref vector) = *self;
         vector.as_slice()
     }
 
+    
     pub fn len(&self) -> uint {
         let ByteString(ref vector) = *self;
         vector.len()
     }
 
+    
     pub fn eq_ignore_case(&self, other: &ByteString) -> bool {
         
         self.to_lower() == other.to_lower()
     }
 
+    
     pub fn to_lower(&self) -> ByteString {
         let ByteString(ref vec) = *self;
         ByteString::new(vec.iter().map(|&x| {
@@ -45,6 +56,8 @@ impl ByteString {
         }).collect())
     }
 
+    
+    
     pub fn is_token(&self) -> bool {
         let ByteString(ref vec) = *self;
         if vec.len() == 0 {
@@ -64,6 +77,8 @@ impl ByteString {
         })
     }
 
+    
+    
     pub fn is_field_value(&self) -> bool {
         
         #[deriving(PartialEq)]

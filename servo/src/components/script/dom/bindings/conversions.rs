@@ -2,6 +2,8 @@
 
 
 
+
+
 use dom::bindings::js::{JS, JSRef, Root};
 use dom::bindings::str::ByteString;
 use dom::bindings::utils::{Reflectable, Reflector};
@@ -33,11 +35,18 @@ pub trait IDLInterface {
     fn get_prototype_depth(_: Option<Self>) -> uint;
 }
 
+
 pub trait ToJSValConvertible {
+    
     fn to_jsval(&self, cx: *mut JSContext) -> JSVal;
 }
 
+
 pub trait FromJSValConvertible<T> {
+    
+    
+    
+    
     fn from_jsval(cx: *mut JSContext, val: JSVal, option: T) -> Result<Self, ()>;
 }
 
@@ -228,9 +237,12 @@ impl ToJSValConvertible for DOMString {
     }
 }
 
+
 #[deriving(PartialEq)]
 pub enum StringificationBehavior {
+    
     Default,
+    
     Empty,
 }
 

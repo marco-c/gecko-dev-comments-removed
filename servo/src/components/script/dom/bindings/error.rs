@@ -2,6 +2,8 @@
 
 
 
+
+
 use dom::bindings::conversions::ToJSValConvertible;
 use dom::bindings::global::GlobalRef;
 use dom::domexception::DOMException;
@@ -15,6 +17,7 @@ use js::rust::with_compartment;
 
 use libc;
 use std::ptr;
+
 
 #[deriving(Show)]
 pub enum Error {
@@ -34,9 +37,13 @@ pub enum Error {
     Timeout
 }
 
+
 pub type Fallible<T> = Result<T, Error>;
 
+
+
 pub type ErrorResult = Fallible<()>;
+
 
 pub fn throw_dom_exception(cx: *mut JSContext, global: &GlobalRef,
                            result: Error) {
@@ -47,6 +54,7 @@ pub fn throw_dom_exception(cx: *mut JSContext, global: &GlobalRef,
         JS_SetPendingException(cx, thrown);
     }
 }
+
 
 pub fn report_pending_exception(cx: *mut JSContext, obj: *mut JSObject) {
     unsafe {
@@ -62,6 +70,8 @@ pub fn report_pending_exception(cx: *mut JSContext, obj: *mut JSObject) {
     }
 }
 
+
+
 pub fn throw_not_in_union(cx: *mut JSContext, names: &'static str) -> JSBool {
     assert!(unsafe { JS_IsExceptionPending(cx) } == 0);
     let message = format!("argument could not be converted to any of: {}", names);
@@ -71,6 +81,7 @@ pub fn throw_not_in_union(cx: *mut JSContext, names: &'static str) -> JSBool {
     return 0;
 }
 
+
 static ERROR_FORMAT_STRING_STRING: [libc::c_char, ..4] = [
     '{' as libc::c_char,
     '0' as libc::c_char,
@@ -78,11 +89,13 @@ static ERROR_FORMAT_STRING_STRING: [libc::c_char, ..4] = [
     0 as libc::c_char,
 ];
 
+
 static ERROR_FORMAT_STRING: JSErrorFormatString = JSErrorFormatString {
     format: &ERROR_FORMAT_STRING_STRING as *libc::c_char,
     argCount: 1,
     exnType: JSEXN_TYPEERR as i16,
 };
+
 
 extern fn get_error_message(_user_ref: *mut libc::c_void,
                             _locale: *libc::c_char,
@@ -91,6 +104,7 @@ extern fn get_error_message(_user_ref: *mut libc::c_void,
     assert_eq!(error_number, 0);
     &ERROR_FORMAT_STRING as *JSErrorFormatString
 }
+
 
 pub fn throw_type_error(cx: *mut JSContext, error: &str) {
     let error = error.to_c_str();
