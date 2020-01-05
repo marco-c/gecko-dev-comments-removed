@@ -399,7 +399,11 @@ ConvertImage(size_t width, size_t height,
         
         
 
-        MOZ_ASSERT(shouldYFlip || srcStride != dstStride,
+        
+        
+        MOZ_ASSERT((srcPremultiplied != dstPremultiplied ||
+                    shouldYFlip ||
+                    srcStride != dstStride),
                    "Performance trap -- should handle this case earlier to avoid memcpy");
 
         const auto bytesPerPixel = TexelBytesForFormat(srcFormat);
