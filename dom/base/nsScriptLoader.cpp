@@ -78,6 +78,8 @@ static LazyLogModule gScriptLoaderLog("ScriptLoader");
 #define LOG_ERROR(args)                                                       \
   MOZ_LOG(gScriptLoaderLog, mozilla::LogLevel::Error, args)
 
+#define LOG_ENABLED() MOZ_LOG_TEST(gScriptLoaderLog, mozilla::LogLevel::Debug)
+
 
 
 static NS_NAMED_LITERAL_CSTRING(
@@ -1224,6 +1226,7 @@ nsresult
 nsScriptLoader::RestartLoad(nsScriptLoadRequest *aRequest)
 {
   MOZ_ASSERT(aRequest->IsBytecode());
+  aRequest->mScriptBytecode.clearAndFree();
 
   
   
@@ -2141,6 +2144,7 @@ nsScriptLoader::ProcessRequest(nsScriptLoadRequest* aRequest)
 
   
   aRequest->mScriptText.clearAndFree();
+  aRequest->mScriptBytecode.clearAndFree();
 
   return rv;
 }
@@ -2647,6 +2651,47 @@ nsScriptLoader::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
 
   bool sriOk = NS_SUCCEEDED(rv);
 
+  
+  
+  if (sriOk && aRequest->IsSource()) {
+    MOZ_ASSERT(aRequest->mScriptBytecode.empty());
+    
+    
+    if (!aRequest->mIntegrity.IsEmpty() && aSRIDataVerifier->IsComplete()) {
+      
+      uint32_t len = aSRIDataVerifier->DataSummaryLength();
+      if (!aRequest->mScriptBytecode.growBy(len)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+      aRequest->mBytecodeOffset = len;
+
+      DebugOnly<nsresult> res = aSRIDataVerifier->ExportDataSummary(
+        aRequest->mScriptBytecode.length(),
+        aRequest->mScriptBytecode.begin());
+      MOZ_ASSERT(NS_SUCCEEDED(res));
+    } else {
+      
+      uint32_t len = SRICheckDataVerifier::EmptyDataSummaryLength();
+      if (!aRequest->mScriptBytecode.growBy(len)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+      aRequest->mBytecodeOffset = len;
+
+      DebugOnly<nsresult> res = SRICheckDataVerifier::ExportEmptyDataSummary(
+        aRequest->mScriptBytecode.length(),
+        aRequest->mScriptBytecode.begin());
+      MOZ_ASSERT(NS_SUCCEEDED(res));
+    }
+
+    
+    mozilla::DebugOnly<uint32_t> srilen;
+    MOZ_ASSERT(NS_SUCCEEDED(SRICheckDataVerifier::DataSummaryLength(
+                              aRequest->mScriptBytecode.length(),
+                              aRequest->mScriptBytecode.begin(),
+                              &srilen)));
+    MOZ_ASSERT(srilen == aRequest->mBytecodeOffset);
+  }
+
   if (sriOk) {
     rv = PrepareLoadedRequest(aRequest, aLoader, aChannelStatus);
   }
@@ -3044,30 +3089,36 @@ nsScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  
-  if (mRequest->IsBytecode()) {
-    nsCOMPtr<nsIRequest> channelRequest;
-    aLoader->GetRequest(getter_AddRefs(channelRequest));
-    return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
-  }
+  if (mRequest->IsSource()) {
+    if (!EnsureDecoder(aLoader, aData, aDataLength,
+                        false)) {
+      return NS_OK;
+    }
 
-  MOZ_ASSERT(mRequest->IsSource());
-  if (!EnsureDecoder(aLoader, aData, aDataLength,
-                      false)) {
-    return NS_OK;
-  }
+    
+    *aConsumedLength = aDataLength;
 
-  
-  *aConsumedLength = aDataLength;
+    
+    rv = DecodeRawData(aData, aDataLength,  false);
+    NS_ENSURE_SUCCESS(rv, rv);
 
-  
-  nsresult rv = DecodeRawData(aData, aDataLength,
-                               false);
-  NS_ENSURE_SUCCESS(rv, rv);
+    
+    if (mSRIDataVerifier && NS_SUCCEEDED(mSRIStatus)) {
+      mSRIStatus = mSRIDataVerifier->Update(aDataLength, aData);
+    }
+  } else {
+    MOZ_ASSERT(mRequest->IsBytecode());
+    if (!mRequest->mScriptBytecode.append(aData, aDataLength)) {
+      return NS_ERROR_OUT_OF_MEMORY;
+    }
 
-  
-  if (mSRIDataVerifier && NS_SUCCEEDED(mSRIStatus)) {
-    mSRIStatus = mSRIDataVerifier->Update(aDataLength, aData);
+    *aConsumedLength = aDataLength;
+    rv = MaybeDecodeSRI();
+    if (NS_FAILED(rv)) {
+      nsCOMPtr<nsIRequest> channelRequest;
+      aLoader->GetRequest(getter_AddRefs(channelRequest));
+      return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
+    }
   }
 
   return rv;
@@ -3212,6 +3263,32 @@ nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
 }
 
 nsresult
+nsScriptLoadHandler::MaybeDecodeSRI()
+{
+  if (!mSRIDataVerifier || mSRIDataVerifier->IsComplete() || NS_FAILED(mSRIStatus)) {
+    return NS_OK;
+  }
+
+  
+  if (mRequest->mScriptBytecode.length() <= mSRIDataVerifier->DataSummaryLength()) {
+    return NS_OK;
+  }
+
+  mSRIStatus = mSRIDataVerifier->ImportDataSummary(
+    mRequest->mScriptBytecode.length(), mRequest->mScriptBytecode.begin());
+
+  if (NS_FAILED(mSRIStatus)) {
+    
+    
+    LOG(("nsScriptLoadHandler::MaybeDecodeSRI, failed to decode SRI, restart request"));
+    return mSRIStatus;
+  }
+
+  mRequest->mBytecodeOffset = mSRIDataVerifier->DataSummaryLength();
+  return NS_OK;
+}
+
+nsresult
 nsScriptLoadHandler::EnsureKnownDataType(nsIIncrementalStreamLoader *aLoader)
 {
   MOZ_ASSERT(mRequest->IsUnknownDataType());
@@ -3251,29 +3328,62 @@ nsScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                                       const uint8_t* aData)
 {
   nsresult rv = NS_OK;
+  if (LOG_ENABLED()) {
+    nsAutoCString url;
+    mRequest->mURI->GetAsciiSpec(url);
+    LOG(("ScriptLoadRequest (%p): Stream complete (url = %s)",
+         mRequest.get(), url.get()));
+  }
+
+  nsCOMPtr<nsIRequest> channelRequest;
+  aLoader->GetRequest(getter_AddRefs(channelRequest));
+
   if (!mRequest->IsCanceled()) {
     if (mRequest->IsUnknownDataType()) {
       rv = EnsureKnownDataType(aLoader);
       NS_ENSURE_SUCCESS(rv, rv);
     }
 
-    
-    if (mRequest->IsBytecode()) {
-      nsCOMPtr<nsIRequest> channelRequest;
-      aLoader->GetRequest(getter_AddRefs(channelRequest));
-      return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
-    }
+    if (mRequest->IsSource()) {
+      DebugOnly<bool> encoderSet =
+        EnsureDecoder(aLoader, aData, aDataLength,  true);
+      MOZ_ASSERT(encoderSet);
+      rv = DecodeRawData(aData, aDataLength,  true);
+      NS_ENSURE_SUCCESS(rv, rv);
 
-    MOZ_ASSERT(mRequest->IsSource());
-    DebugOnly<bool> encoderSet =
-      EnsureDecoder(aLoader, aData, aDataLength,  true);
-    MOZ_ASSERT(encoderSet);
-    rv = DecodeRawData(aData, aDataLength,  true);
-    NS_ENSURE_SUCCESS(rv, rv);
+      LOG(("ScriptLoadRequest (%p): Source length = %u",
+           mRequest.get(), unsigned(mRequest->mScriptText.length())));
 
-    
-    if (mSRIDataVerifier && NS_SUCCEEDED(mSRIStatus)) {
-      mSRIStatus = mSRIDataVerifier->Update(aDataLength, aData);
+      
+      if (mSRIDataVerifier && NS_SUCCEEDED(mSRIStatus)) {
+        mSRIStatus = mSRIDataVerifier->Update(aDataLength, aData);
+      }
+    } else {
+      MOZ_ASSERT(mRequest->IsBytecode());
+      if (!mRequest->mScriptBytecode.append(aData, aDataLength)) {
+        return NS_ERROR_OUT_OF_MEMORY;
+      }
+
+      LOG(("ScriptLoadRequest (%p): Bytecode length = %u",
+           mRequest.get(), unsigned(mRequest->mScriptBytecode.length())));
+
+      
+      
+      
+      
+      rv = MaybeDecodeSRI();
+      if (NS_FAILED(rv)) {
+        return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
+      }
+
+      
+      
+      rv = SRICheckDataVerifier::DataSummaryLength(mRequest->mScriptBytecode.length(),
+                                                   mRequest->mScriptBytecode.begin(),
+                                                   &mRequest->mBytecodeOffset);
+      if (NS_FAILED(rv)) {
+        return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
+      }
     }
   }
 
@@ -3281,3 +3391,9 @@ nsScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
   return mScriptLoader->OnStreamComplete(aLoader, mRequest, aStatus, mSRIStatus,
                                          mSRIDataVerifier);
 }
+
+#undef LOG_ENABLED
+#undef LOG_ERROR
+#undef LOG_WARN
+#undef LOG
+#undef LOG_VERBOSE

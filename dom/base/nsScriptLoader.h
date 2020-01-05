@@ -88,6 +88,8 @@ public:
       mIsTracking(false),
       mOffThreadToken(nullptr),
       mScriptText(),
+      mScriptBytecode(),
+      mBytecodeOffset(0),
       mJSVersion(aVersion),
       mLineNo(1),
       mCORSMode(aCORSMode),
@@ -205,9 +207,16 @@ public:
   bool mIsTracking;       
   void* mOffThreadToken;  
   nsString mSourceMapURL; 
+
   
   
   mozilla::Vector<char16_t> mScriptText;
+
+  
+  
+  mozilla::Vector<uint8_t> mScriptBytecode;
+  uint32_t mBytecodeOffset; 
+
   uint32_t mJSVersion;
   nsCOMPtr<nsIURI> mURI;
   nsCOMPtr<nsIPrincipal> mOriginPrincipal;
@@ -739,6 +748,12 @@ private:
   bool EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
                      const uint8_t* aData, uint32_t aDataLength,
                      bool aEndOfStream, nsCString& oCharset);
+
+  
+
+
+
+  nsresult MaybeDecodeSRI();
 
   
   nsresult EnsureKnownDataType(nsIIncrementalStreamLoader *aLoader);
