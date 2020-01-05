@@ -26,7 +26,7 @@ InvalidArrayIndex_CRASH(size_t aIndex, size_t aLength)
   
   
   
-  char* buffer = new char[CAPACITY];
+  auto* buffer = new char[CAPACITY];
   snprintf(buffer, CAPACITY,
            "ElementAt(aIndex = %llu, aLength = %llu)",
            (long long unsigned) aIndex,

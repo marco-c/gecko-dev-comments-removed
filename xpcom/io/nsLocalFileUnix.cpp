@@ -827,7 +827,7 @@ nsLocalFile::CopyToNative(nsIFile* aNewParent, const nsACString& aNewName)
 #endif
 
     
-    nsLocalFile* newFile = new nsLocalFile();
+    auto* newFile = new nsLocalFile();
     nsCOMPtr<nsIFile> fileRef(newFile); 
 
     rv = newFile->InitWithNativePath(newPathName);
@@ -1040,7 +1040,7 @@ nsLocalFile::Remove(bool aRecursive)
   }
 
   if (aRecursive) {
-    nsDirEnumeratorUnix* dir = new nsDirEnumeratorUnix();
+    auto* dir = new nsDirEnumeratorUnix();
 
     nsCOMPtr<nsISimpleEnumerator> dirRef(dir); 
 
