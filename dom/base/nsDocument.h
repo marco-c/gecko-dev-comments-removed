@@ -70,6 +70,7 @@
 #include "mozilla/LinkedList.h"
 #include "CustomElementRegistry.h"
 #include "mozilla/dom/Performance.h"
+#include "mozilla/Maybe.h"
 
 #define XML_DECLARATION_BITS_DECLARATION_EXISTS   (1 << 0)
 #define XML_DECLARATION_BITS_ENCODING_EXISTS      (1 << 1)
@@ -1308,6 +1309,7 @@ protected:
   void UpdateScreenOrientation();
 
   virtual mozilla::dom::FlashClassification DocumentFlashClassification() override;
+  virtual bool IsThirdParty() override;
 
 #define NS_DOCUMENT_NOTIFY_OBSERVERS(func_, params_)                        \
   NS_OBSERVER_ARRAY_NOTIFY_XPCOM_OBSERVERS(mObservers, nsIDocumentObserver, \
@@ -1331,7 +1333,7 @@ protected:
 
   
   
-  mozilla::dom::FlashClassification PrincipalFlashClassification(bool aIsTopLevel);
+  mozilla::dom::FlashClassification PrincipalFlashClassification();
 
   
   
@@ -1383,6 +1385,9 @@ protected:
   nsWeakPtr mFullscreenRoot;
 
   mozilla::dom::FlashClassification mFlashClassification;
+  
+  
+  mozilla::Maybe<bool> mIsThirdParty;
 private:
   static bool CustomElementConstructor(JSContext* aCx, unsigned aArgc, JS::Value* aVp);
 

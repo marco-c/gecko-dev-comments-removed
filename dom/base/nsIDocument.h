@@ -2903,6 +2903,7 @@ public:
   
   
   virtual mozilla::dom::FlashClassification DocumentFlashClassification() = 0;
+  virtual bool IsThirdParty() = 0;
 
 protected:
   bool GetUseCounter(mozilla::UseCounter aUseCounter)

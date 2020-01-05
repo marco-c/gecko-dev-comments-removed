@@ -13075,9 +13075,10 @@ ArrayContainsTable(const nsTArray<nsCString>& aTableArray,
 
 
 FlashClassification
-nsDocument::PrincipalFlashClassification(bool aIsTopLevel)
+nsDocument::PrincipalFlashClassification()
 {
   nsresult rv;
+  bool isThirdPartyDoc = IsThirdParty();
 
   
   
@@ -13110,7 +13111,7 @@ nsDocument::PrincipalFlashClassification(bool aIsTopLevel)
   Preferences::GetCString("urlclassifier.flashExceptTable",
                           &denyExceptionsTables);
   MaybeAddTableToTableList(denyExceptionsTables, tables);
-  if (!aIsTopLevel) {
+  if (isThirdPartyDoc) {
     Preferences::GetCString("urlclassifier.flashSubDocTable",
                             &subDocDenyTables);
     MaybeAddTableToTableList(subDocDenyTables, tables);
@@ -13155,7 +13156,7 @@ nsDocument::PrincipalFlashClassification(bool aIsTopLevel)
     return FlashClassification::Allowed;
   }
 
-  if (!aIsTopLevel && ArrayContainsTable(results, subDocDenyTables) &&
+  if (isThirdPartyDoc && ArrayContainsTable(results, subDocDenyTables) &&
       !ArrayContainsTable(results, subDocDenyExceptionsTables)) {
     return FlashClassification::Denied;
   }
@@ -13178,7 +13179,7 @@ nsDocument::ComputeFlashClassification()
   bool isTopLevel = !parent;
   FlashClassification classification;
   if (isTopLevel) {
-    classification = PrincipalFlashClassification(isTopLevel);
+    classification = PrincipalFlashClassification();
   } else {
     nsCOMPtr<nsIDocument> parentDocument = GetParentDocument();
     if (!parentDocument) {
@@ -13190,7 +13191,7 @@ nsDocument::ComputeFlashClassification()
     if (parentClassification == FlashClassification::Denied) {
       classification = FlashClassification::Denied;
     } else {
-      classification = PrincipalFlashClassification(isTopLevel);
+      classification = PrincipalFlashClassification();
 
       
       
@@ -13223,4 +13224,84 @@ nsDocument::DocumentFlashClassification()
   }
 
   return mFlashClassification;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+bool
+nsDocument::IsThirdParty()
+{
+  if (mIsThirdParty.isSome()) {
+    return mIsThirdParty.value();
+  }
+
+  nsCOMPtr<nsIDocShellTreeItem> docshell = this->GetDocShell();
+  if (!docshell) {
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
+  }
+
+  nsCOMPtr<nsIDocShellTreeItem> parent;
+  nsresult rv = docshell->GetSameTypeParent(getter_AddRefs(parent));
+  MOZ_ASSERT(NS_SUCCEEDED(rv),
+             "nsIDocShellTreeItem::GetSameTypeParent should never fail");
+  bool isTopLevel = !parent;
+
+  if (isTopLevel) {
+    mIsThirdParty.emplace(false);
+    return mIsThirdParty.value();
+  }
+
+  nsCOMPtr<nsIDocument> parentDocument = GetParentDocument();
+  if (!parentDocument) {
+    
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
+  }
+
+  if (parentDocument->IsThirdParty()) {
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
+  }
+
+  nsCOMPtr<nsIPrincipal> principal = GetPrincipal();
+  nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(parentDocument,
+                                                             &rv);
+  if (NS_WARN_IF(NS_FAILED(rv) || !sop)) {
+    
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
+  }
+  nsCOMPtr<nsIPrincipal> parentPrincipal = sop->GetPrincipal();
+
+  bool principalsMatch = false;
+  rv = principal->Equals(parentPrincipal, &principalsMatch);
+
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
+  }
+
+  if (!principalsMatch) {
+    mIsThirdParty.emplace(true);
+    return mIsThirdParty.value();
+  }
+
+  
+  mIsThirdParty.emplace(false);
+  return mIsThirdParty.value();
 }
