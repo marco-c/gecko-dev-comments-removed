@@ -215,10 +215,6 @@ var whitelist = new Set([
   {file: "chrome://mozapps/skin/downloads/buttons.png", platforms: ["macosx"]},
   {file: "chrome://mozapps/skin/downloads/downloadButtons.png", platforms: ["linux", "win"]},
   
-  {file: "chrome://mozapps/skin/extensions/dictionaryGeneric-16.png"},
-  {file: "chrome://mozapps/skin/extensions/search.png", platforms: ["macosx"]},
-  {file: "chrome://mozapps/skin/extensions/themeGeneric-16.png"},
-  
   {file: "chrome://mozapps/skin/plugins/pluginBlocked.png"},
   
   {file: "chrome://mozapps/skin/update/downloadButtons.png",
