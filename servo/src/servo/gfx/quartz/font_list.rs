@@ -1,12 +1,37 @@
-pub struct QuartzFontListHandle {
-    ctx: (),
+extern mod core_foundation;
+extern mod core_text;
 
-    drop { }
+use cf = core_foundation;
+use cf::array::CFArray;
+use ct = core_text;
+use ct::font_collection::CTFontCollection;
+use ct::font_descriptor::{CTFontDescriptor, CTFontDescriptorRef};
+
+use gfx::font::FontFamily;
+
+use dvec::DVec;
+
+pub struct QuartzFontListHandle {
+    collection: CTFontCollection,
 }
 
 pub impl QuartzFontListHandle {
-    
     static pub fn new() -> QuartzFontListHandle {
-        QuartzFontListHandle { ctx: () }
+        QuartzFontListHandle { collection: CTFontCollection::new() }
+    }
+
+    fn get_available_families(_fctx: FontContext) -> ~[@FontFamily] {
+        
+        let descriptors : CFArray<CTFontDescriptorRef, CTFontDescriptor>;
+        descriptors = self.collection.get_descriptors();
+        for descriptors.each |desc: &CTFontDescriptor| {
+            
+            
+        }
+
+        let families: DVec<@FontFamily> = DVec();
+        
+
+        return move dvec::unwrap(move families);
     }
 }
