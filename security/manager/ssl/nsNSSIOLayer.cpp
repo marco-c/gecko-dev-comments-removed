@@ -2437,10 +2437,6 @@ nsSSLIOLayerImportFD(PRFileDesc* fd,
     goto loser;
   }
 
-  
-  
-  EnsureServerVerificationInitialized();
-
   return sslSock;
 loser:
   if (sslSock) {
