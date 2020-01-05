@@ -25,6 +25,7 @@ class CDMProxy;
 class MediaFormatReader final : public MediaDecoderReader
 {
   typedef TrackInfo::TrackType TrackType;
+  typedef MozPromise<bool, MediaResult,  true> NotifyDataArrivedPromise;
 
 public:
   MediaFormatReader(AbstractMediaDecoder* aDecoder,
@@ -49,11 +50,10 @@ public:
   Seek(const SeekTarget& aTarget, int64_t aUnused) override;
 
 protected:
-  void NotifyDataArrivedInternal() override;
+  void NotifyDataArrived() override;
+  void UpdateBuffered() override;
 
 public:
-  media::TimeIntervals GetBuffered() override;
-
   bool ForceZeroStartTime() const override;
 
   
@@ -93,9 +93,7 @@ private:
 
   bool InitDemuxer();
   
-  
-  
-  void NotifyDemuxer();
+  void NotifyTrackDemuxers();
   void ReturnOutput(MediaData* aData, TrackType aTrack);
 
   
@@ -482,7 +480,8 @@ private:
   DecoderData& GetDecoderData(TrackType aTrack);
 
   
-  RefPtr<MediaDataDemuxer> mDemuxer;
+  class DemuxerProxy;
+  UniquePtr<DemuxerProxy> mDemuxer;
   bool mDemuxerInitDone;
   void OnDemuxerInitDone(nsresult);
   void OnDemuxerInitFailed(const MediaResult& aError);
