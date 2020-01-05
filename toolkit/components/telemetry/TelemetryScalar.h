@@ -7,8 +7,6 @@
 #define TelemetryScalar_h__
 
 #include "mozilla/TelemetryScalarEnums.h"
-#include "nsXULAppAPI.h" 
-#include "ipc/TelemetryComms.h"
 
 
 

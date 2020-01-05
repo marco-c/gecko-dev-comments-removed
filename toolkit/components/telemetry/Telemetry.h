@@ -136,6 +136,34 @@ void AccumulateTimeDelta(ID id, TimeStamp start, TimeStamp end = TimeStamp::Now(
 
 
 
+void AccumulateChild(GeckoProcessType aProcessType, const nsTArray<Accumulation>& aAccumulations);
+
+
+
+
+
+
+void AccumulateChildKeyed(GeckoProcessType aProcessType, const nsTArray<KeyedAccumulation>& aAccumulations);
+
+
+
+
+
+
+void UpdateChildScalars(GeckoProcessType aProcessType, const nsTArray<ScalarAction>& aScalarActions);
+
+
+
+
+
+
+void UpdateChildKeyedScalars(GeckoProcessType aProcessType, const nsTArray<KeyedScalarAction>& aScalarActions);
+
+
+
+
+
+
 
 
 
