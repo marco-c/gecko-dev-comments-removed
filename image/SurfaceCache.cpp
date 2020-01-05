@@ -698,7 +698,7 @@ public:
     }
 
     cache->SetLocked(false);
-    DoUnlockSurfaces(WrapNotNull(cache));
+    DoUnlockSurfaces(WrapNotNull(cache),  false);
   }
 
   void UnlockEntries(const ImageKey aImageKey)
@@ -710,7 +710,8 @@ public:
 
     
     
-    DoUnlockSurfaces(WrapNotNull(cache));
+    DoUnlockSurfaces(WrapNotNull(cache),
+       !gfxPrefs::ImageMemAnimatedDiscardable());
   }
 
   void RemoveImage(const ImageKey aImageKey)
@@ -856,12 +857,15 @@ private:
     }
   }
 
-  void DoUnlockSurfaces(NotNull<ImageSurfaceCache*> aCache)
+  void DoUnlockSurfaces(NotNull<ImageSurfaceCache*> aCache, bool aStaticOnly)
   {
     
     for (auto iter = aCache->ConstIter(); !iter.Done(); iter.Next()) {
       NotNull<CachedSurface*> surface = WrapNotNull(iter.UserData());
       if (surface->IsPlaceholder() || !surface->IsLocked()) {
+        continue;
+      }
+      if (aStaticOnly && surface->GetSurfaceKey().Playback() != PlaybackType::eStatic) {
         continue;
       }
       StopTracking(surface);
