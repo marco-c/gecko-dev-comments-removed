@@ -319,6 +319,8 @@ user_pref("media.decoder.heuristic.dormant.timeout", 0);
 user_pref("browser.tabs.remote.autostart.1", false);
 user_pref("browser.tabs.remote.autostart.2", false);
 
+user_pref("browser.tabs.delayHidingAudioPlayingIconMS", 0);
+
 user_pref("dom.ipc.tabs.shutdownTimeoutSecs", 0);
 
 

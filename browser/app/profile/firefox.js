@@ -437,6 +437,8 @@ pref("browser.tabs.selectOwnerOnClose", true);
 
 pref("browser.tabs.showAudioPlayingIcon", true);
 
+pref("browser.tabs.delayHidingAudioPlayingIconMS", 3000);
+
 pref("browser.tabs.dontfocusfordialogs", true);
 
 pref("browser.ctrlTab.previews", false);
