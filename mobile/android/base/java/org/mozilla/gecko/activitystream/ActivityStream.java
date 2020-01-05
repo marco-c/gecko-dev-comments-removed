@@ -9,7 +9,10 @@ import android.content.Context;
 import android.net.Uri;
 import android.text.TextUtils;
 
+import com.keepsafe.switchboard.SwitchBoard;
+
 import org.mozilla.gecko.AppConstants;
+import org.mozilla.gecko.Experiments;
 import org.mozilla.gecko.GeckoSharedPrefs;
 import org.mozilla.gecko.preferences.GeckoPreferences;
 import org.mozilla.gecko.util.StringUtils;
@@ -45,12 +48,34 @@ public class ActivityStream {
     );
 
     public static boolean isEnabled(Context context) {
-        if (!AppConstants.MOZ_ANDROID_ACTIVITY_STREAM) {
+        if (!isUserEligible(context)) {
+            
+            
             return false;
         }
 
         return GeckoSharedPrefs.forApp(context)
                 .getBoolean(GeckoPreferences.PREFS_ACTIVITY_STREAM, false);
+    }
+
+    
+
+
+    public static boolean isUserEligible(Context context) {
+        if (AppConstants.MOZ_ANDROID_ACTIVITY_STREAM) {
+            
+            return true;
+        }
+
+        if (AppConstants.NIGHTLY_BUILD && SwitchBoard.isInExperiment(context, Experiments.ACTIVITY_STREAM)) {
+            
+            
+            
+            return true;
+        }
+
+        
+        return false;
     }
 
     
