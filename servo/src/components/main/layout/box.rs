@@ -16,7 +16,7 @@ use std::cmp::ApproxEq;
 use std::managed;
 use std::num::Zero;
 use std::uint;
-use geom::{Point2D, Rect, Size2D};
+use geom::{Point2D, Rect, Size2D, SideOffsets2D};
 use gfx::display_list::{BaseDisplayItem, BorderDisplayItem, BorderDisplayItemClass};
 use gfx::display_list::{DisplayList, ImageDisplayItem, ImageDisplayItemClass};
 use gfx::display_list::{SolidColorDisplayItem, SolidColorDisplayItemClass, TextDisplayItem};
@@ -629,13 +629,17 @@ impl RenderBox {
                 // should have a real `SERVO_DEBUG` system.
                 debug!("%?", { 
                     // Compute the text box bounds and draw a border surrounding them.
+                    let debug_border = SideOffsets2D::new(Au::from_px(1),
+                                                          Au::from_px(1),
+                                                          Au::from_px(1),
+                                                          Au::from_px(1));
                     do list.with_mut_ref |list| {
                         let border_display_item = ~BorderDisplayItem {
                             base: BaseDisplayItem {
                                 bounds: absolute_box_bounds,
                                 extra: ExtraDisplayListData::new(*self),
                             },
-                            width: Au::from_px(1),
+                            border: debug_border,
                             color: rgb(0, 0, 200).to_gfx_color(),
                         };
                         list.append_item(BorderDisplayItemClass(border_display_item))
@@ -655,7 +659,7 @@ impl RenderBox {
                                 bounds: baseline,
                                 extra: ExtraDisplayListData::new(*self),
                             },
-                            width: Au::from_px(1),
+                            border: debug_border,
                             color: rgb(0, 200, 0).to_gfx_color(),
                         };
                         list.append_item(BorderDisplayItemClass(border_display_item))
@@ -672,13 +676,18 @@ impl RenderBox {
                 // FIXME(pcwalton): This is a bit of an abuse of the logging infrastructure. We
                 // should have a real `SERVO_DEBUG` system.
                 debug!("%?", {
+                    let debug_border = SideOffsets2D::new(Au::from_px(1),
+                                                          Au::from_px(1),
+                                                          Au::from_px(1),
+                                                          Au::from_px(1));
+
                     do list.with_mut_ref |list| {
                         let border_display_item = ~BorderDisplayItem {
                             base: BaseDisplayItem {
                                 bounds: absolute_box_bounds,
                                 extra: ExtraDisplayListData::new(*self),
                             },
-                            width: Au::from_px(1),
+                            border: debug_border,
                             color: rgb(0, 0, 200).to_gfx_color(),
                         };
                         list.append_item(BorderDisplayItemClass(border_display_item))
@@ -879,16 +888,16 @@ impl RenderBox {
         fmt!("box b%?: %s", self.id(), representation)
     }
 
-    //
-    // Painting
-    //
+    
+    
+    
 
-    /// Adds the display items necessary to paint the borders of this render box to a display list
-    /// if necessary.
+    
+    
     pub fn paint_borders_if_applicable<E:ExtraDisplayListData>(&self,
                                                                list: &Cell<DisplayList<E>>,
                                                                abs_bounds: &Rect<Au>) {
-        // Fast path.
+        
         let border = do self.with_base |base| {
             base.model.border
         };
@@ -896,43 +905,25 @@ impl RenderBox {
             return
         }
 
-        // Are all the widths equal?
-        //
-        // FIXME(pcwalton): Obviously this is wrong.
-        let borders = [ border.top, border.right, border.bottom ];
-        if borders.iter().all(|a| *a == border.left) {
-            let border_width = border.top;
-            let bounds = Rect {
-                origin: Point2D {
-                    x: abs_bounds.origin.x + border_width.scale_by(0.5),
-                    y: abs_bounds.origin.y + border_width.scale_by(0.5),
+        
+        let top_color = self.style().border_top_color();
+        let color = top_color.to_gfx_color();
+
+        
+        do list.with_mut_ref |list| {
+            let border_display_item = ~BorderDisplayItem {
+                base: BaseDisplayItem {
+                    bounds: *abs_bounds,
+                    extra: ExtraDisplayListData::new(*self),
                 },
-                size: Size2D {
-                    width: abs_bounds.size.width - border_width,
-                    height: abs_bounds.size.height - border_width
-                }
+                border: SideOffsets2D::new(border.top,
+                                           border.right,
+                                           border.bottom,
+                                           border.left),
+                color: color,
             };
 
-            let top_color = self.style().border_top_color();
-            let color = top_color.to_gfx_color(); // FIXME
-
-            // Append the border to the display list.
-            do list.with_mut_ref |list| {
-                let border_display_item = ~BorderDisplayItem {
-                    base: BaseDisplayItem {
-                        bounds: bounds,
-                        extra: ExtraDisplayListData::new(*self),
-                    },
-                    width: border_width,
-                    color: color,
-                };
-
-                list.append_item(BorderDisplayItemClass(border_display_item))
-            }
-        } else {
-            warn!("ignoring unimplemented border widths");
+            list.append_item(BorderDisplayItemClass(border_display_item))
         }
     }
-
 }
-
