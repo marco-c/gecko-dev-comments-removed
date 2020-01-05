@@ -23,7 +23,7 @@ use net_traits::ResourceThread;
 use profile_traits::mem;
 use script_thread::{CommonScriptMsg, ScriptChan, ScriptPort, ScriptThread};
 use script_traits::{MsDuration, ScriptMsg as ConstellationMsg, TimerEventRequest};
-use timers::{ScheduledCallback, TimerHandle};
+use timers::{OneshotTimerCallback, OneshotTimerHandle};
 use url::Url;
 
 
@@ -224,9 +224,9 @@ impl<'a> GlobalRef<'a> {
     
     
     pub fn schedule_callback(&self,
-                             callback: Box<ScheduledCallback>,
+                             callback: OneshotTimerCallback,
                              duration: MsDuration)
-                             -> TimerHandle {
+                             -> OneshotTimerHandle {
         match *self {
             GlobalRef::Window(window) => window.schedule_callback(callback, duration),
             GlobalRef::Worker(worker) => worker.schedule_callback(callback, duration),
@@ -234,7 +234,7 @@ impl<'a> GlobalRef<'a> {
     }
 
     
-    pub fn unschedule_callback(&self, handle: TimerHandle) {
+    pub fn unschedule_callback(&self, handle: OneshotTimerHandle) {
         match *self {
             GlobalRef::Window(window) => window.unschedule_callback(handle),
             GlobalRef::Worker(worker) => worker.unschedule_callback(handle),
