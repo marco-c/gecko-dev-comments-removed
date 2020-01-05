@@ -2949,6 +2949,7 @@ ServiceWorkerManager::GetClient(nsIPrincipal* aPrincipal,
 void
 ServiceWorkerManager::GetAllClients(nsIPrincipal* aPrincipal,
                                     const nsCString& aScope,
+                                    uint64_t aServiceWorkerID,
                                     bool aIncludeUncontrolled,
                                     nsTArray<ServiceWorkerClientInfo>& aDocuments)
 {
@@ -3005,9 +3006,12 @@ ServiceWorkerManager::GetAllClients(nsIPrincipal* aPrincipal,
 
     
     
+    
+    
     if (!aIncludeUncontrolled) {
       ServiceWorkerRegistrationInfo* reg = mControlledDocuments.GetWeak(doc);
-      if (!reg || reg->mScope != registration->mScope) {
+      if (!reg || reg->mScope != aScope || !reg->GetActive() ||
+          reg->GetActive()->ID() != aServiceWorkerID) {
         continue;
       }
     }
