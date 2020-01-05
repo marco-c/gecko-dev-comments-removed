@@ -111,9 +111,6 @@ public:
   IsLastUpdateCheckTimeOverOneDay() const;
 
   void
-  NotifyListenersOnChange(WhichServiceWorker aChangedWorkers);
-
-  void
   MaybeScheduleTimeCheckAndUpdate();
 
   void
@@ -175,6 +172,29 @@ public:
   
   bool
   IsIdle() const;
+
+private:
+  enum TransitionType {
+    TransitionToNextState = 0,
+    Invalidate
+  };
+
+  
+  void
+  AsyncUpdateRegistrationStateProperties(WhichServiceWorker aWorker, TransitionType aType);
+
+  
+  
+  
+  void
+  UpdateRegistrationStateProperties(WhichServiceWorker aWorker, TransitionType aType);
+
+  
+  
+  
+  
+  void
+  NotifyChromeRegistrationListeners();
 };
 
 } 
