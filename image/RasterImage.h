@@ -321,7 +321,9 @@ private:
   
   
   bool IsUnlocked() {
-    return (mLockCount == 0 || (mAnimationState && mAnimationConsumers == 0));
+    return (mLockCount == 0 ||
+            (!gfxPrefs::ImageMemAnimatedDiscardable() &&
+             (mAnimationState && mAnimationConsumers == 0)));
   }
 
   

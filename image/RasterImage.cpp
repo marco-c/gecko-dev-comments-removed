@@ -347,6 +347,7 @@ RasterImage::LookupFrame(const IntSize& aSize,
     
     
     MOZ_ASSERT(aPlaybackType != PlaybackType::eAnimated ||
+               gfxPrefs::ImageMemAnimatedDiscardable() ||
                !mAnimationState || mAnimationState->KnownFrameCount() < 1,
                "Animated frames should be locked");
 
@@ -414,7 +415,7 @@ RasterImage::WillDrawOpaqueNow()
     return false;
   }
 
-  if (mAnimationState) {
+  if (mAnimationState && !gfxPrefs::ImageMemAnimatedDiscardable()) {
     
     return true;
   }
@@ -758,9 +759,11 @@ RasterImage::SetMetadata(const ImageMetadata& aMetadata,
     mAnimationState.emplace(mAnimationMode);
     mFrameAnimator = MakeUnique<FrameAnimator>(this, mSize);
 
-    
-    
-    LockImage();
+    if (!gfxPrefs::ImageMemAnimatedDiscardable()) {
+      
+      
+      LockImage();
+    }
 
     if (!aFromMetadataDecode) {
       
@@ -1075,7 +1078,8 @@ RasterImage::Discard()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(CanDiscard(), "Asked to discard but can't");
-  MOZ_ASSERT(!mAnimationState, "Asked to discard for animated image");
+  MOZ_ASSERT(!mAnimationState || gfxPrefs::ImageMemAnimatedDiscardable(),
+    "Asked to discard for animated image");
 
   
   SurfaceCache::RemoveImage(ImageKey(this));
@@ -1092,8 +1096,9 @@ RasterImage::Discard()
 
 bool
 RasterImage::CanDiscard() {
-  return mAllSourceData &&       
-         !mAnimationState;       
+  return mAllSourceData &&
+         
+         (!mAnimationState || gfxPrefs::ImageMemAnimatedDiscardable());
 }
 
 NS_IMETHODIMP
