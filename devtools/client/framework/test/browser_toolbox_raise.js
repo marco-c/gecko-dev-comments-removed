@@ -42,12 +42,12 @@ function testWindowHost() {
   
   
   let onToolboxFocus = () => {
-    toolbox.win.parent.removeEventListener("focus", onToolboxFocus, true);
+    toolbox._host._window.removeEventListener("focus", onToolboxFocus, true);
     info("focusing main window.");
     window.focus();
   };
   
-  toolbox.win.parent.addEventListener("focus", onToolboxFocus, true);
+  toolbox._host._window.addEventListener("focus", onToolboxFocus, true);
 }
 
 function onFocus() {
@@ -56,11 +56,11 @@ function onFocus() {
 
   
   let onToolboxFocusAgain = () => {
-    toolbox.win.parent.removeEventListener("focus", onToolboxFocusAgain, false);
+    toolbox._host._window.removeEventListener("focus", onToolboxFocusAgain, false);
     ok(true, "Toolbox window is the focused window after calling toolbox.raise()");
     cleanup();
   };
-  toolbox.win.parent.addEventListener("focus", onToolboxFocusAgain, false);
+  toolbox._host._window.addEventListener("focus", onToolboxFocusAgain, false);
 
   
   toolbox.raise();
