@@ -591,11 +591,11 @@ public:
         
         
         gfxFloat mPartWidth;
-        
+
         bool mClipBeforePart;
         bool mClipAfterPart;
     };
-    
+
     
     
     virtual size_t SizeOfExcludingThis(mozilla::MallocSizeOf aMallocSizeOf)
