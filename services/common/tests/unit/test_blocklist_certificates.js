@@ -75,7 +75,7 @@ add_task(function* test_something() {
   yield sqliteHandle.close();
 
   
-  yield OneCRLBlocklistClient.maybeSync(4000, Date.now());
+  result = yield OneCRLBlocklistClient.maybeSync(4000, Date.now());
 
   
   
