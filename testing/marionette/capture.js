@@ -91,12 +91,22 @@ capture.viewport = function (win, highlights=[]) {
 
 
 capture.canvas = function (win, left, top, width, height, highlights=[]) {
+  let scale = win.devicePixelRatio;
+
   let canvas = win.document.createElementNS(XHTML_NS, "canvas");
-  canvas.width = width;
-  canvas.height = height;
+  canvas.width = width * scale;
+  canvas.height = height * scale;
 
   let ctx = canvas.getContext(CONTEXT_2D);
-  ctx.drawWindow(win, left, top, width, height, BG_COLOUR);
+  let flags = ctx.DRAWWINDOW_DRAW_CARET;
+      
+      
+      
+      
+      
+
+  ctx.scale(scale, scale);
+  ctx.drawWindow(win, left, top, width, height, BG_COLOUR, flags);
   ctx = capture.highlight_(ctx, highlights, top, left);
 
   return canvas;
