@@ -998,7 +998,9 @@ private:
   {
     
     if (mOwner->mMuted || (std::fabs(mOwner->Volume()) <= 1e-7)) {
-      return AudioChannelService::AudibleState::eNotAudible;
+      return mOwner->HasAudio() ?
+        AudioChannelService::AudibleState::eMaybeAudible :
+        AudioChannelService::AudibleState::eNotAudible;
     }
 
     
