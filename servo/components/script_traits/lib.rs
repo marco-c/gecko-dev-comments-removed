@@ -29,6 +29,7 @@ use net_traits::storage_task::StorageTask;
 use std::any::Any;
 use std::sync::mpsc::{Sender, Receiver};
 use webdriver_traits::WebDriverScriptCommand;
+use url::Url;
 
 use geom::point::Point2D;
 use geom::rect::Rect;
@@ -53,6 +54,10 @@ pub struct NewLayoutInfo {
     pub layout_chan: Box<Any+Send>,
     
     pub load_data: LoadData,
+}
+
+pub trait StylesheetLoadResponder {
+    fn respond(self: Box<Self>);
 }
 
 
@@ -89,6 +94,8 @@ pub enum ConstellationControlMsg {
     WebDriverCommand(PipelineId, WebDriverScriptCommand),
     
     TickAllAnimations(PipelineId),
+    
+    StylesheetLoadComplete(PipelineId, Url, Box<StylesheetLoadResponder+Send>),
 }
 
 

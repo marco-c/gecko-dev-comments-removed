@@ -7,9 +7,11 @@
 
 
 
+use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
 use dom::bindings::conversions::native_from_reflector_jsmanaged;
 use dom::bindings::js::{JS, JSRef, Rootable, Root, Unrooted};
 use dom::bindings::utils::{Reflectable, Reflector};
+use dom::document::DocumentHelpers;
 use dom::workerglobalscope::{WorkerGlobalScope, WorkerGlobalScopeHelpers};
 use dom::window::{self, WindowHelpers};
 use devtools_traits::DevtoolsControlChan;
@@ -101,7 +103,12 @@ impl<'a> GlobalRef<'a> {
     
     pub fn resource_task(&self) -> ResourceTask {
         match *self {
-            GlobalRef::Window(ref window) => window.resource_task().clone(),
+            GlobalRef::Window(ref window) => {
+                let doc = window.Document().root();
+                let doc = doc.r();
+                let loader = doc.loader();
+                loader.resource_task.clone()
+            }
             GlobalRef::Worker(ref worker) => worker.resource_task().clone(),
         }
     }
