@@ -135,15 +135,13 @@ FormAutoCompleteResult.prototype = {
       return "fromhistory";
     }
 
-    if (!this._comments[index]) {
-      return null;  
+    if (this._formHistResult &&
+        this._formHistResult.matchCount > 0 &&
+        index == this._formHistResult.matchCount) {
+      return "datalist-first";
     }
 
-    if (index == 0) {
-      return "suggestfirst";  
-    }
-
-    return "suggesthint";   
+    return null;
   },
 
   

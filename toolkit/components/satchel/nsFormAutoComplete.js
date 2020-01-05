@@ -451,12 +451,6 @@ FormAutoComplete.prototype = {
         let historyComments = new Array(entries.length).fill("");
 
         
-        
-        if (values.length) {
-            comments[0] = "separator";
-        }
-
-        
         let finalValues = historyResults.concat(values);
         let finalLabels = historyResults.concat(labels);
         let finalComments = historyComments.concat(comments);
