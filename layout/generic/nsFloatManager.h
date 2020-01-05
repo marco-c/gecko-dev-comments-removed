@@ -352,6 +352,9 @@ private:
     virtual nscoord BEnd() const = 0;
     virtual bool IsEmpty() const = 0;
 
+    
+    virtual void Translate(nscoord aLineLeft, nscoord aBlockStart) = 0;
+
   protected:
     
     
@@ -391,11 +394,16 @@ private:
     nscoord BEnd() const override { return mShapeBoxRect.YMost(); }
     bool IsEmpty() const override { return mShapeBoxRect.IsEmpty(); };
 
+    void Translate(nscoord aLineLeft, nscoord aBlockStart) override
+    {
+      mShapeBoxRect.MoveBy(aLineLeft, aBlockStart);
+    }
+
   private:
     
     
     
-    const nsRect mShapeBoxRect;
+    nsRect mShapeBoxRect;
     
     nsIFrame* const mFrame;
   };
@@ -405,8 +413,6 @@ private:
   {
   public:
     CircleShapeInfo(mozilla::StyleBasicShape* const aBasicShape,
-                    nscoord aLineLeft,
-                    nscoord aBlockStart,
                     const mozilla::LogicalRect& aShapeBoxRect,
                     mozilla::WritingMode aWM,
                     const nsSize& aContainerSize);
@@ -420,6 +426,11 @@ private:
     nscoord BStart() const override { return mCenter.y - mRadius; }
     nscoord BEnd() const override { return mCenter.y + mRadius; }
     bool IsEmpty() const override { return mRadius == 0; };
+
+    void Translate(nscoord aLineLeft, nscoord aBlockStart) override
+    {
+      mCenter.MoveBy(aLineLeft, aBlockStart);
+    }
 
   private:
     
