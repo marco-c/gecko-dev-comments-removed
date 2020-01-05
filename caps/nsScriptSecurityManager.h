@@ -24,7 +24,7 @@
 class nsCString;
 class nsIIOService;
 class nsIStringBundle;
-class nsSystemPrincipal;
+class SystemPrincipal;
 
 namespace mozilla {
 class OriginAttributes;
@@ -55,7 +55,7 @@ public:
     
     static void InitStatics();
 
-    static nsSystemPrincipal*
+    static SystemPrincipal*
     SystemPrincipalSingletonConstructor();
 
     
