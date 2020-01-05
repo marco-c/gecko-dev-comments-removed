@@ -35,8 +35,6 @@ public:
   Constructor(EventTarget* aOwner, const nsAString& aType,
               const BeforeAfterKeyboardEventInit& aEventInitDict);
 
-  
-  
   Nullable<bool> GetEmbeddedCancelled();
 };
 

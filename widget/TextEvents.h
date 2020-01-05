@@ -427,9 +427,6 @@ private:
 
 
 
-
-
-
 class InternalBeforeAfterKeyboardEvent : public WidgetKeyboardEvent
 {
 private:

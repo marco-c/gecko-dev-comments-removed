@@ -214,13 +214,7 @@ HardwareKeyHandler::OnHandledByInputMethodApp(const nsAString& aType,
   if (CanDispatchEvent(keyInfo->mTarget, keyInfo->mEvent)) {
     
     
-    
-    
-    if (keyInfo->mEvent.mFlags.mDefaultPrevented) {
-      DispatchAfterKeyEvent(keyInfo->mTarget, keyInfo->mEvent);
-    
-    
-    } else {
+    if (!keyInfo->mEvent.mFlags.mDefaultPrevented) {
       DispatchToTargetApp(keyInfo->mTarget,
                           keyInfo->mEvent,
                           keyInfo->mStatus);
@@ -297,25 +291,6 @@ HardwareKeyHandler::DispatchKeyPress(nsINode* aTarget,
   return ret;
 }
 
-void
-HardwareKeyHandler::DispatchAfterKeyEvent(nsINode* aTarget,
-                                          WidgetKeyboardEvent& aEvent)
-{
-  MOZ_ASSERT(aTarget, "No target provided");
-
-  if (!PresShell::BeforeAfterKeyboardEventEnabled() ||
-      aEvent.mMessage == eKeyPress) {
-    return;
-  }
-
-  nsCOMPtr<nsIPresShell> presShell = GetPresShell(aTarget);
-  if (NS_WARN_IF(presShell)) {
-    presShell->DispatchAfterKeyboardEvent(aTarget,
-                                          aEvent,
-                                          aEvent.mFlags.mDefaultPrevented);
-  }
-}
-
 bool
 HardwareKeyHandler::DispatchToTargetApp(nsINode* aTarget,
                                         WidgetKeyboardEvent& aEvent,
@@ -354,22 +329,11 @@ HardwareKeyHandler::DispatchToTargetApp(nsINode* aTarget,
   
   if (!PresShell::IsTargetIframe(currentTarget)) {
     DispatchToCurrentProcess(presShell, currentTarget, aEvent, aStatus);
-
-    if (presShell->CanDispatchEvent(&aEvent)) {
-      DispatchAfterKeyEvent(aTarget, aEvent);
-    }
-
     return true;
   }
 
   
   return DispatchToCrossProcess(aTarget, aEvent);
-
-  
-  
-  
-  
-  
 }
 
 void
