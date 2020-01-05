@@ -185,6 +185,8 @@ public:
 
     static void InitMoz2DLogging();
 
+    static bool IsHeadless();
+
     
 
 

@@ -1853,6 +1853,9 @@ public:
     static already_AddRefed<nsIWidget>
     CreatePuppetWidget(TabChild* aTabChild);
 
+    static already_AddRefed<nsIWidget>
+    CreateHeadlessWidget();
+
     
 
 
