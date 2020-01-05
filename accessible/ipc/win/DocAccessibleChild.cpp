@@ -190,6 +190,13 @@ DocAccessibleChild::SendTextChangeEvent(const uint64_t& aID,
                                         const bool& aFromUser)
 {
   if (IsConstructedInParentProcess()) {
+    if (aStr.Contains(L'\xfffc')) {
+      
+      
+      return PDocAccessibleChild::SendSyncTextChangeEvent(aID, aStr, aStart,
+                                                          aLen, aIsInsert,
+                                                          aFromUser);
+    }
     return PDocAccessibleChild::SendTextChangeEvent(aID, aStr, aStart,
                                                     aLen, aIsInsert, aFromUser);
   }
