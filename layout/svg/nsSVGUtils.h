@@ -267,42 +267,41 @@ public:
 
 
 
-  static float UserSpace(nsSVGElement *aSVGElement, const nsSVGLength2 *aLength);
+  static float UserSpace(nsSVGElement *aSVGElement,
+                         const nsSVGLength2 *aLength);
   static float UserSpace(nsIFrame *aFrame, const nsSVGLength2 *aLength);
-  static float UserSpace(const mozilla::dom::UserSpaceMetrics& aMetrics, const nsSVGLength2 *aLength);
+  static float UserSpace(const mozilla::dom::UserSpaceMetrics& aMetrics,
+                         const nsSVGLength2 *aLength);
 
   
-  static nsSVGOuterSVGFrame *
-  GetOuterSVGFrame(nsIFrame *aFrame);
+  static nsSVGOuterSVGFrame* GetOuterSVGFrame(nsIFrame *aFrame);
 
-  
-
-
-
-
-  static nsIFrame*
-  GetOuterSVGFrameAndCoveredRegion(nsIFrame* aFrame, nsRect* aRect);
-
-  
-
-  static DrawResult
-  PaintFrameWithEffects(nsIFrame *aFrame,
-                        gfxContext& aContext,
-                        const gfxMatrix& aTransform,
-                        const nsIntRect *aDirtyRect = nullptr);
-
-  
-
-  static bool
-  HitTestClip(nsIFrame *aFrame, const gfxPoint &aPoint);
-  
   
 
 
 
 
-  static nsIFrame *
-  HitTestChildren(nsSVGDisplayContainerFrame *aFrame, const gfxPoint &aPoint);
+  static nsIFrame* GetOuterSVGFrameAndCoveredRegion(nsIFrame* aFrame,
+                                                    nsRect* aRect);
+
+  
+
+  static DrawResult PaintFrameWithEffects(nsIFrame *aFrame,
+                                          gfxContext& aContext,
+                                          const gfxMatrix& aTransform,
+                                          const nsIntRect *aDirtyRect = nullptr);
+
+  
+
+  static bool HitTestClip(nsIFrame *aFrame, const gfxPoint &aPoint);
+
+  
+
+
+
+
+  static nsIFrame* HitTestChildren(nsSVGDisplayContainerFrame *aFrame,
+                                   const gfxPoint &aPoint);
 
   
 
@@ -326,19 +325,16 @@ public:
 
 
 
-  static void
-  NotifyChildrenOfSVGChange(nsIFrame *aFrame, uint32_t aFlags);
+  static void NotifyChildrenOfSVGChange(nsIFrame *aFrame, uint32_t aFlags);
 
   
 
 
-  static nsRect
-  GetCoveredRegion(const nsFrameList &aFrames);
+  static nsRect GetCoveredRegion(const nsFrameList &aFrames);
 
-  static nsRect
-  TransformFrameRectToOuterSVG(const nsRect& aRect,
-                               const gfxMatrix& aMatrix,
-                               nsPresContext* aPresContext);
+  static nsRect TransformFrameRectToOuterSVG(const nsRect& aRect,
+                                             const gfxMatrix& aMatrix,
+                                             nsPresContext* aPresContext);
 
   
 
@@ -355,10 +351,9 @@ public:
   
 
 
-  static bool
-  HitTestRect(const mozilla::gfx::Matrix &aMatrix,
-              float aRX, float aRY, float aRWidth, float aRHeight,
-              float aX, float aY);
+  static bool HitTestRect(const mozilla::gfx::Matrix &aMatrix,
+                          float aRX, float aRY, float aRWidth, float aRHeight,
+                          float aX, float aY);
 
 
   
@@ -368,9 +363,9 @@ public:
 
 
 
-  static gfxRect
-  GetClipRectForFrame(nsIFrame *aFrame,
-                      float aX, float aY, float aWidth, float aHeight);
+  static gfxRect GetClipRectForFrame(nsIFrame *aFrame,
+                                     float aX, float aY, float aWidth,
+                                     float aHeight);
 
   static void SetClipRect(gfxContext *aContext,
                           const gfxMatrix &aCTM,
@@ -381,8 +376,7 @@ public:
 
 
 
-  static bool
-  CanOptimizeOpacity(nsIFrame *aFrame);
+  static bool CanOptimizeOpacity(nsIFrame *aFrame);
 
   
 
@@ -392,10 +386,9 @@ public:
 
 
 
-  static gfxMatrix
-  AdjustMatrixForUnits(const gfxMatrix &aMatrix,
-                       nsSVGEnum *aUnits,
-                       nsIFrame *aFrame);
+  static gfxMatrix AdjustMatrixForUnits(const gfxMatrix &aMatrix,
+                                        nsSVGEnum *aUnits,
+                                        nsIFrame *aFrame);
 
   enum BBoxFlags {
     eBBoxIncludeFill           = 1 << 0,
@@ -439,14 +432,12 @@ public:
 
 
 
-  static gfxRect
-  GetRelativeRect(uint16_t aUnits, const nsSVGLength2 *aXYWH,
-                  const gfxRect& aBBox, nsIFrame *aFrame);
+  static gfxRect GetRelativeRect(uint16_t aUnits, const nsSVGLength2 *aXYWH,
+                                 const gfxRect& aBBox, nsIFrame *aFrame);
 
-  static gfxRect
-  GetRelativeRect(uint16_t aUnits, const nsSVGLength2 *aXYWH,
-                  const gfxRect& aBBox,
-                  const mozilla::dom::UserSpaceMetrics& aMetrics);
+  static gfxRect GetRelativeRect(uint16_t aUnits, const nsSVGLength2 *aXYWH,
+                                 const gfxRect& aBBox,
+                                 const mozilla::dom::UserSpaceMetrics& aMetrics);
 
   
 
@@ -503,11 +494,10 @@ public:
   static nscolor GetFallbackOrPaintColor(nsStyleContext *aStyleContext,
                                          nsStyleSVGPaint nsStyleSVG::*aFillOrStroke);
 
-  static void
-  MakeFillPatternFor(nsIFrame *aFrame,
-                     gfxContext* aContext,
-                     GeneralPattern* aOutPattern,
-                     SVGContextPaint* aContextPaint = nullptr);
+  static void MakeFillPatternFor(nsIFrame *aFrame,
+                                 gfxContext* aContext,
+                                 GeneralPattern* aOutPattern,
+                                 SVGContextPaint* aContextPaint = nullptr);
 
   static void
   MakeStrokePatternFor(nsIFrame* aFrame,
@@ -560,6 +550,7 @@ public:
 
 
   static bool PaintSVGGlyph(Element* aElement, gfxContext* aContext);
+
   
 
 
@@ -577,10 +568,9 @@ public:
 
 
 
-  static nsRect
-  ToCanvasBounds(const gfxRect &aUserspaceRect,
-                 const gfxMatrix &aToCanvas,
-                 const nsPresContext *presContext);
+  static nsRect ToCanvasBounds(const gfxRect &aUserspaceRect,
+                               const gfxMatrix &aToCanvas,
+                               const nsPresContext *presContext);
 
   struct MaskUsage {
     bool shouldGenerateMaskLayer;
@@ -595,11 +585,10 @@ public:
     { }
   };
 
-  static void
-  DetermineMaskUsage(nsIFrame* aFrame, bool aHandleOpacity, MaskUsage& aUsage);
+  static void DetermineMaskUsage(nsIFrame* aFrame, bool aHandleOpacity,
+                                 MaskUsage& aUsage);
 
-  static float
-  ComputeOpacity(nsIFrame* aFrame, bool aHandleOpacity);
+  static float ComputeOpacity(nsIFrame* aFrame, bool aHandleOpacity);
 
   
 
@@ -607,8 +596,7 @@ public:
 
 
 
-  static gfxMatrix
-  GetCSSPxToDevPxMatrix(nsIFrame* aNonSVGFrame);
+  static gfxMatrix GetCSSPxToDevPxMatrix(nsIFrame* aNonSVGFrame);
 
   static bool IsInSVGTextSubtree(const nsIFrame* aFrame) {
     
