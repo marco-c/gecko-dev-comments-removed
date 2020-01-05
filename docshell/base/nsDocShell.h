@@ -806,8 +806,6 @@ protected:
 
   void UpdateGlobalHistoryTitle(nsIURI* aURI);
 
-  NS_IMETHOD_(void) GetOriginAttributes(mozilla::OriginAttributes& aAttrs) override;
-
   
   nsIntRect mBounds;
   nsString mName;
