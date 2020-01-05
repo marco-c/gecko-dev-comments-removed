@@ -29,6 +29,7 @@
 #define VPX_DONT_DEFINE_STDINT_TYPES
 #include "vpx/vp8dx.h"
 #include "vpx/vpx_decoder.h"
+#include <numeric>
 
 #define WEBM_DEBUG(arg, ...) MOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, ("WebMDemuxer(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
 extern mozilla::LazyLogModule gMediaDemuxerLog;
@@ -735,7 +736,8 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
     }
 
     if (packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_UNENCRYPTED
-        || packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_ENCRYPTED) {
+        || packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_ENCRYPTED
+        || packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_PARTITIONED) {
       nsAutoPtr<MediaRawDataWriter> writer(sample->CreateWriter());
       unsigned char const* iv;
       size_t ivLength;
@@ -754,8 +756,72 @@ WebMDemuxer::GetNextPacket(TrackInfo::TrackType aType,
         for (uint32_t i = 0; i < 8; i++) {
           writer->mCrypto.mIV.AppendElement(0);
         }
-        writer->mCrypto.mPlainSizes.AppendElement(0);
-        writer->mCrypto.mEncryptedSizes.AppendElement(length);
+
+        if (packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_ENCRYPTED) {
+          writer->mCrypto.mPlainSizes.AppendElement(0);
+          writer->mCrypto.mEncryptedSizes.AppendElement(length);
+        } else if (packetEncryption == NESTEGG_PACKET_HAS_SIGNAL_BYTE_PARTITIONED) {
+          uint8_t numPartitions = 0;
+          const uint32_t* partitions = NULL;
+          nestegg_packet_offsets(holder->Packet(), &partitions, &numPartitions);
+
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          uint32_t lastOffset = 0;
+          bool encrypted = false;
+
+          for (uint8_t i = 0; i < numPartitions; i++) {
+            uint32_t partition = partitions[i];
+            uint32_t currentLength = partition - lastOffset;
+
+            if (encrypted) {
+              writer->mCrypto.mEncryptedSizes.AppendElement(currentLength);
+            } else {
+              writer->mCrypto.mPlainSizes.AppendElement(currentLength);
+            }
+
+            encrypted = !encrypted;
+            lastOffset = partition;
+
+            assert(lastOffset <= length);
+          }
+
+          
+          
+          
+          if (encrypted) {
+            writer->mCrypto.mEncryptedSizes.AppendElement(length - lastOffset);
+          } else {
+            writer->mCrypto.mPlainSizes.AppendElement(length - lastOffset);
+          }
+
+          
+          
+          
+          
+          
+          
+          
+          
+          
+          if (numPartitions % 2 == 0) {
+            writer->mCrypto.mEncryptedSizes.AppendElement(0);
+          }
+
+          
+          
+          assert(((size_t)(std::accumulate(writer->mCrypto.mPlainSizes.begin(), writer->mCrypto.mPlainSizes.end(), 0) \
+                 + std::accumulate(writer->mCrypto.mEncryptedSizes.begin(), writer->mCrypto.mEncryptedSizes.end(), 0)) \
+                 == length));
+        }
       }
     }
     if (aType == TrackInfo::kVideoTrack) {
