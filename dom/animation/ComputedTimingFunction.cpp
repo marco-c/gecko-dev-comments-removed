@@ -18,7 +18,10 @@ ComputedTimingFunction::Init(const nsTimingFunction &aFunction)
     mTimingFunction.Init(aFunction.mFunc.mX1, aFunction.mFunc.mY1,
                          aFunction.mFunc.mX2, aFunction.mFunc.mY2);
   } else {
-    mSteps = aFunction.mSteps;
+    
+    MOZ_ASSERT(nsTimingFunction::Type::StepStart ||
+               nsTimingFunction::Type::StepEnd);
+    mSteps = aFunction.mStepsOrFrames;
   }
 }
 
