@@ -7428,11 +7428,28 @@ IonBuilder::jsop_getelem()
         return pushTypeBarrier(ins, types, BarrierKind::TypeSet);
     }
 
+    bool emitted = false;
+
+    
+    
+    
+    
+    if (obj->mightBeType(MIRType::MagicOptimizedArguments) && !info().isAnalysis()) {
+        trackOptimizationAttempt(TrackedStrategy::GetElem_Arguments);
+        if (!getElemTryArguments(&emitted, obj, index) || emitted)
+            return emitted;
+
+        trackOptimizationAttempt(TrackedStrategy::GetElem_ArgumentsInlined);
+        if (!getElemTryArgumentsInlined(&emitted, obj, index) || emitted)
+            return emitted;
+
+        if (script()->argumentsHasVarBinding())
+            return abort("Type is not definitely lazy arguments.");
+    }
+
     obj = maybeUnboxForPropertyAccess(obj);
     if (obj->type() == MIRType::Object)
         obj = convertUnboxedObjects(obj);
-
-    bool emitted = false;
 
     if (!forceInlineCaches()) {
         trackOptimizationAttempt(TrackedStrategy::GetElem_TypedObject);
@@ -7459,18 +7476,7 @@ IonBuilder::jsop_getelem()
         trackOptimizationAttempt(TrackedStrategy::GetElem_String);
         if (!getElemTryString(&emitted, obj, index) || emitted)
             return emitted;
-
-        trackOptimizationAttempt(TrackedStrategy::GetElem_Arguments);
-        if (!getElemTryArguments(&emitted, obj, index) || emitted)
-            return emitted;
-
-        trackOptimizationAttempt(TrackedStrategy::GetElem_ArgumentsInlined);
-        if (!getElemTryArgumentsInlined(&emitted, obj, index) || emitted)
-            return emitted;
     }
-
-    if (script()->argumentsHasVarBinding() && obj->mightBeType(MIRType::MagicOptimizedArguments))
-        return abort("Type is not definitely lazy arguments.");
 
     trackOptimizationAttempt(TrackedStrategy::GetElem_InlineCache);
     if (!getElemTryCache(&emitted, obj, index) || emitted)
