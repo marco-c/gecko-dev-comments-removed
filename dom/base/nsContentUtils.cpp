@@ -6743,6 +6743,8 @@ nsContentUtils::IsPatternMatching(nsAString& aValue, nsAString& aPattern,
   jsapi.Init();
   JSContext* cx = jsapi.cx();
 
+  MOZ_RELEASE_ASSERT(js::AllowGCBarriers(cx), "IsPatternMatching can enter the JS engine during painting. See bug 1310335.");
+
   
   
   JSAutoCompartment ac(cx, xpc::UnprivilegedJunkScope());
