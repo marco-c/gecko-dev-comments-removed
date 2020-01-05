@@ -2924,6 +2924,9 @@ pref("dom.ipc.processCount", 1);
 #endif
 
 
+pref("dom.ipc.processCount.extension", 1);
+
+
 pref("svg.disabled", false);
 
 
