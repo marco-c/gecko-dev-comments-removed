@@ -60,9 +60,17 @@ public class DynamicToolbar {
         
         
         
-        return Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.JELLY_BEAN
             && (Build.MODEL.startsWith("GT-N80") ||
-                Build.MODEL.startsWith("GT-N51"));
+                Build.MODEL.startsWith("GT-N51"))) {
+            return true;
+        }
+        
+        if (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP
+            && (Build.MODEL.startsWith("SM-910"))) {
+            return true;
+        }
+        return false;
     }
 
     public void destroy() {
