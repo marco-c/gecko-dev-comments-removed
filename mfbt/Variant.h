@@ -9,9 +9,9 @@
 #include <new>
 #include <stdint.h>
 
-#include "mozilla/Alignment.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Move.h"
+#include "mozilla/TemplateLib.h"
 #include "mozilla/TypeTraits.h"
 
 #ifndef mozilla_Variant_h
@@ -50,22 +50,6 @@ struct TypesAreDistinct<First, Rest...>
   static constexpr bool value =
     !FirstTypeIsInRest<First, Rest...>::value &&
     TypesAreDistinct<Rest...>::value;
-};
-
-
-
-template<typename T, typename... Ts>
-struct MaxSizeOf
-{
-  static const size_t size = sizeof(T) > MaxSizeOf<Ts...>::size
-    ? sizeof(T)
-    : MaxSizeOf<Ts...>::size;
-};
-
-template<typename T>
-struct MaxSizeOf<T>
-{
-  static const size_t size = sizeof(T);
 };
 
 
@@ -453,23 +437,41 @@ struct AsVariantTemporary
 
 
 
+
+
+
+
+
+
 template<typename... Ts>
-class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS Variant
+class MOZ_INHERIT_TYPE_ANNOTATIONS_FROM_TEMPLATE_ARGS MOZ_NON_PARAM Variant
 {
-  static_assert(detail::TypesAreDistinct<Ts...>::value, "Variant with duplicate types is not supported");
+  static_assert(detail::TypesAreDistinct<Ts...>::value,
+                "Variant with duplicate types is not supported");
+
   using Tag = typename detail::VariantTag<Ts...>::Type;
   using Impl = detail::VariantImplementation<Tag, 0, Ts...>;
-  using RawData = AlignedStorage<detail::MaxSizeOf<Ts...>::size>;
+
+  static constexpr size_t RawDataAlignment = tl::Max<alignof(Ts)...>::value;
+  static constexpr size_t RawDataSize = tl::Max<sizeof(Ts)...>::value;
 
   
-  RawData raw;
+  alignas(RawDataAlignment) unsigned char rawData[RawDataSize];
 
   
   
   Tag tag;
 
+  
+  
+  
+  
   void* ptr() {
-    return reinterpret_cast<void*>(&raw);
+    return rawData;
+  }
+
+  const void* ptr() const {
+    return rawData;
   }
 
 public:
@@ -576,7 +578,7 @@ public:
     static_assert(detail::IsVariant<T, Ts...>::value,
                   "provided a type not found in this Variant's type list");
     MOZ_RELEASE_ASSERT(is<T>());
-    return *reinterpret_cast<T*>(&raw);
+    return *static_cast<T*>(ptr());
   }
 
   
@@ -585,7 +587,7 @@ public:
     static_assert(detail::IsVariant<T, Ts...>::value,
                   "provided a type not found in this Variant's type list");
     MOZ_RELEASE_ASSERT(is<T>());
-    return *reinterpret_cast<const T*>(&raw);
+    return *static_cast<const T*>(ptr());
   }
 
   

@@ -158,7 +158,7 @@ public:
                                       void* aClosure,
                                       uint32_t aDelay,
                                       uint32_t aType,
-                                      Callback::Name aName);
+                                      const Callback::Name& aName);
 
   
   
