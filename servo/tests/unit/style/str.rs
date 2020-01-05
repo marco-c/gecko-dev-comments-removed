@@ -2,7 +2,6 @@
 
 
 
-use std::borrow::Cow;
 use style::str::{split_html_space_chars, str_join};
 
 #[test]
