@@ -2041,9 +2041,16 @@ StateObject::HandleResumeVideoDecoding(const TimeUnit& aTarget)
   
   SeekJob seekJob;
 
-  const SeekTarget::Type type = mMaster->HasAudio()
-                                ? SeekTarget::Type::Accurate
-                                : SeekTarget::Type::PrevSyncPoint;
+  
+  
+  
+  
+  
+  
+  
+  const auto type = mMaster->HasAudio() || aTarget == mMaster->Duration()
+                    ? SeekTarget::Type::Accurate
+                    : SeekTarget::Type::PrevSyncPoint;
 
   seekJob.mTarget.emplace(aTarget, type, true );
 
