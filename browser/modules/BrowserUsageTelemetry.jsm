@@ -273,6 +273,13 @@ let BrowserUsageTelemetry = {
 
     if (isOneOff) {
       if (!KNOWN_ONEOFF_SOURCES.includes(source)) {
+        
+        
+        
+        
+        if (['urlbar', 'searchbar'].includes(source)) {
+          return;
+        }
         throw new Error("Unknown source for one-off search: " + source);
       }
     } else {
