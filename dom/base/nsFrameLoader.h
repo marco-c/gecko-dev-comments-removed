@@ -44,6 +44,7 @@ class DocShellOriginAttributes;
 namespace dom {
 class ContentParent;
 class PBrowserParent;
+class Promise;
 class TabParent;
 class MutableTabContext;
 } 
@@ -68,6 +69,8 @@ class nsFrameLoader final : public nsIFrameLoader,
 {
   friend class AutoResetInShow;
   friend class AutoResetInFrameSwap;
+  friend class AppendPartialSessionHistoryAndSwapHelper;
+  friend class RequestGroupedHistoryNavigationHelper;
   typedef mozilla::dom::PBrowserParent PBrowserParent;
   typedef mozilla::dom::TabParent TabParent;
   typedef mozilla::layout::RenderFrameParent RenderFrameParent;
@@ -306,6 +309,14 @@ private:
   nsresult
   PopulateUserContextIdFromAttribute(mozilla::DocShellOriginAttributes& aAttr);
 
+  
+  
+  bool SwapBrowsersAndNotify(nsFrameLoader* aOther);
+
+  
+  
+  already_AddRefed<mozilla::dom::Promise> FireWillChangeProcessEvent();
+
   nsCOMPtr<nsIDocShell> mDocShell;
   nsCOMPtr<nsIURI> mURIToLoad;
   mozilla::dom::Element* mOwnerContent; 
@@ -340,6 +351,10 @@ private:
 
   nsCOMPtr<nsIPartialSHistory> mPartialSessionHistory;
   nsCOMPtr<nsIGroupedSHistory> mGroupedSessionHistory;
+
+  
+  
+  nsTArray<RefPtr<mozilla::dom::Promise>>* mBrowserChangingProcessBlockers;
 
   bool mIsPrerendered : 1;
   bool mDepthTooGreat : 1;
