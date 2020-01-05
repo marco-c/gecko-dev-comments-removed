@@ -10,7 +10,6 @@ var {AppConstants} = SpecialPowers.Cu.import("resource://gre/modules/AppConstant
 
 if (location.pathname.includes("test-oop-extensions")) {
   SpecialPowers.pushPrefEnv({set: [
-    ["dom.ipc.processCount.extension", 1],
     ["extensions.webextensions.remote", true],
   ]});
   

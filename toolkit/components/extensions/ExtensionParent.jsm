@@ -437,14 +437,13 @@ class DevToolsExtensionPageContextParent extends ExtensionPageContextParent {
   }
 
   shutdown() {
-    if (this._devToolsTarget) {
-      this._devToolsTarget.destroy();
-      this._devToolsTarget = null;
+    if (!this._devToolsTarget) {
+      throw new Error("no DevTools target is set during DevTools Context shutdown");
     }
 
+    this._devToolsTarget.destroy();
+    this._devToolsTarget = null;
     this._devToolsToolbox = null;
-
-    super.shutdown();
   }
 }
 
@@ -724,35 +723,32 @@ class HiddenExtensionPage {
 
 
 
-  createBrowserElement() {
+  async createBrowserElement() {
     if (this.browser) {
       throw new Error("createBrowserElement called twice");
     }
 
-    let waitForParentDocument;
+    let chromeDoc = await this.createWindowlessBrowser();
+
+    const browser = this.browser = chromeDoc.createElement("browser");
+    browser.setAttribute("type", "content");
+    browser.setAttribute("disableglobalhistory", "true");
+    browser.setAttribute("webextension-view-type", this.viewType);
+
+    let awaitFrameLoader = Promise.resolve();
+
     if (this.extension.remote) {
-      waitForParentDocument = this.createWindowedBrowser();
-    } else {
-      waitForParentDocument = this.createWindowlessBrowser();
+      browser.setAttribute("remote", "true");
+      browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
+      awaitFrameLoader = promiseEvent(browser, "XULFrameLoaderCreated");
     }
 
-    return waitForParentDocument.then(chromeDoc => {
-      const browser = this.browser = chromeDoc.createElement("browser");
-      browser.setAttribute("type", "content");
-      browser.setAttribute("disableglobalhistory", "true");
-      browser.setAttribute("webextension-view-type", this.viewType);
+    chromeDoc.documentElement.appendChild(browser);
+    await awaitFrameLoader;
 
-      let awaitFrameLoader = Promise.resolve();
+    browser.docShellIsActive = false;
 
-      if (this.extension.remote) {
-        browser.setAttribute("remote", "true");
-        browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
-        awaitFrameLoader = promiseEvent(browser, "XULFrameLoaderCreated");
-      }
-
-      chromeDoc.documentElement.appendChild(browser);
-      return awaitFrameLoader.then(() => browser);
-    });
+    return browser;
   }
 
   
@@ -769,58 +765,26 @@ class HiddenExtensionPage {
 
 
   createWindowlessBrowser() {
-    return Task.spawn(function* () {
-      
-      
-      let windowlessBrowser = Services.appShell.createWindowlessBrowser(true);
-      this.windowlessBrowser = windowlessBrowser;
+    
+    
+    let windowlessBrowser = Services.appShell.createWindowlessBrowser(true);
+    this.windowlessBrowser = windowlessBrowser;
 
-      
-      
-      
-      
-      
-      
-      
-      
-      let chromeShell = windowlessBrowser.QueryInterface(Ci.nsIInterfaceRequestor)
-                                         .getInterface(Ci.nsIDocShell)
-                                         .QueryInterface(Ci.nsIWebNavigation);
+    
+    
+    
+    
+    
+    
+    
+    
+    let chromeShell = windowlessBrowser.QueryInterface(Ci.nsIInterfaceRequestor)
+                                       .getInterface(Ci.nsIDocShell)
+                                       .QueryInterface(Ci.nsIWebNavigation);
 
-      yield this.initParentWindow(chromeShell);
-
+    return this.initParentWindow(chromeShell).then(() => {
       return promiseDocumentLoaded(windowlessBrowser.document);
-    }.bind(this));
-  }
-
-  
-
-
-
-
-
-
-
-
-
-  createWindowedBrowser() {
-    return Task.spawn(function* () {
-      let window = Services.ww.openWindow(null, "about:blank", "_blank",
-                                          "chrome,alwaysLowered,dialog", null);
-
-      this.parentWindow = window;
-
-      let chromeShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
-                              .getInterface(Ci.nsIDocShell)
-                              .QueryInterface(Ci.nsIWebNavigation);
-
-
-      yield this.initParentWindow(chromeShell);
-
-      window.minimize();
-
-      return promiseDocumentLoaded(window.document);
-    }.bind(this));
+    });
   }
 
   

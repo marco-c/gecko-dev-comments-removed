@@ -26,7 +26,6 @@ const {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm", {})
 
 if (gTestPath.includes("test-oop-extensions")) {
   SpecialPowers.pushPrefEnv({set: [
-    ["dom.ipc.processCount.extension", 1],
     ["extensions.webextensions.remote", true],
   ]});
   
