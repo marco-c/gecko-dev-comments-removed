@@ -3,6 +3,7 @@
 
 
 use dom::bindings::codegen::Bindings::ClientRectListBinding;
+use dom::bindings::global::Window;
 use dom::bindings::js::{JS, JSRef, Temporary};
 use dom::bindings::utils::{Reflectable, Reflector, reflect_dom_object};
 use dom::clientrect::ClientRect;
@@ -29,7 +30,7 @@ impl ClientRectList {
     pub fn new(window: &JSRef<Window>,
                rects: Vec<JSRef<ClientRect>>) -> Temporary<ClientRectList> {
         reflect_dom_object(box ClientRectList::new_inherited(window, rects),
-                           window, ClientRectListBinding::Wrap)
+                           &Window(*window), ClientRectListBinding::Wrap)
     }
 }
 
