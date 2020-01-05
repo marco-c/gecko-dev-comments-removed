@@ -14,7 +14,6 @@
 #endif 
 #include "mozilla/BrowserElementParent.h"
 #include "mozilla/EventForwards.h"  
-#include "mozilla/ViewportFrame.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/TabChild.h"
@@ -30,10 +29,12 @@
 #include "nsStyleStructInlines.h"
 #include "nsSubDocumentFrame.h"
 #include "nsView.h"
+#include "nsViewportFrame.h"
 #include "RenderFrameParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/CompositorBridgeChild.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "ClientLayerManager.h"
 #include "FrameLayerBuilder.h"
 
@@ -115,22 +116,24 @@ RenderFrameParent::Init(nsFrameLoader* aFrameLoader)
   mAsyncPanZoomEnabled = lm && lm->AsyncPanZoomEnabled();
 
   TabParent* browser = TabParent::GetFrom(mFrameLoader);
-
-  
-  
-  
-  
-  
   if (XRE_IsParentProcess()) {
     
     
     browser->Manager()->AsContentParent()->AllocateLayerTreeId(browser, &mLayersId);
     if (lm && lm->AsClientLayerManager()) {
-      lm->AsClientLayerManager()->GetRemoteRenderer()->SendNotifyChildCreated(mLayersId);
+      if (!lm->AsClientLayerManager()->GetRemoteRenderer()->SendNotifyChildCreated(mLayersId)) {
+        return false;
+      }
+    } else if (lm && lm->AsWebRenderLayerManager()) {
+      if (!lm->AsWebRenderLayerManager()->GetCompositorBridgeChild()->SendNotifyChildCreated(mLayersId)) {
+        return false;
+      }
     }
   } else if (XRE_IsContentProcess()) {
     ContentChild::GetSingleton()->SendAllocateLayerTreeId(browser->Manager()->ChildID(), browser->GetTabId(), &mLayersId);
-    CompositorBridgeChild::Get()->SendNotifyChildCreated(mLayersId);
+    if (!CompositorBridgeChild::Get()->SendNotifyChildCreated(mLayersId)) {
+      return false;
+    }
   }
 
   mInitted = true;

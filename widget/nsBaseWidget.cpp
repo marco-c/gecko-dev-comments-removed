@@ -4,6 +4,7 @@
 
 
 
+
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/TextEventDispatcher.h"
@@ -12,7 +13,6 @@
 #include "mozilla/layers/CompositorBridgeChild.h"
 #include "mozilla/layers/CompositorBridgeParent.h"
 #include "mozilla/layers/ImageBridgeChild.h"
-#include "LiveResizeListener.h"
 #include "nsBaseWidget.h"
 #include "nsDeviceContext.h"
 #include "nsCOMPtr.h"
@@ -56,9 +56,9 @@
 #include "mozilla/layers/APZEventState.h"
 #include "mozilla/layers/APZThreadUtils.h"
 #include "mozilla/layers/ChromeProcessController.h"
-#include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/InputAPZContext.h"
 #include "mozilla/layers/APZCCallbackHelper.h"
+#include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/TabParent.h"
 #include "mozilla/gfx/GPUProcessManager.h"
@@ -250,8 +250,6 @@ WidgetShutdownObserver::Unregister()
 void
 nsBaseWidget::Shutdown()
 {
-  NotifyLiveResizeStopped();
-  RevokeTransactionIdAllocator();
   DestroyCompositor();
   FreeShutdownObserver();
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
@@ -299,23 +297,6 @@ void nsBaseWidget::DestroyCompositor()
   }
 }
 
-
-
-void
-nsBaseWidget::RevokeTransactionIdAllocator()
-{
-  if (!mLayerManager) {
-    return;
-  }
-
-  ClientLayerManager* clm = mLayerManager->AsClientLayerManager();
-  if (!clm) {
-    return;
-  }
-
-  clm->SetTransactionIdAllocator(nullptr);
-}
-
 void nsBaseWidget::ReleaseContentController()
 {
   if (mRootContentController) {
@@ -351,7 +332,7 @@ nsBaseWidget::OnRenderingDeviceReset(uint64_t aSeqNo)
   
   RefPtr<ClientLayerManager> clm = mLayerManager->AsClientLayerManager();
   if (!ComputeShouldAccelerate() &&
-      clm->GetCompositorBackendType() == LayersBackend::LAYERS_BASIC)
+      clm->GetTextureFactoryIdentifier().mParentBackend != LayersBackend::LAYERS_BASIC)
   {
     return;
   }
@@ -367,7 +348,7 @@ nsBaseWidget::OnRenderingDeviceReset(uint64_t aSeqNo)
   FrameLayerBuilder::InvalidateAllLayers(mLayerManager);
 
   
-  clm->UpdateTextureFactoryIdentifier(identifier, aSeqNo);
+  clm->UpdateTextureFactoryIdentifier(identifier);
   ImageBridgeChild::IdentifyCompositorTextureHost(identifier);
   gfx::VRManagerChild::IdentifyTextureHost(identifier);
 }
@@ -398,7 +379,6 @@ nsBaseWidget::~nsBaseWidget()
   }
 
   FreeShutdownObserver();
-  RevokeTransactionIdAllocator();
   DestroyLayerManager();
 
 #ifdef NOISY_WIDGET_LEAKS
@@ -546,6 +526,18 @@ void nsBaseWidget::Destroy()
 
 
 
+
+NS_IMETHODIMP nsBaseWidget::SetParent(nsIWidget* aNewParent)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+
+
+
+
+
+
 nsIWidget* nsBaseWidget::GetParent(void)
 {
   return nullptr;
@@ -686,7 +678,7 @@ void nsBaseWidget::SetZIndex(int32_t aZIndex)
   mZIndex = aZIndex;
 
   
-  auto* parent = static_cast<nsBaseWidget*>(GetParent());
+  nsBaseWidget* parent = static_cast<nsBaseWidget*>(GetParent());
   if (parent) {
     parent->RemoveChild(this);
     
@@ -744,15 +736,14 @@ nsCursor nsBaseWidget::GetCursor()
   return mCursor;
 }
 
-void
-nsBaseWidget::SetCursor(nsCursor aCursor)
+NS_IMETHODIMP nsBaseWidget::SetCursor(nsCursor aCursor)
 {
   mCursor = aCursor;
+  return NS_OK;
 }
 
-nsresult
-nsBaseWidget::SetCursor(imgIContainer* aCursor,
-                        uint32_t aHotspotX, uint32_t aHotspotY)
+NS_IMETHODIMP nsBaseWidget::SetCursor(imgIContainer* aCursor,
+                                      uint32_t aHotspotX, uint32_t aHotspotY)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
@@ -841,6 +832,16 @@ nsBaseWidget::SetWindowClipRegion(const nsTArray<LayoutDeviceIntRect>& aRects,
     StoreWindowClipRegion(rects);
   }
   return NS_OK;
+}
+
+
+
+
+
+
+NS_IMETHODIMP nsBaseWidget::HideWindowChrome(bool aShouldHide)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
  void
@@ -1298,22 +1299,26 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   CreateCompositorVsyncDispatcher();
 
-  RefPtr<ClientLayerManager> lm = new ClientLayerManager(this);
+#ifdef MOZ_ENABLE_WEBRENDER
+  RefPtr<LayerManager> lm = new WebRenderLayerManager(this);
+#else
+  RefPtr<LayerManager> lm = new ClientLayerManager(this);
+#endif
 
-  CompositorOptions options(UseAPZ());
+  bool useAPZ = UseAPZ();
 
   gfx::GPUProcessManager* gpu = gfx::GPUProcessManager::Get();
   mCompositorSession = gpu->CreateTopLevelCompositor(
     this,
     lm,
     GetDefaultScale(),
-    options,
+    useAPZ,
     UseExternalCompositingSurface(),
     gfx::IntSize(aWidth, aHeight));
   mCompositorBridgeChild = mCompositorSession->GetCompositorBridgeChild();
   mCompositorWidgetDelegate = mCompositorSession->GetCompositorWidgetDelegate();
 
-  if (options.UseAPZ()) {
+  if (useAPZ) {
     mAPZC = mCompositorSession->GetAPZCTreeManager();
     ConfigureAPZCTreeManager();
   } else {
@@ -1327,11 +1332,13 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
     mInitialZoomConstraints.reset();
   }
 
-  ShadowLayerForwarder* lf = lm->AsShadowForwarder();
-  
-  MOZ_ASSERT(lf);
+  if (lm->AsWebRenderLayerManager()) {
+    lm->AsWebRenderLayerManager()->Initialize(mCompositorBridgeChild, mCompositorSession->RootLayerTreeId());
+  }
 
+  ShadowLayerForwarder* lf = lm->AsShadowForwarder();
   if (lf) {
+    
     TextureFactoryIdentifier textureFactoryIdentifier;
     PLayerTransactionChild* shadowManager = nullptr;
 
@@ -1353,7 +1360,7 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
     lf->SetShadowManager(shadowManager);
     if (ClientLayerManager* clm = lm->AsClientLayerManager()) {
-      clm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier, 0);
+      clm->UpdateTextureFactoryIdentifier(textureFactoryIdentifier);
     }
     
     
@@ -1456,8 +1463,7 @@ void nsBaseWidget::OnDestroy()
   ReleaseContentController();
 }
 
-void
-nsBaseWidget::MoveClient(double aX, double aY)
+NS_IMETHODIMP nsBaseWidget::MoveClient(double aX, double aY)
 {
   LayoutDeviceIntPoint clientOffset(GetClientOffset());
 
@@ -1465,14 +1471,15 @@ nsBaseWidget::MoveClient(double aX, double aY)
   
   if (BoundsUseDesktopPixels()) {
     DesktopPoint desktopOffset = clientOffset / GetDesktopToDeviceScale();
-    Move(aX - desktopOffset.x, aY - desktopOffset.y);
+    return Move(aX - desktopOffset.x, aY - desktopOffset.y);
   } else {
-    Move(aX - clientOffset.x, aY - clientOffset.y);
+    return Move(aX - clientOffset.x, aY - clientOffset.y);
   }
 }
 
-void
-nsBaseWidget::ResizeClient(double aWidth, double aHeight, bool aRepaint)
+NS_IMETHODIMP nsBaseWidget::ResizeClient(double aWidth,
+                                         double aHeight,
+                                         bool aRepaint)
 {
   NS_ASSERTION((aWidth >=0) , "Negative width passed to ResizeClient");
   NS_ASSERTION((aHeight >=0), "Negative height passed to ResizeClient");
@@ -1485,20 +1492,19 @@ nsBaseWidget::ResizeClient(double aWidth, double aHeight, bool aRepaint)
     DesktopSize desktopDelta =
       (LayoutDeviceIntSize(mBounds.width, mBounds.height) -
        clientBounds.Size()) / GetDesktopToDeviceScale();
-    Resize(aWidth + desktopDelta.width, aHeight + desktopDelta.height,
-           aRepaint);
+    return Resize(aWidth + desktopDelta.width, aHeight + desktopDelta.height,
+                  aRepaint);
   } else {
-    Resize(mBounds.width + (aWidth - clientBounds.width),
-           mBounds.height + (aHeight - clientBounds.height), aRepaint);
+    return Resize(mBounds.width + (aWidth - clientBounds.width),
+                  mBounds.height + (aHeight - clientBounds.height), aRepaint);
   }
 }
 
-void
-nsBaseWidget::ResizeClient(double aX,
-                           double aY,
-                           double aWidth,
-                           double aHeight,
-                           bool aRepaint)
+NS_IMETHODIMP nsBaseWidget::ResizeClient(double aX,
+                                         double aY,
+                                         double aWidth,
+                                         double aHeight,
+                                         bool aRepaint)
 {
   NS_ASSERTION((aWidth >=0) , "Negative width passed to ResizeClient");
   NS_ASSERTION((aHeight >=0), "Negative height passed to ResizeClient");
@@ -1512,14 +1518,14 @@ nsBaseWidget::ResizeClient(double aX,
     DesktopSize desktopDelta =
       (LayoutDeviceIntSize(mBounds.width, mBounds.height) -
        clientBounds.Size()) / scale;
-    Resize(aX - desktopOffset.x, aY - desktopOffset.y,
-           aWidth + desktopDelta.width, aHeight + desktopDelta.height,
-           aRepaint);
+    return Resize(aX - desktopOffset.x, aY - desktopOffset.y,
+                  aWidth + desktopDelta.width, aHeight + desktopDelta.height,
+                  aRepaint);
   } else {
-    Resize(aX - clientOffset.x, aY - clientOffset.y,
-           aWidth + mBounds.width - clientBounds.width,
-           aHeight + mBounds.height - clientBounds.height,
-           aRepaint);
+    return Resize(aX - clientOffset.x, aY - clientOffset.y,
+                  aWidth + mBounds.width - clientBounds.width,
+                  aHeight + mBounds.height - clientBounds.height,
+                  aRepaint);
   }
 }
 
@@ -1576,7 +1582,7 @@ nsBaseWidget::GetClientOffset()
   return LayoutDeviceIntPoint(0, 0);
 }
 
-nsresult
+NS_IMETHODIMP
 nsBaseWidget::SetNonClientMargins(LayoutDeviceIntMargin &margins)
 {
   return NS_ERROR_NOT_IMPLEMENTED;
@@ -1587,10 +1593,21 @@ uint32_t nsBaseWidget::GetMaxTouchPoints() const
   return 0;
 }
 
+NS_IMETHODIMP
+nsBaseWidget::GetAttention(int32_t aCycleCount) {
+    return NS_OK;
+}
+
 bool
 nsBaseWidget::HasPendingInputEvent()
 {
   return false;
+}
+
+NS_IMETHODIMP
+nsBaseWidget::SetIcon(const nsAString&)
+{
+  return NS_OK;
 }
 
 bool
@@ -1664,6 +1681,20 @@ nsBaseWidget::ResolveIconName(const nsAString &aIconName,
               getter_AddRefs(file));
   if (file && ResolveIconNameHelper(file, aIconName, aIconSuffix))
     NS_ADDREF(*aResult = file);
+}
+
+NS_IMETHODIMP
+nsBaseWidget::BeginResizeDrag(WidgetGUIEvent* aEvent,
+                              int32_t aHorizontal,
+                              int32_t aVertical)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsBaseWidget::BeginMoveDrag(WidgetMouseEvent* aEvent)
+{
+  return NS_ERROR_NOT_IMPLEMENTED;
 }
 
 void nsBaseWidget::SetSizeConstraints(const SizeConstraints& aConstraints)
@@ -1762,7 +1793,7 @@ nsBaseWidget::NotifyUIStateChanged(UIStateChangeType aShowAccelerators,
   }
 }
 
-nsresult
+NS_IMETHODIMP
 nsBaseWidget::NotifyIME(const IMENotification& aIMENotification)
 {
   switch (aIMENotification.mMessage) {
@@ -1806,7 +1837,7 @@ nsBaseWidget::EnsureTextEventDispatcher()
   mTextEventDispatcher = new TextEventDispatcher(this);
 }
 
-nsIWidget::TextEventDispatcher*
+NS_IMETHODIMP_(nsIWidget::TextEventDispatcher*)
 nsBaseWidget::GetTextEventDispatcher()
 {
   EnsureTextEventDispatcher();
@@ -1823,7 +1854,7 @@ nsBaseWidget::GetPseudoIMEContext()
   return dispatcher->GetPseudoIMEContext();
 }
 
-TextEventDispatcherListener*
+NS_IMETHODIMP_(TextEventDispatcherListener*)
 nsBaseWidget::GetNativeTextEventDispatcherListener()
 {
   
@@ -1989,7 +2020,7 @@ nsIWidget::SynthesizeNativeTouchTap(LayoutDeviceIntPoint aPoint, bool aLongTap,
 void
 nsIWidget::OnLongTapTimerCallback(nsITimer* aTimer, void* aClosure)
 {
-  auto *self = static_cast<nsIWidget *>(aClosure);
+  nsIWidget *self = static_cast<nsIWidget *>(aClosure);
 
   if ((self->mLongTapTouchPoint->mStamp + self->mLongTapTouchPoint->mDuration) >
       TimeStamp::Now()) {
@@ -2093,41 +2124,6 @@ nsBaseWidget::UpdateSynthesizedTouchState(MultiTouchInput* aState,
   }
 
   return inputToDispatch;
-}
-
-void
-nsBaseWidget::NotifyLiveResizeStarted()
-{
-  
-  
-  
-  NotifyLiveResizeStopped();
-  MOZ_ASSERT(mLiveResizeListeners.IsEmpty());
-
-  
-  
-  if (!mWidgetListener) {
-    return;
-  }
-  nsCOMPtr<nsIXULWindow> xulWindow = mWidgetListener->GetXULWindow();
-  if (!xulWindow) {
-    return;
-  }
-  mLiveResizeListeners = xulWindow->GetLiveResizeListeners();
-  for (uint32_t i = 0; i < mLiveResizeListeners.Length(); i++) {
-    mLiveResizeListeners[i]->LiveResizeStarted();
-  }
-}
-
-void
-nsBaseWidget::NotifyLiveResizeStopped()
-{
-  if (!mLiveResizeListeners.IsEmpty()) {
-    for (uint32_t i = 0; i < mLiveResizeListeners.Length(); i++) {
-      mLiveResizeListeners[i]->LiveResizeStopped();
-    }
-    mLiveResizeListeners.Clear();
-  }
 }
 
 void
@@ -2247,7 +2243,7 @@ nsBaseWidget::CreateScrollCaptureContainer()
     return ImageContainer::sInvalidAsyncContainerId;
   }
 
-  return mScrollCaptureContainer->GetAsyncContainerHandle().Value();
+  return mScrollCaptureContainer->GetAsyncContainerID();
 }
 
 void
@@ -2286,7 +2282,7 @@ nsBaseWidget::DefaultFillScrollCapture(DrawTarget* aSnapshotDrawTarget)
 }
 #endif
 
-nsIWidget::NativeIMEContext
+NS_IMETHODIMP_(nsIWidget::NativeIMEContext)
 nsIWidget::GetNativeIMEContext()
 {
   return NativeIMEContext(this);
@@ -3079,7 +3075,6 @@ case _value: eventName.AssignLiteral(_name) ; break
     _ASSIGN_eventName(eMouseDown,"eMouseDown");
     _ASSIGN_eventName(eMouseUp,"eMouseUp");
     _ASSIGN_eventName(eMouseClick,"eMouseClick");
-    _ASSIGN_eventName(eMouseAuxClick,"eMouseAuxClick");
     _ASSIGN_eventName(eMouseDoubleClick,"eMouseDoubleClick");
     _ASSIGN_eventName(eMouseMove,"eMouseMove");
     _ASSIGN_eventName(eLoad,"eLoad");

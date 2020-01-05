@@ -47,9 +47,7 @@ using namespace mozilla;
 using mozilla::MutexAutoLock;
 
 nsTArray<GfxDriverInfo>* GfxInfoBase::mDriverInfo;
-nsTArray<dom::GfxInfoFeatureStatus>* GfxInfoBase::mFeatureStatus;
 bool GfxInfoBase::mDriverInfoObserverInitialized;
-bool GfxInfoBase::mShutdownOccurred;
 
 
 class ShutdownObserver : public nsIObserver
@@ -69,16 +67,11 @@ public:
     delete GfxInfoBase::mDriverInfo;
     GfxInfoBase::mDriverInfo = nullptr;
 
-    delete GfxInfoBase::mFeatureStatus;
-    GfxInfoBase::mFeatureStatus = nullptr;
-
     for (uint32_t i = 0; i < DeviceFamilyMax; i++)
       delete GfxDriverInfo::mDeviceFamilies[i];
 
     for (uint32_t i = 0; i < DeviceVendorMax; i++)
       delete GfxDriverInfo::mDeviceVendors[i];
-
-    GfxInfoBase::mShutdownOccurred = true;
 
     return NS_OK;
   }
@@ -169,7 +162,6 @@ GetPrefNameForFeature(int32_t aFeature)
     case nsIGfxInfo::FEATURE_VP8_HW_DECODE:
     case nsIGfxInfo::FEATURE_VP9_HW_DECODE:
     case nsIGfxInfo::FEATURE_DX_INTEROP2:
-    case nsIGfxInfo::FEATURE_GPU_PROCESS:
       
       break;
     default:
@@ -254,7 +246,13 @@ RemovePrefForDriverVersion()
 static OperatingSystem
 BlacklistOSToOperatingSystem(const nsAString& os)
 {
-  if (os.EqualsLiteral("WINNT 6.1"))
+  if (os.EqualsLiteral("WINNT 5.1"))
+    return OperatingSystem::WindowsXP;
+  else if (os.EqualsLiteral("WINNT 5.2"))
+    return OperatingSystem::WindowsServer2003;
+  else if (os.EqualsLiteral("WINNT 6.0"))
+    return OperatingSystem::WindowsVista;
+  else if (os.EqualsLiteral("WINNT 6.1"))
     return OperatingSystem::Windows7;
   else if (os.EqualsLiteral("WINNT 6.2"))
     return OperatingSystem::Windows8;
@@ -603,18 +601,13 @@ GfxInfoBase::GetFeatureStatus(int32_t aFeature, nsACString& aFailureId, int32_t*
   }
 
   if (XRE_IsContentProcess()) {
-    
-    MOZ_ASSERT(mFeatureStatus);
-    bool success = false;
-    for (const auto& fs : *mFeatureStatus) {
-      if (fs.feature() == aFeature) {
-        aFailureId = fs.failureId();
-        *aStatus = fs.status();
-        success = true;
-        break;
-      }
-    }
-    return success ? NS_OK : NS_ERROR_FAILURE;
+      
+      mozilla::dom::ContentChild* cc = mozilla::dom::ContentChild::GetSingleton();
+      bool success;
+      nsCString remoteFailureId;
+      cc->SendGetGraphicsFeatureStatus(aFeature, aStatus, &remoteFailureId, &success);
+      aFailureId = remoteFailureId;
+      return success ? NS_OK : NS_ERROR_FAILURE;
   }
 
   nsString version;
@@ -670,45 +663,8 @@ GfxInfoBase::FindBlocklistedDeviceInList(const nsTArray<GfxDriverInfo>& info,
 {
   int32_t status = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;
 
-  
-  nsAutoString adapterVendorID[2];
-  nsAutoString adapterDeviceID[2];
-  nsAutoString adapterDriverVersionString[2];
-  bool adapterInfoFailed[2];
-
-  adapterInfoFailed[0] = (NS_FAILED(GetAdapterVendorID(adapterVendorID[0])) ||
-			  NS_FAILED(GetAdapterDeviceID(adapterDeviceID[0])) ||
-			  NS_FAILED(GetAdapterDriverVersion(adapterDriverVersionString[0])));
-  adapterInfoFailed[1] = (NS_FAILED(GetAdapterVendorID2(adapterVendorID[1])) ||
-			  NS_FAILED(GetAdapterDeviceID2(adapterDeviceID[1])) ||
-			  NS_FAILED(GetAdapterDriverVersion2(adapterDriverVersionString[1])));
-  
-  if (adapterInfoFailed[0] && adapterInfoFailed[1]) {
-    return 0;
-  }
-
-#if defined(XP_WIN) || defined(ANDROID)
-  uint64_t driverVersion[2] = {0, 0};
-  if (!adapterInfoFailed[0]) {
-    ParseDriverVersion(adapterDriverVersionString[0], &driverVersion[0]);
-  }
-  if (!adapterInfoFailed[1]) {
-    ParseDriverVersion(adapterDriverVersionString[1], &driverVersion[1]);
-  }
-#endif
-
   uint32_t i = 0;
   for (; i < info.Length(); i++) {
-    
-    
-    
-    
-    
-    uint32_t infoIndex = info[i].mGpu2 ? 1 : 0;
-    if (adapterInfoFailed[infoIndex]) {
-      continue;
-    }
-
     
     
     if (!MatchingOperatingSystems(info[i].mOperatingSystem, os)) {
@@ -719,15 +675,40 @@ GfxInfoBase::FindBlocklistedDeviceInList(const nsTArray<GfxDriverInfo>& info,
         continue;
     }
 
+    
+    nsAutoString adapterVendorID;
+    nsAutoString adapterDeviceID;
+    nsAutoString adapterDriverVersionString;
+    if (info[i].mGpu2) {
+      if (NS_FAILED(GetAdapterVendorID2(adapterVendorID)) ||
+          NS_FAILED(GetAdapterDeviceID2(adapterDeviceID)) ||
+          NS_FAILED(GetAdapterDriverVersion2(adapterDriverVersionString)))
+      {
+        return 0;
+      }
+    } else {
+      if (NS_FAILED(GetAdapterVendorID(adapterVendorID)) ||
+          NS_FAILED(GetAdapterDeviceID(adapterDeviceID)) ||
+          NS_FAILED(GetAdapterDriverVersion(adapterDriverVersionString)))
+      {
+        return 0;
+      }
+    }
+
+#if defined(XP_WIN) || defined(ANDROID)
+    uint64_t driverVersion;
+    ParseDriverVersion(adapterDriverVersionString, &driverVersion);
+#endif
+
     if (!info[i].mAdapterVendor.Equals(GfxDriverInfo::GetDeviceVendor(VendorAll), nsCaseInsensitiveStringComparator()) &&
-        !info[i].mAdapterVendor.Equals(adapterVendorID[infoIndex], nsCaseInsensitiveStringComparator())) {
+        !info[i].mAdapterVendor.Equals(adapterVendorID, nsCaseInsensitiveStringComparator())) {
       continue;
     }
 
     if (info[i].mDevices != GfxDriverInfo::allDevices && info[i].mDevices->Length()) {
         bool deviceMatches = false;
         for (uint32_t j = 0; j < info[i].mDevices->Length(); j++) {
-            if ((*info[i].mDevices)[j].Equals(adapterDeviceID[infoIndex], nsCaseInsensitiveStringComparator())) {
+            if ((*info[i].mDevices)[j].Equals(adapterDeviceID, nsCaseInsensitiveStringComparator())) {
                 deviceMatches = true;
                 break;
             }
@@ -756,37 +737,37 @@ GfxInfoBase::FindBlocklistedDeviceInList(const nsTArray<GfxDriverInfo>& info,
 #if defined(XP_WIN) || defined(ANDROID)
     switch (info[i].mComparisonOp) {
     case DRIVER_LESS_THAN:
-      match = driverVersion[infoIndex] < info[i].mDriverVersion;
+      match = driverVersion < info[i].mDriverVersion;
       break;
     case DRIVER_BUILD_ID_LESS_THAN:
-      match = (driverVersion[infoIndex] & 0xFFFF) < info[i].mDriverVersion;
+      match = (driverVersion & 0xFFFF) < info[i].mDriverVersion;
       break;
     case DRIVER_LESS_THAN_OR_EQUAL:
-      match = driverVersion[infoIndex] <= info[i].mDriverVersion;
+      match = driverVersion <= info[i].mDriverVersion;
       break;
     case DRIVER_BUILD_ID_LESS_THAN_OR_EQUAL:
-      match = (driverVersion[infoIndex] & 0xFFFF) <= info[i].mDriverVersion;
+      match = (driverVersion & 0xFFFF) <= info[i].mDriverVersion;
       break;
     case DRIVER_GREATER_THAN:
-      match = driverVersion[infoIndex] > info[i].mDriverVersion;
+      match = driverVersion > info[i].mDriverVersion;
       break;
     case DRIVER_GREATER_THAN_OR_EQUAL:
-      match = driverVersion[infoIndex] >= info[i].mDriverVersion;
+      match = driverVersion >= info[i].mDriverVersion;
       break;
     case DRIVER_EQUAL:
-      match = driverVersion[infoIndex] == info[i].mDriverVersion;
+      match = driverVersion == info[i].mDriverVersion;
       break;
     case DRIVER_NOT_EQUAL:
-      match = driverVersion[infoIndex] != info[i].mDriverVersion;
+      match = driverVersion != info[i].mDriverVersion;
       break;
     case DRIVER_BETWEEN_EXCLUSIVE:
-      match = driverVersion[infoIndex] > info[i].mDriverVersion && driverVersion[infoIndex] < info[i].mDriverVersionMax;
+      match = driverVersion > info[i].mDriverVersion && driverVersion < info[i].mDriverVersionMax;
       break;
     case DRIVER_BETWEEN_INCLUSIVE:
-      match = driverVersion[infoIndex] >= info[i].mDriverVersion && driverVersion[infoIndex] <= info[i].mDriverVersionMax;
+      match = driverVersion >= info[i].mDriverVersion && driverVersion <= info[i].mDriverVersionMax;
       break;
     case DRIVER_BETWEEN_INCLUSIVE_START:
-      match = driverVersion[infoIndex] >= info[i].mDriverVersion && driverVersion[infoIndex] < info[i].mDriverVersionMax;
+      match = driverVersion >= info[i].mDriverVersion && driverVersion < info[i].mDriverVersionMax;
       break;
     case DRIVER_COMPARISON_IGNORED:
       
@@ -825,11 +806,15 @@ GfxInfoBase::FindBlocklistedDeviceInList(const nsTArray<GfxDriverInfo>& info,
   
   if (status == nsIGfxInfo::FEATURE_STATUS_UNKNOWN &&
     (aFeature == nsIGfxInfo::FEATURE_DIRECT2D)) {
-    if (!adapterInfoFailed[1]) {
+    nsAutoString adapterVendorID2;
+    nsAutoString adapterDeviceID2;
+    if ((!NS_FAILED(GetAdapterVendorID2(adapterVendorID2))) &&
+      (!NS_FAILED(GetAdapterDeviceID2(adapterDeviceID2))))
+    {
       nsAString &nvVendorID = (nsAString &)GfxDriverInfo::GetDeviceVendor(VendorNVIDIA);
       const nsString nv310mDeviceId = NS_LITERAL_STRING("0x0A70");
-      if (nvVendorID.Equals(adapterVendorID[1], nsCaseInsensitiveStringComparator()) &&
-        nv310mDeviceId.Equals(adapterDeviceID[1], nsCaseInsensitiveStringComparator())) {
+      if (nvVendorID.Equals(adapterVendorID2, nsCaseInsensitiveStringComparator()) &&
+        nv310mDeviceId.Equals(adapterDeviceID2, nsCaseInsensitiveStringComparator())) {
         status = nsIGfxInfo::FEATURE_BLOCKED_DEVICE;
         aFailureId = "FEATURE_FAILURE_D2D_NV310M_BLOCK";
       }
@@ -856,13 +841,6 @@ GfxInfoBase::FindBlocklistedDeviceInList(const nsTArray<GfxDriverInfo>& info,
   return status;
 }
 
-void
-GfxInfoBase::SetFeatureStatus(const nsTArray<dom::GfxInfoFeatureStatus>& aFS)
-{
-  MOZ_ASSERT(!mFeatureStatus);
-  mFeatureStatus = new nsTArray<dom::GfxInfoFeatureStatus>(aFS);
-}
-
 nsresult
 GfxInfoBase::GetFeatureStatusImpl(int32_t aFeature,
                                   int32_t* aStatus,
@@ -877,13 +855,6 @@ GfxInfoBase::GetFeatureStatusImpl(int32_t aFeature,
   }
 
   if (*aStatus != nsIGfxInfo::FEATURE_STATUS_UNKNOWN) {
-    
-    
-    return NS_OK;
-  }
-
-  if (mShutdownOccurred) {
-    
     
     
     return NS_OK;
@@ -1194,6 +1165,8 @@ GetLayersBackendName(layers::LayersBackend aBackend)
       return "d3d11";
     case layers::LayersBackend::LAYERS_CLIENT:
       return "client";
+    case layers::LayersBackend::LAYERS_WR:
+      return "webrender";
     case layers::LayersBackend::LAYERS_BASIC:
       return "basic";
     default:
@@ -1361,9 +1334,6 @@ GfxInfoBase::BuildFeatureStateLog(JSContext* aCx, const FeatureState& aFeature,
 void
 GfxInfoBase::DescribeFeatures(JSContext* aCx, JS::Handle<JSObject*> aObj)
 {
-  JS::Rooted<JSObject*> obj(aCx);
-  gfx::FeatureStatus gpuProcess = gfxConfig::GetValue(Feature::GPU_PROCESS);
-  InitFeatureObject(aCx, aObj, "gpuProcess", FEATURE_GPU_PROCESS, Some(gpuProcess), &obj);
 }
 
 bool
@@ -1470,26 +1440,6 @@ GfxInfoBase::GetUsingGPUProcess(bool *aOutValue)
   }
 
   *aOutValue = !!gpu->GetGPUChild();
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-GfxInfoBase::ControlGPUProcessForXPCShell(bool aEnable, bool *_retval)
-{
-  gfxPlatform::GetPlatform();
-
-  GPUProcessManager* gpm = GPUProcessManager::Get();
-  if (aEnable) {
-    if (!gfxConfig::IsEnabled(Feature::GPU_PROCESS)) {
-      gfxConfig::UserForceEnable(Feature::GPU_PROCESS, "xpcshell-test");
-    }
-    gpm->LaunchGPUProcess();
-    gpm->EnsureGPUReady();
-  } else {
-    gpm->KillProcess();
-  }
-
-  *_retval = true;
   return NS_OK;
 }
 

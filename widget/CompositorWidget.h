@@ -9,7 +9,6 @@
 #include "mozilla/RefPtr.h"
 #include "Units.h"
 #include "mozilla/gfx/2D.h"
-#include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/LayersTypes.h"
 
 class nsIWidget;
@@ -17,8 +16,12 @@ class nsBaseWidget;
 
 namespace mozilla {
 class VsyncObserver;
+namespace gl {
+class GLContext;
+} 
 namespace layers {
 class Compositor;
+class LayerManager;
 class LayerManagerComposite;
 class Compositor;
 class Composer2D;
@@ -58,8 +61,11 @@ class WidgetRenderingContext
 {
 public:
 #if defined(XP_MACOSX)
-  WidgetRenderingContext() : mLayerManager(nullptr) {}
+  WidgetRenderingContext()
+    : mLayerManager(nullptr)
+    , mGL(nullptr) {}
   layers::LayerManagerComposite* mLayerManager;
+  gl::GLContext* mGL;
 #elif defined(MOZ_WIDGET_ANDROID)
   WidgetRenderingContext() : mCompositor(nullptr) {}
   layers::Compositor* mCompositor;
@@ -72,15 +78,13 @@ public:
 class CompositorWidget
 {
 public:
-  NS_INLINE_DECL_REFCOUNTING(mozilla::widget::CompositorWidget)
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(mozilla::widget::CompositorWidget)
 
   
 
 
 
-  static RefPtr<CompositorWidget> CreateLocal(const CompositorWidgetInitData& aInitData,
-                                              const layers::CompositorOptions& aOptions,
-                                              nsIWidget* aWidget);
+  static RefPtr<CompositorWidget> CreateLocal(const CompositorWidgetInitData& aInitData, nsIWidget* aWidget);
 
   
 
@@ -257,14 +261,6 @@ public:
   
 
 
-
-  const layers::CompositorOptions& GetCompositorOptions() {
-    return mOptions;
-  }
-
-  
-
-
   virtual RefPtr<VsyncObserver> GetVsyncObserver() const;
 
   virtual WinCompositorWidget* AsWindows() {
@@ -285,13 +281,10 @@ public:
   }
 
 protected:
-  explicit CompositorWidget(const layers::CompositorOptions& aOptions);
   virtual ~CompositorWidget();
 
   
   RefPtr<gfx::DrawTarget> mLastBackBuffer;
-
-  layers::CompositorOptions mOptions;
 };
 
 } 
