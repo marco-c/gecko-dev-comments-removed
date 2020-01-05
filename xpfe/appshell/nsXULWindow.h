@@ -106,8 +106,7 @@ protected:
 
    
    nsresult ContentShellAdded(nsIDocShellTreeItem* aContentShell,
-                              bool aPrimary,
-                              const nsAString& aID);
+                              bool aPrimary);
    nsresult ContentShellRemoved(nsIDocShellTreeItem* aContentShell);
    NS_IMETHOD GetPrimaryContentSize(int32_t* aWidth,
                                     int32_t* aHeight);
@@ -146,7 +145,6 @@ protected:
    nsCOMPtr<nsIAuthPrompt> mAuthPrompter;
    nsCOMPtr<nsIXULBrowserWindow> mXULBrowserWindow;
    nsCOMPtr<nsIDocShellTreeItem> mPrimaryContentShell;
-   nsTArray<nsContentShellInfo*> mContentShells; 
    nsresult                mModalStatus;
    bool                    mContinueModalLoop;
    bool                    mDebuting;       
@@ -178,20 +176,4 @@ private:
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsXULWindow, NS_XULWINDOW_IMPL_CID)
-
-
-
-
-class nsContentShellInfo
-{
-public:
-   nsContentShellInfo(const nsAString& aID,
-                      nsIWeakReference* aContentShell);
-   ~nsContentShellInfo();
-
-public:
-   nsString id; 
-   nsWeakPtr child; 
-};
-
 #endif 
