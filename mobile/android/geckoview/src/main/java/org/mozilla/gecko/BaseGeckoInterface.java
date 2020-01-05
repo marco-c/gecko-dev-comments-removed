@@ -44,7 +44,8 @@ public class BaseGeckoInterface implements GeckoAppShell.GeckoInterface {
 
     @Override
     public Activity getActivity() {
-        return (Activity)mContext;
+        
+        return null;
     }
 
     @Override
