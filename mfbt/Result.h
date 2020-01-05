@@ -30,11 +30,17 @@ template <typename V, typename E> class Result;
 
 namespace detail {
 
-enum class VEmptiness { IsEmpty, IsNotEmpty };
-enum class Alignedness { IsAligned, IsNotAligned };
+enum class PackingStrategy {
+  Variant,
+  NullIsOk,
+  LowBitTagIsError,
+};
 
-template <typename V, typename E, VEmptiness EmptinessOfV, Alignedness Aligned>
-class ResultImplementation
+template <typename V, typename E, PackingStrategy Strategy>
+class ResultImplementation;
+
+template <typename V, typename E>
+class ResultImplementation<V, E, PackingStrategy::Variant>
 {
   mozilla::Variant<V, E> mStorage;
 
@@ -55,8 +61,8 @@ public:
 
 
 
-template <typename V, typename E, VEmptiness EmptinessOfV, Alignedness Aligned>
-class ResultImplementation<V, E&, EmptinessOfV, Aligned>
+template <typename V, typename E>
+class ResultImplementation<V, E&, PackingStrategy::Variant>
 {
   mozilla::Variant<V, E*> mStorage;
 
@@ -73,8 +79,8 @@ public:
 
 
 
-template <typename V, typename E, Alignedness Aligned>
-class ResultImplementation<V, E&, VEmptiness::IsEmpty, Aligned>
+template <typename V, typename E>
+class ResultImplementation<V, E&, PackingStrategy::NullIsOk>
 {
   E* mErrorValue;
 
@@ -92,8 +98,8 @@ public:
 
 
 
-template <typename V, typename E, VEmptiness EmptinessOfV>
-class ResultImplementation<V*, E&, EmptinessOfV, Alignedness::IsAligned>
+template <typename V, typename E>
+class ResultImplementation<V*, E&, PackingStrategy::LowBitTagIsError>
 {
   uintptr_t mBits;
 
@@ -120,6 +126,23 @@ public:
 
 
 
+
+template<typename T>
+struct UnusedZero
+{
+  static const bool value = false;
+};
+
+
+template<typename T>
+struct UnusedZero<T&>
+{
+  static const bool value = true;
+};
+
+
+
+
 template <typename T> struct HasFreeLSB { static const bool value = false; };
 
 
@@ -133,6 +156,21 @@ template <typename T> struct HasFreeLSB<T*> {
 
 template <typename T> struct HasFreeLSB<T&> {
   static const bool value = HasFreeLSB<T*>::value;
+};
+
+
+
+template <typename V, typename E>
+struct SelectResultImpl
+{
+  static const PackingStrategy value =
+      (IsEmpty<V>::value && UnusedZero<E>::value)
+    ? PackingStrategy::NullIsOk
+    : (detail::HasFreeLSB<V>::value && detail::HasFreeLSB<E>::value)
+    ? PackingStrategy::LowBitTagIsError
+    : PackingStrategy::Variant;
+
+  using Type = detail::ResultImplementation<V, E, value>;
 };
 
 template <typename T>
@@ -172,15 +210,8 @@ struct IsResult<Result<V, E>> : TrueType { };
 template <typename V, typename E>
 class MOZ_MUST_USE_TYPE Result final
 {
-  using Impl =
-    detail::ResultImplementation<V, E,
-                                 IsEmpty<V>::value
-                                   ? detail::VEmptiness::IsEmpty
-                                   : detail::VEmptiness::IsNotEmpty,
-                                 (detail::HasFreeLSB<V>::value &&
-                                  detail::HasFreeLSB<E>::value)
-                                   ? detail::Alignedness::IsAligned
-                                   : detail::Alignedness::IsNotAligned>;
+  using Impl = typename detail::SelectResultImpl<V, E>::Type;
+
   Impl mImpl;
 
 public:
