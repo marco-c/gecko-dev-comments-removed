@@ -399,6 +399,25 @@ StyleSheet::ClearAssociatedDocument()
 }
 
 void
+StyleSheet::AppendStyleSheet(StyleSheet* aSheet)
+{
+  NS_PRECONDITION(nullptr != aSheet, "null arg");
+
+  WillDirty();
+  RefPtr<StyleSheet>* tail = &SheetInfo().mFirstChild;
+  while (*tail) {
+    tail = &(*tail)->mNext;
+  }
+  *tail = aSheet;
+
+  
+  
+  aSheet->mParent = this;
+  aSheet->mDocument = mDocument;
+  DidDirty();
+}
+
+void
 StyleSheet::SetMedia(nsMediaList* aMedia)
 {
   mMedia = aMedia;

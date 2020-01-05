@@ -114,8 +114,6 @@ public:
   void List(FILE* out = stdout, int32_t aIndent = 0) const;
 #endif
 
-  void AppendStyleSheet(CSSStyleSheet* aSheet);
-
   
   void AppendStyleRule(css::Rule* aRule);
 
