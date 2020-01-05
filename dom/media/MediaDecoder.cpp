@@ -163,7 +163,7 @@ MediaDecoderOwner*
 MediaDecoder::ResourceCallback::GetMediaOwner() const
 {
   MOZ_ASSERT(NS_IsMainThread());
-  return mDecoder ? mDecoder->mOwner : nullptr;
+  return mDecoder ? mDecoder->GetOwner() : nullptr;
 }
 
 void
@@ -540,10 +540,10 @@ MediaDecoder::OnPlaybackEvent(MediaEventType aEvent)
       Invalidate();
       break;
     case MediaEventType::EnterVideoSuspend:
-      mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("mozentervideosuspend"));
+      GetOwner()->DispatchAsyncEvent(NS_LITERAL_STRING("mozentervideosuspend"));
       break;
     case MediaEventType::ExitVideoSuspend:
-      mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("mozexitvideosuspend"));
+      GetOwner()->DispatchAsyncEvent(NS_LITERAL_STRING("mozexitvideosuspend"));
       break;
   }
 }
@@ -560,7 +560,7 @@ MediaDecoder::OnDecoderDoctorEvent(DecoderDoctorEvent aEvent)
   MOZ_ASSERT(NS_IsMainThread());
   
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-  HTMLMediaElement* element = mOwner->GetMediaElement();
+  HTMLMediaElement* element = GetOwner()->GetMediaElement();
   if (!element) {
     return;
   }
@@ -704,7 +704,7 @@ MediaDecoder::Seek(double aTime, SeekTarget::Type aSeekType, dom::Promise* aProm
 
   if (mPlayState == PLAY_STATE_ENDED) {
     PinForSeek();
-    ChangeState(mOwner->GetPaused() ? PLAY_STATE_PAUSED : PLAY_STATE_PLAYING);
+    ChangeState(GetOwner()->GetPaused() ? PLAY_STATE_PAUSED : PLAY_STATE_PLAYING);
   }
   return NS_OK;
 }
@@ -805,7 +805,7 @@ MediaDecoder::MetadataLoaded(nsAutoPtr<MediaInfo> aInfo,
   
   if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
     mFiredMetadataLoaded = true;
-    mOwner->MetadataLoaded(mInfo, nsAutoPtr<const MetadataTags>(aTags.forget()));
+    GetOwner()->MetadataLoaded(mInfo, nsAutoPtr<const MetadataTags>(aTags.forget()));
   }
   
   
@@ -888,7 +888,7 @@ MediaDecoder::FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
   
   
   if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
-    mOwner->FirstFrameLoaded();
+    GetOwner()->FirstFrameLoaded();
   }
 }
 
@@ -897,7 +897,7 @@ MediaDecoder::NetworkError()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-  mOwner->NetworkError();
+  GetOwner()->NetworkError();
 }
 
 void
@@ -905,7 +905,7 @@ MediaDecoder::DecodeError(const MediaResult& aError)
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-  mOwner->DecodeError(aError);
+  GetOwner()->DecodeError(aError);
 }
 
 void
@@ -927,7 +927,7 @@ MediaDecoder::OwnerHasError() const
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-  return mOwner->HasError();
+  return GetOwner()->HasError();
 }
 
 class MediaElementGMPCrashHelper : public GMPCrashHelper
@@ -954,8 +954,8 @@ already_AddRefed<GMPCrashHelper>
 MediaDecoder::GetCrashHelper()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  return mOwner->GetMediaElement() ?
-    MakeAndAddRef<MediaElementGMPCrashHelper>(mOwner->GetMediaElement()) : nullptr;
+  return GetOwner()->GetMediaElement() ?
+    MakeAndAddRef<MediaElementGMPCrashHelper>(GetOwner()->GetMediaElement()) : nullptr;
 }
 
 bool
@@ -989,7 +989,7 @@ MediaDecoder::PlaybackEnded()
 
   ChangeState(PLAY_STATE_ENDED);
   InvalidateWithFlags(VideoFrameContainer::INVALIDATE_FORCE);
-  mOwner->PlaybackEnded();
+  GetOwner()->PlaybackEnded();
 
   
   
@@ -1061,7 +1061,7 @@ MediaDecoder::NotifySuspendedStatusChanged()
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
   if (mResource) {
     bool suspended = mResource->IsSuspendedByCache();
-    mOwner->NotifySuspendedByCache(suspended);
+    GetOwner()->NotifySuspendedByCache(suspended);
   }
 }
 
@@ -1071,7 +1071,7 @@ MediaDecoder::NotifyBytesDownloaded()
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
   UpdatePlaybackRate();
-  mOwner->DownloadProgressed();
+  GetOwner()->DownloadProgressed();
 }
 
 void
@@ -1084,7 +1084,7 @@ MediaDecoder::NotifyDownloadEnded(nsresult aStatus)
 
   if (aStatus == NS_BINDING_ABORTED) {
     
-    mOwner->LoadAborted();
+    GetOwner()->LoadAborted();
     return;
   }
 
@@ -1107,7 +1107,7 @@ MediaDecoder::NotifyPrincipalChanged()
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
   nsCOMPtr<nsIPrincipal> newPrincipal = GetCurrentPrincipal();
   mMediaPrincipalHandle = MakePrincipalHandle(newPrincipal);
-  mOwner->NotifyDecoderPrincipalChanged();
+  GetOwner()->NotifyDecoderPrincipalChanged();
 }
 
 void
@@ -1144,7 +1144,7 @@ MediaDecoder::OnSeekResolved()
   
   UpdateLogicalPositionInternal();
 
-  mOwner->SeekCompleted();
+  GetOwner()->SeekCompleted();
   AsyncResolveSeekDOMPromiseIfExists();
 }
 
@@ -1162,7 +1162,7 @@ MediaDecoder::SeekingStarted()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-  mOwner->SeekStarted();
+  GetOwner()->SeekStarted();
 }
 
 void
@@ -1237,7 +1237,7 @@ MediaDecoder::DurationChanged()
   
   if (mFiredMetadataLoaded &&
       (!mozilla::IsInfinite<double>(mDuration) || mExplicitDuration.Ref().isSome())) {
-    mOwner->DispatchAsyncEvent(NS_LITERAL_STRING("durationchange"));
+    GetOwner()->DispatchAsyncEvent(NS_LITERAL_STRING("durationchange"));
   }
 
   if (CurrentPosition() > TimeUnit::FromSeconds(mDuration).ToMicroseconds()) {
@@ -1374,7 +1374,7 @@ MediaDecoder::SetPlaybackRate(double aPlaybackRate)
   }
 
 
-  if (oldRate == 0 && !mOwner->GetPaused()) {
+  if (oldRate == 0 && !GetOwner()->GetPaused()) {
     
     
     Play();
@@ -1506,7 +1506,7 @@ MediaDecoder::FireTimeUpdate()
 {
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-  mOwner->FireTimeUpdate(true);
+  GetOwner()->FireTimeUpdate(true);
 }
 
 void
@@ -1662,7 +1662,7 @@ MediaDecoder::ConstructMediaTracks()
     return;
   }
 
-  HTMLMediaElement* element = mOwner->GetMediaElement();
+  HTMLMediaElement* element = GetOwner()->GetMediaElement();
   if (!element) {
     return;
   }
@@ -1695,7 +1695,7 @@ MediaDecoder::RemoveMediaTracks()
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
 
-  HTMLMediaElement* element = mOwner->GetMediaElement();
+  HTMLMediaElement* element = GetOwner()->GetMediaElement();
   if (!element) {
     return;
   }
@@ -1792,7 +1792,7 @@ void
 MediaDecoder::NotifyAudibleStateChanged()
 {
   MOZ_DIAGNOSTIC_ASSERT(!IsShutdown());
-  mOwner->SetAudibleState(mIsAudioDataAudible);
+  GetOwner()->SetAudibleState(mIsAudioDataAudible);
 }
 
 MediaMemoryTracker::MediaMemoryTracker()
