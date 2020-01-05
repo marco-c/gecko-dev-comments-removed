@@ -277,6 +277,10 @@ BookmarksEngine.prototype = {
   syncPriority: 4,
   allowSkippedRecord: false,
 
+  emptyChangeset() {
+    return new BookmarksChangeset();
+  },
+
 
   _guidMapFailed: false,
   _buildGUIDMap: function _buildGUIDMap() {
@@ -519,6 +523,11 @@ BookmarksEngine.prototype = {
   },
 
   _createRecord: function _createRecord(id) {
+    if (this._modified.isTombstone(id)) {
+      
+      
+      return this._createTombstone(id);
+    }
     
     let record = SyncEngine.prototype._createRecord.call(this, id);
     let entry = this._mapDupe(record);
@@ -526,6 +535,7 @@ BookmarksEngine.prototype = {
       record.hasDupe = true;
     }
     if (record.deleted) {
+      
       
       
       this._modified.setTombstone(record.id);
@@ -554,8 +564,7 @@ BookmarksEngine.prototype = {
   },
 
   pullNewChanges() {
-    let changes = Async.promiseSpinningly(this._tracker.promiseChangedIDs());
-    return new BookmarksChangeset(changes);
+    return Async.promiseSpinningly(this._tracker.promiseChangedIDs());
   },
 
   trackRemainingChanges() {
@@ -1066,24 +1075,50 @@ BookmarksTracker.prototype = {
 };
 
 class BookmarksChangeset extends Changeset {
+  constructor() {
+    super();
+    
+    
+    this.weakChanges = {};
+  }
+
   getModifiedTimestamp(id) {
     let change = this.changes[id];
-    if (!change || change.synced) {
+    if (change) {
       
       
-      return Number.NaN;
+      return change.synced ? Number.NaN : change.modified;
     }
-    return change.modified;
+    if (this.weakChanges[id]) {
+      
+      
+      return 0;
+    }
+    return Number.NaN;
+  }
+
+  setWeak(id, { tombstone = false } = {}) {
+    this.weakChanges[id] = { tombstone };
   }
 
   has(id) {
-    return id in this.changes && !this.changes[id].synced;
+    let change = this.changes[id];
+    if (change) {
+      return !change.synced;
+    }
+    return !!this.weakChanges[id];
   }
 
   setTombstone(id) {
     let change = this.changes[id];
     if (change) {
       change.tombstone = true;
+    }
+    let weakChange = this.weakChanges[id];
+    if (weakChange) {
+      
+      
+      weakChange.tombstone = true;
     }
   }
 
@@ -1094,5 +1129,40 @@ class BookmarksChangeset extends Changeset {
       
       change.synced = true;
     }
+    delete this.weakChanges[id];
+  }
+
+  changeID(oldID, newID) {
+    super.changeID(oldID, newID);
+    this.weakChanges[newID] = this.weakChanges[oldID];
+    delete this.weakChanges[oldID];
+  }
+
+  ids() {
+    let results = new Set();
+    for (let id in this.changes) {
+      results.add(id);
+    }
+    for (let id in this.weakChanges) {
+      results.add(id);
+    }
+    return [...results];
+  }
+
+  clear() {
+    super.clear();
+    this.weakChanges = {};
+  }
+
+  isTombstone(id) {
+    let change = this.changes[id];
+    if (change) {
+      return change.tombstone;
+    }
+    let weakChange = this.weakChanges[id];
+    if (weakChange) {
+      return weakChange.tombstone;
+    }
+    return false;
   }
 }
