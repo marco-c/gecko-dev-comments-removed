@@ -10,6 +10,7 @@
 #include "MainThreadUtils.h" 
 #include "mozilla/Assertions.h" 
 #include "mozilla/ClearOnShutdown.h" 
+#include "mozilla/Unused.h"
 #include "mozilla/dom/CheckerboardReportServiceBinding.h" 
 #include "mozilla/gfx/GPUParent.h"
 #include "nsContentUtils.h" 
@@ -50,7 +51,7 @@ CheckerboardEventStorage::Report(uint32_t aSeverity, const std::string& aLog)
   if (XRE_IsGPUProcess()) {
     if (gfx::GPUParent* gpu = gfx::GPUParent::GetSingleton()) {
       nsCString log(aLog.c_str());
-      gpu->SendReportCheckerboard(aSeverity, log);
+      Unused << gpu->SendReportCheckerboard(aSeverity, log);
     }
     return;
   }
