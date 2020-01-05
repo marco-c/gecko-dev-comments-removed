@@ -1648,7 +1648,8 @@ status_t MPEG4Extractor::parseChunk(off64_t *offset, int depth) {
 
             if (mPath.Length() >= 2
                     && (mPath[mPath.Length() - 2] == FOURCC('m', 'p', '4', 'a') ||
-                       (mPath[mPath.Length() - 2] == FOURCC('e', 'n', 'c', 'a')))) {
+                       (mPath[mPath.Length() - 2] == FOURCC('e', 'n', 'c', 'a')) ||
+                       (mPath[mPath.Length() - 2] == FOURCC('w', 'a', 'v', 'e')))) {
                 
                 
                 
