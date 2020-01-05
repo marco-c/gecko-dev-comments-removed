@@ -619,6 +619,14 @@ public:
 
   void SetVisible(bool aVisible);
 
+  
+  
+  
+  
+  
+  
+  layers::Image* GetCurrentImage();
+
   already_AddRefed<DOMMediaStream> GetSrcObject() const;
   void SetSrcObject(DOMMediaStream& aValue);
   void SetSrcObject(DOMMediaStream* aValue);
@@ -1713,6 +1721,10 @@ private:
 
   
   bool mIsAudioTrackAudible;
+
+  
+  
+  bool mHasSuspendTaint;
 
   Visibility mVisibilityState;
 
