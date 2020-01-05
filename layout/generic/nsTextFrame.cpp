@@ -587,7 +587,7 @@ ClearAllTextRunReferences(nsTextFrame* aFrame, gfxTextRun* aTextRun,
   } else {
     do {
       NS_ASSERTION(aFrame->GetType() == nsGkAtoms::textFrame, "Bad frame");
-      aFrame = aFrame->GetNextContinuation();
+      aFrame = static_cast<nsTextFrame*>(aFrame->GetNextContinuation());
     } while (aFrame && aFrame != aStartContinuation);
   }
   bool found = aStartContinuation == aFrame;
@@ -596,7 +596,7 @@ ClearAllTextRunReferences(nsTextFrame* aFrame, gfxTextRun* aTextRun,
     if (!aFrame->RemoveTextRun(aTextRun)) {
       break;
     }
-    aFrame = aFrame->GetNextContinuation();
+    aFrame = static_cast<nsTextFrame*>(aFrame->GetNextContinuation());
   }
   NS_POSTCONDITION(!found || aStartContinuation, "how did we find null?");
   return found;
@@ -714,7 +714,7 @@ GlyphObserver::NotifyGlyphsChanged()
 }
 
 int32_t nsTextFrame::GetContentEnd() const {
-  nsTextFrame* next = GetNextContinuation();
+  nsTextFrame* next = static_cast<nsTextFrame*>(GetNextContinuation());
   return next ? next->GetContentOffset() : mContent->GetText()->GetLength();
 }
 
@@ -749,7 +749,7 @@ int32_t nsTextFrame::GetInFlowContentLength() {
     return flowLength->mEndFlowOffset - mContentOffset;
   }
 
-  nsTextFrame* nextBidi = LastInFlow()->GetNextContinuation();
+  nsTextFrame* nextBidi = static_cast<nsTextFrame*>(LastInFlow()->GetNextContinuation());
   int32_t endFlow = nextBidi ? nextBidi->GetContentOffset() : mContent->TextLength();
 
   if (!flowLength) {
@@ -1678,7 +1678,7 @@ void BuildTextRunsScanner::AccumulateRunInfo(nsTextFrame* aFrame)
   NS_ASSERTION(mappedFlow->mStartFrame == aFrame ||
                mappedFlow->GetContentEnd() == aFrame->GetContentOffset(),
                "Overlapping or discontiguous frames => BAD");
-  mappedFlow->mEndFrame = aFrame->GetNextContinuation();
+  mappedFlow->mEndFrame = static_cast<nsTextFrame*>(aFrame->GetNextContinuation());
   if (mCurrentFramesAllSameTextRun != aFrame->GetTextRun(mWhichTextRun)) {
     mCurrentFramesAllSameTextRun = nullptr;
   }
@@ -1784,23 +1784,6 @@ GetSpacingFlags(nsIFrame* aFrame, const nsStyleText* aStyleText = nullptr)
   return nonStandardSpacing ? gfxTextRunFactory::TEXT_ENABLE_SPACING : 0;
 }
 
-static bool
-IsBaselineAligned(const nsStyleCoord& aCoord)
-{
-  switch (aCoord.GetUnit()) {
-    case eStyleUnit_Enumerated:
-      return aCoord.GetIntValue() == NS_STYLE_VERTICAL_ALIGN_BASELINE;
-    case eStyleUnit_Coord:
-      return aCoord.GetCoordValue() == 0;
-    case eStyleUnit_Percent:
-      return aCoord.GetPercentValue() == 0;
-    case eStyleUnit_Calc:
-      return aCoord.GetCalcValue()->IsDefinitelyZero();
-    default:
-      return false;
-  }
-}
-
 bool
 BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1, nsTextFrame* aFrame2)
 {
@@ -1830,10 +1813,6 @@ BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1, nsTextFr
   if (textStyle1->NewlineIsSignificant(aFrame1) && HasTerminalNewline(aFrame1))
     return false;
 
-  if (!IsBaselineAligned(sc1->StyleDisplay()->mVerticalAlign)) {
-    return false;
-  }
-
   if (aFrame1->GetContent() == aFrame2->GetContent() &&
       aFrame1->GetNextInFlow() != aFrame2) {
     
@@ -1849,10 +1828,6 @@ BuildTextRunsScanner::ContinueTextRunAcrossFrames(nsTextFrame* aFrame1, nsTextFr
   const nsStyleText* textStyle2 = sc2->StyleText();
   if (sc1 == sc2)
     return true;
-
-  if (!IsBaselineAligned(sc1->StyleDisplay()->mVerticalAlign)) {
-    return false;
-  }
 
   const nsStyleFont* fontStyle1 = sc1->StyleFont();
   const nsStyleFont* fontStyle2 = sc2->StyleFont();
@@ -2329,7 +2304,7 @@ BuildTextRunsScanner::BuildTextRunForFrames(void* aTextBuffer)
       nsStyleContext* sc = nullptr;
       RefPtr<nsTransformedCharStyle> charStyle;
       for (f = mappedFlow->mStartFrame; f != mappedFlow->mEndFrame;
-           f = f->GetNextContinuation()) {
+           f = static_cast<nsTextFrame*>(f->GetNextContinuation())) {
         uint32_t offset = iter.GetSkippedOffset();
         iter.AdvanceOriginal(f->GetContentLength());
         uint32_t end = iter.GetSkippedOffset();
@@ -2684,7 +2659,7 @@ BuildTextRunsScanner::SetupTextEmphasisForTextRun(gfxTextRun* aTextRun,
 {
   if (!mDoubleByteText) {
     auto text = reinterpret_cast<const uint8_t*>(aTextPtr);
-    for (auto i : IntegerRange(aTextRun->GetLength())) {
+    for (auto i : MakeRange(aTextRun->GetLength())) {
       if (!MayCharacterHaveEmphasisMark(text[i])) {
         aTextRun->SetNoEmphasisMark(i);
       }
@@ -2763,7 +2738,8 @@ BuildTextRunsScanner::AssignTextRun(gfxTextRun* aTextRun, float aInflation)
     nsTextFrame* startFrame = mappedFlow->mStartFrame;
     nsTextFrame* endFrame = mappedFlow->mEndFrame;
     nsTextFrame* f;
-    for (f = startFrame; f != endFrame; f = f->GetNextContinuation()) {
+    for (f = startFrame; f != endFrame;
+         f = static_cast<nsTextFrame*>(f->GetNextContinuation())) {
 #ifdef DEBUG_roc
       if (f->GetTextRun(mWhichTextRun)) {
         gfxTextRun* textRun = f->GetTextRun(mWhichTextRun);
@@ -4288,57 +4264,54 @@ nsTextFrame::DestroyFrom(nsIFrame* aDestructRoot)
   nsFrame::DestroyFrom(aDestructRoot);
 }
 
-class nsContinuingTextFrame final : public nsTextFrame
-{
+class nsContinuingTextFrame : public nsTextFrame {
 public:
   NS_DECL_FRAMEARENA_HELPERS
 
   friend nsIFrame* NS_NewContinuingTextFrame(nsIPresShell* aPresShell, nsStyleContext* aContext);
 
-  void Init(nsIContent* aContent,
-            nsContainerFrame* aParent,
-            nsIFrame* aPrevInFlow) override;
+  virtual void Init(nsIContent*       aContent,
+                    nsContainerFrame* aParent,
+                    nsIFrame*         aPrevInFlow) override;
 
-  void DestroyFrom(nsIFrame* aDestructRoot) override;
+  virtual void DestroyFrom(nsIFrame* aDestructRoot) override;
 
-  nsTextFrame* GetPrevContinuation() const override
-  {
+  virtual nsIFrame* GetPrevContinuation() const override {
     return mPrevContinuation;
   }
-  void SetPrevContinuation(nsIFrame* aPrevContinuation) override
-  {
+  virtual void SetPrevContinuation(nsIFrame* aPrevContinuation) override {
     NS_ASSERTION (!aPrevContinuation || GetType() == aPrevContinuation->GetType(),
                   "setting a prev continuation with incorrect type!");
     NS_ASSERTION (!nsSplittableFrame::IsInPrevContinuationChain(aPrevContinuation, this),
                   "creating a loop in continuation chain!");
-    mPrevContinuation = static_cast<nsTextFrame*>(aPrevContinuation);
+    mPrevContinuation = aPrevContinuation;
     RemoveStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
   }
-  nsIFrame* GetPrevInFlowVirtual() const override { return GetPrevInFlow(); }
-  nsTextFrame* GetPrevInFlow() const
-  {
+  virtual nsIFrame* GetPrevInFlowVirtual() const override {
+    return GetPrevInFlow();
+  }
+  nsIFrame* GetPrevInFlow() const {
     return (GetStateBits() & NS_FRAME_IS_FLUID_CONTINUATION) ? mPrevContinuation : nullptr;
   }
-  void SetPrevInFlow(nsIFrame* aPrevInFlow) override
-  {
+  virtual void SetPrevInFlow(nsIFrame* aPrevInFlow) override {
     NS_ASSERTION (!aPrevInFlow || GetType() == aPrevInFlow->GetType(),
                   "setting a prev in flow with incorrect type!");
     NS_ASSERTION (!nsSplittableFrame::IsInPrevContinuationChain(aPrevInFlow, this),
                   "creating a loop in continuation chain!");
-    mPrevContinuation = static_cast<nsTextFrame*>(aPrevInFlow);
+    mPrevContinuation = aPrevInFlow;
     AddStateBits(NS_FRAME_IS_FLUID_CONTINUATION);
   }
-  nsIFrame* FirstInFlow() const override;
-  nsIFrame* FirstContinuation() const override;
+  virtual nsIFrame* FirstInFlow() const override;
+  virtual nsIFrame* FirstContinuation() const override;
 
-  void AddInlineMinISize(nsRenderingContext* aRenderingContext,
-                         InlineMinISizeData* aData) override;
-  void AddInlinePrefISize(nsRenderingContext* aRenderingContext,
-                          InlinePrefISizeData* aData) override;
+  virtual void AddInlineMinISize(nsRenderingContext *aRenderingContext,
+                                 InlineMinISizeData *aData) override;
+  virtual void AddInlinePrefISize(nsRenderingContext *aRenderingContext,
+                                  InlinePrefISizeData *aData) override;
 
 protected:
   explicit nsContinuingTextFrame(nsStyleContext* aContext) : nsTextFrame(aContext) {}
-  nsTextFrame* mPrevContinuation;
+  nsIFrame* mPrevContinuation;
 };
 
 void
@@ -4350,11 +4323,12 @@ nsContinuingTextFrame::Init(nsIContent*       aContent,
   
   nsFrame::Init(aContent, aParent, aPrevInFlow);
 
-  nsTextFrame* prev = static_cast<nsTextFrame*>(aPrevInFlow);
-  nsTextFrame* nextContinuation = prev->GetNextContinuation();
+  nsTextFrame* nextContinuation =
+    static_cast<nsTextFrame*>(aPrevInFlow->GetNextContinuation());
   
   SetPrevInFlow(aPrevInFlow);
   aPrevInFlow->SetNextInFlow(this);
+  nsTextFrame* prev = static_cast<nsTextFrame*>(aPrevInFlow);
   mContentOffset = prev->GetContentOffset() + prev->GetContentLengthHint();
   NS_ASSERTION(mContentOffset < int32_t(aContent->GetText()->GetLength()),
                "Creating ContinuingTextFrame, but there is no more content");
@@ -4395,7 +4369,7 @@ nsContinuingTextFrame::Init(nsIContent*       aContent,
                    "between continuations");
 #endif
         nextContinuation->mContentOffset = mContentOffset;
-        nextContinuation = nextContinuation->GetNextContinuation();
+        nextContinuation = static_cast<nsTextFrame*>(nextContinuation->GetNextContinuation());
       }
     }
     mState |= NS_FRAME_IS_BIDI;
@@ -4423,7 +4397,9 @@ nsContinuingTextFrame::DestroyFrom(nsIFrame* aDestructRoot)
     
     
     if (mPrevContinuation) {
-      mPrevContinuation->ClearTextRuns();
+      nsTextFrame *prevContinuationText =
+        static_cast<nsTextFrame*>(mPrevContinuation);
+      prevContinuationText->ClearTextRuns();
     }
   }
   nsSplittableFrame::RemoveFromFlow(this);
@@ -4504,6 +4480,16 @@ nsContinuingTextFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
   return;
 }
 
+static void
+DestroySelectionDetails(SelectionDetails* aDetails)
+{
+  while (aDetails) {
+    SelectionDetails* next = aDetails->mNext;
+    delete aDetails;
+    aDetails = next;
+  }
+}
+
 
 
 #if defined(DEBUG_rbs) || defined(DEBUG_bzbarsky)
@@ -4559,23 +4545,24 @@ nsTextFrame::GetCursor(const nsPoint& aPoint,
   }
 }
 
-nsTextFrame*
+nsIFrame*
 nsTextFrame::LastInFlow() const
 {
   nsTextFrame* lastInFlow = const_cast<nsTextFrame*>(this);
   while (lastInFlow->GetNextInFlow())  {
-    lastInFlow = lastInFlow->GetNextInFlow();
+    lastInFlow = static_cast<nsTextFrame*>(lastInFlow->GetNextInFlow());
   }
   MOZ_ASSERT(lastInFlow, "post-condition failed");
   return lastInFlow;
 }
 
-nsTextFrame*
+nsIFrame*
 nsTextFrame::LastContinuation() const
 {
   nsTextFrame* lastContinuation = const_cast<nsTextFrame*>(this);
   while (lastContinuation->mNextContinuation)  {
-    lastContinuation = lastContinuation->mNextContinuation;
+    lastContinuation =
+      static_cast<nsTextFrame*>(lastContinuation->mNextContinuation);
   }
   MOZ_ASSERT(lastContinuation, "post-condition failed");
   return lastContinuation;
@@ -4704,7 +4691,7 @@ nsTextFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
   nsTextFrame* next;
   nsTextFrame* textFrame = this;
   while (true) {
-    next = textFrame->GetNextContinuation();
+    next = static_cast<nsTextFrame*>(textFrame->GetNextContinuation());
     if (!next || next->GetContentOffset() > int32_t(aInfo->mChangeStart))
       break;
     textFrame = next;
@@ -4744,7 +4731,7 @@ nsTextFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
       textFrame->mContentOffset = endOfChangedText;
     }
 
-    textFrame = textFrame->GetNextContinuation();
+    textFrame = static_cast<nsTextFrame*>(textFrame->GetNextContinuation());
   } while (textFrame && textFrame->GetContentOffset() < int32_t(aInfo->mChangeEnd));
 
   
@@ -4760,7 +4747,7 @@ nsTextFrame::CharacterDataChanged(CharacterDataChangeInfo* aInfo)
       
       
       textFrame->ClearTextRuns();
-      textFrame = textFrame->GetNextContinuation();
+      textFrame = static_cast<nsTextFrame*>(textFrame->GetNextContinuation());
     }
   }
 
@@ -4851,11 +4838,13 @@ public:
 
   void ApplyOpacity(nsDisplayListBuilder* aBuilder,
                     float aOpacity,
-                    const DisplayItemClipChain* aClip) override
+                    const DisplayItemClip* aClip) override
   {
     NS_ASSERTION(CanApplyOpacity(), "ApplyOpacity should be allowed");
     mOpacity = aOpacity;
-    IntersectClip(aBuilder, aClip);
+    if (aClip) {
+      IntersectClip(aBuilder, *aClip);
+    }
   }
 
   void WriteDebugInfo(std::stringstream& aStream) override
@@ -4883,7 +4872,9 @@ public:
   bool TryMerge(nsDisplayItem* aItem) override {
     if (aItem->GetType() != TYPE_TEXT)
       return false;
-    if (aItem->GetClipChain() != GetClipChain())
+    if (aItem->GetClip() != GetClip())
+      return false;
+    if (aItem->ScrollClip() != ScrollClip())
       return false;
 
     nsDisplayText* other = static_cast<nsDisplayText*>(aItem);
@@ -5003,7 +4994,9 @@ nsDisplayText::nsDisplayText(nsDisplayListBuilder* aBuilder, nsTextFrame* aFrame
     GlyphArray* g = mGlyphs.AppendElement();
     std::vector<Glyph> glyphs;
     Color color;
-    if (!capture->ContainsOnlyColoredGlyphs(mFont, color, glyphs)) {
+    if (!capture->ContainsOnlyColoredGlyphs(mFont, color, glyphs)
+        || !mFont->CanSerialize()
+        || XRE_IsParentProcess()) {
       mFont = nullptr;
       mGlyphs.Clear();
     } else {
@@ -5020,7 +5013,7 @@ nsDisplayText::GetLayerState(nsDisplayListBuilder* aBuilder,
                              const ContainerLayerParameters& aParameters)
 {
   if (mFont) {
-    return mozilla::LAYER_INACTIVE;
+    return mozilla::LAYER_ACTIVE;
   }
   MOZ_ASSERT(mMergedFrames.IsEmpty());
   return mozilla::LAYER_NONE;
@@ -5172,7 +5165,7 @@ GetGeneratedContentOwner(nsIFrame* aFrame, bool* aIsBefore)
   return aFrame;
 }
 
-UniquePtr<SelectionDetails>
+SelectionDetails*
 nsTextFrame::GetSelectionDetails()
 {
   const nsFrameSelection* frameSelection = GetConstFrameSelection();
@@ -5180,10 +5173,11 @@ nsTextFrame::GetSelectionDetails()
     return nullptr;
   }
   if (!(GetStateBits() & NS_FRAME_GENERATED_CONTENT)) {
-    UniquePtr<SelectionDetails> details =
+    SelectionDetails* details =
       frameSelection->LookUpSelection(mContent, GetContentOffset(),
                                       GetContentLength(), false);
-    for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
+    SelectionDetails* sd;
+    for (sd = details; sd; sd = sd->mNext) {
       sd->mStart += mContentOffset;
       sd->mEnd += mContentOffset;
     }
@@ -5197,10 +5191,11 @@ nsTextFrame::GetSelectionDetails()
   if (!owner || !owner->GetContent())
     return nullptr;
 
-  UniquePtr<SelectionDetails> details =
+  SelectionDetails* details =
     frameSelection->LookUpSelection(owner->GetContent(),
         isBefore ? 0 : owner->GetContent()->GetChildCount(), 0, false);
-  for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
+  SelectionDetails* sd;
+  for (sd = details; sd; sd = sd->mNext) {
     
     sd->mStart = GetContentOffset();
     sd->mEnd = GetContentEnd();
@@ -6262,15 +6257,11 @@ nsTextFrame::PaintOneShadow(const PaintShadowParams& aParams,
 bool
 nsTextFrame::PaintTextWithSelectionColors(
     const PaintTextSelectionParams& aParams,
-    const UniquePtr<SelectionDetails>& aDetails,
-    RawSelectionType* aAllRawSelectionTypes,
+    SelectionDetails* aDetails, RawSelectionType* aAllRawSelectionTypes,
     const nsCharClipDisplayItem::ClipEdges& aClipEdges)
 {
   const gfxTextRun::Range& contentRange = aParams.contentRange;
 
-  
-  
-  
   
   AutoTArray<SelectionDetails*,BIG_TEXT_NODE_SIZE> prevailingSelectionsBuffer;
   SelectionDetails** prevailingSelections =
@@ -6284,8 +6275,9 @@ nsTextFrame::PaintTextWithSelectionColors(
     prevailingSelections[i] = nullptr;
   }
 
+  SelectionDetails *sdptr = aDetails;
   bool anyBackgrounds = false;
-  for (SelectionDetails* sdptr = aDetails.get(); sdptr; sdptr = sdptr->mNext.get()) {
+  while (sdptr) {
     int32_t start = std::max(0, sdptr->mStart - int32_t(contentRange.start));
     int32_t end = std::min(int32_t(contentRange.Length()),
                            sdptr->mEnd - int32_t(contentRange.start));
@@ -6309,6 +6301,7 @@ nsTextFrame::PaintTextWithSelectionColors(
         }
       }
     }
+    sdptr = sdptr->mNext;
   }
   *aAllRawSelectionTypes = allRawSelectionTypes;
 
@@ -6428,16 +6421,12 @@ nsTextFrame::PaintTextWithSelectionColors(
 void
 nsTextFrame::PaintTextSelectionDecorations(
     const PaintTextSelectionParams& aParams,
-    const UniquePtr<SelectionDetails>& aDetails,
-    SelectionType aSelectionType)
+    SelectionDetails* aDetails, SelectionType aSelectionType)
 {
   
   if (aParams.provider->GetFontGroup()->ShouldSkipDrawing())
     return;
 
-  
-  
-  
   
   const gfxTextRun::Range& contentRange = aParams.contentRange;
   AutoTArray<SelectionDetails*, BIG_TEXT_NODE_SIZE> selectedCharsBuffer;
@@ -6450,7 +6439,8 @@ nsTextFrame::PaintTextSelectionDecorations(
     selectedChars[i] = nullptr;
   }
 
-  for (SelectionDetails* sdptr = aDetails.get(); sdptr; sdptr = sdptr->mNext.get()) {
+  SelectionDetails *sdptr = aDetails;
+  while (sdptr) {
     if (sdptr->mSelectionType == aSelectionType) {
       int32_t start = std::max(0, sdptr->mStart - int32_t(contentRange.start));
       int32_t end = std::min(int32_t(contentRange.Length()),
@@ -6459,6 +6449,7 @@ nsTextFrame::PaintTextSelectionDecorations(
         selectedChars[i] = sdptr;
       }
     }
+    sdptr = sdptr->mNext;
   }
 
   gfxFont* firstFont = aParams.provider->GetFontGroup()->GetFirstValidFont();
@@ -6527,7 +6518,7 @@ nsTextFrame::PaintTextWithSelection(
 {
   NS_ASSERTION(GetContent()->IsSelectionDescendant(), "wrong paint path");
 
-  UniquePtr<SelectionDetails> details = GetSelectionDetails();
+  SelectionDetails* details = GetSelectionDetails();
   if (!details) {
     return false;
   }
@@ -6535,6 +6526,7 @@ nsTextFrame::PaintTextWithSelection(
   RawSelectionType allRawSelectionTypes;
   if (!PaintTextWithSelectionColors(aParams, details, &allRawSelectionTypes,
                                     aClipEdges)) {
+    DestroySelectionDetails(details);
     return false;
   }
   
@@ -6552,6 +6544,7 @@ nsTextFrame::PaintTextWithSelection(
     }
   }
 
+  DestroySelectionDetails(details);
   return true;
 }
 
@@ -6631,9 +6624,10 @@ nsTextFrame::GetCaretColorAt(int32_t aOffset)
 
   nsTextPaintStyle textPaintStyle(this);
   textPaintStyle.SetResolveColors(isSolidTextColor);
-  UniquePtr<SelectionDetails> details = GetSelectionDetails();
+  SelectionDetails* details = GetSelectionDetails();
+  SelectionDetails* sdptr = details;
   SelectionType selectionType = SelectionType::eNone;
-  for (SelectionDetails* sdptr = details.get(); sdptr; sdptr = sdptr->mNext.get()) {
+  while (sdptr) {
     int32_t start = std::max(0, sdptr->mStart - contentOffset);
     int32_t end = std::min(contentLength, sdptr->mEnd - contentOffset);
     if (start <= offsetInFrame && offsetInFrame < end &&
@@ -6652,8 +6646,10 @@ nsTextFrame::GetCaretColorAt(int32_t aOffset)
         selectionType = sdptr->mSelectionType;
       }
     }
+    sdptr = sdptr->mNext;
   }
 
+  DestroySelectionDetails(details);
   return result;
 }
 
@@ -7237,18 +7233,21 @@ nsTextFrame::IsVisibleInSelection(nsISelection* aSelection)
   if (!GetContent()->IsSelectionDescendant())
     return false;
 
-  UniquePtr<SelectionDetails> details = GetSelectionDetails();
+  SelectionDetails* details = GetSelectionDetails();
   bool found = false;
 
   
-  for (SelectionDetails* sdptr = details.get(); sdptr; sdptr = sdptr->mNext.get()) {
+  SelectionDetails *sdptr = details;
+  while (sdptr) {
     if (sdptr->mEnd > GetContentOffset() &&
         sdptr->mStart < GetContentEnd() &&
         sdptr->mSelectionType == SelectionType::eNormal) {
       found = true;
       break;
     }
+    sdptr = sdptr->mNext;
   }
+  DestroySelectionDetails(details);
 
   return found;
 }
@@ -7410,8 +7409,8 @@ nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
     ComputeDescentLimitForSelectionUnderline(aPresContext, metrics);
   params.vertical = verticalRun;
 
-  UniquePtr<SelectionDetails> details = GetSelectionDetails();
-  for (SelectionDetails* sd = details.get(); sd; sd = sd->mNext.get()) {
+  SelectionDetails *details = GetSelectionDetails();
+  for (SelectionDetails *sd = details; sd; sd = sd->mNext) {
     if (sd->mStart == sd->mEnd ||
         !(sd->mSelectionType & kRawSelectionTypesWithDecorations) ||
         
@@ -7457,6 +7456,7 @@ nsTextFrame::CombineSelectionUnderlineRect(nsPresContext* aPresContext,
       nsCSSRendering::GetTextDecorationRect(aPresContext, params);
     aRect.UnionRect(aRect, decorationArea);
   }
+  DestroySelectionDetails(details);
 
   return !aRect.IsEmpty() && !givenRect.Contains(aRect);
 }
@@ -7483,7 +7483,7 @@ nsTextFrame::SetSelectedRange(uint32_t aStart, uint32_t aEnd, bool aSelected,
 
   nsTextFrame* f = this;
   while (f && f->GetContentEnd() <= int32_t(aStart)) {
-    f = f->GetNextContinuation();
+    f = static_cast<nsTextFrame*>(f->GetNextContinuation());
   }
 
   nsPresContext* presContext = PresContext();
@@ -7506,7 +7506,7 @@ nsTextFrame::SetSelectedRange(uint32_t aStart, uint32_t aEnd, bool aSelected,
     
     f->InvalidateFrame();
 
-    f = f->GetNextContinuation();
+    f = static_cast<nsTextFrame*>(f->GetNextContinuation());
   }
 }
 
@@ -7719,7 +7719,7 @@ nsTextFrame::GetChildFrameContainingOffset(int32_t   aContentOffset,
   if ((aContentOffset >= offset) &&
       (aHint || aContentOffset != offset)) {
     while (true) {
-      nsTextFrame* next = f->GetNextContinuation();
+      nsTextFrame* next = static_cast<nsTextFrame*>(f->GetNextContinuation());
       if (!next || aContentOffset < next->GetContentOffset())
         break;
       if (aContentOffset == next->GetContentOffset()) {
@@ -7735,7 +7735,7 @@ nsTextFrame::GetChildFrameContainingOffset(int32_t   aContentOffset,
     }
   } else {
     while (true) {
-      nsTextFrame* prev = f->GetPrevContinuation();
+      nsTextFrame* prev = static_cast<nsTextFrame*>(f->GetPrevContinuation());
       if (!prev || aContentOffset > f->GetContentOffset())
         break;
       if (aContentOffset == f->GetContentOffset()) {
@@ -8112,7 +8112,8 @@ nsTextFrame::CheckVisibility(nsPresContext* aContext, int32_t aStartIndex,
   
   
   
-  for (nsTextFrame* f = this; f; f = f->GetNextContinuation()) {
+  for (nsTextFrame* f = this; f;
+       f = static_cast<nsTextFrame*>(GetNextContinuation())) {
     int32_t dummyOffset = 0;
     if (f->PeekOffsetNoAmount(true, &dummyOffset) == FOUND) {
       *aRetval = true;
@@ -8478,7 +8479,7 @@ nsTextFrame::AddInlineMinISize(nsRenderingContext *aRenderingContext,
   const gfxTextRun* lastTextRun = nullptr;
   
   
-  for (f = this; f; f = f->GetNextContinuation()) {
+  for (f = this; f; f = static_cast<nsTextFrame*>(f->GetNextContinuation())) {
     
     
     
@@ -8629,7 +8630,7 @@ nsTextFrame::AddInlinePrefISize(nsRenderingContext *aRenderingContext,
   const gfxTextRun* lastTextRun = nullptr;
   
   
-  for (f = this; f; f = f->GetNextContinuation()) {
+  for (f = this; f; f = static_cast<nsTextFrame*>(f->GetNextContinuation())) {
     
     
     
@@ -8788,11 +8789,11 @@ RemoveEmptyInFlows(nsTextFrame* aFrame, nsTextFrame* aFirstToNotRemove)
                aFrame->GetPrevInFlow() != nullptr,
                "aFrame should have a fluid prev continuation");
 
-  nsTextFrame* prevContinuation = aFrame->GetPrevContinuation();
-  nsTextFrame* lastRemoved = aFirstToNotRemove->GetPrevContinuation();
+  nsIFrame* prevContinuation = aFrame->GetPrevContinuation();
+  nsIFrame* lastRemoved = aFirstToNotRemove->GetPrevContinuation();
 
   for (nsTextFrame* f = aFrame; f != aFirstToNotRemove;
-       f = f->GetNextContinuation()) {
+       f = static_cast<nsTextFrame*>(f->GetNextContinuation())) {
     
     
     
@@ -8831,7 +8832,7 @@ nsTextFrame::SetLength(int32_t aLength, nsLineLayout* aLineLayout,
 {
   mContentLengthHint = aLength;
   int32_t end = GetContentOffset() + aLength;
-  nsTextFrame* f = GetNextInFlow();
+  nsTextFrame* f = static_cast<nsTextFrame*>(GetNextInFlow());
   if (!f)
     return;
 
@@ -8894,7 +8895,7 @@ nsTextFrame::SetLength(int32_t aLength, nsLineLayout* aLineLayout,
       ClearTextRuns();
       f->ClearTextRuns();
     }
-    nsTextFrame* next = f->GetNextInFlow();
+    nsTextFrame* next = static_cast<nsTextFrame*>(f->GetNextInFlow());
     
     
     
@@ -8931,14 +8932,14 @@ nsTextFrame::SetLength(int32_t aLength, nsLineLayout* aLineLayout,
   int32_t iterations = 0;
   while (f && iterations < 10) {
     f->GetContentLength(); 
-    f = f->GetNextContinuation();
+    f = static_cast<nsTextFrame*>(f->GetNextContinuation());
     ++iterations;
   }
   f = this;
   iterations = 0;
   while (f && iterations < 10) {
     f->GetContentLength(); 
-    f = f->GetPrevContinuation();
+    f = static_cast<nsTextFrame*>(f->GetPrevContinuation());
     ++iterations;
   }
 #endif
@@ -9803,7 +9804,7 @@ nsTextFrame::GetRenderedText(uint32_t aStartOffset,
 
   Maybe<nsBlockFrame::AutoLineCursorSetup> autoLineCursor;
   for (textFrame = this; textFrame;
-       textFrame = textFrame->GetNextContinuation()) {
+       textFrame = static_cast<nsTextFrame*>(textFrame->GetNextContinuation())) {
     if (textFrame->GetStateBits() & NS_FRAME_IS_DIRTY) {
       
       break;
@@ -10070,7 +10071,7 @@ nsTextFrame::AdjustOffsetsForBidi(int32_t aStart, int32_t aEnd)
 
   ClearTextRuns();
 
-  nsTextFrame* prev = GetPrevContinuation();
+  nsTextFrame* prev = static_cast<nsTextFrame*>(GetPrevContinuation());
   if (prev) {
     
     
