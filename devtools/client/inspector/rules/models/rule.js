@@ -12,7 +12,7 @@ const {ELEMENT_STYLE} = require("devtools/shared/specs/styles");
 const {TextProperty} =
       require("devtools/client/inspector/rules/models/text-property");
 const {promiseWarn} = require("devtools/client/inspector/shared/utils");
-const {parseDeclarations} = require("devtools/shared/css/parsing-utils");
+const {parseNamedDeclarations} = require("devtools/shared/css/parsing-utils");
 const Services = require("Services");
 
 const STYLE_INSPECTOR_PROPERTIES = "devtools/shared/locales/styleinspector.properties";
@@ -242,8 +242,8 @@ Rule.prototype = {
       
       
       
-      for (let cssProp of parseDeclarations(this.cssProperties.isKnown,
-                                            this.style.authoredText)) {
+      for (let cssProp of parseNamedDeclarations(this.cssProperties.isKnown,
+                                                 this.style.authoredText)) {
         cssProps[cssProp.name] = cssProp;
       }
 
@@ -440,18 +440,15 @@ Rule.prototype = {
     
     let props = this.style.declarations;
     if (!props.length) {
-      props = parseDeclarations(this.cssProperties.isKnown,
-                                this.style.authoredText, true);
+      
+      
+      
+      props = parseNamedDeclarations(this.cssProperties.isKnown,
+                                     this.style.authoredText, true);
     }
 
     for (let prop of props) {
       let name = prop.name;
-      
-      
-      
-      if (!name) {
-        continue;
-      }
       
       
       

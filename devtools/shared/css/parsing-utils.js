@@ -452,6 +452,16 @@ function parseDeclarations(isCssPropertyKnown, inputString,
 
 
 
+function parseNamedDeclarations(isCssPropertyKnown, inputString,
+                                parseComments = false) {
+  return parseDeclarations(isCssPropertyKnown, inputString, parseComments)
+         .filter(item => !!item.name);
+}
+
+
+
+
+
 
 
 
@@ -519,8 +529,8 @@ RuleRewriter.prototype = {
     
     this.hasNewLine = /[\r\n]/.test(this.inputString);
     
-    this.declarations = parseDeclarations(this.isCssPropertyKnown, this.inputString,
-                                          true);
+    this.declarations = parseNamedDeclarations(this.isCssPropertyKnown, this.inputString,
+                                               true);
     this.decl = null;
     this.result = null;
   },
@@ -1163,6 +1173,7 @@ exports.escapeCSSComment = escapeCSSComment;
 
 exports._unescapeCSSComment = unescapeCSSComment;
 exports.parseDeclarations = parseDeclarations;
+exports.parseNamedDeclarations = parseNamedDeclarations;
 
 exports._parseCommentDeclarations = parseCommentDeclarations;
 exports.RuleRewriter = RuleRewriter;
