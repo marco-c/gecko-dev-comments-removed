@@ -144,7 +144,7 @@ PerformanceStatisticsView.prototype = {
 
     chart.on("click", (_, item) => {
       
-      this.store.dispatch(Actions.enableFilterOnly(item.label));
+      this.store.dispatch(Actions.enableFilterTypeOnly(item.label));
       NetMonitorView.showNetworkInspectorView();
     });
 

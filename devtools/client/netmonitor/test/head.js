@@ -385,14 +385,16 @@ function waitFor(subject, eventName) {
 
 
 
-function testFilterButtons(aMonitor, aFilterType) {
-  let doc = aMonitor.panelWin.document;
-  let target = doc.querySelector("#requests-menu-filter-" + aFilterType + "-button");
-  let buttons = doc.querySelectorAll(".requests-menu-footer-button");
+function testFilterButtons(monitor, filterType) {
+  let doc = monitor.panelWin.document;
+  let target = doc.querySelector("#requests-menu-filter-" + filterType + "-button");
+  ok(target, `Filter button '${filterType}' was found`);
+  let buttons = [...doc.querySelectorAll(".menu-filter-button")];
+  ok(buttons.length > 0, "More than zero filter buttons were found");
 
   
-  let checkStatus = [...buttons].map(button => button == target ? 1 : 0);
-  testFilterButtonsCustom(aMonitor, checkStatus);
+  let checkStatus = buttons.map(button => button == target ? 1 : 0);
+  testFilterButtonsCustom(monitor, checkStatus);
 }
 
 
