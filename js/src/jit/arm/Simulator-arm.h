@@ -31,6 +31,8 @@
 
 #ifdef JS_SIMULATOR_ARM
 
+#include "mozilla/Atomics.h"
+
 #include "jit/arm/Architecture-arm.h"
 #include "jit/arm/disasm/Disasm-arm.h"
 #include "jit/IonTypes.h"
@@ -345,9 +347,29 @@ class Simulator
     
     void instructionDecode(SimInstruction* instr);
 
+  private:
+    
+    struct ICacheHasher {
+        typedef void* Key;
+        typedef void* Lookup;
+        static HashNumber hash(const Lookup& l);
+        static bool match(const Key& k, const Lookup& l);
+    };
+
+  public:
+    typedef HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy> ICacheMap;
+
   public:
     static bool ICacheCheckingEnabled;
     static void FlushICache(void* start, size_t size);
+
+    
+    
+    
+    
+    mozilla::Atomic<bool, mozilla::ReleaseAcquire> cacheInvalidatedBySignalHandler_;
+
+    void checkICacheLocked(ICacheMap& i_cache, SimInstruction* instr);
 
     static int64_t StopSimAt;
 
@@ -449,18 +471,6 @@ class Simulator
     int64_t icount() {
         return icount_;
     }
-
-  private:
-    
-    struct ICacheHasher {
-        typedef void* Key;
-        typedef void* Lookup;
-        static HashNumber hash(const Lookup& l);
-        static bool match(const Key& k, const Lookup& l);
-    };
-
-  public:
-    typedef HashMap<void*, CachePage*, ICacheHasher, SystemAllocPolicy> ICacheMap;
 
   private:
     
