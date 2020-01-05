@@ -3228,6 +3228,9 @@ var SessionStoreInternal = {
     let overwriteTabs = aOptions && aOptions.overwriteTabs;
     let isFollowUp = aOptions && aOptions.isFollowUp;
     let firstWindow = aOptions && aOptions.firstWindow;
+    
+    
+    let selectTab = (overwriteTabs ? parseInt(winData.selected || 1, 10) : 0);
 
     if (isFollowUp) {
       this.windowToFocus = aWindow;
@@ -3252,24 +3255,21 @@ var SessionStoreInternal = {
       winData.tabs = [];
     }
 
-    
-    
-    let selectTab = 0;
-    if (overwriteTabs) {
-      selectTab = parseInt(winData.selected || 1, 10);
-      selectTab = Math.max(selectTab, 1);
-      selectTab = Math.min(selectTab, winData.tabs.length);
-    }
-
-    let tabbrowser = aWindow.gBrowser;
-    let tabsToRemove = overwriteTabs ? tabbrowser.browsers.length : 0;
-    let newTabCount = winData.tabs.length;
+    var tabbrowser = aWindow.gBrowser;
+    var openTabCount = overwriteTabs ? tabbrowser.browsers.length : -1;
+    var newTabCount = winData.tabs.length;
     var tabs = [];
 
     
-    let tabstrip = tabbrowser.tabContainer.mTabstrip;
-    let smoothScroll = tabstrip.smoothScroll;
+    var tabstrip = tabbrowser.tabContainer.mTabstrip;
+    var smoothScroll = tabstrip.smoothScroll;
     tabstrip.smoothScroll = false;
+
+    
+    if (overwriteTabs) {
+      for (let t = tabbrowser._numPinnedTabs - 1; t > -1; t--)
+        tabbrowser.unpinTab(tabbrowser.tabs[t]);
+    }
 
     
     
@@ -3278,31 +3278,36 @@ var SessionStoreInternal = {
       initialTabs = Array.slice(tabbrowser.tabs);
     }
 
+    
+    
+    if (overwriteTabs && tabbrowser.selectedTab._tPos >= newTabCount)
+      tabbrowser.moveTabTo(tabbrowser.selectedTab, newTabCount - 1);
+
     let numVisibleTabs = 0;
 
     let restoreTabsLazily = this._prefBranch.getBoolPref("sessionstore.restore_tabs_lazily") &&
       this._prefBranch.getBoolPref("sessionstore.restore_on_demand");
 
     for (var t = 0; t < newTabCount; t++) {
+      
+      
       let userContextId = winData.tabs[t].userContextId;
-      let select = t == selectTab - 1;
-      let createLazyBrowser = restoreTabsLazily && !select && !winData.tabs[t].pinned;
-      let tab = tabbrowser.addTab("about:blank",
-                                  { createLazyBrowser,
-                                    skipAnimation: true,
-                                    userContextId,
-                                    skipBackgroundNotify: true });
+      let createLazyBrowser = restoreTabsLazily && !winData.tabs[t].pinned;
+      let reuseExisting = t < openTabCount &&
+                          (tabbrowser.tabs[t].getAttribute("usercontextid") == (userContextId || ""));
+      let tab = reuseExisting ? this._maybeUpdateBrowserRemoteness(tabbrowser.tabs[t])
+                              : tabbrowser.addTab("about:blank",
+                                                  { createLazyBrowser,
+                                                    skipAnimation: true,
+                                                    userContextId,
+                                                    skipBackgroundNotify: true });
 
-      if (select) {
-        
-        
-        tabbrowser.selectedTab = tab;
-
-        
-        for (let i = 0; i < tabsToRemove; i++) {
-          tabbrowser.removeTab(tabbrowser.tabs[0]);
-        }
-        tabsToRemove = 0;
+      
+      
+      
+      if (!reuseExisting && t < openTabCount) {
+        tabbrowser.removeTab(tabbrowser.tabs[t]);
+        tabbrowser.moveTabTo(tab, t);
       }
 
       tabs.push(tab);
@@ -3312,6 +3317,47 @@ var SessionStoreInternal = {
       } else {
         tabbrowser.showTab(tabs[t]);
         numVisibleTabs++;
+      }
+
+      if (!!winData.tabs[t].muted != tabs[t].linkedBrowser.audioMuted) {
+        tabs[t].toggleMuteAudio(winData.tabs[t].muteReason);
+      }
+    }
+
+    if (selectTab > 0 && selectTab <= tabs.length) {
+      
+      
+      let currentIndex = tabbrowser.tabContainer.selectedIndex;
+      let targetIndex = selectTab - 1;
+
+      if (currentIndex != targetIndex) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        let selectedTab = tabbrowser.selectedTab;
+        let tabAtTargetIndex = tabs[targetIndex];
+        let userContextsMatch = selectedTab.userContextId == tabAtTargetIndex.userContextId;
+
+        if (userContextsMatch) {
+          tabbrowser.moveTabTo(selectedTab, targetIndex);
+          tabbrowser.moveTabTo(tabAtTargetIndex, currentIndex);
+          
+          
+          
+          tabs[targetIndex] = tabs[currentIndex];
+          tabs[currentIndex] = tabAtTargetIndex;
+        } else {
+          
+          tabbrowser.selectedTab = tabs[targetIndex];
+        }
       }
     }
 
@@ -3330,7 +3376,6 @@ var SessionStoreInternal = {
       
       let endPosition = tabbrowser.tabs.length - 1;
       for (let i = 0; i < initialTabs.length; i++) {
-        tabbrowser.unpinTab(initialTabs[i]);
         tabbrowser.moveTabTo(initialTabs[i], endPosition);
       }
     }
@@ -3344,9 +3389,27 @@ var SessionStoreInternal = {
     
     
     
+    
+    if (overwriteTabs) {
+      for (let i = 0; i < tabbrowser.tabs.length; i++) {
+        let tab = tabbrowser.tabs[i];
+        if (tabbrowser.browsers[i].__SS_restoreState)
+          this._resetTabRestoringState(tab);
+      }
+    }
+
+    
+    
+    
     delete aWindow.__SS_lastSessionWindowID;
     if (winData.__lastSessionWindowID)
       aWindow.__SS_lastSessionWindowID = winData.__lastSessionWindowID;
+
+    
+    if (overwriteTabs && newTabCount < openTabCount) {
+      Array.slice(tabbrowser.tabs, newTabCount, openTabCount)
+           .forEach(tabbrowser.removeTab, tabbrowser);
+    }
 
     if (overwriteTabs) {
       this.restoreWindowFeatures(aWindow, winData);
@@ -3766,6 +3829,7 @@ var SessionStoreInternal = {
         loadArguments: aLoadArguments,
         isRemotenessUpdate,
       });
+
     }
 
     
@@ -4011,6 +4075,27 @@ var SessionStoreInternal = {
     setTimeout(() => {
       Services.obs.notifyObservers(null, NOTIFY_CLOSED_OBJECTS_CHANGED);
     }, 0);
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _maybeUpdateBrowserRemoteness(tab) {
+    let win = tab.ownerGlobal;
+    let tabbrowser = win.gBrowser;
+    let browser = tab.linkedBrowser;
+    if (win.gMultiProcessBrowser && !browser.isRemoteBrowser) {
+      tabbrowser.updateBrowserRemoteness(browser, true);
+    }
+
+    return tab;
   },
 
   

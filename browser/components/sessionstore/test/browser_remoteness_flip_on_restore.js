@@ -95,9 +95,21 @@ const PINNED_STATE = {
 
 
 
+
+
+
+
+
+
+
+
 function* runScenarios(scenarios) {
   for (let [scenarioIndex, scenario] of scenarios.entries()) {
     info("Running scenario " + scenarioIndex);
+    
+    Assert.equal(scenario.expectedFlips.length,
+                 scenario.expectedRemoteness.length,
+                 "All expected flips and remoteness needs to be supplied");
     Assert.ok(scenario.initialSelectedTab > 0,
               "You must define an initially selected tab");
 
@@ -131,14 +143,61 @@ function* runScenarios(scenarios) {
     }
 
     
+    
+    let flipListener = {
+      seenBeforeTabs: new Set(),
+      seenAfterTabs: new Set(),
+      handleEvent(e) {
+        let index = Array.from(tabbrowser.tabs).indexOf(e.target);
+        switch (e.type) {
+          case "BeforeTabRemotenessChange":
+            info(`Saw tab at index ${index} before remoteness flip`);
+            if (this.seenBeforeTabs.has(e.target)) {
+              Assert.ok(false, "Saw tab before remoteness flip more than once");
+            }
+            this.seenBeforeTabs.add(e.target);
+            break;
+          case "TabRemotenessChange":
+            info(`Saw tab at index ${index} after remoteness flip`);
+            if (this.seenAfterTabs.has(e.target)) {
+              Assert.ok(false, "Saw tab after remoteness flip more than once");
+            }
+            this.seenAfterTabs.add(e.target);
+            break;
+        }
+      },
+    };
+
+    win.addEventListener("BeforeTabRemotenessChange", flipListener);
+    win.addEventListener("TabRemotenessChange", flipListener);
+
+    
     let state = prepareState(scenario.stateToRestore,
                              scenario.selectedTab);
 
     SessionStore.setWindowState(win, state, true);
 
-    for (let i = 0; i < scenario.expectedRemoteness.length; ++i) {
+    win.removeEventListener("BeforeTabRemotenessChange", flipListener);
+    win.removeEventListener("TabRemotenessChange", flipListener);
+
+    
+    
+    
+    for (let i = 0; i < scenario.expectedFlips.length; ++i) {
+      let expectedToFlip = scenario.expectedFlips[i];
       let expectedRemoteness = scenario.expectedRemoteness[i];
       let tab = tabbrowser.tabs[i];
+      if (expectedToFlip) {
+        Assert.ok(flipListener.seenBeforeTabs.has(tab),
+                  `We should have seen tab at index ${i} before remoteness flip`);
+        Assert.ok(flipListener.seenAfterTabs.has(tab),
+                  `We should have seen tab at index ${i} after remoteness flip`);
+      } else {
+        Assert.ok(!flipListener.seenBeforeTabs.has(tab),
+                  `We should not have seen tab at index ${i} before remoteness flip`);
+        Assert.ok(!flipListener.seenAfterTabs.has(tab),
+                  `We should not have seen tab at index ${i} after remoteness flip`);
+      }
 
       Assert.equal(tab.linkedBrowser.isRemoteBrowser, expectedRemoteness,
                    "Should have gotten the expected remoteness " +
@@ -148,6 +207,7 @@ function* runScenarios(scenarios) {
     yield BrowserTestUtils.closeWindow(win);
   }
 }
+
 
 
 
@@ -174,6 +234,11 @@ add_task(function*() {
       stateToRestore: SIMPLE_STATE,
       selectedTab: 3,
       
+      
+      
+      
+      expectedFlips: [false, false, false],
+      
       expectedRemoteness: [true, true, true],
     },
 
@@ -184,6 +249,10 @@ add_task(function*() {
       initialSelectedTab: 1,
       stateToRestore: SIMPLE_STATE,
       selectedTab: 1,
+      
+      
+      
+      expectedFlips: [false, false, false],
       
       expectedRemoteness: [true, true, true],
     },
@@ -197,6 +266,10 @@ add_task(function*() {
       stateToRestore: SIMPLE_STATE,
       selectedTab: 0,
       
+      
+      
+      expectedFlips: [false, false, false],
+      
       expectedRemoteness: [true, true, true],
     },
 
@@ -210,6 +283,12 @@ add_task(function*() {
       selectedTab: 3,
       
       
+      
+      
+      
+      expectedFlips: [false, false, false],
+      
+      
       expectedRemoteness: [true, true, true],
     },
 
@@ -220,6 +299,14 @@ add_task(function*() {
       stateToRestore: SIMPLE_STATE,
       selectedTab: 2,
       
+      
+      
+      
+      
+      
+      
+      expectedFlips: [false, true, false],
+      
       expectedRemoteness: [true, true, true],
     },
 
@@ -229,6 +316,16 @@ add_task(function*() {
       initialSelectedTab: 1,
       stateToRestore: SIMPLE_STATE,
       selectedTab: 3,
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      expectedFlips: [false, true, false],
       
       expectedRemoteness: [true, true, true],
     },
@@ -241,6 +338,18 @@ add_task(function*() {
       initialSelectedTab: 1,
       stateToRestore: PINNED_STATE,
       selectedTab: 3,
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      expectedFlips: [false, false, true],
       
       expectedRemoteness: [true, true, true],
     },
