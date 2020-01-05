@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 const {
@@ -12,6 +14,8 @@ const {
   RESIZE_VIEWPORT,
   ROTATE_VIEWPORT
 } = require("./index");
+
+const { post } = require("../utils/message");
 
 module.exports = {
 
@@ -51,6 +55,7 @@ module.exports = {
 
 
   removeDeviceAssociation(id) {
+    post(window, "remove-device-association");
     return {
       type: REMOVE_DEVICE_ASSOCIATION,
       id,

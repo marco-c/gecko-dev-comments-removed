@@ -55,6 +55,9 @@ let App = createClass({
   },
 
   onChangeDevice(id, device, deviceType) {
+    
+    
+    
     window.postMessage({
       type: "change-device",
       device,
@@ -111,9 +114,7 @@ let App = createClass({
 
   onRemoveDeviceAssociation(id) {
     
-    window.postMessage({
-      type: "remove-device-association",
-    }, "*");
+    
     this.props.dispatch(removeDeviceAssociation(id));
     this.props.dispatch(changeTouchSimulation(false));
     this.props.dispatch(changePixelRatio(id, 0));

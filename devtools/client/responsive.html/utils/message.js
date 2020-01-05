@@ -23,8 +23,29 @@ function wait(win, type) {
   return deferred.promise;
 }
 
-function post(win, type) {
-  win.postMessage({ type }, "*");
+
+
+
+
+
+
+
+
+
+
+function post(win, typeOrMessage) {
+  
+  if (!win) {
+    return;
+  }
+
+  let message = typeOrMessage;
+  if (typeof typeOrMessage == "string") {
+    message = {
+      type: typeOrMessage,
+    };
+  }
+  win.postMessage(message, "*");
 }
 
 function request(win, type) {
