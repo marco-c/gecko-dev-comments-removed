@@ -11,7 +11,10 @@ const Cc = Components.classes;
 const Ci = Components.interfaces;
 const Cu = Components.utils;
 
-Cu.import("resource://gre/modules/ContentPrefUtils.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "_methodsCallableFromChild",
+                                  "resource://gre/modules/ContentPrefUtils.jsm");
 
 let loadContext = Cc["@mozilla.org/loadcontext;1"].
                     createInstance(Ci.nsILoadContext);
@@ -25,21 +28,27 @@ function contextArg(context) {
 }
 
 var ContentPrefServiceParent = {
-  _cps2: null,
+  
+  alwaysInit() {
+    let globalMM = Cc["@mozilla.org/parentprocessmessagemanager;1"]
+                     .getService(Ci.nsIMessageListenerManager);
 
+    globalMM.addMessageListener("child-process-shutdown", this);
+  },
+
+  
+  
   init() {
     let globalMM = Cc["@mozilla.org/parentprocessmessagemanager;1"]
                      .getService(Ci.nsIMessageListenerManager);
 
-    this._cps2 = Cc["@mozilla.org/content-pref/service;1"]
-                  .getService(Ci.nsIContentPrefService2);
-
+    
     globalMM.addMessageListener("ContentPrefs:FunctionCall", this);
+    globalMM.addMessageListener("ContentPrefs:AddObserverForName", this);
+    globalMM.addMessageListener("ContentPrefs:RemoveObserverForName", this);
+    
 
-    let observerChangeHandler = this.handleObserverChange.bind(this);
-    globalMM.addMessageListener("ContentPrefs:AddObserverForName", observerChangeHandler);
-    globalMM.addMessageListener("ContentPrefs:RemoveObserverForName", observerChangeHandler);
-    globalMM.addMessageListener("child-process-shutdown", observerChangeHandler);
+    this.alwaysInit();
   },
 
   
@@ -105,7 +114,13 @@ var ContentPrefServiceParent = {
     }
   },
 
+  
   receiveMessage(msg) {
+    if (msg.name != "ContentPrefs:FunctionCall") {
+      this.handleObserverChange(msg);
+      return;
+    }
+
     let data = msg.data;
     let signature;
 
@@ -159,3 +174,7 @@ var ContentPrefServiceParent = {
     this._cps2[data.call](...args);
   }
 };
+
+XPCOMUtils.defineLazyServiceGetter(ContentPrefServiceParent, "_cps2",
+                                   "@mozilla.org/content-pref/service;1",
+                                   "nsIContentPrefService2");
