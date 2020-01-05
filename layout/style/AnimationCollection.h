@@ -72,6 +72,12 @@ public:
 
   
   
+  static AnimationCollection<AnimationType>*
+    GetAnimationCollection(const dom::Element* aElement,
+                           nsIAtom* aPseudoTagOrNull);
+
+  
+  
   
   
   static AnimationCollection<AnimationType>* GetAnimationCollection(
