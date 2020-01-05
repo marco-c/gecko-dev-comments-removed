@@ -19,6 +19,7 @@ namespace dom {
 class BlobImpl;
 class FileSystemBase;
 class FileSystemParams;
+class PBlobParent;
 
 
 
