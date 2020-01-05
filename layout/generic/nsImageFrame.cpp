@@ -1573,42 +1573,44 @@ nsDisplayImage::GetLayerState(nsDisplayListBuilder* aBuilder,
                               LayerManager* aManager,
                               const ContainerLayerParameters& aParameters)
 {
-  bool animated = false;
-  if (!nsLayoutUtils::AnimatedImageLayersEnabled() ||
-      mImage->GetType() != imgIContainer::TYPE_RASTER ||
-      NS_FAILED(mImage->GetAnimated(&animated)) ||
-      !animated) {
-    if (!aManager->IsCompositingCheap() ||
-        !nsLayoutUtils::GPUImageScalingEnabled()) {
-      return LAYER_NONE;
-    }
-  }
-
-  if (!animated) {
-    int32_t imageWidth;
-    int32_t imageHeight;
-    mImage->GetWidth(&imageWidth);
-    mImage->GetHeight(&imageHeight);
-
-    NS_ASSERTION(imageWidth != 0 && imageHeight != 0, "Invalid image size!");
-
-    const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
-    const LayoutDeviceRect destRect =
-      LayoutDeviceRect::FromAppUnits(GetDestRect(), factor);
-    const LayerRect destLayerRect = destRect * aParameters.Scale();
-
-    
-    const gfxSize scale = gfxSize(destLayerRect.width / imageWidth,
-                                  destLayerRect.height / imageHeight);
-
-    
-    if (scale.width == 1.0f && scale.height == 1.0f) {
-      return LAYER_NONE;
+  if (!nsDisplayItem::ForceActiveLayers()) {
+    bool animated = false;
+    if (!nsLayoutUtils::AnimatedImageLayersEnabled() ||
+        mImage->GetType() != imgIContainer::TYPE_RASTER ||
+        NS_FAILED(mImage->GetAnimated(&animated)) ||
+        !animated) {
+      if (!aManager->IsCompositingCheap() ||
+          !nsLayoutUtils::GPUImageScalingEnabled()) {
+        return LAYER_NONE;
+      }
     }
 
-    
-    if (destLayerRect.width * destLayerRect.height < 64 * 64) {
-      return LAYER_NONE;
+    if (!animated) {
+      int32_t imageWidth;
+      int32_t imageHeight;
+      mImage->GetWidth(&imageWidth);
+      mImage->GetHeight(&imageHeight);
+
+      NS_ASSERTION(imageWidth != 0 && imageHeight != 0, "Invalid image size!");
+
+      const int32_t factor = mFrame->PresContext()->AppUnitsPerDevPixel();
+      const LayoutDeviceRect destRect =
+        LayoutDeviceRect::FromAppUnits(GetDestRect(), factor);
+      const LayerRect destLayerRect = destRect * aParameters.Scale();
+
+      
+      const gfxSize scale = gfxSize(destLayerRect.width / imageWidth,
+                                    destLayerRect.height / imageHeight);
+
+      
+      if (scale.width == 1.0f && scale.height == 1.0f) {
+        return LAYER_NONE;
+      }
+
+      
+      if (destLayerRect.width * destLayerRect.height < 64 * 64) {
+        return LAYER_NONE;
+      }
     }
   }
 
