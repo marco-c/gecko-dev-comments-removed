@@ -168,6 +168,13 @@ public:
 
   void RecomputeDefaultComputedStyles();
 
+  
+
+
+
+  already_AddRefed<ServoComputedValues>
+    ResolveServoStyle(dom::Element* aElement, ConsumeStyleBehavior aConsume);
+
 private:
   already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
                                               nsStyleContext* aParentContext,
