@@ -102,7 +102,7 @@ add_task(async function searchSuggestionKeyboard() {
 
 
 
-function* compareCounts(clickCallback) {
+async function compareCounts(clickCallback) {
   
   
   
@@ -145,7 +145,7 @@ function* compareCounts(clickCallback) {
                         { value: engineID });
 
   gURLBar.focus();
-  yield clickCallback();
+  await clickCallback();
 
   
 

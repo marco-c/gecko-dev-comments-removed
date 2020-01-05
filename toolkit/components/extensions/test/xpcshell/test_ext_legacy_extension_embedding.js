@@ -113,7 +113,7 @@ add_task(async function test_embedded_webextension_utils() {
         "EmbeddedExtension instances has been untracked from the EmbeddedExtensionManager");
 });
 
-function* createManifestErrorTestCase(id, xpi, expectedError) {
+async function createManifestErrorTestCase(id, xpi, expectedError) {
   
   
   do_register_cleanup(() => {
@@ -128,12 +128,12 @@ function* createManifestErrorTestCase(id, xpi, expectedError) {
     id, resourceURI,
   });
 
-  yield Assert.rejects(embeddedExtension.startup(), expectedError,
+  await Assert.rejects(embeddedExtension.startup(), expectedError,
                        "embedded extension startup rejected");
 
   
   
-  yield embeddedExtension.shutdown();
+  await embeddedExtension.shutdown();
 }
 
 add_task(async function test_startup_error_empty_manifest() {

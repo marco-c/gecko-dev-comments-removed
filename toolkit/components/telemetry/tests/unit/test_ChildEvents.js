@@ -47,8 +47,8 @@ function run_child_test() {
 
 
 
-function* waitForContentEvents() {
-  yield ContentTaskUtils.waitForCondition(() => {
+async function waitForContentEvents() {
+  await ContentTaskUtils.waitForCondition(() => {
     const snapshot =
       Telemetry.snapshotBuiltinEvents(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, false);
     return Object.keys(snapshot).includes("tab");

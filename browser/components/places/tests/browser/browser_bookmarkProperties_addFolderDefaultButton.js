@@ -15,7 +15,7 @@ add_task(async function() {
   });
   let newBookmarkId = await PlacesUtils.promiseItemId(newBookmark.guid);
 
-  await withSidebarTree("bookmarks", function* (tree) {
+  await withSidebarTree("bookmarks", async function(tree) {
     
     tree.selectItems([newBookmarkId]);
     ok(tree.controller.isCommandEnabled("placesCmd_new:folder"),
@@ -24,7 +24,7 @@ add_task(async function() {
     
     
     
-    yield withBookmarksDialog(
+    await withBookmarksDialog(
       false,
       function openDialog() {
         tree.controller.doCommand("placesCmd_new:folder");

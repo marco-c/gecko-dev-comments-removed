@@ -676,13 +676,13 @@ var Bookmarks = Object.freeze({
     const folderGuids = [this.toolbarGuid, this.menuGuid, this.unfiledGuid,
                           this.mobileGuid];
     return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: eraseEverything",
-      db => db.executeTransaction(function* () {
-        yield removeFoldersContents(db, folderGuids, options);
+      db => db.executeTransaction(async function() {
+        await removeFoldersContents(db, folderGuids, options);
         const time = PlacesUtils.toPRTime(new Date());
         const syncChangeDelta =
           PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
         for (let folderGuid of folderGuids) {
-          yield db.executeCached(
+          await db.executeCached(
             `UPDATE moz_bookmarks SET lastModified = :time,
                                       syncChangeCounter = syncChangeCounter + :syncChangeDelta
              WHERE id IN (SELECT id FROM moz_bookmarks WHERE guid = :folderGuid )
@@ -1039,14 +1039,14 @@ function updateBookmark(info, item, newParent) {
     if (info.hasOwnProperty("dateAdded"))
       tuples.set("dateAdded", { value: PlacesUtils.toPRTime(info.dateAdded) });
 
-    await db.executeTransaction(function* () {
+    await db.executeTransaction(async function() {
       let isTagging = item._grandParentId == PlacesUtils.tagsFolderId;
       let syncChangeDelta =
         PlacesSyncUtils.bookmarks.determineSyncChangeDelta(info.source);
 
       if (info.hasOwnProperty("url")) {
         
-        yield maybeInsertPlace(db, info.url);
+        await maybeInsertPlace(db, info.url);
         
         tuples.set("url", { value: info.url.href
                           , fragment: "fk = (SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url)" });
@@ -1064,7 +1064,7 @@ function updateBookmark(info, item, newParent) {
           
           
           let sign = newIndex < item.index ? +1 : -1;
-          yield db.executeCached(
+          await db.executeCached(
             `UPDATE moz_bookmarks SET position = position + :sign
              WHERE parent = :newParentId
                AND position BETWEEN :lowIndex AND :highIndex
@@ -1076,21 +1076,21 @@ function updateBookmark(info, item, newParent) {
           
           
           tuples.set("parent", { value: newParent._id} );
-          yield db.executeCached(
+          await db.executeCached(
             `UPDATE moz_bookmarks SET position = position + :sign
              WHERE parent = :oldParentId
                AND position >= :oldIndex
             `, { sign: -1, oldParentId: item._parentId, oldIndex: item.index });
-          yield db.executeCached(
+          await db.executeCached(
             `UPDATE moz_bookmarks SET position = position + :sign
              WHERE parent = :newParentId
                AND position >= :newIndex
             `, { sign: +1, newParentId: newParent._id, newIndex });
 
-          yield setAncestorsLastModified(db, item.parentGuid, info.lastModified,
+          await setAncestorsLastModified(db, item.parentGuid, info.lastModified,
                                          syncChangeDelta);
         }
-        yield setAncestorsLastModified(db, newParent.guid, info.lastModified,
+        await setAncestorsLastModified(db, newParent.guid, info.lastModified,
                                        syncChangeDelta);
       }
 
@@ -1115,13 +1115,13 @@ function updateBookmark(info, item, newParent) {
       if (isTagging) {
         
         
-        yield PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
+        await PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
           db, item.url, syncChangeDelta);
         if (info.hasOwnProperty("url")) {
           
           
           
-          yield PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
+          await PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
             db, info.url, syncChangeDelta);
         }
       }
@@ -1130,10 +1130,10 @@ function updateBookmark(info, item, newParent) {
       if (isChangingTagFolder) {
         
         
-        yield addSyncChangesForBookmarksInFolder(db, item, syncChangeDelta);
+        await addSyncChangesForBookmarksInFolder(db, item, syncChangeDelta);
       }
 
-      yield db.executeCached(
+      await db.executeCached(
         `UPDATE moz_bookmarks
          SET ${Array.from(tuples.keys()).map(v => tuples.get(v).fragment || `${v} = :${v}`).join(", ")}
          WHERE guid = :guid
@@ -1145,16 +1145,16 @@ function updateBookmark(info, item, newParent) {
           
           
           const startIndex = Math.min(newIndex, item.index);
-          yield adjustSeparatorsSyncCounter(db, newParent._id, startIndex, syncChangeDelta);
+          await adjustSeparatorsSyncCounter(db, newParent._id, startIndex, syncChangeDelta);
         } else {
           
-          yield adjustSeparatorsSyncCounter(db, item._parentId, item.index, syncChangeDelta);
-          yield adjustSeparatorsSyncCounter(db, newParent._id, newIndex, syncChangeDelta);
+          await adjustSeparatorsSyncCounter(db, item._parentId, item.index, syncChangeDelta);
+          await adjustSeparatorsSyncCounter(db, newParent._id, newIndex, syncChangeDelta);
         }
         
         
         
-        yield db.executeCached(
+        await db.executeCached(
           `DELETE FROM moz_items_annos
            WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes
                                       WHERE name = :orphanAnno) AND
@@ -1197,15 +1197,15 @@ function insertBookmark(item, parent) {
 
     let isTagging = parent._parentId == PlacesUtils.tagsFolderId;
 
-    await db.executeTransaction(function* transaction() {
+    await db.executeTransaction(async function transaction() {
       if (item.type == Bookmarks.TYPE_BOOKMARK) {
         
         
-        yield maybeInsertPlace(db, item.url);
+        await maybeInsertPlace(db, item.url);
       }
 
       
-      yield db.executeCached(
+      await db.executeCached(
         `UPDATE moz_bookmarks SET position = position + 1
          WHERE parent = :parent
          AND position >= :index
@@ -1217,7 +1217,7 @@ function insertBookmark(item, parent) {
         PlacesSyncUtils.bookmarks.determineInitialSyncStatus(item.source);
 
       
-      yield db.executeCached(
+      await db.executeCached(
         `INSERT INTO moz_bookmarks (fk, type, parent, position, title,
                                     dateAdded, lastModified, guid,
                                     syncChangeCounter, syncStatus)
@@ -1231,11 +1231,11 @@ function insertBookmark(item, parent) {
              syncChangeCounter: syncChangeDelta, syncStatus });
 
       
-      yield adjustSeparatorsSyncCounter(db, parent._id, item.index + 1, syncChangeDelta);
+      await adjustSeparatorsSyncCounter(db, parent._id, item.index + 1, syncChangeDelta);
 
       if (hasExistingGuid) {
         
-        yield db.executeCached(
+        await db.executeCached(
           `DELETE FROM moz_bookmarks_deleted WHERE guid = :guid`,
           { guid: item.guid });
       }
@@ -1243,11 +1243,11 @@ function insertBookmark(item, parent) {
       if (isTagging) {
         
         
-        yield PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
+        await PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
           db, item.url, syncChangeDelta);
       }
 
-      yield setAncestorsLastModified(db, item.parentGuid, item.dateAdded,
+      await setAncestorsLastModified(db, item.parentGuid, item.dateAdded,
                                      syncChangeDelta);
     });
 
@@ -1267,8 +1267,8 @@ function insertBookmark(item, parent) {
 
 function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: insertBookmarkTree", async function(db) {
-    await db.executeTransaction(function* transaction() {
-      yield maybeInsertManyPlaces(db, urls);
+    await db.executeTransaction(async function transaction() {
+      await maybeInsertManyPlaces(db, urls);
 
       let syncChangeDelta =
         PlacesSyncUtils.bookmarks.determineSyncChangeDelta(source);
@@ -1284,7 +1284,7 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
         last_modified: PlacesUtils.toPRTime(item.lastModified), guid: item.guid,
         syncChangeCounter: syncChangeDelta, syncStatus, rootId
       }));
-      yield db.executeCached(
+      await db.executeCached(
         `INSERT INTO moz_bookmarks (fk, type, parent, position, title,
                                     dateAdded, lastModified, guid,
                                     syncChangeCounter, syncStatus)
@@ -1294,7 +1294,7 @@ function insertBookmarkTree(items, source, parent, urls, lastAddedForParent) {
          :title, :date_added, :last_modified, :guid,
          :syncChangeCounter, :syncStatus)`, items);
 
-      yield setAncestorsLastModified(db, parent.guid, lastAddedForParent,
+      await setAncestorsLastModified(db, parent.guid, lastAddedForParent,
                                      syncChangeDelta);
     });
 
@@ -1487,13 +1487,13 @@ function removeBookmark(item, options) {
 
     let isUntagging = item._grandParentId == PlacesUtils.tagsFolderId;
 
-    await db.executeTransaction(function* transaction() {
+    await db.executeTransaction(async function transaction() {
       
       if (item.type == Bookmarks.TYPE_FOLDER) {
         if (options.preventRemovalOfNonEmptyFolders && item._childCount > 0) {
           throw new Error("Cannot remove a non-empty folder.");
         }
-        yield removeFoldersContents(db, [item.guid], options);
+        await removeFoldersContents(db, [item.guid], options);
       }
 
       
@@ -1501,15 +1501,15 @@ function removeBookmark(item, options) {
         
         
         
-        yield removeAnnotationsForItem(db, item._id);
+        await removeAnnotationsForItem(db, item._id);
       }
 
       
-      yield db.executeCached(
+      await db.executeCached(
         `DELETE FROM moz_bookmarks WHERE guid = :guid`, { guid: item.guid });
 
       
-      yield db.executeCached(
+      await db.executeCached(
         `UPDATE moz_bookmarks SET position = position - 1 WHERE
          parent = :parentId AND position > :index
         `, { parentId: item._parentId, index: item.index });
@@ -1518,19 +1518,19 @@ function removeBookmark(item, options) {
         PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
 
       
-      yield adjustSeparatorsSyncCounter(db, item._parentId, item.index, syncChangeDelta);
+      await adjustSeparatorsSyncCounter(db, item._parentId, item.index, syncChangeDelta);
 
       if (isUntagging) {
         
         
-        yield PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
+        await PlacesSyncUtils.bookmarks.addSyncChangesForBookmarksWithURL(
           db, item.url, syncChangeDelta);
       }
 
       
-      yield insertTombstone(db, item, syncChangeDelta);
+      await insertTombstone(db, item, syncChangeDelta);
 
-      yield setAncestorsLastModified(db, item.parentGuid, new Date(),
+      await setAncestorsLastModified(db, item.parentGuid, new Date(),
                                      syncChangeDelta);
     });
 
@@ -1548,9 +1548,9 @@ function removeBookmark(item, options) {
 
 function reorderChildren(parent, orderedChildrenGuids, options) {
   return PlacesUtils.withConnectionWrapper("Bookmarks.jsm: updateBookmark",
-    db => db.executeTransaction(function* () {
+    db => db.executeTransaction(async function() {
       
-      let children = yield fetchBookmarksByParent({ parentGuid: parent.guid });
+      let children = await fetchBookmarksByParent({ parentGuid: parent.guid });
       if (!children.length) {
         return [];
       }
@@ -1615,7 +1615,7 @@ function reorderChildren(parent, orderedChildrenGuids, options) {
         
         let valuesTable = children.map((child, i) => `("${child.guid}", ${i})`)
                                   .join();
-        yield db.execute(
+        await db.execute(
           `WITH sorting(g, p) AS (
              VALUES ${valuesTable}
            )
@@ -1634,7 +1634,7 @@ function reorderChildren(parent, orderedChildrenGuids, options) {
           PlacesSyncUtils.bookmarks.determineSyncChangeDelta(options.source);
         if (syncChangeDelta) {
           
-          yield db.executeCached(`
+          await db.executeCached(`
             UPDATE moz_bookmarks SET
               syncChangeCounter = syncChangeCounter + :syncChangeDelta
             WHERE id = :parentId`,
@@ -1644,7 +1644,7 @@ function reorderChildren(parent, orderedChildrenGuids, options) {
         
         
         
-        yield db.executeCached(
+        await db.executeCached(
           `CREATE TEMP TRIGGER moz_bookmarks_reorder_trigger
              AFTER UPDATE OF position ON moz_bookmarks
              WHEN NEW.position = -1
@@ -1659,10 +1659,10 @@ function reorderChildren(parent, orderedChildrenGuids, options) {
            END
           `);
 
-        yield db.executeCached(
+        await db.executeCached(
           `UPDATE moz_bookmarks SET position = -1 WHERE position < 0`);
 
-        yield db.executeCached(`DROP TRIGGER moz_bookmarks_reorder_trigger`);
+        await db.executeCached(`DROP TRIGGER moz_bookmarks_reorder_trigger`);
       }
 
       
@@ -1675,7 +1675,7 @@ function reorderChildren(parent, orderedChildrenGuids, options) {
           possibleOrphanIds.push(child._id);
         }
       }
-      yield db.executeCached(
+      await db.executeCached(
         `DELETE FROM moz_items_annos
          WHERE anno_attribute_id = (SELECT id FROM moz_anno_attributes
                                     WHERE name = :orphanAnno) AND

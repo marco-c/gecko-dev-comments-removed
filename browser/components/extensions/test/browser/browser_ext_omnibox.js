@@ -81,8 +81,8 @@ add_task(async function() {
     },
   });
 
-  function* expectEvent(event, expected = {}) {
-    let actual = yield extension.awaitMessage(event);
+  async function expectEvent(event, expected = {}) {
+    let actual = await extension.awaitMessage(event);
     if (expected.text) {
       is(actual.text, expected.text,
         `Expected "${event}" to have fired with text: "${expected.text}".`);
@@ -108,7 +108,7 @@ add_task(async function() {
     return "t";
   }
 
-  function* testInputEvents() {
+  async function testInputEvents() {
     gURLBar.focus();
 
     
@@ -116,18 +116,18 @@ add_task(async function() {
       EventUtils.synthesizeKey(letter, {});
     }
     EventUtils.synthesizeKey(" ", {});
-    yield expectEvent("on-input-started-fired");
+    await expectEvent("on-input-started-fired");
 
     
     EventUtils.synthesizeKey("VK_BACK_SPACE", {});
-    yield expectEvent("on-input-cancelled-fired");
+    await expectEvent("on-input-cancelled-fired");
 
     EventUtils.synthesizeKey(" ", {});
-    yield expectEvent("on-input-started-fired");
+    await expectEvent("on-input-started-fired");
 
     
     EventUtils.synthesizeKey("VK_RETURN", {});
-    yield expectEvent("on-input-entered-fired");
+    await expectEvent("on-input-entered-fired");
 
     gURLBar.focus();
 
@@ -136,52 +136,52 @@ add_task(async function() {
       EventUtils.synthesizeKey(letter, {});
     }
     EventUtils.synthesizeKey(" ", {});
-    yield expectEvent("on-input-started-fired");
+    await expectEvent("on-input-started-fired");
 
     
     EventUtils.synthesizeKey("b", {});
-    yield expectEvent("on-input-changed-fired", {text: "b"});
+    await expectEvent("on-input-changed-fired", {text: "b"});
 
     EventUtils.synthesizeKey("c", {});
-    yield expectEvent("on-input-changed-fired", {text: "bc"});
+    await expectEvent("on-input-changed-fired", {text: "bc"});
 
     EventUtils.synthesizeKey("VK_BACK_SPACE", {});
-    yield expectEvent("on-input-changed-fired", {text: "b"});
+    await expectEvent("on-input-changed-fired", {text: "b"});
 
     
     
     EventUtils.synthesizeKey("VK_BACK_SPACE", {});
-    yield expectEvent("on-input-changed-fired", {text: ""});
+    await expectEvent("on-input-changed-fired", {text: ""});
 
     
     EventUtils.synthesizeKey("VK_BACK_SPACE", {});
-    yield expectEvent("on-input-cancelled-fired");
+    await expectEvent("on-input-cancelled-fired");
 
     
     
     EventUtils.synthesizeKey(" ", {});
-    yield expectEvent("on-input-started-fired");
+    await expectEvent("on-input-started-fired");
 
     
     EventUtils.synthesizeKey(" ", {});
-    yield expectEvent("on-input-changed-fired", {text: " "});
+    await expectEvent("on-input-changed-fired", {text: " "});
 
     
     gURLBar.blur();
-    yield expectEvent("on-input-cancelled-fired");
+    await expectEvent("on-input-cancelled-fired");
   }
 
-  function* testHeuristicResult(expectedText, setDefaultSuggestion) {
+  async function testHeuristicResult(expectedText, setDefaultSuggestion) {
     if (setDefaultSuggestion) {
       extension.sendMessage("set-default-suggestion", {
         suggestion: {
           description: expectedText,
         },
       });
-      yield extension.awaitMessage("default-suggestion-set");
+      await extension.awaitMessage("default-suggestion-set");
     }
 
-    let text = yield startInputSession();
+    let text = await startInputSession();
 
     let item = gURLBar.popup.richlistbox.children[0];
 
@@ -193,14 +193,14 @@ add_task(async function() {
 
     EventUtils.synthesizeMouseAtCenter(item, {});
 
-    yield expectEvent("on-input-entered-fired", {
+    await expectEvent("on-input-entered-fired", {
       text,
       disposition: "currentTab",
     });
   }
 
-  function* testDisposition(suggestionIndex, expectedDisposition, expectedText) {
-    yield startInputSession();
+  async function testDisposition(suggestionIndex, expectedDisposition, expectedText) {
+    await startInputSession();
 
     
     for (let i = 0; i < suggestionIndex; i++) {
@@ -216,13 +216,13 @@ add_task(async function() {
       EventUtils.synthesizeMouseAtCenter(item, {shiftKey: true, accelKey: true});
     }
 
-    yield expectEvent("on-input-entered-fired", {
+    await expectEvent("on-input-entered-fired", {
       text: expectedText,
       disposition: expectedDisposition,
     });
   }
 
-  function* testSuggestions(info) {
+  async function testSuggestions(info) {
     extension.sendMessage("set-synchronous", {synchronous: false});
 
     function expectSuggestion({content, description}, index) {
@@ -236,15 +236,15 @@ add_task(async function() {
         `Expected suggestion to have displayurl: "${keyword} ${content}".`);
     }
 
-    let text = yield startInputSession();
+    let text = await startInputSession();
 
     extension.sendMessage(info.test);
-    yield extension.awaitMessage("test-ready");
+    await extension.awaitMessage("test-ready");
 
     info.suggestions.forEach(expectSuggestion);
 
     EventUtils.synthesizeMouseAtCenter(gURLBar.popup.richlistbox.children[0], {});
-    yield expectEvent("on-input-entered-fired", {
+    await expectEvent("on-input-entered-fired", {
       text,
       disposition: "currentTab",
     });

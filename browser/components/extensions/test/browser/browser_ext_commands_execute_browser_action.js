@@ -2,7 +2,7 @@
 
 "use strict";
 
-function* testExecuteBrowserActionWithOptions(options = {}) {
+async function testExecuteBrowserActionWithOptions(options = {}) {
   
   EventUtils.synthesizeMouseAtCenter(gURLBar, {type: "mouseover"}, window);
 
@@ -74,9 +74,9 @@ function* testExecuteBrowserActionWithOptions(options = {}) {
     EventUtils.synthesizeKey("j", {altKey: true, shiftKey: true});
   });
 
-  yield extension.startup();
+  await extension.startup();
 
-  yield SimpleTest.promiseFocus(window);
+  await SimpleTest.promiseFocus(window);
 
   if (options.inArea) {
     let widget = getBrowserActionWidget(extension);
@@ -86,16 +86,16 @@ function* testExecuteBrowserActionWithOptions(options = {}) {
   extension.sendMessage("withPopup", options.withPopup);
 
   if (options.withPopup) {
-    yield extension.awaitFinish("execute-browser-action-popup-opened");
+    await extension.awaitFinish("execute-browser-action-popup-opened");
 
     if (!getBrowserActionPopup(extension)) {
-      yield awaitExtensionPanel(extension);
+      await awaitExtensionPanel(extension);
     }
-    yield closeBrowserAction(extension);
+    await closeBrowserAction(extension);
   } else {
-    yield extension.awaitFinish("execute-browser-action-on-clicked-fired");
+    await extension.awaitFinish("execute-browser-action-on-clicked-fired");
   }
-  yield extension.unload();
+  await extension.unload();
 }
 
 add_task(async function test_execute_browser_action_with_popup() {

@@ -75,7 +75,7 @@ var tests = [
   
   
   { id: "Test#4",
-    *run() {
+    async run() {
       let notifyObj1 = new BasicNotification(this.id);
       notifyObj1.id += "_1";
       notifyObj1.anchorID = "default-notification-icon";
@@ -88,7 +88,7 @@ var tests = [
       });
       let opened = waitForNotificationPanel();
       let notification1 = showNotification(notifyObj1);
-      yield opened;
+      await opened;
 
       let notifyObj2 = new BasicNotification(this.id);
       notifyObj2.id += "_2";
@@ -98,7 +98,7 @@ var tests = [
       });
       opened = waitForNotificationPanel();
       let notification2 = showNotification(notifyObj2);
-      let popup = yield opened;
+      let popup = await opened;
 
       
       checkPopup(popup, notifyObj2);
@@ -109,7 +109,7 @@ var tests = [
       is(document.activeElement, anchor);
       opened = waitForNotificationPanel();
       EventUtils.synthesizeKey(" ", {});
-      popup = yield opened;
+      popup = await opened;
       checkPopup(popup, notifyObj1);
 
       is(document.activeElement, popup.childNodes[0].checkbox);
@@ -120,7 +120,7 @@ var tests = [
       is(document.activeElement, anchor);
       opened = waitForNotificationPanel();
       EventUtils.synthesizeKey(" ", {});
-      popup = yield opened;
+      popup = await opened;
       checkPopup(popup, notifyObj2);
 
       is(document.activeElement, popup.childNodes[0].closebutton);
@@ -151,7 +151,7 @@ var tests = [
       is(Services.focus.focusedElement, popup.childNodes[0].closebutton);
       dismissNotification(popup);
     },
-    *onHidden() {
+    async onHidden() {
       
       gURLBar.focus();
 
@@ -162,7 +162,7 @@ var tests = [
 
       let opened = waitForNotificationPanel();
       let notification = showNotification(notifyObj);
-      let popup = yield opened;
+      let popup = await opened;
       checkPopup(popup, notifyObj);
 
       

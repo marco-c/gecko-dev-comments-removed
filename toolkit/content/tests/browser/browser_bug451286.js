@@ -134,19 +134,19 @@ function findAgainAndWait() {
   });
 }
 
-function* openFindBarAndWait() {
+async function openFindBarAndWait() {
   let awaitTransitionEnd = BrowserTestUtils.waitForEvent(gFindBar, "transitionend");
   gFindBar.open();
-  yield awaitTransitionEnd;
+  await awaitTransitionEnd;
 }
 
 
 
 
-function* closeFindBarAndWait() {
+async function closeFindBarAndWait() {
   let awaitTransitionEnd = BrowserTestUtils.waitForEvent(gFindBar, "transitionend", false, event => {
     return event.propertyName == "visibility";
   });
   gFindBar.close();
-  yield awaitTransitionEnd;
+  await awaitTransitionEnd;
 }

@@ -21,9 +21,9 @@ autocompleteObject.populatePreloadedSiteStorage([
   [gooogleURI.spec, "Gooogle"],
 ]);
 
-function *assert_feature_works(condition) {
+async function assert_feature_works(condition) {
   do_print("List Results do appear " + condition);
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "ooo",
     matches: [
       { uri: yahoooURI, title: "Yahooo",  style: ["preloaded-top-site"] },
@@ -32,16 +32,16 @@ function *assert_feature_works(condition) {
   });
 
   do_print("Autofill does appear " + condition);
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "gooo",
     autofilled: "gooogle.com/", 
     completed: "https://gooogle.com/",
   });
 }
 
-function *assert_feature_does_not_appear(condition) {
+async function assert_feature_does_not_appear(condition) {
   do_print("List Results don't appear " + condition);
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "ooo",
     matches: [],
   });
@@ -52,7 +52,7 @@ function *assert_feature_does_not_appear(condition) {
   
   
   
-  yield check_autocomplete({
+  await check_autocomplete({
     search: "gooo",
     autofilled: "gooo",
     completed: "gooo",

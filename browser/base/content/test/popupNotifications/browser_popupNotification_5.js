@@ -341,8 +341,8 @@ var tests = [
   
   
   { id: "Test#11",
-    *run() {
-      yield SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
+    async run() {
+      await SpecialPowers.pushPrefEnv({"set": [["accessibility.tabfocus", 7]]});
 
       function clickAnchor(notifyObj) {
         let anchor = document.getElementById(notifyObj.anchorID);
@@ -357,7 +357,7 @@ var tests = [
       notifyObj1.options.persistent = true;
       let shown = waitForNotificationPanel();
       let notification1 = showNotification(notifyObj1);
-      yield shown;
+      await shown;
       checkPopup(popup, notifyObj1);
       ok(!notifyObj1.dismissalCallbackTriggered,
          "Should not have dismissed the notification");
@@ -387,7 +387,7 @@ var tests = [
       
       shown = waitForNotificationPanel();
       clickAnchor(notifyObj2);
-      yield shown;
+      await shown;
       checkPopup(popup, notifyObj2);
       ok(notifyObj1.dismissalCallbackTriggered,
          "Should have dismissed the first notification");
@@ -395,7 +395,7 @@ var tests = [
       
       shown = waitForNotificationPanel();
       clickAnchor(notifyObj1);
-      yield shown;
+      await shown;
       checkPopup(popup, notifyObj1);
       ok(notifyObj2.dismissalCallbackTriggered,
          "Should have dismissed the second notification");

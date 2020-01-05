@@ -3,8 +3,8 @@
 
 
 
-registerCleanupFunction(function*() {
-  yield task_resetState();
+registerCleanupFunction(async function() {
+  await task_resetState();
 });
 
 

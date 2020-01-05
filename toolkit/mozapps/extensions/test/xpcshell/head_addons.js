@@ -1304,13 +1304,13 @@ function writeProxyFileToDir(aDir, aAddon, aId) {
   return file
 }
 
-function* serveSystemUpdate(xml, perform_update, testserver) {
+async function serveSystemUpdate(xml, perform_update, testserver) {
   testserver.registerPathHandler("/data/update.xml", (request, response) => {
     response.write(xml);
   });
 
   try {
-    yield perform_update();
+    await perform_update();
   } finally {
     testserver.registerPathHandler("/data/update.xml", null);
   }
@@ -1318,21 +1318,21 @@ function* serveSystemUpdate(xml, perform_update, testserver) {
 
 
 
-function* installSystemAddons(xml, testserver) {
+async function installSystemAddons(xml, testserver) {
   do_print("Triggering system add-on update check.");
 
-  yield serveSystemUpdate(xml, function*() {
+  await serveSystemUpdate(xml, async function() {
     let { XPIProvider } = Components.utils.import("resource://gre/modules/addons/XPIProvider.jsm", {});
-    yield XPIProvider.updateSystemAddons();
+    await XPIProvider.updateSystemAddons();
   }, testserver);
 }
 
 
 
-function* updateAllSystemAddons(xml, testserver) {
+async function updateAllSystemAddons(xml, testserver) {
   do_print("Triggering full add-on update check.");
 
-  yield serveSystemUpdate(xml, function() {
+  await serveSystemUpdate(xml, function() {
     return new Promise(resolve => {
       Services.obs.addObserver(function() {
         Services.obs.removeObserver(arguments.callee, "addons-background-update-complete");

@@ -121,8 +121,8 @@ function checkContentScalars(processData) {
 
 
 
-function* waitForContentScalars() {
-  yield ContentTaskUtils.waitForCondition(() => {
+async function waitForContentScalars() {
+  await ContentTaskUtils.waitForCondition(() => {
     const scalars =
       Telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
     return Object.keys(scalars).includes("tab");

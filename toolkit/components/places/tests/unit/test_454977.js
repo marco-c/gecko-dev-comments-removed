@@ -8,7 +8,7 @@
 var visit_count = 0;
 
 
-function* task_add_visit(aURI, aVisitType) {
+async function task_add_visit(aURI, aVisitType) {
   
   let deferUpdatePlaces = new Promise((resolve, reject) => {
     PlacesUtils.asyncHistory.updatePlaces({
@@ -27,7 +27,7 @@ function* task_add_visit(aURI, aVisitType) {
     });
   });
 
-  let visitId = yield deferUpdatePlaces;
+  let visitId = await deferUpdatePlaces;
 
   
   if (aVisitType != 0 &&

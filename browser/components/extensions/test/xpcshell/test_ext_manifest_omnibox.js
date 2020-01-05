@@ -2,8 +2,8 @@
 
 "use strict";
 
-function* testKeyword(params) {
-  let normalized = yield ExtensionTestUtils.normalizeManifest({
+async function testKeyword(params) {
+  let normalized = await ExtensionTestUtils.normalizeManifest({
     "omnibox": {
       "keyword": params.keyword,
     },

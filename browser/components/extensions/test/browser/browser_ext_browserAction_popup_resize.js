@@ -2,10 +2,10 @@
 
 "use strict";
 
-function* openPanel(extension, win = window, awaitLoad = false) {
+async function openPanel(extension, win = window, awaitLoad = false) {
   clickBrowserAction(extension, win);
 
-  return yield awaitExtensionPanel(extension, win, awaitLoad);
+  return await awaitExtensionPanel(extension, win, awaitLoad);
 }
 
 add_task(async function testBrowserActionPopupResize() {

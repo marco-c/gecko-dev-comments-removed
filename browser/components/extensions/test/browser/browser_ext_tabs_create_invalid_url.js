@@ -2,7 +2,7 @@
 
 "use strict";
 
-function* testTabsCreateInvalidURL(tabsCreateURL) {
+async function testTabsCreateInvalidURL(tabsCreateURL) {
   let extension = ExtensionTestUtils.loadExtension({
     manifest: {
       "permissions": ["tabs"],
@@ -26,16 +26,16 @@ function* testTabsCreateInvalidURL(tabsCreateURL) {
     },
   });
 
-  yield extension.startup();
+  await extension.startup();
 
-  yield extension.awaitMessage("ready");
+  await extension.awaitMessage("ready");
 
   info(`test tab.create on invalid URL "${tabsCreateURL}"`);
 
   extension.sendMessage("start", tabsCreateURL);
-  yield extension.awaitMessage("done");
+  await extension.awaitMessage("done");
 
-  yield extension.unload();
+  await extension.unload();
 }
 
 add_task(async function() {

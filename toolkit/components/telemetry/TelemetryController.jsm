@@ -707,19 +707,19 @@ var Impl = {
     
     
     this._delayedInitTaskDeferred = Promise.defer();
-    this._delayedInitTask = new DeferredTask(function* () {
+    this._delayedInitTask = new DeferredTask(async function() {
       try {
         
         this._initialized = true;
         TelemetryEnvironment.delayedInit();
 
         
-        this._clientID = yield ClientID.getClientID();
+        this._clientID = await ClientID.getClientID();
 
-        yield TelemetrySend.setup(this._testMode);
+        await TelemetrySend.setup(this._testMode);
 
         
-        yield TelemetrySession.delayedInit();
+        await TelemetrySession.delayedInit();
 
         if (Preferences.get(PREF_NEWPROFILE_PING_ENABLED, false) &&
             !TelemetrySession.newProfilePingSent) {
@@ -987,9 +987,9 @@ var Impl = {
     const sendDelay =
       Preferences.get(PREF_NEWPROFILE_PING_DELAY, NEWPROFILE_PING_DEFAULT_DELAY);
 
-    this._delayedNewPingTask = new DeferredTask(function* () {
+    this._delayedNewPingTask = new DeferredTask(async function() {
       try {
-        yield this.sendNewProfilePing();
+        await this.sendNewProfilePing();
       } finally {
         this._delayedNewPingTask = null;
       }

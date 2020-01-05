@@ -2,8 +2,8 @@
 
 "use strict";
 
-function* test_theme_property(property) {
-  let normalized = yield ExtensionTestUtils.normalizeManifest({
+async function test_theme_property(property) {
+  let normalized = await ExtensionTestUtils.normalizeManifest({
     "theme": {
       [property]: {
         "unrecognized_key": "unrecognized_value",

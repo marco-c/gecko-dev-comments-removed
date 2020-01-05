@@ -95,27 +95,27 @@ add_task(async function() {
   await extension.startup();
   await extension.awaitMessage("tab.html ready");
 
-  function* clickContextMenu() {
+  async function clickContextMenu() {
     
     
-    let extensionMenuRoot = yield openContextMenu();
+    let extensionMenuRoot = await openContextMenu();
     let items = extensionMenuRoot.getElementsByAttribute("label", "tifier");
     is(items.length, 1, "Expected one context menu item");
-    yield closeExtensionContextMenu(items[0]);
+    await closeExtensionContextMenu(items[0]);
     
-    info(`onClicked from: ${yield extension.awaitMessage("onClicked-fired")}`);
-    info(`onClicked from: ${yield extension.awaitMessage("onClicked-fired")}`);
+    info(`onClicked from: ${await extension.awaitMessage("onClicked-fired")}`);
+    info(`onClicked from: ${await extension.awaitMessage("onClicked-fired")}`);
   }
 
-  function* getCounts(page) {
+  async function getCounts(page) {
     extension.sendMessage(page, "get-click-counts");
-    return yield extension.awaitMessage("click-counts");
+    return await extension.awaitMessage("click-counts");
   }
-  function* resetCounts() {
+  async function resetCounts() {
     extension.sendMessage("tab", "clear-click-counts");
     extension.sendMessage("background", "clear-click-counts");
-    yield extension.awaitMessage("next");
-    yield extension.awaitMessage("next");
+    await extension.awaitMessage("next");
+    await extension.awaitMessage("next");
   }
 
   
@@ -215,10 +215,10 @@ add_task(async function test_onclick_modifiers() {
   await extension.startup();
   await extension.awaitMessage("ready");
 
-  function* click(modifiers = {}) {
-    const menu = yield openContextMenu();
+  async function click(modifiers = {}) {
+    const menu = await openContextMenu();
     const items = menu.getElementsByAttribute("label", "modify");
-    yield closeExtensionContextMenu(items[0], modifiers);
+    await closeExtensionContextMenu(items[0], modifiers);
     return extension.awaitMessage("click");
   }
 

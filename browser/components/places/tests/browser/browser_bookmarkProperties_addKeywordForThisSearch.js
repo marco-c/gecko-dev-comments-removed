@@ -6,11 +6,11 @@ add_task(async function() {
   await BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_URL,
-  }, function* (browser) {
+  }, async function(browser) {
     
-    yield openContextMenuForContentSelector(browser, '#form1 > input[name="search"]');
+    await openContextMenuForContentSelector(browser, '#form1 > input[name="search"]');
 
-    yield withBookmarksDialog(true, AddKeywordForSearchField, async function(dialogWin) {
+    await withBookmarksDialog(true, AddKeywordForSearchField, async function(dialogWin) {
       let acceptBtn = dialogWin.document.documentElement.getButton("accept");
       ok(acceptBtn.disabled, "Accept button is disabled");
 
@@ -27,8 +27,8 @@ add_task(async function() {
       
       info("Check the keyword entry has been created");
       let entry;
-      await waitForCondition(function* () {
-        entry = yield PlacesUtils.keywords.fetch("kw");
+      await waitForCondition(async function() {
+        entry = await PlacesUtils.keywords.fetch("kw");
         return !!entry;
       }, "Unable to find the expected keyword");
       is(entry.keyword, "kw", "keyword is correct");
@@ -53,18 +53,18 @@ add_task(async function reopen_same_field() {
     keyword: "kw",
     postData: "accenti%3D%E0%E8%EC%F2%F9&search%3D%25s"
   });
-  registerCleanupFunction(function* () {
-    yield PlacesUtils.keywords.remove("kw");
+  registerCleanupFunction(async function() {
+    await PlacesUtils.keywords.remove("kw");
   });
   
   await BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_URL,
-  }, function* (browser) {
+  }, async function(browser) {
     
-    yield openContextMenuForContentSelector(browser, '#form1 > input[name="search"]');
+    await openContextMenuForContentSelector(browser, '#form1 > input[name="search"]');
 
-    yield withBookmarksDialog(true, AddKeywordForSearchField, function(dialogWin) {
+    await withBookmarksDialog(true, AddKeywordForSearchField, function(dialogWin) {
       let acceptBtn = dialogWin.document.documentElement.getButton("accept");
       ok(acceptBtn.disabled, "Accept button is disabled");
 
@@ -80,19 +80,19 @@ add_task(async function open_other_field() {
     keyword: "kw2",
     postData: "search%3D%25s"
   });
-  registerCleanupFunction(function* () {
-    yield PlacesUtils.keywords.remove("kw2");
+  registerCleanupFunction(async function() {
+    await PlacesUtils.keywords.remove("kw2");
   });
   
   
   await BrowserTestUtils.withNewTab({
     gBrowser,
     url: TEST_URL,
-  }, function* (browser) {
+  }, async function(browser) {
     
-    yield openContextMenuForContentSelector(browser, '#form2 > input[name="search"]');
+    await openContextMenuForContentSelector(browser, '#form2 > input[name="search"]');
 
-    yield withBookmarksDialog(true, AddKeywordForSearchField, function(dialogWin) {
+    await withBookmarksDialog(true, AddKeywordForSearchField, function(dialogWin) {
       let acceptBtn = dialogWin.document.documentElement.getButton("accept");
       ok(acceptBtn.disabled, "Accept button is disabled");
 

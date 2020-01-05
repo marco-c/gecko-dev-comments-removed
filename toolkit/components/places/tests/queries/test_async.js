@@ -229,7 +229,7 @@ Test.prototype = {
 
 
 
-  *setup() {
+  async setup() {
     
     this.data = DataHelper.makeDataArray([
       { type: "bookmark" },
@@ -237,7 +237,7 @@ Test.prototype = {
       { type: "folder" },
       { type: "bookmark", uri: "place:terms=foo" }
     ]);
-    yield task_populateDB(this.data);
+    await task_populateDB(this.data);
 
     
     this.query = PlacesUtils.history.getNewQuery();

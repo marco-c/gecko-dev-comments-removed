@@ -2,7 +2,7 @@
 
 "use strict";
 
-function* loadExtension(options) {
+async function loadExtension(options) {
   let extension = ExtensionTestUtils.loadExtension({
     useAddonManager: "temporary",
 
@@ -32,7 +32,7 @@ function* loadExtension(options) {
     background: options.background,
   });
 
-  yield extension.startup();
+  await extension.startup();
 
   return extension;
 }

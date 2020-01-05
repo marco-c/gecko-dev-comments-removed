@@ -1848,7 +1848,7 @@ this.PlacesUtils = {
 
 
   async promiseBookmarksTree(aItemGuid = "", aOptions = {}) {
-    let createItemInfoObject = function* (aRow, aIncludeParentGuid) {
+    let createItemInfoObject = async function(aRow, aIncludeParentGuid) {
       let item = {};
       let copyProps = (...props) => {
         for (let prop of props) {
@@ -1887,7 +1887,7 @@ this.PlacesUtils = {
           
           item.uri = NetUtil.newURI(aRow.getResultByName("url")).spec;
           
-          let entry = yield PlacesUtils.keywords.fetch({ url: item.uri });
+          let entry = await PlacesUtils.keywords.fetch({ url: item.uri });
           if (entry) {
             item.keyword = entry.keyword;
             item.postData = entry.postData;

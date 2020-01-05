@@ -1,9 +1,9 @@
 
 
 
-registerCleanupFunction(function*() {
+registerCleanupFunction(async function() {
   
-  yield task_resetState();
+  await task_resetState();
 });
 
 

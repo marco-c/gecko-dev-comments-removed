@@ -8,14 +8,14 @@ add_task(async function prepare() {
   let engine = await promiseNewSearchEngine(TEST_ENGINE_BASENAME);
   let oldCurrentEngine = Services.search.currentEngine;
   Services.search.currentEngine = engine;
-  registerCleanupFunction(function* () {
+  registerCleanupFunction(async function() {
     Services.search.currentEngine = oldCurrentEngine;
     Services.prefs.clearUserPref(SUGGEST_ALL_PREF);
     Services.prefs.clearUserPref(SUGGEST_URLBAR_PREF);
 
     
     
-    yield setUserMadeChoicePref(true);
+    await setUserMadeChoicePref(true);
 
     
     gURLBar.blur();

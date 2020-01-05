@@ -441,7 +441,7 @@ function checkDeviceSelectors(aAudio, aVideo, aScreen) {
 
 
 
-function* checkSharingUI(aExpected, aWin = window, aExpectedGlobal = null) {
+async function checkSharingUI(aExpected, aWin = window, aExpectedGlobal = null) {
   let doc = aWin.document;
   
   let identityBox = doc.getElementById("identity-box");
@@ -485,17 +485,17 @@ function* checkSharingUI(aExpected, aWin = window, aExpectedGlobal = null) {
   aWin.gIdentityHandler._identityPopup.hidden = true;
 
   
-  yield* assertWebRTCIndicatorStatus(aExpectedGlobal || aExpected);
+  await assertWebRTCIndicatorStatus(aExpectedGlobal || aExpected);
 }
 
-function* checkNotSharing() {
-  Assert.deepEqual((yield getMediaCaptureState()), {},
+async function checkNotSharing() {
+  Assert.deepEqual((await getMediaCaptureState()), {},
                    "expected nothing to be shared");
 
   ok(!document.getElementById("identity-box").hasAttribute("sharing"),
      "no sharing indicator on the control center icon");
 
-  yield* assertWebRTCIndicatorStatus(null);
+  await assertWebRTCIndicatorStatus(null);
 }
 
 function promiseReloadFrame(aFrameId) {

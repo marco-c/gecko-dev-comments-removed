@@ -15,7 +15,7 @@ add_task(async function() {
   await BrowserTestUtils.withNewTab({gBrowser, url}, testPromiseMessageAPI)
 });
 
-function* testPromiseMessageAPI(aBrowser) {
+async function testPromiseMessageAPI(aBrowser) {
   
   const msgKey = "DOM:WebManifest:hasManifestLink";
   const mm = aBrowser.messageManager;
@@ -24,7 +24,7 @@ function* testPromiseMessageAPI(aBrowser) {
   const data = {id, foo};
 
   
-  yield PromiseMessage.send(mm, msgKey, data);
+  await PromiseMessage.send(mm, msgKey, data);
 
   
   const props = Object.getOwnPropertyNames(data);
