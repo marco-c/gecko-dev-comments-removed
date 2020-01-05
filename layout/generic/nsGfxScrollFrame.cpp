@@ -1766,7 +1766,7 @@ public:
   bool SetRefreshObserver(ScrollFrameHelper *aCallee) {
     NS_ASSERTION(aCallee && !mCallee, "AsyncSmoothMSDScroll::SetRefreshObserver - Invalid usage.");
 
-    if (!RefreshDriver(aCallee)->AddRefreshObserver(this, FlushType::Style)) {
+    if (!RefreshDriver(aCallee)->AddRefreshObserver(this, Flush_Style)) {
       return false;
     }
 
@@ -1793,7 +1793,7 @@ private:
 
   void RemoveObserver() {
     if (mCallee) {
-      RefreshDriver(mCallee)->RemoveRefreshObserver(this, FlushType::Style);
+      RefreshDriver(mCallee)->RemoveRefreshObserver(this, Flush_Style);
     }
   }
 
@@ -1860,7 +1860,7 @@ public:
   bool SetRefreshObserver(ScrollFrameHelper *aCallee) {
     NS_ASSERTION(aCallee && !mCallee, "AsyncScroll::SetRefreshObserver - Invalid usage.");
 
-    if (!RefreshDriver(aCallee)->AddRefreshObserver(this, FlushType::Style)) {
+    if (!RefreshDriver(aCallee)->AddRefreshObserver(this, Flush_Style)) {
       return false;
     }
 
@@ -1889,7 +1889,7 @@ private:
 
   void RemoveObserver() {
     if (mCallee) {
-      RefreshDriver(mCallee)->RemoveRefreshObserver(this, FlushType::Style);
+      RefreshDriver(mCallee)->RemoveRefreshObserver(this, Flush_Style);
       APZCCallbackHelper::SuppressDisplayport(false, mCallee->mOuter->PresContext()->PresShell());
     }
   }
@@ -2935,9 +2935,6 @@ ScrollFrameHelper::ScrollToImpl(nsPoint aPt, const nsRect& aRange, nsIAtom* aOri
       return;
     }
   }
-
-  presContext->RecordInteractionTime(
-    nsPresContext::InteractionType::eScrollInteraction);
 
   PostScrollEvent();
 
@@ -4689,13 +4686,13 @@ ScrollFrameHelper::ScrollEvent::ScrollEvent(ScrollFrameHelper* aHelper)
   : mHelper(aHelper)
 {
   mDriver = mHelper->mOuter->PresContext()->RefreshDriver();
-  mDriver->AddRefreshObserver(this, FlushType::Layout);
+  mDriver->AddRefreshObserver(this, Flush_Layout);
 }
 
 ScrollFrameHelper::ScrollEvent::~ScrollEvent()
 {
   if (mDriver) {
-    mDriver->RemoveRefreshObserver(this, FlushType::Layout);
+    mDriver->RemoveRefreshObserver(this, Flush_Layout);
     mDriver = nullptr;
   }
 }
@@ -4703,7 +4700,7 @@ ScrollFrameHelper::ScrollEvent::~ScrollEvent()
 void
 ScrollFrameHelper::ScrollEvent::WillRefresh(mozilla::TimeStamp aTime)
 {
-  mDriver->RemoveRefreshObserver(this, FlushType::Layout);
+  mDriver->RemoveRefreshObserver(this, Flush_Layout);
   mDriver = nullptr;
   mHelper->FireScrollEvent();
 }
@@ -4751,7 +4748,7 @@ ScrollFrameHelper::AsyncScrollPortEvent::Run()
 {
   if (mHelper) {
     mHelper->mOuter->PresContext()->GetPresShell()->
-      FlushPendingNotifications(FlushType::InterruptibleLayout);
+      FlushPendingNotifications(Flush_InterruptibleLayout);
   }
   return mHelper ? mHelper->FireScrollPortEvent() : NS_OK;
 }
@@ -5727,26 +5724,26 @@ ScrollFrameHelper::GetBorderRadii(const nsSize& aFrameSize,
 
   if (sb.left > 0 || sb.top > 0) {
     ReduceRadii(border.left, border.top,
-                aRadii[NS_CORNER_TOP_LEFT_X],
-                aRadii[NS_CORNER_TOP_LEFT_Y]);
+                aRadii[eCornerTopLeftX],
+                aRadii[eCornerTopLeftY]);
   }
 
   if (sb.top > 0 || sb.right > 0) {
     ReduceRadii(border.right, border.top,
-                aRadii[NS_CORNER_TOP_RIGHT_X],
-                aRadii[NS_CORNER_TOP_RIGHT_Y]);
+                aRadii[eCornerTopRightX],
+                aRadii[eCornerTopRightY]);
   }
 
   if (sb.right > 0 || sb.bottom > 0) {
     ReduceRadii(border.right, border.bottom,
-                aRadii[NS_CORNER_BOTTOM_RIGHT_X],
-                aRadii[NS_CORNER_BOTTOM_RIGHT_Y]);
+                aRadii[eCornerBottomRightX],
+                aRadii[eCornerBottomRightY]);
   }
 
   if (sb.bottom > 0 || sb.left > 0) {
     ReduceRadii(border.left, border.bottom,
-                aRadii[NS_CORNER_BOTTOM_LEFT_X],
-                aRadii[NS_CORNER_BOTTOM_LEFT_Y]);
+                aRadii[eCornerBottomLeftX],
+                aRadii[eCornerBottomLeftY]);
   }
 
   return true;

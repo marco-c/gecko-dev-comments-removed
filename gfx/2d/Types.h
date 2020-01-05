@@ -440,6 +440,19 @@ static inline Corner operator++(Corner& aCorner) {
   return aCorner;
 }
 
+
+enum HalfCorner {
+  
+  eCornerTopLeftX = 0,
+  eCornerTopLeftY = 1,
+  eCornerTopRightX = 2,
+  eCornerTopRightY = 3,
+  eCornerBottomRightX = 4,
+  eCornerBottomRightY = 5,
+  eCornerBottomLeftX = 6,
+  eCornerBottomLeftY = 7
+};
+
 } 
 
 #endif 
