@@ -2,6 +2,7 @@
 
 
 use element_state::ElementState;
+use properties::{self, ServoComputedValues};
 use selector_matching::{USER_OR_USER_AGENT_STYLESHEETS, QUIRKS_MODE_STYLESHEET};
 use selectors::Element;
 use selectors::parser::{ParserContext, SelectorImpl};
@@ -12,8 +13,50 @@ pub trait ElementExt: Element {
 }
 
 pub trait SelectorImplExt : SelectorImpl + Sized {
-    fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
+    type ComputedValues: properties::ComputedValues;
+
+    fn each_pseudo_element<F>(mut fun: F)
         where F: FnMut(<Self as SelectorImpl>::PseudoElement);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn is_eagerly_cascaded_pseudo_element(pseudo: &<Self as SelectorImpl>::PseudoElement) -> bool;
+
+    #[inline]
+    fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
+        where F: FnMut(<Self as SelectorImpl>::PseudoElement) {
+        Self::each_pseudo_element(|pseudo| {
+            if Self::is_eagerly_cascaded_pseudo_element(&pseudo) {
+                fun(pseudo)
+            }
+        })
+    }
+
+    #[inline]
+    fn each_non_eagerly_cascaded_pseudo_element<F>(mut fun: F)
+        where F: FnMut(<Self as SelectorImpl>::PseudoElement) {
+        Self::each_pseudo_element(|pseudo| {
+            if !Self::is_eagerly_cascaded_pseudo_element(&pseudo) {
+                fun(pseudo)
+            }
+        })
+    }
 
     fn pseudo_class_state_flag(pc: &Self::NonTSPseudoClass) -> ElementState;
 
@@ -29,6 +72,19 @@ pub enum PseudoElement {
     Selection,
     DetailsSummary,
     DetailsContent,
+}
+
+impl PseudoElement {
+    #[inline]
+    pub fn is_eagerly_cascaded(&self) -> bool {
+        match *self {
+            PseudoElement::Before |
+            PseudoElement::After |
+            PseudoElement::Selection |
+            PseudoElement::DetailsSummary => true,
+            PseudoElement::DetailsContent => false,
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, HeapSizeOf, Hash)]
@@ -112,15 +168,17 @@ impl SelectorImpl for ServoSelectorImpl {
             "before" => Before,
             "after" => After,
             "selection" => Selection,
-            "-servo-details-summary" => if context.in_user_agent_stylesheet {
+            "-servo-details-summary" => {
+                if !context.in_user_agent_stylesheet {
+                    return Err(())
+                }
                 DetailsSummary
-            } else {
-                return Err(())
             },
-            "-servo-details-content" => if context.in_user_agent_stylesheet {
+            "-servo-details-content" => {
+                if !context.in_user_agent_stylesheet {
+                    return Err(())
+                }
                 DetailsContent
-            } else {
-                return Err(())
             },
             _ => return Err(())
         };
@@ -129,15 +187,16 @@ impl SelectorImpl for ServoSelectorImpl {
     }
 }
 
-impl<E: Element<Impl=ServoSelectorImpl>> ElementExt for E {
-    fn is_link(&self) -> bool {
-        self.match_non_ts_pseudo_class(NonTSPseudoClass::AnyLink)
-    }
-}
-
 impl SelectorImplExt for ServoSelectorImpl {
+    type ComputedValues = ServoComputedValues;
+
     #[inline]
-    fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
+    fn is_eagerly_cascaded_pseudo_element(pseudo: &PseudoElement) -> bool {
+        pseudo.is_eagerly_cascaded()
+    }
+
+    #[inline]
+    fn each_pseudo_element<F>(mut fun: F)
         where F: FnMut(PseudoElement) {
         fun(PseudoElement::Before);
         fun(PseudoElement::After);
@@ -159,5 +218,11 @@ impl SelectorImplExt for ServoSelectorImpl {
     #[inline]
     fn get_quirks_mode_stylesheet() -> Option<&'static Stylesheet<Self>> {
         Some(&*QUIRKS_MODE_STYLESHEET)
+    }
+}
+
+impl<E: Element<Impl=ServoSelectorImpl>> ElementExt for E {
+    fn is_link(&self) -> bool {
+        self.match_non_ts_pseudo_class(NonTSPseudoClass::AnyLink)
     }
 }

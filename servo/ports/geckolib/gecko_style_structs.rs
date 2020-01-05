@@ -3986,6 +3986,34 @@ fn bindgen_test_layout_CounterStyleManager() {
     assert_eq!(::std::mem::size_of::<CounterStyleManager>() , 72usize);
     assert_eq!(::std::mem::align_of::<CounterStyleManager>() , 8usize);
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(u32)]
+#[derive(Debug, Copy, Clone)]
+pub enum SheetParsingMode {
+    eAuthorSheetFeatures = 0,
+    eUserSheetFeatures = 1,
+    eAgentSheetFeatures = 2,
+}
 pub type nsLoadFlags = u32;
 #[repr(C)]
 #[derive(Debug, Copy)]

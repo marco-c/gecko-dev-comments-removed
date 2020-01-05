@@ -123,8 +123,8 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
                                  root: OpaqueNode,
                                  node: N)
     where N: TNode,
-          C: StyleContext<'a, <N::ConcreteElement as Element>::Impl, N::ConcreteComputedValues>,
-          <N::ConcreteElement as Element>::Impl: SelectorImplExt + 'a {
+          C: StyleContext<'a, <N::ConcreteElement as Element>::Impl>,
+          <N::ConcreteElement as Element>::Impl: SelectorImplExt<ComputedValues=N::ConcreteComputedValues> + 'a {
     
     
     
@@ -167,8 +167,9 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
                 let shareable_element = match node.as_element() {
                     Some(element) => {
                         
-                        let stylist = unsafe { &*context.shared_context().stylist.0 };
-                        if element.match_element(stylist,
+                        let stylist = &context.shared_context().stylist;
+
+                        if element.match_element(&**stylist,
                                                  Some(&*bf),
                                                  &mut applicable_declarations) {
                             Some(element)

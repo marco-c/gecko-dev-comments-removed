@@ -4,11 +4,12 @@
 
 #![allow(unsafe_code)]
 
+use context::SharedStyleContext;
 use data::PrivateStyleData;
 use element_state::ElementState;
 use properties::{ComputedValues, PropertyDeclaration, PropertyDeclarationBlock};
 use restyle_hints::{ElementSnapshot, RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
-use selector_impl::ElementExt;
+use selector_impl::{ElementExt, SelectorImplExt};
 use selectors::Element;
 use selectors::matching::DeclarationBlock;
 use smallvec::VecLike;
@@ -137,19 +138,19 @@ pub trait TNode : Sized + Copy + Clone {
     #[inline(always)]
     unsafe fn borrow_data_unchecked(&self)
         -> Option<*const PrivateStyleData<<Self::ConcreteElement as Element>::Impl,
-                                          Self::ConcreteComputedValues>>;
+                                           Self::ConcreteComputedValues>>;
 
     
     #[inline(always)]
     fn borrow_data(&self)
         -> Option<Ref<PrivateStyleData<<Self::ConcreteElement as Element>::Impl,
-                                       Self::ConcreteComputedValues>>>;
+                                           Self::ConcreteComputedValues>>>;
 
     
     #[inline(always)]
     fn mutate_data(&self)
         -> Option<RefMut<PrivateStyleData<<Self::ConcreteElement as Element>::Impl,
-                                          Self::ConcreteComputedValues>>>;
+                                           Self::ConcreteComputedValues>>>;
 
     
     fn restyle_damage(self) -> Self::ConcreteRestyleDamage;
@@ -170,7 +171,10 @@ pub trait TNode : Sized + Copy + Clone {
 
     
     
-    fn style(&self) -> Ref<Arc<Self::ConcreteComputedValues>> {
+    fn style(&self,
+             _context: &SharedStyleContext<<Self::ConcreteElement as Element>::Impl>)
+        -> Ref<Arc<Self::ConcreteComputedValues>>
+        where <Self::ConcreteElement as Element>::Impl: SelectorImplExt<ComputedValues=Self::ConcreteComputedValues> {
         Ref::map(self.borrow_data().unwrap(), |data| data.style.as_ref().unwrap())
     }
 

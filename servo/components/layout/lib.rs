@@ -103,3 +103,4 @@ mod wrapper;
 
 
 pub use fragment::Fragment;
+pub use wrapper::ServoThreadSafeLayoutNode;

@@ -8,8 +8,9 @@
 use dom::TElement;
 use element_state::*;
 use error_reporting::{ParseErrorReporter, StdoutErrorReporter};
+use euclid::Size2D;
 use media_queries::{Device, MediaType};
-use properties::{PropertyDeclaration, PropertyDeclarationBlock};
+use properties::{self, ComputedValues, PropertyDeclaration, PropertyDeclarationBlock};
 use restyle_hints::{ElementSnapshot, RestyleHint, DependencySet};
 use selector_impl::{SelectorImplExt, ServoSelectorImpl};
 use selectors::Element;
@@ -116,11 +117,20 @@ pub struct Stylist<Impl: SelectorImplExt> {
     
     
     element_map: PerPseudoElementSelectorMap<Impl>,
+
     
     
     pseudos_map: HashMap<Impl::PseudoElement,
                          PerPseudoElementSelectorMap<Impl>,
                          BuildHasherDefault<::fnv::FnvHasher>>,
+
+    
+    
+    
+    non_eagerly_cascaded_pseudo_element_decls: HashMap<Impl::PseudoElement,
+                                                       Vec<DeclarationBlock>,
+                                                       BuildHasherDefault<::fnv::FnvHasher>>,
+
     rules_source_order: usize,
 
     
@@ -138,6 +148,7 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
 
             element_map: PerPseudoElementSelectorMap::new(),
             pseudos_map: HashMap::with_hasher(Default::default()),
+            non_eagerly_cascaded_pseudo_element_decls: HashMap::with_hasher(Default::default()),
             rules_source_order: 0,
             state_deps: DependencySet::new(),
         };
@@ -160,6 +171,11 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
 
         self.element_map = PerPseudoElementSelectorMap::new();
         self.pseudos_map = HashMap::with_hasher(Default::default());
+        Impl::each_eagerly_cascaded_pseudo_element(|pseudo| {
+            self.pseudos_map.insert(pseudo, PerPseudoElementSelectorMap::new());
+        });
+
+        self.non_eagerly_cascaded_pseudo_element_decls = HashMap::with_hasher(Default::default());
         self.rules_source_order = 0;
         self.state_deps.clear();
 
@@ -182,8 +198,7 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
     }
 
     fn add_stylesheet(&mut self, stylesheet: &Stylesheet<Impl>) {
-        let device = &self.device;
-        if !stylesheet.is_effective_for_device(device) {
+        if !stylesheet.is_effective_for_device(&self.device) {
             return;
         }
         let mut rules_source_order = self.rules_source_order;
@@ -195,20 +210,21 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
                 if !$style_rule.declarations.$priority.is_empty() {
                     for selector in &$style_rule.selectors {
                         let map = if let Some(ref pseudo) = selector.pseudo_element {
-                            self.pseudos_map.entry(pseudo.clone())
-                                            .or_insert_with(PerPseudoElementSelectorMap::new)
-                                            .borrow_for_origin(&stylesheet.origin)
+                            self.pseudos_map
+                                .entry(pseudo.clone())
+                                .or_insert_with(PerPseudoElementSelectorMap::new)
+                                .borrow_for_origin(&stylesheet.origin)
                         } else {
                             self.element_map.borrow_for_origin(&stylesheet.origin)
                         };
 
                         map.$priority.insert(Rule {
-                                selector: selector.compound_selectors.clone(),
-                                declarations: DeclarationBlock {
-                                    specificity: selector.specificity,
-                                    declarations: $style_rule.declarations.$priority.clone(),
-                                    source_order: rules_source_order,
-                                },
+                            selector: selector.compound_selectors.clone(),
+                            declarations: DeclarationBlock {
+                                specificity: selector.specificity,
+                                declarations: $style_rule.declarations.$priority.clone(),
+                                source_order: rules_source_order,
+                            },
                         });
                     }
                 }
@@ -223,15 +239,48 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
                 self.state_deps.note_selector(selector.compound_selectors.clone());
             }
         }
+
         self.rules_source_order = rules_source_order;
+
+        Impl::each_non_eagerly_cascaded_pseudo_element(|pseudo| {
+            
+            
+            
+            
+            
+            if let Some(map) = self.pseudos_map.remove(&pseudo) {
+                let mut declarations = vec![];
+
+                map.user_agent.normal.get_universal_rules(&mut declarations);
+                map.user_agent.important.get_universal_rules(&mut declarations);
+
+                self.non_eagerly_cascaded_pseudo_element_decls.insert(pseudo, declarations);
+            }
+        })
+    }
+
+    pub fn computed_values_for_pseudo(&self,
+                                      pseudo: &Impl::PseudoElement,
+                                      parent: Option<&Arc<Impl::ComputedValues>>) -> Option<Arc<Impl::ComputedValues>> {
+        debug_assert!(!Impl::is_eagerly_cascaded_pseudo_element(pseudo));
+        if let Some(declarations) = self.non_eagerly_cascaded_pseudo_element_decls.get(pseudo) {
+            let (computed, _) =
+                properties::cascade::<Impl::ComputedValues>(Size2D::zero(),
+                                                            &declarations, false,
+                                                            parent.map(|p| &**p), None,
+                                                            box StdoutErrorReporter);
+            Some(Arc::new(computed))
+        } else {
+            parent.map(|p| p.clone())
+        }
     }
 
     pub fn compute_restyle_hint<E>(&self, element: &E,
                                    snapshot: &ElementSnapshot,
-                                   
-                                   
-                                   
-                                   
+                                   // NB: We need to pass current_state as an argument because
+                                   // selectors::Element doesn't provide access to ElementState
+                                   // directly, and computing it from the ElementState would be
+                                   // more expensive than getting it directly from the caller.
                                    current_state: ElementState)
                                    -> RestyleHint
                                    where E: Element<Impl=Impl> + Clone {
@@ -264,13 +313,13 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
         self.quirks_mode = enabled;
     }
 
-    
-    
-    
-    
-    
-    
-    
+    /// Returns the applicable CSS declarations for the given element.
+    /// This corresponds to `ElementRuleCollector` in WebKit.
+    ///
+    /// The returned boolean indicates whether the style is *shareable*;
+    /// that is, whether the matched selectors are simple enough to allow the
+    /// matching logic to be reduced to the logic in
+    /// `css::matching::PrivateMatchMethods::candidate_element_allows_for_style_sharing`.
     pub fn push_applicable_declarations<E, V>(
                                         &self,
                                         element: &E,
@@ -284,19 +333,15 @@ impl<Impl: SelectorImplExt> Stylist<Impl> {
         assert!(!self.is_device_dirty);
         assert!(style_attribute.is_none() || pseudo_element.is_none(),
                 "Style attributes do not apply to pseudo-elements");
+        debug_assert!(pseudo_element.is_none() ||
+                      Impl::is_eagerly_cascaded_pseudo_element(pseudo_element.as_ref().unwrap()));
 
         let map = match pseudo_element {
-            Some(ref pseudo) => match self.pseudos_map.get(pseudo) {
-                Some(map) => map,
-                
-                
-                None => return true,
-            },
+            Some(ref pseudo) => self.pseudos_map.get(pseudo).unwrap(),
             None => &self.element_map,
         };
 
         let mut shareable = true;
-
 
         
         map.user_agent.normal.get_all_matching_rules(element,
