@@ -13,6 +13,8 @@
 
 
 (function initializeUtilityExports(global, parent) {
+  "use strict";
+
   
 
 
@@ -195,6 +197,8 @@
 })(this);
 
 (function(global) {
+  "use strict";
+
   
 
 

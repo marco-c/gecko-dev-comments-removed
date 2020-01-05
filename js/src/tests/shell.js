@@ -10,6 +10,8 @@
 
 
 (function(global) {
+  "use strict";
+
   
 
 
@@ -18,7 +20,7 @@
 
   var document = global.document;
   var Error = global.Error;
-  var eval = global.eval;
+  var Function = global.Function;
   var Number = global.Number;
   var RegExp = global.RegExp;
   var String = global.String;
@@ -648,9 +650,9 @@
       var expectCompile = 'No Error';
       var actualCompile;
 
-      eval(expect);
+      Function(expect);
       try {
-        eval(actual);
+        Function(actual);
         actualCompile = 'No Error';
       } catch(ex1) {
         actualCompile = ex1 + '';
@@ -754,9 +756,11 @@
     }
   }
   global.jsTestDriverEnd = jsTestDriverEnd;
-})(this);
 
-(function(global) {
+  
+
+
+
   function getPromiseResult(promise) {
     var result, error, caught = false;
     promise.then(r => { result = r; },
