@@ -141,7 +141,9 @@ GPUParent::NotifyDeviceReset()
 
   
   
-  Unused << SendNotifyDeviceReset();
+  GPUDeviceData data;
+  RecvGetDeviceStatus(&data);
+  Unused << SendNotifyDeviceReset(data);
 }
 
 mozilla::ipc::IPCResult
