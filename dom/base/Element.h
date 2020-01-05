@@ -387,7 +387,7 @@ public:
     }
   }
 
-  bool GetBindingURL(nsIDocument *aDocument, css::URLValue **aResult);
+  bool GetBindingURL(nsIDocument* aDocument, css::URLValue **aResult);
 
   
   
