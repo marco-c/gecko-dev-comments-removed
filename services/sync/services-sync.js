@@ -77,4 +77,4 @@ pref("services.sync.validation.interval", 86400);
 pref("services.sync.validation.percentageChance", 10);
 
 
-pref("services.sync.validation.maxRecords", 100);
+pref("services.sync.validation.maxRecords", 1000);

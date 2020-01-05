@@ -136,9 +136,6 @@ var TPS = {
     }, this);
 
     
-    Weave.Svc.Prefs.set("log.appender.dump", "Debug");
-
-    
     Cu.import("resource://tps/auth/fxaccounts.jsm", module);
   },
 
@@ -624,7 +621,7 @@ var TPS = {
       serverRecordDumpStr = JSON.stringify(serverRecords);
 
       let validator = new BookmarkValidator();
-      let {problemData} = validator.compareServerWithClient(serverRecords, clientTree);
+      let {problemData} = Async.promiseSpinningly(validator.compareServerWithClient(serverRecords, clientTree));
 
       for (let {name, count} of problemData.getSummary()) {
         
