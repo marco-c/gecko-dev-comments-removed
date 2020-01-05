@@ -12,6 +12,7 @@
 
 #include <cstddef>
 #include <stdint.h>
+#include <string>
 
 #include <set>
 
@@ -57,6 +58,7 @@ class MediaPipelineFilter {
   bool FilterSenderReport(const unsigned char* data, size_t len) const;
 
   void AddRemoteSSRC(uint32_t ssrc);
+  void AddRemoteRtpStreamId(const std::string& rtp_strm_id);
 
   
   void AddUniquePT(uint8_t payload_type);
@@ -78,6 +80,7 @@ class MediaPipelineFilter {
   
   std::set<uint32_t> remote_ssrc_set_;
   std::set<uint8_t> payload_type_set_;
+  std::set<std::string> remote_rid_set_;
 };
 
 } 

@@ -118,6 +118,14 @@ class MediaPipeline : public sigslot::has_slots<> {
   
   void SelectSsrc_m(size_t ssrc_index);
   void SelectSsrc_s(uint32_t ssrc);
+  
+  
+  void AddRIDExtension_m(size_t extension_id);
+  void AddRIDExtension_s(size_t extension_id);
+  
+  
+  void AddRIDFilter_m(const std::string& rid);
+  void AddRIDFilter_s(const std::string& rid);
 
   virtual Direction direction() const { return direction_; }
   virtual const std::string& trackid() const { return track_id_; }
