@@ -416,8 +416,10 @@ public:
   ~AutoStyleNewChildren()
   {
     nsIPresShell* presShell = mElement->OwnerDoc()->GetShell();
-    ServoStyleSet* servoSet = presShell ? presShell->StyleSet()->GetAsServo() : nullptr;
-    if (servoSet) {
+    if (!presShell || !presShell->DidInitialize()) {
+      return;
+    }
+    if (ServoStyleSet* servoSet = presShell->StyleSet()->GetAsServo()) {
       
       
       
