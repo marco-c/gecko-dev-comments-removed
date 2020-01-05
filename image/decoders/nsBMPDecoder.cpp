@@ -994,33 +994,36 @@ nsBMPDecoder::ReadRLEDelta(const char* aData)
   MOZ_ASSERT(mMayHaveTransparency);
   mDoesHaveTransparency = true;
 
-  if (mDownscaler) {
-    
-    
-    mDownscaler->ClearRestOfRow( mCurrentPos);
-  }
-
   
-  mCurrentPos += uint8_t(aData[0]);
-  if (mCurrentPos > mH.mWidth) {
-    mCurrentPos = mH.mWidth;
+  
+  uint8_t xDelta = uint8_t(aData[0]);
+  int32_t finalPos = std::min<int32_t>(mH.mWidth, mCurrentPos + xDelta);
+  uint32_t* dst = RowBuffer();
+  while (mCurrentPos < mH.mWidth) {
+    SetPixel(dst, 0, 0, 0, 0);
+    ++mCurrentPos;
   }
 
   
   int32_t yDelta = std::min<int32_t>(uint8_t(aData[1]), mCurrentRow);
-  mCurrentRow -= yDelta;
-
-  if (mDownscaler && yDelta > 0) {
+  if (yDelta > 0) {
     
-    mDownscaler->CommitRow();
+    mCurrentPos = 0;
+    FinishRow();
 
     
     for (int32_t line = 1; line < yDelta; line++) {
-      mDownscaler->ClearRow();
-      mDownscaler->CommitRow();
+      dst = RowBuffer();
+      while (mCurrentPos < mH.mWidth) {
+        SetPixel(dst, 0, 0, 0, 0);
+        ++mCurrentPos;
+      }
+      mCurrentPos = 0;
+      FinishRow();
     }
   }
 
+  mCurrentPos = finalPos;
   return mCurrentRow == 0
        ? Transition::TerminateSuccess()
        : Transition::To(State::RLE_SEGMENT, RLE::SEGMENT_LENGTH);
