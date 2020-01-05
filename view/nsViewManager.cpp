@@ -63,6 +63,7 @@ nsViewManager::nsViewManager()
   , mPainting(false)
   , mRecursiveRefreshPending(false)
   , mHasPendingWidgetGeometryChanges(false)
+  , mPrintRelated(false)
 {
   if (gViewManagers == nullptr) {
     
