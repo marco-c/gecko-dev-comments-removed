@@ -412,8 +412,8 @@ impl Shaper {
 
             let mut covered_byte_span = char_byte_span.clone();
             
-            while covered_byte_span.end() < byte_max
-                    && byte_to_glyph[covered_byte_span.end()] == NO_GLYPH {
+            while covered_byte_span.end() < byte_max &&
+                    byte_to_glyph[covered_byte_span.end()] == NO_GLYPH {
                 let range = text.char_range_at(covered_byte_span.end());
                 drop(range.ch);
                 covered_byte_span.extend_to(range.next);

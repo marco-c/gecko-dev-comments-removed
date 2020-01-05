@@ -194,9 +194,9 @@ impl<'a> PostorderFlowTraversal for AssignBSizes<'a> {
     #[inline]
     fn should_process(&self, flow: &mut Flow) -> bool {
         let base = flow::base(flow);
-        base.restyle_damage.intersects(REFLOW_OUT_OF_FLOW | REFLOW)
+        base.restyle_damage.intersects(REFLOW_OUT_OF_FLOW | REFLOW) &&
         
-        && !base.flags.contains(CAN_BE_FRAGMENTED)
+        !base.flags.contains(CAN_BE_FRAGMENTED)
     }
 }
 
