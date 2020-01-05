@@ -97,7 +97,13 @@ enum class ImageFormat {
   
 
 
-  TEXTURE_WRAPPER
+  TEXTURE_WRAPPER,
+
+  
+
+
+
+  GPU_VIDEO
 };
 
 enum class StereoMode {
