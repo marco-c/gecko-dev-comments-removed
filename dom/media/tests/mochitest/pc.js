@@ -1823,9 +1823,11 @@ var setupIceServerConfig = useIceServer => {
   
   
   
-  var enableHttpProxy = enable =>
+  var enableHttpProxy = enable => new Promise(resolve => {
     SpecialPowers.pushPrefEnv(
-      {'set': [['media.peerconnection.disable_http_proxy', !enable]]});
+        {'set': [['media.peerconnection.disable_http_proxy', !enable]]},
+        resolve);
+  });
 
   var spawnIceServer = () => new Promise( (resolve, reject) => {
     iceServerWebsocket = new WebSocket("ws://localhost:8191/");

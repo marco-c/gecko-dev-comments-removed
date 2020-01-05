@@ -10,7 +10,7 @@ add_task(function* () {
   var contextMenu;
 
   
-  yield SpecialPowers.pushPrefEnv({set: [["dom.select_events.enabled", true]]});
+  yield new Promise(resolve => SpecialPowers.pushPrefEnv({"set": [["dom.select_events.enabled", true]]}, resolve));
 
   let envService = Cc["@mozilla.org/process/environment;1"].getService(Ci.nsIEnvironment);
   let originalValue = envService.get("XPCSHELL_TEST_PROFILE_DIR");

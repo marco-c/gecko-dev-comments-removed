@@ -17,9 +17,9 @@ function waitForInsecureLoginFormsStateChange(browser, count) {
 
 
 add_task(function* test_simple() {
-  yield SpecialPowers.pushPrefEnv({
+  yield new Promise(resolve => SpecialPowers.pushPrefEnv({
     "set": [["security.insecure_password.ui.enabled", true]],
-  });
+  }, resolve));
 
   for (let [origin, expectWarning] of [
     ["http://example.com", true],
@@ -82,9 +82,9 @@ add_task(function* test_simple() {
 
 
 add_task(function* test_mixedcontent() {
-  yield SpecialPowers.pushPrefEnv({
+  yield new Promise(resolve => SpecialPowers.pushPrefEnv({
     "set": [["security.mixed_content.block_active_content", false]],
-  });
+  }, resolve));
 
   
   let testUrlPath = "://example.com" + TEST_URL_PATH;

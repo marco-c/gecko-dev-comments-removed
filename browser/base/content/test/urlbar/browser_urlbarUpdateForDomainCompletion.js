@@ -5,7 +5,7 @@
 
 
 add_task(function* () {
-  yield SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]});
+  yield new Promise(resolve => SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]}, resolve));
   yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function* (browser) {
     gURLBar.value = "example";
     gURLBar.select();

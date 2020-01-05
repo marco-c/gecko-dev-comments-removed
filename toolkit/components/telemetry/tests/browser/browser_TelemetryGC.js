@@ -106,7 +106,8 @@ add_task(function* test() {
   let multiprocess = Services.appinfo.browserTabsRemoteAutostart;
 
   
-  yield SpecialPowers.pushPrefEnv({"set": [["javascript.options.mem.notify", true]]});
+  const prefs = {"set": [["javascript.options.mem.notify", true]]};
+  yield new Promise(resolve => SpecialPowers.pushPrefEnv(prefs, resolve));
 
   function runRemote(f) {
     gBrowser.selectedBrowser.messageManager.loadFrameScript(`data:,(${f})()`, false);

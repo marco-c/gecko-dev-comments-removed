@@ -77,9 +77,11 @@ function loadFaviconHandler(metadata, response) {
 
 add_task(function* setup() {
   
-  yield SpecialPowers.pushPrefEnv({"set": [
-    ["privacy.userContext.enabled", true]
-  ]});
+  yield new Promise(resolve => {
+    SpecialPowers.pushPrefEnv({"set": [
+      ["privacy.userContext.enabled", true]
+    ]}, resolve);
+  });
 
   
   if (!gHttpServer) {
