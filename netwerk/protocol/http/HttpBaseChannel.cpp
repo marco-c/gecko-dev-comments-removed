@@ -2664,18 +2664,33 @@ HttpBaseChannel::ShouldIntercept(nsIURI* aURI)
   return shouldIntercept;
 }
 
-void HttpBaseChannel::CheckPrivateBrowsing()
+#ifdef DEBUG
+void HttpBaseChannel::AssertPrivateBrowsingId()
 {
   nsCOMPtr<nsILoadContext> loadContext;
   NS_QueryNotificationCallbacks(this, loadContext);
   
-  if (mLoadInfo && loadContext) {
-      DocShellOriginAttributes docShellAttrs;
-      loadContext->GetOriginAttributes(docShellAttrs);
-      MOZ_ASSERT(mLoadInfo->GetOriginAttributes().mPrivateBrowsingId == docShellAttrs.mPrivateBrowsingId,
-                 "PrivateBrowsingId values are not the same between LoadInfo and LoadContext.");
+  if (!mLoadInfo) {
+    return;
   }
+
+  if (!loadContext) {
+    return;
+  }
+
+  
+  
+  if (nsContentUtils::IsSystemPrincipal(mLoadInfo->LoadingPrincipal()) &&
+      mLoadInfo->InternalContentPolicyType() == nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
+    return;
+  }
+
+  DocShellOriginAttributes docShellAttrs;
+  loadContext->GetOriginAttributes(docShellAttrs);
+  MOZ_ASSERT(mLoadInfo->GetOriginAttributes().mPrivateBrowsingId == docShellAttrs.mPrivateBrowsingId,
+             "PrivateBrowsingId values are not the same between LoadInfo and LoadContext.");
 }
+#endif
 
 
 

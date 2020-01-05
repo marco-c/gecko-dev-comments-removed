@@ -2408,6 +2408,18 @@ NS_CompareLoadInfoAndLoadContext(nsIChannel *aChannel)
     return NS_OK;
   }
 
+  
+  
+  
+  
+  
+  
+  if (nsContentUtils::IsSystemPrincipal(loadInfo->LoadingPrincipal()) &&
+      loadInfo->InternalContentPolicyType() ==
+        nsIContentPolicy::TYPE_INTERNAL_IMAGE_FAVICON) {
+    return NS_OK;
+  }
+
   uint32_t loadContextAppId = 0;
   nsresult rv = loadContext->GetAppId(&loadContextAppId);
   if (NS_FAILED(rv)) {
