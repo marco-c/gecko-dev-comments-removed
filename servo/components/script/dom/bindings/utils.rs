@@ -198,8 +198,6 @@ pub enum ConstantVal {
     BoolVal(bool),
     
     NullVal,
-    
-    VoidVal
 }
 
 
@@ -220,7 +218,6 @@ impl ConstantSpec {
             UintVal(u) => UInt32Value(u),
             DoubleVal(d) => DoubleValue(d),
             BoolVal(b) => BooleanValue(b),
-            VoidVal => UndefinedValue(),
         }
     }
 }
