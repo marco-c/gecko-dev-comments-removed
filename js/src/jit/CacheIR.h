@@ -519,13 +519,12 @@ class MOZ_RAII CacheIRWriter : public JS::CustomAutoRooter
         writeOpWithOperandId(CacheOp::GuardMagicValue, val);
         buffer_.writeByte(uint32_t(magic));
     }
-    void guardCompartment(ObjOperandId obj, JSCompartment* compartment) {
+    void guardCompartment(ObjOperandId obj, JSObject* global, JSCompartment* compartment) {
         writeOpWithOperandId(CacheOp::GuardCompartment, obj);
         
-        addStubField(uintptr_t(compartment->maybeGlobal()), StubField::Type::JSObject);
+        addStubField(uintptr_t(global), StubField::Type::JSObject);
         
         addStubField(uintptr_t(compartment), StubField::Type::RawWord);
-
     }
     void guardNoDetachedTypedObjects() {
         writeOp(CacheOp::GuardNoDetachedTypedObjects);
