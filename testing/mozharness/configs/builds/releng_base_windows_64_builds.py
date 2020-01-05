@@ -23,7 +23,6 @@ config = {
     ],
     "buildbot_json_path": "buildprops.json",
     'exes': {
-        'python2.7': sys.executable,
         "buildbot": [
             sys.executable,
             'c:\\mozilla-build\\buildbotve\\scripts\\buildbot'
@@ -36,7 +35,6 @@ config = {
     'app_ini_path': '%(obj_dir)s/dist/bin/application.ini',
     
     'enable_signing': True,
-    'enable_ccache': False,
     'vcs_share_base': 'C:/builds/hg-shared',
     'objdir': 'obj-firefox',
     'tooltool_script': [sys.executable,
