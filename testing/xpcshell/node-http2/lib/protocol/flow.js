@@ -64,7 +64,6 @@ function Flow(flowControlId) {
   this._queue = [];
   this._ended = false;
   this._received = 0;
-  this._blocked = false;
 }
 Flow.prototype = Object.create(Duplex.prototype, { constructor: { value: Flow } });
 
@@ -157,7 +156,6 @@ Flow.prototype._read = function _read() {
   
   
   else if (this._window > 0) {
-    this._blocked = false;
     this._readableState.sync = true; 
     do {
       var moreNeeded = this._push(this._queue[0]);
@@ -173,14 +171,8 @@ Flow.prototype._read = function _read() {
   }
 
   
-  else if (!this._blocked) {
-    this._parentPush({
-      type: 'BLOCKED',
-      flags: {},
-      stream: this._flowControlId
-    });
+  else {
     this.once('window_update', this._read);
-    this._blocked = true;
   }
 };
 

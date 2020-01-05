@@ -1069,25 +1069,23 @@ Deserializer.ALTSVC = function readAltSvc(buffer, frame) {
   }
 };
 
+frameTypes[0xB] = 'ORIGIN';
+frameFlags.ORIGIN = [];
+typeSpecificAttributes.ORIGIN = ['originList'];
 
-
-
-
-
-
-
-
-frameTypes[0xB] = 'BLOCKED';
-
-frameFlags.BLOCKED = [];
-
-typeSpecificAttributes.BLOCKED = [];
-
-Serializer.BLOCKED = function writeBlocked(frame, buffers) {
+Serializer.ORIGIN = function writeOrigin(frame, buffers) {
+  for (var i = 0; i < frame.originList.length; i++) {
+    var buffer = new Buffer(2);
+    buffer.writeUInt16BE(frame.originList[i].length, 0);
+    buffers.push(buffer);
+    buffers.push(new Buffer(frame.originList[i], 'ascii'));
+  }
 };
 
-Deserializer.BLOCKED = function readBlocked(buffer, frame) {
+Deserializer.ORIGIN = function readOrigin(buffer, frame) {
+    
 };
+
 
 
 

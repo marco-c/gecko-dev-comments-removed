@@ -743,6 +743,21 @@ function handleRequest(req, res) {
      }
    
   }
+  else if (u.pathname === "/origin-4") {
+   var originList = [ ];
+   req.stream.connection.originFrame(originList);
+   res.setHeader("x-client-port", req.remotePort);
+  }
+  else if (u.pathname === "/origin-6") {
+   var originList = [ "https://alt1.example.com:" + serverPort,
+		      "https://alt2.example.com:" + serverPort,
+                      "https://bar.example.com:" + serverPort ];
+   req.stream.connection.originFrame(originList);
+   res.setHeader("x-client-port", req.remotePort);
+  }
+  else if (u.pathname.substring(0,8) === "/origin-") { 
+    res.setHeader("x-client-port", req.remotePort);
+  }
 
   res.setHeader('Content-Type', 'text/html');
   if (req.httpVersionMajor != 2) {
