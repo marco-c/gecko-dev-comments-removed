@@ -133,12 +133,10 @@ public:
 
 
 
-
   static nsTArray<AnimationProperty> GetAnimationPropertiesFromKeyframes(
     const nsTArray<Keyframe>& aKeyframes,
     const nsTArray<ComputedKeyframeValues>& aComputedValues,
-    dom::CompositeOperation aEffectComposite,
-    nsStyleContext* aStyleContext);
+    dom::CompositeOperation aEffectComposite);
 
   
 
