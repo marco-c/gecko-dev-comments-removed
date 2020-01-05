@@ -34,6 +34,7 @@ use msg::constellation_msg::PipelineId;
 use rustc_serialize::{Decodable, Decoder};
 use std::net::TcpStream;
 use time::Duration;
+use time::Tm;
 use url::Url;
 
 
@@ -264,6 +265,7 @@ pub struct HttpRequest {
     pub headers: Headers,
     pub body: Option<Vec<u8>>,
     pub pipeline_id: PipelineId,
+    pub startedDateTime: Tm
 }
 
 #[derive(Debug, PartialEq)]
