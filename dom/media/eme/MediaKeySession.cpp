@@ -310,9 +310,6 @@ MediaKeySession::GenerateRequest(const nsAString& aInitDataType,
 
   
 
-  Telemetry::Accumulate(Telemetry::VIDEO_CDM_GENERATE_REQUEST_CALLED,
-                        ToCDMTypeTelemetryEnum(mKeySystem));
-
   
   
   

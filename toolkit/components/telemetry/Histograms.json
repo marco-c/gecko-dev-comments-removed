@@ -8236,7 +8236,7 @@
     "kind": "enumerated",
     "n_values": 10,
     "releaseChannelCollection": "opt-out",
-    "description": "Strict Secure Cookies: 0=blocked secure cookie from http; 1=blocked shadowing secure cookie from http; 2=shadowing secure cookie from https; 3=evicted newer insecure cookie; 4=evicted oldest insecure cookie; 5=evicted secure cookie; 6=evicting secure cookie blocked; 7=blocked downgrading secure cookie from http; 8=downgraded secure cookie from https"
+    "description": "Measuring the effects of draft-ietf-httpbis-cookie-alone blocking. 0=blocked http setting secure cookie; 1=blocked http downgrading secure cookie; 2=blocked evicting secure cookie; 3=evicting newer insecure cookie; 4=evicting the oldest insecure cookie; 5=evicting the preferred cookie; 6=evicting the secure blocked"
   },
   "NTLM_MODULE_USED_2": {
     "expires_in_version": "never",
@@ -9241,15 +9241,6 @@
     "kind": "enumerated",
     "n_values": 6,
     "description": "Note the type of CDM (0=ClearKey, 1=Primetime, 2=Widevine, 3=unknown) every time we successfully instantiate an EME MediaKeys object.",
-    "releaseChannelCollection": "opt-out"
-  },
-  "VIDEO_CDM_GENERATE_REQUEST_CALLED": {
-    "alert_emails": ["cpearce@mozilla.com"],
-    "expires_in_version": "58",
-    "bug_numbers": [1305552],
-    "kind": "enumerated",
-    "n_values": 6,
-    "description": "Note the type of CDM (0=ClearKey, 1=Primetime, 2=Widevine, 3=unknown) every time we call MediaKeySession.generateRequest().",
     "releaseChannelCollection": "opt-out"
   },
   "MEDIA_CODEC_USED": {
