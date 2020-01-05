@@ -76,16 +76,6 @@ pub static MAX_RECT: Rect<Au> = Rect {
 };
 
 
-
-
-pub fn rect_contains_point<T>(rect: Rect<T>, point: Point2D<T>) -> bool
-    where T: PartialOrd + Add<T, Output=T>
-{
-    point.x >= rect.origin.x && point.x < rect.origin.x + rect.size.width &&
-        point.y >= rect.origin.y && point.y < rect.origin.y + rect.size.height
-}
-
-
 pub fn f32_rect_to_au_rect(rect: Rect<f32>) -> Rect<Au> {
     Rect::new(Point2D::new(Au::from_f32_px(rect.origin.x), Au::from_f32_px(rect.origin.y)),
               Size2D::new(Au::from_f32_px(rect.size.width), Au::from_f32_px(rect.size.height)))
