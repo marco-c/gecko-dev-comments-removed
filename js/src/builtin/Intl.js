@@ -382,7 +382,7 @@ function CanonicalizeLanguageTag(locale) {
     if (hasOwn(locale, langTagMappings))
         return langTagMappings[locale];
 
-    var subtags = StringSplitString(ToString(locale), "-");
+    var subtags = StringSplitString(locale, "-");
     var i = 0;
 
     
@@ -930,10 +930,7 @@ function LookupMatcher(availableLocales, requestedLocales) {
         if (locale !== noExtensionsLocale) {
             var unicodeLocaleExtensionSequenceRE = getUnicodeLocaleExtensionSequenceRE();
             var extensionMatch = regexp_exec_no_statics(unicodeLocaleExtensionSequenceRE, locale);
-            var extension = extensionMatch[0];
-            var extensionIndex = extensionMatch.index;
-            result.extension = extension;
-            result.extensionIndex = extensionIndex;
+            result.extension = extensionMatch[0];
         }
     } else {
         result.locale = DefaultLocale();
@@ -962,6 +959,79 @@ function BestFitMatcher(availableLocales, requestedLocales) {
 
 
 
+function UnicodeExtensionValue(extension, key) {
+    assert(typeof extension === "string", "extension is a string value");
+    assert(function() {
+        var unicodeLocaleExtensionSequenceRE = getUnicodeLocaleExtensionSequenceRE();
+        var extensionMatch = regexp_exec_no_statics(unicodeLocaleExtensionSequenceRE, extension);
+        return extensionMatch !== null && extensionMatch[0] === extension;
+    }(), "extension is a Unicode extension subtag");
+    assert(typeof key === "string", "key is a string value");
+    assert(key.length === 2, "key is a Unicode extension key subtag");
+
+    
+    var size = extension.length;
+
+    
+    var searchValue = "-" + key + "-";
+
+    
+    var pos = callFunction(std_String_indexOf, extension, searchValue);
+
+    
+    if (pos !== -1) {
+        
+        var start = pos + 4;
+
+        
+        var end = start;
+
+        
+        var k = start;
+
+        
+        while (true) {
+            
+            var e = callFunction(std_String_indexOf, extension, "-", k);
+
+            
+            var len = e === -1 ? size - k : e - k;
+
+            
+            if (len === 2)
+                break;
+
+            
+            if (e === -1) {
+                end = size;
+                break;
+            }
+
+            
+            end = e;
+            k = e + 1;
+        }
+
+        
+        return callFunction(String_substring, extension, start, end);
+    }
+
+    
+    searchValue = "-" + key;
+
+    
+    if (callFunction(std_String_endsWith, extension, searchValue))
+        return "";
+
+    
+}
+
+
+
+
+
+
+
 
 
 
@@ -980,17 +1050,6 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
     
     var extension = r.extension;
-    var extensionIndex, extensionSubtags, extensionSubtagsLength;
-
-    
-    if (extension !== undefined) {
-        
-        extensionIndex = r.extensionIndex;
-
-        
-        extensionSubtags = StringSplitString(ToString(extension), "-");
-        extensionSubtagsLength = extensionSubtags.length;
-    }
 
     
     var result = new Record();
@@ -1018,6 +1077,7 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
         
         
         var value = keyLocaleData[0];
+        assert(typeof value === "string" || value === null, "unexpected locale data value");
 
         
 
@@ -1025,28 +1085,21 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
         var supportedExtensionAddition = "";
 
         
-
-        var valuePos;
-
-        
-        if (extensionSubtags !== undefined) {
+        if (extension !== undefined) {
             
-            var keyPos = callFunction(ArrayIndexOf, extensionSubtags, key);
+            
+            
+            
 
             
-            if (keyPos !== -1) {
+            var requestedValue = UnicodeExtensionValue(extension, key);
+
+            
+            if (requestedValue !== undefined) {
                 
-                if (keyPos + 1 < extensionSubtagsLength &&
-                    extensionSubtags[keyPos + 1].length > 2)
-                {
+                if (requestedValue !== "") {
                     
-                    var requestedValue = extensionSubtags[keyPos + 1];
-
-                    
-                    valuePos = callFunction(ArrayIndexOf, keyLocaleData, requestedValue);
-
-                    
-                    if (valuePos !== -1) {
+                    if (callFunction(ArrayIndexOf, keyLocaleData, requestedValue) !== -1) {
                         value = requestedValue;
                         supportedExtensionAddition = "-" + key + "-" + value;
                     }
@@ -1055,12 +1108,7 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
                     
                     
-
-                    
-                    valuePos = callFunction(ArrayIndexOf, keyLocaleData, "true");
-
-                    
-                    if (valuePos !== -1)
+                    if (callFunction(ArrayIndexOf, keyLocaleData, "true") !== -1)
                         value = "true";
                 }
             }
@@ -1073,13 +1121,11 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
         
         if (optionsValue !== undefined &&
+            optionsValue !== value &&
             callFunction(ArrayIndexOf, keyLocaleData, optionsValue) !== -1)
         {
-            
-            if (optionsValue !== value) {
-                value = optionsValue;
-                supportedExtensionAddition = "";
-            }
+            value = optionsValue;
+            supportedExtensionAddition = "";
         }
 
         
@@ -1090,13 +1136,33 @@ function ResolveLocale(availableLocales, requestedLocales, options, relevantExte
 
     
     if (supportedExtension.length > 2) {
-        var preExtension = callFunction(String_substring, foundLocale, 0, extensionIndex);
-        var postExtension = callFunction(String_substring, foundLocale, extensionIndex);
-        foundLocale = preExtension + supportedExtension + postExtension;
+        assert(!callFunction(std_String_startsWith, foundLocale, "x-"),
+               "unexpected privateuse-only locale returned from ICU");
+
+        
+        var privateIndex = callFunction(std_String_indexOf, foundLocale, "-x-");
+
+        
+        if (privateIndex === -1) {
+            foundLocale += supportedExtension;
+        } else {
+            var preExtension = callFunction(String_substring, foundLocale, 0, privateIndex);
+            var postExtension = callFunction(String_substring, foundLocale, privateIndex);
+            foundLocale = preExtension + supportedExtension + postExtension;
+        }
+
+        
+        assert(IsStructurallyValidLanguageTag(foundLocale), "invalid locale after concatenation");
+
+        
+        
+        assert(foundLocale === CanonicalizeLanguageTag(foundLocale), "same locale with extension");
     }
 
     
     result.locale = foundLocale;
+
+    
     return result;
 }
 

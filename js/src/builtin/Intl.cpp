@@ -831,6 +831,12 @@ u_strToUpper(UChar* dest, int32_t destCapacity, const UChar* src, int32_t srcLen
     MOZ_CRASH("u_strToUpper: Intl API disabled");
 }
 
+const char*
+uloc_toUnicodeLocaleType(const char* keyword, const char* value)
+{
+    MOZ_CRASH("uloc_toUnicodeLocaleType: Intl API disabled");
+}
+
 } 
 
 #endif
@@ -887,11 +893,8 @@ LegacyIntlInitialize(JSContext* cx, HandleObject obj, Handle<PropertyName*> init
 
 
 
-typedef int32_t
-(* CountAvailable)();
-
-typedef const char*
-(* GetAvailable)(int32_t localeIndex);
+using CountAvailable = int32_t (*)();
+using GetAvailable = const char* (*)(int32_t localeIndex);
 
 static bool
 intl_availableLocales(JSContext* cx, CountAvailable countAvailable,
@@ -902,6 +905,7 @@ intl_availableLocales(JSContext* cx, CountAvailable countAvailable,
         return false;
 
 #if ENABLE_INTL_API
+    RootedAtom a(cx);
     uint32_t count = countAvailable();
     RootedValue t(cx, BooleanValue(true));
     for (uint32_t i = 0; i < count; i++) {
@@ -912,7 +916,7 @@ intl_availableLocales(JSContext* cx, CountAvailable countAvailable,
         char* p;
         while ((p = strchr(lang.get(), '_')))
             *p = '-';
-        RootedAtom a(cx, Atomize(cx, lang.get(), strlen(lang.get())));
+        a = Atomize(cx, lang.get(), strlen(lang.get()));
         if (!a)
             return false;
         if (!DefineProperty(cx, locales, a->asPropertyName(), t, nullptr, nullptr,
@@ -1211,6 +1215,8 @@ js::intl_availableCollations(JSContext* cx, unsigned argc, Value* vp)
     if (!DefineElement(cx, collations, index++, NullHandleValue))
         return false;
 
+    RootedString jscollation(cx);
+    RootedValue element(cx);
     for (uint32_t i = 0; i < count; i++) {
         const char* collation = uenum_next(values, nullptr, &status);
         if (U_FAILURE(status)) {
@@ -1226,20 +1232,10 @@ js::intl_availableCollations(JSContext* cx, unsigned argc, Value* vp)
             continue;
 
         
-        
-        if (equal(collation, "dictionary"))
-            collation = "dict";
-        else if (equal(collation, "gb2312han"))
-            collation = "gb2312";
-        else if (equal(collation, "phonebook"))
-            collation = "phonebk";
-        else if (equal(collation, "traditional"))
-            collation = "trad";
-
-        RootedString jscollation(cx, JS_NewStringCopyZ(cx, collation));
+        jscollation = JS_NewStringCopyZ(cx, uloc_toUnicodeLocaleType("co", collation));
         if (!jscollation)
             return false;
-        RootedValue element(cx, StringValue(jscollation));
+        element = StringValue(jscollation);
         if (!DefineElement(cx, collations, index++, element))
             return false;
     }
@@ -2678,19 +2674,16 @@ js::intl_DateTimeFormat_availableLocales(JSContext* cx, unsigned argc, Value* vp
     return true;
 }
 
-
-
-static const char*
-bcp47CalendarName(const char* icuName)
+struct CalendarAlias
 {
-    if (equal(icuName, "ethiopic-amete-alem"))
-        return "ethioaa";
-    if (equal(icuName, "gregorian"))
-        return "gregory";
-    if (equal(icuName, "islamic-civil"))
-        return "islamicc";
-    return icuName;
-}
+    const char* const calendar;
+    const char* const alias;
+};
+
+const CalendarAlias calendarAliases[] = {
+    { "islamic-civil", "islamicc" },
+    { "ethioaa", "ethiopic-amete-alem" }
+};
 
 bool
 js::intl_availableCalendars(JSContext* cx, unsigned argc, Value* vp)
@@ -2723,7 +2716,8 @@ js::intl_availableCalendars(JSContext* cx, unsigned argc, Value* vp)
             return false;
         }
 
-        jscalendar = JS_NewStringCopyZ(cx, bcp47CalendarName(calendar));
+        
+        jscalendar = JS_NewStringCopyZ(cx, uloc_toUnicodeLocaleType("ca", calendar));
         if (!jscalendar)
             return false;
     }
@@ -2753,12 +2747,27 @@ js::intl_availableCalendars(JSContext* cx, unsigned argc, Value* vp)
             return false;
         }
 
-        jscalendar = JS_NewStringCopyZ(cx, bcp47CalendarName(calendar));
+        
+        calendar = uloc_toUnicodeLocaleType("ca", calendar);
+
+        jscalendar = JS_NewStringCopyZ(cx, calendar);
         if (!jscalendar)
             return false;
         element = StringValue(jscalendar);
         if (!DefineElement(cx, calendars, index++, element))
             return false;
+
+        
+        for (const auto& calendarAlias : calendarAliases) {
+            if (equal(calendar, calendarAlias.calendar)) {
+                jscalendar = JS_NewStringCopyZ(cx, calendarAlias.alias);
+                if (!jscalendar)
+                    return false;
+                element = StringValue(jscalendar);
+                if (!DefineElement(cx, calendars, index++, element))
+                    return false;
+            }
+        }
     }
 
     args.rval().setObject(*calendars);
