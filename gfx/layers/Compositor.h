@@ -542,27 +542,6 @@ public:
     mScreenRotation = aRotation;
   }
 
-  TimeStamp GetCompositionTime() const {
-    return mCompositionTime;
-  }
-  void SetCompositionTime(TimeStamp aTimeStamp) {
-    mCompositionTime = aTimeStamp;
-    if (!mCompositionTime.IsNull() && !mCompositeUntilTime.IsNull() &&
-        mCompositionTime >= mCompositeUntilTime) {
-      mCompositeUntilTime = TimeStamp();
-    }
-  }
-
-  virtual void CompositeUntil(TimeStamp aTimeStamp) {
-    if (mCompositeUntilTime.IsNull() ||
-        mCompositeUntilTime < aTimeStamp) {
-      mCompositeUntilTime = aTimeStamp;
-    }
-  }
-  TimeStamp GetCompositeUntilTime() const {
-    return mCompositeUntilTime;
-  }
-
   
   
   void SetInvalid();
@@ -651,17 +630,6 @@ protected:
 
 
   TimeStamp mLastCompositionEndTime;
-
-  
-
-
-  TimeStamp mCompositionTime;
-  
-
-
-
-
-  TimeStamp mCompositeUntilTime;
 
   uint32_t mCompositorID;
   DiagnosticTypes mDiagnosticTypes;
