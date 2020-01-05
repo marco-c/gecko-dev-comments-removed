@@ -121,45 +121,11 @@ private:
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
   NS_DECL_NSIATOM
-
-  void TransmuteToStatic(nsStringBuffer* aStringBuffer);
 };
 
 class StaticAtom final : public nsIAtom
 {
-  
-  friend void DynamicAtom::TransmuteToStatic(nsStringBuffer*);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  explicit StaticAtom(nsStringBuffer* aStaticBuffer)
-  {
-    static_assert(sizeof(DynamicAtom) >= sizeof(StaticAtom),
-                  "can't safely transmute a smaller object to a bigger one");
-
-    
-    MOZ_ASSERT(!mIsStatic);
-    mIsStatic = true;
-
-    char16_t* staticString = static_cast<char16_t*>(aStaticBuffer->Data());
-    MOZ_ASSERT(nsCRT::strcmp(staticString, mString) == 0);
-    nsStringBuffer* dynamicBuffer = nsStringBuffer::FromData(mString);
-    mString = staticString;
-    dynamicBuffer->Release();
-  }
-
 public:
-  
   StaticAtom(nsStringBuffer* aStringBuffer, uint32_t aLength, uint32_t aHash)
   {
     mLength = aLength;
@@ -258,14 +224,6 @@ StaticAtom::SizeOfIncludingThis(MallocSizeOf aMallocSizeOf)
   
   
   return n;
-}
-
-
-
-void
-DynamicAtom::TransmuteToStatic(nsStringBuffer* aStringBuffer)
-{
-  new (this) StaticAtom(aStringBuffer);
 }
 
 
