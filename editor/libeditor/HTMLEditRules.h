@@ -405,19 +405,6 @@ protected:
   nsresult ChangeIndentation(Element& aElement, Change aChange);
   void DocumentModifiedWorker();
 
-  
-
-
-
-  void InitStyleCacheArray(nsTArray<StyleCache>& aStyleCache);
-
-  
-
-
-
-  nsresult GetInlineStyles(nsIDOMNode* aNode,
-                           nsTArray<StyleCache>& aStyleCache);
-
 protected:
   HTMLEditor* mHTMLEditor;
   RefPtr<nsRange> mDocChangeRange;
@@ -431,12 +418,7 @@ protected:
   uint32_t mJoinOffset;
   nsCOMPtr<Element> mNewBlock;
   RefPtr<RangeItem> mRangeItem;
-
-  
-  
-  
-  
-  nsTArray<StyleCache> mCachedStyles;
+  StyleCache mCachedStyles[SIZE_STYLE_TABLE];
 };
 
 } 
