@@ -3125,6 +3125,29 @@ TabChild::ReinitRendering()
 }
 
 void
+TabChild::ReinitRenderingForDeviceReset()
+{
+  InvalidateLayers();
+
+  RefPtr<LayerManager> lm = mPuppetWidget->GetLayerManager();
+  ClientLayerManager* clm = lm->AsClientLayerManager();
+  if (!clm) {
+    return;
+  }
+
+  if (ShadowLayerForwarder* fwd = clm->AsShadowForwarder()) {
+    
+    
+    
+    
+    fwd->SynchronouslyShutdown();
+  }
+
+  
+  ReinitRendering();
+}
+
+void
 TabChild::CompositorUpdated(const TextureFactoryIdentifier& aNewIdentifier,
                             uint64_t aDeviceResetSeqNo)
 {

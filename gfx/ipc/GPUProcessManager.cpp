@@ -364,12 +364,11 @@ GPUProcessManager::OnProcessDeviceReset(GPUProcessHost* aHost)
     HandleProcessLost();
     return;
   }
-  
-  uint64_t seqNo = GetNextDeviceResetSequenceNumber();
 
-  
-  for (auto& session : mRemoteSessions) {
-    session->NotifyDeviceReset(seqNo);
+  RebuildRemoteSessions();
+
+  for (const auto& listener : mListeners) {
+    listener->OnCompositorDeviceReset();
   }
 }
 
@@ -469,7 +468,19 @@ GPUProcessManager::HandleProcessLost()
   
   
   
+  RebuildRemoteSessions();
 
+  
+  
+  
+  for (const auto& listener : mListeners) {
+    listener->OnCompositorUnexpectedShutdown();
+  }
+}
+
+void
+GPUProcessManager::RebuildRemoteSessions()
+{
   
   
   nsTArray<RefPtr<RemoteCompositorSession>> sessions;
@@ -481,13 +492,6 @@ GPUProcessManager::HandleProcessLost()
   
   for (const auto& session : sessions) {
     session->NotifySessionLost();
-  }
-
-  
-  
-  
-  for (const auto& listener : mListeners) {
-    listener->OnCompositorUnexpectedShutdown();
   }
 }
 

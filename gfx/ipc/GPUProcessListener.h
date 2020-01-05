@@ -19,6 +19,11 @@ class GPUProcessListener
   
   virtual void OnCompositorUnexpectedShutdown()
   {}
+
+  
+  
+  virtual void OnCompositorDeviceReset()
+  {}
 };
 
 } 
