@@ -26,6 +26,7 @@ namespace mozilla {
 struct Ok {};
 
 template <typename E> class GenericErrorResult;
+template <typename V, typename E> class Result;
 
 namespace detail {
 
@@ -133,6 +134,12 @@ template <typename T> struct HasFreeLSB<T*> {
 template <typename T> struct HasFreeLSB<T&> {
   static const bool value = HasFreeLSB<T*>::value;
 };
+
+template <typename T>
+struct IsResult : FalseType { };
+
+template <typename V, typename E>
+struct IsResult<Result<V, E>> : TrueType { };
 
 } 
 
@@ -250,6 +257,44 @@ public:
   auto map(F f) const -> Result<decltype(f(*((V*) nullptr))), E> {
       using RetResult = Result<decltype(f(*((V*) nullptr))), E>;
       return isOk() ? RetResult(f(unwrap())) : RetResult(unwrapErr());
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  template<
+      typename F,
+      typename = typename EnableIf<
+          detail::IsResult<decltype((*((F*) nullptr))(*((V*) nullptr)))>::value
+      >::Type
+  >
+  auto andThen(F f) const -> decltype(f(*((V*) nullptr))) {
+      return isOk() ? f(unwrap()) : GenericErrorResult<E>(unwrapErr());
   }
 };
 
