@@ -933,6 +933,17 @@ class MacroAssembler : public MacroAssemblerSpecific
     
     
 
+    template <typename T1, typename T2>
+    inline void cmp32Set(Condition cond, T1 lhs, T2 rhs, Register dest)
+        DEFINED_ON(x86_shared, arm, arm64, mips32, mips64);
+
+    template <typename T1, typename T2>
+    inline void cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest)
+        PER_ARCH;
+
+    
+    
+
     template <class L>
     inline void branch32(Condition cond, Register lhs, Register rhs, L label) PER_SHARED_ARCH;
     template <class L>

@@ -1302,13 +1302,6 @@ class MacroAssemblerX86Shared : public Assembler
         }
     }
 
-    template <typename T1, typename T2>
-    void cmp32Set(Assembler::Condition cond, T1 lhs, T2 rhs, Register dest)
-    {
-        cmp32(lhs, rhs);
-        emitSet(cond, dest);
-    }
-
     
     CodeOffset toggledJump(Label* label) {
         CodeOffset offset(size());

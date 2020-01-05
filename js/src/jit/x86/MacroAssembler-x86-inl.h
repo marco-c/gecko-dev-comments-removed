@@ -613,6 +613,17 @@ MacroAssembler::popcnt64(Register64 src, Register64 dest, Register tmp)
 
 
 
+template <typename T1, typename T2>
+void
+MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest)
+{
+    cmpPtr(lhs, rhs);
+    emitSet(cond, dest);
+}
+
+
+
+
 void
 MacroAssembler::branch32(Condition cond, const AbsoluteAddress& lhs, Register rhs, Label* label)
 {

@@ -456,6 +456,17 @@ MacroAssembler::rshift32Arithmetic(Imm32 shift, Register srcDest)
 
 
 
+template <typename T1, typename T2>
+void
+MacroAssembler::cmp32Set(Condition cond, T1 lhs, T2 rhs, Register dest)
+{
+    cmp32(lhs, rhs);
+    emitSet(cond, dest);
+}
+
+
+
+
 template <class L>
 void
 MacroAssembler::branch32(Condition cond, Register lhs, Register rhs, L label)

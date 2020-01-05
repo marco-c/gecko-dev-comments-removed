@@ -458,6 +458,17 @@ MacroAssembler::rotateRight64(Imm32 count, Register64 src, Register64 dest, Regi
 
 
 
+template <typename T1, typename T2>
+void
+MacroAssembler::cmpPtrSet(Condition cond, T1 lhs, T2 rhs, Register dest)
+{
+    cmpPtr(lhs, rhs);
+    emitSet(cond, dest);
+}
+
+
+
+
 void
 MacroAssembler::clz64(Register64 src, Register dest)
 {
