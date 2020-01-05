@@ -7,7 +7,6 @@
 #include "ExtendedValidation.h"
 
 #include "cert.h"
-#include "certdb.h"
 #include "hasht.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Assertions.h"
@@ -18,17 +17,18 @@
 #include "nsString.h"
 #include "pk11pub.h"
 #include "pkix/pkixtypes.h"
-#include "prerror.h"
 
-struct nsMyTrustedEVInfo
+namespace mozilla { namespace psm {
+
+struct EVInfo
 {
   
-  const char* dotted_oid;
-  const char* oid_name; 
+  const char* dottedOid;
+  const char* oidName; 
                   
-  unsigned char ev_root_sha256_fingerprint[SHA256_LENGTH];
-  const char* issuer_base64;
-  const char* serial_base64;
+  unsigned char sha256Fingerprint[SHA256_LENGTH];
+  const char* issuerBase64;
+  const char* serialBase64;
 };
 
 
@@ -86,7 +86,7 @@ struct nsMyTrustedEVInfo
 static const size_t NUM_TEST_EV_ROOTS = 2;
 #endif
 
-static const struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
+static const struct EVInfo kEVInfos[] = {
   
   
 #ifdef DEBUG
@@ -1132,11 +1132,11 @@ static const struct nsMyTrustedEVInfo myTrustedEVInfos[] = {
   },
 };
 
-static SECOidTag sEVInfoOIDTags[mozilla::ArrayLength(myTrustedEVInfos)];
+static SECOidTag sEVInfoOIDTags[ArrayLength(kEVInfos)];
 
 static_assert(SEC_OID_UNKNOWN == 0,
   "We depend on zero-initialized globals being interpreted as SEC_OID_UNKNOWN.");
-static_assert(mozilla::ArrayLength(sEVInfoOIDTags) == mozilla::ArrayLength(myTrustedEVInfos),
+static_assert(ArrayLength(sEVInfoOIDTags) == ArrayLength(kEVInfos),
   "These arrays are used in parallel and must have the same length.");
 
 static SECOidTag
@@ -1170,8 +1170,6 @@ isEVPolicy(SECOidTag policyOIDTag)
   return false;
 }
 
-namespace mozilla { namespace psm {
-
 bool
 CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
                                const mozilla::pkix::CertPolicyId& policy)
@@ -1190,13 +1188,13 @@ CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
   }
 
   const SECOidData* cabforumOIDData = SECOID_FindOIDByTag(sCABForumEVOIDTag);
-  for (size_t iEV = 0; iEV < mozilla::ArrayLength(myTrustedEVInfos); ++iEV) {
-    const nsMyTrustedEVInfo& entry = myTrustedEVInfos[iEV];
+  for (size_t i = 0; i < ArrayLength(kEVInfos); ++i) {
+    const EVInfo& entry = kEVInfos[i];
 
     
     
     
-    if (!PodEqual(fingerprint, entry.ev_root_sha256_fingerprint)) {
+    if (!PodEqual(fingerprint, entry.sha256Fingerprint)) {
       continue;
     }
 
@@ -1204,7 +1202,7 @@ CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
         PodEqual(cabforumOIDData->oid.data, policy.bytes, policy.numBytes)) {
       return true;
     }
-    const SECOidData* oidData = SECOID_FindOIDByTag(sEVInfoOIDTags[iEV]);
+    const SECOidData* oidData = SECOID_FindOIDByTag(sEVInfoOIDTags[i]);
     if (oidData && oidData->oid.len == policy.numBytes &&
         PodEqual(oidData->oid.data, policy.bytes, policy.numBytes)) {
       return true;
@@ -1220,7 +1218,7 @@ LoadExtendedValidationInfo()
   static const char* sCABForumOIDString = "2.23.140.1.1";
   static const char* sCABForumOIDDescription = "CA/Browser Forum EV OID";
 
-  mozilla::ScopedAutoSECItem cabforumOIDItem;
+  ScopedAutoSECItem cabforumOIDItem;
   if (SEC_StringToOID(nullptr, &cabforumOIDItem, sCABForumOIDString, 0)
         != SECSuccess) {
     return NS_ERROR_FAILURE;
@@ -1230,8 +1228,8 @@ LoadExtendedValidationInfo()
     return NS_ERROR_FAILURE;
   }
 
-  for (size_t iEV = 0; iEV < mozilla::ArrayLength(myTrustedEVInfos); ++iEV) {
-    const nsMyTrustedEVInfo& entry = myTrustedEVInfos[iEV];
+  for (size_t i = 0; i < ArrayLength(kEVInfos); ++i) {
+    const EVInfo& entry = kEVInfos[i];
 
     SECStatus srv;
 #ifdef DEBUG
@@ -1241,7 +1239,7 @@ LoadExtendedValidationInfo()
     
     
     nsAutoCString derIssuer;
-    nsresult rv = Base64Decode(nsDependentCString(entry.issuer_base64),
+    nsresult rv = Base64Decode(nsDependentCString(entry.issuerBase64),
                                derIssuer);
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Could not base64-decode built-in EV issuer");
     if (NS_FAILED(rv)) {
@@ -1249,7 +1247,7 @@ LoadExtendedValidationInfo()
     }
 
     nsAutoCString serialNumber;
-    rv = Base64Decode(nsDependentCString(entry.serial_base64), serialNumber);
+    rv = Base64Decode(nsDependentCString(entry.serialBase64), serialNumber);
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Could not base64-decode built-in EV serial");
     if (NS_FAILED(rv)) {
       return rv;
@@ -1273,7 +1271,7 @@ LoadExtendedValidationInfo()
       
       
       
-      MOZ_ASSERT(iEV < NUM_TEST_EV_ROOTS, "Could not find built-in EV root");
+      MOZ_ASSERT(i < NUM_TEST_EV_ROOTS, "Could not find built-in EV root");
     } else {
       unsigned char certFingerprint[SHA256_LENGTH];
       srv = PK11_HashBuf(SEC_OID_SHA256, certFingerprint, cert->derCert.data,
@@ -1282,7 +1280,7 @@ LoadExtendedValidationInfo()
       if (srv != SECSuccess) {
         return NS_ERROR_FAILURE;
       }
-      bool same = PodEqual(certFingerprint, entry.ev_root_sha256_fingerprint);
+      bool same = PodEqual(certFingerprint, entry.sha256Fingerprint);
       MOZ_ASSERT(same, "EV root fingerprint mismatch");
       if (!same) {
         return NS_ERROR_FAILURE;
@@ -1290,14 +1288,14 @@ LoadExtendedValidationInfo()
     }
 #endif
     
-    mozilla::ScopedAutoSECItem evOIDItem;
-    srv = SEC_StringToOID(nullptr, &evOIDItem, entry.dotted_oid, 0);
+    ScopedAutoSECItem evOIDItem;
+    srv = SEC_StringToOID(nullptr, &evOIDItem, entry.dottedOid, 0);
     MOZ_ASSERT(srv == SECSuccess, "SEC_StringToOID failed");
     if (srv != SECSuccess) {
       return NS_ERROR_FAILURE;
     }
-    sEVInfoOIDTags[iEV] = RegisterOID(evOIDItem, entry.oid_name);
-    if (sEVInfoOIDTags[iEV] == SEC_OID_UNKNOWN) {
+    sEVInfoOIDTags[i] = RegisterOID(evOIDItem, entry.oidName);
+    if (sEVInfoOIDTags[i] == SEC_OID_UNKNOWN) {
       return NS_ERROR_FAILURE;
     }
   }
