@@ -61,6 +61,10 @@ class AtomMarkingRuntime
     
     template <typename T> void markAtom(JSContext* cx, T* thing);
 
+    
+    
+    template <typename T> MOZ_ALWAYS_INLINE void inlinedMarkAtom(JSContext* cx, T* thing);
+
     void markId(JSContext* cx, jsid id);
     void markAtomValue(JSContext* cx, const Value& value);
 
