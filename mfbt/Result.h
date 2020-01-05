@@ -34,6 +34,7 @@ enum class PackingStrategy {
   Variant,
   NullIsOk,
   LowBitTagIsError,
+  PackedVariant,
 };
 
 template <typename V, typename E, PackingStrategy Strategy>
@@ -124,6 +125,55 @@ public:
 };
 
 
+template<typename V, typename E>
+struct IsPackableVariant
+{
+  struct VEbool {
+      V v;
+      E e;
+      bool ok;
+  };
+  struct EVbool {
+      E e;
+      V v;
+      bool ok;
+  };
+
+  using Impl = typename Conditional<sizeof(VEbool) <= sizeof(EVbool),
+                                    VEbool, EVbool>::Type;
+
+  static const bool value = sizeof(Impl) <= sizeof(uintptr_t);
+};
+
+
+
+
+
+template <typename V, typename E>
+class ResultImplementation<V, E, PackingStrategy::PackedVariant>
+{
+  using Impl = typename IsPackableVariant<V, E>::Impl;
+  Impl data;
+
+public:
+  explicit ResultImplementation(V aValue)
+  {
+    data.v = aValue;
+    data.ok = true;
+  }
+  explicit ResultImplementation(E aErrorValue)
+  {
+    data.e = aErrorValue;
+    data.ok = false;
+  }
+
+  bool isOk() const { return data.ok; }
+
+  V unwrap() const { return data.v; }
+  E unwrapErr() const { return data.e; }
+};
+
+
 
 
 
@@ -168,6 +218,9 @@ struct SelectResultImpl
     ? PackingStrategy::NullIsOk
     : (detail::HasFreeLSB<V>::value && detail::HasFreeLSB<E>::value)
     ? PackingStrategy::LowBitTagIsError
+    : (IsDefaultConstructible<V>::value && IsDefaultConstructible<E>::value &&
+       IsPackableVariant<V, E>::value)
+    ? PackingStrategy::PackedVariant
     : PackingStrategy::Variant;
 
   using Type = detail::ResultImplementation<V, E, value>;
