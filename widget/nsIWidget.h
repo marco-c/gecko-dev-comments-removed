@@ -1783,20 +1783,20 @@ public:
     
 
 
-    NS_IMETHOD_(void) SetInputContext(const InputContext& aContext,
-                                      const InputContextAction& aAction) = 0;
+    virtual void SetInputContext(const InputContext& aContext,
+                                 const InputContextAction& aAction) = 0;
 
     
 
 
-    NS_IMETHOD_(InputContext) GetInputContext() = 0;
+    virtual InputContext GetInputContext() = 0;
 
     
 
 
 
 
-    NS_IMETHOD_(NativeIMEContext) GetNativeIMEContext();
+    virtual NativeIMEContext GetNativeIMEContext();
 
     
 
@@ -1817,7 +1817,7 @@ public:
       NativeKeyBindingsForMultiLineEditor,
       NativeKeyBindingsForRichTextEditor
     };
-    NS_IMETHOD_(bool) ExecuteNativeKeyBinding(
+    virtual bool ExecuteNativeKeyBinding(
                         NativeKeyBindingsType aType,
                         const mozilla::WidgetKeyboardEvent& aEvent,
                         DoCommandCallback aCallback,
@@ -1957,14 +1957,14 @@ public:
 
 
 
-    NS_IMETHOD_(TextEventDispatcher*) GetTextEventDispatcher() = 0;
+    virtual TextEventDispatcher* GetTextEventDispatcher() = 0;
 
     
 
 
 
 
-    NS_IMETHOD_(TextEventDispatcherListener*)
+    virtual TextEventDispatcherListener*
       GetNativeTextEventDispatcherListener() = 0;
 
     virtual void ZoomToRect(const uint32_t& aPresShellId,
