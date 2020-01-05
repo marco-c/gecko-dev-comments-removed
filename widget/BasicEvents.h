@@ -556,6 +556,10 @@ public:
   
 
 
+  bool IsAllowedToDispatchInSystemGroup() const;
+  
+
+
   void SetDefaultComposed()
   {
     switch (mClass) {

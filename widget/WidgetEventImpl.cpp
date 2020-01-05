@@ -416,6 +416,15 @@ WidgetEvent::IsAllowedToDispatchDOMEvent() const
   }
 }
 
+bool
+WidgetEvent::IsAllowedToDispatchInSystemGroup() const
+{
+  
+  
+  
+  return mClass != ePointerEventClass;
+}
+
 
 
 
