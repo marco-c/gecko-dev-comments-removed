@@ -12,7 +12,7 @@
 typedef mozilla::Maybe<WRImageMask> MaybeImageMask;
 
 namespace mozilla {
-namespace layers {
+namespace wr {
 
 static inline WRColor ToWRColor(const gfx::Color& color)
 {
@@ -57,12 +57,6 @@ static inline WRRect ToWRRect(const gfx::IntRectTyped<T>& rect)
 {
   return ToWRRect(IntRectToRect(rect));
 }
-
-} 
-} 
-
-namespace mozilla {
-namespace gfx {
 
 struct ByteBuffer
 {

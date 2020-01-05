@@ -18,7 +18,7 @@
 #include "mozilla/webrender/WebRenderTypes.h"
 
 namespace mozilla {
-namespace layers {
+namespace wr {
 
 class RendererOGL;
 class RenderThread;
@@ -31,7 +31,7 @@ class RendererEvent
 {
 public:
   virtual ~RendererEvent() {}
-  virtual void Run(RenderThread& aRenderThread, gfx::WindowId aWindow) = 0;
+  virtual void Run(RenderThread& aRenderThread, wr::WindowId aWindow) = 0;
 };
 
 
@@ -73,27 +73,27 @@ public:
   static bool IsInRenderThread();
 
   
-  void AddRenderer(gfx::WindowId aWindowId, UniquePtr<RendererOGL> aRenderer);
+  void AddRenderer(wr::WindowId aWindowId, UniquePtr<RendererOGL> aRenderer);
 
   
-  void RemoveRenderer(gfx::WindowId aWindowId);
+  void RemoveRenderer(wr::WindowId aWindowId);
 
   
-  RendererOGL* GetRenderer(gfx::WindowId aWindowId);
+  RendererOGL* GetRenderer(wr::WindowId aWindowId);
 
   
 
   
-  void NewFrameReady(gfx::WindowId aWindowId);
+  void NewFrameReady(wr::WindowId aWindowId);
 
   
-  void NewScrollFrameReady(gfx::WindowId aWindowId, bool aCompositeNeeded);
+  void NewScrollFrameReady(wr::WindowId aWindowId, bool aCompositeNeeded);
 
   
-  void PipelineSizeChanged(gfx::WindowId aWindowId, uint64_t aPipelineId, float aWidth, float aHeight);
+  void PipelineSizeChanged(wr::WindowId aWindowId, uint64_t aPipelineId, float aWidth, float aHeight);
 
   
-  void RunEvent(gfx::WindowId aWindowId, UniquePtr<RendererEvent> aCallBack);
+  void RunEvent(wr::WindowId aWindowId, UniquePtr<RendererEvent> aCallBack);
 
 private:
   explicit RenderThread(base::Thread* aThread);
@@ -101,11 +101,11 @@ private:
   ~RenderThread();
 
   
-  void UpdateAndRender(gfx::WindowId aWindowId);
+  void UpdateAndRender(wr::WindowId aWindowId);
 
   base::Thread* const mThread;
 
-  std::map<gfx::WindowId, UniquePtr<RendererOGL>> mRenderers;
+  std::map<wr::WindowId, UniquePtr<RendererOGL>> mRenderers;
 };
 
 } 
