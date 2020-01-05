@@ -535,12 +535,12 @@ function newChannelForURL(url, { policy, window, principal }) {
 
   let uri;
   try {
-    uri = Services.io.newURI(url, null, null);
+    uri = Services.io.newURI(url);
   } catch (e) {
     
     
     
-    uri = Services.io.newURI("file://" + url, null, null);
+    uri = Services.io.newURI("file://" + url);
   }
   let channelOptions = {
     contentPolicyType: policy,

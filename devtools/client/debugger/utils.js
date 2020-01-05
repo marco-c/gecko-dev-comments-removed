@@ -168,7 +168,7 @@ var SourceUtils = {
 
     try {
       
-      var uri = Services.io.newURI(aUrl, null, null).QueryInterface(Ci.nsIURL);
+      var uri = Services.io.newURI(aUrl).QueryInterface(Ci.nsIURL);
     } catch (e) {
       
       return "";
@@ -257,7 +257,7 @@ var SourceUtils = {
     if (!(aUrl instanceof Ci.nsIURL)) {
       try {
         
-        aUrl = Services.io.newURI(aUrl, null, null).QueryInterface(Ci.nsIURL);
+        aUrl = Services.io.newURI(aUrl).QueryInterface(Ci.nsIURL);
       } catch (e) {
         
         return aUrl;

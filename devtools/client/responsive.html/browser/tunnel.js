@@ -238,7 +238,7 @@ function tunnelToInnerBrowser(outer, inner) {
       
       let { detail } = event;
       event.preventDefault();
-      let uri = Services.io.newURI(detail.url, null, null);
+      let uri = Services.io.newURI(detail.url);
       
       
       

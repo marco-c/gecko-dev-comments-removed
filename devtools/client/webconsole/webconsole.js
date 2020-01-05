@@ -1498,8 +1498,8 @@ WebConsoleFrame.prototype = {
     
     
     if (scriptError.category && scriptError.category == "SHA-1 Signature") {
-      let sourceURI = Services.io.newURI(scriptError.sourceName, null, null)
-                      .QueryInterface(Ci.nsIURL);
+      let sourceURI = Services.io.newURI(scriptError.sourceName)
+                                 .QueryInterface(Ci.nsIURL);
       displayOrigin = sourceURI.prePath;
     }
 
