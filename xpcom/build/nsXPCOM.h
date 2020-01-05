@@ -268,6 +268,27 @@ XPCOM_API(void) NS_LogInit();
 
 XPCOM_API(void) NS_LogTerm();
 
+#ifdef __cplusplus
+
+
+
+
+
+class ScopedLogging
+{
+public:
+    ScopedLogging()
+    {
+        NS_LogInit();
+    }
+
+    ~ScopedLogging()
+    {
+        NS_LogTerm();
+    }
+};
+#endif
+
 
 
 
