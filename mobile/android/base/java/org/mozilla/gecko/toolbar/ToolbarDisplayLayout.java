@@ -449,9 +449,11 @@ public class ToolbarDisplayLayout extends ThemedLinearLayout {
         
         
         if (mUiMode == UIMode.PROGRESS) {
-            Log.i(LOGTAG, "zerdatime " + SystemClock.uptimeMillis() + " - Throbber start");
+            Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
+                  " - page load start");
         } else {
-            Log.i(LOGTAG, "zerdatime " + SystemClock.uptimeMillis() + " - Throbber stop");
+            Log.i(LOGTAG, "zerdatime " + SystemClock.elapsedRealtime() +
+                  " - page load stop");
         }
 
         updatePageActions();

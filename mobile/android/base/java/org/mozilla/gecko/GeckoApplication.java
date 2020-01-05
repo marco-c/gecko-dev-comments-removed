@@ -147,7 +147,8 @@ public class GeckoApplication extends Application
 
     @Override
     public void onCreate() {
-        Log.i(LOG_TAG, "zerdatime " + SystemClock.uptimeMillis() + " - Fennec application start");
+        Log.i(LOG_TAG, "zerdatime " + SystemClock.elapsedRealtime() +
+              " - application start");
 
         
         
