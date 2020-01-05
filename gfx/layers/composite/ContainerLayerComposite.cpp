@@ -212,7 +212,8 @@ ContainerPrepare(ContainerT* aContainer,
     
     
     if (!layerToRender->GetLayer()->AsContainerLayer()) {
-      if (!layerToRender->GetLayer()->IsVisible()) {
+      if (!layerToRender->GetLayer()->IsVisible() &&
+          !layerToRender->NeedToDrawCheckerboarding(nullptr)) {
         CULLING_LOG("Sublayer %p has no effective visible region\n", layerToRender->GetLayer());
         continue;
       }
@@ -420,6 +421,24 @@ RenderLayers(ContainerT* aContainer, LayerManagerComposite* aManager,
           break;
         }
       }
+    }
+
+    Color color;
+    if (layerToRender->NeedToDrawCheckerboarding(&color)) {
+      if (gfxPrefs::APZHighlightCheckerboardedAreas()) {
+        color = Color(255 / 255.f, 188 / 255.f, 217 / 255.f, 1.f); 
+      }
+      
+      
+      
+      
+      
+      
+      EffectChain effectChain(layer);
+      effectChain.mPrimaryEffect = new EffectSolidColor(color);
+      aManager->GetCompositor()->DrawGeometry(gfx::Rect(layer->GetLayerBounds()), clipRect,
+                                              effectChain, layer->GetEffectiveOpacity(),
+                                              layer->GetEffectiveTransform(), Nothing());
     }
 
     if (layerToRender->HasLayerBeenComposited()) {

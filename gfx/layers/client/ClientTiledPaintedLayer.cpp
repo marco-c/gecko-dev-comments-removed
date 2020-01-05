@@ -169,7 +169,7 @@ ClientTiledPaintedLayer::BeginPaint()
   ParentLayerToLayerMatrix4x4 transformDisplayPortToLayer =
     GetTransformToAncestorsParentLayer(this, displayPortAncestor).Inverse();
 
-  LayerRect layerBounds(GetVisibleRegion().GetBounds());
+  LayerRect layerBounds = ViewAs<LayerPixel>(Rect(GetLayerBounds()));
 
   
   

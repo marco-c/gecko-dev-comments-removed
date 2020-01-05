@@ -576,7 +576,8 @@ Layer::CalculateScissorRect(const RenderTargetIntRect& aCurrentScissorRect)
     return currentClip;
   }
 
-  if (GetLocalVisibleRegion().IsEmpty()) {
+  if (GetLocalVisibleRegion().IsEmpty() &&
+      !(AsHostLayer() && AsHostLayer()->NeedToDrawCheckerboarding())) {
     
     
     
@@ -1837,6 +1838,9 @@ Layer::PrintInfo(std::stringstream& aStream, const char* aPrefix)
   }
   if (GetTransformIsPerspective()) {
     aStream << " [perspective]";
+  }
+  if (!GetLayerBounds().IsEmpty()) {
+    AppendToString(aStream, GetLayerBounds(), " [bounds=", "]");
   }
   if (!mVisibleRegion.IsEmpty()) {
     AppendToString(aStream, mVisibleRegion.ToUnknownRegion(), " [visible=", "]");
