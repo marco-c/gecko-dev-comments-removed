@@ -163,6 +163,9 @@ impl TableRowFlow {
             child_table_cell.block_flow.base.position.size.block = block_size;
 
             
+            child_table_cell.valign_children();
+
+            
             
             child_table_cell.block_flow.base.early_absolute_position_info =
                 EarlyAbsolutePositionInfo {
