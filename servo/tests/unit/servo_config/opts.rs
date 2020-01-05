@@ -2,7 +2,8 @@
 
 
 
-use servo_config::opts::parse_url_or_filename;
+use servo_config::opts::{parse_url_or_filename, parse_pref_from_command_line};
+use servo_config::prefs::{PrefValue, PREFS};
 use std::path::Path;
 
 #[cfg(not(target_os = "windows"))]
@@ -66,4 +67,27 @@ fn test_argument_parsing_special() {
                ["fake", "cwd", "bar%3Fbaz%23buzz.html"]);
     assert_eq!(url.query(), None);
     assert_eq!(url.fragment(), None);
+}
+
+#[test]
+fn test_parse_pref_from_command_line() {
+    
+    parse_pref_from_command_line("testtrue=true");
+    assert_eq!(*PREFS.get("testtrue"), PrefValue::Boolean(true));
+    parse_pref_from_command_line("testfalse=false");
+    assert_eq!(*PREFS.get("testfalse"), PrefValue::Boolean(false));
+
+    
+    parse_pref_from_command_line("testint=42");
+    assert_eq!(*PREFS.get("testint"), PrefValue::Number(42 as f64));
+    parse_pref_from_command_line("testfloat=4.2");
+    assert_eq!(*PREFS.get("testfloat"), PrefValue::Number(4.2));
+
+    
+    parse_pref_from_command_line("teststr=str");
+    assert_eq!(*PREFS.get("teststr"), PrefValue::String("str".to_owned()));
+
+    
+    parse_pref_from_command_line("testempty");
+    assert_eq!(*PREFS.get("testempty"), PrefValue::Boolean(true));
 }
