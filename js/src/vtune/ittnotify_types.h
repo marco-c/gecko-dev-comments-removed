@@ -55,7 +55,6 @@
 
 
 
-
 #ifndef _ITTNOTIFY_TYPES_H_
 #define _ITTNOTIFY_TYPES_H_
 

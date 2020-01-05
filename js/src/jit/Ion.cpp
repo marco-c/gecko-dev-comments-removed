@@ -51,9 +51,6 @@
 #include "vm/Debugger.h"
 #include "vm/HelperThreads.h"
 #include "vm/TraceLogging.h"
-#ifdef MOZ_VTUNE
-# include "vtune/VTuneWrapper.h"
-#endif
 
 #include "jscompartmentinlines.h"
 #include "jsobjinlines.h"
@@ -819,11 +816,6 @@ JitCode::finalize(FreeOp* fop)
     }
 #endif
 
-#ifdef MOZ_VTUNE
-    if (IsVTuneProfilingActive())
-        VTuneUnloadCode(this);
-#endif
-
     MOZ_ASSERT(pool_);
 
     
@@ -836,14 +828,12 @@ JitCode::finalize(FreeOp* fop)
     }
     code_ = nullptr;
 
-#ifdef JS_ION_PERF
     
     
     
     
     if (!PerfEnabled())
         pool_->release(headerSize_ + bufferSize_, CodeKind(kind_));
-#endif
     pool_ = nullptr;
 }
 
