@@ -46,17 +46,6 @@ AnimationEffectReadOnly::AnimationEffectReadOnly(
 
 
 bool
-AnimationEffectReadOnly::IsInPlay() const
-{
-  if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
-    return false;
-  }
-
-  return GetComputedTiming().mPhase == ComputedTiming::AnimationPhase::Active;
-}
-
-
-bool
 AnimationEffectReadOnly::IsCurrent() const
 {
   if (!mAnimation || mAnimation->PlayState() == AnimationPlayState::Finished) {
