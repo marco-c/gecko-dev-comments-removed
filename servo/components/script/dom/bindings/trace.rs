@@ -64,7 +64,7 @@ impl<T: Reflectable> JSTraceable for JS<T> {
     }
 }
 
-untraceable!(Reflector)
+no_jsmanaged_fields!(Reflector)
 
 
 pub trait JSTraceable {
@@ -190,25 +190,25 @@ impl<A: JSTraceable, B: JSTraceable> JSTraceable for (A, B) {
 }
 
 
-untraceable!(bool, f32, f64, String, Url)
-untraceable!(uint, u8, u16, u32, u64)
-untraceable!(int, i8, i16, i32, i64)
-untraceable!(Sender<T>)
-untraceable!(Receiver<T>)
-untraceable!(ImageCacheTask, ScriptControlChan)
-untraceable!(Atom, Namespace, Timer)
-untraceable!(PropertyDeclarationBlock)
+no_jsmanaged_fields!(bool, f32, f64, String, Url)
+no_jsmanaged_fields!(uint, u8, u16, u32, u64)
+no_jsmanaged_fields!(int, i8, i16, i32, i64)
+no_jsmanaged_fields!(Sender<T>)
+no_jsmanaged_fields!(Receiver<T>)
+no_jsmanaged_fields!(ImageCacheTask, ScriptControlChan)
+no_jsmanaged_fields!(Atom, Namespace, Timer)
+no_jsmanaged_fields!(PropertyDeclarationBlock)
 
 
-untraceable!(SubpageId, WindowSizeData, PipelineId)
-untraceable!(QuirksMode)
-untraceable!(Cx)
-untraceable!(ResponseHeaderCollection, RequestHeaderCollection, Method)
-untraceable!(ConstellationChan)
-untraceable!(LayoutChan)
-untraceable!(WindowProxyHandler)
-untraceable!(UntrustedNodeAddress)
-untraceable!(LengthOrPercentageOrAuto)
+no_jsmanaged_fields!(SubpageId, WindowSizeData, PipelineId)
+no_jsmanaged_fields!(QuirksMode)
+no_jsmanaged_fields!(Cx)
+no_jsmanaged_fields!(ResponseHeaderCollection, RequestHeaderCollection, Method)
+no_jsmanaged_fields!(ConstellationChan)
+no_jsmanaged_fields!(LayoutChan)
+no_jsmanaged_fields!(WindowProxyHandler)
+no_jsmanaged_fields!(UntrustedNodeAddress)
+no_jsmanaged_fields!(LengthOrPercentageOrAuto)
 
 impl<'a> JSTraceable for &'a str {
     #[inline]
