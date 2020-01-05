@@ -1,6 +1,9 @@
 
 
 
+
+
+
 var {classes: Cc, interfaces: Ci, results: Cr, utils: Cu} = Components;
 
 "use strict";
@@ -16,4 +19,3 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
   ns.initTestLogging("Trace");
 }).call(this);
-

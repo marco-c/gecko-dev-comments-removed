@@ -2,6 +2,8 @@
 
 
 
+
+
 pref("services.sync.lastversion", "firstrun");
 pref("services.sync.sendVersionInfo", true);
 
