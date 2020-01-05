@@ -487,7 +487,7 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSPropertyID aProperty,
     MOZ_ASSERT(keyframeEffect,
                "A playing animation should have a keyframe effect");
     const AnimationProperty* property =
-      keyframeEffect->GetAnimationOfProperty(aProperty);
+      keyframeEffect->GetEffectiveAnimationOfProperty(aProperty);
     if (!property) {
       continue;
     }
@@ -500,8 +500,8 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSPropertyID aProperty,
                  EffectCompositor::CascadeLevel::Animations ||
                !effects->PropertiesWithImportantRules()
                   .HasProperty(aProperty),
-               "GetAnimationOfProperty already tested the property is not "
-               "overridden by !important rules");
+               "GetEffectiveAnimationOfProperty already tested the property "
+               "is not overridden by !important rules");
 
     
     

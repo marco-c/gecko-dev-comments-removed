@@ -192,7 +192,8 @@ KeyframeEffectReadOnly::SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
 }
 
 const AnimationProperty*
-KeyframeEffectReadOnly::GetAnimationOfProperty(nsCSSPropertyID aProperty) const
+KeyframeEffectReadOnly::GetEffectiveAnimationOfProperty(
+  nsCSSPropertyID aProperty) const
 {
   if (!IsInEffect()) {
     return nullptr;
@@ -217,6 +218,17 @@ KeyframeEffectReadOnly::GetAnimationOfProperty(nsCSSPropertyID aProperty) const
     }
   }
   return nullptr;
+}
+
+bool
+KeyframeEffectReadOnly::HasAnimationOfProperty(nsCSSPropertyID aProperty) const
+{
+  for (const AnimationProperty& property : mProperties) {
+    if (property.mProperty == aProperty) {
+      return true;
+    }
+  }
+  return false;
 }
 
 #ifdef DEBUG
@@ -929,7 +941,9 @@ KeyframeEffectReadOnly::CanThrottle() const
     
     
     
-    if (!HasAnimationOfProperty(record.mProperty)) {
+    
+    
+    if (!HasEffectiveAnimationOfProperty(record.mProperty)) {
       continue;
     }
 
