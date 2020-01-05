@@ -686,7 +686,9 @@ nsFileInputStream::ExpectedSerializedLength()
 bool
 nsFileInputStream::IsCloneable() const
 {
-    return XRE_IsParentProcess();
+    
+    
+    return XRE_IsParentProcess() && mFile;
 }
 
 NS_IMETHODIMP
