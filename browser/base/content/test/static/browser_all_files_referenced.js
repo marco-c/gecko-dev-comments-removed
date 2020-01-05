@@ -190,8 +190,6 @@ var whitelist = new Set([
   {file: "chrome://global/skin/icons/warning-large.png", platforms: ["linux"]},
   {file: "chrome://global/skin/icons/windowControls.png", platforms: ["linux"]},
   
-  {file: "chrome://global/skin/linkTree.css"},
-  
   {file: "chrome://global/skin/media/clicktoplay-bgtexture.png"},
   {file: "chrome://global/skin/media/videoClickToPlayButton.svg"},
   
