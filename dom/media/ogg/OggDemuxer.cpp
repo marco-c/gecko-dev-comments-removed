@@ -137,8 +137,9 @@ OggDemuxer::~OggDemuxer()
                ptr, __func__, isChained));
       Telemetry::Accumulate(Telemetry::HistogramID::MEDIA_OGG_LOADED_IS_CHAINED, isChained);
     });
-    
-    AbstractThread::MainThread()->Dispatch(task.forget());
+    SystemGroup::Dispatch("~OggDemuxer::report_telemetry",
+                          TaskCategory::Other,
+                          task.forget());
   }
 }
 
