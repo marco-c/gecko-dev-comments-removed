@@ -841,9 +841,6 @@ GeckoMediaPluginServiceParent::PathRunnable::Run()
 #ifndef MOZ_WIDGET_GONK 
   
   
-  NS_DispatchToMainThread(new NotifyObserversTask("gmp-changed"), NS_DISPATCH_NORMAL);
-  
-  
   NS_DispatchToMainThread(NS_NewRunnableFunction([]() -> void {
     GMPDecoderModule::UpdateUsableCodecs();
   }));
@@ -895,6 +892,14 @@ GeckoMediaPluginServiceParent::UpdateContentProcessGMPCapabilities()
   for (auto* cp : ContentParent::AllProcesses(ContentParent::eLive)) {
     Unused << cp->SendGMPsChanged(caps);
   }
+
+  
+  
+  nsCOMPtr<nsIObserverService> obsService = mozilla::services::GetObserverService();
+  MOZ_ASSERT(obsService);
+  if (obsService) {
+    obsService->NotifyObservers(nullptr, "gmp-changed", nullptr);
+  }
 }
 
 RefPtr<GenericPromise>
@@ -913,13 +918,6 @@ GeckoMediaPluginServiceParent::AsyncAddPluginDirectory(const nsAString& aDirecto
         LOGD(("GeckoMediaPluginServiceParent::AsyncAddPluginDirectory %s succeeded",
               NS_ConvertUTF16toUTF8(dir).get()));
         MOZ_ASSERT(NS_IsMainThread());
-        
-        
-        nsCOMPtr<nsIObserverService> obsService = mozilla::services::GetObserverService();
-        MOZ_ASSERT(obsService);
-        if (obsService) {
-          obsService->NotifyObservers(nullptr, "gmp-changed", nullptr);
-        }
         self->UpdateContentProcessGMPCapabilities();
         
         
