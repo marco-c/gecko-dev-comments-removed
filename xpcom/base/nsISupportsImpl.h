@@ -13,10 +13,9 @@
 #include "nsISupportsBase.h"
 #include "nsISupportsUtils.h"
 
-
 #if !defined(XPCOM_GLUE_AVOID_NSPR)
 #include "prthread.h" 
-#endif 
+#endif
 
 #include "nsDebug.h"
 #include "nsXPCOM.h"
@@ -51,19 +50,34 @@ ToCanonicalSupports(nsISupports* aSupports)
 
 #ifdef MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED
 
+#include "prthread.h" 
+
 class nsAutoOwningThread
 {
 public:
   nsAutoOwningThread() { mThread = PR_GetCurrentThread(); }
-  void* GetThread() const { return mThread; }
+
+  
+  
+  
+  
+  
+  
+  template<int N>
+  void AssertOwnership(const char (&aMsg)[N]) const
+  {
+    AssertCurrentThreadOwnsMe(aMsg);
+  }
 
 private:
+  void AssertCurrentThreadOwnsMe(const char* aMsg) const;
+
   void* mThread;
 };
 
 #define NS_DECL_OWNINGTHREAD            nsAutoOwningThread _mOwningThread;
 #define NS_ASSERT_OWNINGTHREAD_AGGREGATE(agg, _class) \
-  NS_CheckThreadSafe(agg->_mOwningThread.GetThread(), #_class " not thread-safe")
+  agg->_mOwningThread.AssertOwnership(#_class " not thread-safe")
 #define NS_ASSERT_OWNINGTHREAD(_class) NS_ASSERT_OWNINGTHREAD_AGGREGATE(this, _class)
 #else 
 

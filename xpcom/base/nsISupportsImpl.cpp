@@ -5,6 +5,7 @@
 
 
 #include "nsISupportsImpl.h"
+#include "mozilla/Assertions.h"
 
 nsresult NS_FASTCALL
 NS_TableDrivenQI(void* aThis, REFNSIID aIID, void** aInstancePtr,
@@ -25,3 +26,14 @@ NS_TableDrivenQI(void* aThis, REFNSIID aIID, void** aInstancePtr,
   *aInstancePtr = nullptr;
   return NS_ERROR_NO_INTERFACE;
 }
+
+#ifdef MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED
+void
+nsAutoOwningThread::AssertCurrentThreadOwnsMe(const char* msg) const
+{
+  if (MOZ_UNLIKELY(mThread != PR_GetCurrentThread())) {
+    
+    MOZ_CRASH_UNSAFE_OOL(msg);
+  }
+}
+#endif

@@ -291,16 +291,18 @@ inline void MOZ_PretendNoReturn()
 #if defined(DEBUG) && !defined(XPCOM_GLUE_AVOID_NSPR)
 
 #define NS_ENSURE_SUCCESS_BODY(res, ret)                                  \
-    mozilla::SmprintfPointer msg = mozilla::Smprintf("NS_ENSURE_SUCCESS(%s, %s) failed with " \
+    char *msg = mozilla::Smprintf("NS_ENSURE_SUCCESS(%s, %s) failed with "       \
                            "result 0x%" PRIX32, #res, #ret,               \
                            static_cast<uint32_t>(__rv));                  \
-    NS_WARNING(msg.get());
+    NS_WARNING(msg);                                                      \
+    mozilla::SmprintfFree(msg);
 
 #define NS_ENSURE_SUCCESS_BODY_VOID(res)                                  \
-    mozilla::SmprintfPointer msg = mozilla::Smprintf("NS_ENSURE_SUCCESS_VOID(%s) failed with " \
+    char *msg = mozilla::Smprintf("NS_ENSURE_SUCCESS_VOID(%s) failed with "      \
                            "result 0x%" PRIX32, #res,                     \
                            static_cast<uint32_t>(__rv));                  \
-    NS_WARNING(msg.get());
+    NS_WARNING(msg);                                                      \
+    mozilla::SmprintfFree(msg);
 
 #else
 
@@ -359,15 +361,6 @@ inline void MOZ_PretendNoReturn()
 
 #if (defined(DEBUG) || (defined(NIGHTLY_BUILD) && !defined(MOZ_PROFILING))) && !defined(XPCOM_GLUE_AVOID_NSPR)
   #define MOZ_THREAD_SAFETY_OWNERSHIP_CHECKS_SUPPORTED  1
-#endif
-
-#ifdef XPCOM_GLUE
-  #define NS_CheckThreadSafe(owningThread, msg)
-#else
-  #define NS_CheckThreadSafe(owningThread, msg)                 \
-    if (MOZ_UNLIKELY(owningThread != PR_GetCurrentThread())) {  \
-      MOZ_CRASH(msg);                                           \
-    }
 #endif
 
 #ifdef MOZILLA_INTERNAL_API
