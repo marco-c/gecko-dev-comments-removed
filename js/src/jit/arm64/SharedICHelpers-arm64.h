@@ -317,18 +317,10 @@ inline void
 EmitStubGuardFailure(MacroAssembler& masm)
 {
     
-    
-
-    
-
-    
     masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
 
     
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
-
-    
-    masm.Br(x0);
+    masm.jump(Address(ICStubReg, ICStub::offsetOfStubCode()));
 }
 
 } 

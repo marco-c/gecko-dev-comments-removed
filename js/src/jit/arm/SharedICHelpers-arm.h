@@ -359,22 +359,12 @@ EmitPreBarrier(MacroAssembler& masm, const AddrType& addr, MIRType type)
 inline void
 EmitStubGuardFailure(MacroAssembler& masm)
 {
-    MOZ_ASSERT(R2 == ValueOperand(r1, r0));
-
-    
-    
-
-    
-
     
     masm.loadPtr(Address(ICStubReg, ICStub::offsetOfNext()), ICStubReg);
 
     
-    masm.loadPtr(Address(ICStubReg, ICStub::offsetOfStubCode()), r0);
-
-    
     MOZ_ASSERT(ICTailCallReg == lr);
-    masm.branch(r0);
+    masm.jump(Address(ICStubReg, ICStub::offsetOfStubCode()));
 }
 
 
