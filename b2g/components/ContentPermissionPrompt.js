@@ -264,11 +264,7 @@ ContentPermissionPrompt.prototype = {
     }
 
     let principal = request.principal;
-    let isApp = principal.appStatus != Ci.nsIPrincipal.APP_STATUS_NOT_INSTALLED;
-    let remember = (principal.appStatus == Ci.nsIPrincipal.APP_STATUS_PRIVILEGED ||
-                    principal.appStatus == Ci.nsIPrincipal.APP_STATUS_CERTIFIED)
-                    ? true
-                    : request.remember;
+    let remember = request.remember;
     let isGranted = typesInfo.every(function(type) {
       return type.action == Ci.nsIPermissionManager.ALLOW_ACTION;
     });
@@ -286,14 +282,10 @@ ContentPermissionPrompt.prototype = {
       
       
       origin: principal.originNoSuffix,
-      isApp: isApp,
+      isApp: false,
       remember: remember,
       isGranted: isGranted,
     };
-
-    if (isApp) {
-      details.manifestURL = DOMApplicationRegistry.getManifestURLByLocalId(principal.appId);
-    }
 
     
     
