@@ -1,3 +1,4 @@
+import comm::*;
 import libc::c_double;
 import azure::*;
 import azure::bindgen::*;
@@ -15,5 +16,13 @@ fn main() {
     let lister = layout::lister::lister(renderer);
 
     
-    input::input(osmain_ch, renderer, lister);
+    let layout = layout::layout::layout(lister);
+
+    
+    input::input(osmain_ch, renderer, lister, layout);
+
+    loop {
+        std::timer::sleep(10u);
+        send(layout, layout::layout::do_layout);
+    }
 }
