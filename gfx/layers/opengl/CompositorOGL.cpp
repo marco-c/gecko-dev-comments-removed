@@ -1365,7 +1365,8 @@ CompositorOGL::DrawQuad(const Rect& aRect,
 
       if (config.mFeatures & ENABLE_TEXTURE_RECT) {
         
-        program->SetTexCoordMultiplier(aRect.width, aRect.height);
+        program->SetTexCoordMultiplier(surface->GetSize().width,
+                                       surface->GetSize().height);
       }
 
       
