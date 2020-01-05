@@ -34,7 +34,7 @@
 
 
 use extra::url::Url;
-use script::dom::bindings::codegen::InheritTypes::{ElementDerived, HTMLIFrameElementDerived};
+use script::dom::bindings::codegen::InheritTypes::{HTMLIFrameElementDerived};
 use script::dom::bindings::codegen::InheritTypes::{HTMLImageElementDerived, TextDerived};
 use script::dom::bindings::js::JS;
 use script::dom::element::{Element, HTMLAreaElementTypeId, HTMLAnchorElementTypeId};
@@ -228,16 +228,13 @@ impl<'ln> TNode<LayoutElement<'ln>> for LayoutNode<'ln> {
 
     /// If this is an element, accesses the element data. Fails if this is not an element node.
     #[inline]
-    fn with_element<R>(&self, f: |&LayoutElement<'ln>| -> R) -> R {
+    fn as_element(&self) -> LayoutElement<'ln> {
         unsafe {
-            if !self.node.is_element() {
-                fail!("not an element!")
-            }
             let elem: JS<Element> = self.node.transmute_copy();
             let element = elem.get();
-            f(&LayoutElement {
+            LayoutElement {
                 element: cast::transmute_region(element),
-            })
+            }
         }
     }
 
@@ -250,23 +247,22 @@ impl<'ln> TNode<LayoutElement<'ln>> for LayoutNode<'ln> {
     }
 
     fn match_attr(&self, attr: &AttrSelector, test: |&str| -> bool) -> bool {
-        self.with_element(|element| {
-            let name = unsafe {
-                if element.element.html_element_in_html_document_for_layout() {
-                    attr.lower_name.as_slice()
-                } else {
-                    attr.name.as_slice()
-                }
-            };
-            match attr.namespace {
-                SpecificNamespace(ref ns) => {
-                    element.get_attr(ns, name)
-                           .map_or(false, |attr| test(attr))
-                },
-                // FIXME: https://github.com/mozilla/servo/issues/1558
-                AnyNamespace => false,
+        let element = self.as_element();
+        let name = unsafe {
+            if element.element.html_element_in_html_document_for_layout() {
+                attr.lower_name.as_slice()
+            } else {
+                attr.name.as_slice()
             }
-        })
+        };
+        match attr.namespace {
+            SpecificNamespace(ref ns) => {
+                element.get_attr(ns, name)
+                        .map_or(false, |attr| test(attr))
+            },
+            // FIXME: https://github.com/mozilla/servo/issues/1558
+            AnyNamespace => false,
+        }
     }
 }
 
@@ -375,18 +371,18 @@ impl<'le> TElement for LayoutElement<'le> {
     }
 }
 
-/// A thread-safe version of `LayoutNode`, used during flow construction. This type of layout
-/// node does not allow any parents or siblings of nodes to be accessed, to avoid races.
+
+
 pub struct ThreadSafeLayoutNode<'ln> {
-    /// The wrapped node.
+    
     priv node: JS<Node>,
 
-    /// Being chained to a value prevents `ThreadSafeLayoutNode`s from escaping.
+    
     priv chain: &'ln (),
 }
 
 impl<'ln> TLayoutNode for ThreadSafeLayoutNode<'ln> {
-    /// Creates a new layout node with the same lifetime as this layout node.
+    
     unsafe fn new_with_this_lifetime(&self, node: &JS<Node>) -> ThreadSafeLayoutNode<'ln> {
         ThreadSafeLayoutNode {
             node: node.transmute_copy(),
@@ -411,7 +407,7 @@ impl<'ln> Clone for ThreadSafeLayoutNode<'ln> {
 }
 
 impl<'ln> ThreadSafeLayoutNode<'ln> {
-    /// Creates a new `ThreadSafeLayoutNode` from the given `LayoutNode`.
+    
     pub fn new<'a>(node: &LayoutNode<'a>) -> ThreadSafeLayoutNode<'a> {
         ThreadSafeLayoutNode {
             node: node.node.clone(),
@@ -419,32 +415,29 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         }
     }
 
-    /// Returns the next sibling of this node. Unsafe and private because this can lead to races.
+    
     unsafe fn next_sibling(&self) -> Option<ThreadSafeLayoutNode<'ln>> {
         self.node.get().next_sibling_ref().map(|node| self.new_with_this_lifetime(node))
     }
 
-    /// Returns an iterator over this node's children.
+    
     pub fn children(&self) -> ThreadSafeLayoutNodeChildrenIterator<'ln> {
         ThreadSafeLayoutNodeChildrenIterator {
             current_node: self.first_child(),
         }
     }
 
-    /// If this is an element, accesses the element data. Fails if this is not an element node.
+    
     #[inline]
-    pub fn with_element<R>(&self, f: |&ThreadSafeLayoutElement| -> R) -> R {
+    pub fn as_element(&self) -> ThreadSafeLayoutElement {
         unsafe {
-            if !self.node.is_element() {
-                fail!("not an element!")
-            }
             let elem: JS<Element> = self.node.transmute_copy();
             let element = elem.unsafe_get();
             
             
-            f(&ThreadSafeLayoutElement {
+            ThreadSafeLayoutElement {
                 element: cast::transmute::<*mut Element,&mut Element>(element),
-            })
+            }
         }
     }
 

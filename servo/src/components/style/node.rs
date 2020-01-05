@@ -15,10 +15,7 @@ pub trait TNode<E:TElement> : Clone {
     fn next_sibling(&self) -> Option<Self>;
     fn is_document(&self) -> bool;
     fn is_element(&self) -> bool;
-
-    
-    fn with_element<'a, R>(&self, f: |&E| -> R) -> R;
-
+    fn as_element(&self) -> E;
     fn match_attr(&self, attr: &AttrSelector, test: |&str| -> bool) -> bool;
 }
 
