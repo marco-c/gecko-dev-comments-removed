@@ -957,6 +957,13 @@ impl Flow for InlineFlow {
                 fragment.assign_replaced_inline_size_if_necessary(inline_size);
             }
         }
+
+        
+        let block_container_explicit_block_size = self.base.block_container_explicit_block_size;
+        for kid in self.base.child_iter() {
+            flow::mut_base(kid).block_container_explicit_block_size =
+                block_container_explicit_block_size;
+        }
     }
 
     

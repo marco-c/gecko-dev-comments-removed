@@ -740,6 +740,10 @@ pub struct BaseFlow {
 
     
     
+    pub block_container_explicit_block_size: Option<Au>,
+
+    
+    
     pub absolute_static_i_offset: Au,
 
     
@@ -820,6 +824,7 @@ impl BaseFlow {
             abs_descendants: Descendants::new(),
             absolute_static_i_offset: Au::new(0),
             fixed_static_i_offset: Au::new(0),
+            block_container_explicit_block_size: None,
             absolute_cb: ContainingBlockLink::new(),
             display_list: DisplayList::new(),
             layers: DList::new(),
