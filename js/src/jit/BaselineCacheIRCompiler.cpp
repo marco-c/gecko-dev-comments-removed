@@ -1944,12 +1944,12 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
         break;
     }
 
-    JitCompartment* jitCompartment = cx->compartment()->jitCompartment();
+    JitZone* jitZone = cx->zone()->jitZone();
 
     
     CacheIRStubInfo* stubInfo;
     CacheIRStubKey::Lookup lookup(kind, engine, writer.codeStart(), writer.codeLength());
-    JitCode* code = jitCompartment->getCacheIRStubCode(lookup, &stubInfo);
+    JitCode* code = jitZone->getBaselineCacheIRStubCode(lookup, &stubInfo);
     if (!code) {
         
         JitContext jctx(cx, nullptr);
@@ -1964,13 +1964,14 @@ jit::AttachBaselineCacheIRStub(JSContext* cx, const CacheIRWriter& writer,
         
         
         
+        
         MOZ_ASSERT(!stubInfo);
         stubInfo = CacheIRStubInfo::New(kind, engine, comp.makesGCCalls(), stubDataOffset, writer);
         if (!stubInfo)
             return nullptr;
 
         CacheIRStubKey key(stubInfo);
-        if (!jitCompartment->putCacheIRStubCode(lookup, key, code))
+        if (!jitZone->putBaselineCacheIRStubCode(lookup, key, code))
             return nullptr;
     }
 
