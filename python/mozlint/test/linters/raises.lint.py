@@ -1,0 +1,19 @@
+
+
+
+
+
+
+from mozlint.errors import LintException
+
+
+def lint(files, **lintargs):
+    raise LintException("Oh no something bad happened!")
+
+
+LINTER = {
+    'name': "RaisesLinter",
+    'description': "Raises an exception",
+    'type': 'external',
+    'payload': lint,
+}

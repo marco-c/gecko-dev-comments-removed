@@ -1,10 +1,10 @@
-# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
-# vim: set filetype=python:
+
+
 
 LINTER = {
     'name': "BadExcludeLinter",
     'description': "Has an invalid exclude directive.",
-    'exclude': [0, 1],  # should be a list of strings
+    'exclude': [0, 1],  
     'type': 'string',
     'payload': 'foobar',
 }
