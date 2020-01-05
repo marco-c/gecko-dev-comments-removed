@@ -31,6 +31,7 @@
 #include "ImageContainer.h"
 #include "gfx2DGlue.h"
 #include "nsStyleConsts.h"
+#include "SVGImageContext.h"
 #include <limits>
 #include <algorithm>
 
@@ -65,7 +66,6 @@ struct nsOverflowAreas;
 namespace mozilla {
 enum class CSSPseudoElementType : uint8_t;
 class EventListenerManager;
-class SVGImageContext;
 struct IntrinsicSize;
 struct ContainerLayerParameters;
 class WritingMode;
@@ -160,6 +160,7 @@ public:
   typedef mozilla::ScreenMargin ScreenMargin;
   typedef mozilla::LayoutDeviceIntSize LayoutDeviceIntSize;
   typedef mozilla::StyleGeometryBox StyleGeometryBox;
+  typedef mozilla::SVGImageContext SVGImageContext;
 
   
 
@@ -1877,13 +1878,17 @@ public:
 
 
 
+
+
+
+
   static DrawResult DrawSingleImage(gfxContext&         aContext,
                                     nsPresContext*      aPresContext,
                                     imgIContainer*      aImage,
                                     const SamplingFilter aSamplingFilter,
                                     const nsRect&       aDest,
                                     const nsRect&       aDirty,
-                                    const mozilla::SVGImageContext* aSVGContext,
+                                    const mozilla::Maybe<const SVGImageContext>& aSVGContext,
                                     uint32_t            aImageFlags,
                                     const nsPoint*      aAnchorPoint = nullptr,
                                     const nsRect*       aSourceArea = nullptr);

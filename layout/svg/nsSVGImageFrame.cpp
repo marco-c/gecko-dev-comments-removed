@@ -402,9 +402,10 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       
       
       
-      SVGImageContext context(CSSIntSize::Truncate(width, height),
-                              Some(imgElem->mPreserveAspectRatio.GetAnimValue()),
-                              1.0, true);
+      const Maybe<const SVGImageContext> context(
+        Some(SVGImageContext(CSSIntSize::Truncate(width, height),
+                             Some(imgElem->mPreserveAspectRatio.GetAnimValue()),
+                             1.0,  true)));
 
       
       
@@ -423,7 +424,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
         nsLayoutUtils::GetSamplingFilterForFrame(this),
         destRect,
         aDirtyRect ? dirtyRect : destRect,
-        &context,
+        context,
         drawFlags);
     } else { 
       result = nsLayoutUtils::DrawSingleUnscaledImage(
