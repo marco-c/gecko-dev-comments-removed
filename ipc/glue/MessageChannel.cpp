@@ -2029,55 +2029,17 @@ MessageChannel::DispatchInterruptMessage(Message&& aMsg, size_t stackDepth)
 
     IPC_ASSERT(aMsg.is_interrupt() && !aMsg.is_reply(), "wrong message type");
 
-    
-    
-    
-    if (aMsg.interrupt_remote_stack_depth_guess() != RemoteViewOfStackDepth(stackDepth)) {
+    if (ShouldDeferInterruptMessage(aMsg, stackDepth)) {
         
         
-        bool defer;
-        const char* winner;
-        const MessageInfo parentMsgInfo =
-          (mSide == ChildSide) ? MessageInfo(aMsg) : mInterruptStack.top();
-        const MessageInfo childMsgInfo =
-          (mSide == ChildSide) ? mInterruptStack.top() : MessageInfo(aMsg);
-        switch (mListener->MediateInterruptRace(parentMsgInfo, childMsgInfo))
-        {
-          case RIPChildWins:
-            winner = "child";
-            defer = (mSide == ChildSide);
-            break;
-          case RIPParentWins:
-            winner = "parent";
-            defer = (mSide != ChildSide);
-            break;
-          case RIPError:
-            MOZ_CRASH("NYI: 'Error' Interrupt race policy");
-            return;
-          default:
-            MOZ_CRASH("not reached");
-            return;
-        }
-
-        if (LoggingEnabled()) {
-            printf_stderr("  (%s: %s won, so we're%sdeferring)\n",
-                          (mSide == ChildSide) ? "child" : "parent",
-                          winner,
-                          defer ? " " : " not ");
-        }
-
-        if (defer) {
-            
-            
-            ++mRemoteStackDepthGuess; 
-            mDeferred.push(Move(aMsg));
-            return;
-        }
-
-        
-        
-        
+        ++mRemoteStackDepthGuess; 
+        mDeferred.push(Move(aMsg));
+        return;
     }
+
+    
+    
+    
 
 #ifdef OS_WIN
     SyncStackFrame frame(this, true);
@@ -2103,6 +2065,54 @@ MessageChannel::DispatchInterruptMessage(Message&& aMsg, size_t stackDepth)
     }
 }
 
+bool
+MessageChannel::ShouldDeferInterruptMessage(const Message& aMsg, size_t aStackDepth)
+{
+    AssertWorkerThread();
+
+    
+    
+
+    IPC_ASSERT(aMsg.is_interrupt() && !aMsg.is_reply(), "wrong message type");
+
+    
+    
+    
+    if (aMsg.interrupt_remote_stack_depth_guess() == RemoteViewOfStackDepth(aStackDepth)) {
+        return false;
+    }
+
+    
+    
+    bool defer;
+    const char* winner;
+    const MessageInfo parentMsgInfo =
+        (mSide == ChildSide) ? MessageInfo(aMsg) : mInterruptStack.top();
+    const MessageInfo childMsgInfo =
+        (mSide == ChildSide) ? mInterruptStack.top() : MessageInfo(aMsg);
+    switch (mListener->MediateInterruptRace(parentMsgInfo, childMsgInfo))
+    {
+        case RIPChildWins:
+            winner = "child";
+            defer = (mSide == ChildSide);
+            break;
+        case RIPParentWins:
+            winner = "parent";
+            defer = (mSide != ChildSide);
+            break;
+        case RIPError:
+            MOZ_CRASH("NYI: 'Error' Interrupt race policy");
+        default:
+            MOZ_CRASH("not reached");
+    }
+
+    IPC_LOG("race in %s: %s won",
+            (mSide == ChildSide) ? "child" : "parent",
+            winner);
+
+    return defer;
+}
+
 void
 MessageChannel::MaybeUndeferIncall()
 {
@@ -2114,12 +2124,18 @@ MessageChannel::MaybeUndeferIncall()
 
     size_t stackDepth = InterruptStackDepth();
 
-    
-    IPC_ASSERT(mDeferred.top().interrupt_remote_stack_depth_guess() <= stackDepth,
-               "fatal logic error");
+    Message& deferred = mDeferred.top();
 
     
-    Message call(Move(mDeferred.top()));
+    IPC_ASSERT(deferred.interrupt_remote_stack_depth_guess() <= stackDepth,
+               "fatal logic error");
+
+    if (ShouldDeferInterruptMessage(deferred, stackDepth)) {
+        return;
+    }
+
+    
+    Message call(Move(deferred));
     mDeferred.pop();
 
     
