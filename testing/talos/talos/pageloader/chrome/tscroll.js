@@ -12,6 +12,20 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
     win = window;
   }
 
+  var result = {
+    names: [],
+    values: [],
+  };
+  
+  
+  
+  
+  var href = win.location.href;
+  var testBaseName = href.split("/tp5n/")[1]
+                  || href.split("/").pop()
+                  || href.split("/").splice(-2, 1)[0]
+                  || "REALLY_WEIRD_URI";
+
   var report;
   
 
@@ -136,7 +150,9 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
             sum += Number(durations[i]);
 
           
-          resolve(durations.length ? sum / durations.length : 0);
+          result.values.push(durations.length ? sum / durations.length : 0);
+          result.names.push(testBaseName);
+          resolve();
           return;
         }
 
@@ -156,8 +172,8 @@ function testScroll(target, stepSize, opt_reportFunc, opt_numSteps)
   .then(gotoTop)
   .then(P_rAF)
   .then(P_syncScrollTest)
-  .then(function(result) { 
-    report(result);
+  .then(function() {
+    report(result.values.join(","), 0, result.names.join(","));
   });
 }
 
