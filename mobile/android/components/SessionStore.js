@@ -40,6 +40,9 @@ function log(a) {
 
 
 
+const INVALID_TAB_ID = -1;
+const INVALID_TAB_INDEX = -1;
+
 const STATE_STOPPED = 0;
 const STATE_RUNNING = 1;
 const STATE_QUITTING = -1;
@@ -82,7 +85,7 @@ SessionStore.prototype = {
 
   
   
-  _lastClosedTabIndex: -1,
+  _lastClosedTabIndex: INVALID_TAB_INDEX,
 
   
   _notifyClosedTabs: false,
@@ -90,7 +93,7 @@ SessionStore.prototype = {
   
   
   
-  _keepAsZombieTabId: -1,
+  _keepAsZombieTabId: INVALID_TAB_ID,
 
   init: function ss_init() {
     loggingEnabled = Services.prefs.getBoolPref("browser.sessionstore.debug_logging");
@@ -157,7 +160,7 @@ SessionStore.prototype = {
       win.closedTabs = [];
     }
 
-    this._lastClosedTabIndex = -1;
+    this._lastClosedTabIndex = INVALID_TAB_INDEX;
   },
 
   onEvent: function ss_onEvent(event, data, callback) {
@@ -418,7 +421,7 @@ SessionStore.prototype = {
         for (let window of Object.values(this._windows)) {
           window.closedTabs = window.closedTabs.filter(tab => !tab.isPrivate);
         }
-        this._lastClosedTabIndex = -1;
+        this._lastClosedTabIndex = INVALID_TAB_INDEX;
         break;
     }
   },
@@ -682,7 +685,7 @@ SessionStore.prototype = {
   onTabClose: function ss_onTabClose(aWindow, aBrowser, aTabIndex) {
     let data = aBrowser.__SS_data || {};
     if (this._maxTabsUndo == 0 || this._sessionDataIsEmpty(data)) {
-      this._lastClosedTabIndex = -1;
+      this._lastClosedTabIndex = INVALID_TAB_INDEX;
       return;
     }
 
@@ -809,7 +812,7 @@ SessionStore.prototype = {
       log("keeping as zombie tab " + tabId);
     }
     
-    this._keepAsZombieTabId = -1;
+    this._keepAsZombieTabId = INVALID_TAB_ID;
 
     log("onTabSelect() ran for tab " + tabId);
     this.saveStateDelayed();
@@ -844,7 +847,7 @@ SessionStore.prototype = {
 
     
     
-    this._lastClosedTabIndex = -1;
+    this._lastClosedTabIndex = INVALID_TAB_INDEX;
     this.saveStateDelayed();
   },
 
@@ -1411,7 +1414,7 @@ SessionStore.prototype = {
       }
 
       let parentId = tabData.parentId;
-      if (parentId > -1) {
+      if (parentId > INVALID_TAB_ID) {
         tab.parentId = parentId;
       }
 
@@ -1491,7 +1494,7 @@ SessionStore.prototype = {
     tab.browser.__SS_extdata = aCloseTabData.extData;
     this._restoreTab(aCloseTabData, tab.browser);
 
-    this._lastClosedTabIndex = -1;
+    this._lastClosedTabIndex = INVALID_TAB_INDEX;
 
     if (this._notifyClosedTabs) {
       this._sendClosedTabsToJava(aWindow);
@@ -1518,7 +1521,7 @@ SessionStore.prototype = {
 
     
     if (aIndex == 0) {
-      this._lastClosedTabIndex = -1;
+      this._lastClosedTabIndex = INVALID_TAB_INDEX;
     }
     if (this._notifyClosedTabs) {
       this._sendClosedTabsToJava(aWindow);
@@ -1526,7 +1529,7 @@ SessionStore.prototype = {
   },
 
   get canUndoLastCloseTab() {
-    return this._lastClosedTabIndex > -1;
+    return this._lastClosedTabIndex > INVALID_TAB_INDEX;
   },
 
   _sendClosedTabsToJava: function ss_sendClosedTabsToJava(aWindow) {
