@@ -19,12 +19,11 @@
 #ifndef asmjs_wasm_baseline_compile_h
 #define asmjs_wasm_baseline_compile_h
 
-#include "wasm/WasmIonCompile.h"
-
 namespace js {
 namespace wasm {
 
 class FunctionGenerator;
+class CompileTask;
 
 
 
@@ -40,7 +39,7 @@ BaselineCanCompile(const FunctionGenerator* fg);
 
 
 bool
-BaselineCompileFunction(IonCompileTask* task);
+BaselineCompileFunction(CompileTask* task);
 
 } 
 } 

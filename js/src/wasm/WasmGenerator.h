@@ -26,6 +26,12 @@
 namespace js {
 namespace wasm {
 
+struct ModuleEnvironment;
+
+typedef Vector<jit::MIRType, 8, SystemAllocPolicy> MIRTypeVector;
+typedef jit::ABIArgIter<MIRTypeVector> ABIArgMIRTypeIter;
+typedef jit::ABIArgIter<ValTypeVector> ABIArgValTypeIter;
+
 struct CompileArgs;
 
 class FunctionGenerator;
@@ -36,13 +42,132 @@ typedef Vector<UniqueBytes, 0, SystemAllocPolicy> UniqueBytesVector;
 
 
 
+class FuncBytes
+{
+    UniqueBytes      bytes_;
+    uint32_t         index_;
+    const SigWithId& sig_;
+    uint32_t         lineOrBytecode_;
+    Uint32Vector     callSiteLineNums_;
+
+  public:
+    FuncBytes(UniqueBytes bytes,
+              uint32_t index,
+              const SigWithId& sig,
+              uint32_t lineOrBytecode,
+              Uint32Vector&& callSiteLineNums)
+      : bytes_(Move(bytes)),
+        index_(index),
+        sig_(sig),
+        lineOrBytecode_(lineOrBytecode),
+        callSiteLineNums_(Move(callSiteLineNums))
+    {}
+
+    Bytes& bytes() { return *bytes_; }
+    const Bytes& bytes() const { return *bytes_; }
+    UniqueBytes recycle() { return Move(bytes_); }
+    uint32_t index() const { return index_; }
+    const SigWithId& sig() const { return sig_; }
+    uint32_t lineOrBytecode() const { return lineOrBytecode_; }
+    const Uint32Vector& callSiteLineNums() const { return callSiteLineNums_; }
+};
+
+typedef UniquePtr<FuncBytes> UniqueFuncBytes;
+
+
+
+
+class FuncCompileResults
+{
+    jit::TempAllocator alloc_;
+    jit::MacroAssembler masm_;
+    FuncOffsets offsets_;
+
+    FuncCompileResults(const FuncCompileResults&) = delete;
+    FuncCompileResults& operator=(const FuncCompileResults&) = delete;
+
+  public:
+    explicit FuncCompileResults(LifoAlloc& lifo)
+      : alloc_(&lifo),
+        masm_(jit::MacroAssembler::WasmToken(), alloc_)
+    {}
+
+    jit::TempAllocator& alloc() { return alloc_; }
+    jit::MacroAssembler& masm() { return masm_; }
+    FuncOffsets& offsets() { return offsets_; }
+};
+
+
+
+
+
+
+
+
+class CompileTask
+{
+  public:
+    enum class CompileMode { None, Baseline, Ion };
+
+  private:
+    const ModuleEnvironment&  env_;
+    LifoAlloc                 lifo_;
+    UniqueFuncBytes           func_;
+    CompileMode               mode_;
+    Maybe<FuncCompileResults> results_;
+
+    CompileTask(const CompileTask&) = delete;
+    CompileTask& operator=(const CompileTask&) = delete;
+
+  public:
+    CompileTask(const ModuleEnvironment& env, size_t defaultChunkSize)
+      : env_(env), lifo_(defaultChunkSize), func_(nullptr), mode_(CompileMode::None)
+    {}
+    LifoAlloc& lifo() {
+        return lifo_;
+    }
+    const ModuleEnvironment& env() const {
+        return env_;
+    }
+    void init(UniqueFuncBytes func, CompileMode mode) {
+        MOZ_ASSERT(!func_);
+        func_ = Move(func);
+        results_.emplace(lifo_);
+        mode_ = mode;
+    }
+    CompileMode mode() const {
+        return mode_;
+    }
+    const FuncBytes& func() const {
+        MOZ_ASSERT(func_);
+        return *func_;
+    }
+    FuncCompileResults& results() {
+        return *results_;
+    }
+    void reset(UniqueBytes* recycled) {
+        if (func_) {
+            *recycled = Move(func_->recycle());
+            (*recycled)->clear();
+        }
+        func_.reset(nullptr);
+        results_.reset();
+        lifo_.releaseAll();
+        mode_ = CompileMode::None;
+    }
+};
+
+
+
+
+
 
 
 class MOZ_STACK_CLASS ModuleGenerator
 {
     typedef HashSet<uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy> Uint32Set;
-    typedef Vector<IonCompileTask, 0, SystemAllocPolicy> IonCompileTaskVector;
-    typedef Vector<IonCompileTask*, 0, SystemAllocPolicy> IonCompileTaskPtrVector;
+    typedef Vector<CompileTask, 0, SystemAllocPolicy> CompileTaskVector;
+    typedef Vector<CompileTask*, 0, SystemAllocPolicy> CompileTaskPtrVector;
     typedef EnumeratedArray<Trap, Trap::Limit, ProfilingOffsets> TrapExitOffsetArray;
 
     
@@ -69,8 +194,8 @@ class MOZ_STACK_CLASS ModuleGenerator
     
     bool                            parallel_;
     uint32_t                        outstanding_;
-    IonCompileTaskVector            tasks_;
-    IonCompileTaskPtrVector         freeTasks_;
+    CompileTaskVector               tasks_;
+    CompileTaskPtrVector            freeTasks_;
     UniqueBytesVector               freeBytes_;
 
     
@@ -83,7 +208,7 @@ class MOZ_STACK_CLASS ModuleGenerator
     const CodeRange& funcCodeRange(uint32_t funcIndex) const;
     MOZ_MUST_USE bool patchCallSites(TrapExitOffsetArray* maybeTrapExits = nullptr);
     MOZ_MUST_USE bool patchFarJumps(const TrapExitOffsetArray& trapExits);
-    MOZ_MUST_USE bool finishTask(IonCompileTask* task);
+    MOZ_MUST_USE bool finishTask(CompileTask* task);
     MOZ_MUST_USE bool finishOutstandingTask();
     MOZ_MUST_USE bool finishFuncExports();
     MOZ_MUST_USE bool finishCodegen();
