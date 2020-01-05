@@ -176,6 +176,13 @@ public abstract class BrowserDB {
 
     public abstract CursorLoader getHighlights(Context context, int limit);
 
+    
+
+
+
+
+    public abstract void blockActivityStreamSite(ContentResolver cr, String url);
+
     public static BrowserDB from(final Context context) {
         return from(GeckoProfile.get(context));
     }
