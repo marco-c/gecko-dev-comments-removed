@@ -146,6 +146,9 @@ ClientLayerManager::Destroy()
     });
     NS_DispatchToMainThread(task.forget());
   }
+
+  
+  mWidget = nullptr;
 }
 
 int32_t
