@@ -312,19 +312,21 @@ private:
   bool operator==(const Declaration& aCopy) const = delete;
 
   void GetPropertyValueInternal(nsCSSPropertyID aProperty, nsAString& aValue,
-                                nsCSSValue::Serialization aValueSerialization)
-    const;
+                                nsCSSValue::Serialization aValueSerialization,
+                                bool* aIsTokenStream = nullptr) const;
   bool GetPropertyIsImportantByID(nsCSSPropertyID aProperty) const;
 
   static void AppendImportanceToString(bool aIsImportant, nsAString& aString);
   
   bool AppendValueToString(nsCSSPropertyID aProperty, nsAString& aResult) const;
   bool AppendValueToString(nsCSSPropertyID aProperty, nsAString& aResult,
-                           nsCSSValue::Serialization aValueSerialization) const;
+                           nsCSSValue::Serialization aValueSerialization,
+                           bool* aIsTokenStream = nullptr) const;
   
   void AppendPropertyAndValueToString(nsCSSPropertyID aProperty,
+                                      nsAString& aResult,
                                       nsAutoString& aValue,
-                                      nsAString& aResult) const;
+                                      bool aValueIsTokenStream) const;
   
   
   void AppendVariableAndValueToString(const nsAString& aName,

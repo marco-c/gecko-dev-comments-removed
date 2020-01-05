@@ -251,7 +251,8 @@ Declaration::HasProperty(nsCSSPropertyID aProperty) const
 bool
 Declaration::AppendValueToString(nsCSSPropertyID aProperty,
                                  nsAString& aResult,
-                                 nsCSSValue::Serialization aSerialization) const
+                                 nsCSSValue::Serialization aSerialization,
+                                 bool* aIsTokenStream) const
 {
   MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT_no_shorthands,
              "property ID out of range");
@@ -263,6 +264,9 @@ Declaration::AppendValueToString(nsCSSPropertyID aProperty,
     return false;
   }
 
+  if (aIsTokenStream) {
+    *aIsTokenStream = val->GetUnit() == eCSSUnit_TokenStream;
+  }
   val->AppendToString(aProperty, aResult, aSerialization);
   return true;
 }
@@ -536,13 +540,16 @@ Declaration::GetImageLayerPositionValue(
 void
 Declaration::GetPropertyValueInternal(
     nsCSSPropertyID aProperty, nsAString& aValue,
-    nsCSSValue::Serialization aSerialization) const
+    nsCSSValue::Serialization aSerialization, bool* aIsTokenStream) const
 {
   aValue.Truncate(0);
+  if (aIsTokenStream) {
+    *aIsTokenStream = false;
+  }
 
   
   if (!nsCSSProps::IsShorthand(aProperty)) {
-    AppendValueToString(aProperty, aValue, aSerialization);
+    AppendValueToString(aProperty, aValue, aSerialization, aIsTokenStream);
     return;
   }
 
@@ -640,6 +647,9 @@ Declaration::GetPropertyValueInternal(
     if (matchingTokenStreamCount == totalCount) {
       
       
+      if (aIsTokenStream) {
+        *aIsTokenStream = true;
+      }
       aValue.Append(tokenStream->GetTokenStreamValue()->mTokenStream);
     } else {
       
@@ -1605,21 +1615,29 @@ Declaration::GetPropertyIsImportantByID(nsCSSPropertyID aProperty) const
 
 void
 Declaration::AppendPropertyAndValueToString(nsCSSPropertyID aProperty,
+                                            nsAString& aResult,
                                             nsAutoString& aValue,
-                                            nsAString& aResult) const
+                                            bool aValueIsTokenStream) const
 {
   MOZ_ASSERT(0 <= aProperty && aProperty < eCSSProperty_COUNT,
              "property enum out of range");
   MOZ_ASSERT((aProperty < eCSSProperty_COUNT_no_shorthands) == aValue.IsEmpty(),
              "aValue should be given for shorthands but not longhands");
   AppendASCIItoUTF16(nsCSSProps::GetStringValue(aProperty), aResult);
-  aResult.AppendLiteral(": ");
-  if (aValue.IsEmpty())
-    AppendValueToString(aProperty, aResult, nsCSSValue::eNormalized);
-  else
-    aResult.Append(aValue);
+  if (aValue.IsEmpty()) {
+    AppendValueToString(aProperty, aValue,
+                        nsCSSValue::eNormalized, &aValueIsTokenStream);
+  }
+  aResult.Append(':');
+  if (!aValueIsTokenStream) {
+    aResult.Append(' ');
+  }
+  aResult.Append(aValue);
   if (GetPropertyIsImportantByID(aProperty)) {
-    aResult.AppendLiteral(" !important");
+    if (!aValueIsTokenStream) {
+      aResult.Append(' ');
+    }
+    aResult.AppendLiteral("!important");
   }
   aResult.AppendLiteral("; ");
 }
@@ -1738,7 +1756,9 @@ Declaration::ToString(nsAString& aString) const
       
       nsCSSPropertyID shorthand = *shorthands;
 
-      GetPropertyValueByID(shorthand, value);
+      bool isTokenStream;
+      GetPropertyValueInternal(shorthand, value,
+                               nsCSSValue::eNormalized, &isTokenStream);
 
       
       
@@ -1750,7 +1770,8 @@ Declaration::ToString(nsAString& aString) const
       
       
       if (!value.IsEmpty()) {
-        AppendPropertyAndValueToString(shorthand, value, aString);
+        AppendPropertyAndValueToString(shorthand, aString,
+                                       value, isTokenStream);
         shorthandsUsed.AppendElement(shorthand);
         doneProperty = true;
         break;
@@ -1763,7 +1784,9 @@ Declaration::ToString(nsAString& aString) const
           
           systemFont->AppendToString(eCSSProperty__x_system_font, value,
                                      nsCSSValue::eNormalized);
-          AppendPropertyAndValueToString(eCSSProperty_font, value, aString);
+          isTokenStream = systemFont->GetUnit() == eCSSUnit_TokenStream;
+          AppendPropertyAndValueToString(eCSSProperty_font, aString,
+                                         value, isTokenStream);
           value.Truncate();
           didSystemFont = true;
         }
@@ -1786,7 +1809,7 @@ Declaration::ToString(nsAString& aString) const
       continue;
 
     MOZ_ASSERT(value.IsEmpty(), "value should be empty now");
-    AppendPropertyAndValueToString(property, value, aString);
+    AppendPropertyAndValueToString(property, aString, value, false);
   }
   if (! aString.IsEmpty()) {
     
