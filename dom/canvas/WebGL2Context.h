@@ -270,8 +270,12 @@ public:
 
 
 
-    void DrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count, GLenum type, GLintptr offset);
 
+    void DrawRangeElements(GLenum mode, GLuint start, GLuint end, GLsizei count,
+                           GLenum type, WebGLintptr byteOffset)
+    {
+        DrawElements(mode, count, type, byteOffset);
+    }
 
     
     
