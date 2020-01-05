@@ -135,7 +135,7 @@ function hasoptions(testOptions, options) {
 }
 
 var tests = {
-  testShareDisabledOnActivation(next) {
+  testShareDisabledOnActivation: function(next) {
     
     
     is(gBrowser.currentURI.spec, "about:blank");
@@ -157,7 +157,7 @@ var tests = {
       SocialService.disableProvider(manifest.origin, next);
     });
   },
-  testShareEnabledOnActivation(next) {
+  testShareEnabledOnActivation: function(next) {
     
     
     
@@ -180,7 +180,7 @@ var tests = {
       });
     });
   },
-  testSharePage(next) {
+  testSharePage: function(next) {
     let testTab;
     let testIndex = 0;
     let testData = corpus[testIndex++];
@@ -222,7 +222,7 @@ var tests = {
     }
     executeSoon(runOneTest);
   },
-  testShareMicroformats(next) {
+  testShareMicroformats: function(next) {
     
     CustomizableUI.addWidgetToArea("social-share-button", CustomizableUI.AREA_NAVBAR);
     
@@ -305,7 +305,7 @@ var tests = {
       });
     });
   },
-  testSharePanelActivation(next) {
+  testSharePanelActivation: function(next) {
     let testTab;
     
     Services.prefs.setCharPref("social.directories", "https://example.com");
@@ -352,7 +352,7 @@ var tests = {
       SocialShare.sharePage();
     });
   },
-  testSharePanelDialog(next) {
+  testSharePanelDialog: function(next) {
     let testTab;
     
     CustomizableUI.addWidgetToArea("social-share-button", CustomizableUI.AREA_NAVBAR);

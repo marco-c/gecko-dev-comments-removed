@@ -60,7 +60,7 @@ GMPInstallManager.prototype = {
   
 
 
-  _getURL() {
+  _getURL: function() {
     let log = getScopedLogger("GMPInstallManager._getURL");
     
     
@@ -89,7 +89,7 @@ GMPInstallManager.prototype = {
 
 
 
-  checkForAddons() {
+  checkForAddons: function() {
     let log = getScopedLogger("GMPInstallManager.checkForAddons");
     if (this._deferred) {
         log.error("checkForAddons already called");
@@ -137,7 +137,7 @@ GMPInstallManager.prototype = {
 
 
 
-  installAddon(gmpAddon) {
+  installAddon: function(gmpAddon) {
     if (this._deferred) {
         log.error("previous error encountered");
         return Promise.reject({type: "previouserrorencountered"});
@@ -145,7 +145,7 @@ GMPInstallManager.prototype = {
     this.gmpDownloader = new GMPDownloader(gmpAddon);
     return this.gmpDownloader.start();
   },
-  _getTimeSinceLastCheck() {
+  _getTimeSinceLastCheck: function() {
     let now = Math.round(Date.now() / 1000);
     
     
@@ -160,18 +160,18 @@ GMPInstallManager.prototype = {
   get _isEMEEnabled() {
     return GMPPrefs.get(GMPPrefs.KEY_EME_ENABLED, true);
   },
-  _isAddonEnabled(aAddon) {
+  _isAddonEnabled: function(aAddon) {
     return GMPPrefs.get(GMPPrefs.KEY_PLUGIN_ENABLED, true, aAddon);
   },
-  _isAddonUpdateEnabled(aAddon) {
+  _isAddonUpdateEnabled: function(aAddon) {
     return this._isAddonEnabled(aAddon) &&
            GMPPrefs.get(GMPPrefs.KEY_PLUGIN_AUTOUPDATE, true, aAddon);
   },
-  _updateLastCheck() {
+  _updateLastCheck: function() {
     let now = Math.round(Date.now() / 1000);
     GMPPrefs.set(GMPPrefs.KEY_UPDATE_LAST_CHECK, now);
   },
-  _versionchangeOccurred() {
+  _versionchangeOccurred: function() {
     let savedBuildID = GMPPrefs.get(GMPPrefs.KEY_BUILDID, null);
     let buildID = Services.appinfo.platformBuildID;
     if (savedBuildID == buildID) {
@@ -293,7 +293,7 @@ GMPInstallManager.prototype = {
   
 
 
-  uninit() {
+  uninit: function() {
     let log = getScopedLogger("GMPInstallManager.uninit");
     if (this._request) {
       log.info("Aborting request");
@@ -332,7 +332,7 @@ GMPAddon.prototype = {
   
 
 
-  toString() {
+  toString: function() {
     return this.id + " (" +
            "isValid: " + this.isValid +
            ", isInstalled: " + this.isInstalled +
@@ -383,7 +383,7 @@ GMPExtractor.prototype = {
 
 
 
-  _getZipEntries(zipReader) {
+  _getZipEntries: function(zipReader) {
     let entries = [];
     let enumerator = zipReader.findEntries("*.*");
     while (enumerator.hasMore()) {
@@ -398,7 +398,7 @@ GMPExtractor.prototype = {
 
 
 
-  install() {
+  install: function() {
     try {
       let log = getScopedLogger("GMPExtractor.install");
       this._deferred = Promise.defer();
@@ -484,7 +484,7 @@ GMPDownloader.prototype = {
 
 
 
-  start() {
+  start: function() {
     let log = getScopedLogger("GMPDownloader");
     let gmpAddon = this._gmpAddon;
 
@@ -492,7 +492,7 @@ GMPDownloader.prototype = {
       log.info("gmpAddon is not valid, will not continue");
       return Promise.reject({
         target: this,
-        status,
+        status: status,
         type: "downloaderr"
       });
     }

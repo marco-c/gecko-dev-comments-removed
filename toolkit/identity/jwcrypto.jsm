@@ -101,16 +101,16 @@ jwcryptoClass.prototype = {
 
 
 
-  getExpiration(duration = DURATION_MS, localtimeOffsetMsec = 0, now = Date.now()) {
+  getExpiration: function(duration = DURATION_MS, localtimeOffsetMsec = 0, now = Date.now()) {
     return now + localtimeOffsetMsec + duration;
   },
 
-  isCertValid(aCert, aCallback) {
+  isCertValid: function(aCert, aCallback) {
     
     aCallback(true);
   },
 
-  generateKeyPair(aAlgorithmName, aCallback) {
+  generateKeyPair: function(aAlgorithmName, aCallback) {
     log("generating");
     generateKeyPair(aAlgorithmName, aCallback);
   },
@@ -144,7 +144,7 @@ jwcryptoClass.prototype = {
 
 
 
-  generateAssertion(aCert, aKeyPair, aAudience, aOptions, aCallback) {
+  generateAssertion: function(aCert, aKeyPair, aAudience, aOptions, aCallback) {
     if (typeof aOptions == "function") {
       aCallback = aOptions;
       aOptions = { };

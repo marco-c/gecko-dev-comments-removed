@@ -60,7 +60,7 @@ function loadPinningPage() {
 
 
 var successfulPinningPageListener = {
-  handleEvent() {
+  handleEvent: function() {
     gBrowser.selectedBrowser.removeEventListener("load", this, true);
     BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "https://" + kBadPinningDomain).then(function() {
       return promiseErrorPageLoaded(gBrowser.selectedBrowser);

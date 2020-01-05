@@ -12,11 +12,11 @@ Components.utils.import("resource://testing-common/MockRegistrar.jsm");
 
 var promptService = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIPromptService]),
-  confirmEx() {}
+  confirmEx: function() {}
 };
 var prompt = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIPrompt]),
-  alert() {}
+  alert: function() {}
 };
 
 
@@ -38,14 +38,14 @@ add_test(function init_search_service() {
 
 add_test(function simple_callback_test() {
   let searchCallback = {
-    onSuccess(engine) {
+    onSuccess: function(engine) {
       do_check_true(!!engine);
       do_check_neq(engine.name, Services.search.defaultEngine.name);
       do_check_eq(engine.wrappedJSObject._loadPath,
                   "[http]localhost/test-search-engine.xml");
       run_next_test();
     },
-    onError(errorCode) {
+    onError: function(errorCode) {
       do_throw("search callback returned error: " + errorCode);
     }
   }
@@ -56,10 +56,10 @@ add_test(function simple_callback_test() {
 
 add_test(function duplicate_failure_test() {
   let searchCallback = {
-    onSuccess(engine) {
+    onSuccess: function(engine) {
       do_throw("this addition should not have succeeded");
     },
-    onError(errorCode) {
+    onError: function(errorCode) {
       do_check_true(!!errorCode);
       do_check_eq(errorCode, Ci.nsISearchInstallCallback.ERROR_DUPLICATE_ENGINE);
       run_next_test();
@@ -73,10 +73,10 @@ add_test(function duplicate_failure_test() {
 
 add_test(function load_failure_test() {
   let searchCallback = {
-    onSuccess(engine) {
+    onSuccess: function(engine) {
       do_throw("this addition should not have succeeded");
     },
-    onError(errorCode) {
+    onError: function(errorCode) {
       do_check_true(!!errorCode);
       do_check_eq(errorCode, Ci.nsISearchInstallCallback.ERROR_UNKNOWN_FAILURE);
       run_next_test();

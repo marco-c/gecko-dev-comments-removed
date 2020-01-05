@@ -33,7 +33,7 @@ AreaPositionManager.prototype = {
   _nodePositionStore: null,
   _wideCache: null,
 
-  update(aContainer) {
+  update: function(aContainer) {
     this._nodePositionStore = new WeakMap();
     this._wideCache = new Set();
     let last = null;
@@ -73,7 +73,7 @@ AreaPositionManager.prototype = {
 
 
 
-  find(aContainer, aX, aY, aDraggedItemId) {
+  find: function(aContainer, aX, aY, aDraggedItemId) {
     let closest = null;
     let minCartesian = Number.MAX_VALUE;
     let containerX = this._containerInfo.left;
@@ -130,7 +130,7 @@ AreaPositionManager.prototype = {
 
 
 
-  insertPlaceholder(aContainer, aBefore, aWide, aSize, aIsFromThisArea) {
+  insertPlaceholder: function(aContainer, aBefore, aWide, aSize, aIsFromThisArea) {
     let isShifted = false;
     let shiftDown = aWide;
     for (let child of aContainer.children) {
@@ -185,11 +185,11 @@ AreaPositionManager.prototype = {
     this._lastPlaceholderInsertion = aBefore;
   },
 
-  isWide(aNode) {
+  isWide: function(aNode) {
     return this._wideCache.has(aNode.id);
   },
 
-  _checkIfWide(aNode) {
+  _checkIfWide: function(aNode) {
     return this._inPanel && aNode && aNode.firstChild &&
            aNode.firstChild.classList.contains(CustomizableUI.WIDE_PANEL_CLASS);
   },
@@ -201,7 +201,7 @@ AreaPositionManager.prototype = {
 
 
 
-  clearPlaceholders(aContainer, aNoTransition) {
+  clearPlaceholders: function(aContainer, aNoTransition) {
     for (let child of aContainer.children) {
       if (aNoTransition) {
         child.setAttribute("notransition", true);
@@ -220,7 +220,7 @@ AreaPositionManager.prototype = {
     }
   },
 
-  _getNextPos(aNode, aShiftDown, aSize) {
+  _getNextPos: function(aNode, aShiftDown, aSize) {
     
     if (this._inPanel && aShiftDown) {
       return "translate(0, " + aSize.height + "px)";
@@ -228,7 +228,7 @@ AreaPositionManager.prototype = {
     return this._diffWithNext(aNode, aSize);
   },
 
-  _diffWithNext(aNode, aSize) {
+  _diffWithNext: function(aNode, aSize) {
     let xDiff;
     let yDiff = null;
     let nodeBounds = this._lazyStoreGet(aNode);
@@ -306,7 +306,7 @@ AreaPositionManager.prototype = {
 
 
 
-  _moveNextBasedOnPrevious(aNode, aNodeBounds, aFirstNodeInRow) {
+  _moveNextBasedOnPrevious: function(aNode, aNodeBounds, aFirstNodeInRow) {
     let next = this._getVisibleSiblingForDirection(aNode, "previous");
     let otherBounds = this._lazyStoreGet(next);
     let side = this._dir == "ltr" ? "left" : "right";
@@ -328,7 +328,7 @@ AreaPositionManager.prototype = {
 
 
 
-  _lazyStoreGet(aNode) {
+  _lazyStoreGet: function(aNode) {
     let rect = this._nodePositionStore.get(aNode);
     if (!rect) {
       
@@ -352,7 +352,7 @@ AreaPositionManager.prototype = {
     return rect;
   },
 
-  _firstInRow(aNode) {
+  _firstInRow: function(aNode) {
     
     
     
@@ -368,7 +368,7 @@ AreaPositionManager.prototype = {
     return rv;
   },
 
-  _getVisibleSiblingForDirection(aNode, aDirection) {
+  _getVisibleSiblingForDirection: function(aNode, aDirection) {
     let rv = aNode;
     do {
       rv = rv[aDirection + "Sibling"];
@@ -378,7 +378,7 @@ AreaPositionManager.prototype = {
 }
 
 var DragPositionManager = {
-  start(aWindow) {
+  start: function(aWindow) {
     let areas = CustomizableUI.areas.filter((area) => CustomizableUI.getAreaType(area) != "toolbar");
     areas = areas.map((area) => CustomizableUI.getCustomizeTargetForArea(area, aWindow));
     areas.push(aWindow.document.getElementById(kPaletteId));
@@ -392,7 +392,7 @@ var DragPositionManager = {
     }
   },
 
-  add(aWindow, aArea, aContainer) {
+  add: function(aWindow, aArea, aContainer) {
     if (CustomizableUI.getAreaType(aArea) != "toolbar") {
       return;
     }
@@ -400,7 +400,7 @@ var DragPositionManager = {
     gManagers.set(aContainer, new AreaPositionManager(aContainer));
   },
 
-  remove(aWindow, aArea, aContainer) {
+  remove: function(aWindow, aArea, aContainer) {
     if (CustomizableUI.getAreaType(aArea) != "toolbar") {
       return;
     }
@@ -408,11 +408,11 @@ var DragPositionManager = {
     gManagers.delete(aContainer);
   },
 
-  stop() {
+  stop: function() {
     gManagers = new WeakMap();
   },
 
-  getManagerForArea(aArea) {
+  getManagerForArea: function(aArea) {
     return gManagers.get(aArea);
   }
 };

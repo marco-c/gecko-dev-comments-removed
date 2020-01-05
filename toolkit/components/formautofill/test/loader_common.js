@@ -104,12 +104,12 @@ function getTaskId(stackFrame) {
 
 
 var _mochitestAssert = {
-  ok(actual) {
+  ok: function(actual) {
     let stack = Components.stack.caller;
     ok(actual, "[" + stack.name + " : " + stack.lineNumber + "] " + actual +
                " == true");
   },
-  equal(actual, expected) {
+  equal: function(actual, expected) {
     let stack = Components.stack.caller;
     is(actual, expected, "[" + stack.name + " : " + stack.lineNumber + "] " +
                actual + " == " + expected);

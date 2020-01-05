@@ -82,11 +82,11 @@ function isValidCCNumber(value) {
 
 
 this.FormData = Object.freeze({
-  collect(frame) {
+  collect: function(frame) {
     return FormDataInternal.collect(frame);
   },
 
-  restoreTree(root, data) {
+  restoreTree: function(root, data) {
     FormDataInternal.restoreTree(root, data);
   }
 });
@@ -118,7 +118,7 @@ var FormDataInternal = {
 
 
 
-  collect({document: doc}) {
+  collect: function({document: doc}) {
     let formNodes = doc.evaluate(
       XPathGenerator.restorableFormNodes,
       doc,
@@ -232,7 +232,7 @@ var FormDataInternal = {
 
 
 
-  restore({document: doc}, data) {
+  restore: function({document: doc}, data) {
     
     
     if (!data.url || data.url != getDocumentURI(doc)) {
@@ -275,7 +275,7 @@ var FormDataInternal = {
 
 
 
-  restoreManyInputValues(data, retrieve) {
+  restoreManyInputValues: function(data, retrieve) {
     for (let key of Object.keys(data)) {
       let input = retrieve(key);
       if (input) {
@@ -293,7 +293,7 @@ var FormDataInternal = {
 
 
 
-  restoreSingleInputValue(aNode, aValue) {
+  restoreSingleInputValue: function(aNode, aValue) {
     let eventType;
 
     if (typeof aValue == "string" && aNode.type != "file") {
@@ -359,7 +359,7 @@ var FormDataInternal = {
 
 
 
-  fireEvent(node, type) {
+  fireEvent: function(node, type) {
     let doc = node.ownerDocument;
     let event = doc.createEvent("UIEvents");
     event.initUIEvent(type, true, true, doc.defaultView, 0);
@@ -387,7 +387,7 @@ var FormDataInternal = {
 
 
 
-  restoreTree(root, data) {
+  restoreTree: function(root, data) {
     
     
     if (data.url && data.url != getDocumentURI(root.document)) {

@@ -28,7 +28,7 @@ function cleanup() {
 var tests = [
   {
     expected: testURL,
-    setup() {
+    setup: function() {
       gURLBar.value = testActionURL;
       gURLBar.valueIsTyped = true;
       is(gURLBar.value, testActionURL, "gURLBar starts with the correct real value");
@@ -39,37 +39,37 @@ var tests = [
       gURLBar.select();
       goDoCommand("cmd_copy");
     },
-    success() {
+    success: function() {
       is(gURLBar.value, testActionURL, "gURLBar.value didn't change when copying");
     }
   },
   {
     expected: testURL.substring(0, 10),
-    setup() {
+    setup: function() {
       
       gURLBar.selectionStart = 0;
       gURLBar.selectionEnd = 10;
       goDoCommand("cmd_copy");
     },
-    success() {
+    success: function() {
       is(gURLBar.value, testActionURL, "gURLBar.value didn't change when copying");
     }
   },
   {
     expected: testURL,
-    setup() {
+    setup: function() {
       
       
       gURLBar.select();
       goDoCommand("cmd_cut");
     },
-    success() {
+    success: function() {
       is(gURLBar.value, "", "gURLBar.value is now empty");
     }
   },
   {
     expected: testURL.substring(testURL.length - 10, testURL.length),
-    setup() {
+    setup: function() {
       
       gURLBar.value = testActionURL;
       gURLBar.valueIsTyped = true;
@@ -82,7 +82,7 @@ var tests = [
       gURLBar.selectionEnd = testURL.length;
       goDoCommand("cmd_cut");
     },
-    success() {
+    success: function() {
       is(gURLBar.value, testURL.substring(0, testURL.length - 10), "gURLBar.value has the correct value");
     }
   }

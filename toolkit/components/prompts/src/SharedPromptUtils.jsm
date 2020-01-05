@@ -16,7 +16,7 @@ this.PromptUtils = {
     
     
     
-    fireDialogEvent(domWin, eventName, maybeTarget, detail) {
+    fireDialogEvent : function(domWin, eventName, maybeTarget, detail) {
         let target = maybeTarget || domWin;
         let eventOptions = {cancelable: true, bubbles: true};
         if (detail) {
@@ -28,7 +28,7 @@ this.PromptUtils = {
         winUtils.dispatchEventToChromeOnly(target, event);
     },
 
-    objectToPropBag(obj) {
+    objectToPropBag : function(obj) {
         let bag = Cc["@mozilla.org/hash-property-bag;1"].
                   createInstance(Ci.nsIWritablePropertyBag2);
         bag.QueryInterface(Ci.nsIWritablePropertyBag);
@@ -39,7 +39,7 @@ this.PromptUtils = {
         return bag;
     },
 
-    propBagToObject(propBag, obj) {
+    propBagToObject : function(propBag, obj) {
         
         
         
@@ -80,7 +80,7 @@ this.EnableDelayHelper.prototype = {
         return Services.prefs.getIntPref("security.dialog_enable_delay");
     },
 
-    handleEvent(event) {
+    handleEvent : function(event) {
         if (event.target != this.focusTarget &&
             event.target != this.focusTarget.document)
             return;
@@ -100,7 +100,7 @@ this.EnableDelayHelper.prototype = {
         }
     },
 
-    onBlur() {
+    onBlur : function() {
         this.disableDialog();
         
         
@@ -110,11 +110,11 @@ this.EnableDelayHelper.prototype = {
         }
     },
 
-    onFocus() {
+    onFocus : function() {
         this.startOnFocusDelay();
     },
 
-    onUnload() {
+    onUnload: function() {
         this.focusTarget.removeEventListener("blur", this, false);
         this.focusTarget.removeEventListener("focus", this, false);
         this.focusTarget.document.removeEventListener("unload", this, false);
@@ -127,7 +127,7 @@ this.EnableDelayHelper.prototype = {
         this.focusTarget = this.enableDialog = this.disableDialog = null;
     },
 
-    startOnFocusDelay() {
+    startOnFocusDelay : function() {
         if (this._focusTimer)
             return;
 
@@ -140,7 +140,7 @@ this.EnableDelayHelper.prototype = {
         );
     },
 
-    onFocusTimeout() {
+    onFocusTimeout : function() {
         this._focusTimer = null;
         this.enableDialog();
     },

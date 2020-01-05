@@ -17,7 +17,7 @@ var FontBuilder = {
 
   _allFonts: null,
   _langGroupSupported: false,
-  buildFontList(aLanguage, aFontType, aMenuList)
+  buildFontList: function(aLanguage, aFontType, aMenuList)
   {
     
     while (aMenuList.hasChildNodes())

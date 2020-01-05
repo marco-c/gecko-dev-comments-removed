@@ -104,7 +104,7 @@ var AboutHome = {
     "AboutHome:MaybeShowAutoMigrationUndoNotification",
   ],
 
-  init() {
+  init: function() {
     let mm = Cc["@mozilla.org/globalmessagemanager;1"].getService(Ci.nsIMessageListenerManager);
 
     for (let msg of this.MESSAGES) {
@@ -112,7 +112,7 @@ var AboutHome = {
     }
   },
 
-  receiveMessage(aMessage) {
+  receiveMessage: function(aMessage) {
     let window = aMessage.target.ownerGlobal;
 
     switch (aMessage.name) {
@@ -160,7 +160,7 @@ var AboutHome = {
 
   
   
-  sendAboutHomeData(target) {
+  sendAboutHomeData: function(target) {
     let wrapper = {};
     Components.utils.import("resource:///modules/sessionstore/SessionStore.jsm",
       wrapper);

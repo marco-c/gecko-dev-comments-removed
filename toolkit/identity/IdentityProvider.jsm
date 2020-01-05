@@ -427,7 +427,7 @@ IdentityProviderService.prototype = {
   
 
 
-  setAuthenticationFlow(aAuthId, aProvId) {
+  setAuthenticationFlow: function(aAuthId, aProvId) {
     
     
     

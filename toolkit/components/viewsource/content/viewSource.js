@@ -441,7 +441,7 @@ ViewSourceChrome.prototype = {
       
       
       this.sendAsyncMessage("ViewSource:SetCharacterSet", {
-        charset,
+        charset: charset,
         doPageLoad: this.historyEnabled,
       });
 

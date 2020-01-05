@@ -81,7 +81,7 @@ this.PermissionsUtils = {
 
 
 
-  importFromPrefs(aPrefBranch, aPermission) {
+  importFromPrefs: function(aPrefBranch, aPermission) {
     if (!aPrefBranch.endsWith("."))
       aPrefBranch += ".";
 

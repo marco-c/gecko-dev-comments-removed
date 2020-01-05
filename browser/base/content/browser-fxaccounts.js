@@ -88,7 +88,7 @@ var gFxAccounts = {
            .sort((a, b) => a.name.localeCompare(b.name));
   },
 
-  init() {
+  init: function() {
     
     if (this._initialized || !window.toolbar.visible) {
       return;
@@ -107,7 +107,7 @@ var gFxAccounts = {
     this.updateUI();
   },
 
-  uninit() {
+  uninit: function() {
     if (!this._initialized) {
       return;
     }
@@ -119,7 +119,7 @@ var gFxAccounts = {
     this._initialized = false;
   },
 
-  observe(subject, topic, data) {
+  observe: function(subject, topic, data) {
     switch (topic) {
       case "fxa-migration:state-changed":
         this.onMigrationStateChanged(data, subject);
@@ -133,7 +133,7 @@ var gFxAccounts = {
     }
   },
 
-  onMigrationStateChanged() {
+  onMigrationStateChanged: function() {
     
     
     
@@ -175,12 +175,12 @@ var gFxAccounts = {
     this.updateAppMenuItem();
   },
 
-  handleEvent(event) {
+  handleEvent: function(event) {
     this._inCustomizationMode = event.type == "customizationstarting";
     this.updateAppMenuItem();
   },
 
-  updateUI() {
+  updateUI: function() {
     
     
     
@@ -194,7 +194,7 @@ var gFxAccounts = {
   },
 
   
-  updateAppMenuItem() {
+  updateAppMenuItem: function() {
     let profileInfoEnabled = false;
     try {
       profileInfoEnabled = Services.prefs.getBoolPref("identity.fxaccounts.profile_image.enabled");
@@ -320,7 +320,7 @@ var gFxAccounts = {
     });
   },
 
-  onMenuPanelCommand() {
+  onMenuPanelCommand: function() {
 
     switch (this.panelUIFooter.getAttribute("fxastatus")) {
     case "signedin":
@@ -341,11 +341,11 @@ var gFxAccounts = {
     PanelUI.hide();
   },
 
-  openPreferences() {
+  openPreferences: function() {
     openPreferences("paneSync", { urlParams: { entrypoint: "menupanel" } });
   },
 
-  openAccountsPage(action, urlParams = {}) {
+  openAccountsPage: function(action, urlParams = {}) {
     let params = new URLSearchParams();
     if (action) {
       params.set("action", action);
@@ -361,15 +361,15 @@ var gFxAccounts = {
     });
   },
 
-  openSignInAgainPage(entryPoint) {
+  openSignInAgainPage: function(entryPoint) {
     this.openAccountsPage("reauth", { entrypoint: entryPoint });
   },
 
-  sendTabToDevice(url, clientId, title) {
+  sendTabToDevice: function(url, clientId, title) {
     Weave.Service.clientsEngine.sendURIToClientForDisplay(url, clientId, title);
   },
 
-  populateSendTabToDevicesMenu(devicesPopup, url, title) {
+  populateSendTabToDevicesMenu: function(devicesPopup, url, title) {
     
     while (devicesPopup.hasChildNodes()) {
       devicesPopup.removeChild(devicesPopup.firstChild);
@@ -410,7 +410,7 @@ var gFxAccounts = {
     devicesPopup.appendChild(fragment);
   },
 
-  updateTabContextMenu(aPopupMenu) {
+  updateTabContextMenu: function(aPopupMenu) {
     if (!this.sendTabToDeviceEnabled) {
       return;
     }
@@ -420,7 +420,7 @@ var gFxAccounts = {
     .forEach(id => { document.getElementById(id).hidden = !remoteClientPresent });
   },
 
-  initPageContextMenu(contextMenu) {
+  initPageContextMenu: function(contextMenu) {
     if (!this.sendTabToDeviceEnabled) {
       return;
     }

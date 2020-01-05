@@ -174,7 +174,7 @@ this.PageMetadata = {
 
 
 
-  _getLinkData(document, result) {
+  _getLinkData: function(document, result) {
     let elements = document.querySelectorAll("head > link[rel], head > link[id]");
 
     for (let element of elements) {

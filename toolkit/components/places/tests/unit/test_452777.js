@@ -26,7 +26,7 @@ function run_test()
 
   
   bs.addObserver({
-    onItemAdded(aItemId, aFolder, aIndex, aItemType, aURI, aTitle)
+    onItemAdded: function(aItemId, aFolder, aIndex, aItemType, aURI, aTitle)
     {
       do_check_eq(aItemId, id);
       do_check_eq(aTitle, TITLE);

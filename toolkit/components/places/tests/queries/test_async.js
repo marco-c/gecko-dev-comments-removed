@@ -9,12 +9,12 @@ var tests = [
     desc: "nsNavHistoryFolderResultNode: Basic test, asynchronously open and " +
           "close container with a single child",
 
-    loading(node, newState, oldState) {
+    loading: function(node, newState, oldState) {
       this.checkStateChanged("loading", 1);
       this.checkArgs("loading", node, oldState, node.STATE_CLOSED);
     },
 
-    opened(node, newState, oldState) {
+    opened: function(node, newState, oldState) {
       this.checkStateChanged("opened", 1);
       this.checkState("loading", 1);
       this.checkArgs("opened", node, oldState, node.STATE_LOADING);
@@ -26,7 +26,7 @@ var tests = [
       node.containerOpen = false;
     },
 
-    closed(node, newState, oldState) {
+    closed: function(node, newState, oldState) {
       this.checkStateChanged("closed", 1);
       this.checkState("opened", 1);
       this.checkArgs("closed", node, oldState, node.STATE_OPENED);
@@ -38,13 +38,13 @@ var tests = [
     desc: "nsNavHistoryFolderResultNode: After async open and no changes, " +
           "second open should be synchronous",
 
-    loading(node, newState, oldState) {
+    loading: function(node, newState, oldState) {
       this.checkStateChanged("loading", 1);
       this.checkState("closed", 0);
       this.checkArgs("loading", node, oldState, node.STATE_CLOSED);
     },
 
-    opened(node, newState, oldState) {
+    opened: function(node, newState, oldState) {
       let cnt = this.checkStateChanged("opened", 1, 2);
       let expectOldState = cnt === 1 ? node.STATE_LOADING : node.STATE_CLOSED;
       this.checkArgs("opened", node, oldState, expectOldState);
@@ -56,7 +56,7 @@ var tests = [
       node.containerOpen = false;
     },
 
-    closed(node, newState, oldState) {
+    closed: function(node, newState, oldState) {
       let cnt = this.checkStateChanged("closed", 1, 2);
       this.checkArgs("closed", node, oldState, node.STATE_OPENED);
 
@@ -75,18 +75,18 @@ var tests = [
     desc: "nsNavHistoryFolderResultNode: After closing container in " +
           "loading(), opened() should not be called",
 
-    loading(node, newState, oldState) {
+    loading: function(node, newState, oldState) {
       this.checkStateChanged("loading", 1);
       this.checkArgs("loading", node, oldState, node.STATE_CLOSED);
       print("Closing container");
       node.containerOpen = false;
     },
 
-    opened(node, newState, oldState) {
+    opened: function(node, newState, oldState) {
       do_throw("opened should not be called");
     },
 
-    closed(node, newState, oldState) {
+    closed: function(node, newState, oldState) {
       this.checkStateChanged("closed", 1);
       this.checkState("loading", 1);
       this.checkArgs("closed", node, oldState, node.STATE_LOADING);
@@ -122,7 +122,7 @@ Test.prototype = {
 
 
 
-  checkArgs(aNewState, aNode, aOldState, aExpectOldState) {
+  checkArgs: function(aNewState, aNode, aOldState, aExpectOldState) {
     print("Node passed on " + aNewState + " should be result.root");
     do_check_eq(this.result.root, aNode);
     print("Old state passed on " + aNewState + " should be " + aExpectOldState);
@@ -141,7 +141,7 @@ Test.prototype = {
 
 
 
-  checkStateChanged(aState, aExpectedMin, aExpectedMax) {
+  checkStateChanged: function(aState, aExpectedMin, aExpectedMax) {
     print(aState + " state change observed");
     if (!this.stateCounts.hasOwnProperty(aState))
       this.stateCounts[aState] = 0;
@@ -163,7 +163,7 @@ Test.prototype = {
 
 
 
-  checkState(aState, aExpectedMin, aExpectedMax) {
+  checkState: function(aState, aExpectedMin, aExpectedMax) {
     let cnt = this.stateCounts[aState] || 0;
     if (aExpectedMax === undefined)
       aExpectedMax = aExpectedMin;
@@ -183,12 +183,12 @@ Test.prototype = {
   
 
 
-  openContainer() {
+  openContainer: function() {
     
     
     let self = this;
     this.observer = {
-      containerStateChanged(container, oldState, newState) {
+      containerStateChanged: function(container, oldState, newState) {
         print("New state passed to containerStateChanged() should equal the " +
               "container's current state");
         do_check_eq(newState, container.state);
@@ -222,7 +222,7 @@ Test.prototype = {
   
 
 
-  run() {
+  run: function() {
     this.openContainer();
     return this.deferNextTest.promise;
   },
@@ -231,7 +231,7 @@ Test.prototype = {
 
 
 
-  *setup() {
+  setup: function*() {
     
     this.data = DataHelper.makeDataArray([
       { type: "bookmark" },
@@ -253,7 +253,7 @@ Test.prototype = {
 
 
 
-  success() {
+  success: function() {
     this.result.removeObserver(this.observer);
 
     

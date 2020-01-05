@@ -63,7 +63,7 @@ this.ProfileAge.prototype = {
 
 
 
-  getPath(file) {
+  getPath: function(file) {
     return OS.Path.join(this.profilePath, file);
   },
 
@@ -71,7 +71,7 @@ this.ProfileAge.prototype = {
 
 
 
-  getTimes(file = "times.json") {
+  getTimes: function(file = "times.json") {
     if (this._times) {
       return Promise.resolve(this._times);
     }
@@ -86,7 +86,7 @@ this.ProfileAge.prototype = {
 
 
 
-  readTimes(file = "times.json") {
+  readTimes: function(file = "times.json") {
     return CommonUtils.readJSON(this.getPath(file));
   },
 
@@ -94,7 +94,7 @@ this.ProfileAge.prototype = {
 
 
 
-  writeTimes(contents, file = "times.json") {
+  writeTimes: function(contents, file = "times.json") {
     return CommonUtils.writeJSON(contents, this.getPath(file));
   },
 
@@ -102,7 +102,7 @@ this.ProfileAge.prototype = {
 
 
 
-  computeAndPersistCreated(existingContents, file = "times.json") {
+  computeAndPersistCreated: function(existingContents, file = "times.json") {
     let path = this.getPath(file);
     function onOldest(oldest) {
       let contents = existingContents || {};
@@ -122,7 +122,7 @@ this.ProfileAge.prototype = {
 
 
 
-  getOldestProfileTimestamp() {
+  getOldestProfileTimestamp: function() {
     let self = this;
     let oldest = Date.now() + 1000;
     let iterator = new OS.File.DirectoryIterator(this.profilePath);
@@ -185,7 +185,7 @@ this.ProfileAge.prototype = {
 
 
 
-  recordProfileReset(time = Date.now(), file = "times.json") {
+  recordProfileReset: function(time = Date.now(), file = "times.json") {
     return this.getTimes(file).then(
       times => {
         times.reset = time;

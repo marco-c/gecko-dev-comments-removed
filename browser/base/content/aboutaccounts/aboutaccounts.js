@@ -101,7 +101,7 @@ function updateDisplayedEmail(user) {
 var wrapper = {
   iframe: null,
 
-  init(url, urlParams) {
+  init: function(url, urlParams) {
     
     
     
@@ -130,7 +130,7 @@ var wrapper = {
     webNav.loadURI(url, Ci.nsIWebNavigation.LOAD_FLAGS_REPLACE_HISTORY, null, null, null);
   },
 
-  retry() {
+  retry: function() {
     let webNav = this.iframe.frameLoader.docShell.QueryInterface(Ci.nsIWebNavigation);
     webNav.loadURI(this.url, Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY, null, null, null);
   },
@@ -140,7 +140,7 @@ var wrapper = {
                                          Ci.nsISupportsWeakReference,
                                          Ci.nsISupports]),
 
-    onStateChange(aWebProgress, aRequest, aState, aStatus) {
+    onStateChange: function(aWebProgress, aRequest, aState, aStatus) {
       let failure = false;
 
       
@@ -164,19 +164,19 @@ var wrapper = {
       }
     },
 
-    onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
+    onLocationChange: function(aWebProgress, aRequest, aLocation, aFlags) {
       if (aRequest && aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) {
         aRequest.cancel(Components.results.NS_BINDING_ABORTED);
         setErrorPage("networkError");
       }
     },
 
-    onProgressChange() {},
-    onStatusChange() {},
-    onSecurityChange() {},
+    onProgressChange: function() {},
+    onStatusChange: function() {},
+    onSecurityChange: function() {},
   },
 
-  handleEvent(evt) {
+  handleEvent: function(evt) {
     switch (evt.type) {
       case "load":
         this.iframe.contentWindow.addEventListener("FirefoxAccountsCommand", this);
@@ -194,7 +194,7 @@ var wrapper = {
 
 
 
-  onLogin(accountData) {
+  onLogin: function(accountData) {
     log("Received: 'login'. Data:" + JSON.stringify(accountData));
 
     if (accountData.customizeSync) {
@@ -251,16 +251,16 @@ var wrapper = {
     );
   },
 
-  onCanLinkAccount(accountData) {
+  onCanLinkAccount: function(accountData) {
     
     let ok = shouldAllowRelink(accountData.email);
-    this.injectData("message", { status: "can_link_account", data: { ok } });
+    this.injectData("message", { status: "can_link_account", data: { ok: ok } });
   },
 
   
 
 
-  onSignOut() {
+  onSignOut: function() {
     log("Received: 'sign_out'.");
 
     fxAccounts.signOut().then(
@@ -269,7 +269,7 @@ var wrapper = {
     );
   },
 
-  handleRemoteCommand(evt) {
+  handleRemoteCommand: function(evt) {
     log('command: ' + evt.detail.command);
     let data = evt.detail.data;
 
@@ -289,11 +289,11 @@ var wrapper = {
     }
   },
 
-  injectData(type, content) {
+  injectData: function(type, content) {
     return fxAccounts.promiseAccountsSignUpURI().then(authUrl => {
       let data = {
-        type,
-        content
+        type: type,
+        content: content
       };
       this.iframe.contentWindow.postMessage(data, authUrl);
     })

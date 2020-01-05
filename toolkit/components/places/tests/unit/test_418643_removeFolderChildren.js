@@ -29,7 +29,7 @@ var deletedBookmarkIds = [];
 var observer = {
   
   _onItemRemovedItemIds: [],
-  onItemRemoved(aItemId, aParentId, aIndex) {
+  onItemRemoved: function(aItemId, aParentId, aIndex) {
     
     do_check_eq(this._onItemRemovedItemIds.indexOf(aParentId), -1);
     
@@ -39,7 +39,7 @@ var observer = {
     this._onItemRemovedItemIds.push(aItemId);
   },
 
-  QueryInterface(aIID) {
+  QueryInterface: function(aIID) {
     if (aIID.equals(Ci.nsINavBookmarkObserver) ||
         aIID.equals(Ci.nsISupports)) {
       return this;

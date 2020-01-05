@@ -53,11 +53,11 @@ const IS_UNIFIED_TELEMETRY = Preferences.get(PREF_TELEMETRY_UNIFIED, false);
 var gLogAppenderDump = null;
 
 this.SelfSupportBackend = Object.freeze({
-  init() {
+  init: function() {
     SelfSupportBackendInternal.init();
   },
 
-  uninit() {
+  uninit: function() {
     SelfSupportBackendInternal.uninit();
   },
 });
@@ -75,7 +75,7 @@ var SelfSupportBackendInternal = {
   
 
 
-  init() {
+  init: function() {
     this._configureLogging();
 
     this._log.trace("init");
@@ -108,7 +108,7 @@ var SelfSupportBackendInternal = {
   
 
 
-  uninit() {
+  uninit: function() {
     this._log.trace("uninit");
 
     Preferences.ignore(PREF_BRANCH_LOG, this._configureLogging, this);
@@ -142,7 +142,7 @@ var SelfSupportBackendInternal = {
 
 
 
-  observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     this._log.trace("observe - Topic " + aTopic);
 
     if (aTopic === "sessionstore-windows-restored") {
@@ -154,7 +154,7 @@ var SelfSupportBackendInternal = {
   
 
 
-  _configureLogging() {
+  _configureLogging: function() {
     if (!this._log) {
       this._log = Log.repository.getLogger(LOGGER_NAME);
 
@@ -183,7 +183,7 @@ var SelfSupportBackendInternal = {
 
 
 
-  _makeHiddenBrowser(aURL) {
+  _makeHiddenBrowser: function(aURL) {
     this._frame = new HiddenFrame();
     return this._frame.get().then(aFrame => {
       let doc = aFrame.document;
@@ -197,7 +197,7 @@ var SelfSupportBackendInternal = {
     });
   },
 
-  handleEvent(aEvent) {
+  handleEvent: function(aEvent) {
     this._log.trace("handleEvent - aEvent.type " + aEvent.type + ", Trusted " + aEvent.isTrusted);
 
     if (aEvent.type === "DOMWindowClose") {
@@ -217,7 +217,7 @@ var SelfSupportBackendInternal = {
   
 
 
-  _pageSuccessCallback() {
+  _pageSuccessCallback: function() {
     this._log.debug("_pageSuccessCallback - Page correctly loaded.");
     this._browser.removeProgressListener(this._progressListener);
     this._progressListener.destroy();
@@ -230,7 +230,7 @@ var SelfSupportBackendInternal = {
   
 
 
-  _pageLoadErrorCallback() {
+  _pageLoadErrorCallback: function() {
     this._log.info("_pageLoadErrorCallback - Too many failed load attempts. Giving up.");
     this.uninit();
   },
@@ -240,7 +240,7 @@ var SelfSupportBackendInternal = {
 
 
 
-  _loadSelfSupport() {
+  _loadSelfSupport: function() {
     
     let unformattedURL = Preferences.get(PREF_URL, null);
     let url = Services.urlFormatter.formatURL(unformattedURL);
@@ -290,7 +290,7 @@ function ProgressListener(aLoadErrorCallback, aLoadSuccessCallback) {
 }
 
 ProgressListener.prototype = {
-  onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
+  onLocationChange: function(aWebProgress, aRequest, aLocation, aFlags) {
     if (aFlags & Ci.nsIWebProgressListener.LOCATION_CHANGE_ERROR_PAGE) {
       this._log.warn("onLocationChange - There was a problem fetching the SelfSupport URL (attempt " +
                      this._loadAttempts + ").");
@@ -312,7 +312,7 @@ ProgressListener.prototype = {
     }
   },
 
-  onStateChange(aWebProgress, aRequest, aFlags, aStatus) {
+  onStateChange: function(aWebProgress, aRequest, aFlags, aStatus) {
     if (aFlags & Ci.nsIWebProgressListener.STATE_STOP &&
         aFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK &&
         aFlags & Ci.nsIWebProgressListener.STATE_IS_WINDOW &&
@@ -321,7 +321,7 @@ ProgressListener.prototype = {
     }
   },
 
-  destroy() {
+  destroy: function() {
     
     clearTimeout(this._reloadTimerId);
   },

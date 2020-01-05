@@ -79,7 +79,7 @@ Probe.prototype = {
 
 
 
-  acquire() {
+  acquire: function() {
     if (this._counter == 0) {
       this._impl.isActive = true;
       Process.broadcast("acquire", [this._name]);
@@ -92,7 +92,7 @@ Probe.prototype = {
 
 
 
-  release() {
+  release: function() {
     this._counter--;
     if (this._counter == 0) {
       try {
@@ -117,7 +117,7 @@ Probe.prototype = {
 
 
 
-  extract(xpcom) {
+  extract: function(xpcom) {
     if (!this._impl.isActive) {
       throw new Error(`Probe is inactive: ${this._name}`);
     }
@@ -130,7 +130,7 @@ Probe.prototype = {
 
 
 
-  isEqual(a, b) {
+  isEqual: function(a, b) {
     if (a == null && b == null) {
       return true;
     }
@@ -149,7 +149,7 @@ Probe.prototype = {
 
 
 
-  subtract(a, b) {
+  subtract: function(a, b) {
     if (a == null) {
       throw new TypeError();
     }
@@ -159,7 +159,7 @@ Probe.prototype = {
     return this._impl.subtract(a, b);
   },
 
-  importChildCompartments(parent, children) {
+  importChildCompartments: function(parent, children) {
     if (!Array.isArray(children)) {
       throw new TypeError();
     }
@@ -176,7 +176,7 @@ Probe.prototype = {
     return this._name;
   },
 
-  compose(stats) {
+  compose: function(stats) {
     if (!Array.isArray(stats)) {
       throw new TypeError();
     }
@@ -221,17 +221,17 @@ var Probes = {
     get isActive() {
       return performanceStatsService.isMonitoringJank;
     },
-    extract(xpcom) {
+    extract: function(xpcom) {
       let durations = xpcom.getDurations();
       return {
         totalUserTime: xpcom.totalUserTime,
         totalSystemTime: xpcom.totalSystemTime,
         totalCPUTime: xpcom.totalUserTime + xpcom.totalSystemTime,
-        durations,
+        durations: durations,
         longestDuration: lastNonZero(durations)
       }
     },
-    isEqual(a, b) {
+    isEqual: function(a, b) {
       
       if (a.totalUserTime != b.totalUserTime) {
         return false;
@@ -246,7 +246,7 @@ var Probes = {
       }
       return true;
     },
-    subtract(a, b) {
+    subtract: function(a, b) {
       
       let result = {
         totalUserTime: a.totalUserTime - b.totalUserTime,
@@ -261,8 +261,8 @@ var Probes = {
       result.longestDuration = lastNonZero(result.durations);
       return result;
     },
-    importChildCompartments() {  },
-    compose(stats) {
+    importChildCompartments: function() {  },
+    compose: function(stats) {
       let result = {
         totalUserTime: 0,
         totalSystemTime: 0,
@@ -298,21 +298,21 @@ var Probes = {
     get isActive() {
       return performanceStatsService.isMonitoringCPOW;
     },
-    extract(xpcom) {
+    extract: function(xpcom) {
       return {
         totalCPOWTime: xpcom.totalCPOWTime
       };
     },
-    isEqual(a, b) {
+    isEqual: function(a, b) {
       return a.totalCPOWTime == b.totalCPOWTime;
     },
-    subtract(a, b) {
+    subtract: function(a, b) {
       return {
         totalCPOWTime: a.totalCPOWTime - b.totalCPOWTime
       };
     },
-    importChildCompartments() {  },
-    compose(stats) {
+    importChildCompartments: function() {  },
+    compose: function(stats) {
       let totalCPOWTime = 0;
       for (let stat of stats) {
         totalCPOWTime += stat.totalCPOWTime;
@@ -335,21 +335,21 @@ var Probes = {
   ticks: new Probe("ticks", {
     set isActive(x) {  },
     get isActive() { return true; },
-    extract(xpcom) {
+    extract: function(xpcom) {
       return {
         ticks: xpcom.ticks
       };
     },
-    isEqual(a, b) {
+    isEqual: function(a, b) {
       return a.ticks == b.ticks;
     },
-    subtract(a, b) {
+    subtract: function(a, b) {
       return {
         ticks: a.ticks - b.ticks
       };
     },
-    importChildCompartments() {  },
-    compose(stats) {
+    importChildCompartments: function() {  },
+    compose: function(stats) {
       let ticks = 0;
       for (let stat of stats) {
         ticks += stat.ticks;
@@ -365,19 +365,19 @@ var Probes = {
     get isActive() {
       return performanceStatsService.isMonitoringPerCompartment;
     },
-    extract(xpcom) {
+    extract: function(xpcom) {
       return null;
     },
-    isEqual(a, b) {
+    isEqual: function(a, b) {
       return true;
     },
-    subtract(a, b) {
+    subtract: function(a, b) {
       return true;
     },
-    importChildCompartments(parent, children) {
+    importChildCompartments: function(parent, children) {
       parent.children = children;
     },
-    compose(stats) {
+    compose: function(stats) {
       return null;
     },
   }),
@@ -447,7 +447,7 @@ PerformanceMonitor.prototype = {
 
 
 
-  _checkBeforeSnapshot(options) {
+  _checkBeforeSnapshot: function(options) {
     if (!this._finalizer) {
       throw new Error("dispose() has already been called, this PerformanceMonitor is not usable anymore");
     }
@@ -472,11 +472,11 @@ PerformanceMonitor.prototype = {
     }
     return probes;
   },
-  promiseContentSnapshot(options = null) {
+  promiseContentSnapshot: function(options = null) {
     this._checkBeforeSnapshot(options);
     return (new ProcessSnapshot(performanceStatsService.getSnapshot()));
   },
-  promiseSnapshot(options = null) {
+  promiseSnapshot: function(options = null) {
     let probes = this._checkBeforeSnapshot(options);
     return Task.spawn(function*() {
       let childProcesses = yield Process.broadcastAndCollect("collect", {probeNames: probes.map(p => p.name)});
@@ -496,7 +496,7 @@ PerformanceMonitor.prototype = {
 
 
 
-  dispose() {
+  dispose: function() {
     if (!this._finalizer) {
       return;
     }
@@ -573,7 +573,7 @@ this.PerformanceStats = {
   
 
 
-  getMonitor(probes) {
+  getMonitor: function(probes) {
     return PerformanceMonitor.make(probes);
   }
 };
@@ -640,7 +640,7 @@ PerformanceDataLeaf.prototype = {
 
 
 
-  equals(to) {
+  equals: function(to) {
     if (!(to instanceof PerformanceDataLeaf)) {
       throw new TypeError();
     }
@@ -661,7 +661,7 @@ PerformanceDataLeaf.prototype = {
 
 
 
-  subtract(to = null) {
+  subtract: function(to = null) {
     return (new PerformanceDiffLeaf(this, to));
   }
 };
@@ -673,7 +673,7 @@ function PerformanceData(timestamp) {
   this._timestamp = timestamp;
 }
 PerformanceData.prototype = {
-  addChild(stat) {
+  addChild: function(stat) {
     if (!(stat instanceof PerformanceDataLeaf)) {
       throw new TypeError(); 
     }
@@ -684,7 +684,7 @@ PerformanceData.prototype = {
     this._all.push(stat);
     stat.owner = this;
   },
-  setParent(stat) {
+  setParent: function(stat) {
     if (!(stat instanceof PerformanceDataLeaf)) {
       throw new TypeError(); 
     }
@@ -695,7 +695,7 @@ PerformanceData.prototype = {
     this._all.push(stat);
     stat.owner = this;
   },
-  equals(to) {
+  equals: function(to) {
     if (this._parent && !to._parent) {
       return false;
     }
@@ -719,7 +719,7 @@ PerformanceData.prototype = {
     }
     return true;
   },
-  subtract(to = null) {
+  subtract: function(to = null) {
     return (new PerformanceDiff(this, to));
   },
   get addonId() {
@@ -767,7 +767,7 @@ function PerformanceDiff(current, old = null) {
   }
 }
 PerformanceDiff.prototype = {
-  toString() {
+  toString: function() {
     return `[PerformanceDiff] ${this.key}`;
   },
   get windowIds() {
@@ -924,7 +924,7 @@ var Process = {
 
 
 
-  broadcast(topic, payload) {
+  broadcast: function(topic, payload) {
     if (!this.loader) {
       return;
     }

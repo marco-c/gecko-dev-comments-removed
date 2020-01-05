@@ -384,7 +384,7 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
     , { url: uri.spec, userContextId });
   },
 
-  shutdown() {
+  shutdown: function() {
     this._conn = null;
     this._queue.clear();
   }
@@ -769,7 +769,7 @@ Search.prototype = {
 
 
 
-  setBehavior(type) {
+  setBehavior: function(type) {
     type = type.toUpperCase();
     this._behavior |=
       Ci.mozIPlacesAutoComplete["BEHAVIOR_" + type];
@@ -787,7 +787,7 @@ Search.prototype = {
 
 
 
-  hasBehavior(type) {
+  hasBehavior: function(type) {
     let behavior = Ci.mozIPlacesAutoComplete["BEHAVIOR_" + type.toUpperCase()];
 
     if (this._disablePrivateActions &&
@@ -803,7 +803,7 @@ Search.prototype = {
 
 
   _sleepDeferred: null,
-  _sleep(aTimeMs) {
+  _sleep: function(aTimeMs) {
     
     
     if (!this._sleepTimer)
@@ -822,7 +822,7 @@ Search.prototype = {
 
 
 
-  filterTokens(tokens) {
+  filterTokens: function(tokens) {
     let foundToken = false;
     
     for (let i = tokens.length - 1; i >= 0; i--) {
@@ -1152,7 +1152,7 @@ Search.prototype = {
     return this._searchTokens.some(looksLikeUrl);
   },
 
-  *_matchKnownUrl(conn) {
+  _matchKnownUrl: function* (conn) {
     
     let lastSlashIndex = this._searchString.lastIndexOf("/");
     
@@ -1184,7 +1184,7 @@ Search.prototype = {
     return gotResult;
   },
 
-  *_matchExtensionHeuristicResult() {
+  _matchExtensionHeuristicResult: function* () {
     if (ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
         this._originalSearchString.length > this._searchTokens[0].length) {
       let description = ExtensionSearchHandler.getDescription(this._searchTokens[0]);
@@ -1194,7 +1194,7 @@ Search.prototype = {
     return false;
   },
 
-  *_matchPlacesKeyword() {
+  _matchPlacesKeyword: function* () {
     
     let keyword = this._searchTokens[0];
     let entry = yield PlacesUtils.keywords.fetch(this._searchTokens[0]);
@@ -1228,7 +1228,7 @@ Search.prototype = {
     return true;
   },
 
-  *_matchSearchEngineUrl() {
+  _matchSearchEngineUrl: function* () {
     if (!Prefs.autofillSearchEngines)
       return false;
 
@@ -1270,7 +1270,7 @@ Search.prototype = {
 
     this._result.setDefaultIndex(0);
     this._addMatch({
-      value,
+      value: value,
       comment: match.engineName,
       icon: match.iconUrl,
       style: "priority-search",
@@ -1280,7 +1280,7 @@ Search.prototype = {
     return true;
   },
 
-  *_matchSearchEngineAlias() {
+  _matchSearchEngineAlias: function* () {
     if (this._searchTokens.length < 1)
       return false;
 
@@ -1296,7 +1296,7 @@ Search.prototype = {
     return true;
   },
 
-  *_matchCurrentSearchEngine() {
+  _matchCurrentSearchEngine: function* () {
     let match = yield PlacesSearchAutocompleteProvider.getDefaultMatch();
     if (!match)
       return false;
@@ -1338,7 +1338,7 @@ Search.prototype = {
     let value = PlacesUtils.mozActionURI("searchengine", actionURLParams);
 
     this._addMatch({
-      value,
+      value: value,
       comment: match.engineName,
       icon: match.iconUrl,
       style: "action searchengine",
@@ -1393,7 +1393,7 @@ Search.prototype = {
 
   
   
-  *_matchUnknownUrl() {
+  _matchUnknownUrl: function* () {
     let flags = Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
                 Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
     let fixupInfo = null;
@@ -1435,7 +1435,7 @@ Search.prototype = {
     });
 
     let match = {
-      value,
+      value: value,
       comment: displayURL,
       style: "action visiturl",
       frecency: 0,
@@ -1453,7 +1453,7 @@ Search.prototype = {
     return true;
   },
 
-  _onResultRow(row) {
+  _onResultRow: function(row) {
     if (this._localMatchesCount == 0) {
       TelemetryStopwatch.finish(TELEMETRY_1ST_RESULT, this);
     }
@@ -1479,7 +1479,7 @@ Search.prototype = {
       throw StopIteration;
   },
 
-  _maybeRestyleSearchMatch(match) {
+  _maybeRestyleSearchMatch: function(match) {
     
     let parseResult =
       PlacesSearchAutocompleteProvider.parseSubmissionURL(match.value);
@@ -1585,7 +1585,7 @@ Search.prototype = {
     return index;
   },
 
-  _processHostRow(row) {
+  _processHostRow: function(row) {
     let match = {};
     let trimmedHost = row.getResultByIndex(QUERYINDEX_URL);
     let untrimmedHost = row.getResultByIndex(QUERYINDEX_TITLE);
@@ -1614,7 +1614,7 @@ Search.prototype = {
     return match;
   },
 
-  _processUrlRow(row) {
+  _processUrlRow: function(row) {
     let match = {};
     let value = row.getResultByIndex(QUERYINDEX_URL);
     let url = fixupSearchText(value);
@@ -1656,7 +1656,7 @@ Search.prototype = {
     return match;
   },
 
-  _processRow(row) {
+  _processRow: function(row) {
     let match = {};
     match.placeId = row.getResultByIndex(QUERYINDEX_PLACEID);
     let escapedURL = row.getResultByIndex(QUERYINDEX_URL);
@@ -1933,7 +1933,7 @@ Search.prototype = {
 
 
 
-  notifyResults(searchOngoing) {
+  notifyResults: function(searchOngoing) {
     let result = this._result;
     let resultCode = result.matchCount ? "RESULT_SUCCESS" : "RESULT_NOMATCH";
     if (searchOngoing) {
@@ -1971,7 +1971,7 @@ UnifiedComplete.prototype = {
 
 
 
-  getDatabaseHandle() {
+  getDatabaseHandle: function() {
     if (Prefs.enabled && !this._promiseDatabase) {
       this._promiseDatabase = Task.spawn(function* () {
         let conn = yield Sqlite.cloneStorageConnection({
@@ -2018,7 +2018,7 @@ UnifiedComplete.prototype = {
 
   
 
-  startSearch(searchString, searchParam, previousResult, listener) {
+  startSearch: function(searchString, searchParam, previousResult, listener) {
     
     if (this._currentSearch) {
       this.stopSearch();
@@ -2057,7 +2057,7 @@ UnifiedComplete.prototype = {
                             });
   },
 
-  stopSearch() {
+  stopSearch: function() {
     if (this._currentSearch) {
       this._currentSearch.stop();
     }
@@ -2073,7 +2073,7 @@ UnifiedComplete.prototype = {
 
 
 
-  finishSearch(notify = false) {
+  finishSearch: function(notify = false) {
     TelemetryStopwatch.cancel(TELEMETRY_1ST_RESULT, this);
     TelemetryStopwatch.cancel(TELEMETRY_6_FIRST_RESULTS, this);
     
@@ -2100,7 +2100,7 @@ UnifiedComplete.prototype = {
 
   
 
-  onValueRemoved(result, spec, removeFromDB) {
+  onValueRemoved: function(result, spec, removeFromDB) {
     if (removeFromDB) {
       PlacesUtils.history.removePage(NetUtil.newURI(spec));
     }

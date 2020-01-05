@@ -91,7 +91,7 @@ var test = {
                                          DEFAULT_INDEX, this._queryTitle3);
   },
 
-  clean() {},
+  clean: function() {},
 
   validate: function validate() {
     

@@ -137,7 +137,7 @@ function NarrateControls(mm, win, languagePromise) {
 }
 
 NarrateControls.prototype = {
-  handleEvent(evt) {
+  handleEvent: function(evt) {
     switch (evt.type) {
       case "change":
         if (evt.target.id == "narrate-rate-input") {
@@ -163,7 +163,7 @@ NarrateControls.prototype = {
   
 
 
-  _setupVoices() {
+  _setupVoices: function() {
     return this._languagePromise.then(language => {
       this.voiceSelect.clear();
       let win = this._win;
@@ -211,7 +211,7 @@ NarrateControls.prototype = {
     });
   },
 
-  _getVoicePref() {
+  _getVoicePref: function() {
     let voicePref = Services.prefs.getCharPref("narrate.voice");
     try {
       return JSON.parse(voicePref);
@@ -220,12 +220,12 @@ NarrateControls.prototype = {
     }
   },
 
-  _onRateInput(evt) {
+  _onRateInput: function(evt) {
     AsyncPrefs.set("narrate.rate", parseInt(evt.target.value, 10));
     this.narrator.setRate(this._convertRate(evt.target.value));
   },
 
-  _onVoiceChange() {
+  _onVoiceChange: function() {
     let voice = this.voice;
     this.narrator.setVoice(voice);
     this._languagePromise.then(language => {
@@ -237,7 +237,7 @@ NarrateControls.prototype = {
     });
   },
 
-  _onButtonClick(evt) {
+  _onButtonClick: function(evt) {
     switch (evt.target.id) {
       case "narrate-skip-previous":
         this.narrator.skipPrevious();
@@ -262,7 +262,7 @@ NarrateControls.prototype = {
     }
   },
 
-  _updateSpeechControls(speaking) {
+  _updateSpeechControls: function(speaking) {
     let dropdown = this._doc.getElementById("narrate-dropdown");
     dropdown.classList.toggle("keep-open", speaking);
     dropdown.classList.toggle("speaking", speaking);
@@ -281,7 +281,7 @@ NarrateControls.prototype = {
     }
   },
 
-  _createVoiceLabel(voice) {
+  _createVoiceLabel: function(voice) {
     
     
     
@@ -304,7 +304,7 @@ NarrateControls.prototype = {
     }
   },
 
-  _getLanguageName(lang) {
+  _getLanguageName: function(lang) {
     if (!this._langStrings) {
       this._langStrings = Services.strings.createBundle(
         "chrome://global/locale/languageNames.properties ");
@@ -318,7 +318,7 @@ NarrateControls.prototype = {
     }
   },
 
-  _convertRate(rate) {
+  _convertRate: function(rate) {
     
     
     

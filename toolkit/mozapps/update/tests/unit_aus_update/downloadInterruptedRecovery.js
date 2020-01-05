@@ -92,13 +92,13 @@ function IncrementalDownload() {
 
 IncrementalDownload.prototype = {
   
-  init(uri, file, chunkSize, intervalInSeconds) {
+  init: function(uri, file, chunkSize, intervalInSeconds) {
     this._destination = file;
     this._URI = uri;
     this._finalURI = uri;
   },
 
-  start(observer, ctxt) {
+  start: function(observer, ctxt) {
     let tm = Cc["@mozilla.org/thread-manager;1"].
              getService(Ci.nsIThreadManager);
     
@@ -161,13 +161,13 @@ IncrementalDownload.prototype = {
   },
 
   
-  cancel(aStatus) {
+  cancel: function(aStatus) {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
-  suspend() {
+  suspend: function() {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
-  isPending() {
+  isPending: function() {
     throw Cr.NS_ERROR_NOT_IMPLEMENTED;
   },
   _loadFlags: 0,

@@ -400,7 +400,7 @@ function PrefObserver(prefName, callback, thisObject) {
 PrefObserver.prototype = {
   QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver, Ci.nsISupportsWeakReference]),
 
-  observe(subject, topic, data) {
+  observe: function(subject, topic, data) {
     
     
     

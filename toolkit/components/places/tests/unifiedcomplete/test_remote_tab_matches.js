@@ -189,7 +189,7 @@ add_task(function* test_localtab_matches_override() {
   
   let uri = NetUtil.newURI("http://foo.com/");
   yield PlacesTestUtils.addVisits([
-    { uri, title: "An Example" },
+    { uri: uri, title: "An Example" },
   ]);
   addOpenPages(uri, 1);
 

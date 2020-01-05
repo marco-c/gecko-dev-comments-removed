@@ -26,7 +26,7 @@ profileDir.append("extensions");
 
 
 var WindowWatcher = {
-  openWindow(parent, url, name, features, args) {
+  openWindow: function(parent, url, name, features, args) {
     
     do_check_eq(url, URI_EXTENSION_BLOCKLIST_DIALOG);
 
@@ -42,7 +42,7 @@ var WindowWatcher = {
 
   },
 
-  QueryInterface(iid) {
+  QueryInterface: function(iid) {
     if (iid.equals(Ci.nsIWindowWatcher)
      || iid.equals(Ci.nsISupports))
       return this;

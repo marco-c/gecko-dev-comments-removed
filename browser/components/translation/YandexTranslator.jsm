@@ -76,7 +76,7 @@ this.YandexTranslator.prototype = {
 
 
 
-  translate() {
+  translate: function() {
     return Task.spawn(function *() {
       let currentIndex = 0;
       this._onFinishedDeferred = Promise.defer();
@@ -120,7 +120,7 @@ this.YandexTranslator.prototype = {
 
 
 
-  _chunkCompleted(yandexRequest) {
+  _chunkCompleted: function(yandexRequest) {
     if (this._parseChunkResult(yandexRequest)) {
       this._partialSuccess = true;
       
@@ -140,7 +140,7 @@ this.YandexTranslator.prototype = {
 
 
 
-  _chunkFailed(aError) {
+  _chunkFailed: function(aError) {
     if (aError instanceof Ci.nsIXMLHttpRequest) {
       let body = aError.responseText;
       let json = { code: 0 };
@@ -160,7 +160,7 @@ this.YandexTranslator.prototype = {
 
 
 
-  _checkIfFinished() {
+  _checkIfFinished: function() {
     
     
     
@@ -188,7 +188,7 @@ this.YandexTranslator.prototype = {
 
 
 
-  _parseChunkResult(yandexRequest) {
+  _parseChunkResult: function(yandexRequest) {
     let results;
     try {
       let result = JSON.parse(yandexRequest.networkRequest.responseText);
@@ -228,7 +228,7 @@ this.YandexTranslator.prototype = {
 
 
 
-  _generateNextTranslationRequest(startIndex) {
+  _generateNextTranslationRequest: function(startIndex) {
     let currentDataSize = 0;
     let currentChunks = 0;
     let output = [];
@@ -292,7 +292,7 @@ YandexRequest.prototype = {
   
 
 
-  fireRequest() {
+  fireRequest: function() {
     return Task.spawn(function *() {
       
       let url = getUrlParam("https://translate.yandex.net/api/v1.5/tr.json/translate",
@@ -317,7 +317,7 @@ YandexRequest.prototype = {
         onLoad: (function(responseText, xhr) {
           deferred.resolve(this);
         }).bind(this),
-        onError(e, responseText, xhr) {
+        onError: function(e, responseText, xhr) {
           deferred.reject(xhr);
         },
         postData: params

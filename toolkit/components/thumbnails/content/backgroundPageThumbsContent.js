@@ -24,7 +24,7 @@ const SANDBOXED_AUXILIARY_NAVIGATION = 0x2;
 
 const backgroundPageThumbsContent = {
 
-  init() {
+  init: function() {
     Services.obs.addObserver(this, "document-element-inserted", true);
 
     
@@ -51,7 +51,7 @@ const backgroundPageThumbsContent = {
       addProgressListener(this, Ci.nsIWebProgress.NOTIFY_STATE_WINDOW);
   },
 
-  observe(subj, topic, data) {
+  observe: function(subj, topic, data) {
     
     
     
@@ -68,7 +68,7 @@ const backgroundPageThumbsContent = {
     return docShell.QueryInterface(Ci.nsIWebNavigation);
   },
 
-  _onCapture(msg) {
+  _onCapture: function(msg) {
     this._nextCapture = {
       id: msg.data.id,
       url: msg.data.url,
@@ -86,7 +86,7 @@ const backgroundPageThumbsContent = {
     this._startNextCapture();
   },
 
-  _startNextCapture() {
+  _startNextCapture: function() {
     if (!this._nextCapture)
       return;
     this._currentCapture = this._nextCapture;
@@ -105,7 +105,7 @@ const backgroundPageThumbsContent = {
     }
   },
 
-  onStateChange(webProgress, req, flags, status) {
+  onStateChange: function(webProgress, req, flags, status) {
     if (webProgress.isTopLevel &&
         (flags & Ci.nsIWebProgressListener.STATE_STOP) &&
         this._currentCapture) {
@@ -144,7 +144,7 @@ const backgroundPageThumbsContent = {
     }
   },
 
-  _captureCurrentPage() {
+  _captureCurrentPage: function() {
     let capture = this._currentCapture;
     capture.finalURL = this._webNav.currentURI.spec;
     capture.pageLoadTime = new Date() - capture.pageLoadStartDate;
@@ -161,7 +161,7 @@ const backgroundPageThumbsContent = {
     });
   },
 
-  _finishCurrentCapture() {
+  _finishCurrentCapture: function() {
     let capture = this._currentCapture;
     let fileReader = new FileReader();
     fileReader.onloadend = () => {
@@ -178,7 +178,7 @@ const backgroundPageThumbsContent = {
     fileReader.readAsArrayBuffer(capture.imageBlob);
   },
 
-  _failCurrentCapture(reason) {
+  _failCurrentCapture: function(reason) {
     let capture = this._currentCapture;
     sendAsyncMessage("BackgroundPageThumbs:didCapture", {
       id: capture.id,

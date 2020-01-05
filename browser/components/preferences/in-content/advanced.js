@@ -18,7 +18,7 @@ var gAdvancedPane = {
   
 
 
-  init()
+  init: function()
   {
     function setEventListener(aId, aEventType, aCallback)
     {
@@ -120,7 +120,7 @@ var gAdvancedPane = {
 
 
 
-  tabSelectionChanged()
+  tabSelectionChanged: function()
   {
     if (!this._inited)
       return;
@@ -182,7 +182,7 @@ var gAdvancedPane = {
 
 
 
-  readCheckSpelling()
+  readCheckSpelling: function()
   {
     var pref = document.getElementById("layout.spellcheckDefault");
     this._storedSpellCheck = pref.value;
@@ -195,7 +195,7 @@ var gAdvancedPane = {
 
 
 
-  writeCheckSpelling()
+  writeCheckSpelling: function()
   {
     var checkbox = document.getElementById("checkSpelling");
     if (checkbox.checked) {
@@ -211,7 +211,7 @@ var gAdvancedPane = {
 
 
 
-  readEnableOCSP()
+  readEnableOCSP: function()
   {
     var preference = document.getElementById("security.OCSP.enabled");
     
@@ -224,7 +224,7 @@ var gAdvancedPane = {
   
 
 
-  writeEnableOCSP()
+  writeEnableOCSP: function()
   {
     var checkbox = document.getElementById("enableOCSP");
     return checkbox.checked ? 1 : 0;
@@ -234,7 +234,7 @@ var gAdvancedPane = {
 
 
 
-  updateHardwareAcceleration()
+  updateHardwareAcceleration: function()
   {
     if (AppConstants.platform = "win") {
       var fromPref = document.getElementById("layers.acceleration.disabled");
@@ -248,7 +248,7 @@ var gAdvancedPane = {
   
 
 
-  _setupLearnMoreLink(pref, element) {
+  _setupLearnMoreLink: function(pref, element) {
     
     let url = Services.prefs.getCharPref(pref);
     let el = document.getElementById(element);
@@ -263,7 +263,7 @@ var gAdvancedPane = {
   
 
 
-  initSubmitCrashes()
+  initSubmitCrashes: function()
   {
     this._setupLearnMoreLink("toolkit.crashreporter.infoURL",
                              "crashReporterLearnMore");
@@ -274,7 +274,7 @@ var gAdvancedPane = {
 
 
 
-  initTelemetry()
+  initTelemetry: function()
   {
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
       this._setupLearnMoreLink("toolkit.telemetry.infoURL", "telemetryLearnMore");
@@ -285,7 +285,7 @@ var gAdvancedPane = {
 
 
 
-  setTelemetrySectionEnabled(aEnabled)
+  setTelemetrySectionEnabled: function(aEnabled)
   {
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
       
@@ -302,7 +302,7 @@ var gAdvancedPane = {
   
 
 
-  initSubmitHealthReport() {
+  initSubmitHealthReport: function() {
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
       this._setupLearnMoreLink("datareporting.healthreport.infoURL", "FHRLearnMore");
 
@@ -321,7 +321,7 @@ var gAdvancedPane = {
   
 
 
-  updateSubmitHealthReport() {
+  updateSubmitHealthReport: function() {
     if (AppConstants.MOZ_TELEMETRY_REPORTING) {
       let checkbox = document.getElementById("submitHealthReportBox");
       Services.prefs.setBoolPref(PREF_UPLOAD_ENABLED, checkbox.checked);
@@ -351,16 +351,16 @@ var gAdvancedPane = {
   
 
 
-  showConnections()
+  showConnections: function()
   {
     gSubDialog.open("chrome://browser/content/preferences/connection.xul");
   },
 
-  showSiteDataSettings() {
+  showSiteDataSettings: function() {
     gSubDialog.open("chrome://browser/content/preferences/siteDataSettings.xul");
   },
 
-  updateTotalSiteDataSize() {
+  updateTotalSiteDataSize: function() {
     SiteDataManager.getTotalUsage()
       .then(usage => {
         let size = DownloadUtils.convertByteUnits(usage);
@@ -373,14 +373,14 @@ var gAdvancedPane = {
   },
 
   
-  updateActualCacheSize()
+  updateActualCacheSize: function()
   {
     var actualSizeLabel = document.getElementById("actualDiskCacheSize");
     var prefStrBundle = document.getElementById("bundlePreferences");
 
     
     this.observer = {
-      onNetworkCacheDiskConsumption(consumption) {
+      onNetworkCacheDiskConsumption: function(consumption) {
         var size = DownloadUtils.convertByteUnits(consumption);
         
         
@@ -407,10 +407,10 @@ var gAdvancedPane = {
   },
 
   
-  updateActualAppCacheSize()
+  updateActualAppCacheSize: function()
   {
     var visitor = {
-      onCacheStorageInfo(aEntryCount, aConsumption, aCapacity, aDiskDirectory)
+      onCacheStorageInfo: function(aEntryCount, aConsumption, aCapacity, aDiskDirectory)
       {
         var actualSizeLabel = document.getElementById("actualAppCacheSize");
         var sizeStrings = DownloadUtils.convertByteUnits(aConsumption);
@@ -434,14 +434,14 @@ var gAdvancedPane = {
     } catch (e) {}
   },
 
-  updateCacheSizeUI(smartSizeEnabled)
+  updateCacheSizeUI: function(smartSizeEnabled)
   {
     document.getElementById("useCacheBefore").disabled = smartSizeEnabled;
     document.getElementById("cacheSize").disabled = smartSizeEnabled;
     document.getElementById("useCacheAfter").disabled = smartSizeEnabled;
   },
 
-  readSmartSizeEnabled()
+  readSmartSizeEnabled: function()
   {
     
     
@@ -480,7 +480,7 @@ var gAdvancedPane = {
   
 
 
-  clearCache()
+  clearCache: function()
   {
     try {
       var cache = Components.classes["@mozilla.org/netwerk/cache-storage-service;1"]
@@ -493,7 +493,7 @@ var gAdvancedPane = {
   
 
 
-  clearOfflineAppCache()
+  clearOfflineAppCache: function()
   {
     Components.utils.import("resource:///modules/offlineAppCache.jsm");
     OfflineAppCacheHelper.clear();
@@ -502,7 +502,7 @@ var gAdvancedPane = {
     this.updateOfflineApps();
   },
 
-  clearSiteData() {
+  clearSiteData: function() {
     let flags =
       Services.prompt.BUTTON_TITLE_IS_STRING * Services.prompt.BUTTON_POS_0 +
       Services.prompt.BUTTON_TITLE_CANCEL * Services.prompt.BUTTON_POS_1 +
@@ -519,7 +519,7 @@ var gAdvancedPane = {
     }
   },
 
-  readOfflineNotify()
+  readOfflineNotify: function()
   {
     var pref = document.getElementById("browser.offline-apps.notify");
     var button = document.getElementById("offlineNotifyExceptions");
@@ -527,7 +527,7 @@ var gAdvancedPane = {
     return pref.value;
   },
 
-  showOfflineExceptions()
+  showOfflineExceptions: function()
   {
     var bundlePreferences = document.getElementById("bundlePreferences");
     var params = { blockVisible     : false,
@@ -569,7 +569,7 @@ var gAdvancedPane = {
   
 
 
-  updateOfflineApps()
+  updateOfflineApps: function()
   {
     var pm = Components.classes["@mozilla.org/permissionmanager;1"]
                        .getService(Components.interfaces.nsIPermissionManager);
@@ -610,7 +610,7 @@ var gAdvancedPane = {
     }
   },
 
-  offlineAppSelected()
+  offlineAppSelected: function()
   {
     var removeButton = document.getElementById("offlineAppsListRemove");
     var list = document.getElementById("offlineAppsList");
@@ -621,7 +621,7 @@ var gAdvancedPane = {
     }
   },
 
-  removeOfflineApp()
+  removeOfflineApp: function()
   {
     var list = document.getElementById("offlineAppsList");
     var item = list.selectedItem;
@@ -702,7 +702,7 @@ var gAdvancedPane = {
 
 
 
-  updateReadPrefs()
+  updateReadPrefs: function()
   {
     if (AppConstants.MOZ_UPDATER) {
       var enabledPref = document.getElementById("app.update.enabled");
@@ -748,7 +748,7 @@ var gAdvancedPane = {
   
 
 
-  updateWritePrefs()
+  updateWritePrefs: function()
   {
     if (AppConstants.MOZ_UPDATER) {
       var enabledPref = document.getElementById("app.update.enabled");
@@ -773,7 +773,7 @@ var gAdvancedPane = {
   
 
 
-  showUpdates()
+  showUpdates: function()
   {
     gSubDialog.open("chrome://mozapps/content/update/history.xul");
   },
@@ -795,7 +795,7 @@ var gAdvancedPane = {
   
 
 
-  showCertificates()
+  showCertificates: function()
   {
     gSubDialog.open("chrome://pippki/content/certManager.xul");
   },
@@ -803,12 +803,12 @@ var gAdvancedPane = {
   
 
 
-  showSecurityDevices()
+  showSecurityDevices: function()
   {
     gSubDialog.open("chrome://pippki/content/device_manager.xul");
   },
 
-  observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     if (AppConstants.MOZ_UPDATER) {
       switch (aTopic) {
         case "nsPref:changed":

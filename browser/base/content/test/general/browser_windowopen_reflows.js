@@ -73,7 +73,7 @@ function test() {
 }
 
 var observer = {
-  reflow(start, end) {
+  reflow: function(start, end) {
     
     let stack = new Error().stack;
     let path = stack.split("\n").slice(1).map(line => {
@@ -99,7 +99,7 @@ var observer = {
     ok(false, "unexpected uninterruptible reflow '" + pathWithLineNumbers + "'");
   },
 
-  reflowInterruptible(start, end) {
+  reflowInterruptible: function(start, end) {
     
   },
 

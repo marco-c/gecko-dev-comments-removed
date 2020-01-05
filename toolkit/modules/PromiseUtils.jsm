@@ -15,7 +15,7 @@ this.PromiseUtils = {
 
 
 
-  defer() {
+  defer : function() {
     return new Deferred();
   },
 }

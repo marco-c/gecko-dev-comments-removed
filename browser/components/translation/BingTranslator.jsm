@@ -58,7 +58,7 @@ this.BingTranslator.prototype = {
 
 
 
-  translate() {
+  translate: function() {
     return Task.spawn(function *() {
       let currentIndex = 0;
       this._onFinishedDeferred = Promise.defer();
@@ -98,7 +98,7 @@ this.BingTranslator.prototype = {
 
 
 
-  _resetToken() {
+  _resetToken : function() {
     
     BingTokenManager._currentExpiryTime = 0;
   },
@@ -111,7 +111,7 @@ this.BingTranslator.prototype = {
 
 
 
-  _chunkCompleted(bingRequest) {
+  _chunkCompleted: function(bingRequest) {
     if (this._parseChunkResult(bingRequest)) {
       this._partialSuccess = true;
       
@@ -131,7 +131,7 @@ this.BingTranslator.prototype = {
 
 
 
-  _chunkFailed(aError) {
+  _chunkFailed: function(aError) {
     if (aError instanceof Ci.nsIXMLHttpRequest &&
         [400, 401].indexOf(aError.status) != -1) {
       let body = aError.responseText;
@@ -148,7 +148,7 @@ this.BingTranslator.prototype = {
 
 
 
-  _checkIfFinished() {
+  _checkIfFinished: function() {
     
     
     
@@ -177,7 +177,7 @@ this.BingTranslator.prototype = {
 
 
 
-  _parseChunkResult(bingRequest) {
+  _parseChunkResult: function(bingRequest) {
     let results;
     try {
       let doc = bingRequest.networkRequest.responseXML;
@@ -220,7 +220,7 @@ this.BingTranslator.prototype = {
 
 
 
-  _generateNextTranslationRequest(startIndex) {
+  _generateNextTranslationRequest: function(startIndex) {
     let currentDataSize = 0;
     let currentChunks = 0;
     let output = [];
@@ -285,7 +285,7 @@ BingRequest.prototype = {
   
 
 
-  fireRequest() {
+  fireRequest: function() {
     return Task.spawn(function *() {
       
       let token = yield BingTokenManager.getToken();
@@ -324,11 +324,11 @@ BingRequest.prototype = {
         onLoad: (function(responseText, xhr) {
           deferred.resolve(this);
         }).bind(this),
-        onError(e, responseText, xhr) {
+        onError: function(e, responseText, xhr) {
           deferred.reject(xhr);
         },
         postData: requestString,
-        headers
+        headers: headers
       };
 
       
@@ -358,7 +358,7 @@ var BingTokenManager = {
 
 
 
-  getToken() {
+  getToken: function() {
     if (this._pendingRequest) {
       return this._pendingRequest;
     }
@@ -378,7 +378,7 @@ var BingTokenManager = {
 
 
 
-  _getNewToken() {
+  _getNewToken: function() {
     let url = getUrlParam("https://datamarket.accesscontrol.windows.net/v2/OAuth2-13",
                           "browser.translation.bing.authURL");
     let params = [
@@ -392,7 +392,7 @@ var BingTokenManager = {
 
     let deferred = Promise.defer();
     let options = {
-      onLoad(responseText, xhr) {
+      onLoad: function(responseText, xhr) {
         BingTokenManager._pendingRequest = null;
         try {
           let json = JSON.parse(responseText);
@@ -411,7 +411,7 @@ var BingTokenManager = {
           deferred.reject(e);
         }
       },
-      onError(e, responseText, xhr) {
+      onError: function(e, responseText, xhr) {
         BingTokenManager._pendingRequest = null;
         deferred.reject(e);
       },

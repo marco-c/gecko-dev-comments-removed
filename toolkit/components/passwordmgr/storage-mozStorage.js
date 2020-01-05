@@ -31,12 +31,12 @@ function Transaction(aDatabase) {
 }
 
 Transaction.prototype = {
-  commit() {
+  commit : function() {
     if (this._hasTransaction)
       this._db.commitTransaction();
   },
 
-  rollback() {
+  rollback : function() {
     if (this._hasTransaction)
       this._db.rollbackTransaction();
   },
@@ -50,7 +50,7 @@ LoginManagerStorage_mozStorage.prototype = {
   classID : Components.ID("{8c2023b9-175c-477e-9761-44ae7b549756}"),
   QueryInterface : XPCOMUtils.generateQI([Ci.nsILoginManagerStorage,
                                           Ci.nsIInterfaceRequestor]),
-  getInterface(aIID) {
+  getInterface : function(aIID) {
     if (aIID.equals(Ci.nsIVariant)) {
       
       return this;
@@ -155,7 +155,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  initWithFile(aDBFile) {
+  initWithFile : function(aDBFile) {
     if (aDBFile)
       this._signonsFile = aDBFile;
 
@@ -163,7 +163,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  initialize() {
+  initialize : function() {
     this._dbStmts = {};
 
     let isFirstRun;
@@ -200,12 +200,12 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  terminate() {
+  terminate : function() {
     return Promise.resolve();
   },
 
 
-  addLogin(login) {
+  addLogin : function(login) {
     
     LoginHelper.checkLoginValues(login);
 
@@ -254,7 +254,7 @@ LoginManagerStorage_mozStorage.prototype = {
       encryptedUsername:   encUsername,
       encryptedPassword:   encPassword,
       guid:                loginClone.guid,
-      encType,
+      encType:             encType,
       timeCreated:         loginClone.timeCreated,
       timeLastUsed:        loginClone.timeLastUsed,
       timePasswordChanged: loginClone.timePasswordChanged,
@@ -280,7 +280,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  removeLogin(login) {
+  removeLogin : function(login) {
     let [idToDelete, storedLogin] = this._getIdForLogin(login);
     if (!idToDelete)
       throw new Error("No matching logins");
@@ -307,7 +307,7 @@ LoginManagerStorage_mozStorage.prototype = {
     LoginHelper.notifyStorageChanged("removeLogin", storedLogin);
   },
 
-  modifyLogin(oldLogin, newLoginData) {
+  modifyLogin : function(oldLogin, newLoginData) {
     let [idToModify, oldStoredLogin] = this._getIdForLogin(oldLogin);
     if (!idToModify)
       throw new Error("No matching logins");
@@ -360,7 +360,7 @@ LoginManagerStorage_mozStorage.prototype = {
       encryptedUsername:   encUsername,
       encryptedPassword:   encPassword,
       guid:                newLogin.guid,
-      encType,
+      encType:             encType,
       timeCreated:         newLogin.timeCreated,
       timeLastUsed:        newLogin.timeLastUsed,
       timePasswordChanged: newLogin.timePasswordChanged,
@@ -387,7 +387,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  getAllLogins(count) {
+  getAllLogins : function(count) {
     let [logins, ids] = this._searchLogins({});
 
     
@@ -406,7 +406,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  searchLogins(count, matchData) {
+  searchLogins : function(count, matchData) {
     let realMatchData = {};
     let options = {};
     
@@ -444,7 +444,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _searchLogins(matchData, aOptions = {
+  _searchLogins : function(matchData, aOptions = {
     schemeUpgrades: false,
   }) {
     let conditions = [], params = {};
@@ -551,7 +551,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  storeDeletedLogin(aLogin) {
+  storeDeletedLogin : function(aLogin) {
     let stmt = null;
     try {
       this.log("Storing " + aLogin.guid + " in deleted passwords\n");
@@ -572,7 +572,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  removeAllLogins() {
+  removeAllLogins : function() {
     this.log("Removing all logins");
     let query;
     let stmt;
@@ -600,11 +600,11 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  findLogins(count, hostname, formSubmitURL, httpRealm) {
+  findLogins : function(count, hostname, formSubmitURL, httpRealm) {
     let loginData = {
-      hostname,
-      formSubmitURL,
-      httpRealm
+      hostname: hostname,
+      formSubmitURL: formSubmitURL,
+      httpRealm: httpRealm
     };
     let matchData = { };
     for (let field of ["hostname", "formSubmitURL", "httpRealm"])
@@ -621,7 +621,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  countLogins(hostname, formSubmitURL, httpRealm) {
+  countLogins : function(hostname, formSubmitURL, httpRealm) {
 
     let _countLoginsHelper = (hostname, formSubmitURL, httpRealm) => {
       
@@ -670,7 +670,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _getIdForLogin(login) {
+  _getIdForLogin : function(login) {
     let matchData = { };
     for (let field of ["hostname", "formSubmitURL", "httpRealm"])
       if (login[field] != '')
@@ -705,7 +705,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _buildConditionsAndParams(hostname, formSubmitURL, httpRealm) {
+  _buildConditionsAndParams : function(hostname, formSubmitURL, httpRealm) {
     let conditions = [], params = {};
 
     if (hostname == null) {
@@ -736,9 +736,9 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _isGuidUnique(guid) {
+  _isGuidUnique : function(guid) {
     let query = "SELECT COUNT(1) AS numLogins FROM moz_logins WHERE guid = :guid";
-    let params = { guid };
+    let params = { guid: guid };
 
     let stmt, numLogins;
     try {
@@ -761,7 +761,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _encryptLogin(login) {
+  _encryptLogin : function(login) {
     let encUsername = this._crypto.encrypt(login.username);
     let encPassword = this._crypto.encrypt(login.password);
     let encType     = this._crypto.defaultEncType;
@@ -781,7 +781,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _decryptLogins(logins) {
+  _decryptLogins : function(logins) {
     let result = [];
 
     for (let login of logins) {
@@ -809,7 +809,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbCreateStatement(query, params) {
+  _dbCreateStatement : function(query, params) {
     let wrappedStmt = this._dbStmts[query];
     
     if (!wrappedStmt) {
@@ -829,7 +829,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbInit() {
+  _dbInit : function() {
     this.log("Initializing Database");
     let isFirstRun = false;
     try {
@@ -856,7 +856,7 @@ LoginManagerStorage_mozStorage.prototype = {
     return isFirstRun;
   },
 
-  observe(subject, topic, data) {
+  observe: function(subject, topic, data) {
     switch (topic) {
       case "profile-before-change":
         Services.obs.removeObserver(this, "profile-before-change");
@@ -865,27 +865,27 @@ LoginManagerStorage_mozStorage.prototype = {
     }
   },
 
-  _dbCreate() {
+  _dbCreate: function() {
     this.log("Creating Database");
     this._dbCreateSchema();
     this._dbConnection.schemaVersion = DB_VERSION;
   },
 
 
-  _dbCreateSchema() {
+  _dbCreateSchema : function() {
     this._dbCreateTables();
     this._dbCreateIndices();
   },
 
 
-  _dbCreateTables() {
+  _dbCreateTables : function() {
     this.log("Creating Tables");
     for (let name in this._dbSchema.tables)
       this._dbConnection.createTable(name, this._dbSchema.tables[name]);
   },
 
 
-  _dbCreateIndices() {
+  _dbCreateIndices : function() {
     this.log("Creating Indices");
     for (let name in this._dbSchema.indices) {
       let index = this._dbSchema.indices[name];
@@ -896,7 +896,7 @@ LoginManagerStorage_mozStorage.prototype = {
   },
 
 
-  _dbMigrate(oldVersion) {
+  _dbMigrate : function(oldVersion) {
     this.log("Attempting to migrate from version " + oldVersion);
 
     if (oldVersion > DB_VERSION) {
@@ -943,7 +943,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _dbMigrateToVersion2() {
+  _dbMigrateToVersion2 : function() {
     
     let query;
     if (!this._dbColumnExists("guid")) {
@@ -975,7 +975,7 @@ LoginManagerStorage_mozStorage.prototype = {
     query = "UPDATE moz_logins SET guid = :guid WHERE id = :id";
     for (let id of ids) {
       let params = {
-        id,
+        id:   id,
         guid: this._uuidService.generateUUID().toString()
       };
 
@@ -997,7 +997,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _dbMigrateToVersion3() {
+  _dbMigrateToVersion3 : function() {
     
     let query;
     if (!this._dbColumnExists("encType")) {
@@ -1057,7 +1057,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbMigrateToVersion4() {
+  _dbMigrateToVersion4 : function() {
     let query;
     
     for (let column of ["timeCreated", "timeLastUsed", "timePasswordChanged", "timesUsed"]) {
@@ -1112,7 +1112,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _dbMigrateToVersion5() {
+  _dbMigrateToVersion5 : function() {
     if (!this._dbConnection.tableExists("moz_deleted_logins")) {
       this._dbConnection.createTable("moz_deleted_logins", this._dbSchema.tables.moz_deleted_logins);
     }
@@ -1122,7 +1122,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbMigrateToVersion6() {
+  _dbMigrateToVersion6 : function() {
     let disabledHosts = [];
     let query = "SELECT hostname FROM moz_disabledHosts";
     let stmt;
@@ -1158,7 +1158,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbAreExpectedColumnsPresent() {
+  _dbAreExpectedColumnsPresent : function() {
     let query = "SELECT " +
                    "id, " +
                    "hostname, " +
@@ -1203,7 +1203,7 @@ LoginManagerStorage_mozStorage.prototype = {
   
 
 
-  _dbColumnExists(columnName) {
+  _dbColumnExists : function(columnName) {
     let query = "SELECT " + columnName + " FROM moz_logins";
     try {
       let stmt = this._dbConnection.createStatement(query);
@@ -1215,7 +1215,7 @@ LoginManagerStorage_mozStorage.prototype = {
     }
   },
 
-  _dbClose() {
+  _dbClose : function() {
     this.log("Closing the DB connection.");
     
     for (let query in this._dbStmts) {
@@ -1238,7 +1238,7 @@ LoginManagerStorage_mozStorage.prototype = {
 
 
 
-  _dbCleanup(backup) {
+  _dbCleanup : function(backup) {
     this.log("Cleaning up DB file - close & remove & backup=" + backup);
 
     

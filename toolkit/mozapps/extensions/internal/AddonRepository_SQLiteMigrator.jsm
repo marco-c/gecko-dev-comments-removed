@@ -50,7 +50,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  migrate(aCallback) {
+  migrate: function(aCallback) {
     if (!this._openConnection()) {
       this._closeConnection();
       aCallback([]);
@@ -74,7 +74,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  _openConnection() {
+  _openConnection: function() {
     delete this.connection;
 
     let dbfile = FileUtils.getFile(KEY_PROFILEDIR, [FILE_DATABASE], true);
@@ -141,7 +141,7 @@ this.AddonRepository_SQLiteMigrator = {
     return true;
   },
 
-  _closeConnection() {
+  _closeConnection: function() {
     for (let key in this.asyncStatementsCache) {
       let stmt = this.asyncStatementsCache[key];
       stmt.finalize();
@@ -161,7 +161,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  _retrieveStoredData(aCallback) {
+  _retrieveStoredData: function(aCallback) {
     let addons = {};
 
     
@@ -177,7 +177,7 @@ this.AddonRepository_SQLiteMigrator = {
 
         handleError: this.asyncErrorLogger,
 
-        handleCompletion(aReason) {
+        handleCompletion: function(aReason) {
           if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
             logger.error("Error retrieving add-ons from database. Returning empty results");
             aCallback({});
@@ -211,7 +211,7 @@ this.AddonRepository_SQLiteMigrator = {
 
         handleError: this.asyncErrorLogger,
 
-        handleCompletion(aReason) {
+        handleCompletion: function(aReason) {
           if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
             logger.error("Error retrieving developers from database. Returning empty results");
             aCallback({});
@@ -244,7 +244,7 @@ this.AddonRepository_SQLiteMigrator = {
 
         handleError: this.asyncErrorLogger,
 
-        handleCompletion(aReason) {
+        handleCompletion: function(aReason) {
           if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
             logger.error("Error retrieving screenshots from database. Returning empty results");
             aCallback({});
@@ -276,7 +276,7 @@ this.AddonRepository_SQLiteMigrator = {
 
         handleError: this.asyncErrorLogger,
 
-        handleCompletion(aReason) {
+        handleCompletion: function(aReason) {
           if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
             logger.error("Error retrieving compatibility overrides from database. Returning empty results");
             aCallback({});
@@ -309,7 +309,7 @@ this.AddonRepository_SQLiteMigrator = {
 
         handleError: this.asyncErrorLogger,
 
-        handleCompletion(aReason) {
+        handleCompletion: function(aReason) {
           if (aReason != Ci.mozIStorageStatementCallback.REASON_FINISHED) {
             logger.error("Error retrieving icons from database. Returning empty results");
             aCallback({});
@@ -342,7 +342,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  getAsyncStatement(aKey) {
+  getAsyncStatement: function(aKey) {
     if (aKey in this.asyncStatementsCache)
       return this.asyncStatementsCache[aKey];
 
@@ -389,7 +389,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  _makeAddonFromAsyncRow(aRow) {
+  _makeAddonFromAsyncRow: function(aRow) {
     
     
     
@@ -410,7 +410,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  _makeDeveloperFromAsyncRow(aRow) {
+  _makeDeveloperFromAsyncRow: function(aRow) {
     let name = aRow.getResultByName("name");
     let url = aRow.getResultByName("url")
     return new AddonManagerPrivate.AddonAuthor(name, url);
@@ -423,7 +423,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  _makeScreenshotFromAsyncRow(aRow) {
+  _makeScreenshotFromAsyncRow: function(aRow) {
     let url = aRow.getResultByName("url");
     let width = aRow.getResultByName("width");
     let height = aRow.getResultByName("height");
@@ -442,7 +442,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  _makeCompatOverrideFromAsyncRow(aRow) {
+  _makeCompatOverrideFromAsyncRow: function(aRow) {
     let type = aRow.getResultByName("type");
     let minVersion = aRow.getResultByName("minVersion");
     let maxVersion = aRow.getResultByName("maxVersion");
@@ -464,10 +464,10 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  _makeIconFromAsyncRow(aRow) {
+  _makeIconFromAsyncRow: function(aRow) {
     let size = aRow.getResultByName("size");
     let url = aRow.getResultByName("url");
-    return { size, url };
+    return { size: size, url: url };
   },
 
   
@@ -478,7 +478,7 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  logSQLError(aError, aErrorString) {
+  logSQLError: function(aError, aErrorString) {
     logger.error("SQL error " + aError + ": " + aErrorString);
   },
 
@@ -488,14 +488,14 @@ this.AddonRepository_SQLiteMigrator = {
 
 
 
-  asyncErrorLogger(aError) {
+  asyncErrorLogger: function(aError) {
     logger.error("Async SQL error " + aError.result + ": " + aError.message);
   },
 
   
 
 
-  _createTriggers() {
+  _createTriggers: function() {
     this.connection.executeSimpleSQL("DROP TRIGGER IF EXISTS delete_addon");
     this.connection.executeSimpleSQL("CREATE TRIGGER delete_addon AFTER DELETE " +
       "ON addon BEGIN " +
@@ -509,7 +509,7 @@ this.AddonRepository_SQLiteMigrator = {
   
 
 
-  _createIndices() {
+  _createIndices: function() {
     this.connection.executeSimpleSQL("CREATE INDEX IF NOT EXISTS developer_idx " +
                                      "ON developer (addon_internal_id)");
     this.connection.executeSimpleSQL("CREATE INDEX IF NOT EXISTS screenshot_idx " +

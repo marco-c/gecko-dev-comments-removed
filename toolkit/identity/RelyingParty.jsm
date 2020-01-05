@@ -108,13 +108,13 @@ IdentityRelyingParty.prototype = {
 
       } else if (aRpCaller.loggedInUser === null) {
         
-        let options = {loggedInUser: state.email, origin};
+        let options = {loggedInUser: state.email, origin: origin};
         return this._doLogin(aRpCaller, options);
       }
       
       
 
-      let options = {loggedInUser: state.email, origin};
+      let options = {loggedInUser: state.email, origin: origin};
       return this._doLogin(aRpCaller, options);
 
     
@@ -124,7 +124,7 @@ IdentityRelyingParty.prototype = {
 
     }
     if (aRpCaller.loggedInUser) {
-      return this._doLogout(aRpCaller, {origin});
+      return this._doLogout(aRpCaller, {origin: origin});
     }
     return aRpCaller.doReady();
   },
@@ -240,7 +240,7 @@ IdentityRelyingParty.prototype = {
     if (rp && rp.origin) {
       let origin = rp.origin;
       log("logout: origin:", origin);
-      this._doLogout(rp, {origin});
+      this._doLogout(rp, {origin: origin});
     } else {
       log("logout: no RP found with id:", aRpCallerId);
     }

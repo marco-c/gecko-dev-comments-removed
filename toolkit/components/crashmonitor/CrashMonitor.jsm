@@ -93,7 +93,7 @@ var CrashMonitorInternal = {
 
 
 
-  loadPreviousCheckpoints() {
+  loadPreviousCheckpoints: function() {
     this.previousCheckpoints = Task.spawn(function*() {
       let data;
       try {
@@ -155,7 +155,7 @@ this.CrashMonitor = {
 
 
 
-  init() {
+  init: function() {
     if (CrashMonitorInternal.initialized) {
       throw new Error("CrashMonitor.init() must only be called once!");
     }
@@ -185,7 +185,7 @@ this.CrashMonitor = {
 
 
 
-  observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     if (!(aTopic in CrashMonitorInternal.checkpoints)) {
       
       

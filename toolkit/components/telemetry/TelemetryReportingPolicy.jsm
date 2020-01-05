@@ -98,7 +98,7 @@ NotifyPolicyRequest.prototype = Object.freeze({
   
 
 
-  onUserNotifyComplete() {
+  onUserNotifyComplete: function() {
     return TelemetryReportingPolicyImpl._userNotified();
    },
 
@@ -108,7 +108,7 @@ NotifyPolicyRequest.prototype = Object.freeze({
 
 
 
-  onUserNotifyFailed(error) {
+  onUserNotifyFailed: function(error) {
     this._log.error("onUserNotifyFailed - " + error);
   },
 });
@@ -122,14 +122,14 @@ this.TelemetryReportingPolicy = {
   
 
 
-  setup() {
+  setup: function() {
     return TelemetryReportingPolicyImpl.setup();
   },
 
   
 
 
-  shutdown() {
+  shutdown: function() {
     return TelemetryReportingPolicyImpl.shutdown();
   },
 
@@ -141,28 +141,28 @@ this.TelemetryReportingPolicy = {
 
 
 
-  canUpload() {
+  canUpload: function() {
     return TelemetryReportingPolicyImpl.canUpload();
   },
 
   
 
 
-  reset() {
+  reset: function() {
     return TelemetryReportingPolicyImpl.reset();
   },
 
   
 
 
-  testIsUserNotified() {
+  testIsUserNotified: function() {
     return TelemetryReportingPolicyImpl.isUserNotifiedOfCurrentPolicy;
   },
 
   
 
 
-  testInfobarShown() {
+  testInfobarShown: function() {
     return TelemetryReportingPolicyImpl._userNotified();
   },
 };
@@ -295,7 +295,7 @@ var TelemetryReportingPolicyImpl = {
   
 
 
-  reset() {
+  reset: function() {
     this.shutdown();
     return this.setup();
   },
@@ -303,7 +303,7 @@ var TelemetryReportingPolicyImpl = {
   
 
 
-  setup() {
+  setup: function() {
     this._log.trace("setup");
 
     
@@ -316,7 +316,7 @@ var TelemetryReportingPolicyImpl = {
   
 
 
-  shutdown() {
+  shutdown: function() {
     this._log.trace("shutdown");
 
     this._detachObservers();
@@ -327,7 +327,7 @@ var TelemetryReportingPolicyImpl = {
   
 
 
-  _detachObservers() {
+  _detachObservers: function() {
     Services.obs.removeObserver(this, "sessionstore-windows-restored");
   },
 
@@ -339,7 +339,7 @@ var TelemetryReportingPolicyImpl = {
 
 
 
-  canUpload() {
+  canUpload: function() {
     
     
     if (!this.dataSubmissionEnabled) {
@@ -355,7 +355,7 @@ var TelemetryReportingPolicyImpl = {
   
 
 
-  _migratePreferences() {
+  _migratePreferences: function() {
     
     for (let pref of DEPRECATED_FHR_PREFS) {
       Preferences.reset(pref);
@@ -366,7 +366,7 @@ var TelemetryReportingPolicyImpl = {
 
 
 
-  _showInfobar() {
+  _showInfobar: function() {
     if (!this.dataSubmissionEnabled) {
       this._log.trace("_showInfobar - Data submission disabled by the policy.");
       return;
@@ -401,7 +401,7 @@ var TelemetryReportingPolicyImpl = {
   
 
 
-  _recordNotificationData() {
+  _recordNotificationData: function() {
     this._log.trace("_recordNotificationData");
     this.dataSubmissionPolicyNotifiedDate = Policy.now();
     this.dataSubmissionPolicyAcceptedVersion = this.currentPolicyVersion;
@@ -464,7 +464,7 @@ var TelemetryReportingPolicyImpl = {
     return true;
   },
 
-  observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     if (aTopic != "sessionstore-windows-restored") {
       return;
     }

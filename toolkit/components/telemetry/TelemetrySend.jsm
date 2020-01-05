@@ -141,7 +141,7 @@ function savePing(aPing) {
 function gzipCompressString(string) {
   let observer = {
     buffer: "",
-    onStreamComplete(loader, context, status, length, result) {
+    onStreamComplete: function(loader, context, status, length, result) {
       this.buffer = String.fromCharCode.apply(this, result);
     }
   };
@@ -182,7 +182,7 @@ this.TelemetrySend = {
 
 
 
-  setup(testing = false) {
+  setup: function(testing = false) {
     return TelemetrySendImpl.setup(testing);
   },
 
@@ -192,7 +192,7 @@ this.TelemetrySend = {
 
 
 
-  shutdown() {
+  shutdown: function() {
     return TelemetrySendImpl.shutdown();
   },
 
@@ -204,7 +204,7 @@ this.TelemetrySend = {
 
 
 
-  submitPing(ping) {
+  submitPing: function(ping) {
     return TelemetrySendImpl.submitPing(ping);
   },
 
@@ -218,49 +218,49 @@ this.TelemetrySend = {
   
 
 
-  notifyCanUpload() {
+  notifyCanUpload: function() {
     return TelemetrySendImpl.notifyCanUpload();
   },
 
   
 
 
-  reset() {
+  reset: function() {
     return TelemetrySendImpl.reset();
   },
 
   
 
 
-  setServer(server) {
+  setServer: function(server) {
     return TelemetrySendImpl.setServer(server);
   },
 
   
 
 
-  clearCurrentPings() {
+  clearCurrentPings: function() {
     return TelemetrySendImpl.clearCurrentPings();
   },
 
   
 
 
-  testWaitOnOutgoingPings() {
+  testWaitOnOutgoingPings: function() {
     return TelemetrySendImpl.promisePendingPingActivity();
   },
 
   
 
 
-  setTestModeEnabled(testing) {
+  setTestModeEnabled: function(testing) {
     TelemetrySendImpl.setTestModeEnabled(testing);
   },
 
   
 
 
-  getShutdownState() {
+  getShutdownState: function() {
     return TelemetrySendImpl.getShutdownState();
   },
 };
@@ -276,7 +276,7 @@ var CancellableTimeout = {
 
 
 
-  promiseWaitOnTimeout(timeoutMs) {
+  promiseWaitOnTimeout: function(timeoutMs) {
     if (!this._deferred) {
       this._deferred = PromiseUtils.defer();
       this._timer = Policy.setSchedulerTickTimeout(() => this._onTimeout(), timeoutMs);
@@ -285,7 +285,7 @@ var CancellableTimeout = {
     return this._deferred.promise;
   },
 
-  _onTimeout() {
+  _onTimeout: function() {
     if (this._deferred) {
       this._deferred.resolve(false);
       this._timer = null;
@@ -293,7 +293,7 @@ var CancellableTimeout = {
     }
   },
 
-  cancelTimeout() {
+  cancelTimeout: function() {
     if (this._deferred) {
       Policy.clearSchedulerTickTimeout(this._timer);
       this._deferred.resolve(true);
@@ -328,14 +328,14 @@ var SendScheduler = {
     return this._logger;
   },
 
-  shutdown() {
+  shutdown: function() {
     this._log.trace("shutdown");
     this._shutdown = true;
     CancellableTimeout.cancelTimeout();
     return Promise.resolve(this._sendTask);
   },
 
-  start() {
+  start: function() {
     this._log.trace("start");
     this._sendsFailed = false;
     this._backoffDelay = SEND_TICK_DELAY;
@@ -345,7 +345,7 @@ var SendScheduler = {
   
 
 
-  reset() {
+  reset: function() {
     this._log.trace("reset");
     return this.shutdown().then(() => this.start());
   },
@@ -354,7 +354,7 @@ var SendScheduler = {
 
 
 
-  notifySendsFailed() {
+  notifySendsFailed: function() {
     this._log.trace("notifySendsFailed");
     if (this._sendsFailed) {
       return;
@@ -367,17 +367,17 @@ var SendScheduler = {
   
 
 
-  isThrottled() {
+  isThrottled: function() {
     const now = Policy.now();
     const nextPingSendTime = this._getNextPingSendTime(now);
     return (nextPingSendTime > now.getTime());
   },
 
-  waitOnSendTask() {
+  waitOnSendTask: function() {
     return Promise.resolve(this._sendTask);
   },
 
-  triggerSendingPings(immediately) {
+  triggerSendingPings: function(immediately) {
     this._log.trace("triggerSendingPings - active send task: " + !!this._sendTask + ", immediately: " + immediately);
 
     if (!this._sendTask) {
@@ -502,7 +502,7 @@ var SendScheduler = {
 
 
 
-  _getNextPingSendTime(now) {
+  _getNextPingSendTime: function(now) {
     
     
     
@@ -520,7 +520,7 @@ var SendScheduler = {
     return midnight.getTime() + Policy.midnightPingFuzzingDelay();
   },
 
-  getShutdownState() {
+  getShutdownState: function() {
     return {
       shutdown: this._shutdown,
       hasSendTask: !!this._sendTask,
@@ -572,7 +572,7 @@ var TelemetrySendImpl = {
     return TelemetryStorage.getPendingPingList().length + this._currentPings.size;
   },
 
-  setTestModeEnabled(testing) {
+  setTestModeEnabled: function(testing) {
     this._testMode = testing;
   },
 
@@ -656,7 +656,7 @@ var TelemetrySendImpl = {
     yield this._persistCurrentPings();
   }),
 
-  reset() {
+  reset: function() {
     this._log.trace("reset");
 
     this._shutdown = false;
@@ -677,13 +677,13 @@ var TelemetrySendImpl = {
   
 
 
-  notifyCanUpload() {
+  notifyCanUpload: function() {
     
     SendScheduler.triggerSendingPings(true);
     return this.promisePendingPingActivity();
   },
 
-  observe(subject, topic, data) {
+  observe: function(subject, topic, data) {
     switch (topic) {
     case TOPIC_IDLE_DAILY:
       SendScheduler.triggerSendingPings(true);
@@ -691,7 +691,7 @@ var TelemetrySendImpl = {
     }
   },
 
-  submitPing(ping) {
+  submitPing: function(ping) {
     this._log.trace("submitPing - ping id: " + ping.id);
 
     if (!this.sendingEnabled(ping)) {
@@ -717,7 +717,7 @@ var TelemetrySendImpl = {
   
 
 
-  setServer(server) {
+  setServer: function(server) {
     this._log.trace("setServer", server);
     this._server = server;
   },
@@ -754,7 +754,7 @@ var TelemetrySendImpl = {
     SendScheduler.triggerSendingPings(true);
   }),
 
-  _cancelOutgoingRequests() {
+  _cancelOutgoingRequests: function() {
     
     for (let [id, request] of this._pendingPingRequests) {
       this._log.trace("_cancelOutgoingRequests - aborting ping request for id " + id);
@@ -767,7 +767,7 @@ var TelemetrySendImpl = {
     this._pendingPingRequests.clear();
   },
 
-  sendPings(currentPings, persistedPingIds) {
+  sendPings: function(currentPings, persistedPingIds) {
     let pingSends = [];
 
     for (let current of currentPings) {
@@ -834,7 +834,7 @@ var TelemetrySendImpl = {
     yield promise;
   }),
 
-  _onPingRequestFinished(success, startTime, id, isPersisted) {
+  _onPingRequestFinished: function(success, startTime, id, isPersisted) {
     this._log.trace("_onPingRequestFinished - success: " + success + ", persisted: " + isPersisted);
 
     let sendId = success ? "TELEMETRY_SEND_SUCCESS" : "TELEMETRY_SEND_FAILURE";
@@ -858,7 +858,7 @@ var TelemetrySendImpl = {
     return Promise.resolve();
   },
 
-  _getSubmissionPath(ping) {
+  _getSubmissionPath: function(ping) {
     
     let pathComponents;
     if (isV4PingFormat(ping)) {
@@ -891,7 +891,7 @@ var TelemetrySendImpl = {
     return "/submit/telemetry/" + slug;
   },
 
-  _doPing(ping, id, isPersisted) {
+  _doPing: function(ping, id, isPersisted) {
     if (!this.sendingEnabled(ping)) {
       
       this._log.trace("_doPing - Can't send ping " + ping.id);
@@ -1035,7 +1035,7 @@ var TelemetrySendImpl = {
 
 
 
-  sendingEnabled(ping = null) {
+  sendingEnabled: function(ping = null) {
     
     if (!Telemetry.isOfficialTelemetry && !this._testMode) {
       return false;
@@ -1059,7 +1059,7 @@ var TelemetrySendImpl = {
 
 
 
-  _trackPendingPingTask(promise) {
+  _trackPendingPingTask: function(promise) {
     let clear = () => this._pendingPingActivity.delete(promise);
     promise.then(clear, clear);
     this._pendingPingActivity.add(promise);
@@ -1070,7 +1070,7 @@ var TelemetrySendImpl = {
 
 
 
-  promisePendingPingActivity() {
+  promisePendingPingActivity: function() {
     this._log.trace("promisePendingPingActivity - Waiting for ping task");
     let p = Array.from(this._pendingPingActivity, p => p.catch(ex => {
       this._log.error("promisePendingPingActivity - ping activity had an error", ex);
@@ -1095,13 +1095,13 @@ var TelemetrySendImpl = {
   
 
 
-  getUnpersistedPings() {
+  getUnpersistedPings: function() {
     let current = [...this._currentPings.values()];
     current.reverse();
     return current;
   },
 
-  getShutdownState() {
+  getShutdownState: function() {
     return {
       sendingEnabled: this._sendingEnabled,
       pendingPingRequestCount: this._pendingPingRequests.size,

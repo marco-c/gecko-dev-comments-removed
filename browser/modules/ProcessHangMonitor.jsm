@@ -49,7 +49,7 @@ var ProcessHangMonitor = {
   
 
 
-  init() {
+  init: function() {
     Services.obs.addObserver(this, "process-hang-report", false);
     Services.obs.addObserver(this, "clear-hang-report", false);
     Services.obs.addObserver(this, "xpcom-shutdown", false);
@@ -60,7 +60,7 @@ var ProcessHangMonitor = {
 
 
 
-  terminateScript(win) {
+  terminateScript: function(win) {
     this.handleUserInput(win, report => report.terminateScript());
   },
 
@@ -68,7 +68,7 @@ var ProcessHangMonitor = {
 
 
 
-  debugScript(win) {
+  debugScript: function(win) {
     this.handleUserInput(win, report => {
       function callback() {
         report.endStartingDebugger();
@@ -87,7 +87,7 @@ var ProcessHangMonitor = {
 
 
 
-  terminatePlugin(win) {
+  terminatePlugin: function(win) {
     this.handleUserInput(win, report => report.terminatePlugin());
   },
 
@@ -95,7 +95,7 @@ var ProcessHangMonitor = {
 
 
 
-  stopIt(win) {
+  stopIt: function(win) {
     let report = this.findActiveReport(win.gBrowser.selectedBrowser);
     if (!report) {
       return;
@@ -115,7 +115,7 @@ var ProcessHangMonitor = {
 
 
 
-  waitLonger(win) {
+  waitLonger: function(win) {
     let report = this.findActiveReport(win.gBrowser.selectedBrowser);
     if (!report) {
       return;
@@ -155,7 +155,7 @@ var ProcessHangMonitor = {
 
 
 
-  handleUserInput(win, func) {
+  handleUserInput: function(win, func) {
     let report = this.findActiveReport(win.gBrowser.selectedBrowser);
     if (!report) {
       return null;
@@ -165,7 +165,7 @@ var ProcessHangMonitor = {
     return func(report);
   },
 
-  observe(subject, topic, data) {
+  observe: function(subject, topic, data) {
     switch (topic) {
       case "xpcom-shutdown":
         Services.obs.removeObserver(this, "xpcom-shutdown");
@@ -198,7 +198,7 @@ var ProcessHangMonitor = {
   
 
 
-  findActiveReport(browser) {
+  findActiveReport: function(browser) {
     let frameLoader = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader;
     for (let report of this._activeReports) {
       if (report.isReportForBrowser(frameLoader)) {
@@ -211,7 +211,7 @@ var ProcessHangMonitor = {
   
 
 
-  findPausedReport(browser) {
+  findPausedReport: function(browser) {
     let frameLoader = browser.QueryInterface(Ci.nsIFrameLoaderOwner).frameLoader;
     for (let [report, ] of this._pausedReports) {
       if (report.isReportForBrowser(frameLoader)) {
@@ -225,7 +225,7 @@ var ProcessHangMonitor = {
 
 
 
-  removeActiveReport(report) {
+  removeActiveReport: function(report) {
     this._activeReports.delete(report);
     this.updateWindows();
   },
@@ -234,7 +234,7 @@ var ProcessHangMonitor = {
 
 
 
-  removePausedReport(report) {
+  removePausedReport: function(report) {
     let timer = this._pausedReports.get(report);
     if (timer) {
       timer.cancel();
@@ -248,7 +248,7 @@ var ProcessHangMonitor = {
 
 
 
-  updateWindows() {
+  updateWindows: function() {
     let e = Services.wm.getEnumerator("navigator:browser");
     while (e.hasMoreElements()) {
       let win = e.getNext();
@@ -267,7 +267,7 @@ var ProcessHangMonitor = {
   
 
 
-  updateWindow(win) {
+  updateWindow: function(win) {
     let report = this.findActiveReport(win.gBrowser.selectedBrowser);
 
     if (report) {
@@ -280,7 +280,7 @@ var ProcessHangMonitor = {
   
 
 
-  showNotification(win, report) {
+  showNotification: function(win, report) {
     let nb = win.document.getElementById("high-priority-global-notificationbox");
     let notification = nb.getNotificationWithValue("process-hang");
     if (notification) {
@@ -292,14 +292,14 @@ var ProcessHangMonitor = {
     let buttons = [{
         label: bundle.getString("processHang.button_stop.label"),
         accessKey: bundle.getString("processHang.button_stop.accessKey"),
-        callback() {
+        callback: function() {
           ProcessHangMonitor.stopIt(win);
         }
       },
       {
         label: bundle.getString("processHang.button_wait.label"),
         accessKey: bundle.getString("processHang.button_wait.accessKey"),
-        callback() {
+        callback: function() {
           ProcessHangMonitor.waitLonger(win);
         }
       }];
@@ -308,7 +308,7 @@ var ProcessHangMonitor = {
       buttons.push({
         label: bundle.getString("processHang.button_debug.label"),
         accessKey: bundle.getString("processHang.button_debug.accessKey"),
-        callback() {
+        callback: function() {
           ProcessHangMonitor.debugScript(win);
         }
       });
@@ -323,7 +323,7 @@ var ProcessHangMonitor = {
   
 
 
-  hideNotification(win) {
+  hideNotification: function(win) {
     let nb = win.document.getElementById("high-priority-global-notificationbox");
     let notification = nb.getNotificationWithValue("process-hang");
     if (notification) {
@@ -335,17 +335,17 @@ var ProcessHangMonitor = {
 
 
 
-  trackWindow(win) {
+  trackWindow: function(win) {
     win.gBrowser.tabContainer.addEventListener("TabSelect", this, true);
     win.gBrowser.tabContainer.addEventListener("TabRemotenessChange", this, true);
   },
 
-  untrackWindow(win) {
+  untrackWindow: function(win) {
     win.gBrowser.tabContainer.removeEventListener("TabSelect", this, true);
     win.gBrowser.tabContainer.removeEventListener("TabRemotenessChange", this, true);
   },
 
-  handleEvent(event) {
+  handleEvent: function(event) {
     let win = event.target.ownerGlobal;
 
     
@@ -360,7 +360,7 @@ var ProcessHangMonitor = {
 
 
 
-  reportHang(report) {
+  reportHang: function(report) {
     
     if (this._activeReports.has(report)) {
       
@@ -389,7 +389,7 @@ var ProcessHangMonitor = {
     this.updateWindows();
   },
 
-  clearHang(report) {
+  clearHang: function(report) {
     this.removeActiveReport(report);
     this.removePausedReport(report);
     report.userCanceled();

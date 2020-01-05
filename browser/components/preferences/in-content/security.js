@@ -13,7 +13,7 @@ var gSecurityPane = {
   
 
 
-  init()
+  init: function()
   {
     function setEventListener(aId, aEventType, aCallback)
     {
@@ -52,7 +52,7 @@ var gSecurityPane = {
 
 
 
-  readWarnAddonInstall()
+  readWarnAddonInstall: function()
   {
     var warn = document.getElementById("xpinstall.whitelist.required");
     var exceptions = document.getElementById("addonExceptions");
@@ -66,7 +66,7 @@ var gSecurityPane = {
   
 
 
-  showAddonExceptions()
+  showAddonExceptions: function()
   {
     var bundlePrefs = document.getElementById("bundlePreferences");
 
@@ -106,7 +106,7 @@ var gSecurityPane = {
 
 
 
-  readSavePasswords()
+  readSavePasswords: function()
   {
     var pref = document.getElementById("signon.rememberSignons");
     var excepts = document.getElementById("passwordExceptions");
@@ -125,7 +125,7 @@ var gSecurityPane = {
 
 
 
-  showPasswordExceptions()
+  showPasswordExceptions: function()
   {
     var bundlePrefs = document.getElementById("bundlePreferences");
     var params = {
@@ -149,7 +149,7 @@ var gSecurityPane = {
 
 
 
-  _initMasterPasswordUI()
+  _initMasterPasswordUI: function()
   {
     var noMP = !LoginHelper.isMasterPasswordSet();
 
@@ -238,7 +238,7 @@ var gSecurityPane = {
 
 
 
-  updateMasterPasswordButton()
+  updateMasterPasswordButton: function()
   {
     var checkbox = document.getElementById("useMasterPassword");
     var button = document.getElementById("changeMasterPassword");
@@ -262,7 +262,7 @@ var gSecurityPane = {
 
 
 
-  _removeMasterPassword()
+  _removeMasterPassword: function()
   {
     var secmodDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].
                    getService(Ci.nsIPKCS11ModuleDB);
@@ -284,7 +284,7 @@ var gSecurityPane = {
   
 
 
-  changeMasterPassword()
+  changeMasterPassword: function()
   {
     gSubDialog.open("chrome://mozapps/content/preferences/changemp.xul",
                     "resizable=no", null, this._initMasterPasswordUI.bind(this));
@@ -294,7 +294,7 @@ var gSecurityPane = {
 
 
 
-  showPasswords()
+  showPasswords: function()
   {
     gSubDialog.open("chrome://passwordmgr/content/passwordManager.xul");
   }

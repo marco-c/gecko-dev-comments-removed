@@ -247,7 +247,7 @@ function setTimeout(fun, timeout) {
   let timer = Components.classes["@mozilla.org/timer;1"]
                         .createInstance(Components.interfaces.nsITimer);
   var event = {
-    notify() {
+    notify: function() {
       fun();
     }
   };
@@ -1062,7 +1062,7 @@ add_task(function* test_DirectoryLinksProvider_getEnhancedLink() {
   do_check_eq(links.length, 0); 
 
   function checkEnhanced(url, image) {
-    let enhanced = DirectoryLinksProvider.getEnhancedLink({url});
+    let enhanced = DirectoryLinksProvider.getEnhancedLink({url: url});
     do_check_eq(enhanced && enhanced.enhancedImageURI, image);
   }
 
@@ -1487,7 +1487,7 @@ add_task(function* test_DirectoryLinksProvider_getFrequencyCapReportSiteAction()
       targetedSite: "foo.com",
       url: "bar.com"
     },
-    isPinned() { return false; },
+    isPinned: function() { return false; },
   }], "view", 0);
 
   
@@ -1531,9 +1531,9 @@ add_task(function* test_DirectoryLinksProvider_ClickRemoval() {
         }]
       },
       {
-        handleError() { do_check_true(false); },
-        handleResult() {},
-        handleCompletion() { resolve(); }
+        handleError: function() { do_check_true(false); },
+        handleResult: function() {},
+        handleCompletion: function() { resolve(); }
       }
     );
   });
@@ -1827,7 +1827,7 @@ add_task(function* test_blockSuggestedTiles() {
 
   
   DirectoryLinksProvider.reportSitesAction([{
-      isPinned() { return false; },
+      isPinned: function() { return false; },
       link: Object.assign({frecency: 1000}, suggestedLink)
   }], "block", 0);
 

@@ -91,13 +91,13 @@ function AbstractWorker(agent) {
 }
 AbstractWorker.prototype = {
   
-  log() {
+  log: function() {
   },
 
   
 
 
-  handleMessage(msg) {
+  handleMessage: function(msg) {
     let data = msg.data;
     this.log("Received message", data);
     let id = data.id;
@@ -141,17 +141,17 @@ AbstractWorker.prototype = {
       if (result instanceof Meta) {
         if ("transfers" in result.meta) {
           
-          this.postMessage({ok: result.data, id, durationMs},
+          this.postMessage({ok: result.data, id: id, durationMs: durationMs},
             result.meta.transfers);
         } else {
-          this.postMessage({ok: result.data, id, durationMs});
+          this.postMessage({ok: result.data, id:id, durationMs: durationMs});
         }
         if (result.meta.shutdown || false) {
           
           this.close();
         }
       } else {
-        this.postMessage({ok: result, id, durationMs});
+        this.postMessage({ok: result, id:id, durationMs: durationMs});
       }
     } else if (exn.constructor.name in EXCEPTION_NAMES) {
       
@@ -166,7 +166,7 @@ AbstractWorker.prototype = {
         lineNumber: exn.lineNumber,
         stack: exn.moduleStack
       };
-      this.postMessage({fail: error, id, durationMs});
+      this.postMessage({fail: error, id: id, durationMs: durationMs});
     } else if (exn == StopIteration) {
       
       
@@ -174,7 +174,7 @@ AbstractWorker.prototype = {
       let error = {
         exn: "StopIteration"
       };
-      this.postMessage({fail: error, id, durationMs});
+      this.postMessage({fail: error, id: id, durationMs: durationMs});
     } else if ("toMsg" in exn) {
       
       
@@ -183,7 +183,7 @@ AbstractWorker.prototype = {
       
       this.log("Sending back an error that knows how to serialize itself", exn, "id is", id);
       let msg = exn.toMsg();
-      this.postMessage({fail: msg, id, durationMs});
+      this.postMessage({fail: msg, id:id, durationMs: durationMs});
     } else {
       
       

@@ -54,11 +54,11 @@ var AutoCompleteResultView = {
     return this.results[index].image;
   },
 
-  handleEnter(aIsPopupSelection) {
+  handleEnter: function(aIsPopupSelection) {
     AutoCompletePopup.handleEnter(aIsPopupSelection);
   },
 
-  stopSearch() {},
+  stopSearch: function() {},
 
   searchString: "",
 
@@ -76,11 +76,11 @@ var AutoCompleteResultView = {
   },
 
   
-  clearResults() {
+  clearResults: function() {
     this.results = [];
   },
 
-  setResults(results) {
+  setResults: function(results) {
     this.results = results;
   },
 };
@@ -97,19 +97,19 @@ this.AutoCompletePopup = {
     "FormAutoComplete:Invalidate",
   ],
 
-  init() {
+  init: function() {
     for (let msg of this.MESSAGES) {
       Services.mm.addMessageListener(msg, this);
     }
   },
 
-  uninit() {
+  uninit: function() {
     for (let msg of this.MESSAGES) {
       Services.mm.removeMessageListener(msg, this);
     }
   },
 
-  handleEvent(evt) {
+  handleEvent: function(evt) {
     switch (evt.type) {
       case "popupshowing": {
         this.sendMessageToBrowser("FormAutoComplete:PopupOpened");
@@ -136,7 +136,7 @@ this.AutoCompletePopup = {
   
   
   
-  showPopupWithResults({ browser, rect, dir, results }) {
+  showPopupWithResults: function({ browser, rect, dir, results }) {
     if (!results.length || this.openedPopup) {
       
       
@@ -206,7 +206,7 @@ this.AutoCompletePopup = {
     Services.logins.removeLogin(login);
   },
 
-  receiveMessage(message) {
+  receiveMessage: function(message) {
     if (!message.target.autoCompletePopup) {
       
       
@@ -300,13 +300,13 @@ this.AutoCompletePopup = {
     }
   },
 
-  stopSearch() {},
+  stopSearch: function() {},
 
   
 
 
 
-  requestFocus() {
+  requestFocus: function() {
     if (this.openedPopup) {
       this.sendMessageToBrowser("FormAutoComplete:Focus");
     }

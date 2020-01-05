@@ -214,7 +214,7 @@ this.UITour = {
     ["webide",      {query: "#webide-button"}],
   ]),
 
-  init() {
+  init: function() {
     log.debug("Initializing UITour");
     
     
@@ -243,7 +243,7 @@ this.UITour = {
     }, {}));
   },
 
-  restoreSeenPageIDs() {
+  restoreSeenPageIDs: function() {
     delete this.seenPageIDs;
 
     if (UITelemetry.enabled) {
@@ -276,7 +276,7 @@ this.UITour = {
     return this.seenPageIDs;
   },
 
-  addSeenPageID(aPageID) {
+  addSeenPageID: function(aPageID) {
     if (!UITelemetry.enabled)
       return;
 
@@ -287,7 +287,7 @@ this.UITour = {
     this.persistSeenIDs();
   },
 
-  persistSeenIDs() {
+  persistSeenIDs: function() {
     if (this.seenPageIDs.size === 0) {
       Services.prefs.clearUserPref(PREF_SEENPAGEIDS);
       return;
@@ -303,7 +303,7 @@ this.UITour = {
     return this._readerViewTriggerRegEx = new RegExp(readerViewUITourTrigger, "i");
   },
 
-  onLocationChange(aLocation) {
+  onLocationChange: function(aLocation) {
     
     
     
@@ -314,7 +314,7 @@ this.UITour = {
     }
   },
 
-  onPageEvent(aMessage, aEvent) {
+  onPageEvent: function(aMessage, aEvent) {
     let browser = aMessage.target;
     let window = browser.ownerGlobal;
 
@@ -620,7 +620,7 @@ this.UITour = {
           value = Services.prefs.getComplexValue("browser.uitour.treatment." + name,
                                                  Ci.nsISupportsString).data;
         } catch (ex) {}
-        this.sendPageCallback(messageManager, data.callbackID, { value });
+        this.sendPageCallback(messageManager, data.callbackID, { value: value });
         break;
       }
 
@@ -708,7 +708,7 @@ this.UITour = {
     window.addEventListener("SSWindowClosing", this);
   },
 
-  handleEvent(aEvent) {
+  handleEvent: function(aEvent) {
     log.debug("handleEvent: type =", aEvent.type, "event =", aEvent);
     switch (aEvent.type) {
       case "TabSelect": {
@@ -734,7 +734,7 @@ this.UITour = {
     }
   },
 
-  observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     log.debug("observe: aTopic =", aTopic);
     switch (aTopic) {
       
@@ -769,7 +769,7 @@ this.UITour = {
   
   
   
-  _populateCampaignParams(urlSearchParams, extraURLCampaignParams) {
+  _populateCampaignParams: function(urlSearchParams, extraURLCampaignParams) {
     
     if (typeof extraURLCampaignParams == "undefined") {
       
@@ -811,12 +811,12 @@ this.UITour = {
     return true;
   },
 
-  setTelemetryBucket(aPageID) {
+  setTelemetryBucket: function(aPageID) {
     let bucket = BUCKET_NAME + BrowserUITelemetry.BUCKET_SEPARATOR + aPageID;
     BrowserUITelemetry.setBucket(bucket);
   },
 
-  setExpiringTelemetryBucket(aPageID, aType) {
+  setExpiringTelemetryBucket: function(aPageID, aType) {
     let bucket = BUCKET_NAME + BrowserUITelemetry.BUCKET_SEPARATOR + aPageID +
                  BrowserUITelemetry.BUCKET_SEPARATOR + aType;
 
@@ -826,7 +826,7 @@ this.UITour = {
 
   
   
-  getTelemetry() {
+  getTelemetry: function() {
     return {
       seenPageIDs: [...this.seenPageIDs.keys()],
     };
@@ -835,7 +835,7 @@ this.UITour = {
   
 
 
-  teardownTourForBrowser(aWindow, aBrowser, aTourPageClosing = false) {
+  teardownTourForBrowser: function(aWindow, aBrowser, aTourPageClosing = false) {
     log.debug("teardownTourForBrowser: aBrowser = ", aBrowser, aTourPageClosing);
 
     if (this.pageIDSourceBrowsers.has(aBrowser)) {
@@ -873,7 +873,7 @@ this.UITour = {
   
 
 
-  teardownTourForWindow(aWindow) {
+  teardownTourForWindow: function(aWindow) {
     log.debug("teardownTourForWindow");
     aWindow.gBrowser.tabContainer.removeEventListener("TabSelect", this);
     aWindow.removeEventListener("SSWindowClosing", this);
@@ -892,7 +892,7 @@ this.UITour = {
   },
 
   
-  isSafeScheme(aURI) {
+  isSafeScheme: function(aURI) {
     let allowedSchemes = new Set(["https", "about"]);
     if (!Services.prefs.getBoolPref("browser.uitour.requireSecure"))
       allowedSchemes.add("http");
@@ -905,7 +905,7 @@ this.UITour = {
     return true;
   },
 
-  resolveURL(aBrowser, aURL) {
+  resolveURL: function(aBrowser, aURL) {
     try {
       let uri = Services.io.newURI(aURL, null, aBrowser.currentURI);
 
@@ -918,20 +918,20 @@ this.UITour = {
     return null;
   },
 
-  sendPageCallback(aMessageManager, aCallbackID, aData = {}) {
+  sendPageCallback: function(aMessageManager, aCallbackID, aData = {}) {
     let detail = {data: aData, callbackID: aCallbackID};
     log.debug("sendPageCallback", detail);
     aMessageManager.sendAsyncMessage("UITour:SendPageCallback", detail);
   },
 
-  isElementVisible(aElement) {
+  isElementVisible: function(aElement) {
     let targetStyle = aElement.ownerGlobal.getComputedStyle(aElement);
     return !aElement.ownerDocument.hidden &&
              targetStyle.display != "none" &&
              targetStyle.visibility == "visible";
   },
 
-  getTarget(aWindow, aTargetName, aSticky = false) {
+  getTarget: function(aWindow, aTargetName, aSticky = false) {
     log.debug("getTarget:", aTargetName);
     let deferred = Promise.defer();
     if (typeof aTargetName != "string" || !aTargetName) {
@@ -966,7 +966,7 @@ this.UITour = {
         infoPanelOffsetX: targetObject.infoPanelOffsetX,
         infoPanelOffsetY: targetObject.infoPanelOffsetY,
         infoPanelPosition: targetObject.infoPanelPosition,
-        node,
+        node: node,
         removeTargetListener: targetObject.removeTargetListener,
         targetName: aTargetName,
         widgetName: targetObject.widgetName,
@@ -976,7 +976,7 @@ this.UITour = {
     return deferred.promise;
   },
 
-  targetIsInAppMenu(aTarget) {
+  targetIsInAppMenu: function(aTarget) {
     let placement = CustomizableUI.getPlacementOfWidget(aTarget.widgetName || aTarget.node.id);
     if (placement && placement.area == CustomizableUI.AREA_PANEL) {
       return true;
@@ -997,7 +997,7 @@ this.UITour = {
 
 
 
-  _setAppMenuStateForAnnotation(aWindow, aAnnotationType, aShouldOpenForHighlight, aCallback = null) {
+  _setAppMenuStateForAnnotation: function(aWindow, aAnnotationType, aShouldOpenForHighlight, aCallback = null) {
     log.debug("_setAppMenuStateForAnnotation:", aAnnotationType);
     log.debug("_setAppMenuStateForAnnotation: Menu is expected to be:", aShouldOpenForHighlight ? "open" : "closed");
 
@@ -1037,14 +1037,14 @@ this.UITour = {
 
   },
 
-  previewTheme(aTheme) {
+  previewTheme: function(aTheme) {
     let origin = Services.prefs.getCharPref("browser.uitour.themeOrigin");
     let data = LightweightThemeManager.parseTheme(aTheme, origin);
     if (data)
       LightweightThemeManager.previewTheme(data);
   },
 
-  resetTheme() {
+  resetTheme: function() {
     LightweightThemeManager.resetPreview();
   },
 
@@ -1387,7 +1387,7 @@ this.UITour = {
 
 
 
-  _correctAnchor(aAnchor) {
+  _correctAnchor: function(aAnchor) {
     
     if (aAnchor.getAttribute("overflowedItem")) {
       let doc = aAnchor.ownerDocument;
@@ -1407,7 +1407,7 @@ this.UITour = {
 
 
 
-  showHighlight(aChromeWindow, aTarget, aEffect = "none") {
+  showHighlight: function(aChromeWindow, aTarget, aEffect = "none") {
     function showHighlightPanel() {
       let highlighter = aChromeWindow.document.getElementById("UITourHighlight");
 
@@ -1478,7 +1478,7 @@ this.UITour = {
                                        showHighlightPanel.bind(this));
   },
 
-  hideHighlight(aWindow) {
+  hideHighlight: function(aWindow) {
     let highlighter = aWindow.document.getElementById("UITourHighlight");
     this._removeAnnotationPanelMutationObserver(highlighter.parentElement);
     highlighter.parentElement.hidePopup();
@@ -1617,7 +1617,7 @@ this.UITour = {
     return tooltip.getAttribute("targetName") == aTargetName && tooltip.state != "closed";
   },
 
-  hideInfo(aWindow) {
+  hideInfo: function(aWindow) {
     let document = aWindow.document;
 
     let tooltip = document.getElementById("UITourTooltip");
@@ -1630,7 +1630,7 @@ this.UITour = {
       tooltipButtons.firstChild.remove();
   },
 
-  showMenu(aWindow, aMenuName, aOpenCallback = null) {
+  showMenu: function(aWindow, aMenuName, aOpenCallback = null) {
     log.debug("showMenu:", aMenuName);
     function openMenuButton(aMenuBtn) {
       if (!aMenuBtn || !aMenuBtn.boxObject || aMenuBtn.open) {
@@ -1731,7 +1731,7 @@ this.UITour = {
     }
   },
 
-  hideMenu(aWindow, aMenuName) {
+  hideMenu: function(aWindow, aMenuName) {
     log.debug("hideMenu:", aMenuName);
     function closeMenuButton(aMenuBtn) {
       if (aMenuBtn && aMenuBtn.boxObject)
@@ -1749,11 +1749,11 @@ this.UITour = {
     }
   },
 
-  showNewTab(aWindow, aBrowser) {
+  showNewTab: function(aWindow, aBrowser) {
     aWindow.openLinkIn("about:newtab", "current", {targetBrowser: aBrowser});
   },
 
-  hideAnnotationsForPanel(aEvent, aTargetPositionCallback) {
+  hideAnnotationsForPanel: function(aEvent, aTargetPositionCallback) {
     let win = aEvent.target.ownerGlobal;
     let annotationElements = new Map([
       
@@ -1778,7 +1778,7 @@ this.UITour = {
     UITour.appMenuOpenForAnnotation.clear();
   },
 
-  hideAppMenuAnnotations(aEvent) {
+  hideAppMenuAnnotations: function(aEvent) {
     UITour.hideAnnotationsForPanel(aEvent, UITour.targetIsInAppMenu);
   },
 
@@ -1788,13 +1788,13 @@ this.UITour = {
     });
   },
 
-  onPanelHidden(aEvent) {
+  onPanelHidden: function(aEvent) {
     aEvent.target.removeAttribute("noautohide");
     UITour.recreatePopup(aEvent.target);
     UITour.clearAvailableTargetsCache();
   },
 
-  recreatePopup(aPanel) {
+  recreatePopup: function(aPanel) {
     
     
     if (aPanel.hidden) {
@@ -1808,7 +1808,7 @@ this.UITour = {
     aPanel.hidden = false;
   },
 
-  getConfiguration(aMessageManager, aWindow, aConfiguration, aCallbackID) {
+  getConfiguration: function(aMessageManager, aWindow, aConfiguration, aCallbackID) {
     switch (aConfiguration) {
       case "appinfo":
         let props = ["defaultUpdateChannel", "version"];
@@ -1888,7 +1888,7 @@ this.UITour = {
     }
   },
 
-  setConfiguration(aWindow, aConfiguration, aValue) {
+  setConfiguration: function(aWindow, aConfiguration, aValue) {
     switch (aConfiguration) {
       case "defaultBrowser":
         
@@ -1906,7 +1906,7 @@ this.UITour = {
     }
   },
 
-  getAvailableTargets(aMessageManager, aChromeWindow, aCallbackID) {
+  getAvailableTargets: function(aMessageManager, aChromeWindow, aCallbackID) {
     Task.spawn(function*() {
       let window = aChromeWindow;
       let data = this.availableTargetsCache.get(window);
@@ -1941,7 +1941,7 @@ this.UITour = {
     });
   },
 
-  startSubTour(aFeature) {
+  startSubTour: function(aFeature) {
     if (aFeature != "string") {
       log.error("startSubTour: No feature option specified");
       return;
@@ -1955,7 +1955,7 @@ this.UITour = {
     }
   },
 
-  addNavBarWidget(aTarget, aMessageManager, aCallbackID) {
+  addNavBarWidget: function(aTarget, aMessageManager, aCallbackID) {
     if (aTarget.node) {
       log.error("addNavBarWidget: can't add a widget already present:", aTarget);
       return;
@@ -1973,7 +1973,7 @@ this.UITour = {
     this.sendPageCallback(aMessageManager, aCallbackID);
   },
 
-  _addAnnotationPanelMutationObserver(aPanelEl) {
+  _addAnnotationPanelMutationObserver: function(aPanelEl) {
     if (AppConstants.platform == "linux") {
       let observer = this._annotationPanelMutationObservers.get(aPanelEl);
       if (observer) {
@@ -1990,7 +1990,7 @@ this.UITour = {
     }
   },
 
-  _removeAnnotationPanelMutationObserver(aPanelEl) {
+  _removeAnnotationPanelMutationObserver: function(aPanelEl) {
     if (AppConstants.platform == "linux") {
       let observer = this._annotationPanelMutationObservers.get(aPanelEl);
       if (observer) {
@@ -2005,7 +2005,7 @@ this.UITour = {
 
 
 
-  _annotationMutationCallback(aMutations) {
+  _annotationMutationCallback: function(aMutations) {
     for (let mutation of aMutations) {
       
       mutation.target.removeAttribute("width");
@@ -2055,7 +2055,7 @@ this.UITour = {
         }
         let detail = {
           event: eventName,
-          params,
+          params: params,
         };
         messageManager.sendAsyncMessage("UITour:SendPageNotification", detail);
       }
@@ -2096,7 +2096,7 @@ this.UITour.init();
 
 
 const UITourHealthReport = {
-  recordTreatmentTag(tag, value) {
+  recordTreatmentTag: function(tag, value) {
     return TelemetryController.submitExternalPing("uitour-tag",
       {
         version: 1,

@@ -23,7 +23,7 @@ function SuggestAutoComplete() {
 }
 SuggestAutoComplete.prototype = {
 
-  _init() {
+  _init: function() {
     this._suggestionController = new SearchSuggestionController(obj => this.onResultsReturned(obj));
     this._suggestionController.maxLocalResults = this._historyLimit;
   },
@@ -54,7 +54,7 @@ SuggestAutoComplete.prototype = {
 
 
 
-  onResultsReturned(results) {
+  onResultsReturned: function(results) {
     let finalResults = [];
     let finalComments = [];
 
@@ -85,7 +85,7 @@ SuggestAutoComplete.prototype = {
 
 
 
-  onResultsReady(searchString, results, comments, formHistoryResult) {
+  onResultsReady: function(searchString, results, comments, formHistoryResult) {
     if (this._listener) {
       
       
@@ -122,7 +122,7 @@ SuggestAutoComplete.prototype = {
 
 
 
-  startSearch(searchString, searchParam, previousResult, listener) {
+  startSearch: function(searchString, searchParam, previousResult, listener) {
     
     if (!previousResult)
       this._formHistoryResult = null;
@@ -157,7 +157,7 @@ SuggestAutoComplete.prototype = {
   
 
 
-  _triggerSearch(searchString, searchParam, listener, privacyMode) {
+  _triggerSearch: function(searchString, searchParam, listener, privacyMode) {
     this._listener = listener;
     this._suggestionController.fetch(searchString,
                                      privacyMode,
@@ -168,7 +168,7 @@ SuggestAutoComplete.prototype = {
 
 
 
-  stopSearch() {
+  stopSearch: function() {
     this._suggestionController.stop();
   },
 

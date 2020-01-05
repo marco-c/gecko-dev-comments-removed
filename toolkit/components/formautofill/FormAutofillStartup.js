@@ -31,7 +31,7 @@ FormAutofillStartup.prototype = {
   ]),
 
   
-  observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     
     
     
@@ -44,7 +44,7 @@ FormAutofillStartup.prototype = {
   },
 
   
-  receiveMessage(aMessage) {
+  receiveMessage: function(aMessage) {
     
     
     

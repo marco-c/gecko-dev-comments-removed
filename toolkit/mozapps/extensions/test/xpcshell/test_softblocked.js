@@ -19,7 +19,7 @@ testserver.registerDirectory("/data/", do_get_file("data"));
 
 
 var WindowWatcher = {
-  openWindow(parent, url, name, features, openArgs) {
+  openWindow: function(parent, url, name, features, openArgs) {
     
     do_check_eq(url, URI_EXTENSION_BLOCKLIST_DIALOG);
 
@@ -34,7 +34,7 @@ var WindowWatcher = {
     Services.obs.notifyObservers(null, "addon-blocklist-closed", null);
   },
 
-  QueryInterface(iid) {
+  QueryInterface: function(iid) {
     if (iid.equals(Ci.nsIWindowWatcher)
      || iid.equals(Ci.nsISupports))
       return this;

@@ -146,7 +146,7 @@ this.TelemetryStorage = {
 
 
 
-  shutdown() {
+  shutdown: function() {
     return TelemetryStorageImpl.shutdown();
   },
 
@@ -156,7 +156,7 @@ this.TelemetryStorage = {
 
 
 
-  saveArchivedPing(ping) {
+  saveArchivedPing: function(ping) {
     return TelemetryStorageImpl.saveArchivedPing(ping);
   },
 
@@ -166,7 +166,7 @@ this.TelemetryStorage = {
 
 
 
-  loadArchivedPing(id) {
+  loadArchivedPing: function(id) {
     return TelemetryStorageImpl.loadArchivedPing(id);
   },
 
@@ -177,7 +177,7 @@ this.TelemetryStorage = {
 
 
 
-  loadArchivedPingList() {
+  loadArchivedPingList: function() {
     return TelemetryStorageImpl.loadArchivedPingList();
   },
 
@@ -187,7 +187,7 @@ this.TelemetryStorage = {
 
 
 
-  runCleanPingArchiveTask() {
+  runCleanPingArchiveTask: function() {
     return TelemetryStorageImpl.runCleanPingArchiveTask();
   },
 
@@ -196,7 +196,7 @@ this.TelemetryStorage = {
 
 
 
-  runEnforcePendingPingsQuotaTask() {
+  runEnforcePendingPingsQuotaTask: function() {
     return TelemetryStorageImpl.runEnforcePendingPingsQuotaTask();
   },
 
@@ -205,28 +205,28 @@ this.TelemetryStorage = {
 
 
 
-  runRemovePendingPingsTask() {
+  runRemovePendingPingsTask: function() {
     return TelemetryStorageImpl.runRemovePendingPingsTask();
   },
 
   
 
 
-  reset() {
+  reset: function() {
     return TelemetryStorageImpl.reset();
   },
 
   
 
 
-  testCleanupTaskPromise() {
+  testCleanupTaskPromise: function() {
     return (TelemetryStorageImpl._cleanArchiveTask || Promise.resolve());
   },
 
   
 
 
-  testPendingQuotaTaskPromise() {
+  testPendingQuotaTaskPromise: function() {
     return (TelemetryStorageImpl._enforcePendingPingsQuotaTask || Promise.resolve());
   },
 
@@ -236,7 +236,7 @@ this.TelemetryStorage = {
 
 
 
-  savePendingPing(ping) {
+  savePendingPing: function(ping) {
     return TelemetryStorageImpl.savePendingPing(ping);
   },
 
@@ -245,7 +245,7 @@ this.TelemetryStorage = {
 
 
 
-  saveSessionData(sessionData) {
+  saveSessionData: function(sessionData) {
     return TelemetryStorageImpl.saveSessionData(sessionData);
   },
 
@@ -253,7 +253,7 @@ this.TelemetryStorage = {
 
 
 
-  loadSessionData() {
+  loadSessionData: function() {
     return TelemetryStorageImpl.loadSessionData();
   },
 
@@ -263,7 +263,7 @@ this.TelemetryStorage = {
 
 
 
-  loadPendingPing(id) {
+  loadPendingPing: function(id) {
     return TelemetryStorageImpl.loadPendingPing(id);
   },
 
@@ -273,7 +273,7 @@ this.TelemetryStorage = {
 
 
 
-  removePendingPing(id) {
+  removePendingPing: function(id) {
     return TelemetryStorageImpl.removePendingPing(id);
   },
 
@@ -287,7 +287,7 @@ this.TelemetryStorage = {
 
 
 
-  loadPendingPingList() {
+  loadPendingPingList: function() {
     return TelemetryStorageImpl.loadPendingPingList();
    },
 
@@ -301,7 +301,7 @@ this.TelemetryStorage = {
 
 
 
-  getPendingPingList() {
+  getPendingPingList: function() {
     return TelemetryStorageImpl.getPendingPingList();
    },
 
@@ -312,7 +312,7 @@ this.TelemetryStorage = {
 
 
 
-  saveAbortedSessionPing(ping) {
+  saveAbortedSessionPing: function(ping) {
     return TelemetryStorageImpl.saveAbortedSessionPing(ping);
   },
 
@@ -322,7 +322,7 @@ this.TelemetryStorage = {
 
 
 
-  loadAbortedSessionPing() {
+  loadAbortedSessionPing: function() {
     return TelemetryStorageImpl.loadAbortedSessionPing();
   },
 
@@ -331,7 +331,7 @@ this.TelemetryStorage = {
 
 
 
-  saveDeletionPing(ping) {
+  saveDeletionPing: function(ping) {
     return TelemetryStorageImpl.saveDeletionPing(ping);
   },
 
@@ -339,14 +339,14 @@ this.TelemetryStorage = {
 
 
 
-  removeDeletionPing() {
+  removeDeletionPing: function() {
     return TelemetryStorageImpl.removeDeletionPing();
   },
 
   
 
 
-  isDeletionPing(aPingId) {
+  isDeletionPing: function(aPingId) {
     return TelemetryStorageImpl.isDeletionPing(aPingId);
   },
 
@@ -355,7 +355,7 @@ this.TelemetryStorage = {
 
 
 
-  removeAbortedSessionPing() {
+  removeAbortedSessionPing: function() {
     return TelemetryStorageImpl.removeAbortedSessionPing();
   },
 
@@ -369,7 +369,7 @@ this.TelemetryStorage = {
 
 
 
-  savePingToFile(ping, file, overwrite) {
+  savePingToFile: function(ping, file, overwrite) {
     return TelemetryStorageImpl.savePingToFile(ping, file, overwrite);
   },
 
@@ -381,7 +381,7 @@ this.TelemetryStorage = {
 
 
 
-  savePing(ping, overwrite) {
+  savePing: function(ping, overwrite) {
     return TelemetryStorageImpl.savePing(ping, overwrite);
   },
 
@@ -392,7 +392,7 @@ this.TelemetryStorage = {
 
 
 
-  addPendingPing(pingData) {
+  addPendingPing: function(pingData) {
     return TelemetryStorageImpl.addPendingPing(pingData);
   },
 
@@ -402,7 +402,7 @@ this.TelemetryStorage = {
 
 
 
-  cleanupPingFile(ping) {
+  cleanupPingFile: function(ping) {
     return TelemetryStorageImpl.cleanupPingFile(ping);
   },
 
@@ -428,7 +428,7 @@ this.TelemetryStorage = {
 
 
 
-  removeFHRDatabase() {
+  removeFHRDatabase: function() {
     return TelemetryStorageImpl.removeFHRDatabase();
   },
 
@@ -439,7 +439,7 @@ this.TelemetryStorage = {
 
 
 
-  _testGetArchivedPingPath(aPingId, aDate, aType) {
+  _testGetArchivedPingPath: function(aPingId, aDate, aType) {
     return getArchivedPingPath(aPingId, aDate, aType);
   },
 
@@ -453,14 +453,14 @@ this.TelemetryStorage = {
 
 
 
-  _testGetArchivedPingDataFromFileName(aFileName) {
+  _testGetArchivedPingDataFromFileName: function(aFileName) {
     return TelemetryStorageImpl._getArchivedPingDataFromFileName(aFileName);
   },
 
   
 
 
-  testClearPendingPings() {
+  testClearPendingPings: function() {
     return TelemetryStorageImpl.runRemovePendingPingsTask();
   }
 };
@@ -486,7 +486,7 @@ SaveSerializer.prototype = {
 
 
 
-  enqueueTask(aFunction) {
+  enqueueTask: function(aFunction) {
     let promise = new Promise((resolve, reject) =>
       this._queuedOperations.push([aFunction, resolve, reject]));
 
@@ -500,7 +500,7 @@ SaveSerializer.prototype = {
 
 
 
-  flushTasks() {
+  flushTasks: function() {
     let dummyTask = () => new Promise(resolve => resolve());
     return this.enqueueTask(dummyTask);
   },
@@ -509,7 +509,7 @@ SaveSerializer.prototype = {
 
 
 
-  _popAndPerformQueuedOperation() {
+  _popAndPerformQueuedOperation: function() {
     if (!this._queuedOperations.length || this._queuedInProgress) {
       return;
     }
@@ -649,7 +649,7 @@ var TelemetryStorageImpl = {
 
 
 
-  saveArchivedPing(ping) {
+  saveArchivedPing: function(ping) {
     let promise = this._saveArchivedPingTask(ping);
     this._activelyArchiving.add(promise);
     promise.then((r) => { this._activelyArchiving.delete(promise); },
@@ -732,7 +732,7 @@ var TelemetryStorageImpl = {
   
 
 
-  saveSessionData(sessionData) {
+  saveSessionData: function(sessionData) {
     return this._stateSaveSerializer.enqueueTask(() => this._saveSessionData(sessionData));
   },
 
@@ -754,7 +754,7 @@ var TelemetryStorageImpl = {
 
 
 
-  loadSessionData() {
+  loadSessionData: function() {
     return this._stateSaveSerializer.enqueueTask(() => this._loadSessionData());
   },
 
@@ -807,7 +807,7 @@ var TelemetryStorageImpl = {
 
 
 
-  runCleanPingArchiveTask() {
+  runCleanPingArchiveTask: function() {
     
     if (this._cleanArchiveTask) {
       return this._cleanArchiveTask;
@@ -1141,7 +1141,7 @@ var TelemetryStorageImpl = {
   
 
 
-  reset() {
+  reset: function() {
     this._shutdown = false;
     this._scannedArchiveDirectory = false;
     this._archivedPings = new Map();
@@ -1293,7 +1293,7 @@ var TelemetryStorageImpl = {
 
 
 
-  addPendingPing(ping) {
+  addPendingPing: function(ping) {
     return this.savePendingPing(ping);
   },
 
@@ -1303,14 +1303,14 @@ var TelemetryStorageImpl = {
 
 
 
-  cleanupPingFile(ping) {
+  cleanupPingFile: function(ping) {
     return OS.File.remove(pingFilePath(ping));
   },
 
-  savePendingPing(ping) {
+  savePendingPing: function(ping) {
     let p = this.savePing(ping, true).then((path) => {
       this._pendingPings.set(ping.id, {
-        path,
+        path: path,
         lastModificationDate: Policy.now().getTime(),
       });
       this._log.trace("savePendingPing - saved ping with id " + ping.id);
@@ -1367,7 +1367,7 @@ var TelemetryStorageImpl = {
     return ping;
   }),
 
-  removePendingPing(id) {
+  removePendingPing: function(id) {
     let info = this._pendingPings.get(id);
     if (!info) {
       this._log.trace("removePendingPing - unknown id " + id);
@@ -1387,7 +1387,7 @@ var TelemetryStorageImpl = {
 
 
 
-  _trackPendingPingSaveTask(promise) {
+  _trackPendingPingSaveTask: function(promise) {
     let clear = () => this._activePendingPingSaves.delete(promise);
     promise.then(clear, clear);
     this._activePendingPingSaves.add(promise);
@@ -1398,7 +1398,7 @@ var TelemetryStorageImpl = {
 
 
 
-  promisePendingPingSaves() {
+  promisePendingPingSaves: function() {
     
     
     return waitForAll(this._activePendingPingSaves);
@@ -1456,7 +1456,7 @@ var TelemetryStorageImpl = {
     }
   }),
 
-  loadPendingPingList() {
+  loadPendingPingList: function() {
     
     if (this._scanPendingPingsTask) {
       return this._scanPendingPingsTask;
@@ -1479,7 +1479,7 @@ var TelemetryStorageImpl = {
     return this._scanPendingPingsTask;
   },
 
-  getPendingPingList() {
+  getPendingPingList: function() {
     return this._buildPingList();
   },
 
@@ -1555,7 +1555,7 @@ var TelemetryStorageImpl = {
     return this._buildPingList();
   }),
 
-  _buildPingList() {
+  _buildPingList: function() {
     const list = Array.from(this._pendingPings, p => ({
       id: p[0],
       lastModificationDate: p[1].lastModificationDate,
@@ -1620,7 +1620,7 @@ var TelemetryStorageImpl = {
 
 
 
-  _getArchivedPingDataFromFileName(fileName) {
+  _getArchivedPingDataFromFileName: function(fileName) {
     
     let parts = fileName.split(".");
     if (parts.length != 4) {
@@ -1655,9 +1655,9 @@ var TelemetryStorageImpl = {
     }
 
     return {
-      timestamp,
+      timestamp: timestamp,
       id: uuid,
-      type,
+      type: type,
     };
   },
 
@@ -1683,7 +1683,7 @@ var TelemetryStorageImpl = {
     return ping;
   }),
 
-  removeAbortedSessionPing() {
+  removeAbortedSessionPing: function() {
     return this._abortedSessionSerializer.enqueueTask(Task.async(function*() {
       try {
         yield OS.File.remove(gAbortedSessionFilePath, { ignoreAbsent: false });
@@ -1732,7 +1732,7 @@ var TelemetryStorageImpl = {
     }.bind(this)));
   }),
 
-  isDeletionPing(aPingId) {
+  isDeletionPing: function(aPingId) {
     this._log.trace("isDeletionPing - id: " + aPingId);
     let pingInfo = this._pendingPings.get(aPingId);
     if (!pingInfo) {

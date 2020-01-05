@@ -19,7 +19,7 @@ function test_begin_provisioning() {
       IdentityProvider.beginProvisioning(caller);
     }, function() {},
     {
-      beginProvisioningCallback(email, duration_s) {
+      beginProvisioningCallback: function(email, duration_s) {
         do_check_eq(email, TEST_USER);
         do_check_true(duration_s > 0);
         do_check_true(duration_s <= (24 * 3600));
@@ -49,7 +49,7 @@ function test_raise_provisioning_failure() {
       run_next_test();
     },
     {
-      beginProvisioningCallback(email, duration_s) {
+      beginProvisioningCallback: function(email, duration_s) {
         
         IdentityProvider.raiseProvisioningFailure(_callerId, "can't authenticate this email");
       }
@@ -74,7 +74,7 @@ function test_genkeypair_before_begin_provisioning() {
     },
     {
       
-      genKeyPairCallback(pk) {
+      genKeyPairCallback: function(pk) {
         
         do_check_true(false);
 
@@ -103,10 +103,10 @@ function test_genkeypair() {
       run_next_test();
     },
     {
-      beginProvisioningCallback(email, time_s) {
+      beginProvisioningCallback: function(email, time_s) {
         IdentityProvider.genKeyPair(_callerId);
       },
-      genKeyPairCallback(kp) {
+      genKeyPairCallback: function(kp) {
         do_check_neq(kp, null);
 
         
@@ -139,7 +139,7 @@ function test_register_certificate_before_genkeypair() {
       run_next_test();
     },
     {
-      beginProvisioningCallback(email, duration_s) {
+      beginProvisioningCallback: function(email, duration_s) {
         
         IdentityProvider.registerCertificate(_callerID, "fake-cert");
       }
@@ -175,10 +175,10 @@ function test_register_certificate() {
       });
     },
     {
-      beginProvisioningCallback(email, duration_s) {
+      beginProvisioningCallback: function(email, duration_s) {
         IdentityProvider.genKeyPair(_callerId);
       },
-      genKeyPairCallback(pk) {
+      genKeyPairCallback: function(pk) {
         IdentityProvider.registerCertificate(_callerId, "fake-cert-42");
       }
     }
@@ -214,10 +214,10 @@ function test_get_assertion_after_provision() {
       });
     },
     {
-      beginProvisioningCallback(email, duration_s) {
+      beginProvisioningCallback: function(email, duration_s) {
         IdentityProvider.genKeyPair(_callerId);
       },
-      genKeyPairCallback(pk) {
+      genKeyPairCallback: function(pk) {
         IdentityProvider.registerCertificate(_callerId, "fake-cert-42");
       }
     }

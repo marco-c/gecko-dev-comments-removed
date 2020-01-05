@@ -42,8 +42,8 @@ function cacheDataForContext(loadContextInfo) {
     let cacheVisitor = {
       onCacheStorageInfo(num, consumption) {},
       onCacheEntryInfo(uri, idEnhance) {
-        cacheEntries.push({ uri,
-                            idEnhance });
+        cacheEntries.push({ uri: uri,
+                            idEnhance: idEnhance });
       },
       onCacheEntryVisitCompleted() {
         resolve(cacheEntries);
@@ -73,7 +73,7 @@ function observeChannels(onChannel) {
   
   
   let proxyFilter = {
-    applyFilter(aProxyService, aChannel, aProxy) {
+    applyFilter : function(aProxyService, aChannel, aProxy) {
       
       onChannel(aChannel);
       
@@ -141,7 +141,7 @@ function* doInit(aMode) {
 function* doTest(aBrowser) {
 
   let argObj = {
-    randomSuffix,
+    randomSuffix: randomSuffix,
     urlPrefix: TEST_DOMAIN + TEST_PATH,
   };
 

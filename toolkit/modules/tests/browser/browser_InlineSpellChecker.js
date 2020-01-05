@@ -12,7 +12,7 @@ function test() {
 var tests = {
   
   
-  testDictionaryDisplayNames() {
+  testDictionaryDisplayNames: function() {
     let isc = new InlineSpellChecker();
 
     

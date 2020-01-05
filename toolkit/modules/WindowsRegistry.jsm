@@ -23,7 +23,7 @@ var WindowsRegistry = {
 
 
 
-  readRegKey(aRoot, aPath, aKey, aRegistryNode = 0) {
+  readRegKey: function(aRoot, aPath, aKey, aRegistryNode = 0) {
     const kRegMultiSz = 7;
     const kMode = Ci.nsIWindowsRegKey.ACCESS_READ | aRegistryNode;
     let registry = Cc["@mozilla.org/windows-registry-key;1"].
@@ -66,7 +66,7 @@ var WindowsRegistry = {
 
 
 
-  removeRegKey(aRoot, aPath, aKey, aRegistryNode = 0) {
+  removeRegKey: function(aRoot, aPath, aKey, aRegistryNode = 0) {
     let registry = Cc["@mozilla.org/windows-registry-key;1"].
                    createInstance(Ci.nsIWindowsRegKey);
     let result = false;

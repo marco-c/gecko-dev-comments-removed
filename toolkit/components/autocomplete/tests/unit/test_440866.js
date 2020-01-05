@@ -35,21 +35,21 @@ AutoCompleteInput.prototype = {
     return this.searches.length;
   },
 
-  getSearchAt(aIndex) {
+  getSearchAt: function(aIndex) {
     return this.searches[aIndex];
   },
 
-  onSearchBegin() {},
-  onSearchComplete() {},
+  onSearchBegin: function() {},
+  onSearchComplete: function() {},
 
   popupOpen: false,
 
   popup: {
-    setSelectedIndex(aIndex) {},
-    invalidate() {},
+    setSelectedIndex: function(aIndex) {},
+    invalidate: function() {},
 
     
-    QueryInterface(iid) {
+    QueryInterface: function(iid) {
       if (iid.equals(Ci.nsISupports) ||
           iid.equals(Ci.nsIAutoCompletePopup))
         return this;
@@ -59,7 +59,7 @@ AutoCompleteInput.prototype = {
   },
 
   
-  QueryInterface(iid) {
+  QueryInterface: function(iid) {
     if (iid.equals(Ci.nsISupports) ||
         iid.equals(Ci.nsIAutoCompleteInput))
       return this;
@@ -101,34 +101,34 @@ AutoCompleteResult.prototype = {
     return this._values.length;
   },
 
-  getValueAt(aIndex) {
+  getValueAt: function(aIndex) {
     return this._values[aIndex];
   },
 
-  getLabelAt(aIndex) {
+  getLabelAt: function(aIndex) {
     return this.getValueAt(aIndex);
   },
 
-  getCommentAt(aIndex) {
+  getCommentAt: function(aIndex) {
     return this._comments[aIndex];
   },
 
-  getStyleAt(aIndex) {
+  getStyleAt: function(aIndex) {
     return this._styles[aIndex];
   },
 
-  getImageAt(aIndex) {
+  getImageAt: function(aIndex) {
     return "";
   },
 
-  getFinalCompleteValueAt(aIndex) {
+  getFinalCompleteValueAt: function(aIndex) {
     return this.getValueAt(aIndex);
   },
 
-  removeValueAt(aRowIndex, aRemoveFromDb) {},
+  removeValueAt: function(aRowIndex, aRemoveFromDb) {},
 
   
-  QueryInterface(iid) {
+  QueryInterface: function(iid) {
     if (iid.equals(Ci.nsISupports) ||
         iid.equals(Ci.nsIAutoCompleteResult))
       return this;
@@ -160,7 +160,7 @@ AutoCompleteSearch.prototype = {
   
 
 
-  startSearch(aSearchString,
+  startSearch: function(aSearchString,
                         aSearchParam,
                         aPreviousResult,
                         aListener)
@@ -168,10 +168,10 @@ AutoCompleteSearch.prototype = {
     aListener.onSearchResult(this, this._result);
   },
 
-  stopSearch() {},
+  stopSearch: function() {},
 
   
-  QueryInterface(iid) {
+  QueryInterface: function(iid) {
     if (iid.equals(Ci.nsISupports) ||
         iid.equals(Ci.nsIFactory) ||
         iid.equals(Ci.nsIAutoCompleteSearch))
@@ -181,7 +181,7 @@ AutoCompleteSearch.prototype = {
   },
 
   
-  createInstance(outer, iid) {
+  createInstance: function(outer, iid) {
     return this.QueryInterface(iid);
   }
 }

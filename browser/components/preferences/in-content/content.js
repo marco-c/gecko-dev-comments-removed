@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyGetter(this, "AlertsServiceDND", function() {
 });
 
 var gContentPane = {
-  init()
+  init: function()
   {
     function setEventListener(aId, aEventType, aCallback)
     {
@@ -99,7 +99,7 @@ var gContentPane = {
 
 
 
-  updateButtons(aButtonID, aPreferenceID)
+  updateButtons: function(aButtonID, aPreferenceID)
   {
     var button = document.getElementById(aButtonID);
     var preference = document.getElementById(aPreferenceID);
@@ -145,7 +145,7 @@ var gContentPane = {
 
 
 
-  showPopupExceptions()
+  showPopupExceptions: function()
   {
     var bundlePreferences = document.getElementById("bundlePreferences");
     var params = { blockVisible: false, sessionVisible: false, allowVisible: true,
@@ -162,7 +162,7 @@ var gContentPane = {
   
 
 
-  _rebuildFonts()
+  _rebuildFonts: function()
   {
     var preferences = document.getElementById("contentPreferences");
     
@@ -177,7 +177,7 @@ var gContentPane = {
   
 
 
-  _selectDefaultLanguageGroup(aLanguageGroup, aIsSerif)
+  _selectDefaultLanguageGroup: function(aLanguageGroup, aIsSerif)
   {
     const kFontNameFmtSerif         = "font.name.serif.%LANG%";
     const kFontNameFmtSansSerif     = "font.name.sans-serif.%LANG%";
@@ -228,7 +228,7 @@ var gContentPane = {
 
 
 
-  _readDefaultFontTypeForLanguage(aLanguageGroup)
+  _readDefaultFontTypeForLanguage: function(aLanguageGroup)
   {
     const kDefaultFontType = "font.default.%LANG%";
     var defaultFontTypePref = kDefaultFontType.replace(/%LANG%/, aLanguageGroup);
@@ -248,7 +248,7 @@ var gContentPane = {
 
 
 
-  configureFonts()
+  configureFonts: function()
   {
     gSubDialog.open("chrome://browser/content/preferences/fonts.xul", "resizable=no");
   },
@@ -257,7 +257,7 @@ var gContentPane = {
 
 
 
-  configureColors()
+  configureColors: function()
   {
     gSubDialog.open("chrome://browser/content/preferences/colors.xul", "resizable=no");
   },
@@ -267,7 +267,7 @@ var gContentPane = {
   
 
 
-  showLanguages()
+  showLanguages: function()
   {
     gSubDialog.open("chrome://browser/content/preferences/languages.xul");
   },
@@ -276,18 +276,18 @@ var gContentPane = {
 
 
 
-  showTranslationExceptions()
+  showTranslationExceptions: function()
   {
     gSubDialog.open("chrome://browser/content/preferences/translation.xul");
   },
 
-  openTranslationProviderAttribution()
+  openTranslationProviderAttribution: function()
   {
     Components.utils.import("resource:///modules/translation/Translation.jsm");
     Translation.openProviderAttribution();
   },
 
-  toggleDoNotDisturbNotifications(event)
+  toggleDoNotDisturbNotifications: function(event)
   {
     AlertsServiceDND.manualDoNotDisturb = event.target.checked;
   },

@@ -279,7 +279,7 @@ TimerManager.prototype = {
 
 
 
-  _ensureTimer(interval) {
+  _ensureTimer: function(interval) {
     if (!this._canEnsureTimer) {
       return;
     }
@@ -296,7 +296,7 @@ TimerManager.prototype = {
   
 
 
-  _cancelTimer() {
+  _cancelTimer: function() {
     if (this._timer) {
       this._timer.cancel();
       this._timer = null;
@@ -323,9 +323,9 @@ TimerManager.prototype = {
     if (lastUpdateTime == 0) {
       Services.prefs.setIntPref(prefLastUpdate, lastUpdateTime);
     }
-    this._timers[id] = {callback,
-                        interval,
-                        lastUpdateTime};
+    this._timers[id] = {callback: callback,
+                        interval: interval,
+                        lastUpdateTime: lastUpdateTime};
 
     this._ensureTimer(interval * 1000);
   },

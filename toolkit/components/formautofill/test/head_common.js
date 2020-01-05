@@ -42,7 +42,7 @@ var TestUtils = {
 
 
 
-  waitForTick() {
+  waitForTick: function() {
     return new Promise(resolve => executeSoon(resolve));
   },
 
@@ -58,7 +58,7 @@ var TestUtils = {
 
 
 
-  waitMs(aTimeMs) {
+  waitMs: function(aTimeMs) {
     return new Promise(resolve => setTimeout(resolve, aTimeMs));
   },
 
@@ -72,7 +72,7 @@ var TestUtils = {
 
 
 
-  waitForNotification(aTopic) {
+  waitForNotification: function(aTopic) {
     Output.print("Waiting for notification: '" + aTopic + "'.");
 
     return new Promise(resolve => Services.obs.addObserver(
@@ -96,7 +96,7 @@ var TestUtils = {
 
 
 
-  waitForEvent(aTarget, aEventName, aUseCapture = false) {
+  waitForEvent: function(aTarget, aEventName, aUseCapture = false) {
     Output.print("Waiting for event: '" + aEventName + "' on " + aTarget + ".");
 
     return new Promise(resolve => aTarget.addEventListener(aEventName,
@@ -183,7 +183,7 @@ var FormAutofillTest = {
     
     return {
       uiWindow: (yield promiseUIWindow)[0],
-      promiseResult,
+      promiseResult: promiseResult,
     };
   }),
 };

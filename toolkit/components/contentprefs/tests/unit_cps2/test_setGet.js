@@ -143,7 +143,7 @@ var tests = [
 
     
     cps.set("a.com", "foo", 2, null, {
-      handleCompletion() {
+      handleCompletion: function() {
         
         getCachedOK(["a.com", "foo"], true, 2);
       },
@@ -155,10 +155,10 @@ var tests = [
     
     var fetchedPref;
     cps.getByDomainAndName("a.com", "foo", null, {
-      handleResult(pref) {
+      handleResult: function(pref) {
         fetchedPref = pref;
       },
-      handleCompletion() {
+      handleCompletion: function() {
         
         do_check_true(!!fetchedPref);
         do_check_eq(fetchedPref.value, 2);

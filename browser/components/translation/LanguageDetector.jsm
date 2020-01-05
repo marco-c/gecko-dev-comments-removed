@@ -134,7 +134,7 @@ this.LanguageDetector = {
 
 
 
-  detectLanguage(aParams) {
+  detectLanguage: function(aParams) {
     if (typeof aParams == "string")
       aParams = { text: aParams };
 

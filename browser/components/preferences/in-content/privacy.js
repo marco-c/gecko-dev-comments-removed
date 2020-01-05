@@ -26,7 +26,7 @@ var gPrivacyPane = {
 
 
 
-  _initTrackingProtection() {
+  _initTrackingProtection: function() {
     if (!Services.prefs.getBoolPref("privacy.trackingprotection.ui.enabled")) {
       return;
     }
@@ -45,7 +45,7 @@ var gPrivacyPane = {
 
 
 
-  _initTrackingProtectionPBM() {
+  _initTrackingProtectionPBM: function() {
     let link = document.getElementById("trackingProtectionPBMLearnMore");
     let url = Services.urlFormatter.formatURLPref("app.support.baseURL") + "tracking-protection-pbm";
     link.setAttribute("href", url);
@@ -54,7 +54,7 @@ var gPrivacyPane = {
   
 
 
-  _initAutocomplete() {
+  _initAutocomplete: function() {
     Components.classes["@mozilla.org/autocomplete/search;1?name=unifiedcomplete"]
               .getService(Components.interfaces.mozIPlacesAutoComplete);
   },
@@ -62,7 +62,7 @@ var gPrivacyPane = {
   
 
 
-  _initBrowserContainers() {
+  _initBrowserContainers: function() {
     if (!Services.prefs.getBoolPref("privacy.userContext.ui.enabled")) {
       return;
     }
@@ -76,7 +76,7 @@ var gPrivacyPane = {
       Services.prefs.getBoolPref("privacy.userContext.enabled");
   },
 
-  _checkBrowserContainers(event) {
+  _checkBrowserContainers: function(event) {
     let checkbox = document.getElementById("browserContainersCheckbox");
     if (checkbox.checked) {
       Services.prefs.setBoolPref("privacy.userContext.enabled", true);
@@ -116,7 +116,7 @@ var gPrivacyPane = {
 
 
 
-  init()
+  init: function()
   {
     function setEventListener(aId, aEventType, aCallback)
     {
@@ -271,7 +271,7 @@ var gPrivacyPane = {
 
 
 
-  _checkHistoryValues(aPrefs) {
+  _checkHistoryValues: function(aPrefs) {
     for (let pref of Object.keys(aPrefs)) {
       if (document.getElementById(pref).value != aPrefs[pref])
         return false;
@@ -282,7 +282,7 @@ var gPrivacyPane = {
   
 
 
-  initializeHistoryMode()
+  initializeHistoryMode: function PPP_initializeHistoryMode()
   {
     let mode;
     let getVal = aPref => document.getElementById(aPref).value;
@@ -304,7 +304,7 @@ var gPrivacyPane = {
   
 
 
-  updateHistoryModePane()
+  updateHistoryModePane: function PPP_updateHistoryModePane()
   {
     let selectedIndex = -1;
     switch (document.getElementById("historyMode").value) {
@@ -326,7 +326,7 @@ var gPrivacyPane = {
 
 
 
-  updateHistoryModePrefs()
+  updateHistoryModePrefs: function PPP_updateHistoryModePrefs()
   {
     let pref = document.getElementById("browser.privatebrowsing.autostart");
     switch (document.getElementById("historyMode").value) {
@@ -361,7 +361,7 @@ var gPrivacyPane = {
 
 
 
-  updatePrivacyMicroControls()
+  updatePrivacyMicroControls: function PPP_updatePrivacyMicroControls()
   {
     if (document.getElementById("historyMode").value == "custom") {
       let disabled = this._autoStartPrivateBrowsing =
@@ -413,7 +413,7 @@ var gPrivacyPane = {
   
 
 
-  initAutoStartPrivateBrowsingReverter()
+  initAutoStartPrivateBrowsingReverter: function PPP_initAutoStartPrivateBrowsingReverter()
   {
     let mode = document.getElementById("historyMode");
     let autoStart = document.getElementById("privateBrowsingAutoStart");
@@ -423,7 +423,7 @@ var gPrivacyPane = {
 
   _lastMode: null,
   _lastCheckState: null,
-  updateAutostart() {
+  updateAutostart: function PPP_updateAutostart() {
       let mode = document.getElementById("historyMode");
       let autoStart = document.getElementById("privateBrowsingAutoStart");
       let pref = document.getElementById("browser.privatebrowsing.autostart");
@@ -490,7 +490,7 @@ var gPrivacyPane = {
   
 
 
-  showBlockLists()
+  showBlockLists: function()
   {
     var bundlePreferences = document.getElementById("bundlePreferences");
     let brandName = document.getElementById("bundleBrand")
@@ -545,7 +545,7 @@ var gPrivacyPane = {
 
 
 
-  readAcceptCookies()
+  readAcceptCookies: function()
   {
     var pref = document.getElementById("network.cookie.cookieBehavior");
     var acceptThirdPartyLabel = document.getElementById("acceptThirdPartyLabel");
@@ -566,7 +566,7 @@ var gPrivacyPane = {
 
 
 
-  writeAcceptCookies()
+  writeAcceptCookies: function()
   {
     var accept = document.getElementById("acceptCookies");
     var acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
@@ -581,7 +581,7 @@ var gPrivacyPane = {
   
 
 
-  readAcceptThirdPartyCookies()
+  readAcceptThirdPartyCookies: function()
   {
     var pref = document.getElementById("network.cookie.cookieBehavior");
     switch (pref.value)
@@ -599,7 +599,7 @@ var gPrivacyPane = {
     }
   },
 
-  writeAcceptThirdPartyCookies()
+  writeAcceptThirdPartyCookies: function()
   {
     var accept = document.getElementById("acceptThirdPartyMenu").selectedItem;
     switch (accept.value)
@@ -618,7 +618,7 @@ var gPrivacyPane = {
   
 
 
-  showCookieExceptions()
+  showCookieExceptions: function()
   {
     var bundlePreferences = document.getElementById("bundlePreferences");
     var params = { blockVisible   : true,
@@ -635,7 +635,7 @@ var gPrivacyPane = {
   
 
 
-  showCookies(aCategory)
+  showCookies: function(aCategory)
   {
     gSubDialog.open("chrome://browser/content/preferences/cookies.xul");
   },
@@ -653,7 +653,7 @@ var gPrivacyPane = {
   
 
 
-  showClearPrivateDataSettings()
+  showClearPrivateDataSettings: function()
   {
     gSubDialog.open("chrome://browser/content/preferences/sanitize.xul", "resizable=no");
   },
@@ -663,7 +663,7 @@ var gPrivacyPane = {
 
 
 
-  clearPrivateDataNow(aClearEverything) {
+  clearPrivateDataNow: function(aClearEverything) {
     var ts = document.getElementById("privacy.sanitize.timeSpan");
     var timeSpanOrig = ts.value;
 
@@ -685,7 +685,7 @@ var gPrivacyPane = {
 
 
 
-  _updateSanitizeSettingsButton() {
+  _updateSanitizeSettingsButton: function() {
     var settingsButton = document.getElementById("clearDataSettings");
     var sanitizeOnShutdownPref = document.getElementById("privacy.sanitize.sanitizeOnShutdown");
 
@@ -704,7 +704,7 @@ var gPrivacyPane = {
    
 
 
-   readBrowserContainersCheckbox()
+   readBrowserContainersCheckbox: function()
    {
      var pref = document.getElementById("privacy.userContext.enabled");
      var settings = document.getElementById("browserContainersSettings");

@@ -314,7 +314,7 @@ function Database(trigger, addons)
 
 Database.prototype = {
   
-  add(table, obj) {
+  add: function(table, obj) {
     if (!this.tables.has(table)) {
       this.tables.set(table, new Set());
     }
@@ -327,13 +327,13 @@ Database.prototype = {
     this.todo.push([table, obj]);
   },
 
-  cache(...args) {
+  cache: function(...args) {
     this.cached.push(args);
   },
 
   
   
-  process() {
+  process: function() {
     while (this.todo.length) {
       let [table, obj] = this.todo.pop();
       let rules = this.rules.get(table);
@@ -348,7 +348,7 @@ Database.prototype = {
 };
 
 var Prefetcher = {
-  init() {
+  init: function() {
     
     
     
@@ -368,7 +368,7 @@ var Prefetcher = {
     Services.obs.addObserver(this, "xpcom-shutdown", false);
   },
 
-  observe(subject, topic, data) {
+  observe: function(subject, topic, data) {
     if (topic == "xpcom-shutdown") {
       Services.prefs.removeObserver(PREF_PREFETCHING_ENABLED, this);
       Services.obs.removeObserver(this, "xpcom-shutdown");
@@ -381,7 +381,7 @@ var Prefetcher = {
   
   
   
-  prefetch(trigger, addons, args) {
+  prefetch: function(trigger, addons, args) {
     if (!this.prefetchingEnabled) {
       return [[], []];
     }
@@ -425,7 +425,7 @@ var Prefetcher = {
 
   
   
-  generateCache(prefetched, cpows) {
+  generateCache: function(prefetched, cpows) {
     let cache = new Map();
     for (let item of prefetched) {
       
@@ -446,7 +446,7 @@ var Prefetcher = {
 
   
   
-  withPrefetching(prefetched, cpows, func) {
+  withPrefetching: function(prefetched, cpows, func) {
     if (!this.prefetchingEnabled) {
       return func();
     }
@@ -466,7 +466,7 @@ var Prefetcher = {
 
   
   
-  lookupInCache(addon, target, prop) {
+  lookupInCache: function(addon, target, prop) {
     if (!this.cache || !Cu.isCrossProcessWrapper(target)) {
       return null;
     }

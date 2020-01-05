@@ -118,7 +118,7 @@ var PendingErrors = {
   
 
 
-  init() {
+  init: function() {
     Services.obs.addObserver(function observe(aSubject, aTopic, aValue) {
       PendingErrors.report(aValue);
     }, "promise-finalization-witness", false);
@@ -129,7 +129,7 @@ var PendingErrors = {
 
 
 
-  register(error) {
+  register: function(error) {
     let id = "pending-error-" + (this._counter++);
     
     
@@ -222,7 +222,7 @@ var PendingErrors = {
 
 
 
-  report(id) {
+  report: function(id) {
     let value = this._map.get(id);
     if (!value) {
       return; 
@@ -236,7 +236,7 @@ var PendingErrors = {
   
 
 
-  flush() {
+  flush: function() {
     
     
     for (let key of Array.from(this._map.keys())) {
@@ -248,7 +248,7 @@ var PendingErrors = {
 
 
 
-  unregister(id) {
+  unregister: function(id) {
     this._map.delete(id);
   },
 
@@ -260,21 +260,21 @@ var PendingErrors = {
 
 
 
-  addObserver(observer) {
+  addObserver: function(observer) {
     this._observers.add(observer);
   },
 
   
 
 
-  removeObserver(observer) {
+  removeObserver: function(observer) {
     this._observers.delete(observer);
   },
 
   
 
 
-  removeAllObservers() {
+  removeAllObservers: function() {
     this._observers.clear();
   }
 };
@@ -620,7 +620,7 @@ Promise.Debugging = {
 
 
 
-  addUncaughtErrorObserver(observer) {
+  addUncaughtErrorObserver: function(observer) {
     PendingErrors.addObserver(observer);
   },
 
@@ -630,14 +630,14 @@ Promise.Debugging = {
 
 
 
-  removeUncaughtErrorObserver(observer) {
+  removeUncaughtErrorObserver: function(observer) {
     PendingErrors.removeObserver(observer);
   },
 
   
 
 
-  clearUncaughtErrorObservers() {
+  clearUncaughtErrorObservers: function() {
     PendingErrors.removeAllObservers();
   },
 
@@ -645,7 +645,7 @@ Promise.Debugging = {
 
 
 
-  flushUncaughtErrors() {
+  flushUncaughtErrors: function() {
     PendingErrors.flush();
   },
 };
@@ -688,7 +688,7 @@ this.PromiseWalker = {
 
 
 
-  completePromise(aPromise, aStatus, aValue)
+  completePromise: function(aPromise, aStatus, aValue)
   {
     
     if (aPromise[N_INTERNALS].status != STATUS_PENDING) {
@@ -722,7 +722,7 @@ this.PromiseWalker = {
   
 
 
-  scheduleWalkerLoop()
+  scheduleWalkerLoop: function()
   {
     this.walkerLoopScheduled = true;
 
@@ -763,7 +763,7 @@ this.PromiseWalker = {
 
 
 
-  schedulePromise(aPromise)
+  schedulePromise: function(aPromise)
   {
     
     for (let handler of aPromise[N_INTERNALS].handlers) {
@@ -790,7 +790,7 @@ this.PromiseWalker = {
 
 
 
-  walkerLoop()
+  walkerLoop: function()
   {
     
     
@@ -917,7 +917,7 @@ Handler.prototype = {
 
 
 
-  process()
+  process: function()
   {
     
     let nextStatus = this.thisPromise[N_INTERNALS].status;

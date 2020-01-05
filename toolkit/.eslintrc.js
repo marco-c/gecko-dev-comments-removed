@@ -164,9 +164,6 @@ module.exports = {
     "no-with": "error",
 
     
-    "object-shorthand": ["error", "always", { "avoidQuotes": true }],
-
-    
     "rest-spread-spacing": "error",
 
     

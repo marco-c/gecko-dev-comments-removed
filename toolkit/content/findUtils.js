@@ -31,7 +31,7 @@ nsFindInstData.prototype =
 
   get webBrowserFind() { return this.browser.webBrowserFind; },
 
-  init() {
+  init : function() {
     var findInst = this.webBrowserFind;
     
     var findInFrames = findInst.QueryInterface(Components.interfaces.nsIWebBrowserFindInFrames);
@@ -42,7 +42,7 @@ nsFindInstData.prototype =
     findInst.searchFrames = true;
   },
 
-  window,
+  window : window,
   _root : null,
   _current : null
 }

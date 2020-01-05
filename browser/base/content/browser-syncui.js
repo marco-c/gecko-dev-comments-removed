@@ -39,7 +39,7 @@ var gSyncUI = {
   _syncStartTime: 0,
   _syncAnimationTimer: 0,
 
-  init() {
+  init: function() {
     Cu.import("resource://services-common/stringbundle.js");
 
     
@@ -137,7 +137,7 @@ var gSyncUI = {
   
   
   
-  _loginFailed() {
+  _loginFailed: function() {
     
     
     
@@ -242,7 +242,7 @@ var gSyncUI = {
     this.updateUI();
   },
 
-  _getAppName() {
+  _getAppName: function() {
     let brand = new StringBundle("chrome://branding/locale/brand.properties");
     return brand.get("brandShortName");
   },
@@ -304,7 +304,7 @@ var gSyncUI = {
   },
 
   
-  openAddDevice() {
+  openAddDevice: function() {
     if (!Weave.Utils.ensureMPUnlocked())
       return;
 
@@ -316,11 +316,11 @@ var gSyncUI = {
                         "syncAddDevice", "centerscreen,chrome,resizable=no");
   },
 
-  openPrefs(entryPoint) {
+  openPrefs: function(entryPoint) {
     openPreferences("paneSync", { urlParams: { entrypoint: entryPoint } });
   },
 
-  openSignInAgainPage(entryPoint = "syncbutton") {
+  openSignInAgainPage: function(entryPoint = "syncbutton") {
     gFxAccounts.openSignInAgainPage(entryPoint);
   },
 
@@ -423,7 +423,7 @@ var gSyncUI = {
     }
   }),
 
-  formatLastSyncDate(date) {
+  formatLastSyncDate: function(date) {
     let dateFormat;
     let sixDaysAgo = (() => {
       let tempDate = new Date();
@@ -441,7 +441,7 @@ var gSyncUI = {
     return this._stringBundle.formatStringFromName("lastSync2.label", [lastSyncDateString], 1);
   },
 
-  onClientsSynced() {
+  onClientsSynced: function() {
     let broadcaster = document.getElementById("sync-syncnow-state");
     if (broadcaster) {
       if (Weave.Service.clientsEngine.stats.numClients > 1) {

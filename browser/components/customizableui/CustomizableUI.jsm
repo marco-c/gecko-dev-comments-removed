@@ -170,7 +170,7 @@ XPCOMUtils.defineLazyGetter(this, "log", () => {
 });
 
 var CustomizableUIInternal = {
-  initialize() {
+  initialize: function() {
     log.debug("Initializing");
 
     this.addListener(this);
@@ -323,13 +323,13 @@ var CustomizableUIInternal = {
     return toolbars;
   },
 
-  _defineBuiltInWidgets() {
+  _defineBuiltInWidgets: function() {
     for (let widgetDefinition of CustomizableWidgets) {
       this.createBuiltinWidget(widgetDefinition);
     }
   },
 
-  _introduceNewBuiltinWidgets() {
+  _introduceNewBuiltinWidgets: function() {
     
     
     if (!gSavedState) {
@@ -389,7 +389,7 @@ var CustomizableUIInternal = {
 
 
 
-  _markObsoleteBuiltinButtonsSeen() {
+  _markObsoleteBuiltinButtonsSeen: function() {
     if (!gSavedState)
       return;
     let currentVersion = gSavedState.currentVersion;
@@ -405,7 +405,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  _placeNewDefaultWidgetsInArea(aArea) {
+  _placeNewDefaultWidgetsInArea: function(aArea) {
     let futurePlacedWidgets = gFuturePlacements.get(aArea);
     let savedPlacements = gSavedState && gSavedState.placements && gSavedState.placements[aArea];
     let defaultPlacements = gAreas.get(aArea).get("defaultPlacements");
@@ -459,7 +459,7 @@ var CustomizableUIInternal = {
     this.saveState();
   },
 
-  wrapWidget(aWidgetId) {
+  wrapWidget: function(aWidgetId) {
     if (gGroupWrapperCache.has(aWidgetId)) {
       return gGroupWrapperCache.get(aWidgetId);
     }
@@ -484,7 +484,7 @@ var CustomizableUIInternal = {
     return wrapper;
   },
 
-  registerArea(aName, aProperties, aInternalCaller) {
+  registerArea: function(aName, aProperties, aInternalCaller) {
     if (typeof aName != "string" || !/^[a-z0-9-_]{1,}$/i.test(aName)) {
       throw new Error("Invalid area name");
     }
@@ -563,7 +563,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  unregisterArea(aName, aDestroyPlacements) {
+  unregisterArea: function(aName, aDestroyPlacements) {
     if (typeof aName != "string" || !/^[a-z0-9-_]{1,}$/i.test(aName)) {
       throw new Error("Invalid area name");
     }
@@ -605,7 +605,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  registerToolbarNode(aToolbar, aExistingChildren) {
+  registerToolbarNode: function(aToolbar, aExistingChildren) {
     let area = aToolbar.id;
     if (gBuildAreas.has(area) && gBuildAreas.get(area).has(aToolbar)) {
       return;
@@ -677,7 +677,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  buildArea(aArea, aPlacements, aAreaNode) {
+  buildArea: function(aArea, aPlacements, aAreaNode) {
     let document = aAreaNode.ownerDocument;
     let window = document.defaultView;
     let inPrivateWindow = PrivateBrowsingUtils.isWindowPrivate(window);
@@ -813,7 +813,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  addPanelCloseListeners(aPanel) {
+  addPanelCloseListeners: function(aPanel) {
     gELS.addSystemEventListener(aPanel, "click", this, false);
     gELS.addSystemEventListener(aPanel, "keypress", this, false);
     let win = aPanel.ownerGlobal;
@@ -823,7 +823,7 @@ var CustomizableUIInternal = {
     gPanelsForWindow.get(win).add(this._getPanelForNode(aPanel));
   },
 
-  removePanelCloseListeners(aPanel) {
+  removePanelCloseListeners: function(aPanel) {
     gELS.removeSystemEventListener(aPanel, "click", this, false);
     gELS.removeSystemEventListener(aPanel, "keypress", this, false);
     let win = aPanel.ownerGlobal;
@@ -833,7 +833,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  ensureButtonContextMenu(aNode, aAreaNode) {
+  ensureButtonContextMenu: function(aNode, aAreaNode) {
     const kPanelItemContextMenu = "customizationPanelItemContextMenu";
 
     let currentContextMenu = aNode.getAttribute("context") ||
@@ -851,7 +851,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  getWidgetProvider(aWidgetId) {
+  getWidgetProvider: function(aWidgetId) {
     if (this.isSpecialWidget(aWidgetId)) {
       return CustomizableUI.PROVIDER_SPECIAL;
     }
@@ -871,7 +871,7 @@ var CustomizableUIInternal = {
     return CustomizableUI.PROVIDER_XUL;
   },
 
-  getWidgetNode(aWidgetId, aWindow) {
+  getWidgetNode: function(aWidgetId, aWindow) {
     let document = aWindow.document;
 
     if (this.isSpecialWidget(aWidgetId)) {
@@ -904,7 +904,7 @@ var CustomizableUIInternal = {
     return [null, null];
   },
 
-  registerMenuPanel(aPanelContents) {
+  registerMenuPanel: function(aPanelContents) {
     if (gBuildAreas.has(CustomizableUI.AREA_PANEL) &&
         gBuildAreas.get(CustomizableUI.AREA_PANEL).has(aPanelContents)) {
       return;
@@ -935,7 +935,7 @@ var CustomizableUIInternal = {
     this.registerBuildArea(CustomizableUI.AREA_PANEL, aPanelContents);
   },
 
-  onWidgetAdded(aWidgetId, aArea, aPosition) {
+  onWidgetAdded: function(aWidgetId, aArea, aPosition) {
     this.insertNode(aWidgetId, aArea, aPosition, true);
 
     if (!gResetting) {
@@ -943,7 +943,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  onWidgetRemoved(aWidgetId, aArea) {
+  onWidgetRemoved: function(aWidgetId, aArea) {
     let areaNodes = gBuildAreas.get(aArea);
     if (!areaNodes) {
       return;
@@ -1003,18 +1003,18 @@ var CustomizableUIInternal = {
     }
   },
 
-  onWidgetMoved(aWidgetId, aArea, aOldPosition, aNewPosition) {
+  onWidgetMoved: function(aWidgetId, aArea, aOldPosition, aNewPosition) {
     this.insertNode(aWidgetId, aArea, aNewPosition);
     if (!gResetting) {
       this._clearPreviousUIState();
     }
   },
 
-  onCustomizeEnd(aWindow) {
+  onCustomizeEnd: function(aWindow) {
     this._clearPreviousUIState();
   },
 
-  registerBuildArea(aArea, aNode) {
+  registerBuildArea: function(aArea, aNode) {
     
     
     let window = aNode.ownerGlobal;
@@ -1039,7 +1039,7 @@ var CustomizableUIInternal = {
     customizableNode.classList.add("customization-target");
   },
 
-  registerBuildWindow(aWindow) {
+  registerBuildWindow: function(aWindow) {
     if (!gBuildWindows.has(aWindow)) {
       gBuildWindows.set(aWindow, new Set());
 
@@ -1050,7 +1050,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  unregisterBuildWindow(aWindow) {
+  unregisterBuildWindow: function(aWindow) {
     aWindow.removeEventListener("unload", this);
     aWindow.removeEventListener("command", this, true);
     gPanelsForWindow.delete(aWindow);
@@ -1093,7 +1093,7 @@ var CustomizableUIInternal = {
     this.notifyListeners("onWindowClosed", aWindow);
   },
 
-  setLocationAttributes(aNode, aArea) {
+  setLocationAttributes: function(aNode, aArea) {
     let props = gAreas.get(aArea);
     if (!props) {
       throw new Error("Expected area " + aArea + " to have a properties Map " +
@@ -1109,12 +1109,12 @@ var CustomizableUIInternal = {
     }
   },
 
-  removeLocationAttributes(aNode) {
+  removeLocationAttributes: function(aNode) {
     aNode.removeAttribute("cui-areatype");
     aNode.removeAttribute("cui-anchorid");
   },
 
-  insertNode(aWidgetId, aArea, aPosition, isNew) {
+  insertNode: function(aWidgetId, aArea, aPosition, isNew) {
     let areaNodes = gBuildAreas.get(aArea);
     if (!areaNodes) {
       return;
@@ -1134,7 +1134,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  insertNodeInWindow(aWidgetId, aAreaNode, isNew) {
+  insertNodeInWindow: function(aWidgetId, aAreaNode, isNew) {
     let window = aAreaNode.ownerGlobal;
     let showInPrivateBrowsing = gPalette.has(aWidgetId)
                               ? gPalette.get(aWidgetId).showInPrivateBrowsing
@@ -1166,7 +1166,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  findInsertionPoints(aNode, aAreaNode) {
+  findInsertionPoints: function(aNode, aAreaNode) {
     let areaId = aAreaNode.id;
     let props = gAreas.get(areaId);
 
@@ -1191,14 +1191,14 @@ var CustomizableUIInternal = {
     return [container, null];
   },
 
-  insertWidgetBefore(aNode, aNextNode, aContainer, aArea) {
+  insertWidgetBefore: function(aNode, aNextNode, aContainer, aArea) {
     this.notifyListeners("onWidgetBeforeDOMChange", aNode, aNextNode, aContainer);
     this.setLocationAttributes(aNode, aArea);
     aContainer.insertBefore(aNode, aNextNode);
     this.notifyListeners("onWidgetAfterDOMChange", aNode, aNextNode, aContainer);
   },
 
-  handleEvent(aEvent) {
+  handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "command":
         if (!this._originalEventInPanel(aEvent)) {
@@ -1216,7 +1216,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  _originalEventInPanel(aEvent) {
+  _originalEventInPanel: function(aEvent) {
     let e = aEvent.sourceEvent;
     if (!e) {
       return false;
@@ -1230,14 +1230,14 @@ var CustomizableUIInternal = {
     return !!panels && panels.has(node);
   },
 
-  isSpecialWidget(aId) {
+  isSpecialWidget: function(aId) {
     return (aId.startsWith(kSpecialWidgetPfx) ||
             aId.startsWith("separator") ||
             aId.startsWith("spring") ||
             aId.startsWith("spacer"));
   },
 
-  ensureSpecialWidgetId(aId) {
+  ensureSpecialWidgetId: function(aId) {
     let nodeType = aId.match(/spring|spacer|separator/)[0];
     
     if (nodeType == aId) {
@@ -1247,7 +1247,7 @@ var CustomizableUIInternal = {
     return aId;
   },
 
-  createSpecialWidget(aId, aDocument) {
+  createSpecialWidget: function(aId, aDocument) {
     let nodeName = "toolbar" + aId.match(/spring|spacer|separator/)[0];
     let node = aDocument.createElementNS(kNSXUL, nodeName);
     node.id = this.ensureSpecialWidgetId(aId);
@@ -1260,7 +1260,7 @@ var CustomizableUIInternal = {
   
 
 
-  findWidgetInWindow(aId, aWindow) {
+  findWidgetInWindow: function(aId, aWindow) {
     if (!gBuildWindows.has(aWindow)) {
       throw new Error("Build window not registered");
     }
@@ -1322,7 +1322,7 @@ var CustomizableUIInternal = {
     return null;
   },
 
-  buildWidget(aDocument, aWidget) {
+  buildWidget: function(aDocument, aWidget) {
     if (aDocument.documentURI != kExpectedWindowURL) {
       throw new Error("buildWidget was called for a non-browser window!");
     }
@@ -1417,7 +1417,7 @@ var CustomizableUIInternal = {
     return node;
   },
 
-  getLocalizedProperty(aWidget, aProp, aFormatArgs, aDef) {
+  getLocalizedProperty: function(aWidget, aProp, aFormatArgs, aDef) {
     const kReqStringProps = ["label"];
 
     if (typeof aWidget == "string") {
@@ -1456,7 +1456,7 @@ var CustomizableUIInternal = {
     return def;
   },
 
-  addShortcut(aShortcutNode, aTargetNode = aShortcutNode) {
+  addShortcut: function(aShortcutNode, aTargetNode = aShortcutNode) {
     
     if (aTargetNode.hasAttribute("shortcut"))
       return;
@@ -1478,7 +1478,7 @@ var CustomizableUIInternal = {
     aTargetNode.setAttribute("shortcut", ShortcutUtils.prettifyShortcut(shortcut));
   },
 
-  handleWidgetCommand(aWidget, aNode, aEvent) {
+  handleWidgetCommand: function(aWidget, aNode, aEvent) {
     log.debug("handleWidgetCommand");
 
     if (aWidget.type == "button") {
@@ -1509,7 +1509,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  handleWidgetClick(aWidget, aNode, aEvent) {
+  handleWidgetClick: function(aWidget, aNode, aEvent) {
     log.debug("handleWidgetClick");
     if (aWidget.onClick) {
       try {
@@ -1523,7 +1523,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  _getPanelForNode(aNode) {
+  _getPanelForNode: function(aNode) {
     let panel = aNode;
     while (panel && panel.localName != "panel")
       panel = panel.parentNode;
@@ -1536,7 +1536,7 @@ var CustomizableUIInternal = {
 
 
 
-  _isOnInteractiveElement(aEvent) {
+  _isOnInteractiveElement: function(aEvent) {
     function getMenuPopupForDescendant(aNode) {
       let lastPopup = null;
       while (aNode && aNode.parentNode &&
@@ -1652,14 +1652,14 @@ var CustomizableUIInternal = {
     return inInput || !inItem;
   },
 
-  hidePanelForNode(aNode) {
+  hidePanelForNode: function(aNode) {
     let panel = this._getPanelForNode(aNode);
     if (panel) {
       panel.hidePopup();
     }
   },
 
-  maybeAutoHidePanel(aEvent) {
+  maybeAutoHidePanel: function(aEvent) {
     if (aEvent.type == "keypress") {
       if (aEvent.keyCode != aEvent.DOM_VK_RETURN) {
         return;
@@ -1714,7 +1714,7 @@ var CustomizableUIInternal = {
     this.hidePanelForNode(aEvent.target);
   },
 
-  getUnusedWidgets(aWindowPalette) {
+  getUnusedWidgets: function(aWindowPalette) {
     let window = aWindowPalette.ownerGlobal;
     let isWindowPrivate = PrivateBrowsingUtils.isWindowPrivate(window);
     
@@ -1745,7 +1745,7 @@ var CustomizableUIInternal = {
     return [...widgets];
   },
 
-  getPlacementOfWidget(aWidgetId, aOnlyRegistered, aDeadAreas) {
+  getPlacementOfWidget: function(aWidgetId, aOnlyRegistered, aDeadAreas) {
     if (aOnlyRegistered && !this.widgetExists(aWidgetId)) {
       return null;
     }
@@ -1756,14 +1756,14 @@ var CustomizableUIInternal = {
       }
       let index = placements.indexOf(aWidgetId);
       if (index != -1) {
-        return { area, position: index };
+        return { area: area, position: index };
       }
     }
 
     return null;
   },
 
-  widgetExists(aWidgetId) {
+  widgetExists: function(aWidgetId) {
     if (gPalette.has(aWidgetId) || this.isSpecialWidget(aWidgetId)) {
       return true;
     }
@@ -1778,7 +1778,7 @@ var CustomizableUIInternal = {
     return true;
   },
 
-  addWidgetToArea(aWidgetId, aArea, aPosition, aInitialAdd) {
+  addWidgetToArea: function(aWidgetId, aArea, aPosition, aInitialAdd) {
     if (!gAreas.has(aArea)) {
       throw new Error("Unknown customization area: " + aArea);
     }
@@ -1852,7 +1852,7 @@ var CustomizableUIInternal = {
     this.notifyListeners("onWidgetAdded", aWidgetId, aArea, aPosition);
   },
 
-  removeWidgetFromArea(aWidgetId) {
+  removeWidgetFromArea: function(aWidgetId) {
     let oldPlacement = this.getPlacementOfWidget(aWidgetId, false, true);
     if (!oldPlacement) {
       return;
@@ -1881,7 +1881,7 @@ var CustomizableUIInternal = {
     this.notifyListeners("onWidgetRemoved", aWidgetId, oldPlacement.area);
   },
 
-  moveWidgetWithinArea(aWidgetId, aPosition) {
+  moveWidgetWithinArea: function(aWidgetId, aPosition) {
     let oldPlacement = this.getPlacementOfWidget(aWidgetId);
     if (!oldPlacement) {
       return;
@@ -1930,7 +1930,7 @@ var CustomizableUIInternal = {
   
   
   
-  loadSavedState() {
+  loadSavedState: function() {
     let state = null;
     try {
       state = Services.prefs.getCharPref(kPrefCustomizationState);
@@ -1967,7 +1967,7 @@ var CustomizableUIInternal = {
     gNewElementCount = gSavedState.newElementCount || 0;
   },
 
-  restoreStateForArea(aArea, aLegacyState) {
+  restoreStateForArea: function(aArea, aLegacyState) {
     let placementsPreexisted = gPlacements.has(aArea);
 
     this.beginBatchUpdate();
@@ -2031,7 +2031,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  saveState() {
+  saveState: function() {
     if (gInBatchStack || !gDirty) {
       return;
     }
@@ -2061,7 +2061,7 @@ var CustomizableUIInternal = {
     gDirty = false;
   },
 
-  serializerHelper(aKey, aValue) {
+  serializerHelper: function(aKey, aValue) {
     if (typeof aValue == "object" && aValue.constructor.name == "Map") {
       let result = {};
       for (let [mapKey, mapValue] of aValue)
@@ -2076,11 +2076,11 @@ var CustomizableUIInternal = {
     return aValue;
   },
 
-  beginBatchUpdate() {
+  beginBatchUpdate: function() {
     gInBatchStack++;
   },
 
-  endBatchUpdate(aForceDirty) {
+  endBatchUpdate: function(aForceDirty) {
     gInBatchStack--;
     if (aForceDirty === true) {
       gDirty = true;
@@ -2092,11 +2092,11 @@ var CustomizableUIInternal = {
     }
   },
 
-  addListener(aListener) {
+  addListener: function(aListener) {
     gListeners.add(aListener);
   },
 
-  removeListener(aListener) {
+  removeListener: function(aListener) {
     if (aListener == this) {
       return;
     }
@@ -2104,7 +2104,7 @@ var CustomizableUIInternal = {
     gListeners.delete(aListener);
   },
 
-  notifyListeners(aEvent, ...aArgs) {
+  notifyListeners: function(aEvent, ...aArgs) {
     if (gRestoring) {
       return;
     }
@@ -2120,7 +2120,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  _dispatchToolboxEventToWindow(aEventType, aDetails, aWindow) {
+  _dispatchToolboxEventToWindow: function(aEventType, aDetails, aWindow) {
     let evt = new aWindow.CustomEvent(aEventType, {
       bubbles: true,
       cancelable: true,
@@ -2129,7 +2129,7 @@ var CustomizableUIInternal = {
     aWindow.gNavToolbox.dispatchEvent(evt);
   },
 
-  dispatchToolboxEvent(aEventType, aDetails = {}, aWindow = null) {
+  dispatchToolboxEvent: function(aEventType, aDetails = {}, aWindow = null) {
     if (aWindow) {
       this._dispatchToolboxEventToWindow(aEventType, aDetails, aWindow);
       return;
@@ -2139,7 +2139,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  createWidget(aProperties) {
+  createWidget: function(aProperties) {
     let widget = this.normalizeWidget(aProperties, CustomizableUI.SOURCE_EXTERNAL);
     
     if (!widget) {
@@ -2256,7 +2256,7 @@ var CustomizableUIInternal = {
     return widget.id;
   },
 
-  createBuiltinWidget(aData) {
+  createBuiltinWidget: function(aData) {
     
     
     
@@ -2291,7 +2291,7 @@ var CustomizableUIInternal = {
   },
 
   
-  isAreaLazy(aArea) {
+  isAreaLazy: function(aArea) {
     if (gPlacements.has(aArea)) {
       return false;
     }
@@ -2299,7 +2299,7 @@ var CustomizableUIInternal = {
   },
 
   
-  normalizeWidget(aData, aSource) {
+  normalizeWidget: function(aData, aSource) {
     let widget = {
       implementation: aData,
       source: aSource || CustomizableUI.SOURCE_EXTERNAL,
@@ -2400,7 +2400,7 @@ var CustomizableUIInternal = {
     return widget;
   },
 
-  wrapWidgetEventHandler(aEventName, aWidget) {
+  wrapWidgetEventHandler: function(aEventName, aWidget) {
     if (typeof aWidget.implementation[aEventName] != "function") {
       aWidget[aEventName] = null;
       return;
@@ -2422,7 +2422,7 @@ var CustomizableUIInternal = {
     };
   },
 
-  destroyWidget(aWidgetId) {
+  destroyWidget: function(aWidgetId) {
     let widget = gPalette.get(aWidgetId);
     if (!widget) {
       gGroupWrapperCache.delete(aWidgetId);
@@ -2489,7 +2489,7 @@ var CustomizableUIInternal = {
     this.notifyListeners("onWidgetDestroyed", aWidgetId);
   },
 
-  getCustomizeTargetForArea(aArea, aWindow) {
+  getCustomizeTargetForArea: function(aArea, aWindow) {
     let buildAreaNodes = gBuildAreas.get(aArea);
     if (!buildAreaNodes) {
       return null;
@@ -2504,7 +2504,7 @@ var CustomizableUIInternal = {
     return null;
   },
 
-  reset() {
+  reset: function() {
     gResetting = true;
     this._resetUIState();
 
@@ -2524,7 +2524,7 @@ var CustomizableUIInternal = {
     gResetting = false;
   },
 
-  _resetUIState() {
+  _resetUIState: function() {
     try {
       gUIStateBeforeReset.drawInTitlebar = Services.prefs.getBoolPref(kPrefDrawInTitlebar);
       gUIStateBeforeReset.uiCustomizationState = Services.prefs.getCharPref(kPrefCustomizationState);
@@ -2550,7 +2550,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  _resetExtraToolbars(aFilter = null) {
+  _resetExtraToolbars: function(aFilter = null) {
     let firstWindow = true; 
     for (let [win, ] of gBuildWindows) {
       let toolbox = win.gNavToolbox;
@@ -2572,7 +2572,7 @@ var CustomizableUIInternal = {
     }
   },
 
-  _rebuildRegisteredAreas() {
+  _rebuildRegisteredAreas: function() {
     for (let [areaId, areaNodes] of gBuildAreas) {
       let placements = gPlacements.get(areaId);
       let isFirstChangedToolbar = true;
@@ -2595,7 +2595,7 @@ var CustomizableUIInternal = {
   
 
 
-  undoReset() {
+  undoReset: function() {
     if (gUIStateBeforeReset.uiCustomizationState == null ||
         gUIStateBeforeReset.drawInTitlebar == null) {
       return;
@@ -2627,13 +2627,13 @@ var CustomizableUIInternal = {
     gUndoResetting = false;
   },
 
-  _clearPreviousUIState() {
+  _clearPreviousUIState: function() {
     Object.getOwnPropertyNames(gUIStateBeforeReset).forEach((prop) => {
       gUIStateBeforeReset[prop] = null;
     });
   },
 
-  removeExtraToolbar(aToolbarId) {
+  removeExtraToolbar: function(aToolbarId) {
     this._resetExtraToolbars(aToolbarId);
   },
 
@@ -2641,7 +2641,7 @@ var CustomizableUIInternal = {
 
 
 
-  isWidgetRemovable(aWidget) {
+  isWidgetRemovable: function(aWidget) {
     let widgetId;
     let widgetNode;
     if (typeof aWidget == "string") {
@@ -2684,7 +2684,7 @@ var CustomizableUIInternal = {
     return true;
   },
 
-  canWidgetMoveToArea(aWidgetId, aArea) {
+  canWidgetMoveToArea: function(aWidgetId, aArea) {
     let placement = this.getPlacementOfWidget(aWidgetId);
     if (placement && placement.area != aArea) {
       
@@ -2699,7 +2699,7 @@ var CustomizableUIInternal = {
     return true;
   },
 
-  ensureWidgetPlacedInWindow(aWidgetId, aWindow) {
+  ensureWidgetPlacedInWindow: function(aWidgetId, aWindow) {
     let placement = this.getPlacementOfWidget(aWidgetId);
     if (!placement) {
       return false;
@@ -2799,7 +2799,7 @@ var CustomizableUIInternal = {
     return true;
   },
 
-  setToolbarVisibility(aToolbarId, aIsVisible) {
+  setToolbarVisibility: function(aToolbarId, aIsVisible) {
     
     let isFirstChangedToolbar = true;
     for (let window of CustomizableUI.windows) {
@@ -3003,14 +3003,14 @@ this.CustomizableUI = {
 
 
 
-  addListener(aListener) {
+  addListener: function(aListener) {
     CustomizableUIInternal.addListener(aListener);
   },
   
 
 
 
-  removeListener(aListener) {
+  removeListener: function(aListener) {
     CustomizableUIInternal.removeListener(aListener);
   },
 
@@ -3036,7 +3036,7 @@ this.CustomizableUI = {
 
 
 
-  registerArea(aName, aProperties) {
+  registerArea: function(aName, aProperties) {
     CustomizableUIInternal.registerArea(aName, aProperties);
   },
   
@@ -3055,7 +3055,7 @@ this.CustomizableUI = {
 
 
 
-  registerToolbarNode(aToolbar, aExistingChildren) {
+  registerToolbarNode: function(aToolbar, aExistingChildren) {
     CustomizableUIInternal.registerToolbarNode(aToolbar, aExistingChildren);
   },
   
@@ -3063,7 +3063,7 @@ this.CustomizableUI = {
 
 
 
-  registerMenuPanel(aPanel) {
+  registerMenuPanel: function(aPanel) {
     CustomizableUIInternal.registerMenuPanel(aPanel);
   },
   
@@ -3087,7 +3087,7 @@ this.CustomizableUI = {
 
 
 
-  unregisterArea(aName, aDestroyPlacements) {
+  unregisterArea: function(aName, aDestroyPlacements) {
     CustomizableUIInternal.unregisterArea(aName, aDestroyPlacements);
   },
   
@@ -3112,7 +3112,7 @@ this.CustomizableUI = {
 
 
 
-  addWidgetToArea(aWidgetId, aArea, aPosition) {
+  addWidgetToArea: function(aWidgetId, aArea, aPosition) {
     CustomizableUIInternal.addWidgetToArea(aWidgetId, aArea, aPosition);
   },
   
@@ -3124,7 +3124,7 @@ this.CustomizableUI = {
 
 
 
-  removeWidgetFromArea(aWidgetId) {
+  removeWidgetFromArea: function(aWidgetId) {
     CustomizableUIInternal.removeWidgetFromArea(aWidgetId);
   },
   
@@ -3142,7 +3142,7 @@ this.CustomizableUI = {
 
 
 
-  moveWidgetWithinArea(aWidgetId, aPosition) {
+  moveWidgetWithinArea: function(aWidgetId, aPosition) {
     CustomizableUIInternal.moveWidgetWithinArea(aWidgetId, aPosition);
   },
   
@@ -3161,7 +3161,7 @@ this.CustomizableUI = {
 
 
 
-  ensureWidgetPlacedInWindow(aWidgetId, aWindow) {
+  ensureWidgetPlacedInWindow: function(aWidgetId, aWindow) {
     return CustomizableUIInternal.ensureWidgetPlacedInWindow(aWidgetId, aWindow);
   },
   
@@ -3176,7 +3176,7 @@ this.CustomizableUI = {
 
 
 
-  beginBatchUpdate() {
+  beginBatchUpdate: function() {
     CustomizableUIInternal.beginBatchUpdate();
   },
   
@@ -3191,7 +3191,7 @@ this.CustomizableUI = {
 
 
 
-  endBatchUpdate(aForceDirty) {
+  endBatchUpdate: function(aForceDirty) {
     CustomizableUIInternal.endBatchUpdate(aForceDirty);
   },
   
@@ -3267,7 +3267,7 @@ this.CustomizableUI = {
 
 
 
-  createWidget(aProperties) {
+  createWidget: function(aProperties) {
     return CustomizableUIInternal.wrapWidget(
       CustomizableUIInternal.createWidget(aProperties)
     );
@@ -3283,7 +3283,7 @@ this.CustomizableUI = {
 
 
 
-  destroyWidget(aWidgetId) {
+  destroyWidget: function(aWidgetId) {
     CustomizableUIInternal.destroyWidget(aWidgetId);
   },
   
@@ -3346,7 +3346,7 @@ this.CustomizableUI = {
 
 
 
-  getWidget(aWidgetId) {
+  getWidget: function(aWidgetId) {
     return CustomizableUIInternal.wrapWidget(aWidgetId);
   },
   
@@ -3363,7 +3363,7 @@ this.CustomizableUI = {
 
 
 
-  getUnusedWidgets(aWindowPalette) {
+  getUnusedWidgets: function(aWindowPalette) {
     return CustomizableUIInternal.getUnusedWidgets(aWindowPalette).map(
       CustomizableUIInternal.wrapWidget,
       CustomizableUIInternal
@@ -3380,7 +3380,7 @@ this.CustomizableUI = {
 
 
 
-  getWidgetIdsInArea(aArea) {
+  getWidgetIdsInArea: function(aArea) {
     if (!gAreas.has(aArea)) {
       throw new Error("Unknown customization area: " + aArea);
     }
@@ -3406,7 +3406,7 @@ this.CustomizableUI = {
 
 
 
-  getWidgetsInArea(aArea) {
+  getWidgetsInArea: function(aArea) {
     return this.getWidgetIdsInArea(aArea).map(
       CustomizableUIInternal.wrapWidget,
       CustomizableUIInternal
@@ -3430,7 +3430,7 @@ this.CustomizableUI = {
 
 
 
-  getAreaType(aArea) {
+  getAreaType: function(aArea) {
     let area = gAreas.get(aArea);
     return area ? area.get("type") : null;
   },
@@ -3441,7 +3441,7 @@ this.CustomizableUI = {
 
 
 
-  isToolbarDefaultCollapsed(aArea) {
+  isToolbarDefaultCollapsed: function(aArea) {
     let area = gAreas.get(aArea);
     return area ? area.get("defaultCollapsed") : null;
   },
@@ -3469,7 +3469,7 @@ this.CustomizableUI = {
 
 
 
-  getCustomizeTargetForArea(aArea, aWindow) {
+  getCustomizeTargetForArea: function(aArea, aWindow) {
     return CustomizableUIInternal.getCustomizeTargetForArea(aArea, aWindow);
   },
   
@@ -3479,7 +3479,7 @@ this.CustomizableUI = {
 
 
 
-  reset() {
+  reset: function() {
     CustomizableUIInternal.reset();
   },
 
@@ -3487,7 +3487,7 @@ this.CustomizableUI = {
 
 
 
-  undoReset() {
+  undoReset: function() {
     CustomizableUIInternal.undoReset();
   },
 
@@ -3498,7 +3498,7 @@ this.CustomizableUI = {
 
 
 
-  removeExtraToolbar(aToolbarId) {
+  removeExtraToolbar: function(aToolbarId) {
     CustomizableUIInternal.removeExtraToolbar(aToolbarId);
   },
 
@@ -3532,7 +3532,7 @@ this.CustomizableUI = {
 
 
 
-  getPlacementOfWidget(aWidgetId, aOnlyRegistered = true, aDeadAreas = false) {
+  getPlacementOfWidget: function(aWidgetId, aOnlyRegistered = true, aDeadAreas = false) {
     return CustomizableUIInternal.getPlacementOfWidget(aWidgetId, aOnlyRegistered, aDeadAreas);
   },
   
@@ -3553,7 +3553,7 @@ this.CustomizableUI = {
 
 
 
-  isWidgetRemovable(aWidgetId) {
+  isWidgetRemovable: function(aWidgetId) {
     return CustomizableUIInternal.isWidgetRemovable(aWidgetId);
   },
   
@@ -3566,7 +3566,7 @@ this.CustomizableUI = {
 
 
 
-  canWidgetMoveToArea(aWidgetId, aArea) {
+  canWidgetMoveToArea: function(aWidgetId, aArea) {
     return CustomizableUIInternal.canWidgetMoveToArea(aWidgetId, aArea);
   },
   
@@ -3587,7 +3587,7 @@ this.CustomizableUI = {
 
 
 
-  setToolbarVisibility(aToolbarId, aIsVisible) {
+  setToolbarVisibility: function(aToolbarId, aIsVisible) {
     CustomizableUIInternal.setToolbarVisibility(aToolbarId, aIsVisible);
   },
 
@@ -3614,7 +3614,7 @@ this.CustomizableUI = {
 
 
 
-  getLocalizedProperty(aWidget, aProp, aFormatArgs, aDef) {
+  getLocalizedProperty: function(aWidget, aProp, aFormatArgs, aDef) {
     return CustomizableUIInternal.getLocalizedProperty(aWidget, aProp,
       aFormatArgs, aDef);
   },
@@ -3627,7 +3627,7 @@ this.CustomizableUI = {
 
 
 
-  addShortcut(aShortcutNode, aTargetNode) {
+  addShortcut: function(aShortcutNode, aTargetNode) {
     return CustomizableUIInternal.addShortcut(aShortcutNode, aTargetNode);
   },
   
@@ -3636,7 +3636,7 @@ this.CustomizableUI = {
 
 
 
-  hidePanelForNode(aNode) {
+  hidePanelForNode: function(aNode) {
     CustomizableUIInternal.hidePanelForNode(aNode);
   },
   
@@ -3645,7 +3645,7 @@ this.CustomizableUI = {
 
 
 
-  isSpecialWidget(aWidgetId) {
+  isSpecialWidget: function(aWidgetId) {
     return CustomizableUIInternal.isSpecialWidget(aWidgetId);
   },
   
@@ -3655,7 +3655,7 @@ this.CustomizableUI = {
 
 
 
-  addPanelCloseListeners(aPanel) {
+  addPanelCloseListeners: function(aPanel) {
     CustomizableUIInternal.addPanelCloseListeners(aPanel);
   },
   
@@ -3665,7 +3665,7 @@ this.CustomizableUI = {
 
 
 
-  removePanelCloseListeners(aPanel) {
+  removePanelCloseListeners: function(aPanel) {
     CustomizableUIInternal.removePanelCloseListeners(aPanel);
   },
   
@@ -3675,7 +3675,7 @@ this.CustomizableUI = {
 
 
 
-  onWidgetDrag(aWidgetId, aArea) {
+  onWidgetDrag: function(aWidgetId, aArea) {
     CustomizableUIInternal.notifyListeners("onWidgetDrag", aWidgetId, aArea);
   },
   
@@ -3683,7 +3683,7 @@ this.CustomizableUI = {
 
 
 
-  notifyStartCustomizing(aWindow) {
+  notifyStartCustomizing: function(aWindow) {
     CustomizableUIInternal.notifyListeners("onCustomizeStart", aWindow);
   },
   
@@ -3691,7 +3691,7 @@ this.CustomizableUI = {
 
 
 
-  notifyEndCustomizing(aWindow) {
+  notifyEndCustomizing: function(aWindow) {
     CustomizableUIInternal.notifyListeners("onCustomizeEnd", aWindow);
   },
 
@@ -3703,7 +3703,7 @@ this.CustomizableUI = {
 
 
 
-  dispatchToolboxEvent(aEvent, aDetails = {}, aWindow = null) {
+  dispatchToolboxEvent: function(aEvent, aDetails = {}, aWindow = null) {
     CustomizableUIInternal.dispatchToolboxEvent(aEvent, aDetails, aWindow);
   },
 
@@ -3713,7 +3713,7 @@ this.CustomizableUI = {
 
 
 
-  isAreaOverflowable(aAreaId) {
+  isAreaOverflowable: function(aAreaId) {
     let area = gAreas.get(aAreaId);
     return area ? area.get("type") == this.TYPE_TOOLBAR && area.get("overflowable")
                 : false;
@@ -3728,7 +3728,7 @@ this.CustomizableUI = {
 
 
 
-  getPlaceForItem(aElement) {
+  getPlaceForItem: function(aElement) {
     let place;
     let node = aElement;
     while (node && !place) {
@@ -3748,7 +3748,7 @@ this.CustomizableUI = {
 
 
 
-  isBuiltinToolbar(aToolbarId) {
+  isBuiltinToolbar: function(aToolbarId) {
     return CustomizableUIInternal._builtinToolbars.has(aToolbarId);
   },
 };
@@ -4038,7 +4038,7 @@ OverflowableToolbar.prototype = {
   initialized: false,
   _forceOnOverflow: false,
 
-  observe(aSubject, aTopic, aData) {
+  observe: function(aSubject, aTopic, aData) {
     if (aTopic == "browser-delayed-startup-finished" &&
         aSubject == this._toolbar.ownerGlobal) {
       Services.obs.removeObserver(this, "browser-delayed-startup-finished");
@@ -4046,7 +4046,7 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  init() {
+  init: function() {
     let doc = this._toolbar.ownerDocument;
     let window = doc.defaultView;
     window.addEventListener("resize", this);
@@ -4075,7 +4075,7 @@ OverflowableToolbar.prototype = {
     this.initialized = true;
   },
 
-  uninit() {
+  uninit: function() {
     this._toolbar.removeEventListener("overflow", this._toolbar);
     this._toolbar.removeEventListener("underflow", this._toolbar);
     this._toolbar.removeAttribute("overflowable");
@@ -4099,7 +4099,7 @@ OverflowableToolbar.prototype = {
     CustomizableUIInternal.removePanelCloseListeners(this._panel);
   },
 
-  handleEvent(aEvent) {
+  handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "aftercustomization":
         this._enable();
@@ -4128,7 +4128,7 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  show() {
+  show: function() {
     if (this._panel.state == "open") {
       return Promise.resolve();
     }
@@ -4151,7 +4151,7 @@ OverflowableToolbar.prototype = {
     });
   },
 
-  _onClickChevron(aEvent) {
+  _onClickChevron: function(aEvent) {
     if (this._chevron.open) {
       this._panel.hidePopup();
       this._chevron.open = false;
@@ -4160,7 +4160,7 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  _onPanelHiding(aEvent) {
+  _onPanelHiding: function(aEvent) {
     this._chevron.open = false;
     this._panel.removeEventListener("dragover", this);
     this._panel.removeEventListener("dragend", this);
@@ -4169,7 +4169,7 @@ OverflowableToolbar.prototype = {
     gELS.removeSystemEventListener(contextMenu, 'command', this, true);
   },
 
-  onOverflow(aEvent) {
+  onOverflow: function(aEvent) {
     
     
     
@@ -4202,7 +4202,7 @@ OverflowableToolbar.prototype = {
     win.UpdateUrlbarSearchSplitterState();
   },
 
-  _onResize(aEvent) {
+  _onResize: function(aEvent) {
     if (!this._lazyResizeHandler) {
       this._lazyResizeHandler = new DeferredTask(this._onLazyResize.bind(this),
                                                  LAZY_RESIZE_INTERVAL_MS);
@@ -4210,7 +4210,7 @@ OverflowableToolbar.prototype = {
     this._lazyResizeHandler.arm();
   },
 
-  _moveItemsBackToTheirOrigin(shouldMoveAllItems) {
+  _moveItemsBackToTheirOrigin: function(shouldMoveAllItems) {
     let placements = gPlacements.get(this._toolbar.id);
     while (this._list.firstChild) {
       let child = this._list.firstChild;
@@ -4256,7 +4256,7 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  _onLazyResize() {
+  _onLazyResize: function() {
     if (!this._enabled)
       return;
 
@@ -4267,7 +4267,7 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  _disable() {
+  _disable: function() {
     this._enabled = false;
     this._moveItemsBackToTheirOrigin(true);
     if (this._lazyResizeHandler) {
@@ -4275,12 +4275,12 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  _enable() {
+  _enable: function() {
     this._enabled = true;
     this.onOverflow();
   },
 
-  onWidgetBeforeDOMChange(aNode, aNextNode, aContainer) {
+  onWidgetBeforeDOMChange: function(aNode, aNextNode, aContainer) {
     if (aContainer != this._target && aContainer != this._list) {
       return;
     }
@@ -4303,7 +4303,7 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  onWidgetAfterDOMChange(aNode, aNextNode, aContainer) {
+  onWidgetAfterDOMChange: function(aNode, aNextNode, aContainer) {
     if (aContainer != this._target && aContainer != this._list) {
       return;
     }
@@ -4358,7 +4358,7 @@ OverflowableToolbar.prototype = {
     }
   },
 
-  findOverflowedInsertionPoints(aNode) {
+  findOverflowedInsertionPoints: function(aNode) {
     let newNodeCanOverflow = aNode.getAttribute("overflows") != "false";
     let areaId = this._toolbar.id;
     let placements = gPlacements.get(areaId);
@@ -4391,7 +4391,7 @@ OverflowableToolbar.prototype = {
     return [containerForAppending, null];
   },
 
-  getContainerFor(aNode) {
+  getContainerFor: function(aNode) {
     if (aNode.getAttribute("overflowedItem") == "true") {
       return this._list;
     }
@@ -4399,7 +4399,7 @@ OverflowableToolbar.prototype = {
   },
 
   _hideTimeoutId: null,
-  _showWithTimeout() {
+  _showWithTimeout: function() {
     this.show().then(function() {
       let window = this._toolbar.ownerGlobal;
       if (this._hideTimeoutId) {

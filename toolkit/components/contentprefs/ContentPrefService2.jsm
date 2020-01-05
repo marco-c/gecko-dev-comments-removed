@@ -418,7 +418,7 @@ ContentPrefService2.prototype = {
   },
 
   
-  _settingsAndGroupsCleanupStmts() {
+  _settingsAndGroupsCleanupStmts: function() {
     
     
     return [

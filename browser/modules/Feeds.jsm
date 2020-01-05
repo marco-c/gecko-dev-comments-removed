@@ -72,7 +72,7 @@ this.Feeds = {
 
 
 
-  isValidFeed(aLink, aPrincipal, aIsFeed) {
+  isValidFeed: function(aLink, aPrincipal, aIsFeed) {
     if (!aLink || !aPrincipal)
       return false;
 

@@ -59,7 +59,7 @@ const BackgroundPageThumbs = {
 
 
 
-  capture(url, options = {}) {
+  capture: function(url, options = {}) {
     if (!PageThumbs._prefEnabled()) {
       if (options.onDone)
         schedule(() => options.onDone(url));
@@ -139,7 +139,7 @@ const BackgroundPageThumbs = {
 
 
 
-  renewThumbnailBrowser() {
+  renewThumbnailBrowser: function() {
     this._renewThumbBrowser = true;
   },
 
@@ -150,7 +150,7 @@ const BackgroundPageThumbs = {
 
 
 
-  _ensureParentWindowReady() {
+  _ensureParentWindowReady: function() {
     if (this._parentWin)
       
       return true;
@@ -182,7 +182,7 @@ const BackgroundPageThumbs = {
 
 
 
-  _destroy() {
+  _destroy: function() {
     if (this._captureQueue)
       this._captureQueue.forEach(cap => cap.destroy());
     this._destroyBrowser();
@@ -197,7 +197,7 @@ const BackgroundPageThumbs = {
   
 
 
-  _ensureBrowser() {
+  _ensureBrowser: function() {
     if (this._thumbBrowser && !this._renewThumbBrowser)
       return;
 
@@ -264,7 +264,7 @@ const BackgroundPageThumbs = {
     this._thumbBrowser = browser;
   },
 
-  _destroyBrowser() {
+  _destroyBrowser: function() {
     if (!this._thumbBrowser)
       return;
     this._thumbBrowser.remove();
@@ -275,7 +275,7 @@ const BackgroundPageThumbs = {
 
 
 
-  _processCaptureQueue() {
+  _processCaptureQueue: function() {
     if (!this._captureQueue.length ||
         this._captureQueue[0].pending ||
         !this._ensureParentWindowReady())
@@ -294,7 +294,7 @@ const BackgroundPageThumbs = {
 
 
 
-  _onCaptureOrTimeout(capture) {
+  _onCaptureOrTimeout: function(capture) {
     
     
     if (capture !== this._captureQueue[0])
@@ -363,7 +363,7 @@ Capture.prototype = {
 
 
 
-  start(messageManager) {
+  start: function(messageManager) {
     this.startDate = new Date();
     tel("CAPTURE_QUEUE_TIME_MS", this.startDate - this.creationDate);
 
@@ -387,7 +387,7 @@ Capture.prototype = {
 
 
 
-  destroy() {
+  destroy: function() {
     
     
     if (this._timeoutTimer) {
@@ -405,7 +405,7 @@ Capture.prototype = {
   },
 
   
-  receiveMessage(msg) {
+  receiveMessage: function(msg) {
     if (msg.data.imageData)
       tel("CAPTURE_SERVICE_TIME_MS", new Date() - this.startDate);
 
@@ -424,11 +424,11 @@ Capture.prototype = {
   },
 
   
-  notify() {
+  notify: function() {
     this._done(null, TEL_CAPTURE_DONE_TIMEOUT);
   },
 
-  _done(data, reason) {
+  _done: function(data, reason) {
     
     
     

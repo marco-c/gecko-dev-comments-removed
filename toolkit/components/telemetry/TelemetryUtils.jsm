@@ -45,14 +45,14 @@ this.TelemetryUtils = {
 
 
 
-  millisecondsToDays(aMsec) {
+  millisecondsToDays: function(aMsec) {
     return Math.floor(aMsec / MILLISECONDS_PER_DAY);
   },
 
   
 
 
-  truncateToDays(date) {
+  truncateToDays: function(date) {
     return new Date(date.getFullYear(),
                     date.getMonth(),
                     date.getDate(),
@@ -67,7 +67,7 @@ this.TelemetryUtils = {
 
 
 
-  areTimesClose(t1, t2, tolerance) {
+  areTimesClose: function(t1, t2, tolerance) {
     return Math.abs(t1 - t2) <= tolerance;
   },
 
@@ -76,7 +76,7 @@ this.TelemetryUtils = {
 
 
 
-  getNextMidnight(date) {
+  getNextMidnight: function(date) {
     let nextMidnight = new Date(this.truncateToDays(date));
     nextMidnight.setDate(nextMidnight.getDate() + 1);
     return nextMidnight;
@@ -89,7 +89,7 @@ this.TelemetryUtils = {
 
 
 
-  getNearestMidnight(date, tolerance) {
+  getNearestMidnight: function(date, tolerance) {
     let lastMidnight = this.truncateToDays(date);
     if (this.areTimesClose(date.getTime(), lastMidnight.getTime(), tolerance)) {
       return lastMidnight;
@@ -102,7 +102,7 @@ this.TelemetryUtils = {
     return null;
   },
 
-  generateUUID() {
+  generateUUID: function() {
     let str = Cc["@mozilla.org/uuid-generator;1"].getService(Ci.nsIUUIDGenerator).generateUUID().toString();
     
     return str.substring(1, str.length - 1);
@@ -114,7 +114,7 @@ this.TelemetryUtils = {
 
 
 
-  getElapsedTimeInMonths(aStartDate, aEndDate) {
+  getElapsedTimeInMonths: function(aStartDate, aEndDate) {
     return (aEndDate.getMonth() - aStartDate.getMonth())
            + 12 * (aEndDate.getFullYear() - aStartDate.getFullYear());
   },
@@ -125,7 +125,7 @@ this.TelemetryUtils = {
 
 
 
-  toLocalTimeISOString(date) {
+  toLocalTimeISOString: function(date) {
     function padNumber(number, places) {
       number = number.toString();
       while (number.length < places) {

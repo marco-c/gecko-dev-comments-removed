@@ -15,9 +15,9 @@ do_get_profile();
 let window = {
     document: {},
     location: {},
-    setTimeout,
-    setInterval,
-    clearTimeout,
+    setTimeout: setTimeout,
+    setInterval: setInterval,
+    clearTimeout: clearTimeout,
     clearinterval: clearInterval
 };
 let self = window;

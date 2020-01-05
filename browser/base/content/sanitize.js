@@ -38,14 +38,14 @@ function Sanitizer() {
 }
 Sanitizer.prototype = {
   
-  clearItem(aItemName)
+  clearItem: function(aItemName)
   {
     this.items[aItemName].clear();
   },
 
   prefDomain: "",
 
-  getNameFromPreference(aPreferenceName)
+  getNameFromPreference: function(aPreferenceName)
   {
     return aPreferenceName.substr(this.prefDomain.length);
   },
@@ -516,7 +516,7 @@ Sanitizer.prototype = {
 
     openWindows: {
       privateStateForNewWindow: "non-private",
-      _canCloseWindow(aWindow) {
+      _canCloseWindow: function(aWindow) {
         if (aWindow.CanCloseWindow()) {
           
           
@@ -526,7 +526,7 @@ Sanitizer.prototype = {
         }
         return false;
       },
-      _resetAllWindowClosures(aWindowList) {
+      _resetAllWindowClosures: function(aWindowList) {
         for (let win of aWindowList) {
           win.skipNextCanClose = false;
         }

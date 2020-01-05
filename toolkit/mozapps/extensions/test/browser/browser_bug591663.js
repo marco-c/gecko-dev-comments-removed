@@ -88,14 +88,14 @@ add_test(function() {
 
 add_test(function() {
   gItem.addTestListener({
-    onDownloadStarted() {
+    onDownloadStarted: function() {
       
       check_list(null);
     },
-    onInstallStarted() {
+    onInstallStarted: function() {
       check_list(gItem);
     },
-    onInstallEnded() {
+    onInstallEnded: function() {
       check_list(gItem);
       run_next_test();
     }
@@ -127,13 +127,13 @@ add_test(function() {
   check_list(null);
 
   extension.addTestListener({
-    onDownloadStarted() {
+    onDownloadStarted: function() {
       check_list(null);
     },
-    onInstallStarted() {
+    onInstallStarted: function() {
       check_list(null);
     },
-    onInstallEnded() {
+    onInstallEnded: function() {
       check_list(null);
       extension.cancel();
       run_next_test();

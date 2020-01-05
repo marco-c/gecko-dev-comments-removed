@@ -32,11 +32,11 @@ function test() {
       },
     ]
     PlacesUtils.asyncHistory.updatePlaces(places, {
-      handleResult() {},
-      handleError() {
+      handleResult: function() {},
+      handleError: function() {
         ok(false, "gHistory.updatePlaces() failed");
       },
-      handleCompletion() {
+      handleCompletion: function() {
         
         isnot(win.PlacesOrganizer._places.selectedNode, null,
               "Downloads is present and selected");

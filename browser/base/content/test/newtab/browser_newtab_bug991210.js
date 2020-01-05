@@ -7,10 +7,10 @@ add_task(function* () {
 
   
   let afterLoadProvider = {
-    getLinks(callback) {
+    getLinks: function(callback) {
       this.callback = callback;
     },
-    addObserver() {},
+    addObserver: function() {},
   };
   NewTabUtils.links.addProvider(afterLoadProvider);
 

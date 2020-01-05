@@ -221,7 +221,7 @@ add_UITour_task(function* test_heartbeat_take_optional_icon_URL() {
   
   let shownPromise = promiseWaitHeartbeatNotification("Heartbeat:NotificationOffered");
   gContentAPI.showHeartbeat("How would you rate Firefox?", "Thank you!", flowId, engagementURL, null, null, {
-    iconURL
+    iconURL: iconURL
   });
 
   

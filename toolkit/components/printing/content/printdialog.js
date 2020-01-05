@@ -98,7 +98,8 @@ function listElement(aListElement)
 
 listElement.prototype =
   {
-    clearList()
+    clearList:
+      function()
         {
           
           var popup = this.listElement.firstChild;
@@ -107,7 +108,8 @@ listElement.prototype =
           }
         },
 
-    appendPrinterNames(aDataObject)
+    appendPrinterNames:
+      function(aDataObject)
         {
           if ((null == aDataObject) || !aDataObject.hasMore()) {
             

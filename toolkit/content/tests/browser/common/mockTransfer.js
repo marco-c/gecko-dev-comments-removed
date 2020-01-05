@@ -37,24 +37,24 @@ MockTransfer.prototype = {
       
       mockTransferCallback(this._downloadIsSuccessful);
   },
-  onProgressChange() {},
-  onLocationChange() {},
+  onProgressChange: function() {},
+  onLocationChange: function() {},
   onStatusChange: function MTFC_onStatusChange(aWebProgress, aRequest, aStatus,
                                                aMessage) {
     
     if (!Components.isSuccessCode(aStatus))
       this._downloadIsSuccessful = false;
   },
-  onSecurityChange() {},
+  onSecurityChange: function() {},
 
   
-  onProgressChange64() {},
-  onRefreshAttempted() {},
+  onProgressChange64: function() {},
+  onRefreshAttempted: function() {},
 
   
-  init() {},
-  setSha256Hash() {},
-  setSignatureInfo() {}
+  init: function() {},
+  setSha256Hash: function() {},
+  setSignatureInfo: function() {}
 };
 
 

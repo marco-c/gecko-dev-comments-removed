@@ -56,7 +56,7 @@ function promiseExpirableDownloadVisit(aSourceUrl)
                                           aResultCode);
         deferred.reject(ex);
       },
-      handleResult() {},
+      handleResult: function() {},
       handleCompletion: function handleCompletion() {
         deferred.resolve();
       }
@@ -192,7 +192,7 @@ add_task(function* test_notifications_add_remove()
     
     let addNotifications = 0;
     let viewOne = {
-      onDownloadAdded(aDownload) {
+      onDownloadAdded: function(aDownload) {
         
         if (addNotifications == 0) {
           do_check_eq(aDownload, downloadOne);
@@ -212,7 +212,7 @@ add_task(function* test_notifications_add_remove()
     
     let removeNotifications = 0;
     let viewTwo = {
-      onDownloadRemoved(aDownload) {
+      onDownloadRemoved: function(aDownload) {
         do_check_eq(aDownload, downloadOne);
         removeNotifications++;
       },
@@ -257,7 +257,7 @@ add_task(function* test_notifications_change()
     
     let receivedOnDownloadChanged = false;
     yield list.addView({
-      onDownloadChanged(aDownload) {
+      onDownloadChanged: function(aDownload) {
         do_check_eq(aDownload, downloadOne);
         receivedOnDownloadChanged = true;
       },
@@ -285,18 +285,18 @@ add_task(function* test_notifications_this()
   let receivedOnDownloadChanged = false;
   let receivedOnDownloadRemoved = false;
   let view = {
-    onDownloadAdded() {
+    onDownloadAdded: function() {
       do_check_eq(this, view);
       receivedOnDownloadAdded = true;
     },
-    onDownloadChanged() {
+    onDownloadChanged: function() {
       
       if (!receivedOnDownloadChanged) {
         do_check_eq(this, view);
         receivedOnDownloadChanged = true;
       }
     },
-    onDownloadRemoved() {
+    onDownloadRemoved: function() {
       do_check_eq(this, view);
       receivedOnDownloadRemoved = true;
     },
@@ -336,7 +336,7 @@ add_task(function* test_history_expiration()
   let deferred = Promise.defer();
   let removeNotifications = 0;
   let downloadView = {
-    onDownloadRemoved(aDownload) {
+    onDownloadRemoved: function(aDownload) {
       if (++removeNotifications == 2) {
         deferred.resolve();
       }
@@ -383,7 +383,7 @@ add_task(function* test_history_clear()
   let deferred = Promise.defer();
   let removeNotifications = 0;
   let downloadView = {
-    onDownloadRemoved(aDownload) {
+    onDownloadRemoved: function(aDownload) {
       if (++removeNotifications == 2) {
         deferred.resolve();
       }
@@ -419,7 +419,7 @@ add_task(function* test_removeFinished()
   let deferred = Promise.defer();
   let removeNotifications = 0;
   let downloadView = {
-    onDownloadRemoved(aDownload) {
+    onDownloadRemoved: function(aDownload) {
       do_check_true(aDownload == downloadOne ||
                     aDownload == downloadTwo ||
                     aDownload == downloadThree);
@@ -555,7 +555,7 @@ add_task(function* test_DownloadSummary_notifications()
   
   let receivedOnSummaryChanged = false;
   yield summary.addView({
-    onSummaryChanged() {
+    onSummaryChanged: function() {
       receivedOnSummaryChanged = true;
     },
   });

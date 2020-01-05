@@ -44,7 +44,7 @@ this.AddonWatcher = {
 
   TOPIC_SLOW_ADDON_DETECTED: "addon-watcher-detected-slow-addon",
 
-  init() {
+  init: function() {
     this._initializedTimeStamp = Cu.now();
 
     try {
@@ -58,7 +58,7 @@ this.AddonWatcher = {
     this._idleThreshold = Preferences.get("browser.addon-watch.deactivate-after-idle-ms", 3000);
     this.paused = false;
   },
-  uninit() {
+  uninit: function() {
     this.paused = true;
   },
   _initializedTimeStamp: 0,
@@ -87,7 +87,7 @@ this.AddonWatcher = {
 
 
 
-  _getAlerts(addonId) {
+  _getAlerts: function(addonId) {
     let alerts = this._alerts.get(addonId);
     if (!alerts) {
       alerts = {
@@ -100,7 +100,7 @@ this.AddonWatcher = {
     return alerts;
   },
   _alerts: new Map(),
-  _onSlowAddons(addons) {
+  _onSlowAddons: function(addons) {
     try {
       if (IdleService.idleTime >= this._idleThreshold) {
         
@@ -202,10 +202,10 @@ this.AddonWatcher = {
     }
   },
 
-  ignoreAddonForSession(addonid) {
+  ignoreAddonForSession: function(addonid) {
     this._ignoreList.add(addonid);
   },
-  ignoreAddonPermanently(addonid) {
+  ignoreAddonPermanently: function(addonid) {
     this._ignoreList.add(addonid);
     try {
       let ignoreList = JSON.parse(Preferences.get("browser.addon-watch.ignore", "[]"))

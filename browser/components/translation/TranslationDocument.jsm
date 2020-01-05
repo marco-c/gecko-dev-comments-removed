@@ -42,7 +42,7 @@ this.TranslationDocument.prototype = {
 
 
 
-  _init(document) {
+  _init: function(document) {
     let window = document.defaultView;
     let winUtils = window.QueryInterface(Ci.nsIInterfaceRequestor)
                          .getInterface(Ci.nsIDOMWindowUtils);
@@ -94,7 +94,7 @@ this.TranslationDocument.prototype = {
 
 
 
-  _createItemForNode(node, id, isRoot) {
+  _createItemForNode: function(node, id, isRoot) {
     if (this.itemsMap.has(node)) {
       return this.itemsMap.get(node);
     }
@@ -129,7 +129,7 @@ this.TranslationDocument.prototype = {
 
 
 
-  generateTextForItem(item) {
+  generateTextForItem: function(item) {
     if (item.original) {
       return regenerateTextFromOriginalHelper(item);
     }
@@ -187,7 +187,7 @@ this.TranslationDocument.prototype = {
 
 
 
-  showTranslation() {
+  showTranslation: function() {
     this.originalShown = false;
     this._swapDocumentContent("translation");
   },
@@ -196,7 +196,7 @@ this.TranslationDocument.prototype = {
 
 
 
-  showOriginal() {
+  showOriginal: function() {
     this.originalShown = true;
     this._swapDocumentContent("original");
   },
@@ -208,7 +208,7 @@ this.TranslationDocument.prototype = {
 
 
 
-  _swapDocumentContent(target) {
+  _swapDocumentContent: function(target) {
     Task.spawn(function *() {
       
       
@@ -274,7 +274,7 @@ TranslationItem.prototype = {
   isRoot: false,
   isSimpleRoot: false,
 
-  toString() {
+  toString: function() {
     let rootType = "";
     if (this.isRoot) {
       if (this.isSimpleRoot) {
@@ -305,7 +305,7 @@ TranslationItem.prototype = {
 
 
 
-  parseResult(result) {
+  parseResult: function(result) {
     if (this.isSimpleRoot) {
       this.translation = [result];
       return;
@@ -325,7 +325,7 @@ TranslationItem.prototype = {
 
 
 
-  getChildById(id) {
+  getChildById: function(id) {
     for (let child of this.children) {
       if (("n" + child.id) == id) {
         return child;
@@ -341,7 +341,7 @@ TranslationItem.prototype = {
 
 
 
-  swapText(target) {
+  swapText: function(target) {
     swapTextForItem(this, target);
   }
 };
@@ -354,7 +354,7 @@ TranslationItem.prototype = {
 
 
 const TranslationItem_NodePlaceholder = {
-  toString() {
+  toString: function() {
     return "[object TranslationItem_NodePlaceholder]";
   }
 };

@@ -976,7 +976,7 @@ const errorsPrefObserver = {
 
 
 
-  init(aObservePref, aMaxErrorPref, aMaxErrorCount) {
+  init: function(aObservePref, aMaxErrorPref, aMaxErrorCount) {
     this.observedPref = aObservePref;
     this.maxErrorPref = aMaxErrorPref;
 

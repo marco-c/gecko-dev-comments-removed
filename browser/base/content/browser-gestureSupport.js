@@ -351,7 +351,7 @@ var gGestureSupport = {
 
 
 
-  _doUpdate(aEvent) {},
+  _doUpdate: function(aEvent) {},
 
   
 
@@ -359,7 +359,7 @@ var gGestureSupport = {
 
 
 
-  _doEnd(aEvent) {},
+  _doEnd: function(aEvent) {},
 
   
 
@@ -444,7 +444,7 @@ var gGestureSupport = {
 
 
 
-  rotate(aEvent) {
+  rotate: function(aEvent) {
     if (!(content.document instanceof ImageDocument))
       return;
 
@@ -463,7 +463,7 @@ var gGestureSupport = {
   
 
 
-  rotateEnd() {
+  rotateEnd: function() {
     if (!(content.document instanceof ImageDocument))
       return;
 
@@ -531,7 +531,7 @@ var gGestureSupport = {
 
 
 
-  restoreRotationState() {
+  restoreRotationState: function() {
     
     if (gMultiProcessBrowser)
       return;
@@ -560,7 +560,7 @@ var gGestureSupport = {
   
 
 
-  _clearCompleteRotation() {
+  _clearCompleteRotation: function() {
     let contentElement = content.document &&
                          content.document instanceof ImageDocument &&
                          content.document.body &&
@@ -731,7 +731,7 @@ var gHistorySwipeAnimation = {
     }
   },
 
-  _getCurrentHistoryIndex() {
+  _getCurrentHistoryIndex: function() {
     return SessionStore.getSessionHistory(gBrowser.selectedTab).index;
   },
 

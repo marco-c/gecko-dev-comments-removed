@@ -33,7 +33,7 @@ this.ObjectUtils = {
 
 
 
-  deepEqual(a, b) {
+  deepEqual: function(a, b) {
     return _deepEqual(a, b);
   },
 
@@ -52,7 +52,7 @@ this.ObjectUtils = {
 
 
 
-  strict(obj) {
+  strict: function(obj) {
     return _strict(obj);
   }
 };
@@ -171,7 +171,7 @@ function _strict(obj) {
   }
 
   return new Proxy(obj, {
-    get(target, name) {
+    get: function(target, name) {
       if (name in obj) {
         return obj[name];
       }

@@ -59,7 +59,7 @@ HierarchicalClustering.prototype = {
         
         key: index,
         
-        index,
+        index: index,
         
         size: 1
       };

@@ -19,7 +19,7 @@ dir.append("test_dir");
 dir.create(dir.DIRECTORY_TYPE, -1);
 
 var gListener = {
-  onSearchResult(aSearch, aResult) {
+  onSearchResult: function(aSearch, aResult) {
     
     do_check_eq(aResult.searchString, "test");
     

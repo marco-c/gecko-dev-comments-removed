@@ -129,7 +129,7 @@ function onFirefoxButtonClick(event) {
 var PositionHandler = {
   positionCustomized: false,
   threshold: 10,
-  adjustPosition() {
+  adjustPosition: function() {
     if (!this.positionCustomized) {
       
       
@@ -150,14 +150,14 @@ var PositionHandler = {
       this.setXPosition(window.screenX);
     }
   },
-  setXPosition(desiredX) {
+  setXPosition: function(desiredX) {
     
     desiredX = Math.max(desiredX, screen.availLeft);
     let maxX =
       screen.availLeft + screen.availWidth - document.documentElement.clientWidth;
     window.moveTo(Math.min(desiredX, maxX), screen.availTop);
   },
-  handleEvent(aEvent) {
+  handleEvent: function(aEvent) {
     switch (aEvent.type) {
       case "mousedown":
         if (aEvent.button != 0 || aEvent.defaultPrevented)

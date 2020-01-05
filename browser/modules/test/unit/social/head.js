@@ -132,7 +132,7 @@ function AsyncRunner() {
 
   this._callbacks = {
     done: do_test_finished,
-    error(err) {
+    error: function(err) {
       
       
       if (err !== Cr.NS_ERROR_ABORT) {
@@ -143,7 +143,7 @@ function AsyncRunner() {
         do_throw(err);
       }
     },
-    consoleError(scriptErr) {
+    consoleError: function(scriptErr) {
       
       let filename = scriptErr.sourceName || scriptErr.toString() || "";
       if (filename.indexOf("/toolkit/components/social/") >= 0)

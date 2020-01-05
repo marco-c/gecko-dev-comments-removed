@@ -166,9 +166,9 @@ add_task(function* init() {
   a7.userDisabled = true;
   t2.userDisabled = false;
   a3.findUpdates({
-    onUpdateFinished() {
+    onUpdateFinished: function() {
       a4.findUpdates({
-        onUpdateFinished() {
+        onUpdateFinished: function() {
           
           deferredUpdateFinished.resolve();
         }

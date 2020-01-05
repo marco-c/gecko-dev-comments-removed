@@ -37,7 +37,7 @@ const PanelUI = {
   },
 
   _initialized: false,
-  init() {
+  init: function() {
     for (let [k, v] of Object.entries(this.kElements)) {
       
       let getKey = k;
@@ -57,13 +57,13 @@ const PanelUI = {
   },
 
   _eventListenersAdded: false,
-  _ensureEventListenersAdded() {
+  _ensureEventListenersAdded: function() {
     if (this._eventListenersAdded)
       return;
     this._addEventListeners();
   },
 
-  _addEventListeners() {
+  _addEventListeners: function() {
     for (let event of this.kEvents) {
       this.panel.addEventListener(event, this);
     }
@@ -72,7 +72,7 @@ const PanelUI = {
     this._eventListenersAdded = true;
   },
 
-  uninit() {
+  uninit: function() {
     for (let event of this.kEvents) {
       this.panel.removeEventListener(event, this);
     }
@@ -92,7 +92,7 @@ const PanelUI = {
 
 
 
-  setMainView(aMainView) {
+  setMainView: function(aMainView) {
     this._ensureEventListenersAdded();
     this.multiView.setMainView(aMainView);
   },
@@ -103,7 +103,7 @@ const PanelUI = {
 
 
 
-  toggle(aEvent) {
+  toggle: function(aEvent) {
     
     
     if (document.documentElement.hasAttribute("customizing")) {
@@ -124,7 +124,7 @@ const PanelUI = {
 
 
 
-  show(aEvent) {
+  show: function(aEvent) {
     return new Promise(resolve => {
       this.ensureReady().then(() => {
         if (this.panel.state == "open" ||
@@ -170,7 +170,7 @@ const PanelUI = {
   
 
 
-  hide() {
+  hide: function() {
     if (document.documentElement.hasAttribute("customizing")) {
       return;
     }
@@ -178,7 +178,7 @@ const PanelUI = {
     this.panel.hidePopup();
   },
 
-  handleEvent(aEvent) {
+  handleEvent: function(aEvent) {
     
     if (aEvent.type.startsWith("popup") &&
         aEvent.target != this.panel) {
@@ -221,7 +221,7 @@ const PanelUI = {
 
 
 
-  ensureReady(aCustomizing = false) {
+  ensureReady: function(aCustomizing = false) {
     if (this._readyPromise) {
       return this._readyPromise;
     }
@@ -282,7 +282,7 @@ const PanelUI = {
 
 
 
-  showMainView() {
+  showMainView: function() {
     this._ensureEventListenersAdded();
     this.multiView.showMainView();
   },
@@ -291,7 +291,7 @@ const PanelUI = {
 
 
 
-  showHelpView(aAnchor) {
+  showHelpView: function(aAnchor) {
     this._ensureEventListenersAdded();
     this.multiView.showSubView("PanelUI-helpView", aAnchor);
   },
@@ -410,15 +410,15 @@ const PanelUI = {
 
 
 
-  disableSingleSubviewPanelAnimations() {
+  disableSingleSubviewPanelAnimations: function() {
     this._disableAnimations = true;
   },
 
-  enableSingleSubviewPanelAnimations() {
+  enableSingleSubviewPanelAnimations: function() {
     this._disableAnimations = false;
   },
 
-  onWidgetAfterDOMChange(aNode, aNextNode, aContainer, aWasRemoval) {
+  onWidgetAfterDOMChange: function(aNode, aNextNode, aContainer, aWasRemoval) {
     if (aContainer != this.contents) {
       return;
     }
@@ -427,7 +427,7 @@ const PanelUI = {
     }
   },
 
-  onWidgetBeforeDOMChange(aNode, aNextNode, aContainer, aIsRemoval) {
+  onWidgetBeforeDOMChange: function(aNode, aNextNode, aContainer, aIsRemoval) {
     if (aContainer != this.contents) {
       return;
     }
@@ -442,7 +442,7 @@ const PanelUI = {
 
 
 
-  beginBatchUpdate() {
+  beginBatchUpdate: function() {
     this._ensureEventListenersAdded();
     this.multiView.ignoreMutations = true;
   },
@@ -452,12 +452,12 @@ const PanelUI = {
 
 
 
-  endBatchUpdate(aReason) {
+  endBatchUpdate: function(aReason) {
     this._ensureEventListenersAdded();
     this.multiView.ignoreMutations = false;
   },
 
-  _adjustLabelsForAutoHyphens(aNode) {
+  _adjustLabelsForAutoHyphens: function(aNode) {
     let toolbarButtons = aNode ? [aNode] :
                                  this.contents.querySelectorAll(".toolbarbutton-1");
     for (let node of toolbarButtons) {
@@ -477,12 +477,12 @@ const PanelUI = {
 
 
 
-  _updatePanelButton() {
+  _updatePanelButton: function() {
     this.menuButton.open = this.panel.state == "open" ||
                            this.panel.state == "showing";
   },
 
-  _onHelpViewShow(aEvent) {
+  _onHelpViewShow: function(aEvent) {
     
     buildHelpMenu();
 
@@ -515,7 +515,7 @@ const PanelUI = {
     items.appendChild(fragment);
   },
 
-  _updateQuitTooltip() {
+  _updateQuitTooltip: function() {
     if (AppConstants.platform == "win") {
       return;
     }
@@ -535,7 +535,7 @@ const PanelUI = {
   },
 
   _overlayScrollListenerBoundFn: null,
-  _overlayScrollListener(aMQL) {
+  _overlayScrollListener: function(aMQL) {
     ScrollbarSampler.resetSystemScrollbarWidth();
     this._scrollWidth = null;
   },

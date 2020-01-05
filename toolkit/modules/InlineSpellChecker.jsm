@@ -19,7 +19,7 @@ this.InlineSpellChecker = function InlineSpellChecker(aEditor) {
 
 InlineSpellChecker.prototype = {
   
-  init(aEditor)
+  init: function(aEditor)
   {
     this.uninit();
     this.mEditor = aEditor;
@@ -31,7 +31,7 @@ InlineSpellChecker.prototype = {
     }
   },
 
-  initFromRemote(aSpellInfo)
+  initFromRemote: function(aSpellInfo)
   {
     if (this.mRemote)
       throw new Error("Unexpected state");
@@ -45,7 +45,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  uninit()
+  uninit: function()
   {
     if (this.mRemote) {
       this.mRemote.uninit();
@@ -67,7 +67,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  initFromEvent(rangeParent, rangeOffset)
+  initFromEvent: function(rangeParent, rangeOffset)
   {
     this.mOverMisspelling = false;
 
@@ -134,7 +134,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  addSuggestionsToMenu(menu, insertBefore, maxNumber)
+  addSuggestionsToMenu: function(menu, insertBefore, maxNumber)
   {
     if (!this.mRemote && (!this.mInlineSpellChecker || !this.mOverMisspelling))
       return 0; 
@@ -172,7 +172,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  clearSuggestionsFromMenu()
+  clearSuggestionsFromMenu: function()
   {
     for (var i = 0; i < this.mSuggestionItems.length; i++) {
       this.mMenu.removeChild(this.mSuggestionItems[i]);
@@ -180,7 +180,7 @@ InlineSpellChecker.prototype = {
     this.mSuggestionItems = [];
   },
 
-  sortDictionaryList(list) {
+  sortDictionaryList: function(list) {
     var sortedList = [];
     for (var i = 0; i < list.length; i++) {
       sortedList.push({"id": list[i],
@@ -199,7 +199,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  addDictionaryListToMenu(menu, insertBefore)
+  addDictionaryListToMenu: function(menu, insertBefore)
   {
     this.mDictionaryMenu = menu;
     this.mDictionaryNames = [];
@@ -258,7 +258,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  getDictionaryDisplayName(dictionaryName) {
+  getDictionaryDisplayName: function(dictionaryName) {
     try {
       
       let languageTagMatch = /^([a-z]{2,3}|[a-z]{4}|[a-z]{5,8})(?:[-_]([a-z]{4}))?(?:[-_]([A-Z]{2}|[0-9]{3}))?((?:[-_](?:[a-z0-9]{5,8}|[0-9][a-z0-9]{3}))*)(?:[-_][a-wy-z0-9](?:[-_][a-z0-9]{2,8})+)*(?:[-_]x(?:[-_][a-z0-9]{1,8})+)?$/i;
@@ -318,7 +318,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  clearDictionaryListFromMenu()
+  clearDictionaryListFromMenu: function()
   {
     for (var i = 0; i < this.mDictionaryItems.length; i++) {
       this.mDictionaryMenu.removeChild(this.mDictionaryItems[i]);
@@ -327,7 +327,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  selectDictionary(index)
+  selectDictionary: function(index)
   {
     if (this.mRemote) {
       this.mRemote.selectDictionary(index);
@@ -341,7 +341,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  replaceMisspelling(index)
+  replaceMisspelling: function(index)
   {
     if (this.mRemote) {
       this.mRemote.replaceMisspelling(index);
@@ -356,7 +356,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  toggleEnabled()
+  toggleEnabled: function()
   {
     if (this.mRemote)
       this.mRemote.toggleEnabled();
@@ -365,7 +365,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  addToDictionary()
+  addToDictionary: function()
   {
     
     if (this.mAddedWordStack.length == MAX_UNDO_STACK_DEPTH)
@@ -379,7 +379,7 @@ InlineSpellChecker.prototype = {
     }
   },
   
-  undoAddToDictionary()
+  undoAddToDictionary: function()
   {
     if (this.mAddedWordStack.length > 0)
     {
@@ -390,12 +390,12 @@ InlineSpellChecker.prototype = {
         this.mInlineSpellChecker.removeWordFromDictionary(word);
     }
   },
-  canUndo()
+  canUndo : function()
   {
     
     return (this.mAddedWordStack.length > 0);
   },
-  ignoreWord()
+  ignoreWord: function()
   {
     if (this.mRemote)
       this.mRemote.ignoreWord();

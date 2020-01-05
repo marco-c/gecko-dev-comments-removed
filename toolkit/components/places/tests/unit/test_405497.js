@@ -27,7 +27,7 @@ function callback(aService)
 callback.prototype = {
   
 
-  runBatched(aUserData)
+  runBatched: function(aUserData)
   {
     this.callCount++;
 

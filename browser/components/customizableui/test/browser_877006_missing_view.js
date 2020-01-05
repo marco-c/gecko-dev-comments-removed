@@ -12,7 +12,7 @@ add_task(function testAddbrokenViewWidget() {
     type: 'view',
     viewId: 'idontexist',
     
-    onViewShowing() {
+    onViewShowing: function() {
     }
   };
 

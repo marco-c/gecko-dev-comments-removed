@@ -40,7 +40,7 @@ var TestRunner = {
   
 
 
-  run() {
+  run: function() {
     waitForExplicitFinish();
 
     SessionStore.promiseInitialized.then(function() {
@@ -58,7 +58,7 @@ var TestRunner = {
 
 
 
-  next(aValue) {
+  next: function(aValue) {
     let obj = TestRunner._iter.next(aValue);
     if (obj.done) {
       finish();

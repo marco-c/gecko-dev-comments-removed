@@ -37,7 +37,7 @@ this.SearchStaticData = {
 
 
 
-  getAlternateDomains(aDomain) {
+  getAlternateDomains: function(aDomain) {
     return gGoogleDomains.indexOf(aDomain) == -1 ? [] : gGoogleDomains;
   },
 };

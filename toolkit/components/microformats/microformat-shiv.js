@@ -43,7 +43,7 @@ var Microformats;
 
     modules.Parser.prototype = {
 
-        init() {
+        init: function() {
             this.rootNode = null;
             this.document = null;
             this.options = {
@@ -67,7 +67,7 @@ var Microformats;
 
 
 
-        get(options) {
+        get: function(options) {
             var out = this.formatEmpty(),
                 data = [],
                 rels;
@@ -126,7 +126,7 @@ var Microformats;
 
 
 
-        getParent(node, options) {
+        getParent: function(node, options) {
             this.init();
             options = (options) ? options : {};
 
@@ -144,7 +144,7 @@ var Microformats;
 
 
 
-        count( options ) {
+        count: function( options ) {
             var out = {},
                 items,
                 classItems,
@@ -194,7 +194,7 @@ var Microformats;
 
 
 
-        isMicroformat( node, options ) {
+        isMicroformat: function( node, options ) {
             var classes,
                 i;
 
@@ -227,7 +227,7 @@ var Microformats;
 
 
 
-        hasMicroformats( node, options ) {
+        hasMicroformats: function( node, options ) {
             var items,
                 i;
 
@@ -258,7 +258,7 @@ var Microformats;
 
 
 
-        add( maps ) {
+        add: function( maps ) {
             maps.forEach(function(map) {
                 if (map && map.root && map.name && map.properties) {
                 modules.maps[map.name] = JSON.parse(JSON.stringify(map));
@@ -275,7 +275,7 @@ var Microformats;
 
 
 
-        getParentTreeWalk(node, options, recursive) {
+        getParentTreeWalk: function(node, options, recursive) {
             options = (options) ? options : {};
 
             
@@ -303,7 +303,7 @@ var Microformats;
 
 
 
-        getDOMContext( options ) {
+        getDOMContext: function( options ) {
             var nodes = modules.domUtils.getDOMContext( options );
             this.rootNode = nodes.rootNode;
             this.document = nodes.document;
@@ -316,7 +316,7 @@ var Microformats;
 
 
 
-        prepareDOM( options ) {
+        prepareDOM: function( options ) {
             var baseTag,
                 href;
 
@@ -370,7 +370,7 @@ var Microformats;
 
 
 
-        formatError() {
+        formatError: function() {
             var out = this.formatEmpty();
             out.errors = this.errors;
             return out;
@@ -382,7 +382,7 @@ var Microformats;
 
 
 
-        formatEmpty() {
+        formatEmpty: function() {
             return {
                 'items': [],
                 'rels': {},
@@ -392,7 +392,7 @@ var Microformats;
 
 
         
-        findFilterNodes(rootNode, filters) {
+        findFilterNodes: function(rootNode, filters) {
             if (modules.utils.isString(filters)) {
                 filters = [filters];
             }
@@ -438,7 +438,7 @@ var Microformats;
 
 
 
-        appendCount(name, count, out) {
+        appendCount: function(name, count, out) {
             if (out[name]) {
                 out[name] = out[name] + count;
             } else {
@@ -454,7 +454,7 @@ var Microformats;
 
 
 
-        shouldInclude(uf, filters) {
+        shouldInclude: function(uf, filters) {
             var i;
 
             if (modules.utils.isArray(filters) && filters.length > 0) {
@@ -477,7 +477,7 @@ var Microformats;
 
 
 
-        findRootNodes(rootNode, includeRoot) {
+        findRootNodes: function(rootNode, includeRoot) {
             var arr = null,
                 out = [],
                 classList = [],
@@ -538,7 +538,7 @@ var Microformats;
 
 
 
-        walkRoot(node) {
+        walkRoot: function(node) {
             var context = this,
                 children = [],
                 child,
@@ -577,7 +577,7 @@ var Microformats;
 
 
 
-        walkTree(node) {
+        walkTree: function(node) {
             var classes,
                 out = [],
                 obj,
@@ -612,7 +612,7 @@ var Microformats;
 
 
 
-        walkChildren(node, out, ufName, rootID, parentClasses) {
+        walkChildren: function(node, out, ufName, rootID, parentClasses) {
             var context = this,
                 children = [],
                 rootItem,
@@ -777,7 +777,7 @@ var Microformats;
 
 
 
-        getValue(node, className, uf) {
+        getValue: function(node, className, uf) {
             var value = '';
 
             if (modules.utils.startWith(className, 'p-')) {
@@ -806,7 +806,7 @@ var Microformats;
 
 
 
-        getPValue(node, valueParse) {
+        getPValue: function(node, valueParse) {
             var out = '';
             if (valueParse) {
                 out = this.getValueClass(node, 'p');
@@ -846,7 +846,7 @@ var Microformats;
 
 
 
-        getEValue(node) {
+        getEValue: function(node) {
 
             var out = {value: '', html: ''};
 
@@ -867,7 +867,7 @@ var Microformats;
 
 
 
-        getUValue(node, valueParse) {
+        getUValue: function(node, valueParse) {
             var out = '';
             if (valueParse) {
                 out = this.getValueClass(node, 'u');
@@ -919,7 +919,7 @@ var Microformats;
 
 
 
-        getDTValue(node, className, uf, valueParse) {
+        getDTValue: function(node, className, uf, valueParse) {
             var out = '';
 
             if (valueParse) {
@@ -974,7 +974,7 @@ var Microformats;
 
 
 
-        appendRootID(node, id, propertyName) {
+        appendRootID: function(node, id, propertyName) {
             if (this.hasRootID(node, id, propertyName) === false) {
                 var rootids = [];
                 if (modules.domUtils.hasAttribute(node, 'rootids')) {
@@ -994,7 +994,7 @@ var Microformats;
 
 
 
-        hasRootID(node, id, propertyName) {
+        hasRootID: function(node, id, propertyName) {
             var rootids = [];
             if (!modules.domUtils.hasAttribute(node, 'rootids')) {
                 return false;
@@ -1012,7 +1012,7 @@ var Microformats;
 
 
 
-        getValueClass(node, propertyType) {
+        getValueClass: function(node, propertyType) {
             var context = this,
                 children = [],
                 out = [],
@@ -1068,7 +1068,7 @@ var Microformats;
 
 
 
-        getValueTitle(node) {
+        getValueTitle: function(node) {
             var out = [],
                 items,
                 i,
@@ -1093,7 +1093,7 @@ var Microformats;
 
 
 
-        hasHClass(node) {
+        hasHClass: function(node) {
             var classes = this.getUfClassNames(node);
             if (classes.root && classes.root.length > 0) {
                 return true;
@@ -1109,7 +1109,7 @@ var Microformats;
 
 
 
-        getUfClassNames(node, ufNameArr) {
+        getUfClassNames: function(node, ufNameArr) {
             var context = this,
                 out = {
                     'root': [],
@@ -1258,7 +1258,7 @@ var Microformats;
 
 
 
-        getMapping(name) {
+        getMapping: function(name) {
             var key;
             for (key in modules.maps) {
                 if (modules.maps[key].root === name || key === name) {
@@ -1275,7 +1275,7 @@ var Microformats;
 
 
 
-        getV2RootName(name) {
+        getV2RootName: function(name) {
             var key;
             for (key in modules.maps) {
                 if (modules.maps[key].root === name) {
@@ -1293,7 +1293,7 @@ var Microformats;
 
 
 
-        isAllowedPropertyVersion(typeVersion, propertyVersion) {
+        isAllowedPropertyVersion: function(typeVersion, propertyVersion) {
             if (this.options.overlappingVersions === true) {
                 return true;
             }
@@ -1308,7 +1308,7 @@ var Microformats;
 
 
 
-        createUfObject(names, typeVersion, value) {
+        createUfObject: function(names, typeVersion, value) {
             var out = {};
 
             
@@ -1337,7 +1337,7 @@ var Microformats;
 
 
 
-        cleanUfObject( microformat ) {
+        cleanUfObject: function( microformat ) {
             delete microformat.times;
             delete microformat.dates;
             delete microformat.typeVersion;
@@ -1353,7 +1353,7 @@ var Microformats;
 
 
 
-        removePropPrefix(text) {
+        removePropPrefix: function(text) {
             var i;
 
             i = this.propertyPrefixes.length;
@@ -1374,7 +1374,7 @@ var Microformats;
 
 
 
-        expandURLs(node, attrName, baseUrl) {
+        expandURLs: function(node, attrName, baseUrl) {
             var i,
                 nodes,
                 attr;
@@ -1403,7 +1403,7 @@ var Microformats;
 
 
 
-        mergeOptions(options) {
+        mergeOptions: function(options) {
             var key;
             for (key in options) {
                 if (options.hasOwnProperty(key)) {
@@ -1418,7 +1418,7 @@ var Microformats;
 
 
 
-        removeRootIds(rootNode) {
+        removeRootIds: function(rootNode) {
             var arr,
                 i;
 
@@ -1435,7 +1435,7 @@ var Microformats;
 
 
 
-        clearUpDom(rootNode) {
+        clearUpDom: function(rootNode) {
             if (this.removeIncludes) {
                 this.removeIncludes(rootNode);
             }
@@ -1751,15 +1751,15 @@ var Microformats;
             if (uf.value && !uf.altValue) {
                 
                 if (modules.utils.startWith(parentPropertyName, 'p-') && propertyName === 'p-name') {
-                    uf.altValue = {name: propertyName, value};
+                    uf.altValue = {name: propertyName, value: value};
                 }
                 
                 if (modules.utils.startWith(parentPropertyName, 'e-') && modules.utils.startWith(propertyName, 'e-')) {
-                    uf.altValue = {name: propertyName, value};
+                    uf.altValue = {name: propertyName, value: value};
                 }
                 
                 if (modules.utils.startWith(parentPropertyName, 'u-') && propertyName === 'u-url') {
-                    uf.altValue = {name: propertyName, value};
+                    uf.altValue = {name: propertyName, value: value};
                 }
             }
             return uf;
@@ -2205,7 +2205,7 @@ var Microformats;
 
 
 
-        isString( obj ) {
+        isString: function( obj ) {
             return typeof( obj ) === 'string';
         },
 
@@ -2215,7 +2215,7 @@ var Microformats;
 
 
 
-        isNumber( obj ) {
+        isNumber: function( obj ) {
             return !isNaN(parseFloat( obj )) && isFinite( obj );
         },
 
@@ -2226,7 +2226,7 @@ var Microformats;
 
 
 
-        isArray( obj ) {
+        isArray: function( obj ) {
             return obj && !( obj.propertyIsEnumerable( 'length' ) ) && typeof obj === 'object' && typeof obj.length === 'number';
         },
 
@@ -2237,7 +2237,7 @@ var Microformats;
 
 
 
-        isFunction(obj) {
+        isFunction: function(obj) {
             return !!(obj && obj.constructor && obj.call && obj.apply);
         },
 
@@ -2249,7 +2249,7 @@ var Microformats;
 
 
 
-        startWith( text, test ) {
+        startWith: function( text, test ) {
             return (text.indexOf(test) === 0);
         },
 
@@ -2260,7 +2260,7 @@ var Microformats;
 
 
 
-        trim( text ) {
+        trim: function( text ) {
             if (text && this.isString(text)) {
                 return (text.trim()) ? text.trim() : text.replace(/^\s+|\s+$/g, '');
             }
@@ -2276,7 +2276,7 @@ var Microformats;
 
 
 
-        replaceCharAt( text, index, character ) {
+        replaceCharAt: function( text, index, character ) {
             if (text && text.length > index) {
                return text.substr(0, index) + character + text.substr(index + character.length);
             }
@@ -2290,7 +2290,7 @@ var Microformats;
 
 
 
-        trimWhitespace( text ) {
+        trimWhitespace: function( text ) {
             if (text && text.length) {
                 var i = text.length,
                     x = 0;
@@ -2325,7 +2325,7 @@ var Microformats;
 
 
 
-        isOnlyWhiteSpace( text ) {
+        isOnlyWhiteSpace: function( text ) {
             return !(/[^\t\n\r ]/.test( text ));
         },
 
@@ -2336,7 +2336,7 @@ var Microformats;
 
 
 
-        collapseWhiteSpace( text ) {
+        collapseWhiteSpace: function( text ) {
             return text.replace(/[\t\n\r ]+/g, ' ');
         },
 
@@ -2347,7 +2347,7 @@ var Microformats;
 
 
 
-        hasProperties( obj ) {
+        hasProperties: function( obj ) {
             var key;
             for (key in obj) {
                 if ( obj.hasOwnProperty( key ) ) {
@@ -2365,7 +2365,7 @@ var Microformats;
 
 
 
-        sortObjects(property, reverse) {
+        sortObjects: function(property, reverse) {
             reverse = (reverse) ? -1 : 1;
             return function(a, b) {
                 a = a[property];
@@ -2395,7 +2395,7 @@ var Microformats;
 
 
 
-        getDOMParser() {
+        getDOMParser: function() {
             if (typeof DOMParser === "undefined") {
                 try {
                     return Components.classes["@mozilla.org/xmlextras/domparser;1"]
@@ -2415,7 +2415,7 @@ var Microformats;
 
 
 
-        getDOMContext( options ) {
+        getDOMContext: function( options ) {
 
             
             if (options.node) {
@@ -2465,7 +2465,7 @@ var Microformats;
 
 
 
-        getTopMostNode( node ) {
+        getTopMostNode: function( node ) {
             
             
             
@@ -2481,7 +2481,7 @@ var Microformats;
 
 
 
-        ownerDocument(node) {
+        ownerDocument: function(node) {
             return node.ownerDocument;
         },
 
@@ -2492,7 +2492,7 @@ var Microformats;
 
 
 
-        textContent(node) {
+        textContent: function(node) {
             if (node.textContent) {
                 return node.textContent;
             } else if (node.innerText) {
@@ -2508,7 +2508,7 @@ var Microformats;
 
 
 
-        innerHTML(node) {
+        innerHTML: function(node) {
             return node.innerHTML;
         },
 
@@ -2520,7 +2520,7 @@ var Microformats;
 
 
 
-        hasAttribute(node, attributeName) {
+        hasAttribute: function(node, attributeName) {
             return node.hasAttribute(attributeName);
         },
 
@@ -2533,7 +2533,7 @@ var Microformats;
 
 
 
-        hasAttributeValue(node, attributeName, value) {
+        hasAttributeValue: function(node, attributeName, value) {
             return (this.getAttributeList(node, attributeName).indexOf(value) > -1);
         },
 
@@ -2545,7 +2545,7 @@ var Microformats;
 
 
 
-        getAttribute(node, attributeName) {
+        getAttribute: function(node, attributeName) {
             return node.getAttribute(attributeName);
         },
 
@@ -2557,7 +2557,7 @@ var Microformats;
 
 
 
-        setAttribute(node, attributeName, attributeValue) {
+        setAttribute: function(node, attributeName, attributeValue) {
             node.setAttribute(attributeName, attributeValue);
         },
 
@@ -2568,7 +2568,7 @@ var Microformats;
 
 
 
-        removeAttribute(node, attributeName) {
+        removeAttribute: function(node, attributeName) {
             node.removeAttribute(attributeName);
         },
 
@@ -2580,7 +2580,7 @@ var Microformats;
 
 
 
-        getElementById(docNode, id) {
+        getElementById: function(docNode, id) {
             return docNode.querySelector( '#' + id );
         },
 
@@ -2592,7 +2592,7 @@ var Microformats;
 
 
 
-        querySelector(docNode, selector) {
+        querySelector: function(docNode, selector) {
             return docNode.querySelector( selector );
         },
 
@@ -2604,7 +2604,7 @@ var Microformats;
 
 
 
-        getAttributeList(node, attributeName) {
+        getAttributeList: function(node, attributeName) {
             var out = [],
                 attList;
 
@@ -2627,7 +2627,7 @@ var Microformats;
 
 
 
-        getNodesByAttribute(node, attributeName) {
+        getNodesByAttribute: function(node, attributeName) {
             var selector = '[' + attributeName + ']';
             return node.querySelectorAll(selector);
         },
@@ -2640,7 +2640,7 @@ var Microformats;
 
 
 
-        getNodesByAttributeValue(rootNode, name, value) {
+        getNodesByAttributeValue: function(rootNode, name, value) {
             var arr = [],
                 x = 0,
                 i,
@@ -2667,7 +2667,7 @@ var Microformats;
 
 
 
-        getAttrValFromTagList(node, tagNames, attributeName) {
+        getAttrValFromTagList: function(node, tagNames, attributeName) {
             var i = tagNames.length;
 
             while (i--) {
@@ -2689,7 +2689,7 @@ var Microformats;
 
 
 
-        getSingleDescendant(node) {
+        getSingleDescendant: function(node) {
             return this.getDescendant( node, null, false );
         },
 
@@ -2701,7 +2701,7 @@ var Microformats;
 
 
 
-        getSingleDescendantOfType(node, tagNames) {
+        getSingleDescendantOfType: function(node, tagNames) {
             return this.getDescendant( node, tagNames, true );
         },
 
@@ -2713,7 +2713,7 @@ var Microformats;
 
 
 
-        getDescendant( node, tagNames, onlyOfType ) {
+        getDescendant: function( node, tagNames, onlyOfType ) {
             var i = node.children.length,
                 countAll = 0,
                 countOfType = 0,
@@ -2750,7 +2750,7 @@ var Microformats;
 
 
 
-        hasTagName(node, tagNames) {
+        hasTagName: function(node, tagNames) {
             var i = tagNames.length;
             while (i--) {
                 if (node.tagName.toLowerCase() === tagNames[i]) {
@@ -2768,7 +2768,7 @@ var Microformats;
 
 
 
-        appendChild(node, childNode) {
+        appendChild: function(node, childNode) {
             return node.appendChild(childNode);
         },
 
@@ -2779,7 +2779,7 @@ var Microformats;
 
 
 
-        removeChild(childNode) {
+        removeChild: function(childNode) {
             if (childNode.parentNode) {
                 return childNode.parentNode.removeChild(childNode);
             }
@@ -2793,7 +2793,7 @@ var Microformats;
 
 
 
-        clone(node) {
+        clone: function(node) {
             var newNode = node.cloneNode(true);
             newNode.removeAttribute('id');
             return newNode;
@@ -2806,7 +2806,7 @@ var Microformats;
 
 
 
-        getElementText( node ) {
+        getElementText: function( node ) {
             if (node && node.data) {
                 return node.data;
             }
@@ -2820,7 +2820,7 @@ var Microformats;
 
 
 
-        getOrderedAttributes( node ) {
+        getOrderedAttributes: function( node ) {
             var nodeStr = node.outerHTML,
                 attrs = [];
 
@@ -2841,7 +2841,7 @@ var Microformats;
 
 
 
-        decodeEntities( doc, text ) {
+        decodeEntities: function( doc, text ) {
             
             return doc.createTextNode( text ).nodeValue;
         },
@@ -2853,7 +2853,7 @@ var Microformats;
 
 
 
-        cloneDocument( document ) {
+        cloneDocument: function( document ) {
             var newNode,
                 newDocument = null;
 
@@ -2872,7 +2872,7 @@ var Microformats;
 
 
 
-        canCloneDocument( document ) {
+        canCloneDocument: function( document ) {
             return (document && document.importNode && document.implementation && document.implementation.createHTMLDocument);
         },
 
@@ -2883,7 +2883,7 @@ var Microformats;
 
 
 
-        getChildIndex(node) {
+        getChildIndex: function(node) {
             var parent = node.parentNode,
                 i = -1,
                 child;
@@ -2902,7 +2902,7 @@ var Microformats;
 
 
 
-        getNodePath(node) {
+        getNodePath: function(node) {
             var parent = node.parentNode,
                 path = [],
                 index = this.getChildIndex(node);
@@ -2923,7 +2923,7 @@ var Microformats;
 
 
 
-        getNodeByPath(document, path) {
+        getNodeByPath: function(document, path) {
             var node = document.documentElement,
                 i = 0,
                 index;
@@ -2940,7 +2940,7 @@ var Microformats;
 
 
 
-        getChildren( node ) {
+        getChildren: function( node ) {
             return node.children;
         },
 
@@ -2951,7 +2951,7 @@ var Microformats;
 
 
 
-        createNode( tagName ) {
+        createNode: function( tagName ) {
             return this.document.createElement(tagName);
         },
 
@@ -2963,7 +2963,7 @@ var Microformats;
 
 
 
-        createNodeWithText( tagName, text ) {
+        createNodeWithText: function( tagName, text ) {
             var node = this.document.createElement(tagName);
             node.innerHTML = text;
             return node;
@@ -2980,7 +2980,7 @@ var Microformats;
         
 
 
-        init() {
+        init: function() {
             
             this._domParser = modules.domUtils.getDOMParser();
             
@@ -2998,7 +2998,7 @@ var Microformats;
 
 
 
-        resolve(url, baseUrl) {
+        resolve: function(url, baseUrl) {
             
             if (modules.utils.isString(url) && modules.utils.isString(baseUrl) && url.indexOf('://') === -1) {
                 
@@ -3062,7 +3062,7 @@ var Microformats;
 
 
 
-        clear() {
+        clear: function() {
             this.clearDate();
             this.clearTime();
             this.clearTimeZone();
@@ -3074,7 +3074,7 @@ var Microformats;
 
 
 
-        clearDate() {
+        clearDate: function() {
             this.dY = -1;
             this.dM = -1;
             this.dD = -1;
@@ -3086,7 +3086,7 @@ var Microformats;
 
 
 
-        clearTime() {
+        clearTime: function() {
             this.tH = -1;
             this.tM = -1;
             this.tS = -1;
@@ -3098,7 +3098,7 @@ var Microformats;
 
 
 
-        clearTimeZone() {
+        clearTimeZone: function() {
             this.tzH = -1;
             this.tzM = -1;
             this.tzPN = '+';
@@ -3110,7 +3110,7 @@ var Microformats;
 
 
 
-        setAutoProfileState() {
+        setAutoProfileState: function() {
             this.autoProfile = {
                sep: 'T',
                dsep: '-',
@@ -3128,7 +3128,7 @@ var Microformats;
 
 
 
-        parse( dateString, format ) {
+        parse: function( dateString, format ) {
             this.clear();
 
             var parts = [],
@@ -3218,7 +3218,7 @@ var Microformats;
 
 
 
-        parseDate( dateString, format ) {
+        parseDate: function( dateString, format ) {
             this.clearDate();
 
             var parts = [];
@@ -3263,7 +3263,7 @@ var Microformats;
 
 
 
-        parseTime( timeString, format ) {
+        parseTime: function( timeString, format ) {
             this.clearTime();
             var parts = [];
 
@@ -3297,7 +3297,7 @@ var Microformats;
 
 
 
-        parseTimeZone( timeString, format ) {
+        parseTimeZone: function( timeString, format ) {
             this.clearTimeZone();
             var parts = [];
 
@@ -3337,7 +3337,7 @@ var Microformats;
 
 
 
-        toString( format ) {
+        toString: function( format ) {
             var output = '';
 
             if (format) {
@@ -3374,7 +3374,7 @@ var Microformats;
 
 
 
-        toTimeString( format ) {
+        toTimeString: function( format ) {
             var out = '';
 
             if (format) {
@@ -3417,7 +3417,7 @@ var Microformats;
 
 
 
-        setFormatSep() {
+        setFormatSep: function() {
             switch ( this.format.toLowerCase() ) {
                 case 'rfc3339':
                     this.sep = 'T';
@@ -3456,7 +3456,7 @@ var Microformats;
 
 
 
-        hasFullDate() {
+        hasFullDate: function() {
             return (this.dY !== -1 && this.dM !== -1 && this.dD !== -1);
         },
 
@@ -3466,7 +3466,7 @@ var Microformats;
 
 
 
-        hasDate() {
+        hasDate: function() {
             return (this.dY !== -1);
         },
 
@@ -3476,7 +3476,7 @@ var Microformats;
 
 
 
-        hasTime() {
+        hasTime: function() {
             return (this.tH !== -1);
         },
 
@@ -3485,7 +3485,7 @@ var Microformats;
 
 
 
-        hasTimeZone() {
+        hasTimeZone: function() {
             return (this.tzH !== -1);
         }
 
@@ -3503,7 +3503,7 @@ var Microformats;
 
 
 
-        hasAM( text ) {
+        hasAM: function( text ) {
             text = text.toLowerCase();
             return (text.indexOf('am') > -1 || text.indexOf('a.m.') > -1);
         },
@@ -3515,7 +3515,7 @@ var Microformats;
 
 
 
-        hasPM( text ) {
+        hasPM: function( text ) {
             text = text.toLowerCase();
             return (text.indexOf('pm') > -1 || text.indexOf('p.m.') > -1);
         },
@@ -3527,7 +3527,7 @@ var Microformats;
 
 
 
-        removeAMPM( text ) {
+        removeAMPM: function( text ) {
             return text.replace('pm', '').replace('p.m.', '').replace('am', '').replace('a.m.', '');
         },
 
@@ -3538,7 +3538,7 @@ var Microformats;
 
 
 
-        isDuration( text ) {
+        isDuration: function( text ) {
             if (modules.utils.isString( text )) {
                 text = text.toLowerCase();
                 if (modules.utils.startWith(text, 'p') ) {
@@ -3556,7 +3556,7 @@ var Microformats;
 
 
 
-        isTime( text ) {
+        isTime: function( text ) {
             if (modules.utils.isString(text)) {
                 text = text.toLowerCase();
                 text = modules.utils.trim( text );
@@ -3592,7 +3592,7 @@ var Microformats;
 
 
 
-        parseAmPmTime( text ) {
+        parseAmPmTime: function( text ) {
             var out = text,
                 times = [];
 
@@ -3643,7 +3643,7 @@ var Microformats;
 
 
 
-        dateTimeUnion(date, time, format) {
+        dateTimeUnion: function(date, time, format) {
             var isodate = new modules.ISODate(date, format),
                 isotime = new modules.ISODate();
 
@@ -3670,7 +3670,7 @@ var Microformats;
 
 
 
-        concatFragments(arr, format) {
+        concatFragments: function(arr, format) {
             var out = new modules.ISODate(),
                 i = 0,
                 value = '';
@@ -3721,7 +3721,7 @@ var Microformats;
 
 
 
-        splitTimeAndZone( text ) {
+        splitTimeAndZone: function( text ) {
            var out = [text],
                chars = ['-', '+', 'z', 'Z'],
                i = chars.length;
@@ -3762,7 +3762,7 @@ var Microformats;
 
 
 
-        parse(doc, node, textFormat) {
+        parse: function(doc, node, textFormat) {
             var out;
             this.textFormat = (textFormat) ? textFormat : this.textFormat;
             if (this.textFormat === 'normalised') {
@@ -3784,7 +3784,7 @@ var Microformats;
 
 
 
-        parseText( doc, text, textFormat ) {
+        parseText: function( doc, text, textFormat ) {
            var node = modules.domUtils.createNodeWithText( 'div', text );
            return this.parse( doc, node, textFormat );
         },
@@ -3797,7 +3797,7 @@ var Microformats;
 
 
 
-        formatText( doc, text, textFormat ) {
+        formatText: function( doc, text, textFormat ) {
            this.textFormat = (textFormat) ? textFormat : this.textFormat;
            if (text) {
               var out = '',
@@ -3821,7 +3821,7 @@ var Microformats;
 
 
 
-        normalise( doc, text ) {
+        normalise: function( doc, text ) {
             text = text.replace( /&nbsp;/g, ' ') ;    
             text = modules.utils.collapseWhiteSpace( text );     
             text = modules.domUtils.decodeEntities( doc, text );  
@@ -3836,7 +3836,7 @@ var Microformats;
 
 
 
-        walkTreeForText( node ) {
+        walkTreeForText: function( node ) {
             var out = '',
                 j = 0;
 
@@ -3882,7 +3882,7 @@ var Microformats;
 
 
 
-        parse( node ) {
+        parse: function( node ) {
             var out = '',
                 j = 0;
 
@@ -3907,7 +3907,7 @@ var Microformats;
 
 
 
-        walkTreeForHtml( node ) {
+        walkTreeForHtml: function( node ) {
             var out = '',
                 j = 0;
 
