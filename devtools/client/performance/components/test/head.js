@@ -20,7 +20,7 @@ let { Toolbox } = require("devtools/client/framework/toolbox");
 flags.testing = true;
 let { require: browserRequire } = BrowserLoader({
   baseURI: "resource://devtools/client/performance/",
-  window: this
+  window
 });
 
 let $ = (selector, scope = document) => scope.querySelector(selector);

@@ -11,7 +11,7 @@ var BrowserLoaderModule = {};
 Cu.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderModule);
 var { loader, require } = BrowserLoaderModule.BrowserLoader({
   baseURI: "resource://devtools/client/performance/",
-  window: this
+  window
 });
 var { Task } = require("devtools/shared/task");
 
