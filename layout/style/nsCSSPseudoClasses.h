@@ -10,6 +10,7 @@
 
 #include "nsStringFwd.h"
 #include "mozilla/CSSEnabledState.h"
+#include "mozilla/Maybe.h"
 
 
 
@@ -29,6 +30,9 @@
 class nsIAtom;
 
 namespace mozilla {
+namespace dom {
+class Element;
+} 
 
 
 
@@ -82,6 +86,12 @@ public:
     }
     return false;
   }
+
+  
+  
+  
+  static mozilla::Maybe<bool>
+    MatchesElement(Type aType, const mozilla::dom::Element* aElement);
 
 private:
   static const uint32_t kPseudoClassFlags[size_t(Type::Count)];
