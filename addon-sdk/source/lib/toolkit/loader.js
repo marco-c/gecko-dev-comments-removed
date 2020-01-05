@@ -906,6 +906,14 @@ const Require = iced(function Require(loader, requirer) {
   }
 
   
+  
+  require.context = prefix => {
+    return id => {
+      return require(prefix + id);
+    };
+  };
+
+  
   require.main = loader.main === requirer ? requirer : undefined;
   return iced(require);
 });

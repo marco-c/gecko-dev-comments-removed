@@ -16,9 +16,50 @@ const propertiesMap = {};
 
 
 
+
+
+
+
+
+
+
+
+
+
+const reqShared = require.context("raw!devtools-shared/locale/",
+                                  true, /^.*\.properties$/);
+const reqClient = require.context("raw!devtools/locale/",
+                                  true, /^.*\.properties$/);
+const reqGlobal = require.context("raw!global/locale/",
+                                  true, /^.*\.properties$/);
+
+
+
+
+
+
+
+
+
 function getProperties(url) {
   if (!propertiesMap[url]) {
-    propertiesMap[url] = parsePropertiesFile(require(`raw!${url}`));
+    
+    
+    
+    
+    
+    let index = url.lastIndexOf("/");
+    
+    let baseName = "." + url.substr(index);
+    let reqFn;
+    if (/^global/.test(url)) {
+      reqFn = reqGlobal;
+    } else if (/^devtools-shared/.test(url)) {
+      reqFn = reqShared;
+    } else {
+      reqFn = reqClient;
+    }
+    propertiesMap[url] = parsePropertiesFile(reqFn(baseName));
   }
 
   return propertiesMap[url];
