@@ -4672,12 +4672,14 @@ nsGridContainerFrame::Tracks::FindUsedFlexFraction(
 
   
   
+  
   float fr = 0.0f;
   for (uint32_t track : aFlexTracks) {
     float flexFactor = aFunctions.MaxSizingFor(track).GetFlexFractionValue();
-    if (flexFactor > 0.0f) {
-      fr = std::max(fr, mSizes[track].mBase / flexFactor);
-    }
+    float possiblyDividedBaseSize = (flexFactor > 1.0f)
+      ? mSizes[track].mBase / flexFactor
+      : mSizes[track].mBase;
+    fr = std::max(fr, possiblyDividedBaseSize);
   }
   WritingMode wm = aState.mWM;
   nsRenderingContext* rc = &aState.mRenderingContext;
