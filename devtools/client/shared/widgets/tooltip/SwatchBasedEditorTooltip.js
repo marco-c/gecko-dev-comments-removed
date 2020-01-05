@@ -85,6 +85,24 @@ SwatchBasedEditorTooltip.prototype = {
 
 
 
+  isVisible: function () {
+    return this.tooltip.isVisible();
+  },
+
+  
+
+
+
+
+  isEditing: function () {
+    return this.isVisible();
+  },
+
+  
+
+
+
+
 
   show: function () {
     let tooltipAnchor = this.useInline ?

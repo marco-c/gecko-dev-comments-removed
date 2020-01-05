@@ -42,6 +42,15 @@ CssDocsTooltip.prototype = {
 
 
 
+
+  isVisible: function () {
+    return this.tooltip.isVisible();
+  },
+
+  
+
+
+
   show: function (anchor, propertyName) {
     this.tooltip.once("shown", () => {
       this.widget.loadCssDocs(propertyName);
@@ -52,6 +61,8 @@ CssDocsTooltip.prototype = {
   hide: function () {
     this.tooltip.hide();
   },
+
+  revert: function () {},
 
   _onShortcut: function (shortcut, event) {
     if (!this.tooltip.isVisible()) {

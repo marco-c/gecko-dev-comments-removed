@@ -16,7 +16,7 @@ add_task(function* () {
   let swatch = getRuleViewProperty(view, "body", "filter").valueSpan
     .querySelector(".ruleview-filterswatch");
 
-  let filterTooltip = view.tooltips.filterEditor;
+  let filterTooltip = view.tooltips.getTooltip("filterEditor");
   
   
   
