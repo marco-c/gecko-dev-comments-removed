@@ -1499,23 +1499,19 @@ SeekingState::SeekCompleted()
     newCurrentTime = video ? video->mTime : seekTime;
   }
 
-  
   bool isLiveStream = Resource()->IsLiveStream();
-  State nextState;
   if (newCurrentTime == mMaster->Duration().ToMicroseconds() && !isLiveStream) {
     
     
     
     
-    
-    nextState = DECODER_STATE_COMPLETED;
-  } else {
-    nextState = DECODER_STATE_DECODING;
+    AudioQueue().Finish();
+    VideoQueue().Finish();
   }
 
   
   
-  mSeekJob.Resolve(nextState == DECODER_STATE_COMPLETED, __func__);
+  mSeekJob.Resolve(false, __func__);
 
   
   
@@ -1545,11 +1541,7 @@ SeekingState::SeekCompleted()
     mMaster->UpdateNextFrameStatus();
   }
 
-  if (nextState == DECODER_STATE_COMPLETED) {
-    SetState<CompletedState>();
-  } else {
-    SetState<DecodingState>();
-  }
+  SetState<DecodingState>();
 }
 
 void
