@@ -4,8 +4,6 @@
 
 
 
-#ifndef SkBmpRLECodec_DEFINED
-#define SkBmpRLECodec_DEFINED
 
 #include "SkBmpCodec.h"
 #include "SkColorTable.h"
@@ -35,9 +33,12 @@ public:
 
 
 
+
+
     SkBmpRLECodec(int width, int height, const SkEncodedInfo& info, SkStream* stream,
             uint16_t bitsPerPixel, uint32_t numColors, uint32_t bytesPerColor,
-            uint32_t offset, SkCodec::SkScanlineOrder rowOrder);
+            uint32_t offset, SkCodec::SkScanlineOrder rowOrder,
+            size_t RLEBytes);
 
     int setSampleX(int);
 
@@ -47,7 +48,7 @@ protected:
                        size_t dstRowBytes, const Options&, SkPMColor*,
                        int*, int*) override;
 
-    SkCodec::Result onPrepareToDecode(const SkImageInfo& dstInfo,
+    SkCodec::Result prepareToDecode(const SkImageInfo& dstInfo,
             const SkCodec::Options& options, SkPMColor inputColorPtr[],
             int* inputColorCount) override;
 
@@ -88,32 +89,28 @@ private:
 
     int decodeRows(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes,
             const Options& opts) override;
-    int decodeRLE(const SkImageInfo& dstInfo, void* dst, size_t dstRowBytes);
 
     bool skipRows(int count) override;
 
     SkSampler* getSampler(bool createIfNecessary) override;
 
-    sk_sp<SkColorTable>        fColorTable;
+    SkAutoTUnref<SkColorTable>          fColorTable;    
     
-    const uint32_t             fNumColors;
-    const uint32_t             fBytesPerColor;
-    const uint32_t             fOffset;
-
-    static constexpr size_t    kBufferSize = 4096;
-    uint8_t                    fStreamBuffer[kBufferSize];
-    size_t                     fBytesBuffered;
-
-    uint32_t                   fCurrRLEByte;
-    int                        fSampleX;
-    std::unique_ptr<SkSampler> fSampler;
+    const uint32_t                      fNumColors;
+    const uint32_t                      fBytesPerColor;
+    const uint32_t                      fOffset;
+    SkAutoTDeleteArray<uint8_t>         fStreamBuffer;
+    size_t                              fRLEBytes;
+    const size_t                        fOrigRLEBytes;
+    uint32_t                            fCurrRLEByte;
+    int                                 fSampleX;
+    SkAutoTDelete<SkSampler>            fSampler;
 
     
     
     
     
-    int                        fLinesToSkip;
+    int                                 fLinesToSkip;
 
     typedef SkBmpCodec INHERITED;
 };
-#endif  

@@ -10,6 +10,7 @@
 #include "SkRecordPattern.h"
 #include "SkRecords.h"
 #include "SkTDArray.h"
+#include "SkXfermode.h"
 
 using namespace SkRecords;
 
@@ -172,7 +173,6 @@ void SkRecordNoopSaveRestores(SkRecord* record) {
     while (apply(&onlyDraws, record) || apply(&noDraws, record));
 }
 
-#ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
 static bool effectively_srcover(const SkPaint* paint) {
     if (!paint || paint->isSrcOver()) {
         return true;
@@ -189,11 +189,6 @@ struct SaveLayerDrawRestoreNooper {
 
     bool onMatch(SkRecord* record, Match* match, int begin, int end) {
         if (match->first<SaveLayer>()->backdrop) {
-            
-            return false;
-        }
-
-        if (match->first<SaveLayer>()->saveLayerFlags & (1U << 31)) {
             
             return false;
         }
@@ -230,7 +225,7 @@ void SkRecordNoopSaveLayerDrawRestores(SkRecord* record) {
     SaveLayerDrawRestoreNooper pass;
     apply(&pass, record);
 }
-#endif
+
 
 
 
@@ -298,12 +293,7 @@ void SkRecordOptimize(SkRecord* record) {
     
 
 
-    
-    
-    
-#ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
     SkRecordNoopSaveLayerDrawRestores(record);
-#endif
     SkRecordMergeSvgOpacityAndFilterLayers(record);
 
     record->defrag();
@@ -312,10 +302,7 @@ void SkRecordOptimize(SkRecord* record) {
 void SkRecordOptimize2(SkRecord* record) {
     multiple_set_matrices(record);
     SkRecordNoopSaveRestores(record);
-    
-#ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
     SkRecordNoopSaveLayerDrawRestores(record);
-#endif
     SkRecordMergeSvgOpacityAndFilterLayers(record);
 
     record->defrag();

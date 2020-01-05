@@ -56,10 +56,11 @@ struct ANPCanvas {
     
     explicit ANPCanvas(SkCanvas* other) {
         skcanvas = other;
+        skcanvas->ref();
     }
 
     ~ANPCanvas() {
-        delete skcanvas;
+        skcanvas->unref();
     }
 };
 

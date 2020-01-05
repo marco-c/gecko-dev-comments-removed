@@ -10,7 +10,38 @@
 #include "SkFontMgr.h"
 #include "SkFontMgr_android.h"
 
-sk_sp<SkFontMgr> SkFontMgr::Factory() {
+
+static const char* gTestFontsXml = nullptr;
+static const char* gTestFallbackFontsXml = nullptr;
+static const char* gTestBasePath = nullptr;
+
+void SkUseTestFontConfigFile(const char* fontsXml, const char* fallbackFontsXml,
+                             const char* basePath)
+{
+    gTestFontsXml = fontsXml;
+    gTestFallbackFontsXml = fallbackFontsXml;
+    gTestBasePath = basePath;
+    SkASSERT(gTestFontsXml);
+    SkASSERT(gTestFallbackFontsXml);
+    SkASSERT(gTestBasePath);
+    SkDEBUGF(("Test BasePath: %s Fonts: %s FallbackFonts: %s\n",
+              gTestBasePath, gTestFontsXml, gTestFallbackFontsXml));
+}
+
+SkFontMgr* SkFontMgr::Factory() {
+    
+    
+    if ((gTestFontsXml || gTestFallbackFontsXml) && gTestBasePath) {
+        SkFontMgr_Android_CustomFonts custom = {
+            SkFontMgr_Android_CustomFonts::kOnlyCustom,
+            gTestBasePath,
+            gTestFontsXml,
+            gTestFallbackFontsXml,
+            false 
+        };
+        return SkFontMgr_New_Android(&custom);
+    }
+
     return SkFontMgr_New_Android(nullptr);
 }
 

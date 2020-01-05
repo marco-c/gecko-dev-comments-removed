@@ -13,19 +13,18 @@ SkCanvasStack::~SkCanvasStack() {
     this->removeAll();
 }
 
-void SkCanvasStack::pushCanvas(std::unique_ptr<SkCanvas> canvas, const SkIPoint& origin) {
+void SkCanvasStack::pushCanvas(SkCanvas* canvas, const SkIPoint& origin) {
     if (canvas) {
         
-        const SkIRect canvasBounds = SkIRect::MakeSize(canvas->getBaseLayerSize());
+        const SkIRect canvasBounds = SkIRect::MakeSize(canvas->getDeviceSize());
 
         
-        this->INHERITED::addCanvas(canvas.get());
+        this->INHERITED::addCanvas(canvas);
 
         
         CanvasData* data = &fCanvasData.push_back();
         data->origin = origin;
         data->requiredClip.setRect(canvasBounds);
-        data->ownedCanvas = std::move(canvas);
 
         
         
@@ -42,8 +41,8 @@ void SkCanvasStack::pushCanvas(std::unique_ptr<SkCanvas> canvas, const SkIPoint&
 }
 
 void SkCanvasStack::removeAll() {
-    this->INHERITED::removeAll();   
     fCanvasData.reset();
+    this->INHERITED::removeAll();
 }
 
 
@@ -77,22 +76,22 @@ void SkCanvasStack::didSetMatrix(const SkMatrix& matrix) {
     this->SkCanvas::didSetMatrix(matrix);
 }
 
-void SkCanvasStack::onClipRect(const SkRect& r, SkClipOp op, ClipEdgeStyle edgeStyle) {
+void SkCanvasStack::onClipRect(const SkRect& r, ClipOp op, ClipEdgeStyle edgeStyle) {
     this->INHERITED::onClipRect(r, op, edgeStyle);
     this->clipToZOrderedBounds();
 }
 
-void SkCanvasStack::onClipRRect(const SkRRect& rr, SkClipOp op, ClipEdgeStyle edgeStyle) {
+void SkCanvasStack::onClipRRect(const SkRRect& rr, ClipOp op, ClipEdgeStyle edgeStyle) {
     this->INHERITED::onClipRRect(rr, op, edgeStyle);
     this->clipToZOrderedBounds();
 }
 
-void SkCanvasStack::onClipPath(const SkPath& p, SkClipOp op, ClipEdgeStyle edgeStyle) {
+void SkCanvasStack::onClipPath(const SkPath& p, ClipOp op, ClipEdgeStyle edgeStyle) {
     this->INHERITED::onClipPath(p, op, edgeStyle);
     this->clipToZOrderedBounds();
 }
 
-void SkCanvasStack::onClipRegion(const SkRegion& deviceRgn, SkClipOp op) {
+void SkCanvasStack::onClipRegion(const SkRegion& deviceRgn, ClipOp op) {
     SkASSERT(fList.count() == fCanvasData.count());
     for (int i = 0; i < fList.count(); ++i) {
         SkRegion tempRegion;

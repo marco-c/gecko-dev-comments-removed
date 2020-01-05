@@ -7,8 +7,6 @@
 
 #include "SkMask.h"
 
-#include "SkMalloc.h"
-
 
 
 

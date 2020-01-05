@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_IRNODE
 #define SKSL_IRNODE
 
@@ -22,7 +22,7 @@ struct IRNode {
 
     virtual ~IRNode() {}
 
-    virtual String description() const = 0;
+    virtual std::string description() const = 0;
 
     const Position fPosition;
 };

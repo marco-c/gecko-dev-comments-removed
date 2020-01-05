@@ -12,7 +12,9 @@
 #include "SkColor.h"
 #include "SkFilterQuality.h"
 #include "SkMatrix.h"
-#include "SkRefCnt.h"
+#include "SkXfermode.h"
+
+
 
 class SkAutoDescriptor;
 class SkAutoGlyphCache;
@@ -36,6 +38,8 @@ class SkShader;
 class SkSurfaceProps;
 class SkTextBlob;
 class SkTypeface;
+
+#define kBicubicFilterBitmap_Flag kHighQualityFilterBitmap_Flag
 
 
 
@@ -101,6 +105,8 @@ public:
     enum Flags {
         kAntiAlias_Flag       = 0x01,   
         kDither_Flag          = 0x04,   
+        kUnderlineText_Flag   = 0x08,   
+        kStrikeThruText_Flag  = 0x10,   
         kFakeBoldText_Flag    = 0x20,   
         kLinearText_Flag      = 0x40,   
         kSubpixelText_Flag    = 0x80,   
@@ -113,17 +119,8 @@ public:
         
         
 
-        kAllFlags = 0xFFFF,
+        kAllFlags = 0xFFFF
     };
-
-#ifdef SK_BUILD_FOR_ANDROID_FRAMEWORK
-    enum ReserveFlags {
-        
-        
-        kUnderlineText_ReserveFlag   = 0x08,   
-        kStrikeThruText_ReserveFlag  = 0x10,   
-    };
-#endif
 
     
 
@@ -232,6 +229,32 @@ public:
 
 
     void setVerticalText(bool);
+
+    
+
+
+    bool isUnderlineText() const {
+        return SkToBool(this->getFlags() & kUnderlineText_Flag);
+    }
+
+    
+
+
+
+    void setUnderlineText(bool underlineText);
+
+    
+
+
+    bool isStrikeThruText() const {
+        return SkToBool(this->getFlags() & kStrikeThruText_Flag);
+    }
+
+    
+
+
+
+    void setStrikeThruText(bool strikeThruText);
 
     
 
@@ -460,9 +483,9 @@ public:
 
 
     SkShader* getShader() const { return fShader.get(); }
-    sk_sp<SkShader> refShader() const;
 
     
+
 
 
 
@@ -483,13 +506,15 @@ public:
 
 
     void setShader(sk_sp<SkShader>);
+#ifdef SK_SUPPORT_LEGACY_CREATESHADER_PTR
+    SkShader* setShader(SkShader* shader);
+#endif
 
     
 
 
 
     SkColorFilter* getColorFilter() const { return fColorFilter.get(); }
-    sk_sp<SkColorFilter> refColorFilter() const;
 
     
 
@@ -497,7 +522,41 @@ public:
 
 
 
+
+#ifdef SK_SUPPORT_LEGACY_COLORFILTER_PTR
+    SkColorFilter* setColorFilter(SkColorFilter* filter);
+#endif
     void setColorFilter(sk_sp<SkColorFilter>);
+
+#ifdef SK_SUPPORT_LEGACY_XFERMODE_OBJECT
+    
+
+
+
+
+    SkXfermode* getXfermode() const;
+
+    
+
+
+
+
+
+
+
+
+
+    void setXfermode(sk_sp<SkXfermode>);
+#ifdef SK_SUPPORT_LEGACY_XFERMODE_PTR
+    SkXfermode* setXfermode(SkXfermode* xfermode);
+#endif
+
+    
+
+
+
+    SkXfermode* setXfermodeMode(SkXfermode::Mode);
+#endif
 
     SkBlendMode getBlendMode() const { return (SkBlendMode)fBlendMode; }
     bool isSrcOver() const { return (SkBlendMode)fBlendMode == SkBlendMode::kSrcOver; }
@@ -509,7 +568,6 @@ public:
 
 
     SkPathEffect* getPathEffect() const { return fPathEffect.get(); }
-    sk_sp<SkPathEffect> refPathEffect() const;
 
     
 
@@ -522,6 +580,9 @@ public:
 
 
     void setPathEffect(sk_sp<SkPathEffect>);
+#ifdef SK_SUPPORT_LEGACY_PATHEFFECT_PTR
+    SkPathEffect* setPathEffect(SkPathEffect* effect);
+#endif
 
     
 
@@ -529,7 +590,6 @@ public:
 
 
     SkMaskFilter* getMaskFilter() const { return fMaskFilter.get(); }
-    sk_sp<SkMaskFilter> refMaskFilter() const;
 
     
 
@@ -541,6 +601,9 @@ public:
 
 
 
+#ifdef SK_SUPPORT_LEGACY_MASKFILTER_PTR
+    SkMaskFilter* setMaskFilter(SkMaskFilter* maskfilter);
+#endif
     void setMaskFilter(sk_sp<SkMaskFilter>);
 
     
@@ -552,7 +615,6 @@ public:
 
 
     SkTypeface* getTypeface() const { return fTypeface.get(); }
-    sk_sp<SkTypeface> refTypeface() const;
 
     
 
@@ -565,6 +627,9 @@ public:
 
 
     void setTypeface(sk_sp<SkTypeface>);
+#ifdef SK_SUPPORT_LEGACY_TYPEFACE_PTR
+    SkTypeface* setTypeface(SkTypeface* typeface);
+#endif
 
     
 
@@ -572,7 +637,6 @@ public:
 
 
     SkRasterizer* getRasterizer() const { return fRasterizer.get(); }
-    sk_sp<SkRasterizer> refRasterizer() const;
 
     
 
@@ -585,10 +649,13 @@ public:
 
 
 
+#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
+    SkRasterizer* setRasterizer(SkRasterizer* rasterizer);
+#endif
     void setRasterizer(sk_sp<SkRasterizer>);
 
     SkImageFilter* getImageFilter() const { return fImageFilter.get(); }
-    sk_sp<SkImageFilter> refImageFilter() const;
+    SkImageFilter* setImageFilter(SkImageFilter*);
     void setImageFilter(sk_sp<SkImageFilter>);
 
     
@@ -596,8 +663,6 @@ public:
 
 
     SkDrawLooper* getDrawLooper() const { return fDrawLooper.get(); }
-    sk_sp<SkDrawLooper> refDrawLooper() const;
-
     SkDrawLooper* getLooper() const { return fDrawLooper.get(); }
     
 
@@ -609,7 +674,9 @@ public:
 
 
     void setDrawLooper(sk_sp<SkDrawLooper>);
-
+#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
+    SkDrawLooper* setLooper(SkDrawLooper* looper);
+#endif
     void setLooper(sk_sp<SkDrawLooper>);
 
     enum Align {
@@ -688,7 +755,7 @@ public:
 
 
         enum FontMetricsFlags {
-            kUnderlineThicknessIsValid_Flag = 1 << 0,
+            kUnderlineThinknessIsValid_Flag = 1 << 0,
             kUnderlinePositionIsValid_Flag = 1 << 1,
         };
 
@@ -719,7 +786,7 @@ public:
 
 
         bool hasUnderlineThickness(SkScalar* thickness) const {
-            if (SkToBool(fFlags & kUnderlineThicknessIsValid_Flag)) {
+            if (SkToBool(fFlags & kUnderlineThinknessIsValid_Flag)) {
                 *thickness = fUnderlineThickness;
                 return true;
             }

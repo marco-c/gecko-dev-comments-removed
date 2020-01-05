@@ -16,12 +16,10 @@
 #include "SkPath.h"
 #include "SkPicture.h"
 #include "SkRect.h"
-#include "SkRegion.h"
 #include "SkRRect.h"
 #include "SkRSXform.h"
 #include "SkString.h"
 #include "SkTextBlob.h"
-#include "SkVertices.h"
 
 
 
@@ -194,14 +192,9 @@ RECORD(TranslateZ, 0, SkScalar z);
 
 struct ClipOpAndAA {
     ClipOpAndAA() {}
-    ClipOpAndAA(SkClipOp op, bool aa) : fOp(static_cast<unsigned>(op)), fAA(aa) {}
-
-    SkClipOp op() const { return static_cast<SkClipOp>(fOp); }
-    bool aa() const { return fAA != 0; }
-
-private:
-    unsigned fOp : 31;  
-    unsigned fAA :  1;  
+    ClipOpAndAA(SkCanvas::ClipOp op, bool aa) : op(op), aa(aa) {}
+    SkCanvas::ClipOp op : 31;  
+    unsigned         aa :  1;  
 };
 static_assert(sizeof(ClipOpAndAA) == 4, "ClipOpAndAASize");
 
@@ -220,7 +213,7 @@ RECORD(ClipRect, 0,
 RECORD(ClipRegion, 0,
         SkIRect devBounds;
         SkRegion region;
-        SkClipOp op);
+        SkCanvas::ClipOp op);
 
 
 RECORD(DrawArc, kDraw_Tag|kHasPaint_Tag,
@@ -334,7 +327,7 @@ RECORD(DrawPatch, kDraw_Tag|kHasPaint_Tag,
         PODArray<SkPoint> cubics;
         PODArray<SkColor> colors;
         PODArray<SkPoint> texCoords;
-        SkBlendMode bmode);
+        sk_sp<SkXfermode> xmode);
 RECORD(DrawAtlas, kDraw_Tag|kHasImage_Tag|kHasPaint_Tag,
         Optional<SkPaint> paint;
         sk_sp<const SkImage> atlas;
@@ -342,12 +335,18 @@ RECORD(DrawAtlas, kDraw_Tag|kHasImage_Tag|kHasPaint_Tag,
         PODArray<SkRect> texs;
         PODArray<SkColor> colors;
         int count;
-        SkBlendMode mode;
+        SkXfermode::Mode mode;
         Optional<SkRect> cull);
 RECORD(DrawVertices, kDraw_Tag|kHasPaint_Tag,
         SkPaint paint;
-        sk_sp<SkVertices> vertices;
-        SkBlendMode bmode);
+        SkCanvas::VertexMode vmode;
+        int vertexCount;
+        PODArray<SkPoint> vertices;
+        PODArray<SkPoint> texs;
+        PODArray<SkColor> colors;
+        sk_sp<SkXfermode> xmode;
+        PODArray<uint16_t> indices;
+        int indexCount);
 RECORD(DrawAnnotation, 0,  
        SkRect rect;
        SkString key;

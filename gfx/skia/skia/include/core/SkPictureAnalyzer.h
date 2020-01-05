@@ -37,7 +37,7 @@ public:
     
 
 
-    void analyzeClipPath(const SkPath&, SkClipOp, bool doAntiAlias);
+    void analyzeClipPath(const SkPath&, SkCanvas::ClipOp, bool doAntiAlias);
 
     
 

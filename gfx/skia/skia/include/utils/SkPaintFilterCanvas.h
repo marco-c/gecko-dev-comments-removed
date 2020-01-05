@@ -20,6 +20,11 @@ public:
     
 
 
+    SkPaintFilterCanvas(int width, int height);
+
+    
+
+
 
     SkPaintFilterCanvas(SkCanvas* canvas);
 
@@ -74,9 +79,13 @@ protected:
                          const SkPaint*, SrcRectConstraint) override;
     void onDrawImageNine(const SkImage*, const SkIRect& center, const SkRect& dst,
                          const SkPaint*) override;
-    void onDrawVerticesObject(const SkVertices*, SkBlendMode, const SkPaint&) override;
+    void onDrawVertices(VertexMode vmode, int vertexCount,
+                              const SkPoint vertices[], const SkPoint texs[],
+                              const SkColor colors[], SkXfermode* xmode,
+                              const uint16_t indices[], int indexCount,
+                              const SkPaint&) override;
     void onDrawPatch(const SkPoint cubics[12], const SkColor colors[4],
-                             const SkPoint texCoords[4], SkBlendMode,
+                             const SkPoint texCoords[4], SkXfermode* xmode,
                              const SkPaint& paint) override;
     void onDrawPicture(const SkPicture*, const SkMatrix*, const SkPaint*) override;
 

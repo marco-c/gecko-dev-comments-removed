@@ -8,7 +8,6 @@
 #ifndef GrTexturePriv_DEFINED
 #define GrTexturePriv_DEFINED
 
-#include "GrExternalTextureData.h"
 #include "GrTexture.h"
 
 
@@ -50,32 +49,10 @@ public:
         return fTexture->fMaxMipMapLevel;
     }
 
-    GrSLType imageStorageType() const {
-        if (GrPixelConfigIsSint(fTexture->config())) {
-            return kIImageStorage2D_GrSLType;
-        } else {
-            return kImageStorage2D_GrSLType;
-        }
+    void setGammaTreatment(SkSourceGammaTreatment gammaTreatment) const {
+        fTexture->fGammaTreatment = gammaTreatment;
     }
-
-    GrSLType samplerType() const { return fTexture->fSamplerType; }
-
-    
-    GrSamplerParams::FilterMode highestFilterMode() const { return fTexture->fHighestFilterMode; }
-
-    void setMipColorMode(SkDestinationSurfaceColorMode colorMode) const {
-        fTexture->fMipColorMode = colorMode;
-    }
-    SkDestinationSurfaceColorMode mipColorMode() const { return fTexture->fMipColorMode; }
-
-    
-
-
-
-
-    std::unique_ptr<GrExternalTextureData> detachBackendTexture() {
-        return fTexture->detachBackendTexture();
-    }
+    SkSourceGammaTreatment gammaTreatment() const { return fTexture->fGammaTreatment; }
 
     static void ComputeScratchKey(const GrSurfaceDesc&, GrScratchKey*);
 

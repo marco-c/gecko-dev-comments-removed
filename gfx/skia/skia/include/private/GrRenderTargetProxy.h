@@ -9,22 +9,33 @@
 #define GrRenderTargetProxy_DEFINED
 
 #include "GrRenderTarget.h"
+#include "GrRenderTargetPriv.h"
 #include "GrSurfaceProxy.h"
 #include "GrTypes.h"
 
-class GrResourceProvider;
+class GrTextureProvider;
 
 
 
 
 
-class GrRenderTargetProxy : virtual public GrSurfaceProxy {
+class GrRenderTargetProxy : public GrSurfaceProxy {
 public:
+    
+
+
+    static sk_sp<GrRenderTargetProxy> Make(const GrCaps&, const GrSurfaceDesc&,
+                                           SkBackingFit, SkBudgeted);
+    static sk_sp<GrRenderTargetProxy> Make(const GrCaps&, sk_sp<GrRenderTarget>);
+
+    ~GrRenderTargetProxy() override;
+
+    
     GrRenderTargetProxy* asRenderTargetProxy() override { return this; }
     const GrRenderTargetProxy* asRenderTargetProxy() const override { return this; }
 
     
-    GrRenderTarget* instantiate(GrResourceProvider* resourceProvider);
+    GrRenderTarget* instantiate(GrTextureProvider* texProvider);
 
     bool isStencilBufferMultisampled() const { return fDesc.fSampleCnt > 0; }
 
@@ -32,7 +43,7 @@ public:
 
 
 
-    bool isMixedSampled() const { return fRenderTargetFlags & GrRenderTarget::Flags::kMixedSampled; }
+    bool isMixedSampled() const { return fFlags & GrRenderTargetPriv::Flags::kMixedSampled; }
 
     
 
@@ -49,36 +60,36 @@ public:
 
     int numColorSamples() const { return this->isMixedSampled() ? 0 : fDesc.fSampleCnt; }
 
-    int maxWindowRectangles(const GrCaps& caps) const;
+    void setLastDrawTarget(GrDrawTarget* dt);
+    GrDrawTarget* getLastDrawTarget() { return fLastDrawTarget; }
 
-    GrRenderTarget::Flags testingOnly_getFlags() const;
-
-    
-    bool refsWrappedObjects() const;
-
-protected:
-    friend class GrSurfaceProxy;  
-
-    
-    GrRenderTargetProxy(const GrCaps&, const GrSurfaceDesc&,
-                        SkBackingFit, SkBudgeted, uint32_t flags);
-
-    
-    GrRenderTargetProxy(sk_sp<GrSurface>);
+    GrRenderTargetPriv::Flags testingOnly_getFlags() const;
 
 private:
-    size_t onGpuMemorySize() const override;
+    
+    GrRenderTargetProxy(const GrCaps&, const GrSurfaceDesc&, SkBackingFit, SkBudgeted);
+
+    
+    GrRenderTargetProxy(const GrCaps&, sk_sp<GrRenderTarget> rt);
+
+    
+    
+    sk_sp<GrRenderTarget>       fTarget;
 
     
     
     
+    
+    
+    GrRenderTargetPriv::Flags   fFlags;
 
     
     
     
     
     
-    GrRenderTarget::Flags   fRenderTargetFlags;
+    
+    GrDrawTarget* fLastDrawTarget;
 
     typedef GrSurfaceProxy INHERITED;
 };

@@ -35,7 +35,7 @@ public:
                      bool gzip = false);
 
     
-    ~SkDeflateWStream() override;
+    ~SkDeflateWStream();
 
     
 

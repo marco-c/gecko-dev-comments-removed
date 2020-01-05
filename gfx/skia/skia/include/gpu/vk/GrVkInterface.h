@@ -19,6 +19,20 @@
 
 
 
+struct GrVkInterface;
+
+
+
+
+const GrVkInterface* GrVkCreateInterface(VkInstance instance, VkDevice device,
+                                         uint32_t extensionFlags);
+
+
+
+
+
+
+
 
 struct SK_API GrVkInterface : public SkRefCnt {
 private:
@@ -35,19 +49,11 @@ private:
     typedef SkRefCnt INHERITED;
 
 public:
-    using GetProc = std::function<PFN_vkVoidFunction(
-        const char*, 
-        VkInstance,  
-        VkDevice     
-        )>;
-    GrVkInterface(GetProc getProc,
-                  VkInstance instance,
-                  VkDevice device,
-                  uint32_t extensionFlags);
+    GrVkInterface();
 
     
     
-    bool validate(uint32_t extensionFlags) const;
+    bool validate() const;
 
     
 

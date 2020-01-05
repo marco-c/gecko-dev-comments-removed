@@ -38,7 +38,7 @@ public:
 
 
     explicit SkRTree(SkScalar aspectRatio = 1);
-    ~SkRTree() override {}
+    virtual ~SkRTree() {}
 
     void insert(const SkRect[], int N) override;
     void search(const SkRect& query, SkTDArray<int>* results) const override;

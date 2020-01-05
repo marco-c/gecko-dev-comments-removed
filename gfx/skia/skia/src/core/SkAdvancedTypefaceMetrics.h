@@ -26,6 +26,8 @@ public:
     SkAdvancedTypefaceMetrics()
         : fType(SkAdvancedTypefaceMetrics::kOther_Font)
         , fFlags((FontFlags)0)
+        , fLastGlyphID(0)
+        , fEmSize(0)
         , fStyle((StyleFlags)0)
         , fItalicAngle(0)
         , fAscent(0)
@@ -56,6 +58,9 @@ public:
         kNotSubsettable_FontFlag = 0x04,  
     };
     FontFlags fFlags;  
+
+    uint16_t fLastGlyphID; 
+    uint16_t fEmSize;  
 
     
     enum StyleFlags : uint32_t {

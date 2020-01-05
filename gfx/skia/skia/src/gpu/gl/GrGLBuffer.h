@@ -19,7 +19,7 @@ public:
     static GrGLBuffer* Create(GrGLGpu*, size_t size, GrBufferType intendedType, GrAccessPattern,
                               const void* data = nullptr);
 
-    ~GrGLBuffer() override {
+    ~GrGLBuffer() {
         
         SkASSERT(0 == fBufferID);
     }

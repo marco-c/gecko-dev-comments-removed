@@ -6,19 +6,55 @@
 
 
 #include "GrCoordTransform.h"
-#include "GrResourceProvider.h"
-#include "GrTextureProxy.h"
+#include "GrCaps.h"
+#include "GrContext.h"
+#include "GrGpu.h"
 
-void GrCoordTransform::reset(GrResourceProvider* resourceProvider, const SkMatrix& m,
-                             GrTextureProxy* proxy, bool normalize) {
-    SkASSERT(proxy);
+void GrCoordTransform::reset(const SkMatrix& m, const GrTexture* texture,
+                             GrTextureParams::FilterMode filter) {
+    SkASSERT(texture);
     SkASSERT(!fInProcessor);
 
     fMatrix = m;
+    fReverseY = kBottomLeft_GrSurfaceOrigin == texture->origin();
+
     
     
     
-    fTexture = proxy->instantiate(resourceProvider);
-    fNormalize = normalize;
-    fReverseY = kBottomLeft_GrSurfaceOrigin == proxy->origin();
+    
+    
+    int subPixelThresh = filter > GrTextureParams::kNone_FilterMode ? 4 : 1;
+    fPrecision = kDefault_GrSLPrecision;
+    if (texture->getContext()) {
+        const GrShaderCaps* caps = texture->getContext()->caps()->shaderCaps();
+        if (caps->floatPrecisionVaries()) {
+            int maxD = SkTMax(texture->width(), texture->height());
+            const GrShaderCaps::PrecisionInfo* info;
+            info = &caps->getFloatShaderPrecisionInfo(kFragment_GrShaderType, fPrecision);
+            do {
+                SkASSERT(info->supported());
+                
+                
+                if ((2 << info->fBits) / maxD > subPixelThresh) {
+                    break;
+                }
+                if (kHigh_GrSLPrecision == fPrecision) {
+                    break;
+                }
+                GrSLPrecision nextP = static_cast<GrSLPrecision>(fPrecision + 1);
+                info = &caps->getFloatShaderPrecisionInfo(kFragment_GrShaderType, nextP);
+                if (!info->supported()) {
+                    break;
+                }
+                fPrecision = nextP;
+            } while (true);
+        }
+    }
+}
+
+void GrCoordTransform::reset(const SkMatrix& m, GrSLPrecision precision) {
+    SkASSERT(!fInProcessor);
+    fMatrix = m;
+    fReverseY = false;
+    fPrecision = precision;
 }

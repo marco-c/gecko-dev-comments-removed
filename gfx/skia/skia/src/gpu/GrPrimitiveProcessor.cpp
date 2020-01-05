@@ -15,9 +15,17 @@
 
 enum {
     kMatrixTypeKeyBits   = 1,
-    kPositionCoords_Flag = 1 << kMatrixTypeKeyBits,
-    kTransformKeyBits    = kMatrixTypeKeyBits + 1,
+    kMatrixTypeKeyMask   = (1 << kMatrixTypeKeyBits) - 1,
+
+    kPrecisionBits       = 2,
+    kPrecisionShift      = kMatrixTypeKeyBits,
+
+    kPositionCoords_Flag = (1 << (kPrecisionShift + kPrecisionBits)),
+
+    kTransformKeyBits    = kMatrixTypeKeyBits + kPrecisionBits + 2,
 };
+
+GR_STATIC_ASSERT(kHigh_GrSLPrecision < (1 << kPrecisionBits));
 
 
 
@@ -43,6 +51,9 @@ GrPrimitiveProcessor::getTransformKey(const SkTArray<const GrCoordTransform*, tr
         if (!this->hasExplicitLocalCoords()) {
             key |= kPositionCoords_Flag;
         }
+
+        GR_STATIC_ASSERT(kGrSLPrecisionCount <= (1 << kPrecisionBits));
+        key |= (coordTransform->precision() << kPrecisionShift);
 
         key <<= kTransformKeyBits * t;
 

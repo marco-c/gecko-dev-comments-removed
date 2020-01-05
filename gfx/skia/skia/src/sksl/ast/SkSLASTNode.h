@@ -4,11 +4,12 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTNODE
 #define SKSL_ASTNODE
 
-#include "SkSLString.h"
+#include <memory>
+#include <string>
 
 namespace SkSL {
 
@@ -18,8 +19,8 @@ namespace SkSL {
 
 struct ASTNode {
     virtual ~ASTNode() {}
-
-    virtual String description() const = 0;
+     
+    virtual std::string description() const = 0;
 };
 
 } 

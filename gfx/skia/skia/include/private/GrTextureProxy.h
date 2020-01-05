@@ -11,36 +11,34 @@
 #include "GrSurfaceProxy.h"
 #include "GrTexture.h"
 
-class GrCaps;
-class GrResourceProvider;
-class GrTextureOpList;
+class GrTextureProvider;
 
 
-class GrTextureProxy : virtual public GrSurfaceProxy {
+class GrTextureProxy : public GrSurfaceProxy {
 public:
+    
+    
+    static sk_sp<GrTextureProxy> Make(const GrSurfaceDesc&, SkBackingFit, SkBudgeted,
+                                      const void* srcData = nullptr, size_t rowBytes = 0);
+    static sk_sp<GrTextureProxy> Make(sk_sp<GrTexture>);
+
+    
     GrTextureProxy* asTextureProxy() override { return this; }
     const GrTextureProxy* asTextureProxy() const override { return this; }
 
     
-    GrTexture* instantiate(GrResourceProvider*);
-
-    void setMipColorMode(SkDestinationSurfaceColorMode colorMode);
-
-protected:
-    friend class GrSurfaceProxy; 
-
-    
-    GrTextureProxy(const GrSurfaceDesc& srcDesc, SkBackingFit, SkBudgeted,
-                   const void* srcData, size_t srcRowBytes, uint32_t flags);
-    
-    GrTextureProxy(sk_sp<GrSurface>);
+    GrTexture* instantiate(GrTextureProvider* texProvider);
 
 private:
-    size_t onGpuMemorySize() const override;
+    
+    GrTextureProxy(const GrSurfaceDesc& srcDesc, SkBackingFit, SkBudgeted,
+                   const void* srcData, size_t srcRowBytes);
+    
+    GrTextureProxy(sk_sp<GrTexture> tex);
 
     
     
-    
+    sk_sp<GrTexture> fTexture;
 
     typedef GrSurfaceProxy INHERITED;
 };

@@ -436,7 +436,7 @@ private:
 
         SkPoint findAndPositionGlyph(
             const char** text, SkPoint position, ProcessOneGlyph&& processOneGlyph) override {
-
+            SkPoint finalPosition = position;
             if (kTextAlignment != SkPaint::kLeft_Align) {
                 
                 
@@ -447,28 +447,26 @@ private:
                 if (metricGlyph.fWidth <= 0) {
                     
                     *text = tempText;
-                    return position + SkPoint{SkFloatToScalar(metricGlyph.fAdvanceX),
-                                              SkFloatToScalar(metricGlyph.fAdvanceY)};
+                    return finalPosition + SkPoint{SkFloatToScalar(metricGlyph.fAdvanceX),
+                                                   SkFloatToScalar(metricGlyph.fAdvanceY)};
                 }
 
                 
-                position -= TextAlignmentAdjustment(kTextAlignment, metricGlyph);
+                finalPosition -= TextAlignmentAdjustment(kTextAlignment, metricGlyph);
             }
 
             
-            SkIPoint lookupPosition = SkScalarsAreFinite(position.fX, position.fY)
-                                      ? SubpixelAlignment(kAxisAlignment, position)
-                                      : SkIPoint{0, 0};
+            SkIPoint lookupPosition = SubpixelAlignment(kAxisAlignment, finalPosition);
             const SkGlyph& renderGlyph =
                 fGlyphFinder->lookupGlyphXY(text, lookupPosition.fX, lookupPosition.fY);
 
             
             if (renderGlyph.fWidth > 0) {
-                processOneGlyph(renderGlyph, position,
+                processOneGlyph(renderGlyph, finalPosition,
                                 SubpixelPositionRounding(kAxisAlignment));
             }
-            return position + SkPoint{SkFloatToScalar(renderGlyph.fAdvanceX),
-                                      SkFloatToScalar(renderGlyph.fAdvanceY)};
+            return finalPosition + SkPoint{SkFloatToScalar(renderGlyph.fAdvanceX),
+                                           SkFloatToScalar(renderGlyph.fAdvanceY)};
         }
 
     private:

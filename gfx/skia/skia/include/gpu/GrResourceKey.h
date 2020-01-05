@@ -9,11 +9,10 @@
 #ifndef GrResourceKey_DEFINED
 #define GrResourceKey_DEFINED
 
-#include "../private/SkOnce.h"
 #include "../private/SkTemplates.h"
 #include "GrTypes.h"
 #include "SkData.h"
-#include "SkString.h"
+#include "../private/SkOnce.h"
 
 uint32_t GrResourceKeyHash(const uint32_t* data, size_t size);
 
@@ -140,8 +139,7 @@ private:
     friend class TestResource; 
 
     
-    
-    SkAutoSTMalloc<kMetaDataCnt + 7, uint32_t> fKey;
+    SkAutoSTMalloc<kMetaDataCnt + 5, uint32_t> fKey;
 };
 
 
@@ -241,7 +239,6 @@ public:
     GrUniqueKey& operator=(const GrUniqueKey& that) {
         this->INHERITED::operator=(that);
         this->setCustomData(sk_ref_sp(that.getCustomData()));
-        SkDEBUGCODE(fTag = that.fTag;)
         return *this;
     }
 
@@ -257,28 +254,21 @@ public:
         return fData.get();
     }
 
-    SkDEBUGCODE(const char* tag() const { return fTag.c_str(); })
-
     class Builder : public INHERITED::Builder {
     public:
-        Builder(GrUniqueKey* key, Domain type, int data32Count, const char* tag = nullptr)
-                : INHERITED::Builder(key, type, data32Count) {
-            SkDEBUGCODE(key->fTag = tag;)
-            (void) tag;  
-        }
+        Builder(GrUniqueKey* key, Domain domain, int data32Count)
+            : INHERITED::Builder(key, domain, data32Count) {}
 
         
-        Builder(GrUniqueKey* key, const GrUniqueKey& innerKey, Domain domain, int extraData32Cnt,
-                const char* tag = nullptr)
-                : INHERITED::Builder(key, domain, Data32CntForInnerKey(innerKey) + extraData32Cnt) {
+        Builder(GrUniqueKey* key, const GrUniqueKey& innerKey, Domain domain,
+                int extraData32Cnt)
+            : INHERITED::Builder(key, domain, Data32CntForInnerKey(innerKey) + extraData32Cnt) {
             SkASSERT(&innerKey != key);
             
             uint32_t* innerKeyData = &this->operator[](extraData32Cnt);
             const uint32_t* srcData = innerKey.data();
             (*innerKeyData++) = innerKey.domain();
             memcpy(innerKeyData, srcData, innerKey.dataSize());
-            SkDEBUGCODE(key->fTag = tag;)
-            (void) tag;  
         }
 
     private:
@@ -290,7 +280,6 @@ public:
 
 private:
     sk_sp<SkData> fData;
-    SkDEBUGCODE(SkString fTag;)
 };
 
 

@@ -11,19 +11,18 @@
 #include "GrProcessor.h"
 
 class GrCoordTransform;
+class GrGLSLCaps;
 class GrGLSLFragmentProcessor;
 class GrInvariantOutput;
 class GrPipeline;
 class GrProcessorKeyBuilder;
-class GrShaderCaps;
-class GrSwizzle;
 
 
 
 
 
 
-class GrFragmentProcessor : public GrResourceIOProcessor, public GrProgramElement {
+class GrFragmentProcessor : public GrProcessor {
 public:
     
 
@@ -40,8 +39,7 @@ public:
 
 
 
-
-    static sk_sp<GrFragmentProcessor> MakeInputPremulAndMulByOutput(sk_sp<GrFragmentProcessor>);
+    static sk_sp<GrFragmentProcessor> MulOutputByInputUnpremulColor(sk_sp<GrFragmentProcessor>);
 
     
 
@@ -60,35 +58,22 @@ public:
 
 
 
-    static sk_sp<GrFragmentProcessor> PremulOutput(sk_sp<GrFragmentProcessor>);
-
-    
-
-
-
-    static sk_sp<GrFragmentProcessor> UnpremulOutput(sk_sp<GrFragmentProcessor>);
-
-    
-
-
-
-    static sk_sp<GrFragmentProcessor> SwizzleOutput(sk_sp<GrFragmentProcessor>, const GrSwizzle&);
-
-    
-
-
-
 
 
 
 
     static sk_sp<GrFragmentProcessor> RunInSeries(sk_sp<GrFragmentProcessor>*, int cnt);
 
+    GrFragmentProcessor()
+        : INHERITED()
+        , fUsesDistanceVectorField(false)
+        , fUsesLocalCoords(false) {}
+
     ~GrFragmentProcessor() override;
 
     GrGLSLFragmentProcessor* createGLSLInstance() const;
 
-    void getGLSLProcessorKey(const GrShaderCaps& caps, GrProcessorKeyBuilder* b) const {
+    void getGLSLProcessorKey(const GrGLSLCaps& caps, GrProcessorKeyBuilder* b) const {
         this->onGetGLSLProcessorKey(caps, b);
         for (int i = 0; i < fChildProcessors.count(); ++i) {
             fChildProcessors[i]->getGLSLProcessorKey(caps, b);
@@ -110,51 +95,10 @@ public:
     const GrFragmentProcessor& childProcessor(int index) const { return *fChildProcessors[index]; }
 
     
-    bool usesLocalCoords() const { return SkToBool(fFlags & kUsesLocalCoords_Flag); }
+    bool usesLocalCoords() const { return fUsesLocalCoords; }
 
     
-    bool usesDistanceVectorField() const {
-        return SkToBool(fFlags & kUsesDistanceVectorField_Flag);
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-    bool compatibleWithCoverageAsAlpha() const {
-        return SkToBool(fFlags & kCompatibleWithCoverageAsAlpha_OptimizationFlag);
-    }
-
-    
-
-
-    bool preservesOpaqueInput() const {
-        return SkToBool(fFlags & kPreservesOpaqueInput_OptimizationFlag);
-    }
-
-    
-
-
-
-
-    bool hasConstantOutputForConstantInput(GrColor4f inputColor, GrColor4f* outputColor) const {
-        if (fFlags & kConstantOutputForConstantInput_OptimizationFlag) {
-            *outputColor = this->constantOutputForConstantInput(inputColor);
-            return true;
-        }
-        return false;
-    }
-    bool hasConstantOutputForConstantInput() const {
-        return SkToBool(fFlags & kConstantOutputForConstantInput_OptimizationFlag);
-    }
+    bool usesDistanceVectorField() const { return fUsesDistanceVectorField; }
 
     
 
@@ -164,6 +108,18 @@ public:
 
 
     bool isEqual(const GrFragmentProcessor& that) const;
+
+    
+
+
+
+
+
+
+
+    void computeInvariantOutput(GrInvariantOutput* inout) const {
+        this->onComputeInvariantOutput(inout);
+    }
 
     
 
@@ -227,41 +183,14 @@ public:
                                           &GrFragmentProcessor::numCoordTransforms,
                                           &GrFragmentProcessor::coordTransform>;
 
-    using TextureAccessIter = FPItemIter<TextureSampler,
-                                         GrResourceIOProcessor,
-                                         &GrResourceIOProcessor::numTextureSamplers,
-                                         &GrResourceIOProcessor::textureSampler>;
+    using TextureAccessIter = FPItemIter<GrTextureAccess,
+                                         GrProcessor,
+                                         &GrProcessor::numTextures,
+                                         &GrProcessor::textureAccess>;
 
 protected:
-    enum OptimizationFlags : uint32_t {
-        kNone_OptimizationFlags,
-        kCompatibleWithCoverageAsAlpha_OptimizationFlag = 0x1,
-        kPreservesOpaqueInput_OptimizationFlag = 0x2,
-        kConstantOutputForConstantInput_OptimizationFlag = 0x4,
-        kAll_OptimizationFlags = kCompatibleWithCoverageAsAlpha_OptimizationFlag |
-                                 kPreservesOpaqueInput_OptimizationFlag |
-                                 kConstantOutputForConstantInput_OptimizationFlag
-    };
-    GR_DECL_BITFIELD_OPS_FRIENDS(OptimizationFlags)
-
-    GrFragmentProcessor(OptimizationFlags optimizationFlags) : fFlags(optimizationFlags) {
-        SkASSERT((fFlags & ~kAll_OptimizationFlags) == 0);
-    }
-
-    OptimizationFlags optimizationFlags() const {
-        return static_cast<OptimizationFlags>(kAll_OptimizationFlags & fFlags);
-    }
-
-    
-
-
-
-
-    static GrColor4f ConstantOutputForConstantInput(const GrFragmentProcessor& fp,
-                                                    GrColor4f input) {
-        SkASSERT(fp.hasConstantOutputForConstantInput());
-        return fp.constantOutputForConstantInput(input);
-    }
+    void addTextureAccess(const GrTextureAccess* textureAccess) override;
+    void addBufferAccess(const GrBufferAccess*) override;
 
     
 
@@ -297,19 +226,17 @@ protected:
 
 
 
-    void setWillUseDistanceVectorField() { fFlags |= kUsesDistanceVectorField_Flag; }
+
+
+    virtual void onComputeInvariantOutput(GrInvariantOutput* inout) const = 0;
+
+    
+
+
+    bool fUsesDistanceVectorField;
 
 private:
-    void addPendingIOs() const override { GrResourceIOProcessor::addPendingIOs(); }
-    void removeRefs() const override { GrResourceIOProcessor::removeRefs(); }
-    void pendingIOComplete() const override { GrResourceIOProcessor::pendingIOComplete(); }
-
     void notifyRefCntIsZero() const final;
-
-    virtual GrColor4f constantOutputForConstantInput(GrColor4f ) const {
-        SkFAIL("Subclass must override this if advertising this optimization.");
-        return GrColor4f::TransparentBlack();
-    }
 
     
 
@@ -317,7 +244,8 @@ private:
     virtual GrGLSLFragmentProcessor* onCreateGLSLInstance() const = 0;
 
     
-    virtual void onGetGLSLProcessorKey(const GrShaderCaps&, GrProcessorKeyBuilder*) const = 0;
+    virtual void onGetGLSLProcessorKey(const GrGLSLCaps& caps,
+                                       GrProcessorKeyBuilder* b) const = 0;
 
     
 
@@ -329,13 +257,7 @@ private:
 
     bool hasSameTransforms(const GrFragmentProcessor&) const;
 
-    enum PrivateFlags {
-        kFirstPrivateFlag = kAll_OptimizationFlags + 1,
-        kUsesLocalCoords_Flag = kFirstPrivateFlag,
-        kUsesDistanceVectorField_Flag = kFirstPrivateFlag << 1,
-    };
-
-    mutable uint32_t fFlags = 0;
+    bool                                       fUsesLocalCoords;
 
     SkSTArray<4, const GrCoordTransform*, true> fCoordTransforms;
 
@@ -343,11 +265,9 @@ private:
 
 
 
-    SkSTArray<1, GrFragmentProcessor*, true> fChildProcessors;
+    SkSTArray<1, GrFragmentProcessor*, true>    fChildProcessors;
 
     typedef GrProcessor INHERITED;
 };
-
-GR_MAKE_BITFIELD_OPS(GrFragmentProcessor::OptimizationFlags)
 
 #endif

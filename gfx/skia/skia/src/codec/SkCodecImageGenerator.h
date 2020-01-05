@@ -4,11 +4,8 @@
 
 
 
-#ifndef SkCodecImageGenerator_DEFINED
-#define SkCodecImageGenerator_DEFINED
 
 #include "SkCodec.h"
-#include "SkColorTable.h"
 #include "SkData.h"
 #include "SkImageGenerator.h"
 
@@ -18,15 +15,16 @@ public:
 
 
 
-    static std::unique_ptr<SkImageGenerator> MakeFromEncodedCodec(sk_sp<SkData>);
+    static SkImageGenerator* NewFromEncodedCodec(sk_sp<SkData>);
+    static SkImageGenerator* NewFromEncodedCodec(SkData* data) {
+        return NewFromEncodedCodec(sk_ref_sp(data));
+    }
 
 protected:
-    SkData* onRefEncodedData(GrContext* ctx) override;
+    SkData* onRefEncodedData(SK_REFENCODEDDATA_CTXPARAM) override;
 
     bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, SkPMColor ctable[],
-                     int* ctableCount) override;
-    bool onGetPixels(const SkImageInfo& info, void* pixels, size_t rowBytes, const Options& opts)
-                     override;
+            int* ctableCount) override;
 
     bool onQueryYUV8(SkYUVSizeInfo*, SkYUVColorSpace*) const override;
 
@@ -38,10 +36,8 @@ private:
 
     SkCodecImageGenerator(SkCodec* codec, sk_sp<SkData>);
 
-    std::unique_ptr<SkCodec> fCodec;
+    SkAutoTDelete<SkCodec> fCodec;
     sk_sp<SkData> fData;
-    sk_sp<SkColorTable> fColorTable;
 
     typedef SkImageGenerator INHERITED;
 };
-#endif  

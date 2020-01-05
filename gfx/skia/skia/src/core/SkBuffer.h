@@ -22,7 +22,14 @@
 class SkRBuffer : SkNoncopyable {
 public:
     SkRBuffer() : fData(0), fPos(0), fStop(0) {}
+    
 
+
+    SkRBuffer(const void* data) {
+        fData = (const char*)data;
+        fPos = (const char*)data;
+        fStop = 0;  
+    }
     
 
     SkRBuffer(const void* data, size_t size) {
@@ -32,39 +39,79 @@ public:
         fStop = (const char*)data + size;
     }
 
-    
-
-
-    size_t pos() const { return fPos - fData; }
-    
-
-
-    size_t size() const { return fStop - fData; }
-    
-
-
-
-    bool eof() const { return fPos >= fStop; }
-
-    size_t available() const { return fStop - fPos; }
-
-    bool isValid() const { return fValid; }
+    virtual ~SkRBuffer() { }
 
     
 
 
-    bool read(void* buffer, size_t size);
-    bool skipToAlign4();
+    size_t  pos() const { return fPos - fData; }
+    
 
-    bool readU8(uint8_t* x)   { return this->read(x, 1); }
-    bool readS32(int32_t* x)  { return this->read(x, 4); }
-    bool readU32(uint32_t* x) { return this->read(x, 4); }
 
-private:
+    size_t  size() const { return fStop - fData; }
+    
+
+
+
+    bool    eof() const { return fPos >= fStop; }
+
+    
+
+
+    virtual bool read(void* buffer, size_t size) {
+        if (size) {
+            this->readNoSizeCheck(buffer, size);
+        }
+        return true;
+    }
+
+    const void* skip(size_t size); 
+    size_t  skipToAlign4();
+
+    bool readPtr(void** ptr) { return read(ptr, sizeof(void*)); }
+    bool readScalar(SkScalar* x) { return read(x, 4); }
+    bool readU32(uint32_t* x) { return read(x, 4); }
+    bool readS32(int32_t* x) { return read(x, 4); }
+    bool readU16(uint16_t* x) { return read(x, 2); }
+    bool readS16(int16_t* x) { return read(x, 2); }
+    bool readU8(uint8_t* x) { return read(x, 1); }
+    bool readBool(bool* x) {
+        uint8_t u8;
+        if (this->readU8(&u8)) {
+            *x = (u8 != 0);
+            return true;
+        }
+        return false;
+    }
+
+protected:
+    void    readNoSizeCheck(void* buffer, size_t size);
+
     const char* fData;
     const char* fPos;
     const char* fStop;
-    bool        fValid = true;
+};
+
+
+
+
+
+
+class SkRBufferWithSizeCheck : public SkRBuffer {
+public:
+    SkRBufferWithSizeCheck(const void* data, size_t size) : SkRBuffer(data, size), fError(false) {}
+
+    
+
+
+
+    bool read(void* buffer, size_t size) override;
+
+    
+
+    bool isValid() const { return !fError; }
+private:
+    bool fError;
 };
 
 

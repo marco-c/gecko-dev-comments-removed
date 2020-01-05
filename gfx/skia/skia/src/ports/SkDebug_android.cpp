@@ -15,6 +15,7 @@
 
 
 
+
 bool gSkDebugToStdOut = false;
 
 void SkDebugf(const char format[], ...) {

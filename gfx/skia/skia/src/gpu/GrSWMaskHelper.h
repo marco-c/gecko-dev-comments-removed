@@ -9,7 +9,7 @@
 #define GrSWMaskHelper_DEFINED
 
 #include "GrColor.h"
-#include "GrRenderTargetContext.h"
+#include "GrTextureProvider.h"
 #include "SkAutoPixmapStorage.h"
 #include "SkBitmap.h"
 #include "SkDraw.h"
@@ -21,6 +21,7 @@
 class GrClip;
 class GrPaint;
 class GrShape;
+class GrTextureProvider;
 class GrStyle;
 class GrTexture;
 struct GrUserStencilSettings;
@@ -41,7 +42,7 @@ struct GrUserStencilSettings;
 
 class GrSWMaskHelper : SkNoncopyable {
 public:
-    GrSWMaskHelper() { }
+    GrSWMaskHelper(GrTextureProvider* texProvider) : fTexProvider(texProvider) { }
 
     
     
@@ -50,12 +51,13 @@ public:
     bool init(const SkIRect& resultBounds, const SkMatrix* matrix);
 
     
-    void drawRect(const SkRect& rect, SkRegion::Op op, GrAA, uint8_t alpha);
+    void drawRect(const SkRect& rect, SkRegion::Op op, bool antiAlias, uint8_t alpha);
 
     
-    void drawShape(const GrShape&, SkRegion::Op op, GrAA, uint8_t alpha);
+    void drawShape(const GrShape&, SkRegion::Op op, bool antiAlias, uint8_t alpha);
 
-    sk_sp<GrTextureProxy> toTextureProxy(GrContext*, SkBackingFit fit);
+    
+    void toTexture(GrTexture* texture);
 
     
     void toSDF(unsigned char* sdf);
@@ -65,21 +67,27 @@ public:
         fPixels.erase(SkColorSetARGB(alpha, 0xFF, 0xFF, 0xFF));
     }
 
+
+    enum class TextureType {
+        kExactFit,
+        kApproximateFit
+    };
+
     
     
-    static sk_sp<GrTextureProxy> DrawShapeMaskToTexture(GrContext*,
-                                                        const GrShape&,
-                                                        const SkIRect& resultBounds,
-                                                        GrAA,
-                                                        SkBackingFit,
-                                                        const SkMatrix* matrix);
+    static GrTexture* DrawShapeMaskToTexture(GrTextureProvider*,
+                                             const GrShape&,
+                                             const SkIRect& resultBounds,
+                                             bool antiAlias,
+                                             TextureType,
+                                             const SkMatrix* matrix);
 
     
     
     
-    static void DrawToTargetWithShapeMask(sk_sp<GrTextureProxy>,
-                                          GrRenderTargetContext*,
-                                          GrPaint&& paint,
+    static void DrawToTargetWithShapeMask(GrTexture* texture,
+                                          GrDrawContext*,
+                                          const GrPaint& paint,
                                           const GrUserStencilSettings& userStencilSettings,
                                           const GrClip&,
                                           const SkMatrix& viewMatrix,
@@ -87,6 +95,11 @@ public:
                                           const SkIRect& deviceSpaceRectToDraw);
 
 private:
+    
+    
+    GrTexture* createTexture(TextureType);
+
+    GrTextureProvider*  fTexProvider;
     SkMatrix            fMatrix;
     SkAutoPixmapStorage fPixels;
     SkDraw              fDraw;

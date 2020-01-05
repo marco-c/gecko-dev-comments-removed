@@ -9,9 +9,7 @@
 #define GrGpuCommandBuffer_DEFINED
 
 #include "GrColor.h"
-#include "ops/GrDrawOp.h"
 
-class GrOpFlushState;
 class GrFixedClip;
 class GrGpu;
 class GrMesh;
@@ -19,13 +17,6 @@ class GrPipeline;
 class GrPrimitiveProcessor;
 class GrRenderTarget;
 struct SkIRect;
-struct SkRect;
-
-
-
-
-
-
 
 
 
@@ -60,7 +51,8 @@ public:
 
     
     
-    void submit();
+    
+    void submit(const SkIRect& bounds);
 
     
     
@@ -69,44 +61,36 @@ public:
     bool draw(const GrPipeline&,
               const GrPrimitiveProcessor&,
               const GrMesh*,
-              int meshCount,
-              const SkRect& bounds);
-
-    
-    virtual void inlineUpload(GrOpFlushState* state, GrDrawOp::DeferredUploadFn& upload,
-                              GrRenderTarget* rt) = 0;
+              int meshCount);
 
     
 
 
-    void clear(GrRenderTarget*, const GrFixedClip&, GrColor);
+    void clear(const GrFixedClip&, GrColor, GrRenderTarget*);
 
-    void clearStencilClip(GrRenderTarget*, const GrFixedClip&, bool insideStencilMask);
-
+    void clearStencilClip(const GrFixedClip&, bool insideStencilMask, GrRenderTarget*);
     
 
 
 
     
-    virtual void discard(GrRenderTarget*) = 0;
+    virtual void discard(GrRenderTarget* = nullptr) = 0;
 
 private:
     virtual GrGpu* gpu() = 0;
-    virtual GrRenderTarget* renderTarget() = 0;
-
-    virtual void onSubmit() = 0;
+    virtual void onSubmit(const SkIRect& bounds) = 0;
 
     
     virtual void onDraw(const GrPipeline&,
                         const GrPrimitiveProcessor&,
                         const GrMesh*,
-                        int meshCount,
-                        const SkRect& bounds) = 0;
+                        int meshCount) = 0;
 
     
     virtual void onClear(GrRenderTarget*, const GrFixedClip&, GrColor) = 0;
 
-    virtual void onClearStencilClip(GrRenderTarget*, const GrFixedClip&,
+    virtual void onClearStencilClip(GrRenderTarget*,
+                                    const GrFixedClip&,
                                     bool insideStencilMask) = 0;
 
 };

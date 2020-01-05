@@ -8,33 +8,34 @@
 #include "GrDrawingManager.h"
 
 #include "GrContext.h"
-#include "GrRenderTargetContext.h"
-#include "GrPathRenderingRenderTargetContext.h"
-#include "GrRenderTargetProxy.h"
+#include "GrDrawContext.h"
+#include "GrDrawTarget.h"
+#include "GrPathRenderingDrawContext.h"
 #include "GrResourceProvider.h"
 #include "GrSoftwarePathRenderer.h"
 #include "GrSurfacePriv.h"
-#include "GrSurfaceProxyPriv.h"
-#include "GrTextureContext.h"
-#include "GrTextureOpList.h"
 #include "SkSurface_Gpu.h"
 #include "SkTTopoSort.h"
+
+#include "instanced/InstancedRendering.h"
 
 #include "text/GrAtlasTextContext.h"
 #include "text/GrStencilAndCoverTextContext.h"
 
+using gr_instanced::InstancedRendering;
+
 void GrDrawingManager::cleanup() {
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->makeClosed();  
-        fOpLists[i]->clearTarget();
+    for (int i = 0; i < fDrawTargets.count(); ++i) {
+        fDrawTargets[i]->makeClosed();  
+        fDrawTargets[i]->clearRT();
 
         
         
-        fOpLists[i]->reset();
-        fOpLists[i]->unref();
+        fDrawTargets[i]->reset();
+        fDrawTargets[i]->unref();
     }
 
-    fOpLists.reset();
+    fDrawTargets.reset();
 
     delete fPathRendererChain;
     fPathRendererChain = nullptr;
@@ -47,8 +48,11 @@ GrDrawingManager::~GrDrawingManager() {
 
 void GrDrawingManager::abandon() {
     fAbandoned = true;
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->abandonGpuResources();
+    for (int i = 0; i < fDrawTargets.count(); ++i) {
+        if (GrCaps::InstancedSupport::kNone != fContext->caps()->instancedSupport()) {
+            InstancedRendering* ir = fDrawTargets[i]->instancedRendering();
+            ir->resetGpuResources(InstancedRendering::ResetType::kAbandon);
+        }
     }
     this->cleanup();
 }
@@ -58,111 +62,70 @@ void GrDrawingManager::freeGpuResources() {
     delete fPathRendererChain;
     fPathRendererChain = nullptr;
     SkSafeSetNull(fSoftwarePathRenderer);
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->freeGpuResources();
+    for (int i = 0; i < fDrawTargets.count(); ++i) {
+        if (GrCaps::InstancedSupport::kNone != fContext->caps()->instancedSupport()) {
+            InstancedRendering* ir = fDrawTargets[i]->instancedRendering();
+            ir->resetGpuResources(InstancedRendering::ResetType::kDestroy);
+        }
     }
 }
 
 void GrDrawingManager::reset() {
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->reset();
+    for (int i = 0; i < fDrawTargets.count(); ++i) {
+        fDrawTargets[i]->reset();
     }
     fFlushState.reset();
 }
 
-
-void GrDrawingManager::internalFlush(GrSurfaceProxy*, GrResourceCache::FlushType type) {
+void GrDrawingManager::internalFlush(GrResourceCache::FlushType type) {
     if (fFlushing || this->wasAbandoned()) {
         return;
     }
     fFlushing = true;
     bool flushed = false;
-
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        
-        
-        
-        
-        fOpLists[i]->makeClosed();
-    }
-
     SkDEBUGCODE(bool result =)
-                        SkTTopoSort<GrOpList, GrOpList::TopoSortTraits>(&fOpLists);
+                        SkTTopoSort<GrDrawTarget, GrDrawTarget::TopoSortTraits>(&fDrawTargets);
     SkASSERT(result);
 
-    GrPreFlushResourceProvider preFlushProvider(this);
-
-    if (fPreFlushCBObjects.count()) {
-        
-        
-        SkAutoSTArray<1, uint32_t> opListIds(fOpLists.count());
-        for (int i = 0; i < fOpLists.count(); ++i) {
-            opListIds[i] = fOpLists[i]->uniqueID();
-        }
-
-        SkSTArray<1, sk_sp<GrRenderTargetContext>> renderTargetContexts;
-        for (int i = 0; i < fPreFlushCBObjects.count(); ++i) {
-            fPreFlushCBObjects[i]->preFlush(&preFlushProvider,
-                                            opListIds.get(), opListIds.count(),
-                                            &renderTargetContexts);
-            if (!renderTargetContexts.count()) {
-                continue;       
-            }
-
-            for (int j = 0; j < renderTargetContexts.count(); ++j) {
-                GrRenderTargetOpList* opList = renderTargetContexts[j]->getOpList();
-                if (!opList) {
-                    continue;   
-                }
-                SkDEBUGCODE(opList->validateTargetsSingleRenderTarget());
-                opList->prepareOps(&fFlushState);
-                if (!opList->executeOps(&fFlushState)) {
-                    continue;         
-                }
-            }
-            renderTargetContexts.reset();
-        }
+    for (int i = 0; i < fDrawTargets.count(); ++i) {
+        fDrawTargets[i]->prepareBatches(&fFlushState);
     }
 
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->prepareOps(&fFlushState);
-    }
-
-#if 0
     
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        SkDEBUGCODE(fOpLists[i]->dump();)
+#if 0
+    for (int i = 0; i < fDrawTargets.count(); ++i) {
+        SkDEBUGCODE(fDrawTargets[i]->dump();)
     }
 #endif
 
     
     fFlushState.preIssueDraws();
 
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        if (fOpLists[i]->executeOps(&fFlushState)) {
+    for (int i = 0; i < fDrawTargets.count(); ++i) {
+        if (fDrawTargets[i]->drawBatches(&fFlushState)) {
             flushed = true;
         }
     }
 
     SkASSERT(fFlushState.nextDrawToken() == fFlushState.nextTokenToFlush());
 
-    for (int i = 0; i < fOpLists.count(); ++i) {
-        fOpLists[i]->reset();
+    for (int i = 0; i < fDrawTargets.count(); ++i) {
+        fDrawTargets[i]->reset();
 #ifdef ENABLE_MDB
-        fOpLists[i]->unref();
+        fDrawTargets[i]->unref();
 #endif
     }
 
 #ifndef ENABLE_MDB
     
-    if (fOpLists.count()) {
-        SkASSERT(fOpLists.count() == 1);
+    if (fDrawTargets.count()) {
+        SkASSERT(fDrawTargets.count() == 1);
         
         
-        fOpLists[0]->resetFlag(GrOpList::kWasOutput_Flag);
+        fDrawTargets[0]->resetFlag(GrDrawTarget::kWasOutput_Flag);
     }
 #else
-    fOpLists.reset();
+    fDrawTargets.reset();
 #endif
 
     fFlushState.reset();
@@ -173,75 +136,45 @@ void GrDrawingManager::internalFlush(GrSurfaceProxy*, GrResourceCache::FlushType
     fFlushing = false;
 }
 
-void GrDrawingManager::prepareSurfaceForExternalIO(GrSurfaceProxy* proxy) {
+void GrDrawingManager::prepareSurfaceForExternalIO(GrSurface* surface) {
     if (this->wasAbandoned()) {
         return;
     }
-    SkASSERT(proxy);
+    SkASSERT(surface);
+    SkASSERT(surface->getContext() == fContext);
 
-    if (proxy->priv().hasPendingIO()) {
-        this->flush(proxy);
+    if (surface->surfacePriv().hasPendingIO()) {
+        this->flush();
     }
 
-    GrSurface* surface = proxy->instantiate(fContext->resourceProvider());
-    if (!surface) {
-        return;
-    }
-
-    if (fContext->getGpu() && surface->asRenderTarget()) {
-        fContext->getGpu()->resolveRenderTarget(surface->asRenderTarget());
+    GrRenderTarget* rt = surface->asRenderTarget();
+    if (fContext->getGpu() && rt) {
+        fContext->getGpu()->resolveRenderTarget(rt);
     }
 }
 
-void GrDrawingManager::addPreFlushCallbackObject(sk_sp<GrPreFlushCallbackObject> preFlushCBObject) {
-    fPreFlushCBObjects.push_back(preFlushCBObject);
-}
-
-GrRenderTargetOpList* GrDrawingManager::newOpList(GrRenderTargetProxy* rtp) {
+GrDrawTarget* GrDrawingManager::newDrawTarget(GrRenderTarget* rt) {
     SkASSERT(fContext);
 
 #ifndef ENABLE_MDB
     
-    if (fOpLists.count()) {
-        SkASSERT(fOpLists.count() == 1);
+    if (fDrawTargets.count()) {
+        SkASSERT(fDrawTargets.count() == 1);
         
         
-        rtp->setLastOpList(fOpLists[0]);
+        rt->setLastDrawTarget(fDrawTargets[0]);
         
-
-        
-        return SkRef((GrRenderTargetOpList*) fOpLists[0]);
+        return SkRef(fDrawTargets[0]);
     }
 #endif
 
-    GrRenderTargetOpList* opList = new GrRenderTargetOpList(rtp,
-                                                            fContext->getGpu(),
-                                                            fContext->resourceProvider(),
-                                                            fContext->getAuditTrail(),
-                                                            fOptionsForOpLists);
+    GrDrawTarget* dt = new GrDrawTarget(rt, fContext->getGpu(), fContext->resourceProvider(),
+                                        fContext->getAuditTrail(), fOptionsForDrawTargets);
 
-    *fOpLists.append() = opList;
+    *fDrawTargets.append() = dt;
 
     
-    return SkRef(opList);
-}
-
-GrTextureOpList* GrDrawingManager::newOpList(GrTextureProxy* textureProxy) {
-    SkASSERT(fContext);
-
-    GrTextureOpList* opList = new GrTextureOpList(textureProxy, fContext->getGpu(),
-                                                  fContext->getAuditTrail());
-
-#ifndef ENABLE_MDB
-    
-    
-    return opList;
-#else
-    *fOpLists.append() = opList;
-
-    
-    return SkRef(opList);
-#endif
+    return SkRef(dt);
 }
 
 GrAtlasTextContext* GrDrawingManager::getAtlasTextContext() {
@@ -271,34 +204,29 @@ GrPathRenderer* GrDrawingManager::getPathRenderer(const GrPathRenderer::CanDrawP
     if (!pr && allowSW) {
         if (!fSoftwarePathRenderer) {
             fSoftwarePathRenderer =
-                    new GrSoftwarePathRenderer(fContext->resourceProvider(),
+                    new GrSoftwarePathRenderer(fContext->textureProvider(),
                                                fOptionsForPathRendererChain.fAllowPathMaskCaching);
         }
-        if (fSoftwarePathRenderer->canDrawPath(args)) {
-            pr = fSoftwarePathRenderer;
-        }
+        pr = fSoftwarePathRenderer;
     }
 
     return pr;
 }
 
-sk_sp<GrRenderTargetContext> GrDrawingManager::makeRenderTargetContext(
-                                                            sk_sp<GrSurfaceProxy> sProxy,
-                                                            sk_sp<SkColorSpace> colorSpace,
-                                                            const SkSurfaceProps* surfaceProps) {
-    if (this->wasAbandoned() || !sProxy->asRenderTargetProxy()) {
+sk_sp<GrDrawContext> GrDrawingManager::makeDrawContext(sk_sp<GrRenderTarget> rt,
+                                                       sk_sp<SkColorSpace> colorSpace,
+                                                       const SkSurfaceProps* surfaceProps) {
+    if (this->wasAbandoned()) {
         return nullptr;
     }
 
     
     
     
-    if (colorSpace && !SkSurface_Gpu::Valid(fContext, sProxy->config(), colorSpace.get())) {
+    if (colorSpace && !SkSurface_Gpu::Valid(fContext, rt->config(), colorSpace.get())) {
         SkDEBUGFAIL("Invalid config and colorspace combination");
         return nullptr;
     }
-
-    sk_sp<GrRenderTargetProxy> rtp(sk_ref_sp(sProxy->asRenderTargetProxy()));
 
     bool useDIF = false;
     if (surfaceProps) {
@@ -306,49 +234,18 @@ sk_sp<GrRenderTargetContext> GrDrawingManager::makeRenderTargetContext(
     }
 
     if (useDIF && fContext->caps()->shaderCaps()->pathRenderingSupport() &&
-        rtp->isStencilBufferMultisampled()) {
-        
-        sk_sp<GrRenderTarget> rt(sk_ref_sp(rtp->instantiate(fContext->resourceProvider())));
-        if (!rt) {
-            return nullptr;
-        }
+        rt->isStencilBufferMultisampled()) {
         GrStencilAttachment* sb = fContext->resourceProvider()->attachStencilAttachment(rt.get());
         if (sb) {
-            return sk_sp<GrRenderTargetContext>(new GrPathRenderingRenderTargetContext(
-                                                        fContext, this, std::move(rtp),
+            return sk_sp<GrDrawContext>(new GrPathRenderingDrawContext(
+                                                        fContext, this, std::move(rt),
                                                         std::move(colorSpace), surfaceProps,
                                                         fContext->getAuditTrail(), fSingleOwner));
         }
     }
 
-    return sk_sp<GrRenderTargetContext>(new GrRenderTargetContext(fContext, this, std::move(rtp),
-                                                                  std::move(colorSpace),
-                                                                  surfaceProps,
-                                                                  fContext->getAuditTrail(),
-                                                                  fSingleOwner));
-}
-
-sk_sp<GrTextureContext> GrDrawingManager::makeTextureContext(sk_sp<GrSurfaceProxy> sProxy,
-                                                             sk_sp<SkColorSpace> colorSpace) {
-    if (this->wasAbandoned() || !sProxy->asTextureProxy()) {
-        return nullptr;
-    }
-
-    
-    
-    
-    if (colorSpace && !SkSurface_Gpu::Valid(fContext, sProxy->config(), colorSpace.get())) {
-        SkDEBUGFAIL("Invalid config and colorspace combination");
-        return nullptr;
-    }
-
-    
-    SkASSERT(!sProxy->asRenderTargetProxy());
-
-    sk_sp<GrTextureProxy> textureProxy(sk_ref_sp(sProxy->asTextureProxy()));
-
-    return sk_sp<GrTextureContext>(new GrTextureContext(fContext, this, std::move(textureProxy),
-                                                        std::move(colorSpace),
-                                                        fContext->getAuditTrail(),
-                                                        fSingleOwner));
+    return sk_sp<GrDrawContext>(new GrDrawContext(fContext, this, std::move(rt),
+                                                  std::move(colorSpace), surfaceProps,
+                                                  fContext->getAuditTrail(),
+                                                  fSingleOwner));
 }

@@ -45,10 +45,6 @@ public:
 
     
 
-    GrIOType ioType() const { return fIOType; }
-
-    
-
     void reset();
 
 protected:
@@ -79,7 +75,7 @@ private:
 
     void pendingIOComplete() const;
 
-    friend class GrResourceIOProcessor;
+    friend class GrProgramElement;
 
     GrGpuResource*  fResource;
     mutable bool    fOwnRef;

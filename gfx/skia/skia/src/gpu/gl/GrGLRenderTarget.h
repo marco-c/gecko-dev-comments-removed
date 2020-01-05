@@ -31,14 +31,15 @@ public:
         bool                       fIsMixedSampled;
     };
 
-    static sk_sp<GrGLRenderTarget> MakeWrapped(GrGLGpu*,
-                                               const GrSurfaceDesc&,
-                                               const IDDesc&,
-                                               int stencilBits);
+    static GrGLRenderTarget* CreateWrapped(GrGLGpu*,
+                                           const GrSurfaceDesc&,
+                                           const IDDesc&,
+                                           int stencilBits);
 
     void setViewport(const GrGLIRect& rect) { fViewport = rect; }
     const GrGLIRect& getViewport() const { return fViewport; }
 
+    
     
     
     
@@ -76,7 +77,8 @@ protected:
     void onAbandon() override;
     void onRelease() override;
 
-    int numSamplesOwnedPerPixel() const { return fNumSamplesOwnedPerPixel; }
+    
+    size_t onGpuMemorySize() const override;
 
 private:
     
@@ -87,8 +89,8 @@ private:
     GrGLGpu* getGLGpu() const;
     bool completeStencilAttachment() override;
 
-    size_t onGpuMemorySize() const override;
-
+    
+    size_t totalBytesPerSample() const;
     int msaaSamples() const;
     
     int totalSamples() const;
@@ -106,8 +108,7 @@ private:
 
     
     
-    
-    int         fNumSamplesOwnedPerPixel;
+    size_t      fGpuMemorySize;
 
     typedef GrRenderTarget INHERITED;
 };

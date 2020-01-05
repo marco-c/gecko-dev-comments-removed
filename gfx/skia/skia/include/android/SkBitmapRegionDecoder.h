@@ -10,7 +10,7 @@
 
 #include "SkBitmap.h"
 #include "SkBRDAllocator.h"
-#include "SkEncodedImageFormat.h"
+#include "SkEncodedFormat.h"
 #include "SkStream.h"
 
 
@@ -57,19 +57,16 @@ public:
 
 
 
-
-
     virtual bool decodeRegion(SkBitmap* bitmap, SkBRDAllocator* allocator,
                               const SkIRect& desiredSubset, int sampleSize,
-                              SkColorType colorType, bool requireUnpremul,
-                              sk_sp<SkColorSpace> prefColorSpace = nullptr) = 0;
+                              SkColorType colorType, bool requireUnpremul) = 0;
     
 
 
 
     virtual bool conversionSupported(SkColorType colorType) = 0;
 
-    virtual SkEncodedImageFormat getEncodedFormat() = 0;
+    virtual SkEncodedFormat getEncodedFormat() = 0;
 
     int width() const { return fWidth; }
     int height() const { return fHeight; }

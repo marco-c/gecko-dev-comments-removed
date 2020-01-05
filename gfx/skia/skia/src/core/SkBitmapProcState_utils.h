@@ -1,17 +1,10 @@
-
-
-
-
-
-
-
 #ifndef SkBitmapProcState_utils_DEFINED
 #define SkBitmapProcState_utils_DEFINED
 
 
 
 
-static inline unsigned SK_USHIFT16(unsigned x) {
+static unsigned SK_USHIFT16(unsigned x) {
     return x >> 16;
 }
 
@@ -25,10 +18,10 @@ static inline unsigned SK_USHIFT16(unsigned x) {
 
 
 
-static inline bool can_truncate_to_fixed_for_decal(SkFixed fx,
-                                                   SkFixed dx,
+static inline bool can_truncate_to_fixed_for_decal(SkFractionalInt frX,
+                                                   SkFractionalInt frDx,
                                                    int count, unsigned max) {
-    SkASSERT(count > 0);
+    SkFixed dx = SkFractionalIntToFixed(frDx);
 
     
     
@@ -39,18 +32,9 @@ static inline bool can_truncate_to_fixed_for_decal(SkFixed fx,
 
     
     
-    
-
-    
-    
-    if ((unsigned)SkFixedFloorToInt(fx) >= max) {
-        return false;
-    }
-
-    
-    const uint64_t lastFx = fx + sk_64_mul(dx, count - 1);
-
-    return sk_64_isS32(lastFx) && (unsigned)SkFixedFloorToInt(sk_64_asS32(lastFx)) < max;
+    SkFixed fx = SkFractionalIntToFixed(frX);
+    return (unsigned)SkFixedFloorToInt(fx) <= max &&
+           (unsigned)SkFixedFloorToInt(fx + dx * (count - 1)) < max;
 }
 
 #endif 

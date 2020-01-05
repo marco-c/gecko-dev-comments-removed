@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKIASL_TYPE
 #define SKIASL_TYPE
 
@@ -26,17 +26,17 @@ class Context;
 class Type : public Symbol {
 public:
     struct Field {
-        Field(Modifiers modifiers, String name, const Type* type)
+        Field(Modifiers modifiers, std::string name, const Type* type)
         : fModifiers(modifiers)
         , fName(std::move(name))
         , fType(std::move(type)) {}
 
-        const String description() const {
+        const std::string description() const {
             return fType->description() + " " + fName + ";";
         }
 
         Modifiers fModifiers;
-        String fName;
+        std::string fName;
         const Type* fType;
     };
 
@@ -53,24 +53,26 @@ public:
 
     
     
-    Type(String name)
+    Type(std::string name)
     : INHERITED(Position(), kType_Kind, std::move(name))
     , fTypeKind(kOther_Kind) {}
 
     
-    Type(String name, std::vector<const Type*> types)
+    Type(std::string name, std::vector<const Type*> types)
     : INHERITED(Position(), kType_Kind, std::move(name))
     , fTypeKind(kGeneric_Kind)
-    , fCoercibleTypes(std::move(types)) {}
+    , fCoercibleTypes(std::move(types)) {
+        ASSERT(fCoercibleTypes.size() == 4);
+    }
 
     
-    Type(Position position, String name, std::vector<Field> fields)
-    : INHERITED(position, kType_Kind, std::move(name))
+    Type(std::string name, std::vector<Field> fields)
+    : INHERITED(Position(), kType_Kind, std::move(name))
     , fTypeKind(kStruct_Kind)
     , fFields(std::move(fields)) {}
 
     
-    Type(String name, bool isNumber)
+    Type(std::string name, bool isNumber)
     : INHERITED(Position(), kType_Kind, std::move(name))
     , fTypeKind(kScalar_Kind)
     , fIsNumber(isNumber)
@@ -78,7 +80,7 @@ public:
     , fRows(1) {}
 
     
-    Type(String name, bool isNumber, std::vector<const Type*> coercibleTypes)
+    Type(std::string name, bool isNumber, std::vector<const Type*> coercibleTypes)
     : INHERITED(Position(), kType_Kind, std::move(name))
     , fTypeKind(kScalar_Kind)
     , fIsNumber(isNumber)
@@ -87,30 +89,30 @@ public:
     , fRows(1) {}
 
     
-    Type(String name, const Type& componentType, int columns)
+    Type(std::string name, const Type& componentType, int columns)
     : Type(name, kVector_Kind, componentType, columns) {}
 
     
-    Type(String name, Kind kind, const Type& componentType, int columns)
+    Type(std::string name, Kind kind, const Type& componentType, int columns)
     : INHERITED(Position(), kType_Kind, std::move(name))
     , fTypeKind(kind)
     , fComponentType(&componentType)
     , fColumns(columns)
-    , fRows(1)
+    , fRows(1)    
     , fDimensions(SpvDim1D) {}
 
     
-    Type(String name, const Type& componentType, int columns, int rows)
+    Type(std::string name, const Type& componentType, int columns, int rows)
     : INHERITED(Position(), kType_Kind, std::move(name))
     , fTypeKind(kMatrix_Kind)
     , fComponentType(&componentType)
     , fColumns(columns)
-    , fRows(rows)
+    , fRows(rows)    
     , fDimensions(SpvDim1D) {}
 
     
-    Type(String name, SpvDim_ dimensions, bool isDepth, bool isArrayed, bool isMultisampled,
-         bool isSampled)
+    Type(std::string name, SpvDim_ dimensions, bool isDepth, bool isArrayed, bool isMultisampled, 
+         bool isSampled) 
     : INHERITED(Position(), kType_Kind, std::move(name))
     , fTypeKind(kSampler_Kind)
     , fDimensions(dimensions)
@@ -119,11 +121,11 @@ public:
     , fIsMultisampled(isMultisampled)
     , fIsSampled(isSampled) {}
 
-    String name() const {
+    std::string name() const {
         return fName;
     }
 
-    String description() const override {
+    std::string description() const override {
         return fName;
     }
 
@@ -181,7 +183,7 @@ public:
 
 
     int columns() const {
-        ASSERT(fTypeKind == kScalar_Kind || fTypeKind == kVector_Kind ||
+        ASSERT(fTypeKind == kScalar_Kind || fTypeKind == kVector_Kind || 
                fTypeKind == kMatrix_Kind || fTypeKind == kArray_Kind);
         return fColumns;
     }
@@ -209,29 +211,110 @@ public:
         return fCoercibleTypes;
     }
 
-    SpvDim_ dimensions() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+    int dimensions() const {
+        ASSERT(fTypeKind == kSampler_Kind);
         return fDimensions;
     }
 
     bool isDepth() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        ASSERT(fTypeKind == kSampler_Kind);
         return fIsDepth;
     }
 
     bool isArrayed() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        ASSERT(fTypeKind == kSampler_Kind);
         return fIsArrayed;
     }
 
     bool isMultisampled() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        ASSERT(fTypeKind == kSampler_Kind);
         return fIsMultisampled;
     }
 
     bool isSampled() const {
-        ASSERT(kSampler_Kind == fTypeKind);
+        ASSERT(fTypeKind == kSampler_Kind);
         return fIsSampled;
+    }
+
+    static size_t vector_alignment(size_t componentSize, int columns) {
+        return componentSize * (columns + columns % 2);
+    }
+
+    
+
+
+
+    size_t alignment() const {
+        
+        switch (fTypeKind) {
+            case kScalar_Kind:
+                return this->size();
+            case kVector_Kind:
+                return vector_alignment(fComponentType->size(), fColumns);
+            case kMatrix_Kind:
+                return (vector_alignment(fComponentType->size(), fRows) + 15) & ~15;
+            case kArray_Kind:
+                
+                return (fComponentType->alignment() + 15) & ~15;
+            case kStruct_Kind: {
+                size_t result = 16;
+                for (size_t i = 0; i < fFields.size(); i++) {
+                    size_t alignment = fFields[i].fType->alignment();
+                    if (alignment > result) {
+                        result = alignment;
+                    }
+                }
+            }
+            default:
+                ABORT(("cannot determine size of type " + fName).c_str());
+        }
+    }
+
+    
+
+
+
+    size_t stride() const {
+        switch (fTypeKind) {
+            case kMatrix_Kind: 
+            case kArray_Kind:
+                return this->alignment();
+            default:
+                ABORT("type does not have a stride");
+        }
+    }
+
+    
+
+
+    size_t size() const {
+        switch (fTypeKind) {
+            case kScalar_Kind:
+                
+                
+                return 4;
+            case kVector_Kind:
+                return fColumns * fComponentType->size();
+            case kMatrix_Kind:
+                return vector_alignment(fComponentType->size(), fRows) * fColumns;
+            case kArray_Kind:
+                return fColumns * this->stride();
+            case kStruct_Kind: {
+                size_t total = 0;
+                for (size_t i = 0; i < fFields.size(); i++) {
+                    size_t alignment = fFields[i].fType->alignment();
+                    if (total % alignment != 0) {
+                        total += alignment - total % alignment;
+                    }
+                    ASSERT(false);
+                    ASSERT(total % alignment == 0);
+                    total += fFields[i].fType->size();
+                }
+                return total;
+            }
+            default:
+                ABORT(("cannot determine size of type " + fName).c_str());
+        }
     }
 
     

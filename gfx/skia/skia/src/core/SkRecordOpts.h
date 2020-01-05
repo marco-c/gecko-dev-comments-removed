@@ -16,11 +16,9 @@ void SkRecordOptimize(SkRecord*);
 
 void SkRecordNoopSaveRestores(SkRecord*);
 
-#ifndef SK_BUILD_FOR_ANDROID_FRAMEWORK
 
 
 void SkRecordNoopSaveLayerDrawRestores(SkRecord*);
-#endif
 
 
 

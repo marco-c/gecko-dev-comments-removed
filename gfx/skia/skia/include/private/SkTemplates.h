@@ -11,7 +11,6 @@
 #define SkTemplates_DEFINED
 
 #include "SkMath.h"
-#include "SkMalloc.h"
 #include "SkTLogic.h"
 #include "SkTypes.h"
 #include <limits.h>
@@ -80,6 +79,33 @@ public:
     SkAutoTCallIProc(T* obj): std::unique_ptr<T, SkFunctionWrapper<int, T, P>>(obj) {}
 
     operator T*() const { return this->get(); }
+};
+
+
+
+
+
+
+
+
+
+
+
+template <typename T> class SkAutoTDelete : public std::unique_ptr<T> {
+public:
+    SkAutoTDelete(T* obj = NULL) : std::unique_ptr<T>(obj) {}
+
+    operator T*() const { return this->get(); }
+
+#if defined(SK_BUILD_FOR_ANDROID_FRAMEWORK)
+    
+    T* detach() { return this->release(); }
+#endif
+};
+
+template <typename T> class SkAutoTDeleteArray : public std::unique_ptr<T[]> {
+public:
+    SkAutoTDeleteArray(T array[]) : std::unique_ptr<T[]>(array) {}
 };
 
 
@@ -205,14 +231,6 @@ public:
 
     T* get() const { return fArray; }
 
-    T* begin() { return fArray; }
-
-    const T* begin() const { return fArray; }
-
-    T* end() { return fArray + fCount; }
-
-    const T* end() const { return fArray + fCount; }
-
     
 
     T&  operator[](int index) const {
@@ -253,8 +271,6 @@ public:
         fPtr = count ? (T*)sk_malloc_flags(count * sizeof(T), SK_MALLOC_THROW) : nullptr;
     }
 
-    SkAutoTMalloc(SkAutoTMalloc<T>&& that) : fPtr(that.release()) {}
-
     ~SkAutoTMalloc() {
         sk_free(fPtr);
     }
@@ -291,14 +307,6 @@ public:
 
     const T& operator[](int index) const {
         return fPtr[index];
-    }
-
-    SkAutoTMalloc& operator=(SkAutoTMalloc<T>&& that) {
-        if (this != &that) {
-            sk_free(fPtr);
-            fPtr = that.release();
-        }
-        return *this;
     }
 
     
@@ -480,7 +488,5 @@ public:
 private:
     SkAlignedSStorage<sizeof(T)*N> fStorage;
 };
-
-using SkAutoFree = std::unique_ptr<void, SkFunctionWrapper<void, void, sk_free>>;
 
 #endif

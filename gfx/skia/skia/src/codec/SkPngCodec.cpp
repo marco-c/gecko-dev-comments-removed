@@ -8,8 +8,7 @@
 #include "SkBitmap.h"
 #include "SkCodecPriv.h"
 #include "SkColorPriv.h"
-#include "SkColorSpace.h"
-#include "SkColorSpacePriv.h"
+#include "SkColorSpace_Base.h"
 #include "SkColorTable.h"
 #include "SkMath.h"
 #include "SkOpts.h"
@@ -213,8 +212,6 @@ void SkPngCodec::processData() {
     }
 }
 
-static const SkColorType kXformSrcColorType = kRGBA_8888_SkColorType;
-
 
 bool SkPngCodec::createColorTable(const SkImageInfo& dstInfo, int* ctableCount) {
 
@@ -227,14 +224,14 @@ bool SkPngCodec::createColorTable(const SkImageInfo& dstInfo, int* ctableCount) 
     
     
     SkPMColor colorTable[256];
-    SkColorType tableColorType = this->colorXform() ? kXformSrcColorType : dstInfo.colorType();
+    SkColorType tableColorType = fColorXform ? kRGBA_8888_SkColorType : dstInfo.colorType();
 
     png_bytep alphas;
     int numColorsWithAlpha = 0;
     if (png_get_tRNS(fPng_ptr, fInfo_ptr, &alphas, &numColorsWithAlpha, nullptr)) {
         
         
-        bool premultiply = !this->colorXform() && needs_premul(dstInfo, this->getEncodedInfo());
+        bool premultiply =  !fColorXform && needs_premul(dstInfo, this->getInfo());
 
         
         
@@ -267,15 +264,16 @@ bool SkPngCodec::createColorTable(const SkImageInfo& dstInfo, int* ctableCount) 
         }
     }
 
-    if (this->colorXform() &&
-            !apply_xform_on_decode(dstInfo.colorType(), this->getEncodedInfo().color())) {
-        const SkColorSpaceXform::ColorFormat dstFormat =
-                select_xform_format_ct(dstInfo.colorType());
-        const SkColorSpaceXform::ColorFormat srcFormat = select_xform_format(kXformSrcColorType);
-        const SkAlphaType xformAlphaType = select_xform_alpha(dstInfo.alphaType(),
-                                                              this->getInfo().alphaType());
-        SkAssertResult(this->colorXform()->apply(dstFormat, colorTable, srcFormat, colorTable,
-                       numColors, xformAlphaType));
+    
+    
+    if (fColorXform && kRGBA_F16_SkColorType != dstInfo.colorType()) {
+        SkColorSpaceXform::ColorFormat xformColorFormat = is_rgba(dstInfo.colorType()) ?
+                SkColorSpaceXform::kRGBA_8888_ColorFormat :
+                SkColorSpaceXform::kBGRA_8888_ColorFormat;
+        SkAlphaType xformAlphaType = select_xform_alpha(dstInfo.alphaType(),
+                                                        this->getInfo().alphaType());
+        fColorXform->apply(colorTable, colorTable, numColors, xformColorFormat,
+                           SkColorSpaceXform::kRGBA_8888_ColorFormat, xformAlphaType);
     }
 
     
@@ -318,13 +316,75 @@ static float png_inverted_fixed_point_to_float(png_fixed_point x) {
     return 1.0f / png_fixed_point_to_float(x);
 }
 
+static constexpr float gSRGB_toXYZD50[] {
+    0.4358f, 0.3853f, 0.1430f,    
+    0.2224f, 0.7170f, 0.0606f,    
+    0.0139f, 0.0971f, 0.7139f,    
+};
+
+static bool convert_to_D50(SkMatrix44* toXYZD50, float toXYZ[9], float whitePoint[2]) {
+    float wX = whitePoint[0];
+    float wY = whitePoint[1];
+    if (wX < 0.0f || wY < 0.0f || (wX + wY > 1.0f)) {
+        return false;
+    }
+
+    
+    float wZ = 1.0f - wX - wY;
+    float scale = 1.0f / wY;
+    
+    
+    
+    
+    SkVector3 srcXYZ = SkVector3::Make(wX * scale, 1.0f, wZ * scale);
+
+    
+    SkVector3 dstXYZ = SkVector3::Make(0.96422f, 1.0f, 0.82521f);
+
+    
+    
+    
+    
+    SkMatrix mA, mAInv;
+    mA.setAll(0.8951f, 0.2664f, -0.1614f, -0.7502f, 1.7135f, 0.0367f, 0.0389f, -0.0685f, 1.0296f);
+    mAInv.setAll(0.9869929f, -0.1470543f, 0.1599627f, 0.4323053f, 0.5183603f, 0.0492912f,
+                 -0.0085287f, 0.0400428f, 0.9684867f);
+
+    
+    SkVector3 srcCone;
+    srcCone.fX = mA[0] * srcXYZ.fX + mA[1] * srcXYZ.fY + mA[2] * srcXYZ.fZ;
+    srcCone.fY = mA[3] * srcXYZ.fX + mA[4] * srcXYZ.fY + mA[5] * srcXYZ.fZ;
+    srcCone.fZ = mA[6] * srcXYZ.fX + mA[7] * srcXYZ.fY + mA[8] * srcXYZ.fZ;
+    SkVector3 dstCone;
+    dstCone.fX = mA[0] * dstXYZ.fX + mA[1] * dstXYZ.fY + mA[2] * dstXYZ.fZ;
+    dstCone.fY = mA[3] * dstXYZ.fX + mA[4] * dstXYZ.fY + mA[5] * dstXYZ.fZ;
+    dstCone.fZ = mA[6] * dstXYZ.fX + mA[7] * dstXYZ.fY + mA[8] * dstXYZ.fZ;
+
+    SkMatrix DXToD50;
+    DXToD50.setIdentity();
+    DXToD50[0] = dstCone.fX / srcCone.fX;
+    DXToD50[4] = dstCone.fY / srcCone.fY;
+    DXToD50[8] = dstCone.fZ / srcCone.fZ;
+    DXToD50.postConcat(mAInv);
+    DXToD50.preConcat(mA);
+
+    SkMatrix toXYZ3x3;
+    toXYZ3x3.setAll(toXYZ[0], toXYZ[3], toXYZ[6], toXYZ[1], toXYZ[4], toXYZ[7], toXYZ[2], toXYZ[5],
+                    toXYZ[8]);
+    toXYZ3x3.postConcat(DXToD50);
+
+    toXYZD50->set3x3(toXYZ3x3[0], toXYZ3x3[3], toXYZ3x3[6],
+                     toXYZ3x3[1], toXYZ3x3[4], toXYZ3x3[7],
+                     toXYZ3x3[2], toXYZ3x3[5], toXYZ3x3[8]);
+    return true;
+}
+
 #endif 
 
 
 
 
-sk_sp<SkColorSpace> read_color_space(png_structp png_ptr, png_infop info_ptr,
-                                     SkColorSpace_Base::ICCTypeFlag iccType) {
+sk_sp<SkColorSpace> read_color_space(png_structp png_ptr, png_infop info_ptr) {
 
 #if (PNG_LIBPNG_VER_MAJOR > 1) || (PNG_LIBPNG_VER_MAJOR == 1 && PNG_LIBPNG_VER_MINOR >= 6)
 
@@ -341,7 +401,7 @@ sk_sp<SkColorSpace> read_color_space(png_structp png_ptr, png_infop info_ptr,
     int compression;
     if (PNG_INFO_iCCP == png_get_iCCP(png_ptr, info_ptr, &name, &compression, &profile,
             &length)) {
-        return SkColorSpace_Base::MakeICC(profile, length, iccType);
+        return SkColorSpace::NewICC(profile, length);
     }
 
     
@@ -352,63 +412,68 @@ sk_sp<SkColorSpace> read_color_space(png_structp png_ptr, png_infop info_ptr,
         
         
         
-        return SkColorSpace::MakeSRGB();
+        return SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named);
     }
 
     
-    png_fixed_point chrm[8];
+    png_fixed_point toXYZFixed[9];
+    float toXYZ[9];
+    png_fixed_point whitePointFixed[2];
+    float whitePoint[2];
     png_fixed_point gamma;
-    if (png_get_cHRM_fixed(png_ptr, info_ptr, &chrm[0], &chrm[1], &chrm[2], &chrm[3], &chrm[4],
-                           &chrm[5], &chrm[6], &chrm[7]))
+    float gammas[3];
+    if (png_get_cHRM_XYZ_fixed(png_ptr, info_ptr, &toXYZFixed[0], &toXYZFixed[1], &toXYZFixed[2],
+                               &toXYZFixed[3], &toXYZFixed[4], &toXYZFixed[5], &toXYZFixed[6],
+                               &toXYZFixed[7], &toXYZFixed[8]) &&
+        png_get_cHRM_fixed(png_ptr, info_ptr, &whitePointFixed[0], &whitePointFixed[1], nullptr,
+                           nullptr, nullptr, nullptr, nullptr, nullptr))
     {
-        SkColorSpacePrimaries primaries;
-        primaries.fRX = png_fixed_point_to_float(chrm[2]);
-        primaries.fRY = png_fixed_point_to_float(chrm[3]);
-        primaries.fGX = png_fixed_point_to_float(chrm[4]);
-        primaries.fGY = png_fixed_point_to_float(chrm[5]);
-        primaries.fBX = png_fixed_point_to_float(chrm[6]);
-        primaries.fBY = png_fixed_point_to_float(chrm[7]);
-        primaries.fWX = png_fixed_point_to_float(chrm[0]);
-        primaries.fWY = png_fixed_point_to_float(chrm[1]);
+        for (int i = 0; i < 9; i++) {
+            toXYZ[i] = png_fixed_point_to_float(toXYZFixed[i]);
+        }
+        whitePoint[0] = png_fixed_point_to_float(whitePointFixed[0]);
+        whitePoint[1] = png_fixed_point_to_float(whitePointFixed[1]);
 
         SkMatrix44 toXYZD50(SkMatrix44::kUninitialized_Constructor);
-        if (!primaries.toXYZD50(&toXYZD50)) {
+        if (!convert_to_D50(&toXYZD50, toXYZ, whitePoint)) {
             toXYZD50.set3x3RowMajorf(gSRGB_toXYZD50);
         }
 
         if (PNG_INFO_gAMA == png_get_gAMA_fixed(png_ptr, info_ptr, &gamma)) {
-            SkColorSpaceTransferFn fn;
-            fn.fA = 1.0f;
-            fn.fB = fn.fC = fn.fD = fn.fE = fn.fF = 0.0f;
-            fn.fG = png_inverted_fixed_point_to_float(gamma);
+            float value = png_inverted_fixed_point_to_float(gamma);
+            gammas[0] = value;
+            gammas[1] = value;
+            gammas[2] = value;
 
-            return SkColorSpace::MakeRGB(fn, toXYZD50);
+            return SkColorSpace_Base::NewRGB(gammas, toXYZD50);
         }
 
         
         
-        return SkColorSpace::MakeRGB(SkColorSpace::kSRGB_RenderTargetGamma, toXYZD50);
+        return SkColorSpace::NewRGB(SkColorSpace::kSRGB_RenderTargetGamma, toXYZD50);
     }
 
     
     if (PNG_INFO_gAMA == png_get_gAMA_fixed(png_ptr, info_ptr, &gamma)) {
-        SkColorSpaceTransferFn fn;
-        fn.fA = 1.0f;
-        fn.fB = fn.fC = fn.fD = fn.fE = fn.fF = 0.0f;
-        fn.fG = png_inverted_fixed_point_to_float(gamma);
+
+        
+        float value = png_inverted_fixed_point_to_float(gamma);
+        gammas[0] = value;
+        gammas[1] = value;
+        gammas[2] = value;
 
         
         SkMatrix44 toXYZD50(SkMatrix44::kUninitialized_Constructor);
         toXYZD50.set3x3RowMajorf(gSRGB_toXYZD50);
 
-        return SkColorSpace::MakeRGB(fn, toXYZD50);
+        return SkColorSpace_Base::NewRGB(gammas, toXYZD50);
     }
 
 #endif 
 
     
     
-    return SkColorSpace::MakeSRGB();
+    return nullptr;
 }
 
 void SkPngCodec::allocateStorage(const SkImageInfo& dstInfo) {
@@ -420,47 +485,28 @@ void SkPngCodec::allocateStorage(const SkImageInfo& dstInfo) {
             
             
         case kSwizzleColor_XformMode: {
-            const int bitsPerPixel = this->getEncodedInfo().bitsPerPixel();
-
-            
-            
-            const size_t bytesPerPixel = (bitsPerPixel > 32) ? bitsPerPixel / 8 : 4;
-            const size_t colorXformBytes = dstInfo.width() * bytesPerPixel;
+            const size_t colorXformBytes = dstInfo.width() * sizeof(uint32_t);
             fStorage.reset(colorXformBytes);
-            fColorXformSrcRow = fStorage.get();
+            fColorXformSrcRow = (uint32_t*) fStorage.get();
             break;
         }
     }
 }
 
-static SkColorSpaceXform::ColorFormat png_select_xform_format(const SkEncodedInfo& info) {
-    
-    if (16 == info.bitsPerComponent()) {
-        if (SkEncodedInfo::kRGBA_Color == info.color()) {
-            return SkColorSpaceXform::kRGBA_U16_BE_ColorFormat;
-        } else if (SkEncodedInfo::kRGB_Color == info.color()) {
-            return SkColorSpaceXform::kRGB_U16_BE_ColorFormat;
-        }
-    }
-
-    return SkColorSpaceXform::kRGBA_8888_ColorFormat;
-}
-
 void SkPngCodec::applyXformRow(void* dst, const void* src) {
-    const SkColorSpaceXform::ColorFormat srcColorFormat =
-            png_select_xform_format(this->getEncodedInfo());
+    const SkColorSpaceXform::ColorFormat srcColorFormat = SkColorSpaceXform::kRGBA_8888_ColorFormat;
     switch (fXformMode) {
         case kSwizzleOnly_XformMode:
             fSwizzler->swizzle(dst, (const uint8_t*) src);
             break;
         case kColorOnly_XformMode:
-            SkAssertResult(this->colorXform()->apply(fXformColorFormat, dst, srcColorFormat, src,
-                    fXformWidth, fXformAlphaType));
+            fColorXform->apply(dst, (const uint32_t*) src, fXformWidth, fXformColorFormat,
+                               srcColorFormat, fXformAlphaType);
             break;
         case kSwizzleColor_XformMode:
             fSwizzler->swizzle(fColorXformSrcRow, (const uint8_t*) src);
-            SkAssertResult(this->colorXform()->apply(fXformColorFormat, dst, srcColorFormat,
-                    fColorXformSrcRow, fXformWidth, fXformAlphaType));
+            fColorXform->apply(dst, fColorXformSrcRow, fXformWidth, fXformColorFormat,
+                               srcColorFormat, fXformAlphaType);
             break;
     }
 }
@@ -470,7 +516,7 @@ public:
     SkPngNormalDecoder(const SkEncodedInfo& info, const SkImageInfo& imageInfo, SkStream* stream,
             SkPngChunkReader* reader, png_structp png_ptr, png_infop info_ptr, int bitDepth)
         : INHERITED(info, imageInfo, stream, reader, png_ptr, info_ptr, bitDepth)
-        , fRowsWrittenToOutput(0)
+        , fLinesDecoded(0)
         , fDst(nullptr)
         , fRowBytes(0)
         , fFirstRow(0)
@@ -492,14 +538,13 @@ public:
 #endif
 
 private:
-    int                         fRowsWrittenToOutput;
+    int                         fLinesDecoded; 
     void*                       fDst;
     size_t                      fRowBytes;
 
     
     int                         fFirstRow;  
     int                         fLastRow;
-    int                         fRowsNeeded;
 
     typedef SkPngCodec INHERITED;
 
@@ -517,26 +562,24 @@ private:
         fDst = dst;
         fRowBytes = rowBytes;
 
-        fRowsWrittenToOutput = 0;
-        fFirstRow = 0;
-        fLastRow = height - 1;
+        fLinesDecoded = 0;
 
         this->processData();
 
-        if (fRowsWrittenToOutput == height) {
+        if (fLinesDecoded == height) {
             return SkCodec::kSuccess;
         }
 
         if (rowsDecoded) {
-            *rowsDecoded = fRowsWrittenToOutput;
+            *rowsDecoded = fLinesDecoded;
         }
 
         return SkCodec::kIncompleteInput;
     }
 
     void allRowsCallback(png_bytep row, int rowNum) {
-        SkASSERT(rowNum == fRowsWrittenToOutput);
-        fRowsWrittenToOutput++;
+        SkASSERT(rowNum - fFirstRow == fLinesDecoded);
+        fLinesDecoded++;
         this->applyXformRow(fDst, row);
         fDst = SkTAddOffset<void>(fDst, fRowBytes);
     }
@@ -551,23 +594,18 @@ private:
         fLastRow = lastRow;
         fDst = dst;
         fRowBytes = rowBytes;
-        fRowsWrittenToOutput = 0;
-        fRowsNeeded = fLastRow - fFirstRow + 1;
+        fLinesDecoded = 0;
     }
 
     SkCodec::Result decode(int* rowsDecoded) override {
-        if (this->swizzler()) {
-            const int sampleY = this->swizzler()->sampleY();
-            fRowsNeeded = get_scaled_dimension(fLastRow - fFirstRow + 1, sampleY);
-        }
         this->processData();
 
-        if (fRowsWrittenToOutput == fRowsNeeded) {
+        if (fLinesDecoded == fLastRow - fFirstRow + 1) {
             return SkCodec::kSuccess;
         }
 
         if (rowsDecoded) {
-            *rowsDecoded = fRowsWrittenToOutput;
+            *rowsDecoded = fLinesDecoded;
         }
 
         return SkCodec::kIncompleteInput;
@@ -580,16 +618,16 @@ private:
         }
 
         SkASSERT(rowNum <= fLastRow);
-        SkASSERT(fRowsWrittenToOutput < fRowsNeeded);
 
         
-        if (!this->swizzler() || this->swizzler()->rowNeeded(rowNum - fFirstRow)) {
+        if (!this->swizzler() || this->swizzler()->rowNeeded(fLinesDecoded)) {
             this->applyXformRow(fDst, row);
             fDst = SkTAddOffset<void>(fDst, fRowBytes);
-            fRowsWrittenToOutput++;
         }
 
-        if (fRowsWrittenToOutput == fRowsNeeded) {
+        fLinesDecoded++;
+
+        if (rowNum == fLastRow) {
             
             longjmp(PNG_JMPBUF(this->png_ptr()), kStopDecoding);
         }
@@ -726,25 +764,17 @@ private:
 
         
         if (!fLinesDecoded) {
-            if (rowsDecoded) {
-                *rowsDecoded = 0;
-            }
             return SkCodec::kIncompleteInput;
         }
+        const int lastRow = fLinesDecoded + fFirstRow - 1;
+        SkASSERT(lastRow <= fLastRow);
 
+        
+        
+        png_bytep srcRow = fInterlaceBuffer.get();
         const int sampleY = this->swizzler() ? this->swizzler()->sampleY() : 1;
-        const int rowsNeeded = get_scaled_dimension(fLastRow - fFirstRow + 1, sampleY);
-        int rowsWrittenToOutput = 0;
-
-        
-        
-
-        
-        
-        png_bytep srcRow = SkTAddOffset<png_byte>(fInterlaceBuffer.get(),
-                                                  fPng_rowbytes * get_start_coord(sampleY));
         void* dst = fDst;
-        for (; rowsWrittenToOutput < rowsNeeded; rowsWrittenToOutput++) {
+        for (int rowNum = fFirstRow; rowNum <= lastRow; rowNum += sampleY) {
             this->applyXformRow(dst, srcRow);
             dst = SkTAddOffset<void>(dst, fRowBytes);
             srcRow = SkTAddOffset<png_byte>(srcRow, fPng_rowbytes * sampleY);
@@ -755,7 +785,7 @@ private:
         }
 
         if (rowsDecoded) {
-            *rowsDecoded = rowsWrittenToOutput;
+            *rowsDecoded = fLinesDecoded;
         }
         return SkCodec::kIncompleteInput;
     }
@@ -889,17 +919,17 @@ static bool read_header(SkStream* stream, SkPngChunkReader* chunkReader, SkCodec
 
 
 static void general_info_callback(png_structp png_ptr, png_infop info_ptr,
-                                  SkEncodedInfo::Color* outColor, SkEncodedInfo::Alpha* outAlpha,
-                                  int* outBitDepth) {
+                                  SkEncodedInfo::Color* outColor, SkEncodedInfo::Alpha* outAlpha) {
     png_uint_32 origWidth, origHeight;
     int bitDepth, encodedColorType;
     png_get_IHDR(png_ptr, info_ptr, &origWidth, &origHeight, &bitDepth,
                  &encodedColorType, nullptr, nullptr, nullptr);
 
     
-    if (bitDepth == 16 && (PNG_COLOR_TYPE_GRAY == encodedColorType ||
-                           PNG_COLOR_TYPE_GRAY_ALPHA == encodedColorType)) {
-        bitDepth = 8;
+    
+    
+    if (bitDepth == 16) {
+        SkASSERT(PNG_COLOR_TYPE_PALETTE != encodedColorType);
         png_set_strip_16(png_ptr);
     }
 
@@ -914,7 +944,6 @@ static void general_info_callback(png_structp png_ptr, png_infop info_ptr,
             
             if (bitDepth < 8) {
                 
-                bitDepth = 8;
                 png_set_packing(png_ptr);
             }
 
@@ -938,7 +967,6 @@ static void general_info_callback(png_structp png_ptr, png_infop info_ptr,
             
             if (bitDepth < 8) {
                 
-                bitDepth = 8;
                 png_set_expand_gray_1_2_4_to_8(png_ptr);
             }
 
@@ -971,14 +999,11 @@ static void general_info_callback(png_structp png_ptr, png_infop info_ptr,
     if (outAlpha) {
         *outAlpha = alpha;
     }
-    if (outBitDepth) {
-        *outBitDepth = bitDepth;
-    }
 }
 
 #ifdef SK_GOOGLE3_PNG_HACK
 void SkPngCodec::rereadInfoCallback() {
-    general_info_callback(fPng_ptr, fInfo_ptr, nullptr, nullptr, nullptr);
+    general_info_callback(fPng_ptr, fInfo_ptr, nullptr, nullptr);
     png_set_interlace_handling(fPng_ptr);
     png_read_update_info(fPng_ptr, fInfo_ptr);
 }
@@ -987,8 +1012,7 @@ void SkPngCodec::rereadInfoCallback() {
 void AutoCleanPng::infoCallback() {
     SkEncodedInfo::Color color;
     SkEncodedInfo::Alpha alpha;
-    int bitDepth;
-    general_info_callback(fPng_ptr, fInfo_ptr, &color, &alpha, &bitDepth);
+    general_info_callback(fPng_ptr, fInfo_ptr, &color, &alpha);
 
     const int numberPasses = png_set_interlace_handling(fPng_ptr);
 
@@ -1004,18 +1028,13 @@ void AutoCleanPng::infoCallback() {
 #endif
     if (fOutCodec) {
         SkASSERT(nullptr == *fOutCodec);
-        SkColorSpace_Base::ICCTypeFlag iccType = SkColorSpace_Base::kRGB_ICCTypeFlag;
-        if (SkEncodedInfo::kGray_Color == color || SkEncodedInfo::kGrayAlpha_Color == color) {
-            iccType |= SkColorSpace_Base::kGray_ICCTypeFlag;
-        }
-        sk_sp<SkColorSpace> colorSpace = read_color_space(fPng_ptr, fInfo_ptr, iccType);
-        const bool unsupportedICC = !colorSpace;
+        sk_sp<SkColorSpace> colorSpace = read_color_space(fPng_ptr, fInfo_ptr);
         if (!colorSpace) {
             
-            colorSpace = SkColorSpace::MakeSRGB();
+            colorSpace = SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named);
         }
 
-        SkEncodedInfo encodedInfo = SkEncodedInfo::Make(color, alpha, bitDepth);
+        SkEncodedInfo encodedInfo = SkEncodedInfo::Make(color, alpha, 8);
         
         
         png_uint_32 origWidth = png_get_image_width(fPng_ptr, fInfo_ptr);
@@ -1040,7 +1059,6 @@ void AutoCleanPng::infoCallback() {
             *fOutCodec = new SkPngInterlacedDecoder(encodedInfo, imageInfo, fStream,
                     fChunkReader, fPng_ptr, fInfo_ptr, bitDepth, numberPasses);
         }
-        (*fOutCodec)->setUnsupportedICC(unsupportedICC);
     }
 
 
@@ -1092,28 +1110,19 @@ bool SkPngCodec::initializeXforms(const SkImageInfo& dstInfo, const Options& opt
     
     
     fSwizzler.reset(nullptr);
+    fColorXform = nullptr;
 
-    if (!this->initializeColorXform(dstInfo, options.fPremulBehavior)) {
-        return false;
+    if (needs_color_xform(dstInfo, this->getInfo())) {
+        fColorXform = SkColorSpaceXform::New(this->getInfo().colorSpace(), dstInfo.colorSpace());
+        SkASSERT(fColorXform);
     }
 
     
     
-    bool skipFormatConversion = false;
-    switch (this->getEncodedInfo().color()) {
-        case SkEncodedInfo::kRGB_Color:
-            if (this->getEncodedInfo().bitsPerComponent() != 16) {
-                break;
-            }
-
-            
-        case SkEncodedInfo::kRGBA_Color:
-            skipFormatConversion = this->colorXform();
-            break;
-        default:
-            break;
-    }
-    if (skipFormatConversion && !options.fSubset) {
+    
+    if (fColorXform && SkEncodedInfo::kRGBA_Color == this->getEncodedInfo().color() &&
+        !options.fSubset)
+    {
         fXformMode = kColorOnly_XformMode;
         return true;
     }
@@ -1125,9 +1134,9 @@ bool SkPngCodec::initializeXforms(const SkImageInfo& dstInfo, const Options& opt
     }
 
     
-    copy_color_table(dstInfo, fColorTable.get(), ctable, ctableCount);
+    copy_color_table(dstInfo, fColorTable, ctable, ctableCount);
 
-    this->initializeSwizzler(dstInfo, options, skipFormatConversion);
+    this->initializeSwizzler(dstInfo, options);
     return true;
 }
 
@@ -1150,15 +1159,17 @@ void SkPngCodec::initializeXformParams() {
     }
 }
 
-void SkPngCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& options,
-                                    bool skipFormatConversion) {
+static inline bool apply_xform_on_decode(SkColorType dstColorType, SkEncodedInfo::Color srcColor) {
+    
+    return SkEncodedInfo::kPalette_Color != srcColor || kRGBA_F16_SkColorType == dstColorType;
+}
+
+void SkPngCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& options) {
     SkImageInfo swizzlerInfo = dstInfo;
     Options swizzlerOptions = options;
     fXformMode = kSwizzleOnly_XformMode;
-    if (this->colorXform() &&
-        apply_xform_on_decode(dstInfo.colorType(), this->getEncodedInfo().color()))
-    {
-        swizzlerInfo = swizzlerInfo.makeColorType(kXformSrcColorType);
+    if (fColorXform && apply_xform_on_decode(dstInfo.colorType(), this->getEncodedInfo().color())) {
+        swizzlerInfo = swizzlerInfo.makeColorType(kRGBA_8888_SkColorType);
         if (kPremul_SkAlphaType == dstInfo.alphaType()) {
             swizzlerInfo = swizzlerInfo.makeAlphaType(kUnpremul_SkAlphaType);
         }
@@ -1173,17 +1184,17 @@ void SkPngCodec::initializeSwizzler(const SkImageInfo& dstInfo, const Options& o
 
     const SkPMColor* colors = get_color_ptr(fColorTable.get());
     fSwizzler.reset(SkSwizzler::CreateSwizzler(this->getEncodedInfo(), colors, swizzlerInfo,
-                                               swizzlerOptions, nullptr, skipFormatConversion));
+                                               swizzlerOptions));
     SkASSERT(fSwizzler);
 }
 
 SkSampler* SkPngCodec::getSampler(bool createIfNecessary) {
     if (fSwizzler || !createIfNecessary) {
-        return fSwizzler.get();
+        return fSwizzler;
     }
 
-    this->initializeSwizzler(this->dstInfo(), this->options(), true);
-    return fSwizzler.get();
+    this->initializeSwizzler(this->dstInfo(), this->options());
+    return fSwizzler;
 }
 
 bool SkPngCodec::onRewind() {
@@ -1278,13 +1289,13 @@ uint64_t SkPngCodec::onGetFillValue(const SkImageInfo& dstInfo) const {
         SkAlphaType alphaType = select_xform_alpha(dstInfo.alphaType(),
                                                    this->getInfo().alphaType());
         return get_color_table_fill_value(dstInfo.colorType(), alphaType, colorPtr, 0,
-                                          this->colorXform(), true);
+                                          fColorXform.get());
     }
     return INHERITED::onGetFillValue(dstInfo);
 }
 
 SkCodec* SkPngCodec::NewFromStream(SkStream* stream, SkPngChunkReader* chunkReader) {
-    std::unique_ptr<SkStream> streamDeleter(stream);
+    SkAutoTDelete<SkStream> streamDeleter(stream);
 
     SkCodec* outCodec = nullptr;
     if (read_header(streamDeleter.get(), chunkReader, &outCodec, nullptr, nullptr)) {

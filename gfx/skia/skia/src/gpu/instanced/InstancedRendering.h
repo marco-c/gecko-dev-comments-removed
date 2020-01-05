@@ -8,12 +8,11 @@
 #ifndef gr_instanced_InstancedRendering_DEFINED
 #define gr_instanced_InstancedRendering_DEFINED
 
-#include "../private/GrInstancedPipelineInfo.h"
-#include "GrGpu.h"
 #include "GrMemoryPool.h"
 #include "SkTInternalLList.h"
+#include "batches/GrDrawBatch.h"
 #include "instanced/InstancedRenderingTypes.h"
-#include "ops/GrDrawOp.h"
+#include "../private/GrInstancedPipelineInfo.h"
 
 class GrResourceProvider;
 
@@ -36,7 +35,7 @@ class InstancedRendering : public SkNoncopyable {
 public:
     virtual ~InstancedRendering() { SkASSERT(State::kRecordingDraws == fState); }
 
-    GrGpu* gpu() const { return fGpu.get(); }
+    GrGpu* gpu() const { return fGpu; }
 
     
 
@@ -45,32 +44,29 @@ public:
 
 
 
-    std::unique_ptr<GrDrawOp> SK_WARN_UNUSED_RESULT recordRect(const SkRect&, const SkMatrix&,
-                                                               GrPaint&&, GrAA,
-                                                               const GrInstancedPipelineInfo&);
+    GrDrawBatch* SK_WARN_UNUSED_RESULT recordRect(const SkRect&, const SkMatrix&, GrColor,
+                                                  bool antialias, const GrInstancedPipelineInfo&,
+                                                  bool* useHWAA);
 
-    std::unique_ptr<GrDrawOp> SK_WARN_UNUSED_RESULT recordRect(const SkRect&, const SkMatrix&,
-                                                               GrPaint&&, const SkRect& localRect,
-                                                               GrAA,
-                                                               const GrInstancedPipelineInfo&);
+    GrDrawBatch* SK_WARN_UNUSED_RESULT recordRect(const SkRect&, const SkMatrix&, GrColor,
+                                                  const SkRect& localRect, bool antialias,
+                                                  const GrInstancedPipelineInfo&, bool* useHWAA);
 
-    std::unique_ptr<GrDrawOp> SK_WARN_UNUSED_RESULT recordRect(const SkRect&, const SkMatrix&,
-                                                               GrPaint&&,
-                                                               const SkMatrix& localMatrix, GrAA,
-                                                               const GrInstancedPipelineInfo&);
+    GrDrawBatch* SK_WARN_UNUSED_RESULT recordRect(const SkRect&, const SkMatrix&, GrColor,
+                                                  const SkMatrix& localMatrix, bool antialias,
+                                                  const GrInstancedPipelineInfo&, bool* useHWAA);
 
-    std::unique_ptr<GrDrawOp> SK_WARN_UNUSED_RESULT recordOval(const SkRect&, const SkMatrix&,
-                                                               GrPaint&&, GrAA,
-                                                               const GrInstancedPipelineInfo&);
+    GrDrawBatch* SK_WARN_UNUSED_RESULT recordOval(const SkRect&, const SkMatrix&, GrColor,
+                                                  bool antialias, const GrInstancedPipelineInfo&,
+                                                  bool* useHWAA);
 
-    std::unique_ptr<GrDrawOp> SK_WARN_UNUSED_RESULT recordRRect(const SkRRect&, const SkMatrix&,
-                                                                GrPaint&&, GrAA,
-                                                                const GrInstancedPipelineInfo&);
+    GrDrawBatch* SK_WARN_UNUSED_RESULT recordRRect(const SkRRect&, const SkMatrix&, GrColor,
+                                                   bool antialias, const GrInstancedPipelineInfo&,
+                                                   bool* useHWAA);
 
-    std::unique_ptr<GrDrawOp> SK_WARN_UNUSED_RESULT recordDRRect(const SkRRect& outer,
-                                                                 const SkRRect& inner,
-                                                                 const SkMatrix&, GrPaint&&, GrAA,
-                                                                 const GrInstancedPipelineInfo&);
+    GrDrawBatch* SK_WARN_UNUSED_RESULT recordDRRect(const SkRRect& outer, const SkRRect& inner,
+                                                    const SkMatrix&, GrColor, bool antialias,
+                                                    const GrInstancedPipelineInfo&, bool* useHWAA);
 
     
 
@@ -96,31 +92,12 @@ public:
     void resetGpuResources(ResetType);
 
 protected:
-    class Op : public GrDrawOp {
+    class Batch : public GrDrawBatch {
     public:
-        SK_DECLARE_INTERNAL_LLIST_INTERFACE(Op);
+        SK_DECLARE_INTERNAL_LLIST_INTERFACE(Batch);
 
-        ~Op() override;
-        const char* name() const override { return "InstancedRendering::Op"; }
-
-        SkString dumpInfo() const override {
-            SkString string;
-            string.printf(
-                    "AA: %d, ShapeTypes: 0x%02x, IShapeTypes: 0x%02x, Persp %d, "
-                    "NonSquare: %d, PLoad: %0.2f, Tracked: %d, NumDraws: %d, "
-                    "GeomChanges: %d\n",
-                    (unsigned)fInfo.fAAType,
-                    fInfo.fShapeTypes,
-                    fInfo.fInnerShapeTypes,
-                    fInfo.fHasPerspective,
-                    fInfo.fNonSquare,
-                    fPixelLoad,
-                    fIsTracked,
-                    fNumDraws,
-                    fNumChangesInGeometry);
-            string.append(INHERITED::dumpInfo());
-            return string;
-        }
+        ~Batch() override;
+        const char* name() const override { return "Instanced Batch"; }
 
         struct Draw {
             Instance     fInstance;
@@ -135,50 +112,45 @@ protected:
         void appendParamsTexel(const SkScalar* vals, int count);
         void appendParamsTexel(SkScalar x, SkScalar y, SkScalar z, SkScalar w);
         void appendParamsTexel(SkScalar x, SkScalar y, SkScalar z);
-        FixedFunctionFlags fixedFunctionFlags() const override {
-            return GrAATypeIsHW(fInfo.aaType()) ? FixedFunctionFlags::kUsesHWAA
-                                                : FixedFunctionFlags::kNone;
-        }
-        bool xpRequiresDstTexture(const GrCaps&, const GrAppliedClip*) override;
-
-        
-        void wasRecorded() override;
 
     protected:
-        Op(uint32_t classID, GrPaint&&, InstancedRendering*);
+        Batch(uint32_t classID, InstancedRendering* ir);
 
-        InstancedRendering* const fInstancedRendering;
-        OpInfo fInfo;
-        SkScalar fPixelLoad;
-        GrProcessorSet fProcessors;
-        SkSTArray<5, ParamsTexel, true> fParams;
-        bool fIsTracked : 1;
-        bool fRequiresBarrierOnOverlap : 1;
-        int fNumDraws;
-        int fNumChangesInGeometry;
-        Draw* fHeadDraw;
-        Draw* fTailDraw;
+        void initBatchTracker(const GrXPOverridesForBatch&) override;
+        bool onCombineIfPossible(GrBatch* other, const GrCaps& caps) override;
 
-    private:
-        bool onCombineIfPossible(GrOp* other, const GrCaps& caps) override;
-        void onPrepare(GrOpFlushState*) override {}
-        void onExecute(GrOpFlushState*) override;
+        void computePipelineOptimizations(GrInitInvariantOutput* color,
+                                          GrInitInvariantOutput* coverage,
+                                          GrBatchToXPOverrides*) const override;
 
-        typedef GrDrawOp INHERITED;
+        void onPrepare(GrBatchFlushState*) override {}
+        void onDraw(GrBatchFlushState*) override;
+
+        InstancedRendering* const         fInstancedRendering;
+        BatchInfo                         fInfo;
+        SkScalar                          fPixelLoad;
+        SkSTArray<5, ParamsTexel, true>   fParams;
+        bool                              fIsTracked;
+        int                               fNumDraws;
+        int                               fNumChangesInGeometry;
+        Draw*                             fHeadDraw;
+        Draw*                             fTailDraw;
+
+        typedef GrDrawBatch INHERITED;
 
         friend class InstancedRendering;
     };
 
-    typedef SkTInternalLList<Op> OpList;
+    typedef SkTInternalLList<Batch> BatchList;
 
     InstancedRendering(GrGpu* gpu);
 
-    const OpList& trackedOps() const { return fTrackedOps; }
-    const GrBuffer* vertexBuffer() const { SkASSERT(fVertexBuffer); return fVertexBuffer.get(); }
-    const GrBuffer* indexBuffer() const { SkASSERT(fIndexBuffer); return fIndexBuffer.get(); }
+    const BatchList& trackedBatches() const { return fTrackedBatches; }
+    const GrBuffer* vertexBuffer() const { SkASSERT(fVertexBuffer); return fVertexBuffer; }
+    const GrBuffer* indexBuffer() const { SkASSERT(fIndexBuffer); return fIndexBuffer; }
 
     virtual void onBeginFlush(GrResourceProvider*) = 0;
-    virtual void onDraw(const GrPipeline&, const InstanceProcessor&, const Op*) = 0;
+    virtual void onDraw(const GrPipeline&, const InstanceProcessor&, const Batch*) = 0;
     virtual void onEndFlush() = 0;
     virtual void onResetGpuResources(ResetType) = 0;
 
@@ -188,24 +160,24 @@ private:
         kFlushing
     };
 
-    std::unique_ptr<Op> SK_WARN_UNUSED_RESULT recordShape(ShapeType, const SkRect& bounds,
-                                                          const SkMatrix& viewMatrix, GrPaint&&,
-                                                          const SkRect& localRect, GrAA aa,
-                                                          const GrInstancedPipelineInfo&);
+    Batch* SK_WARN_UNUSED_RESULT recordShape(ShapeType, const SkRect& bounds,
+                                             const SkMatrix& viewMatrix, GrColor,
+                                             const SkRect& localRect, bool antialias,
+                                             const GrInstancedPipelineInfo&, bool* requireHWAA);
 
-    bool selectAntialiasMode(const SkMatrix& viewMatrix, GrAA aa, const GrInstancedPipelineInfo&,
-                             GrAAType*);
+    bool selectAntialiasMode(const SkMatrix& viewMatrix, bool antialias,
+                             const GrInstancedPipelineInfo&, bool* useHWAA, AntialiasMode*);
 
-    virtual std::unique_ptr<Op> makeOp(GrPaint&&) = 0;
+    virtual Batch* createBatch() = 0;
 
-    const sk_sp<GrGpu> fGpu;
-    State fState;
-    GrObjectMemoryPool<Op::Draw> fDrawPool;
-    SkSTArray<1024, ParamsTexel, true> fParams;
-    OpList fTrackedOps;
-    sk_sp<const GrBuffer> fVertexBuffer;
-    sk_sp<const GrBuffer> fIndexBuffer;
-    sk_sp<GrBuffer> fParamsBuffer;
+    const SkAutoTUnref<GrGpu>            fGpu;
+    State                                fState;
+    GrMemoryPool                         fDrawPool;
+    SkSTArray<1024, ParamsTexel, true>   fParams;
+    BatchList                            fTrackedBatches;
+    SkAutoTUnref<const GrBuffer>         fVertexBuffer;
+    SkAutoTUnref<const GrBuffer>         fIndexBuffer;
+    SkAutoTUnref<GrBuffer>               fParamsBuffer;
 };
 
 }

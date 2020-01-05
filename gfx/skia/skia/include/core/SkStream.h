@@ -12,8 +12,6 @@
 #include "SkRefCnt.h"
 #include "SkScalar.h"
 
-#include <memory.h>
-
 class SkStream;
 class SkStreamRewindable;
 class SkStreamSeekable;
@@ -189,31 +187,21 @@ public:
 
 
     virtual bool write(const void* buffer, size_t size) = 0;
+    virtual void newline();
     virtual void flush();
 
     virtual size_t bytesWritten() const = 0;
 
     
 
-    bool write8(U8CPU value)   {
-        uint8_t v = SkToU8(value);
-        return this->write(&v, 1);
-    }
-    bool write16(U16CPU value) {
-        uint16_t v = SkToU16(value);
-        return this->write(&v, 2);
-    }
-    bool write32(uint32_t v) {
-        return this->write(&v, 4);
-    }
+    bool    write8(U8CPU);
+    bool    write16(U16CPU);
+    bool    write32(uint32_t);
 
-    bool writeText(const char text[]) {
+    bool    writeText(const char text[]) {
         SkASSERT(text);
         return this->write(text, strlen(text));
     }
-
-    bool newline() { return this->write("\n", strlen("\n")); }
-
     bool    writeDecAsText(int32_t);
     bool    writeBigDecAsText(int64_t, int minDigits = 0);
     bool    writeHexAsText(uint32_t, int minDigits = 0);
@@ -232,20 +220,9 @@ public:
     static int SizeOfPackedUInt(size_t value);
 };
 
-class SK_API SkNullWStream : public SkWStream {
-public:
-    SkNullWStream() : fBytesWritten(0) {}
-
-    bool write(const void*, size_t n) override { fBytesWritten += n; return true; }
-    void flush() override {}
-    size_t bytesWritten() const override { return fBytesWritten; }
-
-private:
-    size_t fBytesWritten;
-};
 
 
-
+#include "SkString.h"
 #include <stdio.h>
 
 
@@ -254,20 +231,28 @@ public:
     
 
 
-    explicit SkFILEStream(const char path[] = nullptr);
+    explicit SkFILEStream(const char path[] = NULL);
+
+    enum Ownership {
+        kCallerPasses_Ownership,
+        kCallerRetains_Ownership
+    };
+    
+
+
+
+
+    explicit SkFILEStream(FILE* file, Ownership ownership = kCallerPasses_Ownership);
+
+    virtual ~SkFILEStream();
+
+    
+    bool isValid() const { return fFILE != NULL; }
 
     
 
 
-    explicit SkFILEStream(FILE* file);
-
-    ~SkFILEStream() override;
-
-    
-    bool isValid() const { return fFILE != nullptr; }
-
-    
-    void close();
+    void setPath(const char path[]);
 
     size_t read(void* buffer, size_t size) override;
     bool isAtEnd() const override;
@@ -285,14 +270,11 @@ public:
     const void* getMemoryBase() override;
 
 private:
-    explicit SkFILEStream(std::shared_ptr<FILE>, size_t size, size_t offset);
-    explicit SkFILEStream(std::shared_ptr<FILE>, size_t size, size_t offset, size_t originalOffset);
-
-    std::shared_ptr<FILE> fFILE;
+    FILE*       fFILE;
+    SkString    fName;
+    Ownership   fOwnership;
     
-    size_t fSize;
-    size_t fOffset;
-    size_t fOriginalOffset;
+    mutable sk_sp<SkData> fData;
 
     typedef SkStreamAsset INHERITED;
 };
@@ -306,6 +288,14 @@ public:
 
     
     SkMemoryStream(const void* data, size_t length, bool copyData = false);
+
+#ifdef SK_SUPPORT_LEGACY_STREAM_DATA
+    
+
+
+
+    SkMemoryStream(SkData*);
+#endif
 
     
     SkMemoryStream(sk_sp<SkData>);
@@ -324,6 +314,22 @@ public:
 
     sk_sp<SkData> asData() const { return fData; }
     void setData(sk_sp<SkData>);
+#ifdef SK_SUPPORT_LEGACY_STREAM_DATA
+    
+
+
+    SkData* copyToData() const { return asData().release(); }
+
+    
+
+
+
+
+    SkData* setData(SkData* data) {
+        this->setData(sk_ref_sp(data));
+        return data;
+    }
+#endif
 
     void skipToAlign4();
     const void* getAtPos();
@@ -357,7 +363,7 @@ private:
 class SK_API SkFILEWStream : public SkWStream {
 public:
     SkFILEWStream(const char path[]);
-    ~SkFILEWStream() override;
+    virtual ~SkFILEWStream();
 
     
 
@@ -374,28 +380,52 @@ private:
     typedef SkWStream INHERITED;
 };
 
+class SK_API SkMemoryWStream : public SkWStream {
+public:
+    SkMemoryWStream(void* buffer, size_t size);
+    bool write(const void* buffer, size_t size) override;
+    size_t bytesWritten() const override { return fBytesWritten; }
+
+private:
+    char*   fBuffer;
+    size_t  fMaxLength;
+    size_t  fBytesWritten;
+
+    typedef SkWStream INHERITED;
+};
+
 class SK_API SkDynamicMemoryWStream : public SkWStream {
 public:
     SkDynamicMemoryWStream();
-    ~SkDynamicMemoryWStream() override;
+    virtual ~SkDynamicMemoryWStream();
 
     bool write(const void* buffer, size_t size) override;
-    size_t bytesWritten() const override;
-
+    size_t bytesWritten() const override { return fBytesWritten; }
+    
+    
+    bool write(const void* buffer, size_t offset, size_t size);
     bool read(void* buffer, size_t offset, size_t size);
+    size_t getOffset() const { return fBytesWritten; }
 
     
     void copyTo(void* dst) const;
     void writeToStream(SkWStream* dst) const;
 
-    
-    void copyToAndReset(void* dst);
-
+    sk_sp<SkData> snapshotAsData() const;
     
     sk_sp<SkData> detachAsData();
+#ifdef SK_SUPPORT_LEGACY_STREAM_DATA
+    
+
+
+
+    SkData* copyToData() const {
+        return snapshotAsData().release();
+    }
+#endif
 
     
-    std::unique_ptr<SkStreamAsset> detachAsStream();
+    SkStreamAsset* detachAsStream();
 
     
     void reset();
@@ -404,13 +434,10 @@ private:
     struct Block;
     Block*  fHead;
     Block*  fTail;
-    size_t  fBytesWrittenBeforeTail;
+    size_t  fBytesWritten;
+    mutable sk_sp<SkData> fCopy;  
 
-#ifdef SK_DEBUG
-    void validate() const;
-#else
-    void validate() const {}
-#endif
+    void invalidateCopy();
 
     
     friend class SkBlockMemoryStream;
@@ -418,5 +445,23 @@ private:
 
     typedef SkWStream INHERITED;
 };
+
+
+class SK_API SkDebugWStream : public SkWStream {
+public:
+    SkDebugWStream() : fBytesWritten(0) {}
+
+    
+    bool write(const void* buffer, size_t size) override;
+    void newline() override;
+    size_t bytesWritten() const override { return fBytesWritten; }
+
+private:
+    size_t fBytesWritten;
+    typedef SkWStream INHERITED;
+};
+
+
+typedef SkFILEStream SkURLStream;
 
 #endif

@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_EXTENSION
 #define SKSL_EXTENSION
 
@@ -16,15 +16,15 @@ namespace SkSL {
 
 
 struct Extension : public ProgramElement {
-    Extension(Position position, String name)
-    : INHERITED(position, kExtension_Kind)
+    Extension(Position position, std::string name)
+    : INHERITED(position, kExtension_Kind) 
     , fName(std::move(name)) {}
 
-    String description() const override {
+    std::string description() const override {
         return "#extension " + fName + " : enable";
     }
 
-    const String fName;
+    const std::string fName;
 
     typedef ProgramElement INHERITED;
 };

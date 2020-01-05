@@ -4,13 +4,12 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTPARAMETER
 #define SKSL_ASTPARAMETER
 
-#include "SkSLASTPositionNode.h"
+#include "SkSLASTModifiers.h"
 #include "SkSLASTType.h"
-#include "../ir/SkSLModifiers.h"
 
 namespace SkSL {
 
@@ -20,25 +19,25 @@ namespace SkSL {
 struct ASTParameter : public ASTPositionNode {
     
     
-    ASTParameter(Position position, Modifiers modifiers, std::unique_ptr<ASTType> type,
-                 String name, std::vector<int> sizes)
+    ASTParameter(Position position, ASTModifiers modifiers, std::unique_ptr<ASTType> type, 
+                 std::string name, std::vector<int> sizes)
     : INHERITED(position)
     , fModifiers(modifiers)
     , fType(std::move(type))
     , fName(std::move(name))
     , fSizes(std::move(sizes)) {}
 
-    String description() const override {
-        String result = fModifiers.description() + fType->description() + " " + fName;
+    std::string description() const override {
+        std::string result = fModifiers.description() + fType->description() + " " + fName;
         for (int size : fSizes) {
             result += "[" + to_string(size) + "]";
         }
         return result;
     }
 
-    const Modifiers fModifiers;
+    const ASTModifiers fModifiers;
     const std::unique_ptr<ASTType> fType;
-    const String fName;
+    const std::string fName;
     const std::vector<int> fSizes;
 
     typedef ASTPositionNode INHERITED;

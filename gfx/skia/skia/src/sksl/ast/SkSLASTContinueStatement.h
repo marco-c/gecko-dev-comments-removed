@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTCONTINUESTATEMENT
 #define SKSL_ASTCONTINUESTATEMENT
 
@@ -19,8 +19,8 @@ struct ASTContinueStatement : public ASTStatement {
     ASTContinueStatement(Position position)
     : INHERITED(position, kContinue_Kind) {}
 
-    String description() const override {
-        return String("continue;");
+    std::string description() const override {
+        return "continue;";
     }
 
     typedef ASTStatement INHERITED;

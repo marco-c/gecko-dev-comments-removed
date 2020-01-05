@@ -14,7 +14,6 @@
 
 class GrContext;
 class GrTexture;
-class GrTextureProxy;
 
 
 
@@ -36,7 +35,7 @@ public:
 
 
 
-    sk_sp<GrTextureProxy> refAsTextureProxy(GrContext*, const GrSurfaceDesc&, bool useCache);
+    sk_sp<GrTexture> refAsTexture(GrContext*, const GrSurfaceDesc&, bool useCache);
 
     virtual uint32_t onGetID() = 0;
 

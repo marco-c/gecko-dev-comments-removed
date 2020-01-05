@@ -4,7 +4,7 @@
 
 
 
-
+ 
 #ifndef SKSL_ASTBLOCK
 #define SKSL_ASTBLOCK
 
@@ -20,14 +20,14 @@ struct ASTBlock : public ASTStatement {
     : INHERITED(position, kBlock_Kind)
     , fStatements(std::move(statements)) {}
 
-    String description() const override {
-        String result("{");
+    std::string description() const override {
+        std::string result("{");
         for (size_t i = 0; i < fStatements.size(); i++) {
             result += "\n";
             result += fStatements[i]->description();
         }
         result += "\n}\n";
-        return result;
+        return result;        
     }
 
     const std::vector<std::unique_ptr<ASTStatement>> fStatements;

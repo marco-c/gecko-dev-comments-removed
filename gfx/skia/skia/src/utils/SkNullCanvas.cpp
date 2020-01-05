@@ -9,10 +9,10 @@
 
 #include "SkCanvas.h"
 #include "SkNWayCanvas.h"
-#include "SkMakeUnique.h"
 
-std::unique_ptr<SkCanvas> SkMakeNullCanvas() {
+
+SkCanvas* SkCreateNullCanvas() {
     
     
-    return std::unique_ptr<SkCanvas>(new SkNWayCanvas(0, 0));
+    return new SkNWayCanvas(0, 0);
 }

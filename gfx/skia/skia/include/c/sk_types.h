@@ -81,7 +81,7 @@ typedef enum {
 
 
 
-SK_API sk_colortype_t sk_colortype_get_default_8888(void);
+SK_API sk_colortype_t sk_colortype_get_default_8888();
 
 typedef struct {
     int32_t         width;
@@ -112,59 +112,6 @@ typedef struct {
     float   right;
     float   bottom;
 } sk_rect_t;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 typedef struct {
     float   mat[9];

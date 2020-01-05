@@ -5,8 +5,8 @@
 
 
 
-#include "SkArenaAlloc.h"
 #include "SkOpts.h"
+#include "SkSmallAllocator.h"
 #include "SkSpriteBlitter.h"
 
 SkSpriteBlitter::SkSpriteBlitter(const SkPixmap& source)
@@ -140,7 +140,7 @@ private:
 
 
 SkBlitter* SkBlitter::ChooseSprite(const SkPixmap& dst, const SkPaint& paint,
-        const SkPixmap& source, int left, int top, SkArenaAlloc* allocator) {
+        const SkPixmap& source, int left, int top, SkTBlitterAllocator* allocator) {
     
 
 
@@ -161,7 +161,7 @@ SkBlitter* SkBlitter::ChooseSprite(const SkPixmap& dst, const SkPaint& paint,
     SkSpriteBlitter* blitter = nullptr;
 
     if (SkSpriteBlitter_Src_SrcOver::Supports(dst, source, paint)) {
-        blitter = allocator->make<SkSpriteBlitter_Src_SrcOver>(source);
+        blitter = allocator->createT<SkSpriteBlitter_Src_SrcOver>(source);
     } else {
         switch (dst.colorType()) {
             case kRGB_565_SkColorType:

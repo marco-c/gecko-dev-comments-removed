@@ -13,7 +13,7 @@
 #include "SkTLList.h"
 
 class GrContext;
-class GrRenderTargetContext;
+class GrDrawContext;
 
 
 
@@ -70,8 +70,8 @@ public:
 
     InitialState initialState() const { return fInitialState; }
 
-    bool drawAlphaClipMask(GrRenderTargetContext*) const;
-    bool drawStencilClipMask(GrContext*, GrRenderTargetContext*) const;
+    bool drawAlphaClipMask(GrDrawContext*) const;
+    bool drawStencilClipMask(GrContext*, GrDrawContext*, const SkIPoint& clipOrigin) const;
 
 private:
     void walkStack(const SkClipStack&, const SkRect& queryBounds, int maxWindowRectangles);

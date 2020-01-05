@@ -8,15 +8,21 @@
 #ifndef SkTaskGroup_DEFINED
 #define SkTaskGroup_DEFINED
 
-#include "SkExecutor.h"
-#include "SkTypes.h"
-#include <atomic>
 #include <functional>
+
+#include "SkTypes.h"
+#include "SkAtomics.h"
+#include "SkTemplates.h"
 
 class SkTaskGroup : SkNoncopyable {
 public:
     
-    explicit SkTaskGroup(SkExecutor& executor = SkExecutor::GetDefault());
+    struct Enabler : SkNoncopyable {
+        explicit Enabler(int threads = -1);  
+        ~Enabler();
+    };
+
+    SkTaskGroup();
     ~SkTaskGroup() { this->wait(); }
 
     
@@ -29,16 +35,8 @@ public:
     
     void wait();
 
-    
-    
-    struct Enabler {
-        explicit Enabler(int threads = -1);  
-        std::unique_ptr<SkExecutor> fThreadPool;
-    };
-
 private:
-    std::atomic<int32_t> fPending;
-    SkExecutor&          fExecutor;
+    SkAtomic<int32_t> fPending;
 };
 
 #endif

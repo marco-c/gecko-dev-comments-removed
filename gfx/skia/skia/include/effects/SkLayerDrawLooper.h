@@ -11,11 +11,11 @@
 #include "SkDrawLooper.h"
 #include "SkPaint.h"
 #include "SkPoint.h"
-#include "SkBlendMode.h"
+#include "SkXfermode.h"
 
 class SK_API SkLayerDrawLooper : public SkDrawLooper {
 public:
-    ~SkLayerDrawLooper() override;
+    virtual ~SkLayerDrawLooper();
 
     
 
@@ -56,10 +56,10 @@ public:
 
 
     struct SK_API LayerInfo {
-        BitFlags    fPaintBits;
-        SkBlendMode fColorMode;
-        SkVector    fOffset;
-        bool        fPostTranslate; 
+        BitFlags            fPaintBits;
+        SkXfermode::Mode    fColorMode;
+        SkVector            fOffset;
+        bool                fPostTranslate; 
 
         
 
@@ -71,7 +71,9 @@ public:
         LayerInfo();
     };
 
-    SkDrawLooper::Context* makeContext(SkCanvas*, SkArenaAlloc*) const override;
+    SkDrawLooper::Context* createContext(SkCanvas*, void* storage) const override;
+
+    size_t contextSize() const override { return sizeof(LayerDrawLooperContext); }
 
     bool asABlurShadow(BlurShadowRec* rec) const override;
 
@@ -81,8 +83,6 @@ public:
     static sk_sp<SkFlattenable> CreateProc(SkReadBuffer& buffer);
 
 protected:
-    sk_sp<SkDrawLooper> onMakeColorSpace(SkColorSpaceXformer*) const override;
-
     SkLayerDrawLooper();
 
     void flatten(SkWriteBuffer&) const override;
@@ -143,6 +143,11 @@ public:
 
 
         sk_sp<SkDrawLooper> detach();
+#ifdef SK_SUPPORT_LEGACY_MINOR_EFFECT_PTR
+        SkLayerDrawLooper* detachLooper() {
+            return (SkLayerDrawLooper*)this->detach().release();
+        }
+#endif
 
     private:
         Rec* fRecs;

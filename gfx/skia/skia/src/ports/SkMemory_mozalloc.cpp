@@ -6,9 +6,8 @@
 
 
 
-#include "SkMalloc.h"
-
 #include "SkTypes.h"
+
 #include "mozilla/mozalloc.h"
 #include "mozilla/mozalloc_abort.h"
 #include "mozilla/mozalloc_oom.h"

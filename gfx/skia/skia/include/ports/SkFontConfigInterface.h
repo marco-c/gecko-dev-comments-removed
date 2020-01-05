@@ -109,6 +109,9 @@ public:
 
     static SkFontConfigInterface* GetSingletonDirectInterface();
 
+    
+
+    virtual sk_sp<SkDataTable> getFamilyNames() { return SkDataTable::MakeEmpty(); }
     typedef SkRefCnt INHERITED;
 };
 

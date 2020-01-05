@@ -4,11 +4,10 @@
 
 
 
-
+ 
 #ifndef SKSL_INTLITERAL
 #define SKSL_INTLITERAL
 
-#include "SkSLContext.h"
 #include "SkSLExpression.h"
 
 namespace SkSL {
@@ -19,11 +18,11 @@ namespace SkSL {
 struct IntLiteral : public Expression {
     
     
-    IntLiteral(const Context& context, Position position, int64_t value, const Type* type = nullptr)
-    : INHERITED(position, kIntLiteral_Kind, type ? *type : *context.fInt_Type)
+    IntLiteral(const Context& context, Position position, int64_t value)
+    : INHERITED(position, kIntLiteral_Kind, *context.fInt_Type)
     , fValue(value) {}
 
-    virtual String description() const override {
+    virtual std::string description() const override {
         return to_string(fValue);
     }
 
