@@ -2878,24 +2878,6 @@ var BrowserOnClick = {
     }
   },
 
-  handleEvent(event) {
-    if (!event.isTrusted || 
-        event.button == 2) {
-      return;
-    }
-
-    let originalTarget = event.originalTarget;
-    let ownerDoc = originalTarget.ownerDocument;
-    if (!ownerDoc) {
-      return;
-    }
-
-    if (gMultiProcessBrowser &&
-        ownerDoc.documentURI.toLowerCase() == "about:newtab") {
-      this.onE10sAboutNewTab(event, ownerDoc);
-    }
-  },
-
   receiveMessage(msg) {
     switch (msg.name) {
       case "Browser:CertExceptionError":
@@ -3079,28 +3061,6 @@ var BrowserOnClick = {
           this.ignoreWarningButton(reason);
         }
         break;
-    }
-  },
-
-  
-
-
-
-
-
-  onE10sAboutNewTab(event, ownerDoc) {
-    let isTopFrame = (ownerDoc.defaultView.parent === ownerDoc.defaultView);
-    if (!isTopFrame) {
-      return;
-    }
-
-    let anchorTarget = event.originalTarget.parentNode;
-
-    if (anchorTarget instanceof HTMLAnchorElement &&
-        anchorTarget.classList.contains("newtab-link")) {
-      event.preventDefault();
-      let where = whereToOpenLink(event, false, false);
-      openLinkIn(anchorTarget.href, where, { charset: ownerDoc.characterSet, referrerURI: ownerDoc.documentURIObject });
     }
   },
 
@@ -4927,10 +4887,6 @@ var TabsProgressListener = {
     
     
     
-    
-    
-    
-
     let isRemoteBrowser = aBrowser.isRemoteBrowser;
     
     let doc = isRemoteBrowser ? null : aWebProgress.DOMWindow.document;
@@ -4945,11 +4901,9 @@ var TabsProgressListener = {
       
       
       doc.documentElement.setAttribute("hasBrowserHandlers", "true");
-      aBrowser.addEventListener("click", BrowserOnClick, true);
       aBrowser.addEventListener("pagehide", function onPageHide(event) {
         if (event.target.defaultView.frameElement)
           return;
-        aBrowser.removeEventListener("click", BrowserOnClick, true);
         aBrowser.removeEventListener("pagehide", onPageHide, true);
         if (event.target.documentElement)
           event.target.documentElement.removeAttribute("hasBrowserHandlers");
