@@ -27,10 +27,6 @@ var gContentPane = {
 
     
     this._rebuildFonts();
-    var menulist = document.getElementById("defaultFont");
-    if (menulist.selectedIndex == -1) {
-      menulist.value = FontBuilder.readFontSelection(menulist);
-    }
 
     
     const prefName = "browser.translation.ui.show";
