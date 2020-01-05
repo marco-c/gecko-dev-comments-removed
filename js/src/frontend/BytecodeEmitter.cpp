@@ -2514,6 +2514,9 @@ BytecodeEmitter::emitDupAt(unsigned slotFromTop)
 {
     MOZ_ASSERT(slotFromTop < unsigned(stackDepth));
 
+    if (slotFromTop == 0)
+        return emit1(JSOP_DUP);
+
     if (slotFromTop >= JS_BIT(24)) {
         reportError(nullptr, JSMSG_TOO_MANY_LOCALS);
         return false;
@@ -5787,13 +5790,8 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
                 return false;
         }
 
-        if (emitted) {
-            if (!emitDupAt(emitted))                              
-                return false;
-        } else {
-            if (!emit1(JSOP_DUP))                                 
-                return false;
-        }
+        if (!emitDupAt(emitted))                                  
+            return false;
         if (!emitIteratorNext(pattern))                           
             return false;
         if (!emit1(JSOP_DUP))                                     
@@ -5918,13 +5916,8 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
             return false;
 
         
-        if (emitted) {
-            if (!emitDupAt(emitted))                              
-                return false;
-        } else {
-            if (!emit1(JSOP_DUP))                                 
-                return false;
-        }
+        if (!emitDupAt(emitted))                                  
+            return false;
 
         if (member->isKind(PNK_SPREAD)) {
             if (!updateSourceCoordNotes(member->pn_pos.begin))
