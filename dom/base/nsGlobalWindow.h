@@ -137,7 +137,6 @@ class TabGroup;
 class Timeout;
 class U2F;
 class VRDisplay;
-enum class VRDisplayEventReason : uint8_t;
 class VREventObserver;
 class WakeLock;
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
@@ -758,11 +757,6 @@ public:
   
   
   void NotifyActiveVRDisplaysChanged();
-
-  void DispatchVRDisplayActivate(uint32_t aDisplayID,
-                                 mozilla::dom::VRDisplayEventReason aReason);
-  void DispatchVRDisplayDeactivate(uint32_t aDisplayID,
-                                   mozilla::dom::VRDisplayEventReason aReason);
 
 #define EVENT(name_, id_, type_, struct_)                                     \
   mozilla::dom::EventHandlerNonNull* GetOn##name_()                           \
@@ -1879,6 +1873,8 @@ protected:
   
   
   bool                   mAllowScriptsToClose : 1;
+
+  bool mTopLevelOuterContentWindow : 1;
 
   nsCOMPtr<nsIScriptContext>    mContext;
   nsWeakPtr                     mOpener;
