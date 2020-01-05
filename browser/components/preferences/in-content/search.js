@@ -194,9 +194,14 @@ var gSearchPane = {
     }
   },
 
-  onInputBlur: function() {
+  onInputBlur: function(aEvent) {
     let tree = document.getElementById("engineList");
-    tree.stopEditing(false);
+    if (!tree.hasAttribute("editing"))
+      return;
+
+    
+    let accept = aEvent.charCode != KeyEvent.DOM_VK_ESCAPE;
+    tree.stopEditing(accept);
   },
 
   onTreeSelect: function() {
