@@ -82,6 +82,7 @@ function nearestAncestorMethods(csu, field)
 
 function findVirtualFunctions(initialCSU, field)
 {
+    var fieldName = field.Name[0];
     var worklist = [initialCSU];
     var functions = new Set();
 
@@ -97,9 +98,9 @@ function findVirtualFunctions(initialCSU, field)
 
     while (worklist.length) {
         var csu = worklist.pop();
-        if (isSuppressedVirtualMethod(csu, field))
+        if (isSuppressedVirtualMethod(csu, fieldName))
             return [ new Set(), true ];
-        if (isOverridableField(initialCSU, csu, field)) {
+        if (isOverridableField(initialCSU, csu, fieldName)) {
             
             
             
@@ -186,7 +187,7 @@ function getCallees(edge)
             
             
             callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
-                          'suppressed': true});
+                          'suppressed': true, 'isVirtual': true});
         }
     } else {
         functions = new Set([null]); 
@@ -205,7 +206,8 @@ function getCallees(edge)
             
             
             
-            callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
+            callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
+			  'isVirtual': "FieldInstanceFunction" in field});
             fullyResolved = false;
         } else {
             callees.push({'kind': "direct", 'name': name});
@@ -291,8 +293,9 @@ function processBody(functionName, body)
                     printOnce("D " + prologue + memo(callee.name));
                 }
             } else if (callee.kind == 'field') {
-                var { csu, field } = callee;
-                printOnce("F " + prologue + "CLASS " + csu + " FIELD " + field);
+                var { csu, field, isVirtual } = callee;
+                const tag = isVirtual ? 'V' : 'F';
+                printOnce(tag + " " + prologue + "CLASS " + csu + " FIELD " + field);
             } else if (callee.kind == 'resolved-field') {
                 
                 
