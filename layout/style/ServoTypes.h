@@ -71,6 +71,8 @@ enum class UpdateAnimationsTasks : uint8_t {
   CascadeResults   = 1 << 3,
 };
 
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(UpdateAnimationsTasks)
+
 
 enum class LengthParsingMode {
   
@@ -83,7 +85,16 @@ enum class LengthParsingMode {
   SVG,
 };
 
-MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(UpdateAnimationsTasks)
+
+
+enum class InheritTarget {
+  
+  Text,
+  
+  FirstLetterContinuation,
+  
+  PlaceholderFrame,
+};
 
 } 
 
