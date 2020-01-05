@@ -13,6 +13,7 @@ use geom::rect::Rect;
 use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel, UntrustedNodeAddress};
 use msg::constellation_msg::{PipelineExitType, WindowSizeData};
 use util::geometry::Au;
+use util::memory::{MemoryReporter, MemoryReportsChan};
 use std::any::Any;
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::boxed::BoxAny;
@@ -43,6 +44,10 @@ pub enum Msg {
     
     
     ReapLayoutData(LayoutData),
+
+    
+    
+    CollectMemoryReports(MemoryReportsChan),
 
     
     
@@ -125,6 +130,14 @@ impl LayoutChan {
     pub fn new() -> (Receiver<Msg>, LayoutChan) {
         let (chan, port) = channel();
         (port, LayoutChan(chan))
+    }
+}
+
+impl MemoryReporter for LayoutChan {
+    
+    fn collect_reports(&self, reports_chan: MemoryReportsChan) -> bool {
+        let LayoutChan(ref c) = *self;
+        c.send(Msg::CollectMemoryReports(reports_chan)).is_ok()
     }
 }
 

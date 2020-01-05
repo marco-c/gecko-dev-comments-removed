@@ -6,20 +6,175 @@
 
 use libc::{c_char,c_int,c_void,size_t};
 use std::borrow::ToOwned;
+use std::collections::{DList, HashMap};
 use std::ffi::CString;
 #[cfg(target_os = "linux")]
 use std::iter::AdditiveIterator;
 use std::old_io::timer::sleep;
 #[cfg(target_os="linux")]
 use std::old_io::File;
-use std::mem::size_of;
+use std::mem::{size_of, transmute};
 use std::ptr::null_mut;
+use std::sync::Arc;
 use std::sync::mpsc::{Sender, channel, Receiver};
 use std::time::duration::Duration;
 use task::spawn_named;
 #[cfg(target_os="macos")]
 use task_info::task_basic_info::{virtual_size,resident_size};
 
+extern {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn je_malloc_usable_size(ptr: *const c_void) -> size_t;
+}
+
+
+pub fn heap_size_of(ptr: *const c_void) -> usize {
+    if ptr == ::std::rt::heap::EMPTY as *const c_void {
+        0
+    } else {
+        unsafe { je_malloc_usable_size(ptr) as usize }
+    }
+}
+
+
+
+
+
+
+
+
+pub trait SizeOf {
+    
+    
+    
+    fn size_of_excluding_self(&self) -> usize;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+impl<T: SizeOf> SizeOf for Box<T> {
+    fn size_of_excluding_self(&self) -> usize {
+        
+        heap_size_of(&**self as *const T as *const c_void) + (**self).size_of_excluding_self()
+    }
+}
+
+impl SizeOf for String {
+    fn size_of_excluding_self(&self) -> usize {
+        heap_size_of(self.as_ptr() as *const c_void)
+    }
+}
+
+impl<T: SizeOf> SizeOf for Option<T> {
+    fn size_of_excluding_self(&self) -> usize {
+        match *self {
+            None => 0,
+            Some(ref x) => x.size_of_excluding_self()
+        }
+    }
+}
+
+impl<T: SizeOf> SizeOf for Arc<T> {
+    fn size_of_excluding_self(&self) -> usize {
+        (**self).size_of_excluding_self()
+    }
+}
+
+impl<T: SizeOf> SizeOf for Vec<T> {
+    fn size_of_excluding_self(&self) -> usize {
+        heap_size_of(self.as_ptr() as *const c_void) +
+            self.iter().fold(0, |n, elem| n + elem.size_of_excluding_self())
+    }
+}
+
+
+
+
+
+impl<T: SizeOf> SizeOf for DList<T> {
+    fn size_of_excluding_self(&self) -> usize {
+        let list2: &DList2<T> = unsafe { transmute(self) };
+        list2.size_of_excluding_self()
+    }
+}
+
+struct DList2<T> {
+    _length: usize,
+    list_head: Link<T>,
+    _list_tail: Rawlink<Node<T>>,
+}
+
+type Link<T> = Option<Box<Node<T>>>;
+
+struct Rawlink<T> {
+    _p: *mut T,
+}
+
+struct Node<T> {
+    next: Link<T>,
+    _prev: Rawlink<Node<T>>,
+    value: T,
+}
+
+impl<T: SizeOf> SizeOf for Node<T> {
+    
+    
+    
+    fn size_of_excluding_self(&self) -> usize {
+        self.value.size_of_excluding_self()
+    }
+}
+
+impl<T: SizeOf> SizeOf for DList2<T> {
+    fn size_of_excluding_self(&self) -> usize {
+        let mut size = 0;
+        let mut curr: &Link<T> = &self.list_head;
+        while curr.is_some() {
+            size += (*curr).size_of_excluding_self();
+            curr = &curr.as_ref().unwrap().next;
+        }
+        size
+    }
+}
+
+
+
+#[allow(dead_code)]
+unsafe fn dlist2_check() {
+    transmute::<DList<i32>, DList2<i32>>(panic!());
+}
+
+
+
+#[unsafe_destructor]
+impl<T> Drop for DList2<T> {
+    fn drop(&mut self) {}
+}
+
+
+
+#[derive(Clone)]
 pub struct MemoryProfilerChan(pub Sender<MemoryProfilerMsg>);
 
 impl MemoryProfilerChan {
@@ -29,62 +184,98 @@ impl MemoryProfilerChan {
     }
 }
 
+pub struct MemoryReport {
+    
+    pub name: String,
+
+    
+    pub size: u64,
+}
+
+
+#[derive(Clone)]
+pub struct MemoryReportsChan(pub Sender<Vec<MemoryReport>>);
+
+impl MemoryReportsChan {
+    pub fn send(&self, report: Vec<MemoryReport>) {
+        let MemoryReportsChan(ref c) = *self;
+        c.send(report).unwrap();
+    }
+}
+
+
+
+
+
+
+pub trait MemoryReporter {
+    
+    fn collect_reports(&self, reports_chan: MemoryReportsChan) -> bool;
+}
+
+
 pub enum MemoryProfilerMsg {
     
+    
+    
+    RegisterMemoryReporter(String, Box<MemoryReporter + Send>),
+
+    
+    
+    
+    UnregisterMemoryReporter(String),
+
+    
     Print,
+
     
     Exit,
 }
 
 pub struct MemoryProfiler {
+    
     pub port: Receiver<MemoryProfilerMsg>,
+
+    
+    reporters: HashMap<String, Box<MemoryReporter + Send>>,
 }
 
 impl MemoryProfiler {
     pub fn create(period: Option<f64>) -> MemoryProfilerChan {
         let (chan, port) = channel();
-        match period {
-            Some(period) => {
-                let period = Duration::milliseconds((period * 1000f64) as i64);
-                let chan = chan.clone();
-                spawn_named("Memory profiler timer".to_owned(), move || {
-                    loop {
-                        sleep(period);
-                        if chan.send(MemoryProfilerMsg::Print).is_err() {
-                            break;
-                        }
+
+        
+        if let Some(period) = period {
+            let period_ms = Duration::milliseconds((period * 1000f64) as i64);
+            let chan = chan.clone();
+            spawn_named("Memory profiler timer".to_owned(), move || {
+                loop {
+                    sleep(period_ms);
+                    if chan.send(MemoryProfilerMsg::Print).is_err() {
+                        break;
                     }
-                });
-                
-                spawn_named("Memory profiler".to_owned(), move || {
-                    let memory_profiler = MemoryProfiler::new(port);
-                    memory_profiler.start();
-                });
-            }
-            None => {
-                
-                
-                spawn_named("Memory profiler".to_owned(), move || {
-                    loop {
-                        match port.recv() {
-                            Err(_) | Ok(MemoryProfilerMsg::Exit) => break,
-                            _ => {}
-                        }
-                    }
-                });
-            }
+                }
+            });
         }
+
+        
+        
+        spawn_named("Memory profiler".to_owned(), move || {
+            let mut memory_profiler = MemoryProfiler::new(port);
+            memory_profiler.start();
+        });
 
         MemoryProfilerChan(chan)
     }
 
     pub fn new(port: Receiver<MemoryProfilerMsg>) -> MemoryProfiler {
         MemoryProfiler {
-            port: port
+            port: port,
+            reporters: HashMap::new(),
         }
     }
 
-    pub fn start(&self) {
+    pub fn start(&mut self) {
         loop {
             match self.port.recv() {
                Ok(msg) => {
@@ -97,12 +288,33 @@ impl MemoryProfiler {
         }
     }
 
-    fn handle_msg(&self, msg: MemoryProfilerMsg) -> bool {
+    fn handle_msg(&mut self, msg: MemoryProfilerMsg) -> bool {
         match msg {
+            MemoryProfilerMsg::RegisterMemoryReporter(name, reporter) => {
+                
+                let name_clone = name.clone();
+                match self.reporters.insert(name, reporter) {
+                    None => true,
+                    Some(_) =>
+                        panic!(format!("RegisterMemoryReporter: '{}' name is already in use",
+                                       name_clone)),
+                }
+            },
+
+            MemoryProfilerMsg::UnregisterMemoryReporter(name) => {
+                
+                match self.reporters.remove(&name) {
+                    Some(_) => true,
+                    None =>
+                        panic!(format!("UnregisterMemoryReporter: '{}' name is unknown", &name)),
+                }
+            },
+
             MemoryProfilerMsg::Print => {
                 self.handle_print_msg();
                 true
             },
+
             MemoryProfilerMsg::Exit => false
         }
     }
@@ -120,7 +332,10 @@ impl MemoryProfiler {
     }
 
     fn handle_print_msg(&self) {
+
         println!("{:12}: {}", "_size (MiB)_", "_category_");
+
+        
 
         
         MemoryProfiler::print_measurement("vsize", get_vsize());
@@ -153,6 +368,24 @@ impl MemoryProfiler {
         
         MemoryProfiler::print_measurement("jemalloc-heap-mapped",
                                           get_jemalloc_stat("stats.mapped"));
+
+        
+
+        
+        
+        
+        
+        for reporter in self.reporters.values() {
+            let (chan, port) = channel();
+            if reporter.collect_reports(MemoryReportsChan(chan)) {
+                if let Ok(reports) = port.recv() {
+                    for report in reports {
+                        MemoryProfiler::print_measurement(report.name.as_slice(),
+                                                          Some(report.size));
+                    }
+                }
+            }
+        }
 
         println!("");
     }
