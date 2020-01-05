@@ -287,6 +287,16 @@ public class DateTimePicker extends FrameLayout {
             mCalendar = new CalendarView(context);
             mCalendar.setVisibility(GONE);
 
+            
+            mMaxDate.set(Calendar.HOUR, 23);
+            mMaxDate.set(Calendar.MINUTE, 59);
+            mMaxDate.set(Calendar.SECOND, 59);
+            mMaxDate.set(Calendar.MILLISECOND, 999);
+            mMinDate.set(Calendar.HOUR, 0);
+            mMinDate.set(Calendar.MINUTE, 0);
+            mMinDate.set(Calendar.SECOND, 0);
+            mMinDate.set(Calendar.MILLISECOND, 0);
+
             mCalendar.setFocusable(true);
             mCalendar.setFocusableInTouchMode(true);
             mCalendar.setMaxDate(mMaxDate.getTimeInMillis());
