@@ -38,7 +38,6 @@ use incremental::{self, RECONSTRUCT_FLOW, REFLOW, REFLOW_OUT_OF_FLOW, RestyleDam
 use inline::InlineFlow;
 use model::{CollapsibleMargins, IntrinsicISizes, MarginCollapseInfo};
 use msg::compositor_msg::{LayerId, LayerType};
-use msg::constellation_msg::ConstellationChan;
 use multicol::MulticolFlow;
 use parallel::FlowParallelInfo;
 use rustc_serialize::{Encodable, Encoder};
@@ -363,9 +362,6 @@ pub trait Flow: fmt::Debug + Sync + Send + 'static {
     
     
     fn repair_style(&mut self, new_style: &Arc<ComputedValues>);
-
-    
-    fn remove_compositor_layers(&self, _: ConstellationChan) {}
 }
 
 

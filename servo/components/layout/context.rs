@@ -16,17 +16,16 @@ use gfx::font_cache_task::FontCacheTask;
 use gfx::font_context::FontContext;
 use ipc_channel::ipc::{self, IpcSender};
 use msg::compositor_msg::LayerId;
-use msg::constellation_msg::ConstellationChan;
 use net_traits::image::base::Image;
 use net_traits::image_cache_task::{ImageCacheChan, ImageCacheTask, ImageResponse, ImageState};
 use net_traits::image_cache_task::{UsePlaceholder};
-use script::layout_interface::{Animation, LayoutChan, ReflowGoal};
+use script::layout_interface::{Animation, ReflowGoal};
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::collections::hash_state::DefaultState;
 use std::rc::Rc;
-use std::sync::Arc;
 use std::sync::mpsc::{Sender, channel};
+use std::sync::{Arc, Mutex};
 use style::selector_matching::Stylist;
 use url::Url;
 use util::mem::HeapSizeOf;
@@ -63,8 +62,9 @@ fn create_or_get_local_context(shared_layout_context: &SharedLayoutContext)
             }
             context
         } else {
+            let font_cache_task = shared_layout_context.font_cache_task.lock().unwrap().clone();
             let context = Rc::new(LocalLayoutContext {
-                font_context: RefCell::new(FontContext::new(shared_layout_context.font_cache_task.clone())),
+                font_context: RefCell::new(FontContext::new(font_cache_task)),
                 applicable_declarations_cache: RefCell::new(ApplicableDeclarationsCache::new()),
                 style_sharing_candidate_cache: RefCell::new(StyleSharingCandidateCache::new()),
             });
@@ -74,13 +74,19 @@ fn create_or_get_local_context(shared_layout_context: &SharedLayoutContext)
     })
 }
 
+pub struct StylistWrapper(pub *const Stylist);
+
+
+#[allow(unsafe_code)]
+unsafe impl Sync for StylistWrapper {}
+
 
 pub struct SharedLayoutContext {
     
     pub image_cache_task: ImageCacheTask,
 
     
-    pub image_cache_sender: ImageCacheChan,
+    pub image_cache_sender: Mutex<ImageCacheChan>,
 
     
     pub viewport_size: Size2D<Au>,
@@ -89,18 +95,12 @@ pub struct SharedLayoutContext {
     pub screen_size_changed: bool,
 
     
-    pub constellation_chan: ConstellationChan,
-
-    
-    pub layout_chan: LayoutChan,
-
-    
-    pub font_cache_task: FontCacheTask,
+    pub font_cache_task: Mutex<FontCacheTask>,
 
     
     
     
-    pub stylist: *const Stylist,
+    pub stylist: StylistWrapper,
 
     
     pub url: Url,
@@ -111,10 +111,10 @@ pub struct SharedLayoutContext {
 
     
     
-    pub new_animations_sender: Sender<Animation>,
+    pub new_animations_sender: Mutex<Sender<Animation>>,
 
     
-    pub canvas_layers_sender: Sender<(LayerId, IpcSender<CanvasMsg>)>,
+    pub canvas_layers_sender: Mutex<Sender<(LayerId, IpcSender<CanvasMsg>)>>,
 
     
     pub visible_rects: Arc<HashMap<LayerId, Rect<Au>, DefaultState<FnvHasher>>>,
@@ -125,18 +125,6 @@ pub struct SharedLayoutContext {
     
     pub goal: ReflowGoal,
 }
-
-
-
-
-
-
-
-
-
-
-#[allow(unsafe_code)]
-unsafe impl Sync for SharedLayoutContext {}
 
 pub struct LayoutContext<'a> {
     pub shared: &'a SharedLayoutContext,
@@ -200,8 +188,8 @@ impl<'a> LayoutContext<'a> {
                     }
                     
                     (ImageState::NotRequested, false) => {
-                        self.shared.image_cache_task
-                            .request_image(url, self.shared.image_cache_sender.clone(), None);
+                        let sender = self.shared.image_cache_sender.lock().unwrap().clone();
+                        self.shared.image_cache_task.request_image(url, sender, None);
                         None
                     }
                     
