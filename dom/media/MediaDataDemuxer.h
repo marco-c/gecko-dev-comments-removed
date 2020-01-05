@@ -32,7 +32,8 @@ class MediaDataDemuxer
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaDataDemuxer)
 
-  typedef MozPromise<nsresult, MediaResult,  true> InitPromise;
+  typedef
+    MozPromise<MediaResult, MediaResult,  true> InitPromise;
 
   
   
