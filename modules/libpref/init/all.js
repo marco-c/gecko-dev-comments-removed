@@ -4471,7 +4471,7 @@ pref("image.mem.discardable", true);
 
 
 
-pref("image.mem.animated.discardable", false);
+pref("image.mem.animated.discardable", true);
 
 
 
@@ -5028,14 +5028,6 @@ pref("dom.vr.enabled", false);
 #else
 pref("dom.vr.enabled", true);
 #endif
-
-
-
-
-
-
-
-pref("dom.vr.autoactivate.enabled", false);
 
 
 
