@@ -3041,24 +3041,6 @@ ReflowInput::ComputeMinMaxValues(const LogicalSize&aCBSize)
   }
 }
 
-void
-ReflowInput::SetTruncated(const ReflowOutput& aMetrics,
-                                nsReflowStatus* aStatus) const
-{
-  const WritingMode containerWM = aMetrics.GetWritingMode();
-  if (GetWritingMode().IsOrthogonalTo(containerWM)) {
-    
-    
-    *aStatus &= ~NS_FRAME_TRUNCATED;
-  } else if (AvailableBSize() != NS_UNCONSTRAINEDSIZE &&
-             AvailableBSize() < aMetrics.BSize(containerWM) &&
-             !mFlags.mIsTopOfPage) {
-    *aStatus |= NS_FRAME_TRUNCATED;
-  } else {
-    *aStatus &= ~NS_FRAME_TRUNCATED;
-  }
-}
-
 bool
 ReflowInput::IsFloating() const
 {
