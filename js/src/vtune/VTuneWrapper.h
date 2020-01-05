@@ -4,15 +4,39 @@
 
 
 
-#ifndef vtunewrapper_h
+#ifndef vtune_vtunewrapper_h
 #define vtunewrapper_h
 
+#ifdef MOZ_VTUNE
+
 #include "vtune/jitprofiling.h"
+
+#include "jsscript.h"
+
+#include "jit/IonCode.h"
+
+
+
 
 inline bool
 IsVTuneProfilingActive()
 {
     return iJIT_IsProfilingActive() == iJIT_SAMPLING_ON;
 }
+
+
+uint32_t VTuneGenerateUniqueMethodID();
+
+void VTuneMarkStub(const js::jit::JitCode* code, const char* name);
+
+void VTuneMarkRegExp(const js::jit::JitCode* code, bool match_only);
+
+void VTuneMarkScript(const js::jit::JitCode* code,
+                     const JSScript* script,
+                     const char* module);
+
+void VTuneUnloadCode(const js::jit::JitCode* code);
+
+#endif 
 
 #endif 
