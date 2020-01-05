@@ -107,6 +107,7 @@ private:
   
   
   nsCString mTelemetryProvider;
+  PRIntervalTime mTelemetryClockStart;
 };
 
 #endif 
