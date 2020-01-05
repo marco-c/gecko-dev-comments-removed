@@ -45,7 +45,7 @@ impl TableCellFlow {
     
     
     #[inline(always)]
-    fn assign_block_size_table_cell_base(&mut self, layout_context: &mut LayoutContext) {
+    fn assign_block_size_table_cell_base<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         self.block_flow.assign_block_size_block_base(layout_context, MarginsMayNotCollapse)
     }
 
@@ -69,7 +69,7 @@ impl Flow for TableCellFlow {
     }
 
     
-    fn bubble_inline_sizes(&mut self, ctx: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, ctx: &LayoutContext) {
         self.block_flow.bubble_inline_sizes(ctx);
         let specified_inline_size = MaybeAuto::from_style(self.block_flow.fragment.style().content_inline_size(),
                                                     Au::new(0)).specified_or_zero();
@@ -85,7 +85,7 @@ impl Flow for TableCellFlow {
 
     
     
-    fn assign_inline_sizes(&mut self, ctx: &mut LayoutContext) {
+    fn assign_inline_sizes(&mut self, ctx: &LayoutContext) {
         debug!("assign_inline_sizes({}): assigning inline_size for flow", "table_cell");
 
         
@@ -104,7 +104,7 @@ impl Flow for TableCellFlow {
                                                              None);
     }
 
-    fn assign_block_size(&mut self, ctx: &mut LayoutContext) {
+    fn assign_block_size<'a>(&mut self, ctx: &'a LayoutContext<'a>) {
         debug!("assign_block_size: assigning block_size for table_cell");
         self.assign_block_size_table_cell_base(ctx);
     }

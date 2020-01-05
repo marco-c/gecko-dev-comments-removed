@@ -100,7 +100,7 @@ impl TableWrapperFlow {
     
     
     #[inline(always)]
-    fn assign_block_size_table_wrapper_base(&mut self, layout_context: &mut LayoutContext) {
+    fn assign_block_size_table_wrapper_base<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         self.block_flow.assign_block_size_block_base(layout_context, MarginsMayNotCollapse);
     }
 
@@ -129,7 +129,7 @@ impl Flow for TableWrapperFlow {
 
 
 
-    fn bubble_inline_sizes(&mut self, ctx: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, ctx: &LayoutContext) {
         
         for kid in self.block_flow.base.child_iter() {
             assert!(kid.is_table_caption() || kid.is_table());
@@ -147,7 +147,7 @@ impl Flow for TableWrapperFlow {
     
     
     
-    fn assign_inline_sizes(&mut self, ctx: &mut LayoutContext) {
+    fn assign_inline_sizes(&mut self, ctx: &LayoutContext) {
         debug!("assign_inline_sizes({}): assigning inline_size for flow",
                if self.is_float() {
                    "floated table_wrapper"
@@ -178,7 +178,7 @@ impl Flow for TableWrapperFlow {
         self.block_flow.propagate_assigned_inline_size_to_children(inline_start_content_edge, content_inline_size, assigned_col_inline_sizes);
     }
 
-    fn assign_block_size(&mut self, ctx: &mut LayoutContext) {
+    fn assign_block_size<'a>(&mut self, ctx: &'a LayoutContext<'a>) {
         if self.is_float() {
             debug!("assign_block_size_float: assigning block_size for floated table_wrapper");
             self.block_flow.assign_block_size_float(ctx);
@@ -208,7 +208,7 @@ struct TableWrapper;
 impl TableWrapper {
     fn compute_used_inline_size_table_wrapper(&self,
                                         table_wrapper: &mut TableWrapperFlow,
-                                        ctx: &mut LayoutContext,
+                                        ctx: &LayoutContext,
                                         parent_flow_inline_size: Au) {
         let input = self.compute_inline_size_constraint_inputs_table_wrapper(table_wrapper,
                                                                        parent_flow_inline_size,
@@ -223,7 +223,7 @@ impl TableWrapper {
     fn compute_inline_size_constraint_inputs_table_wrapper(&self,
                                                      table_wrapper: &mut TableWrapperFlow,
                                                      parent_flow_inline_size: Au,
-                                                     ctx: &mut LayoutContext)
+                                                     ctx: &LayoutContext)
                                                      -> ISizeConstraintInput {
         let mut input = self.compute_inline_size_constraint_inputs(&mut table_wrapper.block_flow,
                                                              parent_flow_inline_size,

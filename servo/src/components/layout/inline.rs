@@ -932,7 +932,7 @@ impl InlineFlow {
         
         let container_size = Size2D::zero();
         if !abs_rect.to_physical(self.base.writing_mode, container_size)
-                    .intersects(&layout_context.dirty) {
+                    .intersects(&layout_context.shared.dirty) {
             return
         }
 
@@ -1090,7 +1090,7 @@ impl Flow for InlineFlow {
         self
     }
 
-    fn bubble_inline_sizes(&mut self, _: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, _: &LayoutContext) {
         let writing_mode = self.base.writing_mode;
         for kid in self.base.child_iter() {
             flow::mut_base(kid).floats = Floats::new(writing_mode);
@@ -1115,7 +1115,7 @@ impl Flow for InlineFlow {
 
     
     
-    fn assign_inline_sizes(&mut self, _: &mut LayoutContext) {
+    fn assign_inline_sizes(&mut self, _: &LayoutContext) {
         
         
         
@@ -1144,7 +1144,7 @@ impl Flow for InlineFlow {
     }
 
     
-    fn assign_block_size(&mut self, _: &mut LayoutContext) {
+    fn assign_block_size(&mut self, _: &LayoutContext) {
         debug!("assign_block_size_inline: assigning block_size for flow");
 
         

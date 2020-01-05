@@ -75,7 +75,7 @@ impl TableRowFlow {
     
     
     #[inline(always)]
-    fn assign_block_size_table_row_base(&mut self, layout_context: &mut LayoutContext) {
+    fn assign_block_size_table_row_base<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         let (block_start_offset, _, _) = self.initialize_offsets();
 
         let  cur_y = block_start_offset;
@@ -165,7 +165,7 @@ impl Flow for TableRowFlow {
     
     
     
-    fn bubble_inline_sizes(&mut self, _: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, _: &LayoutContext) {
         let mut min_inline_size = Au(0);
         let mut pref_inline_size = Au(0);
         
@@ -194,7 +194,7 @@ impl Flow for TableRowFlow {
 
     
     
-    fn assign_inline_sizes(&mut self, ctx: &mut LayoutContext) {
+    fn assign_inline_sizes(&mut self, ctx: &LayoutContext) {
         debug!("assign_inline_sizes({}): assigning inline_size for flow", "table_row");
 
         
@@ -208,7 +208,7 @@ impl Flow for TableRowFlow {
         self.block_flow.propagate_assigned_inline_size_to_children(inline_start_content_edge, Au(0), Some(self.col_inline_sizes.clone()));
     }
 
-    fn assign_block_size(&mut self, ctx: &mut LayoutContext) {
+    fn assign_block_size<'a>(&mut self, ctx: &'a LayoutContext<'a>) {
         debug!("assign_block_size: assigning block_size for table_row");
         self.assign_block_size_table_row_base(ctx);
     }

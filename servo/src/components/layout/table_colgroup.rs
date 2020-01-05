@@ -52,7 +52,7 @@ impl Flow for TableColGroupFlow {
         self
     }
 
-    fn bubble_inline_sizes(&mut self, _: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, _: &LayoutContext) {
         for fragment in self.cols.iter() {
             
             let inline_size = MaybeAuto::from_style(fragment.style().content_inline_size(),
@@ -70,11 +70,11 @@ impl Flow for TableColGroupFlow {
 
     
     
-    fn assign_inline_sizes(&mut self, _ctx: &mut LayoutContext) {
+    fn assign_inline_sizes(&mut self, _ctx: &LayoutContext) {
     }
 
     
-    fn assign_block_size(&mut self, _ctx: &mut LayoutContext) {
+    fn assign_block_size(&mut self, _ctx: &LayoutContext) {
     }
 }
 

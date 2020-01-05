@@ -47,7 +47,6 @@ use wrapper::{PostorderNodeMutTraversal, TLayoutNode, ThreadSafeLayoutNode};
 use wrapper::{Before, BeforeBlock, After, AfterBlock, Normal};
 
 use gfx::display_list::OpaqueNode;
-use gfx::font_context::FontContext;
 use script::dom::element::{HTMLIFrameElementTypeId, HTMLImageElementTypeId};
 use script::dom::element::{HTMLObjectElementTypeId};
 use script::dom::element::{HTMLTableColElementTypeId, HTMLTableDataCellElementTypeId};
@@ -184,45 +183,18 @@ enum WhitespaceStrippingMode {
 }
 
 
-pub struct FlowConstructor<'a> {
+pub struct FlowConstructor<'a, 'b> {
     
-    pub layout_context: &'a mut LayoutContext,
-
-    
-    
-    
-    
-    
-    pub font_context: Option<Box<FontContext>>,
+    pub layout_context: &'b LayoutContext<'b>,
 }
 
-impl<'a> FlowConstructor<'a> {
+impl<'a, 'b> FlowConstructor<'a, 'b> {
     
-    pub fn new(layout_context: &'a mut LayoutContext, font_context: Option<Box<FontContext>>)
-               -> FlowConstructor<'a> {
+    pub fn new<'b>(layout_context: &'b LayoutContext)
+               -> FlowConstructor<'a, 'b> {
         FlowConstructor {
             layout_context: layout_context,
-            font_context: font_context,
         }
-    }
-
-    fn font_context<'a>(&'a mut self) -> &'a mut FontContext {
-        match self.font_context {
-            Some(ref mut font_context) => {
-                let font_context: &mut FontContext = &mut **font_context;
-                font_context
-            }
-            None => self.layout_context.font_context(),
-        }
-    }
-
-    
-    pub fn unwrap_font_context(self) -> Option<Box<FontContext>> {
-        let FlowConstructor {
-            font_context,
-            ..
-        } = self;
-        font_context
     }
 
     
@@ -233,7 +205,7 @@ impl<'a> FlowConstructor<'a> {
             Some(url) => {
                 
                 
-                ImageFragment(ImageFragmentInfo::new(node, url, self.layout_context.image_cache.clone()))
+                ImageFragment(ImageFragmentInfo::new(node, url, self.layout_context.shared.image_cache.clone()))
             }
         }
     }
@@ -293,11 +265,11 @@ impl<'a> FlowConstructor<'a> {
         }
 
         let mut inline_flow = box InlineFlow::from_fragments((*node).clone(), fragments);
-        let (ascent, descent) = inline_flow.compute_minimum_ascent_and_descent(self.font_context(), &**node.style());
+        let (ascent, descent) = inline_flow.compute_minimum_ascent_and_descent(self.layout_context.font_context(), &**node.style());
         inline_flow.minimum_block_size_above_baseline = ascent;
         inline_flow.minimum_depth_below_baseline = descent;
         let mut inline_flow = inline_flow as Box<Flow>;
-        TextRunScanner::new().scan_for_runs(self.font_context(), inline_flow);
+        TextRunScanner::new().scan_for_runs(self.layout_context.font_context(), inline_flow);
         let mut inline_flow = FlowRef::new(inline_flow);
         inline_flow.finish(self.layout_context);
 
@@ -797,7 +769,7 @@ impl<'a> FlowConstructor<'a> {
     }
 }
 
-impl<'a> PostorderNodeMutTraversal for FlowConstructor<'a> {
+impl<'a, 'b> PostorderNodeMutTraversal for FlowConstructor<'a, 'b> {
     
     
     
@@ -1039,7 +1011,7 @@ pub trait FlowConstructionUtils {
     
     
     
-    fn finish(&mut self, context: &mut LayoutContext);
+    fn finish(&mut self, context: &LayoutContext);
 }
 
 impl FlowConstructionUtils for FlowRef {
@@ -1066,8 +1038,8 @@ impl FlowConstructionUtils for FlowRef {
     
     
     
-    fn finish(&mut self, context: &mut LayoutContext) {
-        if !context.opts.bubble_inline_sizes_separately {
+    fn finish(&mut self, context: &LayoutContext) {
+        if !context.shared.opts.bubble_inline_sizes_separately {
             self.get_mut().bubble_inline_sizes(context)
         }
     }

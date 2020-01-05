@@ -149,24 +149,24 @@ pub trait Flow: fmt::Show + ToString + Share {
     
     
     
-    fn bubble_inline_sizes(&mut self, _ctx: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, _ctx: &LayoutContext) {
         fail!("bubble_inline_sizes not yet implemented")
     }
 
     
-    fn assign_inline_sizes(&mut self, _ctx: &mut LayoutContext) {
+    fn assign_inline_sizes(&mut self, _ctx: &LayoutContext) {
         fail!("assign_inline_sizes not yet implemented")
     }
 
     
-    fn assign_block_size(&mut self, _ctx: &mut LayoutContext) {
+    fn assign_block_size<'a>(&mut self, _ctx: &'a LayoutContext<'a>) {
         fail!("assign_block_size not yet implemented")
     }
 
     
     
     
-    fn assign_block_size_for_inorder_child_if_necessary(&mut self, layout_context: &mut LayoutContext)
+    fn assign_block_size_for_inorder_child_if_necessary<'a>(&mut self, layout_context: &'a LayoutContext<'a>)
                                                     -> bool {
         let impacted = base(&*self).flags.impacted_by_floats();
         if impacted {
@@ -365,7 +365,7 @@ pub trait MutableFlowUtils {
     
 
     
-    fn store_overflow(self, _: &mut LayoutContext);
+    fn store_overflow(self, _: &LayoutContext);
 
     
     fn build_display_list(self, layout_context: &LayoutContext);
@@ -963,7 +963,7 @@ impl<'a> MutableFlowUtils for &'a mut Flow {
     
     
     
-    fn store_overflow(self, _: &mut LayoutContext) {
+    fn store_overflow(self, _: &LayoutContext) {
         let my_position = mut_base(self).position;
         let mut overflow = my_position;
 

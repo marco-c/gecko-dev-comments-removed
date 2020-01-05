@@ -125,7 +125,7 @@ impl TableFlow {
     
     
     #[inline(always)]
-    fn assign_block_size_table_base(&mut self, layout_context: &mut LayoutContext) {
+    fn assign_block_size_table_base<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         self.block_flow.assign_block_size_block_base(layout_context, MarginsMayNotCollapse);
     }
 
@@ -164,7 +164,7 @@ impl Flow for TableFlow {
     
     
     
-    fn bubble_inline_sizes(&mut self, _: &mut LayoutContext) {
+    fn bubble_inline_sizes(&mut self, _: &LayoutContext) {
         let mut min_inline_size = Au(0);
         let mut pref_inline_size = Au(0);
         let mut did_first_row = false;
@@ -235,7 +235,7 @@ impl Flow for TableFlow {
 
     
     
-    fn assign_inline_sizes(&mut self, ctx: &mut LayoutContext) {
+    fn assign_inline_sizes(&mut self, ctx: &LayoutContext) {
         debug!("assign_inline_sizes({}): assigning inline_size for flow", "table");
 
         
@@ -282,7 +282,7 @@ impl Flow for TableFlow {
         self.block_flow.propagate_assigned_inline_size_to_children(inline_start_content_edge, content_inline_size, Some(self.col_inline_sizes.clone()));
     }
 
-    fn assign_block_size(&mut self, ctx: &mut LayoutContext) {
+    fn assign_block_size<'a>(&mut self, ctx: &'a LayoutContext<'a>) {
         debug!("assign_block_size: assigning block_size for table");
         self.assign_block_size_table_base(ctx);
     }
@@ -309,7 +309,7 @@ impl ISizeAndMarginsComputer for InternalTable {
     
     fn compute_used_inline_size(&self,
                           block: &mut BlockFlow,
-                          ctx: &mut LayoutContext,
+                          ctx: &LayoutContext,
                           parent_flow_inline_size: Au) {
         let input = self.compute_inline_size_constraint_inputs(block, parent_flow_inline_size, ctx);
         let solution = self.solve_inline_size_constraints(block, &input);
