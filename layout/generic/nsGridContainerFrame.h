@@ -221,9 +221,9 @@ public:
   struct GridReflowInput;
   template<typename Iterator> class CSSOrderAwareFrameIteratorT;
   typedef CSSOrderAwareFrameIteratorT<nsFrameList::iterator>
-    GridItemCSSOrderIterator;
+    CSSOrderAwareFrameIterator;
   typedef CSSOrderAwareFrameIteratorT<nsFrameList::reverse_iterator>
-    ReverseGridItemCSSOrderIterator;
+    ReverseCSSOrderAwareFrameIterator;
   struct FindItemInGridOrderResult
   {
     
@@ -324,7 +324,7 @@ protected:
     eBoth  = eFirst | eLast,
   };
   void CalculateBaselines(BaselineSet                   aBaselineSet,
-                          GridItemCSSOrderIterator*     aIter,
+                          CSSOrderAwareFrameIterator*   aIter,
                           const nsTArray<GridItemInfo>* aGridItems,
                           const Tracks&    aTracks,
                           uint32_t         aFragmentStartTrack,
@@ -351,7 +351,7 @@ protected:
 
 
   static FindItemInGridOrderResult
-  FindFirstItemInGridOrder(GridItemCSSOrderIterator& aIter,
+  FindFirstItemInGridOrder(CSSOrderAwareFrameIterator& aIter,
                            const nsTArray<GridItemInfo>& aGridItems,
                            LineRange GridArea::* aMajor,
                            LineRange GridArea::* aMinor,
@@ -365,7 +365,7 @@ protected:
 
 
   static FindItemInGridOrderResult
-  FindLastItemInGridOrder(ReverseGridItemCSSOrderIterator& aIter,
+  FindLastItemInGridOrder(ReverseCSSOrderAwareFrameIterator& aIter,
                           const nsTArray<GridItemInfo>& aGridItems,
                           LineRange GridArea::* aMajor,
                           LineRange GridArea::* aMinor,
