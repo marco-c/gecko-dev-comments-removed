@@ -151,46 +151,64 @@ struct MediaHeaderBox {
 
 
 #[derive(Debug)]
-struct ChunkOffsetBox {
-    offsets: Vec<u64>,
+pub struct ChunkOffsetBox {
+    pub offsets: Vec<u64>,
 }
 
 
 #[derive(Debug)]
-struct SyncSampleBox {
-    samples: Vec<u32>,
+pub struct SyncSampleBox {
+    pub samples: Vec<u32>,
 }
 
 
 #[derive(Debug)]
-struct SampleToChunkBox {
-    samples: Vec<SampleToChunk>,
+pub struct SampleToChunkBox {
+    pub samples: Vec<SampleToChunk>,
 }
 
 #[derive(Debug)]
-struct SampleToChunk {
-    first_chunk: u32,
-    samples_per_chunk: u32,
-    sample_description_index: u32,
-}
-
-
-#[derive(Debug)]
-struct SampleSizeBox {
-    sample_size: u32,
-    sample_sizes: Vec<u32>,
+pub struct SampleToChunk {
+    pub first_chunk: u32,
+    pub samples_per_chunk: u32,
+    pub sample_description_index: u32,
 }
 
 
 #[derive(Debug)]
-struct TimeToSampleBox {
-    samples: Vec<Sample>,
+pub struct SampleSizeBox {
+    pub sample_size: u32,
+    pub sample_sizes: Vec<u32>,
+}
+
+
+#[derive(Debug)]
+pub struct TimeToSampleBox {
+    pub samples: Vec<Sample>,
+}
+
+#[repr(C)]
+#[derive(Debug)]
+pub struct Sample {
+    pub sample_count: u32,
+    pub sample_delta: u32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum TimeOffsetVersion {
+    Version0(u32),
+    Version1(i32),
+}
+
+#[derive(Debug, Clone)]
+pub struct TimeOffset {
+    pub sample_count: u32,
+    pub time_offset: TimeOffsetVersion,
 }
 
 #[derive(Debug)]
-struct Sample {
-    sample_count: u32,
-    sample_delta: u32,
+pub struct CompositionOffsetBox {
+    pub samples: Vec<TimeOffset>,
 }
 
 
@@ -228,6 +246,7 @@ pub enum AudioCodecSpecific {
     ES_Descriptor(ES_Descriptor),
     FLACSpecificBox(FLACSpecificBox),
     OpusSpecificBox(OpusSpecificBox),
+    MP3,
 }
 
 #[derive(Debug, Clone)]
@@ -396,6 +415,7 @@ pub struct TrackScaledTime(pub u64, pub usize);
 
 #[derive(Debug, Default)]
 pub struct EmptySampleTableBoxes {
+    
     pub empty_stts : bool,
     pub empty_stsc : bool,
     pub empty_stco : bool,
@@ -421,6 +441,12 @@ pub struct Track {
     pub empty_sample_boxes: EmptySampleTableBoxes,
     pub data: Option<SampleEntry>,
     pub tkhd: Option<TrackHeaderBox>, 
+    pub stts: Option<TimeToSampleBox>,
+    pub stsc: Option<SampleToChunkBox>,
+    pub stsz: Option<SampleSizeBox>,
+    pub stco: Option<ChunkOffsetBox>,   
+    pub stss: Option<SyncSampleBox>,
+    pub ctts: Option<CompositionOffsetBox>,
 }
 
 impl Track {
@@ -840,30 +866,41 @@ fn read_stbl<T: Read>(f: &mut BMFFBox<T>, track: &mut Track) -> Result<()> {
             }
             BoxType::TimeToSampleBox => {
                 let stts = read_stts(&mut b)?;
-                track.empty_sample_boxes.empty_stts = stts.samples.is_empty();
                 log!("{:?}", stts);
+                track.empty_sample_boxes.empty_stts = stts.samples.is_empty();
+                track.stts = Some(stts);
             }
             BoxType::SampleToChunkBox => {
                 let stsc = read_stsc(&mut b)?;
-                track.empty_sample_boxes.empty_stsc = stsc.samples.is_empty();
                 log!("{:?}", stsc);
+                track.empty_sample_boxes.empty_stsc = stsc.samples.is_empty();
+                track.stsc = Some(stsc);
             }
             BoxType::SampleSizeBox => {
                 let stsz = read_stsz(&mut b)?;
                 log!("{:?}", stsz);
+                track.stsz = Some(stsz);
             }
             BoxType::ChunkOffsetBox => {
                 let stco = read_stco(&mut b)?;
                 track.empty_sample_boxes.empty_stco = stco.offsets.is_empty();
                 log!("{:?}", stco);
+                track.stco = Some(stco);
             }
             BoxType::ChunkLargeOffsetBox => {
                 let co64 = read_co64(&mut b)?;
                 log!("{:?}", co64);
+                track.stco = Some(co64);
             }
             BoxType::SyncSampleBox => {
                 let stss = read_stss(&mut b)?;
                 log!("{:?}", stss);
+                track.stss = Some(stss);
+            }
+            BoxType::CompositionOffsetBox => {
+                let ctts = read_ctts(&mut b)?;
+                log!("{:?}", ctts);
+                track.ctts = Some(ctts);
             }
             _ => skip_box_content(&mut b)?,
         };
@@ -1112,6 +1149,45 @@ fn read_stsc<T: Read>(src: &mut BMFFBox<T>) -> Result<SampleToChunkBox> {
 
     Ok(SampleToChunkBox {
         samples: samples,
+    })
+}
+
+fn read_ctts<T: Read>(src: &mut BMFFBox<T>) -> Result<CompositionOffsetBox> {
+    let (version, _) = read_fullbox_extra(src)?;
+
+    let counts = be_u32(src)?;
+
+    if src.bytes_left() < (counts as usize * 8) {
+        return Err(Error::InvalidData("insufficient data in 'ctts' box"));
+    }
+
+    let mut offsets = Vec::new();
+    for _ in 0..counts {
+        let (sample_count, time_offset) = match version {
+            0 => {
+                let count = be_u32(src)?;
+                let offset = TimeOffsetVersion::Version0(be_u32(src)?);
+                (count, offset)
+            },
+            1 => {
+                let count = be_u32(src)?;
+                let offset = TimeOffsetVersion::Version1(be_i32(src)?);
+                (count, offset)
+            },
+            _ => {
+                return Err(Error::InvalidData("unsupported version in 'ctts' box"));
+            }
+        };
+        offsets.push(TimeOffset {
+            sample_count: sample_count,
+            time_offset: time_offset,
+        });
+    }
+
+    skip_box_remain(src)?;
+
+    Ok(CompositionOffsetBox {
+        samples: offsets,
     })
 }
 
@@ -1433,7 +1509,6 @@ fn read_dfla<T: Read>(src: &mut BMFFBox<T>) -> Result<FLACSpecificBox> {
     if blocks.is_empty() {
         return Err(Error::InvalidData("FLACSpecificBox missing metadata"));
     } else if blocks[0].block_type != 0 {
-        println!("flac metadata block:\n  {:?}", blocks[0]);
         return Err(Error::InvalidData(
                 "FLACSpecificBox must have STREAMINFO metadata first"));
     } else if blocks[0].data.len() != 34 {
@@ -1602,7 +1677,8 @@ fn read_video_sample_entry<T: Read>(src: &mut BMFFBox<T>, track: &mut Track) -> 
             }
             BoxType::VPCodecConfigurationBox => { 
                 if (name != BoxType::VP8SampleEntry &&
-                    name != BoxType::VP9SampleEntry) ||
+                    name != BoxType::VP9SampleEntry &&
+                    name != BoxType::ProtectedVisualSampleEntry) ||
                     codec_specific.is_some() {
                         return Err(Error::InvalidData("malformed video sample entry"));
                     }
@@ -1687,6 +1763,9 @@ fn read_audio_sample_entry<T: Read>(src: &mut BMFFBox<T>, track: &mut Track) -> 
 
     
     let mut codec_specific = None;
+    if name == BoxType::MP3AudioSampleEntry {
+        codec_specific = Some(AudioCodecSpecific::MP3);
+    }
     let mut protection_info = Vec::new();
     let mut iter = src.box_iter();
     while let Some(mut b) = iter.next_box()? {
@@ -1889,16 +1968,18 @@ fn read_buf<T: ReadBytesExt>(src: &mut T, size: usize) -> Result<Vec<u8>> {
 
 
 
+
 fn read_null_terminated_string<T: ReadBytesExt>(src: &mut T, mut size: usize) -> Result<String> {
     let mut buf = Vec::new();
     while size > 0 {
         let c = src.read_u8()?;
+        size -= 1;
         if c == 0 {
             break;
         }
         buf.push(c);
-        size -= 1;
     }
+    skip(src, size)?;
     String::from_utf8(buf).map_err(From::from)
 }
 
