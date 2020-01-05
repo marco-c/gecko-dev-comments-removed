@@ -7,6 +7,7 @@
 use compositor_thread::{CompositorProxy, CompositorReceiver};
 use euclid::{Point2D, Size2D};
 use euclid::point::TypedPoint2D;
+use euclid::rect::TypedRect;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
@@ -108,6 +109,8 @@ impl Debug for WindowEvent {
 pub trait WindowMethods {
     
     fn framebuffer_size(&self) -> TypedSize2D<u32, DevicePixel>;
+    
+    fn window_rect(&self) -> TypedRect<u32, DevicePixel>;
     
     fn size(&self) -> TypedSize2D<f32, DeviceIndependentPixel>;
     
