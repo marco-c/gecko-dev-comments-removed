@@ -102,7 +102,8 @@ pub enum ScriptMsg {
     
     NodeStatus(Option<String>),
     
-    RemoveIFrame(PipelineId, Option<IpcSender<()>>),
+    
+    RemoveIFrame(FrameId, IpcSender<Vec<PipelineId>>),
     
     SetVisible(PipelineId, bool),
     

@@ -3,16 +3,13 @@
 
 
 use dom::bindings::conversions::{ToJSValConvertible, root_from_handleobject};
-use dom::bindings::inheritance::Castable;
-use dom::bindings::js::{JS, MutNullableJS, Root, RootedReference};
+use dom::bindings::js::{JS, Root, RootedReference};
 use dom::bindings::proxyhandler::{fill_property_descriptor, get_property_descriptor};
 use dom::bindings::reflector::{DomObject, MutDomObject, Reflector};
 use dom::bindings::trace::JSTraceable;
 use dom::bindings::utils::WindowProxyHandler;
 use dom::bindings::utils::get_array_index_from_id;
-use dom::document::Document;
 use dom::element::Element;
-use dom::globalscope::GlobalScope;
 use dom::window::Window;
 use js::JSCLASS_IS_GLOBAL;
 use js::glue::{CreateWrapperProxyHandler, ProxyTraps, NewWindowProxy};
@@ -26,7 +23,6 @@ use js::jsapi::{MutableHandle, MutableHandleObject, MutableHandleValue};
 use js::jsapi::{ObjectOpResult, PropertyDescriptor};
 use js::jsval::{UndefinedValue, PrivateValue};
 use js::rust::get_object_class;
-use msg::constellation_msg::PipelineId;
 use std::cell::Cell;
 
 #[dom_struct]
@@ -41,9 +37,7 @@ pub struct BrowsingContext {
     needs_reflow: Cell<bool>,
 
     
-    
-    
-    active_document: MutNullableJS<Document>,
+    discarded: Cell<bool>,
 
     
     frame_element: Option<JS<Element>>,
@@ -54,7 +48,7 @@ impl BrowsingContext {
         BrowsingContext {
             reflector: Reflector::new(),
             needs_reflow: Cell::new(true),
-            active_document: Default::default(),
+            discarded:  Cell::new(false),
             frame_element: frame_element.map(JS::from_ref),
         }
     }
@@ -84,20 +78,12 @@ impl BrowsingContext {
         }
     }
 
-    pub fn set_active_document(&self, document: &Document) {
-        self.active_document.set(Some(document))
+    pub fn discard(&self) {
+        self.discarded.set(true);
     }
 
-    pub fn active_document(&self) -> Root<Document> {
-        self.active_document.get().expect("No active document.")
-    }
-
-    pub fn maybe_active_document(&self) -> Option<Root<Document>> {
-        self.active_document.get()
-    }
-
-    pub fn active_window(&self) -> Root<Window> {
-        Root::from_ref(self.active_document().window())
+    pub fn is_discarded(&self) -> bool {
+        self.discarded.get()
     }
 
     pub fn frame_element(&self) -> Option<&Element> {
@@ -114,15 +100,6 @@ impl BrowsingContext {
         let old = self.needs_reflow.get();
         self.needs_reflow.set(status);
         old
-    }
-
-    pub fn active_pipeline_id(&self) -> Option<PipelineId> {
-        self.active_document.get()
-            .map(|doc| doc.window().upcast::<GlobalScope>().pipeline_id())
-    }
-
-    pub fn unset_active_document(&self) {
-        self.active_document.set(None)
     }
 }
 

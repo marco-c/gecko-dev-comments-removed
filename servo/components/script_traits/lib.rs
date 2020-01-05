@@ -185,6 +185,15 @@ pub struct NewLayoutInfo {
 }
 
 
+#[derive(Copy, Clone, PartialEq, Eq, Hash, Deserialize, Serialize)]
+pub enum DiscardBrowsingContext {
+    
+    Yes,
+    
+    No,
+}
+
+
 #[derive(Deserialize, Serialize)]
 pub enum ConstellationControlMsg {
     
@@ -194,7 +203,7 @@ pub enum ConstellationControlMsg {
     
     ResizeInactive(PipelineId, WindowSizeData),
     
-    ExitPipeline(PipelineId),
+    ExitPipeline(PipelineId, DiscardBrowsingContext),
     
     ExitScriptThread,
     
