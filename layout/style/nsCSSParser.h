@@ -209,18 +209,6 @@ public:
 
 
 
-
-
-  bool ParseMarginString(const nsSubstring& aBuffer,
-                         nsIURI*            aURL,
-                         uint32_t           aLineNumber,
-                         nsCSSValue&        aValue,
-                         bool               aSuppressErrors = false);
-
-  
-
-
-
   nsresult ParseSelectorString(const nsSubstring&  aSelectorString,
                                nsIURI*             aURL,
                                uint32_t            aLineNumber,
