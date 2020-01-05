@@ -961,13 +961,11 @@ pref("security.sandbox.content.level", 2);
 pref("security.sandbox.content.level", 1);
 #endif
 
-#if defined(MOZ_STACKWALKING)
 
 
 
 
 pref("security.sandbox.windows.log.stackTraceDepth", 0);
-#endif
 #endif
 #endif
 
