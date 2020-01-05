@@ -206,16 +206,16 @@ public:
 
 
 
-  void BuildWebRenderDisplayItemsForLayer(nsPresContext*       aPresContext,
-                                          mozilla::wr::DisplayListBuilder& aBuilder,
-                                          nsTArray<layers::WebRenderParentCommand>& aParentCommands,
-                                          mozilla::layers::WebRenderDisplayItemLayer* aLayer,
-                                          const nsRect&        aDest,
-                                          const nsRect&        aFill,
-                                          const nsPoint&       aAnchor,
-                                          const nsRect&        aDirty,
-                                          const nsSize&        aRepeatSize,
-                                          float                aOpacity);
+  DrawResult BuildWebRenderDisplayItemsForLayer(nsPresContext*       aPresContext,
+                                                mozilla::wr::DisplayListBuilder& aBuilder,
+                                                nsTArray<layers::WebRenderParentCommand>& aParentCommands,
+                                                mozilla::layers::WebRenderDisplayItemLayer* aLayer,
+                                                const nsRect&        aDest,
+                                                const nsRect&        aFill,
+                                                const nsPoint&       aAnchor,
+                                                const nsRect&        aDirty,
+                                                const nsSize&        aRepeatSize,
+                                                float                aOpacity);
 
   
 
@@ -290,17 +290,17 @@ private:
 
 
 
-  void BuildWebRenderDisplayItems(nsPresContext*       aPresContext,
-                                  mozilla::wr::DisplayListBuilder& aBuilder,
-                                  nsTArray<layers::WebRenderParentCommand>& aParentCommands,
-                                  mozilla::layers::WebRenderDisplayItemLayer* aLayer,
-                                  const nsRect&        aDirtyRect,
-                                  const nsRect&        aDest,
-                                  const nsRect&        aFill,
-                                  const nsPoint&       aAnchor,
-                                  const nsSize&        aRepeatSize,
-                                  const mozilla::CSSIntRect& aSrc,
-                                  float                aOpacity = 1.0);
+  DrawResult BuildWebRenderDisplayItems(nsPresContext*       aPresContext,
+                                        mozilla::wr::DisplayListBuilder& aBuilder,
+                                        nsTArray<layers::WebRenderParentCommand>& aParentCommands,
+                                        mozilla::layers::WebRenderDisplayItemLayer* aLayer,
+                                        const nsRect&        aDirtyRect,
+                                        const nsRect&        aDest,
+                                        const nsRect&        aFill,
+                                        const nsPoint&       aAnchor,
+                                        const nsSize&        aRepeatSize,
+                                        const mozilla::CSSIntRect& aSrc,
+                                        float                aOpacity = 1.0);
 
   
 
