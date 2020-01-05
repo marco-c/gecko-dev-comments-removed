@@ -175,6 +175,11 @@ public:
   bool HasNothingToTrace(nsISupports* aThis);
 
   
+
+
+  void MarkWrapperLive();
+
+  
   void SetPreservingWrapper(bool aPreserve)
   {
     if(aPreserve) {

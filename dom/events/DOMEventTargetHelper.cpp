@@ -57,8 +57,7 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(DOMEventTargetHelper)
       tmp->mListenerManager->MarkForCC();
     }
     if (!tmp->IsBlack() && tmp->PreservingWrapper()) {
-      
-      tmp->GetWrapper();
+      tmp->MarkWrapperLive();
     }
     return true;
   }

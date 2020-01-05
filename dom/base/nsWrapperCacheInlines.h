@@ -53,4 +53,12 @@ nsWrapperCache::IsBlackAndDoesNotNeedTracing(nsISupports* aThis)
   return IsBlack() && HasNothingToTrace(aThis);
 }
 
+inline void
+nsWrapperCache::MarkWrapperLive()
+{
+  
+  
+  GetWrapper();
+}
+
 #endif 
