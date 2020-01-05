@@ -66,6 +66,9 @@ fn load(load_data: LoadData, start_chan: Sender<LoadResponse>) {
     if is_base64 {
         
         
+        let bytes = bytes.move_iter().filter(|&b| b != ' ' as u8).collect::<Vec<u8>>();
+        
+        
         let fake_utf8 = unsafe { str::raw::from_utf8(bytes.as_slice()) };
         match fake_utf8.from_base64() {
             Err(..) => {
