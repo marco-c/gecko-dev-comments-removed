@@ -1530,7 +1530,6 @@ pref("dom.ipc.reportProcessHangs", false);
 pref("dom.ipc.reportProcessHangs", true);
 #endif
 
-pref("browser.reader.detectedFirstArticle", false);
 
 pref("reader.parse-node-limit", 0);
 

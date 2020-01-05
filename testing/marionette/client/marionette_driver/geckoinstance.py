@@ -432,9 +432,6 @@ class DesktopInstance(GeckoInstance):
         "browser.pagethumbnails.capturing_disabled": True,
 
         
-        "browser.reader.detectedFirstArticle": True,
-
-        
         "browser.safebrowsing.blockedURIs.enabled": False,
         "browser.safebrowsing.downloads.enabled": False,
         "browser.safebrowsing.forbiddenURIs.enabled": False,

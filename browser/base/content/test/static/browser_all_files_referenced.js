@@ -37,10 +37,6 @@ var whitelist = new Set([
   {file: "chrome://pippki/content/load_device.xul"},
 
   
-  {file: "chrome://browser/skin/reader-tour.png"},
-  {file: "chrome://browser/skin/reader-tour@2x.png"},
-
-  
   {file: "chrome://browser/content/newtab/alternativeDefaultSites.json"},
 
   

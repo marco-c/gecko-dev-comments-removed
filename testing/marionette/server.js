@@ -95,9 +95,6 @@ const RECOMMENDED_PREFS = new Map([
   ["browser.pagethumbnails.capturing_disabled", true],
 
   
-  ["browser.reader.detectedFirstArticle", true],
-
-  
   
   
   
