@@ -1157,7 +1157,7 @@ nsresult DecodeQOrBase64Str(const char *aEncoded, size_t aLen, char aQOrBase64,
   return NS_OK;
 }
 
-static const char especials[] = "()<>@,;:\\\"/[]?.=";
+static const char especials[] = R"(()<>@,;:\"/[]?.=)";
 
 
 
