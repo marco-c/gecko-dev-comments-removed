@@ -65,16 +65,16 @@ impl<'a> PrivateDOMTokenListHelpers for JSRef<'a, DOMTokenList> {
     }
 }
 
-
+// http://dom.spec.whatwg.org/#domtokenlist
 impl<'a> DOMTokenListMethods for JSRef<'a, DOMTokenList> {
-    
+    // http://dom.spec.whatwg.org/#dom-domtokenlist-length
     fn Length(self) -> u32 {
         self.attribute().root().map(|attr| {
             attr.value().tokens().map(|tokens| tokens.len()).unwrap_or(0)
         }).unwrap_or(0) as u32
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-domtokenlist-item
     fn Item(self, index: u32) -> Option<DOMString> {
         self.attribute().root().and_then(|attr| attr.value().tokens().and_then(|tokens| {
             tokens.get(index as uint).map(|token| token.as_slice().to_string())
@@ -87,13 +87,16 @@ impl<'a> DOMTokenListMethods for JSRef<'a, DOMTokenList> {
         item
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-domtokenlist-contains
     fn Contains(self, token: DOMString) -> Fallible<bool> {
         self.check_token_exceptions(token.as_slice()).map(|slice| {
-            self.attribute().root().and_then(|attr| attr.value().tokens().map(|tokens| {
+            self.attribute().root().map(|attr| {
+                let value = attr.value();
+                let tokens = value.tokens()
+                                  .expect("Should have parsed this attribute");
                 let atom = Atom::from_slice(slice);
                 tokens.iter().any(|token| *token == atom)
-            })).unwrap_or(false)
+            }).unwrap_or(false)
         })
     }
 }
