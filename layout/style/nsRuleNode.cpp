@@ -554,6 +554,9 @@ static nscoord CalcLengthWith(const nsCSSValue& aValue,
         
         
         
+        
+        
+        
         nsStyleContext* rootStyle = aStyleContext;
         while (rootStyle->GetParent()) {
           rootStyle = rootStyle->GetParent();
