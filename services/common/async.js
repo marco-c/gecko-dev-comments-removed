@@ -114,6 +114,7 @@ this.Async = {
   
 
 
+
   checkAppReady: function checkAppReady() {
     
     Services.obs.addObserver(function onQuitApplication() {
@@ -126,6 +127,21 @@ this.Async = {
     }, "quit-application", false);
     
     return (Async.checkAppReady = function() { return true; })();
+  },
+
+  
+
+
+
+  isAppReady() {
+    try {
+      return Async.checkAppReady()
+    } catch (ex) {
+      if (!Async.isShutdownException(ex)) {
+        throw ex;
+      }
+    }
+    return false;
   },
 
   
