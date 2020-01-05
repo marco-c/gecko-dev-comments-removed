@@ -62,6 +62,12 @@ function GetProfileDir() {
   return (profileDir);
 }
 
+function GetHomeDir() {
+  
+  let homeDir = Services.dirsvc.get("Home", Ci.nsILocalFile);
+  return (homeDir);
+}
+
 
 
 function GetProfileEntry(name) {

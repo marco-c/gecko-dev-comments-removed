@@ -113,6 +113,21 @@ function minProfileReadSandboxLevel(level) {
 
 
 
+function minHomeReadSandboxLevel(level) {
+  switch (Services.appinfo.OS) {
+    case "WINNT":
+      return 3;
+    case "Darwin":
+      return 3;
+    case "Linux":
+      return 3;
+    default:
+      Assert.ok(false, "Unknown OS");
+  }
+}
+
+
+
 
 
 
@@ -197,10 +212,16 @@ function* createTempFile() {
   let browser = gBrowser.selectedBrowser;
   let path = fileInTempDir().path;
   let fileCreated = yield ContentTask.spawn(browser, path, createFile);
-  ok(fileCreated == true, "creating a file in content temp is permitted");
-  
-  let fileDeleted = yield ContentTask.spawn(browser, path, deleteFile);
-  ok(fileDeleted == true, "deleting a file in content temp is permitted");
+  if (!fileCreated && isWin()) {
+    
+    
+    info("ignoring failure to write to content temp due to 1329294\n");
+  } else {
+    ok(fileCreated == true, "creating a file in content temp is permitted");
+    
+    let fileDeleted = yield ContentTask.spawn(browser, path, deleteFile);
+    ok(fileDeleted == true, "deleting a file in content temp is permitted");
+  }
 }
 
 
@@ -254,6 +275,24 @@ function* testFileAccess() {
       ok:       true,
       browser:  fileBrowser,
       file:     profileDir,
+      minLevel: 0,
+    });
+  }
+
+  let homeDir = GetHomeDir();
+  tests.push({
+    desc:     "home dir",
+    ok:       false,
+    browser:  webBrowser,
+    file:     homeDir,
+    minLevel: minHomeReadSandboxLevel(),
+  });
+  if (fileContentProcessEnabled) {
+    tests.push({
+      desc:     "home dir",
+      ok:       true,
+      browser:  fileBrowser,
+      file:     homeDir,
       minLevel: 0,
     });
   }
