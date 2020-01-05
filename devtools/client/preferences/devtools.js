@@ -65,8 +65,6 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 
 pref("devtools.inspector.mdnDocsTooltip.enabled", true);
 
-pref("devtools.inspector.colorWidget.enabled", false);
-
 
 pref("devtools.fontinspector.enabled", true);
 
