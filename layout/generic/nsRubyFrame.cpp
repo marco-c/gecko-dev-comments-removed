@@ -147,7 +147,7 @@ nsRubyFrame::Reflow(nsPresContext* aPresContext,
   for (RubySegmentEnumerator e(this); !e.AtEnd(); e.Next()) {
     ReflowSegment(aPresContext, aReflowInput, e.GetBaseContainer(), aStatus);
 
-    if (NS_INLINE_IS_BREAK(aStatus)) {
+    if (aStatus.IsInlineBreak()) {
       
       
       break;

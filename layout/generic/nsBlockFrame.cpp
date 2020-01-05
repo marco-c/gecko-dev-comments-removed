@@ -259,7 +259,7 @@ RecordReflowStatus(bool aChildIsBlock, nsReflowStatus aFrameReflowStatus)
 
   
   uint32_t newS = record[index];
-  if (NS_INLINE_IS_BREAK(aFrameReflowStatus)) {
+  if (aFrameReflowStatus.IsInlineBreak()) {
     if (aFrameReflowStatus.IsInlineBreakBefore()) {
       newS |= 1;
     }
@@ -4181,7 +4181,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
   
   
   aLine->SetBreakTypeAfter(StyleClear::None);
-  if (NS_INLINE_IS_BREAK(frameReflowStatus) ||
+  if (frameReflowStatus.IsInlineBreak() ||
       StyleClear::None != aState.mFloatBreakType) {
     
     

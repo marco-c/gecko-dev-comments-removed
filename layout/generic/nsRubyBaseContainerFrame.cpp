@@ -399,7 +399,7 @@ nsRubyBaseContainerFrame::Reflow(nsPresContext* aPresContext,
   
   
   NS_WARNING_ASSERTION(
-    NS_INLINE_IS_BREAK(aStatus) || isize == lineSpanSize || mFrames.IsEmpty(),
+    aStatus.IsInlineBreak() || isize == lineSpanSize || mFrames.IsEmpty(),
     "bad isize");
 
   
@@ -483,7 +483,7 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
     if (!reflowStatus.IsInlineBreakBefore()) {
       columnIndex++;
     }
-    if (NS_INLINE_IS_BREAK(reflowStatus)) {
+    if (reflowStatus.IsInlineBreak()) {
       break;
     }
     
@@ -492,7 +492,7 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
 
   bool isComplete = false;
   PullFrameState pullFrameState(this, aReflowInput.mTextContainers);
-  while (!NS_INLINE_IS_BREAK(reflowStatus)) {
+  while (!reflowStatus.IsInlineBreak()) {
     
     MOZ_ASSERT(reflowStatus == NS_FRAME_COMPLETE);
 
@@ -640,7 +640,7 @@ nsRubyBaseContainerFrame::ReflowOneColumn(const RubyReflowInput& aReflowInput,
       nsLineLayout* lineLayout = textReflowInputs[i]->mLineLayout;
       nscoord textIStart = lineLayout->GetCurrentICoord();
       lineLayout->ReflowFrame(textFrame, reflowStatus, nullptr, pushedFrame);
-      if (MOZ_UNLIKELY(NS_INLINE_IS_BREAK(reflowStatus) || pushedFrame)) {
+      if (MOZ_UNLIKELY(reflowStatus.IsInlineBreak() || pushedFrame)) {
         MOZ_ASSERT_UNREACHABLE(
             "Any line break inside ruby box should have been suppressed");
         
@@ -662,7 +662,7 @@ nsRubyBaseContainerFrame::ReflowOneColumn(const RubyReflowInput& aReflowInput,
     nscoord baseIStart = lineLayout->GetCurrentICoord();
     lineLayout->ReflowFrame(aColumn.mBaseFrame, reflowStatus,
                             nullptr, pushedFrame);
-    if (MOZ_UNLIKELY(NS_INLINE_IS_BREAK(reflowStatus) || pushedFrame)) {
+    if (MOZ_UNLIKELY(reflowStatus.IsInlineBreak() || pushedFrame)) {
       MOZ_ASSERT_UNREACHABLE(
         "Any line break inside ruby box should have been suppressed");
       
@@ -828,7 +828,7 @@ nsRubyBaseContainerFrame::ReflowSpans(const RubyReflowInput& aReflowInput)
     MOZ_ASSERT(lineLayout->GetCurrentICoord() == 0,
                "border/padding of rtc should have been suppressed");
     lineLayout->ReflowFrame(rtFrame, reflowStatus, nullptr, pushedFrame);
-    MOZ_ASSERT(!NS_INLINE_IS_BREAK(reflowStatus) && !pushedFrame,
+    MOZ_ASSERT(!reflowStatus.IsInlineBreak() && !pushedFrame,
                "Any line break inside ruby box should has been suppressed");
     spanISize = std::max(spanISize, lineLayout->GetCurrentICoord());
   }
