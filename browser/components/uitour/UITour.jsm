@@ -662,7 +662,12 @@ this.UITour = {
       }
     }
 
-    this.initForBrowser(browser, window);
+    
+    
+    
+    
+    if (action != "getConfiguration")
+      this.initForBrowser(browser, window);
 
     return true;
   },
