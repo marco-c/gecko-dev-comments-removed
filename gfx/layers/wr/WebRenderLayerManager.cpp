@@ -287,7 +287,7 @@ WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize)
   }
 
   IntRect bounds = ToOutsideIntRect(mTarget->GetClipExtents());
-  if (!WRBridge()->SendDPGetSnapshot(texture->GetIPDLActor(), bounds)) {
+  if (!WRBridge()->SendDPGetSnapshot(texture->GetIPDLActor())) {
     return;
   }
 
@@ -312,8 +312,9 @@ WebRenderLayerManager::MakeSnapshotIfRequired(LayoutDeviceIntSize aSize)
   Rect src(0, 0, bounds.width, bounds.height);
 
   
+  
   SurfacePattern pattern(snapshot, ExtendMode::CLAMP,
-                         Matrix::Scaling(1.0, -1.0).PostTranslate(0.0, bounds.height));
+                         Matrix::Scaling(1.0, -1.0).PostTranslate(0.0, aSize.height));
   DrawTarget* dt = mTarget->GetDrawTarget();
   MOZ_RELEASE_ASSERT(dt);
   dt->FillRect(dst, pattern);
