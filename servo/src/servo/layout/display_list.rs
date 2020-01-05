@@ -1,7 +1,9 @@
 import gfx::geom::*;
 
 enum item_type {
-    solid_color
+    solid_color(u8, u8, u8),
+    
+    padding(u8, u8, u8, u8)
 }
 
 enum display_item = {
