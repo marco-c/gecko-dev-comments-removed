@@ -19,6 +19,7 @@ using namespace gfx;
 
 
 
+
 VREventObserver::VREventObserver(nsGlobalWindow* aGlobalWindow)
   : mWindow(aGlobalWindow)
 {
@@ -35,6 +36,46 @@ VREventObserver::~VREventObserver()
   VRManagerChild* vmc = VRManagerChild::Get();
   if (vmc) {
     vmc->RemoveListener(this);
+  }
+}
+
+void
+VREventObserver::NotifyVRDisplayMounted(uint32_t aDisplayID)
+{
+  if (mWindow->AsInner()->IsCurrentInnerWindow()) {
+    MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+    mWindow->DispatchVRDisplayActivate(aDisplayID,
+                                       VRDisplayEventReason::Mounted);
+  }
+}
+
+void
+VREventObserver::NotifyVRDisplayNavigation(uint32_t aDisplayID)
+{
+  if (mWindow->AsInner()->IsCurrentInnerWindow()) {
+    MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+    mWindow->DispatchVRDisplayActivate(aDisplayID,
+                                       VRDisplayEventReason::Navigation);
+  }
+}
+
+void
+VREventObserver::NotifyVRDisplayRequested(uint32_t aDisplayID)
+{
+  if (mWindow->AsInner()->IsCurrentInnerWindow()) {
+    MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+    mWindow->DispatchVRDisplayActivate(aDisplayID,
+                                       VRDisplayEventReason::Requested);
+  }
+}
+
+void
+VREventObserver::NotifyVRDisplayUnmounted(uint32_t aDisplayID)
+{
+  if (mWindow->AsInner()->IsCurrentInnerWindow()) {
+    MOZ_ASSERT(nsContentUtils::IsSafeToRunScript());
+    mWindow->DispatchVRDisplayDeactivate(aDisplayID,
+                                         VRDisplayEventReason::Unmounted);
   }
 }
 

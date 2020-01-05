@@ -464,7 +464,10 @@ VRDisplay::RequestPresent(const nsTArray<VRLayer>& aLayers, ErrorResult& aRv)
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
   NS_ENSURE_TRUE(obs, nullptr);
 
-  if (mClient->GetIsPresenting()) {
+  if (!IsPresenting() && IsAnyPresenting()) {
+    
+    
+    
     
     
     promise->MaybeRejectWithUndefined();
@@ -583,6 +586,14 @@ VRDisplay::IsPresenting() const
   
   
   return mPresentation != nullptr;
+}
+
+bool
+VRDisplay::IsAnyPresenting() const
+{
+  
+  
+  return IsPresenting() || mClient->GetIsPresenting();
 }
 
 bool

@@ -137,12 +137,19 @@ VRDisplayOpenVR::VRDisplayOpenVR(::vr::IVRSystem *aVRSystem,
 
   mDisplayInfo.mDisplayName.AssignLiteral("OpenVR HMD");
   mDisplayInfo.mIsConnected = true;
+  mDisplayInfo.mIsMounted = false;
   mDisplayInfo.mCapabilityFlags = VRDisplayCapabilityFlags::Cap_None |
                                   VRDisplayCapabilityFlags::Cap_Orientation |
                                   VRDisplayCapabilityFlags::Cap_Position |
                                   VRDisplayCapabilityFlags::Cap_External |
                                   VRDisplayCapabilityFlags::Cap_Present |
                                   VRDisplayCapabilityFlags::Cap_StageParameters;
+
+  ::vr::ETrackedPropertyError err;
+  bool bHasProximitySensor = mVRSystem->GetBoolTrackedDeviceProperty(::vr::k_unTrackedDeviceIndex_Hmd, ::vr::Prop_ContainsProximitySensor_Bool, &err);
+  if (err == ::vr::TrackedProp_Success && bHasProximitySensor) {
+    mDisplayInfo.mCapabilityFlags |= VRDisplayCapabilityFlags::Cap_MountDetection;
+  }
 
   mVRCompositor->SetTrackingSpace(::vr::TrackingUniverseSeated);
 
@@ -258,15 +265,31 @@ VRDisplayOpenVR::GetImmediateSensorState()
   return GetSensorState(0.0f);
 }
 
+void
+VRDisplayOpenVR::PollEvents()
+{
+  ::vr::VREvent_t event;
+  while (mVRSystem->PollNextEvent(&event, sizeof(event))) {
+    if (event.trackedDeviceIndex == ::vr::k_unTrackedDeviceIndex_Hmd) {
+      switch (event.eventType) {
+      case ::vr::VREvent_TrackedDeviceUserInteractionStarted:
+        mDisplayInfo.mIsMounted = true;
+        break;
+      case ::vr::VREvent_TrackedDeviceUserInteractionEnded:
+        mDisplayInfo.mIsMounted = false;
+        break;
+      default:
+        
+        break;
+      }
+    }
+  }
+}
+
 VRHMDSensorState
 VRDisplayOpenVR::GetSensorState(double timeOffset)
 {
-  {
-    ::vr::VREvent_t event;
-    while (mVRSystem->PollNextEvent(&event, sizeof(event))) {
-      
-    }
-  }
+  PollEvents();
 
   ::vr::TrackedDevicePose_t poses[::vr::k_unMaxTrackedDeviceCount];
   
@@ -392,6 +415,9 @@ VRDisplayOpenVR::NotifyVSync()
 {
   
   mDisplayInfo.mIsConnected = vr_IsHmdPresent();
+
+  
+  PollEvents();
 }
 
 VRSystemManagerOpenVR::VRSystemManagerOpenVR()
