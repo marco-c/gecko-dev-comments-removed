@@ -8,7 +8,7 @@ module.metadata = {
 };
 
 const method = require('../../method/core');
-const { uuid } = require('../util/uuid');
+lazyRequire(this, '../util/uuid', "uuid");
 
 
 function memoize(f) {
