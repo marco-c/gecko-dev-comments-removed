@@ -382,7 +382,13 @@ bool
 PowPolicy::adjustInputs(TempAllocator& alloc, MInstruction* ins)
 {
     MIRType specialization = ins->typePolicySpecialization();
-    MOZ_ASSERT(specialization == MIRType::Int32 || specialization == MIRType::Double);
+    MOZ_ASSERT(specialization == MIRType::Int32 ||
+               specialization == MIRType::Double ||
+               specialization == MIRType::None);
+
+    
+    if (specialization == MIRType::None)
+        return BoxInputsPolicy::staticAdjustInputs(alloc, ins);
 
     
     if (!DoublePolicy<0>::staticAdjustInputs(alloc, ins))

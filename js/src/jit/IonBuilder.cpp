@@ -5091,10 +5091,11 @@ IonBuilder::jsop_pow()
         return emitted;
 
     
-    MPow* pow = MPow::New(alloc(), base, exponent, MIRType::Double);
+    MPow* pow = MPow::New(alloc(), base, exponent, MIRType::None);
     current->add(pow);
     current->push(pow);
-    return true;
+    MOZ_ASSERT(pow->isEffectful());
+    return resumeAfter(pow);
 }
 
 bool
