@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #[crate_id = "github.com/mozilla/servo#style:0.1"];
 #[crate_type = "lib"];
@@ -16,11 +16,11 @@ extern mod encoding;
 extern mod servo_util = "util";
 
 
-// Public API
+
 pub use stylesheets::Stylesheet;
 pub use selector_matching::{Stylist, StylesheetOrigin, UserAgentOrigin, AuthorOrigin, UserOrigin};
 pub use properties::{cascade, PropertyDeclaration, ComputedValues, computed_values};
-pub use properties::{PropertyDeclarationBlock, parse_style_attribute};  // Style attributes
+pub use properties::{PropertyDeclarationBlock, parse_style_attribute};  
 pub use errors::with_errors_silenced;
 pub use node::{TElement, TNode};
 pub use selectors::{PseudoElement, Before, After, AttrSelector};

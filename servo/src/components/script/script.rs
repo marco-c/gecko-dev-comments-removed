@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #[crate_id = "github.com/mozilla/servo#script:0.1"];
 #[crate_type = "lib"];
@@ -21,7 +21,7 @@ extern mod servo_msg = "msg";
 extern mod extra;
 extern mod native;
 
-// Macros
+
 mod macros;
 
 pub mod dom {
