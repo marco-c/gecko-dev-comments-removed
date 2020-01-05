@@ -963,6 +963,12 @@ nsresult NS_GetSecureUpgradedURI(nsIURI* aURI, nsIURI** aUpgradedURI);
 
 nsresult NS_CompareLoadInfoAndLoadContext(nsIChannel *aChannel);
 
+
+
+
+
+uint32_t NS_GetDefaultReferrerPolicy();
+
 namespace mozilla {
 namespace net {
 
