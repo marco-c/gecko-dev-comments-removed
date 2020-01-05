@@ -222,7 +222,7 @@ impl FontContext {
 
         
         
-        if fonts.len() == 0 {
+        if fonts.is_empty() {
             let mut cache_hit = false;
             for cached_font_entry in self.fallback_font_cache.iter() {
                 let cached_font = cached_font_entry.font.borrow();

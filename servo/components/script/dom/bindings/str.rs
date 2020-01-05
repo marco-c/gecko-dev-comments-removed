@@ -50,7 +50,7 @@ impl ByteString {
     
     pub fn is_token(&self) -> bool {
         let ByteString(ref vec) = *self;
-        if vec.len() == 0 {
+        if vec.is_empty() {
             return false; 
         }
         vec.iter().all(|&x| {
