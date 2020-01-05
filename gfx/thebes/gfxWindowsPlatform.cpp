@@ -1576,6 +1576,10 @@ gfxWindowsPlatform::InitGPUProcessSupport()
 
   if (!gfxConfig::IsEnabled(Feature::D3D11_COMPOSITING)) {
     
+    
+    if (gfxPrefs::GPUProcessAllowSoftware()) {
+      return gpuProc.IsEnabled();
+    }
     gpuProc.Disable(
       FeatureStatus::Unavailable,
       "Not using GPU Process since D3D11 is unavailable",
