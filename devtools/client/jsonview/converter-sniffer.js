@@ -14,7 +14,7 @@ const categoryManager = Cc["@mozilla.org/categorymanager;1"]
   .getService(Ci.nsICategoryManager);
 
 
-const JSON_TYPE = "application/json";
+const JSON_TYPES = ["application/json", "application/manifest+json"];
 const CONTRACT_ID = "@mozilla.org/devtools/jsonview-sniffer;1";
 const CLASS_ID = components.ID("{4148c488-dca1-49fc-a621-2a0097a62422}");
 const CLASS_DESCRIPTION = "JSONView content sniffer";
@@ -64,7 +64,8 @@ Sniffer.prototype = {
 
       
       
-      if (request.contentType == JSON_TYPE) {
+      
+      if (JSON_TYPES.includes(request.contentType)) {
         return JSON_VIEW_MIME_TYPE;
       }
     }
