@@ -692,7 +692,18 @@ public:
 
 
   static void MapDivAlignAttributeInto(const nsMappedAttributes* aAttributes,
-                                       GenericSpecifiedValues* aGenericData);
+                                    GenericSpecifiedValues* aGenericData);
+
+  
+
+
+
+
+
+
+
+  static void MapVAlignAttributeInto(const nsMappedAttributes* aAttributes,
+                                    GenericSpecifiedValues* aGenericData);
 
   
 
@@ -721,6 +732,25 @@ public:
 
   static void MapImageSizeAttributesInto(const nsMappedAttributes* aAttributes,
                                          GenericSpecifiedValues* aGenericData);
+
+  
+
+
+
+
+
+
+  static void MapWidthAttributeInto(const nsMappedAttributes* aAttributes,
+                                    GenericSpecifiedValues* aGenericData);
+  
+
+
+
+
+
+
+  static void MapHeightAttributeInto(const nsMappedAttributes* aAttributes,
+                                     GenericSpecifiedValues* aGenericData);
   
 
 

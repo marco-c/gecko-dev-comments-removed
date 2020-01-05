@@ -440,78 +440,58 @@ HTMLTableCellElement::ParseAttribute(int32_t aNamespaceID,
 
 void
 HTMLTableCellElement::MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
-                                            GenericSpecifiedValues* aGenericData)
+                                            GenericSpecifiedValues* aData)
 {
-  nsRuleData* aData = aGenericData->AsRuleData();
-  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Position)) {
+  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Position))) {
     
-    nsCSSValue* width = aData->ValueForWidth();
-    if (width->GetUnit() == eCSSUnit_Null) {
+    if (!aData->PropertyIsSet(eCSSProperty_width)) {
       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
       if (value && value->Type() == nsAttrValue::eInteger) {
         if (value->GetIntegerValue() > 0)
-          width->SetFloatValue((float)value->GetIntegerValue(), eCSSUnit_Pixel); 
+          aData->SetPixelValue(eCSSProperty_width, (float)value->GetIntegerValue());
         
       }
       else if (value && value->Type() == nsAttrValue::ePercent) {
         if (value->GetPercentValue() > 0.0f)
-          width->SetPercentValue(value->GetPercentValue());
+          aData->SetPercentValue(eCSSProperty_width, value->GetPercentValue());
         
       }
     }
-
     
-    nsCSSValue* height = aData->ValueForHeight();
-    if (height->GetUnit() == eCSSUnit_Null) {
+    if (!aData->PropertyIsSet(eCSSProperty_height)) {
       const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::height);
       if (value && value->Type() == nsAttrValue::eInteger) {
         if (value->GetIntegerValue() > 0)
-          height->SetFloatValue((float)value->GetIntegerValue(), eCSSUnit_Pixel);
+          aData->SetPixelValue(eCSSProperty_height, (float)value->GetIntegerValue());
         
       }
       else if (value && value->Type() == nsAttrValue::ePercent) {
         if (value->GetPercentValue() > 0.0f)
-          height->SetPercentValue(value->GetPercentValue());
+          aData->SetPercentValue(eCSSProperty_height, value->GetPercentValue());
         
       }
     }
   }
-  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Text)) {
-    nsCSSValue* textAlign = aData->ValueForTextAlign();
-    if (textAlign->GetUnit() == eCSSUnit_Null) {
-      
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::align);
-      if (value && value->Type() == nsAttrValue::eEnum)
-        textAlign->SetIntValue(value->GetEnumValue(), eCSSUnit_Enumerated);
-    }
-
-    nsCSSValue* whiteSpace = aData->ValueForWhiteSpace();
-    if (whiteSpace->GetUnit() == eCSSUnit_Null) {
+  if (aData->ShouldComputeStyleStruct(NS_STYLE_INHERIT_BIT(Text))) {
+    if (!aData->PropertyIsSet(eCSSProperty_white_space)) {
       
       if (aAttributes->GetAttr(nsGkAtoms::nowrap)) {
         
         const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::width);
-        nsCompatibility mode = aData->mPresContext->CompatibilityMode();
+        nsCompatibility mode = aData->PresContext()->CompatibilityMode();
         if (!value || value->Type() != nsAttrValue::eInteger ||
             value->GetIntegerValue() == 0 ||
             eCompatibility_NavQuirks != mode) {
-          whiteSpace->SetIntValue(NS_STYLE_WHITESPACE_NOWRAP, eCSSUnit_Enumerated);
+          aData->SetKeywordValue(eCSSProperty_white_space, NS_STYLE_WHITESPACE_NOWRAP);
         }
       }
     }
   }
-  if (aData->mSIDs & NS_STYLE_INHERIT_BIT(Display)) {
-    nsCSSValue* verticalAlign = aData->ValueForVerticalAlign();
-    if (verticalAlign->GetUnit() == eCSSUnit_Null) {
-      
-      const nsAttrValue* value = aAttributes->GetAttr(nsGkAtoms::valign);
-      if (value && value->Type() == nsAttrValue::eEnum)
-        verticalAlign->SetIntValue(value->GetEnumValue(), eCSSUnit_Enumerated);
-    }
-  }
-  
-  nsGenericHTMLElement::MapBackgroundAttributesInto(aAttributes, aGenericData);
-  nsGenericHTMLElement::MapCommonAttributesInto(aAttributes, aGenericData);
+
+  nsGenericHTMLElement::MapDivAlignAttributeInto(aAttributes, aData);
+  nsGenericHTMLElement::MapVAlignAttributeInto(aAttributes, aData);
+  nsGenericHTMLElement::MapBackgroundAttributesInto(aAttributes, aData);
+  nsGenericHTMLElement::MapCommonAttributesInto(aAttributes, aData);
 }
 
 NS_IMETHODIMP_(bool)

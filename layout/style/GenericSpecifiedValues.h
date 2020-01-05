@@ -57,6 +57,8 @@ public:
     }
 
     
+    virtual void SetIntValue(nsCSSPropertyID aId, int32_t aValue) = 0;
+    
     virtual void SetPixelValue(nsCSSPropertyID aId, float aValue) = 0;
     virtual void SetPixelValueIfUnset(nsCSSPropertyID aId, float aValue) = 0;
 
@@ -65,11 +67,16 @@ public:
     virtual void SetPercentValueIfUnset(nsCSSPropertyID aId, float aValue) = 0;
 
     
+    virtual void SetAutoValue(nsCSSPropertyID aId) = 0;
+    virtual void SetAutoValueIfUnset(nsCSSPropertyID aId) = 0;
+
+    
     virtual void SetCurrentColor(nsCSSPropertyID aId) = 0;
     virtual void SetCurrentColorIfUnset(nsCSSPropertyID aId) = 0;
 
     
     virtual void SetColorValue(nsCSSPropertyID aId, nscolor aValue) = 0;
+    virtual void SetColorValueIfUnset(nsCSSPropertyID aId, nscolor aValue) = 0;
 
     virtual nsRuleData* AsRuleData() = 0;
 };
