@@ -294,12 +294,9 @@ OutputParser.prototype = {
 
 
 
-
-
   _isDisplayGrid: function (text, token, options) {
     return options.expectDisplay &&
-      (token.text === "grid" || token.text === "inline-grid") &&
-      text === token.text;
+      (token.text === "grid" || token.text === "inline-grid");
   },
 
   
