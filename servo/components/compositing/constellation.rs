@@ -443,6 +443,10 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 let is_ready = self.handle_is_ready_to_save_image(pipeline_states);
                 self.compositor_proxy.send(CompositorMsg::IsReadyToSaveImageReply(is_ready));
             }
+            ConstellationMsg::RemoveIFrame(containing_pipeline_id, subpage_id) => {
+                debug!("constellation got remove iframe message");
+                self.handle_remove_iframe_msg(containing_pipeline_id, subpage_id);
+            }
         }
         true
     }
@@ -511,7 +515,14 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                              rect: TypedRect<PagePx, f32>) {
         
         let (pipeline_id, script_chan) = {
-            let pipeline = self.find_subpage(containing_pipeline_id, subpage_id);
+            
+            
+            
+            let pipeline_id = self.subpage_map.get(&(containing_pipeline_id, subpage_id)).map(|id| *id);
+            let pipeline = match pipeline_id {
+                Some(pipeline_id) => self.mut_pipeline(pipeline_id),
+                None => return,
+            };
             pipeline.rect = Some(rect);
             (pipeline.id, pipeline.script_chan.clone())
         };
@@ -786,6 +797,23 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         self.focus_parent_pipeline(pipeline_id);
     }
 
+    fn handle_remove_iframe_msg(&mut self, containing_pipeline_id: PipelineId, subpage_id: SubpageId) {
+        let pipeline_id = self.find_subpage(containing_pipeline_id, subpage_id).id;
+        let frame_id = self.pipeline_to_frame_map.get(&pipeline_id).map(|id| *id);
+        match frame_id {
+            Some(frame_id) => {
+                
+                self.close_frame(frame_id, ExitPipelineMode::Normal);
+            }
+            None => {
+                
+                
+                
+                self.close_pipeline(pipeline_id, ExitPipelineMode::Normal);
+            }
+        }
+    }
+
     fn handle_webdriver_command_msg(&mut self,
                                     pipeline_id: PipelineId,
                                     msg: WebDriverScriptCommand) {
@@ -1026,23 +1054,55 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
     
     fn close_frame(&mut self, frame_id: FrameId, exit_mode: ExitPipelineMode) {
-        let frame = self.frames.remove(&frame_id).unwrap();
+        
+        
+        
+        
+        let parent_info = self.pipeline(self.frame(frame_id).current).parent_info;
+        let pipelines_to_close = {
+            let mut pipelines_to_close = vec!();
 
-        self.close_pipeline(frame.current, exit_mode);
+            let frame = self.frame(frame_id);
+            pipelines_to_close.push_all(&frame.next);
+            pipelines_to_close.push(frame.current);
+            pipelines_to_close.push_all(&frame.prev);
 
-        for pipeline_id in frame.prev.iter().chain(frame.next.iter()) {
+            pipelines_to_close
+        };
+
+        for pipeline_id in &pipelines_to_close {
             self.close_pipeline(*pipeline_id, exit_mode);
+        }
+
+        self.frames.remove(&frame_id).unwrap();
+
+        if let Some((parent_pipeline_id, _)) = parent_info {
+            let parent_pipeline = self.mut_pipeline(parent_pipeline_id);
+            parent_pipeline.remove_child(frame_id);
         }
     }
 
     
     fn close_pipeline(&mut self, pipeline_id: PipelineId, exit_mode: ExitPipelineMode) {
-        let pipeline = self.pipelines.remove(&pipeline_id).unwrap();
+        
+        
+        
+        
+        let frames_to_close = {
+            let mut frames_to_close = vec!();
+
+            let pipeline = self.pipeline(pipeline_id);
+            frames_to_close.push_all(&pipeline.children);
+
+            frames_to_close
+        };
 
         
-        for child in &pipeline.children {
-            self.close_frame(*child, exit_mode);
+        for child_frame in &frames_to_close {
+            self.close_frame(*child_frame, exit_mode);
         }
+
+        let pipeline = self.pipelines.remove(&pipeline_id).unwrap();
 
         
         if let Some(info) = pipeline.parent_info {
@@ -1053,11 +1113,18 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         self.pipeline_to_frame_map.remove(&pipeline_id);
 
         
+        let pending_index = self.pending_frames.iter().position(|frame_change| {
+            frame_change.new_pipeline_id == pipeline_id
+        });
+        if let Some(pending_index) = pending_index {
+            self.pending_frames.remove(pending_index);
+        }
+
+        
         match exit_mode {
             ExitPipelineMode::Normal => pipeline.exit(PipelineExitType::PipelineOnly),
             ExitPipelineMode::Force => pipeline.force_exit(),
         }
-        self.compositor_proxy.send(CompositorMsg::PaintTaskExited(pipeline_id));
     }
 
     

@@ -92,6 +92,14 @@ pub trait CompositorLayer {
     
     
     
+    fn remove_root_layer_with_pipeline_id<Window>(&self,
+                                                  compositor: &IOCompositor<Window>,
+                                                  pipeline_id: PipelineId)
+                                                  where Window: WindowMethods;
+
+    
+    
+    
     
     
     fn forget_all_tiles(&self);
@@ -245,6 +253,31 @@ impl CompositorLayer for Layer<CompositorData> {
         self.clear(compositor);
         for kid in self.children().iter() {
             kid.clear_all_tiles(compositor);
+        }
+    }
+
+    fn remove_root_layer_with_pipeline_id<Window>(&self,
+                                                  compositor: &IOCompositor<Window>,
+                                                  pipeline_id: PipelineId)
+                                                  where Window: WindowMethods {
+        
+        let index = self.children().iter().position(|kid| {
+            let extra_data = kid.extra_data.borrow();
+            extra_data.pipeline_id == pipeline_id && extra_data.id == LayerId::null()
+        });
+
+        match index {
+            Some(index) => {
+                
+                let child = self.children().remove(index);
+                child.clear_all_tiles(compositor);
+            }
+            None => {
+                
+                for kid in self.children().iter() {
+                    kid.remove_root_layer_with_pipeline_id(compositor, pipeline_id);
+                }
+            }
         }
     }
 

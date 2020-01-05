@@ -244,6 +244,8 @@ pub enum Msg {
     CompositePng(Sender<Option<png::Image>>),
     
     IsReadyToSaveImage(HashMap<PipelineId, Epoch>),
+    
+    RemoveIFrame(PipelineId, SubpageId),
 }
 
 #[derive(Clone, Eq, PartialEq)]

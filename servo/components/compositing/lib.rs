@@ -3,6 +3,7 @@
 
 
 #![feature(box_syntax)]
+#![feature(collections)]
 #![feature(core)]
 #![feature(rustc_private)]
 
