@@ -14,7 +14,7 @@ namespace mozilla {
 
 namespace dom {
 class nsIContentChild;
-class PContentParent;
+class nsIContentParent;
 }
 
 namespace ipc {
@@ -29,6 +29,9 @@ DeserializeIPCStream(const IPCStream& aValue);
 
 already_AddRefed<nsIInputStream>
 DeserializeIPCStream(const OptionalIPCStream& aValue);
+
+
+
 
 
 
@@ -146,23 +149,21 @@ public:
   
   
   
-  void
+  bool
   Serialize(nsIInputStream* aStream, dom::nsIContentChild* aManager);
 
   
   
   
-  void
+  bool
   Serialize(nsIInputStream* aStream, PBackgroundChild* aManager);
 
   
-  
-  void
-  Serialize(nsIInputStream* aStream, dom::PContentParent* aManager);
+  MOZ_MUST_USE bool
+  Serialize(nsIInputStream* aStream, dom::nsIContentParent* aManager);
 
   
-  
-  void
+  MOZ_MUST_USE bool
   Serialize(nsIInputStream* aStream, PBackgroundParent* aManager);
 
   

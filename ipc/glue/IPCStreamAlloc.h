@@ -1,0 +1,25 @@
+
+
+
+
+
+
+#ifndef mozilla_ipc_IPCStreamAlloc_h
+#define mozilla_ipc_IPCStreamAlloc_h
+
+namespace mozilla {
+namespace ipc {
+
+class PChildToParentStreamParent;
+class PParentToChildStreamChild;
+
+PChildToParentStreamParent*
+AllocPChildToParentStreamParent();
+
+PParentToChildStreamChild*
+AllocPParentToChildStreamChild();
+
+} 
+} 
+
+#endif 
