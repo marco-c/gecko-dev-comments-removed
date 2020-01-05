@@ -10,18 +10,40 @@
 
 #define GTEST_HAS_RTTI 0
 #include "gtest/gtest.h"
-#include "gtest_utils.h"
-
-
-#include "FakeMediaStreamsImpl.h"
-#include "FakeLogging.h"
 
 #include "signaling/src/sdp/SipccSdpParser.h"
 
-#include "FakeIPC.h"
-#include "FakeIPC.cpp"
+#include "CSFLog.h"
+
+void CSFLog(CSFLogLevel priority, const char* sourceFile, int sourceLine, const char* tag , const char* format, ...)
+{
+  va_list ap;
+  va_start(ap, format);
+
+  printf("%s\n:", tag);
+  vprintf(format, ap);
+
+  va_end(ap);
+}
 
 namespace mozilla {
+
+enum class LogLevel {
+
+};
+
+namespace detail {
+
+void log_print(PRLogModuleInfo const* info, LogLevel level, char const* format, ...) {
+  va_list ap;
+  va_start(ap, format);
+
+  vprintf(format, ap);
+
+  va_end(ap);
+}
+
+} 
 
 const std::string kDefaultFilename((char *)"/tmp/sdp.bin");
 std::string filename(kDefaultFilename);
