@@ -12,7 +12,8 @@ use geom::size::TypedSize2D;
 use layers::geometry::DevicePixel;
 use layers::platform::surface::NativeGraphicsMetadata;
 use msg::compositor_msg::{PaintState, ReadyState};
-use msg::constellation_msg::{Key, KeyState, KeyModifiers, LoadData};
+use msg::constellation_msg::{Key, KeyState, KeyModifiers};
+use url::Url;
 use util::cursor::Cursor;
 use util::geometry::ScreenPx;
 use std::fmt::{Error, Formatter, Debug};
@@ -105,7 +106,7 @@ pub trait WindowMethods {
     
     fn set_page_title(&self, title: Option<String>);
     
-    fn set_page_load_data(&self, load_data: LoadData);
+    fn set_page_url(&self, url: Url);
     
     fn load_end(&self);
 

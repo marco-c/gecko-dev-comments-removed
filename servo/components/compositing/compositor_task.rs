@@ -20,8 +20,9 @@ use layers::layers::LayerBufferSet;
 use pipeline::CompositionPipeline;
 use msg::compositor_msg::{Epoch, LayerId, LayerMetadata, ReadyState};
 use msg::compositor_msg::{PaintListener, PaintState, ScriptListener, ScrollPolicy};
-use msg::constellation_msg::{ConstellationChan, LoadData, PipelineId};
+use msg::constellation_msg::{ConstellationChan, PipelineId};
 use msg::constellation_msg::{Key, KeyState, KeyModifiers};
+use url::Url;
 use util::cursor::Cursor;
 use util::geometry::PagePx;
 use util::memory::MemoryProfilerChan;
@@ -201,7 +202,7 @@ pub enum Msg {
     
     ChangePageTitle(PipelineId, Option<String>),
     
-    ChangePageLoadData(FrameId, LoadData),
+    ChangePageUrl(FrameId, Url),
     
     PaintMsgDiscarded,
     
@@ -237,7 +238,7 @@ impl Debug for Msg {
             Msg::ChangeReadyState(..) => write!(f, "ChangeReadyState"),
             Msg::ChangePaintState(..) => write!(f, "ChangePaintState"),
             Msg::ChangePageTitle(..) => write!(f, "ChangePageTitle"),
-            Msg::ChangePageLoadData(..) => write!(f, "ChangePageLoadData"),
+            Msg::ChangePageUrl(..) => write!(f, "ChangePageUrl"),
             Msg::PaintMsgDiscarded(..) => write!(f, "PaintMsgDiscarded"),
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
             Msg::CreateRootLayerForPipeline(..) => write!(f, "CreateRootLayerForPipeline"),
