@@ -6,6 +6,12 @@ tree[type="places"] {
   -moz-binding: url("chrome://browser/content/places/tree.xml#places-tree");
 }
 
+tree[type="places"] > treechildren::-moz-tree-cell {
+  
+
+  unicode-bidi: plaintext;
+}
+
 .toolbar-drop-indicator {
   position: relative;
   z-index: 1;
