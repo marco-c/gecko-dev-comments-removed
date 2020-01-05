@@ -19,8 +19,6 @@
 #include "nsRect.h"                     
 #include "nsXULAppAPI.h"                
 #include "gfxPrefs.h"                   
-#include "gfxUtils.h"
-#include "mozilla/layers/TextureClientSharedSurface.h"
 
 using namespace mozilla::gfx;
 using namespace mozilla::gl;
