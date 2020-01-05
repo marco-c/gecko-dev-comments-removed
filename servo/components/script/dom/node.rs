@@ -82,9 +82,6 @@ pub struct Node {
     eventtarget: EventTarget,
 
     
-    type_id: NodeTypeId,
-
-    
     parent_node: MutNullableHeap<JS<Node>>,
 
     
@@ -284,8 +281,7 @@ impl LayoutDataRef {
 }
 
 
-#[derive(JSTraceable, Copy, Clone, PartialEq, Debug)]
-#[derive(HeapSizeOf)]
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub enum NodeTypeId {
     CharacterData(CharacterDataTypeId),
     DocumentType,
@@ -452,7 +448,7 @@ impl Node {
 
     
     pub fn debug_str(&self) -> String {
-        format!("{:?}", self.type_id)
+        format!("{:?}", self.type_id())
     }
 
     pub fn is_in_doc(&self) -> bool {
@@ -461,12 +457,15 @@ impl Node {
 
     
     pub fn type_id(&self) -> NodeTypeId {
-        self.type_id
+        match *self.eventtarget.type_id() {
+            EventTargetTypeId::Node(type_id) => type_id,
+            _ => unreachable!(),
+        }
     }
 
     
     pub fn len(&self) -> u32 {
-        match self.type_id {
+        match self.type_id() {
             NodeTypeId::DocumentType => 0,
             NodeTypeId::CharacterData(_) => {
                 CharacterDataCast::to_ref(self).unwrap().Length()
@@ -486,12 +485,12 @@ impl Node {
 
     #[inline]
     pub fn is_anchor_element(&self) -> bool {
-        self.type_id == NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLAnchorElement))
+        self.type_id() == NodeTypeId::Element(ElementTypeId::HTMLElement(HTMLElementTypeId::HTMLAnchorElement))
     }
 
     #[inline]
     pub fn is_doctype(&self) -> bool {
-        self.type_id == NodeTypeId::DocumentType
+        self.type_id() == NodeTypeId::DocumentType
     }
 
     pub fn get_flag(&self, flag: NodeFlags) -> bool {
@@ -1026,7 +1025,7 @@ impl LayoutNodeHelpers for LayoutJS<Node> {
     #[inline]
     #[allow(unsafe_code)]
     unsafe fn type_id_for_layout(&self) -> NodeTypeId {
-        (*self.unsafe_get()).type_id
+        (*self.unsafe_get()).type_id()
     }
 
     #[inline]
@@ -1393,8 +1392,7 @@ impl Node {
 
     fn new_(type_id: NodeTypeId, doc: Option<&Document>) -> Node {
         Node {
-            eventtarget: EventTarget::new_inherited(EventTargetTypeId::Node(type_id)),
-            type_id: type_id,
+            eventtarget: EventTarget::new_inherited(),
 
             parent_node: Default::default(),
             first_child: Default::default(),
@@ -1833,7 +1831,7 @@ impl Node {
                 }
         }
 
-        match node.type_id {
+        match node.type_id() {
             NodeTypeId::Element(_) => {
                 let element = ElementCast::to_ref(node).unwrap();
                 
@@ -1889,7 +1887,7 @@ impl Node {
 impl NodeMethods for Node {
     
     fn NodeType(&self) -> u16 {
-        match self.type_id {
+        match self.type_id() {
             NodeTypeId::CharacterData(CharacterDataTypeId::Text) =>
                 NodeConstants::TEXT_NODE,
             NodeTypeId::CharacterData(CharacterDataTypeId::ProcessingInstruction) =>
@@ -1909,7 +1907,7 @@ impl NodeMethods for Node {
 
     
     fn NodeName(&self) -> DOMString {
-        match self.type_id {
+        match self.type_id() {
             NodeTypeId::Element(..) => {
                 let elem: &Element = ElementCast::to_ref(self).unwrap();
                 elem.TagName()
@@ -1937,7 +1935,7 @@ impl NodeMethods for Node {
 
     
     fn GetOwnerDocument(&self) -> Option<Root<Document>> {
-        match self.type_id {
+        match self.type_id() {
             NodeTypeId::CharacterData(..) |
             NodeTypeId::Element(..) |
             NodeTypeId::DocumentType |
@@ -1992,19 +1990,30 @@ impl NodeMethods for Node {
 
     
     fn GetNodeValue(&self) -> Option<DOMString> {
-        CharacterDataCast::to_ref(self).map(|c| c.Data())
+        match self.type_id() {
+            NodeTypeId::CharacterData(..) => {
+                let chardata: &CharacterData = CharacterDataCast::to_ref(self).unwrap();
+                Some(chardata.Data())
+            }
+            _ => {
+                None
+            }
+        }
     }
 
     
     fn SetNodeValue(&self, val: Option<DOMString>) {
-        if let NodeTypeId::CharacterData(..) = self.type_id {
-            self.SetTextContent(val)
+        match self.type_id() {
+            NodeTypeId::CharacterData(..) => {
+                self.SetTextContent(val)
+            }
+            _ => {}
         }
     }
 
     
     fn GetTextContent(&self) -> Option<DOMString> {
-        match self.type_id {
+        match self.type_id() {
             NodeTypeId::DocumentFragment |
             NodeTypeId::Element(..) => {
                 let content = Node::collect_text_contents(self.traverse_preorder());
@@ -2024,7 +2033,7 @@ impl NodeMethods for Node {
     
     fn SetTextContent(&self, value: Option<DOMString>) {
         let value = value.unwrap_or(String::new());
-        match self.type_id {
+        match self.type_id() {
             NodeTypeId::DocumentFragment |
             NodeTypeId::Element(..) => {
                 
@@ -2065,7 +2074,7 @@ impl NodeMethods for Node {
     fn ReplaceChild(&self, node: &Node, child: &Node) -> Fallible<Root<Node>> {
 
         
-        match self.type_id {
+        match self.type_id() {
             NodeTypeId::Document |
             NodeTypeId::DocumentFragment |
             NodeTypeId::Element(..) => (),
@@ -2147,7 +2156,7 @@ impl NodeMethods for Node {
                     }
                 },
                 NodeTypeId::CharacterData(..) => (),
-                NodeTypeId::Document => unreachable!()
+                NodeTypeId::Document => unreachable!(),
             }
         }
 

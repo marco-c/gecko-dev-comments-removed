@@ -15,6 +15,7 @@ use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;
 use dom::bindings::trace::trace_object;
 use dom::browsercontext;
+use dom::eventtarget::EventTargetTypeId;
 use dom::window;
 use util::mem::HeapSizeOf;
 use util::str::DOMString;
@@ -156,6 +157,9 @@ pub struct DOMClass {
     
     
     pub interface_chain: [PrototypeList::ID; MAX_PROTO_CHAIN_LENGTH],
+
+    
+    pub type_id: Option<EventTargetTypeId>,
 
     
     pub native_hooks: &'static NativePropertyHooks,
