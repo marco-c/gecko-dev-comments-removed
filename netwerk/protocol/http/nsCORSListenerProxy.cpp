@@ -867,6 +867,10 @@ CheckUpgradeInsecureRequestsPreventsCORS(nsIPrincipal* aRequestingPrincipal,
   rv = aChannel->GetLoadInfo(getter_AddRefs(loadInfo));
   NS_ENSURE_SUCCESS(rv, false);
 
+  if (!loadInfo) {
+    return false;
+  }
+
   
   
   return loadInfo->GetUpgradeInsecureRequests();

@@ -1267,6 +1267,10 @@ NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport)
   nsCOMPtr<nsILoadInfo> loadInfo = aChannel->GetLoadInfo();
   MOZ_RELEASE_ASSERT(loadInfo, "Origin tracking only works for channels created with a loadinfo");
 
+  if (!loadInfo) {
+    return false;
+  }
+
   
   if (!loadInfo->LoadingPrincipal()) {
     return false;
