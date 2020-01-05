@@ -30,7 +30,6 @@ use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{JS, RootCollection, trace_roots};
 use dom::bindings::js::{RootCollectionPtr, Root, RootedReference};
 use dom::bindings::refcounted::{LiveDOMReferences, Trusted, TrustedReference, trace_refcounted_objects};
-use dom::bindings::structuredclone::StructuredCloneData;
 use dom::bindings::trace::{JSTraceable, trace_traceables, RootedVec};
 use dom::bindings::utils::{WRAP_CALLBACKS, DOM_CALLBACKS};
 use dom::document::{Document, IsHTMLDocument, DocumentHelpers, DocumentProgressHandler,
@@ -180,44 +179,46 @@ pub trait MainThreadRunnable {
 }
 
 
-
-pub enum ScriptMsg {
+pub enum CommonScriptMsg {
     
     
-    Navigate(PipelineId, LoadData),
+    CollectReports(ReportsChan),
     
     
     
     FireTimer(TimerSource, TimerId),
     
-    
-    ExitWindow(PipelineId),
-    
-    
-    DOMMessage(StructuredCloneData),
+    RefcountCleanup(TrustedReference),
     
     RunnableMsg(Box<Runnable+Send>),
+}
+
+
+pub enum MainThreadScriptMsg {
     
-    MainThreadRunnableMsg(Box<MainThreadRunnable+Send>),
-    
-    RefcountCleanup(TrustedReference),
+    Common(CommonScriptMsg),
     
     DocumentLoadsComplete(PipelineId),
     
     
-    CollectReports(ReportsChan),
+    ExitWindow(PipelineId),
+    
+    MainThreadRunnableMsg(Box<MainThreadRunnable+Send>),
+    
+    
+    Navigate(PipelineId, LoadData),
 }
 
 
 pub trait ScriptChan {
     
-    fn send(&self, msg: ScriptMsg) -> Result<(), ()>;
+    fn send(&self, msg: CommonScriptMsg) -> Result<(), ()>;
     
     fn clone(&self) -> Box<ScriptChan+Send>;
 }
 
-impl OpaqueSender<ScriptMsg> for Box<ScriptChan+Send> {
-    fn send(&self, msg: ScriptMsg) {
+impl OpaqueSender<CommonScriptMsg> for Box<ScriptChan+Send> {
+    fn send(&self, msg: CommonScriptMsg) {
         ScriptChan::send(&**self, msg).unwrap();
     }
 }
@@ -226,42 +227,84 @@ impl OpaqueSender<ScriptMsg> for Box<ScriptChan+Send> {
 
 
 pub trait ScriptPort {
-    fn recv(&self) -> ScriptMsg;
+    fn recv(&self) -> CommonScriptMsg;
 }
 
-impl ScriptPort for Receiver<ScriptMsg> {
-    fn recv(&self) -> ScriptMsg {
+impl ScriptPort for Receiver<CommonScriptMsg> {
+    fn recv(&self) -> CommonScriptMsg {
         self.recv().unwrap()
     }
 }
 
-impl ScriptPort for Receiver<(TrustedWorkerAddress, ScriptMsg)> {
-    fn recv(&self) -> ScriptMsg {
+impl ScriptPort for Receiver<MainThreadScriptMsg> {
+    fn recv(&self) -> CommonScriptMsg {
+        match self.recv().unwrap() {
+            MainThreadScriptMsg::Common(script_msg) => script_msg,
+            _ => panic!("unexpected main thread event message!")
+        }
+    }
+}
+
+impl ScriptPort for Receiver<(TrustedWorkerAddress, CommonScriptMsg)> {
+    fn recv(&self) -> CommonScriptMsg {
         self.recv().unwrap().1
+    }
+}
+
+impl ScriptPort for Receiver<(TrustedWorkerAddress, MainThreadScriptMsg)> {
+    fn recv(&self) -> CommonScriptMsg {
+        match self.recv().unwrap().1 {
+            MainThreadScriptMsg::Common(script_msg) => script_msg,
+            _ => panic!("unexpected main thread event message!")
+        }
     }
 }
 
 
 #[derive(JSTraceable)]
-pub struct NonWorkerScriptChan(pub Sender<ScriptMsg>);
+pub struct SendableMainThreadScriptChan(pub Sender<CommonScriptMsg>);
 
-impl ScriptChan for NonWorkerScriptChan {
-    fn send(&self, msg: ScriptMsg) -> Result<(), ()> {
-        let NonWorkerScriptChan(ref chan) = *self;
+impl ScriptChan for SendableMainThreadScriptChan {
+    fn send(&self, msg: CommonScriptMsg) -> Result<(), ()> {
+        let SendableMainThreadScriptChan(ref chan) = *self;
         return chan.send(msg).map_err(|_| ());
     }
 
     fn clone(&self) -> Box<ScriptChan+Send> {
-        let NonWorkerScriptChan(ref chan) = *self;
-        box NonWorkerScriptChan((*chan).clone())
+        let SendableMainThreadScriptChan(ref chan) = *self;
+        box SendableMainThreadScriptChan((*chan).clone())
     }
 }
 
-impl NonWorkerScriptChan {
+impl SendableMainThreadScriptChan {
     
-    pub fn new() -> (Receiver<ScriptMsg>, Box<NonWorkerScriptChan>) {
+    pub fn new() -> (Receiver<CommonScriptMsg>, Box<SendableMainThreadScriptChan>) {
         let (chan, port) = channel();
-        (port, box NonWorkerScriptChan(chan))
+        (port, box SendableMainThreadScriptChan(chan))
+    }
+}
+
+
+#[derive(JSTraceable)]
+pub struct MainThreadScriptChan(pub Sender<MainThreadScriptMsg>);
+
+impl ScriptChan for MainThreadScriptChan {
+    fn send(&self, msg: CommonScriptMsg) -> Result<(), ()> {
+        let MainThreadScriptChan(ref chan) = *self;
+        return chan.send(MainThreadScriptMsg::Common(msg)).map_err(|_| ());
+    }
+
+    fn clone(&self) -> Box<ScriptChan+Send> {
+        let MainThreadScriptChan(ref chan) = *self;
+        box MainThreadScriptChan((*chan).clone())
+    }
+}
+
+impl MainThreadScriptChan {
+    
+    pub fn new() -> (Receiver<MainThreadScriptMsg>, Box<MainThreadScriptChan>) {
+        let (chan, port) = channel();
+        (port, box MainThreadScriptChan(chan))
     }
 }
 
@@ -302,10 +345,10 @@ pub struct ScriptTask {
     storage_task: StorageTask,
 
     
-    port: Receiver<ScriptMsg>,
+    port: Receiver<MainThreadScriptMsg>,
     
     
-    chan: NonWorkerScriptChan,
+    chan: MainThreadScriptChan,
 
     
     control_chan: Sender<ConstellationControlMsg>,
@@ -419,7 +462,7 @@ impl ScriptTaskFactory for ScriptTask {
         spawn_named_with_send_on_failure(format!("ScriptTask {:?}", id), task_state::SCRIPT, move || {
             let roots = RootCollection::new();
             let _stack_roots_tls = StackRootTLS::new(&roots);
-            let chan = NonWorkerScriptChan(script_chan);
+            let chan = MainThreadScriptChan(script_chan);
             let channel_for_reporter = chan.clone();
             let script_task = ScriptTask::new(compositor,
                                               script_port,
@@ -446,7 +489,7 @@ impl ScriptTaskFactory for ScriptTask {
             let reporter_name = format!("script-reporter-{}", id.0);
             mem_profiler_chan.run_with_memory_reporting(|| {
                 script_task.start();
-            }, reporter_name, channel_for_reporter, ScriptMsg::CollectReports);
+            }, reporter_name, channel_for_reporter, CommonScriptMsg::CollectReports);
 
             
             failsafe.neuter();
@@ -526,19 +569,19 @@ impl ScriptTask {
         });
     }
 
-    pub fn process_event(msg: ScriptMsg) {
+    pub fn process_event(msg: CommonScriptMsg) {
         SCRIPT_TASK_ROOT.with(|root| {
             if let Some(script_task) = *root.borrow() {
                 let script_task = unsafe { &*script_task };
-                script_task.handle_msg_from_script(msg);
+                script_task.handle_msg_from_script(MainThreadScriptMsg::Common(msg));
             }
         });
     }
 
     
     pub fn new(compositor: ScriptListener,
-               port: Receiver<ScriptMsg>,
-               chan: NonWorkerScriptChan,
+               port: Receiver<MainThreadScriptMsg>,
+               chan: MainThreadScriptChan,
                control_chan: Sender<ConstellationControlMsg>,
                control_port: Receiver<ConstellationControlMsg>,
                constellation_chan: ConstellationChan,
@@ -672,7 +715,7 @@ impl ScriptTask {
 
         enum MixedMessage {
             FromConstellation(ConstellationControlMsg),
-            FromScript(ScriptMsg),
+            FromScript(MainThreadScriptMsg),
             FromDevtools(DevtoolScriptControlMsg),
             FromImageCache(ImageCacheResult),
         }
@@ -855,27 +898,27 @@ impl ScriptTask {
         }
     }
 
-    fn handle_msg_from_script(&self, msg: ScriptMsg) {
+    fn handle_msg_from_script(&self, msg: MainThreadScriptMsg) {
         match msg {
-            ScriptMsg::Navigate(id, load_data) =>
+            MainThreadScriptMsg::Navigate(id, load_data) =>
                 self.handle_navigate(id, None, load_data),
-            ScriptMsg::FireTimer(TimerSource::FromWindow(id), timer_id) =>
-                self.handle_fire_timer_msg(id, timer_id),
-            ScriptMsg::FireTimer(TimerSource::FromWorker, _) =>
-                panic!("Worker timeouts must not be sent to script task"),
-            ScriptMsg::ExitWindow(id) =>
+            MainThreadScriptMsg::ExitWindow(id) =>
                 self.handle_exit_window_msg(id),
-            ScriptMsg::DOMMessage(..) =>
-                panic!("unexpected message"),
-            ScriptMsg::RunnableMsg(runnable) =>
-                runnable.handler(),
-            ScriptMsg::MainThreadRunnableMsg(runnable) =>
+            MainThreadScriptMsg::MainThreadRunnableMsg(runnable) =>
                 runnable.handler(self),
-            ScriptMsg::RefcountCleanup(addr) =>
-                LiveDOMReferences::cleanup(addr),
-            ScriptMsg::DocumentLoadsComplete(id) =>
+            MainThreadScriptMsg::DocumentLoadsComplete(id) =>
                 self.handle_loads_complete(id),
-            ScriptMsg::CollectReports(reports_chan) =>
+            MainThreadScriptMsg::Common(
+                CommonScriptMsg::FireTimer(TimerSource::FromWindow(id), timer_id)) =>
+                self.handle_fire_timer_msg(id, timer_id),
+            MainThreadScriptMsg::Common(
+                CommonScriptMsg::FireTimer(TimerSource::FromWorker, _)) =>
+                panic!("Worker timeouts must not be sent to script task"),
+            MainThreadScriptMsg::Common(CommonScriptMsg::RunnableMsg(runnable)) =>
+                runnable.handler(),
+            MainThreadScriptMsg::Common(CommonScriptMsg::RefcountCleanup(addr)) =>
+                LiveDOMReferences::cleanup(addr),
+            MainThreadScriptMsg::Common(CommonScriptMsg::CollectReports(reports_chan)) =>
                 self.collect_reports(reports_chan),
         }
     }
@@ -1085,7 +1128,7 @@ impl ScriptTask {
         
         let addr: Trusted<Document> = Trusted::new(self.get_cx(), doc, self.chan.clone());
         let handler = box DocumentProgressHandler::new(addr.clone(), DocumentProgressTask::Load);
-        self.chan.send(ScriptMsg::RunnableMsg(handler)).unwrap();
+        self.chan.send(CommonScriptMsg::RunnableMsg(handler)).unwrap();
 
         let ConstellationChan(ref chan) = self.constellation_chan;
         chan.send(ConstellationMsg::LoadComplete(pipeline)).unwrap();
@@ -1455,11 +1498,12 @@ impl ScriptTask {
             PageToRemove::Child(incomplete.pipeline_id)
         };
         let mut page_remover = AutoPageRemover::new(self, page_to_remove);
+        let MainThreadScriptChan(ref sender) = self.chan;
 
         
         let window = Window::new(self.js_runtime.clone(),
                                  page.clone(),
-                                 self.chan.clone(),
+                                 MainThreadScriptChan(sender.clone()),
                                  self.image_cache_channel.clone(),
                                  self.control_chan.clone(),
                                  self.compositor.borrow_mut().dup(),
@@ -1485,9 +1529,12 @@ impl ScriptTask {
             _ => None
         };
 
-        let notifier_data = NotifierData {
-            script_chan: self.chan.clone(),
-            pipeline: page.pipeline(),
+        let notifier_data =  {
+            let MainThreadScriptChan(ref sender) = self.chan;
+            NotifierData {
+                script_chan: sender.clone(),
+                pipeline: page.pipeline(),
+            }
         };
         let loader = DocumentLoader::new_with_task(self.resource_task.clone(),
                                                    Some(notifier_data),
@@ -1822,7 +1869,7 @@ impl ScriptTask {
         // https://html.spec.whatwg.org/multipage/#the-end step 4
         let addr: Trusted<Document> = Trusted::new(self.get_cx(), document.r(), self.chan.clone());
         let handler = box DocumentProgressHandler::new(addr, DocumentProgressTask::DOMContentLoaded);
-        self.chan.send(ScriptMsg::RunnableMsg(handler)).unwrap();
+        self.chan.send(CommonScriptMsg::RunnableMsg(handler)).unwrap();
 
         window.r().set_fragment_name(final_url.fragment.clone());
 

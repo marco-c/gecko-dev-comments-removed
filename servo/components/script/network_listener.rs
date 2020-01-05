@@ -2,7 +2,7 @@
 
 
 
-use script_task::{ScriptChan, ScriptMsg, Runnable};
+use script_task::{ScriptChan, Runnable, CommonScriptMsg};
 use net_traits::{AsyncResponseListener, ResponseAction};
 use std::sync::{Arc, Mutex};
 
@@ -15,7 +15,7 @@ pub struct NetworkListener<T: AsyncResponseListener + PreInvoke + Send + 'static
 
 impl<T: AsyncResponseListener + PreInvoke + Send + 'static> NetworkListener<T> {
     pub fn notify(&self, action: ResponseAction) {
-        if let Err(err) = self.script_chan.send(ScriptMsg::RunnableMsg(box ListenerRunnable {
+        if let Err(err) = self.script_chan.send(CommonScriptMsg::RunnableMsg(box ListenerRunnable {
             context: self.context.clone(),
             action: action,
         })) {
