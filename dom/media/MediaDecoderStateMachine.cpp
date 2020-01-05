@@ -1511,7 +1511,7 @@ SeekingState::SeekCompleted()
 
   
   
-  mSeekJob.Resolve(false, __func__);
+  mSeekJob.Resolve(__func__);
 
   
   

@@ -59,7 +59,6 @@ class MediaDecoder : public AbstractMediaDecoder
 {
 public:
   struct SeekResolveValue {
-    bool mAtEnd;
   };
 
   
