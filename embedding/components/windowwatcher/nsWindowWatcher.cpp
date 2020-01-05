@@ -52,7 +52,6 @@
 #include "nsIContentViewer.h"
 #include "nsIWindowProvider.h"
 #include "nsIMutableArray.h"
-#include "nsISupportsArray.h"
 #include "nsIDOMStorageManager.h"
 #include "nsIWidget.h"
 #include "nsFocusManager.h"
@@ -320,28 +319,6 @@ ConvertArgsToArray(nsISupports* aArguments)
     }
 
     return array.forget();
-  }
-
-  nsCOMPtr<nsISupportsArray> supArray = do_QueryInterface(aArguments);
-  if (supArray) {
-    uint32_t argc = 0;
-    supArray->Count(&argc);
-    if (argc == 0) {
-      return nullptr;
-    }
-
-    nsCOMPtr<nsIMutableArray> mutableArray =
-      do_CreateInstance(NS_ARRAY_CONTRACTID);
-    NS_ENSURE_TRUE(mutableArray, nullptr);
-
-    for (uint32_t i = 0; i < argc; i++) {
-      nsCOMPtr<nsISupports> elt;
-      supArray->GetElementAt(i, getter_AddRefs(elt));
-      nsresult rv = mutableArray->AppendElement(elt,  false);
-      NS_ENSURE_SUCCESS(rv, nullptr);
-    }
-
-    return mutableArray.forget();
   }
 
   nsCOMPtr<nsIMutableArray> singletonArray =
