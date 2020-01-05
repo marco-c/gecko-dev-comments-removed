@@ -1415,24 +1415,19 @@ impl Node {
     
     pub fn adopt(node: &Node, document: &Document) {
         
-        let parent_node = node.GetParentNode();
-        match parent_node {
-            Some(ref parent) => {
-                Node::remove(node, parent, SuppressObserver::Unsuppressed);
-            }
-            None => (),
-        }
-
+        let old_doc = node.owner_doc();
         
-        let node_doc = document_from_node(node);
-        if node_doc.r() != document {
+        node.remove_self();
+        if &*old_doc != document {
+            
             for descendant in node.traverse_preorder() {
-                descendant.r().set_owner_doc(document);
+                descendant.set_owner_doc(document);
+            }
+            
+            for descendant in node.traverse_preorder() {
+                vtable_for(&descendant).adopting_steps(&old_doc);
             }
         }
-
-        
-        
     }
 
     
