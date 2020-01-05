@@ -3446,9 +3446,10 @@ CASE(JSOP_DEFFUN)
 
 
 
-    ReservedRooted<JSFunction*> fun(&rootFunction0, script->getFunction(GET_UINT32_INDEX(REGS.pc)));
+    ReservedRooted<JSFunction*> fun(&rootFunction0, &REGS.sp[-1].toObject().as<JSFunction>());
     if (!DefFunOperation(cx, script, REGS.fp()->environmentChain(), fun))
         goto error;
+    REGS.sp--;
 }
 END_CASE(JSOP_DEFFUN)
 
@@ -4330,27 +4331,8 @@ js::LambdaArrow(JSContext* cx, HandleFunction fun, HandleObject parent, HandleVa
 
 bool
 js::DefFunOperation(JSContext* cx, HandleScript script, HandleObject envChain,
-                    HandleFunction funArg)
+                    HandleFunction fun)
 {
-    
-
-
-
-
-
-
-
-
-    RootedFunction fun(cx, funArg);
-    if (fun->isNative() || fun->environment() != envChain) {
-        fun = CloneFunctionObjectIfNotSingleton(cx, fun, envChain, nullptr, TenuredObject);
-        if (!fun)
-            return false;
-    } else {
-        MOZ_ASSERT(script->treatAsRunOnce());
-        MOZ_ASSERT(!script->functionNonDelazifying());
-    }
-
     
 
 

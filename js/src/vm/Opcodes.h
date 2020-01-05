@@ -1303,7 +1303,7 @@
 
 
  \
-    macro(JSOP_DEFFUN,    127,"deffun",     NULL,         5,  0,  0,  JOF_OBJECT) \
+    macro(JSOP_DEFFUN,    127,"deffun",     NULL,         1,  1,  0,  JOF_BYTE) \
     
 
 
