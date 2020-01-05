@@ -5,6 +5,7 @@
 
 
 use extra::url::Url;
+use extra::arc::MutexArc;
 use geom::{Point2D, Rect, Size2D, SideOffsets2D};
 use gfx::color::rgb;
 use gfx::display_list::{BaseDisplayItem, BorderDisplayItem, BorderDisplayItemClass};
@@ -98,14 +99,14 @@ impl ImageBoxInfo {
     
     
     
-    pub fn new(image_url: Url, local_image_cache: @mut LocalImageCache) -> ImageBoxInfo {
+    pub fn new(image_url: Url, local_image_cache: MutexArc<LocalImageCache>) -> ImageBoxInfo {
         ImageBoxInfo {
             image: Slot::init(ImageHolder::new(image_url, local_image_cache)),
         }
     }
 
-    // Calculate the width of an image, accounting for the width attribute
-    // TODO: This could probably go somewhere else
+    
+    
     pub fn image_width(&self, base: &Box) -> Au {
         let attr_width: Option<int> = do base.node.with_imm_element |elt| {
             match elt.get_attr("width") {
@@ -118,7 +119,7 @@ impl ImageBoxInfo {
             }
         };
 
-        // TODO: Consult margins and borders?
+        
         let px_width = if attr_width.is_some() {
             attr_width.unwrap()
         } else {
@@ -128,8 +129,8 @@ impl ImageBoxInfo {
         Au::from_px(px_width)
     }
 
-    // Calculate the height of an image, accounting for the height attribute
-    // TODO: This could probably go somewhere else
+    
+    
     pub fn image_height(&self, base: &Box) -> Au {
         let attr_height: Option<int> = do base.node.with_imm_element |elt| {
             match elt.get_attr("height") {
@@ -142,7 +143,7 @@ impl ImageBoxInfo {
             }
         };
 
-        // TODO: Consult margins and borders?
+        
         let px_height = if attr_height.is_some() {
             attr_height.unwrap()
         } else {
@@ -153,12 +154,12 @@ impl ImageBoxInfo {
     }
 }
 
-/// A scanned text box represents a single run of text with a distinct style. A `TextBox` may be
-/// split into two or more boxes across line breaks. Several `TextBox`es may correspond to a single
-/// DOM text node. Split text boxes are implemented by referring to subsets of a single `TextRun`
-/// object.
+
+
+
+
 pub struct ScannedTextBoxInfo {
-    /// The text run that this represents.
+    
     run: @TextRun,
 
     /// The range within the above text run that this represents.
