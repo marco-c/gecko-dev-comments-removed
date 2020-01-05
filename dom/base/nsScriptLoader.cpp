@@ -57,9 +57,11 @@
 #include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/ConsoleReportCollector.h"
 
+#include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Unused.h"
 #include "nsIScriptError.h"
+#include "nsIOutputStream.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -102,10 +104,23 @@ ImplCycleCollectionTraverse(nsCycleCollectionTraversalCallback& aCallback,
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsScriptLoadRequest)
 NS_INTERFACE_MAP_END
 
-NS_IMPL_CYCLE_COLLECTION_0(nsScriptLoadRequest)
-
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsScriptLoadRequest)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsScriptLoadRequest)
+
+NS_IMPL_CYCLE_COLLECTION_CLASS(nsScriptLoadRequest)
+
+NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(nsScriptLoadRequest)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mCacheInfo)
+  tmp->DropBytecodeCacheReferences();
+NS_IMPL_CYCLE_COLLECTION_UNLINK_END
+
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(nsScriptLoadRequest)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCacheInfo)
+NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
+
+NS_IMPL_CYCLE_COLLECTION_TRACE_BEGIN(nsScriptLoadRequest)
+  NS_IMPL_CYCLE_COLLECTION_TRACE_JS_MEMBER_CALLBACK(mScript)
+NS_IMPL_CYCLE_COLLECTION_TRACE_END
 
 nsScriptLoadRequest::~nsScriptLoadRequest()
 {
@@ -115,6 +130,10 @@ nsScriptLoadRequest::~nsScriptLoadRequest()
   
   
   MaybeCancelOffThreadScript();
+
+  if (mScript) {
+    DropBytecodeCacheReferences();
+  }
 }
 
 void
@@ -543,6 +562,7 @@ nsScriptLoader::nsScriptLoader(nsIDocument *aDocument)
     mDeferEnabled(false),
     mDocumentParsingDone(false),
     mBlockingDOMContentLoaded(false),
+    mLoadEventFired(false),
     mReporter(new ConsoleReportCollector())
 {
 }
@@ -2163,8 +2183,8 @@ nsScriptLoader::ProcessRequest(nsScriptLoadRequest* aRequest)
   }
 
   
+  
   aRequest->mScriptText.clearAndFree();
-  aRequest->mScriptBytecode.clearAndFree();
 
   return rv;
 }
@@ -2348,6 +2368,7 @@ nsScriptLoader::EvaluateScript(nsScriptLoadRequest* aRequest)
         MOZ_ASSERT(module);
         rv = nsJSUtils::ModuleEvaluation(aes.cx(), module);
       }
+      aRequest->mCacheInfo = nullptr;
     } else {
       JS::CompileOptions options(aes.cx());
       rv = FillCompileOptionsForRequest(aes, aRequest, global, &options);
@@ -2363,26 +2384,58 @@ nsScriptLoader::EvaluateScript(nsScriptLoadRequest* aRequest)
             rv = exec.DecodeAndExec(options, aRequest->mScriptBytecode,
                                     aRequest->mBytecodeOffset);
           }
+          
+          
+          MOZ_ASSERT(!aRequest->mCacheInfo);
         } else {
-          nsJSUtils::ExecutionContext exec(aes.cx(), global);
           MOZ_ASSERT(aRequest->IsSource());
           if (aRequest->mOffThreadToken) {
             
             LOG(("ScriptLoadRequest (%p): Join (off-thread parsing) and Execute",
                  aRequest));
-            JS::Rooted<JSScript*> script(aes.cx());
-            rv = exec.JoinAndExec(&aRequest->mOffThreadToken, &script);
+            {
+              nsJSUtils::ExecutionContext exec(aes.cx(), global);
+              JS::Rooted<JSScript*> script(aes.cx());
+              if (!aRequest->mCacheInfo) {
+                rv = exec.JoinAndExec(&aRequest->mOffThreadToken, &script);
+                LOG(("ScriptLoadRequest (%p): Cannot cache anything (cacheInfo = nullptr)",
+                     aRequest));
+              } else {
+                MOZ_ASSERT(aRequest->mBytecodeOffset ==
+                           aRequest->mScriptBytecode.length());
+                rv = exec.JoinEncodeAndExec(&aRequest->mOffThreadToken,
+                                            aRequest->mScriptBytecode,
+                                            &script);
+                
+                if (NS_SUCCEEDED(rv)) {
+                  aRequest->mScript = script;
+                  HoldJSObjects(aRequest);
+                  RegisterForBytecodeEncoding(aRequest);
+                } else {
+                  LOG(("ScriptLoadRequest (%p): Cannot cache anything (rv = %X, script = %p, cacheInfo = %p)",
+                       aRequest, unsigned(rv), script.get(), aRequest->mCacheInfo.get()));
+                  aRequest->mCacheInfo = nullptr;
+                }
+              }
+            }
           } else {
             
             LOG(("ScriptLoadRequest (%p): Compile And Exec", aRequest));
+            nsJSUtils::ExecutionContext exec(aes.cx(), global);
             nsAutoString inlineData;
             SourceBufferHolder srcBuf = GetScriptSource(aRequest, inlineData);
             rv = exec.CompileAndExec(options, srcBuf);
+            aRequest->mCacheInfo = nullptr;
           }
         }
 
       }
     }
+
+    
+    
+    
+    MaybeTriggerBytecodeEncoding();
   }
 
   context->SetProcessingScriptTag(oldProcessingScriptTag);
@@ -2390,14 +2443,190 @@ nsScriptLoader::EvaluateScript(nsScriptLoadRequest* aRequest)
 }
 
 void
+nsScriptLoader::RegisterForBytecodeEncoding(nsScriptLoadRequest* aRequest)
+{
+  MOZ_ASSERT(aRequest->mCacheInfo);
+  MOZ_ASSERT(aRequest->mScript);
+  mBytecodeEncodingQueue.AppendElement(aRequest);
+}
+
+void
+nsScriptLoader::LoadEventFired()
+{
+  mLoadEventFired = true;
+  MaybeTriggerBytecodeEncoding();
+}
+
+void
+nsScriptLoader::MaybeTriggerBytecodeEncoding()
+{
+  
+  
+  
+  
+  if (!mLoadEventFired) {
+    return;
+  }
+
+  
+  if (mBytecodeEncodingQueue.isEmpty()) {
+    return;
+  }
+
+  
+  
+  if (HasPendingRequests()) {
+    return;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIRunnable> encoder =
+    NewRunnableMethod("nsScriptLoader::EncodeBytecode",
+                      this, &nsScriptLoader::EncodeBytecode);
+  if (NS_FAILED(NS_DispatchToCurrentThread(encoder))) {
+    GiveUpBytecodeEncoding();
+  }
+}
+
+void
+nsScriptLoader::EncodeBytecode()
+{
+  
+  
+  
+  if (HasPendingRequests()) {
+    return;
+  }
+
+  nsCOMPtr<nsIScriptGlobalObject> globalObject = GetScriptGlobalObject();
+  if (!globalObject) {
+    GiveUpBytecodeEncoding();
+    return;
+  }
+
+  nsCOMPtr<nsIScriptContext> context = globalObject->GetScriptContext();
+  if (!context) {
+    GiveUpBytecodeEncoding();
+    return;
+  }
+
+  AutoEntryScript aes(globalObject, "encode bytecode", true);
+  RefPtr<nsScriptLoadRequest> request;
+  while (!mBytecodeEncodingQueue.isEmpty()) {
+    request = mBytecodeEncodingQueue.StealFirst();
+    EncodeRequestBytecode(aes.cx(), request);
+    request->mScriptBytecode.clearAndFree();
+    request->DropBytecodeCacheReferences();
+  }
+}
+
+void
+nsScriptLoader::EncodeRequestBytecode(JSContext* aCx, nsScriptLoadRequest* aRequest)
+{
+  nsresult rv = NS_OK;
+  MOZ_ASSERT(aRequest->mCacheInfo);
+
+  JS::RootedScript script(aCx, aRequest->mScript);
+  if (!JS::FinishIncrementalEncoding(aCx, script)) {
+    LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode",
+         aRequest));
+    return;
+  }
+
+  if (aRequest->mScriptBytecode.length() >= UINT32_MAX) {
+    LOG(("ScriptLoadRequest (%p): Bytecode cache is too large to be decoded correctly.",
+         aRequest));
+    return;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIOutputStream> output;
+  rv = aRequest->mCacheInfo->OpenAlternativeOutputStream(kBytecodeMimeType,
+                                                         getter_AddRefs(output));
+  if (NS_FAILED(rv)) {
+    LOG(("ScriptLoadRequest (%p): Cannot open bytecode cache (rv = %X, output = %p)",
+         aRequest, unsigned(rv), output.get()));
+    return;
+  }
+  MOZ_ASSERT(output);
+  auto closeOutStream = mozilla::MakeScopeExit([&]() {
+    nsresult rv = output->Close();
+    LOG(("ScriptLoadRequest (%p): Closing (rv = %X)",
+         aRequest, unsigned(rv)));
+  });
+
+  uint32_t n;
+  rv = output->Write(reinterpret_cast<char*>(aRequest->mScriptBytecode.begin()),
+                     aRequest->mScriptBytecode.length(), &n);
+  LOG(("ScriptLoadRequest (%p): Write bytecode cache (rv = %X, length = %u, written = %u)",
+       aRequest, unsigned(rv), unsigned(aRequest->mScriptBytecode.length()), n));
+  if (NS_FAILED(rv)) {
+    return;
+  }
+}
+
+void
+nsScriptLoadRequest::DropBytecodeCacheReferences()
+{
+  mCacheInfo = nullptr;
+  mScript = nullptr;
+  DropJSObjects(this);
+}
+
+void
+nsScriptLoader::GiveUpBytecodeEncoding()
+{
+  
+  
+  
+  nsCOMPtr<nsIScriptGlobalObject> globalObject = GetScriptGlobalObject();
+  if (globalObject) {
+    nsCOMPtr<nsIScriptContext> context = globalObject->GetScriptContext();
+    if (context) {
+      AutoEntryScript aes(globalObject, "give-up bytecode encoding", true);
+      JS::RootedScript script(aes.cx());
+      while (!mBytecodeEncodingQueue.isEmpty()) {
+        RefPtr<nsScriptLoadRequest> request = mBytecodeEncodingQueue.StealFirst();
+        LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode", request.get()));
+        script.set(request->mScript);
+        Unused << JS::FinishIncrementalEncoding(aes.cx(), script);
+        request->mScriptBytecode.clearAndFree();
+        request->DropBytecodeCacheReferences();
+      }
+      return;
+    }
+  }
+
+  while (!mBytecodeEncodingQueue.isEmpty()) {
+    RefPtr<nsScriptLoadRequest> request = mBytecodeEncodingQueue.StealFirst();
+    LOG(("ScriptLoadRequest (%p): Cannot serialize bytecode", request.get()));
+    
+    
+    
+    
+    request->mCacheInfo = nullptr;
+  }
+}
+
+bool
+nsScriptLoader::HasPendingRequests()
+{
+  return mParserBlockingRequest ||
+         !mXSLTRequests.isEmpty() ||
+         !mLoadedAsyncRequests.isEmpty() ||
+         !mNonAsyncExternalScriptInsertedRequests.isEmpty() ||
+         !mDeferRequests.isEmpty() ||
+         !mPendingChildLoaders.IsEmpty();
+}
+
+void
 nsScriptLoader::ProcessPendingRequestsAsync()
 {
-  if (mParserBlockingRequest ||
-      !mXSLTRequests.isEmpty() ||
-      !mLoadedAsyncRequests.isEmpty() ||
-      !mNonAsyncExternalScriptInsertedRequests.isEmpty() ||
-      !mDeferRequests.isEmpty() ||
-      !mPendingChildLoaders.IsEmpty()) {
+  if (HasPendingRequests()) {
     nsCOMPtr<nsIRunnable> task = NewRunnableMethod(this,
                                                    &nsScriptLoader::ProcessPendingRequests);
     if (mDocument) {
@@ -3426,8 +3655,23 @@ nsScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
   }
 
   
-  return mScriptLoader->OnStreamComplete(aLoader, mRequest, aStatus, mSRIStatus,
-                                         mSRIDataVerifier);
+  
+  if (NS_SUCCEEDED(rv) && mRequest->IsSource() && IsBytecodeCacheEnabled()) {
+    mRequest->mCacheInfo = do_QueryInterface(channelRequest);
+    LOG(("ScriptLoadRequest (%p): nsICacheInfoChannel = %p",
+         mRequest.get(), mRequest->mCacheInfo.get()));
+  }
+
+  
+  rv = mScriptLoader->OnStreamComplete(aLoader, mRequest, aStatus, mSRIStatus,
+                                       mSRIDataVerifier);
+
+  
+  if (NS_FAILED(rv)) {
+    mRequest->mCacheInfo = nullptr;
+  }
+
+  return rv;
 }
 
 #undef LOG_ENABLED

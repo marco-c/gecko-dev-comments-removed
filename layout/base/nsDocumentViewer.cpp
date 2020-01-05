@@ -1082,6 +1082,12 @@ nsDocumentViewer::LoadComplete(nsresult aStatus)
     }
   }
 
+  
+  
+  if (mDocument && mDocument->ScriptLoader()) {
+    mDocument->ScriptLoader()->LoadEventFired();
+  }
+
   nsJSContext::LoadEnd();
 
   

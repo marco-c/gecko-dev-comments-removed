@@ -19,6 +19,7 @@
 #include "nsCycleCollectionParticipant.h"
 #include "nsTArray.h"
 #include "nsAutoPtr.h"
+#include "nsICacheInfoChannel.h"
 #include "nsIDocument.h"
 #include "nsIIncrementalStreamLoader.h"
 #include "nsURIHashKey.h"
@@ -99,7 +100,7 @@ public:
   }
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
-  NS_DECL_CYCLE_COLLECTION_CLASS(nsScriptLoadRequest)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsScriptLoadRequest)
 
   bool IsModuleRequest() const
   {
@@ -187,6 +188,7 @@ public:
   }
 
   void MaybeCancelOffThreadScript();
+  void DropBytecodeCacheReferences();
 
   using super::getNext;
   using super::isInList;
@@ -210,6 +212,10 @@ public:
 
   
   
+  JS::Heap<JSScript*> mScript;
+
+  
+  
   mozilla::Vector<char16_t> mScriptText;
 
   
@@ -225,6 +231,10 @@ public:
   const mozilla::CORSMode mCORSMode;
   const mozilla::dom::SRIMetadata mIntegrity;
   mozilla::net::ReferrerPolicy mReferrerPolicy;
+
+  
+  
+  nsCOMPtr<nsICacheInfoChannel> mCacheInfo;
 };
 
 class nsScriptLoadRequestList : private mozilla::LinkedList<nsScriptLoadRequest>
@@ -471,6 +481,11 @@ public:
   
 
 
+  bool HasPendingRequests();
+
+  
+
+
   void ProcessPendingRequests();
 
   
@@ -536,6 +551,13 @@ public:
   {
     return mDocument->GetDocGroup();
   }
+
+  
+
+
+
+
+  void LoadEventFired();
 
 private:
   virtual ~nsScriptLoader();
@@ -622,6 +644,30 @@ private:
                            nsScriptLoadRequest* aRequest);
   nsresult EvaluateScript(nsScriptLoadRequest* aRequest);
 
+  
+
+
+
+
+
+  void RegisterForBytecodeEncoding(nsScriptLoadRequest* aRequest);
+
+  
+
+
+
+
+  void MaybeTriggerBytecodeEncoding();
+
+  
+
+
+
+  void EncodeBytecode();
+  void EncodeRequestBytecode(JSContext* aCx, nsScriptLoadRequest* aRequest);
+
+  void GiveUpBytecodeEncoding();
+
   already_AddRefed<nsIScriptGlobalObject> GetScriptGlobalObject();
   nsresult FillCompileOptionsForRequest(const mozilla::dom::AutoJSAPI& jsapi,
                                         nsScriptLoadRequest* aRequest,
@@ -677,6 +723,10 @@ private:
   RefPtr<nsScriptLoadRequest> mParserBlockingRequest;
 
   
+  
+  nsScriptLoadRequestList mBytecodeEncodingQueue;
+
+  
   struct PreloadInfo {
     RefPtr<nsScriptLoadRequest> mRequest;
     nsString mCharset;
@@ -709,6 +759,7 @@ private:
   bool mDeferEnabled;
   bool mDocumentParsingDone;
   bool mBlockingDOMContentLoaded;
+  bool mLoadEventFired;
 
   
   nsRefPtrHashtable<nsURIHashKey, mozilla::GenericPromise::Private> mFetchingModules;
