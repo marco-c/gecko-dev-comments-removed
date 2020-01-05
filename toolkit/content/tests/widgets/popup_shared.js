@@ -1,30 +1,30 @@
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/*
+ * This script is used for menu and popup tests. Call startPopupTests to start
+ * the tests, passing an array of tests as an argument. Each test is an object
+ * with the following properties:
+ *   testname - name of the test
+ *   test - function to call to perform the test
+ *   events - a list of events that are expected to be fired in sequence
+ *            as a result of calling the 'test' function. This list should be
+ *            an array of strings of the form "eventtype targetid" where
+ *            'eventtype' is the event type and 'targetid' is the id of
+ *            target of the event. This function will be passed two
+ *            arguments, the testname and the step argument.
+ *            Alternatively, events may be a function which returns the array
+ *            of events. This can be used when the events vary per platform.
+ *   result - function to call after all the events have fired to check
+ *            for additional results. May be null. This function will be
+ *            passed two arguments, the testname and the step argument.
+ *   steps - optional array of values. The test will be repeated for
+ *           each step, passing each successive value within the array to
+ *           the test and result functions
+ *   autohide - if set, should be set to the id of a popup to hide after
+ *              the test is complete. This is a convenience for some tests.
+ *   condition - an optional function which, if it returns false, causes the
+ *               test to be skipped.
+ *   end - used for debugging. Set to true to stop the tests after running
+ *         this one.
+ */
 
 const menuactiveAttribute = "_moz-menuactive";
 
@@ -148,7 +148,7 @@ function eventOccurred(event)
     }
 
     if (gExpectedTriggerNode && event.type == "popupshowing") {
-      if (gExpectedTriggerNode == "notset") 
+      if (gExpectedTriggerNode == "notset") // check against null instead
         gExpectedTriggerNode = null;
 
       is(event.originalTarget.triggerNode, gExpectedTriggerNode, test.testname + " popupshowing triggerNode");
@@ -210,8 +210,8 @@ function goNextStep()
 
 function goNext()
 {
-  
-  
+  // We want to continue after the next animation frame so that
+  // we're in a stable state and don't get spurious mouse events at unexpected targets.
   window.requestAnimationFrame(
     function() {
       setTimeout(goNextStepSync, 0);
@@ -230,25 +230,28 @@ function goNextStepSync()
   gTestStepIndex = 0;
   if (gTestIndex < gPopupTests.length) {
     var test = gPopupTests[gTestIndex];
-    
+    // Set the location hash so it's easy to see which test is running
     document.location.hash = test.testname;
 
-    
+    // skip the test if the condition returns false
     if ("condition" in test && !test.condition()) {
       goNext();
       return;
     }
 
-    
+    // start with the first step if there are any
     var step = null;
     if ("steps" in test)
       step = test.steps[gTestStepIndex];
 
     test.test(test.testname, step);
 
-    
-    if (!("events" in test))
+    // no events to check for so just check the result
+    if (!("events" in test)) {
       checkResult();
+    } else if (typeof test.events == "function" && !test.events().length) {
+      checkResult();
+    }
   }
   else {
     finish();
@@ -330,13 +333,13 @@ function convertPosition(anchor, align)
   return "";
 }
 
-
-
-
-
-
-
-
+/*
+ * When checking position of the bottom or right edge of the popup's rect,
+ * use this instead of strict equality check of rounded values,
+ * because we snap the top/left edges to pixel boundaries,
+ * which can shift the bottom/right up to 0.5px from its "ideal" location,
+ * and could cause it to round differently. (See bug 622507.)
+ */
 function isWithinHalfPixel(a, b)
 {
   return Math.abs(a - b) <= 0.5;

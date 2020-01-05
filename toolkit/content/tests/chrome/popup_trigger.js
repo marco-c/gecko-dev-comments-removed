@@ -31,8 +31,8 @@ function runTests()
 
   gIsMenu = gTrigger.boxObject instanceof MenuBoxObject;
 
-  
-  
+  // a hacky way to get the screen position of the document. Cache the event
+  // so that we can use it in calls to openPopup.
   gCachedEvent = cacheEvent({ shiftKey: true });
   gScreenX = gCachedEvent.screenX;
   gScreenY = gCachedEvent.screenY;
@@ -46,93 +46,97 @@ var popupTests = [
   testname: "mouse click on trigger",
   events: [ "popupshowing thepopup", "popupshown thepopup" ],
   test: function() {
-    
-    
+    // for menus, no trigger will be set. For non-menus using the popup
+    // attribute, the trigger will be set to the node with the popup attribute
     gExpectedTriggerNode = gIsMenu ? "notset" : gTrigger;
     synthesizeMouse(gTrigger, 4, 4, { });
   },
   result: function(testname) {
     gExpectedTriggerNode = null;
-    
+    // menus are the anchor but non-menus are opened at screen coordinates
     is(gMenuPopup.anchorNode, gIsMenu ? gTrigger : null, testname + " anchorNode");
-    
-    
+    // menus are opened internally, but non-menus have a mouse event which
+    // triggered them
     is(gMenuPopup.triggerNode, gIsMenu ? null : gTrigger, testname + " triggerNode");
     is(document.popupNode, gIsMenu ? null : gTrigger, testname + " document.popupNode");
     is(document.tooltipNode, null, testname + " document.tooltipNode");
-    
+    // check to ensure the popup node for a different document isn't used
     if (window.opener)
       is(window.opener.document.popupNode, null, testname + " opener.document.popupNode");
 
-    
+    // this will be used in some tests to ensure the size doesn't change
     var popuprect = gMenuPopup.getBoundingClientRect();
     gPopupWidth = Math.round(popuprect.width);
     gPopupHeight = Math.round(popuprect.height);
 
     checkActive(gMenuPopup, "", testname);
     checkOpen("trigger", testname);
-    
-    
+    // if a menu, the popup should be opened underneath the menu in the
+    // 'after_start' position, otherwise it is opened at the mouse position
     if (gIsMenu)
       compareEdge(gTrigger, gMenuPopup, "after_start", 0, 0, testname);
   }
 },
 {
-  
-  
+  // check that pressing cursor down while there is no selection
+  // highlights the first item
   testname: "cursor down no selection",
   events: [ "DOMMenuItemActive item1" ],
   test: function() { synthesizeKey("VK_DOWN", { }); },
   result: function(testname) { checkActive(gMenuPopup, "item1", testname); }
 },
 {
-  
+  // check that pressing cursor up wraps and highlights the last item
   testname: "cursor up wrap",
-  events: [ "DOMMenuItemInactive item1", "DOMMenuItemActive last" ],
+  events: function () {
+    // No wrapping on menus on Mac
+    return platformIsMac() ? [] : [ "DOMMenuItemInactive item1", "DOMMenuItemActive last" ]
+  },
   test: function() { synthesizeKey("VK_UP", { }); },
   result: function(testname) {
-    checkActive(gMenuPopup, "last", testname);
+    checkActive(gMenuPopup, platformIsMac() ? "item1" : "last", testname);
   }
 },
 {
-  
+  // check that pressing cursor down wraps and highlights the first item
   testname: "cursor down wrap",
-  events: [ "DOMMenuItemInactive last", "DOMMenuItemActive item1" ],
+  condition: function () { return !platformIsMac() },
+  events: ["DOMMenuItemInactive last", "DOMMenuItemActive item1" ],
   test: function() { synthesizeKey("VK_DOWN", { }); },
   result: function(testname) { checkActive(gMenuPopup, "item1", testname); }
 },
 {
-  
+  // check that pressing cursor down highlights the second item
   testname: "cursor down",
   events: [ "DOMMenuItemInactive item1", "DOMMenuItemActive item2" ],
   test: function() { synthesizeKey("VK_DOWN", { }); },
   result: function(testname) { checkActive(gMenuPopup, "item2", testname); }
 },
 {
-  
+  // check that pressing cursor up highlights the second item
   testname: "cursor up",
   events: [ "DOMMenuItemInactive item2", "DOMMenuItemActive item1" ],
   test: function() { synthesizeKey("VK_UP", { }); },
   result: function(testname) { checkActive(gMenuPopup, "item1", testname); }
 },
 {
-  
+  // cursor left should not do anything
   testname: "cursor left",
   test: function() { synthesizeKey("VK_LEFT", { }); },
   result: function(testname) { checkActive(gMenuPopup, "item1", testname); }
 },
 {
-  
+  // cursor right should not do anything
   testname: "cursor right",
   test: function() { synthesizeKey("VK_RIGHT", { }); },
   result: function(testname) { checkActive(gMenuPopup, "item1", testname); }
 },
 {
-  
+  // check cursor down when a disabled item exists in the menu
   testname: "cursor down disabled",
   events: function() {
-    
-    
+    // On Windows, disabled items are included when navigating, but on
+    // other platforms, disabled items are skipped over
     if (navigator.platform.indexOf("Win") == 0) {
       return [ "DOMMenuItemInactive item1", "DOMMenuItemActive item2" ];
     }
@@ -144,7 +148,7 @@ var popupTests = [
   }
 },
 {
-  
+  // check cursor up when a disabled item exists in the menu
   testname: "cursor up disabled",
   events: function() {
     if (navigator.platform.indexOf("Win") == 0) {
@@ -168,10 +172,10 @@ var popupTests = [
             "DOMMenuItemInactive item1", "DOMMenuInactive thepopup" ],
   test: function() {
     gMenuPopup.hidePopup();
-    
-    
-    
-    
+    // XXXndeakin event simulation fires events outside of the platform specific
+    // widget code so the popup capturing isn't handled. Thus, the menu won't
+    // rollup this way.
+    // synthesizeMouse(gTrigger, 0, -12, { });
   },
   result: function(testname, step) {
     is(gMenuPopup.anchorNode, null, testname + " anchorNode");
@@ -181,8 +185,8 @@ var popupTests = [
   }
 },
 {
-  
-  
+  // these tests check to ensure that passing an anchor and position
+  // puts the popup in the right place
   testname: "open popup anchored",
   events: [ "popupshowing thepopup", "popupshown thepopup" ],
   autohide: "thepopup",
@@ -197,7 +201,7 @@ var popupTests = [
     gMenuPopup.openPopup(gTrigger, step, 0, 0, false, false);
   },
   result: function(testname, step) {
-    
+    // no triggerNode because it was opened without passing an event
     gExpectedTriggerNode = null;
     is(gMenuPopup.anchorNode, gTrigger, testname + " anchorNode");
     is(gMenuPopup.triggerNode, null, testname + " triggerNode");
@@ -206,7 +210,7 @@ var popupTests = [
   }
 },
 {
-  
+  // these tests check the same but with a 10 pixel margin on the popup
   testname: "open popup anchored with margin",
   events: [ "popupshowing thepopup", "popupshown thepopup" ],
   autohide: "thepopup",
@@ -232,7 +236,7 @@ var popupTests = [
   }
 },
 {
-  
+  // these tests check the same but with a -8 pixel margin on the popup
   testname: "open popup anchored with negative margin",
   events: [ "popupshowing thepopup", "popupshown thepopup" ],
   autohide: "thepopup",
@@ -263,9 +267,9 @@ var popupTests = [
   },
   result: function(testname, step) {
     var popuprect = gMenuPopup.getBoundingClientRect();
-    
-    
-    
+    // as there is more room on the 'end' or 'after' side, popups will always
+    // appear on the right or bottom corners, depending on which side they are
+    // allowed to be flipped by.
     var expectedleft = step == "before_end" || step == "after_end" ?
                        0 : Math.round(window.innerWidth - gPopupWidth);
     var expectedtop = step == "start_after" || step == "end_after" ?
@@ -287,8 +291,8 @@ var popupTests = [
   },
   result: function(testname, step) {
     var popuprect = gMenuPopup.getBoundingClientRect();
-    
-    
+    // using negative margins causes the reverse of positive margins, and
+    // popups will appear on the left or top corners.
     var expectedleft = step == "before_end" || step == "after_end" ?
                        Math.round(window.innerWidth - gPopupWidth) : 0;
     var expectedtop = step == "start_after" || step == "end_after" ?
@@ -313,8 +317,8 @@ var popupTests = [
   }
 },
 {
-  
-  
+  // these tests check to ensure that the position attribute can be used
+  // to set the position of a popup instead of passing it as an argument
   testname: "open popup anchored with attribute",
   events: [ "popupshowing thepopup", "popupshown thepopup" ],
   autohide: "thepopup",
@@ -328,13 +332,13 @@ var popupTests = [
   result: function(testname, step) { compareEdge(gTrigger, gMenuPopup, step, 0, 0, testname); }
 },
 {
-  
-  
-  
+  // this test checks to ensure that the attributes override flag to openPopup
+  // can be used to override the popup's position. This test also passes an
+  // event to openPopup to check the trigger node.
   testname: "open popup anchored with override",
   events: [ "popupshowing thepopup 0010", "popupshown thepopup" ],
   test: function(testname, step) {
-    
+    // attribute overrides the position passed in
     gMenuPopup.setAttribute("position", "end_after");
     gExpectedTriggerNode = gCachedEvent.target;
     gMenuPopup.openPopup(gTrigger, "before_start", 0, 0, false, true, gCachedEvent);
@@ -357,25 +361,25 @@ var popupTests = [
   }
 },
 {
-  
+  // check that offsets may be supplied to the openPopup method
   testname: "open popup anchored with offsets",
   events: [ "popupshowing thepopup", "popupshown thepopup" ],
   autohide: "thepopup",
   test: function(testname, step) {
-    
+    // attribute is empty so does not override
     gMenuPopup.setAttribute("position", "");
     gMenuPopup.openPopup(gTrigger, "before_start", 5, 10, true, true);
   },
   result: function(testname, step) { compareEdge(gTrigger, gMenuPopup, "before_start", 5, 10, testname); }
 },
 {
-  
-  
+  // these tests check to ensure that passing an anchor and position
+  // puts the popup in the right place
   testname: "show popup anchored",
   condition: function() {
-    
-    
-    
+    // only perform this test for popups not in a menu, such as those using
+    // the popup attribute, as the showPopup implementation in popup.xml
+    // calls openMenu if the popup is inside a menu
     return !gIsMenu;
   },
   events: [ "popupshowing thepopup", "popupshown thepopup" ],
@@ -386,7 +390,7 @@ var popupTests = [
           ["bottomleft", "bottomright"], ["bottomleft", "topleft"],
           ["bottomright", "bottomleft"], ["bottomright", "topright"]],
   test: function(testname, step) {
-    
+    // the attributes should be ignored
     gMenuPopup.setAttribute("popupanchor", "topright");
     gMenuPopup.setAttribute("popupalign", "bottomright");
     gMenuPopup.setAttribute("position", "end_after");
@@ -419,8 +423,8 @@ var popupTests = [
   }
 },
 {
-  
-  
+  // if no anchor is supplied to openPopup, it should be opened relative
+  // to the viewport.
   testname: "open popup unanchored",
   events: [ "popupshowing thepopup", "popupshown thepopup" ],
   test: function(testname, step) { gMenuPopup.openPopup(null, "after_start", 6, 8, false); },
@@ -467,9 +471,9 @@ var popupTests = [
   }
 },
 {
-  
-  
-  
+  // check that pressing a menuitem's accelerator selects it. Note that
+  // the menuitem with the M accesskey overrides the earlier menuitem that
+  // begins with M.
   testname: "menuitem accelerator",
   events: [ "DOMMenuItemActive amenu", "DOMMenuItemInactive amenu",
             "DOMMenuInactive thepopup",
@@ -502,7 +506,7 @@ var popupTests = [
         is(child.documentElement.getAttribute("data"), "xnull",
            "cannot get popupNode from other document");
         child.documentElement.setAttribute("data", "none");
-        
+        // now try again with document.popupNode set explicitly
         document.popupNode = gCachedEvent.target;
       }
     }
@@ -517,9 +521,9 @@ var popupTests = [
   }
 },
 {
-  
-  
-  
+  // pressing a letter that doesn't correspond to an accelerator, but does
+  // correspond to the first letter in a menu's label. The menu should not
+  // close because there is more than one item corresponding to that letter
   testname: "menuitem with non accelerator",
   events: [ "DOMMenuItemActive one" ],
   test: function() { synthesizeKey("O", { }); },
@@ -529,20 +533,20 @@ var popupTests = [
   }
 },
 {
-  
-  
+  // pressing the letter again should select the next one that starts with
+  // that letter
   testname: "menuitem with non accelerator again",
   events: [ "DOMMenuItemInactive one", "DOMMenuItemActive submenu" ],
   test: function() { synthesizeKey("O", { }); },
   result: function(testname) {
-    
+    // 'submenu' is a menu but it should not be open
     checkOpen("trigger", testname);
     checkClosed("submenu", testname);
     checkActive(gMenuPopup, "submenu", testname);
   }
 },
 {
-  
+  // open the submenu with the cursor right key
   testname: "open submenu with cursor right",
   events: [ "popupshowing submenupopup", "DOMMenuItemActive submenuitem",
             "popupshown submenupopup" ],
@@ -555,7 +559,7 @@ var popupTests = [
   }
 },
 {
-  
+  // close the submenu with the cursor left key
   testname: "close submenu with cursor left",
   events: [ "popuphiding submenupopup", "popuphidden submenupopup",
             "DOMMenuItemInactive submenuitem", "DOMMenuInactive submenupopup",
@@ -569,7 +573,7 @@ var popupTests = [
   }
 },
 {
-  
+  // open the submenu with the enter key
   testname: "open submenu with enter",
   events: [ "popupshowing submenupopup", "DOMMenuItemActive submenuitem",
             "popupshown submenupopup" ],
@@ -582,7 +586,7 @@ var popupTests = [
   }
 },
 {
-  
+  // close the submenu with the escape key
   testname: "close submenu with escape",
   events: [ "popuphiding submenupopup", "popuphidden submenupopup",
             "DOMMenuItemInactive submenuitem", "DOMMenuInactive submenupopup",
@@ -596,9 +600,9 @@ var popupTests = [
   }
 },
 {
-  
-  
-  
+  // pressing the letter again when the next item is disabled should still
+  // select the disabled item on Windows, but select the next item on other
+  // platforms
   testname: "menuitem with non accelerator disabled",
   events: function() {
     if (navigator.platform.indexOf("Win") == 0) {
@@ -614,8 +618,8 @@ var popupTests = [
   }
 },
 {
-  
-  
+  // pressing a letter that doesn't correspond to an accelerator nor the
+  // first letter of a menu. This should have no effect.
   testname: "menuitem with keypress no accelerator found",
   test: function() { synthesizeKey("G", { }); },
   result: function(testname) {
@@ -624,8 +628,8 @@ var popupTests = [
   }
 },
 {
-  
-  
+  // when only one menuitem starting with that letter exists, it should be
+  // selected and the menu closed
   testname: "menuitem with non accelerator single",
   events: [ "DOMMenuItemInactive item1", "DOMMenuItemActive amenu",
             "DOMMenuItemInactive amenu", "DOMMenuInactive thepopup",
@@ -664,11 +668,11 @@ var popupTests = [
   result: function(testname, step) {
     checkOpen("trigger", testname);
     checkOpen("submenu", testname);
-    
-    
-    
-    
-    
+    // XXXndeakin
+    // getBoundingClientRect doesn't seem to working right for submenus
+    // so disable this test for now
+    // compareEdge(document.getElementById("submenu"),
+    //             document.getElementById("submenupopup"), "end_before", 0, 0, testname);
   }
 },
 {
@@ -799,7 +803,7 @@ var popupTests = [
   }
 },
 {
-  
+  // the menu should only open when the meta or alt key is not pressed
   testname: "focus trigger and key wrong modifier",
   condition: function() { return gIsMenu; },
   test: function(testname, step) {
@@ -826,8 +830,8 @@ var popupTests = [
   }
 },
 {
-  
-  
+  // openPopup should open the menu synchronously, however popupshown
+  // is fired asynchronously
   testname: "openPopup synchronous",
   events: [ "popupshowing thepopup", "popupshowing submenupopup",
             "popupshown thepopup", "DOMMenuItemActive submenu",
@@ -841,7 +845,7 @@ var popupTests = [
   }
 },
 {
-  
+  // remove the content nodes for the popup
   testname: "remove content",
   test: function(testname, step) {
     var submenupopup = document.getElementById("submenupopup");

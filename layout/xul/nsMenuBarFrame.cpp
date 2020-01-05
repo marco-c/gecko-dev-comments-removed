@@ -147,7 +147,7 @@ nsMenuBarFrame::ToggleMenuActiveState()
     
     
     
-    nsMenuFrame* firstFrame = nsXULPopupManager::GetNextMenuItem(this, nullptr, false);
+    nsMenuFrame* firstFrame = nsXULPopupManager::GetNextMenuItem(this, nullptr, false, false);
     if (firstFrame) {
       
       SetActive(true);
