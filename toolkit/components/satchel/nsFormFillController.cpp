@@ -291,7 +291,6 @@ nsFormFillController::MarkAsLoginManagerField(nsIDOMHTMLInputElement *aInput)
       if (!mFocusedInput) {
         MaybeStartControllingInput(input);
       }
-      ShowPopup();
     }
   }
 
@@ -706,6 +705,7 @@ nsFormFillController::StartSearch(const nsAString &aSearchString, const nsAStrin
 
   
   
+  
   if (mFocusedInputNode && (mPwmgrInputs.Get(mFocusedInputNode) ||
                             formControl->GetType() == NS_FORM_INPUT_PASSWORD)) {
 
@@ -713,6 +713,10 @@ nsFormFillController::StartSearch(const nsAString &aSearchString, const nsAStrin
     
     if (!mLoginManager) {
       mLoginManager = do_GetService("@mozilla.org/login-manager;1");
+    }
+
+    if (NS_WARN_IF(!mLoginManager)) {
+      return NS_ERROR_FAILURE;
     }
 
     
@@ -992,8 +996,10 @@ nsFormFillController::MaybeStartControllingInput(nsIDOMHTMLInputElement* aInput)
   bool hasList = datalist != nullptr;
 
   bool isPwmgrInput = false;
-  if (mPwmgrInputs.Get(inputNode))
-      isPwmgrInput = true;
+  if (mPwmgrInputs.Get(inputNode) ||
+      formControl->GetType() == NS_FORM_INPUT_PASSWORD) {
+    isPwmgrInput = true;
+  }
 
   if (isPwmgrInput || hasList || autocomplete) {
     StartControllingInput(aInput);
@@ -1013,19 +1019,17 @@ nsFormFillController::Focus(nsIDOMEvent* aEvent)
     return NS_OK;
   }
 
+#ifndef ANDROID
   nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(mFocusedInputNode);
   MOZ_ASSERT(formControl);
 
   
   
-  if (!mContextMenuFiredBeforeFocus &&
-      (mPwmgrInputs.Get(mFocusedInputNode)
-#ifndef ANDROID
-       || formControl->GetType() == NS_FORM_INPUT_PASSWORD
-#endif
-       )) {
+  if (!mContextMenuFiredBeforeFocus
+      && formControl->GetType() == NS_FORM_INPUT_PASSWORD) {
     ShowPopup();
   }
+#endif
 
   mContextMenuFiredBeforeFocus = false;
   return NS_OK;
