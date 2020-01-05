@@ -337,33 +337,6 @@ const cairo_font_face_backend_t _cairo_quartz_font_face_backend = {
 
 
 
-static CTFontRef
-CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize)
-{
-    CFDictionaryRef vars = CGFontCopyVariations(aCGFont);
-    CTFontRef ctFont;
-    if (vars) {
-        CFDictionaryRef varAttr =
-            CFDictionaryCreate(NULL,
-                               (const void**)&kCTFontVariationAttribute,
-                               (const void**)&vars, 1,
-                               &kCFTypeDictionaryKeyCallBacks,
-                               &kCFTypeDictionaryValueCallBacks);
-        CFRelease(vars);
-
-        CTFontDescriptorRef varDesc = CTFontDescriptorCreateWithAttributes(varAttr);
-        CFRelease(varAttr);
-
-        ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, NULL, varDesc);
-        CFRelease(varDesc);
-    } else {
-        ctFont = CTFontCreateWithGraphicsFont(aCGFont, aSize, NULL, NULL);
-    }
-    return ctFont;
-}
-
-
-
 
 
 
@@ -392,7 +365,7 @@ cairo_quartz_font_face_create_for_cgfont (CGFontRef font)
     font_face->cgFont = CGFontRetain (font);
 
     if (CTFontCreateWithGraphicsFontPtr) {
-        font_face->ctFont = CreateCTFontFromCGFontWithVariations (font, 1.0);
+        font_face->ctFont = CTFontCreateWithGraphicsFontPtr (font, 1.0, NULL, NULL);
     } else {
         font_face->ctFont = NULL;
     }
@@ -597,7 +570,7 @@ _cairo_quartz_init_glyph_path (cairo_quartz_scaled_font_t *font,
 					-font->base.scale.yy,
 					0, 0);
 
-    ctFont = CreateCTFontFromCGFontWithVariations (font_face->cgFont, 1.0);
+    ctFont = CTFontCreateWithGraphicsFont (font_face->cgFont, 1.0, NULL, NULL);
     glyphPath = CTFontCreatePathForGlyph (ctFont, glyph, &textMatrix);
     CFRelease (ctFont);
     if (!glyphPath)

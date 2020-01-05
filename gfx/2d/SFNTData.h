@@ -37,8 +37,7 @@ public:
 
 
 
-  static uint64_t GetUniqueKey(const uint8_t *aFontData, uint32_t aDataLength,
-                               uint32_t aVarDataSize, const void* aVarData);
+  static uint64_t GetUniqueKey(const uint8_t *aFontData, uint32_t aDataLength);
 
   ~SFNTData();
 

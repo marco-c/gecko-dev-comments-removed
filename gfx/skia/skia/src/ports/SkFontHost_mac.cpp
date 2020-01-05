@@ -800,25 +800,6 @@ static CTFontRef ctfont_create_exact_copy(CTFontRef baseFont, CGFloat textSize,
     
     
     
-
-    
-    CFDictionaryRef variations = CGFontCopyVariations(baseCGFont);
-    if (variations) {
-        AutoCFRelease<CFDictionaryRef>
-            varAttr(CFDictionaryCreate(nullptr,
-                                       (const void**)&kCTFontVariationAttribute,
-                                       (const void**)&variations,
-                                       1,
-                                       &kCFTypeDictionaryKeyCallBacks,
-                                       &kCFTypeDictionaryValueCallBacks));
-        CFRelease(variations);
-
-        AutoCFRelease<CTFontDescriptorRef>
-            varDesc(CTFontDescriptorCreateWithAttributes(varAttr));
-
-        return CTFontCreateWithGraphicsFont(baseCGFont, textSize, transform, varDesc);
-    }
-
     return CTFontCreateWithGraphicsFont(baseCGFont, textSize, transform, nullptr);
 }
 
