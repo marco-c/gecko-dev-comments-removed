@@ -1209,6 +1209,16 @@ nsProtocolProxyService::AsyncResolveInternal(nsIChannel *channel, uint32_t flags
     bool usePACThread;
 
     
+    if (mProxyConfig == PROXYCONFIG_SYSTEM) {
+        nsCOMPtr<nsISystemProxySettings> sp2 =
+            do_GetService(NS_SYSTEMPROXYSETTINGS_CONTRACTID);
+        if (sp2 != mSystemProxySettings) {
+            mSystemProxySettings = sp2;
+            ResetPACThread();
+        }
+    }
+
+    
     
     
 
