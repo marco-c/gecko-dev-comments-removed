@@ -12,31 +12,12 @@
 
 namespace js {
 
-enum PromiseSlots {
-    PromiseSlot_Flags = 0,
-    PromiseSlot_ReactionsOrResult,
-    PromiseSlot_RejectFunction,
-    PromiseSlot_AllocationSite,
-    PromiseSlot_ResolutionSite,
-    PromiseSlot_AllocationTime,
-    PromiseSlot_ResolutionTime,
-    PromiseSlot_Id,
-    PromiseSlots,
-};
-
-#define PROMISE_FLAG_RESOLVED  0x1
-#define PROMISE_FLAG_FULFILLED 0x2
-#define PROMISE_FLAG_HANDLED   0x4
-#define PROMISE_FLAG_REPORTED  0x8
-#define PROMISE_FLAG_DEFAULT_RESOLVE_FUNCTION 0x10
-#define PROMISE_FLAG_DEFAULT_REJECT_FUNCTION  0x20
-
 class AutoSetNewObjectMetadata;
 
 class PromiseObject : public NativeObject
 {
   public:
-    static const unsigned RESERVED_SLOTS = PromiseSlots;
+    static const unsigned RESERVED_SLOTS = 8;
     static const Class class_;
     static const Class protoClass_;
     static PromiseObject* create(JSContext* cx, HandleObject executor,
@@ -46,7 +27,7 @@ class PromiseObject : public NativeObject
     static JSObject* unforgeableReject(JSContext* cx, HandleValue value);
 
     JS::PromiseState state() {
-        int32_t flags = getFixedSlot(PromiseSlot_Flags).toInt32();
+        int32_t flags = getFixedSlot(PROMISE_FLAGS_SLOT).toInt32();
         if (!(flags & PROMISE_FLAG_RESOLVED)) {
             MOZ_ASSERT(!(flags & PROMISE_FLAG_FULFILLED));
             return JS::PromiseState::Pending;
@@ -57,11 +38,11 @@ class PromiseObject : public NativeObject
     }
     Value value()  {
         MOZ_ASSERT(state() == JS::PromiseState::Fulfilled);
-        return getFixedSlot(PromiseSlot_ReactionsOrResult);
+        return getFixedSlot(PROMISE_REACTIONS_OR_RESULT_SLOT);
     }
     Value reason() {
         MOZ_ASSERT(state() == JS::PromiseState::Rejected);
-        return getFixedSlot(PromiseSlot_ReactionsOrResult);
+        return getFixedSlot(PROMISE_REACTIONS_OR_RESULT_SLOT);
     }
 
     MOZ_MUST_USE bool resolve(JSContext* cx, HandleValue resolutionValue);
@@ -69,13 +50,13 @@ class PromiseObject : public NativeObject
 
     void onSettled(JSContext* cx);
 
-    double allocationTime() { return getFixedSlot(PromiseSlot_AllocationTime).toNumber(); }
-    double resolutionTime() { return getFixedSlot(PromiseSlot_ResolutionTime).toNumber(); }
+    double allocationTime() { return getFixedSlot(PROMISE_ALLOCATION_TIME_SLOT).toNumber(); }
+    double resolutionTime() { return getFixedSlot(PROMISE_RESOLUTION_TIME_SLOT).toNumber(); }
     JSObject* allocationSite() {
-        return getFixedSlot(PromiseSlot_AllocationSite).toObjectOrNull();
+        return getFixedSlot(PROMISE_ALLOCATION_SITE_SLOT).toObjectOrNull();
     }
     JSObject* resolutionSite() {
-        return getFixedSlot(PromiseSlot_ResolutionSite).toObjectOrNull();
+        return getFixedSlot(PROMISE_RESOLUTION_SITE_SLOT).toObjectOrNull();
     }
     double lifetime();
     double timeToResolution() {
@@ -86,12 +67,12 @@ class PromiseObject : public NativeObject
     uint64_t getID();
     bool isUnhandled() {
         MOZ_ASSERT(state() == JS::PromiseState::Rejected);
-        return !(getFixedSlot(PromiseSlot_Flags).toInt32() & PROMISE_FLAG_HANDLED);
+        return !(getFixedSlot(PROMISE_FLAGS_SLOT).toInt32() & PROMISE_FLAG_HANDLED);
     }
     void markAsReported() {
         MOZ_ASSERT(isUnhandled());
-        int32_t flags = getFixedSlot(PromiseSlot_Flags).toInt32();
-        setFixedSlot(PromiseSlot_Flags, Int32Value(flags | PROMISE_FLAG_REPORTED));
+        int32_t flags = getFixedSlot(PROMISE_FLAGS_SLOT).toInt32();
+        setFixedSlot(PROMISE_FLAGS_SLOT, Int32Value(flags | PROMISE_FLAG_REPORTED));
     }
 };
 
@@ -105,17 +86,26 @@ class PromiseObject : public NativeObject
 
 
 
-MOZ_MUST_USE bool
-EnqueuePromiseReactions(JSContext* cx, Handle<PromiseObject*> promise,
-                        HandleObject dependentPromise,
-                        HandleValue onFulfilled, HandleValue onRejected);
 
-MOZ_MUST_USE JSObject*
-GetWaitForAllPromise(JSContext* cx, const JS::AutoObjectVector& promises);
 
-MOZ_MUST_USE JSObject*
-OriginalPromiseThen(JSContext* cx, Handle<PromiseObject*> promise, HandleValue onFulfilled,
-                    HandleValue onRejected);
+
+
+
+
+
+bool EnqueuePromiseReactionJob(JSContext* cx, HandleValue handler, HandleValue handlerArg,
+                               HandleObject resolve, HandleObject reject,
+                               HandleObject promise, HandleObject objectFromIncumbentGlobal);
+
+
+
+
+
+
+
+
+bool EnqueuePromiseResolveThenableJob(JSContext* cx, HandleValue promiseToResolve,
+                                      HandleValue thenable, HandleValue then);
 
 
 

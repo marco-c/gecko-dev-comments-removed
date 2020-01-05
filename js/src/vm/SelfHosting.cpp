@@ -27,6 +27,7 @@
 #include "builtin/MapObject.h"
 #include "builtin/ModuleObject.h"
 #include "builtin/Object.h"
+#include "builtin/Promise.h"
 #include "builtin/Reflect.h"
 #include "builtin/SelfHostingDefines.h"
 #include "builtin/SIMD.h"
@@ -174,6 +175,59 @@ intrinsic_IsConstructor(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     args.rval().setBoolean(IsConstructor(args[0]));
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
+intrinsic_UnsafeCallWrappedFunction(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() >= 2);
+    MOZ_ASSERT(IsCallable(args[0]));
+    MOZ_ASSERT(IsWrapper(&args[0].toObject()));
+    MOZ_ASSERT(args[1].isObject() || args[1].isUndefined());
+
+    MOZ_RELEASE_ASSERT(args[0].isObject());
+    RootedObject wrappedFun(cx, &args[0].toObject());
+    RootedObject fun(cx, UncheckedUnwrap(wrappedFun));
+    MOZ_RELEASE_ASSERT(fun->is<JSFunction>());
+    MOZ_RELEASE_ASSERT(fun->as<JSFunction>().isSelfHostedOrIntrinsic());
+
+    InvokeArgs args2(cx);
+    if (!args2.init(cx, args.length() - 2))
+        return false;
+
+    args2.setThis(args[1]);
+
+    for (size_t i = 0; i < args2.length(); i++)
+        args2[i].set(args[i + 2]);
+
+    AutoWaivePolicy waivePolicy(cx, wrappedFun, JSID_VOIDHANDLE, BaseProxyHandler::CALL);
+    if (!CrossCompartmentWrapper::singleton.call(cx, wrappedFun, args2))
+        return false;
+    args.rval().set(args2.rval());
     return true;
 }
 
@@ -1831,6 +1885,54 @@ js::ReportIncompatibleSelfHostedMethod(JSContext* cx, const CallArgs& args)
     return false;
 }
 
+static bool
+intrinsic_EnqueuePromiseReactionJob(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 6);
+
+    RootedValue handler(cx, args[0]);
+    MOZ_ASSERT((handler.isNumber() &&
+                (handler.toNumber() == PROMISE_HANDLER_IDENTITY ||
+                 handler.toNumber() == PROMISE_HANDLER_THROWER)) ||
+               handler.toObject().isCallable());
+
+    RootedValue handlerArg(cx, args[1]);
+
+    RootedObject resolve(cx, &args[2].toObject());
+    MOZ_ASSERT(IsCallable(resolve));
+
+    RootedObject reject(cx, &args[3].toObject());
+    MOZ_ASSERT(IsCallable(reject));
+
+    RootedObject promise(cx, args[4].toObjectOrNull());
+    RootedObject objectFromIncumbentGlobal(cx, args[5].toObjectOrNull());
+
+    if (!EnqueuePromiseReactionJob(cx, handler, handlerArg, resolve, reject, promise,
+                                   objectFromIncumbentGlobal))
+    {
+        return false;
+    }
+    args.rval().setUndefined();
+    return true;
+}
+
+
+static bool
+intrinsic_HostPromiseRejectionTracker(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 2);
+    MOZ_ASSERT(args[0].toObject().is<PromiseObject>());
+
+    Rooted<PromiseObject*> promise(cx, &args[0].toObject().as<PromiseObject>());
+    mozilla::DebugOnly<bool> isHandled = args[1].toBoolean();
+    MOZ_ASSERT(isHandled, "HostPromiseRejectionTracker intrinsic currently only marks as handled");
+    cx->runtime()->removeUnhandledRejectedPromise(cx, promise);
+    args.rval().setUndefined();
+    return true;
+}
+
 
 
 
@@ -1954,6 +2056,61 @@ intrinsic_NameForTypedArray(JSContext* cx, unsigned argc, Value* vp)
     MOZ_ASSERT(protoKey);
 
     args.rval().setString(ClassName(protoKey, cx));
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static bool
+intrinsic_GetObjectFromIncumbentGlobal(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 0);
+
+    RootedObject obj(cx);
+    RootedObject global(cx, cx->runtime()->getIncumbentGlobal(cx));
+    if (global) {
+        MOZ_ASSERT(global->is<GlobalObject>());
+        AutoCompartment ac(cx, global);
+        obj = NewBuiltinClassInstance<PlainObject>(cx);
+        if (!obj)
+            return false;
+    }
+
+    RootedValue objVal(cx, ObjectOrNullValue(obj));
+
+    
+    if (obj && !cx->compartment()->wrap(cx, &objVal))
+        return false;
+
+    args.rval().set(objVal);
+    return true;
+}
+
+static bool
+intrinsic_IsWrappedPromiseObject(JSContext* cx, unsigned argc, Value* vp)
+{
+    CallArgs args = CallArgsFromVp(argc, vp);
+    MOZ_ASSERT(args.length() == 1);
+
+    RootedObject obj(cx, &args[0].toObject());
+    MOZ_ASSERT(!obj->is<PromiseObject>(),
+               "Unwrapped promises should be filtered out in inlineable code");
+    args.rval().setBoolean(CheckedUnwrap(obj)->is<PromiseObject>());
     return true;
 }
 
@@ -2251,6 +2408,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_INLINABLE_FN("UnsafeGetBooleanFromReservedSlot", intrinsic_UnsafeGetBooleanFromReservedSlot,2,0,
                     IntrinsicUnsafeGetBooleanFromReservedSlot),
 
+    JS_FN("UnsafeCallWrappedFunction", intrinsic_UnsafeCallWrappedFunction,2,0),
     JS_FN("NewArrayInCompartment",   intrinsic_NewArrayInCompartment,   1,0),
 
     JS_FN("IsPackedArray",           intrinsic_IsPackedArray,           1,0),
@@ -2362,6 +2520,14 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("IsWeakSet", intrinsic_IsInstanceOfBuiltin<WeakSetObject>, 1,0),
     JS_FN("CallWeakSetMethodIfWrapped",
           CallNonGenericSelfhostedMethod<Is<WeakSetObject>>, 2, 0),
+
+    JS_FN("_GetObjectFromIncumbentGlobal",  intrinsic_GetObjectFromIncumbentGlobal, 0, 0),
+    JS_FN("IsPromise",                      intrinsic_IsInstanceOfBuiltin<PromiseObject>, 1,0),
+    JS_FN("IsWrappedPromise",               intrinsic_IsWrappedPromiseObject,     1, 0),
+    JS_FN("_EnqueuePromiseReactionJob",     intrinsic_EnqueuePromiseReactionJob,  2, 0),
+    JS_FN("HostPromiseRejectionTracker",    intrinsic_HostPromiseRejectionTracker,2, 0),
+    JS_FN("CallPromiseMethodIfWrapped",
+          CallNonGenericSelfhostedMethod<Is<PromiseObject>>,      2,0),
 
     
     JS_FN("NewOpaqueTypedObject",           js::NewOpaqueTypedObject, 1, 0),

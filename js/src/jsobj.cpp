@@ -1974,47 +1974,6 @@ js::IsStandardPrototype(JSObject* obj, JSProtoKey key)
     return v.isObject() && obj == &v.toObject();
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool
-js::GetObjectFromIncumbentGlobal(JSContext* cx, MutableHandleObject obj)
-{
-    RootedObject globalObj(cx, cx->runtime()->getIncumbentGlobal(cx));
-    if (!globalObj) {
-        obj.set(nullptr);
-        return true;
-    }
-
-    {
-        AutoCompartment ac(cx, globalObj);
-        obj.set(globalObj->as<GlobalObject>().getOrCreateObjectPrototype(cx));
-        if (!obj)
-            return false;
-    }
-
-    
-    if (obj && !cx->compartment()->wrap(cx, obj))
-        return false;
-
-    return true;
-}
-
 JSProtoKey
 JS::IdentifyStandardInstance(JSObject* obj)
 {
@@ -3941,16 +3900,6 @@ js::SpeciesConstructor(JSContext* cx, HandleObject obj, HandleValue defaultCtor,
 
     pctor.set(args.rval());
     return true;
-}
-
-bool
-js::SpeciesConstructor(JSContext* cx, HandleObject obj, JSProtoKey ctorKey,
-                       MutableHandleValue pctor)
-{
-    if (!GlobalObject::ensureConstructor(cx, cx->global(), ctorKey))
-        return false;
-    RootedValue defaultCtor(cx, cx->global()->getConstructor(ctorKey));
-    return SpeciesConstructor(cx, obj, defaultCtor, pctor);
 }
 
 bool
