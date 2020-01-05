@@ -23,6 +23,8 @@ extern crate android_glue;
 
 extern crate glutin_app as app;
 extern crate env_logger;
+#[cfg(target_os = "android")]
+extern crate libc;
 #[macro_use]
 extern crate log;
 
@@ -192,6 +194,16 @@ fn args() -> Vec<String> {
 
 
 #[cfg(target_os = "android")]
+extern {
+    fn app_dummy() -> libc::c_void;
+}
+
+
+
+
+
+
+#[cfg(target_os = "android")]
 android_start!(main);
 
 #[cfg(target_os = "android")]
@@ -209,6 +221,8 @@ mod android {
         
         redirect_output(STDERR_FILENO);
         redirect_output(STDOUT_FILENO);
+
+        unsafe { super::app_dummy(); }
     }
 
     struct FilePtr(*mut self::libc::types::common::c95::FILE);
