@@ -259,8 +259,7 @@ var gCSSProperties = {
   },
   'border-spacing': {
     
-    types: [
-    ]
+    types: [ 'lengthPair' ]
   },
   'border-top-color': {
     
