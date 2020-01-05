@@ -83,6 +83,15 @@ class CollectionValidator {
   }
 
   
+
+
+
+
+  async canValidate() {
+    return true;
+  }
+
+  
   
   normalizeClientItem(item) {
     return Cu.cloneInto(item, {});

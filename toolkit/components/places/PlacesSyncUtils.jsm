@@ -301,6 +301,16 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
   
 
 
+  havePendingChanges() {
+    
+    
+    return PlacesUtils.withConnectionWrapper("BookmarkSyncUtils: havePendingChanges",
+      db => pullSyncChanges(db, true).then(changes => Object.keys(changes).length > 0));
+  },
+
+  
+
+
 
 
 
@@ -1691,7 +1701,9 @@ function addRowToChangeRecords(row, changeRecords) {
 
 
 
-var pullSyncChanges = Task.async(function* (db) {
+
+
+var pullSyncChanges = Task.async(function* (db, preventUpdate = false) {
   let changeRecords = {};
 
   yield db.executeCached(`
@@ -1716,7 +1728,9 @@ var pullSyncChanges = Task.async(function* (db) {
     { deletedSyncStatus: PlacesUtils.bookmarks.SYNC_STATUS.NORMAL },
     row => addRowToChangeRecords(row, changeRecords));
 
-  yield markChangesAsSyncing(db, changeRecords);
+  if (!preventUpdate) {
+    yield markChangesAsSyncing(db, changeRecords);
+  }
 
   return changeRecords;
 });
