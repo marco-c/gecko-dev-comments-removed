@@ -1495,6 +1495,11 @@ protected:
                          uint32_t* aSelectionEnd,
                          ErrorResult& aRv);
 
+  
+
+
+  nsIContent* AsContent() override { return this; }
+
   nsCOMPtr<nsIControllers> mControllers;
 
   

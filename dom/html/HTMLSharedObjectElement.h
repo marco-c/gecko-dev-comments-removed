@@ -200,6 +200,11 @@ public:
 
 
   void StartObjectLoad(bool aNotify, bool aForceLoad);
+
+protected:
+  
+  nsIContent* AsContent() override { return this; }
+
 private:
   virtual ~HTMLSharedObjectElement();
 

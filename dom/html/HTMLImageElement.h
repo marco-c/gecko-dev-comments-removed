@@ -351,6 +351,9 @@ protected:
                                 const nsAttrValue* aValue, bool aNotify) override;
 
   
+  nsIContent* AsContent() override { return this; }
+
+  
   
   HTMLFormElement* mForm;
 
