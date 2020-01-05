@@ -17,6 +17,12 @@ public:
   
   RiceDeltaDecoder(uint8_t* aEncodedData, size_t aEncodedDataSize);
 
+  
+  
+  
+  
+  
+  
   bool Decode(uint32_t aRiceParameter,
               uint32_t aFirstValue,
               uint32_t aNumEntries,

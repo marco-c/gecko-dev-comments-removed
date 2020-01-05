@@ -16,6 +16,12 @@ struct TestingData {
 
 static bool runOneTest(TestingData& aData);
 
+TEST(RiceDeltaDecoder, SingleEncodedValue) {
+  TestingData td = { { 99 }, { 99 }, 0 };
+
+  ASSERT_TRUE(runOneTest(td));
+}
+
 
 
 
@@ -149,11 +155,11 @@ runOneTest(TestingData& aData)
 
   std::vector<uint32_t> decoded(aData.mExpectedDecoded.size());
 
-  decoded[0] = aData.mExpectedDecoded[0];
+  uint32_t firstValue = aData.mExpectedDecoded[0];
   bool rv = decoder.Decode(aData.mRiceParameter,
-                           decoded[0], 
+                           firstValue,
                            decoded.size() - 1, 
-                           &decoded[1]);
+                           &decoded[0]);
 
   return rv && decoded == aData.mExpectedDecoded;
 }
