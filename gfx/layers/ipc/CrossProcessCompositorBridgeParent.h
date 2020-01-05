@@ -42,7 +42,11 @@ public:
 
   
   virtual bool RecvInitialize(const uint64_t& aRootLayerTreeId) override { return false; }
-  virtual bool RecvReset(nsTArray<LayersBackend>&& aBackendHints, bool* aResult, TextureFactoryIdentifier* aOutIdentifier) override { return false; }
+  virtual bool RecvReset(nsTArray<LayersBackend>&& aBackendHints,
+                         const uint64_t& aSeqNo,
+                         bool* aResult,
+                         TextureFactoryIdentifier* aOutIdentifier) override
+  { return false; }
   virtual bool RecvRequestOverfill() override { return true; }
   virtual bool RecvWillClose() override { return true; }
   virtual bool RecvPause() override { return true; }

@@ -148,6 +148,14 @@ public:
     return mNumProcessAttempts > 0;
   }
 
+  
+  
+  
+  
+  uint64_t GetNextDeviceResetSequenceNumber() {
+    return ++mNextResetSequenceNo;
+  }
+
 private:
   
   void OnXPCOMShutdown();
@@ -213,6 +221,7 @@ private:
   ipc::TaskFactory<GPUProcessManager> mTaskFactory;
   RefPtr<VsyncIOThreadHolder> mVsyncIOThread;
   uint64_t mNextLayerTreeId;
+  uint64_t mNextResetSequenceNo;
   uint32_t mNumProcessAttempts;
 
   nsTArray<RefPtr<RemoteCompositorSession>> mRemoteSessions;

@@ -254,8 +254,7 @@ public:
   WindowHook&             GetWindowHook() { return mWindowHook; }
   nsWindow*               GetParentWindow(bool aIncludeOwner);
   
-  typedef void            (WindowEnumCallback)(nsWindow*);
-  static void             EnumAllWindows(WindowEnumCallback aCallback);
+  static nsTArray<nsWindow*> EnumAllWindows();
 
   
 
