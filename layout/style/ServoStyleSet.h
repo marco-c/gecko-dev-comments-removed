@@ -142,6 +142,13 @@ public:
 
   void StyleNewChildren(Element* aParent);
 
+  
+
+
+
+
+  void NoteStyleSheetsChanged();
+
 #ifdef DEBUG
   void AssertTreeIsClean();
 #else

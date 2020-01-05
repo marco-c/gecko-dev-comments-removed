@@ -4518,6 +4518,12 @@ nsIPresShell::RestyleForCSSRuleChanges()
   }
 
   RestyleManagerHandle restyleManager = mPresContext->RestyleManager();
+
+  if (mStyleSet->IsServo()) {
+    
+    mStyleSet->AsServo()->NoteStyleSheetsChanged();
+  }
+
   if (scopeRoots.IsEmpty()) {
     
     
@@ -4550,7 +4556,6 @@ PresShell::RecordStyleSheetChange(StyleSheet* aStyleSheet)
     }
   } else {
     NS_WARNING("stylo: ServoStyleSheets don't support <style scoped>");
-    return;
   }
 
   mStylesHaveChanged = true;
