@@ -30,10 +30,11 @@ const kNotificationId = "abouthome-automigration-undo";
 
 Cu.import("resource:///modules/MigrationUtils.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
-Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
+                                  "resource://gre/modules/PlacesUtils.jsm");
 
 const AutoMigrate = {
   get resourceTypesToUse() {
@@ -389,6 +390,53 @@ const AutoMigrate = {
   UNDO_REMOVED_REASON_BOOKMARK_CHANGE: 3,
   UNDO_REMOVED_REASON_OFFER_EXPIRED: 4,
   UNDO_REMOVED_REASON_OFFER_REJECTED: 5,
+
+  _removeUnchangedBookmarks: Task.async(function* (bookmarks) {
+    if (!bookmarks.length) {
+      return;
+    }
+
+    let guidToLMMap = new Map(bookmarks.map(b => [b.guid, b.lastModified]));
+    let bookmarksFromDB = [];
+    let bmPromises = Array.from(guidToLMMap.keys()).map(guid => {
+      
+      
+      return PlacesUtils.bookmarks.fetch(guid).then(bm => bm && bookmarksFromDB.push(bm), () => {});
+    });
+    
+    
+    yield Promise.all(bmPromises);
+    let unchangedBookmarks = bookmarksFromDB.filter(bm => {
+      return bm.lastModified.getTime() == guidToLMMap.get(bm.guid).getTime();
+    });
+
+    
+    
+    
+    
+    
+    function determineAncestorCount(bm) {
+      if (bm._ancestorCount) {
+        return bm._ancestorCount;
+      }
+      let myCount = 0;
+      let parentBM = unchangedBookmarks.find(item => item.guid == bm.parentGuid);
+      if (parentBM) {
+        myCount = determineAncestorCount(parentBM) + 1;
+      }
+      bm._ancestorCount = myCount;
+      return myCount;
+    }
+    unchangedBookmarks.forEach(determineAncestorCount);
+    unchangedBookmarks.sort((a, b) => b._ancestorCount - a._ancestorCount);
+    for (let {guid} of unchangedBookmarks) {
+      yield PlacesUtils.bookmarks.remove(guid, {preventRemovalOfNonEmptyFolders: true}).catch(err => {
+        if (err && err.message != "Cannot remove a non-empty folder.") {
+          Cu.reportError(err);
+        }
+      });
+    }
+  }),
 
   QueryInterface: XPCOMUtils.generateQI(
     [Ci.nsIObserver, Ci.nsINavBookmarkObserver, Ci.nsISupportsWeakReference]
