@@ -704,19 +704,23 @@ CodeGeneratorARM::modICommon(MMod* mir, Register lhs, Register rhs, Register out
     
     
     if (mir->canBeDivideByZero() || mir->canBeNegativeDividend()) {
+        if (mir->trapOnError()) {
+            
+            MOZ_ASSERT(mir->isTruncated());
+            masm.as_cmp(rhs, Imm8(0));
+            masm.ma_b(trap(mir, wasm::Trap::IntegerDivideByZero), Assembler::Equal);
+            return;
+        }
+
         masm.as_cmp(rhs, Imm8(0));
         masm.as_cmp(lhs, Imm8(0), Assembler::LessThan);
         if (mir->isTruncated()) {
-            if (mir->trapOnError()) {
-                masm.ma_b(trap(mir, wasm::Trap::IntegerDivideByZero), Assembler::Equal);
-            } else {
-                
-                Label skip;
-                masm.ma_b(&skip, Assembler::NotEqual);
-                masm.ma_mov(Imm32(0), output);
-                masm.ma_b(&done);
-                masm.bind(&skip);
-            }
+            
+            Label skip;
+            masm.ma_b(&skip, Assembler::NotEqual);
+            masm.ma_mov(Imm32(0), output);
+            masm.ma_b(&done);
+            masm.bind(&skip);
         } else {
             MOZ_ASSERT(mir->fallible());
             bailoutIf(Assembler::Equal, snapshot);
