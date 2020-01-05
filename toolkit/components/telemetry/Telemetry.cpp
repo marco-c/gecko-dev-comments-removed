@@ -184,9 +184,7 @@ CombinedStacks::SizeOfExcludingThis() const {
   size_t n = 0;
   n += mModules.capacity() * sizeof(Telemetry::ProcessedStack::Module);
   n += mStacks.capacity() * sizeof(Stack);
-  for (std::vector<Stack>::const_iterator i = mStacks.begin(),
-         e = mStacks.end(); i != e; ++i) {
-    const Stack& s = *i;
+  for (const auto & s : mStacks) {
     n += s.capacity() * sizeof(Telemetry::ProcessedStack::Frame);
   }
   return n;
@@ -237,7 +235,7 @@ public:
       : mHangIndices(aOther.mHangIndices)
       , mAnnotations(Move(aOther.mAnnotations))
     {}
-    ~AnnotationInfo() {}
+    ~AnnotationInfo() = default;
     AnnotationInfo& operator=(AnnotationInfo&& aOther)
     {
       mHangIndices = aOther.mHangIndices;
@@ -626,7 +624,7 @@ public:
 
 
 
-  void Observe(Observation& aOb);
+  void Observe(Observation& aOb) override;
 
   
 
@@ -1646,8 +1644,7 @@ IsValidBreakpadId(const std::string &breakpadId) {
   if (breakpadId.size() < 33) {
     return false;
   }
-  for (unsigned i = 0, n = breakpadId.size(); i < n; ++i) {
-    char c = breakpadId[i];
+  for (char c : breakpadId) {
     if ((c < '0' || c > '9') && (c < 'A' || c > 'F')) {
       return false;
     }
@@ -1810,13 +1807,11 @@ CreateJSHangAnnotations(JSContext* cx, const HangAnnotationsVector& annotations,
   
   nsTHashtable<nsStringHashKey> reportedAnnotations;
   size_t annotationIndex = 0;
-  for (const HangAnnotationsPtr *i = annotations.begin(), *e = annotations.end();
-       i != e; ++i) {
+  for (const auto & curAnnotations : annotations) {
     JS::RootedObject jsAnnotation(cx, JS_NewPlainObject(cx));
     if (!jsAnnotation) {
       continue;
     }
-    const HangAnnotationsPtr& curAnnotations = *i;
     
     nsAutoString annotationsKey;
     nsresult rv = ComputeAnnotationsKey(curAnnotations, annotationsKey);
@@ -1951,9 +1946,9 @@ TelemetryImpl::GetThreadHangStats(JSContext* cx, JS::MutableHandle<JS::Value> re
 
   
   MutexAutoLock autoLock(mThreadHangStatsMutex);
-  for (size_t i = 0; i < mThreadHangStats.length(); i++) {
+  for (auto & stat : mThreadHangStats) {
     JS::RootedObject obj(cx,
-      CreateJSThreadHangStats(cx, mThreadHangStats[i]));
+      CreateJSThreadHangStats(cx, stat));
     if (!JS_DefineElement(cx, retObj, threadIndex++, obj, JSPROP_ENUMERATE)) {
       return NS_ERROR_FAILURE;
     }
@@ -2804,9 +2799,7 @@ RecordShutdownEndTimeStamp() {
 namespace mozilla {
 namespace Telemetry {
 
-ProcessedStack::ProcessedStack()
-{
-}
+ProcessedStack::ProcessedStack() = default;
 
 size_t ProcessedStack::GetStackSize() const
 {
@@ -2918,9 +2911,7 @@ GetStackAndModules(const std::vector<uintptr_t>& aPCs)
 
   
   ProcessedStack Ret;
-  for (std::vector<StackFrame>::iterator i = rawStack.begin(),
-         e = rawStack.end(); i != e; ++i) {
-    const StackFrame &rawFrame = *i;
+  for (auto & rawFrame : rawStack) {
     mozilla::Telemetry::ProcessedStack::Frame frame = { rawFrame.mPC, rawFrame.mModIndex };
     Ret.AddFrame(frame);
   }
@@ -2990,10 +2981,10 @@ HangStack::AppendViaBuffer(const char* aText, size_t aLength)
 
   if (prevStart != mBuffer.begin()) {
     
-    for (const char** entry = this->begin(); entry != this->end(); entry++) {
-      if (*entry >= prevStart && *entry < prevEnd) {
+    for (auto & entry : *this) {
+      if (entry >= prevStart && entry < prevEnd) {
         
-        *entry += mBuffer.begin() - prevStart;
+        entry += mBuffer.begin() - prevStart;
       }
     }
   }

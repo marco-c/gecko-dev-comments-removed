@@ -204,13 +204,13 @@ ApplyBorderToStyle(const nsMathMLmtdFrame* aFrame,
     
     int32_t listLength = rowLinesList->Length();
     if (rowIndex < listLength) {
-      aStyleBorder.SetBorderStyle(NS_SIDE_TOP,
+      aStyleBorder.SetBorderStyle(eSideTop,
                     rowLinesList->ElementAt(rowIndex - 1));
     } else {
-      aStyleBorder.SetBorderStyle(NS_SIDE_TOP,
+      aStyleBorder.SetBorderStyle(eSideTop,
                     rowLinesList->ElementAt(listLength - 1));
     }
-    aStyleBorder.SetBorderWidth(NS_SIDE_TOP, borderWidth);
+    aStyleBorder.SetBorderWidth(eSideTop, borderWidth);
   }
 
   
@@ -219,13 +219,13 @@ ApplyBorderToStyle(const nsMathMLmtdFrame* aFrame,
     
     int32_t listLength = columnLinesList->Length();
     if (columnIndex < listLength) {
-      aStyleBorder.SetBorderStyle(NS_SIDE_LEFT,
+      aStyleBorder.SetBorderStyle(eSideLeft,
                     columnLinesList->ElementAt(columnIndex - 1));
     } else {
-      aStyleBorder.SetBorderStyle(NS_SIDE_LEFT,
+      aStyleBorder.SetBorderStyle(eSideLeft,
                     columnLinesList->ElementAt(listLength - 1));
     }
-    aStyleBorder.SetBorderWidth(NS_SIDE_LEFT, borderWidth);
+    aStyleBorder.SetBorderWidth(eSideLeft, borderWidth);
   }
 }
 
