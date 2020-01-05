@@ -1,15 +1,11 @@
-export ImageBuffer, SharedImageBuffer;
-export image;
+export Image;
+
 export load;
+export load_from_memory;
 
-import stb_image::image::{image, load};
-import core::arc::arc;
-
-
+import stb_image::image::{image, load, load_from_memory};
 
 
-type SharedImageBuffer = arc<ImageBuffer>;
 
-struct ImageBuffer {
-    data: ~[u8];
-}
+
+type Image = image;
