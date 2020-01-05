@@ -111,6 +111,9 @@ public class TabsListLayout extends TabsLayout {
 
     @Override
     protected boolean addAtIndexRequiresScroll(int index) {
+        
+        
+        
         return index == 0 || index == getAdapter().getItemCount() - 1;
     }
 }

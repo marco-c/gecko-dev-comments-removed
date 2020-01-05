@@ -84,6 +84,10 @@ public class TabsLayoutAdapter
         }
     }
 
+    
+
+
+
      void notifyTabInserted(Tab tab, int index) {
         if (index >= 0 && index <= tabs.size()) {
             tabs.add(index, tab);
@@ -92,10 +96,7 @@ public class TabsLayoutAdapter
             
             tabs.add(tab);
             notifyItemInserted(tabs.size() - 1);
-            
-            if (index != -1) {
-                Log.e(LOGTAG, "Tab was inserted at an invalid position: " + Integer.toString(index));
-            }
+            Log.e(LOGTAG, "Tab was inserted at an invalid position: " + Integer.toString(index));
         }
     }
 

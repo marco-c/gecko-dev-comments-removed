@@ -51,7 +51,8 @@ abstract class TabsGridLayout extends TabsLayout {
         
         
         
-        return index == firstVisibleIndex ||
-                (index == getAdapter().getItemCount() - 1 && index % spanCount == 0);
+        
+        
+        return index == firstVisibleIndex || index == getAdapter().getItemCount() - 1;
     }
 }
