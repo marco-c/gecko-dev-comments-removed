@@ -32,6 +32,8 @@ class NodeInfo;
 } 
 } 
 
+#define RECENTLY_USED_NODEINFOS_SIZE 31
+
 class nsNodeInfoManager final
 {
 private:
@@ -137,6 +139,7 @@ private:
   mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mCommentNodeInfo; 
   mozilla::dom::NodeInfo * MOZ_NON_OWNING_REF mDocumentNodeInfo; 
   RefPtr<nsBindingManager> mBindingManager;
+  mozilla::dom::NodeInfo* mRecentlyUsedNodeInfos[RECENTLY_USED_NODEINFOS_SIZE];
 };
 
 #endif 
