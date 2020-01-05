@@ -145,8 +145,7 @@ add_task(function* checkWrongSystemTimeWarning() {
   let localDateFmt = formatter.format(new Date());
 
   let skew = Math.floor((Date.now() - serverDate.getTime()) / 1000);
-  yield new Promise(r => SpecialPowers.pushPrefEnv({set:
-    [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]}, r));
+  yield SpecialPowers.pushPrefEnv({set: [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]});
 
   info("Loading a bad cert page with a skewed clock");
   let message = yield Task.spawn(setUpPage);
@@ -167,8 +166,7 @@ add_task(function* checkWrongSystemTimeWarning() {
   serverDateFmt = formatter.format(serverDate);
 
   skew = Math.floor((Date.now() - serverDate.getTime()) / 1000);
-  yield new Promise(r => SpecialPowers.pushPrefEnv({set:
-    [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]}, r));
+  yield SpecialPowers.pushPrefEnv({set: [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]});
 
   info("Loading a bad cert page with a skewed clock");
   message = yield Task.spawn(setUpPage);
@@ -184,8 +182,7 @@ add_task(function* checkWrongSystemTimeWarning() {
 
   
   skew = 60 * 60 * 4;
-  yield new Promise(r => SpecialPowers.pushPrefEnv({set:
-    [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]}, r));
+  yield SpecialPowers.pushPrefEnv({set: [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]});
 
   info("Loading a bad cert page with an only slightly skewed clock");
   message = yield Task.spawn(setUpPage);
@@ -196,8 +193,7 @@ add_task(function* checkWrongSystemTimeWarning() {
 
   
   skew = 0;
-  yield new Promise(r => SpecialPowers.pushPrefEnv({set:
-    [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]}, r));
+  yield SpecialPowers.pushPrefEnv({set: [[PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, skew]]});
 
   info("Loading a bad cert page with no skewed clock");
   message = yield Task.spawn(setUpPage);
