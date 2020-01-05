@@ -330,9 +330,6 @@ protected:
                           const mozilla::LogicalPoint& aContentBoxOrigin,
                           const nsSize& aContainerSize);
 
-  bool mChildrenHaveBeenReordered; 
-                                   
-
   nscoord mBaselineFromLastReflow;
   
   nscoord mLastBaselineFromLastReflow;
