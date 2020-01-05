@@ -124,10 +124,18 @@ private:
     CheckLoadURIFlags(nsIURI* aSourceURI, nsIURI* aTargetURI, nsIURI* aSourceBaseURI,
                       nsIURI* aTargetBaseURI, uint32_t aFlags);
 
+    
+    
+    const nsTArray<nsCOMPtr<nsIURI>>& EnsureFileURIWhitelist();
+
     nsCOMPtr<nsIPrincipal> mSystemPrincipal;
     bool mPrefInitialized;
     bool mIsJavaScriptEnabled;
-    nsTArray<nsCOMPtr<nsIURI>> mFileURIWhitelist;
+
+    
+    
+    
+    mozilla::Maybe<nsTArray<nsCOMPtr<nsIURI>>> mFileURIWhitelist;
 
     
     
