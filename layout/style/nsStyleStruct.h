@@ -2609,6 +2609,24 @@ private:
 
 } 
 
+
+
+
+
+
+class BindingHolder {
+public:
+  BindingHolder() {}
+  explicit BindingHolder(mozilla::css::URLValue* aPtr) : mPtr(aPtr) {}
+  operator mozilla::css::URLValue*() const { return Get(); }
+  mozilla::css::URLValue* operator->() const { return Get(); }
+  mozilla::css::URLValue* Get() const { return (mPtr && mPtr->GetURI()) ? mPtr.get() : nullptr; }
+  mozilla::css::URLValue* ForceGet() const { return mPtr.get(); }
+  void Set(mozilla::css::URLValue* aPtr) { mPtr = aPtr; }
+private:
+  RefPtr<mozilla::css::URLValue> mPtr;
+};
+
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 {
   typedef mozilla::StyleGeometryBox StyleGeometryBox;
@@ -2634,7 +2652,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleDisplay
 
   
   
-  RefPtr<mozilla::css::URLValue> mBinding; 
+  BindingHolder mBinding;                  
   mozilla::StyleDisplay mDisplay;          
   mozilla::StyleDisplay mOriginalDisplay;  
                                            
