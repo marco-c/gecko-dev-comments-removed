@@ -4469,17 +4469,6 @@ NS_IMETHODIMP nsDocumentViewer::SetPageMode(bool aPageMode, nsIPrintSettings* aP
   mViewManager  = nullptr;
   mWindow       = nullptr;
 
-  
-  
-  
-  Element* root = mDocument->GetRootElement();
-  if (root) {
-    auto index = mDocument->IndexOf(root);
-    MOZ_ASSERT(index >= 0);
-    mDocument->RemoveChildAt(index,  false);
-    mDocument->InsertChildAt(root, index,  false);
-  }
-
   NS_ENSURE_STATE(mDocument);
   if (aPageMode)
   {    
