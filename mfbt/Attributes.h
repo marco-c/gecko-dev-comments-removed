@@ -469,6 +469,10 @@
 
 
 
+
+
+
+
 #ifdef MOZ_CLANG_PLUGIN
 #  define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #  define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
@@ -501,6 +505,8 @@
     __attribute__((annotate("moz_ignore_ctor_initialization")))
 #  define MOZ_IS_CLASS_INIT \
     __attribute__((annotate("moz_is_class_init")))
+#  define MOZ_REQUIRED_BASE_METHOD \
+    __attribute__((annotate("moz_required_base_method")))
 
 
 
@@ -535,6 +541,7 @@
 #  define MOZ_INIT_OUTSIDE_CTOR
 #  define MOZ_IS_CLASS_INIT
 #  define MOZ_NON_AUTOABLE
+#  define MOZ_REQUIRED_BASE_METHOD
 #endif 
 
 #define MOZ_RAII MOZ_NON_TEMPORARY_CLASS MOZ_STACK_CLASS
