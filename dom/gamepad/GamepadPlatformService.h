@@ -38,7 +38,8 @@ class GamepadPlatformService final
 
   
   uint32_t AddGamepad(const char* aID, GamepadMappingType aMapping,
-                      uint32_t aNumButtons, uint32_t aNumAxes);
+                      GamepadHand aHand, uint32_t aNumButtons,
+                      uint32_t aNumAxes, uint32_t aNumHaptics);
   
   void RemoveGamepad(uint32_t aIndex);
 
@@ -55,6 +56,9 @@ class GamepadPlatformService final
   
   
   void NewAxisMoveEvent(uint32_t aIndex, uint32_t aAxis, double aValue);
+  
+  
+  void NewPoseEvent(uint32_t aIndex, const GamepadPoseState& aState);
 
   
   
