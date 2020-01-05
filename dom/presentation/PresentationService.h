@@ -51,7 +51,6 @@ private:
   nsresult HandleTerminateRequest(nsIPresentationTerminateRequest* aRequest);
   nsresult HandleReconnectRequest(nsIPresentationSessionRequest* aRequest);
   void NotifyAvailableChange(bool aIsAvailable);
-  bool IsAppInstalled(nsIURI* aUri);
 
   
   already_AddRefed<PresentationSessionInfo>
