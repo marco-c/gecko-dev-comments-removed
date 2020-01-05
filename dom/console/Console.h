@@ -107,7 +107,7 @@ public:
          const Sequence<JS::Value>& aData);
 
   static void
-  Count(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  Count(const GlobalObject& aGlobal, const nsAString& aLabel);
 
   static void
   Clear(const GlobalObject& aGlobal);
@@ -181,8 +181,8 @@ private:
                  const nsAString& aString, const Sequence<JS::Value>& aData);
 
   static void
-  TimeMethod(const GlobalObject& aGlobal, const nsAString& aLabel,
-             MethodName aMethodName, const nsAString& aMethodString);
+  StringMethod(const GlobalObject& aGlobal, const nsAString& aLabel,
+               MethodName aMethodName, const nsAString& aMethodString);
 
   
   void
@@ -324,6 +324,9 @@ private:
   ArgumentsToValueList(const Sequence<JS::Value>& aData,
                        Sequence<JS::Value>& aSequence) const;
 
+  
+  
+  
   
   
   
