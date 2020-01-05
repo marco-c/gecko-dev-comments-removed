@@ -166,19 +166,6 @@ var AdbController = {
       (!(this.lockEnabled && this.locked) || usbFuncActive);
 
     let useDisableAdbTimer = true;
-    try {
-      if (Services.prefs.getBoolPref("marionette.defaultPrefs.enabled")) {
-        
-        
-        
-        
-        enableAdb = true;
-        useDisableAdbTimer = false;
-      }
-    } catch (e) {
-      
-      
-    }
 
     
     let lockFile = Cc['@mozilla.org/file/local;1'].createInstance(Ci.nsIFile);

@@ -451,16 +451,6 @@ pref("full-screen-api.ignore-widgets", true);
 
 pref("media.volume.steps", 10);
 
-#ifdef ENABLE_MARIONETTE
-
-pref("marionette.defaultPrefs.enabled", true);
-pref("marionette.defaultPrefs.port", 2828);
-#ifndef MOZ_WIDGET_GONK
-
-pref("marionette.force-local", true);
-#endif
-#endif
-
 #ifdef MOZ_UPDATER
 
 
@@ -816,7 +806,6 @@ pref("network.sntp.pools",
      "0.pool.ntp.org;1.pool.ntp.org;2.pool.ntp.org;3.pool.ntp.org");
 pref("network.sntp.port", 123);
 pref("network.sntp.timeout", 30); 
-
 
 
 

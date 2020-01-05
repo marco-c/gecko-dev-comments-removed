@@ -47,10 +47,6 @@ pref("b2g.nativeWindowGeometry.fullscreen", false);
 
 pref("media.useAudioChannelService", false);
 
-#ifdef ENABLE_MARIONETTE
-pref("b2g.is_mulet", true);
-#endif
-
 
 
 
