@@ -5,7 +5,10 @@
 
 
 #include "mozilla/ServoRestyleManager.h"
+
+#include "mozilla/DocumentStyleRootIterator.h"
 #include "mozilla/ServoBindings.h"
+#include "mozilla/ServoRestyleManagerInlines.h"
 #include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/ChildIterator.h"
 #include "nsContentUtils.h"
@@ -289,11 +292,9 @@ ServoRestyleManager::ProcessPendingRestyles()
 
   ServoStyleSet* styleSet = StyleSet();
   nsIDocument* doc = PresContext()->Document();
-  Element* root = doc->GetRootElement();
 
   
   if (HasPendingRestyles()) {
-    MOZ_ASSERT(root);
     mInStyleRefresh = true;
     styleSet->StyleDocument();
 
@@ -309,7 +310,10 @@ ServoRestyleManager::ProcessPendingRestyles()
 
     
     nsStyleChangeList currentChanges;
-    RecreateStyleContexts(root, nullptr, styleSet, currentChanges);
+    DocumentStyleRootIterator iter(doc);
+    while (Element* root = iter.GetNextStyleRoot()) {
+      RecreateStyleContexts(root, nullptr, styleSet, currentChanges);
+    }
 
     
     
