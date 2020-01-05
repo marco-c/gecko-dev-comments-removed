@@ -918,7 +918,8 @@ SenderHelper::SendLayer(LayerComposite* aLayer,
         case Layer::TYPE_PAINTED: {
             
             CompositableHost* compHost = aLayer->GetCompositableHost();
-            Compositor* comp = compHost->GetCompositor();
+            TextureSourceProvider* provider = compHost->GetTextureSourceProvider();
+            Compositor* comp = provider->AsCompositor();
             
             if (LayersBackend::LAYERS_OPENGL == comp->GetBackendType()) {
                 CompositorOGL* compOGL = comp->AsCompositorOGL();

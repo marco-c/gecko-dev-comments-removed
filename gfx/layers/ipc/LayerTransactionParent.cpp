@@ -873,15 +873,15 @@ LayerTransactionParent::Attach(Layer* aLayer,
     return false;
   }
 
-  Compositor* compositor
-    = static_cast<HostLayerManager*>(aLayer->Manager())->GetCompositor();
+  TextureSourceProvider* provider =
+    static_cast<HostLayerManager*>(aLayer->Manager())->GetTextureSourceProvider();
 
   if (!layer->SetCompositableHost(aCompositable)) {
     
     return false;
   }
   aCompositable->Attach(aLayer,
-                        compositor,
+                        provider,
                         aIsAsync
                           ? CompositableHost::ALLOW_REATTACH
                             | CompositableHost::KEEP_ATTACHED
