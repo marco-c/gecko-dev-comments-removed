@@ -72,7 +72,7 @@ impl<'lc, 'ln> DomTraversalContext<ServoLayoutNode<'ln>> for RecalcStyleAndConst
 
 pub trait PostorderNodeMutTraversal<ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode> {
     
-    fn process(&mut self, node: &ConcreteThreadSafeLayoutNode) -> bool;
+    fn process(&mut self, node: &ConcreteThreadSafeLayoutNode);
 }
 
 
