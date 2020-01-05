@@ -8,6 +8,7 @@
 #ifndef nsTransitionManager_h_
 #define nsTransitionManager_h_
 
+#include "mozilla/ComputedTiming.h"
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EffectCompositor.h" 
 #include "mozilla/MemoryReporting.h"
@@ -119,7 +120,7 @@ class CSSTransition final : public Animation
 public:
  explicit CSSTransition(nsIGlobalObject* aGlobal)
     : dom::Animation(aGlobal)
-    , mWasFinishedOnLastTick(false)
+    , mPreviousTransitionPhase(TransitionPhase::Idle)
     , mNeedsNewAnimationIndexWhenRun(false)
     , mTransitionProperty(eCSSProperty_UNKNOWN)
   {
@@ -228,6 +229,10 @@ protected:
 
   
   
+  TimeStamp ElapsedTimeToTimeStamp(const StickyTimeDuration& aElapsedTime) const;
+
+  
+  
   
   
   
@@ -245,7 +250,17 @@ protected:
   
   OwningElementRef mOwningElement;
 
-  bool mWasFinishedOnLastTick;
+  
+  
+  
+  enum class TransitionPhase {
+    Idle   = static_cast<int>(ComputedTiming::AnimationPhase::Null),
+    Before = static_cast<int>(ComputedTiming::AnimationPhase::Before),
+    Active = static_cast<int>(ComputedTiming::AnimationPhase::Active),
+    After  = static_cast<int>(ComputedTiming::AnimationPhase::After),
+    Pending
+  };
+  TransitionPhase mPreviousTransitionPhase;
 
   
   
@@ -287,13 +302,14 @@ struct TransitionEventInfo {
 
   TransitionEventInfo(dom::Element* aElement,
                       CSSPseudoElementType aPseudoType,
+                      EventMessage aMessage,
                       nsCSSPropertyID aProperty,
                       StickyTimeDuration aDuration,
                       const TimeStamp& aTimeStamp,
                       dom::Animation* aAnimation)
     : mElement(aElement)
     , mAnimation(aAnimation)
-    , mEvent(true, eTransitionEnd)
+    , mEvent(true, aMessage)
     , mTimeStamp(aTimeStamp)
   {
     
@@ -309,7 +325,7 @@ struct TransitionEventInfo {
   TransitionEventInfo(const TransitionEventInfo& aOther)
     : mElement(aOther.mElement)
     , mAnimation(aOther.mAnimation)
-    , mEvent(true, eTransitionEnd)
+    , mEvent(aOther.mEvent)
     , mTimeStamp(aOther.mTimeStamp)
   {
     mEvent.AssignTransitionEventData(aOther.mEvent, false);
