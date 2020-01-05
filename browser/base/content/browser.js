@@ -2367,7 +2367,7 @@ function BrowserViewSourceOfDocument(aArgsOrDocument) {
         relatedToCurrent: true,
         inBackground: false,
         preferredRemoteType,
-        sameProcessAsFrameLoader: args.browser ? args.browser.frameLoader : null
+        relatedBrowser: args.browser
       });
       args.viewSourceBrowser = tabBrowser.getBrowserForTab(tab);
       top.gViewSourceUtils.viewSourceInBrowser(args);
@@ -3347,21 +3347,19 @@ var PrintPreviewListener = {
       let browser = gBrowser.selectedBrowser;
       let preferredRemoteType = browser.remoteType;
       this._tabBeforePrintPreview = gBrowser.selectedTab;
-      this._printPreviewTab = gBrowser.loadOneTab("about:blank", {
-        inBackground: false,
-        preferredRemoteType,
-        sameProcessAsFrameLoader: browser.frameLoader
-      });
+      this._printPreviewTab = gBrowser.loadOneTab("about:blank",
+                                                  { inBackground: false,
+                                                    preferredRemoteType,
+                                                    relatedBrowser: browser });
       gBrowser.selectedTab = this._printPreviewTab;
     }
     return gBrowser.getBrowserForTab(this._printPreviewTab);
   },
   createSimplifiedBrowser() {
     let browser = this._tabBeforePrintPreview.linkedBrowser;
-    this._simplifyPageTab = gBrowser.loadOneTab("about:blank", {
-      inBackground: true,
-      sameProcessAsFrameLoader: browser.frameLoader
-     });
+    this._simplifyPageTab = gBrowser.loadOneTab("about:blank",
+                                                { inBackground: true,
+                                                  relatedBrowser: browser });
     return this.getSimplifiedSourceBrowser();
   },
   getSourceBrowser() {
@@ -4207,7 +4205,7 @@ function updateUserContextUIIndicator() {
     return;
   }
 
-  let identity = ContextualIdentityService.getIdentityFromId(userContextId);
+  let identity = ContextualIdentityService.getPublicIdentityFromId(userContextId);
   if (!identity) {
     hbox.setAttribute("data-identity-color", "");
     hbox.hidden = true;

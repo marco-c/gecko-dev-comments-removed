@@ -250,6 +250,7 @@ this.SiteDataManager = {
 
   isPrivateCookie(cookie) {
     let { userContextId } = cookie.originAttributes;
-    return userContextId && !ContextualIdentityService.getIdentityFromId(userContextId).public;
+    
+    return userContextId && !ContextualIdentityService.getPublicIdentityFromId(userContextId);
   }
 };
