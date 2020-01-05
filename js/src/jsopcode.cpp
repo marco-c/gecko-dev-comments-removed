@@ -2139,6 +2139,7 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
             return false;
 
         RootedScript script(cx);
+        RootedFunction fun(cx);
         do {
             script = queue.popCopy();
             compCover.collectCodeCoverageInfo(comp, script->sourceObject(), script);
@@ -2156,15 +2157,15 @@ GenerateLcovInfo(JSContext* cx, JSCompartment* comp, GenericPrinter& out)
                 
                 if (!obj->is<JSFunction>())
                     continue;
-                JSFunction& fun = obj->as<JSFunction>();
+                fun = &obj->as<JSFunction>();
 
                 
-                if (!fun.isInterpreted())
+                if (!fun->isInterpreted())
                     continue;
 
                 
                 
-                JSScript* childScript = fun.getOrCreateScript(cx);
+                JSScript* childScript = JSFunction::getOrCreateScript(cx, fun);
                 if (!childScript || !queue.append(childScript))
                     return false;
             }
