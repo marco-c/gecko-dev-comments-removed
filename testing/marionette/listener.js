@@ -902,7 +902,7 @@ function pollForReadyState(msg, start = undefined, callback = undefined) {
     callback = () => {};
   }
 
-  let checkLoad = function() {
+  let checkLoad = () => {
     navTimer.cancel();
 
     let doc = curContainer.frame.document;
@@ -1020,11 +1020,10 @@ function get(msg) {
   
   
   
-  onDOMContentLoaded = function onDOMContentLoaded(event) {
-    let frameEl = event.originalTarget.defaultView.frameElement;
+  onDOMContentLoaded = ev => {
+    let frameEl = ev.originalTarget.defaultView.frameElement;
     let correctFrame = !frameEl || frameEl == curContainer.frame.frameElement;
 
-    
     
     
     
@@ -1041,21 +1040,21 @@ function get(msg) {
         docShell.hasLoadedNonBlankURI;
 
     if (correctFrame && sawLoad && loadedRequestedURI) {
-      webProgress.removeProgressListener(loadListener);
       pollForReadyState(msg, start, () => {
+        webProgress.removeProgressListener(loadListener);
         removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
       });
     }
   };
 
   if (typeof pageTimeout != "undefined") {
-    let onTimeout = function() {
+    let onTimeout = () => {
       if (loadEventExpected) {
         removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
       }
       webProgress.removeProgressListener(loadListener);
       sendError(new TimeoutError("Error loading page, timed out (onDOMContentLoaded)"), command_id);
-    }
+    };
     navTimer.initWithCallback(onTimeout, pageTimeout, Ci.nsITimer.TYPE_ONE_SHOT);
   }
 
