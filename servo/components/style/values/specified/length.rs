@@ -1146,7 +1146,9 @@ impl ToCss for LengthOrPercentage {
         }
     }
 }
+
 impl LengthOrPercentage {
+    #[inline]
     
     pub fn zero() -> LengthOrPercentage {
         LengthOrPercentage::Length(NoCalcLength::zero())
