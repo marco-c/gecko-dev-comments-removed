@@ -11,14 +11,14 @@
 
 #define MAX_CHANNELS 16
 
-namespace mozilla
-{
+namespace mozilla {
 
 FFmpegAudioDecoder<LIBAV_VER>::FFmpegAudioDecoder(FFmpegLibWrapper* aLib,
   TaskQueue* aTaskQueue, const AudioInfo& aConfig)
   : FFmpegDataDecoder(aLib, aTaskQueue, GetCodecId(aConfig.mMimeType))
 {
   MOZ_COUNT_CTOR(FFmpegAudioDecoder);
+  
   
   if (aConfig.mCodecSpecificConfig && aConfig.mCodecSpecificConfig->Length()) {
     mExtraData = new MediaByteBuffer;
@@ -31,8 +31,10 @@ FFmpegAudioDecoder<LIBAV_VER>::Init()
 {
   nsresult rv = InitDecoder();
 
-  return rv == NS_OK ? InitPromise::CreateAndResolve(TrackInfo::kAudioTrack, __func__)
-                     : InitPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR, __func__);
+  return rv == NS_OK
+         ? InitPromise::CreateAndResolve(TrackInfo::kAudioTrack, __func__)
+         : InitPromise::CreateAndReject(NS_ERROR_DOM_MEDIA_FATAL_ERR,
+                                        __func__);
 }
 
 void
@@ -43,6 +45,7 @@ FFmpegAudioDecoder<LIBAV_VER>::InitCodecContext()
   
   
   mCodecContext->thread_count = 1;
+  
   
   
   mCodecContext->request_sample_fmt =

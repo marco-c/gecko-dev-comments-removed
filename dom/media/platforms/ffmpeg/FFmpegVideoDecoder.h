@@ -48,8 +48,10 @@ private:
   RefPtr<DecodePromise> ProcessDecode(MediaRawData* aSample) override;
   RefPtr<DecodePromise> ProcessDrain() override;
   RefPtr<FlushPromise> ProcessFlush() override;
-  MediaResult DoDecode(MediaRawData* aSample, bool* aGotFrame, DecodedData& aResults);
-  MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize, bool* aGotFrame, DecodedData& aResults);
+  MediaResult DoDecode(MediaRawData* aSample, bool* aGotFrame,
+                       DecodedData& aResults);
+  MediaResult DoDecode(MediaRawData* aSample, uint8_t* aData, int aSize,
+                       bool* aGotFrame, DecodedData& aResults);
   void OutputDelayedFrames();
 
   
@@ -67,7 +69,8 @@ private:
   
   AVCodecParserContext* mCodecParser;
 
-  class PtsCorrectionContext {
+  class PtsCorrectionContext
+  {
   public:
     PtsCorrectionContext();
     int64_t GuessCorrectPts(int64_t aPts, int64_t aDts);
@@ -77,14 +80,15 @@ private:
   private:
     int64_t mNumFaultyPts; 
     int64_t mNumFaultyDts; 
-    int64_t mLastPts;       
-    int64_t mLastDts;       
+    int64_t mLastPts;      
+    int64_t mLastDts;      
   };
 
   PtsCorrectionContext mPtsContext;
   int64_t mLastInputDts;
 
-  class DurationMap {
+  class DurationMap
+  {
   public:
     typedef Pair<int64_t, int64_t> DurationElement;
 

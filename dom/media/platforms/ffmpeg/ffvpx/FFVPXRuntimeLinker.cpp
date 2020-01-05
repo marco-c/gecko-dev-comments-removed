@@ -15,8 +15,7 @@
 
 #include "soundtouch/SoundTouch.h"
 
-namespace mozilla
-{
+namespace mozilla {
 
 template <int V> class FFmpegDecoderModule
 {
