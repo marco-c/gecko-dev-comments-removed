@@ -64,6 +64,8 @@ ManageProfileDialog.prototype = {
   loadProfiles() {
     return this.getProfiles().then(profiles => {
       log.debug("profiles:", profiles);
+      
+      profiles.sort((a, b) => b.timeLastModified - a.timeLastModified);
       this.renderProfileElements(profiles);
       this.updateButtonsStates(this._selectedOptions.length);
     });
