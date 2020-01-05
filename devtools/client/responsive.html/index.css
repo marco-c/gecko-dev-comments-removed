@@ -83,7 +83,7 @@ select {
   -moz-appearance: none; appearance: none;
   background-color: var(--theme-toolbar-background);
   background-image: var(--viewport-selection-arrow);
-  
+  -moz-context-properties: fill;
   fill: currentColor;
   color: var(--viewport-color);
   background-position: 100% 50%;
