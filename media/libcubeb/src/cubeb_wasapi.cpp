@@ -1609,7 +1609,7 @@ int setup_wasapi_stream(cubeb_stream * stm)
     
     
     
-#if !defined(NDEBUG)
+#if !defined(DEBUG)
     const int silent_buffer_count = 2;
 #else
     const int silent_buffer_count = 4;
