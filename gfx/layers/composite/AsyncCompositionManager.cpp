@@ -645,26 +645,41 @@ ApplyAnimatedValue(Layer* aLayer,
   }
 }
 
-static bool
+static AnimationProcessTypes
 SampleAnimations(Layer* aLayer,
                  CompositorAnimationStorage* aStorage,
                  TimeStamp aPoint,
                  uint64_t* aLayerAreaAnimated)
 {
-  bool activeAnimations = false;
+  
+  
+  
+  
+  RefLayer* ancestorRefLayer = nullptr;
+
+  
+  
+  
+  AnimationProcessTypes animProcess = AnimationProcessTypes::eNone;
 
   ForEachNode<ForwardIterator>(
       aLayer,
-      [aStorage, &activeAnimations, &aPoint, &aLayerAreaAnimated] (Layer* layer)
+      [&] (Layer* layer)
       {
+        if (!ancestorRefLayer) {
+          ancestorRefLayer = layer->AsRefLayer();
+        }
+
         bool hasInEffectAnimations = false;
         StyleAnimationValue animationValue = layer->GetBaseAnimationStyle();
-        activeAnimations |=
-          AnimationHelper::SampleAnimationForEachNode(aPoint,
-                                                      layer->GetAnimations(),
-                                                      layer->GetAnimationData(),
-                                                      animationValue,
-                                                      hasInEffectAnimations);
+        if (AnimationHelper::SampleAnimationForEachNode(aPoint,
+                                                        layer->GetAnimations(),
+                                                        layer->GetAnimationData(),
+                                                        animationValue,
+                                                        hasInEffectAnimations)) {
+          animProcess |= (ancestorRefLayer ? AnimationProcessTypes::eContent
+                                           : AnimationProcessTypes::eChrome);
+        }
         if (hasInEffectAnimations) {
           Animation& animation = layer->GetAnimations().LastElement();
           ApplyAnimatedValue(layer,
@@ -676,9 +691,16 @@ SampleAnimations(Layer* aLayer,
             *aLayerAreaAnimated += (layer->GetVisibleRegion().Area());
           }
         }
+      },
+      [&ancestorRefLayer] (Layer* aLayer)
+      {
+        
+        if (ancestorRefLayer && aLayer->AsRefLayer() == ancestorRefLayer) {
+          ancestorRefLayer = nullptr;
+        }
       });
 
-  return activeAnimations;
+  return animProcess;
 }
 
 static bool
@@ -1336,12 +1358,13 @@ AsyncCompositionManager::TransformShadowTree(TimeStamp aCurrentFrame,
   
   
   uint64_t layerAreaAnimated = 0;
-  bool wantNextFrame =
+  AnimationProcessTypes animationProcess =
     SampleAnimations(root,
                      storage,
                      !mPreviousFrameTimeStamp.IsNull() ?
                        mPreviousFrameTimeStamp : aCurrentFrame,
                      &layerAreaAnimated);
+  bool wantNextFrame = (animationProcess != AnimationProcessTypes::eNone);
 
   mAnimationMetricsTracker.UpdateAnimationInProgress(
     wantNextFrame, layerAreaAnimated);
