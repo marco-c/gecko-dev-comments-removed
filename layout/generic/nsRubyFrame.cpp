@@ -224,7 +224,7 @@ nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
     
     
     
-    MOZ_ASSERT(NS_INLINE_IS_BREAK_AFTER(aStatus));
+    MOZ_ASSERT(aStatus.IsInlineBreakAfter());
     
     
     nsIFrame* lastChild;

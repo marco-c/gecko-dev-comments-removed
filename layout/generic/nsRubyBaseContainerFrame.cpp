@@ -509,7 +509,7 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
     }
   }
 
-  if (!e.AtEnd() && NS_INLINE_IS_BREAK_AFTER(reflowStatus)) {
+  if (!e.AtEnd() && reflowStatus.IsInlineBreakAfter()) {
     
     
     e.Next();
@@ -559,7 +559,7 @@ nsRubyBaseContainerFrame::ReflowColumns(const RubyReflowInput& aReflowInput,
           textFrame, textFrame->GetPrevSibling());
       }
     }
-  } else if (NS_INLINE_IS_BREAK_AFTER(reflowStatus)) {
+  } else if (reflowStatus.IsInlineBreakAfter()) {
     
     
     

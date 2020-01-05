@@ -4234,7 +4234,7 @@ nsBlockFrame::ReflowInlineFrame(BlockReflowInput& aState,
         
         SplitLine(aState, aLineLayout, aLine, aFrame->GetNextSibling(), aLineReflowStatus);
 
-        if (NS_INLINE_IS_BREAK_AFTER(frameReflowStatus) &&
+        if (frameReflowStatus.IsInlineBreakAfter() &&
             !aLineLayout.GetLineEndsInBR()) {
           aLineLayout.SetDirtyNextLine();
         }
