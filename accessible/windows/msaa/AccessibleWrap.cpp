@@ -1394,7 +1394,9 @@ AccessibleWrap::GetIAccessibleFor(const VARIANT& aVarChild, bool* aIsDefunct)
     varChild.lVal = GetExistingID();
   }
 
-  if (IsProxy() ? Proxy()->MustPruneChildren() : nsAccUtils::MustPrune(this)) {
+  if (varChild.ulVal != GetExistingID() &&
+      (IsProxy() ? Proxy()->MustPruneChildren() : nsAccUtils::MustPrune(this))) {
+    
     return nullptr;
   }
 
