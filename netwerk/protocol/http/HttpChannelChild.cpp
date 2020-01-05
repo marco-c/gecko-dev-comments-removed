@@ -1266,7 +1266,8 @@ mozilla::ipc::IPCResult
 HttpChannelChild::RecvReportSecurityMessage(const nsString& messageTag,
                                             const nsString& messageCategory)
 {
-  AddSecurityMessage(messageTag, messageCategory);
+  DebugOnly<nsresult> rv = AddSecurityMessage(messageTag, messageCategory);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
   return IPC_OK();
 }
 
@@ -1361,7 +1362,7 @@ HttpChannelChild::SetupRedirect(nsIURI* uri,
       
       
       
-      httpChannelChild->ForceIntercepted(false, false);
+      rv = httpChannelChild->ForceIntercepted(false, false);
     } else if (mRedirectMode == nsIHttpChannelInternal::REDIRECT_MODE_MANUAL &&
                ((redirectFlags & (nsIChannelEventSink::REDIRECT_TEMPORARY |
                                   nsIChannelEventSink::REDIRECT_PERMANENT)) != 0) &&
@@ -1371,8 +1372,9 @@ HttpChannelChild::SetupRedirect(nsIURI* uri,
       
       
       
-      httpChannelChild->ForceIntercepted(true, shouldUpgrade);
+      rv = httpChannelChild->ForceIntercepted(true, shouldUpgrade);
     }
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
   mRedirectChannelChild = do_QueryInterface(newChannel);
@@ -1409,7 +1411,8 @@ HttpChannelChild::Redirect1Begin(const uint32_t& registrarId,
       
       nsCOMPtr<nsIHttpChannel> httpChannel = do_QueryInterface(mRedirectChannelChild);
       if (httpChannel) {
-        httpChannel->SetChannelId(channelId);
+        rv = httpChannel->SetChannelId(channelId);
+        MOZ_ASSERT(NS_SUCCEEDED(rv));
       }
       mRedirectChannelChild->ConnectParent(registrarId);
     }
@@ -1456,7 +1459,8 @@ void
 HttpChannelChild::OverrideSecurityInfoForNonIPCRedirect(nsISupports* securityInfo)
 {
   mResponseCouldBeSynthesized = true;
-  OverrideSecurityInfo(securityInfo);
+  DebugOnly<nsresult> rv = OverrideSecurityInfo(securityInfo);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
 class Redirect3Event : public ChannelEvent
@@ -1761,9 +1765,11 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult result)
       mixedContentWouldBlock = newLoadInfo->GetMixedContentWouldBlock();
     }
 
-    newHttpChannel->GetReferrerPolicy(&referrerPolicy);
+    rv = newHttpChannel->GetReferrerPolicy(&referrerPolicy);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
     nsCOMPtr<nsIURI> newChannelReferrerURI;
-    newHttpChannel->GetReferrer(getter_AddRefs(newChannelReferrerURI));
+    rv = newHttpChannel->GetReferrer(getter_AddRefs(newChannelReferrerURI));
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     SerializeURI(newChannelReferrerURI, referrerURI);
   }
@@ -1792,8 +1798,10 @@ HttpChannelChild::OnRedirectVerifyCallback(nsresult result)
   nsCOMPtr<nsIHttpChannelChild> newHttpChannelChild =
       do_QueryInterface(mRedirectChannelChild);
   if (newHttpChannelChild && NS_SUCCEEDED(result)) {
-    newHttpChannelChild->AddCookiesToRequest();
-    newHttpChannelChild->GetClientSetRequestHeaders(&headerTuples);
+    rv = newHttpChannelChild->AddCookiesToRequest();
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    rv = newHttpChannelChild->GetClientSetRequestHeaders(&headerTuples);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
     newHttpChannelChild->GetClientSetCorsPreflightParameters(corsPreflightArgs);
   }
 
@@ -1983,7 +1991,8 @@ HttpChannelChild::AsyncOpen(nsIStreamListener *listener, nsISupports *aContext)
     mUserSetCookieHeader = cookie;
   }
 
-  AddCookiesToRequest();
+  rv = AddCookiesToRequest();
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
   
@@ -2879,7 +2888,8 @@ HttpChannelChild::OverrideWithSynthesizedResponse(nsAutoPtr<nsHttpResponseHead>&
     
     nsresult rv = ContinueAsyncOpen();
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      AsyncAbort(rv);
+      rv = AsyncAbort(rv);
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
     return;
   }

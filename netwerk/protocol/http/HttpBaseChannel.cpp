@@ -134,7 +134,8 @@ public:
   {
     nsHttpAtom atom = nsHttp::ResolveAtom(aHeader);
     if (!IsHeaderBlacklistedForRedirectCopy(atom)) {
-      mChannel->SetRequestHeader(aHeader, aValue, false);
+      DebugOnly<nsresult> rv = mChannel->SetRequestHeader(aHeader, aValue, false);
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
     return NS_OK;
   }
@@ -3225,33 +3226,40 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
 
     nsAutoCString method;
     mRequestHead.Method(method);
-    httpChannel->SetRequestMethod(method);
+    rv = httpChannel->SetRequestMethod(method);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
   
-  if (mReferrer)
-    httpChannel->SetReferrerWithPolicy(mReferrer, mReferrerPolicy);
+  if (mReferrer) {
+    rv = httpChannel->SetReferrerWithPolicy(mReferrer, mReferrerPolicy);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+  }
   
-  httpChannel->SetAllowSTS(mAllowSTS);
+  rv = httpChannel->SetAllowSTS(mAllowSTS);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
   
   
   uint32_t redirectionLimit = mRedirectionLimit
     ? mRedirectionLimit - 1
     : 0;
-  httpChannel->SetRedirectionLimit(redirectionLimit);
+  rv = httpChannel->SetRedirectionLimit(redirectionLimit);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
   {
     nsAutoCString oldAcceptValue;
     nsresult hasHeader = mRequestHead.GetHeader(nsHttp::Accept, oldAcceptValue);
     if (NS_SUCCEEDED(hasHeader)) {
-      httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Accept"),
-                                    oldAcceptValue,
-                                    false);
+      rv = httpChannel->SetRequestHeader(NS_LITERAL_CSTRING("Accept"),
+                                         oldAcceptValue,
+                                         false);
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
   }
 
   
-  httpChannel->SetRequestContextID(mRequestContextID);
+  rv = httpChannel->SetRequestContextID(mRequestContextID);
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   
   nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(newChannel);
@@ -3261,15 +3269,20 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
 
   if (httpInternal) {
     
-    httpInternal->SetThirdPartyFlags(mThirdPartyFlags);
-    httpInternal->SetAllowSpdy(mAllowSpdy);
-    httpInternal->SetAllowAltSvc(mAllowAltSvc);
-    httpInternal->SetBeConservative(mBeConservative);
+    rv = httpInternal->SetThirdPartyFlags(mThirdPartyFlags);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    rv = httpInternal->SetAllowSpdy(mAllowSpdy);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    rv = httpInternal->SetAllowAltSvc(mAllowAltSvc);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    rv = httpInternal->SetBeConservative(mBeConservative);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     RefPtr<nsHttpChannel> realChannel;
     CallQueryInterface(newChannel, realChannel.StartAssignment());
     if (realChannel) {
-      realChannel->SetTopWindowURI(mTopWindowURI);
+      rv = realChannel->SetTopWindowURI(mTopWindowURI);
+      MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
 
     
@@ -3277,29 +3290,35 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
     
     
     if (newURI && (mURI == mDocumentURI))
-      httpInternal->SetDocumentURI(newURI);
+      rv = httpInternal->SetDocumentURI(newURI);
     else
-      httpInternal->SetDocumentURI(mDocumentURI);
+      rv = httpInternal->SetDocumentURI(mDocumentURI);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
     
     if (mRedirectedCachekeys) {
         LOG(("HttpBaseChannel::SetupReplacementChannel "
              "[this=%p] transferring chain of redirect cache-keys", this));
-        httpInternal->SetCacheKeysRedirectChain(mRedirectedCachekeys.forget());
+        rv = httpInternal->SetCacheKeysRedirectChain(mRedirectedCachekeys.forget());
+        MOZ_ASSERT(NS_SUCCEEDED(rv));
     }
 
     
-    httpInternal->SetCorsMode(mCorsMode);
+    rv = httpInternal->SetCorsMode(mCorsMode);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
-    httpInternal->SetRedirectMode(mRedirectMode);
+    rv = httpInternal->SetRedirectMode(mRedirectMode);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
-    httpInternal->SetFetchCacheMode(mFetchCacheMode);
+    rv = httpInternal->SetFetchCacheMode(mFetchCacheMode);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
 
     
-    httpInternal->SetIntegrityMetadata(mIntegrityMetadata);
+    rv = httpInternal->SetIntegrityMetadata(mIntegrityMetadata);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
   
@@ -3376,7 +3395,8 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
     
     nsCOMPtr<nsIHttpHeaderVisitor> visitor =
       new AddHeadersToChannelVisitor(httpChannel);
-    mRequestHead.VisitHeaders(visitor);
+    rv = mRequestHead.VisitHeaders(visitor);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
   }
 
   
