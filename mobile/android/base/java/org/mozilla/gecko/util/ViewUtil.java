@@ -6,6 +6,7 @@ package org.mozilla.gecko.util;
 
 import android.annotation.TargetApi;
 import android.content.res.TypedArray;
+import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.text.TextUtilsCompat;
 import android.support.v4.view.MarginLayoutParamsCompat;
@@ -27,7 +28,18 @@ public class ViewUtil {
 
 
 
+    @TargetApi(Build.VERSION_CODES.JELLY_BEAN)
     public static void enableTouchRipple(final View view) {
+        final TypedArray backgroundDrawableArray;
+        if (AppConstants.Versions.feature21Plus) {
+            backgroundDrawableArray = view.getContext().obtainStyledAttributes(new int[] { R.attr.selectableItemBackgroundBorderless });
+        } else {
+            backgroundDrawableArray = view.getContext().obtainStyledAttributes(new int[] { R.attr.selectableItemBackground });
+        }
+        final Drawable backgroundDrawable = backgroundDrawableArray.getDrawable(0);
+        backgroundDrawableArray.recycle();
+
+
         
         
         
@@ -46,24 +58,18 @@ public class ViewUtil {
             paddingBottom = view.getPaddingBottom();
         }
 
-        setTouchRipple(view);
+        
+        
+        if (AppConstants.Versions.feature16Plus) {
+            view.setBackground(backgroundDrawable);
+        } else {
+            view.setBackgroundDrawable(backgroundDrawable);
+        }
 
+        
         if (!AppConstants.Versions.feature21Plus) {
             view.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom);
         }
-    }
-
-    private static void setTouchRipple(final View view) {
-        final TypedArray backgroundDrawableArray;
-        if (AppConstants.Versions.feature21Plus) {
-            backgroundDrawableArray = view.getContext().obtainStyledAttributes(new int[] { R.attr.selectableItemBackgroundBorderless });
-        } else {
-            backgroundDrawableArray = view.getContext().obtainStyledAttributes(new int[] { R.attr.selectableItemBackground });
-        }
-
-        
-        
-        view.setBackgroundDrawable(backgroundDrawableArray.getDrawable(0));
     }
 
     
