@@ -8,7 +8,6 @@
 "use strict";
 
 const Cu = Components.utils;
-const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
 const { BrowserLoader } = Cu.import("resource://devtools/client/shared/browser-loader.js", {});
 
 function Netmonitor(toolbox) {
@@ -39,22 +38,3 @@ Netmonitor.prototype = {
     return window.NetMonitorController.shutdownNetMonitor();
   }
 };
-
-
-
-
-
-var $ = (selector, target = document) => target.querySelector(selector);
-var $all = (selector, target = document) => target.querySelectorAll(selector);
-
-
-
-
-
-function dumpn(str) {
-  if (wantLogging) {
-    dump("NET-FRONTEND: " + str + "\n");
-  }
-}
-
-var wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");

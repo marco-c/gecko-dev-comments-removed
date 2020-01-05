@@ -2,12 +2,9 @@
 
 
 
-
-
 "use strict";
 
 const {
-  createClass,
   createFactory,
   DOM,
   PropTypes,
@@ -15,7 +12,6 @@ const {
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 const Actions = require("../../actions/index");
 const { getSelectedRequest } = require("../../selectors/index");
-const { Prefs } = require("../../prefs");
 
 
 const CustomRequestPanel = createFactory(require("./custom-request-panel"));
@@ -25,74 +21,49 @@ const { div } = DOM;
 
 
 
-const NetworkDetailsPanel = createClass({
-  displayName: "NetworkDetailsPanel",
 
-  propTypes: {
-    activeTabId: PropTypes.string,
-    cloneSelectedRequest: PropTypes.func.isRequired,
-    open: PropTypes.bool,
-    request: PropTypes.object,
-    selectTab: PropTypes.func.isRequired,
-    toolbox: PropTypes.object.isRequired,
-  },
-
-  componentDidMount() {
-    
-    document.getElementById("splitter-adjustable-box")
-      .setAttribute("width", Prefs.networkDetailsWidth);
-    document.getElementById("splitter-adjustable-box")
-      .setAttribute("height", Prefs.networkDetailsHeight);
-  },
-
-  componentWillUnmount() {
-    
-    Prefs.networkDetailsWidth =
-      document.getElementById("splitter-adjustable-box").getAttribute("width");
-    Prefs.networkDetailsHeight =
-      document.getElementById("splitter-adjustable-box").getAttribute("height");
-  },
-
-  render() {
-    let {
-      activeTabId,
-      cloneSelectedRequest,
-      open,
-      request,
-      selectTab,
-      toolbox,
-    } = this.props;
-
-    if (!open || !request) {
-      
-      document.getElementById("splitter-adjustable-box").setAttribute("hidden", true);
-      return null;
-    }
-    
-    document.getElementById("splitter-adjustable-box").removeAttribute("hidden");
-
-    return (
-      div({ className: "network-details-panel" },
-        !request.isCustom ?
-          TabboxPanel({
-            activeTabId,
-            request,
-            selectTab,
-            toolbox,
-          }) :
-          CustomRequestPanel({
-            cloneSelectedRequest,
-            request,
-          })
-      )
-    );
+function NetworkDetailsPanel({
+  activeTabId,
+  cloneSelectedRequest,
+  request,
+  selectTab,
+  toolbox,
+}) {
+  if (!request) {
+    return null;
   }
-});
+
+  return (
+    div({ className: "network-details-panel" },
+      !request.isCustom ?
+        TabboxPanel({
+          activeTabId,
+          request,
+          selectTab,
+          toolbox,
+        }) :
+        CustomRequestPanel({
+          cloneSelectedRequest,
+          request,
+        })
+    )
+  );
+}
+
+NetworkDetailsPanel.displayName = "NetworkDetailsPanel";
+
+NetworkDetailsPanel.propTypes = {
+  activeTabId: PropTypes.string,
+  cloneSelectedRequest: PropTypes.func.isRequired,
+  open: PropTypes.bool,
+  request: PropTypes.object,
+  selectTab: PropTypes.func.isRequired,
+  toolbox: PropTypes.object.isRequired,
+};
 
 module.exports = connect(
   (state) => ({
     activeTabId: state.ui.detailsPanelSelectedTab,
-    open: state.ui.networkDetailsOpen,
     request: getSelectedRequest(state),
   }),
   (dispatch) => ({

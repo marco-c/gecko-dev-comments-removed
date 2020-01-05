@@ -20,23 +20,23 @@ const SplitBox = React.createClass({
     
     className: PropTypes.string,
     
-    initialSize: PropTypes.number,
+    initialSize: PropTypes.string,
     
-    initialWidth: PropTypes.number,
+    initialWidth: PropTypes.string,
     
-    initialHeight: PropTypes.number,
+    initialHeight: PropTypes.string,
     
     startPanel: PropTypes.any,
     
-    minSize: PropTypes.number,
+    minSize: PropTypes.string,
     
-    maxSize: PropTypes.number,
+    maxSize: PropTypes.string,
     
     endPanel: PropTypes.any,
     
     endPanelControl: PropTypes.bool,
     
-    splitterSize: PropTypes.number,
+    splitterSize: PropTypes.string,
     
     vert: PropTypes.bool,
     
@@ -62,6 +62,14 @@ const SplitBox = React.createClass({
       width: this.props.initialWidth || this.props.initialSize,
       height: this.props.initialHeight || this.props.initialSize
     };
+  },
+
+  componentWillReceiveProps(nextProps) {
+    let { vert } = nextProps;
+
+    if (vert !== this.props.vert) {
+      this.setState({ vert });
+    }
   },
 
   

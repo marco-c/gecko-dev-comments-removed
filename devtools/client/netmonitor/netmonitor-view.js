@@ -4,7 +4,6 @@
 
 
 
-
 "use strict";
 
 const { ACTIVITY_TYPE } = require("./constants");
@@ -13,10 +12,8 @@ const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const Provider = createFactory(require("devtools/client/shared/vendor/react-redux").Provider);
 
 
-const NetworkDetailsPanel = createFactory(require("./shared/components/network-details-panel"));
-const RequestList = createFactory(require("./components/request-list"));
+const MonitorPanel = createFactory(require("./components/monitor-panel"));
 const StatisticsPanel = createFactory(require("./components/statistics-panel"));
-const Toolbar = createFactory(require("./components/toolbar"));
 
 
 
@@ -28,30 +25,17 @@ exports.NetMonitorView = {
   initialize: function () {
     this._body = document.querySelector("#body");
 
-    this.networkDetailsPanel = document.querySelector(
-      "#react-network-details-panel-hook");
+    this.monitorPanel = document.querySelector("#react-monitor-panel-hook");
     ReactDOM.render(Provider(
       { store: gStore },
-      NetworkDetailsPanel({ toolbox: NetMonitorController._toolbox }),
-    ), this.networkDetailsPanel);
-
-    this.requestList = document.querySelector("#react-request-list-hook");
-    ReactDOM.render(Provider(
-      { store: gStore },
-      RequestList({ toolbox: NetMonitorController._toolbox })
-    ), this.requestList);
+      MonitorPanel(),
+    ), this.monitorPanel);
 
     this.statisticsPanel = document.querySelector("#react-statistics-panel-hook");
     ReactDOM.render(Provider(
       { store: gStore },
       StatisticsPanel(),
     ), this.statisticsPanel);
-
-    this.toolbar = document.querySelector("#react-toolbar-hook");
-    ReactDOM.render(Provider(
-      { store: gStore },
-      Toolbar(),
-    ), this.toolbar);
 
     
     
@@ -66,19 +50,17 @@ exports.NetMonitorView = {
 
 
   destroy: function () {
-    ReactDOM.unmountComponentAtNode(this.networkDetailsPanel);
-    ReactDOM.unmountComponentAtNode(this.requestList);
+    ReactDOM.unmountComponentAtNode(this.monitorPanel);
     ReactDOM.unmountComponentAtNode(this.statisticsPanel);
-    ReactDOM.unmountComponentAtNode(this.toolbar);
     this.unsubscribeStore();
   },
 
   toggleFrontendMode: function () {
     if (gStore.getState().ui.statisticsOpen) {
-      this._body.selectedPanel = document.querySelector("#react-statistics-panel-hook");
+      this._body.selectedPanel = this.statisticsPanel;
       NetMonitorController.triggerActivity(ACTIVITY_TYPE.RELOAD.WITH_CACHE_ENABLED);
     } else {
-      this._body.selectedPanel = document.querySelector("#inspector-panel");
+      this._body.selectedPanel = this.monitorPanel;
     }
   },
 };
