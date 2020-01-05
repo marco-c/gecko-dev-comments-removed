@@ -40,6 +40,9 @@ thread_local!(pub static LIVE_REFERENCES: Rc<RefCell<Option<LiveDOMReferences>>>
 
 
 
+pub struct TrustedReference(*const libc::c_void);
+
+
 
 
 
@@ -108,7 +111,8 @@ impl<T: Reflectable> Drop for Trusted<T> {
         assert!(*refcount > 0);
         *refcount -= 1;
         if *refcount == 0 {
-            self.script_chan.send(ScriptMsg::RefcountCleanup(self.ptr));
+            self.script_chan.send(
+                ScriptMsg::RefcountCleanup(TrustedReference(self.ptr)));
         }
     }
 }
@@ -151,7 +155,8 @@ impl LiveDOMReferences {
     }
 
     
-    pub fn cleanup(cx: *mut JSContext, raw_reflectable: *const libc::c_void) {
+    pub fn cleanup(cx: *mut JSContext, raw_reflectable: TrustedReference) {
+        let TrustedReference(raw_reflectable) = raw_reflectable;
         LIVE_REFERENCES.with(|ref r| {
             let r = r.borrow();
             let live_references = r.as_ref().unwrap();
