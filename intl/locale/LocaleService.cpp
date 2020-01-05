@@ -38,6 +38,43 @@ mozilla::StaticRefPtr<LocaleService> LocaleService::sInstance;
 
 
 
+
+
+
+static void SanitizeForBCP47(nsACString& aLocale)
+{
+#ifdef ENABLE_INTL_API
+  
+  
+  
+  const int32_t LANG_TAG_CAPACITY = 128;
+  char langTag[LANG_TAG_CAPACITY];
+  nsAutoCString locale(aLocale);
+  UErrorCode err = U_ZERO_ERROR;
+  
+  
+  int32_t len = uloc_toLanguageTag(locale.get(), langTag, LANG_TAG_CAPACITY,
+                                   false, &err);
+  if (U_SUCCESS(err) && len > 0) {
+    aLocale.Assign(langTag, len);
+  }
+#else
+  
+  
+  
+  
+  if (aLocale.EqualsLiteral("ja-JP-mac")) {
+    aLocale.AssignLiteral("ja-JP");
+  }
+#endif
+}
+
+
+
+
+
+
+
 static void
 ReadAppLocales(nsTArray<nsCString>& aRetVal)
 {
@@ -80,12 +117,25 @@ LocaleService::~LocaleService()
 }
 
 void
-LocaleService::GetAppLocales(nsTArray<nsCString>& aRetVal)
+LocaleService::GetAppLocalesAsLangTags(nsTArray<nsCString>& aRetVal)
 {
   if (mAppLocales.IsEmpty()) {
     ReadAppLocales(mAppLocales);
   }
   aRetVal = mAppLocales;
+}
+
+void
+LocaleService::GetAppLocalesAsBCP47(nsTArray<nsCString>& aRetVal)
+{
+  if (mAppLocales.IsEmpty()) {
+    ReadAppLocales(mAppLocales);
+  }
+  for (uint32_t i = 0; i < mAppLocales.Length(); i++) {
+    nsAutoCString locale(mAppLocales[i]);
+    SanitizeForBCP47(locale);
+    aRetVal.AppendElement(locale);
+  }
 }
 
 bool
@@ -335,7 +385,7 @@ CreateOutArray(const nsTArray<nsCString>& aArray)
 }
 
 NS_IMETHODIMP
-LocaleService::GetAppLocales(uint32_t* aCount, char*** aOutArray)
+LocaleService::GetAppLocalesAsLangTags(uint32_t* aCount, char*** aOutArray)
 {
   if (mAppLocales.IsEmpty()) {
     ReadAppLocales(mAppLocales);
@@ -348,12 +398,35 @@ LocaleService::GetAppLocales(uint32_t* aCount, char*** aOutArray)
 }
 
 NS_IMETHODIMP
-LocaleService::GetAppLocale(nsACString& aRetVal)
+LocaleService::GetAppLocalesAsBCP47(uint32_t* aCount, char*** aOutArray)
+{
+  AutoTArray<nsCString, 32> locales;
+  GetAppLocalesAsBCP47(locales);
+
+  *aCount = locales.Length();
+  *aOutArray = CreateOutArray(locales);
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::GetAppLocaleAsLangTag(nsACString& aRetVal)
 {
   if (mAppLocales.IsEmpty()) {
     ReadAppLocales(mAppLocales);
   }
   aRetVal = mAppLocales[0];
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+LocaleService::GetAppLocaleAsBCP47(nsACString& aRetVal)
+{
+  if (mAppLocales.IsEmpty()) {
+    ReadAppLocales(mAppLocales);
+  }
+  aRetVal = mAppLocales[0];
+  SanitizeForBCP47(aRetVal);
   return NS_OK;
 }
 

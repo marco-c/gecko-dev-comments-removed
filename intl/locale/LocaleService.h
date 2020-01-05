@@ -92,7 +92,8 @@ public:
 
 
 
-  void GetAppLocales(nsTArray<nsCString>& aRetVal);
+  void GetAppLocalesAsLangTags(nsTArray<nsCString>& aRetVal);
+  void GetAppLocalesAsBCP47(nsTArray<nsCString>& aRetVal);
 
   
 
