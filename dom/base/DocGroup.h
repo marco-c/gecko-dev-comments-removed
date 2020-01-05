@@ -119,6 +119,23 @@ public:
     return mDocGroups.Iter();
   }
 
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsresult
+  FindItemWithName(const char16_t* aName,
+                   nsIDocShellTreeItem* aRequestor,
+                   nsIDocShellTreeItem* aOriginalRequestor,
+                   nsIDocShellTreeItem** aFoundItem);
+
 private:
   ~TabGroup();
   DocGroupMap mDocGroups;

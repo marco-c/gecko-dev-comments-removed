@@ -35,6 +35,10 @@ function runTest() {
 
     SimpleTest.executeSoon(function() {
       var iframe2 = document.createElement('iframe');
+      
+      
+      
+      SpecialPowers.wrap(iframe2).presetOpenerWindow(iframe1.contentWindow);
       iframe2.setAttribute('mozbrowser', 'true');
 
       iframe2.addEventListener('mozbrowseropenwindow', function(e) {

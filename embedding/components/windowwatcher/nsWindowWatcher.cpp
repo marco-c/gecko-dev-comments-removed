@@ -2060,66 +2060,25 @@ nsWindowWatcher::FindItemWithName(const char16_t* aName,
                                   nsIDocShellTreeItem* aOriginalRequestor,
                                   nsIDocShellTreeItem** aFoundItem)
 {
-  *aFoundItem = 0;
-
-  
+  *aFoundItem = nullptr;
   if (!aName || !*aName) {
     return NS_OK;
   }
 
   nsDependentString name(aName);
-
-  nsCOMPtr<nsISimpleEnumerator> windows;
-  GetWindowEnumerator(getter_AddRefs(windows));
-  if (!windows) {
-    return NS_ERROR_FAILURE;
+  if (name.LowerCaseEqualsLiteral("_blank") ||
+      name.LowerCaseEqualsLiteral("_top") ||
+      name.LowerCaseEqualsLiteral("_parent") ||
+      name.LowerCaseEqualsLiteral("_self")) {
+    return NS_OK;
   }
 
-  bool more;
-  nsresult rv = NS_OK;
-
-  do {
-    windows->HasMoreElements(&more);
-    if (!more) {
-      break;
-    }
-    nsCOMPtr<nsISupports> nextSupWindow;
-    windows->GetNext(getter_AddRefs(nextSupWindow));
-    nsCOMPtr<mozIDOMWindowProxy> nextWindow(do_QueryInterface(nextSupWindow));
-    if (nextWindow) {
-      nsCOMPtr<nsIDocShellTreeItem> treeItem;
-      GetWindowTreeItem(nextWindow, getter_AddRefs(treeItem));
-      if (treeItem) {
-        
-        
-        nsCOMPtr<nsIDocShellTreeItem> root;
-        treeItem->GetSameTypeRootTreeItem(getter_AddRefs(root));
-        NS_ASSERTION(root, "Must have root tree item of same type");
-        
-        if (root != aRequestor) {
-          
-          
-          
-          nsCOMPtr<nsIDocShellTreeOwner> rootOwner;
-          
-          
-          
-          
-          
-          if (aRequestor) {
-            root->GetTreeOwner(getter_AddRefs(rootOwner));
-          }
-          rv = root->FindItemWithName(aName, rootOwner, aOriginalRequestor,
-                                      aFoundItem);
-          if (NS_FAILED(rv) || *aFoundItem || !aRequestor) {
-            break;
-          }
-        }
-      }
-    }
-  } while (1);
-
-  return rv;
+  
+  
+  return TabGroup::GetChromeTabGroup()->FindItemWithName(aName,
+                                                         aRequestor,
+                                                         aOriginalRequestor,
+                                                         aFoundItem);
 }
 
 already_AddRefed<nsIDocShellTreeItem>
