@@ -43,9 +43,6 @@ var Utils = {
     }
 
     return mm;
-  },
-  checkPermissionForMM: function u_checkPermissionForMM(mm, permName) {
-    return mm.assertPermission(permName);
   }
 };
 
@@ -215,32 +212,7 @@ this.Keyboard = {
   },
 
   receiveMessage: function keyboardReceiveMessage(msg) {
-    
-    
-    let mm;
-
-    
-    let permName;
-    if (msg.name.startsWith("Keyboard:")) {
-      permName = "input";
-    } else if (msg.name.startsWith("System:")) {
-      permName = "input-manage";
-    }
-
-    
-    
-    if (permName) {
-      mm = Utils.getMMFromMessage(msg);
-      if (!mm) {
-        dump("Keyboard.jsm: Message " + msg.name + " has no message manager.");
-        return;
-      }
-      if (!Utils.checkPermissionForMM(mm, permName)) {
-        dump("Keyboard.jsm: Message " + msg.name +
-          " from a content process with no '" + permName + "' privileges.\n");
-        return;
-      }
-    }
+    let mm = Utils.getMMFromMessage(msg);
 
     
     
@@ -537,13 +509,6 @@ function InputRegistryGlue() {
 
 InputRegistryGlue.prototype.receiveMessage = function(msg) {
   let mm = Utils.getMMFromMessage(msg);
-
-  let permName = msg.name.startsWith("System:") ? "input-mgmt" : "input";
-  if (!Utils.checkPermissionForMM(mm, permName)) {
-    dump("InputRegistryGlue message " + msg.name +
-      " from a content process with no " + permName + " privileges.");
-    return;
-  }
 
   switch (msg.name) {
     case 'InputRegistry:Add':
