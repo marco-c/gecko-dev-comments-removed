@@ -245,35 +245,6 @@ add_task(function* test_getHistogramById() {
   do_check_eq(s.max, 10000);
 });
 
-add_task(function* test_histogramFrom() {
-  
-  let names = [
-      "CYCLE_COLLECTOR",      
-      "GC_REASON_2",          
-      "GC_RESET",             
-      "TELEMETRY_TEST_FLAG",  
-      "TELEMETRY_TEST_COUNT", 
-  ];
-
-  for (let name of names) {
-    let [min, max, bucket_count] = [1, INT_MAX - 1, 10]
-    let original = Telemetry.getHistogramById(name);
-    let clone = Telemetry.histogramFrom("clone" + name, name);
-    compareHistograms(original, clone);
-  }
-
-  
-  
-  let testFlag = Telemetry.getHistogramById("TELEMETRY_TEST_FLAG");
-  testFlag.add(1);
-  let testCount = Telemetry.getHistogramById("TELEMETRY_TEST_COUNT");
-  testCount.add();
-  let clone = Telemetry.histogramFrom("FlagClone", "TELEMETRY_TEST_FLAG");
-  compareHistograms(testFlag, clone);
-  clone = Telemetry.histogramFrom("CountClone", "TELEMETRY_TEST_COUNT");
-  compareHistograms(testCount, clone);
-});
-
 add_task(function* test_getSlowSQL() {
   var slow = Telemetry.slowSQL;
   do_check_true(("mainThread" in slow) && ("otherThreads" in slow));
@@ -442,18 +413,14 @@ add_task(function* test_addons() {
 
 add_task(function* test_expired_histogram() {
   var test_expired_id = "TELEMETRY_TEST_EXPIRED";
-  var clone_id = "ExpiredClone";
   var dummy = Telemetry.getHistogramById(test_expired_id);
-  var dummy_clone = Telemetry.histogramFrom(clone_id, test_expired_id);
   var rh = Telemetry.registeredHistograms(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN, []);
   Assert.ok(!!rh);
 
   dummy.add(1);
-  dummy_clone.add(1);
 
   do_check_eq(Telemetry.histogramSnapshots["__expired__"], undefined);
   do_check_eq(Telemetry.histogramSnapshots[test_expired_id], undefined);
-  do_check_eq(Telemetry.histogramSnapshots[clone_id], undefined);
   do_check_eq(rh[test_expired_id], undefined);
 });
 
