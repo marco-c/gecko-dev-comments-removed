@@ -536,6 +536,20 @@ class JS_PUBLIC_API(AutoAssertNoAlloc)
 
 
 
+class JS_PUBLIC_API(AutoAssertOnBarrier)
+{
+    JSContext* context;
+    bool prev;
+
+  public:
+    explicit AutoAssertOnBarrier(JSContext* cx);
+    ~AutoAssertOnBarrier();
+};
+
+
+
+
+
 
 
 
@@ -621,6 +635,7 @@ ExposeGCThingToActiveJS(JS::GCCellPtr thing)
     if (IsInsideNursery(thing.asCell()))
         return;
     JS::shadow::Runtime* rt = detail::GetGCThingRuntime(thing.unsafeAsUIntPtr());
+    MOZ_DIAGNOSTIC_ASSERT(rt->allowGCBarriers());
     if (IsIncrementalBarrierNeededOnTenuredGCThing(rt, thing))
         JS::IncrementalReferenceBarrier(thing);
     else if (JS::GCThingIsMarkedGray(thing))
@@ -631,6 +646,7 @@ static MOZ_ALWAYS_INLINE void
 MarkGCThingAsLive(JSRuntime* aRt, JS::GCCellPtr thing)
 {
     JS::shadow::Runtime* rt = JS::shadow::Runtime::asShadowRuntime(aRt);
+    MOZ_DIAGNOSTIC_ASSERT(rt->allowGCBarriers());
     
 
 
