@@ -2,6 +2,8 @@
 
 
 
+
+
 #include "shared-libraries.h"
 
 #define PATH_MAX_TOSTRING(x) #x
@@ -15,12 +17,56 @@
 #include "platform.h"
 #include "shared-libraries.h"
 #include "mozilla/Unused.h"
+#include "nsDebug.h"
 #include "nsNativeCharsetUtils.h"
 
 #include "common/linux/file_id.h"
 #include <algorithm>
 
-#define ARRAY_SIZE(a) (sizeof(a)/sizeof(a[0]))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+#undef CONFIG_CASE_1
+#undef CONFIG_CASE_2
+#undef CONFIG_CASE_3
+
+#if defined(GP_OS_linux)
+# define CONFIG_CASE_1 1
+# include <link.h> 
+# include <features.h>
+# include <dlfcn.h>
+# include <sys/types.h>
+
+#elif defined(GP_OS_android) && !defined(MOZ_WIDGET_GONK)
+# define CONFIG_CASE_2 1
+# include "ElfLoader.h" 
+# include <features.h>
+# include <dlfcn.h>
+# include <sys/types.h>
+extern "C" MOZ_EXPORT __attribute__((weak))
+int dl_iterate_phdr(
+          int (*callback)(struct dl_phdr_info *info, size_t size, void *data),
+          void *data);
+
+#elif defined(GP_OS_android) && defined(MOZ_WIDGET_GONK)
+# define CONFIG_CASE_3 1
+  
+
+#else
+# error "Unexpected configuration"
+#endif
+
 
 
 static std::string getId(const char *bin_name)
@@ -39,26 +85,9 @@ static std::string getId(const char *bin_name)
   return "";
 }
 
-#if !defined(MOZ_WIDGET_GONK)
 
-#include "nsDebug.h"
-#if defined(GP_OS_android)
-#include "ElfLoader.h" 
-#else
-#include <link.h> 
-#endif
-#include <features.h>
-#include <dlfcn.h>
-#include <sys/types.h>
 
-#if defined(GP_OS_android)
-extern "C" MOZ_EXPORT __attribute__((weak))
-int dl_iterate_phdr(
-          int (*callback) (struct dl_phdr_info *info,
-                           size_t size, void *data),
-          void *data);
-#endif
-
+#if defined(CONFIG_CASE_1) || defined(CONFIG_CASE_2)
 static int
 dl_iterate_callback(struct dl_phdr_info *dl_info, size_t size, void *data)
 {
@@ -84,7 +113,9 @@ dl_iterate_callback(struct dl_phdr_info *dl_info, size_t size, void *data)
   const char *path = dl_info->dlpi_name;
 
   nsAutoString pathStr;
-  mozilla::Unused << NS_WARN_IF(NS_FAILED(NS_CopyNativeToUnicode(nsDependentCString(path), pathStr)));
+  mozilla::Unused <<
+    NS_WARN_IF(NS_FAILED(NS_CopyNativeToUnicode(nsDependentCString(path),
+                                                pathStr)));
 
   nsAutoString nameStr = pathStr;
   int32_t pos = nameStr.RFindChar('/');
@@ -99,15 +130,15 @@ dl_iterate_callback(struct dl_phdr_info *dl_info, size_t size, void *data)
 
   return 0;
 }
-
 #endif 
+
 
 SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
 {
   SharedLibraryInfo info;
 
-#if !defined(MOZ_WIDGET_GONK)
-#if defined(GP_OS_android)
+#if defined(CONFIG_CASE_2)
+  
   if (!dl_iterate_phdr) {
     
     
@@ -115,12 +146,12 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
     
     return info;
   }
-#endif 
+#endif
 
-  dl_iterate_phdr(dl_iterate_callback, &info);
-#endif 
-
-#if defined(GP_OS_android) || defined(MOZ_WIDGET_GONK)
+#if defined(CONFIG_CASE_2) || defined(CONFIG_CASE_3)
+  
+  
+  
   pid_t pid = getpid();
   char path[PATH_MAX];
   snprintf(path, PATH_MAX, "/proc/%d/maps", pid);
@@ -129,7 +160,6 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
   int count = 0;
   while (std::getline(maps, line)) {
     int ret;
-    
     unsigned long start;
     unsigned long end;
     char perm[6] = "";
@@ -143,26 +173,32 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
       continue;
     }
     if (ret != 5 && ret != 4) {
-      LOG("Get maps line failed");
+      LOG("SharedLibraryInfo::GetInfoForSelf(): "
+          "reading /proc/self/maps failed");
       continue;
     }
-#if defined(PROFILE_JAVA)
+
+#if defined(CONFIG_CASE_2)
     
     
-    if (strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache") != 0) {
+    if (0 != strcmp(modulePath, "/dev/ashmem/dalvik-jit-code-cache")) {
       continue;
     }
-#else
+    
+#elif defined(CONFIG_CASE_3)
     if (strcmp(perm, "r-xp") != 0) {
       
       
       
       continue;
     }
+    
 #endif
 
     nsAutoString pathStr;
-    mozilla::Unused << NS_WARN_IF(NS_FAILED(NS_CopyNativeToUnicode(nsDependentCString(modulePath), pathStr)));
+    mozilla::Unused <<
+      NS_WARN_IF(NS_FAILED(NS_CopyNativeToUnicode(
+                             nsDependentCString(modulePath), pathStr)));
 
     nsAutoString nameStr = pathStr;
     int32_t pos = nameStr.RFindChar('/');
@@ -171,16 +207,22 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
     }
 
     SharedLibrary shlib(start, end, offset, getId(path),
-                        nameStr, pathStr, nameStr, pathStr,
-                        "", "");
+                        nameStr, pathStr, nameStr, pathStr, "", "");
     info.AddSharedLibrary(shlib);
     if (count > 10000) {
-      LOG("Get maps failed");
+      LOG("SharedLibraryInfo::GetInfoForSelf(): "
+          "implausibly large number of mappings acquired");
       break;
     }
     count++;
   }
 #endif 
+
+#if defined(CONFIG_CASE_1) || defined(CONFIG_CASE_2)
+  
+  
+  dl_iterate_phdr(dl_iterate_callback, &info);
+#endif
 
   return info;
 }
