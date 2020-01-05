@@ -1483,7 +1483,7 @@ SetObjectElementOperation(JSContext* cx, HandleObject obj, HandleId id, HandleVa
         int32_t i = JSID_TO_INT(id);
         if ((uint32_t)i >= length) {
             
-            if (script && script->hasBaselineScript() && *pc == JSOP_SETELEM)
+            if (script && script->hasBaselineScript() && IsSetElemPC(pc))
                 script->baselineScript()->noteArrayWriteHole(script->pcToOffset(pc));
         }
     }
