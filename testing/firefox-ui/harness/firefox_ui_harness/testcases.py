@@ -312,7 +312,7 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
             self.software_update.force_fallback()
 
         
-        self.restart()
+        self.restart(callback=lambda: about_window.deck.apply.button.click())
 
     def download_and_apply_forced_update(self):
         self.check_update_not_applied()
@@ -341,9 +341,13 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
                 self.wait_for_update_applied(about_window)
 
             finally:
-                if about_window:
-                    self.update_status['patch'] = self.patch_info
+                self.update_status['patch'] = self.patch_info
 
+            
+            self.assertIsNotNone(about_window)
+            self.restart(callback=lambda: about_window.deck.apply.button.click())
+
+        
         else:
             try:
                 self.assertEqual(dialog.wizard.selected_panel,
@@ -355,8 +359,8 @@ class UpdateTestCase(PuppeteerMixin, MarionetteTestCase):
             finally:
                 self.update_status['patch'] = self.patch_info
 
-        
-        self.restart()
+            
+            self.restart(callback=lambda: dialog.wizard.finish_button.click())
 
     def read_update_log(self):
         """Read the content of the update log file for the last update attempt."""
