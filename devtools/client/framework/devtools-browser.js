@@ -129,6 +129,22 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     toggleMenuItem("menu_devtools_connect", devtoolsRemoteEnabled);
   },
 
+  
+
+
+
+
+  updateDevtoolsThemeAttribute: function(win) {
+    
+    
+    let devtoolsTheme = Services.prefs.getCharPref("devtools.theme");
+    if (devtoolsTheme != "dark") {
+      devtoolsTheme = "light";
+    }
+
+    win.document.documentElement.setAttribute("devtoolstheme", devtoolsTheme);
+  },
+
   observe: function (subject, topic, prefName) {
     switch (topic) {
       case "browser-delayed-startup-finished":
@@ -138,6 +154,11 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
         if (prefName.endsWith("enabled")) {
           for (let win of this._trackedBrowserWindows) {
             this.updateCommandAvailability(win);
+          }
+        }
+        if (prefName === "devtools.theme") {
+          for (let win of this._trackedBrowserWindows) {
+            this.updateDevtoolsThemeAttribute(win);
           }
         }
         break;
@@ -461,6 +482,7 @@ var gDevToolsBrowser = exports.gDevToolsBrowser = {
     });
 
     this.updateCommandAvailability(win);
+    this.updateDevtoolsThemeAttribute(win);
     this.ensurePrefObserver();
     win.addEventListener("unload", this);
 
