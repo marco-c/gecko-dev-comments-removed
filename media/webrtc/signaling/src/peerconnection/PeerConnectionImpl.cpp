@@ -104,9 +104,7 @@
 
 #include "mozilla/net/DataChannelProtocol.h"
 
-#ifndef USE_FAKE_MEDIA_STREAMS
 #include "MediaStreamGraphImpl.h"
-#endif
 
 #ifdef XP_WIN
 
@@ -116,9 +114,7 @@
 #endif
 #endif 
 
-#ifndef USE_FAKE_MEDIA_STREAMS
 #include "MediaSegment.h"
-#endif
 
 #ifdef USE_FAKE_PCOBSERVER
 #include "FakePCObserver.h"
