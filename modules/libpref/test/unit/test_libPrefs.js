@@ -352,41 +352,59 @@ function run_test() {
   
   
 
-  
-  var observer = {
-    QueryInterface: function QueryInterface(aIID) {
+  class PrefObserver {
+    
+
+
+
+
+
+
+    constructor(prefBranch, expectedName, expectedValue) {
+      this.pb = prefBranch;
+      this.name = expectedName;
+      this.value = expectedValue;
+
+      prefBranch.addObserver(expectedName, this, false);
+    }
+
+    QueryInterface(aIID) {
       if (aIID.equals(Ci.nsIObserver) ||
           aIID.equals(Ci.nsISupports))
          return this;
       throw Components.results.NS_NOINTERFACE;
-    },
+    }
 
-    observe: function observe(aSubject, aTopic, aState) {
+    observe(aSubject, aTopic, aState) {
       do_check_eq(aTopic, "nsPref:changed");
-      do_check_eq(aState, "ReadPref.int");
-      do_check_eq(ps.getIntPref(aState), 76);
-      ps.removeObserver("ReadPref.int", this);
+      do_check_eq(aState, this.name);
+      do_check_eq(this.pb.getIntPref(aState), this.value);
+      pb.removeObserver(aState, this);
 
       
       do_test_finished();
     }
-  }
-
-  pb2.addObserver("ReadPref.int", observer, false);
-  ps.setIntPref("ReadPref.int", 76);
+  };
 
   
+  
   do_test_pending();
+  do_test_pending();
+  do_test_pending();
+
+  let observer = new PrefObserver(pb2, "ReadPref.int", 76);
+  ps.setIntPref("ReadPref.int", 76);
 
   
   pb2.removeObserver("ReadPref.int", observer);
   ps.setIntPref("ReadPref.int", 32);
 
   
-  pb2.getBranch("ReadPref.");
-  pb2.addObserver("int", observer, false);
+  pb = pb2.getBranch("ReadPref.");
+  observer = new PrefObserver(pb, "int", 76);
   ps.setIntPref("ReadPref.int", 76);
 
   
-  do_test_pending();
+  observer = new PrefObserver(pb, "another_int", 76);
+  ps.setIntPref("ReadPref.another_int", 76);
 }
