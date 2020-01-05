@@ -227,12 +227,9 @@ XPCWrappedNative::WrapNewGlobal(xpcObjectHelper& nativeHelper,
     
     
     
-    
     XPCNativeScriptableInfo* siProto = proto->GetScriptableInfo();
     if (siProto && siProto->GetCallback() == sciWrapper.GetCallback()) {
         wrapper->mScriptableInfo = siProto;
-        
-        
         
         
         
@@ -751,8 +748,7 @@ XPCWrappedNative::Init(const XPCNativeScriptableCreateInfo* sci)
                 mScriptableInfo = siProto;
         }
         if (!mScriptableInfo) {
-            mScriptableInfo =
-                XPCNativeScriptableInfo::Construct(sci);
+            mScriptableInfo = XPCNativeScriptableInfo::Construct(sci);
 
             if (!mScriptableInfo)
                 return false;
@@ -972,8 +968,6 @@ XPCWrappedNative::SystemIsBeingShutDown()
     if (HasProto())
         proto->SystemIsBeingShutDown();
 
-    
-    
     
 
     

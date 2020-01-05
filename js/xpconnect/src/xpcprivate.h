@@ -66,11 +66,6 @@
 
 
 
-
-
-
-
-
 #ifndef xpcprivate_h___
 #define xpcprivate_h___
 
@@ -180,7 +175,6 @@
 #define XPC_DYING_NATIVE_PROTO_MAP_LENGTH        8
 #define XPC_NATIVE_INTERFACE_MAP_LENGTH         32
 #define XPC_NATIVE_SET_MAP_LENGTH               32
-#define XPC_NATIVE_JSCLASS_MAP_LENGTH           16
 #define XPC_THIS_TRANSLATOR_MAP_LENGTH           4
 #define XPC_WRAPPER_MAP_LENGTH                   8
 
@@ -206,9 +200,6 @@ extern const char XPC_XPCONNECT_CONTRACTID[];
         result = nullptr;                                                      \
     *dest = result;                                                           \
     return (result || !src) ? NS_OK : NS_ERROR_OUT_OF_MEMORY
-
-
-#define WRAPPER_FLAGS (JSCLASS_HAS_PRIVATE | JSCLASS_FOREGROUND_FINALIZE)
 
 
 
@@ -448,9 +439,6 @@ public:
     IID2ThisTranslatorMap* GetThisTranslatorMap() const
         {return mThisTranslatorMap;}
 
-    XPCNativeScriptableSharedMap* GetNativeScriptableSharedMap() const
-        {return mNativeScriptableSharedMap;}
-
     XPCWrappedNativeProtoMap* GetDyingWrappedNativeProtoMap() const
         {return mDyingWrappedNativeProtoMap;}
 
@@ -612,7 +600,6 @@ private:
     ClassInfo2NativeSetMap*  mClassInfo2NativeSetMap;
     NativeSetMap*            mNativeSetMap;
     IID2ThisTranslatorMap*   mThisTranslatorMap;
-    XPCNativeScriptableSharedMap* mNativeScriptableSharedMap;
     XPCWrappedNativeProtoMap* mDyingWrappedNativeProtoMap;
     bool mGCIsRunning;
     nsTArray<nsISupports*> mNativesToReleaseArray;
@@ -1458,44 +1445,6 @@ private:
 
 
 
-
-
-
-
-
-
-class XPCNativeScriptableShared final
-{
-public:
-    NS_INLINE_DECL_REFCOUNTING(XPCNativeScriptableShared)
-
-    const XPCNativeScriptableFlags& GetFlags() const { return mFlags; }
-
-    const JSClass* GetJSClass() { return Jsvalify(&mJSClass); }
-
-    XPCNativeScriptableShared(uint32_t aFlags, char* aName, bool aPopulate);
-
-    char* TransferNameOwnership() {
-        char* name = (char*)mJSClass.name;
-        mJSClass.name = nullptr;
-        return name;
-    }
-
-private:
-    ~XPCNativeScriptableShared();
-
-    XPCNativeScriptableFlags mFlags;
-
-    
-    
-    
-    js::Class mJSClass;
-};
-
-
-
-
-
 class XPCNativeScriptableInfo final
 {
 public:
@@ -1505,18 +1454,15 @@ public:
     nsIXPCScriptable*
     GetCallback() const { return mCallback; }
 
-    const XPCNativeScriptableFlags&
-    GetFlags() const { return mShared->GetFlags(); }
+    XPCNativeScriptableFlags
+    GetFlags() const { return XPCNativeScriptableFlags(mCallback->GetScriptableFlags()); }
 
     const JSClass*
-    GetJSClass() { return mShared->GetJSClass(); }
-
-    void
-    SetScriptableShared(already_AddRefed<XPCNativeScriptableShared>&& shared) { mShared = shared; }
+    GetJSClass() { return Jsvalify(mCallback->GetClass()); }
 
 protected:
-    explicit XPCNativeScriptableInfo(nsIXPCScriptable* scriptable)
-        : mCallback(scriptable)
+    explicit XPCNativeScriptableInfo(nsIXPCScriptable* aCallback)
+        : mCallback(aCallback)
     {
         MOZ_COUNT_CTOR(XPCNativeScriptableInfo);
     }
@@ -1533,7 +1479,6 @@ private:
 
 private:
     nsCOMPtr<nsIXPCScriptable> mCallback;
-    RefPtr<XPCNativeScriptableShared> mShared;
 };
 
 
@@ -1570,6 +1515,8 @@ public:
     SetFlags(const XPCNativeScriptableFlags& flags)  {mFlags = flags;}
 
 private:
+    
+    
     nsCOMPtr<nsIXPCScriptable>  mCallback;
     XPCNativeScriptableFlags    mFlags;
 };
