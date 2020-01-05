@@ -72,6 +72,12 @@ function waitForInsecureLoginFormsStateChange(browser, count) {
                                        false, () => --count == 0);
 }
 
+add_task(function* setup() {
+  yield SpecialPowers.pushPrefEnv({
+    set: [["dom.ipc.processCount", 1]]
+  });
+})
+
 
 
 

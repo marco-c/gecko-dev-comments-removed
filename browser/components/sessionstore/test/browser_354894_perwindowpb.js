@@ -69,7 +69,7 @@ add_task(function* setup() {
 
   
   
-  requestLongerTimeout(2);
+  requestLongerTimeout(3);
 
   
   let oldWinType = document.documentElement.getAttribute("windowtype");
