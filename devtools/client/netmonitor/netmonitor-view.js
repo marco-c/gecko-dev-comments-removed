@@ -6,11 +6,10 @@
 
 
 
+
 "use strict";
 
-
 const {VariablesView} = require("resource://devtools/client/shared/widgets/VariablesView.jsm");
-
 const {VariablesViewController} = require("resource://devtools/client/shared/widgets/VariablesViewController.jsm");
 const {ToolSidebar} = require("devtools/client/framework/sidebar");
 const {testing: isTesting} = require("devtools/shared/flags");

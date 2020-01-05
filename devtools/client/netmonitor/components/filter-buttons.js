@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const { DOM, PropTypes } = require("devtools/client/shared/vendor/react");

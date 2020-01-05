@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const I = require("devtools/client/shared/vendor/immutable");
