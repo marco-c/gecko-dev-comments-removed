@@ -540,7 +540,8 @@ var gErrorTests = [
 
 
 
-if (manifestVideo().canPlayType('video/mp4; codecs="avc1.42E01E"')) {
+if (manifestNavigator().userAgent.includes("Windows") &&
+    manifestVideo().canPlayType('video/mp4; codecs="avc1.42E01E"')) {
   gErrorTests = gErrorTests.concat({name: "red-46x48.mp4", type:"video/mp4"},
                                    {name: "red-48x46.mp4", type:"video/mp4"});
 }
