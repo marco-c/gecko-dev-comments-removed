@@ -7112,65 +7112,36 @@ CSSParserImpl::LookupKeywordPrefixAware(nsAString& aKeywordStr,
 {
   nsCSSKeyword keyword = nsCSSKeywords::LookupKeyword(aKeywordStr);
 
+  if (!sWebkitPrefixedAliasesEnabled) {
+    
+    return keyword;
+  }
+
   if (aKeywordTable == nsCSSProps::kDisplayKTable) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
     if ((keyword == eCSSKeyword__webkit_box ||
          keyword == eCSSKeyword__webkit_inline_box)) {
-      const bool usingUnprefixingService = false;
       
       
-      if (sWebkitPrefixedAliasesEnabled || usingUnprefixingService) {
-        
-        
-        
-        if (mWebkitBoxUnprefixState == eHaveNotUnprefixed) {
-          mWebkitBoxUnprefixState = eHaveUnprefixed;
-        }
-        if (usingUnprefixingService) {
-          
-          
-          
-          return (keyword == eCSSKeyword__webkit_box) ?
-            eCSSKeyword_flex : eCSSKeyword_inline_flex;
-        }
+      
+      if (mWebkitBoxUnprefixState == eHaveNotUnprefixed) {
+        mWebkitBoxUnprefixState = eHaveUnprefixed;
       }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mWebkitBoxUnprefixState == eHaveUnprefixed &&
-        (keyword == eCSSKeyword__moz_box ||
-         keyword == eCSSKeyword__moz_inline_box)) {
+    } else if (mWebkitBoxUnprefixState == eHaveUnprefixed &&
+               (keyword == eCSSKeyword__moz_box ||
+                keyword == eCSSKeyword__moz_inline_box)) {
+      
+      
+      
+      
+      
+      
+      
+      
       MOZ_ASSERT(sWebkitPrefixedAliasesEnabled,
                  "The only way mWebkitBoxUnprefixState can be eHaveUnprefixed "
                  "is if we're supporting webkit-prefixed aliases");
-      if (sWebkitPrefixedAliasesEnabled) {
-        return (keyword == eCSSKeyword__moz_box) ?
-          eCSSKeyword__webkit_box : eCSSKeyword__webkit_inline_box;
-      }
-      
-      
       return (keyword == eCSSKeyword__moz_box) ?
-        eCSSKeyword_flex : eCSSKeyword_inline_flex;
+        eCSSKeyword__webkit_box : eCSSKeyword__webkit_inline_box;
     }
   }
 
