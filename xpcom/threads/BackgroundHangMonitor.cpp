@@ -95,13 +95,11 @@ public:
     autoLock.Notify();
   }
 
+  
   void Wakeup()
   {
-    
-    if (mHangMonitorThread) {
-      
-      PR_Interrupt(mHangMonitorThread);
-    }
+    mLock.AssertCurrentThreadOwns();
+    mLock.NotifyAll();
   }
 
   BackgroundHangManager();
@@ -275,8 +273,6 @@ BackgroundHangManager::RunMonitorThread()
   PRIntervalTime recheckTimeout = PR_INTERVAL_NO_WAIT;
 
   while (!mShutdown) {
-
-    PR_ClearInterrupt();
     nsresult rv = autoLock.Wait(waitTime);
 
     PRIntervalTime newTime = PR_IntervalNow();
