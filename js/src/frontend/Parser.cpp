@@ -93,6 +93,8 @@ DeclarationKindString(DeclarationKind kind)
       case DeclarationKind::PositionalFormalParameter:
       case DeclarationKind::FormalParameter:
         return "formal parameter";
+      case DeclarationKind::CoverArrowParameter:
+        return "cover arrow parameter";
       case DeclarationKind::Var:
         return "var";
       case DeclarationKind::Let:
@@ -1299,6 +1301,10 @@ Parser<ParseHandler>::noteDeclaredName(HandlePropertyName name, DeclarationKind 
 
         break;
       }
+
+      case DeclarationKind::CoverArrowParameter:
+        
+        break;
 
       case DeclarationKind::PositionalFormalParameter:
         MOZ_CRASH("Positional formal parameter names should use "
@@ -2628,12 +2634,39 @@ Parser<ParseHandler>::functionArguments(YieldHandling yieldHandling, FunctionSyn
             if (!tokenStream.getToken(&tt, TokenStream::Operand))
                 return false;
             MOZ_ASSERT_IF(parenFreeArrow, tt == TOK_NAME || tt == TOK_YIELD);
+
+            if (tt == TOK_TRIPLEDOT) {
+                if (IsSetterKind(kind)) {
+                    report(ParseError, false, null(),
+                           JSMSG_ACCESSOR_WRONG_ARGS, "setter", "one", "");
+                    return false;
+                }
+
+                disallowDuplicateParams = true;
+                if (duplicatedParam) {
+                    
+                    report(ParseError, false, null(), JSMSG_BAD_DUP_ARGS);
+                    return false;
+                }
+
+                hasRest = true;
+                funbox->function()->setHasRest();
+
+                if (!tokenStream.getToken(&tt))
+                    return false;
+
+                if (tt != TOK_NAME && tt != TOK_YIELD && tt != TOK_LB && tt != TOK_LC) {
+                    report(ParseError, false, null(), JSMSG_NO_REST_NAME);
+                    return false;
+                }
+            }
+
             switch (tt) {
               case TOK_LB:
               case TOK_LC: {
-                
                 disallowDuplicateParams = true;
                 if (duplicatedParam) {
+                    
                     report(ParseError, false, null(), JSMSG_BAD_DUP_ARGS);
                     return false;
                 }
@@ -2652,31 +2685,6 @@ Parser<ParseHandler>::functionArguments(YieldHandling yieldHandling, FunctionSyn
 
                 break;
               }
-
-              case TOK_TRIPLEDOT:
-                if (IsSetterKind(kind)) {
-                    report(ParseError, false, null(),
-                           JSMSG_ACCESSOR_WRONG_ARGS, "setter", "one", "");
-                    return false;
-                }
-
-                hasRest = true;
-                funbox->function()->setHasRest();
-
-                disallowDuplicateParams = true;
-                if (duplicatedParam) {
-                    
-                    report(ParseError, false, null(), JSMSG_BAD_DUP_ARGS);
-                    return false;
-                }
-
-                if (!tokenStream.getToken(&tt))
-                    return false;
-                if (tt != TOK_NAME && tt != TOK_YIELD) {
-                    report(ParseError, false, null(), JSMSG_NO_REST_NAME);
-                    return false;
-                }
-                MOZ_FALLTHROUGH;
 
               case TOK_NAME:
               case TOK_YIELD: {
@@ -3919,8 +3927,6 @@ Parser<FullParseHandler>::checkDestructuringArray(ParseNode* arrayPattern,
 
     return true;
 }
-
-
 
 
 
@@ -9085,13 +9091,24 @@ Parser<ParseHandler>::primaryExpr(YieldHandling yieldHandling, TripledotHandling
         if (!tokenStream.getToken(&next))
             return null();
 
-        
-        
-        
-        if (next != TOK_NAME && next != TOK_YIELD) {
-            report(ParseError, false, null(), JSMSG_UNEXPECTED_TOKEN,
-                   "rest argument name", TokenKindToDesc(next));
-            return null();
+        if (next == TOK_LB || next == TOK_LC) {
+            
+            
+            if (!destructuringDeclaration(DeclarationKind::CoverArrowParameter, yieldHandling,
+                                          next))
+            {
+                return null();
+            }
+        } else {
+            
+            
+            
+            
+            if (next != TOK_NAME && next != TOK_YIELD) {
+                report(ParseError, false, null(), JSMSG_UNEXPECTED_TOKEN,
+                    "rest argument name", TokenKindToDesc(next));
+                return null();
+            }
         }
 
         if (!tokenStream.getToken(&next))
