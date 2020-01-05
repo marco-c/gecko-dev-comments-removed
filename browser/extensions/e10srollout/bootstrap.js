@@ -84,6 +84,7 @@ function defineCohort() {
   let testGroup = (getUserSample() < TEST_THRESHOLD[updateChannel]);
   let hasNonExemptAddon = Preferences.get(PREF_E10S_HAS_NONEXEMPT_ADDON, false);
   let temporaryDisqualification = getTemporaryDisqualification();
+  let temporaryQualification = getTemporaryQualification();
 
   let cohortPrefix = "";
   if (disqualified) {
@@ -107,6 +108,9 @@ function defineCohort() {
     
     setCohort(`temp-disqualified-${temporaryDisqualification}`);
     Preferences.reset(PREF_TOGGLE_E10S);
+  } else if (!disqualified && temporaryQualification != "") {
+    setCohort(`temp-qualified-${temporaryQualification}`);
+    Preferences.set(PREF_TOGGLE_E10S, true);
   } else if (testGroup) {
     setCohort(`${cohortPrefix}test`);
     Preferences.set(PREF_TOGGLE_E10S, true);
@@ -172,5 +176,15 @@ function optedOut() {
 
 
 function getTemporaryDisqualification() {
+  return "";
+}
+
+
+
+
+
+
+
+function getTemporaryQualification() {
   return "";
 }
