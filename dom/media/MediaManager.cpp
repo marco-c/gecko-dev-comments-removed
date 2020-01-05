@@ -158,29 +158,6 @@ using media::Refcountable;
 static Atomic<bool> sInShutdown;
 
 static bool
-HostInDomain(const nsCString &aHost, const nsCString &aPattern)
-{
-  int32_t patternOffset = 0;
-  int32_t hostOffset = 0;
-
-  
-  if (aPattern.Length() > 2 && aPattern[0] == '*' && aPattern[1] == '.') {
-    patternOffset = 2;
-
-    
-    hostOffset = aHost.FindChar('.') + 1;
-
-    if (hostOffset <= 1) {
-      
-      return false;
-    }
-  }
-
-  nsDependentCString hostRoot(aHost, hostOffset);
-  return hostRoot.EqualsIgnoreCase(aPattern.BeginReading() + patternOffset);
-}
-
-static bool
 HostIsHttps(nsIURI &docURI)
 {
   bool isHttps;
@@ -189,58 +166,6 @@ HostIsHttps(nsIURI &docURI)
     return false;
   }
   return isHttps;
-}
-
-static bool
-HostHasPermission(nsIURI &docURI)
-{
-  nsAdoptingCString hostName;
-  docURI.GetAsciiHost(hostName); 
-  nsAdoptingCString domainWhiteList =
-    Preferences::GetCString("media.getusermedia.screensharing.allowed_domains");
-  domainWhiteList.StripWhitespace();
-
-  if (domainWhiteList.IsEmpty() || hostName.IsEmpty()) {
-    return false;
-  }
-
-  
-  nsresult rv;
-  nsCOMPtr<nsIIDNService> idnService =
-    do_GetService("@mozilla.org/network/idn-service;1", &rv);
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return false;
-  }
-
-  uint32_t begin = 0;
-  uint32_t end = 0;
-  nsCString domainName;
-  
-
-
-
-
-  do {
-    end = domainWhiteList.FindChar(',', begin);
-    if (end == (uint32_t)-1) {
-      
-      end = domainWhiteList.Length();
-    }
-
-    rv = idnService->ConvertUTF8toACE(Substring(domainWhiteList, begin, end - begin),
-                                      domainName);
-    if (NS_SUCCEEDED(rv)) {
-      if (HostInDomain(hostName, domainName)) {
-        return true;
-      }
-    } else {
-      NS_WARNING("Failed to convert UTF-8 host to ASCII");
-    }
-
-    begin = end + 1;
-  } while (end < domainWhiteList.Length());
-
-  return false;
 }
 
 
@@ -2218,8 +2143,7 @@ if (privileged) {
               !Preferences::GetBool("media.getusermedia.screensharing.allow_on_old_platforms",
                                     false) && !IsVistaOrLater()) ||
 #endif
-            (!privileged && !HostIsHttps(*docURI)) ||
-            (!isChrome && !HostHasPermission(*docURI))) {
+            (!privileged && !HostIsHttps(*docURI))) {
           RefPtr<MediaStreamError> error =
               new MediaStreamError(aWindow,
                                    NS_LITERAL_STRING("NotAllowedError"));
