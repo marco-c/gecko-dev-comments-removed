@@ -408,7 +408,8 @@ class ImportHook(object):
         
         
         if not os.path.exists(module.__file__[:-1]):
-            os.remove(module.__file__)
+            if os.path.exists(module.__file__):
+                os.remove(module.__file__)
             del sys.modules[module.__name__]
             module = self(name, globals, locals, fromlist, level)
 
