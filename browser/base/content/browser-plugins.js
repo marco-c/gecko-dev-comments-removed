@@ -222,7 +222,7 @@ var gPluginHandler = {
     
     
     
-    let receivedURI = BrowserUtils.makeURI(location);
+    let receivedURI = Services.io.newURI(location);
     if (!browser.documentURI.equalsExceptRef(receivedURI)) {
       return;
     }
@@ -318,7 +318,7 @@ var gPluginHandler = {
     
     
     
-    let receivedURI = BrowserUtils.makeURI(location);
+    let receivedURI = Services.io.newURI(location);
     if (!browser.documentURI.equalsExceptRef(receivedURI)) {
       return;
     }

@@ -129,6 +129,8 @@ this.BrowserUtils = {
 
 
 
+
+
   makeURI(aURL, aOriginCharset, aBaseURI) {
     return Services.io.newURI(aURL, aOriginCharset, aBaseURI);
   },
