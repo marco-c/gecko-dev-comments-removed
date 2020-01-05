@@ -202,10 +202,12 @@ impl LintPass for UnrootedPass {
                 
                 
                 
-                ast::ExprMatch(ref e, _, _) |
+                ast::ExprMatch(ref e, _, _) => &**e,
                 
-                ast::ExprForLoop(_, ref e, _, _) => &**e,
                 
+                ast::ExprForLoop(..) => unreachable!(),
+                ast::ExprIfLet(..) => unreachable!(),
+                ast::ExprWhileLet(..) => unreachable!(),
                 _ => return
             },
             _ => return
