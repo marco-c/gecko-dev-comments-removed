@@ -2,7 +2,6 @@
 
 
 
-use legacy::PresentationalHintSynthesis;
 use media_queries::{Device, MediaType};
 use node::TElementAttributes;
 use properties::{PropertyDeclaration, PropertyDeclarationBlock};
@@ -277,9 +276,12 @@ impl Stylist {
                                                      &mut shareable);
 
         
-        self.synthesize_presentational_hints_for_legacy_attributes(element,
-                                                                   applicable_declarations,
-                                                                   &mut shareable);
+        let length = applicable_declarations.len();
+        element.synthesize_presentational_hints_for_legacy_attributes(applicable_declarations);
+        if applicable_declarations.len() != length {
+            
+            shareable = false;
+        }
 
         
         map.user.normal.get_all_matching_rules(element,
