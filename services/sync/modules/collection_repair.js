@@ -75,6 +75,17 @@ class CollectionRepairRequestor {
 
 
 
+  tryServerOnlyRepairs(validationInfo) {
+    return false;
+  }
+
+  
+
+
+
+
+
+
 
 
 
