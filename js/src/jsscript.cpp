@@ -2103,11 +2103,12 @@ ScriptSource::setDisplayURL(ExclusiveContext* cx, const char16_t* displayURL)
 {
     MOZ_ASSERT(displayURL);
     if (hasDisplayURL()) {
+        
         if (cx->isJSContext() &&
-            !JS_ReportErrorFlagsAndNumber(cx->asJSContext(), JSREPORT_WARNING,
-                                          GetErrorMessage, nullptr,
-                                          JSMSG_ALREADY_HAS_PRAGMA, filename_.get(),
-                                          "//# sourceURL"))
+            !JS_ReportErrorFlagsAndNumberLatin1(cx->asJSContext(), JSREPORT_WARNING,
+                                                GetErrorMessage, nullptr,
+                                                JSMSG_ALREADY_HAS_PRAGMA, filename_.get(),
+                                                "//# sourceURL"))
         {
             return false;
         }
