@@ -1038,7 +1038,7 @@ pub trait MatchMethods : TElement {
             
             
             if hint.contains(RESTYLE_CSS_ANIMATIONS) {
-                debug_assert!(context.shared.traversal_flags.for_animation_only());
+                debug_assert!(context.shared.animation_only_restyle);
 
                 let animation_rule = self.get_animation_rule(None);
                 replace_rule_node(CascadeLevel::Animations,
