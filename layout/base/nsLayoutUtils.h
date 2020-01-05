@@ -70,6 +70,7 @@ enum class LayoutFrameType : uint8_t;
 struct IntrinsicSize;
 struct ContainerLayerParameters;
 class WritingMode;
+class DisplayItemClip;
 namespace dom {
 class CanvasRenderingContext2D;
 class DOMRectList;
@@ -2591,6 +2592,8 @@ public:
 
 
 
+
+
   static void
   TransformToAncestorAndCombineRegions(
     const nsRegion& aRegion,
@@ -2598,7 +2601,8 @@ public:
     const nsIFrame* aAncestorFrame,
     nsRegion* aPreciseTargetDest,
     nsRegion* aImpreciseTargetDest,
-    mozilla::Maybe<Matrix4x4>* aMatrixCache);
+    mozilla::Maybe<Matrix4x4>* aMatrixCache,
+    const mozilla::DisplayItemClip* aClip);
 
   
 

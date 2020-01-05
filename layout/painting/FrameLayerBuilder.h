@@ -199,7 +199,8 @@ public:
   static void Shutdown();
 
   void Init(nsDisplayListBuilder* aBuilder, LayerManager* aManager,
-            PaintedLayerData* aLayerData = nullptr);
+            PaintedLayerData* aLayerData = nullptr,
+            const DisplayItemClip* aInactiveLayerClip = nullptr);
 
   
 
@@ -693,6 +694,11 @@ public:
     return mContainingPaintedLayer;
   }
 
+  const DisplayItemClip* GetInactiveLayerClip() const
+  {
+    return mInactiveLayerClip;
+  }
+
   bool IsBuildingRetainedLayers()
   {
     return !mContainingPaintedLayer && mRetainingManager;
@@ -740,6 +746,12 @@ protected:
 
 
   PaintedLayerData*                   mContainingPaintedLayer;
+
+  
+
+
+
+  const DisplayItemClip*              mInactiveLayerClip;
 
   
 
