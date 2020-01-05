@@ -516,7 +516,7 @@ class PerfherderResourceOptionsMixin(ScriptMixin):
                 
                 with open('/etc/instance_metadata.json', 'rb') as fh:
                     im = json.load(fh)
-                    instance = im['aws_instance_type'].encode('ascii')
+                    instance = im.get('aws_instance_type', u'unknown').encode('ascii')
             except IOError as e:
                 if e.errno != errno.ENOENT:
                     raise
