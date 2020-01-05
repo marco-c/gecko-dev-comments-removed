@@ -38,6 +38,8 @@ XPCOMUtils.defineLazyServiceGetter(this, "Blocklist",
 Cu.import("resource://gre/modules/Log.jsm");
 const LOGGER_ID = "addons.xpi-utils";
 
+const nsIFile = Components.Constructor("@mozilla.org/file/local;1", "nsIFile");
+
 
 
 var logger = Log.repository.getLogger(LOGGER_ID);
@@ -1823,7 +1825,10 @@ this.XPIDatabaseReconcile = {
 
 
 
-  updateCompatibility(aInstallLocation, aOldAddon, aAddonState, aOldAppVersion, aOldPlatformVersion) {
+
+
+  updateCompatibility(aInstallLocation, aOldAddon, aAddonState, aOldAppVersion,
+                      aOldPlatformVersion, aReloadMetadata) {
     logger.debug("Updating compatibility for add-on " + aOldAddon.id + " in " + aInstallLocation.name);
 
     
@@ -1835,6 +1840,25 @@ this.XPIDatabaseReconcile = {
       let manifest = syncLoadManifestFromFile(file, aInstallLocation);
       aOldAddon.signedState = manifest.signedState;
     }
+
+    
+    
+    if (aReloadMetadata) {
+      let file = new nsIFile()
+      file.persistentDescriptor = aAddonState.descriptor;
+      let manifest = syncLoadManifestFromFile(file, aInstallLocation);
+
+      
+      
+      
+      let remove = ["syncGUID", "foreignInstall", "visible", "active",
+                    "userDisabled", "applyBackgroundUpdates", "sourceURI",
+                    "releaseNotesURI", "targetApplications"];
+
+      let props = PROP_JSON_FIELDS.filter(a => !remove.includes(a));
+      copyProperties(manifest, props, aOldAddon);
+    }
+
     
     applyBlocklistChanges(aOldAddon, aOldAddon, aOldAppVersion,
                           aOldPlatformVersion);
@@ -1865,7 +1889,10 @@ this.XPIDatabaseReconcile = {
 
 
 
-  processFileChanges(aManifests, aUpdateCompatibility, aOldAppVersion, aOldPlatformVersion) {
+
+
+  processFileChanges(aManifests, aUpdateCompatibility, aOldAppVersion, aOldPlatformVersion,
+                     aSchemaChange) {
     let loadedManifest = (aInstallLocation, aId) => {
       if (!(aInstallLocation.name in aManifests))
         return null;
@@ -1940,6 +1967,8 @@ this.XPIDatabaseReconcile = {
             
             
             
+            
+            
             let newAddon = loadedManifest(installLocation, id);
             if (newAddon || oldAddon.updateDate != xpiState.mtime ||
                 (aUpdateCompatibility && (installLocation.name == KEY_APP_GLOBAL ||
@@ -1949,9 +1978,13 @@ this.XPIDatabaseReconcile = {
             else if (oldAddon.descriptor != xpiState.descriptor) {
               newAddon = this.updateDescriptor(installLocation, oldAddon, xpiState);
             }
-            else if (aUpdateCompatibility) {
+            
+            
+            
+            else if (aUpdateCompatibility || aSchemaChange) {
               newAddon = this.updateCompatibility(installLocation, oldAddon, xpiState,
-                                                  aOldAppVersion, aOldPlatformVersion);
+                                                  aOldAppVersion, aOldPlatformVersion,
+                                                  aSchemaChange);
             }
             else {
               
