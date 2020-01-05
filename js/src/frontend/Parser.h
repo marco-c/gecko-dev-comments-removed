@@ -1316,8 +1316,8 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     Node objectLiteral(YieldHandling yieldHandling, PossibleError* possibleError);
 
     
-    bool checkDestructuringPattern(Node pattern,
-                                   mozilla::Maybe<DeclarationKind> maybeDecl = mozilla::Nothing());
+    bool checkDestructuringPattern(Node pattern, mozilla::Maybe<DeclarationKind> maybeDecl,
+                                   PossibleError* possibleError = nullptr);
 
     
     
