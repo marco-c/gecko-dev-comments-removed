@@ -158,7 +158,7 @@ function TypedArrayEntries() {
 }
 
 
-function TypedArrayEvery(callbackfn, thisArg = undefined) {
+function TypedArrayEvery(callbackfn) {
     
     var O = this;
 
@@ -183,7 +183,7 @@ function TypedArrayEvery(callbackfn, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = thisArg;
+    var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
     
@@ -245,7 +245,7 @@ function TypedArrayFill(value, start = 0, end = undefined) {
 }
 
 
-function TypedArrayFilter(callbackfn, thisArg = undefined) {
+function TypedArrayFilter(callbackfn) {
     
     var O = this;
 
@@ -271,7 +271,7 @@ function TypedArrayFilter(callbackfn, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = thisArg;
+    var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
     var defaultConstructor = _ConstructorForTypedArray(O);
@@ -294,9 +294,7 @@ function TypedArrayFilter(callbackfn, thisArg = undefined) {
         
         if (selected) {
             
-            callFunction(std_Array_push, kept, kValue);
-            
-            captured++;
+            kept[captured++] = kValue;
         }
     }
 
@@ -314,7 +312,7 @@ function TypedArrayFilter(callbackfn, thisArg = undefined) {
 }
 
 
-function TypedArrayFind(predicate, thisArg = undefined) {
+function TypedArrayFind(predicate) {
     
     var O = this;
 
@@ -339,7 +337,7 @@ function TypedArrayFind(predicate, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
 
     
-    var T = thisArg;
+    var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
     
@@ -356,7 +354,7 @@ function TypedArrayFind(predicate, thisArg = undefined) {
 }
 
 
-function TypedArrayFindIndex(predicate, thisArg = undefined) {
+function TypedArrayFindIndex(predicate) {
     
     var O = this;
 
@@ -381,7 +379,7 @@ function TypedArrayFindIndex(predicate, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, predicate));
 
     
-    var T = thisArg;
+    var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
     
@@ -396,7 +394,7 @@ function TypedArrayFindIndex(predicate, thisArg = undefined) {
 }
 
 
-function TypedArrayForEach(callbackfn, thisArg = undefined) {
+function TypedArrayForEach(callbackfn) {
     
     var O = this;
 
@@ -421,7 +419,7 @@ function TypedArrayForEach(callbackfn, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = thisArg;
+    var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
     
@@ -588,7 +586,7 @@ function TypedArrayLastIndexOf(searchElement, fromIndex = undefined) {
 }
 
 
-function TypedArrayMap(callbackfn, thisArg = undefined) {
+function TypedArrayMap(callbackfn) {
     
     var O = this;
 
@@ -614,7 +612,7 @@ function TypedArrayMap(callbackfn, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = thisArg;
+    var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
     var defaultConstructor = _ConstructorForTypedArray(O);
@@ -950,7 +948,7 @@ function TypedArraySlice(start, end) {
 }
 
 
-function TypedArraySome(callbackfn, thisArg = undefined) {
+function TypedArraySome(callbackfn) {
     
     var O = this;
 
@@ -975,7 +973,7 @@ function TypedArraySome(callbackfn, thisArg = undefined) {
         ThrowTypeError(JSMSG_NOT_FUNCTION, DecompileArg(0, callbackfn));
 
     
-    var T = thisArg;
+    var T = arguments.length > 1 ? arguments[1] : void 0;
 
     
     
@@ -1337,6 +1335,7 @@ function TypedArrayFrom(constructor, target, items, mapfn, thisArg) {
         var values = new List();
 
         
+        var i = 0;
         while (true) {
             
             var next = callContentFunction(iterator.next, iterator);
@@ -1346,11 +1345,11 @@ function TypedArrayFrom(constructor, target, items, mapfn, thisArg) {
             
             if (next.done)
                 break;
-            callFunction(std_Array_push, values, next.value);
+            values[i++] = next.value;
         }
 
         
-        var len = values.length;
+        var len = i;
 
         
         
