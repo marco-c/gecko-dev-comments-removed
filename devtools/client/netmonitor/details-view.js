@@ -9,45 +9,26 @@
 
 const promise = require("promise");
 const EventEmitter = require("devtools/shared/event-emitter");
-const Editor = require("devtools/client/sourceeditor/editor");
 const { Heritage } = require("devtools/client/shared/widgets/view-helpers");
 const { Task } = require("devtools/shared/task");
 const { ToolSidebar } = require("devtools/client/framework/sidebar");
 const { VariablesView } = require("resource://devtools/client/shared/widgets/VariablesView.jsm");
-const { VariablesViewController } = require("resource://devtools/client/shared/widgets/VariablesViewController.jsm");
 const { EVENTS } = require("./events");
 const { L10N } = require("./l10n");
 const { Filters } = require("./filter-predicates");
 const {
   decodeUnicodeUrl,
-  formDataURI,
-  getUrlBaseName,
 } = require("./request-utils");
 const { createFactory } = require("devtools/client/shared/vendor/react");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const Provider = createFactory(require("devtools/client/shared/vendor/react-redux").Provider);
 const ParamsPanel = createFactory(require("./shared/components/params-panel"));
 const PreviewPanel = createFactory(require("./shared/components/preview-panel"));
+const ResponsePanel = createFactory(require("./shared/components/response-panel"));
 const SecurityPanel = createFactory(require("./shared/components/security-panel"));
 const TimingsPanel = createFactory(require("./shared/components/timings-panel"));
 
-
-const SOURCE_SYNTAX_HIGHLIGHT_MAX_FILE_SIZE = 102400;
 const HEADERS_SIZE_DECIMALS = 3;
-const CONTENT_MIME_TYPE_MAPPINGS = {
-  "/ecmascript": Editor.modes.js,
-  "/javascript": Editor.modes.js,
-  "/x-javascript": Editor.modes.js,
-  "/html": Editor.modes.html,
-  "/xhtml": Editor.modes.html,
-  "/xml": Editor.modes.html,
-  "/atom": Editor.modes.html,
-  "/soap": Editor.modes.html,
-  "/vnd.mpeg.dash.mpd": Editor.modes.html,
-  "/rdf": Editor.modes.css,
-  "/rss": Editor.modes.css,
-  "/css": Editor.modes.css
-};
 const GENERIC_VARIABLES_VIEW_SETTINGS = {
   lazyEmpty: true,
   
@@ -106,6 +87,13 @@ DetailsView.prototype = {
       PreviewPanel()
     ), this._previewPanelNode);
 
+    this._responsePanelNode = $("#react-response-tabpanel-hook");
+
+    ReactDOM.render(Provider(
+      { store },
+      ResponsePanel()
+    ), this._responsePanelNode);
+
     this._securityPanelNode = $("#react-security-tabpanel-hook");
 
     ReactDOM.render(Provider(
@@ -136,12 +124,6 @@ DetailsView.prototype = {
         emptyText: L10N.getStr("cookiesEmptyText"),
         searchPlaceholder: L10N.getStr("cookiesFilterText")
       }));
-    this._json = new VariablesView($("#response-content-json"),
-      Heritage.extend(GENERIC_VARIABLES_VIEW_SETTINGS, {
-        onlyEnumVisible: true,
-        searchPlaceholder: L10N.getStr("jsonFilterText")
-      }));
-    VariablesViewController.attach(this._json);
 
     this._requestHeaders = L10N.getStr("requestHeaders");
     this._requestHeadersFromUpload = L10N.getStr("requestHeadersFromUpload");
@@ -159,6 +141,7 @@ DetailsView.prototype = {
     dumpn("Destroying the DetailsView");
     ReactDOM.unmountComponentAtNode(this._paramsPanelNode);
     ReactDOM.unmountComponentAtNode(this._previewPanelNode);
+    ReactDOM.unmountComponentAtNode(this._responsePanelNode);
     ReactDOM.unmountComponentAtNode(this._securityPanelNode);
     ReactDOM.unmountComponentAtNode(this._timingsPanelNode);
     this.sidebar.destroy();
@@ -175,11 +158,7 @@ DetailsView.prototype = {
 
 
   populate: function (data) {
-    $("#response-content-info-header").hidden = true;
-    $("#response-content-json-box").hidden = true;
-    $("#response-content-textarea-box").hidden = true;
     $("#raw-headers").hidden = true;
-    $("#response-content-image-box").hidden = true;
 
     let isHtml = Filters.html(data);
 
@@ -205,7 +184,6 @@ DetailsView.prototype = {
 
     this._headers.empty();
     this._cookies.empty();
-    this._json.empty();
 
     this._dataSrc = { src: data, populated: [] };
     this._onTabSelect();
@@ -253,10 +231,6 @@ DetailsView.prototype = {
         case 1:
           yield view._setResponseCookies(src.responseCookies);
           yield view._setRequestCookies(src.requestCookies);
-          break;
-        
-        case 3:
-          yield view._setResponseBody(src.url, src.responseContent);
           break;
       }
       viewState.updating[tab] = false;
@@ -471,125 +445,9 @@ DetailsView.prototype = {
     }
   }),
 
-  
-
-
-
-
-
-
-
-
-
-  _setResponseBody: Task.async(function* (url, response) {
-    if (!response) {
-      return;
-    }
-    let { mimeType, text, encoding } = response.content;
-    let responseBody = yield gNetwork.getString(text);
-
-    
-    
-    
-    
-    
-    
-    let jsonMimeType, jsonObject, jsonObjectParseError;
-    try {
-      jsonMimeType = /\bjson/.test(mimeType);
-      jsonObject = JSON.parse(responseBody);
-    } catch (e) {
-      jsonObjectParseError = e;
-    }
-    if (jsonMimeType || jsonObject) {
-      
-      
-      
-      let jsonpRegex = /^\s*([\w$]+)\s*\(\s*([^]*)\s*\)\s*;?\s*$/;
-      let [_, callbackPadding, jsonpString] = 
-        responseBody.match(jsonpRegex) || [];
-
-      
-      
-      
-      if (callbackPadding && jsonpString) {
-        try {
-          jsonObject = JSON.parse(jsonpString);
-        } catch (e) {
-          jsonObjectParseError = e;
-        }
-      }
-
-      
-      if (jsonObject) {
-        $("#response-content-json-box").hidden = false;
-        let jsonScopeName = callbackPadding
-          ? L10N.getFormatStr("jsonpScopeName", callbackPadding)
-          : L10N.getStr("jsonScopeName");
-
-        let jsonVar = { label: jsonScopeName, rawObject: jsonObject };
-        yield this._json.controller.setSingleVariable(jsonVar).expanded;
-      } else {
-        
-        $("#response-content-textarea-box").hidden = false;
-        let infoHeader = $("#response-content-info-header");
-        infoHeader.setAttribute("value", jsonObjectParseError);
-        infoHeader.setAttribute("tooltiptext", jsonObjectParseError);
-        infoHeader.hidden = false;
-
-        let editor = yield NetMonitorView.editor("#response-content-textarea");
-        editor.setMode(Editor.modes.js);
-        editor.setText(responseBody);
-      }
-    } else if (mimeType.includes("image/")) {
-      
-      $("#response-content-image-box").setAttribute("align", "center");
-      $("#response-content-image-box").setAttribute("pack", "center");
-      $("#response-content-image-box").hidden = false;
-      $("#response-content-image").src = formDataURI(mimeType, encoding, responseBody);
-
-      
-      
-      $("#response-content-image-name-value").setAttribute("value",
-        getUrlBaseName(url));
-      $("#response-content-image-mime-value").setAttribute("value", mimeType);
-
-      
-      $("#response-content-image").onload = e => {
-        
-        
-        
-        let { width, height } = e.target.getBoundingClientRect();
-        let dimensions = (width - 2) + " \u00D7 " + (height - 2);
-        $("#response-content-image-dimensions-value").setAttribute("value",
-          dimensions);
-      };
-    } else {
-      $("#response-content-textarea-box").hidden = false;
-      let editor = yield NetMonitorView.editor("#response-content-textarea");
-      editor.setMode(Editor.modes.text);
-      editor.setText(responseBody);
-
-      
-      
-      if (responseBody.length < SOURCE_SYNTAX_HIGHLIGHT_MAX_FILE_SIZE) {
-        let mapping = Object.keys(CONTENT_MIME_TYPE_MAPPINGS).find(key => {
-          return mimeType.includes(key);
-        });
-
-        if (mapping) {
-          editor.setMode(CONTENT_MIME_TYPE_MAPPINGS[mapping]);
-        }
-      }
-    }
-
-    window.emit(EVENTS.RESPONSE_BODY_DISPLAYED);
-  }),
-
   _dataSrc: null,
   _headers: null,
   _cookies: null,
-  _json: null,
   _requestHeaders: "",
   _responseHeaders: "",
   _requestCookies: "",

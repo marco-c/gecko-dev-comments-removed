@@ -16,22 +16,28 @@ const Editor = createClass({
   displayName: "Editor",
 
   propTypes: {
+    
+    mode: PropTypes.string,
+    
     open: PropTypes.bool,
+    
     text: PropTypes.string,
   },
 
   getDefaultProps() {
     return {
+      mode: null,
       open: true,
       text: "",
     };
   },
 
   componentDidMount() {
-    const { text } = this.props;
+    const { mode, text } = this.props;
 
     this.editor = new SourceEditor({
       lineNumbers: true,
+      mode,
       readOnly: true,
       value: text,
     });
@@ -57,7 +63,7 @@ const Editor = createClass({
         
         
         
-        if (this.refs.editor) {
+        if (this.refs.editorElement) {
           this.editor.setText(text);
         }
       });
