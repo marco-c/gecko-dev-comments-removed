@@ -340,15 +340,6 @@ IsFlexOrGridContainer(const nsIFrame* aFrame)
          t == nsGkAtoms::gridContainerFrame;
 }
 
-
-static inline bool
-IsWebkitBox(const nsIFrame* aFrame)
-{
-  auto containerDisplay = aFrame->StyleDisplay()->mDisplay;
-  return containerDisplay == StyleDisplay::WebkitBox ||
-    containerDisplay == StyleDisplay::WebkitInlineBox;
-}
-
 #if DEBUG
 static void
 AssertAnonymousFlexOrGridItemParent(const nsIFrame* aChild,
@@ -9876,7 +9867,7 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
   }
 
   nsIAtom* containerType = aParentFrame->GetType();
-  const bool isWebkitBox = IsWebkitBox(aParentFrame);
+  const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aParentFrame);
 
   FCItemIterator iter(aItems);
   do {
@@ -12182,7 +12173,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     
     nsIAtom* containerType = aFrame->GetType();
-    bool isWebkitBox = IsWebkitBox(aFrame);
+    const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aFrame);
     if (aPrevSibling && IsAnonymousFlexOrGridItem(aPrevSibling) &&
         iter.item().NeedsAnonFlexOrGridItem(aState, containerType,
                                             isWebkitBox)) {
@@ -12224,9 +12215,10 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     
     nsIFrame* containerFrame = aFrame->GetParent();
+    const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(containerFrame);
     if (!iter.SkipItemsThatNeedAnonFlexOrGridItem(aState,
                                                   containerFrame->GetType(),
-                                                  IsWebkitBox(containerFrame))) {
+                                                  isWebkitBox)) {
       
       
       RecreateFramesForContent(containerFrame->GetContent(), true,
@@ -12785,10 +12777,10 @@ Iterator::AppendItemToList(FrameConstructionItemList& aTargetList)
   NS_ASSERTION(&aTargetList != &mList, "Unexpected call");
   NS_PRECONDITION(!IsDone(), "should not be done");
 
-  FrameConstructionItem* item = mCurrent;
+  FrameConstructionItem* item = ToItem(mCurrent);
   Next();
-  item->remove();
-  aTargetList.mItems.insertBack(item);
+  PR_REMOVE_LINK(item);
+  PR_APPEND_LINK(item, &aTargetList.mItems);
 
   mList.AdjustCountsForItem(item, -1);
   aTargetList.AdjustCountsForItem(item, 1);
@@ -12800,7 +12792,7 @@ Iterator::AppendItemsToList(const Iterator& aEnd,
                             FrameConstructionItemList& aTargetList)
 {
   NS_ASSERTION(&aTargetList != &mList, "Unexpected call");
-  NS_PRECONDITION(&mList == &aEnd.mList, "End iterator for some other list?");
+  NS_PRECONDITION(mEnd == aEnd.mEnd, "end iterator for some other list?");
 
   
   
@@ -12813,11 +12805,9 @@ Iterator::AppendItemsToList(const Iterator& aEnd,
   }
 
   
+  PR_INSERT_AFTER(&aTargetList.mItems, &mList.mItems);
   
-  
-  aTargetList.mItems.~LinkedList<FrameConstructionItem>();
-  new (&aTargetList.mItems) LinkedList<FrameConstructionItem>(
-    Move(mList.mItems));
+  PR_REMOVE_AND_INIT_LINK(&mList.mItems);
 
   
   aTargetList.mInlineCount = mList.mInlineCount;
@@ -12835,7 +12825,7 @@ Iterator::AppendItemsToList(const Iterator& aEnd,
   new (&mList) FrameConstructionItemList();
 
   
-  SetToEnd();
+  mCurrent = mEnd = &mList.mItems;
   NS_POSTCONDITION(*this == aEnd, "How did that happen?");
 }
 
@@ -12843,29 +12833,25 @@ void
 nsCSSFrameConstructor::FrameConstructionItemList::
 Iterator::InsertItem(FrameConstructionItem* aItem)
 {
-  if (IsDone()) {
-    mList.mItems.insertBack(aItem);
-  } else {
-    
-    mCurrent->setPrevious(aItem);
-  }
+  
+  PR_INSERT_BEFORE(aItem, mCurrent);
   mList.AdjustCountsForItem(aItem, 1);
 
-  NS_POSTCONDITION(aItem->getNext() == mCurrent, "How did that happen?");
+  NS_POSTCONDITION(PR_NEXT_LINK(aItem) == mCurrent, "How did that happen?");
 }
 
 void
 nsCSSFrameConstructor::FrameConstructionItemList::
 Iterator::DeleteItemsTo(const Iterator& aEnd)
 {
-  NS_PRECONDITION(&mList == &aEnd.mList, "End iterator for some other list?");
+  NS_PRECONDITION(mEnd == aEnd.mEnd, "end iterator for some other list?");
   NS_PRECONDITION(*this != aEnd, "Shouldn't be at aEnd yet");
 
   do {
     NS_ASSERTION(!IsDone(), "Ran off end of list?");
-    FrameConstructionItem* item = mCurrent;
+    FrameConstructionItem* item = ToItem(mCurrent);
     Next();
-    item->remove();
+    PR_REMOVE_LINK(item);
     mList.AdjustCountsForItem(item, -1);
     delete item;
   } while (*this != aEnd);
