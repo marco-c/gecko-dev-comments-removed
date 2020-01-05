@@ -38,6 +38,8 @@
 #include "nsContentSecurityManager.h"
 #include "nsIDeprecationWarner.h"
 #include "nsICompressConvStats.h"
+#include "nsIDocument.h"
+#include "nsIDOMWindowUtils.h"
 #include "nsStreamUtils.h"
 
 #ifdef OS_POSIX
@@ -2044,6 +2046,18 @@ HttpChannelChild::ContinueAsyncOpen()
     return NS_ERROR_ILLEGAL_VALUE;
   }
 
+  
+  
+  uint64_t contentWindowId = 0;
+  if (tabChild) {
+    MOZ_ASSERT(tabChild->WebNavigation());
+    nsCOMPtr<nsIDocument> document = tabChild->GetDocument();
+    if (document) {
+      contentWindowId = document->InnerWindowID();
+    }
+  }
+  SetTopLevelContentWindowId(contentWindowId);
+
   HttpChannelOpenArgs openArgs;
   
   
@@ -2137,6 +2151,8 @@ HttpChannelChild::ContinueAsyncOpen()
   char chid[NSID_LENGTH];
   mChannelId.ToProvidedString(chid);
   openArgs.channelId().AssignASCII(chid);
+
+  openArgs.contentWindowId() = contentWindowId;
 
   if (tabChild && !tabChild->IPCOpen()) {
     return NS_ERROR_FAILURE;

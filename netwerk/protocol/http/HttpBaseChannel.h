@@ -188,6 +188,8 @@ public:
   NS_IMETHOD GetProtocolVersion(nsACString & aProtocolVersion) override;
   NS_IMETHOD GetChannelId(nsACString& aChannelId) override;
   NS_IMETHOD SetChannelId(const nsACString& aChannelId) override;
+  NS_IMETHOD GetTopLevelContentWindowId(uint64_t *aContentWindowId) override;
+  NS_IMETHOD SetTopLevelContentWindowId(uint64_t aContentWindowId) override;
 
   
   NS_IMETHOD GetDocumentURI(nsIURI **aDocumentURI) override;
@@ -549,6 +551,10 @@ protected:
 
   nsID mRequestContextID;
   bool EnsureRequestContextID();
+
+  
+  
+  uint64_t mContentWindowId;
 
   bool                              mRequireCORSPreflight;
   nsTArray<nsCString>               mUnsafeHeaders;
