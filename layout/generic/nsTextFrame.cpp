@@ -1907,12 +1907,11 @@ static gfxFontGroup*
 GetFontGroupForFrame(nsIFrame* aFrame, float aFontSizeInflation,
                      nsFontMetrics** aOutFontMetrics = nullptr)
 {
-  if (aOutFontMetrics)
-    *aOutFontMetrics = nullptr;
-
   RefPtr<nsFontMetrics> metrics =
     nsLayoutUtils::GetFontMetricsForFrame(aFrame, aFontSizeInflation);
+  gfxFontGroup* fontGroup = metrics->GetThebesFontGroup();
 
+  
   if (aOutFontMetrics) {
     *aOutFontMetrics = metrics;
     NS_ADDREF(*aOutFontMetrics);
@@ -1921,7 +1920,7 @@ GetFontGroupForFrame(nsIFrame* aFrame, float aFontSizeInflation,
   
   
   
-  return metrics->GetThebesFontGroup();
+  return fontGroup;
 }
 
 static already_AddRefed<DrawTarget>
