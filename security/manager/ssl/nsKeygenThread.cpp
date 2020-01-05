@@ -4,14 +4,15 @@
 
 
 
-#include "pk11func.h"
-#include "nsCOMPtr.h"
-#include "nsThreadUtils.h"
-#include "nsKeygenThread.h"
-#include "nsIObserver.h"
-#include "nsNSSShutDown.h"
 #include "PSMRunnable.h"
+#include "mozilla/Assertions.h"
 #include "mozilla/DebugOnly.h"
+#include "nsCOMPtr.h"
+#include "nsIObserver.h"
+#include "nsKeygenThread.h"
+#include "nsNSSShutDown.h"
+#include "nsThreadUtils.h"
+#include "pk11func.h"
 
 using namespace mozilla;
 using namespace mozilla::psm;
@@ -92,7 +93,7 @@ nsresult nsKeygenThread::ConsumeResult(
   
     
     
-    NS_ASSERTION(keygenReady, "logic error in nsKeygenThread::GetParams");
+    MOZ_ASSERT(keygenReady, "Logic error in nsKeygenThread::GetParams");
 
     if (keygenReady) {
       *a_privateKey = privateKey;
@@ -146,8 +147,7 @@ nsresult nsKeygenThread::StartKeyGeneration(nsIObserver* aObserver)
 
     
     
-    NS_ASSERTION(threadHandle, "Could not create nsKeygenThreadRunner thread\n");
-  
+    MOZ_ASSERT(threadHandle, "Could not create nsKeygenThreadRunner thread");
   return NS_OK;
 }
 
@@ -237,8 +237,8 @@ void nsKeygenThread::Run(void)
 
   if (notifyObserver) {
     DebugOnly<nsresult> rv = NS_DispatchToMainThread(notifyObserver);
-    NS_ASSERTION(NS_SUCCEEDED(rv),
-		 "failed to dispatch keygen thread observer to main thread");
+    MOZ_ASSERT(NS_SUCCEEDED(rv),
+               "Failed to dispatch keygen thread observer to main thread");
   }
 }
 
