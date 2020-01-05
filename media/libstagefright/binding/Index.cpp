@@ -137,6 +137,11 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext()
     writer->mCrypto.mValid = true;
     writer->mCrypto.mIVSize = ivSize;
 
+    CencSampleEncryptionInfoEntry* sampleInfo = GetSampleEncryptionEntry();
+    if (sampleInfo) {
+      writer->mCrypto.mKeyId.AppendElements(sampleInfo->mKeyId);
+    }
+
     if (!reader.ReadArray(writer->mCrypto.mIV, ivSize)) {
       return nullptr;
     }
@@ -162,6 +167,47 @@ already_AddRefed<MediaRawData> SampleIterator::GetNext()
   Next();
 
   return sample.forget();
+}
+
+CencSampleEncryptionInfoEntry* SampleIterator::GetSampleEncryptionEntry()
+{
+  nsTArray<Moof>& moofs = mIndex->mMoofParser->Moofs();
+  Moof* currentMoof = &moofs[mCurrentMoof];
+  SampleToGroupEntry* sampleToGroupEntry = nullptr;
+
+  uint32_t seen = 0;
+
+  for (SampleToGroupEntry& entry : currentMoof->mSampleToGroupEntries) {
+    if (seen + entry.mSampleCount > mCurrentSample) {
+      sampleToGroupEntry = &entry;
+      break;
+    }
+    seen += entry.mSampleCount;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+
+  if (!sampleToGroupEntry || sampleToGroupEntry->mGroupDescriptionIndex == 0) {
+    return nullptr;
+  }
+
+  uint32_t group_index = sampleToGroupEntry->mGroupDescriptionIndex;
+
+  if (group_index > SampleToGroupEntry::kFragmentGroupDescriptionIndexBase) {
+    group_index -= SampleToGroupEntry::kFragmentGroupDescriptionIndexBase;
+  }
+
+  
+  return group_index > currentMoof->mSampleEncryptionInfoEntries.Length()
+         ? nullptr
+         : &currentMoof->mSampleEncryptionInfoEntries.ElementAt(group_index - 1);
 }
 
 Sample* SampleIterator::Get()
