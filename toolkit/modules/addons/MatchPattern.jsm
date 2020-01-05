@@ -105,6 +105,12 @@ SingleMatchPattern.prototype = {
       ))
     );
   },
+
+  
+  overlapsIgnoringPath(other) {
+    return this.schemes.some(scheme => other.schemes.includes(scheme)) &&
+           (this.hostMatch(other) || other.hostMatch(this));
+  },
 };
 
 this.MatchPattern = function(pat) {
@@ -177,6 +183,14 @@ MatchPattern.prototype = {
     }
 
     return false;
+  },
+
+  
+  
+  overlapsPermissions(hosts, optional) {
+    const perms = hosts.matchers.concat(optional.matchers);
+    return this.matchers.length &&
+           this.matchers.every(m => perms.some(p => p.overlapsIgnoringPath(m)));
   },
 
   
