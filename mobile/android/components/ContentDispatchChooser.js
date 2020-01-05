@@ -69,9 +69,12 @@ ContentDispatchChooser.prototype =
         
         
         
-        
-        
-        window.location.href = uri;
+
+        let dwu = window.QueryInterface(Ci.nsIInterfaceRequestor).getInterface(Ci.nsIDOMWindowUtils);
+        let millis = dwu.millisSinceLastUserInput;
+        if (millis > 0 && millis >= 1000) {
+          window.location.href = uri;
+        }
       });
     }
   },

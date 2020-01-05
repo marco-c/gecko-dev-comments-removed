@@ -533,8 +533,8 @@ public final class IntentHelper implements GeckoEventListener,
             
             
             
-            Log.w(LOGTAG, "Unable to open URI - ignoring click");
-            callback.sendSuccess(null); 
+            Log.w(LOGTAG, "Unable to open URI, maybe showing neterror");
+            callback.sendError(getUnknownProtocolErrorPageUri(intent.getData().toString()));
         }
     }
 
