@@ -68,6 +68,9 @@ class SETA(object):
             
             low_value_tasks = [x for x in low_value_tasks if 'build' not in x.lower()]
 
+            
+            low_value_tasks = [x for x in low_value_tasks if x.find('linux64-stylo') == -1]
+
         
         except exceptions.Timeout:
             logger.warning("SETA timeout, we will treat all test tasks as high value.")
