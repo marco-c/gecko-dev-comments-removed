@@ -98,7 +98,7 @@ add_task(function* test() {
 
         let initialWidth, previousWidth;
         initialWidth = previousWidth =
-          parseInt(content.document.querySelector("div#pageContainer1").style.width);
+          parseInt(content.document.querySelector('div.page[data-page-number="1"]').style.width);
 
         for (let test of TESTS) {
           
@@ -133,7 +133,7 @@ add_task(function* test() {
           
           var zoomValue = pageZoomScale.options[pageZoomScale.selectedIndex].innerHTML;
 
-          let pageContainer = content.document.querySelector('div#pageContainer1');
+          let pageContainer = content.document.querySelector('div.page[data-page-number="1"]');
           let actualWidth = parseInt(pageContainer.style.width);
 
           
