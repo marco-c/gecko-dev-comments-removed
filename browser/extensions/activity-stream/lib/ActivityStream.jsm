@@ -3,7 +3,10 @@
 
 "use strict";
 
-class ActivityStream {
+const {utils: Cu} = Components;
+const {Store} = Cu.import("resource://activity-stream/lib/Store.jsm", {});
+
+this.ActivityStream = class ActivityStream {
 
   
 
@@ -16,13 +19,16 @@ class ActivityStream {
   constructor(options) {
     this.initialized = false;
     this.options = options;
+    this.store = new Store();
   }
   init() {
     this.initialized = true;
+    this.store.init();
   }
   uninit() {
+    this.store.uninit();
     this.initialized = false;
   }
-}
+};
 
 this.EXPORTED_SYMBOLS = ["ActivityStream"];

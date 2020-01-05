@@ -1,0 +1,19 @@
+
+
+
+"use strict";
+
+this.actionTypes = [
+  "INIT",
+  "UNINIT",
+
+
+
+
+
+
+].reduce((obj, type) => { obj[type] = type; return obj; }, {});
+
+this.EXPORTED_SYMBOLS = [
+  "actionTypes"
+];
