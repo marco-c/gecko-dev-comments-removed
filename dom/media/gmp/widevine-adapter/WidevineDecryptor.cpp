@@ -313,17 +313,6 @@ WidevineDecryptor::OnResolveNewSessionPromise(uint32_t aPromiseId,
     Log("Decryptor::OnResolveNewSessionPromise(aPromiseId=0x%d) FAIL; !mCallback", aPromiseId);
     return;
   }
-
-  
-  
-  
-  
-  if (!aSessionId) {
-    Log("Decryptor::OnResolveNewSessionPromise(aPromiseId=0x%d) Failed to load session", aPromiseId);
-    mCallback->ResolveLoadSessionPromise(aPromiseId, false);
-    return;
-  }
-
   Log("Decryptor::OnResolveNewSessionPromise(aPromiseId=0x%d)", aPromiseId);
   auto iter = mPromiseIdToNewSessionTokens.find(aPromiseId);
   if (iter == mPromiseIdToNewSessionTokens.end()) {

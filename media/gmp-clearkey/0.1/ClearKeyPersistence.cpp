@@ -15,123 +15,81 @@
 
 
 #include "ClearKeyPersistence.h"
-
 #include "ClearKeyUtils.h"
 #include "ClearKeyStorage.h"
 #include "ClearKeySessionManager.h"
 #include "RefCounted.h"
 
-#include <assert.h>
 #include <stdint.h>
-#include <sstream>
 #include <string.h>
+#include <set>
+#include <vector>
+#include <sstream>
+#include <assert.h>
 
 using namespace std;
-using namespace cdm;
 
-void
-ClearKeyPersistence::ReadAllRecordsFromIndex(function<void()>&& aOnComplete) {
-  
-  mPersistentSessionIds.clear();
 
-  
-  
-  RefPtr<ClearKeyPersistence> self(this);
-  function<void(const uint8_t*, uint32_t)> onIndexSuccess =
-    [self, aOnComplete] (const uint8_t* data, uint32_t size)
-  {
-    CK_LOGD("ClearKeyPersistence: Loaded index file!");
-    const char* charData = (const char*)data;
+enum PersistentKeyState {
+  UNINITIALIZED,
+  LOADING,
+  LOADED
+};
+static PersistentKeyState sPersistentKeyState = UNINITIALIZED;
 
-    stringstream ss(string(charData, charData + size));
-    string name;
-    while (getline(ss, name)) {
-      if (ClearKeyUtils::IsValidSessionId(name.data(), name.size())) {
-        self->mPersistentSessionIds.insert(atoi(name.c_str()));
+
+
+static set<uint32_t> sPersistentSessionIds;
+
+static vector<GMPTask*> sTasksBlockedOnSessionIdLoad;
+
+static void
+ReadAllRecordsFromIterator(GMPRecordIterator* aRecordIterator,
+                           void* aUserArg,
+                           GMPErr aStatus)
+{
+  assert(sPersistentKeyState == LOADING);
+  if (GMP_SUCCEEDED(aStatus)) {
+    
+    
+    const char* name = nullptr;
+    uint32_t len = 0;
+    while (GMP_SUCCEEDED(aRecordIterator->GetName(&name, &len))) {
+      if (ClearKeyUtils::IsValidSessionId(name, len)) {
+        assert(name[len] == 0);
+        sPersistentSessionIds.insert(atoi(name));
       }
+      aRecordIterator->NextRecord();
     }
-
-    self->mPersistentKeyState = PersistentKeyState::LOADED;
-    aOnComplete();
-  };
-
-  function<void()> onIndexFailed =
-    [self, aOnComplete] ()
-  {
-    CK_LOGD("ClearKeyPersistence: Failed to load index file (it might not exist");
-    self->mPersistentKeyState = PersistentKeyState::LOADED;
-    aOnComplete();
-  };
-
-  string filename = "index";
-  ReadData(mHost, filename, move(onIndexSuccess), move(onIndexFailed));
-}
-
-void
-ClearKeyPersistence::WriteIndex() {
-  function <void()> onIndexSuccess =
-    [] ()
-  {
-    CK_LOGD("ClearKeyPersistence: Wrote index file");
-  };
-
-  function <void()> onIndexFail =
-    [] ()
-  {
-    CK_LOGD("ClearKeyPersistence: Failed to write index file (this is bad)");
-  };
-
-  stringstream ss;
-
-  for (const uint32_t& sessionId : mPersistentSessionIds) {
-    ss << sessionId;
-    ss << '\n';
   }
+  sPersistentKeyState = LOADED;
+  aRecordIterator->Close();
 
-  string dataString = ss.str();
-  uint8_t* dataArray = (uint8_t*)dataString.data();
-  vector<uint8_t> data(dataArray, dataArray + dataString.size());
-
-  string filename = "index";
-  WriteData(mHost,
-            filename,
-            data,
-            move(onIndexSuccess),
-            move(onIndexFail));
+  for (size_t i = 0; i < sTasksBlockedOnSessionIdLoad.size(); i++) {
+    sTasksBlockedOnSessionIdLoad[i]->Run();
+    sTasksBlockedOnSessionIdLoad[i]->Destroy();
+  }
+  sTasksBlockedOnSessionIdLoad.clear();
 }
 
-
-ClearKeyPersistence::ClearKeyPersistence(Host_8* aHost)
+ void
+ClearKeyPersistence::EnsureInitialized()
 {
-  this->mHost = aHost;
-}
-
-void
-ClearKeyPersistence::EnsureInitialized(bool aPersistentStateAllowed,
-                                       function<void()>&& aOnInitialized)
-{
-  if (aPersistentStateAllowed &&
-      mPersistentKeyState == PersistentKeyState::UNINITIALIZED) {
-    mPersistentKeyState = LOADING;
-    ReadAllRecordsFromIndex(move(aOnInitialized));
-  } else {
-    mPersistentKeyState = PersistentKeyState::LOADED;
-    aOnInitialized();
+  if (sPersistentKeyState == UNINITIALIZED) {
+    sPersistentKeyState = LOADING;
+    if (GMP_FAILED(EnumRecordNames(&ReadAllRecordsFromIterator))) {
+      sPersistentKeyState = LOADED;
+    }
   }
 }
 
-bool ClearKeyPersistence::IsLoaded() const
-{
-  return mPersistentKeyState == PersistentKeyState::LOADED;
-}
-
-string
-ClearKeyPersistence::GetNewSessionId(SessionType aSessionType)
+ string
+ClearKeyPersistence::GetNewSessionId(GMPSessionType aSessionType)
 {
   static uint32_t sNextSessionId = 1;
 
   
-  while (Contains(mPersistentSessionIds, sNextSessionId)) {
+  while (Contains(sPersistentSessionIds, sNextSessionId)) {
     sNextSessionId++;
   }
 
@@ -140,11 +98,8 @@ ClearKeyPersistence::GetNewSessionId(SessionType aSessionType)
   ss << sNextSessionId;
   ss >> sessionId;
 
-  if (aSessionType == SessionType::kPersistentLicense) {
-    mPersistentSessionIds.insert(sNextSessionId);
-
-    
-    WriteIndex();
+  if (aSessionType == kGMPPersistentSession) {
+    sPersistentSessionIds.insert(sNextSessionId);
   }
 
   sNextSessionId++;
@@ -152,17 +107,154 @@ ClearKeyPersistence::GetNewSessionId(SessionType aSessionType)
   return sessionId;
 }
 
-bool
-ClearKeyPersistence::IsPersistentSessionId(const string& aSessionId)
+
+class CreateSessionTask : public GMPTask {
+public:
+  CreateSessionTask(ClearKeySessionManager* aTarget,
+                    uint32_t aCreateSessionToken,
+                    uint32_t aPromiseId,
+                    const string& aInitDataType,
+                    const uint8_t* aInitData,
+                    uint32_t aInitDataSize,
+                    GMPSessionType aSessionType)
+    : mTarget(aTarget)
+    , mCreateSessionToken(aCreateSessionToken)
+    , mPromiseId(aPromiseId)
+    , mInitDataType(aInitDataType)
+    , mSessionType(aSessionType)
+  {
+    mInitData.insert(mInitData.end(),
+                     aInitData,
+                     aInitData + aInitDataSize);
+  }
+  virtual void Run() override {
+    mTarget->CreateSession(mCreateSessionToken,
+                           mPromiseId,
+                           mInitDataType.c_str(),
+                           mInitDataType.size(),
+                           &mInitData.front(),
+                           mInitData.size(),
+                           mSessionType);
+  }
+  virtual void Destroy() override {
+    delete this;
+  }
+private:
+  RefPtr<ClearKeySessionManager> mTarget;
+  uint32_t mCreateSessionToken;
+  uint32_t mPromiseId;
+  const string mInitDataType;
+  vector<uint8_t> mInitData;
+  GMPSessionType mSessionType;
+};
+
+
+ bool
+ClearKeyPersistence::DeferCreateSessionIfNotReady(ClearKeySessionManager* aInstance,
+                                                  uint32_t aCreateSessionToken,
+                                                  uint32_t aPromiseId,
+                                                  const string& aInitDataType,
+                                                  const uint8_t* aInitData,
+                                                  uint32_t aInitDataSize,
+                                                  GMPSessionType aSessionType)
 {
-  return Contains(mPersistentSessionIds, atoi(aSessionId.c_str()));
+  if (sPersistentKeyState >= LOADED)  {
+    return false;
+  }
+  GMPTask* t = new CreateSessionTask(aInstance,
+                                     aCreateSessionToken,
+                                     aPromiseId,
+                                     aInitDataType,
+                                     aInitData,
+                                     aInitDataSize,
+                                     aSessionType);
+  sTasksBlockedOnSessionIdLoad.push_back(t);
+  return true;
 }
 
-void
-ClearKeyPersistence::PersistentSessionRemoved(string& aSessionId)
-{
-  mPersistentSessionIds.erase(atoi(aSessionId.c_str()));
+class LoadSessionTask : public GMPTask {
+public:
+  LoadSessionTask(ClearKeySessionManager* aTarget,
+                  uint32_t aPromiseId,
+                  const char* aSessionId,
+                  uint32_t aSessionIdLength)
+    : mTarget(aTarget)
+    , mPromiseId(aPromiseId)
+    , mSessionId(aSessionId, aSessionId + aSessionIdLength)
+  {
+  }
+  virtual void Run() override {
+    mTarget->LoadSession(mPromiseId,
+                         mSessionId.c_str(),
+                         mSessionId.size());
+  }
+  virtual void Destroy() override {
+    delete this;
+  }
+private:
+  RefPtr<ClearKeySessionManager> mTarget;
+  uint32_t mPromiseId;
+  string mSessionId;
+};
 
-  
-  WriteIndex();
+ bool
+ClearKeyPersistence::DeferLoadSessionIfNotReady(ClearKeySessionManager* aInstance,
+                                                uint32_t aPromiseId,
+                                                const char* aSessionId,
+                                                uint32_t aSessionIdLength)
+{
+  if (sPersistentKeyState >= LOADED)  {
+    return false;
+  }
+  GMPTask* t = new LoadSessionTask(aInstance,
+                                   aPromiseId,
+                                   aSessionId,
+                                   aSessionIdLength);
+  sTasksBlockedOnSessionIdLoad.push_back(t);
+  return true;
+}
+
+ bool
+ClearKeyPersistence::IsPersistentSessionId(const string& aSessionId)
+{
+  return Contains(sPersistentSessionIds, atoi(aSessionId.c_str()));
+}
+
+class LoadSessionFromKeysTask : public ReadContinuation {
+public:
+  LoadSessionFromKeysTask(ClearKeySessionManager* aTarget,
+                          const string& aSessionId,
+                          uint32_t aPromiseId)
+    : mTarget(aTarget)
+    , mSessionId(aSessionId)
+    , mPromiseId(aPromiseId)
+  {
+  }
+
+  virtual void ReadComplete(GMPErr aStatus,
+                            const uint8_t* aData,
+                            uint32_t aLength) override
+  {
+    mTarget->PersistentSessionDataLoaded(aStatus, mPromiseId, mSessionId, aData, aLength);
+  }
+private:
+  RefPtr<ClearKeySessionManager> mTarget;
+  string mSessionId;
+  uint32_t mPromiseId;
+};
+
+ void
+ClearKeyPersistence::LoadSessionData(ClearKeySessionManager* aInstance,
+                                     const string& aSid,
+                                     uint32_t aPromiseId)
+{
+  LoadSessionFromKeysTask* loadTask =
+    new LoadSessionFromKeysTask(aInstance, aSid, aPromiseId);
+  ReadData(aSid, loadTask);
+}
+
+ void
+ClearKeyPersistence::PersistentSessionRemoved(const string& aSessionId)
+{
+  sPersistentSessionIds.erase(atoi(aSessionId.c_str()));
 }

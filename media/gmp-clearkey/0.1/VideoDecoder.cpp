@@ -14,162 +14,247 @@
 
 
 
-#include <algorithm>
 #include <cstdint>
 #include <limits>
 
+#include "AnnexB.h"
 #include "BigEndian.h"
 #include "ClearKeyDecryptionManager.h"
 #include "ClearKeyUtils.h"
+#include "gmp-task-utils.h"
 #include "VideoDecoder.h"
 
 using namespace wmf;
-using namespace cdm;
 
-VideoDecoder::VideoDecoder(Host_8 *aHost)
-  : mHost(aHost)
+VideoDecoder::VideoDecoder(GMPVideoHost *aHostAPI)
+  : mHostAPI(aHostAPI)
+  , mCallback(nullptr)
+  , mWorkerThread(nullptr)
+  , mMutex(nullptr)
+  , mNumInputTasks(0)
+  , mSentExtraData(false)
+  , mIsFlushing(false)
   , mHasShutdown(false)
 {
   
   AddRef();
-
-  mDecoder = new WMFH264Decoder();
-
-  uint32_t cores = std::max(1u, std::thread::hardware_concurrency());
-  HRESULT hr = mDecoder->Init(cores);
 }
 
 VideoDecoder::~VideoDecoder()
 {
-
+  if (mMutex) {
+    mMutex->Destroy();
+  }
 }
 
-Status
-VideoDecoder::InitDecode(const VideoDecoderConfig& aConfig)
+void
+VideoDecoder::InitDecode(const GMPVideoCodec& aCodecSettings,
+                         const uint8_t* aCodecSpecific,
+                         uint32_t aCodecSpecificLength,
+                         GMPVideoDecoderCallback* aCallback,
+                         int32_t aCoreCount)
 {
-  if (!mDecoder) {
+  mCallback = aCallback;
+  assert(mCallback);
+  mDecoder = new WMFH264Decoder();
+  HRESULT hr = mDecoder->Init(aCoreCount);
+  if (FAILED(hr)) {
     CK_LOGD("VideoDecoder::InitDecode failed to init WMFH264Decoder");
-
-    return Status::kDecodeError;
+    mCallback->Error(GMPGenericErr);
+    return;
   }
 
-  return Status::kSuccess;
+  auto err = GetPlatform()->createmutex(&mMutex);
+  if (GMP_FAILED(err)) {
+    CK_LOGD("VideoDecoder::InitDecode failed to create GMPMutex");
+    mCallback->Error(GMPGenericErr);
+    return;
+  }
+
+  
+  
+  const uint8_t* avcc = aCodecSpecific + 1;
+  const uint8_t* avccEnd = aCodecSpecific + aCodecSpecificLength;
+  mExtraData.insert(mExtraData.end(), avcc, avccEnd);
+
+  AnnexB::ConvertConfig(mExtraData, mAnnexB);
 }
 
-Status
-VideoDecoder::Decode(const InputBuffer& aInputBuffer, VideoFrame* aVideoFrame)
+void
+VideoDecoder::EnsureWorker()
 {
-  
-  
-  if (!aInputBuffer.data) {
+  if (!mWorkerThread) {
+    GetPlatform()->createthread(&mWorkerThread);
+    if (!mWorkerThread) {
+      mCallback->Error(GMPAllocErr);
+      return;
+    }
+  }
+}
+
+void
+VideoDecoder::Decode(GMPVideoEncodedFrame* aInputFrame,
+                     bool aMissingFrames,
+                     const uint8_t* aCodecSpecificInfo,
+                     uint32_t aCodecSpecificInfoLength,
+                     int64_t aRenderTimeMs)
+{
+  if (aInputFrame->BufferType() != GMP_BufferLength32) {
     
-    
-    CK_LOGD("Input buffer null: Draining");
-    return Drain(aVideoFrame);
+    mCallback->Error(GMPGenericErr);
+    return;
   }
 
-  DecodeData* data = new DecodeData();
-  Assign(data->mBuffer, aInputBuffer.data, aInputBuffer.data_size);
-  data->mTimestamp = aInputBuffer.timestamp;
-  data->mCrypto = CryptoMetaData(&aInputBuffer);
+  EnsureWorker();
 
+  {
+    AutoLock lock(mMutex);
+    mNumInputTasks++;
+  }
+
+  
+  
+
+  
+  
+  
+  
+  
+  
+  DecodeData* data = new DecodeData();
+  Assign(data->mBuffer, aInputFrame->Buffer(), aInputFrame->Size());
+  data->mTimestamp = aInputFrame->TimeStamp();
+  data->mDuration = aInputFrame->Duration();
+  data->mIsKeyframe = (aInputFrame->FrameType() == kGMPKeyFrame);
+  const GMPEncryptedBufferMetadata* crypto = aInputFrame->GetDecryptionData();
+  if (crypto) {
+    data->mCrypto.Init(crypto);
+  }
+  aInputFrame->Destroy();
+  mWorkerThread->Post(WrapTaskRefCounted(this,
+                                         &VideoDecoder::DecodeTask,
+                                         data));
+}
+
+void
+VideoDecoder::DecodeTask(DecodeData* aData)
+{
   CK_LOGD("VideoDecoder::DecodeTask");
-  AutoPtr<DecodeData> d(data);
+  AutoPtr<DecodeData> d(aData);
   HRESULT hr;
 
-  if (!data || !mDecoder) {
-    CK_LOGE("Decode job not set up correctly!");
-    return Status::kDecodeError;
+  {
+    AutoLock lock(mMutex);
+    mNumInputTasks--;
+    assert(mNumInputTasks >= 0);
   }
 
-  std::vector<uint8_t>& buffer = data->mBuffer;
+  if (mIsFlushing) {
+    CK_LOGD("VideoDecoder::DecodeTask rejecting frame: flushing.");
+    return;
+  }
 
-  if (data->mCrypto.IsValid()) {
-    Status rv =
-      ClearKeyDecryptionManager::Get()->Decrypt(buffer, data->mCrypto);
+  if (!aData || !mHostAPI || !mDecoder) {
+    CK_LOGE("Decode job not set up correctly!");
+    return;
+  }
 
-    if (STATUS_FAILED(rv)) {
-      CK_LOGARRAY("Failed to decrypt video using key ",
-                  aInputBuffer.key_id,
-                  aInputBuffer.key_id_size);
-      return rv;
+  std::vector<uint8_t>& buffer = aData->mBuffer;
+  if (aData->mCrypto.IsValid()) {
+    
+    
+    GMPErr rv =
+      ClearKeyDecryptionManager::Get()->Decrypt(buffer, aData->mCrypto);
+
+    if (GMP_FAILED(rv)) {
+      MaybeRunOnMainThread(WrapTask(mCallback, &GMPVideoDecoderCallback::Error, rv));
+      return;
     }
+  }
+
+  AnnexB::ConvertFrameInPlace(buffer);
+
+  if (aData->mIsKeyframe) {
+    
+    
+    
+    buffer.insert(buffer.begin(), mAnnexB.begin(), mAnnexB.end());
   }
 
   hr = mDecoder->Input(buffer.data(),
                        buffer.size(),
-                       data->mTimestamp);
+                       aData->mTimestamp,
+                       aData->mDuration);
 
   CK_LOGD("VideoDecoder::DecodeTask() Input ret hr=0x%x\n", hr);
-
-
   if (FAILED(hr)) {
-    assert(hr != MF_E_TRANSFORM_NEED_MORE_INPUT);
-
     CK_LOGE("VideoDecoder::DecodeTask() decode failed ret=0x%x%s\n",
-      hr,
-      ((hr == MF_E_NOTACCEPTING) ? " (MF_E_NOTACCEPTING)" : ""));
-    CK_LOGD("Decode failed. The decoder is not accepting input");
-    return Status::kDecodeError;
+        hr,
+        ((hr == MF_E_NOTACCEPTING) ? " (MF_E_NOTACCEPTING)" : ""));
+    return;
   }
 
-  return OutputFrame(aVideoFrame);
-}
-
-Status VideoDecoder::OutputFrame(VideoFrame* aVideoFrame) {
-  HRESULT hr = S_OK;
-
-  
-  
-  
-  
-  while (true) {
+  while (hr == S_OK) {
     CComPtr<IMFSample> output;
     hr = mDecoder->Output(&output);
-
-    if (hr != S_OK) {
-      break;
-    }
-
     CK_LOGD("VideoDecoder::DecodeTask() output ret=0x%x\n", hr);
+    if (hr == S_OK) {
+      MaybeRunOnMainThread(
+        WrapTaskRefCounted(this,
+                           &VideoDecoder::ReturnOutput,
+                           CComPtr<IMFSample>(output),
+                           mDecoder->GetFrameWidth(),
+                           mDecoder->GetFrameHeight(),
+                           mDecoder->GetStride()));
+    }
+    if (hr == MF_E_TRANSFORM_NEED_MORE_INPUT) {
+      AutoLock lock(mMutex);
+      if (mNumInputTasks == 0) {
+        
+        
+        MaybeRunOnMainThread(
+          WrapTask(mCallback,
+                   &GMPVideoDecoderCallback::InputDataExhausted));
+      }
+    }
+    if (FAILED(hr)) {
+      CK_LOGE("VideoDecoder::DecodeTask() output failed hr=0x%x\n", hr);
+    }
+  }
+}
 
-    mOutputQueue.push(output);
-    CK_LOGD("Queue size: %u", mOutputQueue.size());
+void
+VideoDecoder::ReturnOutput(IMFSample* aSample,
+                           int32_t aWidth,
+                           int32_t aHeight,
+                           int32_t aStride)
+{
+  CK_LOGD("[%p] VideoDecoder::ReturnOutput()\n", this);
+  assert(aSample);
+
+  HRESULT hr;
+
+  GMPVideoFrame* f = nullptr;
+  auto err = mHostAPI->CreateFrame(kGMPI420VideoFrame, &f);
+  if (GMP_FAILED(err) || !f) {
+    CK_LOGE("Failed to create i420 frame!\n");
+    return;
+  }
+  if (HasShutdown()) {
+    
+    
+    
+    CK_LOGD("Shutdown while waiting on GMPVideoHost::CreateFrame()!\n");
+    f->Destroy();
+    return;
   }
 
-  
-  if (mOutputQueue.empty()) {
-    CK_LOGD("Decode failed. Not enought data; Requesting more input");
-    return Status::kNeedMoreData;
-  }
+  auto vf = static_cast<GMPVideoi420Frame*>(f);
 
-  
-  
-  if (hr != MF_E_TRANSFORM_NEED_MORE_INPUT && FAILED(hr)) {
-    CK_LOGD("Decode failed output ret=0x%x\n", hr);
-    return Status::kDecodeError;
-  }
+  hr = SampleToVideoFrame(aSample, aWidth, aHeight, aStride, vf);
+  ENSURE(SUCCEEDED(hr), );
 
-  CComPtr<IMFSample> result = mOutputQueue.front();
-  mOutputQueue.pop();
-
-  
-  
-  if (mDecoder->GetStride() <= 0) {
-    return Status::kDecodeError;
-  }
-
-  hr = SampleToVideoFrame(result,
-                          mDecoder->GetFrameWidth(),
-                          mDecoder->GetFrameHeight(),
-                          mDecoder->GetStride(),
-                          aVideoFrame);
-  if (FAILED(hr)) {
-    return Status::kDecodeError;
-  }
-
-  CK_LOGD("Decode succeeded.");
-  return Status::kSuccess;
+  mCallback->Decoded(vf);
 }
 
 HRESULT
@@ -177,18 +262,13 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
                                  int32_t aWidth,
                                  int32_t aHeight,
                                  int32_t aStride,
-                                 VideoFrame* aVideoFrame)
+                                 GMPVideoi420Frame* aVideoFrame)
 {
-  CK_LOGD("[%p] VideoDecoder::SampleToVideoFrame()\n", this);
-  assert(aSample);
-
   ENSURE(aSample != nullptr, E_POINTER);
   ENSURE(aVideoFrame != nullptr, E_POINTER);
 
   HRESULT hr;
   CComPtr<IMFMediaBuffer> mediaBuffer;
-
-  aVideoFrame->SetFormat(kI420);
 
   
   hr = aSample->ConvertToContiguousBuffer(&mediaBuffer);
@@ -205,7 +285,7 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
     hr = twoDBuffer->Lock2D(&data, &stride);
     ENSURE(SUCCEEDED(hr), hr);
   } else {
-    hr = mediaBuffer->Lock(&data, nullptr, nullptr);
+    hr = mediaBuffer->Lock(&data, NULL, NULL);
     ENSURE(SUCCEEDED(hr), hr);
     stride = aStride;
   }
@@ -218,47 +298,33 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
   if (aHeight % 16 != 0) {
     padding = 16 - (aHeight % 16);
   }
-  uint32_t ySize = stride * (aHeight + padding);
-  uint32_t uSize = stride * (aHeight + padding) / 4;
-  uint32_t halfStride = (stride + 1) / 2;
-  uint32_t halfHeight = (aHeight + 1) / 2;
+  int32_t y_size = stride * (aHeight + padding);
+  int32_t v_size = stride * (aHeight + padding) / 4;
+  int32_t halfStride = (stride + 1) / 2;
+  int32_t halfHeight = (aHeight + 1) / 2;
 
-  aVideoFrame->SetStride(VideoFrame::kYPlane, stride);
-  aVideoFrame->SetStride(VideoFrame::kUPlane, halfStride);
-  aVideoFrame->SetStride(VideoFrame::kVPlane, halfStride);
+  auto err = aVideoFrame->CreateEmptyFrame(stride, aHeight, stride, halfStride, halfStride);
+  ENSURE(GMP_SUCCEEDED(err), E_FAIL);
 
-  aVideoFrame->SetSize(Size(aWidth, aHeight));
+  err = aVideoFrame->SetWidth(aWidth);
+  ENSURE(GMP_SUCCEEDED(err), E_FAIL);
+  err = aVideoFrame->SetHeight(aHeight);
+  ENSURE(GMP_SUCCEEDED(err), E_FAIL);
 
-  uint64_t bufferSize = ySize + 2 * uSize;
+  uint8_t* outBuffer = aVideoFrame->Buffer(kGMPYPlane);
+  ENSURE(outBuffer != nullptr, E_FAIL);
+  assert(aVideoFrame->AllocatedSize(kGMPYPlane) >= stride*aHeight);
+  memcpy(outBuffer, data, stride*aHeight);
 
-  
-  
-  if (bufferSize > UINT32_MAX) {
-    return Status::kDecodeError;
-  }
+  outBuffer = aVideoFrame->Buffer(kGMPUPlane);
+  ENSURE(outBuffer != nullptr, E_FAIL);
+  assert(aVideoFrame->AllocatedSize(kGMPUPlane) >= halfStride*halfHeight);
+  memcpy(outBuffer, data+y_size, halfStride*halfHeight);
 
-  
-  Buffer* buffer = mHost->Allocate(bufferSize);
-  aVideoFrame->SetFrameBuffer(buffer);
-
-  
-  
-  if (!buffer) {
-    return E_OUTOFMEMORY;
-  }
-
-  uint8_t* outBuffer = buffer->Data();
-
-  aVideoFrame->SetPlaneOffset(VideoFrame::kYPlane, 0);
-
-  
-  aVideoFrame->SetPlaneOffset(VideoFrame::kUPlane, ySize);
-
-  
-  aVideoFrame->SetPlaneOffset(VideoFrame::kVPlane, ySize + uSize);
-
-  
-  memcpy(outBuffer, data, ySize + uSize * 2);
+  outBuffer = aVideoFrame->Buffer(kGMPVPlane);
+  ENSURE(outBuffer != nullptr, E_FAIL);
+  assert(aVideoFrame->AllocatedSize(kGMPVPlane) >= halfStride*halfHeight);
+  memcpy(outBuffer, data + y_size + v_size, halfStride*halfHeight);
 
   if (twoDBuffer) {
     twoDBuffer->Unlock2D();
@@ -269,50 +335,121 @@ VideoDecoder::SampleToVideoFrame(IMFSample* aSample,
   LONGLONG hns = 0;
   hr = aSample->GetSampleTime(&hns);
   ENSURE(SUCCEEDED(hr), hr);
-
   aVideoFrame->SetTimestamp(HNsToUsecs(hns));
+
+  hr = aSample->GetSampleDuration(&hns);
+  ENSURE(SUCCEEDED(hr), hr);
+  aVideoFrame->SetDuration(HNsToUsecs(hns));
 
   return S_OK;
 }
 
 void
+VideoDecoder::ResetCompleteTask()
+{
+  mIsFlushing = false;
+  if (mCallback) {
+    MaybeRunOnMainThread(WrapTask(mCallback,
+                                  &GMPVideoDecoderCallback::ResetComplete));
+  }
+}
+
+void
 VideoDecoder::Reset()
 {
-  CK_LOGD("VideoDecoder::Reset");
-
+  mIsFlushing = true;
   if (mDecoder) {
     mDecoder->Reset();
   }
 
   
-  while (!mOutputQueue.empty()) {
-    mOutputQueue.pop();
-  }
+  
+  EnsureWorker();
+  mWorkerThread->Post(WrapTaskRefCounted(this,
+                                         &VideoDecoder::ResetCompleteTask));
 }
 
-Status
-VideoDecoder::Drain(VideoFrame* aVideoFrame)
+void
+VideoDecoder::DrainTask()
 {
-  CK_LOGD("VideoDecoder::Drain()");
-
-  if (!mDecoder) {
-    CK_LOGD("Drain failed! Decoder was not initialized");
-    return Status::kDecodeError;
-  }
-
   mDecoder->Drain();
 
   
-  return OutputFrame(aVideoFrame);
+  HRESULT hr = S_OK;
+  while (hr == S_OK) {
+    CComPtr<IMFSample> output;
+    hr = mDecoder->Output(&output);
+    CK_LOGD("VideoDecoder::DrainTask() output ret=0x%x\n", hr);
+    if (hr == S_OK) {
+      MaybeRunOnMainThread(
+        WrapTaskRefCounted(this,
+                           &VideoDecoder::ReturnOutput,
+                           CComPtr<IMFSample>(output),
+                           mDecoder->GetFrameWidth(),
+                           mDecoder->GetFrameHeight(),
+                           mDecoder->GetStride()));
+    }
+  }
+  MaybeRunOnMainThread(WrapTask(mCallback, &GMPVideoDecoderCallback::DrainComplete));
+}
+
+void
+VideoDecoder::Drain()
+{
+  if (!mDecoder) {
+    if (mCallback) {
+      mCallback->DrainComplete();
+    }
+    return;
+  }
+  EnsureWorker();
+  mWorkerThread->Post(WrapTaskRefCounted(this,
+                                         &VideoDecoder::DrainTask));
 }
 
 void
 VideoDecoder::DecodingComplete()
 {
+  if (mWorkerThread) {
+    mWorkerThread->Join();
+  }
   mHasShutdown = true;
 
   
   
   
   Release();
+}
+
+void
+VideoDecoder::MaybeRunOnMainThread(GMPTask* aTask)
+{
+  class MaybeRunTask : public GMPTask
+  {
+  public:
+    MaybeRunTask(VideoDecoder* aDecoder, GMPTask* aTask)
+      : mDecoder(aDecoder), mTask(aTask)
+    { }
+
+    virtual void Run(void) {
+      if (mDecoder->HasShutdown()) {
+        CK_LOGD("Trying to dispatch to main thread after VideoDecoder has shut down");
+        return;
+      }
+
+      mTask->Run();
+    }
+
+    virtual void Destroy()
+    {
+      mTask->Destroy();
+      delete this;
+    }
+
+  private:
+    RefPtr<VideoDecoder> mDecoder;
+    GMPTask* mTask;
+  };
+
+  GetPlatform()->runonmainthread(new MaybeRunTask(this, aTask));
 }
