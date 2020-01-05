@@ -895,11 +895,6 @@ private:
   Mirror<double> mVolume;
 
   
-  
-  
-  Mirror<double> mLogicalPlaybackRate;
-
-  
   Mirror<bool> mPreservesPitch;
 
   
