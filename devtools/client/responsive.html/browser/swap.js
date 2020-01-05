@@ -68,6 +68,13 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       
       
       
+      let stateFlags = gBrowser._tabListeners.get(tab).mStateFlags;
+      gBrowser._tabListeners.get(containerTab).mStateFlags = stateFlags;
+
+      
+      
+      
+      
       
       
       
@@ -146,6 +153,11 @@ function swapToInnerBrowser({ tab, containerURL, getInnerBrowser }) {
       dispatchDevToolsBrowserSwap(innerBrowser, contentBrowser);
       gBrowser._swapBrowserDocShells(contentTab, innerBrowser);
       innerBrowser = null;
+
+      
+      
+      let stateFlags = gBrowser._tabListeners.get(tab).mStateFlags;
+      gBrowser._tabListeners.get(contentTab).mStateFlags = stateFlags;
 
       
       
