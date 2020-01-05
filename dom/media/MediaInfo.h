@@ -179,6 +179,9 @@ private:
 };
 
 
+const char* TrackTypeToStr(TrackInfo::TrackType aTrack);
+
+
 class VideoInfo : public TrackInfo
 {
 public:
