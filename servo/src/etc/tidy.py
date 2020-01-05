@@ -32,19 +32,10 @@ def do_license_check(name, contents):
         report_error_name_no(name, 1, "incorrect license")
 
 exceptions = [
-    "src/cairo", 
-    "src/libcss", 
-    "src/libhubbub", 
-    "src/libparserutils", 
-    "src/libwapcaplet", 
-    "src/mozjs", 
-    "src/pixman", 
-    "src/rust/", 
-    "src/rust-azure/src", 
-    "src/rust-azure/include", 
-    "src/rust-harfbuzz/harfbuzz", 
-    "src/skia", 
-    "src/servo/dom/bindings/codegen", 
+    "src/support", 
+    "src/platform", 
+    "src/compiler", 
+    "src/components/servo/dom/bindings/codegen", 
 ]
 
 def should_check(name):
