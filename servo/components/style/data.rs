@@ -224,13 +224,6 @@ impl StoredRestyleHint {
     }
 
     
-    
-    
-    pub fn subtree_and_later_siblings() -> Self {
-        StoredRestyleHint(RESTYLE_SELF | RESTYLE_DESCENDANTS | RESTYLE_LATER_SIBLINGS)
-    }
-
-    
     pub fn has_self_invalidations(&self) -> bool {
         self.0.intersects(RestyleHint::for_self())
     }
