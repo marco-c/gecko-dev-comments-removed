@@ -445,6 +445,13 @@ impl<T: Reflectable> RootedReference<T> for Option<Root<T>> {
 }
 
 
+impl<T: Reflectable> RootedReference<T> for Option<JS<T>> {
+    fn r(&self) -> Option<&T> {
+        self.as_ref().map(|inner| &**inner)
+    }
+}
+
+
 pub trait OptionalRootedReference<T> {
     
     
