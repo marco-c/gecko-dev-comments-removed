@@ -8,9 +8,7 @@
 #include "WidevineAdapter.h"
 #include "WidevineUtils.h"
 #include "WidevineFileIO.h"
-#include "GMPPlatform.h"
 #include <stdarg.h>
-#include "TimeUnits.h"
 
 using namespace cdm;
 using namespace std;
@@ -160,33 +158,6 @@ WidevineDecryptor::SetServerCertificate(uint32_t aPromiseId,
   CDM()->SetServerCertificate(aPromiseId, aServerCert, aServerCertSize);
 }
 
-cdm::Time
-WidevineDecryptor::ThrottleDecrypt(cdm::Time aWallTime, cdm::Time aSampleDuration)
-{
-  const cdm::Time WindowSize = 1.0;
-  const cdm::Time MaxThroughput = 2.0;
-
-  
-  while (!mDecrypts.empty() && mDecrypts.front().mWallTime < aWallTime - WindowSize) {
-    mDecrypts.pop_front();
-  }
-
-  
-  
-  cdm::Time durationDecrypted = aSampleDuration;
-  for (const DecryptJob& job : mDecrypts) {
-    durationDecrypted += job.mSampleDuration;
-  }
-
-  if (durationDecrypted > MaxThroughput) {
-    
-    
-    return durationDecrypted - MaxThroughput;
-  }
-
-  return 0.0;
-}
-
 void
 WidevineDecryptor::Decrypt(GMPBuffer* aBuffer,
                            GMPEncryptedBufferMetadata* aMetadata,
@@ -196,72 +167,21 @@ WidevineDecryptor::Decrypt(GMPBuffer* aBuffer,
     CDM_LOG("WidevineDecryptor::Decrypt() this=%p FAIL; !mCallback", this);
     return;
   }
-
-  cdm::Time duration = double(aDurationUsecs) / USECS_PER_S;
-  mPendingDecrypts.push({aBuffer, aMetadata, duration});
-  ProcessDecrypts();
-}
-
-void
-WidevineDecryptor::ProcessDecryptsFromTimer()
-{
-  MOZ_ASSERT(mPendingDecryptTimerSet);
-  mPendingDecryptTimerSet = false;
-  ProcessDecrypts();
-}
-
-void
-WidevineDecryptor::ProcessDecrypts()
-{
-  while (!mPendingDecrypts.empty()) {
-    PendingDecrypt job = mPendingDecrypts.front();
-
-    
-    
-    
-    cdm::Time now = GetCurrentWallTime();
-    cdm::Time delay = ThrottleDecrypt(now, job.mSampleDuration);
-
-    if (delay > 0.0) {
-      
-      
-      
-      if (!mPendingDecryptTimerSet) {
-        mPendingDecryptTimerSet = true;
-        RefPtr<WidevineDecryptor> self = this;
-        GMPTask* task = gmp::NewGMPTask(
-          [self]() {
-            self->ProcessDecryptsFromTimer();
-          });
-        gmp::SetTimerOnMainThread(task, delay * 1000);
-      }
-      return;
-    }
-    DecryptBuffer(job);
-    mDecrypts.push_back(DecryptJob(now, job.mSampleDuration));
-    mPendingDecrypts.pop();
-  }
-}
-
-void
-WidevineDecryptor::DecryptBuffer(const PendingDecrypt& aJob)
-{
-  GMPBuffer* buffer = aJob.mBuffer;
-  const GMPEncryptedBufferMetadata* crypto = aJob.mMetadata;
+  const GMPEncryptedBufferMetadata* crypto = aMetadata;
   InputBuffer sample;
   nsTArray<SubsampleEntry> subsamples;
-  InitInputBuffer(crypto, buffer->Id(), buffer->Data(), buffer->Size(), sample, subsamples);
+  InitInputBuffer(crypto, aBuffer->Id(), aBuffer->Data(), aBuffer->Size(), sample, subsamples);
   WidevineDecryptedBlock decrypted;
   Status rv = CDM()->Decrypt(sample, &decrypted);
   CDM_LOG("Decryptor::Decrypt(timestamp=%" PRId64 ") rv=%d sz=%d",
           sample.timestamp, rv, decrypted.DecryptedBuffer()->Size());
   if (rv == kSuccess) {
-    buffer->Resize(decrypted.DecryptedBuffer()->Size());
-    memcpy(buffer->Data(),
+    aBuffer->Resize(decrypted.DecryptedBuffer()->Size());
+    memcpy(aBuffer->Data(),
            decrypted.DecryptedBuffer()->Data(),
            decrypted.DecryptedBuffer()->Size());
   }
-  mCallback->Decrypted(buffer, ToGMPErr(rv));
+  mCallback->Decrypted(aBuffer, ToGMPErr(rv));
 }
 
 void
@@ -269,16 +189,6 @@ WidevineDecryptor::DecryptingComplete()
 {
   CDM_LOG("WidevineDecryptor::DecryptingComplete() this=%p, instanceId=%u",
           this, mInstanceId);
-
-  
-  while (!mPendingDecrypts.empty()) {
-    PendingDecrypt& job = mPendingDecrypts.front();
-    if (mCallback) {
-      mCallback->Decrypted(job.mBuffer, GMPAbortedErr);
-    }
-    mPendingDecrypts.pop();
-  }
-
   
   
   
