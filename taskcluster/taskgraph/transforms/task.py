@@ -12,7 +12,6 @@ from __future__ import absolute_import, print_function, unicode_literals
 
 import json
 import time
-from copy import deepcopy
 
 from taskgraph.util.treeherder import split_symbol
 from taskgraph.transforms.base import TransformSequence
@@ -213,17 +212,10 @@ task_description_schema = Schema({
         Optional('retry-exit-status'): int,
 
     }, {
-        
-        
         Required('implementation'): 'generic-worker',
 
         
-        
-        
-        Required('command'): Any(
-            [taskref_or_string],   
-            [[taskref_or_string]]  
-        ),
+        Required('command'): [taskref_or_string],
 
         
         
@@ -233,48 +225,15 @@ task_description_schema = Schema({
 
             
             'path': basestring,
-
-            
-            Optional('name'): basestring
         }],
 
         
-        
-        
-        
         Optional('mounts'): [{
             
-            
-            Optional('cache-name'): basestring,
-            
-            
-            
-            Optional('content'): {
-
-                
-
-                
-                Optional('artifact'): basestring,
-                
-                Optional('task-id'): taskref_or_string,
-                
-                
-                Optional('url'): basestring
-            },
+            'cache-name': basestring,
 
             
-
-            
-            
-            
-            Optional('directory'): basestring,
-            
-            
-            Optional('file'): basestring,
-            
-            
-            
-            Optional('format'): Any('rar', 'tar.bz2', 'tar.gz', 'zip')
+            'path': basestring,
         }],
 
         
@@ -285,9 +244,6 @@ task_description_schema = Schema({
 
         
         Optional('os-groups', default=[]): [basestring],
-
-        
-        Required('chain-of-trust', default=False): bool,
     }, {
         Required('implementation'): 'buildbot-bridge',
 
@@ -411,6 +367,7 @@ task_description_schema = Schema({
         
         Required('google-play-track'): Any('production', 'beta', 'alpha', 'invalid'),
         Required('dry-run', default=True): bool,
+        Optional('rollout-percentage'): int,
     }),
 })
 
@@ -601,26 +558,19 @@ def build_generic_worker_payload(config, task, task_def):
     artifacts = []
 
     for artifact in worker['artifacts']:
-        a = {
+        artifacts.append({
             'path': artifact['path'],
             'type': artifact['type'],
             'expires': task_def['expires'],  
-        }
-        if 'name' in artifact:
-            a['name'] = artifact['name']
-        artifacts.append(a)
+        })
 
-    
-    
-    
-    
-    mounts = deepcopy(worker.get('mounts', []))
-    for mount in mounts:
-        if 'cache-name' in mount:
-            mount['cacheName'] = mount.pop('cache-name')
-        if 'content' in mount:
-            if 'task-id' in mount['content']:
-                mount['content']['taskId'] = mount['content'].pop('task-id')
+    mounts = []
+
+    for mount in worker.get('mounts', []):
+        mounts.append({
+            'cacheName': mount['cache-name'],
+            'directory': mount['path']
+        })
 
     task_def['payload'] = {
         'command': worker['command'],
@@ -635,15 +585,6 @@ def build_generic_worker_payload(config, task, task_def):
 
     if 'retry-exit-status' in worker:
         raise Exception("retry-exit-status not supported in generic-worker")
-
-    
-    features = {}
-
-    if worker.get('chain-of-trust'):
-        features['chainOfTrust'] = True
-
-    if features:
-        task_def['payload']['features'] = features
 
 
 @payload_builder('scriptworker-signing')
@@ -690,6 +631,9 @@ def build_push_apk_payload(config, task, task_def):
         'upstreamArtifacts':  worker['upstream-artifacts'],
         'google_play_track': worker['google-play-track'],
     }
+
+    if worker.get('rollout-percentage', None):
+        task_def['payload']['rollout_percentage'] = worker['rollout-percentage']
 
 
 @payload_builder('push-apk-breakpoint')
