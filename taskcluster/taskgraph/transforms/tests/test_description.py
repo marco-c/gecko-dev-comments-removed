@@ -9,7 +9,7 @@ transforms do not generate invalid tests.
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from taskgraph.transforms.base import validate_schema
+from taskgraph.transforms.base import validate_schema, optionally_keyed_by
 from voluptuous import (
     Any,
     Optional,
@@ -32,10 +32,7 @@ test_description_schema = Schema({
     'description': basestring,
 
     
-    Required('suite'): Any(
-        basestring,
-        {'by-test-platform': {basestring: basestring}},
-    ),
+    Required('suite'): optionally_keyed_by('test-platform', basestring),
 
     
     
@@ -60,10 +57,9 @@ test_description_schema = Schema({
     
     
     
-    Optional('run-on-projects', default=['all']): Any(
-        [basestring],
-        {'by-test-platform': {basestring: [basestring]}},
-    ),
+    Optional('run-on-projects', default=['all']): optionally_keyed_by(
+        'test-platform',
+        [basestring]),
 
     
     Optional('tier'): Any(
@@ -74,10 +70,7 @@ test_description_schema = Schema({
     
     
     
-    Required('chunks', default=1): Any(
-        int,
-        {'by-test-platform': {basestring: int}},
-    ),
+    Required('chunks', default=1): optionally_keyed_by('test-platform', int),
 
     
     
@@ -87,16 +80,14 @@ test_description_schema = Schema({
     
     
     
-    Required('e10s', default='both'): Any(
-        bool, 'both',
-        {'by-test-platform': {basestring: Any(bool, 'both')}},
-    ),
+    Required('e10s', default='both'): optionally_keyed_by(
+        'test-platform',
+        Any(bool, 'both')),
 
     
-    Required('instance-size', default='default'): Any(
-        Any('default', 'large', 'xlarge', 'legacy'),
-        {'by-test-platform': {basestring: Any('default', 'large', 'xlarge', 'legacy')}},
-    ),
+    Required('instance-size', default='default'): optionally_keyed_by(
+        'test-platform',
+        Any('default', 'large', 'xlarge', 'legacy')),
 
     
     
@@ -132,10 +123,7 @@ test_description_schema = Schema({
 
     
     
-    Required('max-run-time', default=3600): Any(
-        int,
-        {'by-test-platform': {basestring: int}},
-    ),
+    Required('max-run-time', default=3600): optionally_keyed_by('test-platform', int),
 
     
     Optional('retry-exit-status'): int,
@@ -149,20 +137,16 @@ test_description_schema = Schema({
         Required('script'): basestring,
 
         
-        Required('config'): Any(
-            [basestring],
-            {'by-test-platform': {basestring: [basestring]}},
-        ),
+        Required('config'): optionally_keyed_by('test-platform', [basestring]),
 
         
         Optional('actions'): [basestring],
 
         
         
-        Required('extra-options', default=[]): Any(
-            [basestring],
-            {'by-test-platform': {basestring: [basestring]}},
-        ),
+        Required('extra-options', default=[]): optionally_keyed_by(
+            'test-platform',
+            [basestring]),
 
         
         
@@ -211,11 +195,9 @@ test_description_schema = Schema({
 
     
     
-    Optional('os-groups', default=[]): Any(
-        [basestring],
-        
-        {'by-test-platform': {basestring: [basestring]}},
-    ),
+    Optional('os-groups', default=[]): optionally_keyed_by(
+        'test-platform',
+        [basestring]),
 
     
 
