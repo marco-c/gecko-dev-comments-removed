@@ -673,15 +673,8 @@ public:
   }
 
   bool
-  IsAllowedToPlay()
+  IsPlaybackBlocked()
   {
-    
-    
-    if (mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
-        mSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
-      return false;
-    }
-
     
     
     
@@ -689,10 +682,10 @@ public:
       
       
       UpdateAudioChannelPlayingState(true );
-      return false;
+      return true;
     }
 
-    return true;
+    return false;
   }
 
   float
@@ -3568,7 +3561,8 @@ HTMLMediaElement::NotifyXPCOMShutdown()
 void
 HTMLMediaElement::Play(ErrorResult& aRv)
 {
-  if (!IsAllowedToPlay()) {
+  if (mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked()) {
+    
     MaybeDoLoad();
     return;
   }
@@ -3584,6 +3578,11 @@ HTMLMediaElement::Play(ErrorResult& aRv)
 nsresult
 HTMLMediaElement::PlayInternal()
 {
+  if (!IsAllowedToPlay()) {
+    
+    return NS_OK;
+  }
+
   
   mHasUserInteraction = true;
 
@@ -3657,7 +3656,8 @@ HTMLMediaElement::MaybeDoLoad()
 
 NS_IMETHODIMP HTMLMediaElement::Play()
 {
-  if (!IsAllowedToPlay()) {
+  if (mAudioChannelWrapper && mAudioChannelWrapper->IsPlaybackBlocked()) {
+    
     MaybeDoLoad();
     return NS_OK;
   }
@@ -5489,8 +5489,13 @@ bool HTMLMediaElement::CanActivateAutoplay()
     return false;
   }
 
-  if (mAudioChannelWrapper && !mAudioChannelWrapper->IsAllowedToPlay()) {
-    return false;
+  if (mAudioChannelWrapper) {
+    
+    if (mAudioChannelWrapper->GetSuspendType() == nsISuspendedTypes::SUSPENDED_PAUSE ||
+        mAudioChannelWrapper->GetSuspendType() == nsISuspendedTypes::SUSPENDED_BLOCK ||
+        mAudioChannelWrapper->IsPlaybackBlocked()) {
+      return false;
+    }
   }
 
   bool hasData =
@@ -6315,7 +6320,13 @@ HTMLMediaElement::IsAllowedToPlay()
 
   
   if (mAudioChannelWrapper) {
-    return mAudioChannelWrapper->IsAllowedToPlay();
+    
+    if (mAudioChannelWrapper->GetSuspendType() == nsISuspendedTypes::SUSPENDED_PAUSE ||
+        mAudioChannelWrapper->GetSuspendType() == nsISuspendedTypes::SUSPENDED_BLOCK) {
+      return false;
+    }
+
+    return true;
   }
 
   
