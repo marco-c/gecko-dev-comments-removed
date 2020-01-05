@@ -100,7 +100,7 @@ public:
   void DeleteProcess();
 
   GMPState State() const;
-  nsIThread* GMPThread();
+  nsCOMPtr<nsIThread> GMPThread();
 
   
   
@@ -207,7 +207,6 @@ private:
 
   nsTArray<RefPtr<GMPTimerParent>> mTimers;
   nsTArray<RefPtr<GMPStorageParent>> mStorage;
-  nsCOMPtr<nsIThread> mGMPThread;
   
   
   nsCString mNodeId;

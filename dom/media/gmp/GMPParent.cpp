@@ -324,7 +324,7 @@ void
 GMPParent::ChildTerminated()
 {
   RefPtr<GMPParent> self(this);
-  nsIThread* gmpThread = GMPThread();
+  nsCOMPtr<nsIThread> gmpThread = GMPThread();
 
   if (!gmpThread) {
     
@@ -373,26 +373,20 @@ GMPParent::State() const
   return mState;
 }
 
-
-nsIThread*
+nsCOMPtr<nsIThread>
 GMPParent::GMPThread()
 {
-  if (!mGMPThread) {
-    nsCOMPtr<mozIGeckoMediaPluginService> mps = do_GetService("@mozilla.org/gecko-media-plugin-service;1");
-    MOZ_ASSERT(mps);
-    if (!mps) {
-      return nullptr;
-    }
-    
-    
-    
-    
-    
-    mps->GetThread(getter_AddRefs(mGMPThread));
-    MOZ_ASSERT(mGMPThread);
+  nsCOMPtr<mozIGeckoMediaPluginService> mps =
+    do_GetService("@mozilla.org/gecko-media-plugin-service;1");
+  MOZ_ASSERT(mps);
+  if (!mps) {
+    return nullptr;
   }
-
-  return mGMPThread;
+  
+  
+  nsCOMPtr<nsIThread> gmpThread;
+  mps->GetThread(getter_AddRefs(gmpThread));
+  return gmpThread;
 }
 
 
@@ -590,7 +584,8 @@ GMPParent::RecvPGMPTimerConstructor(PGMPTimerParent* actor)
 PGMPTimerParent*
 GMPParent::AllocPGMPTimerParent()
 {
-  GMPTimerParent* p = new GMPTimerParent(GMPThread());
+  nsCOMPtr<nsIThread> thread = GMPThread();
+  GMPTimerParent* p = new GMPTimerParent(thread);
   mTimers.AppendElement(p); 
   return p;
 }
