@@ -1456,8 +1456,11 @@ ContentChild::RecvNotifyLayerAllocated(const dom::TabId& aTabId, const uint64_t&
     return true;
   }
 
+  
+  
   APZChild* apz = ContentProcessController::Create(aTabId);
-  return CompositorBridgeChild::Get()->SendPAPZConstructor(apz, aLayersId);
+  CompositorBridgeChild::Get()->SendPAPZConstructor(apz, aLayersId);
+  return true;
 }
 
 bool
