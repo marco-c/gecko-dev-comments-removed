@@ -36,21 +36,55 @@ const { join: pathJoin, normalize, dirname } = Cu.import("resource://gre/modules
 
 XPCOMUtils.defineLazyGetter(this, "XulApp", () => {
   let xulappURI = module.uri.replace("toolkit/loader.js",
-                                       "sdk/system/xul-app.jsm");
+                                     "sdk/system/xul-app.jsm");
   return Cu.import(xulappURI, {});
 });
 
 
 const bind = Function.call.bind(Function.bind);
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-const define = Object.defineProperties;
 const prototypeOf = Object.getPrototypeOf;
-const create = Object.create;
-const keys = Object.keys;
 const getOwnIdentifiers = x => [...Object.getOwnPropertyNames(x),
                                 ...Object.getOwnPropertySymbols(x)];
 
-const NODE_MODULES = ["assert", "buffer_ieee754", "buffer", "child_process", "cluster", "console", "constants", "crypto", "_debugger", "dgram", "dns", "domain", "events", "freelist", "fs", "http", "https", "_linklist", "module", "net", "os", "path", "punycode", "querystring", "readline", "repl", "stream", "string_decoder", "sys", "timers", "tls", "tty", "url", "util", "vm", "zlib"];
+const NODE_MODULES = new Set([
+  "assert",
+  "buffer_ieee754",
+  "buffer",
+  "child_process",
+  "cluster",
+  "console",
+  "constants",
+  "crypto",
+  "_debugger",
+  "dgram",
+  "dns",
+  "domain",
+  "events",
+  "freelist",
+  "fs",
+  "http",
+  "https",
+  "_linklist",
+  "module",
+  "net",
+  "os",
+  "path",
+  "punycode",
+  "querystring",
+  "readline",
+  "repl",
+  "stream",
+  "string_decoder",
+  "sys",
+  "timers",
+  "tls",
+  "tty",
+  "url",
+  "util",
+  "vm",
+  "zlib",
+]);
 
 const COMPONENT_ERROR = '`Components` is not available in this context.\n' +
   'Functionality provided by Components may be available in an SDK\n' +
@@ -122,7 +156,7 @@ const override = iced(function override(target, source) {
   getOwnIdentifiers(extension).forEach(function(name) {
     properties[name] = extension[name];
   });
-  return define({}, properties);
+  return Object.defineProperties({}, properties);
 });
 Loader.override = override;
 
@@ -193,7 +227,7 @@ function readURI(uri) {
 }
 
 
-function join (...paths) {
+function join(...paths) {
   let joined = pathJoin(...paths);
   let resolved = normalize(joined);
 
@@ -310,12 +344,12 @@ const load = iced(function load(loader, module) {
     getOwnIdentifiers(globals).forEach(function(name) {
       descriptors[name] = getOwnPropertyDescriptor(globals, name)
     });
-    define(sandbox, descriptors);
+    Object.defineProperties(sandbox, descriptors);
   }
   else {
     sandbox = Sandbox({
       name: module.uri,
-      prototype: create(globals, descriptors),
+      prototype: Object.create(globals, descriptors),
       wantXrays: false,
       wantGlobalProperties: module.id == "sdk/indexed-db" ? ["indexedDB"] : [],
       invisibleToDebugger: loader.invisibleToDebugger,
@@ -359,7 +393,7 @@ const load = iced(function load(loader, module) {
     let prototype = typeof(error) === "object" ? error.constructor.prototype :
                     Error.prototype;
 
-    throw create(prototype, {
+    throw Object.create(prototype, {
       message: { value: message, writable: true, configurable: true },
       fileName: { value: fileName, writable: true, configurable: true },
       lineNumber: { value: lineNumber, writable: true, configurable: true },
@@ -368,7 +402,7 @@ const load = iced(function load(loader, module) {
     });
   }
 
-  if(loadModuleHook) {
+  if (loadModuleHook) {
     module = loadModuleHook(module, require);
   }
 
@@ -387,7 +421,7 @@ const load = iced(function load(loader, module) {
 Loader.load = load;
 
 
-function normalizeExt (uri) {
+function normalizeExt(uri) {
   return isJSURI(uri) ? uri :
          isJSONURI(uri) ? uri :
          isJSMURI(uri) ? uri :
@@ -396,7 +430,7 @@ function normalizeExt (uri) {
 
 
 
-function stripBase (rootURI, string) {
+function stripBase(rootURI, string) {
   return string.replace(rootURI, './');
 }
 
@@ -404,15 +438,14 @@ function stripBase (rootURI, string) {
 
 
 const resolve = iced(function resolve(id, base) {
-  if (!isRelative(id)) return id;
-  let basePaths = base.split('/');
-  
-  
-  
-  basePaths.pop();
-  if (!basePaths.length)
+  if (!isRelative(id))
+    return id;
+
+  let baseDir = dirname(base);
+  if (!baseDir)
     return normalize(id);
-  let resolved = join(basePaths.join('/'), id);
+
+  let resolved = join(baseDir, id);
 
   
   
@@ -425,6 +458,78 @@ Loader.resolve = resolve;
 
 
 
+function resolveAsFile(path) {
+  let found;
+
+  
+  
+  
+  
+  try {
+    
+    path = normalizeExt(path);
+    readURI(path);
+    found = path;
+  } catch (e) {}
+
+  return found;
+}
+
+
+
+function resolveAsDirectory(path) {
+  try {
+    
+    
+    let main = getManifestMain(JSON.parse(readURI(path + '/package.json')));
+    if (main != null) {
+      let tmpPath = join(path, main);
+      let found = resolveAsFile(tmpPath);
+      if (found)
+        return found
+    }
+  } catch (e) {}
+
+  try {
+    let tmpPath = path + '/index.js';
+    readURI(tmpPath);
+    return tmpPath;
+  } catch (e) {}
+
+  return null;
+}
+
+function resolveRelative(rootURI, modulesDir, id) {
+  let fullId = join(rootURI, modulesDir, id);
+  let resolvedPath;
+
+  if ((resolvedPath = resolveAsFile(fullId)))
+    return stripBase(rootURI, resolvedPath);
+
+  if ((resolvedPath = resolveAsDirectory(fullId)))
+    return stripBase(rootURI, resolvedPath);
+
+  return null;
+}
+
+
+
+function* getNodeModulePaths(start) {
+  
+  let moduleDir = 'node_modules';
+
+  let parts = start.split('/');
+  while (parts.length) {
+    let leaf = parts.pop();
+    if (leaf !== moduleDir)
+      yield join(...parts, leaf, moduleDir);
+  }
+
+  yield moduleDir;
+}
+
+
+
 
 
 
@@ -434,39 +539,31 @@ const nodeResolve = iced(function nodeResolve(id, requirer, { rootURI }) {
 
   
   if (isAbsoluteURI(id))
-    return void 0;
+    return null;
 
   
   
-  let fullId = join(rootURI, id);
   let resolvedPath;
 
-  if ((resolvedPath = loadAsFile(fullId)))
-    return stripBase(rootURI, resolvedPath);
-
-  if ((resolvedPath = loadAsDirectory(fullId)))
-    return stripBase(rootURI, resolvedPath);
+  if ((resolvedPath = resolveRelative(rootURI, "", id)))
+    return resolvedPath;
 
   
   
   if (isAbsoluteURI(requirer))
-    return void 0;
+    return null;
 
   
   
-  let dirs = getNodeModulePaths(dirname(requirer)).map(dir => join(rootURI, dir, id));
-  for (let i = 0; i < dirs.length; i++) {
-    if ((resolvedPath = loadAsFile(dirs[i])))
-      return stripBase(rootURI, resolvedPath);
-
-    if ((resolvedPath = loadAsDirectory(dirs[i])))
-      return stripBase(rootURI, resolvedPath);
+  for (let modulesDir of getNodeModulePaths(dirname(requirer))) {
+    if ((resolvedPath = resolveRelative(rootURI, modulesDir, id)))
+      return resolvedPath;
   }
 
   
   
   
-  return void 0;
+  return null;
 });
 
 
@@ -488,101 +585,20 @@ const nodeResolveWithCache = iced(function cacheNodeResolutions(id, requirer, { 
 });
 Loader.nodeResolve = nodeResolveWithCache;
 
-
-
-function loadAsFile (path) {
-  let found;
-
-  
-  
-  
-  
-  try {
-    
-    path = normalizeExt(path);
-    readURI(path);
-    found = path;
-  } catch (e) {}
-
-  return found;
-}
-
-
-
-function loadAsDirectory (path) {
-  try {
-    
-    
-    let main = getManifestMain(JSON.parse(readURI(path + '/package.json')));
-    if (main != null) {
-      let tmpPath = join(path, main);
-      let found = loadAsFile(tmpPath);
-      if (found)
-        return found
-    }
-    try {
-      let tmpPath = path + '/index.js';
-      readURI(tmpPath);
-      return tmpPath;
-    } catch (e) {}
-  } catch (e) {
-    try {
-      let tmpPath = path + '/index.js';
-      readURI(tmpPath);
-      return tmpPath;
-    } catch (e) {}
-  }
-  return void 0;
-}
-
-
-
-function getNodeModulePaths (start) {
-  
-  let moduleDir = 'node_modules';
-
-  let parts = start.split('/');
-  let dirs = [];
-  for (let i = parts.length - 1; i >= 0; i--) {
-    if (parts[i] === moduleDir) continue;
-    let dir = join(parts.slice(0, i + 1).join('/'), moduleDir);
-    dirs.push(dir);
-  }
-  dirs.push(moduleDir);
-  return dirs;
-}
-
-
-function addTrailingSlash (path) {
-  return !path ? null : !path.endsWith('/') ? path + '/' : path;
-}
-
-
-
-function isNodeModule (name) {
-  return !!~NODE_MODULES.indexOf(name);
-}
-
-
-
-function sortPaths (paths) {
-  return keys(paths).
-    sort((a, b) => (b.length - a.length)).
-    map((path) => [ path, paths[path] ]);
+function addTrailingSlash(path) {
+  return path.replace(/\/*$/, "/");
 }
 
 const resolveURI = iced(function resolveURI(id, mapping) {
-  let count = mapping.length, index = 0;
-
   
-  if (isAbsoluteURI(id)) return normalizeExt(id);
+  if (isAbsoluteURI(id))
+    return normalizeExt(id);
 
-  while (index < count) {
-    let [ path, uri ] = mapping[index++];
+  for (let [path, uri] of mapping) {
+    
+    let stripped = path.replace(/\/+$/, "");
 
     
-    let stripped = path.endsWith('/') ? path.slice(0, -1) : path;
-
     
     
     
@@ -591,14 +607,11 @@ const resolveURI = iced(function resolveURI(id, mapping) {
     
     
     
-    
-    if(stripped === "" ||
-       (id.indexOf(stripped) === 0 &&
-        (id.length === path.length || id[stripped.length] === '/'))) {
+    if(stripped === "" || id === stripped || id.startsWith(stripped + "/")) {
       return normalizeExt(id.replace(path, uri));
     }
   }
-  return void 0; 
+  return null;
 });
 Loader.resolveURI = resolveURI;
 
@@ -704,19 +717,16 @@ const Require = iced(function Require(loader, requirer) {
       let { overrides } = manifest.jetpack;
       for (let key in overrides) {
         
-        if (/^[\.\/]/.test(key)) {
+        if (/^[.\/]/.test(key)) {
           continue;
         }
 
         
         
         
-        if (id == key || (id.substr(0, key.length + 1) == (key + "/"))) {
+        if (id == key || id.startsWith(key + "/")) {
           id = overrides[key] + id.substr(key.length);
-          id = id.replace(/^[\.\/]+/, "./");
-          if (id.substr(0, 2) == "./") {
-            id = "" + id.substr(2);
-          }
+          id = id.replace(/^[.\/]+/, "");
         }
       }
 
@@ -728,7 +738,7 @@ const Require = iced(function Require(loader, requirer) {
 
       
       
-      if (!requirement && !isNodeModule(id)) {
+      if (!requirement && !NODE_MODULES.has(id)) {
         
         
         
@@ -747,9 +757,12 @@ const Require = iced(function Require(loader, requirer) {
         requirement = isRelative(id) ? Loader.resolve(id, requirer.id) : id;
       }
     }
-    else {
+    else if (requirer) {
       
-      requirement = requirer ? loaderResolve(id, requirer.id) : id;
+      requirement = loaderResolve(id, requirer.id);
+    }
+    else {
+      requirement = id;
     }
 
     
@@ -790,9 +803,9 @@ Loader.main = main;
 
 
 const Module = iced(function Module(id, uri) {
-  return create(null, {
+  return Object.create(null, {
     id: { enumerable: true, value: id },
-    exports: { enumerable: true, writable: true, value: create(null),
+    exports: { enumerable: true, writable: true, value: Object.create(null),
                configurable: true },
     uri: { value: uri }
   });
@@ -878,9 +891,12 @@ function Loader(options) {
   
   
   
-  let destructor = freeze(create(null));
+  let destructor = freeze(Object.create(null));
 
-  let mapping = sortPaths(paths);
+  
+  let mapping = Object.keys(paths)
+                      .sort((a, b) => b.length - a.length)
+                      .map(path => [path, paths[path]]);
 
   
   modules = override({
@@ -895,7 +911,8 @@ function Loader(options) {
   }, modules);
 
   const builtinModuleExports = modules;
-  modules = keys(modules).reduce(function(result, id) {
+  modules = {};
+  for (let id of Object.keys(builtinModuleExports)) {
     
     let uri = resolveURI(id, mapping);
     
@@ -913,9 +930,8 @@ function Loader(options) {
       }
     });
 
-    result[uri] = freeze(module);
-    return result;
-  }, {});
+    modules[uri] = freeze(module);
+  }
 
   let sharedGlobalSandbox;
   if (sharedGlobal) {
@@ -981,150 +997,23 @@ function Loader(options) {
     returnObj.rootURI = { enumerable: false, value: addTrailingSlash(rootURI) };
   }
 
-  return freeze(create(null, returnObj));
+  return freeze(Object.create(null, returnObj));
 };
 Loader.Loader = Loader;
 
-var isJSONURI = uri => uri.substr(-5) === '.json';
-var isJSMURI = uri => uri.substr(-4) === '.jsm';
-var isJSURI = uri => uri.substr(-3) === '.js';
-var isAbsoluteURI = uri => uri.indexOf("resource://") >= 0 ||
-                           uri.indexOf("chrome://") >= 0 ||
-                           uri.indexOf("file://") >= 0
-var isRelative = id => id[0] === '.'
-
-const generateMap = iced(function generateMap(options, callback) {
-  let { rootURI, resolve, paths } = override({
-    paths: {},
-    resolve: Loader.nodeResolve
-  }, options);
-
-  rootURI = addTrailingSlash(rootURI);
-
-  let manifest;
-  let manifestURI = join(rootURI, 'package.json');
-
-  if (rootURI)
-    manifest = JSON.parse(readURI(manifestURI));
-  else
-    throw new Error('No `rootURI` given to generate map');
-
-  let main = getManifestMain(manifest);
-
-  findAllModuleIncludes(main, {
-    resolve: resolve,
-    manifest: manifest,
-    rootURI: rootURI
-  }, {}, callback);
-
-});
-Loader.generateMap = generateMap;
+var isJSONURI = uri => uri.endsWith('.json');
+var isJSMURI = uri => uri.endsWith('.jsm');
+var isJSURI = uri => uri.endsWith('.js');
+var isAbsoluteURI = uri => uri.startsWith("resource://") ||
+                           uri.startsWith("chrome://") ||
+                           uri.startsWith("file://");
+var isRelative = id => id.startsWith(".");
 
 
 
-function getManifestMain (manifest) {
+function getManifestMain(manifest) {
   let main = manifest.main || './index.js';
   return isRelative(main) ? main : './' + main;
-}
-
-function findAllModuleIncludes (uri, options, results, callback) {
-  let { resolve, manifest, rootURI } = options;
-  results = results || {};
-
-  
-  if (isJSONURI(uri) || isJSMURI(uri)) {
-    callback(results);
-    return;
-  }
-
-  findModuleIncludes(join(rootURI, uri), modules => {
-    
-    if (!modules.length) {
-      callback(results);
-      return;
-    }
-
-    results[uri] = modules.reduce((agg, mod) => {
-      let resolved = resolve(mod, uri, { manifest: manifest, rootURI: rootURI });
-
-      
-      
-      if (!resolved)
-        return agg;
-      agg[mod] = resolved;
-      return agg;
-    }, {});
-
-    let includes = keys(results[uri]);
-    let count = 0;
-    let subcallback = () => { if (++count >= includes.length) callback(results) };
-    includes.map(id => {
-      let moduleURI = results[uri][id];
-      if (!results[moduleURI])
-        findAllModuleIncludes(moduleURI, options, results, subcallback);
-      else
-        subcallback();
-    });
-  });
-}
-
-
-
-
-
-
-function findModuleIncludes (uri, callback) {
-  let src = isAbsoluteURI(uri) ? readURI(uri) : uri;
-  let modules = [];
-
-  walk(src, function (node) {
-    if (isRequire(node))
-      modules.push(node.arguments[0].value);
-  });
-
-  callback(modules);
-}
-
-function walk (src, callback) {
-  
-  let { Reflect } = Cu.import("resource://gre/modules/reflect.jsm", {});
-  let nodes = Reflect.parse(src);
-  traverse(nodes, callback);
-}
-
-function traverse (node, cb) {
-  if (Array.isArray(node)) {
-    node.map(x => {
-      if (x != null) {
-        x.parent = node;
-        traverse(x, cb);
-      }
-    });
-  }
-  else if (node && typeof node === 'object') {
-    cb(node);
-    keys(node).map(key => {
-      if (key === 'parent' || !node[key]) return;
-      if (typeof node[key] === "object")
-        node[key].parent = node;
-      traverse(node[key], cb);
-    });
-  }
-}
-
-
-
-
-
-
-function isRequire (node) {
-  var c = node.callee;
-  return c
-    && node.type === 'CallExpression'
-    && c.type === 'Identifier'
-    && c.name === 'require'
-    && node.arguments.length
-   && node.arguments[0].type === 'Literal';
 }
 
 module.exports = iced(Loader);
