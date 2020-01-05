@@ -630,7 +630,6 @@ BasicLayerManager::EndTransactionInternal(DrawPaintedLayerCallback aCallback,
       FlashWidgetUpdateArea(mTarget);
     }
     RecordFrame();
-    PostPresent();
 
     if (!mTransactionIncomplete) {
       

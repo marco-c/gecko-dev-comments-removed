@@ -50,7 +50,7 @@
 #include "mozilla/Compression.h"
 #include "TreeTraversal.h"              
 
-#include <list>
+#include <deque>
 #include <set>
 
 uint8_t gLayerManagerLayerBuilder;
@@ -1158,7 +1158,8 @@ ContainerLayer::Collect3DContextLeaves(nsTArray<Layer*>& aToSort)
 static nsTArray<LayerPolygon>
 SortLayersWithBSPTree(nsTArray<Layer*>& aArray)
 {
-  std::list<LayerPolygon> inputLayers;
+  std::deque<LayerPolygon> inputLayers;
+  nsTArray<LayerPolygon> orderedLayers;
 
   
   for (Layer* layer : aArray) {
@@ -1188,13 +1189,12 @@ SortLayersWithBSPTree(nsTArray<Layer*>& aArray)
   }
 
   if (inputLayers.empty()) {
-    return nsTArray<LayerPolygon>();
+    return orderedLayers;
   }
 
   
   BSPTree tree(inputLayers);
-
-  nsTArray<LayerPolygon> orderedLayers(tree.GetDrawOrder());
+  orderedLayers = Move(tree.GetDrawOrder());
 
   
   for (LayerPolygon& layerPolygon : orderedLayers) {
@@ -1545,16 +1545,6 @@ LayerManager::RecordFrame()
 }
 
 void
-LayerManager::PostPresent()
-{
-  if (!mTabSwitchStart.IsNull()) {
-    Telemetry::Accumulate(Telemetry::FX_TAB_SWITCH_TOTAL_MS,
-                          uint32_t((TimeStamp::Now() - mTabSwitchStart).ToMilliseconds()));
-    mTabSwitchStart = TimeStamp();
-  }
-}
-
-void
 LayerManager::StopFrameTimeRecording(uint32_t         aStartIndex,
                                      nsTArray<float>& aFrameIntervals)
 {
@@ -1580,12 +1570,6 @@ LayerManager::StopFrameTimeRecording(uint32_t         aStartIndex,
     }
     aFrameIntervals[i] = mRecording.mIntervals[cyclicPos];
   }
-}
-
-void
-LayerManager::BeginTabSwitch()
-{
-  mTabSwitchStart = TimeStamp::Now();
 }
 
 static void PrintInfo(std::stringstream& aStream, HostLayer* aLayerComposite);

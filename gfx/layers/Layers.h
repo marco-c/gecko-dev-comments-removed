@@ -328,9 +328,6 @@ public:
 
   virtual void Composite() {}
 
-  virtual void SetNeedsComposite(bool aNeedsComposite) {}
-  virtual bool NeedsComposite() const { return false; }
-
   virtual bool HasShadowManagerInternal() const { return false; }
   bool HasShadowManager() const { return HasShadowManagerInternal(); }
   virtual void StorePluginWidgetConfigurations(const nsTArray<nsIWidget::Configuration>& aConfigurations) {}
@@ -595,8 +592,6 @@ public:
 
   virtual void FlushRendering() { }
 
-  virtual void SendInvalidRegion(const nsIntRegion& aRegion) {}
-
   
 
 
@@ -660,9 +655,6 @@ public:
                                       nsTArray<float>& aFrameIntervals);
 
   void RecordFrame();
-  void PostPresent();
-
-  void BeginTabSwitch();
 
   static bool IsLogEnabled();
   static mozilla::LogModule* GetLog();
@@ -774,8 +766,6 @@ private:
     bool mIsPaused;
   };
   FramesTimingRecording mRecording;
-
-  TimeStamp mTabSwitchStart;
 
 public:
   
