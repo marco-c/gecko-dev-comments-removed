@@ -531,14 +531,16 @@ pub fn static_representation(list_style_type: list_style_type::T) -> char {
 
 
 fn push_alphabetic_representation(mut value: i32, system: &[char], accumulator: &mut String) {
+    let mut abs_value = handle_negative_value(value, accumulator);
+
     let mut string: SmallVec<[char; 8]> = SmallVec::new();
-    while value != 0 {
+    while abs_value != 0 {
         
-        value = value - 1;
+        abs_value = abs_value - 1;
         
-        string.push(system[(value as usize) % system.len()]);
+        string.push(system[abs_value % system.len()]);
         
-        value = ((value as usize) / system.len()) as i32;
+        abs_value = abs_value / system.len();
     }
 
     accumulator.extend(string.iter().cloned().rev())
@@ -547,21 +549,39 @@ fn push_alphabetic_representation(mut value: i32, system: &[char], accumulator: 
 
 
 fn push_numeric_representation(mut value: i32, system: &[char], accumulator: &mut String) {
+    let mut abs_value = handle_negative_value(value, accumulator);
+
     
-    if value == 0 {
+    if abs_value == 0 {
         accumulator.push(system[0]);
         return
     }
 
     
     let mut string: SmallVec<[char; 8]> = SmallVec::new();
-    while value != 0 {
+    while abs_value != 0 {
         
-        string.push(system[(value as usize) % system.len()]);
+        string.push(system[abs_value % system.len()]);
         
-        value = ((value as usize) / system.len()) as i32;
+        abs_value = abs_value / system.len();
     }
 
     
     accumulator.extend(string.iter().cloned().rev())
+}
+
+
+
+
+fn handle_negative_value(value: i32, accumulator: &mut String) -> usize {
+    
+    
+    if value < 0 {
+        
+        
+        accumulator.push('-');
+        value.abs() as usize
+    } else {
+        value as usize
+    }
 }
