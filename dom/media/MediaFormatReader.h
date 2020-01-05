@@ -425,6 +425,8 @@ private:
     Maybe<uint32_t> mNextStreamSourceID;
     media::TimeIntervals mTimeRanges;
     Maybe<media::TimeUnit> mLastTimeRangesEnd;
+    
+    UniquePtr<TrackInfo> mOriginalInfo;
     RefPtr<SharedTrackInfo> mInfo;
     Maybe<media::TimeUnit> mFirstDemuxedSampleTime;
     
