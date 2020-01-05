@@ -6768,20 +6768,6 @@ nsContentUtils::IsPDFJSEnabled()
    return NS_SUCCEEDED(rv) && canConvert;
 }
 
-bool
-nsContentUtils::IsSWFPlayerEnabled()
-{
-   nsCOMPtr<nsIStreamConverterService> convServ =
-     do_GetService("@mozilla.org/streamConverters;1");
-   nsresult rv = NS_ERROR_FAILURE;
-   bool canConvert = false;
-   if (convServ) {
-     rv = convServ->CanConvert("application/x-shockwave-flash",
-                               "text/html", &canConvert);
-   }
-   return NS_SUCCEEDED(rv) && canConvert;
-}
-
 already_AddRefed<nsIDocumentLoaderFactory>
 nsContentUtils::FindInternalContentViewer(const nsACString& aType,
                                           ContentViewerType* aLoaderType)
@@ -10150,13 +10136,6 @@ nsContentUtils::HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
   
   if (aMIMEType.LowerCaseEqualsLiteral("application/pdf") &&
       IsPDFJSEnabled()) {
-    return nsIObjectLoadingContent::TYPE_DOCUMENT;
-  }
-
-  
-  
-  if (aMIMEType.LowerCaseEqualsLiteral("application/x-shockwave-flash") &&
-      IsSWFPlayerEnabled()) {
     return nsIObjectLoadingContent::TYPE_DOCUMENT;
   }
 
