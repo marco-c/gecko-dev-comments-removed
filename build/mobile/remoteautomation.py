@@ -327,6 +327,9 @@ class RemoteAutomation(Automation):
             try:
                 newLogContent = self.dm.pullFile(self.proc, self.stdoutlen)
             except DMError:
+                
+                
+                
                 return False
             if not newLogContent:
                 return False

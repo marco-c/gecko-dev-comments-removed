@@ -234,6 +234,8 @@ class DeviceManagerADB(DeviceManager):
     def pushFile(self, localname, destname, retryLimit=None, createDir=True):
         
         
+        
+        
         retryLimit = retryLimit or self.retryLimit
         if self.dirExists(destname):
             raise DMError("Attempted to push a file (%s) to a directory (%s)!" %
@@ -411,6 +413,7 @@ class DeviceManagerADB(DeviceManager):
         acmd = ["-W"]
         cmd = ' '.join(cmd).strip()
         i = cmd.find(" ")
+        
         re_url = re.compile('^[http|file|chrome|about].*')
         last = cmd.rfind(" ")
         uri = ""

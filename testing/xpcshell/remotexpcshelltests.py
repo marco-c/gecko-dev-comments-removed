@@ -578,10 +578,16 @@ def main():
                                     options,
                                     {"tbpl": sys.stdout})
 
-    if options.deviceIP:
-        dm = mozdevice.DroidADB(options.deviceIP, options.devicePort, packageName=None, deviceRoot=options.remoteTestRoot)
+    if options.dm_trans == "adb":
+        if options.deviceIP:
+            dm = mozdevice.DroidADB(options.deviceIP, options.devicePort, packageName=None, deviceRoot=options.remoteTestRoot)
+        else:
+            dm = mozdevice.DroidADB(packageName=None, deviceRoot=options.remoteTestRoot)
     else:
-        dm = mozdevice.DroidADB(packageName=None, deviceRoot=options.remoteTestRoot)
+        if not options.deviceIP:
+            print "Error: you must provide a device IP to connect to via the --device option"
+            sys.exit(1)
+        dm = mozdevice.DroidSUT(options.deviceIP, options.devicePort, deviceRoot=options.remoteTestRoot)
 
     if options.interactive and not options.testPath:
         print >>sys.stderr, "Error: You must specify a test filename in interactive mode!"
