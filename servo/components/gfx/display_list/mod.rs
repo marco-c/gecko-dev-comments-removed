@@ -61,7 +61,7 @@ pub static BLUR_INFLATION_FACTOR: i32 = 3;
 
 
 
-#[derive(Clone, Copy, HeapSizeOf, Deserialize, Serialize)]
+#[derive(Clone, Copy, HeapSizeOf, Deserialize, Serialize, Debug)]
 pub struct LayerInfo {
     
     pub layer_id: LayerId,
@@ -133,7 +133,7 @@ impl<'a> DisplayListTraversal<'a> {
     }
 }
 
-#[derive(HeapSizeOf, Deserialize, Serialize)]
+#[derive(HeapSizeOf, Deserialize, Serialize, Debug)]
 pub struct StackingContextOffsets {
     pub start: u32,
     pub block_backgrounds_and_borders: u32,
@@ -510,7 +510,10 @@ impl DisplayList {
 
     
     
-    pub fn hit_test(&self, point: &Point2D<Au>, scroll_offsets: &ScrollOffsetMap)
+    pub fn hit_test(&self,
+                    translated_point: &Point2D<Au>,
+                    client_point: &Point2D<Au>,
+                    scroll_offsets: &ScrollOffsetMap)
                     -> Vec<DisplayItemMetadata> {
         let mut traversal = DisplayListTraversal {
             display_list: self,
@@ -518,7 +521,11 @@ impl DisplayList {
             last_item_index: self.list.len() - 1,
         };
         let mut result = Vec::new();
-        self.root_stacking_context.hit_test(&mut traversal, point, scroll_offsets, &mut result);
+        self.root_stacking_context.hit_test(&mut traversal,
+                                            translated_point,
+                                            client_point,
+                                            scroll_offsets,
+                                            &mut result);
         result
     }
 }
@@ -633,18 +640,26 @@ impl StackingContext {
 
     pub fn hit_test<'a>(&self,
                         traversal: &mut DisplayListTraversal<'a>,
-                        point: &Point2D<Au>,
+                        translated_point: &Point2D<Au>,
+                        client_point: &Point2D<Au>,
                         scroll_offsets: &ScrollOffsetMap,
                         result: &mut Vec<DisplayItemMetadata>) {
+        let is_fixed = match self.layer_info {
+            Some(ref layer_info) => layer_info.scroll_policy == ScrollPolicy::FixedPosition,
+            None => false,
+        };
+
+        let effective_point = if is_fixed { client_point } else { translated_point };
+
         
         let mut point = if self.context_type == StackingContextType::Real {
-            let point = *point - self.bounds.origin;
+            let point = *effective_point - self.bounds.origin;
             let inv_transform = self.transform.invert();
             let frac_point = inv_transform.transform_point(&Point2D::new(point.x.to_f32_px(),
                                                                          point.y.to_f32_px()));
             Point2D::new(Au::from_f32_px(frac_point.x), Au::from_f32_px(frac_point.y))
         } else {
-            *point
+            *effective_point
         };
 
         
@@ -653,7 +668,7 @@ impl StackingContext {
         
         
         
-        if self.id != StackingContextId::root() {
+        if !is_fixed && self.id != StackingContextId::root() {
             if let Some(scroll_offset) = scroll_offsets.get(&self.id) {
                 point.x -= Au::from_f32_px(scroll_offset.x);
                 point.y -= Au::from_f32_px(scroll_offset.y);
@@ -666,7 +681,7 @@ impl StackingContext {
                     result.push(meta);
                 }
             }
-            child.hit_test(traversal, &point, scroll_offsets, result);
+            child.hit_test(traversal, translated_point, client_point, scroll_offsets, result);
         }
 
         while let Some(item) = traversal.advance(self) {
@@ -1366,6 +1381,7 @@ impl DisplayItem {
         
         
         let base_item = self.base();
+
         if !base_item.clip.might_intersect_point(&point) {
             
             return None;
