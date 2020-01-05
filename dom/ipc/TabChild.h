@@ -660,14 +660,27 @@ public:
 
   bool TakeIsFreshProcess()
   {
-    bool wasFreshProcess = mIsFreshProcess;
-    mIsFreshProcess = false;
-    return wasFreshProcess;
+    if (mIsFreshProcess) {
+      MOZ_ASSERT(!sWasFreshProcess,
+                 "At most one tabGroup may be a fresh process per process");
+      sWasFreshProcess = true;
+      mIsFreshProcess = false;
+      return true;
+    }
+    return false;
   }
 
   already_AddRefed<nsISHistory> GetRelatedSHistory();
 
   mozilla::dom::TabGroup* TabGroup();
+
+  
+  
+  
+  static bool GetWasFreshProcess()
+  {
+    return sWasFreshProcess;
+  }
 
 protected:
   virtual ~TabChild();
@@ -747,6 +760,10 @@ private:
     mUnscaledInnerSize = aSize;
   }
 
+  bool SkipRepeatedKeyEvent(const WidgetKeyboardEvent& aEvent);
+
+  void UpdateRepeatedKeyEventEndTime(const WidgetKeyboardEvent& aEvent);
+
   class DelayedDeleteRunnable;
 
   TextureFactoryIdentifier mTextureFactoryIdentifier;
@@ -795,6 +812,13 @@ private:
   bool mDidLoadURLInit;
   bool mIsFreshProcess;
 
+  bool mSkipKeyPress;
+
+  
+  
+  
+  mozilla::TimeStamp mRepeatedKeyEventTime;
+
   AutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
 
   RefPtr<layers::IAPZCTreeManager> mApzcTreeManager;
@@ -806,6 +830,8 @@ private:
   
   uintptr_t mNativeWindowHandle;
 #endif 
+
+  static bool sWasFreshProcess;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };

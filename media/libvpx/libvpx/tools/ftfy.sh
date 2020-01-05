@@ -32,7 +32,7 @@ vpx_style() {
   for f; do
     case "$f" in
       *.h|*.c|*.cc)
-        clang-format -i --style=file "$f"
+        "${dirname_self}"/vpx-astyle.sh "$f"
         ;;
     esac
   done
@@ -102,8 +102,9 @@ CLEAN_FILES="${CLEAN_FILES} ${ORIG_COMMIT_MSG} ${NEW_COMMIT_MSG}"
 # Preconditions
 [ $# -lt 2 ] || usage
 
-if ! clang-format -version >/dev/null 2>&1; then
-  log "clang-format not found"
+# Check that astyle supports pad-header and align-pointer=name
+if ! astyle --pad-header --align-pointer=name < /dev/null; then
+  log "Install astyle v1.24 or newer"
   exit 1
 fi
 
