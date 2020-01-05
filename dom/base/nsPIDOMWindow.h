@@ -195,8 +195,6 @@ protected:
   void MaybeCreateDoc();
 
 public:
-  inline bool IsLoadingOrRunningTimeout() const;
-
   
   inline bool IsLoading() const;
   inline bool IsHandlingResizeEvent() const;
