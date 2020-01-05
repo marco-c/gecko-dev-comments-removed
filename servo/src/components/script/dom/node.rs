@@ -1339,7 +1339,7 @@ impl Node {
         Temporary::from_rooted(&*copy)
     }
 
-    /// Sends layout data, if any, back to the script task to be destroyed.
+    /// Sends layout data, if any, back to the layout task to be destroyed.
     unsafe fn reap_layout_data(&mut self) {
         if self.layout_data.is_present() {
             let layout_data = mem::replace(&mut self.layout_data, LayoutDataRef::new());
