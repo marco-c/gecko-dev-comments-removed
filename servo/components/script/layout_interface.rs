@@ -208,15 +208,15 @@ pub struct Animation {
     
     pub property_animation: PropertyAnimation,
     
-    pub start_time: f32,
+    pub start_time: f64,
     
-    pub end_time: f32,
+    pub end_time: f64,
 }
 
 impl Animation {
     
     #[inline]
-    pub fn duration(&self) -> f32 {
+    pub fn duration(&self) -> f64 {
         self.end_time - self.start_time
     }
 }
