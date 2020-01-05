@@ -562,9 +562,7 @@ private:
   
   MediaQueue<MediaData> mVideoQueue;
 
-  
-  
-  Watchable<State> mState;
+  State mState = DECODER_STATE_DECODING_METADATA;
 
   UniquePtr<StateObject> mStateObj;
 
@@ -682,16 +680,10 @@ private:
   bool mAudioCaptured;
 
   
-  
-  
-  
-  
-  
-  
-  Watchable<bool> mAudioCompleted;
+  bool mAudioCompleted = false;
 
   
-  Watchable<bool> mVideoCompleted;
+  bool mVideoCompleted = false;
 
   
   
