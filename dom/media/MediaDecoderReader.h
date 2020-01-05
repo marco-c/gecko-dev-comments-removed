@@ -151,7 +151,8 @@ public:
   
   
   virtual RefPtr<VideoDataPromise>
-  RequestVideoData(bool aSkipToNextKeyframe, int64_t aTimeThreshold);
+  RequestVideoData(bool aSkipToNextKeyframe,
+                   const media::TimeUnit& aTimeThreshold);
 
   
   
