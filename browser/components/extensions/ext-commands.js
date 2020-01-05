@@ -167,11 +167,12 @@ this.commands = class extends ExtensionAPI {
     
     keyElement.setAttribute("modifiers", this.getModifiersAttribute(parts));
 
-    if (/^[A-Z0-9]$/.test(chromeKey)) {
+    if (/^[A-Z]$/.test(chromeKey)) {
       
       keyElement.setAttribute("key", chromeKey);
     } else {
       keyElement.setAttribute("keycode", this.getKeycodeAttribute(chromeKey));
+      keyElement.setAttribute("event", "keydown");
     }
 
     return keyElement;
@@ -191,6 +192,9 @@ this.commands = class extends ExtensionAPI {
 
 
   getKeycodeAttribute(chromeKey) {
+    if (/[0-9]/.test(chromeKey)) {
+      return `VK_${chromeKey}`;
+    }
     return `VK${chromeKey.replace(/([A-Z])/g, "_$&").toUpperCase()}`;
   }
 
