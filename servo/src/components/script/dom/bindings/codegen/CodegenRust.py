@@ -909,11 +909,6 @@ for (uint32_t i = 0; i < length; ++i) {
 
         
         
-
-        argIsPointer = type.nullable()
-
-        
-        
         forceOwningType = descriptor.interface.isCallback() or isMember
 
         typePtr = descriptor.nativeType
@@ -930,14 +925,14 @@ for (uint32_t i = 0; i < length; ++i) {
                         "JSVAL_TO_OBJECT(${val})",
                         "${declName}",
                         failureCode,
-                        isOptional or argIsPointer or type.nullable(),
+                        isOptional or type.nullable(),
                         preUnwrapped=preSuccess, postUnwrapped=postSuccess))
             else:
                 templateBody += str(FailureFatalCastableObjectUnwrapper(
                         descriptor,
                         "JSVAL_TO_OBJECT(${val})",
                         "${declName}",
-                        isOptional or argIsPointer or type.nullable()))
+                        isOptional or type.nullable()))
         else:
             templateBody += (
                 "match unwrap_value::<" + typePtr + ">(&${val} as *JSVal, "
@@ -955,7 +950,7 @@ for (uint32_t i = 0; i < length; ++i) {
                                           failureCode)
 
         declType = CGGeneric(typePtr)
-        if argIsPointer or isOptional:
+        if type.nullable() or isOptional:
             declType = CGWrapper(declType, pre="Option<", post=">")
 
         return (templateBody, declType, None, isOptional, "None" if isOptional else None)
