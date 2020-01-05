@@ -11,7 +11,6 @@ use flow::{BaseFlow, FlowClass, Flow, InlineFlowClass};
 use flow;
 use fragment::{Fragment, ScannedTextFragment, ScannedTextFragmentInfo, SplitInfo};
 use model::IntrinsicISizes;
-use model;
 use text;
 use wrapper::ThreadSafeLayoutNode;
 
@@ -23,14 +22,12 @@ use gfx::font_context::FontContext;
 use gfx::text::glyph::CharIndex;
 use servo_util::geometry::Au;
 use servo_util::geometry;
-use servo_util::logical_geometry::{LogicalRect, LogicalMargin, LogicalSize};
+use servo_util::logical_geometry::{LogicalRect, LogicalSize};
 use servo_util::range;
 use servo_util::range::{EachIndex, Range, RangeIndex, IntRangeIndex};
-use std::iter::Enumerate;
 use std::fmt;
 use std::mem;
 use std::num;
-use std::slice::{Items, MutItems};
 use std::u16;
 use style::computed_values::{text_align, vertical_align, white_space};
 use style::ComputedValues;
@@ -342,7 +339,7 @@ impl LineBreaker {
             }
         }
 
-        old_fragments.fixup(mem::replace(&mut self.new_fragments, vec![]));
+        old_fragments.fragments = mem::replace(&mut self.new_fragments, vec![]);
         flow.fragments = old_fragments;
         flow.lines = mem::replace(&mut self.lines, Vec::new());
     }
@@ -628,42 +625,9 @@ impl LineBreaker {
 }
 
 
-pub struct FragmentIterator<'a> {
-    iter: Enumerate<Items<'a,Fragment>>,
-    ranges: &'a Vec<InlineFragmentRange>,
-}
-
-impl<'a> Iterator<(&'a Fragment, InlineFragmentContext<'a>)> for FragmentIterator<'a> {
-    #[inline]
-    fn next(&mut self) -> Option<(&'a Fragment, InlineFragmentContext<'a>)> {
-        self.iter.next().map(|(i, fragment)| {
-            (fragment, InlineFragmentContext::new(self.ranges, FragmentIndex(i as int)))
-        })
-    }
-}
-
-
-pub struct MutFragmentIterator<'a> {
-    iter: Enumerate<MutItems<'a,Fragment>>,
-    ranges: &'a Vec<InlineFragmentRange>,
-}
-
-impl<'a> Iterator<(&'a mut Fragment, InlineFragmentContext<'a>)> for MutFragmentIterator<'a> {
-    #[inline]
-    fn next(&mut self) -> Option<(&'a mut Fragment, InlineFragmentContext<'a>)> {
-        self.iter.next().map(|(i, fragment)| {
-            (fragment, InlineFragmentContext::new(self.ranges, FragmentIndex(i as int)))
-        })
-    }
-}
-
-
 pub struct InlineFragments {
     
     pub fragments: Vec<Fragment>,
-    
-    
-    pub ranges: Vec<InlineFragmentRange>,
 }
 
 impl InlineFragments {
@@ -671,7 +635,6 @@ impl InlineFragments {
     pub fn new() -> InlineFragments {
         InlineFragments {
             fragments: vec![],
-            ranges: vec![],
         }
     }
 
@@ -686,35 +649,14 @@ impl InlineFragments {
     }
 
     
-    pub fn push(&mut self, fragment: Fragment, style: Arc<ComputedValues>) {
-        self.ranges.push(InlineFragmentRange::new(
-            style, Range::new(FragmentIndex(self.fragments.len() as int), FragmentIndex(1)),
-        ));
-        self.fragments.push(fragment)
+    pub fn push(&mut self, fragment: &mut Fragment, style: Arc<ComputedValues>) {
+        fragment.add_inline_context_style(style);
+        self.fragments.push(fragment.clone());
     }
 
     
-    pub fn push_all(&mut self, InlineFragments { fragments, ranges }: InlineFragments) {
-        let adjustment = FragmentIndex(self.fragments.len() as int);
-        self.push_all_ranges(ranges, adjustment);
-        self.fragments.push_all_move(fragments);
-    }
-
-    
-    pub fn iter<'a>(&'a self) -> FragmentIterator<'a> {
-        FragmentIterator {
-            iter: self.fragments.as_slice().iter().enumerate(),
-            ranges: &self.ranges,
-        }
-    }
-
-    
-    
-    pub fn mut_iter<'a>(&'a mut self) -> MutFragmentIterator<'a> {
-        MutFragmentIterator {
-            iter: self.fragments.as_mut_slice().mut_iter().enumerate(),
-            ranges: &self.ranges,
-        }
+    pub fn push_all(&mut self, fragments: InlineFragments) {
+        self.fragments.push_all_move(fragments.fragments);
     }
 
     
@@ -725,134 +667,6 @@ impl InlineFragments {
     
     pub fn get_mut<'a>(&'a mut self, index: uint) -> &'a mut Fragment {
         self.fragments.get_mut(index)
-    }
-
-    
-    pub fn push_range(&mut self, style: Arc<ComputedValues>, range: Range<FragmentIndex>) {
-        self.ranges.push(InlineFragmentRange::new(style, range))
-    }
-
-    
-    fn push_all_ranges(&mut self, ranges: Vec<InlineFragmentRange>, adjustment: FragmentIndex) {
-        for other_range in ranges.move_iter() {
-            let InlineFragmentRange {
-                style: other_style,
-                range: mut other_range
-            } = other_range;
-
-            other_range.shift_by(adjustment);
-            self.push_range(other_style, other_range)
-        }
-    }
-
-    
-    pub fn get_mut_range<'a>(&'a mut self, index: FragmentIndex) -> &'a mut InlineFragmentRange {
-        self.ranges.get_mut(index.to_uint())
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    pub fn fixup(&mut self, new_fragments: Vec<Fragment>) {
-        
-        let old_list = mem::replace(&mut self.ranges, vec![]);
-        let mut worklist = vec![];        
-        let mut old_list_iter = old_list.move_iter().peekable();
-
-        { 
-            let mut new_fragments_iter = new_fragments.iter().enumerate().peekable();
-            
-            
-            for (i, old_fragment) in self.fragments.iter().enumerate() {
-                let old_fragment_index = FragmentIndex(i as int);
-                
-                let new_fragment_start = match new_fragments_iter.peek() {
-                    Some(&(index, new_fragment)) if new_fragment.node == old_fragment.node => {
-                        
-                        FragmentIndex(index as int)
-                    }
-                    Some(_) | None => {
-                        
-                        continue
-                    }
-                };
-                drop(new_fragments_iter.next());
-
-                
-                loop {
-                    match new_fragments_iter.peek() {
-                        Some(&(_, new_fragment)) if new_fragment.node == old_fragment.node => {}
-                        Some(_) | None => break,
-                    }
-                    drop(new_fragments_iter.next());
-                }
-
-                
-                loop {
-                    match old_list_iter.peek() {
-                        None => break,
-                        Some(fragment_range) => {
-                            if fragment_range.range.begin() > old_fragment_index {
-                                
-                                break
-                            }
-                            
-                            
-                            
-                            
-                        }
-                    };
-
-                    let InlineFragmentRange {
-                        style: style,
-                        range: old_range,
-                    } = old_list_iter.next().unwrap();
-                    worklist.push(InlineFragmentFixupWorkItem {
-                        style: style,
-                        new_start_index: new_fragment_start,
-                        old_end_index: old_range.end(),
-                    });
-                }
-
-                
-                loop {
-                    match worklist.as_slice().last() {
-                        None => break,
-                        Some(last_work_item) => {
-                            if last_work_item.old_end_index > old_fragment_index + FragmentIndex(1) {
-                                
-                                break
-                            }
-                        }
-                    }
-
-                    let new_last_index = match new_fragments_iter.peek() {
-                        None => {
-                            
-                            FragmentIndex(new_fragments.len() as int)
-                        }
-                        Some(&(index, _)) => {
-                            FragmentIndex(index as int)
-                        },
-                    };
-
-                    let InlineFragmentFixupWorkItem {
-                        style,
-                        new_start_index,
-                        ..
-                    } = worklist.pop().unwrap();
-                    let range = Range::new(new_start_index, new_last_index - new_start_index);
-                    self.ranges.push(InlineFragmentRange::new(style, range))
-                }
-            }
-        }
-        self.fragments = new_fragments;
     }
 
     
@@ -874,7 +688,7 @@ impl InlineFragments {
             new_fragments.push(fragment);
         }
 
-        self.fixup(new_fragments);
+        self.fragments = new_fragments;
     }
 
     
@@ -889,7 +703,8 @@ impl InlineFragments {
             drop(new_fragments.pop());
         }
 
-        self.fixup(new_fragments);
+
+        self.fragments = new_fragments;
     }
 }
 
@@ -936,17 +751,15 @@ impl InlineFlow {
         
         debug!("Flow: building display list for {:u} inline fragments", self.fragments.len());
 
-        for (fragment, context) in self.fragments.mut_iter() {
+        for fragment in self.fragments.fragments.mut_iter() {
             let rel_offset = fragment.relative_position(&self.base
                                                              .absolute_position_info
-                                                             .relative_containing_block_size,
-                                                        Some(context));
+                                                             .relative_containing_block_size);
             drop(fragment.build_display_list(&mut self.base.display_list,
                                              layout_context,
                                              self.base.abs_position.add_size(
                                                 &rel_offset.to_physical(self.base.writing_mode)),
-                                             ContentLevel,
-                                             Some(context)));
+                                             ContentLevel));
         }
 
         
@@ -1095,11 +908,11 @@ impl Flow for InlineFlow {
         }
 
         let mut intrinsic_inline_sizes = IntrinsicISizes::new();
-        for (fragment, context) in self.fragments.mut_iter() {
+        for fragment in self.fragments.fragments.mut_iter() {
             debug!("Flow: measuring {}", *fragment);
 
             let fragment_intrinsic_inline_sizes =
-                fragment.intrinsic_inline_sizes(Some(context));
+                fragment.intrinsic_inline_sizes();
             intrinsic_inline_sizes.minimum_inline_size = geometry::max(
                 intrinsic_inline_sizes.minimum_inline_size,
                 fragment_intrinsic_inline_sizes.minimum_inline_size);
@@ -1123,9 +936,8 @@ impl Flow for InlineFlow {
         {
             let inline_size = self.base.position.size.inline;
             let this = &mut *self;
-            for (fragment, context) in this.fragments.mut_iter() {
-                fragment.assign_replaced_inline_size_if_necessary(inline_size,
-                                                            Some(context))
+            for fragment in this.fragments.fragments.mut_iter() {
+                fragment.assign_replaced_inline_size_if_necessary(inline_size);
             }
         }
 
@@ -1157,7 +969,7 @@ impl Flow for InlineFlow {
         debug!("assign_block_size_inline: floats in: {:?}", self.base.floats);
 
         
-        for (fragment, _) in self.fragments.mut_iter() {
+        for fragment in self.fragments.fragments.mut_iter() {
             fragment.assign_replaced_block_size_if_necessary();
         }
 
@@ -1305,7 +1117,7 @@ impl Flow for InlineFlow {
 impl fmt::Show for InlineFlow {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         try!(write!(f, "InlineFlow"));
-        for (i, (fragment, _)) in self.fragments.iter().enumerate() {
+        for (i, fragment) in self.fragments.fragments.iter().enumerate() {
             if i == 0 {
                 try!(write!(f, ": {}", fragment))
             } else {
@@ -1316,102 +1128,15 @@ impl fmt::Show for InlineFlow {
     }
 }
 
-
-
-pub struct InlineFragmentRange {
-    
-    pub style: Arc<ComputedValues>,
-    
-    pub range: Range<FragmentIndex>,
+#[deriving(Clone)]
+pub struct InlineFragmentContext {
+    pub styles: Vec<Arc<ComputedValues>>,
 }
 
-impl InlineFragmentRange {
-    
-    fn new(style: Arc<ComputedValues>, range: Range<FragmentIndex>) -> InlineFragmentRange {
-        InlineFragmentRange {
-            style: style,
-            range: range,
-        }
-    }
-
-    
-    #[inline]
-    pub fn border(&self) -> LogicalMargin<Au> {
-        self.style.logical_border_width()
-    }
-
-    
-    #[inline]
-    pub fn padding(&self) -> LogicalMargin<Au> {
-        
-        model::padding_from_style(&*self.style, Au(0))
-    }
-}
-
-struct InlineFragmentFixupWorkItem {
-    style: Arc<ComputedValues>,
-    new_start_index: FragmentIndex,
-    old_end_index: FragmentIndex,
-}
-
-
-pub struct RangeIterator<'a> {
-    iter: Items<'a,InlineFragmentRange>,
-    index: FragmentIndex,
-    is_first: bool,
-}
-
-impl<'a> Iterator<&'a InlineFragmentRange> for RangeIterator<'a> {
-    fn next(&mut self) -> Option<&'a InlineFragmentRange> {
-        if !self.is_first {
-            
-            self.iter.next().and_then(|frag_range| {
-                if frag_range.range.contains(self.index) { Some(frag_range) } else { None }
-            })
-        } else {
-            
-            let index = self.index;
-            let first = self.iter.by_ref().find(|frag_range| {
-                frag_range.range.contains(index)
-            });
-            self.is_first = false; 
-            first
-        }
-    }
-}
-
-
-
-pub struct InlineFragmentContext<'a> {
-    ranges: &'a Vec<InlineFragmentRange>,
-    index: FragmentIndex,
-}
-
-impl<'a> InlineFragmentContext<'a> {
-    pub fn new<'a>(ranges: &'a Vec<InlineFragmentRange>, index: FragmentIndex) -> InlineFragmentContext<'a> {
+impl InlineFragmentContext {
+    pub fn new() -> InlineFragmentContext {
         InlineFragmentContext {
-            ranges: ranges,
-            index: index,
-        }
-    }
-
-    
-    #[inline(always)]
-    pub fn ranges(&self) -> RangeIterator<'a> {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        RangeIterator {
-            iter: self.ranges.iter(),
-            index: self.index,
-            is_first: true,
+            styles: vec!()
         }
     }
 }

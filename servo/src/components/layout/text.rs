@@ -75,7 +75,7 @@ impl TextRunScanner {
 
         debug!("TextRunScanner: swapping out fragments.");
 
-        fragments.fixup(new_fragments);
+        fragments.fragments = new_fragments;
     }
 
     
