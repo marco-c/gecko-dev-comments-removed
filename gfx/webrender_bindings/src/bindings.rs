@@ -286,9 +286,7 @@ impl ExternalImageHandler for WrExternalImageHandler {
 }
 
 #[no_mangle]
-pub extern fn wr_init_window(root_pipeline_id: u64,
-                             enable_profiler: bool,
-                             external_image_handler: *mut WrExternalImageHandler) -> *mut WrWindowState {
+pub extern fn wr_init_window(root_pipeline_id: u64, external_image_handler: *mut WrExternalImageHandler) -> *mut WrWindowState {
     let library = GlLibrary::new();
     gl::load_with(|symbol| library.query(symbol));
     gl::clear_color(0.3, 0.0, 0.0, 1.0);
@@ -306,7 +304,7 @@ pub extern fn wr_init_window(root_pipeline_id: u64,
         enable_aa: false,
         enable_subpixel_aa: false,
         enable_msaa: false,
-        enable_profiler: enable_profiler,
+        enable_profiler: false,
         enable_recording: false,
         enable_scrollbars: false,
         precache_shaders: false,
@@ -473,6 +471,11 @@ pub extern fn wr_add_image(window: &mut WrWindowState, width: u32, height: u32, 
 }
 
 #[no_mangle]
+pub extern fn wr_add_external_image_texture(window: &mut WrWindowState, width: u32, height: u32, format: ImageFormat, external_image_id: u64) -> ImageKey {
+    window.api.add_image(width, height, None, format, ImageData::External(ExternalImageId(external_image_id)))
+}
+
+#[no_mangle]
 pub extern fn wr_update_image(window: &mut WrWindowState, key: ImageKey, width: u32, height: u32, format: ImageFormat, bytes: * const u8, size: usize) {
     let bytes = unsafe { slice::from_raw_parts(bytes, size).to_owned() };
     window.api.update_image(key, width, height, format, bytes);
@@ -615,10 +618,4 @@ pub extern fn wr_free_buffer(vec_ptr: *mut c_uchar, length: u32, capacity: u32)
     unsafe {
         let rebuilt = Vec::from_raw_parts(vec_ptr, length as usize, capacity as usize);
     }
-}
-
-#[no_mangle]
-pub extern fn wr_profiler_set_enabled(window: &mut WrWindowState, enabled: bool)
-{
-    window.renderer.set_profiler_enabled(enabled);
 }

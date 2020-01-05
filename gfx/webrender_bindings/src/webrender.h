@@ -95,7 +95,7 @@ struct wrstate;
 #endif
 
 WR_INLINE wrwindowstate*
-wr_init_window(uint64_t root_pipeline_id, bool enable_profiler, WRExternalImageHandler* handler = nullptr)
+wr_init_window(uint64_t root_pipeline_id, WRExternalImageHandler* handler = nullptr)
 WR_FUNC;
 
 WR_INLINE wrstate*
@@ -110,6 +110,17 @@ WR_INLINE WRImageKey
 wr_add_image(wrwindowstate* wrWindow, uint32_t width, uint32_t height,
              uint32_t stride, WRImageFormat format, uint8_t *bytes, size_t size)
 WR_FUNC;
+
+WR_INLINE WRImageKey
+wr_add_external_image_texture(wrwindowstate* wrWindow, uint32_t width, uint32_t height,
+                              WRImageFormat format, uint64_t external_image_id)
+WR_FUNC;
+
+
+
+
+
+
 
 WR_INLINE void
 wr_update_image(wrwindowstate* wrWindow, WRImageKey key,
@@ -169,10 +180,6 @@ WR_FUNC;
 WR_INLINE void
 wr_free_buffer(const uint8_t* pointer, uint32_t length, uint32_t capacity)
 
-WR_FUNC;
-
-WR_INLINE void
-wr_profiler_set_enabled(wrwindowstate* wrWindow, bool enabled)
 WR_FUNC;
 
 #undef WR_FUNC
