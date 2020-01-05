@@ -95,10 +95,6 @@ panelview:not([mainview]):not([current]) {
   visibility: collapse;
 }
 
-browser[frameType="social"][remote="true"] {
-  -moz-binding: url("chrome://global/content/bindings/remote-browser.xml#remote-browser");
-}
-
 tabbrowser {
   -moz-binding: url("chrome://browser/content/tabbrowser.xml#tabbrowser");
 }
@@ -529,8 +525,7 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 
-.addengine-item > .button-box > .button-icon,
-.addengine-item[type="menu"] > .button-box > .box-inherit > .button-icon {
+.addengine-item > .button-box > .button-icon {
   -moz-binding: url("chrome://browser/content/search/search.xml#addengine-icon");
   display: -moz-stack;
 }
