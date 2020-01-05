@@ -104,10 +104,6 @@ using namespace mozilla::places;
 #define PREF_FREC_RELOAD_VISIT_BONUS_DEF        0
 
 
-#define PREF_FREC_DECAY_RATE     "places.frecency.decayRate"
-#define PREF_FREC_DECAY_RATE_DEF 0.975f
-
-
 
 #define RENEW_CACHED_NOW_TIMEOUT ((int32_t)3 * PR_MSEC_PER_SEC)
 
@@ -956,6 +952,10 @@ nsresult
 nsNavHistory::AsciiHostNameFromHostString(const nsACString& aHostName,
                                           nsACString& aAscii)
 {
+  aAscii.Truncate();
+  if (aHostName.IsEmpty()) {
+    return NS_OK;
+  }
   
   nsAutoCString fakeURL("http://");
   fakeURL.Append(aHostName);
@@ -3096,8 +3096,6 @@ nsNavHistory::DecayFrecency()
   nsresult rv = FixInvalidFrecencies();
   NS_ENSURE_SUCCESS(rv, rv);
 
-  float decayRate = Preferences::GetFloat(PREF_FREC_DECAY_RATE, PREF_FREC_DECAY_RATE_DEF);
-
   
   
   
@@ -3105,14 +3103,10 @@ nsNavHistory::DecayFrecency()
   
   
   nsCOMPtr<mozIStorageAsyncStatement> decayFrecency = mDB->GetAsyncStatement(
-    "UPDATE moz_places SET frecency = ROUND(frecency * :decay_rate) "
+    "UPDATE moz_places SET frecency = ROUND(frecency * .975) "
     "WHERE frecency > 0"
   );
   NS_ENSURE_STATE(decayFrecency);
-
-  rv = decayFrecency->BindDoubleByName(NS_LITERAL_CSTRING("decay_rate"),
-                                       static_cast<double>(decayRate));
-  NS_ENSURE_SUCCESS(rv, rv);
 
   
   
