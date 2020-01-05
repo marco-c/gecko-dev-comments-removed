@@ -2,8 +2,6 @@
 
 
 
-
-
 add_task(function* () {
   let rooturi = "https://example.com/browser/toolkit/modules/tests/browser/";
   yield BrowserTestUtils.openNewForegroundTab(gBrowser, rooturi + "metadata_simple.html");

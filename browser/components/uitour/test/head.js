@@ -3,9 +3,6 @@
 
 
 
-
-
-
 Cu.import("resource://gre/modules/Promise.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "UITour",

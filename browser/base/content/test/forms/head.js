@@ -1,5 +1,3 @@
-
-
 function hideSelectPopup(selectPopup, mode = "enter", win = window) {
   let browser = win.gBrowser.selectedBrowser;
   let selectClosedPromise = ContentTask.spawn(browser, null, function*() {

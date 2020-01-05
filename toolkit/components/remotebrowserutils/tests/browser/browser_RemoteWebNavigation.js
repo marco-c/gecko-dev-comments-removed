@@ -1,5 +1,3 @@
-
-
 const DUMMY1 = "http://example.com/browser/toolkit/modules/tests/browser/dummy_page.html";
 const DUMMY2 = "http://example.org/browser/toolkit/modules/tests/browser/dummy_page.html"
 

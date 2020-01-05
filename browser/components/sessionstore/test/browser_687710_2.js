@@ -4,7 +4,6 @@
 
 
 
-
 var stateBackup = ss.getBrowserState();
 
 var state = {entries: [

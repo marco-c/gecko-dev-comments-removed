@@ -11,8 +11,6 @@
 
 
 
-
-
 function assertWindowIsPrivate(win) {
   let winDocShell = win.QueryInterface(Ci.nsIInterfaceRequestor)
                        .getInterface(Ci.nsIDocShell);

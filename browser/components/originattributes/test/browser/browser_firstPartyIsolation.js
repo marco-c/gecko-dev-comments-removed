@@ -1,6 +1,3 @@
-
-
-
 const BASE_URL = "http://mochi.test:8888/browser/browser/components/originattributes/test/browser/";
 const BASE_DOMAIN = "mochi.test";
 

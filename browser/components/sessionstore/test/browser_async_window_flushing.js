@@ -1,8 +1,5 @@
 "use strict";
 
-
-
-
 const PAGE = "http://example.com/";
 
 
