@@ -172,19 +172,19 @@ function setPasswordStrength()
 
 
 
-  var numnumeric = pw.replace (/[0-9]/g, "");
+  var numnumeric = pw.replace(/[0-9]/g, "");
   var numeric = (pw.length - numnumeric.length);
   if (numeric > 3)
     numeric = 3;
 
 
-  var symbols = pw.replace (/\W/g, "");
+  var symbols = pw.replace(/\W/g, "");
   var numsymbols = (pw.length - symbols.length);
   if (numsymbols > 3)
     numsymbols = 3;
 
 
-  var numupper = pw.replace (/[A-Z]/g, "");
+  var numupper = pw.replace(/[A-Z]/g, "");
   var upper = (pw.length - numupper.length);
   if (upper > 3)
     upper = 3;

@@ -37,6 +37,9 @@ module.exports = {
     "eol-last": "error",
 
     
+    "func-call-spacing": "error",
+
+    
     
 
     
@@ -137,9 +140,6 @@ module.exports = {
 
     
     "no-shadow-restricted-names": "error",
-
-    
-    
 
     
     "no-trailing-spaces": "error",
