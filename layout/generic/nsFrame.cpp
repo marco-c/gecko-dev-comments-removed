@@ -8315,12 +8315,27 @@ nsIFrame::GetFrameFromDirection(nsDirection aDirection, bool aVisual,
     if (NS_FAILED(result))
       return result;
 
-    if (aDirection == eDirNext)
-      frameTraversal->Next();
-    else
-      frameTraversal->Prev();
+    auto Advance = [&frameTraversal, aDirection] () {
+      if (aDirection == eDirNext) {
+        frameTraversal->Next();
+      } else {
+        frameTraversal->Prev();
+      }
+      return frameTraversal->CurrentItem();
+    };
 
-    traversedFrame = frameTraversal->CurrentItem();
+    traversedFrame = Advance();
+
+    if (nsIContent* content = GetContent()) {
+      
+      for (nsIContent* traversedContent;
+           traversedFrame &&
+             !traversedFrame->IsGeneratedContentFrame() &&
+             (traversedContent = traversedFrame->GetContent()) &&
+             !nsContentUtils::IsInSameAnonymousTree(content, traversedContent);) {
+        traversedFrame = Advance();
+      }
+    }
 
     
     if (!traversedFrame ||
@@ -9177,23 +9192,31 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
 void
 nsFrame::GetLastLeaf(nsPresContext* aPresContext, nsIFrame **aFrame)
 {
-  if (!aFrame || !*aFrame)
+  if (!aFrame || !*aFrame) {
     return;
-  nsIFrame *child = *aFrame;
-  
-  while (1){
+  }
+
+  nsIFrame* child = *aFrame;
+  while (true) {
     child = child->PrincipalChildList().FirstChild();
-    if (!child)
+    if (!child) {
+      return; 
+    }
+
+    
+    
+    nsIFrame* nonAnonymousChild = nullptr;
+    const nsIContent* content;
+    while (child &&
+           (content = child->GetContent()) &&
+           !content->IsRootOfNativeAnonymousSubtree()) {
+      nonAnonymousChild = child;
+      child = child->GetNextSibling();
+    }
+    if (!nonAnonymousChild) {
       return;
-    nsIFrame* siblingFrame;
-    nsIContent* content;
-    
-    
-    while ((siblingFrame = child->GetNextSibling()) &&
-           (content = siblingFrame->GetContent()) &&
-           !content->IsRootOfNativeAnonymousSubtree())
-      child = siblingFrame;
-    *aFrame = child;
+    }
+    *aFrame = child = nonAnonymousChild;
   }
 }
 
