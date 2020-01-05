@@ -478,8 +478,12 @@ private:
 
     
     
+    uint32_t TotalActiveConnections(nsConnectionEntry *ent) const;
+
     
-    uint32_t AvailableNewConnectionCount(nsConnectionEntry * ent);
+    
+    uint32_t MaxPersistConnections(nsConnectionEntry *ent) const;
+
     bool     AtActiveConnectionLimit(nsConnectionEntry *, uint32_t caps);
     MOZ_MUST_USE nsresult TryDispatchTransaction(nsConnectionEntry *ent,
                                                  bool onlyReusedConnection,
