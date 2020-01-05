@@ -264,15 +264,6 @@ Factory::CheckSurfaceSize(const IntSize &sz,
     return false;
   }
 
-#if defined(XP_MACOSX)
-  
-  
-  if (sz.height > SHRT_MAX) {
-    gfxDebug() << "Surface size too large (exceeds CoreGraphics limit)!";
-    return false;
-  }
-#endif
-
   
   
   CheckedInt<int32_t> stride = GetAlignedStride<16>(sz.width, 4);
