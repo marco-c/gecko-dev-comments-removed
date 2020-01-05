@@ -1,0 +1,26 @@
+
+
+"use strict";
+
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+var {
+  IconDetails,
+} = ExtensionUtils;
+
+extensions.registerSchemaAPI("pageAction", "addon_child", context => {
+  return {
+    pageAction: {
+      setIcon: function(details) {
+        
+        
+        let normalizedDetails = {
+          tabId: details.tabId,
+          path: IconDetails.normalize(details, context.extension, context),
+        };
+        return context.childManager.callParentAsyncFunction("pageAction.setIcon", [
+          normalizedDetails,
+        ]);
+      },
+    },
+  };
+});
