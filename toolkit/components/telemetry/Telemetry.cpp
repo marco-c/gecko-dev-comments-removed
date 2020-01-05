@@ -2342,6 +2342,35 @@ TelemetryImpl::SnapshotScalars(unsigned int aDataset, bool aClearScalars, JSCont
 }
 
 NS_IMETHODIMP
+TelemetryImpl::KeyedScalarAdd(const nsACString& aName, const nsAString& aKey,
+                              JS::HandleValue aVal, JSContext* aCx)
+{
+  return TelemetryScalar::Add(aName, aKey, aVal, aCx);
+}
+
+NS_IMETHODIMP
+TelemetryImpl::KeyedScalarSet(const nsACString& aName, const nsAString& aKey,
+                              JS::HandleValue aVal, JSContext* aCx)
+{
+  return TelemetryScalar::Set(aName, aKey, aVal, aCx);
+}
+
+NS_IMETHODIMP
+TelemetryImpl::KeyedScalarSetMaximum(const nsACString& aName, const nsAString& aKey,
+                              JS::HandleValue aVal, JSContext* aCx)
+{
+  return TelemetryScalar::SetMaximum(aName, aKey, aVal, aCx);
+}
+
+NS_IMETHODIMP
+TelemetryImpl::SnapshotKeyedScalars(unsigned int aDataset, bool aClearScalars, JSContext* aCx,
+                                    uint8_t optional_argc, JS::MutableHandleValue aResult)
+{
+  return TelemetryScalar::CreateKeyedSnapshots(aDataset, aClearScalars, aCx, optional_argc,
+                                               aResult);
+}
+
+NS_IMETHODIMP
 TelemetryImpl::ClearScalars()
 {
   TelemetryScalar::ClearScalars();
@@ -2967,23 +2996,11 @@ void DestroyStatisticsRecorder()
 
 
 
-
-
-
-
-
-
 void
 ScalarAdd(mozilla::Telemetry::ScalarID aId, uint32_t aVal)
 {
   TelemetryScalar::Add(aId, aVal);
 }
-
-
-
-
-
-
 
 void
 ScalarSet(mozilla::Telemetry::ScalarID aId, uint32_t aVal)
@@ -2991,28 +3008,40 @@ ScalarSet(mozilla::Telemetry::ScalarID aId, uint32_t aVal)
   TelemetryScalar::Set(aId, aVal);
 }
 
-
-
-
-
-
-
 void
 ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aVal)
 {
   TelemetryScalar::Set(aId, aVal);
 }
 
-
-
-
-
-
-
 void
 ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, uint32_t aVal)
 {
   TelemetryScalar::SetMaximum(aId, aVal);
+}
+
+void
+ScalarAdd(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, uint32_t aVal)
+{
+  TelemetryScalar::Add(aId, aKey, aVal);
+}
+
+void
+ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, uint32_t aVal)
+{
+  TelemetryScalar::Set(aId, aKey, aVal);
+}
+
+void
+ScalarSet(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, bool aVal)
+{
+  TelemetryScalar::Set(aId, aKey, aVal);
+}
+
+void
+ScalarSetMaximum(mozilla::Telemetry::ScalarID aId, const nsAString& aKey, uint32_t aVal)
+{
+  TelemetryScalar::SetMaximum(aId, aKey, aVal);
 }
 
 } 
