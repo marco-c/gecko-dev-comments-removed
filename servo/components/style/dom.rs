@@ -267,7 +267,7 @@ pub unsafe fn raw_note_descendants<E, B>(element: E) -> bool
 }
 
 
-pub trait PresentationalHintsSynthetizer {
+pub trait PresentationalHintsSynthesizer {
     
     
     fn synthesize_presentational_hints_for_legacy_attributes<V>(&self, hints: &mut V)
@@ -290,7 +290,7 @@ impl AnimationRules {
 
 
 pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
-                     ElementExt + PresentationalHintsSynthetizer {
+                     ElementExt + PresentationalHintsSynthesizer {
     
     type ConcreteNode: TNode<ConcreteElement = Self>;
 
