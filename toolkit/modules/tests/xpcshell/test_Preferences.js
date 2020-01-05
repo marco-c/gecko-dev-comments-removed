@@ -91,8 +91,7 @@ add_test(function test_set_null_pref() {
     Preferences.set("test_set_null_pref", null);
     
     do_check_true(false);
-  }
-  catch (ex) {}
+  } catch (ex) {}
 
   run_next_test();
 });
@@ -102,8 +101,7 @@ add_test(function test_set_undefined_pref() {
     Preferences.set("test_set_undefined_pref");
     
     do_check_true(false);
-  }
-  catch (ex) {}
+  } catch (ex) {}
 
   run_next_test();
 });
@@ -113,8 +111,7 @@ add_test(function test_set_unsupported_pref() {
     Preferences.set("test_set_unsupported_pref", new Array());
     
     do_check_true(false);
-  }
-  catch (ex) {}
+  } catch (ex) {}
 
   run_next_test();
 });
@@ -166,8 +163,7 @@ add_test(function test_set_get_number_pref() {
     Preferences.set("test_set_get_number_pref", Math.pow(2, 31));
     
     do_check_true(false);
-  }
-  catch (ex) {}
+  } catch (ex) {}
 
   
   Preferences.reset("test_set_get_number_pref");

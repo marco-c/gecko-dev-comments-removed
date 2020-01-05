@@ -77,8 +77,7 @@ TaggingService.prototype = {
       if (stmt.executeStep()) {
         return stmt.row.id;
       }
-    }
-    finally {
+    } finally {
       stmt.finalize();
     }
     return -1;
@@ -121,16 +120,14 @@ TaggingService.prototype = {
         
         
         tag.__defineGetter__("name", () => this._tagFolders[tag.id]);
-      }
-      else if (typeof(idOrName) == "string" && idOrName.length > 0 &&
+      } else if (typeof(idOrName) == "string" && idOrName.length > 0 &&
                idOrName.length <= Ci.nsITaggingService.MAX_TAG_LENGTH) {
         
         tag.name = trim ? idOrName.trim() : idOrName;
         
         
         tag.__defineGetter__("id", () => this._getItemIdForTag(tag.name));
-      }
-      else {
+      } else {
         throw Cr.NS_ERROR_INVALID_ARG;
       }
       return tag;
@@ -138,8 +135,7 @@ TaggingService.prototype = {
   },
 
   
-  tagURI: function TS_tagURI(aURI, aTags, aSource)
-  {
+  tagURI: function TS_tagURI(aURI, aTags, aSource) {
     if (!aURI || !aTags || !Array.isArray(aTags)) {
       throw Cr.NS_ERROR_INVALID_ARG;
     }
@@ -208,8 +204,7 @@ TaggingService.prototype = {
       if (stmt.executeStep()) {
         count = stmt.row.count;
       }
-    }
-    finally {
+    } finally {
       stmt.finalize();
     }
 
@@ -219,8 +214,7 @@ TaggingService.prototype = {
   },
 
   
-  untagURI: function TS_untagURI(aURI, aTags, aSource)
-  {
+  untagURI: function TS_untagURI(aURI, aTags, aSource) {
     if (!aURI || (aTags && !Array.isArray(aTags))) {
       throw Cr.NS_ERROR_INVALID_ARG;
     }
@@ -290,8 +284,7 @@ TaggingService.prototype = {
           uris.push(Services.io.newURI(stmt.row.url, null, null));
         } catch (ex) {}
       }
-    }
-    finally {
+    } finally {
       stmt.finalize();
     }
 
@@ -335,8 +328,7 @@ TaggingService.prototype = {
         while (stmt.executeStep()) {
           this.__tagFolders[stmt.row.id] = stmt.row.title;
         }
-      }
-      finally {
+      } finally {
         stmt.finalize();
       }
     }
@@ -400,14 +392,12 @@ TaggingService.prototype = {
         if (this._tagFolders[stmt.row.parent]) {
           
           itemIds.push(stmt.row.id);
-        }
-        else {
+        } else {
           
           isBookmarked = true;
         }
       }
-    }
-    finally {
+    } finally {
       stmt.finalize();
     }
 
@@ -431,9 +421,8 @@ TaggingService.prototype = {
     
     if (aFolderId == PlacesUtils.tagsFolderId && this._tagFolders[aItemId]) {
       delete this._tagFolders[aItemId];
-    }
-    
-    else if (aURI && !this._tagFolders[aFolderId]) {
+    } else if (aURI && !this._tagFolders[aFolderId]) {
+      
       
       
       
@@ -443,9 +432,8 @@ TaggingService.prototype = {
           PlacesUtils.bookmarks.removeItem(itemIds[i], aSource);
         } catch (ex) {}
       }
-    }
-    
-    else if (aURI && this._tagFolders[aFolderId]) {
+    } else if (aURI && this._tagFolders[aFolderId]) {
+      
       this._removeTagIfEmpty(aFolderId, aSource);
     }
   },

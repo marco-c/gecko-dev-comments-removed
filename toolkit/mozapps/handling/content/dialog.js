@@ -51,8 +51,7 @@ var dialog = {
  
 
 
-  initialize: function initialize()
-  {
+  initialize: function initialize() {
     this._handlerInfo = window.arguments[7].QueryInterface(Ci.nsIHandlerInfo);
     this._URI         = window.arguments[8].QueryInterface(Ci.nsIURI);
     this._windowCtxt  = window.arguments[9];
@@ -103,8 +102,7 @@ var dialog = {
  
 
 
-  populateList: function populateList()
-  {
+  populateList: function populateList() {
     var items = document.getElementById("items");
     var possibleHandlers = this._handlerInfo.possibleApplicationHandlers;
     var preferredHandler = this._handlerInfo.preferredApplicationHandler;
@@ -121,8 +119,7 @@ var dialog = {
         
         let uri = ios.newFileURI(app.executable);
         elm.setAttribute("image", "moz-icon://" + uri.spec + "?size=32");
-      }
-      else if (app instanceof Ci.nsIWebHandlerApp) {
+      } else if (app instanceof Ci.nsIWebHandlerApp) {
         let uri = ios.newURI(app.uriTemplate, null, null);
         if (/^https?/.test(uri.scheme)) {
           
@@ -134,11 +131,9 @@ var dialog = {
           elm.setAttribute("image", uri.prePath + "/favicon.ico");
         }
         elm.setAttribute("description", uri.prePath);
-      }
-      else if (app instanceof Ci.nsIDBusHandlerApp) {
+      } else if (app instanceof Ci.nsIDBusHandlerApp) {
 	  elm.setAttribute("description", app.method);
-      }
-      else
+      } else
         throw "unknown handler type";
 
       items.insertBefore(elm, this._itemChoose);
@@ -163,8 +158,7 @@ var dialog = {
  
 
 
-  chooseApplication: function chooseApplication()
-  {
+  chooseApplication: function chooseApplication() {
     var bundle = document.getElementById("base-strings");
     var title = bundle.getString("choose.application.title");
 
@@ -206,8 +200,7 @@ var dialog = {
  
 
 
-  onAccept: function onAccept()
-  {
+  onAccept: function onAccept() {
     var checkbox = document.getElementById("remember");
     if (!checkbox.hidden) {
       
@@ -215,8 +208,7 @@ var dialog = {
         
         this._handlerInfo.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
         this._handlerInfo.preferredApplicationHandler = this.selectedItem.obj;
-      }
-      else
+      } else
         this._handlerInfo.preferredAction = Ci.nsIHandlerInfo.useSystemDefault;
     }
     this._handlerInfo.alwaysAskBeforeHandling = !checkbox.checked;
@@ -233,8 +225,7 @@ var dialog = {
  
 
 
-  updateOKButton: function updateOKButton()
-  {
+  updateOKButton: function updateOKButton() {
     this._okButton.disabled = this._itemChoose.selected ||
                               this._buttonDisabled;
   },
@@ -242,8 +233,7 @@ var dialog = {
  
 
 
-  onCheck: function onCheck()
-  {
+  onCheck: function onCheck() {
     if (document.getElementById("remember").checked)
       document.getElementById("remember-text").setAttribute("visible", "true");
     else
@@ -253,8 +243,7 @@ var dialog = {
   
 
 
-  onDblClick: function onDblClick()
-  {
+  onDblClick: function onDblClick() {
     if (this.selectedItem == this._itemChoose)
       this.chooseApplication();
     else
@@ -266,12 +255,10 @@ var dialog = {
  
 
 
-  get selectedItem()
-  {
+  get selectedItem() {
     return document.getElementById("items").selectedItem;
   },
-  set selectedItem(aItem)
-  {
+  set selectedItem(aItem) {
     return document.getElementById("items").selectedItem = aItem;
   }
 

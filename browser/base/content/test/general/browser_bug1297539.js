@@ -52,8 +52,7 @@ function* cutCurrentSelection(elementQueryString, property, browser) {
 
 
 
-add_task(function* test_paste_transferable_plain_text()
-{
+add_task(function* test_paste_transferable_plain_text() {
   let testPage =
     'data:text/html,' +
     '<textarea id="textarea">Write something here</textarea>';
@@ -84,8 +83,7 @@ add_task(function* test_paste_transferable_plain_text()
 
 
 
-add_task(function* test_paste_transferable_html()
-{
+add_task(function* test_paste_transferable_html() {
   let testPage =
     'data:text/html,' +
     '<div contenteditable="true"><b>Bold Text</b><i>italics</i></div>';

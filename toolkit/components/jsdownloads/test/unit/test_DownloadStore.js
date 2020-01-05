@@ -28,8 +28,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "OS",
 
 
 
-function promiseNewListAndStore(aStorePath)
-{
+function promiseNewListAndStore(aStorePath) {
   return promiseNewList().then(function(aList) {
     let path = aStorePath || getTempFile(TEST_STORE_FILE_NAME).path;
     let store = new DownloadStore(aList, path);
@@ -42,8 +41,7 @@ function promiseNewListAndStore(aStorePath)
 
 
 
-add_task(function* test_save_reload()
-{
+add_task(function* test_save_reload() {
   let [listForSave, storeForSave] = yield promiseNewListAndStore();
   let [listForLoad, storeForLoad] = yield promiseNewListAndStore(
                                                  storeForSave.path);
@@ -109,8 +107,7 @@ add_task(function* test_save_reload()
 
 
 
-add_task(function* test_save_empty()
-{
+add_task(function* test_save_empty() {
   let [, store] = yield promiseNewListAndStore();
 
   let createdFile = yield OS.File.open(store.path, { create: true });
@@ -127,8 +124,7 @@ add_task(function* test_save_empty()
 
 
 
-add_task(function* test_load_empty()
-{
+add_task(function* test_load_empty() {
   let [list, store] = yield promiseNewListAndStore();
 
   do_check_false(yield OS.File.exists(store.path));
@@ -144,8 +140,7 @@ add_task(function* test_load_empty()
 
 
 
-add_task(function* test_load_string_predefined()
-{
+add_task(function* test_load_string_predefined() {
   let [list, store] = yield promiseNewListAndStore();
 
   
@@ -182,8 +177,7 @@ add_task(function* test_load_string_predefined()
 
 
 
-add_task(function* test_load_string_unrecognized()
-{
+add_task(function* test_load_string_unrecognized() {
   let [list, store] = yield promiseNewListAndStore();
 
   
@@ -214,8 +208,7 @@ add_task(function* test_load_string_unrecognized()
 
 
 
-add_task(function* test_load_string_malformed()
-{
+add_task(function* test_load_string_malformed() {
   let [list, store] = yield promiseNewListAndStore();
 
   let string = "{\"list\":[{\"source\":null,\"target\":null}," +
@@ -243,8 +236,7 @@ add_task(function* test_load_string_malformed()
 
 
 
-add_task(function* test_save_reload_unknownProperties()
-{
+add_task(function* test_save_reload_unknownProperties() {
   let [listForSave, storeForSave] = yield promiseNewListAndStore();
   let [listForLoad, storeForLoad] = yield promiseNewListAndStore(
                                                  storeForSave.path);

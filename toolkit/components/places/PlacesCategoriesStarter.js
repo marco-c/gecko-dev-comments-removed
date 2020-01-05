@@ -28,8 +28,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesDBUtils",
 
 
 
-function PlacesCategoriesStarter()
-{
+function PlacesCategoriesStarter() {
   Services.obs.addObserver(this, TOPIC_GATHER_TELEMETRY, false);
   Services.obs.addObserver(this, PlacesUtils.TOPIC_SHUTDOWN, false);
 
@@ -58,8 +57,7 @@ function PlacesCategoriesStarter()
 PlacesCategoriesStarter.prototype = {
   
 
-  observe: function PCS_observe(aSubject, aTopic, aData)
-  {
+  observe: function PCS_observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       case PlacesUtils.TOPIC_SHUTDOWN:
         Services.obs.removeObserver(this, PlacesUtils.TOPIC_SHUTDOWN);

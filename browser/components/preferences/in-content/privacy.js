@@ -116,10 +116,8 @@ var gPrivacyPane = {
 
 
 
-  init()
-  {
-    function setEventListener(aId, aEventType, aCallback)
-    {
+  init() {
+    function setEventListener(aId, aEventType, aCallback) {
       document.getElementById(aId)
               .addEventListener(aEventType, aCallback.bind(gPrivacyPane));
     }
@@ -282,8 +280,7 @@ var gPrivacyPane = {
   
 
 
-  initializeHistoryMode()
-  {
+  initializeHistoryMode() {
     let mode;
     let getVal = aPref => document.getElementById(aPref).value;
 
@@ -294,8 +291,7 @@ var gPrivacyPane = {
         mode = "dontremember";
       else
         mode = "remember";
-    }
-    else
+    } else
       mode = "custom";
 
     document.getElementById("historyMode").value = mode;
@@ -304,8 +300,7 @@ var gPrivacyPane = {
   
 
 
-  updateHistoryModePane()
-  {
+  updateHistoryModePane() {
     let selectedIndex = -1;
     switch (document.getElementById("historyMode").value) {
     case "remember":
@@ -326,8 +321,7 @@ var gPrivacyPane = {
 
 
 
-  updateHistoryModePrefs()
-  {
+  updateHistoryModePrefs() {
     let pref = document.getElementById("browser.privatebrowsing.autostart");
     switch (document.getElementById("historyMode").value) {
     case "remember":
@@ -361,8 +355,7 @@ var gPrivacyPane = {
 
 
 
-  updatePrivacyMicroControls()
-  {
+  updatePrivacyMicroControls() {
     if (document.getElementById("historyMode").value == "custom") {
       let disabled = this._autoStartPrivateBrowsing =
         document.getElementById("privateBrowsingAutoStart").checked;
@@ -413,8 +406,7 @@ var gPrivacyPane = {
   
 
 
-  initAutoStartPrivateBrowsingReverter()
-  {
+  initAutoStartPrivateBrowsingReverter() {
     let mode = document.getElementById("historyMode");
     let autoStart = document.getElementById("privateBrowsingAutoStart");
     this._lastMode = mode.selectedIndex;
@@ -447,7 +439,7 @@ var gPrivacyPane = {
         pref.value = autoStart.hasAttribute('checked');
         let appStartup = Cc["@mozilla.org/toolkit/app-startup;1"]
                            .getService(Ci.nsIAppStartup);
-        appStartup.quit(Ci.nsIAppStartup.eAttemptQuit |  Ci.nsIAppStartup.eRestart);
+        appStartup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
         return;
       }
 
@@ -490,8 +482,7 @@ var gPrivacyPane = {
   
 
 
-  showBlockLists()
-  {
+  showBlockLists() {
     var bundlePreferences = document.getElementById("bundlePreferences");
     let brandName = document.getElementById("bundleBrand")
                             .getString("brandShortName");
@@ -545,8 +536,7 @@ var gPrivacyPane = {
 
 
 
-  readAcceptCookies()
-  {
+  readAcceptCookies() {
     var pref = document.getElementById("network.cookie.cookieBehavior");
     var acceptThirdPartyLabel = document.getElementById("acceptThirdPartyLabel");
     var acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
@@ -566,8 +556,7 @@ var gPrivacyPane = {
 
 
 
-  writeAcceptCookies()
-  {
+  writeAcceptCookies() {
     var accept = document.getElementById("acceptCookies");
     var acceptThirdPartyMenu = document.getElementById("acceptThirdPartyMenu");
 
@@ -581,11 +570,9 @@ var gPrivacyPane = {
   
 
 
-  readAcceptThirdPartyCookies()
-  {
+  readAcceptThirdPartyCookies() {
     var pref = document.getElementById("network.cookie.cookieBehavior");
-    switch (pref.value)
-    {
+    switch (pref.value) {
       case 0:
         return "always";
       case 1:
@@ -599,11 +586,9 @@ var gPrivacyPane = {
     }
   },
 
-  writeAcceptThirdPartyCookies()
-  {
+  writeAcceptThirdPartyCookies() {
     var accept = document.getElementById("acceptThirdPartyMenu").selectedItem;
-    switch (accept.value)
-    {
+    switch (accept.value) {
       case "always":
         return 0;
       case "visited":
@@ -618,8 +603,7 @@ var gPrivacyPane = {
   
 
 
-  showCookieExceptions()
-  {
+  showCookieExceptions() {
     var bundlePreferences = document.getElementById("bundlePreferences");
     var params = { blockVisible   : true,
                    sessionVisible : true,
@@ -635,8 +619,7 @@ var gPrivacyPane = {
   
 
 
-  showCookies(aCategory)
-  {
+  showCookies(aCategory) {
     gSubDialog.open("chrome://browser/content/preferences/cookies.xul");
   },
 
@@ -653,8 +636,7 @@ var gPrivacyPane = {
   
 
 
-  showClearPrivateDataSettings()
-  {
+  showClearPrivateDataSettings() {
     gSubDialog.open("chrome://browser/content/preferences/sanitize.xul", "resizable=no");
   },
 
@@ -704,8 +686,7 @@ var gPrivacyPane = {
    
 
 
-   readBrowserContainersCheckbox()
-   {
+   readBrowserContainersCheckbox() {
      var pref = document.getElementById("privacy.userContext.enabled");
      var settings = document.getElementById("browserContainersSettings");
 

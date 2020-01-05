@@ -130,14 +130,12 @@ function readShortFile(aFile) {
     try {
       
       return scrInputStream.read(1048576);
-    }
-    finally {
+    } finally {
       
       
       scrInputStream.close();
     }
-  }
-  finally {
+  } finally {
     
     
     inputStream.close();

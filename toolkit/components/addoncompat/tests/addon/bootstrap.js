@@ -13,8 +13,7 @@ const baseURL = "http://mochi.test:8888/browser/" +
 var contentSecManager = Cc["@mozilla.org/contentsecuritymanager;1"]
                           .getService(Ci.nsIContentSecurityManager);
 
-function forEachWindow(f)
-{
+function forEachWindow(f) {
   let wins = Services.wm.getEnumerator("navigator:browser");
   while (wins.hasMoreElements()) {
     let win = wins.getNext();
@@ -22,8 +21,7 @@ function forEachWindow(f)
   }
 }
 
-function addLoadListener(target, listener)
-{
+function addLoadListener(target, listener) {
   target.addEventListener("load", function handler(event) {
     target.removeEventListener("load", handler, true);
     return listener(event);
@@ -34,8 +32,7 @@ var gWin;
 var gBrowser;
 var ok, is, info;
 
-function removeTab(tab, done)
-{
+function removeTab(tab, done) {
   
   
   
@@ -47,8 +44,7 @@ function removeTab(tab, done)
 
 
 
-function testContentWindow()
-{
+function testContentWindow() {
   return new Promise(function(resolve, reject) {
     const url = baseURL + "browser_addonShims_testpage.html";
     let tab = gBrowser.addTab(url);
@@ -73,8 +69,7 @@ function testContentWindow()
 
 
 
-function testListeners()
-{
+function testListeners() {
   return new Promise(function(resolve, reject) {
     const url1 = baseURL + "browser_addonShims_testpage.html";
     const url2 = baseURL + "browser_addonShims_testpage2.html";
@@ -129,8 +124,7 @@ function testListeners()
 
 
 
-function testCapturing()
-{
+function testCapturing() {
   return new Promise(function(resolve, reject) {
     let capturingCount = 0;
     let nonCapturingCount = 0;
@@ -177,8 +171,7 @@ function testCapturing()
 
 
 
-function testObserver()
-{
+function testObserver() {
   return new Promise(function(resolve, reject) {
     let observerFired = 0;
 
@@ -210,8 +203,7 @@ function testObserver()
 
 
 
-function testSandbox()
-{
+function testSandbox() {
   return new Promise(function(resolve, reject) {
     const url = baseURL + "browser_addonShims_testpage.html";
     let tab = gBrowser.addTab(url);
@@ -245,8 +237,7 @@ function testSandbox()
 
 
 
-function testAddonContent()
-{
+function testAddonContent() {
   let chromeRegistry = Components.classes["@mozilla.org/chrome/chrome-registry;1"]
     .getService(Components.interfaces.nsIChromeRegistry);
   let base = chromeRegistry.convertChromeURL(BrowserUtils.makeURI("chrome://addonshim1/content/"));
@@ -270,8 +261,7 @@ function testAddonContent()
 
 
 
-function testAboutModuleRegistration()
-{
+function testAboutModuleRegistration() {
   let Registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
 
   let modulesToUnregister = new Map();
@@ -309,14 +299,12 @@ function testAboutModuleRegistration()
 
     open() {
       function getWindow(channel) {
-        try
-        {
+        try {
           if (channel.notificationCallbacks)
             return channel.notificationCallbacks.getInterface(Ci.nsILoadContext).associatedWindow;
         } catch (e) {}
 
-        try
-        {
+        try {
           if (channel.loadGroup && channel.loadGroup.notificationCallbacks)
             return channel.loadGroup.notificationCallbacks.getInterface(Ci.nsILoadContext).associatedWindow;
         } catch (e) {}
@@ -511,8 +499,7 @@ function testAboutModuleRegistration()
   });
 }
 
-function testProgressListener()
-{
+function testProgressListener() {
   const url = baseURL + "browser_addonShims_testpage.html";
 
   let sawGlobalLocChange = false;
@@ -554,8 +541,7 @@ function testProgressListener()
   });
 }
 
-function testRootTreeItem()
-{
+function testRootTreeItem() {
   return new Promise(function(resolve, reject) {
     const url = baseURL + "browser_addonShims_testpage.html";
     let tab = gBrowser.addTab(url);
@@ -578,8 +564,7 @@ function testRootTreeItem()
   });
 }
 
-function testImportNode()
-{
+function testImportNode() {
   return new Promise(function(resolve, reject) {
     const url = baseURL + "browser_addonShims_testpage.html";
     let tab = gBrowser.addTab(url);
@@ -603,8 +588,7 @@ function testImportNode()
   });
 }
 
-function runTests(win, funcs)
-{
+function runTests(win, funcs) {
   ok = funcs.ok;
   is = funcs.is;
   info = funcs.info;
@@ -629,25 +613,21 @@ function runTests(win, funcs)
 
 
 
-function startup(aData, aReason)
-{
+function startup(aData, aReason) {
   forEachWindow(win => {
     win.runAddonShimTests = (funcs) => runTests(win, funcs);
   });
 }
 
-function shutdown(aData, aReason)
-{
+function shutdown(aData, aReason) {
   forEachWindow(win => {
     delete win.runAddonShimTests;
   });
 }
 
-function install(aData, aReason)
-{
+function install(aData, aReason) {
 }
 
-function uninstall(aData, aReason)
-{
+function uninstall(aData, aReason) {
 }
 

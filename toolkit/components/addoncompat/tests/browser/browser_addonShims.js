@@ -6,8 +6,7 @@ const COMPAT_ADDON_URL = "http://example.com/browser/toolkit/components/addoncom
 
 
 
-function addAddon(url)
-{
+function addAddon(url) {
   info("Installing add-on: " + url);
 
   return new Promise(function(resolve, reject) {
@@ -30,8 +29,7 @@ function addAddon(url)
 
 
 
-function removeAddon(addon)
-{
+function removeAddon(addon) {
   info("Removing addon.");
 
   return new Promise(function(resolve, reject) {

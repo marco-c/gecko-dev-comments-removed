@@ -43,24 +43,21 @@ var ContentAreaUtils = {
   }
 }
 
-function urlSecurityCheck(aURL, aPrincipal, aFlags)
-{
+function urlSecurityCheck(aURL, aPrincipal, aFlags) {
   return BrowserUtils.urlSecurityCheck(aURL, aPrincipal, aFlags);
 }
 
 
 
 
-function isContentFrame(aFocusedWindow)
-{
+function isContentFrame(aFocusedWindow) {
   if (!aFocusedWindow)
     return false;
 
   return (aFocusedWindow.top == window.content);
 }
 
-function forbidCPOW(arg, func, argname)
-{
+function forbidCPOW(arg, func, argname) {
   if (arg && (typeof(arg) == "object" || typeof(arg) == "function") &&
       Components.utils.isCrossProcessWrapper(arg)) {
     throw new Error(`no CPOWs allowed for argument ${argname} to ${func}`);
@@ -86,8 +83,7 @@ function forbidCPOW(arg, func, argname)
 
 
 function saveURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
-                 aSkipPrompt, aReferrer, aSourceDocument, aIsContentWindowPrivate)
-{
+                 aSkipPrompt, aReferrer, aSourceDocument, aIsContentWindowPrivate) {
   forbidCPOW(aURL, "saveURL", "aURL");
   forbidCPOW(aReferrer, "saveURL", "aReferrer");
   
@@ -137,8 +133,7 @@ const nsISupportsCString = Components.interfaces.nsISupportsCString;
 
 function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
                       aSkipPrompt, aReferrer, aDoc, aContentType, aContentDisp,
-                      aIsContentWindowPrivate)
-{
+                      aIsContentWindowPrivate) {
   forbidCPOW(aURL, "saveImageURL", "aURL");
   forbidCPOW(aReferrer, "saveImageURL", "aReferrer");
 
@@ -188,8 +183,7 @@ function saveImageURL(aURL, aFileName, aFilePickerTitleKey, aShouldBypassCache,
 
 
 
-function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0)
-{
+function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0) {
   if (!aBrowser) {
     throw "Must have a browser when calling saveBrowser";
   }
@@ -215,8 +209,7 @@ function saveBrowser(aBrowser, aSkipPrompt, aOuterWindowID = 0)
 
 
 
-function saveDocument(aDocument, aSkipPrompt)
-{
+function saveDocument(aDocument, aSkipPrompt) {
   const Ci = Components.interfaces;
 
   if (!aDocument)
@@ -293,8 +286,7 @@ function DownloadListener(win, transfer) {
 }
 
 DownloadListener.prototype = {
-  QueryInterface: function dl_qi(aIID)
-  {
+  QueryInterface: function dl_qi(aIID) {
     if (aIID.equals(Components.interfaces.nsIInterfaceRequestor) ||
         aIID.equals(Components.interfaces.nsIWebProgressListener) ||
         aIID.equals(Components.interfaces.nsIWebProgressListener2) ||
@@ -304,8 +296,7 @@ DownloadListener.prototype = {
     throw Components.results.NS_ERROR_NO_INTERFACE;
   },
 
-  getInterface: function dl_gi(aIID)
-  {
+  getInterface: function dl_gi(aIID) {
     if (aIID.equals(Components.interfaces.nsIAuthPrompt) ||
         aIID.equals(Components.interfaces.nsIAuthPrompt2)) {
       var ww =
@@ -388,8 +379,7 @@ XPCOMUtils.defineConstant(this, "kSaveAsType_Text", kSaveAsType_Text);
 function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
                       aContentType, aShouldBypassCache, aFilePickerTitleKey,
                       aChosenData, aReferrer, aInitiatingDocument, aSkipPrompt,
-                      aCacheKey, aIsContentWindowPrivate)
-{
+                      aCacheKey, aIsContentWindowPrivate) {
   forbidCPOW(aURL, "internalSave", "aURL");
   forbidCPOW(aReferrer, "internalSave", "aReferrer");
   forbidCPOW(aCacheKey, "internalSave", "aCacheKey");
@@ -514,8 +504,7 @@ function internalSave(aURL, aDocument, aDefaultFileName, aContentDisposition,
 
 
 
-function internalPersist(persistArgs)
-{
+function internalPersist(persistArgs) {
   var persist = makeWebBrowserPersist();
 
   
@@ -559,8 +548,7 @@ function internalPersist(persistArgs)
       encodingFlags |= nsIWBP.ENCODE_FLAGS_FORMATTED;
       encodingFlags |= nsIWBP.ENCODE_FLAGS_ABSOLUTE_LINKS;
       encodingFlags |= nsIWBP.ENCODE_FLAGS_NOFRAMES_CONTENT;
-    }
-    else {
+    } else {
       encodingFlags |= nsIWBP.ENCODE_FLAGS_ENCODE_BASIC_ENTITIES;
     }
 
@@ -624,8 +612,7 @@ function FileInfo(aSuggestedFileName, aFileName, aFileBaseName, aFileExt, aUri) 
 
 
 function initFileInfo(aFI, aURL, aURLCharset, aDocument,
-                      aContentType, aContentDisposition)
-{
+                      aContentType, aContentDisposition) {
   try {
     
     try {
@@ -676,8 +663,7 @@ function initFileInfo(aFI, aURL, aURLCharset, aDocument,
 
 
 
-function promiseTargetFile(aFpP,  aSkipPrompt,  aRelatedURI)
-{
+function promiseTargetFile(aFpP,  aSkipPrompt,  aRelatedURI) {
   return Task.spawn(function*() {
     let downloadLastDir = new DownloadLastDir(window);
     let prefBranch = Services.prefs.getBranch("browser.download.");
@@ -740,8 +726,7 @@ function promiseTargetFile(aFpP,  aSkipPrompt,  aRelatedURI)
     if (aFpP.saveMode != SAVEMODE_FILEONLY) {
       try {
         fp.filterIndex = prefBranch.getIntPref("save_converter_index");
-      }
-      catch (e) {
+      } catch (e) {
       }
     }
 
@@ -777,8 +762,7 @@ function promiseTargetFile(aFpP,  aSkipPrompt,  aRelatedURI)
 
 
 
-function uniqueFile(aLocalFile)
-{
+function uniqueFile(aLocalFile) {
   var collisionCount = 0;
   while (aLocalFile.exists()) {
     collisionCount++;
@@ -789,8 +773,7 @@ function uniqueFile(aLocalFile)
         aLocalFile.leafName = aLocalFile.leafName.replace(/\.[^\.]{1,3}\.(gz|bz2|Z)$/i, "(2)$&");
       else
         aLocalFile.leafName = aLocalFile.leafName.replace(/(\.[^\.]*)?$/, "(2)$&");
-    }
-    else {
+    } else {
       
       aLocalFile.leafName = aLocalFile.leafName.replace(/^(.*\()\d+\)/, "$1" + (collisionCount + 1) + ")");
     }
@@ -860,8 +843,7 @@ XPCOMUtils.defineConstant(this, "SAVEMODE_COMPLETE_TEXT", SAVEMODE_COMPLETE_TEXT
 
 
 
-function appendFiltersForContentType(aFilePicker, aContentType, aFileExtension, aSaveMode)
-{
+function appendFiltersForContentType(aFilePicker, aContentType, aFileExtension, aSaveMode) {
   
   var bundleName;
   
@@ -933,8 +915,7 @@ function appendFiltersForContentType(aFilePicker, aContentType, aFileExtension, 
   aFilePicker.appendFilters(Components.interfaces.nsIFilePicker.filterAll);
 }
 
-function getPostData(aDocument)
-{
+function getPostData(aDocument) {
   const Ci = Components.interfaces;
 
   if (aDocument instanceof Ci.nsIWebBrowserPersistDocument) {
@@ -952,38 +933,32 @@ function getPostData(aDocument)
                  .currentDescriptor
                  .QueryInterface(Ci.nsISHEntry);
     return sessionHistoryEntry.postData;
-  }
-  catch (e) {
+  } catch (e) {
   }
   return null;
 }
 
-function makeWebBrowserPersist()
-{
+function makeWebBrowserPersist() {
   const persistContractID = "@mozilla.org/embedding/browser/nsWebBrowserPersist;1";
   const persistIID = Components.interfaces.nsIWebBrowserPersist;
   return Components.classes[persistContractID].createInstance(persistIID);
 }
 
-function makeURI(aURL, aOriginCharset, aBaseURI)
-{
+function makeURI(aURL, aOriginCharset, aBaseURI) {
   return BrowserUtils.makeURI(aURL, aOriginCharset, aBaseURI);
 }
 
-function makeFileURI(aFile)
-{
+function makeFileURI(aFile) {
   return BrowserUtils.makeFileURI(aFile);
 }
 
-function makeFilePicker()
-{
+function makeFilePicker() {
   const fpContractID = "@mozilla.org/filepicker;1";
   const fpIID = Components.interfaces.nsIFilePicker;
   return Components.classes[fpContractID].createInstance(fpIID);
 }
 
-function getMIMEService()
-{
+function getMIMEService() {
   const mimeSvcContractID = "@mozilla.org/mime;1";
   const mimeSvcIID = Components.interfaces.nsIMIMEService;
   const mimeSvc = Components.classes[mimeSvcContractID].getService(mimeSvcIID);
@@ -991,37 +966,31 @@ function getMIMEService()
 }
 
 
-function getFileBaseName(aFileName)
-{
+function getFileBaseName(aFileName) {
   
   return aFileName.replace(/\.[^.]*$/, "");
 }
 
-function getMIMETypeForURI(aURI)
-{
+function getMIMETypeForURI(aURI) {
   try {
     return getMIMEService().getTypeFromURI(aURI);
-  }
-  catch (e) {
+  } catch (e) {
   }
   return null;
 }
 
-function getMIMEInfoForType(aMIMEType, aExtension)
-{
+function getMIMEInfoForType(aMIMEType, aExtension) {
   if (aMIMEType || aExtension) {
     try {
       return getMIMEService().getFromTypeAndExtension(aMIMEType, aExtension);
-    }
-    catch (e) {
+    } catch (e) {
     }
   }
   return null;
 }
 
 function getDefaultFileName(aDefaultFileName, aURI, aDocument,
-                            aContentDisposition)
-{
+                            aContentDisposition) {
   
   if (aContentDisposition) {
     const mhpContractID = "@mozilla.org/network/mime-hdrparam;1";
@@ -1034,13 +1003,11 @@ function getDefaultFileName(aDefaultFileName, aURI, aDocument,
     try {
       fileName = mhp.getParameter(aContentDisposition, "filename", charset,
                                   true, dummy);
-    }
-    catch (e) {
+    } catch (e) {
       try {
         fileName = mhp.getParameter(aContentDisposition, "name", charset, true,
                                     dummy);
-      }
-      catch (e) {
+      } catch (e) {
       }
     }
     if (fileName)
@@ -1106,8 +1073,7 @@ function getDefaultFileName(aDefaultFileName, aURI, aDocument,
   return "index";
 }
 
-function validateFileName(aFileName)
-{
+function validateFileName(aFileName) {
   var re = /[\/]+/g;
   if (navigator.appVersion.indexOf("Windows") != -1) {
     re = /[\\\/\|]+/g;
@@ -1115,8 +1081,7 @@ function validateFileName(aFileName)
     aFileName = aFileName.replace(/[\*\:\?]+/g, " ");
     aFileName = aFileName.replace(/[\<]+/g, "(");
     aFileName = aFileName.replace(/[\>]+/g, ")");
-  }
-  else if (navigator.appVersion.indexOf("Macintosh") != -1)
+  } else if (navigator.appVersion.indexOf("Macintosh") != -1)
     re = /[\:\/]+/g;
   else if (navigator.appVersion.indexOf("Android") != -1) {
     
@@ -1155,8 +1120,7 @@ function validateFileName(aFileName)
   return aFileName.replace(re, "_");
 }
 
-function getNormalizedLeafName(aFile, aDefaultExtension)
-{
+function getNormalizedLeafName(aFile, aDefaultExtension) {
   if (!aDefaultExtension)
     return aFile;
 
@@ -1176,8 +1140,7 @@ function getNormalizedLeafName(aFile, aDefaultExtension)
   return aFile;
 }
 
-function getDefaultExtension(aFilename, aURI, aContentType)
-{
+function getDefaultExtension(aFilename, aURI, aContentType) {
   if (aContentType == "text/plain" || aContentType == "application/octet-stream" || aURI.scheme == "ftp")
     return "";   
 
@@ -1211,16 +1174,14 @@ function getDefaultExtension(aFilename, aURI, aContentType)
   try {
     if (mimeInfo)
       return mimeInfo.primaryExtension;
-  }
-  catch (e) {
+  } catch (e) {
   }
   
   
   return ext || urlext;
 }
 
-function GetSaveModeForContentType(aContentType, aDocument)
-{
+function GetSaveModeForContentType(aContentType, aDocument) {
   
   
   if (!aDocument || Components.utils.isCrossProcessWrapper(aDocument))
@@ -1243,8 +1204,7 @@ function GetSaveModeForContentType(aContentType, aDocument)
   return saveMode;
 }
 
-function getCharsetforSave(aDocument)
-{
+function getCharsetforSave(aDocument) {
   if (aDocument)
     return aDocument.characterSet;
 
@@ -1261,8 +1221,7 @@ function getCharsetforSave(aDocument)
 
 
 
-function openURL(aURL)
-{
+function openURL(aURL) {
   var uri = makeURI(aURL);
 
   var protocolSvc = Components.classes["@mozilla.org/uriloader/external-protocol-service;1"]
@@ -1271,8 +1230,7 @@ function openURL(aURL)
   if (!protocolSvc.isExposedProtocol(uri.scheme)) {
     
     protocolSvc.loadUrl(uri);
-  }
-  else {
+  } else {
     var recentWindow = Services.wm.getMostRecentWindow("navigator:browser");
     if (recentWindow) {
       recentWindow.openUILinkIn(uri.spec, "tab");

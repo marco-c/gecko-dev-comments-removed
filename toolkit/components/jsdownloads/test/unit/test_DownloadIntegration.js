@@ -68,8 +68,7 @@ XPCOMUtils.defineLazyGetter(this, "gStringBundle", function() {
 
 
 
-add_task(function* test_getSystemDownloadsDirectory_exists_or_creates()
-{
+add_task(function* test_getSystemDownloadsDirectory_exists_or_creates() {
   let tempDir = Services.dirsvc.get("TmpD", Ci.nsIFile);
   let downloadDir;
 
@@ -105,8 +104,7 @@ add_task(function* test_getSystemDownloadsDirectory_exists_or_creates()
 
 
 
-add_task(function* test_getSystemDownloadsDirectory_real()
-{
+add_task(function* test_getSystemDownloadsDirectory_real() {
   let fakeDownloadDir = yield DownloadIntegration.getSystemDownloadsDirectory();
 
   let cleanup = allowDirectoriesInTest();
@@ -120,8 +118,7 @@ add_task(function* test_getSystemDownloadsDirectory_real()
 
 
 
-add_task(function* test_getPreferredDownloadsDirectory()
-{
+add_task(function* test_getPreferredDownloadsDirectory() {
   let cleanupDirectories = allowDirectoriesInTest();
 
   let folderListPrefName = "browser.download.folderList";
@@ -159,7 +156,7 @@ add_task(function* test_getPreferredDownloadsDirectory()
   Services.prefs.setComplexValue("browser.download.dir", Ci.nsIFile, tempDir);
   downloadDir = yield DownloadIntegration.getPreferredDownloadsDirectory();
   do_check_neq(downloadDir, "");
-  do_check_eq(downloadDir,  tempDir.path);
+  do_check_eq(downloadDir, tempDir.path);
   do_check_true(yield OS.File.exists(downloadDir));
   yield OS.File.removeEmptyDir(tempDir.path);
 
@@ -186,8 +183,7 @@ add_task(function* test_getPreferredDownloadsDirectory()
 
 
 
-add_task(function* test_getTemporaryDownloadsDirectory()
-{
+add_task(function* test_getTemporaryDownloadsDirectory() {
   let cleanup = allowDirectoriesInTest();
 
   let downloadDir = yield DownloadIntegration.getTemporaryDownloadsDirectory();
@@ -212,8 +208,7 @@ add_task(function* test_getTemporaryDownloadsDirectory()
 
 
 
-add_task(function* test_observers_setup()
-{
+add_task(function* test_observers_setup() {
   DownloadIntegration.allowObservers = true;
   do_register_cleanup(function() {
     DownloadIntegration.allowObservers = false;
@@ -224,8 +219,7 @@ add_task(function* test_observers_setup()
 
 
 
-add_task(function* test_notifications()
-{
+add_task(function* test_notifications() {
   for (let isPrivate of [false, true]) {
     mustInterruptResponses();
 
@@ -262,8 +256,7 @@ add_task(function* test_notifications()
 
 
 
-add_task(function* test_no_notifications()
-{
+add_task(function* test_no_notifications() {
   for (let isPrivate of [false, true]) {
     let list = yield promiseNewList(isPrivate);
     let download1 = yield promiseNewDownload(httpUrl("interruptible.txt"));
@@ -290,8 +283,7 @@ add_task(function* test_no_notifications()
 
 
 
-add_task(function* test_mix_notifications()
-{
+add_task(function* test_mix_notifications() {
   mustInterruptResponses();
 
   let publicList = yield promiseNewList();
@@ -321,14 +313,12 @@ add_task(function* test_mix_notifications()
 
 
 
-add_task(function* test_suspend_resume()
-{
+add_task(function* test_suspend_resume() {
   
   
   Services.prefs.setIntPref("browser.download.manager.resumeOnWakeDelay", 5);
 
-  let addDownload = function(list)
-  {
+  let addDownload = function(list) {
     return Task.spawn(function* () {
       let download = yield promiseNewDownload(httpUrl("interruptible.txt"));
       download.start().catch(() => {});
@@ -400,8 +390,7 @@ add_task(function* test_suspend_resume()
 
 
 
-add_task(function* test_exit_private_browsing()
-{
+add_task(function* test_exit_private_browsing() {
   mustInterruptResponses();
 
   let privateList = yield promiseNewList(true);

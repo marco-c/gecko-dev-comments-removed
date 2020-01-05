@@ -36,7 +36,7 @@ function sleep(ms) {
 
 
 
-function failTestsOnAutoClose(enabled)  {
+function failTestsOnAutoClose(enabled) {
   Cu.getGlobalForObject(Sqlite).Debugging.failTestsOnAutoClose = enabled;
 }
 

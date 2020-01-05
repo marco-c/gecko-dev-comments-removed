@@ -50,7 +50,7 @@ function runAsyncTests(tests, dontResetBefore = false) {
       
       
       
-      dump("AsyncRunner.jsm observed console error: " +  scriptErr + "\n");
+      dump("AsyncRunner.jsm observed console error: " + scriptErr + "\n");
     }
   });
 
@@ -106,8 +106,7 @@ function do_check_throws(fn) {
   let threw = false;
   try {
     fn();
-  }
-  catch (err) {
+  } catch (err) {
     threw = true;
   }
   ok(threw);

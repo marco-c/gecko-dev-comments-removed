@@ -108,8 +108,7 @@ function isString(aValue) {
 
 
 
-function serializeUnknownProperties(aObject, aSerializable)
-{
+function serializeUnknownProperties(aObject, aSerializable) {
   if (aObject._unknownProperties) {
     for (let property in aObject._unknownProperties) {
       aSerializable[property] = aObject._unknownProperties[property];
@@ -122,8 +121,7 @@ function serializeUnknownProperties(aObject, aSerializable)
 
 
 
-function deserializeUnknownProperties(aObject, aSerializable, aFilterFn)
-{
+function deserializeUnknownProperties(aObject, aSerializable, aFilterFn) {
   for (let property in aSerializable) {
     if (aFilterFn(property)) {
       if (!aObject._unknownProperties) {
@@ -149,8 +147,7 @@ const kProgressUpdateIntervalMs = 400;
 
 
 
-this.Download = function()
-{
+this.Download = function() {
   this._deferSucceeded = Promise.defer();
 }
 
@@ -351,8 +348,7 @@ this.Download.prototype = {
 
 
 
-  start: function D_start()
-  {
+  start: function D_start() {
     
     if (this.succeeded) {
       return Promise.resolve();
@@ -402,8 +398,7 @@ this.Download.prototype = {
     
     
     
-    function DS_setProgressBytes(aCurrentBytes, aTotalBytes, aHasPartialData)
-    {
+    function DS_setProgressBytes(aCurrentBytes, aTotalBytes, aHasPartialData) {
       if (this._currentAttempt == currentAttempt) {
         this._setBytes(aCurrentBytes, aTotalBytes, aHasPartialData);
       }
@@ -413,8 +408,7 @@ this.Download.prototype = {
     
     
     
-    function DS_setProperties(aOptions)
-    {
+    function DS_setProperties(aOptions) {
       if (this._currentAttempt != currentAttempt) {
         return;
       }
@@ -773,8 +767,7 @@ this.Download.prototype = {
 
 
 
-  cancel: function D_cancel()
-  {
+  cancel: function D_cancel() {
     
     if (this.stopped) {
       return Promise.resolve();
@@ -845,8 +838,7 @@ this.Download.prototype = {
 
 
 
-  removePartialData()
-  {
+  removePartialData() {
     if (!this.canceled && !this.error) {
       return Promise.resolve();
     }
@@ -902,8 +894,7 @@ this.Download.prototype = {
 
 
 
-  whenSucceeded: function D_whenSucceeded()
-  {
+  whenSucceeded: function D_whenSucceeded() {
     return this._deferSucceeded.promise;
   },
 
@@ -920,8 +911,7 @@ this.Download.prototype = {
 
 
 
-  refresh()
-  {
+  refresh() {
     return Task.spawn(function* () {
       if (!this.stopped || this._finalized) {
         return;
@@ -999,8 +989,7 @@ this.Download.prototype = {
 
 
 
-  finalize(aRemovePartialData)
-  {
+  finalize(aRemovePartialData) {
     
     this._finalized = true;
 
@@ -1096,8 +1085,7 @@ this.Download.prototype = {
 
 
 
-  toSerializable()
-  {
+  toSerializable() {
     let serializable = {
       source: this.source.toSerializable(),
       target: this.target.toSerializable(),
@@ -1148,8 +1136,7 @@ this.Download.prototype = {
 
 
 
-  getSerializationHash()
-  {
+  getSerializationHash() {
     
     
     
@@ -1296,8 +1283,7 @@ this.DownloadSource.prototype = {
 
 
 
-  toSerializable()
-  {
+  toSerializable() {
     if (this.adjustChannel) {
       
       return null;
@@ -1452,8 +1438,7 @@ this.DownloadTarget.prototype = {
 
 
 
-  toSerializable()
-  {
+  toSerializable() {
     
     if (!this.partFilePath && !this._unknownProperties) {
       return this.path;
@@ -1522,8 +1507,7 @@ this.DownloadTarget.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadError = function(aProperties)
-{
+this.DownloadError = function(aProperties) {
   const NS_ERROR_MODULE_BASE_OFFSET = 0x45;
   const NS_ERROR_MODULE_NETWORK = 6;
   const NS_ERROR_MODULE_FILES = 13;
@@ -1547,8 +1531,7 @@ this.DownloadError = function(aProperties)
                  NS_ERROR_MODULE_BASE_OFFSET;
     this.becauseSourceFailed = (module == NS_ERROR_MODULE_NETWORK);
     this.becauseTargetFailed = (module == NS_ERROR_MODULE_FILES);
-  }
-  else {
+  } else {
     if (aProperties.becauseSourceFailed) {
       this.becauseSourceFailed = true;
     }
@@ -1654,8 +1637,7 @@ this.DownloadError.prototype = {
 
 
 
-  toSerializable()
-  {
+  toSerializable() {
     let serializable = {
       result: this.result,
       message: this.message,
@@ -1735,16 +1717,14 @@ this.DownloadSaver.prototype = {
 
 
 
-  execute: function DS_execute(aSetProgressBytesFn, aSetPropertiesFn)
-  {
+  execute: function DS_execute(aSetProgressBytesFn, aSetPropertiesFn) {
     throw new Error("Not implemented.");
   },
 
   
 
 
-  cancel: function DS_cancel()
-  {
+  cancel: function DS_cancel() {
     throw new Error("Not implemented.");
   },
 
@@ -1759,8 +1739,7 @@ this.DownloadSaver.prototype = {
 
 
 
-  removePartialData: function DS_removePartialData()
-  {
+  removePartialData: function DS_removePartialData() {
     return Promise.resolve();
   },
 
@@ -1769,8 +1748,7 @@ this.DownloadSaver.prototype = {
 
 
 
-  addToHistory()
-  {
+  addToHistory() {
     if (this.download.source.isPrivate) {
       return;
     }
@@ -1787,8 +1765,7 @@ this.DownloadSaver.prototype = {
     try {
       gDownloadHistory.addDownload(sourceUri, referrerUri, startPRTime,
                                    targetUri);
-    }
-    catch (ex) {
+    } catch (ex) {
       if (!(ex instanceof Components.Exception) ||
           ex.result != Cr.NS_ERROR_NOT_AVAILABLE) {
         throw ex;
@@ -1806,21 +1783,18 @@ this.DownloadSaver.prototype = {
 
 
 
-  toSerializable()
-  {
+  toSerializable() {
     throw new Error("Not implemented.");
   },
 
   
 
 
-  getSha256Hash()
-  {
+  getSha256Hash() {
     throw new Error("Not implemented.");
   },
 
-  getSignatureInfo()
-  {
+  getSignatureInfo() {
     throw new Error("Not implemented.");
   },
 }; 
@@ -1910,8 +1884,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  execute: function DCS_execute(aSetProgressBytesFn, aSetPropertiesFn)
-  {
+  execute: function DCS_execute(aSetProgressBytesFn, aSetPropertiesFn) {
     let copySaver = this;
 
     this._canceled = false;
@@ -2025,8 +1998,7 @@ this.DownloadCopySaver.prototype = {
             QueryInterface: XPCOMUtils.generateQI([Ci.nsIInterfaceRequestor]),
             getInterface: XPCOMUtils.generateQI([Ci.nsIProgressEventSink]),
             onProgress: function DCSE_onProgress(aRequest, aContext, aProgress,
-                                                 aProgressMax)
-            {
+                                                 aProgressMax) {
               let currentBytes = resumeFromBytes + aProgress;
               let totalBytes = aProgressMax == -1 ? -1 : (resumeFromBytes +
                                                           aProgressMax);
@@ -2245,8 +2217,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  cancel: function DCS_cancel()
-  {
+  cancel: function DCS_cancel() {
     this._canceled = true;
     if (this._backgroundFileSaver) {
       this._backgroundFileSaver.finish(Cr.NS_ERROR_FAILURE);
@@ -2257,8 +2228,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  removePartialData()
-  {
+  removePartialData() {
     return Task.spawn(function* task_DCS_removePartialData() {
       if (this.download.target.partFilePath) {
         try {
@@ -2275,8 +2245,7 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  toSerializable()
-  {
+  toSerializable() {
     
     if (!this.entityID && !this._unknownProperties) {
       return "copy";
@@ -2291,24 +2260,21 @@ this.DownloadCopySaver.prototype = {
   
 
 
-  getSha256Hash()
-  {
+  getSha256Hash() {
     return this._sha256Hash;
   },
 
   
 
 
-  getSignatureInfo()
-  {
+  getSignatureInfo() {
     return this._signatureInfo;
   },
 
   
 
 
-  getRedirects()
-  {
+  getRedirects() {
     return this._redirects;
   }
 };
@@ -2341,8 +2307,7 @@ this.DownloadCopySaver.fromSerializable = function(aSerializable) {
 
 
 
-this.DownloadLegacySaver = function()
-{
+this.DownloadLegacySaver = function() {
   this.deferExecuted = Promise.defer();
   this.deferCanceled = Promise.defer();
 }
@@ -2405,8 +2370,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-  onProgressBytes: function DLS_onProgressBytes(aCurrentBytes, aTotalBytes)
-  {
+  onProgressBytes: function DLS_onProgressBytes(aCurrentBytes, aTotalBytes) {
     this.progressWasNotified = true;
 
     
@@ -2440,8 +2404,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-  onTransferStarted(aRequest, aAlreadyAddedToHistory)
-  {
+  onTransferStarted(aRequest, aAlreadyAddedToHistory) {
     
     if (this.download.tryToKeepPartialData &&
         aRequest instanceof Ci.nsIResumableChannel) {
@@ -2474,8 +2437,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-  onTransferFinished: function DLS_onTransferFinished(aRequest, aStatus)
-  {
+  onTransferFinished: function DLS_onTransferFinished(aRequest, aStatus) {
     
     this.request = aRequest;
 
@@ -2513,8 +2475,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  execute: function DLS_execute(aSetProgressBytesFn, aSetPropertiesFn)
-  {
+  execute: function DLS_execute(aSetProgressBytesFn, aSetPropertiesFn) {
     
     
     if (this.firstExecutionFinished) {
@@ -2611,8 +2572,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  cancel: function DLS_cancel()
-  {
+  cancel: function DLS_cancel() {
     
     if (this.copySaver) {
       return this.copySaver.cancel.apply(this.copySaver, arguments);
@@ -2629,8 +2589,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  removePartialData()
-  {
+  removePartialData() {
     
     
     
@@ -2640,8 +2599,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  toSerializable()
-  {
+  toSerializable() {
     
     
     
@@ -2652,8 +2610,7 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  getSha256Hash()
-  {
+  getSha256Hash() {
     if (this.copySaver) {
       return this.copySaver.getSha256Hash();
     }
@@ -2663,16 +2620,14 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  setSha256Hash(hash)
-  {
+  setSha256Hash(hash) {
     this._sha256Hash = hash;
   },
 
   
 
 
-  getSignatureInfo()
-  {
+  getSignatureInfo() {
     if (this.copySaver) {
       return this.copySaver.getSignatureInfo();
     }
@@ -2682,16 +2637,14 @@ this.DownloadLegacySaver.prototype = {
   
 
 
-  setSignatureInfo(signatureInfo)
-  {
+  setSignatureInfo(signatureInfo) {
     this._signatureInfo = signatureInfo;
   },
 
   
 
 
-  getRedirects()
-  {
+  getRedirects() {
     if (this.copySaver) {
       return this.copySaver.getRedirects();
     }
@@ -2702,8 +2655,7 @@ this.DownloadLegacySaver.prototype = {
 
 
 
-  setRedirects(redirects)
-  {
+  setRedirects(redirects) {
     this._redirects = redirects;
   },
 };
@@ -2746,8 +2698,7 @@ this.DownloadPDFSaver.prototype = {
   
 
 
-  execute(aSetProgressBytesFn, aSetPropertiesFn)
-  {
+  execute(aSetProgressBytesFn, aSetPropertiesFn) {
     return Task.spawn(function* task_DCS_execute() {
       if (!this.download.source.windowRef) {
         throw new DownloadError({
@@ -2834,8 +2785,7 @@ this.DownloadPDFSaver.prototype = {
   
 
 
-  cancel: function DCS_cancel()
-  {
+  cancel: function DCS_cancel() {
     if (this._webBrowserPrint) {
       this._webBrowserPrint.cancel();
       this._webBrowserPrint = null;
@@ -2845,8 +2795,7 @@ this.DownloadPDFSaver.prototype = {
   
 
 
-  toSerializable()
-  {
+  toSerializable() {
     if (this.download.succeeded) {
       return DownloadCopySaver.prototype.toSerializable.call(this);
     }

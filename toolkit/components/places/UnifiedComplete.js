@@ -574,8 +574,7 @@ function getUnfilteredSearchTokens(searchString) {
 
 
 
-function stripPrefix(spec)
-{
+function stripPrefix(spec) {
   ["http://", "https://", "ftp://"].some(scheme => {
     
     if (spec.startsWith(scheme) && spec[scheme.length] != " ") {
@@ -1708,8 +1707,7 @@ Search.prototype = {
         
         
         match.style = this.hasBehavior("bookmark") ? "bookmark-tag" : "tag";
-      }
-      else if (bookmarked) {
+      } else if (bookmarked) {
         match.style = "bookmark";
       }
     }
@@ -2000,8 +1998,10 @@ UnifiedComplete.prototype = {
         yield SwitchToTabStorage.initDatabase(conn);
 
         return conn;
-      }.bind(this)).then(null, ex => { dump("Couldn't get database handle: " + ex + "\n");
-                                       Cu.reportError(ex); });
+      }.bind(this)).then(null, ex => {
+ dump("Couldn't get database handle: " + ex + "\n");
+                                       Cu.reportError(ex);
+});
     }
     return this._promiseDatabase;
   },

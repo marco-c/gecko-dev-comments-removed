@@ -7,8 +7,7 @@
 
 
 
-function test_table_creation()
-{
+function test_table_creation() {
   var msc = getOpenedUnsharedDatabase();
 
   msc.executeSimpleSQL(
@@ -17,8 +16,7 @@ function test_table_creation()
   do_check_true(msc.tableExists("recipe"));
 }
 
-function test_insertion()
-{
+function test_insertion() {
   var msc = getOpenedUnsharedDatabase();
 
   msc.executeSimpleSQL("INSERT INTO recipe (name, ingredients) VALUES " +
@@ -39,8 +37,7 @@ function test_insertion()
   stmt.finalize();
 }
 
-function test_selection()
-{
+function test_selection() {
   var msc = getOpenedUnsharedDatabase();
 
   var stmt = msc.createStatement(
@@ -64,8 +61,7 @@ function test_selection()
 
 var tests = [test_table_creation, test_insertion, test_selection];
 
-function run_test()
-{
+function run_test() {
   
   
   
@@ -75,12 +71,11 @@ function run_test()
     for (var i = 0; i < tests.length; i++) {
       tests[i]();
     }
-  }
-  
-  
-  
-  
-  finally {
+  } finally {
+    
+    
+    
+    
     cleanup();
   }
 }

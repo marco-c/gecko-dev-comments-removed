@@ -6,8 +6,7 @@
 
 
 
-function setup()
-{
+function setup() {
   getOpenedDatabase().createTable("test", "id INTEGER PRIMARY KEY, val NONE," +
                                           "alt_val NONE");
 }
@@ -32,8 +31,7 @@ function setup()
 
 
 
-function checkVal(aActualVal, aReturnedVal)
-{
+function checkVal(aActualVal, aReturnedVal) {
   if (aActualVal instanceof Date) aActualVal = aActualVal.valueOf() * 1000.0;
   do_check_eq(aActualVal, aReturnedVal);
 }
@@ -41,8 +39,7 @@ function checkVal(aActualVal, aReturnedVal)
 
 
 
-function clearTable()
-{
+function clearTable() {
   var stmt = createStatement("DELETE FROM test");
   stmt.execute();
   stmt.finalize();
@@ -56,8 +53,7 @@ function clearTable()
 
 
 
-function ensureNumRows(aNumRows)
-{
+function ensureNumRows(aNumRows) {
   var stmt = createStatement("SELECT COUNT(*) AS number FROM test");
   do_check_true(stmt.step());
   do_check_eq(aNumRows, stmt.row.number);
@@ -73,8 +69,7 @@ function ensureNumRows(aNumRows)
 
 
 
-function insertAndCheckSingleParam(aVal)
-{
+function insertAndCheckSingleParam(aVal) {
   clearTable();
 
   var stmt = createStatement("INSERT INTO test (val) VALUES (:val)");
@@ -100,8 +95,7 @@ function insertAndCheckSingleParam(aVal)
 
 
 
-function insertAndCheckMultipleParams(aVal)
-{
+function insertAndCheckMultipleParams(aVal) {
   clearTable();
 
   var stmt = createStatement("INSERT INTO test (val, alt_val) " +
@@ -127,8 +121,7 @@ function insertAndCheckMultipleParams(aVal)
 
 
 
-function printValDesc(aVal)
-{
+function printValDesc(aVal) {
   try {
     var toSource = aVal.toSource();
   } catch (ex) {
@@ -138,8 +131,7 @@ function printValDesc(aVal)
         (toSource ? " toSource=" + toSource : ""));
 }
 
-function run_test()
-{
+function run_test() {
   setup();
 
   
@@ -154,8 +146,7 @@ function run_test()
     new Date(), 
   ];
 
-  vals.forEach(function(val)
-  {
+  vals.forEach(function(val) {
     printValDesc(val);
     print("Single parameter");
     insertAndCheckSingleParam(val);

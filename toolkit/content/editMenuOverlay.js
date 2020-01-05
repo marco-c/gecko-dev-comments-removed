@@ -5,8 +5,7 @@
 
 
 
-function goUpdateGlobalEditMenuItems()
-{
+function goUpdateGlobalEditMenuItems() {
   
   
   
@@ -26,14 +25,12 @@ function goUpdateGlobalEditMenuItems()
 }
 
 
-function goUpdateUndoEditMenuItems()
-{
+function goUpdateUndoEditMenuItems() {
   goUpdateCommand("cmd_undo");
   goUpdateCommand("cmd_redo");
 }
 
 
-function goUpdatePasteMenuItems()
-{
+function goUpdatePasteMenuItems() {
   goUpdateCommand("cmd_paste");
 }

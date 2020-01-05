@@ -55,8 +55,7 @@ function strToURI(link, base) {
     gIoService = Cc[IO_CONTRACTID].getService(Ci.nsIIOService);
   try {
     return gIoService.newURI(link, null, base);
-  }
-  catch (e) {
+  } catch (e) {
     return null;
   }
 }
@@ -78,8 +77,7 @@ function isIID(a, iid) {
   try {
     a.QueryInterface(iid);
     rv = true;
-  }
-  catch (e) {
+  } catch (e) {
   }
   return rv;
 }
@@ -146,8 +144,7 @@ function bagHasKey(bag, key) {
   try {
     bag.getProperty(key);
     return true;
-  }
-  catch (e) {
+  } catch (e) {
     return false;
   }
 }
@@ -156,8 +153,7 @@ function makePropGetter(key) {
   return function FeedPropGetter(bag) {
     try {
       return bag.getProperty(key);
-    }
-    catch (e) {
+    } catch (e) {
     }
     return null;
   }
@@ -358,8 +354,7 @@ Feed.prototype = {
     try {
       var base = baseSpec ? strToURI(baseSpec, this.baseURI) : this.baseURI;
       uri = strToURI(linkSpec, base);
-    }
-    catch (e) {
+    } catch (e) {
       LOG(e);
     }
 
@@ -715,8 +710,7 @@ function fieldsToObj(container, fields) {
       field = isArray(props) ? props[0] : props;
       try {
         prop = container.fields.getProperty(field);
-      }
-      catch (e) {
+      } catch (e) {
       }
       if (prop) {
         prop = isArray(props) ? props[1](prop) : prop;
@@ -790,17 +784,14 @@ function rssAuthor(s, author) {
     if (emailCheck.test(match1)) {
       author.email = match1;
       author.name = match2;
-    }
-    else if (emailCheck.test(match2)) {
+    } else if (emailCheck.test(match2)) {
       author.email = match2;
       author.name = match1;
-    }
-    else {
+    } else {
       
       author.name = match1 + " (" + match2 + ")";
     }
-  }
-  else {
+  } else {
     author.name = chars;
     if (chars.indexOf('@'))
       author.email = chars;
@@ -1170,7 +1161,7 @@ function FeedProcessor() {
                                      null, true),
       "atom:generator": new ElementInfo("generator", Cc[GENERATOR_CONTRACTID],
                                         atomGenerator, false),
-      "atom:contributor": new ElementInfo("contributors",  Cc[PERSON_CONTRACTID],
+      "atom:contributor": new ElementInfo("contributors", Cc[PERSON_CONTRACTID],
                                           null, true),
       "atom:link": new ElementInfo("links", null, null, true),
       "atom:logo": new ElementInfo("atom:logo", null, atomLogo, false),
@@ -1247,16 +1238,14 @@ FeedProcessor.prototype = {
       
       if (this._result.doc)
         this._result.doc.normalize();
-    }
-    catch (e) {
+    } catch (e) {
       LOG("FIXME: " + e);
     }
 
     try {
       if (this.listener != null)
         this.listener.handleResult(this._result);
-    }
-    finally {
+    } finally {
       this._result = null;
     }
   },
@@ -1294,8 +1283,7 @@ FeedProcessor.prototype = {
   onStopRequest: function FP_onStopRequest(request, context, statusCode) {
     try {
       this._reader.onStopRequest(request, context, statusCode);
-    }
-    finally {
+    } finally {
       this._reader = null;
     }
   },
@@ -1412,8 +1400,7 @@ FeedProcessor.prototype = {
     
     if (this._trans[this._state] && this._trans[this._state][key]) {
       elementInfo = this._trans[this._state][key];
-    }
-    else {
+    } else {
       
       this._extensionHandler = new ExtensionHandler(this);
       this._reader.contentHandler = this._extensionHandler;
@@ -1427,8 +1414,7 @@ FeedProcessor.prototype = {
     if (elementInfo.isWrapper) {
       this._state = "IN_" + elementInfo.fieldName.toUpperCase();
       this._stack.push([this._feed, this._state]);
-    }
-    else if (elementInfo.feedVersion) {
+    } else if (elementInfo.feedVersion) {
       this._state = "IN_" + elementInfo.fieldName.toUpperCase();
 
       
@@ -1440,8 +1426,7 @@ FeedProcessor.prototype = {
       this._docVerified(elementInfo.feedVersion);
       this._stack.push([this._feed, this._state]);
       this._mapAttributes(this._feed, attributes);
-    }
-    else {
+    } else {
       this._state = this._processComplexElement(elementInfo, attributes);
     }
   },
@@ -1504,13 +1489,11 @@ FeedProcessor.prototype = {
       obj = elementInfo.containerClass.createInstance(Ci.nsIFeedEntry);
       obj.baseURI = this._xmlBaseStack[this._xmlBaseStack.length - 1];
       this._mapAttributes(obj.fields, attributes);
-    }
-    else if (elementInfo.containerClass) {
+    } else if (elementInfo.containerClass) {
       obj = elementInfo.containerClass.createInstance(Ci.nsIFeedElementBase);
       obj.baseURI = this._xmlBaseStack[this._xmlBaseStack.length - 1];
       obj.attributes = attributes; 
-    }
-    else {
+    } else {
       obj = Cc[BAG_CONTRACTID].createInstance(Ci.nsIWritablePropertyBag2);
       this._mapAttributes(obj, attributes);
     }
@@ -1527,8 +1510,7 @@ FeedProcessor.prototype = {
     var prop;
     try {
       prop = container.getProperty(elementInfo.fieldName);
-    }
-    catch (e) {
+    } catch (e) {
     }
 
     if (elementInfo.isArray) {
@@ -1550,8 +1532,7 @@ FeedProcessor.prototype = {
       if (isIFeedContainer(obj))
         newProp = obj.fields;
 
-    }
-    else {
+    } else {
       
       if (!prop) {
         container.setPropertyAsInterface(elementInfo.fieldName, obj);
@@ -1687,8 +1668,7 @@ FeedProcessor.prototype = {
             }
             el[propName] = propValue;
           }
-        }
-        catch (e) {
+        } catch (e) {
           
         }
         
@@ -1713,15 +1693,12 @@ FeedProcessor.prototype = {
       var typeAttribute = attributes.getValueFromName("", "type");
       if (this._result.version == "atom" && typeAttribute != null) {
         type = typeAttribute;
-      }
-      else if (this._result.version == "atom03" && typeAttribute != null) {
+      } else if (this._result.version == "atom03" && typeAttribute != null) {
         if (typeAttribute.toLowerCase().indexOf("xhtml") >= 0) {
           type = "xhtml";
-        }
-        else if (typeAttribute.toLowerCase().indexOf("html") >= 0) {
+        } else if (typeAttribute.toLowerCase().indexOf("html") >= 0) {
           type = "html";
-        }
-        else if (typeAttribute.toLowerCase().indexOf("text") >= 0) {
+        } else if (typeAttribute.toLowerCase().indexOf("text") >= 0) {
           type = "text";
         }
       }
@@ -1734,8 +1711,7 @@ FeedProcessor.prototype = {
       newProp.type = type;
       newProp.base = this._xmlBaseStack[this._xmlBaseStack.length - 1];
       container.setPropertyAsInterface(propName, newProp);
-    }
-    else {
+    } else {
       container.setPropertyAsAString(propName, chars);
     }
   },

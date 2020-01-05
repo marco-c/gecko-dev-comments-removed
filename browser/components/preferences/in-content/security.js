@@ -13,10 +13,8 @@ var gSecurityPane = {
   
 
 
-  init()
-  {
-    function setEventListener(aId, aEventType, aCallback)
-    {
+  init() {
+    function setEventListener(aId, aEventType, aCallback) {
       document.getElementById(aId)
               .addEventListener(aEventType, aCallback.bind(gSecurityPane));
     }
@@ -52,8 +50,7 @@ var gSecurityPane = {
 
 
 
-  readWarnAddonInstall()
-  {
+  readWarnAddonInstall() {
     var warn = document.getElementById("xpinstall.whitelist.required");
     var exceptions = document.getElementById("addonExceptions");
 
@@ -66,8 +63,7 @@ var gSecurityPane = {
   
 
 
-  showAddonExceptions()
-  {
+  showAddonExceptions() {
     var bundlePrefs = document.getElementById("bundlePreferences");
 
     var params = this._addonParams;
@@ -106,8 +102,7 @@ var gSecurityPane = {
 
 
 
-  readSavePasswords()
-  {
+  readSavePasswords() {
     var pref = document.getElementById("signon.rememberSignons");
     var excepts = document.getElementById("passwordExceptions");
 
@@ -125,8 +120,7 @@ var gSecurityPane = {
 
 
 
-  showPasswordExceptions()
-  {
+  showPasswordExceptions() {
     var bundlePrefs = document.getElementById("bundlePreferences");
     var params = {
       blockVisible: true,
@@ -149,8 +143,7 @@ var gSecurityPane = {
 
 
 
-  _initMasterPasswordUI()
-  {
+  _initMasterPasswordUI() {
     var noMP = !LoginHelper.isMasterPasswordSet();
 
     var button = document.getElementById("changeMasterPassword");
@@ -238,8 +231,7 @@ var gSecurityPane = {
 
 
 
-  updateMasterPasswordButton()
-  {
+  updateMasterPasswordButton() {
     var checkbox = document.getElementById("useMasterPassword");
     var button = document.getElementById("changeMasterPassword");
     button.disabled = !checkbox.checked;
@@ -262,8 +254,7 @@ var gSecurityPane = {
 
 
 
-  _removeMasterPassword()
-  {
+  _removeMasterPassword() {
     var secmodDB = Cc["@mozilla.org/security/pkcs11moduledb;1"].
                    getService(Ci.nsIPKCS11ModuleDB);
     if (secmodDB.isFIPSEnabled) {
@@ -274,8 +265,7 @@ var gSecurityPane = {
                           bundle.getString("pw_change_failed_title"),
                           bundle.getString("pw_change2empty_in_fips_mode"));
       this._initMasterPasswordUI();
-    }
-    else {
+    } else {
       gSubDialog.open("chrome://mozapps/content/preferences/removemp.xul",
                       null, null, this._initMasterPasswordUI.bind(this));
     }
@@ -284,8 +274,7 @@ var gSecurityPane = {
   
 
 
-  changeMasterPassword()
-  {
+  changeMasterPassword() {
     gSubDialog.open("chrome://mozapps/content/preferences/changemp.xul",
                     "resizable=no", null, this._initMasterPasswordUI.bind(this));
   },
@@ -294,8 +283,7 @@ var gSecurityPane = {
 
 
 
-  showPasswords()
-  {
+  showPasswords() {
     gSubDialog.open("chrome://passwordmgr/content/passwordManager.xul");
   }
 

@@ -89,8 +89,7 @@ function LinksStorage() {
         throw new Error("Unsupported newTab storage version");
       }
       
-    }
-    else {
+    } else {
       
       
       
@@ -1193,8 +1192,7 @@ var Links = {
         existingLink.title = aLink.title;
         updatePages = true;
       }
-    }
-    else if (this._sortProperties.every(prop => prop in aLink)) {
+    } else if (this._sortProperties.every(prop => prop in aLink)) {
       
       
       if (sortedLinks.length && sortedLinks.length == aProvider.maxNumLinks) {

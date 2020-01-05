@@ -55,8 +55,7 @@ var gFileCounter = Math.floor(Math.random() * 1000000);
 
 
 
-function getTempFile(aLeafName)
-{
+function getTempFile(aLeafName) {
   
   let [base, ext] = DownloadPaths.splitBaseNameAndExtension(aLeafName);
   let leafName = base + "-" + gFileCounter + ext;

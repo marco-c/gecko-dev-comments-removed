@@ -12,8 +12,7 @@ const Cr = Components.results;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 
-function RemoteController(browser)
-{
+function RemoteController(browser) {
   this._browser = browser;
 
   

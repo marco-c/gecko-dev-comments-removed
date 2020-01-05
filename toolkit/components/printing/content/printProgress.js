@@ -18,8 +18,7 @@ var docURL   = "";
 var progressParams = null;
 var switchUI = true;
 
-function ellipseString(aStr, doFront)
-{
+function ellipseString(aStr, doFront) {
   if (aStr.length > 3 && (aStr.substr(0, 3) == "..." || aStr.substr(aStr.length - 4, 3) == "...")) {
     return aStr;
   }
@@ -38,17 +37,14 @@ function ellipseString(aStr, doFront)
 
 
 var progressListener = {
-    onStateChange(aWebProgress, aRequest, aStateFlags, aStatus)
-    {
-      if (aStateFlags & Components.interfaces.nsIWebProgressListener.STATE_START)
-      {
+    onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
+      if (aStateFlags & Components.interfaces.nsIWebProgressListener.STATE_START) {
         
         
         dialog.progress.setAttribute( "mode", "undetermined" );
       }
 
-      if (aStateFlags & Components.interfaces.nsIWebProgressListener.STATE_STOP)
-      {
+      if (aStateFlags & Components.interfaces.nsIWebProgressListener.STATE_STOP) {
         
         
         var msg = getString( "printComplete" );
@@ -84,10 +80,8 @@ var progressListener = {
       }
     },
 
-    onProgressChange(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress)
-    {
-      if (switchUI)
-      {
+    onProgressChange(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
+      if (switchUI) {
         dialog.tempLabel.setAttribute("hidden", "true");
         dialog.progress.setAttribute("hidden", "false");
 
@@ -98,8 +92,7 @@ var progressListener = {
         switchUI = false;
       }
 
-      if (progressParams)
-      {
+      if (progressParams) {
         var docTitleStr = ellipseString(progressParams.docTitle, false);
         if (docTitleStr != docTitle) {
           docTitle = docTitleStr;
@@ -116,8 +109,7 @@ var progressListener = {
 
       
       var percent;
-      if ( aMaxTotalProgress > 0 )
-      {
+      if ( aMaxTotalProgress > 0 ) {
         percent = Math.round( (aCurTotalProgress * 100) / aMaxTotalProgress );
         if ( percent > 100 )
           percent = 100;
@@ -131,9 +123,7 @@ var progressListener = {
         var percentPrint = getString( "progressText" );
         percentPrint = replaceInsert( percentPrint, 1, percent );
         dialog.progressText.setAttribute("value", percentPrint);
-      }
-      else
-      {
+      } else {
         
         dialog.progress.setAttribute( "mode", "undetermined" );
         
@@ -141,24 +131,20 @@ var progressListener = {
       }
     },
 
-	  onLocationChange(aWebProgress, aRequest, aLocation, aFlags)
-    {
+	  onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {
       
     },
 
-    onStatusChange(aWebProgress, aRequest, aStatus, aMessage)
-    {
+    onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
       if (aMessage != "")
         dialog.title.setAttribute("value", aMessage);
     },
 
-    onSecurityChange(aWebProgress, aRequest, state)
-    {
+    onSecurityChange(aWebProgress, aRequest, state) {
       
     },
 
-    QueryInterface(iid)
-    {
+    QueryInterface(iid) {
      if (iid.equals(Components.interfaces.nsIWebProgressListener) || iid.equals(Components.interfaces.nsISupportsWeakReference))
       return this;
 
@@ -189,8 +175,7 @@ function getString( stringId ) {
    return dialog.strings[stringId];
 }
 
-function loadDialog()
-{
+function loadDialog() {
 }
 
 function replaceInsert( text, index, value ) {
@@ -204,11 +189,9 @@ function onLoad() {
 
     
     printProgress = window.arguments[0];
-    if (window.arguments[1])
-    {
+    if (window.arguments[1]) {
       progressParams = window.arguments[1].QueryInterface(Components.interfaces.nsIPrintProgressParams)
-      if (progressParams)
-      {
+      if (progressParams) {
         docTitle = ellipseString(progressParams.docTitle, false);
         docURL   = ellipseString(progressParams.docURL, true);
       }
@@ -248,35 +231,26 @@ function onLoad() {
     window.setTimeout(doneIniting, 500);
 }
 
-function onUnload()
-{
-  if (printProgress)
-  {
-   try
-   {
+function onUnload() {
+  if (printProgress) {
+   try {
      printProgress.unregisterListener(progressListener);
      printProgress = null;
-   }
-
-   catch ( exception ) {}
+   } catch ( exception ) {}
   }
 }
 
 
-function onCancel()
-{
+function onCancel() {
   
-   try
-   {
+   try {
      printProgress.processCanceledByUser = true;
-   }
-   catch ( exception ) { return true; }
+   } catch ( exception ) { return true; }
 
   
   return false;
 }
 
-function doneIniting()
-{
+function doneIniting() {
   printProgress.doneIniting();
 }

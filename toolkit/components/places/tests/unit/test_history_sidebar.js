@@ -419,13 +419,11 @@ function* task_test_date_liveupdate(aResultType) {
   bs.removeItem(itemId);
 }
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }
 
-add_task(function* test_history_sidebar()
-{
+add_task(function* test_history_sidebar() {
   
   if (nowObj.getHours() == 23 && nowObj.getMinutes() >= 50) {
     return;

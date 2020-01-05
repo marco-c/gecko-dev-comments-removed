@@ -399,8 +399,7 @@ var gSyncUI = {
       try {
         let lastSync = new Date(Services.prefs.getCharPref("services.sync.lastSync"));
         tooltiptext = this.formatLastSyncDate(lastSync);
-      }
-      catch (e) {
+      } catch (e) {
         
         
         

@@ -113,8 +113,7 @@ this.__defineGetter__("gBG", function() {
                     getService(Ci.nsIObserver);
 });
 
-function test()
-{
+function test() {
   waitForExplicitFinish();
 
   
@@ -175,8 +174,7 @@ var gWindowCatcher = {
   }
 };
 
-function finish_test()
-{
+function finish_test() {
   
   
   if (gOriginalMStone) {
@@ -200,8 +198,7 @@ function finish_test()
 }
 
 
-function testDefaultArgs()
-{
+function testDefaultArgs() {
   
   
   
@@ -300,8 +297,7 @@ const BG_NOTIFY_TESTS = [
 
 
 
-function testShowNotification()
-{
+function testShowNotification() {
   let notifyBox = document.getElementById("high-priority-global-notificationbox");
 
   
@@ -382,8 +378,7 @@ function testShowNotification()
 }
 
 
-function testNotificationURL()
-{
+function testNotificationURL() {
   ok(true, "Test testNotificationURL: clicking the notification button " +
            "opened the url specified by the update");
   let href = gBrowser.currentURI.spec;
@@ -396,15 +391,13 @@ function testNotificationURL()
 }
 
 
-function reloadUpdateManagerData()
-{
+function reloadUpdateManagerData() {
   Cc["@mozilla.org/updates/update-manager;1"].getService(Ci.nsIUpdateManager).
   QueryInterface(Ci.nsIObserver).observe(null, "um-reload-update-data", "");
 }
 
 
-function writeUpdatesToXMLFile(aText)
-{
+function writeUpdatesToXMLFile(aText) {
   const PERMS_FILE = 0o644;
 
   const MODE_WRONLY   = 0x02;

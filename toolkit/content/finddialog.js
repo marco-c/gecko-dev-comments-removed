@@ -11,8 +11,7 @@ var dialog;
 var gFindInst;   
 var gFindInstData; 
 
-function initDialogObject()
-{
+function initDialogObject() {
   
   dialog = {};
   dialog.findKey         = document.getElementById("dialog.findKey");
@@ -26,15 +25,13 @@ function initDialogObject()
 
   
   var windowElement = document.getElementById("findDialog");
-  if (!windowElement.hasAttribute("screenX") || !windowElement.hasAttribute("screenY"))
-  {
+  if (!windowElement.hasAttribute("screenX") || !windowElement.hasAttribute("screenY")) {
     sizeToContent();
     moveToAlertPosition();
   }
 }
 
-function fillDialog()
-{
+function fillDialog() {
   
   var findService = Components.classes["@mozilla.org/find/find_service;1"]
                               .getService(Components.interfaces.nsIFindService);
@@ -51,8 +48,7 @@ function fillDialog()
     dialog.rg.selectedItem = dialog.down;
 }
 
-function saveFindData()
-{
+function saveFindData() {
   
   var findService = Components.classes["@mozilla.org/find/find_service;1"]
                          .getService(Components.interfaces.nsIFindService);
@@ -64,8 +60,7 @@ function saveFindData()
   findService.findBackwards = dialog.up.selected;
 }
 
-function onLoad()
-{
+function onLoad() {
   initDialogObject();
 
   
@@ -87,13 +82,11 @@ function onLoad()
   dialog.findKey.focus();
 }
 
-function onUnload()
-{
+function onUnload() {
   window.opener.findDialog = 0;
 }
 
-function onAccept()
-{
+function onAccept() {
   if (gFindInstData && gFindInst != gFindInstData.webBrowserFind) {
     gFindInstData.init();
     gFindInst = gFindInstData.webBrowserFind;
@@ -112,8 +105,7 @@ function onAccept()
   
   var result = gFindInst.findNext();
 
-  if (!result)
-  {
+  if (!result) {
     if (!dialog.bundle)
       dialog.bundle = document.getElementById("findBundle");
     Services.prompt.alert(window, dialog.bundle.getString("notFoundTitle"),
@@ -124,13 +116,11 @@ function onAccept()
   return false;
 }
 
-function doEnabling()
-{
+function doEnabling() {
   dialog.find.disabled = !dialog.findKey.value;
 }
 
-function updateFormHistory()
-{
+function updateFormHistory() {
   if (window.opener.PrivateBrowsingUtils &&
       window.opener.PrivateBrowsingUtils.isWindowPrivate(window.opener) ||
       !dialog.findKey.value)

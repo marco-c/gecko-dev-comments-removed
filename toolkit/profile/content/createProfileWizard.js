@@ -21,8 +21,7 @@ var gProfileRoot;
 var gProfileDisplay;
 
 
-function initWizard()
-{
+function initWizard() {
   try {
     gProfileService = C[ToolkitProfileService].getService(I.nsIToolkitProfileService);
     gProfileManagerBundle = document.getElementById("bundle_profileManager");
@@ -33,16 +32,14 @@ function initWizard()
     
     gProfileDisplay = document.getElementById("profileDisplay").firstChild;
     setDisplayToDefaultFolder();
-  }
-  catch (e) {
+  } catch (e) {
     window.close();
     throw (e);
   }
 }
 
 
-function initSecondWizardPage()
-{
+function initSecondWizardPage() {
   var profileName = document.getElementById("profileName");
   profileName.select();
   profileName.focus();
@@ -62,27 +59,23 @@ for (var i = 0; i < 8; ++i) {
 }
 
 
-function saltName(aName)
-{
+function saltName(aName) {
   return kSaltString + "." + aName;
 }
 
-function setDisplayToDefaultFolder()
-{
+function setDisplayToDefaultFolder() {
   var defaultProfileDir = gDefaultProfileParent.clone();
   defaultProfileDir.append(saltName(document.getElementById("profileName").value));
   gProfileRoot = defaultProfileDir;
   document.getElementById("useDefault").disabled = true;
 }
 
-function updateProfileDisplay()
-{
+function updateProfileDisplay() {
   gProfileDisplay.data = gProfileRoot.path;
 }
 
 
-function chooseProfileFolder()
-{
+function chooseProfileFolder() {
   var newProfileRoot;
 
   var dirChooser = C["@mozilla.org/filepicker;1"].createInstance(I.nsIFilePicker);
@@ -106,8 +99,7 @@ function chooseProfileFolder()
 }
 
 
-function checkCurrentInput(currentInput)
-{
+function checkCurrentInput(currentInput) {
   var finishButton = document.documentElement.getButton("finish");
   var finishText = document.getElementById("finishText");
   var canAdvance;
@@ -118,13 +110,11 @@ function checkCurrentInput(currentInput)
     finishText.className = "";
     if (AppConstants.platform == "macosx") {
       finishText.firstChild.data = gProfileManagerBundle.getString("profileFinishTextMac");
-    }
-    else {
+    } else {
       finishText.firstChild.data = gProfileManagerBundle.getString("profileFinishText");
     }
     canAdvance = true;
-  }
-  else {
+  } else {
     finishText.className = "error";
     finishText.firstChild.data = errorMessage;
     canAdvance = false;
@@ -138,8 +128,7 @@ function checkCurrentInput(currentInput)
   return canAdvance;
 }
 
-function updateProfileName(aNewName)
-{
+function updateProfileName(aNewName) {
   if (checkCurrentInput(aNewName)) {
     gProfileRoot.leafName = saltName(aNewName);
     updateProfileDisplay();
@@ -148,8 +137,7 @@ function updateProfileName(aNewName)
 
 
 
-function checkProfileName(profileNameToCheck)
-{
+function checkProfileName(profileNameToCheck) {
   
   if (!/\S/.test(profileNameToCheck))
     return gProfileManagerBundle.getString("profileNameEmpty");
@@ -166,8 +154,7 @@ function checkProfileName(profileNameToCheck)
   return "";
 }
 
-function profileExists(aName)
-{
+function profileExists(aName) {
   var profiles = gProfileService.profiles;
   while (profiles.hasMoreElements()) {
     var profile = profiles.getNext().QueryInterface(I.nsIToolkitProfile);
@@ -179,21 +166,18 @@ function profileExists(aName)
 }
 
 
-function enableNextButton()
-{
+function enableNextButton() {
   document.documentElement.canAdvance = true;
 }
 
-function onFinish()
-{
+function onFinish() {
   var profileName = document.getElementById("profileName").value;
   var profile;
 
   
   try {
     profile = gProfileService.createProfile(gProfileRoot, profileName);
-  }
-  catch (e) {
+  } catch (e) {
     var profileCreationFailed =
       gProfileManagerBundle.getString("profileCreationFailed");
     var profileCreationFailedTitle =
@@ -211,8 +195,7 @@ function onFinish()
   if (window.opener) {
     
     window.opener.CreateProfile(profile);
-  }
-  else {
+  } else {
     
     var profileLock = profile.lock(null);
 

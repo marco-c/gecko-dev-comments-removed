@@ -339,8 +339,7 @@ IE7FormPasswords.prototype = {
   },
 };
 
-function IEProfileMigrator()
-{
+function IEProfileMigrator() {
   this.wrappedJSObject = this; 
 }
 

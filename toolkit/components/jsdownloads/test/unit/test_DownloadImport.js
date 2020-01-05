@@ -533,8 +533,7 @@ add_task(function* prepareDownloadsToImport() {
 
 
 
-add_task(function* prepareNonImportableDownloads()
-{
+add_task(function* prepareNonImportableDownloads() {
   gDownloadsRowNonImportable = [
     
     {
@@ -657,8 +656,7 @@ add_task(function* prepareNonImportableDownloads()
 
 
 
-add_task(function* test_downloadImport()
-{
+add_task(function* test_downloadImport() {
   let connection = null;
   let downloadsSqlite = getTempFile("downloads.sqlite").path;
 

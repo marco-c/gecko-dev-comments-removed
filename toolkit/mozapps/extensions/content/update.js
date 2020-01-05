@@ -53,8 +53,7 @@ var gUpdateWizard = {
   upgradeFailed: 0,
   upgradeDeclined: 0,
 
-  init()
-  {
+  init() {
     logger = Log.repository.getLogger("addons.update-dialog");
     
     this.affectedAddonIDs = new Set(window.arguments[0]);
@@ -62,15 +61,13 @@ var gUpdateWizard = {
     try {
       this.shouldSuggestAutoChecking =
         !Services.prefs.getBoolPref(PREF_UPDATE_EXTENSIONS_ENABLED);
-    }
-    catch (e) {
+    } catch (e) {
     }
 
     try {
       this.xpinstallEnabled = Services.prefs.getBoolPref(PREF_XPINSTALL_ENABLED);
       this.xpinstallLocked = Services.prefs.prefIsLocked(PREF_XPINSTALL_ENABLED);
-    }
-    catch (e) {
+    } catch (e) {
     }
 
     if (Services.io.offline)
@@ -79,22 +76,19 @@ var gUpdateWizard = {
       document.documentElement.currentPage = document.getElementById("versioninfo");
   },
 
-  onWizardFinish: function gUpdateWizard_onWizardFinish()
-  {
+  onWizardFinish: function gUpdateWizard_onWizardFinish() {
     if (this.shouldSuggestAutoChecking)
       Services.prefs.setBoolPref(PREF_UPDATE_EXTENSIONS_ENABLED, this.shouldAutoCheck);
   },
 
-  _setUpButton(aButtonID, aButtonKey, aDisabled)
-  {
+  _setUpButton(aButtonID, aButtonKey, aDisabled) {
     var strings = document.getElementById("updateStrings");
     var button = document.documentElement.getButton(aButtonID);
     if (aButtonKey) {
       button.label = strings.getString(aButtonKey);
       try {
         button.setAttribute("accesskey", strings.getString(aButtonKey + "Accesskey"));
-      }
-      catch (e) {
+      } catch (e) {
       }
     }
     button.disabled = aDisabled;
@@ -102,8 +96,7 @@ var gUpdateWizard = {
 
   setButtonLabels(aBackButton, aBackButtonIsDisabled,
                              aNextButton, aNextButtonIsDisabled,
-                             aCancelButton, aCancelButtonIsDisabled)
-  {
+                             aCancelButton, aCancelButtonIsDisabled) {
     this._setUpButton("back", aBackButton, aBackButtonIsDisabled);
     this._setUpButton("next", aNextButton, aNextButtonIsDisabled);
     this._setUpButton("cancel", aCancelButton, aCancelButtonIsDisabled);
@@ -112,19 +105,16 @@ var gUpdateWizard = {
   
   errorItems: [],
 
-  checkForErrors(aElementIDToShow)
-  {
+  checkForErrors(aElementIDToShow) {
     if (this.errorItems.length > 0)
       document.getElementById(aElementIDToShow).hidden = false;
   },
 
-  onWizardClose(aEvent)
-  {
+  onWizardClose(aEvent) {
     return this.onWizardCancel();
   },
 
-  onWizardCancel()
-  {
+  onWizardCancel() {
     gUpdateWizard.shuttingDown = true;
     
     
@@ -143,8 +133,7 @@ var gUpdateWizard = {
     
     if (!gInstallingPage.installing) {
       logger.info("Dialog closed while waiting for updated compatibility information");
-    }
-    else {
+    } else {
       logger.info("Dialog closed while downloading and installing updates");
     }
     return true;
@@ -152,14 +141,12 @@ var gUpdateWizard = {
 };
 
 var gOfflinePage = {
-  onPageAdvanced()
-  {
+  onPageAdvanced() {
     Services.io.offline = false;
     return true;
   },
 
-  toggleOffline()
-  {
+  toggleOffline() {
     var nextbtn = document.documentElement.getButton("next");
     nextbtn.disabled = !nextbtn.disabled;
   }
@@ -245,8 +232,7 @@ var gVersionInfoPage = {
       if (a.appDisabled) {
         logger.debug("Continuing with add-on " + a.id);
         filteredAddons.push(a);
-      }
-      else if (gUpdateWizard.addonInstalls.has(a.id)) {
+      } else if (gUpdateWizard.addonInstalls.has(a.id)) {
         gUpdateWizard.addonInstalls.get(a.id).cancel();
         gUpdateWizard.addonInstalls.delete(a.id);
       }
@@ -268,8 +254,7 @@ var gVersionInfoPage = {
         return;
       }
       document.documentElement.currentPage = document.getElementById("mismatch");
-    }
-    else {
+    } else {
       logger.info("VersionInfo: No updates require further action");
       
       
@@ -287,8 +272,7 @@ var gVersionInfoPage = {
       logger.debug("VersionInfo update " + this._completeCount + " of " + this._totalCount +
            " failed for " + aAddon.id + ": " + status);
       gUpdateWizard.errorItems.push(aAddon);
-    }
-    else {
+    } else {
       logger.debug("VersionInfo update " + this._completeCount + " of " + this._totalCount +
            " finished for " + aAddon.id);
     }
@@ -328,8 +312,7 @@ var gVersionInfoPage = {
 var gMismatchPage = {
   waiting: false,
 
-  onPageShow()
-  {
+  onPageShow() {
     gMismatchPage.waiting = true;
     gUpdateWizard.setButtonLabels(null, true,
                                   "mismatchCheckNow", false,
@@ -348,8 +331,7 @@ var gMismatchPage = {
 var gUpdatePage = {
   _totalCount: 0,
   _completeCount: 0,
-  onPageShow()
-  {
+  onPageShow() {
     gMismatchPage.waiting = false;
     gUpdateWizard.setButtonLabels(null, true,
                                   "nextButtonText", true,
@@ -406,8 +388,7 @@ var gUpdatePage = {
 };
 
 var gFoundPage = {
-  onPageShow()
-  {
+  onPageShow() {
     gUpdateWizard.setButtonLabels(null, true,
                                   "installButtonText", false,
                                   null, false);
@@ -424,15 +405,13 @@ var gFoundPage = {
       document.getElementById("xpinstallDisabledAlert").hidden = false;
       document.getElementById("enableXPInstall").focus();
       document.documentElement.getButton("next").disabled = true;
-    }
-    else {
+    } else {
       document.documentElement.getButton("next").focus();
       document.documentElement.getButton("next").disabled = false;
     }
   },
 
-  toggleXPInstallEnable(aEvent)
-  {
+  toggleXPInstallEnable(aEvent) {
     var enabled = aEvent.target.checked;
     gUpdateWizard.xpinstallEnabled = enabled;
     var pref = Components.classes["@mozilla.org/preferences-service;1"]
@@ -441,8 +420,7 @@ var gFoundPage = {
     this.updateNextButton();
   },
 
-  updateNextButton()
-  {
+  updateNextButton() {
     if (!gUpdateWizard.xpinstallEnabled) {
       document.documentElement.getButton("next").disabled = true;
       return;
@@ -488,8 +466,7 @@ var gInstallingPage = {
     this.startNextInstall();
   },
 
-  onPageShow()
-  {
+  onPageShow() {
     gUpdateWizard.setButtonLabels(null, true,
                                   "nextButtonText", true,
                                   null, true);
@@ -608,8 +585,7 @@ var gInstallingPage = {
 };
 
 var gInstallErrorsPage = {
-  onPageShow()
-  {
+  onPageShow() {
     gUpdateWizard.setButtonLabels(null, true, null, true, null, true);
     document.documentElement.getButton("finish").focus();
   },
@@ -618,8 +594,7 @@ var gInstallErrorsPage = {
 
 
 var gAdminDisabledPage = {
-  onPageShow()
-  {
+  onPageShow() {
     gUpdateWizard.setButtonLabels(null, true, null, true,
                                   "cancelButtonText", true);
     document.documentElement.getButton("finish").focus();
@@ -629,16 +604,14 @@ var gAdminDisabledPage = {
 
 
 var gFinishedPage = {
-  onPageShow()
-  {
+  onPageShow() {
     gUpdateWizard.setButtonLabels(null, true, null, true, null, true);
     document.documentElement.getButton("finish").focus();
 
     if (gUpdateWizard.shouldSuggestAutoChecking) {
       document.getElementById("finishedCheckDisabled").hidden = false;
       gUpdateWizard.shouldAutoCheck = true;
-    }
-    else
+    } else
       document.getElementById("finishedCheckEnabled").hidden = false;
 
     document.documentElement.getButton("finish").focus();
@@ -648,14 +621,12 @@ var gFinishedPage = {
 
 
 var gNoUpdatesPage = {
-  onPageShow(aEvent)
-  {
+  onPageShow(aEvent) {
     gUpdateWizard.setButtonLabels(null, true, null, true, null, true);
     if (gUpdateWizard.shouldSuggestAutoChecking) {
       document.getElementById("noupdatesCheckDisabled").hidden = false;
       gUpdateWizard.shouldAutoCheck = true;
-    }
-    else
+    } else
       document.getElementById("noupdatesCheckEnabled").hidden = false;
 
     gUpdateWizard.checkForErrors("updateCheckErrorNotFound");

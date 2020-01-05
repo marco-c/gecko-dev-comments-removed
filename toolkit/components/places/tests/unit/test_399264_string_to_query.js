@@ -11,8 +11,7 @@
 
 
 
-function folder_id(aQuery)
-{
+function folder_id(aQuery) {
   var hs = Cc["@mozilla.org/browser/nav-history-service;1"].
            getService(Ci.nsINavHistoryService);
 
@@ -30,8 +29,7 @@ function folder_id(aQuery)
   return folderID;
 }
 
-function run_test()
-{
+function run_test() {
   var bs = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
            getService(Ci.nsINavBookmarksService);
 

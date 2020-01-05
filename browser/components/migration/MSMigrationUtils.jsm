@@ -400,8 +400,7 @@ Bookmarks.prototype = {
               folderGuid =
                 yield MigrationUtils.createImportedBookmarksFolder(this.importedAppLabel, folderGuid);
             }
-          }
-          else {
+          } else {
             
             folderGuid = (yield MigrationUtils.insertBookmarkWrapper({
               type: PlacesUtils.bookmarks.TYPE_FOLDER,
@@ -414,8 +413,7 @@ Bookmarks.prototype = {
             
             yield this._migrateFolder(entry, folderGuid);
           }
-        }
-        else {
+        } else {
           
           
           let matches = entry.leafName.match(/(.+)\.url$/i);

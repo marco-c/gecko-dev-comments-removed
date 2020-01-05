@@ -63,8 +63,7 @@ this.DownloadUIHelper = {
 
 
 
-  getPrompter(aParent)
-  {
+  getPrompter(aParent) {
     return new DownloadPrompter(aParent || null);
   },
 };
@@ -104,8 +103,7 @@ XPCOMUtils.defineLazyGetter(DownloadUIHelper, "strings", function() {
 
 
 
-this.DownloadPrompter = function(aParent)
-{
+this.DownloadPrompter = function(aParent) {
   if (AppConstants.MOZ_B2G) {
     
     this._prompter = null;
@@ -139,8 +137,7 @@ this.DownloadPrompter.prototype = {
 
 
 
-  confirmLaunchExecutable(aPath)
-  {
+  confirmLaunchExecutable(aPath) {
     const kPrefAlertOnEXEOpen = "browser.download.manager.alertOnEXEOpen";
 
     try {
@@ -190,8 +187,7 @@ this.DownloadPrompter.prototype = {
 
 
   confirmCancelDownloads: function DP_confirmCancelDownload(aDownloadsCount,
-                                                            aPromptType)
-  {
+                                                            aPromptType) {
     
     
     if (!this._prompter || aDownloadsCount <= 0) {

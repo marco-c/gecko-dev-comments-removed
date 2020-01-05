@@ -38,8 +38,7 @@ function isBlankPageURL(aURL) {
   return aURL == "about:blank" || aURL == BROWSER_NEW_TAB_URL;
 }
 
-function getBrowserURL()
-{
+function getBrowserURL() {
   return "chrome://browser/content/browser.xul";
 }
 
@@ -61,12 +60,10 @@ function openTopWin(url) {
   openUILinkIn(url, "current");
 }
 
-function getBoolPref(prefname, def)
-{
+function getBoolPref(prefname, def) {
   try {
     return Services.prefs.getBoolPref(prefname);
-  }
-  catch (er) {
+  } catch (er) {
     return def;
   }
 }
@@ -122,8 +119,7 @@ function openUILink(url, event, aIgnoreButton, aIgnoreAlt, aAllowThirdPartyFixup
 
 
 
-function whereToOpenLink( e, ignoreButton, ignoreAlt )
-{
+function whereToOpenLink(e, ignoreButton, ignoreAlt) {
   
   
   
@@ -233,8 +229,7 @@ function openLinkIn(url, where, params) {
     
     if ("isContentWindowPrivate" in params) {
       saveURL(url, null, null, true, true, aNoReferrer ? null : aReferrerURI, null, params.isContentWindowPrivate);
-    }
-    else {
+    } else {
       if (!aInitiatingDoc) {
         Components.utils.reportError("openUILink/openLinkIn was called with " +
           "where == 'save' but without initiatingDoc.  See bug 814264.");
@@ -522,8 +517,7 @@ function createUserContextMenu(event, {
 }
 
 
-function closeMenus(node)
-{
+function closeMenus(node) {
   if ("tagName" in node) {
     if (node.namespaceURI == "http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul"
     && (node.tagName == "menupopup" || node.tagName == "popup"))
@@ -543,8 +537,7 @@ function closeMenus(node)
 
 
 
-function eventMatchesKey(aEvent, aKey)
-{
+function eventMatchesKey(aEvent, aKey) {
   let keyPressed = aKey.getAttribute("key").toLowerCase();
   let keyModifiers = aKey.getAttribute("modifiers");
   let modifiers = ["Alt", "Control", "Meta", "Shift"];
@@ -563,7 +556,7 @@ function eventMatchesKey(aEvent, aKey)
     
     keyModifiers.forEach(function(modifier, index) {
       if (modifier == "accel") {
-        keyModifiers[index] = AppConstants.platform == "macosx" ?  "Meta" : "Control";
+        keyModifiers[index] = AppConstants.platform == "macosx" ? "Meta" : "Control";
       } else {
         keyModifiers[index] = modifier[0].toUpperCase() + modifier.slice(1);
       }
@@ -574,8 +567,7 @@ function eventMatchesKey(aEvent, aKey)
 }
 
 
-function gatherTextUnder( root )
-{
+function gatherTextUnder(root) {
   var text = "";
   var node = root.firstChild;
   var depth = 1;
@@ -616,8 +608,7 @@ function gatherTextUnder( root )
 }
 
 
-function getShellService()
-{
+function getShellService() {
   return ShellService;
 }
 
@@ -679,8 +670,7 @@ function openAboutDialog() {
   window.openDialog("chrome://browser/content/aboutDialog.xul", "", features);
 }
 
-function openPreferences(paneID, extraArgs)
-{
+function openPreferences(paneID, extraArgs) {
   function switchToAdvancedSubPane(doc) {
     if (extraArgs && extraArgs["advancedTab"]) {
       let advancedPaneTabs = doc.getElementById("advancedPrefs");
@@ -746,8 +736,7 @@ function openPreferences(paneID, extraArgs)
   }
 }
 
-function openAdvancedPreferences(tabID)
-{
+function openAdvancedPreferences(tabID) {
   openPreferences("paneAdvanced", { "advancedTab" : tabID });
 }
 
@@ -755,8 +744,7 @@ function openAdvancedPreferences(tabID)
 
 
 
-function openTroubleshootingPage()
-{
+function openTroubleshootingPage() {
   openUILinkIn("about:support", "tab");
 }
 
@@ -764,39 +752,34 @@ function openTroubleshootingPage()
 
 
 
-function openHealthReport()
-{
+function openHealthReport() {
   openUILinkIn("about:healthreport", "tab");
 }
 
 
 
 
-function openFeedbackPage()
-{
+function openFeedbackPage() {
   var url = Components.classes["@mozilla.org/toolkit/URLFormatterService;1"]
                       .getService(Components.interfaces.nsIURLFormatter)
                       .formatURLPref("app.feedback.baseURL");
   openUILinkIn(url, "tab");
 }
 
-function openTourPage()
-{
+function openTourPage() {
   let scope = {}
   Components.utils.import("resource:///modules/UITour.jsm", scope);
   openUILinkIn(scope.UITour.url, "tab");
 }
 
-function buildHelpMenu()
-{
+function buildHelpMenu() {
   
   if (typeof gSafeBrowsing != "undefined") {
     gSafeBrowsing.setReportPhishingMenu();
   }
 }
 
-function isElementVisible(aElement)
-{
+function isElementVisible(aElement) {
   if (!aElement)
     return false;
 
@@ -806,8 +789,7 @@ function isElementVisible(aElement)
   return (bo.height > 0 && bo.width > 0);
 }
 
-function makeURLAbsolute(aBase, aUrl)
-{
+function makeURLAbsolute(aBase, aUrl) {
   
   return makeURI(aUrl, null, makeURI(aBase)).spec;
 }

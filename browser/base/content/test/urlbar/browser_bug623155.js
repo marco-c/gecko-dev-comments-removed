@@ -91,8 +91,7 @@ var gWebProgressListener = {
     } else if (aLocation.ref == "FG") {
       
       is(gNewTab, gBrowser.selectedTab, "This is a foreground tab.");
-    }
-    else {
+    } else {
       
       ok(false, "This URI hash is not expected:" + aLocation.ref);
     }
@@ -117,8 +116,7 @@ function delayed(aIsSelectedTab) {
   if (!aIsSelectedTab) {
     
     gBrowser.selectedBrowser.loadURI(REDIRECT_FROM + "#FG");
-  }
-  else {
+  } else {
     
     finish();
   }

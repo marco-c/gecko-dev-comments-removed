@@ -120,8 +120,7 @@ this.DownloadUtils = {
 
 
   getDownloadStatus: function DU_getDownloadStatus(aCurrBytes, aMaxBytes,
-                                                   aSpeed, aLastSec)
-  {
+                                                   aSpeed, aLastSec) {
     let [transfer, timeLeft, newLast, normalizedSpeed]
       = this._deriveTransferRate(aCurrBytes, aMaxBytes, aSpeed, aLastSec);
 
@@ -133,8 +132,7 @@ this.DownloadUtils = {
       let params = [transfer, gBundle.GetStringFromName(gStr.infiniteRate), timeLeft];
       status = gBundle.formatStringFromName(gStr.statusFormatInfiniteRate, params,
                                             params.length);
-    }
-    else {
+    } else {
       let params = [transfer, rate, unit, timeLeft];
       status = gBundle.formatStringFromName(gStr.statusFormat, params,
                                             params.length);
@@ -160,8 +158,7 @@ this.DownloadUtils = {
 
   getDownloadStatusNoRate:
   function DU_getDownloadStatusNoRate(aCurrBytes, aMaxBytes, aSpeed,
-                                      aLastSec)
-  {
+                                      aLastSec) {
     let [transfer, timeLeft, newLast]
       = this._deriveTransferRate(aCurrBytes, aMaxBytes, aSpeed, aLastSec);
 
@@ -187,8 +184,7 @@ this.DownloadUtils = {
 
   _deriveTransferRate: function DU__deriveTransferRate(aCurrBytes,
                                                        aMaxBytes, aSpeed,
-                                                       aLastSec)
-  {
+                                                       aLastSec) {
     if (aMaxBytes == null)
       aMaxBytes = -1;
     if (aSpeed == null)
@@ -216,8 +212,7 @@ this.DownloadUtils = {
 
 
 
-  getTransferTotal: function DU_getTransferTotal(aCurrBytes, aMaxBytes)
-  {
+  getTransferTotal: function DU_getTransferTotal(aCurrBytes, aMaxBytes) {
     if (aMaxBytes == null)
       aMaxBytes = -1;
 
@@ -264,8 +259,7 @@ this.DownloadUtils = {
 
 
 
-  getTimeLeft: function DU_getTimeLeft(aSeconds, aLastSec)
-  {
+  getTimeLeft: function DU_getTimeLeft(aSeconds, aLastSec) {
     if (aLastSec == null)
       aLastSec = Infinity;
 
@@ -343,8 +337,7 @@ this.DownloadUtils = {
 
 
 
-  getReadableDates: function DU_getReadableDates(aDate, aNow)
-  {
+  getReadableDates: function DU_getReadableDates(aDate, aNow) {
     if (!aNow) {
       aNow = new Date();
     }
@@ -410,8 +403,7 @@ this.DownloadUtils = {
 
 
 
-  getURIHost: function DU_getURIHost(aURIString)
-  {
+  getURIHost: function DU_getURIHost(aURIString) {
     let ioService = Cc["@mozilla.org/network/io-service;1"].
                     getService(Ci.nsIIOService);
     let eTLDService = Cc["@mozilla.org/network/effective-tld-service;1"].
@@ -479,8 +471,7 @@ this.DownloadUtils = {
 
 
 
-  convertByteUnits: function DU_convertByteUnits(aBytes)
-  {
+  convertByteUnits: function DU_convertByteUnits(aBytes) {
     let unitIndex = 0;
 
     
@@ -520,8 +511,7 @@ this.DownloadUtils = {
 
 
 
-  convertTimeUnits: function DU_convertTimeUnits(aSecs)
-  {
+  convertTimeUnits: function DU_convertTimeUnits(aSecs) {
     
     
     let timeSize = [60, 60, 24];
@@ -562,8 +552,7 @@ this.DownloadUtils = {
 
 
 
-function convertTimeUnitsValue(aTime)
-{
+function convertTimeUnitsValue(aTime) {
   return Math.floor(aTime);
 }
 
@@ -576,8 +565,7 @@ function convertTimeUnitsValue(aTime)
 
 
 
-function convertTimeUnitsUnits(aTime, aIndex)
-{
+function convertTimeUnitsUnits(aTime, aIndex) {
   
   if (aIndex < 0)
     return "";
@@ -591,8 +579,7 @@ function convertTimeUnitsUnits(aTime, aIndex)
 
 
 
-function log(aMsg)
-{
+function log(aMsg) {
   let msg = "DownloadUtils.jsm: " + (aMsg.join ? aMsg.join("") : aMsg);
   Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService).
     logStringMessage(msg);

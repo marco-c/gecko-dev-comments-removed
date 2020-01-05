@@ -2,14 +2,12 @@ var gInvalidFormPopup = document.getElementById('invalid-form-popup');
 ok(gInvalidFormPopup,
    "The browser should have a popup to show when a form is invalid");
 
-function checkPopupShow()
-{
+function checkPopupShow() {
   ok(gInvalidFormPopup.state == 'showing' || gInvalidFormPopup.state == 'open',
      "[Test " + testId + "] The invalid form popup should be shown");
 }
 
-function checkPopupHide()
-{
+function checkPopupHide() {
   ok(gInvalidFormPopup.state != 'showing' && gInvalidFormPopup.state != 'open',
      "[Test " + testId + "] The invalid form popup should not be shown");
 }
@@ -17,37 +15,31 @@ function checkPopupHide()
 var gObserver = {
   QueryInterface : XPCOMUtils.generateQI([Ci.nsIFormSubmitObserver]),
 
-  notifyInvalidSubmit(aFormElement, aInvalidElements)
-  {
+  notifyInvalidSubmit(aFormElement, aInvalidElements) {
   }
 };
 
 var testId = 0;
 
-function incrementTest()
-{
+function incrementTest() {
   testId++;
   info("Starting next part of test");
 }
 
-function getDocHeader()
-{
+function getDocHeader() {
   return "<html><head><meta charset='utf-8'></head><body>" + getEmptyFrame();
 }
 
-function getDocFooter()
-{
+function getDocFooter() {
   return "</body></html>";
 }
 
-function getEmptyFrame()
-{
+function getEmptyFrame() {
   return "<iframe style='width:100px; height:30px; margin:3px; border:1px solid lightgray;' " +
          "name='t' srcdoc=\"<html><head><meta charset='utf-8'></head><body>form target</body></html>\"></iframe>";
 }
 
-function* openNewTab(uri, background)
-{
+function* openNewTab(uri, background) {
   let tab = gBrowser.addTab();
   let browser = gBrowser.getBrowserForTab(tab);
   if (!background) {
@@ -57,22 +49,19 @@ function* openNewTab(uri, background)
   return browser;
 }
 
-function* clickChildElement(browser)
-{
+function* clickChildElement(browser) {
   yield ContentTask.spawn(browser, {}, function* () {
     content.document.getElementById('s').click();
   });
 }
 
-function* blurChildElement(browser)
-{
+function* blurChildElement(browser) {
   yield ContentTask.spawn(browser, {}, function* () {
     content.document.getElementById('i').blur();
   });
 }
 
-function* checkChildFocus(browser, message)
-{
+function* checkChildFocus(browser, message) {
   yield ContentTask.spawn(browser, [message, testId], function* (args) {
     let [msg, id] = args;
     var focused = content.document.activeElement == content.document.getElementById('i');
@@ -90,8 +79,7 @@ function* checkChildFocus(browser, message)
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);
@@ -113,8 +101,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input required id='i'><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);
@@ -133,8 +120,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input><input id='i' required><input required><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);
@@ -153,8 +139,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input id='i' required><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);
@@ -177,8 +162,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input type='email' id='i' required><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);
@@ -205,8 +189,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input id='i' required><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);
@@ -228,8 +211,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input id='i' required><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);
@@ -251,8 +233,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input id='i' required><input id='s' type='submit'></form>" + getDocFooter();
   let browser1 = yield openNewTab(uri);
@@ -277,8 +258,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   
   
   if (gMultiProcessBrowser) {
@@ -317,8 +297,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input x-moz-errormessage='foo' required id='i'><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);
@@ -339,8 +318,7 @@ add_task(function* ()
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   incrementTest();
   let uri = getDocHeader() + "<form target='t' action='data:text/html,'><input type='email' required id='i'><input id='s' type='submit'></form>" + getDocFooter();
   let browser = yield openNewTab(uri);

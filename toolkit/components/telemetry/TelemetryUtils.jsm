@@ -139,7 +139,7 @@ this.TelemetryUtils = {
     let tzOffset = -date.getTimezoneOffset();
 
     
-    return    padNumber(date.getFullYear(), 4)
+    return padNumber(date.getFullYear(), 4)
       + "-" + padNumber(date.getMonth() + 1, 2)
       + "-" + padNumber(date.getDate(), 2)
       + "T" + padNumber(date.getHours(), 2)

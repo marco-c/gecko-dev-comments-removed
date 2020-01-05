@@ -173,8 +173,7 @@ function nextTest() {
     ok(true, "TEST: " + testCase.desc);
     dump("TEST: " + testCase.desc + "\n");
     testCase.run();
-  }
-  else {
+  } else {
     
     gLibrary.close();
     

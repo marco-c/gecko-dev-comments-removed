@@ -15,8 +15,7 @@ const STRINGBUNDLE_URL = "chrome://mozapps/locale/handling/handling.properties";
 
 
 
-function nsContentDispatchChooser()
-{
+function nsContentDispatchChooser() {
 }
 
 nsContentDispatchChooser.prototype =
@@ -25,8 +24,7 @@ nsContentDispatchChooser.prototype =
 
   
 
-  ask: function ask(aHandler, aWindowContext, aURI, aReason)
-  {
+  ask: function ask(aHandler, aWindowContext, aURI, aReason) {
     var window = null;
     try {
       if (aWindowContext)

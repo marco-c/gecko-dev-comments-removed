@@ -26,8 +26,7 @@ const nsISimpleEnumerator      = Components.interfaces.nsISimpleEnumerator;
 
 
 
-function getDirectoryService()
-{
+function getDirectoryService() {
   return Components.classes["@mozilla.org/file/directory_service;1"]
                    .getService(nsIProperties);
 }
@@ -48,8 +47,7 @@ nsDefaultCLH.prototype = {
       var out = "print-xpcom-dir(\"" + printDir + "\"): ";
       try {
         out += getDirectoryService().get(printDir, nsIFile).path;
-      }
-      catch (e) {
+      } catch (e) {
         out += "<Not Provided>";
       }
 
@@ -66,8 +64,7 @@ nsDefaultCLH.prototype = {
                                              nsISimpleEnumerator);
         while (list.hasMoreElements())
           out += list.getNext().QueryInterface(nsIFile).path + ";";
-      }
-      catch (e) {
+      } catch (e) {
         out += "<Not Provided>";
       }
 
@@ -98,8 +95,7 @@ nsDefaultCLH.prototype = {
         cmdLine.preventDefault = true;
         return;
       }
-    }
-    catch (e) { }
+    } catch (e) { }
 
     
     try {
@@ -108,15 +104,13 @@ nsDefaultCLH.prototype = {
       var flags = "chrome,dialog=no,all";
       try {
         flags = prefs.getCharPref("toolkit.defaultChromeFeatures");
-      }
-      catch (e) { }
+      } catch (e) { }
 
       var wwatch = Components.classes["@mozilla.org/embedcomp/window-watcher;1"]
                             .getService(nsIWindowWatcher);
       wwatch.openWindow(null, chromeURI, "_blank",
                         flags, cmdLine);
-    }
-    catch (e) { }
+    } catch (e) { }
   },
 
   helpInfo : "",

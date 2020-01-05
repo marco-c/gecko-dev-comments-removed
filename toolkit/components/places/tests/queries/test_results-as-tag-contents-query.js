@@ -59,13 +59,11 @@ function getIdForTag(aTagName) {
  
 
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }
 
-add_task(function* test_results_as_tag_contents_query()
-{
+add_task(function* test_results_as_tag_contents_query() {
   yield task_populateDB(testData);
 
   

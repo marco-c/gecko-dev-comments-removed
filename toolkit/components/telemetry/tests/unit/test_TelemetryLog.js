@@ -7,8 +7,7 @@ Cu.import("resource://gre/modules/TelemetrySession.jsm", this);
 const TEST_PREFIX = "TEST-";
 const TEST_REGEX = new RegExp("^" + TEST_PREFIX);
 
-function check_event(event, id, data)
-{
+function check_event(event, id, data) {
   do_print("Checking message " + id);
   do_check_eq(event[0], id);
   do_check_true(event[1] > 0);
@@ -24,8 +23,7 @@ function check_event(event, id, data)
   }
 }
 
-add_task(function* ()
-{
+add_task(function* () {
   do_get_profile();
   
   Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);

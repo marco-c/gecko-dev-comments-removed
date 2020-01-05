@@ -246,8 +246,7 @@ function clearDB() {
 
 
 
-function dump_table(aName)
-{
+function dump_table(aName) {
   let stmt = DBConn().createStatement("SELECT * FROM " + aName);
 
   print("\n*** Printing data from " + aName);
@@ -295,8 +294,7 @@ function dump_table(aName)
 
 
 
-function page_in_database(aURI)
-{
+function page_in_database(aURI) {
   let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
   let stmt = DBConn().createStatement(
     "SELECT id FROM moz_places WHERE url_hash = hash(:url) AND url = :url"
@@ -306,8 +304,7 @@ function page_in_database(aURI)
     if (!stmt.executeStep())
       return 0;
     return stmt.getInt64(0);
-  }
-  finally {
+  } finally {
     stmt.finalize();
   }
 }
@@ -318,8 +315,7 @@ function page_in_database(aURI)
 
 
 
-function visits_in_database(aURI)
-{
+function visits_in_database(aURI) {
   let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
   let stmt = DBConn().createStatement(
     `SELECT count(*) FROM moz_historyvisits v
@@ -331,8 +327,7 @@ function visits_in_database(aURI)
     if (!stmt.executeStep())
       return 0;
     return stmt.getInt64(0);
-  }
-  finally {
+  } finally {
     stmt.finalize();
   }
 }
@@ -367,8 +362,7 @@ function check_no_bookmarks() {
 
 
 
-function promiseTopicObserved(aTopic)
-{
+function promiseTopicObserved(aTopic) {
   return new Promise(resolve => {
     Services.obs.addObserver(function observe(aObsSubject, aObsTopic, aObsData) {
       Services.obs.removeObserver(observe, aObsTopic);
@@ -532,8 +526,7 @@ function check_JSON_backup(aIsAutomaticBackup) {
 
 
 
-function frecencyForUrl(aURI)
-{
+function frecencyForUrl(aURI) {
   let url = aURI;
   if (aURI instanceof Ci.nsIURI) {
     url = aURI.spec;
@@ -561,8 +554,7 @@ function frecencyForUrl(aURI)
 
 
 
-function isUrlHidden(aURI)
-{
+function isUrlHidden(aURI) {
   let url = aURI instanceof Ci.nsIURI ? aURI.spec : aURI;
   let stmt = DBConn().createStatement(
     "SELECT hidden FROM moz_places WHERE url_hash = hash(?1) AND url = ?1"
@@ -601,8 +593,7 @@ function is_time_ordered(before, after) {
 
 
 
-function waitForConnectionClosed(aCallback)
-{
+function waitForConnectionClosed(aCallback) {
   promiseTopicObserved("places-connection-closed").then(aCallback);
   shutdownPlaces();
 }
@@ -616,8 +607,7 @@ function waitForConnectionClosed(aCallback)
 
 
 function do_check_valid_places_guid(aGuid,
-                                    aStack)
-{
+                                    aStack) {
   if (!aStack) {
     aStack = Components.stack.caller;
   }
@@ -634,8 +624,7 @@ function do_check_valid_places_guid(aGuid,
 
 
 function do_get_guid_for_uri(aURI,
-                             aStack)
-{
+                             aStack) {
   if (!aStack) {
     aStack = Components.stack.caller;
   }
@@ -661,8 +650,7 @@ function do_get_guid_for_uri(aURI,
 
 
 function do_check_guid_for_uri(aURI,
-                               aGUID)
-{
+                               aGUID) {
   let caller = Components.stack.caller;
   let guid = do_get_guid_for_uri(aURI, caller);
   if (aGUID) {
@@ -681,8 +669,7 @@ function do_check_guid_for_uri(aURI,
 
 
 function do_get_guid_for_bookmark(aId,
-                                  aStack)
-{
+                                  aStack) {
   if (!aStack) {
     aStack = Components.stack.caller;
   }
@@ -708,8 +695,7 @@ function do_get_guid_for_bookmark(aId,
 
 
 function do_check_guid_for_bookmark(aId,
-                                    aGUID)
-{
+                                    aGUID) {
   let caller = Components.stack.caller;
   let guid = do_get_guid_for_bookmark(aId, caller);
   if (aGUID) {
@@ -729,8 +715,7 @@ function do_check_guid_for_bookmark(aId,
 
 
 
-function do_compare_arrays(a1, a2, sorted)
-{
+function do_compare_arrays(a1, a2, sorted) {
   if (a1.length != a2.length)
     return false;
 

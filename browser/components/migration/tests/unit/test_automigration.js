@@ -29,8 +29,7 @@ do_register_cleanup(function() {
 
 
 
-function* visitsForURL(url)
-{
+function* visitsForURL(url) {
   let visitCount = 0;
   let db = yield PlacesUtils.promiseDBConnection();
   visitCount = yield db.execute(

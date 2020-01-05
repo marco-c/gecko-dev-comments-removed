@@ -1342,8 +1342,7 @@ var CustomizableUIInternal = {
       }
       if (!node || !(node instanceof aDocument.defaultView.XULElement))
         log.error("Custom widget with id " + aWidget.id + " does not return a valid node");
-    }
-    else {
+    } else {
       if (aWidget.onBeforeCreated) {
         aWidget.onBeforeCreated(aDocument);
       }
@@ -4324,18 +4323,16 @@ OverflowableToolbar.prototype = {
         aNode.setAttribute("cui-anchorid", this._chevron.id);
         aNode.setAttribute("overflowedItem", true);
         CustomizableUIInternal.notifyListeners("onWidgetOverflow", aNode, this._target);
-      }
-      
-      
-      
-      else if (!nowInBar) {
+      } else if (!nowInBar) {
+        
+        
+        
         this._moveItemsBackToTheirOrigin(true);
       }
       
       
-    }
-    
-    else if (!nowOverflowed) {
+    } else if (!nowOverflowed) {
+      
       
       this._collapsed.delete(aNode.id);
       aNode.removeAttribute("cui-anchorid");

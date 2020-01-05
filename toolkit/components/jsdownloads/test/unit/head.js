@@ -84,8 +84,7 @@ const TEST_DATA_SHORT_GZIP_ENCODED =
 
 
 
-function run_test()
-{
+function run_test() {
   do_get_profile();
   run_next_test();
 }
@@ -126,8 +125,7 @@ var gFileCounter = Math.floor(Math.random() * 1000000);
 
 
 
-function getTempFile(aLeafName)
-{
+function getTempFile(aLeafName) {
   
   let [base, ext] = DownloadPaths.splitBaseNameAndExtension(aLeafName);
   let leafName = base + "-" + gFileCounter + ext;
@@ -164,8 +162,7 @@ function getTempFile(aLeafName)
 
 
 
-function promiseExecuteSoon()
-{
+function promiseExecuteSoon() {
   let deferred = Promise.defer();
   do_execute_soon(deferred.resolve);
   return deferred.promise;
@@ -178,8 +175,7 @@ function promiseExecuteSoon()
 
 
 
-function promiseTimeout(aTime)
-{
+function promiseTimeout(aTime) {
   let deferred = Promise.defer();
   do_timeout(aTime, deferred.resolve);
   return deferred.promise;
@@ -195,8 +191,7 @@ function promiseTimeout(aTime)
 
 
 
-function promiseWaitForVisit(aUrl)
-{
+function promiseWaitForVisit(aUrl) {
   let deferred = Promise.defer();
 
   let uri = NetUtil.newURI(aUrl);
@@ -417,22 +412,19 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
     channel.asyncOpen2({
       contentListener: null,
 
-      onStartRequest(aRequest, aContext)
-      {
+      onStartRequest(aRequest, aContext) {
         let requestChannel = aRequest.QueryInterface(Ci.nsIChannel);
         this.contentListener = gExternalHelperAppService.doContent(
                                      requestChannel.contentType, aRequest, null, true);
         this.contentListener.onStartRequest(aRequest, aContext);
       },
 
-      onStopRequest(aRequest, aContext, aStatusCode)
-      {
+      onStopRequest(aRequest, aContext, aStatusCode) {
         this.contentListener.onStopRequest(aRequest, aContext, aStatusCode);
       },
 
       onDataAvailable(aRequest, aContext, aInputStream, aOffset,
-                                aCount)
-      {
+                                aCount) {
         this.contentListener.onDataAvailable(aRequest, aContext, aInputStream,
                                              aOffset, aCount);
       },
@@ -507,8 +499,7 @@ function promiseDownloadStopped(aDownload) {
 
 
 
-function promiseNewList(aIsPrivate)
-{
+function promiseNewList(aIsPrivate) {
   
   
   Downloads._promiseListsInitialized = null;
@@ -531,8 +522,7 @@ function promiseNewList(aIsPrivate)
 
 
 
-function promiseVerifyContents(aPath, aExpectedContents)
-{
+function promiseVerifyContents(aPath, aExpectedContents) {
   return Task.spawn(function* () {
     let file = new FileUtils.File(aPath);
 
@@ -573,8 +563,7 @@ function promiseVerifyContents(aPath, aExpectedContents)
 
 
 
-function startFakeServer()
-{
+function startFakeServer() {
   let serverSocket = new ServerSocket(-1, true, -1);
   serverSocket.asyncListen({
     onSocketAccepted(aServ, aTransport) {
@@ -608,8 +597,7 @@ var _gDeferResponses = Promise.defer();
 
 
 
-function mustInterruptResponses()
-{
+function mustInterruptResponses() {
   
   
   
@@ -623,8 +611,7 @@ function mustInterruptResponses()
 
 
 
-function continueResponses()
-{
+function continueResponses() {
   do_print("Interruptible responses are now allowed to continue.");
   _gDeferResponses.resolve();
 }
@@ -641,8 +628,7 @@ function continueResponses()
 
 
 
-function registerInterruptibleHandler(aPath, aFirstPartFn, aSecondPartFn)
-{
+function registerInterruptibleHandler(aPath, aFirstPartFn, aSecondPartFn) {
   gHttpServer.registerPathHandler(aPath, function(aRequest, aResponse) {
     do_print("Interruptible request started.");
 
@@ -677,8 +663,7 @@ var gMostRecentFirstBytePos;
 
 
 
-add_task(function test_common_initialize()
-{
+add_task(function test_common_initialize() {
   
   gHttpServer = new HttpServer();
   gHttpServer.registerDirectory("/", do_get_file("../data"));

@@ -98,8 +98,7 @@ function promiseNewEngine(basename, options = {}) {
 
 
 
-function promiseTabLoadEvent(tab, url)
-{
+function promiseTabLoadEvent(tab, url) {
   info("Wait tab event: load");
 
   function handle(loadedUrl) {

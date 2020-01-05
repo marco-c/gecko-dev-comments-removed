@@ -19,16 +19,14 @@ var bs = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
 
 
 
-function callback(aService)
-{
+function callback(aService) {
   this.callCount = 0;
   this.service = aService;
 }
 callback.prototype = {
   
 
-  runBatched(aUserData)
-  {
+  runBatched(aUserData) {
     this.callCount++;
 
     if (this.callCount == 1) {

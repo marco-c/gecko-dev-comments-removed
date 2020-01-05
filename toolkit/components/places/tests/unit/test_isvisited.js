@@ -4,13 +4,11 @@
 
 
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute()
-{
+add_task(function* test_execute() {
   var referrer = uri("about:blank");
 
   
@@ -55,8 +53,7 @@ add_task(function* test_execute()
   for (let currentURL of URLS) {
     try {
       var cantAddUri = uri(currentURL);
-    }
-    catch (e) {
+    } catch (e) {
       
       
       

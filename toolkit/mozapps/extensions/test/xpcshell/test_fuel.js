@@ -24,8 +24,7 @@ function run_test() {
     var contract = cm.getCategoryEntry("JavaScript-global-privileged-property",
                                        "Application");
     Application = AM_Cc[contract].getService(AM_Ci.extIApplication);
-  }
-  catch (e) {
+  } catch (e) {
     
     return;
   }

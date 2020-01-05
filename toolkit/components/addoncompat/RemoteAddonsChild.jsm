@@ -26,8 +26,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "contentSecManager",
 
 
 
-function setDefault(dict, key, default_)
-{
+function setDefault(dict, key, default_) {
   if (key in dict) {
     return dict[key];
   }
@@ -214,8 +213,7 @@ var ContentPolicyChild = {
 
 
 
-function AboutProtocolChannel(uri, contractID, loadInfo)
-{
+function AboutProtocolChannel(uri, contractID, loadInfo) {
   this.URI = uri;
   this.originalURI = uri;
   this._contractID = contractID;
@@ -311,8 +309,7 @@ AboutProtocolChannel.prototype = {
 };
 
 
-function AboutProtocolInstance(contractID)
-{
+function AboutProtocolInstance(contractID) {
   this._contractID = contractID;
   this._uriFlags = undefined;
 }
@@ -424,8 +421,7 @@ var ObserverChild = {
 
 
 
-function EventTargetChild(childGlobal)
-{
+function EventTargetChild(childGlobal) {
   this._childGlobal = childGlobal;
   this.capturingHandler = (event) => this.handleEvent(true, event);
   this.nonCapturingHandler = (event) => this.handleEvent(false, event);
@@ -474,8 +470,7 @@ EventTargetChild.prototype = {
 
 
 
-function SandboxChild(chromeGlobal)
-{
+function SandboxChild(chromeGlobal) {
   this.chromeGlobal = chromeGlobal;
   this.sandboxes = [];
 }

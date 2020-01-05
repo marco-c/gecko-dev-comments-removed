@@ -64,4 +64,4 @@ MockTransfer.prototype = {
 
 
 var mockTransferRegisterer =
-  new MockObjectRegisterer("@mozilla.org/transfer;1",  MockTransfer);
+  new MockObjectRegisterer("@mozilla.org/transfer;1", MockTransfer);

@@ -20,10 +20,8 @@ var gMainPane = {
   
 
 
-  init()
-  {
-    function setEventListener(aId, aEventType, aCallback)
-    {
+  init() {
+    function setEventListener(aId, aEventType, aCallback) {
       document.getElementById(aId)
               .addEventListener(aEventType, aCallback.bind(gMainPane));
     }
@@ -121,8 +119,7 @@ var gMainPane = {
               .notifyObservers(window, "main-pane-loaded", null);
   },
 
-  enableE10SChange()
-  {
+  enableE10SChange() {
     if (AppConstants.E10S_TESTING_ONLY) {
       let e10sCheckbox = document.getElementById("e10sAutoStart");
       let e10sPref = document.getElementById("browser.tabs.remote.autostart");
@@ -147,7 +144,7 @@ var gMainPane = {
           prefToChange.value = e10sCheckbox.checked;
         }
 
-        Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit |  Ci.nsIAppStartup.eRestart);
+        Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
       }
 
       
@@ -155,11 +152,10 @@ var gMainPane = {
     }
   },
 
-  separateProfileModeChange()
-  {
+  separateProfileModeChange() {
     if (AppConstants.MOZ_DEV_EDITION) {
       function quitApp() {
-        Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit |  Ci.nsIAppStartup.eRestartNotSameProfile);
+        Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestartNotSameProfile);
       }
       function revertCheckbox(error) {
         separateProfileModeCheckbox.checked = !separateProfileModeCheckbox.checked;
@@ -241,8 +237,7 @@ var gMainPane = {
 
 
 
-  syncFromHomePref()
-  {
+  syncFromHomePref() {
     let homePref = document.getElementById("browser.startup.homepage");
 
     
@@ -267,8 +262,7 @@ var gMainPane = {
     return undefined;
   },
 
-  syncToHomePref(value)
-  {
+  syncToHomePref(value) {
     
     if (value == "")
       return "about:home";
@@ -282,8 +276,7 @@ var gMainPane = {
 
 
 
-  setHomePageToCurrent()
-  {
+  setHomePageToCurrent() {
     let homePage = document.getElementById("browser.startup.homepage");
     let tabs = this._getTabsForHomePage();
     function getTabURI(t) {
@@ -300,8 +293,7 @@ var gMainPane = {
 
 
 
-  setHomePageToBookmark()
-  {
+  setHomePageToBookmark() {
     var rv = { urls: null, names: null };
     gSubDialog.open("chrome://browser/content/preferences/selectBookmark.xul",
                     "resizable=yes, modal=yes", rv,
@@ -342,8 +334,7 @@ var gMainPane = {
     useCurrent.disabled = !tabs.length
   },
 
-  _getTabsForHomePage()
-  {
+  _getTabsForHomePage() {
     var win;
     var tabs = [];
 
@@ -366,16 +357,14 @@ var gMainPane = {
   
 
 
-  isNotAboutPreferences(aElement, aIndex, aArray)
-  {
+  isNotAboutPreferences(aElement, aIndex, aArray) {
     return !aElement.linkedBrowser.currentURI.spec.startsWith("about:preferences");
   },
 
   
 
 
-  restoreDefaultHomePage()
-  {
+  restoreDefaultHomePage() {
     var homePage = document.getElementById("browser.startup.homepage");
     homePage.value = homePage.defaultValue;
   },
@@ -416,8 +405,7 @@ var gMainPane = {
 
 
 
-  readUseDownloadDir()
-  {
+  readUseDownloadDir() {
     var downloadFolder = document.getElementById("downloadFolder");
     var chooseFolder = document.getElementById("chooseFolder");
     var preference = document.getElementById("browser.download.useDownloadDir");
@@ -433,12 +421,10 @@ var gMainPane = {
 
 
 
-  chooseFolder()
-  {
+  chooseFolder() {
     return this.chooseFolderTask().catch(Components.utils.reportError);
   },
-  chooseFolderTask: Task.async(function* ()
-  {
+  chooseFolderTask: Task.async(function* () {
     let bundlePreferences = document.getElementById("bundlePreferences");
     let title = bundlePreferences.getString("chooseDownloadFolderTitle");
     let folderListPref = document.getElementById("browser.download.folderList");
@@ -452,11 +438,11 @@ var gMainPane = {
     
     if (currentDirPref && currentDirPref.exists()) {
       fp.displayDirectory = currentDirPref;
-    } 
-    else if (defDownloads && defDownloads.exists()) {
+    } else if (defDownloads && defDownloads.exists()) {
+      
       fp.displayDirectory = defDownloads;
-    } 
-    else {
+    } else {
+      
       fp.displayDirectory = yield this._indexToFolder(0);
     }
 
@@ -478,16 +464,14 @@ var gMainPane = {
 
 
 
-  displayDownloadDirPref()
-  {
+  displayDownloadDirPref() {
     this.displayDownloadDirPrefTask().catch(Components.utils.reportError);
 
     
     return undefined;
   },
 
-  displayDownloadDirPrefTask: Task.async(function* ()
-  {
+  displayDownloadDirPrefTask: Task.async(function* () {
     var folderListPref = document.getElementById("browser.download.folderList");
     var bundlePreferences = document.getElementById("bundlePreferences");
     var downloadFolder = document.getElementById("downloadFolder");
@@ -529,8 +513,7 @@ var gMainPane = {
   
 
 
-  _getDisplayNameOfFile(aFolder)
-  {
+  _getDisplayNameOfFile(aFolder) {
     
     
     return aFolder ? aFolder.path : "";
@@ -545,8 +528,7 @@ var gMainPane = {
 
 
 
-  _getDownloadsFolder: Task.async(function* (aFolder)
-  {
+  _getDownloadsFolder: Task.async(function* (aFolder) {
     switch (aFolder) {
       case "Desktop":
         var fileLoc = Components.classes["@mozilla.org/file/directory_service;1"]
@@ -569,8 +551,7 @@ var gMainPane = {
 
 
 
-  _folderToIndex: Task.async(function* (aFolder)
-  {
+  _folderToIndex: Task.async(function* (aFolder) {
     if (!aFolder || aFolder.equals(yield this._getDownloadsFolder("Desktop")))
       return 0;
     else if (aFolder.equals(yield this._getDownloadsFolder("Downloads")))
@@ -587,8 +568,7 @@ var gMainPane = {
 
 
 
-  _indexToFolder: Task.async(function* (aIndex)
-  {
+  _indexToFolder: Task.async(function* (aIndex) {
     switch (aIndex) {
       case 0:
         return yield this._getDownloadsFolder("Desktop");
@@ -603,8 +583,7 @@ var gMainPane = {
 
 
 
-  updateBrowserStartupLastSession()
-  {
+  updateBrowserStartupLastSession() {
     let pbAutoStartPref = document.getElementById("browser.privatebrowsing.autostart");
     let startupPref = document.getElementById("browser.startup.page");
     let menu = document.getElementById("browserStartupPage");
@@ -677,8 +656,7 @@ var gMainPane = {
 
 
 
-  updateSetDefaultBrowser()
-  {
+  updateSetDefaultBrowser() {
     if (AppConstants.HAVE_SHELL_SERVICE) {
       let shellSvc = getShellService();
       let defaultBrowserBox = document.getElementById("defaultBrowserBox");
@@ -698,8 +676,7 @@ var gMainPane = {
   
 
 
-  setDefaultBrowser()
-  {
+  setDefaultBrowser() {
     if (AppConstants.HAVE_SHELL_SERVICE) {
       let alwaysCheckPref = document.getElementById("browser.shell.checkDefaultBrowser");
       alwaysCheckPref.value = true;

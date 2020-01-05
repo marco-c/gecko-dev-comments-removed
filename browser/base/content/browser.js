@@ -408,8 +408,7 @@ const gClickAndHoldListenersOnElement = {
 };
 
 const gSessionHistoryObserver = {
-  observe(subject, topic, data)
-  {
+  observe(subject, topic, data) {
     if (topic != "browser:purge-session-history")
       return;
 
@@ -459,8 +458,7 @@ function findChildShell(aDocument, aDocShell, aSoughtURI) {
 var gPopupBlockerObserver = {
   _reportButton: null,
 
-  onReportButtonMousedown(aEvent)
-  {
+  onReportButtonMousedown(aEvent) {
     
     
     if (aEvent.button != 0 || aEvent.target != this._reportButton || this.isPopupHidingTick)
@@ -470,8 +468,7 @@ var gPopupBlockerObserver = {
             .openPopup(this._reportButton, "after_end", 0, 2, false, false, aEvent);
   },
 
-  handleEvent(aEvent)
-  {
+  handleEvent(aEvent) {
     if (aEvent.originalTarget != gBrowser.selectedBrowser)
       return;
 
@@ -519,8 +516,7 @@ var gPopupBlockerObserver = {
         let notification = notificationBox.getNotificationWithValue("popup-blocked");
         if (notification) {
           notification.label = message;
-        }
-        else {
+        } else {
           var buttons = [{
             label: popupButtonText,
             accessKey: popupButtonAccesskey,
@@ -541,8 +537,7 @@ var gPopupBlockerObserver = {
     }
   },
 
-  toggleAllowPopupsForSite(aEvent)
-  {
+  toggleAllowPopupsForSite(aEvent) {
     var pm = Services.perms;
     var shouldBlock = aEvent.target.getAttribute("block") == "true";
     var perm = shouldBlock ? pm.DENY_ACTION : pm.ALLOW_ACTION;
@@ -554,8 +549,7 @@ var gPopupBlockerObserver = {
     gBrowser.getNotificationBox().removeCurrentNotification();
   },
 
-  fillPopupList(aEvent)
-  {
+  fillPopupList(aEvent) {
     
     
     
@@ -578,15 +572,13 @@ var gPopupBlockerObserver = {
         let blockString = gNavigatorBundle.getFormattedString("popupBlock", [uriHost]);
         blockedPopupAllowSite.setAttribute("label", blockString);
         blockedPopupAllowSite.setAttribute("block", "true");
-      }
-      else {
+      } else {
         
         let allowString = gNavigatorBundle.getFormattedString("popupAllow", [uriHost]);
         blockedPopupAllowSite.setAttribute("label", allowString);
         blockedPopupAllowSite.removeAttribute("block");
       }
-    }
-    catch (e) {
+    } catch (e) {
       blockedPopupAllowSite.setAttribute("hidden", "true");
     }
 
@@ -672,16 +664,14 @@ var gPopupBlockerObserver = {
     }
   },
 
-  showBlockedPopup(aEvent)
-  {
+  showBlockedPopup(aEvent) {
     var target = aEvent.target;
     var popupReportIndex = target.getAttribute("popupReportIndex");
     let browser = target.popupReportBrowser;
     browser.unblockPopup(popupReportIndex);
   },
 
-  showAllBlockedPopups(aBrowser)
-  {
+  showAllBlockedPopups(aBrowser) {
     aBrowser.retrieveListOfBlockedPopups().then(popups => {
       for (let i = 0; i < popups.length; i++) {
         if (popups[i].popupWindowURIspec)
@@ -690,8 +680,7 @@ var gPopupBlockerObserver = {
     }, null);
   },
 
-  editPopupSettings()
-  {
+  editPopupSettings() {
     let prefillValue = "";
     try {
       
@@ -708,8 +697,7 @@ var gPopupBlockerObserver = {
           prefillValue = principalURI.spec;
         }
       }
-    }
-    catch (e) { }
+    } catch (e) { }
 
     var bundlePreferences = document.getElementById("bundle_preferences");
     var params = { blockVisible   : false,
@@ -723,14 +711,12 @@ var gPopupBlockerObserver = {
     if (existingWindow) {
       existingWindow.initWithParams(params);
       existingWindow.focus();
-    }
-    else
+    } else
       window.openDialog("chrome://browser/content/preferences/permissions.xul",
                         "_blank", "resizable,dialog=no,centerscreen", params);
   },
 
-  dontShowMessage()
-  {
+  dontShowMessage() {
     var showMessage = gPrefService.getBoolPref("privacy.popups.showBrowserMessage");
     gPrefService.setBoolPref("privacy.popups.showBrowserMessage", !showMessage);
     gBrowser.getNotificationBox().removeCurrentNotification();
@@ -744,7 +730,7 @@ function gKeywordURIFixup({ target: browser, data: fixupInfo }) {
   
   
   let alternativeURI = deserializeURI(fixupInfo.fixedURI);
-  if (!fixupInfo.keywordProviderName  || !alternativeURI || !alternativeURI.host) {
+  if (!fixupInfo.keywordProviderName || !alternativeURI || !alternativeURI.host) {
     return;
   }
 
@@ -1161,8 +1147,7 @@ var gBrowserInit = {
         try {
           gBrowser.loadTabs(specs, false, true);
         } catch (e) {}
-      }
-      else if (uriToLoad instanceof XULElement) {
+      } else if (uriToLoad instanceof XULElement) {
         
         
         let tabToOpen = uriToLoad;
@@ -1195,14 +1180,13 @@ var gBrowserInit = {
         } catch (e) {
           Cu.reportError(e);
         }
-      }
-      
-      
-      
-      
-      
-      
-      else if (window.arguments.length >= 3) {
+      } else if (window.arguments.length >= 3) {
+        
+        
+        
+        
+        
+        
         let referrerURI = window.arguments[2];
         if (typeof(referrerURI) == "string") {
           try {
@@ -1221,10 +1205,9 @@ var gBrowserInit = {
                 
                 window.arguments[7], !!window.arguments[7]);
         window.focus();
-      }
-      
-      
-      else {
+      } else {
+        
+        
         loadOneOrMoreURIs(uriToLoad);
       }
     }
@@ -1651,8 +1634,7 @@ if (AppConstants.platform == "macosx") {
           let dockSupport = Cc["@mozilla.org/widget/macdocksupport;1"]
                             .getService(Ci.nsIMacDockSupport);
           dockSupport.dockMenu = nativeMenu;
-        }
-        catch (e) {
+        } catch (e) {
         }
       }
     }
@@ -1776,8 +1758,7 @@ function gotoHistoryIndex(aEvent) {
 
     try {
       gBrowser.gotoIndex(index);
-    }
-    catch (ex) {
+    } catch (ex) {
       return false;
     }
     return true;
@@ -1795,11 +1776,9 @@ function BrowserForward(aEvent) {
   if (where == "current") {
     try {
       gBrowser.goForward();
+    } catch (ex) {
     }
-    catch (ex) {
-    }
-  }
-  else {
+  } else {
     duplicateTabIn(gBrowser.selectedTab, where, 1);
   }
 }
@@ -1810,17 +1789,14 @@ function BrowserBack(aEvent) {
   if (where == "current") {
     try {
       gBrowser.goBack();
+    } catch (ex) {
     }
-    catch (ex) {
-    }
-  }
-  else {
+  } else {
     duplicateTabIn(gBrowser.selectedTab, where, -1);
   }
 }
 
-function BrowserHandleBackspace()
-{
+function BrowserHandleBackspace() {
   switch (gPrefService.getIntPref("browser.backspace_action")) {
   case 0:
     BrowserBack();
@@ -1831,8 +1807,7 @@ function BrowserHandleBackspace()
   }
 }
 
-function BrowserHandleShiftBackspace()
-{
+function BrowserHandleShiftBackspace() {
   switch (gPrefService.getIntPref("browser.backspace_action")) {
   case 0:
     BrowserForward();
@@ -1914,11 +1889,9 @@ function BrowserGoHome(aEvent) {
   }
 }
 
-function loadOneOrMoreURIs(aURIString)
-{
+function loadOneOrMoreURIs(aURIString) {
   
-  if (window.location.href != getBrowserURL())
-  {
+  if (window.location.href != getBrowserURL()) {
     window.openDialog(getBrowserURL(), "_blank", "all,dialog=no", aURIString);
     return;
   }
@@ -1927,8 +1900,7 @@ function loadOneOrMoreURIs(aURIString)
   
   try {
     gBrowser.loadTabs(aURIString.split("|"), false, true);
-  }
-  catch (e) {
+  } catch (e) {
   }
 }
 
@@ -1968,8 +1940,7 @@ function openLocation() {
       
       win.focus()
       win.openLocation();
-    }
-    else {
+    } else {
       
       window.openDialog("chrome://browser/content/", "_blank",
                         "chrome,all,dialog=no", BROWSER_NEW_TAB_URL);
@@ -2004,8 +1975,7 @@ function BrowserOpenTab(event) {
 
 
 
-function delayedOpenWindow(chrome, flags, href, postData)
-{
+function delayedOpenWindow(chrome, flags, href, postData) {
   
   
   
@@ -2016,8 +1986,7 @@ function delayedOpenWindow(chrome, flags, href, postData)
 
 
 
-function delayedOpenTab(aUrl, aReferrer, aCharset, aPostData, aAllowThirdPartyFixup)
-{
+function delayedOpenTab(aUrl, aReferrer, aCharset, aPostData, aAllowThirdPartyFixup) {
   gBrowser.loadOneTab(aUrl, {
                       referrerURI: aReferrer,
                       charset: aCharset,
@@ -2035,8 +2004,7 @@ var gLastOpenDirectory = {
                                                      Ci.nsILocalFile);
         if (!this._lastDir.exists())
           this._lastDir = null;
-      }
-      catch (e) {}
+      } catch (e) {}
     }
     return this._lastDir;
   },
@@ -2059,8 +2027,7 @@ var gLastOpenDirectory = {
   }
 };
 
-function BrowserOpenFileWindow()
-{
+function BrowserOpenFileWindow() {
   
   try {
     const nsIFilePicker = Ci.nsIFilePicker;
@@ -2100,8 +2067,7 @@ function BrowserCloseTabOrWindow() {
   gBrowser.removeCurrentTab({animate: true});
 }
 
-function BrowserTryToCloseWindow()
-{
+function BrowserTryToCloseWindow() {
   if (WindowIsClosing())
     window.close();     
 }
@@ -2215,8 +2181,7 @@ function getLoadContext() {
                .QueryInterface(Ci.nsILoadContext);
 }
 
-function readFromClipboard()
-{
+function readFromClipboard() {
   var url;
 
   try {
@@ -2507,8 +2472,7 @@ function losslessDecodeURI(aURI) {
   return value;
 }
 
-function UpdateUrlbarSearchSplitterState()
-{
+function UpdateUrlbarSearchSplitterState() {
   var splitter = document.getElementById("urlbar-search-splitter");
   var urlbar = document.getElementById("urlbar-container");
   var searchbar = document.getElementById("search-container");
@@ -2550,8 +2514,7 @@ function UpdateUrlbarSearchSplitterState()
     splitter.parentNode.removeChild(splitter);
 }
 
-function UpdatePageProxyState()
-{
+function UpdatePageProxyState() {
   if (gURLBar && gURLBar.value != gLastValidURLStr)
     SetPageProxyState("invalid");
 }
@@ -2575,8 +2538,7 @@ function UpdatePageProxyState()
 
 
 
-function SetPageProxyState(aState, aOptions = {})
-{
+function SetPageProxyState(aState, aOptions = {}) {
   if (!gURLBar)
     return;
 
@@ -2601,8 +2563,7 @@ function SetPageProxyState(aState, aOptions = {})
   }
 }
 
-function PageProxyClickHandler(aEvent)
-{
+function PageProxyClickHandler(aEvent) {
   if (aEvent.button == 1 && gPrefService.getBoolPref("middlemouse.paste"))
     middleMousePaste(aEvent);
 }
@@ -3223,8 +3184,7 @@ function getDefaultHomePage() {
   return url;
 }
 
-function BrowserFullScreen()
-{
+function BrowserFullScreen() {
   window.fullScreen = !window.fullScreen;
 }
 
@@ -3257,8 +3217,7 @@ function populateMirrorTabMenu(popup) {
   });
 }
 
-function getWebNavigation()
-{
+function getWebNavigation() {
   return gBrowser.webNavigation;
 }
 
@@ -3347,8 +3306,7 @@ function getDetailedCertErrorInfo(location, securityInfo) {
 
 
 
-function getDERString(cert)
-{
+function getDERString(cert) {
   var length = {};
   var derArray = cert.getRawDER(length);
   var derString = '';
@@ -3358,8 +3316,7 @@ function getDERString(cert)
   return derString;
 }
 
-function getPEMString(cert)
-{
+function getPEMString(cert) {
   var derb64 = btoa(getDERString(cert));
   
   
@@ -3485,22 +3442,19 @@ var PrintPreviewListener = {
   },
 }
 
-function getMarkupDocumentViewer()
-{
+function getMarkupDocumentViewer() {
   return gBrowser.markupDocumentViewer;
 }
 
 
-function FillInHTMLTooltip(tipElement)
-{
+function FillInHTMLTooltip(tipElement) {
   document.getElementById("aHTMLTooltip").fillInPageTooltip(tipElement);
 }
 
 var browserDragAndDrop = {
   canDropLink: aEvent => Services.droppedLinkHandler.canDropLink(aEvent, true),
 
-  dragOver(aEvent)
-  {
+  dragOver(aEvent) {
     if (this.canDropLink(aEvent)) {
       aEvent.preventDefault();
     }
@@ -3512,8 +3466,7 @@ var browserDragAndDrop = {
 };
 
 var homeButtonObserver = {
-  onDrop(aEvent)
-    {
+  onDrop(aEvent) {
       
       let links = browserDragAndDrop.dropLinks(aEvent, true);
       if (links.length) {
@@ -3521,21 +3474,18 @@ var homeButtonObserver = {
       }
     },
 
-  onDragOver(aEvent)
-    {
+  onDragOver(aEvent) {
       if (gPrefService.prefIsLocked("browser.startup.homepage")) {
         return;
       }
       browserDragAndDrop.dragOver(aEvent);
       aEvent.dropEffect = "link";
     },
-  onDragExit(aEvent)
-    {
+  onDragExit(aEvent) {
     }
 }
 
-function openHomeDialog(aURL)
-{
+function openHomeDialog(aURL) {
   var promptTitle = gNavigatorBundle.getString("droponhometitle");
   var promptMsg;
   if (aURL.includes("|")) {
@@ -3946,8 +3896,7 @@ function FillHistoryMenu(aParent) {
   const tooltipCurrent = gNavigatorBundle.getString("tabHistory.current");
   const tooltipForward = gNavigatorBundle.getString("tabHistory.goForward");
 
-  function updateSessionHistory(sessionHistory, initial)
-  {
+  function updateSessionHistory(sessionHistory, initial) {
     let count = sessionHistory.entries.length;
 
     if (!initial) {
@@ -4049,8 +3998,7 @@ function addToUrlbarHistory(aUrlToAdd) {
     PlacesUIUtils.markPageAsTyped(aUrlToAdd);
 }
 
-function BrowserDownloadsUI()
-{
+function BrowserDownloadsUI() {
   if (PrivateBrowsingUtils.isWindowPrivate(window)) {
     openUILinkIn("about:downloads", "tab");
   } else {
@@ -4058,8 +4006,7 @@ function BrowserDownloadsUI()
   }
 }
 
-function toOpenWindowByType(inType, uri, features)
-{
+function toOpenWindowByType(inType, uri, features) {
   var topWindow = Services.wm.getMostRecentWindow(inType);
 
   if (topWindow)
@@ -4070,8 +4017,7 @@ function toOpenWindowByType(inType, uri, features)
     window.open(uri, "_blank", "chrome,extrachrome,menubar,resizable,scrollbars,status,toolbar");
 }
 
-function OpenBrowserWindow(options)
-{
+function OpenBrowserWindow(options) {
   var telemetryObj = {};
   TelemetryStopwatch.start("FX_NEW_WINDOW_MS", telemetryObj);
 
@@ -4124,16 +4070,14 @@ function OpenBrowserWindow(options)
   
   
   var win;
-  if (window && (wintype == "navigator:browser") && window.content && window.content.document)
-  {
+  if (window && (wintype == "navigator:browser") && window.content && window.content.document) {
     var DocCharset = window.content.document.characterSet;
     charsetArg = "charset=" + DocCharset;
 
     
     win = window.openDialog("chrome://browser/content/", "_blank", "chrome,all,dialog=no" + extraFeatures, defaultArgs, charsetArg);
-  }
-  else 
-  {
+  } else {
+    
     win = window.openDialog("chrome://browser/content/", "_blank", "chrome,all,dialog=no" + extraFeatures, defaultArgs);
   }
 
@@ -4165,8 +4109,7 @@ function BrowserCustomizeToolbar() {
 
 
 
-function updateEditUIVisibility()
-{
+function updateEditUIVisibility() {
   if (AppConstants.platform == "macosx")
     return;
 
@@ -4213,8 +4156,7 @@ function updateEditUIVisibility()
 
 
 
-function openNewUserContextTab(event)
-{
+function openNewUserContextTab(event) {
   openUILinkIn(BROWSER_NEW_TAB_URL, "tab", {
     userContextId: parseInt(event.target.getAttribute('data-usercontextid')),
   });
@@ -4224,8 +4166,7 @@ function openNewUserContextTab(event)
 
 
 
-function updateUserContextUIVisibility()
-{
+function updateUserContextUIVisibility() {
   let menu = document.getElementById("menu_newUserContext");
   menu.hidden = !Services.prefs.getBoolPref("privacy.userContext.enabled");
   if (PrivateBrowsingUtils.isWindowPrivate(window)) {
@@ -4236,8 +4177,7 @@ function updateUserContextUIVisibility()
 
 
 
-function updateUserContextUIIndicator()
-{
+function updateUserContextUIIndicator() {
   let hbox = document.getElementById("userContext-icons");
 
   let userContextId = gBrowser.selectedBrowser.getAttribute("usercontextid");
@@ -4269,8 +4209,7 @@ function updateUserContextUIIndicator()
 
 
 
-function updateCharacterEncodingMenuState()
-{
+function updateCharacterEncodingMenuState() {
   let charsetMenu = document.getElementById("charsetMenu");
   
   
@@ -4483,8 +4422,7 @@ var XULBrowserWindow = {
         this.stopCommand.removeAttribute("disabled");
         CombinedStopReload.switchToStop();
       }
-    }
-    else if (aStateFlags & nsIWebProgressListener.STATE_STOP) {
+    } else if (aStateFlags & nsIWebProgressListener.STATE_STOP) {
       
       
       
@@ -4553,8 +4491,7 @@ var XULBrowserWindow = {
       
       if (aWebProgress.isTopLevel) {
         pageTooltip.hidePopup();
-      }
-      else {
+      } else {
         for (let tooltipWindow = tooltipNode.ownerGlobal;
              tooltipWindow != tooltipWindow.parent;
              tooltipWindow = tooltipWindow.parent) {
@@ -5368,24 +5305,21 @@ var gTabletModePageCounter = {
   },
 };
 
-function displaySecurityInfo()
-{
+function displaySecurityInfo() {
   BrowserPageInfo(null, "securityTab");
 }
 
 
 var gHomeButton = {
   prefDomain: "browser.startup.homepage",
-  observe(aSubject, aTopic, aPrefName)
-  {
+  observe(aSubject, aTopic, aPrefName) {
     if (aTopic != "nsPref:changed" || aPrefName != this.prefDomain)
       return;
 
     this.updateTooltip();
   },
 
-  updateTooltip(homeButton)
-  {
+  updateTooltip(homeButton) {
     if (!homeButton)
       homeButton = document.getElementById("home-button");
     if (homeButton) {
@@ -5398,8 +5332,7 @@ var gHomeButton = {
     }
   },
 
-  getHomePage()
-  {
+  getHomePage() {
     var url;
     try {
       url = gPrefService.getComplexValue(this.prefDomain,
@@ -5521,10 +5454,8 @@ function asyncOpenWebPanel(event) {
 
 
 
-function hrefAndLinkNodeForClickEvent(event)
-{
-  function isHTMLLink(aNode)
-  {
+function hrefAndLinkNodeForClickEvent(event) {
+  function isHTMLLink(aNode) {
     
     return ((aNode instanceof HTMLAnchorElement && aNode.href) ||
             (aNode instanceof HTMLAreaElement && aNode.href) ||
@@ -5571,8 +5502,7 @@ function hrefAndLinkNodeForClickEvent(event)
 
 
 
-function contentAreaClick(event, isPanelClick)
-{
+function contentAreaClick(event, isPanelClick) {
   if (!event.isTrusted || event.defaultPrevented || event.button == 2)
     return;
 
@@ -5596,7 +5526,7 @@ function contentAreaClick(event, isPanelClick)
     
     
     let target = linkNode.target;
-    let mainTarget = !target || target == "_content" || target  == "_main";
+    let mainTarget = !target || target == "_content" || target == "_main";
     if (isPanelClick && mainTarget) {
       
       if (linkNode.getAttribute("onclick") ||
@@ -5606,8 +5536,7 @@ function contentAreaClick(event, isPanelClick)
 
       try {
         urlSecurityCheck(href, linkNode.ownerDocument.nodePrincipal);
-      }
-      catch (ex) {
+      } catch (ex) {
         
         event.preventDefault();
         return;
@@ -5682,8 +5611,7 @@ function handleLinkClick(event, href, linkNode) {
       var targetURI = makeURI(href);
       sm.checkSameOriginURI(referrerURI, targetURI, false);
       persistAllowMixedContentInChildTab = true;
-    }
-    catch (e) { }
+    } catch (e) { }
   }
 
   
@@ -5771,16 +5699,17 @@ function stripUnsafeProtocolOnPaste(pasteData) {
   let changed = false;
   let pasteDataNoJS = pasteData.replace(/\r?\n/g, "")
                                .replace(/^(?:\s*javascript:)+/i,
-                                        () => { changed = true;
-                                                return ""; });
+                                        () => {
+                                                changed = true;
+                                                return "";
+                                              });
   return changed ? pasteDataNoJS : pasteData;
 }
 
 
 
 
-function handleDroppedLink(event, urlOrLinks, name)
-{
+function handleDroppedLink(event, urlOrLinks, name) {
   let links;
   if (Array.isArray(urlOrLinks)) {
     links = urlOrLinks;
@@ -5829,8 +5758,7 @@ function handleDroppedLink(event, urlOrLinks, name)
   }
 }
 
-function BrowserSetForcedCharacterSet(aCharset)
-{
+function BrowserSetForcedCharacterSet(aCharset) {
   if (aCharset) {
     gBrowser.selectedBrowser.characterSet = aCharset;
     
@@ -5840,8 +5768,7 @@ function BrowserSetForcedCharacterSet(aCharset)
   BrowserCharsetReload();
 }
 
-function BrowserCharsetReload()
-{
+function BrowserCharsetReload() {
   BrowserReloadWithFlags(nsIWebNavigation.LOAD_FLAGS_CHARSET_CHANGE);
 }
 
@@ -6011,8 +5938,7 @@ var BrowserOffline = {
   _inited: false,
 
   
-  init()
-  {
+  init() {
     if (!this._uiElement)
       this._uiElement = document.getElementById("workOfflineMenuitemState");
 
@@ -6023,15 +5949,13 @@ var BrowserOffline = {
     this._inited = true;
   },
 
-  uninit()
-  {
+  uninit() {
     if (this._inited) {
       Services.obs.removeObserver(this, "network:offline-status-changed");
     }
   },
 
-  toggleOfflineStatus()
-  {
+  toggleOfflineStatus() {
     var ioService = Services.io;
 
     if (!ioService.offline && !this._canGoOffline()) {
@@ -6043,8 +5967,7 @@ var BrowserOffline = {
   },
 
   
-  observe(aSubject, aTopic, aState)
-  {
+  observe(aSubject, aTopic, aState) {
     if (aTopic != "network:offline-status-changed")
       return;
 
@@ -6054,8 +5977,7 @@ var BrowserOffline = {
   },
 
   
-  _canGoOffline()
-  {
+  _canGoOffline() {
     try {
       var cancelGoOffline = Cc["@mozilla.org/supports-PRBool;1"].createInstance(Ci.nsISupportsPRBool);
       Services.obs.notifyObservers(cancelGoOffline, "offline-requested", null);
@@ -6063,16 +5985,14 @@ var BrowserOffline = {
       
       if (cancelGoOffline.data)
         return false;
-    }
-    catch (ex) {
+    } catch (ex) {
     }
 
     return true;
   },
 
   _uiElement: null,
-  _updateOfflineUI(aOffline)
-  {
+  _updateOfflineUI(aOffline) {
     var offlineLocked = gPrefService.prefIsLocked("network.online");
     if (offlineLocked)
       this._uiElement.setAttribute("disabled", "true");
@@ -6309,8 +6229,7 @@ var IndexedDBPromptHelper = {
   }
 };
 
-function CanCloseWindow()
-{
+function CanCloseWindow() {
   
   
   if (Services.startup.shuttingDown || window.skipNextCanClose) {
@@ -6329,8 +6248,7 @@ function CanCloseWindow()
   return true;
 }
 
-function WindowIsClosing()
-{
+function WindowIsClosing() {
   if (!closeWindow(false, warnAboutClosingWindow))
     return false;
 

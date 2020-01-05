@@ -31,8 +31,7 @@ var completedResolve;
 var waitingURL, waitingEvent;
 var rootWindowID;
 
-function gotEvent(event, details)
-{
+function gotEvent(event, details) {
   if (!details.url.startsWith(BASE)) {
     return;
   }
@@ -61,8 +60,7 @@ function gotEvent(event, details)
   }
 }
 
-function loadViaFrameScript(url, event, script)
-{
+function loadViaFrameScript(url, event, script) {
   
   
   received = [];

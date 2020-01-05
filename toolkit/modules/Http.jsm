@@ -47,8 +47,7 @@ function httpRequest(aUrl, aOptions) {
       try {
         
         status = request.status;
-      }
-      catch (e) {
+      } catch (e) {
         request = request.channel.QueryInterface(Ci.nsIRequest);
         status = request.status;
       }

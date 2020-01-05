@@ -4,8 +4,7 @@
 
 
 
-function macWindowMenuDidShow()
-{
+function macWindowMenuDidShow() {
   var windowManagerDS =
     Components.classes['@mozilla.org/rdf/datasource;1?name=window-mediator']
               .getService(Components.interfaces.nsIWindowDataSource);
@@ -21,16 +20,14 @@ function macWindowMenuDidShow()
   }
 }
 
-function toOpenWindow( aWindow )
-{
+function toOpenWindow( aWindow ) {
   
   if (aWindow.windowState == STATE_MINIMIZED)
     aWindow.restore();
   aWindow.document.commandDispatcher.focusedWindow.focus();
 }
 
-function ShowWindowFromResource( node )
-{
+function ShowWindowFromResource( node ) {
   var windowManagerDS =
     Components.classes['@mozilla.org/rdf/datasource;1?name=window-mediator']
               .getService(Components.interfaces.nsIWindowDataSource);
@@ -42,8 +39,7 @@ function ShowWindowFromResource( node )
     toOpenWindow(desiredWindow);
 }
 
-function zoomWindow()
-{
+function zoomWindow() {
   if (window.windowState == STATE_NORMAL)
     window.maximize();
   else

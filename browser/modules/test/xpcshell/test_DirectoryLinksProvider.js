@@ -139,8 +139,7 @@ function getHttpHandler(path) {
 function isIdentical(actual, expected) {
   if (expected == null) {
     do_check_eq(actual, expected);
-  }
-  else if (typeof expected == "object") {
+  } else if (typeof expected == "object") {
     
     do_check_eq(Object.keys(actual).sort() + "", Object.keys(expected).sort());
 
@@ -148,8 +147,7 @@ function isIdentical(actual, expected) {
     Object.keys(expected).forEach(key => {
       isIdentical(actual[key], expected[key]);
     });
-  }
-  else {
+  } else {
     do_check_eq(actual, expected);
   }
 }
@@ -1234,8 +1232,7 @@ add_task(function* test_timeSensetiveSuggestedTiles() {
           do_check_true(timeDelta >= 1000 / 2); 
           do_check_eq(link.targetedSite, "hrblock.com");
           do_check_true(DirectoryLinksProvider._campaignTimeoutID);
-        }
-        else {
+        } else {
           
           
           do_print("TESTING END timeDelta: " + timeDelta);

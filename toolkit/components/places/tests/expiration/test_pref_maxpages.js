@@ -69,8 +69,7 @@ add_task(function* test_pref_maxpages() {
   try {
     getMaxPages();
     do_throw("interval pref should not exist by default");
-  }
-  catch (ex) {}
+  } catch (ex) {}
 
   
   setInterval(3600); 

@@ -18,8 +18,7 @@
 
 
 
-function check_size(dbOpener, file, pageSize, expectedCacheSize)
-{
+function check_size(dbOpener, file, pageSize, expectedCacheSize) {
   
   let db = dbOpener(file);
   db.executeSimpleSQL("PRAGMA page_size = " + pageSize);
@@ -44,16 +43,14 @@ function check_size(dbOpener, file, pageSize, expectedCacheSize)
   stmt.finalize();
 }
 
-function new_file(name)
-{
+function new_file(name) {
   let file = dirSvc.get("ProfD", Ci.nsIFile);
   file.append(name + ".sqlite");
   do_check_false(file.exists());
   return file;
 }
 
-function run_test()
-{
+function run_test() {
   const kExpectedCacheSize = -2048; 
 
   let pageSizes = [

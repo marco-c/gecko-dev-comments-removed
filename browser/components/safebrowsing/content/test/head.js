@@ -19,8 +19,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 
 
 
-function promiseTabLoadEvent(tab, url, eventType = "load")
-{
+function promiseTabLoadEvent(tab, url, eventType = "load") {
   info(`Wait tab event: ${eventType}`);
 
   function handle(loadedUrl) {

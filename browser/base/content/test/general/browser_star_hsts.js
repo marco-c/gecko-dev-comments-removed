@@ -63,8 +63,7 @@ function promiseStarState(aValue) {
 
 
 
-function promiseTabLoadEvent(aTab, aURL, aFinalURL)
-{
+function promiseTabLoadEvent(aTab, aURL, aFinalURL) {
   if (!aFinalURL)
     aFinalURL = aURL;
   let deferred = Promise.defer();

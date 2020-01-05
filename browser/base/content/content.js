@@ -190,8 +190,7 @@ var handleContentContextMenu = function(event) {
                      frameOuterWindowID, selectionInfo, disableSetDesktopBg,
                      loginFillInfo, parentAllowsMixedContent, userContextId },
                    { event, popupNode: event.target });
-  }
-  else {
+  } else {
     
     let browser = docShell.chromeEventHandler;
     let mainWin = browser.ownerGlobal;
@@ -303,7 +302,7 @@ var AboutNetAndCertErrorListener = {
 
     switch (msg.data.code) {
       case SEC_ERROR_UNKNOWN_ISSUER:
-        learnMoreLink.href = baseURL  + "security-error";
+        learnMoreLink.href = baseURL + "security-error";
         break;
 
       
@@ -339,7 +338,7 @@ var AboutNetAndCertErrorListener = {
               .style.display = "block";
           }
         }
-        learnMoreLink.href = baseURL  + "time-errors";
+        learnMoreLink.href = baseURL + "time-errors";
         break;
     }
   },
@@ -969,8 +968,7 @@ addMessageListener("ContextMenu:SetAsDesktopBackground", (message) => {
       let dataUrl = canvas.toDataURL();
       sendAsyncMessage("ContextMenu:SetAsDesktopBackground:Result",
                        { dataUrl });
-    }
-    catch (e) {
+    } catch (e) {
       Cu.reportError(e);
       disable = true;
     }
@@ -997,8 +995,7 @@ var PageInfoListener = {
     if (frameOuterWindowID) {
       window = Services.wm.getOuterWindowWithId(frameOuterWindowID);
       document = window.document;
-    }
-    else {
+    } else {
       window = content.window;
       document = content.document;
     }
@@ -1051,8 +1048,7 @@ var PageInfoListener = {
     let hostName = null;
     try {
       hostName = window.location.host;
-    }
-    catch (exception) { }
+    } catch (exception) { }
 
     windowInfo.hostName = hostName;
     return windowInfo;
@@ -1110,14 +1106,12 @@ var PageInfoListener = {
   },
 
   
-  getMediaInfo(document, window, strings)
-  {
+  getMediaInfo(document, window, strings) {
     let frameList = this.goThroughFrames(document, window);
     Task.spawn(() => this.processFrames(document, frameList, strings));
   },
 
-  goThroughFrames(document, window)
-  {
+  goThroughFrames(document, window) {
     let frameList = [document];
     if (window && window.frames.length > 0) {
       let num = window.frames.length;
@@ -1130,8 +1124,7 @@ var PageInfoListener = {
     return frameList;
   },
 
-  *processFrames(document, frameList, strings)
-  {
+  *processFrames(document, frameList, strings) {
     let nodeCount = 0;
     for (let doc of frameList) {
       let iterator = doc.createTreeWalker(doc, content.NodeFilter.SHOW_ELEMENT);
@@ -1155,8 +1148,7 @@ var PageInfoListener = {
     sendAsyncMessage("PageInfo:mediaData", {isComplete: true});
   },
 
-  getMediaItems(document, strings, elem)
-  {
+  getMediaItems(document, strings, elem) {
     
     let computedStyle = elem.ownerGlobal.getComputedStyle(elem);
     
@@ -1172,8 +1164,7 @@ var PageInfoListener = {
       let addImgFunc = (label, val) => {
         if (val.primitiveType == content.CSSPrimitiveValue.CSS_URI) {
           addImage(val.getStringValue(), label, strings.notSet, elem, true);
-        }
-        else if (val.primitiveType == content.CSSPrimitiveValue.CSS_STRING) {
+        } else if (val.primitiveType == content.CSSPrimitiveValue.CSS_STRING) {
           
           
           let strVal = val.getStringValue();
@@ -1181,8 +1172,7 @@ var PageInfoListener = {
             let url = strVal.replace(/^.*url\(\"?/, "").replace(/\"?\).*$/, "");
             addImage(url, label, strings.notSet, elem, true);
           }
-        }
-        else if (val.cssValueType == content.CSSValue.CSS_VALUE_LIST) {
+        } else if (val.cssValueType == content.CSSValue.CSS_VALUE_LIST) {
           
           for (let i = 0; i < val.length; i++) {
             addImgFunc(label, val.item(i));
@@ -1200,36 +1190,29 @@ var PageInfoListener = {
     if (elem instanceof content.HTMLImageElement) {
       addImage(elem.src, strings.mediaImg,
                (elem.hasAttribute("alt")) ? elem.alt : strings.notSet, elem, false);
-    }
-    else if (elem instanceof content.SVGImageElement) {
+    } else if (elem instanceof content.SVGImageElement) {
       try {
         
         
         let href = makeURLAbsolute(elem.baseURI, elem.href.baseVal);
         addImage(href, strings.mediaImg, "", elem, false);
       } catch (e) { }
-    }
-    else if (elem instanceof content.HTMLVideoElement) {
+    } else if (elem instanceof content.HTMLVideoElement) {
       addImage(elem.currentSrc, strings.mediaVideo, "", elem, false);
-    }
-    else if (elem instanceof content.HTMLAudioElement) {
+    } else if (elem instanceof content.HTMLAudioElement) {
       addImage(elem.currentSrc, strings.mediaAudio, "", elem, false);
-    }
-    else if (elem instanceof content.HTMLLinkElement) {
+    } else if (elem instanceof content.HTMLLinkElement) {
       if (elem.rel && /\bicon\b/i.test(elem.rel)) {
         addImage(elem.href, strings.mediaLink, "", elem, false);
       }
-    }
-    else if (elem instanceof content.HTMLInputElement || elem instanceof content.HTMLButtonElement) {
+    } else if (elem instanceof content.HTMLInputElement || elem instanceof content.HTMLButtonElement) {
       if (elem.type.toLowerCase() == "image") {
         addImage(elem.src, strings.mediaInput,
                  (elem.hasAttribute("alt")) ? elem.alt : strings.notSet, elem, false);
       }
-    }
-    else if (elem instanceof content.HTMLObjectElement) {
+    } else if (elem instanceof content.HTMLObjectElement) {
       addImage(elem.data, strings.mediaObject, this.getValueText(elem), elem, false);
-    }
-    else if (elem instanceof content.HTMLEmbedElement) {
+    } else if (elem instanceof content.HTMLEmbedElement) {
       addImage(elem.src, strings.mediaEmbed, "", elem, false);
     }
 
@@ -1241,8 +1224,7 @@ var PageInfoListener = {
 
 
 
-  serializeElementInfo(document, url, type, alt, item, isBG)
-  {
+  serializeElementInfo(document, url, type, alt, item, isBG) {
     let result = {};
 
     let imageText;
@@ -1322,8 +1304,7 @@ var PageInfoListener = {
   
   
   
-  getValueText(node)
-  {
+  getValueText(node) {
 
     let valueText = "";
 
@@ -1344,14 +1325,12 @@ var PageInfoListener = {
       
       if (nodeType == content.Node.TEXT_NODE) {
         valueText += " " + childNode.nodeValue;
-      }
-      
-      else if (nodeType == content.Node.ELEMENT_NODE) {
+      } else if (nodeType == content.Node.ELEMENT_NODE) {
+        
         
         if (childNode instanceof content.HTMLImageElement) {
           valueText += " " + this.getAltText(childNode);
-        }
-        else {
+        } else {
           valueText += " " + this.getValueText(childNode);
         }
       }
@@ -1362,8 +1341,7 @@ var PageInfoListener = {
 
   
   
-  getAltText(node)
-  {
+  getAltText(node) {
     let altText = "";
 
     if (node.alt) {
@@ -1380,8 +1358,7 @@ var PageInfoListener = {
 
   
   
-  stripWS(text)
-  {
+  stripWS(text) {
     let middleRE = /\s+/g;
     let endRE = /(^\s+)|(\s+$)/g;
 

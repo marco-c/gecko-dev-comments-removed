@@ -68,8 +68,7 @@ var gTests = [
 }
 ];
 
-function test()
-{
+function test() {
   waitForExplicitFinish();
   requestLongerTimeout(2);
   ignoreAllUncaughtExceptions();
@@ -130,8 +129,7 @@ function test()
 
 
 
-function promiseTabLoadEvent(aTab, aURL, aEventType = "load")
-{
+function promiseTabLoadEvent(aTab, aURL, aEventType = "load") {
   return new Promise(resolve => {
     info("Wait tab event: " + aEventType);
     aTab.linkedBrowser.addEventListener(aEventType, function load(event) {
@@ -158,8 +156,7 @@ function promiseTabLoadEvent(aTab, aURL, aEventType = "load")
 
 
 
-function promiseSetupSnippetsMap(aTab, aSnippet)
-{
+function promiseSetupSnippetsMap(aTab, aSnippet) {
   info("Waiting for snippets map");
 
   return ContentTask.spawn(aTab.linkedBrowser,

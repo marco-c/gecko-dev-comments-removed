@@ -34,8 +34,7 @@ function getEventDir() {
 
 
 
-function do_crash(setup, callback, canReturnZero)
-{
+function do_crash(setup, callback, canReturnZero) {
   
   let ds = Components.classes["@mozilla.org/file/directory_service;1"]
     .getService(Components.interfaces.nsIProperties);
@@ -75,9 +74,9 @@ function do_crash(setup, callback, canReturnZero)
 
   try {
       process.run(true, args, args.length);
-  }
-  catch (ex) {} 
-  finally {
+  } catch (ex) {
+    
+  } finally {
     env.set("CRASHES_EVENTS_DIR", "");
   }
 
@@ -101,8 +100,7 @@ function getMinidump() {
   return null;
 }
 
-function handleMinidump(callback)
-{
+function handleMinidump(callback) {
   
   let minidump = getMinidump();
 
@@ -147,8 +145,7 @@ function handleMinidump(callback)
   }
 }
 
-function do_content_crash(setup, callback)
-{
+function do_content_crash(setup, callback) {
   do_load_child_test_harness();
   do_test_pending();
 

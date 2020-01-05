@@ -21,8 +21,7 @@ this.EXPORTED_SYMBOLS = ["ForgetAboutSite"];
 
 
 
-function hasRootDomain(str, aDomain)
-{
+function hasRootDomain(str, aDomain) {
   let index = str.indexOf(aDomain);
   
   if (index == -1)
@@ -45,8 +44,7 @@ const Ci = Components.interfaces;
 const Cu = Components.utils;
 
 this.ForgetAboutSite = {
-  removeDataFromDomain: function CRH_removeDataFromDomain(aDomain)
-  {
+  removeDataFromDomain: function CRH_removeDataFromDomain(aDomain) {
     PlacesUtils.history.removePagesFromHost(aDomain, true);
 
     
@@ -121,10 +119,9 @@ this.ForgetAboutSite = {
       for (let i = 0; i < logins.length; i++)
         if (hasRootDomain(logins[i].hostname, aDomain))
           lm.removeLogin(logins[i]);
-    }
-    
-    
-    catch (ex) {
+    } catch (ex) {
+      
+      
       if (ex.message.indexOf("User canceled Master Password entry") == -1) {
         throw ex;
       }

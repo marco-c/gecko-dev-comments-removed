@@ -112,8 +112,7 @@ this.ChromeManifestParser = {
       
       let zis = reader.getInputStream(entries[0]);
       data = NetUtil.readInputStreamToString(zis, zis.available());
-    }
-    finally {
+    } finally {
       
       for (let i = readers.length - 1; i >= 0; i--) {
         readers[i].close();

@@ -86,8 +86,7 @@ function* checkBookmark(uri, expected_title) {
 
 
 
-function promisePageLoaded(browser)
-{
+function promisePageLoaded(browser) {
   return ContentTask.spawn(browser, null, function* () {
     yield ContentTaskUtils.waitForEvent(this, "DOMContentLoaded", true,
         (event) => {

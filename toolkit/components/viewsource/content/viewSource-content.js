@@ -542,8 +542,7 @@ var ViewSourceContent = {
       if (offset < node.data.length) {
         
         selection.extend(node, offset);
-      }
-      else {
+      } else {
         
         
         
@@ -766,8 +765,7 @@ var ViewSourceContent = {
 
 
 
-  viewSourceWithSelection(uri, drawSelection, baseURI)
-  {
+  viewSourceWithSelection(uri, drawSelection, baseURI) {
     this.needsDrawSelection = drawSelection;
 
     
@@ -876,8 +874,7 @@ var ViewSourceContent = {
                                  Ci.nsISelectionController.SELECTION_NORMAL,
                                  Ci.nsISelectionController.SELECTION_ANCHOR_REGION,
                                  true);
-    }
-    catch (e) { }
+    } catch (e) { }
 
     
     findService.matchCase     = matchCase;

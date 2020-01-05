@@ -68,8 +68,7 @@ AutoCompleteInput.prototype = {
 
 
 
-function ensure_results(expected, searchTerm)
-{
+function ensure_results(expected, searchTerm) {
   let controller = Cc["@mozilla.org/autocomplete/controller;1"].
                    getService(Ci.nsIAutoCompleteController);
 
@@ -98,8 +97,7 @@ function ensure_results(expected, searchTerm)
 
 
 
-function* task_setCountRank(aURI, aCount, aRank, aSearch, aBookmark)
-{
+function* task_setCountRank(aURI, aCount, aRank, aSearch, aBookmark) {
   
   let visits = [];
   for (let i = 0; i < aCount; i++) {
@@ -148,8 +146,7 @@ function* task_setCountRank(aURI, aCount, aRank, aSearch, aBookmark)
 
 
 
-function doAdaptiveDecay()
-{
+function doAdaptiveDecay() {
   PlacesUtils.history.runInBatchMode({
     runBatched() {
       for (let i = 0; i < 10; i++) {
@@ -177,8 +174,7 @@ var observer = {
   results: null,
   search: null,
   runCount: -1,
-  observe(aSubject, aTopic, aData)
-  {
+  observe(aSubject, aTopic, aData) {
     if (--this.runCount > 0)
       return;
     ensure_results(this.results, this.search);
@@ -379,8 +375,7 @@ var deferEnsureResults;
 
 
 
-add_task(function* test_adaptive()
-{
+add_task(function* test_adaptive() {
   
   Services.prefs.setBoolPref("browser.urlbar.autoFill", false);
   do_register_cleanup(() => Services.prefs.clearUserPref("browser.urlbar.autoFill"));

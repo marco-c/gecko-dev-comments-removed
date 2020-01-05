@@ -514,8 +514,7 @@ this.PageThumbs = {
   _prefEnabled: function PageThumbs_prefEnabled() {
     try {
       return !Services.prefs.getBoolPref("browser.pagethumbnails.capturing_disabled");
-    }
-    catch (e) {
+    } catch (e) {
       return true;
     }
   },
@@ -687,7 +686,7 @@ this.PageThumbsStorage = {
     let promise = PageThumbsWorker.post("wipe", [this.path]);
     try {
       yield promise;
-    }  finally {
+    } finally {
        
        
        if ("removeBlocker" in AsyncShutdown.profileBeforeChange) {

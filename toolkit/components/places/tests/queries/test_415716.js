@@ -27,8 +27,7 @@ function modHistoryTypes(val) {
   return TRANSITION_TYPED;
 }
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }
 
@@ -36,8 +35,7 @@ function run_test()
 
 
 
-add_task(function* test_buildTestDatabase()
-{
+add_task(function* test_buildTestDatabase() {
   
   
   let testURI = uri("http://www.foo.com");
@@ -77,8 +75,7 @@ add_task(function* test_buildTestDatabase()
 
 
 
-add_task(function test_execute()
-{
+add_task(function test_execute() {
   let query = PlacesUtils.history.getNewQuery();
   query.annotation = "moz-test-places/testing123";
   query.beginTime = daybefore * 1000;

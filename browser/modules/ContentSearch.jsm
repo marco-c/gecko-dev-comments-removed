@@ -464,8 +464,7 @@ this.ContentSearch = {
     if (data === "engine-current") {
       let engine = yield this._currentEngineObj();
       this._broadcast("CurrentEngine", engine);
-    }
-    else if (data !== "engine-default") {
+    } else if (data !== "engine-default") {
       
       
       let state = yield this.currentStateObj();
@@ -539,8 +538,7 @@ this.ContentSearch = {
     try {
       
       xhr.send();
-    }
-    catch (err) {
+    } catch (err) {
       return Promise.resolve(null);
     }
     return deferred.promise;

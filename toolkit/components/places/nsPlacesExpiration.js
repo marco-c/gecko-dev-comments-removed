@@ -454,8 +454,7 @@ function notify(observers, notification, args = []) {
 
 
 
-function nsPlacesExpiration()
-{
+function nsPlacesExpiration() {
   
 
   XPCOMUtils.defineLazyGetter(this, "_db", function() {
@@ -507,8 +506,7 @@ nsPlacesExpiration.prototype = {
 
   
 
-  observe: function PEX_observe(aSubject, aTopic, aData)
-  {
+  observe: function PEX_observe(aSubject, aTopic, aData) {
     if (this._shuttingDown) {
       return;
     }
@@ -532,16 +530,14 @@ nsPlacesExpiration.prototype = {
       }
 
       this._finalizeInternalStatements();
-    }
-    else if (aTopic == TOPIC_PREF_CHANGED) {
+    } else if (aTopic == TOPIC_PREF_CHANGED) {
       this._loadPrefs().then(() => {
         if (aData == PREF_INTERVAL_SECONDS) {
           
           this._newTimer();
         }
       }, Cu.reportError);
-    }
-    else if (aTopic == TOPIC_DEBUG_START_EXPIRATION) {
+    } else if (aTopic == TOPIC_DEBUG_START_EXPIRATION) {
       
       
       let limit = parseInt(aData);
@@ -550,14 +546,12 @@ nsPlacesExpiration.prototype = {
         
         
         this._expireWithActionAndLimit(ACTION.DEBUG, LIMIT.UNLIMITED);
-      }
-      else if (limit > 0) {
+      } else if (limit > 0) {
         
         
         this._debugLimit = limit;
         this._expireWithActionAndLimit(ACTION.DEBUG, LIMIT.DEBUG);
-      }
-      else {
+      } else {
         
         
         
@@ -565,8 +559,7 @@ nsPlacesExpiration.prototype = {
         this._debugLimit = -1;
         this._expireWithActionAndLimit(ACTION.DEBUG, LIMIT.DEBUG);
       }
-    }
-    else if (aTopic == TOPIC_IDLE_BEGIN) {
+    } else if (aTopic == TOPIC_IDLE_BEGIN) {
       
       
       if (this._timer) {
@@ -575,16 +568,13 @@ nsPlacesExpiration.prototype = {
       }
       if (this.expireOnIdle)
         this._expireWithActionAndLimit(ACTION.IDLE_DIRTY, LIMIT.LARGE);
-    }
-    else if (aTopic == TOPIC_IDLE_END) {
+    } else if (aTopic == TOPIC_IDLE_END) {
       
       if (!this._timer)
         this._newTimer();
-    }
-    else if (aTopic == TOPIC_IDLE_DAILY) {
+    } else if (aTopic == TOPIC_IDLE_DAILY) {
       this._expireWithActionAndLimit(ACTION.IDLE_DAILY, LIMIT.LARGE);
-    }
-    else if (aTopic == TOPIC_TESTING_MODE) {
+    } else if (aTopic == TOPIC_TESTING_MODE) {
       this._testingMode = true;
     }
   },
@@ -592,8 +582,7 @@ nsPlacesExpiration.prototype = {
   
 
   _inBatchMode: false,
-  onBeginUpdateBatch: function PEX_onBeginUpdateBatch()
-  {
+  onBeginUpdateBatch: function PEX_onBeginUpdateBatch() {
     this._inBatchMode = true;
 
     
@@ -603,8 +592,7 @@ nsPlacesExpiration.prototype = {
     }
   },
 
-  onEndUpdateBatch: function PEX_onEndUpdateBatch()
-  {
+  onEndUpdateBatch: function PEX_onEndUpdateBatch() {
     this._inBatchMode = false;
 
     
@@ -628,8 +616,7 @@ nsPlacesExpiration.prototype = {
 
   
 
-  notify: function PEX_timerCallback()
-  {
+  notify: function PEX_timerCallback() {
     
     this._getPagesStats((function onPagesCount(aPagesCount, aStatsCount) {
       let overLimitPages = aPagesCount - this._urisLimit;
@@ -652,8 +639,7 @@ nsPlacesExpiration.prototype = {
 
   
 
-  handleResult: function PEX_handleResult(aResultSet)
-  {
+  handleResult: function PEX_handleResult(aResultSet) {
     
     if (this._shuttingDown)
       return;
@@ -687,8 +673,7 @@ nsPlacesExpiration.prototype = {
         let days = parseInt((Date.now() - (mostRecentExpiredVisit / 1000)) / MSECS_PER_DAY);
         if (!this._mostRecentExpiredVisitDays) {
           this._mostRecentExpiredVisitDays = days;
-        }
-        else if (days < this._mostRecentExpiredVisitDays) {
+        } else if (days < this._mostRecentExpiredVisitDays) {
           this._mostRecentExpiredVisitDays = days;
         }
       }
@@ -702,16 +687,14 @@ nsPlacesExpiration.prototype = {
     }
   },
 
-  handleError: function PEX_handleError(aError)
-  {
+  handleError: function PEX_handleError(aError) {
     Cu.reportError("Async statement execution returned with '" +
                    aError.result + "', '" + aError.message + "'");
   },
 
   
   _telemetrySteps: 1,
-  handleCompletion: function PEX_handleCompletion(aReason)
-  {
+  handleCompletion: function PEX_handleCompletion(aReason) {
     if (aReason == Ci.mozIStorageStatementCallback.REASON_FINISHED) {
 
       if (this._mostRecentExpiredVisitDays) {
@@ -737,8 +720,7 @@ nsPlacesExpiration.prototype = {
         
         if (this.status == STATUS.DIRTY) {
           this._telemetrySteps++;
-        }
-        else {
+        } else {
           
           
           if (oldStatus == STATUS.DIRTY) {
@@ -791,8 +773,7 @@ nsPlacesExpiration.prototype = {
     if (!this._isIdleObserver && !this._shuttingDown) {
       this._idle.addIdleObserver(this, IDLE_TIMEOUT_SECONDS);
       this._isIdleObserver = true;
-    }
-    else if (this._isIdleObserver && this._shuttingDown) {
+    } else if (this._isIdleObserver && this._shuttingDown) {
       this._idle.removeIdleObserver(this, IDLE_TIMEOUT_SECONDS);
       this._isIdleObserver = false;
     }
@@ -929,8 +910,7 @@ nsPlacesExpiration.prototype = {
 
 
   _expireWithActionAndLimit:
-  function PEX__expireWithActionAndLimit(aAction, aLimit)
-  {
+  function PEX__expireWithActionAndLimit(aAction, aLimit) {
     
     if (this._inBatchMode)
       return;
@@ -953,8 +933,7 @@ nsPlacesExpiration.prototype = {
 
 
 
-  _finalizeInternalStatements: function PEX__finalizeInternalStatements()
-  {
+  _finalizeInternalStatements: function PEX__finalizeInternalStatements() {
     for (let queryType in this._cachedStatements) {
       let stmt = this._cachedStatements[queryType];
       stmt.finalize();
@@ -973,8 +952,7 @@ nsPlacesExpiration.prototype = {
 
 
   _cachedStatements: {},
-  _getBoundStatement: function PEX__getBoundStatement(aQueryType, aLimit, aAction)
-  {
+  _getBoundStatement: function PEX__getBoundStatement(aQueryType, aLimit, aAction) {
     
     let stmt = this._cachedStatements[aQueryType];
     if (stmt === undefined) {
@@ -1065,8 +1043,7 @@ nsPlacesExpiration.prototype = {
 
 
 
-  _newTimer: function PEX__newTimer()
-  {
+  _newTimer: function PEX__newTimer() {
     if (this._timer)
       this._timer.cancel();
     if (this._shuttingDown)

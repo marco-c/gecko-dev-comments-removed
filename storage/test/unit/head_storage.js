@@ -18,8 +18,7 @@ var dirSvc = Cc["@mozilla.org/file/directory_service;1"].
 
 var gDBConn = null;
 
-function getTestDB()
-{
+function getTestDB() {
   var db = dirSvc.get("ProfD", Ci.nsIFile);
   db.append("test_storage.sqlite");
   return db;
@@ -28,32 +27,28 @@ function getTestDB()
 
 
 
-function getCorruptDB()
-{
+function getCorruptDB() {
   return do_get_file("corruptDB.sqlite");
 }
 
 
 
 
-function getFakeDB()
-{
+function getFakeDB() {
   return do_get_file("fakeDB.sqlite");
 }
 
 
 
 
-function deleteTestDB()
-{
+function deleteTestDB() {
   print("*** Storage Tests: Trying to remove file!");
   var dbFile = getTestDB();
   if (dbFile.exists())
     try { dbFile.remove(false); } catch (e) {  }
 }
 
-function cleanup()
-{
+function cleanup() {
   
   print("*** Storage Tests: Trying to close!");
   getOpenedDatabase().close();
@@ -70,8 +65,7 @@ function cleanup()
 
 
 
-function asyncCleanup()
-{
+function asyncCleanup() {
   let closed = false;
 
   
@@ -91,8 +85,7 @@ function asyncCleanup()
   deleteTestDB();
 }
 
-function getService()
-{
+function getService() {
   return Cc["@mozilla.org/storage/service;1"].getService(Ci.mozIStorageService);
 }
 
@@ -103,8 +96,7 @@ function getService()
 
 
 
-function getOpenedDatabase()
-{
+function getOpenedDatabase() {
   if (!gDBConn) {
     gDBConn = getService().openDatabase(getTestDB());
   }
@@ -118,8 +110,7 @@ function getOpenedDatabase()
 
 
 
-function getOpenedUnsharedDatabase()
-{
+function getOpenedUnsharedDatabase() {
   if (!gDBConn) {
     gDBConn = getService().openUnsharedDatabase(getTestDB());
   }
@@ -133,13 +124,11 @@ function getOpenedUnsharedDatabase()
 
 
 
-function getDatabase(aFile)
-{
+function getDatabase(aFile) {
   return getService().openDatabase(aFile);
 }
 
-function createStatement(aSQL)
-{
+function createStatement(aSQL) {
   return getOpenedDatabase().createStatement(aSQL);
 }
 
@@ -150,8 +139,7 @@ function createStatement(aSQL)
 
 
 
-function createAsyncStatement(aSQL)
-{
+function createAsyncStatement(aSQL) {
   return getOpenedDatabase().createAsyncStatement(aSQL);
 }
 
@@ -168,13 +156,11 @@ function createAsyncStatement(aSQL)
 
 
 
-function expectError(aErrorCode, aFunction)
-{
+function expectError(aErrorCode, aFunction) {
   let exceptionCaught = false;
   try {
     aFunction();
-  }
-  catch (e) {
+  } catch (e) {
     if (e.result != aErrorCode) {
       do_throw("Got an exception, but the result code was not the expected " +
                "one.  Expected " + aErrorCode + ", got " + e.result);
@@ -196,8 +182,7 @@ function expectError(aErrorCode, aFunction)
 
 
 
-function verifyQuery(aSQLString, aBind, aResults)
-{
+function verifyQuery(aSQLString, aBind, aResults) {
   let stmt = getOpenedDatabase().createStatement(aSQLString);
   stmt.bindByIndex(0, aBind);
   try {
@@ -212,22 +197,18 @@ function verifyQuery(aSQLString, aBind, aResults)
       if (expectedVal === null) {
         do_check_eq(stmt.VALUE_TYPE_NULL, valType);
         do_check_true(stmt.getIsNull(iCol));
-      }
-      else if (typeof expectedVal == "number") {
+      } else if (typeof expectedVal == "number") {
         if (Math.floor(expectedVal) == expectedVal) {
           do_check_eq(stmt.VALUE_TYPE_INTEGER, valType);
           do_check_eq(expectedVal, stmt.getInt32(iCol));
-        }
-        else {
+        } else {
           do_check_eq(stmt.VALUE_TYPE_FLOAT, valType);
           do_check_eq(expectedVal, stmt.getDouble(iCol));
         }
-      }
-      else if (typeof expectedVal == "string") {
+      } else if (typeof expectedVal == "string") {
         do_check_eq(stmt.VALUE_TYPE_TEXT, valType);
         do_check_eq(expectedVal, stmt.getUTF8String(iCol));
-      }
-      else { 
+      } else { 
         do_check_eq(stmt.VALUE_TYPE_BLOB, valType);
         let count = { value: 0 }, blob = { value: null };
         stmt.getBlob(iCol, count, blob);
@@ -237,8 +218,7 @@ function verifyQuery(aSQLString, aBind, aResults)
         }
       }
     }
-  }
-  finally {
+  } finally {
     stmt.finalize();
   }
 }
@@ -251,8 +231,7 @@ function verifyQuery(aSQLString, aBind, aResults)
 
 
 
-function getTableRowCount(aTableName)
-{
+function getTableRowCount(aTableName) {
   var currentRows = 0;
   var countStmt = getOpenedDatabase().createStatement(
     "SELECT COUNT(1) AS count FROM " + aTableName
@@ -260,8 +239,7 @@ function getTableRowCount(aTableName)
   try {
     do_check_true(countStmt.executeStep());
     currentRows = countStmt.row.count;
-  }
-  finally {
+  } finally {
     countStmt.finalize();
   }
   return currentRows;

@@ -68,8 +68,7 @@ var gAppManagerDialog = {
     if (list.getRowCount() == 0) {
       
       document.getElementById("appDetails").hidden = true;
-    }
-    else {
+    } else {
       
       
       if (index == list.getRowCount())

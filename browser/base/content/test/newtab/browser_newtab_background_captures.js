@@ -22,8 +22,7 @@ add_task(function* () {
   file.initWithPath(path);
   try {
     file.remove(false);
-  }
-  catch (err) {}
+  } catch (err) {}
 
   
   yield setLinks("-1");

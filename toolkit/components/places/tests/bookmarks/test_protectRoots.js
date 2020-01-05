@@ -1,8 +1,7 @@
 
 
 
-function run_test()
-{
+function run_test() {
   const ROOTS = [
     PlacesUtils.bookmarksMenuFolderId,
     PlacesUtils.toolbarFolderId,

@@ -46,8 +46,7 @@ function test_resetPref() {
   
 }
 
-function test_resetSearchEngines()
-{
+function test_resetSearchEngines() {
   const defaultEngineOriginal = Services.search.defaultEngine;
   const visibleEnginesOriginal = Services.search.getVisibleEngines();
 
@@ -81,8 +80,7 @@ function test_resetSearchEngines()
   
 }
 
-function test()
-{
+function test() {
   test_resetPref();
   test_resetSearchEngines();
 }

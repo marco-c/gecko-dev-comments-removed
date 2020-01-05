@@ -68,8 +68,7 @@ function QI_node(aNode, aIID) {
   var result = null;
   try {
     result = aNode.QueryInterface(aIID);
-  }
-  catch (e) {
+  } catch (e) {
   }
   return result;
 }
@@ -175,8 +174,7 @@ function serializeNode(aNode, aIsLivemark) {
 
     if (aNode.tags)
       data.tags = aNode.tags;
-  }
-  else if (PlacesUtils.nodeIsContainer(aNode)) {
+  } else if (PlacesUtils.nodeIsContainer(aNode)) {
     
     if (data.grandParentId == PlacesUtils.tagsFolderId)
       throw new Error("Unexpected node type");
@@ -189,19 +187,16 @@ function serializeNode(aNode, aIsLivemark) {
         data.type = PlacesUtils.TYPE_X_MOZ_PLACE;
         data.uri = aNode.uri;
         data.concreteId = concreteId;
-      }
-      else {
+      } else {
         
         data.type = PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER;
       }
-    }
-    else {
+    } else {
       
       data.type = PlacesUtils.TYPE_X_MOZ_PLACE;
       data.uri = aNode.uri;
     }
-  }
-  else if (PlacesUtils.nodeIsSeparator(aNode)) {
+  } else if (PlacesUtils.nodeIsSeparator(aNode)) {
     
     if (data.parent == PlacesUtils.tagsFolderId ||
         data.grandParentId == PlacesUtils.tagsFolderId)
@@ -585,8 +580,7 @@ this.PlacesUtils = {
   ]),
 
   _shutdownFunctions: [],
-  registerShutdownFunction: function PU_registerShutdownFunction(aFunc)
-  {
+  registerShutdownFunction: function PU_registerShutdownFunction(aFunc) {
     
     if (this._shutdownFunctions.length == 0) {
       Services.obs.addObserver(this, this.TOPIC_SHUTDOWN, false);
@@ -595,8 +589,7 @@ this.PlacesUtils = {
   },
 
   
-  observe: function PU_observe(aSubject, aTopic, aData)
-  {
+  observe: function PU_observe(aSubject, aTopic, aData) {
     switch (aTopic) {
       case this.TOPIC_SHUTDOWN:
         Services.obs.removeObserver(this, this.TOPIC_SHUTDOWN);
@@ -629,23 +622,19 @@ this.PlacesUtils = {
 
   
 
-  didDo: function PU_didDo(aManager, aTransaction, aDoResult)
-  {
+  didDo: function PU_didDo(aManager, aTransaction, aDoResult) {
     updateCommandsOnActiveWindow();
   },
 
-  didUndo: function PU_didUndo(aManager, aTransaction, aUndoResult)
-  {
+  didUndo: function PU_didUndo(aManager, aTransaction, aUndoResult) {
     updateCommandsOnActiveWindow();
   },
 
-  didRedo: function PU_didRedo(aManager, aTransaction, aRedoResult)
-  {
+  didRedo: function PU_didRedo(aManager, aTransaction, aRedoResult) {
     updateCommandsOnActiveWindow();
   },
 
-  didBeginBatch: function PU_didBeginBatch(aManager, aResult)
-  {
+  didBeginBatch: function PU_didBeginBatch(aManager, aResult) {
     
     
     
@@ -946,8 +935,7 @@ this.PlacesUtils = {
             try {
               titleString = this._uri(uriString).QueryInterface(Ci.nsIURL)
                                 .fileName;
-            }
-            catch (e) {}
+            } catch (e) {}
           }
           
           if (this._uri(uriString)) {
@@ -1070,8 +1058,7 @@ this.PlacesUtils = {
     aAnnos.forEach(function(anno) {
       if (anno.value === undefined || anno.value === null) {
         annosvc.removePageAnnotation(aURI, anno.name);
-      }
-      else {
+      } else {
         let flags = ("flags" in anno) ? anno.flags : 0;
         let expires = ("expires" in anno) ?
           anno.expires : Ci.nsIAnnotationService.EXPIRE_NEVER;
@@ -1095,8 +1082,7 @@ this.PlacesUtils = {
     aAnnos.forEach(function(anno) {
       if (anno.value === undefined || anno.value === null) {
         annosvc.removeItemAnnotation(aItemId, anno.name, aSource);
-      }
-      else {
+      } else {
         let flags = ("flags" in anno) ? anno.flags : 0;
         let expires = ("expires" in anno) ?
           anno.expires : Ci.nsIAnnotationService.EXPIRE_NEVER;
@@ -1179,8 +1165,7 @@ this.PlacesUtils = {
     stmt.params.post_data = aPostData;
     try {
       stmt.execute();
-    }
-    finally {
+    } finally {
       stmt.finalize();
     }
 
@@ -1219,8 +1204,7 @@ this.PlacesUtils = {
       if (!stmt.executeStep())
         return null;
       return stmt.row.post_data;
-    }
-    finally {
+    } finally {
       stmt.finalize();
     }
   },
@@ -1247,8 +1231,7 @@ this.PlacesUtils = {
       if (!stmt.executeStep())
         return [ null, null ];
       return [ stmt.row.url, stmt.row.post_data ];
-    }
-    finally {
+    } finally {
       stmt.finalize();
     }
   },
@@ -1488,8 +1471,7 @@ this.PlacesUtils = {
 
 
 
-  asyncGetBookmarkIds: function PU_asyncGetBookmarkIds(aURI, aCallback)
-  {
+  asyncGetBookmarkIds: function PU_asyncGetBookmarkIds(aURI, aCallback) {
     let abort = false;
     let itemIds = [];
     Task.spawn(function* () {
@@ -2245,7 +2227,7 @@ var Keywords = {
     
     url = new URL(url);
 
-    return PlacesUtils.withConnectionWrapper("Keywords.insert",  Task.async(function*(db) {
+    return PlacesUtils.withConnectionWrapper("Keywords.insert", Task.async(function*(db) {
         let cache = yield gKeywordsCachePromise;
 
         
@@ -2314,7 +2296,7 @@ var Keywords = {
     let { keyword,
           source = Ci.nsINavBookmarksService.SOURCE_DEFAULT } = keywordOrEntry;
     keyword = keywordOrEntry.keyword.trim().toLowerCase();
-    return PlacesUtils.withConnectionWrapper("Keywords.remove",  Task.async(function*(db) {
+    return PlacesUtils.withConnectionWrapper("Keywords.remove", Task.async(function*(db) {
       let cache = yield gKeywordsCachePromise;
       if (!cache.has(keyword))
         return;
@@ -2579,8 +2561,7 @@ var GuidHelper = {
 
 
 
-function updateCommandsOnActiveWindow()
-{
+function updateCommandsOnActiveWindow() {
   let win = Services.focus.activeWindow;
   if (win && win instanceof Ci.nsIDOMWindow) {
     
@@ -2595,8 +2576,7 @@ function updateCommandsOnActiveWindow()
 
 
 
-function TransactionItemCache()
-{
+function TransactionItemCache() {
 }
 
 TransactionItemCache.prototype = {
@@ -2663,8 +2643,7 @@ TransactionItemCache.prototype = {
 
 
 
-function BaseTransaction()
-{
+function BaseTransaction() {
 }
 
 BaseTransaction.prototype = {
@@ -2703,8 +2682,7 @@ BaseTransaction.prototype = {
 
 
 this.PlacesAggregatedTransaction =
- function PlacesAggregatedTransaction(aName, aTransactions)
-{
+ function PlacesAggregatedTransaction(aName, aTransactions) {
   
   
   this.childTransactions = aTransactions;
@@ -2713,8 +2691,7 @@ this.PlacesAggregatedTransaction =
 
   
   
-  let countTransactions = function(aTransactions, aTxnCount)
-  {
+  let countTransactions = function(aTransactions, aTxnCount) {
     for (let i = 0;
          i < aTransactions.length && aTxnCount < MIN_TRANSACTIONS_FOR_BATCH;
          ++i, ++aTxnCount) {
@@ -2732,8 +2709,7 @@ this.PlacesAggregatedTransaction =
 PlacesAggregatedTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function ATXN_doTransaction()
-  {
+  doTransaction: function ATXN_doTransaction() {
     this._isUndo = false;
     if (this._useBatch)
       PlacesUtils.bookmarks.runInBatchMode(this, null);
@@ -2741,8 +2717,7 @@ PlacesAggregatedTransaction.prototype = {
       this.runBatched(false);
   },
 
-  undoTransaction: function ATXN_undoTransaction()
-  {
+  undoTransaction: function ATXN_undoTransaction() {
     this._isUndo = true;
     if (this._useBatch)
       PlacesUtils.bookmarks.runInBatchMode(this, null);
@@ -2750,8 +2725,7 @@ PlacesAggregatedTransaction.prototype = {
       this.runBatched(true);
   },
 
-  runBatched: function ATXN_runBatched()
-  {
+  runBatched: function ATXN_runBatched() {
     
     
     let transactions = this.childTransactions.slice(0);
@@ -2788,8 +2762,7 @@ PlacesAggregatedTransaction.prototype = {
 
 this.PlacesCreateFolderTransaction =
  function PlacesCreateFolderTransaction(aTitle, aParentId, aIndex, aAnnotations,
-                                        aChildTransactions)
-{
+                                        aChildTransactions) {
   this.item = new TransactionItemCache();
   this.item.title = aTitle;
   this.item.parentId = aParentId;
@@ -2801,8 +2774,7 @@ this.PlacesCreateFolderTransaction =
 PlacesCreateFolderTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function CFTXN_doTransaction()
-  {
+  doTransaction: function CFTXN_doTransaction() {
     this.item.id = PlacesUtils.bookmarks.createFolder(this.item.parentId,
                                                       this.item.title,
                                                       this.item.index);
@@ -2821,8 +2793,7 @@ PlacesCreateFolderTransaction.prototype = {
     }
   },
 
-  undoTransaction: function CFTXN_undoTransaction()
-  {
+  undoTransaction: function CFTXN_undoTransaction() {
     if (this.childTransactions && this.childTransactions.length > 0) {
       let txn = new PlacesAggregatedTransaction("Create folder childTxn",
                                                 this.childTransactions);
@@ -2865,8 +2836,7 @@ PlacesCreateFolderTransaction.prototype = {
 this.PlacesCreateBookmarkTransaction =
  function PlacesCreateBookmarkTransaction(aURI, aParentId, aIndex, aTitle,
                                           aKeyword, aAnnotations,
-                                          aChildTransactions, aPostData)
-{
+                                          aChildTransactions, aPostData) {
   this.item = new TransactionItemCache();
   this.item.uri = aURI;
   this.item.parentId = aParentId;
@@ -2881,8 +2851,7 @@ this.PlacesCreateBookmarkTransaction =
 PlacesCreateBookmarkTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function CITXN_doTransaction()
-  {
+  doTransaction: function CITXN_doTransaction() {
     this.item.id = PlacesUtils.bookmarks.insertBookmark(this.item.parentId,
                                                         this.item.uri,
                                                         this.item.index,
@@ -2909,8 +2878,7 @@ PlacesCreateBookmarkTransaction.prototype = {
     }
   },
 
-  undoTransaction: function CITXN_undoTransaction()
-  {
+  undoTransaction: function CITXN_undoTransaction() {
     if (this.childTransactions && this.childTransactions.length > 0) {
       
       let txn = new PlacesAggregatedTransaction("Create item childTxn",
@@ -2935,8 +2903,7 @@ PlacesCreateBookmarkTransaction.prototype = {
 
 
 this.PlacesCreateSeparatorTransaction =
- function PlacesCreateSeparatorTransaction(aParentId, aIndex)
-{
+ function PlacesCreateSeparatorTransaction(aParentId, aIndex) {
   this.item = new TransactionItemCache();
   this.item.parentId = aParentId;
   this.item.index = aIndex;
@@ -2945,14 +2912,12 @@ this.PlacesCreateSeparatorTransaction =
 PlacesCreateSeparatorTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function CSTXN_doTransaction()
-  {
+  doTransaction: function CSTXN_doTransaction() {
     this.item.id =
       PlacesUtils.bookmarks.insertSeparator(this.item.parentId, this.item.index);
   },
 
-  undoTransaction: function CSTXN_undoTransaction()
-  {
+  undoTransaction: function CSTXN_undoTransaction() {
     PlacesUtils.bookmarks.removeItem(this.item.id);
   }
 };
@@ -2980,8 +2945,7 @@ PlacesCreateSeparatorTransaction.prototype = {
 
 this.PlacesCreateLivemarkTransaction =
  function PlacesCreateLivemarkTransaction(aFeedURI, aSiteURI, aTitle, aParentId,
-                                          aIndex, aAnnotations)
-{
+                                          aIndex, aAnnotations) {
   this.item = new TransactionItemCache();
   this.item.feedURI = aFeedURI;
   this.item.siteURI = aSiteURI;
@@ -2994,8 +2958,7 @@ this.PlacesCreateLivemarkTransaction =
 PlacesCreateLivemarkTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function CLTXN_doTransaction()
-  {
+  doTransaction: function CLTXN_doTransaction() {
     this._promise = PlacesUtils.livemarks.addLivemark(
       { title: this.item.title
       , feedURI: this.item.feedURI
@@ -3011,8 +2974,7 @@ PlacesCreateLivemarkTransaction.prototype = {
       }, Cu.reportError);
   },
 
-  undoTransaction: function CLTXN_undoTransaction()
-  {
+  undoTransaction: function CLTXN_undoTransaction() {
     
     
     this._promise = PlacesUtils.livemarks.getLivemark({ id: this.item.id })
@@ -3032,8 +2994,7 @@ PlacesCreateLivemarkTransaction.prototype = {
 
 
 
-function PlacesRemoveLivemarkTransaction(aLivemarkId)
-{
+function PlacesRemoveLivemarkTransaction(aLivemarkId) {
   this.item = new TransactionItemCache();
   this.item.id = aLivemarkId;
   this.item.title = PlacesUtils.bookmarks.getItemTitle(this.item.id);
@@ -3054,8 +3015,7 @@ function PlacesRemoveLivemarkTransaction(aLivemarkId)
 PlacesRemoveLivemarkTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function RLTXN_doTransaction()
-  {
+  doTransaction: function RLTXN_doTransaction() {
     PlacesUtils.livemarks.getLivemark({ id: this.item.id })
       .then(aLivemark => {
         this.item.feedURI = aLivemark.feedURI;
@@ -3064,8 +3024,7 @@ PlacesRemoveLivemarkTransaction.prototype = {
       }, Cu.reportError);
   },
 
-  undoTransaction: function RLTXN_undoTransaction()
-  {
+  undoTransaction: function RLTXN_undoTransaction() {
     
     
     
@@ -3102,8 +3061,7 @@ PlacesRemoveLivemarkTransaction.prototype = {
 
 
 this.PlacesMoveItemTransaction =
- function PlacesMoveItemTransaction(aItemId, aNewParentId, aNewIndex)
-{
+ function PlacesMoveItemTransaction(aItemId, aNewParentId, aNewIndex) {
   this.item = new TransactionItemCache();
   this.item.id = aItemId;
   this.item.parentId = PlacesUtils.bookmarks.getFolderIdForItem(this.item.id);
@@ -3115,24 +3073,21 @@ this.PlacesMoveItemTransaction =
 PlacesMoveItemTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function MITXN_doTransaction()
-  {
+  doTransaction: function MITXN_doTransaction() {
     this.item.index = PlacesUtils.bookmarks.getItemIndex(this.item.id);
     PlacesUtils.bookmarks.moveItem(this.item.id,
                                    this.new.parentId, this.new.index);
     this._undoIndex = PlacesUtils.bookmarks.getItemIndex(this.item.id);
   },
 
-  undoTransaction: function MITXN_undoTransaction()
-  {
+  undoTransaction: function MITXN_undoTransaction() {
     
     
     if (this.new.parentId == this.item.parentId &&
         this.item.index > this._undoIndex) {
       PlacesUtils.bookmarks.moveItem(this.item.id, this.item.parentId,
                                      this.item.index + 1);
-    }
-    else {
+    } else {
       PlacesUtils.bookmarks.moveItem(this.item.id, this.item.parentId,
                                      this.item.index);
     }
@@ -3149,8 +3104,7 @@ PlacesMoveItemTransaction.prototype = {
 
 
 this.PlacesRemoveItemTransaction =
- function PlacesRemoveItemTransaction(aItemId)
-{
+ function PlacesRemoveItemTransaction(aItemId) {
   if (PlacesUtils.isRootItem(aItemId))
     throw Cr.NS_ERROR_INVALID_ARG;
 
@@ -3175,8 +3129,7 @@ this.PlacesRemoveItemTransaction =
     
     let txn = PlacesUtils.bookmarks.getRemoveFolderTransaction(this.item.id);
     this.childTransactions.push(txn);
-  }
-  else if (this.item.itemType == Ci.nsINavBookmarksService.TYPE_BOOKMARK) {
+  } else if (this.item.itemType == Ci.nsINavBookmarksService.TYPE_BOOKMARK) {
     this.item.uri = PlacesUtils.bookmarks.getBookmarkURI(this.item.id);
     this.item.keyword =
       PlacesUtils.bookmarks.getKeywordForBookmark(this.item.id);
@@ -3197,16 +3150,14 @@ this.PlacesRemoveItemTransaction =
 PlacesRemoveItemTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function RITXN_doTransaction()
-  {
+  doTransaction: function RITXN_doTransaction() {
     this.item.index = PlacesUtils.bookmarks.getItemIndex(this.item.id);
 
     if (this.item.itemType == Ci.nsINavBookmarksService.TYPE_FOLDER) {
       let txn = new PlacesAggregatedTransaction("Remove item childTxn",
                                                 this.childTransactions);
       txn.doTransaction();
-    }
-    else {
+    } else {
       
       let tags = this.item.uri ?
         PlacesUtils.tagging.getTagsForURI(this.item.uri) : null;
@@ -3221,8 +3172,7 @@ PlacesRemoveItemTransaction.prototype = {
     }
   },
 
-  undoTransaction: function RITXN_undoTransaction()
-  {
+  undoTransaction: function RITXN_undoTransaction() {
     if (this.item.itemType == Ci.nsINavBookmarksService.TYPE_BOOKMARK) {
       this.item.id = PlacesUtils.bookmarks.insertBookmark(this.item.parentId,
                                                           this.item.uri,
@@ -3237,13 +3187,11 @@ PlacesRemoveItemTransaction.prototype = {
           PlacesUtils.bookmarks.setPostDataForBookmark(this.item.id);
         }
       }
-    }
-    else if (this.item.itemType == Ci.nsINavBookmarksService.TYPE_FOLDER) {
+    } else if (this.item.itemType == Ci.nsINavBookmarksService.TYPE_FOLDER) {
       let txn = new PlacesAggregatedTransaction("Remove item childTxn",
                                                 this.childTransactions);
       txn.undoTransaction();
-    }
-    else { 
+    } else { 
       this.item.id = PlacesUtils.bookmarks.insertSeparator(this.item.parentId,
                                                             this.item.index);
     }
@@ -3261,8 +3209,7 @@ PlacesRemoveItemTransaction.prototype = {
 
 
   _getFolderContentsTransactions:
-  function RITXN__getFolderContentsTransactions()
-  {
+  function RITXN__getFolderContentsTransactions() {
     let transactions = [];
     let contents =
       PlacesUtils.getFolderContents(this.item.id, false, false).root;
@@ -3288,8 +3235,7 @@ PlacesRemoveItemTransaction.prototype = {
 
 
 this.PlacesEditItemTitleTransaction =
- function PlacesEditItemTitleTransaction(aItemId, aNewTitle)
-{
+ function PlacesEditItemTitleTransaction(aItemId, aNewTitle) {
   this.item = new TransactionItemCache();
   this.item.id = aItemId;
   this.new = new TransactionItemCache();
@@ -3299,14 +3245,12 @@ this.PlacesEditItemTitleTransaction =
 PlacesEditItemTitleTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function EITTXN_doTransaction()
-  {
+  doTransaction: function EITTXN_doTransaction() {
     this.item.title = PlacesUtils.bookmarks.getItemTitle(this.item.id);
     PlacesUtils.bookmarks.setItemTitle(this.item.id, this.new.title);
   },
 
-  undoTransaction: function EITTXN_undoTransaction()
-  {
+  undoTransaction: function EITTXN_undoTransaction() {
     PlacesUtils.bookmarks.setItemTitle(this.item.id, this.item.title);
   }
 };
@@ -3333,8 +3277,7 @@ this.PlacesEditBookmarkURITransaction =
 PlacesEditBookmarkURITransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function EBUTXN_doTransaction()
-  {
+  doTransaction: function EBUTXN_doTransaction() {
     this.item.uri = PlacesUtils.bookmarks.getBookmarkURI(this.item.id);
     PlacesUtils.bookmarks.changeBookmarkURI(this.item.id, this.new.uri);
     
@@ -3347,8 +3290,7 @@ PlacesEditBookmarkURITransaction.prototype = {
     }
   },
 
-  undoTransaction: function EBUTXN_undoTransaction()
-  {
+  undoTransaction: function EBUTXN_undoTransaction() {
     PlacesUtils.bookmarks.changeBookmarkURI(this.item.id, this.item.uri);
     
     if (this.item.tags.length > 0) {
@@ -3374,8 +3316,7 @@ PlacesEditBookmarkURITransaction.prototype = {
 
 
 this.PlacesSetItemAnnotationTransaction =
- function PlacesSetItemAnnotationTransaction(aItemId, aAnnotationObject)
-{
+ function PlacesSetItemAnnotationTransaction(aItemId, aAnnotationObject) {
   this.item = new TransactionItemCache();
   this.item.id = aItemId;
   this.new = new TransactionItemCache();
@@ -3385,8 +3326,7 @@ this.PlacesSetItemAnnotationTransaction =
 PlacesSetItemAnnotationTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function SIATXN_doTransaction()
-  {
+  doTransaction: function SIATXN_doTransaction() {
     let annoName = this.new.annotations[0].name;
     if (PlacesUtils.annotations.itemHasAnnotation(this.item.id, annoName)) {
       
@@ -3400,8 +3340,7 @@ PlacesSetItemAnnotationTransaction.prototype = {
                                 flags: flags.value,
                                 value,
                                 expires: expires.value }];
-    }
-    else {
+    } else {
       
       this.item.annotations = [{ name: annoName,
                                 flags: 0,
@@ -3412,8 +3351,7 @@ PlacesSetItemAnnotationTransaction.prototype = {
     PlacesUtils.setAnnotationsForItem(this.item.id, this.new.annotations);
   },
 
-  undoTransaction: function SIATXN_undoTransaction()
-  {
+  undoTransaction: function SIATXN_undoTransaction() {
     PlacesUtils.setAnnotationsForItem(this.item.id, this.item.annotations);
   }
 };
@@ -3432,8 +3370,7 @@ PlacesSetItemAnnotationTransaction.prototype = {
 
 
 this.PlacesSetPageAnnotationTransaction =
- function PlacesSetPageAnnotationTransaction(aURI, aAnnotationObject)
-{
+ function PlacesSetPageAnnotationTransaction(aURI, aAnnotationObject) {
   this.item = new TransactionItemCache();
   this.item.uri = aURI;
   this.new = new TransactionItemCache();
@@ -3443,8 +3380,7 @@ this.PlacesSetPageAnnotationTransaction =
 PlacesSetPageAnnotationTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function SPATXN_doTransaction()
-  {
+  doTransaction: function SPATXN_doTransaction() {
     let annoName = this.new.annotations[0].name;
     if (PlacesUtils.annotations.pageHasAnnotation(this.item.uri, annoName)) {
       
@@ -3457,8 +3393,7 @@ PlacesSetPageAnnotationTransaction.prototype = {
                                 flags: flags.value,
                                 value,
                                 expires: expires.value }];
-    }
-    else {
+    } else {
       
       this.item.annotations = [{ name: annoName,
                                 type: Ci.nsIAnnotationService.TYPE_STRING,
@@ -3470,8 +3405,7 @@ PlacesSetPageAnnotationTransaction.prototype = {
     PlacesUtils.setAnnotationsForURI(this.item.uri, this.new.annotations);
   },
 
-  undoTransaction: function SPATXN_undoTransaction()
-  {
+  undoTransaction: function SPATXN_undoTransaction() {
     PlacesUtils.setAnnotationsForURI(this.item.uri, this.item.annotations);
   }
 };
@@ -3506,8 +3440,7 @@ this.PlacesEditBookmarkKeywordTransaction =
 PlacesEditBookmarkKeywordTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function EBKTXN_doTransaction()
-  {
+  doTransaction: function EBKTXN_doTransaction() {
     let done = false;
     Task.spawn(function* () {
       if (this.item.keyword) {
@@ -3533,8 +3466,7 @@ PlacesEditBookmarkKeywordTransaction.prototype = {
     }
   },
 
-  undoTransaction: function EBKTXN_undoTransaction()
-  {
+  undoTransaction: function EBKTXN_undoTransaction() {
 
     let done = false;
     Task.spawn(function* () {
@@ -3572,8 +3504,7 @@ PlacesEditBookmarkKeywordTransaction.prototype = {
 
 
 this.PlacesEditBookmarkPostDataTransaction =
- function PlacesEditBookmarkPostDataTransaction(aItemId, aPostData)
-{
+ function PlacesEditBookmarkPostDataTransaction(aItemId, aPostData) {
   this.item = new TransactionItemCache();
   this.item.id = aItemId;
   this.new = new TransactionItemCache();
@@ -3611,8 +3542,7 @@ PlacesEditBookmarkPostDataTransaction.prototype = {
 
 
 this.PlacesEditItemDateAddedTransaction =
- function PlacesEditItemDateAddedTransaction(aItemId, aNewDateAdded)
-{
+ function PlacesEditItemDateAddedTransaction(aItemId, aNewDateAdded) {
   this.item = new TransactionItemCache();
   this.item.id = aItemId;
   this.new = new TransactionItemCache();
@@ -3622,8 +3552,7 @@ this.PlacesEditItemDateAddedTransaction =
 PlacesEditItemDateAddedTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function EIDATXN_doTransaction()
-  {
+  doTransaction: function EIDATXN_doTransaction() {
     
     if (this.item.id == -1 && this.item.parentId != -1)
       this.item.id = this.item.parentId;
@@ -3632,8 +3561,7 @@ PlacesEditItemDateAddedTransaction.prototype = {
     PlacesUtils.bookmarks.setItemDateAdded(this.item.id, this.new.dateAdded);
   },
 
-  undoTransaction: function EIDATXN_undoTransaction()
-  {
+  undoTransaction: function EIDATXN_undoTransaction() {
     PlacesUtils.bookmarks.setItemDateAdded(this.item.id, this.item.dateAdded);
   }
 };
@@ -3650,8 +3578,7 @@ PlacesEditItemDateAddedTransaction.prototype = {
 
 
 this.PlacesEditItemLastModifiedTransaction =
- function PlacesEditItemLastModifiedTransaction(aItemId, aNewLastModified)
-{
+ function PlacesEditItemLastModifiedTransaction(aItemId, aNewLastModified) {
   this.item = new TransactionItemCache();
   this.item.id = aItemId;
   this.new = new TransactionItemCache();
@@ -3662,8 +3589,7 @@ PlacesEditItemLastModifiedTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
   doTransaction:
-  function EILMTXN_doTransaction()
-  {
+  function EILMTXN_doTransaction() {
     
     if (this.item.id == -1 && this.item.parentId != -1)
       this.item.id = this.item.parentId;
@@ -3674,8 +3600,7 @@ PlacesEditItemLastModifiedTransaction.prototype = {
   },
 
   undoTransaction:
-  function EILMTXN_undoTransaction()
-  {
+  function EILMTXN_undoTransaction() {
     PlacesUtils.bookmarks.setItemLastModified(this.item.id,
                                               this.item.lastModified);
   }
@@ -3691,8 +3616,7 @@ PlacesEditItemLastModifiedTransaction.prototype = {
 
 
 this.PlacesSortFolderByNameTransaction =
- function PlacesSortFolderByNameTransaction(aFolderId)
-{
+ function PlacesSortFolderByNameTransaction(aFolderId) {
   this.item = new TransactionItemCache();
   this.item.id = aFolderId;
 }
@@ -3700,8 +3624,7 @@ this.PlacesSortFolderByNameTransaction =
 PlacesSortFolderByNameTransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function SFBNTXN_doTransaction()
-  {
+  doTransaction: function SFBNTXN_doTransaction() {
     this._oldOrder = [];
 
     let contents =
@@ -3730,8 +3653,7 @@ PlacesSortFolderByNameTransaction.prototype = {
           preSep.splice(0, preSep.length);
         }
         newOrder.push(item);
-      }
-      else
+      } else
         preSep.push(item);
     }
     contents.containerOpen = false;
@@ -3752,8 +3674,7 @@ PlacesSortFolderByNameTransaction.prototype = {
     PlacesUtils.bookmarks.runInBatchMode(callback, null);
   },
 
-  undoTransaction: function SFBNTXN_undoTransaction()
-  {
+  undoTransaction: function SFBNTXN_undoTransaction() {
     let callback = {
       _self: this,
       runBatched() {
@@ -3778,8 +3699,7 @@ PlacesSortFolderByNameTransaction.prototype = {
 
 
 this.PlacesTagURITransaction =
- function PlacesTagURITransaction(aURI, aTags)
-{
+ function PlacesTagURITransaction(aURI, aTags) {
   this.item = new TransactionItemCache();
   this.item.uri = aURI;
   this.item.tags = aTags;
@@ -3788,8 +3708,7 @@ this.PlacesTagURITransaction =
 PlacesTagURITransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function TUTXN_doTransaction()
-  {
+  doTransaction: function TUTXN_doTransaction() {
     if (PlacesUtils.getMostRecentBookmarkForURI(this.item.uri) == -1) {
       
       
@@ -3803,8 +3722,7 @@ PlacesTagURITransaction.prototype = {
     PlacesUtils.tagging.tagURI(this.item.uri, this.item.tags);
   },
 
-  undoTransaction: function TUTXN_undoTransaction()
-  {
+  undoTransaction: function TUTXN_undoTransaction() {
     if (this.item.id != -1) {
       PlacesUtils.bookmarks.removeItem(this.item.id);
       this.item.id = -1;
@@ -3826,8 +3744,7 @@ PlacesTagURITransaction.prototype = {
 
 
 this.PlacesUntagURITransaction =
- function PlacesUntagURITransaction(aURI, aTags)
-{
+ function PlacesUntagURITransaction(aURI, aTags) {
   this.item = new TransactionItemCache();
   this.item.uri = aURI;
   if (aTags) {
@@ -3848,8 +3765,7 @@ this.PlacesUntagURITransaction =
 PlacesUntagURITransaction.prototype = {
   __proto__: BaseTransaction.prototype,
 
-  doTransaction: function UTUTXN_doTransaction()
-  {
+  doTransaction: function UTUTXN_doTransaction() {
     
     
     let tags = PlacesUtils.tagging.getTagsForURI(this.item.uri);
@@ -3859,8 +3775,7 @@ PlacesUntagURITransaction.prototype = {
     PlacesUtils.tagging.untagURI(this.item.uri, this.item.tags);
   },
 
-  undoTransaction: function UTUTXN_undoTransaction()
-  {
+  undoTransaction: function UTUTXN_undoTransaction() {
     PlacesUtils.tagging.tagURI(this.item.uri, this.item.tags);
   }
 };

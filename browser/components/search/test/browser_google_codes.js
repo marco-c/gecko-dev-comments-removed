@@ -12,8 +12,7 @@ var originalGeoURL;
 
 
 
-function removeCacheFile()
-{
+function removeCacheFile() {
   const CACHE_FILENAME = "search.json.mozlz4";
 
   let file =  Services.dirsvc.get("ProfD", Ci.nsIFile);

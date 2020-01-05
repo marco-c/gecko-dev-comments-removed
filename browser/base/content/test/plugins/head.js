@@ -11,8 +11,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
 
 
 
-function promiseInitContentBlocklistSvc(aBrowser)
-{
+function promiseInitContentBlocklistSvc(aBrowser) {
   return ContentTask.spawn(aBrowser, {}, function* () {
     try {
       Cc["@mozilla.org/extensions/blocklist;1"]

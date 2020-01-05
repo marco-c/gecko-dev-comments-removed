@@ -115,19 +115,16 @@ const backgroundPageThumbsContent = {
           this._finishCurrentCapture();
           delete this._currentCapture;
           this._startNextCapture();
-        }
-        else if (this._state == STATE_CANCELED) {
+        } else if (this._state == STATE_CANCELED) {
           delete this._currentCapture;
           this._startNextCapture();
         }
-      }
-      else if (this._state == STATE_LOADING &&
+      } else if (this._state == STATE_LOADING &&
                Components.isSuccessCode(status)) {
         
         this._state = STATE_CAPTURING;
         this._captureCurrentPage();
-      }
-      else if (this._state != STATE_CANCELED) {
+      } else if (this._state != STATE_CANCELED) {
         
         
         

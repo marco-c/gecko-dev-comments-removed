@@ -14,7 +14,7 @@ module.exports = {
     "block-spacing": "error",
 
     
-    
+    "brace-style": ["error", "1tbs", { "allowSingleLine": true }],
 
     
     "comma-spacing": ["error", {"before": false, "after": true}],
@@ -109,7 +109,7 @@ module.exports = {
     "no-mixed-spaces-and-tabs": ["error", "smart-tabs"],
 
     
-    
+    "no-multi-spaces": ["error", { exceptions: { "AssignmentExpression": true, "VariableDeclarator": true, "ArrayExpression": true, "ObjectExpression": true } }],
 
     
     "no-native-reassign": "error",

@@ -12,8 +12,7 @@
 var bs = Cc["@mozilla.org/browser/nav-bookmarks-service;1"].
          getService(Ci.nsINavBookmarksService);
 
-function run_test()
-{
+function run_test() {
   const TITLE = "test folder";
 
   
@@ -26,8 +25,7 @@ function run_test()
 
   
   bs.addObserver({
-    onItemAdded(aItemId, aFolder, aIndex, aItemType, aURI, aTitle)
-    {
+    onItemAdded(aItemId, aFolder, aIndex, aItemType, aURI, aTitle) {
       do_check_eq(aItemId, id);
       do_check_eq(aTitle, TITLE);
     }

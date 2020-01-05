@@ -330,8 +330,7 @@ var FullScreen = {
       
       if (!document.fullscreenElement)
         this.hideNavToolbox(true);
-    }
-    else {
+    } else {
       this.showNavToolbox(false);
       
       this._isPopupOpen = false;
@@ -495,30 +494,26 @@ var FullScreen = {
                  .getInterface(Ci.nsIDOMWindowUtils);
   },
 
-  getMouseTargetRect()
-  {
+  getMouseTargetRect() {
     return this._mouseTargetRect;
   },
 
   
-  _expandCallback()
-  {
+  _expandCallback() {
     FullScreen.showNavToolbox();
   },
-  onMouseEnter()
-  {
+  onMouseEnter() {
     FullScreen.hideNavToolbox();
   },
-  _keyToggleCallback(aEvent)
-  {
+  _keyToggleCallback(aEvent) {
     
     
     if (aEvent.keyCode == aEvent.DOM_VK_ESCAPE) {
       FullScreen.hideNavToolbox();
-    }
-    
-    else if (aEvent.keyCode == aEvent.DOM_VK_F6)
+    } else if (aEvent.keyCode == aEvent.DOM_VK_F6) {
+      
       FullScreen.showNavToolbox();
+    }
   },
 
   
@@ -546,8 +541,7 @@ var FullScreen = {
     return true;
   },
 
-  _setPopupOpen(aEvent)
-  {
+  _setPopupOpen(aEvent) {
     
     
     
@@ -564,12 +558,10 @@ var FullScreen = {
   },
 
   
-  getAutohide(aItem)
-  {
+  getAutohide(aItem) {
     aItem.setAttribute("checked", gPrefService.getBoolPref("browser.fullscreen.autohide"));
   },
-  setAutohide()
-  {
+  setAutohide() {
     gPrefService.setBoolPref("browser.fullscreen.autohide", !gPrefService.getBoolPref("browser.fullscreen.autohide"));
     
     FullScreen.hideNavToolbox(true);
@@ -662,8 +654,7 @@ var FullScreen = {
     if (fullscreenctls.parentNode == navbar && ctlsOnTabbar) {
       fullscreenctls.removeAttribute("flex");
       document.getElementById("TabsToolbar").appendChild(fullscreenctls);
-    }
-    else if (fullscreenctls.parentNode.id == "TabsToolbar" && !ctlsOnTabbar) {
+    } else if (fullscreenctls.parentNode.id == "TabsToolbar" && !ctlsOnTabbar) {
       fullscreenctls.setAttribute("flex", "1");
       navbar.appendChild(fullscreenctls);
     }

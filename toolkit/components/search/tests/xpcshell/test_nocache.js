@@ -10,8 +10,7 @@
 
 
 
-function run_test()
-{
+function run_test() {
   removeCacheFile();
   updateAppInfo();
   do_load_manifest("data/chrome.manifest");

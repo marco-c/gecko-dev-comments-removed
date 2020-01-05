@@ -28,8 +28,7 @@ addEventListener('DOMContentLoaded', function() {
 
 
 
-function navigate()
-{
+function navigate() {
   context = '';
   if ($('anon').checked)
     context += 'a,';

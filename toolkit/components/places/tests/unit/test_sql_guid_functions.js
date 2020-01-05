@@ -12,8 +12,7 @@
 
 
 
-function check_invariants(aGuid)
-{
+function check_invariants(aGuid) {
   do_print("Checking guid '" + aGuid + "'");
 
   do_check_valid_places_guid(aGuid);
@@ -21,8 +20,7 @@ function check_invariants(aGuid)
 
 
 
-function test_guid_invariants()
-{
+function test_guid_invariants() {
   const kExpectedChars = 64;
   const kAllowedChars =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_"
@@ -67,8 +65,7 @@ function test_guid_invariants()
   run_next_test();
 }
 
-function test_guid_on_background()
-{
+function test_guid_on_background() {
   
   let stmt = DBConn().createAsyncStatement("SELECT GENERATE_GUID()");
   let checked = false;
@@ -79,8 +76,7 @@ function test_guid_on_background()
         check_invariants(row.getResultByIndex(0));
         do_check_eq(aResult.getNextRow(), null);
         checked = true;
-      }
-      catch (e) {
+      } catch (e) {
         do_throw(e);
       }
     },
@@ -100,7 +96,6 @@ function test_guid_on_background()
   test_guid_on_background,
 ].forEach(add_test);
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }

@@ -334,8 +334,7 @@ const ERRORS_TO_REPORT = ["EvalError", "RangeError", "ReferenceError", "TypeErro
 
 
 
-this.Promise = function Promise(aExecutor)
-{
+this.Promise = function Promise(aExecutor) {
   if (typeof(aExecutor) != "function") {
     throw new TypeError("Promise constructor must be called with an executor.");
   }
@@ -432,8 +431,7 @@ this.Promise = function Promise(aExecutor)
 
 
 
-Promise.prototype.then = function(aOnResolve, aOnReject)
-{
+Promise.prototype.then = function(aOnResolve, aOnReject) {
   let handler = new Handler(this, aOnResolve, aOnReject);
   this[N_INTERNALS].handlers.push(handler);
 
@@ -466,8 +464,7 @@ Promise.prototype.then = function(aOnResolve, aOnReject)
 
 
 
-Promise.prototype.catch = function(aOnReject)
-{
+Promise.prototype.catch = function(aOnReject) {
   return this.then(undefined, aOnReject);
 };
 
@@ -478,8 +475,7 @@ Promise.prototype.catch = function(aOnReject)
 
 
 
-Promise.defer = function()
-{
+Promise.defer = function() {
   return new Deferred();
 };
 
@@ -495,8 +491,7 @@ Promise.defer = function()
 
 
 
-Promise.resolve = function(aValue)
-{
+Promise.resolve = function(aValue) {
   if (aValue && typeof(aValue) == "function" && aValue.isAsyncFunction) {
     throw new TypeError(
       "Cannot resolve a promise with an async function. " +
@@ -526,8 +521,7 @@ Promise.resolve = function(aValue)
 
 
 
-Promise.reject = function(aReason)
-{
+Promise.reject = function(aReason) {
   return new Promise((_, aReject) => aReject(aReason));
 };
 
@@ -547,8 +541,7 @@ Promise.reject = function(aReason)
 
 
 
-Promise.all = function(aValues)
-{
+Promise.all = function(aValues) {
   if (aValues == null || typeof(aValues[Symbol.iterator]) != "function") {
     throw new Error("Promise.all() expects an iterable.");
   }
@@ -598,8 +591,7 @@ Promise.all = function(aValues)
 
 
 
-Promise.race = function(aValues)
-{
+Promise.race = function(aValues) {
   if (aValues == null || typeof(aValues[Symbol.iterator]) != "function") {
     throw new Error("Promise.race() expects an iterable.");
   }
@@ -688,8 +680,7 @@ this.PromiseWalker = {
 
 
 
-  completePromise(aPromise, aStatus, aValue)
-  {
+  completePromise(aPromise, aStatus, aValue) {
     
     if (aPromise[N_INTERNALS].status != STATUS_PENDING) {
       return;
@@ -722,8 +713,7 @@ this.PromiseWalker = {
   
 
 
-  scheduleWalkerLoop()
-  {
+  scheduleWalkerLoop() {
     this.walkerLoopScheduled = true;
 
     
@@ -763,8 +753,7 @@ this.PromiseWalker = {
 
 
 
-  schedulePromise(aPromise)
-  {
+  schedulePromise(aPromise) {
     
     for (let handler of aPromise[N_INTERNALS].handlers) {
       this.handlers.push(handler);
@@ -790,8 +779,7 @@ this.PromiseWalker = {
 
 
 
-  walkerLoop()
-  {
+  walkerLoop() {
     
     
     
@@ -824,8 +812,7 @@ PromiseWalker.walkerLoop = PromiseWalker.walkerLoop.bind(PromiseWalker);
 
 
 
-function Deferred()
-{
+function Deferred() {
   this.promise = new Promise((aResolve, aReject) => {
     this.resolve = aResolve;
     this.reject = aReject;
@@ -884,8 +871,7 @@ Deferred.prototype = {
 
 
 
-function Handler(aThisPromise, aOnResolve, aOnReject)
-{
+function Handler(aThisPromise, aOnResolve, aOnReject) {
   this.thisPromise = aThisPromise;
   this.onResolve = aOnResolve;
   this.onReject = aOnReject;
@@ -917,8 +903,7 @@ Handler.prototype = {
 
 
 
-  process()
-  {
+  process() {
     
     let nextStatus = this.thisPromise[N_INTERNALS].status;
     let nextValue = this.thisPromise[N_INTERNALS].value;

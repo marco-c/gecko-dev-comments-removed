@@ -30,13 +30,11 @@ function uri_in_db(aURI) {
 }
 
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute()
-{
+add_task(function* test_execute() {
   
   do_check_eq(histsvc.databaseStatus, histsvc.DATABASE_STATUS_CREATE);
 
@@ -165,8 +163,7 @@ add_task(function* test_execute()
      statement = db.createStatement(q);
   } catch (ex) {
     do_throw("bookmarks table does not have id field, schema is too old!");
-  }
-  finally {
+  } finally {
     statement.finalize();
   }
 

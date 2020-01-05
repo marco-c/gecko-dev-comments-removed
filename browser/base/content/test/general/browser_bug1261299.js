@@ -9,8 +9,7 @@
 
 
 
-add_task(function* test_content_and_chrome_selection()
-{
+add_task(function* test_content_and_chrome_selection() {
   let testPage =
     'data:text/html,' +
     '<textarea id="textarea">Write something here</textarea>';
@@ -39,8 +38,7 @@ add_task(function* test_content_and_chrome_selection()
 
 
 
-add_task(function* test_active_selection_switches_properly()
-{
+add_task(function* test_active_selection_switches_properly() {
   let testPage1 =
     'data:text/html,' +
     '<textarea id="textarea">Write something here</textarea>';

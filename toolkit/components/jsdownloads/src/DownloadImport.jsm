@@ -51,8 +51,7 @@ const DOWNLOAD_QUEUED = 5;
 
 
 
-this.DownloadImport = function(aList, aPath)
-{
+this.DownloadImport = function(aList, aPath) {
   this.list = aList;
   this.path = aPath;
 }

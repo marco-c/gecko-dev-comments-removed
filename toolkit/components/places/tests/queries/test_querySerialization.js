@@ -488,8 +488,7 @@ const queryOptionSwitches = [
 
 
 
-function cartProd(aSequences, aCallback)
-{
+function cartProd(aSequences, aCallback) {
   if (aSequences.length === 0)
     return 0;
 
@@ -530,8 +529,7 @@ function cartProd(aSequences, aCallback)
         
         if (seqPtr < 0)
           done = true;
-      }
-      else break;
+      } else break;
     }
   }
   return numProds;
@@ -554,8 +552,7 @@ function cartProd(aSequences, aCallback)
 
 
 
-function choose(aSet, aHowMany, aCallback)
-{
+function choose(aSet, aHowMany, aCallback) {
   
   var ptrs = [];
   for (let i = 0; i < aHowMany; i++) {
@@ -615,21 +612,18 @@ function choose(aSet, aHowMany, aCallback)
 
 
 
-function flagSwitchMatches(aQuery1, aQuery2)
-{
+function flagSwitchMatches(aQuery1, aQuery2) {
   if (aQuery1[this.flag] && aQuery2[this.flag]) {
     for (let p in this.subswitches) {
       if (p in aQuery1 && p in aQuery2) {
         if (aQuery1[p] instanceof Ci.nsIURI) {
           if (!aQuery1[p].equals(aQuery2[p]))
             return false;
-        }
-        else if (aQuery1[p] !== aQuery2[p])
+        } else if (aQuery1[p] !== aQuery2[p])
           return false;
       }
     }
-  }
-  else if (aQuery1[this.flag] || aQuery2[this.flag])
+  } else if (aQuery1[this.flag] || aQuery2[this.flag])
     return false;
 
   return true;
@@ -650,8 +644,7 @@ function flagSwitchMatches(aQuery1, aQuery2)
 
 
 
-function queryObjsEqual(aSwitches, aObj1, aObj2)
-{
+function queryObjsEqual(aSwitches, aObj1, aObj2) {
   for (let i = 0; i < aSwitches.length; i++) {
     if (!aSwitches[i].matches(aObj1, aObj2))
       return false;
@@ -667,8 +660,7 @@ function queryObjsEqual(aSwitches, aObj1, aObj2)
 
 
 
-function runQuerySequences(aHowManyLo, aHowManyHi)
-{
+function runQuerySequences(aHowManyLo, aHowManyHi) {
   var allSwitches = querySwitches.concat(queryOptionSwitches);
   var prevQueries = [];
   var prevOpts = [];
@@ -739,8 +731,7 @@ function runQuerySequences(aHowManyLo, aHowManyHi)
 
 
 
-function serializeDeserialize(aQueryArr, aQueryOptions)
-{
+function serializeDeserialize(aQueryArr, aQueryOptions) {
   var queryStr = PlacesUtils.history.queriesToQueryString(aQueryArr,
                                                         aQueryArr.length,
                                                         aQueryOptions);
@@ -786,12 +777,10 @@ function serializeDeserialize(aQueryArr, aQueryOptions)
 
 
 
-function simplePropertyMatches(aObj1, aObj2)
-{
+function simplePropertyMatches(aObj1, aObj2) {
   return aObj1[this.property] === aObj2[this.property];
 }
 
-function run_test()
-{
+function run_test() {
   runQuerySequences(CHOOSE_HOW_MANY_SWITCHES_LO, CHOOSE_HOW_MANY_SWITCHES_HI);
 }

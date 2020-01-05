@@ -17,14 +17,12 @@ const moz_anno_favicon_prefix = "moz-anno:favicon:";
 
 
 
-function streamListener(aExpectedContentType)
-{
+function streamListener(aExpectedContentType) {
   this._expectedContentType = aExpectedContentType;
 }
 streamListener.prototype =
 {
-  onStartRequest(aRequest, aContext)
-  {
+  onStartRequest(aRequest, aContext) {
     
     
     let channel = aRequest.QueryInterface(Ci.nsIChannel);
@@ -35,21 +33,18 @@ streamListener.prototype =
     
     this._checked = true;
   },
-  onStopRequest()
-  {
+  onStopRequest() {
     do_check_true(this._checked);
     do_test_finished();
   },
-  onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount)
-  {
+  onDataAvailable(aRequest, aContext, aInputStream, aOffset, aCount) {
     aRequest.cancel(Cr.NS_ERROR_ABORT);
   }
 };
 
 
 
-function run_test()
-{
+function run_test() {
   let fs = Cc["@mozilla.org/browser/favicon-service;1"].
            getService(Ci.nsIFaviconService);
 

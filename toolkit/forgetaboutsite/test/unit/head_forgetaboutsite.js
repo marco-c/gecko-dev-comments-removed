@@ -12,8 +12,7 @@ var profileDir = do_get_profile();
 
 
 
-function cleanUp()
-{
+function cleanUp() {
   let files = [
     "places.sqlite",
     "cookies.sqlite",

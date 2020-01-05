@@ -38,8 +38,7 @@ FormSubmitObserver.prototype =
 
 
 
-  init(aWindow, aTabChildGlobal)
-  {
+  init(aWindow, aTabChildGlobal) {
     this._content = aWindow;
     this._tab = aTabChildGlobal;
     this._mm =
@@ -57,8 +56,7 @@ FormSubmitObserver.prototype =
     this._tab.addEventListener("unload", this, false);
   },
 
-  uninit()
-  {
+  uninit() {
     Services.obs.removeObserver(this, "invalidformsubmit");
     this._content.removeEventListener("pageshow", this, false);
     this._content.removeEventListener("unload", this, false);
@@ -95,8 +93,7 @@ FormSubmitObserver.prototype =
 
 
 
-  notifyInvalidSubmit(aFormElement, aInvalidElements)
-  {
+  notifyInvalidSubmit(aFormElement, aInvalidElements) {
     
     
     

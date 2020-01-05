@@ -17,8 +17,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
 
 
 
-function promiseTopicObserved(topic)
-{
+function promiseTopicObserved(topic) {
   let deferred = Promise.defer();
   info("Waiting for observer topic " + topic);
   Services.obs.addObserver(function PTO_observe(obsSubject, obsTopic, obsData) {
@@ -32,8 +31,7 @@ function promiseTopicObserved(topic)
 
 
 
-function* waitForWindowReadyForPopupNotifications(win)
-{
+function* waitForWindowReadyForPopupNotifications(win) {
   
   
   yield BrowserTestUtils.waitForCondition(
@@ -58,8 +56,7 @@ function* waitForWindowReadyForPopupNotifications(win)
 
 
 
-function promiseTabLoadEvent(tab, url)
-{
+function promiseTabLoadEvent(tab, url) {
   let browser = tab.linkedBrowser;
 
   if (url) {

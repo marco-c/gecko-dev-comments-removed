@@ -1,8 +1,7 @@
 
 
 
-add_task(function* ()
-{
+add_task(function* () {
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, null, false);
 
   let browser = tab.linkedBrowser;

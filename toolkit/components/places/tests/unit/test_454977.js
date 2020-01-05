@@ -8,11 +8,9 @@
 var visit_count = 0;
 
 
-function* task_add_visit(aURI, aVisitType)
-{
+function* task_add_visit(aURI, aVisitType) {
   
-  let deferUpdatePlaces = new Promise((resolve, reject) =>
-  {
+  let deferUpdatePlaces = new Promise((resolve, reject) => {
     PlacesUtils.asyncHistory.updatePlaces({
       uri: aURI,
       visits: [{ transitionType: aVisitType, visitDate: Date.now() * 1000 }]
@@ -61,8 +59,7 @@ function* task_add_visit(aURI, aVisitType)
 
 
 
-function check_results(aExpectedCount, aExpectedCountWithHidden)
-{
+function check_results(aExpectedCount, aExpectedCountWithHidden) {
   let query = PlacesUtils.history.getNewQuery();
   
   query.minVisits = visit_count;
@@ -86,13 +83,11 @@ function check_results(aExpectedCount, aExpectedCountWithHidden)
 }
 
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute()
-{
+add_task(function* test_execute() {
   const TEST_URI = uri("http://test.mozilla.org/");
 
   

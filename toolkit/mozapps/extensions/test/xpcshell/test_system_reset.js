@@ -75,13 +75,11 @@ function* check_installed(conditions) {
 
       
       BootstrapMonitor.checkAddonStarted(id, version);
-    }
-    else {
+    } else {
       if (isUpgrade) {
         
         do_check_eq(addon, null);
-      }
-      else {
+      } else {
         
         do_check_true(!addon || !addon.isActive);
       }

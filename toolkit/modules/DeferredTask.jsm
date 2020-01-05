@@ -161,8 +161,7 @@ this.DeferredTask.prototype = {
   
 
 
-  _startTimer()
-  {
+  _startTimer() {
     this._timer = new Timer(this._timerCallback.bind(this), this._delayMs,
                             Ci.nsITimer.TYPE_ONE_SHOT);
   },
@@ -185,8 +184,7 @@ this.DeferredTask.prototype = {
 
 
 
-  arm()
-  {
+  arm() {
     if (this._finalized) {
       throw new Error("Unable to arm timer, the object has been finalized.");
     }
@@ -262,8 +260,7 @@ this.DeferredTask.prototype = {
   
 
 
-  _timerCallback()
-  {
+  _timerCallback() {
     let runningDeferred = Promise.defer();
 
     

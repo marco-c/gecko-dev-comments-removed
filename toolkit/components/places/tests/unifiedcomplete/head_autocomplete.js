@@ -333,8 +333,7 @@ function resetRestrict(aType) {
 
 
 
-function stripPrefix(spec)
-{
+function stripPrefix(spec) {
   ["http://", "https://", "ftp://"].some(scheme => {
     if (spec.startsWith(scheme)) {
       spec = spec.slice(scheme.length);

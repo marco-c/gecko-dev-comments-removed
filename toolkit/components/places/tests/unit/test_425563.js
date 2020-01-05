@@ -4,13 +4,11 @@
 
 
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }
 
-add_task(function* test_execute()
-{
+add_task(function* test_execute() {
   let count_visited_URIs = ["http://www.test-link.com/",
                             "http://www.test-typed.com/",
                             "http://www.test-bookmark.com/",

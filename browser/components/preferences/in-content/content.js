@@ -16,10 +16,8 @@ XPCOMUtils.defineLazyGetter(this, "AlertsServiceDND", function() {
 });
 
 var gContentPane = {
-  init()
-  {
-    function setEventListener(aId, aEventType, aCallback)
-    {
+  init() {
+    function setEventListener(aId, aEventType, aCallback) {
       document.getElementById(aId)
               .addEventListener(aEventType, aCallback.bind(gContentPane));
     }
@@ -99,8 +97,7 @@ var gContentPane = {
 
 
 
-  updateButtons(aButtonID, aPreferenceID)
-  {
+  updateButtons(aButtonID, aPreferenceID) {
     var button = document.getElementById(aButtonID);
     var preference = document.getElementById(aPreferenceID);
     button.disabled = preference.value != true;
@@ -122,8 +119,7 @@ var gContentPane = {
 
 
 
-  showNotificationExceptions()
-  {
+  showNotificationExceptions() {
     let bundlePreferences = document.getElementById("bundlePreferences");
     let params = { permissionType: "desktop-notification" };
     params.windowTitle = bundlePreferences.getString("notificationspermissionstitle");
@@ -145,8 +141,7 @@ var gContentPane = {
 
 
 
-  showPopupExceptions()
-  {
+  showPopupExceptions() {
     var bundlePreferences = document.getElementById("bundlePreferences");
     var params = { blockVisible: false, sessionVisible: false, allowVisible: true,
                    prefilledHost: "", permissionType: "popup" }
@@ -162,8 +157,7 @@ var gContentPane = {
   
 
 
-  _rebuildFonts()
-  {
+  _rebuildFonts() {
     var preferences = document.getElementById("contentPreferences");
     
     preferences.hidden = false;
@@ -177,8 +171,7 @@ var gContentPane = {
   
 
 
-  _selectDefaultLanguageGroup(aLanguageGroup, aIsSerif)
-  {
+  _selectDefaultLanguageGroup(aLanguageGroup, aIsSerif) {
     const kFontNameFmtSerif         = "font.name.serif.%LANG%";
     const kFontNameFmtSansSerif     = "font.name.sans-serif.%LANG%";
     const kFontNameListFmtSerif     = "font.name-list.serif.%LANG%";
@@ -228,8 +221,7 @@ var gContentPane = {
 
 
 
-  _readDefaultFontTypeForLanguage(aLanguageGroup)
-  {
+  _readDefaultFontTypeForLanguage(aLanguageGroup) {
     const kDefaultFontType = "font.default.%LANG%";
     var defaultFontTypePref = kDefaultFontType.replace(/%LANG%/, aLanguageGroup);
     var preference = document.getElementById(defaultFontTypePref);
@@ -248,8 +240,7 @@ var gContentPane = {
 
 
 
-  configureFonts()
-  {
+  configureFonts() {
     gSubDialog.open("chrome://browser/content/preferences/fonts.xul", "resizable=no");
   },
 
@@ -257,8 +248,7 @@ var gContentPane = {
 
 
 
-  configureColors()
-  {
+  configureColors() {
     gSubDialog.open("chrome://browser/content/preferences/colors.xul", "resizable=no");
   },
 
@@ -267,8 +257,7 @@ var gContentPane = {
   
 
 
-  showLanguages()
-  {
+  showLanguages() {
     gSubDialog.open("chrome://browser/content/preferences/languages.xul");
   },
 
@@ -276,19 +265,16 @@ var gContentPane = {
 
 
 
-  showTranslationExceptions()
-  {
+  showTranslationExceptions() {
     gSubDialog.open("chrome://browser/content/preferences/translation.xul");
   },
 
-  openTranslationProviderAttribution()
-  {
+  openTranslationProviderAttribution() {
     Components.utils.import("resource:///modules/translation/Translation.jsm");
     Translation.openProviderAttribution();
   },
 
-  toggleDoNotDisturbNotifications(event)
-  {
+  toggleDoNotDisturbNotifications(event) {
     AlertsServiceDND.manualDoNotDisturb = event.target.checked;
   },
 };

@@ -298,19 +298,15 @@ BrowserGlue.prototype = {
         if (data == "post-update-notification") {
           if (Services.prefs.prefHasUserValue("app.update.postupdate"))
             this._showUpdateNotification();
-        }
-        else if (data == "force-ui-migration") {
+        } else if (data == "force-ui-migration") {
           this._migrateUI();
-        }
-        else if (data == "force-distribution-customization") {
+        } else if (data == "force-distribution-customization") {
           this._distributionCustomizer.applyPrefDefaults();
           this._distributionCustomizer.applyCustomizations();
           
-        }
-        else if (data == "force-places-init") {
+        } else if (data == "force-places-init") {
           this._initPlaces(false);
-        }
-        else if (data == "smart-bookmarks-init") {
+        } else if (data == "smart-bookmarks-init") {
           this.ensurePlacesDefaultQueriesInitialized().then(() => {
             Services.obs.notifyObservers(null, "test-smart-bookmarks-done", null);
           });
@@ -1110,8 +1106,7 @@ BrowserGlue.prototype = {
                  getService(Ci.nsISessionStartup);
         willRecoverSession =
           (ss.sessionType == Ci.nsISessionStartup.RECOVER_SESSION);
-      }
-      catch (ex) {  }
+      } catch (ex) {  }
 
       
       let isDefault = false;
@@ -1158,8 +1153,7 @@ BrowserGlue.prototype = {
                           .add(shouldCheck);
         Services.telemetry.getHistogramById("BROWSER_SET_DEFAULT_DIALOG_PROMPT_RAWCOUNT")
                           .add(promptCount);
-      }
-      catch (ex) {  }
+      } catch (ex) {  }
 
       if (willPrompt) {
         Services.tm.mainThread.dispatch(function() {
@@ -1345,8 +1339,7 @@ BrowserGlue.prototype = {
     try {
       
       var update = um.getUpdateAt(0).QueryInterface(Ci.nsIPropertyBag);
-    }
-    catch (e) {
+    } catch (e) {
       
       Cu.reportError("Unable to find update: " + e);
       return;
@@ -1430,8 +1423,7 @@ BrowserGlue.prototype = {
       
       AlertsService.showAlertNotification(null, title, text,
                                           true, url, clickCallback);
-    }
-    catch (e) {
+    } catch (e) {
       Cu.reportError(e);
     }
   },
@@ -1516,15 +1508,13 @@ BrowserGlue.prototype = {
           
           yield BookmarkJSONUtils.importFromFile(lastBackupFile, true);
           importBookmarks = false;
-        }
-        else {
+        } else {
           
           importBookmarks = true;
           if (yield OS.File.exists(BookmarkHTMLUtils.defaultPath)) {
             
             importBookmarksHTML = true;
-          }
-          else {
+          } else {
             
             restoreDefaultBookmarks = true;
           }
@@ -1545,8 +1535,7 @@ BrowserGlue.prototype = {
         } catch (e) {
           Cu.reportError(e);
         }
-      }
-      else {
+      } else {
         
         
         
@@ -1561,8 +1550,7 @@ BrowserGlue.prototype = {
         if (restoreDefaultBookmarks) {
           
           bookmarksUrl = "chrome://browser/locale/bookmarks.html";
-        }
-        else if (yield OS.File.exists(BookmarkHTMLUtils.defaultPath)) {
+        } else if (yield OS.File.exists(BookmarkHTMLUtils.defaultPath)) {
           bookmarksUrl = OS.Path.toFileURI(BookmarkHTMLUtils.defaultPath);
         }
 
@@ -1584,8 +1572,7 @@ BrowserGlue.prototype = {
             Cu.reportError(e);
           }
 
-        }
-        else {
+        } else {
           Cu.reportError(new Error("Unable to find bookmarks.html file."));
         }
 
@@ -1607,8 +1594,7 @@ BrowserGlue.prototype = {
           lastBackupFile = yield PlacesBackups.getMostRecentBackup();
         if (!lastBackupFile) {
             this._bookmarksBackupIdleTime /= 2;
-        }
-        else {
+        } else {
           let lastBackupTime = PlacesBackups.getDateForFile(lastBackupFile);
           let profileLastUse = Services.appinfo.replacedLockTime || Date.now();
 
@@ -1910,8 +1896,7 @@ BrowserGlue.prototype = {
           Services.prefs.clearUserPref("privacy.donottrackheader.enabled");
           Services.prefs.clearUserPref("privacy.donottrackheader.value");
         }
-      }
-      catch (ex) {}
+      } catch (ex) {}
     }
 
     if (currentUIVersion < 26) {
@@ -2183,8 +2168,7 @@ BrowserGlue.prototype = {
           let bm = yield PlacesUtils.bookmarks.fetch(smartBookmark.guid);
           smartBookmark.parentGuid = bm.parentGuid;
           smartBookmark.index = bm.index;
-        }
-        else {
+        } else {
           
           
           

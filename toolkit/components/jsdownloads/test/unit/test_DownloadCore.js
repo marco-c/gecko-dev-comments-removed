@@ -24,8 +24,7 @@ Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
 
 
 
-add_task(function test_DownloadError()
-{
+add_task(function test_DownloadError() {
   let error = new DownloadError({ result: Cr.NS_ERROR_NOT_RESUMABLE,
                                   message: "Not resumable."});
   do_check_eq(error.result, Cr.NS_ERROR_NOT_RESUMABLE);

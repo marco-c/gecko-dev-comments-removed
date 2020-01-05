@@ -100,13 +100,11 @@ var testData = [
 
 
 
-function run_test()
-{
+function run_test() {
   run_next_test();
 }
 
-add_task(function* test_abstime_annotation_uri()
-{
+add_task(function* test_abstime_annotation_uri() {
   
   yield task_populateDB(testData);
 

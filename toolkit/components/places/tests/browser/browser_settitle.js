@@ -3,22 +3,19 @@ var conn = PlacesUtils.history.QueryInterface(Ci.nsPIPlacesDatabase).DBConnectio
 
 
 
-function getColumn(table, column, url)
-{
+function getColumn(table, column, url) {
   var stmt = conn.createStatement(
     `SELECT ${column} FROM ${table} WHERE url_hash = hash(:val) AND url = :val`);
   try {
     stmt.params.val = url;
     stmt.executeStep();
     return stmt.row[column];
-  }
-  finally {
+  } finally {
     stmt.finalize();
   }
 }
 
-add_task(function* ()
-{
+add_task(function* () {
   
   
 

@@ -80,8 +80,7 @@ this.BrowserUtils = {
       let principalStr = "";
       try {
         principalStr = " from " + aPrincipal.URI.spec;
-      }
-      catch (e2) { }
+      } catch (e2) { }
 
       throw "Load of " + aURL + principalStr + " denied.";
     }
@@ -424,9 +423,8 @@ this.BrowserUtils = {
         try {
           url = this.makeURI(linkText);
         } catch (ex) {}
-      }
-      
-      else if (/^(?:[a-z\d-]+\.)+[a-z]+$/i.test(linkText)) {
+      } else if (/^(?:[a-z\d-]+\.)+[a-z]+$/i.test(linkText)) {
+        
         
         
         

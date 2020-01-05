@@ -17,8 +17,7 @@ var docTitle = "";
 var docURL   = "";
 var progressParams = null;
 
-function ellipseString(aStr, doFront)
-{
+function ellipseString(aStr, doFront) {
   if (aStr.length > 3 && (aStr.substr(0, 3) == "..." || aStr.substr(aStr.length - 4, 3) == "..."))
     return aStr;
 
@@ -35,14 +34,12 @@ function ellipseString(aStr, doFront)
 
 var progressListener = {
 
-  onStateChange(aWebProgress, aRequest, aStateFlags, aStatus)
-  {
+  onStateChange(aWebProgress, aRequest, aStateFlags, aStatus) {
     if (aStateFlags & Components.interfaces.nsIWebProgressListener.STATE_STOP)
       window.close();
   },
 
-  onProgressChange(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress)
-  {
+  onProgressChange(aWebProgress, aRequest, aCurSelfProgress, aMaxSelfProgress, aCurTotalProgress, aMaxTotalProgress) {
     if (!progressParams)
       return;
     var docTitleStr = ellipseString(progressParams.docTitle, false);
@@ -61,14 +58,12 @@ var progressListener = {
   onLocationChange(aWebProgress, aRequest, aLocation, aFlags) {},
   onSecurityChange(aWebProgress, aRequest, state) {},
 
-  onStatusChange(aWebProgress, aRequest, aStatus, aMessage)
-  {
+  onStatusChange(aWebProgress, aRequest, aStatus, aMessage) {
     if (aMessage)
       dialog.title.setAttribute("value", aMessage);
   },
 
-  QueryInterface(iid)
-  {
+  QueryInterface(iid) {
     if (iid.equals(Components.interfaces.nsIWebProgressListener) || iid.equals(Components.interfaces.nsISupportsWeakReference))
       return this;
     throw Components.results.NS_NOINTERFACE;
@@ -106,15 +101,13 @@ function onLoad() {
   window.setTimeout(doneIniting, 100);
 }
 
-function onUnload()
-{
+function onUnload() {
   if (!printProgress)
     return;
   try {
     printProgress.unregisterListener(progressListener);
     printProgress = null;
-  }
-  catch (e) {}
+  } catch (e) {}
 }
 
 function getString(stringId) {
@@ -135,20 +128,17 @@ function getString(stringId) {
 }
 
 
-function onCancel()
-{
+function onCancel() {
   
   try {
     printProgress.processCanceledByUser = true;
-  }
-  catch (e) { return true; }
+  } catch (e) { return true; }
 
   
   return false;
 }
 
-function doneIniting()
-{
+function doneIniting() {
   
   printProgress.doneIniting();
 }

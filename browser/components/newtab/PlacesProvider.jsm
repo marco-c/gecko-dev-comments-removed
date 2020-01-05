@@ -211,9 +211,8 @@ Links.prototype = {
         
         if (callback) {
           callback(aRow);
-        }
-        
-        else {
+        } else {
+          
           let item = null;
           
           if (columns && Array.isArray(columns)) {

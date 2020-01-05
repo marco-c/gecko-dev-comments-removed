@@ -12,8 +12,7 @@
 
 
 
-add_task(function* test_common_terminate()
-{
+add_task(function* test_common_terminate() {
   
   
   let deferred = Promise.defer();

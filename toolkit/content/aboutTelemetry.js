@@ -1396,8 +1396,7 @@ var Histogram = {
       var r = filter.match(/^\/(.*)\/(i?)$/);
       try {
         filter = RegExp(r[1], r[2]);
-      }
-      catch (e) { 
+      } catch (e) { 
         isPassFunc = function() {
           return false;
         };
@@ -1768,8 +1767,7 @@ function toggleSection(aEvent) {
 
 
 
-function setupPageHeader()
-{
+function setupPageHeader() {
   let serverOwner = Preferences.get(PREF_TELEMETRY_SERVER_OWNER, "Mozilla");
   let brandName = brandBundle.GetStringFromName("brandFullName");
   let subtitleText = bundle.formatStringFromName(

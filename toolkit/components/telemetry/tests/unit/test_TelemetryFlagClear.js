@@ -1,8 +1,7 @@
 
 
 
-function run_test()
-{
+function run_test() {
   let testFlag = Services.telemetry.getHistogramById("TELEMETRY_TEST_FLAG");
   equal(JSON.stringify(testFlag.snapshot().counts), "[1,0,0]", "Original value is correct");
   testFlag.add(1);

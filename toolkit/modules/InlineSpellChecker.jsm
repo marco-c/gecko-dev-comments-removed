@@ -19,8 +19,7 @@ this.InlineSpellChecker = function InlineSpellChecker(aEditor) {
 
 InlineSpellChecker.prototype = {
   
-  init(aEditor)
-  {
+  init(aEditor) {
     this.uninit();
     this.mEditor = aEditor;
     try {
@@ -31,8 +30,7 @@ InlineSpellChecker.prototype = {
     }
   },
 
-  initFromRemote(aSpellInfo)
-  {
+  initFromRemote(aSpellInfo) {
     if (this.mRemote)
       throw new Error("Unexpected state");
     this.uninit();
@@ -45,8 +43,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  uninit()
-  {
+  uninit() {
     if (this.mRemote) {
       this.mRemote.uninit();
       this.mRemote = null;
@@ -67,8 +64,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  initFromEvent(rangeParent, rangeOffset)
-  {
+  initFromEvent(rangeParent, rangeOffset) {
     this.mOverMisspelling = false;
 
     if (!rangeParent || !this.mInlineSpellChecker)
@@ -92,8 +88,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  get canSpellCheck()
-  {
+  get canSpellCheck() {
     
     
     if (this.mRemote)
@@ -111,15 +106,13 @@ InlineSpellChecker.prototype = {
   },
 
   
-  get enabled()
-  {
+  get enabled() {
     if (this.mRemote)
       return this.mRemote.enableRealTimeSpell;
     return (this.mInlineSpellChecker &&
             this.mInlineSpellChecker.enableRealTimeSpell);
   },
-  set enabled(isEnabled)
-  {
+  set enabled(isEnabled) {
     if (this.mRemote)
       this.mRemote.setSpellcheckUserOverride(isEnabled);
     else if (this.mInlineSpellChecker)
@@ -127,15 +120,13 @@ InlineSpellChecker.prototype = {
   },
 
   
-  get overMisspelling()
-  {
+  get overMisspelling() {
     return this.mOverMisspelling;
   },
 
   
   
-  addSuggestionsToMenu(menu, insertBefore, maxNumber)
-  {
+  addSuggestionsToMenu(menu, insertBefore, maxNumber) {
     if (!this.mRemote && (!this.mInlineSpellChecker || !this.mOverMisspelling))
       return 0; 
 
@@ -172,8 +163,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  clearSuggestionsFromMenu()
-  {
+  clearSuggestionsFromMenu() {
     for (var i = 0; i < this.mSuggestionItems.length; i++) {
       this.mMenu.removeChild(this.mSuggestionItems[i]);
     }
@@ -199,8 +189,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  addDictionaryListToMenu(menu, insertBefore)
-  {
+  addDictionaryListToMenu(menu, insertBefore) {
     this.mDictionaryMenu = menu;
     this.mDictionaryNames = [];
     this.mDictionaryItems = [];
@@ -213,8 +202,7 @@ InlineSpellChecker.prototype = {
     if (this.mRemote) {
       list = this.mRemote.dictionaryList;
       curlang = this.mRemote.currentDictionary;
-    }
-    else if (this.mInlineSpellChecker) {
+    } else if (this.mInlineSpellChecker) {
       var spellchecker = this.mInlineSpellChecker.spellChecker;
       var o1 = {}, o2 = {};
       spellchecker.GetDictionaryList(o1, o2);
@@ -318,8 +306,7 @@ InlineSpellChecker.prototype = {
 
   
   
-  clearDictionaryListFromMenu()
-  {
+  clearDictionaryListFromMenu() {
     for (var i = 0; i < this.mDictionaryItems.length; i++) {
       this.mDictionaryMenu.removeChild(this.mDictionaryItems[i]);
     }
@@ -327,8 +314,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  selectDictionary(index)
-  {
+  selectDictionary(index) {
     if (this.mRemote) {
       this.mRemote.selectDictionary(index);
       return;
@@ -341,8 +327,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  replaceMisspelling(index)
-  {
+  replaceMisspelling(index) {
     if (this.mRemote) {
       this.mRemote.replaceMisspelling(index);
       return;
@@ -356,8 +341,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  toggleEnabled()
-  {
+  toggleEnabled() {
     if (this.mRemote)
       this.mRemote.toggleEnabled();
     else
@@ -365,8 +349,7 @@ InlineSpellChecker.prototype = {
   },
 
   
-  addToDictionary()
-  {
+  addToDictionary() {
     
     if (this.mAddedWordStack.length == MAX_UNDO_STACK_DEPTH)
       this.mAddedWordStack.shift();
@@ -379,10 +362,8 @@ InlineSpellChecker.prototype = {
     }
   },
   
-  undoAddToDictionary()
-  {
-    if (this.mAddedWordStack.length > 0)
-    {
+  undoAddToDictionary() {
+    if (this.mAddedWordStack.length > 0) {
       var word = this.mAddedWordStack.pop();
       if (this.mRemote)
         this.mRemote.undoAddToDictionary(word);
@@ -390,13 +371,11 @@ InlineSpellChecker.prototype = {
         this.mInlineSpellChecker.removeWordFromDictionary(word);
     }
   },
-  canUndo()
-  {
+  canUndo() {
     
     return (this.mAddedWordStack.length > 0);
   },
-  ignoreWord()
-  {
+  ignoreWord() {
     if (this.mRemote)
       this.mRemote.ignoreWord();
     else
@@ -504,8 +483,7 @@ var SpellCheckHelper = {
               this.getComputedStyle(element, "-moz-user-modify") == "read-write") {
             isEditable = true;
           }
-        }
-        catch (ex) {
+        } catch (ex) {
           
         }
 

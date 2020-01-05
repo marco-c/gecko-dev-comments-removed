@@ -12,8 +12,7 @@ var sessionCheckpointsPath;
 
 
 
-function run_test()
-{
+function run_test() {
   do_get_profile();
   sessionCheckpointsPath = OS.Path.join(OS.Constants.Path.profileDir,
                                         "sessionCheckpoints.json");

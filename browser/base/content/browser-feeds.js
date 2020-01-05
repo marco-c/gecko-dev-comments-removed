@@ -95,8 +95,7 @@ var FeedHandler = {
     let feeds = gBrowser.selectedBrowser.feeds;
     try {
       openUILink(href, event, { ignoreAlt: true });
-    }
-    finally {
+    } finally {
       
       
       gBrowser.selectedBrowser.feeds = feeds;
