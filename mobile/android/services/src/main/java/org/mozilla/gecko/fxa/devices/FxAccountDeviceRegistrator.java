@@ -2,7 +2,7 @@
 
 
 
-package org.mozilla.gecko.fxa;
+package org.mozilla.gecko.fxa.devices;
 
 import android.content.Context;
 import android.content.Intent;
