@@ -9,12 +9,12 @@
 const React = require("devtools/client/shared/vendor/react");
 const { connect } = require("devtools/client/shared/vendor/react-redux");
 
-
-const { createFactories } = require("devtools/client/shared/components/reps/rep-utils");
 const TreeView = React.createFactory(require("devtools/client/shared/components/tree/tree-view"));
-const { Rep } = createFactories(require("devtools/client/shared/components/reps/rep"));
-const { Grip } = require("devtools/client/shared/components/reps/grip");
-const { MODE } = require("devtools/client/shared/components/reps/constants");
+
+
+const { REPS, MODE } = require("devtools/client/shared/components/reps/load-reps");
+const Rep = React.createFactory(REPS.Rep);
+const Grip = REPS.Grip;
 
 
 const { GripProvider } = require("../grip-provider");
@@ -89,4 +89,3 @@ const mapStateToProps = (state) => {
 
 
 module.exports = connect(mapStateToProps)(DomTree);
-
