@@ -296,7 +296,7 @@ enum class ProfilerVerbosity : int8_t { UNCHECKED, NOTVERBOSE, VERBOSE };
 
 static ProfilerVerbosity profiler_verbosity = ProfilerVerbosity::UNCHECKED;
 
-bool moz_profiler_verbose()
+bool profiler_verbose()
 {
   if (profiler_verbosity == ProfilerVerbosity::UNCHECKED) {
     if (getenv("MOZ_PROFILER_VERBOSE") != nullptr)
@@ -308,7 +308,7 @@ bool moz_profiler_verbose()
   return profiler_verbosity == ProfilerVerbosity::VERBOSE;
 }
 
-void moz_profiler_set_verbosity(ProfilerVerbosity pv)
+void profiler_set_verbosity(ProfilerVerbosity pv)
 {
    MOZ_ASSERT(pv == ProfilerVerbosity::UNCHECKED ||
               pv == ProfilerVerbosity::VERBOSE);
@@ -380,11 +380,11 @@ void read_profiler_env_vars()
 
   if (getenv(PROFILER_HELP)) {
      
-     moz_profiler_set_verbosity(ProfilerVerbosity::VERBOSE);
+     profiler_set_verbosity(ProfilerVerbosity::VERBOSE);
      profiler_usage();
      
      
-     moz_profiler_set_verbosity(ProfilerVerbosity::UNCHECKED);
+     profiler_set_verbosity(ProfilerVerbosity::UNCHECKED);
   }
 
   if (!set_profiler_interval(interval) ||
