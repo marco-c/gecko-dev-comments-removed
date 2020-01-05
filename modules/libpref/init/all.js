@@ -2693,7 +2693,7 @@ pref("layout.idle_period.required_quiescent_frames", 2);
 
 
 
-pref("layout.idle_period.time_limit", 1);
+pref("layout.idle_period.time_limit", 3);
 
 
 
@@ -2749,14 +2749,6 @@ pref("dom.idle_period.throttled_length", 10000);
 
 
 pref("idle_queue.long_period", 50);
-
-
-
-
-
-
-
-pref("idle_queue.min_period", 3);
 
 
 
@@ -4529,6 +4521,10 @@ pref("layers.acceleration.disabled", false);
 
 
 pref("layers.bench.enabled", false);
+
+#if defined(XP_WIN) && defined(NIGHTLY_BUILD)
+pref("layers.gpu-process.dev.enabled", true);
+#endif
 
 
 #ifdef ANDROID
