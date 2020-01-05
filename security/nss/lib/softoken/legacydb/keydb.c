@@ -130,7 +130,9 @@ encode_dbkey(NSSLOWKEYDBKey *dbkey, unsigned char version)
     buf[2] = nnlen;
 
     
-    PORT_Memcpy(&buf[3], dbkey->salt.data, dbkey->salt.len);
+    if (dbkey->salt.len > 0) {
+        PORT_Memcpy(&buf[3], dbkey->salt.data, dbkey->salt.len);
+    }
 
     
     PORT_Memcpy(&buf[3 + dbkey->salt.len], nn, nnlen);

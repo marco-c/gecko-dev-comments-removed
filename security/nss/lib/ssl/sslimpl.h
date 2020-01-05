@@ -937,8 +937,7 @@ typedef struct SSL3HandshakeStateStr {
     PRInt32 recvdHighWater;        
 
 
-    unsigned char cookie[32];      
-    unsigned char cookieLen;       
+    SECItem cookie;                
     PRIntervalTime rtTimerStarted; 
     DTLSTimerCb rtTimerCb;         
     PRUint32 rtTimeoutMs;          
@@ -949,18 +948,19 @@ typedef struct SSL3HandshakeStateStr {
 
 
     
-    PK11Context *clientHelloHash;   
+    PK11Context *clientHelloHash;         
 
-    PRCList remoteKeyShares;        
-    PK11SymKey *currentSecret;      
+    PRCList remoteKeyShares;              
+    PK11SymKey *currentSecret;            
 
-    PK11SymKey *resumptionPsk;      
-    SECItem resumptionContext;      
-    PK11SymKey *dheSecret;          
-    PK11SymKey *earlyTrafficSecret; 
-    PK11SymKey *hsTrafficSecret;    
-    PK11SymKey *trafficSecret;      
-
+    PK11SymKey *resumptionPsk;            
+    SECItem resumptionContext;            
+    PK11SymKey *dheSecret;                
+    PK11SymKey *clientEarlyTrafficSecret; 
+    PK11SymKey *clientHsTrafficSecret;    
+    PK11SymKey *serverHsTrafficSecret;    
+    PK11SymKey *clientTrafficSecret;      
+    PK11SymKey *serverTrafficSecret;      
     
     TLS13CertificateRequest *certificateRequest;
     PRCList cipherSpecs;            

@@ -260,6 +260,23 @@ TEST_P(TlsConnectGeneric, P256andCurve25519OnlyServer) {
   CheckKeys(ssl_kea_ecdh, ssl_auth_rsa_sign, 255);
 }
 
+TEST_P(TlsConnectGeneric, P256ClientAndCurve25519Server) {
+  EnsureTlsSetup();
+  client_->DisableAllCiphers();
+  client_->EnableCiphersByKeyExchange(ssl_kea_ecdh);
+
+  
+  const std::vector<SSLNamedGroup> server_groups = {ssl_grp_ec_curve25519};
+  const std::vector<SSLNamedGroup> client_groups = {ssl_grp_ec_secp256r1};
+
+  client_->ConfigNamedGroups(client_groups);
+  server_->ConfigNamedGroups(server_groups);
+
+  ConnectExpectFail();
+  client_->CheckErrorCode(SSL_ERROR_NO_CYPHER_OVERLAP);
+  server_->CheckErrorCode(SSL_ERROR_NO_CYPHER_OVERLAP);
+}
+
 
 class ECCClientKEXFilter : public TlsHandshakeFilter {
  public:
