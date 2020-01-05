@@ -642,11 +642,22 @@ impl<'a> PaintContext<'a> {
         };
         
         let original_bounds = self.get_scaled_bounds(bounds, border, 0.0);
+
+        let mut scaled_color;
+
         
-        let scaled_color    = match direction {
-            Direction::Top | Direction::Left      => self.scale_color(color, if is_inset { 2.0/3.0 } else { 1.0     }),
-            Direction::Right | Direction::Bottom  => self.scale_color(color, if is_inset { 1.0     } else { 2.0/3.0 })
-        };
+        if color.r != 0.0 || color.g != 0.0 || color.b != 0.0 {
+            scaled_color = match direction {
+                Direction::Top | Direction::Left      => self.scale_color(color, if is_inset { 2.0/3.0 } else { 1.0     }),
+                Direction::Right | Direction::Bottom  => self.scale_color(color, if is_inset { 1.0     } else { 2.0/3.0 })
+            };
+        } else {
+            scaled_color = match direction {
+                Direction::Top | Direction::Left      => if is_inset { Color::new(0.3, 0.3, 0.3, color.a) } else { Color::new(0.7, 0.7, 0.7, color.a) },
+                Direction::Right | Direction::Bottom  => if is_inset { Color::new(0.7, 0.7, 0.7, color.a) } else { Color::new(0.3, 0.3, 0.3, color.a) }
+            };
+        }
+
         self.draw_border_path(&original_bounds, direction, border, radius, scaled_color);
     }
 
