@@ -1,9 +1,11 @@
 
 
 
+"use strict";
+
 console.log("Initializing worker.");
 
-self.onmessage = e => {
+self.onmessage = ex => {
   console.log("Starting test.");
   try {
     ok(typeof ChromeUtils === "undefined",

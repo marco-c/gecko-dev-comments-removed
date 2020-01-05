@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -20,7 +21,7 @@ add_task(function* test() {
          function f() { this.log.push(allocationMarker()); } // 3
          function g() { this.log.push(allocationMarker()); } // 4
          function h() { this.log.push(allocationMarker()); } // 5
-         `);                                                 
+         `);
 
   
   
@@ -49,20 +50,26 @@ add_task(function* test() {
   
   
 
-  const { report } = yield client.takeCensus(snapshotFilePath, {
-    breakdown: { by: "objectClass",
-                 then: { by: "allocationStack",
-                         then: { by: "count",
-                                 bytes: true,
-                                 count: true
-                               },
-                         noStack: { by: "count",
-                                    bytes: true,
-                                    count: true
-                                  }
-                       }
-               }
-  });
+  const { report } = yield client.takeCensus(
+    snapshotFilePath,
+    {
+      breakdown: {
+        by: "objectClass",
+        then: {
+          by: "allocationStack",
+          then: {
+            by: "count",
+            bytes: true,
+            count: true
+          },
+          noStack: {
+            by: "count",
+            bytes: true,
+            count: true
+          }
+        }
+      }
+    });
 
   
 
@@ -72,7 +79,7 @@ add_task(function* test() {
   ok(map, "Should get AllocationMarkers in the report.");
   
   
-  equal(map.__proto__.constructor.name, "Map");
+  equal(Object.getPrototypeOf(map).constructor.name, "Map");
 
   equal(map.size, 4, "Should have 4 allocation stacks (including the lack of a stack)");
 

@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -7,8 +8,8 @@
 
 
 function run_test() {
-  var g = newGlobal();
-  var dbg = new Debugger(g);
+  let g = newGlobal();
+  let dbg = new Debugger(g);
 
   g.eval(`
 function withAllocationMarkerOnStack(f) {
@@ -22,7 +23,7 @@ function withAllocationMarkerOnStack(f) {
   equal("AllocationMarker" in saveHeapSnapshotAndTakeCensus(dbg).objects, false,
         "There shouldn't exist any allocation markers in the census.");
 
-  var allocationMarkerCount;
+  let allocationMarkerCount;
   g.withAllocationMarkerOnStack(() => {
     const census = saveHeapSnapshotAndTakeCensus(dbg);
     allocationMarkerCount = census.objects.AllocationMarker.count;

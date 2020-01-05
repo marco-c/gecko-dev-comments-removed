@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -47,7 +48,8 @@ add_task(function* () {
           "each node should have a retained size");
 
     ok(node.children === undefined || Array.isArray(node.children),
-       "each node either has a list of children, or undefined meaning no children loaded");
+       "each node either has a list of children, "
+       + "or undefined meaning no children loaded");
     equal(typeof node.moreChildrenAvailable, "boolean",
           "each node should indicate if there are more children available or not");
 

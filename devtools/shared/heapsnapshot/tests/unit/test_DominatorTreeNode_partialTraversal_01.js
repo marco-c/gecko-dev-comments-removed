@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -154,8 +155,10 @@ function run_test() {
   const actual = DominatorTreeNode.partialTraversal(mockDominatorTree,
                                                     mockSnapshot,
                                                     breakdown,
-                                                     4,
-                                                     2);
+                                                    
+                                                    4,
+                                                    
+                                                    2);
 
   dumpn("Expected = " + JSON.stringify(expected, null, 2));
   dumpn("Actual = " + JSON.stringify(actual, null, 2));

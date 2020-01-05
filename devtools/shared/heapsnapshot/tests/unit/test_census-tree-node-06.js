@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -11,8 +12,6 @@ function run_test() {
     then: { by: "count", count: true, bytes: true },
     noStack: { by: "count", count: true, bytes: true },
   };
-
-  let stack1, stack2, stack3, stack4;
 
   function a(n) {
     return b(n);

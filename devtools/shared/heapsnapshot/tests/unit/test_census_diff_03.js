@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -8,7 +9,7 @@ const BREAKDOWN = {
   objects: { by: "count", count: true, bytes: true },
   scripts: { by: "count", count: true, bytes: true },
   strings: { by: "count", count: true, bytes: true },
-  other:   { by: "count", count: true, bytes: true },
+  other: { by: "count", count: true, bytes: true },
 };
 
 const REPORT1 = {

@@ -4,6 +4,7 @@
 
 
 
+
 function run_test() {
   const stack1 = saveStack(1);
   const stack2 = saveStack(1);
@@ -25,6 +26,7 @@ function run_test() {
         CensusUtils.countToBucketBreakdown(BREAKDOWN));
 
       
+      
       return new Map([               
         [stack1, {                   
           JSObject: [101, 102, 103], 
@@ -43,6 +45,7 @@ function run_test() {
           JSString: [411, 412, 413], 
         }],
       ]);
+      
     }
   };
 

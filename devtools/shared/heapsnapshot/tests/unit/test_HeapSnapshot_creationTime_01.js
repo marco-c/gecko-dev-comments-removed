@@ -1,11 +1,14 @@
 
 
+"use strict";
 
 
 
 function waitForThirtyMilliseconds() {
   const start = Date.now();
-  while (Date.now() - start < 30) ;
+  while (Date.now() - start < 30) {
+    
+  }
 }
 
 function run_test() {

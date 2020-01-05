@@ -1,20 +1,21 @@
 
 
+"use strict";
 
 
 
 
 
 function run_test() {
-  var g = newGlobal();
-  var dbg = new Debugger(g);
+  let g = newGlobal();
+  let dbg = new Debugger(g);
 
   g.eval(`                                              // 1
          var log = [];                                  // 2
          function f() { log.push(allocationMarker()); } // 3
          function g() { f(); }                          // 4
          function h() { f(); }                          // 5
-         `);                                            
+         `);
 
   
   
@@ -22,7 +23,7 @@ function run_test() {
 
   dbg.memory.allocationSamplingProbability = 1;
 
-  for ([func, n] of [[g.f, 20], [g.g, 10], [g.h, 5]]) {
+  for (let [func, n] of [[g.f, 20], [g.g, 10], [g.h, 5]]) {
     for (let i = 0; i < n; i++) {
       dbg.memory.trackingAllocationSites = true;
       
@@ -32,17 +33,19 @@ function run_test() {
     }
   }
 
-  let census = saveHeapSnapshotAndTakeCensus(dbg, { breakdown: { by: "objectClass",
-                                                                 then: { by: "allocationStack",
-                                                                         then: { by: "count",
-                                                                                 label: "haz stack"
-                                                                               },
-                                                                         noStack: { by: "count",
-                                                                                    label: "no haz stack"
-                                                                                  }
-                                                                       }
-                                                               }
-                                                  });
+  let census = saveHeapSnapshotAndTakeCensus(
+    dbg, { breakdown: {
+      by: "objectClass",
+      then: {
+        by: "allocationStack",
+        then: { by: "count", label: "haz stack"},
+        noStack: {
+          by: "count",
+          label: "no haz stack"
+        }
+      }
+    }
+    });
 
   let map = census.AllocationMarker;
   ok(map instanceof Map, "Should be a Map instance");

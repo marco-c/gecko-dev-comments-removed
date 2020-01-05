@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 console.log("Initializing worker.");
 
 self.onmessage = e => {
@@ -16,12 +18,12 @@ self.onmessage = e => {
     let threw = false;
     try {
       new DominatorTree();
-    } catch (e) {
+    } catch (excp) {
       threw = true;
     }
     ok(threw, "Constructor shouldn't be usable");
-  } catch (e) {
-    ok(false, "Unexpected error inside worker:\n" + e.toString() + "\n" + e.stack);
+  } catch (ex) {
+    ok(false, "Unexpected error inside worker:\n" + ex.toString() + "\n" + ex.stack);
   } finally {
     done();
   }

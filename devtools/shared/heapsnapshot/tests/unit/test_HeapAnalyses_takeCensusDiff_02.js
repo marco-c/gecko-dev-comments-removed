@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -43,10 +44,11 @@ add_task(function* () {
                                                 secondSnapshotFilePath,
                                                 { breakdown: BREAKDOWN });
 
-  const { delta: deltaTreeNode } = yield client.takeCensusDiff(firstSnapshotFilePath,
-                                                               secondSnapshotFilePath,
-                                                               { breakdown: BREAKDOWN },
-                                                               { asInvertedTreeNode: true });
+  const { delta: deltaTreeNode }
+    = yield client.takeCensusDiff(firstSnapshotFilePath,
+                                 secondSnapshotFilePath,
+                                 { breakdown: BREAKDOWN },
+                                 { asInvertedTreeNode: true });
 
   
   

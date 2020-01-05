@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 this.EXPORTED_SYMBOLS = ["Census"];
 
 this.Census = (function () {
@@ -62,7 +64,11 @@ this.Census = (function () {
   Census.assertAllZeros = {
     enter: () => Census.assertAllZeros,
     done: () => undefined,
-    check: elt => { if (elt !== 0) throw new Error("Census mismatch: expected zero, found " + elt); }
+    check: elt => {
+      if (elt !== 0) {
+        throw new Error("Census mismatch: expected zero, found " + elt);
+      }
+    }
   };
 
   function expectedObject() {
@@ -89,27 +95,27 @@ this.Census = (function () {
   function makeBasisChecker({compare, missing, extra}) {
     return function makeWalker(basis) {
       if (typeof basis === "object") {
-        var unvisited = new Set(Object.getOwnPropertyNames(basis));
+        let unvisited = new Set(Object.getOwnPropertyNames(basis));
         return {
           enter: prop => {
             unvisited.delete(prop);
             if (prop in basis) {
               return makeWalker(basis[prop]);
-            } else {
-              return extra(prop);
             }
+
+            return extra(prop);
           },
 
           done: () => unvisited.forEach(prop => missing(prop, basis[prop])),
           check: expectedObject
         };
-      } else {
-        return {
-          enter: expectedLeaf,
-          done: expectedLeaf,
-          check: elt => compare(elt, basis)
-        };
       }
+
+      return {
+        enter: expectedLeaf,
+        done: expectedLeaf,
+        check: elt => compare(elt, basis)
+      };
     };
   }
 
@@ -118,13 +124,18 @@ this.Census = (function () {
   }
 
   function extraProp(prop) {
-    throw new Error("Census mismatch: subject has property not present in basis: " + prop);
+    throw new Error("Census mismatch: subject has property not present in basis: "
+      + prop);
   }
 
   
   
   Census.assertAllEqual = makeBasisChecker({
-    compare: (a, b) => { if (a !== b) throw new Error("Census mismatch: expected " + a + " got " + b);},
+    compare: (a, b) => {
+      if (a !== b) {
+        throw new Error("Census mismatch: expected " + a + " got " + b);
+      }
+    },
     missing: missingProp,
     extra: extraProp
   });
@@ -155,7 +166,7 @@ this.Census = (function () {
   
   Census.assertAllWithin = function (fudge, basis) {
     return makeBasisChecker({
-      compare: (subject, basis) => ok(Math.abs(subject - basis) <= fudge),
+      compare: (subject, base) => ok(Math.abs(subject - base) <= fudge),
       missing: missingProp,
       extra: () => Census.walkAnything
     })(basis);

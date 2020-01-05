@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -20,8 +21,9 @@ function run_test() {
   debuggee.eval("this.objects = []");
   debuggee.eval(
     (function recursiveAllocate(n) {
-      if (n <= 0)
+      if (n <= 0) {
         return;
+      }
 
       
       
@@ -46,7 +48,7 @@ function run_test() {
     breakdown: { by: "allocationStack",
                  then: { by: "count", bytes: true, count: true },
                  noStack: { by: "count", bytes: true, count: true }
-               }
+    }
   });
 
   

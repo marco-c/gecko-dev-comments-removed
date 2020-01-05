@@ -1,29 +1,31 @@
 
 
+"use strict";
 
 
 
 
 function run_test() {
-  var dbg = new Debugger;
+  let dbg = new Debugger();
 
   function checkProperties(census) {
     equal(typeof census, "object");
-    for (prop of Object.getOwnPropertyNames(census)) {
-      var desc = Object.getOwnPropertyDescriptor(census, prop);
+    for (let prop of Object.getOwnPropertyNames(census)) {
+      let desc = Object.getOwnPropertyDescriptor(census, prop);
       equal(desc.enumerable, true);
       equal(desc.configurable, true);
       equal(desc.writable, true);
-      if (typeof desc.value === "object")
+      if (typeof desc.value === "object") {
         checkProperties(desc.value);
-      else
+      } else {
         equal(typeof desc.value, "number");
+      }
     }
   }
 
   checkProperties(saveHeapSnapshotAndTakeCensus(dbg));
 
-  var g = newGlobal();
+  let g = newGlobal();
   dbg.addDebuggee(g);
   checkProperties(saveHeapSnapshotAndTakeCensus(dbg));
 

@@ -1,5 +1,6 @@
 
 
+"use strict";
 
 
 
@@ -7,27 +8,27 @@
 
 
 function run_test() {
-  var dbg = new Debugger;
+  let dbg = new Debugger();
 
-  var census0 = saveHeapSnapshotAndTakeCensus(dbg);
+  let census0 = saveHeapSnapshotAndTakeCensus(dbg);
   Census.walkCensus(census0, "census0", Census.assertAllZeros);
 
-  var g1 = newGlobal();
+  let g1 = newGlobal();
   dbg.addDebuggee(g1);
-  var census1 = saveHeapSnapshotAndTakeCensus(dbg);
+  let census1 = saveHeapSnapshotAndTakeCensus(dbg);
   Census.walkCensus(census1, "census1", Census.assertAllNotLessThan(census0));
 
-  var g2 = newGlobal();
+  let g2 = newGlobal();
   dbg.addDebuggee(g2);
-  var census2 = saveHeapSnapshotAndTakeCensus(dbg);
+  let census2 = saveHeapSnapshotAndTakeCensus(dbg);
   Census.walkCensus(census2, "census2", Census.assertAllNotLessThan(census1));
 
   dbg.removeDebuggee(g2);
-  var census3 = saveHeapSnapshotAndTakeCensus(dbg);
+  let census3 = saveHeapSnapshotAndTakeCensus(dbg);
   Census.walkCensus(census3, "census3", Census.assertAllEqual(census1));
 
   dbg.removeDebuggee(g1);
-  var census4 = saveHeapSnapshotAndTakeCensus(dbg);
+  let census4 = saveHeapSnapshotAndTakeCensus(dbg);
   Census.walkCensus(census4, "census4", Census.assertAllEqual(census0));
 
   do_test_finished();
