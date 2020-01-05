@@ -2,7 +2,6 @@
 
 
 
-use devtools_traits;
 use devtools_traits::{EvaluateJSReply, NodeInfo, Modification};
 use dom::bindings::conversions::FromJSValConvertible;
 use dom::bindings::conversions::StringificationBehavior;
@@ -31,16 +30,16 @@ pub fn handle_evaluate_js(page: &Rc<Page>, pipeline: PipelineId, eval: String, r
     let rval = window.r().evaluate_js_on_global_with_result(eval.as_slice());
 
     reply.send(if rval.is_undefined() {
-        devtools_traits::VoidValue
+        EvaluateJSReply::VoidValue
     } else if rval.is_boolean() {
-        devtools_traits::BooleanValue(rval.to_boolean())
+        EvaluateJSReply::BooleanValue(rval.to_boolean())
     } else if rval.is_double() {
-        devtools_traits::NumberValue(FromJSValConvertible::from_jsval(cx, rval, ()).unwrap())
+        EvaluateJSReply::NumberValue(FromJSValConvertible::from_jsval(cx, rval, ()).unwrap())
     } else if rval.is_string() {
         
-        devtools_traits::StringValue(FromJSValConvertible::from_jsval(cx, rval, StringificationBehavior::Default).unwrap())
+        EvaluateJSReply::StringValue(FromJSValConvertible::from_jsval(cx, rval, StringificationBehavior::Default).unwrap())
     } else if rval.is_null() {
-        devtools_traits::NullValue
+        EvaluateJSReply::NullValue
     } else {
         
         assert!(rval.is_object());
