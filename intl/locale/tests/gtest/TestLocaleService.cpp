@@ -4,7 +4,7 @@
 
 
 #include "gtest/gtest.h"
-#include "LocaleService.h"
+#include "mozilla/intl/LocaleService.h"
 #include "mozilla/Services.h"
 #include "nsIToolkitChromeRegistry.h"
 

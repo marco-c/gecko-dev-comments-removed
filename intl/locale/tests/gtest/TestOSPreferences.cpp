@@ -4,7 +4,7 @@
 
 
 #include "gtest/gtest.h"
-#include "OSPreferences.h"
+#include "mozilla/intl/OSPreferences.h"
 
 using namespace mozilla::intl;
 
