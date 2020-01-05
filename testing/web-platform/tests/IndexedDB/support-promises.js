@@ -1,16 +1,14 @@
-'use strict';
 
-
-function databaseName(testCase) {
+const databaseName = (testCase) => {
   return 'db' + self.location.pathname + '-' + testCase.name;
-}
+};
 
 
 
-function requestWatcher(testCase, request) {
+const requestWatcher = (testCase, request) => {
   return new EventWatcher(testCase, request,
-      ['abort', 'blocked', 'complete', 'error', 'success', 'upgradeneeded']);
-}
+      ['error', 'success', 'upgradeneeded']);
+};
 
 
 
@@ -22,11 +20,10 @@ function requestWatcher(testCase, request) {
 
 
 
-
-function migrateDatabase(testCase, newVersion, migrationCallback) {
+const migrateDatabase = (testCase, newVersion, migrationCallback) => {
   return migrateNamedDatabase(
       testCase, databaseName(testCase), newVersion, migrationCallback);
-}
+};
 
 
 
@@ -38,9 +35,8 @@ function migrateDatabase(testCase, newVersion, migrationCallback) {
 
 
 
-
-function migrateNamedDatabase(
-    testCase, databaseName, newVersion, migrationCallback) {
+const migrateNamedDatabase =
+    (testCase, databaseName, newVersion, migrationCallback) => {
   
   
   
@@ -49,50 +45,36 @@ function migrateNamedDatabase(
     request.onupgradeneeded = testCase.step_func(event => {
       const database = event.target.result;
       const transaction = event.target.transaction;
-      let shouldBeAborted = false;
-      let requestEventPromise = null;
+      let abortCalled = false;
 
       
       
       
       const transactionAbort = transaction.abort.bind(transaction);
       transaction.abort = () => {
-        transaction._willBeAborted();
+        request.onerror = event => {
+          event.preventDefault();
+          resolve(event);
+        };
+        request.onsuccess = () => reject(new Error(
+            'indexedDB.open should not succeed after the versionchange ' +
+            'transaction is aborted'));
         transactionAbort();
-      }
-      transaction._willBeAborted = () => {
-        requestEventPromise = new Promise((resolve, reject) => {
-          request.onerror = event => {
-            event.preventDefault();
-            resolve(event);
-          };
-          request.onsuccess = () => reject(new Error(
-              'indexedDB.open should not succeed for an aborted ' +
-              'versionchange transaction'));
-        });
-        shouldBeAborted = true;
+        abortCalled = true;
       }
 
-      
-      
-      const callbackResult = migrationCallback(database, transaction, request);
-      if (!shouldBeAborted) {
-        request.onerror = null;
+      migrationCallback(database, transaction);
+      if (!abortCalled) {
         request.onsuccess = null;
-        requestEventPromise =
-            requestWatcher(testCase, request).wait_for('success');
+        resolve(requestWatcher(testCase, request).wait_for('success'));
       }
-
-      
-      
-      resolve(Promise.resolve(callbackResult).then(() => requestEventPromise));
     });
     request.onerror = event => reject(event.target.error);
     request.onsuccess = () => reject(new Error(
         'indexedDB.open should not succeed without creating a ' +
         'versionchange transaction'));
   }).then(event => event.target.result || event.target.error);
-}
+};
 
 
 
@@ -101,10 +83,9 @@ function migrateNamedDatabase(
 
 
 
-
-function createDatabase(testCase, setupCallback) {
+const createDatabase = (testCase, setupCallback) => {
   return createNamedDatabase(testCase, databaseName(testCase), setupCallback);
-}
+};
 
 
 
@@ -113,14 +94,13 @@ function createDatabase(testCase, setupCallback) {
 
 
 
-
-function createNamedDatabase(testCase, databaseName, setupCallback) {
+const createNamedDatabase = (testCase, databaseName, setupCallback) => {
   const request = indexedDB.deleteDatabase(databaseName);
   const eventWatcher = requestWatcher(testCase, request);
 
   return eventWatcher.wait_for('success').then(event =>
       migrateNamedDatabase(testCase, databaseName, 1, setupCallback));
-}
+};
 
 
 
@@ -128,7 +108,7 @@ function createNamedDatabase(testCase, databaseName, setupCallback) {
 
 
 
-function openDatabase(testCase, version) {
+const openDatabase = (testCase, version) => {
   return openNamedDatabase(testCase, databaseName(testCase), version);
 }
 
@@ -138,7 +118,7 @@ function openDatabase(testCase, version) {
 
 
 
-function openNamedDatabase(testCase, databaseName, version) {
+const openNamedDatabase = (testCase, databaseName, version) => {
   const request = indexedDB.open(databaseName, version);
   const eventWatcher = requestWatcher(testCase, request);
   return eventWatcher.wait_for('success').then(event => event.target.result);
@@ -162,16 +142,16 @@ const createBooksStore = (testCase, database) => {
   for (let record of BOOKS_RECORD_DATA)
       store.put(record);
   return store;
-}
+};
 
 
 
-function createNotBooksStore(testCase, database) {
-  const store = database.createObjectStore('not_books');
-  store.createIndex('not_by_author', 'author');
-  store.createIndex('not_by_title', 'title', { unique: true });
-  return store;
-}
+const createNotBooksStore = (testCase, database) => {
+    const store = database.createObjectStore('not_books');
+    store.createIndex('not_by_author', 'author');
+    store.createIndex('not_by_title', 'title', { unique: true });
+    return store;
+};
 
 
 
@@ -179,7 +159,7 @@ function createNotBooksStore(testCase, database) {
 
 
 
-function checkStoreIndexes (testCase, store, errorMessage) {
+const checkStoreIndexes = (testCase, store, errorMessage) => {
   assert_array_equals(
       store.indexNames, ['by_author', 'by_title'], errorMessage);
   const authorIndex = store.index('by_author');
@@ -188,7 +168,7 @@ function checkStoreIndexes (testCase, store, errorMessage) {
       checkAuthorIndexContents(testCase, authorIndex, errorMessage),
       checkTitleIndexContents(testCase, titleIndex, errorMessage),
   ]);
-}
+};
 
 
 
@@ -196,7 +176,7 @@ function checkStoreIndexes (testCase, store, errorMessage) {
 
 
 
-function checkStoreGenerator(testCase, store, expectedKey, errorMessage) {
+const checkStoreGenerator = (testCase, store, expectedKey, errorMessage) => {
   const request = store.put(
       { title: 'Bedrock Nights ' + expectedKey, author: 'Barney' });
   const eventWatcher = requestWatcher(testCase, request);
@@ -204,7 +184,7 @@ function checkStoreGenerator(testCase, store, expectedKey, errorMessage) {
     const result = request.result;
     assert_equals(result, expectedKey, errorMessage);
   });
-}
+};
 
 
 
@@ -212,7 +192,7 @@ function checkStoreGenerator(testCase, store, expectedKey, errorMessage) {
 
 
 
-function checkStoreContents(testCase, store, errorMessage) {
+const checkStoreContents = (testCase, store, errorMessage) => {
   const request = store.get(123456);
   const eventWatcher = requestWatcher(testCase, request);
   return eventWatcher.wait_for('success').then(() => {
@@ -221,7 +201,7 @@ function checkStoreContents(testCase, store, errorMessage) {
     assert_equals(result.author, BOOKS_RECORD_DATA[0].author, errorMessage);
     assert_equals(result.title, BOOKS_RECORD_DATA[0].title, errorMessage);
   });
-}
+};
 
 
 
@@ -229,7 +209,7 @@ function checkStoreContents(testCase, store, errorMessage) {
 
 
 
-function checkAuthorIndexContents(testCase, index, errorMessage) {
+const checkAuthorIndexContents = (testCase, index, errorMessage) => {
   const request = index.get(BOOKS_RECORD_DATA[2].author);
   const eventWatcher = requestWatcher(testCase, request);
   return eventWatcher.wait_for('success').then(() => {
@@ -237,7 +217,7 @@ function checkAuthorIndexContents(testCase, index, errorMessage) {
     assert_equals(result.isbn, BOOKS_RECORD_DATA[2].isbn, errorMessage);
     assert_equals(result.title, BOOKS_RECORD_DATA[2].title, errorMessage);
   });
-}
+};
 
 
 
@@ -245,7 +225,7 @@ function checkAuthorIndexContents(testCase, index, errorMessage) {
 
 
 
-function checkTitleIndexContents(testCase, index, errorMessage) {
+const checkTitleIndexContents = (testCase, index, errorMessage) => {
   const request = index.get(BOOKS_RECORD_DATA[2].title);
   const eventWatcher = requestWatcher(testCase, request);
   return eventWatcher.wait_for('success').then(() => {
@@ -253,4 +233,4 @@ function checkTitleIndexContents(testCase, index, errorMessage) {
     assert_equals(result.isbn, BOOKS_RECORD_DATA[2].isbn, errorMessage);
     assert_equals(result.author, BOOKS_RECORD_DATA[2].author, errorMessage);
   });
-}
+};
