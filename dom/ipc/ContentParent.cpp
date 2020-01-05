@@ -419,7 +419,7 @@ ContentParentsMemoryReporter::CollectReports(
     }
 
     nsPrintfCString path("queued-ipc-messages/content-parent"
-                         "(%s, pid=%d, %s, 0x%p, refcnt=%" PRIuPTR ")",
+                         "(%s, pid=%d, %s, 0x%p, refcnt=%d)",
                          NS_ConvertUTF16toUTF8(friendlyName).get(),
                          cp->Pid(), channelStr,
                          static_cast<nsIContentParent*>(cp), refcnt);
@@ -673,21 +673,15 @@ ContentParent::RandomSelect(const nsTArray<ContentParent*>& aContentParents,
 ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
                                           ProcessPriority aPriority,
                                           ContentParent* aOpener,
-                                          bool aLargeAllocationProcess,
                                           bool* aNew)
 {
   if (aNew) {
     *aNew = false;
   }
-  
-  
-  nsAutoString contentProcessType(aLargeAllocationProcess
-                                  ? NS_LITERAL_STRING(LARGE_ALLOCATION_REMOTE_TYPE)
-                                  : aRemoteType);
 
-  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(contentProcessType);
+  nsTArray<ContentParent*>& contentParents = GetOrCreatePool(aRemoteType);
 
-  uint32_t maxContentParents = GetMaxProcessCount(contentProcessType);
+  uint32_t maxContentParents = GetMaxProcessCount(aRemoteType);
 
   RefPtr<ContentParent> p;
   if (contentParents.Length() >= uint32_t(maxContentParents) &&
@@ -696,12 +690,12 @@ ContentParent::GetNewOrUsedBrowserProcess(const nsAString& aRemoteType,
   }
 
   
-  if (contentProcessType.Equals(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE)) &&
+  if (aRemoteType.Equals(NS_LITERAL_STRING(DEFAULT_REMOTE_TYPE)) &&
       (p = PreallocatedProcessManager::Take())) {
     
     p->mOpener = aOpener;
   } else {
-    p = new ContentParent(aOpener, contentProcessType);
+    p = new ContentParent(aOpener, aRemoteType);
 
     if (aNew) {
       *aNew = true;
@@ -981,8 +975,7 @@ ContentParent::RecvFindPlugins(const uint32_t& aPluginEpoch,
  TabParent*
 ContentParent::CreateBrowser(const TabContext& aContext,
                              Element* aFrameElement,
-                             ContentParent* aOpenerContentParent,
-                             bool aFreshProcess)
+                             ContentParent* aOpenerContentParent)
 {
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
 
@@ -1005,6 +998,12 @@ ContentParent::CreateBrowser(const TabContext& aContext,
     openerTabId = TabParent::GetTabIdFrom(docShell);
   }
 
+  nsAutoString remoteType;
+  if (!aFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType,
+                              remoteType)) {
+    remoteType.AssignLiteral(DEFAULT_REMOTE_TYPE);
+  }
+
   bool newProcess = false;
   RefPtr<nsIContentParent> constructorSender;
   if (isInContentProcess) {
@@ -1015,15 +1014,9 @@ ContentParent::CreateBrowser(const TabContext& aContext,
     if (aOpenerContentParent) {
       constructorSender = aOpenerContentParent;
     } else {
-      nsAutoString remoteType;
-      if (!aFrameElement->GetAttr(kNameSpaceID_None, nsGkAtoms::RemoteType,
-                                  remoteType)) {
-        remoteType.AssignLiteral(DEFAULT_REMOTE_TYPE);
-      }
-
       constructorSender =
         GetNewOrUsedBrowserProcess(remoteType, initialPriority, nullptr,
-                                   aFreshProcess, &newProcess);
+                                   &newProcess);
       if (!constructorSender) {
         return nullptr;
       }
@@ -1070,7 +1063,7 @@ ContentParent::CreateBrowser(const TabContext& aContext,
       constructorSender->ChildID(),
       constructorSender->IsForBrowser());
 
-    if (aFreshProcess) {
+    if (remoteType.EqualsLiteral(LARGE_ALLOCATION_REMOTE_TYPE)) {
       
       
       
