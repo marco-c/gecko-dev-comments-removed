@@ -1157,6 +1157,9 @@ pref("browser.newtabpage.enabled", true);
 sticky_pref("browser.newtabpage.enhanced", true);
 
 
+pref("browser.newtabpage.compact", false);
+
+
 pref("browser.newtabpage.rows", 3);
 
 

@@ -209,23 +209,25 @@ var gGrid = {
     }
 
     
-    if (this._cellMargin === undefined) {
+    if (this._cellHeight === undefined) {
       let refCell = document.querySelector(".newtab-cell");
-      this._cellMargin = parseFloat(getComputedStyle(refCell).marginTop);
-      this._cellHeight = refCell.offsetHeight + this._cellMargin +
-        parseFloat(getComputedStyle(refCell).marginBottom);
-      this._cellWidth = refCell.offsetWidth + this._cellMargin;
+      let style = getComputedStyle(refCell);
+      this._cellHeight = refCell.offsetHeight +
+        parseFloat(style.marginTop) + parseFloat(style.marginBottom);
+      this._cellWidth = refCell.offsetWidth +
+        parseFloat(style.marginLeft) + parseFloat(style.marginRight);
     }
 
     let searchContainer = document.querySelector("#newtab-search-container");
     
-    if (this._searchContainerMargin  === undefined) {
-      this._searchContainerMargin = parseFloat(getComputedStyle(searchContainer).marginBottom) +
-                                    parseFloat(getComputedStyle(searchContainer).marginTop);
+    if (this._searchContainerMargin === undefined) {
+      let style = getComputedStyle(searchContainer);
+      this._searchContainerMargin = parseFloat(style.marginBottom) +
+                                    parseFloat(style.marginTop);
     }
 
     
-    let availHeight = document.documentElement.clientHeight - this._cellMargin -
+    let availHeight = document.documentElement.clientHeight -
                       searchContainer.offsetHeight - this._searchContainerMargin;
     let visibleRows = Math.floor(availHeight / this._cellHeight);
 
@@ -235,14 +237,14 @@ var gGrid = {
     let availWidth = Math.min(document.querySelector("#newtab-grid").clientWidth,
                               maxGridWidth);
     
-    let gridColumns =  Math.floor(availWidth / this._cellWidth);
+    let gridColumns = Math.floor(availWidth / this._cellWidth);
     
     let tileIndex = Math.min(gGridPrefs.gridRows * gridColumns, this.sites.length) - 1;
     while (tileIndex >= visibleRows * gridColumns) {
       if (this._isHistoricalTile(tileIndex)) {
         break;
       }
-      tileIndex --;
+      tileIndex--;
     }
 
     
