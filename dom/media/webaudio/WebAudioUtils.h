@@ -190,13 +190,15 @@ namespace WebAudioUtils {
       MOZ_CRASH("We should never see a NaN here");
     }
 
-    if (f > FloatType(numeric_limits<IntType>::max())) {
-      
-      
+    
+    
+    
+    
+    if (f >= FloatType(numeric_limits<IntType>::max())) {
       return numeric_limits<IntType>::max();
     }
 
-    if (f < FloatType(numeric_limits<IntType>::min())) {
+    if (f <= FloatType(numeric_limits<IntType>::min())) {
       
       
       return numeric_limits<IntType>::min();
