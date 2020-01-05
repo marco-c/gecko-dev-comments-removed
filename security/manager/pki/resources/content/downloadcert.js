@@ -4,52 +4,89 @@
 
 "use strict";
 
-const nsIDialogParamBlock = Components.interfaces.nsIDialogParamBlock;
-const nsIX509Cert = Components.interfaces.nsIX509Cert;
 
-var params;
-var caName;
-var cert;
 
-function onLoad()
-{
-  params = window.arguments[0].QueryInterface(nsIDialogParamBlock);
-  cert = params.objects.queryElementAt(0, nsIX509Cert);
 
-  var bundle = document.getElementById("pippki_bundle");
 
-  caName = cert.commonName;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+
+
+
+
+
+var gCert;
+
+
+
+
+function onLoad() {
+  gCert = window.arguments[0].QueryInterface(Ci.nsIX509Cert);
+
+  let bundle = document.getElementById("pippki_bundle");
+  let caName = gCert.commonName;
   if (caName.length == 0) {
     caName = bundle.getString("unnamedCA");
   }
 
-  var message2 = bundle.getFormattedString("newCAMessage1", [caName]);
-  setText("message2", message2);
+  setText("trustHeader", bundle.getFormattedString("newCAMessage1", [caName]));
 }
 
-function viewCert()
-{
-  viewCertHelper(window, cert);
+
+
+
+function viewCert() {
+  viewCertHelper(window, gCert);
 }
 
-function doOK()
-{
+
+
+
+
+
+function onDialogAccept() {
   let checkSSL = document.getElementById("trustSSL");
   let checkEmail = document.getElementById("trustEmail");
   let checkObjSign = document.getElementById("trustObjSign");
 
-  
-  params.SetInt(2, checkSSL.checked ? 1 : 0);
-  params.SetInt(3, checkEmail.checked ? 1 : 0);
-  params.SetInt(4, checkObjSign.checked ? 1 : 0);
-
-  
-  params.SetInt(1, 1);
+  let retVals = window.arguments[1].QueryInterface(Ci.nsIWritablePropertyBag2);
+  retVals.setPropertyAsBool("importConfirmed", true);
+  retVals.setPropertyAsBool("trustForSSL", checkSSL.checked);
+  retVals.setPropertyAsBool("trustForEmail", checkEmail.checked);
+  retVals.setPropertyAsBool("trustForObjSign", checkObjSign.checked);
   return true;
 }
 
-function doCancel()
-{
-  params.SetInt(1, 0); 
+
+
+
+
+
+function onDialogCancel() {
+  let retVals = window.arguments[1].QueryInterface(Ci.nsIWritablePropertyBag2);
+  retVals.setPropertyAsBool("importConfirmed", false);
   return true;
 }
