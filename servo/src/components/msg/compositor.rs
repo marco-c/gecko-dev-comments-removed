@@ -40,3 +40,17 @@ pub trait RenderListener {
     fn set_render_state(&self, render_state: RenderState);
 }
 
+pub enum ReadyState {
+    
+    Loading,
+    
+    PerformingLayout,
+    
+    FinishedLoading,
+}
+
+
+
+pub trait ScriptListener : Clone {
+    fn set_ready_state(&self, ReadyState);
+}

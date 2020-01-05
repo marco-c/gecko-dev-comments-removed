@@ -2,7 +2,7 @@
 
 
 
-use compositor::LayerBuffer;
+use servo_msg::compositor::LayerBuffer;
 use font_context::FontContext;
 use geometry::Au;
 use opts::Opts;
