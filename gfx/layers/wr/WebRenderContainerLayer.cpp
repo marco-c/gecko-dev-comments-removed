@@ -11,6 +11,7 @@
 #include "mozilla/layers/StackingContextHelper.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/webrender/WebRenderTypes.h"
+#include "UnitTransforms.h"
 
 namespace mozilla {
 namespace layers {
@@ -109,7 +110,15 @@ void
 WebRenderRefLayer::RenderLayer(wr::DisplayListBuilder& aBuilder,
                                const StackingContextHelper& aSc)
 {
-  LayerRect rect = Bounds();
+  ParentLayerRect bounds = GetLocalTransformTyped().TransformBounds(Bounds());
+  
+  
+  
+  
+  
+  
+  LayerRect rect = ViewAs<LayerPixel>(bounds,
+      PixelCastJustification::MovingDownToChildren);
   DumpLayerInfo("RefLayer", rect);
 
   WrClipRegion clipRegion = aBuilder.BuildClipRegion(aSc.ToRelativeWrRect(rect));
