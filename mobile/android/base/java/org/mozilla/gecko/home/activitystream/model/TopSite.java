@@ -28,7 +28,8 @@ public class TopSite implements Item {
 
         
         Boolean isBookmarked = null;
-        if (type != BrowserContract.TopSites.TYPE_PINNED) {
+        if (type != BrowserContract.TopSites.TYPE_PINNED &&
+                type != BrowserContract.TopSites.TYPE_SUGGESTED) {
             isBookmarked = !cursor.isNull(cursor.getColumnIndexOrThrow(BrowserContract.Combined.BOOKMARK_ID));
         }
 
