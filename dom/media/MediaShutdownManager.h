@@ -54,8 +54,6 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
-  static void InitStatics();
-
   
   
   static MediaShutdownManager& Instance();
@@ -73,7 +71,10 @@ private:
 
   MediaShutdownManager();
   virtual ~MediaShutdownManager();
-  void RemoveBlocker();
+
+  
+  
+  void EnsureCorrectShutdownObserverState();
 
   static StaticRefPtr<MediaShutdownManager> sInstance;
 
@@ -82,7 +83,10 @@ private:
   
   nsTHashtable<nsRefPtrHashKey<MediaDecoder>> mDecoders;
 
-  bool mIsDoingXPCOMShutDown = false;
+  
+  bool mIsObservingShutdown;
+
+  bool mIsDoingXPCOMShutDown;
 };
 
 } 

@@ -19,6 +19,8 @@ extern LazyLogModule gMediaDecoderLog;
 NS_IMPL_ISUPPORTS(MediaShutdownManager, nsIAsyncShutdownBlocker)
 
 MediaShutdownManager::MediaShutdownManager()
+  : mIsObservingShutdown(false)
+  , mIsDoingXPCOMShutDown(false)
 {
   MOZ_ASSERT(NS_IsMainThread());
 }
@@ -36,7 +38,9 @@ MediaShutdownManager&
 MediaShutdownManager::Instance()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_DIAGNOSTIC_ASSERT(sInstance);
+  if (!sInstance) {
+    sInstance = new MediaShutdownManager();
+  }
   return *sInstance;
 }
 
@@ -59,39 +63,33 @@ GetShutdownBarrier()
 }
 
 void
-MediaShutdownManager::InitStatics()
+MediaShutdownManager::EnsureCorrectShutdownObserverState()
 {
-  sInstance = new MediaShutdownManager();
-
-  
-  NS_DispatchToCurrentThread(NS_NewRunnableFunction([] () {
-    nsresult rv = GetShutdownBarrier()->AddBlocker(
-      sInstance, NS_LITERAL_STRING(__FILE__), __LINE__,
-      NS_LITERAL_STRING("MediaShutdownManager shutdown"));
-    if (NS_FAILED(rv)) {
+  bool needShutdownObserver = mDecoders.Count() > 0;
+  if (needShutdownObserver != mIsObservingShutdown) {
+    mIsObservingShutdown = needShutdownObserver;
+    if (mIsObservingShutdown) {
+      nsresult rv = GetShutdownBarrier()->AddBlocker(
+        this, NS_LITERAL_STRING(__FILE__), __LINE__,
+        NS_LITERAL_STRING("MediaShutdownManager shutdown"));
+      if (NS_FAILED(rv)) {
+        
+        
+        
+        const size_t CAPACITY = 256;
+        auto buf = new char[CAPACITY];
+        snprintf(buf, CAPACITY, "Failed to add shutdown blocker! rv=%x", uint32_t(rv));
+        MOZ_CRASH_ANNOTATE(buf);
+        MOZ_REALLY_CRASH();
+      }
+    } else {
+      GetShutdownBarrier()->RemoveBlocker(this);
       
       
-      
-      const size_t CAPACITY = 256;
-      auto buf = new char[CAPACITY];
-      snprintf(buf, CAPACITY, "Failed to add shutdown blocker! rv=%x", uint32_t(rv));
-      MOZ_CRASH_ANNOTATE(buf);
-      MOZ_REALLY_CRASH();
+      sInstance = nullptr;
+      DECODER_LOG(LogLevel::Debug, ("MediaShutdownManager::BlockShutdown() end."));
     }
-  }));
-}
-
-void
-MediaShutdownManager::RemoveBlocker()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mIsDoingXPCOMShutDown);
-  MOZ_ASSERT(mDecoders.Count() == 0);
-  GetShutdownBarrier()->RemoveBlocker(this);
-  
-  
-  sInstance = nullptr;
-  DECODER_LOG(LogLevel::Debug, ("MediaShutdownManager::BlockShutdown() end."));
+  }
 }
 
 void
@@ -105,6 +103,7 @@ MediaShutdownManager::Register(MediaDecoder* aDecoder)
   mDecoders.PutEntry(aDecoder);
   MOZ_ASSERT(mDecoders.Contains(aDecoder));
   MOZ_ASSERT(mDecoders.Count() > 0);
+  EnsureCorrectShutdownObserverState();
 }
 
 void
@@ -113,9 +112,7 @@ MediaShutdownManager::Unregister(MediaDecoder* aDecoder)
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mDecoders.Contains(aDecoder));
   mDecoders.RemoveEntry(aDecoder);
-  if (mIsDoingXPCOMShutDown && mDecoders.Count() == 0) {
-    RemoveBlocker();
-  }
+  EnsureCorrectShutdownObserverState();
 }
 
 NS_IMETHODIMP
@@ -142,11 +139,8 @@ MediaShutdownManager::BlockShutdown(nsIAsyncShutdownClient*)
   
   mIsDoingXPCOMShutDown = true;
 
-  auto oldCount = mDecoders.Count();
-  if (oldCount == 0) {
-    RemoveBlocker();
-    return NS_OK;
-  }
+  DebugOnly<uint32_t> oldCount = mDecoders.Count();
+  MOZ_ASSERT(oldCount > 0);
 
   
   for (auto iter = mDecoders.Iter(); !iter.Done(); iter.Next()) {
