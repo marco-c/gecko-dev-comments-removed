@@ -140,6 +140,42 @@ let getTopLevelWindow = function (window) {
                .getInterface(Ci.nsIDOMWindow);
 };
 
+function unload(reason) {
+  
+  
+  Services.ppmm.loadProcessScript("data:,(" + function (scriptReason) {
+    
+    let obs = Components.classes["@mozilla.org/observer-service;1"]
+                        .getService(Components.interfaces.nsIObserverService);
+    obs.notifyObservers(null, "message-manager-flush-caches");
+
+    
+
+    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
+      Services.obs.notifyObservers(null, "devtools-unload", scriptReason);
+    }
+  } + ")(\"" + reason.replace(/"/g, '\\"') + "\")", false);
+
+  
+  
+  Services.obs.notifyObservers(null, "devtools-unload", reason);
+
+  
+  Cu.unload("resource://devtools/shared/Loader.jsm");
+  
+  
+  Cu.unload("resource://devtools/client/shared/browser-loader.js");
+  Cu.unload("resource://devtools/client/framework/ToolboxProcess.jsm");
+  Cu.unload("resource://devtools/shared/apps/Devices.jsm");
+  Cu.unload("resource://devtools/client/scratchpad/scratchpad-manager.jsm");
+  Cu.unload("resource://devtools/shared/Parser.jsm");
+  Cu.unload("resource://devtools/client/shared/DOMHelpers.jsm");
+  Cu.unload("resource://devtools/client/shared/widgets/VariablesView.jsm");
+  Cu.unload("resource://devtools/client/responsivedesign/responsivedesign.jsm");
+  Cu.unload("resource://devtools/client/shared/widgets/AbstractTreeItem.jsm");
+  Cu.unload("resource://devtools/shared/deprecated-sync-thenables.js");
+}
+
 function reload(event) {
   
   
@@ -172,39 +208,7 @@ function reload(event) {
   
   Services.obs.notifyObservers(null, "startupcache-invalidate");
 
-  
-  
-  Services.ppmm.loadProcessScript("data:,new " + function () {
-    
-    let obs = Components.classes["@mozilla.org/observer-service;1"]
-                        .getService(Components.interfaces.nsIObserverService);
-    obs.notifyObservers(null, "message-manager-flush-caches");
-
-    
-
-    if (Services.appinfo.processType == Services.appinfo.PROCESS_TYPE_CONTENT) {
-      Services.obs.notifyObservers(null, "devtools-unload", "reload");
-    }
-  }, false);
-
-  
-  
-  Services.obs.notifyObservers(null, "devtools-unload", "reload");
-
-  
-  Cu.unload("resource://devtools/shared/Loader.jsm");
-  
-  
-  Cu.unload("resource://devtools/client/shared/browser-loader.js");
-  Cu.unload("resource://devtools/client/framework/ToolboxProcess.jsm");
-  Cu.unload("resource://devtools/shared/apps/Devices.jsm");
-  Cu.unload("resource://devtools/client/scratchpad/scratchpad-manager.jsm");
-  Cu.unload("resource://devtools/shared/Parser.jsm");
-  Cu.unload("resource://devtools/client/shared/DOMHelpers.jsm");
-  Cu.unload("resource://devtools/client/shared/widgets/VariablesView.jsm");
-  Cu.unload("resource://devtools/client/responsivedesign/responsivedesign.jsm");
-  Cu.unload("resource://devtools/client/shared/widgets/AbstractTreeItem.jsm");
-  Cu.unload("resource://devtools/shared/deprecated-sync-thenables.js");
+  unload("reload");
 
   
   setPrefs();
@@ -293,7 +297,12 @@ function startup(data) {
 
   reload();
 }
-function shutdown() {
+function shutdown(data, reason) {
+  
+  if (reason == APP_SHUTDOWN) {
+    return;
+  }
+
   listener.stop();
   listener = null;
 
@@ -305,6 +314,8 @@ function shutdown() {
       Services.prefs.setBoolPref(name, originalPrefValues[name]);
     }
   }
+
+  unload("disable");
 }
 function install() {
   try {
