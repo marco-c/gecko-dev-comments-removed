@@ -233,6 +233,14 @@ public class GeckoPreferences
         }
     }
 
+    private void updateHomeAsUpIndicator() {
+        final ActionBar actionBar = getSupportActionBar();
+        if (actionBar == null) {
+            return;
+        }
+        actionBar.setHomeAsUpIndicator(android.support.v7.appcompat.R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+    }
+
     
 
 
@@ -263,10 +271,8 @@ public class GeckoPreferences
         
         BrowserLocaleManager.getInstance().updateConfiguration(GeckoPreferences.this, newLocale);
         ViewUtil.setLayoutDirection(getWindow().getDecorView(), newLocale);
-
         
-        final ActionBar actionBar = getSupportActionBar();
-        actionBar.setHomeAsUpIndicator(android.support.v7.appcompat.R.drawable.abc_ic_ab_back_mtrl_am_alpha);
+        updateHomeAsUpIndicator();
 
         this.lastLocale = newLocale;
 
@@ -326,6 +332,11 @@ public class GeckoPreferences
     }
 
     private void checkLocale() {
+        if (AppConstants.Versions.feature21Plus && AppConstants.Versions.preMarshmallow) {
+            
+            updateHomeAsUpIndicator();
+        }
+
         final Locale currentLocale = Locale.getDefault();
         Log.v(LOGTAG, "Checking locale: " + currentLocale + " vs " + lastLocale);
         if (currentLocale.equals(lastLocale)) {
