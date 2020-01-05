@@ -547,13 +547,10 @@ int main(int argc, char** argv)
     
     UIShowDefaultUI();
   } else {
-#ifndef RELEASE_OR_BETA
-    
     
     string empty;
     UIRunProgram(GetProgramPath(UI_MINIDUMP_ANALYZER_FILENAME),
                  gReporterDumpFile, empty,  true);
-#endif
 
     
     gExtraFile = GetAdditionalFilename(gReporterDumpFile, kExtraDataExtension);
