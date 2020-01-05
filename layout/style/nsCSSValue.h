@@ -131,7 +131,7 @@ public:
 
   nsIURI* GetURI() const;
 
-  bool IsLocalRef() const { return mIsLocalRef; }
+  bool IsLocalRef() const;
 
   bool HasRef() const;
 
@@ -158,7 +158,7 @@ public:
 private:
   mutable bool mURIResolved;
   
-  bool mIsLocalRef;
+  mutable Maybe<bool> mIsLocalRef;
 
 protected:
   virtual ~URLValueData() = default;
