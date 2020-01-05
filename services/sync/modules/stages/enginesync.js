@@ -329,6 +329,13 @@ EngineSynchronizer.prototype = {
         
         return false;
       }
+      
+      if (Async.isShutdownException(e)) {
+        
+        
+        this._log.info(`${engine.name} was interrupted by shutdown; no other engines will sync`);
+        return false;
+      }
     }
 
     return true;
