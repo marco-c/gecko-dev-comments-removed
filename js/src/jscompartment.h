@@ -758,6 +758,9 @@ struct JSCompartment
     bool getTemplateLiteralObject(JSContext* cx, js::HandleObject rawStrings,
                                   js::MutableHandleObject templateObj);
 
+    
+    JSObject* getExistingTemplateLiteralObject(JSObject* rawStrings);
+
     void findOutgoingEdges(js::gc::ZoneComponentFinder& finder);
 
     MOZ_MUST_USE bool findDeadProxyZoneEdges(bool* foundAny);
