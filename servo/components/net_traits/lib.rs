@@ -463,9 +463,6 @@ pub enum CoreResourceMsg {
     Exit(IpcSender<()>),
 }
 
-
-
-
 struct LoadOriginData {
     pipeline: Option<PipelineId>,
     referrer_policy: Option<ReferrerPolicy>,
