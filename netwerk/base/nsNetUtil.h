@@ -661,9 +661,7 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport = false);
 
 
 
-bool NS_ShouldCheckAppCache(nsIURI *aURI, bool usePrivateBrowsing);
-
-bool NS_ShouldCheckAppCache(nsIPrincipal *aPrincipal, bool usePrivateBrowsing);
+bool NS_ShouldCheckAppCache(nsIPrincipal *aPrincipal);
 
 
 

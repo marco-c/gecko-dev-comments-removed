@@ -590,7 +590,7 @@ HttpChannelParent::DoAsyncOpen(  const URIParams&           aURI,
       bool chooseAppCache = false;
       
       
-      chooseAppCache = NS_ShouldCheckAppCache(principal, NS_UsePrivateBrowsing(mChannel));
+      chooseAppCache = NS_ShouldCheckAppCache(principal);
 
       appCacheChan->SetChooseApplicationCache(chooseAppCache);
     }
