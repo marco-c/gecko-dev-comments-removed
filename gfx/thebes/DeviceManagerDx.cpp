@@ -792,7 +792,7 @@ DeviceManagerDx::CanInitializeKeyedMutexTextures()
   }
   
   
-  return mDeviceStatus->adapter().VendorId != 0x8086;
+  return (mDeviceStatus->adapter().VendorId != 0x8086 || gfxPrefs::Direct3D11AllowIntelMutex());
 }
 
 bool
