@@ -75,6 +75,18 @@ public class AndroidBrowserBookmarksDataAccessor extends AndroidBrowserRepositor
     return BrowserContractHelpers.BOOKMARKS_CONTENT_URI;
   }
 
+  
+
+
+
+  @Override
+  public Cursor fetchSince(long timestamp) throws NullCursorException {
+    return queryHelper.safeQuery(".fetchSince",
+            getAllColumns(),
+            dateModifiedWhere(timestamp),
+            null, BrowserContract.Bookmarks.TYPE + " ASC");
+  }
+
   protected static Uri getPositionsUri() {
     return BrowserContractHelpers.BOOKMARKS_POSITIONS_CONTENT_URI;
   }
