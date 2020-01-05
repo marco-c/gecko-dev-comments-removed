@@ -11,6 +11,8 @@
 
 #include "mozilla/Types.h"
 
+struct sock_fprog;
+
 namespace mozilla {
 
 
@@ -19,6 +21,7 @@ namespace mozilla {
 
 typedef void (*SandboxCrashFunc)(int, siginfo_t*, void*);
 extern MOZ_EXPORT SandboxCrashFunc gSandboxCrashFunc;
+extern const sock_fprog* gSetSandboxFilter;
 
 } 
 

@@ -217,10 +217,15 @@ InstallSigSysHandler(void)
 
 
 
+
+
 static bool MOZ_MUST_USE
 InstallSyscallFilter(const sock_fprog *aProg, bool aUseTSync)
 {
   if (prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0)) {
+    if (!aUseTSync && errno == ETXTBSY) {
+      return false;
+    }
     SANDBOX_LOG_ERROR("prctl(PR_SET_NO_NEW_PRIVS) failed: %s", strerror(errno));
     MOZ_CRASH("prctl(PR_SET_NO_NEW_PRIVS)");
   }
@@ -230,13 +235,13 @@ InstallSyscallFilter(const sock_fprog *aProg, bool aUseTSync)
                 SECCOMP_FILTER_FLAG_TSYNC, aProg) != 0) {
       SANDBOX_LOG_ERROR("thread-synchronized seccomp failed: %s",
                         strerror(errno));
-      return false;
+      MOZ_CRASH("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER)");
     }
   } else {
     if (prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, (unsigned long)aProg, 0, 0)) {
       SANDBOX_LOG_ERROR("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER) failed: %s",
                         strerror(errno));
-      return false;
+      MOZ_CRASH("seccomp+tsync failed, but kernel supports tsync");
     }
   }
   return true;
@@ -246,7 +251,7 @@ InstallSyscallFilter(const sock_fprog *aProg, bool aUseTSync)
 
 static mozilla::Atomic<int> gSetSandboxDone;
 
-static const sock_fprog* gSetSandboxFilter;
+const sock_fprog* gSetSandboxFilter;
 
 
 
@@ -275,13 +280,7 @@ FindFreeSignalNumber()
 static bool
 SetThreadSandbox()
 {
-  if (prctl(PR_GET_SECCOMP, 0, 0, 0, 0) == 0) {
-    if (!InstallSyscallFilter(gSetSandboxFilter, false)) {
-      MOZ_CRASH("prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER)");
-    }
-    return true;
-  }
-  return false;
+  return InstallSyscallFilter(gSetSandboxFilter, false);
 }
 
 static void
@@ -451,7 +450,7 @@ ApplySandboxWithTSync(sock_fprog* aFilter)
   
   
   if (!InstallSyscallFilter(aFilter, true)) {
-    MOZ_CRASH("seccomp+tsync failed, but kernel supports tsync");
+    MOZ_CRASH();
   }
 }
 
