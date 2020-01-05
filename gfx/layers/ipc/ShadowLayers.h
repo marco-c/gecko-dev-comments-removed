@@ -210,6 +210,7 @@ public:
   void CreatedCanvasLayer(ShadowableLayer* aCanvas);
   void CreatedRefLayer(ShadowableLayer* aRef);
   void CreatedTextLayer(ShadowableLayer* aRef);
+  void CreatedBorderLayer(ShadowableLayer* aRef);
 
   
 
