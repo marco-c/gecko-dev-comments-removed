@@ -84,6 +84,8 @@ struct EnumEntry {
   size_t length;
 };
 
+enum class CallerType : uint32_t;
+
 class MOZ_STACK_CLASS GlobalObject
 {
 public:
@@ -112,6 +114,10 @@ public:
   
   
   nsIPrincipal* GetSubjectPrincipal() const;
+
+  
+  
+  dom::CallerType CallerType() const;
 
 protected:
   JS::Rooted<JSObject*> mGlobalJSObject;
