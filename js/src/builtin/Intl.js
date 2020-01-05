@@ -2317,8 +2317,10 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
 
 
 
-
 function getDateTimeFormatInternals(obj, methodName) {
+    assert(IsObject(obj), "getDateTimeFormatInternals called with non-object");
+    assert(IsDateTimeFormat(obj), "getDateTimeFormatInternals called with non-DateTimeFormat");
+
     var internals = getIntlObjectInternals(obj, "DateTimeFormat", methodName);
     assert(internals.type === "DateTimeFormat", "bad type escaped getIntlObjectInternals");
 
@@ -2337,20 +2339,44 @@ function getDateTimeFormatInternals(obj, methodName) {
 
 
 
-
-
-
-
-
-
-
-
-function InitializeDateTimeFormat(dateTimeFormat, locales, options) {
-    assert(IsObject(dateTimeFormat), "InitializeDateTimeFormat");
+function UnwrapDateTimeFormat(dtf, methodName) {
+    
+    if ((!IsObject(dtf) || !IsDateTimeFormat(dtf)) &&
+        dtf instanceof GetDateTimeFormatConstructor())
+    {
+        dtf = dtf[intlFallbackSymbol()];
+    }
 
     
-    if (isInitializedIntlObject(dateTimeFormat))
-        ThrowTypeError(JSMSG_INTL_OBJECT_REINITED);
+    if (!IsObject(dtf) || !IsDateTimeFormat(dtf)) {
+        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "DateTimeFormat", methodName,
+                       "DateTimeFormat");
+    }
+
+    
+    return dtf;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options) {
+    assert(IsObject(dateTimeFormat), "InitializeDateTimeFormat called with non-Object");
+    assert(IsDateTimeFormat(dateTimeFormat),
+           "InitializeDateTimeFormat called with non-DateTimeFormat");
+
+    
+    
+    assert(!isInitializedIntlObject(dateTimeFormat), "dateTimeFormat mustn't be initialized");
 
     
     var internals = initializeIntlObject(dateTimeFormat);
@@ -2465,6 +2491,18 @@ function InitializeDateTimeFormat(dateTimeFormat, locales, options) {
     
     
     setLazyData(internals, "DateTimeFormat", lazyDateTimeFormatData);
+
+    if (dateTimeFormat !== thisValue && thisValue instanceof GetDateTimeFormatConstructor()) {
+        if (!IsObject(thisValue))
+            ThrowTypeError(JSMSG_NOT_NONNULL_OBJECT, typeof thisValue);
+
+        _DefineDataProperty(thisValue, intlFallbackSymbol(), dateTimeFormat,
+                            ATTR_NONENUMERABLE | ATTR_NONCONFIGURABLE | ATTR_NONWRITABLE);
+
+        return thisValue;
+    }
+
+    return dateTimeFormat;
 }
 
 
@@ -2875,7 +2913,9 @@ function dateTimeFormatFormatToBind() {
 
 function Intl_DateTimeFormat_format_get() {
     
-    var internals = getDateTimeFormatInternals(this, "format");
+    var dtf = UnwrapDateTimeFormat(this, "format");
+
+    var internals = getDateTimeFormatInternals(dtf, "format");
 
     
     if (internals.boundFormat === undefined) {
@@ -2883,7 +2923,7 @@ function Intl_DateTimeFormat_format_get() {
         var F = dateTimeFormatFormatToBind;
 
         
-        var bf = callFunction(FunctionBind, F, this);
+        var bf = callFunction(FunctionBind, F, dtf);
         internals.boundFormat = bf;
     }
 
@@ -2895,14 +2935,17 @@ _SetCanonicalName(Intl_DateTimeFormat_format_get, "get format");
 
 function Intl_DateTimeFormat_formatToParts() {
     
-    getDateTimeFormatInternals(this, "formatToParts");
+    var dtf = UnwrapDateTimeFormat(this, "formatToParts");
+
+    
+    getDateTimeFormatInternals(dtf, "formatToParts");
 
     
     var date = arguments.length > 0 ? arguments[0] : undefined;
     var x = (date === undefined) ? std_Date_now() : ToNumber(date);
 
     
-    return intl_FormatDateTime(this, x,  true);
+    return intl_FormatDateTime(dtf, x,  true);
 }
 
 
@@ -2913,7 +2956,9 @@ function Intl_DateTimeFormat_formatToParts() {
 
 function Intl_DateTimeFormat_resolvedOptions() {
     
-    var internals = getDateTimeFormatInternals(this, "resolvedOptions");
+    var dtf = UnwrapDateTimeFormat(this, "resolvedOptions");
+
+    var internals = getDateTimeFormatInternals(dtf, "resolvedOptions");
 
     var result = {
         locale: internals.locale,
