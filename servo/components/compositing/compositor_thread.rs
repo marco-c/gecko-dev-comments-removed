@@ -128,7 +128,9 @@ pub enum Msg {
     
     
     
-    Dispatch(Box<Fn() + Send>)
+    Dispatch(Box<Fn() + Send>),
+    
+    SetFullscreenState(bool),
 }
 
 impl Debug for Msg {
@@ -161,6 +163,7 @@ impl Debug for Msg {
             Msg::PipelineExited(..) => write!(f, "PipelineExited"),
             Msg::NewScrollFrameReady(..) => write!(f, "NewScrollFrameReady"),
             Msg::Dispatch(..) => write!(f, "Dispatch"),
+            Msg::SetFullscreenState(..) => write!(f, "SetFullscreenState"),
         }
     }
 }

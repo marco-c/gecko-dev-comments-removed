@@ -119,6 +119,8 @@ pub trait WindowMethods {
     fn set_inner_size(&self, size: Size2D<u32>);
     
     fn set_position(&self, point: Point2D<i32>);
+    
+    fn set_fullscreen_state(&self, state: bool);
 
     
     fn set_page_title(&self, title: Option<String>);

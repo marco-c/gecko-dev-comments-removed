@@ -633,6 +633,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 func();
             }
 
+            (Msg::SetFullscreenState(state), ShutdownState::NotShuttingDown) => {
+                self.window.set_fullscreen_state(state);
+            }
+
             
             
             

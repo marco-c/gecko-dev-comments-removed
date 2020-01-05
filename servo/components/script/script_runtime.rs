@@ -76,7 +76,9 @@ pub enum ScriptThreadEventCategory {
     UpdateReplacedElement,
     WebSocketEvent,
     WorkerEvent,
-    ServiceWorkerEvent
+    ServiceWorkerEvent,
+    EnterFullscreen,
+    ExitFullscreen,
 }
 
 

@@ -146,6 +146,8 @@ pub enum ScriptMsg {
     
     RegisterServiceWorker(ScopeThings, ServoUrl),
     
+    SetFullscreenState(bool),
+    
     Exit
 }
 
