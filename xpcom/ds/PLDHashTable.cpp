@@ -253,15 +253,27 @@ PLDHashTable::Hash1(PLDHashNumber aHash0)
   return aHash0 >> mHashShift;
 }
 
-
-
 void
-PLDHashTable::Hash2(PLDHashNumber aHash,
+PLDHashTable::Hash2(PLDHashNumber aHash0,
                     uint32_t& aHash2Out, uint32_t& aSizeMaskOut)
 {
   uint32_t sizeLog2 = kHashBits - mHashShift;
-  aHash2Out = ((aHash << sizeLog2) >> mHashShift) | 1;
-  aSizeMaskOut = (PLDHashNumber(1) << sizeLog2) - 1;
+  uint32_t sizeMask = (PLDHashNumber(1) << sizeLog2) - 1;
+  aSizeMaskOut = sizeMask;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  aHash2Out = (aHash0 & sizeMask) | 1;
 }
 
 
