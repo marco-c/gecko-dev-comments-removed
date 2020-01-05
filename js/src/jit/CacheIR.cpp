@@ -48,6 +48,10 @@ EmitLoadSlotResult(CacheIRWriter& writer, ObjOperandId holderOp, NativeObject* h
 bool
 GetPropIRGenerator::tryAttachStub()
 {
+    
+    
+    MOZ_ASSERT(pc_);
+
     AutoAssertNoPendingException aanpe(cx_);
 
     ValOperandId valId(writer.setInputOperandId(0));
@@ -127,6 +131,27 @@ GetPropIRGenerator::tryAttachStub()
     return false;
 }
 
+bool
+GetPropIRGenerator::tryAttachIdempotentStub()
+{
+    
+    
+    
+    
+    
+
+    
+    
+    MOZ_ASSERT(!pc_);
+
+    RootedObject obj(cx_, &val_.toObject());
+    RootedId id(cx_, NameToId(idVal_.toString()->asAtom().asPropertyName()));
+
+    ValOperandId valId(writer.setInputOperandId(0));
+    ObjOperandId objId = writer.guardIsObject(valId);
+    return tryAttachNative(obj, objId, id);
+}
+
 static bool
 IsCacheableNoProperty(JSContext* cx, JSObject* obj, JSObject* holder, Shape* shape, jsid id,
                       jsbytecode* pc)
@@ -135,6 +160,12 @@ IsCacheableNoProperty(JSContext* cx, JSObject* obj, JSObject* holder, Shape* sha
         return false;
 
     MOZ_ASSERT(!holder);
+
+    if (!pc) {
+        
+        
+        return false;
+    }
 
     
     if (*pc == JSOP_GETXPROP)
@@ -350,6 +381,13 @@ GetPropIRGenerator::tryAttachNative(HandleObject obj, ObjOperandId objId, Handle
 
     NativeGetPropCacheability type = CanAttachNativeGetProp(cx_, obj, id, &holder, &shape, pc_,
                                                             engine_, isTemporarilyUnoptimizable_);
+    if (!pc_) {
+        
+        if (type != CanAttachReadSlot)
+            return false;
+        MOZ_ASSERT(holder);
+    }
+
     switch (type) {
       case CanAttachNone:
         return false;
