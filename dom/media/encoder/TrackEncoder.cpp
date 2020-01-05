@@ -199,6 +199,8 @@ VideoTrackEncoder::Init(const VideoSegment& aSegment)
     return;
   }
 
+  mLastChunk.mDuration = 0;
+
   mInitCounter++;
   TRACK_LOG(LogLevel::Debug, ("Init the video encoder %d times", mInitCounter));
   VideoSegment::ConstChunkIterator iter(aSegment);
@@ -279,34 +281,73 @@ VideoTrackEncoder::AppendVideoSegment(const VideoSegment& aSegment)
 
   
   
-  VideoSegment::ChunkIterator iter(const_cast<VideoSegment&>(aSegment));
-  while (!iter.IsEnded()) {
+  VideoSegment::ConstChunkIterator iter(aSegment);
+  for (; !iter.IsEnded(); iter.Next()) {
     VideoChunk chunk = *iter;
-    mLastFrameDuration += chunk.GetDuration();
-    
-    
-    
-    if ((mLastFrame != chunk.mFrame) ||
-        (mLastFrameDuration >= mTrackRate)) {
-      RefPtr<layers::Image> image = chunk.mFrame.GetImage();
+
+    if (mLastChunk.mTimeStamp.IsNull()) {
+      if (chunk.IsNull()) {
+        
+        
+        mLastChunk.mDuration += chunk.mDuration;
+        continue;
+      }
 
       
       
+      MOZ_ASSERT(!chunk.mTimeStamp.IsNull());
+      const StreamTime nullDuration = mLastChunk.mDuration;
+      mLastChunk = chunk;
+
       
       
+      mLastChunk.mTimeStamp -=
+        TimeDuration::FromMicroseconds(
+          RateConvertTicksRoundUp(PR_USEC_PER_SEC, mTrackRate, nullDuration));
+    }
+
+    MOZ_ASSERT(!mLastChunk.IsNull());
+    if (mLastChunk.CanCombineWithFollowing(chunk) || chunk.IsNull()) {
       
       
-      if (image) {
-        mRawSegment.AppendFrame(image.forget(),
-                                mLastFrameDuration,
-                                chunk.mFrame.GetIntrinsicSize(),
-                                PRINCIPAL_HANDLE_NONE,
-                                chunk.mFrame.GetForceBlack());
-        mLastFrameDuration = 0;
+      mLastChunk.mDuration += chunk.mDuration;
+
+      if (mLastChunk.mDuration < mTrackRate) {
+        continue;
+      }
+
+      
+      
+      chunk.mTimeStamp = mLastChunk.mTimeStamp + TimeDuration::FromSeconds(1);
+
+      if (chunk.IsNull()) {
+        
+        
+        chunk.mFrame = mLastChunk.mFrame;
       }
     }
-    mLastFrame.TakeFrom(&chunk.mFrame);
-    iter.Next();
+
+    TimeDuration diff = chunk.mTimeStamp - mLastChunk.mTimeStamp;
+    if (diff <= TimeDuration::FromSeconds(0)) {
+      
+      
+      
+      
+      
+      chunk.mTimeStamp = mLastChunk.mTimeStamp;
+    } else {
+      RefPtr<layers::Image> lastImage = mLastChunk.mFrame.GetImage();
+      mRawSegment.AppendFrame(lastImage.forget(),
+                              RateConvertTicksRoundUp(
+                                  mTrackRate, PR_USEC_PER_SEC,
+                                  diff.ToMicroseconds()),
+                              mLastChunk.mFrame.GetIntrinsicSize(),
+                              PRINCIPAL_HANDLE_NONE,
+                              mLastChunk.mFrame.GetForceBlack(),
+                              mLastChunk.mTimeStamp);
+    }
+
+    mLastChunk = chunk;
   }
 
   if (mRawSegment.GetDuration() > 0) {
