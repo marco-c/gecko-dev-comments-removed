@@ -6187,7 +6187,6 @@ class MBinaryArithInstruction
     bool mustPreserveNaN() const { return mustPreserveNaN_; }
 
     MDefinition* foldsTo(TempAllocator& alloc) override;
-    void printOpcode(GenericPrinter& out) const override;
 
     virtual double getIdentity() = 0;
 
@@ -8904,22 +8903,33 @@ class MSetArrayLength
     }
 };
 
-class MGetNextMapEntryForIterator
+class MGetNextEntryForIterator
   : public MBinaryInstruction,
     public MixPolicy<ObjectPolicy<0>, ObjectPolicy<1> >::Data
 {
-  protected:
-    explicit MGetNextMapEntryForIterator(MDefinition* iter, MDefinition* result)
-      : MBinaryInstruction(iter, result)
+  public:
+    enum Mode {
+        Map,
+        Set
+    };
+
+  private:
+    Mode mode_;
+
+    explicit MGetNextEntryForIterator(MDefinition* iter, MDefinition* result, Mode mode)
+      : MBinaryInstruction(iter, result), mode_(mode)
     {
         setResultType(MIRType::Boolean);
     }
 
   public:
-    INSTRUCTION_HEADER(GetNextMapEntryForIterator)
+    INSTRUCTION_HEADER(GetNextEntryForIterator)
     TRIVIAL_NEW_WRAPPERS
     NAMED_OPERANDS((0, iter), (1, result))
 
+    Mode mode() const {
+        return mode_;
+    }
 };
 
 

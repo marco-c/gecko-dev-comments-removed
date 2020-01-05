@@ -885,7 +885,8 @@ class IonBuilder
                                                MIRType knownValueType);
 
     
-    InliningStatus inlineGetNextMapEntryForIterator(CallInfo& callInfo);
+    InliningStatus inlineGetNextEntryForIterator(CallInfo& callInfo,
+                                                 MGetNextEntryForIterator::Mode mode);
 
     
     InliningStatus inlineArrayBufferByteLength(CallInfo& callInfo);

@@ -955,6 +955,8 @@ SetIteratorObject::next(Handle<SetIteratorObject*> setIterator, HandleArrayObjec
                         JSContext* cx)
 {
     
+
+    
     MOZ_ASSERT(resultObj->isTenured());
 
     
