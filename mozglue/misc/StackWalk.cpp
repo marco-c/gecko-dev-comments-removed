@@ -453,7 +453,7 @@ WalkStackMain64(struct WalkStackData* aData)
   frame64.AddrReturn.Mode  = AddrModeFlat;
 #endif
 
-#ifdef _M_AMD64
+#ifdef _WIN64
   
   
   
@@ -467,11 +467,10 @@ WalkStackMain64(struct WalkStackData* aData)
   if (sStackWalkSuppressions) {
     return;
   }
+#endif
 
+#ifdef _M_AMD64
   bool firstFrame = true;
-
-  
-  HMODULE msmpeg2vdec = GetModuleHandleW(L"msmpeg2vdec.dll");
 #endif
 
   
@@ -524,18 +523,6 @@ WalkStackMain64(struct WalkStackData* aData)
     if (sJitCodeRegionStart &&
         (uint8_t*)context.Rip >= sJitCodeRegionStart &&
         (uint8_t*)context.Rip < sJitCodeRegionStart + sJitCodeRegionSize) {
-      break;
-    }
-
-    HMODULE ripModule = nullptr;
-    DWORD moduleFlags = GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS |
-                        GET_MODULE_HANDLE_EX_FLAG_UNCHANGED_REFCOUNT;
-    
-    
-    
-    if (msmpeg2vdec &&
-        GetModuleHandleExW(moduleFlags, (LPWSTR)context.Rip, &ripModule) &&
-        ripModule == msmpeg2vdec) {
       break;
     }
 
