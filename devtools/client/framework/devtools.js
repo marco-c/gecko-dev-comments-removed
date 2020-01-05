@@ -32,6 +32,8 @@ this.DevTools = function DevTools() {
   this._tools = new Map();     
   this._themes = new Map();    
   this._toolboxes = new Map(); 
+  
+  this._creatingToolboxes = new Map(); 
 
   
   this.destroy = this.destroy.bind(this);
@@ -417,25 +419,41 @@ DevTools.prototype = {
 
       toolbox.raise();
     } else {
-      let manager = new ToolboxHostManager(target, hostType, hostOptions);
-
-      toolbox = yield manager.create(toolId);
-      this._toolboxes.set(target, toolbox);
-
-      this.emit("toolbox-created", toolbox);
-
-      toolbox.once("destroy", () => {
-        this.emit("toolbox-destroy", target);
-      });
-
-      toolbox.once("destroyed", () => {
-        this._toolboxes.delete(target);
-        this.emit("toolbox-destroyed", target);
-      });
-
-      yield toolbox.open();
-      this.emit("toolbox-ready", toolbox);
+      
+      
+      
+      let promise = this._creatingToolboxes.get(target);
+      if (promise) {
+        return yield promise;
+      }
+      let toolboxPromise = this.createToolbox(target, toolId, hostType, hostOptions);
+      this._creatingToolboxes.set(target, toolboxPromise);
+      toolbox = yield toolboxPromise;
+      this._creatingToolboxes.delete(target);
     }
+    return toolbox;
+  }),
+
+  createToolbox: Task.async(function* (target, toolId, hostType, hostOptions) {
+    let manager = new ToolboxHostManager(target, hostType, hostOptions);
+
+    let toolbox = yield manager.create(toolId);
+
+    this._toolboxes.set(target, toolbox);
+
+    this.emit("toolbox-created", toolbox);
+
+    toolbox.once("destroy", () => {
+      this.emit("toolbox-destroy", target);
+    });
+
+    toolbox.once("destroyed", () => {
+      this._toolboxes.delete(target);
+      this.emit("toolbox-destroyed", target);
+    });
+
+    yield toolbox.open();
+    this.emit("toolbox-ready", toolbox);
 
     return toolbox;
   }),
