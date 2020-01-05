@@ -149,6 +149,7 @@ protected:
   void ShowToolbarIfNotVisible(StaticToolbarState aCurrentToolbarState);
   void TranslateTouchEvent(MultiTouchInput& aTouchEvent);
   ScreenIntCoord GetFixedLayerMarginsBottom();
+  void NotifyControllerSnapshotFailed();
 
   
   uint64_t mRootLayerTreeId;

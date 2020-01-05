@@ -208,6 +208,7 @@ public class LayerView extends FrameLayout {
                 
                 Bitmap bm = mToolbarAnimator.getBitmapOfToolbarChrome();
                 if (bm == null) {
+                    postCompositorMessage(TOOLBAR_SNAPSHOT_FAILED);
                     break;
                 }
                 final int width = bm.getWidth();
