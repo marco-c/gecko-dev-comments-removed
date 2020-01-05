@@ -130,6 +130,10 @@ using namespace mozilla::system;
 #include "mozilla/StaticPresData.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
 
+#ifdef MOZ_B2G_BT
+#include "mozilla/dom/BluetoothUUID.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::net;
 using namespace mozilla::dom;
@@ -386,7 +390,6 @@ nsLayoutStatics::Shutdown()
   nsAutoCopyListener::Shutdown();
   FrameLayerBuilder::Shutdown();
 
-  VideoDecoderManagerChild::Shutdown();
 
 #ifdef MOZ_ANDROID_OMX
   AndroidMediaPluginHost::Shutdown();
@@ -436,4 +439,8 @@ nsLayoutStatics::Shutdown()
   CacheObserver::Shutdown();
 
   PromiseDebugging::Shutdown();
+
+#ifdef MOZ_B2G_BT
+  BluetoothUUID::HandleShutdown();
+#endif
 }
