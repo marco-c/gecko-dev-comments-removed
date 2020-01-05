@@ -48,9 +48,7 @@ const nsIFile = Components.Constructor("@mozilla.org/file/local;1", "nsIFile");
 var logger = Log.repository.getLogger(LOGGER_ID);
 
 const KEY_PROFILEDIR                  = "ProfD";
-const FILE_DATABASE                   = "extensions.sqlite";
 const FILE_JSON_DB                    = "extensions.json";
-const FILE_OLD_DATABASE               = "extensions.rdf";
 const FILE_XPI_ADDONS_LIST            = "extensions.ini";
 
 
@@ -70,19 +68,6 @@ const KEY_APP_GLOBAL                  = "app-global";
 const KEY_APP_TEMPORARY               = "app-temporary";
 
 
-const DB_METADATA        = ["syncGUID",
-                            "installDate",
-                            "updateDate",
-                            "size",
-                            "sourceURI",
-                            "releaseNotesURI",
-                            "applyBackgroundUpdates"];
-const DB_BOOL_METADATA   = ["visible", "active", "userDisabled", "appDisabled",
-                            "pendingUninstall", "bootstrap", "skinnable",
-                            "softDisabled", "isForeignInstall",
-                            "hasBinaryComponents", "strictCompatibility"];
-
-
 const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
                           "internalName", "updateURL", "updateKey", "optionsURL",
                           "optionsType", "optionsBrowserStyle", "aboutURL",
@@ -97,57 +82,7 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
                           "userPermissions", "icons", "iconURL", "icon64URL"];
 
 
-
-
-const DB_MIGRATE_METADATA = ["installDate", "userDisabled", "softDisabled",
-                            "sourceURI", "applyBackgroundUpdates",
-                            "releaseNotesURI", "foreignInstall", "syncGUID"];
-
-
 const ASYNC_SAVE_DELAY_MS = 20;
-
-const PREFIX_ITEM_URI                 = "urn:mozilla:item:";
-const RDFURI_ITEM_ROOT                = "urn:mozilla:item:root"
-const PREFIX_NS_EM                    = "http://www.mozilla.org/2004/em-rdf#";
-
-XPCOMUtils.defineLazyServiceGetter(this, "gRDF", "@mozilla.org/rdf/rdf-service;1",
-                                   Ci.nsIRDFService);
-
-function EM_R(aProperty) {
-  return gRDF.GetResource(PREFIX_NS_EM + aProperty);
-}
-
-
-
-
-
-
-
-
-function getRDFValue(aLiteral) {
-  if (aLiteral instanceof Ci.nsIRDFLiteral)
-    return aLiteral.Value;
-  if (aLiteral instanceof Ci.nsIRDFResource)
-    return aLiteral.Value;
-  if (aLiteral instanceof Ci.nsIRDFInt)
-    return aLiteral.Value;
-  return null;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-function getRDFProperty(aDs, aResource, aProperty) {
-  return getRDFValue(aDs.GetTarget(aResource, EM_R(aProperty), true));
-}
 
 
 
@@ -221,50 +156,6 @@ function asyncMap(aObjects, aMethod, aCallback) {
       asyncMap_gotValue(aIndex, undefined);
     }
   });
-}
-
-
-
-
-
-
-
-function* resultRows(aStatement) {
-  try {
-    while (stepStatement(aStatement))
-      yield aStatement.row;
-  } finally {
-    aStatement.reset();
-  }
-}
-
-
-
-
-
-
-
-
-
-function logSQLError(aError, aErrorString) {
-  logger.error("SQL error " + aError + ": " + aErrorString);
-}
-
-
-
-
-
-
-
-
-function stepStatement(aStatement) {
-  try {
-    return aStatement.executeStep();
-  } catch (e) {
-    logSQLError(XPIDatabase.connection.lastError,
-                XPIDatabase.connection.lastErrorString);
-    throw e;
-  }
 }
 
 
@@ -508,32 +399,6 @@ this.XPIDatabase = {
 
 
 
-  getMigrateDataFromSQLITE() {
-    let connection = null;
-    let dbfile = FileUtils.getFile(KEY_PROFILEDIR, [FILE_DATABASE], true);
-    
-    try {
-      connection = Services.storage.openUnsharedDatabase(dbfile);
-    } catch (e) {
-      logger.warn("Failed to open sqlite database " + dbfile.path + " for upgrade", e);
-      return null;
-    }
-    logger.debug("Migrating data from sqlite");
-    let migrateData = this.getMigrateDataFromDatabase(connection);
-    connection.close();
-    return migrateData;
-  },
-
-  
-
-
-
-
-
-
-
-
-
 
 
 
@@ -668,21 +533,12 @@ this.XPIDatabase = {
 
   upgradeDB(aRebuildOnError) {
     let upgradeTimer = AddonManagerPrivate.simpleTimer("XPIDB_upgradeDB_MS");
-    try {
-      let schemaVersion = Services.prefs.getIntPref(PREF_DB_SCHEMA);
-      if (schemaVersion <= LAST_SQLITE_DB_SCHEMA) {
-        
-        logger.debug("Attempting to upgrade from SQLITE database");
-        this.migrateData = this.getMigrateDataFromSQLITE();
-      } else {
-        
-        
-        AddonManagerPrivate.recordSimpleMeasure("XPIDB_startupError", "dbMissing");
-      }
-    } catch (e) {
+
+    let schemaVersion = Services.prefs.getIntPref(PREF_DB_SCHEMA, 0);
+    if (schemaVersion > LAST_SQLITE_DB_SCHEMA) {
       
       
-      this.migrateData = this.getMigrateDataFromRDF();
+      AddonManagerPrivate.recordSimpleMeasure("XPIDB_startupError", "dbMissing");
     }
 
     this.rebuildDatabase(aRebuildOnError);
@@ -832,163 +688,6 @@ this.XPIDatabase = {
       bundles.push(XPIProvider.bootstrappedAddons[id].descriptor);
 
     return bundles;
-  },
-
-  
-
-
-
-
-
-  getMigrateDataFromRDF(aDbWasMissing) {
-
-    
-    let rdffile = FileUtils.getFile(KEY_PROFILEDIR, [FILE_OLD_DATABASE], true);
-    if (!rdffile.exists())
-      return null;
-
-    logger.debug("Migrating data from " + FILE_OLD_DATABASE);
-    let migrateData = {};
-
-    try {
-      let ds = gRDF.GetDataSourceBlocking(Services.io.newFileURI(rdffile).spec);
-      let root = Cc["@mozilla.org/rdf/container;1"].
-                 createInstance(Ci.nsIRDFContainer);
-      root.Init(ds, gRDF.GetResource(RDFURI_ITEM_ROOT));
-      let elements = root.GetElements();
-
-      while (elements.hasMoreElements()) {
-        let source = elements.getNext().QueryInterface(Ci.nsIRDFResource);
-
-        let location = getRDFProperty(ds, source, "installLocation");
-        if (location) {
-          if (!(location in migrateData))
-            migrateData[location] = {};
-          let id = source.ValueUTF8.substring(PREFIX_ITEM_URI.length);
-          migrateData[location][id] = {
-            version: getRDFProperty(ds, source, "version"),
-            userDisabled: false,
-            targetApplications: []
-          }
-
-          let disabled = getRDFProperty(ds, source, "userDisabled");
-          if (disabled == "true" || disabled == "needs-disable")
-            migrateData[location][id].userDisabled = true;
-
-          let targetApps = ds.GetTargets(source, EM_R("targetApplication"),
-                                         true);
-          while (targetApps.hasMoreElements()) {
-            let targetApp = targetApps.getNext()
-                                      .QueryInterface(Ci.nsIRDFResource);
-            let appInfo = {
-              id: getRDFProperty(ds, targetApp, "id")
-            };
-
-            let minVersion = getRDFProperty(ds, targetApp, "updatedMinVersion");
-            if (minVersion) {
-              appInfo.minVersion = minVersion;
-              appInfo.maxVersion = getRDFProperty(ds, targetApp, "updatedMaxVersion");
-            } else {
-              appInfo.minVersion = getRDFProperty(ds, targetApp, "minVersion");
-              appInfo.maxVersion = getRDFProperty(ds, targetApp, "maxVersion");
-            }
-            migrateData[location][id].targetApplications.push(appInfo);
-          }
-        }
-      }
-    } catch (e) {
-      logger.warn("Error reading " + FILE_OLD_DATABASE, e);
-      migrateData = null;
-    }
-
-    return migrateData;
-  },
-
-  
-
-
-
-
-
-  getMigrateDataFromDatabase(aConnection) {
-    let migrateData = {};
-
-    
-    
-    try {
-      var stmt = aConnection.createStatement("PRAGMA table_info(addon)");
-
-      const REQUIRED = ["internal_id", "id", "location", "userDisabled",
-                        "installDate", "version"];
-
-      let reqCount = 0;
-      let props = [];
-      for (let row of resultRows(stmt)) {
-        if (REQUIRED.indexOf(row.name) != -1) {
-          reqCount++;
-          props.push(row.name);
-        } else if (DB_METADATA.indexOf(row.name) != -1) {
-          props.push(row.name);
-        } else if (DB_BOOL_METADATA.indexOf(row.name) != -1) {
-          props.push(row.name);
-        }
-      }
-
-      if (reqCount < REQUIRED.length) {
-        logger.error("Unable to read anything useful from the database");
-        return null;
-      }
-      stmt.finalize();
-
-      stmt = aConnection.createStatement("SELECT " + props.join(",") + " FROM addon");
-      for (let row of resultRows(stmt)) {
-        if (!(row.location in migrateData))
-          migrateData[row.location] = {};
-        let addonData = {
-          targetApplications: []
-        }
-        migrateData[row.location][row.id] = addonData;
-
-        props.forEach(function(aProp) {
-          if (aProp == "isForeignInstall")
-            addonData.foreignInstall = (row[aProp] == 1);
-          if (DB_BOOL_METADATA.indexOf(aProp) != -1)
-            addonData[aProp] = row[aProp] == 1;
-          else
-            addonData[aProp] = row[aProp];
-        })
-      }
-
-      var taStmt = aConnection.createStatement("SELECT id, minVersion, " +
-                                                   "maxVersion FROM " +
-                                                   "targetApplication WHERE " +
-                                                   "addon_internal_id=:internal_id");
-
-      for (let location in migrateData) {
-        for (let id in migrateData[location]) {
-          taStmt.params.internal_id = migrateData[location][id].internal_id;
-          delete migrateData[location][id].internal_id;
-          for (let row of resultRows(taStmt)) {
-            migrateData[location][id].targetApplications.push({
-              id: row.id,
-              minVersion: row.minVersion,
-              maxVersion: row.maxVersion
-            });
-          }
-        }
-      }
-    } catch (e) {
-      
-      logger.error("Error migrating data", e);
-      return null;
-    } finally {
-      if (taStmt)
-        taStmt.finalize();
-      if (stmt)
-        stmt.finalize();
-    }
-
-    return migrateData;
   },
 
   
@@ -1605,17 +1304,14 @@ this.XPIDatabaseReconcile = {
 
 
 
-
-
-
   addMetadata(aInstallLocation, aId, aAddonState, aNewAddon, aOldAppVersion,
-              aOldPlatformVersion, aMigrateData) {
+              aOldPlatformVersion) {
     logger.debug("New add-on " + aId + " installed in " + aInstallLocation.name);
 
     
     
     
-    let isNewInstall = (!!aNewAddon) || (!XPIDatabase.activeBundles && !aMigrateData);
+    let isNewInstall = !!aNewAddon || !XPIDatabase.activeBundles;
 
     
     
@@ -1660,38 +1356,6 @@ this.XPIDatabaseReconcile = {
 
     
     aNewAddon.appDisabled = !isUsableAddon(aNewAddon);
-
-    if (aMigrateData) {
-      
-      logger.debug("Migrating data from old database");
-
-      DB_MIGRATE_METADATA.forEach(function(aProp) {
-        
-        
-        if (aProp == "userDisabled" && aNewAddon.type == "theme")
-          return;
-
-        if (aProp in aMigrateData)
-          aNewAddon[aProp] = aMigrateData[aProp];
-      });
-
-      
-      
-      aNewAddon.foreignInstall |= aInstallLocation.name != KEY_APP_PROFILE;
-
-      
-      
-      
-      if (aMigrateData.version == aNewAddon.version) {
-        logger.debug("Migrating compatibility info");
-        if ("targetApplications" in aMigrateData)
-          aNewAddon.applyCompatibilityUpdate(aMigrateData, true);
-      }
-
-      
-      applyBlocklistChanges(aNewAddon, aNewAddon, aOldAppVersion,
-                            aOldPlatformVersion);
-    }
 
     
     if (aNewAddon.type == "theme" && aNewAddon.internalName == XPIProvider.defaultSkin)
