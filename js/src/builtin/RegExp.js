@@ -599,22 +599,27 @@ function RegExpSplit(string, limit) {
     
     var C = SpeciesConstructor(rx, GetBuiltinConstructor("RegExp"));
 
-    
-    var flags = ToString(rx.flags);
-
-    
-    var unicodeMatching = callFunction(std_String_includes, flags, "u");
-
     var optimizable = IsRegExpSplitOptimizable(rx, C) &&
                       (limit === undefined || typeof limit == "number");
-    var splitter;
+
+    var flags, unicodeMatching, splitter;
     if (optimizable) {
         
+        flags = UnsafeGetInt32FromReservedSlot(rx, REGEXP_FLAGS_SLOT);
+
+        
+        unicodeMatching = !!(flags & (REGEXP_UNICODE_FLAG));
 
         
         
-        splitter = regexp_construct_no_sticky(rx, flags);
+        splitter = regexp_construct_raw_flags(rx, flags & ~REGEXP_STICKY_FLAG);
     } else {
+        
+        flags = ToString(rx.flags);
+
+        
+        unicodeMatching = callFunction(std_String_includes, flags, "u");
+
         
         var newFlags;
         if (callFunction(std_String_includes, flags, "y"))
@@ -692,7 +697,7 @@ function RegExpSplit(string, limit) {
                 break;
 
             
-            e = ToLength(q + z[0].length);
+            e = q + z[0].length;
         } else {
             
             splitter.lastIndex = q;

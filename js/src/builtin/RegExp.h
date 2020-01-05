@@ -93,9 +93,8 @@ regexp_test_no_statics(JSContext* cx, unsigned argc, Value* vp);
 
 
 
-
 extern MOZ_MUST_USE bool
-regexp_construct_no_sticky(JSContext* cx, unsigned argc, Value* vp);
+regexp_construct_raw_flags(JSContext* cx, unsigned argc, Value* vp);
 
 
 

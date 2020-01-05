@@ -524,9 +524,8 @@ js::regexp_construct(JSContext* cx, unsigned argc, Value* vp)
 
 
 
-
 bool
-js::regexp_construct_no_sticky(JSContext* cx, unsigned argc, Value* vp)
+js::regexp_construct_raw_flags(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     MOZ_ASSERT(args.length() == 2);
@@ -538,13 +537,7 @@ js::regexp_construct_no_sticky(JSContext* cx, unsigned argc, Value* vp)
     RootedAtom sourceAtom(cx, rx->getSource());
 
     
-    RootedString flagStr(cx, args[1].toString());
-    RegExpFlag flags = RegExpFlag(0);
-    if (!ParseRegExpFlags(cx, flagStr, &flags))
-        return false;
-
-    
-    flags = RegExpFlag(flags & ~StickyFlag);
+    int32_t flags = int32_t(args[1].toNumber());
 
     
     Rooted<RegExpObject*> regexp(cx, RegExpAlloc(cx));
@@ -552,7 +545,7 @@ js::regexp_construct_no_sticky(JSContext* cx, unsigned argc, Value* vp)
         return false;
 
     
-    regexp->initAndZeroLastIndex(sourceAtom, flags, cx);
+    regexp->initAndZeroLastIndex(sourceAtom, RegExpFlag(flags), cx);
     args.rval().setObject(*regexp);
     return true;
 }
