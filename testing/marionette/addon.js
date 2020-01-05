@@ -4,7 +4,7 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+const {interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/AddonManager.jsm");
 Cu.import("resource://gre/modules/FileUtils.jsm");
@@ -14,6 +14,20 @@ Cu.import("chrome://marionette/content/error.js");
 this.EXPORTED_SYMBOLS = ["addon"];
 
 this.addon = {};
+
+
+addon.Errors = {
+  [-1]: "ERROR_NETWORK_FAILURE: A network error occured.",
+  [-2]: "ERROR_INCORECT_HASH: The downloaded file did not match the expected hash.",
+  [-3]: "ERROR_CORRUPT_FILE: The file appears to be corrupt.",
+  [-4]: "ERROR_FILE_ACCESS: There was an error accessing the filesystem.",
+  [-5]: "ERROR_SIGNEDSTATE_REQUIRED: The addon must be signed and isn't.",
+};
+
+function lookupError(code) {
+  let msg = addon.Errors[code];
+  return new UnknownError(msg);
+}
 
 
 
@@ -37,13 +51,15 @@ this.addon = {};
 
 addon.install = function(path, temporary = false) {
   return new Promise((resolve, reject) => {
+    let file = new FileUtils.File(path);
+
     let listener = {
       onInstallEnded: function(install, addon) {
         resolve(addon.id);
       },
 
       onInstallFailed: function(install) {
-        reject(new AddonError(install.error));
+        reject(lookupError(install.error));
       },
 
       onInstalled: function(addon) {
@@ -52,23 +68,17 @@ addon.install = function(path, temporary = false) {
       }
     };
 
-    let file = new FileUtils.File(path);
-
-    
-    if (temp) {
-      AddonManager.addAddonListener(listener);
-      AddonManager.installTemporaryAddon(file);
-    }
-
-    
-    else {
+    if (!temporary) {
       AddonManager.getInstallForFile(file, function(aInstall) {
-        if (aInstall.error != 0) {
-          reject(new AddonError(aInstall.error));
+        if (aInstall.error !== 0) {
+          reject(lookupError(aInstall.error));
         }
         aInstall.addListener(listener);
         aInstall.install();
       });
+    } else {
+      AddonManager.addAddonListener(listener);
+      AddonManager.installTemporaryAddon(file);
     }
   });
 };
@@ -86,8 +96,9 @@ addon.install = function(path, temporary = false) {
 
 addon.uninstall = function(id) {
   return new Promise(resolve => {
-    AddonManager.getAddonByID(arguments[0], function(addon) {
+    AddonManager.getAddonByID(id, function(addon) {
       addon.uninstall();
+      resolve();
     });
   });
 };
