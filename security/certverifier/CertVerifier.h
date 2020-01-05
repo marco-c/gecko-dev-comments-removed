@@ -11,10 +11,27 @@
 #include "CTVerifyResult.h"
 #include "OCSPCache.h"
 #include "ScopedNSSTypes.h"
-#include "mozilla/BasePrincipal.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/UniquePtr.h"
 #include "pkix/pkixtypes.h"
+
+#if defined(_MSC_VER)
+#pragma warning(push)
+
+
+#pragma warning(disable:4324)
+
+
+#pragma warning(disable:4365)
+
+
+#pragma warning(disable:5031)
+#endif 
+#include "mozilla/BasePrincipal.h"
+#if defined(_MSC_VER)
+#pragma warning(pop) /* popping the pragma in Vector.h */
+#pragma warning(pop) /* popping the pragma in this file */
+#endif 
 
 namespace mozilla { namespace ct {
 
