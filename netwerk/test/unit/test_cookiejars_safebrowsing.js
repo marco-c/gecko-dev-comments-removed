@@ -148,7 +148,9 @@ add_test(function test_non_safebrowsing_cookie() {
 add_test(function test_safebrowsing_cookie() {
 
   var cookieName = 'sbCookie_id4294967294';
-  var originAttributes = new OriginAttributes(Ci.nsIScriptSecurityManager.SAFEBROWSING_APP_ID, false, 0);
+  var originAttributes = new OriginAttributes(0, false, 0);
+  originAttributes.firstPartyDomain =
+    "safebrowsing.86868755-6b82-4842-b301-72671a0db32e.mozilla";
 
   function setSafeBrowsingCookie() {
     var channel = setupChannel(setCookiePath, originAttributes);

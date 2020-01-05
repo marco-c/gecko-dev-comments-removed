@@ -41,7 +41,8 @@ this.PROT_XMLFetcher = function PROT_XMLFetcher() {
   this.debugZone = "xmlfetcher";
   this._request = PROT_NewXMLHttpRequest();
   
-  this.appId = Ci.nsIScriptSecurityManager.SAFEBROWSING_APP_ID;
+  this.firstPartyDomain =
+    "safebrowsing.86868755-6b82-4842-b301-72671a0db32e.mozilla";
   this.isInIsolatedMozBrowserElement = false;
   this.usePrivateBrowsing = false;
   this.isContent = false;
@@ -66,7 +67,7 @@ PROT_XMLFetcher.prototype = {
     this._callback = callback;
     var asynchronous = true;
     this._request.loadInfo.originAttributes = {
-      appId: this.appId,
+      firstPartyDomain: this.firstPartyDomain,
       inIsolatedMozBrowser: this.isInIsolatedMozBrowserElement
     };
     this._request.open("GET", page, asynchronous);

@@ -673,7 +673,11 @@ bool NS_HasBeenCrossOrigin(nsIChannel* aChannel, bool aReport = false);
 #define NECKO_NO_APP_ID 0
 #define NECKO_UNKNOWN_APP_ID UINT32_MAX
 
-#define NECKO_SAFEBROWSING_APP_ID UINT32_MAX - 1
+
+
+
+#define NECKO_SAFEBROWSING_FIRST_PARTY_DOMAIN \
+  "safebrowsing.86868755-6b82-4842-b301-72671a0db32e.mozilla"
 
 
 

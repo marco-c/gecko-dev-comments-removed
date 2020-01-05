@@ -35,7 +35,7 @@ public:
   explicit KeyParser(nsACString const& aInput)
     : Tokenizer(aInput)
     
-    , originAttribs(0, false)
+    , originAttribs(false)
     , isAnonymous(false)
     
     , lastTag(0)

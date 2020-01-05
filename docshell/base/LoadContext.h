@@ -27,9 +27,6 @@ namespace mozilla {
 
 
 
-
-
-
 class LoadContext final
   : public nsILoadContext
   , public nsIInterfaceRequestor
