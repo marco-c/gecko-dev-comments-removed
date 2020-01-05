@@ -478,12 +478,6 @@ ScreenOrientation::GetLockOrientationPermission(bool aCheckSandbox) const
     return LOCK_DENIED;
   }
 
-  
-  if (doc->NodePrincipal()->GetAppStatus() >=
-        nsIPrincipal::APP_STATUS_INSTALLED) {
-    return LOCK_ALLOWED;
-  }
-
   if (Preferences::GetBool("dom.screenorientation.testing.non_fullscreen_lock_allow",
                            false)) {
     return LOCK_ALLOWED;
