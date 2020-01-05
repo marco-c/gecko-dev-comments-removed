@@ -286,40 +286,28 @@ class DeviceManagerADB(DeviceManager):
         else:
             localDir = os.path.normpath(localDir)
             remoteDir = os.path.normpath(remoteDir)
-            copyRequired = False
-            if self._adb_version >= '1.0.36' and \
-               os.path.isdir(localDir) and self.dirExists(remoteDir):
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                localName = os.path.basename(localDir)
-                remoteName = os.path.basename(remoteDir)
-                if localName != remoteName:
-                    copyRequired = True
-                    tempParent = tempfile.mkdtemp()
-                    newLocal = os.path.join(tempParent, remoteName)
-                    dir_util.copy_tree(localDir, newLocal)
-                    localDir = newLocal
+            tempParent = tempfile.mkdtemp()
+            remoteName = os.path.basename(remoteDir)
+            newLocal = os.path.join(tempParent, remoteName)
+            dir_util.copy_tree(localDir, newLocal)
+            
+            
+            
+            
+            
+            
+            
+            if self._adb_version >= '1.0.36':
                 remoteDir = '/'.join(remoteDir.rstrip('/').split('/')[:-1])
             try:
-                self._checkCmd(["push", localDir, remoteDir],
-                               retryLimit=retryLimit, timeout=timeout)
+                if self._checkCmd(["push", newLocal, remoteDir],
+                                  retryLimit=retryLimit, timeout=timeout):
+                    raise DMError("failed to push %s (copy of %s) to %s" %
+                                  (newLocal, localDir, remoteDir))
             except:
                 raise
             finally:
-                if copyRequired:
-                    mozfile.remove(tempParent)
+                mozfile.remove(tempParent)
 
     def dirExists(self, remotePath):
         self._detectLsModifier()
