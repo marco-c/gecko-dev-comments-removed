@@ -312,7 +312,22 @@ class Sampler;
 class nsISupports;
 class ProfilerMarkerPayload;
 
-extern MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern MOZ_THREAD_LOCAL(PseudoStack*) tlsPseudoStack;
+
 extern Sampler* gSampler;
 extern bool stack_key_initialized;
 
@@ -363,7 +378,7 @@ profiler_call_exit(void* aHandle)
     return;
 
   PseudoStack *stack = (PseudoStack*)aHandle;
-  stack->popAndMaybeDelete();
+  stack->pop();
 }
 
 void profiler_add_marker(const char *aMarker,

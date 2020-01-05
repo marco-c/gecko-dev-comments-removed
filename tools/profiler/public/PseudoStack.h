@@ -222,10 +222,25 @@ void ProfilerJSEventMarker(const char *event);
 struct PseudoStack
 {
 public:
-  
-  static PseudoStack *create()
+  PseudoStack()
+    : mStackPointer(0)
+    , mSleepId(0)
+    , mSleepIdObserved(0)
+    , mSleeping(false)
+    , mContext(nullptr)
+    , mStartJSSampling(false)
+    , mPrivacyMode(false)
   {
-    return new PseudoStack();
+    MOZ_COUNT_CTOR(PseudoStack);
+  }
+
+  ~PseudoStack() {
+    MOZ_COUNT_DTOR(PseudoStack);
+
+    
+    
+    
+    MOZ_RELEASE_ASSERT(mStackPointer == 0);
   }
 
   
@@ -263,13 +278,6 @@ public:
       return;
     }
 
-    
-    
-    
-    if (mStackPointer == 0) {
-      ref();
-    }
-
     volatile StackEntry &entry = mStack[mStackPointer];
 
     
@@ -291,23 +299,8 @@ public:
   }
 
   
-  
-  
-  bool popAndMaybeDelete()
-  {
-    mStackPointer--;
-    if (mStackPointer == 0) {
-      
-      deref();
-      return false;
-    } else {
-      return true;
-    }
-  }
-  bool isEmpty()
-  {
-    return mStackPointer == 0;
-  }
+  void pop() { mStackPointer--; }
+
   uint32_t stackSize() const
   {
     return sMin(mStackPointer, mozilla::sig_safe_t(mozilla::ArrayLength(mStack)));
@@ -335,6 +328,7 @@ public:
     if (mStartJSSampling)
       enableJSSampling();
   }
+
   void enableJSSampling() {
     if (mContext) {
       js::EnableContextProfilingStack(mContext, true);
@@ -344,10 +338,12 @@ public:
       mStartJSSampling = true;
     }
   }
+
   void jsOperationCallback() {
     if (mStartJSSampling)
       enableJSSampling();
   }
+
   void disableJSSampling() {
     mStartJSSampling = false;
     if (mContext)
@@ -372,34 +368,8 @@ public:
 
   
   StackEntry volatile mStack[1024];
- private:
 
-  
-  PseudoStack()
-    : mStackPointer(0)
-    , mSleepId(0)
-    , mSleepIdObserved(0)
-    , mSleeping(false)
-    , mRefCnt(1)
-    , mContext(nullptr)
-    , mStartJSSampling(false)
-    , mPrivacyMode(false)
-  {
-    MOZ_COUNT_CTOR(PseudoStack);
-  }
-
-  
-  ~PseudoStack() {
-    MOZ_COUNT_DTOR(PseudoStack);
-    if (mStackPointer != 0) {
-      
-      
-      
-      
-      abort();
-    }
-  }
-
+private:
   
   PseudoStack(const PseudoStack&) = delete;
   void operator=(const PseudoStack&) = delete;
@@ -418,10 +388,6 @@ public:
   mozilla::Atomic<int> mSleepIdObserved;
   
   mozilla::Atomic<int> mSleeping;
-  
-  
-  
-  mozilla::Atomic<int> mRefCnt;
 
  public:
   
@@ -458,17 +424,6 @@ public:
 
   bool isSleeping() {
     return !!mSleeping;
-  }
-
-  void ref() {
-    ++mRefCnt;
-  }
-
-  void deref() {
-    int newValue = --mRefCnt;
-    if (newValue == 0) {
-      delete this;
-    }
   }
 };
 

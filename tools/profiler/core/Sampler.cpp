@@ -286,6 +286,8 @@ Sampler::~Sampler()
       
       
       if (info->IsPendingDelete()) {
+        
+        MOZ_ASSERT(!info->Stack());
         delete info;
         sRegisteredThreads->erase(sRegisteredThreads->begin() + i);
         i--;
@@ -366,8 +368,8 @@ Sampler::RegisterCurrentThread(const char* aName,
     }
   }
 
-  ThreadInfo* info = new StackOwningThreadInfo(aName, id,
-    aIsMainThread, aPseudoStack, stackTop);
+  ThreadInfo* info =
+    new ThreadInfo(aName, id, aIsMainThread, aPseudoStack, stackTop);
 
   
   if (gSampler) {

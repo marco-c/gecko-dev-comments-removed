@@ -117,13 +117,4 @@ public:
 #endif
 };
 
-
-class StackOwningThreadInfo : public ThreadInfo {
- public:
-  StackOwningThreadInfo(const char* aName, int aThreadId, bool aIsMainThread, PseudoStack* aPseudoStack, void* aStackTop);
-  virtual ~StackOwningThreadInfo();
-
-  virtual void SetPendingDelete();
-};
-
 #endif
