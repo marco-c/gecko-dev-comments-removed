@@ -385,10 +385,21 @@ function getInnerWindowIDForWindow(aContentWindow) {
 }
 
 function getMessageManagerForWindow(aContentWindow) {
-  let ir = aContentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
-                         .getInterface(Ci.nsIDocShell)
-                         .sameTypeRootTreeItem
-                         .QueryInterface(Ci.nsIInterfaceRequestor);
+  aContentWindow.QueryInterface(Ci.nsIInterfaceRequestor);
+
+  let docShell;
+  try {
+    
+    docShell = aContentWindow.getInterface(Ci.nsIDocShell);
+  } catch (e) {
+    if (e.result == Cr.NS_NOINTERFACE) {
+      return null;
+    }
+    throw e;
+  }
+
+  let ir = docShell.sameTypeRootTreeItem
+                   .QueryInterface(Ci.nsIInterfaceRequestor);
   try {
     
     return ir.getInterface(Ci.nsIContentFrameMessageManager);
