@@ -60,7 +60,7 @@ struct RuntimeStats;
 } 
 
 namespace mozilla {
-class TaskQueue;
+class ThrottledEventQueue;
 namespace dom {
 class Function;
 class MessagePort;
@@ -942,7 +942,7 @@ class WorkerPrivate : public WorkerPrivateParent<WorkerPrivate>
   nsTObserverArray<WorkerHolder*> mHolders;
   nsTArray<nsAutoPtr<TimeoutInfo>> mTimeouts;
   uint32_t mDebuggerEventLoopLevel;
-  RefPtr<TaskQueue> mMainThreadTaskQueue;
+  RefPtr<ThrottledEventQueue> mMainThreadThrottledEventQueue;
   nsCOMPtr<nsIEventTarget> mMainThreadEventTarget;
 
   struct SyncLoopInfo

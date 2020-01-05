@@ -47,6 +47,7 @@
 #include "mozilla/Move.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/Console.h"
+#include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/ErrorEvent.h"
 #include "mozilla/dom/ErrorEventBinding.h"
 #include "mozilla/dom/Exceptions.h"
@@ -70,7 +71,7 @@
 #include "mozilla/dom/WorkerDebuggerGlobalScopeBinding.h"
 #include "mozilla/dom/WorkerGlobalScopeBinding.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/TaskQueue.h"
+#include "mozilla/ThrottledEventQueue.h"
 #include "mozilla/TimelineConsumers.h"
 #include "mozilla/WorkerTimelineMarker.h"
 #include "nsAlgorithm.h"
@@ -4122,12 +4123,18 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
 
   nsCOMPtr<nsIEventTarget> target;
 
+  
+  
+  
+  
   if (aParent) {
-    target = aParent->MainThreadEventTarget();
+    mMainThreadThrottledEventQueue = aParent->mMainThreadThrottledEventQueue;
+    mMainThreadEventTarget = aParent->mMainThreadEventTarget;
+    return;
   }
 
-  
-  
+  MOZ_ASSERT(NS_IsMainThread());
+  target = GetWindow() ? GetWindow()->GetThrottledEventQueue() : nullptr;
 
   if (!target) {
     nsCOMPtr<nsIThread> mainThread;
@@ -4138,10 +4145,16 @@ WorkerPrivate::WorkerPrivate(WorkerPrivate* aParent,
 
   
   
-  mMainThreadTaskQueue = new TaskQueue(target.forget());
+  mMainThreadThrottledEventQueue = ThrottledEventQueue::Create(target);
 
   
-  mMainThreadEventTarget = mMainThreadTaskQueue->WrapAsEventTarget();
+  
+  
+  if (mMainThreadThrottledEventQueue) {
+    mMainThreadEventTarget = mMainThreadThrottledEventQueue;
+  } else {
+    mMainThreadEventTarget = target.forget();
+  }
 }
 
 WorkerPrivate::~WorkerPrivate()
@@ -4683,14 +4696,6 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
 
         
         
-        
-        mMainThreadEventTarget = do_GetMainThread();
-        RefPtr<TaskQueue> taskQueue = mMainThreadTaskQueue.forget();
-        taskQueue->BeginShutdown();
-        taskQueue->AwaitShutdownAndIdle();
-
-        
-        
         if (!mControlQueue.IsEmpty()) {
           WorkerControlRunnable* runnable;
           while (mControlQueue.Pop(runnable)) {
@@ -4758,9 +4763,9 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
     
     
     
-    if (mMainThreadTaskQueue &&
-        mMainThreadTaskQueue->ImpreciseLengthForHeuristics() > 5000) {
-      mMainThreadTaskQueue->AwaitIdle();
+    if (mMainThreadThrottledEventQueue &&
+        mMainThreadThrottledEventQueue->Length() > 5000) {
+      mMainThreadThrottledEventQueue->AwaitIdle();
     }
   }
 
