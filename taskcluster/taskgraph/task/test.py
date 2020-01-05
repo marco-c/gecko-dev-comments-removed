@@ -21,7 +21,7 @@ def get_inputs(kind, path, config, params, loaded_tasks):
     
     if len(config.get('kind-dependencies', [])) != 1:
         raise Exception(
-            "TestTask kinds must have exactly one item in kind-dependencies")
+            "Test kinds must have exactly one item in kind-dependencies")
     dep_kind = config['kind-dependencies'][0]
 
     
