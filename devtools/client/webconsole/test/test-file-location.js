@@ -3,6 +3,8 @@
 
 
 
+"use strict";
+
 console.log("message for level log");
 console.info("message for level info");
 console.warn("message for level warn");
