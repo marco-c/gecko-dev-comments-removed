@@ -16,15 +16,7 @@ const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 const MAX_ROWS = 20;
 
 
-const AUTOSCROLL_INTERVAL = 25;
-
-
 const SEARCH_MINIMUM_ELEMENTS = 40;
-
-
-const NOT_DRAGGING = 0;
-const DRAG_OVER_SELECT = -1;
-const DRAG_OVER_POPUP = 1;
 
 var currentBrowser = null;
 var currentMenulist = null;
@@ -33,9 +25,6 @@ var closedWithEnter = false;
 var selectRect;
 
 this.SelectParentHelper = {
-  draggingState: NOT_DRAGGING,
-  scrollTimer: 0,
-
   populate(menulist, items, selectedIndex, zoom) {
     
     menulist.menupopup.textContent = "";
@@ -78,9 +67,6 @@ this.SelectParentHelper = {
                                      constraintRect.width, constraintRect.height);
     menupopup.setConstraintRect(constraintRect);
     menupopup.openPopupAtScreenRect(AppConstants.platform == "macosx" ? "selection" : "after_start", rect.left, rect.top, rect.width, rect.height, false, false);
-
-    
-    this.enableDragScrolling(false);
   },
 
   hide(menulist, browser) {
@@ -89,31 +75,9 @@ this.SelectParentHelper = {
     }
   },
 
-  enableDragScrolling(overOption) {
-    if (this.draggingState) {
-      return;
-    }
-
-    currentMenulist.menupopup.setCaptureAlways();
-    this.draggingState = overOption ? DRAG_OVER_POPUP : DRAG_OVER_SELECT;
-    currentMenulist.menupopup.addEventListener("mousemove", this);
-  },
-
-  clearScrollTimer() {
-    if (this.scrollTimer) {
-      let win = currentBrowser.ownerDocument.defaultView;
-      win.clearInterval(this.scrollTimer);
-      this.scrollTimer = 0;
-    }
-  },
-
   handleEvent(event) {
     switch (event.type) {
       case "mouseup":
-        this.draggingState = NOT_DRAGGING;
-        this.clearScrollTimer();
-        currentMenulist.menupopup.removeEventListener("mousemove", this);
-
         function inRect(rect, x, y) {
           return x >= rect.left && x <= rect.left + rect.width && y >= rect.top && y <= rect.top + rect.height;
         }
@@ -130,56 +94,6 @@ this.SelectParentHelper = {
 
       case "mouseout":
         currentBrowser.messageManager.sendAsyncMessage("Forms:MouseOut", {});
-        break;
-
-      case "mousedown":
-        if (event.target.localName == "menuitem" ||
-            event.target.localName == "menu" ||
-            event.target.localName == "menucaption") {
-          this.enableDragScrolling(true);
-        }
-        break;
-
-      case "mousemove":
-        let menupopup = currentMenulist.menupopup;
-
-        this.clearScrollTimer();
-
-        
-        
-        
-        
-        if (!(event.buttons & 1)) {
-          currentMenulist.menupopup.removeEventListener("mousemove", this);
-          menupopup.releaseCapture();
-          return;
-        }
-
-        
-        
-        
-        
-        
-        let popupRect = menupopup.getOuterScreenRect();
-        if (event.screenX >= popupRect.left && event.screenX <= popupRect.right) {
-          if (this.draggingState == DRAG_OVER_SELECT) {
-            if (event.screenY > popupRect.top && event.screenY < popupRect.bottom) {
-              this.draggingState = DRAG_OVER_POPUP;
-            }
-          }
-
-          if (this.draggingState == DRAG_OVER_POPUP &&
-              (event.screenY <= popupRect.top || event.screenY >= popupRect.bottom)) {
-            let scrollAmount = event.screenY <= popupRect.top ? -1 : 1;
-            menupopup.scrollBox.scrollByIndex(scrollAmount);
-
-            let win = currentBrowser.ownerDocument.defaultView;
-            this.scrollTimer = win.setInterval(function() {
-              menupopup.scrollBox.scrollByIndex(scrollAmount);
-            }, AUTOSCROLL_INTERVAL);
-          }
-        }
-
         break;
 
       case "keydown":
@@ -207,9 +121,6 @@ this.SelectParentHelper = {
         currentBrowser.messageManager.sendAsyncMessage("Forms:DismissedDropDown", {});
         let popup = event.target;
         this._unregisterListeners(currentBrowser, popup);
-        this.draggingState = NOT_DRAGGING;
-        this.clearScrollTimer();
-        popup.releaseCapture();
         popup.parentNode.hidden = true;
         currentBrowser = null;
         currentMenulist = null;
@@ -235,7 +146,6 @@ this.SelectParentHelper = {
   _registerListeners(browser, popup) {
     popup.addEventListener("command", this);
     popup.addEventListener("popuphidden", this);
-    popup.addEventListener("mousedown", this);
     popup.addEventListener("mouseover", this);
     popup.addEventListener("mouseout", this);
     browser.ownerDocument.defaultView.addEventListener("mouseup", this, true);
@@ -247,7 +157,6 @@ this.SelectParentHelper = {
   _unregisterListeners(browser, popup) {
     popup.removeEventListener("command", this);
     popup.removeEventListener("popuphidden", this);
-    popup.removeEventListener("mousedown", this);
     popup.removeEventListener("mouseover", this);
     popup.removeEventListener("mouseout", this);
     browser.ownerDocument.defaultView.removeEventListener("mouseup", this, true);
