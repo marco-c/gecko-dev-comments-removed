@@ -58,7 +58,7 @@ caches.open(name).then(function(cache) {
   );
 }).then(function() {
   
-  return c.keys(new Request(tests[0], {method: "HEAD"}));
+  return c.keys(new Request(tests[0], {method: "HEAD"}), {ignoreMethod: true});
 }).then(function(keys) {
   is(keys.length, 1, "One match should be found");
   ok(keys[0].url.indexOf(tests[0]) >= 0, "Valid URL");
