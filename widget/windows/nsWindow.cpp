@@ -380,7 +380,7 @@ static bool gIsPointerEventsEnabled = false;
 
 #define HITTEST_CACHE_LIFETIME_MS 50
 
-#if defined(ACCESSIBILITY) && defined(_M_IX86)
+#if defined(ACCESSIBILITY)
 
 namespace mozilla {
 
@@ -535,7 +535,8 @@ private:
     
     
     
-    if (!aMsgResult || aMsgCode != WM_GETOBJECT || aLParam != OBJID_CLIENT ||
+    if (!aMsgResult || aMsgCode != WM_GETOBJECT ||
+        static_cast<DWORD>(aLParam) != OBJID_CLIENT ||
         !WinUtils::GetNSWindowPtr(aHwnd) ||
         ::GetWindowThreadProcessId(aHwnd, nullptr) != ::GetCurrentThreadId() ||
         !IsA11yBlocked()) {
@@ -647,7 +648,7 @@ nsWindow::nsWindow()
     
     mozilla::widget::WinTaskbar::RegisterAppUserModelID();
     KeyboardLayout::GetInstance()->OnLayoutChange(::GetKeyboardLayout(0));
-#if defined(ACCESSIBILITY) && defined(_M_IX86)
+#if defined(ACCESSIBILITY)
     mozilla::TIPMessageHandler::Initialize();
 #endif 
     IMEHandler::Initialize();
