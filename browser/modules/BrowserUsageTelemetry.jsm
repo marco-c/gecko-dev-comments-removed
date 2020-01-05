@@ -32,6 +32,15 @@ const WINDOW_OPEN_EVENT_COUNT_SCALAR_NAME = "browser.engagement.window_open_even
 const UNIQUE_DOMAINS_COUNT_SCALAR_NAME = "browser.engagement.unique_domains_count";
 const TOTAL_URI_COUNT_SCALAR_NAME = "browser.engagement.total_uri_count";
 
+
+const KNOWN_SEARCH_SOURCES = [
+  "abouthome",
+  "contextmenu",
+  "newtab",
+  "searchbar",
+  "urlbar",
+];
+
 function getOpenTabsAndWinsCounts() {
   let tabCount = 0;
   let winCount = 0;
@@ -44,6 +53,23 @@ function getOpenTabsAndWinsCounts() {
   }
 
   return { tabCount, winCount };
+}
+
+function getSearchEngineId(engine) {
+  if (engine) {
+    if (engine.identifier) {
+      return engine.identifier;
+    }
+    
+    
+    const extendedTelemetry = Services.prefs.getBoolPref("toolkit.telemetry.enabled");
+    if (engine.name && extendedTelemetry) {
+      
+      
+      return "other-" + engine.name;
+    }
+  }
+  return "other";
 }
 
 let URICountListener = {
@@ -187,6 +213,29 @@ let BrowserUsageTelemetry = {
         URICountListener.addRestoredURI(browser, browser.currentURI);
         break;
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+  recordSearch(engine, source) {
+    if (!KNOWN_SEARCH_SOURCES.includes(source)) {
+      throw new Error("Unknown source for search: " + source);
+    }
+
+    let countId = getSearchEngineId(engine) + "." + source;
+    Services.telemetry.getKeyedHistogramById("SEARCH_COUNTS").add(countId);
   },
 
   
