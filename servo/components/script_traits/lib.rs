@@ -54,7 +54,7 @@ use layers::geometry::DevicePixel;
 use libc::c_void;
 use msg::constellation_msg::{FrameId, FrameType, Image, Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{PipelineId, PipelineNamespaceId, ReferrerPolicy};
-use msg::constellation_msg::{SubpageId, TraversalDirection, WindowSizeType};
+use msg::constellation_msg::{TraversalDirection, WindowSizeType};
 use net_traits::{LoadOrigin, ResourceThreads};
 use net_traits::bluetooth_thread::BluetoothMethodMsg;
 use net_traits::image_cache_thread::ImageCacheThread;
@@ -130,11 +130,9 @@ pub enum LayoutControlMsg {
 #[derive(Deserialize, Serialize)]
 pub struct NewLayoutInfo {
     
-    pub containing_pipeline_id: PipelineId,
+    pub parent_pipeline_id: PipelineId,
     
     pub new_pipeline_id: PipelineId,
-    
-    pub subpage_id: SubpageId,
     
     pub frame_type: FrameType,
     
@@ -178,16 +176,22 @@ pub enum ConstellationControlMsg {
     
     ChangeFrameVisibilityStatus(PipelineId, bool),
     
+    
     NotifyVisibilityChange(PipelineId, PipelineId, bool),
     
-    Navigate(PipelineId, SubpageId, LoadData),
+    
+    Navigate(PipelineId, PipelineId, LoadData),
     
     
-    MozBrowserEvent(PipelineId, Option<SubpageId>, MozBrowserEvent),
     
-    UpdateSubpageId(PipelineId, SubpageId, SubpageId, PipelineId),
+    MozBrowserEvent(PipelineId, Option<PipelineId>, MozBrowserEvent),
     
-    FocusIFrame(PipelineId, SubpageId),
+    
+    
+    UpdatePipelineId(PipelineId, PipelineId, PipelineId),
+    
+    
+    FocusIFrame(PipelineId, PipelineId),
     
     WebDriverScriptCommand(PipelineId, WebDriverScriptCommand),
     
@@ -203,7 +207,8 @@ pub enum ConstellationControlMsg {
         parent: PipelineId,
     },
     
-    FramedContentChanged(PipelineId, SubpageId),
+    
+    FramedContentChanged(PipelineId, PipelineId),
     
     ReportCSSError(PipelineId, String, usize, usize, String),
     
@@ -228,7 +233,7 @@ impl fmt::Debug for ConstellationControlMsg {
             NotifyVisibilityChange(..) => "NotifyVisibilityChange",
             Navigate(..) => "Navigate",
             MozBrowserEvent(..) => "MozBrowserEvent",
-            UpdateSubpageId(..) => "UpdateSubpageId",
+            UpdatePipelineId(..) => "UpdatePipelineId",
             FocusIFrame(..) => "FocusIFrame",
             WebDriverScriptCommand(..) => "WebDriverScriptCommand",
             TickAllAnimations(..) => "TickAllAnimations",
@@ -389,7 +394,7 @@ pub struct InitialScriptState {
     pub id: PipelineId,
     
     
-    pub parent_info: Option<(PipelineId, SubpageId, FrameType)>,
+    pub parent_info: Option<(PipelineId, FrameType)>,
     
     pub control_chan: IpcSender<ConstellationControlMsg>,
     
@@ -444,11 +449,9 @@ pub struct IFrameLoadInfo {
     
     pub load_data: Option<LoadData>,
     
-    pub containing_pipeline_id: PipelineId,
+    pub parent_pipeline_id: PipelineId,
     
-    pub new_subpage_id: SubpageId,
-    
-    pub old_subpage_id: Option<SubpageId>,
+    pub old_pipeline_id: Option<PipelineId>,
     
     pub new_pipeline_id: PipelineId,
     

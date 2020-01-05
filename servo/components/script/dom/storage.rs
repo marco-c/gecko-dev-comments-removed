@@ -206,7 +206,7 @@ impl Runnable for StorageEventRunnable {
             assert!(UrlHelper::SameOrigin(&ev_url, &it_window.get_url()));
             
             
-            if ev_window.pipeline() != it_window.pipeline() {
+            if ev_window.pipeline_id() != it_window.pipeline_id() {
                 storage_event.upcast::<Event>().fire(it_window.upcast());
             }
         }

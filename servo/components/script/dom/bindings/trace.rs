@@ -57,7 +57,7 @@ use js::jsapi::{GCTraceKindToAscii, Heap, JSObject, JSTracer, TraceKind};
 use js::jsval::JSVal;
 use js::rust::Runtime;
 use libc;
-use msg::constellation_msg::{FrameType, PipelineId, ReferrerPolicy, SubpageId, WindowSizeType};
+use msg::constellation_msg::{FrameType, PipelineId, ReferrerPolicy, WindowSizeType};
 use net_traits::{Metadata, NetworkError, ResourceThreads};
 use net_traits::filemanager_thread::RelativePos;
 use net_traits::image::base::{Image, ImageMetadata};
@@ -308,7 +308,7 @@ no_jsmanaged_fields!(PropertyDeclarationBlock);
 no_jsmanaged_fields!(HashSet<T>);
 
 
-no_jsmanaged_fields!(FrameType, SubpageId, WindowSizeData, WindowSizeType, PipelineId);
+no_jsmanaged_fields!(FrameType, WindowSizeData, WindowSizeType, PipelineId);
 no_jsmanaged_fields!(TimerEventId, TimerSource);
 no_jsmanaged_fields!(WorkerId);
 no_jsmanaged_fields!(QuirksMode);

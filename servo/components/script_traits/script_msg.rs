@@ -17,7 +17,7 @@ use euclid::size::Size2D;
 use gfx_traits::LayerId;
 use ipc_channel::ipc::IpcSender;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
-use msg::constellation_msg::{PipelineId, SubpageId, TraversalDirection};
+use msg::constellation_msg::{PipelineId, TraversalDirection};
 use net_traits::CoreResourceMsg;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use style_traits::cursor::Cursor;
@@ -87,7 +87,8 @@ pub enum ScriptMsg {
     LoadUrl(PipelineId, LoadData),
     
     
-    MozBrowserEvent(PipelineId, Option<SubpageId>, MozBrowserEvent),
+    
+    MozBrowserEvent(PipelineId, Option<PipelineId>, MozBrowserEvent),
     
     TraverseHistory(Option<PipelineId>, TraversalDirection),
     
