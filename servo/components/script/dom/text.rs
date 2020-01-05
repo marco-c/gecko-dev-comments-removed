@@ -2,16 +2,17 @@
 
 
 
-use dom::bindings::codegen::Bindings::TextBinding;
+use dom::bindings::codegen::Bindings::TextBinding::{self, TextMethods};
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
-use dom::bindings::codegen::InheritTypes::TextDerived;
+use dom::bindings::codegen::InheritTypes::{CharacterDataCast, TextDerived};
+use dom::bindings::codegen::InheritTypes::NodeCast;
 use dom::bindings::error::Fallible;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{JSRef, Temporary};
-use dom::characterdata::CharacterData;
+use dom::characterdata::{CharacterData, CharacterDataHelpers};
 use dom::document::Document;
 use dom::eventtarget::{EventTarget, EventTargetTypeId};
-use dom::node::{Node, NodeTypeId};
+use dom::node::{Node, NodeHelpers, NodeTypeId};
 use util::str::DOMString;
 
 
@@ -41,6 +42,24 @@ impl Text {
     pub fn Constructor(global: GlobalRef, text: DOMString) -> Fallible<Temporary<Text>> {
         let document = global.as_window().Document().root();
         Ok(Text::new(text, document.r()))
+    }
+}
+
+impl<'a> TextMethods for JSRef<'a, Text> {
+    
+    fn WholeText(self) -> DOMString {
+        let first = NodeCast::from_ref(self).inclusively_preceding_siblings()
+                                            .map(|node| node.root())
+                                            .take_while(|node| node.r().is_text())
+                                            .last().unwrap();
+        let nodes = first.r().inclusively_following_siblings().map(|node| node.root())
+                             .take_while(|node| node.r().is_text());
+        let mut text = DOMString::new();
+        for node in nodes {
+            let cdata = CharacterDataCast::to_ref(node.r()).unwrap();
+            text.push_str(&cdata.data());
+        }
+        text
     }
 }
 
