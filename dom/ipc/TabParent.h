@@ -770,12 +770,6 @@ private:
   
   bool mPreserveLayers;
 
-  
-  
-  
-  
-  bool mFirstActivate;
-
 public:
   static TabParent* GetTabParentFromLayersId(uint64_t aLayersId);
 };
