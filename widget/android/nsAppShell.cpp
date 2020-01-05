@@ -580,21 +580,29 @@ nsAppShell::Observe(nsISupports* aSubject,
         removeObserver = true;
 
     } else if (!strcmp(aTopic, "chrome-document-loaded")) {
-        if (jni::IsAvailable()) {
-            
-            java::GeckoThread::CheckAndSetState(
-                    java::GeckoThread::State::PROFILE_READY(),
-                    java::GeckoThread::State::RUNNING());
-        }
-
+        
         
         nsCOMPtr<nsIDocument> doc = do_QueryInterface(aSubject);
         MOZ_ASSERT(doc);
         nsCOMPtr<nsIWidget> widget =
             WidgetUtils::DOMWindowToWidget(doc->GetWindow());
-        MOZ_ASSERT(widget);
-        if (widget->WindowType() == nsWindowType::eWindowType_toplevel) {
-            
+
+        
+        
+        
+        
+        
+        
+        if (widget &&
+            widget->WindowType() == nsWindowType::eWindowType_toplevel &&
+            widget->GetNativeData(NS_NATIVE_WIDGET) == widget) {
+            if (jni::IsAvailable()) {
+                
+                
+                java::GeckoThread::CheckAndSetState(
+                        java::GeckoThread::State::PROFILE_READY(),
+                        java::GeckoThread::State::RUNNING());
+            }
             const auto window = static_cast<nsWindow*>(widget.get());
             window->EnableEventDispatcher();
         }
