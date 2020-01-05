@@ -164,6 +164,9 @@ public:
   }
   inline void PreventDefault(bool aCalledByDefaultHandler = true)
   {
+    if (!mCancelable) {
+      return;
+    }
     mDefaultPrevented = true;
     
     
@@ -178,6 +181,9 @@ public:
   
   inline void PreventDefaultBeforeDispatch()
   {
+    if (!mCancelable) {
+      return;
+    }
     mDefaultPrevented = true;
   }
   inline bool DefaultPrevented() const
