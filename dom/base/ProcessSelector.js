@@ -11,14 +11,6 @@ const BASE_PREF = "dom.ipc.processCount"
 const PREF_BRANCH = BASE_PREF + ".";
 
 
-function getMaxContentParents(processType) {
-  
-  
-  return Services.prefs.getIntPref(PREF_BRANCH + processType,
-                                   Services.prefs.getIntPref(BASE_PREF, 1));
-}
-
-
 
 function RandomSelector() {
 }
@@ -27,13 +19,12 @@ RandomSelector.prototype = {
   classID:          Components.ID("{c616fcfd-9737-41f1-aa74-cee72a38f91b}"),
   QueryInterface:   XPCOMUtils.generateQI([Ci.nsIContentProcessProvider]),
 
-  provideProcess(aType, aOpener, aProcesses, aCount) {
-    let maxContentParents = getMaxContentParents(aType);
-    if (aCount < maxContentParents) {
+  provideProcess(aType, aOpener, aProcesses, aCount, aMaxCount) {
+    if (aCount < aMaxCount) {
       return Ci.nsIContentProcessProvider.NEW_PROCESS;
     }
 
-    let startIdx = Math.floor(Math.random() * maxContentParents);
+    let startIdx = Math.floor(Math.random() * aMaxCount);
     let curIdx = startIdx;
 
     do {
@@ -41,7 +32,7 @@ RandomSelector.prototype = {
         return curIdx;
       }
 
-      curIdx = (curIdx + 1) % maxContentParents;
+      curIdx = (curIdx + 1) % aMaxCount;
     } while (curIdx !== startIdx);
 
     return Ci.nsIContentProcessProvider.NEW_PROCESS;
@@ -57,16 +48,20 @@ MinTabSelector.prototype = {
   classID:          Components.ID("{2dc08eaf-6eef-4394-b1df-a3a927c1290b}"),
   QueryInterface:   XPCOMUtils.generateQI([Ci.nsIContentProcessProvider]),
 
-  provideProcess(aType, aOpener, aProcesses, aCount) {
-    let maxContentParents = getMaxContentParents(aType);
-    if (aCount < maxContentParents) {
+  provideProcess(aType, aOpener, aProcesses, aCount, aMaxCount) {
+    if (aCount < aMaxCount) {
       return Ci.nsIContentProcessProvider.NEW_PROCESS;
     }
 
     let min = Number.MAX_VALUE;
     let candidate = Ci.nsIContentProcessProvider.NEW_PROCESS;
 
-    for (let i = 0; i < maxContentParents; i++) {
+    
+    
+    
+    
+    
+    for (let i = 0; i < aMaxCount; i++) {
       let process = aProcesses[i];
       let tabCount = process.tabCount;
       if (process.opener === aOpener && tabCount < min) {
