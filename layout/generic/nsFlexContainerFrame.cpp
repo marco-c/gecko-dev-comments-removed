@@ -87,27 +87,24 @@ IsDisplayValueLegacyBox(const nsStyleDisplay* aStyleDisp)
     aStyleDisp->mDisplay == mozilla::StyleDisplay::WebkitInlineBox;
 }
 
-
-
-
-
-static inline bool
-IsLegacyBox(const nsStyleDisplay* aStyleDisp,
-            nsStyleContext* aStyleContext)
+ bool
+nsFlexContainerFrame::IsLegacyBox(const nsIFrame* aFrame)
 {
+  nsStyleContext* styleContext = aFrame->StyleContext();
+  const nsStyleDisplay* styleDisp = styleContext->StyleDisplay();
   
-  if (IsDisplayValueLegacyBox(aStyleDisp)) {
+  if (IsDisplayValueLegacyBox(styleDisp)) {
     return true;
   }
 
   
   
   
-  if (aStyleDisp->mDisplay == mozilla::StyleDisplay::Block) {
-    nsStyleContext* parentStyleContext = aStyleContext->GetParent();
+  if (styleDisp->mDisplay == mozilla::StyleDisplay::Block) {
+    nsStyleContext* parentStyleContext = styleContext->GetParent();
     NS_ASSERTION(parentStyleContext &&
-                 (aStyleContext->GetPseudo() == nsCSSAnonBoxes::buttonContent ||
-                  aStyleContext->GetPseudo() == nsCSSAnonBoxes::scrolledContent),
+                 (styleContext->GetPseudo() == nsCSSAnonBoxes::buttonContent ||
+                  styleContext->GetPseudo() == nsCSSAnonBoxes::scrolledContent),
                  "The only way a nsFlexContainerFrame can have 'display:block' "
                  "should be if it's the inner part of a scrollable or button "
                  "element");
@@ -1070,9 +1067,7 @@ IsOrderLEQWithDOMFallback(nsIFrame* aFrame1,
              "this method only intended for comparing flex items");
   MOZ_ASSERT(aFrame1->GetParent() == aFrame2->GetParent(),
              "this method only intended for comparing siblings");
-  nsStyleContext* parentFrameSC = aFrame1->GetParent()->StyleContext();
-  bool isInLegacyBox = IsLegacyBox(parentFrameSC->StyleDisplay(),
-                                   parentFrameSC);
+  bool isInLegacyBox = nsFlexContainerFrame::IsLegacyBox(aFrame1->GetParent());
 
   if (aFrame1 == aFrame2) {
     
@@ -1156,9 +1151,7 @@ IsOrderLEQ(nsIFrame* aFrame1,
              "this method only intended for comparing flex items");
   MOZ_ASSERT(aFrame1->GetParent() == aFrame2->GetParent(),
              "this method only intended for comparing siblings");
-  nsStyleContext* parentFrameSC = aFrame1->GetParent()->StyleContext();
-  bool isInLegacyBox = IsLegacyBox(parentFrameSC->StyleDisplay(),
-                                   parentFrameSC);
+  bool isInLegacyBox = nsFlexContainerFrame::IsLegacyBox(aFrame1->GetParent());
 
   
   nsIFrame* aRealFrame1 = nsPlaceholderFrame::GetRealFrameFor(aFrame1);
@@ -1194,7 +1187,7 @@ nsFlexContainerFrame::GenerateFlexItemForChild(
   
   
   float flexGrow, flexShrink;
-  if (IsLegacyBox(aParentReflowInput.mStyleDisplay, mStyleContext)) {
+  if (IsLegacyBox(this)) {
     flexGrow = flexShrink = aChildFrame->StyleXUL()->mBoxFlex;
   } else {
     const nsStylePosition* stylePos = aChildFrame->StylePosition();
@@ -1707,8 +1700,7 @@ FlexItem::FlexItem(ReflowInput& aFlexItemReflowInput,
              "out-of-flow frames should not be treated as flex items");
 
   const ReflowInput* containerRS = aFlexItemReflowInput.mParentReflowInput;
-  if (IsLegacyBox(containerRS->mStyleDisplay,
-                  containerRS->mFrame->StyleContext())) {
+  if (IsLegacyBox(containerRS->mFrame)) {
     
     
     
@@ -3240,8 +3232,7 @@ FlexboxAxisTracker::FlexboxAxisTracker(
   : mWM(aWM),
     mAreAxesInternallyReversed(false)
 {
-  if (IsLegacyBox(aFlexContainer->StyleDisplay(),
-                  aFlexContainer->StyleContext())) {
+  if (IsLegacyBox(aFlexContainer)) {
     InitAxesFromLegacyProps(aFlexContainer);
   } else {
     InitAxesFromModernProps(aFlexContainer);
@@ -4139,8 +4130,7 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
     }
   }
 
-  const auto justifyContent = IsLegacyBox(aReflowInput.mStyleDisplay,
-                                          mStyleContext) ?
+  const auto justifyContent = IsLegacyBox(aReflowInput.mFrame) ?
     ConvertLegacyStyleToJustifyContent(StyleXUL()) :
     aReflowInput.mStylePosition->mJustifyContent;
 
