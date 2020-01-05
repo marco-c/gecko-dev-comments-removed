@@ -1322,7 +1322,7 @@ HttpChannelChild::BeginNonIPCRedirect(nsIURI* responseURI,
     
     
     nsCOMPtr<nsIHttpChannelChild> channelChild = do_QueryInterface(newChannel);
-    if (channelChild) {
+    if (mSecurityInfo && channelChild) {
       HttpChannelChild* httpChannelChild = static_cast<HttpChannelChild*>(channelChild.get());
       httpChannelChild->OverrideSecurityInfoForNonIPCRedirect(mSecurityInfo);
     }
