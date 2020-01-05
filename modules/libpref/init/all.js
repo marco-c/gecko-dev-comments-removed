@@ -3091,14 +3091,10 @@ pref("dom.ipc.plugins.unloadTimeoutSecs", 30);
 
 pref("dom.ipc.plugins.asyncInit.enabled", false);
 
-#ifdef RELEASE_OR_BETA
-pref("dom.ipc.plugins.asyncdrawing.enabled", false);
-#else
 
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 
 pref("dom.ipc.plugins.forcedirect.enabled", true);
-#endif
 
 #ifdef RELEASE_OR_BETA
 pref("dom.ipc.processCount", 1);

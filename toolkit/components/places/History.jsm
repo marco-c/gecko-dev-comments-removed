@@ -1032,15 +1032,17 @@ var insertMany = Task.async(function*(db, pageInfos, onResult, onError) {
         let pageInfo = mergeUpdateInfoIntoPageInfo(result);
         onResultData.push(pageInfo);
       },
-      handleCompletion: () => {
+      ignoreErrors: !onError,
+      ignoreResults: !onResult,
+      handleCompletion: (updatedCount) => {
         notifyOnResult(onResultData, onResult);
         notifyOnResult(onErrorData, onError);
-        if (onResultData.length) {
+        if (updatedCount > 0) {
           resolve();
         } else {
           reject({message: "No items were added to history."})
         }
       }
-    });
+    }, true);
   });
 });
