@@ -118,10 +118,9 @@ import static org.mozilla.gecko.activitystream.ranking.RankingUtils.normalize;
                     Math.max(1, System.currentTimeMillis() - cursor.getDouble(bookmarkDateColumnIndex)));
         }
 
-        
         candidate.features.put(
                 FEATURE_DESCRIPTION_LENGTH,
-                0d);
+                (double) candidate.highlight.getMetadata().getDescriptionLength());
 
         final Uri uri = Uri.parse(candidate.highlight.getUrl());
 
