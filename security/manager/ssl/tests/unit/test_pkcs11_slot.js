@@ -23,6 +23,9 @@ function run_test() {
   let moduleDB = Cc["@mozilla.org/security/pkcs11moduledb;1"]
                    .getService(Ci.nsIPKCS11ModuleDB);
   let testModule = moduleDB.findModuleByName("PKCS11 Test Module");
+  
+  
+  
   let testSlot = testModule.findSlotByName("Test PKCS11 Slot");
 
   equal(testSlot.name, "Test PKCS11 Slot",
