@@ -14,9 +14,9 @@ use dom::bindings::str::DOMString;
 use dom::event::{Event, EventBubbles, EventCancelable};
 use dom::globalscope::GlobalScope;
 use dom::window::Window;
+use servo_atoms::Atom;
 use std::cell::Cell;
 use std::default::Default;
-use string_cache::Atom;
 
 
 #[dom_struct]

@@ -2,9 +2,9 @@
 
 
 
+use servo_atoms::Atom;
 use std::fs::File;
 use std::io::{Read, Error};
-use string_cache::Atom;
 use webrender_traits::NativeFontHandle;
 
 

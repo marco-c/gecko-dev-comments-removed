@@ -4,6 +4,7 @@
 
 
 
+use Atom;
 use element_state::*;
 #[cfg(feature = "servo")]
 use heapsize::HeapSizeOf;
@@ -14,7 +15,6 @@ use selectors::matching::matches_complex_selector;
 use selectors::parser::{AttrSelector, Combinator, ComplexSelector, SelectorImpl, SimpleSelector};
 use std::clone::Clone;
 use std::sync::Arc;
-use string_cache::Atom;
 
 
 
