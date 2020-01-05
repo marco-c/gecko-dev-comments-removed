@@ -222,7 +222,6 @@ var getTitleFn = dispatch(getTitle);
 var getPageSourceFn = dispatch(getPageSource);
 var getActiveElementFn = dispatch(getActiveElement);
 var clickElementFn = dispatch(clickElement);
-var goBackFn = dispatch(goBack);
 var getElementAttributeFn = dispatch(getElementAttribute);
 var getElementPropertyFn = dispatch(getElementProperty);
 var getElementTextFn = dispatch(getElementText);
@@ -271,7 +270,7 @@ function startListeners() {
   addMessageListenerId("Marionette:getCurrentUrl", getCurrentUrlFn);
   addMessageListenerId("Marionette:getTitle", getTitleFn);
   addMessageListenerId("Marionette:getPageSource", getPageSourceFn);
-  addMessageListenerId("Marionette:goBack", goBackFn);
+  addMessageListenerId("Marionette:goBack", goBack);
   addMessageListenerId("Marionette:goForward", goForward);
   addMessageListenerId("Marionette:refresh", refresh);
   addMessageListenerId("Marionette:findElementContent", findElementContentFn);
@@ -376,7 +375,7 @@ function deleteSession(msg) {
   removeMessageListenerId("Marionette:getTitle", getTitleFn);
   removeMessageListenerId("Marionette:getPageSource", getPageSourceFn);
   removeMessageListenerId("Marionette:getCurrentUrl", getCurrentUrlFn);
-  removeMessageListenerId("Marionette:goBack", goBackFn);
+  removeMessageListenerId("Marionette:goBack", goBack);
   removeMessageListenerId("Marionette:goForward", goForward);
   removeMessageListenerId("Marionette:refresh", refresh);
   removeMessageListenerId("Marionette:findElementContent", findElementContentFn);
@@ -901,8 +900,10 @@ function multiAction(args, maxLen) {
 
 
 
+
+
 function pollForReadyState(msg) {
-  let {cleanupCallback, command_id, pageTimeout, startTime} = msg.json;
+  let {cleanupCallback, command_id, lastSeenURL, pageTimeout, startTime} = msg.json;
 
   if (typeof startTime == "undefined") {
     startTime = new Date().getTime();
@@ -921,7 +922,15 @@ function pollForReadyState(msg) {
 
     if (pageTimeout === null || new Date().getTime() <= endTime) {
       
-      if (doc.readyState === "complete") {
+      
+      
+      
+      
+      if (!doc.location || lastSeenURL && doc.location.href === lastSeenURL) {
+        navTimer.initWithCallback(checkLoad, 100, Ci.nsITimer.TYPE_ONE_SHOT);
+
+      
+      } else if (doc.readyState === "complete") {
         cleanupCallback();
         sendOk(command_id);
 
@@ -1125,12 +1134,8 @@ function cancelRequest() {
 
 
 
-function getCurrentUrl(isB2G) {
-  if (isB2G) {
-    return curContainer.frame.location.href;
-  } else {
-    return content.location.href;
-  }
+function getCurrentUrl() {
+  return content.location.href;
 }
 
 
@@ -1151,16 +1156,111 @@ function getPageSource() {
 
 
 
-function goBack() {
-  curContainer.frame.history.back();
+
+
+
+
+
+
+
+
+
+function waitForPageUnloaded(trigger, doneCallback) {
+  let currentURL = curContainer.frame.location.href;
+  let start = new Date().getTime();
+
+  function handleEvent(event) {
+    
+    
+    
+    
+    if (typeof event.originalTarget.location == "undefined") {
+      return;
+    }
+
+    switch (event.type) {
+      case "hashchange":
+        removeEventListener("hashchange", handleEvent);
+        removeEventListener("pagehide", handleEvent);
+        removeEventListener("unload", handleEvent);
+
+        doneCallback({loading: false, lastSeenURL: currentURL});
+        break;
+
+      case "pagehide":
+      case "unload":
+        if (event.originalTarget === curContainer.frame.document) {
+          removeEventListener("hashchange", handleEvent);
+          removeEventListener("pagehide", handleEvent);
+          removeEventListener("unload", handleEvent);
+
+          doneCallback({loading: true, lastSeenURL: currentURL, startTime: start});
+        }
+        break;
+    }
+  }
+
+  addEventListener("hashchange", handleEvent, false);
+  addEventListener("pagehide", handleEvent, false);
+  addEventListener("unload", handleEvent, false);
+
+  trigger();
 }
 
 
 
 
+
+
+
+
+
+
+function goBack(msg) {
+  let {command_id, pageTimeout} = msg.json;
+
+  waitForPageUnloaded(() => {
+      curContainer.frame.history.back();
+    }, pageLoadStatus => {
+    if (pageLoadStatus.loading) {
+      pollForReadyState({json: {
+        command_id: command_id,
+        lastSeenURL: pageLoadStatus.lastSeenURL,
+        pageTimeout: pageTimeout,
+        startTime: pageLoadStatus.startTime,
+      }});
+    } else {
+      sendOk(command_id);
+    }
+  });
+}
+
+
+
+
+
+
+
+
+
+
 function goForward(msg) {
-  curContainer.frame.history.forward();
-  sendOk(msg.json.command_id);
+  let {command_id, pageTimeout} = msg.json;
+
+  waitForPageUnloaded(() => {
+    curContainer.frame.history.forward();
+  }, pageLoadStatus => {
+    if (pageLoadStatus.loading) {
+      pollForReadyState({json: {
+        command_id: command_id,
+        lastSeenURL: pageLoadStatus.lastSeenURL,
+        pageTimeout: pageTimeout,
+        startTime: pageLoadStatus.startTime,
+      }});
+    } else {
+      sendOk(command_id);
+    }
+  });
 }
 
 

@@ -1011,17 +1011,85 @@ GeckoDriver.prototype.getPageSource = function* (cmd, resp) {
 };
 
 
-GeckoDriver.prototype.goBack = function*(cmd, resp) {
+
+
+
+GeckoDriver.prototype.goBack = function* (cmd, resp) {
   assert.content(this.context);
 
-  yield this.listener.goBack();
+  if (!this.curBrowser.tab) {
+    
+    return;
+  }
+
+  let contentBrowser = browser.getBrowserForTab(this.curBrowser.tab)
+  if (!contentBrowser.webNavigation.canGoBack) {
+    return;
+  }
+
+  let currentURL = yield this.listener.getCurrentUrl();
+  let goBack = this.listener.goBack({pageTimeout: this.timeouts.pageLoad});
+
+  
+  
+  
+  this.curBrowser.pendingCommands.push(() => {
+    let parameters = {
+      
+      command_id: this.listener.activeMessageId,
+      lastSeenURL: currentURL,
+      pageTimeout: this.timeouts.pageLoad,
+      startTime: new Date().getTime(),
+    };
+    this.mm.broadcastAsyncMessage(
+        
+        
+        "Marionette:pollForReadyState" + this.curBrowser.curFrameId,
+        parameters);
+  });
+
+  yield goBack;
 };
 
 
-GeckoDriver.prototype.goForward = function*(cmd, resp) {
+
+
+
+GeckoDriver.prototype.goForward = function* (cmd, resp) {
   assert.content(this.context);
 
-  yield this.listener.goForward();
+  if (!this.curBrowser.tab) {
+    
+    return;
+  }
+
+  let contentBrowser = browser.getBrowserForTab(this.curBrowser.tab)
+  if (!contentBrowser.webNavigation.canGoForward) {
+    return;
+  }
+
+  let currentURL = yield this.listener.getCurrentUrl();
+  let goForward = this.listener.goForward({pageTimeout: this.timeouts.pageLoad});
+
+  
+  
+  
+  this.curBrowser.pendingCommands.push(() => {
+    let parameters = {
+      
+      command_id: this.listener.activeMessageId,
+      lastSeenURL: currentURL,
+      pageTimeout: this.timeouts.pageLoad,
+      startTime: new Date().getTime(),
+    };
+    this.mm.broadcastAsyncMessage(
+        
+        
+        "Marionette:pollForReadyState" + this.curBrowser.curFrameId,
+        parameters);
+  });
+
+  yield goForward;
 };
 
 
