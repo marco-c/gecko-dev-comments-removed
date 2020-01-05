@@ -4,7 +4,7 @@
 
 #![deny(unsafe_code)]
 
-use app_units::{Au, MAX_AU};
+use app_units::Au;
 use block::{AbsoluteAssignBSizesTraversal, AbsoluteStoreOverflowTraversal};
 use context::LayoutContext;
 use display_list_builder::{FragmentDisplayListBuilding, InlineFlowDisplayListBuilding};
@@ -179,15 +179,6 @@ int_range_index! {
     struct FragmentIndex(isize)
 }
 
-bitflags! {
-    flags InlineReflowFlags: u8 {
-        #[doc = "The `white-space: nowrap` property from CSS 2.1 § 16.6 is in effect."]
-        const NO_WRAP_INLINE_REFLOW_FLAG = 0x01,
-        #[doc = "The `white-space: pre` property from CSS 2.1 § 16.6 is in effect."]
-        const WRAP_ON_NEWLINE_INLINE_REFLOW_FLAG = 0x02
-    }
-}
-
 
 struct LineBreaker {
     
@@ -322,16 +313,7 @@ impl LineBreaker {
             };
 
             
-            let flags = match fragment.style().get_inheritedtext().white_space {
-                white_space::T::normal => InlineReflowFlags::empty(),
-                white_space::T::nowrap => NO_WRAP_INLINE_REFLOW_FLAG,
-                white_space::T::pre => {
-                    WRAP_ON_NEWLINE_INLINE_REFLOW_FLAG | NO_WRAP_INLINE_REFLOW_FLAG
-                }
-            };
-
-            
-            self.reflow_fragment(fragment, flow, layout_context, flags);
+            self.reflow_fragment(fragment, flow, layout_context);
         }
 
         if !self.pending_line_is_empty() {
@@ -540,8 +522,7 @@ impl LineBreaker {
     fn reflow_fragment(&mut self,
                        mut fragment: Fragment,
                        flow: &InlineFlow,
-                       layout_context: &LayoutContext,
-                       flags: InlineReflowFlags) {
+                       layout_context: &LayoutContext) {
         
         
         
@@ -552,7 +533,7 @@ impl LineBreaker {
             self.pending_line.green_zone = line_bounds.size;
             false
         } else {
-            !flags.contains(NO_WRAP_INLINE_REFLOW_FLAG)
+            fragment.white_space_allow_wrap()
         };
 
         debug!("LineBreaker: trying to append to line {} (fragment size: {:?}, green zone: {:?}): \
@@ -582,13 +563,15 @@ impl LineBreaker {
 
         
         
-        let line_flush_mode =
-            if flags.contains(WRAP_ON_NEWLINE_INLINE_REFLOW_FLAG) &&
-                    fragment.requires_line_break_afterward_if_wrapping_on_newlines() {
+        let line_flush_mode = if fragment.white_space_preserve_newlines() {
+            if fragment.requires_line_break_afterward_if_wrapping_on_newlines() {
                 LineFlushMode::Flush
             } else {
                 LineFlushMode::No
-            };
+            }
+        } else {
+            LineFlushMode::No
+        };
 
         
         
@@ -603,34 +586,22 @@ impl LineBreaker {
         }
 
         
-        if !fragment.can_split() && self.pending_line_is_empty() {
-            debug!("LineBreaker: fragment can't split and line {} is empty, so overflowing",
-                    self.lines.len());
-            self.push_fragment_to_line(layout_context, fragment, LineFlushMode::No);
-            return
-        }
-
         
-        
-        if flags.contains(NO_WRAP_INLINE_REFLOW_FLAG) &&
-                !flags.contains(WRAP_ON_NEWLINE_INLINE_REFLOW_FLAG) {
-            debug!("LineBreaker: white-space: nowrap in effect; falling back to last known good \
-                    split point");
+        if !fragment.white_space_allow_wrap() {
+            debug!("LineBreaker: fragment can't split; falling back to last known good split point");
             if !self.split_line_at_last_known_good_position() {
                 
-                self.push_fragment_to_line(layout_context, fragment, LineFlushMode::No)
+                self.push_fragment_to_line(layout_context, fragment, line_flush_mode);
             } else {
-                self.work_list.push_front(fragment)
+                self.work_list.push_front(fragment);
             }
-            return
+            return;
         }
 
         
-        let available_inline_size = if !flags.contains(NO_WRAP_INLINE_REFLOW_FLAG) {
-            green_zone.inline - self.pending_line.bounds.size.inline - indentation
-        } else {
-            MAX_AU
-        };
+        let available_inline_size = green_zone.inline -
+                                    self.pending_line.bounds.size.inline -
+                                    indentation;
         let inline_start_fragment;
         let inline_end_fragment;
         let split_result = match fragment.calculate_split_position(available_inline_size,
@@ -1371,6 +1342,27 @@ impl Flow for InlineFlow {
                         intrinsic_sizes_for_inline_run = IntrinsicISizesContribution::new();
                     }
                 }
+                white_space::T::pre_wrap |
+                white_space::T::pre_line => {
+                    
+                    
+                    intrinsic_sizes_for_inline_run.union_inline(
+                        &intrinsic_sizes_for_nonbroken_run.finish());
+                    intrinsic_sizes_for_nonbroken_run = IntrinsicISizesContribution::new();
+
+                    intrinsic_sizes_for_nonbroken_run.union_inline(&intrinsic_sizes_for_fragment);
+
+                    
+                    
+                    if fragment.requires_line_break_afterward_if_wrapping_on_newlines() {
+                        intrinsic_sizes_for_inline_run.union_inline(
+                            &intrinsic_sizes_for_nonbroken_run.finish());
+                        intrinsic_sizes_for_nonbroken_run = IntrinsicISizesContribution::new();
+                        intrinsic_sizes_for_flow.union_block(
+                            &intrinsic_sizes_for_inline_run.finish());
+                        intrinsic_sizes_for_inline_run = IntrinsicISizesContribution::new();
+                    }
+                }
                 white_space::T::normal => {
                     
                     
@@ -1378,7 +1370,7 @@ impl Flow for InlineFlow {
                         &intrinsic_sizes_for_nonbroken_run.finish());
                     intrinsic_sizes_for_nonbroken_run = IntrinsicISizesContribution::new();
 
-                    intrinsic_sizes_for_nonbroken_run.union_inline(&intrinsic_sizes_for_fragment)
+                    intrinsic_sizes_for_nonbroken_run.union_inline(&intrinsic_sizes_for_fragment);
                 }
             }
         }

@@ -48,7 +48,7 @@ use util;
 use util::geometry::ZERO_POINT;
 use util::logical_geometry::{LogicalMargin, LogicalRect, LogicalSize, WritingMode};
 use util::range::*;
-use util::str::{is_whitespace, slice_chars};
+use util::str::slice_chars;
 use wrapper::{PseudoElementType, ThreadSafeLayoutNode};
 
 
@@ -1248,6 +1248,36 @@ impl Fragment {
         self.style().get_inheritedtext().white_space
     }
 
+    pub fn white_space_allow_wrap(&self) -> bool {
+        match self.white_space() {
+            white_space::T::nowrap |
+            white_space::T::pre => false,
+            white_space::T::normal |
+            white_space::T::pre_wrap |
+            white_space::T::pre_line => true,
+        }
+    }
+
+    pub fn white_space_preserve_newlines(&self) -> bool {
+        match self.white_space() {
+            white_space::T::normal |
+            white_space::T::nowrap => false,
+            white_space::T::pre |
+            white_space::T::pre_wrap |
+            white_space::T::pre_line => true,
+        }
+    }
+
+    pub fn white_space_preserve_spaces(&self) -> bool {
+        match self.white_space() {
+            white_space::T::normal |
+            white_space::T::nowrap |
+            white_space::T::pre_line => false,
+            white_space::T::pre |
+            white_space::T::pre_wrap => true,
+        }
+    }
+
     
     
     
@@ -1277,8 +1307,7 @@ impl Fragment {
     
     
     pub fn can_split(&self) -> bool {
-        self.is_scanned_text_fragment() &&
-            self.style.get_inheritedtext().white_space != white_space::T::pre
+        self.is_scanned_text_fragment() && self.white_space_allow_wrap()
     }
 
     
@@ -1352,9 +1381,10 @@ impl Fragment {
                                                              .metrics_for_range(range)
                                                              .advance_width;
 
-                let min_line_inline_size = match self.style.get_inheritedtext().white_space {
-                    white_space::T::pre | white_space::T::nowrap => max_line_inline_size,
-                    white_space::T::normal => text_fragment_info.run.min_width_for_range(range),
+                let min_line_inline_size = if self.white_space_allow_wrap() {
+                    text_fragment_info.run.min_width_for_range(range)
+                } else {
+                    max_line_inline_size
                 };
 
                 result.union_block(&IntrinsicISizes {
@@ -1533,7 +1563,6 @@ impl Fragment {
                 return None
             };
 
-        let mut pieces_processed_count: u32 = 0;
         let mut remaining_inline_size = max_inline_size;
         let mut inline_start_range = Range::new(text_fragment_info.range.begin(), CharIndex(0));
         let mut inline_end_range = None;
@@ -1560,18 +1589,9 @@ impl Fragment {
             
             if advance <= remaining_inline_size || slice.glyphs.is_whitespace() {
                 
-                if flags.contains(STARTS_LINE) &&
-                        pieces_processed_count == 0 &&
-                        slice.glyphs.is_whitespace() {
-                    debug!("calculate_split_position_using_breaking_strategy: skipping \
-                            leading trimmable whitespace");
-                    inline_start_range.shift_by(slice.range.length());
-                } else {
-                    debug!("calculate_split_position_using_breaking_strategy: enlarging span");
-                    remaining_inline_size = remaining_inline_size - advance;
-                    inline_start_range.extend_by(slice.range.length());
-                }
-                pieces_processed_count += 1;
+                debug!("calculate_split_position_using_breaking_strategy: enlarging span");
+                remaining_inline_size = remaining_inline_size - advance;
+                inline_start_range.extend_by(slice.range.length());
                 continue
             }
 
@@ -1666,21 +1686,6 @@ impl Fragment {
         }
 
         self.meld_with_next_inline_fragment(&next_fragment);
-    }
-
-    
-    
-    pub fn is_ignorable_whitespace(&self) -> bool {
-        match self.white_space() {
-            white_space::T::pre => return false,
-            white_space::T::normal | white_space::T::nowrap => {}
-        }
-        match self.specific {
-            SpecificFragmentInfo::UnscannedText(ref text_fragment_info) => {
-                is_whitespace(&text_fragment_info.text)
-            }
-            _ => false,
-        }
     }
 
     
@@ -2243,7 +2248,7 @@ impl Fragment {
     }
 
     pub fn strip_leading_whitespace_if_necessary(&mut self) -> WhitespaceStrippingResult {
-        if self.style.get_inheritedtext().white_space == white_space::T::pre {
+        if self.white_space_preserve_spaces() {
             return WhitespaceStrippingResult::RetainFragment
         }
 
@@ -2306,7 +2311,7 @@ impl Fragment {
 
     
     pub fn strip_trailing_whitespace_if_necessary(&mut self) -> WhitespaceStrippingResult {
-        if self.style.get_inheritedtext().white_space == white_space::T::pre {
+        if self.white_space_preserve_spaces() {
             return WhitespaceStrippingResult::RetainFragment
         }
 
