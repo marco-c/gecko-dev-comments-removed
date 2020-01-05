@@ -65,12 +65,15 @@ impl TextMethods for Text {
             
             parent.InsertBefore(new_node.upcast(), node.GetNextSibling().r()).unwrap();
             
+            node.ranges().move_to_following_text_sibling_above(node, offset, new_node.upcast());
+            
+            parent.ranges().increment_at(&parent, node.index() + 1);
         }
         
         cdata.DeleteData(offset, count).unwrap();
         if parent.is_none() {
             
-            
+            node.ranges().clamp_above(&node, offset);
         }
         
         Ok(new_node)

@@ -33,7 +33,6 @@ use dom::bindings::trace::JSTraceable;
 use dom::bindings::trace::RootedVec;
 use dom::bindings::xmlname::namespace_from_domstring;
 use dom::characterdata::CharacterData;
-use dom::comment::Comment;
 use dom::document::{Document, DocumentSource, IsHTMLDocument};
 use dom::documentfragment::DocumentFragment;
 use dom::documenttype::DocumentType;
@@ -43,6 +42,7 @@ use dom::htmlcollection::HTMLCollection;
 use dom::htmlelement::HTMLElement;
 use dom::nodelist::NodeList;
 use dom::processinginstruction::ProcessingInstruction;
+use dom::range::WeakRangeVec;
 use dom::text::Text;
 use dom::virtualmethods::{VirtualMethods, vtable_for};
 use dom::window::Window;
@@ -108,6 +108,12 @@ pub struct Node {
 
     
     inclusive_descendants_version: Cell<u64>,
+
+    
+    
+    
+    
+    ranges: WeakRangeVec,
 
     
     
@@ -283,6 +289,7 @@ impl Node {
         }
 
         new_child.parent_node.set(Some(self));
+        self.children_count.set(self.children_count.get() + 1);
 
         let parent_in_doc = self.is_in_doc();
         for node in new_child.traverse_preorder() {
@@ -296,7 +303,7 @@ impl Node {
     
     
     
-    fn remove_child(&self, child: &Node) {
+    fn remove_child(&self, child: &Node, cached_index: Option<u32>) {
         assert!(child.parent_node.get().r() == Some(self));
         let prev_sibling = child.GetPreviousSibling();
         match prev_sibling {
@@ -317,14 +324,16 @@ impl Node {
             }
         }
 
+        let context = UnbindContext::new(self, prev_sibling.r(), cached_index);
+
         child.prev_sibling.set(None);
         child.next_sibling.set(None);
         child.parent_node.set(None);
+        self.children_count.set(self.children_count.get() - 1);
 
-        let parent_in_doc = self.is_in_doc();
         for node in child.traverse_preorder() {
             node.set_flag(IS_IN_DOC, false);
-            vtable_for(&&*node).unbind_from_tree(parent_in_doc);
+            vtable_for(&&*node).unbind_from_tree(&context);
             node.layout_data.dispose(&node);
         }
 
@@ -431,6 +440,10 @@ impl Node {
 
     pub fn children_count(&self) -> u32 {
         self.children_count.get()
+    }
+
+    pub fn ranges(&self) -> &WeakRangeVec {
+        &self.ranges
     }
 
     #[inline]
@@ -1307,6 +1320,7 @@ impl Node {
             children_count: Cell::new(0u32),
             flags: Cell::new(flags),
             inclusive_descendants_version: Cell::new(0),
+            ranges: WeakRangeVec::new(),
 
             layout_data: LayoutDataRef::new(),
 
@@ -1482,6 +1496,19 @@ impl Node {
         debug_assert!(child.map_or(true, |child| Some(parent) == child.GetParentNode().r()));
 
         
+        let count = if node.is::<DocumentFragment>() {
+            node.children_count()
+        } else {
+            1
+        };
+        
+        if let Some(child) = child {
+            if !parent.ranges.is_empty() {
+                let index = child.index();
+                
+                parent.ranges.increase_above(parent, index, count);
+            }
+        }
         let mut new_nodes = RootedVec::new();
         let new_nodes = if let NodeTypeId::DocumentFragment = node.type_id() {
             
@@ -1571,18 +1598,31 @@ impl Node {
     
     fn remove(node: &Node, parent: &Node, suppress_observers: SuppressObserver) {
         assert!(node.GetParentNode().map_or(false, |node_parent| node_parent.r() == parent));
-
-        
+        let cached_index = {
+            if parent.ranges.is_empty() {
+                None
+            } else {
+                
+                let index = node.index();
+                
+                
+                parent.ranges.decrease_above(parent, index, 1);
+                
+                
+                
+                Some(index)
+            }
+        };
         
         let old_previous_sibling = node.GetPreviousSibling();
         
         
         let old_next_sibling = node.GetNextSibling();
-        parent.remove_child(node);
+        parent.remove_child(node, cached_index);
         if let SuppressObserver::Unsuppressed = suppress_observers {
             vtable_for(&parent).children_changed(
                 &ChildrenMutation::replace(old_previous_sibling.r(),
-                                           &node, &[],
+                                           &Some(&node), &[],
                                            old_next_sibling.r()));
         }
     }
@@ -1611,10 +1651,9 @@ impl Node {
                 let doc_fragment = DocumentFragment::new(document.r());
                 Root::upcast::<Node>(doc_fragment)
             },
-            NodeTypeId::CharacterData(CharacterDataTypeId::Comment) => {
+            NodeTypeId::CharacterData(_) => {
                 let cdata = node.downcast::<CharacterData>().unwrap();
-                let comment = Comment::new(cdata.Data(), document.r());
-                Root::upcast::<Node>(comment)
+                cdata.clone_with_data(cdata.Data(), &document)
             },
             NodeTypeId::Document(_) => {
                 let document = node.downcast::<Document>().unwrap();
@@ -1639,17 +1678,6 @@ impl Node {
                     element.prefix().as_ref().map(|p| Atom::from(&**p)),
                     document.r(), ElementCreator::ScriptCreated);
                 Root::upcast::<Node>(element)
-            },
-            NodeTypeId::CharacterData(CharacterDataTypeId::Text) => {
-                let cdata = node.downcast::<CharacterData>().unwrap();
-                let text = Text::new(cdata.Data(), document.r());
-                Root::upcast::<Node>(text)
-            },
-            NodeTypeId::CharacterData(CharacterDataTypeId::ProcessingInstruction) => {
-                let pi = node.downcast::<ProcessingInstruction>().unwrap();
-                let pi = ProcessingInstruction::new(pi.Target(),
-                                                    pi.upcast::<CharacterData>().Data(), document.r());
-                Root::upcast::<Node>(pi)
             },
         };
 
@@ -2039,11 +2067,6 @@ impl NodeMethods for Node {
         }
 
         
-        if node == child {
-            return Ok(Root::from_ref(child));
-        }
-
-        
         let child_next_sibling = child.GetNextSibling();
         let node_next_sibling = node.GetNextSibling();
         let reference_child = if child_next_sibling.r() == Some(node) {
@@ -2053,14 +2076,19 @@ impl NodeMethods for Node {
         };
 
         
-        let document = document_from_node(self);
-        Node::adopt(node, document.r());
-
-        
         let previous_sibling = child.GetPreviousSibling();
 
         
-        Node::remove(child, self, SuppressObserver::Suppressed);
+        let document = document_from_node(self);
+        Node::adopt(node, document.r());
+
+        let removed_child = if node != child {
+            
+            Node::remove(child, self, SuppressObserver::Suppressed);
+            Some(child)
+        } else {
+            None
+        };
 
         
         let mut nodes = RootedVec::new();
@@ -2077,7 +2105,7 @@ impl NodeMethods for Node {
         
         vtable_for(&self).children_changed(
             &ChildrenMutation::replace(previous_sibling.r(),
-                                       &child, nodes,
+                                       &removed_child, nodes,
                                        reference_child));
 
         
@@ -2092,28 +2120,26 @@ impl NodeMethods for Node {
 
     
     fn Normalize(&self) {
-        let mut prev_text: Option<Root<Text>> = None;
-        for child in self.children() {
-            match child.downcast::<Text>() {
-                Some(text) => {
-                    let characterdata = text.upcast::<CharacterData>();
-                    if characterdata.Length() == 0 {
-                        Node::remove(&*child, self, SuppressObserver::Unsuppressed);
-                    } else {
-                        match prev_text {
-                            Some(ref text_node) => {
-                                let prev_characterdata = text_node.upcast::<CharacterData>();
-                                prev_characterdata.append_data(&**characterdata.data());
-                                Node::remove(&*child, self, SuppressObserver::Unsuppressed);
-                            },
-                            None => prev_text = Some(Root::from_ref(text))
-                        }
-                    }
-                },
-                None => {
-                    child.Normalize();
-                    prev_text = None;
+        let mut children = self.children().enumerate().peekable();
+        while let Some((_, node)) = children.next() {
+            if let Some(text) = node.downcast::<Text>() {
+                let cdata = text.upcast::<CharacterData>();
+                let mut length = cdata.Length();
+                if length == 0 {
+                    Node::remove(&node, self, SuppressObserver::Unsuppressed);
+                    continue;
                 }
+                while children.peek().map_or(false, |&(_, ref sibling)| sibling.is::<Text>()) {
+                    let (index, sibling) = children.next().unwrap();
+                    sibling.ranges.drain_to_preceding_text_sibling(&sibling, &node, length);
+                    self.ranges.move_to_text_child_at(self, index as u32, &node, length as u32);
+                    let sibling_cdata = sibling.downcast::<CharacterData>().unwrap();
+                    length += sibling_cdata.Length();
+                    cdata.append_data(&sibling_cdata.data());
+                    Node::remove(&sibling, self, SuppressObserver::Unsuppressed);
+                }
+            } else {
+                node.Normalize();
             }
         }
     }
@@ -2348,24 +2374,16 @@ impl VirtualMethods for Node {
         if let Some(ref s) = self.super_type() {
             s.children_changed(mutation);
         }
-        match *mutation {
-            ChildrenMutation::Append { added, .. } |
-            ChildrenMutation::Insert { added, .. } |
-            ChildrenMutation::Prepend { added, .. } => {
-                self.children_count.set(
-                    self.children_count.get() + added.len() as u32);
-            },
-            ChildrenMutation::Replace { added, .. } => {
-                self.children_count.set(
-                    self.children_count.get() - 1u32 + added.len() as u32);
-            },
-            ChildrenMutation::ReplaceAll { added, .. } => {
-                self.children_count.set(added.len() as u32);
-            },
-        }
         if let Some(list) = self.child_list.get() {
             list.as_children_list().children_changed(mutation);
         }
+    }
+
+    
+    
+    fn unbind_from_tree(&self, context: &UnbindContext) {
+        self.super_type().unwrap().unbind_from_tree(context);
+        self.ranges.drain_to_parent(context, self);
     }
 }
 
@@ -2411,27 +2429,70 @@ impl<'a> ChildrenMutation<'a> {
     }
 
     fn replace(prev: Option<&'a Node>,
-               removed: &'a &'a Node,
+               removed: &'a Option<&'a Node>,
                added: &'a [&'a Node],
                next: Option<&'a Node>)
                -> ChildrenMutation<'a> {
-        if let (None, None) = (prev, next) {
-            ChildrenMutation::ReplaceAll {
-                removed: ref_slice(removed),
-                added: added,
+        if let Some(ref removed) = *removed {
+            if let (None, None) = (prev, next) {
+                ChildrenMutation::ReplaceAll {
+                    removed: ref_slice(removed),
+                    added: added,
+                }
+            } else {
+                ChildrenMutation::Replace {
+                    prev: prev,
+                    removed: *removed,
+                    added: added,
+                    next: next,
+                }
             }
         } else {
-            ChildrenMutation::Replace {
-                prev: prev,
-                removed: *removed,
-                added: added,
-                next: next,
-            }
+            ChildrenMutation::insert(prev, added, next)
         }
     }
 
     fn replace_all(removed: &'a [&'a Node], added: &'a [&'a Node])
                    -> ChildrenMutation<'a> {
         ChildrenMutation::ReplaceAll { removed: removed, added: added }
+    }
+}
+
+
+
+pub struct UnbindContext<'a> {
+    
+    index: Cell<Option<u32>>,
+    
+    pub parent: &'a Node,
+    
+    prev_sibling: Option<&'a Node>,
+    
+    pub tree_in_doc: bool,
+}
+
+impl<'a> UnbindContext<'a> {
+    
+    fn new(parent: &'a Node,
+           prev_sibling: Option<&'a Node>,
+           cached_index: Option<u32>) -> Self {
+        UnbindContext {
+            index: Cell::new(cached_index),
+            parent: parent,
+            prev_sibling: prev_sibling,
+            tree_in_doc: parent.is_in_doc(),
+        }
+    }
+
+    
+    #[allow(unsafe_code)]
+    pub fn index(&self) -> u32 {
+        if let Some(index) = self.index.get() {
+            return index;
+        }
+        let index =
+            self.prev_sibling.map(|sibling| sibling.index() + 1).unwrap_or(0);
+        self.index.set(Some(index));
+        index
     }
 }
