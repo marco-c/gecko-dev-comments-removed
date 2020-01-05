@@ -19,10 +19,6 @@
 #undef MP_ASSEMBLY_SQUARE
 #endif
 
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#define inline __inline
-#endif
-
 #if MP_LOGTAB
 
 
@@ -2761,7 +2757,7 @@ s_mp_pad(mp_int *mp, mp_size min)
 
 
 
-inline void
+void
 s_mp_setz(mp_digit *dp, mp_size count)
 {
 #if MP_MEMSET == 0
@@ -2780,7 +2776,7 @@ s_mp_setz(mp_digit *dp, mp_size count)
 
 
 
-inline void
+void
 s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count)
 {
 #if MP_MEMCPY == 0
@@ -2798,7 +2794,7 @@ s_mp_copy(const mp_digit *sp, mp_digit *dp, mp_size count)
 
 
 
-inline void *
+void *
 s_mp_alloc(size_t nb, size_t ni)
 {
     return calloc(nb, ni);
@@ -2810,7 +2806,7 @@ s_mp_alloc(size_t nb, size_t ni)
 
 
 
-inline void
+void
 s_mp_free(void *ptr)
 {
     if (ptr) {
@@ -2823,7 +2819,7 @@ s_mp_free(void *ptr)
 
 
 
-inline void
+void
 s_mp_clamp(mp_int *mp)
 {
     mp_size used = MP_USED(mp);

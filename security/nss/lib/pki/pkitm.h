@@ -22,9 +22,9 @@
 PR_BEGIN_EXTERN_C
 
 typedef enum nssCertIDMatchEnum {
-  nssCertIDMatch_Yes = 0,
-  nssCertIDMatch_No = 1,
-  nssCertIDMatch_Unknown = 2
+    nssCertIDMatch_Yes = 0,
+    nssCertIDMatch_No = 1,
+    nssCertIDMatch_Unknown = 2
 } nssCertIDMatch;
 
 
@@ -39,29 +39,29 @@ struct nssDecodedCertStr {
     NSSCertificateType type;
     void *data;
     
-    NSSItem *  (*getIdentifier)(nssDecodedCert *dc);
+    NSSItem *(*getIdentifier)(nssDecodedCert *dc);
     
-    void *     (*getIssuerIdentifier)(nssDecodedCert *dc);
+    void *(*getIssuerIdentifier)(nssDecodedCert *dc);
     
     nssCertIDMatch (*matchIdentifier)(nssDecodedCert *dc, void *id);
     
-    PRBool     (*isValidIssuer)(nssDecodedCert *dc);
+    PRBool (*isValidIssuer)(nssDecodedCert *dc);
     
-    NSSUsage * (*getUsage)(nssDecodedCert *dc);
+    NSSUsage *(*getUsage)(nssDecodedCert *dc);
     
-    PRBool     (*isValidAtTime)(nssDecodedCert *dc, NSSTime *time);
+    PRBool (*isValidAtTime)(nssDecodedCert *dc, NSSTime *time);
     
-    PRBool     (*isNewerThan)(nssDecodedCert *dc, nssDecodedCert *cmpdc);
+    PRBool (*isNewerThan)(nssDecodedCert *dc, nssDecodedCert *cmpdc);
     
-    PRBool     (*matchUsage)(nssDecodedCert *dc, const NSSUsage *usage);
+    PRBool (*matchUsage)(nssDecodedCert *dc, const NSSUsage *usage);
     
-    PRBool     (*isTrustedForUsage)(nssDecodedCert *dc,
-                                    const NSSUsage *usage);
+    PRBool (*isTrustedForUsage)(nssDecodedCert *dc,
+                                const NSSUsage *usage);
     
     NSSASCII7 *(*getEmailAddress)(nssDecodedCert *dc);
     
-    PRStatus   (*getDERSerialNumber)(nssDecodedCert *dc,
-                                     NSSDER *derSerial, NSSArena *arena);
+    PRStatus (*getDERSerialNumber)(nssDecodedCert *dc,
+                                   NSSDER *derSerial, NSSArena *arena);
 };
 
 struct NSSUsageStr {
@@ -74,13 +74,13 @@ typedef struct nssPKIObjectCollectionStr nssPKIObjectCollection;
 
 typedef struct
 {
-  union {
-    PRStatus (*  cert)(NSSCertificate *c, void *arg);
-    PRStatus (*   crl)(NSSCRL       *crl, void *arg);
-    PRStatus (* pvkey)(NSSPrivateKey *vk, void *arg);
-    PRStatus (* pbkey)(NSSPublicKey *bk, void *arg);
-  } func;
-  void *arg;
+    union {
+        PRStatus (*cert)(NSSCertificate *c, void *arg);
+        PRStatus (*crl)(NSSCRL *crl, void *arg);
+        PRStatus (*pvkey)(NSSPrivateKey *vk, void *arg);
+        PRStatus (*pbkey)(NSSPublicKey *bk, void *arg);
+    } func;
+    void *arg;
 } nssPKIObjectCallback;
 
 PR_END_EXTERN_C

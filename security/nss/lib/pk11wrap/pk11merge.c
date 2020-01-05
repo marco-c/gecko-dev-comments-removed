@@ -30,22 +30,22 @@
 
 static SECStatus
 pk11_setAttributes(PK11SlotInfo *slot, CK_OBJECT_HANDLE id,
-		CK_ATTRIBUTE *setTemplate, CK_ULONG setTemplCount)
+                   CK_ATTRIBUTE *setTemplate, CK_ULONG setTemplCount)
 {
     CK_RV crv;
     CK_SESSION_HANDLE rwsession;
 
     rwsession = PK11_GetRWSession(slot);
     if (rwsession == CK_INVALID_SESSION) {
-    	PORT_SetError(SEC_ERROR_BAD_DATA);
-    	return SECFailure;
+        PORT_SetError(SEC_ERROR_BAD_DATA);
+        return SECFailure;
     }
     crv = PK11_GETTAB(slot)->C_SetAttributeValue(rwsession, id,
-			setTemplate, setTemplCount);
+                                                 setTemplate, setTemplCount);
     PK11_RestoreROSession(slot, rwsession);
     if (crv != CKR_OK) {
-	PORT_SetError(PK11_MapError(crv));
-	return SECFailure;
+        PORT_SetError(PK11_MapError(crv));
+        return SECFailure;
     }
     return SECSuccess;
 }
@@ -54,26 +54,50 @@ pk11_setAttributes(PK11SlotInfo *slot, CK_OBJECT_HANDLE id,
 
 
 
-
 static SECStatus
 pk11_copyAttributes(PLArenaPool *arena,
-	PK11SlotInfo *targetSlot, CK_OBJECT_HANDLE targetID,
-	PK11SlotInfo *sourceSlot, CK_OBJECT_HANDLE sourceID,
-	CK_ATTRIBUTE *copyTemplate, CK_ULONG copyTemplateCount)
+                    PK11SlotInfo *targetSlot, CK_OBJECT_HANDLE targetID,
+                    PK11SlotInfo *sourceSlot, CK_OBJECT_HANDLE sourceID,
+                    CK_ATTRIBUTE *copyTemplate, CK_ULONG copyTemplateCount)
 {
-    SECStatus rv = PK11_GetAttributes(arena, sourceSlot, sourceID, 
-				copyTemplate, copyTemplateCount);
-    if (rv != SECSuccess) {
-	return rv;
+    SECStatus rv;
+    CK_ATTRIBUTE *newTemplate = NULL;
+    CK_RV crv;
+
+    crv = PK11_GetAttributes(arena, sourceSlot, sourceID,
+                             copyTemplate, copyTemplateCount);
+    
+    if (crv == CKR_ATTRIBUTE_TYPE_INVALID) {
+        int i, j;
+        newTemplate = PORT_NewArray(CK_ATTRIBUTE, copyTemplateCount);
+        
+
+        for (i = 0, j = 0; i < copyTemplateCount; i++) {
+            if (copyTemplate[i].ulValueLen != -1) {
+                newTemplate[j] = copyTemplate[i];
+                j++;
+            }
+        }
+        copyTemplate = newTemplate;
+        copyTemplateCount = j;
+        crv = PK11_GetAttributes(arena, sourceSlot, sourceID,
+                                 copyTemplate, copyTemplateCount);
+    }
+    if (crv != CKR_OK) {
+        PORT_SetError(PK11_MapError(crv));
+        return SECFailure;
     }
     if (targetID == CK_INVALID_HANDLE) {
-	
-	rv = PK11_CreateNewObject(targetSlot, CK_INVALID_SESSION, 
-		copyTemplate, copyTemplateCount, PR_TRUE, &targetID);
+        
+        rv = PK11_CreateNewObject(targetSlot, CK_INVALID_SESSION,
+                                  copyTemplate, copyTemplateCount, PR_TRUE, &targetID);
     } else {
-	
-	rv = pk11_setAttributes(targetSlot, targetID, 
-			copyTemplate, copyTemplateCount);
+        
+        rv = pk11_setAttributes(targetSlot, targetID,
+                                copyTemplate, copyTemplateCount);
+    }
+    if (newTemplate) {
+        free(newTemplate);
     }
     return rv;
 }
@@ -83,9 +107,9 @@ pk11_copyAttributes(PLArenaPool *arena,
 
 static SECStatus
 pk11_matchAcrossTokens(PLArenaPool *arena, PK11SlotInfo *targetSlot,
-		       PK11SlotInfo *sourceSlot,
-		       CK_ATTRIBUTE *template, CK_ULONG tsize, 
-		       CK_OBJECT_HANDLE id, CK_OBJECT_HANDLE *peer)
+                       PK11SlotInfo *sourceSlot,
+                       CK_ATTRIBUTE *template, CK_ULONG tsize,
+                       CK_OBJECT_HANDLE id, CK_OBJECT_HANDLE *peer)
 {
 
     CK_RV crv;
@@ -93,14 +117,14 @@ pk11_matchAcrossTokens(PLArenaPool *arena, PK11SlotInfo *targetSlot,
 
     crv = PK11_GetAttributes(arena, sourceSlot, id, template, tsize);
     if (crv != CKR_OK) {
- 	PORT_SetError( PK11_MapError(crv) );
-	goto loser;
+        PORT_SetError(PK11_MapError(crv));
+        goto loser;
     }
 
     if (template[0].ulValueLen == -1) {
-	crv = CKR_ATTRIBUTE_TYPE_INVALID;
- 	PORT_SetError( PK11_MapError(crv) );
-	goto loser;
+        crv = CKR_ATTRIBUTE_TYPE_INVALID;
+        PORT_SetError(PK11_MapError(crv));
+        goto loser;
     }
 
     *peer = pk11_FindObjectByTemplate(targetSlot, template, tsize);
@@ -115,45 +139,43 @@ loser:
 
 SECStatus
 pk11_encrypt(PK11SymKey *symKey, CK_MECHANISM_TYPE mechType, SECItem *param,
-	SECItem *input, SECItem **output)
+             SECItem *input, SECItem **output)
 {
     PK11Context *ctxt = NULL;
     SECStatus rv = SECSuccess;
 
     if (*output) {
-	SECITEM_FreeItem(*output,PR_TRUE);
+        SECITEM_FreeItem(*output, PR_TRUE);
     }
-    *output = SECITEM_AllocItem(NULL, NULL, input->len+20 );
+    *output = SECITEM_AllocItem(NULL, NULL, input->len + 20 );
     if (!*output) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
     ctxt = PK11_CreateContextBySymKey(mechType, CKA_ENCRYPT, symKey, param);
     if (ctxt == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
-    rv = PK11_CipherOp(ctxt, (*output)->data, 
-		(int *)&((*output)->len), 
-		(*output)->len, input->data, input->len);
+    rv = PK11_CipherOp(ctxt, (*output)->data,
+                       (int *)&((*output)->len),
+                       (*output)->len, input->data, input->len);
 
 done:
     if (ctxt) {
-	PK11_Finalize(ctxt);
-	PK11_DestroyContext(ctxt,PR_TRUE);
+        PK11_Finalize(ctxt);
+        PK11_DestroyContext(ctxt, PR_TRUE);
     }
     if (rv != SECSuccess) {
-	if (*output) {
-	    SECITEM_FreeItem(*output, PR_TRUE);
-	    *output = NULL;
-	}
+        if (*output) {
+            SECITEM_FreeItem(*output, PR_TRUE);
+            *output = NULL;
+        }
     }
     return rv;
 }
-
-
 
 
 
@@ -169,21 +191,20 @@ pk11_getPrivateKeyUsage(PK11SlotInfo *slot, CK_OBJECT_HANDLE id)
 {
     unsigned int usage = 0;
 
-    if ((PK11_HasAttributeSet(slot, id, CKA_UNWRAP,PR_FALSE) || 
-			PK11_HasAttributeSet(slot,id, CKA_DECRYPT,PR_FALSE))) {
-	usage |= KU_KEY_ENCIPHERMENT;
+    if ((PK11_HasAttributeSet(slot, id, CKA_UNWRAP, PR_FALSE) ||
+         PK11_HasAttributeSet(slot, id, CKA_DECRYPT, PR_FALSE))) {
+        usage |= KU_KEY_ENCIPHERMENT;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_DERIVE, PR_FALSE)) {
-	usage |= KU_KEY_AGREEMENT;
+        usage |= KU_KEY_AGREEMENT;
     }
-    if ((PK11_HasAttributeSet(slot, id, CKA_SIGN_RECOVER, PR_FALSE) || 
-			PK11_HasAttributeSet(slot, id, CKA_SIGN, PR_FALSE))) {
-	usage |= KU_DIGITAL_SIGNATURE;
+    if ((PK11_HasAttributeSet(slot, id, CKA_SIGN_RECOVER, PR_FALSE) ||
+         PK11_HasAttributeSet(slot, id, CKA_SIGN, PR_FALSE))) {
+        usage |= KU_DIGITAL_SIGNATURE;
     }
     return usage;
 }
-    
-	
+
 
 
 
@@ -193,7 +214,7 @@ pk11_getPrivateKeyUsage(PK11SlotInfo *slot, CK_OBJECT_HANDLE id)
 
 static SECStatus
 pk11_mergePrivateKey(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+                     CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
 {
     SECKEYPrivateKey *sourceKey = NULL;
     CK_OBJECT_HANDLE targetKeyID;
@@ -208,109 +229,108 @@ pk11_mergePrivateKey(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
     unsigned char randomData[SHA1_LENGTH];
     SECOidTag algTag = SEC_OID_PKCS12_V2_PBE_WITH_SHA1_AND_3KEY_TRIPLE_DES_CBC;
     CK_ATTRIBUTE privTemplate[] = {
-	{ CKA_ID, NULL, 0 },
-	{ CKA_CLASS, NULL, 0 }
+        { CKA_ID, NULL, 0 },
+        { CKA_CLASS, NULL, 0 }
     };
-    CK_ULONG privTemplateCount = sizeof(privTemplate)/sizeof(privTemplate[0]);
+    CK_ULONG privTemplateCount = sizeof(privTemplate) / sizeof(privTemplate[0]);
     CK_ATTRIBUTE privCopyTemplate[] = {
-	{ CKA_SUBJECT, NULL, 0 }
+        { CKA_SUBJECT, NULL, 0 }
     };
-    CK_ULONG privCopyTemplateCount = 
-		sizeof(privCopyTemplate)/sizeof(privCopyTemplate[0]);
+    CK_ULONG privCopyTemplateCount =
+        sizeof(privCopyTemplate) / sizeof(privCopyTemplate[0]);
 
-    arena = PORT_NewArena( DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
     
-    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, privTemplate, 
-				privTemplateCount, id, &targetKeyID);
+    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, privTemplate,
+                                privTemplateCount, id, &targetKeyID);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
 
     if (targetKeyID != CK_INVALID_HANDLE) {
-	
-	goto done;
+        
+        goto done;
     }
 
     
-    sourceKey = PK11_MakePrivKey(sourceSlot, nullKey, PR_FALSE, 
-				 id, sourcePwArg);
+    sourceKey = PK11_MakePrivKey(sourceSlot, nullKey, PR_FALSE,
+                                 id, sourcePwArg);
     if (sourceKey == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
     
     
     rv = PK11_GenerateRandom(randomData, sizeof(randomData));
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
     pwitem.data = randomData;
     pwitem.len = sizeof(randomData);
     
-    epki = PK11_ExportEncryptedPrivKeyInfo(sourceSlot, algTag, &pwitem, 
-					   sourceKey, 1, sourcePwArg);
+    epki = PK11_ExportEncryptedPrivKeyInfo(sourceSlot, algTag, &pwitem,
+                                           sourceKey, 1, sourcePwArg);
     if (epki == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
     nickname = PK11_GetObjectNickname(sourceSlot, id);
     
-    if (nickname)  {
-	nickItem.data = (unsigned char *)nickname;
-	nickItem.len = PORT_Strlen(nickname);
+    if (nickname) {
+        nickItem.data = (unsigned char *)nickname;
+        nickItem.len = PORT_Strlen(nickname);
     }
     keyUsage = pk11_getPrivateKeyUsage(sourceSlot, id);
     
     publicValue.data = privTemplate[0].pValue;
     publicValue.len = privTemplate[0].ulValueLen;
     rv = PK11_ImportEncryptedPrivateKeyInfo(targetSlot, epki, &pwitem,
-			nickname? &nickItem : NULL , &publicValue, 
-			PR_TRUE, PR_TRUE, sourceKey->keyType, keyUsage, 
-			targetPwArg);
+                                            nickname ? &nickItem : NULL, &publicValue,
+                                            PR_TRUE, PR_TRUE, sourceKey->keyType, keyUsage,
+                                            targetPwArg);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
 
     
-    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, privTemplate, 
-				privTemplateCount, id, &targetKeyID);
+    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, privTemplate,
+                                privTemplateCount, id, &targetKeyID);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
 
     if (targetKeyID == CK_INVALID_HANDLE) {
-	
-	rv = SECFailure;
-	goto done;
+        
+        rv = SECFailure;
+        goto done;
     }
 
     
     rv = pk11_copyAttributes(arena, targetSlot, targetKeyID, sourceSlot, id,
-				privCopyTemplate, privCopyTemplateCount);
+                             privCopyTemplate, privCopyTemplateCount);
 done:
     
     PORT_Memset(randomData, 0, sizeof(randomData));
     if (nickname) {
-	PORT_Free(nickname);
+        PORT_Free(nickname);
     }
     if (sourceKey) {
-	SECKEY_DestroyPrivateKey(sourceKey);
+        SECKEY_DestroyPrivateKey(sourceKey);
     }
     if (epki) {
-	SECKEY_DestroyEncryptedPrivateKeyInfo(epki, PR_TRUE);
+        SECKEY_DestroyEncryptedPrivateKeyInfo(epki, PR_TRUE);
     }
     if (arena) {
-         PORT_FreeArena(arena,PR_FALSE);
+        PORT_FreeArena(arena, PR_FALSE);
     }
     return rv;
 }
-
 
 
 
@@ -337,36 +357,35 @@ pk11_incrementID(PLArenaPool *arena, CK_ATTRIBUTE *ptemplate)
     CK_ULONG len = ptemplate->ulValueLen;
 
     if (buf == NULL || len == (CK_ULONG)-1) {
-	
-	len = 0;
+        
+        len = 0;
     } else {
-	CK_ULONG i;
+        CK_ULONG i;
 
-	
+        
 
 
-	for (i=len; i != 0; i--) {
-	    buf[i-1]++;
-	    if (buf[i-1] != 0) {
-		
-		return SECSuccess;
-	     }
-	}
-	
+        for (i = len; i != 0; i--) {
+            buf[i - 1]++;
+            if (buf[i - 1] != 0) {
+                
+                return SECSuccess;
+            }
+        }
+        
 
-    } 
+    }
     
 
 
-    buf = PORT_ArenaZAlloc(arena, len+1);
+    buf = PORT_ArenaZAlloc(arena, len + 1);
     if (buf == NULL) {
-	return SECFailure;
+        return SECFailure;
     }
     ptemplate->pValue = buf;
-    ptemplate->ulValueLen = len+1;
+    ptemplate->ulValueLen = len + 1;
     return SECSuccess;
 }
-
 
 static CK_FLAGS
 pk11_getSecretKeyFlags(PK11SlotInfo *slot, CK_OBJECT_HANDLE id)
@@ -374,37 +393,37 @@ pk11_getSecretKeyFlags(PK11SlotInfo *slot, CK_OBJECT_HANDLE id)
     CK_FLAGS flags = 0;
 
     if (PK11_HasAttributeSet(slot, id, CKA_UNWRAP, PR_FALSE)) {
-	flags |= CKF_UNWRAP;
+        flags |= CKF_UNWRAP;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_WRAP, PR_FALSE)) {
-	flags |= CKF_WRAP;
+        flags |= CKF_WRAP;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_ENCRYPT, PR_FALSE)) {
-	flags |= CKF_ENCRYPT;
+        flags |= CKF_ENCRYPT;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_DECRYPT, PR_FALSE)) {
-	flags |= CKF_DECRYPT;
+        flags |= CKF_DECRYPT;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_DERIVE, PR_FALSE)) {
-	flags |= CKF_DERIVE;
+        flags |= CKF_DERIVE;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_SIGN, PR_FALSE)) {
-	flags |= CKF_SIGN;
+        flags |= CKF_SIGN;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_SIGN_RECOVER, PR_FALSE)) {
-	flags |= CKF_SIGN_RECOVER;
+        flags |= CKF_SIGN_RECOVER;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_VERIFY, PR_FALSE)) {
-	flags |= CKF_VERIFY;
+        flags |= CKF_VERIFY;
     }
     if (PK11_HasAttributeSet(slot, id, CKA_VERIFY_RECOVER, PR_FALSE)) {
-	flags |= CKF_VERIFY_RECOVER;
+        flags |= CKF_VERIFY_RECOVER;
     }
     return flags;
 }
 
-static const char testString[] = 
-	"My Encrytion Test Data (should be at least 32 bytes long)";
+static const char testString[] =
+    "My Encrytion Test Data (should be at least 32 bytes long)";
 
 
 
@@ -422,7 +441,7 @@ static const char testString[] =
 
 static SECStatus
 pk11_mergeSecretKey(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+                    CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
 {
     PK11SymKey *sourceKey = NULL;
     PK11SymKey *targetKey = NULL;
@@ -438,26 +457,26 @@ pk11_mergeSecretKey(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
     CK_MECHANISM_TYPE keyMechType, cryptoMechType;
     CK_KEY_TYPE sourceKeyType, targetKeyType;
     CK_ATTRIBUTE symTemplate[] = {
-	{ CKA_ID, NULL, 0 },
-	{ CKA_CLASS, NULL, 0 }
+        { CKA_ID, NULL, 0 },
+        { CKA_CLASS, NULL, 0 }
     };
-    CK_ULONG symTemplateCount = sizeof(symTemplate)/sizeof(symTemplate[0]);
+    CK_ULONG symTemplateCount = sizeof(symTemplate) / sizeof(symTemplate[0]);
     CK_ATTRIBUTE symCopyTemplate[] = {
-	{ CKA_LABEL, NULL, 0 }
+        { CKA_LABEL, NULL, 0 }
     };
-    CK_ULONG symCopyTemplateCount = 
-		sizeof(symCopyTemplate)/sizeof(symCopyTemplate[0]);
+    CK_ULONG symCopyTemplateCount =
+        sizeof(symCopyTemplate) / sizeof(symCopyTemplate[0]);
 
-    arena = PORT_NewArena( DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
     sourceKeyType = PK11_ReadULongAttribute(sourceSlot, id, CKA_KEY_TYPE);
-    if (sourceKeyType == (CK_ULONG) -1) {
-	rv = SECFailure;
-	goto done;
+    if (sourceKeyType == (CK_ULONG)-1) {
+        rv = SECFailure;
+        goto done;
     }
 
     
@@ -467,17 +486,17 @@ pk11_mergeSecretKey(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 
 
 
-    cryptoMechType =  keyMechType;
-    if ((keyMechType == CKM_DES3_KEY_GEN) ||  
-				(keyMechType == CKM_DES2_KEY_GEN)) {
-	cryptoMechType = CKM_DES3_CBC;
+    cryptoMechType = keyMechType;
+    if ((keyMechType == CKM_DES3_KEY_GEN) ||
+        (keyMechType == CKM_DES2_KEY_GEN)) {
+        cryptoMechType = CKM_DES3_CBC;
     }
 
     sourceKey = PK11_SymKeyFromHandle(sourceSlot, NULL, PK11_OriginDerive,
-				keyMechType , id, PR_FALSE, sourcePwArg);
+                                      keyMechType, id, PR_FALSE, sourcePwArg);
     if (sourceKey == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
     
@@ -485,106 +504,106 @@ pk11_mergeSecretKey(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 
 
     rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot,
-			symTemplate, symTemplateCount, id, &targetKeyID);
+                                symTemplate, symTemplateCount, id, &targetKeyID);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
 
     
     input.data = (unsigned char *)testString;
     blockSize = PK11_GetBlockSize(cryptoMechType, NULL);
     if (blockSize < 0) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
     input.len = blockSize;
     if (input.len == 0) {
-	input.len = sizeof (testString);
+        input.len = sizeof(testString);
     }
     while (targetKeyID != CK_INVALID_HANDLE) {
-	
-	targetKeyType = PK11_ReadULongAttribute(sourceSlot, id, CKA_KEY_TYPE);
-	if (targetKeyType == sourceKeyType) {
-		
-		targetKey = PK11_SymKeyFromHandle(targetSlot, NULL, 
-			PK11_OriginDerive, keyMechType, targetKeyID, PR_FALSE,
-			targetPwArg);
-		
-		if (!param) {
-		    param = PK11_GenerateNewParam(cryptoMechType, sourceKey);
-		    if (param == NULL) {
-			rv = SECFailure;
-			goto done;
-		    }
-		}
-		
-		if (!sourceOutput) {
-		    rv = pk11_encrypt(sourceKey, cryptoMechType, param, &input,
-			&sourceOutput);
-		    if (rv != SECSuccess) {
-			goto done;
-		    }
-		}
-		
-		rv = pk11_encrypt(targetKey, cryptoMechType, param, &input,
-			&targetOutput);
-		if (rv == SECSuccess) {
-		    if (SECITEM_ItemsAreEqual(sourceOutput, targetOutput)) {
-			
+        
+        targetKeyType = PK11_ReadULongAttribute(sourceSlot, id, CKA_KEY_TYPE);
+        if (targetKeyType == sourceKeyType) {
+            
+            targetKey = PK11_SymKeyFromHandle(targetSlot, NULL,
+                                              PK11_OriginDerive, keyMechType, targetKeyID, PR_FALSE,
+                                              targetPwArg);
+            
+            if (!param) {
+                param = PK11_GenerateNewParam(cryptoMechType, sourceKey);
+                if (param == NULL) {
+                    rv = SECFailure;
+                    goto done;
+                }
+            }
+            
+            if (!sourceOutput) {
+                rv = pk11_encrypt(sourceKey, cryptoMechType, param, &input,
+                                  &sourceOutput);
+                if (rv != SECSuccess) {
+                    goto done;
+                }
+            }
+            
+            rv = pk11_encrypt(targetKey, cryptoMechType, param, &input,
+                              &targetOutput);
+            if (rv == SECSuccess) {
+                if (SECITEM_ItemsAreEqual(sourceOutput, targetOutput)) {
+                    
 
-			goto done;
-		    }
-		    SECITEM_FreeItem(targetOutput, PR_TRUE);
-		    targetOutput = NULL;
-		}
-		PK11_FreeSymKey(targetKey);
-		targetKey = NULL;
-	}
-	
-	rv = pk11_incrementID(arena, &symTemplate[0]);
-	if (rv != SECSuccess) {
-	    goto done;
-	}
-	targetKeyID = pk11_FindObjectByTemplate(targetSlot, 
-					symTemplate, symTemplateCount);
+                    goto done;
+                }
+                SECITEM_FreeItem(targetOutput, PR_TRUE);
+                targetOutput = NULL;
+            }
+            PK11_FreeSymKey(targetKey);
+            targetKey = NULL;
+        }
+        
+        rv = pk11_incrementID(arena, &symTemplate[0]);
+        if (rv != SECSuccess) {
+            goto done;
+        }
+        targetKeyID = pk11_FindObjectByTemplate(targetSlot,
+                                                symTemplate, symTemplateCount);
     }
 
     
 
     flags = pk11_getSecretKeyFlags(sourceSlot, id);
     targetKey = PK11_MoveSymKey(targetSlot, PK11_OriginDerive, flags, PR_TRUE,
-			sourceKey);
+                                sourceKey);
     if (targetKey == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
     
     rv = pk11_setAttributes(targetSlot, targetKey->objectID, symTemplate, 1);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
 
     
-    rv = pk11_copyAttributes(arena, targetSlot, targetKey->objectID, 
-			sourceSlot, id, symCopyTemplate, symCopyTemplateCount);
+    rv = pk11_copyAttributes(arena, targetSlot, targetKey->objectID,
+                             sourceSlot, id, symCopyTemplate, symCopyTemplateCount);
 done:
     if (sourceKey) {
-	PK11_FreeSymKey(sourceKey);
+        PK11_FreeSymKey(sourceKey);
     }
     if (targetKey) {
-	PK11_FreeSymKey(targetKey);
+        PK11_FreeSymKey(targetKey);
     }
     if (sourceOutput) {
-	SECITEM_FreeItem(sourceOutput, PR_TRUE);
+        SECITEM_FreeItem(sourceOutput, PR_TRUE);
     }
     if (targetOutput) {
-	SECITEM_FreeItem(targetOutput, PR_TRUE);
+        SECITEM_FreeItem(targetOutput, PR_TRUE);
     }
     if (param) {
-	SECITEM_FreeItem(param, PR_TRUE);
+        SECITEM_FreeItem(param, PR_TRUE);
     }
     if (arena) {
-         PORT_FreeArena(arena,PR_FALSE);
+        PORT_FreeArena(arena, PR_FALSE);
     }
     return rv;
 }
@@ -603,70 +622,68 @@ done:
 
 static SECStatus
 pk11_mergePublicKey(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+                    CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
 {
     SECKEYPublicKey *sourceKey = NULL;
     CK_OBJECT_HANDLE targetKeyID;
     PLArenaPool *arena = NULL;
     SECStatus rv = SECSuccess;
     CK_ATTRIBUTE pubTemplate[] = {
-	{ CKA_ID, NULL, 0 },
-	{ CKA_CLASS, NULL, 0 }
+        { CKA_ID, NULL, 0 },
+        { CKA_CLASS, NULL, 0 }
     };
-    CK_ULONG pubTemplateCount = sizeof(pubTemplate)/sizeof(pubTemplate[0]);
+    CK_ULONG pubTemplateCount = sizeof(pubTemplate) / sizeof(pubTemplate[0]);
     CK_ATTRIBUTE pubCopyTemplate[] = {
-	{ CKA_ID, NULL, 0 },
-	{ CKA_LABEL, NULL, 0 },
-	{ CKA_SUBJECT, NULL, 0 }
+        { CKA_ID, NULL, 0 },
+        { CKA_LABEL, NULL, 0 },
+        { CKA_SUBJECT, NULL, 0 }
     };
-    CK_ULONG pubCopyTemplateCount = 
-		sizeof(pubCopyTemplate)/sizeof(pubCopyTemplate[0]);
+    CK_ULONG pubCopyTemplateCount =
+        sizeof(pubCopyTemplate) / sizeof(pubCopyTemplate[0]);
 
-    arena = PORT_NewArena( DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
-
     
-    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, pubTemplate, 
-				pubTemplateCount, id, &targetKeyID);
+    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, pubTemplate,
+                                pubTemplateCount, id, &targetKeyID);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
 
     
     if (targetKeyID != CK_INVALID_HANDLE) {
-	
-	goto done;
+        
+        goto done;
     }
 
     
     sourceKey = PK11_ExtractPublicKey(sourceSlot, nullKey, id);
-    if (sourceKey== NULL) {
-	rv = SECFailure;
-	goto done;
+    if (sourceKey == NULL) {
+        rv = SECFailure;
+        goto done;
     }
 
     
     targetKeyID = PK11_ImportPublicKey(targetSlot, sourceKey, PR_TRUE);
     if (targetKeyID == CK_INVALID_HANDLE) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
     
     rv = pk11_copyAttributes(arena, targetSlot, targetKeyID, sourceSlot, id,
-				pubCopyTemplate, pubCopyTemplateCount);
-
+                             pubCopyTemplate, pubCopyTemplateCount);
 
 done:
     if (sourceKey) {
-	SECKEY_DestroyPublicKey(sourceKey);
+        SECKEY_DestroyPublicKey(sourceKey);
     }
     if (arena) {
-         PORT_FreeArena(arena,PR_FALSE);
+        PORT_FreeArena(arena, PR_FALSE);
     }
     return rv;
 }
@@ -691,44 +708,45 @@ pk11_IncrementNickname(char *nickname)
     int len = strlen(nickname);
 
     
-    for (end = len - 1; 
-         end >= 2 && (digit = nickname[end]) <= '9' &&  digit >= '0'; 
-	 end--)   ;
+    for (end = len - 1;
+         end >= 2 && (digit = nickname[end]) <= '9' && digit >= '0';
+         end--) 
+        ;
     if (len >= 3 &&
         end < (len - 1)  &&
-	nickname[end]     == '#'  && 
-	nickname[end - 1] == ' ') {
-    	
+        nickname[end] == '#' &&
+        nickname[end - 1] == ' ') {
+        
     } else {
-	
-	static const char num2[] = " #2";
-	newNickname = PORT_Realloc(nickname, len + sizeof(num2));
-	if (newNickname) {
-	    PORT_Strcat(newNickname, num2);
-	} else {
-	    PORT_Free(nickname);
-	}
-	return newNickname;
+        
+        static const char num2[] = " #2";
+        newNickname = PORT_Realloc(nickname, len + sizeof(num2));
+        if (newNickname) {
+            PORT_Strcat(newNickname, num2);
+        } else {
+            PORT_Free(nickname);
+        }
+        return newNickname;
     }
 
-    for (end = len - 1; 
-	 end >= 0 && (digit = nickname[end]) <= '9' &&  digit >= '0'; 
-	 end--) {
-	if (digit < '9') {
-	    nickname[end]++;
-	    return nickname;
-	}
-	nickname[end] = '0';
+    for (end = len - 1;
+         end >= 0 && (digit = nickname[end]) <= '9' && digit >= '0';
+         end--) {
+        if (digit < '9') {
+            nickname[end]++;
+            return nickname;
+        }
+        nickname[end] = '0';
     }
 
     
     newNickname = PORT_Realloc(nickname, len + 2);
     if (newNickname) {
-	newNickname[++end] = '1';
-	PORT_Memset(&newNickname[end + 1], '0', len - end);
-	newNickname[len + 1] = 0;
+        newNickname[++end] = '1';
+        PORT_Memset(&newNickname[end + 1], '0', len - end);
+        newNickname[len + 1] = 0;
     } else {
-	PORT_Free(nickname);
+        PORT_Free(nickname);
     }
     return newNickname;
 }
@@ -740,22 +758,22 @@ pk11_IncrementNickname(char *nickname)
 
 static SECStatus
 pk11_mergeCert(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+               CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
 {
     CERTCertificate *sourceCert = NULL;
     CK_OBJECT_HANDLE targetCertID = CK_INVALID_HANDLE;
     char *nickname = NULL;
     SECStatus rv = SECSuccess;
     PLArenaPool *arena = NULL;
-    CK_ATTRIBUTE sourceCKAID = {CKA_ID, NULL, 0};
-    CK_ATTRIBUTE targetCKAID = {CKA_ID, NULL, 0};
+    CK_ATTRIBUTE sourceCKAID = { CKA_ID, NULL, 0 };
+    CK_ATTRIBUTE targetCKAID = { CKA_ID, NULL, 0 };
     SECStatus lrv = SECSuccess;
     int error = SEC_ERROR_LIBRARY_FAILURE;
 
     sourceCert = PK11_MakeCertFromHandle(sourceSlot, id, NULL);
     if (sourceCert == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
     nickname = PK11_GetObjectNickname(sourceSlot, id);
@@ -764,102 +782,100 @@ pk11_mergeCert(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 
 
     if (nickname) {
-	const char *tokenName = PK11_GetTokenName(targetSlot);
-	char *tokenNickname = NULL;
+        const char *tokenName = PK11_GetTokenName(targetSlot);
+        char *tokenNickname = NULL;
 
-	do {
-	    tokenNickname = PR_smprintf("%s:%s",tokenName, nickname);
-	    if (!tokenNickname) {
-		break;
-	    }
-	    if (!SEC_CertNicknameConflict(tokenNickname, 
-			&sourceCert->derSubject, CERT_GetDefaultCertDB())) {
-		break;
-	     }
-	    nickname = pk11_IncrementNickname(nickname);
-	    if (!nickname) {
-		break;
-	    }
-	    PR_smprintf_free(tokenNickname);
-	} while (1);
-	if (tokenNickname) {
-	    PR_smprintf_free(tokenNickname);
-	}
+        do {
+            tokenNickname = PR_smprintf("%s:%s", tokenName, nickname);
+            if (!tokenNickname) {
+                break;
+            }
+            if (!SEC_CertNicknameConflict(tokenNickname,
+                                          &sourceCert->derSubject, CERT_GetDefaultCertDB())) {
+                break;
+            }
+            nickname = pk11_IncrementNickname(nickname);
+            if (!nickname) {
+                break;
+            }
+            PR_smprintf_free(tokenNickname);
+        } while (1);
+        if (tokenNickname) {
+            PR_smprintf_free(tokenNickname);
+        }
     }
-
-	
 
     
     targetCertID = PK11_FindCertInSlot(targetSlot, sourceCert, targetPwArg);
     if (targetCertID == CK_INVALID_HANDLE) {
-	
-	
-	rv = PK11_ImportCert(targetSlot, sourceCert, CK_INVALID_HANDLE,
-			     nickname, PR_FALSE);
-	goto done;
+        
+        
+        rv = PK11_ImportCert(targetSlot, sourceCert, CK_INVALID_HANDLE,
+                             nickname, PR_FALSE);
+        goto done;
     }
 
     
 
 
-    arena = PORT_NewArena( DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
 
     
-    rv = PK11_GetAttributes(arena, sourceSlot, id,  &sourceCKAID, 1);
+    rv = PK11_GetAttributes(arena, sourceSlot, id, &sourceCKAID, 1);
     if (rv != SECSuccess) {
-	sourceCKAID.ulValueLen = 0;
+        sourceCKAID.ulValueLen = 0;
     }
 
     
 
     if (sourceCKAID.ulValueLen != 0) {
-	rv = PK11_GetAttributes(arena, targetSlot, targetCertID,
-				    &targetCKAID, 1);
-	if (rv != SECSuccess) {
-	    targetCKAID.ulValueLen = 0;
-	}
-	
-	if (targetCKAID.ulValueLen == 0) {
-	    lrv=pk11_setAttributes(targetSlot, targetCertID, &sourceCKAID, 1);
-	    if (lrv != SECSuccess) {
-		error = PORT_GetError();
-	    }
-	}
+        rv = PK11_GetAttributes(arena, targetSlot, targetCertID,
+                                &targetCKAID, 1);
+        if (rv != SECSuccess) {
+            targetCKAID.ulValueLen = 0;
+        }
+        
+        if (targetCKAID.ulValueLen == 0) {
+            lrv = pk11_setAttributes(targetSlot, targetCertID, &sourceCKAID, 1);
+            if (lrv != SECSuccess) {
+                error = PORT_GetError();
+            }
+        }
     }
     rv = SECSuccess;
 
     
     if (nickname && *nickname) {
-	char *targetname;
-	targetname = PK11_GetObjectNickname(targetSlot, targetCertID);
-	if (!targetname || !*targetname) {
-	    
-	    rv = PK11_SetObjectNickname(targetSlot, targetCertID, nickname);
-	}
-	if (targetname) {
-	    PORT_Free(targetname);
-	}
+        char *targetname;
+        targetname = PK11_GetObjectNickname(targetSlot, targetCertID);
+        if (!targetname || !*targetname) {
+            
+            rv = PK11_SetObjectNickname(targetSlot, targetCertID, nickname);
+        }
+        if (targetname) {
+            PORT_Free(targetname);
+        }
     }
 
     
     if ((rv == SECSuccess) && (lrv != SECSuccess)) {
-	rv = lrv;
-	PORT_SetError(error);
+        rv = lrv;
+        PORT_SetError(error);
     }
 
 done:
     if (nickname) {
-	PORT_Free(nickname);
+        PORT_Free(nickname);
     }
     if (sourceCert) {
-	CERT_DestroyCertificate(sourceCert);
+        CERT_DestroyCertificate(sourceCert);
     }
     if (arena) {
-         PORT_FreeArena(arena,PR_FALSE);
+        PORT_FreeArena(arena, PR_FALSE);
     }
     return rv;
 }
@@ -875,56 +891,55 @@ done:
 
 
 
-
 static SECStatus
 pk11_mergeCrl(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+              CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
 {
     CK_OBJECT_HANDLE targetCrlID;
     PLArenaPool *arena = NULL;
     SECStatus rv = SECSuccess;
     CK_ATTRIBUTE crlTemplate[] = {
-	{ CKA_SUBJECT, NULL, 0 },
-	{ CKA_CLASS, NULL, 0 },
-	{ CKA_NSS_KRL, NULL, 0 }
+        { CKA_SUBJECT, NULL, 0 },
+        { CKA_CLASS, NULL, 0 },
+        { CKA_NSS_KRL, NULL, 0 }
     };
-    CK_ULONG crlTemplateCount = sizeof(crlTemplate)/sizeof(crlTemplate[0]);
+    CK_ULONG crlTemplateCount = sizeof(crlTemplate) / sizeof(crlTemplate[0]);
     CK_ATTRIBUTE crlCopyTemplate[] = {
-	{ CKA_CLASS, NULL, 0 },
-	{ CKA_TOKEN, NULL, 0 },
-	{ CKA_LABEL, NULL, 0 },
-	{ CKA_PRIVATE, NULL, 0 },
-	{ CKA_MODIFIABLE, NULL, 0 },
-	{ CKA_SUBJECT, NULL, 0 },
-	{ CKA_NSS_KRL, NULL, 0 },
-	{ CKA_NSS_URL, NULL, 0 },
-	{ CKA_VALUE, NULL, 0 }
+        { CKA_CLASS, NULL, 0 },
+        { CKA_TOKEN, NULL, 0 },
+        { CKA_LABEL, NULL, 0 },
+        { CKA_PRIVATE, NULL, 0 },
+        { CKA_MODIFIABLE, NULL, 0 },
+        { CKA_SUBJECT, NULL, 0 },
+        { CKA_NSS_KRL, NULL, 0 },
+        { CKA_NSS_URL, NULL, 0 },
+        { CKA_VALUE, NULL, 0 }
     };
-    CK_ULONG crlCopyTemplateCount = 
-		sizeof(crlCopyTemplate)/sizeof(crlCopyTemplate[0]);
+    CK_ULONG crlCopyTemplateCount =
+        sizeof(crlCopyTemplate) / sizeof(crlCopyTemplate[0]);
 
-    arena = PORT_NewArena( DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
     
-    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, crlTemplate, 
-				crlTemplateCount, id, &targetCrlID);
+    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, crlTemplate,
+                                crlTemplateCount, id, &targetCrlID);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
     if (targetCrlID != CK_INVALID_HANDLE) {
-	
-	goto done;
+        
+        goto done;
     }
 
     
     rv = pk11_copyAttributes(arena, targetSlot, targetCrlID, sourceSlot, id,
-				crlCopyTemplate, crlCopyTemplateCount);
+                             crlCopyTemplate, crlCopyTemplateCount);
 done:
     if (arena) {
-         PORT_FreeArena(arena,PR_FALSE);
+        PORT_FreeArena(arena, PR_FALSE);
     }
     return rv;
 }
@@ -940,58 +955,57 @@ done:
 
 static SECStatus
 pk11_mergeSmime(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+                CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
 {
     CK_OBJECT_HANDLE targetSmimeID;
     PLArenaPool *arena = NULL;
     SECStatus rv = SECSuccess;
     CK_ATTRIBUTE smimeTemplate[] = {
-	{ CKA_SUBJECT, NULL, 0 },
-	{ CKA_NSS_EMAIL, NULL, 0 },
-	{ CKA_CLASS, NULL, 0 },
+        { CKA_SUBJECT, NULL, 0 },
+        { CKA_NSS_EMAIL, NULL, 0 },
+        { CKA_CLASS, NULL, 0 },
     };
-    CK_ULONG smimeTemplateCount = 
-		sizeof(smimeTemplate)/sizeof(smimeTemplate[0]);
+    CK_ULONG smimeTemplateCount =
+        sizeof(smimeTemplate) / sizeof(smimeTemplate[0]);
     CK_ATTRIBUTE smimeCopyTemplate[] = {
-	{ CKA_CLASS, NULL, 0 },
-	{ CKA_TOKEN, NULL, 0 },
-	{ CKA_LABEL, NULL, 0 },
-	{ CKA_PRIVATE, NULL, 0 },
-	{ CKA_MODIFIABLE, NULL, 0 },
-	{ CKA_SUBJECT, NULL, 0 },
-	{ CKA_NSS_EMAIL, NULL, 0 },
-	{ CKA_NSS_SMIME_TIMESTAMP, NULL, 0 },
-	{ CKA_VALUE, NULL, 0 }
+        { CKA_CLASS, NULL, 0 },
+        { CKA_TOKEN, NULL, 0 },
+        { CKA_LABEL, NULL, 0 },
+        { CKA_PRIVATE, NULL, 0 },
+        { CKA_MODIFIABLE, NULL, 0 },
+        { CKA_SUBJECT, NULL, 0 },
+        { CKA_NSS_EMAIL, NULL, 0 },
+        { CKA_NSS_SMIME_TIMESTAMP, NULL, 0 },
+        { CKA_VALUE, NULL, 0 }
     };
-    CK_ULONG smimeCopyTemplateCount = 
-		sizeof(smimeCopyTemplate)/sizeof(smimeCopyTemplate[0]);
+    CK_ULONG smimeCopyTemplateCount =
+        sizeof(smimeCopyTemplate) / sizeof(smimeCopyTemplate[0]);
 
-    arena = PORT_NewArena( DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
     
-    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, smimeTemplate, 
-				smimeTemplateCount, id, &targetSmimeID);
+    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, smimeTemplate,
+                                smimeTemplateCount, id, &targetSmimeID);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
     if (targetSmimeID != CK_INVALID_HANDLE) {
-	
-	goto done;
+        
+        goto done;
     }
 
     
     rv = pk11_copyAttributes(arena, targetSlot, targetSmimeID, sourceSlot, id,
-				smimeCopyTemplate, smimeCopyTemplateCount);
+                             smimeCopyTemplate, smimeCopyTemplateCount);
 done:
     if (arena) {
-         PORT_FreeArena(arena,PR_FALSE);
+        PORT_FreeArena(arena, PR_FALSE);
     }
     return rv;
 }
-
 
 
 
@@ -1007,10 +1021,10 @@ done:
 PRBool
 pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
 {
-    CK_ULONG targetTrust = (target->ulValueLen == sizeof (CK_LONG)) ?
-		*(CK_ULONG *)target->pValue : CKT_NSS_TRUST_UNKNOWN;
-    CK_ULONG sourceTrust = (source->ulValueLen == sizeof (CK_LONG)) ?
-		*(CK_ULONG *)source->pValue : CKT_NSS_TRUST_UNKNOWN;
+    CK_ULONG targetTrust = (target->ulValueLen == sizeof(CK_LONG)) ? *(CK_ULONG *)target->pValue
+                                                                   : CKT_NSS_TRUST_UNKNOWN;
+    CK_ULONG sourceTrust = (source->ulValueLen == sizeof(CK_LONG)) ? *(CK_ULONG *)source->pValue
+                                                                   : CKT_NSS_TRUST_UNKNOWN;
 
     
 
@@ -1021,17 +1035,17 @@ pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
 
 
     if (sourceTrust == targetTrust) {
-	return USE_TARGET;  
+        return USE_TARGET; 
     }
 
     if (sourceTrust == CKT_NSS_TRUST_UNKNOWN) {
-	return USE_TARGET; 
+        return USE_TARGET;
     }
 
     
     if (targetTrust == CKT_NSS_TRUST_UNKNOWN) {
-	
-	return USE_SOURCE;
+        
+        return USE_SOURCE;
     }
 
     
@@ -1042,14 +1056,14 @@ pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
 
 
 
-    if ((sourceTrust == CKT_NSS_MUST_VERIFY_TRUST) 
-	|| (sourceTrust == CKT_NSS_VALID_DELEGATOR)) {
-	return USE_TARGET;
+    if ((sourceTrust == CKT_NSS_MUST_VERIFY_TRUST) ||
+        (sourceTrust == CKT_NSS_VALID_DELEGATOR)) {
+        return USE_TARGET;
     }
-    if ((targetTrust == CKT_NSS_MUST_VERIFY_TRUST) 
-	|| (targetTrust == CKT_NSS_VALID_DELEGATOR)) {
-	
-	return USE_SOURCE;
+    if ((targetTrust == CKT_NSS_MUST_VERIFY_TRUST) ||
+        (targetTrust == CKT_NSS_VALID_DELEGATOR)) {
+        
+        return USE_SOURCE;
     }
 
     
@@ -1060,117 +1074,116 @@ pk11_mergeTrustEntry(CK_ATTRIBUTE *target, CK_ATTRIBUTE *source)
 
 static SECStatus
 pk11_mergeTrust(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+                CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
 {
     CK_OBJECT_HANDLE targetTrustID;
     PLArenaPool *arena = NULL;
     SECStatus rv = SECSuccess;
     int error = 0;
     CK_ATTRIBUTE trustTemplate[] = {
-	{ CKA_ISSUER, NULL, 0 },
-	{ CKA_SERIAL_NUMBER, NULL, 0 },
-	{ CKA_CLASS, NULL, 0 },
+        { CKA_ISSUER, NULL, 0 },
+        { CKA_SERIAL_NUMBER, NULL, 0 },
+        { CKA_CLASS, NULL, 0 },
     };
-    CK_ULONG trustTemplateCount = 
-		sizeof(trustTemplate)/sizeof(trustTemplate[0]);
+    CK_ULONG trustTemplateCount =
+        sizeof(trustTemplate) / sizeof(trustTemplate[0]);
     CK_ATTRIBUTE trustCopyTemplate[] = {
-	{ CKA_CLASS, NULL, 0 },
-	{ CKA_TOKEN, NULL, 0 },
-	{ CKA_LABEL, NULL, 0 },
-	{ CKA_PRIVATE, NULL, 0 },
-	{ CKA_MODIFIABLE, NULL, 0 },
-	{ CKA_ISSUER, NULL, 0},
-	{ CKA_SERIAL_NUMBER, NULL, 0},
-	{ CKA_CERT_SHA1_HASH, NULL, 0 },
-	{ CKA_CERT_MD5_HASH, NULL, 0 },
-	{ CKA_TRUST_SERVER_AUTH, NULL, 0 },
-	{ CKA_TRUST_CLIENT_AUTH, NULL, 0 },
-	{ CKA_TRUST_CODE_SIGNING, NULL, 0 },
-	{ CKA_TRUST_EMAIL_PROTECTION, NULL, 0 },
-	{ CKA_TRUST_STEP_UP_APPROVED, NULL, 0 }
+        { CKA_CLASS, NULL, 0 },
+        { CKA_TOKEN, NULL, 0 },
+        { CKA_LABEL, NULL, 0 },
+        { CKA_PRIVATE, NULL, 0 },
+        { CKA_MODIFIABLE, NULL, 0 },
+        { CKA_ISSUER, NULL, 0 },
+        { CKA_SERIAL_NUMBER, NULL, 0 },
+        { CKA_CERT_SHA1_HASH, NULL, 0 },
+        { CKA_CERT_MD5_HASH, NULL, 0 },
+        { CKA_TRUST_SERVER_AUTH, NULL, 0 },
+        { CKA_TRUST_CLIENT_AUTH, NULL, 0 },
+        { CKA_TRUST_CODE_SIGNING, NULL, 0 },
+        { CKA_TRUST_EMAIL_PROTECTION, NULL, 0 },
+        { CKA_TRUST_STEP_UP_APPROVED, NULL, 0 }
     };
-    CK_ULONG trustCopyTemplateCount = 
-		sizeof(trustCopyTemplate)/sizeof(trustCopyTemplate[0]);
+    CK_ULONG trustCopyTemplateCount =
+        sizeof(trustCopyTemplate) / sizeof(trustCopyTemplate[0]);
 
-    arena = PORT_NewArena( DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
-	rv = SECFailure;
-	goto done;
+        rv = SECFailure;
+        goto done;
     }
     
-    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, trustTemplate, 
-				trustTemplateCount, id, &targetTrustID);
+    rv = pk11_matchAcrossTokens(arena, targetSlot, sourceSlot, trustTemplate,
+                                trustTemplateCount, id, &targetTrustID);
     if (rv != SECSuccess) {
-	goto done;
+        goto done;
     }
     if (targetTrustID != CK_INVALID_HANDLE) {
-	
-	CK_ATTRIBUTE_TYPE trustAttrs[] = {
-	    CKA_TRUST_SERVER_AUTH, CKA_TRUST_CLIENT_AUTH,
-	    CKA_TRUST_CODE_SIGNING, CKA_TRUST_EMAIL_PROTECTION, 
-	    CKA_TRUST_IPSEC_TUNNEL, CKA_TRUST_IPSEC_USER, 
-	    CKA_TRUST_TIME_STAMPING
-	};
-	CK_ULONG trustAttrsCount = 
-		sizeof(trustAttrs)/sizeof(trustAttrs[0]);
+        
+        CK_ATTRIBUTE_TYPE trustAttrs[] = {
+            CKA_TRUST_SERVER_AUTH, CKA_TRUST_CLIENT_AUTH,
+            CKA_TRUST_CODE_SIGNING, CKA_TRUST_EMAIL_PROTECTION,
+            CKA_TRUST_IPSEC_TUNNEL, CKA_TRUST_IPSEC_USER,
+            CKA_TRUST_TIME_STAMPING
+        };
+        CK_ULONG trustAttrsCount =
+            sizeof(trustAttrs) / sizeof(trustAttrs[0]);
 
-	CK_ULONG i;
-	CK_ATTRIBUTE targetTemplate, sourceTemplate;
+        CK_ULONG i;
+        CK_ATTRIBUTE targetTemplate, sourceTemplate;
 
-	
-        for (i=0; i < trustAttrsCount; i++) {
-	    targetTemplate.type = sourceTemplate.type = trustAttrs[i];
-	    targetTemplate.pValue = sourceTemplate.pValue = NULL;
-	    targetTemplate.ulValueLen = sourceTemplate.ulValueLen = 0;
-	    PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
-	    PK11_GetAttributes(arena, targetSlot, targetTrustID, 
-							&targetTemplate, 1);
-	    if (pk11_mergeTrustEntry(&targetTemplate, &sourceTemplate)) {
-		
-		SECStatus lrv = pk11_setAttributes(targetSlot, targetTrustID, 
-				   &sourceTemplate, 1);
-		if (lrv != SECSuccess) {
-		    rv = SECFailure;
-		    error = PORT_GetError();
-		}
-	    }
-	}
+        
+        for (i = 0; i < trustAttrsCount; i++) {
+            targetTemplate.type = sourceTemplate.type = trustAttrs[i];
+            targetTemplate.pValue = sourceTemplate.pValue = NULL;
+            targetTemplate.ulValueLen = sourceTemplate.ulValueLen = 0;
+            PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
+            PK11_GetAttributes(arena, targetSlot, targetTrustID,
+                               &targetTemplate, 1);
+            if (pk11_mergeTrustEntry(&targetTemplate, &sourceTemplate)) {
+                
+                SECStatus lrv = pk11_setAttributes(targetSlot, targetTrustID,
+                                                   &sourceTemplate, 1);
+                if (lrv != SECSuccess) {
+                    rv = SECFailure;
+                    error = PORT_GetError();
+                }
+            }
+        }
 
-	
-	sourceTemplate.type = CKA_TRUST_STEP_UP_APPROVED;
-	sourceTemplate.pValue = NULL;
-	sourceTemplate.ulValueLen = 0;
+        
+        sourceTemplate.type = CKA_TRUST_STEP_UP_APPROVED;
+        sourceTemplate.pValue = NULL;
+        sourceTemplate.ulValueLen = 0;
 
-	
-	PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
-	if ((sourceTemplate.ulValueLen == sizeof(CK_BBOOL)) && 
-		(sourceTemplate.pValue) &&
-		(*(CK_BBOOL *)sourceTemplate.pValue == CK_TRUE)) {
-	    SECStatus lrv = pk11_setAttributes(targetSlot, targetTrustID, 
-				   &sourceTemplate, 1);
-	    if (lrv != SECSuccess) {
-		rv = SECFailure;
-		error = PORT_GetError();
-	    }
-	}
+        
+        PK11_GetAttributes(arena, sourceSlot, id, &sourceTemplate, 1);
+        if ((sourceTemplate.ulValueLen == sizeof(CK_BBOOL)) &&
+            (sourceTemplate.pValue) &&
+            (*(CK_BBOOL *)sourceTemplate.pValue == CK_TRUE)) {
+            SECStatus lrv = pk11_setAttributes(targetSlot, targetTrustID,
+                                               &sourceTemplate, 1);
+            if (lrv != SECSuccess) {
+                rv = SECFailure;
+                error = PORT_GetError();
+            }
+        }
 
-	goto done;
-
+        goto done;
     }
 
     
     rv = pk11_copyAttributes(arena, targetSlot, targetTrustID, sourceSlot, id,
-				trustCopyTemplate, trustCopyTemplateCount);
+                             trustCopyTemplate, trustCopyTemplateCount);
 done:
     if (arena) {
-         PORT_FreeArena(arena,PR_FALSE);
+        PORT_FreeArena(arena, PR_FALSE);
     }
 
     
     if (rv == SECFailure && error) {
-	PORT_SetError(error);
+        PORT_SetError(error);
     }
-	
+
     return rv;
 }
 
@@ -1184,70 +1197,70 @@ done:
 
 static SECStatus
 pk11_mergeObject(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
+                 CK_OBJECT_HANDLE id, void *targetPwArg, void *sourcePwArg)
 {
 
     CK_OBJECT_CLASS objClass;
 
-
     objClass = PK11_ReadULongAttribute(sourceSlot, id, CKA_CLASS);
-    if (objClass == (CK_ULONG) -1) {
-	PORT_SetError( SEC_ERROR_UNKNOWN_OBJECT_TYPE );
-	return SECFailure;
+    if (objClass == (CK_ULONG)-1) {
+        PORT_SetError(SEC_ERROR_UNKNOWN_OBJECT_TYPE);
+        return SECFailure;
     }
 
     switch (objClass) {
-    case CKO_CERTIFICATE:
-	return pk11_mergeCert(targetSlot, sourceSlot, id, 
-					targetPwArg, sourcePwArg);
-    case CKO_NSS_TRUST:
-	return pk11_mergeTrust(targetSlot, sourceSlot, id, 
-					targetPwArg, sourcePwArg);
-    case CKO_PUBLIC_KEY:
-	return pk11_mergePublicKey(targetSlot, sourceSlot, id,
-					targetPwArg, sourcePwArg);
-    case CKO_PRIVATE_KEY:
-	return pk11_mergePrivateKey(targetSlot, sourceSlot, id, 
-					targetPwArg, sourcePwArg);
-    case CKO_SECRET_KEY:
-	return pk11_mergeSecretKey(targetSlot, sourceSlot, id, 
-					targetPwArg, sourcePwArg);
-    case CKO_NSS_CRL:
-	return pk11_mergeCrl(targetSlot, sourceSlot, id, 
-					targetPwArg, sourcePwArg);
-    case CKO_NSS_SMIME:
-	return pk11_mergeSmime(targetSlot, sourceSlot, id, 
-					targetPwArg, sourcePwArg);
-    default:
-	break;
+        case CKO_CERTIFICATE:
+            return pk11_mergeCert(targetSlot, sourceSlot, id,
+                                  targetPwArg, sourcePwArg);
+        case CKO_NSS_TRUST:
+            return pk11_mergeTrust(targetSlot, sourceSlot, id,
+                                   targetPwArg, sourcePwArg);
+        case CKO_PUBLIC_KEY:
+            return pk11_mergePublicKey(targetSlot, sourceSlot, id,
+                                       targetPwArg, sourcePwArg);
+        case CKO_PRIVATE_KEY:
+            return pk11_mergePrivateKey(targetSlot, sourceSlot, id,
+                                        targetPwArg, sourcePwArg);
+        case CKO_SECRET_KEY:
+            return pk11_mergeSecretKey(targetSlot, sourceSlot, id,
+                                       targetPwArg, sourcePwArg);
+        case CKO_NSS_CRL:
+            return pk11_mergeCrl(targetSlot, sourceSlot, id,
+                                 targetPwArg, sourcePwArg);
+        case CKO_NSS_SMIME:
+            return pk11_mergeSmime(targetSlot, sourceSlot, id,
+                                   targetPwArg, sourcePwArg);
+        default:
+            break;
     }
 
-    PORT_SetError( SEC_ERROR_UNKNOWN_OBJECT_TYPE );
+    PORT_SetError(SEC_ERROR_UNKNOWN_OBJECT_TYPE);
     return SECFailure;
 }
 
 PK11MergeLogNode *
 pk11_newMergeLogNode(PLArenaPool *arena,
-		     PK11SlotInfo *slot, CK_OBJECT_HANDLE id, int error)
+                     PK11SlotInfo *slot, CK_OBJECT_HANDLE id, int error)
 {
     PK11MergeLogNode *newLog;
     PK11GenericObject *obj;
 
     newLog = PORT_ArenaZNew(arena, PK11MergeLogNode);
     if (newLog == NULL) {
-	return NULL;
+        return NULL;
     }
 
     obj = PORT_ArenaZNew(arena, PK11GenericObject);
-    if ( !obj ) {
-	return NULL;
+    if (!obj) {
+        return NULL;
     }
 
     
     obj->slot = slot;
     obj->objectID = id;
+    obj->owner = PR_FALSE;
 
-    newLog->object= obj;
+    newLog->object = obj;
     newLog->error = error;
     return newLog;
 }
@@ -1257,56 +1270,56 @@ pk11_newMergeLogNode(PLArenaPool *arena,
 
 static SECStatus
 pk11_mergeByObjectIDs(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		CK_OBJECT_HANDLE *objectIDs, int count,
-		PK11MergeLog *log, void *targetPwArg, void *sourcePwArg)
+                      CK_OBJECT_HANDLE *objectIDs, int count,
+                      PK11MergeLog *log, void *targetPwArg, void *sourcePwArg)
 {
     SECStatus rv = SECSuccess;
     int error = SEC_ERROR_LIBRARY_FAILURE;
     int i;
-    
-    for (i=0; i < count; i++) {
-	
 
-	SECStatus lrv;
-	PK11MergeLogNode *newLog;
+    for (i = 0; i < count; i++) {
+        
 
-	lrv= pk11_mergeObject(targetSlot, sourceSlot, objectIDs[i], 
-				targetPwArg, sourcePwArg);
-	if (lrv == SECSuccess) {
-	   
-	   continue;
-	}
+        SECStatus lrv;
+        PK11MergeLogNode *newLog;
 
-	
-	rv = SECFailure;
-	error = PORT_GetError();
+        lrv = pk11_mergeObject(targetSlot, sourceSlot, objectIDs[i],
+                               targetPwArg, sourcePwArg);
+        if (lrv == SECSuccess) {
+            
+            continue;
+        }
 
-	
-	if (!log) {
-	    
-	    continue;
-	}
-	newLog = pk11_newMergeLogNode(log->arena, sourceSlot, 
-				      objectIDs[i], error);
-	if (!newLog) {
-	    
-	    continue;
-	}
+        
+        rv = SECFailure;
+        error = PORT_GetError();
 
-	
-	newLog->next = NULL;
-	if (log->tail) {
-	    log->tail->next = newLog;
-	} else {
-	    log->head = newLog;
-	}
-	newLog->prev = log->tail;
-	log->tail = newLog;
+        
+        if (!log) {
+            
+            continue;
+        }
+        newLog = pk11_newMergeLogNode(log->arena, sourceSlot,
+                                      objectIDs[i], error);
+        if (!newLog) {
+            
+            continue;
+        }
+
+        
+        newLog->next = NULL;
+        if (log->tail) {
+            log->tail->next = newLog;
+        } else {
+            log->head = newLog;
+        }
+        newLog->prev = log->tail;
+        log->tail = newLog;
     }
 
     
     if (rv != SECSuccess) {
-	PORT_SetError(error);
+        PORT_SetError(error);
     }
     return rv;
 }
@@ -1323,7 +1336,7 @@ pk11_mergeByObjectIDs(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 
 SECStatus
 PK11_MergeTokens(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
-		PK11MergeLog *log, void *targetPwArg, void *sourcePwArg)
+                 PK11MergeLog *log, void *targetPwArg, void *sourcePwArg)
 {
     SECStatus rv = SECSuccess, lrv = SECSuccess;
     int error = SEC_ERROR_LIBRARY_FAILURE;
@@ -1340,25 +1353,25 @@ PK11_MergeTokens(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 
     rv = PK11_Authenticate(targetSlot, PR_TRUE, targetPwArg);
     if (rv != SECSuccess) {
-	goto loser;
+        goto loser;
     }
     rv = PK11_Authenticate(sourceSlot, PR_TRUE, sourcePwArg);
     if (rv != SECSuccess) {
-	goto loser;
+        goto loser;
     }
 
     
 
     objectIDs = pk11_FindObjectsByTemplate(sourceSlot, search, 2, &count);
     if (objectIDs) {
-	lrv = pk11_mergeByObjectIDs(targetSlot, sourceSlot, 
-				    objectIDs, count, log, 
-				    targetPwArg, sourcePwArg);
-	if (lrv != SECSuccess) {
-	    error = PORT_GetError();
-	}
-	PORT_Free(objectIDs);
-	count = 0;
+        lrv = pk11_mergeByObjectIDs(targetSlot, sourceSlot,
+                                    objectIDs, count, log,
+                                    targetPwArg, sourcePwArg);
+        if (lrv != SECSuccess) {
+            error = PORT_GetError();
+        }
+        PORT_Free(objectIDs);
+        count = 0;
     }
 
     
@@ -1366,26 +1379,26 @@ PK11_MergeTokens(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
 
     objectIDs = pk11_FindObjectsByTemplate(sourceSlot, search, 1, &count);
     if (!objectIDs) {
-	rv = SECFailure;
-	goto loser;
+        rv = SECFailure;
+        goto loser;
     }
 
-    rv = pk11_mergeByObjectIDs(targetSlot, sourceSlot, objectIDs, count, log, 
-			targetPwArg, sourcePwArg);
+    rv = pk11_mergeByObjectIDs(targetSlot, sourceSlot, objectIDs, count, log,
+                               targetPwArg, sourcePwArg);
     if (rv == SECSuccess) {
-	
+        
 
 
 
-	if (lrv != SECSuccess) {
-	    rv = lrv;
-	    PORT_SetError(error);
-	}
+        if (lrv != SECSuccess) {
+            rv = lrv;
+            PORT_SetError(error);
+        }
     }
 
 loser:
     if (objectIDs) {
-	PORT_Free(objectIDs);
+        PORT_Free(objectIDs);
     }
     return rv;
 }
@@ -1396,15 +1409,15 @@ PK11_CreateMergeLog(void)
     PLArenaPool *arena;
     PK11MergeLog *log;
 
-    arena = PORT_NewArena( DER_DEFAULT_CHUNKSIZE);
+    arena = PORT_NewArena(DER_DEFAULT_CHUNKSIZE);
     if (arena == NULL) {
-	return NULL;
+        return NULL;
     }
 
     log = PORT_ArenaZNew(arena, PK11MergeLog);
     if (log == NULL) {
-         PORT_FreeArena(arena,PR_FALSE);
-	return NULL;
+        PORT_FreeArena(arena, PR_FALSE);
+        return NULL;
     }
     log->arena = arena;
     log->version = 1;
@@ -1414,7 +1427,7 @@ PK11_CreateMergeLog(void)
 void
 PK11_DestroyMergeLog(PK11MergeLog *log)
 {
-   if (log && log->arena) {
-	PORT_FreeArena(log->arena, PR_FALSE);
+    if (log && log->arena) {
+        PORT_FreeArena(log->arena, PR_FALSE);
     }
 }

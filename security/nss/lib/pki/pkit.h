@@ -65,15 +65,14 @@ typedef enum {
 
 
 
-struct nssPKIObjectStr 
-{
+struct nssPKIObjectStr {
     
     NSSArena *arena;
     
     PRInt32 refCount;
     
     union {
-        PZLock* lock;
+        PZLock *lock;
         PZMonitor *mlock;
     } sync;
     nssPKILockType lockType;
@@ -100,8 +99,7 @@ typedef struct nssSMIMEProfileStr nssSMIMEProfile;
 
 typedef struct nssPKIObjectStr nssPKIObject;
 
-struct NSSTrustStr 
-{
+struct NSSTrustStr {
     nssPKIObject object;
     NSSCertificate *certificate;
     nssTrustLevel serverAuth;
@@ -111,8 +109,7 @@ struct NSSTrustStr
     PRBool stepUpApproved;
 };
 
-struct nssSMIMEProfileStr
-{
+struct nssSMIMEProfileStr {
     nssPKIObject object;
     NSSCertificate *certificate;
     NSSASCII7 *email;
@@ -121,8 +118,7 @@ struct nssSMIMEProfileStr
     NSSItem *profileData;
 };
 
-struct NSSCertificateStr
-{
+struct NSSCertificateStr {
     nssPKIObject object;
     NSSCertificateType type;
     NSSItem id;
@@ -154,8 +150,7 @@ struct NSSTrustDomainStr {
     CERTStatusConfig *statusConfig;
 };
 
-struct NSSCryptoContextStr
-{
+struct NSSCryptoContextStr {
     PRInt32 refCount;
     NSSArena *arena;
     NSSTrustDomain *td;
@@ -169,10 +164,10 @@ struct NSSTimeStr {
 };
 
 struct NSSCRLStr {
-  nssPKIObject object;
-  NSSDER encoding;
-  NSSUTF8 *url;
-  PRBool isKRL;
+    nssPKIObject object;
+    NSSDER encoding;
+    NSSUTF8 *url;
+    PRBool isKRL;
 };
 
 typedef struct NSSCRLStr NSSCRL;

@@ -13,7 +13,6 @@
 #include "secpkcs7.h"
 
 
-
 SEC_BEGIN_PROTOS
 
 
@@ -117,10 +116,10 @@ extern PRBool SECMIME_EncryptionPossible(void);
 
 
 extern SEC_PKCS7ContentInfo *SECMIME_CreateEncrypted(CERTCertificate *scert,
-						     CERTCertificate **rcerts,
-						     CERTCertDBHandle *certdb,
-						     SECKEYGetPasswordKey pwfn,
-						     void *pwfn_arg);
+                                                     CERTCertificate **rcerts,
+                                                     CERTCertDBHandle *certdb,
+                                                     SECKEYGetPasswordKey pwfn,
+                                                     void *pwfn_arg);
 
 
 
@@ -148,12 +147,12 @@ extern SEC_PKCS7ContentInfo *SECMIME_CreateEncrypted(CERTCertificate *scert,
 
 
 extern SEC_PKCS7ContentInfo *SECMIME_CreateSigned(CERTCertificate *scert,
-						  CERTCertificate *ecert,
-						  CERTCertDBHandle *certdb,
-						  SECOidTag digestalg,
-						  SECItem *digest,
-						  SECKEYGetPasswordKey pwfn,
-						  void *pwfn_arg);
+                                                  CERTCertificate *ecert,
+                                                  CERTCertDBHandle *certdb,
+                                                  SECOidTag digestalg,
+                                                  SECItem *digest,
+                                                  SECKEYGetPasswordKey pwfn,
+                                                  void *pwfn_arg);
 
 
 SEC_END_PROTOS
