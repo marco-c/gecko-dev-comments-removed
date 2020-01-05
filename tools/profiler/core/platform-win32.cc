@@ -167,11 +167,9 @@ class SamplerThread
 
       if (!mSampler->IsPaused()) {
         mozilla::MutexAutoLock lock(*Sampler::sRegisteredThreadsMutex);
-        const std::vector<ThreadInfo*>& threads =
-          mSampler->GetRegisteredThreads();
         bool isFirstProfiledThread = true;
-        for (uint32_t i = 0; i < threads.size(); i++) {
-          ThreadInfo* info = threads[i];
+        for (uint32_t i = 0; i < Sampler::sRegisteredThreads->size(); i++) {
+          ThreadInfo* info = (*Sampler::sRegisteredThreads)[i];
 
           
           if (!info->hasProfile() || info->IsPendingDelete()) {

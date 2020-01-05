@@ -310,12 +310,10 @@ static void* SignalSender(void* arg) {
 
     if (!SamplerRegistry::sampler->IsPaused()) {
       MutexAutoLock lock(*Sampler::sRegisteredThreadsMutex);
-      const std::vector<ThreadInfo*>& threads =
-        SamplerRegistry::sampler->GetRegisteredThreads();
 
       bool isFirstProfiledThread = true;
-      for (uint32_t i = 0; i < threads.size(); i++) {
-        ThreadInfo* info = threads[i];
+      for (uint32_t i = 0; i < Sampler::sRegisteredThreads->size(); i++) {
+        ThreadInfo* info = (*Sampler::sRegisteredThreads)[i];
 
         
         if (!info->hasProfile() || info->IsPendingDelete()) {
