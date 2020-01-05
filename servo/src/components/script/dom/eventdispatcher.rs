@@ -43,7 +43,7 @@ pub fn dispatch_event<'a, 'b>(target: &JSRef<'a, EventTarget>,
     
 
     
-    for cur_target in chain.as_slice().rev_iter() {
+    for cur_target in chain.as_slice().iter().rev() {
         let stopped = match cur_target.get_listeners_for(type_, Capturing) {
             Some(listeners) => {
                 event.current_target.assign(Some(cur_target.deref().clone()));
