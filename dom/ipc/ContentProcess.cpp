@@ -8,10 +8,6 @@
 
 #include "ContentProcess.h"
 
-#if defined(XP_WIN) && defined(MOZ_CONTENT_SANDBOX)
-#include "mozilla/WindowsVersion.h"
-#endif
-
 #if defined(XP_MACOSX) && defined(MOZ_CONTENT_SANDBOX)
 #include <stdlib.h>
 #endif
@@ -34,8 +30,7 @@ IsSandboxTempDirRequired()
 {
   
   
-  return (IsVistaOrLater() &&
-    (Preferences::GetInt("security.sandbox.content.level") >= 1));
+  return Preferences::GetInt("security.sandbox.content.level") >= 1;
 }
 
 static void
