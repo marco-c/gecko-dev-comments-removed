@@ -2559,6 +2559,15 @@ nsComputedDOMStyle::GetGridTrackSize(const nsStyleCoord& aMinValue,
     return val.forget();
   }
 
+  
+  
+  if (aMinValue.GetUnit() == eStyleUnit_Auto &&
+      aMaxValue.GetUnit() == eStyleUnit_FlexFraction) {
+    RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
+    SetValueToCoord(val, aMaxValue, true);
+    return val.forget();
+  }
+
   RefPtr<nsROCSSPrimitiveValue> val = new nsROCSSPrimitiveValue;
   nsAutoString argumentStr, minmaxStr;
   minmaxStr.AppendLiteral("minmax(");

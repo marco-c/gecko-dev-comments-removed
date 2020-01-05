@@ -1310,10 +1310,24 @@ nsCSSValue::AppendToString(nsCSSPropertyID aProperty, nsAString& aResult,
     const nsCSSValue& functionName = array->Item(0);
     MOZ_ASSERT(functionName.GetUnit() == eCSSUnit_Enumerated,
                "Functions must have an enumerated name.");
+    
+    const nsCSSKeyword functionId = functionName.GetKeywordValue();
 
     
     
-    const nsCSSKeyword functionId = functionName.GetKeywordValue();
+    if (functionId == eCSSKeyword_minmax &&
+        array->Count() == 3 &&
+        array->Item(1).GetUnit() == eCSSUnit_Auto &&
+        array->Item(2).GetUnit() == eCSSUnit_FlexFraction) {
+      array->Item(2).AppendToString(aProperty, aResult, aSerialization);
+      MOZ_ASSERT(aProperty == eCSSProperty_grid_template_columns ||
+                 aProperty == eCSSProperty_grid_template_rows ||
+                 aProperty == eCSSProperty_grid_auto_columns ||
+                 aProperty == eCSSProperty_grid_auto_rows);
+      return;
+    }
+
+    
     NS_ConvertASCIItoUTF16 ident(nsCSSKeywords::GetStringValue(functionId));
     
     
