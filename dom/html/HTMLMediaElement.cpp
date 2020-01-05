@@ -1527,33 +1527,6 @@ HTMLMediaElement::SetVisible(bool aVisible)
   mDecoder->SetForcedHidden(!aVisible);
 }
 
-layers::Image*
-HTMLMediaElement::GetCurrentImage()
-{
-  
-  
-  mHasSuspendTaint = true;
-  if (mDecoder) {
-    mDecoder->SetSuspendTaint(true);
-  }
-
-  
-  ImageContainer* container = GetImageContainer();
-  if (!container) {
-    return nullptr;
-  }
-
-  AutoLockImage lockImage(container);
-  return lockImage.GetImage();
-}
-
-bool
-HTMLMediaElement::HasSuspendTaint() const
-{
-  MOZ_ASSERT(!mDecoder || (mDecoder->HasSuspendTaint() == mHasSuspendTaint));
-  return mHasSuspendTaint;
-}
-
 already_AddRefed<DOMMediaStream>
 HTMLMediaElement::GetSrcObject() const
 {
@@ -3719,7 +3692,6 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
     mFirstFrameLoaded(false),
     mDefaultPlaybackStartPosition(0.0),
     mIsAudioTrackAudible(false),
-    mHasSuspendTaint(false),
     mVisibilityState(Visibility::APPROXIMATELY_NONVISIBLE),
     mErrorSink(new ErrorSink(this)),
     mAudioChannelWrapper(new AudioChannelAgentCallback(this, mAudioChannel))
@@ -4717,8 +4689,6 @@ nsresult HTMLMediaElement::FinishDecoderSetup(MediaDecoder* aDecoder,
   if (mPreloadAction == HTMLMediaElement::PRELOAD_METADATA) {
     mDecoder->SetMinimizePrerollUntilPlaybackStarts();
   }
-  
-  mDecoder->SetSuspendTaint(mHasSuspendTaint);
 
   
   

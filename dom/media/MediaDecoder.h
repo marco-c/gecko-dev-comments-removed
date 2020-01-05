@@ -378,12 +378,6 @@ private:
   void SetForcedHidden(bool aForcedHidden);
 
   
-  void SetSuspendTaint(bool aTaint);
-
-  
-  bool HasSuspendTaint() const;
-
-  
 
 
 
@@ -809,10 +803,6 @@ protected:
   
   Canonical<bool> mIsVisible;
 
-  
-  
-  Canonical<bool> mHasSuspendTaint;
-
 public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() override;
   AbstractCanonical<double>* CanonicalVolume() { return &mVolume; }
@@ -855,7 +845,6 @@ public:
     return &mDecoderPosition;
   }
   AbstractCanonical<bool>* CanonicalIsVisible() { return &mIsVisible; }
-  AbstractCanonical<bool>* CanonicalHasSuspendTaint() { return &mHasSuspendTaint; }
 
 private:
   

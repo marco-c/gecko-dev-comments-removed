@@ -617,19 +617,7 @@ public:
 
   void MozDumpDebugInfo();
 
-  
   void SetVisible(bool aVisible);
-
-  
-  bool HasSuspendTaint() const;
-
-  
-  
-  
-  
-  
-  
-  layers::Image* GetCurrentImage();
 
   already_AddRefed<DOMMediaStream> GetSrcObject() const;
   void SetSrcObject(DOMMediaStream& aValue);
@@ -1725,10 +1713,6 @@ private:
 
   
   bool mIsAudioTrackAudible;
-
-  
-  
-  bool mHasSuspendTaint;
 
   Visibility mVisibilityState;
 
