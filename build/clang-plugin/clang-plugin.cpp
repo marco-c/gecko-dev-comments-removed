@@ -413,7 +413,7 @@ bool typeIsRefPtr(QualType Q) {
 
 
 
-const Stmt *IgnoreImplicit(const Stmt *s) {
+const Stmt *IgnoreTrivials(const Stmt *s) {
   while (true) {
     if (auto *ewc = dyn_cast<ExprWithCleanups>(s)) {
       s = ewc->getSubExpr();
@@ -433,8 +433,8 @@ const Stmt *IgnoreImplicit(const Stmt *s) {
   return s;
 }
 
-const Expr *IgnoreImplicit(const Expr *e) {
-  return cast<Expr>(IgnoreImplicit(static_cast<const Stmt *>(e)));
+const Expr *IgnoreTrivials(const Expr *e) {
+  return cast<Expr>(IgnoreTrivials(static_cast<const Stmt *>(e)));
 }
 }
 
@@ -564,7 +564,7 @@ public:
   void handleUnusedExprResult(const Stmt *Statement) {
     const Expr *E = dyn_cast_or_null<Expr>(Statement);
     if (E) {
-      E = E->IgnoreImplicit(); 
+      E = E->IgnoreTrivials(); 
       QualType T = E->getType();
       if (MustUse.hasEffectiveAnnotation(T) && !isIgnoredExprForMustUse(E)) {
         unsigned ErrorID = Diag.getDiagnosticIDs()->getCustomDiagID(
@@ -1922,7 +1922,7 @@ void DiagnosticsMatcher::KungFuDeathGripChecker::run(
     return;
   }
 
-  const Expr *E = IgnoreImplicit(D->getInit());
+  const Expr *E = IgnoreTrivials(D->getInit());
   const CXXConstructExpr *CE = dyn_cast<CXXConstructExpr>(E);
   if (CE && CE->getNumArgs() == 0) {
     
@@ -1938,7 +1938,7 @@ void DiagnosticsMatcher::KungFuDeathGripChecker::run(
   
   
   while ((CE = dyn_cast<CXXConstructExpr>(E)) && CE->getNumArgs() == 1) {
-    E = IgnoreImplicit(CE->getArg(0));
+    E = IgnoreTrivials(CE->getArg(0));
   }
 
   
