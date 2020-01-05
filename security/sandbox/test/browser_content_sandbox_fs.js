@@ -249,6 +249,9 @@ function* testFileAccess() {
   }
 
   
+  let level = prefs.getIntPref("security.sandbox.content.level");
+
+  
   
   
   
@@ -291,6 +294,30 @@ function* testFileAccess() {
     });
   }
 
+  if (isMac()) {
+    
+    
+    let homeTempDir = GetHomeDir();
+    homeTempDir.appendRelativePath('Library/Caches/TemporaryItems');
+    if (homeTempDir.exists()) {
+      let shouldBeReadable, minLevel;
+      if (level >= minHomeReadSandboxLevel()) {
+        shouldBeReadable = false;
+        minLevel = minHomeReadSandboxLevel();
+      } else {
+        shouldBeReadable = true;
+        minLevel = 0;
+      }
+      tests.push({
+        desc:     "home library cache temp dir",
+        ok:       shouldBeReadable,
+        browser:  webBrowser,
+        file:     homeTempDir,
+        minLevel: minLevel,
+      });
+    }
+  }
+
   let extensionsDir = GetProfileEntry("extensions");
   if (extensionsDir.exists() && extensionsDir.isDirectory()) {
     tests.push({
@@ -331,7 +358,6 @@ function* testFileAccess() {
   }
 
   
-  let level = prefs.getIntPref("security.sandbox.content.level");
   tests = tests.filter((test) => { return (test.minLevel <= level); });
 
   for (let test of tests) {
