@@ -61,14 +61,14 @@ public:
   NS_DECL_FRAMEARENA_HELPERS
 
   
-  virtual void Reflow(nsPresContext*      aPresContext,
-                      ReflowOutput& aDesiredSize,
-                      const ReflowInput& aMaxSize,
-                      nsReflowStatus&      aStatus) override;
+  void Reflow(nsPresContext* aPresContext,
+              ReflowOutput& aDesiredSize,
+              const ReflowInput& aMaxSize,
+              nsReflowStatus& aStatus) override;
 
-  virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
-                                const nsRect&           aDirtyRect,
-                                const nsDisplayListSet& aLists) override;
+  void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
+                        const nsRect&           aDirtyRect,
+                        const nsDisplayListSet& aLists) override;
 
   
   NS_IMETHOD SetPageNo(int32_t aPageNo) { return NS_OK;}
@@ -94,19 +94,19 @@ public:
 
   
   
-  virtual bool HonorPrintBackgroundSettings() override { return false; }
+  bool HonorPrintBackgroundSettings() override { return false; }
 
-  virtual bool HasTransformGetter() const override { return true; }
+  bool HasTransformGetter() const override { return true; }
 
   
 
 
 
 
-  virtual nsIAtom* GetType() const override;
+  nsIAtom* GetType() const override;
 
 #ifdef DEBUG_FRAME_DUMP
-  virtual nsresult  GetFrameName(nsAString& aResult) const override;
+  nsresult GetFrameName(nsAString& aResult) const override;
 #endif
 
 protected:
