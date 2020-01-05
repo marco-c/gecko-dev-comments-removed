@@ -57,7 +57,7 @@ pub enum LogEntry {
     
     Error(String),
     
-    Warn(String)
+    Warn(String),
 }
 
 
@@ -148,7 +148,7 @@ pub enum ScriptMsg {
     
     SetFullscreenState(bool),
     
-    Exit
+    Exit,
 }
 
 
@@ -175,7 +175,7 @@ pub struct SWManagerSenders {
     
     pub swmanager_sender: IpcSender<SWManagerMsg>,
     
-    pub resource_sender: IpcSender<CoreResourceMsg>
+    pub resource_sender: IpcSender<CoreResourceMsg>,
 }
 
 
@@ -195,6 +195,5 @@ pub enum ServiceWorkerMsg {
 #[derive(Deserialize, Serialize)]
 pub enum SWManagerMsg {
     
-    OwnSender(IpcSender<ServiceWorkerMsg>)
-
+    OwnSender(IpcSender<ServiceWorkerMsg>),
 }

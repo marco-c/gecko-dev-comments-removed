@@ -18,7 +18,8 @@ extern crate devtools_traits;
 extern crate euclid;
 extern crate gfx_traits;
 extern crate heapsize;
-#[macro_use] extern crate heapsize_derive;
+#[macro_use]
+extern crate heapsize_derive;
 extern crate hyper;
 extern crate hyper_serde;
 extern crate ipc_channel;
@@ -252,13 +253,13 @@ pub enum ConstellationControlMsg {
     
     ReportCSSError(PipelineId, String, usize, usize, String),
     
-    Reload(PipelineId)
+    Reload(PipelineId),
 }
 
 impl fmt::Debug for ConstellationControlMsg {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
         use self::ConstellationControlMsg::*;
-        write!(formatter, "ConstellationMsg::{}", match *self {
+        let variant = match *self {
             AttachLayout(..) => "AttachLayout",
             Resize(..) => "Resize",
             ResizeInactive(..) => "ResizeInactive",
@@ -284,8 +285,9 @@ impl fmt::Debug for ConstellationControlMsg {
             DispatchStorageEvent(..) => "DispatchStorageEvent",
             FramedContentChanged(..) => "FramedContentChanged",
             ReportCSSError(..) => "ReportCSSError",
-            Reload(..) => "Reload"
-        })
+            Reload(..) => "Reload",
+        };
+        write!(formatter, "ConstellationMsg::{}", variant)
     }
 }
 
@@ -383,10 +385,7 @@ pub enum TouchpadPressurePhase {
 
 
 #[derive(Deserialize, Serialize)]
-pub struct TimerEventRequest(pub IpcSender<TimerEvent>,
-                             pub TimerSource,
-                             pub TimerEventId,
-                             pub MsDuration);
+pub struct TimerEventRequest(pub IpcSender<TimerEvent>, pub TimerSource, pub TimerEventId, pub MsDuration);
 
 
 
@@ -478,9 +477,7 @@ pub trait ScriptThreadFactory {
     
     type Message;
     
-    fn create(state: InitialScriptState,
-              load_data: LoadData)
-              -> (Sender<Self::Message>, Receiver<Self::Message>);
+    fn create(state: InitialScriptState, load_data: LoadData) -> (Sender<Self::Message>, Receiver<Self::Message>);
 }
 
 
@@ -489,7 +486,7 @@ pub enum IFrameSandboxState {
     
     IFrameSandboxed,
     
-    IFrameUnsandboxed
+    IFrameUnsandboxed,
 }
 
 
@@ -743,5 +740,5 @@ pub struct WorkerScriptLoadOrigin {
     
     pub referrer_policy: Option<ReferrerPolicy>,
     
-    pub pipeline_id: Option<PipelineId>
+    pub pipeline_id: Option<PipelineId>,
 }

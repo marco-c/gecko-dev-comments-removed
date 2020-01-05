@@ -9,7 +9,7 @@ use msg::constellation_msg::PipelineId;
 use servo_url::ServoUrl;
 use std::cell::{Cell, RefCell};
 use std::default::Default;
-use url::{Origin as UrlOrigin};
+use url::Origin as UrlOrigin;
 
 
 #[derive(Copy, Clone, PartialEq, HeapSizeOf)]
@@ -18,29 +18,47 @@ pub enum Initiator {
     Download,
     ImageSet,
     Manifest,
-    XSLT
+    XSLT,
 }
 
 
 #[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
 pub enum Type {
-    None, Audio, Font, Image,
-    Script, Style, Track, Video
+    None,
+    Audio,
+    Font,
+    Image,
+    Script,
+    Style,
+    Track,
+    Video,
 }
 
 
 #[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
 pub enum Destination {
-    None, Document, Embed, Font, Image, Manifest,
-    Media, Object, Report, Script, ServiceWorker,
-    SharedWorker, Style, Worker, XSLT
+    None,
+    Document,
+    Embed,
+    Font,
+    Image,
+    Manifest,
+    Media,
+    Object,
+    Report,
+    Script,
+    ServiceWorker,
+    SharedWorker,
+    Style,
+    Worker,
+    XSLT,
 }
 
 
 #[derive(Clone, PartialEq, Debug, HeapSizeOf)]
 pub enum Origin {
     Client,
-    Origin(UrlOrigin)
+    Origin(UrlOrigin),
 }
 
 
@@ -49,7 +67,7 @@ pub enum Referrer {
     NoReferrer,
     
     Client,
-    ReferrerUrl(ServoUrl)
+    ReferrerUrl(ServoUrl),
 }
 
 
@@ -58,7 +76,7 @@ pub enum RequestMode {
     Navigate,
     SameOrigin,
     NoCors,
-    CorsMode
+    CorsMode,
 }
 
 
@@ -66,7 +84,7 @@ pub enum RequestMode {
 pub enum CredentialsMode {
     Omit,
     CredentialsSameOrigin,
-    Include
+    Include,
 }
 
 
@@ -77,7 +95,7 @@ pub enum CacheMode {
     Reload,
     NoCache,
     ForceCache,
-    OnlyIfCached
+    OnlyIfCached,
 }
 
 
@@ -85,7 +103,7 @@ pub enum CacheMode {
 pub enum RedirectMode {
     Follow,
     Error,
-    Manual
+    Manual,
 }
 
 
@@ -93,22 +111,21 @@ pub enum RedirectMode {
 pub enum ResponseTainting {
     Basic,
     CorsTainting,
-    Opaque
+    Opaque,
 }
 
 
 #[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum Window {
     NoWindow,
-    Client,
-    
+    Client, 
 }
 
 
 #[derive(Copy, Clone, PartialEq, Serialize, Deserialize)]
 pub enum CorsSettings {
     Anonymous,
-    UseCredentials
+    UseCredentials,
 }
 
 #[derive(Serialize, Deserialize, Clone, HeapSizeOf)]
@@ -214,7 +231,8 @@ impl Request {
     pub fn new(url: ServoUrl,
                origin: Option<Origin>,
                is_service_worker_global_scope: bool,
-               pipeline_id: Option<PipelineId>) -> Request {
+               pipeline_id: Option<PipelineId>)
+               -> Request {
         Request {
             method: RefCell::new(Method::Get),
             local_urls_only: false,
@@ -251,7 +269,8 @@ impl Request {
     pub fn from_init(init: RequestInit) -> Request {
         let mut req = Request::new(init.url,
                                    Some(Origin::Origin(init.origin.origin())),
-                                   false, init.pipeline_id);
+                                   false,
+                                   init.pipeline_id);
         *req.method.borrow_mut() = init.method;
         *req.headers.borrow_mut() = init.headers;
         req.unsafe_request = init.unsafe_request;
@@ -289,11 +308,9 @@ impl Request {
 
     pub fn is_subresource_request(&self) -> bool {
         match self.destination {
-            Destination::Font | Destination::Image | Destination::Manifest
-                | Destination::Media | Destination::Script
-                | Destination::Style | Destination::XSLT
-                | Destination::None => true,
-            _ => false
+            Destination::Font | Destination::Image | Destination::Manifest | Destination::Media |
+            Destination::Script | Destination::Style | Destination::XSLT | Destination::None => true,
+            _ => false,
         }
     }
 }
@@ -302,7 +319,7 @@ impl Referrer {
     pub fn to_url(&self) -> Option<&ServoUrl> {
         match *self {
             Referrer::NoReferrer | Referrer::Client => None,
-            Referrer::ReferrerUrl(ref url) => Some(url)
+            Referrer::ReferrerUrl(ref url) => Some(url),
         }
     }
 }

@@ -58,16 +58,18 @@ pub fn parse_hostsfile(hostsfile_content: &str) -> HashMap<String, IpAddr> {
 }
 
 pub fn replace_hosts(url: &ServoUrl) -> ServoUrl {
-    HOST_TABLE.lock().unwrap().as_ref().map_or_else(|| url.clone(), |host_table| {
-        host_replacement(host_table, url)
-    })
+    HOST_TABLE.lock().unwrap().as_ref().map_or_else(|| url.clone(),
+                                                    |host_table| host_replacement(host_table, url))
 }
 
-pub fn host_replacement(host_table: &HashMap<String, IpAddr>,
-                        url: &ServoUrl) -> ServoUrl {
-    url.domain().and_then(|domain| host_table.get(domain).map(|ip| {
-        let mut new_url = url.clone();
-        new_url.set_ip_host(*ip).unwrap();
-        new_url
-    })).unwrap_or_else(|| url.clone())
+pub fn host_replacement(host_table: &HashMap<String, IpAddr>, url: &ServoUrl) -> ServoUrl {
+    url.domain()
+        .and_then(|domain| {
+            host_table.get(domain).map(|ip| {
+                let mut new_url = url.clone();
+                new_url.set_ip_host(*ip).unwrap();
+                new_url
+            })
+        })
+        .unwrap_or_else(|| url.clone())
 }
