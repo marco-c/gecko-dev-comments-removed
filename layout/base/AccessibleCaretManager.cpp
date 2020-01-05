@@ -196,6 +196,14 @@ AccessibleCaretManager::OnSelectionChanged(nsIDOMDocument* aDoc,
     return NS_OK;
   }
 
+  
+  
+  if (sHideCaretsForMouseInput &&
+      (aReason & nsISelectionListener::SELECTALL_REASON)) {
+    HideCarets();
+    return NS_OK;
+  }
+
   UpdateCarets();
   return NS_OK;
 }

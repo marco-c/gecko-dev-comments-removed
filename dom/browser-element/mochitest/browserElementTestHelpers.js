@@ -65,8 +65,11 @@ const browserElementTestHelpers = {
     this._setPref('dom.mozBrowserFramesEnabled', value);
   },
 
-  setAccessibleCaretEnabledPref: function(value) {
-    this._setPref('layout.accessiblecaret.enabled', value);
+  setupAccessibleCaretPref: function() {
+    this._setPref('layout.accessiblecaret.enabled', true);
+    
+    
+    this._setPref('layout.accessiblecaret.hide_carets_for_mouse_input', false);
   },
 
   getOOPByDefaultPref: function() {
