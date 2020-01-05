@@ -36,9 +36,6 @@ public:
   void     Shutdown();
   void     GC();
   bool     MyIPAddress(const JS::CallArgs &aArgs);
-  bool     MyAppId(const JS::CallArgs &aArgs);
-  bool     MyAppOrigin(const JS::CallArgs &aArgs);
-  bool     IsInIsolatedMozBrowser(const JS::CallArgs &aArgs);
   bool     ResolveAddress(const nsCString &aHostName,
                           NetAddr *aNetAddr, unsigned int aTimeout);
 
@@ -76,21 +73,8 @@ public:
 
 
 
-
-
-
-
-
-
-
-
-
-
   nsresult GetProxyForURI(const nsCString &aTestURI,
                           const nsCString &aTestHost,
-                          uint32_t aAppId,
-                          const nsString &aAppOrigin,
-                          bool aIsInIsolatedMozBrowser,
                           nsACString &result);
 
 private:
@@ -111,9 +95,6 @@ private:
   nsCString         mPACURI;
   bool              mIncludePath;
   nsCString         mRunningHost;
-  uint32_t          mRunningAppId;
-  nsString          mRunningAppOrigin;
-  bool              mRunningIsInIsolatedMozBrowser;
   nsCOMPtr<nsITimer> mTimer;
 };
 

@@ -329,10 +329,6 @@ user_pref("browser.reader.detectedFirstArticle", true);
 
 
 
-user_pref("network.proxy.pac_generator", false);
-
-
-
 user_pref("lightweightThemes.selectedThemeID", "");
 
 

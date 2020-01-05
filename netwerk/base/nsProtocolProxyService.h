@@ -225,13 +225,7 @@ protected:
 
 
 
-
-
-
-
     nsresult Resolve_Internal(nsIChannel *channel,
-                              uint32_t appId,
-                              bool isInBrowser,
                               const nsProtocolInfo &info,
                               uint32_t flags,
                               bool *usePAC,

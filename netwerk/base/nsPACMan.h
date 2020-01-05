@@ -59,8 +59,8 @@ class PendingPACQuery final : public Runnable,
                               public LinkedListElement<PendingPACQuery>
 {
 public:
-  PendingPACQuery(nsPACMan *pacMan, nsIURI *uri, uint32_t appId,
-                  bool isInIsolatedMozBrowser, nsPACManCallback *callback,
+  PendingPACQuery(nsPACMan *pacMan, nsIURI *uri,
+                  nsPACManCallback *callback,
                   bool mainThreadResponse);
 
   
@@ -76,11 +76,6 @@ public:
 
 private:
   nsPACMan                  *mPACMan;  
-
-public:
-  uint32_t                   mAppId;
-  bool                       mIsInIsolatedMozBrowser;
-  nsString                   mAppOrigin;
 
 private:
   RefPtr<nsPACManCallback> mCallback;
@@ -121,12 +116,7 @@ public:
 
 
 
-
-
-
-
-  nsresult AsyncGetProxyForURI(nsIURI *uri, uint32_t appId,
-                               bool isInBrowser,
+  nsresult AsyncGetProxyForURI(nsIURI *uri,
                                nsPACManCallback *callback,
                                bool mustCallbackOnMainThread);
 

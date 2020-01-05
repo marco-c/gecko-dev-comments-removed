@@ -877,13 +877,6 @@ pref("gfx.screen-mirroring.enabled", true);
 pref("b2g.neterror.url", "net_error.html");
 
 
-pref("network.proxy.pac_generator", true);
-
-
-
-pref("network.proxy.browsing.app_origins", "app://system.gaiamobile.org");
-
-
 pref("media.webspeech.synth.enabled", true);
 
 
