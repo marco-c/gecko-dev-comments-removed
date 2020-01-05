@@ -1699,26 +1699,11 @@ class ProxyAPIImplementation extends SchemaAPIInterface {
   }
 
   callFunctionNoReturn(args) {
-    this.childApiManager.messageManager.sendAsyncMessage("API:Call", {
-      childId: this.childApiManager.id,
-      path: this.path,
-      args,
-    });
+    this.childApiManager.callParentFunctionNoReturn(this.path, args);
   }
 
   callAsyncFunction(args, callback) {
-    let callId = nextId++;
-    let deferred = PromiseUtils.defer();
-    this.childApiManager.callPromises.set(callId, deferred);
-
-    this.childApiManager.messageManager.sendAsyncMessage("API:Call", {
-      childId: this.childApiManager.id,
-      callId,
-      path: this.path,
-      args,
-    });
-
-    return this.childApiManager.context.wrapPromise(deferred.promise, callback);
+    return this.childApiManager.callParentAsyncFunction(this.path, args, callback);
   }
 
   addListener(listener, args) {
@@ -1818,6 +1803,46 @@ class ChildAPIManager {
         this.callPromises.delete(data.callId);
         break;
     }
+  }
+
+  
+
+
+
+
+
+  callParentFunctionNoReturn(path, args) {
+    this.messageManager.sendAsyncMessage("API:Call", {
+      childId: this.id,
+      path,
+      args,
+    });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  callParentAsyncFunction(path, args, callback) {
+    let callId = nextId++;
+    let deferred = PromiseUtils.defer();
+    this.callPromises.set(callId, deferred);
+
+    this.messageManager.sendAsyncMessage("API:Call", {
+      childId: this.id,
+      callId,
+      path,
+      args,
+    });
+
+    return this.context.wrapPromise(deferred.promise, callback);
   }
 
   close() {
