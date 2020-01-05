@@ -1,126 +1,121 @@
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #ifndef mozilla_Mutex_h
 #define mozilla_Mutex_h
 
-#include "prlock.h"
-
 #include "mozilla/BlockingResourceBase.h"
 #include "mozilla/GuardObjects.h"
+#include "mozilla/PlatformMutex.h"
 
-//
-// Provides:
-//
-//  - Mutex, a non-recursive mutex
-//  - MutexAutoLock, an RAII class for ensuring that Mutexes are properly
-//    locked and unlocked
-//  - MutexAutoUnlock, complementary sibling to MutexAutoLock
-//
-//  - OffTheBooksMutex, a non-recursive mutex that doesn't do leak checking
-//  - OffTheBooksMutexAuto{Lock,Unlock} - Like MutexAuto{Lock,Unlock}, but for
-//    an OffTheBooksMutex.
-//
-// Using MutexAutoLock/MutexAutoUnlock etc. is MUCH preferred to making bare
-// calls to Lock and Unlock.
-//
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 namespace mozilla {
 
-/**
- * OffTheBooksMutex is identical to Mutex, except that OffTheBooksMutex doesn't
- * include leak checking.  Sometimes you want to intentionally "leak" a mutex
- * until shutdown; in these cases, OffTheBooksMutex is for you.
- */
-class OffTheBooksMutex : BlockingResourceBase
+
+
+
+
+
+class OffTheBooksMutex : public detail::MutexImpl, BlockingResourceBase
 {
 public:
-  /**
-   * @param aName A name which can reference this lock
-   * @returns If failure, nullptr
-   *          If success, a valid Mutex* which must be destroyed
-   *          by Mutex::DestroyMutex()
-   **/
+  
+
+
+
+
+
   explicit OffTheBooksMutex(const char* aName)
-    : BlockingResourceBase(aName, eMutex)
+    : detail::MutexImpl()
+    , BlockingResourceBase(aName, eMutex)
+#ifdef DEBUG
+    , mOwningThread(nullptr)
+#endif
   {
-    mLock = PR_NewLock();
-    if (!mLock) {
-      MOZ_CRASH("Can't allocate mozilla::Mutex");
-    }
   }
 
   ~OffTheBooksMutex()
   {
-    NS_ASSERTION(mLock,
-                 "improperly constructed Lock or double free");
-    // NSPR does consistency checks for us
-    PR_DestroyLock(mLock);
-    mLock = 0;
+#ifdef DEBUG
+    MOZ_ASSERT(!mOwningThread, "destroying a still-owned lock!");
+#endif
   }
 
 #ifndef DEBUG
-  /**
-   * Lock
-   * @see prlock.h
-   **/
-  void Lock() { PR_Lock(mLock); }
+  
 
-  /**
-   * Unlock
-   * @see prlock.h
-   **/
-  void Unlock() { PR_Unlock(mLock); }
 
-  /**
-   * AssertCurrentThreadOwns
-   * @see prlock.h
-   **/
+  void Lock() { this->lock(); }
+
+  
+
+
+  void Unlock() { this->unlock(); }
+
+  
+
+
+
+
   void AssertCurrentThreadOwns() const {}
 
-  /**
-   * AssertNotCurrentThreadOwns
-   * @see prlock.h
-   **/
+  
+
+
+
+
+
+
+
   void AssertNotCurrentThreadOwns() const {}
 
 #else
   void Lock();
   void Unlock();
 
-  void AssertCurrentThreadOwns() const
-  {
-    PR_ASSERT_CURRENT_THREAD_OWNS_LOCK(mLock);
-  }
+  void AssertCurrentThreadOwns() const;
 
   void AssertNotCurrentThreadOwns() const
   {
-    // FIXME bug 476536
+    
   }
 
-#endif  // ifndef DEBUG
+#endif  
 
 private:
   OffTheBooksMutex();
   OffTheBooksMutex(const OffTheBooksMutex&);
   OffTheBooksMutex& operator=(const OffTheBooksMutex&);
 
-  PRLock* mLock;
-
   friend class CondVar;
 
-  // MozPromise needs to access mLock for debugging purpose.
-  template<typename, typename, bool>
-  friend class MozPromise;
+#ifdef DEBUG
+  PRThread* mOwningThread;
+#endif
 };
 
-/**
- * Mutex
- * When possible, use MutexAutoLock/MutexAutoUnlock to lock/unlock this
- * mutex within a scope, instead of calling Lock/Unlock directly.
- */
+
+
+
+
+
 class Mutex : public OffTheBooksMutex
 {
 public:
@@ -141,25 +136,25 @@ private:
   Mutex& operator=(const Mutex&);
 };
 
-/**
- * MutexAutoLock
- * Acquires the Mutex when it enters scope, and releases it when it leaves
- * scope.
- *
- * MUCH PREFERRED to bare calls to Mutex.Lock and Unlock.
- */
+
+
+
+
+
+
+
 template<typename T>
 class MOZ_RAII BaseAutoLock
 {
 public:
-  /**
-   * Constructor
-   * The constructor aquires the given lock.  The destructor
-   * releases the lock.
-   *
-   * @param aLock A valid mozilla::Mutex* returned by
-   *              mozilla::Mutex::NewMutex.
-   **/
+  
+
+
+
+
+
+
+
   explicit BaseAutoLock(T& aLock MOZ_GUARD_OBJECT_NOTIFIER_PARAM)
     : mLock(&aLock)
   {
@@ -186,13 +181,13 @@ private:
 typedef BaseAutoLock<Mutex> MutexAutoLock;
 typedef BaseAutoLock<OffTheBooksMutex> OffTheBooksMutexAutoLock;
 
-/**
- * MutexAutoUnlock
- * Releases the Mutex when it enters scope, and re-acquires it when it leaves
- * scope.
- *
- * MUCH PREFERRED to bare calls to Mutex.Unlock and Lock.
- */
+
+
+
+
+
+
+
 template<typename T>
 class MOZ_RAII BaseAutoUnlock
 {
@@ -223,7 +218,7 @@ private:
 typedef BaseAutoUnlock<Mutex> MutexAutoUnlock;
 typedef BaseAutoUnlock<OffTheBooksMutex> OffTheBooksMutexAutoUnlock;
 
-} // namespace mozilla
+} 
 
 
-#endif // ifndef mozilla_Mutex_h
+#endif 
