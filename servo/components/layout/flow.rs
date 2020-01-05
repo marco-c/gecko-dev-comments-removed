@@ -727,7 +727,7 @@ impl AbsoluteDescendants {
     
     
     pub fn push_descendants(&mut self, given_descendants: AbsoluteDescendants) {
-        for elem in given_descendants.descendant_links.into_iter() {
+        for elem in given_descendants.descendant_links {
             self.descendant_links.push(elem);
         }
     }
