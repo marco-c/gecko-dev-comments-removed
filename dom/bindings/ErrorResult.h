@@ -102,6 +102,7 @@ struct StringArrayAppender
 } 
 
 class ErrorResult;
+class OOMReporter;
 
 namespace binding_danger {
 
@@ -162,6 +163,7 @@ public:
   }
 
   operator ErrorResult&();
+  operator OOMReporter&();
 
   void Throw(nsresult rv) {
     MOZ_ASSERT(NS_FAILED(rv), "Please don't try throwing success");
@@ -536,6 +538,82 @@ class IgnoredErrorResult :
     public binding_danger::TErrorResult<binding_danger::JustSuppressCleanupPolicy>
 {
 };
+
+namespace dom {
+namespace binding_detail {
+class FastErrorResult :
+    public mozilla::binding_danger::TErrorResult<
+      mozilla::binding_danger::JustAssertCleanupPolicy>
+{
+};
+} 
+} 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+namespace binding_danger {
+class OOMReporterInstantiator;
+} 
+
+class OOMReporter : private dom::binding_detail::FastErrorResult
+{
+public:
+  void ReportOOM()
+  {
+    Throw(NS_ERROR_OUT_OF_MEMORY);
+  }
+
+private:
+  
+  
+  friend class binding_danger::OOMReporterInstantiator;
+
+  
+  template<typename CleanupPolicy>
+  friend class binding_danger::TErrorResult;
+
+  OOMReporter()
+    : dom::binding_detail::FastErrorResult()
+  {
+  }
+};
+
+namespace binding_danger {
+class OOMReporterInstantiator : public OOMReporter
+{
+public:
+  OOMReporterInstantiator()
+    : OOMReporter()
+  {
+  }
+
+  
+  
+  
+  bool MaybeSetPendingException(JSContext* cx)
+  {
+    return OOMReporter::MaybeSetPendingException(cx);
+  }
+};
+} 
+
+template<typename CleanupPolicy>
+binding_danger::TErrorResult<CleanupPolicy>::operator OOMReporter&()
+{
+  return *static_cast<OOMReporter*>(
+     reinterpret_cast<TErrorResult<JustAssertCleanupPolicy>*>(this));
+}
 
 
 
