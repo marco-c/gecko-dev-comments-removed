@@ -9,14 +9,10 @@ var {
   EventManager,
 } = ExtensionUtils;
 
+
 var DEFAULT_STORE = "firefox-default";
-var PRIVATE_STORE = "firefox-private";
 
-global.getCookieStoreIdForTab = function(tab) {
-  return tab.incognito ? PRIVATE_STORE : DEFAULT_STORE;
-};
-
-function convert({cookie, isPrivate}) {
+function convert(cookie) {
   let result = {
     name: cookie.name,
     value: cookie.value,
@@ -26,7 +22,7 @@ function convert({cookie, isPrivate}) {
     secure: cookie.isSecure,
     httpOnly: cookie.isHttpOnly,
     session: cookie.isSession,
-    storeId: isPrivate ? PRIVATE_STORE : DEFAULT_STORE,
+    storeId: DEFAULT_STORE,
   };
 
   if (!cookie.isSession) {
@@ -130,7 +126,7 @@ function checkSetCookiePermissions(extension, uri, cookie) {
   return true;
 }
 
-function* query(detailsIn, props, context) {
+function* query(detailsIn, props, extension) {
   
   
   let details = {};
@@ -144,36 +140,21 @@ function* query(detailsIn, props, context) {
     details.domain = details.domain.toLowerCase().replace(/^\./, "");
   }
 
-  let isPrivate = context.incognito;
-  if(details.storeId == DEFAULT_STORE) {
-    isPrivate = false;
-  } else if (details.storeId == PRIVATE_STORE) {
-    isPrivate = true;
-  } else if ("storeId" in details) {
-    return;
-  }
-
   
   let enumerator;
   let uri;
   if ("url" in details) {
     try {
       uri = NetUtil.newURI(details.url).QueryInterface(Ci.nsIURL);
-      Services.cookies.usePrivateMode(isPrivate, () => {
-        enumerator = Services.cookies.getCookiesFromHost(uri.host, {});
-      });
+      enumerator = Services.cookies.getCookiesFromHost(uri.host, {});
     } catch (ex) {
       
       return;
     }
   } else if ("domain" in details) {
-    Services.cookies.usePrivateMode(isPrivate, () => {
-      enumerator = Services.cookies.getCookiesFromHost(details.domain, {});
-    });
+    enumerator = Services.cookies.getCookiesFromHost(details.domain, {});
   } else {
-    Services.cookies.usePrivateMode(isPrivate, () => {
-      enumerator = Services.cookies.enumerator;
-    });
+    enumerator = Services.cookies.enumerator;
   }
 
   
@@ -237,8 +218,12 @@ function* query(detailsIn, props, context) {
       return false;
     }
 
+    if ("storeId" in details && details.storeId != DEFAULT_STORE) {
+      return false;
+    }
+
     
-    if (!context.extension.whiteListedHosts.matchesCookie(cookie)) {
+    if (!extension.whiteListedHosts.matchesCookie(cookie)) {
       return false;
     }
 
@@ -248,7 +233,7 @@ function* query(detailsIn, props, context) {
   while (enumerator.hasMoreElements()) {
     let cookie = enumerator.getNext().QueryInterface(Ci.nsICookie2);
     if (matches(cookie)) {
-      yield {cookie, isPrivate};
+      yield cookie;
     }
   }
 }
@@ -259,7 +244,7 @@ extensions.registerSchemaAPI("cookies", "addon_parent", context => {
     cookies: {
       get: function(details) {
         
-        for (let cookie of query(details, ["url", "name", "storeId"], context)) {
+        for (let cookie of query(details, ["url", "name", "storeId"], extension)) {
           return Promise.resolve(convert(cookie));
         }
 
@@ -269,7 +254,7 @@ extensions.registerSchemaAPI("cookies", "addon_parent", context => {
 
       getAll: function(details) {
         let allowed = ["url", "name", "domain", "path", "secure", "session", "storeId"];
-        let result = Array.from(query(details, allowed, context), convert);
+        let result = Array.from(query(details, allowed, extension), convert);
 
         return Promise.resolve(result);
       },
@@ -294,14 +279,7 @@ extensions.registerSchemaAPI("cookies", "addon_parent", context => {
         let httpOnly = details.httpOnly !== null ? details.httpOnly : false;
         let isSession = details.expirationDate === null;
         let expiry = isSession ? Number.MAX_SAFE_INTEGER : details.expirationDate;
-        let isPrivate = context.incognito;
-        if(details.storeId == DEFAULT_STORE) {
-          isPrivate = false;
-        } else if (details.storeId == PRIVATE_STORE) {
-          isPrivate = true;
-        } else if (details.storeId !== null) {
-          return Promise.reject({message: "Unknown storeId"});
-        }
+        
 
         let cookieAttrs = {host: details.domain, path: path, isSecure: secure};
         if (!checkSetCookiePermissions(extension, uri, cookieAttrs)) {
@@ -310,24 +288,20 @@ extensions.registerSchemaAPI("cookies", "addon_parent", context => {
 
         
         
-        Services.cookies.usePrivateMode(isPrivate, () => {
-          Services.cookies.add(cookieAttrs.host, path, name, value,
-                               secure, httpOnly, isSession, expiry, {});
-        });
+        Services.cookies.add(cookieAttrs.host, path, name, value,
+                             secure, httpOnly, isSession, expiry, {});
 
         return self.cookies.get(details);
       },
 
       remove: function(details) {
-        for (let {cookie, isPrivate} of query(details, ["url", "name", "storeId"], context)) {
-          Services.cookies.usePrivateMode(isPrivate, () => {
-            Services.cookies.remove(cookie.host, cookie.name, cookie.path, false, cookie.originAttributes);
-          });
+        for (let cookie of query(details, ["url", "name", "storeId"], extension)) {
+          Services.cookies.remove(cookie.host, cookie.name, cookie.path, false, cookie.originAttributes);
           
           return Promise.resolve({
             url: details.url,
             name: details.name,
-            storeId: isPrivate ? PRIVATE_STORE : DEFAULT_STORE,
+            storeId: DEFAULT_STORE,
           });
         }
 
@@ -335,26 +309,8 @@ extensions.registerSchemaAPI("cookies", "addon_parent", context => {
       },
 
       getAllCookieStores: function() {
-        let defaultTabs = [];
-        let privateTabs = [];
-        for (let window of WindowListManager.browserWindows()) {
-          let tabs = TabManager.for(extension).getTabs(window);
-          for (let tab of tabs) {
-            if (tab.incognito) {
-              privateTabs.push(tab.id);
-            } else {
-              defaultTabs.push(tab.id);
-            }
-          }
-        }
-        let result = [];
-        if (defaultTabs.length > 0) {
-          result.push({id: DEFAULT_STORE, tabIds: defaultTabs});
-        }
-        if (privateTabs.length > 0) {
-          result.push({id: PRIVATE_STORE, tabIds: privateTabs});
-        }
-        return Promise.resolve(result);
+        
+        return Promise.resolve([{id: DEFAULT_STORE, tabIds: []}]);
       },
 
       onChanged: new EventManager(context, "cookies.onChanged", fire => {
@@ -363,7 +319,7 @@ extensions.registerSchemaAPI("cookies", "addon_parent", context => {
             cookie.QueryInterface(Ci.nsICookie2);
 
             if (extension.whiteListedHosts.matchesCookie(cookie)) {
-              fire({removed, cookie: convert({cookie, isPrivate: topic == "private-cookie-changed"}), cause});
+              fire({removed, cookie: convert(cookie), cause});
             }
           };
 
@@ -394,11 +350,7 @@ extensions.registerSchemaAPI("cookies", "addon_parent", context => {
         };
 
         Services.obs.addObserver(observer, "cookie-changed", false);
-        Services.obs.addObserver(observer, "private-cookie-changed", false);
-        return () => {
-          Services.obs.removeObserver(observer, "cookie-changed");
-          Services.obs.removeObserver(observer, "private-cookie-changed");
-        };
+        return () => Services.obs.removeObserver(observer, "cookie-changed");
       }).api(),
     },
   };
