@@ -6540,7 +6540,7 @@ DrawImageInternal(gfxContext&            aContext,
     Maybe<const SVGImageContext> fallbackContext;
     if (!aSVGContext) {
       
-      fallbackContext.emplace(params.svgViewportSize);
+      fallbackContext.emplace(Some(params.svgViewportSize));
     }
 
     result = aImage->Draw(destCtx, params.size, params.region,
@@ -6725,7 +6725,7 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
   PROFILER_LABEL("layout", "nsLayoutUtils::DrawBackgroundImage",
                  js::ProfileEntry::Category::GRAPHICS);
 
-  const Maybe<const SVGImageContext> svgContext(Some(SVGImageContext(aImageSize)));
+  const Maybe<SVGImageContext> svgContext(Some(SVGImageContext(Some(aImageSize))));
 
   
   if (aRepeatSize.width == aDest.width && aRepeatSize.height == aDest.height) {
@@ -6974,8 +6974,7 @@ nsLayoutUtils::GetTextRunFlagsForStyle(nsStyleContext* aStyleContext,
                                        nscoord aLetterSpacing)
 {
   uint32_t result = 0;
-  if (aLetterSpacing != 0 ||
-      aStyleText->mTextJustify == StyleTextJustify::InterCharacter) {
+  if (aLetterSpacing != 0) {
     result |= gfxTextRunFactory::TEXT_DISABLE_OPTIONAL_LIGATURES;
   }
   if (aStyleText->mControlCharacterVisibility == NS_STYLE_CONTROL_CHARACTER_VISIBILITY_HIDDEN) {

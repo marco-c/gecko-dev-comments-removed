@@ -467,13 +467,16 @@ ClippedImage::DrawSingleTile(gfxContext* aContext,
     
     
     
-    CSSIntSize vSize(aOldContext.GetViewportSize());
-    vSize.width = ceil(vSize.width * double(innerSize.width) / mClip.width);
-    vSize.height =
-      ceil(vSize.height * double(innerSize.height) / mClip.height);
-
     SVGImageContext context(aOldContext);
-    context.SetViewportSize(vSize);
+    auto oldViewport = aOldContext.GetViewportSize();
+    if (oldViewport) {
+      CSSIntSize newViewport;
+      newViewport.width =
+        ceil(oldViewport->width * double(innerSize.width) / mClip.width);
+      newViewport.height =
+        ceil(oldViewport->height * double(innerSize.height) / mClip.height);
+      context.SetViewportSize(Some(newViewport));
+    }
     return context;
   };
 
