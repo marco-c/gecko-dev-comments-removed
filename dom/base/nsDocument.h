@@ -1447,10 +1447,6 @@ public:
 
   
   
-  bool mInFlush:1;
-
-  
-  
   bool mParserAborted:1;
 
   friend class nsCallRequestFullScreen;

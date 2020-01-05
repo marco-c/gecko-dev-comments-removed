@@ -254,6 +254,7 @@
 #include "mozilla/dom/SVGSVGElement.h"
 #include "mozilla/dom/DocGroup.h"
 #include "mozilla/dom/TabGroup.h"
+#include "nsIPresShellInlines.h"
 
 #include "mozilla/DocLoadingTimelineMarker.h"
 
@@ -1313,8 +1314,6 @@ nsIDocument::nsIDocument()
     mIsBeingUsedAsImage(false),
     mIsSyntheticDocument(false),
     mHasLinksToUpdate(false),
-    mNeedLayoutFlush(false),
-    mNeedStyleFlush(false),
     mMayHaveDOMMutationObservers(false),
     mMayHaveAnimationObservers(false),
     mHasMixedActiveContentLoaded(false),
@@ -1392,7 +1391,6 @@ nsDocument::nsDocument(const char* aContentType)
   , mDelayFrameLoaderInitialization(false)
   , mSynchronousDOMContentLoaded(false)
   , mInXBLUpdate(false)
-  , mInFlush(false)
   , mParserAborted(false)
   , mCurrentOrientationAngle(0)
   , mCurrentOrientationType(OrientationType::Portrait_primary)
@@ -7951,25 +7949,10 @@ nsDocument::FlushPendingNotifications(FlushType aType)
 
   
   
-  
-  
-  
-  
-  if (mNeedStyleFlush ||
-      (mNeedLayoutFlush && aType >= FlushType::InterruptibleLayout) ||
-      aType >= FlushType::Display ||
-      mInFlush) {
-    nsCOMPtr<nsIPresShell> shell = GetShell();
-    if (shell) {
-      mNeedStyleFlush = false;
-      mNeedLayoutFlush = mNeedLayoutFlush && (aType < FlushType::InterruptibleLayout);
-      
-      
-      
-      bool oldInFlush = mInFlush;
-      mInFlush = true;
-      shell->FlushPendingNotifications(aType);
-      mInFlush = oldInFlush;
+  if (nsIPresShell* shell = GetShell()) {
+    if (shell->NeedFlush(aType)) {
+      nsCOMPtr<nsIPresShell> presShell = shell;
+      presShell->FlushPendingNotifications(aType);
     }
   }
 }
@@ -12902,7 +12885,9 @@ nsIDocument::RebuildUserFontSet()
   }
 
   mFontFaceSetDirty = true;
-  SetNeedStyleFlush();
+  if (nsIPresShell* shell = GetShell()) {
+    shell->SetNeedStyleFlush();
+  }
 
   
   

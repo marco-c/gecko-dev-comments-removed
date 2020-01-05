@@ -7,6 +7,7 @@
 #include "mozilla/RestyleManagerBase.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "nsIFrame.h"
+#include "nsIPresShellInlines.h"
 
 namespace mozilla {
 
@@ -218,7 +219,7 @@ RestyleManagerBase::PostRestyleEventInternal(bool aForLazyConstruction)
   
   
   
-  presShell->GetDocument()->SetNeedStyleFlush();
+  presShell->SetNeedStyleFlush();
 }
 
 

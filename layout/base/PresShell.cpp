@@ -796,6 +796,8 @@ nsIPresShell::nsIPresShell()
     , mReflowScheduled(false)
     , mSuppressInterruptibleReflows(false)
     , mScrollPositionClampingScrollPortSizeSet(false)
+    , mNeedLayoutFlush(true)
+    , mNeedStyleFlush(true)
     , mPresShellId(0)
     , mFontSizeInflationEmPerLine(0)
     , mFontSizeInflationMinTwips(0)
@@ -806,6 +808,7 @@ nsIPresShell::nsIPresShell()
     , mPaintingIsFrozen(false)
     , mFontSizeInflationEnabledIsDirty(false)
     , mIsNeverPainting(false)
+    , mInFlush(false)
   {}
 
 PresShell::PresShell()
@@ -941,6 +944,13 @@ PresShell::Init(nsIDocument* aDocument,
 
   mDocument = aDocument;
   mViewManager = aViewManager;
+
+  
+  
+  
+  
+  SetNeedLayoutFlush();
+  SetNeedStyleFlush();
 
   
   mFrameConstructor = new nsCSSFrameConstructor(mDocument, this);
@@ -2027,7 +2037,7 @@ PresShell::ResizeReflowIgnoreOverride(nscoord aWidth, nscoord aHeight, nscoord a
         NewRunnableMethod(this, &PresShell::FireResizeEvent);
       if (NS_SUCCEEDED(NS_DispatchToCurrentThread(resizeEvent))) {
         mResizeEvent = resizeEvent;
-        mDocument->SetNeedStyleFlush();
+        SetNeedStyleFlush();
       }
     }
   }
@@ -2773,7 +2783,7 @@ PresShell::FrameNeedsReflow(nsIFrame *aFrame, IntrinsicDirty aIntrinsicDirty,
         
         if (!wasDirty) {
           mDirtyRoots.AppendElement(f);
-          mDocument->SetNeedLayoutFlush();
+          SetNeedLayoutFlush();
         }
 #ifdef DEBUG
         else {
@@ -3500,7 +3510,9 @@ PresShell::ScrollContentIntoView(nsIContent*              aContent,
   }
 
   
-  composedDoc->SetNeedLayoutFlush();
+  if (nsIPresShell* shell = composedDoc->GetShell()) {
+    shell->SetNeedLayoutFlush();
+  }
   composedDoc->FlushPendingNotifications(FlushType::InterruptibleLayout);
 
   
@@ -3727,9 +3739,7 @@ PresShell::ScheduleViewManagerFlush(PaintType aType)
   if (presContext) {
     presContext->RefreshDriver()->ScheduleViewManagerFlush();
   }
-  if (mDocument) {
-    mDocument->SetNeedLayoutFlush();
-  }
+  SetNeedLayoutFlush();
 }
 
 bool
@@ -4101,6 +4111,18 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
 
   NS_ASSERTION(flushType >= FlushType::Frames, "Why did we get called?");
 
+  
+  
+  
+  
+  
+  AutoRestore<bool> guard(mInFlush);
+  mInFlush = true;
+
+  mNeedStyleFlush = false;
+  mNeedLayoutFlush =
+    mNeedLayoutFlush && (flushType < FlushType::InterruptibleLayout);
+
   bool isSafeToFlush = IsSafeToFlush();
 
   
@@ -4224,7 +4246,7 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
   }
 
   if (!didStyleFlush && flushType >= FlushType::Style && !mIsDestroying) {
-    mDocument->SetNeedStyleFlush();
+    SetNeedStyleFlush();
   }
 
   if (!didLayoutFlush && !mIsDestroying &&
@@ -4234,7 +4256,7 @@ PresShell::FlushPendingNotifications(mozilla::ChangesToFlush aFlush)
     
     
     
-    mDocument->SetNeedLayoutFlush();
+    SetNeedLayoutFlush();
   }
 }
 
@@ -9294,7 +9316,7 @@ PresShell::DoReflow(nsIFrame* target, bool aInterruptible)
 
     NS_ASSERTION(NS_SUBTREE_DIRTY(target), "Why is the target not dirty?");
     mDirtyRoots.AppendElement(target);
-    mDocument->SetNeedLayoutFlush();
+    SetNeedLayoutFlush();
 
     
     
@@ -9432,7 +9454,7 @@ PresShell::ProcessReflowCommands(bool aInterruptible)
       if (!mDirtyRoots.IsEmpty()) {
         MaybeScheduleReflow();
         
-        mDocument->SetNeedLayoutFlush();
+        SetNeedLayoutFlush();
       }
     }
   }

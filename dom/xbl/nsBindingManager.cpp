@@ -20,6 +20,7 @@
 #include "nsIDocument.h"
 #include "nsContentUtils.h"
 #include "nsIPresShell.h"
+#include "nsIPresShellInlines.h"
 #include "nsIXMLContentSink.h"
 #include "nsContentCID.h"
 #include "mozilla/dom/XMLDocument.h"
@@ -338,7 +339,9 @@ nsBindingManager::AddToAttachedQueue(nsXBLBinding* aBinding)
   }
 
   
-  mDocument->SetNeedStyleFlush();
+  if (nsIPresShell* shell = mDocument->GetShell()) {
+    shell->SetNeedStyleFlush();
+  }
 
   return NS_OK;
 

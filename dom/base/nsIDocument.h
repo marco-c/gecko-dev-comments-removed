@@ -2477,20 +2477,6 @@ public:
 
   bool IsSyntheticDocument() const { return mIsSyntheticDocument; }
 
-  void SetNeedLayoutFlush() {
-    mNeedLayoutFlush = true;
-    if (mDisplayDocument) {
-      mDisplayDocument->SetNeedLayoutFlush();
-    }
-  }
-
-  void SetNeedStyleFlush() {
-    mNeedStyleFlush = true;
-    if (mDisplayDocument) {
-      mDisplayDocument->SetNeedStyleFlush();
-    }
-  }
-
   
   
   
@@ -3123,12 +3109,6 @@ protected:
 
   
   bool mHasLinksToUpdate : 1;
-
-  
-  bool mNeedLayoutFlush : 1;
-
-  
-  bool mNeedStyleFlush : 1;
 
   
   bool mMayHaveDOMMutationObservers : 1;

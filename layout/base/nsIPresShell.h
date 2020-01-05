@@ -589,6 +589,32 @@ public:
 
 
 
+
+
+
+  bool NeedFlush(mozilla::FlushType aType) const
+  {
+    
+    
+    
+    
+    MOZ_ASSERT(aType >= mozilla::FlushType::Style);
+    return mNeedStyleFlush ||
+           (mNeedLayoutFlush &&
+            aType >= mozilla::FlushType::InterruptibleLayout) ||
+           aType >= mozilla::FlushType::Display ||
+           mInFlush;
+  }
+
+  inline void SetNeedStyleFlush();
+  inline void SetNeedLayoutFlush();
+
+  bool NeedStyleFlush() { return mNeedStyleFlush; }
+
+  
+
+
+
   virtual nsresult PostReflowCallback(nsIReflowCallback* aCallback) = 0;
   virtual void CancelReflowCallback(nsIReflowCallback* aCallback) = 0;
 
@@ -1805,6 +1831,12 @@ protected:
   bool                      mSuppressInterruptibleReflows : 1;
   bool                      mScrollPositionClampingScrollPortSizeSet : 1;
 
+  
+  bool mNeedLayoutFlush : 1;
+
+  
+  bool mNeedStyleFlush : 1;
+
   uint32_t                  mPresShellId;
 
   
@@ -1835,6 +1867,10 @@ protected:
   
   
   bool mIsNeverPainting;
+
+  
+  
+  bool mInFlush;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsIPresShell, NS_IPRESSHELL_IID)
