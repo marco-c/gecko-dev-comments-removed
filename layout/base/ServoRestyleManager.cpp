@@ -143,12 +143,9 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
 {
   nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
 
-  
-  
   nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
-  if (changeHint & ~nsChangeHint_NeutralChange) {
-    aChangeListToProcess.AppendChange(
-      primaryFrame, aElement, changeHint & ~nsChangeHint_NeutralChange);
+  if (changeHint) {
+    aChangeListToProcess.AppendChange(primaryFrame, aElement, changeHint);
   }
 
   
@@ -163,17 +160,33 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
 
   
   
-  bool recreateContext = primaryFrame && changeHint;
+  
+  
+  
+  
+  
+  RefPtr<nsStyleContext> oldStyleContext =
+    primaryFrame ? primaryFrame->StyleContext() : nullptr;
+
+  RefPtr<ServoComputedValues> computedValues =
+    aStyleSet->ResolveServoStyle(aElement);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const bool recreateContext = oldStyleContext &&
+    oldStyleContext->StyleSource().AsServoComputedValues() != computedValues;
+
+  MOZ_ASSERT_IF(changeHint, recreateContext);
+
   if (recreateContext) {
-    RefPtr<ServoComputedValues> computedValues = aStyleSet->ResolveServoStyle(aElement);
-
-    
-    
-    
-    
-    RefPtr<nsStyleContext> oldStyleContext = primaryFrame->StyleContext();
-    MOZ_ASSERT(oldStyleContext);
-
     RefPtr<nsStyleContext> newContext =
       aStyleSet->GetContext(computedValues.forget(), aParentContext, nullptr,
                             CSSPseudoElementType::NotPseudo, aElement);
