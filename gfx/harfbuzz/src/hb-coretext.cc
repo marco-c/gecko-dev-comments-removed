@@ -150,8 +150,16 @@ create_ct_font (CGFontRef cg_font, CGFloat font_size)
 
 
 
-  if (&CTGetCoreTextVersion != NULL && CTGetCoreTextVersion() <= kCTVersionNumber10_9)
-    return ct_font;
+
+
+  
+  if (&CTGetCoreTextVersion != NULL && CTGetCoreTextVersion() < 0x00070000) {
+    CFStringRef fontName = CTFontCopyPostScriptName (ct_font);
+    bool isEmojiFont = CFStringCompare (fontName, CFSTR("AppleColorEmoji"), 0) == kCFCompareEqualTo;
+    CFRelease (fontName);
+    if (!isEmojiFont)
+      return ct_font;
+  }
 
   CFURLRef original_url = (CFURLRef)CTFontCopyAttribute(ct_font, kCTFontURLAttribute);
 

@@ -35,6 +35,7 @@
 #include "hb-ot-layout-gsub-table.hh"
 #include "hb-ot-layout-gpos-table.hh"
 #include "hb-ot-layout-jstf-table.hh"
+#include "hb-ot-layout-math-table.hh"
 
 #include "hb-ot-map-private.hh"
 
@@ -59,6 +60,10 @@ _hb_ot_layout_create (hb_face_t *face)
 
   layout->gpos_blob = OT::Sanitizer<OT::GPOS>::sanitize (face->reference_table (HB_OT_TAG_GPOS));
   layout->gpos = OT::Sanitizer<OT::GPOS>::lock_instance (layout->gpos_blob);
+
+  
+  layout->math_blob = NULL;
+  layout->math = NULL;
 
   {
     
@@ -120,6 +125,14 @@ _hb_ot_layout_create (hb_face_t *face)
       
       
       || (188 == gdef_len && 3426 == gpos_len && 264 == gsub_len)
+      
+      || (1046 == gdef_len && 17112 == gpos_len && 71788 == gsub_len)
+      
+      || (1058 == gdef_len && 17514 == gpos_len && 71794 == gsub_len)
+      
+      || (1330 == gdef_len && 57938 == gpos_len && 109904 == gsub_len)
+      
+      || (1330 == gdef_len && 58972 == gpos_len && 109904 == gsub_len)
     )
     {
       
@@ -169,6 +182,7 @@ _hb_ot_layout_destroy (hb_ot_layout_t *layout)
   hb_blob_destroy (layout->gdef_blob);
   hb_blob_destroy (layout->gsub_blob);
   hb_blob_destroy (layout->gpos_blob);
+  hb_blob_destroy (layout->math_blob);
 
   free (layout);
 }
@@ -190,6 +204,30 @@ _get_gpos (hb_face_t *face)
 {
   if (unlikely (!hb_ot_shaper_face_data_ensure (face))) return OT::Null(OT::GPOS);
   return *hb_ot_layout_from_face (face)->gpos;
+}
+static inline const OT::MATH&
+_get_math (hb_face_t *face)
+{
+  if (unlikely (!hb_ot_shaper_face_data_ensure (face))) return OT::Null(OT::MATH);
+
+  hb_ot_layout_t * layout = hb_ot_layout_from_face (face);
+
+retry:
+  const OT::MATH *math = (const OT::MATH *) hb_atomic_ptr_get (&layout->math);
+
+  if (unlikely (!math))
+  {
+    hb_blob_t *blob = OT::Sanitizer<OT::MATH>::sanitize (face->reference_table (HB_OT_TAG_MATH));
+    math = OT::Sanitizer<OT::MATH>::lock_instance (blob);
+    if (!hb_atomic_ptr_cmpexch (&layout->math, NULL, math))
+    {
+      hb_blob_destroy (blob);
+      goto retry;
+    }
+    layout->math_blob = blob;
+  }
+
+  return *math;
 }
 
 
@@ -1181,4 +1219,222 @@ hb_ot_layout_substitute_lookup (OT::hb_apply_context_t *c,
 				const hb_ot_layout_lookup_accelerator_t &accel)
 {
   apply_string<GSUBProxy> (c, lookup, accel);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_ot_math_has_data (hb_face_t *face)
+{
+  return &_get_math (face) != &OT::Null(OT::MATH);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_position_t
+hb_ot_math_get_constant (hb_font_t *font,
+			 hb_ot_math_constant_t constant)
+{
+  const OT::MATH &math = _get_math (font->face);
+  return math.get_constant(constant, font);
+}
+
+
+
+
+
+
+
+
+
+
+hb_position_t
+hb_ot_math_get_glyph_italics_correction (hb_font_t *font,
+					 hb_codepoint_t glyph)
+{
+  const OT::MATH &math = _get_math (font->face);
+  return math.get_math_glyph_info().get_italics_correction (glyph, font);
+}
+
+
+
+
+
+
+
+
+
+
+hb_position_t
+hb_ot_math_get_glyph_top_accent_attachment (hb_font_t *font,
+					    hb_codepoint_t glyph)
+{
+  const OT::MATH &math = _get_math (font->face);
+  return math.get_math_glyph_info().get_top_accent_attachment (glyph, font);
+}
+
+
+
+
+
+
+
+
+
+
+hb_bool_t
+hb_ot_math_is_glyph_extended_shape (hb_face_t *face,
+				    hb_codepoint_t glyph)
+{
+  const OT::MATH &math = _get_math (face);
+  return math.get_math_glyph_info().is_extended_shape (glyph);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_position_t
+hb_ot_math_get_glyph_kerning (hb_font_t *font,
+			      hb_codepoint_t glyph,
+			      hb_ot_math_kern_t kern,
+			      hb_position_t correction_height)
+{
+  const OT::MATH &math = _get_math (font->face);
+  return math.get_math_glyph_info().get_kerning (glyph, kern, correction_height, font);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+unsigned int
+hb_ot_math_get_glyph_variants (hb_font_t *font,
+			       hb_codepoint_t glyph,
+			       hb_direction_t direction,
+			       unsigned int start_offset,
+			       unsigned int *variants_count, 
+			       hb_ot_math_glyph_variant_t *variants )
+{
+  const OT::MATH &math = _get_math (font->face);
+  return math.get_math_variants().get_glyph_variants (glyph, direction, font,
+						      start_offset,
+						      variants_count,
+						      variants);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+hb_position_t
+hb_ot_math_get_min_connector_overlap (hb_font_t *font,
+				      hb_direction_t direction)
+{
+  const OT::MATH &math = _get_math (font->face);
+  return math.get_math_variants().get_min_connector_overlap (direction, font);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+unsigned int
+hb_ot_math_get_glyph_assembly (hb_font_t *font,
+			       hb_codepoint_t glyph,
+			       hb_direction_t direction,
+			       unsigned int start_offset,
+			       unsigned int *parts_count, 
+			       hb_ot_math_glyph_part_t *parts, 
+			       hb_position_t *italics_correction )
+{
+  const OT::MATH &math = _get_math (font->face);
+  return math.get_math_variants().get_glyph_parts (glyph, direction, font,
+						   start_offset,
+						   parts_count,
+						   parts,
+						   italics_correction);
 }
