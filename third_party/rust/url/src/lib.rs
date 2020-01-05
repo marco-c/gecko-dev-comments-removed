@@ -228,11 +228,39 @@ impl<'a> ParseOptions<'a> {
 
 impl Url {
     
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn parse(input: &str) -> Result<Url, ::ParseError> {
         Url::options().parse(input)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     #[inline]
     pub fn join(&self, input: &str) -> Result<Url, ::ParseError> {
@@ -251,11 +279,31 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn as_str(&self) -> &str {
         &self.serialization
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -314,7 +362,10 @@ impl Url {
             match self.host {
                 HostInternal::None => assert_eq!(host_str, ""),
                 HostInternal::Ipv4(address) => assert_eq!(host_str, address.to_string()),
-                HostInternal::Ipv6(address) => assert_eq!(host_str, format!("[{}]", address)),
+                HostInternal::Ipv6(address) => {
+                    let h: Host<String> = Host::Ipv6(address);
+                    assert_eq!(host_str, h.to_string())
+                }
                 HostInternal::Domain => {
                     if SchemeType::from(self.scheme()).is_special() {
                         assert!(!host_str.is_empty())
@@ -442,6 +493,21 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn has_authority(&self) -> bool {
         debug_assert!(self.byte_at(self.scheme_end) == b':');
@@ -453,9 +519,24 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn cannot_be_a_base(&self) -> bool {
-        self.byte_at(self.path_start) != b'/'
+        !self.slice(self.path_start..).starts_with('/')
     }
 
     
@@ -514,10 +595,43 @@ impl Url {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn has_host(&self) -> bool {
         !matches!(self.host, HostInternal::None)
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -542,6 +656,24 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn host(&self) -> Option<Host<&str>> {
         match self.host {
             HostInternal::None => None,
@@ -552,6 +684,18 @@ impl Url {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn domain(&self) -> Option<&str> {
         match self.host {
             HostInternal::Domain => Some(self.slice(self.host_start..self.host_end)),
@@ -560,11 +704,38 @@ impl Url {
     }
 
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     #[inline]
     pub fn port(&self) -> Option<u16> {
         self.port
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     
     
     
@@ -848,6 +1019,20 @@ impl Url {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn set_port(&mut self, mut port: Option<u16>) -> Result<(), ()> {
         if !self.has_host() || self.scheme() == "file" {
             return Err(())
@@ -902,12 +1087,18 @@ impl Url {
         }
 
         if let Some(host) = host {
+            if host == "" && SchemeType::from(self.scheme()).is_special() {
+                return Err(ParseError::EmptyHost);
+            }
             self.set_host_internal(try!(Host::parse(host)), None)
         } else if self.has_host() {
+            if SchemeType::from(self.scheme()).is_special() {
+                return Err(ParseError::EmptyHost)
+            }
             debug_assert!(self.byte_at(self.scheme_end) == b':');
             debug_assert!(self.byte_at(self.path_start) == b'/');
             let new_path_start = self.scheme_end + 1;
-            self.serialization.drain(self.path_start as usize..new_path_start as usize);
+            self.serialization.drain(new_path_start as usize..self.path_start as usize);
             let offset = self.path_start - new_path_start;
             self.path_start = new_path_start;
             self.username_end = new_path_start;
@@ -1332,7 +1523,7 @@ impl serde::Deserialize for Url {
     }
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "redox"))]
 fn path_to_file_url_segments(path: &Path, serialization: &mut String) -> Result<(), ()> {
     use std::os::unix::prelude::OsStrExt;
     if !path.is_absolute() {
@@ -1392,7 +1583,7 @@ fn path_to_file_url_segments_windows(path: &Path, serialization: &mut String) ->
     Ok(())
 }
 
-#[cfg(unix)]
+#[cfg(any(unix, target_os = "redox"))]
 fn file_url_segments_to_pathbuf(segments: str::Split<char>) -> Result<PathBuf, ()> {
     use std::ffi::OsStr;
     use std::os::unix::prelude::OsStrExt;
@@ -1419,11 +1610,31 @@ fn file_url_segments_to_pathbuf(segments: str::Split<char>) -> Result<PathBuf, (
 #[cfg_attr(not(windows), allow(dead_code))]
 fn file_url_segments_to_pathbuf_windows(mut segments: str::Split<char>) -> Result<PathBuf, ()> {
     let first = try!(segments.next().ok_or(()));
-    if first.len() != 2 || !first.starts_with(parser::ascii_alpha)
-            || first.as_bytes()[1] != b':' {
-        return Err(())
-    }
-    let mut string = first.to_owned();
+
+    let mut string = match first.len() {
+        2 => {
+            if !first.starts_with(parser::ascii_alpha) || first.as_bytes()[1] != b':' {
+                return Err(())
+            }
+
+            first.to_owned()
+        },
+
+        4 => {
+            if !first.starts_with(parser::ascii_alpha) {
+                return Err(())
+            }
+            let bytes = first.as_bytes();
+            if bytes[1] != b'%' || bytes[2] != b'3' || (bytes[3] != b'a' && bytes[3] != b'A') {
+                return Err(())
+            }
+
+            first[0..1].to_owned() + ":"
+        },
+
+        _ => return Err(()),
+    };
+
     for segment in segments {
         string.push('\\');
 
