@@ -9,6 +9,7 @@
 #include "nsFrameMessageManager.h"
 
 #include "ContentChild.h"
+#include "nsASCIIMask.h"
 #include "nsContentUtils.h"
 #include "nsDOMClassInfoID.h"
 #include "nsError.h"
@@ -591,7 +592,7 @@ AllowMessage(size_t aDataLength, const nsAString& aMessageName)
   }
 
   NS_ConvertUTF16toUTF8 messageName(aMessageName);
-  messageName.StripChars("0123456789");
+  messageName.StripTaggedASCII(ASCIIMask::Mask0to9());
 
   Telemetry::Accumulate(Telemetry::MESSAGE_MANAGER_MESSAGE_SIZE2, messageName,
                         aDataLength);
@@ -677,7 +678,7 @@ nsFrameMessageManager::SendMessage(const nsAString& aMessageName,
     
     
     
-    messageName.StripChars("0123456789");
+    messageName.StripTaggedASCII(ASCIIMask::Mask0to9());
     Telemetry::Accumulate(Telemetry::IPC_SYNC_MESSAGE_MANAGER_LATENCY_MS,
                           messageName, latencyMs);
   }

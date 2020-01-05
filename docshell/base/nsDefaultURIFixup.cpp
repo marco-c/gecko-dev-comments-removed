@@ -167,7 +167,7 @@ nsDefaultURIFixup::GetFixupURIInfo(const nsACString& aStringURI,
   nsAutoCString uriString(aStringURI);
 
   
-  uriString.StripChars("\r\n");
+  uriString.StripCRLF();
   
   uriString.Trim(" ");
 
