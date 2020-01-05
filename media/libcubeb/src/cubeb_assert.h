@@ -12,6 +12,6 @@
 #include <mozilla/Assertions.h>
 
 
-#define XASSERT(expr) MOZ_ASSERT(expr)
+#define XASSERT(expr) MOZ_RELEASE_ASSERT(expr)
 
 #endif
