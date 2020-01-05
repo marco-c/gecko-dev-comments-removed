@@ -33,31 +33,34 @@ def do_process_check(func, always=False):
 
         def check_for_crash():
             try:
-                m.check_for_crash()
-            except:
+                return m.check_for_crash()
+            except Exception:
                 
                 traceback.print_exc()
+
+                return False
 
         try:
             return func(*args, **kwargs)
         except (MarionetteException, IOError) as e:
             exc, val, tb = sys.exc_info()
+            crashed = False
 
             
             
             
             if not isinstance(e, MarionetteException) or type(e) is MarionetteException:
                 if not always:
-                    check_for_crash()
+                    crashed = check_for_crash()
 
             
-            if type(e) in (socket.error, socket.timeout):
-                m.force_shutdown()
+            if type(e) in (socket.error, socket.timeout) or crashed:
+                m.handle_socket_failure(crashed)
 
             raise exc, val, tb
         finally:
             if always:
-                check_for_crash(m)
+                check_for_crash()
     return _
 
 
