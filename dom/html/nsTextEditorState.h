@@ -313,6 +313,12 @@ public:
   
   
   
+  void GetSelectionDirectionString(nsAString& aDirection,
+                                   mozilla::ErrorResult& aRv);
+
+  
+  
+  
   void SetSelectionDirection(const nsAString& aDirection,
                              mozilla::ErrorResult& aRv);
 
