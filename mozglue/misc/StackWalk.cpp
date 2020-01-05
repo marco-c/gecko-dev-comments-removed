@@ -222,6 +222,11 @@ struct WalkStackData
 DWORD gStackWalkThread;
 CRITICAL_SECTION gDbgHelpCS;
 
+#ifdef _M_AMD64
+static uint8_t* sJitCodeRegionStart;
+static size_t sJitCodeRegionSize;
+#endif
+
 
 static void
 PrintError(const char* aPrefix)
@@ -399,6 +404,14 @@ WalkStackMain64(struct WalkStackData* aData)
 #elif defined(_M_AMD64)
     
     
+    if (sJitCodeRegionStart &&
+        (uint8_t*)context.Rip >= sJitCodeRegionStart &&
+        (uint8_t*)context.Rip < sJitCodeRegionStart + sJitCodeRegionSize) {
+      break;
+    }
+
+    
+    
     ULONG64 imageBase;
     PRUNTIME_FUNCTION runtimeFunction =
       RtlLookupFunctionEntry(context.Rip, &imageBase, NULL);
@@ -499,6 +512,33 @@ ReleaseStackWalkWorkaroundLock()
   LeaveCriticalSection(&gWorkaroundLock.lock);
 #endif
 }
+
+MFBT_API void
+RegisterJitCodeRegion(uint8_t* aStart, size_t aSize)
+{
+#ifdef _M_AMD64
+  
+  MOZ_RELEASE_ASSERT(!sJitCodeRegionStart);
+
+  sJitCodeRegionStart = aStart;
+  sJitCodeRegionSize = aSize;
+#endif
+}
+
+MFBT_API void
+UnregisterJitCodeRegion(uint8_t* aStart, size_t aSize)
+{
+#ifdef _M_AMD64
+  
+  MOZ_RELEASE_ASSERT(sJitCodeRegionStart &&
+                     sJitCodeRegionStart == aStart &&
+                     sJitCodeRegionSize == aSize);
+
+  sJitCodeRegionStart = nullptr;
+  sJitCodeRegionSize = 0;
+#endif
+}
+
 
 static unsigned int WINAPI
 WalkStackThread(void* aData)
