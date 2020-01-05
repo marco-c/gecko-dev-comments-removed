@@ -602,6 +602,8 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
 
     
     
+    
+    
     let kind = yield getKindForItem(bookmarkItem);
     let item;
     switch (kind) {
@@ -632,11 +634,10 @@ const BookmarkSyncUtils = PlacesSyncUtils.bookmarks = Object.freeze({
     }
 
     
+    
     if (bookmarkItem.parentGuid) {
       let parent = yield PlacesUtils.bookmarks.fetch(bookmarkItem.parentGuid);
-      if ("title" in parent) {
-        item.parentTitle = parent.title;
-      }
+      item.parentTitle = parent.title || "";
     }
 
     return item;
@@ -1418,6 +1419,10 @@ function syncBookmarkToPlacesBookmark(info) {
 var fetchBookmarkItem = Task.async(function* (bookmarkItem) {
   let item = yield placesBookmarkToSyncBookmark(bookmarkItem);
 
+  if (!item.title) {
+    item.title = "";
+  }
+
   item.tags = PlacesUtils.tagging.getTagsForURI(
     PlacesUtils.toURI(bookmarkItem.url), {});
 
@@ -1445,6 +1450,10 @@ var fetchBookmarkItem = Task.async(function* (bookmarkItem) {
 var fetchFolderItem = Task.async(function* (bookmarkItem) {
   let item = yield placesBookmarkToSyncBookmark(bookmarkItem);
 
+  if (!item.title) {
+    item.title = "";
+  }
+
   let description = yield getAnno(bookmarkItem.guid,
                                   BookmarkSyncUtils.DESCRIPTION_ANNO);
   if (description) {
@@ -1464,6 +1473,10 @@ var fetchFolderItem = Task.async(function* (bookmarkItem) {
 
 var fetchLivemarkItem = Task.async(function* (bookmarkItem) {
   let item = yield placesBookmarkToSyncBookmark(bookmarkItem);
+
+  if (!item.title) {
+    item.title = "";
+  }
 
   let description = yield getAnno(bookmarkItem.guid,
                                   BookmarkSyncUtils.DESCRIPTION_ANNO);
