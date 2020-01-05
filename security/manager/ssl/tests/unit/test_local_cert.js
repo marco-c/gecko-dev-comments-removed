@@ -49,11 +49,15 @@ add_task(function* () {
   ok(!certService.loginPromptRequired);
 
   let certA = yield getOrCreateCert(gNickname);
-  equal(certA.nickname, gNickname);
+  
+  
+  
+  
+  equal(certA.displayName, gNickname);
 
   
   let certB = yield getOrCreateCert(gNickname);
-  equal(certB.nickname, gNickname);
+  equal(certB.displayName, gNickname);
 
   
   ok(certA.equals(certB));

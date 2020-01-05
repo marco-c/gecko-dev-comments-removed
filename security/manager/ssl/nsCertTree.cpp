@@ -1075,30 +1075,9 @@ nsCertTree::GetCellText(int32_t row, nsITreeColumn* col,
 
   if (NS_LITERAL_STRING("certcol").Equals(colID)) {
     if (!cert) {
-      mNSSComponent->GetPIPNSSBundleString("CertNotStored", _retval);
-    }
-    else {
-      rv = cert->GetCommonName(_retval);
-      if (NS_FAILED(rv) || _retval.IsEmpty()) {
-        
-        
-        nsAutoString nick;
-        rv = cert->GetNickname(nick);
-        
-        nsAString::const_iterator start, end, end2;
-        nick.BeginReading(start);
-        nick.EndReading(end);
-        end2 = end;
-  
-        if (FindInReadable(NS_LITERAL_STRING(":"), start, end)) {
-          
-          
-          _retval = Substring(end, end2);
-        }
-        else {
-          _retval = nick;
-        }
-      }
+      rv = mNSSComponent->GetPIPNSSBundleString("CertNotStored", _retval);
+    } else {
+      rv = cert->GetDisplayName(_retval);
     }
   } else if (NS_LITERAL_STRING("tokencol").Equals(colID) && cert) {
     rv = cert->GetTokenName(_retval);
