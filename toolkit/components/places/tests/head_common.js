@@ -864,16 +864,14 @@ function sortBy(array, prop) {
 
 
 
-
-
-function setFaviconForPage(page, icon, forceReload = true) {
+function setFaviconForPage(page, icon) {
   let pageURI = page instanceof Ci.nsIURI ? page
                                           : NetUtil.newURI(new URL(page).href);
   let iconURI = icon instanceof Ci.nsIURI ? icon
                                           : NetUtil.newURI(new URL(icon).href);
   return new Promise(resolve => {
     PlacesUtils.favicons.setAndFetchFaviconForPage(
-      pageURI, iconURI, forceReload,
+      pageURI, iconURI, true,
       PlacesUtils.favicons.FAVICON_LOAD_NON_PRIVATE,
       resolve,
       Services.scriptSecurityManager.getSystemPrincipal()
