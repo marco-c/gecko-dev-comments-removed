@@ -134,19 +134,15 @@ impl<T: ClipboardProvider> TextInput<T> {
 
     
     pub fn insert_char(&mut self, ch: char) {
-        if self.selection_begin.is_none() {
-            self.selection_begin = Some(self.edit_point);
-        }
-        self.replace_selection(ch.to_string());
+        self.insert_string(ch.to_string());
     }
 
     
-    fn insert_string(&mut self, s: &str) {
-        
-        
-        for ch in s.chars() {
-            self.insert_char(ch);
+    fn insert_string<S: Into<String>>(&mut self, s: S) {
+        if self.selection_begin.is_none() {
+            self.selection_begin = Some(self.edit_point);
         }
+        self.replace_selection(s.into());
     }
 
     pub fn get_sorted_selection(&self) -> (TextPoint, TextPoint) {
@@ -316,7 +312,7 @@ impl<T: ClipboardProvider> TextInput<T> {
             },
            Key::V if is_control_key(mods) => {
                 let contents = self.clipboard_provider.clipboard_contents();
-                self.insert_string(&contents);
+                self.insert_string(contents);
                 KeyReaction::DispatchInput
             },
             _ if is_printable_key(key) => {
