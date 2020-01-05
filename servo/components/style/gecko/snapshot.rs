@@ -1,16 +1,17 @@
 
 
 
+
+use element_state::ElementState;
+use gecko::snapshot_helpers;
+use gecko::wrapper::AttrSelectorHelpers;
 use gecko_bindings::bindings;
 use gecko_bindings::structs::ServoElementSnapshot;
 use gecko_bindings::structs::ServoElementSnapshotFlags as Flags;
-use gecko_string_cache::Atom;
+use restyle_hints::ElementSnapshot;
+use selector_impl::TheSelectorImpl;
 use selectors::parser::AttrSelector;
-use snapshot_helpers;
-use style::element_state::ElementState;
-use style::restyle_hints::ElementSnapshot;
-use style::selector_impl::TheSelectorImpl;
-use wrapper::AttrSelectorHelpers;
+use string_cache::Atom;
 
 
 

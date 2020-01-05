@@ -2,9 +2,9 @@
 
 
 
+use context::{LocalStyleContext, StyleContext, SharedStyleContext};
 use std::cell::RefCell;
 use std::rc::Rc;
-use style::context::{LocalStyleContext, StyleContext, SharedStyleContext};
 
 thread_local!(static LOCAL_CONTEXT_KEY: RefCell<Option<Rc<LocalStyleContext>>> = RefCell::new(None));
 

@@ -2,7 +2,7 @@
 
 
 
-use bindings::*;
+use gecko_bindings::bindings::*;
 use heapsize::HeapSizeOf;
 use std::fmt::{self, Debug};
 

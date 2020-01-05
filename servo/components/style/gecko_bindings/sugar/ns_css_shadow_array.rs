@@ -2,12 +2,12 @@
 
 
 
-use bindings::Gecko_AddRefCSSShadowArrayArbitraryThread;
-use bindings::Gecko_NewCSSShadowArray;
-use bindings::Gecko_ReleaseCSSShadowArrayArbitraryThread;
+use gecko_bindings::bindings::Gecko_AddRefCSSShadowArrayArbitraryThread;
+use gecko_bindings::bindings::Gecko_NewCSSShadowArray;
+use gecko_bindings::bindings::Gecko_ReleaseCSSShadowArrayArbitraryThread;
+use gecko_bindings::structs::{RefPtr, nsCSSShadowArray, nsCSSShadowItem};
 use std::{ptr, slice};
 use std::ops::{Deref, DerefMut};
-use structs::{RefPtr, nsCSSShadowArray, nsCSSShadowItem};
 
 impl RefPtr<nsCSSShadowArray> {
     pub fn replace_with_new(&mut self, len: u32) {
