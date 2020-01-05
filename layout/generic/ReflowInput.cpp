@@ -534,6 +534,9 @@ IsQuirkContainingBlockHeight(const ReflowInput* rs, nsIAtom* aFrameType)
 void
 ReflowInput::InitResizeFlags(nsPresContext* aPresContext, nsIAtom* aFrameType)
 {
+  SetBResize(false);
+  SetIResize(false);
+
   const WritingMode wm = mWritingMode; 
   
   
