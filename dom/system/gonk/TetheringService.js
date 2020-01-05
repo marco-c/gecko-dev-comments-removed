@@ -593,9 +593,9 @@ TetheringService.prototype = {
 
     if (aCallback) {
       
-      Services.tm.currentThread.dispatch(() => {
+      Services.tm.dispatchToMainThread(() => {
         aCallback.wifiTetheringEnabledChange(aMsg);
-      }, Ci.nsIThread.DISPATCH_NORMAL);
+      });
     }
   },
 

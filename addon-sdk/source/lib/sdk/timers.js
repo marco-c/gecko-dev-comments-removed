@@ -80,8 +80,7 @@ function setImmediate(callback, ...params) {
   
   if (!dispatcher.scheduled) {
     dispatcher.scheduled = true;
-    threadManager.currentThread.dispatch(dispatcher,
-                                         Ci.nsIThread.DISPATCH_NORMAL);
+    threadManager.dispatchToMainThread(dispatcher);
   }
   return id;
 }

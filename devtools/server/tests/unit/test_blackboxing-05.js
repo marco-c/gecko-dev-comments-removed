@@ -24,9 +24,9 @@ function run_test() {
         
         
         
-        Services.tm.mainThread.dispatch({
+        Services.tm.dispatchToMainThread({
           run: test_black_box
-        }, Ci.nsIThread.DISPATCH_NORMAL);
+        });
       });
   });
   do_test_pending();

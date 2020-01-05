@@ -315,7 +315,7 @@ var WebExtensionInspectedWindowActor = protocol.ActorClassWithSpec(
       
       
       
-      Services.tm.currentThread.dispatch(delayedReload, 0);
+      Services.tm.dispatchToMainThread(delayedReload);
 
       return {};
     },

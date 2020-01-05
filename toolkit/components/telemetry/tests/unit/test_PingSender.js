@@ -76,8 +76,7 @@ add_task(function* test_pingSender() {
 
     if (hitCount >= 2) {
       
-      Services.tm.currentThread.dispatch(() => deferred404Hit.resolve(),
-                                         Ci.nsIThread.DISPATCH_NORMAL);
+      Services.tm.dispatchToMainThread(() => deferred404Hit.resolve());
     }
   });
   failingServer.start(-1);

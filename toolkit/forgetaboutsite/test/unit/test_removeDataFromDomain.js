@@ -382,9 +382,9 @@ function waitForPurgeNotification() {
       
       
       
-      Services.tm.mainThread.dispatch(function() {
+      Services.tm.dispatchToMainThread(function() {
         deferred.resolve();
-      }, Components.interfaces.nsIThread.DISPATCH_NORMAL);
+      });
     }
   };
   Services.obs.addObserver(observer, "browser:purge-domain-data", false);
