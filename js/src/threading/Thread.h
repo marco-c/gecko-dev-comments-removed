@@ -104,14 +104,6 @@ public:
   
   
   
-  template <typename F, typename... Args>
-  explicit Thread(F&& f, Args&&... args) {
-    MOZ_RELEASE_ASSERT(init(mozilla::Forward<F>(f),
-                            mozilla::Forward<Args>(args)...));
-  }
-
-  
-  
   
   template <typename F, typename... Args>
   MOZ_MUST_USE bool init(F&& f, Args&&... args) {
