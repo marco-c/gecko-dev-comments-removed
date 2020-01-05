@@ -724,32 +724,35 @@ class HiddenExtensionPage {
 
 
 
-  async createBrowserElement() {
+  createBrowserElement() {
     if (this.browser) {
       throw new Error("createBrowserElement called twice");
     }
 
-    let chromeDoc = await this.createWindowlessBrowser();
-
-    const browser = this.browser = chromeDoc.createElement("browser");
-    browser.setAttribute("type", "content");
-    browser.setAttribute("disableglobalhistory", "true");
-    browser.setAttribute("webextension-view-type", this.viewType);
-
-    let awaitFrameLoader = Promise.resolve();
-
+    let waitForParentDocument;
     if (this.extension.remote) {
-      browser.setAttribute("remote", "true");
-      browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
-      awaitFrameLoader = promiseEvent(browser, "XULFrameLoaderCreated");
+      waitForParentDocument = this.createWindowedBrowser();
+    } else {
+      waitForParentDocument = this.createWindowlessBrowser();
     }
 
-    chromeDoc.documentElement.appendChild(browser);
-    await awaitFrameLoader;
+    return waitForParentDocument.then(chromeDoc => {
+      const browser = this.browser = chromeDoc.createElement("browser");
+      browser.setAttribute("type", "content");
+      browser.setAttribute("disableglobalhistory", "true");
+      browser.setAttribute("webextension-view-type", this.viewType);
 
-    browser.docShellIsActive = false;
+      let awaitFrameLoader = Promise.resolve();
 
-    return browser;
+      if (this.extension.remote) {
+        browser.setAttribute("remote", "true");
+        browser.setAttribute("remoteType", E10SUtils.EXTENSION_REMOTE_TYPE);
+        awaitFrameLoader = promiseEvent(browser, "XULFrameLoaderCreated");
+      }
+
+      chromeDoc.documentElement.appendChild(browser);
+      return awaitFrameLoader.then(() => browser);
+    });
   }
 
   
@@ -766,26 +769,58 @@ class HiddenExtensionPage {
 
 
   createWindowlessBrowser() {
-    
-    
-    let windowlessBrowser = Services.appShell.createWindowlessBrowser(true);
-    this.windowlessBrowser = windowlessBrowser;
+    return Task.spawn(function* () {
+      
+      
+      let windowlessBrowser = Services.appShell.createWindowlessBrowser(true);
+      this.windowlessBrowser = windowlessBrowser;
 
-    
-    
-    
-    
-    
-    
-    
-    
-    let chromeShell = windowlessBrowser.QueryInterface(Ci.nsIInterfaceRequestor)
-                                       .getInterface(Ci.nsIDocShell)
-                                       .QueryInterface(Ci.nsIWebNavigation);
+      
+      
+      
+      
+      
+      
+      
+      
+      let chromeShell = windowlessBrowser.QueryInterface(Ci.nsIInterfaceRequestor)
+                                         .getInterface(Ci.nsIDocShell)
+                                         .QueryInterface(Ci.nsIWebNavigation);
 
-    return this.initParentWindow(chromeShell).then(() => {
+      yield this.initParentWindow(chromeShell);
+
       return promiseDocumentLoaded(windowlessBrowser.document);
-    });
+    }.bind(this));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  createWindowedBrowser() {
+    return Task.spawn(function* () {
+      let window = Services.ww.openWindow(null, "about:blank", "_blank",
+                                          "chrome,alwaysLowered,dialog", null);
+
+      this.parentWindow = window;
+
+      let chromeShell = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                              .getInterface(Ci.nsIDocShell)
+                              .QueryInterface(Ci.nsIWebNavigation);
+
+
+      yield this.initParentWindow(chromeShell);
+
+      window.minimize();
+
+      return promiseDocumentLoaded(window.document);
+    }.bind(this));
   }
 
   
