@@ -135,6 +135,7 @@
 #include "mozilla/WindowsVersion.h"
 #include "mozilla/TextEvents.h" 
 #include "mozilla/TextEventDispatcherListener.h"
+#include "mozilla/widget/nsAutoRollup.h"
 #include "mozilla/widget/WinNativeEventData.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
 #include "nsThemeConstants.h"
@@ -7916,7 +7917,7 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
   }
 
   
-  NS_ASSERTION(!mLastRollup, "mLastRollup is null");
+  NS_ASSERTION(!nsAutoRollup::GetLastRollup(), "last rollup is null");
 
   if (nativeMessage == WM_TOUCH || nativeMessage == WM_LBUTTONDOWN || nativeMessage == WM_POINTERDOWN) {
     nsIntPoint pos;
@@ -7932,9 +7933,10 @@ nsWindow::DealWithPopups(HWND aWnd, UINT aMessage,
       pos = nsIntPoint(pt.x, pt.y);
     }
 
+    nsIContent* lastRollup;
     consumeRollupEvent =
-      rollupListener->Rollup(popupsToRollup, true, &pos, &mLastRollup);
-    NS_IF_ADDREF(mLastRollup);
+      rollupListener->Rollup(popupsToRollup, true, &pos, &lastRollup);
+    nsAutoRollup::SetLastRollup(lastRollup);
   } else {
     consumeRollupEvent =
       rollupListener->Rollup(popupsToRollup, true, nullptr, nullptr);

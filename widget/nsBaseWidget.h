@@ -32,7 +32,6 @@ const mozilla::gfx::SurfaceFormat kScrollCaptureFormat =
 #endif
 
 class nsIContent;
-class nsAutoRollup;
 class gfxContext;
 
 namespace mozilla {
@@ -112,7 +111,6 @@ public:
 
 class nsBaseWidget : public nsIWidget, public nsSupportsWeakReference
 {
-  friend class nsAutoRollup;
   friend class DispatchWheelEventOnMainThread;
   friend class mozilla::widget::InProcessCompositorWidget;
   friend class mozilla::layers::RemoteCompositorSession;
@@ -466,11 +464,6 @@ protected:
   void ArrayFromRegion(const LayoutDeviceIntRegion& aRegion,
                        nsTArray<LayoutDeviceIntRect>& aRects);
 
-  virtual nsIContent* GetLastRollup() override
-  {
-    return mLastRollup;
-  }
-
   virtual nsresult SynthesizeNativeKeyEvent(int32_t aNativeKeyboardLayout,
                                             int32_t aNativeKeyCode,
                                             uint32_t aModifierFlags,
@@ -696,10 +689,6 @@ protected:
 #endif
   static nsIRollupListener* gRollupListener;
 
-  
-  
-  static nsIContent* mLastRollup;
-
   struct InitialZoomConstraints {
     InitialZoomConstraints(const uint32_t& aPresShellID,
                            const FrameMetrics::ViewID& aViewID,
@@ -745,28 +734,6 @@ protected:
 
   static bool debug_GetCachedBoolPref(const char* aPrefName);
 #endif
-};
-
-
-
-
-
-
-
-
-
-
-
-
-
-class nsAutoRollup
-{
-  bool wasClear;
-
-  public:
-
-  nsAutoRollup();
-  ~nsAutoRollup();
 };
 
 #endif 

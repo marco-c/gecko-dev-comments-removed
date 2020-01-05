@@ -1458,11 +1458,6 @@ class nsIWidget : public nsISupports
     
 
 
-    virtual nsIContent* GetLastRollup() = 0;
-
-    
-
-
     virtual MOZ_MUST_USE nsresult
     BeginResizeDrag(mozilla::WidgetGUIEvent* aEvent,
                     int32_t aHorizontal,

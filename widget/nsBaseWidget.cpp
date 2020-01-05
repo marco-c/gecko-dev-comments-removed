@@ -108,7 +108,6 @@ using namespace mozilla::widget;
 using namespace mozilla;
 using base::Thread;
 
-nsIContent* nsBaseWidget::mLastRollup = nullptr;
 
 
 bool            gDisableNativeTheme               = false;
@@ -140,21 +139,6 @@ IMENotification::SelectionChangeDataBase::GetWritingMode() const
 
 } 
 } 
-
-nsAutoRollup::nsAutoRollup()
-{
-  
-  
-  
-  wasClear = !nsBaseWidget::mLastRollup;
-}
-
-nsAutoRollup::~nsAutoRollup()
-{
-  if (nsBaseWidget::mLastRollup && wasClear) {
-    NS_RELEASE(nsBaseWidget::mLastRollup);
-  }
-}
 
 NS_IMPL_ISUPPORTS(nsBaseWidget, nsIWidget, nsISupportsWeakReference)
 
