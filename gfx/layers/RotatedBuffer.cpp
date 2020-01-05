@@ -543,10 +543,20 @@ RotatedContentBuffer::BeginPaint(PaintedLayer* aLayer,
     return result;
 
   if (HaveBuffer()) {
-    
-    
-    
-    FinalizeFrame(result.mRegionToDraw);
+    if (LockBuffers()) {
+      
+      
+      
+      FinalizeFrame(result.mRegionToDraw);
+    } else {
+      
+      
+      
+      
+      result.mRegionToDraw = neededRegion;
+      canReuseBuffer = false;
+      Clear();
+    }
   }
 
   IntRect drawBounds = result.mRegionToDraw.GetBounds();
