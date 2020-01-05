@@ -191,6 +191,8 @@ const currentSchemaVersion = 1;
 
 
 
+
+
 class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
   constructor(collection, options = {}) {
     super();
@@ -201,8 +203,10 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
   }
 
   
-  
-  
+
+
+
+
   static _init(connection) {
     return Task.spawn(function* () {
       yield connection.executeTransaction(function* doSetup() {
@@ -224,30 +228,22 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
   }
 
   _executeStatement(statement, params) {
-    if (!this._connection) {
-      throw new Error("The storage adapter is not open");
-    }
     return this._connection.executeCached(statement, params);
   }
 
-  open() {
-    const self = this;
-    return Task.spawn(function* () {
-      if (!self._connection) {
-        const path = self._options.path || SQLITE_PATH;
-        const opts = { path, sharedMemoryCache: false };
-        self._connection = yield Sqlite.openConnection(opts).then(FirefoxAdapter._init);
-      }
-    });
-  }
+  
 
-  close() {
-    if (this._connection) {
-      const promise = this._connection.close();
-      this._connection = null;
-      return promise;
-    }
-    return Promise.resolve();
+
+
+
+
+
+
+
+
+  static async openConnection(options) {
+    const opts = Object.assign({}, { sharedMemoryCache: false }, options);
+    return await Sqlite.openConnection(opts).then(this._init);
   }
 
   clear() {
@@ -256,10 +252,6 @@ class FirefoxAdapter extends Kinto.adapters.BaseAdapter {
   }
 
   execute(callback, options = { preload: [] }) {
-    if (!this._connection) {
-      throw new Error("The storage adapter is not open");
-    }
-
     let result;
     const conn = this._connection;
     const collection = this.collection;

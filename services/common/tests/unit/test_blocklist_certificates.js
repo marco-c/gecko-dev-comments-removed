@@ -14,21 +14,17 @@ let server;
 
 const kintoFilename = "kinto.sqlite";
 
-let kintoClient;
-
-function do_get_kinto_collection(collectionName) {
-  if (!kintoClient) {
-    let config = {
-      
-      
-      remote: "https://firefox.settings.services.mozilla.com/v1/",
-      
-      adapter: FirefoxAdapter,
-      bucket: "blocklists"
-    };
-    kintoClient = new Kinto(config);
-  }
-  return kintoClient.collection(collectionName);
+function do_get_kinto_collection(collectionName, sqliteHandle) {
+  let config = {
+    
+    
+    remote: "https://firefox.settings.services.mozilla.com/v1/",
+    
+    adapter: FirefoxAdapter,
+    adapterOptions: {sqliteHandle},
+    bucket: "blocklists"
+  };
+  return new Kinto(config).collection(collectionName);
 }
 
 
@@ -72,22 +68,22 @@ add_task(function* test_something(){
 
   
   
-  let collection = do_get_kinto_collection("certificates");
-  yield collection.db.open();
+  let sqliteHandle = yield FirefoxAdapter.openConnection({path: kintoFilename});
+  let collection = do_get_kinto_collection("certificates", sqliteHandle);
   let list = yield collection.list();
   do_check_eq(list.data.length, 1);
-  yield collection.db.close();
+  yield sqliteHandle.close();
 
   
   result = yield OneCRLBlocklistClient.maybeSync(4000, Date.now());
 
   
   
-  collection = do_get_kinto_collection("certificates");
-  yield collection.db.open();
+  sqliteHandle = yield FirefoxAdapter.openConnection({path: kintoFilename});
+  collection = do_get_kinto_collection("certificates", sqliteHandle);
   list = yield collection.list();
   do_check_eq(list.data.length, 3);
-  yield collection.db.close();
+  yield sqliteHandle.close();
 
   
   
