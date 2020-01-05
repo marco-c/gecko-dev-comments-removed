@@ -121,9 +121,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.17.0"
-#define SQLITE_VERSION_NUMBER 3017000
-#define SQLITE_SOURCE_ID      "2017-02-13 16:02:40 ada05cfa86ad7f5645450ac7a2a21c9aa6e57d2c"
+#define SQLITE_VERSION        "3.18.0"
+#define SQLITE_VERSION_NUMBER 3018000
+#define SQLITE_SOURCE_ID      "2017-03-28 18:48:43 424a0d380332858ee55bdebc4af3789f74e70a2b3ba1cf29d84b9b4bcf3e2e37"
 
 
 
@@ -2078,7 +2078,27 @@ SQLITE_API int sqlite3_extended_result_codes(sqlite3*, int onoff);
 
 
 
+
+
+
+
+
+
+
+
+
+
 SQLITE_API sqlite3_int64 sqlite3_last_insert_rowid(sqlite3*);
+
+
+
+
+
+
+
+
+
+SQLITE_API void sqlite3_set_last_insert_rowid(sqlite3*,sqlite3_int64);
 
 
 
@@ -3443,6 +3463,7 @@ SQLITE_API int sqlite3_limit(sqlite3*, int id, int newVal);
 #define SQLITE_LIMIT_VARIABLE_NUMBER           9
 #define SQLITE_LIMIT_TRIGGER_DEPTH            10
 #define SQLITE_LIMIT_WORKER_THREADS           11
+
 
 
 
