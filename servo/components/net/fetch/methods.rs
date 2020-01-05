@@ -7,7 +7,7 @@ use connector::create_http_connector;
 use data_loader::decode;
 use devtools_traits::DevtoolsControlMsg;
 use fetch::cors_cache::CorsCache;
-use filemanager_thread::{FileManager, UIProvider};
+use filemanager_thread::FileManager;
 use http_loader::{HttpState, set_default_accept_encoding, set_default_accept_language, set_request_cookies};
 use http_loader::{NetworkHttpRequestFactory, ReadResult, StreamedResponse, obtain_response, read_block};
 use http_loader::{auth_from_cache, determine_request_referrer, set_cookies_from_headers};
@@ -52,28 +52,28 @@ enum Data {
     Done,
 }
 
-pub struct FetchContext<UI: 'static + UIProvider> {
+pub struct FetchContext {
     pub state: HttpState,
     pub user_agent: Cow<'static, str>,
     pub devtools_chan: Option<Sender<DevtoolsControlMsg>>,
-    pub filemanager: FileManager<UI>,
+    pub filemanager: FileManager,
 }
 
 type DoneChannel = Option<(Sender<Data>, Receiver<Data>)>;
 
 
-pub fn fetch<UI: 'static + UIProvider>(request: Rc<Request>,
-                                       target: &mut Target,
-                                       context: &FetchContext<UI>)
-                                       -> Response {
+pub fn fetch(request: Rc<Request>,
+             target: &mut Target,
+             context: &FetchContext)
+             -> Response {
     fetch_with_cors_cache(request, &mut CorsCache::new(), target, context)
 }
 
-pub fn fetch_with_cors_cache<UI: 'static + UIProvider>(request: Rc<Request>,
-                                                       cache: &mut CorsCache,
-                                                       target: &mut Target,
-                                                       context: &FetchContext<UI>)
-                                                       -> Response {
+pub fn fetch_with_cors_cache(request: Rc<Request>,
+                             cache: &mut CorsCache,
+                             target: &mut Target,
+                             context: &FetchContext)
+                             -> Response {
     
     if request.window.get() == Window::Client {
         
@@ -136,14 +136,14 @@ pub fn fetch_with_cors_cache<UI: 'static + UIProvider>(request: Rc<Request>,
 }
 
 
-fn main_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
-                                        cache: &mut CorsCache,
-                                        cors_flag: bool,
-                                        recursive_flag: bool,
-                                        target: &mut Target,
-                                        done_chan: &mut DoneChannel,
-                                        context: &FetchContext<UI>)
-                                        -> Response {
+fn main_fetch(request: Rc<Request>,
+              cache: &mut CorsCache,
+              cors_flag: bool,
+              recursive_flag: bool,
+              target: &mut Target,
+              done_chan: &mut DoneChannel,
+              context: &FetchContext)
+              -> Response {
     
 
     
@@ -400,12 +400,12 @@ fn main_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
 }
 
 
-fn basic_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
-                                         cache: &mut CorsCache,
-                                         target: &mut Target,
-                                         done_chan: &mut DoneChannel,
-                                         context: &FetchContext<UI>)
-                                         -> Response {
+fn basic_fetch(request: Rc<Request>,
+               cache: &mut CorsCache,
+               target: &mut Target,
+               done_chan: &mut DoneChannel,
+               context: &FetchContext)
+               -> Response {
     let url = request.current_url();
 
     match url.scheme() {
@@ -492,15 +492,15 @@ fn basic_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
 }
 
 
-fn http_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
-                                        cache: &mut CorsCache,
-                                        cors_flag: bool,
-                                        cors_preflight_flag: bool,
-                                        authentication_fetch_flag: bool,
-                                        target: &mut Target,
-                                        done_chan: &mut DoneChannel,
-                                        context: &FetchContext<UI>)
-                                        -> Response {
+fn http_fetch(request: Rc<Request>,
+              cache: &mut CorsCache,
+              cors_flag: bool,
+              cors_preflight_flag: bool,
+              authentication_fetch_flag: bool,
+              target: &mut Target,
+              done_chan: &mut DoneChannel,
+              context: &FetchContext)
+              -> Response {
     
     *done_chan = None;
     
@@ -667,14 +667,14 @@ fn http_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
 }
 
 
-fn http_redirect_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
-                                                 cache: &mut CorsCache,
-                                                 response: Response,
-                                                 cors_flag: bool,
-                                                 target: &mut Target,
-                                                 done_chan: &mut DoneChannel,
-                                                 context: &FetchContext<UI>)
-                                                 -> Response {
+fn http_redirect_fetch(request: Rc<Request>,
+                       cache: &mut CorsCache,
+                       response: Response,
+                       cors_flag: bool,
+                       target: &mut Target,
+                       done_chan: &mut DoneChannel,
+                       context: &FetchContext)
+                       -> Response {
     
     assert_eq!(response.return_internal.get(), true);
 
@@ -748,12 +748,12 @@ fn http_redirect_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
 }
 
 
-fn http_network_or_cache_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
-                                                         credentials_flag: bool,
-                                                         authentication_fetch_flag: bool,
-                                                         done_chan: &mut DoneChannel,
-                                                         context: &FetchContext<UI>)
-                                                         -> Response {
+fn http_network_or_cache_fetch(request: Rc<Request>,
+                               credentials_flag: bool,
+                               authentication_fetch_flag: bool,
+                               done_chan: &mut DoneChannel,
+                               context: &FetchContext)
+                               -> Response {
     
     let request_has_no_window = true;
 
@@ -970,11 +970,11 @@ fn http_network_or_cache_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
 }
 
 
-fn http_network_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
-                                                credentials_flag: bool,
-                                                done_chan: &mut DoneChannel,
-                                                context: &FetchContext<UI>)
-                                                -> Response {
+fn http_network_fetch(request: Rc<Request>,
+                      credentials_flag: bool,
+                      done_chan: &mut DoneChannel,
+                      context: &FetchContext)
+                      -> Response {
     
 
     
@@ -1158,10 +1158,10 @@ fn http_network_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
 }
 
 /// [CORS preflight fetch](https://fetch.spec.whatwg.org#cors-preflight-fetch)
-fn cors_preflight_fetch<UI: 'static + UIProvider>(request: Rc<Request>,
-                                                  cache: &mut CorsCache,
-                                                  context: &FetchContext<UI>)
-                                                  -> Response {
+fn cors_preflight_fetch(request: Rc<Request>,
+                        cache: &mut CorsCache,
+                        context: &FetchContext)
+                        -> Response {
     // Step 1
     let mut preflight = Request::new(request.current_url(), Some(request.origin.borrow().clone()),
                                      request.is_service_worker_global_scope, request.pipeline_id.get());
