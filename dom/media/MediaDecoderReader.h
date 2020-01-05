@@ -245,6 +245,18 @@ public:
 
   
   
+  MediaEventSource<TrackInfo::TrackType>& OnTrackWaitingForKey()
+  {
+    return mOnTrackWaitingForKey;
+  }
+
+  MediaEventProducer<TrackInfo::TrackType>& OnTrackWaitingForKeyProducer()
+  {
+    return mOnTrackWaitingForKey;
+  }
+
+  
+  
   
   virtual void SetVideoBlankDecode(bool aIsBlankDecode) {}
 
@@ -305,6 +317,9 @@ protected:
 
   
   MediaEventProducer<void> mOnMediaNotSeekable;
+
+  
+  MediaEventProducer<TrackInfo::TrackType> mOnTrackWaitingForKey;
 
 private:
   virtual nsresult InitInternal() { return NS_OK; }
