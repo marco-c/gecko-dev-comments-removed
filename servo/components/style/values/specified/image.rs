@@ -141,6 +141,11 @@ impl Gradient {
             _ => { return Err(()); }
         };
 
+        
+        if stops.len() < 2 {
+            return Err(())
+        }
+
         Ok(Gradient {
             stops: stops,
             repeating: repeating,
