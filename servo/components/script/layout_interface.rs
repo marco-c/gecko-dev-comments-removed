@@ -113,6 +113,8 @@ pub trait LayoutRPC {
     fn offset_parent(&self) -> OffsetParentResponse;
     
     fn margin_style(&self) -> MarginStyleResponse;
+
+    fn nodes_from_point(&self, point: Point2D<f32>) -> Vec<UntrustedNodeAddress>;
 }
 
 #[derive(Clone)]
