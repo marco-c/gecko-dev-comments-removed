@@ -20,7 +20,7 @@ function getConnectionIcon() {
 
 function checkIdentityPopup(icon) {
   gIdentityHandler.refreshIdentityPopup();
-  is(getConnectionIcon(), `url("chrome://browser/skin/${icon}.svg")`);
+  is(getConnectionIcon(), `url("chrome://browser/skin/${icon}")`);
   is(getConnectionState(), "secure-cert-user-overridden");
   isnot(getPopupContentVerifier().style.display, "none", "Overridden certificate warning is shown");
   ok(getPopupContentVerifier().textContent.includes("security exception"), "Text shows overridden certificate warning.");
@@ -30,18 +30,18 @@ add_task(function* () {
 
   
   yield loadBadCertPage(MIXED_CONTENT_URL);
-  checkIdentityPopup("identity-mixed-passive-loaded");
+  checkIdentityPopup("connection-mixed-passive-loaded.svg#icon");
 
   
   gIdentityHandler.disableMixedContentProtection();
   yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
 
-  checkIdentityPopup("identity-mixed-active-loaded");
+  checkIdentityPopup("connection-mixed-active-loaded.svg#icon");
 
   
   yield BrowserTestUtils.loadURI(gBrowser.selectedBrowser, "https://self-signed.example.com");
   yield BrowserTestUtils.browserLoaded(gBrowser.selectedBrowser);
-  checkIdentityPopup("identity-mixed-passive-loaded");
+  checkIdentityPopup("connection-mixed-passive-loaded.svg#icon");
 
   
   let certOverrideService = Cc["@mozilla.org/security/certoverride;1"]
