@@ -138,6 +138,9 @@ nsPrincipal::GetOriginInternal(nsACString& aOrigin)
     return NS_ERROR_FAILURE;
   }
 
+  MOZ_ASSERT(!NS_IsAboutBlank(origin),
+             "The inner URI for about:blank must be moz-safe-about:blank");
+
   if (!nsScriptSecurityManager::GetStrictFileOriginPolicy() &&
       NS_URIIsLocalFile(origin)) {
     
@@ -176,7 +179,11 @@ nsPrincipal::GetOriginInternal(nsACString& aOrigin)
   
   bool isBehaved;
   if ((NS_SUCCEEDED(origin->SchemeIs("about", &isBehaved)) && isBehaved) ||
-      (NS_SUCCEEDED(origin->SchemeIs("moz-safe-about", &isBehaved)) && isBehaved) ||
+      (NS_SUCCEEDED(origin->SchemeIs("moz-safe-about", &isBehaved)) && isBehaved &&
+       
+       
+       
+       !origin->GetSpecOrDefault().EqualsLiteral("moz-safe-about:blank")) ||
       (NS_SUCCEEDED(origin->SchemeIs("indexeddb", &isBehaved)) && isBehaved)) {
     rv = origin->GetAsciiSpec(aOrigin);
     NS_ENSURE_SUCCESS(rv, rv);
