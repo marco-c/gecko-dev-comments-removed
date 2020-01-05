@@ -483,7 +483,7 @@ pub trait ImmutableFlowUtils {
     fn need_anonymous_flow(self, child: &Flow) -> bool;
 
     
-    fn generate_missing_child_flow<'ln, N: ThreadSafeLayoutNode<'ln>>(self, node: &N) -> FlowRef;
+    fn generate_missing_child_flow<N: ThreadSafeLayoutNode>(self, node: &N) -> FlowRef;
 
     
     fn contains_roots_of_absolute_flow_tree(&self) -> bool;
@@ -1272,7 +1272,7 @@ impl<'a> ImmutableFlowUtils for &'a Flow {
     
     
     
-    fn generate_missing_child_flow<'ln, N: ThreadSafeLayoutNode<'ln>>(self, node: &N) -> FlowRef {
+    fn generate_missing_child_flow<N: ThreadSafeLayoutNode>(self, node: &N) -> FlowRef {
         let mut style = node.style().clone();
         match self.class() {
             FlowClass::Table | FlowClass::TableRowGroup => {

@@ -28,7 +28,7 @@ pub struct RecalcStyleAndConstructFlows<'lc> {
     root: OpaqueNode,
 }
 
-impl<'lc, 'ln> DomTraversalContext<'ln, ServoLayoutNode<'ln>> for RecalcStyleAndConstructFlows<'lc> {
+impl<'lc, 'ln> DomTraversalContext<ServoLayoutNode<'ln>> for RecalcStyleAndConstructFlows<'lc> {
     type SharedContext = SharedLayoutContext;
     #[allow(unsafe_code)]
     fn new<'a>(shared: &'a Self::SharedContext, root: OpaqueNode) -> Self {
@@ -73,7 +73,7 @@ impl<'lc, 'ln> DomTraversalContext<'ln, ServoLayoutNode<'ln>> for RecalcStyleAnd
 }
 
 
-pub trait PostorderNodeMutTraversal<'ln, ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode<'ln>> {
+pub trait PostorderNodeMutTraversal<ConcreteThreadSafeLayoutNode: ThreadSafeLayoutNode> {
     
     fn process(&mut self, node: &ConcreteThreadSafeLayoutNode) -> bool;
 }
@@ -81,7 +81,7 @@ pub trait PostorderNodeMutTraversal<'ln, ConcreteThreadSafeLayoutNode: ThreadSaf
 
 #[inline]
 #[allow(unsafe_code)]
-fn construct_flows_at<'a, 'ln, N: LayoutNode<'ln>>(context: &'a LayoutContext<'a>, root: OpaqueNode, node: N) {
+fn construct_flows_at<'a, N: LayoutNode>(context: &'a LayoutContext<'a>, root: OpaqueNode, node: N) {
     
     {
         let tnode = node.to_threadsafe();
