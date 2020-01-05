@@ -189,6 +189,11 @@ CompositorVsyncScheduler::SetNeedsComposite()
   mNeedsComposite++;
   if (!mIsObservingVsync && mNeedsComposite) {
     ObserveVsync();
+    
+    
+    
+    
+    PostCompositeTask(TimeStamp::Now());
   }
 }
 
