@@ -327,10 +327,7 @@ nsDOMCSSDeclaration::ModifyDeclaration(GeckoFunc aGeckoFunc,
   if (decl->IsGecko()) {
     aGeckoFunc(decl->AsGecko(), env, &changed);
   } else {
-    
-    RefPtr<URLExtraData> data =
-      new URLExtraData(env.mBaseURI, env.mSheetURI, env.mPrincipal);
-    changed = aServoFunc(decl->AsServo(), data);
+    changed = aServoFunc(decl->AsServo(), urlData);
   }
   if (!changed) {
     
