@@ -34,6 +34,7 @@ use libc::uintptr_t;
 use paint_task::PaintLayer;
 use msg::compositor_msg::LayerId;
 use net_traits::image::base::Image;
+use util::opts;
 use util::cursor::Cursor;
 use util::linked_list::prepend_from;
 use util::geometry::{self, Au, MAX_RECT, ZERO_RECT};
@@ -279,6 +280,11 @@ impl StackingContext {
             
             let display_list =
                 DisplayListOptimizer::new(tile_bounds).optimize(&*self.display_list);
+
+            if opts::get().dump_display_list_optimized {
+                println!("**** optimized display list. Tile bounds: {:?}", tile_bounds);
+                display_list.print_items(String::from_str("*"));
+            }
 
             
             let mut positioned_children = SmallVec8::new();
