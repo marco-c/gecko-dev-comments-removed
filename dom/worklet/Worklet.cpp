@@ -208,6 +208,8 @@ public:
     
     compileOptions.setNoScriptRval(true);
 
+    JSAutoCompartment comp(cx, globalObj);
+
     JS::Rooted<JS::Value> unused(cx);
     if (!JS::Evaluate(cx, compileOptions, buffer, &unused)) {
       ErrorResult error;
