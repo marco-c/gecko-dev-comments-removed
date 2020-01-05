@@ -771,8 +771,6 @@ public:
 
 
 
-
-
   static nsresult LoadImage(nsIURI* aURI,
                             nsINode* aContext,
                             nsIDocument* aLoadingDocument,
@@ -783,8 +781,7 @@ public:
                             int32_t aLoadFlags,
                             const nsAString& initiatorType,
                             imgRequestProxy** aRequest,
-                            uint32_t aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE,
-                            bool aUseUrgentStartForChannel = false);
+                            uint32_t aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE);
 
   
 
@@ -2038,23 +2035,9 @@ public:
 
 
 
-
-
-
   static nsIWidget* WidgetForDocument(const nsIDocument* aDoc);
 
   
-
-
-
-
-
-  static nsIWidget* WidgetForContent(const nsIContent* aContent);
-
-  
-
-
-
 
 
 
@@ -2066,16 +2049,6 @@ public:
 
   static already_AddRefed<mozilla::layers::LayerManager>
   LayerManagerForDocument(const nsIDocument *aDoc);
-
-  
-
-
-
-
-
-
-  static already_AddRefed<mozilla::layers::LayerManager>
-  LayerManagerForContent(const nsIContent *aContent);
 
   
 
