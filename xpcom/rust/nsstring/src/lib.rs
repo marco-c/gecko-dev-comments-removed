@@ -163,13 +163,6 @@ const F_CLASS_FIXED: u32 = 1 << 16;
 
 
 
-
-enum Impossible {}
-
-
-
-
-
 macro_rules! define_string_types {
     {
         char_t = $char_t: ty;
@@ -236,9 +229,14 @@ macro_rules! define_string_types {
         /// associated with it is not necessarially safe to move. It is not safe
         /// to construct a nsAString yourself, unless it is received by
         /// dereferencing one of these types.
+        ///
+        /// NOTE: The `[u8; 0]` member is zero sized, and only exists to prevent
+        /// the construction by code outside of this module. It is used instead
+        /// of a private `()` member because the `improper_ctypes` lint complains
+        /// about some ZST members in `extern "C"` function declarations.
         #[repr(C)]
         pub struct $AString {
-            _prohibit_constructor: Impossible,
+            _prohibit_constructor: [u8; 0],
         }
 
         impl Deref for $AString {
