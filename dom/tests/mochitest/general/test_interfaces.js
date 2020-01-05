@@ -548,7 +548,7 @@ var interfaceNamesInGlobalScope =
 
     "HTMLVideoElement",
 
-    {name: "IdleDeadline", nightly: true},
+    {name: "IdleDeadline"},
 
     "IDBCursor",
 
