@@ -287,13 +287,9 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
   }
 
   
-  nsCSSPropertyIDSet winningInCascadeProperties;
   nsCSSPropertyIDSet runningOnCompositorProperties;
 
   for (const AnimationProperty& property : mProperties) {
-    if (property.mWinsInCascade) {
-      winningInCascadeProperties.AddProperty(property.mProperty);
-    }
     if (property.mIsRunningOnCompositor) {
       runningOnCompositorProperties.AddProperty(property.mProperty);
     }
@@ -302,8 +298,6 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
   mProperties = Move(properties);
 
   for (AnimationProperty& property : mProperties) {
-    property.mWinsInCascade =
-      winningInCascadeProperties.HasProperty(property.mProperty);
     property.mIsRunningOnCompositor =
       runningOnCompositorProperties.HasProperty(property.mProperty);
   }
@@ -1297,8 +1291,6 @@ KeyframeEffectReadOnly::MaybeUpdateFrameForCompositor()
     return;
   }
 
-  
-  
   
   
   

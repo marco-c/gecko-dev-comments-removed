@@ -711,20 +711,14 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
   propertiesWithImportantRules.Empty();
   propertiesForAnimationsLevel.Empty();
 
-  nsCSSPropertyIDSet animatedProperties;
   bool hasCompositorPropertiesForTransition = false;
 
-  for (KeyframeEffectReadOnly* effect : sortedEffectList) {
+  for (const KeyframeEffectReadOnly* effect : sortedEffectList) {
     MOZ_ASSERT(effect->GetAnimation(),
                "Effects on a target element should have an Animation");
-    bool inEffect = effect->IsInEffect();
     CascadeLevel cascadeLevel = effect->GetAnimation()->CascadeLevel();
 
-    for (AnimationProperty& prop : effect->Properties()) {
-
-      bool winsInCascade = !animatedProperties.HasProperty(prop.mProperty) &&
-                           inEffect;
-
+    for (const AnimationProperty& prop : effect->Properties()) {
       if (overriddenProperties.HasProperty(prop.mProperty)) {
         propertiesWithImportantRules.AddProperty(prop.mProperty);
       }
@@ -737,29 +731,6 @@ EffectCompositor::UpdateCascadeResults(EffectSet& aEffectSet,
           cascadeLevel == EffectCompositor::CascadeLevel::Transitions) {
         hasCompositorPropertiesForTransition = true;
       }
-
-      
-      
-      
-      
-      if (winsInCascade) {
-        animatedProperties.AddProperty(prop.mProperty);
-      }
-
-      
-      
-      
-      
-      
-      
-      
-      if (winsInCascade &&
-          effect->GetAnimation()->CascadeLevel() == CascadeLevel::Animations &&
-          overriddenProperties.HasProperty(prop.mProperty)) {
-        winsInCascade = false;
-      }
-
-      prop.mWinsInCascade = winsInCascade;
     }
   }
 

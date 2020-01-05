@@ -89,9 +89,6 @@ KeyframeEffect::SetTarget(const Nullable<ElementOrCSSPseudoElement>& aTarget)
   if (mTarget) {
     UnregisterTarget();
     ResetIsRunningOnCompositor();
-    
-    
-    
 
     RequestRestyle(EffectCompositor::RestyleType::Layer);
 

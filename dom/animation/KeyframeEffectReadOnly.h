@@ -142,30 +142,12 @@ struct AnimationProperty
   
   
   
-  
-  
-  
-  
-  
-  bool mWinsInCascade = false;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
   bool mIsRunningOnCompositor = false;
 
   Maybe<AnimationPerformanceWarning> mPerformanceWarning;
 
   InfallibleTArray<AnimationPropertySegment> mSegments;
 
-  
-  
   
   
   
