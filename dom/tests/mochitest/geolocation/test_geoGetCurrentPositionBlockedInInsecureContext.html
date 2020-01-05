@@ -29,6 +29,7 @@
 
   function errorCallback(error) {
     ok(true, "Check for the error callback to be called for insecure requests");
+    is(error.code, error.PERMISSION_DENIED, "Check error code for insecure requests");
     SimpleTest.finish();
   }
 
