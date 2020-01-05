@@ -7,7 +7,7 @@
 use app_units::Au;
 use gecko_bindings::bindings;
 use gecko_bindings::structs::{nsCSSValue, nsCSSUnit};
-use gecko_bindings::structs::{nsCSSValue_Array, nsCSSValue_ThreadSafeArray, nscolor};
+use gecko_bindings::structs::{nsCSSValue_Array, nscolor};
 use std::mem;
 use std::ops::{Index, IndexMut};
 use std::slice;
@@ -127,10 +127,8 @@ impl Drop for nsCSSValue {
     }
 }
 
-macro_rules! decl_cssarray_sugar {
-($name:ident) => {
-impl $name {
-    /// Return the length of this `nsCSSValue::Array`
+impl nsCSSValue_Array {
+    
     #[inline]
     pub fn len(&self) -> usize {
         self.mCount
@@ -141,20 +139,20 @@ impl $name {
         self.mArray.as_ptr()
     }
 
-    /// Get the array as a slice of nsCSSValues.
+    
     #[inline]
     pub fn as_slice(&self) -> &[nsCSSValue] {
         unsafe { slice::from_raw_parts(self.buffer(), self.len()) }
     }
 
-    /// Get the array as a mutable slice of nsCSSValues.
+    
     #[inline]
     pub fn as_mut_slice(&mut self) -> &mut [nsCSSValue] {
         unsafe { slice::from_raw_parts_mut(self.buffer() as *mut _, self.len()) }
     }
 }
 
-impl Index<usize> for $name {
+impl Index<usize> for nsCSSValue_Array {
     type Output = nsCSSValue;
     #[inline]
     fn index(&self, i: usize) -> &nsCSSValue {
@@ -162,14 +160,9 @@ impl Index<usize> for $name {
     }
 }
 
-impl IndexMut<usize> for $name {
+impl IndexMut<usize> for nsCSSValue_Array {
     #[inline]
     fn index_mut(&mut self, i: usize) -> &mut nsCSSValue {
         &mut self.as_mut_slice()[i]
     }
 }
-}
-}
-
-decl_cssarray_sugar!(nsCSSValue_Array);
-decl_cssarray_sugar!(nsCSSValue_ThreadSafeArray);
