@@ -62,7 +62,7 @@ var AboutTabCrashed = {
   receiveMessage(message) {
     switch (message.name) {
       case "UpdateCount": {
-        this.showRestoreAll(message.data.count > 1);
+        this.setMultiple(message.data.count > 1);
         break;
       }
       case "SetCrashReportAvailable": {
@@ -169,12 +169,17 @@ var AboutTabCrashed = {
 
 
 
+
+
+
+
   onSetCrashReportAvailable(message) {
-    if (message.data.hasReport) {
+    let data = message.data;
+
+    if (data.hasReport) {
       this.hasReport = true;
       document.documentElement.classList.add("crashDumpAvailable");
 
-      let data = message.data;
       document.getElementById("sendReport").checked = data.sendReport;
       document.getElementById("includeURL").checked = data.includeURL;
       document.getElementById("emailMe").checked = data.emailMe;
@@ -183,6 +188,12 @@ var AboutTabCrashed = {
       }
 
       this.showCrashReportUI(data.sendReport);
+    } else {
+      this.showCrashReportUI(false);
+    }
+
+    if (data.requestAutoSubmit) {
+      document.getElementById("requestAutoSubmit").hidden = false;
     }
 
     let event = new CustomEvent("AboutTabCrashedReady", {bubbles:true});
@@ -205,8 +216,8 @@ var AboutTabCrashed = {
 
 
   showCrashReportUI(shouldShow) {
-    let container = document.getElementById("crash-reporter-container");
-    container.hidden = !shouldShow;
+    let options = document.getElementById("options");
+    options.hidden = !shouldShow;
   },
 
   
@@ -215,14 +226,19 @@ var AboutTabCrashed = {
 
 
 
-  showRestoreAll(shouldShow) {
-    let restoreAll = document.getElementById("restoreAll");
+
+
+  setMultiple(hasMultiple) {
+    let main = document.getElementById("main");
+    main.setAttribute("multiple", hasMultiple);
+
     let restoreTab = document.getElementById("restoreTab");
-    if (shouldShow) {
-      restoreAll.removeAttribute("hidden");
+
+    
+    
+    if (hasMultiple) {
       restoreTab.classList.remove("primary");
     } else {
-      restoreAll.setAttribute("hidden", true);
       restoreTab.classList.add("primary");
     }
   },
@@ -243,6 +259,7 @@ var AboutTabCrashed = {
     let sendReport = false;
     let emailMe = false;
     let includeURL = false;
+    let autoSubmit = false;
 
     if (this.hasReport) {
       sendReport = document.getElementById("sendReport").checked;
@@ -261,6 +278,15 @@ var AboutTabCrashed = {
       }
     }
 
+    let requestAutoSubmit = document.getElementById("requestAutoSubmit");
+    if (requestAutoSubmit.hidden) {
+      
+      
+      autoSubmit = true;
+    } else {
+      autoSubmit = document.getElementById("autoSubmit").checked;
+    }
+
     sendAsyncMessage(messageName, {
       sendReport,
       comments,
@@ -268,6 +294,7 @@ var AboutTabCrashed = {
       emailMe,
       includeURL,
       URL,
+      autoSubmit,
     });
   },
 };

@@ -32,7 +32,7 @@ add_task(function* test_show_form() {
     ok(checkbox.checked, "Send report checkbox is checked.");
 
     
-    let container = doc.getElementById("crash-reporter-container");
-    ok(!container.hidden, "Showing the crash report detail form.");
+    let options = doc.getElementById("options");
+    ok(!options.hidden, "Showing the crash report options form.");
   });
 });
