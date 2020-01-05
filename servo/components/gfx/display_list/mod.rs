@@ -33,10 +33,11 @@ use servo_msg::compositor_msg::LayerId;
 use servo_net::image::base::Image;
 use servo_util::cursor::Cursor;
 use servo_util::dlist as servo_dlist;
-use servo_util::geometry::{mod, Au, ZERO_POINT};
+use servo_util::geometry::{mod, Au, MAX_RECT, ZERO_POINT, ZERO_RECT};
 use servo_util::range::Range;
 use servo_util::smallvec::{SmallVec, SmallVec8};
 use std::fmt;
+use std::num::Zero;
 use std::slice::Items;
 use style::ComputedValues;
 use style::computed_values::border_style;
@@ -205,7 +206,7 @@ impl StackingContext {
                 page_rect: paint_context.page_rect,
                 screen_rect: paint_context.screen_rect,
                 clip_rect: clip_rect,
-                transient_clip_rect: None,
+                transient_clip: None,
             };
 
             
@@ -348,7 +349,9 @@ impl StackingContext {
                                   mut iterator: I)
                                   where I: Iterator<&'a DisplayItem> {
             for item in iterator {
-                if !geometry::rect_contains_point(item.base().clip_rect, point) {
+                
+                
+                if !item.base().clip.might_intersect_point(&point) {
                     
                     continue
                 }
@@ -478,21 +481,129 @@ pub struct BaseDisplayItem {
     pub metadata: DisplayItemMetadata,
 
     
-    
-    
-    
-    pub clip_rect: Rect<Au>,
+    pub clip: ClippingRegion,
 }
 
 impl BaseDisplayItem {
     #[inline(always)]
-    pub fn new(bounds: Rect<Au>, metadata: DisplayItemMetadata, clip_rect: Rect<Au>)
+    pub fn new(bounds: Rect<Au>, metadata: DisplayItemMetadata, clip: ClippingRegion)
                -> BaseDisplayItem {
         BaseDisplayItem {
             bounds: bounds,
             metadata: metadata,
-            clip_rect: clip_rect,
+            clip: clip,
         }
+    }
+}
+
+
+
+
+#[deriving(Clone, PartialEq, Show)]
+pub struct ClippingRegion {
+    
+    pub main: Rect<Au>,
+    
+    
+    
+    
+    pub complex: Vec<ComplexClippingRegion>,
+}
+
+
+
+
+#[deriving(Clone, PartialEq, Show)]
+pub struct ComplexClippingRegion {
+    
+    pub rect: Rect<Au>,
+    
+    pub radii: BorderRadii<Au>,
+}
+
+impl ClippingRegion {
+    
+    #[inline]
+    pub fn empty() -> ClippingRegion {
+        ClippingRegion {
+            main: ZERO_RECT,
+            complex: Vec::new(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn max() -> ClippingRegion {
+        ClippingRegion {
+            main: MAX_RECT,
+            complex: Vec::new(),
+        }
+    }
+
+    
+    #[inline]
+    pub fn from_rect(rect: &Rect<Au>) -> ClippingRegion {
+        ClippingRegion {
+            main: *rect,
+            complex: Vec::new(),
+        }
+    }
+
+    
+    
+    
+    
+    #[inline]
+    pub fn intersect_rect(self, rect: &Rect<Au>) -> ClippingRegion {
+        ClippingRegion {
+            main: self.main.intersection(rect).unwrap_or(ZERO_RECT),
+            complex: self.complex,
+        }
+    }
+
+    
+    
+    #[inline]
+    pub fn might_be_nonempty(&self) -> bool {
+        !self.main.is_empty()
+    }
+
+    
+    
+    #[inline]
+    pub fn might_intersect_point(&self, point: &Point2D<Au>) -> bool {
+        geometry::rect_contains_point(self.main, *point) &&
+            self.complex.iter().all(|complex| geometry::rect_contains_point(complex.rect, *point))
+    }
+
+    
+    
+    #[inline]
+    pub fn might_intersect_rect(&self, rect: &Rect<Au>) -> bool {
+        self.main.intersects(rect) &&
+            self.complex.iter().all(|complex| complex.rect.intersects(rect))
+    }
+
+
+    
+    #[inline]
+    pub fn bounding_rect(&self) -> Rect<Au> {
+        let mut rect = self.main;
+        for complex in self.complex.iter() {
+            rect = rect.union(&complex.rect)
+        }
+        rect
+    }
+
+    
+    #[inline]
+    pub fn intersect_with_rounded_rect(mut self, rect: &Rect<Au>, radii: &BorderRadii<Au>)
+                                       -> ClippingRegion {
+        self.complex.push(ComplexClippingRegion {
+            rect: *rect,
+            radii: *radii,
+        });
+        self
     }
 }
 
@@ -610,12 +721,21 @@ pub struct BorderDisplayItem {
 
 
 
-#[deriving(Clone, Default, Show)]
+#[deriving(Clone, Default, PartialEq, Show)]
 pub struct BorderRadii<T> {
-    pub top_left:     T,
-    pub top_right:    T,
+    pub top_left: T,
+    pub top_right: T,
     pub bottom_right: T,
-    pub bottom_left:  T,
+    pub bottom_left: T,
+}
+
+impl<T> BorderRadii<T> where T: PartialEq + Zero {
+    
+    pub fn is_square(&self) -> bool {
+        let zero = Zero::zero();
+        self.top_left == zero && self.top_right == zero && self.bottom_right == zero &&
+            self.bottom_left == zero
+    }
 }
 
 
@@ -673,13 +793,12 @@ impl<'a> Iterator<&'a DisplayItem> for DisplayItemIterator<'a> {
 impl DisplayItem {
     
     fn draw_into_context(&self, paint_context: &mut PaintContext) {
-        let this_clip_rect = self.base().clip_rect;
-        if paint_context.transient_clip_rect != Some(this_clip_rect) {
-            if paint_context.transient_clip_rect.is_some() {
-                paint_context.draw_pop_clip();
+        {
+            let this_clip = &self.base().clip;
+            match paint_context.transient_clip {
+                Some(ref transient_clip) if transient_clip == this_clip => {}
+                Some(_) | None => paint_context.push_transient_clip((*this_clip).clone()),
             }
-            paint_context.draw_push_clip(&this_clip_rect);
-            paint_context.transient_clip_rect = Some(this_clip_rect)
         }
 
         match *self {
@@ -693,6 +812,8 @@ impl DisplayItem {
             }
 
             DisplayItem::ImageClass(ref image_item) => {
+                
+                
                 debug!("Drawing image at {}.", image_item.base.bounds);
 
                 let mut y_offset = Au(0);
@@ -715,23 +836,21 @@ impl DisplayItem {
 
             DisplayItem::BorderClass(ref border) => {
                 paint_context.draw_border(&border.base.bounds,
-                                           border.border_widths,
-                                           &border.radius,
-                                           border.color,
-                                           border.style)
+                                          &border.border_widths,
+                                          &border.radius,
+                                          &border.color,
+                                          &border.style)
             }
 
             DisplayItem::GradientClass(ref gradient) => {
                 paint_context.draw_linear_gradient(&gradient.base.bounds,
-                                                    &gradient.start_point,
-                                                    &gradient.end_point,
-                                                    gradient.stops.as_slice());
+                                                   &gradient.start_point,
+                                                   &gradient.end_point,
+                                                   gradient.stops.as_slice());
             }
 
             DisplayItem::LineClass(ref line) => {
-                paint_context.draw_line(&line.base.bounds,
-                                          line.color,
-                                          line.style)
+                paint_context.draw_line(&line.base.bounds, line.color, line.style)
             }
 
             DisplayItem::BoxShadowClass(ref box_shadow) => {
