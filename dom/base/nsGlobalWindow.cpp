@@ -572,6 +572,7 @@ public:
     MOZ_DIAGNOSTIC_ASSERT(mWindow->IsInnerWindow());
 
     mIdlePeriodLimit = { mDeadline, mWindow->LastIdleRequestHandle() };
+    mDelayedExecutorDispatcher = new IdleRequestExecutorTimeoutHandler(this);
   }
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
@@ -581,7 +582,7 @@ public:
   nsresult Cancel() override;
   void SetDeadline(TimeStamp aDeadline) override;
 
-  bool IsCancelled() const { return !mWindow; }
+  bool IsCancelled() const { return !mWindow || mWindow->AsInner()->InnerObjectsFreed(); }
   
   
   
@@ -605,7 +606,7 @@ private:
     uint32_t mLastRequestIdInIdlePeriod;
   };
 
-  void ThrottledDispatch(uint32_t aDelay);
+  void DelayedDispatch(uint32_t aDelay);
 
   ~IdleRequestExecutor() {}
 
@@ -613,6 +614,17 @@ private:
   TimeStamp mDeadline;
   IdlePeriodLimit mIdlePeriodLimit;
   RefPtr<nsGlobalWindow> mWindow;
+  
+  
+  
+  
+  
+  nsCOMPtr<nsITimeoutHandler> mDelayedExecutorDispatcher;
+  
+  
+  
+  
+  Maybe<int32_t> mDelayedExecutorHandle;
 };
 
 NS_IMPL_CYCLE_COLLECTION_CLASS(IdleRequestExecutor)
@@ -622,10 +634,12 @@ NS_IMPL_CYCLE_COLLECTING_RELEASE(IdleRequestExecutor)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(IdleRequestExecutor)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mWindow)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mDelayedExecutorDispatcher)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(IdleRequestExecutor)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWindow)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDelayedExecutorDispatcher)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(IdleRequestExecutor)
@@ -652,6 +666,12 @@ nsresult
 IdleRequestExecutor::Cancel()
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  if (mDelayedExecutorHandle && mWindow) {
+    mWindow->AsInner()->TimeoutManager().ClearTimeout(
+      mDelayedExecutorHandle.value(),
+      Timeout::Reason::eIdleCallbackTimeout);
+  }
 
   mWindow = nullptr;
   return NS_OK;
@@ -684,7 +704,7 @@ IdleRequestExecutor::MaybeDispatch(TimeStamp aDelayUntil)
   
   
   
-  if (mDispatched || !mWindow) {
+  if (mDispatched || IsCancelled()) {
     return;
   }
 
@@ -695,33 +715,38 @@ IdleRequestExecutor::MaybeDispatch(TimeStamp aDelayUntil)
     
     
     
-    ThrottledDispatch(0);
-  } else if (aDelayUntil) {
-    ThrottledDispatch(
-      static_cast<uint32_t>((aDelayUntil - TimeStamp::Now()).ToMilliseconds()));
-  } else {
-    ScheduleDispatch();
+    DelayedDispatch(0);
+    return;
   }
+
+  TimeStamp now = TimeStamp::Now();
+  if (!aDelayUntil || aDelayUntil < now) {
+    ScheduleDispatch();
+    return;
+  }
+
+  TimeDuration delay = aDelayUntil - now;
+  DelayedDispatch(static_cast<uint32_t>(delay.ToMilliseconds()));
 }
 
 void
 IdleRequestExecutor::ScheduleDispatch()
 {
   MOZ_ASSERT(mWindow);
+  mDelayedExecutorHandle = Nothing();
   RefPtr<IdleRequestExecutor> request = this;
   NS_IdleDispatchToCurrentThread(request.forget());
 }
 
 void
-IdleRequestExecutor::ThrottledDispatch(uint32_t aDelay)
+IdleRequestExecutor::DelayedDispatch(uint32_t aDelay)
 {
   MOZ_ASSERT(mWindow);
-
-  nsCOMPtr<nsITimeoutHandler> handler =
-    new IdleRequestExecutorTimeoutHandler(this);
-  int32_t dummy;
+  MOZ_ASSERT(mDelayedExecutorHandle.isNothing());
+  int32_t handle;
   mWindow->AsInner()->TimeoutManager().SetTimeout(
-    handler, aDelay, false, Timeout::Reason::eIdleCallbackTimeout, &dummy);
+    mDelayedExecutorDispatcher, aDelay, false, Timeout::Reason::eIdleCallbackTimeout, &handle);
+  mDelayedExecutorHandle = Some(handle);
 }
 
 nsresult
