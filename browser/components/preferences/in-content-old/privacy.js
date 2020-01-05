@@ -331,9 +331,7 @@ var gPrivacyPane = {
         pref.value = false;
 
       
-      let rememberHistoryCheckbox = document.getElementById("rememberHistory");
-      if (!rememberHistoryCheckbox.checked)
-        rememberHistoryCheckbox.checked = true;
+      document.getElementById("places.history.enabled").value = true;
 
       
       document.getElementById("browser.formfill.enable").value = true;
