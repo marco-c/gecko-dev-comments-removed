@@ -3317,14 +3317,6 @@ MediaDecoderStateMachine::ResetDecode(TrackSet aTracks)
 
   
   
-  
-  
-  MOZ_ASSERT(IsShutdown() ||
-             mState == DECODER_STATE_SEEKING ||
-             mState == DECODER_STATE_DORMANT);
-
-  
-  
   MOZ_ASSERT(aTracks.contains(TrackInfo::kVideoTrack));
 
   if (aTracks.contains(TrackInfo::kVideoTrack)) {
