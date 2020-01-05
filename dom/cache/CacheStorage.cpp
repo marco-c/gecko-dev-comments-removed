@@ -501,8 +501,6 @@ void
 CacheStorage::ActorCreated(PBackgroundChild* aActor)
 {
   NS_ASSERT_OWNINGTHREAD(CacheStorage);
-  MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(mStatus));
-  MOZ_DIAGNOSTIC_ASSERT(!mActor);
   MOZ_DIAGNOSTIC_ASSERT(aActor);
 
   if (NS_WARN_IF(mWorkerHolder && mWorkerHolder->Notified())) {
@@ -513,22 +511,19 @@ CacheStorage::ActorCreated(PBackgroundChild* aActor)
   
   
   
-  mActor = new CacheStorageChild(this, mWorkerHolder);
-  mWorkerHolder = nullptr;
-
-  
-  
-  
+  CacheStorageChild* newActor = new CacheStorageChild(this, mWorkerHolder);
   PCacheStorageChild* constructedActor =
-    aActor->SendPCacheStorageConstructor(mActor, mNamespace, *mPrincipalInfo);
+    aActor->SendPCacheStorageConstructor(newActor, mNamespace, *mPrincipalInfo);
 
-  if (NS_WARN_IF(NS_FAILED(mStatus))) {
-    MOZ_DIAGNOSTIC_ASSERT(!mActor);
+  if (NS_WARN_IF(!constructedActor)) {
+    ActorFailed();
     return;
   }
 
-  MOZ_DIAGNOSTIC_ASSERT(mActor);
-  MOZ_DIAGNOSTIC_ASSERT(constructedActor == mActor);
+  mWorkerHolder = nullptr;
+
+  MOZ_DIAGNOSTIC_ASSERT(constructedActor == newActor);
+  mActor = newActor;
 
   MaybeRunPendingRequests();
   MOZ_DIAGNOSTIC_ASSERT(mPendingRequests.IsEmpty());
@@ -538,7 +533,7 @@ void
 CacheStorage::ActorFailed()
 {
   NS_ASSERT_OWNINGTHREAD(CacheStorage);
-  MOZ_DIAGNOSTIC_ASSERT(NS_SUCCEEDED(mStatus));
+  MOZ_DIAGNOSTIC_ASSERT(!NS_FAILED(mStatus));
 
   mStatus = NS_ERROR_UNEXPECTED;
   mWorkerHolder = nullptr;
