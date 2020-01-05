@@ -1047,7 +1047,7 @@ wasm::GenerateInterruptStub(MacroAssembler& masm)
     
     masm.mov(sp,r6);
     
-    masm.ma_and(Imm32(~7), sp, sp);
+    masm.as_bic(sp, sp, Imm8(7));
 
     
     masm.loadWasmActivationFromSymbolicAddress(IntArgReg0);
