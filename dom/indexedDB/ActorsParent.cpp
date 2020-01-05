@@ -5720,6 +5720,11 @@ public:
     return mSerialNumber;
   }
 
+  nsCString GetThreadName() const
+  {
+    return nsPrintfCString("IndexedDB #%lu", mSerialNumber);
+  }
+
 private:
   ~ThreadRunnable() override;
 
@@ -12571,7 +12576,10 @@ ConnectionPool::ScheduleTransaction(TransactionInfo* aTransactionInfo,
         RefPtr<ThreadRunnable> runnable = new ThreadRunnable();
 
         nsCOMPtr<nsIThread> newThread;
-        if (NS_SUCCEEDED(NS_NewThread(getter_AddRefs(newThread), runnable))) {
+        nsresult rv =
+          NS_NewNamedThread(runnable->GetThreadName(),
+                            getter_AddRefs(newThread), runnable);
+        if (NS_SUCCEEDED(rv)) {
           MOZ_ASSERT(newThread);
 
           IDB_DEBUG_LOG(("ConnectionPool created thread %lu",
@@ -13284,10 +13292,6 @@ nsresult
 ConnectionPool::
 ThreadRunnable::Run()
 {
-#ifdef MOZ_ENABLE_PROFILER_SPS
-  char stackTopGuess;
-#endif 
-
   MOZ_ASSERT(!IsOnBackgroundThread());
   MOZ_ASSERT(mContinueRunning);
 
@@ -13297,18 +13301,6 @@ ThreadRunnable::Run()
   }
 
   mFirstRun = false;
-
-  {
-    
-    
-    const nsPrintfCString threadName("IndexedDB #%lu", mSerialNumber);
-
-    PR_SetCurrentThreadName(threadName.get());
-
-#ifdef MOZ_ENABLE_PROFILER_SPS
-    profiler_register_thread(threadName.get(), &stackTopGuess);
-#endif 
-  }
 
   {
     
@@ -13350,10 +13342,6 @@ ThreadRunnable::Run()
 #endif 
     }
   }
-
-#ifdef MOZ_ENABLE_PROFILER_SPS
-  profiler_unregister_thread();
-#endif 
 
   return NS_OK;
 }
