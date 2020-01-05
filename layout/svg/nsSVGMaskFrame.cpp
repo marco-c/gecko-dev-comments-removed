@@ -7,6 +7,7 @@
 #include "nsSVGMaskFrame.h"
 
 
+#include "AutoReferenceChainGuard.h"
 #include "gfx2DGlue.h"
 #include "gfxContext.h"
 #include "mozilla/gfx/2D.h"
@@ -205,13 +206,13 @@ mozilla::Pair<DrawResult, RefPtr<SourceSurface>>
 nsSVGMaskFrame::GetMaskForMaskedFrame(MaskParams& aParams)
 {
   
-  
-  
-  if (mInUse) {
-    NS_WARNING("Mask loop detected!");
+  static int16_t sRefChainLengthCounter = AutoReferenceChainGuard::noChain;
+  AutoReferenceChainGuard refChainGuard(this, &mInUse,
+                                        &sRefChainLengthCounter);
+  if (MOZ_UNLIKELY(!refChainGuard.Reference())) {
+    
     return MakePair(DrawResult::SUCCESS, RefPtr<SourceSurface>());
   }
-  AutoMaskReferencer maskRef(this);
 
   gfxRect maskArea = GetMaskArea(aParams.maskedFrame);
   gfxContext* context = aParams.ctx;
