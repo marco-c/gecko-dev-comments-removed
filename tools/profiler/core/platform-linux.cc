@@ -88,6 +88,16 @@
 
 using namespace mozilla;
 
+
+
+static bool gIsSigprofSignalHandlerInstalled;
+static struct sigaction gOldSigprofSignalHandler;
+
+
+
+static bool gHasSignalSenderLaunched;
+static pthread_t gSignalSenderThread;
+
 #if defined(USE_LUL_STACKWALK)
 
 
@@ -363,6 +373,8 @@ static void* SignalSender(void* arg) {
 }
 
 void Sampler::Start() {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
   LOG("Sampler started");
 
 #if defined(USE_EHABI_STACKWALK)
@@ -388,12 +400,12 @@ void Sampler::Start() {
   sa.sa_sigaction = MOZ_SIGNAL_TRAMPOLINE(ProfilerSignalHandler);
   sigemptyset(&sa.sa_mask);
   sa.sa_flags = SA_RESTART | SA_SIGINFO;
-  if (sigaction(SIGPROF, &sa, &old_sigprof_signal_handler_) != 0) {
+  if (sigaction(SIGPROF, &sa, &gOldSigprofSignalHandler) != 0) {
     LOG("Error installing signal");
     return;
   }
   LOG("Signal installed");
-  signal_handler_installed_ = true;
+  gIsSigprofSignalHandlerInstalled = true;
 
 #if defined(USE_LUL_STACKWALK)
   
@@ -412,28 +424,29 @@ void Sampler::Start() {
   
   
   SetActive(true);
-  if (pthread_create(
-        &signal_sender_thread_, NULL, SignalSender, NULL) == 0) {
-    signal_sender_launched_ = true;
+  if (pthread_create(&gSignalSenderThread, NULL, SignalSender, NULL) == 0) {
+    gHasSignalSenderLaunched = true;
   }
   LOG("Profiler thread started");
 }
 
 
 void Sampler::Stop() {
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
   SetActive(false);
 
   
   
-  if (signal_sender_launched_) {
-    pthread_join(signal_sender_thread_, NULL);
-    signal_sender_launched_ = false;
+  if (gHasSignalSenderLaunched) {
+    pthread_join(gSignalSenderThread, NULL);
+    gHasSignalSenderLaunched = false;
   }
 
   
-  if (signal_handler_installed_) {
-    sigaction(SIGPROF, &old_sigprof_signal_handler_, 0);
-    signal_handler_installed_ = false;
+  if (gIsSigprofSignalHandlerInstalled) {
+    sigaction(SIGPROF, &gOldSigprofSignalHandler, 0);
+    gIsSigprofSignalHandlerInstalled = false;
   }
 }
 
