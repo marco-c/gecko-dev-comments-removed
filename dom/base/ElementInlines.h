@@ -58,6 +58,11 @@ Element::ShouldTraverseForServo()
 inline void
 Element::NoteDirtyDescendantsForServo()
 {
+  if (!HasServoData()) {
+    
+    return;
+  }
+
   Element* curr = this;
   while (curr && !curr->HasDirtyDescendantsForServo()) {
     curr->SetHasDirtyDescendantsForServo();
