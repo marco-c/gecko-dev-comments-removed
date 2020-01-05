@@ -570,22 +570,27 @@ private:
 
 struct AnimationValue
 {
+  
+  
+  
+  
+  
   StyleAnimationValue mGecko;
   RefPtr<RawServoAnimationValue> mServo;
 
-  inline bool operator==(const AnimationValue& aOther) const;
+  bool operator==(const AnimationValue& aOther) const;
 
   bool IsNull() const { return mGecko.IsNull() && !mServo; }
 
-  inline float GetOpacity() const;
+  float GetOpacity() const;
 
   
   
-  inline gfxSize GetScaleValue(const nsIFrame* aFrame) const;
+  gfxSize GetScaleValue(const nsIFrame* aFrame) const;
 
   
-  inline void SerializeSpecifiedValue(nsCSSPropertyID aProperty,
-                                      nsAString& aString) const;
+  void SerializeSpecifiedValue(nsCSSPropertyID aProperty,
+                               nsAString& aString) const;
 };
 
 struct PropertyStyleAnimationValuePair
