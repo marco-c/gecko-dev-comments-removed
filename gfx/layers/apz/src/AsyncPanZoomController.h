@@ -457,6 +457,7 @@ protected:
   nsEventStatus OnPanEnd(const PanGestureInput& aEvent);
   nsEventStatus OnPanMomentumStart(const PanGestureInput& aEvent);
   nsEventStatus OnPanMomentumEnd(const PanGestureInput& aEvent);
+  nsEventStatus HandleEndOfPan();
 
   
 
@@ -576,7 +577,7 @@ protected:
 
 
 
-  nsEventStatus StartPanning(const MultiTouchInput& aStartPoint);
+  nsEventStatus StartPanning(const ParentLayerPoint& aStartPoint);
 
   
 
