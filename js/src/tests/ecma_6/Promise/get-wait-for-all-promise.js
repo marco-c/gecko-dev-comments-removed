@@ -5,8 +5,6 @@ if (!this.Promise) {
     quit(0);
 }
 
-let GetWaitForAllPromise = getSelfHostedValue('GetWaitForAllPromise');
-
 function onResolved(val) {
     result = 'resolved with ' + val;
 }
@@ -40,7 +38,7 @@ for (let i = 0; i < 3; i++) {
     promises.push(p);
 }
 
-let allPromise = GetWaitForAllPromise(promises);
+let allPromise = getWaitForAllPromise(promises);
 let then = originalThen.call(allPromise, onResolved, onRejected);
 
 resolveFunctions.forEach((fun, i)=>fun(i));
@@ -50,14 +48,14 @@ assertEq(result, 'resolved with 0,1,2');
 
 
 result = undefined;
-originalThen.call(GetWaitForAllPromise([]), v=>(result = v));
+originalThen.call(getWaitForAllPromise([]), v=>(result = v));
 drainJobQueue();
 assertEq(result instanceof Array, true);
 assertEq(result.length, 0);
 
 
 result = undefined;
-originalThen.call(GetWaitForAllPromise([]), v=>(result = v));
+originalThen.call(getWaitForAllPromise([]), v=>(result = v));
 
 drainJobQueue();
 
