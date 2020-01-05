@@ -865,7 +865,18 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
   
   
   
-  if (!mParent) {
+  if (!mParent &&
+      
+      
+      
+      
+      
+      
+      
+      
+      (!mPseudoTag ||
+       mPseudoTag == nsCSSAnonBoxes::viewport ||
+       mPseudoTag == nsCSSPseudoElements::backdrop)) {
     auto displayVal = disp->mDisplay;
     if (displayVal != mozilla::StyleDisplay::Contents) {
       nsRuleNode::EnsureBlockDisplay(displayVal, true);
