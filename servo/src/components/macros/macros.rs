@@ -2,8 +2,16 @@
 
 
 
-#[macro_escape];
+#[crate_id = "github.com/mozilla/servo#macros:0.1"];
+#[crate_type = "lib"];
 
+#[feature(macro_rules)];
+
+
+
+
+
+#[macro_export]
 macro_rules! bitfield(
     ($bitfieldname:ident, $getter:ident, $setter:ident, $value:expr) => (
         impl $bitfieldname {
