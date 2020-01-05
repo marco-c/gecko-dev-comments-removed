@@ -3,11 +3,19 @@
 
 
 use std::io::{File, IoResult};
-use std::io::fs::PathExtensions;
-use std::os;
 use std::path::Path;
 
+#[cfg(not(target_os = "android"))]
+use std::io::fs::PathExtensions;
+#[cfg(not(target_os = "android"))]
+use std::os;
 
+#[cfg(target_os = "android")]
+pub fn resources_dir_path() -> Path {
+    Path::new("/sdcard/servo/")
+}
+
+#[cfg(not(target_os = "android"))]
 pub fn resources_dir_path() -> Path {
     
     let mut path = os::self_exe_path().expect("can't get exe path");
