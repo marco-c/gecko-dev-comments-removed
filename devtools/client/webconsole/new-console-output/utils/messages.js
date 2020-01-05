@@ -65,9 +65,14 @@ function transformPacket(packet) {
           parameters = null;
           break;
         case "time":
-          
           parameters = null;
-          type = MESSAGE_TYPE.NULL_MESSAGE;
+          if (timer && timer.error) {
+            messageText = l10n.getFormatStr(timer.error, [timer.name]);
+            level = MESSAGE_LEVEL.WARN;
+          } else {
+            
+            type = MESSAGE_TYPE.NULL_MESSAGE;
+          }
           break;
         case "timeEnd":
           parameters = null;

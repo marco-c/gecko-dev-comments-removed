@@ -29,6 +29,7 @@ class ConsoleCallData;
 class ConsoleRunnable;
 class ConsoleCallDataRunnable;
 class ConsoleProfileRunnable;
+struct ConsoleTimerError;
 struct ConsoleStackEntry;
 
 class Console final : public nsIObserver
@@ -259,6 +260,14 @@ private:
   bool
   UnstoreGroupName(nsAString& aName);
 
+  enum StartTimerStatus {
+    eTimerUnknown,
+    eTimerStarted,
+    eTimerAlreadyExists,
+    eTimerJSException,
+    eTimerMaxReached,
+  };
+
   
   
   
@@ -269,8 +278,7 @@ private:
   
   
   
-  
-  bool
+  StartTimerStatus
   StartTimer(JSContext* aCx, const JS::Value& aName,
              DOMHighResTimeStamp aTimestamp,
              nsAString& aTimerLabel,
@@ -285,7 +293,11 @@ private:
   
   JS::Value
   CreateStartTimerValue(JSContext* aCx, const nsAString& aTimerLabel,
-                        bool aTimerStatus) const;
+                        StartTimerStatus aTimerStatus) const;
+
+  void
+  StartTimerStatusToError(StartTimerStatus aStatus,
+                          ConsoleTimerError& aError) const;
 
   
   
