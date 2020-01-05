@@ -2305,24 +2305,10 @@ nsAHttpTransaction *
 nsHttpConnection::CloseConnectionFastOpenTakesTooLongOrError()
 {
     MOZ_ASSERT(!mCurrentBytesRead);
-
-    RefPtr<nsAHttpTransaction> trans;
     if (mUsingSpdyVersion) {
-        
-        
-        
         DontReuse();
         mUsingSpdyVersion = 0;
-        if (mSpdySession) {
-            mSpdySession->Finish0RTT(true, true);
-        }
         mSpdySession = nullptr;
-    } else {
-        
-        
-        if (NS_SUCCEEDED(mTransaction->RestartOnFastOpenError())) {
-            trans = mTransaction;
-        }
     }
 
     {
@@ -2330,6 +2316,10 @@ nsHttpConnection::CloseConnectionFastOpenTakesTooLongOrError()
         mCallbacks = nullptr;
     }
 
+    RefPtr<nsAHttpTransaction> trans = nullptr;
+    if (NS_SUCCEEDED(mTransaction->RestartOnFastOpenError())) {
+        trans = mTransaction;
+    }
     mTransaction = nullptr;
     Close(NS_ERROR_NET_RESET);
     return trans;
