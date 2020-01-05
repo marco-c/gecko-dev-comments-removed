@@ -54,6 +54,8 @@ PluginContent.prototype = {
     global.addMessageListener("BrowserPlugins:NPAPIPluginProcessCrashed", this);
     global.addMessageListener("BrowserPlugins:CrashReportSubmitted", this);
     global.addMessageListener("BrowserPlugins:Test:ClearCrashData", this);
+
+    Services.obs.addObserver(this, "decoder-doctor-notification", false);
   },
 
   uninit: function() {
@@ -75,6 +77,9 @@ PluginContent.prototype = {
     global.removeMessageListener("BrowserPlugins:NPAPIPluginProcessCrashed", this);
     global.removeMessageListener("BrowserPlugins:CrashReportSubmitted", this);
     global.removeMessageListener("BrowserPlugins:Test:ClearCrashData", this);
+
+    Services.obs.removeObserver(this, "decoder-doctor-notification");
+
     delete this.global;
     delete this.content;
   },
@@ -118,6 +123,26 @@ PluginContent.prototype = {
     }
   },
 
+  observe: function observe(aSubject, aTopic, aData) {
+    switch (aTopic) {
+      case "decoder-doctor-notification":
+        let data = JSON.parse(aData);
+        if (this.haveShownNotification &&
+            aSubject.top.document == this.content.document &&
+            data.formats.toLowerCase().includes("application/x-mpegurl", 0)) {
+          let pluginHost = Cc["@mozilla.org/plugin/host;1"].getService(Ci.nsIPluginHost);
+          let principal = this.content.document.nodePrincipal;
+          let location = this.content.document.location.href;
+          this.global.content.pluginRequiresReload = true;
+          this.global.sendAsyncMessage("PluginContent:ShowClickToPlayNotification",
+                                       { plugins: [... this.pluginData.values()],
+                                         showNow: true,
+                                         location: location,
+                                       }, null, principal);
+        }
+    }
+  },
+
   onPageShow: function (event) {
     
     if (!this.content || event.target != this.content.document) {
@@ -140,6 +165,7 @@ PluginContent.prototype = {
 
     this._finishRecordingFlashPluginTelemetry();
     this.clearPluginCaches();
+    this.haveShownNotification = false;
   },
 
   getPluginUI: function (plugin, anonid) {
@@ -727,7 +753,9 @@ PluginContent.prototype = {
 
     
     
-    if (newState != "block" && !pluginFound) {
+    
+    if (newState != "block" &&
+       (!pluginFound || contentWindow.pluginRequiresReload)) {
       this.reloadPage();
     }
     this.updateNotificationUI();
@@ -788,6 +816,8 @@ PluginContent.prototype = {
 
       this.pluginData.set(pluginInfo.permissionString, pluginInfo);
     }
+
+    this.haveShownNotification = true;
 
     this.global.sendAsyncMessage("PluginContent:ShowClickToPlayNotification", {
       plugins: [... this.pluginData.values()],
