@@ -205,22 +205,21 @@ class Promise;
 }
 }
 
+
+
+struct PlatformDataDestructor {
+  void operator()(PlatformData*);
+};
+
+typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
+  UniquePlatformData;
+UniquePlatformData AllocPlatformData(int aThreadId);
+
 class Sampler {
 public:
   
   Sampler();
   ~Sampler();
-
-  
-  
-  
-  struct PlatformDataDestructor {
-    void operator()(PlatformData*);
-  };
-
-  typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
-    UniquePlatformData;
-  static UniquePlatformData AllocPlatformData(int aThreadId);
 
   void RegisterThread(ThreadInfo* aInfo);
 

@@ -41,7 +41,7 @@ class ThreadInfo {
   int mThreadId;
   const bool mIsMainThread;
   PseudoStack* mPseudoStack;
-  Sampler::UniquePlatformData mPlatformData;
+  UniquePlatformData mPlatformData;
   void* mStackTop;
 
   
