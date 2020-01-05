@@ -4,12 +4,15 @@
 
 "use strict";
 
-const { Cu, Ci } = require("chrome");
-
 const { TargetFactory } = require("devtools/client/framework/target");
 const { DebuggerServer } = require("devtools/server/main");
 const { DebuggerClient } = require("devtools/shared/client/main");
 const { Task } = require("devtools/shared/task");
+
+
+
+
+
 
 
 
@@ -90,6 +93,26 @@ exports.targetFromURL = Task.async(function* (url) {
     } catch (ex) {
       if (ex.error == "noProcess") {
         throw new Error("targetFromURL, process with id:'" + id + "' doesn't exist");
+      }
+      throw ex;
+    }
+  } else if (type == "window") {
+    
+    DebuggerServer.allowChromeProcess = true;
+    try {
+      id = parseInt(id, 10);
+      if (isNaN(id)) {
+        throw new Error("targetFromURL, window requires id parameter");
+      }
+      let response = yield client.mainRoot.getWindow({
+        outerWindowID: id,
+      });
+      form = response.window;
+      chrome = true;
+    } catch (ex) {
+      if (ex.error == "notFound") {
+        throw new Error(`targetFromURL, window with id:'${id}' ` +
+                        "doesn't exist");
       }
       throw ex;
     }

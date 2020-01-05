@@ -1747,6 +1747,27 @@ RootClient.prototype = {
 
 
 
+
+  getWindow: function ({ outerWindowID }) {
+    if (!outerWindowID) {
+      throw new Error("Must specify outerWindowID");
+    }
+
+    let packet = {
+      to: this.actor,
+      type: "getWindow",
+      outerWindowID,
+    };
+
+    return this.request(packet);
+  },
+
+  
+
+
+
+
+
   protocolDescription: DebuggerClient.requester({ type: "protocolDescription" }),
 
   
