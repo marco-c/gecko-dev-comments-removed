@@ -14,6 +14,7 @@
 #include "nsMimeTypes.h"
 #include "nsNetCID.h"
 #include "nsNetUtil.h"
+#include "nsReadableUtils.h"
 
 #include "nsICachingChannel.h"
 #include "nsIDOMDocument.h"
@@ -1466,6 +1467,10 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
 
   
   
+  bool userHideOnionReferrerSource = gHttpHandler->HideOnionReferrerSource();
+
+  
+  
   
   int userReferrerTrimmingPolicy = gHttpHandler->ReferrerTrimmingPolicy();
 
@@ -1615,6 +1620,13 @@ HttpBaseChannel::SetReferrerWithPolicy(nsIURI *referrer,
 
   rv = clone->GetAsciiHost(referrerHost);
   if (NS_FAILED(rv)) return rv;
+
+  
+  if(userHideOnionReferrerSource &&
+     !currentHost.Equals(referrerHost) &&
+     StringEndsWith(referrerHost, NS_LITERAL_CSTRING(".onion"))) {
+    return NS_OK;
+  }
 
   
   if (userReferrerXOriginPolicy == 2 && !currentHost.Equals(referrerHost))
