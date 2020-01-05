@@ -728,6 +728,8 @@ Http2PushApiListener.prototype = {
     pushChannel.asyncOpen2(this);
     if (pushChannel.originalURI.spec == "https://localhost:" + serverPort + "/pushapi1/2") {
       pushChannel.cancel(Components.results.NS_ERROR_ABORT);
+    } else if (pushChannel.originalURI.spec == "https://localhost:" + serverPort + "/pushapi1/3") {
+      do_check_true(pushChannel.getRequestHeader("Accept-Encoding").includes("br"));
     }
   },
 
