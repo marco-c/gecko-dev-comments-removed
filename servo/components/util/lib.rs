@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #![feature(default_type_params,macro_rules,unsafe_destructor)]
 
@@ -30,6 +30,8 @@ extern crate url;
 
 #[phase(plugin)]
 extern crate string_cache_macros;
+#[phase(plugin)]
+extern crate lazy_static;
 
 use std::sync::Arc;
 
@@ -45,6 +47,7 @@ pub mod namespace;
 pub mod opts;
 pub mod range;
 pub mod resource_files;
+pub mod rtinstrument;
 pub mod smallvec;
 pub mod sort;
 pub mod str;
@@ -60,7 +63,7 @@ pub fn breakpoint() {
     unsafe { ::std::intrinsics::breakpoint() };
 }
 
-
+// Workaround for lack of `ptr_eq` on Arcs...
 #[inline]
 pub fn arc_ptr_eq<T: 'static + Send + Sync>(a: &Arc<T>, b: &Arc<T>) -> bool {
     let a: &T = a.deref();

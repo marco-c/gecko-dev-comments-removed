@@ -89,6 +89,11 @@ pub struct Opts {
 
     
     
+    
+    pub profile_tasks: bool,
+
+    
+    
     pub devtools_port: Option<u16>,
 
     
@@ -148,6 +153,7 @@ fn default_opts() -> Opts {
         user_agent: None,
         dump_flow_tree: false,
         validate_display_list_geometry: false,
+        profile_tasks: false,
     }
 }
 
@@ -173,6 +179,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         getopts::optflag("b", "bubble-widths", "Bubble intrinsic widths separately like other engines"),
         getopts::optflag("", "show-debug-borders", "Show debugging borders on layers and tiles."),
         getopts::optflag("", "show-debug-fragment-borders", "Show debugging borders on fragments."),
+        getopts::optflag("", "profile-tasks", "Instrument each task, writing the output to a file."),
         getopts::optflag("", "disable-text-aa", "Disable antialiasing for text rendering."),
         getopts::optflag("", "trace-layout", "Write layout trace to external file for debugging."),
         getopts::optflagopt("", "devtools", "Start remote devtools server on port", "6000"),
@@ -277,6 +284,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         show_debug_borders: opt_match.opt_present("show-debug-borders"),
         show_debug_fragment_borders: opt_match.opt_present("show-debug-fragment-borders"),
         enable_text_antialiasing: !opt_match.opt_present("disable-text-aa"),
+        profile_tasks: opt_match.opt_present("profile-tasks"),
         trace_layout: trace_layout,
         devtools_port: devtools_port,
         initial_window_size: initial_window_size,
