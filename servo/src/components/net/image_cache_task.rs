@@ -23,34 +23,30 @@ pub enum Msg {
     Prefetch(Url),
 
     
-    
-    
-    StorePrefetchedImageData(Url, Result<~[u8], ()>),
-
-    /// Tell the cache to decode an image. Must be posted before GetImage/WaitForImage
     Decode(Url),
 
-    /// Used by the decoder tasks to post decoded images back to the cache
-    // FIXME: make this priv after visibility rules change
-    StoreImage(Url, Option<Arc<~Image>>),
-
-    /// Request an Image object for a URL. If the image is not is not immediately
-    /// available then ImageNotReady is returned.
+    
+    
     GetImage(Url, Sender<ImageResponseMsg>),
 
-    /// Wait for an image to become available (or fail to load).
+    
     WaitForImage(Url, Sender<ImageResponseMsg>),
 
-    /// Clients must wait for a response before shutting down the ResourceTask
+    
     Exit(Sender<()>),
 
-    /// For testing
-    // FIXME: make this priv after visibility rules change
-    WaitForStore(Sender<()>),
+    
+    
+    priv StorePrefetchedImageData(Url, Result<~[u8], ()>),
+
+    /// Used by the decoder tasks to post decoded images back to the cache
+    priv StoreImage(Url, Option<Arc<~Image>>),
 
     /// For testing
-    // FIXME: make this priv after visibility rules change
-    WaitForStorePrefetched(Sender<()>),
+    priv WaitForStore(Sender<()>),
+
+    /// For testing
+    priv WaitForStorePrefetched(Sender<()>),
 }
 
 #[deriving(Clone)]
