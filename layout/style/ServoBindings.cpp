@@ -88,6 +88,20 @@ Gecko_FlattenedTreeParentIsParent(RawGeckoNodeBorrowed aNode)
 }
 #endif
 
+
+
+
+
+
+bool
+Gecko_IsSignificantChild(RawGeckoNodeBorrowed aNode, bool aTextIsSignificant,
+                         bool aWhitespaceIsSignificant)
+{
+  return nsStyleUtil::ThreadSafeIsSignificantChild(aNode->AsContent(),
+                                                   aTextIsSignificant,
+                                                   aWhitespaceIsSignificant);
+}
+
 RawGeckoNodeBorrowedOrNull
 Gecko_GetParentNode(RawGeckoNodeBorrowed aNode)
 {
