@@ -12,10 +12,20 @@ locale = sys.argv[2]
 with open(sys.argv[1]) as f:
   searchinfo = json.load(f)
 
+
+engines = set()
 if locale in searchinfo["locales"]:
-  for region in searchinfo["locales"][locale]:
-    engines = list(set(engines)|set(searchinfo["locales"][locale][region]["visibleDefaultEngines"]))
+  for region, table in searchinfo["locales"][locale].iteritems():
+    engines.update(table["visibleDefaultEngines"])
 else:
-  engines = searchinfo["default"]["visibleDefaultEngines"]
+  engines.update(searchinfo["default"]["visibleDefaultEngines"])
+
+
+for region, overrides in searchinfo["regionOverrides"].iteritems():
+  for originalengine, replacement in overrides.iteritems():
+    if originalengine in engines:
+      
+      engines.add(replacement)
+
 
 print '\n'.join(engines)
