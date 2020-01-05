@@ -34,7 +34,6 @@ pub fn is_whitespace(s: &str) -> bool {
 
 
 
-
 pub static HTML_SPACE_CHARACTERS: StaticCharVec = &[
     '\u0020',
     '\u0009',
