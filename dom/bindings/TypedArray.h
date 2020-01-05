@@ -143,7 +143,6 @@ public:
   
   
   
-  
 
   inline bool IsShared() const {
     MOZ_ASSERT(mComputed);
