@@ -281,6 +281,13 @@ public:
   nsresult Init();
 
   
+
+
+
+
+  static void PreloadSlowThings();
+
+  
   static already_AddRefed<TabChild>
   Create(nsIContentChild* aManager, const TabId& aTabId,
          const TabContext& aContext, uint32_t aChromeFlags);
@@ -717,7 +724,9 @@ private:
 
   void ActorDestroy(ActorDestroyReason why) override;
 
-  bool InitTabChildGlobal();
+  enum FrameScriptLoading { DONT_LOAD_SCRIPTS, DEFAULT_LOAD_SCRIPTS };
+
+  bool InitTabChildGlobal(FrameScriptLoading aScriptLoading = DEFAULT_LOAD_SCRIPTS);
 
   void InitRenderingState(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
                           const uint64_t& aLayersId,
