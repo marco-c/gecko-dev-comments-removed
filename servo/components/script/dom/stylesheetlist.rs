@@ -35,13 +35,18 @@ impl StyleSheetList {
 impl StyleSheetListMethods for StyleSheetList {
     
     fn Length(&self) -> u32 {
-       self.document.stylesheets().len() as u32
+       self.document.with_style_sheets_in_document(|s| s.len() as u32)
     }
 
     
-    fn Item(&self, _index: u32) -> Option<Root<StyleSheet>> {
-        None
+    fn Item(&self, index: u32) -> Option<Root<StyleSheet>> {
         
+        
+        self.document.with_style_sheets_in_document(|sheets| {
+            sheets.get(index as usize)
+                  .and_then(|sheet| sheet.node.get_cssom_stylesheet())
+                  .map(Root::upcast)
+        })
     }
 
     
