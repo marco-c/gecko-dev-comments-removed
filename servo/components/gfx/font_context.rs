@@ -140,7 +140,7 @@ impl FontContext {
         
 
         let desc = FontTemplateDescriptor::new(style.font_weight,
-                                               style.font_style == font_style::T::italic);
+                                               style.font_style == font_style::T::italic || style.font_style == font_style::T::oblique);
         let mut fonts = SmallVec8::new();
 
         for family in style.font_family.iter() {
