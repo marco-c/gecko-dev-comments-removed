@@ -39,7 +39,7 @@ add_task(function* () {
   
   
   if (newTabTarget.textContent != "foo") {
-    yield waitForMutation(newTabTarget, { childList: true });
+    yield waitForContentMutation(newTabTarget);
   }
 
   

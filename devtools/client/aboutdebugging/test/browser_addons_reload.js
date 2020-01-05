@@ -170,8 +170,8 @@ add_task(function* reloadButtonRefreshesMetadata() {
 
   
   const onReInstall = promiseAddonEvent("onInstalled");
-  const onAddonReloaded = waitForMutation(getAddonList(document),
-                                          { childList: true, subtree: true });
+  const onAddonReloaded = waitForContentMutation(getAddonList(document));
+
   const reloadButton = getReloadButton(document, manifestBase.name);
   reloadButton.click();
 

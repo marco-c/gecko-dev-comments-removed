@@ -237,6 +237,22 @@ function waitForMutation(target, mutationOptions) {
 
 
 
+function waitForContentMutation(target) {
+  return waitForMutation(target, {
+    characterData: true,
+    childList: true,
+    subtree: true
+  });
+}
+
+
+
+
+
+
+
+
+
 function assertHasTarget(expected, document, type, name) {
   let names = [...document.querySelectorAll("#" + type + " .target-name")];
   names = names.map(element => element.textContent);
