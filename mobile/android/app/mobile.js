@@ -172,6 +172,7 @@ pref("browser.helperApps.deleteTempFileOnExit", false);
 
 
 pref("signon.rememberSignons", true);
+pref("signon.autofillForms.http", true);
 pref("signon.expireMasterPassword", false);
 pref("signon.debug", false);
 
