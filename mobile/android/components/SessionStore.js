@@ -148,6 +148,7 @@ SessionStore.prototype = {
 
   _clearDisk: function ss_clearDisk() {
     this._sessionDataIsGood = false;
+    this._lastBackupTime = 0;
 
     if (this._loadState > STATE_QUITTING) {
       OS.File.remove(this._sessionFile.path);
@@ -597,6 +598,13 @@ SessionStore.prototype = {
     log("onTabAdd() ran for tab " + aWindow.BrowserApp.getTabForBrowser(aBrowser).id +
         ", aNoNotification = " + aNoNotification);
     if (!aNoNotification) {
+      if (this._loadState == STATE_QUITTING) {
+        
+        
+        this._forEachBrowserWindow((aWindow) => {
+          this._collectWindowData(aWindow);
+        });
+      }
       this.saveStateDelayed();
     }
     this._updateCrashReportURL(aWindow);
