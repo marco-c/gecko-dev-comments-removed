@@ -179,11 +179,23 @@ function getUrlHost(url) {
 
 
 
+
+
+
+
+function getUrlScheme(url) {
+  return (new URL(url)).protocol.replace(":", "").toLowerCase();
+}
+
+
+
+
 function getUrlDetails(url) {
   let baseNameWithQuery = getUrlBaseNameWithQuery(url);
   let host = getUrlHost(url);
   let hostname = getUrlHostName(url);
   let unicodeUrl = decodeUnicodeUrl(url);
+  let scheme = getUrlScheme(url);
 
   
   
@@ -202,6 +214,7 @@ function getUrlDetails(url) {
   return {
     baseNameWithQuery,
     host,
+    scheme,
     unicodeUrl,
     isLocal
   };
@@ -296,11 +309,12 @@ module.exports = {
   decodeUnicodeUrl,
   getAbbreviatedMimeType,
   getUrlBaseName,
-  getUrlQuery,
   getUrlBaseNameWithQuery,
-  getUrlHostName,
-  getUrlHost,
   getUrlDetails,
+  getUrlHost,
+  getUrlHostName,
+  getUrlQuery,
+  getUrlScheme,
   parseQueryString,
   parseFormData,
   propertiesEqual,
