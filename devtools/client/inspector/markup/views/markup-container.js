@@ -211,10 +211,12 @@ MarkupContainer.prototype = {
     }
 
     if (this.showExpander) {
+      this.elt.classList.add("expandable");
       this.expander.style.visibility = "visible";
       
       this.tagLine.setAttribute("aria-expanded", this.expanded);
     } else {
+      this.elt.classList.remove("expandable");
       this.expander.style.visibility = "hidden";
       
       
