@@ -1,6 +1,7 @@
 
 
 
+"use strict";
 
 const Cc = Components.classes;
 const Ci = Components.interfaces;
@@ -200,10 +201,11 @@ SessionStore.prototype = {
         break;
       case "domwindowopened": {
         let window = aSubject;
-        window.addEventListener("load", () => {
+        let onLoad = () => {
+          window.removeEventListener("load", onLoad);
           this.onWindowOpen(window);
-          window.removeEventListener("load", arguments.callee);
-        });
+        };
+        window.addEventListener("load", onLoad);
         break;
       }
       case "domwindowclosed": 
