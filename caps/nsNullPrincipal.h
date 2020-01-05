@@ -36,7 +36,10 @@ public:
   
   
   
-  nsNullPrincipal() {}
+  nsNullPrincipal()
+    : BasePrincipal(eNullPrincipal)
+  {
+  }
 
   NS_DECL_NSISERIALIZABLE
 
@@ -61,8 +64,6 @@ public:
                 nsIURI* aURI = nullptr);
 
   virtual nsresult GetScriptLocation(nsACString &aStr) override;
-
-  PrincipalKind Kind() override { return eNullPrincipal; }
 
  protected:
   virtual ~nsNullPrincipal() {}
