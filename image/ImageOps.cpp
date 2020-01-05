@@ -113,7 +113,10 @@ ImageOps::DecodeToSurface(nsIInputStream* aInputStream,
   if (NS_FAILED(rv)) {
     return nullptr;
   }
-  sourceBuffer->Complete(NS_OK);
+  
+  if (!sourceBuffer->IsComplete()) {
+    sourceBuffer->Complete(NS_OK);
+  }
 
   
   DecoderType decoderType =
