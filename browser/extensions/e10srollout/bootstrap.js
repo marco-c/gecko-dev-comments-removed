@@ -14,11 +14,13 @@ Cu.import("resource://gre/modules/UpdateUtils.jsm");
 const TEST_THRESHOLD = {
   "beta"    : 0.5,  
   "release" : 1.0,  
+  "esr"     : 1.0,  
 };
 
 const ADDON_ROLLOUT_POLICY = {
   "beta"    : "51alladdons", 
   "release" : "51set1",
+  "esr"     : "esrA", 
 };
 
 const PREF_COHORT_SAMPLE       = "e10s.rollout.cohortSample";
