@@ -1263,7 +1263,7 @@ impl Renderer {
                 let props = &deferred_resolve.image_properties;
                 let external_id = props.external_id
                                        .expect("BUG: Deferred resolves must be external images!");
-                let image = handler.get(external_id);
+                let image = handler.lock(external_id);
 
                 let texture_id = match image.source {
                     ExternalImageSource::NativeTexture(texture_id) => TextureId::new(texture_id),
@@ -1450,8 +1450,17 @@ pub struct ExternalImage {
 
 
 
+
+
 pub trait ExternalImageHandler {
-    fn get(&mut self, key: ExternalImageId) -> ExternalImage;
+    
+    
+    
+    fn lock(&mut self, key: ExternalImageId) -> ExternalImage;
+    
+    
+    fn unlock(&mut self, key: ExternalImageId);
+    
     fn release(&mut self, key: ExternalImageId);
 }
 
