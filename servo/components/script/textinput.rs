@@ -149,7 +149,7 @@ impl TextInput {
 
     
     fn current_line_length(&self) -> uint {
-        self.lines[self.edit_point.line].len()
+        self.lines[self.edit_point.line].char_len()
     }
 
     
