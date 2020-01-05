@@ -375,9 +375,11 @@ GetPlaceholderContainer(nsPresContext* aPresContext,
 
 
 
+
 static nscoord
 OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
                          const LogicalSize& aKidSizeInAbsPosCBWM,
+                         const LogicalSize& aAbsPosCBSize,
                          nsContainerFrame* aPlaceholderContainer,
                          WritingMode aAbsPosCBWM,
                          LogicalAxis aAbsPosCBAxis)
@@ -410,10 +412,30 @@ OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
   nsIAtom* parentType = aPlaceholderContainer->GetType();
   LogicalSize alignAreaSize(pcWM);
   if (parentType == nsGkAtoms::flexContainerFrame) {
+    
     alignAreaSize = aPlaceholderContainer->GetLogicalSize(pcWM);
     LogicalMargin pcBorderPadding =
       aPlaceholderContainer->GetLogicalUsedBorderAndPadding(pcWM);
     alignAreaSize -= pcBorderPadding.Size(pcWM);
+  } else if (parentType == nsGkAtoms::gridContainerFrame) {
+    
+    
+    
+    
+    
+    
+    if (aPlaceholderContainer == aKidReflowInput.mCBReflowInput->mFrame) {
+      
+      
+      alignAreaSize = aAbsPosCBSize.ConvertTo(pcWM, aAbsPosCBWM);
+    } else {
+      
+      
+      alignAreaSize = aPlaceholderContainer->GetLogicalSize(pcWM);
+      LogicalMargin pcBorder =
+        aPlaceholderContainer->GetLogicalUsedBorder(pcWM);
+      alignAreaSize -= pcBorder.Size(pcWM);
+    }
   } else {
     NS_ERROR("Unsupported container for abpsos CSS Box Alignment");
     return 0; 
@@ -522,6 +544,7 @@ nsAbsoluteContainingBlock::ResolveSizeDependentOffsets(
       placeholderContainer = GetPlaceholderContainer(aPresContext,
                                                      aKidReflowInput.mFrame);
       nscoord offset = OffsetToAlignedStaticPos(aKidReflowInput, aKidSize,
+                                                logicalCBSizeOuterWM,
                                                 placeholderContainer,
                                                 outerWM, eLogicalAxisInline);
       
@@ -544,6 +567,7 @@ nsAbsoluteContainingBlock::ResolveSizeDependentOffsets(
                                                        aKidReflowInput.mFrame);
       }
       nscoord offset = OffsetToAlignedStaticPos(aKidReflowInput, aKidSize,
+                                                logicalCBSizeOuterWM,
                                                 placeholderContainer,
                                                 outerWM, eLogicalAxisBlock);
       
