@@ -3292,6 +3292,9 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
   bool createLayersForScrollbars = mIsRoot &&
     mOuter->PresContext()->IsRootContentDocument();
 
+  nsIScrollableFrame* sf = do_QueryFrame(mOuter);
+  MOZ_ASSERT(sf);
+
   if (ignoringThisScrollFrame) {
     
     
@@ -3308,11 +3311,20 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                           createLayersForScrollbars, false);
     }
 
-    
-    
-    
-    mOuter->BuildDisplayListForChild(aBuilder, mScrolledFrame,
-                                     dirtyRect, aLists);
+    {
+      nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(aBuilder);
+      if (aBuilder->IsPaintingToWindow() &&
+          gfxPrefs::LayoutUseContainersForRootFrames() && mIsRoot) {
+        asrSetter.EnterScrollFrame(sf);
+        aBuilder->SetActiveScrolledRootForRootScrollframe(aBuilder->CurrentActiveScrolledRoot());
+      }
+
+      
+      
+      
+      mOuter->BuildDisplayListForChild(aBuilder, mScrolledFrame,
+                                       dirtyRect, aLists);
+    }
 
     if (addScrollBars) {
       
@@ -3397,9 +3409,6 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     }
   }
 
-  nsIScrollableFrame* sf = do_QueryFrame(mOuter);
-  MOZ_ASSERT(sf);
-
   nsDisplayListCollection scrolledContent;
   {
     
@@ -3447,6 +3456,10 @@ ScrollFrameHelper::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     nsDisplayListBuilder::AutoCurrentActiveScrolledRootSetter asrSetter(aBuilder);
     if (mWillBuildScrollableLayer) {
       asrSetter.EnterScrollFrame(sf);
+    }
+
+    if (mIsScrollableLayerInRootContainer) {
+      aBuilder->SetActiveScrolledRootForRootScrollframe(aBuilder->CurrentActiveScrolledRoot());
     }
 
     {
