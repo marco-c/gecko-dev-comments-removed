@@ -8,6 +8,8 @@
 #define jit_Ion_h
 
 #include "mozilla/MemoryReporting.h"
+#include "mozilla/Move.h"
+#include "mozilla/Result.h"
 
 #include "jscntxt.h"
 #include "jscompartment.h"
@@ -36,6 +38,21 @@ enum class AbortReason {
     Error,
     NoAbort
 };
+
+template <typename V>
+using AbortReasonOr = mozilla::Result<V, AbortReason>;
+using mozilla::Ok;
+
+
+
+
+template <typename E>
+inline mozilla::GenericErrorResult<E>
+Err(E&& aErrorValue)
+{
+    return mozilla::MakeGenericErrorResult(mozilla::Forward<E>(aErrorValue));
+}
+
 
 
 

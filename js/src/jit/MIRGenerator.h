@@ -72,11 +72,21 @@ class MIRGenerator
 
     
     
-    bool abort(const char* message, ...) MOZ_FORMAT_PRINTF(2, 3); 
-    bool abortFmt(const char* message, va_list ap); 
+    mozilla::GenericErrorResult<AbortReason> abort(AbortReason r);
+    mozilla::GenericErrorResult<AbortReason>
+    abort(AbortReason r, const char* message, ...) MOZ_FORMAT_PRINTF(3, 4);
 
-    bool errored() const {
-        return error_;
+    mozilla::GenericErrorResult<AbortReason>
+    abortFmt(AbortReason r, const char* message, va_list ap);
+
+    
+    
+    void setOffThreadStatus(AbortReasonOr<Ok> result) {
+        MOZ_ASSERT(offThreadStatus_.isOk());
+        offThreadStatus_ = result;
+    }
+    AbortReasonOr<Ok> getOffThreadStatus() const {
+        return offThreadStatus_;
     }
 
     MOZ_MUST_USE bool instrumentedProfiling() {
@@ -117,13 +127,6 @@ class MIRGenerator
     }
     void setPauseFlag(mozilla::Atomic<bool, mozilla::Relaxed>* pauseBuild) {
         pauseBuild_ = pauseBuild;
-    }
-
-    void disable() {
-        abortReason_ = AbortReason::Disable;
-    }
-    AbortReason abortReason() {
-        return abortReason_;
     }
 
     bool compilingWasm() const {
@@ -172,10 +175,8 @@ class MIRGenerator
     const OptimizationInfo* optimizationInfo_;
     TempAllocator* alloc_;
     MIRGraph* graph_;
-    AbortReason abortReason_;
-    bool shouldForceAbort_; 
+    AbortReasonOr<Ok> offThreadStatus_;
     ObjectGroupVector abortedPreliminaryGroups_;
-    bool error_;
     mozilla::Atomic<bool, mozilla::Relaxed>* pauseBuild_;
     mozilla::Atomic<bool, mozilla::Relaxed> cancelBuild_;
 
@@ -196,13 +197,6 @@ class MIRGenerator
     void addAbortedPreliminaryGroup(ObjectGroup* group);
 
     uint32_t minWasmHeapLength_;
-
-    void setForceAbort() {
-        shouldForceAbort_ = true;
-    }
-    bool shouldForceAbort() {
-        return shouldForceAbort_;
-    }
 
 #if defined(JS_ION_PERF)
     WasmPerfSpewer wasmPerfSpewer_;

@@ -12,6 +12,7 @@
 #ifndef jit_MIR_h
 #define jit_MIR_h
 
+#include "mozilla/Alignment.h"
 #include "mozilla/Array.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/MacroForEach.h"
@@ -14237,7 +14238,7 @@ BarrierKind PropertyReadNeedsTypeBarrier(JSContext* propertycx,
                                          CompilerConstraintList* constraints,
                                          MDefinition* obj, PropertyName* name,
                                          TemporaryTypeSet* observed);
-ResultWithOOM<BarrierKind>
+AbortReasonOr<BarrierKind>
 PropertyReadOnPrototypeNeedsTypeBarrier(IonBuilder* builder,
                                         MDefinition* obj, PropertyName* name,
                                         TemporaryTypeSet* observed);
@@ -14258,4 +14259,21 @@ bool TypeCanHaveExtraIndexedProperties(IonBuilder* builder, TemporaryTypeSet* ty
 } 
 } 
 
-#endif 
+
+
+namespace mozilla
+{
+
+template <>
+class AlignmentFinder<js::jit::MDefinition> : public AlignmentFinder<js::jit::MStart>
+{
+};
+
+template <>
+class AlignmentFinder<js::jit::MInstruction> : public AlignmentFinder<js::jit::MStart>
+{
+};
+
+} 
+
+#endif
