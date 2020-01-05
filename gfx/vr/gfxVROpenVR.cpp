@@ -60,17 +60,18 @@ static pfn_VR_GetGenericInterface vr_GetGenericInterface = nullptr;
 
 
 
+
 const uint64_t gOpenVRButtonMask[] = {
   
-  vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_ApplicationMenu),
-  vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip),
-  
-  
-  
-  
-  
   vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Touchpad),
-  vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger)
+  vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_SteamVR_Trigger),
+  
+  vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_Grip),
+  vr::ButtonMaskFromId(vr::EVRButtonId::k_EButton_ApplicationMenu)
+  
+  
+  
+  
 };
 
 const uint32_t gNumOpenVRButtonMask = sizeof(gOpenVRButtonMask) /
