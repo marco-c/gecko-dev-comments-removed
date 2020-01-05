@@ -237,7 +237,7 @@ struct nsCSSRendering {
 
 
   static void PaintGradient(nsPresContext* aPresContext,
-                            nsRenderingContext& aRenderingContext,
+                            gfxContext& aContext,
                             nsStyleGradient* aGradient,
                             const nsRect& aDirtyRect,
                             const nsRect& aDest,
