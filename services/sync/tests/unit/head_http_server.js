@@ -406,7 +406,14 @@ ServerCollection.prototype = {
           options[chunk[0]] = chunk[1];
         }
       }
-      if (options.ids) {
+      
+      if (options.hasOwnProperty("ids")) {
+        if (!options.ids) {
+          response.setStatusLine(request.httpVersion, "400", "Bad Request");
+          body = "Bad Request";
+          response.bodyOutputStream.write(body, body.length);
+          return;
+        }
         options.ids = options.ids.split(",");
       }
       if (options.newer) {
@@ -937,6 +944,8 @@ SyncServer.prototype = {
               respond(404, "Not found", "Not found");
               return undefined;
             }
+            
+            
             
             respond(200, "OK", "[]");
             return undefined;

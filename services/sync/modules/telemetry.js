@@ -65,53 +65,6 @@ const reProfileDir = new RegExp(
         OS.Constants.Path.profileDir.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"),
         "gi");
 
-function transformError(error, engineName) {
-  if (Async.isShutdownException(error)) {
-    return { name: "shutdownerror" };
-  }
-
-  if (typeof error === "string") {
-    if (error.startsWith("error.")) {
-      
-      return { name: "othererror", error };
-    }
-    
-    
-    error = error.replace(reProfileDir, "[profileDir]");
-    return { name: "unexpectederror", error };
-  }
-
-  if (error.failureCode) {
-    return { name: "othererror", error: error.failureCode };
-  }
-
-  if (error instanceof AuthenticationError) {
-    return { name: "autherror", from: error.source };
-  }
-
-  if (error instanceof Ci.mozIStorageError) {
-    return { name: "sqlerror", code: error.result };
-  }
-
-  let httpCode = error.status ||
-    (error.response && error.response.status) ||
-    error.code;
-
-  if (httpCode) {
-    return { name: "httperror", code: httpCode };
-  }
-
-  if (error.result) {
-    return { name: "nserror", code: error.result };
-  }
-
-  return {
-    name: "unexpectederror",
-    
-    error: String(error).replace(reProfileDir, "[profileDir]")
-  }
-}
-
 function tryGetMonotonicTimestamp() {
   try {
     return Telemetry.msSinceProcessStart();
@@ -187,7 +140,7 @@ class EngineRecord {
       this.took = took;
     }
     if (error) {
-      this.failureReason = transformError(error, this.name);
+      this.failureReason = SyncTelemetry.transformError(error);
     }
   }
 
@@ -241,7 +194,7 @@ class EngineRecord {
     }
 
     this.validation = {
-      failureReason: transformError(e)
+      failureReason: SyncTelemetry.transformError(e)
     };
   }
 
@@ -302,7 +255,7 @@ class TelemetryRecord {
       this.onEngineStop(this.currentEngine.name);
     }
     if (error) {
-      this.failureReason = transformError(error);
+      this.failureReason = SyncTelemetry.transformError(error);
     }
 
     
@@ -688,6 +641,58 @@ class SyncTelemetryImpl {
         break;
     }
   }
+
+  
+  
+  
+  
+  transformError(error) {
+    if (Async.isShutdownException(error)) {
+      return { name: "shutdownerror" };
+    }
+
+    if (typeof error === "string") {
+      if (error.startsWith("error.")) {
+        
+        return { name: "othererror", error };
+      }
+      
+      
+      error = error.replace(reProfileDir, "[profileDir]");
+      return { name: "unexpectederror", error };
+    }
+
+    if (error.failureCode) {
+      return { name: "othererror", error: error.failureCode };
+    }
+
+    if (error instanceof AuthenticationError) {
+      return { name: "autherror", from: error.source };
+    }
+
+    if (error instanceof Ci.mozIStorageError) {
+      return { name: "sqlerror", code: error.result };
+    }
+
+    let httpCode = error.status ||
+      (error.response && error.response.status) ||
+      error.code;
+
+    if (httpCode) {
+      return { name: "httperror", code: httpCode };
+    }
+
+    if (error.result) {
+      return { name: "nserror", code: error.result };
+    }
+
+    return {
+      name: "unexpectederror",
+      
+      error: String(error).replace(reProfileDir, "[profileDir]")
+    }
+  }
+
 }
 
 this.SyncTelemetry = new SyncTelemetryImpl(ENGINES);

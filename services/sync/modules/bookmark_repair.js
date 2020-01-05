@@ -18,6 +18,7 @@ Cu.import("resource://services-sync/collection_repair.js");
 Cu.import("resource://services-sync/constants.js");
 Cu.import("resource://services-sync/resource.js");
 Cu.import("resource://services-sync/doctor.js");
+Cu.import("resource://services-sync/telemetry.js");
 Cu.import("resource://services-common/utils.js");
 
 const log = Log.repository.getLogger("Sync.Engine.Bookmarks.Repair");
@@ -551,91 +552,120 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     
     
 
-    let engine = this.service.engineManager.get("bookmarks");
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    let allIDs = new Set(); 
-    let maybeToDelete = new Set(); 
-    let toUpload = new Set(); 
-    let results = await PlacesSyncUtils.bookmarks.fetchSyncIdsForRepair(request.ids);
-    for (let { syncId: id, syncable } of results) {
-      allIDs.add(id);
-      if (syncable) {
-        toUpload.add(id);
-      } else {
-        log.debug(`repair request to upload item ${id} but it isn't under a syncable root`);
-        maybeToDelete.add(id);
-      }
-    }
-    if (log.level <= Log.Level.Debug) {
-      let missingItems = request.ids.filter(id =>
-        !toUpload.has(id) && !maybeToDelete.has(id)
-      );
-      if (missingItems.length) {
-        log.debug("repair request to upload items that don't exist locally",
-                  missingItems);
-      }
-    }
-    
-    
-    let existsRemotely = new Set(); 
-    let itemSource = engine.itemSource();
-    itemSource.ids = Array.from(allIDs);
-    log.trace(`checking the server for items`, itemSource.ids);
-    for (let remoteID of JSON.parse(itemSource.get())) {
-      log.trace(`the server has "${remoteID}"`);
-      existsRemotely.add(remoteID);
-      
-      
-      
-      
-      if (request.ids.indexOf(remoteID) == -1) {
-        toUpload.delete(remoteID);
-      }
-    }
-    
-    let toDelete = CommonUtils.difference(maybeToDelete, existsRemotely);
-    
-    
-    
-    log.debug(`repair request will upload ${toUpload.size} items and delete ${toDelete.size} items`);
-    for (let id of toUpload) {
-      engine._modified.setWeak(id, { tombstone: false });
-    }
-    for (let id of toDelete) {
-      engine._modified.setWeak(id, { tombstone: true });
-    }
-
-    
     this._currentState = {
       request,
       rawCommand,
-      toUpload,
-      toDelete,
+      ids: [],
     }
-    if (toUpload.size || toDelete.size) {
+
+    try {
+      let engine = this.service.engineManager.get("bookmarks");
+      let { toUpload, toDelete } = await this._fetchItemsToUpload(request);
+
+      if (toUpload.size || toDelete.size) {
+        log.debug(`repair request will upload ${toUpload.size} items and delete ${toDelete.size} items`);
+        
+        
+        
+        for (let id of toUpload) {
+          engine._modified.setWeak(id, { tombstone: false });
+          this._currentState.ids.push(id);
+        }
+        for (let id of toDelete) {
+          engine._modified.setWeak(id, { tombstone: true });
+          this._currentState.ids.push(id);
+        }
+
+        
+        Svc.Obs.add("weave:engine:sync:uploaded", this.onUploaded, this);
+        
+        
+        let eventExtra = {
+          flowID: request.flowID,
+          numIDs: this._currentState.ids.length.toString(),
+        };
+        this.service.recordTelemetryEvent("repairResponse", "uploading", undefined, eventExtra);
+      } else {
+        
+        this._finishRepair();
+      }
+    } catch (ex) {
+      if (Async.isShutdownException(ex)) {
+        
+        throw ex;
+      }
       
-      Svc.Obs.add("weave:engine:sync:uploaded", this.onUploaded, this);
       
-      
-      let eventExtra = {
-        flowID: request.flowID,
-        numIDs: (toUpload.size + toDelete.size).toString(),
-      };
-      this.service.recordTelemetryEvent("repairResponse", "uploading", undefined, eventExtra);
-    } else {
-      
+      log.error("Failed to respond to the repair request", ex);
+      this._currentState.failureReason = SyncTelemetry.transformError(ex);
       this._finishRepair();
     }
+  }
+
+  async _fetchItemsToUpload(request) {
+    let toUpload = new Set(); 
+    let toDelete = new Set(); 
+
+    let requested = new Set(request.ids);
+
+    let engine = this.service.engineManager.get("bookmarks");
+    
+    
+    
+    let repairable = await PlacesSyncUtils.bookmarks.fetchSyncIdsForRepair(request.ids);
+    if (repairable.length == 0) {
+      
+      
+      return { toUpload, toDelete };
+    }
+
+    
+    let itemSource = engine.itemSource();
+    itemSource.ids = repairable.map(item => item.syncId);
+    log.trace(`checking the server for items`, itemSource.ids);
+    let itemsResponse = itemSource.get();
+    
+    
+    
+    
+    
+    
+    if (!itemsResponse.success) {
+      throw new Error(`request for server IDs failed: ${itemsResponse.status}`);
+    }
+    let existRemotely = new Set(JSON.parse(itemsResponse));
+    
+    
+    
+    
+    
+    
+    
+    for (let { syncId: id, syncable } of repairable) {
+      if (requested.has(id)) {
+        if (syncable) {
+          log.debug(`repair request to upload item '${id}' which exists locally; uploading`);
+          toUpload.add(id);
+        } else {
+          
+          log.debug(`repair request to upload item '${id}' but it isn't under a syncable root; writing a tombstone`);
+          toDelete.add(id);
+        }
+      } else {
+        
+        
+        if (syncable && !existRemotely.has(id)) {
+          log.debug(`repair request found related item '${id}' which isn't on the server; uploading`);
+          toUpload.add(id);
+        } else if (!syncable && existRemotely.has(id)) {
+          log.debug(`repair request found non-syncable related item '${id}' on the server; writing a tombstone`);
+          toDelete.add(id);
+        } else {
+          log.debug(`repair request found related item '${id}' which we will not upload; ignoring`);
+        }
+      }
+    }
+    return { toUpload, toDelete };
   }
 
   onUploaded(subject, data) {
@@ -655,13 +685,7 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
       collection: "bookmarks",
       clientID: clientsEngine.localID,
       flowID,
-      ids: [],
-    }
-    for (let id of this._currentState.toUpload) {
-      response.ids.push(id);
-    }
-    for (let id of this._currentState.toDelete) {
-      response.ids.push(id);
+      ids: this._currentState.ids,
     }
     let clientID = this._currentState.request.requestor;
     clientsEngine.sendCommand("repairResponse", [response], clientID, { flowID });
@@ -671,7 +695,14 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
       flowID,
       numIDs: response.ids.length.toString(),
     }
-    this.service.recordTelemetryEvent("repairResponse", "finished", undefined, eventExtra);
+    if (this._currentState.failureReason) {
+      
+      
+      eventExtra.failureReason = JSON.stringify(this._currentState.failureReason).substring(0, 85)
+      this.service.recordTelemetryEvent("repairResponse", "failed", undefined, eventExtra);
+    } else {
+      this.service.recordTelemetryEvent("repairResponse", "finished", undefined, eventExtra);
+    }
     this._currentState = null;
   }
 

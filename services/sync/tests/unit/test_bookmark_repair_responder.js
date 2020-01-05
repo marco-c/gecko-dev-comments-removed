@@ -15,6 +15,8 @@ Cu.import("resource://testing-common/services/sync/utils.js");
 initTestLogging("Trace");
 Log.repository.getLogger("Sync.Engine.Bookmarks").level = Log.Level.Trace;
 
+Log.repository.getLogger("Sqlite").level = Log.Level.Error;
+
 
 var recordedEvents = [];
 Service.recordTelemetryEvent = (object, method, value, extra = undefined) => {
@@ -78,10 +80,47 @@ async function cleanup(server) {
   await promiseStopServer(server);
   await PlacesSyncUtils.bookmarks.wipe();
   Svc.Prefs.reset("engine.bookmarks.validation.enabled");
+  
+  Service.collectionKeys.clear();
 }
+
+add_task(async function test_responder_error() {
+  let server = await setup();
+
+  
+  Service.sync();
+
+  let request = {
+    request: "upload",
+    ids: [Utils.makeGUID()],
+    flowID: Utils.makeGUID(),
+  }
+  let responder = new BookmarkRepairResponder();
+  
+  responder._fetchItemsToUpload = async function() {
+    throw new Error("oh no!");
+  }
+  await responder.repair(request, null);
+
+  checkRecordedEvents([
+    { object: "repairResponse",
+      method: "failed",
+      value: undefined,
+      extra: { flowID: request.flowID,
+               numIDs: "0",
+               failureReason: '{"name":"unexpectederror","error":"Error: oh no!"}',
+      }
+    },
+  ]);
+
+  await cleanup(server);
+});
 
 add_task(async function test_responder_no_items() {
   let server = await setup();
+
+  
+  Service.sync();
 
   let request = {
     request: "upload",
@@ -279,6 +318,8 @@ add_task(async function test_responder_missing_items() {
 add_task(async function test_non_syncable() {
   let server = await setup();
 
+  Service.sync(); 
+
   
   let leftPaneId = PlacesUIUtils.leftPaneFolderId;
   _(`Left pane root ID: ${leftPaneId}`);
@@ -289,11 +330,19 @@ add_task(async function test_non_syncable() {
   let allBookmarksId = PlacesUIUtils.leftPaneQueries.AllBookmarks;
   let allBookmarksGuid = await PlacesUtils.promiseItemGuid(allBookmarksId);
 
-  
-  
   let unfiledQueryId = PlacesUIUtils.leftPaneQueries.UnfiledBookmarks;
   let unfiledQueryGuid = await PlacesUtils.promiseItemGuid(unfiledQueryId);
 
+  
+  let bookmarksMenuQueryId = PlacesUIUtils.leftPaneQueries.BookmarksMenu;
+  let bookmarksMenuQueryGuid = await PlacesUtils.promiseItemGuid(bookmarksMenuQueryId);
+  let collection = getServerBookmarks(server);
+  collection.insert(bookmarksMenuQueryGuid, "doesn't matter");
+
+  
+  
+  
+  
   let request = {
     request: "upload",
     ids: [allBookmarksGuid, unfiledQueryGuid],
@@ -307,7 +356,7 @@ add_task(async function test_non_syncable() {
       method: "uploading",
       value: undefined,
       
-      extra: {flowID: request.flowID, numIDs: "4"},
+      extra: {flowID: request.flowID, numIDs: "3"},
     },
   ]);
 
@@ -323,27 +372,34 @@ add_task(async function test_non_syncable() {
     unfiledQueryGuid,
   ];
 
-  let collection = getServerBookmarks(server);
   deepEqual(collection.keys().sort(), [
     
     "menu",
     "mobile",
     "toolbar",
     "unfiled",
-    ...queryGuids,
+    ...request.ids,
+    bookmarksMenuQueryGuid,
   ].sort(), "Should upload roots and queries on first sync");
 
   for (let guid of queryGuids) {
     let wbo = collection.wbo(guid);
-    let payload = JSON.parse(JSON.parse(wbo.payload).ciphertext);
-    ok(payload.deleted, `Should upload tombstone for left pane query ${guid}`);
+    if (request.ids.indexOf(guid) >= 0 || guid == bookmarksMenuQueryGuid) {
+      
+      let payload = JSON.parse(JSON.parse(wbo.payload).ciphertext);
+      ok(payload.deleted, `Should upload tombstone for left pane query ${guid}`);
+    } else {
+      
+      
+      ok(!wbo, `Should not upload anything for left pane query ${guid}`);
+    }
   }
 
   checkRecordedEvents([
     { object: "repairResponse",
       method: "finished",
       value: undefined,
-      extra: {flowID: request.flowID, numIDs: "4"},
+      extra: {flowID: request.flowID, numIDs: "3"},
     },
   ]);
 
