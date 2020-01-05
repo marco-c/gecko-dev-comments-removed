@@ -202,8 +202,6 @@ CSSTransition::QueueEvents(StickyTimeDuration aActiveTime)
 
   if (!mEffect) {
     currentPhase      = GetTransitionPhaseWithoutEffect();
-    intervalStartTime = zeroDuration;
-    intervalEndTime   = zeroDuration;
   } else {
     ComputedTiming computedTiming = mEffect->GetComputedTiming();
 
@@ -221,9 +219,9 @@ CSSTransition::QueueEvents(StickyTimeDuration aActiveTime)
   
   
   
-  TimeStamp zeroTimeStamp   = AnimationTimeToTimeStamp(zeroDuration);
-  TimeStamp startTimeStamp  = ElapsedTimeToTimeStamp(intervalStartTime);
-  TimeStamp endTimeStamp    = ElapsedTimeToTimeStamp(intervalEndTime);
+  TimeStamp zeroTimeStamp  = AnimationTimeToTimeStamp(zeroDuration);
+  TimeStamp startTimeStamp = ElapsedTimeToTimeStamp(intervalStartTime);
+  TimeStamp endTimeStamp   = ElapsedTimeToTimeStamp(intervalEndTime);
 
   if (mPendingState != PendingState::NotPending &&
       (mPreviousTransitionPhase == TransitionPhase::Idle ||
@@ -235,7 +233,8 @@ CSSTransition::QueueEvents(StickyTimeDuration aActiveTime)
   AutoTArray<TransitionEventParams, 3> events;
 
   
-  if (mPreviousTransitionPhase != TransitionPhase::Idle &&
+  if ((mPreviousTransitionPhase != TransitionPhase::Idle &&
+       mPreviousTransitionPhase != TransitionPhase::After) &&
       currentPhase == TransitionPhase::Idle) {
     TimeStamp activeTimeStamp = ElapsedTimeToTimeStamp(aActiveTime);
     events.AppendElement(TransitionEventParams{ eTransitionCancel,
