@@ -64,6 +64,17 @@ class DebugFrame
 
     explicit DebugFrame() {}
 
+    void StaticAsserts() {
+        
+        
+        static_assert(offsetof(DebugFrame, resultI32_) == 0, "results shall be at offset 0");
+        static_assert(offsetof(DebugFrame, tlsData_) + sizeof(TlsData*) ==
+                      offsetof(DebugFrame, frame_),
+                      "TLS pointer must be a field just before the wasm frame");
+        static_assert(sizeof(DebugFrame) % 8 == 0 && offsetof(DebugFrame, frame_) % 8 == 0,
+                      "DebugFrame and its portion is 8-bytes aligned for AbstractFramePtr");
+    }
+
   public:
     inline uint32_t funcIndex() const { return funcIndex_; }
     inline TlsData* tlsData() const { return tlsData_; }
@@ -109,12 +120,6 @@ class DebugFrame
     static constexpr size_t offsetOfTlsData() { return offsetof(DebugFrame, tlsData_); }
     static constexpr size_t offsetOfFrame() { return offsetof(DebugFrame, frame_); }
 };
-
-static_assert(DebugFrame::offsetOfResults() == 0, "results shall be at offset 0");
-static_assert(DebugFrame::offsetOfTlsData() + sizeof(TlsData*) == DebugFrame::offsetOfFrame(),
-              "TLS pointer must be a field just before the wasm frame");
-static_assert(sizeof(DebugFrame) % 8 == 0 && DebugFrame::offsetOfFrame() % 8 == 0,
-              "DebugFrame and its portion is 8-bytes aligned for AbstractFramePtr");
 
 } 
 } 
