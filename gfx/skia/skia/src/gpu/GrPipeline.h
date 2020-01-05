@@ -10,40 +10,25 @@
 
 #include "GrColor.h"
 #include "GrFragmentProcessor.h"
-#include "GrGpu.h"
 #include "GrNonAtomicRef.h"
 #include "GrPendingProgramElement.h"
-#include "GrPrimitiveProcessor.h"
-#include "GrProcOptInfo.h"
+#include "GrProcessorSet.h"
 #include "GrProgramDesc.h"
 #include "GrScissorState.h"
-#include "GrStencilSettings.h"
+#include "GrUserStencilSettings.h"
 #include "GrWindowRectsState.h"
 #include "SkMatrix.h"
 #include "SkRefCnt.h"
-
 #include "effects/GrCoverageSetOpXP.h"
 #include "effects/GrDisableColorXP.h"
 #include "effects/GrPorterDuffXferProcessor.h"
 #include "effects/GrSimpleTextureEffect.h"
 
-class GrBatch;
-class GrDrawContext;
+class GrAppliedClip;
 class GrDeviceCoordTexture;
+class GrOp;
 class GrPipelineBuilder;
-
-struct GrBatchToXPOverrides {
-    GrBatchToXPOverrides()
-    : fUsePLSDstRead(false) {}
-
-    bool fUsePLSDstRead;
-};
-
-struct GrPipelineOptimizations {
-    GrProcOptInfo fColorPOI;
-    GrProcOptInfo fCoveragePOI;
-    GrBatchToXPOverrides fOverrides;
-};
+class GrRenderTargetContext;
 
 
 
@@ -54,19 +39,48 @@ public:
     
     
 
-    struct CreateArgs {
-        const GrPipelineBuilder*    fPipelineBuilder;
-        GrDrawContext*              fDrawContext;
-        const GrCaps*               fCaps;
-        GrPipelineOptimizations     fOpts;
-        const GrScissorState*       fScissor;
-        const GrWindowRectsState*   fWindowRectsState;
-        bool                        fHasStencilClip;
+    enum Flags {
+        
+
+
+
+
+        kHWAntialias_Flag = 0x1,
+
+        
+
+
+        kSnapVerticesToPixelCenters_Flag = 0x2,
+    };
+
+    struct InitArgs {
+        uint32_t fFlags = 0;
+        GrDrawFace fDrawFace = GrDrawFace::kBoth;
+        const GrProcessorSet* fProcessors = nullptr;  
+        const GrUserStencilSettings* fUserStencil = &GrUserStencilSettings::kUnused;
+        const GrAppliedClip* fAppliedClip = nullptr;
+        GrRenderTarget* fRenderTarget = nullptr;
+        const GrCaps* fCaps = nullptr;
         GrXferProcessor::DstTexture fDstTexture;
     };
 
     
-    static GrPipeline* CreateAt(void* memory, const CreateArgs&, GrXPOverridesForBatch*);
+
+
+    GrPipeline() = default;
+
+    
+
+
+
+
+    GrPipeline(GrRenderTarget*, SkBlendMode);
+
+    
+    void init(const InitArgs&);
+
+    
+    bool isInitialized() const { return SkToBool(fRenderTarget.get()); }
 
     
 
@@ -117,13 +131,24 @@ public:
     int numFragmentProcessors() const { return fFragmentProcessors.count(); }
 
     const GrXferProcessor& getXferProcessor() const {
-        if (fXferProcessor.get()) {
+        if (fXferProcessor) {
             return *fXferProcessor.get();
         } else {
             
             
             return GrPorterDuffXPFactory::SimpleSrcOverXP();
         }
+    }
+
+    
+
+
+
+    GrTexture* dstTexture(SkIPoint* offset = nullptr) const {
+        if (offset) {
+            *offset = fDstTextureOffset;
+        }
+        return fDstTexture.get();
     }
 
     const GrFragmentProcessor& getColorFragmentProcessor(int idx) const {
@@ -149,14 +174,16 @@ public:
 
     GrRenderTarget* getRenderTarget() const { return fRenderTarget.get(); }
 
-    const GrStencilSettings& getStencil() const { return fStencilSettings; }
+    const GrUserStencilSettings* getUserStencil() const { return fUserStencilSettings; }
 
     const GrScissorState& getScissorState() const { return fScissorState; }
 
     const GrWindowRectsState& getWindowRectsState() const { return fWindowRectsState; }
 
-    bool isHWAntialiasState() const { return SkToBool(fFlags & kHWAA_Flag); }
-    bool snapVerticesToPixelCenters() const { return SkToBool(fFlags & kSnapVertices_Flag); }
+    bool isHWAntialiasState() const { return SkToBool(fFlags & kHWAntialias_Flag); }
+    bool snapVerticesToPixelCenters() const {
+        return SkToBool(fFlags & kSnapVerticesToPixelCenters_Flag);
+    }
     bool getDisableOutputConversionToSRGB() const {
         return SkToBool(fFlags & kDisableOutputConversionToSRGB_Flag);
     }
@@ -169,9 +196,15 @@ public:
     bool hasStencilClip() const {
         return SkToBool(fFlags & kHasStencilClip_Flag);
     }
+    bool isStencilEnabled() const {
+        return SkToBool(fFlags & kStencilEnabled_Flag);
+    }
 
     GrXferBarrierType xferBarrierType(const GrCaps& caps) const {
-        return this->getXferProcessor().xferBarrierType(fRenderTarget.get(), caps);
+        if (fDstTexture.get() && fDstTexture.get() == fRenderTarget.get()->asTexture()) {
+            return kTexture_GrXferBarrierType;
+        }
+        return this->getXferProcessor().xferBarrierType(caps);
     }
 
     
@@ -179,59 +212,36 @@ public:
 
 
 
-    GrDrawFace getDrawFace() const { return fDrawFace; }
-
-
-    
-
-    bool ignoresCoverage() const { return fIgnoresCoverage; }
+    GrDrawFace getDrawFace() const { return static_cast<GrDrawFace>(fDrawFace); }
 
 private:
-    GrPipeline() {  }
-
     
-
-
-    void adjustProgramFromOptimizations(const GrPipelineBuilder& ds,
-                                        GrXferProcessor::OptFlags,
-                                        const GrProcOptInfo& colorPOI,
-                                        const GrProcOptInfo& coveragePOI,
-                                        int* firstColorProcessorIdx,
-                                        int* firstCoverageProcessorIdx);
-
-    
-
-
-
-
-    void setOutputStateInfo(const GrPipelineBuilder& ds, GrXferProcessor::OptFlags,
-                            const GrCaps&);
-
-    enum Flags {
-        kHWAA_Flag                          = 0x1,
-        kSnapVertices_Flag                  = 0x2,
+    enum PrivateFlags {
         kDisableOutputConversionToSRGB_Flag = 0x4,
-        kAllowSRGBInputs_Flag               = 0x8,
-        kUsesDistanceVectorField_Flag       = 0x10,
-        kHasStencilClip_Flag                = 0x20,
+        kAllowSRGBInputs_Flag = 0x8,
+        kUsesDistanceVectorField_Flag = 0x10,
+        kHasStencilClip_Flag = 0x20,
+        kStencilEnabled_Flag = 0x40,
     };
 
-    typedef GrPendingIOResource<GrRenderTarget, kWrite_GrIOType> RenderTarget;
-    typedef GrPendingProgramElement<const GrFragmentProcessor> PendingFragmentProcessor;
-    typedef SkAutoSTArray<8, PendingFragmentProcessor> FragmentProcessorArray;
-    typedef GrPendingProgramElement<const GrXferProcessor> ProgramXferProcessor;
-    RenderTarget                        fRenderTarget;
-    GrScissorState                      fScissorState;
-    GrWindowRectsState                  fWindowRectsState;
-    GrStencilSettings                   fStencilSettings;
-    GrDrawFace                          fDrawFace;
-    uint32_t                            fFlags;
-    ProgramXferProcessor                fXferProcessor;
-    FragmentProcessorArray              fFragmentProcessors;
-    bool                                fIgnoresCoverage;
+    using RenderTarget = GrPendingIOResource<GrRenderTarget, kWrite_GrIOType>;
+    using DstTexture = GrPendingIOResource<GrTexture, kRead_GrIOType>;
+    using PendingFragmentProcessor = GrPendingProgramElement<const GrFragmentProcessor>;
+    using FragmentProcessorArray = SkAutoSTArray<8, PendingFragmentProcessor>;
+
+    DstTexture fDstTexture;
+    SkIPoint fDstTextureOffset;
+    RenderTarget fRenderTarget;
+    GrScissorState fScissorState;
+    GrWindowRectsState fWindowRectsState;
+    const GrUserStencilSettings* fUserStencilSettings;
+    uint16_t fDrawFace;
+    uint16_t fFlags;
+    sk_sp<const GrXferProcessor> fXferProcessor;
+    FragmentProcessorArray fFragmentProcessors;
 
     
-    int                                 fNumColorProcessors;
+    int fNumColorProcessors;
 
     typedef SkRefCnt INHERITED;
 };

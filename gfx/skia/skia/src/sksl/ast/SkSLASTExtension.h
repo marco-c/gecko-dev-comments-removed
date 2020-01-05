@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_ASTEXTENSION
 #define SKSL_ASTEXTENSION
 
@@ -16,15 +16,15 @@ namespace SkSL {
 
 
 struct ASTExtension : public ASTDeclaration {
-    ASTExtension(Position position, std::string name)
+    ASTExtension(Position position, String name)
     : INHERITED(position, kExtension_Kind)
     , fName(std::move(name)) {}
 
-    std::string description() const override {
+    String description() const override {
         return "#extension " + fName + " : enable";
     }
 
-    const std::string fName;
+    const String fName;
 
     typedef ASTDeclaration INHERITED;
 };

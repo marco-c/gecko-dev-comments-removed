@@ -18,23 +18,27 @@
 
 class GrGLSLColorSpaceXformHelper : public SkNoncopyable {
 public:
-    GrGLSLColorSpaceXformHelper(GrGLSLUniformHandler* uniformHandler,
-                                GrColorSpaceXform* colorSpaceXform,
-                                GrGLSLProgramDataManager::UniformHandle* handle) {
-        SkASSERT(uniformHandler && handle);
+    GrGLSLColorSpaceXformHelper() : fValid(false) {}
+
+    void emitCode(GrGLSLUniformHandler* uniformHandler, GrColorSpaceXform* colorSpaceXform) {
+        SkASSERT(uniformHandler);
         if (colorSpaceXform) {
-            *handle = uniformHandler->addUniform(kFragment_GrShaderFlag, kMat44f_GrSLType,
-                                                 kDefault_GrSLPrecision, "ColorXform",
-                                                 &fXformMatrix);
-        } else {
-            fXformMatrix = nullptr;
+            fGamutXformVar = uniformHandler->addUniform(kFragment_GrShaderFlag, kMat44f_GrSLType,
+                                                        kDefault_GrSLPrecision, "ColorXform");
+            fValid = true;
         }
     }
 
-    const char* getXformMatrix() const { return fXformMatrix; }
+    void setData(const GrGLSLProgramDataManager& pdman, GrColorSpaceXform* colorSpaceXform) {
+        pdman.setSkMatrix44(fGamutXformVar, colorSpaceXform->srcToDst());
+    }
+
+    bool isValid() const { return fValid; }
+    GrGLSLProgramDataManager::UniformHandle const gamutXformUniform() { return fGamutXformVar; }
 
 private:
-    const char* fXformMatrix;
+    GrGLSLProgramDataManager::UniformHandle fGamutXformVar;
+    bool fValid;
 };
 
 #endif

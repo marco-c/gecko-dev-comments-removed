@@ -15,10 +15,12 @@
 #include "SkPoint.h"
 #include "SkColor.h"
 
-class SkCanvas;
-class SkPaint;
+class  SkArenaAlloc;
+class  SkCanvas;
+class  SkColorSpaceXformer;
+class  SkPaint;
 struct SkRect;
-class SkString;
+class  SkString;
 
 
 
@@ -62,18 +64,7 @@ public:
 
 
 
-
-
-
-
-    virtual Context* createContext(SkCanvas*, void* storage) const = 0;
-
-    
-
-
-
-    virtual size_t contextSize() const = 0;
-
+    virtual Context* makeContext(SkCanvas*, SkArenaAlloc*) const = 0;
 
     
 
@@ -110,9 +101,16 @@ public:
     SK_DEFINE_FLATTENABLE_TYPE(SkDrawLooper)
 
 protected:
+    sk_sp<SkDrawLooper> makeColorSpace(SkColorSpaceXformer* xformer) const {
+        return this->onMakeColorSpace(xformer);
+    }
+    virtual sk_sp<SkDrawLooper> onMakeColorSpace(SkColorSpaceXformer*) const = 0;
+
     SkDrawLooper() {}
 
 private:
+    friend class SkColorSpaceXformer;
+
     typedef SkFlattenable INHERITED;
 };
 

@@ -29,24 +29,6 @@ public:
     int numSamples() const { return fSampleCnt; }
 
     
-    void setLastClip(int32_t clipStackGenID,
-                     const SkIRect& clipSpaceRect,
-                     const SkIPoint clipOrigin) {
-        fLastClipStackGenID = clipStackGenID;
-        fLastClipStackRect = clipSpaceRect;
-        fLastClipOrigin = clipOrigin;
-    }
-
-    
-    bool mustRenderClip(int32_t clipStackGenID,
-                        const SkIRect& clipSpaceRect,
-                        const SkIPoint& clipOrigin) const {
-        return fLastClipStackGenID != clipStackGenID ||
-               fLastClipOrigin != clipOrigin ||
-               !fLastClipStackRect.contains(clipSpaceRect);
-    }
-
-    
     
     static void ComputeSharedStencilAttachmentKey(int width, int height, int sampleCnt,
                                                   GrUniqueKey* key);
@@ -57,9 +39,7 @@ protected:
         , fWidth(width)
         , fHeight(height)
         , fBits(bits)
-        , fSampleCnt(sampleCnt)
-        , fLastClipStackGenID(SkClipStack::kInvalidGenID) {
-        fLastClipStackRect.setEmpty();
+        , fSampleCnt(sampleCnt) {
     }
 
 private:
@@ -68,10 +48,6 @@ private:
     int fHeight;
     int fBits;
     int fSampleCnt;
-
-    int32_t     fLastClipStackGenID;
-    SkIRect     fLastClipStackRect;
-    SkIPoint    fLastClipOrigin;
 
     typedef GrGpuResource INHERITED;
 };

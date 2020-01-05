@@ -8,6 +8,21 @@
 
 #include "SkUtils.h"
 
+void sk_memset16(uint16_t buffer[], uint16_t value, int count) {
+    for (int i = 0; i < count; i++) {
+        buffer[i] = value;
+    }
+}
+void sk_memset32(uint32_t buffer[], uint32_t value, int count) {
+    for (int i = 0; i < count; i++) {
+        buffer[i] = value;
+    }
+}
+void sk_memset64(uint64_t buffer[], uint64_t value, int count) {
+    for (int i = 0; i < count; i++) {
+        buffer[i] = value;
+    }
+}
 
 
 
@@ -18,11 +33,21 @@
 
 
 
+
+
+static bool utf8_byte_is_valid(uint8_t c) {
+    return c < 0xF5 && (c & 0xFE) != 0xC0;
+}
+static bool utf8_byte_is_continuation(uint8_t c) {
+    return  (c & 0xC0) == 0x80;
+}
+static bool utf8_byte_is_leading_byte(uint8_t c) {
+    return utf8_byte_is_valid(c) && !utf8_byte_is_continuation(c);
+}
 
 #ifdef SK_DEBUG
     static void assert_utf8_leadingbyte(unsigned c) {
-        SkASSERT(c <= 0xF7);    
-        SkASSERT((c & 0xC0) != 0x80);   
+        SkASSERT(utf8_byte_is_leading_byte(SkToU8(c)));
     }
 
     int SkUTF8_LeadByteToCount(unsigned c) {
@@ -32,6 +57,29 @@
 #else
     #define assert_utf8_leadingbyte(c)
 #endif
+
+
+
+
+
+
+
+
+
+
+
+static int utf8_byte_type(uint8_t c) {
+    if (c < 0x80) {
+        return 1;
+    } else if (c < 0xC0) {
+        return 0;
+    } else if (c < 0xF5 && (c & 0xFE) != 0xC0) { 
+        return (((0xE5 << 24) >> ((unsigned)c >> 4 << 1)) & 3) + 1;
+    } else {
+        return -1;
+    }
+}
+static bool utf8_type_is_valid_leading_byte(int type) { return type > 0; }
 
 int SkUTF8_CountUnichars(const char utf8[]) {
     SkASSERT(utf8);
@@ -49,15 +97,28 @@ int SkUTF8_CountUnichars(const char utf8[]) {
     return count;
 }
 
-int SkUTF8_CountUnichars(const char utf8[], size_t byteLength) {
+
+int SkUTF8_CountUnicharsWithError(const char utf8[], size_t byteLength) {
     SkASSERT(utf8 || 0 == byteLength);
 
     int         count = 0;
     const char* stop = utf8 + byteLength;
 
     while (utf8 < stop) {
-        utf8 += SkUTF8_LeadByteToCount(*(const uint8_t*)utf8);
-        count += 1;
+        int type = utf8_byte_type(*(const uint8_t*)utf8);
+        SkASSERT(type >= -1 && type <= 4);
+        if (!utf8_type_is_valid_leading_byte(type) ||
+            utf8 + type > stop) {  
+            return -1;
+        }
+        while(type-- > 1) {
+            ++utf8;
+            if (!utf8_byte_is_continuation(*(const uint8_t*)utf8)) {
+                return -1;
+            }
+        }
+        ++utf8;
+        ++count;
     }
     return count;
 }
@@ -80,6 +141,39 @@ SkUnichar SkUTF8_ToUnichar(const char utf8[]) {
         } while ((hic = SkLeftShift(hic, 1)) < 0);
         c &= ~mask;
     }
+    return c;
+}
+
+
+SkUnichar SkUTF8_NextUnicharWithError(const char** ptr, const char* end) {
+    SkASSERT(ptr && *ptr);
+    SkASSERT(*ptr < end);
+    const uint8_t*  p = (const uint8_t*)*ptr;
+    int             c = *p;
+    int             hic = c << 24;
+
+    if (!utf8_byte_is_leading_byte(c)) {
+        return -1;
+    }
+    if (hic < 0) {
+        uint32_t mask = (uint32_t)~0x3F;
+        hic = SkLeftShift(hic, 1);
+        do {
+            ++p;
+            if (p >= (const uint8_t*)end) {
+                return -1;
+            }
+            
+            uint8_t nextByte = *p;
+            if (!utf8_byte_is_continuation(nextByte)) {
+                return -1;
+            }
+            c = (c << 6) | (nextByte & 0x3F);
+            mask <<= 5;
+        } while ((hic = SkLeftShift(hic, 1)) < 0);
+        c &= ~mask;
+    }
+    *ptr = (char*)p + 1;
     return c;
 }
 

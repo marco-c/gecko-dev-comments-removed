@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_FIELD
 #define SKSL_FIELD
 
@@ -12,6 +12,7 @@
 #include "SkSLPosition.h"
 #include "SkSLSymbol.h"
 #include "SkSLType.h"
+#include "SkSLVariable.h"
 
 namespace SkSL {
 
@@ -26,7 +27,7 @@ struct Field : public Symbol {
     , fOwner(owner)
     , fFieldIndex(fieldIndex) {}
 
-    virtual std::string description() const override {
+    virtual String description() const override {
         return fOwner.description() + "." + fOwner.fType.fields()[fFieldIndex].fName;
     }
 

@@ -8,7 +8,8 @@
 #ifndef GrXfermodeFragmentProcessor_DEFINED
 #define GrXfermodeFragmentProcessor_DEFINED
 
-#include "SkXfermode.h"
+#include "SkRefCnt.h"
+#include "SkBlendMode.h"
 
 class GrFragmentProcessor;
 
@@ -16,19 +17,19 @@ namespace GrXfermodeFragmentProcessor {
     
 
     sk_sp<GrFragmentProcessor> MakeFromDstProcessor(sk_sp<GrFragmentProcessor> dst,
-                                                    SkXfermode::Mode mode);
+                                                    SkBlendMode mode);
 
     
 
     sk_sp<GrFragmentProcessor> MakeFromSrcProcessor(sk_sp<GrFragmentProcessor> src,
-                                                    SkXfermode::Mode mode);
+                                                    SkBlendMode mode);
 
     
 
 
     sk_sp<GrFragmentProcessor> MakeFromTwoProcessors(sk_sp<GrFragmentProcessor> src,
                                                      sk_sp<GrFragmentProcessor> dst,
-                                                     SkXfermode::Mode mode);
+                                                     SkBlendMode mode);
 };
 
 #endif

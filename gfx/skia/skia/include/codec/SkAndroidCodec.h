@@ -9,7 +9,7 @@
 #define SkAndroidCodec_DEFINED
 
 #include "SkCodec.h"
-#include "SkEncodedFormat.h"
+#include "SkEncodedImageFormat.h"
 #include "SkStream.h"
 #include "SkTypes.h"
 
@@ -51,9 +51,13 @@ public:
     
 
 
-    SkEncodedFormat getEncodedFormat() const { return fCodec->getEncodedFormat(); }
+    SkEncodedImageFormat getEncodedFormat() const { return fCodec->getEncodedFormat(); }
 
     
+
+
+
+
 
 
 
@@ -70,6 +74,19 @@ public:
 
 
     SkAlphaType computeOutputAlphaType(bool requestedUnpremul);
+
+    
+
+
+
+
+
+
+
+
+
+    sk_sp<SkColorSpace> computeOutputColorSpace(SkColorType outputColorType,
+                                                sk_sp<SkColorSpace> prefColorSpace = nullptr);
 
     
 
@@ -260,6 +277,6 @@ private:
     
     const SkImageInfo& fInfo;
 
-    SkAutoTDelete<SkCodec> fCodec;
+    std::unique_ptr<SkCodec> fCodec;
 };
 #endif 

@@ -24,10 +24,12 @@
 
 class SK_API SkColorTable : public SkRefCnt {
 public:
+    static sk_sp<SkColorTable> Make(const SkPMColor colors[], int count);
+
     
 
     SkColorTable(const SkPMColor colors[], int count);
-    virtual ~SkColorTable();
+    ~SkColorTable() override;
 
     
 
@@ -52,7 +54,7 @@ public:
     void writeToBuffer(SkWriteBuffer&) const;
 
     
-    static SkColorTable* Create(SkReadBuffer&);
+    static sk_sp<SkColorTable> Create(SkReadBuffer&);
 
 private:
     enum AllocatedWithMalloc {

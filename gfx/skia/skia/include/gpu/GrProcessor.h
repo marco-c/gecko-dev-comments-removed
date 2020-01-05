@@ -9,10 +9,12 @@
 #define GrProcessor_DEFINED
 
 #include "GrColor.h"
+#include "GrBuffer.h"
+#include "GrGpuResourceRef.h"
 #include "GrProcessorUnitTest.h"
 #include "GrProgramElement.h"
-#include "GrTextureAccess.h"
-#include "GrBufferAccess.h"
+#include "GrSamplerParams.h"
+#include "GrShaderVar.h"
 #include "SkMath.h"
 #include "SkString.h"
 #include "../private/SkAtomics.h"
@@ -20,6 +22,8 @@
 class GrContext;
 class GrCoordTransform;
 class GrInvariantOutput;
+class GrResourceProvider;
+class GrTextureProxy;
 
 
 
@@ -57,9 +61,9 @@ private:
 
 
 
-class GrProcessor : public GrProgramElement {
+class GrProcessor {
 public:
-    virtual ~GrProcessor();
+    virtual ~GrProcessor() = default;
 
     
 
@@ -72,30 +76,12 @@ public:
         return str;
     }
 
-    int numTextures() const { return fTextureAccesses.count(); }
-
-    
-
-    const GrTextureAccess& textureAccess(int index) const { return *fTextureAccesses[index]; }
-
-    
-    GrTexture* texture(int index) const { return this->textureAccess(index).getTexture(); }
-
-    int numBuffers() const { return fBufferAccesses.count(); }
-
-    
-
-    const GrBufferAccess& bufferAccess(int index) const {
-        return *fBufferAccesses[index];
-    }
-
     
 
 
     enum RequiredFeatures {
         kNone_RequiredFeatures             = 0,
-        kFragmentPosition_RequiredFeature  = 1 << 0,
-        kSampleLocations_RequiredFeature   = 1 << 1
+        kSampleLocations_RequiredFeature   = 1 << 0
     };
 
     GR_DECL_BITFIELD_OPS_FRIENDS(RequiredFeatures);
@@ -113,8 +99,6 @@ public:
     }
 
     
-
-
     template <typename T> const T& cast() const { return *static_cast<const T*>(this); }
 
     uint32_t classID() const { SkASSERT(kIllegalProcessorClassID != fClassID); return fClassID; }
@@ -127,19 +111,6 @@ protected:
 
 
 
-
-
-    virtual void addTextureAccess(const GrTextureAccess* textureAccess);
-    virtual void addBufferAccess(const GrBufferAccess* bufferAccess);
-
-    bool hasSameSamplers(const GrProcessor&) const;
-
-    
-
-
-
-
-    void setWillReadFragmentPosition() { fRequiredFeatures |= kFragmentPosition_RequiredFeature; }
     void setWillUseSampleLocations() { fRequiredFeatures |= kSampleLocations_RequiredFeature; }
 
     void combineRequiredFeatures(const GrProcessor& other) {
@@ -151,11 +122,10 @@ protected:
          fClassID = kClassID;
     }
 
-    uint32_t fClassID;
-    SkSTArray<4, const GrTextureAccess*, true>   fTextureAccesses;
-    SkSTArray<2, const GrBufferAccess*, true>    fBufferAccesses;
-
 private:
+    GrProcessor(const GrProcessor&) = delete;
+    GrProcessor& operator=(const GrProcessor&) = delete;
+
     static uint32_t GenClassID() {
         
         
@@ -173,11 +143,214 @@ private:
     };
     static int32_t gCurrProcessorClassID;
 
-    RequiredFeatures fRequiredFeatures;
-
-    typedef GrProgramElement INHERITED;
+    uint32_t                                        fClassID;
+    RequiredFeatures                                fRequiredFeatures;
 };
 
 GR_MAKE_BITFIELD_OPS(GrProcessor::RequiredFeatures);
+
+
+class GrResourceIOProcessor : public GrProcessor {
+public:
+    class TextureSampler;
+    class BufferAccess;
+    class ImageStorageAccess;
+
+    int numTextureSamplers() const { return fTextureSamplers.count(); }
+
+    
+
+    const TextureSampler& textureSampler(int index) const { return *fTextureSamplers[index]; }
+
+    int numBuffers() const { return fBufferAccesses.count(); }
+
+    
+
+    const BufferAccess& bufferAccess(int index) const { return *fBufferAccesses[index]; }
+
+    int numImageStorages() const { return fImageStorageAccesses.count(); }
+
+    
+
+    const ImageStorageAccess& imageStorageAccess(int index) const {
+        return *fImageStorageAccesses[index];
+    }
+
+protected:
+    GrResourceIOProcessor() = default;
+
+    
+
+
+
+
+
+    void addTextureSampler(const TextureSampler*);
+    void addBufferAccess(const BufferAccess*);
+    void addImageStorageAccess(const ImageStorageAccess*);
+
+    bool hasSameSamplersAndAccesses(const GrResourceIOProcessor&) const;
+
+    
+    void addPendingIOs() const;
+    void removeRefs() const;
+    void pendingIOComplete() const;
+
+private:
+    SkSTArray<4, const TextureSampler*, true> fTextureSamplers;
+    SkSTArray<1, const BufferAccess*, true> fBufferAccesses;
+    SkSTArray<1, const ImageStorageAccess*, true> fImageStorageAccesses;
+
+    typedef GrProcessor INHERITED;
+};
+
+
+
+
+
+
+class GrResourceIOProcessor::TextureSampler : public SkNoncopyable {
+public:
+    
+
+
+    TextureSampler();
+
+    TextureSampler(GrTexture*, const GrSamplerParams&);
+    explicit TextureSampler(GrTexture*,
+                            GrSamplerParams::FilterMode = GrSamplerParams::kNone_FilterMode,
+                            SkShader::TileMode tileXAndY = SkShader::kClamp_TileMode,
+                            GrShaderFlags visibility = kFragment_GrShaderFlag);
+    void reset(GrTexture*, const GrSamplerParams&,
+               GrShaderFlags visibility = kFragment_GrShaderFlag);
+    void reset(GrTexture*,
+               GrSamplerParams::FilterMode = GrSamplerParams::kNone_FilterMode,
+               SkShader::TileMode tileXAndY = SkShader::kClamp_TileMode,
+               GrShaderFlags visibility = kFragment_GrShaderFlag);
+
+    
+    TextureSampler(GrResourceProvider*, sk_sp<GrTextureProxy>, const GrSamplerParams&);
+    explicit TextureSampler(GrResourceProvider*, sk_sp<GrTextureProxy>,
+                            GrSamplerParams::FilterMode = GrSamplerParams::kNone_FilterMode,
+                            SkShader::TileMode tileXAndY = SkShader::kClamp_TileMode,
+                            GrShaderFlags visibility = kFragment_GrShaderFlag);
+    void reset(GrResourceProvider*, sk_sp<GrTextureProxy>, const GrSamplerParams&,
+               GrShaderFlags visibility = kFragment_GrShaderFlag);
+    void reset(GrResourceProvider*, sk_sp<GrTextureProxy>,
+               GrSamplerParams::FilterMode = GrSamplerParams::kNone_FilterMode,
+               SkShader::TileMode tileXAndY = SkShader::kClamp_TileMode,
+               GrShaderFlags visibility = kFragment_GrShaderFlag);
+
+    bool operator==(const TextureSampler& that) const {
+        return this->texture() == that.texture() &&
+               fParams == that.fParams &&
+               fVisibility == that.fVisibility;
+    }
+
+    bool operator!=(const TextureSampler& other) const { return !(*this == other); }
+
+    GrTexture* texture() const { return fTexture.get(); }
+    GrShaderFlags visibility() const { return fVisibility; }
+    const GrSamplerParams& params() const { return fParams; }
+
+    
+
+
+    const GrGpuResourceRef* programTexture() const { return &fTexture; }
+
+private:
+
+    typedef GrTGpuResourceRef<GrTexture> ProgramTexture;
+
+    ProgramTexture                  fTexture;
+    GrSamplerParams                 fParams;
+    GrShaderFlags                   fVisibility;
+
+    typedef SkNoncopyable INHERITED;
+};
+
+
+
+
+
+class GrResourceIOProcessor::BufferAccess : public SkNoncopyable {
+public:
+    BufferAccess() = default;
+    BufferAccess(GrPixelConfig texelConfig, GrBuffer* buffer,
+                 GrShaderFlags visibility = kFragment_GrShaderFlag) {
+        this->reset(texelConfig, buffer, visibility);
+    }
+    
+
+
+    void reset(GrPixelConfig texelConfig, GrBuffer* buffer,
+               GrShaderFlags visibility = kFragment_GrShaderFlag) {
+        fTexelConfig = texelConfig;
+        fBuffer.set(SkRef(buffer), kRead_GrIOType);
+        fVisibility = visibility;
+    }
+
+    bool operator==(const BufferAccess& that) const {
+        return fTexelConfig == that.fTexelConfig &&
+               this->buffer() == that.buffer() &&
+               fVisibility == that.fVisibility;
+    }
+
+    bool operator!=(const BufferAccess& that) const { return !(*this == that); }
+
+    GrPixelConfig texelConfig() const { return fTexelConfig; }
+    GrBuffer* buffer() const { return fBuffer.get(); }
+    GrShaderFlags visibility() const { return fVisibility; }
+
+    
+
+
+    const GrGpuResourceRef* programBuffer() const { return &fBuffer;}
+
+private:
+    GrPixelConfig fTexelConfig;
+    GrTGpuResourceRef<GrBuffer> fBuffer;
+    GrShaderFlags fVisibility;
+
+    typedef SkNoncopyable INHERITED;
+};
+
+
+
+
+
+
+
+class GrResourceIOProcessor::ImageStorageAccess : public SkNoncopyable {
+public:
+    ImageStorageAccess(sk_sp<GrTexture> texture, GrIOType ioType, GrSLMemoryModel, GrSLRestrict,
+                       GrShaderFlags visibility = kFragment_GrShaderFlag);
+
+    bool operator==(const ImageStorageAccess& that) const {
+        return this->texture() == that.texture() && fVisibility == that.fVisibility;
+    }
+
+    bool operator!=(const ImageStorageAccess& that) const { return !(*this == that); }
+
+    GrTexture* texture() const { return fTexture.get(); }
+    GrShaderFlags visibility() const { return fVisibility; }
+    GrIOType ioType() const { return fTexture.ioType(); }
+    GrImageStorageFormat format() const { return fFormat; }
+    GrSLMemoryModel memoryModel() const { return fMemoryModel; }
+    GrSLRestrict restrict() const { return fRestrict; }
+
+    
+
+
+    const GrGpuResourceRef* programTexture() const { return &fTexture; }
+
+private:
+    GrTGpuResourceRef<GrTexture> fTexture;
+    GrShaderFlags fVisibility;
+    GrImageStorageFormat fFormat;
+    GrSLMemoryModel fMemoryModel;
+    GrSLRestrict fRestrict;
+    typedef SkNoncopyable INHERITED;
+};
 
 #endif

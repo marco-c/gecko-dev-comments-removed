@@ -10,7 +10,9 @@
 
 #include "SkColorPriv.h"
 #include "SkColorSpaceXform.h"
+#include "SkColorSpaceXformPriv.h"
 #include "SkColorTable.h"
+#include "SkEncodedInfo.h"
 #include "SkImageInfo.h"
 #include "SkTypes.h"
 
@@ -110,59 +112,15 @@ static inline bool valid_alpha(SkAlphaType dstAlpha, SkAlphaType srcAlpha) {
 
 
 
-
-
-
-
-
-
-
-
-static inline bool conversion_possible_ignore_color_space(const SkImageInfo& dst,
-                                                          const SkImageInfo& src) {
-    
-    if (!valid_alpha(dst.alphaType(), src.alphaType())) {
-        return false;
-    }
-
-    
-    switch (dst.colorType()) {
-        case kRGBA_8888_SkColorType:
-        case kBGRA_8888_SkColorType:
-            return true;
-        case kRGB_565_SkColorType:
-            return kOpaque_SkAlphaType == src.alphaType();
-        default:
-            return dst.colorType() == src.colorType();
-    }
-}
-
-
-
-
 static inline const SkPMColor* get_color_ptr(SkColorTable* colorTable) {
      return nullptr != colorTable ? colorTable->readColors() : nullptr;
-}
-
-static inline SkColorSpaceXform::ColorFormat select_xform_format(SkColorType colorType) {
-    switch (colorType) {
-        case kRGBA_8888_SkColorType:
-            return SkColorSpaceXform::kRGBA_8888_ColorFormat;
-        case kBGRA_8888_SkColorType:
-            return SkColorSpaceXform::kBGRA_8888_ColorFormat;
-        case kRGBA_F16_SkColorType:
-            return SkColorSpaceXform::kRGBA_F16_ColorFormat;
-        default:
-            SkASSERT(false);
-            return SkColorSpaceXform::kRGBA_8888_ColorFormat;
-    }
 }
 
 
 
 
 static inline uint64_t get_color_table_fill_value(SkColorType dstColorType, SkAlphaType alphaType,
-        const SkPMColor* colorPtr, uint8_t fillIndex, SkColorSpaceXform* colorXform) {
+        const SkPMColor* colorPtr, uint8_t fillIndex, SkColorSpaceXform* colorXform, bool isRGBA) {
     SkASSERT(nullptr != colorPtr);
     switch (dstColorType) {
         case kRGBA_8888_SkColorType:
@@ -176,8 +134,11 @@ static inline uint64_t get_color_table_fill_value(SkColorType dstColorType, SkAl
             SkASSERT(colorXform);
             uint64_t dstColor;
             uint32_t srcColor = colorPtr[fillIndex];
-            colorXform->apply(&dstColor, &srcColor, 1, select_xform_format(dstColorType),
-                              SkColorSpaceXform::kRGBA_8888_ColorFormat, alphaType);
+            SkColorSpaceXform::ColorFormat srcFormat =
+                    isRGBA ? SkColorSpaceXform::kRGBA_8888_ColorFormat
+                           : SkColorSpaceXform::kBGRA_8888_ColorFormat;
+            SkAssertResult(colorXform->apply(select_xform_format(dstColorType), &dstColor,
+                                             srcFormat, &srcColor, 1, alphaType));
             return dstColor;
         }
         default:
@@ -337,14 +298,17 @@ static inline PackColorProc choose_pack_color_proc(bool isPremul, SkColorType co
     }
 }
 
-static inline bool needs_premul(const SkImageInfo& dstInfo, const SkImageInfo& srcInfo) {
+static inline bool needs_premul(const SkImageInfo& dstInfo, const SkEncodedInfo& encodedInfo) {
     return kPremul_SkAlphaType == dstInfo.alphaType() &&
-           kUnpremul_SkAlphaType == srcInfo.alphaType();
+           SkEncodedInfo::kUnpremul_Alpha == encodedInfo.alpha();
 }
 
-static inline bool needs_color_xform(const SkImageInfo& dstInfo, const SkImageInfo& srcInfo) {
+static inline bool needs_color_xform(const SkImageInfo& dstInfo, const SkImageInfo& srcInfo,
+                                     bool needsColorCorrectPremul) {
     
-    bool needsPremul = needs_premul(dstInfo, srcInfo);
+    if (!dstInfo.colorSpace()) {
+        return false;
+    }
 
     
     bool isF16 = kRGBA_F16_SkColorType == dstInfo.colorType();
@@ -352,14 +316,16 @@ static inline bool needs_color_xform(const SkImageInfo& dstInfo, const SkImageIn
     
     bool srcDstNotEqual = !SkColorSpace::Equals(srcInfo.colorSpace(), dstInfo.colorSpace());
 
-    
-    bool isLegacy = nullptr == dstInfo.colorSpace();
-
-    return !isLegacy && (needsPremul || isF16 || srcDstNotEqual);
+    return needsColorCorrectPremul || isF16 || srcDstNotEqual;
 }
 
 static inline SkAlphaType select_xform_alpha(SkAlphaType dstAlphaType, SkAlphaType srcAlphaType) {
     return (kOpaque_SkAlphaType == srcAlphaType) ? kOpaque_SkAlphaType : dstAlphaType;
+}
+
+static inline bool apply_xform_on_decode(SkColorType dstColorType, SkEncodedInfo::Color srcColor) {
+    
+    return SkEncodedInfo::kPalette_Color != srcColor || kRGBA_F16_SkColorType == dstColorType;
 }
 
 
@@ -390,12 +356,31 @@ static inline bool conversion_possible(const SkImageInfo& dst, const SkImageInfo
         case kIndex_8_SkColorType:
             return kIndex_8_SkColorType == src.colorType();
         case kRGB_565_SkColorType:
-            return kOpaque_SkAlphaType == src.alphaType() && !needs_color_xform(dst, src);
+            return kOpaque_SkAlphaType == src.alphaType();
         case kGray_8_SkColorType:
             return kGray_8_SkColorType == src.colorType() &&
-                   kOpaque_SkAlphaType == src.alphaType() && !needs_color_xform(dst, src);
+                   kOpaque_SkAlphaType == src.alphaType() && !needs_color_xform(dst, src, false);
         default:
             return false;
+    }
+}
+
+static inline SkColorSpaceXform::ColorFormat select_xform_format_ct(SkColorType colorType) {
+    switch (colorType) {
+        case kRGBA_8888_SkColorType:
+            return SkColorSpaceXform::kRGBA_8888_ColorFormat;
+        case kBGRA_8888_SkColorType:
+            return SkColorSpaceXform::kBGRA_8888_ColorFormat;
+        case kRGB_565_SkColorType:
+        case kIndex_8_SkColorType:
+#ifdef SK_PMCOLOR_IS_RGBA
+            return SkColorSpaceXform::kRGBA_8888_ColorFormat;
+#else
+            return SkColorSpaceXform::kBGRA_8888_ColorFormat;
+#endif
+        default:
+            SkASSERT(false);
+            return SkColorSpaceXform::kRGBA_8888_ColorFormat;
     }
 }
 

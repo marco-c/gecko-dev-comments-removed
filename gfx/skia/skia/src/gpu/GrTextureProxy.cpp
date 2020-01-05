@@ -7,45 +7,44 @@
 
 #include "GrTextureProxy.h"
 
-#include "GrTextureProvider.h"
-#include "GrGpuResourcePriv.h"
+#include "GrResourceProvider.h"
+#include "GrTexturePriv.h"
 
 GrTextureProxy::GrTextureProxy(const GrSurfaceDesc& srcDesc, SkBackingFit fit, SkBudgeted budgeted,
-                               const void* , size_t )
-    : INHERITED(srcDesc, fit, budgeted) {
-    
+                               const void* srcData, size_t , uint32_t flags)
+    : INHERITED(srcDesc, fit, budgeted, flags) {
+    SkASSERT(!srcData);   
 }
 
-GrTextureProxy::GrTextureProxy(sk_sp<GrTexture> tex)
-    : INHERITED(tex->desc(), SkBackingFit::kExact,
-                tex->resourcePriv().isBudgeted(), tex->uniqueID())
-    , fTexture(std::move(tex)) {
+GrTextureProxy::GrTextureProxy(sk_sp<GrSurface> surf)
+    : INHERITED(std::move(surf), SkBackingFit::kExact) {
 }
 
-GrTexture* GrTextureProxy::instantiate(GrTextureProvider* texProvider) {
-    if (fTexture) {
-        return fTexture.get();
+GrTexture* GrTextureProxy::instantiate(GrResourceProvider* resourceProvider) {
+    GrSurface* surf = this->INHERITED::instantiate(resourceProvider);
+    if (!surf) {
+        return nullptr;
     }
 
-    if (SkBackingFit::kApprox == fFit) {
-        fTexture.reset(texProvider->createApproxTexture(fDesc));
-    } else {
-        fTexture.reset(texProvider->createTexture(fDesc, fBudgeted));
+    return fTarget->asTexture();
+}
+
+void GrTextureProxy::setMipColorMode(SkDestinationSurfaceColorMode colorMode) {
+    SkASSERT(fTarget || fTarget->asTexture());
+
+    if (fTarget) {
+        fTarget->asTexture()->texturePriv().setMipColorMode(colorMode);
     }
 
-    return fTexture.get();
+    fMipColorMode = colorMode;
 }
 
-sk_sp<GrTextureProxy> GrTextureProxy::Make(const GrSurfaceDesc& desc,
-                                           SkBackingFit fit,
-                                           SkBudgeted budgeted,
-                                           const void* srcData,
-                                           size_t rowBytes) {
+size_t GrTextureProxy::onGpuMemorySize() const {
+    if (fTarget) {
+        return fTarget->gpuMemorySize();
+    }
+
+    static const bool kHasMipMaps = true;
     
-    SkASSERT(!srcData && !rowBytes);
-    return sk_sp<GrTextureProxy>(new GrTextureProxy(desc, fit, budgeted, srcData, rowBytes));
-}
-
-sk_sp<GrTextureProxy> GrTextureProxy::Make(sk_sp<GrTexture> tex) {
-    return sk_sp<GrTextureProxy>(new GrTextureProxy(std::move(tex)));
+    return GrSurface::ComputeSize(fDesc, 1, kHasMipMaps, SkBackingFit::kApprox == fFit);
 }

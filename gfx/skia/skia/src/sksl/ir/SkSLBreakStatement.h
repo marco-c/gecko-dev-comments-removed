@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_BREAKSTATEMENT
 #define SKSL_BREAKSTATEMENT
 
@@ -20,8 +20,8 @@ struct BreakStatement : public Statement {
     BreakStatement(Position position)
     : INHERITED(position, kBreak_Kind) {}
 
-    std::string description() const override {
-        return "break;";
+    String description() const override {
+        return String("break;");
     }
 
     typedef Statement INHERITED;

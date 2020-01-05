@@ -8,11 +8,13 @@
 #ifndef GrBlurUtils_DEFINED
 #define GrBlurUtils_DEFINED
 
+#include "GrTypes.h"
+
 class GrClip;
 class GrContext;
-class GrDrawContext;
 class GrPaint;
 class GrRenderTarget;
+class GrRenderTargetContext;
 class GrStyle;
 struct SkIRect;
 class SkMaskFilter;
@@ -30,7 +32,7 @@ namespace GrBlurUtils {
 
 
     void drawPathWithMaskFilter(GrContext* context,
-                                GrDrawContext* drawContext,
+                                GrRenderTargetContext* renderTargetContext,
                                 const GrClip& clip,
                                 const SkPath& origSrcPath,
                                 const SkPaint& paint,
@@ -44,15 +46,15 @@ namespace GrBlurUtils {
 
 
     void drawPathWithMaskFilter(GrContext*,
-                                GrDrawContext*,
+                                GrRenderTargetContext*,
                                 const GrClip&,
                                 const SkPath& path,
-                                GrPaint*,
+                                GrPaint&&,
+                                GrAA,
                                 const SkMatrix& viewMatrix,
                                 const SkMaskFilter*,
                                 const GrStyle&,
                                 bool pathIsMutable);
-
 };
 
 #endif

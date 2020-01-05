@@ -3,22 +3,10 @@
 
 
 #include "SkConvolver.h"
+#include "SkOpts.h"
 #include "SkTArray.h"
 
 namespace {
-
-    
-    
-    inline unsigned char ClampTo8(int a) {
-        if (static_cast<unsigned>(a) < 256) {
-            return a;  
-        }
-        if (a < 0) {
-            return 0;
-        }
-        return 255;
-    }
-
     
     
     
@@ -108,169 +96,6 @@ namespace {
         SkTArray<unsigned char*> fRowAddresses;
     };
 
-
-
-template<bool hasAlpha>
-    void ConvolveHorizontally(const unsigned char* srcData,
-                              const SkConvolutionFilter1D& filter,
-                              unsigned char* outRow) {
-        
-        int numValues = filter.numValues();
-        for (int outX = 0; outX < numValues; outX++) {
-            
-            int filterOffset, filterLength;
-            const SkConvolutionFilter1D::ConvolutionFixed* filterValues =
-                filter.FilterForValue(outX, &filterOffset, &filterLength);
-
-            
-            
-            const unsigned char* rowToFilter = &srcData[filterOffset * 4];
-
-            
-            int accum[4] = {0};
-            for (int filterX = 0; filterX < filterLength; filterX++) {
-                SkConvolutionFilter1D::ConvolutionFixed curFilter = filterValues[filterX];
-                accum[0] += curFilter * rowToFilter[filterX * 4 + 0];
-                accum[1] += curFilter * rowToFilter[filterX * 4 + 1];
-                accum[2] += curFilter * rowToFilter[filterX * 4 + 2];
-                if (hasAlpha) {
-                    accum[3] += curFilter * rowToFilter[filterX * 4 + 3];
-                }
-            }
-
-            
-            
-            accum[0] >>= SkConvolutionFilter1D::kShiftBits;
-            accum[1] >>= SkConvolutionFilter1D::kShiftBits;
-            accum[2] >>= SkConvolutionFilter1D::kShiftBits;
-            if (hasAlpha) {
-                accum[3] >>= SkConvolutionFilter1D::kShiftBits;
-            }
-
-            
-            outRow[outX * 4 + 0] = ClampTo8(accum[0]);
-            outRow[outX * 4 + 1] = ClampTo8(accum[1]);
-            outRow[outX * 4 + 2] = ClampTo8(accum[2]);
-            if (hasAlpha) {
-                outRow[outX * 4 + 3] = ClampTo8(accum[3]);
-            }
-        }
-    }
-
-    
-    
-    
-    
-    
-    #if SK_HAS_ATTRIBUTE(optimize) && defined(SK_RELEASE)
-        #define SK_MAYBE_DISABLE_VECTORIZATION __attribute__((optimize("O2"), noinline))
-    #else
-        #define SK_MAYBE_DISABLE_VECTORIZATION
-    #endif
-
-    SK_MAYBE_DISABLE_VECTORIZATION
-    static void ConvolveHorizontallyAlpha(const unsigned char* srcData,
-                                          const SkConvolutionFilter1D& filter,
-                                          unsigned char* outRow) {
-        return ConvolveHorizontally<true>(srcData, filter, outRow);
-    }
-
-    SK_MAYBE_DISABLE_VECTORIZATION
-    static void ConvolveHorizontallyNoAlpha(const unsigned char* srcData,
-                                            const SkConvolutionFilter1D& filter,
-                                            unsigned char* outRow) {
-        return ConvolveHorizontally<false>(srcData, filter, outRow);
-    }
-
-    #undef SK_MAYBE_DISABLE_VECTORIZATION
-
-
-
-
-
-
-
-
-template<bool hasAlpha>
-    void ConvolveVertically(const SkConvolutionFilter1D::ConvolutionFixed* filterValues,
-                            int filterLength,
-                            unsigned char* const* sourceDataRows,
-                            int pixelWidth,
-                            unsigned char* outRow) {
-        
-        
-        for (int outX = 0; outX < pixelWidth; outX++) {
-            
-            
-            int byteOffset = outX * 4;
-
-            
-            int accum[4] = {0};
-            for (int filterY = 0; filterY < filterLength; filterY++) {
-                SkConvolutionFilter1D::ConvolutionFixed curFilter = filterValues[filterY];
-                accum[0] += curFilter * sourceDataRows[filterY][byteOffset + 0];
-                accum[1] += curFilter * sourceDataRows[filterY][byteOffset + 1];
-                accum[2] += curFilter * sourceDataRows[filterY][byteOffset + 2];
-                if (hasAlpha) {
-                    accum[3] += curFilter * sourceDataRows[filterY][byteOffset + 3];
-                }
-            }
-
-            
-            
-            accum[0] >>= SkConvolutionFilter1D::kShiftBits;
-            accum[1] >>= SkConvolutionFilter1D::kShiftBits;
-            accum[2] >>= SkConvolutionFilter1D::kShiftBits;
-            if (hasAlpha) {
-                accum[3] >>= SkConvolutionFilter1D::kShiftBits;
-            }
-
-            
-            outRow[byteOffset + 0] = ClampTo8(accum[0]);
-            outRow[byteOffset + 1] = ClampTo8(accum[1]);
-            outRow[byteOffset + 2] = ClampTo8(accum[2]);
-            if (hasAlpha) {
-                unsigned char alpha = ClampTo8(accum[3]);
-
-                
-                
-                
-                
-                
-                
-                
-                int maxColorChannel = SkTMax(outRow[byteOffset + 0],
-                                               SkTMax(outRow[byteOffset + 1],
-                                                      outRow[byteOffset + 2]));
-                if (alpha < maxColorChannel) {
-                    outRow[byteOffset + 3] = maxColorChannel;
-                } else {
-                    outRow[byteOffset + 3] = alpha;
-                }
-            } else {
-                
-                outRow[byteOffset + 3] = 0xff;
-            }
-        }
-    }
-
-    void ConvolveVertically(const SkConvolutionFilter1D::ConvolutionFixed* filterValues,
-                            int filterLength,
-                            unsigned char* const* sourceDataRows,
-                            int pixelWidth,
-                            unsigned char* outRow,
-                            bool sourceHasAlpha) {
-        if (sourceHasAlpha) {
-            ConvolveVertically<true>(filterValues, filterLength,
-                                     sourceDataRows, pixelWidth,
-                                     outRow);
-        } else {
-            ConvolveVertically<false>(filterValues, filterLength,
-                                      sourceDataRows, pixelWidth,
-                                      outRow);
-        }
-    }
-
 }  
 
 
@@ -346,9 +171,7 @@ bool BGRAConvolve2D(const unsigned char* sourceData,
                     const SkConvolutionFilter1D& filterX,
                     const SkConvolutionFilter1D& filterY,
                     int outputByteRowStride,
-                    unsigned char* output,
-                    const SkConvolutionProcs& convolveProcs,
-                    bool useSimdIfPossible) {
+                    unsigned char* output) {
 
     int maxYFilterSize = filterY.maxFilter();
 
@@ -372,9 +195,9 @@ bool BGRAConvolve2D(const unsigned char* sourceData,
     
     
     
-    int rowBufferWidth = (filterX.numValues() + 15) & ~0xF;
+    int rowBufferWidth = (filterX.numValues() + 31) & ~0x1F;
     int rowBufferHeight = maxYFilterSize +
-                          (convolveProcs.fConvolve4RowsHorizontally ? 4 : 0);
+                          (SkOpts::convolve_4_rows_horizontally != nullptr ? 4 : 0);
 
     
     {
@@ -401,19 +224,6 @@ bool BGRAConvolve2D(const unsigned char* sourceData,
     
     
     int lastFilterOffset, lastFilterLength;
-
-    
-    
-    
-    
-    
-    
-    
-    filterX.FilterForValue(filterX.numValues() - 1, &lastFilterOffset,
-                           &lastFilterLength);
-    int avoidSimdRows = 1 + convolveProcs.fExtraHorizontalReads /
-        (lastFilterOffset + lastFilterLength);
-
     filterY.FilterForValue(numOutputRows - 1, &lastFilterOffset,
                            &lastFilterLength);
 
@@ -423,36 +233,20 @@ bool BGRAConvolve2D(const unsigned char* sourceData,
 
         
         while (nextXRow < filterOffset + filterLength) {
-            if (convolveProcs.fConvolve4RowsHorizontally &&
-                nextXRow + 3 < lastFilterOffset + lastFilterLength -
-                avoidSimdRows) {
+            if (SkOpts::convolve_4_rows_horizontally != nullptr &&
+                nextXRow + 3 < lastFilterOffset + lastFilterLength) {
                 const unsigned char* src[4];
                 unsigned char* outRow[4];
                 for (int i = 0; i < 4; ++i) {
                     src[i] = &sourceData[(uint64_t)(nextXRow + i) * sourceByteRowStride];
                     outRow[i] = rowBuffer.advanceRow();
                 }
-                convolveProcs.fConvolve4RowsHorizontally(src, filterX, outRow, 4*rowBufferWidth);
+                SkOpts::convolve_4_rows_horizontally(src, filterX, outRow, 4*rowBufferWidth);
                 nextXRow += 4;
             } else {
-                
-                if (convolveProcs.fConvolveHorizontally &&
-                    nextXRow < lastFilterOffset + lastFilterLength -
-                    avoidSimdRows) {
-                    convolveProcs.fConvolveHorizontally(
+                SkOpts::convolve_horizontally(
                         &sourceData[(uint64_t)nextXRow * sourceByteRowStride],
                         filterX, rowBuffer.advanceRow(), sourceHasAlpha);
-                } else {
-                    if (sourceHasAlpha) {
-                        ConvolveHorizontallyAlpha(
-                            &sourceData[(uint64_t)nextXRow * sourceByteRowStride],
-                            filterX, rowBuffer.advanceRow());
-                    } else {
-                        ConvolveHorizontallyNoAlpha(
-                            &sourceData[(uint64_t)nextXRow * sourceByteRowStride],
-                            filterX, rowBuffer.advanceRow());
-                    }
-                }
                 nextXRow++;
             }
         }
@@ -466,21 +260,13 @@ bool BGRAConvolve2D(const unsigned char* sourceData,
             rowBuffer.GetRowAddresses(&firstRowInCircularBuffer);
 
         
-        
         unsigned char* const* firstRowForFilter =
             &rowsToConvolve[filterOffset - firstRowInCircularBuffer];
 
-        if (convolveProcs.fConvolveVertically) {
-            convolveProcs.fConvolveVertically(filterValues, filterLength,
-                                               firstRowForFilter,
-                                               filterX.numValues(), curOutputRow,
-                                               sourceHasAlpha);
-        } else {
-            ConvolveVertically(filterValues, filterLength,
-                               firstRowForFilter,
-                               filterX.numValues(), curOutputRow,
-                               sourceHasAlpha);
-        }
+        SkOpts::convolve_vertically(filterValues, filterLength,
+                                    firstRowForFilter,
+                                    filterX.numValues(), curOutputRow,
+                                    sourceHasAlpha);
     }
     return true;
 }

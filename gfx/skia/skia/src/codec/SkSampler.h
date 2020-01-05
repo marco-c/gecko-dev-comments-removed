@@ -8,6 +8,7 @@
 #define SkSampler_DEFINED
 
 #include "SkCodec.h"
+#include "SkCodecPriv.h"
 #include "SkTypes.h"
 
 class SkSampler : public SkNoncopyable {
@@ -39,9 +40,8 @@ public:
 
 
 
-
     bool rowNeeded(int row) const {
-        return row % fSampleY == 0;
+        return (row - get_start_coord(fSampleY)) % fSampleY == 0;
     }
 
     

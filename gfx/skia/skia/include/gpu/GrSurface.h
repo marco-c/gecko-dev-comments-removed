@@ -14,6 +14,7 @@
 #include "SkImageInfo.h"
 #include "SkRect.h"
 
+class GrOpList;
 class GrRenderTarget;
 class GrSurfacePriv;
 class GrTexture;
@@ -66,54 +67,6 @@ public:
     virtual const GrRenderTarget* asRenderTarget() const { return NULL; }
 
     
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool readPixels(int left, int top, int width, int height,
-                    GrPixelConfig config,
-                    void* buffer,
-                    size_t rowBytes = 0,
-                    uint32_t pixelOpsFlags = 0);
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    bool writePixels(int left, int top, int width, int height,
-                     GrPixelConfig config,
-                     const void* buffer,
-                     size_t rowBytes = 0,
-                     uint32_t pixelOpsFlags = 0);
-
-    
-
-
-    void flushWrites();
-
-    
     inline GrSurfacePriv surfacePriv();
     inline const GrSurfacePriv surfacePriv() const;
 
@@ -125,11 +78,15 @@ public:
         fReleaseCtx = ctx;
     }
 
-    static size_t WorstCaseSize(const GrSurfaceDesc& desc);
+    void setLastOpList(GrOpList* opList);
+    GrOpList* getLastOpList() { return fLastOpList; }
+
+    static size_t WorstCaseSize(const GrSurfaceDesc& desc, bool useNextPow2 = false);
+    static size_t ComputeSize(const GrSurfaceDesc& desc, int colorSamplesPerPixel,
+                              bool hasMIPMaps, bool useNextPow2 = false);
 
 protected:
     
-    bool savePixels(const char* filename);
     bool hasPendingRead() const;
     bool hasPendingWrite() const;
     bool hasPendingIO() const;
@@ -142,12 +99,9 @@ protected:
         , fDesc(desc)
         , fReleaseProc(NULL)
         , fReleaseCtx(NULL)
-    {}
-
-    ~GrSurface() override {
-        
-        SkASSERT(NULL == fReleaseProc);
+        , fLastOpList(nullptr) {
     }
+    ~GrSurface() override;
 
     GrSurfaceDesc fDesc;
 
@@ -164,6 +118,14 @@ private:
 
     ReleaseProc fReleaseProc;
     ReleaseCtx  fReleaseCtx;
+
+    
+    
+    
+    
+    
+    
+    GrOpList* fLastOpList;
 
     typedef GrGpuResource INHERITED;
 };

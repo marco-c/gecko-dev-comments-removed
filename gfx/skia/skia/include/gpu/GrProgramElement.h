@@ -39,8 +39,6 @@ class GrGpuResourceRef;
 
 
 
-
-
 class GrProgramElement : public SkNoncopyable {
 public:
     virtual ~GrProgramElement() {
@@ -73,11 +71,6 @@ public:
         this->validate();
     }
 
-    
-
-
-    uint32_t getUniqueID() const { return fUniqueID; }
-
     void validate() const {
 #ifdef SK_DEBUG
         SkASSERT(fRefCnt >= 0);
@@ -87,19 +80,10 @@ public:
     }
 
 protected:
-    GrProgramElement() : fRefCnt(1), fPendingExecutions(0), fUniqueID(CreateUniqueID()) {}
-
-    
-
-
-
-    void addGpuResource(const GrGpuResourceRef* res) {
-        fGpuResources.push_back(res);
-    }
+    GrProgramElement() : fRefCnt(1), fPendingExecutions(0) {}
 
     void addPendingExecution() const {
         this->validate();
-        SkASSERT(fRefCnt > 0);
         if (0 == fPendingExecutions) {
             this->addPendingIOs();
         }
@@ -122,25 +106,21 @@ protected:
     }
 
 private:
+    virtual void addPendingIOs() const = 0;
+    virtual void removeRefs() const = 0;
+    virtual void pendingIOComplete() const = 0;
+
     
 
     virtual void notifyRefCntIsZero() const = 0;
 
-    static uint32_t CreateUniqueID();
-
-    void removeRefs() const;
-    void addPendingIOs() const;
-    void pendingIOComplete() const;
-
     mutable int32_t fRefCnt;
     
     mutable int32_t fPendingExecutions;
-    uint32_t        fUniqueID;
-
-    SkSTArray<4, const GrGpuResourceRef*, true> fGpuResources;
 
     
     template <typename T> friend class GrPendingProgramElement;
+    friend class GrProcessorSet;
 
     typedef SkNoncopyable INHERITED;
 };

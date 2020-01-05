@@ -104,7 +104,7 @@ public:
     }
 
 #ifdef SK_DEBUG
-    SkOpGlobalState* debugGlobalState() { return fDebugGlobalState; }
+    SkOpGlobalState* globalState() const { return fDebugGlobalState; }
 #endif
 
     bool hasT(double t) const {
@@ -308,9 +308,9 @@ private:
     void cleanUpParallelLines(bool parallel);
     void computePoints(const SkDLine& line, int used);
 
-    SkDPoint fPt[12];  
+    SkDPoint fPt[13];  
     SkDPoint fPt2[2];  
-    double fT[2][12];
+    double fT[2][13];
     uint16_t fIsCoincident[2];  
     bool fNearlySame[2];  
     unsigned char fUsed;

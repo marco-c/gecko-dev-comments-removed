@@ -5,6 +5,7 @@
 
 
 
+#include "SkAutoMalloc.h"
 #include "SkEndian.h"
 #include "SkFontStream.h"
 #include "SkStream.h"

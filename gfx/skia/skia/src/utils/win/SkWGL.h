@@ -133,7 +133,8 @@ enum SkWGLContextRequest {
 
 
 
-HGLRC SkCreateWGLContext(HDC dc, int msaaSampleCount, bool deepColor, SkWGLContextRequest context);
+HGLRC SkCreateWGLContext(HDC dc, int msaaSampleCount, bool deepColor, SkWGLContextRequest context,
+                         HGLRC shareContext = nullptr);
 
 
 
@@ -143,7 +144,7 @@ HGLRC SkCreateWGLContext(HDC dc, int msaaSampleCount, bool deepColor, SkWGLConte
 class SkWGLPbufferContext : public SkRefCnt {
 public:
     static SkWGLPbufferContext* Create(HDC parentDC, int msaaSampleCount,
-                                       SkWGLContextRequest contextType);
+                                       SkWGLContextRequest contextType, HGLRC shareContext);
 
     virtual ~SkWGLPbufferContext();
 

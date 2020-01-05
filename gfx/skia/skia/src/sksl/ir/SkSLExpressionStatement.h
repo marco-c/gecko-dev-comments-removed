@@ -4,7 +4,7 @@
 
 
 
- 
+
 #ifndef SKSL_EXPRESSIONSTATEMENT
 #define SKSL_EXPRESSIONSTATEMENT
 
@@ -21,11 +21,11 @@ struct ExpressionStatement : public Statement {
     : INHERITED(expression->fPosition, kExpression_Kind)
     , fExpression(std::move(expression)) {}
 
-    std::string description() const override {
+    String description() const override {
         return fExpression->description() + ";";
     }
 
-    const std::unique_ptr<Expression> fExpression;
+    std::unique_ptr<Expression> fExpression;
 
     typedef Statement INHERITED;
 };

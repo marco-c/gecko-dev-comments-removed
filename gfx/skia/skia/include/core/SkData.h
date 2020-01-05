@@ -168,14 +168,8 @@ private:
     explicit SkData(size_t size);   
     ~SkData();
 
-
     
-    
-    
-    
-    void* operator new(size_t size) { return sk_malloc_throw(size); }
-    void* operator new(size_t, void* p) { return p; }
-    void operator delete(void* p) { sk_free(p); }
+    void operator delete(void* p) { ::operator delete(p); }
 
     
     friend SkData* sk_new_empty_data();

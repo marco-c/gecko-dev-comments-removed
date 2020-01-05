@@ -16,16 +16,16 @@
 #include "GrVkRenderPass.h"
 #include "GrVkResource.h"
 #include "GrVkUtil.h"
+#include "SkLRUCache.h"
 #include "SkTArray.h"
 #include "SkTDynamicHash.h"
-#include "SkTHash.h"
 #include "SkTInternalLList.h"
 
 #include "vk/GrVkDefines.h"
 
 class GrPipeline;
 class GrPrimitiveProcessor;
-class GrTextureParams;
+class GrSamplerParams;
 class GrVkCopyPipeline;
 class GrVkGpu;
 class GrVkPipeline;
@@ -44,6 +44,7 @@ public:
     void init();
 
     GrVkPipeline* createPipeline(const GrPipeline& pipeline,
+                                 const GrStencilSettings& stencil,
                                  const GrPrimitiveProcessor& primProc,
                                  VkPipelineShaderStageCreateInfo* shaderStageInfo,
                                  int shaderStageCount,
@@ -98,7 +99,7 @@ public:
 
     
     
-    GrVkSampler* findOrCreateCompatibleSampler(const GrTextureParams&, uint32_t mipLevels);
+    GrVkSampler* findOrCreateCompatibleSampler(const GrSamplerParams&, uint32_t mipLevels);
 
     sk_sp<GrVkPipelineState> findOrCreateCompatiblePipelineState(const GrPipeline&,
                                                                  const GrPrimitiveProcessor&,
@@ -147,7 +148,9 @@ public:
     
     
     
-    void destroyResources();
+    
+    
+    void destroyResources(bool deviceLost);
 
     
     
@@ -180,11 +183,13 @@ private:
 
         struct Entry;
 
-        void reset();
+        struct DescHash {
+            uint32_t operator()(const GrProgramDesc& desc) const {
+                return SkOpts::hash_fn(desc.asKey(), desc.keyLength(), 0);
+            }
+        };
 
-        int                         fCount;
-        SkTHashTable<Entry*, const GrVkPipelineState::Desc&, Entry> fHashTable;
-        SkTInternalLList<Entry> fLRUList;
+        SkLRUCache<const GrVkPipelineState::Desc, std::unique_ptr<Entry>, DescHash> fMap;
 
         GrVkGpu*                    fGpu;
 

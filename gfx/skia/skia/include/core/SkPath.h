@@ -24,6 +24,8 @@ class SkWStream;
 
 
 
+
+
 class SK_API SkPath {
 public:
     enum Direction {
@@ -356,6 +358,19 @@ public:
         
         this->getBounds();
     }
+
+    
+
+
+
+
+
+
+
+
+
+
+    SkRect computeTightBounds() const;
 
     
 
@@ -1121,12 +1136,12 @@ private:
         kCurrent_Version = 2
     };
 
-    SkAutoTUnref<SkPathRef>                            fPathRef;
+    sk_sp<SkPathRef>                                   fPathRef;
     int                                                fLastMoveToIndex;
     uint8_t                                            fFillType;
     mutable uint8_t                                    fConvexity;
     mutable SkAtomic<uint8_t, sk_memory_order_relaxed> fFirstDirection;
-    mutable SkBool8                                    fIsVolatile;
+    SkBool8                                            fIsVolatile;
 
     
 
@@ -1190,6 +1205,8 @@ private:
     friend class SkAutoPathBoundsUpdate;
     friend class SkAutoDisableOvalCheck;
     friend class SkAutoDisableDirectionCheck;
+    friend class SkPathWriter;
+    friend class SkOpBuilder;
     friend class SkBench_AddPathTest; 
     friend class PathTest_Private; 
     friend class ForceIsRRect_Private; 

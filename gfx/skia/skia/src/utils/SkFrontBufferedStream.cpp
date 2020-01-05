@@ -29,19 +29,19 @@ public:
     SkStreamRewindable* duplicate() const override { return nullptr; }
 
 private:
-    SkAutoTDelete<SkStream> fStream;
-    const bool              fHasLength;
-    const size_t            fLength;
+    std::unique_ptr<SkStream> fStream;
+    const bool                fHasLength;
+    const size_t              fLength;
     
-    size_t                  fOffset;
-    
-    
-    size_t                  fBufferedSoFar;
-    
-    const size_t            fBufferSize;
+    size_t                    fOffset;
     
     
-    SkAutoTMalloc<char>     fBuffer;
+    size_t                    fBufferedSoFar;
+    
+    const size_t              fBufferSize;
+    
+    
+    SkAutoTMalloc<char>       fBuffer;
 
     
     

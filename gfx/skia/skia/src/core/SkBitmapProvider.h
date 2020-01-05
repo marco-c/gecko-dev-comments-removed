@@ -8,24 +8,26 @@
 #ifndef SkBitmapProvider_DEFINED
 #define SkBitmapProvider_DEFINED
 
-#include "SkBitmap.h"
 #include "SkImage.h"
 #include "SkBitmapCache.h"
 
 class SkBitmapProvider {
 public:
-    explicit SkBitmapProvider(const SkBitmap& bm) : fBitmap(bm) {}
-    explicit SkBitmapProvider(const SkImage* img) : fImage(SkSafeRef(img)) {}
+    explicit SkBitmapProvider(const SkImage* img, SkColorSpace* dstColorSpace)
+        : fImage(img)
+        , fDstColorSpace(dstColorSpace) {
+        SkASSERT(img);
+    }
     SkBitmapProvider(const SkBitmapProvider& other)
-        : fBitmap(other.fBitmap)
-        , fImage(SkSafeRef(other.fImage.get()))
+        : fImage(other.fImage)
+        , fDstColorSpace(other.fDstColorSpace)
     {}
 
     int width() const;
     int height() const;
     uint32_t getID() const;
+    SkColorSpace* dstColorSpace() const { return fDstColorSpace; }
 
-    bool validForDrawing() const;
     SkImageInfo info() const;
     bool isVolatile() const;
 
@@ -38,8 +40,14 @@ public:
     bool asBitmap(SkBitmap*) const;
 
 private:
-    SkBitmap fBitmap;
-    SkAutoTUnref<const SkImage> fImage;
+    
+    void* operator new(size_t) = delete;
+    void* operator new(size_t, void*) = delete;
+
+    
+    
+    const SkImage* fImage;
+    SkColorSpace*  fDstColorSpace;
 };
 
 #endif

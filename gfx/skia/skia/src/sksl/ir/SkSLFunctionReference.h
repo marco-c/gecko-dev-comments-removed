@@ -4,12 +4,13 @@
 
 
 
- 
+
 #ifndef SKSL_FUNCTIONREFERENCE
 #define SKSL_FUNCTIONREFERENCE
 
 #include "SkSLContext.h"
 #include "SkSLExpression.h"
+#include "SkSLFunctionDeclaration.h"
 
 namespace SkSL {
 
@@ -18,14 +19,14 @@ namespace SkSL {
 
 
 struct FunctionReference : public Expression {
-    FunctionReference(const Context& context, Position position, 
+    FunctionReference(const Context& context, Position position,
                       std::vector<const FunctionDeclaration*> function)
     : INHERITED(position, kFunctionReference_Kind, *context.fInvalid_Type)
     , fFunctions(function) {}
 
-    virtual std::string description() const override {
+    virtual String description() const override {
         ASSERT(false);
-        return "<function>";
+        return String("<function>");
     }
 
     const std::vector<const FunctionDeclaration*> fFunctions;

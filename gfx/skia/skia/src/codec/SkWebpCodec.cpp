@@ -7,9 +7,10 @@
 
 #include "SkCodecPriv.h"
 #include "SkColorSpaceXform.h"
-#include "SkWebpCodec.h"
+#include "SkSampler.h"
 #include "SkStreamPriv.h"
 #include "SkTemplates.h"
+#include "SkWebpCodec.h"
 
 
 
@@ -36,7 +37,7 @@ bool SkWebpCodec::IsWebp(const void* buf, size_t bytesRead) {
 
 
 SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
-    SkAutoTDelete<SkStream> streamDeleter(stream);
+    std::unique_ptr<SkStream> streamDeleter(stream);
 
     
     sk_sp<SkData> data = nullptr;
@@ -59,34 +60,12 @@ SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
         return nullptr;
     }
 
-    WebPChunkIterator chunkIterator;
-    SkAutoTCallVProc<WebPChunkIterator, WebPDemuxReleaseChunkIterator> autoCI(&chunkIterator);
-    sk_sp<SkColorSpace> colorSpace = nullptr;
-    if (WebPDemuxGetChunk(demux, "ICCP", 1, &chunkIterator)) {
-        colorSpace = SkColorSpace::NewICC(chunkIterator.chunk.bytes, chunkIterator.chunk.size);
-    }
-
-    if (!colorSpace) {
-        colorSpace = SkColorSpace::NewNamed(SkColorSpace::kSRGB_Named);
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    WebPIterator frame;
-    SkAutoTCallVProc<WebPIterator, WebPDemuxReleaseIterator> autoFrame(&frame);
-    if (!WebPDemuxGetFrame(demux, 1, &frame)) {
-        return nullptr;
-    }
+    const int width = WebPDemuxGetI(demux, WEBP_FF_CANVAS_WIDTH);
+    const int height = WebPDemuxGetI(demux, WEBP_FF_CANVAS_HEIGHT);
 
     
     {
-        const int64_t size = sk_64_mul(frame.width, frame.height);
+        const int64_t size = sk_64_mul(width, height);
         if (!sk_64_isS32(size)) {
             return nullptr;
         }
@@ -96,10 +75,29 @@ SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
         }
     }
 
+    WebPChunkIterator chunkIterator;
+    SkAutoTCallVProc<WebPChunkIterator, WebPDemuxReleaseChunkIterator> autoCI(&chunkIterator);
+    sk_sp<SkColorSpace> colorSpace = nullptr;
+    bool unsupportedICC = false;
+    if (WebPDemuxGetChunk(demux, "ICCP", 1, &chunkIterator)) {
+        colorSpace = SkColorSpace::MakeICC(chunkIterator.chunk.bytes, chunkIterator.chunk.size);
+        if (!colorSpace) {
+            unsupportedICC = true;
+        }
+    }
+    if (!colorSpace) {
+        colorSpace = SkColorSpace::MakeSRGB();
+    }
+
     
     
     
-    
+    WebPIterator frame;
+    SkAutoTCallVProc<WebPIterator, WebPDemuxReleaseIterator> autoFrame(&frame);
+    if (!WebPDemuxGetFrame(demux, 1, &frame)) {
+        return nullptr;
+    }
+
     WebPBitstreamFeatures features;
     VP8StatusCode status = WebPGetFeatures(frame.fragment.bytes, frame.fragment.size, &features);
     if (VP8_STATUS_OK != status) {
@@ -122,7 +120,7 @@ SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
             break;
         case 1:
             
-            if (SkToBool(features.has_alpha)) {
+            if (SkToBool(features.has_alpha) || frame.width != width || frame.height != height) {
                 color = SkEncodedInfo::kYUVA_Color;
                 alpha = SkEncodedInfo::kUnpremul_Alpha;
             } else {
@@ -140,8 +138,11 @@ SkCodec* SkWebpCodec::NewFromStream(SkStream* stream) {
     }
 
     SkEncodedInfo info = SkEncodedInfo::Make(color, alpha, 8);
-    return new SkWebpCodec(features.width, features.height, info, std::move(colorSpace),
-                           streamDeleter.release(), demux.release(), std::move(data));
+    SkWebpCodec* codecOut = new SkWebpCodec(width, height, info, std::move(colorSpace),
+                                            streamDeleter.release(), demux.release(),
+                                            std::move(data));
+    codecOut->setUnsupportedICC(unsupportedICC);
+    return codecOut;
 }
 
 SkISize SkWebpCodec::onGetScaledDimensions(float desiredScale) const {
@@ -193,14 +194,10 @@ bool SkWebpCodec::onGetValidSubset(SkIRect* desiredSubset) const {
 SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, size_t rowBytes,
                                          const Options& options, SkPMColor*, int*,
                                          int* rowsDecodedPtr) {
-    if (!conversion_possible(dstInfo, this->getInfo())) {
+    if (!conversion_possible(dstInfo, this->getInfo()) ||
+        !this->initializeColorXform(dstInfo, options.fPremulBehavior))
+    {
         return kInvalidConversion;
-    }
-
-    std::unique_ptr<SkColorSpaceXform> colorXform = nullptr;
-    if (needs_color_xform(dstInfo, this->getInfo())) {
-        colorXform = SkColorSpaceXform::New(this->getInfo().colorSpace(), dstInfo.colorSpace());
-        SkASSERT(colorXform);
     }
 
     WebPDecoderConfig config;
@@ -213,48 +210,85 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
     
     SkAutoTCallVProc<WebPDecBuffer, WebPFreeDecBuffer> autoFree(&(config.output));
 
-    SkIRect bounds = SkIRect::MakeSize(this->getInfo().dimensions());
+    WebPIterator frame;
+    SkAutoTCallVProc<WebPIterator, WebPDemuxReleaseIterator> autoFrame(&frame);
+    
+    SkAssertResult(WebPDemuxGetFrame(fDemux, 1, &frame));
+
+    
+    
+    auto frameRect = SkIRect::MakeXYWH(frame.x_offset, frame.y_offset, frame.width, frame.height);
+    SkASSERT(this->getInfo().bounds().contains(frameRect));
+    bool frameIsSubset = frameRect.size() != this->getInfo().dimensions();
+    if (frameIsSubset) {
+        SkSampler::Fill(dstInfo, dst, rowBytes, 0, options.fZeroInitialized);
+    }
+
+    int dstX = frameRect.x();
+    int dstY = frameRect.y();
+    int subsetWidth = frameRect.width();
+    int subsetHeight = frameRect.height();
     if (options.fSubset) {
-        
-        if (!bounds.contains(*options.fSubset)) {
-            
-            return kInvalidParameters;
+        SkIRect subset = *options.fSubset;
+        SkASSERT(this->getInfo().bounds().contains(subset));
+        SkASSERT(SkIsAlign2(subset.fLeft) && SkIsAlign2(subset.fTop));
+        SkASSERT(this->getValidSubset(&subset) && subset == *options.fSubset);
+
+        if (!SkIRect::IntersectsNoEmptyCheck(subset, frameRect)) {
+            return kSuccess;
         }
 
-        bounds = *options.fSubset;
+        int minXOffset = SkTMin(dstX, subset.x());
+        int minYOffset = SkTMin(dstY, subset.y());
+        dstX -= minXOffset;
+        dstY -= minYOffset;
+        frameRect.offset(-minXOffset, -minYOffset);
+        subset.offset(-minXOffset, -minYOffset);
 
         
         
         
-        
-        
-        if (!SkIsAlign2(bounds.fLeft) || !SkIsAlign2(bounds.fTop)) {
-            return kInvalidParameters;
-        }
+        SkASSERT(SkIsAlign2(subset.fLeft) && SkIsAlign2(subset.fTop));
 
-#ifdef SK_DEBUG
-        {
-            
-            SkIRect subset(bounds);
-            
-            
-            SkASSERT(this->getValidSubset(&subset) && subset == bounds);
-        }
-#endif
+        SkIRect intersection;
+        SkAssertResult(intersection.intersect(frameRect, subset));
+        subsetWidth = intersection.width();
+        subsetHeight = intersection.height();
 
         config.options.use_cropping = 1;
-        config.options.crop_left = bounds.fLeft;
-        config.options.crop_top = bounds.fTop;
-        config.options.crop_width = bounds.width();
-        config.options.crop_height = bounds.height();
+        config.options.crop_left = subset.x();
+        config.options.crop_top = subset.y();
+        config.options.crop_width = subsetWidth;
+        config.options.crop_height = subsetHeight;
     }
 
-    SkISize dstDimensions = dstInfo.dimensions();
-    if (bounds.size() != dstDimensions) {
-        
+    
+    int scaledWidth = subsetWidth;
+    int scaledHeight = subsetHeight;
+    SkISize srcSize = options.fSubset ? options.fSubset->size() : this->getInfo().dimensions();
+    if (srcSize != dstInfo.dimensions()) {
         config.options.use_scaling = 1;
-        config.options.scaled_width = dstDimensions.width();
-        config.options.scaled_height = dstDimensions.height();
+
+        if (frameIsSubset) {
+            float scaleX = ((float) dstInfo.width()) / srcSize.width();
+            float scaleY = ((float) dstInfo.height()) / srcSize.height();
+
+            
+            
+            dstX = scaleX * dstX;
+            scaledWidth = scaleX * scaledWidth;
+            dstY = scaleY * dstY;
+            scaledHeight = scaleY * scaledHeight;
+            if (0 == scaledWidth || 0 == scaledHeight) {
+                return kSuccess;
+            }
+        } else {
+            scaledWidth = dstInfo.width();
+            scaledHeight = dstInfo.height();
+        }
+
+        config.options.scaled_width = scaledWidth;
+        config.options.scaled_height = scaledHeight;
     }
 
     
@@ -262,7 +296,7 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
     
     
     
-    config.output.colorspace = colorXform ? MODE_BGRA :
+    config.output.colorspace = this->colorXform() ? MODE_BGRA :
             webp_decode_mode(dstInfo.colorType(), dstInfo.alphaType() == kPremul_SkAlphaType);
     config.output.is_external_memory = 1;
 
@@ -270,21 +304,19 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
     
     
     SkAutoTMalloc<uint32_t> pixels;
-    if (kRGBA_F16_SkColorType == dstInfo.colorType()) {
-        pixels.reset(dstDimensions.width() * dstDimensions.height());
-        config.output.u.RGBA.rgba = (uint8_t*) pixels.get();
-        config.output.u.RGBA.stride = (int) dstDimensions.width() * sizeof(uint32_t);
-        config.output.u.RGBA.size = config.output.u.RGBA.stride * dstDimensions.height();
-    } else {
-        config.output.u.RGBA.rgba = (uint8_t*) dst;
-        config.output.u.RGBA.stride = (int) rowBytes;
-        config.output.u.RGBA.size = dstInfo.getSafeSize(rowBytes);
-    }
+    bool needsCopy = this->colorXform() && kRGBA_8888_SkColorType != dstInfo.colorType() &&
+                                           kBGRA_8888_SkColorType != dstInfo.colorType();
+    void* webpDst = needsCopy ? pixels.reset(dstInfo.width() * dstInfo.height()) : dst;
+    size_t webpRowBytes = needsCopy ? dstInfo.width() * sizeof(uint32_t) : rowBytes;
+    size_t totalBytes = needsCopy ? webpRowBytes * dstInfo.height()
+                                  : dstInfo.getSafeSize(webpRowBytes);
+    size_t dstBpp = SkColorTypeBytesPerPixel(dstInfo.colorType());
+    size_t webpBpp = needsCopy ? sizeof(uint32_t) : dstBpp;
 
-    WebPIterator frame;
-    SkAutoTCallVProc<WebPIterator, WebPDemuxReleaseIterator> autoFrame(&frame);
-    
-    SkAssertResult(WebPDemuxGetFrame(fDemux, 1, &frame));
+    size_t offset = dstX * webpBpp + dstY * webpRowBytes;
+    config.output.u.RGBA.rgba = SkTAddOffset<uint8_t>(webpDst, offset);
+    config.output.u.RGBA.stride = (int) webpRowBytes;
+    config.output.u.RGBA.size = totalBytes - offset;
 
     SkAutoTCallVProc<WebPIDecoder, WebPIDelete> idec(WebPIDecode(nullptr, 0, &config));
     if (!idec) {
@@ -295,30 +327,32 @@ SkCodec::Result SkWebpCodec::onGetPixels(const SkImageInfo& dstInfo, void* dst, 
     SkCodec::Result result;
     switch (WebPIUpdate(idec, frame.fragment.bytes, frame.fragment.size)) {
         case VP8_STATUS_OK:
-            rowsDecoded = dstInfo.height();
+            rowsDecoded = scaledHeight;
             result = kSuccess;
             break;
         case VP8_STATUS_SUSPENDED:
-            WebPIDecGetRGB(idec, rowsDecodedPtr, nullptr, nullptr, nullptr);
-            rowsDecoded = *rowsDecodedPtr;
+            WebPIDecGetRGB(idec, &rowsDecoded, nullptr, nullptr, nullptr);
+            *rowsDecodedPtr = rowsDecoded + dstY;
             result = kIncompleteInput;
             break;
         default:
             return kInvalidInput;
     }
 
-    if (colorXform) {
+    if (this->colorXform()) {
         SkColorSpaceXform::ColorFormat dstColorFormat = select_xform_format(dstInfo.colorType());
         SkAlphaType xformAlphaType = select_xform_alpha(dstInfo.alphaType(),
                                                         this->getInfo().alphaType());
 
-        uint32_t* src = (uint32_t*) config.output.u.RGBA.rgba;
+        uint32_t* xformSrc = (uint32_t*) config.output.u.RGBA.rgba;
+        void* xformDst = SkTAddOffset<void>(dst, dstBpp * dstX + rowBytes * dstY);
         size_t srcRowBytes = config.output.u.RGBA.stride;
         for (int y = 0; y < rowsDecoded; y++) {
-            colorXform->apply(dst, src, dstInfo.width(), dstColorFormat,
-                              SkColorSpaceXform::kBGRA_8888_ColorFormat, xformAlphaType);
-            dst = SkTAddOffset<void>(dst, rowBytes);
-            src = SkTAddOffset<uint32_t>(src, srcRowBytes);
+            SkAssertResult(this->colorXform()->apply(dstColorFormat, xformDst,
+                    SkColorSpaceXform::kBGRA_8888_ColorFormat, xformSrc, scaledWidth,
+                    xformAlphaType));
+            xformDst = SkTAddOffset<void>(xformDst, rowBytes);
+            xformSrc = SkTAddOffset<uint32_t>(xformSrc, srcRowBytes);
         }
     }
 

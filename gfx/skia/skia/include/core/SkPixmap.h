@@ -70,6 +70,7 @@ public:
     int height() const { return fInfo.height(); }
     SkColorType colorType() const { return fInfo.colorType(); }
     SkAlphaType alphaType() const { return fInfo.alphaType(); }
+    SkColorSpace* colorSpace() const { return fInfo.colorSpace(); }
     bool isOpaque() const { return fInfo.isOpaque(); }
 
     SkIRect bounds() const { return SkIRect::MakeWH(this->width(), this->height()); }
@@ -88,6 +89,22 @@ public:
     uint64_t getSize64() const { return sk_64_mul(fInfo.height(), fRowBytes); }
     uint64_t getSafeSize64() const { return fInfo.getSafeSize64(fRowBytes); }
     size_t getSafeSize() const { return fInfo.getSafeSize(fRowBytes); }
+
+    
+
+
+
+    bool computeIsOpaque() const;
+
+    
+
+
+
+
+
+
+
+    SkColor getColor(int x, int y) const;
 
     const void* addr(int x, int y) const {
         return (const char*)fPixels + fInfo.computeOffset(x, y, fRowBytes);

@@ -9,7 +9,8 @@
 #define SkValidationUtils_DEFINED
 
 #include "SkBitmap.h"
-#include "SkXfermode.h"
+#include "SkBlendMode.h"
+#include "SkXfermodePriv.h"
 
 
 
@@ -19,8 +20,8 @@ static inline bool SkIsValidCoeff(SkXfermode::Coeff coeff) {
 
 
 
-static inline bool SkIsValidMode(SkXfermode::Mode mode) {
-    return (mode >= 0) && (mode <= SkXfermode::kLastMode);
+static inline bool SkIsValidMode(SkBlendMode mode) {
+    return (unsigned)mode <= (unsigned)SkBlendMode::kLastMode;
 }
 
 

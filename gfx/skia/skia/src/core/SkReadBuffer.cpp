@@ -7,10 +7,10 @@
 
 #include "SkBitmap.h"
 #include "SkDeduper.h"
-#include "SkErrorInternals.h"
 #include "SkImage.h"
 #include "SkImageDeserializer.h"
 #include "SkImageGenerator.h"
+#include "SkMakeUnique.h"
 #include "SkReadBuffer.h"
 #include "SkStream.h"
 #include "SkTypeface.h"
@@ -29,9 +29,9 @@ namespace {
 
     static sk_sp<SkImage> MakeEmptyImage(int width, int height) {
         return SkImage::MakeFromGenerator(
-            new EmptyImageGenerator(SkImageInfo::MakeN32Premul(width, height)));
+              skstd::make_unique<EmptyImageGenerator>(SkImageInfo::MakeN32Premul(width, height)));
     }
-    
+
 } 
 
 
@@ -225,9 +225,7 @@ sk_sp<SkImage> SkReadBuffer::readBitmapAsImage() {
     if (this->readBool()) {
         this->readUInt(); 
         this->readUInt(); 
-        SkErrorInternals::SetError(kParseError_SkError, "SkWriteBuffer::writeBitmap "
-                                   "stored the SkBitmap in an SkBitmapHeap, but "
-                                   "that feature is no longer supported.");
+        
     } else {
         
         const size_t length = this->readUInt();
@@ -248,8 +246,6 @@ sk_sp<SkImage> SkReadBuffer::readBitmapAsImage() {
 
             
             
-            SkErrorInternals::SetError(kParseError_SkError,
-                                       "Could not decode bitmap. Resulting bitmap will be empty.");
             
             
             
@@ -315,8 +311,8 @@ sk_sp<SkTypeface> SkReadBuffer::readTypeface() {
     if (fInflator) {
         return sk_ref_sp(fInflator->getTypeface(this->read32()));
     }
-    
-    uint32_t index = fReader.readU32();
+
+    uint32_t index = this->readUInt();
     if (0 == index || index > (unsigned)fTFCount) {
         return nullptr;
     } else {
