@@ -6607,17 +6607,30 @@ HTMLInputElement::GetFiles(nsIDOMFileList** aFileList)
   return NS_OK;
 }
 
-nsresult
+NS_IMETHODIMP
 HTMLInputElement::GetSelectionRange(int32_t* aSelectionStart,
                                     int32_t* aSelectionEnd)
 {
-  nsIFormControlFrame* formControlFrame = GetFormControlFrame(true);
-  nsITextControlFrame* textControlFrame = do_QueryFrame(formControlFrame);
-  if (textControlFrame) {
-    return textControlFrame->GetSelectionRange(aSelectionStart, aSelectionEnd);
+  
+  if (IsInComposedDoc()) {
+    GetComposedDoc()->FlushPendingNotifications(FlushType::Frames);
+  }
+  if (!GetPrimaryFrame()) {
+    
+    
+    
+    
+    
+    return NS_ERROR_FAILURE;
   }
 
-  return NS_ERROR_FAILURE;
+  nsTextEditorState* state = GetEditorState();
+  if (!state) {
+    
+    return NS_ERROR_FAILURE;
+  }
+
+  return state->GetSelectionRange(aSelectionStart, aSelectionEnd);
 }
 
 static void
@@ -6642,28 +6655,29 @@ HTMLInputElement::GetSelectionDirection(nsAString& aDirection, ErrorResult& aRv)
     return;
   }
 
-  nsresult rv = NS_ERROR_FAILURE;
   nsIFormControlFrame* formControlFrame = GetFormControlFrame(true);
-  nsITextControlFrame* textControlFrame = do_QueryFrame(formControlFrame);
-  if (textControlFrame) {
-    nsITextControlFrame::SelectionDirection dir;
-    rv = textControlFrame->GetSelectionRange(nullptr, nullptr, &dir);
-    if (NS_SUCCEEDED(rv)) {
-      DirectionToName(dir, aDirection);
-    }
+  nsTextEditorState* state = GetEditorState();
+  if (!state) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return;
   }
 
-  if (NS_FAILED(rv)) {
-    nsTextEditorState* state = GetEditorState();
-    if (state && state->IsSelectionCached()) {
-      DirectionToName(state->GetSelectionProperties().GetDirection(), aDirection);
+  nsresult rv = NS_ERROR_FAILURE;
+  if (formControlFrame) {
+    nsITextControlFrame::SelectionDirection dir;
+    rv = state->GetSelectionDirection(&dir);
+    if (NS_SUCCEEDED(rv)) {
+      DirectionToName(dir, aDirection);
       return;
     }
   }
-
-  if (NS_FAILED(rv)) {
-    aRv.Throw(rv);
+  
+  if (state->IsSelectionCached()) {
+    DirectionToName(state->GetSelectionProperties().GetDirection(), aDirection);
+    return;
   }
+
+  aRv.Throw(rv);
 }
 
 NS_IMETHODIMP

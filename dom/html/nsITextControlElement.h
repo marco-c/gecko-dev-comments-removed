@@ -196,6 +196,12 @@ public:
 
   static already_AddRefed<nsITextControlElement>
   GetTextControlElementFromEditingHost(nsIContent* aHost);
+
+  
+
+
+  NS_IMETHOD GetSelectionRange(int32_t* aSelectionStart,
+                               int32_t* aSelectionEnd) = 0;
 };
 
 NS_DEFINE_STATIC_IID_ACCESSOR(nsITextControlElement,

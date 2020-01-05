@@ -262,6 +262,12 @@ public:
   void WillInitEagerly() { mSelectionRestoreEagerInit = true; }
   bool HasNeverInitializedBefore() const { return !mEverInited; }
 
+  
+  nsresult GetSelectionRange(int32_t* aSelectionStart, int32_t* aSelectionEnd);
+
+  
+  nsresult GetSelectionDirection(nsITextControlFrame::SelectionDirection* aDirection);
+
   void UpdateEditableState(bool aNotify) {
     if (mRootNode) {
       mRootNode->UpdateEditableState(aNotify);

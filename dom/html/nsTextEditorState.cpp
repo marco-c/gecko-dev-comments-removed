@@ -1549,6 +1549,73 @@ nsTextEditorState::SetSelectionProperties(nsTextEditorState::SelectionProperties
   }
 }
 
+nsresult
+nsTextEditorState::GetSelectionRange(int32_t* aSelectionStart,
+                                     int32_t* aSelectionEnd)
+{
+  MOZ_ASSERT(mBoundFrame,
+             "Caller didn't flush out frames and check for a frame?");
+  MOZ_ASSERT(aSelectionStart);
+  MOZ_ASSERT(aSelectionEnd);
+
+  
+  
+  
+
+  nsresult rv = mBoundFrame->EnsureEditorInitialized();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsISelectionController* selCon = GetSelectionController();
+  NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsISelection> selection;
+  rv = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
+                            getter_AddRefs(selection));
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
+
+  dom::Selection* sel = selection->AsSelection();
+  mozilla::dom::Element* root = GetRootNode();
+  NS_ENSURE_STATE(root);
+  nsContentUtils::GetSelectionInTextControl(sel, root,
+                                            *aSelectionStart, *aSelectionEnd);
+  return NS_OK;
+}
+
+nsresult
+nsTextEditorState::GetSelectionDirection(nsITextControlFrame::SelectionDirection* aDirection)
+{
+  MOZ_ASSERT(mBoundFrame,
+             "Caller didn't flush out frames and check for a frame?");
+  MOZ_ASSERT(aDirection);
+
+  
+  
+  
+
+  nsresult rv = mBoundFrame->EnsureEditorInitialized();
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsISelectionController* selCon = GetSelectionController();
+  NS_ENSURE_TRUE(selCon, NS_ERROR_FAILURE);
+
+  nsCOMPtr<nsISelection> selection;
+  rv = selCon->GetSelection(nsISelectionController::SELECTION_NORMAL,
+                            getter_AddRefs(selection));
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
+
+  dom::Selection* sel = selection->AsSelection();
+  nsDirection direction = sel->GetSelectionDirection();
+  if (direction == eDirNext) {
+    *aDirection = nsITextControlFrame::eForward;
+  } else if (direction == eDirPrevious) {
+    *aDirection = nsITextControlFrame::eBackward;
+  } else {
+    NS_NOTREACHED("Invalid nsDirection enum value");
+  }
+  return NS_OK;
+}
 
 HTMLInputElement*
 nsTextEditorState::GetParentNumberControl(nsFrame* aFrame) const
@@ -1636,13 +1703,15 @@ nsTextEditorState::UnbindFromFrame(nsTextControlFrame* aFrame)
       
       
       SelectionProperties props;
-      mBoundFrame->GetSelectionRange(&start, &end, &direction);
+      GetSelectionRange(&start, &end);
+      GetSelectionDirection(&direction);
       props.SetStart(start);
       props.SetEnd(end);
       props.SetDirection(direction);
       number->SetSelectionProperties(props);
     } else {
-      mBoundFrame->GetSelectionRange(&start, &end, &direction);
+      GetSelectionRange(&start, &end);
+      GetSelectionDirection(&direction);
       mSelectionProperties.SetStart(start);
       mSelectionProperties.SetEnd(end);
       mSelectionProperties.SetDirection(direction);

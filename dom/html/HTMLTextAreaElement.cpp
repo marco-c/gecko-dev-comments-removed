@@ -840,17 +840,24 @@ HTMLTextAreaElement::SetSelectionEnd(const Nullable<uint32_t>& aSelectionEnd,
   }
 }
 
-nsresult
+NS_IMETHODIMP
 HTMLTextAreaElement::GetSelectionRange(int32_t* aSelectionStart,
                                        int32_t* aSelectionEnd)
 {
-  nsIFormControlFrame* formControlFrame = GetFormControlFrame(true);
-  nsITextControlFrame* textControlFrame = do_QueryFrame(formControlFrame);
-  if (textControlFrame) {
-    return textControlFrame->GetSelectionRange(aSelectionStart, aSelectionEnd);
+  
+  if (IsInComposedDoc()) {
+    GetComposedDoc()->FlushPendingNotifications(FlushType::Frames);
+  }
+  if (!GetPrimaryFrame()) {
+    
+    
+    
+    
+    
+    return NS_ERROR_FAILURE;
   }
 
-  return NS_ERROR_FAILURE;
+  return mState.GetSelectionRange(aSelectionStart, aSelectionEnd);
 }
 
 static void
@@ -880,22 +887,21 @@ HTMLTextAreaElement::GetSelectionDirection(nsAString& aDirection, ErrorResult& a
 {
   nsresult rv = NS_ERROR_FAILURE;
   nsIFormControlFrame* formControlFrame = GetFormControlFrame(true);
-  nsITextControlFrame* textControlFrame = do_QueryFrame(formControlFrame);
-  if (textControlFrame) {
+  if (formControlFrame) {
     nsITextControlFrame::SelectionDirection dir;
-    rv = textControlFrame->GetSelectionRange(nullptr, nullptr, &dir);
+    rv = mState.GetSelectionDirection(&dir);
     if (NS_SUCCEEDED(rv)) {
       DirectionToName(dir, aDirection);
+      return;
     }
   }
 
-  if (NS_FAILED(rv)) {
-    if (mState.IsSelectionCached()) {
-      DirectionToName(mState.GetSelectionProperties().GetDirection(), aDirection);
-      return;
-    }
-    aError.Throw(rv);
+  if (mState.IsSelectionCached()) {
+    DirectionToName(mState.GetSelectionProperties().GetDirection(), aDirection);
+    return;
   }
+
+  aError.Throw(rv);
 }
 
 NS_IMETHODIMP

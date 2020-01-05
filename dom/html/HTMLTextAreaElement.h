@@ -109,6 +109,9 @@ public:
   NS_IMETHOD_(void) InitializeKeyboardEventListeners() override;
   NS_IMETHOD_(void) OnValueChanged(bool aNotify, bool aWasInteractiveUserChange) override;
   NS_IMETHOD_(bool) HasCachedSelection() override;
+  NS_IMETHOD GetSelectionRange(int32_t* aSelectionStart,
+                               int32_t* aSelectionEnd) override;
+
 
   
   virtual nsresult BindToTree(nsIDocument* aDocument, nsIContent* aParent,
@@ -346,8 +349,6 @@ protected:
 
 
   nsresult SetValueInternal(const nsAString& aValue, uint32_t aFlags);
-
-  nsresult GetSelectionRange(int32_t* aSelectionStart, int32_t* aSelectionEnd);
 
   
 
