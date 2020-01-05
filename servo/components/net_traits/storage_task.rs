@@ -2,43 +2,44 @@
 
 
 
-use std::sync::mpsc::Sender;
+use ipc_channel::ipc::IpcSender;
 use url::Url;
 
 use util::str::DOMString;
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Deserialize, Serialize)]
 pub enum StorageType {
     Session,
     Local
 }
 
 
+#[derive(Deserialize, Serialize)]
 pub enum StorageTaskMsg {
     
-    Length(Sender<usize>, Url, StorageType),
+    Length(IpcSender<usize>, Url, StorageType),
 
     
-    Key(Sender<Option<DOMString>>, Url, StorageType, u32),
+    Key(IpcSender<Option<DOMString>>, Url, StorageType, u32),
 
     
-    GetItem(Sender<Option<DOMString>>, Url, StorageType, DOMString),
+    GetItem(IpcSender<Option<DOMString>>, Url, StorageType, DOMString),
 
     
     
-    SetItem(Sender<(bool, Option<DOMString>)>, Url, StorageType, DOMString, DOMString),
+    SetItem(IpcSender<(bool, Option<DOMString>)>, Url, StorageType, DOMString, DOMString),
 
     
-    RemoveItem(Sender<Option<DOMString>>, Url, StorageType, DOMString),
+    RemoveItem(IpcSender<Option<DOMString>>, Url, StorageType, DOMString),
 
     
-    Clear(Sender<bool>, Url, StorageType),
+    Clear(IpcSender<bool>, Url, StorageType),
 
     
     Exit
 }
 
 
-pub type StorageTask = Sender<StorageTaskMsg>;
+pub type StorageTask = IpcSender<StorageTaskMsg>;
 
 
