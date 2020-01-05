@@ -70,18 +70,10 @@ NS_IMPL_ISUPPORTS(TransportSecurityInfo,
                   nsISerializable,
                   nsIClassInfo)
 
-nsresult
+void
 TransportSecurityInfo::SetHostName(const char* host)
 {
-  mHostName.Adopt(host ? NS_strdup(host) : 0);
-  return NS_OK;
-}
-
-nsresult
-TransportSecurityInfo::GetHostName(char **host)
-{
-  *host = (mHostName) ? NS_strdup(mHostName) : nullptr;
-  return NS_OK;
+  mHostName.Assign(host);
 }
 
 nsresult
@@ -217,27 +209,27 @@ TransportSecurityInfo::GetErrorLogMessage(PRErrorCode errorCode,
 }
 
 static nsresult
-formatPlainErrorMessage(nsXPIDLCString const & host, int32_t port,
-                        PRErrorCode err, 
+formatPlainErrorMessage(const nsCString& host, int32_t port,
+                        PRErrorCode err,
                         bool suppressPort443,
-                        nsString &returnedMessage);
+                 nsString& returnedMessage);
 
 static nsresult
-formatOverridableCertErrorMessage(nsISSLStatus & sslStatus,
-                                  PRErrorCode errorCodeToReport, 
-                                  const nsXPIDLCString & host, int32_t port,
+formatOverridableCertErrorMessage(nsISSLStatus& sslStatus,
+                                  PRErrorCode errorCodeToReport,
+                                  const nsCString& host, int32_t port,
                                   bool suppressPort443,
                                   bool wantsHtml,
-                                  nsString & returnedMessage);
+                           nsString& returnedMessage);
 
 
 
 nsresult
-TransportSecurityInfo::formatErrorMessage(MutexAutoLock const & proofOfLock, 
+TransportSecurityInfo::formatErrorMessage(const MutexAutoLock& ,
                                           PRErrorCode errorCode,
                                           SSLErrorMessageType errorMessageType,
-                                          bool wantsHtml, bool suppressPort443, 
-                                          nsString &result)
+                                          bool wantsHtml, bool suppressPort443,
+                                   nsString& result)
 {
   result.Truncate();
   if (errorCode == 0) {
@@ -249,12 +241,11 @@ TransportSecurityInfo::formatErrorMessage(MutexAutoLock const & proofOfLock,
   }
 
   nsresult rv;
-  NS_ConvertASCIItoUTF16 hostNameU(mHostName);
   MOZ_ASSERT(errorMessageType != OverridableCertErrorMessage ||
                (mSSLStatus && mSSLStatus->HasServerCert() &&
                 mSSLStatus->mHaveCertErrorBits),
              "formatErrorMessage() called for cert error without cert");
-  if (errorMessageType == OverridableCertErrorMessage && 
+  if (errorMessageType == OverridableCertErrorMessage &&
       mSSLStatus && mSSLStatus->HasServerCert()) {
     rv = formatOverridableCertErrorMessage(*mSSLStatus, errorCode,
                                            mHostName, mPort,
@@ -520,10 +511,10 @@ TransportSecurityInfo::SetSSLStatus(nsSSLStatus *aSSLStatus)
 
 
 static nsresult
-formatPlainErrorMessage(const nsXPIDLCString &host, int32_t port,
-                        PRErrorCode err, 
+formatPlainErrorMessage(const nsCString& host, int32_t port,
+                        PRErrorCode err,
                         bool suppressPort443,
-                        nsString &returnedMessage)
+                 nsString& returnedMessage)
 {
   static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
 
@@ -535,8 +526,6 @@ formatPlainErrorMessage(const nsXPIDLCString &host, int32_t port,
 
   if (host.Length())
   {
-    nsString hostWithPort;
-
     
     
     
@@ -544,7 +533,7 @@ formatPlainErrorMessage(const nsXPIDLCString &host, int32_t port,
     
     
 
-    hostWithPort.AssignASCII(host);
+    NS_ConvertASCIItoUTF16 hostWithPort(host);
     if (!suppressPort443 || port != 443) {
       hostWithPort.Append(':');
       hostWithPort.AppendInt(port);
@@ -552,9 +541,8 @@ formatPlainErrorMessage(const nsXPIDLCString &host, int32_t port,
     params[0] = hostWithPort.get();
 
     nsString formattedString;
-    rv = component->PIPBundleFormatStringFromName("SSLConnectionErrorPrefix", 
-                                                  params, 1, 
-                                                  formattedString);
+    rv = component->PIPBundleFormatStringFromName("SSLConnectionErrorPrefix",
+                                                  params, 1, formattedString);
     if (NS_SUCCEEDED(rv))
     {
       returnedMessage.Append(formattedString);
@@ -870,19 +858,19 @@ AppendErrorTextCode(PRErrorCode errorCodeToReport,
 
 
 static nsresult
-formatOverridableCertErrorMessage(nsISSLStatus & sslStatus,
-                                  PRErrorCode errorCodeToReport, 
-                                  const nsXPIDLCString & host, int32_t port,
+formatOverridableCertErrorMessage(nsISSLStatus& sslStatus,
+                                  PRErrorCode errorCodeToReport,
+                                  const nsCString& host, int32_t port,
                                   bool suppressPort443,
                                   bool wantsHtml,
-                                  nsString & returnedMessage)
+                           nsString& returnedMessage)
 {
   static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
 
   const char16_t *params[1];
   nsresult rv;
-  nsAutoString hostWithPort;
-  nsAutoString hostWithoutPort;
+  NS_ConvertASCIItoUTF16 hostWithPort(host);
+  NS_ConvertASCIItoUTF16 hostWithoutPort(host);
 
   
   
@@ -890,12 +878,9 @@ formatOverridableCertErrorMessage(nsISSLStatus & sslStatus,
   
   
   
-  
-  hostWithoutPort.AppendASCII(host);
   if (suppressPort443 && port == 443) {
     params[0] = hostWithoutPort.get();
   } else {
-    hostWithPort.AppendASCII(host);
     hostWithPort.Append(':');
     hostWithPort.AppendInt(port);
     params[0] = hostWithPort.get();
@@ -956,21 +941,20 @@ RememberCertErrorsTable::RememberCertErrorsTable()
 }
 
 static nsresult
-GetHostPortKey(TransportSecurityInfo* infoObject, nsAutoCString &result)
+GetHostPortKey(TransportSecurityInfo* infoObject,  nsCString& result)
 {
-  nsresult rv;
+  MOZ_ASSERT(infoObject);
+  NS_ENSURE_ARG(infoObject);
 
   result.Truncate();
 
-  nsXPIDLCString hostName;
-  rv = infoObject->GetHostName(getter_Copies(hostName));
-  NS_ENSURE_SUCCESS(rv, rv);
-
   int32_t port;
-  rv = infoObject->GetPort(&port);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsresult rv = infoObject->GetPort(&port);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
-  result.Assign(hostName);
+  result.Assign(infoObject->GetHostName());
   result.Append(':');
   result.AppendInt(port);
 

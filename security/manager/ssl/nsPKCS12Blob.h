@@ -2,18 +2,18 @@
 
 
 
-
 #ifndef nsPKCS12Blob_h
 #define nsPKCS12Blob_h
 
 #include "nsCOMPtr.h"
 #include "nsIMutableArray.h"
 #include "nsNSSShutDown.h"
+#include "nsString.h"
 #include "p12.h"
 #include "seccomon.h"
 
-class nsIX509Cert;
 class nsIFile;
+class nsIX509Cert;
 
 
 
@@ -44,7 +44,7 @@ private:
   nsresult getPKCS12FilePassword(SECItem *);
   nsresult newPKCS12FilePassword(SECItem *);
   nsresult inputToDecoder(SEC_PKCS12DecoderContext *, nsIFile *);
-  nsresult unicodeToItem(const char16_t *, SECItem *);
+  nsresult unicodeToItem(const nsString& uni, SECItem* item);
   void handleError(int myerr = 0);
 
   

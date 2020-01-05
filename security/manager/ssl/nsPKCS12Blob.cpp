@@ -16,7 +16,6 @@
 #include "nsNSSHelper.h"
 #include "nsNetUtil.h"
 #include "nsReadableUtils.h"
-#include "nsString.h"
 #include "nsThreadUtils.h"
 #include "pkix/pkixtypes.h"
 #include "prmem.h"
@@ -328,14 +327,19 @@ finish:
 
 
 nsresult
-nsPKCS12Blob::unicodeToItem(const char16_t *uni, SECItem *item)
+nsPKCS12Blob::unicodeToItem(const nsString& uni, SECItem* item)
 {
-  uint32_t len = NS_strlen(uni) + 1;
+  uint32_t len = uni.Length() + 1; 
   if (!SECITEM_AllocItem(nullptr, item, sizeof(char16_t) * len)) {
     return NS_ERROR_OUT_OF_MEMORY;
   }
 
-  mozilla::NativeEndian::copyAndSwapToBigEndian(item->data, uni, len);
+  
+  
+  mozilla::NativeEndian::copyAndSwapToBigEndian(
+    item->data,
+    static_cast<const char16_t*>(uni.get()),
+    len);
 
   return NS_OK;
 }
@@ -357,7 +361,7 @@ nsPKCS12Blob::newPKCS12FilePassword(SECItem *unicodePw)
   bool pressedOK;
   rv = certDialogs->SetPKCS12FilePassword(mUIContext, password, &pressedOK);
   if (NS_FAILED(rv) || !pressedOK) return rv;
-  return unicodeToItem(password.get(), unicodePw);
+  return unicodeToItem(password, unicodePw);
 }
 
 
@@ -377,7 +381,7 @@ nsPKCS12Blob::getPKCS12FilePassword(SECItem *unicodePw)
   bool pressedOK;
   rv = certDialogs->GetPKCS12FilePassword(mUIContext, password, &pressedOK);
   if (NS_FAILED(rv) || !pressedOK) return rv;
-  return unicodeToItem(password.get(), unicodePw);
+  return unicodeToItem(password, unicodePw);
 }
 
 
