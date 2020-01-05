@@ -596,7 +596,7 @@ struct nsCSSRendering {
                     bool* aOutIsTransformedFixed = nullptr);
 
   struct ImageLayerClipState {
-    nsRect mBGClipArea;  
+    nsRect mBGClipArea;            
     nsRect mAdditionalBGClipArea;  
     nsRect mDirtyRect;
     gfxRect mDirtyRectGfx;
@@ -609,6 +609,14 @@ struct nsCSSRendering {
     
     
     bool mCustomClip;
+
+    ImageLayerClipState()
+     : mHasRoundedCorners(false),
+       mHasAdditionalBGClipArea(false),
+       mCustomClip(false)
+    {
+      memset(mRadii, 0, sizeof(nscoord) * 8);
+    }
   };
 
   static void
