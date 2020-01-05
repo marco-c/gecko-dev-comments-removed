@@ -874,7 +874,7 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             let window_size = self.pipelines.get(&pipeline_id).and_then(|pipeline| pipeline.size);
 
             
-            self.trigger_mozbrowsererror(pipeline_id);
+            self.trigger_mozbrowsererror(pipeline_id, reason, backtrace);
 
             self.close_pipeline(pipeline_id, ExitPipelineMode::Force);
 
@@ -1967,8 +1967,7 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
 
     
     
-    
-    fn trigger_mozbrowsererror(&self, pipeline_id: PipelineId) {
+    fn trigger_mozbrowsererror(&self, pipeline_id: PipelineId, reason: String, backtrace: String) {
         if !prefs::get_pref("dom.mozbrowser.enabled").as_boolean().unwrap_or(false) { return; }
 
         if let Some(pipeline) = self.pipelines.get(&pipeline_id) {
@@ -1981,7 +1980,7 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
                             None => return warn!("Mozbrowsererror via closed pipeline {:?}.", ancestor_info.0),
                         };
                     }
-                    let event = MozBrowserEvent::Error(MozBrowserErrorType::Fatal, None, None);
+                    let event = MozBrowserEvent::Error(MozBrowserErrorType::Fatal, Some(reason), Some(backtrace));
                     ancestor.trigger_mozbrowser_event(ancestor_info.1, event);
                 }
             }
