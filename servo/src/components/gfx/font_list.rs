@@ -84,7 +84,7 @@ impl FontList {
         debug!("FontList: %s font family with name=%s", decision, family_name);
 
         
-        family.map(|f| **f)
+        family.map(|f| *f)
     }
 
     pub fn get_last_resort_font_families() -> ~[~str] {

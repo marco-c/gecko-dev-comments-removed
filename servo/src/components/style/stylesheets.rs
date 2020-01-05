@@ -3,7 +3,7 @@
 
 
 use std::str;
-use std::iterator::Iterator;
+use std::iter::Iterator;
 use std::ascii::StrAsciiExt;
 use cssparser::*;
 use selectors;

@@ -39,7 +39,7 @@ pub enum Msg {
 
 
 #[deriving(Clone, Eq, IterBytes)]
-enum NavigationType {
+pub enum NavigationType {
     Load,               
     Navigate,           
 }

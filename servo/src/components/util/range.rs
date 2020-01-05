@@ -3,7 +3,7 @@
 
 
 use std::cmp::{max, min};
-use std::iterator;
+use std::iter;
 
 enum RangeRelation {
     OverlapsBegin( uint),
@@ -36,7 +36,7 @@ impl Range {
     pub fn length(&self) -> uint { self.len }
     pub fn end(&self) -> uint { self.off + self.len }
 
-    pub fn eachi(&self) -> iterator::Range<uint> {
+    pub fn eachi(&self) -> iter::Range<uint> {
         range(self.off, self.off + self.len)
     }
 
