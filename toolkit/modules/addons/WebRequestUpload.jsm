@@ -368,33 +368,11 @@ function parseFormData(stream, channel, lenient = false) {
   }
 
   try {
-    let headers;
     if (stream instanceof Ci.nsIMIMEInputStream && stream.data) {
-      if (channel instanceof Ci.nsIUploadChannel2 && channel.uploadStreamHasHeaders) {
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        headers = readString(createTextStream(stream),
-                             stream.available() - stream.data.available());
-      }
-
-      rewind(stream);
       stream = stream.data;
     }
 
-    let contentType;
-    try {
-      contentType = channel.getRequestHeader("Content-Type");
-    } catch (e) {
-      contentType = new Headers(headers).get("content-type");
-    }
+    let contentType = channel.getRequestHeader("Content-Type");
 
     switch (Headers.getParam(contentType, "")) {
       case "multipart/form-data":
@@ -504,29 +482,33 @@ function* getRawDataChunked(outerStream, maxRead = WebRequestUpload.MAX_RAW_BYTE
 
 WebRequestUpload = {
   createRequestBody(channel) {
-    if (channel instanceof Ci.nsIUploadChannel && channel.uploadStream) {
-      try {
-        let stream = channel.uploadStream;
-
-        let formData = createFormData(stream, channel);
-        if (formData) {
-          return {formData};
-        }
-
-        
-        
-        
-        return {
-          raw: Array.from(getRawDataChunked(stream)),
-          lenientFormData: createFormData(stream, channel, true),
-        };
-      } catch (e) {
-        Cu.reportError(e);
-        return {error: e.message || String(e)};
-      }
+    if (!(channel instanceof Ci.nsIUploadChannel) || !channel.uploadStream) {
+      return null;
     }
 
-    return null;
+    if (channel instanceof Ci.nsIUploadChannel2 && channel.uploadStreamHasHeaders) {
+      return {error: "Upload streams with headers are unsupported"};
+    }
+
+    try {
+      let stream = channel.uploadStream;
+
+      let formData = createFormData(stream, channel);
+      if (formData) {
+        return {formData};
+      }
+
+      
+      
+      
+      return {
+        raw: Array.from(getRawDataChunked(stream)),
+        lenientFormData: createFormData(stream, channel, true),
+      };
+    } catch (e) {
+      Cu.reportError(e);
+      return {error: e.message || String(e)};
+    }
   },
 };
 
