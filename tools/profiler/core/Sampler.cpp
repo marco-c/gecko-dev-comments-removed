@@ -329,7 +329,7 @@ Sampler::RegisterCurrentThread(const char* aName,
     if (info->ThreadId() == id && !info->IsPendingDelete()) {
       
       
-      ASSERT(false);
+      MOZ_ASSERT(false);
       return false;
     }
   }
