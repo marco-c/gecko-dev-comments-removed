@@ -222,6 +222,9 @@ static DllBlockInfo sWindowsDllBlocklist[] = {
   
   { "vorbis.acm", MAKE_VERSION(0, 0, 3, 6) },
 
+  
+  { "nzbrcom.dll", ALL_VERSIONS },
+
   { nullptr, 0 }
 };
 
