@@ -570,7 +570,8 @@ public class BrowserApp extends GeckoApp
         
         
         
-        if (!Versions.preN) {
+        if (!Versions.preN &&
+                keyCode == KeyEvent.KEYCODE_BACK) {
             ThreadUtils.getUiHandler().removeCallbacks(mCheckLongPress);
             ThreadUtils.getUiHandler().postDelayed(mCheckLongPress, ViewConfiguration.getLongPressTimeout());
         }
