@@ -23,6 +23,7 @@ namespace mozilla {
 namespace gmp {
 
 class GMPParent;
+class GMPServiceParent;
 
 class GeckoMediaPluginServiceParent final : public GeckoMediaPluginService
                                           , public mozIGeckoMediaPluginChromeService
@@ -60,8 +61,8 @@ public:
                                 const mozilla::OriginAttributesPattern& aPattern);
 
   
-  void ServiceUserCreated();
-  void ServiceUserDestroyed();
+  void ServiceUserCreated(GMPServiceParent* aServiceParent);
+  void ServiceUserDestroyed(GMPServiceParent* aServiceParent);
 
   void UpdateContentProcessGMPCapabilities();
 
@@ -209,7 +210,8 @@ private:
 
   
   
-  MainThreadOnly<int32_t> mServiceUserCount;
+  
+  nsTArray<GMPServiceParent*> mServiceParents;
 
   const RefPtr<AbstractThread> mMainThread;
 };
@@ -222,11 +224,7 @@ bool MatchOrigin(nsIFile* aPath,
 class GMPServiceParent final : public PGMPServiceParent
 {
 public:
-  explicit GMPServiceParent(GeckoMediaPluginServiceParent* aService)
-    : mService(aService)
-  {
-    mService->ServiceUserCreated();
-  }
+  explicit GMPServiceParent(GeckoMediaPluginServiceParent* aService);
   virtual ~GMPServiceParent();
 
   ipc::IPCResult RecvGetGMPNodeId(const nsString& aOrigin,
