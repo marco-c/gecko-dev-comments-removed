@@ -7,7 +7,6 @@
 #include "ServiceProvider.h"
 
 #include "ApplicationAccessibleWrap.h"
-#include "Compatibility.h"
 #include "DocAccessible.h"
 #include "nsAccUtils.h"
 #include "nsCoreUtils.h"
@@ -72,8 +71,10 @@ ServiceProvider::QueryService(REFGUID aGuidService, REFIID aIID,
   }
 
   
+  
+  
   if (aGuidService == IID_IAccessibleApplication ||
-      (Compatibility::IsJAWS() && aIID == IID_IAccessibleApplication)) {
+      aIID == IID_IAccessibleApplication) {
     ApplicationAccessibleWrap* applicationAcc =
       static_cast<ApplicationAccessibleWrap*>(ApplicationAcc());
     if (!applicationAcc)
