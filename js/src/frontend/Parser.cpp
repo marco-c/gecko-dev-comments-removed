@@ -2098,24 +2098,21 @@ Parser<FullParseHandler, char16_t>::evalBody(EvalSharedContext* evalsc)
     if (!varScope.init(pc))
         return nullptr;
 
-    ParseNode* body;
-    {
-        
-        ParseContext::Scope lexicalScope(this);
-        if (!lexicalScope.init(pc))
-            return nullptr;
+    
+    ParseContext::Scope lexicalScope(this);
+    if (!lexicalScope.init(pc))
+        return nullptr;
 
-        body = statementList(YieldIsName);
-        if (!body)
-            return nullptr;
+    ParseNode* body = statementList(YieldIsName);
+    if (!body)
+        return nullptr;
 
-        if (!checkStatementsEOF())
-            return nullptr;
+    if (!checkStatementsEOF())
+        return nullptr;
 
-        body = finishLexicalScope(lexicalScope, body);
-        if (!body)
-            return nullptr;
-    }
+    body = finishLexicalScope(lexicalScope, body);
+    if (!body)
+        return nullptr;
 
     
     
