@@ -13,12 +13,12 @@ use text::glyph::{CharIndex, GlyphStore};
 
 #[deriving(Clone)]
 pub struct TextRun {
-    pub text: Arc<~str>,
+    pub text: Arc<String>,
     pub font_descriptor: FontDescriptor,
     pub font_metrics: FontMetrics,
     pub font_style: FontStyle,
     pub decoration: text_decoration::T,
-    // An Arc pointing to a Vec of Arcs?! Wat.
+    
     pub glyphs: Arc<Vec<Arc<GlyphStore>>>,
 }
 
@@ -29,7 +29,7 @@ pub struct SliceIterator<'a> {
 }
 
 impl<'a> Iterator<(&'a GlyphStore, CharIndex, Range<CharIndex>)> for SliceIterator<'a> {
-    // inline(always) due to the inefficient rt failures messing up inline heuristics, I think.
+    
     #[inline(always)]
     fn next(&mut self) -> Option<(&'a GlyphStore, CharIndex, Range<CharIndex>)> {
         loop {
@@ -60,7 +60,7 @@ pub struct LineIterator<'a> {
 
 impl<'a> Iterator<Range<CharIndex>> for LineIterator<'a> {
     fn next(&mut self) -> Option<Range<CharIndex>> {
-        // Loop until we hit whitespace and are in a clump.
+        
         loop {
             match self.slices.next() {
                 Some((glyphs, offset, slice_range)) => {
@@ -73,16 +73,16 @@ impl<'a> Iterator<Range<CharIndex>> for LineIterator<'a> {
                             c.shift_by(offset);
                             self.clump = Some(c);
                         }
-                        (true, None)    => { /* chomp whitespace */ }
+                        (true, None)    => {  }
                         (true, Some(c)) => {
                             self.clump = None;
-                            // The final whitespace clump is not included.
+                            
                             return Some(c);
                         }
                     }
                 },
                 None => {
-                    // flush any remaining chars as a line
+                    
                     if self.clump.is_some() {
                         let mut c = self.clump.take_unwrap();
                         c.extend_to(self.range.end());
@@ -97,8 +97,8 @@ impl<'a> Iterator<Range<CharIndex>> for LineIterator<'a> {
 }
 
 impl<'a> TextRun {
-    pub fn new(font: &mut Font, text: ~str, decoration: text_decoration::T) -> TextRun {
-        let glyphs = TextRun::break_and_shape(font, text);
+    pub fn new(font: &mut Font, text: String, decoration: text_decoration::T) -> TextRun {
+        let glyphs = TextRun::break_and_shape(font, text.as_slice());
 
         let run = TextRun {
             text: Arc::new(text),
@@ -112,7 +112,7 @@ impl<'a> TextRun {
     }
 
     pub fn break_and_shape(font: &mut Font, text: &str) -> Vec<Arc<GlyphStore>> {
-        // TODO(Issue #230): do a better job. See Gecko's LineBreaker.
+        
 
         let mut glyphs = vec!();
         let mut byte_i = 0u;
@@ -123,8 +123,8 @@ impl<'a> TextRun {
             let ch = range.ch;
             let next = range.next;
 
-            // Slices alternate between whitespace and non-whitespace,
-            // representing line break opportunities.
+            
+            
             let can_break_before = if cur_slice_is_whitespace {
                 match ch {
                     ' ' | '\t' | '\n' => false,
@@ -143,9 +143,9 @@ impl<'a> TextRun {
                 }
             };
 
-            // Create a glyph store for this slice if it's nonempty.
+            
             if can_break_before && byte_i > byte_last_boundary {
-                let slice = text.slice(byte_last_boundary, byte_i).to_owned();
+                let slice = text.slice(byte_last_boundary, byte_i).to_string();
                 debug!("creating glyph store for slice {} (ws? {}), {} - {} in run {}",
                         slice, !cur_slice_is_whitespace, byte_last_boundary, byte_i, text);
                 glyphs.push(font.shape_text(slice, !cur_slice_is_whitespace));
@@ -155,9 +155,9 @@ impl<'a> TextRun {
             byte_i = next;
         }
 
-        // Create a glyph store for the final slice if it's nonempty.
+        
         if byte_i > byte_last_boundary {
-            let slice = text.slice_from(byte_last_boundary).to_owned();
+            let slice = text.slice_from(byte_last_boundary).to_string();
             debug!("creating glyph store for final slice {} (ws? {}), {} - {} in run {}",
                 slice, cur_slice_is_whitespace, byte_last_boundary, text.len(), text);
             glyphs.push(font.shape_text(slice, cur_slice_is_whitespace));
@@ -192,8 +192,8 @@ impl<'a> TextRun {
     }
 
     pub fn advance_for_range(&self, range: &Range<CharIndex>) -> Au {
-        // TODO(Issue #199): alter advance direction for RTL
-        // TODO(Issue #98): using inter-char and inter-word spacing settings  when measuring text
+        
+        
         self.iter_slices_for_range(range)
             .fold(Au(0), |advance, (glyphs, _, slice_range)| {
                 advance + glyphs.advance_for_char_range(&slice_range)

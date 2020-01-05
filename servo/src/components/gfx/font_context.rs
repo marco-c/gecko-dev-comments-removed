@@ -30,16 +30,16 @@ pub struct FontContextInfo {
 }
 
 pub trait FontContextHandleMethods {
-    fn create_font_from_identifier(&self, ~str, UsedFontStyle) -> Result<FontHandle, ()>;
+    fn create_font_from_identifier(&self, String, UsedFontStyle) -> Result<FontHandle, ()>;
 }
 
 pub struct FontContext {
     pub instance_cache: LRUCache<FontDescriptor, Rc<RefCell<Font>>>,
-    pub font_list: Option<FontList>, // only needed by layout
+    pub font_list: Option<FontList>, 
     pub group_cache: LRUCache<SpecifiedFontStyle, Rc<RefCell<FontGroup>>>,
     pub handle: FontContextHandle,
     pub backend: BackendType,
-    pub generic_fonts: HashMap<~str,~str>,
+    pub generic_fonts: HashMap<String,String>,
     pub profiler_chan: ProfilerChan,
 }
 
@@ -52,13 +52,13 @@ impl FontContext {
             None
         };
 
-        // TODO: Allow users to specify these.
+        
         let mut generic_fonts = HashMap::with_capacity(5);
-        generic_fonts.insert("serif".to_owned(), "Times New Roman".to_owned());
-        generic_fonts.insert("sans-serif".to_owned(), "Arial".to_owned());
-        generic_fonts.insert("cursive".to_owned(), "Apple Chancery".to_owned());
-        generic_fonts.insert("fantasy".to_owned(), "Papyrus".to_owned());
-        generic_fonts.insert("monospace".to_owned(), "Menlo".to_owned());
+        generic_fonts.insert("serif".to_string(), "Times New Roman".to_string());
+        generic_fonts.insert("sans-serif".to_string(), "Arial".to_string());
+        generic_fonts.insert("cursive".to_string(), "Apple Chancery".to_string());
+        generic_fonts.insert("fantasy".to_string(), "Papyrus".to_string());
+        generic_fonts.insert("monospace".to_string(), "Menlo".to_string());
 
         FontContext {
             instance_cache: LRUCache::new(10),
@@ -107,10 +107,10 @@ impl FontContext {
         }
     }
 
-    fn transform_family(&self, family: &~str) -> ~str {
+    fn transform_family(&self, family: &String) -> String {
         debug!("(transform family) searching for `{:s}`", family.as_slice());
         match self.generic_fonts.find(family) {
-            None => family.to_owned(),
+            None => family.to_string(),
             Some(mapped_family) => (*mapped_family).clone()
         }
     }
@@ -120,7 +120,7 @@ impl FontContext {
 
         debug!("(create font group) --- starting ---");
 
-        // TODO(Issue #193): make iteration over 'font-family' more robust.
+        
         for family in style.families.iter() {
             let transformed_family_name = self.transform_family(family);
             debug!("(create font group) transformed family is `{:s}`", transformed_family_name);
@@ -193,7 +193,7 @@ impl FontContext {
             }
         }
         assert!(fonts.len() > 0, "No matching font(s), are the appropriate fonts installed?");
-        // TODO(Issue #179): Split FontStyle into specified and used styles
+        
         let used_style = (*style).clone();
 
         debug!("(create font group) --- finished ---");

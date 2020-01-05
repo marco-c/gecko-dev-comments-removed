@@ -56,30 +56,30 @@ pub enum Combinator {
 
 #[deriving(Eq, Clone)]
 pub enum SimpleSelector {
-    IDSelector(~str),
-    ClassSelector(~str),
-    LocalNameSelector(~str),
+    IDSelector(String),
+    ClassSelector(String),
+    LocalNameSelector(String),
     NamespaceSelector(Namespace),
 
-    // Attribute selectors
-    AttrExists(AttrSelector),  // [foo]
-    AttrEqual(AttrSelector, ~str),  // [foo=bar]
-    AttrIncludes(AttrSelector, ~str),  // [foo~=bar]
-    AttrDashMatch(AttrSelector, ~str, ~str),  // [foo|=bar]  Second string is the first + "-"
-    AttrPrefixMatch(AttrSelector, ~str),  // [foo^=bar]
-    AttrSubstringMatch(AttrSelector, ~str),  // [foo*=bar]
-    AttrSuffixMatch(AttrSelector, ~str),  // [foo$=bar]
+    
+    AttrExists(AttrSelector),  
+    AttrEqual(AttrSelector, String),  
+    AttrIncludes(AttrSelector, String),  
+    AttrDashMatch(AttrSelector, String, String),  
+    AttrPrefixMatch(AttrSelector, String),  
+    AttrSubstringMatch(AttrSelector, String),  
+    AttrSuffixMatch(AttrSelector, String),  
 
-    // Pseudo-classes
+    
     Negation(Vec<SimpleSelector>),
     AnyLink,
     Link,
     Visited,
     Hover,
     FirstChild, LastChild, OnlyChild,
-//    Empty,
+
     Root,
-//    Lang(~str),
+
     NthChild(i32, i32),
     NthLastChild(i32, i32),
     NthOfType(i32, i32),
@@ -87,13 +87,13 @@ pub enum SimpleSelector {
     FirstOfType,
     LastOfType,
     OnlyOfType
-    // ...
+    
 }
 
 #[deriving(Eq, Clone)]
 pub struct AttrSelector {
-    pub name: ~str,
-    pub lower_name: ~str,
+    pub name: String,
+    pub lower_name: String,
     pub namespace: NamespaceConstraint,
 }
 
@@ -107,10 +107,10 @@ pub enum NamespaceConstraint {
 type Iter = iter::Peekable<ComponentValue, vec::MoveItems<ComponentValue>>;
 
 
-/// Parse a comma-separated list of Selectors.
-/// aka Selector Group in http://www.w3.org/TR/css3-selectors/#grouping
-///
-/// Return the Selectors or None if there is an invalid selector.
+
+
+
+
 pub fn parse_selector_list(input: Vec<ComponentValue>, namespaces: &NamespaceMap)
                            -> Option<Vec<Selector>> {
     let iter = &mut input.move_iter().peekable();
@@ -123,7 +123,7 @@ pub fn parse_selector_list(input: Vec<ComponentValue>, namespaces: &NamespaceMap
     loop {
         skip_whitespace(iter);
         match iter.peek() {
-            None => break,  // EOF
+            None => break,  
             Some(&Comma) => {
                 iter.next();
             }
@@ -138,10 +138,10 @@ pub fn parse_selector_list(input: Vec<ComponentValue>, namespaces: &NamespaceMap
 }
 
 
-/// Build up a Selector.
-/// selector : simple_selector_sequence [ combinator simple_selector_sequence ]* ;
-///
-/// None means invalid selector.
+
+
+
+
 fn parse_selector(iter: &mut Iter, namespaces: &NamespaceMap)
                   -> Option<Selector> {
     let (first, pseudo_element) = match parse_simple_selectors(iter, namespaces) {
@@ -154,7 +154,7 @@ fn parse_selector(iter: &mut Iter, namespaces: &NamespaceMap)
     while pseudo_element.is_none() {
         let any_whitespace = skip_whitespace(iter);
         let combinator = match iter.peek() {
-            None => break,  // EOF
+            None => break,  
             Some(&Comma) => break,
             Some(&Delim('>')) => { iter.next(); Child },
             Some(&Delim('+')) => { iter.next(); NextSibling },
@@ -367,13 +367,13 @@ enum QualifiedNameParseResult {
     InvalidQualifiedName,
     NotAQualifiedName,
     // Namespace URL, local name. None means '*'
-    QualifiedName(NamespaceConstraint, Option<~str>)
+    QualifiedName(NamespaceConstraint, Option<String>)
 }
 
 fn parse_qualified_name(iter: &mut Iter, in_attr_selector: bool, namespaces: &NamespaceMap)
                        -> QualifiedNameParseResult {
     #[inline]
-    fn default_namespace(namespaces: &NamespaceMap, local_name: Option<~str>)
+    fn default_namespace(namespaces: &NamespaceMap, local_name: Option<String>)
                          -> QualifiedNameParseResult {
         QualifiedName(match namespaces.default {
             Some(ref ns) => SpecificNamespace(ns.clone()),
@@ -440,7 +440,7 @@ fn parse_attribute_selector(content: Vec<ComponentValue>, namespaces: &Namespace
         QualifiedName(_, None) => fail!("Implementation error, this should not happen."),
         QualifiedName(namespace, Some(local_name)) => AttrSelector {
             namespace: namespace,
-            lower_name: local_name.to_ascii_lower(),
+            lower_name: local_name.as_slice().to_ascii_lower(),
             name: local_name,
         },
     };
@@ -459,7 +459,7 @@ fn parse_attribute_selector(content: Vec<ComponentValue>, namespaces: &Namespace
         Some(IncludeMatch) => AttrIncludes(attr, (get_value!()).into_owned()),  // [foo~=bar]
         Some(DashMatch) => {
             let value = get_value!();
-            let dashing_value = value.as_slice() + "-";
+            let dashing_value = format!("{}-", value);
             AttrDashMatch(attr, value.into_owned(), dashing_value)  // [foo|=bar]
         },
         Some(PrefixMatch) => AttrPrefixMatch(attr, (get_value!()).into_owned()),  // [foo^=bar]
@@ -491,7 +491,7 @@ fn parse_simple_pseudo_class(name: &str) -> Option<SimpleSelector> {
 }
 
 
-fn parse_functional_pseudo_class(name: StrBuf, arguments: Vec<ComponentValue>,
+fn parse_functional_pseudo_class(name: String, arguments: Vec<ComponentValue>,
                                  namespaces: &NamespaceMap, inside_negation: bool)
                                  -> Option<SimpleSelector> {
     match name.as_slice().to_ascii_lower().as_slice() {
@@ -506,7 +506,7 @@ fn parse_functional_pseudo_class(name: StrBuf, arguments: Vec<ComponentValue>,
 }
 
 
-fn parse_pseudo_element(name: StrBuf) -> Option<PseudoElement> {
+fn parse_pseudo_element(name: String) -> Option<PseudoElement> {
     match name.as_slice().to_ascii_lower().as_slice() {
         // All supported pseudo-elements
         "before" => Some(Before),
@@ -549,7 +549,7 @@ fn parse_negation(arguments: Vec<ComponentValue>, namespaces: &NamespaceMap)
 
 /// Assuming the next token is an ident, consume it and return its value
 #[inline]
-fn get_next_ident(iter: &mut Iter) -> ~str {
+fn get_next_ident(iter: &mut Iter) -> String {
     match iter.next() {
         Some(Ident(value)) => value.into_owned(),
         _ => fail!("Implementation error, this should not happen."),

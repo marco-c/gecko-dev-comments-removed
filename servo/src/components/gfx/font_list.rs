@@ -13,15 +13,15 @@ use style::computed_values::{font_weight, font_style};
 use servo_util::time::{ProfilerChan, profile};
 use servo_util::time;
 
-pub type FontFamilyMap = HashMap<~str, FontFamily>;
+pub type FontFamilyMap = HashMap<String, FontFamily>;
 
 trait FontListHandleMethods {
     fn get_available_families(&self, fctx: &FontContextHandle) -> FontFamilyMap;
     fn load_variations_for_family(&self, family: &mut FontFamily);
-    fn get_last_resort_font_families() -> Vec<~str>;
+    fn get_last_resort_font_families() -> Vec<String>;
 }
 
-/// The platform-independent font list abstraction.
+
 pub struct FontList {
     family_map: FontFamilyMap,
     handle: FontListHandle,
@@ -43,26 +43,26 @@ impl FontList {
     }
 
     fn refresh(&mut self, _: &FontContextHandle) {
-        // TODO(Issue #186): don't refresh unless something actually
-        // changed.  Does OSX have a notification for this event?
-        //
-        // Should font families with entries be invalidated/refreshed too?
+        
+        
+        
+        
         profile(time::GfxRegenAvailableFontsCategory, self.prof_chan.clone(), || {
             self.family_map = self.handle.get_available_families();
         });
     }
 
     pub fn find_font_in_family<'a>(&'a mut self,
-                                   family_name: &~str,
+                                   family_name: &String,
                                    style: &SpecifiedFontStyle) -> Option<&'a FontEntry> {
-        // TODO(Issue #188): look up localized font family names if canonical name not found
-        // look up canonical name
+        
+        
         if self.family_map.contains_key(family_name) {
-            //FIXME call twice!(ksh8281)
+            
             debug!("FontList: Found font family with name={:s}", family_name.to_str());
             let s: &'a mut FontFamily = self.family_map.get_mut(family_name);
-            // TODO(Issue #192: handle generic font families, like 'serif' and 'sans-serif'.
-            // if such family exists, try to match style to a font
+            
+            
             let result = s.find_font_for_style(&mut self.handle, style);
             if result.is_some() {
                 return result;
@@ -75,14 +75,14 @@ impl FontList {
         }
     }
 
-    pub fn get_last_resort_font_families() -> Vec<~str> {
+    pub fn get_last_resort_font_families() -> Vec<String> {
         FontListHandle::get_last_resort_font_families()
     }
 }
 
 
 pub struct FontFamily {
-    pub family_name: ~str,
+    pub family_name: String,
     pub entries: Vec<FontEntry>,
 }
 
@@ -130,7 +130,7 @@ impl FontFamily {
 
 
 pub struct FontEntry {
-    pub face_name: ~str,
+    pub face_name: String,
     weight: font_weight::T,
     italic: bool,
     pub handle: FontHandle,

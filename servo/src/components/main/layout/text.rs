@@ -131,7 +131,7 @@ impl TextRunScanner {
 
                 let mut new_line_pos = vec![];
 
-                let (transformed_text, whitespace) = transform_text(*text,
+                let (transformed_text, whitespace) = transform_text(text.as_slice(),
                                                                     compression,
                                                                     last_whitespace,
                                                                     &mut new_line_pos);
@@ -177,10 +177,10 @@ impl TextRunScanner {
 
                 
                 let mut last_whitespace_in_clump = new_whitespace;
-                let transformed_strs: Vec<~str> = Vec::from_fn(self.clump.length().to_uint(), |i| {
-                    // TODO(#113): We should be passing the compression context between calls to
-                    // `transform_text`, so that fragments starting and/or ending with whitespace can
-                    // be compressed correctly with respect to the text run.
+                let transformed_strs: Vec<String> = Vec::from_fn(self.clump.length().to_uint(), |i| {
+                    
+                    
+                    
                     let idx = CharIndex(i as int) + self.clump.begin();
                     let in_fragment = match in_fragments[idx.to_uint()].specific {
                         UnscannedTextFragment(ref text_fragment_info) => &text_fragment_info.text,
@@ -189,7 +189,7 @@ impl TextRunScanner {
 
                     let mut new_line_pos = vec![];
 
-                    let (new_str, new_whitespace) = transform_text(*in_fragment,
+                    let (new_str, new_whitespace) = transform_text(in_fragment.as_slice(),
                                                                    compression,
                                                                    last_whitespace_in_clump,
                                                                    &mut new_line_pos);
@@ -200,21 +200,21 @@ impl TextRunScanner {
                 });
                 new_whitespace = last_whitespace_in_clump;
 
-                // Next, concatenate all of the transformed strings together, saving the new
-                // character indices.
-                let mut run_str = StrBuf::new();
+                
+                
+                let mut run_str = String::new();
                 let mut new_ranges: Vec<Range<CharIndex>> = vec![];
                 let mut char_total = CharIndex(0);
                 for i in range(0, transformed_strs.len() as int) {
-                    let added_chars = CharIndex(transformed_strs.get(i as uint).char_len() as int);
+                    let added_chars = CharIndex(transformed_strs.get(i as uint).as_slice().char_len() as int);
                     new_ranges.push(Range::new(char_total, added_chars));
-                    run_str.push_str(*transformed_strs.get(i as uint));
+                    run_str.push_str(transformed_strs.get(i as uint).as_slice());
                     char_total = char_total + added_chars;
                 }
 
-                // Now create the run.
-                // TextRuns contain a cycle which is usually resolved by the teardown
-                // sequence. If no clump takes ownership, however, it will leak.
+                
+                
+                
                 let clump = self.clump;
                 let run = if clump.length() != CharIndex(0) && run_str.len() > 0 {
                     Some(Arc::new(box TextRun::new(

@@ -17,9 +17,7 @@ from CodegenRust import GlobalGenRoots, replaceFileIfChanged
 
 import Codegen
 
-def generate_file(config, name):
-    filename = name + '.rs'
-
+def generate_file(config, name, filename):
     root = getattr(GlobalGenRoots, name)(config)
     code = root.define()
 
@@ -65,21 +63,21 @@ def main():
     config = Configuration(configFile, parserResults)
 
     
-    generate_file(config, 'PrototypeList')
+    generate_file(config, 'PrototypeList', 'PrototypeList.rs')
 
     
-    generate_file(config, 'RegisterBindings')
+    generate_file(config, 'RegisterBindings', 'RegisterBindings.rs')
 
     
-    generate_file(config, 'InterfaceTypes')
+    generate_file(config, 'InterfaceTypes', 'InterfaceTypes.rs')
 
     
-    generate_file(config, 'InheritTypes')
+    generate_file(config, 'InheritTypes', 'InheritTypes.rs')
 
     
-    generate_file(config, 'Bindings')
+    generate_file(config, 'Bindings', 'Bindings/mod.rs')
 
-    generate_file(config, 'UnionTypes')
+    generate_file(config, 'UnionTypes', 'UnionTypes.rs')
 
 if __name__ == '__main__':
     main()

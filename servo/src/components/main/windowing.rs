@@ -32,7 +32,7 @@ pub enum WindowEvent {
     
     ResizeWindowEvent(uint, uint),
     
-    LoadUrlWindowEvent(~str),
+    LoadUrlWindowEvent(String),
     
     MouseWindowEventClass(MouseWindowEvent),
     

@@ -84,7 +84,7 @@ impl ProfilerCategory {
 
     
     
-    pub fn format(self) -> ~str {
+    pub fn format(self) -> String {
         let padding = match self {
             LayoutStyleRecalcCategory |
             LayoutMainCategory |
@@ -102,7 +102,7 @@ impl ProfilerCategory {
 
 type ProfilerBuckets = TreeMap<ProfilerCategory, Vec<f64>>;
 
-// back end of the profiler that handles data aggregation and performance metrics
+
 pub struct Profiler {
     pub port: Receiver<ProfilerMsg>,
     buckets: ProfilerBuckets,

@@ -263,36 +263,36 @@ impl SplitInfo {
 #[deriving(Clone)]
 pub struct UnscannedTextFragmentInfo {
     
-    pub text: ~str,
+    pub text: String,
 }
 
 impl UnscannedTextFragmentInfo {
-    /// Creates a new instance of `UnscannedTextFragmentInfo` from the given DOM node.
+    
     pub fn new(node: &ThreadSafeLayoutNode) -> UnscannedTextFragmentInfo {
-        // FIXME(pcwalton): Don't copy text; atomically reference count it instead.
+        
         UnscannedTextFragmentInfo {
             text: node.text(),
         }
     }
 
-    /// Creates a new instance of `UnscannedTextFragmentInfo` from the given text.
+    
     #[inline]
-    pub fn from_text(text: ~str) -> UnscannedTextFragmentInfo {
+    pub fn from_text(text: String) -> UnscannedTextFragmentInfo {
         UnscannedTextFragmentInfo {
             text: text,
         }
     }
 }
 
-/// A fragment that represents a table column.
+
 #[deriving(Clone)]
 pub struct TableColumnFragmentInfo {
-    /// the number of columns a <col> element should span
+    
     pub span: Option<int>,
 }
 
 impl TableColumnFragmentInfo {
-    /// Create the information specific to an table column fragment.
+    
     pub fn new(node: &ThreadSafeLayoutNode) -> TableColumnFragmentInfo {
         let span = {
             let element = node.as_element();
@@ -308,13 +308,13 @@ impl TableColumnFragmentInfo {
 }
 
 impl Fragment {
-    /// Constructs a new `Fragment` instance for the given node.
-    ///
-    /// Arguments:
-    ///
-    ///   * `constructor`: The flow constructor.
-    ///
-    ///   * `node`: The node to create a fragment for.
+    
+    
+    
+    
+    
+    
+    
     pub fn new(constructor: &mut FlowConstructor, node: &ThreadSafeLayoutNode) -> Fragment {
         Fragment {
             node: OpaqueNodeMethods::from_thread_safe_layout_node(node),
@@ -327,7 +327,7 @@ impl Fragment {
         }
     }
 
-    /// Constructs a new `Fragment` instance from a specific info.
+    
     pub fn new_from_specific_info(node: &ThreadSafeLayoutNode, specific: SpecificFragmentInfo) -> Fragment {
         Fragment {
             node: OpaqueNodeMethods::from_thread_safe_layout_node(node),
@@ -340,16 +340,16 @@ impl Fragment {
         }
     }
 
-    /// Constructs a new `Fragment` instance for an anonymous table object.
+    
     pub fn new_anonymous_table_fragment(node: &ThreadSafeLayoutNode, specific: SpecificFragmentInfo) -> Fragment {
-        // CSS 2.1 § 17.2.1 This is for non-inherited properties on anonymous table fragments
-        // example:
-        //
-        //     <div style="display: table">
-        //         Foo
-        //     </div>
-        //
-        // Anonymous table fragments, TableRowFragment and TableCellFragment, are generated around `Foo`, but it shouldn't inherit the border.
+        
+        
+        
+        
+        
+        
+        
+        
 
         let node_style = cascade_anonymous(&**node.style());
         Fragment {
@@ -363,7 +363,7 @@ impl Fragment {
         }
     }
 
-    /// Constructs a new `Fragment` instance from an opaque node.
+    
     pub fn from_opaque_node_and_style(node: OpaqueNode,
                                       style: Arc<ComputedValues>,
                                       specific: SpecificFragmentInfo)
@@ -379,8 +379,8 @@ impl Fragment {
         }
     }
 
-    /// Returns a debug ID of this fragment. This ID should not be considered stable across multiple
-    /// layouts or fragment manipulations.
+    
+    
     pub fn debug_id(&self) -> uint {
         self as *Fragment as uint
     }
@@ -1245,7 +1245,7 @@ impl Fragment {
     /// Returns true if this fragment is an unscanned text fragment that consists entirely of whitespace.
     pub fn is_whitespace_only(&self) -> bool {
         match self.specific {
-            UnscannedTextFragment(ref text_fragment_info) => is_whitespace(text_fragment_info.text),
+            UnscannedTextFragment(ref text_fragment_info) => is_whitespace(text_fragment_info.text.as_slice()),
             _ => false,
         }
     }
@@ -1407,12 +1407,12 @@ impl Fragment {
         if value.is_zero() {
             Ok(())
         } else {
-            write!(f.buf, "{}{},{},{},{}",
-                name,
-                value.top,
-                value.right,
-                value.bottom,
-                value.left)
+            write!(f, "{}{},{},{},{}",
+                   name,
+                   value.top,
+                   value.right,
+                   value.bottom,
+                   value.left)
         }
     }
 
@@ -1443,7 +1443,7 @@ impl Fragment {
 impl fmt::Show for Fragment {
     /// Outputs a debugging string describing this fragment.
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        try!(write!(f.buf, "({} ",
+        try!(write!(f, "({} ",
             match self.specific {
                 GenericFragment => "GenericFragment",
                 IframeFragment(_) => "IframeFragment",
@@ -1457,9 +1457,9 @@ impl fmt::Show for Fragment {
                 UnscannedTextFragment(_) => "UnscannedTextFragment",
         }));
         try!(self.side_offsets_debug_fmt("bp", self.border_padding, f));
-        try!(write!(f.buf, " "));
+        try!(write!(f, " "));
         try!(self.side_offsets_debug_fmt("m", self.margin, f));
-        write!(f.buf, ")")
+        write!(f, ")")
     }
 }
 

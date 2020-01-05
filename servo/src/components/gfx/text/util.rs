@@ -24,21 +24,21 @@ pub enum CompressionMode {
 
 pub fn transform_text(text: &str, mode: CompressionMode,
                       incoming_whitespace: bool,
-                      new_line_pos: &mut Vec<CharIndex>) -> (~str, bool) {
-    let mut out_str = StrBuf::new();
+                      new_line_pos: &mut Vec<CharIndex>) -> (String, bool) {
+    let mut out_str = String::new();
     let out_whitespace = match mode {
         CompressNone | DiscardNewline => {
             let mut new_line_index = CharIndex(0);
             for ch in text.chars() {
                 if is_discardable_char(ch, mode) {
-                    // TODO: record skipped char
+                    
                 } else {
-                    // TODO: record kept char
+                    
                     if ch == '\t' {
-                        // TODO: set "has tab" flag
+                        
                     } else if ch == '\n' {
-                        // Save new-line's position for line-break
-                        // This value is relative(not absolute)
+                        
+                        
                         new_line_pos.push(new_line_index);
                         new_line_index = CharIndex(0);
                     }
@@ -55,29 +55,29 @@ pub fn transform_text(text: &str, mode: CompressionMode,
         CompressWhitespace | CompressWhitespaceNewline => {
             let mut in_whitespace: bool = incoming_whitespace;
             for ch in text.chars() {
-                // TODO: discard newlines between CJK chars
+                
                 let mut next_in_whitespace: bool = is_in_whitespace(ch, mode);
 
                 if !next_in_whitespace {
                     if is_always_discardable_char(ch) {
-                        // revert whitespace setting, since this char was discarded
+                        
                         next_in_whitespace = in_whitespace;
-                        // TODO: record skipped char
+                        
                     } else {
-                        // TODO: record kept char
+                        
                         out_str.push_char(ch);
                     }
-                } else { /* next_in_whitespace; possibly add a space char */
+                } else { 
                     if in_whitespace {
-                        // TODO: record skipped char
+                        
                     } else {
-                        // TODO: record kept char
+                        
                         out_str.push_char(' ');
                     }
                 }
-                // save whitespace context for next char
+                
                 in_whitespace = next_in_whitespace;
-            } /* /for str::each_char */
+            } 
             in_whitespace
         }
     };
@@ -104,7 +104,7 @@ pub fn transform_text(text: &str, mode: CompressionMode,
     }
 
     fn is_always_discardable_char(_ch: char) -> bool {
-        // TODO: check for bidi control chars, soft hyphens.
+        
         false
     }
 }
@@ -126,7 +126,7 @@ pub fn fixed_to_rounded_int(before: int, f: i32) -> int {
     }
 }
 
-/* Generate a 32-bit TrueType tag from its 4 characters */
+
 pub fn true_type_tag(a: char, b: char, c: char, d: char) -> u32 {
     let a = a as u32;
     let b = b as u32;
@@ -192,63 +192,63 @@ fn test_transform_discard_newline() {
     }
 }
 
-/* FIXME: Fix and re-enable
-#[test]
-fn test_transform_compress_whitespace() {
-    let  test_strs : ~[~str] = ~["  foo bar".to_owned(),
-                                 "foo bar  ".to_owned(),
-                                 "foo\n bar".to_owned(),
-                                 "foo \nbar".to_owned(),
-                                 "  foo  bar  \nbaz".to_owned(),
-                                 "foo bar baz".to_owned(),
-                                 "foobarbaz\n\n".to_owned()];
 
-    let oracle_strs : ~[~str] = ~[" foo bar".to_owned(),
-                                 "foo bar ".to_owned(),
-                                 "foo\n bar".to_owned(),
-                                 "foo \nbar".to_owned(),
-                                 " foo bar \nbaz".to_owned(),
-                                 "foo bar baz".to_owned(),
-                                 "foobarbaz\n\n".to_owned()];
 
-    assert_eq!(test_strs.len(), oracle_strs.len());
-    let mode = CompressWhitespace;
 
-    for i in range(0, test_strs.len()) {
-        let mut new_line_pos = ~[];
-        let (trimmed_str, _out) = transform_text(test_strs[i], mode, true, &mut new_line_pos);
-        assert_eq!(&trimmed_str, &oracle_strs[i])
-    }
-}
 
-#[test]
-fn test_transform_compress_whitespace_newline() {
-    let  test_strs : ~[~str] = ~["  foo bar".to_owned(),
-                                 "foo bar  ".to_owned(),
-                                 "foo\n bar".to_owned(),
-                                 "foo \nbar".to_owned(),
-                                 "  foo  bar  \nbaz".to_owned(),
-                                 "foo bar baz".to_owned(),
-                                 "foobarbaz\n\n".to_owned()];
 
-    let oracle_strs : ~[~str] = ~["foo bar".to_owned(),
-                                 "foo bar ".to_owned(),
-                                 "foo bar".to_owned(),
-                                 "foo bar".to_owned(),
-                                 " foo bar baz".to_owned(),
-                                 "foo bar baz".to_owned(),
-                                 "foobarbaz ".to_owned()];
 
-    assert_eq!(test_strs.len(), oracle_strs.len());
-    let mode = CompressWhitespaceNewline;
 
-    for i in range(0, test_strs.len()) {
-        let mut new_line_pos = ~[];
-        let (trimmed_str, _out) = transform_text(test_strs[i], mode, true, &mut new_line_pos);
-        assert_eq!(&trimmed_str, &oracle_strs[i])
-    }
-}
-*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 #[test]
 fn test_transform_compress_whitespace_newline_no_incoming() {

@@ -15,16 +15,16 @@ use url::Url;
 
 pub enum StylesheetProvenance {
     UrlProvenance(Url, ResourceTask),
-    InlineProvenance(Url, ~str),
+    InlineProvenance(Url, String),
 }
 
-// Parses the style data and returns the stylesheet
-pub fn parse_inline_css(url: Url, data: ~str) -> Stylesheet {
+
+pub fn parse_inline_css(url: Url, data: String) -> Stylesheet {
     parse_css(InlineProvenance(url, data))
 }
 
 fn parse_css(provenance: StylesheetProvenance) -> Stylesheet {
-    // TODO: Get the actual value. http://dev.w3.org/csswg/css-syntax/#environment-encoding
+    
     let environment_encoding = UTF_8 as EncodingRef;
 
     match provenance {
@@ -43,7 +43,7 @@ fn parse_css(provenance: StylesheetProvenance) -> Stylesheet {
         }
         InlineProvenance(base_url, data) => {
             debug!("cssparse: loading inline stylesheet {:s}", data);
-            Stylesheet::from_str(data, base_url, environment_encoding)
+            Stylesheet::from_str(data.as_slice(), base_url, environment_encoding)
         }
     }
 }
