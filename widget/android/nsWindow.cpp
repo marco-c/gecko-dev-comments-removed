@@ -1063,8 +1063,6 @@ public:
 
         const auto& layerClient = GeckoLayerClient::Ref::From(aClient);
 
-        AndroidBridge::Bridge()->SetLayerClient(layerClient);
-
         
         
         
