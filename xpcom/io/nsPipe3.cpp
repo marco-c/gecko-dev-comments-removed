@@ -1525,7 +1525,18 @@ nsPipeInputStream::Clone(nsIInputStream** aCloneOut)
 nsresult
 nsPipeInputStream::Status(const ReentrantMonitorAutoEnter& ev) const
 {
-  return NS_FAILED(mInputStatus) ? mInputStatus : mPipe->mStatus;
+  if (NS_FAILED(mInputStatus)) {
+    return mInputStatus;
+  }
+
+  if (mReadState.mAvailable) {
+    
+    return NS_OK;
+  }
+
+  
+  
+  return mPipe->mStatus;
 }
 
 nsresult
