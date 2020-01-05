@@ -63,6 +63,23 @@ impl LogBehavior {
 }
 
 
+#[derive(Debug, Copy, Clone)]
+pub enum TraversalDriver {
+    
+    Parallel,
+    
+    Sequential,
+}
+
+impl TraversalDriver {
+    
+    #[inline]
+    pub fn is_parallel(&self) -> bool {
+        matches!(*self, TraversalDriver::Parallel)
+    }
+}
+
+
 
 pub trait DomTraversal<E: TElement> : Sync {
     
@@ -284,6 +301,14 @@ pub trait DomTraversal<E: TElement> : Sync {
 
     
     fn create_thread_local_context(&self) -> Self::ThreadLocalContext;
+
+    
+    
+    
+    
+    
+    
+    fn is_parallel(&self) -> bool;
 }
 
 

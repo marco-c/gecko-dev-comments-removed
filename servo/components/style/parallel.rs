@@ -45,6 +45,7 @@ pub fn traverse_dom<E, D>(traversal: &D,
     where E: TElement,
           D: DomTraversal<E>,
 {
+    debug_assert!(traversal.is_parallel());
     
     
     
