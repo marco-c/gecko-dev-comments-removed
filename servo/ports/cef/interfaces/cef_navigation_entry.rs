@@ -49,9 +49,8 @@ use std::ptr;
 
 
 
-
 #[repr(C)]
-pub struct _cef_response_t {
+pub struct _cef_navigation_entry_t {
   
   
   
@@ -60,65 +59,75 @@ pub struct _cef_response_t {
   
   
   
-  pub is_read_only: Option<extern "C" fn(
-      this: *mut cef_response_t) -> libc::c_int>,
-
   
-  
-  
-  pub get_status: Option<extern "C" fn(
-      this: *mut cef_response_t) -> libc::c_int>,
-
-  
-  
-  
-  pub set_status: Option<extern "C" fn(this: *mut cef_response_t,
-      status: libc::c_int) -> ()>,
+  pub is_valid: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> libc::c_int>,
 
   
   
   
   
-  pub get_status_text: Option<extern "C" fn(
-      this: *mut cef_response_t) -> types::cef_string_userfree_t>,
-
   
-  
-  
-  pub set_status_text: Option<extern "C" fn(this: *mut cef_response_t,
-      statusText: *const types::cef_string_t) -> ()>,
+  pub get_url: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> types::cef_string_userfree_t>,
 
   
   
   
   
-  pub get_mime_type: Option<extern "C" fn(
-      this: *mut cef_response_t) -> types::cef_string_userfree_t>,
-
-  
-  
-  
-  pub set_mime_type: Option<extern "C" fn(this: *mut cef_response_t,
-      mimeType: *const types::cef_string_t) -> ()>,
+  pub get_display_url: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> types::cef_string_userfree_t>,
 
   
   
   
   
-  pub get_header: Option<extern "C" fn(this: *mut cef_response_t,
-      name: *const types::cef_string_t) -> types::cef_string_userfree_t>,
+  pub get_original_url: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> types::cef_string_userfree_t>,
 
   
   
   
-  pub get_header_map: Option<extern "C" fn(this: *mut cef_response_t,
-      headerMap: types::cef_string_multimap_t) -> ()>,
+  
+  pub get_title: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> types::cef_string_userfree_t>,
 
   
   
   
-  pub set_header_map: Option<extern "C" fn(this: *mut cef_response_t,
-      headerMap: types::cef_string_multimap_t) -> ()>,
+  
+  pub get_transition_type: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> types::cef_transition_type_t>,
+
+  
+  
+  
+  pub has_post_data: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> libc::c_int>,
+
+  
+  
+  
+  
+  
+  pub get_frame_name: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> types::cef_string_userfree_t>,
+
+  
+  
+  
+  
+  
+  pub get_completion_time: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> types::cef_time_t>,
+
+  
+  
+  
+  
+  
+  pub get_http_status_code: Option<extern "C" fn(
+      this: *mut cef_navigation_entry_t) -> libc::c_int>,
 
   
   
@@ -131,32 +140,31 @@ pub struct _cef_response_t {
   pub extra: u8,
 }
 
-pub type cef_response_t = _cef_response_t;
+pub type cef_navigation_entry_t = _cef_navigation_entry_t;
 
 
 
 
 
-
-pub struct CefResponse {
-  c_object: *mut cef_response_t,
+pub struct CefNavigationEntry {
+  c_object: *mut cef_navigation_entry_t,
 }
 
-impl Clone for CefResponse {
-  fn clone(&self) -> CefResponse{
+impl Clone for CefNavigationEntry {
+  fn clone(&self) -> CefNavigationEntry{
     unsafe {
       if !self.c_object.is_null() &&
           self.c_object as usize != mem::POST_DROP_USIZE {
         ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
       }
-      CefResponse {
+      CefNavigationEntry {
         c_object: self.c_object,
       }
     }
   }
 }
 
-impl Drop for CefResponse {
+impl Drop for CefNavigationEntry {
   fn drop(&mut self) {
     unsafe {
       if !self.c_object.is_null() &&
@@ -167,28 +175,28 @@ impl Drop for CefResponse {
   }
 }
 
-impl CefResponse {
-  pub unsafe fn from_c_object(c_object: *mut cef_response_t) -> CefResponse {
-    CefResponse {
+impl CefNavigationEntry {
+  pub unsafe fn from_c_object(c_object: *mut cef_navigation_entry_t) -> CefNavigationEntry {
+    CefNavigationEntry {
       c_object: c_object,
     }
   }
 
-  pub unsafe fn from_c_object_addref(c_object: *mut cef_response_t) -> CefResponse {
+  pub unsafe fn from_c_object_addref(c_object: *mut cef_navigation_entry_t) -> CefNavigationEntry {
     if !c_object.is_null() &&
         c_object as usize != mem::POST_DROP_USIZE {
       ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
     }
-    CefResponse {
+    CefNavigationEntry {
       c_object: c_object,
     }
   }
 
-  pub fn c_object(&self) -> *mut cef_response_t {
+  pub fn c_object(&self) -> *mut cef_navigation_entry_t {
     self.c_object
   }
 
-  pub fn c_object_addrefed(&self) -> *mut cef_response_t {
+  pub fn c_object_addrefed(&self) -> *mut cef_navigation_entry_t {
     unsafe {
       if !self.c_object.is_null() &&
           self.c_object as usize != mem::POST_DROP_USIZE {
@@ -208,14 +216,15 @@ impl CefResponse {
   
   
   
-  pub fn is_read_only(&self) -> libc::c_int {
+  
+  pub fn is_valid(&self) -> libc::c_int {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
-        ((*self.c_object).is_read_only.unwrap())(
+        ((*self.c_object).is_valid.unwrap())(
           self.c_object))
     }
   }
@@ -223,14 +232,16 @@ impl CefResponse {
   
   
   
-  pub fn get_status(&self) -> libc::c_int {
+  
+  
+  pub fn get_url(&self) -> String {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
-        ((*self.c_object).get_status.unwrap())(
+        ((*self.c_object).get_url.unwrap())(
           self.c_object))
     }
   }
@@ -238,31 +249,15 @@ impl CefResponse {
   
   
   
-  pub fn set_status(&self, status: libc::c_int) -> () {
+  
+  pub fn get_display_url(&self) -> String {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
-        ((*self.c_object).set_status.unwrap())(
-          self.c_object,
-          CefWrap::to_c(status)))
-    }
-  }
-
-  
-  
-  
-  
-  pub fn get_status_text(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
-      panic!("called a CEF method on a null object")
-    }
-    unsafe {
-      CefWrap::to_rust(
-        ((*self.c_object).get_status_text.unwrap())(
+        ((*self.c_object).get_display_url.unwrap())(
           self.c_object))
     }
   }
@@ -270,31 +265,15 @@ impl CefResponse {
   
   
   
-  pub fn set_status_text(&self, statusText: &[u16]) -> () {
+  
+  pub fn get_original_url(&self) -> String {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
-        ((*self.c_object).set_status_text.unwrap())(
-          self.c_object,
-          CefWrap::to_c(statusText)))
-    }
-  }
-
-  
-  
-  
-  
-  pub fn get_mime_type(&self) -> String {
-    if self.c_object.is_null() ||
-       self.c_object as usize == mem::POST_DROP_USIZE {
-      panic!("called a CEF method on a null object")
-    }
-    unsafe {
-      CefWrap::to_rust(
-        ((*self.c_object).get_mime_type.unwrap())(
+        ((*self.c_object).get_original_url.unwrap())(
           self.c_object))
     }
   }
@@ -302,16 +281,16 @@ impl CefResponse {
   
   
   
-  pub fn set_mime_type(&self, mimeType: &[u16]) -> () {
+  
+  pub fn get_title(&self) -> String {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
-        ((*self.c_object).set_mime_type.unwrap())(
-          self.c_object,
-          CefWrap::to_c(mimeType)))
+        ((*self.c_object).get_title.unwrap())(
+          self.c_object))
     }
   }
 
@@ -319,84 +298,106 @@ impl CefResponse {
   
   
   
-  pub fn get_header(&self, name: &[u16]) -> String {
+  pub fn get_transition_type(&self) -> types::cef_transition_type_t {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
-        ((*self.c_object).get_header.unwrap())(
-          self.c_object,
-          CefWrap::to_c(name)))
+        ((*self.c_object).get_transition_type.unwrap())(
+          self.c_object))
     }
   }
 
   
   
   
-  pub fn get_header_map(&self, headerMap: HashMap<String,Vec<String>>) -> () {
+  pub fn has_post_data(&self) -> libc::c_int {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
-        ((*self.c_object).get_header_map.unwrap())(
-          self.c_object,
-          CefWrap::to_c(headerMap)))
+        ((*self.c_object).has_post_data.unwrap())(
+          self.c_object))
     }
   }
 
   
   
   
-  pub fn set_header_map(&self, headerMap: HashMap<String,Vec<String>>) -> () {
+  
+  
+  pub fn get_frame_name(&self) -> String {
     if self.c_object.is_null() ||
        self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
-        ((*self.c_object).set_header_map.unwrap())(
-          self.c_object,
-          CefWrap::to_c(headerMap)))
+        ((*self.c_object).get_frame_name.unwrap())(
+          self.c_object))
     }
   }
 
   
   
   
-  pub fn create() -> interfaces::CefResponse {
+  
+  
+  pub fn get_completion_time(&self) -> types::cef_time_t {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
+      panic!("called a CEF method on a null object")
+    }
     unsafe {
       CefWrap::to_rust(
-        ::response::cef_response_create(
-))
+        ((*self.c_object).get_completion_time.unwrap())(
+          self.c_object))
+    }
+  }
+
+  
+  
+  
+  
+  
+  pub fn get_http_status_code(&self) -> libc::c_int {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
+      panic!("called a CEF method on a null object")
+    }
+    unsafe {
+      CefWrap::to_rust(
+        ((*self.c_object).get_http_status_code.unwrap())(
+          self.c_object))
     }
   }
 } 
 
-impl CefWrap<*mut cef_response_t> for CefResponse {
-  fn to_c(rust_object: CefResponse) -> *mut cef_response_t {
+impl CefWrap<*mut cef_navigation_entry_t> for CefNavigationEntry {
+  fn to_c(rust_object: CefNavigationEntry) -> *mut cef_navigation_entry_t {
     rust_object.c_object_addrefed()
   }
-  unsafe fn to_rust(c_object: *mut cef_response_t) -> CefResponse {
-    CefResponse::from_c_object_addref(c_object)
+  unsafe fn to_rust(c_object: *mut cef_navigation_entry_t) -> CefNavigationEntry {
+    CefNavigationEntry::from_c_object_addref(c_object)
   }
 }
-impl CefWrap<*mut cef_response_t> for Option<CefResponse> {
-  fn to_c(rust_object: Option<CefResponse>) -> *mut cef_response_t {
+impl CefWrap<*mut cef_navigation_entry_t> for Option<CefNavigationEntry> {
+  fn to_c(rust_object: Option<CefNavigationEntry>) -> *mut cef_navigation_entry_t {
     match rust_object {
       None => ptr::null_mut(),
       Some(rust_object) => rust_object.c_object_addrefed(),
     }
   }
-  unsafe fn to_rust(c_object: *mut cef_response_t) -> Option<CefResponse> {
+  unsafe fn to_rust(c_object: *mut cef_navigation_entry_t) -> Option<CefNavigationEntry> {
     if c_object.is_null() &&
        c_object as usize != mem::POST_DROP_USIZE {
       None
     } else {
-      Some(CefResponse::from_c_object_addref(c_object))
+      Some(CefNavigationEntry::from_c_object_addref(c_object))
     }
   }
 }

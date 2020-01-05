@@ -43,6 +43,7 @@ use wrappers::CefWrap;
 
 use libc;
 use std::collections::HashMap;
+use std::mem;
 use std::ptr;
 
 
@@ -61,10 +62,12 @@ pub struct _cef_cookie_manager_t {
   
   
   
+  
   pub set_supported_schemes: Option<extern "C" fn(
-      this: *mut cef_cookie_manager_t, schemes: types::cef_string_list_t) -> (
-      )>,
+      this: *mut cef_cookie_manager_t, schemes: types::cef_string_list_t,
+      callback: *mut interfaces::cef_completion_callback_t) -> ()>,
 
+  
   
   
   
@@ -91,10 +94,13 @@ pub struct _cef_cookie_manager_t {
   
   
   
+  
   pub set_cookie: Option<extern "C" fn(this: *mut cef_cookie_manager_t,
-      url: *const types::cef_string_t,
-      cookie: *const interfaces::cef_cookie_t) -> libc::c_int>,
+      url: *const types::cef_string_t, cookie: *const interfaces::cef_cookie_t,
+      callback: *mut interfaces::cef_set_cookie_callback_t) -> libc::c_int>,
 
+  
+  
   
   
   
@@ -105,8 +111,8 @@ pub struct _cef_cookie_manager_t {
   
   
   pub delete_cookies: Option<extern "C" fn(this: *mut cef_cookie_manager_t,
-      url: *const types::cef_string_t,
-      cookie_name: *const types::cef_string_t) -> libc::c_int>,
+      url: *const types::cef_string_t, cookie_name: *const types::cef_string_t,
+      callback: *mut interfaces::cef_delete_cookies_callback_t) -> libc::c_int>,
 
   
   
@@ -117,9 +123,10 @@ pub struct _cef_cookie_manager_t {
   
   
   
+  
   pub set_storage_path: Option<extern "C" fn(this: *mut cef_cookie_manager_t,
-      path: *const types::cef_string_t,
-      persist_session_cookies: libc::c_int) -> libc::c_int>,
+      path: *const types::cef_string_t, persist_session_cookies: libc::c_int,
+      callback: *mut interfaces::cef_completion_callback_t) -> libc::c_int>,
 
   
   
@@ -132,13 +139,13 @@ pub struct _cef_cookie_manager_t {
   
   
   
-  pub ref_count: usize,
+  pub ref_count: u32,
 
   
   
   
   pub extra: u8,
-} 
+}
 
 pub type cef_cookie_manager_t = _cef_cookie_manager_t;
 
@@ -154,7 +161,8 @@ pub struct CefCookieManager {
 impl Clone for CefCookieManager {
   fn clone(&self) -> CefCookieManager{
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
       }
       CefCookieManager {
@@ -167,7 +175,8 @@ impl Clone for CefCookieManager {
 impl Drop for CefCookieManager {
   fn drop(&mut self) {
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
       }
     }
@@ -182,7 +191,8 @@ impl CefCookieManager {
   }
 
   pub unsafe fn from_c_object_addref(c_object: *mut cef_cookie_manager_t) -> CefCookieManager {
-    if !c_object.is_null() {
+    if !c_object.is_null() &&
+        c_object as usize != mem::POST_DROP_USIZE {
       ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
     }
     CefCookieManager {
@@ -196,7 +206,8 @@ impl CefCookieManager {
 
   pub fn c_object_addrefed(&self) -> *mut cef_cookie_manager_t {
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         eutil::add_ref(self.c_object as *mut types::cef_base_t);
       }
       self.c_object
@@ -204,10 +215,10 @@ impl CefCookieManager {
   }
 
   pub fn is_null_cef_object(&self) -> bool {
-    self.c_object.is_null()
+    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
   }
   pub fn is_not_null_cef_object(&self) -> bool {
-    !self.c_object.is_null()
+    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
   }
 
   
@@ -215,15 +226,19 @@ impl CefCookieManager {
   
   
   
-  pub fn set_supported_schemes(&self, schemes: Vec<String>) -> () {
-    if self.c_object.is_null() {
+  
+  pub fn set_supported_schemes(&self, schemes: Vec<String>,
+      callback: interfaces::CefCompletionCallback) -> () {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
       CefWrap::to_rust(
         ((*self.c_object).set_supported_schemes.unwrap())(
           self.c_object,
-          CefWrap::to_c(schemes)))
+          CefWrap::to_c(schemes),
+          CefWrap::to_c(callback)))
     }
   }
 
@@ -231,9 +246,11 @@ impl CefCookieManager {
   
   
   
+  
   pub fn visit_all_cookies(&self,
       visitor: interfaces::CefCookieVisitor) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -253,7 +270,8 @@ impl CefCookieManager {
   
   pub fn visit_url_cookies(&self, url: &[u16], includeHttpOnly: libc::c_int,
       visitor: interfaces::CefCookieVisitor) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -274,9 +292,11 @@ impl CefCookieManager {
   
   
   
-  pub fn set_cookie(&self, url: &[u16],
-      cookie: &interfaces::CefCookie) -> libc::c_int {
-    if self.c_object.is_null() {
+  
+  pub fn set_cookie(&self, url: &[u16], cookie: &interfaces::CefCookie,
+      callback: interfaces::CefSetCookieCallback) -> libc::c_int {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -284,7 +304,8 @@ impl CefCookieManager {
         ((*self.c_object).set_cookie.unwrap())(
           self.c_object,
           CefWrap::to_c(url),
-          CefWrap::to_c(cookie)))
+          CefWrap::to_c(cookie),
+          CefWrap::to_c(callback)))
     }
   }
 
@@ -297,9 +318,12 @@ impl CefCookieManager {
   
   
   
-  pub fn delete_cookies(&self, url: &[u16],
-      cookie_name: &[u16]) -> libc::c_int {
-    if self.c_object.is_null() {
+  
+  
+  pub fn delete_cookies(&self, url: &[u16], cookie_name: &[u16],
+      callback: interfaces::CefDeleteCookiesCallback) -> libc::c_int {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -307,10 +331,12 @@ impl CefCookieManager {
         ((*self.c_object).delete_cookies.unwrap())(
           self.c_object,
           CefWrap::to_c(url),
-          CefWrap::to_c(cookie_name)))
+          CefWrap::to_c(cookie_name),
+          CefWrap::to_c(callback)))
     }
   }
 
+  
   
   
   
@@ -321,8 +347,10 @@ impl CefCookieManager {
   
   
   pub fn set_storage_path(&self, path: &[u16],
-      persist_session_cookies: libc::c_int) -> libc::c_int {
-    if self.c_object.is_null() {
+      persist_session_cookies: libc::c_int,
+      callback: interfaces::CefCompletionCallback) -> libc::c_int {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -330,7 +358,8 @@ impl CefCookieManager {
         ((*self.c_object).set_storage_path.unwrap())(
           self.c_object,
           CefWrap::to_c(path),
-          CefWrap::to_c(persist_session_cookies)))
+          CefWrap::to_c(persist_session_cookies),
+          CefWrap::to_c(callback)))
     }
   }
 
@@ -341,7 +370,8 @@ impl CefCookieManager {
   
   pub fn flush_store(&self,
       callback: interfaces::CefCompletionCallback) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -356,11 +386,16 @@ impl CefCookieManager {
   
   
   
-  pub fn get_global_manager() -> interfaces::CefCookieManager {
+  
+  
+  
+  
+  pub fn get_global_manager(
+      callback: interfaces::CefCompletionCallback) -> interfaces::CefCookieManager {
     unsafe {
       CefWrap::to_rust(
         ::cookie::cef_cookie_manager_get_global_manager(
-))
+          CefWrap::to_c(callback)))
     }
   }
 
@@ -372,13 +407,15 @@ impl CefCookieManager {
   
   
   
-  pub fn create_manager(path: &[u16],
-      persist_session_cookies: libc::c_int) -> interfaces::CefCookieManager {
+  
+  pub fn create_manager(path: &[u16], persist_session_cookies: libc::c_int,
+      callback: interfaces::CefCompletionCallback) -> interfaces::CefCookieManager {
     unsafe {
       CefWrap::to_rust(
         ::cookie::cef_cookie_manager_create_manager(
           CefWrap::to_c(path),
-          CefWrap::to_c(persist_session_cookies)))
+          CefWrap::to_c(persist_session_cookies),
+          CefWrap::to_c(callback)))
     }
   }
 } 
@@ -399,7 +436,8 @@ impl CefWrap<*mut cef_cookie_manager_t> for Option<CefCookieManager> {
     }
   }
   unsafe fn to_rust(c_object: *mut cef_cookie_manager_t) -> Option<CefCookieManager> {
-    if c_object.is_null() {
+    if c_object.is_null() &&
+       c_object as usize != mem::POST_DROP_USIZE {
       None
     } else {
       Some(CefCookieManager::from_c_object_addref(c_object))
@@ -433,13 +471,13 @@ pub struct _cef_cookie_visitor_t {
   
   
   
-  pub ref_count: usize,
+  pub ref_count: u32,
 
   
   
   
   pub extra: u8,
-} 
+}
 
 pub type cef_cookie_visitor_t = _cef_cookie_visitor_t;
 
@@ -455,7 +493,8 @@ pub struct CefCookieVisitor {
 impl Clone for CefCookieVisitor {
   fn clone(&self) -> CefCookieVisitor{
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
       }
       CefCookieVisitor {
@@ -468,7 +507,8 @@ impl Clone for CefCookieVisitor {
 impl Drop for CefCookieVisitor {
   fn drop(&mut self) {
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
       }
     }
@@ -483,7 +523,8 @@ impl CefCookieVisitor {
   }
 
   pub unsafe fn from_c_object_addref(c_object: *mut cef_cookie_visitor_t) -> CefCookieVisitor {
-    if !c_object.is_null() {
+    if !c_object.is_null() &&
+        c_object as usize != mem::POST_DROP_USIZE {
       ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
     }
     CefCookieVisitor {
@@ -497,7 +538,8 @@ impl CefCookieVisitor {
 
   pub fn c_object_addrefed(&self) -> *mut cef_cookie_visitor_t {
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         eutil::add_ref(self.c_object as *mut types::cef_base_t);
       }
       self.c_object
@@ -505,10 +547,10 @@ impl CefCookieVisitor {
   }
 
   pub fn is_null_cef_object(&self) -> bool {
-    self.c_object.is_null()
+    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
   }
   pub fn is_not_null_cef_object(&self) -> bool {
-    !self.c_object.is_null()
+    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
   }
 
   
@@ -520,7 +562,8 @@ impl CefCookieVisitor {
   
   pub fn visit(&self, cookie: &interfaces::CefCookie, count: libc::c_int,
       total: libc::c_int, deleteCookie: &mut libc::c_int) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -551,10 +594,306 @@ impl CefWrap<*mut cef_cookie_visitor_t> for Option<CefCookieVisitor> {
     }
   }
   unsafe fn to_rust(c_object: *mut cef_cookie_visitor_t) -> Option<CefCookieVisitor> {
-    if c_object.is_null() {
+    if c_object.is_null() &&
+       c_object as usize != mem::POST_DROP_USIZE {
       None
     } else {
       Some(CefCookieVisitor::from_c_object_addref(c_object))
+    }
+  }
+}
+
+
+
+
+
+
+#[repr(C)]
+pub struct _cef_set_cookie_callback_t {
+  
+  
+  
+  pub base: types::cef_base_t,
+
+  
+  
+  
+  
+  pub on_complete: Option<extern "C" fn(this: *mut cef_set_cookie_callback_t,
+      success: libc::c_int) -> ()>,
+
+  
+  
+  
+  pub ref_count: u32,
+
+  
+  
+  
+  pub extra: u8,
+}
+
+pub type cef_set_cookie_callback_t = _cef_set_cookie_callback_t;
+
+
+
+
+
+
+pub struct CefSetCookieCallback {
+  c_object: *mut cef_set_cookie_callback_t,
+}
+
+impl Clone for CefSetCookieCallback {
+  fn clone(&self) -> CefSetCookieCallback{
+    unsafe {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
+        ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
+      }
+      CefSetCookieCallback {
+        c_object: self.c_object,
+      }
+    }
+  }
+}
+
+impl Drop for CefSetCookieCallback {
+  fn drop(&mut self) {
+    unsafe {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
+        ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
+      }
+    }
+  }
+}
+
+impl CefSetCookieCallback {
+  pub unsafe fn from_c_object(c_object: *mut cef_set_cookie_callback_t) -> CefSetCookieCallback {
+    CefSetCookieCallback {
+      c_object: c_object,
+    }
+  }
+
+  pub unsafe fn from_c_object_addref(c_object: *mut cef_set_cookie_callback_t) -> CefSetCookieCallback {
+    if !c_object.is_null() &&
+        c_object as usize != mem::POST_DROP_USIZE {
+      ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
+    }
+    CefSetCookieCallback {
+      c_object: c_object,
+    }
+  }
+
+  pub fn c_object(&self) -> *mut cef_set_cookie_callback_t {
+    self.c_object
+  }
+
+  pub fn c_object_addrefed(&self) -> *mut cef_set_cookie_callback_t {
+    unsafe {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
+        eutil::add_ref(self.c_object as *mut types::cef_base_t);
+      }
+      self.c_object
+    }
+  }
+
+  pub fn is_null_cef_object(&self) -> bool {
+    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
+  }
+  pub fn is_not_null_cef_object(&self) -> bool {
+    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
+  }
+
+  
+  
+  
+  
+  pub fn on_complete(&self, success: libc::c_int) -> () {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
+      panic!("called a CEF method on a null object")
+    }
+    unsafe {
+      CefWrap::to_rust(
+        ((*self.c_object).on_complete.unwrap())(
+          self.c_object,
+          CefWrap::to_c(success)))
+    }
+  }
+} 
+
+impl CefWrap<*mut cef_set_cookie_callback_t> for CefSetCookieCallback {
+  fn to_c(rust_object: CefSetCookieCallback) -> *mut cef_set_cookie_callback_t {
+    rust_object.c_object_addrefed()
+  }
+  unsafe fn to_rust(c_object: *mut cef_set_cookie_callback_t) -> CefSetCookieCallback {
+    CefSetCookieCallback::from_c_object_addref(c_object)
+  }
+}
+impl CefWrap<*mut cef_set_cookie_callback_t> for Option<CefSetCookieCallback> {
+  fn to_c(rust_object: Option<CefSetCookieCallback>) -> *mut cef_set_cookie_callback_t {
+    match rust_object {
+      None => ptr::null_mut(),
+      Some(rust_object) => rust_object.c_object_addrefed(),
+    }
+  }
+  unsafe fn to_rust(c_object: *mut cef_set_cookie_callback_t) -> Option<CefSetCookieCallback> {
+    if c_object.is_null() &&
+       c_object as usize != mem::POST_DROP_USIZE {
+      None
+    } else {
+      Some(CefSetCookieCallback::from_c_object_addref(c_object))
+    }
+  }
+}
+
+
+
+
+
+
+#[repr(C)]
+pub struct _cef_delete_cookies_callback_t {
+  
+  
+  
+  pub base: types::cef_base_t,
+
+  
+  
+  
+  
+  pub on_complete: Option<extern "C" fn(
+      this: *mut cef_delete_cookies_callback_t, num_deleted: libc::c_int) -> (
+      )>,
+
+  
+  
+  
+  pub ref_count: u32,
+
+  
+  
+  
+  pub extra: u8,
+}
+
+pub type cef_delete_cookies_callback_t = _cef_delete_cookies_callback_t;
+
+
+
+
+
+
+pub struct CefDeleteCookiesCallback {
+  c_object: *mut cef_delete_cookies_callback_t,
+}
+
+impl Clone for CefDeleteCookiesCallback {
+  fn clone(&self) -> CefDeleteCookiesCallback{
+    unsafe {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
+        ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
+      }
+      CefDeleteCookiesCallback {
+        c_object: self.c_object,
+      }
+    }
+  }
+}
+
+impl Drop for CefDeleteCookiesCallback {
+  fn drop(&mut self) {
+    unsafe {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
+        ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
+      }
+    }
+  }
+}
+
+impl CefDeleteCookiesCallback {
+  pub unsafe fn from_c_object(c_object: *mut cef_delete_cookies_callback_t) -> CefDeleteCookiesCallback {
+    CefDeleteCookiesCallback {
+      c_object: c_object,
+    }
+  }
+
+  pub unsafe fn from_c_object_addref(c_object: *mut cef_delete_cookies_callback_t) -> CefDeleteCookiesCallback {
+    if !c_object.is_null() &&
+        c_object as usize != mem::POST_DROP_USIZE {
+      ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
+    }
+    CefDeleteCookiesCallback {
+      c_object: c_object,
+    }
+  }
+
+  pub fn c_object(&self) -> *mut cef_delete_cookies_callback_t {
+    self.c_object
+  }
+
+  pub fn c_object_addrefed(&self) -> *mut cef_delete_cookies_callback_t {
+    unsafe {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
+        eutil::add_ref(self.c_object as *mut types::cef_base_t);
+      }
+      self.c_object
+    }
+  }
+
+  pub fn is_null_cef_object(&self) -> bool {
+    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
+  }
+  pub fn is_not_null_cef_object(&self) -> bool {
+    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
+  }
+
+  
+  
+  
+  
+  pub fn on_complete(&self, num_deleted: libc::c_int) -> () {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
+      panic!("called a CEF method on a null object")
+    }
+    unsafe {
+      CefWrap::to_rust(
+        ((*self.c_object).on_complete.unwrap())(
+          self.c_object,
+          CefWrap::to_c(num_deleted)))
+    }
+  }
+} 
+
+impl CefWrap<*mut cef_delete_cookies_callback_t> for CefDeleteCookiesCallback {
+  fn to_c(rust_object: CefDeleteCookiesCallback) -> *mut cef_delete_cookies_callback_t {
+    rust_object.c_object_addrefed()
+  }
+  unsafe fn to_rust(c_object: *mut cef_delete_cookies_callback_t) -> CefDeleteCookiesCallback {
+    CefDeleteCookiesCallback::from_c_object_addref(c_object)
+  }
+}
+impl CefWrap<*mut cef_delete_cookies_callback_t> for Option<CefDeleteCookiesCallback> {
+  fn to_c(rust_object: Option<CefDeleteCookiesCallback>) -> *mut cef_delete_cookies_callback_t {
+    match rust_object {
+      None => ptr::null_mut(),
+      Some(rust_object) => rust_object.c_object_addrefed(),
+    }
+  }
+  unsafe fn to_rust(c_object: *mut cef_delete_cookies_callback_t) -> Option<CefDeleteCookiesCallback> {
+    if c_object.is_null() &&
+       c_object as usize != mem::POST_DROP_USIZE {
+      None
+    } else {
+      Some(CefDeleteCookiesCallback::from_c_object_addref(c_object))
     }
   }
 }

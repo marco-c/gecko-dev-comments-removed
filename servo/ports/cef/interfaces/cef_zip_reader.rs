@@ -43,6 +43,7 @@ use wrappers::CefWrap;
 
 use libc;
 use std::collections::HashMap;
+use std::mem;
 use std::ptr;
 
 
@@ -105,7 +106,7 @@ pub struct _cef_zip_reader_t {
   
   
   pub get_file_last_modified: Option<extern "C" fn(
-      this: *mut cef_zip_reader_t) -> libc::time_t>,
+      this: *mut cef_zip_reader_t) -> types::cef_time_t>,
 
   
   
@@ -140,13 +141,13 @@ pub struct _cef_zip_reader_t {
   
   
   
-  pub ref_count: usize,
+  pub ref_count: u32,
 
   
   
   
   pub extra: u8,
-} 
+}
 
 pub type cef_zip_reader_t = _cef_zip_reader_t;
 
@@ -163,7 +164,8 @@ pub struct CefZipReader {
 impl Clone for CefZipReader {
   fn clone(&self) -> CefZipReader{
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         ((*self.c_object).base.add_ref.unwrap())(&mut (*self.c_object).base);
       }
       CefZipReader {
@@ -176,7 +178,8 @@ impl Clone for CefZipReader {
 impl Drop for CefZipReader {
   fn drop(&mut self) {
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         ((*self.c_object).base.release.unwrap())(&mut (*self.c_object).base);
       }
     }
@@ -191,7 +194,8 @@ impl CefZipReader {
   }
 
   pub unsafe fn from_c_object_addref(c_object: *mut cef_zip_reader_t) -> CefZipReader {
-    if !c_object.is_null() {
+    if !c_object.is_null() &&
+        c_object as usize != mem::POST_DROP_USIZE {
       ((*c_object).base.add_ref.unwrap())(&mut (*c_object).base);
     }
     CefZipReader {
@@ -205,7 +209,8 @@ impl CefZipReader {
 
   pub fn c_object_addrefed(&self) -> *mut cef_zip_reader_t {
     unsafe {
-      if !self.c_object.is_null() {
+      if !self.c_object.is_null() &&
+          self.c_object as usize != mem::POST_DROP_USIZE {
         eutil::add_ref(self.c_object as *mut types::cef_base_t);
       }
       self.c_object
@@ -213,10 +218,10 @@ impl CefZipReader {
   }
 
   pub fn is_null_cef_object(&self) -> bool {
-    self.c_object.is_null()
+    self.c_object.is_null() || self.c_object as usize == mem::POST_DROP_USIZE
   }
   pub fn is_not_null_cef_object(&self) -> bool {
-    !self.c_object.is_null()
+    !self.c_object.is_null() && self.c_object as usize != mem::POST_DROP_USIZE
   }
 
   
@@ -224,7 +229,8 @@ impl CefZipReader {
   
   
   pub fn move_to_first_file(&self) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -239,7 +245,8 @@ impl CefZipReader {
   
   
   pub fn move_to_next_file(&self) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -256,7 +263,8 @@ impl CefZipReader {
   
   pub fn move_to_file(&self, fileName: &[u16],
       caseSensitive: libc::c_int) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -273,7 +281,8 @@ impl CefZipReader {
   
   
   pub fn close(&self) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -291,7 +300,8 @@ impl CefZipReader {
   
   
   pub fn get_file_name(&self) -> String {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -305,7 +315,8 @@ impl CefZipReader {
   
   
   pub fn get_file_size(&self) -> i64 {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -318,8 +329,9 @@ impl CefZipReader {
   
   
   
-  pub fn get_file_last_modified(&self) -> libc::time_t {
-    if self.c_object.is_null() {
+  pub fn get_file_last_modified(&self) -> types::cef_time_t {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -334,7 +346,8 @@ impl CefZipReader {
   
   
   pub fn open_file(&self, password: &[u16]) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -349,7 +362,8 @@ impl CefZipReader {
   
   
   pub fn close_file(&self) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -365,7 +379,8 @@ impl CefZipReader {
   
   pub fn read_file(&self, buffer: &mut (),
       bufferSize: libc::size_t) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -381,7 +396,8 @@ impl CefZipReader {
   
   
   pub fn tell(&self) -> i64 {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -395,7 +411,8 @@ impl CefZipReader {
   
   
   pub fn eof(&self) -> libc::c_int {
-    if self.c_object.is_null() {
+    if self.c_object.is_null() ||
+       self.c_object as usize == mem::POST_DROP_USIZE {
       panic!("called a CEF method on a null object")
     }
     unsafe {
@@ -435,7 +452,8 @@ impl CefWrap<*mut cef_zip_reader_t> for Option<CefZipReader> {
     }
   }
   unsafe fn to_rust(c_object: *mut cef_zip_reader_t) -> Option<CefZipReader> {
-    if c_object.is_null() {
+    if c_object.is_null() &&
+       c_object as usize != mem::POST_DROP_USIZE {
       None
     } else {
       Some(CefZipReader::from_c_object_addref(c_object))
