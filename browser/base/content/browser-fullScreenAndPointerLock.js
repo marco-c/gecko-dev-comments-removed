@@ -537,7 +537,8 @@ var FullScreen = {
     
     
     if (aEvent.type == "popupshown" && !FullScreen._isChromeCollapsed &&
-        aEvent.target.localName != "tooltip" && aEvent.target.localName != "window")
+        aEvent.target.localName != "tooltip" && aEvent.target.localName != "window" &&
+        aEvent.target.getAttribute("nopreventnavboxhide") != "true")
       FullScreen._isPopupOpen = true;
     else if (aEvent.type == "popuphidden" && aEvent.target.localName != "tooltip" &&
              aEvent.target.localName != "window") {
@@ -545,6 +546,10 @@ var FullScreen = {
       
       FullScreen.hideNavToolbox(true);
     }
+  },
+
+  get navToolboxHidden() {
+    return this._isChromeCollapsed;
   },
 
   
@@ -579,6 +584,7 @@ var FullScreen = {
     }
 
     this._isChromeCollapsed = false;
+    Services.obs.notifyObservers(null, "fullscreen-nav-toolbox", "shown");
   },
 
   hideNavToolbox(aAnimate = false) {
@@ -602,6 +608,8 @@ var FullScreen = {
     gNavToolbox.style.marginTop =
       -gNavToolbox.getBoundingClientRect().height + "px";
     this._isChromeCollapsed = true;
+    Services.obs.notifyObservers(null, "fullscreen-nav-toolbox", "hidden");
+
     MousePosTracker.removeListener(this);
   },
 
