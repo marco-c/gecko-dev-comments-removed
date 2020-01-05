@@ -6,6 +6,8 @@ use AnimationState;
 use CompositorEvent;
 use DocumentState;
 use IFrameLoadInfo;
+use IFrameLoadInfoWithData;
+use LayoutControlMsg;
 use LoadData;
 use MozBrowserEvent;
 use WorkerGlobalScopeInit;
@@ -105,7 +107,9 @@ pub enum ScriptMsg {
     
     VisibilityChangeComplete(PipelineId, bool),
     
-    ScriptLoadedURLInIFrame(IFrameLoadInfo),
+    ScriptLoadedURLInIFrame(IFrameLoadInfoWithData),
+    
+    ScriptLoadedAboutBlankInIFrame(IFrameLoadInfo, IpcSender<LayoutControlMsg>),
     
     SetClipboardContents(String),
     

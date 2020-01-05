@@ -178,9 +178,7 @@ pub struct NewLayoutInfo {
     
     pub pipeline_port: IpcReceiver<LayoutControlMsg>,
     
-    pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
-    
-    pub content_process_shutdown_chan: IpcSender<()>,
+    pub content_process_shutdown_chan: Option<IpcSender<()>>,
     
     pub layout_threads: usize,
 }
@@ -451,6 +449,8 @@ pub struct InitialScriptState {
     
     pub constellation_chan: IpcSender<ScriptMsg>,
     
+    pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
+    
     pub scheduler_chan: IpcSender<TimerEventRequest>,
     
     pub resource_threads: ResourceThreads,
@@ -496,17 +496,11 @@ pub enum IFrameSandboxState {
 #[derive(Deserialize, Serialize)]
 pub struct IFrameLoadInfo {
     
-    pub load_data: Option<LoadData>,
-    
     pub parent_pipeline_id: PipelineId,
     
     pub frame_id: FrameId,
     
-    pub old_pipeline_id: Option<PipelineId>,
-    
     pub new_pipeline_id: PipelineId,
-    
-    pub sandbox: IFrameSandboxState,
     
     pub is_private: bool,
     
@@ -514,6 +508,19 @@ pub struct IFrameLoadInfo {
     
     
     pub replace: bool,
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub struct IFrameLoadInfoWithData {
+    
+    pub info: IFrameLoadInfo,
+    
+    pub load_data: Option<LoadData>,
+    
+    pub old_pipeline_id: Option<PipelineId>,
+    
+    pub sandbox: IFrameSandboxState,
 }
 
 
