@@ -337,10 +337,6 @@ WebRenderBridgeParent::ProcessWebRenderCommands(const gfx::IntSize &aSize,
 
         keysToDelete.push_back(key);
         dSurf->Unmap();
-        
-        if(host->GetType() == CompositableType::CONTENT_SINGLE) {
-          host->CleanupResources();
-        }
         break;
       }
       case WebRenderParentCommand::TCompositableOperation: {
