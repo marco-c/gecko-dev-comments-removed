@@ -6,9 +6,12 @@
 
 use layout::box::RenderBox;
 use layout::context::LayoutContext;
+use std::cast::transmute;
+use script::dom::node::AbstractNode;
 
 use gfx;
 use newcss;
+
 
 
 
@@ -16,9 +19,15 @@ pub trait ExtraDisplayListData {
     fn new(box: RenderBox) -> Self;
 }
 
-
-
 pub type Nothing = ();
+
+impl ExtraDisplayListData for AbstractNode<()> {
+    fn new (box: RenderBox) -> AbstractNode<()> {
+        unsafe { 
+            transmute(box.node())
+        }
+    }
+}
 
 impl ExtraDisplayListData for Nothing {
     fn new(_: RenderBox) -> Nothing {

@@ -19,7 +19,6 @@ use geom::rect::Rect;
 use gfx::display_list::DisplayList;
 use gfx::geometry::{Au, to_frac_px};
 use gfx::geometry;
-use servo_util::tree::TreeNodeRef;
 
 pub struct BlockFlowData {
     
@@ -50,7 +49,6 @@ impl BlockFlowData {
     }
 
     pub fn teardown(&mut self) {
-        self.common.teardown();
         for box in self.box.iter() {
             box.teardown();
         }
@@ -66,7 +64,7 @@ pub trait BlockLayout {
 impl BlockLayout for FlowContext {
     fn starts_root_flow(&self) -> bool {
         match *self {
-            BlockFlow(info) => info.is_root,
+            BlockFlow(ref info) => info.is_root,
             _ => false
         }
     }
@@ -89,13 +87,13 @@ impl BlockFlowData {
     /* TODO: floats */
     /* TODO: absolute contexts */
     /* TODO: inline-blocks */
-    pub fn bubble_widths_block(@mut self, ctx: &LayoutContext) {
+    pub fn bubble_widths_block(&mut self, ctx: &LayoutContext) {
         let mut min_width = Au(0);
         let mut pref_width = Au(0);
         let mut num_floats = 0;
 
         /* find max width from child block contexts */
-        for child_ctx in BlockFlow(self).children() {
+        for child_ctx in self.common.child_iter() {
             assert!(child_ctx.starts_block_flow() || child_ctx.starts_inline_flow());
 
             do child_ctx.with_mut_base |child_node| {
@@ -179,7 +177,7 @@ impl BlockFlowData {
     ///
     /// Dual boxes consume some width first, and the remainder is assigned to all child (block)
     /// contexts.
-    pub fn assign_widths_block(@mut self, ctx: &LayoutContext) { 
+    pub fn assign_widths_block(&mut self, ctx: &LayoutContext) { 
         debug!("assign_widths_block: assigning width for flow %?",  self.common.id);
         if self.is_root {
             debug!("Setting root position");
@@ -240,7 +238,7 @@ impl BlockFlowData {
         }
 
         let has_inorder_children = self.common.is_inorder || self.common.num_floats > 0;
-        for kid in BlockFlow(self).children() {
+        for kid in self.common.child_iter() {
             assert!(kid.starts_block_flow() || kid.starts_inline_flow());
 
             do kid.with_mut_base |child_node| {
@@ -255,15 +253,15 @@ impl BlockFlowData {
         }
     }
 
-    pub fn assign_height_inorder_block(@mut self, ctx: &mut LayoutContext) {
+    pub fn assign_height_inorder_block(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_height_inorder_block: assigning height for block %?", self.common.id);
         self.assign_height_block_base(ctx, true);
     }
 
-    pub fn assign_height_block(@mut self, ctx: &mut LayoutContext) {
+    pub fn assign_height_block(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_height_block: assigning height for block %?", self.common.id);
-        
-        
+        // This is the only case in which a block flow can start an inorder
+        // subtraversal.
         if self.is_root && self.common.num_floats > 0 {
             self.assign_height_inorder_block(ctx);
             return;
@@ -271,7 +269,7 @@ impl BlockFlowData {
         self.assign_height_block_base(ctx, false);
     }
 
-    fn assign_height_block_base(@mut self, ctx: &mut LayoutContext, inorder: bool) {
+    fn assign_height_block_base(&mut self, ctx: &mut LayoutContext, inorder: bool) {
         let mut cur_y = Au(0);
         let mut clearance = Au(0);
         let mut top_offset = Au(0);
@@ -296,15 +294,15 @@ impl BlockFlowData {
         }
 
         if inorder {
-            
-            
-            
-            
-            
-            
-            
+            // Floats for blocks work like this:
+            // self.floats_in -> child[0].floats_in
+            // visit child[0]
+            // child[i-1].floats_out -> child[i].floats_in
+            // visit child[i]
+            // repeat until all children are visited.
+            // last_child.floats_out -> self.floats_out (done at the end of this method)
             float_ctx = self.common.floats_in.translate(Point2D(-left_offset, -top_offset));
-            for kid in BlockFlow(self).children() {
+            for kid in self.common.child_iter() {
                 do kid.with_mut_base |child_node| {
                     child_node.floats_in = float_ctx.clone();
                 }
@@ -314,7 +312,7 @@ impl BlockFlowData {
                 }
             }
         }
-        for kid in BlockFlow(self).children() {
+        for kid in self.common.child_iter() {
             do kid.with_mut_base |child_node| {
                 child_node.position.origin.y = cur_y;
                 cur_y = cur_y + child_node.position.size.height;
@@ -337,7 +335,7 @@ impl BlockFlowData {
         let mut noncontent_height = Au(0);
         self.box.map(|&box| {
             do box.with_mut_base |base| {
-                
+                //The associated box is the border box of this flow
                 base.position.origin.y = clearance + base.model.margin.top;
 
                 noncontent_height = base.model.padding.top + base.model.padding.bottom +
@@ -348,7 +346,7 @@ impl BlockFlowData {
             }
         });
 
-        
+        //TODO(eatkinson): compute heights using the 'height' property.
         self.common.position.size.height = height + noncontent_height;
 
         if inorder {
@@ -359,7 +357,7 @@ impl BlockFlowData {
         }
     }
 
-    pub fn build_display_list_block<E:ExtraDisplayListData>(@mut self,
+    pub fn build_display_list_block<E:ExtraDisplayListData>(&mut self,
                                                             builder: &DisplayListBuilder,
                                                             dirty: &Rect<Au>, 
                                                             list: &Cell<DisplayList<E>>) 
@@ -388,8 +386,10 @@ impl BlockFlowData {
 
         let abs_rect = Rect(self.common.abs_position, self.common.position.size);
         if !abs_rect.intersects(dirty) {
-            return false;
+            return true;
         }
+
+        debug!("build_display_list_block: adding display element");
 
         
         self.box.map(|&box| {
@@ -398,16 +398,14 @@ impl BlockFlowData {
 
 
         
-
-        
-        let flow = BlockFlow(self);
-        for child in flow.children() {
+        let this_position = self.common.abs_position;
+        for child in self.common.child_iter() {
             do child.with_mut_base |base| {
-                base.abs_position = self.common.abs_position + base.position.origin;
+                base.abs_position = this_position + base.position.origin;
             }
         }
 
-        true
+        false
     }
 }
 

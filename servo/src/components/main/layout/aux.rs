@@ -4,12 +4,19 @@
 
 
 
-use layout::flow::FlowContext;
 use layout::incremental::RestyleDamage;
+use gfx::display_list::DisplayList;
+use servo_util::range::Range;
 
+use extra::arc::Arc;
 use newcss::complete::CompleteSelectResults;
 use script::dom::node::{AbstractNode, LayoutView};
 use servo_util::tree::TreeNodeRef;
+
+pub struct DisplayBoxes {
+    display_list: Option<Arc<DisplayList<AbstractNode<()>>>>,
+    range: Option<Range>,
+}
 
 
 pub struct LayoutData {
@@ -20,7 +27,8 @@ pub struct LayoutData {
     restyle_damage: Option<RestyleDamage>,
 
     
-    flow: Option<FlowContext>,
+    
+    boxes: DisplayBoxes,
 }
 
 impl LayoutData {
@@ -29,7 +37,7 @@ impl LayoutData {
         LayoutData {
             style: None,
             restyle_damage: None,
-            flow: None,
+            boxes: DisplayBoxes { display_list: None, range: None },
         }
     }
 }
@@ -65,14 +73,8 @@ impl LayoutAuxMethods for AbstractNode<LayoutView> {
     
     fn initialize_layout_data(self) -> Option<@mut LayoutData> {
         if self.has_layout_data() {
-            {
-                let layout_data = &mut self.layout_data().flow;
-                match *layout_data {
-                  Some(ref flow) => flow.teardown(),
-                  None => ()
-                }
-            }
-            self.layout_data().flow = None;
+            self.layout_data().boxes.display_list = None;
+            self.layout_data().boxes.range = None;
             None
         } else {
             let data = @mut LayoutData::new();

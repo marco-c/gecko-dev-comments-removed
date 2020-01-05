@@ -5,7 +5,7 @@
 use layout::box::{RenderBox};
 use layout::context::LayoutContext;
 use layout::display_list_builder::{DisplayListBuilder, ExtraDisplayListData};
-use layout::flow::{FloatFlow, FlowData};
+use layout::flow::{FlowData};
 use layout::model::{MaybeAuto};
 use layout::float_context::{FloatContext, PlacementInfo, FloatType};
 
@@ -15,7 +15,6 @@ use geom::rect::Rect;
 use gfx::display_list::DisplayList;
 use gfx::geometry::Au;
 use gfx::geometry;
-use servo_util::tree::TreeNodeRef;
 
 pub struct FloatFlowData {
     
@@ -54,7 +53,6 @@ impl FloatFlowData {
     }
 
     pub fn teardown(&mut self) {
-        self.common.teardown();
         for box in self.box.iter() {
             box.teardown();
         }
@@ -64,13 +62,13 @@ impl FloatFlowData {
 }
 
 impl FloatFlowData {
-    pub fn bubble_widths_float(@mut self, ctx: &LayoutContext) {
+    pub fn bubble_widths_float(&mut self, ctx: &LayoutContext) {
         let mut min_width = Au(0);
         let mut pref_width = Au(0);
         let mut num_floats = 0;
 
-        for child_ctx in FloatFlow(self).children() {
-            //assert!(child_ctx.starts_block_flow() || child_ctx.starts_inline_flow());
+        for child_ctx in self.common.child_iter() {
+            
 
             do child_ctx.with_mut_base |child_node| {
                 min_width = geometry::max(min_width, child_node.min_width);
@@ -97,24 +95,24 @@ impl FloatFlowData {
         self.common.pref_width = pref_width;
     }
 
-    pub fn assign_widths_float(@mut self) { 
+    pub fn assign_widths_float(&mut self) { 
         debug!("assign_widths_float: assigning width for flow %?",  self.common.id);
-        // position.size.width is set by parent even though we don't know
-        // position.origin yet.
+        
+        
         let mut remaining_width = self.common.position.size.width;
         self.containing_width = remaining_width;
         let mut x_offset = Au(0);
         
-        // Parent usually sets this, but floats are never inorder
+        
         self.common.is_inorder = false;
 
         for &box in self.box.iter() {
             let style = box.style();
             do box.with_model |model| {
-                // Can compute padding here since we know containing block width.
+                
                 model.compute_padding(style, remaining_width);
 
-                // Margins for floats are 0 if auto.
+                
                 let margin_top = MaybeAuto::from_margin(style.margin_top(),
                                                         remaining_width,
                                                         style.font_size()).specified_or_zero();
@@ -150,7 +148,7 @@ impl FloatFlowData {
             }
 
             do box.with_mut_base |base| {
-                //The associated box is the border box of this flow
+                
                 base.position.origin.x = base.model.margin.left;
 
                 let pb = base.model.padding.left + base.model.padding.right +
@@ -162,8 +160,8 @@ impl FloatFlowData {
         self.common.position.size.width = remaining_width;
 
         let has_inorder_children = self.common.num_floats > 0;
-        for kid in FloatFlow(self).children() {
-            //assert!(kid.starts_block_flow() || kid.starts_inline_flow());
+        for kid in self.common.child_iter() {
+            
 
             do kid.with_mut_base |child_node| {
                 child_node.position.origin.x = x_offset;
@@ -177,10 +175,10 @@ impl FloatFlowData {
         }
     }
 
-    pub fn assign_height_inorder_float(@mut self) {
+    pub fn assign_height_inorder_float(&mut self) {
         debug!("assign_height_inorder_float: assigning height for float %?", self.common.id);
-        // assign_height_float was already called by the traversal function
-        // so this is well-defined
+        
+        
 
         let mut height = Au(0);
         let mut clearance = Au(0);
@@ -216,18 +214,18 @@ impl FloatFlowData {
             f_type: self.float_type,
         };
 
-        // Place the float and return the FloatContext back to the parent flow.
-        // After, grab the position and use that to set our position.
+        
+        
         self.common.floats_out = self.common.floats_in.add_float(&info);
         self.rel_pos = self.common.floats_out.last_float_pos();
     }
 
-    pub fn assign_height_float(@mut self, ctx: &mut LayoutContext) {
+    pub fn assign_height_float(&mut self, ctx: &mut LayoutContext) {
         debug!("assign_height_float: assigning height for float %?", self.common.id);
         let has_inorder_children = self.common.num_floats > 0;
         if has_inorder_children {
             let mut float_ctx = FloatContext::new(self.floated_children);
-            for kid in FloatFlow(self).children() {
+            for kid in self.common.child_iter() {
                 do kid.with_mut_base |child_node| {
                     child_node.floats_in = float_ctx.clone();
                 }
@@ -248,7 +246,7 @@ impl FloatFlowData {
             }
         }
 
-        for kid in FloatFlow(self).children() {
+        for kid in self.common.child_iter() {
             do kid.with_mut_base |child_node| {
                 child_node.position.origin.y = cur_y;
                 cur_y = cur_y + child_node.position.size.height;
@@ -261,7 +259,7 @@ impl FloatFlowData {
         let mut noncontent_height = Au(0);
         self.box.map(|&box| {
             do box.with_mut_base |base| {
-                //The associated box is the border box of this flow
+                
                 base.position.origin.y = base.model.margin.top;
 
                 noncontent_width = base.model.padding.left + base.model.padding.right +
@@ -274,7 +272,7 @@ impl FloatFlowData {
         });
 
         
-        //TODO(eatkinson): compute heights properly using the 'height' property.
+        
         for &box in self.box.iter() {
             let height_prop = 
                 MaybeAuto::from_height(box.style().height(),
@@ -289,19 +287,19 @@ impl FloatFlowData {
         }
     }
 
-    pub fn build_display_list_float<E:ExtraDisplayListData>(@mut self,
+    pub fn build_display_list_float<E:ExtraDisplayListData>(&mut self,
                                                             builder: &DisplayListBuilder,
                                                             dirty: &Rect<Au>, 
                                                             list: &Cell<DisplayList<E>>) 
                                                             -> bool {
 
-        //TODO: implement iframe size messaging
+        
         if self.common.node.is_iframe_element() {
             error!("float iframe size messaging not implemented yet");
         }
         let abs_rect = Rect(self.common.abs_position, self.common.position.size);
         if !abs_rect.intersects(dirty) {
-            return false;
+            return true;
         }
 
 
@@ -315,14 +313,13 @@ impl FloatFlowData {
         
 
         
-        let flow = FloatFlow(self);
-        for child in flow.children() {
+        for child in self.common.child_iter() {
             do child.with_mut_base |base| {
                 base.abs_position = offset + base.position.origin;
             }
         }
 
-        true
+        false
     }
 }
 
