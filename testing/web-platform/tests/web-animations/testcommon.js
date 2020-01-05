@@ -91,11 +91,6 @@ function createPseudo(test, type) {
 }
 
 
-function pxToNum(str) {
-  return Number(String(str).match(/^(-?[\d.]+)px$/)[1]);
-}
-
-
 function cubicBezier(x1, y1, x2, y2) {
   function xForT(t) {
     var omt = 1-t;
