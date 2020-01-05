@@ -58,7 +58,7 @@ enum {
   MOZ_GTK_DRAG_RESULT_NO_TARGET
 };
 
-static PRLogModuleInfo *sDragLm = nullptr;
+static LazyLogModule sDragLm("nsDragService");
 
 
 
@@ -134,8 +134,6 @@ nsDragService::nsDragService()
     }
 
     
-    if (!sDragLm)
-        sDragLm = PR_NewLogModule("nsDragService");
     MOZ_LOG(sDragLm, LogLevel::Debug, ("nsDragService::nsDragService"));
     mCanDrop = false;
     mTargetDragDataReceived = false;
