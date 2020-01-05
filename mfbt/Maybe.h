@@ -157,13 +157,7 @@ public:
     if (&aOther != this) {
       if (aOther.mIsSome) {
         if (mIsSome) {
-          
-          
-          
-
-
-          reset();
-          emplace(*aOther);
+          ref() = aOther.ref();
         } else {
           emplace(*aOther);
         }

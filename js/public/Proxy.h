@@ -593,6 +593,15 @@ class JS_FRIEND_API(AutoEnterPolicy)
     inline void recordLeave() {}
 #endif
 
+  private:
+    
+    
+    
+    
+    
+    
+    AutoEnterPolicy(const AutoEnterPolicy&) = delete;
+    AutoEnterPolicy& operator=(const AutoEnterPolicy&) = delete;
 };
 
 #ifdef JS_DEBUG
