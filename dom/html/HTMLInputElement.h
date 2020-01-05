@@ -1049,11 +1049,7 @@ protected:
   
 
 
-  bool DoesValueAsNumberApply() const
-  {
-    
-    return DoesMinMaxApply() && mType != NS_FORM_INPUT_WEEK;
-  }
+  bool DoesValueAsNumberApply() const { return DoesMinMaxApply(); }
 
   
 
@@ -1234,6 +1230,12 @@ protected:
   
 
 
+
+  double DaysSinceEpochFromWeek(uint32_t aYear, uint32_t aWeek) const;
+
+  
+
+
   uint32_t NumberOfDaysInMonth(uint32_t aMonth, uint32_t aYear) const;
 
   
@@ -1245,7 +1247,9 @@ protected:
   
 
 
-  uint32_t DayOfWeek(uint32_t aYear, uint32_t aMonth, uint32_t aDay) const;
+
+  uint32_t DayOfWeek(uint32_t aYear, uint32_t aMonth, uint32_t aDay,
+                     bool isoWeek) const;
 
   
 
@@ -1491,11 +1495,20 @@ protected:
   static const Decimal kStepAny;
 
   
-  static const double kMaximumYear;
-  
   static const double kMinimumYear;
   
+  static const double kMaximumYear;
+  
+  static const double kMaximumWeekInMaximumYear;
+  
+  static const double kMaximumDayInMaximumYear;
+  
+  static const double kMaximumMonthInMaximumYear;
+  
   static const double kMaximumWeekInYear;
+  
+  static const double kMsPerDay;
+
 
   
 

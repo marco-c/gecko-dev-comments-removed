@@ -149,6 +149,22 @@ MonthFromTime(double time);
 JS_PUBLIC_API(double)
 DayFromTime(double time);
 
+
+
+
+
+
+
+JS_PUBLIC_API(double)
+DayFromYear(double year);
+
+
+
+
+
+JS_PUBLIC_API(double)
+DayWithinYear(double time, double year);
+
 } 
 
 #endif 
