@@ -2711,6 +2711,13 @@ RuntimeService::ClampedHardwareConcurrency() const
 {
   
   
+  
+  if (MOZ_UNLIKELY(nsContentUtils::ShouldResistFingerprinting())) {
+    return 2;
+  }
+
+  
+  
   static Atomic<uint32_t> clampedHardwareConcurrency;
 
   
