@@ -107,7 +107,7 @@ impl HTMLScriptElement {
 
 
 /// Supported script types as defined by
-/// <https://whatwg.org/html/#support-the-scripting-language>.
+/// <https://html.spec.whatwg.org/multipage/#support-the-scripting-language>.
 static SCRIPT_JS_MIMES: StaticStringVec = &[
     "application/ecmascript",
     "application/javascript",
@@ -569,7 +569,7 @@ impl VirtualMethods for HTMLScriptElement {
             s.cloning_steps(copy, maybe_doc, clone_children);
         }
 
-        // https://whatwg.org/html/#already-started
+        // https://html.spec.whatwg.org/multipage/#already-started
         if self.already_started.get() {
             let copy_elem = HTMLScriptElementCast::to_ref(copy).unwrap();
             copy_elem.mark_already_started();
