@@ -276,7 +276,10 @@ this.IsolationTestTools = {
 
 
 
-  runTests(aURL, aGetResultFuncs, aCompareResultFunc, aBeforeFunc) {
+
+
+  runTests(aURL, aGetResultFuncs, aCompareResultFunc, aBeforeFunc,
+           aGetResultImmediately) {
     let pageURL;
     let firstFrameSetting;
     let secondFrameSetting;
@@ -317,14 +320,21 @@ this.IsolationTestTools = {
                                                         pageURL,
                                                         tabSettings[tabSettingA],
                                                         firstFrameSetting);
+        let resultsA = [];
+        if (aGetResultImmediately) {
+          for (let getResultFunc of aGetResultFuncs) {
+            resultsA.push(yield getResultFunc(tabInfoA.browser));
+          }
+        }
         let tabInfoB = yield IsolationTestTools._addTab(aMode,
                                                         pageURL,
                                                         tabSettings[tabSettingB],
                                                         secondFrameSetting);
-
+        let i = 0;
         for (let getResultFunc of aGetResultFuncs) {
           
-          let resultA = yield getResultFunc(tabInfoA.browser);
+          let resultA = aGetResultImmediately ? resultsA[i++] :
+                        yield getResultFunc(tabInfoA.browser);
           let resultB = yield getResultFunc(tabInfoB.browser);
 
           
