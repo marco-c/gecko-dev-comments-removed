@@ -6,7 +6,7 @@ const PATH = "/browser/browser/components/sessionstore/test/";
 
 
 add_task(function* test_setup() {
-  requestLongerTimeout(2);
+  requestLongerTimeout(3);
   Services.cookies.removeAll();
 });
 
@@ -82,6 +82,104 @@ add_task(function* test_run() {
 
 
 
+add_task(function* test_run_privacy_level() {
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("browser.sessionstore.privacy_level");
+  });
+
+  
+  yield testCookieCollection({
+    host: "http://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
+    noCookieURIs: ["about:robots"]
+  });
+
+  
+  yield testCookieCollection({
+    host: "https://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
+    noCookieURIs: ["about:robots"]
+  });
+
+  
+  yield testCookieCollection({
+    isSecure: true,
+    host: "https://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
+    noCookieURIs: ["about:robots"]
+  });
+
+  
+  Services.prefs.setIntPref("browser.sessionstore.privacy_level", 1);
+
+  
+  yield testCookieCollection({
+    host: "http://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
+    noCookieURIs: ["about:robots"]
+  });
+
+  
+  
+  yield testCookieCollection({
+    host: "https://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    cookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH],
+    noCookieURIs: ["about:robots"]
+  });
+
+  
+  yield testCookieCollection({
+    isSecure: true,
+    host: "https://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    noCookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH]
+  });
+
+  
+  Services.prefs.setIntPref("browser.sessionstore.privacy_level", 2);
+
+  
+  yield testCookieCollection({
+    host: "http://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    noCookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH]
+  });
+
+  
+  yield testCookieCollection({
+    host: "https://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    noCookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH]
+  });
+
+  
+  yield testCookieCollection({
+    isSecure: true,
+    host: "https://example.com",
+    domain: ".example.com",
+    cookieHost: ".example.com",
+    noCookieURIs: ["https://example.com/" + PATH, "http://example.com/" + PATH]
+  });
+
+  Services.prefs.clearUserPref("browser.sessionstore.privacy_level");
+});
+
+
+
+
 
 
 var testCookieCollection = async function(params) {
@@ -94,6 +192,10 @@ var testCookieCollection = async function(params) {
 
   if (params.domain) {
     urlParams.append("domain", params.domain);
+  }
+
+  if (params.isSecure) {
+    urlParams.append("secure", "1");
   }
 
   

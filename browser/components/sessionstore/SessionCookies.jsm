@@ -28,8 +28,8 @@ this.SessionCookies = Object.freeze({
     SessionCookiesInternal.update(windows);
   },
 
-  getHostsForWindow(window, checkPrivacy = false) {
-    return SessionCookiesInternal.getHostsForWindow(window, checkPrivacy);
+  getHostsForWindow(window) {
+    return SessionCookiesInternal.getHostsForWindow(window);
   },
 
   restore(cookies) {
@@ -58,16 +58,20 @@ var SessionCookiesInternal = {
   update(windows) {
     this._ensureInitialized();
 
+    
+    let storeAnyCookies = PrivacyLevel.canSave(false);
+    let storeSecureCookies = PrivacyLevel.canSave(true);
+
     for (let window of windows) {
       let cookies = [];
 
-      
-      for (let host of this.getHostsForWindow(window, true)) {
-        for (let cookie of CookieStore.getCookiesForHost(host)) {
-          
-          
-          if (PrivacyLevel.canSave(cookie.secure)) {
-            cookies.push(cookie);
+      if (storeAnyCookies) {
+        
+        for (let host of this.getHostsForWindow(window)) {
+          for (let cookie of CookieStore.getCookiesForHost(host)) {
+            if (!cookie.secure || storeSecureCookies) {
+              cookies.push(cookie);
+            }
           }
         }
       }
@@ -89,14 +93,12 @@ var SessionCookiesInternal = {
 
 
 
-
-
-  getHostsForWindow(window, checkPrivacy = false) {
+  getHostsForWindow(window) {
     let hosts = new Set();
 
     for (let tab of window.tabs) {
       for (let entry of tab.entries) {
-        this._extractHostsFromEntry(entry, hosts, checkPrivacy);
+        this._extractHostsFromEntry(entry, hosts);
       }
     }
 
@@ -172,25 +174,18 @@ var SessionCookiesInternal = {
 
 
 
-
-
-  _extractHostsFromEntry(entry, hosts, checkPrivacy) {
+  _extractHostsFromEntry(entry, hosts) {
     try {
       
       let {host, scheme} = Utils.makeURI(entry.url);
-
-      if (scheme == "file") {
+      if (/^(file|https?)$/.test(scheme)) {
         hosts.add(host);
-      } else if (/https?/.test(scheme)) {
-        if (!checkPrivacy || PrivacyLevel.canSave(scheme == "https")) {
-          hosts.add(host);
-        }
       }
     } catch (ex) { }
 
     if (entry.children) {
       for (let child of entry.children) {
-        this._extractHostsFromEntry(child, hosts, checkPrivacy);
+        this._extractHostsFromEntry(child, hosts);
       }
     }
   },
