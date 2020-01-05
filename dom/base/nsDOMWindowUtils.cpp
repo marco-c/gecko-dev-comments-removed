@@ -18,7 +18,6 @@
 #include "nsFocusManager.h"
 #include "nsFrameManager.h"
 #include "nsRefreshDriver.h"
-#include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/BlobBinding.h"
 #include "mozilla/dom/Touch.h"
 #include "mozilla/PendingAnimationTracker.h"
@@ -112,8 +111,6 @@
 #include "mozilla/dom/Promise.h"
 #include "mozilla/StyleSheetInlines.h"
 #include "mozilla/gfx/GPUProcessManager.h"
-#include "mozilla/dom/TimeoutManager.h"
-#include "mozilla/PreloadedStyleSheet.h"
 
 #ifdef XP_WIN
 #undef GetClassName
@@ -330,7 +327,7 @@ NS_IMETHODIMP
 nsDOMWindowUtils::UpdateLayerTree()
 {
   if (nsIPresShell* presShell = GetPresShell()) {
-    presShell->FlushPendingNotifications(FlushType::Display);
+    presShell->FlushPendingNotifications(Flush_Display);
     RefPtr<nsViewManager> vm = presShell->GetViewManager();
     nsView* view = vm->GetRootView();
     if (view) {
@@ -643,16 +640,12 @@ nsDOMWindowUtils::SendMouseEvent(const nsAString& aType,
                                  bool aIsDOMEventSynthesized,
                                  bool aIsWidgetEventSynthesized,
                                  int32_t aButtons,
-                                 uint32_t aIdentifier,
                                  uint8_t aOptionalArgCount,
                                  bool *aPreventDefault)
 {
   return SendMouseEventCommon(aType, aX, aY, aButton, aClickCount, aModifiers,
                               aIgnoreRootScrollFrame, aPressure,
-                              aInputSourceArg,
-                              aOptionalArgCount >= 7 ?
-                                aIdentifier : DEFAULT_MOUSE_POINTER_ID,
-                              false, aPreventDefault,
+                              aInputSourceArg, false, aPreventDefault,
                               aOptionalArgCount >= 4 ?
                                 aIsDOMEventSynthesized : true,
                               aOptionalArgCount >= 5 ?
@@ -674,7 +667,6 @@ nsDOMWindowUtils::SendMouseEventToWindow(const nsAString& aType,
                                          bool aIsDOMEventSynthesized,
                                          bool aIsWidgetEventSynthesized,
                                          int32_t aButtons,
-                                         uint32_t aIdentifier,
                                          uint8_t aOptionalArgCount)
 {
   PROFILER_LABEL("nsDOMWindowUtils", "SendMouseEventToWindow",
@@ -682,10 +674,7 @@ nsDOMWindowUtils::SendMouseEventToWindow(const nsAString& aType,
 
   return SendMouseEventCommon(aType, aX, aY, aButton, aClickCount, aModifiers,
                               aIgnoreRootScrollFrame, aPressure,
-                              aInputSourceArg,
-                              aOptionalArgCount >= 7 ?
-                                aIdentifier : DEFAULT_MOUSE_POINTER_ID,
-                              true, nullptr,
+                              aInputSourceArg, true, nullptr,
                               aOptionalArgCount >= 4 ?
                                 aIsDOMEventSynthesized : true,
                               aOptionalArgCount >= 5 ?
@@ -704,7 +693,6 @@ nsDOMWindowUtils::SendMouseEventCommon(const nsAString& aType,
                                        bool aIgnoreRootScrollFrame,
                                        float aPressure,
                                        unsigned short aInputSourceArg,
-                                       uint32_t aPointerId,
                                        bool aToWindow,
                                        bool *aPreventDefault,
                                        bool aIsDOMEventSynthesized,
@@ -714,8 +702,8 @@ nsDOMWindowUtils::SendMouseEventCommon(const nsAString& aType,
   nsCOMPtr<nsIPresShell> presShell = GetPresShell();
   return nsContentUtils::SendMouseEvent(presShell, aType, aX, aY, aButton,
       aButtons, aClickCount, aModifiers, aIgnoreRootScrollFrame, aPressure,
-      aInputSourceArg, aPointerId, aToWindow, aPreventDefault,
-      aIsDOMEventSynthesized, aIsWidgetEventSynthesized);
+      aInputSourceArg, aToWindow, aPreventDefault, aIsDOMEventSynthesized,
+      aIsWidgetEventSynthesized);
 }
 
 NS_IMETHODIMP
@@ -1675,7 +1663,7 @@ getScrollXYAppUnits(const nsWeakPtr& aWindow, bool aFlushLayout, nsPoint& aScrol
   NS_ENSURE_STATE(doc);
 
   if (aFlushLayout) {
-    doc->FlushPendingNotifications(FlushType::Layout);
+    doc->FlushPendingNotifications(Flush_Layout);
   }
 
   nsIPresShell *presShell = doc->GetShell();
@@ -1723,7 +1711,7 @@ nsDOMWindowUtils::GetScrollbarSize(bool aFlushLayout, int32_t* aWidth,
   NS_ENSURE_STATE(doc);
 
   if (aFlushLayout) {
-    doc->FlushPendingNotifications(FlushType::Layout);
+    doc->FlushPendingNotifications(Flush_Layout);
   }
 
   nsIPresShell* presShell = doc->GetShell();
@@ -1859,8 +1847,7 @@ nsDOMWindowUtils::GetScreenPixelsPerCSSPixel(float* aScreenPixels)
 {
   nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryReferent(mWindow);
   NS_ENSURE_TRUE(window, NS_ERROR_FAILURE);
-  *aScreenPixels = window->GetDevicePixelRatio(CallerType::System);
-  return NS_OK;
+  return window->GetDevicePixelRatio(aScreenPixels);
 }
 
 NS_IMETHODIMP
@@ -1899,7 +1886,7 @@ nsDOMWindowUtils::DispatchDOMEventViaPresShell(nsIDOMNode* aTarget,
   RefPtr<nsIPresShell> targetShell = targetDoc->GetShell();
   NS_ENSURE_STATE(targetShell);
 
-  targetDoc->FlushPendingNotifications(FlushType::Layout);
+  targetDoc->FlushPendingNotifications(Flush_Layout);
 
   nsEventStatus status = nsEventStatus_eIgnore;
   targetShell->HandleEventWithTarget(internalEvent, nullptr, content, &status);
@@ -2330,7 +2317,7 @@ nsDOMWindowUtils::GetLayerManagerRemote(bool* retval)
   if (!mgr)
     return NS_ERROR_FAILURE;
 
-  *retval = !!mgr->AsShadowForwarder();
+  *retval = !!mgr->AsKnowsCompositor();
   return NS_OK;
 }
 
@@ -2348,7 +2335,7 @@ nsDOMWindowUtils::GetSupportsHardwareH264Decoding(JS::MutableHandle<JS::Value> a
   LayerManager *mgr = widget->GetLayerManager();
   NS_ENSURE_STATE(mgr);
   RefPtr<Promise> promise =
-    MP4Decoder::IsVideoAccelerated(mgr->AsShadowForwarder(), parentObject);
+    MP4Decoder::IsVideoAccelerated(mgr->AsKnowsCompositor(), parentObject);
   NS_ENSURE_STATE(promise);
   aPromise.setObject(*promise->PromiseObj());
 #else
@@ -3451,7 +3438,7 @@ nsDOMWindowUtils::LoadSheetUsingURIString(const nsACString& aSheetURI, uint32_t 
 }
 
 NS_IMETHODIMP
-nsDOMWindowUtils::AddSheet(nsIPreloadedStyleSheet* aSheet, uint32_t aSheetType)
+nsDOMWindowUtils::AddSheet(nsIDOMStyleSheet *aSheet, uint32_t aSheetType)
 {
   NS_ENSURE_ARG_POINTER(aSheet);
   NS_ENSURE_ARG(aSheetType == AGENT_SHEET ||
@@ -3461,17 +3448,12 @@ nsDOMWindowUtils::AddSheet(nsIPreloadedStyleSheet* aSheet, uint32_t aSheetType)
   nsCOMPtr<nsIDocument> doc = GetDocument();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
-  StyleSheet* sheet = nullptr;
-  auto preloadedSheet = static_cast<PreloadedStyleSheet*>(aSheet);
-  nsresult rv = preloadedSheet->GetSheet(doc->GetStyleBackendType(), &sheet);
-  NS_ENSURE_SUCCESS(rv, rv);
+  nsIDocument::additionalSheetType type = convertSheetType(aSheetType);
+  RefPtr<CSSStyleSheet> sheet = do_QueryObject(aSheet);
   NS_ENSURE_TRUE(sheet, NS_ERROR_FAILURE);
-
-  if (sheet->GetAssociatedDocument()) {
+  if (sheet->GetOwningDocument()) {
     return NS_ERROR_INVALID_ARG;
   }
-
-  nsIDocument::additionalSheetType type = convertSheetType(aSheetType);
   return doc->AddAdditionalStyleSheet(type, sheet);
 }
 
@@ -4026,10 +4008,7 @@ nsDOMWindowUtils::ForceUseCounterFlush(nsIDOMNode *aNode)
     mozilla::css::ImageLoader* loader = doc->StyleImageLoader();
     loader->FlushUseCounters();
 
-    
-    const auto reportKind
-      = nsDocument::UseCounterReportKind::eIncludeExternalResources;
-    static_cast<nsDocument*>(doc.get())->ReportUseCounters(reportKind);
+    static_cast<nsDocument*>(doc.get())->ReportUseCounters();
     return NS_OK;
   }
 
@@ -4110,21 +4089,6 @@ nsDOMWindowUtils::GetGpuProcessPid(int32_t* aPid)
     *aPid = -1;
   }
 
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-nsDOMWindowUtils::IsTimeoutTracking(uint32_t aTimeoutId, bool* aResult)
-{
-  NS_ENSURE_ARG_POINTER(aResult);
-  *aResult = false;
-
-  nsCOMPtr<nsPIDOMWindowOuter> window = do_QueryReferent(mWindow);
-  NS_ENSURE_STATE(window);
-  nsCOMPtr<nsPIDOMWindowInner> innerWindow = window->GetCurrentInnerWindow();
-  NS_ENSURE_STATE(innerWindow);
-
-  *aResult = innerWindow->TimeoutManager().IsTimeoutTracking(aTimeoutId);
   return NS_OK;
 }
 
