@@ -5,142 +5,68 @@
 
 
 use construct::FlowConstructor;
-use context::LayoutContext;
+use context::{LayoutContext, SharedLayoutContext};
 use flow::{PostorderFlowTraversal, PreorderFlowTraversal};
 use flow::{self, Flow};
 use gfx::display_list::OpaqueNode;
 use incremental::{BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT, RestyleDamage};
 use script::layout_interface::ReflowGoal;
-use selectors::bloom::BloomFilter;
-use std::cell::RefCell;
 use std::mem;
 use style::context::StyleContext;
-use style::dom::{TRestyleDamage, UnsafeNode};
-use style::matching::{ApplicableDeclarations, ElementMatchMethods, MatchMethods, StyleSharingResult};
+use style::matching::MatchMethods;
+use style::traversal::{DomTraversalContext, STYLE_BLOOM};
+use style::traversal::{put_task_local_bloom_filter, recalc_style_at};
 use util::opts;
 use util::tid::tid;
 use wrapper::{LayoutNode, ThreadSafeLayoutNode};
 
+pub struct RecalcStyleAndConstructFlows<'lc> {
+    context: LayoutContext<'lc>,
+    root: OpaqueNode,
+}
 
-
-type Generation = u32;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-thread_local!(
-    static STYLE_BLOOM: RefCell<Option<(Box<BloomFilter>, UnsafeNode, Generation)>> = RefCell::new(None));
-
-
-
-
-
-fn take_task_local_bloom_filter<'ln, N>(parent_node: Option<N>,
-                                        root: OpaqueNode,
-                                        layout_context: &LayoutContext)
-                                        -> Box<BloomFilter>
-                                        where N: LayoutNode<'ln> {
-    STYLE_BLOOM.with(|style_bloom| {
-        match (parent_node, style_bloom.borrow_mut().take()) {
-            
-            (None,     _  ) => {
-                debug!("[{}] No parent, but new bloom filter!", tid());
-                box BloomFilter::new()
-            }
-            
-            (Some(parent), None) => {
-                let mut bloom_filter = box BloomFilter::new();
-                insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, root);
-                bloom_filter
-            }
-            
-            (Some(parent), Some((mut bloom_filter, old_node, old_generation))) => {
-                if old_node == parent.to_unsafe() &&
-                    old_generation == layout_context.shared_context().generation {
-                    
-                    debug!("[{}] Parent matches (={}). Reusing bloom filter.", tid(), old_node.0);
-                } else {
-                    
-                    
-                    bloom_filter.clear();
-                    insert_ancestors_into_bloom_filter(&mut bloom_filter, parent, root);
-                }
-                bloom_filter
-            },
+impl<'lc, 'ln, N: LayoutNode<'ln>> DomTraversalContext<'ln, N> for RecalcStyleAndConstructFlows<'lc> {
+    type SharedContext = SharedLayoutContext;
+    #[allow(unsafe_code)]
+    fn new<'a>(shared: &'a Self::SharedContext, root: OpaqueNode) -> Self {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        let shared_lc: &'lc SharedLayoutContext = unsafe { mem::transmute(shared) };
+        RecalcStyleAndConstructFlows {
+            context: LayoutContext::new(shared_lc),
+            root: root,
         }
-    })
-}
-
-fn put_task_local_bloom_filter(bf: Box<BloomFilter>,
-                               unsafe_node: &UnsafeNode,
-                               layout_context: &LayoutContext) {
-    STYLE_BLOOM.with(move |style_bloom| {
-        assert!(style_bloom.borrow().is_none(),
-                "Putting into a never-taken task-local bloom filter");
-        *style_bloom.borrow_mut() = Some((bf, *unsafe_node, layout_context.shared_context().generation));
-    })
-}
-
-
-fn insert_ancestors_into_bloom_filter<'ln, N>(bf: &mut Box<BloomFilter>,
-                                              mut n: N,
-                                              root: OpaqueNode)
-                                              where N: LayoutNode<'ln> {
-    debug!("[{}] Inserting ancestors.", tid());
-    let mut ancestors = 0;
-    loop {
-        ancestors += 1;
-
-        n.insert_into_bloom_filter(&mut **bf);
-        n = match n.layout_parent_node(root) {
-            None => break,
-            Some(p) => p,
-        };
     }
-    debug!("[{}] Inserted {} ancestors.", tid(), ancestors);
-}
 
-#[derive(Copy, Clone)]
-pub struct DomTraversalContext<'a> {
-    pub layout_context: &'a LayoutContext<'a>,
-    pub root: OpaqueNode,
-}
-
-pub trait DomTraversal<'ln, N: LayoutNode<'ln>>  {
-    fn process_preorder<'a>(context: &'a DomTraversalContext<'a>, node: N);
-    fn process_postorder<'a>(context: &'a DomTraversalContext<'a>, node: N);
-}
-
-
-
-#[allow(dead_code)]
-pub struct RecalcStyleOnly;
-impl<'ln, N: LayoutNode<'ln>> DomTraversal<'ln, N> for RecalcStyleOnly {
-    fn process_preorder<'a>(context: &'a DomTraversalContext<'a>, node: N) { recalc_style_at(context, node); }
-    fn process_postorder<'a>(_: &'a DomTraversalContext<'a>, _: N) {}
-}
-
-pub struct RecalcStyleAndConstructFlows;
-impl<'ln, N: LayoutNode<'ln>> DomTraversal<'ln, N> for RecalcStyleAndConstructFlows {
-    fn process_preorder<'a>(context: &'a DomTraversalContext<'a>, node: N) { recalc_style_at(context, node); }
-    fn process_postorder<'a>(context: &'a DomTraversalContext<'a>, node: N) { construct_flows_at(context, node); }
+    fn process_preorder(&self, node: N) { recalc_style_at(&self.context, self.root, node); }
+    fn process_postorder(&self, node: N) { construct_flows_at(&self.context, self.root, node); }
 }
 
 
@@ -150,106 +76,9 @@ pub trait PostorderNodeMutTraversal<'ln, ConcreteThreadSafeLayoutNode: ThreadSaf
 }
 
 
-
 #[inline]
 #[allow(unsafe_code)]
-fn recalc_style_at<'a, 'ln, N: LayoutNode<'ln>> (context: &'a DomTraversalContext<'a>, node: N) {
-    
-    
-    
-    
-    node.initialize_data();
-
-    
-    let parent_opt = node.layout_parent_node(context.root);
-
-    
-    let mut bf = take_task_local_bloom_filter(parent_opt, context.root, context.layout_context);
-
-    let nonincremental_layout = opts::get().nonincremental_layout;
-    if nonincremental_layout || node.is_dirty() {
-        
-        
-        if node.has_changed() {
-            let node = node.to_threadsafe();
-            node.unstyle();
-        }
-
-        
-        let style_sharing_candidate_cache =
-            &mut context.layout_context.style_sharing_candidate_cache();
-
-        let sharing_result = match node.as_element() {
-            Some(element) => {
-                unsafe {
-                    element.share_style_if_possible(style_sharing_candidate_cache,
-                                                    parent_opt.clone())
-                }
-            },
-            None => StyleSharingResult::CannotShare,
-        };
-
-        
-        match sharing_result {
-            StyleSharingResult::CannotShare => {
-                let mut applicable_declarations = ApplicableDeclarations::new();
-
-                let shareable_element = match node.as_element() {
-                    Some(element) => {
-                        
-                        let stylist = unsafe { &*context.layout_context.shared_context().stylist.0 };
-                        if element.match_element(stylist,
-                                                 Some(&*bf),
-                                                 &mut applicable_declarations) {
-                            Some(element)
-                        } else {
-                            None
-                        }
-                    },
-                    None => {
-                        if node.has_changed() {
-                            node.set_restyle_damage(N::ConcreteRestyleDamage::rebuild_and_reflow())
-                        }
-                        None
-                    },
-                };
-
-                
-                unsafe {
-                    node.cascade_node(&context.layout_context.shared.style_context,
-                                      parent_opt,
-                                      &applicable_declarations,
-                                      &mut context.layout_context.applicable_declarations_cache(),
-                                      &context.layout_context.shared_context().new_animations_sender);
-                }
-
-                
-                if let Some(element) = shareable_element {
-                    style_sharing_candidate_cache.insert_if_possible(&element);
-                }
-            }
-            StyleSharingResult::StyleWasShared(index, damage) => {
-                style_sharing_candidate_cache.touch(index);
-                node.set_restyle_damage(damage);
-            }
-        }
-    }
-
-    let unsafe_layout_node = node.to_unsafe();
-
-    
-    
-    debug!("[{}] + {:X}", tid(), unsafe_layout_node.0);
-    node.insert_into_bloom_filter(&mut *bf);
-
-    
-    put_task_local_bloom_filter(bf, &unsafe_layout_node, context.layout_context);
-}
-
-
-#[inline]
-#[allow(unsafe_code)]
-fn construct_flows_at<'a, 'ln, N: LayoutNode<'ln>>(context: &'a DomTraversalContext<'a>, node: N) {
+fn construct_flows_at<'a, 'ln, N: LayoutNode<'ln>>(context: &'a LayoutContext<'a>, root: OpaqueNode, node: N) {
     
     {
         let tnode = node.to_threadsafe();
@@ -257,7 +86,7 @@ fn construct_flows_at<'a, 'ln, N: LayoutNode<'ln>>(context: &'a DomTraversalCont
         
         let nonincremental_layout = opts::get().nonincremental_layout;
         if nonincremental_layout || node.has_dirty_descendants() {
-            let mut flow_constructor = FlowConstructor::new(context.layout_context);
+            let mut flow_constructor = FlowConstructor::new(context);
             if nonincremental_layout || !flow_constructor.repair_if_possible(&tnode) {
                 flow_constructor.process(&tnode);
                 debug!("Constructed flow for {:x}: {:x}",
@@ -286,9 +115,9 @@ fn construct_flows_at<'a, 'ln, N: LayoutNode<'ln>>(context: &'a DomTraversalCont
         });
 
     assert_eq!(old_node, unsafe_layout_node);
-    assert_eq!(old_generation, context.layout_context.shared_context().generation);
+    assert_eq!(old_generation, context.shared_context().generation);
 
-    match node.layout_parent_node(context.root) {
+    match node.layout_parent_node(root) {
         None => {
             debug!("[{}] - {:X}, and deleting BF.", tid(), unsafe_layout_node.0);
             
@@ -297,7 +126,7 @@ fn construct_flows_at<'a, 'ln, N: LayoutNode<'ln>>(context: &'a DomTraversalCont
             
             node.remove_from_bloom_filter(&mut *bf);
             let unsafe_parent = parent.to_unsafe();
-            put_task_local_bloom_filter(bf, &unsafe_parent, context.layout_context);
+            put_task_local_bloom_filter(bf, &unsafe_parent, &context.shared_context());
         },
     };
 }

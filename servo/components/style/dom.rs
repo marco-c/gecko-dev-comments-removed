@@ -156,6 +156,14 @@ pub trait TNode<'ln> : Sized + Copy + Clone {
     fn prev_sibling(&self) -> Option<Self>;
 
     fn next_sibling(&self) -> Option<Self>;
+
+
+    
+    
+    fn style(&self) -> Ref<Arc<ComputedValues>>;
+
+    
+    fn unstyle(self);
 }
 
 pub trait TDocument<'ld> : Sized + Copy + Clone {
