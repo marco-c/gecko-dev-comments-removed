@@ -11,12 +11,24 @@
 #include <errno.h>
 #include <sys/socket.h>
 #include <sys/types.h>
+#include <time.h> 
 
 #include "mozilla/Assertions.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/StaticMutex.h"
 #include "mozilla/PodOperations.h"
 #include "nsThreadUtils.h"
+#include "mozilla/Telemetry.h"
+#include "sandbox/linux/system_headers/linux_syscalls.h"
+
+
+#if defined(__i386__)
+#define SANDBOX_ARCH_NAME "x86"
+#elif defined(__x86_64__)
+#define SANDBOX_ARCH_NAME "amd64"
+#else
+#error "unrecognized architecture"
+#endif
 
 namespace mozilla {
 
@@ -103,10 +115,116 @@ SandboxReporter::GetClientFileDescriptorMapping(int* aSrcFd, int* aDstFd) const
   *aDstFd = kSandboxReporterFileDesc;
 }
 
+
+
+static void
+SubmitToTelemetry(const SandboxReport& aReport)
+{
+  nsAutoCString key;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  switch (aReport.mProcType) {
+  case SandboxReport::ProcType::CONTENT:
+    key.AppendLiteral("content");
+    break;
+  case SandboxReport::ProcType::MEDIA_PLUGIN:
+    key.AppendLiteral("gmp");
+    break;
+  default:
+    MOZ_ASSERT(false);
+  }
+  key.Append(':');
+
+  switch(aReport.mSyscall) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    
+    
+#define ARG_DECIMAL(name, idx)           \
+    case __NR_##name:                    \
+      key.AppendLiteral(#name ":");      \
+      key.AppendInt(aReport.mArgs[idx]); \
+      break
+
+    
+#define ARG_HEX(name, idx)                    \
+    case __NR_##name:                         \
+      key.AppendLiteral(#name ":0x");         \
+      key.AppendInt(aReport.mArgs[idx], 16);  \
+      break
+
+    
+    
+    
+#define ARG_CLOCKID(name, idx)                              \
+    case __NR_##name:                                       \
+      key.AppendLiteral(#name ":");                         \
+      if (static_cast<clockid_t>(aReport.mArgs[idx]) < 0) { \
+        key.AppendLiteral("dynamic");                       \
+      } else {                                              \
+        key.AppendInt(aReport.mArgs[idx]);                  \
+      }                                                     \
+      break
+
+    
+
+    ARG_HEX(clone, 0); 
+    ARG_DECIMAL(prctl, 0); 
+    ARG_DECIMAL(madvise, 2); 
+    ARG_CLOCKID(clock_gettime, 0); 
+
+#ifdef __NR_socketcall
+    ARG_DECIMAL(socketcall, 0); 
+#endif
+#ifdef __NR_ipc
+    ARG_DECIMAL(ipc, 0); 
+#endif
+
+#undef ARG_DECIMAL
+#undef ARG_HEX
+#undef ARG_CLOCKID
+
+  default:
+    
+    key.Append(SANDBOX_ARCH_NAME "/");
+    key.AppendInt(aReport.mSyscall);
+  }
+
+  Telemetry::Accumulate(Telemetry::SANDBOX_REJECTED_SYSCALLS, key);
+}
+
 void
 SandboxReporter::AddOne(const SandboxReport& aReport)
 {
-  
+  SubmitToTelemetry(aReport);
+
   MutexAutoLock lock(mMutex);
   mBuffer[mCount % kSandboxReporterBufferSize] = aReport;
   ++mCount;
