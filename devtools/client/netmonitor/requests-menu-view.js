@@ -4,6 +4,8 @@
 
 
 
+
+
 "use strict";
 
 const { Task } = require("devtools/shared/task");
@@ -18,7 +20,6 @@ const { Provider } = require("devtools/client/shared/vendor/react-redux");
 const RequestList = createFactory(require("./components/request-list"));
 const RequestListContextMenu = require("./request-list-context-menu");
 const Actions = require("./actions/index");
-const { Prefs } = require("./prefs");
 
 const {
   formDataURI,
