@@ -22,6 +22,19 @@ var {CustomizableUI} = Cu.import("resource:///modules/CustomizableUI.jsm");
 
 
 
+if (gTestPath.includes("test-oop-extensions")) {
+  add_task(() => {
+    return SpecialPowers.pushPrefEnv({set: [
+      ["dom.ipc.processCount", 1],
+      ["extensions.webextensions.remote", true],
+    ]});
+  });
+}
+
+
+
+
+
 function forceGC() {
   if (AppConstants.DEBUG) {
     Cu.forceGC();
@@ -132,7 +145,7 @@ function getPanelForNode(node) {
 
 var awaitBrowserLoaded = browser => ContentTask.spawn(browser, null, () => {
   if (content.document.readyState !== "complete") {
-    return ContentTaskUtils.waitForEvent(content, "load").then(() => {});
+    return ContentTaskUtils.waitForEvent(this, "load", true).then(() => {});
   }
 });
 
@@ -144,7 +157,7 @@ var awaitExtensionPanel = Task.async(function* (extension, win = window, awaitLo
   yield Promise.all([
     promisePopupShown(getPanelForNode(browser)),
 
-    awaitLoad && awaitBrowserLoaded(browser),
+    awaitLoad && awaitBrowserLoaded(browser, awaitLoad),
   ]);
 
   return browser;
