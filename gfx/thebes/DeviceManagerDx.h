@@ -103,11 +103,11 @@ public:
   void ForceDeviceReset(ForcedDeviceResetReason aReason);
   void NotifyD3D9DeviceReset();
 
+private:
   
   
   static void PreloadAttachmentsOnCompositorThread();
 
-private:
   IDXGIAdapter1 *GetDXGIAdapter();
 
   void DisableD3D11AfterCrash();
