@@ -2644,11 +2644,10 @@ GetScrollbarMetrics(GtkOrientation aOrientation)
     
     if (hasButtons) {
         metrics->size.button = GetMinMarginBox(MOZ_GTK_SCROLLBAR_BUTTON);
+        
+        
+        
         if (aOrientation == GTK_ORIENTATION_HORIZONTAL) {
-            metrics->size.button.Rotate();
-            
-            
-            
             gint extra = metrics->size.button.height - trackSizeForThumb.height;
             if (extra > 0) {
                 
