@@ -2443,8 +2443,7 @@ xpc_DumpJSStack(bool showArgs, bool showLocals, bool showThisProps);
 
 
 
-
-extern char*
+extern JS::UniqueChars
 xpc_PrintJSStack(JSContext* cx, bool showArgs, bool showLocals,
                  bool showThisProps);
 
