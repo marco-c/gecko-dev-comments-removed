@@ -179,6 +179,12 @@ public:
   
 
 
+  static bool
+  IsMaskResourceReady(nsIFrame* aFrame);
+
+  
+
+
   static DrawResult
   PaintFilter(const PaintFramesParams& aParams);
 
