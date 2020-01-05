@@ -9,7 +9,10 @@ const { Task } = require("devtools/shared/task");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 
-const { updateGrids } = require("./actions/grids");
+const {
+  updateGridHighlighted,
+  updateGrids,
+} = require("./actions/grids");
 const App = createFactory(require("./components/App"));
 const Store = require("./store");
 
@@ -19,13 +22,17 @@ const INSPECTOR_L10N =
 
 function LayoutView(inspector, window) {
   this.document = window.document;
+  this.highlighters = inspector.highlighters;
   this.inspector = inspector;
   this.store = null;
   this.walker = this.inspector.walker;
 
   this.onGridLayoutChange = this.onGridLayoutChange.bind(this);
+  this.onHighlighterChange = this.onHighlighterChange.bind(this);
   this.onSidebarSelect = this.onSidebarSelect.bind(this);
 
+  this.highlighters.on("grid-highlighter-hidden", this.onHighlighterChange);
+  this.highlighters.on("grid-highlighter-shown", this.onHighlighterChange);
   this.inspector.sidebar.on("select", this.onSidebarSelect);
 
   this.init();
@@ -67,6 +74,8 @@ LayoutView.prototype = {
 
 
   destroy() {
+    this.highlighters.off("grid-highlighter-hidden", this.onHighlighterChange);
+    this.highlighters.off("grid-highlighter-shown", this.onHighlighterChange);
     this.inspector.sidebar.off("select", this.onSidebarSelect);
     this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
 
@@ -111,8 +120,9 @@ LayoutView.prototype = {
 
       grids.push({
         id: i,
+        gridFragments: grid.gridFragments,
+        highlighted: nodeFront == this.highlighters.gridHighlighterShown,
         nodeFront,
-        gridFragments: grid.gridFragments
       });
     }
 
@@ -129,6 +139,21 @@ LayoutView.prototype = {
     if (this.isPanelVisible()) {
       this.refresh(grids);
     }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  onHighlighterChange(event, nodeFront) {
+    let highlighted = event === "grid-highlighter-shown";
+    this.store.dispatch(updateGridHighlighted(nodeFront, highlighted));
   },
 
   
