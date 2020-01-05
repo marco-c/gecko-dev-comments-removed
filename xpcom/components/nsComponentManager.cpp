@@ -343,11 +343,6 @@ nsComponentManagerImpl::Init()
 
   InitializeStaticModules();
 
-  nsresult rv = mNativeModuleLoader.Init();
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   nsCategoryManager::GetSingleton()->SuppressNotifications(true);
 
   RegisterModule(&kXPCOMModule, nullptr);
@@ -632,31 +627,9 @@ nsComponentManagerImpl::ManifestBinaryComponent(ManifestProcessingContext& aCx,
                                                 int aLineNo,
                                                 char* const* aArgv)
 {
-  if (aCx.mFile.IsZip()) {
-    NS_WARNING("Cannot load binary components from a jar.");
-    LogMessageWithContext(aCx.mFile, aLineNo,
-                          "Cannot load binary components from a jar.");
-    return;
-  }
-
-  FileLocation f(aCx.mFile, aArgv[0]);
-  nsCString uri;
-  f.GetURIString(uri);
-
-  if (mKnownModules.Get(uri)) {
-    NS_WARNING("Attempting to register a binary component twice.");
-    LogMessageWithContext(aCx.mFile, aLineNo,
-                          "Attempting to register a binary component twice.");
-    return;
-  }
-
-  const mozilla::Module* m = mNativeModuleLoader.LoadModule(f);
-  
-  if (!m) {
-    return;
-  }
-
-  RegisterModule(m, &f);
+  LogMessageWithContext(aCx.mFile, aLineNo,
+                        "Binary XPCOM components are no longer supported.");
+  return;
 }
 
 static void
@@ -882,9 +855,6 @@ nsresult nsComponentManagerImpl::Shutdown(void)
 
   delete sStaticModules;
   delete sModuleLocations;
-
-  
-  mNativeModuleLoader.UnloadLibraries();
 
   
   PL_FinishArenaPool(&mArena);
@@ -1805,7 +1775,6 @@ nsComponentManagerImpl::SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf)
 
   n += mPendingServices.ShallowSizeOfExcludingThis(aMallocSizeOf);
 
-  
   
   
   
