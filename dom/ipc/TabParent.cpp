@@ -1248,8 +1248,7 @@ public:
                      const char* aTopic,
                      const char16_t* aData) override
   {
-    if (!mTabParent || !mObserverId) {
-      
+    if (!mTabParent) {
       
       return NS_OK;
     }
@@ -3219,7 +3218,7 @@ TabParent::RecvSHistoryUpdate(const uint32_t& aCount, const uint32_t& aLocalInde
   }
 
   nsCOMPtr<nsIPartialSHistory> partialHistory;
-  frameLoader->GetPartialSessionHistory(getter_AddRefs(partialHistory));
+  frameLoader->GetPartialSHistory(getter_AddRefs(partialHistory));
   if (!partialHistory) {
     
     return IPC_OK();

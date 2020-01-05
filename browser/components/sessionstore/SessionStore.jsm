@@ -3641,7 +3641,7 @@ var SessionStoreInternal = {
     
     
     let newFrameloader =
-      aReloadInFreshProcess || !!browser.frameLoader.groupedSessionHistory;
+      aReloadInFreshProcess || !!browser.frameLoader.groupedSHistory;
     let isRemotenessUpdate =
       tabbrowser.updateBrowserRemotenessByURL(browser, uri, {
         freshProcess: aReloadInFreshProcess,
