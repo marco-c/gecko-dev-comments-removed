@@ -156,12 +156,12 @@ class WasmInstanceObject : public NativeObject
     
     
     
+    
     using ExportMap = GCHashMap<uint32_t,
-                                ReadBarrieredFunction,
+                                HeapPtr<JSFunction*>,
                                 DefaultHasher<uint32_t>,
                                 SystemAllocPolicy>;
-    using WeakExportMap = JS::WeakCache<ExportMap>;
-    WeakExportMap& exports() const;
+    ExportMap& exports() const;
 
   public:
     static const unsigned RESERVED_SLOTS = 2;
