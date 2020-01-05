@@ -97,7 +97,7 @@ this.SitePermissions = {
   
 
   listPermissions: function() {
-    return kPermissionIDs;
+    return Object.keys(gPermissionObject);
   },
 
   
