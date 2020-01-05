@@ -25,7 +25,7 @@
 package org.mozilla.gecko.background.testhelpers;
 
 import org.junit.runners.model.InitializationError;
-import org.robolectric.RobolectricGradleTestRunner;
+import org.robolectric.RobolectricTestRunner;
 import org.robolectric.annotation.Config;
 import org.robolectric.manifest.AndroidManifest;
 import org.robolectric.res.FileFsFile;
@@ -46,7 +46,7 @@ import org.robolectric.util.ReflectionHelpers;
 
 
 
-public class TestRunner extends RobolectricGradleTestRunner {
+public class TestRunner extends RobolectricTestRunner {
     private FsFile buildFolder;
 
     public TestRunner(Class<?> klass) throws InitializationError {
