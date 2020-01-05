@@ -624,10 +624,12 @@ impl Document {
 
     
     pub fn title_changed(&self) {
-        
-        self.trigger_mozbrowser_event(MozBrowserEvent::TitleChange(String::from(self.Title())));
+        if self.browsing_context().is_some() {
+            
+            self.trigger_mozbrowser_event(MozBrowserEvent::TitleChange(String::from(self.Title())));
 
-        self.send_title_to_compositor();
+            self.send_title_to_compositor();
+        }
     }
 
     
