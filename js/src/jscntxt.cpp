@@ -178,13 +178,6 @@ js::DestroyContext(JSContext* cx)
 
     js_delete(cx->ionPcScriptCache.ref());
 
-    
-
-
-
-    for (CompartmentsIter c(cx->runtime(), SkipAtoms); !c.done(); c.next())
-        PrintTypes(cx, c, false);
-
     cx->runtime()->destroyRuntime();
     js_delete(cx->runtime());
 
