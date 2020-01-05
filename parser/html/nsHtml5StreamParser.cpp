@@ -962,7 +962,7 @@ nsHtml5StreamParser::OnStartRequest(nsIRequest* aRequest, nsISupports* aContext)
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mRequest, &rv));
   if (NS_SUCCEEDED(rv)) {
     nsAutoCString method;
-    httpChannel->GetRequestMethod(method);
+    Unused << httpChannel->GetRequestMethod(method);
     
     
     if (!method.EqualsLiteral("GET")) {
