@@ -34,8 +34,7 @@ XPCOMUtils.defineLazyGetter(this, "gLogEnabled", function tm_gLogEnabled() {
 function getPref(func, preference, defaultValue) {
   try {
     return Services.prefs[func](preference);
-  }
-  catch (e) {
+  } catch (e) {
   }
   return defaultValue;
 }
@@ -71,7 +70,7 @@ TimerManager.prototype = {
 
 
 
-   _timerMinimumDelay: null,
+  _timerMinimumDelay: null,
 
   
 
@@ -88,30 +87,31 @@ TimerManager.prototype = {
     
     var minFirstInterval = 10000;
     switch (aTopic) {
-    case "utm-test-init":
-      
-      
-      minInterval = 500;
-      minFirstInterval = 500;
-    case "profile-after-change":
-      
-      
-      this._timerMinimumDelay = Math.max(1000 * getPref("getIntPref", PREF_APP_UPDATE_TIMERMINIMUMDELAY, 120),
-                                         minInterval);
-      let firstInterval = Math.max(getPref("getIntPref", PREF_APP_UPDATE_TIMERFIRSTINTERVAL,
-                                           this._timerMinimumDelay), minFirstInterval);
-      this._canEnsureTimer = true;
-      this._ensureTimer(firstInterval);
-      break;
-    case "xpcom-shutdown":
-      Services.obs.removeObserver(this, "xpcom-shutdown");
+      case "utm-test-init":
+        
+        
+        minInterval = 500;
+        minFirstInterval = 500;
+      case "profile-after-change":
+        
+        
+        this._timerMinimumDelay = Math.max(1000 * getPref("getIntPref", PREF_APP_UPDATE_TIMERMINIMUMDELAY, 120),
+                                           minInterval);
+        let firstInterval = Math.max(getPref("getIntPref", PREF_APP_UPDATE_TIMERFIRSTINTERVAL,
+                                             this._timerMinimumDelay), minFirstInterval);
+        this._canEnsureTimer = true;
+        this._ensureTimer(firstInterval);
+        break;
+      case "xpcom-shutdown":
+        Services.obs.removeObserver(this, "xpcom-shutdown");
 
-      
-      this._cancelTimer();
-      for (var timerID in this._timers)
-        delete this._timers[timerID];
-      this._timers = null;
-      break;
+        
+        this._cancelTimer();
+        for (var timerID in this._timers) {
+          delete this._timers[timerID];
+        }
+        this._timers = null;
+        break;
     }
   },
 
@@ -128,8 +128,9 @@ TimerManager.prototype = {
   notify: function TM_notify(timer) {
     var nextDelay = null;
     function updateNextDelay(delay) {
-      if (nextDelay === null || delay < nextDelay)
+      if (nextDelay === null || delay < nextDelay) {
         nextDelay = delay;
+      }
     }
 
     
@@ -149,9 +150,9 @@ TimerManager.prototype = {
           callbackToFire = callback;
           earliestIntendedTime = intendedTime;
           selected = true;
-        }
-        else if (earliestIntendedTime !== null)
+        } else if (earliestIntendedTime !== null) {
           skippedFirings = true;
+        }
       }
       
       
@@ -159,8 +160,9 @@ TimerManager.prototype = {
       
       
       
-      if (!selected)
+      if (!selected) {
         updateNextDelay(intendedTime - now);
+      }
     }
 
     var catMan = Cc["@mozilla.org/categorymanager;1"].
@@ -190,18 +192,19 @@ TimerManager.prototype = {
       
       
       
-      if (lastUpdateTime > now)
+      if (lastUpdateTime > now) {
         lastUpdateTime = 0;
+      }
 
-      if (lastUpdateTime == 0)
+      if (lastUpdateTime == 0) {
         Services.prefs.setIntPref(prefLastUpdate, lastUpdateTime);
+      }
 
-      tryFire(function() {
+      tryFire(function () {
         try {
           Components.classes[cid][method](Ci.nsITimerCallback).notify(timer);
           LOG("TimerManager:notify - notified " + cid);
-        }
-        catch (e) {
+        } catch (e) {
           LOG("TimerManager:notify - error notifying component id: " +
               cid + " ,error: " + e);
         }
@@ -222,18 +225,16 @@ TimerManager.prototype = {
         timerData.lastUpdateTime = 0;
         Services.prefs.setIntPref(prefLastUpdate, timerData.lastUpdateTime);
       }
-      tryFire(function() {
+      tryFire(function () {
         if (timerData.callback && timerData.callback.notify) {
           try {
             timerData.callback.notify(timer);
             LOG("TimerManager:notify - notified timerID: " + timerID);
-          }
-          catch (e) {
+          } catch (e) {
             LOG("TimerManager:notify - error notifying timerID: " + timerID +
                 ", error: " + e);
           }
-        }
-        else {
+        } else {
           LOG("TimerManager:notify - timerID: " + timerID + " doesn't " +
               "implement nsITimerCallback - skipping");
         }
@@ -245,14 +246,16 @@ TimerManager.prototype = {
       }, timerData.lastUpdateTime + timerData.interval);
     }
 
-    if (callbackToFire)
+    if (callbackToFire) {
       callbackToFire();
+    }
 
     if (nextDelay !== null) {
-      if (skippedFirings)
+      if (skippedFirings) {
         timer.delay = this._timerMinimumDelay;
-      else
+      } else {
         timer.delay = Math.max(nextDelay * 1000, this._timerMinimumDelay);
+      }
       this.lastTimerReset = Date.now();
     } else {
       this._cancelTimer();
@@ -263,9 +266,10 @@ TimerManager.prototype = {
 
 
 
-  _ensureTimer: function(interval) {
-    if (!this._canEnsureTimer)
+  _ensureTimer: function (interval) {
+    if (!this._canEnsureTimer) {
       return;
+    }
     if (!this._timer) {
       this._timer = Cc["@mozilla.org/timer;1"].createInstance(Ci.nsITimer);
       this._timer.initWithCallback(this, interval,
@@ -279,7 +283,7 @@ TimerManager.prototype = {
   
 
 
-  _cancelTimer: function() {
+  _cancelTimer: function () {
     if (this._timer) {
       this._timer.cancel();
       this._timer = null;
@@ -300,13 +304,15 @@ TimerManager.prototype = {
     
     let lastUpdateTime = getPref("getIntPref", prefLastUpdate, 0);
     let now = Math.round(Date.now() / 1000);
-    if (lastUpdateTime > now)
+    if (lastUpdateTime > now) {
       lastUpdateTime = 0;
-    if (lastUpdateTime == 0)
+    }
+    if (lastUpdateTime == 0) {
       Services.prefs.setIntPref(prefLastUpdate, lastUpdateTime);
-    this._timers[id] = { callback       : callback,
-                         interval       : interval,
-                         lastUpdateTime : lastUpdateTime };
+    }
+    this._timers[id] = {callback: callback,
+                        interval: interval,
+                        lastUpdateTime: lastUpdateTime};
 
     this._ensureTimer(interval * 1000);
   },
