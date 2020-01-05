@@ -453,11 +453,12 @@ public:
            uint32_t aFlags);
 
     
+    
     struct GlyphRun {
-        RefPtr<gfxFont> mFont;   
-        uint32_t          mCharacterOffset; 
-        uint8_t           mMatchType;
-        uint16_t          mOrientation; 
+        RefPtr<gfxFont> mFont; 
+        uint32_t        mCharacterOffset; 
+        uint16_t        mOrientation; 
+        uint8_t         mMatchType;
     };
 
     class GlyphRunIterator {
@@ -518,7 +519,15 @@ public:
     nsresult AddGlyphRun(gfxFont *aFont, uint8_t aMatchType,
                          uint32_t aStartCharIndex, bool aForceNewRun,
                          uint16_t aOrientation);
-    void ResetGlyphRuns() { mGlyphRuns.Clear(); }
+    void ResetGlyphRuns()
+    {
+        if (mHasGlyphRunArray) {
+            mGlyphRunArray.~nsTArray<GlyphRun>();
+            mHasGlyphRunArray = false;
+        } else {
+            mSingleGlyphRun.mFont = nullptr;
+        }
+    }
     void SortGlyphRuns();
     void SanitizeGlyphRuns();
 
@@ -578,9 +587,16 @@ public:
     void FetchGlyphExtents(DrawTarget* aRefDrawTarget);
 
     uint32_t CountMissingGlyphs() const;
-    const GlyphRun* GetGlyphRuns(uint32_t* aNumGlyphRuns) const {
-        *aNumGlyphRuns = mGlyphRuns.Length();
-        return mGlyphRuns.Elements();
+
+    const GlyphRun* GetGlyphRuns(uint32_t* aNumGlyphRuns) const
+    {
+        if (mHasGlyphRunArray) {
+            *aNumGlyphRuns = mGlyphRunArray.Length();
+            return mGlyphRunArray.Elements();
+        } else {
+            *aNumGlyphRuns = mSingleGlyphRun.mFont ? 1 : 0;
+            return &mSingleGlyphRun;
+        }
     }
     
     
@@ -759,7 +775,27 @@ private:
 
     
     
-    AutoTArray<GlyphRun,1>        mGlyphRuns;
+    union {
+        GlyphRun           mSingleGlyphRun;
+        nsTArray<GlyphRun> mGlyphRunArray;
+    };
+
+    void ConvertToGlyphRunArray() {
+        MOZ_ASSERT(!mHasGlyphRunArray && mSingleGlyphRun.mFont);
+        GlyphRun tmp = mozilla::Move(mSingleGlyphRun);
+        mSingleGlyphRun.~GlyphRun();
+        new (&mGlyphRunArray) nsTArray<GlyphRun>(2);
+        mGlyphRunArray.AppendElement(mozilla::Move(tmp));
+        mHasGlyphRunArray = true;
+    }
+
+    void ConvertFromGlyphRunArray() {
+        MOZ_ASSERT(mHasGlyphRunArray && mGlyphRunArray.Length() == 1);
+        GlyphRun tmp = mozilla::Move(mGlyphRunArray[0]);
+        mGlyphRunArray.~nsTArray<GlyphRun>();
+        new (&mSingleGlyphRun) GlyphRun(mozilla::Move(tmp));
+        mHasGlyphRunArray = false;
+    }
 
     void             *mUserData;
     gfxFontGroup     *mFontGroup; 
@@ -771,6 +807,8 @@ private:
                                     
     bool              mReleasedFontGroup; 
                                           
+    bool              mHasGlyphRunArray; 
+                                         
 
     
     
