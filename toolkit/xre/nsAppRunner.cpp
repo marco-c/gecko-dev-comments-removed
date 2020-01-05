@@ -5130,13 +5130,6 @@ GetMaxWebProcessCount()
     return std::max(1u, optInPrefValue);
   }
 
-  
-  
-  if (Preferences::GetBool("extensions.e10sMultiBlocksEnabling", false) &&
-      Preferences::GetBool("extensions.e10sMultiBlockedByAddons", false)) {
-    return 1;
-  }
-
   if (Preferences::HasUserValue("dom.ipc.processCount.web")) {
     
     return std::max(1, Preferences::GetInt("dom.ipc.processCount.web", 1));

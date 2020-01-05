@@ -175,8 +175,7 @@ function defineCohort() {
   if (!(updateChannel in MULTI_BUCKETS) ||
       !eligibleForMulti ||
       userOptedIn.multi ||
-      disqualified ||
-      getAddonsDisqualifyForMulti()) {
+      disqualified) {
     Preferences.reset(PREF_E10S_PROCESSCOUNT + ".web");
     return;
   }
@@ -184,7 +183,8 @@ function defineCohort() {
   
   
   
-  if (cohortPrefix) {
+  
+  if (cohortPrefix && !getAddonsDisqualifyForMulti()) {
     cohortPrefix = "webextensions-";
   }
 
