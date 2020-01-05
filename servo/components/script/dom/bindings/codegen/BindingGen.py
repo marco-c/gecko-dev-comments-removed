@@ -7,9 +7,9 @@ sys.path.append("./parser/")
 sys.path.append("./ply/")
 import os
 import cPickle
-import WebIDL
-from Configuration import *
+from Configuration import Configuration
 from CodegenRust import CGBindingRoot, replaceFileIfChanged
+
 
 def generate_binding_rs(config, outputprefix, webidlfile):
     """
@@ -21,6 +21,7 @@ def generate_binding_rs(config, outputprefix, webidlfile):
     root = CGBindingRoot(config, outputprefix, webidlfile)
     if replaceFileIfChanged(filename, root.define()):
         print "Generating binding implementation: %s" % (filename)
+
 
 def main():
     
@@ -46,7 +47,7 @@ def main():
     config = Configuration(configFile, parserData)
 
     
-    generate_binding_rs(config, outputPrefix, webIDLFile);
+    generate_binding_rs(config, outputPrefix, webIDLFile)
 
 if __name__ == '__main__':
     main()

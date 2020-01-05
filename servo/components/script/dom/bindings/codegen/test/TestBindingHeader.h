@@ -3,7 +3,6 @@
 
 
 
-
 #ifndef TestBindingHeader_h
 #define TestBindingHeader_h
 
@@ -126,7 +125,7 @@ public:
 
 
 
-  
+
   
   int8_t ReadonlyByte();
   int8_t WritableByte();
@@ -215,7 +214,8 @@ public:
   void ReceiveNonWrapperCacheInterfaceSequence(nsTArray<nsRefPtr<TestNonWrapperCacheInterface> >&);
   void ReceiveNullableNonWrapperCacheInterfaceSequence(nsTArray<nsRefPtr<TestNonWrapperCacheInterface> >&);
   void ReceiveNonWrapperCacheInterfaceNullableSequence(Nullable<nsTArray<nsRefPtr<TestNonWrapperCacheInterface> > >&);
-  void ReceiveNullableNonWrapperCacheInterfaceNullableSequence(Nullable<nsTArray<nsRefPtr<TestNonWrapperCacheInterface> > >&);
+  void ReceiveNullableNonWrapperCacheInterfaceNullableSequence(
+    Nullable<nsTArray<nsRefPtr<TestNonWrapperCacheInterface> > >&);
 
   already_AddRefed<TestNonCastableInterface> ReceiveOther();
   already_AddRefed<TestNonCastableInterface> ReceiveNullableOther();

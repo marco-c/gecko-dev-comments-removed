@@ -9,11 +9,11 @@ import sys
 sys.path.append("./parser/")
 sys.path.append("./ply/")
 import os
-import cStringIO
 import WebIDL
 import cPickle
-from Configuration import *
+from Configuration import Configuration
 from CodegenRust import GlobalGenRoots, replaceFileIfChanged
+
 
 def generate_file(config, name, filename):
     root = getattr(GlobalGenRoots, name)(config)
@@ -23,6 +23,7 @@ def generate_file(config, name, filename):
         print "Generating %s" % (filename)
     else:
         print "%s hasn't changed - not touching it" % (filename)
+
 
 def main():
     
