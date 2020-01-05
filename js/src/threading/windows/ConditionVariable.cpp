@@ -268,7 +268,7 @@ public:
       
       
       
-      MOZ_RELEASE_ASSERT(waitResult = WAIT_OBJECT_0 + 1 ||
+      MOZ_RELEASE_ASSERT(waitResult == WAIT_OBJECT_0 + 1 ||
                          waitResult == WAIT_TIMEOUT);
 
       BOOL success = ResetEvent(wakeAllEvent_);
