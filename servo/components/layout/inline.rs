@@ -303,20 +303,9 @@ impl LineBreaker {
     
     
     
-    
     fn next_fragment<I>(&mut self, old_fragment_iter: &mut I) -> Option<Fragment>
                         where I: Iterator<Item=Fragment> {
-        let mut fragment;
-        if self.work_list.is_empty() {
-            match old_fragment_iter.next() {
-                None => return None,
-                Some(this_fragment) => fragment = this_fragment,
-            }
-        } else {
-            return self.work_list.pop_front()
-        }
-
-        Some(fragment)
+        self.work_list.pop_front().or_else(|| old_fragment_iter.next())
     }
 
     
