@@ -43,6 +43,8 @@ this.SiteDataManager = {
   _quotaUsageRequests: null,
 
   updateSites() {
+    Services.obs.notifyObservers(null, "sitedatamanager:updating-sites", null);
+
     
     this._sites.clear();
     this._cancelQuotaUpdate();
