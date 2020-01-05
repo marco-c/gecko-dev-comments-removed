@@ -116,6 +116,16 @@ private:
 
 public:
   static const uint32_t kNoTimeout = 0;
+  enum ThreadType {
+    
+    
+    
+    THREAD_SHARED,
+    
+    
+    
+    THREAD_PRIVATE
+  };
 
   
 
@@ -181,9 +191,13 @@ public:
 
 
 
+
+
+
   BackgroundHangMonitor(const char* aName,
                         uint32_t aTimeoutMs,
-                        uint32_t aMaxTimeoutMs);
+                        uint32_t aMaxTimeoutMs,
+                        ThreadType aThreadType = THREAD_SHARED);
 
   
 
