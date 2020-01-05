@@ -467,6 +467,15 @@ public:
 
 
 
+
+  virtual void TrackDisplayItemLayer(RefPtr<DisplayItemLayer> aLayer);
+  virtual void ClearDisplayItemLayers();
+
+  
+
+
+
+
   virtual LayersBackend GetBackendType() = 0;
 
   
@@ -775,6 +784,14 @@ public:
   void ClearPendingScrollInfoUpdate();
 private:
   std::map<FrameMetrics::ViewID,ScrollUpdateInfo> mPendingScrollUpdates;
+
+  
+  
+  
+  
+  
+  
+  nsTArray<RefPtr<DisplayItemLayer>> mDisplayItemLayers;
 };
 
 

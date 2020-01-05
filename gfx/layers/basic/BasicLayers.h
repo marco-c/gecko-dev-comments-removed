@@ -213,14 +213,6 @@ protected:
   bool mUsingDefaultTarget;
   bool mTransactionIncomplete;
   bool mCompositorMightResample;
-
-private:
-  
-  
-  
-  
-  void ClearDisplayItemLayers();
-  nsTArray<RefPtr<DisplayItemLayer>> mDisplayItemLayers;
 };
 
 } 

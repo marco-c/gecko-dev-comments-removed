@@ -314,6 +314,8 @@ WebRenderLayerManager::EndTransaction(DrawPaintedLayerCallback aCallback,
 
   MakeSnapshotIfRequired(size);
 
+  ClearDisplayItemLayers();
+
   
   
   mKeepAlive.Clear();
