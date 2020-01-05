@@ -120,6 +120,10 @@ void Gecko_LoadStyleSheet(mozilla::css::Loader* loader,
 
 
 
+RawGeckoURLExtraData* Gecko_URLExtraData_CreateDummy();
+
+
+
 
 
 
