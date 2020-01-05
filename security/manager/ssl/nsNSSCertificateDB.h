@@ -40,7 +40,7 @@ public:
   
   
   static nsresult
-  FindCertByDBKey(const char* aDBKey, mozilla::UniqueCERTCertificate& cert);
+  FindCertByDBKey(const nsACString& aDBKey, mozilla::UniqueCERTCertificate& cert);
 
 protected:
   virtual ~nsNSSCertificateDB();

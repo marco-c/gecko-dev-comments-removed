@@ -152,7 +152,7 @@ function constructCertFromFile(filename) {
   let certdb = Cc["@mozilla.org/security/x509certdb;1"]
                  .getService(Ci.nsIX509CertDB);
   try {
-    return certdb.constructX509(certBytes, certBytes.length);
+    return certdb.constructX509(certBytes);
   } catch (e) {}
   
   return certdb.constructX509FromBase64(pemToBase64(certBytes));
