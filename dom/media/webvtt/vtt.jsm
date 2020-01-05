@@ -1438,7 +1438,7 @@ this.EXPORTED_SYMBOLS = ["WebVTT"];
           if (!line) {
             
             
-            if (!/\r\n|\n/.test(self.buffer)) {
+            if (!/\r\n|\n|\r/.test(self.buffer)) {
               return this;
             }
             line = collectNextLine();
