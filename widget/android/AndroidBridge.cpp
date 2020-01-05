@@ -999,12 +999,12 @@ class AndroidBridge::DelayedTask
     using TimeDuration = mozilla::TimeDuration;
 
 public:
-    DelayedTask(already_AddRefed<nsIRunnable> aTask)
+    DelayedTask(already_AddRefed<Runnable> aTask)
         : mTask(aTask)
         , mRunTime() 
     {}
 
-    DelayedTask(already_AddRefed<nsIRunnable> aTask, int aDelayMs)
+    DelayedTask(already_AddRefed<Runnable> aTask, int aDelayMs)
         : mTask(aTask)
         , mRunTime(TimeStamp::Now() + TimeDuration::FromMilliseconds(aDelayMs))
     {}
@@ -1027,19 +1027,19 @@ public:
         return 0;
     }
 
-    already_AddRefed<nsIRunnable> TakeTask()
+    already_AddRefed<Runnable> TakeTask()
     {
         return mTask.forget();
     }
 
 private:
-    nsCOMPtr<nsIRunnable> mTask;
+    RefPtr<Runnable> mTask;
     const TimeStamp mRunTime;
 };
 
 
 void
-AndroidBridge::PostTaskToUiThread(already_AddRefed<nsIRunnable> aTask, int aDelayMs)
+AndroidBridge::PostTaskToUiThread(already_AddRefed<Runnable> aTask, int aDelayMs)
 {
     
     
@@ -1086,7 +1086,7 @@ AndroidBridge::RunDelayedUiThreadTasks()
         }
 
         
-        nsCOMPtr<nsIRunnable> nextTask(mUiTaskQueue[0].TakeTask());
+        RefPtr<Runnable> nextTask(mUiTaskQueue[0].TakeTask());
         mUiTaskQueue.RemoveElementAt(0);
 
         
