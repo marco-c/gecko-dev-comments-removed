@@ -696,7 +696,8 @@ nsFrame::DestroyFrom(nsIFrame* aDestructRoot)
     }
   }
 
-  if (EffectSet::GetEffectSet(this)) {
+  if (HasCSSAnimations() || HasCSSTransitions() ||
+      EffectSet::GetEffectSet(this)) {
     
     
     if (presContext->RestyleManager()->IsGecko()) {
