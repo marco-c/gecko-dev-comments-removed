@@ -297,6 +297,14 @@ impl<'a> DerefMut for RWGuard<'a> {
     }
 }
 
+fn add_font_face_rules(stylesheet: &Stylesheet, device: &Device, font_cache_task: &FontCacheTask) {
+    for font_face in stylesheet.effective_rules(&device).font_face() {
+        for source in font_face.sources.iter() {
+            font_cache_task.add_web_font(font_face.family.clone(), source.clone());
+        }
+    }
+}
+
 impl LayoutTask {
     
     fn new(id: PipelineId,
@@ -336,6 +344,11 @@ impl LayoutTask {
         let image_cache_receiver =
             ROUTER.route_ipc_receiver_to_new_mpsc_receiver(ipc_image_cache_receiver);
 
+        let stylist = box Stylist::new(device);
+        for user_or_user_agent_stylesheet in stylist.stylesheets() {
+            add_font_face_rules(user_or_user_agent_stylesheet, &stylist.device, &font_cache_task);
+        }
+
         LayoutTask {
             id: id,
             url: url,
@@ -362,7 +375,7 @@ impl LayoutTask {
                     constellation_chan: constellation_chan,
                     screen_size: screen_size,
                     stacking_context: None,
-                    stylist: box Stylist::new(device),
+                    stylist: stylist,
                     parallel_traversal: parallel_traversal,
                     dirty: Rect::zero(),
                     generation: 0,
@@ -380,15 +393,15 @@ impl LayoutTask {
         }
     }
 
-    /// Starts listening on the port.
+    
     fn start(self) {
         let mut possibly_locked_rw_data = Some((*self.rw_data).lock().unwrap());
         while self.handle_request(&mut possibly_locked_rw_data) {
-            // Loop indefinitely.
+            
         }
     }
 
-    // Create a layout context for use in building display lists, hit testing, &c.
+    
     fn build_shared_layout_context(&self,
                                    rw_data: &LayoutTaskData,
                                    screen_size_changed: bool,
@@ -417,7 +430,7 @@ impl LayoutTask {
         }
     }
 
-    /// Receives and dispatches messages from the script and constellation tasks
+    
     fn handle_request<'a>(&'a self,
                           possibly_locked_rw_data: &mut Option<MutexGuard<'a, LayoutTaskData>>)
                           -> bool {
@@ -480,12 +493,12 @@ impl LayoutTask {
         }
     }
 
-    /// If no reflow has happened yet, this will just return the lock in
-    /// `possibly_locked_rw_data`. Otherwise, it will acquire the `rw_data` lock.
-    ///
-    /// If you do not wish RPCs to remain blocked, just drop the `RWGuard`
-    /// returned from this function. If you _do_ wish for them to remain blocked,
-    /// use `return_rw_data`.
+    
+    
+    
+    
+    
+    
     fn lock_rw_data<'a>(&'a self,
                         possibly_locked_rw_data: &mut Option<MutexGuard<'a, LayoutTaskData>>)
                         -> RWGuard<'a> {
@@ -495,9 +508,9 @@ impl LayoutTask {
         }
     }
 
-    /// If no reflow has ever been triggered, this will keep the lock, locked
-    /// (and saved in `possibly_locked_rw_data`). If it has been, the lock will
-    /// be unlocked.
+    
+    
+    
     fn return_rw_data<'a>(possibly_locked_rw_data: &mut Option<MutexGuard<'a, LayoutTaskData>>,
                           rw_data: RWGuard<'a>) {
         match rw_data {
@@ -506,11 +519,11 @@ impl LayoutTask {
         }
     }
 
-    /// Repaint the scene, without performing style matching. This is typically
-    /// used when an image arrives asynchronously and triggers a relayout and
-    /// repaint.
-    /// TODO: In the future we could detect if the image size hasn't changed
-    /// since last time and avoid performing a complete layout pass.
+    
+    
+    
+    
+    
     fn repaint<'a>(&'a self,
                    possibly_locked_rw_data: &mut Option<MutexGuard<'a, LayoutTaskData>>) -> bool {
         let mut rw_data = self.lock_rw_data(possibly_locked_rw_data);
@@ -534,7 +547,7 @@ impl LayoutTask {
         true
     }
 
-    /// Receives and dispatches messages from other tasks.
+    
     fn handle_request_helper<'a>(&'a self,
                                  request: Msg,
                                  possibly_locked_rw_data: &mut Option<MutexGuard<'a,
@@ -735,11 +748,7 @@ impl LayoutTask {
         let mut rw_data = self.lock_rw_data(possibly_locked_rw_data);
 
         if mq.evaluate(&rw_data.stylist.device) {
-            for font_face in sheet.effective_rules(&rw_data.stylist.device).font_face() {
-                for source in font_face.sources.iter() {
-                    self.font_cache_task.add_web_font(font_face.family.clone(), source.clone());
-                }
-            }
+            add_font_face_rules(&sheet, &rw_data.stylist.device, &self.font_cache_task);
             rw_data.stylist.add_stylesheet(sheet);
         }
 
