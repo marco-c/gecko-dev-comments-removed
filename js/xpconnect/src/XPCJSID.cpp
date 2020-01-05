@@ -223,9 +223,9 @@ NS_IMPL_ADDREF(SharedScriptableHelperForJSIID)
 NS_IMPL_RELEASE(SharedScriptableHelperForJSIID)
 
 
-#define XPC_MAP_CLASSNAME           SharedScriptableHelperForJSIID
-#define XPC_MAP_QUOTED_CLASSNAME   "JSIID"
-#define XPC_MAP_FLAGS               nsIXPCScriptable::ALLOW_PROP_MODS_DURING_RESOLVE
+#define XPC_MAP_CLASSNAME SharedScriptableHelperForJSIID
+#define XPC_MAP_QUOTED_CLASSNAME "JSIID"
+#define XPC_MAP_FLAGS XPC_SCRIPTABLE_ALLOW_PROP_MODS_DURING_RESOLVE
 #include "xpc_map_end.h" 
 
 static mozilla::StaticRefPtr<nsIXPCScriptable> gSharedScriptableHelperForJSIID;
@@ -289,12 +289,12 @@ NS_IMPL_RELEASE(nsJSIID)
 NS_IMPL_CI_INTERFACE_GETTER(nsJSIID, nsIJSID, nsIJSIID)
 
 
-#define XPC_MAP_CLASSNAME           nsJSIID
-#define XPC_MAP_QUOTED_CLASSNAME   "nsJSIID"
-#define                             XPC_MAP_WANT_RESOLVE
-#define                             XPC_MAP_WANT_ENUMERATE
-#define                             XPC_MAP_WANT_HASINSTANCE
-#define XPC_MAP_FLAGS               nsIXPCScriptable::ALLOW_PROP_MODS_DURING_RESOLVE
+#define XPC_MAP_CLASSNAME         nsJSIID
+#define XPC_MAP_QUOTED_CLASSNAME "nsJSIID"
+#define XPC_MAP_FLAGS (XPC_SCRIPTABLE_WANT_RESOLVE | \
+                       XPC_SCRIPTABLE_WANT_ENUMERATE | \
+                       XPC_SCRIPTABLE_WANT_HASINSTANCE | \
+                       XPC_SCRIPTABLE_ALLOW_PROP_MODS_DURING_RESOLVE)
 #include "xpc_map_end.h" 
 
 
@@ -547,11 +547,10 @@ NS_IMPL_RELEASE(nsJSCID)
 NS_IMPL_CI_INTERFACE_GETTER(nsJSCID, nsIJSID, nsIJSCID)
 
 
-#define XPC_MAP_CLASSNAME           nsJSCID
-#define XPC_MAP_QUOTED_CLASSNAME   "nsJSCID"
-#define                             XPC_MAP_WANT_CONSTRUCT
-#define                             XPC_MAP_WANT_HASINSTANCE
-#define XPC_MAP_FLAGS               0
+#define XPC_MAP_CLASSNAME         nsJSCID
+#define XPC_MAP_QUOTED_CLASSNAME "nsJSCID"
+#define XPC_MAP_FLAGS (XPC_SCRIPTABLE_WANT_CONSTRUCT | \
+                       XPC_SCRIPTABLE_WANT_HASINSTANCE)
 #include "xpc_map_end.h" 
 
 nsJSCID::nsJSCID()  { mDetails = new nsJSID(); }
