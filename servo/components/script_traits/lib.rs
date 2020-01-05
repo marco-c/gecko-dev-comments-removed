@@ -51,7 +51,7 @@ use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use layers::geometry::DevicePixel;
 use libc::c_void;
 use msg::constellation_msg::{FrameId, FrameType, Image, Key, KeyModifiers, KeyState, LoadData};
-use msg::constellation_msg::{NavigationDirection, PanicMsg, PipelineId, ReferrerPolicy};
+use msg::constellation_msg::{NavigationDirection, PipelineId, ReferrerPolicy};
 use msg::constellation_msg::{PipelineNamespaceId, SubpageId, WindowSizeType};
 use net_traits::bluetooth_thread::BluetoothMethodMsg;
 use net_traits::image_cache_thread::ImageCacheThread;
@@ -142,8 +142,6 @@ pub struct NewLayoutInfo {
     pub paint_chan: OptionalOpaqueIpcSender,
     
     pub pipeline_port: IpcReceiver<LayoutControlMsg>,
-    
-    pub panic_chan: IpcSender<PanicMsg>,
     
     pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
     
@@ -395,8 +393,6 @@ pub struct InitialScriptState {
     
     pub constellation_chan: IpcSender<ScriptMsg>,
     
-    pub panic_chan: IpcSender<PanicMsg>,
-    
     pub scheduler_chan: IpcSender<TimerEventRequest>,
     
     pub resource_threads: ResourceThreads,
@@ -472,7 +468,7 @@ pub enum MozBrowserEvent {
     ContextMenu,
     
     
-    Error(MozBrowserErrorType, Option<String>, Option<String>),
+    Error(MozBrowserErrorType, String, String),
     
     IconChange(String, String, String),
     
@@ -656,8 +652,6 @@ pub struct WorkerGlobalScopeInit {
     pub constellation_chan: IpcSender<ScriptMsg>,
     
     pub scheduler_chan: IpcSender<TimerEventRequest>,
-    
-    pub panic_chan: IpcSender<PanicMsg>,
     
     pub worker_id: WorkerId,
 }
