@@ -122,9 +122,6 @@ TEST(Array, main)
     int32_t expectedIndex = 0;
     int32_t index = array->IndexOf(foo);
     EXPECT_EQ(index, expectedIndex);
-    expectedIndex = 12;
-    index = array->LastIndexOf(foo);
-    EXPECT_EQ(index, expectedIndex);
 
     
     array->ReplaceElementAt(foo, 8);
