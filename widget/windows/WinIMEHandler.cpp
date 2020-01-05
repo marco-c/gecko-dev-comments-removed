@@ -334,31 +334,31 @@ IMEHandler::NotifyIME(nsWindow* aWindow,
 }
 
 
-nsIMEUpdatePreference
-IMEHandler::GetUpdatePreference()
+IMENotificationRequests
+IMEHandler::GetIMENotificationRequests()
 {
   
   
   if (sPluginHasFocus) {
-    return nsIMEUpdatePreference();
+    return IMENotificationRequests();
   }
 
 #ifdef NS_ENABLE_TSF
   if (IsTSFAvailable()) {
     if (!sIsIMMEnabled) {
-      return TSFTextStore::GetIMEUpdatePreference();
+      return TSFTextStore::GetIMENotificationRequests();
     }
     
     
     
     
     
-    return IMMHandler::GetIMEUpdatePreference() |
-             TSFTextStore::GetIMEUpdatePreference();
+    return IMMHandler::GetIMENotificationRequests() |
+             TSFTextStore::GetIMENotificationRequests();
   }
 #endif 
 
-  return IMMHandler::GetIMEUpdatePreference();
+  return IMMHandler::GetIMENotificationRequests();
 }
 
 

@@ -74,7 +74,7 @@ public:
   
 
 
-  static nsIMEUpdatePreference GetUpdatePreference();
+  static IMENotificationRequests GetIMENotificationRequests();
 
   
 

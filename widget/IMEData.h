@@ -16,7 +16,7 @@ namespace mozilla {
 
 class WritingMode;
 
-} 
+namespace widget {
 
 
 
@@ -32,7 +32,7 @@ class WritingMode;
 
 
 
-struct nsIMEUpdatePreference final
+struct IMENotificationRequests final
 {
   typedef uint8_t Notifications;
 
@@ -52,19 +52,19 @@ struct nsIMEUpdatePreference final
     NOTIFY_DURING_DEACTIVE               = 1 << 7
   };
 
-  nsIMEUpdatePreference()
+  IMENotificationRequests()
     : mWantUpdates(NOTIFY_NOTHING)
   {
   }
 
-  explicit nsIMEUpdatePreference(Notifications aWantUpdates)
+  explicit IMENotificationRequests(Notifications aWantUpdates)
     : mWantUpdates(aWantUpdates)
   {
   }
 
-  nsIMEUpdatePreference operator|(const nsIMEUpdatePreference& aOther) const
+  IMENotificationRequests operator|(const IMENotificationRequests& aOther) const
   {
-    return nsIMEUpdatePreference(aOther.mWantUpdates | mWantUpdates);
+    return IMENotificationRequests(aOther.mWantUpdates | mWantUpdates);
   }
 
   bool WantTextChange() const
@@ -99,9 +99,6 @@ struct nsIMEUpdatePreference final
 
 
 
-
-namespace mozilla {
-namespace widget {
 
 struct IMEState final
 {

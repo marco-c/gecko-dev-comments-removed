@@ -146,7 +146,7 @@ public:
                                 const IMENotification& aIMENotification,
                                 bool aIsIMMActive);
 
-  static nsIMEUpdatePreference GetIMEUpdatePreference();
+  static IMENotificationRequests GetIMENotificationRequests();
 
   
   

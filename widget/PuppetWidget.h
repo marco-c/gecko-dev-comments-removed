@@ -183,7 +183,7 @@ public:
                                const InputContextAction& aAction) override;
   virtual InputContext GetInputContext() override;
   virtual NativeIMEContext GetNativeIMEContext() override;
-  virtual nsIMEUpdatePreference GetIMEUpdatePreference() override;
+  virtual IMENotificationRequests GetIMENotificationRequests() override;
   TextEventDispatcherListener* GetNativeTextEventDispatcherListener() override
   { return mNativeTextEventDispatcherListener; }
   void SetNativeTextEventDispatcherListener(TextEventDispatcherListener* aListener)
@@ -356,7 +356,7 @@ private:
   
   RefPtr<DrawTarget> mDrawTarget;
   
-  nsIMEUpdatePreference mIMEPreferenceOfParent;
+  IMENotificationRequests mIMENotificationRequestsOfParent;
   InputContext mInputContext;
   
   

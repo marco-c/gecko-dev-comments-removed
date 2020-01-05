@@ -390,12 +390,12 @@ IMMHandler::GetKeyboardCodePage()
 }
 
 
-nsIMEUpdatePreference
-IMMHandler::GetIMEUpdatePreference()
+IMENotificationRequests
+IMMHandler::GetIMENotificationRequests()
 {
-  return nsIMEUpdatePreference(
-    nsIMEUpdatePreference::NOTIFY_POSITION_CHANGE |
-    nsIMEUpdatePreference::NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR);
+  return IMENotificationRequests(
+    IMENotificationRequests::NOTIFY_POSITION_CHANGE |
+    IMENotificationRequests::NOTIFY_MOUSE_BUTTON_EVENT_ON_CHAR);
 }
 
 

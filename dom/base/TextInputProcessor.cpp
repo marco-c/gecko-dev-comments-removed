@@ -698,11 +698,11 @@ TextInputProcessor::NotifyIME(TextEventDispatcher* aTextEventDispatcher,
   }
 }
 
-NS_IMETHODIMP_(nsIMEUpdatePreference)
-TextInputProcessor::GetIMEUpdatePreference()
+NS_IMETHODIMP_(IMENotificationRequests)
+TextInputProcessor::GetIMENotificationRequests()
 {
   
-  return nsIMEUpdatePreference();
+  return IMENotificationRequests();
 }
 
 NS_IMETHODIMP_(void)

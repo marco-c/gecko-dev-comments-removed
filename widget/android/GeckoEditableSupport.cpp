@@ -1135,14 +1135,14 @@ GeckoEditableSupport::WillDispatchKeyboardEvent(
 {
 }
 
-NS_IMETHODIMP_(nsIMEUpdatePreference)
-GeckoEditableSupport::GetIMEUpdatePreference()
+NS_IMETHODIMP_(IMENotificationRequests)
+GeckoEditableSupport::GetIMENotificationRequests()
 {
     
     if (GetInputContext().mIMEState.mEnabled == IMEState::PLUGIN) {
-      return nsIMEUpdatePreference();
+      return IMENotificationRequests();
     }
-    return nsIMEUpdatePreference(nsIMEUpdatePreference::NOTIFY_TEXT_CHANGE);
+    return IMENotificationRequests(IMENotificationRequests::NOTIFY_TEXT_CHANGE);
 }
 
 void

@@ -185,7 +185,7 @@ public:
     return textStore->OnMouseButtonEventInternal(aIMENotification);
   }
 
-  static nsIMEUpdatePreference GetIMEUpdatePreference();
+  static IMENotificationRequests GetIMENotificationRequests();
 
   
   
