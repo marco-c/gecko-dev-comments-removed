@@ -1,4 +1,4 @@
-
+#[doc="Inline layout."]
 
 import dom::rcu;
 import dom::rcu::reader_methods;
