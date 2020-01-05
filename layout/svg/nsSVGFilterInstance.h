@@ -257,14 +257,14 @@ private:
 
 
 
-  int32_t mSourceGraphicIndex;
+  MOZ_INIT_OUTSIDE_CTOR int32_t mSourceGraphicIndex;
 
   
 
 
 
 
-  int32_t mSourceAlphaIndex;
+  MOZ_INIT_OUTSIDE_CTOR int32_t mSourceAlphaIndex;
 
   
 
