@@ -1385,6 +1385,14 @@ DataTransfer::CacheExternalClipboardFormats()
   
   
   
+  
+  if (XRE_IsContentProcess()) {
+    hasFileData = false;
+  }
+
+  
+  
+  
   const char* formats[] = { kCustomTypesMime, kFileMime, kHTMLMime, kRTFMime,
                             kURLMime, kURLDataMime, kUnicodeMime, kPNGImageMime };
 
@@ -1399,6 +1407,14 @@ DataTransfer::CacheExternalClipboardFormats()
       if (f == 0) {
         FillInExternalCustomTypes(0, sysPrincipal);
       } else {
+        
+        
+        
+        
+        if (XRE_IsContentProcess() && f == 1) {
+          continue;
+        }
+
         
         CacheExternalData(formats[f], 0, sysPrincipal,  f != 1 && hasFileData);
       }
