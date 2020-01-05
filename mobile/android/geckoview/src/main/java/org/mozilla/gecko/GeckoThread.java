@@ -8,6 +8,7 @@ package org.mozilla.gecko;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.GeckoLoader;
+import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.ThreadUtils;
 
@@ -49,6 +50,8 @@ public class GeckoThread extends Thread {
         @WrapForJNI RUNNING(6),
         
         @WrapForJNI EXITING(3),
+        
+        @WrapForJNI RESTARTING(3),
         
         @WrapForJNI EXITED(0);
 
@@ -413,9 +416,12 @@ public class GeckoThread extends Thread {
         GeckoLoader.nativeRun(args, mCrashFileDescriptor, mIPCFileDescriptor);
 
         
+        final boolean restarting = isState(State.RESTARTING);
         setState(State.EXITED);
 
-        EventDispatcher.getInstance().dispatch("Gecko:Exited", null);
+        final GeckoBundle data = new GeckoBundle(1);
+        data.putBoolean("restart", restarting);
+        EventDispatcher.getInstance().dispatch("Gecko:Exited", data);
 
         
         Looper.myQueue().removeIdleHandler(idleHandler);
