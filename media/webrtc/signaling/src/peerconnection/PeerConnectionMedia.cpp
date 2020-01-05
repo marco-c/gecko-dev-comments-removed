@@ -259,6 +259,21 @@ PeerConnectionMedia::ProtocolProxyQueryHandler::SetProxyOnPcm(
 
 NS_IMPL_ISUPPORTS(PeerConnectionMedia::ProtocolProxyQueryHandler, nsIProtocolProxyCallback)
 
+void
+PeerConnectionMedia::StunAddrsHandler::OnStunAddrsAvailable(
+    const mozilla::net::NrIceStunAddrArray& addrs)
+{
+  CSFLogInfo(logTag, "%s: receiving (%d) stun addrs", __FUNCTION__,
+                                                      (int)addrs.Length());
+  if (pcm_) {
+    pcm_->mStunAddrs = addrs;
+    pcm_->mLocalAddrsCompleted = true;
+    pcm_->mStunAddrsRequest = nullptr;
+    pcm_->FlushIceCtxOperationQueueIfReady();
+    pcm_ = nullptr;
+  }
+}
+
 PeerConnectionMedia::PeerConnectionMedia(PeerConnectionImpl *parent)
     : mParent(parent),
       mParentHandle(parent->GetHandle()),
@@ -269,7 +284,27 @@ PeerConnectionMedia::PeerConnectionMedia(PeerConnectionImpl *parent)
       mMainThread(mParent->GetMainThread()),
       mSTSThread(mParent->GetSTSThread()),
       mProxyResolveCompleted(false),
-      mIceRestartState(ICE_RESTART_NONE) {
+      mIceRestartState(ICE_RESTART_NONE),
+      mLocalAddrsCompleted(false) {
+}
+
+void
+PeerConnectionMedia::InitLocalAddrs()
+{
+  if (XRE_IsContentProcess()) {
+    CSFLogDebug(logTag, "%s: Get stun addresses via IPC",
+                mParentHandle.c_str());
+    
+    
+    mStunAddrsRequest =
+        new StunAddrsRequestChild(new StunAddrsHandler(this));
+    mStunAddrsRequest->SendGetStunAddrs();
+  } else {
+    
+    
+    
+    mLocalAddrsCompleted = true;
+  }
 }
 
 nsresult
@@ -352,6 +387,9 @@ nsresult PeerConnectionMedia::Init(const std::vector<NrIceStunServer>& stun_serv
   NS_ENSURE_SUCCESS(rv, rv);
 
   bool ice_tcp = Preferences::GetBool("media.peerconnection.ice.tcp", false);
+
+  
+  InitLocalAddrs();
 
   
   
@@ -920,6 +958,10 @@ PeerConnectionMedia::EnsureIceGathering_s(bool aDefaultRouteOnly,
     return;
   }
 
+  if (mStunAddrs.Length()) {
+    mIceCtxHdlr->ctx()->SetStunAddrs(mStunAddrs);
+  }
+
   
   for (size_t i = 0; i < mIceCtxHdlr->ctx()->GetStreamCount(); ++i) {
     if (mIceCtxHdlr->ctx()->GetStream(i)) {
@@ -1015,6 +1057,11 @@ PeerConnectionMedia::SelfDestruct()
 
   for (uint32_t i=0; i < mRemoteSourceStreams.Length(); ++i) {
     mRemoteSourceStreams[i]->DetachMedia_m();
+  }
+
+  if (mStunAddrsRequest) {
+    mStunAddrsRequest->Cancel();
+    mStunAddrsRequest = nullptr;
   }
 
   if (mProxyRequest) {

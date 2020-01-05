@@ -49,7 +49,7 @@ StunAddrsRequestParent::GetStunAddrs_s()
   ASSERT_ON_THREAD(mSTSThread);
 
   
-  NrIceStunAddrArray addrs; 
+  NrIceStunAddrArray addrs = NrIceCtx::GetStunAddrs();
 
   
   RUN_ON_THREAD(mMainThread,
