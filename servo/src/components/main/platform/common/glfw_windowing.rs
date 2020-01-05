@@ -30,7 +30,7 @@ impl ApplicationMethods for Application {
         
         
         do glfw::set_error_callback |_error_code, description| {
-            error!("GLFW error: %s", description);
+            error!("GLFW error: {:s}", description);
         };
         glfw::init();
         Application
@@ -190,18 +190,18 @@ impl Window {
 
         match self.ready_state {
             Blank => {
-                self.glfw_window.set_title(fmt!("blank — Servo"))
+                self.glfw_window.set_title("blank — Servo")
             }
             Loading => {
-                self.glfw_window.set_title(fmt!("Loading — Servo"))
+                self.glfw_window.set_title("Loading — Servo")
             }
             PerformingLayout => {
-                self.glfw_window.set_title(fmt!("Performing Layout — Servo"))
+                self.glfw_window.set_title("Performing Layout — Servo")
             }
             FinishedLoading => {
                 match self.render_state {
                     RenderingRenderState => {
-                        self.glfw_window.set_title(fmt!("Rendering — Servo"))
+                        self.glfw_window.set_title("Rendering — Servo")
                     }
                     IdleRenderState => {
                         self.glfw_window.set_title("Servo")
