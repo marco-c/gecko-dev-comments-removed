@@ -67,7 +67,7 @@ function load_blocklist(aFile, aCallback) {
   
   
   if (!Services.prefs.getBoolPref("security.onecrl.via.amo")) {
-    ok(Services.prefs.getBoolPref("services.blocklist.update_enabled", false),
+    ok(Services.prefs.getBoolPref("services.blocklist.update_enabled"),
                                   "Kinto update should be enabled");
   }
   blocklist.notify(null);
