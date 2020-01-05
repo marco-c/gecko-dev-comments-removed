@@ -521,7 +521,7 @@ PeerConnectionConfiguration::AddIceServer(const RTCIceServer &aServer)
     if (!(isStun || isStuns || isTurn || isTurns)) {
       return NS_ERROR_FAILURE;
     }
-    if (isTurns || isStuns) {
+    if (isStuns) {
       continue; 
     }
     nsAutoCString spec;
@@ -570,6 +570,11 @@ PeerConnectionConfiguration::AddIceServer(const RTCIceServer &aServer)
     }
     if (port == -1)
       port = (isStuns || isTurns)? 5349 : 3478;
+
+    if (isStuns || isTurns) {
+      
+      transport = "tls";
+    }
 
     if (isTurn || isTurns) {
       NS_ConvertUTF16toUTF8 credential(aServer.mCredential.Value());
