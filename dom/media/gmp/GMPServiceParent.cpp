@@ -837,14 +837,6 @@ GeckoMediaPluginServiceParent::PathRunnable::Run()
                               mDefer);
 
   mService->UpdateContentProcessGMPCapabilities();
-
-#ifndef MOZ_WIDGET_GONK 
-  
-  
-  NS_DispatchToMainThread(NS_NewRunnableFunction([]() -> void {
-    GMPDecoderModule::UpdateUsableCodecs();
-  }));
-#endif
   return NS_OK;
 }
 
@@ -919,9 +911,6 @@ GeckoMediaPluginServiceParent::AsyncAddPluginDirectory(const nsAString& aDirecto
               NS_ConvertUTF16toUTF8(dir).get()));
         MOZ_ASSERT(NS_IsMainThread());
         self->UpdateContentProcessGMPCapabilities();
-        
-        
-        GMPDecoderModule::UpdateUsableCodecs();
       },
       [dir]() -> void {
         LOGD(("GeckoMediaPluginServiceParent::AsyncAddPluginDirectory %s failed",
