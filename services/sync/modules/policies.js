@@ -57,6 +57,11 @@ SyncScheduler.prototype = {
     this.idle = false;
 
     this.hasIncomingItems = false;
+    
+    
+    
+    
+    this.numClientsLastSync = 0;
 
     this.clearSyncTriggers();
   },
@@ -90,11 +95,15 @@ SyncScheduler.prototype = {
     Svc.Prefs.set("globalScore", value);
   },
 
+  
+  
   get numClients() {
-    return Svc.Prefs.get("numClients", 0);
+    return Svc.Prefs.get("clients.devices.desktop", 0) +
+           Svc.Prefs.get("clients.devices.mobile", 0);
+
   },
   set numClients(value) {
-    Svc.Prefs.set("numClients", value);
+    throw new Error("Don't set numClients - the clients engine manages it.")
   },
 
   init: function init() {
@@ -335,12 +344,12 @@ SyncScheduler.prototype = {
 
   updateClientMode: function updateClientMode() {
     
-    let numClients = this.service.clientsEngine.stats.numClients;
-    if (this.numClients == numClients)
+    let numClients = this.numClients;
+    if (numClients == this.numClientsLastSync)
       return;
 
-    this._log.debug("Client count: " + this.numClients + " -> " + numClients);
-    this.numClients = numClients;
+    this._log.debug(`Client count: ${this.numClientsLastSync} -> ${numClients}`);
+    this.numClientsLastSync = numClients;
 
     if (numClients <= 1) {
       this._log.trace("Adjusting syncThreshold to SINGLE_USER_THRESHOLD");

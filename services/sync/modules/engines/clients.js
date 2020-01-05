@@ -130,10 +130,13 @@ ClientEngine.prototype = {
 
 
 
+
+
   get deviceTypes() {
     let counts = new Map();
 
-    counts.set(this.localType, 1);
+    counts.set(this.localType, 1); 
+    counts.set(DEVICE_TYPE_MOBILE, 0);
 
     for (let id in this._store._remoteClients) {
       let record = this._store._remoteClients[id];
@@ -386,15 +389,17 @@ ClientEngine.prototype = {
   _syncFinish() {
     
     
+    
+    
     for (let [deviceType, count] of this.deviceTypes) {
       let hid;
       let prefName = this.name + ".devices.";
       switch (deviceType) {
-        case "desktop":
+        case DEVICE_TYPE_DESKTOP:
           hid = "WEAVE_DEVICE_COUNT_DESKTOP";
           prefName += "desktop";
           break;
-        case "mobile":
+        case DEVICE_TYPE_MOBILE:
           hid = "WEAVE_DEVICE_COUNT_MOBILE";
           prefName += "mobile";
           break;

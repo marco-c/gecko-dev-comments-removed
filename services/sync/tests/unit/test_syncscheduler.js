@@ -168,9 +168,8 @@ add_task(async function test_updateClientMode() {
   do_check_false(scheduler.idle);
 
   
-  clientsEngine._store.create(
-    { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
-  );
+  Svc.Prefs.set("clients.devices.desktop", 1);
+  Svc.Prefs.set("clients.devices.mobile", 1);
   scheduler.updateClientMode();
 
   do_check_eq(scheduler.syncThreshold, MULTI_DEVICE_THRESHOLD);
@@ -180,6 +179,7 @@ add_task(async function test_updateClientMode() {
 
   
   clientsEngine.resetClient();
+  Svc.Prefs.reset("clients.devices.mobile");
   scheduler.updateClientMode();
 
   
@@ -602,9 +602,8 @@ add_task(async function test_idle_adjustSyncInterval() {
 
   
   scheduler.idle = false;
-  clientsEngine._store.create(
-    { id: "foo", cleartext: { os: "mobile", version: "0.01", type: "desktop" } }
-  );
+  Svc.Prefs.set("clients.devices.desktop", 1);
+  Svc.Prefs.set("clients.devices.mobile", 1);
   scheduler.updateClientMode();
   scheduler.observe(null, "idle", Svc.Prefs.get("scheduler.idleTime"));
   do_check_eq(scheduler.idle, true);
@@ -619,7 +618,8 @@ add_task(async function test_back_triggersSync() {
   do_check_eq(Status.backoffInterval, 0);
 
   
-  scheduler.numClients = 2;
+  Svc.Prefs.set("clients.devices.desktop", 1);
+  Svc.Prefs.set("clients.devices.mobile", 1);
   scheduler.observe(null, "idle", Svc.Prefs.get("scheduler.idleTime"));
   do_check_true(scheduler.idle);
 
@@ -640,7 +640,8 @@ add_task(async function test_active_triggersSync_observesBackoff() {
   
   const BACKOFF = 7337;
   Status.backoffInterval = scheduler.idleInterval + BACKOFF;
-  scheduler.numClients = 2;
+  Svc.Prefs.set("clients.devices.desktop", 1);
+  Svc.Prefs.set("clients.devices.mobile", 1);
   scheduler.observe(null, "idle", Svc.Prefs.get("scheduler.idleTime"));
   do_check_eq(scheduler.idle, true);
 
@@ -669,7 +670,8 @@ add_task(async function test_back_debouncing() {
   do_check_eq(scheduler.idle, false);
 
   
-  scheduler.numClients = 2;
+  Svc.Prefs.set("clients.devices.desktop", 1);
+  Svc.Prefs.set("clients.devices.mobile", 1);
   scheduler.observe(null, "idle", Svc.Prefs.get("scheduler.idleTime"));
   do_check_eq(scheduler.idle, true);
 
