@@ -6347,13 +6347,6 @@ Parser<ParseHandler>::classDefinition(YieldHandling yieldHandling,
 
         bool isStatic = false;
         if (tt == TOK_NAME && tokenStream.currentName() == context->names().static_) {
-            MOZ_ASSERT(pc->sc()->strict(), "classes are always strict");
-
-            
-            
-            if (!checkUnescapedName())
-                return null();
-
             if (!tokenStream.peekToken(&tt, TokenStream::KeywordIsName))
                 return null();
             if (tt == TOK_RC) {
