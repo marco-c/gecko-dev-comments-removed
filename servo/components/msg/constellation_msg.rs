@@ -87,20 +87,20 @@ impl LoadData {
 }
 
 
-#[deriving(Clone, PartialEq, Hash)]
+#[deriving(Clone, PartialEq, Hash, Show)]
 pub enum NavigationType {
     Load,               
     Navigate,           
 }
 
-#[deriving(Clone, PartialEq, Hash)]
+#[deriving(Clone, PartialEq, Hash, Show)]
 pub enum NavigationDirection {
     Forward,
     Back,
 }
 
-#[deriving(Clone, PartialEq, Eq, Hash)]
+#[deriving(Clone, PartialEq, Eq, Hash, Show)]
 pub struct PipelineId(pub uint);
 
-#[deriving(Clone, PartialEq, Eq, Hash)]
+#[deriving(Clone, PartialEq, Eq, Hash, Show)]
 pub struct SubpageId(pub uint);

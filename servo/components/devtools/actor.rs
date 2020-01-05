@@ -4,8 +4,8 @@
 
 
 
-use std::any::{AnyPrivate, AnyRefExt, AnyMutRefExt};
-use std::collections::hashmap::HashMap;
+use std::any::{Any, AnyRefExt, AnyMutRefExt};
+use std::collections::HashMap;
 use std::cell::{Cell, RefCell};
 use std::intrinsics::TypeId;
 use std::io::TcpStream;
@@ -16,7 +16,7 @@ use serialize::json;
 
 
 
-pub trait Actor: AnyPrivate {
+pub trait Actor {
     fn handle_message(&self,
                       registry: &ActorRegistry,
                       msg_type: &String,
@@ -45,9 +45,12 @@ impl<'a> AnyRefExt<'a> for &'a Actor + 'a {
     fn is<T: 'static>(self) -> bool {
         
         
-        let t = TypeId::of::<T>();
-        let boxed = self.get_type_id();
-        t == boxed
+        unsafe {
+            let t = TypeId::of::<T>();
+            let this: &Actor = transmute(self);
+            let boxed: TypeId = this.get_type_id();
+            t == boxed
+        }
     }
 
     fn downcast_ref<T: 'static>(self) -> Option<&'a T> {
@@ -94,7 +97,7 @@ impl ActorRegistry {
         if script_id.as_slice() == "" {
             return "".to_string();
         }
-        self.script_actors.borrow().find(&script_id).unwrap().to_string()
+        self.script_actors.borrow().get(&script_id).unwrap().to_string()
     }
 
     pub fn script_actor_registered(&self, script_id: String) -> bool {
@@ -108,7 +111,7 @@ impl ActorRegistry {
                 return key.to_string();
             }
         }
-        fail!("couldn't find actor named {:s}", actor)
+        panic!("couldn't find actor named {:s}", actor)
     }
 
     
@@ -134,7 +137,7 @@ impl ActorRegistry {
         
         
 
-        self.actors.find(&name.to_string()).unwrap().downcast_ref::<T>().unwrap()
+        self.actors.get(&name.to_string()).unwrap().downcast_ref::<T>().unwrap()
     }
 
     
@@ -143,17 +146,17 @@ impl ActorRegistry {
         
         
 
-        self.actors.find_mut(&name.to_string()).unwrap().downcast_mut::<T>().unwrap()
+        self.actors.get_mut(&name.to_string()).unwrap().downcast_mut::<T>().unwrap()
     }
 
     
     
     pub fn handle_message(&mut self, msg: &json::JsonObject, stream: &mut TcpStream) {
-        let to = msg.find(&"to".to_string()).unwrap().as_string().unwrap();
-        match self.actors.find(&to.to_string()) {
+        let to = msg.get(&"to".to_string()).unwrap().as_string().unwrap();
+        match self.actors.get(&to.to_string()) {
             None => println!("message received for unknown actor \"{:s}\"", to),
             Some(actor) => {
-                let msg_type = msg.find(&"type".to_string()).unwrap().as_string().unwrap();
+                let msg_type = msg.get(&"type".to_string()).unwrap().as_string().unwrap();
                 if !actor.handle_message(self, &msg_type.to_string(), msg, stream) {
                     println!("unexpected message type \"{:s}\" found for actor \"{:s}\"",
                              msg_type, to);

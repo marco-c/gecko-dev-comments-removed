@@ -189,7 +189,7 @@ impl CompositorLayer for Layer<CompositorData> {
     
     fn add_buffers(&self, new_buffers: Box<LayerBufferSet>, epoch: Epoch) -> bool {
         if self.extra_data.borrow().epoch != epoch {
-            debug!("add_buffers: compositor epoch mismatch: {:?} != {:?}, id: {:?}",
+            debug!("add_buffers: compositor epoch mismatch: {} != {}, id: {}",
                    self.extra_data.borrow().epoch,
                    epoch,
                    self.extra_data.borrow().pipeline.id);
@@ -357,4 +357,3 @@ impl CompositorLayer for Layer<CompositorData> {
     }
 
 }
-

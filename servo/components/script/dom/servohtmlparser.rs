@@ -109,7 +109,7 @@ impl JSTraceable for ServoHTMLParser {
         unsafe {
             
             
-            debug_assert!(task_state::get().contains(task_state::InHTMLParser)
+            debug_assert!(task_state::get().contains(task_state::IN_HTML_PARSER)
                 || !self.tokenizer.is_mutably_borrowed());
 
             let tokenizer = self.tokenizer.borrow_for_gc_trace();

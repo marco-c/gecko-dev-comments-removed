@@ -6,7 +6,6 @@
 
 use std::from_str::FromStr;
 use std::hash::{Hash, sip};
-use std::path::BytesContainer;
 use std::str;
 
 
@@ -67,7 +66,7 @@ impl ByteString {
         vec.iter().all(|&x| {
             
             match x {
-                0..31 | 127 => false, 
+                0...31 | 127 => false, 
                 40 | 41 | 60 | 62 | 64 |
                 44 | 59 | 58 | 92 | 34 |
                 47 | 91 | 93 | 63 | 61 |
@@ -132,7 +131,7 @@ impl ByteString {
                         false
                     }
                 },
-                0..31 | 127 => false, 
+                0...31 | 127 => false, 
                 x if x > 127 => false, 
                 _ if prev == Other || prev == SPHT => {
                     prev = Other;
@@ -153,6 +152,6 @@ impl Hash for ByteString {
 
 impl FromStr for ByteString {
     fn from_str(s: &str) -> Option<ByteString> {
-        Some(ByteString::new(s.container_into_owned_bytes()))
+        Some(ByteString::new(s.to_string().into_bytes()))
     }
 }

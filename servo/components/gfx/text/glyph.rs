@@ -7,7 +7,7 @@ use servo_util::range;
 use servo_util::range::{Range, RangeIndex, IntRangeIndex, EachIndex};
 use servo_util::geometry::Au;
 
-use std::cmp::{PartialOrd, PartialEq};
+use std::cmp::PartialOrd;
 use std::num::{NumCast, Zero};
 use std::mem;
 use std::u16;
@@ -22,7 +22,7 @@ use geom::point::Point2D;
 
 
 
-#[deriving(Clone)]
+#[deriving(Clone, Show)]
 struct GlyphEntry {
     value: u32,
 }
@@ -251,7 +251,7 @@ impl GlyphEntry {
 
 
 
-#[deriving(Clone)]
+#[deriving(Clone, Show)]
 struct DetailedGlyph {
     id: GlyphId,
     
@@ -270,7 +270,7 @@ impl DetailedGlyph {
     }
 }
 
-#[deriving(PartialEq, Clone, Eq)]
+#[deriving(PartialEq, Clone, Eq, Show)]
 struct DetailedGlyphRecord {
     
     entry_offset: CharIndex,
@@ -319,7 +319,7 @@ impl<'a> DetailedGlyphStore {
             detail_offset: self.detail_buffer.len() as int,
         };
 
-        debug!("Adding entry[off={}] for detailed glyphs: {:?}", entry_offset, glyphs);
+        debug!("Adding entry[off={}] for detailed glyphs: {}", entry_offset, glyphs);
 
         
 
@@ -563,7 +563,7 @@ impl<'a> GlyphStore {
             }
         }.adapt_character_flags_of_entry(self.entry_buffer[i.to_uint()]);
 
-        *self.entry_buffer.get_mut(i.to_uint()) = entry;
+        self.entry_buffer[i.to_uint()] = entry;
     }
 
     pub fn add_glyphs_for_char_index(&mut self, i: CharIndex, data_for_glyphs: &[GlyphData]) {
@@ -589,9 +589,9 @@ impl<'a> GlyphStore {
             }
         }.adapt_character_flags_of_entry(self.entry_buffer[i.to_uint()]);
 
-        debug!("Adding multiple glyphs[idx={}, count={}]: {:?}", i, glyph_count, entry);
+        debug!("Adding multiple glyphs[idx={}, count={}]: {}", i, glyph_count, entry);
 
-        *self.entry_buffer.get_mut(i.to_uint()) = entry;
+        self.entry_buffer[i.to_uint()] = entry;
     }
 
     
@@ -601,7 +601,7 @@ impl<'a> GlyphStore {
         let entry = GlyphEntry::complex(cluster_start, ligature_start, 0);
         debug!("adding spacer for chracter without associated glyph[idx={}]", i);
 
-        *self.entry_buffer.get_mut(i.to_uint()) = entry;
+        self.entry_buffer[i.to_uint()] = entry;
     }
 
     pub fn iter_glyphs_for_char_index(&'a self, i: CharIndex) -> GlyphIterator<'a> {
@@ -611,10 +611,10 @@ impl<'a> GlyphStore {
     #[inline]
     pub fn iter_glyphs_for_char_range(&'a self, rang: &Range<CharIndex>) -> GlyphIterator<'a> {
         if rang.begin() >= self.char_len() {
-            fail!("iter_glyphs_for_range: range.begin beyond length!");
+            panic!("iter_glyphs_for_range: range.begin beyond length!");
         }
         if rang.end() > self.char_len() {
-            fail!("iter_glyphs_for_range: range.end beyond length!");
+            panic!("iter_glyphs_for_range: range.end beyond length!");
         }
 
         GlyphIterator {
@@ -666,25 +666,25 @@ impl<'a> GlyphStore {
     pub fn set_char_is_space(&mut self, i: CharIndex) {
         assert!(i < self.char_len());
         let entry = self.entry_buffer[i.to_uint()];
-        *self.entry_buffer.get_mut(i.to_uint()) = entry.set_char_is_space();
+        self.entry_buffer[i.to_uint()] = entry.set_char_is_space();
     }
 
     pub fn set_char_is_tab(&mut self, i: CharIndex) {
         assert!(i < self.char_len());
         let entry = self.entry_buffer[i.to_uint()];
-        *self.entry_buffer.get_mut(i.to_uint()) = entry.set_char_is_tab();
+        self.entry_buffer[i.to_uint()] = entry.set_char_is_tab();
     }
 
     pub fn set_char_is_newline(&mut self, i: CharIndex) {
         assert!(i < self.char_len());
         let entry = self.entry_buffer[i.to_uint()];
-        *self.entry_buffer.get_mut(i.to_uint()) = entry.set_char_is_newline();
+        self.entry_buffer[i.to_uint()] = entry.set_char_is_newline();
     }
 
     pub fn set_can_break_before(&mut self, i: CharIndex, t: BreakType) {
         assert!(i < self.char_len());
         let entry = self.entry_buffer[i.to_uint()];
-        *self.entry_buffer.get_mut(i.to_uint()) = entry.set_can_break_before(t);
+        self.entry_buffer[i.to_uint()] = entry.set_can_break_before(t);
     }
 }
 

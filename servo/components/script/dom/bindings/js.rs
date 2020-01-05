@@ -94,7 +94,7 @@ impl<T: Reflectable> Temporary<T> {
     pub fn root<'a, 'b>(self) -> Root<'a, 'b, T> {
         let collection = StackRoots.get().unwrap();
         unsafe {
-            (**collection).new_root(&self.inner)
+            Root::new(&**collection, &self.inner)
         }
     }
 
@@ -171,7 +171,7 @@ impl<T: Reflectable> JS<T> {
     pub fn root<'a, 'b>(&self) -> Root<'a, 'b, T> {
         let collection = StackRoots.get().unwrap();
         unsafe {
-            (**collection).new_root(self)
+            Root::new(&**collection, self)
         }
     }
 }
@@ -432,17 +432,11 @@ impl RootCollection {
     }
 
     
-    #[allow(unrooted_must_root)]
-    fn new_root<'b, 'a: 'b, T: Reflectable>(&'a self, unrooted: &JS<T>) -> Root<'a, 'b, T> {
-        Root::new(self, unrooted)
-    }
-
-    
     fn root<'a, 'b, T: Reflectable>(&self, untracked: &Root<'a, 'b, T>) {
         unsafe {
             let roots = self.roots.get();
             (*roots).push(untracked.js_ptr);
-            debug!("  rooting {:?}", untracked.js_ptr);
+            debug!("  rooting {}", untracked.js_ptr);
         }
     }
 
@@ -450,7 +444,7 @@ impl RootCollection {
     fn unroot<'a, 'b, T: Reflectable>(&self, rooted: &Root<'a, 'b, T>) {
         unsafe {
             let roots = self.roots.get();
-            debug!("unrooting {:?} (expecting {:?}",
+            debug!("unrooting {} (expecting {}",
                    (*roots).as_slice().last().unwrap(),
                    rooted.js_ptr);
             assert!(*(*roots).as_slice().last().unwrap() == rooted.js_ptr);

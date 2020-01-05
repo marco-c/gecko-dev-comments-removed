@@ -367,7 +367,7 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
     
     fn load_url(self, href: DOMString) {
         let base_url = self.page().get_url();
-        debug!("current page url is {:?}", base_url);
+        debug!("current page url is {}", base_url);
         let url = UrlParser::new().base_url(&base_url).parse(href.as_slice());
         
         let url = url.unwrap();

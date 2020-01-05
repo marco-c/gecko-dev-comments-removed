@@ -58,7 +58,7 @@ impl LintPass for TransmutePass {
                             cx.span_lint(TRANSMUTE_TYPE_LINT, ex.span,
                                          format!("Transmute from {} to {} detected",
                                                  expr_ty(tcx, ex).repr(tcx),
-                                                 expr_ty(tcx, &**args.get(0)).repr(tcx)
+                                                 expr_ty(tcx, &**args.get(0).unwrap()).repr(tcx)
                                         ).as_slice());
                         }
                     }
@@ -75,7 +75,7 @@ impl LintPass for TransmutePass {
 
 fn lint_unrooted_ty(cx: &Context, ty: &ast::Ty, warning: &str) {
     match ty.node {
-        ast::TyBox(ref t) | ast::TyUniq(ref t) |
+        ast::TyUniq(ref t) |
         ast::TyVec(ref t) | ast::TyFixedLengthVec(ref t, _) |
         ast::TyPtr(ast::MutTy { ty: ref t, ..}) | ast::TyRptr(_, ast::MutTy { ty: ref t, ..}) => lint_unrooted_ty(cx, &**t, warning),
         ast::TyPath(_, _, id) => {
@@ -162,7 +162,7 @@ impl LintPass for UnrootedPass {
                 
                 
                 
-                ast::ExprMatch(ref e, _) |
+                ast::ExprMatch(ref e, _, _) |
                 
                 ast::ExprForLoop(_, ref e, _, _) => &**e,
                 

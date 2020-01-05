@@ -3,7 +3,7 @@
 
 
 
-use std::ascii::StrAsciiExt;
+use std::ascii::AsciiExt;
 use cssparser::ast::{ComponentValue, Ident, Comma, SkipWhitespaceIterable, SkipWhitespaceIterator};
 
 

@@ -28,6 +28,7 @@ use std::fmt;
 
 
 
+#[deriving(Show)]
 pub enum ScreenPx {}
 
 
@@ -39,7 +40,7 @@ pub enum ScreenPx {}
 
 
 
-#[deriving(Encodable)]
+#[deriving(Encodable, Show)]
 pub enum ViewportPx {}
 
 
@@ -48,7 +49,7 @@ pub enum ViewportPx {}
 
 
 
-#[deriving(Encodable)]
+#[deriving(Encodable, Show)]
 pub enum PagePx {}
 
 
@@ -95,8 +96,8 @@ pub static MAX_RECT: Rect<Au> = Rect {
     }
 };
 
-pub static MIN_AU: Au = Au(i32::MIN);
-pub static MAX_AU: Au = Au(i32::MAX);
+pub const MIN_AU: Au = Au(i32::MIN);
+pub const MAX_AU: Au = Au(i32::MAX);
 
 impl<E, S: Encoder<E>> Encodable<S, E> for Au {
     fn encode(&self, e: &mut S) -> Result<(), E> {
@@ -319,4 +320,3 @@ pub fn f32_rect_to_au_rect(rect: Rect<f32>) -> Rect<Au> {
     Rect(Point2D(Au::from_frac32_px(rect.origin.x), Au::from_frac32_px(rect.origin.y)),
          Size2D(Au::from_frac32_px(rect.size.width), Au::from_frac32_px(rect.size.height)))
 }
-

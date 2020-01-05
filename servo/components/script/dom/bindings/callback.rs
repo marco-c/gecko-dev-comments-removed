@@ -2,7 +2,7 @@
 
 
 
-#![deny(missing_doc)]
+#![deny(missing_docs)]
 
 
 

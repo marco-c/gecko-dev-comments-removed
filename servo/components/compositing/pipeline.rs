@@ -168,7 +168,7 @@ impl Pipeline {
     }
 
     pub fn exit(&self) {
-        debug!("pipeline {:?} exiting", self.id);
+        debug!("pipeline {} exiting", self.id);
 
         
         
@@ -189,4 +189,3 @@ impl Pipeline {
         }
     }
 }
-

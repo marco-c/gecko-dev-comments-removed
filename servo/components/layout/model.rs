@@ -4,7 +4,7 @@
 
 
 
-#![deny(unsafe_block)]
+#![deny(unsafe_blocks)]
 
 use fragment::Fragment;
 
@@ -217,7 +217,7 @@ impl MarginCollapseInfo {
             (AccumulatingCollapsibleTopMargin, MarginsCollapse(..)) => {
                 
                 
-                fail!("should not be accumulating collapsible block_start margins anymore!")
+                panic!("should not be accumulating collapsible block_start margins anymore!")
             }
             (AccumulatingCollapsibleTopMargin, MarginsCollapseThrough(margin)) => {
                 self.block_start_margin.union(margin);

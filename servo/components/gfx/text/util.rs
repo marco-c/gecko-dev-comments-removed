@@ -48,7 +48,7 @@ pub fn transform_text(text: &str,
                     if ch != '\n' {
                         new_line_index = new_line_index + CharIndex(1);
                     }
-                    output_text.push_char(ch);
+                    output_text.push(ch);
                 }
             }
             text.len() > 0 && is_in_whitespace(text.char_at_reverse(0), mode)
@@ -67,14 +67,14 @@ pub fn transform_text(text: &str,
                         
                     } else {
                         
-                        output_text.push_char(ch);
+                        output_text.push(ch);
                     }
                 } else { 
                     if in_whitespace {
                         
                     } else {
                         
-                        output_text.push_char(' ');
+                        output_text.push(' ');
                     }
                 }
                 

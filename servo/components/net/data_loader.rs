@@ -28,7 +28,7 @@ fn load(load_data: LoadData, start_chan: Sender<LoadResponse>) {
     
     let mut scheme_data = match url.scheme_data {
         NonRelativeSchemeData(scheme_data) => scheme_data,
-        _ => fail!("Expected a non-relative scheme URL.")
+        _ => panic!("Expected a non-relative scheme URL.")
     };
     match url.query {
         Some(query) => {
