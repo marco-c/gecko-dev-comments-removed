@@ -133,7 +133,7 @@ public:
 
 
 
-  CompletionNotifier(mozIStorageStatementCallback *aCallback,
+  CompletionNotifier(already_AddRefed<mozIStorageStatementCallback> aCallback,
                      ExecutionState aReason)
     : Runnable("storage::CompletionNotifier")
     , mCallback(aCallback)
@@ -145,14 +145,13 @@ public:
   {
     if (mCallback) {
       (void)mCallback->HandleCompletion(mReason);
-      NS_RELEASE(mCallback);
     }
 
     return NS_OK;
   }
 
 private:
-  mozIStorageStatementCallback *mCallback;
+  RefPtr<mozIStorageStatementCallback> mCallback;
   ExecutionState mReason;
 };
 
@@ -211,15 +210,15 @@ AsyncExecuteStatements::AsyncExecuteStatements(StatementDataArray &aStatements,
 , mCancelRequested(false)
 , mMutex(aConnection->sharedAsyncExecutionMutex)
 , mDBMutex(aConnection->sharedDBMutex)
-  , mRequestStartDate(TimeStamp::Now())
+, mRequestStartDate(TimeStamp::Now())
 {
   (void)mStatements.SwapElements(aStatements);
   NS_ASSERTION(mStatements.Length(), "We weren't given any statements!");
-  NS_IF_ADDREF(mCallback);
 }
 
 AsyncExecuteStatements::~AsyncExecuteStatements()
 {
+  MOZ_ASSERT(!mCallback, "Never called the Completion callback!");
   MOZ_ASSERT(!mHasTransaction, "There should be no transaction at this point");
 }
 
@@ -468,12 +467,11 @@ AsyncExecuteStatements::notifyComplete()
   
   
   RefPtr<CompletionNotifier> completionEvent =
-    new CompletionNotifier(mCallback, mState);
-
+    new CompletionNotifier(mCallback.forget(), mState);
   
-  mCallback = nullptr;
-
-  (void)mCallingThread->Dispatch(completionEvent, NS_DISPATCH_NORMAL);
+  
+  
+  (void)mCallingThread->Dispatch(completionEvent.forget(), NS_DISPATCH_NORMAL);
 
   return NS_OK;
 }
@@ -507,7 +505,9 @@ AsyncExecuteStatements::notifyError(mozIStorageError *aError)
     new ErrorNotifier(mCallback, aError, this);
   NS_ENSURE_TRUE(notifier, NS_ERROR_OUT_OF_MEMORY);
 
-  return mCallingThread->Dispatch(notifier, NS_DISPATCH_NORMAL);
+  
+  
+  return mCallingThread->Dispatch(notifier.forget(), NS_DISPATCH_NORMAL);
 }
 
 nsresult
@@ -520,9 +520,13 @@ AsyncExecuteStatements::notifyResults()
     new CallbackResultNotifier(mCallback, mResultSet, this);
   NS_ENSURE_TRUE(notifier, NS_ERROR_OUT_OF_MEMORY);
 
-  nsresult rv = mCallingThread->Dispatch(notifier, NS_DISPATCH_NORMAL);
-  if (NS_SUCCEEDED(rv))
+  
+  
+  nsresult rv = mCallingThread->Dispatch(notifier.forget(), NS_DISPATCH_NORMAL);
+  if (NS_SUCCEEDED(rv)) {
+    
     mResultSet = nullptr; 
+  }
   return rv;
 }
 

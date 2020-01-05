@@ -186,7 +186,10 @@ private:
   RefPtr<Connection> mConnection;
   sqlite3 *mNativeConnection;
   bool mHasTransaction;
-  mozIStorageStatementCallback *mCallback;
+  
+  
+  
+  RefPtr<mozIStorageStatementCallback> mCallback;
   nsCOMPtr<nsIThread> mCallingThread;
   RefPtr<ResultSet> mResultSet;
 
