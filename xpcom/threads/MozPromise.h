@@ -522,6 +522,50 @@ protected:
   };
 
   
+  
+  template<typename ThisType, typename ResolveRejectMethodType>
+  class MethodThenValue<ThisType, ResolveRejectMethodType, void> : public ThenValueBase
+  {
+  public:
+    MethodThenValue(AbstractThread* aResponseTarget, ThisType* aThisVal,
+                    ResolveRejectMethodType aResolveRejectMethod,
+                    const char* aCallSite)
+      : ThenValueBase(aResponseTarget, aCallSite)
+      , mThisVal(aThisVal)
+      , mResolveRejectMethod(aResolveRejectMethod)
+    {}
+
+    void Disconnect() override
+    {
+      ThenValueBase::Disconnect();
+
+      
+      
+      
+      mThisVal = nullptr;
+    }
+
+  protected:
+    already_AddRefed<MozPromise> DoResolveOrRejectInternal(const ResolveOrRejectValue& aValue) override
+    {
+      RefPtr<MozPromise> completion =
+        InvokeCallbackMethod(mThisVal.get(), mResolveRejectMethod, aValue);
+
+      
+      
+      
+      
+      mThisVal = nullptr;
+
+      return completion.forget();
+    }
+
+  private:
+    RefPtr<ThisType> mThisVal; 
+    ResolveRejectMethodType mResolveRejectMethod;
+  };
+
+  
   template<typename ResolveFunction, typename RejectFunction>
   class FunctionThenValue : public ThenValueBase
   {
@@ -726,6 +770,16 @@ public:
     using ThenType = MethodThenValue<ThisType, ResolveMethodType, RejectMethodType>;
     RefPtr<ThenValueBase> thenValue = new ThenType(aResponseThread,
        aThisVal, aResolveMethod, aRejectMethod, aCallSite);
+    return ThenCommand(aResponseThread, aCallSite, thenValue.forget(), this);
+  }
+
+  template<typename ThisType, typename ResolveRejectMethodType>
+  ThenCommand Then(AbstractThread* aResponseThread, const char* aCallSite,
+    ThisType* aThisVal, ResolveRejectMethodType aResolveRejectMethod)
+  {
+    using ThenType = MethodThenValue<ThisType, ResolveRejectMethodType, void>;
+    RefPtr<ThenValueBase> thenValue = new ThenType(aResponseThread,
+       aThisVal, aResolveRejectMethod, aCallSite);
     return ThenCommand(aResponseThread, aCallSite, thenValue.forget(), this);
   }
 
