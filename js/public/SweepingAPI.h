@@ -15,7 +15,11 @@ template <typename T> class WeakCache;
 namespace shadow {
 JS_PUBLIC_API(void)
 RegisterWeakCache(JS::Zone* zone, JS::WeakCache<void*>* cachep);
+JS_PUBLIC_API(void)
+RegisterWeakCache(JSRuntime* rt, JS::WeakCache<void*>* cachep);
 } 
+
+
 
 
 
@@ -42,6 +46,13 @@ class WeakCache : public js::MutableWrappedPtrOperations<T, WeakCache<T>>,
     {
         sweeper = GCPolicy<T>::sweep;
         shadow::RegisterWeakCache(zone, reinterpret_cast<WeakCache<void*>*>(this));
+    }
+    template <typename U>
+    WeakCache(JSRuntime* rt, U&& initial)
+      : cache(mozilla::Forward<U>(initial))
+    {
+        sweeper = GCPolicy<T>::sweep;
+        shadow::RegisterWeakCache(rt, reinterpret_cast<WeakCache<void*>*>(this));
     }
     WeakCache(WeakCache&& other)
       : sweeper(other.sweeper),

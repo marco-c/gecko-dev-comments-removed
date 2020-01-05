@@ -562,6 +562,15 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 
   private:
     
+    js::ActiveThreadData<mozilla::LinkedList<JS::WeakCache<void*>>> weakCaches_;
+  public:
+    mozilla::LinkedList<JS::WeakCache<void*>>& weakCaches() { return weakCaches_.ref(); }
+    void registerWeakCache(JS::WeakCache<void*>* cachep) {
+        weakCaches().insertBack(cachep);
+    }
+
+  private:
+    
 
 
 
