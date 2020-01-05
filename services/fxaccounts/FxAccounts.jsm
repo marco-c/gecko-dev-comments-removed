@@ -10,14 +10,13 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.importGlobalProperties(["URL"]);
 
 Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://gre/modules/Promise.jsm");
+Cu.import("resource://gre/modules/PromiseUtils.jsm");
 Cu.import("resource://services-common/utils.js");
 Cu.import("resource://services-common/rest.js");
 Cu.import("resource://services-crypto/utils.js");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Timer.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/FxAccountsStorage.jsm");
 Cu.import("resource://gre/modules/FxAccountsCommon.js");
 
@@ -894,7 +893,7 @@ FxAccountsInternal.prototype = {
         return userData;
       }
       if (!currentState.whenKeysReadyDeferred) {
-        currentState.whenKeysReadyDeferred = Promise.defer();
+        currentState.whenKeysReadyDeferred = PromiseUtils.defer();
         if (userData.keyFetchToken) {
           this.fetchAndUnwrapKeys(userData.keyFetchToken).then(
             (dataWithKeys) => {
@@ -920,60 +919,58 @@ FxAccountsInternal.prototype = {
     ).then(result => currentState.resolve(result));
    },
 
-  fetchAndUnwrapKeys(keyFetchToken) {
+  async fetchAndUnwrapKeys(keyFetchToken) {
     if (logPII) {
       log.debug("fetchAndUnwrapKeys: token: " + keyFetchToken);
     }
     let currentState = this.currentAccountState;
-    return Task.spawn(function* task() {
-      
-      if (!keyFetchToken) {
-        log.warn("improper fetchAndUnwrapKeys() call: token missing");
-        yield this.signOut();
-        return null;
-      }
+    
+    if (!keyFetchToken) {
+      log.warn("improper fetchAndUnwrapKeys() call: token missing");
+      await this.signOut();
+      return currentState.resolve(null);
+    }
 
-      let {kA, wrapKB} = yield this.fetchKeys(keyFetchToken);
+    let {kA, wrapKB} = await this.fetchKeys(keyFetchToken);
 
-      let data = yield currentState.getUserAccountData();
+    let data = await currentState.getUserAccountData();
 
-      
-      if (data.keyFetchToken !== keyFetchToken) {
-        throw new Error("Signed in user changed while fetching keys!");
-      }
+    
+    if (data.keyFetchToken !== keyFetchToken) {
+      throw new Error("Signed in user changed while fetching keys!");
+    }
 
-      
-      
-      let kB_hex = CryptoUtils.xor(CommonUtils.hexToBytes(data.unwrapBKey),
-                                   wrapKB);
+    
+    
+    let kB_hex = CryptoUtils.xor(CommonUtils.hexToBytes(data.unwrapBKey),
+                                 wrapKB);
 
-      if (logPII) {
-        log.debug("kB_hex: " + kB_hex);
-      }
-      let updateData = {
-        kA: CommonUtils.bytesAsHex(kA),
-        kB: CommonUtils.bytesAsHex(kB_hex),
-        keyFetchToken: null, 
-        unwrapBKey: null,
-      }
+    if (logPII) {
+      log.debug("kB_hex: " + kB_hex);
+    }
+    let updateData = {
+      kA: CommonUtils.bytesAsHex(kA),
+      kB: CommonUtils.bytesAsHex(kB_hex),
+      keyFetchToken: null, 
+      unwrapBKey: null,
+    }
 
-      log.debug("Keys Obtained: kA=" + !!updateData.kA + ", kB=" + !!updateData.kB);
-      if (logPII) {
-        log.debug("Keys Obtained: kA=" + updateData.kA + ", kB=" + updateData.kB);
-      }
+    log.debug("Keys Obtained: kA=" + !!updateData.kA + ", kB=" + !!updateData.kB);
+    if (logPII) {
+      log.debug("Keys Obtained: kA=" + updateData.kA + ", kB=" + updateData.kB);
+    }
 
-      yield currentState.updateUserAccountData(updateData);
-      
-      
-      
-      this.notifyObservers(ONVERIFIED_NOTIFICATION);
-      return currentState.getUserAccountData();
-    }.bind(this)).then(result => currentState.resolve(result));
+    await currentState.updateUserAccountData(updateData);
+    
+    
+    
+    this.notifyObservers(ONVERIFIED_NOTIFICATION);
+    data = await currentState.getUserAccountData();
+    return currentState.resolve(data);
   },
 
-  getAssertionFromCert(data, keyPair, cert, audience) {
+  async getAssertionFromCert(data, keyPair, cert, audience) {
     log.debug("getAssertionFromCert");
-    let d = Promise.defer();
     let options = {
       duration: ASSERTION_LIFETIME,
       localtimeOffsetMsec: this.localtimeOffsetMsec,
@@ -982,19 +979,21 @@ FxAccountsInternal.prototype = {
     let currentState = this.currentAccountState;
     
     
-    jwcrypto.generateAssertion(cert, keyPair, audience, options, (err, signed) => {
-      if (err) {
-        log.error("getAssertionFromCert: " + err);
-        d.reject(err);
-      } else {
-        log.debug("getAssertionFromCert returning signed: " + !!signed);
-        if (logPII) {
-          log.debug("getAssertionFromCert returning signed: " + signed);
+    let assertion = await new Promise((resolve, reject) => {
+      jwcrypto.generateAssertion(cert, keyPair, audience, options, (err, signed) => {
+        if (err) {
+          log.error("getAssertionFromCert: " + err);
+          reject(err);
+        } else {
+          log.debug("getAssertionFromCert returning signed: " + !!signed);
+          if (logPII) {
+            log.debug("getAssertionFromCert returning signed: " + signed);
+          }
+          resolve(signed);
         }
-        d.resolve(signed);
-      }
+      });
     });
-    return d.promise.then(result => currentState.resolve(result));
+    return currentState.resolve(assertion);
   },
 
   getCertificateSigned(sessionToken, serializedPublicKey, lifetime) {
@@ -1012,7 +1011,7 @@ FxAccountsInternal.prototype = {
   
 
 
-  getKeypairAndCertificate: Task.async(function* (currentState) {
+  async getKeypairAndCertificate(currentState) {
     
     
     
@@ -1021,7 +1020,7 @@ FxAccountsInternal.prototype = {
     
     let ignoreCachedAuthCredentials = Services.prefs.getBoolPref("services.sync.debug.ignoreCachedAuthCredentials", false);
     let mustBeValidUntil = this.now() + ASSERTION_USE_PERIOD;
-    let accountData = yield currentState.getUserAccountData(["cert", "keyPair", "sessionToken"]);
+    let accountData = await currentState.getUserAccountData(["cert", "keyPair", "sessionToken"]);
 
     let keyPairValid = !ignoreCachedAuthCredentials &&
                        accountData.keyPair &&
@@ -1055,7 +1054,7 @@ FxAccountsInternal.prototype = {
       keyPair = accountData.keyPair;
     } else {
       let keyWillBeValidUntil = this.now() + KEY_LIFETIME;
-      keyPair = yield new Promise((resolve, reject) => {
+      keyPair = await new Promise((resolve, reject) => {
         jwcrypto.generateKeyPair("DS160", (err, kp) => {
           if (err) {
             reject(err);
@@ -1072,7 +1071,7 @@ FxAccountsInternal.prototype = {
 
     
     let certWillBeValidUntil = this.now() + CERT_LIFETIME;
-    let certificate = yield this.getCertificateSigned(accountData.sessionToken,
+    let certificate = await this.getCertificateSigned(accountData.sessionToken,
                                                       keyPair.rawKeyPair.serializedPublicKey,
                                                       CERT_LIFETIME);
     log.debug("getCertificate got a new one: " + !!certificate);
@@ -1085,13 +1084,13 @@ FxAccountsInternal.prototype = {
           validUntil: certWillBeValidUntil,
         },
       };
-      yield currentState.updateUserAccountData(toUpdate);
+      await currentState.updateUserAccountData(toUpdate);
     }
     return {
       keyPair: keyPair.rawKeyPair,
       certificate,
     }
-  }),
+  },
 
   getUserAccountData() {
     return this.currentAccountState.getUserAccountData();
@@ -1175,7 +1174,7 @@ FxAccountsInternal.prototype = {
       
       this.pollStartDate = Date.now();
       if (!currentState.whenVerifiedDeferred) {
-        currentState.whenVerifiedDeferred = Promise.defer();
+        currentState.whenVerifiedDeferred = PromiseUtils.defer();
         
         
         
@@ -1348,7 +1347,7 @@ FxAccountsInternal.prototype = {
 
 
 
-  getOAuthToken: Task.async(function* (options = {}) {
+  async getOAuthToken(options = {}) {
     log.debug("getOAuthToken enter");
     let scope = options.scope;
     if (typeof scope === "string") {
@@ -1359,7 +1358,7 @@ FxAccountsInternal.prototype = {
       throw this._error(ERROR_INVALID_PARAMETER, "Missing or invalid 'scope' option");
     }
 
-    yield this._getVerifiedAccountOrReject();
+    await this._getVerifiedAccountOrReject();
 
     
     let currentState = this.currentAccountState;
@@ -1388,8 +1387,8 @@ FxAccountsInternal.prototype = {
 
     try {
       log.debug("getOAuthToken fetching new token from", oAuthURL);
-      let assertion = yield this.getAssertion(oAuthURL);
-      let result = yield client.getTokenFromAssertion(assertion, scopeString);
+      let assertion = await this.getAssertion(oAuthURL);
+      let result = await client.getTokenFromAssertion(assertion, scopeString);
       let token = result.access_token;
       
       if (token) {
@@ -1410,7 +1409,7 @@ FxAccountsInternal.prototype = {
     } catch (err) {
       throw this._errorToErrorClass(err);
     }
-  }),
+  },
 
   
 
@@ -1424,7 +1423,7 @@ FxAccountsInternal.prototype = {
 
 
 
-   removeCachedOAuthToken: Task.async(function* (options) {
+  async removeCachedOAuthToken(options) {
     if (!options.token || typeof options.token !== "string") {
       throw this._error(ERROR_INVALID_PARAMETER, "Missing or invalid 'token' option");
     }
@@ -1436,7 +1435,7 @@ FxAccountsInternal.prototype = {
         log.warn("FxA failed to revoke a cached token", err);
       });
     }
-   }),
+  },
 
   async _getVerifiedAccountOrReject() {
     let data = await this.currentAccountState.getUserAccountData();

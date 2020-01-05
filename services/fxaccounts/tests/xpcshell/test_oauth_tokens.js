@@ -61,9 +61,7 @@ function MockFxAccountsClient() {
   this._verified = false;
 
   this.accountStatus = function(uid) {
-    let deferred = Promise.defer();
-    deferred.resolve(!!uid && (!this._deletedOnServer));
-    return deferred.promise;
+    return Promise.resolve(!!uid && (!this._deletedOnServer));
   };
 
   this.signOut = function() { return Promise.resolve(); };
@@ -167,10 +165,11 @@ add_task(function* testRevoke() {
   equal(token1, "token0");
 
   
-  yield fxa.removeCachedOAuthToken({token: token1});
-
+  let revokeComplete = promiseNotification("testhelper-fxa-revoke-complete");
   
-  yield promiseNotification("testhelper-fxa-revoke-complete");
+  yield fxa.removeCachedOAuthToken({token: token1});
+  yield revokeComplete;
+
   
   equal(client.activeTokens.size, 0);
   
@@ -199,9 +198,10 @@ add_task(function* testSignOutDestroysTokens() {
   notEqual(token1, token2, "got a different token");
 
   
-  yield fxa.signOut();
+  let signoutComplete = promiseNotification("testhelper-fxa-signout-complete");
   
-  yield promiseNotification("testhelper-fxa-signout-complete");
+  yield fxa.signOut();
+  yield signoutComplete;
   
   equal(client.activeTokens.size, 0);
 });

@@ -18,7 +18,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "CommonUtils",
   "resource://services-common/utils.js");
 
 Cu.import("resource://gre/modules/Preferences.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 
 this.EXPORTED_SYMBOLS = [
   "LogManager",
@@ -71,7 +70,7 @@ FlushableStorageAppender.prototype = {
 
   
   
-  flushToFile: Task.async(function* (subdirArray, filename, log) {
+  async flushToFile(subdirArray, filename, log) {
     let inStream = this.getInputStream();
     this.reset();
     if (!inStream) {
@@ -81,12 +80,12 @@ FlushableStorageAppender.prototype = {
     log.debug("Flushing file log");
     log.trace("Beginning stream copy to " + filename + ": " + Date.now());
     try {
-      yield this._copyStreamToFile(inStream, subdirArray, filename, log);
+      await this._copyStreamToFile(inStream, subdirArray, filename, log);
       log.trace("onCopyComplete", Date.now());
     } catch (ex) {
       log.error("Failed to copy log stream to file", ex);
     }
-  }),
+  },
 
   
 
@@ -96,7 +95,7 @@ FlushableStorageAppender.prototype = {
 
 
 
-  _copyStreamToFile: Task.async(function* (inputStream, subdirArray, outputFileName, log) {
+  async _copyStreamToFile(inputStream, subdirArray, outputFileName, log) {
     
     
     const BUFFER_SIZE = 8192;
@@ -106,9 +105,9 @@ FlushableStorageAppender.prototype = {
     binaryStream.setInputStream(inputStream);
 
     let outputDirectory = OS.Path.join(OS.Constants.Path.profileDir, ...subdirArray);
-    yield OS.File.makeDir(outputDirectory, { ignoreExisting: true, from: OS.Constants.Path.profileDir });
+    await OS.File.makeDir(outputDirectory, { ignoreExisting: true, from: OS.Constants.Path.profileDir });
     let fullOutputFileName = OS.Path.join(outputDirectory, outputFileName);
-    let output = yield OS.File.open(fullOutputFileName, { write: true} );
+    let output = await OS.File.open(fullOutputFileName, { write: true} );
     try {
       while (true) {
         let available = binaryStream.available();
@@ -116,18 +115,18 @@ FlushableStorageAppender.prototype = {
           break;
         }
         let chunk = binaryStream.readByteArray(Math.min(available, BUFFER_SIZE));
-        yield output.write(new Uint8Array(chunk));
+        await output.write(new Uint8Array(chunk));
       }
     } finally {
       try {
         binaryStream.close(); 
-        yield output.close();
+        await output.close();
       } catch (ex) {
         log.error("Failed to close the input stream", ex);
       }
     }
     log.trace("finished copy to", fullOutputFileName);
-  }),
+  },
 }
 
 
@@ -242,7 +241,7 @@ LogManager.prototype = {
 
 
 
-  resetFileLog: Task.async(function* () {
+  async resetFileLog() {
     try {
       let flushToFile;
       let reasonPrefix;
@@ -266,7 +265,7 @@ LogManager.prototype = {
       
       
       let filename = reasonPrefix + "-" + this.logFilePrefix + "-" + Date.now() + ".txt";
-      yield this._fileAppender.flushToFile(this._logFileSubDirectoryEntries, filename, this._log);
+      await this._fileAppender.flushToFile(this._logFileSubDirectoryEntries, filename, this._log);
 
       
       
@@ -286,12 +285,12 @@ LogManager.prototype = {
       this._log.error("Failed to resetFileLog", ex);
       return null;
     }
-  }),
+  },
 
   
 
 
-  cleanupLogs: Task.async(function* () {
+  async cleanupLogs() {
     this._cleaningUpFileLogs = true;
     let logDir = FileUtils.getDir("ProfD", this._logFileSubDirectoryEntries);
     let iterator = new OS.File.DirectoryIterator(logDir.path);
@@ -299,7 +298,7 @@ LogManager.prototype = {
     let threshold = Date.now() - 1000 * maxAge;
 
     this._log.debug("Log cleanup threshold time: " + threshold);
-    yield iterator.forEach(Task.async(function* (entry) {
+    await iterator.forEach(async (entry) => {
       
       
       
@@ -309,23 +308,23 @@ LogManager.prototype = {
       }
       try {
         
-        let info = yield OS.File.stat(entry.path);
+        let info = await OS.File.stat(entry.path);
         if (info.lastModificationDate.getTime() >= threshold) {
           return;
         }
         this._log.trace(" > Cleanup removing " + entry.name +
                         " (" + info.lastModificationDate.getTime() + ")");
-        yield OS.File.remove(entry.path);
+        await OS.File.remove(entry.path);
         this._log.trace("Deleted " + entry.name);
       } catch (ex) {
         this._log.debug("Encountered error trying to clean up old log file "
                         + entry.name, ex);
       }
-    }.bind(this)));
+    });
     iterator.close();
     this._cleaningUpFileLogs = false;
     this._log.debug("Done deleting files.");
     
     Services.obs.notifyObservers(null, "services-tests:common:log-manager:cleanup-logs");
-  }),
+  },
 }

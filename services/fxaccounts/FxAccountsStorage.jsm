@@ -12,7 +12,6 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://gre/modules/FxAccountsCommon.js");
 Cu.import("resource://gre/modules/osfile.jsm");
 Cu.import("resource://services-common/utils.js");
@@ -65,7 +64,7 @@ this.FxAccountsStorageManager.prototype = {
     this._promiseInitialized = this._initialize(accountData);
   },
 
-  _initialize: Task.async(function* (accountData) {
+  async _initialize(accountData) {
     log.trace("initializing new storage manager");
     try {
       if (accountData) {
@@ -88,20 +87,20 @@ this.FxAccountsStorageManager.prototype = {
           }
         }
         
-        yield this._write();
+        await this._write();
         return;
       }
       
       
       
-      this._needToReadSecure = yield this._readPlainStorage();
+      this._needToReadSecure = await this._readPlainStorage();
       if (this._needToReadSecure && this.secureStorage) {
-        yield this._doReadAndUpdateSecure();
+        await this._doReadAndUpdateSecure();
       }
     } finally {
       log.trace("initializing of new storage manager done");
     }
-  }),
+  },
 
   finalize() {
     
@@ -145,8 +144,8 @@ this.FxAccountsStorageManager.prototype = {
   
   
   
-  getAccountData: Task.async(function* (fieldNames = null) {
-    yield this._promiseInitialized;
+  async getAccountData(fieldNames = null) {
+    await this._promiseInitialized;
     
     
     
@@ -160,7 +159,7 @@ this.FxAccountsStorageManager.prototype = {
         result[name] = value;
       }
       
-      yield this._maybeReadAndUpdateSecure();
+      await this._maybeReadAndUpdateSecure();
       
       
       
@@ -188,7 +187,7 @@ this.FxAccountsStorageManager.prototype = {
       } else if (FXA_PWDMGR_SECURE_FIELDS.has(fieldName)) {
         
         if (!checkedSecure) {
-          yield this._maybeReadAndUpdateSecure();
+          await this._maybeReadAndUpdateSecure();
           checkedSecure = true;
         }
         if (this.cachedSecure[fieldName] !== undefined) {
@@ -199,12 +198,12 @@ this.FxAccountsStorageManager.prototype = {
       }
     }
     return result;
-  }),
+  },
 
   
   
-  updateAccountData: Task.async(function* (newFields) {
-    yield this._promiseInitialized;
+  async updateAccountData(newFields) {
+    await this._promiseInitialized;
     if (!("uid" in this.cachedPlain)) {
       
       
@@ -244,12 +243,12 @@ this.FxAccountsStorageManager.prototype = {
     }
     
     
-    yield this._maybeReadAndUpdateSecure();
+    await this._maybeReadAndUpdateSecure();
     
     
     
     this._write();
-  }),
+  },
 
   _clearCachedData() {
     this.cachedMemory = {};
@@ -270,10 +269,10 @@ this.FxAccountsStorageManager.prototype = {
 
 
 
-  _readPlainStorage: Task.async(function* () {
+  async _readPlainStorage() {
     let got;
     try {
-      got = yield this.plainStorage.get();
+      got = await this.plainStorage.get();
     } catch (err) {
       
       
@@ -299,12 +298,12 @@ this.FxAccountsStorageManager.prototype = {
       this.cachedPlain[name] = value;
     }
     return true;
-  }),
+  },
 
   
 
 
-  _maybeReadAndUpdateSecure: Task.async(function* () {
+  _maybeReadAndUpdateSecure() {
     if (this.secureStorage == null || !this._needToReadSecure) {
       return null;
     }
@@ -314,13 +313,13 @@ this.FxAccountsStorageManager.prototype = {
       }
       return null;
     });
-  }),
+  },
 
   
 
 
 
-  _doReadAndUpdateSecure: Task.async(function* () {
+  async _doReadAndUpdateSecure() {
     let { uid, email } = this.cachedPlain;
     try {
       log.debug("reading secure storage with existing", Object.keys(this.cachedSecure));
@@ -328,7 +327,7 @@ this.FxAccountsStorageManager.prototype = {
       
       
       let needWrite = Object.keys(this.cachedSecure).length != 0;
-      let readSecure = yield this.secureStorage.get(uid, email);
+      let readSecure = await this.secureStorage.get(uid, email);
       
       
       
@@ -345,7 +344,7 @@ this.FxAccountsStorageManager.prototype = {
         }
         if (needWrite) {
           log.debug("successfully read secure data; writing updated data back")
-          yield this._doWriteSecure();
+          await this._doWriteSecure();
         }
       }
       this._needToReadSecure = false;
@@ -357,7 +356,7 @@ this.FxAccountsStorageManager.prototype = {
         throw ex;
       }
     }
-  }),
+  },
 
   _write() {
     
@@ -365,7 +364,7 @@ this.FxAccountsStorageManager.prototype = {
     return this._queueStorageOperation(() => this.__write());
   },
 
-  __write: Task.async(function* () {
+  async __write() {
     
     
     log.debug("writing plain storage", Object.keys(this.cachedPlain));
@@ -373,7 +372,7 @@ this.FxAccountsStorageManager.prototype = {
       version: DATA_FORMAT_VERSION,
       accountData: this.cachedPlain,
     }
-    yield this.plainStorage.set(toWritePlain);
+    await this.plainStorage.set(toWritePlain);
 
     
     if (this.secureStorage == null) {
@@ -382,14 +381,14 @@ this.FxAccountsStorageManager.prototype = {
     
     
     if (!this._needToReadSecure) {
-      yield this._doWriteSecure();
+      await this._doWriteSecure();
     }
-  }),
+  },
 
   
 
 
-  _doWriteSecure: Task.async(function* () {
+  async _doWriteSecure() {
     
     for (let [name, value] of Object.entries(this.cachedSecure)) {
       if (value == null) {
@@ -402,7 +401,7 @@ this.FxAccountsStorageManager.prototype = {
       accountData: this.cachedSecure,
     }
     try {
-      yield this.secureStorage.set(this.cachedPlain.uid, toWriteSecure);
+      await this.secureStorage.set(this.cachedPlain.uid, toWriteSecure);
     } catch (ex) {
       if (!(ex instanceof this.secureStorage.STORAGE_LOCKED)) {
         throw ex;
@@ -412,23 +411,23 @@ this.FxAccountsStorageManager.prototype = {
       
       log.error("setAccountData: secure storage is locked trying to write");
     }
-  }),
+  },
 
   
   deleteAccountData() {
     return this._queueStorageOperation(() => this._deleteAccountData());
   },
 
-  _deleteAccountData: Task.async(function* () {
+  async _deleteAccountData() {
     log.debug("removing account data");
-    yield this._promiseInitialized;
-    yield this.plainStorage.set(null);
+    await this._promiseInitialized;
+    await this.plainStorage.set(null);
     if (this.secureStorage) {
-      yield this.secureStorage.set(null);
+      await this.secureStorage.set(null);
     }
     this._clearCachedData();
     log.debug("account data reset");
-  }),
+  },
 }
 
 
@@ -495,9 +494,9 @@ LoginManagerStorage.prototype = {
   
   
   
-  _clearLoginMgrData: Task.async(function* () {
+  async _clearLoginMgrData() {
     try { 
-      yield Services.logins.initializationPromise;
+      await Services.logins.initializationPromise;
       if (!this._isLoggedIn) {
         return false;
       }
@@ -510,12 +509,12 @@ LoginManagerStorage.prototype = {
       log.error("Failed to clear login data: ${}", ex);
       return false;
     }
-  }),
+  },
 
-  set: Task.async(function* (uid, contents) {
+  async set(uid, contents) {
     if (!contents) {
       
-      let cleared = yield this._clearLoginMgrData();
+      let cleared = await this._clearLoginMgrData();
       if (!cleared) {
         
         
@@ -529,7 +528,7 @@ LoginManagerStorage.prototype = {
     log.trace("starting write of user data to the login manager");
     try { 
       
-      yield Services.logins.initializationPromise;
+      await Services.logins.initializationPromise;
       
       
       if (!this._isLoggedIn) {
@@ -563,14 +562,14 @@ LoginManagerStorage.prototype = {
       
       log.error("Failed to save data to the login manager", ex);
     }
-  }),
+  },
 
-  get: Task.async(function* (uid, email) {
+  async get(uid, email) {
     log.trace("starting fetch of user data from the login manager");
 
     try { 
       
-      yield Services.logins.initializationPromise;
+      await Services.logins.initializationPromise;
 
       if (!this._isLoggedIn) {
         log.info("returning partial account data as the login manager is locked.");
@@ -590,7 +589,7 @@ LoginManagerStorage.prototype = {
         return JSON.parse(login.password);
       }
       log.info("username in the login manager doesn't match - ignoring it");
-      yield this._clearLoginMgrData();
+      await this._clearLoginMgrData();
     } catch (ex) {
       if (ex instanceof this.STORAGE_LOCKED) {
         throw ex;
@@ -600,7 +599,7 @@ LoginManagerStorage.prototype = {
       log.error("Failed to get data from the login manager", ex);
     }
     return null;
-  }),
+  },
 }
 
 

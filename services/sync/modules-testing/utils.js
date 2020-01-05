@@ -222,6 +222,9 @@ this.configureIdentity = async function(identityOverrides, server) {
   await ns.Service.identity.initializeWithCurrentIdentity();
   
   
+  await ns.Service.identity.whenReadyToAuthenticate.promise;
+  
+  
   if (config.fxaccount.token.endpoint) {
     ns.Service.clusterURL = config.fxaccount.token.endpoint;
   }

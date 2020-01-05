@@ -54,22 +54,17 @@ add_task(function* test_check_maybeSync() {
 
   let updater = Cu.import("resource://services-common/blocklist-updater.js", {});
 
-  let syncPromise = new Promise(function(resolve, reject) {
-    
-    
-    updater.addTestBlocklistClient("test-collection", {
-      bucketName: "blocklists",
-      maybeSync(lastModified, serverTime) {
-        do_check_eq(lastModified, 1000);
-        do_check_eq(serverTime, 2000);
-        resolve();
-      }
-    });
-    updater.checkVersions();
-  });
-
   
-  yield syncPromise;
+  
+  
+  updater.addTestBlocklistClient("test-collection", {
+    bucketName: "blocklists",
+    maybeSync(lastModified, serverTime) {
+      do_check_eq(lastModified, 1000);
+      do_check_eq(serverTime, 2000);
+    }
+  });
+  yield updater.checkVersions();
 
   
   do_check_eq(Services.prefs.getIntPref(PREF_LAST_UPDATE), 2);

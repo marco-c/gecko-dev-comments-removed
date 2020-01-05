@@ -7,7 +7,6 @@ this.EXPORTED_SYMBOLS = ["checkVersions", "addTestBlocklistClient"];
 const { classes: Cc, Constructor: CC, interfaces: Ci, utils: Cu } = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.importGlobalProperties(["fetch"]);
 const BlocklistClients = Cu.import("resource://services-common/blocklist-clients.js", {});
 
@@ -33,98 +32,95 @@ this.addTestBlocklistClient = (name, client) => { gBlocklistClients[name] = clie
 
 
 
-this.checkVersions = function() {
-  return Task.spawn(function* syncClients() {
-
-    
-    if (Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF)) {
-      const backoffReleaseTime = Services.prefs.getCharPref(PREF_SETTINGS_SERVER_BACKOFF);
-      const remainingMilliseconds = parseInt(backoffReleaseTime, 10) - Date.now();
-      if (remainingMilliseconds > 0) {
-        throw new Error(`Server is asking clients to back off; retry in ${Math.ceil(remainingMilliseconds / 1000)}s.`);
-      } else {
-        Services.prefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
-      }
-    }
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    const kintoBase = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
-    const changesEndpoint = kintoBase + Services.prefs.getCharPref(PREF_BLOCKLIST_CHANGES_PATH);
-
-    
-    const headers = {};
-    if (Services.prefs.prefHasUserValue(PREF_BLOCKLIST_LAST_ETAG)) {
-      const lastEtag = Services.prefs.getCharPref(PREF_BLOCKLIST_LAST_ETAG);
-      if (lastEtag) {
-        headers["If-None-Match"] = lastEtag;
-      }
-    }
-
-    const response = yield fetch(changesEndpoint, {headers});
-
-    
-    if (response.headers.has("Backoff")) {
-      const backoffSeconds = parseInt(response.headers.get("Backoff"), 10);
-      if (!isNaN(backoffSeconds)) {
-        const backoffReleaseTime = Date.now() + backoffSeconds * 1000;
-        Services.prefs.setCharPref(PREF_SETTINGS_SERVER_BACKOFF, backoffReleaseTime);
-      }
-    }
-
-    let versionInfo;
-    
-    if (response.status == 304) {
-      versionInfo = {data: []};
+this.checkVersions = async function() {
+  
+  if (Services.prefs.prefHasUserValue(PREF_SETTINGS_SERVER_BACKOFF)) {
+    const backoffReleaseTime = Services.prefs.getCharPref(PREF_SETTINGS_SERVER_BACKOFF);
+    const remainingMilliseconds = parseInt(backoffReleaseTime, 10) - Date.now();
+    if (remainingMilliseconds > 0) {
+      throw new Error(`Server is asking clients to back off; retry in ${Math.ceil(remainingMilliseconds / 1000)}s.`);
     } else {
-      versionInfo = yield response.json();
+      Services.prefs.clearUserPref(PREF_SETTINGS_SERVER_BACKOFF);
     }
+  }
 
-    
-    
-    if (!versionInfo.hasOwnProperty("data")) {
-      throw new Error("Polling for changes failed.");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  const kintoBase = Services.prefs.getCharPref(PREF_SETTINGS_SERVER);
+  const changesEndpoint = kintoBase + Services.prefs.getCharPref(PREF_BLOCKLIST_CHANGES_PATH);
+
+  
+  const headers = {};
+  if (Services.prefs.prefHasUserValue(PREF_BLOCKLIST_LAST_ETAG)) {
+    const lastEtag = Services.prefs.getCharPref(PREF_BLOCKLIST_LAST_ETAG);
+    if (lastEtag) {
+      headers["If-None-Match"] = lastEtag;
     }
+  }
 
-    
-    const serverTimeMillis = Date.parse(response.headers.get("Date"));
+  const response = await fetch(changesEndpoint, {headers});
 
-    
-    
-    const clockDifference = Math.floor((Date.now() - serverTimeMillis) / 1000);
-    Services.prefs.setIntPref(PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, clockDifference);
-    Services.prefs.setIntPref(PREF_BLOCKLIST_LAST_UPDATE, serverTimeMillis / 1000);
+  
+  if (response.headers.has("Backoff")) {
+    const backoffSeconds = parseInt(response.headers.get("Backoff"), 10);
+    if (!isNaN(backoffSeconds)) {
+      const backoffReleaseTime = Date.now() + backoffSeconds * 1000;
+      Services.prefs.setCharPref(PREF_SETTINGS_SERVER_BACKOFF, backoffReleaseTime);
+    }
+  }
 
-    let firstError;
-    for (let collectionInfo of versionInfo.data) {
-      const {bucket, collection, last_modified: lastModified} = collectionInfo;
-      const client = gBlocklistClients[collection];
-      if (client && client.bucketName == bucket) {
-        try {
-          yield client.maybeSync(lastModified, serverTimeMillis);
-        } catch (e) {
-          if (!firstError) {
-            firstError = e;
-          }
+  let versionInfo;
+  
+  if (response.status == 304) {
+    versionInfo = {data: []};
+  } else {
+    versionInfo = await response.json();
+  }
+
+  
+  
+  if (!versionInfo.hasOwnProperty("data")) {
+    throw new Error("Polling for changes failed.");
+  }
+
+  
+  const serverTimeMillis = Date.parse(response.headers.get("Date"));
+
+  
+  
+  const clockDifference = Math.floor((Date.now() - serverTimeMillis) / 1000);
+  Services.prefs.setIntPref(PREF_BLOCKLIST_CLOCK_SKEW_SECONDS, clockDifference);
+  Services.prefs.setIntPref(PREF_BLOCKLIST_LAST_UPDATE, serverTimeMillis / 1000);
+
+  let firstError;
+  for (let collectionInfo of versionInfo.data) {
+    const {bucket, collection, last_modified: lastModified} = collectionInfo;
+    const client = gBlocklistClients[collection];
+    if (client && client.bucketName == bucket) {
+      try {
+        await client.maybeSync(lastModified, serverTimeMillis);
+      } catch (e) {
+        if (!firstError) {
+          firstError = e;
         }
       }
     }
-    if (firstError) {
-      
-      throw firstError;
-    }
-
+  }
+  if (firstError) {
     
-    if (response.headers.has("ETag")) {
-      const currentEtag = response.headers.get("ETag");
-      Services.prefs.setCharPref(PREF_BLOCKLIST_LAST_ETAG, currentEtag);
-    }
-  });
+    throw firstError;
+  }
+
+  
+  if (response.headers.has("ETag")) {
+    const currentEtag = response.headers.get("ETag");
+    Services.prefs.setCharPref(PREF_BLOCKLIST_LAST_ETAG, currentEtag);
+  }
 };

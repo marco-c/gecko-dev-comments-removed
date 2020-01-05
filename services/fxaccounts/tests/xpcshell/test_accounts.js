@@ -8,7 +8,7 @@ Cu.import("resource://gre/modules/FxAccounts.jsm");
 Cu.import("resource://gre/modules/FxAccountsClient.jsm");
 Cu.import("resource://gre/modules/FxAccountsCommon.js");
 Cu.import("resource://gre/modules/FxAccountsOAuthGrantClient.jsm");
-Cu.import("resource://gre/modules/Promise.jsm");
+Cu.import("resource://gre/modules/PromiseUtils.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
 
 
@@ -96,31 +96,27 @@ function MockFxAccountsClient() {
 
   
   
-  this.recoveryEmailStatus = function(sessionToken) {
+  this.recoveryEmailStatus = async function(sessionToken) {
     
-    return Promise.resolve({
+    return {
       email: this._email,
       verified: this._verified
-    });
+    };
   };
 
-  this.accountStatus = function(uid) {
-    let deferred = Promise.defer();
-    deferred.resolve(!!uid && (!this._deletedOnServer));
-    return deferred.promise;
+  this.accountStatus = async function(uid) {
+    return !!uid && (!this._deletedOnServer);
   };
 
   this.accountKeys = function(keyFetchToken) {
-    let deferred = Promise.defer();
-
-    do_timeout(50, () => {
-      let response = {
-        kA: expandBytes("11"),
-        wrapKB: expandBytes("22")
-      };
-      deferred.resolve(response);
+    return new Promise(resolve => {
+      do_timeout(50, () => {
+        resolve({
+          kA: expandBytes("11"),
+          wrapKB: expandBytes("22")
+        });
+      });
     });
-    return deferred.promise;
   };
 
   this.resendVerificationEmail = function(sessionToken) {
@@ -150,7 +146,7 @@ function MockFxAccounts() {
     VERIFICATION_POLL_TIMEOUT_INITIAL: 100, 
 
     _getCertificateSigned_calls: [],
-    _d_signCertificate: Promise.defer(),
+    _d_signCertificate: PromiseUtils.defer(),
     _now_is: new Date(),
     now() {
       return this._now_is;
@@ -792,7 +788,7 @@ add_task(function* test_getAssertion() {
   do_check_eq(exp, now + ASSERTION_LIFETIME);
 
   
-  fxa.internal._d_signCertificate = Promise.defer();
+  fxa.internal._d_signCertificate = PromiseUtils.defer();
 
   
   
