@@ -399,7 +399,7 @@ nsSVGImageFrame::PaintSVG(gfxContext& aContext,
       
       
       const Maybe<const SVGImageContext> context(
-        Some(SVGImageContext(CSSIntSize::Truncate(width, height),
+        Some(SVGImageContext(Some(CSSIntSize::Truncate(width, height)),
                              Some(imgElem->mPreserveAspectRatio.GetAnimValue()),
                              1.0,  true)));
 

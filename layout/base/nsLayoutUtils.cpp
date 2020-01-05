@@ -186,7 +186,6 @@ typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
 #ifdef MOZ_STYLO
  bool nsLayoutUtils::sStyloEnabled;
 #endif
- bool nsLayoutUtils::sStyleAttrWithXMLBaseDisabled;
  uint32_t nsLayoutUtils::sIdlePeriodDeadlineLimit;
  uint32_t nsLayoutUtils::sQuiescentFramesBeforeIdlePeriod;
 
@@ -6542,7 +6541,7 @@ DrawImageInternal(gfxContext&            aContext,
     Maybe<const SVGImageContext> fallbackContext;
     if (!aSVGContext) {
       
-      fallbackContext.emplace(params.svgViewportSize);
+      fallbackContext.emplace(Some(params.svgViewportSize));
     }
 
     result = aImage->Draw(destCtx, params.size, params.region,
@@ -6727,7 +6726,7 @@ nsLayoutUtils::DrawBackgroundImage(gfxContext&         aContext,
   PROFILER_LABEL("layout", "nsLayoutUtils::DrawBackgroundImage",
                  js::ProfileEntry::Category::GRAPHICS);
 
-  const Maybe<const SVGImageContext> svgContext(Some(SVGImageContext(aImageSize)));
+  const Maybe<SVGImageContext> svgContext(Some(SVGImageContext(Some(aImageSize))));
 
   
   if (aRepeatSize.width == aDest.width && aRepeatSize.height == aDest.height) {
@@ -7668,8 +7667,6 @@ nsLayoutUtils::Initialize()
   Preferences::AddBoolVarCache(&sStyloEnabled,
                                "layout.css.servo.enabled");
 #endif
-  Preferences::AddBoolVarCache(&sStyleAttrWithXMLBaseDisabled,
-                               "layout.css.style-attr-with-xml-base.disabled");
   Preferences::AddUintVarCache(&sIdlePeriodDeadlineLimit,
                                "layout.idle_period.time_limit",
                                DEFAULT_IDLE_PERIOD_TIME_LIMIT);

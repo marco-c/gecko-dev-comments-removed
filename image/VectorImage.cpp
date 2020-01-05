@@ -789,8 +789,10 @@ struct SVGDrawingParameters
     , opacity(aSVGContext ? aSVGContext->GetGlobalOpacity() : aOpacity)
   {
     if (aSVGContext) {
-      CSSIntSize sz = aSVGContext->GetViewportSize();
-      viewportSize = nsIntSize(sz.width, sz.height); 
+      auto sz = aSVGContext->GetViewportSize();
+      if (sz) {
+        viewportSize = nsIntSize(sz->width, sz->height); 
+      }
     }
   }
 
@@ -854,7 +856,7 @@ VectorImage::Draw(gfxContext* aContext,
     Maybe<SVGPreserveAspectRatio> aspectRatio =
       Some(SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE,
                                   SVG_MEETORSLICE_UNKNOWN));
-    svgContext = Some(SVGImageContext(*aSVGContext)); 
+    svgContext = aSVGContext; 
     svgContext->SetPreserveAspectRatio(aspectRatio);
   } else {
     svgContext = aSVGContext;
