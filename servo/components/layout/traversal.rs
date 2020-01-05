@@ -174,13 +174,12 @@ impl<'a> PreorderFlowTraversal for AssignISizes<'a> {
 
 
 
-
 #[derive(Copy, Clone)]
-pub struct AssignBSizesAndStoreOverflow<'a> {
+pub struct AssignBSizes<'a> {
     pub layout_context: &'a LayoutContext<'a>,
 }
 
-impl<'a> PostorderFlowTraversal for AssignBSizesAndStoreOverflow<'a> {
+impl<'a> PostorderFlowTraversal for AssignBSizes<'a> {
     #[inline]
     fn process(&self, flow: &mut Flow) {
         
