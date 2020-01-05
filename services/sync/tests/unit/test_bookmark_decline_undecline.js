@@ -16,45 +16,6 @@ initTestLogging("Trace");
 
 Service.engineManager.register(BookmarksEngine);
 
-function serverForFoo(engine) {
-  
-  
-  
-  
-  Service.scheduler.syncThreshold = 10000000;
-  let clientsEngine = Service.clientsEngine;
-  return serverForUsers({"foo": "password"}, {
-    meta: {
-      global: {
-        syncID: Service.syncID,
-        storageVersion: STORAGE_VERSION,
-        engines: {
-          clients: {
-            version: clientsEngine.version,
-            syncID: clientsEngine.syncID,
-          },
-          bookmarks: {
-            version: engine.version,
-            syncID: engine.syncID,
-          },
-        },
-      },
-    },
-    crypto: {
-      keys: encryptPayload({
-        id: "keys",
-        
-        
-        default: [
-          Svc.Crypto.generateRandomKey(),
-          Svc.Crypto.generateRandomKey(),
-        ],
-      }),
-    },
-    bookmarks: {}
-  });
-}
-
 
 function getBookmarkWBO(server, guid) {
   let coll = server.user("foo").collection("bookmarks");

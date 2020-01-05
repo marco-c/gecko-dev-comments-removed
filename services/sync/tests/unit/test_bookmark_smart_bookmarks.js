@@ -46,14 +46,6 @@ function clearBookmarks() {
   PlacesUtils.bookmarks.removeFolderChildren(PlacesUtils.bookmarks.unfiledBookmarksFolder);
 }
 
-function serverForFoo(engineData) {
-  return serverForUsers({"foo": "password"}, {
-    meta: {global: {engines: {bookmarks: {version: engineData.version,
-                                          syncID: engineData.syncID}}}},
-    bookmarks: {}
-  });
-}
-
 
 
 add_task(async function test_annotation_uploaded() {

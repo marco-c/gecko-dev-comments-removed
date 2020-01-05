@@ -34,39 +34,9 @@ function getServerBookmarks(server) {
 }
 
 async function setup() {
-  let clientsEngine = Service.clientsEngine;
   let bookmarksEngine = Service.engineManager.get("bookmarks");
 
-  let server = serverForUsers({"foo": "password"}, {
-    meta: {
-      global: {
-        syncID: Service.syncID,
-        storageVersion: STORAGE_VERSION,
-        engines: {
-          clients: {
-            version: clientsEngine.version,
-            syncID: clientsEngine.syncID,
-          },
-          bookmarks: {
-            version: bookmarksEngine.version,
-            syncID: bookmarksEngine.syncID,
-          },
-        },
-      },
-    },
-    crypto: {
-      keys: encryptPayload({
-        id: "keys",
-        
-        
-        default: [
-          Svc.Crypto.generateRandomKey(),
-          Svc.Crypto.generateRandomKey(),
-        ],
-      }),
-    },
-  });
-
+  let server = serverForFoo(bookmarksEngine);
   await SyncTestingInfrastructure(server);
 
   

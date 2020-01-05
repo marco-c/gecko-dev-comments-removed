@@ -25,23 +25,10 @@ store._log.level = Log.Level.Trace;
 engine._log.level = Log.Level.Trace;
 
 async function setup() {
- let server = serverForUsers({"foo": "password"}, {
-    meta: {global: {engines: {bookmarks: {version: engine.version,
-                                          syncID: engine.syncID}}}},
-    bookmarks: {},
-  });
-
-  generateNewKeys(Service.collectionKeys);
-
+ let server = serverForFoo(engine);
   await SyncTestingInfrastructure(server);
 
   let collection = server.user("foo").collection("bookmarks");
-
-  
-  
-  
-  
-  Service.scheduler.syncThreshold = 10000000;
 
   Svc.Obs.notify("weave:engine:start-tracking");   
 
