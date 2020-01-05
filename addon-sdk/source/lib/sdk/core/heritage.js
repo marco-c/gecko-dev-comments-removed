@@ -8,41 +8,37 @@ module.metadata = {
 };
 
 var getPrototypeOf = Object.getPrototypeOf;
-var getNames = x => [...Object.getOwnPropertyNames(x),
-                     ...Object.getOwnPropertySymbols(x)];
+function* getNames(x) {
+  yield* Object.getOwnPropertyNames(x);
+  yield* Object.getOwnPropertySymbols(x);
+}
 var getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-var create = Object.create;
 var freeze = Object.freeze;
-var unbind = Function.call.bind(Function.bind, Function.call);
 
 
 
-var owns = unbind(Object.prototype.hasOwnProperty);
-var apply = unbind(Function.prototype.apply);
-var slice = Array.slice || unbind(Array.prototype.slice);
-var reduce = Array.reduce || unbind(Array.prototype.reduce);
-var map = Array.map || unbind(Array.prototype.map);
-var concat = Array.concat || unbind(Array.prototype.concat);
+var hasOwnProperty = Function.call.bind(Object.prototype.hasOwnProperty);
 
 
-function getOwnPropertyDescriptors(object) {
-  return reduce(getNames(object), function(descriptor, name) {
-    descriptor[name] = getOwnPropertyDescriptor(object, name);
-    return descriptor;
-  }, {});
+function getOwnPropertyDescriptors(...objects) {
+  let descriptors = {};
+  for (let object of objects)
+    for (let name of getNames(object))
+      descriptors[name] = getOwnPropertyDescriptor(object, name);
+  return descriptors;
 }
 
 function isDataProperty(property) {
-  var value = property.value;
   var type = typeof(property.value);
   return "value" in property &&
-         (type !== "object" || value === null) &&
-         type !== "function";
+         type !== "function" &&
+         (type !== "object" || property.value === null);
 }
 
 function getDataProperties(object) {
   var properties = getOwnPropertyDescriptors(object);
-  return getNames(properties).reduce(function(result, name) {
+  let result = {};
+  for (let name of getNames(properties)) {
     var property = properties[name];
     if (isDataProperty(property)) {
       result[name] = {
@@ -52,22 +48,22 @@ function getDataProperties(object) {
         enumerable: false
       };
     }
-    return result;
-  }, {})
+  }
+  return result;
 }
 
 
 
 
 
-function obscure(source) {
-  var descriptor = reduce(getNames(source), function(descriptor, name) {
-    var property = getOwnPropertyDescriptor(source, name);
+function obscure(source, prototype = getPrototypeOf(source)) {
+  let descriptors = {};
+  for (let name of getNames(source)) {
+    let property = getOwnPropertyDescriptor(source, name);
     property.enumerable = false;
-    descriptor[name] = property;
-    return descriptor;
-  }, {});
-  return create(getPrototypeOf(source), descriptor);
+    descriptors[name] = property;
+  }
+  return Object.create(prototype, descriptors);
 }
 exports.obscure = obscure;
 
@@ -79,15 +75,9 @@ exports.obscure = obscure;
 
 
 
-var mix = function(source) {
-  var descriptor = reduce(slice(arguments), function(descriptor, source) {
-    return reduce(getNames(source), function(descriptor, name) {
-      descriptor[name] = getOwnPropertyDescriptor(source, name);
-      return descriptor;
-    }, descriptor);
-  }, {});
-
-  return create(getPrototypeOf(source), descriptor);
+var mix = function(...sources) {
+  return Object.create(getPrototypeOf(sources[0]),
+                       getOwnPropertyDescriptors(...sources));
 };
 exports.mix = mix;
 
@@ -96,77 +86,76 @@ exports.mix = mix;
 
 
 function extend(prototype, properties) {
-  return create(prototype, getOwnPropertyDescriptors(properties));
+  return Object.create(prototype,
+                       getOwnPropertyDescriptors(properties));
 }
 exports.extend = extend;
 
-
-
-
-
-
-
-
-
-
-
-
-var Class = new function() {
-  function prototypeOf(input) {
-    return typeof(input) === 'function' ? input.prototype : input;
-  }
-  var none = freeze([]);
-
-  return function Class(options) {
-    
-    
-    var descriptor = {
-      
-      
-      
-      extends: owns(options, 'extends') ?
-               prototypeOf(options.extends) : Class.prototype,
-      
-      
-      implements: owns(options, 'implements') ?
-                  freeze(map(options.implements, prototypeOf)) : none
-    };
-
-    
-    
-    
-    var descriptors = concat(descriptor.implements, options, descriptor, {
-      constructor: constructor
-    });
-
-    
-    
-    function constructor() {
-      var instance = create(prototype, attributes);
-      if (initialize) apply(initialize, instance, arguments);
-      return instance;
-    }
-    
-    
-    
-    var prototype = extend(descriptor.extends, mix.apply(mix, descriptors));
-    var initialize = prototype.initialize;
-
-    
-    
-    var attributes = mix(descriptor.extends.constructor.attributes || {},
-                         getDataProperties(prototype));
-
-    constructor.attributes = attributes;
-    Object.defineProperty(constructor, 'prototype', {
-      configurable: false,
-      writable: false,
-      value: prototype
-    });
-    return constructor;
-  };
+function prototypeOf(input) {
+  return typeof(input) === 'function' ? input.prototype : input;
 }
-Class.prototype = extend(null, obscure({
+
+
+
+
+
+
+
+
+
+
+
+
+function Class(options) {
+  
+  
+  var descriptor = {
+    
+    
+    
+    extends: hasOwnProperty(options, 'extends') ?
+             prototypeOf(options.extends) : Class.prototype,
+
+    
+    
+    implements: freeze(hasOwnProperty(options, 'implements') ?
+                       options.implements.map(prototypeOf) : []),
+  };
+
+  
+  
+  var descriptors = [].concat(descriptor.implements, options, descriptor,
+                              { constructor });
+
+  
+  
+  function constructor() {
+    var instance = Object.create(prototype, attributes);
+    if (initialize)
+      Reflect.apply(initialize, instance, arguments);
+    return instance;
+  }
+  
+  
+  
+  var prototype = Object.create(descriptor.extends,
+                                getOwnPropertyDescriptors(...descriptors));
+  var initialize = prototype.initialize;
+
+  
+  
+  var attributes = mix(descriptor.extends.constructor.attributes || {},
+                       getDataProperties(prototype));
+
+  constructor.attributes = attributes;
+  Object.defineProperty(constructor, 'prototype', {
+    configurable: false,
+    writable: false,
+    value: prototype
+  });
+  return constructor;
+}
+Class.prototype = obscure({
   constructor: function constructor() {
     this.initialize.apply(this, arguments);
     return this;
@@ -180,5 +169,5 @@ Class.prototype = extend(null, obscure({
   toSource: Object.prototype.toSource,
   valueOf: Object.prototype.valueOf,
   isPrototypeOf: Object.prototype.isPrototypeOf
-}));
+}, null);
 exports.Class = freeze(Class);
