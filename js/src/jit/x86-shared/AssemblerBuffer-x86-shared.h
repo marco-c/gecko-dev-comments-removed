@@ -84,7 +84,12 @@ namespace jit {
         }
 
     public:
-        AssemblerBuffer() : m_oom(false) {}
+        AssemblerBuffer()
+            : m_oom(false)
+        {
+            
+            m_buffer.setLowerBoundForProtection(32 * 1024);
+        }
 
         void ensureSpace(size_t space)
         {
@@ -136,6 +141,13 @@ namespace jit {
             return m_buffer.begin();
         }
 
+        void unprotectDataRegion(size_t firstByteOffset, size_t lastByteOffset) {
+            m_buffer.unprotectRegion(firstByteOffset, lastByteOffset);
+        }
+        void reprotectDataRegion(size_t firstByteOffset, size_t lastByteOffset) {
+            m_buffer.reprotectRegion(firstByteOffset, lastByteOffset);
+        }
+
     protected:
         
 
@@ -156,13 +168,7 @@ namespace jit {
             m_buffer.clear();
         }
 
-#ifndef RELEASE_OR_BETA
-        PageProtectingVector<unsigned char, 256, SystemAllocPolicy,
-                              false,  true,
-                              32 * 1024> m_buffer;
-#else
-        mozilla::Vector<unsigned char, 256, SystemAllocPolicy> m_buffer;
-#endif
+        PageProtectingVector<unsigned char, 256, SystemAllocPolicy> m_buffer;
         bool m_oom;
     };
 

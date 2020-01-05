@@ -272,6 +272,8 @@ typedef HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy> 
 bool
 ModuleGenerator::patchCallSites(TrapExitOffsetArray* maybeTrapExits)
 {
+    MacroAssembler::AutoPrepareForPatching patching(masm_);
+
     masm_.haltingAlign(CodeAlignment);
 
     
@@ -367,6 +369,8 @@ ModuleGenerator::patchCallSites(TrapExitOffsetArray* maybeTrapExits)
 bool
 ModuleGenerator::patchFarJumps(const TrapExitOffsetArray& trapExits)
 {
+    MacroAssembler::AutoPrepareForPatching patching(masm_);
+
     for (CallThunk& callThunk : metadata_->callThunks) {
         uint32_t funcIndex = callThunk.u.funcIndex;
         callThunk.u.codeRangeIndex = funcToCodeRange_[funcIndex];
