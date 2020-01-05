@@ -2,23 +2,27 @@
 
 
 
+use dom::attr::Attr;
 use dom::bindings::codegen::Bindings::HTMLOutputElementBinding;
 use dom::bindings::codegen::Bindings::HTMLOutputElementBinding::HTMLOutputElementMethods;
 use dom::bindings::inheritance::Castable;
-use dom::bindings::js::Root;
+use dom::bindings::js::{MutNullableJS, Root};
 use dom::bindings::str::DOMString;
 use dom::document::Document;
+use dom::element::{AttributeMutation, Element};
 use dom::htmlelement::HTMLElement;
 use dom::htmlformelement::{FormControl, HTMLFormElement};
 use dom::node::{Node, window_from_node};
 use dom::nodelist::NodeList;
 use dom::validitystate::ValidityState;
+use dom::virtualmethods::VirtualMethods;
 use dom_struct::dom_struct;
 use html5ever_atoms::LocalName;
 
 #[dom_struct]
 pub struct HTMLOutputElement {
-    htmlelement: HTMLElement
+    htmlelement: HTMLElement,
+    form_owner: MutNullableJS<HTMLFormElement>,
 }
 
 impl HTMLOutputElement {
@@ -27,7 +31,8 @@ impl HTMLOutputElement {
                      document: &Document) -> HTMLOutputElement {
         HTMLOutputElement {
             htmlelement:
-                HTMLElement::new_inherited(local_name, prefix, document)
+                HTMLElement::new_inherited(local_name, prefix, document),
+            form_owner: Default::default(),
         }
     }
 
@@ -42,21 +47,49 @@ impl HTMLOutputElement {
 }
 
 impl HTMLOutputElementMethods for HTMLOutputElement {
-    
+    // https://html.spec.whatwg.org/multipage/#dom-cva-validity
     fn Validity(&self) -> Root<ValidityState> {
         let window = window_from_node(self);
         ValidityState::new(&window, self.upcast())
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/#dom-fae-form
     fn GetForm(&self) -> Option<Root<HTMLFormElement>> {
         self.form_owner()
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/#dom-lfe-labels
     fn Labels(&self) -> Root<NodeList> {
         self.upcast::<HTMLElement>().labels()
     }
 }
 
-impl FormControl for HTMLOutputElement {}
+impl VirtualMethods for HTMLOutputElement {
+    fn super_type<'b>(&'b self) -> Option<&'b VirtualMethods> {
+        Some(self.upcast::<HTMLElement>() as &VirtualMethods)
+    }
+
+    fn attribute_mutated(&self, attr: &Attr, mutation: AttributeMutation) {
+        self.super_type().unwrap().attribute_mutated(attr, mutation);
+        match attr.local_name() {
+            &local_name!("form") => {
+                self.form_attribute_mutated(mutation);
+            },
+            _ => {},
+        }
+    }
+}
+
+impl FormControl for HTMLOutputElement {
+    fn form_owner(&self) -> Option<Root<HTMLFormElement>> {
+        self.form_owner.get()
+    }
+
+    fn set_form_owner(&self, form: Option<&HTMLFormElement>) {
+        self.form_owner.set(form);
+    }
+
+    fn to_element<'a>(&'a self) -> &'a Element {
+        self.upcast::<Element>()
+    }
+}
