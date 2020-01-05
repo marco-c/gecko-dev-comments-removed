@@ -643,26 +643,23 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
     }
   }
 
+  nsCOMPtr<nsINode> cellNodeForRowParent = do_QueryInterface(cellForRowParent);
+
   if (cellsInRow > 0) {
-    
-    nsCOMPtr<nsIDOMNode> parentOfRow;
-    int32_t newRowOffset;
 
     NS_NAMED_LITERAL_STRING(trStr, "tr");
-    if (!cellForRowParent) {
+    if (!cellNodeForRowParent) {
       return NS_ERROR_FAILURE;
     }
 
-    nsCOMPtr<nsIDOMElement> parentRow;
-    rv = GetElementOrParentByTagName(trStr, cellForRowParent,
-                                     getter_AddRefs(parentRow));
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<Element> parentRow =
+      GetElementOrParentByTagName(trStr, cellNodeForRowParent);
     NS_ENSURE_TRUE(parentRow, NS_ERROR_NULL_POINTER);
 
-    parentRow->GetParentNode(getter_AddRefs(parentOfRow));
+    
+    nsCOMPtr<nsINode> parentOfRow = parentRow->GetParentNode();
     NS_ENSURE_TRUE(parentOfRow, NS_ERROR_NULL_POINTER);
-
-    newRowOffset = GetChildOffset(parentRow, parentOfRow);
+    int32_t newRowOffset = parentOfRow->IndexOf(parentRow);
 
     
     if (aAfter && startRowIndex >= rowCount) {
@@ -671,28 +668,27 @@ HTMLEditor::InsertTableRow(int32_t aNumber,
 
     for (int32_t row = 0; row < aNumber; row++) {
       
-      nsCOMPtr<nsIDOMElement> newRow;
-      rv = CreateElementWithDefaults(trStr, getter_AddRefs(newRow));
-      if (NS_SUCCEEDED(rv)) {
-        NS_ENSURE_TRUE(newRow, NS_ERROR_FAILURE);
+      nsCOMPtr<Element> newRow = CreateElementWithDefaults(trStr);
+      NS_ENSURE_TRUE(newRow, NS_ERROR_FAILURE);
 
-        for (int32_t i = 0; i < cellsInRow; i++) {
-          nsCOMPtr<nsIDOMElement> newCell;
-          rv = CreateElementWithDefaults(NS_LITERAL_STRING("td"),
-                                         getter_AddRefs(newCell));
-          NS_ENSURE_SUCCESS(rv, rv);
-          NS_ENSURE_TRUE(newCell, NS_ERROR_FAILURE);
+      for (int32_t i = 0; i < cellsInRow; i++) {
+        nsCOMPtr<Element> newCell =
+          CreateElementWithDefaults(NS_LITERAL_STRING("td"));
+        NS_ENSURE_TRUE(newCell, NS_ERROR_FAILURE);
 
-          
-          nsCOMPtr<nsIDOMNode>resultNode;
-          rv = newRow->AppendChild(newCell, getter_AddRefs(resultNode));
-          NS_ENSURE_SUCCESS(rv, rv);
+        
+        
+        ErrorResult result;
+        newRow->AppendChild(*newCell, result);
+        if (NS_WARN_IF(result.Failed())) {
+          return result.StealNSResult();
         }
-        
-        
-        rv = InsertNode(newRow, parentOfRow, newRowOffset);
-        NS_ENSURE_SUCCESS(rv, rv);
       }
+
+      
+      
+      rv = InsertNode(*newRow, *parentOfRow, newRowOffset);
+      NS_ENSURE_SUCCESS(rv, rv);
     }
   }
   

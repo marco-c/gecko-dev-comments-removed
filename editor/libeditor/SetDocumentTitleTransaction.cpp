@@ -19,6 +19,8 @@
 #include "nsIEditor.h"                  
 #include "nsIHTMLEditor.h"              
 #include "nsLiteralString.h"            
+#include "nsTextNode.h"                 
+#include "nsQueryObject.h"              
 
 namespace mozilla {
 
@@ -164,26 +166,25 @@ SetDocumentTitleTransaction::SetDomTitle(const nsAString& aTitle)
 
   
   if (titleNode && !aTitle.IsEmpty()) {
-    nsCOMPtr<nsIDOMText> textNode;
-    rv = domDoc->CreateTextNode(aTitle, getter_AddRefs(textNode));
-    if (NS_WARN_IF(NS_FAILED(rv))) {
-      return rv;
-    }
-
-    nsCOMPtr<nsIDOMNode> newNode = do_QueryInterface(textNode);
-    if (NS_WARN_IF(!newNode)) {
-      return NS_ERROR_FAILURE;
-    }
+    RefPtr<nsTextNode> textNode = document->CreateTextNode(aTitle);
 
     if (newTitleNode) {
       
-      nsCOMPtr<nsIDOMNode> resultNode;
-      rv = titleNode->AppendChild(newNode, getter_AddRefs(resultNode));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
+      nsCOMPtr<nsINode> title = do_QueryInterface(titleNode);
+      MOZ_ASSERT(title);
+
+      ErrorResult result;
+      title->AppendChild(*textNode, result);
+      if (NS_WARN_IF(result.Failed())) {
+        return result.StealNSResult();
       }
     } else {
       
+      nsCOMPtr<nsIDOMNode> newNode = do_QueryObject(textNode);
+      if (NS_WARN_IF(!newNode)) {
+        return NS_ERROR_FAILURE;
+      }
+
       rv = editor->InsertNode(newNode, titleNode, 0);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
