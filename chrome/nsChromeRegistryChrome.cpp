@@ -737,7 +737,16 @@ nsChromeRegistryChrome::ManifestLocale(ManifestProcessingContext& cx, int lineno
     SendManifestEntry(chromePackage);
   }
 
-  if (strcmp(package, "global") == 0) {
+  
+  
+  
+  nsAutoCString mainPackage;
+  nsresult rv = OverrideLocalePackage(NS_LITERAL_CSTRING("global"), mainPackage);
+  if (NS_FAILED(rv)) {
+    return;
+  }
+
+  if (mainPackage.Equals(package)) {
     
     
     LocaleService::GetInstance()->OnAvailableLocalesChanged();
