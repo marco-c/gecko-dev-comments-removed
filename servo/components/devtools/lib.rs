@@ -2,6 +2,11 @@
 
 
 
+
+
+
+
+
 #![crate_name = "devtools"]
 #![crate_type = "rlib"]
 
@@ -10,13 +15,8 @@
 
 #![feature(phase)]
 
-#![feature(phase)]
 #[phase(plugin, link)]
 extern crate log;
-
-
-
-
 
 extern crate collections;
 extern crate core;
