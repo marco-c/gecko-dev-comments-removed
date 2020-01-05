@@ -15,6 +15,7 @@
 extern crate cookie as cookie_rs;
 extern crate heapsize;
 extern crate hyper;
+extern crate hyper_serde;
 extern crate image as piston_image;
 extern crate ipc_channel;
 #[allow(unused_extern_crates)]
@@ -37,6 +38,7 @@ use hyper::header::{ContentType, Headers};
 use hyper::http::RawStatus;
 use hyper::method::Method;
 use hyper::mime::{Attr, Mime};
+use hyper_serde::Serde;
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use msg::constellation_msg::{PipelineId, ReferrerPolicy};
 use request::{Request, RequestInit};
@@ -85,8 +87,12 @@ pub enum LoadContext {
 #[derive(Clone, Debug, Deserialize, Serialize, HeapSizeOf)]
 pub struct CustomResponse {
     #[ignore_heap_size_of = "Defined in hyper"]
+    #[serde(deserialize_with = "::hyper_serde::deserialize",
+            serialize_with = "::hyper_serde::serialize")]
     pub headers: Headers,
     #[ignore_heap_size_of = "Defined in hyper"]
+    #[serde(deserialize_with = "::hyper_serde::deserialize",
+            serialize_with = "::hyper_serde::serialize")]
     pub raw_status: RawStatus,
     pub body: Vec<u8>
 }
@@ -107,11 +113,17 @@ pub struct CustomResponseMediator {
 pub struct LoadData {
     pub url: Url,
     #[ignore_heap_size_of = "Defined in hyper"]
+    #[serde(deserialize_with = "::hyper_serde::deserialize",
+            serialize_with = "::hyper_serde::serialize")]
     pub method: Method,
     #[ignore_heap_size_of = "Defined in hyper"]
+    #[serde(deserialize_with = "::hyper_serde::deserialize",
+            serialize_with = "::hyper_serde::serialize")]
     
     pub headers: Headers,
     #[ignore_heap_size_of = "Defined in hyper"]
+    #[serde(deserialize_with = "::hyper_serde::deserialize",
+            serialize_with = "::hyper_serde::serialize")]
     
     
     pub preserved_headers: Headers,
@@ -378,7 +390,12 @@ pub enum WebSocketDomAction {
 
 #[derive(Deserialize, Serialize)]
 pub enum WebSocketNetworkEvent {
-    ConnectionEstablished(header::Headers, Vec<String>),
+    ConnectionEstablished(
+        #[serde(deserialize_with = "::hyper_serde::deserialize",
+                serialize_with = "::hyper_serde::serialize")]
+        header::Headers,
+        Vec<String>
+    ),
     MessageReceived(MessageData),
     Close(Option<u16>, String),
     Fail,
@@ -407,11 +424,17 @@ pub enum CoreResourceMsg {
     
     SetCookiesForUrl(Url, String, CookieSource),
     
-    SetCookiesForUrlWithData(Url, Cookie, CookieSource),
+    SetCookiesForUrlWithData(
+        Url,
+        #[serde(deserialize_with = "::hyper_serde::deserialize",
+                serialize_with = "::hyper_serde::serialize")]
+        Cookie,
+        CookieSource
+    ),
     
     GetCookiesForUrl(Url, IpcSender<Option<String>>, CookieSource),
     
-    GetCookiesDataForUrl(Url, IpcSender<Vec<Cookie>>, CookieSource),
+    GetCookiesDataForUrl(Url, IpcSender<Vec<Serde<Cookie>>>, CookieSource),
     
     Cancel(ResourceId),
     
@@ -528,18 +551,18 @@ pub struct Metadata {
 
     #[ignore_heap_size_of = "Defined in hyper"]
     
-    pub content_type: Option<(ContentType)>,
+    pub content_type: Option<Serde<ContentType>>,
 
     
     pub charset: Option<String>,
 
     #[ignore_heap_size_of = "Defined in hyper"]
     
-    pub headers: Option<Headers>,
+    pub headers: Option<Serde<Headers>>,
 
     #[ignore_heap_size_of = "Defined in hyper"]
     
-    pub status: Option<RawStatus>,
+    pub status: Option<Serde<RawStatus>>,
 
     
     pub https_state: HttpsState,
@@ -557,7 +580,7 @@ impl Metadata {
             charset:      None,
             headers: None,
             
-            status: Some(RawStatus(200, "OK".into())),
+            status: Some(Serde(RawStatus(200, "OK".into()))),
             https_state: HttpsState::None,
             referrer: None,
         }
@@ -566,7 +589,7 @@ impl Metadata {
     
     pub fn set_content_type(&mut self, content_type: Option<&Mime>) {
         match self.headers {
-            None => self.headers = Some(Headers::new()),
+            None => self.headers = Some(Serde(Headers::new())),
             Some(_) => (),
         }
 
@@ -577,7 +600,7 @@ impl Metadata {
                     headers.set(ContentType(mime.clone()));
                 }
 
-                self.content_type = Some(ContentType(mime.clone()));
+                self.content_type = Some(Serde(ContentType(mime.clone())));
                 let &Mime(_, _, ref parameters) = mime;
                 for &(ref k, ref v) in parameters {
                     if &Attr::Charset == k {
