@@ -35,9 +35,6 @@ CreateDataSourceSurfaceWithStrideFromData(const IntSize &aSize,
                                           const uint8_t* aData,
                                           int32_t aDataStride);
 
-void
-ConvertBGRXToBGRA(uint8_t* aData, const IntSize &aSize, const int32_t aStride);
-
 
 
 
