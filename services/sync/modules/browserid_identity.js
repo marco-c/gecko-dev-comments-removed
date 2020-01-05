@@ -115,10 +115,10 @@ this.BrowserIDManager.prototype = {
   },
 
   hashedUID() {
-    if (!this._token) {
-      throw new Error("hashedUID: Don't have token");
+    if (!this._hashedUID) {
+      throw new Error("hashedUID: Don't seem to have previously seen a token");
     }
-    return this._token.hashed_fxa_uid
+    return this._hashedUID;
   },
 
   deviceID() {
@@ -248,6 +248,11 @@ this.BrowserIDManager.prototype = {
         return this._fetchTokenForUser();
       }).then(token => {
         this._token = token;
+        if (token) {
+          
+          
+          this._hashedUID = token.hashed_fxa_uid; 
+        }
         this._shouldHaveSyncKeyBundle = true; 
         this.whenReadyToAuthenticate.resolve();
         this._log.info("Background fetch for key bundle done");
@@ -413,6 +418,7 @@ this.BrowserIDManager.prototype = {
   resetCredentials: function() {
     this.resetSyncKey();
     this._token = null;
+    this._hashedUID = null;
     
     
     Weave.Service.clusterURL = null;
@@ -692,6 +698,13 @@ this.BrowserIDManager.prototype = {
     return this._fetchTokenForUser().then(
       token => {
         this._token = token;
+        
+        
+        
+        if (token) {
+          
+          this._hashedUID = token.hashed_fxa_uid;
+        }
         notifyStateChanged();
       },
       error => {
