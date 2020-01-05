@@ -183,9 +183,6 @@ public:
     CopySurfaceToDataSourceSurfaceWithFormat(SourceSurface* aSurface,
                                              SurfaceFormat aFormat);
 
-    static const uint8_t sUnpremultiplyTable[256*256];
-    static const uint8_t sPremultiplyTable[256*256];
-
     
 
 
