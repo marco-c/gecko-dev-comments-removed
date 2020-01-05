@@ -221,18 +221,6 @@ private:
 
 public:
   
-  void ContentInserted(nsINode* aContainer, nsIContent* aChild)
-  {
-    RestyleForInsertOrChange(aContainer, aChild);
-  }
-
-  
-  void ContentAppended(nsIContent* aContainer, nsIContent* aFirstNewContent)
-  {
-    RestyleForAppend(aContainer, aFirstNewContent);
-  }
-
-  
   
   
   
