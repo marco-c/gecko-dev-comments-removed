@@ -132,7 +132,6 @@ const char* kPrefDevtoolsDisableAutoHide =
 
 NS_IMPL_ISUPPORTS(nsXULPopupManager,
                   nsIDOMEventListener,
-                  nsITimerCallback,
                   nsIObserver)
 
 nsXULPopupManager::nsXULPopupManager() :
@@ -1236,7 +1235,17 @@ nsXULPopupManager::HidePopupAfterDelay(nsMenuPopupFrame* aPopup)
 
   
   mCloseTimer = do_CreateInstance("@mozilla.org/timer;1");
-  mCloseTimer->InitWithCallback(this, menuDelay, nsITimer::TYPE_ONE_SHOT);
+  nsIContent* content = aPopup->GetContent();
+  if (content) {
+    mCloseTimer->SetTarget(
+        content->OwnerDoc()->EventTargetFor(TaskCategory::Other));
+  }
+  mCloseTimer->InitWithNamedFuncCallback([](nsITimer* aTimer, void* aClosure) {
+    nsXULPopupManager* pm = nsXULPopupManager::GetInstance();
+    if (pm) {
+      pm->KillMenuTimer();
+    }
+  }, nullptr, menuDelay, nsITimer::TYPE_ONE_SHOT, "KillMenuTimer");
 
   
   
@@ -2038,15 +2047,6 @@ nsXULPopupManager::UpdateMenuItems(nsIContent* aPopup)
 
 
 
-
-nsresult
-nsXULPopupManager::Notify(nsITimer* aTimer)
-{
-  if (aTimer == mCloseTimer)
-    KillMenuTimer();
-
-  return NS_OK;
-}
 
 void
 nsXULPopupManager::KillMenuTimer()
