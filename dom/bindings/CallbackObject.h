@@ -511,8 +511,11 @@ public:
     nsCOMPtr<nsISupports> supp =
       CallbackObjectHolderBase::ToXPCOMCallback(GetWebIDLCallback(),
                                                 NS_GET_TEMPLATE_IID(XPCOMCallbackT));
-    
-    return supp.forget().downcast<XPCOMCallbackT>();
+    if (supp) {
+      
+      return supp.forget().downcast<XPCOMCallbackT>();
+    }
+    return nullptr;
   }
 
   

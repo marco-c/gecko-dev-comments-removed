@@ -67,6 +67,7 @@ add_task(function*() {
 
   
   
+  Cu.forceGC();
   Cu.forceCC();
 
 
@@ -76,6 +77,9 @@ add_task(function*() {
   yield fromTestPromise;
   do_print("Got event from test");
 
+  let listeners = Services.els.getListenerInfoFor(window);
+  ok(!listeners.some(info => info.type == "FromTest"),
+     "No 'FromTest' listeners returned for nuked sandbox");
 
   webnav.close();
 });

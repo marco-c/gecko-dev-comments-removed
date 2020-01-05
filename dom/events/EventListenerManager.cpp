@@ -1572,10 +1572,16 @@ EventListenerManager::GetListenerInfo(nsCOMArray<nsIEventListenerInfo>* aList)
     } else {
       eventType.Assign(Substring(nsDependentAtomString(listener.mTypeAtom), 2));
     }
+    nsCOMPtr<nsIDOMEventListener> callback = listener.mListener.ToXPCOMCallback();
+    if (!callback) {
+      
+      
+      continue;
+    }
     
     
     RefPtr<EventListenerInfo> info =
-      new EventListenerInfo(eventType, listener.mListener.ToXPCOMCallback(),
+      new EventListenerInfo(eventType, callback.forget(),
                             listener.mFlags.mCapture,
                             listener.mFlags.mAllowUntrustedEvents,
                             listener.mFlags.mInSystemGroup);
