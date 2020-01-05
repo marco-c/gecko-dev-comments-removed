@@ -114,6 +114,8 @@
 #ifdef USE_TURN
 
 #define NR_STUN_ATTR_LIFETIME                0x000d
+
+#define NR_STUN_ATTR_BANDWIDTH               0x0010
 #define NR_STUN_ATTR_XOR_PEER_ADDRESS        0x0012
 #define NR_STUN_ATTR_DATA                    0x0013
 #define NR_STUN_ATTR_XOR_RELAY_ADDRESS       0x0016
