@@ -6724,6 +6724,12 @@ var gIdentityHandler = {
 
   _state: 0,
 
+  
+
+
+
+  _popupTriggeredByKeyboard: false,
+
   get _isBroken() {
     return this._state & Ci.nsIWebProgressListener.STATE_IS_BROKEN;
   },
@@ -7379,6 +7385,8 @@ var gIdentityHandler = {
       return;
     }
 
+    this._popupTriggeredByKeyboard = event.type == "keypress";
+
     
     
     this._identityPopup.hidden = false;
@@ -7398,10 +7406,12 @@ var gIdentityHandler = {
 
   onPopupShown(event) {
     if (event.target == this._identityPopup) {
-      
-      
-      
-      document.commandDispatcher.advanceFocusIntoSubtree(this._identityPopup);
+      if (this._popupTriggeredByKeyboard) {
+        
+        
+        
+        document.commandDispatcher.advanceFocusIntoSubtree(this._identityPopup);
+      }
 
       window.addEventListener("focus", this, true);
     }
