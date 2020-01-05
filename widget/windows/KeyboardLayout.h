@@ -554,7 +554,20 @@ private:
 
 
 
+  void MaybeInitPluginEventOfKeyEvent(WidgetKeyboardEvent& aKeyEvent,
+                                      const MSG& aMsgSentToPlugin) const;
+
+  
+
+
+
   bool DispatchCommandEvent(uint32_t aEventCommand) const;
+
+  
+
+
+
+  bool DispatchKeyPressEventsWithRetrievedCharMessages() const;
 
   
 
@@ -570,13 +583,6 @@ private:
 
 
   bool MaybeDispatchPluginEventsForRemovedCharMessages() const;
-
-  
-
-
-
-
-  bool DispatchKeyPressEventForFollowingCharMessage(const MSG& aCharMsg) const;
 
   
 

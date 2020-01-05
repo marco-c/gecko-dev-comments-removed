@@ -287,9 +287,13 @@ public:
 
 
 
+
+
+
   bool MaybeDispatchKeypressEvents(const WidgetKeyboardEvent& aKeyboardEvent,
                                    nsEventStatus& aStatus,
-                                   void* aData = nullptr);
+                                   void* aData = nullptr,
+                                   bool aNeedsCallback = false);
 
 private:
   
@@ -465,11 +469,15 @@ private:
 
 
 
+
+
+
   bool DispatchKeyboardEventInternal(EventMessage aMessage,
                                      const WidgetKeyboardEvent& aKeyboardEvent,
                                      nsEventStatus& aStatus,
                                      void* aData,
-                                     uint32_t aIndexOfKeypress = 0);
+                                     uint32_t aIndexOfKeypress = 0,
+                                     bool aNeedsCallback = false);
 };
 
 } 
