@@ -1078,30 +1078,9 @@ struct nsCSSValue::Array final {
     return true;
   }
 
-  
-  
-  void AddRef() {
-    if (mRefCnt == size_t(-1)) { 
-      NS_WARNING("refcount overflow, leaking nsCSSValue::Array");
-      return;
-    }
-    ++mRefCnt;
-    NS_LOG_ADDREF(this, mRefCnt, "nsCSSValue::Array", sizeof(*this));
-  }
-  void Release() {
-    if (mRefCnt == size_t(-1)) { 
-      NS_WARNING("refcount overflow, leaking nsCSSValue::Array");
-      return;
-    }
-    --mRefCnt;
-    NS_LOG_RELEASE(this, mRefCnt, "nsCSSValue::Array");
-    if (mRefCnt == 0)
-      delete this;
-  }
-
+  NS_INLINE_DECL_REFCOUNTING(Array);
 private:
 
-  size_t mRefCnt;
   const size_t mCount;
   
   
