@@ -3,6 +3,11 @@ const BASE = getRootDirectory(gTestPath)
   .replace("chrome://mochitests/content/", "https://example.com/");
 
 Cu.import("resource:///modules/ExtensionsUI.jsm");
+XPCOMUtils.defineLazyGetter(this, "Management", () => {
+  const {Management} = Components.utils.import("resource://gre/modules/Extension.jsm", {});
+  return Management;
+});
+
 
 
 
@@ -65,19 +70,58 @@ function promiseInstallEvent(addon, event) {
 
 
 
-function promiseInstallAddon(url) {
-  return AddonManager.getInstallForURL(url, null, "application/x-xpinstall")
-                     .then(install => {
-                       ok(install, "Created install");
-                       return new Promise(resolve => {
-                         install.addListener({
-                           onInstallEnded(_install, addon) {
-                             resolve(addon);
-                           },
-                         });
-                         install.install();
-                       });
-                     });
+async function promiseInstallAddon(url) {
+  let install = await AddonManager.getInstallForURL(url, null, "application/x-xpinstall");
+  install.install();
+
+  let addon = await new Promise(resolve => {
+    install.addListener({
+      onInstallEnded(_install, _addon) {
+        resolve(_addon);
+      },
+    });
+  });
+
+  if (addon.isWebExtension) {
+    await new Promise(resolve => {
+      function listener(event, extension) {
+        if (extension.id == addon.id) {
+          Management.off("ready", listener);
+          resolve();
+        }
+      }
+      Management.on("ready", listener);
+    });
+  }
+
+  return addon;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+async function waitForUpdate(addon) {
+  let installPromise = promiseInstallEvent(addon, "onInstallEnded");
+  let readyPromise = new Promise(resolve => {
+    function listener(event, extension) {
+      if (extension.id == addon.id) {
+        Management.off("ready", listener);
+        resolve();
+      }
+    }
+    Management.on("ready", listener);
+  });
+
+  let [newAddon, ] = await Promise.all([installPromise, readyPromise]);
+  return newAddon;
 }
 
 function isDefaultIcon(icon) {

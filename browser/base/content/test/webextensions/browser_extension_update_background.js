@@ -151,7 +151,7 @@ function* backgroundUpdateTest(url, id, checkIconFn) {
   is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
 
   
-  updatePromise = promiseInstallEvent(addon, "onInstallEnded");
+  updatePromise = waitForUpdate(addon);
   panel = yield popupPromise;
   panel.button.click();
 
@@ -176,7 +176,6 @@ function checkDefaultIcon(icon) {
 
 add_task(() => backgroundUpdateTest(`${BASE}/browser_webext_update1.xpi`,
                                     ID, checkDefaultIcon));
-
 function checkNonDefaultIcon(icon) {
   
   
@@ -209,7 +208,7 @@ async function testNoPrompt(origUrl, id) {
                                             {once: true});
 
   
-  let updatePromise = promiseInstallEvent(addon, "onInstallEnded");
+  let updatePromise = waitForUpdate(addon);
   AddonManagerPrivate.backgroundUpdateCheck();
   await updatePromise;
 
@@ -239,4 +238,3 @@ add_task(() => testNoPrompt(`${BASE}/browser_webext_update_perms1.xpi`,
 
 
 add_task(() => testNoPrompt(`${BASE}/browser_legacy.xpi`, ID_LEGACY));
-
