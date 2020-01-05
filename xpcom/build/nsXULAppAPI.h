@@ -426,10 +426,6 @@ XRE_API(bool,
 
 XRE_API(bool,
         XRE_SetRemoteExceptionHandler, (const char* aPipe))
-
-
-XRE_API(bool,
-        XRE_UnsetRemoteExceptionHandler, ())
 #endif
 
 namespace mozilla {
