@@ -963,15 +963,17 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
   let extension = new ExtensionData(uri);
 
   let manifest = yield extension.loadManifest();
-  let theme = !!manifest.theme;
 
   
   
-  let locales = yield extension.initAllLocales();
+  let locales = (extension.errors.length == 0) ?
+                yield extension.initAllLocales() : null;
 
-  
-  if (extension.errors.length)
+  if (extension.errors.length > 0) {
     throw new Error("Extension is invalid");
+  }
+
+  let theme = Boolean(manifest.theme);
 
   let bss = (manifest.browser_specific_settings && manifest.browser_specific_settings.gecko)
       || (manifest.applications && manifest.applications.gecko) || {};
