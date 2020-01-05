@@ -95,8 +95,9 @@ TextEditRules::~TextEditRules()
    
    
 
-  if (mTimer)
+  if (mTimer) {
     mTimer->Cancel();
+  }
 }
 
 NS_IMPL_CYCLE_COLLECTION(TextEditRules, mBogusNode, mCachedSelectionNode)
@@ -139,8 +140,7 @@ TextEditRules::Init(TextEditor* aTextEditor)
     NS_ENSURE_SUCCESS(rv, rv);
   }
 
-  if (IsPlaintextEditor())
-  {
+  if (IsPlaintextEditor()) {
     
     rv = CreateTrailingBRIfNeeded();
     NS_ENSURE_SUCCESS(rv, rv);
@@ -164,9 +164,9 @@ TextEditRules::SetInitialValue(const nsAString& aValue)
 NS_IMETHODIMP
 TextEditRules::DetachEditor()
 {
-  if (mTimer)
+  if (mTimer) {
     mTimer->Cancel();
-
+  }
   mTextEditor = nullptr;
   return NS_OK;
 }
@@ -175,12 +175,13 @@ NS_IMETHODIMP
 TextEditRules::BeforeEdit(EditAction action,
                           nsIEditor::EDirection aDirection)
 {
-  if (mLockRulesSniffing) return NS_OK;
+  if (mLockRulesSniffing) {
+    return NS_OK;
+  }
 
   AutoLockRulesSniffing lockIt(this);
   mDidExplicitlySetInterline = false;
-  if (!mActionNesting)
-  {
+  if (!mActionNesting) {
     
     mTheAction = action;
   }
@@ -201,13 +202,14 @@ NS_IMETHODIMP
 TextEditRules::AfterEdit(EditAction action,
                          nsIEditor::EDirection aDirection)
 {
-  if (mLockRulesSniffing) return NS_OK;
+  if (mLockRulesSniffing) {
+    return NS_OK;
+  }
 
   AutoLockRulesSniffing lockIt(this);
 
   NS_PRECONDITION(mActionNesting>0, "bad action nesting!");
-  if (!--mActionNesting)
-  {
+  if (!--mActionNesting) {
     NS_ENSURE_STATE(mTextEditor);
     RefPtr<Selection> selection = mTextEditor->GetSelection();
     NS_ENSURE_STATE(selection);
@@ -303,8 +305,7 @@ TextEditRules::DidDoAction(Selection* aSelection,
   
   TextRulesInfo* info = static_cast<TextRulesInfo*>(aInfo);
 
-  switch (info->action)
-  {
+  switch (info->action) {
     case EditAction::insertBreak:
       return DidInsertBreak(aSelection, aResult);
     case EditAction::insertText:
@@ -371,14 +372,14 @@ TextEditRules::WillInsertBreak(Selection* aSelection,
                                bool* aHandled,
                                int32_t aMaxLength)
 {
-  if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
+  if (!aSelection || !aCancel || !aHandled) {
+    return NS_ERROR_NULL_POINTER;
+  }
   CANCEL_OPERATION_IF_READONLY_OR_DISABLED
   *aHandled = false;
   if (IsSingleLineEditor()) {
     *aCancel = true;
-  }
-  else
-  {
+  } else {
     
     
     NS_NAMED_LITERAL_STRING(inString, "\n");
@@ -398,8 +399,7 @@ TextEditRules::WillInsertBreak(Selection* aSelection,
     bool bCollapsed;
     rv = aSelection->GetIsCollapsed(&bCollapsed);
     NS_ENSURE_SUCCESS(rv, rv);
-    if (!bCollapsed)
-    {
+    if (!bCollapsed) {
       NS_ENSURE_STATE(mTextEditor);
       rv = mTextEditor->DeleteSelection(nsIEditor::eNone, nsIEditor::eStrip);
       NS_ENSURE_SUCCESS(rv, rv);
@@ -409,7 +409,6 @@ TextEditRules::WillInsertBreak(Selection* aSelection,
     
     
     *aCancel = false;
-
   }
   return NS_OK;
 }
@@ -450,15 +449,18 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded(Selection* aSelection)
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<nsIDOMText> nodeAsText = do_QueryInterface(selNode);
-  if (!nodeAsText) return NS_OK; 
+  if (!nodeAsText) {
+    return NS_OK; 
+  }
 
   uint32_t length;
   rv = nodeAsText->GetLength(&length);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (selOffset != int32_t(length))
+  if (selOffset != int32_t(length)) {
     return NS_OK;
+  }
 
   int32_t parentOffset;
   nsCOMPtr<nsIDOMNode> parentNode =
@@ -467,7 +469,9 @@ TextEditRules::CollapseSelectionToTrailingBRIfNeeded(Selection* aSelection)
   NS_ENSURE_STATE(mTextEditor);
   nsCOMPtr<nsIDOMNode> root = do_QueryInterface(mTextEditor->GetRoot());
   NS_ENSURE_TRUE(root, NS_ERROR_NULL_POINTER);
-  if (parentNode != root) return NS_OK;
+  if (parentNode != root) {
+    return NS_OK;
+  }
 
   nsCOMPtr<nsIDOMNode> nextNode = mTextEditor->GetChildAt(parentNode,
                                                           parentOffset + 1);
@@ -526,44 +530,41 @@ TextEditRules::HandleNewLines(nsString& aString,
     TextEditor::GetDefaultEditorPrefs(aNewlineHandling, caretStyle);
   }
 
-  switch(aNewlineHandling)
-  {
-  case nsIPlaintextEditor::eNewlinesReplaceWithSpaces:
-    
-    aString.Trim(CRLF, false, true);
-    aString.ReplaceChar(CRLF, ' ');
-    break;
-  case nsIPlaintextEditor::eNewlinesStrip:
-    aString.StripChars(CRLF);
-    break;
-  case nsIPlaintextEditor::eNewlinesPasteToFirst:
-  default:
-    {
+  switch(aNewlineHandling) {
+    case nsIPlaintextEditor::eNewlinesReplaceWithSpaces:
+      
+      aString.Trim(CRLF, false, true);
+      aString.ReplaceChar(CRLF, ' ');
+      break;
+    case nsIPlaintextEditor::eNewlinesStrip:
+      aString.StripChars(CRLF);
+      break;
+    case nsIPlaintextEditor::eNewlinesPasteToFirst:
+    default: {
       int32_t firstCRLF = aString.FindCharInSet(CRLF);
 
       
       int32_t offset = 0;
-      while (firstCRLF == offset)
-      {
+      while (firstCRLF == offset) {
         offset++;
         firstCRLF = aString.FindCharInSet(CRLF, offset);
       }
-      if (firstCRLF > 0)
+      if (firstCRLF > 0) {
         aString.Truncate(firstCRLF);
-      if (offset > 0)
+      }
+      if (offset > 0) {
         aString.Cut(0, offset);
+      }
+      break;
     }
-    break;
-  case nsIPlaintextEditor::eNewlinesReplaceWithCommas:
-    aString.Trim(CRLF, true, true);
-    aString.ReplaceChar(CRLF, ',');
-    break;
-  case nsIPlaintextEditor::eNewlinesStripSurroundingWhitespace:
-    {
-      nsString result;
+    case nsIPlaintextEditor::eNewlinesReplaceWithCommas:
+      aString.Trim(CRLF, true, true);
+      aString.ReplaceChar(CRLF, ',');
+      break;
+    case nsIPlaintextEditor::eNewlinesStripSurroundingWhitespace: {
+      nsAutoString result;
       uint32_t offset = 0;
-      while (offset < aString.Length())
-      {
+      while (offset < aString.Length()) {
         int32_t nextCRLF = aString.FindCharInSet(CRLF, offset);
         if (nextCRLF < 0) {
           result.Append(nsDependentSubstring(aString, offset));
@@ -571,20 +572,22 @@ TextEditRules::HandleNewLines(nsString& aString,
         }
         uint32_t wsBegin = nextCRLF;
         
-        while (wsBegin > offset && NS_IS_SPACE(aString[wsBegin - 1]))
+        while (wsBegin > offset && NS_IS_SPACE(aString[wsBegin - 1])) {
           --wsBegin;
+        }
         result.Append(nsDependentSubstring(aString, offset, wsBegin - offset));
         offset = nextCRLF + 1;
-        while (offset < aString.Length() && NS_IS_SPACE(aString[offset]))
+        while (offset < aString.Length() && NS_IS_SPACE(aString[offset])) {
           ++offset;
+        }
       }
       aString = result;
+      break;
     }
-    break;
-  case nsIPlaintextEditor::eNewlinesPasteIntact:
-    
-    aString.Trim(CRLF, true, true);
-    break;
+    case nsIPlaintextEditor::eNewlinesPasteIntact:
+      
+      aString.Trim(CRLF, true, true);
+      break;
   }
 }
 
@@ -597,7 +600,9 @@ TextEditRules::WillInsertText(EditAction aAction,
                               nsAString* outString,
                               int32_t aMaxLength)
 {
-  if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
+  if (!aSelection || !aCancel || !aHandled) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   if (inString->IsEmpty() && aAction != EditAction::insertIMEText) {
     
@@ -643,8 +648,7 @@ TextEditRules::WillInsertText(EditAction aAction,
   bool bCollapsed;
   rv = aSelection->GetIsCollapsed(&bCollapsed);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (!bCollapsed)
-  {
+  if (!bCollapsed) {
     NS_ENSURE_STATE(mTextEditor);
     rv = mTextEditor->DeleteSelection(nsIEditor::eNone, nsIEditor::eStrip);
     NS_ENSURE_SUCCESS(rv, rv);
@@ -658,11 +662,9 @@ TextEditRules::WillInsertText(EditAction aAction,
   
   
   
-  if (IsPasswordEditor())
-  {
-    if (aAction == EditAction::insertIMEText) {
-      RemoveIMETextFromPWBuf(start, outString);
-    }
+  if (IsPasswordEditor() &&
+      aAction == EditAction::insertIMEText) {
+    RemoveIMETextFromPWBuf(start, outString);
   }
 
   
@@ -675,8 +677,7 @@ TextEditRules::WillInsertText(EditAction aAction,
   
   
   
-  if (IsSingleLineEditor())
-  {
+  if (IsSingleLineEditor()) {
     nsAutoString tString(*outString);
 
     NS_ENSURE_STATE(mTextEditor);
@@ -685,8 +686,7 @@ TextEditRules::WillInsertText(EditAction aAction,
     outString->Assign(tString);
   }
 
-  if (IsPasswordEditor())
-  {
+  if (IsPasswordEditor()) {
     
     mPasswordText.Insert(*outString, start);
 
@@ -694,20 +694,15 @@ TextEditRules::WillInsertText(EditAction aAction,
       HideLastPWInput();
       mLastStart = start;
       mLastLength = outString->Length();
-      if (mTimer)
-      {
+      if (mTimer) {
         mTimer->Cancel();
-      }
-      else
-      {
+      } else {
         mTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
         NS_ENSURE_SUCCESS(rv, rv);
       }
       mTimer->InitWithCallback(this, LookAndFeel::GetPasswordMaskDelay(),
                                nsITimer::TYPE_ONE_SHOT);
-    }
-    else
-    {
+    } else {
       FillBufWithPWChars(outString, outString->Length());
     }
   }
@@ -757,8 +752,7 @@ TextEditRules::WillInsertText(EditAction aAction,
                                      &curOffset, doc);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (curNode)
-    {
+    if (curNode) {
       
       
       bool endsWithLF =
@@ -779,15 +773,14 @@ TextEditRules::DidInsertText(Selection* aSelection,
   return DidInsert(aSelection, aResult);
 }
 
-
-
 nsresult
 TextEditRules::WillSetTextProperty(Selection* aSelection,
                                    bool* aCancel,
                                    bool* aHandled)
 {
-  if (!aSelection || !aCancel || !aHandled)
-    { return NS_ERROR_NULL_POINTER; }
+  if (!aSelection || !aCancel || !aHandled) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   
   if (IsPlaintextEditor()) {
@@ -808,8 +801,9 @@ TextEditRules::WillRemoveTextProperty(Selection* aSelection,
                                       bool* aCancel,
                                       bool* aHandled)
 {
-  if (!aSelection || !aCancel || !aHandled)
-    { return NS_ERROR_NULL_POINTER; }
+  if (!aSelection || !aCancel || !aHandled) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   
   if (IsPlaintextEditor()) {
@@ -831,7 +825,9 @@ TextEditRules::WillDeleteSelection(Selection* aSelection,
                                    bool* aCancel,
                                    bool* aHandled)
 {
-  if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
+  if (!aSelection || !aCancel || !aHandled) {
+    return NS_ERROR_NULL_POINTER;
+  }
   CANCEL_OPERATION_IF_READONLY_OR_DISABLED
 
   
@@ -854,8 +850,7 @@ TextEditRules::WillDeleteSelection(Selection* aSelection,
   AutoHideSelectionChanges hideSelection(aSelection);
   nsAutoScriptBlocker scriptBlocker;
 
-  if (IsPasswordEditor())
-  {
+  if (IsPasswordEditor()) {
     NS_ENSURE_STATE(mTextEditor);
     nsresult rv =
       mTextEditor->ExtendSelectionForDelete(aSelection, &aCollapsedAction);
@@ -871,28 +866,28 @@ TextEditRules::WillDeleteSelection(Selection* aSelection,
       HideLastPWInput();
       mLastStart = start;
       mLastLength = 0;
-      if (mTimer)
-      {
+      if (mTimer) {
         mTimer->Cancel();
       }
     }
 
-    if (end == start)
-    { 
-      if (nsIEditor::ePrevious==aCollapsedAction && 0<start) { 
+    
+    if (end == start) {
+      
+      if (nsIEditor::ePrevious == aCollapsedAction && 0<start) {
         mPasswordText.Cut(start-1, 1);
       }
-      else if (nsIEditor::eNext==aCollapsedAction) {      
+      
+      else if (nsIEditor::eNext == aCollapsedAction) {
         mPasswordText.Cut(start, 1);
       }
       
     }
-    else {  
+    
+    else {
       mPasswordText.Cut(start, end-start);
     }
-  }
-  else
-  {
+  } else {
     nsCOMPtr<nsIDOMNode> startNode;
     int32_t startOffset;
     NS_ENSURE_STATE(mTextEditor);
@@ -906,14 +901,17 @@ TextEditRules::WillDeleteSelection(Selection* aSelection,
     rv = aSelection->GetIsCollapsed(&bCollapsed);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    if (!bCollapsed)
+    if (!bCollapsed) {
       return NS_OK;
+    }
 
     
     rv = CheckBidiLevelForDeletion(aSelection, startNode, startOffset,
                                    aCollapsedAction, aCancel);
     NS_ENSURE_SUCCESS(rv, rv);
-    if (*aCancel) return NS_OK;
+    if (*aCancel) {
+      return NS_OK;
+    }
 
     NS_ENSURE_STATE(mTextEditor);
     rv = mTextEditor->ExtendSelectionForDelete(aSelection, &aCollapsedAction);
@@ -952,8 +950,7 @@ TextEditRules::DidDeleteSelection(Selection* aSelection,
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    if (!strLength)
-    {
+    if (!strLength) {
       rv = mTextEditor->DeleteNode(startNode);
       NS_ENSURE_SUCCESS(rv, rv);
     }
@@ -971,7 +968,9 @@ TextEditRules::WillUndo(Selection* aSelection,
                         bool* aCancel,
                         bool* aHandled)
 {
-  if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
+  if (!aSelection || !aCancel || !aHandled) {
+    return NS_ERROR_NULL_POINTER;
+  }
   CANCEL_OPERATION_IF_READONLY_OR_DISABLED
   
   *aCancel = false;
@@ -1011,7 +1010,9 @@ TextEditRules::WillRedo(Selection* aSelection,
                         bool* aCancel,
                         bool* aHandled)
 {
-  if (!aSelection || !aCancel || !aHandled) { return NS_ERROR_NULL_POINTER; }
+  if (!aSelection || !aCancel || !aHandled) {
+    return NS_ERROR_NULL_POINTER;
+  }
   CANCEL_OPERATION_IF_READONLY_OR_DISABLED
   
   *aCancel = false;
@@ -1069,8 +1070,9 @@ TextEditRules::WillOutputText(Selection* aSelection,
                               bool* aHandled)
 {
   
-  if (!aOutString || !aOutputFormat || !aCancel || !aHandled)
-    { return NS_ERROR_NULL_POINTER; }
+  if (!aOutString || !aOutputFormat || !aCancel || !aHandled) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   
   *aCancel = false;
@@ -1078,15 +1080,13 @@ TextEditRules::WillOutputText(Selection* aSelection,
 
   nsAutoString outputFormat(*aOutputFormat);
   ToLowerCase(outputFormat);
-  if (outputFormat.EqualsLiteral("text/plain"))
-  { 
-    if (IsPasswordEditor())
-    {
+  if (outputFormat.EqualsLiteral("text/plain")) {
+    
+    if (IsPasswordEditor()) {
       *aOutString = mPasswordText;
       *aHandled = true;
-    }
-    else if (mBogusNode)
-    { 
+    } else if (mBogusNode) {
+      
       aOutString->Truncate();
       *aHandled = true;
     }
@@ -1105,17 +1105,20 @@ nsresult
 TextEditRules::RemoveRedundantTrailingBR()
 {
   
-  if (mBogusNode)
+  if (mBogusNode) {
     return NS_OK;
+  }
 
   
-  if (IsSingleLineEditor())
+  if (IsSingleLineEditor()) {
     return NS_OK;
+  }
 
   NS_ENSURE_STATE(mTextEditor);
   RefPtr<dom::Element> body = mTextEditor->GetRoot();
-  if (!body)
+  if (!body) {
     return NS_ERROR_NULL_POINTER;
+  }
 
   uint32_t childCount = body->GetChildCount();
   if (childCount > 1) {
@@ -1252,7 +1255,9 @@ TextEditRules::TruncateInsertionIfNeeded(Selection* aSelection,
                                          int32_t aMaxLength,
                                          bool* aTruncated)
 {
-  if (!aSelection || !aInString || !aOutString) {return NS_ERROR_NULL_POINTER;}
+  if (!aSelection || !aInString || !aOutString) {
+    return NS_ERROR_NULL_POINTER;
+  }
 
   if (!aOutString->Assign(*aInString, mozilla::fallible)) {
     return NS_ERROR_OUT_OF_MEMORY;
@@ -1292,17 +1297,14 @@ TextEditRules::TruncateInsertionIfNeeded(Selection* aSelection,
 
     const int32_t selectionLength = end - start;
     const int32_t resultingDocLength = docLength - selectionLength - oldCompStrLength;
-    if (resultingDocLength >= aMaxLength)
-    {
+    if (resultingDocLength >= aMaxLength) {
       
       
       aOutString->Truncate();
       if (aTruncated) {
         *aTruncated = true;
       }
-    }
-    else
-    {
+    } else {
       int32_t oldLength = aOutString->Length();
       if (oldLength + resultingDocLength > aMaxLength) {
         int32_t newLength = aMaxLength - resultingDocLength;
@@ -1343,8 +1345,7 @@ TextEditRules::RemoveIMETextFromPWBuf(int32_t& aStart,
   
   if (mPasswordIMEText.IsEmpty()) {
     mPasswordIMEIndex = aStart;
-  }
-  else {
+  } else {
     
     mPasswordText.Cut(mPasswordIMEIndex, mPasswordIMEText.Length());
     aStart = mPasswordIMEIndex;
@@ -1392,8 +1393,9 @@ TextEditRules::HideLastPWInput()
 
   nodeAsText->ReplaceData(mLastStart, mLastLength, hiddenText);
   selection->Collapse(selNode, start);
-  if (start != end)
+  if (start != end) {
     selection->Extend(selNode, end);
+  }
   return NS_OK;
 }
 
@@ -1407,10 +1409,10 @@ TextEditRules::FillBufWithPWChars(nsAString* aOutString,
   
   char16_t passwordChar = LookAndFeel::GetPasswordCharacter();
 
-  int32_t i;
   aOutString->Truncate();
-  for (i=0; i < aLength; i++)
+  for (int32_t i = 0; i < aLength; i++) {
     aOutString->Append(passwordChar);
+  }
 }
 
 

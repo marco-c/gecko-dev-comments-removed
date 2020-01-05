@@ -77,16 +77,14 @@ TextEditor::InsertTextAt(const nsAString& aStringToInsert,
                          int32_t aDestOffset,
                          bool aDoDeleteSelection)
 {
-  if (aDestinationNode)
-  {
+  if (aDestinationNode) {
     RefPtr<Selection> selection = GetSelection();
     NS_ENSURE_STATE(selection);
 
     nsCOMPtr<nsIDOMNode> targetNode = aDestinationNode;
     int32_t targetOffset = aDestOffset;
 
-    if (aDoDeleteSelection)
-    {
+    if (aDoDeleteSelection) {
       
       
       AutoTrackDOMPoint tracker(mRangeUpdater, &targetNode, &targetOffset);
@@ -111,14 +109,15 @@ TextEditor::InsertTextFromTransferable(nsITransferable* aTransferable,
   char* bestFlavor = nullptr;
   nsCOMPtr<nsISupports> genericDataObj;
   uint32_t len = 0;
-  if (NS_SUCCEEDED(aTransferable->GetAnyTransferData(&bestFlavor, getter_AddRefs(genericDataObj), &len))
-      && bestFlavor && (0 == nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
-                        0 == nsCRT::strcmp(bestFlavor, kMozTextInternal)))
-  {
+  if (NS_SUCCEEDED(
+        aTransferable->GetAnyTransferData(&bestFlavor,
+                                          getter_AddRefs(genericDataObj),
+                                          &len)) &&
+      bestFlavor && (!nsCRT::strcmp(bestFlavor, kUnicodeMime) ||
+                     !nsCRT::strcmp(bestFlavor, kMozTextInternal))) {
     AutoTransactionsConserveSelection dontSpazMySelection(this);
     nsCOMPtr<nsISupportsString> textDataObj ( do_QueryInterface(genericDataObj) );
-    if (textDataObj && len > 0)
-    {
+    if (textDataObj && len > 0) {
       nsAutoString stuffToPaste;
       textDataObj->GetData(stuffToPaste);
       NS_ASSERTION(stuffToPaste.Length() <= (len/2), "Invalid length!");
@@ -134,8 +133,9 @@ TextEditor::InsertTextFromTransferable(nsITransferable* aTransferable,
 
   
 
-  if (NS_SUCCEEDED(rv))
+  if (NS_SUCCEEDED(rv)) {
     ScrollSelectionIntoView(false);
+  }
 
   return rv;
 }
@@ -192,8 +192,9 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
         aDropEvent->WidgetEventPtr()->AsDragEvent())) {
     
     
-    if (srcdomdoc && !IsSafeToInsertData(srcdomdoc))
+    if (srcdomdoc && !IsSafeToInsertData(srcdomdoc)) {
       return NS_OK;
+    }
   }
 
   
@@ -203,7 +204,9 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
   uint32_t numItems = 0;
   nsresult rv = dataTransfer->GetMozItemCount(&numItems);
   NS_ENSURE_SUCCESS(rv, rv);
-  if (numItems < 1) return NS_ERROR_FAILURE;  
+  if (numItems < 1) {
+    return NS_ERROR_FAILURE;  
+  }
 
   
   AutoEditBatch beginBatching(this);
@@ -231,8 +234,7 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
 
   
   nsCOMPtr<nsIDOMNode> userSelectNode = FindUserSelectAllNode(newSelectionParent);
-  if (userSelectNode)
-  {
+  if (userSelectNode) {
     
     
     
@@ -250,8 +252,7 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
   
   
   
-  if (!isCollapsed)
-  {
+  if (!isCollapsed) {
     
     bool cursorIsInSelection = false;
 
@@ -259,8 +260,7 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
     rv = selection->GetRangeCount(&rangeCount);
     NS_ENSURE_SUCCESS(rv, rv);
 
-    for (int32_t j = 0; j < rangeCount; j++)
-    {
+    for (int32_t j = 0; j < rangeCount; j++) {
       RefPtr<nsRange> range = selection->GetRangeAt(j);
       if (!range) {
         
@@ -268,33 +268,29 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
       }
 
       rv = range->IsPointInRange(newSelectionParent, newSelectionOffset, &cursorIsInSelection);
-      if (cursorIsInSelection)
+      if (cursorIsInSelection) {
         break;
+      }
     }
 
-    if (cursorIsInSelection)
-    {
+    if (cursorIsInSelection) {
       
-      if (srcdomdoc == destdomdoc)
+      if (srcdomdoc == destdomdoc) {
         return NS_OK;
+      }
 
       
       
       
       
-    }
-    else
-    {
+    } else {
       
-      if (srcdomdoc == destdomdoc)
-      {
+      if (srcdomdoc == destdomdoc) {
         
         uint32_t dropEffect;
         dataTransfer->GetDropEffectInt(&dropEffect);
         deleteSelection = !(dropEffect & nsIDragService::DRAGDROP_ACTION_COPY);
-      }
-      else
-      {
+      } else {
         
         deleteSelection = false;
       }
@@ -319,8 +315,9 @@ TextEditor::InsertFromDrop(nsIDOMEvent* aDropEvent)
                            newSelectionOffset, deleteSelection);
   }
 
-  if (NS_SUCCEEDED(rv))
+  if (NS_SUCCEEDED(rv)) {
     ScrollSelectionIntoView(false);
+  }
 
   return rv;
 }
@@ -335,17 +332,17 @@ TextEditor::Paste(int32_t aSelectionType)
   
   nsresult rv;
   nsCOMPtr<nsIClipboard> clipboard(do_GetService("@mozilla.org/widget/clipboard;1", &rv));
-  if ( NS_FAILED(rv) )
+  if (NS_FAILED(rv)) {
     return rv;
+  }
 
   
   nsCOMPtr<nsITransferable> trans;
   rv = PrepareTransferable(getter_AddRefs(trans));
-  if (NS_SUCCEEDED(rv) && trans)
-  {
+  if (NS_SUCCEEDED(rv) && trans) {
     
-    if (NS_SUCCEEDED(clipboard->GetData(trans, aSelectionType)) && IsModifiable())
-    {
+    if (NS_SUCCEEDED(clipboard->GetData(trans, aSelectionType)) &&
+        IsModifiable()) {
       
       nsCOMPtr<nsIDOMDocument> domdoc = GetDOMDocument();
       if (!EditorHookUtils::DoInsertionHook(domdoc, nullptr, trans)) {
@@ -368,8 +365,9 @@ TextEditor::PasteTransferable(nsITransferable* aTransferable)
     return NS_OK;
   }
 
-  if (!IsModifiable())
+  if (!IsModifiable()) {
     return NS_OK;
+  }
 
   
   nsCOMPtr<nsIDOMDocument> domdoc = GetDOMDocument();
@@ -388,8 +386,9 @@ TextEditor::CanPaste(int32_t aSelectionType,
   *aCanPaste = false;
 
   
-  if (!IsModifiable())
+  if (!IsModifiable()) {
     return NS_OK;
+  }
 
   nsresult rv;
   nsCOMPtr<nsIClipboard> clipboard(do_GetService("@mozilla.org/widget/clipboard;1", &rv));
@@ -432,10 +431,11 @@ TextEditor::CanPasteTransferable(nsITransferable* aTransferable,
   nsresult rv = aTransferable->GetTransferData(kUnicodeMime,
                                                getter_AddRefs(data),
                                                &dataLen);
-  if (NS_SUCCEEDED(rv) && data)
+  if (NS_SUCCEEDED(rv) && data) {
     *aCanPaste = true;
-  else
+  } else {
     *aCanPaste = false;
+  }
 
   return NS_OK;
 }
@@ -450,12 +450,14 @@ TextEditor::IsSafeToInsertData(nsIDOMDocument* aSourceDoc)
   NS_ASSERTION(destdoc, "Where is our destination doc?");
   nsCOMPtr<nsIDocShellTreeItem> dsti = destdoc->GetDocShell();
   nsCOMPtr<nsIDocShellTreeItem> root;
-  if (dsti)
+  if (dsti) {
     dsti->GetRootTreeItem(getter_AddRefs(root));
+  }
   nsCOMPtr<nsIDocShell> docShell = do_QueryInterface(root);
   uint32_t appType;
-  if (docShell && NS_SUCCEEDED(docShell->GetAppType(&appType)))
+  if (docShell && NS_SUCCEEDED(docShell->GetAppType(&appType))) {
     isSafe = appType == nsIDocShell::APP_TYPE_EDITOR;
+  }
   if (!isSafe && aSourceDoc) {
     nsCOMPtr<nsIDocument> srcdoc = do_QueryInterface(aSourceDoc);
     NS_ASSERTION(srcdoc, "Where is our source doc?");

@@ -81,12 +81,13 @@ static int32_t GetCSSFloatValue(nsIDOMCSSStyleDeclaration * aDecl,
       
       nsAutoString str;
       val->GetStringValue(str);
-      if (str.EqualsLiteral("thin"))
+      if (str.EqualsLiteral("thin")) {
         f = 1;
-      else if (str.EqualsLiteral("medium"))
+      } else if (str.EqualsLiteral("medium")) {
         f = 3;
-      else if (str.EqualsLiteral("thick"))
+      } else if (str.EqualsLiteral("thick")) {
         f = 5;
+      }
       break;
     }
   }
@@ -282,8 +283,9 @@ HTMLEditor::DeleteRefToAnonymousNode(nsIDOMElement* aElement,
           
           
           nsCOMPtr<nsIDocument> document = GetDocument();
-          if (document)
+          if (document) {
             docObserver->BeginUpdate(document, UPDATE_CONTENT_MODEL);
+          }
 
           
           
@@ -291,8 +293,9 @@ HTMLEditor::DeleteRefToAnonymousNode(nsIDOMElement* aElement,
           docObserver->ContentRemoved(content->GetComposedDoc(),
                                       aParentContent, content, -1,
                                       content->GetPreviousSibling());
-          if (document)
+          if (document) {
             docObserver->EndUpdate(document, UPDATE_CONTENT_MODEL);
+          }
         }
       }
       content->UnbindFromTree();
@@ -511,8 +514,7 @@ HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
          aMarginTop + aBorderTop;
     aW = GetCSSFloatValue(cssDecl, NS_LITERAL_STRING("width"));
     aH = GetCSSFloatValue(cssDecl, NS_LITERAL_STRING("height"));
-  }
-  else {
+  } else {
     mResizedObjectIsAbsolutelyPositioned = false;
     nsCOMPtr<nsIDOMHTMLElement> htmlElement = do_QueryInterface(aElement);
     if (!htmlElement) {

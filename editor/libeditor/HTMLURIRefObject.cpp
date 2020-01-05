@@ -84,13 +84,13 @@ HTMLURIRefObject::GetNextURI(nsAString& aURI)
 {
   NS_ENSURE_TRUE(mNode, NS_ERROR_NOT_INITIALIZED);
 
+  
   nsAutoString tagName;
   nsresult rv = mNode->GetNodeName(tagName);
   NS_ENSURE_SUCCESS(rv, rv);
 
   
-  if (!mAttributes)
-  {
+  if (!mAttributes) {
     nsCOMPtr<nsIDOMElement> element (do_QueryInterface(mNode));
     NS_ENSURE_TRUE(element, NS_ERROR_INVALID_ARG);
 
@@ -104,8 +104,7 @@ HTMLURIRefObject::GetNextURI(nsAString& aURI)
     mCurAttrIndex = 0;
   }
 
-  while (mCurAttrIndex < mAttributeCnt)
-  {
+  while (mCurAttrIndex < mAttributeCnt) {
     nsCOMPtr<nsIDOMAttr> attrNode;
     rv = mAttributes->Item(mCurAttrIndex++, getter_AddRefs(attrNode));
     NS_ENSURE_SUCCESS(rv, rv);
@@ -115,97 +114,98 @@ HTMLURIRefObject::GetNextURI(nsAString& aURI)
     NS_ENSURE_SUCCESS(rv, rv);
 
     
-    if (MATCHES(curAttr, "href"))
-    {
-      if (!MATCHES(tagName, "a") && !MATCHES(tagName, "area")
-          && !MATCHES(tagName, "base") && !MATCHES(tagName, "link"))
+    if (MATCHES(curAttr, "href")) {
+      if (!MATCHES(tagName, "a") && !MATCHES(tagName, "area") &&
+          !MATCHES(tagName, "base") && !MATCHES(tagName, "link")) {
         continue;
+      }
       rv = attrNode->GetValue(aURI);
       NS_ENSURE_SUCCESS(rv, rv);
       nsString uri (aURI);
       
-      if (aURI.First() != char16_t('#'))
+      if (aURI.First() != char16_t('#')) {
         return NS_OK;
+      }
       aURI.Truncate();
       return NS_ERROR_INVALID_ARG;
     }
     
-    else if (MATCHES(curAttr, "src"))
-    {
-      if (!MATCHES(tagName, "img")
-          && !MATCHES(tagName, "frame") && !MATCHES(tagName, "iframe")
-          && !MATCHES(tagName, "input") && !MATCHES(tagName, "script"))
+    else if (MATCHES(curAttr, "src")) {
+      if (!MATCHES(tagName, "img") &&
+          !MATCHES(tagName, "frame") && !MATCHES(tagName, "iframe") &&
+          !MATCHES(tagName, "input") && !MATCHES(tagName, "script")) {
         continue;
+      }
       return attrNode->GetValue(aURI);
     }
     
-    else if (MATCHES(curAttr, "content"))
-    {
-      if (!MATCHES(tagName, "meta"))
+    else if (MATCHES(curAttr, "content")) {
+      if (!MATCHES(tagName, "meta")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "longdesc"))
-    {
-      if (!MATCHES(tagName, "img")
-          && !MATCHES(tagName, "frame") && !MATCHES(tagName, "iframe"))
+    else if (MATCHES(curAttr, "longdesc")) {
+      if (!MATCHES(tagName, "img") &&
+          !MATCHES(tagName, "frame") && !MATCHES(tagName, "iframe")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "usemap"))
-    {
-      if (!MATCHES(tagName, "img")
-          && !MATCHES(tagName, "input") && !MATCHES(tagName, "object"))
+    else if (MATCHES(curAttr, "usemap")) {
+      if (!MATCHES(tagName, "img") &&
+          !MATCHES(tagName, "input") && !MATCHES(tagName, "object")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "action"))
-    {
-      if (!MATCHES(tagName, "form"))
+    else if (MATCHES(curAttr, "action")) {
+      if (!MATCHES(tagName, "form")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "background"))
-    {
-      if (!MATCHES(tagName, "body"))
+    else if (MATCHES(curAttr, "background")) {
+      if (!MATCHES(tagName, "body")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "codebase"))
-    {
-      if (!MATCHES(tagName, "meta"))
+    else if (MATCHES(curAttr, "codebase")) {
+      if (!MATCHES(tagName, "meta")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "classid"))
-    {
-      if (!MATCHES(tagName, "object"))
+    else if (MATCHES(curAttr, "classid")) {
+      if (!MATCHES(tagName, "object")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "data"))
-    {
-      if (!MATCHES(tagName, "object"))
+    else if (MATCHES(curAttr, "data")) {
+      if (!MATCHES(tagName, "object")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "cite"))
-    {
-      if (!MATCHES(tagName, "blockquote") && !MATCHES(tagName, "q")
-          && !MATCHES(tagName, "del") && !MATCHES(tagName, "ins"))
+    else if (MATCHES(curAttr, "cite")) {
+      if (!MATCHES(tagName, "blockquote") && !MATCHES(tagName, "q") &&
+          !MATCHES(tagName, "del") && !MATCHES(tagName, "ins")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "profile"))
-    {
-      if (!MATCHES(tagName, "head"))
+    else if (MATCHES(curAttr, "profile")) {
+      if (!MATCHES(tagName, "head")) {
         continue;
+      }
     }
     
-    else if (MATCHES(curAttr, "archive"))
-    {
-      if (!MATCHES(tagName, "applet"))
+    else if (MATCHES(curAttr, "archive")) {
+      if (!MATCHES(tagName, "applet")) {
         continue;
+      }
     }
   }
   
@@ -236,8 +236,7 @@ HTMLURIRefObject::SetNode(nsIDOMNode* aNode)
 {
   mNode = aNode;
   nsAutoString dummyURI;
-  if (NS_SUCCEEDED(GetNextURI(dummyURI)))
-  {
+  if (NS_SUCCEEDED(GetNextURI(dummyURI))) {
     mCurAttrIndex = 0;    
     return NS_OK;
   }
