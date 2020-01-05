@@ -371,8 +371,7 @@ nsWindowWatcher::OpenWindow(mozIDOMWindowProxy* aParent,
 
   return OpenWindowInternal(aParent, aUrl, aName, aFeatures,
                              false, dialog,
-                             true, argv,
-                             nullptr, aResult);
+                             true, argv, aResult);
 }
 
 struct SizeSpec
@@ -435,8 +434,6 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
                              bool aDialog,
                              bool aNavigate,
                              nsISupports* aArguments,
-                             float aOpenerFullZoom,
-                             uint8_t aOptionalArgc,
                              mozIDOMWindowProxy** aResult)
 {
   nsCOMPtr<nsIArray> argv = ConvertArgsToArray(aArguments);
@@ -457,7 +454,6 @@ nsWindowWatcher::OpenWindow2(mozIDOMWindowProxy* aParent,
   return OpenWindowInternal(aParent, aUrl, aName, aFeatures,
                             aCalledFromScript, dialog,
                             aNavigate, argv,
-                            aOptionalArgc >= 1 ? &aOpenerFullZoom : nullptr,
                             aResult);
 }
 
@@ -673,7 +669,7 @@ nsWindowWatcher::OpenWindowWithTabParent(nsITabParent* aOpeningTabParent,
   SizeSpec sizeSpec;
   CalcSizeSpec(aFeatures, sizeSpec);
   SizeOpenedWindow(chromeTreeOwner, parentWindowOuter, false, sizeSpec,
-                   &aOpenerFullZoom);
+                   Some(aOpenerFullZoom));
 
   nsCOMPtr<nsITabParent> newTabParent;
   chromeTreeOwner->GetPrimaryTabParent(getter_AddRefs(newTabParent));
@@ -694,7 +690,6 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
                                     bool aDialog,
                                     bool aNavigate,
                                     nsIArray* aArgv,
-                                    float* aOpenerFullZoom,
                                     mozIDOMWindowProxy** aResult)
 {
   nsresult rv = NS_OK;
@@ -1254,8 +1249,7 @@ nsWindowWatcher::OpenWindowInternal(mozIDOMWindowProxy* aParent,
   if (isNewToplevelWindow) {
     nsCOMPtr<nsIDocShellTreeOwner> newTreeOwner;
     newDocShellItem->GetTreeOwner(getter_AddRefs(newTreeOwner));
-    SizeOpenedWindow(newTreeOwner, aParent, isCallerChrome, sizeSpec,
-                     aOpenerFullZoom);
+    SizeOpenedWindow(newTreeOwner, aParent, isCallerChrome, sizeSpec);
   }
 
   
@@ -2281,13 +2275,12 @@ nsWindowWatcher::CalcSizeSpec(const nsACString& aFeatures, SizeSpec& aResult)
 
 
 
-
 void
 nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
                                   mozIDOMWindowProxy* aParent,
                                   bool aIsCallerChrome,
                                   const SizeSpec& aSizeSpec,
-                                  float* aOpenerFullZoom)
+                                  Maybe<float> aOpenerFullZoom)
 {
   
   
@@ -2306,8 +2299,8 @@ nsWindowWatcher::SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
     return;
   }
 
-  double openerZoom = aOpenerFullZoom ? *aOpenerFullZoom : 1.0;
-  if (aParent && !aOpenerFullZoom) {
+  double openerZoom = aOpenerFullZoom.valueOr(1.0);
+  if (aParent && aOpenerFullZoom.isNothing()) {
     nsCOMPtr<nsPIDOMWindowOuter> piWindow = nsPIDOMWindowOuter::From(aParent);
     if (nsIDocument* doc = piWindow->GetDoc()) {
       if (nsIPresShell* shell = doc->GetShell()) {
