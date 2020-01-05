@@ -601,6 +601,9 @@ pref("media.decoder.recycle.enabled", false);
 pref("media.cubeb.log_level", "");
 
 
+pref("media.playback.warnings-as-errors", false);
+
+
 pref("layers.amd-switchable-gfx.enabled", true);
 
 

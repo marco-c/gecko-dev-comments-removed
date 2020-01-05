@@ -15,6 +15,7 @@
 #include "MediaEventSource.h"
 #include "MediaDataDemuxer.h"
 #include "MediaDecoderReader.h"
+#include "MediaPrefs.h"
 #include "nsAutoPtr.h"
 #include "PDMFactory.h"
 
@@ -287,7 +288,8 @@ private:
       if (mError.ref() == NS_ERROR_DOM_MEDIA_DECODE_ERR) {
         
         
-        return mNumOfConsecutiveError > mMaxConsecutiveError;
+        return mNumOfConsecutiveError > mMaxConsecutiveError
+               || MediaPrefs::MediaWarningsAsErrors();
       } else if (mError.ref() == NS_ERROR_DOM_MEDIA_NEED_NEW_DECODER) {
         
         
