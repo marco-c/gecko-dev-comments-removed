@@ -298,16 +298,12 @@ final class JellyBeanAsyncCodec implements AsyncCodec {
     public void configure(MediaFormat format, Surface surface, MediaCrypto crypto, int flags) {
         assertCallbacks();
 
-        
-        if (surface != null) {
-            if (HardwareCodecCapabilityUtils.checkSupportsAdaptivePlayback(
-                    mCodec, format.getString(MediaFormat.KEY_MIME))) {
-                
-                format.setInteger(MediaFormat.KEY_MAX_WIDTH, 1920);
-                format.setInteger(MediaFormat.KEY_MAX_HEIGHT, 1080);
-            }
-        }
         mCodec.configure(format, surface, crypto, flags);
+    }
+
+    @Override
+    public boolean isAdaptivePlaybackSupported(String mimeType) {
+        return HardwareCodecCapabilityUtils.checkSupportsAdaptivePlayback(mCodec, mimeType);
     }
 
     private void assertCallbacks() {

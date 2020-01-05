@@ -123,7 +123,7 @@ public:
     return NS_OK;
   }
 
-  bool SupportDecoderRecycling() const override { return true; }
+  bool SupportDecoderRecycling() const override { return mIsCodecSupportAdaptivePlayback; }
 
 protected:
   layers::ImageContainer* mImageContainer;
@@ -383,11 +383,15 @@ MediaCodecDataDecoder::InitDecoder(Surface::Param aSurface)
   }
 
   
-  if (aSurface && java::HardwareCodecCapabilityUtils::CheckSupportsAdaptivePlayback(
-                    mDecoder, nsCString(TranslateMimeType(mMimeType)))) {
-      
-      mFormat->SetInteger(MediaFormat::KEY_MAX_WIDTH, 1920);
-      mFormat->SetInteger(MediaFormat::KEY_MAX_HEIGHT, 1080);
+  if (aSurface) {
+    mIsCodecSupportAdaptivePlayback =
+      java::HardwareCodecCapabilityUtils::CheckSupportsAdaptivePlayback(mDecoder,
+        nsCString(TranslateMimeType(mMimeType)));
+    if (mIsCodecSupportAdaptivePlayback) {
+        
+        mFormat->SetInteger(MediaFormat::KEY_MAX_WIDTH, 1920);
+        mFormat->SetInteger(MediaFormat::KEY_MAX_HEIGHT, 1080);
+    }
   }
 
   MediaCrypto::LocalRef crypto = MediaDrmProxy::GetMediaCrypto(mDrmStubId);
