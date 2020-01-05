@@ -7055,7 +7055,11 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
 {
   MOZ_ASSERT(aSelection && aRoot);
 
-  if (!aSelection->RangeCount()) {
+  
+  
+  
+  const nsRange* range = aSelection->GetAnchorFocusRange();
+  if (!range) {
     
     aOutStartOffset = aOutEndOffset = 0;
     return;
@@ -7063,10 +7067,10 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
 
   
   
-  nsINode* anchorNode = aSelection->GetAnchorNode();
-  uint32_t anchorOffset = aSelection->AnchorOffset();
-  nsINode* focusNode = aSelection->GetFocusNode();
-  uint32_t focusOffset = aSelection->FocusOffset();
+  nsINode* startParent = range->GetStartParent();
+  uint32_t startOffset = range->StartOffset();
+  nsINode* endParent = range->GetEndParent();
+  uint32_t endOffset = range->EndOffset();
 
   
   
@@ -7074,10 +7078,10 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
   nsIContent* firstChild = aRoot->GetFirstChild();
 #ifdef DEBUG
   nsCOMPtr<nsIContent> lastChild = aRoot->GetLastChild();
-  NS_ASSERTION(anchorNode == aRoot || anchorNode == firstChild ||
-               anchorNode == lastChild, "Unexpected anchorNode");
-  NS_ASSERTION(focusNode == aRoot || focusNode == firstChild ||
-               focusNode == lastChild, "Unexpected focusNode");
+  NS_ASSERTION(startParent == aRoot || startParent == firstChild ||
+               startParent == lastChild, "Unexpected startParent");
+  NS_ASSERTION(endParent == aRoot || endParent == firstChild ||
+               endParent == lastChild, "Unexpected endParent");
   
   MOZ_ASSERT_IF(firstChild,
                 firstChild->IsNodeOfType(nsINode::eTEXT) || firstChild->IsElement());
@@ -7086,25 +7090,25 @@ nsContentUtils::GetSelectionInTextControl(Selection* aSelection,
   
   if (!firstChild || firstChild->IsElement()) {
     
-    anchorOffset = focusOffset = 0;
+    startOffset = endOffset = 0;
   } else {
     
     
     
     
-    if ((anchorNode == aRoot && anchorOffset != 0) ||
-        (anchorNode != aRoot && anchorNode != firstChild)) {
-      anchorOffset = firstChild->Length();
+    if ((startParent == aRoot && startOffset != 0) ||
+        (startParent != aRoot && startParent != firstChild)) {
+      startOffset = firstChild->Length();
     }
-    if ((focusNode == aRoot && focusOffset != 0) ||
-        (focusNode != aRoot && focusNode != firstChild)) {
-      focusOffset = firstChild->Length();
+    if ((endParent == aRoot && endOffset != 0) ||
+        (endParent != aRoot && endParent != firstChild)) {
+      endOffset = firstChild->Length();
     }
   }
 
-  
-  aOutStartOffset = std::min(anchorOffset, focusOffset);
-  aOutEndOffset = std::max(anchorOffset, focusOffset);
+  MOZ_ASSERT(startOffset <= endOffset);
+  aOutStartOffset = startOffset;
+  aOutEndOffset = endOffset;
 }
 
 
