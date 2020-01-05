@@ -490,7 +490,7 @@ pub fn parse_length(mut value: &str) -> LengthOrPercentageOrAuto {
     }
 
     
-    if value.starts_with("+") {
+    if value.starts_with('+') {
         value = &value[1..]
     }
 
