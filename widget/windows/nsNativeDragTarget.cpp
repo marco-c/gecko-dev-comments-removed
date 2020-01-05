@@ -28,6 +28,8 @@ static NS_DEFINE_IID(kIDragServiceIID, NS_IDRAGSERVICE_IID);
 
 static POINTL gDragLastPoint;
 
+bool nsNativeDragTarget::gDragImageChanged = false;
+
 
 
 
@@ -319,6 +321,9 @@ nsNativeDragTarget::DragOver(DWORD   grfKeyState,
     return E_FAIL;
   }
 
+  bool dragImageChanged = gDragImageChanged;
+  gDragImageChanged = false;
+
   
   
   mEffectsAllowed = (*pdwEffect) | (mEffectsAllowed & DROPEFFECT_LINK);
@@ -334,6 +339,14 @@ nsNativeDragTarget::DragOver(DWORD   grfKeyState,
 
   
   if (GetDropTargetHelper()) {
+    if (dragImageChanged) {
+      
+      
+      POINT pt = { ptl.x, ptl.y };
+      nsDragService* dragService = static_cast<nsDragService *>(mDragService);
+      GetDropTargetHelper()->DragEnter(mHWnd, dragService->GetDataObject(), &pt, *pdwEffect);
+
+    }
     POINT pt = { ptl.x, ptl.y };
     GetDropTargetHelper()->DragOver(&pt, *pdwEffect);
   }
