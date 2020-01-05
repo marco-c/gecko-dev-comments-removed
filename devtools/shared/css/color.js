@@ -89,12 +89,19 @@ CssColor.prototype = {
   
   lowerCased: null,
 
+  _setColorUnitUppercase: function (color) {
+    
+    
+    
+    this._colorUnitUppercase = (color === color.toUpperCase()) &&
+      (color !== color.toLowerCase());
+  },
+
   get colorUnit() {
     if (this._colorUnit === null) {
       let defaultUnit = Services.prefs.getCharPref(COLOR_UNIT_PREF);
       this._colorUnit = CssColor.COLORUNIT[defaultUnit];
-      this._colorUnitUppercase =
-        (this.authored === this.authored.toUpperCase());
+      this._setColorUnitUppercase(this.authored);
     }
     return this._colorUnit;
   },
@@ -114,7 +121,7 @@ CssColor.prototype = {
     if (Services.prefs.getCharPref(COLOR_UNIT_PREF) ===
         CssColor.COLORUNIT.authored) {
       this._colorUnit = classifyColor(color);
-      this._colorUnitUppercase = (color === color.toUpperCase());
+      this._setColorUnitUppercase(color);
     }
   },
 
@@ -321,6 +328,7 @@ CssColor.prototype = {
     
     this.lowerCased = color.toLowerCase();
     this.authored = color;
+    this._setColorUnitUppercase(color);
     return this;
   },
 
