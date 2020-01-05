@@ -247,7 +247,6 @@ var ctrlTab = {
       aPreview.appendChild(tabPreviews.get(aTab));
       aPreview.setAttribute("label", aTab.label);
       aPreview.setAttribute("tooltiptext", aTab.label);
-      aPreview.setAttribute("crop", aTab.crop);
       aPreview.setAttribute("canvaswidth", canvasWidth);
       aPreview.setAttribute("canvasstyle",
                             "max-width:" + canvasWidth + "px;" +
