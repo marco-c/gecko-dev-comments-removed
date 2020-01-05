@@ -10,18 +10,10 @@
 #include <string.h>
 #include <stdarg.h>
 
-#include "prlog.h"
-
 #include "mozilla/Assertions.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Likely.h"
-#include "mozilla/MacroForEach.h"
-
-
-
-
-
 
 
 
@@ -192,20 +184,6 @@ private:
 
 namespace detail {
 
-inline bool log_test(const PRLogModuleInfo* module, LogLevel level) {
-  MOZ_ASSERT(level != LogLevel::Disabled);
-  return module && module->level >= static_cast<int>(level);
-}
-
-
-
-
-
-
-void log_print(const PRLogModuleInfo* aModule,
-                      LogLevel aLevel,
-                      const char* aFmt, ...) MOZ_FORMAT_PRINTF(3, 4);
-
 inline bool log_test(const LogModule* module, LogLevel level) {
   MOZ_ASSERT(level != LogLevel::Disabled);
   return module && module->ShouldLog(level);
@@ -239,15 +217,12 @@ void log_print(const LogModule* aModule,
 #define MOZ_LOG_TEST(_module,_level) false
 #endif
 
-#define MOZ_LOG(_module,_level,_args)     \
-  PR_BEGIN_MACRO             \
-    if (MOZ_LOG_TEST(_module,_level)) { \
-      mozilla::detail::log_print(_module, _level, MOZ_LOG_EXPAND_ARGS _args);         \
-    }                     \
-  PR_END_MACRO
-
-#undef PR_LOG
-#undef PR_LOG_TEST
+#define MOZ_LOG(_module,_level,_args)                                         \
+  do {                                                                        \
+    if (MOZ_LOG_TEST(_module,_level)) {                                       \
+      mozilla::detail::log_print(_module, _level, MOZ_LOG_EXPAND_ARGS _args); \
+    }                                                                         \
+  } while (0)
 
 
 
