@@ -14,7 +14,8 @@ add_task(async function() {
   ];
 
   let provider = new MockProvider();
-  provider.createAddons(extensions);
+  let addons = provider.createAddons(extensions);
+  addons[1].operationsRequiringRestart = 0;
 
   let mgrWin = await open_manager(null);
   let catUtils = new CategoryUtilities(mgrWin);
@@ -52,7 +53,8 @@ add_task(async function() {
     }
 
     
-    EventUtils.synthesizeMouseAtCenter(item, {clickCount: 2}, mgrWin);
+    let detailsButton = document.getAnonymousElementByAttribute(item, "anonid", "details-btn");
+    EventUtils.synthesizeMouseAtCenter(detailsButton, {}, mgrWin);
     await new Promise(resolve => wait_for_view_load(mgrWin, resolve));
 
     
@@ -79,13 +81,28 @@ add_task(async function() {
   await SpecialPowers.pushPrefEnv({
     set: [["extensions.allow-non-mpc-extensions", false]],
   });
-  extensions[1].multiprocessCompatible = false;
-  extensions[1].appDisabled = true;
+  addons[1].appDisabled = true;
 
   
   
-  check("Compatible extension", false);
-  check("Incompatible extension", true);
+  await check("Compatible extension", false);
+  await check("Incompatible extension", true);
+
+  
+  async function checkType(type) {
+    await catUtils.openType(type);
+
+    let document = mgrWin.document;
+    let items = document.getElementById("addon-list").childNodes;
+    ok(items.length > 0, `Have at least one item of type ${type}`);
+    for (let item of items) {
+      let errorMsg = document.getAnonymousElementByAttribute(item, "anonid", "error");
+      is_element_hidden(errorMsg, `No error message for ${type}\n`);
+    }
+  }
+
+  await checkType("theme");
+  await checkType("plugin");
 
   await close_manager(mgrWin);
 });
