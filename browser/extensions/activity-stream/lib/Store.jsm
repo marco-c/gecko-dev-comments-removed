@@ -8,6 +8,9 @@ const {utils: Cu} = Components;
 const {redux} = Cu.import("resource://activity-stream/vendor/Redux.jsm", {});
 const {actionTypes: at} = Cu.import("resource://activity-stream/common/Actions.jsm", {});
 const {reducers} = Cu.import("resource://activity-stream/common/Reducers.jsm", {});
+const {ActivityStreamMessageChannel} = Cu.import("resource://activity-stream/lib/ActivityStreamMessageChannel.jsm", {});
+
+
 
 
 
@@ -30,9 +33,10 @@ this.Store = class Store {
       }.bind(this);
     });
     this.feeds = new Set();
+    this._messageChannel = new ActivityStreamMessageChannel({dispatch: this.dispatch});
     this._store = redux.createStore(
       redux.combineReducers(reducers),
-      redux.applyMiddleware(this._middleware)
+      redux.applyMiddleware(this._middleware, this._messageChannel.middleware)
     );
   }
 
@@ -61,6 +65,7 @@ this.Store = class Store {
         this.feeds.add(subscriber);
       });
     }
+    this._messageChannel.createChannel();
     this.dispatch({type: at.INIT});
   }
 
@@ -69,9 +74,11 @@ this.Store = class Store {
 
 
 
+
   uninit() {
     this.feeds.clear();
     this.dispatch({type: at.UNINIT});
+    this._messageChannel.destroyChannel();
   }
 };
 
