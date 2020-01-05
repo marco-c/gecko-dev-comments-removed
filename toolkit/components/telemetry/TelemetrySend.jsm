@@ -907,6 +907,9 @@ var TelemetrySendImpl = {
 
     this._pendingPingRequests.set(id, request);
 
+    
+    request.channel.loadFlags &= ~Ci.nsIChannel.LOAD_CLASSIFY_URI;
+
     let startTime = new Date();
     let deferred = PromiseUtils.defer();
 
