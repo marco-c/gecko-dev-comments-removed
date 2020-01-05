@@ -178,16 +178,6 @@ this.AutoCompletePopup = {
 
   removeLogin(login) {
     Services.logins.removeLogin(login);
-
-    
-    
-    
-    let idx = this._resultCache.logins.findIndex(cur => {
-      return login.guid === cur.QueryInterface(Ci.nsILoginMetaInfo).guid
-    });
-    if (idx !== -1) {
-      this.removeEntry(idx, false);
-    }
   },
 
   receiveMessage: function(message) {
