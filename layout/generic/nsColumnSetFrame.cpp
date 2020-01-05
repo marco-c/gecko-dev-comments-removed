@@ -584,9 +584,12 @@ nsColumnSetFrame::ReflowChildren(ReflowOutput&     aDesiredSize,
       
       nsIFrame* kidNext = child->GetNextSibling();
       if (kidNext) {
-        aStatus = (kidNext->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER)
-                  ? NS_FRAME_OVERFLOW_INCOMPLETE
-                  : NS_FRAME_NOT_COMPLETE;
+        aStatus.Reset();
+        if (kidNext->GetStateBits() & NS_FRAME_IS_OVERFLOW_CONTAINER) {
+          aStatus.SetOverflowIncomplete();
+        } else {
+          aStatus.SetIncomplete();
+        }
       } else {
         aStatus = mLastFrameStatus;
       }
