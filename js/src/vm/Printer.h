@@ -36,7 +36,10 @@ class GenericPrinter
     
     
     virtual int put(const char* s, size_t len) = 0;
-    virtual int put(const char* s);
+
+    inline int put(const char* s) {
+        return put(s, strlen(s));
+    }
 
     
     virtual int printf(const char* fmt, ...);
@@ -105,8 +108,8 @@ class Sprinter final : public GenericPrinter
 
     
     
-    using GenericPrinter::put;
     virtual int put(const char* s, size_t len) override;
+    using GenericPrinter::put; 
 
     
     virtual int vprintf(const char* fmt, va_list ap) override;
@@ -145,7 +148,7 @@ class Fprinter final : public GenericPrinter
     
     
     virtual int put(const char* s, size_t len) override;
-    virtual int put(const char* s) override;
+    using GenericPrinter::put; 
 
     
     virtual int printf(const char* fmt, ...) override;
@@ -191,7 +194,7 @@ class LSprinter final : public GenericPrinter
     
     
     virtual int put(const char* s, size_t len) override;
-    virtual int put(const char* s) override;
+    using GenericPrinter::put; 
 
     
     virtual int printf(const char* fmt, ...) override;
