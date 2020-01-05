@@ -89,7 +89,8 @@ const PROP_JSON_FIELDS = ["id", "syncGUID", "location", "version", "type",
                           "softDisabled", "foreignInstall", "hasBinaryComponents",
                           "strictCompatibility", "locales", "targetApplications",
                           "targetPlatforms", "multiprocessCompatible", "signedState",
-                          "seen", "dependencies", "hasEmbeddedWebExtension", "mpcOptedOut"];
+                          "seen", "dependencies", "hasEmbeddedWebExtension", "mpcOptedOut",
+                          "userPermissions"];
 
 
 

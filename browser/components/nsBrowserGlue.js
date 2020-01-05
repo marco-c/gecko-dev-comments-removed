@@ -1061,27 +1061,6 @@ BrowserGlue.prototype = {
       this._showPlacesLockedNotificationBox();
     }
 
-    
-    
-    let win = RecentWindow.getMostRecentBrowserWindow();
-    AddonManager.getAllAddons(addons => {
-      for (let addon of addons) {
-        
-        
-        if (addon.seen !== false) {
-          continue;
-        }
-
-        
-        
-        if (!(addon.permissions & AddonManager.PERM_CAN_ENABLE)) {
-          continue;
-        }
-
-        win.openUILinkIn("about:newaddon?id=" + addon.id, "tab");
-      }
-    });
-
     ExtensionsUI.init();
 
     let signingRequired;
