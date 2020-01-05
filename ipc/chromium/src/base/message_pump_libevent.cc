@@ -22,9 +22,17 @@
 
 
 
+#if defined(_EVENT_SIZEOF_SHORT)
 #define CHECK_EVENT_SIZEOF(TYPE, type) \
     static_assert(_EVENT_SIZEOF_##TYPE == sizeof(type), \
     "bad _EVENT_SIZEOF_"#TYPE);
+#elif defined(EVENT__SIZEOF_SHORT)
+#define CHECK_EVENT_SIZEOF(TYPE, type) \
+    static_assert(EVENT__SIZEOF_##TYPE == sizeof(type), \
+    "bad EVENT__SIZEOF_"#TYPE);
+#else
+#error Cannot find libevent type sizes
+#endif
 
 CHECK_EVENT_SIZEOF(LONG,      long);
 CHECK_EVENT_SIZEOF(LONG_LONG, long long);
