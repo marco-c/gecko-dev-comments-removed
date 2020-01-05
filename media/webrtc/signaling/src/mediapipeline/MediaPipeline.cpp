@@ -1468,14 +1468,20 @@ void MediaPipelineTransmit::AttachToTrack(const std::string& track_id) {
   const bool enableDirectListener = true;
 #endif
 
-  if (enableDirectListener) {
-    
-    
-    
-    
-    domtrack_->AddDirectListener(listener_);
+  if (domtrack_->AsAudioStreamTrack()) {
+    if (enableDirectListener) {
+      
+      
+      
+      
+      domtrack_->AddDirectListener(listener_);
+    }
+    domtrack_->AddListener(listener_);
+  } else if (VideoStreamTrack* video = domtrack_->AsVideoStreamTrack()) {
+    video->AddVideoOutput(listener_);
+  } else {
+    MOZ_ASSERT(false, "Unknown track type");
   }
-  domtrack_->AddListener(listener_);
 
 #ifndef MOZILLA_INTERNAL_API
   
@@ -1523,8 +1529,14 @@ MediaPipelineTransmit::DetachMedia()
 {
   ASSERT_ON_THREAD(main_thread_);
   if (domtrack_) {
-    domtrack_->RemoveDirectListener(listener_);
-    domtrack_->RemoveListener(listener_);
+    if (domtrack_->AsAudioStreamTrack()) {
+      domtrack_->RemoveDirectListener(listener_);
+      domtrack_->RemoveListener(listener_);
+    } else if (VideoStreamTrack* video = domtrack_->AsVideoStreamTrack()) {
+      video->RemoveVideoOutput(listener_);
+    } else {
+      MOZ_ASSERT(false, "Unknown track type");
+    }
     domtrack_ = nullptr;
   }
   
