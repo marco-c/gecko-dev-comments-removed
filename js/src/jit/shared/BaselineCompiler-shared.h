@@ -31,7 +31,7 @@ class BaselineCompilerShared
     FrameInfo frame;
 
     FallbackICStubSpace stubSpace_;
-    js::Vector<ICEntry, 16, SystemAllocPolicy> icEntries_;
+    js::Vector<BaselineICEntry, 16, SystemAllocPolicy> icEntries_;
 
     
     struct PCMappingEntry
@@ -71,16 +71,16 @@ class BaselineCompilerShared
 
     BaselineCompilerShared(JSContext* cx, TempAllocator& alloc, JSScript* script);
 
-    ICEntry* allocateICEntry(ICStub* stub, ICEntry::Kind kind) {
+    BaselineICEntry* allocateICEntry(ICStub* stub, ICEntry::Kind kind) {
         if (!stub)
             return nullptr;
 
         
-        if (!icEntries_.append(ICEntry(script->pcToOffset(pc), kind))) {
+        if (!icEntries_.append(BaselineICEntry(script->pcToOffset(pc), kind))) {
             ReportOutOfMemory(cx);
             return nullptr;
         }
-        ICEntry& vecEntry = icEntries_.back();
+        BaselineICEntry& vecEntry = icEntries_.back();
 
         
         vecEntry.setFirstStub(stub);
@@ -91,7 +91,7 @@ class BaselineCompilerShared
 
     
     bool appendICEntry(ICEntry::Kind kind, uint32_t returnOffset) {
-        ICEntry entry(script->pcToOffset(pc), kind);
+        BaselineICEntry entry(script->pcToOffset(pc), kind);
         entry.setReturnOffset(CodeOffset(returnOffset));
         if (!icEntries_.append(entry)) {
             ReportOutOfMemory(cx);

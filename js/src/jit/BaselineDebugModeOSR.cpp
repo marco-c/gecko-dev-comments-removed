@@ -219,7 +219,7 @@ CollectJitStackScripts(JSContext* cx, const Debugger::ExecutionObservableSet& ob
             } else {
                 
                 uint8_t* retAddr = iter.returnAddressToFp();
-                ICEntry& icEntry = script->baselineScript()->icEntryFromReturnAddress(retAddr);
+                BaselineICEntry& icEntry = script->baselineScript()->icEntryFromReturnAddress(retAddr);
                 if (!entries.append(DebugModeOSREntry(script, icEntry)))
                     return false;
             }
@@ -493,7 +493,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
                 
                 
                 
-                ICEntry& callVMEntry = bl->callVMEntryFromPCOffset(pcOffset);
+                BaselineICEntry& callVMEntry = bl->callVMEntryFromPCOffset(pcOffset);
                 recompInfo->resumeAddr = bl->returnAddressForIC(callVMEntry);
                 popFrameReg = false;
                 break;
@@ -505,7 +505,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
                 
                 
                 
-                ICEntry& warmupCountEntry = bl->warmupCountICEntry();
+                BaselineICEntry& warmupCountEntry = bl->warmupCountICEntry();
                 recompInfo->resumeAddr = bl->returnAddressForIC(warmupCountEntry);
                 popFrameReg = false;
                 break;
@@ -519,7 +519,7 @@ PatchBaselineFramesForDebugMode(JSContext* cx, const Debugger::ExecutionObservab
                 
                 
                 bool earlyCheck = kind == ICEntry::Kind_EarlyStackCheck;
-                ICEntry& stackCheckEntry = bl->stackCheckICEntry(earlyCheck);
+                BaselineICEntry& stackCheckEntry = bl->stackCheckICEntry(earlyCheck);
                 recompInfo->resumeAddr = bl->returnAddressForIC(stackCheckEntry);
                 popFrameReg = false;
                 break;
