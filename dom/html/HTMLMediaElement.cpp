@@ -1022,6 +1022,9 @@ void HTMLMediaElement::AbortExistingLoads()
 
 void HTMLMediaElement::NoSupportedMediaSourceError(const nsACString& aErrorDetails)
 {
+  if (mDecoder) {
+    ShutdownDecoder();
+  }
   mError = new MediaError(this, MEDIA_ERR_SRC_NOT_SUPPORTED, aErrorDetails);
   ChangeNetworkState(nsIDOMHTMLMediaElement::NETWORK_NO_SOURCE);
   DispatchAsyncEvent(NS_LITERAL_STRING("error"));
@@ -2949,6 +2952,7 @@ HTMLMediaElement::HTMLMediaElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
   mWatchManager.Watch(mReadyState, &HTMLMediaElement::UpdateReadyStateInternal);
 
   mShutdownObserver->Subscribe(this);
+  CreateAudioChannelAgent();
 }
 
 HTMLMediaElement::~HTMLMediaElement()
@@ -3029,6 +3033,11 @@ HTMLMediaElement::NotifyXPCOMShutdown()
 void
 HTMLMediaElement::Play(ErrorResult& aRv)
 {
+  if (!IsAllowedToPlay()) {
+    MaybeDoLoad();
+    return;
+  }
+
   nsresult rv = PlayInternal();
   if (NS_FAILED(rv)) {
     aRv.Throw(rv);
@@ -3038,19 +3047,13 @@ HTMLMediaElement::Play(ErrorResult& aRv)
 nsresult
 HTMLMediaElement::PlayInternal()
 {
-  if (!IsAllowedToPlay()) {
-    return NS_OK;
-  }
-
   
   mHasUserInteraction = true;
 
   StopSuspendingAfterFirstFrame();
   SetPlayedOrSeeked(true);
 
-  if (mNetworkState == nsIDOMHTMLMediaElement::NETWORK_EMPTY) {
-    DoLoad();
-  }
+  MaybeDoLoad();
   if (mSuspendedForPreloadNone) {
     ResumeLoad(PRELOAD_ENOUGH);
   }
@@ -3116,8 +3119,21 @@ HTMLMediaElement::PlayInternal()
   return NS_OK;
 }
 
+void
+HTMLMediaElement::MaybeDoLoad()
+{
+  if (mNetworkState == nsIDOMHTMLMediaElement::NETWORK_EMPTY) {
+    DoLoad();
+  }
+}
+
 NS_IMETHODIMP HTMLMediaElement::Play()
 {
+  if (!IsAllowedToPlay()) {
+    MaybeDoLoad();
+    return NS_OK;
+  }
+
   return PlayInternal();
 }
 
@@ -4400,9 +4416,6 @@ void HTMLMediaElement::FirstFrameLoaded()
 
 void HTMLMediaElement::NetworkError()
 {
-  if (mDecoder) {
-    ShutdownDecoder();
-  }
   if (mReadyState == nsIDOMHTMLMediaElement::HAVE_NOTHING) {
     NoSupportedMediaSourceError();
   } else {
@@ -4417,9 +4430,6 @@ void HTMLMediaElement::DecodeError(const MediaResult& aError)
   const char16_t* params[] = { src.get() };
   ReportLoadError("MediaLoadDecodeError", params, ArrayLength(params));
 
-  if (mDecoder) {
-    ShutdownDecoder();
-  }
   AudioTracks()->EmptyTracks();
   VideoTracks()->EmptyTracks();
   if (mIsLoadingFromSourceChildren) {
@@ -4978,6 +4988,10 @@ bool HTMLMediaElement::CanActivateAutoplay()
     return false;
   }
 
+  if (!IsAllowedToPlay()) {
+    return false;
+  }
+
   bool hasData =
     (mDecoder && mReadyState >= nsIDOMHTMLMediaElement::HAVE_ENOUGH_DATA) ||
     (mSrcStream && mSrcStream->Active()) ||
@@ -5003,9 +5017,7 @@ void HTMLMediaElement::CheckAutoplayDataReady()
     if (mCurrentPlayRangeStart == -1.0) {
       mCurrentPlayRangeStart = CurrentTime();
     }
-    if (!ShouldElementBePaused()) {
-      mDecoder->Play();
-    }
+    mDecoder->Play();
   } else if (mSrcStream) {
     SetPlayedOrSeeked(true);
   }
@@ -5807,19 +5819,13 @@ HTMLMediaElement::IsPlayingThroughTheAudioChannel() const
 }
 
 void
-HTMLMediaElement::UpdateAudioChannelPlayingState()
+HTMLMediaElement::UpdateAudioChannelPlayingState(bool aForcePlaying)
 {
-  bool playingThroughTheAudioChannel = IsPlayingThroughTheAudioChannel();
+  bool playingThroughTheAudioChannel =
+    aForcePlaying || IsPlayingThroughTheAudioChannel();
 
   if (playingThroughTheAudioChannel != mPlayingThroughTheAudioChannel) {
     mPlayingThroughTheAudioChannel = playingThroughTheAudioChannel;
-
-    
-    if (!mAudioChannelAgent && !mPlayingThroughTheAudioChannel) {
-       return;
-    }
-
-    CreateAudioChannelAgent();
     NotifyAudioChannelAgent(mPlayingThroughTheAudioChannel);
   }
 }
@@ -5850,7 +5856,6 @@ HTMLMediaElement::NotifyAudioChannelAgent(bool aPlaying)
     WindowSuspendChanged(config.mSuspend);
   } else {
     mAudioChannelAgent->NotifyStoppedPlaying();
-    mAudioChannelAgent = nullptr;
   }
 }
 
@@ -5935,7 +5940,7 @@ HTMLMediaElement::ResumeFromAudioChannelPaused(SuspendTypes aSuspend)
              mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE);
 
   SetAudioChannelSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-  nsresult rv = PlayInternal();
+  nsresult rv = Play();
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
@@ -5948,8 +5953,10 @@ HTMLMediaElement::ResumeFromAudioChannelBlocked()
   MOZ_ASSERT(mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK);
 
   SetAudioChannelSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-  mPaused = false;
-  SuspendOrResumeElement(false , false);
+  nsresult rv = Play();
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return;
+  }
 }
 
 void
@@ -5972,8 +5979,6 @@ HTMLMediaElement::BlockByAudioChannel()
   }
 
   SetAudioChannelSuspended(nsISuspendedTypes::SUSPENDED_BLOCK);
-  mPaused = true;
-  SuspendOrResumeElement(true , true );
 }
 
 void
@@ -6021,12 +6026,29 @@ HTMLMediaElement::IsAllowedToPlay()
   }
 
   
+  
   if (mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_PAUSE ||
       mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
     return false;
   }
 
+  
+  
+  
+  if (!IsTabActivated()) {
+    
+    
+    UpdateAudioChannelPlayingState(true );
+    return false;
+  }
+
   return true;
+}
+
+bool
+HTMLMediaElement::IsTabActivated() const
+{
+  return !mAudioChannelAgent->ShouldBlockMedia();
 }
 
 static const char* VisibilityString(Visibility aVisibility) {
@@ -6437,7 +6459,9 @@ HTMLMediaElement::SetAudibleState(bool aAudible)
 void
 HTMLMediaElement::NotifyAudioPlaybackChanged(AudibleChangedReasons aReason)
 {
-  if (!mAudioChannelAgent) {
+  MOZ_ASSERT(mAudioChannelAgent);
+
+  if (!mAudioChannelAgent->IsPlayingStarted()) {
     return;
   }
 
@@ -6539,11 +6563,6 @@ bool
 HTMLMediaElement::ShouldElementBePaused()
 {
   
-  if (mAudioChannelSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
-    return true;
-  }
-
-  
   if (!IsActive()) {
     return true;
   }
@@ -6561,13 +6580,14 @@ HTMLMediaElement::SetMediaInfo(const MediaInfo& aInfo)
 void
 HTMLMediaElement::AudioCaptureStreamChangeIfNeeded()
 {
-  
-  if (!mAudioChannelAgent) {
-    return;
-  }
+  MOZ_ASSERT(mAudioChannelAgent);
 
   
   if (!HasAudio()) {
+    return;
+  }
+
+  if (!mAudioChannelAgent->IsPlayingStarted()) {
     return;
   }
 
