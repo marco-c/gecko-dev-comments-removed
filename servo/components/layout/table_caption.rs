@@ -1,8 +1,8 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! CSS table formatting contexts.
+
+
+
+
 
 #![deny(unsafe_code)]
 
@@ -14,6 +14,7 @@ use euclid::Point2D;
 use flow::{Flow, FlowClass, OpaqueFlow};
 use fragment::{Fragment, FragmentBorderBoxIterator, Overflow};
 use gfx::display_list::StackingContext;
+use gfx_traits::ScrollRootId;
 use gfx_traits::print_tree::PrintTree;
 use std::fmt;
 use std::sync::Arc;
@@ -21,7 +22,7 @@ use style::context::SharedStyleContext;
 use style::logical_geometry::LogicalSize;
 use style::properties::ServoComputedValues;
 
-/// A table formatting context.
+
 pub struct TableCaptionFlow {
     pub block_flow: BlockFlow,
 }
@@ -82,8 +83,10 @@ impl Flow for TableCaptionFlow {
         self.block_flow.build_display_list(state);
     }
 
-    fn collect_stacking_contexts(&mut self, parent: &mut StackingContext) {
-        self.block_flow.collect_stacking_contexts(parent);
+    fn collect_stacking_contexts(&mut self,
+                                 parent: &mut StackingContext,
+                                 parent_scroll_root_id: ScrollRootId) {
+        self.block_flow.collect_stacking_contexts(parent, parent_scroll_root_id);
     }
 
     fn repair_style(&mut self, new_style: &Arc<ServoComputedValues>) {

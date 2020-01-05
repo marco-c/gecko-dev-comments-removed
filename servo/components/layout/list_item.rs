@@ -1,9 +1,9 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-//! Layout for elements with a CSS `display` property of `list-item`. These elements consist of a
-//! block and an extra inline fragment for the marker.
+
+
+
+
+
 
 #![deny(unsafe_code)]
 
@@ -18,6 +18,7 @@ use fragment::{CoordinateSystem, Fragment, FragmentBorderBoxIterator, GeneratedC
 use fragment::Overflow;
 use generated_content;
 use gfx::display_list::StackingContext;
+use gfx_traits::ScrollRootId;
 use inline::InlineFlow;
 use script_layout_interface::restyle_damage::RESOLVE_GENERATED_CONTENT;
 use std::sync::Arc;
@@ -26,13 +27,13 @@ use style::context::SharedStyleContext;
 use style::logical_geometry::LogicalSize;
 use style::properties::ServoComputedValues;
 
-/// A block with the CSS `display` property equal to `list-item`.
+
 #[derive(Debug)]
 pub struct ListItemFlow {
-    /// Data common to all block flows.
+    
     pub block_flow: BlockFlow,
-    /// The marker, if outside. (Markers that are inside are instead just fragments on the interior
-    /// `InlineFlow`.)
+    
+    
     pub marker_fragments: Vec<Fragment>,
 }
 
@@ -76,7 +77,7 @@ impl Flow for ListItemFlow {
     }
 
     fn bubble_inline_sizes(&mut self) {
-        // The marker contributes no intrinsic inline-size, so…
+        
         self.block_flow.bubble_inline_sizes()
     }
 
@@ -90,8 +91,8 @@ impl Flow for ListItemFlow {
             let container_block_size = self.block_flow.explicit_block_containing_size(shared_context);
             marker.assign_replaced_inline_size_if_necessary(containing_block_inline_size, container_block_size);
 
-            // Do this now. There's no need to do this in bubble-widths, since markers do not
-            // contribute to the inline size of this flow.
+            
+            
             let intrinsic_inline_sizes = marker.compute_intrinsic_inline_sizes();
 
             marker.border_box.size.inline =
@@ -104,7 +105,7 @@ impl Flow for ListItemFlow {
     fn assign_block_size<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         self.block_flow.assign_block_size(layout_context);
 
-        // FIXME(pcwalton): Do this during flow construction, like `InlineFlow` does?
+        
         let marker_line_metrics =
             InlineFlow::minimum_line_metrics_for_fragments(&self.marker_fragments,
                                                            &mut layout_context.font_context(),
@@ -145,8 +146,10 @@ impl Flow for ListItemFlow {
         self.build_display_list_for_list_item(state);
     }
 
-    fn collect_stacking_contexts(&mut self, parent: &mut StackingContext) {
-        self.block_flow.collect_stacking_contexts(parent);
+    fn collect_stacking_contexts(&mut self,
+                                 parent: &mut StackingContext,
+                                 parent_scroll_root_id: ScrollRootId) {
+        self.block_flow.collect_stacking_contexts(parent, parent_scroll_root_id);
     }
 
     fn repair_style(&mut self, new_style: &Arc<ServoComputedValues>) {
@@ -169,7 +172,7 @@ impl Flow for ListItemFlow {
         self.block_flow.generated_containing_block_size(flow)
     }
 
-    /// The 'position' property of this flow.
+    
     fn positioning(&self) -> position::T {
         self.block_flow.positioning()
     }
@@ -213,7 +216,7 @@ impl Flow for ListItemFlow {
     }
 }
 
-/// The kind of content that `list-style-type` results in.
+
 pub enum ListStyleTypeContent {
     None,
     StaticText(char),
@@ -221,10 +224,10 @@ pub enum ListStyleTypeContent {
 }
 
 impl ListStyleTypeContent {
-    /// Returns the content to be used for the given value of the `list-style-type` property.
+    
     pub fn from_list_style_type(list_style_type: list_style_type::T) -> ListStyleTypeContent {
-        // Just to keep things simple, use a nonbreaking space (Unicode 0xa0) to provide the marker
-        // separation.
+        
+        
         match list_style_type {
             list_style_type::T::none => ListStyleTypeContent::None,
             list_style_type::T::disc | list_style_type::T::circle | list_style_type::T::square |

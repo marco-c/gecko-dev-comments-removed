@@ -45,7 +45,7 @@ use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;
 use gfx_traits::DevicePixel;
 use gfx_traits::Epoch;
-use gfx_traits::StackingContextId;
+use gfx_traits::ScrollRootId;
 use heapsize::HeapSizeOf;
 use hyper::header::Headers;
 use hyper::method::Method;
@@ -601,7 +601,7 @@ pub enum AnimationTickType {
 #[derive(Copy, Clone, Debug, Deserialize, Serialize)]
 pub struct StackingContextScrollState {
     
-    pub stacking_context_id: StackingContextId,
+    pub scroll_root_id: ScrollRootId,
     
     pub scroll_offset: Point2D<f32>,
 }
