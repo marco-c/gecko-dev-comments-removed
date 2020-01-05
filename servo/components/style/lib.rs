@@ -14,6 +14,8 @@
 #![plugin(plugins)]
 #![plugin(serde_macros)]
 
+#![deny(unsafe_code)]
+
 #![recursion_limit = "500"]  
 
 extern crate app_units;
