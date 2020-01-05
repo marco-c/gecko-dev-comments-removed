@@ -79,6 +79,9 @@ test_description_schema = Schema({
     Optional('talos-try-name'): basestring,
 
     
+    Optional('tags'): {basestring: object},
+
+    
     
     'treeherder-symbol': basestring,
 
@@ -639,6 +642,7 @@ def make_job_description(config, tests):
         jobdesc['routes'] = []
         jobdesc['run-on-projects'] = test.get('run-on-projects', ['all'])
         jobdesc['scopes'] = []
+        jobdesc['tags'] = test.get('tags', {})
         jobdesc['extra'] = {
             'chunks': {
                 'current': test['this-chunk'],
