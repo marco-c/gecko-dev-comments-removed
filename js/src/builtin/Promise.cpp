@@ -304,28 +304,27 @@ RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp)
         return true;
     }
 
+    
+    
+    
+    ClearResolutionFunctionSlots(reject);
+
     RootedObject promise(cx, &promiseVal.toObject());
 
     
     
     
     if (promise->is<PromiseObject>() &&
-        PromiseHasAnyFlag(promise->as<PromiseObject>(), PROMISE_FLAG_RESOLVED))
+        promise->as<PromiseObject>().state() != JS::PromiseState::Pending)
     {
-        args.rval().setUndefined();
         return true;
     }
 
     
-    
-    
-    ClearResolutionFunctionSlots(reject);
-
-    
-    bool result = RejectMaybeWrappedPromise(cx, promise, reasonVal);
-    if (result)
-        args.rval().setUndefined();
-    return result;
+    if (!RejectMaybeWrappedPromise(cx, promise, reasonVal))
+        return false;
+    args.rval().setUndefined();
+    return true;
 }
 
 static MOZ_MUST_USE bool FulfillMaybeWrappedPromise(JSContext *cx, HandleObject promiseObj,
@@ -396,37 +395,36 @@ ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp)
     RootedValue resolutionVal(cx, args.get(0));
 
     
-    RootedValue promiseVal(cx, resolve->getExtendedSlot(ResolveFunctionSlot_Promise));
-
     
     
     
-    if (promiseVal.isUndefined()) {
+    if (!resolve->getExtendedSlot(ResolveFunctionSlot_RejectFunction).isObject()) {
         args.rval().setUndefined();
         return true;
     }
 
-    RootedObject promise(cx, &promiseVal.toObject());
-
     
-    
-    
-    if (promise->is<PromiseObject>() &&
-        PromiseHasAnyFlag(promise->as<PromiseObject>(), PROMISE_FLAG_RESOLVED))
-    {
-        args.rval().setUndefined();
-        return true;
-    }
+    RootedObject promise(cx, &resolve->getExtendedSlot(ResolveFunctionSlot_Promise).toObject());
 
     
     
     
     ClearResolutionFunctionSlots(resolve);
 
-    bool status = ResolvePromiseInternal(cx, promise, resolutionVal);
-    if (status)
-        args.rval().setUndefined();
-    return status;
+    
+    
+    
+    if (promise->is<PromiseObject>() &&
+        promise->as<PromiseObject>().state() != JS::PromiseState::Pending)
+    {
+        return true;
+    }
+
+    
+    if (!ResolvePromiseInternal(cx, promise, resolutionVal))
+        return false;
+    args.rval().setUndefined();
+    return true;
 }
 
 static bool PromiseReactionJob(JSContext* cx, unsigned argc, Value* vp);
@@ -629,7 +627,7 @@ enum GetCapabilitiesExecutorSlots {
 };
 
 static MOZ_MUST_USE PromiseObject*
-CreatePromiseObjectWithDefaultResolution(JSContext* cx)
+CreatePromiseObjectWithoutResolutionFunctions(JSContext* cx)
 {
     Rooted<PromiseObject*> promise(cx, CreatePromiseObjectInternal(cx));
     if (!promise)
@@ -664,7 +662,7 @@ NewPromiseCapability(JSContext* cx, HandleObject C, MutableHandleObject promise,
     
     
     if (canOmitResolutionFunctions && IsNativeFunction(cVal, PromiseConstructor)) {
-        promise.set(CreatePromiseObjectWithDefaultResolution(cx));
+        promise.set(CreatePromiseObjectWithoutResolutionFunctions(cx));
         if (!promise)
             return false;
         return true;
@@ -1344,6 +1342,14 @@ PromiseObject::create(JSContext* cx, HandleObject executor, HandleObject proto ,
 
     
     return promise;
+}
+
+
+
+ PromiseObject*
+PromiseObject::createSkippingExecutor(JSContext* cx)
+{
+    return CreatePromiseObjectWithoutResolutionFunctions(cx);
 }
 
 static MOZ_MUST_USE bool PerformPromiseAll(JSContext *cx, JS::ForOfIterator& iterator,
@@ -2108,7 +2114,7 @@ MOZ_MUST_USE PromiseObject*
 js::CreatePromiseObjectForAsync(JSContext* cx, HandleValue generatorVal)
 {
     
-    Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithDefaultResolution(cx));
+    Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
     if (!promise)
         return nullptr;
 
@@ -2154,7 +2160,7 @@ MOZ_MUST_USE bool
 js::AsyncFunctionAwait(JSContext* cx, Handle<PromiseObject*> resultPromise, HandleValue value)
 {
     
-    Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithDefaultResolution(cx));
+    Rooted<PromiseObject*> promise(cx, CreatePromiseObjectWithoutResolutionFunctions(cx));
     if (!promise)
         return false;
 
@@ -2585,6 +2591,9 @@ PromiseObject::resolve(JSContext* cx, Handle<PromiseObject*> promise, HandleValu
     if (promise->state() != JS::PromiseState::Pending)
         return true;
 
+    if (PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_RESOLVE_FUNCTION))
+        return ResolvePromiseInternal(cx, promise, resolutionValue);
+
     RootedObject resolveFun(cx, GetResolveFunctionFromPromise(promise));
     RootedValue funVal(cx, ObjectValue(*resolveFun));
 
@@ -2607,6 +2616,9 @@ PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise, HandleValue
     MOZ_ASSERT(!PromiseHasAnyFlag(*promise, PROMISE_FLAG_ASYNC));
     if (promise->state() != JS::PromiseState::Pending)
         return true;
+
+    if (PromiseHasAnyFlag(*promise, PROMISE_FLAG_DEFAULT_REJECT_FUNCTION))
+        return RejectMaybeWrappedPromise(cx, promise, rejectionValue);
 
     RootedValue funVal(cx, promise->getFixedSlot(PromiseSlot_RejectFunction));
     MOZ_ASSERT(IsCallable(funVal));
