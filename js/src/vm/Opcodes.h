@@ -2297,14 +2297,23 @@
 
 
  \
-    macro(JSOP_JUMPTARGET,  230, "jumptarget",     NULL,  1,  0,  0,  JOF_BYTE)
+    macro(JSOP_JUMPTARGET,  230, "jumptarget",     NULL,  1,  0,  0,  JOF_BYTE)\
+    
+
+
+
+
+
+
+
+ \
+    macro(JSOP_CALL_IGNORES_RV, 231, "call-ignores-rv", NULL, 3, -1, 1, JOF_UINT16|JOF_INVOKE|JOF_TYPESET)
 
 
 
 
 
 #define FOR_EACH_TRAILING_UNUSED_OPCODE(macro) \
-    macro(231) \
     macro(232) \
     macro(233) \
     macro(234) \
