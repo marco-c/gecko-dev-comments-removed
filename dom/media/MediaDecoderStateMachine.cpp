@@ -71,7 +71,6 @@ using namespace mozilla::media;
 #undef SFMT
 #undef SLOG
 #undef SWARN
-#undef SDUMP
 
 #define FMT(x, ...) "Decoder=%p " x, mDecoderID, ##__VA_ARGS__
 #define DECODER_LOG(x, ...) MOZ_LOG(gMediaDecoderLog, LogLevel::Debug,   (FMT(x, ##__VA_ARGS__)))
@@ -84,7 +83,6 @@ using namespace mozilla::media;
 #define SFMT(x, ...) "Decoder=%p state=%s " x, mMaster->mDecoderID, ToStateStr(GetState()), ##__VA_ARGS__
 #define SLOG(x, ...) MOZ_LOG(gMediaDecoderLog, LogLevel::Debug, (SFMT(x, ##__VA_ARGS__)))
 #define SWARN(x, ...) NS_WARNING(nsPrintfCString(SFMT(x, ##__VA_ARGS__)).get())
-#define SDUMP(x, ...) NS_DebugBreak(NS_DEBUG_WARNING, nsPrintfCString(SFMT(x, ##__VA_ARGS__)).get(), nullptr, nullptr, -1)
 
 
 
@@ -245,7 +243,7 @@ public:
 
   virtual void HandlePlayStateChanged(MediaDecoder::PlayState aPlayState) {}
 
-  virtual void DumpDebugInfo() {}
+  virtual nsCString GetDebugInfo() { return nsCString(); }
 
 private:
   template <class S, typename R, typename... As>
@@ -744,9 +742,9 @@ public:
     }
   }
 
-  void DumpDebugInfo() override
+  nsCString GetDebugInfo() override
   {
-    SDUMP("mIsPrerolling=%d", mIsPrerolling);
+    return nsPrintfCString("mIsPrerolling=%d", mIsPrerolling);
   }
 
 private:
@@ -1942,12 +1940,8 @@ StateObject::HandleResumeVideoDecoding()
                           type,
                           true );
 
-  
-  
-  RefPtr<AbstractThread> mainThread = mMaster->mAbstractMainThread;
-
   SetSeekingState(Move(seekJob), EventVisibility::Suppressed)->Then(
-    mainThread, __func__,
+    AbstractThread::MainThread(), __func__,
     [start, info, hw](){ ReportRecoveryTelemetry(start, info, hw); },
     [](){});
 }
@@ -2481,7 +2475,6 @@ ShutdownState::Enter()
 MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
                                                    MediaDecoderReader* aReader) :
   mDecoderID(aDecoder),
-  mAbstractMainThread(aDecoder->AbstractMainThread()),
   mFrameStats(&aDecoder->GetFrameStatistics()),
   mVideoFrameContainer(aDecoder->GetVideoFrameContainer()),
   mAudioChannel(aDecoder->GetAudioChannel()),
@@ -2617,7 +2610,7 @@ already_AddRefed<media::MediaSink>
 MediaDecoderStateMachine::CreateMediaSink(bool aAudioCaptured)
 {
   RefPtr<media::MediaSink> audioSink = aAudioCaptured
-    ? new DecodedStream(mTaskQueue, mAbstractMainThread, mAudioQueue, mVideoQueue,
+    ? new DecodedStream(mTaskQueue, mAudioQueue, mVideoQueue,
                         mOutputStreamManager, mSameOriginMedia.Ref(),
                         mMediaPrincipalHandle.Ref())
     : CreateAudioSink();
@@ -3654,6 +3647,23 @@ uint32_t MediaDecoderStateMachine::GetAmpleVideoFrames() const
     : std::max<uint32_t>(sVideoQueueDefaultSize, MIN_VIDEO_QUEUE_SIZE);
 }
 
+nsCString
+MediaDecoderStateMachine::GetDebugInfo()
+{
+  MOZ_ASSERT(OnTaskQueue());
+  return nsPrintfCString(
+    "GetMediaTime=%lld GetClock=%lld mMediaSink=%p "
+    "state=%s mPlayState=%d mSentFirstFrameLoadedEvent=%d IsPlaying=%d "
+    "mAudioStatus=%s mVideoStatus=%s mDecodedAudioEndTime=%lld mDecodedVideoEndTime=%lld "
+    "mAudioCompleted=%d mVideoCompleted=%d ",
+    GetMediaTime(), mMediaSink->IsStarted() ? GetClock() : -1, mMediaSink.get(),
+    ToStateStr(), mPlayState.Ref(), mSentFirstFrameLoadedEvent, IsPlaying(),
+    AudioRequestStatus(), VideoRequestStatus(), mDecodedAudioEndTime, mDecodedVideoEndTime,
+    mAudioCompleted, mVideoCompleted)
+    + mStateObj->GetDebugInfo() + nsCString("\n")
+    + mMediaSink->GetDebugInfo();
+}
+
 void
 MediaDecoderStateMachine::DumpDebugInfo()
 {
@@ -3662,17 +3672,7 @@ MediaDecoderStateMachine::DumpDebugInfo()
   
   
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([this] () {
-    mMediaSink->DumpDebugInfo();
-    mStateObj->DumpDebugInfo();
-    DUMP_LOG(
-      "GetMediaTime=%lld GetClock=%lld mMediaSink=%p "
-      "state=%s mPlayState=%d mSentFirstFrameLoadedEvent=%d IsPlaying=%d "
-      "mAudioStatus=%s mVideoStatus=%s mDecodedAudioEndTime=%lld mDecodedVideoEndTime=%lld "
-      "mAudioCompleted=%d mVideoCompleted=%d",
-      GetMediaTime(), mMediaSink->IsStarted() ? GetClock() : -1, mMediaSink.get(),
-      ToStateStr(), mPlayState.Ref(), mSentFirstFrameLoadedEvent, IsPlaying(),
-      AudioRequestStatus(), VideoRequestStatus(), mDecodedAudioEndTime, mDecodedVideoEndTime,
-      mAudioCompleted, mVideoCompleted);
+    DUMP_LOG("%s", GetDebugInfo().get());
   });
 
   

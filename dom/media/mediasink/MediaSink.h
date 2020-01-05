@@ -121,7 +121,7 @@ public:
 
   
   
-  virtual void DumpDebugInfo() {}
+  virtual nsCString GetDebugInfo() { return nsCString(); }
 
 protected:
   virtual ~MediaSink() {}
