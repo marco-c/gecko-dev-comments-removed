@@ -80,6 +80,10 @@ impl Flow for TableColGroupFlow {
     
     fn assign_block_size(&mut self, _ctx: &LayoutContext) {
     }
+
+    fn update_late_computed_inline_position_if_necessary(&mut self, _: Au) {}
+
+    fn update_late_computed_block_position_if_necessary(&mut self, _: Au) {}
 }
 
 impl fmt::Show for TableColGroupFlow {

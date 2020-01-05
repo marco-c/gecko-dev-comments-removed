@@ -523,6 +523,7 @@ fn compute_absolute_position(unsafe_flow: UnsafeFlow,
 
         
         
+        
         let mut absolutely_positioned_child_count = 0u;
         for kid in flow::child_iter(flow.get_mut()) {
             if kid.is_absolutely_positioned() {
@@ -530,7 +531,6 @@ fn compute_absolute_position(unsafe_flow: UnsafeFlow,
             }
         }
 
-        
         drop(flow::mut_base(flow.get_mut()).parallel
                                            .children_and_absolute_descendant_count
                                            .fetch_sub(absolutely_positioned_child_count as int,
@@ -559,8 +559,7 @@ fn compute_absolute_position(unsafe_flow: UnsafeFlow,
 
         
         if !had_descendants {
-            build_display_list(mut_owned_flow_to_unsafe_flow(flow),
-                               proxy)
+            build_display_list(mut_owned_flow_to_unsafe_flow(flow), proxy)
         }
     }
 }

@@ -7,10 +7,11 @@
 use css::node_style::StyledNode;
 use context::LayoutContext;
 use floats::{FloatLeft, Floats, PlacementInfo};
-use flow::{BaseFlow, FlowClass, Flow, InlineFlowClass};
+use flow::{BaseFlow, FlowClass, Flow, InlineFlowClass, MutableFlowUtils};
 use flow;
+use fragment::{Fragment, InlineBlockFragment, ScannedTextFragment, ScannedTextFragmentInfo};
+use fragment::{SplitInfo};
 use layout_debug;
-use fragment::{Fragment, InlineBlockFragment, ScannedTextFragment, ScannedTextFragmentInfo, SplitInfo};
 use model::IntrinsicISizes;
 use text;
 use wrapper::ThreadSafeLayoutNode;
@@ -876,15 +877,15 @@ impl InlineFlow {
     }
 
     
-    fn set_horizontal_fragment_positions(fragments: &mut InlineFragments,
-                                         line: &Line,
-                                         line_align: text_align::T) {
+    fn set_inline_fragment_positions(fragments: &mut InlineFragments,
+                                     line: &Line,
+                                     line_align: text_align::T) {
         
         let slack_inline_size = Au::max(Au(0), line.green_zone.inline - line.bounds.size.inline);
 
         
-        let mut offset_x = line.bounds.start.i;
-        offset_x = offset_x + match line_align {
+        let mut offset = line.bounds.start.i;
+        offset = offset + match line_align {
             
             
             
@@ -897,10 +898,41 @@ impl InlineFlow {
         for i in each_fragment_index(&line.range) {
             let fragment = fragments.get_mut(i.to_uint());
             let size = fragment.border_box.size;
-            fragment.border_box = LogicalRect::new(
-                fragment.style.writing_mode, offset_x, fragment.border_box.start.b,
-                size.inline, size.block);
-            offset_x = offset_x + size.inline;
+            fragment.border_box = LogicalRect::new(fragment.style.writing_mode,
+                                                   offset,
+                                                   fragment.border_box.start.b,
+                                                   size.inline,
+                                                   size.block);
+            fragment.update_late_computed_inline_position_if_necessary();
+            offset = offset + size.inline;
+        }
+    }
+
+    
+    
+    fn set_block_fragment_positions(fragments: &mut InlineFragments,
+                                     line: &Line,
+                                     line_distance_from_flow_block_start: Au,
+                                     baseline_distance_from_block_start: Au,
+                                     largest_depth_below_baseline: Au) {
+        for fragment_i in each_fragment_index(&line.range) {
+            let fragment = fragments.get_mut(fragment_i.to_uint());
+            match fragment.vertical_align() {
+                vertical_align::top => {
+                    fragment.border_box.start.b = fragment.border_box.start.b +
+                        line_distance_from_flow_block_start
+                }
+                vertical_align::bottom => {
+                    fragment.border_box.start.b = fragment.border_box.start.b +
+                        line_distance_from_flow_block_start + baseline_distance_from_block_start +
+                        largest_depth_below_baseline
+                }
+                _ => {
+                    fragment.border_box.start.b = fragment.border_box.start.b +
+                        line_distance_from_flow_block_start + baseline_distance_from_block_start
+                }
+            }
+            fragment.update_late_computed_block_position_if_necessary();
         }
     }
 
@@ -1016,6 +1048,10 @@ impl Flow for InlineFlow {
 
         
         
+        (&mut *self as &mut Flow).collect_static_block_offsets_from_children();
+
+        
+        
         
         
         
@@ -1041,7 +1077,7 @@ impl Flow for InlineFlow {
         let mut line_distance_from_flow_block_start = Au(0);
         for line in self.lines.iter_mut() {
             
-            InlineFlow::set_horizontal_fragment_positions(&mut self.fragments, line, text_align);
+            InlineFlow::set_inline_fragment_positions(&mut self.fragments, line, text_align);
 
             
             
@@ -1053,8 +1089,8 @@ impl Flow for InlineFlow {
 
             
             
-            let (mut largest_block_size_for_top_fragments, mut largest_block_size_for_bottom_fragments) =
-                (Au(0), Au(0));
+            let (mut largest_block_size_for_top_fragments,
+                 mut largest_block_size_for_bottom_fragments) = (Au(0), Au(0));
 
             for fragment_i in each_fragment_index(&line.range) {
                 let fragment = self.fragments.fragments.get_mut(fragment_i.to_uint());
@@ -1128,24 +1164,11 @@ impl Flow for InlineFlow {
 
             
             
-            for fragment_i in each_fragment_index(&line.range) {
-                let fragment = self.fragments.get_mut(fragment_i.to_uint());
-                match fragment.vertical_align() {
-                    vertical_align::top => {
-                        fragment.border_box.start.b = fragment.border_box.start.b +
-                            line_distance_from_flow_block_start
-                    }
-                    vertical_align::bottom => {
-                        fragment.border_box.start.b = fragment.border_box.start.b +
-                            line_distance_from_flow_block_start + baseline_distance_from_block_start +
-                            largest_depth_below_baseline
-                    }
-                    _ => {
-                        fragment.border_box.start.b = fragment.border_box.start.b +
-                            line_distance_from_flow_block_start + baseline_distance_from_block_start
-                    }
-                }
-            }
+            InlineFlow::set_block_fragment_positions(&mut self.fragments,
+                                                     line,
+                                                     line_distance_from_flow_block_start,
+                                                     baseline_distance_from_block_start,
+                                                     largest_depth_below_baseline);
 
             
             line.bounds.size.block = largest_block_size_above_baseline + largest_depth_below_baseline;
@@ -1170,13 +1193,18 @@ impl Flow for InlineFlow {
 
                     
                     let container_size = Size2D::zero();
-                    block_flow.base.abs_position = self.base.abs_position +
-                                                    f.border_box.start.to_physical(self.base.writing_mode, container_size);
+                    block_flow.base.abs_position =
+                        self.base.abs_position +
+                        f.border_box.start.to_physical(self.base.writing_mode, container_size);
                 }
                 _ => {}
             }
         }
     }
+
+    fn update_late_computed_inline_position_if_necessary(&mut self, _: Au) {}
+
+    fn update_late_computed_block_position_if_necessary(&mut self, _: Au) {}
 }
 
 impl fmt::Show for InlineFlow {
@@ -1189,7 +1217,7 @@ impl fmt::Show for InlineFlow {
                 try!(write!(f, ", {}", fragment))
             }
         }
-        Ok(())
+        write!(f, " ({})", self.base)
     }
 }
 

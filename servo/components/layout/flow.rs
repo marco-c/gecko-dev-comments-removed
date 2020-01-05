@@ -291,6 +291,14 @@ pub trait Flow: fmt::Show + ToString + Sync {
 
     
     
+    fn update_late_computed_inline_position_if_necessary(&mut self, inline_position: Au);
+
+    
+    
+    fn update_late_computed_block_position_if_necessary(&mut self, block_position: Au);
+
+    
+    
     fn generated_containing_block_rect(&self) -> LogicalRect<Au> {
         fail!("generated_containing_block_position not yet implemented for this flow")
     }
@@ -426,6 +434,16 @@ pub trait MutableFlowUtils {
 
     
     fn build_display_list(self, layout_context: &LayoutContext);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    fn collect_static_block_offsets_from_children(&mut self);
 }
 
 pub trait MutableOwnedFlowUtils {
@@ -581,14 +599,14 @@ pub struct Descendants {
     descendant_links: Vec<FlowRef>,
 
     
-    pub static_b_offsets: Vec<Au>,
+    pub static_block_offsets: Vec<Au>,
 }
 
 impl Descendants {
     pub fn new() -> Descendants {
         Descendants {
             descendant_links: Vec::new(),
-            static_b_offsets: Vec::new(),
+            static_block_offsets: Vec::new(),
         }
     }
 
@@ -621,7 +639,7 @@ impl Descendants {
         let descendant_iter = DescendantIter {
             iter: self.descendant_links.slice_from_mut(0).iter_mut(),
         };
-        descendant_iter.zip(self.static_b_offsets.slice_from_mut(0).iter_mut())
+        descendant_iter.zip(self.static_block_offsets.slice_from_mut(0).iter_mut())
     }
 }
 
@@ -750,6 +768,16 @@ pub struct BaseFlow {
     pub flags: FlowFlags,
 
     pub writing_mode: WritingMode,
+}
+
+impl fmt::Show for BaseFlow {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f,
+               "CC {}, ADC {}, CADC {}",
+               self.parallel.children_count.load(SeqCst),
+               self.abs_descendants.len(),
+               self.parallel.children_and_absolute_descendant_count.load(SeqCst))
+    }
 }
 
 impl<E, S: Encoder<E>> Encodable<S, E> for BaseFlow {
@@ -1102,6 +1130,52 @@ impl<'a> MutableFlowUtils for &'a mut Flow + 'a {
                 
             }
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn collect_static_block_offsets_from_children(&mut self) {
+        let mut absolute_descendant_block_offsets = Vec::new();
+        for kid in mut_base(*self).child_iter() {
+            let mut gives_absolute_offsets = true;
+            if kid.is_block_like() {
+                let kid_block = kid.as_block();
+                if kid_block.is_fixed() || kid_block.is_absolutely_positioned() {
+                    
+                    
+                    gives_absolute_offsets = false;
+                    
+                    absolute_descendant_block_offsets.push(
+                        kid_block.get_hypothetical_block_start_edge());
+                } else if kid_block.is_positioned() {
+                    
+                    
+                    gives_absolute_offsets = false;
+                }
+            }
+
+            if gives_absolute_offsets {
+                let kid_base = mut_base(kid);
+                
+                let offsets = mem::replace(&mut kid_base.abs_descendants.static_block_offsets,
+                                           Vec::new());
+                
+                for block_offset in offsets.into_iter() {
+                    
+                    
+                    absolute_descendant_block_offsets.push(
+                        block_offset + kid_base.position.start.b);
+                }
+            }
+        }
+        mut_base(*self).abs_descendants.static_block_offsets = absolute_descendant_block_offsets
     }
 }
 
