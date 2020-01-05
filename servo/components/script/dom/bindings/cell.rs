@@ -2,6 +2,10 @@
 
 
 
+#![deny(missing_docs)]
+
+
+
 use dom::bindings::trace::JSTraceable;
 use js::jsapi::{JSTracer};
 
@@ -46,11 +50,31 @@ impl<T> DOMRefCell<T> {
         self.value.try_borrow().is_some()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_borrow<'a>(&'a self) -> Option<Ref<'a, T>> {
         debug_assert!(task_state::get().is_script());
         self.value.try_borrow()
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn try_borrow_mut<'a>(&'a self) -> Option<RefMut<'a, T>> {
         debug_assert!(task_state::get().is_script());
         self.value.try_borrow_mut()
@@ -66,16 +90,24 @@ impl<T: JSTraceable> JSTraceable for DOMRefCell<T> {
 
 
 impl<T> DOMRefCell<T> {
+    
     pub fn new(value: T) -> DOMRefCell<T> {
         DOMRefCell {
             value: RefCell::new(value),
         }
     }
 
-    pub fn unwrap(self) -> T {
-        self.value.unwrap()
-    }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn borrow<'a>(&'a self) -> Ref<'a, T> {
         match self.try_borrow() {
             Some(ptr) => ptr,
@@ -83,6 +115,16 @@ impl<T> DOMRefCell<T> {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn borrow_mut<'a>(&'a self) -> RefMut<'a, T> {
         match self.try_borrow_mut() {
             Some(ptr) => ptr,
