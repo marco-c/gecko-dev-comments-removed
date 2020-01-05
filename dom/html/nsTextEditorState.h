@@ -301,6 +301,14 @@ public:
   
   
   
+  void SetSelectionRange(int32_t aSelectionStart,
+                         int32_t aSelectionEnd,
+                         const mozilla::dom::Optional<nsAString>& aDirection,
+                         mozilla::ErrorResult& aRv);
+
+  
+  
+  
   void SetSelectionStart(const mozilla::dom::Nullable<uint32_t>& aStart,
                          mozilla::ErrorResult& aRv);
 
