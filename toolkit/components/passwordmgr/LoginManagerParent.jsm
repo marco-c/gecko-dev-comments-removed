@@ -11,8 +11,6 @@ Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Task.jsm");
 
-XPCOMUtils.defineLazyModuleGetter(this, "UserAutoCompleteResult",
-                                  "resource://gre/modules/LoginManagerContent.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "AutoCompletePopup",
                                   "resource://gre/modules/AutoCompletePopup.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "DeferredTask",
@@ -226,9 +224,9 @@ var LoginManagerParent = {
   }),
 
   doAutocompleteSearch({ formOrigin, actionOrigin,
-                                   searchString, previousResult,
-                                   rect, requestId, isSecure, isPasswordField,
-                                   remote }, target) {
+                         searchString, previousResult,
+                         rect, requestId, isSecure, isPasswordField,
+                       }, target) {
     
     
 
@@ -268,16 +266,6 @@ var LoginManagerParent = {
       }
       return match && match.toLowerCase().startsWith(searchStringLower);
     });
-
-    
-    
-    
-    
-    
-    if (remote) {
-      let results = new UserAutoCompleteResult(searchString, matchingLogins, {isSecure});
-      AutoCompletePopup.showPopupWithResults({ browser: target.ownerGlobal, rect, results });
-    }
 
     
     
