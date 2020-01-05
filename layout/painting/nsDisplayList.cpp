@@ -83,7 +83,6 @@
 #include "nsCSSProps.h"
 #include "nsPluginFrame.h"
 #include "nsSVGMaskFrame.h"
-#include "ClientLayerManager.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/WebRenderDisplayItemLayer.h"
@@ -783,7 +782,7 @@ nsDisplayListBuilder::AddAnimationsAndTransitionsToLayer(Layer* aLayer,
   
   
   uint64_t animationGeneration =
-    RestyleManager::GetAnimationGenerationForFrame(aFrame);
+    GeckoRestyleManager::GetAnimationGenerationForFrame(aFrame);
   aLayer->SetAnimationGeneration(animationGeneration);
 
   EffectCompositor::ClearIsRunningOnCompositor(aFrame, aProperty);
@@ -2116,16 +2115,9 @@ already_AddRefed<LayerManager> nsDisplayList::PaintRoot(nsDisplayListBuilder* aB
 
     {
       PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::Layerization);
-
       root = layerBuilder->
         BuildContainerLayerFor(aBuilder, layerManager, frame, nullptr, this,
                                containerParameters, nullptr);
-
-      if (!record.GetStart().IsNull() && gfxPrefs::LayersDrawFPS()) {
-        if (PaintTiming* pt = ClientLayerManager::MaybeGetPaintTiming(layerManager)) {
-          pt->flbMs() = (TimeStamp::Now() - record.GetStart()).ToMilliseconds();
-        }
-      }
     }
 
     if (!root) {
@@ -5011,6 +5003,13 @@ nsDisplayBoxShadowOuter::CanBuildWebRenderDisplayItems()
   bool hasBorderRadius;
   bool nativeTheme =
       nsCSSRendering::HasBoxShadowNativeTheme(mFrame, hasBorderRadius);
+
+  
+  
+  if (nativeTheme) {
+    return false;
+  }
+
   nsPoint offset = ToReferenceFrame();
   nsRect borderRect = mFrame->VisualBorderRectRelativeToSelf() + offset;
   nsRect frameRect =
@@ -5022,11 +5021,15 @@ nsDisplayBoxShadowOuter::CanBuildWebRenderDisplayItems()
     hasBorderRadius = mFrame->GetBorderRadii(sz, sz, Sides(), twipsRadii);
   }
 
-  
-  
-  
-  if (hasBorderRadius || nativeTheme) {
-    return false;
+  if (hasBorderRadius) {
+    RectCornerRadii borderRadii;
+    nsCSSRendering::GetBorderRadii(frameRect,
+                                   borderRect,
+                                   mFrame,
+                                   borderRadii);
+    if (!borderRadii.AreRadiiSame()) {
+      return false;
+    }
   }
 
   for (uint32_t j = shadows->Length(); j  > 0; j--) {
