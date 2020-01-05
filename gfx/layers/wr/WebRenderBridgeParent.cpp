@@ -47,7 +47,7 @@ WebRenderBridgeParent::WebRenderBridgeParent(CompositorBridgeParentBase* aCompos
     
     
     MOZ_ASSERT(mWidget);
-    mWRWindowState = wr_init_window(mPipelineId);
+    mWRWindowState = wr_init_window(mPipelineId, gfxPrefs::WebRenderProfilerEnabled());
   }
   if (mWidget) {
     mCompositorScheduler = new CompositorVsyncScheduler(this, mWidget);
@@ -462,6 +462,15 @@ bool
 WebRenderBridgeParent::DeallocPCompositableParent(PCompositableParent* aActor)
 {
   return true;
+}
+
+void
+WebRenderBridgeParent::SetWebRenderProfilerEnabled(bool aEnabled)
+{
+  if (mWidget) {
+    
+    wr_profiler_set_enabled(mWRWindowState, aEnabled);
+  }
 }
 
 } 
