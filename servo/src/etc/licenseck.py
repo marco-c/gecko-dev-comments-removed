@@ -59,6 +59,7 @@ exceptions = [
     "rust-http-client/http_parser.c", 
     "rust-http-client/http_parser.h", 
     "rust-opengles/gl2.h", 
+    "rust-stb-image/stb_image.c", 
     "servo/dom/bindings/codegen/ply/ply/yacc.py", 
     "servo/dom/bindings/codegen/ply/ply/__init__.py", 
     "servo/dom/bindings/codegen/ply/ply/lex.py", 

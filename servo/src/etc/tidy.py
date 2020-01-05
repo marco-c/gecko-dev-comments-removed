@@ -45,8 +45,6 @@ exceptions = [
     "src/rust-harfbuzz/harfbuzz", 
     "src/skia", 
     "src/servo/dom/bindings/codegen", 
-    "src/rust-opengles", 
-    "src/rust-stb-image", 
 ]
 
 def should_check(name):
