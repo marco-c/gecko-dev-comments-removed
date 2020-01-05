@@ -2,15 +2,13 @@
 
 
 
-use dom::attr::AttrHelpers;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
-use dom::bindings::codegen::InheritTypes::{NodeCast, ElementCast};
-use dom::bindings::js::{MutNullableJS, JS, JSRef, Temporary};
-use dom::bindings::js::OptionalRootable;
+use dom::bindings::codegen::InheritTypes::NodeCast;
+use dom::bindings::js::{JS, JSRef, Temporary, OptionalRootable};
 use dom::bindings::trace::{Traceable, Untraceable};
 use dom::bindings::utils::GlobalStaticData;
 use dom::document::{Document, DocumentHelpers};
-use dom::element::{Element, AttributeHandlers};
+use dom::element::Element;
 use dom::node::{Node, NodeHelpers};
 use dom::window::Window;
 use layout_interface::{DocumentDamage, ReflowForDisplay};
@@ -30,14 +28,12 @@ use servo_net::resource_task::ResourceTask;
 use servo_util::str::DOMString;
 use std::cell::{Cell, RefCell, Ref, RefMut};
 use std::comm::{channel, Receiver, Empty, Disconnected};
-use std::default::Default;
 use std::mem::replace;
 use std::rc::Rc;
 use url::Url;
 
 
 #[jstraceable]
-#[allow(unrooted_must_root)] 
 pub struct Page {
     
     pub id: PipelineId,
@@ -80,7 +76,7 @@ pub struct Page {
     pub resize_event: Untraceable<Cell<Option<WindowSizeData>>>,
 
     
-    pub fragment_node: MutNullableJS<Element>,
+    pub fragment_name: RefCell<Option<String>>,
 
     
     pub resource_task: Untraceable<ResourceTask>,
@@ -154,7 +150,7 @@ impl Page {
             url: Untraceable::new(RefCell::new(None)),
             next_subpage_id: Traceable::new(Cell::new(SubpageId(0))),
             resize_event: Untraceable::new(Cell::new(None)),
-            fragment_node: Default::default(),
+            fragment_name: RefCell::new(None),
             last_reflow_id: Traceable::new(Cell::new(0)),
             resource_task: Untraceable::new(resource_task),
             constellation_chan: Untraceable::new(constellation_chan),
@@ -393,20 +389,7 @@ impl Page {
     
     pub fn find_fragment_node(&self, fragid: DOMString) -> Option<Temporary<Element>> {
         let document = self.frame().as_ref().unwrap().document.root();
-        match document.deref().GetElementById(fragid.to_string()) {
-            Some(node) => Some(node),
-            None => {
-                let doc_node: JSRef<Node> = NodeCast::from_ref(*document);
-                let mut anchors = doc_node.traverse_preorder()
-                                          .filter(|node| node.is_anchor_element());
-                anchors.find(|node| {
-                    let elem: JSRef<Element> = ElementCast::to_ref(*node).unwrap();
-                    elem.get_attribute(ns!(""), "name").root().map_or(false, |attr| {
-                        attr.deref().value().as_slice() == fragid.as_slice()
-                    })
-                }).map(|node| Temporary::from_rooted(ElementCast::to_ref(node).unwrap()))
-            }
-        }
+        document.find_fragment_node(fragid)
     }
 
     pub fn hit_test(&self, point: &Point2D<f32>) -> Option<UntrustedNodeAddress> {
