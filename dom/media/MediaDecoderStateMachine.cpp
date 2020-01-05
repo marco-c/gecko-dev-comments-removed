@@ -2126,7 +2126,7 @@ MediaDecoderStateMachine::
 DecodingState::HandleEndOfAudio()
 {
   AudioQueue().Finish();
-  if (mMaster->CheckIfDecodeComplete()) {
+  if (!mMaster->IsVideoDecoding()) {
     SetState<CompletedState>();
   } else {
     MaybeStopPrerolling();
@@ -2138,7 +2138,7 @@ MediaDecoderStateMachine::
 DecodingState::HandleEndOfVideo()
 {
   VideoQueue().Finish();
-  if (mMaster->CheckIfDecodeComplete()) {
+  if (!mMaster->IsAudioDecoding()) {
     SetState<CompletedState>();
   } else {
     MaybeStopPrerolling();
@@ -2382,7 +2382,7 @@ MediaDecoderStateMachine::
 BufferingState::HandleEndOfAudio()
 {
   AudioQueue().Finish();
-  if (mMaster->CheckIfDecodeComplete()) {
+  if (!mMaster->IsVideoDecoding()) {
     SetState<CompletedState>();
   } else {
     
@@ -2395,7 +2395,7 @@ MediaDecoderStateMachine::
 BufferingState::HandleEndOfVideo()
 {
   VideoQueue().Finish();
-  if (mMaster->CheckIfDecodeComplete()) {
+  if (!mMaster->IsAudioDecoding()) {
     SetState<CompletedState>();
   } else {
     
