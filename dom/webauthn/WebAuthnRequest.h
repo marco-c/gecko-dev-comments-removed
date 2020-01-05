@@ -15,7 +15,7 @@
 namespace mozilla {
 namespace dom {
 
-extern mozilla::LazyLogModule gWebauthLog; 
+
 
 
 
@@ -32,9 +32,9 @@ public:
 
   void AddActiveToken(const char* aCallSite)
   {
-    MOZ_LOG(gWebauthLog, LogLevel::Debug,
-           ("WebAuthnRequest is tracking a new token, called from [%s]",
-            aCallSite));
+    
+    
+    
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
     MOZ_ASSERT(!IsComplete());
     mCountTokens += 1;
