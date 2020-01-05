@@ -8,10 +8,10 @@ use geom::point::Point2D;
 use geom::size::Size2D;
 use servo_msg::compositor_msg::{ReadyState, RenderState};
 
-pub enum WindowMouseEvent {
-    WindowClickEvent(uint, Point2D<f32>),
-    WindowMouseDownEvent(uint, Point2D<f32>),
-    WindowMouseUpEvent(uint, Point2D<f32>),
+pub enum MouseWindowEvent {
+    MouseWindowClickEvent(uint, Point2D<f32>),
+    MouseWindowMouseDownEvent(uint, Point2D<f32>),
+    MouseWindowMouseUpEvent(uint, Point2D<f32>),
 }
 
 pub enum WindowNavigateMsg {
@@ -20,25 +20,29 @@ pub enum WindowNavigateMsg {
 }
 
 
-pub type ResizeCallback = @fn(uint, uint);
-
-
-pub type LoadUrlCallback = @fn(&str);
-
-
-pub type MouseCallback = @fn(WindowMouseEvent);
-
-
-pub type ScrollCallback = @fn(Point2D<f32>);
-
-
-pub type ZoomCallback = @fn(f32);
-
-
-pub type NavigationCallback = @fn(WindowNavigateMsg);
-
-
-pub type FinishedCallback = @fn();
+pub enum WindowEvent {
+    
+    
+    
+    
+    IdleWindowEvent,
+    
+    ResizeWindowEvent(uint, uint),
+    
+    LoadUrlWindowEvent(~str),
+    
+    MouseWindowEventClass(MouseWindowEvent),
+    
+    ScrollWindowEvent(Point2D<f32>),
+    
+    ZoomWindowEvent(f32),
+    
+    NavigationWindowEvent(WindowNavigateMsg),
+    
+    FinishedWindowEvent,
+    
+    QuitWindowEvent,
+}
 
 
 pub trait ApplicationMethods {
@@ -52,24 +56,10 @@ pub trait WindowMethods<A> {
     pub fn size(&self) -> Size2D<f32>;
     
     pub fn present(&mut self);
+ 
+    
+    pub fn recv(@mut self) -> WindowEvent;
 
-    
-    pub fn set_resize_callback(&mut self, new_resize_callback: ResizeCallback);
-    
-    pub fn set_load_url_callback(&mut self, new_load_url_callback: LoadUrlCallback);
-    
-    pub fn set_mouse_callback(&mut self, new_mouse_callback: MouseCallback);
-    
-    pub fn set_scroll_callback(&mut self, new_scroll_callback: ScrollCallback);
-    
-    pub fn set_zoom_callback(&mut self, new_zoom_callback: ZoomCallback);
-    
-    pub fn set_navigation_callback(&mut self, new_navigation_callback: NavigationCallback);
-    
-    pub fn set_finished_callback(&mut self, new_finish_callback: FinishedCallback);
-
-    
-    pub fn check_loop(@mut self) -> bool;
     
     pub fn set_ready_state(@mut self, ready_state: ReadyState);
     
