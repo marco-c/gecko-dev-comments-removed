@@ -5,16 +5,16 @@
 
 
 
-use css::values::*;
+use newcss::values::*;
 
-use css = css::values;
+use css = newcss::values;
 use tok = lexer;
 use lexer::Token;
 use comm::recv;
 use option::{map, is_none};
 use vec::push;
 use parser_util::*;
-use color::parsing::parse_color;
+use newcss::color::parsing::parse_color;
 use vec::push;
 
 type TokenReader = {stream : pipes::Port<Token>, mut lookahead : Option<Token>};
