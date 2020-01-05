@@ -39,6 +39,8 @@ var gSyncUI = {
   
   _syncStartTime: 0,
   _syncAnimationTimer: 0,
+  _withinLastWeekFormat: null,
+  _oneWeekOrOlderFormat: null,
 
   init() {
     
@@ -367,21 +369,31 @@ var gSyncUI = {
     }
   }),
 
+  getWithinLastWeekFormat() {
+    return this._withinLastWeekFormat ||
+           (this._withinLastWeekFormat =
+             new Intl.DateTimeFormat(undefined, {weekday: "long", hour: "numeric", minute: "numeric"}));
+  },
+
+  getOneWeekOrOlderFormat() {
+    return this._oneWeekOrOlderFormat ||
+           (this._oneWeekOrOlderFormat =
+             new Intl.DateTimeFormat(undefined, {month: "long", day: "numeric"}));
+  },
+
   formatLastSyncDate(date) {
-    let dateFormat;
     let sixDaysAgo = (() => {
       let tempDate = new Date();
       tempDate.setDate(tempDate.getDate() - 6);
       tempDate.setHours(0, 0, 0, 0);
       return tempDate;
     })();
+
     
-    if (date < sixDaysAgo) {
-      dateFormat = {month: "long", day: "numeric"};
-    } else {
-      dateFormat = {weekday: "long", hour: "numeric", minute: "numeric"};
-    }
-    let lastSyncDateString = date.toLocaleDateString(undefined, dateFormat);
+    
+    let dateFormat = date < sixDaysAgo ? this.getOneWeekOrOlderFormat() : this.getWithinLastWeekFormat();
+
+    let lastSyncDateString = dateFormat.format(date);
     return this._stringBundle.formatStringFromName("lastSync2.label", [lastSyncDateString], 1);
   },
 
