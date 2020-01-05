@@ -576,11 +576,10 @@ AsyncCompositionManager::AlignFixedAndStickyLayers(Layer* aTransformedSubtreeRoo
   return;
 }
 
-static void
+static StyleAnimationValue
 SampleValue(float aPortion, Animation& aAnimation,
             const StyleAnimationValue& aStart, const StyleAnimationValue& aEnd,
-            const StyleAnimationValue& aLastValue, uint64_t aCurrentIteration,
-            Animatable* aValue, Layer* aLayer)
+            const StyleAnimationValue& aLastValue, uint64_t aCurrentIteration)
 {
   NS_ASSERTION(aStart.GetUnit() == aEnd.GetUnit() ||
                aStart.GetUnit() == StyleAnimationValue::eUnit_None ||
@@ -616,38 +615,61 @@ SampleValue(float aPortion, Animation& aAnimation,
                                      startValue, endValue,
                                      aPortion, interpolatedValue);
   MOZ_ASSERT(uncomputeResult, "could not uncompute value");
+  return interpolatedValue;
+}
 
-  if (aAnimation.property() == eCSSProperty_opacity) {
-    *aValue = interpolatedValue.GetFloatValue();
-    return;
+static void
+ApplyAnimatedValue(Layer* aLayer,
+                   nsCSSPropertyID aProperty,
+                   const AnimationData& aAnimationData,
+                   const StyleAnimationValue& aValue)
+{
+  HostLayer* layerCompositor = aLayer->AsHostLayer();
+  switch (aProperty) {
+    case eCSSProperty_opacity: {
+      MOZ_ASSERT(aValue.GetUnit() == StyleAnimationValue::eUnit_Float,
+                 "Interpolated value for opacity should be float");
+      layerCompositor->SetShadowOpacity(aValue.GetFloatValue());
+      layerCompositor->SetShadowOpacitySetByAnimation(true);
+      break;
+    }
+    case eCSSProperty_transform: {
+      MOZ_ASSERT(aValue.GetUnit() == StyleAnimationValue::eUnit_Transform,
+                 "The unit of interpolated value for transform should be "
+                 "transform");
+      nsCSSValueSharedList* list = aValue.GetCSSValueSharedListValue();
+
+      const TransformData& transformData = aAnimationData.get_TransformData();
+      nsPoint origin = transformData.origin();
+      
+      Point3D transformOrigin = transformData.transformOrigin();
+      nsDisplayTransform::FrameTransformProperties props(list,
+                                                         transformOrigin);
+
+      
+      
+      
+      uint32_t flags = 0;
+      if (!aLayer->GetParent() ||
+          !aLayer->GetParent()->GetTransformIsPerspective()) {
+        flags = nsDisplayTransform::OFFSET_BY_ORIGIN;
+      }
+
+      Matrix4x4 transform =
+        nsDisplayTransform::GetResultingTransformMatrix(props, origin,
+                                                        transformData.appUnitsPerDevPixel(),
+                                                        flags, &transformData.bounds());
+
+      if (ContainerLayer* c = aLayer->AsContainerLayer()) {
+        transform.PostScale(c->GetInheritedXScale(), c->GetInheritedYScale(), 1);
+      }
+      layerCompositor->SetShadowBaseTransform(transform);
+      layerCompositor->SetShadowTransformSetByAnimation(true);
+      break;
+    }
+    default:
+      MOZ_ASSERT_UNREACHABLE("Unhandled animated property");
   }
-
-  nsCSSValueSharedList* interpolatedList =
-    interpolatedValue.GetCSSValueSharedListValue();
-
-  TransformData& data = aAnimation.data().get_TransformData();
-  nsPoint origin = data.origin();
-  
-  Point3D transformOrigin = data.transformOrigin();
-  nsDisplayTransform::FrameTransformProperties props(interpolatedList,
-                                                     transformOrigin);
-
-  
-  
-  
-  uint32_t flags = 0;
-  if (!aLayer->GetParent() || !aLayer->GetParent()->GetTransformIsPerspective()) {
-    flags = nsDisplayTransform::OFFSET_BY_ORIGIN;
-  }
-
-  Matrix4x4 transform =
-    nsDisplayTransform::GetResultingTransformMatrix(props, origin,
-                                                    data.appUnitsPerDevPixel(),
-                                                    flags, &data.bounds());
-
-  InfallibleTArray<TransformFunction> functions;
-  functions.AppendElement(TransformMatrix(transform));
-  *aValue = functions;
 }
 
 static bool
@@ -660,8 +682,13 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
       [&activeAnimations, &aPoint] (Layer* layer)
       {
         AnimationArray& animations = layer->GetAnimations();
+        if (animations.IsEmpty()) {
+          return;
+        }
+
         InfallibleTArray<AnimData>& animationData = layer->GetAnimationData();
 
+        StyleAnimationValue interpolatedValue;
         
         for (size_t i = 0, iEnd = animations.Length(); i < iEnd; ++i) {
           Animation& animation = animations[i];
@@ -719,34 +746,43 @@ SampleAnimations(Layer* aLayer, TimeStamp aPoint)
                                            computedTiming.mBeforeFlag);
 
           
-          Animatable interpolatedValue;
-          SampleValue(portion, animation,
-                      animData.mStartValues[segmentIndex],
-                      animData.mEndValues[segmentIndex],
-                      animData.mEndValues.LastElement(),
-                      computedTiming.mCurrentIteration,
-                      &interpolatedValue, layer);
-          HostLayer* layerCompositor = layer->AsHostLayer();
-          switch (animation.property()) {
-          case eCSSProperty_opacity:
-          {
-            layerCompositor->SetShadowOpacity(interpolatedValue.get_float());
-            layerCompositor->SetShadowOpacitySetByAnimation(true);
-            break;
+          interpolatedValue =
+            SampleValue(portion, animation,
+                        animData.mStartValues[segmentIndex],
+                        animData.mEndValues[segmentIndex],
+                        animData.mEndValues.LastElement(),
+                        computedTiming.mCurrentIteration);
+        }
+
+#ifdef DEBUG
+        
+        const AnimationData& lastData = animations.LastElement().data();
+        for (const Animation& animation : animations) {
+          const AnimationData& data = animation.data();
+          MOZ_ASSERT(data.type() == lastData.type(),
+                     "The type of AnimationData should be the same");
+          if (data.type() == AnimationData::Tnull_t) {
+            continue;
           }
-          case eCSSProperty_transform:
-          {
-            Matrix4x4 matrix = interpolatedValue.get_ArrayOfTransformFunction()[0].get_TransformMatrix().value();
-            if (ContainerLayer* c = layer->AsContainerLayer()) {
-              matrix.PostScale(c->GetInheritedXScale(), c->GetInheritedYScale(), 1);
-            }
-            layerCompositor->SetShadowBaseTransform(matrix);
-            layerCompositor->SetShadowTransformSetByAnimation(true);
-            break;
-          }
-          default:
-            NS_WARNING("Unhandled animated property");
-          }
+
+          MOZ_ASSERT(data.type() == AnimationData::TTransformData);
+          const TransformData& transformData = data.get_TransformData();
+          const TransformData& lastTransformData = lastData.get_TransformData();
+          MOZ_ASSERT(transformData.origin() == lastTransformData.origin() &&
+                     transformData.transformOrigin() ==
+                       lastTransformData.transformOrigin() &&
+                     transformData.bounds() == lastTransformData.bounds() &&
+                     transformData.appUnitsPerDevPixel() ==
+                       lastTransformData.appUnitsPerDevPixel(),
+                     "All of members of TransformData should be the same");
+        }
+#endif
+        if (!interpolatedValue.IsNull()) {
+          Animation& animation = animations.LastElement();
+          ApplyAnimatedValue(layer,
+                             animation.property(),
+                             animation.data(),
+                             interpolatedValue);
         }
       });
   return activeAnimations;
