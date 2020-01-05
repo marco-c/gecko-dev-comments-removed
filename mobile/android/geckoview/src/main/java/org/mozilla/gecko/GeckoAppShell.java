@@ -986,12 +986,6 @@ public class GeckoAppShell
     }
 
     @WrapForJNI(calledFrom = "gecko")
-    private static void setFullScreen(boolean fullscreen) {
-        if (getGeckoInterface() != null)
-            getGeckoInterface().setFullScreen(fullscreen);
-    }
-
-    @WrapForJNI(calledFrom = "gecko")
     private static void performHapticFeedback(boolean aIsLongPress) {
         
         
@@ -1671,12 +1665,6 @@ public class GeckoAppShell
         public Activity getActivity();
         public String getDefaultUAString();
 
-        
-
-
-
-
-        public void setFullScreen(boolean fullscreen);
         public void addPluginView(View view);
         public void removePluginView(final View view);
         public void enableOrientationListener();
