@@ -1187,9 +1187,8 @@ WebrtcVideoConduit::SelectBitrates(unsigned short width,
   
   
   
-  if (mNegotiatedMaxBitrate != 0 && mNegotiatedMaxBitrate > out_max) {
-    out_max = mNegotiatedMaxBitrate;
-  }
+  out_max = MinIgnoreZero(mNegotiatedMaxBitrate, out_max);
+
   MOZ_ASSERT(mPrefMaxBitrate == 0 || out_max <= mPrefMaxBitrate);
 }
 
