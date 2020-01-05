@@ -387,12 +387,21 @@ this.BrowserTestUtils = {
 
 
 
-  domWindowOpened(win) {
+
+
+
+
+
+  domWindowOpened(win, checkFn) {
     return new Promise(resolve => {
       function observer(subject, topic, data) {
         if (topic == "domwindowopened" && (!win || subject === win)) {
+          let observedWindow = subject.QueryInterface(Ci.nsIDOMWindow);
+          if (checkFn && !checkFn(observedWindow)) {
+            return;
+          }
           Services.ww.unregisterNotification(observer);
-          resolve(subject.QueryInterface(Ci.nsIDOMWindow));
+          resolve(observedWindow);
         }
       }
       Services.ww.registerNotification(observer);
