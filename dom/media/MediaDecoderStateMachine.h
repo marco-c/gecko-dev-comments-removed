@@ -172,7 +172,7 @@ public:
   void RemoveOutputStream(MediaStream* aStream);
 
   
-  RefPtr<MediaDecoder::SeekPromise> InvokeSeek(SeekTarget aTarget);
+  RefPtr<MediaDecoder::SeekPromise> InvokeSeek(const SeekTarget& aTarget);
 
   void DispatchSetPlaybackRate(double aPlaybackRate)
   {
@@ -284,7 +284,7 @@ private:
 
   void SetAudioCaptured(bool aCaptured);
 
-  RefPtr<MediaDecoder::SeekPromise> Seek(SeekTarget aTarget);
+  RefPtr<MediaDecoder::SeekPromise> Seek(const SeekTarget& aTarget);
 
   RefPtr<ShutdownPromise> Shutdown();
 
