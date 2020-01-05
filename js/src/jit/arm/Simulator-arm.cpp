@@ -1572,7 +1572,7 @@ Simulator::readQ(int32_t addr, SimInstruction* instr, UnalignedPolicy f)
     }
 
     
-    if (wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
+    if (FixupFault() && wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
         char* ptr = reinterpret_cast<char*>(addr);
         uint64_t value;
         memcpy(&value, ptr, sizeof(value));
@@ -1596,7 +1596,7 @@ Simulator::writeQ(int32_t addr, uint64_t value, SimInstruction* instr, Unaligned
     }
 
     
-    if (wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
+    if (FixupFault() && wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
         char* ptr = reinterpret_cast<char*>(addr);
         memcpy(ptr, &value, sizeof(value));
         return;
@@ -1621,7 +1621,7 @@ Simulator::readW(int32_t addr, SimInstruction* instr, UnalignedPolicy f)
     
     
     
-    if (wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
+    if (FixupFault() && wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
         char* ptr = reinterpret_cast<char*>(addr);
         int value;
         memcpy(&value, ptr, sizeof(value));
@@ -1645,7 +1645,7 @@ Simulator::writeW(int32_t addr, int value, SimInstruction* instr, UnalignedPolic
     }
 
     
-    if (wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
+    if (FixupFault() && wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
         char* ptr = reinterpret_cast<char*>(addr);
         memcpy(ptr, &value, sizeof(value));
         return;
@@ -1721,7 +1721,7 @@ Simulator::readHU(int32_t addr, SimInstruction* instr)
     }
 
     
-    if (wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
+    if (FixupFault() && wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
         char* ptr = reinterpret_cast<char*>(addr);
         uint16_t value;
         memcpy(&value, ptr, sizeof(value));
@@ -1745,7 +1745,7 @@ Simulator::readH(int32_t addr, SimInstruction* instr)
     }
 
     
-    if (wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
+    if (FixupFault() && wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
         char* ptr = reinterpret_cast<char*>(addr);
         int16_t value;
         memcpy(&value, ptr, sizeof(value));
@@ -1770,7 +1770,7 @@ Simulator::writeH(int32_t addr, uint16_t value, SimInstruction* instr)
     }
 
     
-    if (wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
+    if (FixupFault() && wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
         char* ptr = reinterpret_cast<char*>(addr);
         memcpy(ptr, &value, sizeof(value));
         return;
@@ -1793,7 +1793,7 @@ Simulator::writeH(int32_t addr, int16_t value, SimInstruction* instr)
     }
 
     
-    if (wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
+    if (FixupFault() && wasm::IsPCInWasmCode(reinterpret_cast<void *>(get_pc()))) {
         char* ptr = reinterpret_cast<char*>(addr);
         memcpy(ptr, &value, sizeof(value));
         return;
