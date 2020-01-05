@@ -120,7 +120,8 @@ public:
   
   
   
-  void UpdateEffectProperties(nsStyleContext* aStyleContext,
+  template<typename StyleType>
+  void UpdateEffectProperties(StyleType&& aStyleType,
                               dom::Element* aElement,
                               CSSPseudoElementType aPseudoType);
 
