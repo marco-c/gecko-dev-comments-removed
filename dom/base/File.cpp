@@ -158,6 +158,32 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(Blob)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(Blob)
 
+
+
+
+
+
+
+static void
+MakeValidBlobType(nsAString& aType)
+{
+  char16_t* iter = aType.BeginWriting();
+  char16_t* end = aType.EndWriting();
+
+  for ( ; iter != end; ++iter) {
+    char16_t c = *iter;
+    if (c < 0x20 || c > 0x7E) {
+      
+      aType.Truncate();
+      return;
+    }
+
+    if (c >= 'A' && c <= 'Z') {
+      *iter = c + ('a' - 'A');
+    }
+  }
+}
+
  Blob*
 Blob::Create(nsISupports* aParent, BlobImpl* aImpl)
 {
@@ -165,26 +191,6 @@ Blob::Create(nsISupports* aParent, BlobImpl* aImpl)
 
   return aImpl->IsFile() ? new File(aParent, aImpl)
                          : new Blob(aParent, aImpl);
-}
-
- already_AddRefed<Blob>
-Blob::Create(nsISupports* aParent, const nsAString& aContentType,
-             uint64_t aLength)
-{
-  RefPtr<Blob> blob = Blob::Create(aParent,
-    new BlobImplBase(aContentType, aLength));
-  MOZ_ASSERT(!blob->mImpl->IsFile());
-  return blob.forget();
-}
-
- already_AddRefed<Blob>
-Blob::Create(nsISupports* aParent, const nsAString& aContentType,
-             uint64_t aStart, uint64_t aLength)
-{
-  RefPtr<Blob> blob = Blob::Create(aParent,
-    new BlobImplBase(aContentType, aStart, aLength));
-  MOZ_ASSERT(!blob->mImpl->IsFile());
-  return blob.forget();
 }
 
  already_AddRefed<Blob>
@@ -360,7 +366,9 @@ Blob::Constructor(const GlobalObject& aGlobal,
   RefPtr<MultipartBlobImpl> impl = new MultipartBlobImpl();
 
   if (aData.WasPassed()) {
-    impl->InitializeBlob(aGlobal.Context(), aData.Value(), aBag.mType,
+    nsAutoString type(aBag.mType);
+    MakeValidBlobType(type);
+    impl->InitializeBlob(aGlobal.Context(), aData.Value(), type,
                          aBag.mEndings == EndingTypes::Native, aRv);
   } else {
     impl->InitializeBlob(aRv);
@@ -549,7 +557,9 @@ File::Constructor(const GlobalObject& aGlobal,
 {
   RefPtr<MultipartBlobImpl> impl = new MultipartBlobImpl(aName);
 
-  impl->InitializeBlob(aGlobal.Context(), aData, aBag.mType, false, aRv);
+  nsAutoString type(aBag.mType);
+  MakeValidBlobType(type);
+  impl->InitializeBlob(aGlobal.Context(), aData, type, false, aRv);
   if (aRv.Failed()) {
     return nullptr;
   }
@@ -640,8 +650,9 @@ BlobImpl::Slice(const Optional<int64_t>& aStart,
 
   ParseSize((int64_t)thisLength, start, end);
 
-  return CreateSlice((uint64_t)start, (uint64_t)(end - start),
-                     aContentType, aRv);
+  nsAutoString type(aContentType);
+  MakeValidBlobType(type);
+  return CreateSlice((uint64_t)start, (uint64_t)(end - start), type, aRv);
 }
 
 
