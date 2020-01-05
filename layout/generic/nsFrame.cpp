@@ -4514,9 +4514,17 @@ nsIFrame::InlineMinISizeData::OptionallyBreak(nscoord aHyphenWidth)
 }
 
 void
-nsIFrame::InlinePrefISizeData::ForceBreak()
+nsIFrame::InlinePrefISizeData::ForceBreak(StyleClear aBreakType)
 {
-  if (mFloats.Length() != 0) {
+  MOZ_ASSERT(aBreakType == StyleClear::None ||
+             aBreakType == StyleClear::Both ||
+             aBreakType == StyleClear::Left ||
+             aBreakType == StyleClear::Right,
+             "Must be a physical break type");
+
+  
+  
+  if (mFloats.Length() != 0 && aBreakType != StyleClear::None) {
             
             
     nscoord floats_done = 0,
@@ -4524,11 +4532,12 @@ nsIFrame::InlinePrefISizeData::ForceBreak()
             
             floats_cur_left = 0,
             floats_cur_right = 0;
+    const WritingMode wm = mLineContainerWM;
 
     for (uint32_t i = 0, i_end = mFloats.Length(); i != i_end; ++i) {
       const FloatInfo& floatInfo = mFloats[i];
       const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
-      StyleClear breakType = floatDisp->PhysicalBreakType(mLineContainerWM);
+      StyleClear breakType = floatDisp->PhysicalBreakType(wm);
       if (breakType == StyleClear::Left ||
           breakType == StyleClear::Right ||
           breakType == StyleClear::Both) {
@@ -4545,7 +4554,7 @@ nsIFrame::InlinePrefISizeData::ForceBreak()
         }
       }
 
-      StyleFloat floatStyle = floatDisp->PhysicalFloats(mLineContainerWM);
+      StyleFloat floatStyle = floatDisp->PhysicalFloats(wm);
       nscoord& floats_cur =
         floatStyle == StyleFloat::Left ? floats_cur_left : floats_cur_right;
       nscoord floatWidth = floatInfo.Width();
@@ -4562,7 +4571,44 @@ nsIFrame::InlinePrefISizeData::ForceBreak()
 
     mCurrentLine = NSCoordSaturatingAdd(mCurrentLine, floats_done);
 
-    mFloats.Clear();
+    if (aBreakType == StyleClear::Both) {
+      mFloats.Clear();
+    } else {
+      
+      
+      
+      
+      
+      nsTArray<FloatInfo> newFloats;
+      MOZ_ASSERT(aBreakType == StyleClear::Left ||
+                 aBreakType == StyleClear::Right,
+                 "Other values should have been handled in other branches");
+      StyleFloat clearFloatType =
+        aBreakType == StyleClear::Left ? StyleFloat::Left : StyleFloat::Right;
+      
+      
+      for (FloatInfo& floatInfo : Reversed(mFloats)) {
+        const nsStyleDisplay* floatDisp = floatInfo.Frame()->StyleDisplay();
+        if (floatDisp->PhysicalFloats(wm) != clearFloatType) {
+          newFloats.AppendElement(floatInfo);
+        } else {
+          
+          
+          
+          
+          
+          
+          
+          StyleClear floatBreakType = floatDisp->PhysicalBreakType(wm);
+          if (floatBreakType != aBreakType &&
+              floatBreakType != StyleClear::None) {
+            break;
+          }
+        }
+      }
+      newFloats.Reverse();
+      mFloats = Move(newFloats);
+    }
   }
 
   mCurrentLine =
