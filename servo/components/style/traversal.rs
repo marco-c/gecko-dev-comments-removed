@@ -6,7 +6,7 @@
 
 use animation;
 use context::{LocalStyleContext, SharedStyleContext, StyleContext};
-use dom::{OpaqueNode, TNode, TRestyleDamage, UnsafeNode};
+use dom::{OpaqueNode, TNode, UnsafeNode};
 use matching::{ApplicableDeclarations, ElementMatchMethods, MatchMethods, StyleSharingResult};
 use selectors::bloom::BloomFilter;
 use selectors::matching::StyleRelations;
@@ -191,8 +191,8 @@ pub trait DomTraversalContext<N: TNode> {
         
         if parent.is_dirty() {
             unsafe {
-                kid.set_dirty(true);
-                parent.set_dirty_descendants(true);
+                kid.set_dirty();
+                parent.set_dirty_descendants();
             }
         }
     }
@@ -299,12 +299,6 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
     let mut restyle_result = RestyleResult::Continue;
     if nonincremental_layout || node.is_dirty() {
         
-        
-        if node.has_changed() {
-            node.set_style(None);
-        }
-
-        
         let style_sharing_candidate_cache =
             &mut context.local_context().style_sharing_candidate_cache.borrow_mut();
 
@@ -348,9 +342,6 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
                     },
                     None => {
                         relations = StyleRelations::empty();
-                        if node.has_changed() {
-                            node.set_restyle_damage(N::ConcreteRestyleDamage::rebuild_and_reflow())
-                        }
                         None
                     },
                 };
@@ -385,7 +376,7 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
             context.shared_context()
         );
         if had_animations_to_expire {
-            node.set_style(Some(existing_style));
+            node.set_style(existing_style);
         }
     }
 

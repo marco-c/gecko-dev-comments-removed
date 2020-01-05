@@ -2,6 +2,8 @@
 
 
 
+#![allow(unsafe_code)]
+
 use HTMLCanvasData;
 use LayoutNodeType;
 use OpaqueStyleAndLayoutData;
@@ -76,6 +78,10 @@ pub trait LayoutNode: TNode {
 
     
     fn type_id(&self) -> LayoutNodeType;
+
+    fn has_changed(&self) -> bool;
+
+    unsafe fn clear_dirty_bits(&self);
 
     fn get_style_data(&self) -> Option<&AtomicRefCell<PersistentStyleData>>;
 
