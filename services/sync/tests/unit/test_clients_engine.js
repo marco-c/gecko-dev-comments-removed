@@ -92,11 +92,11 @@ add_task(async function test_bad_hmac() {
     return !wbo || !wbo.payload;
   }
 
-  function uploadNewKeys() {
+  async function uploadNewKeys() {
     generateNewKeys(Service.collectionKeys);
     let serverKeys = Service.collectionKeys.asWBO("crypto", "keys");
     serverKeys.encrypt(Service.identity.syncKeyBundle);
-    ok(serverKeys.upload(Service.resource(Service.cryptoKeysURL)).success);
+    ok((await serverKeys.upload(Service.resource(Service.cryptoKeysURL))).success);
   }
 
   try {
@@ -126,7 +126,7 @@ add_task(async function test_bad_hmac() {
     generateNewKeys(Service.collectionKeys);
     let serverKeys = Service.collectionKeys.asWBO("crypto", "keys");
     serverKeys.encrypt(Service.identity.syncKeyBundle);
-    ok(serverKeys.upload(Service.resource(Service.cryptoKeysURL)).success);
+    ok((await serverKeys.upload(Service.resource(Service.cryptoKeysURL))).success);
 
     _("Sync.");
     engine._sync();
@@ -161,14 +161,14 @@ add_task(async function test_bad_hmac() {
     deletedItems       = [];
     check_clients_count(0);
 
-    uploadNewKeys();
+    await uploadNewKeys();
 
     
     engine._sync();
     check_clients_count(1);
 
     
-    uploadNewKeys();
+    await uploadNewKeys();
 
     
     
@@ -317,7 +317,7 @@ add_task(async function test_sync() {
     ok(engine.lastRecordUpload > lastweek);
 
     _("Remove client record.");
-    engine.removeClientData();
+    await engine.removeClientData();
     equal(clientWBO().payload, undefined);
 
     _("Time travel one day back, no record uploaded.");

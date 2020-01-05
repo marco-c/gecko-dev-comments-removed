@@ -133,7 +133,8 @@ AsyncResource.prototype = {
   
   
   
-  _createRequest: function Res__createRequest(method) {
+  _createRequest(method) {
+    this.method = method;
     let channel = NetUtil.newChannel({uri: this.spec, loadUsingSystemPrincipal: true})
                          .QueryInterface(Ci.nsIRequest)
                          .QueryInterface(Ci.nsIHttpChannel);
@@ -172,55 +173,55 @@ AsyncResource.prototype = {
     return channel;
   },
 
-  _onProgress: function Res__onProgress(channel) {},
+  _onProgress(channel) {},
 
-  _doRequest: function _doRequest(action, data, callback) {
+  _doRequest(action, data) {
     this._log.trace("In _doRequest.");
-    this._callback = callback;
-    let channel = this._createRequest(action);
+    return new Promise((resolve, reject) => {
+      this._deferred = { resolve, reject };
+      let channel = this._createRequest(action);
 
-    if ("undefined" != typeof(data))
-      this._data = data;
+      if ("undefined" != typeof(data))
+        this._data = data;
 
-    
-    if ("PUT" == action || "POST" == action) {
       
-      if (this._data.constructor.toString() != String)
-        this._data = JSON.stringify(this._data);
+      if ("PUT" == action || "POST" == action) {
+        
+        if (this._data.constructor.toString() != String)
+          this._data = JSON.stringify(this._data);
 
-      this._log.debug(action + " Length: " + this._data.length);
-      this._log.trace(action + " Body: " + this._data);
+        this._log.debug(action + " Length: " + this._data.length);
+        this._log.trace(action + " Body: " + this._data);
 
-      let type = ("content-type" in this._headers) ?
-        this._headers["content-type"] : "text/plain";
+        let type = ("content-type" in this._headers) ?
+          this._headers["content-type"] : "text/plain";
 
-      let stream = Cc["@mozilla.org/io/string-input-stream;1"].
-        createInstance(Ci.nsIStringInputStream);
-      stream.setData(this._data, this._data.length);
+        let stream = Cc["@mozilla.org/io/string-input-stream;1"].
+          createInstance(Ci.nsIStringInputStream);
+        stream.setData(this._data, this._data.length);
 
-      channel.QueryInterface(Ci.nsIUploadChannel);
-      channel.setUploadStream(stream, type, this._data.length);
-    }
+        channel.QueryInterface(Ci.nsIUploadChannel);
+        channel.setUploadStream(stream, type, this._data.length);
+      }
 
-    
-    
-    let listener = new ChannelListener(this._onComplete, this._onProgress,
-                                       this._log, this.ABORT_TIMEOUT);
-    channel.requestMethod = action;
-    try {
+      
+      
+      let listener = new ChannelListener(this._onComplete, this._onProgress,
+                                         this._log, this.ABORT_TIMEOUT);
+      channel.requestMethod = action;
       channel.asyncOpen2(listener);
-    } catch (ex) {
-      
-      this._log.warn("Caught an error in asyncOpen2", ex);
-      CommonUtils.nextTick(callback.bind(this, ex));
-    }
+    });
   },
 
-  _onComplete: function _onComplete(error, data, channel) {
-    this._log.trace("In _onComplete. Error is " + error + ".");
+  _onComplete(ex, data, channel) {
+    this._log.trace("In _onComplete. Error is " + ex + ".");
 
-    if (error) {
-      this._callback(error);
+    if (ex) {
+      if (!Async.isShutdownException(ex)) {
+        this._log.warn("${action} request to ${url} failed: ${ex}",
+                       { action: this.method, url: this.uri.spec, ex});
+      }
+      this._deferred.reject(ex);
       return;
     }
 
@@ -324,117 +325,29 @@ AsyncResource.prototype = {
       }
     }.bind(this));
 
-    this._callback(null, ret);
+    this._deferred.resolve(ret);
   },
 
-  get: function get(callback) {
-    this._doRequest("GET", undefined, callback);
+  get() {
+    return this._doRequest("GET", undefined);
   },
 
-  put: function put(data, callback) {
-    if (typeof data == "function")
-      [data, callback] = [undefined, data];
-    this._doRequest("PUT", data, callback);
+  put(data) {
+    return this._doRequest("PUT", data);
   },
 
-  post: function post(data, callback) {
-    if (typeof data == "function")
-      [data, callback] = [undefined, data];
-    this._doRequest("POST", data, callback);
+  post(data) {
+    return this._doRequest("POST", data);
   },
 
-  delete: function delete_(callback) {
-    this._doRequest("DELETE", undefined, callback);
+  delete() {
+    return this._doRequest("DELETE", undefined);
   }
 };
 
 
 
-
-
-
-
-
-
-this.Resource = function Resource(uri) {
-  AsyncResource.call(this, uri);
-}
-Resource.prototype = {
-
-  __proto__: AsyncResource.prototype,
-
-  _logName: "Sync.Resource",
-
-  
-  
-  
-  
-  
-  _request: function Res__request(action, data) {
-    let cb = Async.makeSyncCallback();
-    function callback(error, ret) {
-      if (error)
-        cb.throw(error);
-      else
-        cb(ret);
-    }
-
-    
-    try {
-      this._doRequest(action, data, callback);
-      return Async.waitForSyncCallback(cb);
-    } catch (ex) {
-      if (Async.isShutdownException(ex)) {
-        throw ex;
-      }
-      this._log.warn("${action} request to ${url} failed: ${ex}",
-                     { action, url: this.uri.spec, ex });
-      
-      
-      let error = Error(ex.message);
-      error.result = ex.result;
-      let chanStack = [];
-      if (ex.stack)
-        chanStack = ex.stack.trim().split(/\n/).slice(1);
-      let requestStack = error.stack.split(/\n/).slice(1);
-
-      
-      for (let i = 0; i <= 1; i++)
-        requestStack[i] = requestStack[i].replace(/\(".*"\)@/, "(...)@");
-
-      error.stack = chanStack.concat(requestStack).join("\n");
-      throw error;
-    }
-  },
-
-  
-  
-  
-  get: function Res_get() {
-    return this._request("GET");
-  },
-
-  
-  
-  
-  put: function Res_put(data) {
-    return this._request("PUT", data);
-  },
-
-  
-  
-  
-  post: function Res_post(data) {
-    return this._request("POST", data);
-  },
-
-  
-  
-  
-  delete: function Res_delete() {
-    return this._request("DELETE");
-  }
-};
+this.Resource = AsyncResource;
 
 
 

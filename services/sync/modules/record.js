@@ -42,12 +42,12 @@ WBORecord.prototype = {
 
   
   
-  fetch: function fetch(resource) {
+  async fetch(resource) {
     if (!(resource instanceof Resource)) {
       throw new Error("First argument must be a Resource instance.");
     }
 
-    let r = resource.get();
+    let r = await resource.get();
     if (r.success) {
       this.deserialize(r);   
     }
@@ -55,7 +55,7 @@ WBORecord.prototype = {
     return this;
   },
 
-  upload: function upload(resource) {
+  upload(resource) {
     if (!(resource instanceof Resource)) {
       throw new Error("First argument must be a Resource instance.");
     }
@@ -223,12 +223,12 @@ RecordManager.prototype = {
   _recordType: CryptoWrapper,
   _logName: "Sync.RecordManager",
 
-  import: function RecordMgr_import(url) {
+  async import(url) {
     this._log.trace("Importing record: " + (url.spec ? url.spec : url));
     try {
       
       this.response = {};
-      this.response = this.service.resource(url).get();
+      this.response = await this.service.resource(url).get();
 
       
       if (!this.response.success)
@@ -247,11 +247,11 @@ RecordManager.prototype = {
     }
   },
 
-  get: function RecordMgr_get(url) {
+  get(url) {
     
     let spec = url.spec ? url.spec : url;
     if (spec in this._records)
-      return this._records[spec];
+      return Promise.resolve(this._records[spec]);
     return this.import(url);
   },
 
@@ -703,7 +703,7 @@ Collection.prototype = {
   
   
   
-  getBatched(batchSize = DEFAULT_DOWNLOAD_BATCH_SIZE) {
+  async getBatched(batchSize = DEFAULT_DOWNLOAD_BATCH_SIZE) {
     let totalLimit = Number(this.limit) || Infinity;
     if (batchSize <= 0 || batchSize >= totalLimit) {
       
@@ -733,7 +733,7 @@ Collection.prototype = {
         }
         this._log.trace("Performing batched GET", { limit: this.limit, offset: this.offset });
         
-        resp = this.get();
+        resp = await this.get();
         if (!resp.success) {
           break;
         }
@@ -996,7 +996,8 @@ PostQueue.prototype = {
     }
     this.queued = "";
     this.numQueued = 0;
-    let response = this.poster(queued, headers, batch, !!(finalBatchPost && this.batchID !== null));
+    let response = Async.promiseSpinningly(
+                    this.poster(queued, headers, batch, !!(finalBatchPost && this.batchID !== null)));
 
     if (!response.success) {
       this.log.trace("Server error response during a batch", response);

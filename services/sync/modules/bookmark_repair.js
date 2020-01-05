@@ -639,7 +639,7 @@ class BookmarkRepairResponder extends CollectionRepairResponder {
     let itemSource = engine.itemSource();
     itemSource.ids = repairable.map(item => item.syncId);
     log.trace(`checking the server for items`, itemSource.ids);
-    let itemsResponse = itemSource.get();
+    let itemsResponse = await itemSource.get();
     
     
     
