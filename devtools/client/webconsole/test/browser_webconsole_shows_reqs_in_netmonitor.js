@@ -30,7 +30,7 @@ add_task(function* () {
   info("Document loaded.");
 
   
-  testNetmonitor(toolbox);
+  yield testNetmonitor(toolbox);
 
   
   let hud = yield openConsole();
@@ -60,14 +60,12 @@ function loadDocument(browser) {
   return deferred.promise;
 }
 
-function testNetmonitor(toolbox) {
+function* testNetmonitor(toolbox) {
   let monitor = toolbox.getCurrentPanel();
-
   let { gStore, windowRequire } = monitor.panelWin;
-  let Actions = windowRequire("devtools/client/netmonitor/src/actions/index");
   let { getSortedRequests } = windowRequire("devtools/client/netmonitor/src/selectors/index");
 
-  gStore.dispatch(Actions.batchEnable(false));
+  yield waitUntil(() => gStore.getState().requests.requests.size > 0);
 
   is(gStore.getState().requests.requests.size, 1, "Network request appears in the network panel");
 
