@@ -187,7 +187,7 @@ ServoStyleSet::ResolveMappedAttrDeclarationBlocks()
   }
 }
 
-void
+bool
 ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
                                          mozilla::TraversalRootBehavior aRootBehavior) {
   ResolveMappedAttrDeclarationBlocks();
@@ -199,8 +199,10 @@ ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
 
   MOZ_ASSERT(!sInServoTraversal);
   sInServoTraversal = true;
-  Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior);
+  bool postTraversalRequired =
+    Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior);
   sInServoTraversal = false;
+  return postTraversalRequired;
 }
 
 already_AddRefed<nsStyleContext>
@@ -560,30 +562,36 @@ ServoStyleSet::HasStateDependentStyle(dom::Element* aElement,
   return nsRestyleHint(0);
 }
 
-void
+bool
 ServoStyleSet::StyleDocument()
 {
   
   
+  bool postTraversalRequired = false;
   DocumentStyleRootIterator iter(mPresContext->Document());
   while (Element* root = iter.GetNextStyleRoot()) {
-    if (root->ShouldTraverseForServo()) {
-      PrepareAndTraverseSubtree(root, TraversalRootBehavior::Normal);
+    if (PrepareAndTraverseSubtree(root, TraversalRootBehavior::Normal)) {
+      postTraversalRequired = true;
     }
   }
+  return postTraversalRequired;
 }
 
 void
 ServoStyleSet::StyleNewSubtree(Element* aRoot)
 {
   MOZ_ASSERT(!aRoot->HasServoData());
-  PrepareAndTraverseSubtree(aRoot, TraversalRootBehavior::Normal);
+  DebugOnly<bool> postTraversalRequired =
+    PrepareAndTraverseSubtree(aRoot, TraversalRootBehavior::Normal);
+  MOZ_ASSERT(!postTraversalRequired);
 }
 
 void
 ServoStyleSet::StyleNewChildren(Element* aParent)
 {
   PrepareAndTraverseSubtree(aParent, TraversalRootBehavior::UnstyledChildrenOnly);
+  
+  
 }
 
 void

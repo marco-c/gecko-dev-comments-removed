@@ -147,7 +147,9 @@ public:
 
 
 
-  void StyleDocument();
+
+
+  bool StyleDocument();
 
   
 
@@ -225,7 +227,7 @@ private:
 
 
 
-  void PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
+  bool PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
                                  mozilla::TraversalRootBehavior aRootBehavior);
 
   nsPresContext* mPresContext;
