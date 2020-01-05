@@ -160,10 +160,7 @@ NotifyDidRender(layers::CompositorBridgeParentBase* aBridge,
   WrPipelineId pipeline;
   WrEpoch epoch;
   while (wr_rendered_epochs_next(aEpochs, &pipeline, &epoch)) {
-    
-    
-    
-    aBridge->NotifyDidComposite(epoch.mHandle, aStart, aEnd);
+    aBridge->NotifyDidCompositeToPipeline(pipeline, epoch, aStart, aEnd);
   }
   wr_rendered_epochs_delete(aEpochs);
 }
