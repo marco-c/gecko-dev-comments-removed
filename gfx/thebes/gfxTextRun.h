@@ -205,16 +205,16 @@ public:
         
         
         virtual void GetHyphenationBreaks(Range aRange,
-                                          HyphenType *aBreakBefore) = 0;
+                                          HyphenType *aBreakBefore) const = 0;
 
         
         
         
-        virtual mozilla::StyleHyphens GetHyphensOption() = 0;
+        virtual mozilla::StyleHyphens GetHyphensOption() const = 0;
 
         
         
-        virtual gfxFloat GetHyphenWidth() = 0;
+        virtual gfxFloat GetHyphenWidth() const = 0;
 
         typedef gfxFont::Spacing Spacing;
 
@@ -224,15 +224,15 @@ public:
 
 
 
-        virtual void GetSpacing(Range aRange, Spacing *aSpacing) = 0;
+        virtual void GetSpacing(Range aRange, Spacing *aSpacing) const = 0;
 
         
         
-        virtual already_AddRefed<DrawTarget> GetDrawTarget() = 0;
+        virtual already_AddRefed<DrawTarget> GetDrawTarget() const = 0;
 
         
         
-        virtual uint32_t GetAppUnitsPerDevUnit() = 0;
+        virtual uint32_t GetAppUnitsPerDevUnit() const = 0;
     };
 
     struct DrawParams
@@ -851,12 +851,7 @@ public:
     }
 
     
-
-
-
-
-
-    gfxFloat GetHyphenWidth(gfxTextRun::PropertyProvider* aProvider);
+    gfxFloat GetHyphenWidth(const gfxTextRun::PropertyProvider* aProvider);
 
     
 
