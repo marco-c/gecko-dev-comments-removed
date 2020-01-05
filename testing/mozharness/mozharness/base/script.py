@@ -387,7 +387,9 @@ class ScriptMixin(PlatformMixin):
         
         
         
-        response = urllib2.urlopen(request)
+        
+        
+        response = urllib2.urlopen(request, timeout=30)
 
         if parsed_url.scheme in ('http', 'https'):
             expected_file_size = int(response.headers.get('Content-Length'))
