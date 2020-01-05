@@ -579,6 +579,7 @@ pub fn http_fetch(request: Rc<Request>,
             => true,
         _ => false
     };
+
     
     if response.is_none() {
         
@@ -606,8 +607,8 @@ pub fn http_fetch(request: Rc<Request>,
         request.skip_service_worker.set(true);
 
         
-        let fetch_result = http_network_or_cache_fetch(request.clone(), credentials, authentication_fetch_flag,
-                                                       done_chan, context);
+        let fetch_result = http_network_or_cache_fetch(request.clone(), authentication_fetch_flag,
+                                                       cors_flag, done_chan, context);
 
         
         if cors_flag && cors_check(request.clone(), &fetch_result).is_err() {
@@ -790,8 +791,8 @@ fn http_redirect_fetch(request: Rc<Request>,
 
 
 fn http_network_or_cache_fetch(request: Rc<Request>,
-                               credentials_flag: bool,
                                authentication_fetch_flag: bool,
+                               cors_flag: bool,
                                done_chan: &mut DoneChannel,
                                context: &FetchContext)
                                -> Response {
@@ -806,11 +807,19 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         Rc::new((*request).clone())
     };
 
+    
+    let credentials_flag = match http_request.credentials_mode {
+        CredentialsMode::Include => true,
+        CredentialsMode::CredentialsSameOrigin if http_request.response_tainting.get() == ResponseTainting::Basic
+            => true,
+        _ => false
+    };
+
     let content_length_value = match *http_request.body.borrow() {
         None =>
             match *http_request.method.borrow() {
                 
-                Method::Head | Method::Post | Method::Put =>
+                Method::Post | Method::Put =>
                     Some(0),
                 
                 _ => None
@@ -825,6 +834,8 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     }
 
     
+
+    
     match *http_request.referrer.borrow() {
         Referrer::NoReferrer => (),
         Referrer::ReferrerUrl(ref http_request_referrer) =>
@@ -836,7 +847,8 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
     };
 
     
-    if http_request.omit_origin_header.get() == false {
+    if cors_flag ||
+      (*http_request.method.borrow() != Method::Get && *http_request.method.borrow() != Method::Head) {
         
         
     }
@@ -859,7 +871,7 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         },
 
         
-        CacheMode::Reload => {
+        CacheMode::Reload | CacheMode::NoStore => {
             
             if !http_request.headers.borrow().has::<Pragma>() {
                 http_request.headers.borrow_mut().set(Pragma::NoCache);
@@ -874,13 +886,8 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         _ => {}
     }
 
+    
     let current_url = http_request.current_url();
-    
-    
-    
-    
-    
-    
     {
         let headers = &mut *http_request.headers.borrow_mut();
         let host = Host {
@@ -944,7 +951,8 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
         http_request.cache_mode.get() != CacheMode::Reload &&
         complete_http_response_from_cache.is_some() {
         
-        if http_request.cache_mode.get() == CacheMode::ForceCache {
+        if http_request.cache_mode.get() == CacheMode::ForceCache ||
+           http_request.cache_mode.get() == CacheMode::OnlyIfCached {
             
             
         }
@@ -976,34 +984,87 @@ fn http_network_or_cache_fetch(request: Rc<Request>,
 
     
     if response.is_none() {
+        if http_request.cache_mode.get() == CacheMode::OnlyIfCached {
+            return Response::network_error(NetworkError::Internal("Couldn't find response in cache".into()))
+        }
         response = Some(http_network_fetch(http_request.clone(), credentials_flag,
                                            done_chan, context));
     }
     let response = response.unwrap();
 
-    
     if let Some(status) = response.status {
-        if status == StatusCode::NotModified &&
-            (http_request.cache_mode.get() == CacheMode::Default ||
-            http_request.cache_mode.get() == CacheMode::NoCache) {
-            
-            
-            
+        match status {
+            StatusCode::NotModified => {
+                
+                if http_request.cache_mode.get() == CacheMode::Default ||
+                   http_request.cache_mode.get() == CacheMode::NoCache {
+                    
+                    
+                    
 
-            
-            
-            
-            
+                    
+                    
+                    
+                    
 
-            
+                    
 
-            
-            
+                    
+                    
 
-            
-            
-            
+                    
+                    
+                    
+                }
+            },
+            StatusCode::Unauthorized => {
+                
+                
+                if cors_flag && !credentials_flag {
+                    return response;
+                }
+
+                
+                
+
+                
+                if !http_request.use_url_credentials || authentication_fetch_flag {
+                    
+                    
+                    
+                    
+                    return response;
+                }
+
+                
+                return http_network_or_cache_fetch(http_request, true, cors_flag, done_chan, context);
+            },
+            StatusCode::ProxyAuthenticationRequired => {
+                
+                
+                
+
+                
+                
+
+                
+                
+                
+                
+                
+                return response;
+
+                
+                
+                
+            },
+            _ => {}
         }
+    }
+
+    
+    if authentication_fetch_flag {
+        
     }
 
     
