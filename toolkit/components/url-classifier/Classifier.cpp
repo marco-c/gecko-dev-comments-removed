@@ -20,6 +20,7 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/Base64.h"
 #include "mozilla/Unused.h"
+#include "mozilla/TypedEnumBits.h"
 
 
 extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
@@ -476,6 +477,16 @@ Classifier::TableRequest(nsACString& aResult)
   aResult.Append(metadata);
 }
 
+
+enum class PrefixMatch : uint8_t {
+  eNoMatch = 0x00,
+  eMatchV2Prefix = 0x01,
+  eMatchV4Prefix = 0x02,
+  eMatchBoth = eMatchV2Prefix | eMatchV4Prefix
+};
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(PrefixMatch)
+
 nsresult
 Classifier::Check(const nsACString& aSpec,
                   const nsACString& aTables,
@@ -505,6 +516,8 @@ Classifier::Check(const nsACString& aSpec,
     }
   }
 
+  PrefixMatch matchingStatistics = PrefixMatch::eNoMatch;
+
   
   for (uint32_t i = 0; i < fragments.Length(); i++) {
     Completion lookupHash;
@@ -520,6 +533,22 @@ Classifier::Check(const nsACString& aSpec,
     for (uint32_t i = 0; i < cacheArray.Length(); i++) {
       LookupCache *cache = cacheArray[i];
       bool has, complete;
+
+      if (LookupCache::Cast<LookupCacheV4>(cache)) {
+        
+        
+        rv = cache->Has(lookupHash, &has, &complete);
+        if (NS_FAILED(rv)) {
+          LOG(("Failed to lookup fragment %s V4", fragments[i].get()));
+        }
+        if (has) {
+          matchingStatistics |= PrefixMatch::eMatchV4Prefix;
+          
+          
+        }
+        continue;
+      }
+
       rv = cache->Has(lookupHash, &has, &complete);
       NS_ENSURE_SUCCESS(rv, rv);
       if (has) {
@@ -545,9 +574,13 @@ Classifier::Check(const nsACString& aSpec,
         result->mComplete = complete;
         result->mFresh = (age < aFreshnessGuarantee);
         result->mTableName.Assign(cache->TableName());
+
+        matchingStatistics |= PrefixMatch::eMatchV2Prefix;
       }
     }
 
+    Telemetry::Accumulate(Telemetry::URLCLASSIFIER_PREFIX_MATCH,
+                          static_cast<uint8_t>(matchingStatistics));
   }
 
   return NS_OK;

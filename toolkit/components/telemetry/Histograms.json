@@ -3885,6 +3885,14 @@
     "bug_numbers": [1305801],
     "description": "An error was encountered while parsing a partial update returned by a Safe Browsing V4 server (0 = addition of an already existing prefix, 1 = parser got into an infinite loop, 2 = removal index out of bounds, 3 = checksum mismatch, 4 = missing checksum)"
   },
+  "URLCLASSIFIER_PREFIX_MATCH": {
+    "alert_emails": ["safebrowsing-telemetry@mozilla.org"],
+    "expires_in_version": "58",
+    "kind": "enumerated",
+    "n_values": 4,
+    "bug_numbers": [1298257],
+    "description": "Classifier prefix matching result (0 = no match, 1 = match only V2, 2 = match only V4, 3 = match both V2 and V4)"
+  },
   "CSP_DOCUMENTS_COUNT": {
     "alert_emails": ["seceng@mozilla.com"],
     "bug_numbers": [1252829],
@@ -10454,5 +10462,15 @@
     "n_buckets": 50,
     "bug_numbers": [1301346],
     "description": "The time spent handling beforeunload event in milliseconds. It measures all documents and subframes separately. If there are multiple handlers for the unload event in a document, this will record a single value across all handlers in the document."
+  },
+  "TABCHILD_PAINT_TIME": {
+    "alert_emails": ["mconley@mozilla.com"],
+    "bug_numbers": [1313686],
+    "expires_in_version": "56",
+    "kind": "exponential",
+    "high": 1000,
+    "n_buckets": 50,
+    "description": "Time spent painting the contents of a remote browser (ms).",
+    "releaseChannelCollection": "opt-out"
   }
 }

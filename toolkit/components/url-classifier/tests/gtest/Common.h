@@ -19,3 +19,8 @@ void ApplyUpdate(nsTArray<TableUpdate*>& updates);
 
 void ApplyUpdate(TableUpdate* update);
 
+
+
+void PrefixArrayToPrefixStringMap(const nsTArray<nsCString>& prefixArray,
+                                  PrefixStringMap& out);
+
