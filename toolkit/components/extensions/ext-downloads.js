@@ -74,7 +74,7 @@ class DownloadItem {
       this.download.hasPartialData && !this.download.error;
   }
   get error() {
-    if (!this.download.stopped || this.download.succeeded) {
+    if (!this.download.startTime || !this.download.stopped || this.download.succeeded) {
       return null;
     }
     
@@ -126,7 +126,7 @@ class DownloadItem {
   
   
   
-  _change() {
+  _storePrechange() {
     for (let field of DOWNLOAD_ITEM_CHANGE_FIELDS) {
       this.prechange[field] = this[field];
     }
@@ -156,6 +156,7 @@ const DownloadMap = {
           onDownloadAdded(download) {
             const item = self.newFromDownload(download, null);
             self.emit("create", item);
+            item._storePrechange();
           },
 
           onDownloadRemoved(download) {
@@ -172,12 +173,8 @@ const DownloadMap = {
             if (item == null) {
               Cu.reportError("Got onDownloadChanged for unknown download object");
             } else {
-              
-              
-              if (Object.keys(item.prechange).length > 0) {
-                self.emit("change", item);
-              }
-              item._change();
+              self.emit("change", item);
+              item._storePrechange();
             }
           },
         }).then(() => list.getAll())
