@@ -9,6 +9,7 @@
 #define nsCSSPseudoClasses_h___
 
 #include "nsStringFwd.h"
+#include "mozilla/CSSEnabledState.h"
 
 
 
