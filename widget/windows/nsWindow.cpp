@@ -6038,7 +6038,8 @@ LRESULT nsWindow::ProcessCharMessage(const MSG &aMsg, bool *aEventDispatched)
   
   ModifierKeyState modKeyState;
   NativeKey nativeKey(this, aMsg, modKeyState);
-  return static_cast<LRESULT>(nativeKey.HandleCharMessage(aEventDispatched));
+  return static_cast<LRESULT>(nativeKey.HandleCharMessage(aMsg,
+                                                          aEventDispatched));
 }
 
 LRESULT nsWindow::ProcessKeyUpMessage(const MSG &aMsg, bool *aEventDispatched)
@@ -7795,7 +7796,7 @@ void nsWindow::PickerClosed()
 }
 
 bool
-nsWindow::ComputeShouldAccelerate()
+nsWindow::WidgetTypeSupportsAcceleration()
 {
   
   
@@ -7804,12 +7805,8 @@ nsWindow::ComputeShouldAccelerate()
   
   
   
-  if (mTransparencyMode == eTransparencyTransparent ||
-      (IsPopup() && DeviceManagerDx::Get()->IsWARP()))
-  {
-    return false;
-  }
-  return nsBaseWidget::ComputeShouldAccelerate();
+  return mTransparencyMode != eTransparencyTransparent &&
+         !(IsPopup() && DeviceManagerDx::Get()->IsWARP());
 }
 
 void

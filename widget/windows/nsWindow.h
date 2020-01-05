@@ -261,7 +261,7 @@ public:
 
 
   virtual bool            AutoErase(HDC dc);
-  bool ComputeShouldAccelerate() override;
+  bool WidgetTypeSupportsAcceleration() override;
 
   void                    ForcePresent();
 
