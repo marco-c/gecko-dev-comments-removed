@@ -470,7 +470,8 @@ this.CrashManager.prototype = Object.freeze({
       }
 
       
-      if (processType === this.PROCESS_TYPE_CONTENT) {
+      if (processType === this.PROCESS_TYPE_CONTENT ||
+          processType === this.PROCESS_TYPE_GPU) {
         this._sendCrashPing(id, processType, date, metadata);
       }
     }.bind(this));
