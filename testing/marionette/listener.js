@@ -988,23 +988,37 @@ function get(msg) {
         return;
       }
 
-      let isDocument = state & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
-      let isStart = state & Ci.nsIWebProgressListener.STATE_START;
-      let loadedURL = request.URI.spec;
+      const isDocument = state & Ci.nsIWebProgressListener.STATE_IS_DOCUMENT;
+      const loadedURL = request.URI.spec;
+
       
       
       
-      let originalURL = request.originalURI.spec;
-      let isRequestedURL = loadedURL == requestedURL ||
+      const originalURL = request.originalURI.spec;
+      const isRequestedURL = loadedURL == requestedURL ||
           originalURL == requestedURL;
 
-      if (isDocument && isStart && isRequestedURL) {
-        
-        
-        
-        
-        
+      if (!isDocument || !isRequestedURL) {
+        return;
+      }
+
+      
+      
+      
+      
+      
+      if (state & Ci.nsIWebProgressListener.STATE_START) {
         sawLoad = true;
+      }
+
+      
+      
+      
+      else if (state & Ci.nsIWebProgressListener.STATE_STOP &&
+          content.document instanceof content.ImageDocument) {
+        pollForReadyState(msg, start, () => {
+          removeEventListener("DOMContentLoaded", onDOMContentLoaded, false);
+        });
       }
     },
 
