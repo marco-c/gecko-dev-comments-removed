@@ -114,12 +114,16 @@ public:
                    nsIDocShellTreeItem* aOriginalRequestor,
                    nsIDocShellTreeItem** aFoundItem);
 
-  nsTArray<nsPIDOMWindowOuter*> GetTopLevelWindows();
+  nsTArray<nsPIDOMWindowOuter*> GetTopLevelWindows() const;
   const nsTArray<nsPIDOMWindowOuter*>& GetWindows() { return mWindows; }
 
   
   
   nsIEventTarget* EventTargetFor(TaskCategory aCategory) const override;
+
+  
+  
+  bool IsBackground() const override;
 
 private:
   virtual AbstractThread*

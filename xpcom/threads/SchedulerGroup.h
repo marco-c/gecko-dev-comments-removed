@@ -9,6 +9,7 @@
 
 #include "mozilla/AlreadyAddRefed.h"
 #include "mozilla/TaskCategory.h"
+#include "mozilla/TimeStamp.h"
 #include "nsCOMPtr.h"
 #include "nsISupportsImpl.h"
 
@@ -37,6 +38,10 @@ public:
   SchedulerGroup();
 
   NS_INLINE_DECL_PURE_VIRTUAL_REFCOUNTING
+
+  
+  
+  virtual bool IsBackground() const { return false; }
 
   class MOZ_STACK_CLASS AutoProcessEvent final {
   public:
@@ -75,6 +80,10 @@ public:
   static nsresult UnlabeledDispatch(const char* aName,
                                     TaskCategory aCategory,
                                     already_AddRefed<nsIRunnable>&& aRunnable);
+
+  static void MarkVsyncReceived();
+
+  static void MarkVsyncRan();
 
 protected:
   

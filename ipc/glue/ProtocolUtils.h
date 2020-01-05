@@ -192,12 +192,6 @@ public:
     void SetEventTargetForActor(IProtocol* aActor, nsIEventTarget* aEventTarget);
 
     
-    
-    
-    void ReplaceEventTargetForActor(IProtocol* aActor,
-                                    nsIEventTarget* aEventTarget);
-
-    
     virtual nsIEventTarget* GetActorEventTarget();
 
 protected:
@@ -208,9 +202,6 @@ protected:
     void SetIPCChannel(MessageChannel* aChannel) { mChannel = aChannel; }
 
     virtual void SetEventTargetForActorInternal(IProtocol* aActor, nsIEventTarget* aEventTarget);
-    virtual void ReplaceEventTargetForActorInternal(
-      IProtocol* aActor,
-      nsIEventTarget* aEventTarget);
 
     virtual already_AddRefed<nsIEventTarget>
     GetActorEventTargetInternal(IProtocol* aActor);
@@ -385,6 +376,7 @@ public:
     virtual nsIEventTarget*
     GetActorEventTarget();
 
+    virtual void OnChannelReceivedMessage(const Message& aMsg) {}
 protected:
     
     
@@ -397,9 +389,6 @@ protected:
     GetSpecificMessageEventTarget(const Message& aMsg) { return nullptr; }
 
     virtual void SetEventTargetForActorInternal(IProtocol* aActor, nsIEventTarget* aEventTarget);
-    virtual void ReplaceEventTargetForActorInternal(
-      IProtocol* aActor,
-      nsIEventTarget* aEventTarget);
 
     virtual already_AddRefed<nsIEventTarget>
     GetActorEventTargetInternal(IProtocol* aActor);

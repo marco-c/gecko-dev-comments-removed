@@ -1088,6 +1088,8 @@ MessageChannel::OnMessageReceivedFromLink(Message&& aMsg)
     if (MaybeInterceptSpecialIOMessage(aMsg))
         return;
 
+    mListener->OnChannelReceivedMessage(aMsg);
+
     
     
     if (aMsg.is_sync() && aMsg.is_reply()) {
