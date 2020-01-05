@@ -248,7 +248,7 @@ impl<'ln> LayoutNode<'ln> {
         self.dump_indent(0);
     }
 
-    fn dump_indent(self, indent: uint) {
+    fn dump_indent(self, indent: u32) {
         let mut s = String::new();
         for _ in range(0, indent) {
             s.push_str("  ");
@@ -267,10 +267,10 @@ impl<'ln> LayoutNode<'ln> {
                 self.type_id(), self.has_changed(), self.is_dirty(), self.has_dirty_descendants())
     }
 
-    pub fn flow_debug_id(self) -> uint {
+    pub fn flow_debug_id(self) -> usize {
         let layout_data_ref = self.borrow_layout_data();
         match *layout_data_ref {
-            None              => 0u,
+            None => 0,
             Some(ref layout_data) => layout_data.data.flow_construction_result.debug_id()
         }
     }
@@ -285,10 +285,10 @@ impl<'ln> LayoutNode<'ln> {
         }
     }
 
-    /// Returns an iterator over this node's children.
+    
     pub fn children(self) -> LayoutNodeChildrenIterator<'ln> {
-        // FIXME(zwarich): Remove this when UFCS lands and there is a better way
-        // of disambiguating methods.
+        
+        
         fn first_child<T: TLayoutNode>(this: T) -> Option<T> {
             this.first_child()
         }
@@ -309,9 +309,9 @@ impl<'ln> LayoutNode<'ln> {
         &self.node
     }
 
-    /// Resets layout data and styles for the node.
-    ///
-    /// FIXME(pcwalton): Do this as part of fragment building instead of in a traversal.
+    
+    
+    
     pub fn initialize_layout_data(self, chan: LayoutChan) {
         let mut layout_data_ref = self.mutate_layout_data();
         match *layout_data_ref {
@@ -806,7 +806,7 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
         self.node.debug_id()
     }
 
-    pub fn flow_debug_id(self) -> uint {
+    pub fn flow_debug_id(self) -> usize {
         self.node.flow_debug_id()
     }
 
@@ -1135,11 +1135,11 @@ pub trait PostorderNodeMutTraversal {
 
 
 
-pub type UnsafeLayoutNode = (uint, uint);
+pub type UnsafeLayoutNode = (usize, usize);
 
 pub fn layout_node_to_unsafe_layout_node(node: &LayoutNode) -> UnsafeLayoutNode {
     unsafe {
-        let ptr: uint = mem::transmute_copy(node);
+        let ptr: usize = mem::transmute_copy(node);
         (ptr, 0)
     }
 }

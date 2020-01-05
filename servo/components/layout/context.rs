@@ -86,7 +86,7 @@ pub struct SharedLayoutContext {
 
     
     
-    pub generation: uint,
+    pub generation: u32,
 }
 
 pub struct SharedLayoutContextWrapper(pub *const SharedLayoutContext);

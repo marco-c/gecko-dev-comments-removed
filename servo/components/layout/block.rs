@@ -73,9 +73,6 @@ pub struct FloatedBlockInfo {
     pub float_ceiling: Au,
 
     
-    pub index: Option<uint>,
-
-    
     pub float_kind: FloatKind,
 }
 
@@ -84,7 +81,6 @@ impl FloatedBlockInfo {
         FloatedBlockInfo {
             containing_inline_size: Au(0),
             float_ceiling: Au(0),
-            index: None,
             float_kind: float_kind,
         }
     }

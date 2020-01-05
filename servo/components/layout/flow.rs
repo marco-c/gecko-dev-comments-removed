@@ -991,9 +991,9 @@ impl BaseFlow {
         &self.weak_ref_count
     }
 
-    pub fn debug_id(&self) -> uint {
+    pub fn debug_id(&self) -> usize {
         let p = self as *const _;
-        p as uint
+        p as usize
     }
 
     

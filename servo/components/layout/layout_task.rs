@@ -107,7 +107,7 @@ pub struct LayoutTaskData {
 
     
     
-    pub generation: uint,
+    pub generation: u32,
 
     
     pub content_box_response: Rect<Au>,

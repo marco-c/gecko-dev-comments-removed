@@ -28,7 +28,7 @@ use std::mem;
 
 
 
-type Generation = uint;
+type Generation = u32;
 
 
 
