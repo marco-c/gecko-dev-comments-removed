@@ -81,7 +81,8 @@ public:
 
   static MP4Metadata::ResultAndByteBuffer Metadata(Stream* aSource);
 
-  uint32_t GetNumberTracks(mozilla::TrackInfo::TrackType aType) const;
+  MP4Metadata::ResultAndTrackCount
+  GetNumberTracks(mozilla::TrackInfo::TrackType aType) const;
   mozilla::UniquePtr<mozilla::TrackInfo> GetTrackInfo(mozilla::TrackInfo::TrackType aType,
                                                       size_t aTrackNumber) const;
   bool CanSeek() const;
@@ -129,7 +130,8 @@ public:
 
   static MP4Metadata::ResultAndByteBuffer Metadata(Stream* aSource);
 
-  uint32_t GetNumberTracks(mozilla::TrackInfo::TrackType aType) const;
+  MP4Metadata::ResultAndTrackCount
+  GetNumberTracks(mozilla::TrackInfo::TrackType aType) const;
   mozilla::UniquePtr<mozilla::TrackInfo> GetTrackInfo(mozilla::TrackInfo::TrackType aType,
                                                       size_t aTrackNumber) const;
   bool CanSeek() const;
@@ -264,20 +266,30 @@ TrackTypeToString(mozilla::TrackInfo::TrackType aType)
   }
 }
 
-uint32_t
+MP4Metadata::ResultAndTrackCount
 MP4Metadata::GetNumberTracks(mozilla::TrackInfo::TrackType aType) const
 {
-  uint32_t numTracks = mStagefright->GetNumberTracks(aType);
+  MP4Metadata::ResultAndTrackCount numTracks =
+    mStagefright->GetNumberTracks(aType);
 
   if (!mRust) {
     return numTracks;
   }
 
-  uint32_t numTracksRust = mRust->GetNumberTracks(aType);
-  MOZ_LOG(sLog, LogLevel::Info, ("%s tracks found: stagefright=%u rust=%u",
-                                 TrackTypeToString(aType), numTracks, numTracksRust));
+  MP4Metadata::ResultAndTrackCount numTracksRust =
+    mRust->GetNumberTracks(aType);
+  MOZ_LOG(sLog, LogLevel::Info, ("%s tracks found: stagefright=(%s)%u rust=(%s)%u",
+                                 TrackTypeToString(aType),
+                                 numTracks.Result().Description().get(),
+                                 numTracks.Ref(),
+                                 numTracksRust.Result().Description().get(),
+                                 numTracksRust.Ref()));
 
-  bool numTracksMatch = numTracks == numTracksRust;
+  
+  
+  bool numTracksMatch =
+    (numTracks.Ref() != NumberTracksError() ? numTracks.Ref() : 0) ==
+    (numTracksRust.Ref() != NumberTracksError() ? numTracksRust.Ref() : 0);
 
   if (aType == mozilla::TrackInfo::kAudioTrack && !mReportedAudioTrackTelemetry) {
     Telemetry::Accumulate(Telemetry::MEDIA_RUST_MP4PARSE_TRACK_MATCH_AUDIO,
@@ -289,13 +301,53 @@ MP4Metadata::GetNumberTracks(mozilla::TrackInfo::TrackType aType) const
     mReportedVideoTrackTelemetry = true;
   }
 
+  if (!numTracksMatch &&
+      MediaPrefs::MediaWarningsAsErrorsStageFrightVsRust()) {
+    return {MediaResult(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+                        RESULT_DETAIL("Different numbers of tracks: "
+                                      "Stagefright=%u (%s) Rust=%u (%s)",
+                                      numTracks.Ref(),
+                                      numTracks.Result().Description().get(),
+                                      numTracksRust.Ref(),
+                                      numTracksRust.Result().Description().get())),
+            NumberTracksError()};
+  }
+
+  
   if (mPreferRust || ShouldPreferRust()) {
     MOZ_LOG(sLog, LogLevel::Info, ("Preferring rust demuxer"));
     mPreferRust = true;
     return numTracksRust;
   }
 
-  return numTracks;
+  
+  if (!numTracksMatch) {
+    return {MediaResult(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+                        RESULT_DETAIL("Different numbers of tracks: "
+                                      "Stagefright=%u (%s) Rust=%u (%s)",
+                                      numTracks.Ref(),
+                                      numTracks.Result().Description().get(),
+                                      numTracksRust.Ref(),
+                                      numTracksRust.Result().Description().get())),
+            numTracks.Ref()};
+  }
+
+  
+
+  
+  if (numTracks.Ref() == NumberTracksError() ||
+      numTracksRust.Ref() == NumberTracksError()) {
+    return {MediaResult(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+                        RESULT_DETAIL("Errors: "
+                                      "Stagefright=(%s) Rust=(%s)",
+                                      numTracks.Result().Description().get(),
+                                      numTracksRust.Result().Description().get())),
+            numTracks.Ref()};
+  }
+
+  
+  
+  return numTracksRust;
 }
 
 bool MP4Metadata::ShouldPreferRust() const {
@@ -303,26 +355,31 @@ bool MP4Metadata::ShouldPreferRust() const {
     return false;
   }
   
-  uint32_t numTracks = mRust->GetNumberTracks(TrackInfo::kAudioTrack);
-  for (auto i = 0; i < numTracks; i++) {
-    auto info = mRust->GetTrackInfo(TrackInfo::kAudioTrack, i);
-    if (!info) {
-      return false;
-    }
-    if (info->mMimeType.EqualsASCII("audio/opus") ||
-        info->mMimeType.EqualsASCII("audio/flac")) {
-      return true;
+  MP4Metadata::ResultAndTrackCount numTracks =
+    mRust->GetNumberTracks(TrackInfo::kAudioTrack);
+  if (numTracks.Ref() != NumberTracksError()) {
+    for (auto i = 0; i < numTracks.Ref(); i++) {
+      auto info = mRust->GetTrackInfo(TrackInfo::kAudioTrack, i);
+      if (!info) {
+        return false;
+      }
+      if (info->mMimeType.EqualsASCII("audio/opus") ||
+          info->mMimeType.EqualsASCII("audio/flac")) {
+        return true;
+      }
     }
   }
 
   numTracks = mRust->GetNumberTracks(TrackInfo::kVideoTrack);
-  for (auto i = 0; i < numTracks; i++) {
-    auto info = mRust->GetTrackInfo(TrackInfo::kVideoTrack, i);
-    if (!info) {
-      return false;
-    }
-    if (info->mMimeType.EqualsASCII("video/vp9")) {
-      return true;
+  if (numTracks.Ref() != NumberTracksError()) {
+    for (auto i = 0; i < numTracks.Ref(); i++) {
+      auto info = mRust->GetTrackInfo(TrackInfo::kVideoTrack, i);
+      if (!info) {
+        return false;
+      }
+      if (info->mMimeType.EqualsASCII("video/vp9")) {
+        return true;
+      }
     }
   }
   
@@ -501,7 +558,7 @@ MP4MetadataStagefright::~MP4MetadataStagefright()
 {
 }
 
-uint32_t
+MP4Metadata::ResultAndTrackCount
 MP4MetadataStagefright::GetNumberTracks(mozilla::TrackInfo::TrackType aType) const
 {
   size_t tracks = mMetadataExtractor->countTracks();
@@ -530,7 +587,7 @@ MP4MetadataStagefright::GetNumberTracks(mozilla::TrackInfo::TrackType aType) con
         break;
     }
   }
-  return total;
+  return {NS_OK, total};
 }
 
 mozilla::UniquePtr<mozilla::TrackInfo>
@@ -787,7 +844,7 @@ TrackTypeEqual(TrackInfo::TrackType aLHS, mp4parse_track_type aRHS)
   }
 }
 
-uint32_t
+MP4Metadata::ResultAndTrackCount
 MP4MetadataRust::GetNumberTracks(mozilla::TrackInfo::TrackType aType) const
 {
   uint32_t tracks;
@@ -795,7 +852,9 @@ MP4MetadataRust::GetNumberTracks(mozilla::TrackInfo::TrackType aType) const
   if (rv != mp4parse_status_OK) {
     MOZ_LOG(sLog, LogLevel::Warning,
         ("rust parser error %d counting tracks", rv));
-    return 0;
+    return {MediaResult(NS_ERROR_DOM_MEDIA_METADATA_ERR,
+                        RESULT_DETAIL("Rust parser error %d", rv)),
+            MP4Metadata::NumberTracksError()};
   }
   MOZ_LOG(sLog, LogLevel::Info, ("rust parser found %u tracks", tracks));
 
@@ -811,7 +870,7 @@ MP4MetadataRust::GetNumberTracks(mozilla::TrackInfo::TrackType aType) const
     }
   }
 
-  return total;
+  return {NS_OK, total};
 }
 
 Maybe<uint32_t>
