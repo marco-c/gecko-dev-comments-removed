@@ -553,7 +553,7 @@ public:
                            JS::MutableHandle<JSObject*> aResult)
   {
     MOZ_ASSERT(aCx);
-    MOZ_ASSERT(aFile.mMutable);
+    MOZ_ASSERT(aFile.mType == StructuredCloneFile::eMutableFile);
 
     if (!aFile.mMutableFile || !NS_IsMainThread()) {
       return false;
@@ -585,7 +585,7 @@ public:
     MOZ_ASSERT(aData.tag == SCTAG_DOM_FILE ||
                aData.tag == SCTAG_DOM_FILE_WITHOUT_LASTMODIFIEDDATE ||
                aData.tag == SCTAG_DOM_BLOB);
-    MOZ_ASSERT(!aFile.mMutable);
+    MOZ_ASSERT(aFile.mType == StructuredCloneFile::eBlob);
     MOZ_ASSERT(aFile.mBlob);
 
     
@@ -755,9 +755,9 @@ public:
                            JS::MutableHandle<JSObject*> aResult)
   {
     MOZ_ASSERT(aCx);
-    MOZ_ASSERT(!aFile.mMutable);
+    MOZ_ASSERT(aFile.mType == StructuredCloneFile::eBlob);
 
-    aFile.mMutable = true;
+    aFile.mType = StructuredCloneFile::eMutableFile;
 
     
     
@@ -779,7 +779,7 @@ public:
                           JS::MutableHandle<JSObject*> aResult)
   {
     MOZ_ASSERT(aCx);
-    MOZ_ASSERT(!aFile.mMutable);
+    MOZ_ASSERT(aFile.mType == StructuredCloneFile::eBlob);
     MOZ_ASSERT(aData.tag == SCTAG_DOM_FILE ||
                aData.tag == SCTAG_DOM_FILE_WITHOUT_LASTMODIFIEDDATE ||
                aData.tag == SCTAG_DOM_BLOB);
