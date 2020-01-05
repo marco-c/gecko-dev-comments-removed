@@ -746,6 +746,11 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   if (mProcessType == GeckoProcessType_Content) {
     
     newEnvVars["GTK_IM_MODULE"] = "gtk-im-context-simple";
+
+    
+    
+    
+    newEnvVars["NO_AT_BRIDGE"] = "1";
   }
 #endif
 
