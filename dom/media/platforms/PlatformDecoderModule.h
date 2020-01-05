@@ -141,8 +141,9 @@ public:
   virtual nsresult Startup() { return NS_OK; };
 
   
-  virtual bool SupportsMimeType(const nsACString& aMimeType,
-                                DecoderDoctorDiagnostics* aDiagnostics) const = 0;
+  virtual bool SupportsMimeType(
+    const nsACString& aMimeType,
+    DecoderDoctorDiagnostics* aDiagnostics) const = 0;
   virtual bool Supports(const TrackInfo& aTrackInfo,
                         DecoderDoctorDiagnostics* aDiagnostics) const
   {
@@ -161,11 +162,12 @@ public:
   
   
   
-  virtual ConversionRequired DecoderNeedsConversion(const TrackInfo& aConfig) const = 0;
+  virtual ConversionRequired DecoderNeedsConversion(
+    const TrackInfo& aConfig) const = 0;
 
 protected:
-  PlatformDecoderModule() {}
-  virtual ~PlatformDecoderModule() {}
+  PlatformDecoderModule() { }
+  virtual ~PlatformDecoderModule() { }
 
   friend class H264Converter;
   friend class PDMFactory;
@@ -276,7 +278,11 @@ public:
   
   
   
-  virtual bool IsHardwareAccelerated(nsACString& aFailureReason) const { return false; }
+  virtual bool IsHardwareAccelerated(nsACString& aFailureReason) const
+  {
+    return false;
+  }
+
 
   
   
