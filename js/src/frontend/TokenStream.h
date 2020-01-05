@@ -548,6 +548,13 @@ class TokenStreamBase
         return options_;
     }
 
+    
+
+
+
+
+    bool fillExcludingContext(ErrorMetadata* err, uint32_t offset);
+
     void updateFlagsForEOL();
 
     const Token& nextToken() const {

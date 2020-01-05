@@ -707,13 +707,8 @@ TokenStreamBase::computeErrorMetadataNoOffset(ErrorMetadata* err)
 }
 
 bool
-TokenStream::computeErrorMetadata(ErrorMetadata* err, uint32_t offset)
+TokenStreamBase::fillExcludingContext(ErrorMetadata* err, uint32_t offset)
 {
-    if (offset == NoOffset) {
-        computeErrorMetadataNoOffset(err);
-        return true;
-    }
-
     err->isMuted = mutedErrors;
 
     
@@ -725,17 +720,30 @@ TokenStream::computeErrorMetadata(ErrorMetadata* err, uint32_t offset)
         if (!iter.done() && iter.filename()) {
             err->filename = iter.filename();
             err->lineNumber = iter.computeLine(&err->columnNumber);
-
-            
-            
-            return true;
+            return false;
         }
     }
 
     
     err->filename = filename;
-    srcCoords.lineNumAndColumnIndex(offset,
-                                    &err->lineNumber, &err->columnNumber);
+    srcCoords.lineNumAndColumnIndex(offset, &err->lineNumber, &err->columnNumber);
+    return true;
+}
+
+bool
+TokenStream::computeErrorMetadata(ErrorMetadata* err, uint32_t offset)
+{
+    if (offset == NoOffset) {
+        computeErrorMetadataNoOffset(err);
+        return true;
+    }
+
+    
+    
+    
+    
+    if (!fillExcludingContext(err, offset))
+        return true;
 
     
     return computeLineOfContext(err, offset);
@@ -755,12 +763,7 @@ TokenStream::computeLineOfContext(ErrorMetadata* err, uint32_t offset)
     if (err->lineNumber != lineno)
         return true;
 
-    
-    
-    
-    
-    
-    constexpr size_t windowRadius = 60;
+    constexpr size_t windowRadius = ErrorMetadata::lineOfContextRadius;
 
     
     
