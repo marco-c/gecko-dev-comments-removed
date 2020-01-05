@@ -35,9 +35,9 @@ SEC_BEGIN_PROTOS
 
 extern NSSCMSDecoderContext *
 NSS_CMSDecoder_Start(PLArenaPool *poolp,
-		      NSSCMSContentCallback cb, void *cb_arg,
-		      PK11PasswordFunc pwfn, void *pwfn_arg,
-		      NSSCMSGetDecryptKeyCallback decrypt_key_cb, void *decrypt_key_cb_arg);
+                     NSSCMSContentCallback cb, void *cb_arg,
+                     PK11PasswordFunc pwfn, void *pwfn_arg,
+                     NSSCMSGetDecryptKeyCallback decrypt_key_cb, void *decrypt_key_cb_arg);
 
 
 
@@ -62,9 +62,9 @@ NSS_CMSDecoder_Finish(NSSCMSDecoderContext *p7dcx);
 
 extern NSSCMSMessage *
 NSS_CMSMessage_CreateFromDER(SECItem *DERmessage,
-		    NSSCMSContentCallback cb, void *cb_arg,
-		    PK11PasswordFunc pwfn, void *pwfn_arg,
-		    NSSCMSGetDecryptKeyCallback decrypt_key_cb, void *decrypt_key_cb_arg);
+                             NSSCMSContentCallback cb, void *cb_arg,
+                             PK11PasswordFunc pwfn, void *pwfn_arg,
+                             NSSCMSGetDecryptKeyCallback decrypt_key_cb, void *decrypt_key_cb_arg);
 
 
 
@@ -84,11 +84,11 @@ NSS_CMSMessage_CreateFromDER(SECItem *DERmessage,
 
 extern NSSCMSEncoderContext *
 NSS_CMSEncoder_Start(NSSCMSMessage *cmsg,
-			NSSCMSContentCallback outputfn, void *outputarg,
-			SECItem *dest, PLArenaPool *destpoolp,
-			PK11PasswordFunc pwfn, void *pwfn_arg,
-			NSSCMSGetDecryptKeyCallback decrypt_key_cb, void *decrypt_key_cb_arg,
-			SECAlgorithmID **detached_digestalgs, SECItem **detached_digests);
+                     NSSCMSContentCallback outputfn, void *outputarg,
+                     SECItem *dest, PLArenaPool *destpoolp,
+                     PK11PasswordFunc pwfn, void *pwfn_arg,
+                     NSSCMSGetDecryptKeyCallback decrypt_key_cb, void *decrypt_key_cb_arg,
+                     SECAlgorithmID **detached_digestalgs, SECItem **detached_digests);
 
 
 
@@ -138,9 +138,9 @@ NSS_CMSMessage_Create(PLArenaPool *poolp);
 
 extern void
 NSS_CMSMessage_SetEncodingParams(NSSCMSMessage *cmsg,
-			PK11PasswordFunc pwfn, void *pwfn_arg,
-			NSSCMSGetDecryptKeyCallback decrypt_key_cb, void *decrypt_key_cb_arg,
-			SECAlgorithmID **detached_digestalgs, SECItem **detached_digests);
+                                 PK11PasswordFunc pwfn, void *pwfn_arg,
+                                 NSSCMSGetDecryptKeyCallback decrypt_key_cb, void *decrypt_key_cb_arg,
+                                 SECAlgorithmID **detached_digestalgs, SECItem **detached_digests);
 
 
 
@@ -280,7 +280,6 @@ NSS_CMSContentInfo_SetDontStream(NSSCMSContentInfo *cinfo, PRBool dontStream);
 
 
 
-
 extern void *
 NSS_CMSContentInfo_GetContent(NSSCMSContentInfo *cinfo);
 
@@ -317,11 +316,11 @@ NSS_CMSContentInfo_GetContentEncAlg(NSSCMSContentInfo *cinfo);
 
 extern SECStatus
 NSS_CMSContentInfo_SetContentEncAlg(PLArenaPool *poolp, NSSCMSContentInfo *cinfo,
-				    SECOidTag bulkalgtag, SECItem *parameters, int keysize);
+                                    SECOidTag bulkalgtag, SECItem *parameters, int keysize);
 
 extern SECStatus
 NSS_CMSContentInfo_SetContentEncAlgID(PLArenaPool *poolp, NSSCMSContentInfo *cinfo,
-				    SECAlgorithmID *algid, int keysize);
+                                      SECAlgorithmID *algid, int keysize);
 
 extern void
 NSS_CMSContentInfo_SetBulkKey(NSSCMSContentInfo *cinfo, PK11SymKey *bulkkey);
@@ -485,7 +484,7 @@ NSS_CMSSignedData_GetCertificateList(NSSCMSSignedData *sigd);
 
 extern SECStatus
 NSS_CMSSignedData_ImportCerts(NSSCMSSignedData *sigd, CERTCertDBHandle *certdb,
-				SECCertUsage certusage, PRBool keepcerts);
+                              SECCertUsage certusage, PRBool keepcerts);
 
 
 
@@ -504,14 +503,14 @@ NSS_CMSSignedData_HasDigests(NSSCMSSignedData *sigd);
 
 extern SECStatus
 NSS_CMSSignedData_VerifySignerInfo(NSSCMSSignedData *sigd, int i, CERTCertDBHandle *certdb,
-				    SECCertUsage certusage);
+                                   SECCertUsage certusage);
 
 
 
 
 extern SECStatus
-NSS_CMSSignedData_VerifyCertsOnly(NSSCMSSignedData *sigd, 
-                                  CERTCertDBHandle *certdb, 
+NSS_CMSSignedData_VerifyCertsOnly(NSSCMSSignedData *sigd,
+                                  CERTCertDBHandle *certdb,
                                   SECCertUsage usage);
 
 extern SECStatus
@@ -531,23 +530,23 @@ NSS_CMSSignedData_ContainsCertsOrCrls(NSSCMSSignedData *sigd);
 
 extern SECStatus
 NSS_CMSSignedData_AddSignerInfo(NSSCMSSignedData *sigd,
-				NSSCMSSignerInfo *signerinfo);
+                                NSSCMSSignerInfo *signerinfo);
 
 extern SECStatus
 NSS_CMSSignedData_SetDigests(NSSCMSSignedData *sigd,
-				SECAlgorithmID **digestalgs,
-				SECItem **digests);
+                             SECAlgorithmID **digestalgs,
+                             SECItem **digests);
 
 extern SECStatus
 NSS_CMSSignedData_SetDigestValue(NSSCMSSignedData *sigd,
-				SECOidTag digestalgtag,
-				SECItem *digestdata);
+                                 SECOidTag digestalgtag,
+                                 SECItem *digestdata);
 
 extern SECStatus
 NSS_CMSSignedData_AddDigest(PLArenaPool *poolp,
-				NSSCMSSignedData *sigd,
-				SECOidTag digestalgtag,
-				SECItem *digest);
+                            NSSCMSSignedData *sigd,
+                            SECOidTag digestalgtag,
+                            SECItem *digest);
 
 extern SECItem *
 NSS_CMSSignedData_GetDigestValue(NSSCMSSignedData *sigd, SECOidTag digestalgtag);
@@ -589,7 +588,7 @@ NSS_CMSSignerInfo_Sign(NSSCMSSignerInfo *signerinfo, SECItem *digest, SECItem *c
 
 extern SECStatus
 NSS_CMSSignerInfo_VerifyCertificate(NSSCMSSignerInfo *signerinfo, CERTCertDBHandle *certdb,
-			    SECCertUsage certusage);
+                                    SECCertUsage certusage);
 
 
 
@@ -721,7 +720,7 @@ NSS_CMSSignerInfo_AddMSSMIMEEncKeyPrefs(NSSCMSSignerInfo *signerinfo, CERTCertif
 
 extern SECStatus
 NSS_CMSSignerInfo_AddCounterSignature(NSSCMSSignerInfo *signerinfo,
-				    SECOidTag digestalg, CERTCertificate signingcert);
+                                      SECOidTag digestalg, CERTCertificate signingcert);
 
 
 
@@ -822,17 +821,16 @@ NSS_CMSEnvelopedData_Decode_AfterEnd(NSSCMSEnvelopedData *envd);
 
 
 
-
 extern NSSCMSRecipientInfo *
 NSS_CMSRecipientInfo_Create(NSSCMSMessage *cmsg, CERTCertificate *cert);
 
 extern NSSCMSRecipientInfo *
-NSS_CMSRecipientInfo_CreateWithSubjKeyID(NSSCMSMessage   *cmsg, 
-                                         SECItem         *subjKeyID,
+NSS_CMSRecipientInfo_CreateWithSubjKeyID(NSSCMSMessage *cmsg,
+                                         SECItem *subjKeyID,
                                          SECKEYPublicKey *pubKey);
 
 extern NSSCMSRecipientInfo *
-NSS_CMSRecipientInfo_CreateWithSubjKeyIDFromCert(NSSCMSMessage *cmsg, 
+NSS_CMSRecipientInfo_CreateWithSubjKeyIDFromCert(NSSCMSMessage *cmsg,
                                                  CERTCertificate *cert);
 
 
@@ -841,7 +839,7 @@ NSS_CMSRecipientInfo_CreateWithSubjKeyIDFromCert(NSSCMSMessage *cmsg,
 
 
 extern NSSCMSRecipientInfo *
-NSS_CMSRecipientInfo_CreateNew(void* pwfn_arg);
+NSS_CMSRecipientInfo_CreateNew(void *pwfn_arg);
 
 
 
@@ -849,7 +847,7 @@ NSS_CMSRecipientInfo_CreateNew(void* pwfn_arg);
 
 
 extern NSSCMSRecipientInfo *
-NSS_CMSRecipientInfo_CreateFromDER(SECItem* input, void* pwfn_arg);
+NSS_CMSRecipientInfo_CreateFromDER(SECItem *input, void *pwfn_arg);
 
 extern void
 NSS_CMSRecipientInfo_Destroy(NSSCMSRecipientInfo *ri);
@@ -862,7 +860,8 @@ NSS_CMSRecipientInfo_Destroy(NSSCMSRecipientInfo *ri);
 
 
 SECStatus NSS_CMSRecipientInfo_GetCertAndKey(NSSCMSRecipientInfo *ri,
-   CERTCertificate** retcert, SECKEYPrivateKey** retkey);
+                                             CERTCertificate **retcert,
+                                             SECKEYPrivateKey **retkey);
 
 extern int
 NSS_CMSRecipientInfo_GetVersion(NSSCMSRecipientInfo *ri);
@@ -873,19 +872,21 @@ NSS_CMSRecipientInfo_GetEncryptedKey(NSSCMSRecipientInfo *ri, int subIndex);
 
 
 
-SECStatus NSS_CMSRecipientInfo_Encode(PLArenaPool* poolp,
+SECStatus NSS_CMSRecipientInfo_Encode(PLArenaPool *poolp,
                                       const NSSCMSRecipientInfo *src,
-                                      SECItem* returned);
+                                      SECItem *returned);
 
 extern SECOidTag
 NSS_CMSRecipientInfo_GetKeyEncryptionAlgorithmTag(NSSCMSRecipientInfo *ri);
 
 extern SECStatus
-NSS_CMSRecipientInfo_WrapBulkKey(NSSCMSRecipientInfo *ri, PK11SymKey *bulkkey, SECOidTag bulkalgtag);
+NSS_CMSRecipientInfo_WrapBulkKey(NSSCMSRecipientInfo *ri, PK11SymKey *bulkkey,
+                                 SECOidTag bulkalgtag);
 
 extern PK11SymKey *
 NSS_CMSRecipientInfo_UnwrapBulkKey(NSSCMSRecipientInfo *ri, int subIndex,
-		CERTCertificate *cert, SECKEYPrivateKey *privkey, SECOidTag bulkalgtag);
+                                   CERTCertificate *cert, SECKEYPrivateKey *privkey,
+                                   SECOidTag bulkalgtag);
 
 
 
@@ -1076,7 +1077,7 @@ NSS_CMSDigestContext_Cancel(NSSCMSDigestContext *cmsdigcx);
 
 extern SECStatus
 NSS_CMSDigestContext_FinishMultiple(NSSCMSDigestContext *cmsdigcx, PLArenaPool *poolp,
-			    SECItem ***digestsp);
+                                    SECItem ***digestsp);
 
 
 
@@ -1084,7 +1085,7 @@ NSS_CMSDigestContext_FinishMultiple(NSSCMSDigestContext *cmsdigcx, PLArenaPool *
 
 extern SECStatus
 NSS_CMSDigestContext_FinishSingle(NSSCMSDigestContext *cmsdigcx, PLArenaPool *poolp,
-			    SECItem *digest);
+                                  SECItem *digest);
 
 
 
@@ -1098,7 +1099,7 @@ NSS_CMSDigestContext_FinishSingle(NSSCMSDigestContext *cmsdigcx, PLArenaPool *po
 
 
 extern SECStatus
-NSS_CMSDEREncode(NSSCMSMessage *cmsg, SECItem *input, SECItem *derOut, 
+NSS_CMSDEREncode(NSSCMSMessage *cmsg, SECItem *input, SECItem *derOut,
                  PLArenaPool *arena);
 
 
@@ -1135,17 +1136,16 @@ NSS_CMSDEREncode(NSSCMSMessage *cmsg, SECItem *input, SECItem *derOut,
 
 
 
-
 SECStatus NSS_CMSType_RegisterContentType(SECOidTag type,
-                          SEC_ASN1Template *asn1Template, size_t size,
-                          NSSCMSGenericWrapperDataDestroy  destroy,
-                          NSSCMSGenericWrapperDataCallback decode_before,
-                          NSSCMSGenericWrapperDataCallback decode_after,
-                          NSSCMSGenericWrapperDataCallback decode_end,
-                          NSSCMSGenericWrapperDataCallback encode_start,
-                          NSSCMSGenericWrapperDataCallback encode_before,
-                          NSSCMSGenericWrapperDataCallback encode_after,
-                          PRBool isData);
+                                          SEC_ASN1Template *asn1Template, size_t size,
+                                          NSSCMSGenericWrapperDataDestroy destroy,
+                                          NSSCMSGenericWrapperDataCallback decode_before,
+                                          NSSCMSGenericWrapperDataCallback decode_after,
+                                          NSSCMSGenericWrapperDataCallback decode_end,
+                                          NSSCMSGenericWrapperDataCallback encode_start,
+                                          NSSCMSGenericWrapperDataCallback encode_before,
+                                          NSSCMSGenericWrapperDataCallback encode_after,
+                                          PRBool isData);
 
 
 SEC_END_PROTOS

@@ -19,21 +19,21 @@
 
 
 
-typedef SECStatus (*nss_cms_cipher_function) (void *, unsigned char *, unsigned int *,
-					unsigned int, const unsigned char *, unsigned int);
-typedef SECStatus (*nss_cms_cipher_destroy) (void *, PRBool);
+typedef SECStatus (*nss_cms_cipher_function)(void *, unsigned char *, unsigned int *,
+                                             unsigned int, const unsigned char *, unsigned int);
+typedef SECStatus (*nss_cms_cipher_destroy)(void *, PRBool);
 
 #define BLOCK_SIZE 4096
 
 struct NSSCMSCipherContextStr {
-    void *		cx;			
+    void *cx; 
     nss_cms_cipher_function doit;
     nss_cms_cipher_destroy destroy;
-    PRBool		encrypt;		
-    int			block_size;		
-    int			pad_size;
-    int			pending_count;		
-    unsigned char	pending_buf[BLOCK_SIZE];
+    PRBool encrypt; 
+    int block_size; 
+    int pad_size;
+    int pending_count;                     
+    unsigned char pending_buf[BLOCK_SIZE]; 
 };
 
 
@@ -59,28 +59,28 @@ NSS_CMSCipherContext_StartDecrypt(PK11SymKey *key, SECAlgorithmID *algid)
 
     
     if (SEC_PKCS5IsAlgorithmPBEAlg(algid)) {
-	SECItem *pwitem;
+        SECItem *pwitem;
 
-	pwitem = PK11_GetSymKeyUserData(key);
-	if (!pwitem) 
-	    return NULL;
+        pwitem = PK11_GetSymKeyUserData(key);
+        if (!pwitem)
+            return NULL;
 
-	cryptoMechType = PK11_GetPBECryptoMechanism(algid, &param, pwitem);
-	if (cryptoMechType == CKM_INVALID_MECHANISM) {
-	    SECITEM_FreeItem(param,PR_TRUE);
-	    return NULL;
-	}
+        cryptoMechType = PK11_GetPBECryptoMechanism(algid, &param, pwitem);
+        if (cryptoMechType == CKM_INVALID_MECHANISM) {
+            SECITEM_FreeItem(param, PR_TRUE);
+            return NULL;
+        }
 
     } else {
-	cryptoMechType = PK11_AlgtagToMechanism(algtag);
-	if ((param = PK11_ParamFromAlgid(algid)) == NULL)
-	    return NULL;
+        cryptoMechType = PK11_AlgtagToMechanism(algtag);
+        if ((param = PK11_ParamFromAlgid(algid)) == NULL)
+            return NULL;
     }
 
     cc = (NSSCMSCipherContext *)PORT_ZAlloc(sizeof(NSSCMSCipherContext));
     if (cc == NULL) {
-	SECITEM_FreeItem(param,PR_TRUE);
-	return NULL;
+        SECITEM_FreeItem(param, PR_TRUE);
+        return NULL;
     }
 
     
@@ -90,17 +90,17 @@ NSS_CMSCipherContext_StartDecrypt(PK11SymKey *key, SECAlgorithmID *algid)
     PK11_FreeSlot(slot);
 
     
-    ciphercx = PK11_CreateContextBySymKey(cryptoMechType, CKA_DECRYPT, 
-					  key, param);
+    ciphercx = PK11_CreateContextBySymKey(cryptoMechType, CKA_DECRYPT,
+                                          key, param);
     SECITEM_FreeItem(param, PR_TRUE);
     if (ciphercx == NULL) {
-	PORT_Free (cc);
-	return NULL;
+        PORT_Free(cc);
+        return NULL;
     }
 
     cc->cx = ciphercx;
-    cc->doit =  (nss_cms_cipher_function) PK11_CipherOp;
-    cc->destroy = (nss_cms_cipher_destroy) PK11_DestroyContext;
+    cc->doit = (nss_cms_cipher_function)PK11_CipherOp;
+    cc->destroy = (nss_cms_cipher_destroy)PK11_DestroyContext;
     cc->encrypt = PR_FALSE;
     cc->pending_count = 0;
 
@@ -130,27 +130,27 @@ NSS_CMSCipherContext_StartEncrypt(PLArenaPool *poolp, PK11SymKey *key, SECAlgori
 
     
     if (SEC_PKCS5IsAlgorithmPBEAlg(algid)) {
-	SECItem *pwitem;
+        SECItem *pwitem;
 
-	pwitem = PK11_GetSymKeyUserData(key);
-	if (!pwitem) 
-	    return NULL;
+        pwitem = PK11_GetSymKeyUserData(key);
+        if (!pwitem)
+            return NULL;
 
-	cryptoMechType = PK11_GetPBECryptoMechanism(algid, &param, pwitem);
-	if (cryptoMechType == CKM_INVALID_MECHANISM) {
-	    SECITEM_FreeItem(param,PR_TRUE);
-	    return NULL;
-	}
+        cryptoMechType = PK11_GetPBECryptoMechanism(algid, &param, pwitem);
+        if (cryptoMechType == CKM_INVALID_MECHANISM) {
+            SECITEM_FreeItem(param, PR_TRUE);
+            return NULL;
+        }
     } else {
-	cryptoMechType = PK11_AlgtagToMechanism(algtag);
-	if ((param = PK11_GenerateNewParam(cryptoMechType, key)) == NULL)
-	    return NULL;
-	needToEncodeAlgid = PR_TRUE;
+        cryptoMechType = PK11_AlgtagToMechanism(algtag);
+        if ((param = PK11_GenerateNewParam(cryptoMechType, key)) == NULL)
+            return NULL;
+        needToEncodeAlgid = PR_TRUE;
     }
 
     cc = (NSSCMSCipherContext *)PORT_ZAlloc(sizeof(NSSCMSCipherContext));
     if (cc == NULL) {
-	goto loser;
+        goto loser;
     }
 
     
@@ -160,12 +160,12 @@ NSS_CMSCipherContext_StartEncrypt(PLArenaPool *poolp, PK11SymKey *key, SECAlgori
     PK11_FreeSlot(slot);
 
     
-    ciphercx = PK11_CreateContextBySymKey(cryptoMechType, CKA_ENCRYPT, 
-					  key, param);
+    ciphercx = PK11_CreateContextBySymKey(cryptoMechType, CKA_ENCRYPT,
+                                          key, param);
     if (ciphercx == NULL) {
-	PORT_Free(cc);
-	cc = NULL;
-	goto loser;
+        PORT_Free(cc);
+        cc = NULL;
+        goto loser;
     }
 
     
@@ -177,12 +177,12 @@ NSS_CMSCipherContext_StartEncrypt(PLArenaPool *poolp, PK11SymKey *key, SECAlgori
 
 
     if (needToEncodeAlgid) {
-	rv = PK11_ParamToAlgid(algtag, param, poolp, algid);
-	if(rv != SECSuccess) {
-	    PORT_Free(cc);
-	    cc = NULL;
-	    goto loser;
-	}
+        rv = PK11_ParamToAlgid(algtag, param, poolp, algid);
+        if (rv != SECSuccess) {
+            PORT_Free(cc);
+            cc = NULL;
+            goto loser;
+        }
     }
 
     cc->cx = ciphercx;
@@ -206,7 +206,7 @@ NSS_CMSCipherContext_Destroy(NSSCMSCipherContext *cc)
 {
     PORT_Assert(cc != NULL);
     if (cc == NULL)
-	return;
+        return;
     (*cc->destroy)(cc->cx, PR_TRUE);
     PORT_Free(cc);
 }
@@ -237,7 +237,7 @@ NSS_CMSCipherContext_DecryptLength(NSSCMSCipherContext *cc, unsigned int input_l
 {
     int blocks, block_size;
 
-    PORT_Assert (! cc->encrypt);
+    PORT_Assert(!cc->encrypt);
 
     block_size = cc->block_size;
 
@@ -246,7 +246,7 @@ NSS_CMSCipherContext_DecryptLength(NSSCMSCipherContext *cc, unsigned int input_l
 
 
     if (block_size == 0)
-	return input_len;
+        return input_len;
 
     
 
@@ -257,7 +257,7 @@ NSS_CMSCipherContext_DecryptLength(NSSCMSCipherContext *cc, unsigned int input_l
 
 
     if (final)
-	return cc->pending_count + input_len;
+        return cc->pending_count + input_len;
 
     
 
@@ -296,7 +296,7 @@ NSS_CMSCipherContext_EncryptLength(NSSCMSCipherContext *cc, unsigned int input_l
     int blocks, block_size;
     int pad_size;
 
-    PORT_Assert (cc->encrypt);
+    PORT_Assert(cc->encrypt);
 
     block_size = cc->block_size;
     pad_size = cc->pad_size;
@@ -306,7 +306,7 @@ NSS_CMSCipherContext_EncryptLength(NSSCMSCipherContext *cc, unsigned int input_l
 
 
     if (block_size == 0)
-	return input_len;
+        return input_len;
 
     
 
@@ -315,20 +315,19 @@ NSS_CMSCipherContext_EncryptLength(NSSCMSCipherContext *cc, unsigned int input_l
 
 
     if (final) {
-	if (pad_size == 0) {
-    	    return cc->pending_count + input_len;
-	} else {
-    	    blocks = (cc->pending_count + input_len) / pad_size;
-	    blocks++;
-	    return blocks*pad_size;
-	}
+        if (pad_size == 0) {
+            return cc->pending_count + input_len;
+        } else {
+            blocks = (cc->pending_count + input_len) / pad_size;
+            blocks++;
+            return blocks * pad_size;
+        }
     }
 
     
 
 
     blocks = (cc->pending_count + input_len) / block_size;
-
 
     return blocks * block_size;
 }
@@ -363,29 +362,28 @@ NSS_CMSCipherContext_EncryptLength(NSSCMSCipherContext *cc, unsigned int input_l
 
 
 
- 
 SECStatus
 NSS_CMSCipherContext_Decrypt(NSSCMSCipherContext *cc, unsigned char *output,
-		  unsigned int *output_len_p, unsigned int max_output_len,
-		  const unsigned char *input, unsigned int input_len,
-		  PRBool final)
+                             unsigned int *output_len_p, unsigned int max_output_len,
+                             const unsigned char *input, unsigned int input_len,
+                             PRBool final)
 {
     unsigned int blocks, bsize, pcount, padsize;
     unsigned int max_needed, ifraglen, ofraglen, output_len;
     unsigned char *pbuf;
     SECStatus rv;
 
-    PORT_Assert (! cc->encrypt);
+    PORT_Assert(!cc->encrypt);
 
     
 
 
 
     max_needed = NSS_CMSCipherContext_DecryptLength(cc, input_len, final);
-    PORT_Assert (max_output_len >= max_needed);
+    PORT_Assert(max_output_len >= max_needed);
     if (max_output_len < max_needed) {
-	
-	return SECFailure;
+        
+        return SECFailure;
     }
 
     
@@ -400,8 +398,8 @@ NSS_CMSCipherContext_Decrypt(NSSCMSCipherContext *cc, unsigned char *output,
 
 
     if (bsize == 0) {
-	return (* cc->doit) (cc->cx, output, output_len_p, max_output_len,
-			      input, input_len);
+        return (*cc->doit)(cc->cx, output, output_len_p, max_output_len,
+                           input, input_len);
     }
 
     pcount = cc->pending_count;
@@ -410,57 +408,57 @@ NSS_CMSCipherContext_Decrypt(NSSCMSCipherContext *cc, unsigned char *output,
     output_len = 0;
 
     if (pcount) {
-	
+        
 
 
 
-	while (input_len && pcount < bsize) {
-	    pbuf[pcount++] = *input++;
-	    input_len--;
-	}
-	
-
-
-
-
-
-	if (input_len == 0 && !final) {
-	    cc->pending_count = pcount;
-	    if (output_len_p)
-		*output_len_p = 0;
-	    return SECSuccess;
-	}
-	
+        while (input_len && pcount < bsize) {
+            pbuf[pcount++] = *input++;
+            input_len--;
+        }
+        
 
 
 
 
-	if ((padsize != 0) && (pcount % padsize) != 0) {
-	    PORT_Assert (final);	
-	    PORT_SetError (SEC_ERROR_BAD_DATA);
-	    return SECFailure;
-	}
-	
 
-
-	rv = (*cc->doit)(cc->cx, output, &ofraglen, max_output_len,
-			    pbuf, pcount);
-	if (rv != SECSuccess)
-	    return rv;
-
-	
+        if (input_len == 0 && !final) {
+            cc->pending_count = pcount;
+            if (output_len_p)
+                *output_len_p = 0;
+            return SECSuccess;
+        }
+        
 
 
 
 
-	PORT_Assert(ofraglen == pcount);
+        if ((padsize != 0) && (pcount % padsize) != 0) {
+            PORT_Assert(final);
+            PORT_SetError(SEC_ERROR_BAD_DATA);
+            return SECFailure;
+        }
+        
 
-	
+
+        rv = (*cc->doit)(cc->cx, output, &ofraglen, max_output_len,
+                         pbuf, pcount);
+        if (rv != SECSuccess)
+            return rv;
+
+        
 
 
-	max_output_len -= ofraglen;
-	output_len += ofraglen;
-	output += ofraglen;
+
+
+        PORT_Assert(ofraglen == pcount);
+
+        
+
+
+        max_output_len -= ofraglen;
+        output_len += ofraglen;
+        output += ofraglen;
     }
 
     
@@ -477,46 +475,47 @@ NSS_CMSCipherContext_Decrypt(NSSCMSCipherContext *cc, unsigned char *output,
 
 
     if (final) {
-	if (padsize) {
-	    blocks = input_len / padsize;
-	    ifraglen = blocks * padsize;
-	} else ifraglen = input_len;
-	PORT_Assert (ifraglen == input_len);
+        if (padsize) {
+            blocks = input_len / padsize;
+            ifraglen = blocks * padsize;
+        } else
+            ifraglen = input_len;
+        PORT_Assert(ifraglen == input_len);
 
-	if (ifraglen != input_len) {
-	    PORT_SetError(SEC_ERROR_BAD_DATA);
-	    return SECFailure;
-	}
+        if (ifraglen != input_len) {
+            PORT_SetError(SEC_ERROR_BAD_DATA);
+            return SECFailure;
+        }
     } else {
-	blocks = (input_len - 1) / bsize;
-	ifraglen = blocks * bsize;
-	PORT_Assert (ifraglen < input_len);
+        blocks = (input_len - 1) / bsize;
+        ifraglen = blocks * bsize;
+        PORT_Assert(ifraglen < input_len);
 
-	pcount = input_len - ifraglen;
-	PORT_Memcpy (pbuf, input + ifraglen, pcount);
-	cc->pending_count = pcount;
+        pcount = input_len - ifraglen;
+        PORT_Memcpy(pbuf, input + ifraglen, pcount);
+        cc->pending_count = pcount;
     }
 
     if (ifraglen) {
-	rv = (* cc->doit)(cc->cx, output, &ofraglen, max_output_len,
-			    input, ifraglen);
-	if (rv != SECSuccess)
-	    return rv;
+        rv = (*cc->doit)(cc->cx, output, &ofraglen, max_output_len,
+                         input, ifraglen);
+        if (rv != SECSuccess)
+            return rv;
 
-	
-
-
+        
 
 
-	PORT_Assert (ifraglen == ofraglen);
-	if (ifraglen != ofraglen) {
-	    PORT_SetError(SEC_ERROR_BAD_DATA);
-	    return SECFailure;
-	}
 
-	output_len += ofraglen;
+
+        PORT_Assert(ifraglen == ofraglen);
+        if (ifraglen != ofraglen) {
+            PORT_SetError(SEC_ERROR_BAD_DATA);
+            return SECFailure;
+        }
+
+        output_len += ofraglen;
     } else {
-	ofraglen = 0;
+        ofraglen = 0;
     }
 
     
@@ -524,18 +523,18 @@ NSS_CMSCipherContext_Decrypt(NSSCMSCipherContext *cc, unsigned char *output,
 
 
     if (final && (padsize != 0)) {
-	unsigned int padlen = *(output + ofraglen - 1);
+        unsigned int padlen = *(output + ofraglen - 1);
 
-	if (padlen == 0 || padlen > padsize) {
-	    PORT_SetError(SEC_ERROR_BAD_DATA);
-	    return SECFailure;
-	}
-	output_len -= padlen;
+        if (padlen == 0 || padlen > padsize) {
+            PORT_SetError(SEC_ERROR_BAD_DATA);
+            return SECFailure;
+        }
+        output_len -= padlen;
     }
 
-    PORT_Assert (output_len_p != NULL || output_len == 0);
+    PORT_Assert(output_len_p != NULL || output_len == 0);
     if (output_len_p != NULL)
-	*output_len_p = output_len;
+        *output_len_p = output_len;
 
     return SECSuccess;
 }
@@ -574,29 +573,29 @@ NSS_CMSCipherContext_Decrypt(NSSCMSCipherContext *cc, unsigned char *output,
 
 
 
- 
+
 SECStatus
 NSS_CMSCipherContext_Encrypt(NSSCMSCipherContext *cc, unsigned char *output,
-		  unsigned int *output_len_p, unsigned int max_output_len,
-		  const unsigned char *input, unsigned int input_len,
-		  PRBool final)
+                             unsigned int *output_len_p, unsigned int max_output_len,
+                             const unsigned char *input, unsigned int input_len,
+                             PRBool final)
 {
     int blocks, bsize, padlen, pcount, padsize;
     unsigned int max_needed, ifraglen, ofraglen, output_len;
     unsigned char *pbuf;
     SECStatus rv;
 
-    PORT_Assert (cc->encrypt);
+    PORT_Assert(cc->encrypt);
 
     
 
 
 
-    max_needed = NSS_CMSCipherContext_EncryptLength (cc, input_len, final);
-    PORT_Assert (max_output_len >= max_needed);
+    max_needed = NSS_CMSCipherContext_EncryptLength(cc, input_len, final);
+    PORT_Assert(max_output_len >= max_needed);
     if (max_output_len < max_needed) {
-	
-	return SECFailure;
+        
+        return SECFailure;
     }
 
     bsize = cc->block_size;
@@ -607,8 +606,8 @@ NSS_CMSCipherContext_Encrypt(NSSCMSCipherContext *cc, unsigned char *output,
 
 
     if (bsize == 0) {
-	return (*cc->doit)(cc->cx, output, output_len_p, max_output_len,
-			      input, input_len);
+        return (*cc->doit)(cc->cx, output, output_len_p, max_output_len,
+                           input, input_len);
     }
 
     pcount = cc->pending_count;
@@ -617,107 +616,107 @@ NSS_CMSCipherContext_Encrypt(NSSCMSCipherContext *cc, unsigned char *output,
     output_len = 0;
 
     if (pcount) {
-	
+        
 
 
 
-	while (input_len && pcount < bsize) {
-	    pbuf[pcount++] = *input++;
-	    input_len--;
-	}
-	
+        while (input_len && pcount < bsize) {
+            pbuf[pcount++] = *input++;
+            input_len--;
+        }
+        
 
 
 
-	if (pcount < bsize && !final) {
-	    cc->pending_count = pcount;
-	    if (output_len_p != NULL)
-		*output_len_p = 0;
-	    return SECSuccess;
-	}
-	
+        if (pcount < bsize && !final) {
+            cc->pending_count = pcount;
+            if (output_len_p != NULL)
+                *output_len_p = 0;
+            return SECSuccess;
+        }
+        
 
 
-	if ((padsize == 0) || (pcount % padsize) == 0) {
-	    rv = (* cc->doit) (cc->cx, output, &ofraglen, max_output_len,
-				pbuf, pcount);
-	    if (rv != SECSuccess)
-		return rv;
+        if ((padsize == 0) || (pcount % padsize) == 0) {
+            rv = (*cc->doit)(cc->cx, output, &ofraglen, max_output_len,
+                             pbuf, pcount);
+            if (rv != SECSuccess)
+                return rv;
 
-	    
-
-
+            
 
 
-	    PORT_Assert (ofraglen == pcount);
-
-	    
 
 
-	    max_output_len -= ofraglen;
-	    output_len += ofraglen;
-	    output += ofraglen;
+            PORT_Assert(ofraglen == pcount);
 
-	    pcount = 0;
-	}
+            
+
+
+            max_output_len -= ofraglen;
+            output_len += ofraglen;
+            output += ofraglen;
+
+            pcount = 0;
+        }
     }
 
     if (input_len) {
-	PORT_Assert (pcount == 0);
+        PORT_Assert(pcount == 0);
 
-	blocks = input_len / bsize;
-	ifraglen = blocks * bsize;
+        blocks = input_len / bsize;
+        ifraglen = blocks * bsize;
 
-	if (ifraglen) {
-	    rv = (* cc->doit) (cc->cx, output, &ofraglen, max_output_len,
-				input, ifraglen);
-	    if (rv != SECSuccess)
-		return rv;
+        if (ifraglen) {
+            rv = (*cc->doit)(cc->cx, output, &ofraglen, max_output_len,
+                             input, ifraglen);
+            if (rv != SECSuccess)
+                return rv;
 
-	    
-
-
+            
 
 
-	    PORT_Assert (ifraglen == ofraglen);
 
-	    max_output_len -= ofraglen;
-	    output_len += ofraglen;
-	    output += ofraglen;
-	}
 
-	pcount = input_len - ifraglen;
-	PORT_Assert (pcount < bsize);
-	if (pcount)
-	    PORT_Memcpy (pbuf, input + ifraglen, pcount);
+            PORT_Assert(ifraglen == ofraglen);
+
+            max_output_len -= ofraglen;
+            output_len += ofraglen;
+            output += ofraglen;
+        }
+
+        pcount = input_len - ifraglen;
+        PORT_Assert(pcount < bsize);
+        if (pcount)
+            PORT_Memcpy(pbuf, input + ifraglen, pcount);
     }
 
     if (final) {
-	if (padsize <= 0) {
-	    padlen = 0;
-	} else {
-	    padlen = padsize - (pcount % padsize);
-	    PORT_Memset (pbuf + pcount, padlen, padlen);
-	}
-	rv = (* cc->doit) (cc->cx, output, &ofraglen, max_output_len,
-			    pbuf, pcount+padlen);
-	if (rv != SECSuccess)
-	    return rv;
+        if (padsize <= 0) {
+            padlen = 0;
+        } else {
+            padlen = padsize - (pcount % padsize);
+            PORT_Memset(pbuf + pcount, padlen, padlen);
+        }
+        rv = (*cc->doit)(cc->cx, output, &ofraglen, max_output_len,
+                         pbuf, pcount + padlen);
+        if (rv != SECSuccess)
+            return rv;
 
-	
-
-
+        
 
 
-	PORT_Assert (ofraglen == (pcount+padlen));
-	output_len += ofraglen;
+
+
+        PORT_Assert(ofraglen == (pcount + padlen));
+        output_len += ofraglen;
     } else {
-	cc->pending_count = pcount;
+        cc->pending_count = pcount;
     }
 
-    PORT_Assert (output_len_p != NULL || output_len == 0);
+    PORT_Assert(output_len_p != NULL || output_len == 0);
     if (output_len_p != NULL)
-	*output_len_p = output_len;
+        *output_len_p = output_len;
 
     return SECSuccess;
 }

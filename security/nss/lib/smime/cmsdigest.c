@@ -22,19 +22,18 @@ static int stop_on_err = 1;
 static int global_num_digests = 0;
 #endif
 
-struct digestPairStr { 
-    const SECHashObject * digobj;
-    void *                digcx;
+struct digestPairStr {
+    const SECHashObject *digobj;
+    void *digcx;
 };
 typedef struct digestPairStr digestPair;
 
 struct NSSCMSDigestContextStr {
-    PRBool		saw_contents;
-    PLArenaPool *       pool;
-    int			digcnt;
-    digestPair  *       digPairs;
+    PRBool saw_contents;
+    PLArenaPool *pool;
+    int digcnt;
+    digestPair *digPairs;
 };
-
 
 
 
@@ -43,7 +42,7 @@ struct NSSCMSDigestContextStr {
 NSSCMSDigestContext *
 NSS_CMSDigestContext_StartMultiple(SECAlgorithmID **digestalgs)
 {
-    PLArenaPool *        pool;
+    PLArenaPool *pool;
     NSSCMSDigestContext *cmsdigcx;
     int digcnt;
     int i;
@@ -58,56 +57,56 @@ NSS_CMSDigestContext_StartMultiple(SECAlgorithmID **digestalgs)
 
     pool = PORT_NewArena(2048);
     if (!pool)
-    	return NULL;
+        return NULL;
 
     cmsdigcx = PORT_ArenaNew(pool, NSSCMSDigestContext);
     if (cmsdigcx == NULL)
-	goto loser;
+        goto loser;
 
     cmsdigcx->saw_contents = PR_FALSE;
-    cmsdigcx->pool   = pool;
+    cmsdigcx->pool = pool;
     cmsdigcx->digcnt = digcnt;
 
     cmsdigcx->digPairs = PORT_ArenaZNewArray(pool, digestPair, digcnt);
     if (cmsdigcx->digPairs == NULL) {
-	goto loser;
+        goto loser;
     }
 
     
 
 
     for (i = 0; i < digcnt; i++) {
-	const SECHashObject *digobj;
-	void *digcx;
+        const SECHashObject *digobj;
+        void *digcx;
 
-	digobj = NSS_CMSUtil_GetHashObjByAlgID(digestalgs[i]);
-	
-
-
+        digobj = NSS_CMSUtil_GetHashObjByAlgID(digestalgs[i]);
+        
 
 
 
 
 
-	if (digobj == NULL)
-	    continue;
 
-	digcx = (*digobj->create)();
-	if (digcx != NULL) {
-	    (*digobj->begin) (digcx);
-	    cmsdigcx->digPairs[i].digobj = digobj;
-	    cmsdigcx->digPairs[i].digcx  = digcx;
+
+        if (digobj == NULL)
+            continue;
+
+        digcx = (*digobj->create)();
+        if (digcx != NULL) {
+            (*digobj->begin)(digcx);
+            cmsdigcx->digPairs[i].digobj = digobj;
+            cmsdigcx->digPairs[i].digcx = digcx;
 #ifdef CMS_FIND_LEAK_MULTIPLE
-	    global_num_digests++;
+            global_num_digests++;
 #endif
-	}
+        }
     }
     return cmsdigcx;
 
 loser:
     
     if (pool) {
-    	PORT_FreeArena(pool, PR_FALSE);
+        PORT_FreeArena(pool, PR_FALSE);
     }
     return NULL;
 }
@@ -119,7 +118,7 @@ loser:
 NSSCMSDigestContext *
 NSS_CMSDigestContext_StartSingle(SECAlgorithmID *digestalg)
 {
-    SECAlgorithmID *digestalgs[] = { NULL, NULL };		
+    SECAlgorithmID *digestalgs[] = { NULL, NULL }; 
 
     digestalgs[0] = digestalg;
     return NSS_CMSDigestContext_StartMultiple(digestalgs);
@@ -129,7 +128,7 @@ NSS_CMSDigestContext_StartSingle(SECAlgorithmID *digestalg)
 
 
 void
-NSS_CMSDigestContext_Update(NSSCMSDigestContext *cmsdigcx, 
+NSS_CMSDigestContext_Update(NSSCMSDigestContext *cmsdigcx,
                             const unsigned char *data, int len)
 {
     int i;
@@ -138,9 +137,9 @@ NSS_CMSDigestContext_Update(NSSCMSDigestContext *cmsdigcx,
     cmsdigcx->saw_contents = PR_TRUE;
 
     for (i = 0; i < cmsdigcx->digcnt; i++, pair++) {
-	if (pair->digcx) {
-	    (*pair->digobj->update)(pair->digcx, data, len);
-    	}
+        if (pair->digcx) {
+            (*pair->digobj->update)(pair->digcx, data, len);
+        }
     }
 }
 
@@ -154,12 +153,12 @@ NSS_CMSDigestContext_Cancel(NSSCMSDigestContext *cmsdigcx)
     digestPair *pair = cmsdigcx->digPairs;
 
     for (i = 0; i < cmsdigcx->digcnt; i++, pair++) {
-	if (pair->digcx) {
-	    (*pair->digobj->destroy)(pair->digcx, PR_TRUE);
+        if (pair->digcx) {
+            (*pair->digobj->destroy)(pair->digcx, PR_TRUE);
 #ifdef CMS_FIND_LEAK_MULTIPLE
-	    --global_num_digests;
+            --global_num_digests;
 #endif
-    	}
+        }
     }
 #ifdef CMS_FIND_LEAK_MULTIPLE
     PORT_Assert(global_num_digests == 0 || !stop_on_err);
@@ -172,52 +171,52 @@ NSS_CMSDigestContext_Cancel(NSSCMSDigestContext *cmsdigcx)
 
 
 SECStatus
-NSS_CMSDigestContext_FinishMultiple(NSSCMSDigestContext *cmsdigcx, 
+NSS_CMSDigestContext_FinishMultiple(NSSCMSDigestContext *cmsdigcx,
                                     PLArenaPool *poolp,
-			            SECItem ***digestsp)
+                                    SECItem ***digestsp)
 {
-    SECItem **  digests = NULL;
+    SECItem **digests = NULL;
     digestPair *pair;
-    void *      mark;
-    int         i;
-    SECStatus   rv;
+    void *mark;
+    int i;
+    SECStatus rv;
 
     
     if (digestsp == NULL || !cmsdigcx->saw_contents) {
-	rv = SECSuccess;
-	goto cleanup;
+        rv = SECSuccess;
+        goto cleanup;
     }
 
-    mark = PORT_ArenaMark (poolp);
+    mark = PORT_ArenaMark(poolp);
 
     
-    digests = PORT_ArenaNewArray( poolp, SECItem *, cmsdigcx->digcnt + 1);
+    digests = PORT_ArenaNewArray(poolp, SECItem *, cmsdigcx->digcnt + 1);
 
     rv = ((digests == NULL) ? SECFailure : SECSuccess);
     pair = cmsdigcx->digPairs;
     for (i = 0; rv == SECSuccess && i < cmsdigcx->digcnt; i++, pair++) {
-	SECItem digest;
-	unsigned char hash[HASH_LENGTH_MAX];
+        SECItem digest;
+        unsigned char hash[HASH_LENGTH_MAX];
 
-	if (!pair->digcx) {
-	    digests[i] = NULL;
-	    continue;
-	}
+        if (!pair->digcx) {
+            digests[i] = NULL;
+            continue;
+        }
 
-	digest.type = siBuffer;
-	digest.data = hash;
-	digest.len  = pair->digobj->length;
-	(* pair->digobj->end)(pair->digcx, hash, &digest.len, digest.len);
-	digests[i] = SECITEM_ArenaDupItem(poolp, &digest);
-	if (!digests[i]) {
-	    rv = SECFailure;
-	}
+        digest.type = siBuffer;
+        digest.data = hash;
+        digest.len = pair->digobj->length;
+        (*pair->digobj->end)(pair->digcx, hash, &digest.len, digest.len);
+        digests[i] = SECITEM_ArenaDupItem(poolp, &digest);
+        if (!digests[i]) {
+            rv = SECFailure;
+        }
     }
     digests[i] = NULL;
     if (rv == SECSuccess) {
-	PORT_ArenaUnmark(poolp, mark);
+        PORT_ArenaUnmark(poolp, mark);
     } else
-	PORT_ArenaRelease(poolp, mark);
+        PORT_ArenaRelease(poolp, mark);
 
 cleanup:
     NSS_CMSDigestContext_Cancel(cmsdigcx);
@@ -225,7 +224,7 @@ cleanup:
 
 
     if (rv == SECSuccess && digestsp && digests) {
-	*digestsp = digests;
+        *digestsp = digests;
     }
     return rv;
 }
@@ -235,26 +234,26 @@ cleanup:
 
 
 SECStatus
-NSS_CMSDigestContext_FinishSingle(NSSCMSDigestContext *cmsdigcx, 
+NSS_CMSDigestContext_FinishSingle(NSSCMSDigestContext *cmsdigcx,
                                   PLArenaPool *poolp,
-			          SECItem *digest)
+                                  SECItem *digest)
 {
     SECStatus rv = SECFailure;
     SECItem **dp;
     PLArenaPool *arena = NULL;
 
     if ((arena = PORT_NewArena(1024)) == NULL)
-	goto loser;
+        goto loser;
 
     
     rv = NSS_CMSDigestContext_FinishMultiple(cmsdigcx, arena, &dp);
     if (rv == SECSuccess) {
-	
-	rv = SECITEM_CopyItem(poolp, digest, dp[0]);
+        
+        rv = SECITEM_CopyItem(poolp, digest, dp[0]);
     }
 loser:
     if (arena)
-	PORT_FreeArena(arena, PR_FALSE);
+        PORT_FreeArena(arena, PR_FALSE);
 
     return rv;
 }
