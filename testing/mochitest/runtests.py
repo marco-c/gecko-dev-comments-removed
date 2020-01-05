@@ -824,6 +824,7 @@ class MochitestDesktop(object):
         self.result = {}
 
         self.start_script = os.path.join(here, 'start_desktop.js')
+        self.disable_leak_checking = False
 
     def update_mozinfo(self):
         """walk up directories to find mozinfo.json update the info"""
@@ -1495,7 +1496,8 @@ toolbar#nav-bar {
             self.log.error(str(e))
             return None
 
-        browserEnv["XPCOM_MEM_BLOAT_LOG"] = self.leak_report_file
+        if not self.disable_leak_checking:
+            browserEnv["XPCOM_MEM_BLOAT_LOG"] = self.leak_report_file
 
         try:
             gmp_path = self.getGMPPluginPath(options)
@@ -1939,12 +1941,13 @@ toolbar#nav-bar {
             args.append('-foreground')
             self.start_script_args.append(testUrl or 'about:blank')
 
-            if detectShutdownLeaks:
+            if detectShutdownLeaks and not self.disable_leak_checking:
                 shutdownLeaks = ShutdownLeaks(self.log)
             else:
                 shutdownLeaks = None
 
-            if mozinfo.info["asan"] and (mozinfo.isLinux or mozinfo.isMac):
+            if mozinfo.info["asan"] and (mozinfo.isLinux or mozinfo.isMac) \
+                    and not self.disable_leak_checking:
                 lsanLeaks = LSANLeaks(self.log)
             else:
                 lsanLeaks = None
@@ -2201,6 +2204,36 @@ toolbar#nav-bar {
         result = 1  
         for d in dirs:
             print "dir: %s" % d
+
+            
+            
+            
+            
+            
+            
+            
+            
+
+            info = mozinfo.info
+            skip_leak_conditions = [
+                (options.flavor in ('browser', 'chrome', 'plain') and d.startswith('toolkit/components/extensions/test/mochitest'), 'bug 1325158'),  
+                (info['debug'] and options.flavor == 'browser' and d.startswith('browser/components/extensions/test/browser'), 'bug 1325141'),  
+                (info['debug'] and options.flavor == 'plain' and d == 'dom/animation/test/css-animations', 'bug 1325277'),  
+                (info['debug'] and options.flavor == 'plain' and d == 'dom/tests/mochitest/gamepad' and info['os'] == 'win', 'bug 1324592'),  
+                (info['debug'] and options.flavor == 'plain' and d == 'toolkit/components/prompts/test' and info['os'] == 'mac', 'bug 1325275'),  
+                (info['debug'] and options.flavor == 'plain' and d == 'tests/dom/xhr/tests', 'bug 1325438'),  
+            ]
+
+            for condition, reason in skip_leak_conditions:
+                if condition:
+                    self.log.warning('WARNING | disabling leakcheck due to {}'.format(reason))
+                    self.disable_leak_checking = True
+                    break
+            else:
+                self.disable_leak_checking = False
+
+            
+
             tests_in_dir = [t for t in testsToRun if os.path.dirname(t) == d]
 
             
