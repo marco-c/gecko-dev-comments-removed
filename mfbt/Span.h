@@ -87,6 +87,14 @@ class Span;
 
 namespace span_details {
 
+inline size_t strlen16(const char16_t* aZeroTerminated) {
+  size_t len = 0;
+  while (*(aZeroTerminated++)) {
+    len++;
+  }
+  return len;
+}
+
 
 template<class T>
 using remove_cv_t = typename mozilla::RemoveCV<T>::Type;
@@ -1015,9 +1023,18 @@ MakeSpan(Ptr& aPtr, size_t aLength)
 
 
 inline Span<const char>
-MakeCStringSpan(const char* aStr)
+MakeStringSpan(const char* aZeroTerminated)
 {
-  return Span<const char>(aStr, std::strlen(aStr));
+  return Span<const char>(aZeroTerminated, std::strlen(aZeroTerminated));
+}
+
+
+
+
+inline Span<const char16_t>
+MakeStringSpan(const char16_t* aZeroTerminated)
+{
+  return Span<const char16_t>(aZeroTerminated, span_details::strlen16(aZeroTerminated));
 }
 
 } 
