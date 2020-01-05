@@ -41,7 +41,7 @@ public:
 #ifdef DEBUG
   
   
-  void CheckValidMainSummary(const nsFrameList& aFrameList) const;
+  bool CheckValidMainSummary(const nsFrameList& aFrameList) const;
 #endif
 
   void SetInitialChildList(ChildListID aListID,
