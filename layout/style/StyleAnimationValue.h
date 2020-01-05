@@ -20,7 +20,6 @@
 class nsIFrame;
 class nsStyleContext;
 class gfx3DMatrix;
-struct ServoDeclarationBlock;
 
 namespace mozilla {
 
@@ -235,17 +234,6 @@ public:
                 const nsCSSValue& aSpecifiedValue,
                 bool aUseSVGMode,
                 nsTArray<PropertyStyleAnimationValuePair>& aResult);
-
-  
-
-
-
-  static MOZ_MUST_USE bool
-  ComputeValues(nsCSSPropertyID aProperty,
-                mozilla::CSSEnabledState aEnabledState,
-                nsStyleContext* aStyleContext,
-                const ServoDeclarationBlock& aDeclarations,
-                nsTArray<PropertyStyleAnimationValuePair>& aValues);
 
   
 
@@ -526,6 +514,17 @@ public:
   void SetTransformValue(nsCSSValueSharedList* aList);
 
   StyleAnimationValue& operator=(const StyleAnimationValue& aOther);
+  StyleAnimationValue& operator=(StyleAnimationValue&& aOther)
+  {
+    MOZ_ASSERT(this != &aOther, "Do not move itself");
+    if (this != &aOther) {
+      FreeValue();
+      mUnit = aOther.mUnit;
+      mValue = aOther.mValue;
+      aOther.mUnit = eUnit_Null;
+    }
+    return *this;
+  }
 
   bool operator==(const StyleAnimationValue& aOther) const;
   bool operator!=(const StyleAnimationValue& aOther) const
