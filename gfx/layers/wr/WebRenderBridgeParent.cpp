@@ -61,6 +61,8 @@ WebRenderBridgeParent::RecvDestroy()
   wr_destroy(mWRState);
   mWRState = nullptr;
   if (mWidget) {
+    
+    
     mCompositor->Destroy();
   }
   return IPC_OK();
