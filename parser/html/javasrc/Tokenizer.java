@@ -817,6 +817,8 @@ public class Tokenizer implements Locator {
     }
 
     @Inline private void appendCharRefBuf(char c) {
+        
+        
         charRefBuf[charRefBufLen++] = c;
     }
 
@@ -850,7 +852,13 @@ public class Tokenizer implements Locator {
 
 
 
-    private void appendStrBuf(char c) {
+    @Inline private void appendStrBuf(char c) {
+        
+        
+        
+        
+        
+        
         strBuf[strBufLen++] = c;
     }
 
@@ -951,14 +959,15 @@ public class Tokenizer implements Locator {
     }
 
     private void appendStrBuf(@NoLength char[] buffer, int offset, int length) {
-        int reqLen = strBufLen + length;
-        if (strBuf.length < reqLen) {
-            char[] newBuf = new char[reqLen + (reqLen >> 1)];
-            System.arraycopy(strBuf, 0, newBuf, 0, strBuf.length);
-            strBuf = newBuf;
-        }
+        int newLen = strBufLen + length;
+        
+        
+        
+        
+        
+        
         System.arraycopy(buffer, offset, strBuf, strBufLen, length);
-        strBufLen = reqLen;
+        strBufLen = newLen;
     }
 
     
