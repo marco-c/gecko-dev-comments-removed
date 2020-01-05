@@ -344,49 +344,14 @@ ToCString(ValType type)
 
 
 
-
-
-
-
-template<class T>
-class Raw
-{
-    typedef typename mozilla::FloatingPoint<T>::Bits Bits;
-    Bits value_;
-
-  public:
-    Raw() : value_(0) {}
-
-    explicit Raw(T value)
-      : value_(mozilla::BitwiseCast<Bits>(value))
-    {}
-
-    template<class U> MOZ_IMPLICIT Raw(U) = delete;
-
-    static Raw fromBits(Bits bits) { Raw r; r.value_ = bits; return r; }
-
-    Bits bits() const { return value_; }
-    T fp() const { return mozilla::BitwiseCast<T>(value_); }
-};
-
-using RawF64 = Raw<double>;
-using RawF32 = Raw<float>;
-
-
-
-
-
-
-
-
 class Val
 {
     ValType type_;
     union U {
         uint32_t i32_;
         uint64_t i64_;
-        RawF32 f32_;
-        RawF64 f64_;
+        float f32_;
+        double f64_;
         I8x16 i8x16_;
         I16x8 i16x8_;
         I32x4 i32x4_;
@@ -400,10 +365,8 @@ class Val
     explicit Val(uint32_t i32) : type_(ValType::I32) { u.i32_ = i32; }
     explicit Val(uint64_t i64) : type_(ValType::I64) { u.i64_ = i64; }
 
-    explicit Val(RawF32 f32) : type_(ValType::F32) { u.f32_ = f32; }
-    explicit Val(RawF64 f64) : type_(ValType::F64) { u.f64_ = f64; }
-    MOZ_IMPLICIT Val(float) = delete;
-    MOZ_IMPLICIT Val(double) = delete;
+    explicit Val(float f32) : type_(ValType::F32) { u.f32_ = f32; }
+    explicit Val(double f64) : type_(ValType::F64) { u.f64_ = f64; }
 
     explicit Val(const I8x16& i8x16, ValType type = ValType::I8x16) : type_(type) {
         MOZ_ASSERT(type_ == ValType::I8x16 || type_ == ValType::B8x16);
@@ -426,8 +389,8 @@ class Val
 
     uint32_t i32() const { MOZ_ASSERT(type_ == ValType::I32); return u.i32_; }
     uint64_t i64() const { MOZ_ASSERT(type_ == ValType::I64); return u.i64_; }
-    RawF32 f32() const { MOZ_ASSERT(type_ == ValType::F32); return u.f32_; }
-    RawF64 f64() const { MOZ_ASSERT(type_ == ValType::F64); return u.f64_; }
+    const float& f32() const { MOZ_ASSERT(type_ == ValType::F32); return u.f32_; }
+    const double& f64() const { MOZ_ASSERT(type_ == ValType::F64); return u.f64_; }
 
     const I8x16& i8x16() const {
         MOZ_ASSERT(type_ == ValType::I8x16 || type_ == ValType::B8x16);
