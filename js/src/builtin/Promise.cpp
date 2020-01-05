@@ -580,7 +580,7 @@ ResolvePromise(JSContext* cx, Handle<PromiseObject*> promise, HandleValue valueO
 
     
     
-    promise->onSettled(cx);
+    PromiseObject::onSettled(cx, promise);
 
     
     
@@ -2618,10 +2618,9 @@ PromiseObject::reject(JSContext* cx, Handle<PromiseObject*> promise, HandleValue
     return Call(cx, funVal, UndefinedHandleValue, args, &dummy);
 }
 
-void
-PromiseObject::onSettled(JSContext* cx)
+ void
+PromiseObject::onSettled(JSContext* cx, Handle<PromiseObject*> promise)
 {
-    Rooted<PromiseObject*> promise(cx, this);
     RootedObject stack(cx);
     if (cx->options().asyncStack() || cx->compartment()->isDebuggee()) {
         if (!JS::CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::AllFrames()))) {
