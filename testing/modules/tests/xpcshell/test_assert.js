@@ -352,6 +352,10 @@ add_task(function* test_rejects() {
   yield assert.rejects(Promise.reject(new Error("oh no")), /oh no/, "rejected");
 
   
+  let result = yield assert.rejects(Promise.reject("oh no"));
+  equal(result, "oh no");
+
+  
   
   yield checkRejectsFails(new Error("something else"), SomeErrorLikeThing);
   
