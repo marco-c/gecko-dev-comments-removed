@@ -56,6 +56,7 @@ public class FennecTabsRepository extends Repository {
     private final ContentProviderClient clientsProvider;
 
     protected final RepoUtils.QueryHelper tabsHelper;
+    protected final RepoUtils.QueryHelper clientsHelper;
 
     protected final ClientsDatabaseAccessor clientsDatabase;
 
@@ -92,6 +93,7 @@ public class FennecTabsRepository extends Repository {
       }
 
       tabsHelper = new RepoUtils.QueryHelper(context, BrowserContractHelpers.TABS_CONTENT_URI, LOG_TAG);
+      clientsHelper = new RepoUtils.QueryHelper(context, BrowserContractHelpers.CLIENTS_CONTENT_URI, LOG_TAG);
       clientsDatabase = new ClientsDatabaseAccessor(context);
     }
 
@@ -158,7 +160,10 @@ public class FennecTabsRepository extends Repository {
             try {
               final String localClientGuid = clientsDataDelegate.getAccountGUID();
               final String localClientName = clientsDataDelegate.getClientName();
-              final TabsRecord tabsRecord = FennecTabsRepository.tabsRecordFromCursor(cursor, localClientGuid, localClientName);
+              final long localClientLastModified = getLocalClientLastModified();
+              
+              
+              final TabsRecord tabsRecord = FennecTabsRepository.tabsRecordFromCursor(cursor, localClientGuid, localClientName, localClientLastModified);
 
               if (tabsRecord.lastModified >= timestamp ||
                   clientsDataDelegate.getLastModifiedTimestamp() >= timestamp) {
@@ -176,6 +181,19 @@ public class FennecTabsRepository extends Repository {
       };
 
       delegateQueue.execute(command);
+    }
+
+    private long getLocalClientLastModified() {
+      final String localClientSelection = Clients.GUID + " IS NULL";
+      final String[] localClientSelectionArgs = null;
+      try {
+        final Cursor cursor = clientsHelper.safeQuery(tabsProvider, ".fetchLocalClient()", null,
+                localClientSelection, localClientSelectionArgs, null);
+        cursor.moveToFirst();
+        return RepoUtils.getLongFromCursor(cursor, Clients.LAST_MODIFIED);
+      } catch (Exception e) {
+        return 0;
+      }
     }
 
     @Override
@@ -323,7 +341,9 @@ public class FennecTabsRepository extends Repository {
 
 
 
-  public static TabsRecord tabsRecordFromCursor(final Cursor cursor, final String clientGuid, final String clientName) {
+
+
+  public static TabsRecord tabsRecordFromCursor(final Cursor cursor, final String clientGuid, final String clientName, long lastModified) {
     final String collection = "tabs";
     final TabsRecord record = new TabsRecord(clientGuid, collection, 0, false);
     record.tabs = new ArrayList<Tab>();
@@ -332,8 +352,6 @@ public class FennecTabsRepository extends Repository {
     record.androidID = -1;
     record.deleted = false;
 
-    record.lastModified = 0;
-
     int position = cursor.getPosition();
     try {
       cursor.moveToFirst();
@@ -341,15 +359,13 @@ public class FennecTabsRepository extends Repository {
         final Tab tab = Tab.fromCursor(cursor);
         record.tabs.add(tab);
 
-        if (tab.lastUsed > record.lastModified) {
-          record.lastModified = tab.lastUsed;
-        }
-
         cursor.moveToNext();
       }
     } finally {
       cursor.moveToPosition(position);
     }
+
+    record.lastModified = lastModified;
 
     return record;
   }

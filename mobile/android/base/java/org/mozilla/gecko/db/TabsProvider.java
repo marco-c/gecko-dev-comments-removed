@@ -289,7 +289,10 @@ public class TabsProvider extends SharedBrowserDatabaseProvider {
                 }
 
                 qb.setProjectionMap(TABS_PROJECTION_MAP);
-                qb.setTables(TABLE_TABS + " LEFT OUTER JOIN " + TABLE_CLIENTS + " ON (" + TABLE_TABS + "." + Tabs.CLIENT_GUID + " = " + TABLE_CLIENTS + "." + Clients.GUID + ")");
+                qb.setTables(TABLE_TABS + " LEFT OUTER JOIN " + TABLE_CLIENTS + " ON (" + TABLE_TABS + "." + Tabs.CLIENT_GUID + " = " + TABLE_CLIENTS + "." + Clients.GUID +
+                             " OR (" + TABLE_TABS + "." + Tabs.CLIENT_GUID + " IS NULL AND " + TABLE_CLIENTS + "." + Clients.GUID + " IS NULL))");
+                
+                
                 break;
 
             case CLIENTS_ID:
