@@ -305,13 +305,18 @@ nsTextControlFrame::EnsureEditorInitialized()
     
     mEditorHasBeenInitialized = true;
 
-    nsAutoString val;
-    txtCtrl->GetTextEditorValue(val, true);
-    int32_t length = val.Length();
-
-    
     if (weakFrame.IsAlive()) {
-      SetSelectionEndPoints(length, length);
+      int32_t position = 0;
+
+      
+      
+      if (txtCtrl->ValueChanged()) {
+        nsAutoString val;
+        txtCtrl->GetTextEditorValue(val, true);
+        position = val.Length();
+      }
+
+      SetSelectionEndPoints(position, position);
     }
   }
   NS_ENSURE_STATE(weakFrame.IsAlive());
