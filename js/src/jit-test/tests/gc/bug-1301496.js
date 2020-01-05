@@ -1,0 +1,7 @@
+if (helperThreadCount() == 0)
+    quit();
+startgc(1, 'shrinking');
+offThreadCompileScript("");
+
+gczeal(9);
+newGlobal();
