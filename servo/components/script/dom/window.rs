@@ -218,8 +218,7 @@ impl Window {
 }
 
 
-pub fn base64_btoa(btoa: DOMString) -> Fallible<DOMString> {
-    let input = btoa.as_slice();
+pub fn base64_btoa(input: DOMString) -> Fallible<DOMString> {
     
     
     
@@ -239,10 +238,7 @@ pub fn base64_btoa(btoa: DOMString) -> Fallible<DOMString> {
 }
 
 
-pub fn base64_atob(atob: DOMString) -> Fallible<DOMString> {
-    
-    let input = atob.as_slice();
-
+pub fn base64_atob(input: DOMString) -> Fallible<DOMString> {
     
     
     
