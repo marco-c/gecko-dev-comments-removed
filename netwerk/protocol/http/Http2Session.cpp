@@ -226,6 +226,7 @@ static Http2ControlFx sControlFunctions[] = {
   Http2Session::RecvWindowUpdate,
   Http2Session::RecvContinuation,
   Http2Session::RecvAltSvc, 
+  Http2Session::RecvUnused, 
   Http2Session::RecvOrigin  
 };
 
@@ -2304,6 +2305,15 @@ Http2Session::Received421(nsHttpConnectionInfo *ci)
   key.AppendInt(ci->OriginPort());
   mOriginFrame.Remove(key);
   LOG3(("Http2Session::Received421 %p key %s removed\n", this, key.get()));
+}
+
+nsresult
+Http2Session::RecvUnused(Http2Session *self)
+{
+  LOG3(("Http2Session %p unknown frame type %x ignored\n",
+        self, self->mInputFrameType));
+  self->ResetDownstreamState();
+  return NS_OK;
 }
 
 

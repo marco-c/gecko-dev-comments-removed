@@ -1069,7 +1069,10 @@ Deserializer.ALTSVC = function readAltSvc(buffer, frame) {
   }
 };
 
-frameTypes[0xB] = 'ORIGIN';
+
+
+
+frameTypes[0xC] = 'ORIGIN';
 frameFlags.ORIGIN = [];
 typeSpecificAttributes.ORIGIN = ['originList'];
 
