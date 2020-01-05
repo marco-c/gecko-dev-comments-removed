@@ -5036,6 +5036,8 @@ pref("gfx.vr.osvr.utilLibPath", "");
 pref("gfx.vr.osvr.commonLibPath", "");
 pref("gfx.vr.osvr.clientLibPath", "");
 pref("gfx.vr.osvr.clientKitLibPath", "");
+
+pref("dom.vr.puppet.enabled", false);
 pref("dom.vr.test.enabled", false);
 
 pref("wap.UAProf.url", "");
