@@ -7,9 +7,11 @@
 #ifndef nsThreadSyncDispatch_h_
 #define nsThreadSyncDispatch_h_
 
+#include "mozilla/Atomics.h"
+#include "mozilla/DebugOnly.h"
+
 #include "nsThreadUtils.h"
 #include "LeakRefPtr.h"
-#include "mozilla/DebugOnly.h"
 
 class nsThreadSyncDispatch : public mozilla::Runnable
 {
@@ -17,27 +19,37 @@ public:
   nsThreadSyncDispatch(nsIThread* aOrigin, already_AddRefed<nsIRunnable>&& aTask)
     : mOrigin(aOrigin)
     , mSyncTask(mozilla::Move(aTask))
+    , mIsPending(true)
   {
   }
 
   bool IsPending()
   {
-    return !!mSyncTask;
+    
+    return mIsPending;
   }
 
 private:
   NS_IMETHOD Run() override
   {
-    if (nsIRunnable* task = mSyncTask.get()) {
+    if (nsCOMPtr<nsIRunnable> task = mSyncTask.take()) {
+      MOZ_ASSERT(!mSyncTask);
+
       mozilla::DebugOnly<nsresult> result = task->Run();
       MOZ_ASSERT(NS_SUCCEEDED(result),
                  "task in sync dispatch should not fail");
+
       
       
-      mSyncTask.release();
+      task = nullptr;
+
+      
+      mIsPending = false;
+
       
       mOrigin->Dispatch(this, NS_DISPATCH_NORMAL);
     }
+
     return NS_OK;
   }
 
@@ -45,6 +57,7 @@ private:
   
   
   mozilla::LeakRefPtr<nsIRunnable> mSyncTask;
+  mozilla::Atomic<bool, mozilla::ReleaseAcquire> mIsPending;
 };
 
 #endif 
