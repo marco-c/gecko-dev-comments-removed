@@ -919,10 +919,6 @@ nsCSPHashSrc::allows(enum CSPKeyword aKeyword, const nsAString& aHashOrNonce,
   rv = hasher->Finish(true, hash);
   NS_ENSURE_SUCCESS(rv, false);
 
-  
-  
-  
-  hash.StripChars("\r\n");
   return NS_ConvertUTF16toUTF8(mHash).Equals(hash);
 }
 
