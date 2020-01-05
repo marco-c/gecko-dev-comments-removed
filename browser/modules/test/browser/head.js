@@ -182,12 +182,35 @@ function clickMainAction() {
 
 
 
-function clickSecondaryAction() {
+
+
+
+
+
+function clickSecondaryAction(actionIndex) {
   let removePromise =
     BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popuphidden");
   let popupNotification = getPopupNotificationNode();
-  popupNotification.secondaryButton.click();
-  return removePromise;
+  if (!actionIndex) {
+    popupNotification.secondaryButton.click();
+    return removePromise;
+  }
+
+  return Task.spawn(function* () {
+    
+    let dropdownPromise =
+      BrowserTestUtils.waitForEvent(popupNotification.menupopup, "popupshown");
+    yield EventUtils.synthesizeMouseAtCenter(popupNotification.menubutton, {});
+    yield dropdownPromise;
+
+    
+    
+    
+    
+    let actionMenuItem = popupNotification.querySelectorAll("menuitem")[actionIndex - 1];
+    yield EventUtils.synthesizeMouseAtCenter(actionMenuItem, {});
+    yield removePromise;
+  });
 }
 
 
