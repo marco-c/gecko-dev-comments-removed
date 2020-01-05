@@ -78,9 +78,6 @@ public:
     int32_t *aHandle);
   void CancelFrameRequestCallback(int32_t aHandle);
   void RunFrameRequestCallbacks();
-  
-  
-  void SetGamepadManager(dom::GamepadManager* aGamepadManager);
 
   void UpdateDisplayInfo(nsTArray<VRDisplayInfo>& aDisplayUpdates);
   void FireDOMVRDisplayConnectEvent();
@@ -153,7 +150,6 @@ private:
   nsTArray<RefPtr<VRDisplayClient> > mDisplays;
   bool mDisplaysInitialized;
   nsTArray<uint64_t> mNavigatorCallbacks;
-  dom::GamepadManager* mGamepadManager;
 
   int32_t mInputFrameID;
 

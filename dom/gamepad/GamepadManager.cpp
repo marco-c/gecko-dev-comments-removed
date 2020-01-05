@@ -684,7 +684,6 @@ GamepadManager::ActorCreated(PBackgroundChild *aActor)
   
   
   mVRChannelChild = gfx::VRManagerChild::Get();
-  mVRChannelChild->SetGamepadManager(this);
   mVRChannelChild->SendControllerListenerAdded();
 #endif
 }
