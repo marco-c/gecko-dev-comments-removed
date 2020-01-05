@@ -2981,7 +2981,7 @@ PresShell::CreateReferenceRenderingContext()
     
     
     
-    rc = devCtx->CreateRenderingContext();
+    rc = devCtx->CreateReferenceRenderingContext();
   }
 
   return rc ? rc.forget() : nullptr;
