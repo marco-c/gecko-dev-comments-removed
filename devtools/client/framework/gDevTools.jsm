@@ -134,9 +134,6 @@ let gDevToolsBrowserMethods = [
   "openContentProcessToolbox",
 
   
-  "moveWebIDEWidgetInNavbar",
-
-  
   "registerBrowserWindow",
 
   
