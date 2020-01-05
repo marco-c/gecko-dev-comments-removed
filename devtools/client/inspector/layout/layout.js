@@ -13,12 +13,18 @@ const {
   updateGridHighlighted,
   updateGrids,
 } = require("./actions/grids");
+const {
+  updateShowInfiniteLines,
+} = require("./actions/highlighter-settings");
+
 const App = createFactory(require("./components/App"));
 const Store = require("./store");
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const INSPECTOR_L10N =
   new LocalizationHelper("devtools/client/locales/inspector.properties");
+
+const SHOW_INFINITE_LINES_PREF = "devtools.gridinspector.showInfiniteLines";
 
 function LayoutView(inspector, window) {
   this.document = window.document;
@@ -52,6 +58,8 @@ LayoutView.prototype = {
     this.layoutInspector = yield this.inspector.walker.getLayoutInspector();
     let store = this.store = Store();
 
+    this.loadHighlighterSettings();
+
     let app = App({
 
       
@@ -63,7 +71,30 @@ LayoutView.prototype = {
 
 
       onToggleGridHighlighter: node => {
-        this.highlighters.toggleGridHighlighter(node);
+        let { highlighterSettings } = this.store.getState();
+        this.highlighters.toggleGridHighlighter(node, highlighterSettings);
+      },
+
+      
+
+
+
+
+
+
+
+
+      onToggleShowInfiniteLines: enabled => {
+        this.store.dispatch(updateShowInfiniteLines(enabled));
+        Services.prefs.setBoolPref(SHOW_INFINITE_LINES_PREF, enabled);
+
+        let { grids, highlighterSettings } = this.store.getState();
+
+        for (let grid of grids) {
+          if (grid.highlighted) {
+            this.highlighters.showGridHighlighter(grid.nodeFront, highlighterSettings);
+          }
+        }
       },
 
     });
@@ -109,6 +140,16 @@ LayoutView.prototype = {
     return this.inspector.toolbox.currentToolId === "inspector" &&
            this.inspector.sidebar &&
            this.inspector.sidebar.getCurrentTabID() === "layoutview";
+  },
+
+  
+
+
+  loadHighlighterSettings() {
+    let { dispatch } = this.store;
+
+    let showInfinteLines = Services.prefs.getBoolPref(SHOW_INFINITE_LINES_PREF);
+    dispatch(updateShowInfiniteLines(showInfinteLines));
   },
 
   
