@@ -6,19 +6,19 @@
 #if !defined(DecodedAudioDataSink_h__)
 #define DecodedAudioDataSink_h__
 
-#include "AudioSink.h"
 #include "AudioStream.h"
 #include "MediaEventSource.h"
 #include "MediaQueue.h"
 #include "MediaInfo.h"
-#include "mozilla/RefPtr.h"
-#include "nsISupportsImpl.h"
+#include "MediaSink.h"
 
 #include "mozilla/dom/AudioChannelBinding.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/Monitor.h"
+#include "mozilla/RefPtr.h"
+#include "nsISupportsImpl.h"
 
 namespace mozilla {
 
@@ -26,8 +26,10 @@ class AudioConverter;
 
 namespace media {
 
-class DecodedAudioDataSink : public AudioSink,
-                             private AudioStream::DataSource {
+class DecodedAudioDataSink : private AudioStream::DataSource {
+  using PlaybackParams = MediaSink::PlaybackParams;
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(DecodedAudioDataSink)
+
 public:
   DecodedAudioDataSink(AbstractThread* aThread,
                        MediaQueue<AudioData>& aAudioQueue,
@@ -37,26 +39,26 @@ public:
 
   
   
-  RefPtr<GenericPromise> Init(const PlaybackParams& aParams) override;
+  RefPtr<GenericPromise> Init(const PlaybackParams& aParams);
 
   
 
 
 
-  int64_t GetPosition() override;
-  int64_t GetEndTime() const override;
+  int64_t GetPosition();
+  int64_t GetEndTime() const;
 
   
   
-  bool HasUnplayedFrames() override;
+  bool HasUnplayedFrames();
 
   
-  void Shutdown() override;
+  void Shutdown();
 
-  void SetVolume(double aVolume) override;
-  void SetPlaybackRate(double aPlaybackRate) override;
-  void SetPreservesPitch(bool aPreservesPitch) override;
-  void SetPlaying(bool aPlaying) override;
+  void SetVolume(double aVolume);
+  void SetPlaybackRate(double aPlaybackRate);
+  void SetPreservesPitch(bool aPreservesPitch);
+  void SetPlaying(bool aPlaying);
 
   MediaEventSource<bool>& AudibleEvent() {
     return mAudibleEvent;
@@ -157,6 +159,8 @@ private:
   bool mIsAudioDataAudible;
 
   MediaEventProducer<bool> mAudibleEvent;
+
+  MediaQueue<AudioData>& mAudioQueue;
 };
 
 } 
