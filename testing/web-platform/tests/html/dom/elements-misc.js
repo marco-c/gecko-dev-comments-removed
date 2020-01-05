@@ -10,17 +10,12 @@ var miscElements = {
   script: {
     src: "url",
     type: "string",
-    noModule: "boolean",
     charset: "string",
     
     defer: "boolean",
     crossOrigin: {type: "enum", keywords: ["anonymous", "use-credentials"], nonCanon:{"": "anonymous"}, isNullable: true, defaultVal: null, invalidVal: "anonymous"},
     nonce: "string",
     integrity: "string",
-
-    
-    event: "string",
-    htmlFor: {type: "string", domAttrName: "for"},
   },
   noscript: {},
 
@@ -42,7 +37,7 @@ var miscElements = {
   menu: {
     
     
-    type: {type: "enum", keywords:["context", "toolbar"], defaultVal: "toolbar"},
+    type: {type: "enum", keywords:["popup", "toolbar"], defaultVal: "toolbar"},
     label: "string",
 
     
