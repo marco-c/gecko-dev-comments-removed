@@ -3,9 +3,8 @@
 
 
 use azure::azure_hl::Color;
-use constellation_msg::{Key, KeyModifiers, KeyState, PipelineId};
-use euclid::{Matrix4, Point2D, Rect};
-use ipc_channel::ipc::IpcSender;
+use constellation_msg::PipelineId;
+use euclid::{Matrix4, Rect};
 use std::fmt::{self, Debug, Formatter};
 
 
