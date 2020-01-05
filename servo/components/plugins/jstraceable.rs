@@ -15,9 +15,7 @@ pub fn expand_dom_struct(cx: &mut ExtCtxt, sp: Span, _: &MetaItem, anno: Annotat
         item2.attrs.push(quote_attr!(cx, #[repr(C)]));
         item2.attrs.push(quote_attr!(cx, #[derive(JSTraceable)]));
         item2.attrs.push(quote_attr!(cx, #[derive(HeapSizeOf)]));
-
-        
-        item2.attrs.push(quote_attr!(cx, #[_generate_reflector]));
+        item2.attrs.push(quote_attr!(cx, #[derive(DomObject)]));
         
         
         item2.attrs.push(quote_attr!(cx, #[_dom_struct_marker]));

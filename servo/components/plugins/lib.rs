@@ -35,8 +35,6 @@ use syntax::symbol::Symbol;
 pub mod jstraceable;
 pub mod lints;
 
-pub mod reflector;
-
 mod utils;
 
 #[plugin_registrar]
@@ -44,10 +42,6 @@ pub fn plugin_registrar(reg: &mut Registry) {
     reg.register_syntax_extension(
         Symbol::intern("dom_struct"),
         MultiModifier(box jstraceable::expand_dom_struct));
-
-    reg.register_syntax_extension(
-        Symbol::intern("_generate_reflector"),
-        MultiDecorator(box reflector::expand_reflector));
 
     reg.register_late_lint_pass(box lints::unrooted_must_root::UnrootedPass::new());
     reg.register_late_lint_pass(box lints::privatize::PrivatizePass);
