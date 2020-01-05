@@ -105,6 +105,8 @@ var interfaceNamesInGlobalScope =
 
     "Event",
 
+    "EventSource",
+
     "EventTarget",
 
     "File",
