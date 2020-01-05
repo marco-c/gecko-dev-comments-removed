@@ -581,6 +581,21 @@ ICStubCompiler::enterStubFrame(MacroAssembler& masm, Register scratch)
 }
 
 void
+ICStubCompiler::assumeStubFrame(MacroAssembler& masm)
+{
+    MOZ_ASSERT(!inStubFrame_);
+    inStubFrame_ = true;
+
+#ifdef DEBUG
+    entersStubFrame_ = true;
+
+    
+    
+    framePushedAtEnterStubFrame_ = STUB_FRAME_SIZE;
+#endif
+}
+
+void
 ICStubCompiler::leaveStubFrame(MacroAssembler& masm, bool calledIntoIon)
 {
     MOZ_ASSERT(entersStubFrame_ && inStubFrame_);
@@ -2079,15 +2094,8 @@ ICGetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     
-#ifdef DEBUG
-    EmitRepushTailCallReg(masm);
-    enterStubFrame(masm, R0.scratchReg());
-#else
-    inStubFrame_ = true;
-#endif
-
     
-    
+    assumeStubFrame(masm);
     returnOffset_ = masm.currentOffset();
 
     leaveStubFrame(masm, true);

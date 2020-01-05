@@ -1643,16 +1643,8 @@ ICSetProp_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
 
     
     
-#ifdef DEBUG
-    EmitRepushTailCallReg(masm);
-    EmitStowICValues(masm, 1);
-    enterStubFrame(masm, R1.scratchReg());
-#else
-    inStubFrame_ = true;
-#endif
-
     
-    
+    assumeStubFrame(masm);
     returnOffset_ = masm.currentOffset();
 
     leaveStubFrame(masm, true);
@@ -2818,18 +2810,14 @@ ICCall_Fallback::Compiler::generateStubCode(MacroAssembler& masm)
     if (!callVM(DoCallFallbackInfo, masm))
         return false;
 
-    uint32_t framePushed = masm.framePushed();
     leaveStubFrame(masm);
     EmitReturnFromIC(masm);
 
     
     
     
+    assumeStubFrame(masm);
     returnOffset_ = masm.currentOffset();
-
-    
-    inStubFrame_ = true;
-    masm.setFramePushed(framePushed);
 
     
     
@@ -3153,8 +3141,8 @@ ICCallScriptedCompiler::generateStubCode(MacroAssembler& masm)
     EmitEnterTypeMonitorIC(masm);
 
     
+    assumeStubFrame(masm);
     masm.bind(&failureLeaveStubFrame);
-    inStubFrame_ = true;
     leaveStubFrame(masm, false);
     if (argcReg != R0.scratchReg())
         masm.movePtr(argcReg, R0.scratchReg());
