@@ -24,11 +24,8 @@ namespace mozilla {
 
 
 
-class StyleSheetInfo
+struct StyleSheetInfo
 {
-public:
-  friend class mozilla::CSSStyleSheet;
-  friend class ::nsCSSRuleProcessor;
   typedef net::ReferrerPolicy ReferrerPolicy;
 
   StyleSheetInfo(CORSMode aCORSMode,
@@ -36,7 +33,6 @@ public:
                  const dom::SRIMetadata& aIntegrity);
   StyleSheetInfo(const StyleSheetInfo& aCopy);
 
-protected:
   nsCOMPtr<nsIURI>       mSheetURI; 
   nsCOMPtr<nsIURI>       mOriginalSheetURI;  
   nsCOMPtr<nsIURI>       mBaseURI; 
@@ -50,8 +46,6 @@ protected:
 #ifdef DEBUG
   bool                   mPrincipalSet;
 #endif
-
-  friend class StyleSheet;
 };
 
 } 
