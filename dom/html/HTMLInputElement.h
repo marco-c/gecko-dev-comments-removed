@@ -246,7 +246,7 @@ public:
 
   
   
-  int32_t GetSelectionStartIgnoringType(ErrorResult& aRv);
+  uint32_t GetSelectionStartIgnoringType(ErrorResult& aRv);
   int32_t GetSelectionEndIgnoringType(ErrorResult& aRv);
 
   void GetDisplayFileName(nsAString& aFileName) const;
@@ -717,8 +717,8 @@ public:
 
   
 
-  Nullable<int32_t> GetSelectionStart(ErrorResult& aRv);
-  void SetSelectionStart(const Nullable<int32_t>& aValue, ErrorResult& aRv);
+  Nullable<uint32_t> GetSelectionStart(ErrorResult& aRv);
+  void SetSelectionStart(const Nullable<uint32_t>& aValue, ErrorResult& aRv);
 
   Nullable<int32_t> GetSelectionEnd(ErrorResult& aRv);
   void SetSelectionEnd(const Nullable<int32_t>& aValue, ErrorResult& aRv);
