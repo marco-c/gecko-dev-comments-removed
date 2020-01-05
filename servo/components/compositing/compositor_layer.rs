@@ -87,7 +87,8 @@ pub trait CompositorLayer {
 
     
     
-    fn clear_all_tiles<Window>(&self, compositor: &IOCompositor<Window>) where Window: WindowMethods;
+    fn clear_all_tiles<Window>(&self, compositor: &IOCompositor<Window>)
+                               where Window: WindowMethods;
 
     
     

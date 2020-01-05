@@ -75,9 +75,9 @@ pub struct Browser {
 
 
 
-impl Browser  {
+impl Browser {
     pub fn new<Window>(window: Option<Rc<Window>>) -> Browser
-    where Window: WindowMethods + 'static {
+                       where Window: WindowMethods + 'static {
         
         let opts = opts::get();
 
@@ -124,8 +124,8 @@ impl Browser  {
         }
     }
 
-    pub fn handle_event(&mut self, event: WindowEvent) -> bool {
-        self.compositor.handle_event(event)
+    pub fn handle_events(&mut self, events: Vec<WindowEvent>) -> bool {
+        self.compositor.handle_events(events)
     }
 
     pub fn repaint_synchronously(&mut self) {
