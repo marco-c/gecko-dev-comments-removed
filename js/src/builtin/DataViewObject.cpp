@@ -7,6 +7,7 @@
 #include "builtin/DataViewObject.h"
 
 #include "mozilla/Alignment.h"
+#include "mozilla/Casting.h"
 
 #include <string.h>
 
@@ -36,6 +37,7 @@
 using namespace js;
 using namespace js::gc;
 
+using mozilla::AssertedCast;
 using JS::CanonicalizeNaN;
 using JS::ToInt32;
 using JS::ToUint32;
@@ -139,71 +141,63 @@ DataViewObject::create(JSContext* cx, uint32_t byteOffset, uint32_t byteLength,
     return &dvobj;
 }
 
+
+
 bool
 DataViewObject::getAndCheckConstructorArgs(JSContext* cx, HandleObject bufobj, const CallArgs& args,
                                            uint32_t* byteOffsetPtr, uint32_t* byteLengthPtr)
 {
+    
     if (!IsArrayBufferMaybeShared(bufobj)) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_EXPECTED_TYPE,
                                   "DataView", "ArrayBuffer", bufobj->getClass()->name);
         return false;
     }
-
     Rooted<ArrayBufferObjectMaybeShared*> buffer(cx, &AsArrayBufferMaybeShared(bufobj));
-    uint32_t byteOffset = 0;
-    uint32_t byteLength = buffer->byteLength();
 
-    if (args.length() > 1) {
-        if (!ToUint32(cx, args[1], &byteOffset))
-            return false;
-        if (byteOffset > INT32_MAX) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ARG_INDEX_OUT_OF_RANGE,
-                                      "1");
-            return false;
-        }
-    }
+    
+    uint64_t offset;
+    if (!ToIndex(cx, args.get(1), &offset))
+        return false;
 
+    
     if (buffer->isDetached()) {
         JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_DETACHED);
         return false;
     }
 
-    if (args.length() > 1) {
-        if (byteOffset > byteLength) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ARG_INDEX_OUT_OF_RANGE,
-                                      "1");
-            return false;
-        }
-
-        if (args.get(2).isUndefined()) {
-            byteLength -= byteOffset;
-        } else {
-            if (!ToUint32(cx, args[2], &byteLength))
-                return false;
-            if (byteLength > INT32_MAX) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                          JSMSG_ARG_INDEX_OUT_OF_RANGE, "2");
-                return false;
-            }
-
-            MOZ_ASSERT(byteOffset + byteLength >= byteOffset,
-                       "can't overflow: both numbers are less than INT32_MAX");
-            if (byteOffset + byteLength > buffer->byteLength()) {
-                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
-                                          JSMSG_ARG_INDEX_OUT_OF_RANGE, "1");
-                return false;
-            }
-        }
-    }
+    
+    uint32_t bufferByteLength = buffer->byteLength();
 
     
-    MOZ_ASSERT(byteOffset <= INT32_MAX);
-    MOZ_ASSERT(byteLength <= INT32_MAX);
+    if (offset > bufferByteLength) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_ARG_INDEX_OUT_OF_RANGE, "1");
+        return false;
+    }
+    MOZ_ASSERT(offset <= INT32_MAX);
+
+    
+    uint64_t viewByteLength = bufferByteLength - offset;
+    if (args.hasDefined(2)) {
+        
+        if (!ToIndex(cx, args.get(2), &viewByteLength))
+            return false;
 
 
-    *byteOffsetPtr = byteOffset;
-    *byteLengthPtr = byteLength;
+        MOZ_ASSERT(offset + viewByteLength >= offset,
+                   "can't overflow: both numbers are less than DOUBLE_INTEGRAL_PRECISION_LIMIT");
 
+        
+        if (offset + viewByteLength > bufferByteLength) {
+            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                                      JSMSG_ARG_INDEX_OUT_OF_RANGE, "2");
+            return false;
+        }
+    }
+    MOZ_ASSERT(viewByteLength <= INT32_MAX);
+
+    *byteOffsetPtr = AssertedCast<uint32_t>(offset);
+    *byteLengthPtr = AssertedCast<uint32_t>(viewByteLength);
     return true;
 }
 
