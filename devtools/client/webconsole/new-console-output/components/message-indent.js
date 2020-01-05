@@ -13,12 +13,20 @@ const {
 
 const INDENT_WIDTH = 12;
 
-function MessageIndent(props) {
-  const { indent } = props;
+
+
+const CONSTANT_INDENTS = [getIndentElement(0), getIndentElement(1)];
+
+function getIndentElement(indent) {
   return dom.span({
     className: "indent",
     style: {"width": indent * INDENT_WIDTH}
   });
+}
+
+function MessageIndent(props) {
+  const { indent } = props;
+  return CONSTANT_INDENTS[indent] || getIndentElement(indent);
 }
 
 module.exports.MessageIndent = MessageIndent;
