@@ -95,6 +95,12 @@ public:
 
 
 
+  static void ClearRestyleStateFromSubtree(Element* aElement);
+
+  
+
+
+
 
 
 

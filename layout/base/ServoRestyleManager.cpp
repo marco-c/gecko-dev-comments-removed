@@ -111,10 +111,8 @@ ServoRestyleManager::ClearServoDataFromSubtree(Element* aElement)
 }
 
 
-
-
-static void
-ClearRestyleStateFromSubtree(Element* aElement)
+ void
+ServoRestyleManager::ClearRestyleStateFromSubtree(Element* aElement)
 {
   if (aElement->HasDirtyDescendantsForServo()) {
     StyleChildrenIterator it(aElement);

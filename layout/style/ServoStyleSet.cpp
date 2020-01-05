@@ -220,14 +220,32 @@ ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
 
   MOZ_ASSERT(!sInServoTraversal);
   sInServoTraversal = true;
+
+  bool isInitial = !aRoot->HasServoData();
   bool postTraversalRequired =
     Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior);
+  MOZ_ASSERT_IF(isInitial, !postTraversalRequired);
 
   
   
-  if (mPresContext->EffectCompositor()->PreTraverse() &&
-      Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior)) {
-    postTraversalRequired = true;
+  if (mPresContext->EffectCompositor()->PreTraverse()) {
+    if (Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior)) {
+      if (isInitial) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        MOZ_ASSERT(!postTraversalRequired);
+        ServoRestyleManager::ClearRestyleStateFromSubtree(const_cast<Element*>(aRoot));
+      } else {
+        postTraversalRequired = true;
+      }
+    }
   }
 
   sInServoTraversal = false;
