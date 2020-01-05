@@ -98,6 +98,30 @@ function ensureNoPortalNotification(win) {
 
 
 
+
+
+
+
+
+
+
+function waitForXulWindowVisible() {
+  return new Promise(resolve => {
+    Services.obs.addObserver(function observe() {
+      Services.obs.removeObserver(observe, "xul-window-visible");
+      resolve();
+    }, "xul-window-visible", false);
+  });
+}
+
+function* closeWindowAndWaitForXulWindowVisible(win) {
+  let p = waitForXulWindowVisible();
+  yield BrowserTestUtils.closeWindow(win);
+  yield p;
+}
+
+
+
 let testCasesForBothSuccessAndAbort = [
   
 
@@ -111,7 +135,7 @@ let testCasesForBothSuccessAndAbort = [
     freePortal(aSuccess);
     ensureNoPortalTab(win);
     ensureNoPortalNotification(win);
-    yield BrowserTestUtils.closeWindow(win);
+    yield closeWindowAndWaitForXulWindowVisible(win);
   },
 
   
@@ -129,7 +153,7 @@ let testCasesForBothSuccessAndAbort = [
     });
     ensureNoPortalTab(win);
     ensureNoPortalNotification(win);
-    yield BrowserTestUtils.closeWindow(win);
+    yield closeWindowAndWaitForXulWindowVisible(win);
   },
 
   
@@ -191,7 +215,7 @@ let singleRunTestCases = [
     freePortal(true);
     ensurePortalTab(win);
     ensureNoPortalNotification(win);
-    yield BrowserTestUtils.closeWindow(win);
+    yield closeWindowAndWaitForXulWindowVisible(win);
   },
 
   
