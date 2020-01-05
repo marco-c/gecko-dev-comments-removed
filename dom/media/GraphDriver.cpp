@@ -585,6 +585,33 @@ AudioCallbackDriver::~AudioCallbackDriver()
   MOZ_ASSERT(mPromisesForOperation.IsEmpty());
 }
 
+bool IsMacbookOrMacbookAir()
+{
+#ifdef XP_MACOSX
+  size_t len = 0;
+  sysctlbyname("hw.model", NULL, &len, NULL, 0);
+  if (len) {
+    nsAutoPtr<char> model = new char[len];
+    
+    
+    
+    
+    sysctlbyname("hw.model", model, &len, NULL, 0);
+    char* substring = strstr(model, "MacBook");
+    if (substring) {
+      const size_t offset = strlen("MacBook");
+      if (strncmp(model + offset, "Air", len - offset) ||
+          isdigit(model[offset + 1])) {
+        return true;
+      }
+    }
+    return false;
+  }
+#else
+  return false;
+#endif
+}
+
 void
 AudioCallbackDriver::Init()
 {
@@ -637,6 +664,13 @@ AudioCallbackDriver::Init()
       return;
     }
   }
+
+  
+  
+  if (IsMacbookOrMacbookAir()) {
+    latency_frames = std::max(512, latency_frames);
+  }
+
 
   input = output;
   input.channels = mInputChannels; 
