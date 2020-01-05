@@ -4,7 +4,7 @@
 
 use app_units::Au;
 use std::collections::HashMap;
-use webrender_traits::{FontKey, ColorU, FontRenderMode, GlyphDimensions};
+use webrender_traits::{FontKey, FontRenderMode, GlyphDimensions};
 
 use dwrote;
 
@@ -18,7 +18,9 @@ lazy_static! {
 }
 
 pub struct FontContext {
-    fonts: HashMap<FontKey, dwrote::FontFace>,
+    fonts: HashMap<FontKey, dwrote::Font>,
+    gdi_interop: dwrote::GdiInterop,
+    main_display_rendering_params: dwrote::RenderingParams,
 }
 
 pub struct RasterizedGlyph {
@@ -31,22 +33,19 @@ impl FontContext {
     pub fn new() -> FontContext {
         FontContext {
             fonts: HashMap::new(),
+            gdi_interop: dwrote::GdiInterop::create(),
+            main_display_rendering_params: dwrote::RenderingParams::create_for_primary_monitor(),
         }
     }
 
-    pub fn add_raw_font(&mut self, font_key: &FontKey, data: &[u8]) {
+    pub fn add_raw_font(&mut self, font_key: &FontKey, _: &[u8]) {
         if self.fonts.contains_key(font_key) {
             return
         }
 
-        if let Some(font_file) = dwrote::FontFile::new_from_data(data) {
-            let face = font_file.create_face(0, dwrote::DWRITE_FONT_SIMULATIONS_NONE);
-            self.fonts.insert((*font_key).clone(), face);
-        } else {
-            
-            debug!("DWrite WR failed to load font from data, using Arial instead");
-            self.add_native_font(font_key, DEFAULT_FONT_DESCRIPTOR.clone());
-        }
+        debug!("DWrite WR backend can't do raw fonts yet, using Arial instead");
+
+        self.add_native_font(font_key, DEFAULT_FONT_DESCRIPTOR.clone());
     }
 
     pub fn add_native_font(&mut self, font_key: &FontKey, font_handle: dwrote::FontDescriptor) {
@@ -55,71 +54,53 @@ impl FontContext {
         }
 
         let system_fc = dwrote::FontCollection::system();
-        let font = system_fc.get_font_from_descriptor(&font_handle).unwrap();
-        let face = font.create_font_face();
-        self.fonts.insert((*font_key).clone(), face);
+        let realized_font = system_fc.get_font_from_descriptor(&font_handle).unwrap();
+        self.fonts.insert((*font_key).clone(), realized_font);
     }
 
     fn get_glyph_dimensions_and_maybe_rasterize(&self,
                                                 font_key: FontKey,
                                                 size: Au,
                                                 glyph: u32,
+                                                device_pixel_ratio: f32,
                                                 render_mode: Option<FontRenderMode>)
                                                 -> (Option<GlyphDimensions>, Option<RasterizedGlyph>)
     {
-        let face = self.fonts.get(&font_key).unwrap();
+        let font = self.fonts.get(&font_key).unwrap();
+        let face = font.create_font_face();
         let glyph = glyph as u16;
 
-        let glyph = glyph as u16;
-        let advance = 0.0f32;
-        let offset = dwrote::GlyphOffset { advanceOffset: 0.0, ascenderOffset: 0.0 };
+        let gm = face.get_design_glyph_metrics(&[glyph], false)[0];
 
-        let glyph_run = dwrote::DWRITE_GLYPH_RUN {
-            fontFace: unsafe { face.as_ptr() },
-            fontEmSize: size.to_f32_px(), 
-            glyphCount: 1,
-            glyphIndices: &glyph,
-            glyphAdvances: &advance,
-            glyphOffsets: &offset,
-            isSideways: 0,
-            bidiLevel: 0,
-        };
+        let em_size = size.to_f32_px() / 16.; 
+        let du_per_pixel = face.metrics().designUnitsPerEm as f32 / 16.; 
+        let scaled_du_to_pixels = (em_size * device_pixel_ratio) / du_per_pixel;
 
-        
-        
-        
+        let width = (gm.advanceWidth as i32 - (gm.leftSideBearing + gm.rightSideBearing)) as f32
+            * scaled_du_to_pixels;
+        let height = (gm.advanceHeight as i32 - (gm.topSideBearing + gm.bottomSideBearing)) as f32
+            * scaled_du_to_pixels;
+        let x = (gm.leftSideBearing) as f32
+            * scaled_du_to_pixels;
+        let y = (gm.verticalOriginY - gm.topSideBearing) as f32
+            * scaled_du_to_pixels;
 
         
-        
-        let (r_mode, m_mode, tex_type) = match render_mode {
-            Some(FontRenderMode::Mono) => (dwrote::DWRITE_RENDERING_MODE_ALIASED,
-                                           dwrote::DWRITE_MEASURING_MODE_GDI_NATURAL,
-                                           dwrote::DWRITE_TEXTURE_ALIASED_1x1),
-            Some(FontRenderMode::Alpha) => (dwrote::DWRITE_RENDERING_MODE_GDI_NATURAL,
-                                            dwrote::DWRITE_MEASURING_MODE_GDI_NATURAL,
-                                            dwrote::DWRITE_TEXTURE_CLEARTYPE_3x1),
-            Some(FontRenderMode::Subpixel) | None => (dwrote::DWRITE_RENDERING_MODE_CLEARTYPE_GDI_NATURAL,
-                                                      dwrote::DWRITE_MEASURING_MODE_GDI_NATURAL,
-                                                      dwrote::DWRITE_TEXTURE_CLEARTYPE_3x1),
-        };
+        let x0_i = x.floor() as i32;
+        let y0_i = y.floor() as i32;
+        let x1_i = (x + width).ceil() as i32;
+        let y1_i = (y + height).ceil() as i32;
+        let width_u = (x1_i - x0_i) as u32;
+        let height_u = (y1_i - y0_i) as u32;
 
-        
-        
-        let analysis = dwrote::GlyphRunAnalysis::create(&glyph_run, 1.0, None, r_mode, m_mode, 0.0, 0.0);
-        let bounds = analysis.get_alpha_texture_bounds(tex_type);
-
-        let width = (bounds.right - bounds.left) as u32;
-        let height = (bounds.bottom - bounds.top) as u32;
         let dims = GlyphDimensions {
-            left: bounds.left,
-            top: -bounds.top,
-            width: width,
-            height: height,
+            left: x0_i, top: y0_i,
+            width: width_u, height: height_u,
         };
 
         
-        if dims.width == 0 || dims.height == 0 {
-            return (None, None);
+        if width_u == 0 || height_u == 0 {
+            return (None, None)
         }
 
         
@@ -127,66 +108,48 @@ impl FontContext {
             return (Some(dims), None);
         }
 
-        let pixels = analysis.create_alpha_texture(tex_type, bounds);
-        let rgba_pixels = match render_mode.unwrap() {
-            FontRenderMode::Mono => {
-                let mut rgba_pixels = vec![0; pixels.len() * 4];
-                for i in 0..pixels.len() {
-                    rgba_pixels[i*4+0] = 0xff;
-                    rgba_pixels[i*4+1] = 0xff;
-                    rgba_pixels[i*4+2] = 0xff;
-                    rgba_pixels[i*4+3] = pixels[i];
-                }
-                rgba_pixels
-            }
-            FontRenderMode::Alpha => {
-                let mut rgba_pixels = vec![0; pixels.len()/3 * 4];
-                for i in 0..pixels.len()/3 {
-                    
-                    let alpha = (pixels[i*3+0] as u32 + pixels[i*3+0] as u32 + pixels[i*3+0] as u32) / 3;
-                    rgba_pixels[i*4+0] = 0xff;
-                    rgba_pixels[i*4+1] = 0xff;
-                    rgba_pixels[i*4+2] = 0xff;
-                    rgba_pixels[i*4+3] = alpha as u8;
-                }
-                rgba_pixels
-            }
-            FontRenderMode::Subpixel => {
-                let mut rgba_pixels = vec![0; pixels.len()/3 * 4];
-                for i in 0..pixels.len()/3 {
-                    rgba_pixels[i*4+0] = pixels[i*3+0];
-                    rgba_pixels[i*4+1] = pixels[i*3+1];
-                    rgba_pixels[i*4+2] = pixels[i*3+2];
-                    rgba_pixels[i*4+3] = 0xff;
-                }
-                rgba_pixels
-            }
-        };
+        
+
+        
+        
+        let size_dip = size.to_f32_px() * device_pixel_ratio;
+
+        let rt = self.gdi_interop.create_bitmap_render_target(width_u, height_u);
+        rt.set_pixels_per_dip(1.);
+        rt.draw_glyph_run(-x, y,
+                          dwrote::DWRITE_MEASURING_MODE_NATURAL,
+                          &face, size_dip,
+                          &[glyph], &[0.0],
+                          &[dwrote::GlyphOffset { advanceOffset: 0., ascenderOffset: 0. }],
+                          &self.main_display_rendering_params,
+                          &(1.0, 1.0, 1.0));
+        let bytes = rt.get_opaque_values_as_mask();
 
         (Some(dims), Some(RasterizedGlyph {
-            width: dims.width,
-            height: dims.height,
-            bytes: rgba_pixels,
+            width: width_u,
+            height: height_u,
+            bytes: bytes
         }))
     }
 
     pub fn get_glyph_dimensions(&self,
                                 font_key: FontKey,
                                 size: Au,
-                                glyph: u32) -> Option<GlyphDimensions> {
+                                glyph: u32,
+                                device_pixel_ratio: f32) -> Option<GlyphDimensions> {
         let (maybe_dims, _) =
-            self.get_glyph_dimensions_and_maybe_rasterize(font_key, size, glyph, None);
+            self.get_glyph_dimensions_and_maybe_rasterize(font_key, size, glyph, device_pixel_ratio, None);
         maybe_dims
     }
 
     pub fn rasterize_glyph(&mut self,
                            font_key: FontKey,
                            size: Au,
-                           color: ColorU,
                            glyph: u32,
+                           device_pixel_ratio: f32,
                            render_mode: FontRenderMode) -> Option<RasterizedGlyph> {
         let (_, maybe_glyph) =
-            self.get_glyph_dimensions_and_maybe_rasterize(font_key, size, glyph, Some(render_mode));
+            self.get_glyph_dimensions_and_maybe_rasterize(font_key, size, glyph, device_pixel_ratio, Some(render_mode));
         maybe_glyph
     }
 }
