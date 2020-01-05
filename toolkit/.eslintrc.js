@@ -91,6 +91,9 @@ module.exports = {
     "no-extra-boolean-cast": "error",
 
     
+    "no-extra-label": "error",
+
+    
     "no-extra-semi": "error",
 
     
@@ -101,6 +104,9 @@ module.exports = {
 
     
     "no-irregular-whitespace": "error",
+
+    
+    "no-iterator": "error",
 
     
     "no-lonely-if": "error",
@@ -130,6 +136,12 @@ module.exports = {
     "no-redeclare": "error",
 
     
+    "no-regex-spaces": "error",
+
+    
+    "no-self-assign": "error",
+
+    
     "no-self-compare": "error",
 
     
@@ -149,6 +161,12 @@ module.exports = {
 
     
     "no-unreachable": "error",
+
+    
+    "no-unsafe-negation": "error",
+
+    
+    "no-unused-labels": "error",
 
     
     "no-unused-vars": ["error", {
