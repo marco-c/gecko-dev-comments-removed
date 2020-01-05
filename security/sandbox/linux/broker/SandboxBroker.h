@@ -80,7 +80,12 @@ class SandboxBroker final
     
     void AddDir(int aPerms, const char* aPath);
     
-    void AddPrefix(int aPerms, const char* aDir, const char* aPrefix);
+    void AddFilePrefix(int aPerms, const char* aDir, const char* aPrefix);
+    
+    
+    void AddPrefix(int aPerms, const char* aPath);
+    
+    void AddDynamic(int aPerms, const char* aPath);
     
     
     void AddPath(int aPerms, const char* aPath) {
@@ -98,6 +103,7 @@ class SandboxBroker final
     
     
     bool ValidatePath(const char* path) const;
+    void AddPrefixInternal(int aPerms, const nsACString& aPath);
   };
 
   
