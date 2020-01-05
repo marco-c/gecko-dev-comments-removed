@@ -93,6 +93,11 @@ var selectNodeAndWaitForAnimations = Task.async(
     
     let {AnimationsPanel} = inspector.sidebar.getWindowForTab(TAB_NAME);
     yield waitForAllAnimationTargets(AnimationsPanel);
+
+    if (AnimationsPanel.animationsTimelineComponent.animations.length === 1) {
+      
+      yield waitForAnimationSelecting(AnimationsPanel);
+    }
   }
 );
 
@@ -158,6 +163,11 @@ var openAnimationInspector = Task.async(function* () {
   
   
   yield waitForAllAnimationTargets(AnimationsPanel);
+
+  if (AnimationsPanel.animationsTimelineComponent.animations.length === 1) {
+    
+    yield waitForAnimationSelecting(AnimationsPanel);
+  }
 
   return {
     toolbox: toolbox,
@@ -348,6 +358,14 @@ function* changeTimelinePlaybackRate(panel, rate) {
   
   EventUtils.synthesizeMouseAtCenter(
     win.document.querySelector("#timeline-toolbar"), {type: "mousemove"}, win);
+}
+
+
+
+
+
+function* waitForAnimationSelecting(panel) {
+  yield panel.animationsTimelineComponent.once("animation-selected");
 }
 
 

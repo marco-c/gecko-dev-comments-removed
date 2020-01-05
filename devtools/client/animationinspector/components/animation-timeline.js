@@ -490,6 +490,11 @@ AnimationsTimeline.prototype = {
 
     
     this.on("timeline-data-changed", this.onTimelineDataChanged);
+
+    
+    if (this.animations.length === 1) {
+      this.onAnimationSelected(null, this.animations[0]);
+    }
   },
 
   isAtLeastOneAnimationPlaying: function () {

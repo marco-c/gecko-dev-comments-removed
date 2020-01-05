@@ -46,6 +46,7 @@ function* setStyle(animation, panel, name, value) {
     propertyValue: value
   });
   yield onAnimationChanged;
+  yield waitForAnimationSelecting(panel);
 
   
   

@@ -26,8 +26,8 @@ add_task(function* () {
   let {panel} = yield openAnimationInspector();
   let timeline = panel.animationsTimelineComponent;
 
-  info("Expand the animation");
-  yield clickOnAnimation(panel, 0);
+  
+  
 
   ok(timeline.rootWrapperEl.querySelectorAll(".frames .keyframes").length,
      "There are container elements for displaying keyframes");
