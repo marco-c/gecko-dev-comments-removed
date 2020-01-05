@@ -139,6 +139,7 @@ ManageProfileDialog.prototype = {
     
     
     const fieldOrder = [
+      "name",
       "street-address",  
       "address-level2",  
       "organization",    
@@ -169,7 +170,7 @@ ManageProfileDialog.prototype = {
 
   openEditDialog(profile) {
     window.openDialog(EDIT_PROFILE_URL, null,
-                      "chrome,centerscreen,modal,width=600,height=370",
+                      "chrome,centerscreen,modal,width=600,height=450",
                       profile);
   },
 
