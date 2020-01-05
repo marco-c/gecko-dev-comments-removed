@@ -52,6 +52,8 @@ pub enum WindowEvent {
     
     Resize(TypedSize2D<DevicePixel, u32>),
     
+    Viewport(TypedPoint2D<DevicePixel, u32>, TypedSize2D<DevicePixel, u32>),
+    
     LoadUrl(String),
     
     MouseWindowEventClass(MouseWindowEvent),
@@ -81,6 +83,7 @@ impl Debug for WindowEvent {
             WindowEvent::Refresh => write!(f, "Refresh"),
             WindowEvent::InitializeCompositing => write!(f, "InitializeCompositing"),
             WindowEvent::Resize(..) => write!(f, "Resize"),
+            WindowEvent::Viewport(..) => write!(f, "Viewport"),
             WindowEvent::KeyEvent(..) => write!(f, "Key"),
             WindowEvent::LoadUrl(..) => write!(f, "LoadUrl"),
             WindowEvent::MouseWindowEventClass(..) => write!(f, "Mouse"),
