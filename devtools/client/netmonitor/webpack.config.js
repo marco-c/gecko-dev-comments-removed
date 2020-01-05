@@ -19,6 +19,17 @@ let webpackConfig = {
   },
 
   module: {
+    
+    unknownContextRegExp: /$^/,
+    unknownContextCritical: false,
+
+    
+    exprContextRegExp: /$^/,
+    exprContextCritical: false,
+
+    
+    wrappedContextCritical: true,
+
     loaders: [
       {
         test: /\.(png|svg)$/,
@@ -53,7 +64,7 @@ let webpackConfig = {
       "devtools/client/shared/curl": "devtools-modules",
       "devtools/client/shared/file-saver": "devtools-modules",
       "devtools/client/shared/prefs": "devtools-sham-modules",
-      "devtools/client/shared/redux/middleware/thunk": "redux-thunk",
+      "devtools/client/shared/redux/middleware/thunk": "devtools-launchpad/src/utils/redux/middleware/thunk",
       "devtools/client/shared/vendor/immutable": "immutable",
       "devtools/client/shared/vendor/react": "react",
       "devtools/client/shared/vendor/react-dom": "react-dom",
@@ -68,8 +79,10 @@ let webpackConfig = {
       "devtools/client/sourceeditor/editor": "devtools-modules",
       "devtools/shared/fronts/timeline": "devtools-sham-modules",
       "devtools/shared/l10n": "devtools-modules",
+      "devtools/shared/locales": path.join(__dirname, "../../shared/locales/en-US"),
       "devtools/shared/platform/clipboard": "devtools-modules",
       "devtools/shared/plural-form": "devtools-modules",
+      "toolkit/locales": path.join(__dirname, "../../../toolkit/locales/en-US"),
       "Services": "devtools-modules",
     },
   }
