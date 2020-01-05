@@ -109,14 +109,16 @@ bool InImageBridgeChildThread();
 
 class ImageBridgeChild final : public PImageBridgeChild
                              , public CompositableForwarder
-                             , public ShmemAllocator
+                             , public TextureForwarder
 {
   friend class ImageContainer;
 
   typedef InfallibleTArray<AsyncParentMessageData> AsyncParentMessageArray;
 public:
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(ImageBridgeChild, override);
 
-  virtual ShmemAllocator* AsShmemAllocator() override { return this; }
+  TextureForwarder* GetTextureForwarder() override { return this; }
+  LayersIPCActor* GetLayersIPCActor() override { return this; }
 
   
 
@@ -172,12 +174,6 @@ public:
                                               PImageContainerChild* aChild, uint64_t* aID) override;
   bool DeallocPCompositableChild(PCompositableChild* aActor) override;
 
-  
-
-
-
-  ~ImageBridgeChild();
-
   virtual PTextureChild*
   AllocPTextureChild(const SurfaceDescriptor& aSharedData, const LayersBackend& aLayersBackend, const TextureFlags& aFlags, const uint64_t& aSerial) override;
 
@@ -225,6 +221,13 @@ public:
   void FlushAllImages(ImageClient* aClient, ImageContainer* aContainer);
 
 private:
+
+  
+
+
+
+  ~ImageBridgeChild();
+
   
   already_AddRefed<CanvasClient> CreateCanvasClientNow(
     CanvasClient::CanvasClientType aType,
@@ -256,10 +259,7 @@ private:
     RefPtr<AsyncTransactionWaiter> aWaiter);
 
   void ProxyAllocShmemNow(SynchronousTask* aTask, AllocShmemParams* aParams);
-  void ProxyDeallocShmemNow(
-    SynchronousTask* aTask,
-    ISurfaceAllocator* aAllocator,
-    Shmem* aShmem);
+  void ProxyDeallocShmemNow(SynchronousTask* aTask, Shmem* aShmem);
 
 public:
   

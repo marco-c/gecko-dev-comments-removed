@@ -75,7 +75,7 @@ struct TextureDeallocParams
 {
   TextureData* data;
   RefPtr<TextureChild> actor;
-  RefPtr<ClientIPCAllocator> allocator;
+  RefPtr<LayersIPCChannel> allocator;
   bool clientDeallocation;
   bool syncDeallocation;
   bool workAroundSharedSurfaceOwnershipIssue;
@@ -119,15 +119,15 @@ public:
 
   bool Recv__delete__() override { return true; }
 
-  ClientIPCAllocator* GetAllocator() { return mTextureForwarder; }
+  LayersIPCChannel* GetAllocator() { return mTextureForwarder; }
 
   void ActorDestroy(ActorDestroyReason why) override;
 
   bool IPCOpen() const { return mIPCOpen; }
 
-  void Lock() const { if (mCompositableForwarder && mCompositableForwarder->UsesImageBridge()) { mLock.Enter(); } }
+  void Lock() const { if (mCompositableForwarder && mCompositableForwarder->GetTextureForwarder()->UsesImageBridge()) { mLock.Enter(); } }
 
-  void Unlock() const { if (mCompositableForwarder && mCompositableForwarder->UsesImageBridge()) { mLock.Leave(); } }
+  void Unlock() const { if (mCompositableForwarder && mCompositableForwarder->GetTextureForwarder()->UsesImageBridge()) { mLock.Leave(); } }
 
 private:
 
@@ -240,7 +240,7 @@ private:
 };
 
 
-static void DestroyTextureData(TextureData* aTextureData, ClientIPCAllocator* aAllocator,
+static void DestroyTextureData(TextureData* aTextureData, LayersIPCChannel* aAllocator,
                                bool aDeallocate, bool aMainThreadOnly)
 {
   if (!aTextureData) {
@@ -248,7 +248,7 @@ static void DestroyTextureData(TextureData* aTextureData, ClientIPCAllocator* aA
   }
 
   if (aMainThreadOnly && !NS_IsMainThread()) {
-    RefPtr<ClientIPCAllocator> allocatorRef = aAllocator;
+    RefPtr<LayersIPCChannel> allocatorRef = aAllocator;
     NS_DispatchToMainThread(NS_NewRunnableFunction([aTextureData, allocatorRef, aDeallocate]() -> void {
       DestroyTextureData(aTextureData, allocatorRef, aDeallocate, true);
     }));
@@ -352,7 +352,7 @@ DeallocateTextureClient(TextureDeallocParams params)
   MessageLoop* ipdlMsgLoop = nullptr;
 
   if (params.allocator) {
-    ipdlMsgLoop = params.allocator->AsClientAllocator()->GetMessageLoop();
+    ipdlMsgLoop = params.allocator->GetMessageLoop();
     if (!ipdlMsgLoop) {
       
       
@@ -641,7 +641,7 @@ TextureClient::UpdateFromSurface(gfx::SourceSurface* aSurface)
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateSimilar(TextureFlags aFlags, TextureAllocationFlags aAllocFlags) const
+TextureClient::CreateSimilar(LayersBackend aLayersBackend, TextureFlags aFlags, TextureAllocationFlags aAllocFlags) const
 {
   MOZ_ASSERT(IsValid());
 
@@ -651,7 +651,7 @@ TextureClient::CreateSimilar(TextureFlags aFlags, TextureAllocationFlags aAllocF
   }
 
   LockActor();
-  TextureData* data = mData->CreateSimilar(mAllocator, aFlags, aAllocFlags);
+  TextureData* data = mData->CreateSimilar(mAllocator, aLayersBackend, aFlags, aAllocFlags);
   UnlockActor();
 
   if (!data) {
@@ -869,7 +869,7 @@ TextureClient::CancelWaitFenceHandleOnImageBridge()
   ImageBridgeChild::GetSingleton()->CancelWaitFenceHandle(this);
 }
 
-void CancelTextureClientRecycle(uint64_t aTextureId, ClientIPCAllocator* aAllocator)
+void CancelTextureClientRecycle(uint64_t aTextureId, LayersIPCChannel* aAllocator)
 {
   if (!aAllocator) {
     return;
@@ -918,7 +918,7 @@ TextureClient::SetRecycleAllocator(ITextureClientRecycleAllocator* aAllocator)
 bool
 TextureClient::InitIPDLActor(CompositableForwarder* aForwarder)
 {
-  MOZ_ASSERT(aForwarder && aForwarder->GetMessageLoop() == mAllocator->AsClientAllocator()->GetMessageLoop());
+  MOZ_ASSERT(aForwarder && aForwarder->GetTextureForwarder()->GetMessageLoop() == mAllocator->GetMessageLoop());
   if (mActor && !mActor->mDestroyed) {
     CompositableForwarder* currentFwd = mActor->mCompositableForwarder;
     TextureForwarder* currentTexFwd = mActor->mTextureForwarder;
@@ -928,7 +928,7 @@ TextureClient::InitIPDLActor(CompositableForwarder* aForwarder)
       
       
       
-      if (currentTexFwd && currentTexFwd != aForwarder->AsTextureForwarder()) {
+      if (currentTexFwd && currentTexFwd != aForwarder->GetTextureForwarder()) {
         gfxCriticalError() << "Attempt to move a texture to a different channel CF.";
         return false;
       }
@@ -947,10 +947,10 @@ TextureClient::InitIPDLActor(CompositableForwarder* aForwarder)
     return false;
   }
 
-  mActor = static_cast<TextureChild*>(aForwarder->CreateTexture(desc,
-                                                                aForwarder->GetCompositorBackendType(),
-                                                                GetFlags(),
-                                                                mSerial));
+  mActor = static_cast<TextureChild*>(aForwarder->GetTextureForwarder()->CreateTexture(desc,
+                                                                                      aForwarder->GetCompositorBackendType(),
+                                                                                      GetFlags(),
+                                                                                      mSerial));
   if (!mActor) {
     gfxCriticalError() << static_cast<int32_t>(desc.type()) << ", "
                        << static_cast<int32_t>(aForwarder->GetCompositorBackendType()) << ", "
@@ -959,7 +959,7 @@ TextureClient::InitIPDLActor(CompositableForwarder* aForwarder)
     MOZ_CRASH("GFX: Invalid actor");
   }
   mActor->mCompositableForwarder = aForwarder;
-  mActor->mTextureForwarder = aForwarder->AsTextureForwarder();
+  mActor->mTextureForwarder = aForwarder->GetTextureForwarder();
   mActor->mTextureClient = this;
   mActor->mMainThreadOnly = !!(mFlags & TextureFlags::DEALLOCATE_MAIN_THREAD);
 
@@ -973,9 +973,10 @@ TextureClient::InitIPDLActor(CompositableForwarder* aForwarder)
 }
 
 bool
-TextureClient::InitIPDLActor(TextureForwarder* aForwarder)
+TextureClient::InitIPDLActor(KnowsCompositor* aForwarder)
 {
-  MOZ_ASSERT(aForwarder && aForwarder->GetMessageLoop() == mAllocator->AsClientAllocator()->GetMessageLoop());
+  MOZ_ASSERT(aForwarder && aForwarder->GetTextureForwarder()->GetMessageLoop() == mAllocator->GetMessageLoop());
+  TextureForwarder* fwd = aForwarder->GetTextureForwarder();
   if (mActor && !mActor->mDestroyed) {
     CompositableForwarder* currentFwd = mActor->mCompositableForwarder;
     TextureForwarder* currentTexFwd = mActor->mTextureForwarder;
@@ -985,11 +986,11 @@ TextureClient::InitIPDLActor(TextureForwarder* aForwarder)
       return false;
     }
 
-    if (currentTexFwd && currentTexFwd != aForwarder) {
+    if (currentTexFwd && currentTexFwd != fwd) {
       gfxCriticalError() << "Attempt to move a texture to a different channel TF.";
       return false;
     }
-    mActor->mTextureForwarder = aForwarder;
+    mActor->mTextureForwarder = fwd;
     return true;
   }
   MOZ_ASSERT(!mActor || mActor->mDestroyed, "Cannot use a texture on several IPC channels.");
@@ -999,12 +1000,12 @@ TextureClient::InitIPDLActor(TextureForwarder* aForwarder)
     return false;
   }
 
-  mActor = static_cast<TextureChild*>(aForwarder->CreateTexture(desc,
-    aForwarder->GetCompositorBackendType(),
-    GetFlags(),
-    mSerial));
+  mActor = static_cast<TextureChild*>(fwd->CreateTexture(desc,
+                                      aForwarder->GetCompositorBackendType(),
+                                      GetFlags(),
+                                      mSerial));
   MOZ_ASSERT(mActor);
-  mActor->mTextureForwarder = aForwarder;
+  mActor->mTextureForwarder = fwd;
   mActor->mTextureClient = this;
   mActor->mMainThreadOnly = !!(mFlags & TextureFlags::DEALLOCATE_MAIN_THREAD);
 
@@ -1039,7 +1040,7 @@ BackendTypeForBackendSelector(LayersBackend aLayersBackend, BackendSelector aSel
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateForDrawing(CompositableForwarder* aAllocator,
+TextureClient::CreateForDrawing(KnowsCompositor* aAllocator,
                                 gfx::SurfaceFormat aFormat,
                                 gfx::IntSize aSize,
                                 BackendSelector aSelector,
@@ -1047,9 +1048,10 @@ TextureClient::CreateForDrawing(CompositableForwarder* aAllocator,
                                 TextureAllocationFlags aAllocFlags)
 {
   LayersBackend layersBackend = aAllocator->GetCompositorBackendType();
-  return TextureClient::CreateForDrawing(aAllocator->AsTextureForwarder(),
+  return TextureClient::CreateForDrawing(aAllocator->GetTextureForwarder(),
                                          aFormat, aSize,
                                          layersBackend,
+                                         aAllocator->GetMaxTextureSize(),
                                          aSelector,
                                          aTextureFlags,
                                          aAllocFlags);
@@ -1061,18 +1063,11 @@ TextureClient::CreateForDrawing(TextureForwarder* aAllocator,
                                 gfx::SurfaceFormat aFormat,
                                 gfx::IntSize aSize,
                                 LayersBackend aLayersBackend,
+                                int32_t aMaxTextureSize,
                                 BackendSelector aSelector,
                                 TextureFlags aTextureFlags,
                                 TextureAllocationFlags aAllocFlags)
 {
-  
-  
-  
-  
-  
-  
-  aAllocator = aAllocator->AsTextureForwarder();
-
   gfx::BackendType moz2DBackend = BackendTypeForBackendSelector(aLayersBackend, aSelector);
 
   
@@ -1087,26 +1082,22 @@ TextureClient::CreateForDrawing(TextureForwarder* aAllocator,
 
   TextureData* data = nullptr;
 
-#if defined(XP_WIN)
-  int32_t maxTextureSize = aAllocator->GetMaxTextureSize();
-#endif
-
 #ifdef XP_WIN
   if (aLayersBackend == LayersBackend::LAYERS_D3D11 &&
       (moz2DBackend == gfx::BackendType::DIRECT2D ||
        moz2DBackend == gfx::BackendType::DIRECT2D1_1 ||
        (!!(aAllocFlags & ALLOC_FOR_OUT_OF_BAND_CONTENT) &&
         DeviceManagerDx::Get()->GetContentDevice())) &&
-      aSize.width <= maxTextureSize &&
-      aSize.height <= maxTextureSize)
+      aSize.width <= aMaxTextureSize &&
+      aSize.height <= aMaxTextureSize)
   {
     data = DXGITextureData::Create(aSize, aFormat, aAllocFlags);
   }
   if (aLayersBackend == LayersBackend::LAYERS_D3D9 &&
       moz2DBackend == gfx::BackendType::CAIRO &&
       aAllocator->IsSameProcess() &&
-      aSize.width <= maxTextureSize &&
-      aSize.height <= maxTextureSize &&
+      aSize.width <= aMaxTextureSize &&
+      aSize.height <= aMaxTextureSize &&
       NS_IsMainThread() &&
       DeviceManagerD3D9::GetDevice()) {
     data = D3D9TextureData::Create(aSize, aFormat, aAllocFlags);
@@ -1170,18 +1161,15 @@ TextureClient::CreateForDrawing(TextureForwarder* aAllocator,
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateFromSurface(TextureForwarder* aAllocator,
+TextureClient::CreateFromSurface(KnowsCompositor* aAllocator,
                                  gfx::SourceSurface* aSurface,
-                                 LayersBackend aLayersBackend,
                                  BackendSelector aSelector,
                                  TextureFlags aTextureFlags,
                                  TextureAllocationFlags aAllocFlags)
 {
-  aAllocator = aAllocator->AsTextureForwarder();
-
   
-  MOZ_ASSERT(aAllocator && aAllocator->IPCOpen());
-  if (!aAllocator || !aAllocator->IPCOpen()) {
+  MOZ_ASSERT(aAllocator && aAllocator->GetTextureForwarder()->IPCOpen());
+  if (!aAllocator || !aAllocator->GetTextureForwarder()->IPCOpen()) {
     return nullptr;
   }
 
@@ -1193,11 +1181,12 @@ TextureClient::CreateFromSurface(TextureForwarder* aAllocator,
 
   TextureData* data = nullptr;
 #if defined(XP_WIN)
-  gfx::BackendType moz2DBackend = BackendTypeForBackendSelector(aLayersBackend, aSelector);
+  LayersBackend layersBackend = aAllocator->GetCompositorBackendType();
+  gfx::BackendType moz2DBackend = BackendTypeForBackendSelector(layersBackend, aSelector);
 
   int32_t maxTextureSize = aAllocator->GetMaxTextureSize();
 
-  if (aLayersBackend == LayersBackend::LAYERS_D3D11 &&
+  if (layersBackend == LayersBackend::LAYERS_D3D11 &&
     (moz2DBackend == gfx::BackendType::DIRECT2D ||
       moz2DBackend == gfx::BackendType::DIRECT2D1_1 ||
       (!!(aAllocFlags & ALLOC_FOR_OUT_OF_BAND_CONTENT) &&
@@ -1210,13 +1199,13 @@ TextureClient::CreateFromSurface(TextureForwarder* aAllocator,
 #endif
 
   if (data) {
-    return MakeAndAddRef<TextureClient>(data, aTextureFlags, aAllocator);
+    return MakeAndAddRef<TextureClient>(data, aTextureFlags, aAllocator->GetTextureForwarder());
   }
 
   
 
   RefPtr<TextureClient> client = CreateForDrawing(aAllocator, aSurface->GetFormat(), size,
-                                                  aLayersBackend, aSelector, aTextureFlags, aAllocFlags);
+                                                  aSelector, aTextureFlags, aAllocFlags);
   if (!client) {
     return nullptr;
   }
@@ -1232,22 +1221,22 @@ TextureClient::CreateFromSurface(TextureForwarder* aAllocator,
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateForRawBufferAccess(ClientIPCAllocator* aAllocator,
+TextureClient::CreateForRawBufferAccess(KnowsCompositor* aAllocator,
                                         gfx::SurfaceFormat aFormat,
                                         gfx::IntSize aSize,
                                         gfx::BackendType aMoz2DBackend,
                                         TextureFlags aTextureFlags,
                                         TextureAllocationFlags aAllocFlags)
 {
-  auto fwd = aAllocator->AsCompositableForwarder();
-  auto backend = fwd ? fwd->GetCompositorBackendType() : LayersBackend::LAYERS_NONE;
-  return CreateForRawBufferAccess(aAllocator, aFormat, aSize, aMoz2DBackend,
-                                  backend, aTextureFlags, aAllocFlags);
+  return CreateForRawBufferAccess(aAllocator->GetTextureForwarder(),
+                                  aFormat, aSize, aMoz2DBackend,
+                                  aAllocator->GetCompositorBackendType(),
+                                  aTextureFlags, aAllocFlags);
 }
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateForRawBufferAccess(ClientIPCAllocator* aAllocator,
+TextureClient::CreateForRawBufferAccess(LayersIPCChannel* aAllocator,
                                         gfx::SurfaceFormat aFormat,
                                         gfx::IntSize aSize,
                                         gfx::BackendType aMoz2DBackend,
@@ -1287,15 +1276,15 @@ TextureClient::CreateForRawBufferAccess(ClientIPCAllocator* aAllocator,
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateForYCbCr(ClientIPCAllocator* aAllocator,
+TextureClient::CreateForYCbCr(KnowsCompositor* aAllocator,
                               gfx::IntSize aYSize,
                               gfx::IntSize aCbCrSize,
                               StereoMode aStereoMode,
                               TextureFlags aTextureFlags)
 {
   
-  MOZ_ASSERT(!aAllocator || aAllocator->IPCOpen());
-  if (aAllocator && !aAllocator->IPCOpen()) {
+  MOZ_ASSERT(!aAllocator || aAllocator->GetLayersIPCActor()->IPCOpen());
+  if (aAllocator && !aAllocator->GetLayersIPCActor()->IPCOpen()) {
     return nullptr;
   }
 
@@ -1309,18 +1298,19 @@ TextureClient::CreateForYCbCr(ClientIPCAllocator* aAllocator,
     return nullptr;
   }
 
-  return MakeAndAddRef<TextureClient>(data, aTextureFlags, aAllocator);
+  return MakeAndAddRef<TextureClient>(data, aTextureFlags,
+                                      aAllocator ? aAllocator->GetTextureForwarder() : nullptr);
 }
 
 
 already_AddRefed<TextureClient>
-TextureClient::CreateForYCbCrWithBufferSize(ClientIPCAllocator* aAllocator,
+TextureClient::CreateForYCbCrWithBufferSize(KnowsCompositor* aAllocator,
                                             size_t aSize,
                                             TextureFlags aTextureFlags)
 {
   
-  MOZ_ASSERT(aAllocator && aAllocator->IPCOpen());
-  if (!aAllocator || !aAllocator->IPCOpen()) {
+  MOZ_ASSERT(!aAllocator || aAllocator->GetLayersIPCActor()->IPCOpen());
+  if (aAllocator && !aAllocator->GetLayersIPCActor()->IPCOpen()) {
     return nullptr;
   }
 
@@ -1331,10 +1321,11 @@ TextureClient::CreateForYCbCrWithBufferSize(ClientIPCAllocator* aAllocator,
     return nullptr;
   }
 
-  return MakeAndAddRef<TextureClient>(data, aTextureFlags, aAllocator);
+  return MakeAndAddRef<TextureClient>(data, aTextureFlags,
+                                      aAllocator ? aAllocator->GetTextureForwarder() : 0);
 }
 
-TextureClient::TextureClient(TextureData* aData, TextureFlags aFlags, ClientIPCAllocator* aAllocator)
+TextureClient::TextureClient(TextureData* aData, TextureFlags aFlags, LayersIPCChannel* aAllocator)
 : AtomicRefCountedWithFinalize("TextureClient")
 , mAllocator(aAllocator)
 , mActor(nullptr)
@@ -1467,7 +1458,7 @@ public:
     int32_t readCount;
   };
 
-  explicit ShmemTextureReadLock(ClientIPCAllocator* aAllocator);
+  explicit ShmemTextureReadLock(LayersIPCChannel* aAllocator);
 
   ~ShmemTextureReadLock();
 
@@ -1485,9 +1476,8 @@ public:
 
   mozilla::layers::ShmemSection& GetShmemSection() { return mShmemSection; }
 
-  ShmemTextureReadLock(ISurfaceAllocator* aAllocator, const mozilla::layers::ShmemSection& aShmemSection)
-    : mAllocator(aAllocator)
-    , mShmemSection(aShmemSection)
+  explicit ShmemTextureReadLock(const mozilla::layers::ShmemSection& aShmemSection)
+    : mShmemSection(aShmemSection)
     , mAllocSuccess(true)
   {
     MOZ_COUNT_CTOR(ShmemTextureReadLock);
@@ -1499,7 +1489,7 @@ public:
       (mShmemSection.shmem().get<char>() + mShmemSection.offset());
   }
 
-  RefPtr<ISurfaceAllocator> mAllocator;
+  RefPtr<LayersIPCChannel> mClientAllocator;
   mozilla::layers::ShmemSection mShmemSection;
   bool mAllocSuccess;
 };
@@ -1512,7 +1502,7 @@ TextureReadLock::Deserialize(const ReadLockDescriptor& aDescriptor, ISurfaceAllo
     case ReadLockDescriptor::TShmemSection: {
       const ShmemSection& section = aDescriptor.get_ShmemSection();
       MOZ_RELEASE_ASSERT(section.shmem().IsReadable());
-      return MakeAndAddRef<ShmemTextureReadLock>(aAllocator, section);
+      return MakeAndAddRef<ShmemTextureReadLock>(section);
     }
     case ReadLockDescriptor::Tuintptr_t: {
       if (!aAllocator->IsSameProcess()) {
@@ -1545,7 +1535,7 @@ TextureReadLock::Deserialize(const ReadLockDescriptor& aDescriptor, ISurfaceAllo
 }
 
 already_AddRefed<TextureReadLock>
-TextureReadLock::Create(ClientIPCAllocator* aAllocator)
+TextureReadLock::Create(LayersIPCChannel* aAllocator)
 {
   if (aAllocator->IsSameProcess()) {
     
@@ -1604,15 +1594,14 @@ MemoryTextureReadLock::GetReadCount()
   return mReadCount;
 }
 
-ShmemTextureReadLock::ShmemTextureReadLock(ClientIPCAllocator* aAllocator)
-  : mAllocator(aAllocator)
+ShmemTextureReadLock::ShmemTextureReadLock(LayersIPCChannel* aAllocator)
+  : mClientAllocator(aAllocator)
   , mAllocSuccess(false)
 {
   MOZ_COUNT_CTOR(ShmemTextureReadLock);
-  MOZ_ASSERT(mAllocator);
-  MOZ_ASSERT(mAllocator->AsTextureForwarder());
+  MOZ_ASSERT(mClientAllocator);
 #define MOZ_ALIGN_WORD(x) (((x) + 3) & ~3)
-  if (mAllocator->AsTextureForwarder()->GetTileLockAllocator()->AllocShmemSection(
+  if (mClientAllocator->GetTileLockAllocator()->AllocShmemSection(
       MOZ_ALIGN_WORD(sizeof(ShmReadLockInfo)), &mShmemSection)) {
     ShmReadLockInfo* info = GetShmReadLockInfoPtr();
     info->readCount = 1;
@@ -1622,8 +1611,7 @@ ShmemTextureReadLock::ShmemTextureReadLock(ClientIPCAllocator* aAllocator)
 
 ShmemTextureReadLock::~ShmemTextureReadLock()
 {
-  auto fwd = mAllocator->AsTextureForwarder();
-  if (fwd) {
+  if (mClientAllocator) {
     
     
     ReadUnlock();
@@ -1657,9 +1645,8 @@ ShmemTextureReadLock::ReadUnlock() {
   int32_t readCount = PR_ATOMIC_DECREMENT(&info->readCount);
   MOZ_ASSERT(readCount >= 0);
   if (readCount <= 0) {
-    auto fwd = mAllocator->AsTextureForwarder();
-    if (fwd) {
-      fwd->GetTileLockAllocator()->DeallocShmemSection(mShmemSection);
+    if (mClientAllocator) {
+      mClientAllocator->GetTileLockAllocator()->DeallocShmemSection(mShmemSection);
     } else {
       
       FixedSizeSmallShmemSectionAllocator::FreeShmemSection(mShmemSection);
@@ -1738,7 +1725,7 @@ SyncObject::CreateSyncObject(SyncHandle aHandle)
 }
 
 already_AddRefed<TextureClient>
-TextureClient::CreateWithData(TextureData* aData, TextureFlags aFlags, ClientIPCAllocator* aAllocator)
+TextureClient::CreateWithData(TextureData* aData, TextureFlags aFlags, LayersIPCChannel* aAllocator)
 {
   if (!aData) {
     return nullptr;

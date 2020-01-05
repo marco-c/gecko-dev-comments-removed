@@ -26,9 +26,9 @@ public:
                                    LayersBackend aLayersBackend,
                                    TextureFlags aFlags,
                                    TextureAllocationFlags aAllocFlags,
-                                   ClientIPCAllocator* aAllocator);
+                                   LayersIPCChannel* aAllocator);
 
-  static BufferTextureData* CreateForYCbCr(ClientIPCAllocator* aAllocator,
+  static BufferTextureData* CreateForYCbCr(KnowsCompositor* aAllocator,
                                            gfx::IntSize aYSize,
                                            gfx::IntSize aCbCrSize,
                                            StereoMode aStereoMode,
@@ -37,7 +37,7 @@ public:
   
   
   
-  static BufferTextureData* CreateForYCbCrWithBufferSize(ClientIPCAllocator* aAllocator,
+  static BufferTextureData* CreateForYCbCrWithBufferSize(KnowsCompositor* aAllocator,
                                                          int32_t aSize,
                                                          TextureFlags aTextureFlags);
 
@@ -70,7 +70,7 @@ protected:
 
   gfx::SurfaceFormat GetFormat() const;
 
-  static BufferTextureData* CreateInternal(ClientIPCAllocator* aAllocator,
+  static BufferTextureData* CreateInternal(LayersIPCChannel* aAllocator,
                                            const BufferDescriptor& aDesc,
                                            gfx::BackendType aMoz2DBackend,
                                            int32_t aBufferSize,
