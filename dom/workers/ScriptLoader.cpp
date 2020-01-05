@@ -872,17 +872,9 @@ private:
 
     WorkerPrivate* parentWorker = mWorkerPrivate->GetParent();
 
-    
     nsIPrincipal* principal = mWorkerPrivate->GetPrincipal();
     nsCOMPtr<nsILoadGroup> loadGroup = mWorkerPrivate->GetLoadGroup();
-    if (!principal) {
-      NS_ASSERTION(parentWorker, "Must have a principal!");
-      NS_ASSERTION(mIsMainScript, "Must have a principal for importScripts!");
-
-      principal = parentWorker->GetPrincipal();
-      loadGroup = parentWorker->GetLoadGroup();
-    }
-    NS_ASSERTION(principal, "This should never be null here!");
+    MOZ_DIAGNOSTIC_ASSERT(principal);
     MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(loadGroup, principal));
 
     
@@ -1137,61 +1129,8 @@ private:
       
       mWorkerPrivate->InitChannelInfo(channel);
 
-      
-      WorkerPrivate* parent = mWorkerPrivate->GetParent();
-
-      NS_ASSERTION(mWorkerPrivate->GetPrincipal() || parent,
-                   "Must have one of these!");
-
-      nsCOMPtr<nsIPrincipal> loadPrincipal = mWorkerPrivate->GetPrincipal() ?
-                                             mWorkerPrivate->GetPrincipal() :
-                                             parent->GetPrincipal();
-
-      nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
-      NS_ASSERTION(ssm, "Should never be null!");
-
-      nsCOMPtr<nsIPrincipal> channelPrincipal;
-      rv = ssm->GetChannelResultPrincipal(channel, getter_AddRefs(channelPrincipal));
+      rv = mWorkerPrivate->SetPrincipalFromChannel(channel);
       NS_ENSURE_SUCCESS(rv, rv);
-
-      nsCOMPtr<nsILoadGroup> channelLoadGroup;
-      rv = channel->GetLoadGroup(getter_AddRefs(channelLoadGroup));
-      NS_ENSURE_SUCCESS(rv, rv);
-      MOZ_ASSERT(channelLoadGroup);
-
-      
-      
-      
-      
-      
-      
-      
-      if (nsContentUtils::IsSystemPrincipal(loadPrincipal)) {
-        if (!nsContentUtils::IsSystemPrincipal(channelPrincipal)) {
-          
-          
-          
-          bool isResource;
-          rv = NS_URIChainHasFlags(finalURI,
-                                   nsIProtocolHandler::URI_IS_UI_RESOURCE,
-                                   &isResource);
-          NS_ENSURE_SUCCESS(rv, rv);
-
-          if (isResource) {
-            
-            
-            channelPrincipal = loadPrincipal;
-          } else {
-            return NS_ERROR_DOM_BAD_URI;
-          }
-        }
-      }
-
-      
-      
-      MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(channelLoadGroup, channelPrincipal));
-
-      mWorkerPrivate->SetPrincipal(channelPrincipal, channelLoadGroup);
 
       
       
@@ -1239,6 +1178,7 @@ private:
           }
         }
       }
+      WorkerPrivate* parent = mWorkerPrivate->GetParent();
       if (parent) {
         
         mWorkerPrivate->SetXHRParamsAllowed(parent->XHRParamsAllowed());
@@ -1308,7 +1248,7 @@ private:
       MOZ_ASSERT(equal);
 
       mWorkerPrivate->InitChannelInfo(aChannelInfo);
-      mWorkerPrivate->SetPrincipal(responsePrincipal, loadGroup);
+      mWorkerPrivate->SetPrincipalOnMainThread(responsePrincipal, loadGroup);
     }
 
     if (NS_SUCCEEDED(rv)) {
@@ -1817,8 +1757,12 @@ public:
   {
     AssertIsOnMainThread();
 
-    nsIPrincipal* principal = mWorkerPrivate->GetPrincipal();
-    MOZ_ASSERT(principal);
+    
+    
+    
+    
+    mLoadInfo.mPrincipal = mWorkerPrivate->GetPrincipal();
+    MOZ_ASSERT(mLoadInfo.mPrincipal);
 
     
     nsCOMPtr<nsIURI> baseURI = mWorkerPrivate->GetBaseURI();
@@ -1827,12 +1771,13 @@ public:
     
     nsCOMPtr<nsIDocument> parentDoc = mWorkerPrivate->GetDocument();
 
-    nsCOMPtr<nsILoadGroup> loadGroup = mWorkerPrivate->GetLoadGroup();
+    mLoadInfo.mLoadGroup = mWorkerPrivate->GetLoadGroup();
 
     nsCOMPtr<nsIChannel> channel;
     mResult =
-      scriptloader::ChannelFromScriptURLMainThread(principal, baseURI,
-                                                   parentDoc, loadGroup,
+      scriptloader::ChannelFromScriptURLMainThread(mLoadInfo.mPrincipal,
+                                                   baseURI, parentDoc,
+                                                   mLoadInfo.mLoadGroup,
                                                    mScriptURL,
                                                    
                                                    nsIContentPolicy::TYPE_INTERNAL_WORKER,

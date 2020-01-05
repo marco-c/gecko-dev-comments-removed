@@ -1890,6 +1890,67 @@ WorkerLoadInfo::SetPrincipalOnMainThread(nsIPrincipal* aPrincipal,
     PrincipalToPrincipalInfo(aPrincipal, mPrincipalInfo));
 }
 
+nsresult
+WorkerLoadInfo::SetPrincipalFromChannel(nsIChannel* aChannel)
+{
+  AssertIsOnMainThread();
+  MOZ_DIAGNOSTIC_ASSERT(aChannel);
+
+  
+  MOZ_DIAGNOSTIC_ASSERT(mPrincipal);
+
+  nsIScriptSecurityManager* ssm = nsContentUtils::GetSecurityManager();
+  MOZ_DIAGNOSTIC_ASSERT(ssm);
+
+  nsCOMPtr<nsIPrincipal> channelPrincipal;
+  nsresult rv = ssm->GetChannelResultPrincipal(aChannel, getter_AddRefs(channelPrincipal));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsILoadGroup> channelLoadGroup;
+  rv = aChannel->GetLoadGroup(getter_AddRefs(channelLoadGroup));
+  NS_ENSURE_SUCCESS(rv, rv);
+  MOZ_ASSERT(channelLoadGroup);
+
+  
+  
+  
+  
+  
+  
+  
+  if (nsContentUtils::IsSystemPrincipal(mPrincipal)) {
+    if (!nsContentUtils::IsSystemPrincipal(channelPrincipal)) {
+      nsCOMPtr<nsIURI> finalURI;
+      rv = NS_GetFinalChannelURI(aChannel, getter_AddRefs(finalURI));
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      
+      
+      
+      bool isResource;
+      rv = NS_URIChainHasFlags(finalURI,
+                               nsIProtocolHandler::URI_IS_UI_RESOURCE,
+                               &isResource);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      if (isResource) {
+        
+        
+        channelPrincipal = mPrincipal;
+      } else {
+        return NS_ERROR_DOM_BAD_URI;
+      }
+    }
+  }
+
+  
+  
+  MOZ_ASSERT(NS_LoadGroupMatchesPrincipal(channelLoadGroup, channelPrincipal));
+
+  SetPrincipalOnMainThread(channelPrincipal, channelLoadGroup);
+  return NS_OK;
+}
+
 template <class Derived>
 class WorkerPrivateParent<Derived>::EventTarget final
   : public nsIEventTarget
@@ -3695,10 +3756,17 @@ WorkerPrivateParent<Derived>::SetBaseURI(nsIURI* aBaseURI)
 
 template <class Derived>
 void
-WorkerPrivateParent<Derived>::SetPrincipal(nsIPrincipal* aPrincipal,
-                                           nsILoadGroup* aLoadGroup)
+WorkerPrivateParent<Derived>::SetPrincipalOnMainThread(nsIPrincipal* aPrincipal,
+                                                       nsILoadGroup* aLoadGroup)
 {
   mLoadInfo.SetPrincipalOnMainThread(aPrincipal, aLoadGroup);
+}
+
+template <class Derived>
+nsresult
+WorkerPrivateParent<Derived>::SetPrincipalFromChannel(nsIChannel* aChannel)
+{
+  return mLoadInfo.SetPrincipalFromChannel(aChannel);
 }
 
 template <class Derived>
