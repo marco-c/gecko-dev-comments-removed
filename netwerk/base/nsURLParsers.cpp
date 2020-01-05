@@ -381,7 +381,7 @@ nsNoAuthURLParser::ParseAfterScheme(const char *spec, int32_t specLen,
             const char *p = nullptr;
             if (specLen > 2) {
                 
-#if defined(XP_WIN)
+
                 
                 
                 
@@ -391,8 +391,7 @@ nsNoAuthURLParser::ParseAfterScheme(const char *spec, int32_t specLen,
                     ((specLen == 4) || (spec[4] == '/') || (spec[4] == '\\'))) {
                     pos = 1;
                     break;  
-                } 
-#endif
+                }
                 
                 for (p = spec + 2; p < spec + specLen; ++p) {
                     if (*p == '/' || *p == '?' || *p == '#')
