@@ -152,7 +152,7 @@ nsIContent::FindFirstNonChromeOnlyAccessContent() const
 }
 
 nsINode*
-nsIContent::GetFlattenedTreeParentNodeInternal() const
+nsIContent::GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const
 {
   nsINode* parentNode = GetParentNode();
   if (!parentNode || !parentNode->IsContent()) {
@@ -160,6 +160,45 @@ nsIContent::GetFlattenedTreeParentNodeInternal() const
     return parentNode;
   }
   nsIContent* parent = parentNode->AsContent();
+
+  if (aType == eForStyle &&
+      IsRootOfNativeAnonymousSubtree() &&
+      OwnerDoc()->GetRootElement() == parent) {
+    
+    
+    
+    
+    
+    
+    
+    nsIFrame* parentFrame = parent->GetPrimaryFrame();
+    if (!parentFrame) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      return nullptr;
+    }
+    nsIAnonymousContentCreator* creator = do_QueryFrame(parentFrame);
+    if (!creator) {
+      
+      
+      return nullptr;
+    }
+    AutoTArray<nsIContent*, 8> elements;
+    creator->AppendAnonymousContentTo(elements, 0);
+    if (!elements.Contains(this)) {
+      
+      
+      
+      return nullptr;
+    }
+  }
 
   if (parent && nsContentUtils::HasDistributedChildren(parent) &&
       nsContentUtils::IsInSameAnonymousTree(parent, this)) {

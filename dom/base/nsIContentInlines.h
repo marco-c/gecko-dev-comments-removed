@@ -33,10 +33,11 @@ inline mozilla::dom::ShadowRoot* nsIContent::GetShadowRoot() const
   return AsElement()->FastGetShadowRoot();
 }
 
-inline nsINode* nsINode::GetFlattenedTreeParentNode() const
+template<nsIContent::FlattenedParentType Type>
+static inline nsINode*
+GetFlattenedTreeParentNode(const nsINode* aNode)
 {
-  nsINode* parent = GetParentNode();
-
+  nsINode* parent = aNode->GetParentNode();
   
   
   
@@ -48,16 +49,29 @@ inline nsINode* nsINode::GetFlattenedTreeParentNode() const
   
   
   
-  bool needSlowCall = HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
-                      IsInShadowTree() ||
-                      (parent && parent->IsContent() &&
-                       parent->AsContent()->GetShadowRoot());
+  
+  
+  
+  bool needSlowCall = aNode->HasFlag(NODE_MAY_BE_IN_BINDING_MNGR) ||
+                      aNode->IsInShadowTree() ||
+                      (parent &&
+                       parent->IsContent() &&
+                       parent->AsContent()->GetShadowRoot()) ||
+                      (Type == nsIContent::eForStyle &&
+                       aNode->IsContent() &&
+                       aNode->AsContent()->IsRootOfNativeAnonymousSubtree() &&
+                       aNode->OwnerDoc()->GetRootElement() == parent);
   if (MOZ_UNLIKELY(needSlowCall)) {
-    MOZ_ASSERT(IsContent());
-    return AsContent()->GetFlattenedTreeParentNodeInternal();
+    MOZ_ASSERT(aNode->IsContent());
+    return aNode->AsContent()->GetFlattenedTreeParentNodeInternal(Type);
   }
-
   return parent;
+}
+
+inline nsINode*
+nsINode::GetFlattenedTreeParentNode() const
+{
+  return ::GetFlattenedTreeParentNode<nsIContent::eNotForStyle>(this);
 }
 
 inline nsIContent*
@@ -67,5 +81,10 @@ nsIContent::GetFlattenedTreeParent() const
   return (parent && parent->IsContent()) ? parent->AsContent() : nullptr;
 }
 
+inline nsINode*
+nsINode::GetFlattenedTreeParentNodeForStyle() const
+{
+  return ::GetFlattenedTreeParentNode<nsIContent::eForStyle>(this);
+}
 
 #endif 

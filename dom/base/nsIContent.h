@@ -732,9 +732,8 @@ public:
   inline nsIContent *GetFlattenedTreeParent() const;
 
   
-
-
-  nsINode *GetFlattenedTreeParentNodeInternal() const;
+  enum FlattenedParentType { eNotForStyle, eForStyle };
+  nsINode* GetFlattenedTreeParentNodeInternal(FlattenedParentType aType) const;
 
   
 
