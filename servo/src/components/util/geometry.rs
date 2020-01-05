@@ -300,3 +300,11 @@ pub fn to_pt(au: Au) -> f64 {
     (a as f64) / 60f64 * 72f64 / 96f64
 }
 
+
+
+
+pub fn rect_contains_point<T:Ord + Add<T,T>>(rect: Rect<T>, point: Point2D<T>) -> bool {
+    point.x >= rect.origin.x && point.x < rect.origin.x + rect.size.width &&
+        point.y >= rect.origin.y && point.y < rect.origin.y + rect.size.height
+}
+

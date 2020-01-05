@@ -2,16 +2,17 @@
 
 
 
+use azure::azure_hl::Color;
 use geom::point::Point2D;
 use geom::rect::Rect;
 use geom::size::Size2D;
-use azure::azure_hl::Color;
 use layers::platform::surface::{NativeGraphicsMetadata, NativePaintingGraphicsContext};
 use layers::platform::surface::{NativeSurface, NativeSurfaceMethods};
+use serialize::{Encoder, Encodable};
+use std::fmt::{Formatter, Show};
+use std::fmt;
 
 use constellation_msg::PipelineId;
-
-use serialize::{Encoder, Encodable};
 
 pub struct LayerBuffer {
     
@@ -38,7 +39,7 @@ pub struct LayerBufferSet {
 }
 
 impl LayerBufferSet {
-    
+    /// Notes all buffer surfaces will leak if not destroyed via a call to `destroy`.
     pub fn mark_will_leak(&mut self) {
         for buffer in self.buffers.mut_iter() {
             buffer.native_surface.mark_will_leak()
@@ -46,7 +47,7 @@ impl LayerBufferSet {
     }
 }
 
-
+/// The status of the renderer.
 #[deriving(Eq, Clone)]
 pub enum RenderState {
     IdleRenderState,
@@ -55,17 +56,17 @@ pub enum RenderState {
 
 #[deriving(Eq, Clone)]
 pub enum ReadyState {
-    
+    /// Informs the compositor that nothing has been done yet. Used for setting status
     Blank,
-    
+    /// Informs the compositor that a page is loading. Used for setting status
     Loading,
-    
+    /// Informs the compositor that a page is performing layout. Used for setting status
     PerformingLayout,
-    
+    /// Informs the compositor that a page is finished loading. Used for setting status
     FinishedLoading,
 }
 
-
+/// A newtype struct for denoting the age of messages; prevents race conditions.
 #[deriving(Eq)]
 pub struct Epoch(uint);
 
@@ -76,15 +77,73 @@ impl Epoch {
     }
 }
 
+#[deriving(Clone, Eq)]
+pub struct LayerId(uint, uint);
+
+impl Show for LayerId {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        let LayerId(a, b) = *self;
+        write!(f.buf, "Layer({}, {})", a, b);
+        Ok(())
+    }
+}
+
+impl LayerId {
+    
+    pub fn null() -> LayerId {
+        LayerId(0, 0)
+    }
+}
+
+
+#[deriving(Eq)]
+pub enum ScrollPolicy {
+    
+    Scrollable,
+    
+    FixedPosition,
+}
+
+
+
+pub struct LayerMetadata {
+    
+    id: LayerId,
+    
+    position: Rect<uint>,
+    
+    background_color: Color,
+    
+    scroll_policy: ScrollPolicy,
+}
+
 
 
 pub trait RenderListener {
     fn get_graphics_metadata(&self) -> Option<NativeGraphicsMetadata>;
-    fn new_layer(&self, PipelineId, Size2D<uint>);
-    fn set_layer_page_size_and_color(&self, PipelineId, Size2D<uint>, Epoch, Color);
-    fn set_layer_clip_rect(&self, PipelineId, Rect<uint>);
-    fn delete_layer(&self, PipelineId);
-    fn paint(&self, id: PipelineId, layer_buffer_set: ~LayerBufferSet, Epoch);
+    fn create_layer_group_for_pipeline(&self, PipelineId, Size2D<uint>);
+
+    
+    
+    fn initialize_layers_for_pipeline(&self,
+                                      pipeline_id: PipelineId,
+                                      metadata: ~[LayerMetadata],
+                                      epoch: Epoch);
+
+    fn set_layer_clip_rect(&self,
+                           pipeline_id: PipelineId,
+                           layer_id: LayerId,
+                           new_rect: Rect<uint>);
+
+    fn delete_layer_group(&self, PipelineId);
+
+    
+    fn paint(&self,
+             pipeline_id: PipelineId,
+             layer_id: LayerId,
+             layer_buffer_set: ~LayerBufferSet,
+             epoch: Epoch);
+
     fn set_render_state(&self, render_state: RenderState);
 }
 
@@ -92,8 +151,11 @@ pub trait RenderListener {
 
 pub trait ScriptListener : Clone {
     fn set_ready_state(&self, ReadyState);
-    fn invalidate_rect(&self, PipelineId, Rect<uint>);
-    fn scroll_fragment_point(&self, PipelineId, Point2D<f32>);
+    fn invalidate_rect(&self, pipeline_id: PipelineId, layer_id: LayerId, rect: Rect<uint>);
+    fn scroll_fragment_point(&self,
+                             pipeline_id: PipelineId,
+                             layer_id: LayerId,
+                             point: Point2D<f32>);
     fn close(&self);
     fn dup(&self) -> ~ScriptListener;
 }

@@ -7,6 +7,7 @@ use layout::construct::{ConstructionResult, NoConstructionResult};
 use layout::parallel::DomParallelInfo;
 use layout::wrapper::{LayoutNode, TLayoutNode, ThreadSafeLayoutNode};
 
+use gfx::display_list::OpaqueNode;
 use script::dom::bindings::js::JS;
 use script::dom::bindings::utils::Reflectable;
 use script::dom::node::Node;
@@ -146,6 +147,10 @@ pub struct PrivateLayoutData {
     
     flow_construction_result: ConstructionResult,
 
+    before_flow_construction_result: ConstructionResult,
+
+    after_flow_construction_result: ConstructionResult,
+
     
     parallel: DomParallelInfo,
 }
@@ -159,6 +164,8 @@ impl PrivateLayoutData {
             after_style: None,
             restyle_damage: None,
             flow_construction_result: NoConstructionResult,
+            before_flow_construction_result: NoConstructionResult,
+            after_flow_construction_result: NoConstructionResult,
             parallel: DomParallelInfo::new(),
         }
     }
@@ -200,40 +207,45 @@ impl<'ln> LayoutDataAccess for LayoutNode<'ln> {
     }
 }
 
-
-
-
-
-
-
-#[deriving(Clone, Eq)]
-pub struct OpaqueNode(uintptr_t);
-
-impl OpaqueNode {
+pub trait OpaqueNodeMethods {
     
-    pub fn from_layout_node(node: &LayoutNode) -> OpaqueNode {
+    fn from_layout_node(node: &LayoutNode) -> Self;
+
+    
+    fn from_thread_safe_layout_node(node: &ThreadSafeLayoutNode) -> Self;
+
+    
+    fn from_script_node(node: TrustedNodeAddress) -> Self;
+
+    
+    fn from_jsmanaged(node: &JS<Node>) -> Self;
+
+    
+    
+    fn to_untrusted_node_address(&self) -> UntrustedNodeAddress;
+}
+
+impl OpaqueNodeMethods for OpaqueNode {
+    fn from_layout_node(node: &LayoutNode) -> OpaqueNode {
         unsafe {
-            OpaqueNode::from_jsmanaged(node.get_jsmanaged())
+            OpaqueNodeMethods::from_jsmanaged(node.get_jsmanaged())
         }
     }
 
-    
-    pub fn from_thread_safe_layout_node(node: &ThreadSafeLayoutNode) -> OpaqueNode {
+    fn from_thread_safe_layout_node(node: &ThreadSafeLayoutNode) -> OpaqueNode {
         unsafe {
             let abstract_node = node.get_jsmanaged();
-            let ptr: uintptr_t = cast::transmute(abstract_node.reflector().get_jsobject());
+            let ptr: uintptr_t = abstract_node.reflector().get_jsobject() as uint;
             OpaqueNode(ptr)
         }
     }
 
-    
-    pub fn from_script_node(node: TrustedNodeAddress) -> OpaqueNode {
+    fn from_script_node(node: TrustedNodeAddress) -> OpaqueNode {
         unsafe {
-            OpaqueNode::from_jsmanaged(&JS::from_trusted_node_address(node))
+            OpaqueNodeMethods::from_jsmanaged(&JS::from_trusted_node_address(node))
         }
     }
 
-    
     fn from_jsmanaged(node: &JS<Node>) -> OpaqueNode {
         unsafe {
             let ptr: uintptr_t = cast::transmute(node.reflector().get_jsobject());
@@ -241,9 +253,7 @@ impl OpaqueNode {
         }
     }
 
-    
-    
-    pub fn to_untrusted_node_address(&self) -> UntrustedNodeAddress {
+    fn to_untrusted_node_address(&self) -> UntrustedNodeAddress {
         unsafe {
             let OpaqueNode(addr) = *self;
             let addr: UntrustedNodeAddress = cast::transmute(addr);
@@ -251,11 +261,5 @@ impl OpaqueNode {
         }
     }
 
-    
-    pub fn id(&self) -> uintptr_t {
-        unsafe {
-            cast::transmute_copy(self)
-        }
-    }
 }
 

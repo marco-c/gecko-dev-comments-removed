@@ -4,39 +4,34 @@
 
 
 
-use layout::box_::Box;
 use layout::context::LayoutContext;
-use layout::util::OpaqueNode;
 
+use geom::{Point2D, Rect, Size2D};
+use gfx::render_task::RenderLayer;
 use gfx;
+use servo_util::geometry::Au;
+use servo_util::smallvec::SmallVec0;
 use style;
-
-pub trait ExtraDisplayListData {
-    fn new(box_: &Box) -> Self;
-}
-
-pub type Nothing = ();
-
-impl ExtraDisplayListData for OpaqueNode {
-    fn new(box_: &Box) -> OpaqueNode {
-        box_.node
-    }
-}
-
-impl ExtraDisplayListData for Nothing {
-    fn new(_: &Box) -> Nothing {
-        ()
-    }
-}
-
-
-
-
-
 
 
 pub struct DisplayListBuilder<'a> {
     ctx: &'a LayoutContext,
+
+    
+    layers: SmallVec0<RenderLayer>,
+
+    
+    dirty: Rect<Au>,
+}
+
+
+pub struct DisplayListBuildingInfo {
+    
+    relative_containing_block_size: Size2D<Au>,
+    
+    absolute_containing_block_position: Point2D<Au>,
+    
+    layers_needed_for_positioned_flows: bool,
 }
 
 
