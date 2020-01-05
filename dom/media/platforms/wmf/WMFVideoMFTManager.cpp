@@ -157,8 +157,9 @@ WMFVideoMFTManager::~WMFVideoMFTManager()
     Telemetry::Accumulate(Telemetry::HistogramID::VIDEO_MFT_OUTPUT_NULL_SAMPLES,
                           telemetry);
   });
-  
-  AbstractThread::MainThread()->Dispatch(task.forget());
+  SystemGroup::Dispatch("~WMFVideoMFTManager::report_telemetry",
+                        TaskCategory::Other,
+                        task.forget());
 }
 
 const GUID&
