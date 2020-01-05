@@ -896,13 +896,14 @@ LUL::MaybeShowStats()
   if (n_new >= 5000) {
     uint32_t n_new_Context = mStats.mContext - mStatsPrevious.mContext;
     uint32_t n_new_CFI     = mStats.mCFI     - mStatsPrevious.mCFI;
+    uint32_t n_new_FP      = mStats.mFP      - mStatsPrevious.mFP;
     uint32_t n_new_Scanned = mStats.mScanned - mStatsPrevious.mScanned;
     mStatsPrevious = mStats;
     char buf[200];
     SprintfLiteral(buf,
                    "LUL frame stats: TOTAL %5u"
-                   "    CTX %4u    CFI %4u    SCAN %4u",
-                   n_new, n_new_Context, n_new_CFI, n_new_Scanned);
+                   "    CTX %4u    CFI %4u    FP %4u    SCAN %4u",
+                   n_new, n_new_Context, n_new_CFI, n_new_FP, n_new_Scanned);
     buf[sizeof(buf)-1] = 0;
     mLog(buf);
   }
@@ -1346,6 +1347,7 @@ void
 LUL::Unwind(uintptr_t* aFramePCs,
             uintptr_t* aFrameSPs,
             size_t* aFramesUsed, 
+            size_t* aFramePointerFramesAcquired,
             size_t* aScannedFramesAcquired,
             size_t aFramesAvail,
             size_t aScannedFramesAllowed,
@@ -1544,6 +1546,60 @@ LUL::Unwind(uintptr_t* aFramePCs,
       UseRuleSet(&regs, aStackImg, ruleset, pfxinstrs);
 
     } else {
+
+      
+      
+      
+      
+
+#if defined(GP_PLAT_amd64_linux)
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      const size_t wordSzB = sizeof(uintptr_t);
+      TaggedUWord old_xsp = regs.xsp;
+
+      
+      TaggedUWord old_xbp = regs.xbp;
+      
+      TaggedUWord old_xbp_plus1 = regs.xbp + TaggedUWord(1 * wordSzB);
+      
+      TaggedUWord old_xbp_plus2 = regs.xbp + TaggedUWord(2 * wordSzB);
+
+      if (old_xbp.Valid() && old_xbp.IsAligned() &&
+          old_xsp.Valid() && old_xsp.IsAligned() &&
+          old_xsp.Value() <= old_xbp.Value()) {
+        
+        
+        
+        
+        
+        TaggedUWord new_xbp = DerefTUW(old_xbp, aStackImg);
+        if (new_xbp.Valid() && new_xbp.IsAligned() &&
+            old_xbp.Value() < new_xbp.Value()) {
+          TaggedUWord new_xip = DerefTUW(old_xbp_plus1, aStackImg);
+          TaggedUWord new_xsp = old_xbp_plus2;
+          if (new_xbp.Valid() && new_xip.Valid() && new_xsp.Valid()) {
+            regs.xbp = new_xbp;
+            regs.xip = new_xip;
+            regs.xsp = new_xsp;
+            (*aFramePointerFramesAcquired)++;
+            continue;
+          }
+        }
+      }
+#endif
 
       
       
@@ -1768,9 +1824,10 @@ bool GetAndCheckStackTrace(LUL* aLUL, const char* dstring)
   size_t framesAvail = mozilla::ArrayLength(framePCs);
   size_t framesUsed  = 0;
   size_t scannedFramesAllowed = 0;
-  size_t scannedFramesAcquired = 0;
+  size_t scannedFramesAcquired = 0, framePointerFramesAcquired = 0;
   aLUL->Unwind( &framePCs[0], &frameSPs[0],
-                &framesUsed, &scannedFramesAcquired,
+                &framesUsed,
+                &framePointerFramesAcquired, &scannedFramesAcquired,
                 framesAvail, scannedFramesAllowed,
                 &startRegs, stackImg );
 
