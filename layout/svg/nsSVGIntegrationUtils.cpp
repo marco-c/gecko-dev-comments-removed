@@ -117,16 +117,11 @@ private:
     
     
     
-    
-#ifdef DEBUG
-    nsIFrame* firstFrame =
-      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aFrame);
-    NS_ASSERTION(nsSVGEffects::GetEffectProperties(firstFrame).MightHaveNoneSVGMask() ||
+    NS_ASSERTION(nsSVGEffects::GetEffectProperties(aFrame).MightHaveNoneSVGMask() ||
                  aFrame->GetParent()->StyleContext()->GetPseudo() ==
-                   nsCSSAnonBoxes::mozAnonymousBlock ||
-                 (aFrame != firstFrame),
+                   nsCSSAnonBoxes::mozAnonymousBlock,
                  "How did we getting here, then?");
-#endif
+
     NS_ASSERTION(!aFrame->Properties().Get(
                    aFrame->PreTransformOverflowAreasProperty()),
                  "GetVisualOverflowRect() won't return the pre-effects rect!");
