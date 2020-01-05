@@ -230,7 +230,15 @@ if __name__ == "__main__":
     
     base_dir = "/builds/slave/moz-toolchain"
     if is_windows():
-        base_dir = "c:%s" % base_dir
+        
+        
+        
+        
+        
+        
+        
+        
+        base_dir = os.path.join(os.getcwd(), 'llvm-sources')
 
     source_dir = base_dir + "/src"
     build_dir = base_dir + "/build"
