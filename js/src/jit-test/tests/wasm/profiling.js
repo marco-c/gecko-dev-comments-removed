@@ -192,7 +192,7 @@ testError(
     (func (export "") (call $foo))
 )`,
 WebAssembly.RuntimeError,
-["", ">", "1,>", "0,1,>", "interstitial,0,1,>", "trap handling,0,1,>", ""]);
+["", ">", "1,>", "0,1,>", "interstitial,0,1,>", "trap handling,0,1,>", "", ">", ""]);
 
 testError(
 `(module
@@ -207,7 +207,7 @@ WebAssembly.RuntimeError,
 
 
 
-["", ">", "0,>", "1,0,>", "1,>", "trap handling,0,>", ""]);
+["", ">", "0,>", "1,0,>", "1,>", "trap handling,0,>", "", ">", ""]);
 
 (function() {
     var e = wasmEvalText(`

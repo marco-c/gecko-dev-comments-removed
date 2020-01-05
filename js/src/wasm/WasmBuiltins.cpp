@@ -147,7 +147,11 @@ WasmHandleDebugTrap()
     return true;
 }
 
-static WasmActivation*
+
+
+
+
+static void*
 WasmHandleThrow()
 {
     JSContext* cx = TlsContext.get();
@@ -163,10 +167,7 @@ WasmHandleThrow()
     
     
     FrameIterator iter(activation, FrameIterator::Unwind::True);
-    if (iter.done()) {
-        MOZ_ASSERT(!activation->interrupted());
-        return activation;
-    }
+    MOZ_ASSERT(!iter.done());
 
     
     
@@ -208,7 +209,7 @@ WasmHandleThrow()
      }
 
     MOZ_ASSERT(!activation->interrupted(), "unwinding clears the interrupt");
-    return activation;
+    return iter.unwoundAddressOfReturnAddress();
 }
 
 static void
