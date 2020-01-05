@@ -379,6 +379,8 @@ private:
 
   void RecoverFromInvalidFrames(const nsIntSize& aSize, uint32_t aFlags);
 
+  void OnSurfaceDiscardedInternal(bool aAnimatedFramesDiscarded);
+
 private: 
   nsIntSize                  mSize;
   nsTArray<nsIntSize>        mNativeSizes;
