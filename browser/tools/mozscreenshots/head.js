@@ -34,20 +34,29 @@ function* setup() {
   });
 }
 
+
+
+
+
+
 function shouldCapture() {
-  
   if (env.get("MOZSCREENSHOTS_SETS")) {
     ok(true, "MOZSCREENSHOTS_SETS was specified so only capture what was " +
        "requested (in browser_screenshots.js)");
     return false;
   }
 
+  if (AppConstants.MOZ_UPDATE_CHANNEL == "nightly") {
+    ok(true, "Screenshots aren't captured on Nightlies");
+    return false;
+  }
+
   
   
-  let capture = AppConstants.MOZ_UPDATE_CHANNEL == "nightly" ||
-                AppConstants.SOURCE_REVISION_URL == "";
+  
+  let capture = !AppConstants.SOURCE_REVISION_URL.includes("/try/rev/");
   if (!capture) {
-    ok(true, "Capturing is disabled for this MOZ_UPDATE_CHANNEL or REPO");
+    ok(true, "Capturing is disabled for this REPO. You may need to use MOZSCREENSHOTS_SETS");
   }
   return capture;
 }
