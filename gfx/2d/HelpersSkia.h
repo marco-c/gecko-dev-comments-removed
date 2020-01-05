@@ -371,6 +371,25 @@ static inline FillRule GetFillRule(SkPath::FillType aFillType)
   return FillRule::FILL_EVEN_ODD;
 }
 
+
+
+
+
+
+
+
+
+
+static inline bool IsBackedByPixels(const SkCanvas* aCanvas)
+{
+  SkSurfaceProps props(0, kUnknown_SkPixelGeometry);
+  if (!aCanvas->getProps(&props) ||
+      props.pixelGeometry() == kUnknown_SkPixelGeometry) {
+    return false;
+  }
+  return true;
+}
+
 } 
 } 
 

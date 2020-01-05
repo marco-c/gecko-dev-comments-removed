@@ -1587,11 +1587,11 @@ DrawTargetSkia::CreateSimilarDrawTarget(const IntSize &aSize, SurfaceFormat aFor
 #endif
 
 #ifdef DEBUG
-  
-  
-  
-  
-  if (mCanvas->imageInfo().colorType() == kUnknown_SkColorType) {
+  if (!IsBackedByPixels(mCanvas.get())) {
+    
+    
+    
+    
     NS_WARNING("Not backed by pixels - we need to handle PDF backed SkCanvas");
   }
 #endif
@@ -1793,9 +1793,7 @@ DrawTargetSkia::Init(SkCanvas* aCanvas)
 
   
   
-  bool isBackedByPixels = imageInfo.colorType() != kUnknown_SkColorType;
-  if (isBackedByPixels) {
-    
+  if (IsBackedByPixels(mCanvas.get())) {
     SkColor clearColor = imageInfo.isOpaque() ? SK_ColorBLACK : SK_ColorTRANSPARENT;
     mCanvas->clear(clearColor);
   }
