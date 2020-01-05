@@ -92,7 +92,6 @@
 
 #define MOBILE_ROOT_GUID "mobile______"
 #define MOBILE_ROOT_ANNO "mobile/bookmarksRoot"
-#define MOBILE_QUERY_ANNO "MobileBookmarks"
 
 
 
@@ -1906,22 +1905,6 @@ Database::MigrateV35Up() {
 
     
     rv = DeleteBookmarkItem(folderIds[i]);
-    if (NS_FAILED(rv)) return rv;
-  }
-
-  
-  
-  
-  
-  
-  nsTArray<int64_t> queryIds;
-  rv = GetItemsWithAnno(NS_LITERAL_CSTRING(MOBILE_QUERY_ANNO),
-                        nsINavBookmarksService::TYPE_BOOKMARK,
-                        queryIds);
-  if (NS_FAILED(rv)) return rv;
-
-  for (uint32_t i = 0; i < queryIds.Length(); ++i) {
-    rv = DeleteBookmarkItem(queryIds[i]);
     if (NS_FAILED(rv)) return rv;
   }
 

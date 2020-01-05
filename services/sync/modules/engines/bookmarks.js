@@ -1280,6 +1280,10 @@ BookmarksTracker.prototype = {
     }
     
     else {
+      if (!PlacesUtils.bookmarks.getBookmarkURI(mobile[0]).equals(queryURI)) {
+        PlacesUtils.bookmarks.changeBookmarkURI(mobile[0], queryURI,
+                                                SOURCE_SYNC);
+      }
       let queryTitle = PlacesUtils.bookmarks.getItemTitle(mobile[0]);
       if (queryTitle != title) {
         PlacesUtils.bookmarks.setItemTitle(mobile[0], title, SOURCE_SYNC);
