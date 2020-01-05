@@ -79,6 +79,9 @@ public:
   void RemoveRenderer(gfx::WindowId aWindowId);
 
   
+  RendererOGL* GetRenderer(gfx::WindowId aWindowId);
+
+  
 
   
   void NewFrameReady(gfx::WindowId aWindowId);

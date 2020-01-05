@@ -47,6 +47,9 @@ public:
   bool RenderToTarget(gfx::DrawTarget& aTarget);
 
   
+  void SetProfilerEnabled(bool aEnabled);
+
+  
   ~RendererOGL();
 
   
