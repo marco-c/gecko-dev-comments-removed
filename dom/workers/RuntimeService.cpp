@@ -2808,7 +2808,8 @@ WorkerThreadPrimaryRunnable::Run()
   
   if (NS_WARN_IF(!BackgroundChild::SynchronouslyCreateForCurrentThread())) {
     
-    return NS_ERROR_UNEXPECTED;
+    
+    
   }
 
   class MOZ_STACK_CLASS SetThreadHelper final
