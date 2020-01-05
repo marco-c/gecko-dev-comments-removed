@@ -287,7 +287,6 @@ class MochiRemote(MochitestDesktop):
 
         
         kwargs.pop('marionette_args', None)
-        kwargs.pop('quiet', None)
 
         return self._automation.runApp(*args, **kwargs)
 
