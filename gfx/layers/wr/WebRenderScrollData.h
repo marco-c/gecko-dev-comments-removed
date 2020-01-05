@@ -36,6 +36,16 @@ public:
                   Layer* aLayer,
                   int32_t aDescendantCount);
 
+  int32_t GetDescendantCount() const;
+  size_t GetScrollMetadataCount() const;
+
+  
+  
+  
+  
+  const ScrollMetadata& GetScrollMetadata(const WebRenderScrollData& aOwner,
+                                          size_t aIndex) const;
+
   friend struct IPC::ParamTraits<WebRenderLayerScrollData>;
 
 private:
@@ -69,9 +79,14 @@ public:
   
   size_t AddNewLayerData();
 
+  size_t GetLayerCount() const;
+
   
   
   WebRenderLayerScrollData* GetLayerDataMutable(size_t aIndex);
+  const WebRenderLayerScrollData* GetLayerData(size_t aIndex) const;
+
+  const ScrollMetadata& GetScrollMetadata(size_t aIndex) const;
 
   friend struct IPC::ParamTraits<WebRenderScrollData>;
 

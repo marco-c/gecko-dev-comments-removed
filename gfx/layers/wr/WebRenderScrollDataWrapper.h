@@ -27,17 +27,100 @@ namespace layers {
 
 
 
+
+
+
+
+
+
+
+
+
+
 class MOZ_STACK_CLASS WebRenderScrollDataWrapper {
 public:
-  explicit WebRenderScrollDataWrapper(const WebRenderScrollData* aData)
+  
+  
+  explicit WebRenderScrollDataWrapper(const WebRenderScrollData* aData = nullptr)
     : mData(aData)
+    , mLayerIndex(0)
+    , mContainingSubtreeLastIndex(0)
+    , mLayer(nullptr)
+    , mMetadataIndex(0)
   {
+    if (!mData) {
+      return;
+    }
+    mLayer = mData->GetLayerData(mLayerIndex);
+    if (!mLayer) {
+      return;
+    }
+
+    
+    MOZ_ASSERT(mData->GetLayerCount() == (size_t)(1 + mLayer->GetDescendantCount()));
+    mContainingSubtreeLastIndex = mData->GetLayerCount();
+
+    
+    
+    mMetadataIndex = mLayer->GetScrollMetadataCount();
+    if (mMetadataIndex > 0) {
+      mMetadataIndex--;
+    }
+  }
+
+private:
+  
+  
+  
+  WebRenderScrollDataWrapper(const WebRenderScrollData* aData,
+                             size_t aLayerIndex,
+                             size_t aContainingSubtreeLastIndex)
+    : mData(aData)
+    , mLayerIndex(aLayerIndex)
+    , mContainingSubtreeLastIndex(aContainingSubtreeLastIndex)
+    , mLayer(nullptr)
+    , mMetadataIndex(0)
+  {
+    MOZ_ASSERT(mData);
+    mLayer = mData->GetLayerData(mLayerIndex);
+    MOZ_ASSERT(mLayer);
+
+    
+    
+    mMetadataIndex = mLayer->GetScrollMetadataCount();
+    if (mMetadataIndex > 0) {
+      mMetadataIndex--;
+    }
+  }
+
+  
+  
+  WebRenderScrollDataWrapper(const WebRenderScrollData* aData,
+                             size_t aLayerIndex,
+                             size_t aContainingSubtreeLastIndex,
+                             const WebRenderLayerScrollData* aLayer,
+                             uint32_t aMetadataIndex)
+    : mData(aData)
+    , mLayerIndex(aLayerIndex)
+    , mContainingSubtreeLastIndex(aContainingSubtreeLastIndex)
+    , mLayer(aLayer)
+    , mMetadataIndex(aMetadataIndex)
+  {
+    MOZ_ASSERT(mData);
+    MOZ_ASSERT(mLayer);
+    MOZ_ASSERT(mLayer == mData->GetLayerData(mLayerIndex));
+    MOZ_ASSERT(mMetadataIndex == 0 || mMetadataIndex < mLayer->GetScrollMetadataCount());
+  }
+
+public:
+  bool IsValid() const
+  {
+    return mLayer != nullptr;
   }
 
   explicit operator bool() const
   {
-    
-    return false;
+    return IsValid();
   }
 
   bool IsScrollInfoLayer() const
@@ -48,20 +131,59 @@ public:
 
   WebRenderScrollDataWrapper GetLastChild() const
   {
+    MOZ_ASSERT(IsValid());
+
+    if (!AtBottomLayer()) {
+      
+      
+      
+      return WebRenderScrollDataWrapper(mData, mLayerIndex,
+          mContainingSubtreeLastIndex, mLayer, mMetadataIndex - 1);
+    }
+
     
-    return WebRenderScrollDataWrapper(nullptr);
+    
+
+    
+    
+    
+    
+    
+    
+    if (mLayer->GetDescendantCount() > 0) {
+      size_t prevSiblingIndex = mLayerIndex + 1 + mLayer->GetDescendantCount();
+      size_t subtreeLastIndex = std::min(mContainingSubtreeLastIndex, prevSiblingIndex);
+      return WebRenderScrollDataWrapper(mData, mLayerIndex + 1, subtreeLastIndex);
+    }
+    return WebRenderScrollDataWrapper();
   }
 
   WebRenderScrollDataWrapper GetPrevSibling() const
   {
+    MOZ_ASSERT(IsValid());
+
+    if (!AtTopLayer()) {
+      
+      return WebRenderScrollDataWrapper();
+    }
+
     
-    return WebRenderScrollDataWrapper(nullptr);
+    
+    size_t prevSiblingIndex = mLayerIndex + 1 + mLayer->GetDescendantCount();
+    if (prevSiblingIndex < mContainingSubtreeLastIndex) {
+      return WebRenderScrollDataWrapper(mData, prevSiblingIndex, mContainingSubtreeLastIndex);
+    }
+    return WebRenderScrollDataWrapper();
   }
 
   const ScrollMetadata& Metadata() const
   {
-    
-    return *ScrollMetadata::sNullMetadata;
+    MOZ_ASSERT(IsValid());
+
+    if (mMetadataIndex >= mLayer->GetScrollMetadataCount()) {
+      return *ScrollMetadata::sNullMetadata;
+    }
+    return mLayer->GetScrollMetadata(*mData, mMetadataIndex);
   }
 
   const FrameMetrics& Metrics() const
@@ -164,7 +286,33 @@ public:
   }
 
 private:
+  bool AtBottomLayer() const
+  {
+    return mMetadataIndex == 0;
+  }
+
+  bool AtTopLayer() const
+  {
+    return mLayer->GetScrollMetadataCount() == 0 || mMetadataIndex == mLayer->GetScrollMetadataCount() - 1;
+  }
+
+private:
   const WebRenderScrollData* mData;
+  
+  
+  size_t mLayerIndex;
+  
+  
+  
+  
+  
+  
+  size_t mContainingSubtreeLastIndex;
+  
+  const WebRenderLayerScrollData* mLayer;
+  
+  
+  uint32_t mMetadataIndex;
 };
 
 } 
