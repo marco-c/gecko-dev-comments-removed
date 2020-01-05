@@ -485,17 +485,14 @@ LoginManager.prototype = {
     let form = LoginFormFactory.createFromField(aElement);
     let isSecure = InsecurePasswordUtils.isFormSecure(form);
     let isPasswordField = aElement.type == "password";
-    if (isPasswordField && aSearchString) {
+    if (isPasswordField) {
       
-      setTimeout(function() {
-        aCallback.onSearchCompletion(new UserAutoCompleteResult(aSearchString, [], {isSecure, isPasswordField}));
-      }, 0);
-      return;
+      aSearchString = "";
     }
 
     if (!this._remember) {
       setTimeout(function() {
-        aCallback.onSearchCompletion(new UserAutoCompleteResult(aSearchString, [], {isSecure, isPasswordField}));
+        aCallback.onSearchCompletion(new UserAutoCompleteResult(aSearchString, [], {isSecure}));
       }, 0);
       return;
     }
