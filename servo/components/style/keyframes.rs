@@ -10,7 +10,8 @@ use std::sync::Arc;
 
 
 
-#[derive(Debug, Copy, Clone, PartialEq, PartialOrd, HeapSizeOf)]
+#[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframePercentage(pub f32);
 
 impl ::std::cmp::Ord for KeyframePercentage {
@@ -49,7 +50,8 @@ impl KeyframePercentage {
 
 
 
-#[derive(Debug, Clone, PartialEq, HeapSizeOf)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframeSelector(Vec<KeyframePercentage>);
 impl KeyframeSelector {
     #[inline]
@@ -64,7 +66,8 @@ impl KeyframeSelector {
 }
 
 
-#[derive(Debug, Clone, PartialEq, HeapSizeOf)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct Keyframe {
     pub selector: KeyframeSelector,
     pub declarations: Arc<Vec<PropertyDeclaration>>,
@@ -95,14 +98,16 @@ impl Keyframe {
 
 
 
-#[derive(Debug, Clone, PartialEq, HeapSizeOf)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum KeyframesStepValue {
     Declarations(Arc<Vec<PropertyDeclaration>>),
     ComputedValues,
 }
 
 
-#[derive(Debug, Clone, PartialEq, HeapSizeOf)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframesStep {
     
     pub start_percentage: KeyframePercentage,
@@ -126,7 +131,8 @@ impl KeyframesStep {
 
 
 
-#[derive(Debug, Clone, PartialEq, HeapSizeOf)]
+#[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub struct KeyframesAnimation {
     pub steps: Vec<KeyframesStep>,
     
