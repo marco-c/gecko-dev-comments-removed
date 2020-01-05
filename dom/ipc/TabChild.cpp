@@ -2732,11 +2732,7 @@ TabChild::MakeHidden()
     return;
   }
 
-  CompositorBridgeChild* compositor = CompositorBridgeChild::Get();
-
-  
-  
-  compositor->RecvClearCachedResources(mLayersId);
+  ClearCachedResources();
 
   
   if (nsCOMPtr<nsIPresShell> shell = GetPresShell()) {
