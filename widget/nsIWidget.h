@@ -735,8 +735,7 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD MoveClient(double aX, double aY) = 0;
+    virtual void MoveClient(double aX, double aY) = 0;
 
     
 
@@ -775,10 +774,9 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD ResizeClient(double aWidth,
-                            double aHeight,
-                            bool   aRepaint) = 0;
+    virtual void ResizeClient(double aWidth,
+                              double aHeight,
+                              bool   aRepaint) = 0;
 
     
 
@@ -796,12 +794,11 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD ResizeClient(double aX,
-                            double aY,
-                            double aWidth,
-                            double aHeight,
-                            bool   aRepaint) = 0;
+    virtual void ResizeClient(double aX,
+                              double aY,
+                              double aWidth,
+                              double aHeight,
+                              bool   aRepaint) = 0;
 
     
 
