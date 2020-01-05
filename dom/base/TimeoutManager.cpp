@@ -936,15 +936,25 @@ TimeoutManager::Timeouts::ResetTimersForThrottleReduction(int32_t aPreviousThrot
       
       
       
-      NS_ASSERTION(!nextTimeout ||
-                   timeout->When() < nextTimeout->When(), "How did that happen?");
-      timeout->remove();
       
       
-      uint32_t firingDepth = timeout->mFiringDepth;
-      Insert(timeout, aSortBy);
-      timeout->mFiringDepth = firingDepth;
-      timeout->Release();
+      
+      
+      Timeout* prevTimeout = timeout->getPrevious();
+      if (prevTimeout && prevTimeout->When() > timeout->When()) {
+        
+        
+        
+        NS_ASSERTION(!nextTimeout ||
+                     timeout->When() < nextTimeout->When(), "How did that happen?");
+        timeout->remove();
+        
+        
+        uint32_t firingDepth = timeout->mFiringDepth;
+        Insert(timeout, aSortBy);
+        timeout->mFiringDepth = firingDepth;
+        timeout->Release();
+      }
 
       nsresult rv = timeout->InitTimer(aQueue, delay.ToMilliseconds());
 
