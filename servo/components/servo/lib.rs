@@ -103,20 +103,20 @@ pub use export::script_traits;
 pub use export::style;
 pub use export::url;
 
+
+
+
+
+
+
+
+
+
+
+
 pub struct Browser {
     compositor: Box<CompositorEventListener + 'static>,
 }
-
-
-
-
-
-
-
-
-
-
-
 
 impl Browser {
     pub fn new<Window>(window: Option<Rc<Window>>) -> Browser
