@@ -33,8 +33,6 @@ function promiseTabLoadEvent(tab, url, eventType="load")
     return true;
   }
 
-  
-  
   let loaded;
   if (eventType === "load") {
     loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);

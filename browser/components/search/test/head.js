@@ -112,8 +112,6 @@ function promiseTabLoadEvent(tab, url)
     return true;
   }
 
-  
-  
   let loaded = BrowserTestUtils.browserLoaded(tab.linkedBrowser, false, handle);
 
   if (url)
