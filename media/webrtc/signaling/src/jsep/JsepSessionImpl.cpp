@@ -332,6 +332,9 @@ JsepSessionImpl::SetParameters(const std::string& streamId,
   if (addVideoExt != SdpDirectionAttribute::kInactive) {
     AddVideoRtpExtension("urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id", addVideoExt);
   }
+  if (addAudioExt != SdpDirectionAttribute::kInactive) {
+    AddAudioRtpExtension("urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id", addAudioExt);
+  }
 
   it->mTrack->SetJsConstraints(constraints);
 
@@ -1808,8 +1811,8 @@ nsresult
 JsepSessionImpl::SetRemoteTracksFromDescription(const Sdp* remoteDescription)
 {
   
-  for (auto& remoteTrack : mRemoteTracks) {
-    remoteTrack.mAssignedMLine.reset();
+  for (auto i = mRemoteTracks.begin(); i != mRemoteTracks.end(); ++i) {
+    i->mAssignedMLine.reset();
   }
 
   
@@ -2089,8 +2092,9 @@ JsepSessionImpl::CreateGenericSDP(UniquePtr<Sdp>* sdpp)
 
   UniquePtr<SdpFingerprintAttributeList> fpl =
       MakeUnique<SdpFingerprintAttributeList>();
-  for (auto& dtlsFingerprint : mDtlsFingerprints) {
-    fpl->PushEntry(dtlsFingerprint.mAlgorithm, dtlsFingerprint.mValue);
+  for (auto fp = mDtlsFingerprints.begin(); fp != mDtlsFingerprints.end();
+       ++fp) {
+    fpl->PushEntry(fp->mAlgorithm, fp->mValue);
   }
   sdp->GetAttributeList().SetAttribute(fpl.release());
 
@@ -2288,6 +2292,11 @@ JsepSessionImpl::SetupDefaultRtpExtensions()
 {
   AddAudioRtpExtension("urn:ietf:params:rtp-hdrext:ssrc-audio-level",
                        SdpDirectionAttribute::Direction::kSendonly);
+  AddVideoRtpExtension(
+    "http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time",
+                       SdpDirectionAttribute::Direction::kSendrecv);
+  AddVideoRtpExtension("urn:ietf:params:rtp-hdrext:toffset",
+                       SdpDirectionAttribute::Direction::kSendrecv);
 }
 
 void
@@ -2539,8 +2548,8 @@ JsepSessionImpl::GetLastError() const
 bool
 JsepSessionImpl::AllLocalTracksAreAssigned() const
 {
-  for (const auto& localTrack : mLocalTracks) {
-    if (!localTrack.mAssignedMLine.isSome()) {
+  for (auto i = mLocalTracks.begin(); i != mLocalTracks.end(); ++i) {
+    if (!i->mAssignedMLine.isSome()) {
       return false;
     }
   }

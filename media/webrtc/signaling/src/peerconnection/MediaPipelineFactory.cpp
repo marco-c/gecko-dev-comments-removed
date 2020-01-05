@@ -191,8 +191,9 @@ FinalizeTransportFlow_s(RefPtr<PeerConnectionMedia> aPCMedia,
                      aIsRtcp ? 2 : 1);
   nsAutoPtr<std::queue<TransportLayer*> > layerQueue(
       new std::queue<TransportLayer*>);
-  for (auto& value : aLayerList->values) {
-    layerQueue->push(value);
+  for (auto i = aLayerList->values.begin(); i != aLayerList->values.end();
+       ++i) {
+    layerQueue->push(*i);
   }
   aLayerList->values.clear();
   (void)aFlow->PushLayers(layerQueue); 
@@ -264,11 +265,13 @@ MediaPipelineFactory::CreateOrGetTransportFlow(
 
   const SdpFingerprintAttributeList& fingerprints =
       aTransport.mDtls->GetFingerprints();
-  for (const auto& fingerprint : fingerprints.mFingerprints) {
+  for (auto fp = fingerprints.mFingerprints.begin();
+       fp != fingerprints.mFingerprints.end();
+       ++fp) {
     std::ostringstream ss;
-    ss << fingerprint.hashFunc;
-    rv = dtls->SetVerificationDigest(ss.str(), &fingerprint.fingerprint[0],
-                                     fingerprint.fingerprint.size());
+    ss << fp->hashFunc;
+    rv = dtls->SetVerificationDigest(ss.str(), &fp->fingerprint[0],
+                                     fp->fingerprint.size());
     if (NS_FAILED(rv)) {
       MOZ_MTLOG(ML_ERROR, "Could not set fingerprint");
       return rv;
@@ -360,16 +363,17 @@ MediaPipelineFactory::GetTransportParameters(
     if (receiving) {
       
       
-      for (unsigned int ssrc : aTrack.GetSsrcs()) {
-        (*aFilterOut)->AddRemoteSSRC(ssrc);
+      for (auto i = aTrack.GetSsrcs().begin();
+          i != aTrack.GetSsrcs().end(); ++i) {
+        (*aFilterOut)->AddRemoteSSRC(*i);
       }
 
       
 
       
       auto uniquePts = aTrack.GetNegotiatedDetails()->GetUniquePayloadTypes();
-      for (unsigned char& uniquePt : uniquePts) {
-        (*aFilterOut)->AddUniquePT(uniquePt);
+      for (auto i = uniquePts.begin(); i != uniquePts.end(); ++i) {
+        (*aFilterOut)->AddUniquePT(*i);
       }
     }
   }
@@ -813,6 +817,17 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
 
   const std::vector<uint32_t>* ssrcs;
 
+  const JsepTrackNegotiatedDetails* details = aTrack.GetNegotiatedDetails();
+  std::vector<webrtc::RtpExtension> extmaps;
+  if (details) {
+    
+    details->ForEachRTPHeaderExtension(
+      [&extmaps](const SdpExtmapAttributeList::Extmap& extmap)
+    {
+      extmaps.emplace_back(extmap.extensionname,extmap.entry);
+    });
+  }
+
   if (receiving) {
     
     
@@ -840,6 +855,9 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
     }
     conduit->SetRemoteSSRC(ssrcs->front());
 
+    if (!extmaps.empty()) {
+      conduit->AddLocalRTPExtensions(false, extmaps);
+    }
     auto error = conduit->ConfigureRecvMediaCodecs(configs.values);
     if (error) {
       MOZ_MTLOG(ML_ERROR, "ConfigureRecvMediaCodecs failed: " << error);
@@ -865,24 +883,14 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
       return rv;
     }
 
+    if (!extmaps.empty()) {
+      conduit->AddLocalRTPExtensions(true, extmaps);
+    }
     auto error = conduit->ConfigureSendMediaCodec(configs.values[0]);
-
     if (error) {
       MOZ_MTLOG(ML_ERROR, "ConfigureSendMediaCodec failed: " << error);
       return NS_ERROR_FAILURE;
     }
-  }
-
-  const JsepTrackNegotiatedDetails* details = aTrack.GetNegotiatedDetails();
-  if (details) {
-    
-    std::vector<webrtc::RtpExtension> extmaps;
-    details->ForEachRTPHeaderExtension(
-      [&conduit,&extmaps](const SdpExtmapAttributeList::Extmap& extmap)
-    {
-      extmaps.emplace_back(extmap.extensionname,extmap.entry);
-    });
-    conduit->AddLocalRTPExtensions(extmaps);
   }
 
   *aConduitp = conduit;

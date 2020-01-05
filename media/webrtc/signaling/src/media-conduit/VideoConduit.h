@@ -81,8 +81,9 @@ public:
 
 
 
-  void AddLocalRTPExtensions(const std::vector<webrtc::RtpExtension>& extensions) override;
-  std::vector<webrtc::RtpExtension> GetLocalRTPExtensions() const override;
+  void AddLocalRTPExtensions(bool aIsSend,
+                             const std::vector<webrtc::RtpExtension>& extensions) override;
+  std::vector<webrtc::RtpExtension> GetLocalRTPExtensions(bool aIsSend) const override;
 
   
 
@@ -473,6 +474,9 @@ private:
   int mPrefMaxBitrate;
   int mNegotiatedMaxBitrate;
   int mMinBitrateEstimate;
+
+  bool mRtpStreamIdEnabled;
+  uint8_t mRtpStreamIdExtId;
 
   static const unsigned int sAlphaNum = 7;
   static const unsigned int sAlphaDen = 8;
