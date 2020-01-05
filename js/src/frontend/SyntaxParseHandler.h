@@ -408,6 +408,15 @@ class SyntaxParseHandler
         return tokenStream.currentToken().pos;
     }
 
+    uint32_t getFunctionNameOffset(Node func, TokenStreamBase& ts) {
+        
+        
+        
+        
+        
+        return ts.currentToken().pos.begin;
+    }
+
     Node newList(ParseNodeKind kind, const TokenPos& pos, JSOp op = JSOP_NOP) {
         MOZ_ASSERT(kind != PNK_VAR);
         MOZ_ASSERT(kind != PNK_LET);
