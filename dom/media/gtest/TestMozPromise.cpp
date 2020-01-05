@@ -280,7 +280,7 @@ TEST(MozPromise, Chaining)
     }
     
     
-    holder.Begin(p->Then(queue, __func__, [] () {}, [] () {}));
+    p->Then(queue, __func__, [] () {}, [] () {})->Track(holder);
   });
 }
 
