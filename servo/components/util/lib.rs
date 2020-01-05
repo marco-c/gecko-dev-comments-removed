@@ -2,7 +2,7 @@
 
 
 
-#![feature(macro_rules,unsafe_destructor)]
+#![feature(default_type_params,macro_rules,unsafe_destructor)]
 
 #![deny(unused_imports, unused_variable)]
 
@@ -29,8 +29,10 @@ extern crate std_time = "time";
 extern crate string_cache;
 
 pub mod atom;
+pub mod bloom;
 pub mod cache;
 pub mod debug_utils;
+pub mod fnv;
 pub mod geometry;
 pub mod logical_geometry;
 pub mod memory;

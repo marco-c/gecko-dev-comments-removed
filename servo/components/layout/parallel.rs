@@ -20,12 +20,14 @@ use wrapper::{layout_node_to_unsafe_layout_node, layout_node_from_unsafe_layout_
 use wrapper::{ThreadSafeLayoutNode, UnsafeLayoutNode};
 
 use gfx::display_list::OpaqueNode;
+use servo_util::bloom::BloomFilter;
 use servo_util::time::{TimeProfilerChan, profile};
 use servo_util::time;
 use servo_util::workqueue::{WorkQueue, WorkUnit, WorkerProxy};
 use std::mem;
 use std::ptr;
 use std::sync::atomics::{AtomicInt, Relaxed, SeqCst};
+use style;
 use style::TNode;
 
 #[allow(dead_code)]
@@ -213,7 +215,91 @@ impl<'a> ParallelPreorderFlowTraversal for AssignISizesTraversal<'a> {
 
 impl<'a> ParallelPostorderFlowTraversal for AssignBSizesAndStoreOverflowTraversal<'a> {}
 
-fn recalc_style_for_node(unsafe_layout_node: UnsafeLayoutNode,
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+local_data_key!(style_bloom: (BloomFilter, UnsafeLayoutNode))
+
+
+
+
+
+fn take_task_local_bloom_filter(
+  parent_node: Option<LayoutNode>,
+  layout_context: &LayoutContext)
+      -> BloomFilter {
+
+    let new_bloom =
+        |p: Option<LayoutNode>| -> BloomFilter {
+            let mut bf = BloomFilter::new(style::RECOMMENDED_SELECTOR_BLOOM_FILTER_SIZE);
+            p.map(|p| insert_ancestors_into_bloom_filter(&mut bf, p, layout_context));
+            bf
+        };
+
+    match (parent_node, style_bloom.replace(None)) {
+        
+        (None,     _  ) => new_bloom(None),
+        
+        (Some(p), None) => new_bloom(Some(p)),
+        
+        (Some(p), Some((bf, old_node))) => {
+            
+            if old_node == layout_node_to_unsafe_layout_node(&p) {
+                bf
+            
+            } else {
+                new_bloom(Some(p))
+            }
+        },
+    }
+}
+
+fn put_task_local_bloom_filter(bf: BloomFilter, unsafe_node: &UnsafeLayoutNode) {
+    match style_bloom.replace(Some((bf, *unsafe_node))) {
+        None => {},
+        Some(_) => fail!("Putting into a never-taken task-local bloom filter"),
+    }
+}
+
+
+fn insert_ancestors_into_bloom_filter(
+  bf: &mut BloomFilter, mut n: LayoutNode, layout_context: &LayoutContext) {
+    loop {
+        n.insert_into_bloom_filter(bf);
+        n = match parent_node(&n, layout_context) {
+            None => return,
+            Some(p) => p,
+        };
+    }
+}
+
+fn parent_node<'ln>(node: &LayoutNode<'ln>, layout_context: &LayoutContext) -> Option<LayoutNode<'ln>> {
+    let opaque_node: OpaqueNode = OpaqueNodeMethods::from_layout_node(node);
+    if opaque_node == layout_context.shared.reflow_root {
+        None
+    } else {
+        node.parent_node()
+    }
+}
+
+fn recalc_style_for_node(mut unsafe_layout_node: UnsafeLayoutNode,
                          proxy: &mut WorkerProxy<*const SharedLayoutContext,UnsafeLayoutNode>) {
     let shared_layout_context = unsafe { &**proxy.user_data() };
     let layout_context = LayoutContext::new(shared_layout_context);
@@ -230,12 +316,10 @@ fn recalc_style_for_node(unsafe_layout_node: UnsafeLayoutNode,
     node.initialize_layout_data(layout_context.shared.layout_chan.clone());
 
     
-    let opaque_node: OpaqueNode = OpaqueNodeMethods::from_layout_node(&node);
-    let parent_opt = if opaque_node == layout_context.shared.reflow_root {
-        None
-    } else {
-        node.parent_node()
-    };
+    let parent_opt = parent_node(&node, &layout_context);
+
+    
+    let bf = take_task_local_bloom_filter(parent_opt, &layout_context);
 
     
     let style_sharing_candidate_cache = layout_context.style_sharing_candidate_cache();
@@ -245,6 +329,9 @@ fn recalc_style_for_node(unsafe_layout_node: UnsafeLayoutNode,
     };
 
     
+    let some_bf = Some(bf);
+
+    
     match sharing_result {
         CannotShare(mut shareable) => {
             let mut applicable_declarations = ApplicableDeclarations::new();
@@ -252,7 +339,7 @@ fn recalc_style_for_node(unsafe_layout_node: UnsafeLayoutNode,
             if node.is_element() {
                 
                 let stylist = unsafe { &*layout_context.shared.stylist };
-                node.match_node(stylist, &mut applicable_declarations, &mut shareable);
+                node.match_node(stylist, &some_bf, &mut applicable_declarations, &mut shareable);
             }
 
             
@@ -286,6 +373,13 @@ fn recalc_style_for_node(unsafe_layout_node: UnsafeLayoutNode,
     }
 
     
+    let mut bf = some_bf;
+
+    
+    
+    bf.as_mut().map(|bf| node.insert_into_bloom_filter(bf));
+
+    
     
     
     
@@ -299,19 +393,21 @@ fn recalc_style_for_node(unsafe_layout_node: UnsafeLayoutNode,
                 data: layout_node_to_unsafe_layout_node(&kid),
             });
         }
-        return
+    } else {
+        
+        construct_flows(&mut unsafe_layout_node, &mut bf, &layout_context);
     }
 
-    
-    construct_flows(unsafe_layout_node, &layout_context)
+    bf.map(|bf| put_task_local_bloom_filter(bf, &unsafe_layout_node));
 }
 
-fn construct_flows(mut unsafe_layout_node: UnsafeLayoutNode,
-                   layout_context: &LayoutContext) {
+fn construct_flows<'a>(unsafe_layout_node: &mut UnsafeLayoutNode,
+                       parent_bf: &mut Option<BloomFilter>,
+                       layout_context: &'a LayoutContext<'a>) {
     loop {
         
         let node: LayoutNode = unsafe {
-            layout_node_from_unsafe_layout_node(&unsafe_layout_node)
+            layout_node_from_unsafe_layout_node(&*unsafe_layout_node)
         };
 
         
@@ -340,7 +436,10 @@ fn construct_flows(mut unsafe_layout_node: UnsafeLayoutNode,
         
         let opaque_node: OpaqueNode = OpaqueNodeMethods::from_layout_node(&node);
         if layout_context.shared.reflow_root == opaque_node {
-            break
+            *parent_bf = None;
+            break;
+        } else {
+            parent_bf.as_mut().map(|parent_bf| node.remove_from_bloom_filter(parent_bf));
         }
 
         
@@ -352,6 +451,8 @@ fn construct_flows(mut unsafe_layout_node: UnsafeLayoutNode,
                 unsafe {
                     match *parent.borrow_layout_data_unchecked() {
                         Some(ref parent_layout_data) => {
+                            *unsafe_layout_node = layout_node_to_unsafe_layout_node(&parent);
+
                             let parent_layout_data: &mut LayoutDataWrapper = mem::transmute(parent_layout_data);
                             if parent_layout_data.data
                                                  .parallel
@@ -359,7 +460,6 @@ fn construct_flows(mut unsafe_layout_node: UnsafeLayoutNode,
                                                  .fetch_sub(1, SeqCst) == 1 {
                                 
                                 
-                                unsafe_layout_node = layout_node_to_unsafe_layout_node(&parent)
                             } else {
                                 
                                 break
@@ -558,4 +658,3 @@ pub fn build_display_list_for_subtree(root: &mut FlowRef,
 
     queue.data = ptr::null()
 }
-
