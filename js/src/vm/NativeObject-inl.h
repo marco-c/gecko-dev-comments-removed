@@ -120,6 +120,7 @@ NativeObject::ensureDenseInitializedLengthNoPackedCheck(ExclusiveContext* cx, ui
                                                         uint32_t extra)
 {
     MOZ_ASSERT(!denseElementsAreCopyOnWrite());
+    MOZ_ASSERT(!denseElementsAreFrozen());
 
     
 
@@ -154,6 +155,7 @@ NativeObject::extendDenseElements(ExclusiveContext* cx,
                                   uint32_t requiredCapacity, uint32_t extra)
 {
     MOZ_ASSERT(!denseElementsAreCopyOnWrite());
+    MOZ_ASSERT(!denseElementsAreFrozen());
 
     
 
