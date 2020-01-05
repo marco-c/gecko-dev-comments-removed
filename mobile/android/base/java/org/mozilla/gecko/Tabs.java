@@ -963,7 +963,6 @@ public class Tabs implements BundleEventListener {
 
 
 
-    @RobocopTarget
     public Tab getFirstTabForUrl(String url) {
         return getFirstTabForUrlHelper(url, null, TabType.BROWSING);
     }
