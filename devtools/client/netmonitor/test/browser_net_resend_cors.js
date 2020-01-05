@@ -30,9 +30,9 @@ add_task(function* () {
 
   
   for (let [i, method] of METHODS.entries()) {
-    let { attachment } = RequestsMenu.getItemAtIndex(i);
-    is(attachment.method, method, `The ${method} request has the right method`);
-    is(attachment.url, requestUrl, `The ${method} request has the right URL`);
+    let item = RequestsMenu.getItemAtIndex(i);
+    is(item.method, method, `The ${method} request has the right method`);
+    is(item.url, requestUrl, `The ${method} request has the right URL`);
   }
 
   
@@ -61,7 +61,7 @@ add_task(function* () {
   
   for (let [i, method] of METHODS.entries()) {
     let index = i + 2;
-    let item = RequestsMenu.getItemAtIndex(index).attachment;
+    let item = RequestsMenu.getItemAtIndex(index);
     is(item.method, method, `The ${method} request has the right method`);
     is(item.url, requestUrl, `The ${method} request has the right URL`);
     is(item.status, 200, `The ${method} response has the right status`);
