@@ -1407,6 +1407,7 @@ protected:
   
   nsPIDOMWindowOuter* GetParentInternal();
 
+public:
   
   bool IsPopupSpamWindow()
   {
@@ -1417,17 +1418,10 @@ protected:
     return GetOuterWindowInternal()->mIsPopupSpam;
   }
 
-  void SetPopupSpamWindow(bool aPopup)
-  {
-    if (IsInnerWindow() && !mOuterWindow) {
-      NS_ERROR("SetPopupSpamWindow() called on inner window w/o an outer!");
+  
+  void SetIsPopupSpamWindow(bool aIsPopupSpam);
 
-      return;
-    }
-
-    GetOuterWindowInternal()->mIsPopupSpam = aPopup;
-  }
-
+protected:
   
 
   

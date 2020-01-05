@@ -1502,9 +1502,20 @@ void
 nsGlobalWindow::MaybeForgiveSpamCount()
 {
   if (IsOuterWindow() &&
-      IsPopupSpamWindow())
-  {
-    SetPopupSpamWindow(false);
+      IsPopupSpamWindow()) {
+    SetIsPopupSpamWindow(false);
+  }
+}
+
+void
+nsGlobalWindow::SetIsPopupSpamWindow(bool aIsPopupSpam)
+{
+  MOZ_ASSERT(IsOuterWindow());
+
+  mIsPopupSpam = aIsPopupSpam;
+  if (aIsPopupSpam) {
+    ++gOpenPopupSpamCount;
+  } else {
     --gOpenPopupSpamCount;
     NS_ASSERTION(gOpenPopupSpamCount >= 0,
                  "Unbalanced decrement of gOpenPopupSpamCount");
@@ -11884,6 +11895,13 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
   nsCOMPtr<nsPIWindowWatcher> pwwatch(do_QueryInterface(wwatch));
   NS_ENSURE_STATE(pwwatch);
 
+  MOZ_ASSERT_IF(checkForPopup, abuseLevel < openAbused);
+  
+  
+  
+  
+  bool isPopupSpamWindow = checkForPopup && (abuseLevel >= openControlled);
+
   {
     
     
@@ -11896,6 +11914,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
       rv = pwwatch->OpenWindow2(AsOuter(), url.get(), name_ptr,
                                 options_ptr,  true,
                                 aDialog, aNavigate, argv,
+                                isPopupSpamWindow,
                                 getter_AddRefs(domReturn));
     } else {
       
@@ -11912,10 +11931,10 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
         nojsapi.emplace();
       }
 
-
       rv = pwwatch->OpenWindow2(AsOuter(), url.get(), name_ptr,
                                 options_ptr,  false,
                                 aDialog, aNavigate, aExtraArgument,
+                                isPopupSpamWindow,
                                 getter_AddRefs(domReturn));
 
     }
@@ -11943,18 +11962,6 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
       
       nsCOMPtr<nsIDocument> doc = (*aReturn)->GetDoc();
       Unused << doc;
-    }
-  }
-
-  if (checkForPopup) {
-    MOZ_ASSERT(abuseLevel < openAbused, "Why didn't we take the early return?");
-
-    if (abuseLevel >= openControlled) {
-      nsGlobalWindow *opened = nsGlobalWindow::Cast(*aReturn);
-      if (!opened->IsPopupSpamWindow()) {
-        opened->SetPopupSpamWindow(true);
-        ++gOpenPopupSpamCount;
-      }
     }
   }
 
