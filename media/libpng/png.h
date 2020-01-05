@@ -305,12 +305,6 @@
 
 
 
-
-
-
-
-
-
 #ifndef PNG_H
 #define PNG_H
 
@@ -326,9 +320,9 @@
 
 
 
-#define PNG_LIBPNG_VER_STRING "1.6.26+apng"
+#define PNG_LIBPNG_VER_STRING "1.6.27+apng"
 #define PNG_HEADER_VERSION_STRING \
-     " libpng version 1.6.26+apng - October 20, 2016\n"
+     " libpng version 1.6.27+apng - December 29, 2016\n"
 
 #define PNG_LIBPNG_VER_SONUM   16
 #define PNG_LIBPNG_VER_DLLNUM  16
@@ -336,7 +330,7 @@
 
 #define PNG_LIBPNG_VER_MAJOR   1
 #define PNG_LIBPNG_VER_MINOR   6
-#define PNG_LIBPNG_VER_RELEASE 26
+#define PNG_LIBPNG_VER_RELEASE 27
 
 
 
@@ -367,7 +361,7 @@
 
 
 
-#define PNG_LIBPNG_VER 10626 /* 1.6.26 */
+#define PNG_LIBPNG_VER 10627 /* 1.6.27 */
 
 
 
@@ -492,7 +486,7 @@ extern "C" {
 
 
 
-typedef char* png_libpng_version_1_6_26;
+typedef char* png_libpng_version_1_6_27;
 
 
 
@@ -3266,7 +3260,8 @@ PNG_EXPORT(245, int, png_image_write_to_memory, (png_imagep image, void *memory,
 #ifdef PNG_MIPS_MSA_API_SUPPORTED
 #  define PNG_MIPS_MSA   6 /* HARDWARE: MIPS Msa SIMD instructions supported */
 #endif
-#define PNG_OPTION_NEXT  8 /* Next option - numbers must be even */
+#define PNG_IGNORE_ADLER32 8
+#define PNG_OPTION_NEXT  10 /* Next option - numbers must be even */
 
 
 #define PNG_OPTION_UNSET   0 /* Unset - defaults to off */
