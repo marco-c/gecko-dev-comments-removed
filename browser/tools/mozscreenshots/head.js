@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 const {AddonWatcher} = Cu.import("resource://gre/modules/AddonWatcher.jsm", {});
