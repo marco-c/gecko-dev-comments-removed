@@ -485,6 +485,10 @@ void ReflowInput::InitCBReflowInput()
     mCBReflowInput = nullptr;
     return;
   }
+  if (mParentReflowInput->mFlags.mDummyParentReflowInput) {
+    mCBReflowInput = mParentReflowInput;
+    return;
+  }
 
   if (mParentReflowInput->mFrame == mFrame->GetContainingBlock()) {
     
