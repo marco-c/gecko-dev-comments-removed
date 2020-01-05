@@ -243,6 +243,10 @@ public:
   NS_IMETHOD GetSelectionRange(int32_t* aSelectionStart,
                                int32_t* aSelectionEnd) override;
 
+  
+  
+  int32_t GetSelectionStartIgnoringType(ErrorResult& aRv);
+
   void GetDisplayFileName(nsAString& aFileName) const;
 
   const nsTArray<OwningFileOrDirectory>& GetFilesOrDirectoriesInternal() const
