@@ -136,6 +136,11 @@ public class Tabs implements BundleEventListener {
             "Tab:SetParentId",
             null);
 
+        EventDispatcher.getInstance().registerBackgroundThreadListener(this,
+            
+            "Sanitize:ClearHistory",
+            null);
+
         mPrivateClearColor = Color.RED;
     }
 
@@ -483,6 +488,21 @@ public class Tabs implements BundleEventListener {
     @Override 
     public synchronized void handleMessage(final String event, final GeckoBundle message,
                                            final EventCallback callback) {
+        if ("Sanitize:ClearHistory".equals(event)) {
+            ThreadUtils.postToUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    
+                    
+                    for (final Tab tab : mOrder) {
+                        tab.handleButtonStateChange(false, false);
+                        notifyListeners(tab, TabEvents.LOCATION_CHANGE, tab.getURL());
+                    }
+                }
+            });
+            return;
+        }
+
         
         final int id = message.getInt("tabID", -1);
         Tab tab = getTab(id);
