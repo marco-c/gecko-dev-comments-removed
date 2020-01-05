@@ -3292,10 +3292,6 @@ nsDisplayBackgroundImage::GetLayerState(nsDisplayListBuilder* aBuilder,
                                         LayerManager* aManager,
                                         const ContainerLayerParameters& aParameters)
 {
-  if (gfxPrefs::LayersAllowBackgroundImage() && CanBuildWebRenderDisplayItems()) {
-    return LAYER_ACTIVE;
-  }
-
   ImageLayerization shouldLayerize = ShouldCreateOwnLayer(aBuilder, aManager);
   if (shouldLayerize == NO_LAYER_NEEDED) {
     
@@ -3343,10 +3339,6 @@ nsDisplayBackgroundImage::BuildLayer(nsDisplayListBuilder* aBuilder,
                                      LayerManager* aManager,
                                      const ContainerLayerParameters& aParameters)
 {
-  if (gfxPrefs::LayersAllowBackgroundImage()) {
-    return BuildDisplayItemLayer(aBuilder, aManager, aParameters);
-  }
-
   RefPtr<ImageLayer> layer = static_cast<ImageLayer*>
     (aManager->GetLayerBuilder()->GetLeafLayerFor(aBuilder, this));
   if (!layer) {
@@ -3358,31 +3350,6 @@ nsDisplayBackgroundImage::BuildLayer(nsDisplayListBuilder* aBuilder,
   layer->SetContainer(imageContainer);
   ConfigureLayer(layer, aParameters);
   return layer.forget();
-}
-
-bool
-nsDisplayBackgroundImage::CanBuildWebRenderDisplayItems()
-{
-  return mBackgroundStyle->mImage.mLayers[mLayer].mClip != StyleGeometryBox::Text &&
-         nsCSSRendering::CanBuildWebRenderDisplayItemsForStyleImageLayer(*mFrame->PresContext(),
-                                                                         mFrame,
-                                                                         mBackgroundStyle,
-                                                                         mLayer);
-}
-
-void
-nsDisplayBackgroundImage::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
-                                                  nsTArray<WebRenderParentCommand>& aParentCommands,
-                                                  WebRenderDisplayItemLayer* aLayer)
-{
-  nsCSSRendering::PaintBGParams params =
-    nsCSSRendering::PaintBGParams::ForSingleLayer(*mFrame->PresContext(),
-                                                  mVisibleRect, mBackgroundRect,
-                                                  mFrame, 0, mLayer,
-                                                  CompositionOp::OP_OVER);
-  params.bgClipRect = &mBounds;
-
-  nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayer(params, aBuilder, aLayer);
 }
 
 void
@@ -3551,12 +3518,13 @@ nsDisplayBackgroundImage::PaintInternal(nsDisplayListBuilder* aBuilder,
 
   nsCSSRendering::PaintBGParams params =
     nsCSSRendering::PaintBGParams::ForSingleLayer(*mFrame->PresContext(),
+                                                  *aCtx,
                                                   aBounds, mBackgroundRect,
                                                   mFrame, flags, mLayer,
                                                   CompositionOp::OP_OVER);
   params.bgClipRect = aClipRect;
   image::DrawResult result =
-    nsCSSRendering::PaintStyleImageLayer(params, *aCtx);
+    nsCSSRendering::PaintStyleImageLayer(params);
 
   if (clip == StyleGeometryBox::Text) {
     ctx->PopGroupAndBlend();
@@ -3941,10 +3909,11 @@ nsDisplayBackgroundColor::GetLayerState(nsDisplayListBuilder* aBuilder,
                                         const ContainerLayerParameters& aParameters)
 {
   StyleGeometryBox clip = mBackgroundStyle->mImage.mLayers[0].mClip;
-  if (!ForceActiveLayers() || clip == StyleGeometryBox::Text) {
-    return LAYER_NONE;
+  if ((ForceActiveLayers() || gfxPrefs::LayersAllowBackgroundColorLayers()) &&
+      clip != StyleGeometryBox::Text) {
+    return LAYER_ACTIVE;
   }
-  return LAYER_ACTIVE;
+  return LAYER_NONE;
 }
 
 already_AddRefed<Layer>
@@ -8141,15 +8110,12 @@ nsDisplayMask::PaintMask(nsDisplayListBuilder* aBuilder,
 {
   MOZ_ASSERT(aMaskContext->GetDrawTarget()->GetFormat() == SurfaceFormat::A8);
 
-  uint32_t flags = aBuilder->ShouldSyncDecodeImages()
-                  ? imgIContainer::FLAG_SYNC_DECODE
-                  : imgIContainer::FLAG_SYNC_DECODE_IF_FAST;
   nsRect borderArea = nsRect(ToReferenceFrame(), mFrame->GetSize());
   nsSVGIntegrationUtils::PaintFramesParams params(*aMaskContext,
                                                   mFrame,  mVisibleRect,
                                                   borderArea, aBuilder,
                                                   nullptr,
-                                                  mHandleOpacity, flags);
+                                                  mHandleOpacity);
   ComputeMaskGeometry(params);
   image::DrawResult result = nsSVGIntegrationUtils::PaintMask(params);
 
@@ -8252,15 +8218,12 @@ nsDisplayMask::PaintAsLayer(nsDisplayListBuilder* aBuilder,
 {
   MOZ_ASSERT(!ShouldPaintOnMaskLayer(aManager));
 
-  uint32_t flags = aBuilder->ShouldSyncDecodeImages()
-                  ? imgIContainer::FLAG_SYNC_DECODE
-                  : imgIContainer::FLAG_SYNC_DECODE_IF_FAST;
   nsRect borderArea = nsRect(ToReferenceFrame(), mFrame->GetSize());
   nsSVGIntegrationUtils::PaintFramesParams params(*aCtx->ThebesContext(),
                                                   mFrame,  mVisibleRect,
                                                   borderArea, aBuilder,
                                                   aManager,
-                                                  mHandleOpacity, flags);
+                                                  mHandleOpacity);
 
   
   
@@ -8445,15 +8408,12 @@ nsDisplayFilter::PaintAsLayer(nsDisplayListBuilder* aBuilder,
                               nsRenderingContext* aCtx,
                               LayerManager* aManager)
 {
-  uint32_t flags = aBuilder->ShouldSyncDecodeImages()
-                  ? imgIContainer::FLAG_SYNC_DECODE
-                  : imgIContainer::FLAG_SYNC_DECODE_IF_FAST;
   nsRect borderArea = nsRect(ToReferenceFrame(), mFrame->GetSize());
   nsSVGIntegrationUtils::PaintFramesParams params(*aCtx->ThebesContext(),
                                                   mFrame,  mVisibleRect,
                                                   borderArea, aBuilder,
                                                   aManager,
-                                                  mHandleOpacity, flags);
+                                                  mHandleOpacity);
 
   image::DrawResult result = nsSVGIntegrationUtils::PaintFilter(params);
   nsDisplayFilterGeometry::UpdateDrawResult(this, result);
