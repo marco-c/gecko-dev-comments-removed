@@ -3,11 +3,11 @@
 
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
-
+<% from data import ALL_SIDES %>
 <% data.new_style_struct("Margin", inherited=False) %>
 
-% for side in ["top", "right", "bottom", "left"]:
-    ${helpers.predefined_type("margin-" + side, "LengthOrPercentageOrAuto",
+% for side in ALL_SIDES:
+    ${helpers.predefined_type("margin-%s" % side[0], "LengthOrPercentageOrAuto",
                               "computed::LengthOrPercentageOrAuto::Length(Au(0))",
-                              animatable=True)}
+                              animatable=True, logical = side[1])}
 % endfor

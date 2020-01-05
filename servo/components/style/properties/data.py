@@ -4,6 +4,15 @@
 
 import re
 
+PHYSICAL_SIDES = ["top", "left", "bottom", "right"]
+LOGICAL_SIDES = ["block-start", "block-end", "inline-start", "inline-end"]
+PHYSICAL_SIZES = ["width", "height"]
+LOGICAL_SIZES = ["block-size", "inline-size"]
+
+
+ALL_SIDES = [(side, False) for side in PHYSICAL_SIDES] + [(side, True) for side in LOGICAL_SIDES]
+ALL_SIZES = [(size, False) for size in PHYSICAL_SIZES] + [(size, True) for size in LOGICAL_SIZES]
+
 
 def to_rust_ident(name):
     name = name.replace("-", "_")
@@ -63,12 +72,19 @@ class Keyword(object):
         return "as " + type_str if self.needs_cast() else ""
 
 
+def arg_to_bool(arg):
+    if isinstance(arg, bool):
+        return arg
+    assert arg in ["True", "False"]
+    return arg == "True"
+
+
 class Longhand(object):
     def __init__(self, style_struct, name, animatable=None, derived_from=None, keyword=None,
                  predefined_type=None, custom_cascade=False, experimental=False, internal=False,
                  need_clone=False, need_index=False, gecko_ffi_name=None, depend_on_viewport_size=False,
                  allowed_in_keyframe_block=True, complex_color=False, cast_type='u8',
-                 has_uncacheable_values=False):
+                 has_uncacheable_values=False, logical=False):
         self.name = name
         self.keyword = keyword
         self.predefined_type = predefined_type
@@ -85,6 +101,7 @@ class Longhand(object):
         self.derived_from = (derived_from or "").split()
         self.complex_color = complex_color
         self.cast_type = cast_type
+        self.logical = arg_to_bool(logical)
 
         
         
@@ -97,12 +114,10 @@ class Longhand(object):
         
         if animatable is None:
             raise TypeError("animatable should be specified for " + name + ")")
-        if isinstance(animatable, bool):
-            self.animatable = animatable
-        else:
-            assert animatable == "True" or animatable == "False"
-            self.animatable = animatable == "True"
-
+        self.animatable = arg_to_bool(animatable)
+        if self.logical:
+            
+            self.animatable = False
         
         
         
