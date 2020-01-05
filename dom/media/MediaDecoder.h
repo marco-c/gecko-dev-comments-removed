@@ -383,6 +383,8 @@ private:
   
   bool HasSuspendTaint() const;
 
+  void UpdateVideoDecodeMode();
+
   
 
 
