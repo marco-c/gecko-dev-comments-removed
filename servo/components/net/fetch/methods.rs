@@ -25,7 +25,7 @@ use std::mem;
 use std::rc::Rc;
 use std::sync::mpsc::{Sender, Receiver};
 
-pub type Target = Option<Box<FetchTaskTarget + Send>>;
+pub type Target<'a> = &'a mut (FetchTaskTarget + Send);
 
 pub enum Data {
     Payload(Vec<u8>),
@@ -43,17 +43,15 @@ pub type DoneChannel = Option<(Sender<Data>, Receiver<Data>)>;
 
 
 pub fn fetch(request: Rc<Request>,
-             target: &mut Target,
-             context: &FetchContext)
-             -> Response {
-    fetch_with_cors_cache(request, &mut CorsCache::new(), target, context)
+             target: Target,
+             context: &FetchContext) {
+    fetch_with_cors_cache(request, &mut CorsCache::new(), target, context);
 }
 
 pub fn fetch_with_cors_cache(request: Rc<Request>,
                              cache: &mut CorsCache,
-                             target: &mut Target,
-                             context: &FetchContext)
-                             -> Response {
+                             target: Target,
+                             context: &FetchContext) {
     
     if request.window.get() == Window::Client {
         
@@ -112,7 +110,7 @@ pub fn fetch_with_cors_cache(request: Rc<Request>,
     }
 
     
-    main_fetch(request, cache, false, false, target, &mut None, &context)
+    main_fetch(request, cache, false, false, target, &mut None, &context);
 }
 
 
@@ -120,7 +118,7 @@ pub fn main_fetch(request: Rc<Request>,
                   cache: &mut CorsCache,
                   cors_flag: bool,
                   recursive_flag: bool,
-                  target: &mut Target,
+                  target: Target,
                   done_chan: &mut DoneChannel,
                   context: &FetchContext)
                   -> Response {
@@ -297,20 +295,16 @@ pub fn main_fetch(request: Rc<Request>,
 
     
     if request.synchronous {
-        if let Some(ref mut target) = *target {
-            
-            
-            target.process_response(&response);
-        }
+        
+        
+        target.process_response(&response);
 
         if let Some(ref ch) = *done_chan {
             loop {
                 match ch.1.recv()
                         .expect("fetch worker should always send Done before terminating") {
                     Data::Payload(vec) => {
-                        if let Some(ref mut target) = *target {
-                            target.process_response_chunk(vec);
-                        }
+                        target.process_response_chunk(vec);
                     }
                     Data::Done => break,
                 }
@@ -321,37 +315,29 @@ pub fn main_fetch(request: Rc<Request>,
                 
                 
                 
-                if let Some(ref mut target) = *target {
-                    target.process_response_chunk(vec.clone());
-                }
+                target.process_response_chunk(vec.clone());
             } else {
                 assert!(*body == ResponseBody::Empty)
             }
         }
 
         
-        if let Some(ref mut target) = *target {
-            target.process_response_eof(&response);
-        }
+        target.process_response_eof(&response);
         return response;
     }
 
     
     if request.body.borrow().is_some() && matches!(request.current_url().scheme(), "http" | "https") {
-        if let Some(ref mut target) = *target {
-            
-            
-            
-            
-            target.process_request_body(&request);
-            target.process_request_eof(&request);
-        }
+        
+        
+        
+        
+        target.process_request_body(&request);
+        target.process_request_eof(&request);
     }
 
     
-    if let Some(ref mut target) = *target {
-        target.process_response(&response);
-    }
+    target.process_response(&response);
 
     
     if let Some(ref ch) = *done_chan {
@@ -359,14 +345,12 @@ pub fn main_fetch(request: Rc<Request>,
             match ch.1.recv()
                     .expect("fetch worker should always send Done before terminating") {
                 Data::Payload(vec) => {
-                    if let Some(ref mut target) = *target {
-                        target.process_response_chunk(vec);
-                    }
+                    target.process_response_chunk(vec);
                 }
                 Data::Done => break,
             }
         }
-    } else if let Some(ref mut target) = *target {
+    } else {
         let body = response.body.lock().unwrap();
         if let ResponseBody::Done(ref vec) = *body {
             
@@ -379,9 +363,7 @@ pub fn main_fetch(request: Rc<Request>,
     }
 
     
-    if let Some(ref mut target) = *target {
-        target.process_response_eof(&response);
-    }
+    target.process_response_eof(&response);
 
     
     return response;
@@ -390,7 +372,7 @@ pub fn main_fetch(request: Rc<Request>,
 
 fn basic_fetch(request: Rc<Request>,
                cache: &mut CorsCache,
-               target: &mut Target,
+               target: Target,
                done_chan: &mut DoneChannel,
                context: &FetchContext)
                -> Response {
