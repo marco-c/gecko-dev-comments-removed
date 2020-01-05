@@ -280,6 +280,12 @@ public:
 
 
 
+  void ProcessDestroyedFrameListeners();
+
+  
+
+
+
 
   void SetFrameCapture(already_AddRefed<gfx::SourceSurface> aSurface);
 
