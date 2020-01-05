@@ -1191,20 +1191,27 @@ impl<'a> MutableFlowUtils for &'a mut Flow + 'a {
         let mut overflow = my_position;
 
         if self.is_block_container() {
+            let writing_mode = base(self).writing_mode;
+            
+            let container_size = Size2D::zero();
             for kid in child_iter(self) {
                 if kid.is_store_overflow_delayed() {
                     
                     
                     continue;
                 }
-                let mut kid_overflow = base(kid).overflow;
+                let kid_base = base(kid);
+                let mut kid_overflow = kid_base.overflow.convert(
+                    kid_base.writing_mode, writing_mode, container_size);
                 kid_overflow = kid_overflow.translate(&my_position.start);
                 overflow = overflow.union(&kid_overflow)
             }
 
             
             for descendant_link in mut_base(self).abs_descendants.iter() {
-                let mut kid_overflow = base(descendant_link).overflow;
+                let kid_base = base(descendant_link);
+                let mut kid_overflow = kid_base.overflow.convert(
+                    kid_base.writing_mode, writing_mode, container_size);
                 kid_overflow = kid_overflow.translate(&my_position.start);
                 overflow = overflow.union(&kid_overflow)
             }
