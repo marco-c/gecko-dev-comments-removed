@@ -334,7 +334,6 @@ protected:
   virtual ~nsNPAPIPluginInstance();
 
   nsresult GetTagType(nsPluginTagType *result);
-  nsresult GetMode(int32_t *result);
 
   
   void CheckJavaC2PJSObjectQuirk(uint16_t paramCount,
