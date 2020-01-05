@@ -425,9 +425,9 @@ struct Zone : public JS::shadow::Zone,
 
   private:
     
-    js::ZoneGroupOrGCTaskData<js::gc::AtomMarkingRuntime::Bitmap> markedAtoms_;
+    js::ZoneGroupOrGCTaskData<js::SparseBitmap> markedAtoms_;
   public:
-    js::gc::AtomMarkingRuntime::Bitmap& markedAtoms() { return markedAtoms_.ref(); }
+    js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
 
     
     js::gc::HeapUsage usage;

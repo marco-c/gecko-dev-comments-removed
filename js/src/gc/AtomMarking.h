@@ -8,6 +8,7 @@
 #define gc_AtomMarking_h
 
 #include "NamespaceImports.h"
+#include "ds/Bitmap.h"
 #include "gc/Heap.h"
 #include "threading/ProtectedData.h"
 
@@ -21,12 +22,10 @@ class AtomMarkingRuntime
     
     js::ExclusiveAccessLockOrGCTaskData<Vector<size_t, 0, SystemAllocPolicy>> freeArenaIndexes;
 
+  public:
     
     
     mozilla::Atomic<size_t> allocatedWords;
-
-  public:
-    typedef Vector<uintptr_t, 0, SystemAllocPolicy> Bitmap;
 
     AtomMarkingRuntime()
       : allocatedWords(0)
@@ -41,11 +40,11 @@ class AtomMarkingRuntime
     
     
     
-    bool computeBitmapFromChunkMarkBits(JSRuntime* runtime, Bitmap& bitmap);
+    bool computeBitmapFromChunkMarkBits(JSRuntime* runtime, DenseBitmap& bitmap);
 
     
     
-    void updateZoneBitmap(Zone* zone, const Bitmap& bitmap);
+    void updateZoneBitmap(Zone* zone, const DenseBitmap& bitmap);
 
     
     
