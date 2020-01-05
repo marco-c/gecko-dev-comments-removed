@@ -560,6 +560,12 @@ protected:
   TimeStamp                         mAsyncOpenTime;
   TimeStamp                         mCacheReadStart;
   TimeStamp                         mCacheReadEnd;
+  TimeStamp                         mLaunchServiceWorkerStart;
+  TimeStamp                         mLaunchServiceWorkerEnd;
+  TimeStamp                         mDispatchFetchEventStart;
+  TimeStamp                         mDispatchFetchEventEnd;
+  TimeStamp                         mHandleFetchEventStart;
+  TimeStamp                         mHandleFetchEventEnd;
   
   
   TimingStruct                      mTransactionTimings;
