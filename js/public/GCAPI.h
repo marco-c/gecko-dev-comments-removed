@@ -429,6 +429,7 @@ IsIncrementalGCInProgress(JSContext* cx);
 
 
 
+
 extern JS_PUBLIC_API(bool)
 IsIncrementalBarrierNeeded(JSContext* cx);
 
@@ -437,13 +438,14 @@ IsIncrementalBarrierNeeded(JSContext* cx);
 
 
 extern JS_PUBLIC_API(void)
-IncrementalReferenceBarrier(GCCellPtr thing);
+IncrementalPreWriteBarrier(JSObject* obj);
+
+
+
+
 
 extern JS_PUBLIC_API(void)
-IncrementalValueBarrier(const Value& v);
-
-extern JS_PUBLIC_API(void)
-IncrementalObjectBarrier(JSObject* obj);
+IncrementalReadBarrier(GCCellPtr thing);
 
 
 
@@ -643,13 +645,15 @@ ExposeGCThingToActiveJS(JS::GCCellPtr thing)
     MOZ_DIAGNOSTIC_ASSERT(BarriersAreAllowedOnCurrentThread());
 
     if (IsIncrementalBarrierNeededOnTenuredGCThing(thing))
-        JS::IncrementalReferenceBarrier(thing);
-    else if (!thing.mayBeOwnedByOtherRuntime() && js::gc::detail::CellIsMarkedGray(thing.asCell()))
+        JS::IncrementalReadBarrier(thing);
+    else if (js::gc::detail::CellIsMarkedGray(thing.asCell()))
         JS::UnmarkGrayGCThingRecursively(thing);
+
+    MOZ_ASSERT(!js::gc::detail::CellIsMarkedGray(thing.asCell()));
 }
 
 static MOZ_ALWAYS_INLINE void
-MarkGCThingAsLive(JSRuntime* aRt, JS::GCCellPtr thing)
+GCThingReadBarrier(JS::GCCellPtr thing)
 {
     
     
@@ -664,7 +668,7 @@ MarkGCThingAsLive(JSRuntime* aRt, JS::GCCellPtr thing)
     MOZ_DIAGNOSTIC_ASSERT(BarriersAreAllowedOnCurrentThread());
 
     if (IsIncrementalBarrierNeededOnTenuredGCThing(thing))
-        JS::IncrementalReferenceBarrier(thing);
+        JS::IncrementalReadBarrier(thing);
 }
 
 } 
@@ -695,10 +699,10 @@ ExposeScriptToActiveJS(JSScript* script)
 
 
 static MOZ_ALWAYS_INLINE void
-MarkStringAsLive(Zone* zone, JSString* string)
+StringReadBarrier(JSString* string)
 {
-    JSRuntime* rt = JS::shadow::Zone::asShadowZone(zone)->runtimeFromActiveCooperatingThread();
-    js::gc::MarkGCThingAsLive(rt, GCCellPtr(string));
+    MOZ_ASSERT(js::CurrentThreadCanAccessZone(GetStringZone(string)));
+    js::gc::GCThingReadBarrier(GCCellPtr(string));
 }
 
 
