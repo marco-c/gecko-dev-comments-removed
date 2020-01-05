@@ -33,22 +33,17 @@ add_task(function* test_context_menu_iframe_fill() {
     gBrowser,
     url: TEST_HOSTNAME + IFRAME_PAGE_PATH
   }, function* (browser) {
-    let iframe = browser.contentWindow.document.getElementById("test-iframe");
-    let passwordInput = iframe.contentDocument.getElementById("form-basic-password");
+    function getPasswordInput() {
+      let frame = content.document.getElementById("test-iframe");
+      return frame.contentDocument.getElementById("form-basic-password");
+    }
 
     let contextMenuShownPromise = BrowserTestUtils.waitForEvent(window, "popupshown");
     let eventDetails = {type: "contextmenu", button: 2};
 
     
-    let iframeRect = iframe.getBoundingClientRect();
-    let inputRect = passwordInput.getBoundingClientRect();
-    let clickPos = {
-      offsetX: iframeRect.left + inputRect.width / 2,
-      offsetY: iframeRect.top + inputRect.height / 2,
-    };
-
     
-    BrowserTestUtils.synthesizeMouse(passwordInput, clickPos.offsetX, clickPos.offsetY, eventDetails, browser);
+    BrowserTestUtils.synthesizeMouseAtCenter(getPasswordInput, eventDetails, browser);
     yield contextMenuShownPromise;
 
     
@@ -60,23 +55,36 @@ add_task(function* test_context_menu_iframe_fill() {
     let popupMenu = document.getElementById("fill-login-popup");
 
     
-    let usernameInput = iframe.contentDocument.getElementById("form-basic-username");
-    let usernameOriginalValue = usernameInput.value;
+    function promiseFrameInputValue(name) {
+      return ContentTask.spawn(browser, name, function(inputname) {
+        let iframe = content.document.getElementById("test-iframe");
+        let input = iframe.contentDocument.getElementById(inputname);
+        return input.value;
+      });
+    }
+    let usernameOriginalValue = yield promiseFrameInputValue("form-basic-username");
 
     
+    let passwordChangedPromise = ContentTask.spawn(browser, null, function* () {
+      let frame = content.document.getElementById("test-iframe");
+      let passwordInput = frame.contentDocument.getElementById("form-basic-password");
+      yield ContentTaskUtils.waitForEvent(passwordInput, "input");
+    });
+
     let firstLoginItem = popupMenu.getElementsByClassName("context-login-item")[0];
     firstLoginItem.doCommand();
 
-    yield BrowserTestUtils.waitForEvent(passwordInput, "input", "Password input value changed");
+    yield passwordChangedPromise;
 
     
     let login = getLoginFromUsername(firstLoginItem.label);
+    let passwordValue = yield promiseFrameInputValue("form-basic-password");
+    is(login.password, passwordValue, "Password filled and correct.");
 
-    Assert.equal(login.password, passwordInput.value, "Password filled and correct.");
-
-    Assert.equal(usernameOriginalValue,
-                 usernameInput.value,
-                 "Username value was not changed.");
+    let usernameNewValue = yield promiseFrameInputValue("form-basic-username");
+    is(usernameOriginalValue,
+       usernameNewValue,
+       "Username value was not changed.");
 
     let contextMenu = document.getElementById("contentAreaContextMenu");
     contextMenu.hidePopup();
