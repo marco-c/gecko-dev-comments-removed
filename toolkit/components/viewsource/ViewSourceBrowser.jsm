@@ -186,7 +186,7 @@ ViewSourceBrowser.prototype = {
     }
 
     if (browser) {
-      this.browser.relatedBrowser = browser;
+      this.browser.sameProcessAsFrameLoader = browser.frameLoader;
 
       
       

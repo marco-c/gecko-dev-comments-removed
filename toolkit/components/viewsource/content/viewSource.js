@@ -683,7 +683,7 @@ ViewSourceChrome.prototype = {
     
     
     
-    let relatedBrowser = this.browser.relatedBrowser;
+    let sameProcessAsFrameLoader = this.browser.sameProcessAsFrameLoader;
 
     this.browser.remove();
     if (shouldBeRemote) {
@@ -694,7 +694,7 @@ ViewSourceChrome.prototype = {
       this.browser.removeAttribute("remoteType");
     }
 
-    this.browser.relatedBrowser = relatedBrowser;
+    this.browser.sameProcessAsFrameLoader = sameProcessAsFrameLoader;
 
     
     
