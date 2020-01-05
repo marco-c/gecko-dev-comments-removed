@@ -1,12 +1,5 @@
 #include "test/jemalloc_test.h"
 
-
-
-
-
-
-const char *malloc_conf = "lg_chunk:0";
-
 TEST_BEGIN(test_lg_chunk_clamp)
 {
 	void *p;
