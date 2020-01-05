@@ -157,60 +157,63 @@ function getCallees(edge)
         return [];
 
     var callee = edge.Exp[0];
-    var callees = [];
     if (callee.Kind == "Var") {
         assert(callee.Variable.Kind == "Func");
-        callees.push({'kind': 'direct', 'name': callee.Variable.Name[0]});
-    } else {
-        assert(callee.Kind == "Drf");
-        if (callee.Exp[0].Kind == "Fld") {
-            var field = callee.Exp[0].Field;
-            var fieldName = field.Name[0];
-            var csuName = field.FieldCSU.Type.Name;
-            var functions;
-            if ("FieldInstanceFunction" in field) {
-                let suppressed;
-                [ functions, suppressed ] = findVirtualFunctions(csuName, fieldName, suppressed);
-                if (suppressed) {
-                    
-                    
-                    callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
-                                  'suppressed': true});
-                }
-            } else {
-                functions = new Set([null]); 
-            }
+        return [{'kind': 'direct', 'name': callee.Variable.Name[0]}];
+    }
 
+    assert(callee.Kind == "Drf");
+    const called = callee.Exp[0];
+    if (called.Kind == "Var") {
+        
+        return [{'kind': "indirect", 'variable': callee.Exp[0].Variable.Name[0]}];
+    }
+
+    if (called.Kind != "Fld") {
+        
+        return [{'kind': "unknown"}];
+    }
+
+    var callees = [];
+    var field = callee.Exp[0].Field;
+    var fieldName = field.Name[0];
+    var csuName = field.FieldCSU.Type.Name;
+    var functions;
+    if ("FieldInstanceFunction" in field) {
+        let suppressed;
+        [ functions, suppressed ] = findVirtualFunctions(csuName, fieldName, suppressed);
+        if (suppressed) {
+            
+            
+            callees.push({'kind': "field", 'csu': csuName, 'field': fieldName,
+                          'suppressed': true});
+        }
+    } else {
+        functions = new Set([null]); 
+    }
+
+    
+    
+    
+    
+    
+    var targets = [];
+    var fullyResolved = true;
+    for (var name of functions) {
+        if (name === null) {
             
             
             
             
-            
-            
-            var targets = [];
-            var fullyResolved = true;
-            for (var name of functions) {
-                if (name === null) {
-                    
-                    
-                    
-                    callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
-                    fullyResolved = false;
-                } else {
-                    callees.push({'kind': "direct", 'name': name});
-                    targets.push({'kind': "direct", 'name': name});
-                }
-            }
-            if (fullyResolved)
-                callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
-        } else if (callee.Exp[0].Kind == "Var") {
-            
-            callees.push({'kind': "indirect", 'variable': callee.Exp[0].Variable.Name[0]});
+            callees.push({'kind': "field", 'csu': csuName, 'field': fieldName});
+            fullyResolved = false;
         } else {
-            
-            callees.push({'kind': "unknown"});
+            callees.push({'kind': "direct", 'name': name});
+            targets.push({'kind': "direct", 'name': name});
         }
     }
+    if (fullyResolved)
+        callees.push({'kind': "resolved-field", 'csu': csuName, 'field': fieldName, 'callees': targets});
 
     return callees;
 }
