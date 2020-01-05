@@ -299,6 +299,27 @@ AnimationTimeBlock.prototype = {
     }
 
     
+    if (state.easing) {
+      text += L10N.getStr("player.animationEasingLabel") + " ";
+      text += state.easing;
+      text += "\n";
+    }
+
+    
+    if (state.fill) {
+      text += L10N.getStr("player.animationFillLabel") + " ";
+      text += state.fill;
+      text += "\n";
+    }
+
+    
+    if (state.direction) {
+      text += L10N.getStr("player.animationDirectionLabel") + " ";
+      text += state.direction;
+      text += "\n";
+    }
+
+    
     if (state.playbackRate !== 1) {
       text += L10N.getStr("player.animationRateLabel") + " ";
       text += state.playbackRate;
