@@ -1098,15 +1098,3 @@ Gecko_Destroy_nsStyle##name(nsStyle##name* ptr)                               \
 #include "ServoBindingList.h"
 #undef SERVO_BINDING_FUNC
 #endif
-
-#ifdef MOZ_STYLO
-const nsStyleVariables*
-Servo_GetStyleVariables(ServoComputedValuesBorrowed aComputedValues)
-{
-  
-  
-  
-  static nsStyleVariables variables(StyleStructContext::ServoContext());
-  return &variables;
-}
-#endif
