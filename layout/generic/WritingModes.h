@@ -784,6 +784,16 @@ public:
     CHECK_WRITING_MODE(aWritingMode);
     return mPoint.y;
   }
+  nscoord LineRelative(WritingMode aWritingMode,
+                       const nsSize& aContainerSize) const 
+  {
+    CHECK_WRITING_MODE(aWritingMode);
+    if (aWritingMode.IsBidiLTR()) {
+      return I();
+    }
+    return (aWritingMode.IsVertical() ? aContainerSize.height
+                                      : aContainerSize.width) - I();
+  }
 
   
 
