@@ -418,19 +418,33 @@ public abstract class GeckoApp
 
             case LOCATION_CHANGE:
                 
-                if (!Tabs.getInstance().isSelectedTab(tab))
-                    break;
-                
+                if (Tabs.getInstance().isSelectedTab(tab)) {
+                    resetOptionsMenu();
+                    resetFormAssistPopup();
+                }
+                break;
+
             case SELECTED:
-                invalidateOptionsMenu();
-                if (mFormAssistPopup != null)
-                    mFormAssistPopup.hide();
+                resetOptionsMenu();
+                resetFormAssistPopup();
                 break;
 
             case DESKTOP_MODE_CHANGE:
                 if (Tabs.getInstance().isSelectedTab(tab))
-                    invalidateOptionsMenu();
+                    resetOptionsMenu();
                 break;
+        }
+    }
+
+    private void resetOptionsMenu() {
+        if (mInitialized) {
+            invalidateOptionsMenu();
+        }
+    }
+
+    private void resetFormAssistPopup() {
+        if (mInitialized && mFormAssistPopup != null) {
+            mFormAssistPopup.hide();
         }
     }
 
@@ -1343,6 +1357,7 @@ public abstract class GeckoApp
             null);
 
         Tabs.getInstance().attachToContext(this, mLayerView);
+        Tabs.registerOnTabsChangedListener(this);
 
         
         mMainLayout.getViewTreeObserver().addOnGlobalLayoutListener(this);
@@ -1702,8 +1717,6 @@ public abstract class GeckoApp
         
         
         checkMigrateProfile();
-
-        Tabs.registerOnTabsChangedListener(this);
 
         initializeChrome();
 
