@@ -293,16 +293,6 @@ VRManagerChild::RecvUpdateDisplayInfo(nsTArray<VRDisplayInfo>&& aDisplayUpdates)
 bool
 VRManagerChild::GetVRDisplays(nsTArray<RefPtr<VRDisplayClient>>& aDisplays)
 {
-  if (!mDisplaysInitialized) {
-    
-
-
-
-
-    nsTArray<VRDisplayInfo> displays;
-    Unused << SendGetDisplays(&displays);
-    UpdateDisplayInfo(displays);
-  }
   aDisplays = mDisplays;
   return true;
 }
