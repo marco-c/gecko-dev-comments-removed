@@ -2,7 +2,7 @@
 
 
 
-use net_traits::{LoadData, Metadata,ResponseSenders};
+use net_traits::{LoadData, Metadata, LoadConsumer};
 use net_traits::ProgressMsg::Done;
 use mime_classifier::MIMEClassifier;
 use resource_task::start_sending;
@@ -18,7 +18,7 @@ use std::borrow::IntoCow;
 use std::fs::PathExt;
 use std::sync::Arc;
 
-pub fn factory(mut load_data: LoadData, start_chan: ResponseSenders, classifier: Arc<MIMEClassifier>) {
+pub fn factory(mut load_data: LoadData, start_chan: LoadConsumer, classifier: Arc<MIMEClassifier>) {
     match load_data.url.non_relative_scheme_data().unwrap() {
         "blank" => {
             let chan = start_sending(start_chan, Metadata {

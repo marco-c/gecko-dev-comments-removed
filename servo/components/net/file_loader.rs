@@ -2,7 +2,7 @@
 
 
 
-use net_traits::{LoadData, Metadata, ResponseSenders};
+use net_traits::{LoadData, Metadata, LoadConsumer};
 use net_traits::ProgressMsg::{Payload, Done};
 use mime_classifier::MIMEClassifier;
 use resource_task::{start_sending, start_sending_sniffed, ProgressSender};
@@ -43,7 +43,7 @@ fn read_all(reader: &mut File, progress_chan: &ProgressSender)
     }
 }
 
-pub fn factory(load_data: LoadData, senders: ResponseSenders, classifier: Arc<MIMEClassifier>) {
+pub fn factory(load_data: LoadData, senders: LoadConsumer, classifier: Arc<MIMEClassifier>) {
     let url = load_data.url;
     assert!(&*url.scheme == "file");
     spawn_named("file_loader".to_owned(), move || {
