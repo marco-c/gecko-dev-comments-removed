@@ -173,7 +173,7 @@ function* setDisabledStateAndCheck(which, disabled = false) {
   ensure_test_completed();
 }
 
-add_task(function* test_dss_themes() {
+add_task(function* test_complete_themes() {
   
   yield* setDisabledStateAndCheck(THEME_IDS[0]);
 
