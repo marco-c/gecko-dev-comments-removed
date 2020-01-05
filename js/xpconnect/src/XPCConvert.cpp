@@ -791,7 +791,6 @@ XPCConvert::NativeInterface2JSObject(MutableHandleValue d,
         return CreateHolderIfNeeded(flat, d, dest);
     }
 
-#ifdef SPIDERMONKEY_PROMISE
     if (iid->Equals(NS_GET_IID(nsISupports))) {
         
         
@@ -804,7 +803,6 @@ XPCConvert::NativeInterface2JSObject(MutableHandleValue d,
             return CreateHolderIfNeeded(flat, d, dest);
         }
     }
-#endif 
 
     
     
@@ -943,7 +941,6 @@ XPCConvert::JSObject2NativeInterface(void** dest, HandleObject src,
             return false;
         }
 
-#ifdef SPIDERMONKEY_PROMISE
         
         
         if (iid->Equals(NS_GET_IID(nsISupports))) {
@@ -954,7 +951,6 @@ XPCConvert::JSObject2NativeInterface(void** dest, HandleObject src,
                 return p && NS_SUCCEEDED(p->QueryInterface(*iid, dest));
             }
         }
-#endif 
     }
 
     RefPtr<nsXPCWrappedJS> wrapper;
