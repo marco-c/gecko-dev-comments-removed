@@ -13,6 +13,8 @@
 #include "mozilla/EnumeratedArray.h"
 #include "nsCSSValue.h"
 
+#include <limits>
+
 class nsIFrame;
 class nsStyleContext;
 class nsPresContext;
@@ -26,6 +28,17 @@ class RuleNodeCacheConditions;
 
 
 namespace nsStyleTransformMatrix {
+
+  
+  
+  
+  inline void ApplyPerspectiveToMatrix(mozilla::gfx::Matrix4x4& aMatrix,
+                                       float aDepth)
+  {
+    if (aDepth >= std::numeric_limits<float>::epsilon()) {
+      aMatrix.Perspective(aDepth);
+    }
+  }
 
   
 
