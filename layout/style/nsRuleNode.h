@@ -812,6 +812,15 @@ public:
                                                        bool aUseUserFontSet);
 
   
+
+
+
+  static void FixupNoneGeneric(nsFont* aFont,
+                               const nsPresContext* aPresContext,
+                               uint8_t aGenericFontID,
+                               const nsFont* aDefaultVariableFont);
+
+  
   nsRuleNode* Transition(nsIStyleRule* aRule, mozilla::SheetType aLevel,
                          bool aIsImportantRule);
   nsRuleNode* GetParent() const { return mParent; }
