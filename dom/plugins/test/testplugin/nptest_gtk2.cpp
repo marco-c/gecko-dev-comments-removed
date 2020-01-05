@@ -737,6 +737,19 @@ pluginCrashInNestedLoop(InstanceData* instanceData)
   return true;
 }
 
+bool
+pluginTriggerXError(InstanceData* instanceData)
+{
+  mozilla::NoteIntentionalCrash("plugin");
+  int num_prop_return;
+  
+  
+  XListProperties(GDK_DISPLAY(), X11None, &num_prop_return);
+
+  
+  return true;
+}
+
 static int
 SleepThenDie(Display* display)
 {
