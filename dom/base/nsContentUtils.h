@@ -2747,7 +2747,7 @@ public:
                                                 nsIHttpChannel* aChannel,
                                                 mozilla::net::ReferrerPolicy aReferrerPolicy);
 
-    
+  
 
 
 
@@ -2755,6 +2755,8 @@ public:
 
 
   static mozilla::net::ReferrerPolicy GetReferrerPolicyFromHeader(const nsAString& aHeader);
+
+  static bool PromiseRejectionEventsEnabled(JSContext* aCx, JSObject* aObj);
 
   static bool PushEnabled(JSContext* aCx, JSObject* aObj);
 
