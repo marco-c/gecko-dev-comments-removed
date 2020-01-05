@@ -510,7 +510,7 @@ HTMLEditor::InitRules()
     
     mRules = new HTMLEditRules();
   }
-  return mRules->Init(static_cast<TextEditor*>(this));
+  return mRules->Init(this);
 }
 
 NS_IMETHODIMP

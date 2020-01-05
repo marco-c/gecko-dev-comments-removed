@@ -56,6 +56,9 @@ public:
 
   TextEditor();
 
+  virtual TextEditor* AsTextEditor() override { return this; }
+  virtual const TextEditor* AsTextEditor() const override { return this; }
+
   
   NS_DECL_NSIPLAINTEXTEDITOR
 
