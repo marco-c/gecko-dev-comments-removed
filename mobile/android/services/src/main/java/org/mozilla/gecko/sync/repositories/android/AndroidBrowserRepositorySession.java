@@ -484,7 +484,7 @@ public abstract class AndroidBrowserRepositorySession extends StoreTrackingRepos
           if (existingRecord == null) {
             
             trace("No match. Inserting.");
-            insert(record);
+            insert(processBeforeInsertion(record));
             return;
           }
 
@@ -550,6 +550,13 @@ public abstract class AndroidBrowserRepositorySession extends StoreTrackingRepos
     
     dbHelper.purgeGuid(record.guid);
     storeDelegate.onRecordStoreSucceeded(record.guid);
+  }
+
+  
+
+
+  protected Record processBeforeInsertion(Record toProcess) {
+    return toProcess;
   }
 
   protected void insert(Record record) throws NoGuidForIdException, NullCursorException, ParentNotFoundException {

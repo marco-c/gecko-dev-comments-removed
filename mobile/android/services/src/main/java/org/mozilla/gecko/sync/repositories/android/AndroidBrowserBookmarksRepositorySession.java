@@ -699,6 +699,34 @@ public class AndroidBrowserBookmarksRepositorySession extends AndroidBrowserRepo
     }
   }
 
+  
+
+
+
+
+
+
+
+  @Override
+  protected Record processBeforeInsertion(Record toProcess) {
+    
+    if (((BookmarkRecord) toProcess).dateAdded == null) {
+      ((BookmarkRecord) toProcess).dateAdded = toProcess.lastModified;
+      toProcess.lastModified = now();
+      return toProcess;
+    }
+
+    
+    
+    if (toProcess.lastModified < ((BookmarkRecord) toProcess).dateAdded) {
+      ((BookmarkRecord) toProcess).dateAdded = toProcess.lastModified;
+      toProcess.lastModified = now();
+      return toProcess;
+    }
+
+    return toProcess;
+  }
+
   @Override
   protected Record reconcileRecords(Record remoteRecord, Record localRecord,
                                     long lastRemoteRetrieval,
@@ -708,15 +736,40 @@ public class AndroidBrowserBookmarksRepositorySession extends AndroidBrowserRepo
                                                                         lastRemoteRetrieval,
                                                                         lastLocalRetrieval);
 
+    final BookmarkRecord remote = (BookmarkRecord) remoteRecord;
+    final BookmarkRecord local = (BookmarkRecord) localRecord;
+
     
     
-    reconciled.children = ((BookmarkRecord) remoteRecord).children;
+    reconciled.children = remote.children;
 
     
     
     if (reconciled.isFolder()) {
       trackRecord(reconciled);
     }
+
+    
+    
+    
+    
+    
+    long lowest = remote.lastModified;
+
+    
+    
+    final long releaseOfNCSAMosaicMillis = 727747200000L;
+
+    if (local.dateAdded != null && local.dateAdded < lowest && local.dateAdded > releaseOfNCSAMosaicMillis) {
+      lowest = local.dateAdded;
+    }
+
+    if (remote.dateAdded != null && remote.dateAdded < lowest && remote.dateAdded > releaseOfNCSAMosaicMillis) {
+      lowest = remote.dateAdded;
+    }
+
+    reconciled.dateAdded = lowest;
+
     return reconciled;
   }
 
@@ -1089,6 +1142,7 @@ public class AndroidBrowserBookmarksRepositorySession extends AndroidBrowserRepo
     rec.description = RepoUtils.getStringFromCursor(cur, BrowserContract.Bookmarks.DESCRIPTION);
     rec.tags = RepoUtils.getJSONArrayFromCursor(cur, BrowserContract.Bookmarks.TAGS);
     rec.keyword = RepoUtils.getStringFromCursor(cur, BrowserContract.Bookmarks.KEYWORD);
+    rec.dateAdded = RepoUtils.getLongFromCursor(cur, BrowserContract.SyncColumns.DATE_CREATED);
 
     rec.androidID = RepoUtils.getLongFromCursor(cur, BrowserContract.Bookmarks._ID);
     rec.androidPosition = RepoUtils.getLongFromCursor(cur, BrowserContract.Bookmarks.POSITION);

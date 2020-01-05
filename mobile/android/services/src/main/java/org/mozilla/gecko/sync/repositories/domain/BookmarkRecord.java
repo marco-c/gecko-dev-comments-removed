@@ -4,6 +4,8 @@
 
 package org.mozilla.gecko.sync.repositories.domain;
 
+import android.support.annotation.Nullable;
+
 import java.io.UnsupportedEncodingException;
 import java.net.URLEncoder;
 import java.util.Map;
@@ -57,6 +59,10 @@ public class BookmarkRecord extends Record {
   public String  type;
   public long    androidPosition;
 
+  
+  
+  @Nullable public Long dateAdded;
+
   public JSONArray children;
   public JSONArray tags;
 
@@ -104,6 +110,7 @@ public class BookmarkRecord extends Record {
     out.androidParentID = this.androidParentID;
     out.type            = this.type;
     out.androidPosition = this.androidPosition;
+    out.dateAdded       = this.dateAdded;
 
     out.children        = this.copyChildren();
     out.tags            = this.copyTags();
@@ -173,6 +180,21 @@ public class BookmarkRecord extends Record {
     this.description = payload.getString("description");
     this.parentID    = payload.getString("parentid");
     this.parentName  = payload.getString("parentName");
+
+    if (!payload.containsKey("dateAdded")) {
+      
+      this.dateAdded = null;
+    } else {
+      
+      try {
+        this.dateAdded = payload.getLong("dateAdded");
+      } catch (ClassCastException e) {
+        this.dateAdded = Long.parseLong(payload.getString("dateAdded"));
+      } catch (Exception e) {
+        Logger.error(LOG_TAG, "Cannot parse bookmark's 'dateAdded' value. Setting it to null.", e);
+        this.dateAdded = null;
+      }
+    }
 
     if (isFolder()) {
       try {
@@ -255,6 +277,16 @@ public class BookmarkRecord extends Record {
     putPayload(payload, "parentid", this.parentID);
     putPayload(payload, "parentName", this.parentName);
     putPayload(payload, "keyword", this.keyword);
+
+    
+    
+    
+    
+    
+    
+    if (this.dateAdded != null) {
+      putPayload(payload, "dateAdded", Long.toString(this.dateAdded));
+    }
 
     if (isFolder()) {
       payload.put("children", this.children);
@@ -442,6 +474,8 @@ public class BookmarkRecord extends Record {
     return b.toString();
   }
 }
+
+
 
 
 
