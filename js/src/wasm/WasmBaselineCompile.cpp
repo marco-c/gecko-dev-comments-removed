@@ -121,6 +121,7 @@ typedef bool InvertBranch;
 typedef bool IsKnownNotZero;
 typedef bool IsSigned;
 typedef bool IsUnsigned;
+typedef bool NeedsBoundsCheck;
 typedef bool PopStack;
 typedef bool ZeroOnOverflow;
 
@@ -193,124 +194,6 @@ template<> struct RegTypeOf<MIRType::Float32> {
 template<> struct RegTypeOf<MIRType::Double> {
     static constexpr RegTypeName value = RegTypeName::Float64;
 };
-
-static constexpr int32_t TlsSlotSize = sizeof(void*);
-static constexpr int32_t TlsSlotOffset = TlsSlotSize;
-
-BaseLocalIter::BaseLocalIter(const ValTypeVector& locals,
-                                     size_t argsLength,
-                                     bool debugEnabled)
-  : locals_(locals),
-    argsLength_(argsLength),
-    argsRange_(locals.begin(), argsLength),
-    argsIter_(argsRange_),
-    index_(0),
-    localSize_(0),
-    done_(false)
-{
-    MOZ_ASSERT(argsLength <= locals.length());
-
-    
-    
-    DebugOnly<int32_t> tlsSlotOffset = pushLocal(TlsSlotSize);
-    MOZ_ASSERT(tlsSlotOffset == TlsSlotOffset);
-    if (debugEnabled) {
-        
-        
-        
-        localSize_ += DebugFrame::offsetOfTlsData();
-        MOZ_ASSERT(DebugFrame::offsetOfFrame() == localSize_);
-    }
-    reservedSize_ = localSize_;
-
-    settle();
-}
-
-int32_t
-BaseLocalIter::pushLocal(size_t nbytes)
-{
-    if (nbytes == 8)
-        localSize_ = AlignBytes(localSize_, 8u);
-    else if (nbytes == 16)
-        localSize_ = AlignBytes(localSize_, 16u);
-    localSize_ += nbytes;
-    return localSize_;          
-}
-
-void
-BaseLocalIter::settle()
-{
-    if (index_ < argsLength_) {
-        MOZ_ASSERT(!argsIter_.done());
-        mirType_ = argsIter_.mirType();
-        switch (mirType_) {
-          case MIRType::Int32:
-            if (argsIter_->argInRegister())
-                frameOffset_ = pushLocal(4);
-            else
-                frameOffset_ = -(argsIter_->offsetFromArgBase() + sizeof(Frame));
-            break;
-          case MIRType::Int64:
-            if (argsIter_->argInRegister())
-                frameOffset_ = pushLocal(8);
-            else
-                frameOffset_ = -(argsIter_->offsetFromArgBase() + sizeof(Frame));
-            break;
-          case MIRType::Double:
-            if (argsIter_->argInRegister())
-                frameOffset_ = pushLocal(8);
-            else
-                frameOffset_ = -(argsIter_->offsetFromArgBase() + sizeof(Frame));
-            break;
-          case MIRType::Float32:
-            if (argsIter_->argInRegister())
-                frameOffset_ = pushLocal(4);
-            else
-                frameOffset_ = -(argsIter_->offsetFromArgBase() + sizeof(Frame));
-            break;
-          default:
-            MOZ_CRASH("Argument type");
-        }
-        return;
-    }
-
-    MOZ_ASSERT(argsIter_.done());
-    if (index_ < locals_.length()) {
-        switch (locals_[index_]) {
-          case ValType::I32:
-            mirType_ = jit::MIRType::Int32;
-            frameOffset_ = pushLocal(4);
-            break;
-          case ValType::F32:
-            mirType_ = jit::MIRType::Float32;
-            frameOffset_ = pushLocal(4);
-            break;
-          case ValType::F64:
-            mirType_ = jit::MIRType::Double;
-            frameOffset_ = pushLocal(8);
-            break;
-          case ValType::I64:
-            mirType_ = jit::MIRType::Int64;
-            frameOffset_ = pushLocal(8);
-            break;
-          default:
-            MOZ_CRASH("Compiler bug: Unexpected local type");
-        }
-        return;
-    }
-
-    done_ = true;
-}
-
-void
-BaseLocalIter::operator++(int)
-{
-    MOZ_ASSERT(!done_);
-    index_++;
-    if (!argsIter_.done())
-        argsIter_++;
-    settle();
-}
 
 class BaseCompiler
 {
@@ -762,6 +645,17 @@ class BaseCompiler
 
     void loadFromFrameF32(FloatRegister r, int32_t offset) {
         masm.loadFloat32(Address(StackPointer, localOffsetToSPOffset(offset)), r);
+    }
+
+    
+
+    int32_t pushLocal(size_t nbytes) {
+        if (nbytes == 8)
+            localSize_ = AlignBytes(localSize_, 8u);
+        else if (nbytes == 16)
+            localSize_ = AlignBytes(localSize_, 16u);
+        localSize_ += nbytes;
+        return localSize_;          
     }
 
     int32_t frameOffsetFromSlot(uint32_t slot, MIRType type) {
@@ -2653,7 +2547,7 @@ class BaseCompiler
 
         CallSiteDesc desc(call.lineOrBytecode, CallSiteDesc::Dynamic);
         CalleeDesc callee = CalleeDesc::wasmTable(table, sig.id);
-        masm.wasmCallIndirect(desc, callee);
+        masm.wasmCallIndirect(desc, callee, NeedsBoundsCheck(true));
     }
 
     
@@ -7529,26 +7423,76 @@ BaseCompiler::init()
     if (!localInfo_.resize(locals_.length() + 1))
         return false;
 
-    localInfo_[tlsSlot_].init(MIRType::Pointer, TlsSlotOffset);
+    localSize_ = 0;
 
-    BaseLocalIter i(locals_, args.length(), debugEnabled_);
-    varLow_ = i.reservedSize();
-    for (; !i.done() && i.index() < args.length(); i++) {
-        MOZ_ASSERT(i.isArg());
-        Local& l = localInfo_[i.index()];
-        l.init(i.mirType(), i.frameOffset());
-        varLow_ = i.currentLocalSize();
+    
+    
+    localInfo_[tlsSlot_].init(MIRType::Pointer, pushLocal(sizeof(void*)));
+    if (debugEnabled_) {
+        
+        
+        
+        localSize_ += DebugFrame::offsetOfTlsData();
+        MOZ_ASSERT(DebugFrame::offsetOfFrame() == localSize_);
     }
 
-    varHigh_ = varLow_;
-    for (; !i.done() ; i++) {
-        MOZ_ASSERT(!i.isArg());
+    for (ABIArgIter<const ValTypeVector> i(args); !i.done(); i++) {
         Local& l = localInfo_[i.index()];
-        l.init(i.mirType(), i.frameOffset());
-        varHigh_ = i.currentLocalSize();
+        switch (i.mirType()) {
+          case MIRType::Int32:
+            if (i->argInRegister())
+                l.init(MIRType::Int32, pushLocal(4));
+            else
+                l.init(MIRType::Int32, -(i->offsetFromArgBase() + sizeof(Frame)));
+            break;
+          case MIRType::Int64:
+            if (i->argInRegister())
+                l.init(MIRType::Int64, pushLocal(8));
+            else
+                l.init(MIRType::Int64, -(i->offsetFromArgBase() + sizeof(Frame)));
+            break;
+          case MIRType::Double:
+            if (i->argInRegister())
+                l.init(MIRType::Double, pushLocal(8));
+            else
+                l.init(MIRType::Double, -(i->offsetFromArgBase() + sizeof(Frame)));
+            break;
+          case MIRType::Float32:
+            if (i->argInRegister())
+                l.init(MIRType::Float32, pushLocal(4));
+            else
+                l.init(MIRType::Float32, -(i->offsetFromArgBase() + sizeof(Frame)));
+            break;
+          default:
+            MOZ_CRASH("Argument type");
+        }
     }
 
-    localSize_ = AlignBytes(varHigh_, 16u);
+    varLow_ = localSize_;
+
+    for (size_t i = args.length(); i < locals_.length(); i++) {
+        Local& l = localInfo_[i];
+        switch (locals_[i]) {
+          case ValType::I32:
+            l.init(MIRType::Int32, pushLocal(4));
+            break;
+          case ValType::F32:
+            l.init(MIRType::Float32, pushLocal(4));
+            break;
+          case ValType::F64:
+            l.init(MIRType::Double, pushLocal(8));
+            break;
+          case ValType::I64:
+            l.init(MIRType::Int64, pushLocal(8));
+            break;
+          default:
+            MOZ_CRASH("Compiler bug: Unexpected local type");
+        }
+    }
+
+    varHigh_ = localSize_;
+
+    localSize_ = AlignBytes(localSize_, 16u);
 
     addInterruptCheck();
 
