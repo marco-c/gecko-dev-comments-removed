@@ -200,7 +200,6 @@ void
 MediaKeys::ConnectPendingPromiseIdWithToken(PromiseId aId, uint32_t aToken)
 {
   
-  
   mPromiseIdToken.Put(aId, aToken);
   EME_LOG("MediaKeys[%p]::ConnectPendingPromiseIdWithToken() id=%u => token(%u)",
           this, aId, aToken);
