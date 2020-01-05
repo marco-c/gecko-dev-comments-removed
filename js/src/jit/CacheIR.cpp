@@ -2082,6 +2082,8 @@ SetPropIRGenerator::tryAttachStub()
             if (IsPropertySetOp(JSOp(*pc_))) {
                 if (tryAttachSetter(obj, objId, id, rhsValId))
                     return true;
+                if (tryAttachWindowProxy(obj, objId, id, rhsValId))
+                    return true;
                 if (tryAttachProxy(obj, objId, id, rhsValId))
                     return true;
             }
@@ -2933,6 +2935,49 @@ SetPropIRGenerator::tryAttachProxyElement(HandleObject obj, ObjOperandId objId, 
     writer.returnFromIC();
 
     trackAttached("ProxyElement");
+    return true;
+}
+
+bool
+SetPropIRGenerator::tryAttachWindowProxy(HandleObject obj, ObjOperandId objId, HandleId id,
+                                         ValOperandId rhsId)
+{
+    
+    
+
+    if (!IsWindowProxy(obj))
+        return false;
+
+    
+    
+    if (mode_ == ICState::Mode::Megamorphic)
+        return false;
+
+    
+    
+    
+    MOZ_ASSERT(obj->getClass() == cx_->runtime()->maybeWindowProxyClass());
+    MOZ_ASSERT(ToWindowIfWindowProxy(obj) == cx_->global());
+
+    
+    Handle<GlobalObject*> windowObj = cx_->global();
+
+    RootedShape propShape(cx_);
+    if (!CanAttachNativeSetSlot(cx_, windowObj, id, isTemporarilyUnoptimizable_, &propShape))
+        return false;
+
+    maybeEmitIdGuard(id);
+
+    writer.guardClass(objId, GuardClassKind::WindowProxy);
+    ObjOperandId windowObjId = writer.loadObject(windowObj);
+
+    writer.guardShape(windowObjId, windowObj->lastProperty());
+    writer.guardGroup(windowObjId, windowObj->group());
+    typeCheckInfo_.set(windowObj->group(), id);
+
+    EmitStoreSlotAndReturn(writer, windowObjId, windowObj, propShape, rhsId);
+
+    trackAttached("WindowProxySlot");
     return true;
 }
 
