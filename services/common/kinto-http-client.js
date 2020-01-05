@@ -16,6 +16,7 @@
 
 
 
+const global = this;
 
 this.EXPORTED_SYMBOLS = ["KintoHttpClient"];
 
@@ -76,7 +77,226 @@ if (typeof module === "object") {
   module.exports = KintoHttpClient;
 }
 
-},{"../src/base":2}],2:[function(require,module,exports){
+},{"../src/base":4}],2:[function(require,module,exports){
+
+var rng;
+
+var crypto = global.crypto || global.msCrypto; 
+if (crypto && crypto.getRandomValues) {
+  
+  
+  var _rnds8 = new Uint8Array(16);
+  rng = function whatwgRNG() {
+    crypto.getRandomValues(_rnds8);
+    return _rnds8;
+  };
+}
+
+if (!rng) {
+  
+  
+  
+  
+  var  _rnds = new Array(16);
+  rng = function() {
+    for (var i = 0, r; i < 16; i++) {
+      if ((i & 0x03) === 0) r = Math.random() * 0x100000000;
+      _rnds[i] = r >>> ((i & 0x03) << 3) & 0xff;
+    }
+
+    return _rnds;
+  };
+}
+
+module.exports = rng;
+
+
+},{}],3:[function(require,module,exports){
+
+
+
+
+
+
+
+
+var _rng = require('./rng');
+
+
+var _byteToHex = [];
+var _hexToByte = {};
+for (var i = 0; i < 256; i++) {
+  _byteToHex[i] = (i + 0x100).toString(16).substr(1);
+  _hexToByte[_byteToHex[i]] = i;
+}
+
+
+function parse(s, buf, offset) {
+  var i = (buf && offset) || 0, ii = 0;
+
+  buf = buf || [];
+  s.toLowerCase().replace(/[0-9a-f]{2}/g, function(oct) {
+    if (ii < 16) { 
+      buf[i + ii++] = _hexToByte[oct];
+    }
+  });
+
+  
+  while (ii < 16) {
+    buf[i + ii++] = 0;
+  }
+
+  return buf;
+}
+
+
+function unparse(buf, offset) {
+  var i = offset || 0, bth = _byteToHex;
+  return  bth[buf[i++]] + bth[buf[i++]] +
+          bth[buf[i++]] + bth[buf[i++]] + '-' +
+          bth[buf[i++]] + bth[buf[i++]] + '-' +
+          bth[buf[i++]] + bth[buf[i++]] + '-' +
+          bth[buf[i++]] + bth[buf[i++]] + '-' +
+          bth[buf[i++]] + bth[buf[i++]] +
+          bth[buf[i++]] + bth[buf[i++]] +
+          bth[buf[i++]] + bth[buf[i++]];
+}
+
+
+
+
+
+
+
+var _seedBytes = _rng();
+
+
+var _nodeId = [
+  _seedBytes[0] | 0x01,
+  _seedBytes[1], _seedBytes[2], _seedBytes[3], _seedBytes[4], _seedBytes[5]
+];
+
+
+var _clockseq = (_seedBytes[6] << 8 | _seedBytes[7]) & 0x3fff;
+
+
+var _lastMSecs = 0, _lastNSecs = 0;
+
+
+function v1(options, buf, offset) {
+  var i = buf && offset || 0;
+  var b = buf || [];
+
+  options = options || {};
+
+  var clockseq = options.clockseq !== undefined ? options.clockseq : _clockseq;
+
+  
+  
+  
+  
+  var msecs = options.msecs !== undefined ? options.msecs : new Date().getTime();
+
+  
+  
+  var nsecs = options.nsecs !== undefined ? options.nsecs : _lastNSecs + 1;
+
+  
+  var dt = (msecs - _lastMSecs) + (nsecs - _lastNSecs)/10000;
+
+  
+  if (dt < 0 && options.clockseq === undefined) {
+    clockseq = clockseq + 1 & 0x3fff;
+  }
+
+  
+  
+  if ((dt < 0 || msecs > _lastMSecs) && options.nsecs === undefined) {
+    nsecs = 0;
+  }
+
+  
+  if (nsecs >= 10000) {
+    throw new Error('uuid.v1(): Can\'t create more than 10M uuids/sec');
+  }
+
+  _lastMSecs = msecs;
+  _lastNSecs = nsecs;
+  _clockseq = clockseq;
+
+  
+  msecs += 12219292800000;
+
+  
+  var tl = ((msecs & 0xfffffff) * 10000 + nsecs) % 0x100000000;
+  b[i++] = tl >>> 24 & 0xff;
+  b[i++] = tl >>> 16 & 0xff;
+  b[i++] = tl >>> 8 & 0xff;
+  b[i++] = tl & 0xff;
+
+  
+  var tmh = (msecs / 0x100000000 * 10000) & 0xfffffff;
+  b[i++] = tmh >>> 8 & 0xff;
+  b[i++] = tmh & 0xff;
+
+  
+  b[i++] = tmh >>> 24 & 0xf | 0x10; 
+  b[i++] = tmh >>> 16 & 0xff;
+
+  
+  b[i++] = clockseq >>> 8 | 0x80;
+
+  
+  b[i++] = clockseq & 0xff;
+
+  
+  var node = options.node || _nodeId;
+  for (var n = 0; n < 6; n++) {
+    b[i + n] = node[n];
+  }
+
+  return buf ? buf : unparse(b);
+}
+
+
+
+
+function v4(options, buf, offset) {
+  
+  var i = buf && offset || 0;
+
+  if (typeof(options) == 'string') {
+    buf = options == 'binary' ? new Array(16) : null;
+    options = null;
+  }
+  options = options || {};
+
+  var rnds = options.random || (options.rng || _rng)();
+
+  
+  rnds[6] = (rnds[6] & 0x0f) | 0x40;
+  rnds[8] = (rnds[8] & 0x3f) | 0x80;
+
+  
+  if (buf) {
+    for (var ii = 0; ii < 16; ii++) {
+      buf[i + ii] = rnds[ii];
+    }
+  }
+
+  return buf || unparse(rnds);
+}
+
+
+var uuid = v4;
+uuid.v1 = v1;
+uuid.v4 = v4;
+uuid.parse = parse;
+uuid.unparse = unparse;
+
+module.exports = uuid;
+
+},{"./rng":2}],4:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -86,7 +306,7 @@ exports.default = exports.SUPPORTED_PROTOCOL_VERSION = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _desc, _value, _class;
+var _dec, _dec2, _dec3, _dec4, _dec5, _dec6, _dec7, _desc, _value, _class;
 
 var _utils = require("./utils");
 
@@ -158,8 +378,9 @@ const SUPPORTED_PROTOCOL_VERSION = exports.SUPPORTED_PROTOCOL_VERSION = "v1";
 
 
 
-let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec2 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec3 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec4 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec5 = (0, _utils.nobatch)("Can't use batch within a batch!"), _dec6 = (0, _utils.support)("1.4", "2.0"), (_class = class KintoClientBase {
+let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec2 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec3 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec4 = (0, _utils.nobatch)("This operation is not supported within a batch operation."), _dec5 = (0, _utils.nobatch)("Can't use batch within a batch!"), _dec6 = (0, _utils.capable)(["permissions_endpoint"]), _dec7 = (0, _utils.support)("1.4", "2.0"), (_class = class KintoClientBase {
   
+
 
 
 
@@ -188,6 +409,7 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     this.defaultReqOptions = {
       bucket: options.bucket || "default",
       headers: options.headers || {},
+      retry: options.retry || 0,
       safe: !!options.safe
     };
 
@@ -333,9 +555,8 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     if (this.serverInfo) {
       return Promise.resolve(this.serverInfo);
     }
-    return this.http.request(this.remote + (0, _endpoint2.default)("root"), {
-      headers: _extends({}, this.defaultReqOptions.headers, options.headers)
-    }).then(({ json }) => {
+    const reqOptions = this._getRequestOptions(options);
+    return this.http.request(this.remote + (0, _endpoint2.default)("root"), reqOptions).then(({ json }) => {
       this.serverInfo = json;
       return this.serverInfo;
     });
@@ -396,7 +617,8 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   _batchRequests(requests, options = {}) {
-    const headers = _extends({}, this.defaultReqOptions.headers, options.headers);
+    const reqOptions = this._getRequestOptions(options);
+    const { headers } = reqOptions;
     if (!requests.length) {
       return Promise.resolve([]);
     }
@@ -406,21 +628,21 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
         const chunks = (0, _utils.partition)(requests, maxRequests);
         return (0, _utils.pMap)(chunks, chunk => this._batchRequests(chunk, options));
       }
-      return this.execute({
+      return this.execute(_extends({}, reqOptions, {
         path: (0, _endpoint2.default)("batch"),
         method: "POST",
-        headers: headers,
         body: {
           defaults: { headers },
           requests: requests
         }
-      })
+      }))
       
       .then(({ responses }) => responses);
     });
   }
 
   
+
 
 
 
@@ -469,21 +691,104 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  execute(request, options = { raw: false }) {
+
+
+  execute(request, options = { raw: false, stringify: true }) {
+    const { raw, stringify } = options;
     
     if (this._isBatch) {
       this._requests.push(request);
       
       
       const msg = "This result is generated from within a batch " + "operation and should not be consumed.";
-      return Promise.resolve(options.raw ? { json: msg } : msg);
+      return Promise.resolve(raw ? { json: msg, headers: { get() {} } } : msg);
     }
     const promise = this.fetchServerSettings().then(_ => {
       return this.http.request(this.remote + request.path, _extends({}, request, {
-        body: JSON.stringify(request.body)
+        body: stringify ? JSON.stringify(request.body) : request.body
       }));
     });
-    return options.raw ? promise : promise.then(({ json }) => json);
+    return raw ? promise : promise.then(({ json }) => json);
+  }
+
+  paginatedList(path, params, options = {}) {
+    const { sort, filters, limit, pages, since } = _extends({
+      sort: "-last_modified"
+    }, params);
+    
+    if (since && typeof since !== "string") {
+      throw new Error(`Invalid value for since (${ since }), should be ETag value.`);
+    }
+
+    const querystring = (0, _utils.qsify)(_extends({}, filters, {
+      _sort: sort,
+      _limit: limit,
+      _since: since
+    }));
+    let results = [],
+        current = 0;
+
+    const next = function (nextPage) {
+      if (!nextPage) {
+        throw new Error("Pagination exhausted.");
+      }
+      return processNextPage(nextPage);
+    };
+
+    const processNextPage = nextPage => {
+      const { headers } = options;
+      return this.http.request(nextPage, { headers }).then(handleResponse);
+    };
+
+    const pageResults = (results, nextPage, etag, totalRecords) => {
+      
+      
+      return {
+        last_modified: etag ? etag.replace(/"/g, "") : etag,
+        data: results,
+        next: next.bind(null, nextPage),
+        hasNextPage: !!nextPage,
+        totalRecords
+      };
+    };
+
+    const handleResponse = ({ headers, json }) => {
+      const nextPage = headers.get("Next-Page");
+      const etag = headers.get("ETag");
+      const totalRecords = parseInt(headers.get("Total-Records"), 10);
+
+      if (!pages) {
+        return pageResults(json.data, nextPage, etag, totalRecords);
+      }
+      
+      results = results.concat(json.data);
+      current += 1;
+      if (current >= pages || !nextPage) {
+        
+        return pageResults(results, nextPage, etag, totalRecords);
+      }
+      
+      return processNextPage(nextPage);
+    };
+
+    return this.execute(_extends({
+      path: path + "?" + querystring
+    }, options), { raw: true }).then(handleResponse);
+  }
+
+  
+
+
+
+
+
+
+
+  listPermissions(options = {}) {
+    const reqOptions = this._getRequestOptions(options);
+    return this.execute(_extends({
+      path: (0, _endpoint2.default)("permissions")
+    }, reqOptions));
   }
 
   
@@ -494,10 +799,9 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   listBuckets(options = {}) {
-    return this.execute({
-      path: (0, _endpoint2.default)("bucket"),
-      headers: _extends({}, this.defaultReqOptions.headers, options.headers)
-    });
+    const path = (0, _endpoint2.default)("bucket");
+    const reqOptions = this._getRequestOptions(options);
+    return this.paginatedList(path, options, reqOptions);
   }
 
   
@@ -561,10 +865,10 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     const path = (0, _endpoint2.default)("bucket");
     return this.execute(requests.deleteRequest(path, reqOptions));
   }
-}, (_applyDecoratedDescriptor(_class.prototype, "fetchServerSettings", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerSettings"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchServerCapabilities", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerCapabilities"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchUser", [_dec3], Object.getOwnPropertyDescriptor(_class.prototype, "fetchUser"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchHTTPApiVersion", [_dec4], Object.getOwnPropertyDescriptor(_class.prototype, "fetchHTTPApiVersion"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "batch", [_dec5], Object.getOwnPropertyDescriptor(_class.prototype, "batch"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteBuckets", [_dec6], Object.getOwnPropertyDescriptor(_class.prototype, "deleteBuckets"), _class.prototype)), _class));
+}, (_applyDecoratedDescriptor(_class.prototype, "fetchServerSettings", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerSettings"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchServerCapabilities", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerCapabilities"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchUser", [_dec3], Object.getOwnPropertyDescriptor(_class.prototype, "fetchUser"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchHTTPApiVersion", [_dec4], Object.getOwnPropertyDescriptor(_class.prototype, "fetchHTTPApiVersion"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "batch", [_dec5], Object.getOwnPropertyDescriptor(_class.prototype, "batch"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "listPermissions", [_dec6], Object.getOwnPropertyDescriptor(_class.prototype, "listPermissions"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteBuckets", [_dec7], Object.getOwnPropertyDescriptor(_class.prototype, "deleteBuckets"), _class.prototype)), _class));
 exports.default = KintoClientBase;
 
-},{"./batch":3,"./bucket":4,"./endpoint":6,"./http":8,"./requests":9,"./utils":10}],3:[function(require,module,exports){
+},{"./batch":5,"./bucket":6,"./endpoint":8,"./http":10,"./requests":11,"./utils":12}],5:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -591,21 +895,29 @@ function aggregate(responses = [], requests = []) {
   };
   return responses.reduce((acc, response, index) => {
     const { status } = response;
+    const request = requests[index];
     if (status >= 200 && status < 400) {
       acc.published.push(response.body);
     } else if (status === 404) {
-      acc.skipped.push(response.body);
+      
+      const extracts = request.path.match(/(buckets|groups|collections|records)\/([^\/]+)$/);
+      const id = extracts.length === 3 ? extracts[2] : undefined;
+      acc.skipped.push({
+        id,
+        path: request.path,
+        error: response.body
+      });
     } else if (status === 412) {
       acc.conflicts.push({
         
         type: "outgoing",
-        local: requests[index].body,
+        local: request.body,
         remote: response.body.details && response.body.details.existing || null
       });
     } else {
       acc.errors.push({
-        path: response.path,
-        sent: requests[index],
+        path: request.path,
+        sent: request,
         error: response.body
       });
     }
@@ -613,7 +925,7 @@ function aggregate(responses = [], requests = []) {
   }, results);
 }
 
-},{}],4:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -622,6 +934,8 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _dec, _desc, _value, _class;
 
 var _utils = require("./utils");
 
@@ -641,11 +955,40 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+  var desc = {};
+  Object['ke' + 'ys'](descriptor).forEach(function (key) {
+    desc[key] = descriptor[key];
+  });
+  desc.enumerable = !!desc.enumerable;
+  desc.configurable = !!desc.configurable;
+
+  if ('value' in desc || desc.initializer) {
+    desc.writable = true;
+  }
+
+  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
+    return decorator(target, property, desc) || desc;
+  }, desc);
+
+  if (context && desc.initializer !== void 0) {
+    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+    desc.initializer = undefined;
+  }
+
+  if (desc.initializer === void 0) {
+    Object['define' + 'Property'](target, property, desc);
+    desc = null;
+  }
+
+  return desc;
+}
 
 
 
 
-let Bucket = class Bucket {
+
+let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
   
 
 
@@ -714,10 +1057,9 @@ let Bucket = class Bucket {
 
 
   getData(options = {}) {
-    return this.client.execute({
-      path: (0, _endpoint2.default)("bucket", this.name),
-      headers: _extends({}, this.options.headers, options.headers)
-    }).then(res => res.data);
+    const reqOptions = _extends({}, this._bucketOptions(options));
+    const request = _extends({}, reqOptions, { path: (0, _endpoint2.default)("bucket", this.name) });
+    return this.client.execute(request).then(res => res.data);
   }
 
   
@@ -758,11 +1100,24 @@ let Bucket = class Bucket {
 
 
 
+
+  listHistory(options = {}) {
+    const path = (0, _endpoint2.default)("history", this.name);
+    const reqOptions = this._bucketOptions(options);
+    return this.client.paginatedList(path, options, reqOptions);
+  }
+
+  
+
+
+
+
+
+
   listCollections(options = {}) {
-    return this.client.execute({
-      path: (0, _endpoint2.default)("collection", this.name),
-      headers: _extends({}, this.options.headers, options.headers)
-    });
+    const path = (0, _endpoint2.default)("collection", this.name);
+    const reqOptions = this._bucketOptions(options);
+    return this.client.paginatedList(path, options, reqOptions);
   }
 
   
@@ -815,10 +1170,9 @@ let Bucket = class Bucket {
 
 
   listGroups(options = {}) {
-    return this.client.execute({
-      path: (0, _endpoint2.default)("group", this.name),
-      headers: _extends({}, this.options.headers, options.headers)
-    });
+    const path = (0, _endpoint2.default)("group", this.name);
+    const reqOptions = this._bucketOptions(options);
+    return this.client.paginatedList(path, options, reqOptions);
   }
 
   
@@ -830,10 +1184,9 @@ let Bucket = class Bucket {
 
 
   getGroup(id, options = {}) {
-    return this.client.execute({
-      path: (0, _endpoint2.default)("group", this.name, id),
-      headers: _extends({}, this.options.headers, options.headers)
-    });
+    const reqOptions = _extends({}, this._bucketOptions(options));
+    const request = _extends({}, reqOptions, { path: (0, _endpoint2.default)("group", this.name, id) });
+    return this.client.execute(request);
   }
 
   
@@ -914,10 +1267,9 @@ let Bucket = class Bucket {
 
 
   getPermissions(options = {}) {
-    return this.client.execute({
-      path: (0, _endpoint2.default)("bucket", this.name),
-      headers: _extends({}, this.options.headers, options.headers)
-    }).then(res => res.permissions);
+    const reqOptions = this._bucketOptions(options);
+    const request = _extends({}, reqOptions, { path: (0, _endpoint2.default)("bucket", this.name) });
+    return this.client.execute(request).then(res => res.permissions);
   }
 
   
@@ -955,10 +1307,10 @@ let Bucket = class Bucket {
   batch(fn, options = {}) {
     return this.client.batch(fn, this._bucketOptions(options));
   }
-};
+}, (_applyDecoratedDescriptor(_class.prototype, "listHistory", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "listHistory"), _class.prototype)), _class));
 exports.default = Bucket;
 
-},{"./collection":5,"./endpoint":6,"./requests":9,"./utils":10}],5:[function(require,module,exports){
+},{"./collection":7,"./endpoint":8,"./requests":11,"./utils":12}],7:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -967,6 +1319,10 @@ Object.defineProperty(exports, "__esModule", {
 exports.default = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
+var _dec, _dec2, _desc, _value, _class;
+
+var _uuid = require("uuid");
 
 var _utils = require("./utils");
 
@@ -982,11 +1338,40 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } else { var newObj = {}; if (obj != null) { for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) newObj[key] = obj[key]; } } newObj.default = obj; return newObj; } }
 
+function _applyDecoratedDescriptor(target, property, decorators, descriptor, context) {
+  var desc = {};
+  Object['ke' + 'ys'](descriptor).forEach(function (key) {
+    desc[key] = descriptor[key];
+  });
+  desc.enumerable = !!desc.enumerable;
+  desc.configurable = !!desc.configurable;
+
+  if ('value' in desc || desc.initializer) {
+    desc.writable = true;
+  }
+
+  desc = decorators.slice().reverse().reduce(function (desc, decorator) {
+    return decorator(target, property, desc) || desc;
+  }, desc);
+
+  if (context && desc.initializer !== void 0) {
+    desc.value = desc.initializer ? desc.initializer.call(context) : void 0;
+    desc.initializer = undefined;
+  }
+
+  if (desc.initializer === void 0) {
+    Object['define' + 'Property'](target, property, desc);
+    desc = null;
+  }
+
+  return desc;
+}
 
 
 
 
-let Collection = class Collection {
+
+let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _utils.capable)(["attachments"]), (_class = class Collection {
   
 
 
@@ -1048,12 +1433,25 @@ let Collection = class Collection {
 
 
 
+  getTotalRecords(options = {}) {
+    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name);
+    const reqOptions = this._collOptions(options);
+    const request = _extends({}, reqOptions, { path, method: "HEAD" });
+    return this.client.execute(request, { raw: true }).then(({ headers }) => parseInt(headers.get("Total-Records"), 10));
+  }
+
+  
+
+
+
+
+
+
   getData(options = {}) {
-    const { headers } = this._collOptions(options);
-    return this.client.execute({
-      path: (0, _endpoint2.default)("collection", this.bucket.name, this.name),
-      headers
-    }).then(res => res.data);
+    const reqOptions = this._collOptions(options);
+    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
+    const request = _extends({}, reqOptions, { path });
+    return this.client.execute(request).then(res => res.data);
   }
 
   
@@ -1086,11 +1484,10 @@ let Collection = class Collection {
 
 
   getPermissions(options = {}) {
-    const { headers } = this._collOptions(options);
-    return this.client.execute({
-      path: (0, _endpoint2.default)("collection", this.bucket.name, this.name),
-      headers
-    }).then(res => res.permissions);
+    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
+    const reqOptions = this._collOptions(options);
+    const request = _extends({}, reqOptions, { path });
+    return this.client.execute(request).then(res => res.permissions);
   }
 
   
@@ -1123,6 +1520,7 @@ let Collection = class Collection {
 
 
 
+
   createRecord(record, options = {}) {
     const reqOptions = this._collOptions(options);
     const { permissions } = reqOptions;
@@ -1132,6 +1530,51 @@ let Collection = class Collection {
   }
 
   
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  addAttachment(dataURI, record = {}, options = {}) {
+    const reqOptions = this._collOptions(options);
+    const { permissions } = reqOptions;
+    const id = record.id || _uuid.v4.v4();
+    const path = (0, _endpoint2.default)("attachment", this.bucket.name, this.name, id);
+    const addAttachmentRequest = requests.addAttachmentRequest(path, dataURI, {
+      data: record,
+      permissions
+    }, reqOptions);
+    return this.client.execute(addAttachmentRequest, { stringify: false }).then(() => this.getRecord(id));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+  removeAttachment(recordId, options = {}) {
+    const reqOptions = this._collOptions(options);
+    const path = (0, _endpoint2.default)("attachment", this.bucket.name, this.name, recordId);
+    const request = requests.deleteRequest(path, reqOptions);
+    return this.client.execute(request);
+  }
+
+  
+
 
 
 
@@ -1186,9 +1629,10 @@ let Collection = class Collection {
 
 
   getRecord(id, options = {}) {
-    return this.client.execute(_extends({
-      path: (0, _endpoint2.default)("record", this.bucket.name, this.name, id)
-    }, this._collOptions(options)));
+    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, id);
+    const reqOptions = this._collOptions(options);
+    const request = _extends({}, reqOptions, { path });
+    return this.client.execute(request);
   }
 
   
@@ -1224,65 +1668,9 @@ let Collection = class Collection {
 
 
   listRecords(options = {}) {
-    const { http } = this.client;
-    const { sort, filters, limit, pages, since } = _extends({
-      sort: "-last_modified"
-    }, options);
-    
-    if (since && typeof since !== "string") {
-      throw new Error(`Invalid value for since (${ since }), should be ETag value.`);
-    }
-    const collHeaders = this.options.headers;
     const path = (0, _endpoint2.default)("record", this.bucket.name, this.name);
-    const querystring = (0, _utils.qsify)(_extends({}, filters, {
-      _sort: sort,
-      _limit: limit,
-      _since: since
-    }));
-    let results = [],
-        current = 0;
-
-    const next = function (nextPage) {
-      if (!nextPage) {
-        throw new Error("Pagination exhausted.");
-      }
-      return processNextPage(nextPage);
-    };
-
-    const processNextPage = nextPage => {
-      return http.request(nextPage, { headers: collHeaders }).then(handleResponse);
-    };
-
-    const pageResults = (results, nextPage, etag) => {
-      
-      
-      return {
-        last_modified: etag ? etag.replace(/"/g, "") : etag,
-        data: results,
-        next: next.bind(null, nextPage)
-      };
-    };
-
-    const handleResponse = ({ headers, json }) => {
-      const nextPage = headers.get("Next-Page");
-      const etag = headers.get("ETag");
-      if (!pages) {
-        return pageResults(json.data, nextPage, etag);
-      }
-      
-      results = results.concat(json.data);
-      current += 1;
-      if (current >= pages || !nextPage) {
-        
-        return pageResults(results, nextPage, etag);
-      }
-      
-      return processNextPage(nextPage);
-    };
-
-    return this.client.execute(_extends({
-      path: path + "?" + querystring
-    }, this._collOptions(options)), { raw: true }).then(handleResponse);
+    const reqOptions = this._collOptions(options);
+    return this.client.paginatedList(path, options, reqOptions);
   }
 
   
@@ -1302,10 +1690,10 @@ let Collection = class Collection {
       collection: this.name
     }));
   }
-};
+}, (_applyDecoratedDescriptor(_class.prototype, "addAttachment", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "addAttachment"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "removeAttachment", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "removeAttachment"), _class.prototype)), _class));
 exports.default = Collection;
 
-},{"./endpoint":6,"./requests":9,"./utils":10}],6:[function(require,module,exports){
+},{"./endpoint":8,"./requests":11,"./utils":12,"uuid":3}],8:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1319,10 +1707,13 @@ exports.default = endpoint;
 const ENDPOINTS = {
   root: () => "/",
   batch: () => "/batch",
+  permissions: () => "/permissions",
   bucket: bucket => "/buckets" + (bucket ? `/${ bucket }` : ""),
+  history: bucket => `${ ENDPOINTS.bucket(bucket) }/history`,
   collection: (bucket, coll) => `${ ENDPOINTS.bucket(bucket) }/collections` + (coll ? `/${ coll }` : ""),
   group: (bucket, group) => `${ ENDPOINTS.bucket(bucket) }/groups` + (group ? `/${ group }` : ""),
-  record: (bucket, coll, id) => `${ ENDPOINTS.collection(bucket, coll) }/records` + (id ? `/${ id }` : "")
+  record: (bucket, coll, id) => `${ ENDPOINTS.collection(bucket, coll) }/records` + (id ? `/${ id }` : ""),
+  attachment: (bucket, coll, id) => `${ ENDPOINTS.record(bucket, coll, id) }/attachment`
 };
 
 
@@ -1337,7 +1728,7 @@ function endpoint(name, ...args) {
   return ENDPOINTS[name](...args);
 }
 
-},{}],7:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1358,7 +1749,7 @@ exports.default = {
   111: "Missing Token / id",
   112: "Content-Length header was not provided",
   113: "Request body too large",
-  114: "Resource was modified meanwhile",
+  114: "Resource was created, updated or deleted meanwhile",
   115: "Method not allowed on this end point (hint: server may be readonly)",
   116: "Requested version not available on this server",
   117: "Client has sent too many requests",
@@ -1369,13 +1760,15 @@ exports.default = {
   999: "Internal Server Error"
 };
 
-},{}],8:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
 exports.default = undefined;
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 var _errors = require("./errors");
 
@@ -1455,16 +1848,24 @@ let HTTP = class HTTP {
 
 
 
-  request(url, options = { headers: {} }) {
+
+  request(url, options = { headers: {}, retry: 0 }) {
     let response, status, statusText, headers, hasTimedout;
     
-    options.headers = Object.assign({}, HTTP.DEFAULT_REQUEST_HEADERS, options.headers);
+    options.headers = _extends({}, HTTP.DEFAULT_REQUEST_HEADERS, options.headers);
+    
+    
+    if (options.body && typeof options.body.append === "function") {
+      delete options.headers["Content-Type"];
+    }
     options.mode = this.requestMode;
     return new Promise((resolve, reject) => {
+      
       const _timeoutId = setTimeout(() => {
         hasTimedout = true;
         reject(new Error("Request timeout."));
       }, this.timeout);
+
       fetch(url, options).then(res => {
         if (!hasTimedout) {
           clearTimeout(_timeoutId);
@@ -1483,39 +1884,50 @@ let HTTP = class HTTP {
       statusText = res.statusText;
       this._checkForDeprecationHeader(headers);
       this._checkForBackoffHeader(status, headers);
-      this._checkForRetryAfterHeader(status, headers);
-      return res.text();
-    })
-    
-    .then(text => {
-      if (text.length === 0) {
-        return null;
-      }
+
       
-      return JSON.parse(text);
-    }).catch(err => {
-      const error = new Error(`HTTP ${ status || 0 }; ${ err }`);
-      error.response = response;
-      error.stack = err.stack;
-      throw error;
-    }).then(json => {
-      if (json && status >= 400) {
-        let message = `HTTP ${ status } ${ json.error || "" }: `;
-        if (json.errno && json.errno in _errors2.default) {
-          const errnoMsg = _errors2.default[json.errno];
-          message += errnoMsg;
-          if (json.message && json.message !== errnoMsg) {
-            message += ` (${ json.message })`;
-          }
-        } else {
-          message += statusText || "";
-        }
-        const error = new Error(message.trim());
-        error.response = response;
-        error.data = json;
-        throw error;
+      const retryAfter = this._checkForRetryAfterHeader(status, headers);
+      
+      if (retryAfter && options.retry > 0) {
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            resolve(this.request(url, _extends({}, options, { retry: options.retry - 1 })));
+          }, retryAfter);
+        });
       }
-      return { status, json, headers };
+
+      return Promise.resolve(res.text())
+      
+      .then(text => {
+        if (text.length === 0) {
+          return null;
+        }
+        
+        return JSON.parse(text);
+      }).catch(err => {
+        const error = new Error(`HTTP ${ status || 0 }; ${ err }`);
+        error.response = response;
+        error.stack = err.stack;
+        throw error;
+      }).then(json => {
+        if (json && status >= 400) {
+          let message = `HTTP ${ status } ${ json.error || "" }: `;
+          if (json.errno && json.errno in _errors2.default) {
+            const errnoMsg = _errors2.default[json.errno];
+            message += errnoMsg;
+            if (json.message && json.message !== errnoMsg) {
+              message += ` (${ json.message })`;
+            }
+          } else {
+            message += statusText || "";
+          }
+          const error = new Error(message.trim());
+          error.response = response;
+          error.data = json;
+          throw error;
+        }
+        return { status, json, headers };
+      });
     });
   }
 
@@ -1551,13 +1963,15 @@ let HTTP = class HTTP {
     if (!retryAfter) {
       return;
     }
-    retryAfter = new Date().getTime() + parseInt(retryAfter, 10) * 1000;
+    const delay = parseInt(retryAfter, 10) * 1000;
+    retryAfter = new Date().getTime() + delay;
     this.events.emit("retry-after", retryAfter);
+    return delay;
   }
 };
 exports.default = HTTP;
 
-},{"./errors":7}],9:[function(require,module,exports){
+},{"./errors":9}],11:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -1569,6 +1983,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 exports.createRequest = createRequest;
 exports.updateRequest = updateRequest;
 exports.deleteRequest = deleteRequest;
+exports.addAttachmentRequest = addAttachmentRequest;
 
 var _utils = require("./utils");
 
@@ -1651,12 +2066,40 @@ function deleteRequest(path, options = {}) {
   };
 }
 
-},{"./utils":10}],10:[function(require,module,exports){
+
+
+
+function addAttachmentRequest(path, dataURI, { data, permissions } = {}, options = {}) {
+  const { headers, safe, gzipped } = _extends({}, requestDefaults, options);
+  const { last_modified } = _extends({}, data, options);
+
+  const body = { data, permissions };
+  const formData = (0, _utils.createFormData)(dataURI, body, options);
+  let customPath;
+
+  if (gzipped != null) {
+    customPath = path + "?gzipped=" + (gzipped ? "true" : "false");
+  } else {
+    customPath = path;
+  }
+
+  return {
+    method: "POST",
+    path: customPath,
+    headers: _extends({}, headers, safeHeader(safe, last_modified)),
+    body: formData
+  };
+}
+
+},{"./utils":12}],12:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
   value: true
 });
+
+var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
+
 exports.partition = partition;
 exports.pMap = pMap;
 exports.omit = omit;
@@ -1667,6 +2110,9 @@ exports.support = support;
 exports.capable = capable;
 exports.nobatch = nobatch;
 exports.isObject = isObject;
+exports.parseDataURL = parseDataURL;
+exports.extractFileInfo = extractFileInfo;
+exports.createFormData = createFormData;
 
 
 
@@ -1750,18 +2196,17 @@ function toDataBody(resource) {
 
 
 function qsify(obj) {
-  const sep = "&";
   const encode = v => encodeURIComponent(typeof v === "boolean" ? String(v) : v);
   const stripUndefined = o => JSON.parse(JSON.stringify(o));
   const stripped = stripUndefined(obj);
   return Object.keys(stripped).map(k => {
     const ks = encode(k) + "=";
     if (Array.isArray(stripped[k])) {
-      return stripped[k].map(v => ks + encode(v)).join(sep);
+      return ks + stripped[k].map(v => encode(v)).join(",");
     } else {
       return ks + encode(stripped[k]);
     }
-  }).join(sep);
+  }).join("&");
 }
 
 
@@ -1800,7 +2245,7 @@ function support(min, max) {
         const wrappedMethod = (...args) => {
           
           const client = "client" in this ? this.client : this;
-          return client.fetchHTTPApiVersion().then(version => checkVersion(version, min, max)).then(Promise.resolve(fn.apply(this, args)));
+          return client.fetchHTTPApiVersion().then(version => checkVersion(version, min, max)).then(() => fn.apply(this, args));
         };
         Object.defineProperty(this, key, {
           value: wrappedMethod,
@@ -1830,11 +2275,11 @@ function capable(capabilities) {
           
           const client = "client" in this ? this.client : this;
           return client.fetchServerCapabilities().then(available => {
-            const missing = capabilities.filter(c => available.indexOf(c) < 0);
+            const missing = capabilities.filter(c => !available.hasOwnProperty(c));
             if (missing.length > 0) {
               throw new Error(`Required capabilities ${ missing.join(", ") } ` + "not present on server");
             }
-          }).then(Promise.resolve(fn.apply(this, args)));
+          }).then(() => fn.apply(this, args));
         };
         Object.defineProperty(this, key, {
           value: wrappedMethod,
@@ -1885,6 +2330,65 @@ function nobatch(message) {
 
 function isObject(thing) {
   return typeof thing === "object" && thing !== null && !Array.isArray(thing);
+}
+
+
+
+
+
+
+function parseDataURL(dataURL) {
+  const regex = /^data:(.*);base64,(.*)/;
+  const match = dataURL.match(regex);
+  if (!match) {
+    throw new Error(`Invalid data-url: ${ String(dataURL).substr(0, 32) }...`);
+  }
+  const props = match[1];
+  const base64 = match[2];
+  const [type, ...rawParams] = props.split(";");
+  const params = rawParams.reduce((acc, param) => {
+    const [key, value] = param.split("=");
+    return _extends({}, acc, { [key]: value });
+  }, {});
+  return _extends({}, params, { type, base64 });
+}
+
+
+
+
+
+
+function extractFileInfo(dataURL) {
+  const { name, type, base64 } = parseDataURL(dataURL);
+  const binary = atob(base64);
+  const array = [];
+  for (let i = 0; i < binary.length; i++) {
+    array.push(binary.charCodeAt(i));
+  }
+  const blob = new Blob([new Uint8Array(array)], { type });
+  return { blob, name };
+}
+
+
+
+
+
+
+
+
+
+
+function createFormData(dataURL, body, options = {}) {
+  const { filename = "untitled" } = options;
+  const { blob, name } = extractFileInfo(dataURL);
+  const formData = new FormData();
+  formData.append("attachment", blob, name || filename);
+  for (const property in body) {
+    if (typeof body[property] !== "undefined") {
+      formData.append(property, JSON.stringify(body[property]));
+    }
+  }
+  return formData;
 }
 
 },{}]},{},[1])(1)

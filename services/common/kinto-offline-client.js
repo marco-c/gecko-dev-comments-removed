@@ -118,6 +118,7 @@ function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { de
 
 const DEFAULT_BUCKET_NAME = "default";
 const DEFAULT_REMOTE = "http://localhost:8888/v1";
+const DEFAULT_RETRY = 1;
 
 
 
@@ -164,17 +165,19 @@ class KintoBase {
 
 
 
+
   constructor(options = {}) {
     const defaults = {
       bucket: DEFAULT_BUCKET_NAME,
-      remote: DEFAULT_REMOTE
+      remote: DEFAULT_REMOTE,
+      retry: DEFAULT_RETRY
     };
     this._options = _extends({}, defaults, options);
     if (!this._options.adapter) {
       throw new Error("No adapter provided");
     }
 
-    const { remote, events, headers, requestMode, timeout, ApiClass } = this._options;
+    const { remote, events, headers, retry, requestMode, timeout, ApiClass } = this._options;
 
     
 
@@ -182,7 +185,7 @@ class KintoBase {
 
 
 
-    this.api = new ApiClass(remote, { events, headers, requestMode, timeout });
+    this.api = new ApiClass(remote, { events, headers, retry, requestMode, timeout });
     
 
 
@@ -199,20 +202,33 @@ class KintoBase {
 
 
 
+
+
   collection(collName, options = {}) {
     if (!collName) {
       throw new Error("missing collection name");
     }
+    const {
+      bucket,
+      events,
+      adapter,
+      adapterOptions,
+      dbPrefix
+    } = _extends({}, this._options, options);
+    const {
+      idSchema,
+      remoteTransformers,
+      hooks
+    } = options;
 
-    const bucket = this._options.bucket;
     return new _collection2.default(bucket, collName, this.api, {
-      events: this._options.events,
-      adapter: this._options.adapter,
-      adapterOptions: this._options.adapterOptions,
-      dbPrefix: this._options.dbPrefix,
-      idSchema: options.idSchema,
-      remoteTransformers: options.remoteTransformers,
-      hooks: options.hooks
+      events,
+      adapter,
+      adapterOptions,
+      dbPrefix,
+      idSchema,
+      remoteTransformers,
+      hooks
     });
   }
 }
@@ -417,7 +433,7 @@ class IDB extends _base2.default {
       this._db.close(); 
       this._db = null;
     }
-    return super.close();
+    return Promise.resolve();
   }
 
   
@@ -746,26 +762,6 @@ Object.defineProperty(exports, "__esModule", {
   value: true
 });
 class BaseAdapter {
-  
-
-
-
-
-
-  open() {
-    return Promise.resolve();
-  }
-
-  
-
-
-
-
-
-  close() {
-    return Promise.resolve();
-  }
-
   
 
 
@@ -1737,6 +1733,7 @@ class Collection {
         
         since: options.lastModified ? `${ options.lastModified }` : undefined,
         headers: options.headers,
+        retry: options.retry,
         filters
       });
       
@@ -1828,7 +1825,12 @@ class Collection {
             batch.updateRecord(published);
           }
         });
-      }, { headers: options.headers, safe, aggregate: true });
+      }, {
+        headers: options.headers,
+        retry: options.retry,
+        safe,
+        aggregate: true
+      });
 
       
       syncResultObject.add("errors", synced.errors.map(function (e) {
@@ -1837,7 +1839,9 @@ class Collection {
 
       
       const conflicts = [];
-      for (let { type, local, remote } of synced.conflicts) {
+      for (let _ref of synced.conflicts) {
+        let { type, local, remote } = _ref;
+
         
         
         const safeLocal = local && local.data || { id: remote.id };
@@ -1941,9 +1945,11 @@ class Collection {
 
 
 
+
   sync(options = {
     strategy: Collection.strategy.MANUAL,
     headers: {},
+    retry: 1,
     ignoreBackoff: false,
     bucket: null,
     collection: null,
@@ -1952,6 +1958,11 @@ class Collection {
     var _this9 = this;
 
     return _asyncToGenerator(function* () {
+      options = _extends({}, options, {
+        bucket: options.bucket || _this9.bucket,
+        collection: options.collection || _this9.name
+      });
+
       const previousRemote = _this9.api.remote;
       if (options.remote) {
         
@@ -1962,7 +1973,7 @@ class Collection {
         return Promise.reject(new Error(`Server is asking clients to back off; retry in ${ seconds }s or use the ignoreBackoff option.`));
       }
 
-      const client = _this9.api.bucket(options.bucket || _this9.bucket).collection(options.collection || _this9.name);
+      const client = _this9.api.bucket(options.bucket).collection(options.collection);
 
       const result = new SyncResultObject();
       try {
@@ -1997,10 +2008,14 @@ class Collection {
           
           _this9._lastModified = yield _this9.db.saveLastModified(result.lastModified);
         }
+      } catch (e) {
+        _this9.events.emit("sync:error", _extends({}, options, { error: e }));
+        throw e;
       } finally {
         
         _this9.api.remote = previousRemote;
       }
+      _this9.events.emit("sync:success", _extends({}, options, { result }));
       return result;
     })();
   }
@@ -2087,7 +2102,9 @@ class CollectionTransaction {
 
 
   emitEvents() {
-    for (let { action, payload } of this._events) {
+    for (let _ref2 of this._events) {
+      let { action, payload } = _ref2;
+
       this.collection.events.emit(action, payload);
     }
     if (this._events.length > 0) {
