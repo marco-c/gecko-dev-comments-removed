@@ -65,6 +65,7 @@ protected:
   nsresult KeyDown(nsIDOMEvent* aMouseEvent);
   nsresult KeyPress(nsIDOMEvent* aMouseEvent);
   nsresult Blur(nsIDOMEvent* aEvent);
+  nsresult OnWindowDeactivated(nsIDOMEvent* aEvent);
   nsresult MouseDown(nsIDOMEvent* aMouseEvent);
   nsresult Fullscreen(nsIDOMEvent* aEvent);
 
@@ -85,6 +86,8 @@ protected:
   
   
   mozilla::dom::EventTarget* mEventTarget;
+  
+  mozilla::dom::EventTarget* mTopWindowEventTarget;
   
   bool mAccessKeyDown;
   

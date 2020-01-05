@@ -40,6 +40,7 @@ nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
                                      nsIContent* aMenuBarContent)
   : mMenuBarFrame(aMenuBarFrame)
   , mEventTarget(aMenuBarContent ? aMenuBarContent->GetComposedDoc() : nullptr)
+  , mTopWindowEventTarget(nullptr)
   , mAccessKeyDown(false)
   , mAccessKeyDownCanceled(false)
 {
@@ -66,6 +67,14 @@ nsMenuBarListener::nsMenuBarListener(nsMenuBarFrame* aMenuBarFrame,
 
   mEventTarget->AddEventListener(
                   NS_LITERAL_STRING("MozDOMFullscreen:Entered"), this, false);
+
+  
+  RefPtr<EventTarget> topWindowEventTarget =
+    nsContentUtils::GetWindowRoot(aMenuBarContent->GetComposedDoc());
+  mTopWindowEventTarget = topWindowEventTarget.get();
+
+  mTopWindowEventTarget->AddSystemEventListener(NS_LITERAL_STRING("deactivate"),
+                                                this, true);
 }
 
 
@@ -95,8 +104,12 @@ nsMenuBarListener::OnDestroyMenuBarFrame()
   mEventTarget->RemoveEventListener(
                   NS_LITERAL_STRING("MozDOMFullscreen:Entered"), this, false);
 
+  mTopWindowEventTarget->RemoveSystemEventListener(
+                           NS_LITERAL_STRING("deactivate"), this, true);
+
   mMenuBarFrame = nullptr;
   mEventTarget = nullptr;
+  mTopWindowEventTarget = nullptr;
 }
 
 void
@@ -415,14 +428,24 @@ nsMenuBarListener::Blur(nsIDOMEvent* aEvent)
 {
   if (!mMenuBarFrame->IsMenuOpen() && mMenuBarFrame->IsActive()) {
     ToggleMenuActiveState();
+    mAccessKeyDown = false;
+    mAccessKeyDownCanceled = false;
   }
+  return NS_OK; 
+}
+
+
+
+nsresult
+nsMenuBarListener::OnWindowDeactivated(nsIDOMEvent* aEvent)
+{
   
   
   mAccessKeyDown = false;
   mAccessKeyDownCanceled = false;
   return NS_OK; 
 }
-  
+
 
 nsresult 
 nsMenuBarListener::MouseDown(nsIDOMEvent* aMouseEvent)
@@ -487,6 +510,9 @@ nsMenuBarListener::HandleEvent(nsIDOMEvent* aEvent)
   }
   if (eventType.EqualsLiteral("blur")) {
     return Blur(aEvent);
+  }
+  if (eventType.EqualsLiteral("deactivate")) {
+    return OnWindowDeactivated(aEvent);
   }
   if (eventType.EqualsLiteral("mousedown")) {
     return MouseDown(aEvent);
