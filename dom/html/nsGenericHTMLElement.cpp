@@ -1959,13 +1959,6 @@ nsGenericHTMLFormElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       }
 
       mForm->RemoveElement(this, false);
-
-      
-      
-      
-      
-      
-      UpdateState(aNotify);
     }
 
     if (aName == nsGkAtoms::form) {
