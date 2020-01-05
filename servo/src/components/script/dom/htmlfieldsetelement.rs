@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::utils::{DOMString, ErrorResult, CacheableWrapper};
+use dom::bindings::utils::{DOMString, ErrorResult, Reflectable};
 use dom::htmlcollection::HTMLCollection;
 use dom::htmlelement::HTMLElement;
 use dom::node::{AbstractNode, ScriptView};
@@ -43,8 +43,7 @@ impl HTMLFieldSetElement {
         let doc = self.htmlelement.element.node.owner_doc.unwrap();
         let win = doc.with_base(|doc| doc.window.unwrap());
         let cx = win.page.js_info.get_ref().js_compartment.cx.ptr;
-        let cache = win.get_wrappercache();
-        let scope = cache.get_wrapper();
+        let scope = win.reflector().get_jsobject();
         (scope, cx)
     }
 
