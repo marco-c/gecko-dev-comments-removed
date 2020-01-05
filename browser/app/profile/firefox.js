@@ -64,9 +64,6 @@ pref("extensions.hotfix.certs.2.sha1Fingerprint", "39:E7:2B:7A:5B:CF:37:78:F9:5D
 pref("extensions.systemAddon.update.url", "https://aus5.mozilla.org/update/3/SystemAddons/%VERSION%/%BUILD_ID%/%BUILD_TARGET%/%LOCALE%/%CHANNEL%/%OS_VERSION%/%DISTRIBUTION%/%DISTRIBUTION_VERSION%/update.xml");
 
 
-pref("extensions.screenshots.system-disabled", true);
-
-
 
 pref("extensions.autoDisableScopes", 15);
 
@@ -1027,7 +1024,7 @@ pref("security.sandbox.windows.log.stackTraceDepth", 0);
 
 
 
-pref("security.sandbox.gpu.level", 1);
+pref("security.sandbox.gpu.level", 0);
 #endif
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)
