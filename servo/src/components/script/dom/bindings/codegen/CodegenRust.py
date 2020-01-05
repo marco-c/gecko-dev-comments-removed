@@ -2170,7 +2170,12 @@ class CGImports(CGWrapper):
         
 
         def _useString(imports):
-            return '#[allow(non_uppercase_statics,unused_imports,unused_variable,unused_unsafe,unused_mut,dead_assignment)];\n' + ''.join(['use %s;\n' % i for i in imports]) + '\n'
+            
+            
+            return '\n'.join([
+                '#[allow(unreachable_code,non_uppercase_statics,unused_imports,unused_variable,unused_unsafe,unused_mut,dead_assignment)];',
+                ''.join('use %s;\n' % i for i in imports),
+                ''])
         CGWrapper.__init__(self, child,
                            declarePre=_useString(sorted(declareImports)))
 
