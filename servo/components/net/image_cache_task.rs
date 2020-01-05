@@ -129,7 +129,6 @@ impl ImageCache {
     
     fn init(&mut self) {
         let mut placeholder_url = resources_dir_path();
-        
         placeholder_url.push("rippy.jpg");
         let image = load_image_data(Url::from_file_path(&*placeholder_url).unwrap(), self.resource_task.clone(), &self.placeholder_data);
 
