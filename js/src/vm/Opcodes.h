@@ -2001,9 +2001,8 @@
 
 
 
-
  \
-    macro(JSOP_GETBOUNDNAME,  195,"getboundname",NULL,    5,  1,  1, JOF_ATOM|JOF_NAME|JOF_TYPESET) \
+    macro(JSOP_GETXPROP,      195,"getxprop",    NULL,    5,  1,  1, JOF_ATOM|JOF_PROP|JOF_TYPESET) \
     \
     
 
