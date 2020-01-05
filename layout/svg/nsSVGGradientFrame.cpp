@@ -223,7 +223,7 @@ static void GetStopInformation(nsIFrame* aStopFrame,
   *aStopOpacity = aStopFrame->StyleSVGReset()->mStopOpacity;
 }
 
-already_AddRefed<gfxPattern>
+mozilla::Pair<DrawResult, RefPtr<gfxPattern>>
 nsSVGGradientFrame::GetPaintServerPattern(nsIFrame* aSource,
                                           const DrawTarget* aDrawTarget,
                                           const gfxMatrix& aContextMatrix,
@@ -251,7 +251,7 @@ nsSVGGradientFrame::GetPaintServerPattern(nsIFrame* aSource,
   
   if (nStops == 0) {
     RefPtr<gfxPattern> pattern = new gfxPattern(Color());
-    return pattern.forget();
+    return MakePair(DrawResult::SUCCESS, Move(pattern));
   }
 
   if (nStops == 1 || GradientVectorLengthIsZero()) {
@@ -263,7 +263,7 @@ nsSVGGradientFrame::GetPaintServerPattern(nsIFrame* aSource,
     Color stopColor2 = Color::FromABGR(stopColor);
     stopColor2.a *= stopOpacity * aGraphicOpacity;
     RefPtr<gfxPattern> pattern = new gfxPattern(stopColor2);
-    return pattern.forget();
+    return MakePair(DrawResult::SUCCESS, Move(pattern));
   }
 
   
@@ -272,7 +272,7 @@ nsSVGGradientFrame::GetPaintServerPattern(nsIFrame* aSource,
   gfxMatrix patternMatrix = GetGradientTransform(aSource, aOverrideBounds);
 
   if (patternMatrix.IsSingular()) {
-    return nullptr;
+    return MakePair(DrawResult::BAD_ARGS, RefPtr<gfxPattern>());
   }
 
   
@@ -284,12 +284,13 @@ nsSVGGradientFrame::GetPaintServerPattern(nsIFrame* aSource,
   }
 
   if (!patternMatrix.Invert()) {
-    return nullptr;
+    return MakePair(DrawResult::BAD_ARGS, RefPtr<gfxPattern>());
   }
 
   RefPtr<gfxPattern> gradient = CreateGradient();
-  if (!gradient)
-    return nullptr;
+  if (!gradient) {
+    return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<gfxPattern>());
+  }
 
   uint16_t aSpread = GetSpreadMethod();
   if (aSpread == SVG_SPREADMETHOD_PAD)
@@ -320,7 +321,7 @@ nsSVGGradientFrame::GetPaintServerPattern(nsIFrame* aSource,
     gradient->AddColorStop(offset, stopColor2);
   }
 
-  return gradient.forget();
+  return MakePair(DrawResult::SUCCESS, Move(gradient));
 }
 
 
