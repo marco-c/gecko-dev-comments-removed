@@ -76,6 +76,9 @@ public:
 #ifdef DEBUG_FRAME_DUMP
   virtual nsresult GetFrameName(nsAString& aResult) const override;
 #endif
+
+  nscoord GetLogicalBaseline(mozilla::WritingMode aWM) const override;
+
   
   bool IsHorizontal();
 
@@ -83,6 +86,7 @@ protected:
   
   explicit nsFlexContainerFrame(nsStyleContext* aContext)
     : nsContainerFrame(aContext)
+    , mBaselineFromLastReflow(NS_INTRINSIC_WIDTH_UNKNOWN)
   {}
   virtual ~nsFlexContainerFrame();
 
@@ -231,6 +235,8 @@ protected:
 
   bool mChildrenHaveBeenReordered; 
                                    
+
+  nscoord mBaselineFromLastReflow;
 };
 
 #endif 

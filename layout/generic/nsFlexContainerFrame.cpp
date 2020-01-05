@@ -2132,6 +2132,15 @@ nsFlexContainerFrame::GetFrameName(nsAString& aResult) const
 }
 #endif
 
+nscoord
+nsFlexContainerFrame::GetLogicalBaseline(mozilla::WritingMode aWM) const
+{
+  NS_ASSERTION(mBaselineFromLastReflow != NS_INTRINSIC_WIDTH_UNKNOWN,
+               "baseline has not been set");
+
+  return mBaselineFromLastReflow;
+}
+
 
 
 
@@ -4263,6 +4272,9 @@ nsFlexContainerFrame::DoFlexLayout(nsPresContext*           aPresContext,
   
   
   aDesiredSize.SetBlockStartAscent(flexContainerAscent);
+
+  
+  mBaselineFromLastReflow = flexContainerAscent;
 
   
   
