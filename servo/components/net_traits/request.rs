@@ -10,7 +10,7 @@ use std::mem::swap;
 use url::{Origin as UrlOrigin, Url};
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum Initiator {
     None,
     Download,
@@ -20,14 +20,14 @@ pub enum Initiator {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum Type {
     None, Audio, Font, Image,
     Script, Style, Track, Video
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
 pub enum Destination {
     None, Document, Embed, Font, Image, Manifest,
     Media, Object, Report, Script, ServiceWorker,
@@ -35,14 +35,14 @@ pub enum Destination {
 }
 
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Debug, HeapSizeOf)]
 pub enum Origin {
     Client,
     Origin(UrlOrigin)
 }
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, HeapSizeOf)]
 pub enum Referer {
     NoReferer,
     
@@ -51,7 +51,7 @@ pub enum Referer {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
 pub enum RequestMode {
     Navigate,
     SameOrigin,
@@ -60,7 +60,7 @@ pub enum RequestMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq, Serialize, Deserialize)]
+#[derive(Copy, Clone, PartialEq, Serialize, Deserialize, HeapSizeOf)]
 pub enum CredentialsMode {
     Omit,
     CredentialsSameOrigin,
@@ -68,7 +68,7 @@ pub enum CredentialsMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum CacheMode {
     Default,
     NoStore,
@@ -79,7 +79,7 @@ pub enum CacheMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum RedirectMode {
     Follow,
     Error,
@@ -87,7 +87,7 @@ pub enum RedirectMode {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum ResponseTainting {
     Basic,
     CORSTainting,
@@ -95,7 +95,7 @@ pub enum ResponseTainting {
 }
 
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, HeapSizeOf)]
 pub enum Window {
     NoWindow,
     Client,
@@ -138,11 +138,13 @@ pub struct RequestInit {
 }
 
 
-#[derive(Clone)]
+#[derive(Clone, HeapSizeOf)]
 pub struct Request {
+    #[ignore_heap_size_of = "Defined in hyper"]
     pub method: RefCell<Method>,
     pub local_urls_only: bool,
     pub sandboxed_storage_area_urls: bool,
+    #[ignore_heap_size_of = "Defined in hyper"]
     pub headers: RefCell<Headers>,
     pub unsafe_request: bool,
     pub body: RefCell<Option<Vec<u8>>>,
