@@ -5,10 +5,9 @@
 "use strict";
 
 const Services = require("Services");
-const FileSaver = require("devtools/client/shared/file-saver");
-const JSZip = require("devtools/client/shared/vendor/jszip");
 const clipboardHelper = require("devtools/shared/platform/clipboard");
-const { HarBuilder } = require("./har-builder");
+const { HarUtils } = require("./har-utils.js");
+const { HarBuilder } = require("./har-builder.js");
 
 var uid = 1;
 
@@ -62,48 +61,31 @@ const HarExporter = {
 
 
 
-  async save(options) {
+  save: function (options) {
     
-    let defaultFileName = Services.prefs.getCharPref(
+    options.defaultFileName = Services.prefs.getCharPref(
       "devtools.netmonitor.har.defaultFileName");
-    let compress = Services.prefs.getBoolPref(
+    options.compress = Services.prefs.getBoolPref(
       "devtools.netmonitor.har.compress");
 
-    trace.log("HarExporter.save; " + defaultFileName, options);
+    
+    
+    return HarUtils.getTargetFile(options.defaultFileName, options.jsonp,
+      options.compress).then(file => {
+        if (!file) {
+          return null;
+        }
 
-    let data = await this.fetchHarData(options);
-    let fileName = this.getHarFileName(defaultFileName, options.jsonp, compress);
+        trace.log("HarExporter.save; " + options.defaultFileName, options);
 
-    if (compress) {
-      data = await JSZip().file(fileName, data).generateAsync({
-        compression: "DEFLATE",
-        platform: Services.appinfo.OS === "WINNT" ? "DOS" : "UNIX",
-        type: "blob",
+        return this.fetchHarData(options).then(jsonString => {
+          if (!HarUtils.saveToFile(file, jsonString, options.compress)) {
+            let msg = "Failed to save HAR file at: " + options.defaultFileName;
+            console.error(msg);
+          }
+          return jsonString;
+        });
       });
-    }
-
-    fileName = `${fileName}${compress ? ".zip" : ""}`;
-    let blob = compress ? data : new Blob([data], { type: "application/json" });
-
-    FileSaver.saveAs(blob, fileName, document);
-  },
-
-  formatDate(date) {
-    let year = String(date.getFullYear() % 100).padStart(2, "0");
-    let month = String(date.getMonth() + 1).padStart(2, "0");
-    let day = String(date.getDate()).padStart(2, "0");
-    let hour = String(date.getHours()).padStart(2, "0");
-    let minutes = String(date.getMinutes()).padStart(2, "0");
-    let seconds = String(date.getSeconds()).padStart(2, "0");
-
-    return `${year}-${month}-${day} ${hour}-${minutes}-${seconds}`;
-  },
-
-  getHarFileName(defaultFileName, jsonp, compress) {
-    let name = defaultFileName.replace(/%date/g, this.formatDate(new Date()));
-    name = name.replace(/\:/gm, "-", "");
-    name = name.replace(/\//gm, "_", "");
-    return `${name}.${jsonp ? "harp" : "har"}`;
   },
 
   
