@@ -81,6 +81,12 @@ public:
   bool MayLoadInternal(nsIURI* aURI) override;
 
   nsCOMPtr<nsIURI> mURI;
+
+private:
+  
+  
+  
+  nsresult Init(const mozilla::OriginAttributes& aOriginAttributes, bool aIsFirstParty);
 };
 
 #endif 
