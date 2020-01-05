@@ -781,8 +781,27 @@ nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
                                                      SurfaceFormat::A8);
   }
 
+  if (maskUsage.shouldApplyBasicShape) {
+    matSR.SetContext(&ctx);
+
+    SetupContextMatrix(firstFrame, aParams, offsetToBoundingBox,
+                       offsetToUserSpace);
+
+    nsCSSClipPathInstance::ApplyBasicShapeClip(ctx, frame);
+    if (!maskUsage.shouldGenerateMaskLayer) {
+      
+      
+      ctx.SetColor(Color(0.0, 0.0, 0.0, 1.0));
+      ctx.Fill();
+      ctx.PopClip();
+
+      return result;
+    }
+  }
+
   
   if (maskUsage.shouldGenerateMaskLayer) {
+    matSR.Restore();
     matSR.SetContext(&ctx);
 
     SetupContextMatrix(frame, aParams, offsetToBoundingBox,
@@ -794,6 +813,10 @@ nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
                               firstFrame->StyleContext(), maskFrames,
                               ctx.CurrentMatrix(), offsetToUserSpace);
     if (result != DrawResult::SUCCESS) {
+      if (maskUsage.shouldApplyBasicShape) {
+        ctx.PopClip();
+      }
+
       return result;
     }
   }
