@@ -37,7 +37,6 @@ enum FrameType
     
     
     JitFrame_BaselineStub,
-    JitFrame_IonStub,
 
     
     
@@ -147,9 +146,6 @@ class JitFrameIterator
     }
     bool isIonJS() const {
         return type_ == JitFrame_IonJS;
-    }
-    bool isIonStub() const {
-        return type_ == JitFrame_IonStub;
     }
     bool isIonICCall() const {
         return type_ == JitFrame_IonICCall;
