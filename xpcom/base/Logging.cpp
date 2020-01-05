@@ -361,14 +361,20 @@ public:
 
     char* buffToWrite = buff;
 
-    
-    
     va_list argsCopy;
     va_copy(argsCopy, aArgs);
-    size_t charsWritten = VsprintfLiteral(buff, aFmt, argsCopy);
+    int charsWritten = VsprintfLiteral(buff, aFmt, argsCopy);
     va_end(argsCopy);
 
-    if (charsWritten == kBuffSize - 1) {
+    if (charsWritten < 0) {
+      
+      
+      
+      MOZ_ASSERT(false, "Probably incorrect format string in LOG?");
+      strncpy(buff, aFmt, kBuffSize - 1);
+      buff[kBuffSize - 1] = '\0';
+      charsWritten = strlen(buff);
+    } else if (static_cast<size_t>(charsWritten) >= kBuffSize - 1) {
       
       buffToWrite = mozilla::Vsmprintf(aFmt, aArgs);
       charsWritten = strlen(buffToWrite);
