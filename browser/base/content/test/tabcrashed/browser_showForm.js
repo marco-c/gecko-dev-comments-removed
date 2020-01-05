@@ -19,7 +19,9 @@ add_task(function* test_show_form() {
     
     
     let pref = TabCrashHandler.prefs.root + "sendReport";
-    yield pushPrefs([pref, true]);
+    yield SpecialPowers.pushPrefEnv({
+      set: [[pref, true]]
+    });
 
     
     yield BrowserTestUtils.crashBrowser(browser);
