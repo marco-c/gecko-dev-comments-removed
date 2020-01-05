@@ -513,19 +513,22 @@ JS_FRIEND_API(bool)
 js::NukeCrossCompartmentWrappers(JSContext* cx,
                                  const CompartmentFilter& sourceFilter,
                                  const CompartmentFilter& targetFilter,
-                                 js::NukeReferencesToWindow nukeReferencesToWindow)
+                                 js::NukeReferencesToWindow nukeReferencesToWindow,
+                                 js::NukeReferencesFromTarget nukeReferencesFromTarget)
 {
     CHECK_REQUEST(cx);
     JSRuntime* rt = cx->runtime();
 
     EvictAllNurseries(rt);
 
-    
-    
-
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
         if (!sourceFilter.match(c))
             continue;
+
+        
+        
+        bool nukeAll = (nukeReferencesFromTarget == NukeAllReferences &&
+                        targetFilter.match(c));
 
         
         for (JSCompartment::WrapperEnum e(c); !e.empty(); e.popFront()) {
@@ -538,13 +541,15 @@ js::NukeCrossCompartmentWrappers(JSContext* cx,
             AutoWrapperRooter wobj(cx, WrapperValue(e));
             JSObject* wrapped = UncheckedUnwrap(wobj);
 
+            
+            
             if (nukeReferencesToWindow == DontNukeWindowReferences &&
-                IsWindowProxy(wrapped))
+                MOZ_LIKELY(!nukeAll) && IsWindowProxy(wrapped))
             {
                 continue;
             }
 
-            if (targetFilter.match(wrapped->compartment())) {
+            if (MOZ_UNLIKELY(nukeAll) || targetFilter.match(wrapped->compartment())) {
                 
                 e.removeFront();
                 NukeCrossCompartmentWrapper(cx, wobj);

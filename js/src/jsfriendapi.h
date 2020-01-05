@@ -1136,6 +1136,11 @@ typedef enum NukeReferencesToWindow {
     DontNukeWindowReferences
 } NukeReferencesToWindow;
 
+typedef enum NukeReferencesFromTarget {
+    NukeAllReferences,
+    NukeIncomingReferences,
+} NukeReferencesFromTarget;
+
 
 
 
@@ -1178,7 +1183,8 @@ extern JS_FRIEND_API(bool)
 NukeCrossCompartmentWrappers(JSContext* cx,
                              const CompartmentFilter& sourceFilter,
                              const CompartmentFilter& targetFilter,
-                             NukeReferencesToWindow nukeReferencesToWindow);
+                             NukeReferencesToWindow nukeReferencesToWindow,
+                             NukeReferencesFromTarget nukeReferencesFromTarget);
 
 
 

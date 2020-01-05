@@ -9406,21 +9406,16 @@ public:
         nsAutoString addonId;
         if (NS_SUCCEEDED(pc->GetAddonId(addonId)) && !addonId.IsEmpty()) {
           
-          js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(),
-                                           js::SingleCompartment(cpt),
-                                           win->IsInnerWindow() ? js::DontNukeWindowReferences
-                                                                : js::NukeWindowReferences);
-
-          
-          auto compartmentPrivate = xpc::CompartmentPrivate::Get(cpt);
-          compartmentPrivate->wasNuked = true;
-          compartmentPrivate->scriptability.Block();
+          xpc::NukeAllWrappersForCompartment(cx, cpt,
+                                             win->IsInnerWindow() ? js::DontNukeWindowReferences
+                                                                  : js::NukeWindowReferences);
         } else {
           
           js::NukeCrossCompartmentWrappers(cx, BrowserCompartmentMatcher(),
                                            js::SingleCompartment(cpt),
                                            win->IsInnerWindow() ? js::DontNukeWindowReferences
-                                                                : js::NukeWindowReferences);
+                                                                : js::NukeWindowReferences,
+                                           js::NukeIncomingReferences);
         }
       }
     }

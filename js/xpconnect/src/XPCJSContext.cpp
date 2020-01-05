@@ -580,6 +580,37 @@ CurrentWindowOrNull(JSContext* cx)
     return glob ? WindowOrNull(glob) : nullptr;
 }
 
+
+
+
+
+
+
+
+void
+NukeAllWrappersForCompartment(JSContext* cx, JSCompartment* compartment,
+                              js::NukeReferencesToWindow nukeReferencesToWindow)
+{
+    
+    
+    
+    
+    
+    
+    js::NukeCrossCompartmentWrappers(cx, js::AllCompartments(),
+                                     js::SingleCompartment(compartment),
+                                     nukeReferencesToWindow,
+                                     js::NukeAllReferences);
+
+    
+    
+    
+    
+    auto compartmentPrivate = xpc::CompartmentPrivate::Get(compartment);
+    compartmentPrivate->wasNuked = true;
+    compartmentPrivate->scriptability.Block();
+}
+
 } 
 
 static void
