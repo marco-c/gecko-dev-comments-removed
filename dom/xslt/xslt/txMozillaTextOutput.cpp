@@ -149,12 +149,14 @@ txMozillaTextOutput::createResultDocument(nsIDOMDocument* aSourceDocument,
     nsIScriptGlobalObject* sgo =
       source->GetScriptHandlingObject(hasHadScriptObject);
     NS_ENSURE_STATE(sgo || !hasHadScriptObject);
-    mDocument->SetScriptHandlingObject(sgo);
 
     NS_ASSERTION(mDocument, "Need document");
 
     
     URIUtils::ResetWithSource(mDocument, aSourceDocument);
+    
+    
+    mDocument->SetScriptHandlingObject(sgo);
 
     
     if (!mOutputFormat.mEncoding.IsEmpty()) {
