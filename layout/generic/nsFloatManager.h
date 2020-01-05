@@ -331,8 +331,15 @@ private:
     bool IsEmpty() const { return mRect.IsEmpty(); }
 
     nsRect ShapeBoxRect() const { return mShapeBoxRect.valueOr(mRect); }
-    nscoord LineLeft(ShapeType aShapeType) const;
-    nscoord LineRight(ShapeType aShapeType) const;
+
+    
+    
+    
+    nscoord LineLeft(ShapeType aShapeType, const nscoord aBStart,
+                     const nscoord aBEnd) const;
+    nscoord LineRight(ShapeType aShapeType, const nscoord aBStart,
+                     const nscoord aBEnd) const;
+
     nscoord BStart(ShapeType aShapeType) const
     {
       return aShapeType == ShapeType::Margin ? BStart() : ShapeBoxRect().y;
@@ -341,6 +348,22 @@ private:
     {
       return aShapeType == ShapeType::Margin ? BEnd() : ShapeBoxRect().YMost();
     }
+
+    
+    
+    
+    
+    
+    
+    
+    static nscoord ComputeEllipseXInterceptDiff(
+      const nscoord aShapeBoxY, const nscoord aShapeBoxYMost,
+      const nscoord aTopCornerRadiusX, const nscoord aTopCornerRadiusY,
+      const nscoord aBottomCornerRadiusX, const nscoord aBottomCornerRadiusY,
+      const nscoord aBandY, const nscoord aBandYMost);
+
+    static nscoord XInterceptAtY(const nscoord aY, const nscoord aRadiusX,
+                                 const nscoord aRadiusY);
 
 #ifdef NS_BUILD_REFCNT_LOGGING
     FloatInfo(const FloatInfo& aOther);

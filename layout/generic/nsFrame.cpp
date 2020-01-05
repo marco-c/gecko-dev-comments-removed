@@ -1335,14 +1335,31 @@ nsIFrame::InsetBorderRadii(nscoord aRadii[8], const nsMargin &aOffsets)
  void
 nsIFrame::OutsetBorderRadii(nscoord aRadii[8], const nsMargin &aOffsets)
 {
+  auto AdjustOffset = [] (const uint32_t aRadius, const nscoord aOffset) {
+    
+    
+    
+    if (aOffset > 0) {
+      const double ratio = aRadius / double(aOffset);
+      if (ratio < 1.0) {
+        return nscoord(aOffset * (1.0 + std::pow(ratio - 1, 3)));
+      }
+    }
+    return aOffset;
+  };
+
   NS_FOR_CSS_SIDES(side) {
-    nscoord offset = aOffsets.Side(side);
-    uint32_t hc1 = NS_SIDE_TO_HALF_CORNER(side, false, false);
-    uint32_t hc2 = NS_SIDE_TO_HALF_CORNER(side, true, false);
-    if (aRadii[hc1] > 0)
-      aRadii[hc1] += offset;
-    if (aRadii[hc2] > 0)
-      aRadii[hc2] += offset;
+    const nscoord offset = aOffsets.Side(side);
+    const uint32_t hc1 = NS_SIDE_TO_HALF_CORNER(side, false, false);
+    const uint32_t hc2 = NS_SIDE_TO_HALF_CORNER(side, true, false);
+    if (aRadii[hc1] > 0) {
+      const nscoord offset1 = AdjustOffset(aRadii[hc1], offset);
+      aRadii[hc1] = std::max(0, aRadii[hc1] + offset1);
+    }
+    if (aRadii[hc2] > 0) {
+      const nscoord offset2 = AdjustOffset(aRadii[hc2], offset);
+      aRadii[hc2] = std::max(0, aRadii[hc2] + offset2);
+    }
   }
 }
 
@@ -1376,6 +1393,21 @@ nsIFrame::GetBorderRadii(nscoord aRadii[8]) const
 }
 
 bool
+nsIFrame::GetMarginBoxBorderRadii(nscoord aRadii[8]) const
+{
+  if (!GetBorderRadii(aRadii)) {
+    return false;
+  }
+  OutsetBorderRadii(aRadii, GetUsedMargin());
+  NS_FOR_CSS_HALF_CORNERS(corner) {
+    if (aRadii[corner]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool
 nsIFrame::GetPaddingBoxBorderRadii(nscoord aRadii[8]) const
 {
   if (!GetBorderRadii(aRadii))
@@ -1397,6 +1429,24 @@ nsIFrame::GetContentBoxBorderRadii(nscoord aRadii[8]) const
   NS_FOR_CSS_HALF_CORNERS(corner) {
     if (aRadii[corner])
       return true;
+  }
+  return false;
+}
+
+bool
+nsIFrame::GetShapeBoxBorderRadii(nscoord aRadii[8]) const
+{
+  switch (StyleDisplay()->mShapeOutside.GetReferenceBox()) {
+    case StyleShapeOutsideShapeBox::NoBox:
+      return false;
+    case StyleShapeOutsideShapeBox::Content:
+      return GetContentBoxBorderRadii(aRadii);
+    case StyleShapeOutsideShapeBox::Padding:
+      return GetPaddingBoxBorderRadii(aRadii);
+    case StyleShapeOutsideShapeBox::Border:
+      return GetBorderRadii(aRadii);
+    case StyleShapeOutsideShapeBox::Margin:
+      return GetMarginBoxBorderRadii(aRadii);
   }
   return false;
 }
