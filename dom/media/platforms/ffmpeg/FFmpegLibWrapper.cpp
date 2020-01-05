@@ -4,7 +4,6 @@
 
 #include "FFmpegLibWrapper.h"
 #include "FFmpegLog.h"
-#include "MediaPrefs.h"
 #include "mozilla/PodOperations.h"
 #include "mozilla/Types.h"
 #include "prlink.h"
@@ -50,9 +49,7 @@ FFmpegLibWrapper::Link()
       
       Unlink();
       return LinkResult::CannotUseLibAV57;
-    } else if (version < (54u << 16 | 35u << 8 | 1u)
-               && !MediaPrefs::LibavcodecAllowObsolete()) {
-      
+    } else if (version < (54u << 16 | 35u << 8 | 1u)) {
       
       Unlink();
       return LinkResult::BlockedOldLibAVVersion;
