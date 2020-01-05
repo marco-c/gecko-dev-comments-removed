@@ -186,11 +186,7 @@ pref("dom.enable_performance_observer", false);
 #endif
 
 
-#ifdef NIGHTLY_BUILD
 pref("dom.requestIdleCallback.enabled", true);
-#else
-pref("dom.requestIdleCallback.enabled", false);
-#endif
 
 
 pref("dom.gamepad.enabled", true);
