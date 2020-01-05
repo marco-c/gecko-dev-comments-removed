@@ -1,5 +1,14 @@
 
 
+var gMSETestPrefs = [
+  [ "media.mediasource.enabled", true ]
+];
+
+
+function addMSEPrefs(...prefs) {
+  gMSETestPrefs = gMSETestPrefs.concat(prefs);
+}
+
 function runWithMSE(testFunction) {
   function bootstrapTest() {
     var ms = new MediaSource();
@@ -17,10 +26,7 @@ function runWithMSE(testFunction) {
   }
 
   addLoadEvent(function () {
-    SpecialPowers.pushPrefEnv({"set": [
-      [ "media.mediasource.enabled", true ],
-    ]},
-                              bootstrapTest);
+    SpecialPowers.pushPrefEnv({"set": gMSETestPrefs}, bootstrapTest);
   });
 }
 
