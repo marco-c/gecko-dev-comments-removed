@@ -508,7 +508,7 @@ pub struct ScrollRoot {
     pub parent_id: ScrollRootId,
 
     
-    pub clip: Rect<Au>,
+    pub clip: ClippingRegion,
 
     
     pub content_rect: Rect<Au>,
