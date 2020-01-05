@@ -8,6 +8,7 @@
 #define PlatformDecoderModule_h_
 
 #include "MediaDecoderReader.h"
+#include "MediaInfo.h"
 #include "mozilla/MozPromise.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "mozilla/layers/KnowsCompositor.h"
@@ -119,6 +120,13 @@ public:
   
   virtual bool SupportsMimeType(const nsACString& aMimeType,
                                 DecoderDoctorDiagnostics* aDiagnostics) const = 0;
+  virtual bool Supports(const TrackInfo& aTrackInfo,
+                        DecoderDoctorDiagnostics* aDiagnostics) const
+  {
+    
+    
+    return SupportsMimeType(aTrackInfo.mMimeType, aDiagnostics);
+  }
 
   enum class ConversionRequired : uint8_t {
     kNeedNone,

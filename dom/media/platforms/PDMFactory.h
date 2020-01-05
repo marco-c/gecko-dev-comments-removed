@@ -35,6 +35,8 @@ public:
 
   bool SupportsMimeType(const nsACString& aMimeType,
                         DecoderDoctorDiagnostics* aDiagnostics) const;
+  bool Supports(const TrackInfo& aTrackInfo,
+                DecoderDoctorDiagnostics* aDiagnostics) const;
 
   
   
@@ -56,7 +58,7 @@ private:
   bool StartupPDM(PlatformDecoderModule* aPDM);
   
   already_AddRefed<PlatformDecoderModule>
-  GetDecoder(const nsACString& aMimeType,
+  GetDecoder(const TrackInfo& aTrackInfo,
              DecoderDoctorDiagnostics* aDiagnostics) const;
 
   already_AddRefed<MediaDataDecoder>
