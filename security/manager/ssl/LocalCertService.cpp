@@ -13,7 +13,6 @@
 #include "nsIPK11Token.h"
 #include "nsIPK11TokenDB.h"
 #include "nsIX509Cert.h"
-#include "nsIX509CertDB.h"
 #include "nsIX509CertValidity.h"
 #include "nsLiteralString.h"
 #include "nsProxyRelease.h"
@@ -22,6 +21,44 @@
 #include "pk11pub.h"
 
 namespace mozilla {
+
+
+
+
+
+static nsresult
+FindLocalCertByName(const nsACString& aName,
+             UniqueCERTCertificate& aResult)
+{
+  aResult.reset(nullptr);
+  NS_NAMED_LITERAL_CSTRING(commonNamePrefix, "CN=");
+  nsAutoCString expectedDistinguishedName(commonNamePrefix + aName);
+  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
+  if (!slot) {
+    return mozilla::psm::GetXPCOMFromNSSError(PR_GetError());
+  }
+  UniqueCERTCertList certList(PK11_ListCertsInSlot(slot.get()));
+  if (!certList) {
+    return NS_ERROR_UNEXPECTED;
+  }
+  for (const CERTCertListNode* node = CERT_LIST_HEAD(certList);
+       !CERT_LIST_END(node, certList); node = CERT_LIST_NEXT(node)) {
+    
+    if (!node->cert->isRoot) {
+      continue;
+    }
+    if (!expectedDistinguishedName.Equals(node->cert->subjectName)) {
+      continue; 
+    }
+    if (!expectedDistinguishedName.Equals(node->cert->issuerName)) {
+      continue; 
+    }
+    
+    aResult.reset(CERT_DupCertificate(node->cert));
+    return NS_OK;
+  }
+  return NS_OK;
+}
 
 class LocalCertTask : public CryptoTask
 {
@@ -34,32 +71,19 @@ protected:
   nsresult RemoveExisting()
   {
     
-    nsresult rv;
-
     for (;;) {
-      UniqueCERTCertificate cert(
-        PK11_FindCertFromNickname(mNickname.get(), nullptr));
-      if (!cert) {
-        return NS_OK; 
+      UniqueCERTCertificate cert;
+      nsresult rv = FindLocalCertByName(mNickname, cert);
+      if (NS_FAILED(rv)) {
+        return rv;
       }
-
       
-      if (!cert->isRoot) {
-        return NS_ERROR_UNEXPECTED; 
+      if (!cert) {
+        return NS_OK;
       }
-
-      NS_NAMED_LITERAL_CSTRING(commonNamePrefix, "CN=");
-      nsAutoCString subjectNameFromNickname(commonNamePrefix + mNickname);
-      if (!subjectNameFromNickname.Equals(cert->subjectName)) {
-        return NS_ERROR_UNEXPECTED; 
-      }
-      if (!subjectNameFromNickname.Equals(cert->issuerName)) {
-        return NS_ERROR_UNEXPECTED; 
-      }
-
       rv = MapSECStatus(PK11_DeleteTokenCertAndKey(cert.get(), nullptr));
       if (NS_FAILED(rv)) {
-        return rv; 
+        return rv;
       }
     }
   }
@@ -253,19 +277,15 @@ private:
 
   nsresult GetFromDB()
   {
-    nsCOMPtr<nsIX509CertDB> certDB = do_GetService(NS_X509CERTDB_CONTRACTID);
-    if (!certDB) {
-      return NS_ERROR_FAILURE;
-    }
-
-    nsCOMPtr<nsIX509Cert> certFromDB;
-    nsresult rv;
-    rv = certDB->FindCertByNickname(NS_ConvertASCIItoUTF16(mNickname),
-                                    getter_AddRefs(certFromDB));
+    UniqueCERTCertificate cert;
+    nsresult rv = FindLocalCertByName(mNickname, cert);
     if (NS_FAILED(rv)) {
       return rv;
     }
-    mCert = certFromDB;
+    if (!cert) {
+      return NS_ERROR_FAILURE;
+    }
+    mCert = nsNSSCertificate::Create(cert.get());
     return NS_OK;
   }
 
