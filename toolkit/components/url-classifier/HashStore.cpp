@@ -552,33 +552,30 @@ Merge(ChunkSet* aStoreChunks,
 {
   EntrySort(aUpdatePrefixes);
 
-  T* updateIter = aUpdatePrefixes.Elements();
-  T* updateEnd = aUpdatePrefixes.Elements() + aUpdatePrefixes.Length();
-
-  T* storeIter = aStorePrefixes->Elements();
-  T* storeEnd = aStorePrefixes->Elements() + aStorePrefixes->Length();
+  auto storeIter = aStorePrefixes->begin();
+  auto storeEnd = aStorePrefixes->end();
 
   
   
   nsTArray<T> adds;
 
-  for (; updateIter != updateEnd; updateIter++) {
+  for (const auto& updatePrefix : aUpdatePrefixes) {
     
     
     
-    if (aStoreChunks->Has(updateIter->Chunk()))
+    if (aStoreChunks->Has(updatePrefix.Chunk()))
       if (!aAllowMerging)
         continue;
     
     
-    while (storeIter < storeEnd && (storeIter->Compare(*updateIter) < 0)) {
+    while (storeIter < storeEnd && (storeIter->Compare(updatePrefix) < 0)) {
       
       storeIter++;
     }
     
     if (storeIter == storeEnd
-        || storeIter->Compare(*updateIter) != 0) {
-      if (!adds.AppendElement(*updateIter))
+        || storeIter->Compare(updatePrefix) != 0) {
+      if (!adds.AppendElement(updatePrefix))
         return NS_ERROR_OUT_OF_MEMORY;
     }
   }
@@ -659,17 +656,16 @@ template<class T>
 static void
 ExpireEntries(FallibleTArray<T>* aEntries, ChunkSet& aExpirations)
 {
-  T* addIter = aEntries->Elements();
-  T* end = aEntries->Elements() + aEntries->Length();
+  auto addIter = aEntries->begin();
 
-  for (T *iter = addIter; iter != end; iter++) {
-    if (!aExpirations.Has(iter->Chunk())) {
-      *addIter = *iter;
+  for (const auto& entry : *aEntries) {
+    if (!aExpirations.Has(entry.Chunk())) {
+      *addIter = entry;
       addIter++;
     }
   }
 
-  aEntries->TruncateLength(addIter - aEntries->Elements());
+  aEntries->TruncateLength(addIter - aEntries->begin());
 }
 
 nsresult
@@ -1002,9 +998,11 @@ HashStore::WriteFile()
 
 template <class T>
 static void
-Erase(FallibleTArray<T>* array, T* iterStart, T* iterEnd)
+Erase(FallibleTArray<T>* array,
+      typename nsTArray<T>::iterator& iterStart,
+      typename nsTArray<T>::iterator& iterEnd)
 {
-  uint32_t start = iterStart - array->Elements();
+  uint32_t start = iterStart - array->begin();
   uint32_t count = iterEnd - iterStart;
 
   if (count > 0) {
@@ -1028,14 +1026,14 @@ KnockoutSubs(FallibleTArray<TSub>* aSubs, FallibleTArray<TAdd>* aAdds)
   
   
   
-  TAdd* addOut = aAdds->Elements();
-  TAdd* addIter = aAdds->Elements();
+  auto addOut = aAdds->begin();
+  auto addIter = aAdds->begin();
 
-  TSub* subOut = aSubs->Elements();
-  TSub* subIter = aSubs->Elements();
+  auto subOut = aSubs->begin();
+  auto subIter = aSubs->begin();
 
-  TAdd* addEnd = addIter + aAdds->Length();
-  TSub* subEnd = subIter + aSubs->Length();
+  auto addEnd = aAdds->end();
+  auto subEnd = aSubs->end();
 
   while (addIter != addEnd && subIter != subEnd) {
     
@@ -1068,12 +1066,12 @@ static void
 RemoveMatchingPrefixes(const SubPrefixArray& aSubs, FallibleTArray<T>* aFullHashes)
 {
   
-  T* out = aFullHashes->Elements();
-  T* hashIter = out;
-  T* hashEnd = aFullHashes->Elements() + aFullHashes->Length();
+  auto out = aFullHashes->begin();
+  auto hashIter = aFullHashes->begin();
+  auto hashEnd = aFullHashes->end();
 
-  SubPrefix const * removeIter = aSubs.Elements();
-  SubPrefix const * removeEnd = aSubs.Elements() + aSubs.Length();
+  auto removeIter = aSubs.begin();
+  auto removeEnd = aSubs.end();
 
   while (hashIter != hashEnd && removeIter != removeEnd) {
     int32_t cmp = removeIter->CompareAlt(*hashIter);
@@ -1100,31 +1098,30 @@ RemoveMatchingPrefixes(const SubPrefixArray& aSubs, FallibleTArray<T>* aFullHash
 static void
 RemoveDeadSubPrefixes(SubPrefixArray& aSubs, ChunkSet& aAddChunks)
 {
-  SubPrefix * subIter = aSubs.Elements();
-  SubPrefix * subEnd = aSubs.Elements() + aSubs.Length();
+  auto subIter = aSubs.begin();
 
-  for (SubPrefix * iter = subIter; iter != subEnd; iter++) {
-    bool hasChunk = aAddChunks.Has(iter->AddChunk());
+  for (const auto& sub : aSubs) {
+    bool hasChunk = aAddChunks.Has(sub.AddChunk());
     
     
     if (!hasChunk) {
-      *subIter = *iter;
+      *subIter = sub;
       subIter++;
     }
   }
 
-  LOG(("Removed %u dead SubPrefix entries.", subEnd - subIter));
-  aSubs.TruncateLength(subIter - aSubs.Elements());
+  LOG(("Removed %u dead SubPrefix entries.", aSubs.end() - subIter));
+  aSubs.TruncateLength(subIter - aSubs.begin());
 }
 
 #ifdef DEBUG
 template <class T>
 static void EnsureSorted(FallibleTArray<T>* aArray)
 {
-  T* start = aArray->Elements();
-  T* end = aArray->Elements() + aArray->Length();
-  T* iter = start;
-  T* previous = start;
+  auto start = aArray->begin();
+  auto end = aArray->end();
+  auto iter = start;
+  auto previous = start;
 
   while (iter != end) {
     previous = iter;
