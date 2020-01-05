@@ -1,0 +1,21 @@
+
+
+
+
+"use strict";
+
+this.EXPORTED_SYMBOLS = ["CleanupManager"];
+
+const cleanupHandlers = [];
+
+this.CleanupManager = {
+  addCleanupHandler(handler) {
+    cleanupHandlers.push(handler);
+  },
+
+  cleanup() {
+    for (const handler of cleanupHandlers) {
+      handler();
+    }
+  },
+};
