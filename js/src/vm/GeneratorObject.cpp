@@ -359,12 +359,14 @@ js::CheckStarGeneratorResumptionValue(JSContext* cx, HandleValue v)
 
     
     JSObject* ignored;
-    Shape* shape;
-    if (!LookupPropertyPure(cx, obj, NameToId(cx->names().value), &ignored, &shape))
+    PropertyResult prop;
+    if (!LookupPropertyPure(cx, obj, NameToId(cx->names().value), &ignored, &prop))
         return false;
-    if (!shape)
+    if (!prop)
         return false;
-    if (!shape->hasDefaultGetter())
+    if (!prop.isNativeProperty())
+        return false;
+    if (!prop.shape()->hasDefaultGetter())
         return false;
 
     return true;
