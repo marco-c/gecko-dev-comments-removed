@@ -56,9 +56,8 @@ registerCleanupFunction(() => {
 
 
 
-
-function* openTabAndSetupStorage(url) {
-  let tab = yield addTab(url);
+function* openTab(url, options = {}) {
+  let tab = yield addTab(url, options);
   let content = tab.linkedBrowser.contentWindow;
 
   gWindow = content.wrappedJSObject;
@@ -107,6 +106,24 @@ function* openTabAndSetupStorage(url) {
       }
     }
   });
+
+  return tab;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function* openTabAndSetupStorage(url, options = {}) {
+  
+  yield openTab(url, options);
 
   
   return yield openStoragePanel();
@@ -204,46 +221,50 @@ function forceCollections() {
 function* finishTests() {
   
   
-  yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
-    
-
-
-
-
-
-
-
-
-    function getAllWindows(baseWindow) {
-      let windows = new Set();
-
-      let _getAllWindows = function (win) {
-        windows.add(win.wrappedJSObject);
-
-        for (let i = 0; i < win.length; i++) {
-          _getAllWindows(win[i]);
-        }
-      };
-      _getAllWindows(baseWindow);
-
-      return windows;
-    }
-
-    let windows = getAllWindows(content);
-    for (let win of windows) {
+  while (gBrowser.tabs.length > 1) {
+    yield ContentTask.spawn(gBrowser.selectedBrowser, null, function* () {
       
-      try {
-        win.localStorage.clear();
-        win.sessionStorage.clear();
-      } catch (ex) {
-        
+
+
+
+
+
+
+
+
+      function getAllWindows(baseWindow) {
+        let windows = new Set();
+
+        let _getAllWindows = function (win) {
+          windows.add(win.wrappedJSObject);
+
+          for (let i = 0; i < win.length; i++) {
+            _getAllWindows(win[i]);
+          }
+        };
+        _getAllWindows(baseWindow);
+
+        return windows;
       }
 
-      if (win.clear) {
-        yield win.clear();
+      let windows = getAllWindows(content);
+      for (let win of windows) {
+        
+        try {
+          win.localStorage.clear();
+          win.sessionStorage.clear();
+        } catch (ex) {
+          
+        }
+
+        if (win.clear) {
+          yield win.clear();
+        }
       }
-    }
-  });
+    });
+
+    yield closeTabAndToolbox(gBrowser.selectedTab);
+  }
 
   Services.cookies.removeAll();
   forceCollections();

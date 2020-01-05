@@ -113,13 +113,15 @@ registerCleanupFunction(function* cleanup() {
 
 
 
+
 var addTab = Task.async(function* (url, options = { background: false, window: window }) {
   info("Adding a new tab with URL: " + url);
 
   let { background } = options;
   let { gBrowser } = options.window ? options.window : window;
+  let { userContextId } = options;
 
-  let tab = gBrowser.addTab(url);
+  let tab = gBrowser.addTab(url, {userContextId});
   if (!background) {
     gBrowser.selectedTab = tab;
   }
