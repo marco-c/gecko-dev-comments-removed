@@ -145,6 +145,17 @@ impl<'a> GlobalRef<'a> {
 
     
     
+    pub fn api_base_url(&self) -> Url {
+        match *self {
+            
+            GlobalRef::Window(ref window) => window.Document().base_url(),
+            
+            GlobalRef::Worker(ref worker) => worker.get_url().clone(),
+        }
+    }
+
+    
+    
     pub fn script_chan(&self) -> Box<ScriptChan + Send> {
         match *self {
             GlobalRef::Window(ref window) =>
