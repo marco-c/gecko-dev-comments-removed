@@ -13,7 +13,7 @@ use extra::arc::MutexArc;
 
 
 pub struct LayoutContext {
-    font_ctx: @mut FontContext,
+    font_ctx: ~FontContext,
     image_cache: MutexArc<LocalImageCache>,
     screen_size: Rect<Au>
 }
