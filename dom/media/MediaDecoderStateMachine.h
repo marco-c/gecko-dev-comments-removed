@@ -253,9 +253,6 @@ public:
   MediaEventSource<MediaResult>&
   OnPlaybackErrorEvent() { return mOnPlaybackErrorEvent; }
 
-  MediaEventSource<DecoderDoctorEvent>&
-  OnDecoderDoctorEvent() { return mOnDecoderDoctorEvent; }
-
   size_t SizeOfVideoQueue() const;
 
   size_t SizeOfAudioQueue() const;
@@ -564,7 +561,7 @@ private:
   void OnMediaSinkVideoComplete();
 
   
-  void OnMediaSinkAudioError(nsresult aResult);
+  void OnMediaSinkAudioError();
   void OnMediaSinkVideoError();
 
   
@@ -866,8 +863,6 @@ private:
 
   MediaEventProducer<MediaEventType> mOnPlaybackEvent;
   MediaEventProducer<MediaResult> mOnPlaybackErrorEvent;
-
-  MediaEventProducer<DecoderDoctorEvent> mOnDecoderDoctorEvent;
 
   
   
