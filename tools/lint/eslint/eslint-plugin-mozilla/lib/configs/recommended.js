@@ -2,8 +2,28 @@
 
 module.exports = {
   
+  "plugins": [
+    "mozilla"
+  ],
+  "env": {
+    "browser": true,
+    "es6": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 8
+  },
+  
   
   "rules": {
+    "mozilla/avoid-removeChild": "error",
+    "mozilla/avoid-nsISupportsString-preferences": "error",
+    "mozilla/import-globals": "error",
+    "mozilla/no-import-into-var-and-global": "error",
+    "mozilla/no-useless-parameters": "error",
+    "mozilla/no-useless-removeEventListener": "error",
+    "mozilla/use-default-preference-values": "error",
+    "mozilla/use-ownerGlobal": "error",
+
     
     
 
@@ -195,6 +215,9 @@ module.exports = {
     "no-unsafe-finally": "error",
 
     
+    "no-unsafe-negation": "error",
+
+    
     "no-unused-vars": ["error", {
       "vars": "local",
       "varsIgnorePattern": "^Cc|Ci|Cu|Cr|EXPORTED_SYMBOLS",
@@ -262,10 +285,6 @@ module.exports = {
     
     
     "no-useless-concat": "error"
-  },
-  "env": {
-    "es6": true,
-    "browser": true
   },
   "globals": {
     "BroadcastChannel": false,
