@@ -1015,14 +1015,14 @@ CodeGeneratorARM::visitPowHalfD(LPowHalfD* ins)
     Label done;
 
     
-    masm.ma_vimm(NegativeInfinity<double>(), scratch);
+    masm.loadConstantDouble(NegativeInfinity<double>(), scratch);
     masm.compareDouble(input, scratch);
     masm.ma_vneg(scratch, output, Assembler::Equal);
     masm.ma_b(&done, Assembler::Equal);
 
     
     
-    masm.ma_vimm(0.0, scratch);
+    masm.loadConstantDouble(0.0, scratch);
     masm.ma_vadd(scratch, input, output);
     masm.ma_vsqrt(output, output);
 
@@ -1390,8 +1390,7 @@ void
 CodeGeneratorARM::visitDouble(LDouble* ins)
 {
     const LDefinition* out = ins->getDef(0);
-
-    masm.ma_vimm(ins->getDouble(), ToFloatRegister(out));
+    masm.loadConstantDouble(ins->getDouble(), ToFloatRegister(out));
 }
 
 void
