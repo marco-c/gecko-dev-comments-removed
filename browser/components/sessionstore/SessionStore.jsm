@@ -125,7 +125,7 @@ const CLOSED_MESSAGES = new Set([
 
 
 const TAB_EVENTS = [
-  "TabOpen", "TabBrowserCreated", "TabClose", "TabSelect", "TabShow", "TabHide", "TabPinned",
+  "TabOpen", "TabBrowserInserted", "TabClose", "TabSelect", "TabShow", "TabHide", "TabPinned",
   "TabUnpinned"
 ];
 
@@ -935,8 +935,8 @@ var SessionStoreInternal = {
       case "TabOpen":
         this.onTabAdd(win);
         break;
-      case "TabBrowserCreated":
-        this.onTabBrowserCreated(win, target);
+      case "TabBrowserInserted":
+        this.onTabBrowserInserted(win, target);
         break;
       case "TabClose":
         
@@ -1028,7 +1028,7 @@ var SessionStoreInternal = {
 
     
     for (let i = 0; i < tabbrowser.tabs.length; i++) {
-      this.onTabBrowserCreated(aWindow, tabbrowser.tabs[i]);
+      this.onTabBrowserInserted(aWindow, tabbrowser.tabs[i]);
     }
     
     TAB_EVENTS.forEach(function(aEvent) {
@@ -1768,7 +1768,7 @@ var SessionStoreInternal = {
 
 
 
-  onTabBrowserCreated: function ssi_onTabBrowserCreated(aWindow, aTab) {
+  onTabBrowserInserted: function ssi_onTabBrowserInserted(aWindow, aTab) {
     let browser = aTab.linkedBrowser;
     browser.addEventListener("SwapDocShells", this);
     browser.addEventListener("oop-browser-crashed", this);
