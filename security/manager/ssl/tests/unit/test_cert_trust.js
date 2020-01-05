@@ -204,4 +204,14 @@ function run_test() {
 
   setup_basic_trusts(ca_cert, int_cert);
   test_ca_distrust(ee_cert, int_cert, false);
+
+  
+  setCertTrust(ca_cert, ",,");
+  setCertTrust(int_cert, ",,");
+
+  
+  
+  setCertTrust(ee_cert, "C,,");
+  checkCertErrorGeneric(certdb, ee_cert, PRErrorCodeSuccess,
+                        certificateUsageSSLServer);
 }

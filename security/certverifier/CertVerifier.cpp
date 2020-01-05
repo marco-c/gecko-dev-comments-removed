@@ -286,11 +286,12 @@ CertVerifier::VerifyCertificateTransparencyPolicy(
   }
 
   CERTCertListNode* endEntityNode = CERT_LIST_HEAD(builtChain);
-  if (!endEntityNode) {
+  if (!endEntityNode || CERT_LIST_END(endEntityNode, builtChain)) {
     return Result::FATAL_ERROR_INVALID_ARGS;
   }
   CERTCertListNode* issuerNode = CERT_LIST_NEXT(endEntityNode);
-  if (!issuerNode) {
+  if (!issuerNode || CERT_LIST_END(issuerNode, builtChain)) {
+    
     
     return Success;
   }
