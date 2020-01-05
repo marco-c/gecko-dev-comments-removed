@@ -3,6 +3,7 @@
 
 
 const TEST_URI = "http://example.com/browser/dom/tests/browser/test_largeAllocation.html";
+const TEST_URI_2 = "http://example.com/browser/dom/tests/browser/test_largeAllocation2.html";
 
 function expectProcessCreated() {
   let os = Cc["@mozilla.org/observer-service;1"].getService(Ci.nsIObserverService);
@@ -44,12 +45,15 @@ add_task(function*() {
   yield SpecialPowers.pushPrefEnv({
     set: [
       ["dom.largeAllocationHeader.enabled", true],
+      
+      
+      ["dom.ipc.processCount.webLargeAllocation", 20]
     ]
   });
 
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
-    ok(true, "Starting test 0");
+    info("Starting test 0");
     let pid1 = yield getPID(aBrowser);
 
     let epc = expectProcessCreated();
@@ -68,7 +72,7 @@ add_task(function*() {
   
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
-    ok(true, "Starting test 1");
+    info("Starting test 1");
     let pid1 = yield getPID(aBrowser);
 
     
@@ -94,7 +98,7 @@ add_task(function*() {
 
   
   yield BrowserTestUtils.withNewTab("http://example.com", function*(aBrowser) {
-    ok(true, "Starting test 2");
+    info("Starting test 2");
     let pid1 = yield getPID(aBrowser);
 
     
@@ -128,7 +132,7 @@ add_task(function*() {
 
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
-    ok(true, "Starting test 3");
+    info("Starting test 3");
     let pid1 = yield getPID(aBrowser);
 
     let epc = expectProcessCreated();
@@ -171,7 +175,7 @@ add_task(function*() {
 
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
-    ok(true, "Starting test 4");
+    info("Starting test 4");
     let pid1 = yield getPID(aBrowser);
 
     let epc = expectProcessCreated();
@@ -220,5 +224,77 @@ add_task(function*() {
     isnot(pid1, pid4, "PID 4 shouldn't match PID 1");
     isnot(pid2, pid4, "PID 4 shouldn't match PID 2");
 
+  });
+
+  
+  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+    info("Starting test 5");
+    let pid1 = yield getPID(aBrowser);
+
+    let ready = Promise.all([expectProcessCreated(),
+                             BrowserTestUtils.browserLoaded(aBrowser)]);
+
+    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+      content.document.location = TEST_URI;
+    });
+
+    yield ready;
+
+    let pid2 = yield getPID(aBrowser);
+
+    isnot(pid1, pid2, "PIDs 1 and 2 should not match");
+
+    let epc = expectProcessCreated();
+
+    yield ContentTask.spawn(aBrowser, TEST_URI_2, TEST_URI_2 => {
+      content.document.location = TEST_URI_2;
+    });
+
+    yield epc;
+
+    let pid3 = yield getPID(aBrowser);
+
+    isnot(pid1, pid3, "PIDs 1 and 3 should not match");
+    isnot(pid2, pid3, "PIDs 1 and 3 should not match");
+  });
+
+  
+  yield BrowserTestUtils.withNewTab("about:blank", function*(aBrowser) {
+    info("Starting test 6");
+    let pid1 = yield getPID(aBrowser);
+
+    let ready = Promise.all([expectProcessCreated(),
+                             BrowserTestUtils.browserLoaded(aBrowser)]);
+
+    yield ContentTask.spawn(aBrowser, TEST_URI, TEST_URI => {
+      content.document.location = TEST_URI;
+    });
+
+    yield ready;
+
+    let pid2 = yield getPID(aBrowser);
+
+    isnot(pid1, pid2, "PIDs 1 and 2 should not match");
+
+    yield BrowserTestUtils.synthesizeMouse("a", 0, 0, {}, aBrowser);
+
+    let stopExpectNoProcess = expectNoProcess();
+
+    yield ContentTask.spawn(aBrowser, null, () => {
+      content.document.location = "about:blank";
+    });
+
+    yield BrowserTestUtils.browserLoaded(aBrowser);
+
+    let pid3 = yield getPID(aBrowser);
+
+    is(pid3, pid2, "PIDs 2 and 3 should match");
+
+    stopExpectNoProcess();
+
+    is(gBrowser.tabs.length, 3, "There should be 3 tabs");
+
+    
+    gBrowser.removeTab(gBrowser.tabs[2]);
   });
 });
