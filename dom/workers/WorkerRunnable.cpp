@@ -587,10 +587,9 @@ WorkerMainThreadRunnable::Dispatch(ErrorResult& aRv)
     aRv.ThrowUncatchableException();
   }
 
-  
-  
-  
-  
+  Telemetry::Accumulate(Telemetry::SYNC_WORKER_OPERATION, mTelemetryKey,
+                        static_cast<uint32_t>((TimeStamp::NowLoRes() - startTime)
+                                                .ToMilliseconds()));
   Unused << startTime; 
 }
 
