@@ -1573,6 +1573,24 @@ public:
   
   
   
+  elem_type* ReconstructElementAt(index_type aIndex)
+  {
+    elem_type* elem = &ElementAt(aIndex);
+    elem_traits::Destruct(elem);
+    elem_traits::Construct(elem);
+    return elem;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
