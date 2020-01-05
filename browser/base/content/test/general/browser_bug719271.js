@@ -27,7 +27,7 @@ function zoomTab1() {
 
     
     var level1 = ZoomManager.getZoomForBrowser(gBrowser.getBrowserForTab(gTab1));
-    if(level1 > 1)
+    if (level1 > 1)
       FullZoom.reduce();
 
     FullZoomHelper.zoomTest(gTab1, 1, "Initial zoom of tab 1 should be 1");
