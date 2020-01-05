@@ -17,6 +17,16 @@ public:
   
 
 
+  enum class AlignJustifyFlags {
+    eNoFlags           = 0,
+    
+    eOverflowSafe      = 1 << 0,
+    
+    
+    eSameSide          = 1 << 1,
+  };
+
+  
 
 
 
@@ -33,14 +43,14 @@ public:
 
 
 
-
-
-  static nscoord AlignJustifySelf(uint8_t aAlignment, bool aOverflowSafe,
-                                  LogicalAxis aAxis, bool aSameSide,
+  static nscoord AlignJustifySelf(uint8_t aAlignment, LogicalAxis aAxis,
+                                  AlignJustifyFlags aFlags,
                                   nscoord aBaselineAdjust, nscoord aCBSize,
                                   const ReflowInput& aRI,
                                   const LogicalSize& aChildSize);
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(CSSAlignUtils::AlignJustifyFlags)
 
 } 
 

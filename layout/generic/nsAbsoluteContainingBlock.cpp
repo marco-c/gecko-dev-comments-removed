@@ -40,6 +40,8 @@ static void PrettyUC(nscoord aSize, char* aBuf, int aBufSize)
 
 using namespace mozilla;
 
+typedef mozilla::CSSAlignUtils::AlignJustifyFlags AlignJustifyFlags;
+
 void
 nsAbsoluteContainingBlock::SetInitialChildList(nsIFrame*       aDelegatingFrame,
                                                ChildListID     aListID,
@@ -420,21 +422,24 @@ OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
   nscoord alignAreaSizeInAxis = (pcAxis == eLogicalAxisInline)
     ? alignAreaSize.ISize(pcWM)
     : alignAreaSize.BSize(pcWM);
-  
-  
-  
-  
-  const bool overflowSafe = false;
 
+  AlignJustifyFlags flags = AlignJustifyFlags::eNoFlags;
   uint16_t alignConst =
     aPlaceholderContainer->CSSAlignmentForAbsPosChild(aKidReflowInput, pcAxis);
+  
+  
+  
+  
+  
   
   alignConst &= ~NS_STYLE_ALIGN_FLAG_BITS;
 
   
   
   WritingMode kidWM = aKidReflowInput.GetWritingMode();
-  bool sameSidePCAndKid = pcWM.ParallelAxisStartsOnSameSide(pcAxis, kidWM);
+  if (pcWM.ParallelAxisStartsOnSameSide(pcAxis, kidWM)) {
+    flags |= AlignJustifyFlags::eSameSide;
+  }
 
   
   
@@ -449,10 +454,9 @@ OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
                          : aAbsPosCBAxis);
 
   nscoord offset =
-    CSSAlignUtils::AlignJustifySelf(alignConst, overflowSafe,
-                                    kidAxis, sameSidePCAndKid, baselineAdjust,
-                                    alignAreaSizeInAxis, aKidReflowInput,
-                                    kidSizeInOwnWM);
+    CSSAlignUtils::AlignJustifySelf(alignConst, kidAxis, flags,
+                                    baselineAdjust, alignAreaSizeInAxis,
+                                    aKidReflowInput, kidSizeInOwnWM);
 
   
   
