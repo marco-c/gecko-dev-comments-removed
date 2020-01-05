@@ -20,6 +20,7 @@
 #include <functional>
 
 template <class> class nsCOMPtr;
+class nsIContent;
 class nsIDocument;
 class nsIPresShell;
 class nsIWidget;
@@ -86,6 +87,7 @@ private:
                              Modifiers aModifiers,
                              const nsCOMPtr<nsIWidget>& aWidget);
   already_AddRefed<nsIWidget> GetWidget() const;
+  already_AddRefed<nsIContent> GetTouchRollup() const;
 private:
   nsWeakPtr mWidget;
   RefPtr<ActiveElementManager> mActiveElementManager;
@@ -96,6 +98,22 @@ private:
   bool mEndTouchIsClick;
   bool mTouchEndCancelled;
   int32_t mLastTouchIdentifier;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsWeakPtr mTouchRollup;
 };
 
 } 

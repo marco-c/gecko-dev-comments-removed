@@ -31,6 +31,10 @@ public:
   nsAutoRollup();
   ~nsAutoRollup();
 
+  
+  
+  explicit nsAutoRollup(nsIContent* aRollup);
+
   static void SetLastRollup(nsIContent* aLastRollup);
   
   static nsIContent* GetLastRollup();
