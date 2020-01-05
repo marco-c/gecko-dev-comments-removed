@@ -343,7 +343,7 @@ this.PermissionPromptPrototype = {
     }
     
     options.persistent = true;
-    options.hideClose = true;
+    options.hideClose = !Services.prefs.getBoolPref("privacy.permissionPrompts.showCloseButton");
 
     this.onBeforeShow();
     chromeWin.PopupNotifications.show(this.browser,
