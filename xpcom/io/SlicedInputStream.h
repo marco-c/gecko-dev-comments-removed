@@ -11,12 +11,14 @@
 #include "nsIAsyncInputStream.h"
 #include "nsICloneableInputStream.h"
 #include "nsIIPCSerializableInputStream.h"
+#include "nsISeekableStream.h"
 
 
 
 class SlicedInputStream final : public nsIAsyncInputStream
                               , public nsICloneableInputStream
                               , public nsIIPCSerializableInputStream
+                              , public nsISeekableStream
 {
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
@@ -24,6 +26,7 @@ public:
   NS_DECL_NSIASYNCINPUTSTREAM
   NS_DECL_NSICLONEABLEINPUTSTREAM
   NS_DECL_NSIIPCSERIALIZABLEINPUTSTREAM
+  NS_DECL_NSISEEKABLESTREAM
 
   
   
@@ -53,6 +56,7 @@ private:
   
   nsICloneableInputStream* mWeakCloneableInputStream;
   nsIIPCSerializableInputStream* mWeakIPCSerializableInputStream;
+  nsISeekableStream* mWeakSeekableInputStream;
 
   uint64_t mStart;
   uint64_t mLength;
