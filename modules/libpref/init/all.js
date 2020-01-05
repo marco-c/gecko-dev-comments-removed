@@ -2172,9 +2172,6 @@ pref("security.xcto_nosniff_block_images", false);
 pref("security.ssl.enable_ocsp_must_staple", true);
 
 
-pref("security.insecure_field_warning.contextual.enabled", false);
-
-
 pref("security.cert_pinning.enforcement_level", 0);
 
 
@@ -4551,6 +4548,7 @@ pref("layers.bench.enabled", false);
 
 #if defined(XP_WIN) && defined(NIGHTLY_BUILD)
 pref("layers.gpu-process.dev.enabled", true);
+pref("media.gpu-process-decoder", true);
 #endif
 
 
@@ -5467,14 +5465,6 @@ pref("webextensions.tests", false);
 pref("webextensions.webRequest.requestBodyMaxRawBytes", 16777216);
 
 
-pref("webextensions.storage.sync.enabled", false);
-#ifdef RELEASE_OR_BETA
-pref("webextensions.storage.sync.serverURL", "https://webextensions.settings.services.mozilla.com/v1");
-#else
-pref("webextensions.storage.sync.serverURL", "https://webextensions.dev.mozaws.net/v1");
-#endif
-
-
 pref("dom.input.fallbackUploadDir", "");
 
 
@@ -5543,9 +5533,6 @@ pref("security.mixed_content.use_hsts", true);
 #endif
 
 pref ("security.mixed_content.hsts_priming_cache_timeout", 10080);
-
-
-pref ("security.mixed_content.hsts_priming_request_timeout", 3000);
 
 
 #ifdef NIGHTLY_BUILD
