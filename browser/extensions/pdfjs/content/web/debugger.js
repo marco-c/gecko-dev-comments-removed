@@ -149,11 +149,11 @@ var FontInspector = (function FontInspectorClosure() {
       fonts.appendChild(font);
       
       
-      setTimeout(() => {
+      setTimeout(function() {
         if (this.active) {
           resetSelection();
         }
-      }, 2000);
+      }.bind(this), 2000);
     }
   };
 })();
