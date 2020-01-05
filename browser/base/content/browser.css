@@ -529,7 +529,8 @@ toolbar:not(#TabsToolbar) > #personal-bookmarks {
 
 
 
-.addengine-item > .button-box > .button-icon {
+.addengine-item > .button-box > .button-icon,
+.addengine-item[type="menu"] > .button-box > .box-inherit > .button-icon {
   -moz-binding: url("chrome://browser/content/search/search.xml#addengine-icon");
   display: -moz-stack;
 }
