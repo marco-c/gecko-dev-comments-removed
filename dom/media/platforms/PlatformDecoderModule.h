@@ -269,14 +269,6 @@ public:
   
   
   
-  
-  
-  
-  virtual void ConfigurationChanged(const TrackInfo& aConfig) {}
-
-  
-  
-  
   virtual const char* GetDescriptionName() const = 0;
 
   

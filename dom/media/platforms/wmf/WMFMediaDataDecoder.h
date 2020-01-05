@@ -57,8 +57,6 @@ public:
 
   virtual TrackInfo::TrackType GetType() = 0;
 
-  virtual void ConfigurationChanged(const TrackInfo& aConfig) {}
-
   virtual const char* GetDescriptionName() const = 0;
 
   virtual void SetSeekThreshold(const media::TimeUnit& aTime) {
@@ -96,8 +94,6 @@ public:
 
   bool IsHardwareAccelerated(nsACString& aFailureReason) const override;
 
-  void ConfigurationChanged(const TrackInfo& aConfig) override;
-
   const char* GetDescriptionName() const override
   {
     return mMFTManager ? mMFTManager->GetDescriptionName() : "";
@@ -124,10 +120,6 @@ private:
   void ProcessDrain();
 
   void ProcessShutdown();
-
-  
-  
-  void ProcessConfigurationChanged(UniquePtr<TrackInfo>&& aConfig);
 
   const RefPtr<TaskQueue> mTaskQueue;
   MediaDataDecoderCallback* mCallback;
