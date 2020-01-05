@@ -122,31 +122,6 @@ WebGLContext::ValidateBlendFuncEnumsCompatibility(GLenum sfactor,
     return true;
 }
 
-bool
-WebGLContext::ValidateDataOffsetSize(WebGLintptr offset, WebGLsizeiptr size, WebGLsizeiptr bufferSize, const char* info)
-{
-    if (offset < 0) {
-        ErrorInvalidValue("%s: offset must be positive", info);
-        return false;
-    }
-
-    if (size < 0) {
-        ErrorInvalidValue("%s: size must be positive", info);
-        return false;
-    }
-
-    
-    
-    CheckedInt<GLsizeiptr> neededBytes = CheckedInt<GLsizeiptr>(offset) + size;
-    if (!neededBytes.isValid() || neededBytes.value() > bufferSize) {
-        ErrorInvalidValue("%s: invalid range", info);
-        return false;
-    }
-
-    return true;
-}
-
-
 
 
 
@@ -738,7 +713,6 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
     mBoundSamplers.Clear();
 
     mBoundArrayBuffer = nullptr;
-    mBoundTransformFeedbackBuffer = nullptr;
     mCurrentProgram = nullptr;
 
     mBoundDrawFramebuffer = nullptr;
@@ -980,7 +954,6 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
     
 
     if (gl->IsCoreProfile()) {
-        MakeContextCurrent();
         mDefaultVertexArray->GenVertexArray();
         mDefaultVertexArray->BindVertexArray();
     }
