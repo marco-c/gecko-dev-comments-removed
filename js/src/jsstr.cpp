@@ -37,7 +37,6 @@
 #include "js/Conversions.h"
 #include "js/UniquePtr.h"
 #if ENABLE_INTL_API
-#include "unicode/uchar.h"
 #include "unicode/unorm2.h"
 #endif
 #include "vm/GlobalObject.h"
@@ -603,188 +602,17 @@ js::SubstringKernel(JSContext* cx, HandleString str, int32_t beginInt, int32_t l
     return NewDependentString(cx, str, begin, len);
 }
 
-
-
-
-
-
-
-
-
-
-static char16_t
-Final_Sigma(const char16_t* chars, size_t length, size_t index)
-{
-    MOZ_ASSERT(index < length);
-    MOZ_ASSERT(chars[index] == unicode::GREEK_CAPITAL_LETTER_SIGMA);
-    MOZ_ASSERT(unicode::ToLowerCase(unicode::GREEK_CAPITAL_LETTER_SIGMA) ==
-               unicode::GREEK_SMALL_LETTER_SIGMA);
-
-#if ENABLE_INTL_API
-    bool precededByCased = false;
-    for (size_t i = index; i > 0; ) {
-        char16_t c = chars[--i];
-        uint32_t codePoint = c;
-        if (unicode::IsTrailSurrogate(c) && i > 0) {
-            char16_t lead = chars[i - 1];
-            if (unicode::IsLeadSurrogate(lead)) {
-                codePoint = unicode::UTF16Decode(lead, c);
-                i--;
-            }
-        }
-
-        
-        
-        
-        if (u_hasBinaryProperty(codePoint, UCHAR_CASE_IGNORABLE))
-            continue;
-
-        precededByCased = u_hasBinaryProperty(codePoint, UCHAR_CASED);
-        break;
-    }
-    if (!precededByCased)
-        return unicode::GREEK_SMALL_LETTER_SIGMA;
-
-    bool followedByCased = false;
-    for (size_t i = index + 1; i < length; ) {
-        char16_t c = chars[i++];
-        uint32_t codePoint = c;
-        if (unicode::IsLeadSurrogate(c) && i < length) {
-            char16_t trail = chars[i];
-            if (unicode::IsTrailSurrogate(trail)) {
-                codePoint = unicode::UTF16Decode(c, trail);
-                i++;
-            }
-        }
-
-        
-        
-        
-        if (u_hasBinaryProperty(codePoint, UCHAR_CASE_IGNORABLE))
-            continue;
-
-        followedByCased = u_hasBinaryProperty(codePoint, UCHAR_CASED);
-        break;
-    }
-    if (!followedByCased)
-        return unicode::GREEK_SMALL_LETTER_FINAL_SIGMA;
-#endif
-
-    return unicode::GREEK_SMALL_LETTER_SIGMA;
-}
-
-static Latin1Char
-Final_Sigma(const Latin1Char* chars, size_t length, size_t index)
-{
-    MOZ_ASSERT_UNREACHABLE("U+03A3 is not a Latin-1 character");
-    return 0;
-}
-
-
-
-
-
-
-
-
-template <typename CharT>
-static size_t
-ToLowerCaseImpl(CharT* destChars, const CharT* srcChars, size_t startIndex, size_t srcLength,
-                size_t destLength)
-{
-    MOZ_ASSERT(startIndex < srcLength);
-    MOZ_ASSERT(srcLength <= destLength);
-    MOZ_ASSERT_IF((IsSame<CharT, Latin1Char>::value), srcLength == destLength);
-
-    size_t j = startIndex;
-    for (size_t i = startIndex; i < srcLength; i++) {
-        char16_t c = srcChars[i];
-        if (!IsSame<CharT, Latin1Char>::value) {
-            if (unicode::IsLeadSurrogate(c) && i + 1 < srcLength) {
-                char16_t trail = srcChars[i + 1];
-                if (unicode::IsTrailSurrogate(trail)) {
-                    trail = unicode::ToLowerCaseNonBMPTrail(c, trail);
-                    destChars[j++] = c;
-                    destChars[j++] = trail;
-                    i++;
-                    continue;
-                }
-            }
-
-            
-            
-            if (c == unicode::LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE) {
-                
-                if (srcLength == destLength)
-                    return i;
-
-                destChars[j++] = CharT('i');
-                destChars[j++] = CharT(unicode::COMBINING_DOT_ABOVE);
-                continue;
-            }
-
-            
-            
-            if (c == unicode::GREEK_CAPITAL_LETTER_SIGMA) {
-                destChars[j++] = Final_Sigma(srcChars, srcLength, i);
-                continue;
-            }
-        }
-
-        c = unicode::ToLowerCase(c);
-        MOZ_ASSERT_IF((IsSame<CharT, Latin1Char>::value), c <= JSString::MAX_LATIN1_CHAR);
-        destChars[j++] = c;
-    }
-
-    MOZ_ASSERT(j == destLength);
-    destChars[destLength] = '\0';
-
-    return srcLength;
-}
-
-static size_t
-ToLowerCaseLength(const char16_t* chars, size_t startIndex, size_t length)
-{
-    size_t lowerLength = length;
-    for (size_t i = startIndex; i < length; i++) {
-        char16_t c = chars[i];
-
-        
-        if (c == unicode::LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE)
-            lowerLength += 1;
-    }
-    return lowerLength;
-}
-
-static size_t
-ToLowerCaseLength(const Latin1Char* chars, size_t startIndex, size_t length)
-{
-    MOZ_ASSERT_UNREACHABLE("never called for Latin-1 strings");
-    return 0;
-}
-
 template <typename CharT>
 static JSString*
 ToLowerCase(JSContext* cx, JSLinearString* str)
 {
     
     
-    using AnyCharPtr = UniquePtr<CharT[], JS::FreePolicy>;
-
-    AnyCharPtr newChars;
-    const size_t length = str->length();
-    size_t resultLength;
+    UniquePtr<CharT[], JS::FreePolicy> newChars;
+    size_t length = str->length();
     {
         AutoCheckCannotGC nogc;
         const CharT* chars = str->chars<CharT>(nogc);
-
-        
-        
-        
-        MOZ_ASSERT(unicode::CanLowerCase(unicode::LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE),
-                   "U+0130 has a simple lower case mapping");
-        MOZ_ASSERT(unicode::CanLowerCase(unicode::GREEK_CAPITAL_LETTER_SIGMA),
-                   "U+03A3 has a simple lower case mapping");
 
         
         size_t i = 0;
@@ -810,32 +638,36 @@ ToLowerCase(JSContext* cx, JSLinearString* str)
         if (i == length)
             return str;
 
-        resultLength = length;
-        newChars = cx->make_pod_array<CharT>(resultLength + 1);
+        newChars = cx->make_pod_array<CharT>(length + 1);
         if (!newChars)
             return nullptr;
 
         PodCopy(newChars.get(), chars, i);
 
-        size_t readChars = ToLowerCaseImpl(newChars.get(), chars, i, length, resultLength);
-        if (readChars < length) {
-            MOZ_ASSERT((!IsSame<CharT, Latin1Char>::value),
-                       "Latin-1 strings don't have special lower case mappings");
-            resultLength = ToLowerCaseLength(chars, readChars, length);
+        for (; i < length; i++) {
+            char16_t c = chars[i];
+            if (!IsSame<CharT, Latin1Char>::value) {
+                if (unicode::IsLeadSurrogate(c) && i + 1 < length) {
+                    char16_t trail = chars[i + 1];
+                    if (unicode::IsTrailSurrogate(trail)) {
+                        trail = unicode::ToLowerCaseNonBMPTrail(c, trail);
+                        newChars[i] = c;
+                        newChars[i + 1] = trail;
+                        i++;
+                        continue;
+                    }
+                }
+            }
 
-            AnyCharPtr buf = cx->make_pod_array<CharT>(resultLength + 1);
-            if (!buf)
-                return nullptr;
-
-            PodCopy(buf.get(), newChars.get(), readChars);
-            newChars = Move(buf);
-
-            MOZ_ALWAYS_TRUE(length ==
-                ToLowerCaseImpl(newChars.get(), chars, readChars, length, resultLength));
+            c = unicode::ToLowerCase(c);
+            MOZ_ASSERT_IF((IsSame<CharT, Latin1Char>::value), c <= JSString::MAX_LATIN1_CHAR);
+            newChars[i] = c;
         }
+
+        newChars[length] = 0;
     }
 
-    JSString* res = NewStringDontDeflate<CanGC>(cx, newChars.get(), resultLength);
+    JSString* res = NewStringDontDeflate<CanGC>(cx, newChars.get(), length);
     if (!res)
         return nullptr;
 
@@ -843,33 +675,32 @@ ToLowerCase(JSContext* cx, JSLinearString* str)
     return res;
 }
 
-JSString*
-js::StringToLowerCase(JSContext* cx, HandleLinearString string)
+static inline bool
+ToLowerCaseHelper(JSContext* cx, const CallArgs& args)
 {
-    if (string->hasLatin1Chars())
-        return ToLowerCase<Latin1Char>(cx, string);
-    return ToLowerCase<char16_t>(cx, string);
+    RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
+    if (!str)
+        return false;
+
+    JSLinearString* linear = str->ensureLinear(cx);
+    if (!linear)
+        return false;
+
+    if (linear->hasLatin1Chars())
+        str = ToLowerCase<Latin1Char>(cx, linear);
+    else
+        str = ToLowerCase<char16_t>(cx, linear);
+    if (!str)
+        return false;
+
+    args.rval().setString(str);
+    return true;
 }
 
 bool
 js::str_toLowerCase(JSContext* cx, unsigned argc, Value* vp)
 {
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
-    if (!str)
-        return false;
-
-    RootedLinearString linear(cx, str->ensureLinear(cx));
-    if (!linear)
-        return false;
-
-    JSString* result = StringToLowerCase(cx, linear);
-    if (!result)
-        return false;
-
-    args.rval().setString(result);
-    return true;
+    return ToLowerCaseHelper(cx, CallArgsFromVp(argc, vp));
 }
 
 bool
@@ -877,15 +708,15 @@ js::str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
-    if (!str)
-        return false;
-
     
 
 
 
     if (cx->runtime()->localeCallbacks && cx->runtime()->localeCallbacks->localeToLowerCase) {
+        RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
+        if (!str)
+            return false;
+
         RootedValue result(cx);
         if (!cx->runtime()->localeCallbacks->localeToLowerCase(cx, str, &result))
             return false;
@@ -894,165 +725,49 @@ js::str_toLocaleLowerCase(JSContext* cx, unsigned argc, Value* vp)
         return true;
     }
 
-    RootedLinearString linear(cx, str->ensureLinear(cx));
-    if (!linear)
-        return false;
-
-    JSString* result = StringToLowerCase(cx, linear);
-    if (!result)
-        return false;
-
-    args.rval().setString(result);
-    return true;
+    return ToLowerCaseHelper(cx, args);
 }
-
-static inline bool
-CanUpperCaseSpecialCasing(Latin1Char charCode)
-{
-    
-    
-    MOZ_ASSERT_IF(charCode != unicode::LATIN_SMALL_LETTER_SHARP_S,
-                  !unicode::CanUpperCaseSpecialCasing(charCode));
-
-    return charCode == unicode::LATIN_SMALL_LETTER_SHARP_S;
-}
-
-static inline bool
-CanUpperCaseSpecialCasing(char16_t charCode)
-{
-    return unicode::CanUpperCaseSpecialCasing(charCode);
-}
-
-static inline size_t
-LengthUpperCaseSpecialCasing(Latin1Char charCode)
-{
-    
-    MOZ_ASSERT(charCode == unicode::LATIN_SMALL_LETTER_SHARP_S);
-
-    return 2;
-}
-
-static inline size_t
-LengthUpperCaseSpecialCasing(char16_t charCode)
-{
-    MOZ_ASSERT(CanUpperCaseSpecialCasing(charCode));
-
-    return unicode::LengthUpperCaseSpecialCasing(charCode);
-}
-
-static inline void
-AppendUpperCaseSpecialCasing(char16_t charCode, Latin1Char* elements, size_t* index)
-{
-    
-    MOZ_ASSERT(charCode == unicode::LATIN_SMALL_LETTER_SHARP_S);
-    static_assert('S' <= JSString::MAX_LATIN1_CHAR, "'S' is a Latin-1 character");
-
-    elements[(*index)++] = 'S';
-    elements[(*index)++] = 'S';
-}
-
-static inline void
-AppendUpperCaseSpecialCasing(char16_t charCode, char16_t* elements, size_t* index)
-{
-    unicode::AppendUpperCaseSpecialCasing(charCode, elements, index);
-}
-
 
 template <typename DestChar, typename SrcChar>
-static size_t
-ToUpperCaseImpl(DestChar* destChars, const SrcChar* srcChars, size_t startIndex, size_t srcLength,
-                size_t destLength)
+static void
+ToUpperCaseImpl(DestChar* destChars, const SrcChar* srcChars, size_t firstLowerCase, size_t length)
 {
-    static_assert(IsSame<SrcChar, Latin1Char>::value || !IsSame<DestChar, Latin1Char>::value,
-                  "cannot write non-Latin-1 characters into Latin-1 string");
-    MOZ_ASSERT(startIndex < srcLength);
-    MOZ_ASSERT(srcLength <= destLength);
+    MOZ_ASSERT(firstLowerCase < length);
 
-    size_t j = startIndex;
-    for (size_t i = startIndex; i < srcLength; i++) {
+    for (size_t i = 0; i < firstLowerCase; i++)
+        destChars[i] = srcChars[i];
+
+    for (size_t i = firstLowerCase; i < length; i++) {
         char16_t c = srcChars[i];
         if (!IsSame<DestChar, Latin1Char>::value) {
-            if (unicode::IsLeadSurrogate(c) && i + 1 < srcLength) {
+            if (unicode::IsLeadSurrogate(c) && i + 1 < length) {
                 char16_t trail = srcChars[i + 1];
                 if (unicode::IsTrailSurrogate(trail)) {
                     trail = unicode::ToUpperCaseNonBMPTrail(c, trail);
-                    destChars[j++] = c;
-                    destChars[j++] = trail;
+                    destChars[i] = c;
+                    destChars[i + 1] = trail;
                     i++;
                     continue;
                 }
             }
         }
-
-        if (MOZ_UNLIKELY(c > 0x7f && CanUpperCaseSpecialCasing(static_cast<SrcChar>(c)))) {
-            
-            if (srcLength == destLength)
-                return i;
-
-            AppendUpperCaseSpecialCasing(c, destChars, &j);
-            continue;
-        }
-
         c = unicode::ToUpperCase(c);
         MOZ_ASSERT_IF((IsSame<DestChar, Latin1Char>::value), c <= JSString::MAX_LATIN1_CHAR);
-        destChars[j++] = c;
+        destChars[i] = c;
     }
 
-    MOZ_ASSERT(j == destLength);
-    destChars[destLength] = '\0';
-
-    return srcLength;
-}
-
-
-static bool
-ToUpperCaseImpl(Latin1Char* destChars, const char16_t* srcChars, size_t startIndex,
-                size_t srcLength, size_t destLength)
-{
-    MOZ_ASSERT_UNREACHABLE("cannot write non-Latin-1 characters into Latin-1 string");
-    return false;
-}
-
-template <typename CharT>
-static size_t
-ToUpperCaseLength(const CharT* chars, size_t startIndex, size_t length)
-{
-    size_t upperLength = length;
-    for (size_t i = startIndex; i < length; i++) {
-        char16_t c = chars[i];
-
-        if (c > 0x7f && CanUpperCaseSpecialCasing(static_cast<CharT>(c)))
-            upperLength += LengthUpperCaseSpecialCasing(static_cast<CharT>(c)) - 1;
-    }
-    return upperLength;
-}
-
-template <typename DestChar, typename SrcChar>
-static inline void
-CopyChars(DestChar* destChars, const SrcChar* srcChars, size_t length)
-{
-    static_assert(!IsSame<DestChar, SrcChar>::value, "PodCopy is used for the same type case");
-    for (size_t i = 0; i < length; i++)
-        destChars[i] = srcChars[i];
-}
-
-template <typename CharT>
-static inline void
-CopyChars(CharT* destChars, const CharT* srcChars, size_t length)
-{
-    PodCopy(destChars, srcChars, length);
+    destChars[length] = '\0';
 }
 
 template <typename CharT>
 static JSString*
 ToUpperCase(JSContext* cx, JSLinearString* str)
 {
-    using Latin1CharPtr = UniquePtr<Latin1Char[], JS::FreePolicy>;
-    using TwoByteCharPtr = UniquePtr<char16_t[], JS::FreePolicy>;
+    typedef UniquePtr<Latin1Char[], JS::FreePolicy> Latin1CharPtr;
+    typedef UniquePtr<char16_t[], JS::FreePolicy> TwoByteCharPtr;
 
     mozilla::MaybeOneOf<Latin1CharPtr, TwoByteCharPtr> newChars;
-    const size_t length = str->length();
-    size_t resultLength;
+    size_t length = str->length();
     {
         AutoCheckCannotGC nogc;
         const CharT* chars = str->chars<CharT>(nogc);
@@ -1075,8 +790,6 @@ ToUpperCase(JSContext* cx, JSLinearString* str)
             }
             if (unicode::CanUpperCase(c))
                 break;
-            if (MOZ_UNLIKELY(c > 0x7f && CanUpperCaseSpecialCasing(static_cast<CharT>(c))))
-                break;
         }
 
         
@@ -1086,22 +799,12 @@ ToUpperCase(JSContext* cx, JSLinearString* str)
         
         
         
-        
-        
-        
-        
-        
-        
-        
-        
         bool resultIsLatin1;
         if (IsSame<CharT, Latin1Char>::value) {
             resultIsLatin1 = true;
             for (size_t j = i; j < length; j++) {
                 Latin1Char c = chars[j];
-                if (c == unicode::MICRO_SIGN ||
-                    c == unicode::LATIN_SMALL_LETTER_Y_WITH_DIAERESIS)
-                {
+                if (c == 0xb5 || c == 0xff) {
                     MOZ_ASSERT(unicode::ToUpperCase(c) > JSString::MAX_LATIN1_CHAR);
                     resultIsLatin1 = false;
                     break;
@@ -1114,63 +817,31 @@ ToUpperCase(JSContext* cx, JSLinearString* str)
         }
 
         if (resultIsLatin1) {
-            resultLength = length;
-            Latin1CharPtr buf = cx->make_pod_array<Latin1Char>(resultLength + 1);
+            Latin1CharPtr buf = cx->make_pod_array<Latin1Char>(length + 1);
             if (!buf)
                 return nullptr;
 
-            CopyChars(buf.get(), chars, i);
-
-            size_t readChars = ToUpperCaseImpl(buf.get(), chars, i, length, resultLength);
-            if (readChars < length) {
-                resultLength = ToUpperCaseLength(chars, readChars, length);
-
-                Latin1CharPtr buf2 = cx->make_pod_array<Latin1Char>(resultLength + 1);
-                if (!buf2)
-                    return nullptr;
-
-                CopyChars(buf2.get(), buf.get(), readChars);
-                buf = Move(buf2);
-
-                MOZ_ALWAYS_TRUE(length ==
-                    ToUpperCaseImpl(buf.get(), chars, readChars, length, resultLength));
-            }
+            ToUpperCaseImpl(buf.get(), chars, i, length);
             newChars.construct<Latin1CharPtr>(Move(buf));
         } else {
-            resultLength = length;
-            TwoByteCharPtr buf = cx->make_pod_array<char16_t>(resultLength + 1);
+            TwoByteCharPtr buf = cx->make_pod_array<char16_t>(length + 1);
             if (!buf)
                 return nullptr;
 
-            CopyChars(buf.get(), chars, i);
-
-            size_t readChars = ToUpperCaseImpl(buf.get(), chars, i, length, resultLength);
-            if (readChars < length) {
-                resultLength = ToUpperCaseLength(chars, readChars, length);
-
-                TwoByteCharPtr buf2 = cx->make_pod_array<char16_t>(resultLength + 1);
-                if (!buf2)
-                    return nullptr;
-
-                CopyChars(buf2.get(), buf.get(), readChars);
-                buf = Move(buf2);
-
-                MOZ_ALWAYS_TRUE(length ==
-                    ToUpperCaseImpl(buf.get(), chars, readChars, length, resultLength));
-            }
+            ToUpperCaseImpl(buf.get(), chars, i, length);
             newChars.construct<TwoByteCharPtr>(Move(buf));
         }
     }
 
     JSString* res;
     if (newChars.constructed<Latin1CharPtr>()) {
-        res = NewStringDontDeflate<CanGC>(cx, newChars.ref<Latin1CharPtr>().get(), resultLength);
+        res = NewStringDontDeflate<CanGC>(cx, newChars.ref<Latin1CharPtr>().get(), length);
         if (!res)
             return nullptr;
 
         mozilla::Unused << newChars.ref<Latin1CharPtr>().release();
     } else {
-        res = NewStringDontDeflate<CanGC>(cx, newChars.ref<TwoByteCharPtr>().get(), resultLength);
+        res = NewStringDontDeflate<CanGC>(cx, newChars.ref<TwoByteCharPtr>().get(), length);
         if (!res)
             return nullptr;
 
@@ -1180,33 +851,32 @@ ToUpperCase(JSContext* cx, JSLinearString* str)
     return res;
 }
 
-JSString*
-js::StringToUpperCase(JSContext* cx, HandleLinearString string)
+static bool
+ToUpperCaseHelper(JSContext* cx, const CallArgs& args)
 {
-    if (string->hasLatin1Chars())
-        return ToUpperCase<Latin1Char>(cx, string);
-    return ToUpperCase<char16_t>(cx, string);
+    RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
+    if (!str)
+        return false;
+
+    JSLinearString* linear = str->ensureLinear(cx);
+    if (!linear)
+        return false;
+
+    if (linear->hasLatin1Chars())
+        str = ToUpperCase<Latin1Char>(cx, linear);
+    else
+        str = ToUpperCase<char16_t>(cx, linear);
+    if (!str)
+        return false;
+
+    args.rval().setString(str);
+    return true;
 }
 
 bool
 js::str_toUpperCase(JSContext* cx, unsigned argc, Value* vp)
 {
-    CallArgs args = CallArgsFromVp(argc, vp);
-
-    RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
-    if (!str)
-        return false;
-
-    RootedLinearString linear(cx, str->ensureLinear(cx));
-    if (!linear)
-        return false;
-
-    JSString* result = StringToUpperCase(cx, linear);
-    if (!result)
-        return false;
-
-    args.rval().setString(result);
-    return true;
+    return ToUpperCaseHelper(cx, CallArgsFromVp(argc, vp));
 }
 
 bool
@@ -1214,15 +884,15 @@ js::str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
 
-    RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
-    if (!str)
-        return false;
-
     
 
 
 
     if (cx->runtime()->localeCallbacks && cx->runtime()->localeCallbacks->localeToUpperCase) {
+        RootedString str(cx, ToStringForStringFunction(cx, args.thisv()));
+        if (!str)
+            return false;
+
         RootedValue result(cx);
         if (!cx->runtime()->localeCallbacks->localeToUpperCase(cx, str, &result))
             return false;
@@ -1231,16 +901,7 @@ js::str_toLocaleUpperCase(JSContext* cx, unsigned argc, Value* vp)
         return true;
     }
 
-    RootedLinearString linear(cx, str->ensureLinear(cx));
-    if (!linear)
-        return false;
-
-    JSString* result = StringToUpperCase(cx, linear);
-    if (!result)
-        return false;
-
-    args.rval().setString(result);
-    return true;
+    return ToUpperCaseHelper(cx, args);
 }
 
 #if !EXPOSE_INTL_API

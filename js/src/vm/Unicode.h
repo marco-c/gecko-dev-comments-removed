@@ -63,16 +63,8 @@ namespace CharFlag {
     const uint8_t UNICODE_ID_CONTINUE = UNICODE_ID_START + UNICODE_ID_CONTINUE_ONLY;
 }
 
-const char16_t NO_BREAK_SPACE = 0x00A0;
-const char16_t MICRO_SIGN = 0x00B5;
-const char16_t LATIN_SMALL_LETTER_SHARP_S = 0x00DF;
-const char16_t LATIN_SMALL_LETTER_Y_WITH_DIAERESIS = 0x00FF;
-const char16_t LATIN_CAPITAL_LETTER_I_WITH_DOT_ABOVE = 0x0130;
-const char16_t COMBINING_DOT_ABOVE = 0x0307;
-const char16_t GREEK_CAPITAL_LETTER_SIGMA = 0x03A3;
-const char16_t GREEK_SMALL_LETTER_FINAL_SIGMA = 0x03C2;
-const char16_t GREEK_SMALL_LETTER_SIGMA = 0x03C3;
 const char16_t BYTE_ORDER_MARK2 = 0xFFFE;
+const char16_t NO_BREAK_SPACE  = 0x00A0;
 
 const char16_t LeadSurrogateMin = 0xD800;
 const char16_t LeadSurrogateMax = 0xDBFF;
@@ -247,10 +239,6 @@ IsSpaceOrBOM2(char16_t ch)
     return CharInfo(ch).isSpace();
 }
 
-
-
-
-
 inline char16_t
 ToUpperCase(char16_t ch)
 {
@@ -264,10 +252,6 @@ ToUpperCase(char16_t ch)
 
     return uint16_t(ch) + info.upperCase;
 }
-
-
-
-
 
 inline char16_t
 ToLowerCase(char16_t ch)
@@ -344,43 +328,6 @@ ToLowerCaseNonBMPTrail(char16_t lead, char16_t trail)
 
     return trail;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool
-CanUpperCaseSpecialCasing(char16_t ch);
-
-
-
-
-
-
-size_t
-LengthUpperCaseSpecialCasing(char16_t ch);
-
-
-
-
-
-
-
-void
-AppendUpperCaseSpecialCasing(char16_t ch, char16_t* elements, size_t* index);
 
 
 
@@ -544,7 +491,7 @@ UTF16Encode(uint32_t codePoint, char16_t* lead, char16_t* trail)
     *trail = TrailSurrogate(codePoint);
 }
 
-inline void
+static inline void
 UTF16Encode(uint32_t codePoint, char16_t* elements, unsigned* index)
 {
     if (!IsSupplementary(codePoint)) {

@@ -35,9 +35,6 @@ writeHeaderToLog( SECTION + " "+ TITLE);
 
 
 for ( var i = 0x0530; i <= 0x058F; i++ ) {
-  
-  if (i == 0x0587) continue;
-
   var U = new Unicode( i );
 
 
