@@ -139,6 +139,7 @@ struct BaselineStackBuilder
         header_->resumePC = nullptr;
         header_->monitorStub = nullptr;
         header_->numFrames = 0;
+        header_->checkGlobalDeclarationConflicts = false;
         return true;
     }
 
@@ -412,6 +413,10 @@ struct BaselineStackBuilder
 #  error "Bad architecture!"
 #endif
     }
+
+    void setCheckGlobalDeclarationConflicts() {
+        header_->checkGlobalDeclarationConflicts = true;
+    }
 };
 
 
@@ -507,6 +512,16 @@ HasLiveIteratorAtStackDepth(JSScript* script, jsbytecode* pc, uint32_t stackDept
     }
 
     return false;
+}
+
+static bool
+IsPrologueBailout(const SnapshotIterator& iter, const ExceptionBailoutInfo* excInfo)
+{
+    
+    
+    
+    return iter.pcOffset() == 0 && !iter.resumeAfter() &&
+           (!excInfo || !excInfo->propagatingIonExceptionForDebugMode());
 }
 
 
@@ -710,15 +725,8 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 
                 
                 
-                
-                
-                
-                
-                if (iter.pcOffset() != 0 || iter.resumeAfter() ||
-                    (excInfo && excInfo->propagatingIonExceptionForDebugMode()))
-                {
+                if (!IsPrologueBailout(iter, excInfo))
                     envChain = fun->environment();
-                }
             } else if (script->module()) {
                 envChain = script->module()->environment();
             } else {
@@ -731,6 +739,13 @@ InitFromBailout(JSContext* cx, HandleScript caller, jsbytecode* callerPC,
                 MOZ_ASSERT(!script->isForEval());
                 MOZ_ASSERT(!script->hasNonSyntacticScope());
                 envChain = &(script->global().lexicalEnvironment());
+
+                
+                
+                
+                
+                if (IsPrologueBailout(iter, excInfo))
+                    builder.setCheckGlobalDeclarationConflicts();
             }
         }
 
@@ -1789,16 +1804,29 @@ jit::FinishBailoutToBaseline(BaselineBailoutInfo* bailoutInfo)
     uint32_t numFrames = bailoutInfo->numFrames;
     MOZ_ASSERT(numFrames > 0);
     BailoutKind bailoutKind = bailoutInfo->bailoutKind;
+    bool checkGlobalDeclarationConflicts = bailoutInfo->checkGlobalDeclarationConflicts;
 
     
     js_free(bailoutInfo);
     bailoutInfo = nullptr;
 
-    
-    
-    
-    if (topFrame->environmentChain() && !EnsureHasEnvironmentObjects(cx, topFrame))
-        return false;
+    if (topFrame->environmentChain()) {
+        
+        
+        
+        if (!EnsureHasEnvironmentObjects(cx, topFrame))
+            return false;
+
+        
+        
+        
+        if (checkGlobalDeclarationConflicts) {
+            Rooted<LexicalEnvironmentObject*> lexicalEnv(cx, &cx->global()->lexicalEnvironment());
+            RootedScript script(cx, topFrame->script());
+            if (!CheckGlobalDeclarationConflicts(cx, script, lexicalEnv, cx->global()))
+                return false;
+        }
+    }
 
     
     

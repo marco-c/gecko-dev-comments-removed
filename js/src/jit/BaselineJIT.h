@@ -593,6 +593,12 @@ struct BaselineBailoutInfo
     uint32_t numFrames;
 
     
+    
+    
+    
+    bool checkGlobalDeclarationConflicts;
+
+    
     BailoutKind bailoutKind;
 };
 
