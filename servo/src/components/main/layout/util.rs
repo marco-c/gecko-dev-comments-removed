@@ -174,9 +174,7 @@ pub struct LayoutDataWrapper {
 
 pub trait LayoutDataAccess {
     
-    
-    
-    
+    unsafe fn borrow_layout_data_unchecked(&self) -> *Option<LayoutDataWrapper>;
     
     fn borrow_layout_data<'a>(&'a self) -> Ref<'a,Option<LayoutDataWrapper>>;
     
@@ -184,6 +182,11 @@ pub trait LayoutDataAccess {
 }
 
 impl<'ln> LayoutDataAccess for LayoutNode<'ln> {
+    #[inline(always)]
+    unsafe fn borrow_layout_data_unchecked(&self) -> *Option<LayoutDataWrapper> {
+        cast::transmute(self.get().layout_data.borrow_unchecked())
+    }
+
     #[inline(always)]
     fn borrow_layout_data<'a>(&'a self) -> Ref<'a,Option<LayoutDataWrapper>> {
         unsafe {
