@@ -713,19 +713,6 @@ PersistNodeFixup::GetNodeToFixup(nsIDOMNode *aNodeIn, nsIDOMNode **aNodeOut)
     } else {
         NS_ADDREF(*aNodeOut = aNodeIn);
     }
-    nsCOMPtr<nsIDOMHTMLElement> element(do_QueryInterface(*aNodeOut));
-    if (element) {
-        
-        nsAutoString namespaceURI;
-        element->GetNamespaceURI(namespaceURI);
-        if (namespaceURI.IsEmpty()) {
-            
-            
-            
-            
-            element->RemoveAttribute(NS_LITERAL_STRING("_base_href"));
-        }
-    }
     return NS_OK;
 }
 
@@ -1155,8 +1142,9 @@ PersistNodeFixup::FixupNode(nsIDOMNode *aNodeIn,
             }
             
             
+            IgnoredErrorResult ignored;
             static_cast<dom::HTMLSharedObjectElement*>(newApplet.get())->
-              RemoveAttribute(NS_LITERAL_STRING("codebase"));
+              RemoveAttribute(NS_LITERAL_STRING("codebase"), ignored);
             FixupAttribute(*aNodeOut, "code");
             FixupAttribute(*aNodeOut, "archive");
             
@@ -1233,10 +1221,12 @@ PersistNodeFixup::FixupNode(nsIDOMNode *aNodeIn,
                 case NS_FORM_INPUT_COLOR:
                     nodeAsInput->GetValue(valueStr, dom::CallerType::System);
                     
-                    if (valueStr.IsEmpty())
-                      outElt->RemoveAttribute(valueAttr);
-                    else
+                    if (valueStr.IsEmpty()) {
+                      IgnoredErrorResult ignored;
+                      outElt->RemoveAttribute(valueAttr, ignored);
+                    } else {
                       outElt->SetAttribute(valueAttr, valueStr);
+                    }
                     break;
                 case NS_FORM_INPUT_CHECKBOX:
                 case NS_FORM_INPUT_RADIO:
