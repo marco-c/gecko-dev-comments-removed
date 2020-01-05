@@ -128,7 +128,10 @@ nsAboutCache::Channel::Init(nsIURI* aURI, nsILoadInfo* aLoadInfo)
         mBuffer.AppendLiteral("\">Back to overview</a>");
     }
 
-    FlushBuffer();
+    rv = FlushBuffer();
+    if (NS_FAILED(rv)) {
+        NS_WARNING("Failed to flush buffer");
+    }
 
     return NS_OK;
 }
@@ -245,7 +248,10 @@ nsAboutCache::Channel::FireVisitStorage()
             free(escaped);
         }
 
-        FlushBuffer();
+        rv = FlushBuffer();
+        if (NS_FAILED(rv)) {
+            NS_WARNING("Failed to flush buffer");
+        }
 
         
         
@@ -371,7 +377,10 @@ nsAboutCache::Channel::OnCacheStorageInfo(uint32_t aEntryCount, uint64_t aConsum
     
     mEntriesHeaderAdded = false;
 
-    FlushBuffer();
+    nsresult rv = FlushBuffer();
+    if (NS_FAILED(rv)) {
+        NS_WARNING("Failed to flush buffer");
+    }
 
     if (mOverview) {
         
@@ -528,7 +537,10 @@ nsAboutCache::Channel::OnCacheEntryVisitCompleted()
     
     mBuffer.AppendLiteral("</body>\n"
                           "</html>\n");
-    FlushBuffer();
+    nsresult rv = FlushBuffer();
+    if (NS_FAILED(rv)) {
+        NS_WARNING("Failed to flush buffer");
+    }
     mStream->Close();
 
     return NS_OK;

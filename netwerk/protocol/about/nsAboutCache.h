@@ -48,10 +48,10 @@ public:
 
     nsAboutCache() {}
 
-    static nsresult
+    static MOZ_MUST_USE nsresult
     Create(nsISupports *aOuter, REFNSIID aIID, void **aResult);
 
-    static nsresult
+    static MOZ_MUST_USE nsresult
     GetStorage(nsACString const & storageName, nsILoadContextInfo* loadInfo,
                nsICacheStorage **storage);
 
@@ -74,13 +74,13 @@ protected:
         virtual ~Channel() {}
 
     public:
-        nsresult Init(nsIURI* aURI, nsILoadInfo* aLoadInfo);
-        nsresult ParseURI(nsIURI * uri, nsACString & storage);
+        MOZ_MUST_USE nsresult Init(nsIURI* aURI, nsILoadInfo* aLoadInfo);
+        MOZ_MUST_USE nsresult ParseURI(nsIURI * uri, nsACString & storage);
 
         
         
         
-        nsresult VisitNextStorage();
+        MOZ_MUST_USE nsresult VisitNextStorage();
         
         
         
@@ -88,13 +88,13 @@ protected:
         
         
         
-        nsresult VisitStorage(nsACString const & storageName);
+        MOZ_MUST_USE nsresult VisitStorage(nsACString const & storageName);
 
         
         
         
         
-        nsresult FlushBuffer();
+        MOZ_MUST_USE nsresult FlushBuffer();
 
         
         
