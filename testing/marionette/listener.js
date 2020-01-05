@@ -1098,8 +1098,12 @@ function cancelRequest() {
 
 
 
-function getCurrentUrl() {
-  return content.location.href;
+function getCurrentUrl(isB2G) {
+  if (isB2G) {
+    return curContainer.frame.location.href;
+  } else {
+    return content.location.href;
+  }
 }
 
 
