@@ -45,7 +45,7 @@ impl Image {
 
     
     
-    pub fn for_cascade(url: Option<ServoUrl>, extra_data: UrlExtraData) -> Self {
+    pub fn for_cascade(url: ServoUrl, extra_data: UrlExtraData) -> Self {
         Image::Url(SpecifiedUrl::for_cascade(url, extra_data))
     }
 }
