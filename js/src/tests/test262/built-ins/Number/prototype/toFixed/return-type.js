@@ -1,0 +1,12 @@
+
+
+
+
+
+
+
+
+
+assert.sameValue(typeof (123.456).toFixed(), "string");
+
+reportCompare(0, 0);

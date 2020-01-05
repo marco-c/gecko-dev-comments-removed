@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+taintDataProperty(Object.prototype, "1");
+new Intl.PluralRules("und");
+
+reportCompare(0, 0);
