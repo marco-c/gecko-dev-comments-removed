@@ -3,13 +3,6 @@
 
 
 
-
-
-
-
-
-
-
 pref("marionette.enabled", false);
 
 

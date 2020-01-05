@@ -25,27 +25,15 @@ const PREF_FORCE_LOCAL_FALLBACK = "marionette.force-local";
 
 const DEFAULT_PORT = 2828;
 const DEFAULT_LOG_LEVEL = "info";
-const LOG_LEVELS = new class extends Map {
-  constructor () {
-    super([
-      ["fatal", Log.Level.Fatal],
-      ["error", Log.Level.Error],
-      ["warn", Log.Level.Warn],
-      ["info", Log.Level.Info],
-      ["config", Log.Level.Config],
-      ["debug", Log.Level.Debug],
-      ["trace", Log.Level.Trace],
-    ]);
-  }
-
-  get (level) {
-    let s = new String(level).toLowerCase();
-    if (!this.has(s)) {
-      return DEFAULT_LOG_LEVEL;
-    }
-    return super.get(s);
-  }
-};
+const LOG_LEVELS = new Map([
+  ["fatal", Log.Level.Fatal],
+  ["error", Log.Level.Error],
+  ["warn", Log.Level.Warn],
+  ["info", Log.Level.Info],
+  ["config", Log.Level.Config],
+  ["debug", Log.Level.Debug],
+  ["trace", Log.Level.Trace],
+]);
 
 
 
@@ -67,30 +55,43 @@ const ServerSocket = CC("@mozilla.org/network/server-socket;1",
 
 
 
-function getPref (preferred, fallback) {
-  if (!Preferences.isSet(preferred) && Preferences.has(fallback)) {
-    return Preferences.get(fallback, Preferences.get(preferred));
-  }
-  return Preferences.get(preferred);
-}
-
-
-
 
 
 
 const prefs = {
   get port () {
-    return getPref(PREF_PORT, PREF_PORT_FALLBACK);
+    let fallback = Preferences.get(PREF_PORT_FALLBACK, DEFAULT_PORT);
+    return Preferences.get(PREF_PORT, fallback);
   },
 
   get logLevel () {
-    let s = getPref(PREF_LOG_LEVEL, PREF_LOG_LEVEL_FALLBACK);
-    return LOG_LEVELS.get(s);
+    let level = DEFAULT_LOG_LEVEL;
+    let fallback = Preferences.get(PREF_LOG_LEVEL_FALLBACK, level);
+    let p = Preferences.get(PREF_LOG_LEVEL, fallback);
+
+    switch (typeof p) {
+      
+      case "string":
+        let s = p.toLowerCase();
+        if (LOG_LEVELS.has(s)) {
+          level = LOG_LEVELS.get(s);
+        }
+        break;
+
+      
+      case "boolean":
+        if (p) {
+          level = Log.Level.Trace;
+        }
+        break;
+    }
+
+    return level;
   },
 
   get forceLocal () {
-    return getPref(PREF_FORCE_LOCAL, PREF_FORCE_LOCAL_FALLBACK);
+    let fallback = Preferences.get(PREF_FORCE_LOCAL_FALLBACK, true);
+    return Preferences.get(PREF_FORCE_LOCAL, fallback);
   },
 
   readFromEnvironment (key) {
@@ -287,7 +288,7 @@ MarionetteComponent.prototype.init = function () {
     
     
     let insaneSacrificialGoat =
-        new ServerSocket(0, Ci.nsIServerSocket.KeepWhenOffline, 4);
+        new ServerSocket(666, Ci.nsIServerSocket.KeepWhenOffline, 4);
     insaneSacrificialGoat.asyncListen(this);
   }
 
@@ -297,6 +298,9 @@ MarionetteComponent.prototype.init = function () {
     s = new server.TCPListener(prefs.port, prefs.forceLocal);
     s.start();
     this.logger.info(`Listening on port ${s.port}`);
+  } catch (e) {
+    this.logger.error(`Error on starting server: ${e}`);
+    dump(`${e.toString()}\n${e.stack}\n`);
   } finally {
     if (s) {
       this.server = s;
