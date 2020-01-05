@@ -7,7 +7,10 @@
 
 "use strict";
 
-const {Cc, Ci, Cu} = require("chrome");
+const {Cc, Ci} = require("chrome");
+
+
+const JQUERY_LIVE_REGEX = /return typeof \w+.*.event\.triggered[\s\S]*\.event\.(dispatch|handle).*arguments/;
 
 loader.lazyGetter(this, "eventListenerService", () => {
   return Cc["@mozilla.org/eventlistenerservice;1"]
@@ -22,7 +25,7 @@ var parsers = [
       let hasJQuery = global.jQuery && global.jQuery.fn && global.jQuery.fn.jquery;
 
       if (!hasJQuery) {
-        return;
+        return undefined;
       }
 
       let jQuery = global.jQuery;
@@ -36,6 +39,11 @@ var parsers = [
           let events = eventsObj[type];
           for (let key in events) {
             let event = events[key];
+
+            if (node.wrappedJSObject == global.document && event.selector) {
+              continue;
+            }
+
             if (typeof event === "object" || typeof event === "function") {
               let eventInfo = {
                 type: type,
@@ -63,6 +71,12 @@ var parsers = [
       for (let type in entry.events) {
         let events = entry.events[type];
         for (let key in events) {
+          let event = events[key];
+
+          if (node.wrappedJSObject == global.document && event.selector) {
+            continue;
+          }
+
           if (typeof events[key] === "function") {
             let eventInfo = {
               type: type,
@@ -90,7 +104,7 @@ var parsers = [
     getListeners: function (node) {
       return jQueryLiveGetListeners(node, false);
     },
-    normalizeHandler: function (handlerDO) {
+    normalizeListener: function (handlerDO) {
       let paths = [
         [".event.proxy/", ".event.proxy/", "*"],
         [".proxy/", "*"]
@@ -140,7 +154,14 @@ var parsers = [
       let listeners;
 
       if (node.nodeName.toLowerCase() === "html") {
-        listeners = eventListenerService.getListenerInfoFor(node.ownerGlobal) || [];
+        let winListeners =
+          eventListenerService.getListenerInfoFor(node.ownerGlobal) || [];
+        let docElementListeners =
+          eventListenerService.getListenerInfoFor(node) || [];
+        let docListeners =
+          eventListenerService.getListenerInfoFor(node.parentNode) || [];
+
+        listeners = [...winListeners, ...docElementListeners, ...docListeners];
       } else {
         listeners = eventListenerService.getListenerInfoFor(node) || [];
       }
@@ -165,7 +186,7 @@ var parsers = [
         let listener = listenerObj.listenerObject;
 
         
-        if (!listener) {
+        if (!listener || JQUERY_LIVE_REGEX.test(listener.toString())) {
           continue;
         }
 
@@ -188,7 +209,7 @@ function jQueryLiveGetListeners(node, boolOnEventFound) {
   let hasJQuery = global.jQuery && global.jQuery.fn && global.jQuery.fn.jquery;
 
   if (!hasJQuery) {
-    return;
+    return undefined;
   }
 
   let jQuery = global.jQuery;
@@ -235,7 +256,8 @@ function jQueryLiveGetListeners(node, boolOnEventFound) {
           continue;
         }
 
-        if (!boolOnEventFound && (typeof event === "object" || typeof event === "function")) {
+        if (!boolOnEventFound &&
+            (typeof event === "object" || typeof event === "function")) {
           let eventInfo = {
             type: event.origType || event.type.substr(selector.length + 1),
             handler: event.handler || event,
@@ -273,13 +295,15 @@ this.EventParsers = function EventParsers() {
 exports.EventParsers = EventParsers;
 
 EventParsers.prototype = {
-  _eventParsers: new Map(), 
+  
+  _eventParsers: new Map(),
 
   get parsers() {
     return this._eventParsers;
   },
 
   
+
 
 
 
@@ -344,7 +368,7 @@ EventParsers.prototype = {
     this._eventParsers.set(parserId, {
       getListeners: parserObj.getListeners,
       hasListeners: parserObj.hasListeners,
-      normalizeHandler: parserObj.normalizeHandler
+      normalizeListener: parserObj.normalizeListener
     });
   },
 

@@ -3,7 +3,10 @@
 
 
 
+
 "use strict";
+
+loadHelperScript("helper_diff.js");
 
 
 
@@ -83,6 +86,8 @@ function* checkEventsForNode(test, inspector, testActor) {
     let attributes = header.querySelectorAll(".event-tooltip-attributes");
     let contentBox = header.nextElementSibling;
 
+    info("Looking for " + type.textContent);
+
     is(type.textContent, expected[i].type,
        "type matches for " + cssSelector);
     is(filename.textContent, expected[i].filename,
@@ -103,9 +108,47 @@ function* checkEventsForNode(test, inspector, testActor) {
     yield tooltip.once("event-tooltip-ready");
 
     let editor = tooltip.eventTooltip._eventEditors.get(contentBox).editor;
-    is(editor.getText(), expected[i].handler,
-       "handler matches for " + cssSelector);
+    testDiff(editor.getText(), expected[i].handler,
+       "handler matches for " + cssSelector, ok);
   }
 
   tooltip.hide();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+function testDiff(text1, text2, msg) {
+  let out = "";
+
+  if (text1 === text2) {
+    ok(true, msg);
+    return;
+  }
+
+  let result = textDiff(text1, text2);
+
+  for (let {atom, operation} of result) {
+    switch (operation) {
+      case "add":
+        out += "+ " + atom + "\n";
+        break;
+      case "delete":
+        out += "- " + atom + "\n";
+        break;
+      case "none":
+        out += "  " + atom + "\n";
+        break;
+    }
+  }
+
+  ok(false, msg + "\nDIFF:\n==========\n" + out + "==========\n");
 }

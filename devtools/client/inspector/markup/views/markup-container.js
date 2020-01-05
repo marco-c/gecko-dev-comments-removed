@@ -673,6 +673,12 @@ MarkupContainer.prototype = {
   },
 
   _onToggle: function (event) {
+    
+    if (event.target.dataset.event) {
+      event.stopPropagation();
+      return;
+    }
+
     this.markup.navigate(this);
     if (this.hasChildren) {
       this.markup.setNodeExpanded(this.node, !this.expanded, event.altKey);
