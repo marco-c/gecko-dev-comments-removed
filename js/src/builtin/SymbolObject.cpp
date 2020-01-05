@@ -98,7 +98,7 @@ SymbolObject::construct(JSContext* cx, unsigned argc, Value* vp)
     
     CallArgs args = CallArgsFromVp(argc, vp);
     if (args.isConstructing()) {
-        JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_NOT_CONSTRUCTOR, "Symbol");
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_NOT_CONSTRUCTOR, "Symbol");
         return false;
     }
 

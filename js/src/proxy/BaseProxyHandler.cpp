@@ -406,8 +406,8 @@ BaseProxyHandler::setPrototype(JSContext* cx, HandleObject proxy, HandleObject p
     
     
     
-    JS_ReportErrorNumber(cx, GetErrorMessage, nullptr, JSMSG_CANT_SET_PROTO_OF,
-                         "incompatible Proxy");
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_CANT_SET_PROTO_OF,
+                              "incompatible Proxy");
     return false;
 }
 

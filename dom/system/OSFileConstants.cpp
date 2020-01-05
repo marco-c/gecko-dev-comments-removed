@@ -880,8 +880,9 @@ bool DefineOSFileConstants(JSContext *cx, JS::Handle<JSObject*> global)
     
     
     
-    JS_ReportErrorNumber(cx, js::GetErrorMessage, nullptr,
-      JSMSG_CANT_OPEN, "OSFileConstants", "initialization has failed");
+    JS_ReportErrorNumberASCII(cx, js::GetErrorMessage, nullptr,
+                              JSMSG_CANT_OPEN,
+                              "OSFileConstants", "initialization has failed");
     return false;
   }
 
