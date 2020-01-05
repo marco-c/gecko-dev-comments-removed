@@ -75,6 +75,8 @@ class GeckoInstance(object):
         
         "marionette.enabled": True,
         
+        "marionette.defaultPrefs.enabled": True,
+        
         "marionette.prefs.recommended": False,
 
         "media.volume_scale": "0.01",
