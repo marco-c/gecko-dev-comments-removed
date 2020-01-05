@@ -106,8 +106,6 @@ public:
 
   static bool IsEnableAudioCompeting();
 
-  static bool IsServiceStarted();
-
   
 
 

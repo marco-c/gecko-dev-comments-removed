@@ -203,13 +203,6 @@ AudioChannelService::CreateServiceIfNeeded()
   }
 }
 
- bool
-AudioChannelService::IsServiceStarted()
-{
-  
-  return !!gAudioChannelService;
-}
-
  already_AddRefed<AudioChannelService>
 AudioChannelService::GetOrCreate()
 {
