@@ -69,7 +69,8 @@ add_task(function* test_edit_username() {
       
       
       let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
-                                                       "Shown");
+                                                       "popupshown",
+                                                       (event) => event.target == PopupNotifications.panel);
       yield ContentTask.spawn(browser, testCase.usernameInPage,
         function* (usernameInPage) {
           let doc = content.document;
@@ -78,12 +79,14 @@ add_task(function* test_edit_username() {
           doc.getElementById("form-basic").submit();
         });
       yield promiseShown;
-
       let notificationElement = PopupNotifications.panel.childNodes[0];
+      
+      notificationElement.querySelector("#password-notification-password").clientTop;
+
       
       if (testCase.usernameChangedTo) {
         notificationElement.querySelector("#password-notification-username")
-                .setAttribute("value", testCase.usernameChangedTo);
+                .value = testCase.usernameChangedTo;
       }
 
       

@@ -38,7 +38,8 @@ add_task(function* test_save_change() {
       
       
       let promiseShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
-                                                       "Shown");
+                                                       "popupshown",
+                                                       (event) => event.target == PopupNotifications.panel);
       yield ContentTask.spawn(browser, { username, password },
         function* ({ username, password }) {
           let doc = content.document;
@@ -47,13 +48,15 @@ add_task(function* test_save_change() {
           doc.getElementById("form-basic").submit();
         });
       yield promiseShown;
-
       let notificationElement = PopupNotifications.panel.childNodes[0];
       
+      notificationElement.querySelector("#password-notification-password").clientTop;
+
+      
       Assert.equal(notificationElement.querySelector("#password-notification-username")
-                           .getAttribute("value"), username);
+                           .value, username);
       Assert.equal(notificationElement.querySelector("#password-notification-password")
-                           .getAttribute("value"), password);
+                           .value, password);
 
       
       
