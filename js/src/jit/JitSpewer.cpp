@@ -21,6 +21,7 @@
 #include "jit/Ion.h"
 #include "jit/MIR.h"
 #include "jit/MIRGenerator.h"
+#include "jit/MIRGraph.h"
 
 #include "threading/LockGuard.h"
 
@@ -302,6 +303,13 @@ GraphSpewer::spewPass(const char* pass)
     jsonSpewer_.endPass();
 
     ionspewer.spewPass(this);
+
+    
+    
+    
+    AutoEnterOOMUnsafeRegion oomUnsafe;
+    if (!graph_->alloc().ensureBallast())
+        oomUnsafe.crash("Could not ensure enough ballast space after spewing graph information.");
 }
 
 void
