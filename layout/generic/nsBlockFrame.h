@@ -83,21 +83,21 @@ public:
   NS_DECL_QUERYFRAME_TARGET(nsBlockFrame)
   NS_DECL_FRAMEARENA_HELPERS
 
-  typedef nsLineList::iterator line_iterator;
-  typedef nsLineList::const_iterator const_line_iterator;
-  typedef nsLineList::reverse_iterator reverse_line_iterator;
-  typedef nsLineList::const_reverse_iterator const_reverse_line_iterator;
+  typedef nsLineList::iterator LineIterator;
+  typedef nsLineList::const_iterator ConstLineIterator;
+  typedef nsLineList::reverse_iterator ReverseLineIterator;
+  typedef nsLineList::const_reverse_iterator ConstReverseLineIterator;
 
-  line_iterator begin_lines() { return mLines.begin(); }
-  line_iterator end_lines() { return mLines.end(); }
-  const_line_iterator begin_lines() const { return mLines.begin(); }
-  const_line_iterator end_lines() const { return mLines.end(); }
-  reverse_line_iterator rbegin_lines() { return mLines.rbegin(); }
-  reverse_line_iterator rend_lines() { return mLines.rend(); }
-  const_reverse_line_iterator rbegin_lines() const { return mLines.rbegin(); }
-  const_reverse_line_iterator rend_lines() const { return mLines.rend(); }
-  line_iterator line(nsLineBox* aList) { return mLines.begin(aList); }
-  reverse_line_iterator rline(nsLineBox* aList) { return mLines.rbegin(aList); }
+  LineIterator begin_lines() { return mLines.begin(); }
+  LineIterator end_lines() { return mLines.end(); }
+  ConstLineIterator begin_lines() const { return mLines.begin(); }
+  ConstLineIterator end_lines() const { return mLines.end(); }
+  ReverseLineIterator rbegin_lines() { return mLines.rbegin(); }
+  ReverseLineIterator rend_lines() { return mLines.rend(); }
+  ConstReverseLineIterator rbegin_lines() const { return mLines.rbegin(); }
+  ConstReverseLineIterator rend_lines() const { return mLines.rend(); }
+  LineIterator line(nsLineBox* aList) { return mLines.begin(aList); }
+  ReverseLineIterator rline(nsLineBox* aList) { return mLines.rbegin(aList); }
 
   friend nsBlockFrame* NS_NewBlockFrame(nsIPresShell* aPresShell,
                                         nsStyleContext* aContext);
@@ -648,7 +648,7 @@ protected:
 
 
   void ReflowLine(BlockReflowInput& aState,
-                  line_iterator aLine,
+                  LineIterator aLine,
                   bool* aKeepReflowGoing);
 
   
@@ -656,7 +656,7 @@ protected:
   
   bool PlaceLine(BlockReflowInput& aState,
                  nsLineLayout& aLineLayout,
-                 line_iterator aLine,
+                 LineIterator aLine,
                  nsFloatManager::SavedState* aFloatStateBeforeLine,
                  mozilla::LogicalRect& aFloatAvailableSpace, 
                  nscoord& aAvailableSpaceHeight, 
@@ -676,11 +676,11 @@ protected:
 
 
 
-  void MarkLineDirty(line_iterator aLine, const nsLineList* aLineList);
+  void MarkLineDirty(LineIterator aLine, const nsLineList* aLineList);
 
   
   bool IsLastLine(BlockReflowInput& aState,
-                  line_iterator aLine);
+                  LineIterator aLine);
 
   void DeleteLine(BlockReflowInput& aState,
                   nsLineList::iterator aLine,
@@ -694,16 +694,16 @@ protected:
                                nsIFrame* aChildFrame);
 
   void ReflowBlockFrame(BlockReflowInput& aState,
-                        line_iterator aLine,
+                        LineIterator aLine,
                         bool* aKeepGoing);
 
   void ReflowInlineFrames(BlockReflowInput& aState,
-                          line_iterator aLine,
+                          LineIterator aLine,
                           bool* aKeepLineGoing);
 
   void DoReflowInlineFrames(BlockReflowInput& aState,
                             nsLineLayout& aLineLayout,
-                            line_iterator aLine,
+                            LineIterator aLine,
                             nsFlowAreaRect& aFloatAvailableSpace,
                             nscoord& aAvailableSpaceHeight,
                             nsFloatManager::SavedState*
@@ -714,7 +714,7 @@ protected:
 
   void ReflowInlineFrame(BlockReflowInput& aState,
                          nsLineLayout& aLineLayout,
-                         line_iterator aLine,
+                         LineIterator aLine,
                          nsIFrame* aFrame,
                          LineReflowStatus* aLineReflowStatus);
 
@@ -763,12 +763,12 @@ protected:
 
 
   void PushTruncatedLine(BlockReflowInput& aState,
-                         line_iterator aLine,
+                         LineIterator aLine,
                          bool* aKeepReflowGoing);
 
   void SplitLine(BlockReflowInput& aState,
                  nsLineLayout& aLineLayout,
-                 line_iterator aLine,
+                 LineIterator aLine,
                  nsIFrame* aFrame,
                  LineReflowStatus* aLineReflowStatus);
 
@@ -778,7 +778,7 @@ protected:
 
 
   nsIFrame* PullFrame(BlockReflowInput& aState,
-                      line_iterator aLine);
+                      LineIterator aLine);
 
   
 
@@ -954,12 +954,12 @@ private:
 
 class nsBlockInFlowLineIterator {
 public:
-  typedef nsBlockFrame::line_iterator line_iterator;
+  typedef nsBlockFrame::LineIterator LineIterator;
   
 
 
 
-  nsBlockInFlowLineIterator(nsBlockFrame* aFrame, line_iterator aLine);
+  nsBlockInFlowLineIterator(nsBlockFrame* aFrame, LineIterator aLine);
   
 
 
@@ -978,7 +978,7 @@ public:
   nsBlockInFlowLineIterator(nsBlockFrame* aFrame, nsIFrame* aFindFrame,
                             bool* aFoundValidLine);
 
-  line_iterator GetLine() { return mLine; }
+  LineIterator GetLine() { return mLine; }
   bool IsLastLineInList();
   nsBlockFrame* GetContainer() { return mFrame; }
   bool GetInOverflow() { return mLineList != &mFrame->mLines; }
@@ -992,7 +992,7 @@ public:
   
 
 
-  line_iterator End();
+  LineIterator End();
 
   
 
@@ -1008,10 +1008,10 @@ public:
 private:
   friend class nsBlockFrame;
   
-  nsBlockInFlowLineIterator(nsBlockFrame* aFrame, line_iterator aLine, bool aInOverflow);
+  nsBlockInFlowLineIterator(nsBlockFrame* aFrame, LineIterator aLine, bool aInOverflow);
 
   nsBlockFrame* mFrame;
-  line_iterator mLine;
+  LineIterator mLine;
   nsLineList* mLineList;  
 
   
