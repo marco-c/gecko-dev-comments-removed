@@ -72,6 +72,12 @@ VRDisplayHost::SubmitFrame(VRLayerParent* aLayer, const int32_t& aInputFrameID,
   PTextureParent* aTexture, const gfx::Rect& aLeftEyeRect,
   const gfx::Rect& aRightEyeRect)
 {
+  
+  
+  
+  
+  
+
   int32_t inputFrameID = aInputFrameID;
   if (inputFrameID == 0) {
     inputFrameID = mInputFrameID;
