@@ -2,6 +2,7 @@
 
 
 
+use cssparser::ToCss;
 use dom::bindings::codegen::Bindings::CSSStyleDeclarationBinding::{self, CSSStyleDeclarationMethods};
 use dom::bindings::error::{Error, ErrorResult, Fallible};
 use dom::bindings::global::GlobalRef;
@@ -18,7 +19,7 @@ use std::slice;
 use string_cache::Atom;
 use style::parser::ParserContextExtraData;
 use style::properties::{PropertyDeclaration, Shorthand};
-use style::properties::{is_supported_property, parse_one_declaration};
+use style::properties::{is_supported_property, parse_one_declaration, parse_style_attribute};
 use style::selector_impl::PseudoElement;
 
 
@@ -337,6 +338,42 @@ impl CSSStyleDeclarationMethods for CSSStyleDeclaration {
         let rval = self.Item(index);
         *found = index < self.Length();
         rval
+    }
+
+    
+    fn CssText(&self) -> DOMString {
+        let elem = self.owner.upcast::<Element>();
+        let style_attribute = elem.style_attribute().borrow();
+
+        if let Some(declarations) = style_attribute.as_ref() {
+            DOMString::from(declarations.to_css_string())
+        } else {
+            DOMString::new()
+        }
+    }
+
+    
+    fn SetCssText(&self, value: DOMString) -> ErrorResult {
+        let window = window_from_node(self.owner.upcast::<Node>());
+        let element = self.owner.upcast::<Element>();
+
+        
+        if self.readonly {
+            return Err(Error::NoModificationAllowed);
+        }
+
+        
+        let decl_block = parse_style_attribute(&value, &window.get_url(), window.css_error_reporter(),
+                                               ParserContextExtraData::default());
+        *element.style_attribute().borrow_mut() = if decl_block.normal.is_empty() && decl_block.important.is_empty() {
+            None 
+        } else {
+            Some(decl_block)
+        };
+        element.sync_property_with_attrs_style();
+        let node = element.upcast::<Node>();
+        node.dirty(NodeDamage::NodeStyleDamaged);
+        Ok(())
     }
 
     
