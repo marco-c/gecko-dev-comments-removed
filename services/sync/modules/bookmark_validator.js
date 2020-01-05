@@ -386,8 +386,6 @@ class BookmarkValidator {
 
 
 
-  
-  
   async inspectServerRecords(serverRecords) {
     let deletedItemIds = new Set();
     let idToRecord = new Map();
@@ -681,8 +679,6 @@ class BookmarkValidator {
 
 
 
-  
-  
   async compareServerWithClient(serverRecords, clientTree) {
 
     let clientRecords = await this.createClientRecordsFromTree(clientTree);
