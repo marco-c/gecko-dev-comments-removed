@@ -201,8 +201,11 @@
 
 
 
+namespace mozilla {
+struct BootstrapConfig;
+}
 XRE_API(int,
-        XRE_main, (int argc, char* argv[], const mozilla::XREAppData& aAppData))
+        XRE_main, (int argc, char* argv[], const mozilla::BootstrapConfig& aConfig))
 
 
 

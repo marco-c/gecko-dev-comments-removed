@@ -23,7 +23,28 @@ extern "C" NS_EXPORT
 void GeckoStart(JNIEnv* aEnv, char** argv, int argc, const mozilla::StaticXREAppData& aAppData);
 #endif
 
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+namespace sandbox {
+class BrokerServices;
+}
+#endif
+
 namespace mozilla {
+
+struct BootstrapConfig
+{
+#if defined(XP_WIN) && defined(MOZ_SANDBOX)
+  
+  sandbox::BrokerServices* sandboxBrokerServices;
+#endif
+  
+  const StaticXREAppData* appData;
+  
+
+
+
+  const char* appDataPath;
+};
 
 
 
@@ -64,15 +85,11 @@ public:
 
   virtual void NS_LogTerm() = 0;
 
-  virtual nsresult XRE_GetFileFromPath(const char* aPath, nsIFile** aResult) = 0;
-
-  virtual nsresult XRE_ParseAppData(nsIFile* aINIFile, mozilla::XREAppData& aAppData) = 0;
-
   virtual void XRE_TelemetryAccumulate(int aID, uint32_t aSample) = 0;
 
   virtual void XRE_StartupTimelineRecord(int aEvent, mozilla::TimeStamp aWhen) = 0;
 
-  virtual int XRE_main(int argc, char* argv[], const mozilla::XREAppData& aAppData) = 0;
+  virtual int XRE_main(int argc, char* argv[], const BootstrapConfig& aConfig) = 0;
 
   virtual void XRE_StopLateWriteChecks() = 0;
 
