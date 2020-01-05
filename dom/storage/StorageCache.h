@@ -78,22 +78,6 @@ class StorageCache : public StorageCacheBridge
 public:
   NS_IMETHOD_(void) Release(void);
 
-  enum MutationSource {
-    
-    
-    
-    ContentMutation,
-    
-    
-    
-    
-    
-    
-    
-    
-    E10sPropagated
-  };
-
   
   
   
@@ -125,13 +109,10 @@ public:
   nsresult GetItem(const Storage* aStorage, const nsAString& aKey,
                    nsAString& aRetval);
   nsresult SetItem(const Storage* aStorage, const nsAString& aKey,
-                   const nsString& aValue, nsString& aOld,
-                   const MutationSource aSource=ContentMutation);
+                   const nsString& aValue, nsString& aOld);
   nsresult RemoveItem(const Storage* aStorage, const nsAString& aKey,
-                      nsString& aOld,
-                      const MutationSource aSource=ContentMutation);
-  nsresult Clear(const Storage* aStorage,
-                 const MutationSource aSource=ContentMutation);
+                      nsString& aOld);
+  nsresult Clear(const Storage* aStorage);
 
   void GetKeys(const Storage* aStorage, nsTArray<nsString>& aKeys);
 
@@ -201,18 +182,8 @@ private:
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  bool ProcessUsageDelta(uint32_t aGetDataSetIndex, const int64_t aDelta,
-                         const MutationSource aSource=ContentMutation);
-  bool ProcessUsageDelta(const Storage* aStorage, const int64_t aDelta,
-                         const MutationSource aSource=ContentMutation);
+  bool ProcessUsageDelta(uint32_t aGetDataSetIndex, const int64_t aDelta);
+  bool ProcessUsageDelta(const Storage* aStorage, const int64_t aDelta);
 
 private:
   
@@ -224,6 +195,9 @@ private:
   
   
   RefPtr<StorageUsage> mUsage;
+
+  
+  nsCOMPtr<nsITimer> mKeepAliveTimer;
 
   
   
@@ -303,8 +277,7 @@ class StorageUsage : public StorageUsageBridge
 public:
   explicit StorageUsage(const nsACString& aOriginScope);
 
-  bool CheckAndSetETLD1UsageDelta(uint32_t aDataSetIndex, int64_t aUsageDelta,
-                                  const StorageCache::MutationSource aSource);
+  bool CheckAndSetETLD1UsageDelta(uint32_t aDataSetIndex, int64_t aUsageDelta);
 
 private:
   virtual const nsCString& OriginScope() { return mOriginScope; }

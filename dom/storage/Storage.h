@@ -24,7 +24,6 @@ namespace dom {
 
 class StorageManagerBase;
 class StorageCache;
-class StorageEvent;
 
 class Storage final
   : public nsIDOMStorage
@@ -129,28 +128,6 @@ public:
     MOZ_ASSERT(aOther);
     return mCache == aOther->mCache;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  static void
-  DispatchStorageEvent(StorageType aStorageType,
-                       const nsAString& aDocumentURI,
-                       const nsAString& aKey,
-                       const nsAString& aOldValue,
-                       const nsAString& aNewValue,
-                       nsIPrincipal* aPrincipal,
-                       bool aIsPrivate,
-                       Storage* aStorage,
-                       bool aImmediateDispatch);
-
-  void
-  ApplyEvent(StorageEvent* aStorageEvent);
 
 protected:
   
