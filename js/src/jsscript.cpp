@@ -1858,8 +1858,10 @@ ScriptSource::tryCompressOffThread(JSContext* cx)
     
     
     auto task = MakeUnique<SourceCompressionTask>(cx->runtime(), this);
-    if (!task)
+    if (!task) {
+        ReportOutOfMemory(cx);
         return false;
+    }
     return EnqueueOffThreadCompression(cx, Move(task));
 }
 
