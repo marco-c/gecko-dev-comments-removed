@@ -7,6 +7,8 @@
 
 var pr;
 
+addIntlExtras(Intl);
+
 pr = new Intl.PluralRules("en-us");
 assertEq(pr.select(0), "other");
 assertEq(pr.select(0.5), "other");

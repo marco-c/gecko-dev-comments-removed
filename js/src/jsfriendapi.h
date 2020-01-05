@@ -2907,6 +2907,12 @@ ToWindowIfWindowProxy(JSObject* obj);
 JS_FRIEND_API(bool)
 AllowGCBarriers(JSContext* cx);
 
+
+
+
+extern bool
+AddPluralRulesConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
+
 } 
 
 class NativeProfiler
