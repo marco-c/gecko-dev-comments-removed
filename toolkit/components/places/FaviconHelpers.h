@@ -219,7 +219,10 @@ public:
 
 
 
+
+
   AsyncGetFaviconURLForPage(const nsACString& aPageSpec,
+                            const nsACString& aPageHost,
                             uint16_t aPreferredWidth,
                             nsIFaviconDataCallback* aCallback);
 
@@ -227,6 +230,7 @@ private:
   uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCString mPageSpec;
+  nsCString mPageHost;
 };
 
 
@@ -250,7 +254,10 @@ public:
 
 
 
+
+
   AsyncGetFaviconDataForPage(const nsACString& aPageSpec,
+                             const nsACString& aPageHost,
                              uint16_t aPreferredWidth,
                              nsIFaviconDataCallback* aCallback);
 
@@ -258,6 +265,7 @@ private:
   uint16_t mPreferredWidth;
   nsMainThreadPtrHandle<nsIFaviconDataCallback> mCallback;
   nsCString mPageSpec;
+  nsCString mPageHost;
 };
 
 class AsyncReplaceFaviconData final : public Runnable
