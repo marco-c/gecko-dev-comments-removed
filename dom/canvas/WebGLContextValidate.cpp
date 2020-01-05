@@ -540,21 +540,6 @@ WebGLContext::InitAndValidateGL(FailureReason* const out_failReason)
     }
 
     
-    
-    const auto fnFloorPOTIfSupported = [](uint32_t& val) {
-        if (val) {
-            val = FloorPOT(val);
-        }
-    };
-
-    fnFloorPOTIfSupported(mImplMaxTextureSize);
-    fnFloorPOTIfSupported(mImplMaxCubeMapTextureSize);
-    fnFloorPOTIfSupported(mImplMaxRenderbufferSize);
-
-    fnFloorPOTIfSupported(mImplMax3DTextureSize);
-    fnFloorPOTIfSupported(mImplMaxArrayTextureLayers);
-
-    
 
     mGLMaxColorAttachments = 1;
     mGLMaxDrawBuffers = 1;
