@@ -16,11 +16,14 @@
 #include "dirent.h"
 #include "poll.h"
 #include "sys/stat.h"
-#if defined(ANDROID)
+#if defined(XP_LINUX)
 #include <sys/vfs.h>
 #define statvfs statfs
+#define f_frsize f_bsize
 #else
 #include "sys/statvfs.h"
+#endif 
+#if !defined(ANDROID)
 #include "sys/wait.h"
 #include <spawn.h>
 #endif 
