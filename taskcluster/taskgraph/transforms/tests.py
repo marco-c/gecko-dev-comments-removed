@@ -659,6 +659,7 @@ def make_job_description(config, tests):
         jobdesc['run-on-projects'] = test.get('run-on-projects', ['all'])
         jobdesc['scopes'] = []
         jobdesc['tags'] = test.get('tags', {})
+        jobdesc['optimizations'] = [['seta']]  
         jobdesc['extra'] = {
             'chunks': {
                 'current': test['this-chunk'],

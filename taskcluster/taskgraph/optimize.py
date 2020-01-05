@@ -207,10 +207,6 @@ def opt_seta(task, params):
     bbb_task = False
 
     
-    if task.task.get('extra', {}).get('treeherder', {}).get('jobKind', '') == 'build':
-        return False, None
-
-    
     if task.task.get('provisionerId', '') == 'buildbot-bridge':
         label = task.task.get('payload').get('buildername')
         bbb_task = True
