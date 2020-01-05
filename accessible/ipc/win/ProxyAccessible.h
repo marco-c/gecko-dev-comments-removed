@@ -39,34 +39,7 @@ public:
     MOZ_COUNT_DTOR(ProxyAccessible);
   }
 
-  
-
-
-  uint64_t State() const;
-
-  
-
-
-  void Name(nsString& aName) const;
-
-  
-
-
-  void Value(nsString& aValue) const;
-
-  
-
-
-  void Description(nsString& aDesc) const;
-
-  
-
-
-  void Attributes(nsTArray<Attribute> *aAttrs) const;
-
-  nsIntRect Bounds();
-
-  void Language(nsString& aLocale);
+#include "mozilla/a11y/ProxyAccessibleShared.h"
 
   bool GetCOMInterface(void** aOutAccessible) const;
 
