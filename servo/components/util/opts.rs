@@ -75,6 +75,9 @@ pub struct Opts {
     pub show_debug_borders: bool,
 
     
+    pub show_debug_fragment_borders: bool,
+
+    
     
     
     pub enable_text_antialiasing: bool,
@@ -137,6 +140,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         getopts::optflag("f", "hard-fail", "Exit on task failure instead of displaying about:failure"),
         getopts::optflag("b", "bubble-widths", "Bubble intrinsic widths separately like other engines"),
         getopts::optflag("", "show-debug-borders", "Show debugging borders on layers and tiles."),
+        getopts::optflag("", "show-debug-fragment-borders", "Show debugging borders on fragments."),
         getopts::optflag("", "disable-text-aa", "Disable antialiasing for text rendering."),
         getopts::optflag("", "trace-layout", "Write layout trace to external file for debugging."),
         getopts::optflagopt("", "devtools", "Start remote devtools server on port", "6000"),
@@ -238,6 +242,7 @@ pub fn from_cmdline_args(args: &[String]) -> bool {
         hard_fail: opt_match.opt_present("f"),
         bubble_inline_sizes_separately: bubble_inline_sizes_separately,
         show_debug_borders: opt_match.opt_present("show-debug-borders"),
+        show_debug_fragment_borders: opt_match.opt_present("show-debug-fragment-borders"),
         enable_text_antialiasing: !opt_match.opt_present("disable-text-aa"),
         trace_layout: trace_layout,
         devtools_port: devtools_port,
