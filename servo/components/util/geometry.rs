@@ -2,6 +2,8 @@
 
 
 
+use cssparser::ToCss;
+
 use euclid::length::Length;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
@@ -122,7 +124,14 @@ impl Encodable for Au {
 impl fmt::Debug for Au {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}px", self.to_f64_px())
-    }}
+    }
+}
+
+impl ToCss for Au {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        write!(dest, "{}px", self.to_f64_px())
+    }
+}
 
 impl Add for Au {
     type Output = Au;
