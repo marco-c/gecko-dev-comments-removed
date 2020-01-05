@@ -83,6 +83,59 @@ LogToConsole(const nsAString& aMsg)
 
 namespace {
 
+
+
+
+
+
+
+
+static const char* kPreloadPermissions[] = {
+  
+  
+  
+  
+  "other",
+  "script",
+  "image",
+  "stylesheet",
+  "object",
+  "document",
+  "subdocument",
+  "refresh",
+  "xbl",
+  "ping",
+  "xmlhttprequest",
+  "objectsubrequest",
+  "dtd",
+  "font",
+  "media",
+  "websocket",
+  "csp_report",
+  "xslt",
+  "beacon",
+  "fetch",
+  "image",
+  "manifest"
+  
+};
+
+
+
+bool
+IsPreloadPermission(const char* aType)
+{
+  if (aType) {
+    for (uint32_t i = 0; i < mozilla::ArrayLength(kPreloadPermissions); ++i) {
+      if (!strcmp(aType, kPreloadPermissions[i])) {
+        return true;
+      }
+    }
+  }
+
+  return false;
+}
+
 nsresult
 GetOriginFromPrincipal(nsIPrincipal* aPrincipal, nsACString& aOrigin)
 {
@@ -649,22 +702,6 @@ nsPermissionManager::PermissionKey::CreateFromPrincipal(nsIPrincipal* aPrincipal
   if (NS_WARN_IF(NS_FAILED(aResult))) {
     return nullptr;
   }
-
-#ifdef DEBUG
-  
-  
-  
-  if (XRE_IsContentProcess()) {
-    nsAutoCString permissionKey;
-    GetKeyForPrincipal(aPrincipal, permissionKey);
-
-    if (!gPermissionManager->mAvailablePermissionKeys.Contains(permissionKey)) {
-      NS_WARNING(nsPrintfCString("This content process hasn't received the "
-                                 "permissions for %s yet", permissionKey.get()).get());
-      MOZ_CRASH("The content process hasn't recieved permissions for an origin yet.");
-    }
-  }
-#endif
 
   return new PermissionKey(origin);
 }
@@ -1619,7 +1656,7 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
                                aExpireType, aExpireTime);
 
     nsAutoCString permissionKey;
-    GetKeyForPrincipal(aPrincipal, permissionKey);
+    GetKeyForPermission(aPrincipal, aType.get(), permissionKey);
 
     nsTArray<ContentParent*> cplist;
     ContentParent::GetAll(cplist);
@@ -1629,6 +1666,8 @@ nsPermissionManager::AddInternal(nsIPrincipal* aPrincipal,
         Unused << cp->SendAddPermission(permission);
     }
   }
+
+  MOZ_ASSERT(PermissionAvaliable(aPrincipal, aType.get()));
 
   
   int32_t typeIndex = GetTypeIndex(aType.get(), true);
@@ -2096,6 +2135,8 @@ nsPermissionManager::GetPermissionObject(nsIPrincipal* aPrincipal,
     return NS_ERROR_INVALID_ARG;
   }
 
+  MOZ_ASSERT(PermissionAvaliable(aPrincipal, aType));
+
   int32_t typeIndex = GetTypeIndex(aType, false);
   
   
@@ -2173,6 +2214,8 @@ nsPermissionManager::CommonTestPermission(nsIPrincipal* aPrincipal,
     return NS_OK;
   }
 
+  MOZ_ASSERT(PermissionAvaliable(aPrincipal, aType));
+
   int32_t typeIndex = GetTypeIndex(aType, false);
   
   
@@ -2204,6 +2247,8 @@ nsPermissionManager::GetPermissionHashKey(nsIPrincipal* aPrincipal,
                                           uint32_t aType,
                                           bool aExactHostMatch)
 {
+  MOZ_ASSERT(PermissionAvaliable(aPrincipal, mTypeArray[aType].get()));
+
   nsresult rv;
   RefPtr<PermissionKey> key =
     PermissionKey::CreateFromPrincipal(aPrincipal, rv);
@@ -2298,6 +2343,8 @@ NS_IMETHODIMP nsPermissionManager::GetAllForURI(nsIURI* aURI, nsISimpleEnumerato
   nsCOMPtr<nsIPrincipal> principal;
   nsresult rv = GetPrincipal(aURI, getter_AddRefs(principal));
   NS_ENSURE_SUCCESS(rv, rv);
+
+  MOZ_ASSERT(PermissionAvaliable(principal, nullptr));
 
   RefPtr<PermissionKey> key = PermissionKey::CreateFromPrincipal(principal, rv);
   if (!key) {
@@ -2912,6 +2959,8 @@ nsPermissionManager::UpdateExpireTime(nsIPrincipal* aPrincipal,
     return NS_ERROR_INVALID_ARG;
   }
 
+  MOZ_ASSERT(PermissionAvaliable(aPrincipal, aType));
+
   int32_t typeIndex = GetTypeIndex(aType, false);
   
   
@@ -2959,15 +3008,6 @@ nsPermissionManager::GetPermissionsWithKey(const nsACString& aPermissionKey,
       continue;
     }
 
-    
-    
-    nsAutoCString permissionKey;
-    GetKeyForPrincipal(principal, permissionKey);
-
-    if (permissionKey != aPermissionKey) {
-      continue;
-    }
-
     for (const auto& permEntry : entry->GetPermissions()) {
       
       
@@ -2976,11 +3016,20 @@ nsPermissionManager::GetPermissionsWithKey(const nsACString& aPermissionKey,
         continue;
       }
 
-      aPerms.AppendElement(IPC::Permission(entry->GetKey()->mOrigin,
-                                           mTypeArray.ElementAt(permEntry.mType),
-                                           permEntry.mPermission,
-                                           permEntry.mExpireType,
-                                           permEntry.mExpireTime));
+      
+      
+      
+      
+      nsAutoCString permissionKey;
+      GetKeyForPermission(principal, mTypeArray[permEntry.mType].get(), permissionKey);
+
+      if (permissionKey == aPermissionKey) {
+        aPerms.AppendElement(IPC::Permission(entry->GetKey()->mOrigin,
+                                             mTypeArray.ElementAt(permEntry.mType),
+                                             permEntry.mPermission,
+                                             permEntry.mExpireType,
+                                             permEntry.mExpireTime));
+      }
     }
   }
 
@@ -3013,7 +3062,7 @@ nsPermissionManager::SetPermissionsWithKey(const nsACString& aPermissionKey,
 
 #ifdef DEBUG
     nsAutoCString permissionKey;
-    GetKeyForPrincipal(principal, permissionKey);
+    GetKeyForPermission(principal, perm.type.get(), permissionKey);
     MOZ_ASSERT(permissionKey == aPermissionKey,
                "The permission keys which were sent over should match!");
 #endif
@@ -3069,6 +3118,18 @@ nsPermissionManager::GetKeyForPrincipal(nsIPrincipal* aPrincipal, nsACString& aK
   return;
 }
 
+ void
+nsPermissionManager::GetKeyForPermission(nsIPrincipal* aPrincipal, const char* aType, nsACString& aKey)
+{
+  
+  if (IsPreloadPermission(aType)) {
+    aKey.Truncate();
+    return;
+  }
+
+  GetKeyForPrincipal(aPrincipal, aKey);
+}
+
  nsTArray<nsCString>
 nsPermissionManager::GetAllKeysForPrincipal(nsIPrincipal* aPrincipal)
 {
@@ -3101,4 +3162,22 @@ nsPermissionManager::BroadcastPermissionsForPrincipalToAllContentProcesses(nsIPr
   }
 
   return NS_OK;
+}
+
+bool
+nsPermissionManager::PermissionAvaliable(nsIPrincipal* aPrincipal, const char* aType)
+{
+  if (XRE_IsContentProcess()) {
+    nsAutoCString permissionKey;
+    
+    GetKeyForPermission(aPrincipal, aType, permissionKey);
+    if (!mAvailablePermissionKeys.Contains(permissionKey)) {
+      
+      
+      NS_WARNING(nsPrintfCString("This content process hasn't received the "
+                                 "permissions for %s yet", permissionKey.get()).get());
+      return false;
+    }
+  }
+  return true;
 }

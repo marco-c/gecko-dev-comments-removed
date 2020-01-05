@@ -238,6 +238,27 @@ public:
 
 
 
+
+
+  static void GetKeyForPermission(nsIPrincipal* aPrincipal,
+                                  const char* aType,
+                                  nsACString& aPermissionKey);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   static nsTArray<nsCString> GetAllKeysForPrincipal(nsIPrincipal* aPrincipal);
 
 private:
@@ -292,6 +313,15 @@ private:
 
   nsresult
   RemoveAllModifiedSince(int64_t aModificationTime);
+
+  
+
+
+
+
+
+
+  bool PermissionAvaliable(nsIPrincipal* aPrincipal, const char* aType);
 
   nsCOMPtr<mozIStorageConnection> mDBConn;
   nsCOMPtr<mozIStorageAsyncStatement> mStmtInsert;
