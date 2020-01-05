@@ -105,6 +105,12 @@ const QUERYINDEX_FRECENCY      = 10;
 
 
 
+const DISALLOWED_URLLIKE_PREFIXES = [
+  "http", "https", "ftp"
+];
+
+
+
 
 
 const SQL_BOOKMARK_TAGS_FRAGMENT =
@@ -267,6 +273,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSearchHandler",
                                   "resource://gre/modules/ExtensionSearchHandler.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "Task",
+                                  "resource://gre/modules/Task.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesSearchAutocompleteProvider",
                                   "resource://gre/modules/PlacesSearchAutocompleteProvider.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesRemoteTabsAutocompleteProvider",
@@ -295,11 +303,11 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
   _conn: null,
   
   _queue: new Map(),
-  async initDatabase(conn) {
+  initDatabase: Task.async(function* (conn) {
     
     
     
-    await conn.execute(
+    yield conn.execute(
       `CREATE TEMP TABLE moz_openpages_temp (
          url TEXT,
          userContextId INTEGER,
@@ -309,7 +317,7 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
 
     
     
-    await conn.execute(
+    yield conn.execute(
       `CREATE TEMPORARY TRIGGER moz_openpages_temp_afterupdate_trigger
        AFTER UPDATE OF open_count ON moz_openpages_temp FOR EACH ROW
        WHEN NEW.open_count = 0
@@ -330,7 +338,7 @@ XPCOMUtils.defineLazyGetter(this, "SwitchToTabStorage", () => Object.seal({
 
     
     this._queue.clear();
-  },
+  }),
 
   add(uri, userContextId) {
     if (!this._conn) {
@@ -908,7 +916,7 @@ Search.prototype = {
 
 
 
-  async execute(conn) {
+  execute: Task.async(function* (conn) {
     
     if (!this.pending)
       return;
@@ -919,7 +927,7 @@ Search.prototype = {
 
     
     
-    await PlacesSearchAutocompleteProvider.ensureInitialized();
+    yield PlacesSearchAutocompleteProvider.ensureInitialized();
     if (!this.pending)
       return;
 
@@ -957,13 +965,13 @@ Search.prototype = {
     queries.push(this._searchQuery);
 
     
-    await this._checkPreloadedSitesExpiry();
+    yield this._checkPreloadedSitesExpiry();
 
     
     
     
     this._addingHeuristicFirstMatch = true;
-    let hasHeuristic = await this._matchFirstHeuristicResult(conn);
+    let hasHeuristic = yield this._matchFirstHeuristicResult(conn);
     this._addingHeuristicFirstMatch = false;
     if (!this.pending)
       return;
@@ -974,25 +982,25 @@ Search.prototype = {
     
     
     if (hasHeuristic) {
-      await this._sleep(Prefs.delay);
+      yield this._sleep(Prefs.delay);
       if (!this.pending)
         return;
     }
 
     if (this._enableActions && this._searchTokens.length > 0) {
-      await this._matchSearchSuggestions();
+      yield this._matchSearchSuggestions();
       if (!this.pending)
         return;
     }
 
     for (let [query, params] of queries) {
-      await conn.executeCached(query, params, this._onResultRow.bind(this));
+      yield conn.executeCached(query, params, this._onResultRow.bind(this));
       if (!this.pending)
         return;
     }
 
     if (this._enableActions && this.hasBehavior("openpage")) {
-      await this._matchRemoteTabs();
+      yield this._matchRemoteTabs();
       if (!this.pending)
         return;
     }
@@ -1005,7 +1013,7 @@ Search.prototype = {
       this._matchBehavior = MATCH_ANYWHERE;
       for (let [query, params] of [ this._adaptiveQuery,
                                     this._searchQuery ]) {
-        await conn.executeCached(query, params, this._onResultRow.bind(this));
+        yield conn.executeCached(query, params, this._onResultRow.bind(this));
         if (!this.pending)
           return;
       }
@@ -1015,7 +1023,7 @@ Search.prototype = {
     
     if (ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
         this._originalSearchString.length > this._searchTokens[0].length) {
-      await this._matchExtensionSuggestions();
+      yield this._matchExtensionSuggestions();
       if (!this.pending)
         return;
     } else if (ExtensionSearchHandler.hasActiveInputSession()) {
@@ -1026,14 +1034,14 @@ Search.prototype = {
 
     
     
-    await Promise.all(this._remoteMatchesPromises);
-  },
+    yield Promise.all(this._remoteMatchesPromises);
+  }),
 
 
-  async _checkPreloadedSitesExpiry() {
+  *_checkPreloadedSitesExpiry() {
     if (!Prefs.preloadedSitesEnabled)
       return;
-    let profileCreationDate = await ProfileAgeCreatedPromise;
+    let profileCreationDate = yield ProfileAgeCreatedPromise;
     let daysSinceProfileCreation = (Date.now() - profileCreationDate) / MS_PER_DAY;
     if (daysSinceProfileCreation > Prefs.preloadedSitesExpireDays)
       Services.prefs.setBoolPref("browser.urlbar.usepreloadedtopurls.enabled", false);
@@ -1141,7 +1149,7 @@ Search.prototype = {
     return false;
   },
 
-  async _matchFirstHeuristicResult(conn) {
+  *_matchFirstHeuristicResult(conn) {
     
     
 
@@ -1149,7 +1157,7 @@ Search.prototype = {
 
     if (hasSearchTerms) {
       
-      let matched = await this._matchExtensionHeuristicResult();
+      let matched = yield this._matchExtensionHeuristicResult();
       if (matched) {
         return true;
       }
@@ -1157,7 +1165,7 @@ Search.prototype = {
 
     if (this._enableActions && hasSearchTerms) {
       
-      let matched = await this._matchSearchEngineAlias();
+      let matched = yield this._matchSearchEngineAlias();
       if (matched) {
         return true;
       }
@@ -1165,7 +1173,7 @@ Search.prototype = {
 
     if (this.pending && hasSearchTerms) {
       
-      let matched = await this._matchPlacesKeyword();
+      let matched = yield this._matchPlacesKeyword();
       if (matched) {
         return true;
       }
@@ -1174,7 +1182,7 @@ Search.prototype = {
     let shouldAutofill = this._shouldAutofill;
     if (this.pending && shouldAutofill) {
       
-      let matched = await this._matchKnownUrl(conn);
+      let matched = yield this._matchKnownUrl(conn);
       if (matched) {
         return true;
       }
@@ -1182,7 +1190,7 @@ Search.prototype = {
 
     if (this.pending && shouldAutofill) {
       
-      let matched = await this._matchSearchEngineUrl();
+      let matched = yield this._matchSearchEngineUrl();
       if (matched) {
         return true;
       }
@@ -1203,7 +1211,7 @@ Search.prototype = {
       
       
       
-      let matched = await this._matchUnknownUrl();
+      let matched = yield this._matchUnknownUrl();
       if (matched) {
         
         
@@ -1213,7 +1221,7 @@ Search.prototype = {
         } catch (ex) {
           if (Prefs.keywordEnabled && !looksLikeUrl(this._originalSearchString, true)) {
             this._addingHeuristicFirstMatch = false;
-            await this._matchCurrentSearchEngine();
+            yield this._matchCurrentSearchEngine();
             this._addingHeuristicFirstMatch = true;
           }
         }
@@ -1224,7 +1232,7 @@ Search.prototype = {
     if (this.pending && this._enableActions && this._originalSearchString) {
       
       
-      let matched = await this._matchCurrentSearchEngine();
+      let matched = yield this._matchCurrentSearchEngine();
       if (matched) {
         return true;
       }
@@ -1233,7 +1241,7 @@ Search.prototype = {
     return false;
   },
 
-  async _matchSearchSuggestions() {
+  *_matchSearchSuggestions() {
     
     let searchString = this._searchTokens.join(" ")
                            .substr(0, Prefs.maxCharsForSearchSuggestions);
@@ -1275,7 +1283,7 @@ Search.prototype = {
 
     if (this.hasBehavior("restrict")) {
       
-      await promise;
+      yield promise;
       this.stop();
     } else {
       this._remoteMatchesPromises.push(promise);
@@ -1299,10 +1307,17 @@ Search.prototype = {
 
     
     
+    if (DISALLOWED_URLLIKE_PREFIXES.some(prefix => this._trimmedOriginalSearchString == prefix) ||
+        DISALLOWED_URLLIKE_PREFIXES.some(prefix => this._trimmedOriginalSearchString.startsWith(prefix + ":"))) {
+      return true;
+    }
+
+    
+    
     return this._searchTokens.some(looksLikeUrl);
   },
 
-  async _matchKnownUrl(conn) {
+  *_matchKnownUrl(conn) {
     
     let lastSlashIndex = this._searchString.lastIndexOf("/");
     
@@ -1316,7 +1331,7 @@ Search.prototype = {
         
         let gotResult = false;
         let [ query, params ] = this._urlQuery;
-        await conn.executeCached(query, params, row => {
+        yield conn.executeCached(query, params, row => {
           gotResult = true;
           this._onResultRow(row);
         });
@@ -1327,14 +1342,14 @@ Search.prototype = {
 
     let gotResult = false;
     let [ query, params ] = this._hostQuery;
-    await conn.executeCached(query, params, row => {
+    yield conn.executeCached(query, params, row => {
       gotResult = true;
       this._onResultRow(row);
     });
     return gotResult;
   },
 
-  _matchExtensionHeuristicResult() {
+  *_matchExtensionHeuristicResult() {
     if (ExtensionSearchHandler.isKeywordRegistered(this._searchTokens[0]) &&
         this._originalSearchString.length > this._searchTokens[0].length) {
       let description = ExtensionSearchHandler.getDescription(this._searchTokens[0]);
@@ -1344,10 +1359,10 @@ Search.prototype = {
     return false;
   },
 
-  async _matchPlacesKeyword() {
+  *_matchPlacesKeyword() {
     
     let keyword = this._searchTokens[0];
-    let entry = await PlacesUtils.keywords.fetch(this._searchTokens[0]);
+    let entry = yield PlacesUtils.keywords.fetch(this._searchTokens[0]);
     if (!entry)
       return false;
 
@@ -1356,7 +1371,7 @@ Search.prototype = {
     let url = null, postData = null;
     try {
       [url, postData] =
-        await BrowserUtils.parseUrlAndPostData(entry.url.href,
+        yield BrowserUtils.parseUrlAndPostData(entry.url.href,
                                                entry.postData,
                                                searchString);
     } catch (ex) {
@@ -1388,11 +1403,11 @@ Search.prototype = {
     return true;
   },
 
-  async _matchSearchEngineUrl() {
+  *_matchSearchEngineUrl() {
     if (!Prefs.autofillSearchEngines)
       return false;
 
-    let match = await PlacesSearchAutocompleteProvider.findMatchByToken(
+    let match = yield PlacesSearchAutocompleteProvider.findMatchByToken(
                                                            this._searchString);
     if (!match)
       return false;
@@ -1440,12 +1455,12 @@ Search.prototype = {
     return true;
   },
 
-  async _matchSearchEngineAlias() {
+  *_matchSearchEngineAlias() {
     if (this._searchTokens.length < 1)
       return false;
 
     let alias = this._searchTokens[0];
-    let match = await PlacesSearchAutocompleteProvider.findMatchByAlias(alias);
+    let match = yield PlacesSearchAutocompleteProvider.findMatchByAlias(alias);
     if (!match)
       return false;
 
@@ -1456,8 +1471,8 @@ Search.prototype = {
     return true;
   },
 
-  async _matchCurrentSearchEngine() {
-    let match = await PlacesSearchAutocompleteProvider.getDefaultMatch();
+  *_matchCurrentSearchEngine() {
+    let match = yield PlacesSearchAutocompleteProvider.getDefaultMatch();
     if (!match)
       return false;
 
@@ -1507,7 +1522,7 @@ Search.prototype = {
     });
   },
 
-  _matchExtensionSuggestions() {
+  *_matchExtensionSuggestions() {
     let promise = ExtensionSearchHandler.handleSearch(this._searchTokens[0], this._originalSearchString,
       suggestions => {
         suggestions.forEach(suggestion => {
@@ -1519,8 +1534,8 @@ Search.prototype = {
     this._remoteMatchesPromises.push(promise);
   },
 
-  async _matchRemoteTabs() {
-    let matches = await PlacesRemoteTabsAutocompleteProvider.getMatches(this._originalSearchString);
+  *_matchRemoteTabs() {
+    let matches = yield PlacesRemoteTabsAutocompleteProvider.getMatches(this._originalSearchString);
     for (let {url, title, icon, deviceName} of matches) {
       
       
@@ -1548,7 +1563,7 @@ Search.prototype = {
 
   
   
-  _matchUnknownUrl() {
+  *_matchUnknownUrl() {
     let flags = Ci.nsIURIFixup.FIXUP_FLAG_FIX_SCHEME_TYPOS |
                 Ci.nsIURIFixup.FIXUP_FLAG_ALLOW_KEYWORD_LOOKUP;
     let fixupInfo = null;
@@ -2154,21 +2169,21 @@ UnifiedComplete.prototype = {
 
   getDatabaseHandle() {
     if (Prefs.enabled && !this._promiseDatabase) {
-      this._promiseDatabase = (async function() {
-        let conn = await Sqlite.cloneStorageConnection({
+      this._promiseDatabase = Task.spawn(function* () {
+        let conn = yield Sqlite.cloneStorageConnection({
           connection: PlacesUtils.history.DBConnection,
           readOnly: true
         });
 
         try {
            Sqlite.shutdown.addBlocker("Places UnifiedComplete.js clone closing",
-                                      async function() {
+                                      Task.async(function* () {
                                         SwitchToTabStorage.shutdown();
-                                        await conn.close();
-                                      });
+                                        yield conn.close();
+                                      }));
         } catch (ex) {
           
-          await conn.close();
+          yield conn.close();
           throw ex;
         }
 
@@ -2176,12 +2191,12 @@ UnifiedComplete.prototype = {
         
         
         
-        await conn.execute("PRAGMA cache_size = -6144"); 
+        yield conn.execute("PRAGMA cache_size = -6144"); 
 
-        await SwitchToTabStorage.initDatabase(conn);
+        yield SwitchToTabStorage.initDatabase(conn);
 
         return conn;
-      })().then(null, ex => {
+      }).then(null, ex => {
         dump("Couldn't get database handle: " + ex + "\n");
         Cu.reportError(ex);
       });
