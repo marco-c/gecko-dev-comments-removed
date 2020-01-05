@@ -699,7 +699,7 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
     mTextureClientAllocator = new D3D11RecycleAllocator(
       layers::ImageBridgeChild::GetSingleton().get(), mDevice);
 
-    if (ImageBridgeChild::GetSingleton()) {
+    if (ImageBridgeChild::GetSingleton() && gfxPrefs::PDMWMFUseSyncTexture()) {
       
       
       
@@ -711,12 +711,14 @@ D3D11DXVA2Manager::Init(layers::KnowsCompositor* aKnowsCompositor,
   } else {
     mTextureClientAllocator =
       new D3D11RecycleAllocator(aKnowsCompositor, mDevice);
-    
-    
-    
-    mSyncObject =
-      layers::SyncObject::CreateSyncObject(aKnowsCompositor->GetTextureFactoryIdentifier().mSyncHandle,
-                                            mDevice);
+    if (gfxPrefs::PDMWMFUseSyncTexture()) {
+      
+      
+      
+      mSyncObject =
+        layers::SyncObject::CreateSyncObject(aKnowsCompositor->GetTextureFactoryIdentifier().mSyncHandle,
+                                             mDevice);
+    }
   }
   mTextureClientAllocator->SetMaxPoolSize(5);
 
