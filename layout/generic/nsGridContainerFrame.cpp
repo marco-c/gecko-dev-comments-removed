@@ -1850,6 +1850,18 @@ struct MOZ_STACK_CLASS nsGridContainerFrame::GridReflowInput
   
 
 
+
+
+
+
+
+
+  LogicalSize PercentageBasisFor(LogicalAxis aAxis,
+                                 const GridItemInfo& aGridItem) const;
+
+  
+
+
   LogicalRect ContainingBlockFor(const GridArea& aArea) const;
 
   
@@ -3501,14 +3513,15 @@ MeasuringReflow(nsIFrame*           aChild,
 
 
 static nscoord
-ContentContribution(const GridItemInfo&    aGridItem,
-                    const GridReflowInput& aState,
-                    nsRenderingContext*    aRC,
-                    WritingMode            aCBWM,
-                    LogicalAxis            aAxis,
-                    IntrinsicISizeType     aConstraint,
-                    nscoord                aMinSizeClamp = NS_MAXSIZE,
-                    uint32_t               aFlags = 0)
+ContentContribution(const GridItemInfo&       aGridItem,
+                    const GridReflowInput&    aState,
+                    nsRenderingContext*       aRC,
+                    WritingMode               aCBWM,
+                    LogicalAxis               aAxis,
+                    const Maybe<LogicalSize>& aPercentageBasis,
+                    IntrinsicISizeType        aConstraint,
+                    nscoord                   aMinSizeClamp = NS_MAXSIZE,
+                    uint32_t                  aFlags = 0)
 {
   nsIFrame* child = aGridItem.mFrame;
   PhysicalAxis axis(aCBWM.PhysicalAxis(aAxis));
@@ -3582,6 +3595,10 @@ struct CachedIntrinsicSizes
   Maybe<nscoord> mMinSize;
   Maybe<nscoord> mMinContentContribution;
   Maybe<nscoord> mMaxContentContribution;
+
+  
+  Maybe<LogicalSize> mPercentageBasis;
+
   
   
   
@@ -3602,7 +3619,11 @@ MinContentContribution(const GridItemInfo&    aGridItem,
   if (aCache->mMinContentContribution.isSome()) {
     return aCache->mMinContentContribution.value();
   }
+  if (aCache->mPercentageBasis.isNothing()) {
+    aCache->mPercentageBasis.emplace(aState.PercentageBasisFor(aAxis, aGridItem));
+  }
   nscoord s = ContentContribution(aGridItem, aState, aRC, aCBWM, aAxis,
+                                  aCache->mPercentageBasis,
                                   nsLayoutUtils::MIN_ISIZE,
                                   aCache->mMinSizeClamp);
   aCache->mMinContentContribution.emplace(s);
@@ -3620,7 +3641,11 @@ MaxContentContribution(const GridItemInfo&    aGridItem,
   if (aCache->mMaxContentContribution.isSome()) {
     return aCache->mMaxContentContribution.value();
   }
+  if (aCache->mPercentageBasis.isNothing()) {
+    aCache->mPercentageBasis.emplace(aState.PercentageBasisFor(aAxis, aGridItem));
+  }
   nscoord s = ContentContribution(aGridItem, aState, aRC, aCBWM, aAxis,
+                                  aCache->mPercentageBasis,
                                   nsLayoutUtils::PREF_ISIZE,
                                   aCache->mMinSizeClamp);
   aCache->mMaxContentContribution.emplace(s);
@@ -3674,7 +3699,11 @@ MinSize(const GridItemInfo&    aGridItem,
        child->StyleDisplay()->mOverflowX == NS_STYLE_OVERFLOW_VISIBLE)) {
     
     MOZ_ASSERT(unit != eStyleUnit_Enumerated || sz == NS_UNCONSTRAINEDSIZE);
+    if (aCache->mPercentageBasis.isNothing()) {
+      aCache->mPercentageBasis.emplace(aState.PercentageBasisFor(aAxis, aGridItem));
+    }
     sz = std::min(sz, ContentContribution(aGridItem, aState, aRC, aCBWM, aAxis,
+                                          aCache->mPercentageBasis,
                                           nsLayoutUtils::MIN_ISIZE,
                                           aCache->mMinSizeClamp,
                                           nsLayoutUtils::MIN_INTRINSIC_ISIZE));
@@ -4488,7 +4517,8 @@ nsGridContainerFrame::Tracks::FindUsedFlexFraction(
     const GridItemInfo& item = aGridItems[iter.ItemIndex()];
     if (item.mState[mAxis] & ItemState::eIsFlexing) {
       
-      nscoord spaceToFill = ContentContribution(item, aState, rc, wm, mAxis,
+      auto pb = Some(aState.PercentageBasisFor(mAxis, item));
+      nscoord spaceToFill = ContentContribution(item, aState, rc, wm, mAxis, pb,
                                                 nsLayoutUtils::PREF_ISIZE);
       if (spaceToFill <= 0) {
         continue;
@@ -4817,6 +4847,25 @@ nsGridContainerFrame::LineRange::ToPositionAndLengthForAbsPos(
       *aPos = aGridOrigin + pos;
     }
   }
+}
+
+LogicalSize
+nsGridContainerFrame::GridReflowInput::PercentageBasisFor(
+  LogicalAxis aAxis,
+  const GridItemInfo& aGridItem) const
+{
+  auto wm = aGridItem.mFrame->GetWritingMode();
+  if (aAxis == eLogicalAxisInline) {
+    return LogicalSize(wm, NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE);
+  }
+  
+  
+  MOZ_ASSERT(mCols.mCanResolveLineRangeSize);
+  MOZ_ASSERT(!mRows.mCanResolveLineRangeSize);
+  nscoord colSize = aGridItem.mArea.mCols.ToLength(mCols.mSizes);
+  nscoord rowSize = NS_UNCONSTRAINEDSIZE;
+  return !wm.IsOrthogonalTo(mWM) ?
+    LogicalSize(wm, colSize, rowSize) : LogicalSize(wm, rowSize, colSize);
 }
 
 LogicalRect
