@@ -401,6 +401,12 @@ NS_IMETHODIMP nsExtProtocolChannel::NotifyTrackingProtectionDisabled()
   return NS_OK;
 }
 
+NS_IMETHODIMP nsExtProtocolChannel::NotifyTrackingResource()
+{
+  
+  return NS_OK;
+}
+
 NS_IMETHODIMP nsExtProtocolChannel::Delete()
 {
   

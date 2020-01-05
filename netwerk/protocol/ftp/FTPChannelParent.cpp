@@ -564,6 +564,13 @@ FTPChannelParent::NotifyTrackingProtectionDisabled()
 }
 
 NS_IMETHODIMP
+FTPChannelParent::NotifyTrackingResource()
+{
+  
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 FTPChannelParent::Delete()
 {
   if (mIPCClosed || !SendDeleteSelf())

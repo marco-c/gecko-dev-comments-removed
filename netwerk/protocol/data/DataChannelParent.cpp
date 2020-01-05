@@ -43,6 +43,13 @@ DataChannelParent::NotifyTrackingProtectionDisabled()
 }
 
 NS_IMETHODIMP
+DataChannelParent::NotifyTrackingResource()
+{
+    
+    return NS_OK;
+}
+
+NS_IMETHODIMP
 DataChannelParent::Delete()
 {
     
