@@ -82,8 +82,6 @@ module.exports = createClass({
         attributes: attributesMap,
         attributesLength: attributes.length,
         
-        isConnected: true,
-        
         nodeName: nodeFront.nodeName.toLowerCase(),
         nodeType: nodeFront.nodeType,
       }
@@ -118,9 +116,7 @@ module.exports = createClass({
     let { nodeFront } = grid;
 
     return dom.li(
-      {
-        className: "grid-item",
-      },
+      {},
       dom.label(
         {},
         dom.input(
