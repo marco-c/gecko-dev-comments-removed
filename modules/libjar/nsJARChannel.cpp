@@ -23,7 +23,6 @@
 
 #include "mozilla/Preferences.h"
 #include "mozilla/Telemetry.h"
-#include "mozilla/net/RemoteOpenFileChild.h"
 #include "nsITabChild.h"
 #include "private/pprio.h"
 #include "nsInputStreamPump.h"
@@ -201,7 +200,6 @@ nsJARChannel::nsJARChannel()
     , mStatus(NS_OK)
     , mIsPending(false)
     , mIsUnsafe(true)
-    , mOpeningRemote(false)
     , mBlockRemoteFiles(false)
 {
     mBlockRemoteFiles = Preferences::GetBool("network.jar.block-remote-files", false);
@@ -225,7 +223,6 @@ NS_IMPL_ISUPPORTS_INHERITED(nsJARChannel,
                             nsIChannel,
                             nsIStreamListener,
                             nsIRequestObserver,
-                            nsIRemoteOpenFileListener,
                             nsIThreadRetargetableRequest,
                             nsIThreadRetargetableStreamListener,
                             nsIJARChannel)
@@ -356,65 +353,7 @@ nsJARChannel::LookupFile(bool aAllowAsync)
         if (fileURL)
             fileURL->GetFile(getter_AddRefs(mJarFile));
     }
-    
-    
-    if (!mJarFile && !gJarHandler->IsMainProcess()) {
-        nsAutoCString scheme;
-        rv = mJarBaseURI->GetScheme(scheme);
-        if (NS_SUCCEEDED(rv) && scheme.EqualsLiteral("remoteopenfile")) {
-            RefPtr<RemoteOpenFileChild> remoteFile = new RemoteOpenFileChild();
-            rv = remoteFile->Init(mJarBaseURI, mAppURI);
-            NS_ENSURE_SUCCESS(rv, rv);
-            mJarFile = remoteFile;
 
-            nsIZipReaderCache *jarCache = gJarHandler->JarCache();
-            if (jarCache) {
-                bool cached = false;
-                rv = jarCache->IsCached(mJarFile, &cached);
-                if (NS_SUCCEEDED(rv) && cached) {
-                    
-                    
-                    
-                    
-                    
-                    #if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA)
-                    
-                    
-                    return NS_OK;
-                    #else
-                    PRFileDesc *fd = nullptr;
-                    jarCache->GetFd(mJarFile, &fd);
-                    if (fd) {
-                        return SetRemoteNSPRFileDesc(fd);
-                    }
-                    #endif
-                }
-            }
-
-            if (!aAllowAsync) {
-                mJarFile = nullptr;
-                return NS_OK;
-            }
-
-            mOpeningRemote = true;
-
-            if (gJarHandler->RemoteOpenFileInProgress(remoteFile, this)) {
-                
-                
-                
-                return NS_OK;
-            }
-
-            
-            nsCOMPtr<nsITabChild> tabChild;
-            NS_QueryNotificationCallbacks(this, tabChild);
-            nsCOMPtr<nsILoadContext> loadContext;
-            NS_QueryNotificationCallbacks(this, loadContext);
-            rv = remoteFile->AsyncRemoteFileOpen(PR_RDONLY, this, tabChild,
-                                                 loadContext);
-            NS_ENSURE_SUCCESS(rv, rv);
-        }
-    }
     
     if (!mJarFile) {
         nsCOMPtr<nsIJARURI> jarURI = do_QueryInterface(mJarBaseURI);
@@ -473,24 +412,6 @@ nsJARChannel::FireOnProgress(uint64_t aProgress)
   MOZ_ASSERT(mProgressSink);
 
   mProgressSink->OnProgress(this, nullptr, aProgress, mContentLength);
-}
-
-nsresult
-nsJARChannel::SetRemoteNSPRFileDesc(PRFileDesc *fd)
-{
-    PROsfd osfd = dup(PR_FileDesc2NativeHandle(fd));
-    if (osfd == -1) {
-        return NS_ERROR_FAILURE;
-    }
-
-    RemoteOpenFileChild* remoteFile =
-        static_cast<RemoteOpenFileChild*>(mJarFile.get());
-    nsresult rv = remoteFile->SetNSPRFileDesc(PR_ImportFile(osfd));
-    if (NS_FAILED(rv)) {
-        close(osfd);
-    }
-
-    return rv;
 }
 
 
@@ -903,9 +824,8 @@ nsJARChannel::AsyncOpen(nsIStreamListener *listener, nsISupports *ctx)
         else {
             rv = channel->AsyncOpen(downloader, nullptr);
         }
-    } else if (mOpeningRemote) {
-        
-    } else {
+    }
+    else {
         rv = OpenLocalFile();
     }
 
@@ -1087,50 +1007,6 @@ nsJARChannel::OnDownloadComplete(MemoryDownloader* aDownloader,
     if (NS_FAILED(status)) {
         NotifyError(status);
     }
-}
-
-
-
-
-nsresult
-nsJARChannel::OnRemoteFileOpenComplete(nsresult aOpenStatus)
-{
-    nsresult rv = aOpenStatus;
-
-    
-    
-    if (NS_SUCCEEDED(rv) || rv == NS_ERROR_ALREADY_OPENED) {
-        #if defined(XP_WIN) || defined(MOZ_WIDGET_COCOA)
-        
-        
-        #else
-        
-        
-        mozilla::AutoFDClose fd;
-        nsresult rv2 = mJarFile->OpenNSPRFileDesc(PR_RDONLY, 0, &fd.rwget());
-        if (NS_FAILED(rv2)) {
-            nsIZipReaderCache *jarCache = gJarHandler->JarCache();
-            if (!jarCache) {
-                rv = NS_ERROR_FAILURE;
-            }
-            PRFileDesc *jar_fd = nullptr;
-            jarCache->GetFd(mJarFile, &jar_fd);
-            
-            
-            
-            rv = SetRemoteNSPRFileDesc(jar_fd);
-        }
-        #endif
-        if (NS_SUCCEEDED(rv) || rv == NS_ERROR_ALREADY_OPENED) {
-            rv = OpenLocalFile();
-        }
-    }
-
-    if (NS_FAILED(rv)) {
-        NotifyError(rv);
-    }
-
-    return NS_OK;
 }
 
 

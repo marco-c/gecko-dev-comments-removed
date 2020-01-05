@@ -31,8 +31,7 @@ const nsIBinaryInputStream = ctor("@mozilla.org/binaryinputstream;1",
 
 const fileBase = "test_bug637286.zip";
 const file = do_get_file("data/" + fileBase);
-
-const jarBase = "jar:" + filePrefix + ios.newFileURI(file).spec + "!";
+const jarBase = "jar:" + ios.newFileURI(file).spec + "!";
 const tmpDir = dirSvc.get("TmpD", Ci.nsIFile);
 
 function Listener(callback) {
@@ -95,7 +94,6 @@ add_test(testAsync);
 
 
 
-
 function testZipEntry() {
     var uri = jarBase + "/inner40.zip";
     var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true})
@@ -112,138 +110,106 @@ add_test(testZipEntry);
 
 
 
-if (!inChild) {
+add_test(function testSync() {
+    var uri = jarBase + "/inner40.zip";
+    var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
+    var stream = chan.open2();
+    do_check_true(chan.contentLength > 0);
+    do_check_eq(stream.available(), chan.contentLength);
+    stream.close();
+    stream.close(); 
 
-  
-
-
-  add_test(function testSync() {
-      var uri = jarBase + "/inner40.zip";
-      var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
-      var stream = chan.open2();
-      do_check_true(chan.contentLength > 0);
-      do_check_eq(stream.available(), chan.contentLength);
-      stream.close();
-      stream.close(); 
-
-      run_next_test();
-  });
-
-
-  
-
-
-  add_test(function testSyncNested() {
-      var uri = "jar:" + jarBase + "/inner40.zip!/foo";
-      var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
-      var stream = chan.open2();
-      do_check_true(chan.contentLength > 0);
-      do_check_eq(stream.available(), chan.contentLength);
-      stream.close();
-      stream.close(); 
-
-      run_next_test();
-  });
-
-  
-
-
-  add_test(function testAsyncNested(next) {
-      var uri = "jar:" + jarBase + "/inner40.zip!/foo";
-      var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
-      chan.asyncOpen2(new Listener(function(l) {
-          do_check_true(chan.contentLength > 0);
-          do_check_true(l.gotStartRequest);
-          do_check_true(l.gotStopRequest);
-          do_check_eq(l.available, chan.contentLength);
-
-          run_next_test();
-      }));
-  });
-
-  
+    run_next_test();
+});
 
 
 
-  add_test(function testSyncCloseUnlocks() {
-      var copy = tmpDir.clone();
-      copy.append(fileBase);
-      file.copyTo(copy.parent, copy.leafName);
-      var uri = "jar:" + ios.newFileURI(copy).spec + "!/inner40.zip";
-      var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
-      var stream = chan.open2();
-      do_check_true(chan.contentLength > 0);
-      stream.close();
 
-      
-      obs.notifyObservers(null, "chrome-flush-caches", null);
 
-      try {
-          copy.remove(false);
-      }
-      catch (ex) {
-          do_throw(ex);
-      }
+add_test(function testSyncNested() {
+    var uri = "jar:" + jarBase + "/inner40.zip!/foo";
+    var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
+    var stream = chan.open2();
+    do_check_true(chan.contentLength > 0);
+    do_check_eq(stream.available(), chan.contentLength);
+    stream.close();
+    stream.close(); 
 
-      run_next_test();
-  });
-
-  
+    run_next_test();
+});
 
 
 
-  add_test(function testAsyncCloseUnlocks() {
-      var copy = tmpDir.clone();
-      copy.append(fileBase);
-      file.copyTo(copy.parent, copy.leafName);
 
-      var uri = "jar:" + ios.newFileURI(copy).spec + "!/inner40.zip";
-      var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
+add_test(function testAsyncNested(next) {
+    var uri = "jar:" + jarBase + "/inner40.zip!/foo";
+    var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
+    chan.asyncOpen2(new Listener(function(l) {
+        do_check_true(chan.contentLength > 0);
+        do_check_true(l.gotStartRequest);
+        do_check_true(l.gotStopRequest);
+        do_check_eq(l.available, chan.contentLength);
 
-      chan.asyncOpen2(new Listener(function (l) {
-          do_check_true(chan.contentLength > 0);
+        run_next_test();
+    }));
+});
 
-          
-          obs.notifyObservers(null, "chrome-flush-caches", null);
 
-          try {
-              copy.remove(false);
-          }
-          catch (ex) {
-              do_throw(ex);
-          }
 
-          run_next_test();
-      }));
-  });
 
-} 
 
-if (inChild) {
+add_test(function testSyncCloseUnlocks() {
+    var copy = tmpDir.clone();
+    copy.append(fileBase);
+    file.copyTo(copy.parent, copy.leafName);
+    var uri = "jar:" + ios.newFileURI(copy).spec + "!/inner40.zip";
+    var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
+    var stream = chan.open2();
+    do_check_true(chan.contentLength > 0);
+    stream.close();
+
     
+    obs.notifyObservers(null, "chrome-flush-caches", null);
+
+    try {
+        copy.remove(false);
+    }
+    catch (ex) {
+        do_throw(ex);
+    }
+
+    run_next_test();
+});
 
 
-    add_test(function testSimultaneous() {
-        var uri = jarBase + "/inner1.zip";
+
+
+
+add_test(function testAsyncCloseUnlocks() {
+    var copy = tmpDir.clone();
+    copy.append(fileBase);
+    file.copyTo(copy.parent, copy.leafName);
+
+    var uri = "jar:" + ios.newFileURI(copy).spec + "!/inner40.zip";
+    var chan = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true});
+
+    chan.asyncOpen2(new Listener(function (l) {
+        do_check_true(chan.contentLength > 0);
 
         
         obs.notifyObservers(null, "chrome-flush-caches", null);
 
-        
-        var num = 10;
-        var chan = [];
-        for (var i = 0; i < num; i++) {
-            chan[i] = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true})
-                             .QueryInterface(Ci.nsIJARChannel);
-            chan[i].asyncOpen2(new Listener(function(l) {}));
+        try {
+            copy.remove(false);
+        }
+        catch (ex) {
+            do_throw(ex);
         }
 
-        
-        var chan_last = NetUtil.newChannel({uri: uri, loadUsingSystemPrincipal: true})
-                               .QueryInterface(Ci.nsIJARChannel);
-        chan_last.asyncOpen2(new Listener(function(l) { run_next_test(); }));
-    });
-} 
+        run_next_test();
+    }));
+});
+
 
 function run_test() {
   return run_next_test();
