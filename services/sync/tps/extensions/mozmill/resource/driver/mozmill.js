@@ -112,9 +112,7 @@ function getAddons() {
 
 
 function getApplicationDetails() {
-  var locale = Cc["@mozilla.org/chrome/chrome-registry;1"]
-               .getService(Ci.nsIXULChromeRegistry)
-               .getSelectedLocale("global");
+  var locale = Services.locale.getAppLocaleAsLangTag();
 
   
   
