@@ -5066,7 +5066,12 @@ pref("dom.vr.oculus.enabled", true);
 
 pref("dom.vr.osvr.enabled", false);
 
+#ifdef XP_WIN
+pref("dom.vr.openvr.enabled", true);
+#else
+
 pref("dom.vr.openvr.enabled", false);
+#endif
 
 
 
