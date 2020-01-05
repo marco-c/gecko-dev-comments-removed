@@ -564,27 +564,43 @@ GMPParent::GMPThread()
   return mGMPThread;
 }
 
+
 bool
-GMPParent::SupportsAPI(const nsCString& aAPI, const nsCString& aTag)
+GMPCapability::Supports(const nsTArray<GMPCapability>& aCapabilities,
+                        const nsCString& aAPI,
+                        const nsTArray<nsCString>& aTags)
 {
-  for (uint32_t i = 0; i < mCapabilities.Length(); i++) {
-    if (!mCapabilities[i].mAPIName.Equals(aAPI)) {
+  for (const nsCString& tag : aTags) {
+    if (!GMPCapability::Supports(aCapabilities, aAPI, tag)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+
+bool
+GMPCapability::Supports(const nsTArray<GMPCapability>& aCapabilities,
+                        const nsCString& aAPI,
+                        const nsCString& aTag)
+{
+  for (const GMPCapability& capabilities : aCapabilities) {
+    if (!capabilities.mAPIName.Equals(aAPI)) {
       continue;
     }
-    nsTArray<nsCString>& tags = mCapabilities[i].mAPITags;
-    for (uint32_t j = 0; j < tags.Length(); j++) {
-      if (tags[j].Equals(aTag)) {
+    for (const nsCString& tag : capabilities.mAPITags) {
+      if (tag.Equals(aTag)) {
 #ifdef XP_WIN
         
         
         
         
-        if (tags[j].Equals(kEMEKeySystemClearkey)) {
-          if (mCapabilities[i].mAPIName.EqualsLiteral(GMP_API_VIDEO_DECODER)) {
+        if (tag.Equals(kEMEKeySystemClearkey)) {
+          if (capabilities.mAPIName.EqualsLiteral(GMP_API_VIDEO_DECODER)) {
             if (!WMFDecoderModule::HasH264()) {
               continue;
             }
-          } else if (mCapabilities[i].mAPIName.EqualsLiteral(GMP_API_AUDIO_DECODER)) {
+          } else if (capabilities.mAPIName.EqualsLiteral(GMP_API_AUDIO_DECODER)) {
             if (!WMFDecoderModule::HasAAC()) {
               continue;
             }
