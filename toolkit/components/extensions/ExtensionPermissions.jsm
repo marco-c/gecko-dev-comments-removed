@@ -108,4 +108,16 @@ this.ExtensionPermissions = {
     delete prefs.data[extension.id];
     prefs.saveSoon();
   },
+
+  
+  async _uninit() {
+    if (!_initPromise) {
+      return;
+    }
+
+    await _initPromise;
+    await prefs.finalize();
+    prefs = null;
+    _initPromise = null;
+  },
 };
