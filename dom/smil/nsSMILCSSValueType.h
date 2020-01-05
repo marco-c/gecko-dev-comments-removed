@@ -16,6 +16,7 @@
 class nsAString;
 
 namespace mozilla {
+class StyleAnimationValue;
 namespace dom {
 class Element;
 } 
@@ -28,6 +29,7 @@ class nsSMILCSSValueType : public nsISMILType
 {
 public:
   typedef mozilla::dom::Element Element;
+  typedef mozilla::StyleAnimationValue StyleAnimationValue;
 
   
   static nsSMILCSSValueType sSingleton;
@@ -83,6 +85,21 @@ public:
                               const nsAString& aString,
                               nsSMILValue& aValue,
                               bool* aIsContextSensitive);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static nsSMILValue ValueFromAnimationValue(nsCSSPropertyID aPropID,
+                                             Element* aTargetElement,
+                                             const StyleAnimationValue& aValue);
 
   
 

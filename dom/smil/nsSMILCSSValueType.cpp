@@ -418,6 +418,34 @@ nsSMILCSSValueType::ValueFromString(nsCSSPropertyID aPropID,
 }
 
 
+nsSMILValue
+nsSMILCSSValueType::ValueFromAnimationValue(nsCSSPropertyID aPropID,
+                                            Element* aTargetElement,
+                                            const StyleAnimationValue& aValue)
+{
+  nsSMILValue result;
+
+  nsIDocument* doc = aTargetElement->GetUncomposedDoc();
+  
+  
+  
+  
+  static const nsLiteralString kPlaceholderText =
+    NS_LITERAL_STRING("[SVG animation of CSS]");
+  if (doc && !nsStyleUtil::CSPAllowsInlineStyle(nullptr,
+                                                doc->NodePrincipal(),
+                                                doc->GetDocumentURI(),
+                                                0, kPlaceholderText, nullptr)) {
+    return result;
+  }
+
+  sSingleton.Init(result);
+  result.mU.mPtr = new ValueWrapper(aPropID, aValue);
+
+  return result;
+}
+
+
 bool
 nsSMILCSSValueType::ValueToString(const nsSMILValue& aValue,
                                   nsAString& aString)
