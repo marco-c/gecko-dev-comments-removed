@@ -993,6 +993,11 @@ Context::Start()
   if (mState == STATE_CONTEXT_CANCELED) {
     MOZ_DIAGNOSTIC_ASSERT(!mInitRunnable);
     MOZ_DIAGNOSTIC_ASSERT(!mInitAction);
+    
+    
+    
+    
+    mData = nullptr;
     return;
   }
 
