@@ -79,8 +79,9 @@ protected:
   nsString mMcc;
   nsString mMnc;
   nsString mSpn;
-  bool mIsDisplayNetworkNameRequired;
-  bool mIsDisplaySpnRequired;
+  
+  MOZ_INIT_OUTSIDE_CTOR bool mIsDisplayNetworkNameRequired;
+  MOZ_INIT_OUTSIDE_CTOR bool mIsDisplaySpnRequired;
 };
 
 class GsmIccInfo final : public IccInfo
