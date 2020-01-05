@@ -42,7 +42,7 @@ public class ColorProcessor implements Processor {
     private void extractColorUsingPaletteSupportLibrary(final IconResponse response) {
         try {
             final Palette palette = Palette.from(response.getBitmap()).generate();
-            response.updateColor(palette.getVibrantColor(DEFAULT_COLOR));
+            response.updateColor(palette.getVibrantColor(DEFAULT_COLOR) & 0x7FFFFFFF);
         } catch (ArrayIndexOutOfBoundsException e) {
             
             
