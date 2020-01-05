@@ -2440,27 +2440,27 @@ GeckoDriver.prototype.clearImportedScripts = function*(cmd, resp) {
 
 
 
+
+
+
+
 GeckoDriver.prototype.takeScreenshot = function (cmd, resp) {
-  let {id, highlights, full, hash} = cmd.parameters;
+  let {id, highlights, full, hash, scroll} = cmd.parameters;
   highlights = highlights || [];
+  let format = hash ? capture.Format.Hash : capture.Format.Base64;
 
   switch (this.context) {
     case Context.CHROME:
-      let canvas;
-      let highlightEls = [];
-
       let container = {frame: this.getCurrentWindow().document.defaultView};
-
       if (!container.frame) {
-        throw new NoSuchWindowError('Unable to locate window');
+        throw new NoSuchWindowError("Unable to locate window");
       }
 
-      for (let h of highlights) {
-        let el = this.curBrowser.seenEls.get(h, container);
-        highlightEls.push(el);
-      }
+      let highlightEls = highlights.map(
+          ref => this.curBrowser.seenEls.get(ref, container));
 
       
+      let canvas;
       if (!id && !full) {
         canvas = capture.viewport(container.frame, highlightEls);
 
@@ -2476,18 +2476,17 @@ GeckoDriver.prototype.takeScreenshot = function (cmd, resp) {
         canvas = capture.element(node, highlightEls);
       }
 
-      if (hash) {
-        return capture.toHash(canvas);
-      } else {
-        return capture.toBase64(canvas);
+      switch (format) {
+        case capture.Format.Hash:
+          return capture.toHash(canvas);
+
+        case capture.Format.Base64:
+          return capture.toBase64(canvas);
       }
+      break;
 
     case Context.CONTENT:
-      if (hash) {
-        return this.listener.getScreenshotHash(id, full, highlights);
-      } else {
-        return this.listener.takeScreenshot(id, full, highlights);
-      }
+      return this.listener.takeScreenshot(format, cmd.parameters);
   }
 };
 

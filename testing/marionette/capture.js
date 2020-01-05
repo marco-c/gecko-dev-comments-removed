@@ -17,6 +17,11 @@ const XHTML_NS = "http://www.w3.org/1999/xhtml";
 
 this.capture = {};
 
+capture.Format = {
+  Base64: 0,
+  Hash: 1,
+};
+
 
 
 
