@@ -20,6 +20,8 @@
 #include "nsDirectoryServiceDefs.h"
 #include "nsComponentManagerUtils.h"
 
+
+#include "ipc/IPCMessageUtils.h"
 #include "VideoUtils.h"
 #include "MediaEngineCameraVideoSource.h"
 #include "VideoSegment.h"
@@ -32,15 +34,11 @@
 
 
 #include "webrtc/common.h"
-#include "webrtc/video_engine/include/vie_capture.h"
-#include "webrtc/video_engine/include/vie_render.h"
+
+
 #include "CamerasChild.h"
 
 #include "NullTransport.h"
-
-namespace webrtc {
-class I420VideoFrame;
-}
 
 namespace mozilla {
 
@@ -48,24 +46,17 @@ namespace mozilla {
 
 
 class MediaEngineRemoteVideoSource : public MediaEngineCameraVideoSource,
-                                     public webrtc::ExternalRenderer
+                                     public camera::FrameRelay
 {
   typedef MediaEngineCameraVideoSource Super;
 public:
   NS_DECL_THREADSAFE_ISUPPORTS
 
   
-  int FrameSizeChange(unsigned int w, unsigned int h,
-                      unsigned int streams) override;
-  int DeliverFrame(unsigned char* buffer,
-                   size_t size,
-                   uint32_t time_stamp,
-                   int64_t ntp_time,
-                   int64_t render_time,
-                   void *handle) override;
+  void FrameSizeChange(unsigned int w, unsigned int h) override;
   
-  int DeliverI420Frame(const webrtc::I420VideoFrame& webrtc_frame) override { return 0; };
-  bool IsTextureSupported() override { return false; };
+  int DeliverFrame(uint8_t* buffer,
+                   const camera::VideoFrameProperties& properties) override;
 
   
   MediaEngineRemoteVideoSource(int aIndex, mozilla::camera::CaptureEngine aCapEngine,

@@ -46,6 +46,7 @@ class ViEEncoder : public RtcpIntraFrameObserver,
                    public VideoEncoderRateObserver,
                    public VCMPacketizationCallback,
                    public VCMSendStatisticsCallback,
+                   public CPULoadStateObserver,
                    public VideoCaptureCallback {
  public:
   friend class ViEBitrateObserver;
@@ -76,6 +77,9 @@ class ViEEncoder : public RtcpIntraFrameObserver,
 
   
   int Owner() const;
+
+  
+  void onLoadStateChanged(CPULoadState state) override;
 
   
   void Pause();

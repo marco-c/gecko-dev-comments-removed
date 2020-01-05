@@ -168,6 +168,17 @@ class VCMPacketRequestCallback {
  protected:
   virtual ~VCMPacketRequestCallback() {}
 };
+ 
+
+
+class VCMReceiveStateCallback {
+ public:
+  virtual void ReceiveStateChange(VideoReceiveState state) = 0;
+
+ protected:
+  virtual ~VCMReceiveStateCallback() {
+  }
+};
 
 
 

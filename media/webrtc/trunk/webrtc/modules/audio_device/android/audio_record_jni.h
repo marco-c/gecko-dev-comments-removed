@@ -84,6 +84,9 @@ class AudioRecordJni {
   int32_t EnableBuiltInAEC(bool enable);
   int32_t EnableBuiltInAGC(bool enable);
   int32_t EnableBuiltInNS(bool enable);
+  int32_t RecordingDeviceName(uint16_t index,
+                              char name[kAdmMaxDeviceNameSize],
+                              char guid[kAdmMaxGuidSize]);
 
  private:
   

@@ -177,6 +177,10 @@ class VideoSendStream : public SendStream {
 
   
   
+  virtual CPULoadStateObserver* LoadStateObserver() = 0;
+
+  
+  
   
   virtual bool ReconfigureVideoEncoder(const VideoEncoderConfig& config) = 0;
 

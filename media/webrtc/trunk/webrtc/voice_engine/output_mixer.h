@@ -100,6 +100,11 @@ public:
     void PlayFileEnded(int32_t id);
     void RecordFileEnded(int32_t id);
 
+    
+    void APMAnalyzeReverseStream(AudioFrame &audioFrame);
+
+    int GetOutputChannelCount();
+
 private:
     OutputMixer(uint32_t instanceId);
     int InsertInbandDtmfTone();

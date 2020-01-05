@@ -215,6 +215,11 @@ class RtpRtcp : public Module {
 
 
     virtual void SetSSRC(uint32_t ssrc) = 0;
+ 
+    
+
+
+    virtual int32_t SetRID(const char *rid) = 0;
 
     
 
@@ -389,6 +394,17 @@ class RtpRtcp : public Module {
                         int64_t* minRTT,
                         int64_t* maxRTT) const = 0;
 
+     
+
+
+
+
+
+    virtual int32_t GetReportBlockInfo(const uint32_t remote_ssrc,
+                                       uint32_t* ntp_high,
+                                       uint32_t* ntp_low,
+                                       uint32_t* packets_received,
+                                       uint64_t* octets_received) const = 0;
     
 
 

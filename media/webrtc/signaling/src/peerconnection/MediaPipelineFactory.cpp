@@ -27,16 +27,6 @@
 #include "MediaEngine.h"
 #endif
 
-#include "GmpVideoCodec.h"
-#ifdef MOZ_WEBRTC_OMX
-#include "OMXVideoCodec.h"
-#include "OMXCodecWrapper.h"
-#endif
-
-#ifdef MOZ_WEBRTC_MEDIACODEC
-#include "MediaCodecVideoCodec.h"
-#endif
-
 #ifdef MOZILLA_INTERNAL_API
 #include "mozilla/Preferences.h"
 #endif
@@ -167,8 +157,6 @@ NegotiatedDetailsToVideoCodecConfigs(const JsepTrackNegotiatedDetails& aDetails,
       return NS_ERROR_INVALID_ARG;
     }
 
-    config->mTias = aDetails.GetTias();
-
     for (size_t i = 0; i < aDetails.GetEncodingCount(); ++i) {
       const JsepTrackEncoding& jsepEncoding(aDetails.GetEncoding(i));
       if (jsepEncoding.HasFormat(codec->mDefaultPt)) {
@@ -178,7 +166,6 @@ NegotiatedDetailsToVideoCodecConfigs(const JsepTrackNegotiatedDetails& aDetails,
         config->mSimulcastEncodings.push_back(encoding);
       }
     }
-
     aConfigs->values.push_back(config);
   }
 
@@ -456,12 +443,14 @@ MediaPipelineFactory::CreateOrUpdateMediaPipeline(
   RefPtr<MediaSessionConduit> conduit;
   if (aTrack.GetMediaType() == SdpMediaSection::kAudio) {
     rv = GetOrCreateAudioConduit(aTrackPair, aTrack, &conduit);
-    if (NS_FAILED(rv))
+    if (NS_FAILED(rv)) {
       return rv;
+    }
   } else if (aTrack.GetMediaType() == SdpMediaSection::kVideo) {
     rv = GetOrCreateVideoConduit(aTrackPair, aTrack, &conduit);
-    if (NS_FAILED(rv))
+    if (NS_FAILED(rv)) {
       return rv;
+    }
   } else {
     
     return NS_OK;
@@ -733,17 +722,16 @@ MediaPipelineFactory::GetOrCreateAudioConduit(
     if (!aTrackPair.mSending) {
       
       
-      if (!conduit->SetLocalSSRC(aTrackPair.mRecvonlySsrc)) {
+      if (!conduit->SetLocalSSRCs(std::vector<unsigned int>(1,aTrackPair.mRecvonlySsrc))) {
         MOZ_MTLOG(ML_ERROR, "SetLocalSSRC failed");
         return NS_ERROR_FAILURE;
       }
     }
   } else {
-    
     auto ssrcs = aTrack.GetSsrcs();
     if (!ssrcs.empty()) {
-      if (!conduit->SetLocalSSRC(ssrcs.front())) {
-        MOZ_MTLOG(ML_ERROR, "SetLocalSSRC failed");
+      if (!conduit->SetLocalSSRCs(ssrcs)) {
+        MOZ_MTLOG(ML_ERROR, "SetLocalSSRCs failed");
         return NS_ERROR_FAILURE;
       }
     }
@@ -789,7 +777,6 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
     const JsepTrack& aTrack,
     RefPtr<MediaSessionConduit>* aConduitp)
 {
-
   if (!aTrack.GetNegotiatedDetails()) {
     MOZ_ASSERT(false, "Track is missing negotiated details");
     return NS_ERROR_INVALID_ARG;
@@ -801,7 +788,7 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
     mPCMedia->GetVideoConduit(aTrackPair.mLevel);
 
   if (!conduit) {
-    conduit = VideoSessionConduit::Create();
+    conduit = VideoSessionConduit::Create(mPCMedia->mCall);
     if (!conduit) {
       MOZ_MTLOG(ML_ERROR, "Could not create video conduit");
       return NS_ERROR_FAILURE;
@@ -825,90 +812,78 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
     return NS_ERROR_FAILURE;
   }
 
+  const std::vector<uint32_t>* ssrcs;
+
   if (receiving) {
-    if (!aTrackPair.mSending) {
+    
+    
+    if (aTrackPair.mSending) {
+      ssrcs = &aTrackPair.mSending->GetSsrcs();
+      if (!ssrcs->empty()) {
+        conduit->SetLocalSSRCs(*ssrcs);
+      }
+    } else {
       
       
-      if (!conduit->SetLocalSSRC(aTrackPair.mRecvonlySsrc)) {
-        MOZ_MTLOG(ML_ERROR, "SetLocalSSRC failed");
+      if (!conduit->SetLocalSSRCs(std::vector<unsigned int>(1,aTrackPair.mRecvonlySsrc))) {
+        MOZ_MTLOG(ML_ERROR, "SetLocalSSRCs failed");
         return NS_ERROR_FAILURE;
       }
     }
 
+    ssrcs = &aTrack.GetSsrcs();
     
     
-    bool configuredH264 = false;
-    for (size_t i = 0; i < configs.values.size();) {
-      
-      if (configuredH264 && (configs.values[i]->mName == "H264")) {
-        delete configs.values[i];
-        configs.values.erase(configs.values.begin() + i);
-        continue;
-      }
-
-      
-      if (EnsureExternalCodec(*conduit, configs.values[i], false)) {
-        delete configs.values[i];
-        configs.values.erase(configs.values.begin() + i);
-        continue;
-      }
-
-      if (configs.values[i]->mName == "H264") {
-        configuredH264 = true;
-      }
-      ++i;
+    
+    if (ssrcs->empty()) {
+      MOZ_MTLOG(ML_ERROR, "No SSRC set for receive track");
+      return NS_ERROR_FAILURE;
     }
+    conduit->SetRemoteSSRC(ssrcs->front());
 
     auto error = conduit->ConfigureRecvMediaCodecs(configs.values);
-
     if (error) {
       MOZ_MTLOG(ML_ERROR, "ConfigureRecvMediaCodecs failed: " << error);
       return NS_ERROR_FAILURE;
     }
-  } else {
+  } else { 
     
-    auto ssrcs = aTrack.GetSsrcs();
-    if (!ssrcs.empty()) {
-      if (!conduit->SetLocalSSRC(ssrcs.front())) {
-        MOZ_MTLOG(ML_ERROR, "SetLocalSSRC failed");
-        return NS_ERROR_FAILURE;
-      }
+    ssrcs = &aTrack.GetSsrcs();
+    if (ssrcs->empty()) {
+      MOZ_MTLOG(ML_ERROR, "No SSRC set for send track");
+      return NS_ERROR_FAILURE;
+    }
+
+    if (!conduit->SetLocalSSRCs(*ssrcs)) {
+      MOZ_MTLOG(ML_ERROR, "SetLocalSSRC failed");
+      return NS_ERROR_FAILURE;
     }
 
     conduit->SetLocalCNAME(aTrack.GetCNAME().c_str());
 
-    rv = ConfigureVideoCodecMode(aTrack,*conduit);
+    rv = ConfigureVideoCodecMode(aTrack, *conduit);
     if (NS_FAILED(rv)) {
       return rv;
     }
 
-    
-    if (EnsureExternalCodec(*conduit, configs.values[0], true)) {
-      MOZ_MTLOG(ML_ERROR, "External codec not available");
-      return NS_ERROR_FAILURE;
-    }
-
-
     auto error = conduit->ConfigureSendMediaCodec(configs.values[0]);
-
-    const SdpExtmapAttributeList::Extmap* rtpStreamIdExt =
-        aTrack.GetNegotiatedDetails()->GetExt(
-            "urn:ietf:params:rtp-hdrext:sdes:rtp-stream-id");
-
-    if (rtpStreamIdExt) {
-      MOZ_MTLOG(ML_DEBUG, "Calling EnableRTPSenderIdExtension");
-      error = conduit->EnableRTPStreamIdExtension(true, rtpStreamIdExt->entry);
-
-      if (error) {
-        MOZ_MTLOG(ML_ERROR, "EnableRTPSenderIdExtension failed: " << error);
-        return NS_ERROR_FAILURE;
-      }
-    }
 
     if (error) {
       MOZ_MTLOG(ML_ERROR, "ConfigureSendMediaCodec failed: " << error);
       return NS_ERROR_FAILURE;
     }
+  }
+
+  const JsepTrackNegotiatedDetails* details = aTrack.GetNegotiatedDetails();
+  if (details) {
+    
+    std::vector<webrtc::RtpExtension> extmaps;
+    details->ForEachRTPHeaderExtension(
+      [&conduit,&extmaps](const SdpExtmapAttributeList::Extmap& extmap)
+    {
+      extmaps.emplace_back(extmap.extensionname,extmap.entry);
+    });
+    conduit->AddLocalRTPExtensions(extmaps);
   }
 
   *aConduitp = conduit;
@@ -962,107 +937,5 @@ MediaPipelineFactory::ConfigureVideoCodecMode(const JsepTrack& aTrack,
   return NS_OK;
 }
 
-
-
-
-MediaConduitErrorCode
-MediaPipelineFactory::EnsureExternalCodec(VideoSessionConduit& aConduit,
-                                          VideoCodecConfig* aConfig,
-                                          bool aIsSend)
-{
-  if (aConfig->mName == "VP8") {
-#ifdef MOZ_WEBRTC_MEDIACODEC
-     if (aIsSend) {
-#ifdef MOZILLA_INTERNAL_API
-       bool enabled = mozilla::Preferences::GetBool("media.navigator.hardware.vp8_encode.acceleration_enabled", false);
-#else
-       bool enabled = false;
-#endif
-       if (enabled) {
-         nsCOMPtr<nsIGfxInfo> gfxInfo = do_GetService("@mozilla.org/gfx/info;1");
-         if (gfxInfo) {
-           int32_t status;
-           nsCString discardFailureId;
-           if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_WEBRTC_HW_ACCELERATION_ENCODE, discardFailureId, &status))) {
-             if (status != nsIGfxInfo::FEATURE_STATUS_OK) {
-               NS_WARNING("VP8 encoder hardware is not whitelisted: disabling.\n");
-             } else {
-               VideoEncoder* encoder = nullptr;
-               encoder = MediaCodecVideoCodec::CreateEncoder(MediaCodecVideoCodec::CodecType::CODEC_VP8);
-               if (encoder) {
-                 return aConduit.SetExternalSendCodec(aConfig, encoder);
-               }
-               return kMediaConduitNoError;
-             }
-           }
-         }
-       }
-     } else {
-#ifdef MOZILLA_INTERNAL_API
-       bool enabled = mozilla::Preferences::GetBool("media.navigator.hardware.vp8_decode.acceleration_enabled", false);
-#else
-       bool enabled = false;
-#endif
-       if (enabled) {
-         nsCOMPtr<nsIGfxInfo> gfxInfo = do_GetService("@mozilla.org/gfx/info;1");
-         if (gfxInfo) {
-           int32_t status;
-           nsCString discardFailureId;
-           if (NS_SUCCEEDED(gfxInfo->GetFeatureStatus(nsIGfxInfo::FEATURE_WEBRTC_HW_ACCELERATION_DECODE, discardFailureId, &status))) {
-             if (status != nsIGfxInfo::FEATURE_STATUS_OK) {
-               NS_WARNING("VP8 decoder hardware is not whitelisted: disabling.\n");
-             } else {
-               VideoDecoder* decoder;
-               decoder = MediaCodecVideoCodec::CreateDecoder(MediaCodecVideoCodec::CodecType::CODEC_VP8);
-               if (decoder) {
-                 return aConduit.SetExternalRecvCodec(aConfig, decoder);
-               }
-               return kMediaConduitNoError;
-             }
-           }
-         }
-       }
-     }
-#endif
-     return kMediaConduitNoError;
-  }
-  if (aConfig->mName == "VP9") {
-    return kMediaConduitNoError;
-  }
-  if (aConfig->mName == "H264") {
-    if (aConduit.CodecPluginID() != 0) {
-      return kMediaConduitNoError;
-    }
-    
-    if (aIsSend) {
-      VideoEncoder* encoder = nullptr;
-#ifdef MOZ_WEBRTC_OMX
-      encoder =
-          OMXVideoCodec::CreateEncoder(OMXVideoCodec::CodecType::CODEC_H264);
-#else
-      encoder = GmpVideoCodec::CreateEncoder();
-#endif
-      if (encoder) {
-        return aConduit.SetExternalSendCodec(aConfig, encoder);
-      }
-      return kMediaConduitInvalidSendCodec;
-    }
-    VideoDecoder* decoder = nullptr;
-#ifdef MOZ_WEBRTC_OMX
-    decoder =
-      OMXVideoCodec::CreateDecoder(OMXVideoCodec::CodecType::CODEC_H264);
-#else
-    decoder = GmpVideoCodec::CreateDecoder();
-#endif
-    if (decoder) {
-      return aConduit.SetExternalRecvCodec(aConfig, decoder);
-    }
-    return kMediaConduitInvalidReceiveCodec;
-  }
-  MOZ_MTLOG(ML_ERROR,
-            "Invalid video codec configured: " << aConfig->mName.c_str());
-  return aIsSend ? kMediaConduitInvalidSendCodec
-                 : kMediaConduitInvalidReceiveCodec;
-}
 
 } 

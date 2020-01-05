@@ -15,6 +15,7 @@
 
 
 #include "webrtc/common_types.h"
+#include "webrtc/transport.h"
 #include "webrtc/voice_engine/include/voe_base.h"
 #include "webrtc/voice_engine/include/voe_volume_control.h"
 #include "webrtc/voice_engine/include/voe_codec.h"
@@ -45,8 +46,8 @@ NTPtoDOMHighResTimeStamp(uint32_t ntpHigh, uint32_t ntpLow);
 
 
 
-class WebrtcAudioConduit:public AudioSessionConduit
-	      		            ,public webrtc::Transport
+class WebrtcAudioConduit: public AudioSessionConduit
+	      		, public webrtc::Transport
 {
 public:
   
@@ -150,18 +151,20 @@ public:
 
 
 
-  virtual int SendPacket(int channel, const void *data, size_t len) override;
+   virtual bool SendRtp(const uint8_t* data,
+                        size_t len,
+                        const webrtc::PacketOptions& options) override;
 
   
 
 
 
-  virtual int SendRTCPPacket(int channel, const void *data, size_t len) override;
-
+  virtual bool SendRtcp(const uint8_t *data,
+                        size_t len) override;
 
   virtual uint64_t CodecPluginID() override { return 0; }
 
-  WebrtcAudioConduit():
+  explicit WebrtcAudioConduit():
                       mVoiceEngine(nullptr),
                       mTransportMonitor("WebrtcAudioConduit"),
                       mTransmitterTransport(nullptr),
@@ -186,8 +189,13 @@ public:
 
   int GetChannel() { return mChannel; }
   webrtc::VoiceEngine* GetVoiceEngine() { return mVoiceEngine; }
-  bool SetLocalSSRC(unsigned int ssrc) override;
-  bool GetLocalSSRC(unsigned int* ssrc) override;
+
+  
+
+
+
+  bool SetLocalSSRCs(const std::vector<unsigned int>& aSSRCs) override;
+  std::vector<unsigned int> GetLocalSSRCs() const override;
   bool GetRemoteSSRC(unsigned int* ssrc) override;
   bool SetLocalCNAME(const char* cname) override;
   bool GetVideoEncoderStats(double* framerateMean,

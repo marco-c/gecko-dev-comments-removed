@@ -56,6 +56,39 @@ void FrameList::InsertFrame(VCMFrameBuffer* frame) {
   insert(rbegin().base(), FrameListPair(frame->TimeStamp(), frame));
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 VCMFrameBuffer* FrameList::PopFrame(uint32_t timestamp) {
   FrameList::iterator it = find(timestamp);
   if (it == end())
@@ -564,6 +597,10 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
     return NULL;
   }
   
+  
+  
+  
+
   VCMFrameBuffer* frame = decodable_frames_.PopFrame(timestamp);
   bool continuous = true;
   if (!frame) {
@@ -605,6 +642,11 @@ VCMEncodedFrame* VCMJitterBuffer::ExtractAndSetDecode(uint32_t timestamp) {
   if ((*frame).IsSessionComplete())
     UpdateAveragePacketsPerFrame(frame->NumPackets());
 
+  if (frame->Length() == 0) {
+    
+    ReleaseFrame(frame);
+    return NULL;
+  }
   return frame;
 }
 
@@ -622,6 +664,13 @@ void VCMJitterBuffer::ReleaseFrame(VCMEncodedFrame* frame) {
 VCMFrameBufferEnum VCMJitterBuffer::GetFrame(const VCMPacket& packet,
                                              VCMFrameBuffer** frame,
                                              FrameList** frame_list) {
+  
+  
+
+  
+  
+  
+  
   *frame = incomplete_frames_.PopFrame(packet.timestamp);
   if (*frame != NULL) {
     *frame_list = &incomplete_frames_;
@@ -641,8 +690,10 @@ VCMFrameBufferEnum VCMJitterBuffer::GetFrame(const VCMPacket& packet,
     LOG(LS_WARNING) << "Unable to get empty frame; Recycling.";
     bool found_key_frame = RecycleFramesUntilKeyFrame();
     *frame = GetEmptyFrame();
-    assert(*frame);
-    if (!found_key_frame) {
+    if (!*frame) {
+      LOG(LS_ERROR) << "GetEmptyFrame returned NULL.";
+      return kGeneralError;
+    } else if (!found_key_frame) {
       free_frames_.push_back(*frame);
       return kFlushIndicator;
     }

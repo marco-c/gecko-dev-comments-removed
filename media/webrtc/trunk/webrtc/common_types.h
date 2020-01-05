@@ -416,7 +416,7 @@ enum NsModes
     kNsLowSuppression,  
     kNsModerateSuppression,
     kNsHighSuppression,
-    kNsVeryHighSuppression,     
+    kNsVeryHighSuppression     
 };
 
 enum AgcModes                  
@@ -441,7 +441,7 @@ enum EcModes
     kEcDefault,                
     kEcConference,             
     kEcAec,                    
-    kEcAecm,                   
+    kEcAecm                    
 };
 
 
@@ -477,7 +477,8 @@ enum AudioLayers
     kAudioWindowsWave = 1,
     kAudioWindowsCore = 2,
     kAudioLinuxAlsa = 3,
-    kAudioLinuxPulse = 4
+    kAudioLinuxPulse = 4,
+    kAudioSndio = 5
 };
 
 
@@ -494,7 +495,7 @@ enum NetEqModes
     kNetEqFax = 2,
     
     
-    kNetEqOff = 3,
+    kNetEqOff = 3
 };
 
 
@@ -510,7 +511,7 @@ enum AmrMode
 {
     kRfc3267BwEfficient = 0,
     kRfc3267OctetAligned = 1,
-    kRfc3267FileStorage = 2,
+    kRfc3267FileStorage = 2
 };
 
 
@@ -537,12 +538,23 @@ enum RawVideoType
     kVideoUnknown  = 99
 };
 
+enum VideoReceiveState
+{
+  kReceiveStateInitial,            
+  kReceiveStateNormal,
+  kReceiveStatePreemptiveNACK,     
+  kReceiveStateWaitingKey,         
+  kReceiveStateDecodingWithErrors, 
+  kReceiveStateNoIncoming,         
+};
+
 
 enum { kConfigParameterSize = 128};
 enum { kPayloadNameSize = 32};
 enum { kMaxSimulcastStreams = 4};
 enum { kMaxSpatialLayers = 5 };
 enum { kMaxTemporalStreams = 4};
+enum { kRIDSize = 32};
 
 enum VideoCodecComplexity
 {
@@ -617,8 +629,13 @@ struct VideoCodecVP9 {
 
 struct VideoCodecH264 {
   VideoCodecProfile profile;
+  uint8_t        profile_byte;
+  uint8_t        constraints;
+  uint8_t        level;
+  uint8_t        packetizationMode; 
   bool           frameDroppingOn;
   int            keyFrameInterval;
+  double         scaleDownBy;
   
   const uint8_t* spsData;
   size_t         spsLen;
@@ -655,6 +672,9 @@ struct SimulcastStream {
   unsigned int        targetBitrate;  
   unsigned int        minBitrate;  
   unsigned int        qpMax; 
+  char                rid[kRIDSize];
+  unsigned int        jsMaxBitrate; 
+  double              jsScaleDownBy; 
 
   bool operator==(const SimulcastStream& other) const {
     return width == other.width &&
@@ -663,7 +683,10 @@ struct SimulcastStream {
            maxBitrate == other.maxBitrate &&
            targetBitrate == other.targetBitrate &&
            minBitrate == other.minBitrate &&
-           qpMax == other.qpMax;
+           qpMax == other.qpMax &&
+           strcmp(rid, other.rid) == 0 &&
+           jsMaxBitrate == other.jsMaxBitrate &&
+           jsScaleDownBy == other.jsScaleDownBy;
   }
 
   bool operator!=(const SimulcastStream& other) const {
@@ -691,6 +714,8 @@ struct VideoCodec {
 
   unsigned short      width;
   unsigned short      height;
+  
+  unsigned char       resolution_divisor;
 
   unsigned int        startBitrate;  
   unsigned int        maxBitrate;  
@@ -703,6 +728,7 @@ struct VideoCodec {
 
   unsigned int        qpMax;
   unsigned char       numberOfSimulcastStreams;
+  unsigned char       ridId;
   SimulcastStream     simulcastStream[kMaxSimulcastStreams];
   SpatialLayer spatialLayers[kMaxSpatialLayers];
 
@@ -766,6 +792,26 @@ struct OverUseDetectorOptions {
   double initial_var_noise;
 };
 
+enum CPULoadState {
+  kLoadRelaxed = 0,
+  kLoadNormal,
+  kLoadStressed,
+  kLoadLast,
+};
+
+class CPULoadStateObserver {
+public:
+  virtual void onLoadStateChanged(CPULoadState aNewState) = 0;
+  virtual ~CPULoadStateObserver() {};
+};
+
+class CPULoadStateCallbackInvoker {
+public:
+    virtual void AddObserver(CPULoadStateObserver* aObserver) = 0;
+    virtual void RemoveObserver(CPULoadStateObserver* aObserver) = 0;
+    virtual ~CPULoadStateCallbackInvoker() {};
+};
+
 
 
 struct PacketTime {
@@ -803,6 +849,10 @@ struct RTPHeaderExtension {
   
   bool hasVideoRotation;
   uint8_t videoRotation;
+
+  
+  bool hasRID;
+  char *rid; 
 };
 
 struct RTPHeader {

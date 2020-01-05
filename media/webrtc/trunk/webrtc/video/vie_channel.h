@@ -58,6 +58,7 @@ enum StreamType {
 
 class ViEChannel : public VCMFrameTypeCallback,
                    public VCMReceiveCallback,
+									 public VCMReceiveStateCallback,
                    public VCMReceiveStatisticsCallback,
                    public VCMDecoderTimingCallback,
                    public VCMPacketRequestCallback,
@@ -112,6 +113,8 @@ class ViEChannel : public VCMFrameTypeCallback,
   int SetReceiveVideoRotationStatus(bool enable, int id);
   int SetSendTransportSequenceNumber(bool enable, int id);
   int SetReceiveTransportSequenceNumber(bool enable, int id);
+  int SetSendRtpStreamId(bool enable, int id); 
+	int SetReceiveRtpStreamId(bool enable, int id); 
   void SetRtcpXrRrtrStatus(bool enable);
   void EnableTMMBR(bool enable);
 
@@ -125,6 +128,9 @@ class ViEChannel : public VCMFrameTypeCallback,
 
   
   uint32_t GetRemoteSSRC();
+
+	
+	int32_t GetRemoteRtpStreamId(char rid[256]);
 
   int SetRtxSendPayloadType(int payload_type, int associated_payload_type);
   void SetRtxReceivePayloadType(int payload_type, int associated_payload_type);
@@ -150,6 +156,18 @@ class ViEChannel : public VCMFrameTypeCallback,
                                 uint32_t* extended_max,
                                 uint32_t* jitter_samples,
                                 int64_t* rtt_ms);
+
+
+
+int32_t GetRemoteRTCPReceiverInfo(uint32_t& NTPHigh, uint32_t& NTPLow,
+                                  uint32_t& receivedPacketCount,
+                                  uint64_t& receivedOctetCount,
+                                  uint32_t* jitterSamples,
+                                  uint16_t* fractionLost,
+                                  uint32_t* cumulativeLost,
+                                  int64_t* rttMs);
+
+int32_t GetRemoteRTCPSenderInfo(RTCPSenderInfo* sender_info) const;
 
   
   void RegisterSendChannelRtcpStatisticsCallback(
@@ -256,6 +274,8 @@ class ViEChannel : public VCMFrameTypeCallback,
   
   int32_t ResendPackets(const uint16_t* sequence_numbers,
                         uint16_t length) override;
+
+  virtual void ReceiveStateChange(VideoReceiveState state) override;
 
   int32_t SetVoiceChannel(int32_t ve_channel_id,
                           VoEVideoSync* ve_sync_interface);
@@ -443,6 +463,7 @@ class ViEChannel : public VCMFrameTypeCallback,
   int64_t rtt_sum_ms_ GUARDED_BY(crit_);
   int64_t last_rtt_ms_ GUARDED_BY(crit_);
   size_t num_rtts_ GUARDED_BY(crit_);
+	int rid_extension_id_; 
 
   
   const std::vector<RtpRtcp*> rtp_rtcp_modules_;

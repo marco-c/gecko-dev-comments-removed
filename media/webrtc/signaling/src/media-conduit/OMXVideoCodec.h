@@ -18,13 +18,13 @@ class OMXVideoCodec {
 
 
 
-  static VideoEncoder* CreateEncoder(CodecType aCodecType);
+  static WebrtcVideoEncoder* CreateEncoder(CodecType aCodecType);
 
   
 
 
 
-  static VideoDecoder* CreateDecoder(CodecType aCodecType);
+  static WebrtcVideoDecoder* CreateDecoder(CodecType aCodecType);
 };
 
 }

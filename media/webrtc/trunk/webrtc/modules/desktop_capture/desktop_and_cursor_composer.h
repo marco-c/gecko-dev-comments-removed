@@ -20,8 +20,8 @@ namespace webrtc {
 
 
 class DesktopAndCursorComposer : public DesktopCapturer,
-                            public DesktopCapturer::Callback,
-                            public MouseCursorMonitor::Callback {
+                                 public DesktopCapturer::Callback,
+                                 public MouseCursorMonitor::Callback {
  public:
   
   
@@ -33,6 +33,7 @@ class DesktopAndCursorComposer : public DesktopCapturer,
 
   
   void Start(DesktopCapturer::Callback* callback) override;
+  void Stop() override;
   void Capture(const DesktopRegion& region) override;
   void SetExcludedWindow(WindowId window) override;
 

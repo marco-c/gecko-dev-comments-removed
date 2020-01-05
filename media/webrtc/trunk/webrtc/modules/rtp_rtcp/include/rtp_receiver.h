@@ -94,6 +94,8 @@ class RtpReceiver {
 
   
   virtual int32_t CSRCs(uint32_t array_of_csrc[kRtpCsrcSize]) const = 0;
+ 
+  virtual void GetRID(char rid[256]) const = 0;
 
   
   virtual int32_t Energy(uint8_t array_of_energy[kRtpCsrcSize]) const = 0;

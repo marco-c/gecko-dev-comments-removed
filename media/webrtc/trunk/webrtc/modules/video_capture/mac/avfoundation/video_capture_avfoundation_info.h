@@ -8,27 +8,27 @@
 
 
 
-#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_MAC_QTKIT_VIDEO_CAPTURE_QTKIT_INFO_H_
-#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_MAC_QTKIT_VIDEO_CAPTURE_QTKIT_INFO_H_
+#ifndef WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_MAC_AVFOUNDATION_VIDEO_CAPTURE_AVFOUNDATION_INFO_H_
+#define WEBRTC_MODULES_VIDEO_CAPTURE_MAIN_SOURCE_MAC_AVFOUNDATION_VIDEO_CAPTURE_AVFOUNDATION_INFO_H_
 
 #include "webrtc/modules/video_capture/device_info_impl.h"
-#include "webrtc/modules/video_capture/mac/qtkit/video_capture_qtkit_utility.h"
+#include "webrtc/modules/video_capture/mac/avfoundation/video_capture_avfoundation_utility.h"
 #include "webrtc/modules/video_capture/video_capture_impl.h"
 
 
-@class VideoCaptureMacQTKitInfoObjC;
+@class VideoCaptureMacAVFoundationInfoObjC;
 
 namespace webrtc
 {
 namespace videocapturemodule
 {
 
-class VideoCaptureMacQTKitInfo: public DeviceInfoImpl
+class VideoCaptureMacAVFoundationInfo: public DeviceInfoImpl
 {
 public:
 
-   VideoCaptureMacQTKitInfo(const int32_t id);
-    virtual ~VideoCaptureMacQTKitInfo();
+   VideoCaptureMacAVFoundationInfo(const int32_t id);
+    virtual ~VideoCaptureMacAVFoundationInfo();
 
     int32_t Init();
 
@@ -48,7 +48,8 @@ public:
         uint32_t deviceNameLength, char* deviceUniqueIdUTF8,
         uint32_t deviceUniqueIdUTF8Length,
         char* productUniqueIdUTF8 = 0,
-        uint32_t productUniqueIdUTF8Length = 0);
+        uint32_t productUniqueIdUTF8Length = 0,
+        pid_t* pid = 0);
 
     
 
@@ -67,15 +68,6 @@ public:
     
 
 
-
-    virtual int32_t GetBestMatchedCapability(
-        const char* deviceUniqueIdUTF8,
-        const VideoCaptureCapability& requested,
-        VideoCaptureCapability& resulting);
-
-    
-
-
     virtual int32_t DisplayCaptureSettingsDialogBox(
         const char* deviceUniqueIdUTF8,
         const char* dialogTitleUTF8, void* parentWindow,
@@ -85,7 +77,7 @@ protected:
     virtual int32_t CreateCapabilityMap(
         const char* deviceUniqueIdUTF8);
 
-    VideoCaptureMacQTKitInfoObjC*    _captureInfo;
+    VideoCaptureMacAVFoundationInfoObjC*    _captureInfo;
 };
 }  
 }  

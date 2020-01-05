@@ -19,6 +19,15 @@
 
 namespace rtc {
 
+#if defined(WEBRTC_WIN)
+
+static UINT static_reg_windows_msg = RegisterWindowMessageW(L"WebrtcWindowsUIThreadEvent");
+
+static const UINT_PTR kTimerId = 1;
+static const wchar_t kThisProperty[] = L"ThreadWindowsUIPtr";
+static const wchar_t kThreadWindow[] = L"WebrtcWindowsUIThread";
+#endif
+
 PlatformThreadId CurrentThreadId() {
   PlatformThreadId ret;
 #if defined(WEBRTC_WIN)
@@ -116,6 +125,53 @@ PlatformThread::~PlatformThread() {
 }
 
 #if defined(WEBRTC_WIN)
+bool PlatformUIThread::InternalInit() {
+  
+  
+  if (hwnd_ == NULL) {
+    WNDCLASSW wc;
+    HMODULE hModule = GetModuleHandle(NULL);
+    if (!GetClassInfoW(hModule, kThreadWindow, &wc)) {
+      ZeroMemory(&wc, sizeof(WNDCLASSW));
+      wc.hInstance = hModule;
+      wc.lpfnWndProc = EventWindowProc;
+      wc.lpszClassName = kThreadWindow;
+      RegisterClassW(&wc);
+    }
+    hwnd_ = CreateWindowW(kThreadWindow, L"",
+                          0, 0, 0, 0, 0,
+                          NULL, NULL, hModule, NULL);
+    assert(hwnd_);
+    SetPropW(hwnd_, kThisProperty, this);
+
+    if (timeout_) {
+      
+      RequestCallbackTimer(timeout_);
+    }
+  }
+  return !!hwnd_;
+}
+
+void PlatformUIThread::RequestCallback() {
+  assert(hwnd_);
+  assert(static_reg_windows_msg);
+  PostMessage(hwnd_, static_reg_windows_msg, 0, 0);
+}
+
+bool PlatformUIThread::RequestCallbackTimer(unsigned int milliseconds) {
+  if (!hwnd_) {
+    assert(!thread_);
+    
+  } else {
+    if (timerid_) {
+      KillTimer(hwnd_, timerid_);
+    }
+    timerid_ = SetTimer(hwnd_, kTimerId, milliseconds, NULL);
+  }
+  timeout_ = milliseconds;
+  return !!timerid_;
+}
+
 DWORD WINAPI PlatformThread::StartThread(void* param) {
   static_cast<PlatformThread*>(param)->Run();
   return 0;
@@ -175,6 +231,21 @@ void PlatformThread::Stop() {
 #endif  
 }
 
+#ifdef WEBRTC_WIN
+void PlatformUIThread::Stop() {
+  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  
+  if (timerid_) {
+    KillTimer(hwnd_, timerid_);
+    timerid_ = 0;
+  }
+
+  PostMessage(hwnd_, WM_CLOSE, 0, 0);
+
+  PlatformThread::Stop();
+}
+#endif
+
 void PlatformThread::Run() {
   if (!name_.empty())
     rtc::SetCurrentThreadName(name_.c_str());
@@ -192,6 +263,47 @@ void PlatformThread::Run() {
   } while (!stop_event_.Wait(0));
 #endif
 }
+
+#if defined(WEBRTC_WIN)
+void PlatformUIThread::Run() {
+  if (!InternalInit()) {
+    assert(false);
+  }
+  PlatformThread::Run();
+  
+}
+
+void PlatformUIThread::NativeEventCallback() {
+  if (!run_function_) {
+    stop_ = true;
+    return;
+  }
+  stop_ = !run_function_(obj_);
+}
+
+
+LRESULT CALLBACK
+PlatformUIThread::EventWindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
+  if (uMsg == WM_DESTROY) {
+    RemovePropW(hwnd, kThisProperty);
+    PostQuitMessage(0);
+    return 0;
+  }
+
+  PlatformUIThread *twui = static_cast<PlatformUIThread*>(GetPropW(hwnd, kThisProperty));
+  if (!twui) {
+    return DefWindowProc(hwnd, uMsg, wParam, lParam);
+  }
+
+  if ((uMsg == static_reg_windows_msg && uMsg != WM_NULL) ||
+      (uMsg == WM_TIMER && wParam == kTimerId)) {
+    twui->NativeEventCallback();
+    return 0;
+  }
+
+  return DefWindowProc(hwnd, uMsg, wParam, lParam);
+}
+#endif
 
 bool PlatformThread::SetPriority(ThreadPriority priority) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());

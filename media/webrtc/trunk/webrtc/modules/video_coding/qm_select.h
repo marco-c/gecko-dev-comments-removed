@@ -41,6 +41,11 @@ struct VCMResolutionScale {
   bool change_resolution_temporal;
 };
 
+
+
+
+
+
 enum ImageType {
   kQCIF = 0,  
   kHCIF,      
@@ -213,6 +218,9 @@ class VCMQmResolution : public VCMQmMethod {
   
   int SelectResolution(VCMResolutionScale** qm);
 
+  
+  void SetCPULoadState(CPULoadState state);
+
  private:
   
   void SetDefaultAction();
@@ -259,10 +267,6 @@ class VCMQmResolution : public VCMQmMethod {
 
   
   void ConvertSpatialFractionalToWhole();
-
-  
-  
-  bool EvenFrameSize();
 
   
   void InsertLatestDownAction();
@@ -320,6 +324,7 @@ class VCMQmResolution : public VCMQmMethod {
   
   ResolutionAction down_action_history_[kDownActionHistorySize];
   int num_layers_;
+  CPULoadState loadstate_;
 };
 
 

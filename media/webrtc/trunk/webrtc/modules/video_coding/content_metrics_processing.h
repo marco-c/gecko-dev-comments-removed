@@ -41,7 +41,7 @@ class VCMContentMetricsProcessing {
   int Reset();
 
   
-  void UpdateFrameRate(uint32_t frameRate);
+  void UpdateFrameRate(float frameRate);
 
   
   

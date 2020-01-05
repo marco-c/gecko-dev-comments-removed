@@ -30,9 +30,9 @@ AudioClassifier::AudioClassifier()
       
       celt_mode_(opus_custom_mode_create(kDefaultSampleRateHz,
                                          kDefaultFrameSizeSamples,
-                                         NULL)),
-      analysis_state_() {
+                                         NULL)) {
   assert(celt_mode_);
+  tonality_analysis_init(&analysis_state_);
 }
 
 AudioClassifier::~AudioClassifier() {}

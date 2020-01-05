@@ -21,6 +21,7 @@
 #include "webrtc/stream.h"
 #include "webrtc/transport.h"
 #include "webrtc/video_renderer.h"
+#include "webrtc/voice_engine/include/voe_base.h"
 
 namespace webrtc {
 
@@ -105,6 +106,8 @@ class VideoReceiveStream : public ReceiveStream {
       
       bool remb = false;
 
+      bool tmmbr = false;
+
       
       bool transport_cc = false;
 
@@ -171,6 +174,8 @@ class VideoReceiveStream : public ReceiveStream {
 
   
   virtual Stats GetStats() const = 0;
+  virtual int64_t GetRtt() const = 0;
+  virtual void SetSyncChannel(VoiceEngine* voice_engine, int audio_channel_id) = 0;
 };
 
 }  

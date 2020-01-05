@@ -32,7 +32,7 @@ class AudioDecoder {
   enum { kNotImplemented = -2 };
 
   AudioDecoder() = default;
-  virtual ~AudioDecoder() = default;
+  virtual ~AudioDecoder() {} 
 
   
   

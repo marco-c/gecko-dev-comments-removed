@@ -39,10 +39,10 @@ kMediaConduitKeyFrameRequestError,
 kMediaConduitNACKStatusError,          
 kMediaConduitTMMBRStatusError,         
 kMediaConduitFECStatusError,           
-kMediaConduitHybridNACKFECStatusError  
+kMediaConduitHybridNACKFECStatusError, 
+kMediaConduitVideoSendStreamError      
 };
 
 }
 
 #endif
-

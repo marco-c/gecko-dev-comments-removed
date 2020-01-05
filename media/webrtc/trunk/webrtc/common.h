@@ -31,7 +31,8 @@ enum class ConfigOptionID {
   kExperimentalAgc,
   kExperimentalNs,
   kBeamforming,
-  kIntelligibility
+  kIntelligibility,
+  kCaptureDeviceInfo
 };
 
 

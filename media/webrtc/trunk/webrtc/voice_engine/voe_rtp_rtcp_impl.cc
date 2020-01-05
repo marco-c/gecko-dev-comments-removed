@@ -285,15 +285,19 @@ int VoERTP_RTCPImpl::GetRemoteRTCP_CNAME(int channel, char cName[256]) {
   return channelPtr->GetRemoteRTCP_CNAME(cName);
 }
 
-int VoERTP_RTCPImpl::GetRemoteRTCPData(
+int VoERTP_RTCPImpl::GetRemoteRTCPReceiverInfo(
     int channel,
-    unsigned int& NTPHigh,           
-    unsigned int& NTPLow,            
-    unsigned int& timestamp,         
-    unsigned int& playoutTimestamp,  
-    unsigned int* jitter,            
-    unsigned short* fractionLost)    
+    uint32_t& NTPHigh, 
+    uint32_t& NTPLow,  
+    uint32_t& receivedPacketCount, 
+    uint64_t& receivedOctetCount,  
+    uint32_t& jitter,          
+    uint16_t& fractionLost,    
+    uint32_t& cumulativeLost,  
+    int32_t& rttMs)
 {
+  WEBRTC_TRACE(kTraceApiCall, kTraceVoice, VoEId(_shared->instance_id(), -1),
+               "GetRemoteRTCPReceiverInfo(channel=%d,...)", channel);
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -302,17 +306,25 @@ int VoERTP_RTCPImpl::GetRemoteRTCPData(
   voe::Channel* channelPtr = ch.channel();
   if (channelPtr == NULL) {
     _shared->SetLastError(VE_CHANNEL_NOT_VALID, kTraceError,
-                          "GetRemoteRTCP_CNAME() failed to locate channel");
+                          "GetRemoteRTCPReceiverInfo() failed to locate channel");
     return -1;
   }
-  return channelPtr->GetRemoteRTCPData(NTPHigh, NTPLow, timestamp,
-                                       playoutTimestamp, jitter, fractionLost);
+  return channelPtr->GetRemoteRTCPReceiverInfo(NTPHigh,
+                                               NTPLow,
+                                               receivedPacketCount,
+                                               receivedOctetCount,
+                                               jitter,
+                                               fractionLost,
+                                               cumulativeLost,
+                                               rttMs);
 }
 
 int VoERTP_RTCPImpl::GetRTPStatistics(int channel,
                                       unsigned int& averageJitterMs,
                                       unsigned int& maxJitterMs,
-                                      unsigned int& discardedPackets) {
+                                      unsigned int& discardedPackets,
+                                      unsigned int& cumulativeLost)
+{
   if (!_shared->statistics().Initialized()) {
     _shared->SetLastError(VE_NOT_INITED, kTraceError);
     return -1;
@@ -324,8 +336,10 @@ int VoERTP_RTCPImpl::GetRTPStatistics(int channel,
                           "GetRTPStatistics() failed to locate channel");
     return -1;
   }
-  return channelPtr->GetRTPStatistics(averageJitterMs, maxJitterMs,
-                                      discardedPackets);
+  return channelPtr->GetRTPStatistics(averageJitterMs,
+                                      maxJitterMs,
+                                      discardedPackets,
+                                      cumulativeLost);
 }
 
 int VoERTP_RTCPImpl::GetRTCPStatistics(int channel, CallStatistics& stats) {

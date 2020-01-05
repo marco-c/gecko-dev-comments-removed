@@ -67,6 +67,14 @@ using namespace dom;
 
 static const char* logTag = "PeerConnectionMedia";
 
+
+RefPtr<WebRtcCallWrapper>
+CreateCall()
+{
+  WebRtcCallWrapper::Config call_config;
+  return WebRtcCallWrapper::Create(call_config);
+}
+
 nsresult
 PeerConnectionMedia::ReplaceTrack(const std::string& aOldStreamId,
                                   const std::string& aOldTrackId,
@@ -406,6 +414,9 @@ nsresult PeerConnectionMedia::Init(const std::vector<NrIceStunServer>& stun_serv
   }
   ConnectSignals(mIceCtxHdlr->ctx().get());
 
+  
+  mCall = CreateCall();
+
   return NS_OK;
 }
 
@@ -567,6 +578,7 @@ nsresult PeerConnectionMedia::UpdateMediaPipelines(
     JsepTrackPair pair = *i;
 
     if (pair.mReceiving) {
+
       rv = factory.CreateOrUpdateMediaPipeline(pair, *pair.mReceiving);
       if (NS_FAILED(rv)) {
         return rv;

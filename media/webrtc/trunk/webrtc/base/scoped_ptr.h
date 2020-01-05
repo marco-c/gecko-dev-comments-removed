@@ -93,6 +93,19 @@
 #include "webrtc/base/deprecation.h"
 #include "webrtc/base/template_util.h"
 #include "webrtc/typedefs.h"
+ 
+
+
+
+
+
+
+#if defined(__GNUC__)
+#if !defined(__clang__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-local-typedefs"
+#endif 
+#endif 
 
 namespace rtc {
 
@@ -624,5 +637,19 @@ template <typename T>
 rtc::scoped_ptr<T> rtc_make_scoped_ptr(T* ptr) {
   return rtc::scoped_ptr<T>(ptr);
 }
+
+
+#if defined(__GNUC__)
+#if !defined(__clang__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+#pragma GCC diagnostic pop
+#endif 
+#endif 
+
+
+#if defined(__GNUC__)
+#if !defined(__clang__) && ((__GNUC__ > 4) || (__GNUC__ == 4 && __GNUC_MINOR__ >= 8))
+#pragma GCC diagnostic pop
+#endif 
+#endif 
 
 #endif  

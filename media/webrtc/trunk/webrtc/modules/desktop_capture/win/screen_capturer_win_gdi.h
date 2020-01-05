@@ -34,12 +34,14 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
 
   
   void Start(Callback* callback) override;
+  void Stop() override;
   void Capture(const DesktopRegion& region) override;
   bool GetScreenList(ScreenList* screens) override;
   bool SelectScreen(ScreenId id) override;
 
  private:
   typedef HRESULT (WINAPI * DwmEnableCompositionFunc)(UINT);
+  typedef HRESULT (WINAPI * DwmIsCompositionEnabledFunc)(BOOL*);
 
   
   void PrepareCaptureResources();
@@ -77,6 +79,9 @@ class ScreenCapturerWinGdi : public ScreenCapturer {
 
   HMODULE dwmapi_library_;
   DwmEnableCompositionFunc composition_func_;
+  DwmIsCompositionEnabledFunc composition_enabled_func_;
+
+  bool disable_composition_;
 
   
   bool set_thread_execution_state_failed_;

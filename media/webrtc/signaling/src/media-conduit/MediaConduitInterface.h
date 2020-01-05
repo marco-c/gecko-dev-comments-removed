@@ -9,20 +9,64 @@
 #include "nsXPCOM.h"
 #include "nsDOMNavigationTiming.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/RefCounted.h"
+#include "mozilla/UniquePtr.h"
+#include "mozilla/utils.h"
 #include "CodecConfig.h"
 #include "VideoTypes.h"
 #include "MediaConduitErrors.h"
 
 #include "ImageContainer.h"
 
+#include "webrtc/call.h"
+#include "webrtc/config.h"
 #include "webrtc/common_types.h"
-namespace webrtc {
-class I420VideoFrame;
-}
 
 #include <vector>
 
+namespace webrtc {
+class VideoFrame;
+}
+
 namespace mozilla {
+
+
+class WebRtcCallWrapper : public RefCounted<WebRtcCallWrapper>
+{
+public:
+  typedef webrtc::Call::Config Config;
+
+  static RefPtr<WebRtcCallWrapper> Create(const Config& config)
+  {
+    return new WebRtcCallWrapper(webrtc::Call::Create(config));
+  }
+
+  webrtc::Call* Call() const
+  {
+    return mCall.get();
+  }
+
+  virtual ~WebRtcCallWrapper()
+  {
+    if (mCall->voice_engine()) {
+      webrtc::VoiceEngine* voice_engine = mCall->voice_engine();
+      mCall.reset(nullptr); 
+      
+      webrtc::VoiceEngine::Delete(voice_engine);
+    }
+  }
+
+  MOZ_DECLARE_REFCOUNTED_TYPENAME(WebRtcCallWrapper)
+
+private:
+  WebRtcCallWrapper() = delete;
+  explicit WebRtcCallWrapper(webrtc::Call* aCall)
+    : mCall(aCall) {}
+  DISALLOW_COPY_AND_ASSIGN(WebRtcCallWrapper);
+  UniquePtr<webrtc::Call> mCall;
+};
+
+
 
 
 
@@ -40,7 +84,7 @@ public:
 
 
 
-  virtual nsresult SendRtpPacket(const void* data, int len) = 0;
+  virtual nsresult SendRtpPacket(const uint8_t* data, size_t len) = 0;
 
   
 
@@ -48,7 +92,7 @@ public:
 
 
 
-  virtual nsresult SendRtcpPacket(const void* data, int len) = 0;
+  virtual nsresult SendRtcpPacket(const uint8_t* data, size_t len) = 0;
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(TransportInterface)
 };
 
@@ -193,8 +237,13 @@ public:
 
   virtual MediaConduitErrorCode SetReceiverTransport(RefPtr<TransportInterface> aTransport) = 0;
 
-  virtual bool SetLocalSSRC(unsigned int ssrc) = 0;
-  virtual bool GetLocalSSRC(unsigned int* ssrc) = 0;
+  
+
+
+
+  virtual bool SetLocalSSRCs(const std::vector<unsigned int>& aSSRCs) = 0;
+  virtual std::vector<unsigned int> GetLocalSSRCs() const = 0;
+
   virtual bool GetRemoteSSRC(unsigned int* ssrc) = 0;
   virtual bool SetLocalCNAME(const char* cname) = 0;
 
@@ -266,7 +315,9 @@ public:
 
 
 
-  static RefPtr<VideoSessionConduit> Create();
+
+
+  static RefPtr<VideoSessionConduit> Create(RefPtr<WebRtcCallWrapper> aCall);
 
   enum FrameRequestType
   {
@@ -288,11 +339,24 @@ public:
   
 
 
+  virtual void AddLocalRTPExtensions(const std::vector<webrtc::RtpExtension>& extensions) = 0;
+
+  
+
+
+  virtual std::vector<webrtc::RtpExtension> GetLocalRTPExtensions() const = 0;
+
+
+  
 
 
 
-  virtual MediaConduitErrorCode AttachRenderer(RefPtr<VideoRenderer> aRenderer) = 0;
+
+
+  virtual MediaConduitErrorCode AttachRenderer(RefPtr<mozilla::VideoRenderer> aRenderer) = 0;
   virtual void DetachRenderer() = 0;
+
+  virtual bool SetRemoteSSRC(unsigned int ssrc) = 0;
 
   
 
@@ -311,7 +375,7 @@ public:
                                                unsigned short height,
                                                VideoType video_type,
                                                uint64_t capture_time) = 0;
-  virtual MediaConduitErrorCode SendVideoFrame(webrtc::I420VideoFrame& frame) = 0;
+  virtual MediaConduitErrorCode SendVideoFrame(webrtc::VideoFrame& frame) = 0;
 
   virtual MediaConduitErrorCode ConfigureCodecMode(webrtc::VideoCodecMode) = 0;
   
@@ -333,31 +397,7 @@ public:
 
 
   virtual MediaConduitErrorCode ConfigureRecvMediaCodecs(
-                                const std::vector<VideoCodecConfig* >& recvCodecConfigList) = 0;
-
-  
-
-
-
-
-  virtual MediaConduitErrorCode SetExternalSendCodec(VideoCodecConfig* config,
-                                                     VideoEncoder* encoder) = 0;
-
-  
-
-
-
-
-  virtual MediaConduitErrorCode SetExternalRecvCodec(VideoCodecConfig* config,
-                                                     VideoDecoder* decoder) = 0;
-
-  
-
-
-
-
-
-  virtual MediaConduitErrorCode EnableRTPStreamIdExtension(bool enabled, uint8_t id) = 0;
+      const std::vector<VideoCodecConfig* >& recvCodecConfigList) = 0;
 
   
 
@@ -408,7 +448,9 @@ class AudioSessionConduit : public MediaSessionConduit
 {
 public:
 
-   
+ 
+
+
 
 
 

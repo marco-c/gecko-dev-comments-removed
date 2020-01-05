@@ -18,7 +18,7 @@
 
 #include <windows.h>
 #include <mmsystem.h>
-#elif WEBRTC_LINUX
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD)
 #include <time.h>
 #elif WEBRTC_MAC
 #include <mach/mach_time.h>

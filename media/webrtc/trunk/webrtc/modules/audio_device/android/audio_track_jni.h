@@ -83,6 +83,10 @@ class AudioTrackJni {
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer);
 
+  int32_t PlayoutDeviceName(uint16_t index,
+                            char name[kAdmMaxDeviceNameSize],
+                            char guid[kAdmMaxGuidSize]);
+
  private:
   
   

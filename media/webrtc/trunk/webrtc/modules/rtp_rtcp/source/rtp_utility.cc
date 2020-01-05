@@ -57,7 +57,7 @@ bool StringCompare(const char* str1, const char* str2,
                    const uint32_t length) {
   return _strnicmp(str1, str2, length) == 0;
 }
-#elif defined(WEBRTC_LINUX) || defined(WEBRTC_MAC)
+#elif defined(WEBRTC_LINUX) || defined(WEBRTC_BSD) || defined(WEBRTC_MAC)
 bool StringCompare(const char* str1, const char* str2,
                    const uint32_t length) {
   return strncasecmp(str1, str2, length) == 0;
@@ -176,6 +176,9 @@ bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
   header->payloadType  = PT;
   header->ssrc         = SSRC;
   header->headerLength = 4 + (len << 2);
+  if (header->headerLength > static_cast<size_t>(length)) {
+    return false;
+  }
 
   return true;
 }
@@ -213,12 +216,6 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
     return false;
   }
 
-  const size_t CSRCocts = CC * 4;
-
-  if ((ptr + CSRCocts) > _ptrRTPDataEnd) {
-    return false;
-  }
-
   header->markerBit      = M;
   header->payloadType    = PT;
   header->sequenceNumber = sequenceNumber;
@@ -227,13 +224,20 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
   header->numCSRCs       = CC;
   header->paddingLength  = P ? *(_ptrRTPDataEnd - 1) : 0;
 
+  
+  header->headerLength   = 12 + (CC * 4);
+  
+  
+  if (header->paddingLength + header->headerLength > (size_t) length) {
+    return false;
+  }
+
   for (uint8_t i = 0; i < CC; ++i) {
     uint32_t CSRC = ByteReader<uint32_t>::ReadBigEndian(ptr);
     ptr += 4;
     header->arrOfCSRCs[i] = CSRC;
   }
-
-  header->headerLength   = 12 + CSRCocts;
+  assert((ptr - _ptrRTPDataBegin) == (ptrdiff_t) header->headerLength);
 
   
   
@@ -253,6 +257,10 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
   header->extension.hasVideoRotation = false;
   header->extension.videoRotation = 0;
 
+  
+  header->extension.hasRID = false;
+  header->extension.rid = NULL;
+
   if (X) {
     
 
@@ -263,8 +271,9 @@ bool RtpHeaderParser::Parse(RTPHeader* header,
 
 
 
-    const ptrdiff_t remain = _ptrRTPDataEnd - ptr;
-    if (remain < 4) {
+    
+    const ptrdiff_t remain = (_ptrRTPDataEnd - ptr) - header->paddingLength;
+    if (remain < 4) { 
       return false;
     }
 
@@ -327,7 +336,7 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
     RTPExtensionType type;
     if (ptrExtensionMap->GetType(id, &type) != 0) {
       
-      LOG(LS_WARNING) << "Failed to find extension id: " << id;
+      LOG(LS_INFO) << "Failed to find extension id: " << id;
     } else {
       switch (type) {
         case kRtpExtensionTransmissionTimeOffset: {
@@ -410,6 +419,21 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           sequence_number += ptr[1];
           header->extension.transportSequenceNumber = sequence_number;
           header->extension.hasTransportSequenceNumber = true;
+          break;
+        }
+        case kRtpExtensionRtpStreamId: {
+          
+          
+          
+          
+          
+
+          
+          char* ptrRID = new char[len+1];
+          memcpy(ptrRID, ptr, len);
+          ptrRID[len] = '\0';
+          header->extension.rid = ptrRID;
+          header->extension.hasRID = true;
           break;
         }
         default: {

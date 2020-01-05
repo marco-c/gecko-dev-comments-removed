@@ -336,8 +336,6 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
   , mAllowIceLinkLocal(false)
   , mMedia(nullptr)
   , mUuidGen(MakeUnique<PCUuidGenerator>())
-  , mIceRestartCount(0)
-  , mIceRollbackCount(0)
   , mNumAudioStreams(0)
   , mNumVideoStreams(0)
   , mHaveConfiguredCodecs(false)
@@ -1739,7 +1737,6 @@ PeerConnectionImpl::RollbackIceRestart()
   }
   mPreviousIceUfrag = "";
   mPreviousIcePwd = "";
-  ++mIceRollbackCount;
 
   return NS_OK;
 }
@@ -1751,7 +1748,6 @@ PeerConnectionImpl::FinalizeIceRestart()
   
   mPreviousIceUfrag = "";
   mPreviousIcePwd = "";
-  ++mIceRestartCount;
 }
 
 NS_IMETHODIMP
@@ -2746,7 +2742,11 @@ PeerConnectionImpl::ReplaceTrack(MediaStreamTrack& aThisTrack,
   
   
   
-  mMedia->UpdateMediaPipelines(*mJsepSession);
+
+  if (NS_FAILED((rv = mMedia->UpdateMediaPipelines(*mJsepSession)))) {
+    CSFLogError(logTag, "Error Updating MediaPipelines");
+    return rv;
+  }
 
   pco->OnReplaceTrackSuccess(jrv);
   if (jrv.Failed()) {
@@ -3165,7 +3165,11 @@ PeerConnectionImpl::SetSignalingState_m(PCImplSignalingState aSignalingState,
     
     mMedia->ActivateOrRemoveTransports(*mJsepSession);
     if (!rollback) {
-      mMedia->UpdateMediaPipelines(*mJsepSession);
+      if (NS_FAILED(mMedia->UpdateMediaPipelines(*mJsepSession))) {
+        CSFLogError(logTag, "Error Updating MediaPipelines");
+        NS_ASSERTION(false, "Error Updating MediaPipelines in SetSignalingState_m()");
+        
+      }
       InitializeDataChannel();
       mMedia->StartIceChecks(*mJsepSession);
     }
@@ -3612,8 +3616,6 @@ PeerConnectionImpl::BuildStatsQuery_m(
 
   query->iceStartTime = mIceStartTime;
   query->failed = isFailed(mIceConnectionState);
-  query->report->mIceRestarts.Construct(mIceRestartCount);
-  query->report->mIceRollbacks.Construct(mIceRollbackCount);
 
   
   if (query->internalStats) {
@@ -3758,14 +3760,16 @@ PeerConnectionImpl::ExecuteStatsQuery_s(RTCStatsQuery *query) {
     idstr.AppendInt(mp.level());
 
     
+    
+    
     switch (mp.direction()) {
       case MediaPipeline::TRANSMIT: {
         nsString localId = NS_LITERAL_STRING("outbound_rtp_") + idstr;
         nsString remoteId;
         nsString ssrc;
-        unsigned int ssrcval;
-        if (mp.Conduit()->GetLocalSSRC(&ssrcval)) {
-          ssrc.AppendInt(ssrcval);
+        std::vector<unsigned int> ssrcvals = mp.Conduit()->GetLocalSSRCs();
+        if (!ssrcvals.empty()) {
+          ssrc.AppendInt(ssrcvals[0]);
         }
         {
           

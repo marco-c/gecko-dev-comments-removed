@@ -818,8 +818,6 @@ private:
   mozilla::UniquePtr<mozilla::JsepSession> mJsepSession;
   std::string mPreviousIceUfrag; 
   std::string mPreviousIcePwd; 
-  unsigned long mIceRestartCount;
-  unsigned long mIceRollbackCount;
 
 #if !defined(MOZILLA_EXTERNAL_LINKAGE)
   

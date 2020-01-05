@@ -11,14 +11,17 @@
 
 
 #undef FF
-#include "webrtc/video_engine/include/vie_capture.h"
+
+#include "ipc/IPCMessageUtils.h"
+
+
+#include "webrtc/modules/video_capture/video_capture_defines.h"
+
+namespace webrtc {
+  using CaptureCapability = VideoCaptureCapability;
+}
 
 namespace mozilla {
-
-bool operator == (const webrtc::CaptureCapability& a,
-                  const webrtc::CaptureCapability& b);
-bool operator != (const webrtc::CaptureCapability& a,
-                  const webrtc::CaptureCapability& b);
 
 class MediaEngineCameraVideoSource : public MediaEngineVideoSource
 {

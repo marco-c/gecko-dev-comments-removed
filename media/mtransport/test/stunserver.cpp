@@ -82,6 +82,11 @@
 #include "mozilla/Unused.h"
 #include "databuffer.h"
 
+
+#ifdef UNIMPLEMENTED
+#undef UNIMPLEMENTED
+#endif
+
 extern "C" {
 #include "nr_api.h"
 #include "async_wait.h"
