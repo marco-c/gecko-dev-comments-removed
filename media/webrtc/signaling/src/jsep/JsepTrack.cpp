@@ -469,7 +469,7 @@ JsepTrack::Negotiate(const SdpMediaSection& answer,
       SdpDirectionAttribute::Direction direction = extmapAttr.direction;
       if (&remote == &answer) {
         
-        direction = ~direction;
+        direction = reverse(direction);
       }
 
       if (direction & mDirection) {
