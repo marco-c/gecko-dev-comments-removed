@@ -2132,10 +2132,16 @@ AddCSSValuePairList(nsCSSPropertyID aProperty,
   return result;
 }
 
+enum class Restrictions {
+  Enable,
+  Disable
+};
+
 static already_AddRefed<nsCSSValue::Array>
 AddShapeFunction(nsCSSPropertyID aProperty,
                  double aCoeff1, const nsCSSValue::Array* aArray1,
-                 double aCoeff2, const nsCSSValue::Array* aArray2)
+                 double aCoeff2, const nsCSSValue::Array* aArray2,
+                 Restrictions aRestriction = Restrictions::Enable)
 {
   MOZ_ASSERT(aArray1 && aArray1->Count() == 2, "expected shape function");
   MOZ_ASSERT(aArray2 && aArray2->Count() == 2, "expected shape function");
@@ -2167,7 +2173,9 @@ AddShapeFunction(nsCSSPropertyID aProperty,
   switch (shapeFuncName) {
     case eCSSKeyword_ellipse:
       
-      if (!AddCSSValuePixelPercentCalc(CSS_PROPERTY_VALUE_NONNEGATIVE,
+      if (!AddCSSValuePixelPercentCalc(aRestriction == Restrictions::Enable
+                                         ? CSS_PROPERTY_VALUE_NONNEGATIVE
+                                         : 0,
                                        GetCommonUnit(aProperty,
                                                      func1->Item(2).GetUnit(),
                                                      func2->Item(2).GetUnit()),
@@ -2179,7 +2187,9 @@ AddShapeFunction(nsCSSPropertyID aProperty,
       MOZ_FALLTHROUGH;  
     case eCSSKeyword_circle: {
       
-      if (!AddCSSValuePixelPercentCalc(CSS_PROPERTY_VALUE_NONNEGATIVE,
+      if (!AddCSSValuePixelPercentCalc(aRestriction == Restrictions::Enable
+                                         ? CSS_PROPERTY_VALUE_NONNEGATIVE
+                                         : 0,
                                        GetCommonUnit(aProperty,
                                                      func1->Item(1).GetUnit(),
                                                      func2->Item(1).GetUnit()),
@@ -2219,7 +2229,9 @@ AddShapeFunction(nsCSSPropertyID aProperty,
       
       
       for (size_t i = 1; i <= 4; ++i) {
-        if (!AddCSSValuePixelPercentCalc(CSS_PROPERTY_VALUE_NONNEGATIVE,
+        if (!AddCSSValuePixelPercentCalc(aRestriction == Restrictions::Enable
+                                           ? CSS_PROPERTY_VALUE_NONNEGATIVE
+                                           : 0,
                                          GetCommonUnit(aProperty,
                                                        func1->Item(i).GetUnit(),
                                                        func2->Item(i).GetUnit()),
@@ -2242,7 +2254,9 @@ AddShapeFunction(nsCSSPropertyID aProperty,
       
       
       uint32_t restrictions =
-        nsCSSProps::ValueRestrictions(eCSSProperty_border_top_left_radius);
+        aRestriction == Restrictions::Enable
+          ? nsCSSProps::ValueRestrictions(eCSSProperty_border_top_left_radius)
+          : 0;
       for (size_t i = 0; i < 4; ++i) {
         const nsCSSValuePair& pair1 = radii1->Item(i).GetPairValue();
         const nsCSSValuePair& pair2 = radii2->Item(i).GetPairValue();
