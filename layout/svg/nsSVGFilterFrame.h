@@ -69,10 +69,8 @@ private:
   
   
   
-  class AutoFilterReferencer;
   friend class nsSVGFilterInstance;
   nsSVGFilterFrame* GetReferencedFilter();
-  nsSVGFilterFrame* GetReferencedFilterIfNotInUse();
 
   
   uint16_t GetEnumValue(uint32_t aIndex, nsIContent *aDefault);
