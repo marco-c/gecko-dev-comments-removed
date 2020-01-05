@@ -76,9 +76,7 @@ ProxyAccessibleBase<Derived>::ClearChildDoc(DocAccessibleParent* aChildDoc)
   
   
   MOZ_ASSERT(mChildren.Length() <= 1);
-  if (mChildren.RemoveElement(aChildDoc)) {
-    mOuterDoc = false;
-  }
+  mChildren.RemoveElement(aChildDoc);
 }
 
 template <class Derived>
