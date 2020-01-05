@@ -612,9 +612,11 @@ IdleRequestExecutor::SetDeadline(TimeStamp aDeadline)
 void
 IdleRequestExecutor::MaybeDispatch()
 {
-  MOZ_DIAGNOSTIC_ASSERT(mWindow);
-
-  if (mDispatched) {
+  
+  
+  
+  
+  if (mDispatched || !mWindow) {
     return;
   }
 
