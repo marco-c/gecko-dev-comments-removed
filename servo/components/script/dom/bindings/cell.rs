@@ -29,7 +29,7 @@ impl<T> DOMRefCell<T> {
     #[allow(unsafe_code)]
     pub unsafe fn borrow_for_layout(&self) -> &T {
         debug_assert!(thread_state::get().is_layout());
-        &*self.value.as_unsafe_cell().get()
+        &*self.value.as_ptr()
     }
 
     
@@ -41,7 +41,7 @@ impl<T> DOMRefCell<T> {
         
         
         
-        &*self.value.as_unsafe_cell().get()
+        &*self.value.as_ptr()
     }
 
     
@@ -49,7 +49,7 @@ impl<T> DOMRefCell<T> {
     #[allow(unsafe_code)]
     pub unsafe fn borrow_for_script_deallocation(&self) -> &mut T {
         debug_assert!(thread_state::get().contains(SCRIPT));
-        &mut *self.value.as_unsafe_cell().get()
+        &mut *self.value.as_ptr()
     }
 
     
