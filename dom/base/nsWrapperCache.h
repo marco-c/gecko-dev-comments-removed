@@ -98,9 +98,22 @@ public:
 
 
 
-  JSObject* GetWrapperPreserveColor() const
+  JSObject* GetWrapperPreserveColor() const;
+
+  
+
+
+
+
+
+
+
+
+
+
+  JSObject* GetWrapperMaybeDead() const
   {
-    return GetWrapperJSObject();
+    return mWrapper;
   }
 
 #ifdef DEBUG
@@ -123,12 +136,21 @@ public:
   
 
 
-
   void ClearWrapper()
   {
     MOZ_ASSERT(!PreservingWrapper(), "Clearing a preserved wrapper!");
-
     SetWrapperJSObject(nullptr);
+  }
+
+  
+
+
+
+  void ClearWrapper(JSObject* obj)
+  {
+    if (obj == mWrapper) {
+      ClearWrapper();
+    }
   }
 
   
@@ -292,11 +314,6 @@ private:
     MOZ_ASSERT(!mWrapper && !(GetWrapperFlags() & ~WRAPPER_IS_NOT_DOM_BINDING),
                "This flag should be set before creating any wrappers.");
     SetWrapperFlags(WRAPPER_IS_NOT_DOM_BINDING);
-  }
-
-  JSObject *GetWrapperJSObject() const
-  {
-    return mWrapper;
   }
 
   void SetWrapperJSObject(JSObject* aWrapper);

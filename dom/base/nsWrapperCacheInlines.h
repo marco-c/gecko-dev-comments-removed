@@ -12,6 +12,21 @@
 #include "js/TracingAPI.h"
 
 inline JSObject*
+nsWrapperCache::GetWrapperPreserveColor() const
+{
+  JSObject* obj = mWrapper;
+  if (obj && js::gc::EdgeNeedsSweepUnbarriered(&obj)) {
+    
+    
+    
+    const_cast<nsWrapperCache*>(this)->ClearWrapper();
+    return nullptr;
+  }
+  MOZ_ASSERT(obj == mWrapper);
+  return obj;
+}
+
+inline JSObject*
 nsWrapperCache::GetWrapper() const
 {
     JSObject* obj = GetWrapperPreserveColor();

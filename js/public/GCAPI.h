@@ -656,6 +656,27 @@ ExposeGCThingToActiveJS(JS::GCCellPtr thing)
     MOZ_ASSERT(!js::gc::detail::TenuredCellIsMarkedGray(thing.asCell()));
 }
 
+template <typename T>
+extern JS_PUBLIC_API(bool)
+EdgeNeedsSweepUnbarrieredSlow(T* thingp);
+
+static MOZ_ALWAYS_INLINE bool
+EdgeNeedsSweepUnbarriered(JSObject** objp)
+{
+    
+    
+    
+    MOZ_ASSERT(!JS::CurrentThreadIsHeapMinorCollecting());
+    if (IsInsideNursery(reinterpret_cast<Cell*>(*objp)))
+        return false;
+
+    auto zone = JS::shadow::Zone::asShadowZone(detail::GetGCThingZone(uintptr_t(*objp)));
+    if (!zone->isGCSweepingOrCompacting())
+        return false;
+
+    return EdgeNeedsSweepUnbarrieredSlow(objp);
+}
+
 } 
 } 
 
@@ -671,12 +692,14 @@ static MOZ_ALWAYS_INLINE void
 ExposeObjectToActiveJS(JSObject* obj)
 {
     MOZ_ASSERT(obj);
+    MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarrieredSlow(&obj));
     js::gc::ExposeGCThingToActiveJS(GCCellPtr(obj));
 }
 
 static MOZ_ALWAYS_INLINE void
 ExposeScriptToActiveJS(JSScript* script)
 {
+    MOZ_ASSERT(!js::gc::EdgeNeedsSweepUnbarrieredSlow(&script));
     js::gc::ExposeGCThingToActiveJS(GCCellPtr(script));
 }
 
