@@ -6,6 +6,7 @@ package org.mozilla.gecko.util;
 
 import android.annotation.TargetApi;
 import android.content.res.TypedArray;
+import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.text.TextUtilsCompat;
@@ -71,6 +72,62 @@ public class ViewUtil {
             view.setPadding(paddingLeft, paddingTop, paddingRight, paddingBottom);
         }
     }
+
+    
+
+
+
+
+    public static void setCenteredText(final TextView textView, final String label, final int defaultPadding) {
+        textView.setText(label);
+
+        
+        
+        final Drawable[] drawables = textView.getCompoundDrawables();
+        final Drawable drawableLeft = drawables[0];
+        final Drawable drawableRight = drawables[2];
+
+        
+        
+        final int leftRightDelta = (drawableLeft != null ? drawableLeft.getIntrinsicWidth() : 0)
+                - (drawableRight != null ? drawableRight.getIntrinsicWidth() : 0);
+
+        final int leftAdjustment;
+        final int rightAdjustment;
+        if (leftRightDelta == 0) {
+            
+            
+            leftAdjustment = 0;
+            rightAdjustment = 0;
+        } else {
+            
+            
+            
+            final Rect bounds = new Rect();
+            textView.getPaint().getTextBounds(label.toString(), 0, label.length(), bounds);
+
+            
+            
+            final int availableWidth = textView.getWidth() - 2 * Math.abs(leftRightDelta) - 2 * defaultPadding - 2 * textView.getCompoundDrawablePadding();
+            final int textWidth = bounds.width();
+
+            if (textWidth > availableWidth) {
+                leftAdjustment = 0;
+                rightAdjustment = 0;
+            } else {
+                if (leftRightDelta > 0) {
+                    leftAdjustment = 0;
+                    rightAdjustment = leftRightDelta;
+                } else {
+                    leftAdjustment = -leftRightDelta;
+                    rightAdjustment = 0;
+                }
+            }
+        }
+
+        textView.setPadding(defaultPadding + leftAdjustment, textView.getPaddingTop(), defaultPadding + rightAdjustment, textView.getPaddingBottom());
+    }
+
 
     
 
