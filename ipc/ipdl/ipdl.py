@@ -151,6 +151,8 @@ for f in files:
         log(3, '  pretty printed code:')
         ipdl.genipdl(ast, codedir)
 
+ipdl.checkFixedSyncMessages()
+
 
 for f in files:
     
