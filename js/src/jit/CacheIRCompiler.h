@@ -253,6 +253,10 @@ class MOZ_RAII CacheRegisterAllocator
     Vector<OperandLocation, 8, SystemAllocPolicy> operandLocations_;
 
     
+    Vector<uint32_t, 2, SystemAllocPolicy> freeValueSlots_;
+    Vector<uint32_t, 2, SystemAllocPolicy> freePayloadSlots_;
+
+    
     
     
     LiveGeneralRegisterSet currentOpRegs_;
@@ -280,7 +284,7 @@ class MOZ_RAII CacheRegisterAllocator
     CacheRegisterAllocator(const CacheRegisterAllocator&) = delete;
     CacheRegisterAllocator& operator=(const CacheRegisterAllocator&) = delete;
 
-    void freeDeadOperandRegisters();
+    void freeDeadOperandLocations(MacroAssembler& masm);
 
     void spillOperandToStack(MacroAssembler& masm, OperandLocation* loc);
     void spillOperandToStackOrRegister(MacroAssembler& masm, OperandLocation* loc);

@@ -192,7 +192,7 @@ CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm, LiveRegisterS
     
 
     
-    freeDeadOperandRegisters();
+    freeDeadOperandLocations(masm);
 
     
     size_t sizeOfLiveRegsInBytes =
@@ -292,6 +292,8 @@ CacheRegisterAllocator::saveIonLiveRegisters(MacroAssembler& masm, LiveRegisterS
         }
         masm.PushRegsInMask(liveRegs);
     }
+    freePayloadSlots_.clear();
+    freeValueSlots_.clear();
 
     MOZ_ASSERT(masm.framePushed() == ionScript->frameSize() + sizeOfLiveRegsInBytes);
 
