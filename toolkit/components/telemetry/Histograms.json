@@ -10683,14 +10683,6 @@
     "n_values": 10,
     "description": "Number of origins with the web notifications permission (0 = denied, 1 = allowed)."
   },
-  "WEB_NOTIFICATION_PERMISSION_REMOVED": {
-    "alert_emails": ["firefox-dev@mozilla.org"],
-    "bug_numbers": [1219030],
-    "expires_in_version": "50",
-    "kind": "enumerated",
-    "n_values": 10,
-    "description": "Number of removed web notifications permissions (0 = remove deny, 1 = remove allow)."
-  },
   "WEB_NOTIFICATION_SENDERS": {
     "releaseChannelCollection": "opt-out",
     "alert_emails": ["firefox-dev@mozilla.org"],
@@ -10739,15 +10731,15 @@
     "n_values": 10,
     "description": "Media decoder backend (0=WMF Software, 1=DXVA2D3D9, 2=DXVA2D3D11)"
   },
-  "IPC_MESSAGE_SIZE2": {
-    "alert_emails": ["hchang@mozilla.com"],
-    "bug_numbers": [1353159],
-    "expires_in_version": "60",
+  "IPC_MESSAGE_SIZE": {
+    "alert_emails": ["wmccloskey@mozilla.com"],
+    "bug_numbers": [1260908],
+    "expires_in_version": "55",
     "kind": "exponential",
     "high": 8000000,
     "n_buckets": 50,
-    "keyed": false,
-    "description": "Measures the size of all IPC messages sent that are >= 4096 bytes."
+    "keyed": true,
+    "description": "Measures the size of IPC messages by message name"
   },
   "IPC_REPLY_SIZE": {
     "alert_emails": ["wmccloskey@mozilla.com"],
@@ -10769,6 +10761,17 @@
     "n_buckets": 40,
     "keyed": true,
     "description": "Measures the number of milliseconds we spend waiting for sync IPC messages to finish sending, keyed by message name. Note: only messages that wait for more than 500 microseconds and block the main thread are included in this probe."
+  },
+  "MESSAGE_MANAGER_MESSAGE_SIZE2": {
+    "alert_emails": ["wmccloskey@mozilla.com","amccreight@mozilla.com"],
+    "bug_numbers": [1260908],
+    "expires_in_version": "55",
+    "kind": "exponential",
+    "low": 8192,
+    "high": 8000000,
+    "n_buckets": 50,
+    "keyed": true,
+    "description": "Each key is the message name, with digits removed, from an async message manager message that was larger than 8192 bytes, recorded in the sending process at the time of sending."
   },
   "REJECTED_MESSAGE_MANAGER_MESSAGE": {
     "alert_emails": ["amccreight@mozilla.com"],
