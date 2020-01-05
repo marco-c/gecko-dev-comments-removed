@@ -66,11 +66,15 @@ final class GeckoEditable extends JNIObject
 
      GeckoEditableListener mListener;
      GeckoView mView;
+
      boolean mInBatchMode; 
      boolean mNeedSync; 
+    
+    private boolean mNeedUpdateComposition; 
+    private boolean mSuppressKeyUp; 
+
     private boolean mGeckoFocused; 
     private boolean mIgnoreSelectionChange; 
-    private volatile boolean mSuppressKeyUp;
 
     private static final int IME_RANGE_CARETPOSITION = 1;
     private static final int IME_RANGE_RAWINPUT = 2;
@@ -448,28 +452,22 @@ final class GeckoEditable extends JNIObject
             action.mSequence = TextUtils.substring(
                     mText.getShadowText(), action.mStart, action.mEnd);
 
-            if ((action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 && (
-                    (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0 ||
-                    action.mSpanObject == Selection.SELECTION_START ||
-                    action.mSpanObject == Selection.SELECTION_END)) {
-                icMaybeSendComposition(
-                        mText.getShadowText(),  false,  true);
-            } else {
-                onImeSynchronize();
-            }
+            mNeedUpdateComposition |= (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
+                    ((action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0 ||
+                     action.mSpanObject == Selection.SELECTION_START ||
+                     action.mSpanObject == Selection.SELECTION_END);
+
+            onImeSynchronize();
             break;
 
         case Action.TYPE_REMOVE_SPAN:
             final int flags = mText.getShadowText().getSpanFlags(action.mSpanObject);
             mText.shadowRemoveSpan(action.mSpanObject);
 
-            if ((flags & Spanned.SPAN_INTERMEDIATE) == 0 &&
-                    (flags & Spanned.SPAN_COMPOSING) != 0) {
-                icMaybeSendComposition(
-                        mText.getShadowText(),  false,  true);
-            } else {
-                onImeSynchronize();
-            }
+            mNeedUpdateComposition |= (flags & Spanned.SPAN_INTERMEDIATE) == 0 &&
+                    (flags & Spanned.SPAN_COMPOSING) != 0;
+
+            onImeSynchronize();
             break;
 
         case Action.TYPE_REPLACE_TEXT:
@@ -643,6 +641,18 @@ final class GeckoEditable extends JNIObject
     
 
 
+    private void icMaybeSendComposition() {
+        if (!mNeedUpdateComposition) {
+            return;
+        }
+
+        icMaybeSendComposition(mText.getShadowText(),
+                                false,  true);
+    }
+
+    
+
+
 
 
 
@@ -653,6 +663,8 @@ final class GeckoEditable extends JNIObject
     private boolean icMaybeSendComposition(final CharSequence sequence,
                                            final boolean useEntireText,
                                            final boolean notifyGecko) {
+        mNeedUpdateComposition = false;
+
         int selStart = Selection.getSelectionStart(sequence);
         int selEnd = Selection.getSelectionEnd(sequence);
 
@@ -820,6 +832,7 @@ final class GeckoEditable extends JNIObject
 
 
 
+        icMaybeSendComposition();
         onKeyEvent(event, action, metaState,  false);
         icOfferAction(new Action(Action.TYPE_EVENT));
     }
