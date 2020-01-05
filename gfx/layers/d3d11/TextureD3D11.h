@@ -205,9 +205,16 @@ class DataTextureSourceD3D11 : public DataTextureSource
                              , public BigImageIterator
 {
 public:
+  
+  
+  
   DataTextureSourceD3D11(gfx::SurfaceFormat aFormat, CompositorD3D11* aCompositor,
                          TextureFlags aFlags);
 
+  
+  
+  
+  
   DataTextureSourceD3D11(gfx::SurfaceFormat aFormat, CompositorD3D11* aCompositor,
                          ID3D11Texture2D* aTexture);
 
@@ -229,7 +236,8 @@ public:
 
   virtual ID3D11ShaderResourceView* GetShaderResourceView() override;
 
-  virtual DataTextureSource* AsDataTextureSource() override { return this; }
+  
+  virtual DataTextureSource* AsDataTextureSource() override { return mAllowTextureUploads ? this : false; }
 
   virtual void DeallocateDeviceData() override { mTexture = nullptr; }
 
@@ -270,7 +278,13 @@ protected:
   uint32_t mCurrentTile;
   bool mIsTiled;
   bool mIterating;
-
+  
+  
+  
+  
+  
+  
+  bool mAllowTextureUploads;
 };
 
 already_AddRefed<TextureClient>
