@@ -994,6 +994,11 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
         self.ready_state.get()
     }
 
+    
+    fn DefaultView(self) -> Temporary<Window> {
+        Temporary::new(self.window)
+    }
+
     global_event_handlers!()
     event_handler!(readystatechange, GetOnreadystatechange, SetOnreadystatechange)
 }
