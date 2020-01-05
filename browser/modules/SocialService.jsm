@@ -510,7 +510,7 @@ this.SocialService = {
     }
     
     let URI = Services.io.newURI(installOrigin, null, null);
-    principal = Services.scriptSecurityManager.createCodebasePrincipal(URI, {});
+    let principal = Services.scriptSecurityManager.createCodebasePrincipal(URI, {});
     data.origin = principal.origin;
 
     
