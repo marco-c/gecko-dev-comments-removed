@@ -77,7 +77,7 @@ sandboxManager.addHold("test running");
 
 
 
-add_task(async function() {
+add_task(function* () {
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
   const notificationBox = targetWindow.document.querySelector("#high-priority-global-notificationbox");
 
@@ -104,22 +104,22 @@ add_task(async function() {
   
   const tabOpenPromise = BrowserTestUtils.waitForNewTab(targetWindow.gBrowser);
   learnMoreEl.click();
-  const tab = await tabOpenPromise;
-  const tabUrl = await BrowserTestUtils.browserLoaded(
+  const tab = yield tabOpenPromise;
+  const tabUrl = yield BrowserTestUtils.browserLoaded(
     tab.linkedBrowser, true, url => url && url !== "about:blank");
 
   Assert.equal(tabUrl, "https://example.org/learnmore", "Learn more link opened the right url");
 
   const telemetrySentPromise = assertTelemetrySent(hb, ["offeredTS", "learnMoreTS", "closedTS"]);
   
-  await closeAllNotifications(targetWindow, notificationBox);
-  await telemetrySentPromise;
-  await BrowserTestUtils.removeTab(tab);
+  yield closeAllNotifications(targetWindow, notificationBox);
+  yield telemetrySentPromise;
+  yield BrowserTestUtils.removeTab(tab);
 });
 
 
 
-add_task(async function() {
+add_task(function* () {
   const targetWindow = Services.wm.getMostRecentWindow("navigator:browser");
   const notificationBox = targetWindow.document.querySelector("#high-priority-global-notificationbox");
   const hb = new Heartbeat(targetWindow, sandboxManager, {
@@ -140,22 +140,22 @@ add_task(async function() {
   const engagementEl = hb.notice.querySelector(".notification-button");
   const tabOpenPromise = BrowserTestUtils.waitForNewTab(targetWindow.gBrowser);
   engagementEl.click();
-  const tab = await tabOpenPromise;
-  const tabUrl = await BrowserTestUtils.browserLoaded(
+  const tab = yield tabOpenPromise;
+  const tabUrl = yield BrowserTestUtils.browserLoaded(
         tab.linkedBrowser, true, url => url && url !== "about:blank");
   
   Assert.ok(tabUrl.startsWith("https://example.org/postAnswer"), "Engagement button opened the right url");
 
   const telemetrySentPromise = assertTelemetrySent(hb, ["offeredTS", "engagedTS", "closedTS"]);
   
-  await closeAllNotifications(targetWindow, notificationBox);
-  await telemetrySentPromise;
-  await BrowserTestUtils.removeTab(tab);
+  yield closeAllNotifications(targetWindow, notificationBox);
+  yield telemetrySentPromise;
+  yield BrowserTestUtils.removeTab(tab);
 });
 
 
-add_task(async function() {
-  const targetWindow = await BrowserTestUtils.openNewBrowserWindow();
+add_task(function* () {
+  const targetWindow = yield BrowserTestUtils.openNewBrowserWindow();
 
   const hb = new Heartbeat(targetWindow, sandboxManager, {
     testing: true,
@@ -165,16 +165,16 @@ add_task(async function() {
 
   const telemetrySentPromise = assertTelemetrySent(hb, ["offeredTS", "windowClosedTS"]);
   
-  await BrowserTestUtils.closeWindow(targetWindow);
-  await telemetrySentPromise;
+  yield BrowserTestUtils.closeWindow(targetWindow);
+  yield telemetrySentPromise;
 });
 
 
 
-add_task(async function() {
+add_task(function* () {
   
   sandboxManager.removeHold("test running");
-  await sandboxManager.isNuked()
+  yield sandboxManager.isNuked()
     .then(() => ok(true, "sandbox is nuked"))
     .catch(e => ok(false, "sandbox is nuked", e));
 });

@@ -5,6 +5,7 @@
 "use strict";
 
 const {utils: Cu} = Components;
+Cu.import("resource://gre/modules/Task.jsm");
 Cu.importGlobalProperties(["crypto", "TextEncoder"]);
 
 this.EXPORTED_SYMBOLS = ["Sampling"];
@@ -72,14 +73,14 @@ this.Sampling = {
   
 
 
-  async truncatedHash(data) {
+  truncatedHash: Task.async(function* (data) {
     const hasher = crypto.subtle;
     const input = new TextEncoder("utf-8").encode(JSON.stringify(data));
-    const hash = await hasher.digest("SHA-256", input);
+    const hash = yield hasher.digest("SHA-256", input);
     
     
     return Sampling.bufferToHex(hash).slice(0, 12);
-  },
+  }),
 
   
 
@@ -91,12 +92,12 @@ this.Sampling = {
 
 
 
-  async stableSample(input, rate) {
-    const inputHash = await Sampling.truncatedHash(input);
+  stableSample: Task.async(function* (input, rate) {
+    const inputHash = yield Sampling.truncatedHash(input);
     const samplePoint = Sampling.fractionToKey(rate);
 
     return inputHash < samplePoint;
-  },
+  }),
 
   
 
@@ -113,8 +114,8 @@ this.Sampling = {
 
 
 
-  async bucketSample(input, start, count, total) {
-    const inputHash = await Sampling.truncatedHash(input);
+  bucketSample: Task.async(function* (input, start, count, total) {
+    const inputHash = yield Sampling.truncatedHash(input);
     const wrappedStart = start % total;
     const end = wrappedStart + count;
 
@@ -128,46 +129,5 @@ this.Sampling = {
     }
 
     return Sampling.isHashInBucket(inputHash, wrappedStart, end, total);
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  async ratioSample(input, ratios) {
-    if (ratios.length < 1) {
-      throw new Error(`ratios must be at least 1 element long (got length: ${ratios.length})`);
-    }
-
-    const inputHash = await Sampling.truncatedHash(input);
-    const ratioTotal = ratios.reduce((acc, ratio) => acc + ratio);
-
-    let samplePoint = 0;
-    for (let k = 0; k < ratios.length - 1; k++) {
-      samplePoint += ratios[k];
-      if (inputHash <= Sampling.fractionToKey(samplePoint / ratioTotal)) {
-        return k;
-      }
-    }
-
-    
-    return ratios.length - 1;
-  },
+  }),
 };
