@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -9,50 +12,48 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-stack", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_simple_eval();
-    });
+    attachTestTabAndResume(gClient, "test-stack",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_simple_eval();
+                           });
   });
   do_test_pending();
 }
 
-function test_simple_eval()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    let arg1Actor = aPacket.frame.arguments[0].actor;
-    gThreadClient.eval(null, "({ obj: true })", function (aResponse) {
-      do_check_eq(aResponse.type, "resumed");
+function test_simple_eval() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    let arg1Actor = packet.frame.arguments[0].actor;
+    gThreadClient.eval(null, "({ obj: true })", function (response) {
+      do_check_eq(response.type, "resumed");
       
-      gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+      gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(aPacket.type, "paused");
-        do_check_eq(aPacket.why.type, "clientEvaluated");
-        do_check_eq(aPacket.why.frameFinished.return.type, "object");
-        do_check_eq(aPacket.why.frameFinished.return.class, "Object");
+        do_check_eq(packet.type, "paused");
+        do_check_eq(packet.why.type, "clientEvaluated");
+        do_check_eq(packet.why.frameFinished.return.type, "object");
+        do_check_eq(packet.why.frameFinished.return.class, "Object");
 
         
-        gClient.request({ to: arg1Actor, type: "bogusRequest" }, function (aResponse) {
-          do_check_eq(aResponse.error, "noSuchActor");
+        gClient.request({ to: arg1Actor, type: "bogusRequest" }, function (response) {
+          do_check_eq(response.error, "noSuchActor");
           gThreadClient.resume(function () {
             finishClient(gClient);
           });
         });
-
       });
-
     });
-
   });
 
+  
   gDebuggee.eval("(" + function () {
     function stopMe(arg1) { debugger; }
     stopMe({obj: true});
   } + ")()");
+  
 }

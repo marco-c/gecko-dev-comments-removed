@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -11,37 +13,35 @@ var gClient;
 var gThreadClient;
 var gCallback;
 
-function run_test()
-{
+function run_test() {
   run_test_with_server(DebuggerServer, function () {
     run_test_with_server(WorkerDebuggerServer, do_test_finished);
   });
   do_test_pending();
 }
 
-function run_test_with_server(aServer, aCallback)
-{
-  gCallback = aCallback;
-  initTestDebuggerServer(aServer);
-  gDebuggee = addTestGlobal("test-grips", aServer);
+function run_test_with_server(server, callback) {
+  gCallback = callback;
+  initTestDebuggerServer(server);
+  gDebuggee = addTestGlobal("test-grips", server);
   gDebuggee.eval(function stopMe(arg1, arg2, arg3, arg4) {
     debugger;
   }.toString());
 
-  gClient = new DebuggerClient(aServer.connectPipe());
+  gClient = new DebuggerClient(server.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-grips", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_object_grip();
-    });
+    attachTestTabAndResume(gClient, "test-grips",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_object_grip();
+                           });
   });
 }
 
-function test_object_grip()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    let [f, s, ne, e] = aPacket.frame.arguments;
-    let [fClient, sClient, neClient, eClient] = aPacket.frame.arguments.map(
+function test_object_grip() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    let [f, s, ne, e] = packet.frame.arguments;
+    let [fClient, sClient, neClient, eClient] = packet.frame.arguments.map(
       a => gThreadClient.pauseGrip(a));
 
     do_check_false(f.extensible);

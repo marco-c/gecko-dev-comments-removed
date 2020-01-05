@@ -1,6 +1,8 @@
 
 
 
+
+
 "use strict";
 var Cc = Components.classes;
 var Ci = Components.interfaces;
@@ -42,11 +44,11 @@ const { MemoryFront } = require("devtools/shared/fronts/memory");
 
 const { addDebuggerToGlobal } = Cu.import("resource://gre/modules/jsdebugger.jsm", {});
 
-const systemPrincipal = Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal);
+const systemPrincipal = Cc["@mozilla.org/systemprincipal;1"]
+                        .createInstance(Ci.nsIPrincipal);
 
-var loadSubScript = Cc[
-  "@mozilla.org/moz/jssubscript-loader;1"
-].getService(Ci.mozIJSSubScriptLoader).loadSubScript;
+var { loadSubScript } = Cc["@mozilla.org/moz/jssubscript-loader;1"]
+                        .getService(Ci.mozIJSSubScriptLoader);
 
 
 
@@ -150,9 +152,8 @@ function makeFullRuntimeMemoryActorTest(testGeneratorFunction) {
 }
 
 function createTestGlobal(name) {
-  let sandbox = Cu.Sandbox(
-    Cc["@mozilla.org/systemprincipal;1"].createInstance(Ci.nsIPrincipal)
-  );
+  let sandbox = Cu.Sandbox(Cc["@mozilla.org/systemprincipal;1"]
+                           .createInstance(Ci.nsIPrincipal));
   sandbox.__name = name;
   return sandbox;
 }
@@ -236,24 +237,27 @@ function dumpn(msg) {
 function testExceptionHook(ex) {
   try {
     do_report_unexpected_exception(ex);
-  } catch (ex) {
-    return {throw: ex};
+  } catch (e) {
+    return {throw: e};
   }
   return undefined;
 }
 
 
-function scriptErrorFlagsToKind(aFlags) {
-  var kind;
-  if (aFlags & Ci.nsIScriptError.warningFlag)
+function scriptErrorFlagsToKind(flags) {
+  let kind;
+  if (flags & Ci.nsIScriptError.warningFlag) {
     kind = "warning";
-  if (aFlags & Ci.nsIScriptError.exceptionFlag)
+  }
+  if (flags & Ci.nsIScriptError.exceptionFlag) {
     kind = "exception";
-  else
+  } else {
     kind = "error";
+  }
 
-  if (aFlags & Ci.nsIScriptError.strictFlag)
+  if (flags & Ci.nsIScriptError.strictFlag) {
     kind = "strict " + kind;
+  }
 
   return kind;
 }
@@ -262,24 +266,25 @@ function scriptErrorFlagsToKind(aFlags) {
 
 var errorCount = 0;
 var listener = {
-  observe: function (aMessage) {
+  observe: function (message) {
     try {
+      let string;
       errorCount++;
       try {
         
         
-        var scriptError = aMessage.QueryInterface(Ci.nsIScriptError);
-        dumpn(aMessage.sourceName + ":" + aMessage.lineNumber + ": " +
-              scriptErrorFlagsToKind(aMessage.flags) + ": " +
-              aMessage.errorMessage);
-        var string = aMessage.errorMessage;
-      } catch (x) {
+        message.QueryInterface(Ci.nsIScriptError);
+        dumpn(message.sourceName + ":" + message.lineNumber + ": " +
+              scriptErrorFlagsToKind(message.flags) + ": " +
+              message.errorMessage);
+        string = message.errorMessage;
+      } catch (e1) {
         
         
         try {
-          var string = "" + aMessage.message;
-        } catch (x) {
-          var string = "<error converting error message to string>";
+          string = "" + message.message;
+        } catch (e2) {
+          string = "<error converting error message to string>";
         }
       }
 
@@ -310,8 +315,7 @@ var listener = {
 var consoleService = Cc["@mozilla.org/consoleservice;1"].getService(Ci.nsIConsoleService);
 consoleService.registerListener(listener);
 
-function check_except(func)
-{
+function check_except(func) {
   try {
     func();
   } catch (e) {
@@ -322,41 +326,38 @@ function check_except(func)
   do_check_true(false);
 }
 
-function testGlobal(aName) {
-  let systemPrincipal = Cc["@mozilla.org/systemprincipal;1"]
-    .createInstance(Ci.nsIPrincipal);
-
-  let sandbox = Cu.Sandbox(systemPrincipal);
-  sandbox.__name = aName;
+function testGlobal(name) {
+  let sandbox = Cu.Sandbox(Cc["@mozilla.org/systemprincipal;1"]
+                           .createInstance(Ci.nsIPrincipal));
+  sandbox.__name = name;
   return sandbox;
 }
 
-function addTestGlobal(aName, aServer = DebuggerServer)
-{
-  let global = testGlobal(aName);
-  aServer.addTestGlobal(global);
+function addTestGlobal(name, server = DebuggerServer) {
+  let global = testGlobal(name);
+  server.addTestGlobal(global);
   return global;
 }
 
 
 
-function getTestTab(aClient, aTitle, aCallback) {
-  aClient.listTabs(function (aResponse) {
-    for (let tab of aResponse.tabs) {
-      if (tab.title === aTitle) {
-        aCallback(tab, aResponse);
+function getTestTab(client, title, callback) {
+  client.listTabs(function (response) {
+    for (let tab of response.tabs) {
+      if (tab.title === title) {
+        callback(tab, response);
         return;
       }
     }
-    aCallback(null);
+    callback(null);
   });
 }
 
 
 
-function attachTestTab(aClient, aTitle, aCallback) {
-  getTestTab(aClient, aTitle, function (aTab) {
-    aClient.attachTab(aTab.actor, aCallback);
+function attachTestTab(client, title, callback) {
+  getTestTab(client, title, function (tab) {
+    client.attachTab(tab.actor, callback);
   });
 }
 
@@ -364,12 +365,12 @@ function attachTestTab(aClient, aTitle, aCallback) {
 
 
 
-function attachTestThread(aClient, aTitle, aCallback) {
-  attachTestTab(aClient, aTitle, function (aTabResponse, aTabClient) {
-    function onAttach(aResponse, aThreadClient) {
-      aCallback(aResponse, aTabClient, aThreadClient, aTabResponse);
+function attachTestThread(client, title, callback) {
+  attachTestTab(client, title, function (tabResponse, tabClient) {
+    function onAttach(response, threadClient) {
+      callback(response, tabClient, threadClient, tabResponse);
     }
-    aTabClient.attachThread({
+    tabClient.attachThread({
       useSourceMaps: true,
       autoBlackBox: true
     }, onAttach);
@@ -380,12 +381,12 @@ function attachTestThread(aClient, aTitle, aCallback) {
 
 
 
-function attachTestTabAndResume(aClient, aTitle, aCallback = () => {}) {
-  return new Promise((resolve, reject) => {
-    attachTestThread(aClient, aTitle, function (aResponse, aTabClient, aThreadClient) {
-      aThreadClient.resume(function (aResponse) {
-        aCallback(aResponse, aTabClient, aThreadClient);
-        resolve([aResponse, aTabClient, aThreadClient]);
+function attachTestTabAndResume(client, title, callback = () => {}) {
+  return new Promise((resolve) => {
+    attachTestThread(client, title, function (response, tabClient, threadClient) {
+      threadClient.resume(function (response) {
+        callback(response, tabClient, threadClient);
+        resolve([response, tabClient, threadClient]);
       });
     });
   });
@@ -394,11 +395,12 @@ function attachTestTabAndResume(aClient, aTitle, aCallback = () => {}) {
 
 
 
-function initTestDebuggerServer(aServer = DebuggerServer)
-{
-  aServer.registerModule("xpcshell-test/testactors");
+function initTestDebuggerServer(server = DebuggerServer) {
+  server.registerModule("xpcshell-test/testactors");
   
-  aServer.init(function () { return true; });
+  server.init(function () {
+    return true;
+  });
 }
 
 
@@ -415,9 +417,8 @@ function startTestDebuggerServer(title, server = DebuggerServer) {
   return connect(client).then(() => client);
 }
 
-function finishClient(aClient)
-{
-  aClient.close(function () {
+function finishClient(client) {
+  client.close(function () {
     DebuggerServer.destroy();
     do_test_finished();
   });
@@ -425,8 +426,7 @@ function finishClient(aClient)
 
 
 
-function get_chrome_actors(callback)
-{
+function get_chrome_actors(callback) {
   if (!DebuggerServer.initialized) {
     DebuggerServer.init();
     DebuggerServer.addBrowserActors();
@@ -449,8 +449,8 @@ function getChromeActors(client, server = DebuggerServer) {
 
 
 
-function getFileUrl(aName, aAllowMissing = false) {
-  let file = do_get_file(aName, aAllowMissing);
+function getFileUrl(name, allowMissing = false) {
+  let file = do_get_file(name, allowMissing);
   return Services.io.newFileURI(file).spec;
 }
 
@@ -458,9 +458,8 @@ function getFileUrl(aName, aAllowMissing = false) {
 
 
 
-function getFilePath(aName, aAllowMissing = false, aUsePlatformPathSeparator = false)
-{
-  let file = do_get_file(aName, aAllowMissing);
+function getFilePath(name, allowMissing = false, usePlatformPathSeparator = false) {
+  let file = do_get_file(name, allowMissing);
   let path = Services.io.newFileURI(file).spec;
   let filePrePath = "file://";
   if ("nsILocalFileWin" in Ci &&
@@ -470,7 +469,7 @@ function getFilePath(aName, aAllowMissing = false, aUsePlatformPathSeparator = f
 
   path = path.slice(filePrePath.length);
 
-  if (aUsePlatformPathSeparator && path.match(/^\w:/)) {
+  if (usePlatformPathSeparator && path.match(/^\w:/)) {
     path = path.replace(/\//g, "\\");
   }
 
@@ -480,8 +479,8 @@ function getFilePath(aName, aAllowMissing = false, aUsePlatformPathSeparator = f
 
 
 
-function readFile(aFileName) {
-  let f = do_get_file(aFileName);
+function readFile(fileName) {
+  let f = do_get_file(fileName);
   let s = Cc["@mozilla.org/network/file-input-stream;1"]
     .createInstance(Ci.nsIFileInputStream);
   s.init(f, -1, -1, false);
@@ -492,16 +491,16 @@ function readFile(aFileName) {
   }
 }
 
-function writeFile(aFileName, aContent) {
-  let file = do_get_file(aFileName, true);
+function writeFile(fileName, content) {
+  let file = do_get_file(fileName, true);
   let stream = Cc["@mozilla.org/network/file-output-stream;1"]
     .createInstance(Ci.nsIFileOutputStream);
   stream.init(file, -1, -1, 0);
   try {
     do {
-      let numWritten = stream.write(aContent, aContent.length);
-      aContent = aContent.slice(numWritten);
-    } while (aContent.length > 0);
+      let numWritten = stream.write(content, content.length);
+      content = content.slice(numWritten);
+    } while (content.length > 0);
   } finally {
     stream.close();
   }
@@ -585,9 +584,9 @@ StubTransport.prototype.ready = function () {};
 StubTransport.prototype.send = function () {};
 StubTransport.prototype.close = function () {};
 
-function executeSoon(aFunc) {
+function executeSoon(func) {
   Services.tm.mainThread.dispatch({
-    run: DevToolsUtils.makeInfallible(aFunc)
+    run: DevToolsUtils.makeInfallible(func)
   }, Ci.nsIThread.DISPATCH_NORMAL);
 }
 
@@ -810,8 +809,7 @@ function getSource(threadClient, url) {
     });
     if (source.length) {
       deferred.resolve(threadClient.source(source[0]));
-    }
-    else {
+    } else {
       deferred.reject(new Error("source not found"));
     }
   });

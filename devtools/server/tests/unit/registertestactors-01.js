@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 function Actor() {}
 
 exports.register = function (handle) {

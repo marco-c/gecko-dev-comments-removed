@@ -9,18 +9,21 @@
 
 
 
+
+
 Components.utils.import("resource://gre/modules/jsdebugger.jsm");
 addDebuggerToGlobal(this);
 
 
 
-Debugger.Object.prototype.getProperty = function (aName) {
-  let desc = this.getOwnPropertyDescriptor(aName);
-  if (!desc)
+Debugger.Object.prototype.getProperty = function (name) {
+  let desc = this.getOwnPropertyDescriptor(name);
+  if (!desc) {
     return undefined;
+  }
   if (!desc.value) {
     throw Error("Debugger.Object.prototype.getProperty: " +
-                "not a value property: " + aName);
+                "not a value property: " + name);
   }
   return desc.value;
 };
@@ -33,7 +36,7 @@ function run_test() {
   
   
   
-  var mainObj = { name: "mainObj" };
+  let mainObj = { name: "mainObj" };
   Components.utils.evalInSandbox('var contentObj = { name: "contentObj" };',
                                  contentBox);
   Components.utils.evalInSandbox('var chromeObj = { name: "chromeObj" };',
@@ -41,8 +44,8 @@ function run_test() {
 
   
   contentBox.mainObj = chromeBox.mainObj = mainObj;
-  var contentObj = chromeBox.contentObj = contentBox.contentObj;
-  var chromeObj = contentBox.chromeObj = chromeBox.chromeObj;
+  let contentObj = chromeBox.contentObj = contentBox.contentObj;
+  let chromeObj = contentBox.chromeObj = chromeBox.chromeObj;
 
   
   
@@ -91,7 +94,7 @@ function run_test() {
   
 
   
-  let dbg = new Debugger;
+  let dbg = new Debugger();
 
   
   

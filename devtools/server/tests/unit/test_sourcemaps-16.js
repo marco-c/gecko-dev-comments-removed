@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -9,8 +11,7 @@
 var gDebuggee;
 var gClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-sourcemaps");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
@@ -20,19 +21,21 @@ function run_test()
   do_test_pending();
 }
 
-const testSourcemap = Task.async(function* (threadResponse, tabClient, threadClient, tabResponse) {
-  evalTestCode();
+const testSourcemap = Task.async(
+  function* (threadResponse, tabClient, threadClient, tabResponse) {
+    evalTestCode();
 
-  const { sources } = yield getSources(threadClient);
+    const { sources } = yield getSources(threadClient);
 
-  for (let form of sources) {
-    let sourceResponse = yield getSourceContent(threadClient.source(form));
-    ok(sourceResponse, "Should be able to get the source response");
-    ok(sourceResponse.source, "Should have the source text as well");
+    for (let form of sources) {
+      let sourceResponse = yield getSourceContent(threadClient.source(form));
+      ok(sourceResponse, "Should be able to get the source response");
+      ok(sourceResponse.source, "Should have the source text as well");
+    }
+
+    finishClient(gClient);
   }
-
-  finishClient(gClient);
-});
+);
 
 const TEST_FILE = "babel_and_browserify_script_with_source_map.js";
 

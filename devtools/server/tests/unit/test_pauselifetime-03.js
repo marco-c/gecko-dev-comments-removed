@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -9,24 +12,23 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-stack", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_pause_frame();
-    });
+    attachTestTabAndResume(gClient, "test-stack",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_pause_frame();
+                           });
   });
   do_test_pending();
 }
 
-function test_pause_frame()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    let args = aPacket.frame.arguments;
+function test_pause_frame() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    let args = packet.frame.arguments;
     let objActor = args[0].actor;
     do_check_eq(args[0].class, "Object");
     do_check_true(!!objActor);
@@ -36,16 +38,16 @@ function test_pause_frame()
 
     
     
-    gClient.request({ to: objActor, type: "bogusRequest" }, function (aResponse) {
-      do_check_eq(aResponse.error, "unrecognizedPacketType");
+    gClient.request({ to: objActor, type: "bogusRequest" }, function (response) {
+      do_check_eq(response.error, "unrecognizedPacketType");
       do_check_true(objClient.valid);
 
       gThreadClient.resume(function () {
         
         
-        gClient.request({ to: objActor, type: "bogusRequest" }, function (aResponse) {
+        gClient.request({ to: objActor, type: "bogusRequest" }, function (response) {
           do_check_false(objClient.valid);
-          do_check_eq(aResponse.error, "noSuchActor");
+          do_check_eq(response.error, "noSuchActor");
           finishClient(gClient);
         });
       });
@@ -53,7 +55,7 @@ function test_pause_frame()
   });
 
   gDebuggee.eval("(" + function () {
-    function stopMe(aObject) {
+    function stopMe(obj) {
       debugger;
     }
     stopMe({ foo: "bar" });

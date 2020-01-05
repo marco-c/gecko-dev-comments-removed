@@ -1,11 +1,13 @@
 
 
 
-function PostInitTabActor(aConnection) {}
+"use strict";
+
+function PostInitTabActor(connection) {}
 
 PostInitTabActor.prototype = {
   actorPostfix: "postInitTab",
-  onPing: function onPing(aRequest) {
+  onPing(request) {
     return { message: "pong" };
   },
 };

@@ -1,11 +1,13 @@
 
 
 
-function PreInitTabActor(aConnection) {}
+"use strict";
+
+function PreInitTabActor(connection) {}
 
 PreInitTabActor.prototype = {
   actorPrefix: "preInitTab",
-  onPing: function onPing(aRequest) {
+  onPing(request) {
     return { message: "pong" };
   },
 };

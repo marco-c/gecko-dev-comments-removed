@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 function run_test() {
@@ -9,7 +12,9 @@ function run_test() {
 
   
   let testResumed = false;
-  let DebuggerServer = _setupDebuggerServer([testFile.path], () => testResumed = true);
+  let DebuggerServer = _setupDebuggerServer([testFile.path], () => {
+    testResumed = true;
+  });
   let transport = DebuggerServer.connectPipe();
   let client = new DebuggerClient(transport);
   client.connect().then(() => {

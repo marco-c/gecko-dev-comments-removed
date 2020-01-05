@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -12,8 +14,7 @@ var gOldPref;
 
 const { ActorRegistryFront } = require("devtools/shared/fronts/actor-registry");
 
-function run_test()
-{
+function run_test() {
   gOldPref = Services.prefs.getBoolPref("devtools.debugger.forbid-certified-apps");
   Services.prefs.setBoolPref("devtools.debugger.forbid-certified-apps", false);
   initTestDebuggerServer();
@@ -39,7 +40,7 @@ function registerNewActor() {
 
   gRegistryFront
     .registerActor("resource://test/hello-actor.js", options)
-    .then(actorFront => gActorFront = actorFront)
+    .then(actorFront => (gActorFront = actorFront))
     .then(talkToNewActor)
     .then(null, e => {
       DevToolsUtils.reportException("registerNewActor", e);

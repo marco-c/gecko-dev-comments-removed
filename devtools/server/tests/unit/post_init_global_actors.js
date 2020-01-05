@@ -1,11 +1,13 @@
 
 
 
-function PostInitGlobalActor(aConnection) {}
+"use strict";
+
+function PostInitGlobalActor(connection) {}
 
 PostInitGlobalActor.prototype = {
   actorPrefix: "postInitGlobal",
-  onPing: function onPing(aRequest) {
+  onPing(request) {
     return { message: "pong" };
   },
 };

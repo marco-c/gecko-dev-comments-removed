@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -9,28 +11,24 @@
 var gDebuggee;
 var gClient;
 var gThreadClient;
-var gCallback;
 
-function run_test()
-{
+function run_test() {
   run_test_with_server(DebuggerServer, function () {
     run_test_with_server(WorkerDebuggerServer, do_test_finished);
   });
   do_test_pending();
 }
 
-function run_test_with_server(aServer, aCallback)
-{
-  gCallback = aCallback;
-  initTestDebuggerServer(aServer);
-  gDebuggee = addTestGlobal("test-breakpoints", aServer);
+function run_test_with_server(server, callback) {
+  initTestDebuggerServer(server);
+  gDebuggee = addTestGlobal("test-breakpoints", server);
   gDebuggee.console = { log: x => void x };
-  gClient = new DebuggerClient(aServer.connectPipe());
+  gClient = new DebuggerClient(server.connectPipe());
   gClient.connect().then(function () {
     attachTestTabAndResume(gClient,
                            "test-breakpoints",
-                           function (aResponse, aTabClient, aThreadClient) {
-                             gThreadClient = aThreadClient;
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
                              testBreakpoint();
                            });
   });
@@ -39,6 +37,7 @@ function run_test_with_server(aServer, aCallback)
 const URL = "test.js";
 
 function setUpCode() {
+  
   Cu.evalInSandbox(
     "" + function test() { 
       var a = 1;           
@@ -49,11 +48,12 @@ function setUpCode() {
     "1.8",
     URL
   );
+  
 }
 
 const testBreakpoint = Task.async(function* () {
   let source = yield getSource(gThreadClient, URL);
-  let [response, bpClient] = yield setBreakpoint(source, {line: 2});
+  let [response, ] = yield setBreakpoint(source, {line: 2});
   ok(!response.error);
 
   let actor = response.actor;

@@ -1,12 +1,13 @@
 
 
 
+"use strict";
+
 
 
 var EventEmitter = require("devtools/shared/event-emitter");
 
 var gClient;
-var gActors;
 var gTestClient;
 
 function TestActor(conn) {
@@ -49,8 +50,7 @@ TestClient.prototype = {
   }
 };
 
-function run_test()
-{
+function run_test() {
   DebuggerServer.addGlobalActor(TestActor);
 
   DebuggerServer.init();
@@ -62,20 +62,17 @@ function run_test()
   run_next_test();
 }
 
-function init()
-{
+function init() {
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect()
     .then(() => gClient.listTabs())
-    .then(aResponse => {
-      gActors = aResponse;
-      gTestClient = new TestClient(gClient, aResponse);
+    .then(response => {
+      gTestClient = new TestClient(gClient, response);
       run_next_test();
     });
 }
 
-function test_client_events()
-{
+function test_client_events() {
   
   gTestClient.on("foo", function (type, data) {
     do_check_eq(type, "foo");

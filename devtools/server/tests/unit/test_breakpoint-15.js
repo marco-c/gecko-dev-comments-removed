@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -9,16 +11,16 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-stack", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      testSameBreakpoint();
-    });
+    attachTestTabAndResume(gClient, "test-stack",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             testSameBreakpoint();
+                           });
   });
   do_test_pending();
 }
@@ -34,10 +36,11 @@ const testSameBreakpoint = Task.async(function* () {
     line: 2
   };
 
-  let [firstResponse, firstBpClient] = yield setBreakpoint(source, wholeLineLocation);
-  let [secondResponse, secondBpClient] = yield setBreakpoint(source, wholeLineLocation);
+  let [, firstBpClient] = yield setBreakpoint(source, wholeLineLocation);
+  let [, secondBpClient] = yield setBreakpoint(source, wholeLineLocation);
 
-  do_check_eq(firstBpClient.actor, secondBpClient.actor, "Should get the same actor w/ whole line breakpoints");
+  do_check_eq(firstBpClient.actor, secondBpClient.actor,
+              "Should get the same actor w/ whole line breakpoints");
 
   
 
@@ -46,15 +49,17 @@ const testSameBreakpoint = Task.async(function* () {
     column: 6
   };
 
-  [firstResponse, firstBpClient] = yield setBreakpoint(source, columnLocation);
-  [secondResponse, secondBpClient] = yield setBreakpoint(source, columnLocation);
+  [, firstBpClient] = yield setBreakpoint(source, columnLocation);
+  [, secondBpClient] = yield setBreakpoint(source, columnLocation);
 
-  do_check_eq(secondBpClient.actor, secondBpClient.actor, "Should get the same actor column breakpoints");
+  do_check_eq(secondBpClient.actor, secondBpClient.actor,
+              "Should get the same actor column breakpoints");
 
   finishClient(gClient);
 });
 
 function evalCode() {
+  
   Components.utils.evalInSandbox(
     "" + function doStuff(k) { 
       let arg = 15;            
@@ -66,4 +71,5 @@ function evalCode() {
     SOURCE_URL,
     1
   );
+  
 }

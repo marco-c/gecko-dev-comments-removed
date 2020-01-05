@@ -1,14 +1,15 @@
 
 
 
+"use strict";
+
 
 
 
 
 
 var protocol = require("devtools/shared/protocol");
-var {Arg, Option, RetVal} = protocol;
-var events = require("sdk/event/core");
+var {RetVal} = protocol;
 
 function simpleHello() {
   return {

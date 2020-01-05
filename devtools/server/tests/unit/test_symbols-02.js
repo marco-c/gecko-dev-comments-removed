@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -13,10 +15,11 @@ function run_test() {
   const client = new DebuggerClient(DebuggerServer.connectPipe());
 
   client.connect().then(function () {
-    attachTestTabAndResume(client, "test-symbols", function (response, tabClient, threadClient) {
-      add_task(testSymbols.bind(null, client, debuggee));
-      run_next_test();
-    });
+    attachTestTabAndResume(client, "test-symbols",
+                           function (response, tabClient, threadClient) {
+                             add_task(testSymbols.bind(null, client, debuggee));
+                             run_next_test();
+                           });
   });
 
   do_test_pending();
@@ -24,6 +27,7 @@ function run_test() {
 
 function* testSymbols(client, debuggee) {
   const evalCode = () => {
+    
     Components.utils.evalInSandbox(
       "(" + function () {
         Symbol.prototype.toString = () => {
@@ -37,6 +41,7 @@ function* testSymbols(client, debuggee) {
       URL,
       1
     );
+    
   };
 
   const packet = yield executeOnNextTickAndWaitForPause(evalCode, client);

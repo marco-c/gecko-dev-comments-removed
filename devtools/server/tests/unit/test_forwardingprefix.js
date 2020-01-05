@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 const { RootActor } = require("devtools/server/actors/root");
@@ -9,8 +11,7 @@ var gMainConnection, gMainTransport;
 var gSubconnection1, gSubconnection2;
 var gClient;
 
-function run_test()
-{
+function run_test() {
   DebuggerServer.init();
 
   add_test(createMainConnection);
@@ -34,25 +35,23 @@ function run_test()
 
 
 
-function newConnection(aPrefix)
-{
-  var conn;
-  DebuggerServer.createRootActor = function (aConn) {
-    conn = aConn;
-    return new RootActor(aConn, {});
+function newConnection(prefix) {
+  let conn;
+  DebuggerServer.createRootActor = function (connection) {
+    conn = connection;
+    return new RootActor(connection, {});
   };
 
-  var transport = DebuggerServer.connectPipe(aPrefix);
+  let transport = DebuggerServer.connectPipe(prefix);
 
   return { conn: conn, transport: transport };
 }
 
 
-function createMainConnection()
-{
+function createMainConnection() {
   ({ conn: gMainConnection, transport: gMainTransport } = newConnection());
   gClient = new DebuggerClient(gMainTransport);
-  gClient.connect().then(([aType, aTraits]) => run_next_test());
+  gClient.connect().then(([type, traits]) => run_next_test());
 }
 
 
@@ -69,7 +68,7 @@ function createMainConnection()
 
 
 
-function tryActors(aReachables, aCompleted) {
+function tryActors(reachables, completed) {
   let count = 0;
 
   let outerActor;
@@ -84,16 +83,22 @@ function tryActors(aReachables, aCompleted) {
 
     count++;
 
-    gClient.request({ to: actor, type: "echo", value: "tango"}, 
-                    (aResponse) => {
-                      if (aReachables.has(actor))
-                        do_check_matches({ from: actor, to: actor, type: "echo", value: "tango" }, aResponse);
-                      else
-                        do_check_matches({ from: actor, error: "noSuchActor", message: "No such actor for ID: " + actor }, aResponse);
+    
+    gClient.request(
+      { to: actor, type: "echo", value: "tango"},
+      (response) => {
+        if (reachables.has(actor)) {
+          do_check_matches({ from: actor, to: actor,
+                             type: "echo", value: "tango" }, response);
+        } else {
+          do_check_matches({ from: actor, error: "noSuchActor",
+                             message: "No such actor for ID: " + actor }, response);
+        }
 
-                      if (--count == 0)
-                        do_execute_soon(aCompleted, "tryActors callback " + aCompleted.name);
-                    });
+        if (--count == 0) {
+          do_execute_soon(completed, "tryActors callback " + completed.name);
+        }
+      });
   }
 }
 
@@ -102,8 +107,7 @@ function tryActors(aReachables, aCompleted) {
 
 
 
-function TestNoForwardingYet()
-{
+function TestNoForwardingYet() {
   tryActors(new Set(["root"]), run_next_test);
 }
 
@@ -114,44 +118,39 @@ function TestNoForwardingYet()
 
 
 
-function newSubconnection(aPrefix)
-{
-  let { conn, transport } = newConnection(aPrefix);
+function newSubconnection(prefix) {
+  let { conn, transport } = newConnection(prefix);
   transport.hooks = {
-    onPacket: (aPacket) => gMainConnection.send(aPacket),
+    onPacket: (packet) => gMainConnection.send(packet),
     onClosed: () => {}
   };
-  gMainConnection.setForwarding(aPrefix, transport);
+  gMainConnection.setForwarding(prefix, transport);
 
   return { conn: conn, transport: transport };
 }
 
 
-function createSubconnection1()
-{
+function createSubconnection1() {
   let { conn, transport } = newSubconnection("prefix1");
   gSubconnection1 = conn;
   transport.ready();
-  gClient.expectReply("prefix1/root", (aReply) => run_next_test());
+  gClient.expectReply("prefix1/root", (reply) => run_next_test());
 }
 
 
-function TestForwardPrefix1OnlyRoot()
-{
+function TestForwardPrefix1OnlyRoot() {
   tryActors(new Set(["root", "prefix1/root"]), run_next_test);
 }
 
 
-function createSubconnection2()
-{
+function createSubconnection2() {
   let { conn, transport } = newSubconnection("prefix2");
   gSubconnection2 = conn;
   transport.ready();
-  gClient.expectReply("prefix2/root", (aReply) => run_next_test());
+  gClient.expectReply("prefix2/root", (reply) => run_next_test());
 }
 
-function TestForwardPrefix12OnlyRoot()
-{
+function TestForwardPrefix12OnlyRoot() {
   tryActors(new Set(["root", "prefix1/root", "prefix2/root"]), run_next_test);
 }
 
@@ -161,36 +160,39 @@ function TestForwardPrefix12OnlyRoot()
 
 
 
-function EchoActor(aConnection)
-{
-  this.conn = aConnection;
+function EchoActor(connection) {
+  this.conn = connection;
 }
 EchoActor.prototype.actorPrefix = "EchoActor";
-EchoActor.prototype.onEcho = function (aRequest) {
+EchoActor.prototype.onEcho = function (request) {
   
 
 
 
-  return JSON.parse(JSON.stringify(aRequest));
+  return JSON.parse(JSON.stringify(request));
 };
 EchoActor.prototype.requestTypes = {
   "echo": EchoActor.prototype.onEcho
 };
 
-function TestForwardPrefix12WithActor1()
-{
+function TestForwardPrefix12WithActor1() {
   let actor = new EchoActor(gSubconnection1);
   actor.actorID = "prefix1/actor";
   gSubconnection1.addActor(actor);
 
-  tryActors(new Set(["root", "prefix1/root", "prefix1/actor", "prefix2/root"]), run_next_test);
+  tryActors(
+    new Set(["root", "prefix1/root", "prefix1/actor", "prefix2/root"]),
+    run_next_test
+  );
 }
 
-function TestForwardPrefix12WithActor12()
-{
+function TestForwardPrefix12WithActor12() {
   let actor = new EchoActor(gSubconnection2);
   actor.actorID = "prefix2/actor";
   gSubconnection2.addActor(actor);
 
-  tryActors(new Set(["root", "prefix1/root", "prefix1/actor", "prefix2/root", "prefix2/actor"]), run_next_test);
+  tryActors(
+    new Set(["root", "prefix1/root", "prefix1/actor", "prefix2/root", "prefix2/actor"]),
+    run_next_test
+  );
 }

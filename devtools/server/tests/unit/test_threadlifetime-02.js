@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -9,40 +12,40 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-grips");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-grips", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_thread_lifetime();
-    });
+    attachTestTabAndResume(gClient, "test-grips",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_thread_lifetime();
+                           });
   });
   do_test_pending();
 }
 
-function test_thread_lifetime()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    let pauseGrip = aPacket.frame.arguments[0];
+function test_thread_lifetime() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    let pauseGrip = packet.frame.arguments[0];
 
     
-    gClient.request({ to: pauseGrip.actor, type: "threadGrip" }, function (aResponse) {
+    gClient.request({ to: pauseGrip.actor, type: "threadGrip" }, function (response) {
       
-      do_check_eq(aResponse.error, undefined);
-      gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+      do_check_eq(response.error, undefined);
+      gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(pauseGrip.actor, aPacket.frame.arguments[0].actor);
+        do_check_eq(pauseGrip.actor, packet.frame.arguments[0].actor);
         
-        gClient.release(pauseGrip.actor, function (aResponse) {
-          gClient.request({ to: pauseGrip.actor, type: "bogusRequest" }, function (aResponse) {
-            do_check_eq(aResponse.error, "noSuchActor");
-            gThreadClient.resume(function (aResponse) {
-              finishClient(gClient);
+        gClient.release(pauseGrip.actor, function (response) {
+          gClient.request(
+            {to: pauseGrip.actor, type: "bogusRequest"}, function (response) {
+              do_check_eq(response.error, "noSuchActor");
+              gThreadClient.resume(function (response) {
+                finishClient(gClient);
+              });
             });
-          });
         });
       });
       gThreadClient.resume();

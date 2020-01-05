@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -10,26 +13,25 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-stack", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_pause_frame();
-    });
+    attachTestTabAndResume(gClient, "test-stack",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_pause_frame();
+                           });
   });
   do_test_pending();
 }
 
-function test_pause_frame()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-      do_check_eq(aPacket.why.type, "exception");
-      do_check_eq(aPacket.why.exception, "bar");
+function test_pause_frame() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    gThreadClient.addOneTimeListener("paused", function (event, packet) {
+      do_check_eq(packet.why.type, "exception");
+      do_check_eq(packet.why.exception, "bar");
       gThreadClient.resume(function () {
         finishClient(gClient);
       });
@@ -39,6 +41,7 @@ function test_pause_frame()
   });
 
   try {
+    
     gDebuggee.eval("(" + function () {
       debugger;
       try {
@@ -46,5 +49,8 @@ function test_pause_frame()
       } catch (e) {}
       throw "bar";
     } + ")()");
-  } catch (e) {}
+    
+  } catch (e) {
+    
+  }
 }

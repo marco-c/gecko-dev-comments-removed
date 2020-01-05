@@ -2,33 +2,39 @@
 
 
 
+"use strict";
 
 
 
 
-function run_test()
-{
+
+
+function run_test() {
   initTestDebuggerServer();
   const debuggee = addTestGlobal("test-promise-state");
   const client = new DebuggerClient(DebuggerServer.connectPipe());
   client.connect().then(function () {
-    attachTestTabAndResume(client, "test-promise-state", function (response, tabClient, threadClient) {
-      Task.spawn(function* () {
-        const packet = yield executeOnNextTickAndWaitForPause(() => evalCode(debuggee), client);
+    attachTestTabAndResume(
+      client, "test-promise-state",
+      function (response, tabClient, threadClient) {
+        Task.spawn(function* () {
+          const packet = yield executeOnNextTickAndWaitForPause(
+            () => evalCode(debuggee), client);
 
-        const grip = packet.frame.environment.bindings.variables.p;
-        ok(grip.value.preview);
-        equal(grip.value.class, "Promise");
-        equal(grip.value.promiseState.state, "pending");
+          const grip = packet.frame.environment.bindings.variables.p;
+          ok(grip.value.preview);
+          equal(grip.value.class, "Promise");
+          equal(grip.value.promiseState.state, "pending");
 
-        finishClient(client);
+          finishClient(client);
+        });
       });
-    });
   });
   do_test_pending();
 }
 
 function evalCode(debuggee) {
+  
   Components.utils.evalInSandbox(
     "doTest();\n" +
     function doTest() {
@@ -37,4 +43,5 @@ function evalCode(debuggee) {
     },
     debuggee
   );
+  
 }

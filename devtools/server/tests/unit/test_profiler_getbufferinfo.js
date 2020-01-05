@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 
@@ -12,8 +13,7 @@ const INITIAL_WAIT_TIME = 100;
 const MAX_WAIT_TIME = 20000; 
 const MAX_PROFILER_ENTRIES = 10000000;
 
-function run_test()
-{
+function run_test() {
   
   
   Profiler.StopProfiler();
@@ -36,8 +36,7 @@ function run_test()
   do_test_pending();
 }
 
-function check_empty_buffer(client, actor, callback)
-{
+function check_empty_buffer(client, actor, callback) {
   client.request({ to: actor, type: "getBufferInfo" }, response => {
     do_check_true(response.position === 0);
     do_check_true(response.totalSize === 0);
@@ -46,8 +45,7 @@ function check_empty_buffer(client, actor, callback)
   });
 }
 
-function check_buffer(client, actor, callback)
-{
+function check_buffer(client, actor, callback) {
   client.request({ to: actor, type: "getBufferInfo" }, response => {
     do_check_true(typeof response.position === "number");
     do_check_true(typeof response.totalSize === "number");
@@ -61,19 +59,18 @@ function check_buffer(client, actor, callback)
   });
 }
 
-function activate_profiler(client, actor, callback)
-{
-  client.request({ to: actor, type: "startProfiler", entries: MAX_PROFILER_ENTRIES }, response => {
-    do_check_true(response.started);
-    client.request({ to: actor, type: "isActive" }, response => {
-      do_check_true(response.isActive);
-      callback(response.currentTime);
+function activate_profiler(client, actor, callback) {
+  client.request(
+    { to: actor, type: "startProfiler", entries: MAX_PROFILER_ENTRIES }, response => {
+      do_check_true(response.started);
+      client.request({ to: actor, type: "isActive" }, response => {
+        do_check_true(response.isActive);
+        callback(response.currentTime);
+      });
     });
-  });
 }
 
-function deactivate_profiler(client, actor, callback)
-{
+function deactivate_profiler(client, actor, callback) {
   client.request({ to: actor, type: "stopProfiler" }, response => {
     do_check_false(response.started);
     client.request({ to: actor, type: "isActive" }, response => {
@@ -83,18 +80,14 @@ function deactivate_profiler(client, actor, callback)
   });
 }
 
-function wait_for_samples(client, actor, callback)
-{
-  function attempt(delay)
-  {
-    
-    let funcLine = Components.stack.lineNumber - 3;
-
+function wait_for_samples(client, actor, callback) {
+  function attempt(delay) {
     
     let start = Date.now();
-    let stack;
+
     do_print("Attempt: delay = " + delay);
-    while (Date.now() - start < delay) { stack = Components.stack; }
+    
+    while (Date.now() - start < delay) {}
     do_print("Attempt: finished waiting.");
 
     client.request({ to: actor, type: "getProfile" }, response => {
@@ -105,14 +98,14 @@ function wait_for_samples(client, actor, callback)
         if (delay < MAX_WAIT_TIME) {
           
           do_print("Attempt: no samples, going around again.");
-          return attempt(delay * 2);
+          attempt(delay * 2);
         } else {
           
           do_print("Attempt: waited a long time, but no samples were collected.");
           do_print("Giving up.");
           do_check_true(false);
-          return;
         }
+        return;
       }
       callback();
     });

@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -9,48 +12,45 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-conditional-breakpoint");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-conditional-breakpoint", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_simple_breakpoint();
-    });
+    attachTestTabAndResume(gClient, "test-conditional-breakpoint",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_simple_breakpoint();
+                           });
   });
   do_test_pending();
 }
 
-function test_simple_breakpoint()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    let source = gThreadClient.source(aPacket.frame.where.source);
+function test_simple_breakpoint() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    let source = gThreadClient.source(packet.frame.where.source);
     source.setBreakpoint({
       line: 3,
       condition: "a === 1"
-    }, function (aResponse, bpClient) {
-      gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+    }, function (response, bpClient) {
+      gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(aPacket.why.type, "breakpoint");
-        do_check_eq(aPacket.frame.where.line, 3);
+        do_check_eq(packet.why.type, "breakpoint");
+        do_check_eq(packet.frame.where.line, 3);
 
         
-        bpClient.remove(function (aResponse) {
+        bpClient.remove(function (response) {
           gThreadClient.resume(function () {
             finishClient(gClient);
           });
         });
-
       });
       
       gThreadClient.resume();
-
     });
-
   });
 
+  
   Components.utils.evalInSandbox("debugger;\n" +   
                                  "var a = 1;\n" +  
                                  "var b = 2;\n",  
@@ -58,4 +58,5 @@ function test_simple_breakpoint()
                                  "1.8",
                                  "test.js",
                                  1);
+  
 }

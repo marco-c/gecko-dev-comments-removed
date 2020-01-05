@@ -1,7 +1,9 @@
 
 
 
-const protocol = require("devtools/shared/protocol");
+
+"use strict";
+
 const {AddonManager} = require("resource://gre/modules/AddonManager.jsm");
 
 startupAddonsManager();
@@ -80,7 +82,7 @@ add_task(function* testReloadExitedAddon() {
   
   const onUninstalled = promiseAddonEvent("onUninstalled");
   installedAddon2.uninstall();
-  const [uninstalledAddon] = yield onUninstalled;
+  yield onUninstalled;
 
   
   

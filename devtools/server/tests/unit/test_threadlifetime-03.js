@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -9,38 +12,37 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-grips");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-grips", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_thread_lifetime();
-    });
+    attachTestTabAndResume(gClient, "test-grips",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_thread_lifetime();
+                           });
   });
   do_test_pending();
 }
 
-function test_thread_lifetime()
-{
+function test_thread_lifetime() {
   
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
     let grips = [];
 
-    let handler = function (aResponse) {
-      if (aResponse.error) {
-        do_check_eq(aResponse.error, "");
+    let handler = function (response) {
+      if (response.error) {
+        do_check_eq(response.error, "");
         finishClient(gClient);
       }
-      grips.push(aResponse.from);
+      grips.push(response.from);
       if (grips.length == 3) {
         test_release_many(grips);
       }
     };
     for (let i = 0; i < 3; i++) {
-      gClient.request({ to: aPacket.frame.arguments[i].actor, type: "threadGrip" },
+      gClient.request({ to: packet.frame.arguments[i].actor, type: "threadGrip" },
                       handler);
     }
   });
@@ -53,24 +55,23 @@ function test_thread_lifetime()
   } + ")()");
 }
 
-function test_release_many(grips)
-{
+function test_release_many(grips) {
   
 
   let release = [grips[0], grips[1]];
 
-  gThreadClient.releaseMany(release, function (aResponse) {
+  gThreadClient.releaseMany(release, function (response) {
     
     
-    gClient.request({ to: grips[0], type: "bogusRequest" }, function (aResponse) {
-      do_check_eq(aResponse.error, "noSuchActor");
-      gClient.request({ to: grips[1], type: "bogusRequest" }, function (aResponse) {
-        do_check_eq(aResponse.error, "noSuchActor");
+    gClient.request({ to: grips[0], type: "bogusRequest" }, function (response) {
+      do_check_eq(response.error, "noSuchActor");
+      gClient.request({ to: grips[1], type: "bogusRequest" }, function (response) {
+        do_check_eq(response.error, "noSuchActor");
 
         
         
-        gClient.request({ to: grips[2], type: "bogusRequest" }, function (aResponse) {
-          do_check_eq(aResponse.error, "unrecognizedPacketType");
+        gClient.request({ to: grips[2], type: "bogusRequest" }, function (response) {
+          do_check_eq(response.error, "unrecognizedPacketType");
           gThreadClient.resume(function () {
             finishClient(gClient);
           });

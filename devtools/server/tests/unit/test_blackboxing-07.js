@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -10,16 +12,16 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-black-box");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-black-box", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      testBlackBox();
-    });
+    attachTestTabAndResume(gClient, "test-black-box",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             testBlackBox();
+                           });
   });
   do_test_pending();
 }

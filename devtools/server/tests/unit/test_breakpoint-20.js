@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -8,11 +10,8 @@
 
 var gDebuggee;
 var gClient;
-var gTraceClient;
-var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-breakpoints");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
@@ -22,7 +21,8 @@ function run_test()
   do_test_pending();
 }
 
-const testBreakpoint = Task.async(function* (threadResponse, tabClient, threadClient, tabResponse) {
+const testBreakpoint = Task.async(function* (threadResponse, tabClient,
+                                             threadClient, tabResponse) {
   evalSetupCode();
 
   
@@ -34,7 +34,7 @@ const testBreakpoint = Task.async(function* (threadResponse, tabClient, threadCl
   
 
   const source = yield getSource(threadClient, "test.js");
-  const [response, bpClient] = yield setBreakpoint(source, {
+  const [response, ] = yield setBreakpoint(source, {
     line: 3
   });
   ok(!response.error, "Shouldn't get an error setting the BP.");

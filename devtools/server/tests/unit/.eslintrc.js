@@ -2,5 +2,8 @@
 
 module.exports = {
   
-  "extends": "../../../.eslintrc.xpcshell.js"
+  "extends": "../../../.eslintrc.xpcshell.js",
+  "rules": {
+    "no-debugger": 0,
+  }
 };

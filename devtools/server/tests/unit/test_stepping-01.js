@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -10,55 +13,53 @@ var gClient;
 var gThreadClient;
 var gCallback;
 
-function run_test()
-{
+function run_test() {
   run_test_with_server(DebuggerServer, function () {
     run_test_with_server(WorkerDebuggerServer, do_test_finished);
   });
   do_test_pending();
 }
 
-function run_test_with_server(aServer, aCallback)
-{
-  gCallback = aCallback;
-  initTestDebuggerServer(aServer);
-  gDebuggee = addTestGlobal("test-stack", aServer);
-  gClient = new DebuggerClient(aServer.connectPipe());
+function run_test_with_server(server, callback) {
+  gCallback = callback;
+  initTestDebuggerServer(server);
+  gDebuggee = addTestGlobal("test-stack", server);
+  gClient = new DebuggerClient(server.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-stack", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_simple_stepping();
-    });
+    attachTestTabAndResume(gClient, "test-stack",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_simple_stepping();
+                           });
   });
 }
 
-function test_simple_stepping()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+function test_simple_stepping() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    gThreadClient.addOneTimeListener("paused", function (event, packet) {
       
-      do_check_eq(aPacket.type, "paused");
-      do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 2);
-      do_check_eq(aPacket.why.type, "resumeLimit");
+      do_check_eq(packet.type, "paused");
+      do_check_eq(packet.frame.where.line, gDebuggee.line0 + 2);
+      do_check_eq(packet.why.type, "resumeLimit");
       
       do_check_eq(gDebuggee.a, undefined);
       do_check_eq(gDebuggee.b, undefined);
 
-      gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+      gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(aPacket.type, "paused");
-        do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 3);
-        do_check_eq(aPacket.why.type, "resumeLimit");
+        do_check_eq(packet.type, "paused");
+        do_check_eq(packet.frame.where.line, gDebuggee.line0 + 3);
+        do_check_eq(packet.why.type, "resumeLimit");
         
         do_check_eq(gDebuggee.a, 1);
         do_check_eq(gDebuggee.b, undefined);
 
-        gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+        gThreadClient.addOneTimeListener("paused", function (event, packet) {
           
-          do_check_eq(aPacket.type, "paused");
+          do_check_eq(packet.type, "paused");
           
-          do_check_eq(aPacket.frame.where.line, gDebuggee.line0 + 3);
-          do_check_eq(aPacket.why.type, "resumeLimit");
+          do_check_eq(packet.frame.where.line, gDebuggee.line0 + 3);
+          do_check_eq(packet.why.type, "resumeLimit");
           
           do_check_eq(gDebuggee.a, 1);
           do_check_eq(gDebuggee.b, 2);
@@ -70,14 +71,14 @@ function test_simple_stepping()
         gThreadClient.stepOver();
       });
       gThreadClient.stepOver();
-
     });
     gThreadClient.stepOver();
-
   });
 
+  
   gDebuggee.eval("var line0 = Error().lineNumber;\n" +
                  "debugger;\n" +   
                  "var a = 1;\n" +  
                  "var b = 2;\n");  
+  
 }

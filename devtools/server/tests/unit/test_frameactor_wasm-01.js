@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -9,34 +12,35 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   if (typeof WebAssembly == "undefined") {
-    return; 
+    
+    return;
   }
 
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-stack", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      gThreadClient.reconfigure({ observeAsmJS: true }, function (aResponse) {
-        do_check_eq(!!aResponse.error, false);
-        test_pause_frame();
+    attachTestTabAndResume(
+      gClient, "test-stack",
+      function (response, tabClient, threadClient) {
+        gThreadClient = threadClient;
+        gThreadClient.reconfigure({ observeAsmJS: true }, function (response) {
+          do_check_eq(!!response.error, false);
+          test_pause_frame();
+        });
       });
-    });
   });
   do_test_pending();
 }
 
-function test_pause_frame()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket1) {
-    gThreadClient.getFrames(0, null, function (aFrameResponse) {
-      do_check_eq(aFrameResponse.frames.length, 4);
+function test_pause_frame() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    gThreadClient.getFrames(0, null, function (frameResponse) {
+      do_check_eq(frameResponse.frames.length, 4);
 
-      let wasmFrame = aFrameResponse.frames[1];
+      let wasmFrame = frameResponse.frames[1];
       do_check_eq(wasmFrame.type, "wasmcall");
       do_check_eq(wasmFrame.this, undefined);
 
@@ -49,15 +53,16 @@ function test_pause_frame()
     });
   });
 
+  
   gDebuggee.eval("(" + function () {
     
     
-    var m = new WebAssembly.Module(new Uint8Array([
+    let m = new WebAssembly.Module(new Uint8Array([
       0,97,115,109,1,0,0,0,1,132,128,128,128,0,1,96,0,0,2,135,128,128,128,0,1,1,97,1,
       98,0,0,3,130,128,128,128,0,1,0,6,129,128,128,128,0,0,7,133,128,128,128,0,1,1,99,
       0,1,10,138,128,128,128,0,1,132,128,128,128,0,0,16,0,11
     ]));
-    var i = new WebAssembly.Instance(m, {a: {b: () => {
+    let i = new WebAssembly.Instance(m, {a: {b: () => {
       debugger;
     }}});
     i.exports.c();

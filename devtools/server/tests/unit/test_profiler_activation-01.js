@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 
@@ -11,8 +12,7 @@
 const Profiler = Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
 const MAX_PROFILER_ENTRIES = 10000000;
 
-function run_test()
-{
+function run_test() {
   
   
   Profiler.StopProfiler();
@@ -41,49 +41,50 @@ function test_activate(client1, actor1, client2, actor2, callback) {
     do_check_true(typeof response.generation === "number");
 
     
-    client1.request({ to: actor1, type: "startProfiler", entries: MAX_PROFILER_ENTRIES }, response => {
-      do_check_true(Profiler.IsActive());
-      do_check_true(response.started);
-      do_check_true(typeof response.position === "number");
-      do_check_true(typeof response.totalSize === "number");
-      do_check_true(typeof response.generation === "number");
-      do_check_true(response.position >= 0 && response.position < response.totalSize);
-      do_check_true(response.totalSize === MAX_PROFILER_ENTRIES);
-
-      
-      client2.request({ to: actor2, type: "isActive" }, response => {
+    client1.request(
+      { to: actor1, type: "startProfiler", entries: MAX_PROFILER_ENTRIES }, response => {
         do_check_true(Profiler.IsActive());
-        do_check_true(response.isActive);
-        do_check_true(response.currentTime > 0);
+        do_check_true(response.started);
         do_check_true(typeof response.position === "number");
         do_check_true(typeof response.totalSize === "number");
         do_check_true(typeof response.generation === "number");
         do_check_true(response.position >= 0 && response.position < response.totalSize);
         do_check_true(response.totalSize === MAX_PROFILER_ENTRIES);
 
-        let origConnectionClosed = DebuggerServer._connectionClosed;
-
-        DebuggerServer._connectionClosed = function (conn) {
-          origConnectionClosed.call(this, conn);
-
-          
-          
-          
+        
+        client2.request({ to: actor2, type: "isActive" }, response => {
           do_check_true(Profiler.IsActive());
+          do_check_true(response.isActive);
+          do_check_true(response.currentTime > 0);
+          do_check_true(typeof response.position === "number");
+          do_check_true(typeof response.totalSize === "number");
+          do_check_true(typeof response.generation === "number");
+          do_check_true(response.position >= 0 && response.position < response.totalSize);
+          do_check_true(response.totalSize === MAX_PROFILER_ENTRIES);
+
+          let origConnectionClosed = DebuggerServer._connectionClosed;
 
           DebuggerServer._connectionClosed = function (conn) {
             origConnectionClosed.call(this, conn);
 
             
             
-            do_check_false(Profiler.IsActive());
+            
+            do_check_true(Profiler.IsActive());
 
-            callback();
+            DebuggerServer._connectionClosed = function (conn) {
+              origConnectionClosed.call(this, conn);
+
+              
+              
+              do_check_false(Profiler.IsActive());
+
+              callback();
+            };
+            client2.close();
           };
-          client2.close();
-        };
-        client1.close();
+          client1.close();
+        });
       });
-    });
   });
 }

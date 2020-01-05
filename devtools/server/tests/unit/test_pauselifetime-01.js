@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -9,39 +12,37 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-stack", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_pause_frame();
-    });
+    attachTestTabAndResume(gClient, "test-stack",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_pause_frame();
+                           });
   });
   do_test_pending();
 }
 
-function test_pause_frame()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    let pauseActor = aPacket.actor;
+function test_pause_frame() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    let pauseActor = packet.actor;
 
     
     
-    gClient.request({ to: pauseActor, type: "bogusRequest" }, function (aResponse) {
-      do_check_eq(aResponse.error, "unrecognizedPacketType");
+    gClient.request({ to: pauseActor, type: "bogusRequest" }, function (response) {
+      do_check_eq(response.error, "unrecognizedPacketType");
 
       gThreadClient.resume(function () {
         
         
-        gClient.request({ to: pauseActor, type: "bogusRequest" }, function (aResponse) {
-          do_check_eq(aResponse.error, "noSuchActor");
+        gClient.request({ to: pauseActor, type: "bogusRequest" }, function (response) {
+          do_check_eq(response.error, "noSuchActor");
           finishClient(gClient);
         });
       });
-
     });
   });
 

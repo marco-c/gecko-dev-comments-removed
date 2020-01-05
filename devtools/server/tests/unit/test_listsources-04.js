@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -18,12 +21,12 @@ function run_test() {
 }
 
 function run_test_with_server(server, cb) {
-  Task.spawn(function*() {
+  Task.spawn(function* () {
     initTestDebuggerServer(server);
     const debuggee = addTestGlobal("test-sources", server);
     const client = new DebuggerClient(server.connectPipe());
     yield client.connect();
-    const [,,threadClient] = yield attachTestTabAndResume(client, "test-sources");
+    const [,, threadClient] = yield attachTestTabAndResume(client, "test-sources");
 
     yield threadClient.reconfigure({ useSourceMaps: true });
     addSources(debuggee);
@@ -33,7 +36,7 @@ function run_test_with_server(server, cb) {
 
       yield threadClient.reconfigure({ useSourceMaps: false });
 
-      threadClient.getSources(function(res) {
+      threadClient.getSources(function (res) {
         do_check_eq(res.sources.length, 1, "1 source exist");
         client.close().then(cb);
       });

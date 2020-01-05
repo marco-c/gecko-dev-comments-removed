@@ -1,6 +1,7 @@
 
 
 
+"use strict";
 
 
 
@@ -11,31 +12,31 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-no-interface");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-no-interface", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_pause_frame();
-    });
+    attachTestTabAndResume(gClient, "test-no-interface",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_pause_frame();
+                           });
   });
   do_test_pending();
 }
 
-function test_pause_frame()
-{
+function test_pause_frame() {
   gThreadClient.pauseOnExceptions(true, false, function () {
-    gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-      do_check_eq(aPacket.why.type, "exception");
-      do_check_eq(aPacket.why.exception, 42);
+    gThreadClient.addOneTimeListener("paused", function (event, packet) {
+      do_check_eq(packet.why.type, "exception");
+      do_check_eq(packet.why.exception, 42);
       gThreadClient.resume(function () {
         finishClient(gClient);
       });
     });
 
+    
     gDebuggee.eval("(" + function () {
       function QueryInterface() {
         throw Components.results.NS_ERROR_NO_INTERFACE;
@@ -50,5 +51,6 @@ function test_pause_frame()
         stopMe();
       } catch (e) {}
     } + ")()");
+    
   });
 }

@@ -1,7 +1,9 @@
 
 
 
-var {method, RetVal, Actor, ActorClassWithSpec, Front, FrontClassWithSpec,
+"use strict";
+
+var {RetVal, Actor, ActorClassWithSpec, Front, FrontClassWithSpec,
      generateActorSpec} = require("devtools/shared/protocol");
 var Services = require("Services");
 

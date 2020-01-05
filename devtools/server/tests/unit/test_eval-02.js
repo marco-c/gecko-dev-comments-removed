@@ -2,6 +2,9 @@
 
 
 
+"use strict";
+
+
 
 
 
@@ -9,31 +12,30 @@ var gDebuggee;
 var gClient;
 var gThreadClient;
 
-function run_test()
-{
+function run_test() {
   initTestDebuggerServer();
   gDebuggee = addTestGlobal("test-stack");
   gClient = new DebuggerClient(DebuggerServer.connectPipe());
   gClient.connect().then(function () {
-    attachTestTabAndResume(gClient, "test-stack", function (aResponse, aTabClient, aThreadClient) {
-      gThreadClient = aThreadClient;
-      test_throw_eval();
-    });
+    attachTestTabAndResume(gClient, "test-stack",
+                           function (response, tabClient, threadClient) {
+                             gThreadClient = threadClient;
+                             test_throw_eval();
+                           });
   });
   do_test_pending();
 }
 
-function test_throw_eval()
-{
-  gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
-    gThreadClient.eval(null, "throw 'failure'", function (aResponse) {
-      do_check_eq(aResponse.type, "resumed");
+function test_throw_eval() {
+  gThreadClient.addOneTimeListener("paused", function (event, packet) {
+    gThreadClient.eval(null, "throw 'failure'", function (response) {
+      do_check_eq(response.type, "resumed");
       
-      gThreadClient.addOneTimeListener("paused", function (aEvent, aPacket) {
+      gThreadClient.addOneTimeListener("paused", function (event, packet) {
         
-        do_check_eq(aPacket.type, "paused");
-        do_check_eq(aPacket.why.type, "clientEvaluated");
-        do_check_eq(aPacket.why.frameFinished.throw, "failure");
+        do_check_eq(packet.type, "paused");
+        do_check_eq(packet.why.type, "clientEvaluated");
+        do_check_eq(packet.why.frameFinished.throw, "failure");
         gThreadClient.resume(function () {
           finishClient(gClient);
         });
@@ -41,8 +43,10 @@ function test_throw_eval()
     });
   });
 
+  
   gDebuggee.eval("(" + function () {
     function stopMe(arg1) { debugger; }
     stopMe({obj: true});
   } + ")()");
+  
 }

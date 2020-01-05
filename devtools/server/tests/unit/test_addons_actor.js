@@ -1,8 +1,9 @@
 
 
 
-const protocol = require("devtools/shared/protocol");
-const {AddonsActor} = require("devtools/server/actors/addons");
+
+"use strict";
+
 const {AddonsFront} = require("devtools/shared/fronts/addons");
 
 startupAddonsManager();
