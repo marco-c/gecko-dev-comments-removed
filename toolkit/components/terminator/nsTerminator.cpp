@@ -33,6 +33,7 @@
 #include "nsExceptionHandler.h"
 #endif
 #include "GeckoProfiler.h"
+#include "nsThreadUtils.h"
 
 #if defined(XP_WIN)
 #include <windows.h>
@@ -125,7 +126,7 @@ struct Options {
 void
 RunWatchdog(void* arg)
 {
-  PR_SetCurrentThreadName("Shutdown Hang Terminator");
+  NS_SetCurrentThreadName("Shutdown Hang Terminator");
 
   
   
@@ -216,7 +217,7 @@ PRMonitor* gWriteReady = nullptr;
 void RunWriter(void* arg)
 {
   AutoProfilerRegister registerThread("Shutdown Statistics Writer");
-  PR_SetCurrentThreadName("Shutdown Statistics Writer");
+  NS_SetCurrentThreadName("Shutdown Statistics Writer");
 
   MOZ_LSAN_INTENTIONALLY_LEAK_OBJECT(arg);
   

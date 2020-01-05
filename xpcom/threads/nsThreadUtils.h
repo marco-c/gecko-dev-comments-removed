@@ -211,6 +211,16 @@ do_GetMainThread()
 
 
 extern nsIThread* NS_GetCurrentThread();
+
+
+
+
+
+
+
+
+
+extern void NS_SetCurrentThreadName(const char* aName);
 #endif
 
 

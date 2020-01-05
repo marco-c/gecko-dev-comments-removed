@@ -39,6 +39,7 @@
 #include "nsJSUtils.h"
 #include "nsWidgetsCID.h"
 #include "nsXREDirProvider.h"
+#include "ThreadAnnotation.h"
 
 #include "mozilla/Omnijar.h"
 #if defined(XP_MACOSX)
@@ -527,6 +528,9 @@ XRE_InitChildProcess(int aArgc,
 #  else
 #    error "OOP crash reporting unsupported on this platform"
 #  endif
+
+  
+  CrashReporter::InitThreadAnnotationRAII annotation;
 #endif 
 
   gArgv = aArgv;
