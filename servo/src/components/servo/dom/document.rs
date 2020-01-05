@@ -2,13 +2,13 @@
 
 
 
-use content::content_task::global_content;
 use dom::bindings::document;
 use dom::bindings::utils::{DOMString, WrapperCache};
 use dom::event::ReflowEvent;
 use dom::htmlcollection::HTMLCollection;
 use dom::node::AbstractNode;
 use dom::window::Window;
+use scripting::script_task::global_script_context;
 
 use js::jsapi::bindgen::{JS_AddObjectRoot, JS_RemoveObjectRoot};
 use servo_util::tree::{TreeNodeRef, TreeUtils};
@@ -19,14 +19,13 @@ pub struct Document {
     window: Option<@mut Window>,
 }
 
-pub fn Document(root: AbstractNode,
-                window: Option<@mut Window>) -> @mut Document {
+pub fn Document(root: AbstractNode, window: Option<@mut Window>) -> @mut Document {
     let doc = @mut Document {
         root: root,
         wrapper: WrapperCache::new(),
         window: window
     };
-    let compartment = global_content().compartment.get();
+    let compartment = global_script_context().compartment.get();
     do root.with_base |base| {
         assert!(base.wrapper.get_wrapper().is_not_null());
         let rootable = base.wrapper.get_rootable();
@@ -39,7 +38,7 @@ pub fn Document(root: AbstractNode,
 #[unsafe_destructor]
 impl Drop for Document {
     fn finalize(&self) {
-        let compartment = global_content().compartment.get();
+        let compartment = global_script_context().compartment.get();
         do self.root.with_base |base| {
             assert!(base.wrapper.get_wrapper().is_not_null());
             let rootable = base.wrapper.get_rootable();

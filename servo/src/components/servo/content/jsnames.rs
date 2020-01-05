@@ -1,7 +1,0 @@
-
-
-
-
-type name_pool = {
-    
-};

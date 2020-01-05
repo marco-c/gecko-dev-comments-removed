@@ -41,7 +41,7 @@ pub impl ResizeRateLimiter {
                     self.next_resize_event = None;
                 } else {
                     if self.next_resize_event.is_some() {
-                        warn!("osmain: content can't keep up. skipping resize event");
+                        warn!("osmain: script task can't keep up. skipping resize event");
                     }
                     self.next_resize_event = Some((width, height));
                 }
