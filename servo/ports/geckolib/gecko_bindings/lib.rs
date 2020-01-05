@@ -2,9 +2,13 @@
 
 
 
+#![feature(concat_idents)]
+#![feature(type_macros)]
+
 extern crate heapsize;
 
 #[allow(dead_code, non_camel_case_types)]
 pub mod bindings;
+pub mod ptr;
 #[allow(dead_code, non_camel_case_types, non_snake_case, non_upper_case_globals)]
 pub mod structs;
