@@ -9,7 +9,7 @@ import image::base::image;
 import block::block_layout_methods;
 import inline::inline_layout_methods;
 import style::style::*;
-import /*layout::*/text::{text_box, text_layout_methods};
+import /*layout::*/text::*;
 import util::tree;
 
 enum box_kind {
