@@ -148,7 +148,7 @@ class JitRuntime
     void* baselineDebugModeOSRHandlerNoFrameRegPopAddr_;
 
     
-    typedef GCRekeyableHashMap<const VMFunction*, JitCode*> VMWrapperMap;
+    using VMWrapperMap = HashMap<const VMFunction*, JitCode*>;
     VMWrapperMap* functionWrappers_;
 
     
