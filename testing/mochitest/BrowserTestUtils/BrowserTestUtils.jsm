@@ -823,30 +823,9 @@ this.BrowserTestUtils = {
 
 
 
-
-
-
-
-
-
-
   removeTab(tab, options = {}) {
-    let tabRemoved = this.tabRemoved(tab);
-    if (!tab.closing) {
-      tab.ownerGlobal.gBrowser.removeTab(tab, options);
-    }
-    return tabRemoved;
-  },
+    let dontRemove = options && options.dontRemove;
 
-  
-
-
-
-
-
-
-
-  tabRemoved(tab) {
     return new Promise(resolve => {
       let {messageManager: mm, frameLoader} = tab.linkedBrowser;
       mm.addMessageListener("SessionStore:update", function onMessage(msg) {
@@ -855,6 +834,10 @@ this.BrowserTestUtils = {
           resolve();
         }
       }, true);
+
+      if (!dontRemove && !tab.closing) {
+        tab.ownerGlobal.gBrowser.removeTab(tab);
+      }
     });
   },
 
