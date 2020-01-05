@@ -9,6 +9,10 @@ const Services = require("Services");
 const { Task } = require("devtools/shared/task");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { BrowserElementWebNavigation } = require("./web-navigation");
+const { getStack } = require("devtools/shared/platform/stack");
+
+
+const FRAME_LOADER = Symbol("devtools/responsive/frame-loader");
 
 function debug(msg) {
   
@@ -76,6 +80,34 @@ function tunnelToInnerBrowser(outer, inner) {
       if (!inner.isRemoteBrowser) {
         throw new Error("The inner browser must be remote.");
       }
+
+      
+      
+      
+      
+      
+      
+      
+      
+      outer[FRAME_LOADER] = outer.frameLoader;
+      Object.defineProperty(outer, "frameLoader", {
+        get() {
+          let stack = getStack();
+          
+          
+          
+          
+          
+          
+          
+          if (stack.caller.filename.endsWith("SessionStore.jsm")) {
+            return outer[FRAME_LOADER];
+          }
+          return inner.frameLoader;
+        },
+        configurable: true,
+        enumerable: true,
+      });
 
       
       
@@ -154,35 +186,6 @@ function tunnelToInnerBrowser(outer, inner) {
 
       
       
-      Object.defineProperty(outer, "hasContentOpener", {
-        get() {
-          return inner.frameLoader.tabParent.hasContentOpener;
-        },
-        configurable: true,
-        enumerable: true,
-      });
-
-      
-      
-      Object.defineProperty(outer, "docShellIsActive", {
-        get() {
-          return inner.frameLoader.tabParent.docShellIsActive;
-        },
-        set(value) {
-          inner.frameLoader.tabParent.docShellIsActive = value;
-        },
-        configurable: true,
-        enumerable: true,
-      });
-
-      
-      
-      outer.preserveLayers = value => {
-        inner.frameLoader.tabParent.preserveLayers(value);
-      };
-
-      
-      
       
       Object.defineProperty(inner.ownerGlobal, "PopupNotifications", {
         get() {
@@ -254,13 +257,6 @@ function tunnelToInnerBrowser(outer, inner) {
       outer.style.MozBinding = "";
 
       
-      
-      
-      delete outer.hasContentOpener;
-      delete outer.docShellIsActive;
-      delete outer.preserveLayers;
-
-      
       outer.setAttribute("remote", "false");
 
       
@@ -272,6 +268,12 @@ function tunnelToInnerBrowser(outer, inner) {
 
       mmTunnel.destroy();
       mmTunnel = null;
+
+      
+      
+      
+      delete outer.frameLoader;
+      delete outer[FRAME_LOADER];
 
       
       
@@ -296,7 +298,7 @@ function copyPermanentKey(outer, inner) {
   
   
   
-  let outerMM = outer.frameLoader.messageManager;
+  let outerMM = outer[FRAME_LOADER].messageManager;
   let onHistoryEntry = message => {
     let history = message.data.data.history;
     if (!history || !history.entries) {
@@ -427,17 +429,17 @@ MessageManagerTunnel.prototype = {
   ],
 
   get outerParentMM() {
-    if (!this.outer.frameLoader) {
+    if (!this.outer[FRAME_LOADER]) {
       return null;
     }
-    return this.outer.frameLoader.messageManager;
+    return this.outer[FRAME_LOADER].messageManager;
   },
 
   get outerChildMM() {
     
     
     
-    let docShell = this.outer.frameLoader.docShell;
+    let docShell = this.outer[FRAME_LOADER].docShell;
     return docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIContentFrameMessageManager);
   },
