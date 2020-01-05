@@ -277,7 +277,8 @@ XMLDocument::ResetToURI(nsIURI *aURI, nsILoadGroup *aLoadGroup,
 }
 
 bool
-XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
+XMLDocument::Load(const nsAString& aUrl, CallerType aCallerType,
+                  ErrorResult& aRv)
 {
   bool hasHadScriptObject = true;
   nsIScriptGlobalObject* scriptObject =
@@ -308,7 +309,7 @@ XMLDocument::Load(const nsAString& aUrl, ErrorResult& aRv)
   
   
   nsIDocument* docForWarning = callingDoc ? callingDoc.get() : this;
-  if (nsContentUtils::IsCallerChrome()) {
+  if (aCallerType == CallerType::System) {
     docForWarning->WarnOnceAbout(nsIDocument::eChromeUseOfDOM3LoadMethod);
   } else {
     docForWarning->WarnOnceAbout(nsIDocument::eUseOfDOM3LoadMethod);
