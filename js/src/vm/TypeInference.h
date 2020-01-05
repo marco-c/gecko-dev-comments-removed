@@ -572,6 +572,9 @@ public:
 
 
     virtual bool sweep(TypeZone& zone, TypeConstraint** res) = 0;
+
+    
+    virtual JSCompartment* maybeCompartment() = 0;
 };
 
 
