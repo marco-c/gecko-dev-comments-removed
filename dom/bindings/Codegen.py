@@ -5233,6 +5233,139 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
                                         holderArgs=holderArgs,
                                         dealWithOptional=isOptional and (not nullable or isOwningUnion))
 
+    if type.isPromise():
+        assert not type.nullable()
+        assert defaultValue is None
+
+        
+        
+        argIsPointer = isCallbackReturnValue
+        if argIsPointer:
+            declType = CGGeneric("RefPtr<Promise>")
+        else:
+            declType = CGGeneric("OwningNonNull<Promise>")
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if isCallbackReturnValue == "JSImpl":
+            
+            
+            
+            
+            assert exceptionCode == "aRv.Throw(NS_ERROR_UNEXPECTED);\nreturn nullptr;\n"
+            getPromiseGlobal = fill(
+                """
+                if (!$${val}.isObject()) {
+                  aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
+                  return nullptr;
+                }
+                JSObject* unwrappedVal = js::CheckedUnwrap(&$${val}.toObject());
+                if (!unwrappedVal) {
+                  // A slight lie, but not much of one, for a dead object wrapper.
+                  aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
+                  return nullptr;
+                }
+                globalObj = js::GetGlobalForObjectCrossCompartment(unwrappedVal);
+                """,
+                sourceDescription=sourceDescription)
+        elif isCallbackReturnValue == "Callback":
+            getPromiseGlobal = dedent(
+                """
+                // We basically want our entry global here.  Play it safe
+                // and use GetEntryGlobal() to get it, with whatever
+                // principal-clamping it ends up doing.
+                globalObj = GetEntryGlobal()->GetGlobalJSObject();
+                """)
+        else:
+            getPromiseGlobal = ""
+
+        templateBody = fill(
+            """
+            { // Scope for our GlobalObject, FastErrorResult, JSAutoCompartment,
+              // etc.
+
+              JS::Rooted<JSObject*> globalObj(cx, JS::CurrentGlobalOrNull(cx));
+              $*{getPromiseGlobal}
+              JSAutoCompartment ac(cx, globalObj);
+              GlobalObject promiseGlobal(cx, globalObj);
+              if (promiseGlobal.Failed()) {
+                $*{exceptionCode}
+              }
+
+              JS::Rooted<JS::Value> valueToResolve(cx, $${val});
+              if (!JS_WrapValue(cx, &valueToResolve)) {
+                $*{exceptionCode}
+              }
+              binding_detail::FastErrorResult promiseRv;
+              nsCOMPtr<nsIGlobalObject> global =
+                do_QueryInterface(promiseGlobal.GetAsSupports());
+              if (!global) {
+                promiseRv.Throw(NS_ERROR_UNEXPECTED);
+                promiseRv.MaybeSetPendingException(cx);
+                $*{exceptionCode}
+              }
+              $${declName} = Promise::Resolve(global, cx, valueToResolve,
+                                              promiseRv);
+              if (promiseRv.MaybeSetPendingException(cx)) {
+                $*{exceptionCode}
+              }
+            }
+            """,
+            getPromiseGlobal=getPromiseGlobal,
+            exceptionCode=exceptionCode)
+
+        return JSToNativeConversionInfo(templateBody,
+                                        declType=declType,
+                                        dealWithOptional=isOptional)
+
     if type.isGeckoInterface():
         assert not isEnforceRange and not isClamp
 
@@ -5271,12 +5404,8 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         
         
         
-        
-        
-        
         assert not descriptor.interface.isCallback()
-        isPromise = descriptor.interface.identifier.name == "Promise"
-        forceOwningType = isMember or isCallbackReturnValue or isPromise
+        forceOwningType = isMember or isCallbackReturnValue
 
         typeName = descriptor.nativeType
         typePtr = typeName + "*"
@@ -5304,124 +5433,8 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
         if forceOwningType:
             templateBody += 'static_assert(IsRefcounted<%s>::value, "We can only store refcounted classes.");' % typeName
 
-        if isPromise:
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            if isCallbackReturnValue == "JSImpl":
-                
-                
-                
-                
-                assert exceptionCode == "aRv.Throw(NS_ERROR_UNEXPECTED);\nreturn nullptr;\n"
-                getPromiseGlobal = fill(
-                    """
-                    if (!$${val}.isObject()) {
-                      aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
-                      return nullptr;
-                    }
-                    JSObject* unwrappedVal = js::CheckedUnwrap(&$${val}.toObject());
-                    if (!unwrappedVal) {
-                      // A slight lie, but not much of one, for a dead object wrapper.
-                      aRv.ThrowTypeError<MSG_NOT_OBJECT>(NS_LITERAL_STRING("${sourceDescription}"));
-                      return nullptr;
-                    }
-                    globalObj = js::GetGlobalForObjectCrossCompartment(unwrappedVal);
-                    """,
-                    sourceDescription=sourceDescription)
-            elif isCallbackReturnValue == "Callback":
-                getPromiseGlobal = dedent(
-                    """
-                    // We basically want our entry global here.  Play it safe
-                    // and use GetEntryGlobal() to get it, with whatever
-                    // principal-clamping it ends up doing.
-                    globalObj = GetEntryGlobal()->GetGlobalJSObject();
-                    """)
-            else:
-                getPromiseGlobal = ""
-
-            templateBody = fill(
-                """
-                { // Scope for our GlobalObject, FastErrorResult, JSAutoCompartment,
-                  // etc.
-
-                  JS::Rooted<JSObject*> globalObj(cx, JS::CurrentGlobalOrNull(cx));
-                  $*{getPromiseGlobal}
-                  JSAutoCompartment ac(cx, globalObj);
-                  GlobalObject promiseGlobal(cx, globalObj);
-                  if (promiseGlobal.Failed()) {
-                    $*{exceptionCode}
-                  }
-
-                  JS::Rooted<JS::Value> valueToResolve(cx, $${val});
-                  if (!JS_WrapValue(cx, &valueToResolve)) {
-                    $*{exceptionCode}
-                  }
-                  binding_detail::FastErrorResult promiseRv;
-                  nsCOMPtr<nsIGlobalObject> global =
-                    do_QueryInterface(promiseGlobal.GetAsSupports());
-                  if (!global) {
-                    promiseRv.Throw(NS_ERROR_UNEXPECTED);
-                    promiseRv.MaybeSetPendingException(cx);
-                    $*{exceptionCode}
-                  }
-                  $${declName} = Promise::Resolve(global, cx, valueToResolve,
-                                                  promiseRv);
-                  if (promiseRv.MaybeSetPendingException(cx)) {
-                    $*{exceptionCode}
-                  }
-                }
-                """,
-                getPromiseGlobal=getPromiseGlobal,
-                exceptionCode=exceptionCode)
-        elif not descriptor.interface.isConsequential() and not descriptor.interface.isExternal():
+        if (not descriptor.interface.isConsequential() and
+            not descriptor.interface.isExternal()):
             if failureCode is not None:
                 templateBody += str(CastableObjectUnwrapper(
                     descriptor,
@@ -5459,24 +5472,12 @@ def getJSToNativeConversionInfo(type, descriptorProvider, failureCode=None,
             
             templateBody += "${declName} = ${holderName};\n"
 
-        if isPromise:
-            if type.nullable():
-                codeToSetNull = "${declName} = nullptr;\n"
-                templateBody = CGIfElseWrapper(
-                    "${val}.isNullOrUndefined()",
-                    CGGeneric(codeToSetNull),
-                    CGGeneric(templateBody)).define()
-                if isinstance(defaultValue, IDLNullValue):
-                    templateBody = handleDefault(templateBody, codeToSetNull)
-            else:
-                assert defaultValue is None
-        else:
-            
-            
-            
-            templateBody = wrapObjectTemplate(templateBody, type,
-                                              "${declName} = nullptr;\n",
-                                              failureCode)
+        
+        
+        
+        templateBody = wrapObjectTemplate(templateBody, type,
+                                          "${declName} = nullptr;\n",
+                                          failureCode)
 
         declType = CGGeneric(declType)
         if holderType is not None:
