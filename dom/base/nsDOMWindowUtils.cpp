@@ -2652,6 +2652,28 @@ nsDOMWindowUtils::ZoomToFocusedInput()
     return NS_OK;
   }
 
+  nsIFrame* currentFrame = content->GetPrimaryFrame();
+  nsIFrame* rootFrame = shell->GetRootFrame();
+  nsIFrame* scrolledFrame = rootScrollFrame->GetScrolledFrame();
+  bool isFixedPos = true;
+
+  while (currentFrame) {
+    if (currentFrame == rootFrame) {
+      break;
+    } else if (currentFrame == scrolledFrame) {
+      
+      isFixedPos = false;
+      break;
+    }
+    currentFrame = nsLayoutUtils::GetCrossDocParentFrame(currentFrame);
+  }
+
+  if (isFixedPos) {
+    
+    
+    return NS_OK;
+  }
+
   nsIDocument* document = shell->GetDocument();
   if (!document) {
     return NS_OK;
