@@ -5206,7 +5206,17 @@ nsGridContainerFrame::ReflowInFlowChild(nsIFrame*              aChild,
     SetProp(eLogicalAxisInline, isOrthogonal ? BBaselinePadProperty() :
                                                IBaselinePadProperty());
   } else {
-    cb = aContentArea;
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    cb = aContentArea - padStart;
+    aChild->AddStateBits(PLACEHOLDER_STATICPOS_NEEDS_CSSALIGN);
   }
 
   LogicalSize reflowSize(cb.Size(wm));
@@ -5292,10 +5302,8 @@ nsGridContainerFrame::ReflowInFlowChild(nsIFrame*              aChild,
     }
     nscoord cbsz = cb.ISize(wm);
     JustifySelf(*aGridItemInfo, justify, cbsz, wm, childRI, size, &childPos);
-  } else {
-    
-    childPos -= padStart;
-  }
+  } 
+
   childRI.ApplyRelativePositioning(&childPos, aContainerSize);
   FinishReflowChild(aChild, pc, childSize, &childRI, childWM, childPos,
                     aContainerSize, 0);
