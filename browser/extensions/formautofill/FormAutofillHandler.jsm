@@ -124,4 +124,37 @@ FormAutofillHandler.prototype = {
       }
     }
   },
+
+  
+
+
+
+
+
+  previewFormFields(profile) {
+    log.debug("preview profile in autofillFormFields:", profile);
+    for (let fieldDetail of this.fieldDetails) {
+      let value = profile[fieldDetail.fieldName] || "";
+
+      
+      if (fieldDetail.element.value) {
+        continue;
+      }
+
+      
+    }
+  },
+
+  clearPreviewedFormFields() {
+    log.debug("clear previewed fields in:", this.form);
+    for (let fieldDetail of this.fieldDetails) {
+      
+
+      
+      
+      if (this.filledProfileGUID == null) {
+        
+      }
+    }
+  },
 };
