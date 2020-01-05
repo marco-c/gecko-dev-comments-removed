@@ -130,7 +130,11 @@ protected:
     
     
     
-    RespectOldAppearance
+    RespectOldAppearance,
+
+    
+    
+    DispatchNoEvent,
   };
 
   using UpdateCaretsHintSet = mozilla::EnumSet<UpdateCaretsHint>;
@@ -295,6 +299,9 @@ protected:
   
   
   uint16_t mLastInputSource = nsIDOMMouseEvent::MOZ_SOURCE_UNKNOWN;
+
+  
+  bool mIsScrollStarted = false;
 
   static const int32_t kAutoScrollTimerDelay = 30;
 
