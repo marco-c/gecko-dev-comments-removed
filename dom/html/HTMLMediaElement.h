@@ -1300,6 +1300,9 @@ protected:
   already_AddRefed<Promise> CreateDOMPromise(ErrorResult& aRv) const;
 
   
+  void NotifyDecoderActivityChanges() const;
+
+  
   
   RefPtr<MediaDecoder> mDecoder;
 
