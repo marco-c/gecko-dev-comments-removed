@@ -1,0 +1,5 @@
+
+if (!('oomAfterAllocations' in this))
+    quit();
+oomAfterAllocations(1);
+newExternalString("a");
