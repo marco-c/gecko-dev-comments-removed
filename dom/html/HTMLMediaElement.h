@@ -1212,7 +1212,7 @@ protected:
   bool IsPlayingThroughTheAudioChannel() const;
 
   
-  void UpdateAudioChannelPlayingState();
+  void UpdateAudioChannelPlayingState(bool aForcePlaying = false);
 
   
   
@@ -1269,7 +1269,12 @@ protected:
   bool IsSuspendedByAudioChannel() const;
   void SetAudioChannelSuspended(SuspendTypes aSuspend);
 
+  
   bool IsAllowedToPlay();
+
+  
+  
+  bool IsTabActivated() const;
 
   bool IsAudible() const;
   bool HaveFailedWithSourceNotSupportedError() const;
