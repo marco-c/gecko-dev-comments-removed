@@ -91,8 +91,6 @@ public:
 
   static bool AccessibleCaretEnabled(nsIDocShell* aDocShell);
 
-  static bool IsTargetIframe(nsINode* aTarget);
-
   void Init(nsIDocument* aDocument, nsPresContext* aPresContext,
             nsViewManager* aViewManager, mozilla::StyleSetHandle aStyleSet);
   virtual void Destroy() override;
@@ -778,36 +776,6 @@ protected:
   
   
   VisibleFrames mApproximatelyVisibleFrames;
-
-
-  
-  
-  
-
-  void HandleKeyboardEvent(nsINode* aTarget,
-                           mozilla::WidgetKeyboardEvent& aEvent,
-                           bool aEmbeddedCancelled,
-                           nsEventStatus* aStatus,
-                           mozilla::EventDispatchingCallback* aEventCB);
-
-#ifdef MOZ_B2G
-  
-  
-  
-  bool ForwardKeyToInputMethodApp(nsINode* aTarget,
-                                  mozilla::WidgetKeyboardEvent& aEvent,
-                                  nsEventStatus* aStatus);
-#endif 
-
-  
-  
-  
-  
-  bool ForwardKeyToInputMethodAppOrDispatch(bool aIsTargetRemote,
-                                            nsINode* aTarget,
-                                            mozilla::WidgetKeyboardEvent& aEvent,
-                                            nsEventStatus* aStatus,
-                                            mozilla::EventDispatchingCallback* aEventCB);
 
   nsresult SetResolutionImpl(float aResolution, bool aScaleToResolution);
 

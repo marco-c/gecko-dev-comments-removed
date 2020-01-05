@@ -809,9 +809,6 @@ pref("network.sntp.timeout", 30);
 pref("b2g.adb.timeout-hours", 12);
 
 
-pref("dom.mozInputMethod.enabled", true);
-
-
 
 pref("devtools.debugger.unix-domain-socket", "/data/local/debugger-socket");
 

@@ -1747,11 +1747,6 @@ protected:
   
   nsCOMPtr<nsITimer>        mReflowContinueTimer;
 
-#ifdef MOZ_B2G
-  
-  nsCOMPtr<nsIHardwareKeyHandler> mHardwareKeyHandler;
-#endif 
-
 #ifdef DEBUG
   nsIFrame*                 mDrawEventTargetFrame;
 

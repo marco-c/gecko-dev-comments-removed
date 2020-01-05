@@ -767,12 +767,6 @@ PresShell::AccessibleCaretEnabled(nsIDocShell* aDocShell)
   return false;
 }
 
- bool
-PresShell::IsTargetIframe(nsINode* aTarget)
-{
-  return aTarget && aTarget->IsHTMLElement(nsGkAtoms::iframe);
-}
-
 PresShell::PresShell()
   : mMouseLocation(NS_UNCONSTRAINEDSIZE, NS_UNCONSTRAINEDSIZE)
 {
@@ -7040,98 +7034,6 @@ PresShell::CanDispatchEvent(const WidgetGUIEvent* aEvent) const
   return rv;
 }
 
-void
-PresShell::HandleKeyboardEvent(nsINode* aTarget,
-                               WidgetKeyboardEvent& aEvent,
-                               bool aEmbeddedCancelled,
-                               nsEventStatus* aStatus,
-                               EventDispatchingCallback* aEventCB)
-{
-  MOZ_ASSERT(aTarget);
-  
-  
-  bool targetIsIframe = IsTargetIframe(aTarget);
-
-  ForwardKeyToInputMethodAppOrDispatch(targetIsIframe, aTarget, aEvent,
-                                       aStatus, aEventCB);
-}
-
-#ifdef MOZ_B2G
-bool
-PresShell::ForwardKeyToInputMethodApp(nsINode* aTarget,
-                                      WidgetKeyboardEvent& aEvent,
-                                      nsEventStatus* aStatus)
-{
-  if (!XRE_IsParentProcess() || aEvent.mIsSynthesizedByTIP ||
-      aEvent.IsKeyEventOnPlugin()) {
-    return false;
-  }
-
-  if (!mHardwareKeyHandler) {
-    nsresult rv;
-    mHardwareKeyHandler =
-      do_GetService("@mozilla.org/HardwareKeyHandler;1", &rv);
-    if (!NS_SUCCEEDED(rv) || !mHardwareKeyHandler) {
-      return false;
-    }
-  }
-
-  if (mHardwareKeyHandler->ForwardKeyToInputMethodApp(aTarget,
-                                                      aEvent.AsKeyboardEvent(),
-                                                      aStatus)) {
-    
-    aEvent.mFlags.mNoCrossProcessBoundaryForwarding = true;
-    return true;
-  }
-
-  return false;
-}
-#endif 
-
-bool
-PresShell::ForwardKeyToInputMethodAppOrDispatch(bool aIsTargetRemote,
-                                                nsINode* aTarget,
-                                                WidgetKeyboardEvent& aEvent,
-                                                nsEventStatus* aStatus,
-                                                EventDispatchingCallback* aEventCB)
-{
-#ifndef MOZ_B2G
-  
-  EventDispatcher::Dispatch(aTarget, mPresContext,
-                            &aEvent, nullptr, aStatus, aEventCB);
-  return false;
-#else
-  
-  if (!aIsTargetRemote) {
-    if(ForwardKeyToInputMethodApp(aTarget, aEvent, aStatus)) {
-      return true;
-    }
-
-    
-    
-    EventDispatcher::Dispatch(aTarget, mPresContext,
-                              &aEvent, nullptr, aStatus, aEventCB);
-
-    return false;
-  }
-
-  
-  
-  
-  EventDispatcher::Dispatch(aTarget, mPresContext,
-                            &aEvent, nullptr, aStatus, aEventCB);
-
-  
-  
-  if (aEvent.mFlags.mDefaultPrevented) {
-    return false;
-  }
-
-  
-  return ForwardKeyToInputMethodApp(aTarget, aEvent, aStatus);
-#endif 
-}
-
 nsresult
 PresShell::HandleEvent(nsIFrame* aFrame,
                        WidgetGUIEvent* aEvent,
@@ -8216,9 +8118,6 @@ PresShell::DispatchEventToDOM(WidgetEvent* aEvent,
       IMEStateManager::DispatchCompositionEvent(eventTarget, mPresContext,
                                                 aEvent->AsCompositionEvent(),
                                                 aStatus, eventCBPtr);
-    } else if (aEvent->mClass == eKeyboardEventClass) {
-      HandleKeyboardEvent(eventTarget, *(aEvent->AsKeyboardEvent()),
-                          false, aStatus, eventCBPtr);
     } else {
       EventDispatcher::Dispatch(eventTarget, mPresContext,
                                 aEvent, nullptr, aStatus, eventCBPtr);

@@ -131,7 +131,6 @@ function BrowserElementChild() {
   this._nextPaintHandler = null;
 
   this._isContentWindowCreated = false;
-  this._pendingSetInputMethodActive = [];
 
   this._init();
 };
@@ -312,7 +311,6 @@ BrowserElementChild.prototype = {
       "entered-fullscreen": this._recvEnteredFullscreen,
       "exit-fullscreen": this._recvExitFullscreen,
       "activate-next-paint-listener": this._activateNextPaintListener,
-      "set-input-method-active": this._recvSetInputMethodActive,
       "deactivate-next-paint-listener": this._deactivateNextPaintListener,
       "find-all": this._recvFindAll,
       "find-next": this._recvFindNext,
@@ -788,10 +786,6 @@ BrowserElementChild.prototype = {
         sendAsyncMsg('documentfirstpaint');
       });
       this._isContentWindowCreated = true;
-      
-      while (this._pendingSetInputMethodActive.length > 0) {
-        this._recvSetInputMethodActive(this._pendingSetInputMethodActive.shift());
-      }
     }
   },
 
@@ -1505,31 +1499,6 @@ BrowserElementChild.prototype = {
     }
     this._finder.removeSelection();
     sendAsyncMsg("findchange", {active: false});
-  },
-
-  _recvSetInputMethodActive: function(data) {
-    let msgData = { id: data.json.id };
-    if (!this._isContentWindowCreated) {
-      if (data.json.args.isActive) {
-        
-        
-        this._pendingSetInputMethodActive.push(data);
-        return;
-      }
-      msgData.successRv = null;
-      sendAsyncMsg('got-set-input-method-active', msgData);
-      return;
-    }
-    
-    let nav = XPCNativeWrapper.unwrap(content.document.defaultView.navigator);
-    if (nav.mozInputMethod) {
-      
-      new XPCNativeWrapper(nav.mozInputMethod).setActive(data.json.args.isActive);
-      msgData.successRv = null;
-    } else {
-      msgData.errorMsg = 'Cannot access mozInputMethod.';
-    }
-    sendAsyncMsg('got-set-input-method-active', msgData);
   },
 
   
