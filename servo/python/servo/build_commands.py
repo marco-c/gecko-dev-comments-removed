@@ -19,7 +19,7 @@ def is_headless_build():
 
 
 def notify(elapsed):
-    if elapsed < 300:
+    if elapsed < 30:
         return
 
     if sys.platform.startswith('linux'):
