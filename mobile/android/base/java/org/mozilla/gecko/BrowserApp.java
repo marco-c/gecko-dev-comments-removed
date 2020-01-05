@@ -1349,14 +1349,9 @@ public class BrowserApp extends GeckoApp
             
             Tab tab = Tabs.getInstance().getSelectedTab();
             if (tab != null && tab.hasOpenSearch()) {
-                JSONObject args = new JSONObject();
-                try {
-                    args.put("tabId", tab.getId());
-                } catch (JSONException e) {
-                    Log.e(LOGTAG, "error building json arguments", e);
-                    return true;
-                }
-                GeckoAppShell.notifyObservers("SearchEngines:Add", args.toString());
+                final GeckoBundle args = new GeckoBundle(1);
+                args.putInt("tabId", tab.getId());
+                EventDispatcher.getInstance().dispatch("SearchEngines:Add", args);
             }
             return true;
         }
