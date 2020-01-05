@@ -12,6 +12,7 @@
 #include "nsCOMPtr.h"
 #include "nsICacheEntry.h"
 #include "nsICacheEntryOpenCallback.h"
+#include "nsICacheStorageService.h"
 #include "nsICacheStorageVisitor.h"
 #include "nsIDNSListener.h"
 #include "nsIInterfaceRequestor.h"
@@ -177,6 +178,7 @@ private:
     nsTArray<nsCString> mKeysToDelete;
     RefPtr<Predictor> mPredictor;
     nsTArray<nsCOMPtr<nsIURI>> mURIsToVisit;
+    nsTArray<nsCOMPtr<nsILoadContextInfo>> mInfosToVisit;
   };
 
   class SpaceCleaner : public nsICacheEntryMetaDataVisitor
@@ -255,8 +257,10 @@ private:
   
   
   
+  
   void PredictForLink(nsIURI *targetURI,
                       nsIURI *sourceURI,
+                      const OriginAttributes& originAttributes,
                       nsINetworkPredictorVerifier *verifier);
 
   
@@ -333,13 +337,19 @@ private:
   
   
   
-  nsresult Prefetch(nsIURI *uri, nsIURI *referrer, nsINetworkPredictorVerifier *verifier);
+  
+  nsresult Prefetch(nsIURI *uri, nsIURI *referrer,
+                    const OriginAttributes& originAttributes,
+                    nsINetworkPredictorVerifier *verifier);
 
   
   
   
   
-  bool RunPredictions(nsIURI *referrer, nsINetworkPredictorVerifier *verifier);
+  
+  bool RunPredictions(nsIURI *referrer,
+                      const OriginAttributes& originAttributes,
+                      nsINetworkPredictorVerifier *verifier);
 
   
   
@@ -386,7 +396,9 @@ private:
   
   
   
-  void MaybeLearnForStartup(nsIURI *uri, bool fullUri);
+  
+  void MaybeLearnForStartup(nsIURI *uri, bool fullUri,
+                            const OriginAttributes& originAttributes);
 
   
   
@@ -409,7 +421,8 @@ private:
   
   
   void UpdateCacheabilityInternal(nsIURI *sourceURI, nsIURI *targetURI,
-                                  uint32_t httpStatus, const nsCString &method);
+                                  uint32_t httpStatus, const nsCString &method,
+                                  const OriginAttributes& originAttributes);
 
   
   void SanitizePrefs();
@@ -449,7 +462,7 @@ private:
   nsTArray<nsCString> mKeysToOperateOn;
   nsTArray<nsCString> mValuesToOperateOn;
 
-  nsCOMPtr<nsICacheStorage> mCacheDiskStorage;
+  nsCOMPtr<nsICacheStorageService> mCacheStorageService;
 
   nsCOMPtr<nsIIOService> mIOService;
   nsCOMPtr<nsISpeculativeConnect> mSpeculativeService;
