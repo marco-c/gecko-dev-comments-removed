@@ -156,6 +156,15 @@ function* testSelectColors(select, itemCount, options) {
   yield BrowserTestUtils.removeTab(tab);
 }
 
+add_task(function* setup() {
+  yield SpecialPowers.pushPrefEnv({
+    "set": [
+      ["dom.select_popup_in_parent.enabled", true],
+      ["dom.forms.select.customstyling", true]
+    ]
+  });
+});
+
 
 add_task(function* test_colors_applied_to_popup_items() {
   yield testSelectColors(PAGECONTENT_COLORS, 7,
