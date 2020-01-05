@@ -2,11 +2,14 @@
 
 
 
-use cssparser::serialize_identifier;
+use cssparser::{Parser, serialize_identifier};
+use dom::bindings::codegen::Bindings::WindowBinding::WindowBinding::WindowMethods;
 use dom::bindings::error::Fallible;
 use dom::bindings::reflector::Reflector;
 use dom::bindings::str::DOMString;
 use dom::window::Window;
+use style::parser::ParserContext;
+use style::supports::{Declaration, parse_condition_or_declaration};
 
 #[dom_struct]
 pub struct CSS {
@@ -19,5 +22,26 @@ impl CSS {
         let mut escaped = String::new();
         serialize_identifier(&ident, &mut escaped).unwrap();
         Ok(DOMString::from(escaped))
+    }
+
+    
+    pub fn Supports(win: &Window, property: DOMString, value: DOMString) -> bool {
+        let decl = Declaration { prop: property.into(), val: value.into() };
+        let url = win.Document().url();
+        let context = ParserContext::new_for_cssom(&url);
+        decl.eval(&context)
+    }
+
+    
+    pub fn Supports_(win: &Window, condition: DOMString) -> bool {
+        let mut input = Parser::new(&condition);
+        let cond = parse_condition_or_declaration(&mut input);
+        if let Ok(cond) = cond {
+            let url = win.Document().url();
+            let context = ParserContext::new_for_cssom(&url);
+            cond.eval(&context)
+        } else {
+            false
+        }
     }
 }
