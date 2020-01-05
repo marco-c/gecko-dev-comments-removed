@@ -105,7 +105,7 @@ var AboutTabCrashed = {
     document.getElementById("email").addEventListener("input", this);
 
     
-    let event = new CustomEvent("AboutTabCrashedLoad", {bubbles:true});
+    let event = new CustomEvent("AboutTabCrashedLoad", {bubbles: true});
     document.dispatchEvent(event);
 
     sendAsyncMessage("Load");
@@ -202,7 +202,7 @@ var AboutTabCrashed = {
       document.getElementById("requestAutoSubmit").hidden = false;
     }
 
-    let event = new CustomEvent("AboutTabCrashedReady", {bubbles:true});
+    let event = new CustomEvent("AboutTabCrashedReady", {bubbles: true});
     document.dispatchEvent(event);
   },
 

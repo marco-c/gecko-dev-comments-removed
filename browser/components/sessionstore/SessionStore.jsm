@@ -4458,7 +4458,7 @@ var SessionStoreInternal = {
 
 
 
-  _replaceLoadingTitle : function ssi_replaceLoadingTitle(aString, aTabbrowser, aTab) {
+  _replaceLoadingTitle: function ssi_replaceLoadingTitle(aString, aTabbrowser, aTab) {
     if (aString == aTabbrowser.mStringBundle.getString("tabs.connecting")) {
       aTabbrowser.setTabTitle(aTab);
       [aString, aTab.label] = [aTab.label, aString];
@@ -4471,7 +4471,7 @@ var SessionStoreInternal = {
 
 
 
-  _capClosedWindows : function ssi_capClosedWindows() {
+  _capClosedWindows: function ssi_capClosedWindows() {
     if (this._closedWindows.length <= this._max_windows_undo)
       return;
     let spliceTo = this._max_windows_undo;

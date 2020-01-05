@@ -183,7 +183,7 @@ function RenameProfile() {
   var msg =
     gProfileManagerBundle.getFormattedString("renameProfilePrompt", [oldName]);
 
-  if (Services.prompt.prompt(window, dialogTitle, msg, newName, null, {value:0})) {
+  if (Services.prompt.prompt(window, dialogTitle, msg, newName, null, {value: 0})) {
     newName = newName.value;
 
     
@@ -235,7 +235,7 @@ function ConfirmDelete() {
                           gProfileManagerBundle.getString("dontDeleteFiles"),
                           null,
                           gProfileManagerBundle.getString("deleteFiles"),
-                          null, {value:0});
+                          null, {value: 0});
     if (buttonPressed == 1)
       return false;
 

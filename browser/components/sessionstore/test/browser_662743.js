@@ -19,19 +19,19 @@ function test() {
 
   
     
-    { id:{ "select_id": {"selectedIndex":0, "value":"val2"} } },
+    { id: { "select_id": {"selectedIndex": 0, "value": "val2"} } },
     
-    { id:{ "select_id": {"selectedIndex":4, "value":"val8"} } },
+    { id: { "select_id": {"selectedIndex": 4, "value": "val8"} } },
     
-    { id:{ "select_id": {"selectedIndex":8, "value":"val5"} } },
+    { id: { "select_id": {"selectedIndex": 8, "value": "val5"} } },
     
-    { id:{ "select_id": {"selectedIndex":0, "value":"val0"} }, xpath: {} },
+    { id: { "select_id": {"selectedIndex": 0, "value": "val0"} }, xpath: {} },
     
-    { id:{}, "xpath":{ "/xhtml:html/xhtml:body/xhtml:select[@name='select_name']": {"selectedIndex":1, "value":"val7"} } },
+    { id: {}, "xpath": { "/xhtml:html/xhtml:body/xhtml:select[@name='select_name']": {"selectedIndex": 1, "value": "val7"} } },
     
-    { xpath: { "/xhtml:html/xhtml:body/xhtml:select[@name='select_name']" : {"selectedIndex":3, "value":"val3"} } },
+    { xpath: { "/xhtml:html/xhtml:body/xhtml:select[@name='select_name']": {"selectedIndex": 3, "value": "val3"} } },
     
-    { id:{ "select_id": {"selectedIndex":3, "value":"val4"} } },
+    { id: { "select_id": {"selectedIndex": 3, "value": "val4"} } },
   ];
 
   let expectedValues = [

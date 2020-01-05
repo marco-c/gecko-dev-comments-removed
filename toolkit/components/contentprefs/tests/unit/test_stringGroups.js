@@ -12,7 +12,7 @@ function run_test() {
   do_check_eq(0, statement.getInt32(0));
 
   
-  var anObject = {"foo":"bar"};                                
+  var anObject = {"foo": "bar"};                               
   var uri = ContentPrefTest.getURI("http://www.example.com/"); 
   var stringURI = "www.example.com";                           
   var stringObjectURI = new String("www.example.com");         

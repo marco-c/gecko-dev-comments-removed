@@ -168,26 +168,26 @@ function FormAutoComplete() {
 
 
 FormAutoComplete.prototype = {
-    classID          : Components.ID("{c11c21b2-71c9-4f87-a0f8-5e13f50495fd}"),
-    QueryInterface   : XPCOMUtils.generateQI([Ci.nsIFormAutoComplete, Ci.nsISupportsWeakReference]),
+    classID: Components.ID("{c11c21b2-71c9-4f87-a0f8-5e13f50495fd}"),
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIFormAutoComplete, Ci.nsISupportsWeakReference]),
 
-    _prefBranch         : null,
-    _debug              : true, 
-    _enabled            : true, 
-    _agedWeight         : 2,
-    _bucketSize         : 1,
-    _maxTimeGroupings   : 25,
-    _timeGroupingSize   : 7 * 24 * 60 * 60 * 1000 * 1000,
-    _expireDays         : null,
-    _boundaryWeight     : 25,
-    _prefixWeight       : 5,
+    _prefBranch: null,
+    _debug: true, 
+    _enabled: true, 
+    _agedWeight: 2,
+    _bucketSize: 1,
+    _maxTimeGroupings: 25,
+    _timeGroupingSize: 7 * 24 * 60 * 60 * 1000 * 1000,
+    _expireDays: null,
+    _boundaryWeight: 25,
+    _prefixWeight: 5,
 
     
     
     
     
     
-    _pendingClient       : null,
+    _pendingClient: null,
 
     init() {
         
@@ -204,11 +204,11 @@ FormAutoComplete.prototype = {
         this._expireDays       = this._prefBranch.getIntPref("expire_days");
     },
 
-    observer : {
-        _self : null,
+    observer: {
+        _self: null,
 
-        QueryInterface : XPCOMUtils.generateQI([Ci.nsIObserver,
-                                                Ci.nsISupportsWeakReference]),
+        QueryInterface: XPCOMUtils.generateQI([Ci.nsIObserver,
+                                               Ci.nsISupportsWeakReference]),
 
         observe(subject, topic, data) {
             let self = this._self;
@@ -546,13 +546,13 @@ function FormAutoCompleteResult(client,
 }
 
 FormAutoCompleteResult.prototype = {
-    QueryInterface : XPCOMUtils.generateQI([Ci.nsIAutoCompleteResult,
+    QueryInterface: XPCOMUtils.generateQI([Ci.nsIAutoCompleteResult,
                                             Ci.nsISupportsWeakReference]),
 
     
-    client : null,
-    entries : null,
-    fieldName : null,
+    client: null,
+    entries: null,
+    fieldName: null,
 
     _checkIndexBounds(index) {
         if (index < 0 || index >= this.entries.length)
@@ -566,8 +566,8 @@ FormAutoCompleteResult.prototype = {
     },
 
     
-    searchString : "",
-    errorDescription : "",
+    searchString: "",
+    errorDescription: "",
     get defaultIndex() {
         if (this.entries.length == 0)
             return -1;

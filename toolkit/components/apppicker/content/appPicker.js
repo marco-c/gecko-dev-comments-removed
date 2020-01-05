@@ -9,7 +9,7 @@ function AppPicker() {}
 AppPicker.prototype =
 {
     
-    _incomingParams:null,
+    _incomingParams: null,
 
     
 

@@ -70,8 +70,11 @@ module.exports = {
     
 
     
-    
-    
+    "key-spacing": ["error", {
+      "beforeColon": false,
+      "afterColon": true,
+      "mode": "minimum"
+    }],
 
     
     "keyword-spacing": "error",

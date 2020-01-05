@@ -173,7 +173,7 @@ function LoginObserver(captivePortalDetector) {
     
 
 
-    notify : function notify() {
+    notify: function notify() {
       switch (state) {
         case LOGIN_OBSERVER_STATE_BURST:
           

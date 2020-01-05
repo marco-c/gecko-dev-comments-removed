@@ -283,7 +283,7 @@ nsBrowserContentHandler.prototype = {
 
   
 
-  mChromeURL : null,
+  mChromeURL: null,
 
   get chromeURL() {
     if (this.mChromeURL) {
@@ -296,13 +296,13 @@ nsBrowserContentHandler.prototype = {
   },
 
   
-  QueryInterface : XPCOMUtils.generateQI([nsICommandLineHandler,
-                                          nsIBrowserHandler,
-                                          nsIContentHandler,
-                                          nsICommandLineValidator]),
+  QueryInterface: XPCOMUtils.generateQI([nsICommandLineHandler,
+                                         nsIBrowserHandler,
+                                         nsIContentHandler,
+                                         nsICommandLineValidator]),
 
   
-  handle : function bch_handle(cmdLine) {
+  handle: function bch_handle(cmdLine) {
     if (cmdLine.handleFlag("browser", false)) {
       
       openWindow(null, this.chromeURL, "_blank",
@@ -558,9 +558,9 @@ nsBrowserContentHandler.prototype = {
     return uri;
   },
 
-  mFeatures : null,
+  mFeatures: null,
 
-  getFeatures : function bch_features(cmdLine) {
+  getFeatures: function bch_features(cmdLine) {
     if (this.mFeatures === null) {
       this.mFeatures = "";
 
@@ -587,7 +587,7 @@ nsBrowserContentHandler.prototype = {
 
   
 
-  handleContent : function bch_handleContent(contentType, context, request) {
+  handleContent: function bch_handleContent(contentType, context, request) {
     try {
       var webNavInfo = Components.classes["@mozilla.org/webnavigation-info;1"]
                                  .getService(nsIWebNavigationInfo);
@@ -605,7 +605,7 @@ nsBrowserContentHandler.prototype = {
   },
 
   
-  validate : function bch_validate(cmdLine) {
+  validate: function bch_validate(cmdLine) {
     
     
     var osintFlagIdx = cmdLine.findFlag("osint", false);
@@ -669,7 +669,7 @@ nsDefaultCommandLineHandler.prototype = {
   classID: Components.ID("{47cd0651-b1be-4a0f-b5c4-10e5a573ef71}"),
 
   
-  QueryInterface : function dch_QI(iid) {
+  QueryInterface: function dch_QI(iid) {
     if (!iid.equals(nsISupports) &&
         !iid.equals(nsICommandLineHandler))
       throw Components.results.NS_ERROR_NO_INTERFACE;
@@ -680,7 +680,7 @@ nsDefaultCommandLineHandler.prototype = {
   _haveProfile: false,
 
   
-  handle : function dch_handle(cmdLine) {
+  handle: function dch_handle(cmdLine) {
     var urilist = [];
 
     if (AppConstants.platform == "win") {
@@ -765,7 +765,7 @@ nsDefaultCommandLineHandler.prototype = {
     }
   },
 
-  helpInfo : "",
+  helpInfo: "",
 };
 
 var components = [nsBrowserContentHandler, nsDefaultCommandLineHandler];

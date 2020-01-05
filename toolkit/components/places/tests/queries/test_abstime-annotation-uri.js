@@ -73,24 +73,24 @@ var testData = [
     title: "hugelongconfmozlagurationofwordswithasearchtermsinit whoo-hoo"},
 
   
-  {isInQuery: false, isVisit:true, isDetails: true, title: "moz",
+  {isInQuery: false, isVisit: true, isDetails: true, title: "moz",
    uri: "http://foo.com/tooearly.php", lastVisit: jan6_700},
 
   
-  {isInQuery: false, isVisit:true, isDetails: true, isPageAnnotation: true,
+  {isInQuery: false, isVisit: true, isDetails: true, isPageAnnotation: true,
    title: "moz", uri: "http://foo.com/badanno.htm", lastVisit: jan12_1730,
    annoName: badAnnoName, annoVal: val},
 
   
-  {isInQuery: false, isVisit:true, isDetails: true, title: "changeme",
+  {isInQuery: false, isVisit: true, isDetails: true, title: "changeme",
    uri: "http://foo.com/changeme1.htm", lastVisit: jan12_1730},
 
   
-  {isInQuery: false, isVisit:true, isDetails: true, title: "changeme2",
+  {isInQuery: false, isVisit: true, isDetails: true, title: "changeme2",
    uri: "http://foo.com/changeme2.htm", lastVisit: jan7_800},
 
   
-  {isInQuery: false, isVisit:true, isDetails: true, title: "moz",
+  {isInQuery: false, isVisit: true, isDetails: true, title: "moz",
    uri: "http://foo.com/changeme3.htm", lastVisit: dec27_800}];
 
 
@@ -137,12 +137,12 @@ add_task(function* test_abstime_annotation_uri() {
 
   
   do_print("change title");
-  var change1 = [{isDetails: true, uri:"http://foo.com/",
+  var change1 = [{isDetails: true, uri: "http://foo.com/",
                   title: "mo"}, ];
   yield task_populateDB(change1);
   do_check_false(isInResult({uri: "http://foo.com/"}, root));
 
-  var change2 = [{isDetails: true, uri:"http://foo.com/",
+  var change2 = [{isDetails: true, uri: "http://foo.com/",
                   title: "moz", lastvisit: endTime}, ];
   yield task_populateDB(change2);
   dump_table("moz_places");

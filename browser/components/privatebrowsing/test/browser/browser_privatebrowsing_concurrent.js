@@ -31,7 +31,7 @@ add_task(function* test() {
 
 
   
-  let private_window = yield BrowserTestUtils.openNewBrowserWindow({ private : true });
+  let private_window = yield BrowserTestUtils.openNewBrowserWindow({ private: true });
   let private_browser = private_window.getBrowser().selectedBrowser;
   private_browser.loadURI(prefix + "?action=set&name=test2&value=value2");
   yield BrowserTestUtils.browserLoaded(private_browser);
@@ -56,7 +56,7 @@ add_task(function* test() {
   
   
   private_window.close();
-  private_window = yield BrowserTestUtils.openNewBrowserWindow({ private : false });
+  private_window = yield BrowserTestUtils.openNewBrowserWindow({ private: false });
   private_browser = null;
   yield new Promise(resolve => Cu.schedulePreciseGC(resolve));
   private_browser = private_window.getBrowser().selectedBrowser;
@@ -71,7 +71,7 @@ add_task(function* test() {
   
   
   private_window.close();
-  private_window = yield BrowserTestUtils.openNewBrowserWindow({ private : true });
+  private_window = yield BrowserTestUtils.openNewBrowserWindow({ private: true });
   private_browser = null;
   yield new Promise(resolve => Cu.schedulePreciseGC(resolve));
   private_browser = private_window.getBrowser().selectedBrowser;

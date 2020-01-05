@@ -80,7 +80,7 @@ document.addEventListener("DOMContentLoaded", function() {
 function openPrivateWindow() {
  
  document.dispatchEvent(
-   new CustomEvent("AboutPrivateBrowsingOpenWindow", {bubbles:true}));
+   new CustomEvent("AboutPrivateBrowsingOpenWindow", {bubbles: true}));
 }
 
 function toggleTrackingProtection() {

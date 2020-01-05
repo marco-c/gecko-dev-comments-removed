@@ -189,8 +189,8 @@ Sanitizer.prototype = {
   
   
   
-  ignoreTimespan : true,
-  range : null,
+  ignoreTimespan: true,
+  range: null,
 
   items: {
     cache: {

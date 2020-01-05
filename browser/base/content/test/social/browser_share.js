@@ -77,7 +77,7 @@ var corpus = [
       url: "https://www.mozilla.org/",
       
       
-      previews:["https://www.mozilla.org/favicon.png"],
+      previews: ["https://www.mozilla.org/favicon.png"],
       
       siteName: ">My simple test page<"
     }

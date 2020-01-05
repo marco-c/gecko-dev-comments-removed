@@ -21,7 +21,7 @@ function test() {
   
   function doTest() {
     let params = {
-      exceptionAdded : false,
+      exceptionAdded: false,
       location: INVALID_CERT_LOCATION,
       prefetchCert: true,
     };

@@ -246,7 +246,7 @@ this.PageMenuParent = function PageMenuParent() {
 }
 
 PageMenuParent.prototype = {
-  __proto__ : PageMenu.prototype,
+  __proto__: PageMenu.prototype,
 
   
 
@@ -282,7 +282,7 @@ this.PageMenuChild = function PageMenuChild() {
 }
 
 PageMenuChild.prototype = {
-  __proto__ : PageMenu.prototype,
+  __proto__: PageMenu.prototype,
 
   
 

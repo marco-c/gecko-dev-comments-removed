@@ -47,8 +47,8 @@ function LoginManagerStorage_mozStorage() { }
 
 LoginManagerStorage_mozStorage.prototype = {
 
-  classID : Components.ID("{8c2023b9-175c-477e-9761-44ae7b549756}"),
-  QueryInterface : XPCOMUtils.generateQI([Ci.nsILoginManagerStorage,
+  classID: Components.ID("{8c2023b9-175c-477e-9761-44ae7b549756}"),
+  QueryInterface: XPCOMUtils.generateQI([Ci.nsILoginManagerStorage,
                                           Ci.nsIInterfaceRequestor]),
   getInterface(aIID) {
     if (aIID.equals(Ci.nsIVariant)) {
@@ -63,7 +63,7 @@ LoginManagerStorage_mozStorage.prototype = {
     throw new Components.Exception("Interface not available", Cr.NS_ERROR_NO_INTERFACE);
   },
 
-  __crypto : null,  
+  __crypto: null,  
   get _crypto() {
     if (!this.__crypto)
       this.__crypto = Cc["@mozilla.org/login-manager/crypto/SDR;1"].
@@ -145,10 +145,10 @@ LoginManagerStorage_mozStorage.prototype = {
       }
     }
   },
-  _dbConnection : null,  
-  _dbStmts      : null,  
+  _dbConnection: null,  
+  _dbStmts: null,  
 
-  _signonsFile  : null,  
+  _signonsFile: null,  
 
 
   

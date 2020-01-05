@@ -5,11 +5,11 @@
 
 
 var gRemovePasswordDialog = {
-  _token    : null,
-  _bundle   : null,
-  _prompt   : null,
-  _okButton : null,
-  _password : null,
+  _token: null,
+  _bundle: null,
+  _prompt: null,
+  _okButton: null,
+  _password: null,
   init() {
     this._prompt = Components.classes["@mozilla.org/embedcomp/prompt-service;1"]
                              .getService(Components.interfaces.nsIPromptService);

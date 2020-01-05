@@ -12,7 +12,7 @@ function nsFindInstData() {}
 nsFindInstData.prototype =
 {
   
-  browser : null,
+  browser: null,
 
   get rootSearchWindow() { return this._root || this.window.content; },
   set rootSearchWindow(val) { this._root = val; },
@@ -43,8 +43,8 @@ nsFindInstData.prototype =
   },
 
   window,
-  _root : null,
-  _current : null
+  _root: null,
+  _current: null
 }
 
 

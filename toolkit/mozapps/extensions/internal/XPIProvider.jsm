@@ -214,14 +214,14 @@ const STATIC_BLOCKLIST_PATTERNS = [
 
 
 const BOOTSTRAP_REASONS = {
-  APP_STARTUP     : 1,
-  APP_SHUTDOWN    : 2,
-  ADDON_ENABLE    : 3,
-  ADDON_DISABLE   : 4,
-  ADDON_INSTALL   : 5,
-  ADDON_UNINSTALL : 6,
-  ADDON_UPGRADE   : 7,
-  ADDON_DOWNGRADE : 8
+  APP_STARTUP: 1,
+  APP_SHUTDOWN: 2,
+  ADDON_ENABLE: 3,
+  ADDON_DISABLE: 4,
+  ADDON_INSTALL: 5,
+  ADDON_UNINSTALL: 6,
+  ADDON_UPGRADE: 7,
+  ADDON_DOWNGRADE: 8
 };
 
 
@@ -7973,9 +7973,9 @@ function DirectoryInstallLocation(aName, aDirectory, aScope) {
 }
 
 DirectoryInstallLocation.prototype = {
-  _name       : "",
-  _directory   : null,
-  _IDToFileMap : null,  
+  _name: "",
+  _directory: null,
+  _IDToFileMap: null,  
 
   
 
@@ -8986,10 +8986,10 @@ function WinRegInstallLocation(aName, aRootKey, aScope) {
 }
 
 WinRegInstallLocation.prototype = {
-  _name       : "",
-  _rootKey    : null,
-  _scope      : null,
-  _IDToFileMap : null,  
+  _name: "",
+  _rootKey: null,
+  _scope: null,
+  _IDToFileMap: null,  
 
   
 

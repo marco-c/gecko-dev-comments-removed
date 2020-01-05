@@ -80,7 +80,6 @@ var ContentPolicy = {
 
   shouldLoad(policyType, contentLocation, requestOrigin,
              node, mimeTypeGuess, extra, requestPrincipal) {
-
     
     
     

@@ -591,7 +591,7 @@ function TagAutoCompleteSearch() {
 }
 
 TagAutoCompleteSearch.prototype = {
-  _stopped : false,
+  _stopped: false,
 
   
 

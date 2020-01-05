@@ -53,7 +53,7 @@ window.addEventListener("pageshow", function() {
   window.addEventListener("resize", fitToWidth);
 
   
-  var event = new CustomEvent("AboutHomeLoad", {bubbles:true});
+  var event = new CustomEvent("AboutHomeLoad", {bubbles: true});
   document.dispatchEvent(event);
 });
 
@@ -241,7 +241,7 @@ function setupSearch() {
 
 
 function loadCompleted() {
-  var event = new CustomEvent("AboutHomeLoadSnippetsCompleted", {bubbles:true});
+  var event = new CustomEvent("AboutHomeLoadSnippetsCompleted", {bubbles: true});
   document.dispatchEvent(event);
 }
 
@@ -254,7 +254,7 @@ function loadSnippets() {
     throw new Error("Snippets map has not properly been initialized");
 
   
-  var event = new CustomEvent("AboutHomeLoadSnippets", {bubbles:true});
+  var event = new CustomEvent("AboutHomeLoadSnippets", {bubbles: true});
   document.dispatchEvent(event);
 
   

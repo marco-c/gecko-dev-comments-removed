@@ -111,8 +111,8 @@ this.PageThumbs = {
   
 
 
-  _thumbnailWidth : 0,
-  _thumbnailHeight : 0,
+  _thumbnailWidth: 0,
+  _thumbnailHeight: 0,
 
   
 
