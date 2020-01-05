@@ -884,11 +884,6 @@ private:
 
     
     
-    
-    
-
-    
-    
     if (!mMaster->mSentFirstFrameLoadedEvent) {
       
       MOZ_ASSERT(Reader()->ForceZeroStartTime());
