@@ -9,7 +9,7 @@ use http_loader;
 use hyper::header::{Host, SetCookie};
 use net_traits::{CookieSource, MessageData, WebSocketCommunicate};
 use net_traits::{WebSocketConnectData, WebSocketDomAction, WebSocketNetworkEvent};
-use net_traits::hosts::replace_hosts;
+use net_traits::hosts::replace_host_in_url;
 use servo_url::ServoUrl;
 use std::ascii::AsciiExt;
 use std::sync::{Arc, Mutex, RwLock};
@@ -24,84 +24,6 @@ use websocket::sender::Sender;
 use websocket::stream::WebSocketStream;
 use websocket::ws::receiver::Receiver as WSReceiver;
 use websocket::ws::sender::Sender as Sender_Object;
-
-
-fn establish_a_websocket_connection(resource_url: &ServoUrl,
-                                    origin: String,
-                                    protocols: Vec<String>,
-                                    cookie_jar: Arc<RwLock<CookieStorage>>)
-                                    -> WebSocketResult<(Option<String>,
-                                                        Sender<WebSocketStream>,
-                                                        Receiver<WebSocketStream>)> {
-    
-    
-
-    if should_be_blocked_due_to_bad_port(resource_url) {
-        
-        
-        
-        return Err(WebSocketError::RequestError("Request should be blocked due to bad port."));
-    }
-
-    
-    let net_url = replace_hosts(resource_url);
-    let mut request = try!(Client::connect(net_url.as_url()));
-
-    
-    
-    request.headers.set(Host {
-        hostname: resource_url.host_str().unwrap().to_owned(),
-        port: resource_url.port(),
-    });
-
-    
-    if !protocols.is_empty() {
-        request.headers.set(WebSocketProtocol(protocols.clone()));
-    }
-
-    
-    
-
-    
-    
-    request.headers.set(Origin(origin));
-
-    
-    
-    http_loader::set_request_cookies(&resource_url, &mut request.headers, &cookie_jar);
-
-    
-    let response = try!(request.send());
-
-    
-    try!(response.validate());
-
-    
-    
-    let protocol_in_use = response.protocol().and_then(|header| {
-        
-        header.first().cloned()
-    });
-    if let Some(ref protocol_name) = protocol_in_use {
-        if !protocols.is_empty() && !protocols.iter().any(|p| (&**p).eq_ignore_ascii_case(protocol_name)) {
-            return Err(WebSocketError::ProtocolError("Protocol in Use not in client-supplied protocol list"));
-        };
-    };
-
-    
-    
-    if let Some(cookies) = response.headers.get::<SetCookie>() {
-        let mut jar = cookie_jar.write().unwrap();
-        for cookie in &**cookies {
-            if let Some(cookie) = Cookie::new_wrapped(cookie.clone(), resource_url, CookieSource::HTTP) {
-                jar.push(cookie, resource_url, CookieSource::HTTP);
-            }
-        }
-    }
-
-    let (sender, receiver) = response.begin().split();
-    Ok((protocol_in_use, sender, receiver))
-}
 
 pub fn init(connect: WebSocketCommunicate, connect_data: WebSocketConnectData, cookie_jar: Arc<RwLock<CookieStorage>>) {
     thread::Builder::new().name(format!("WebSocket connection to {}", connect_data.resource_url)).spawn(move || {
@@ -181,4 +103,82 @@ pub fn init(connect: WebSocketCommunicate, connect_data: WebSocketConnectData, c
             }
         }
     }).expect("Thread spawning failed");
+}
+
+
+fn establish_a_websocket_connection(resource_url: &ServoUrl,
+                                    origin: String,
+                                    protocols: Vec<String>,
+                                    cookie_jar: Arc<RwLock<CookieStorage>>)
+                                    -> WebSocketResult<(Option<String>,
+                                                        Sender<WebSocketStream>,
+                                                        Receiver<WebSocketStream>)> {
+    
+    
+
+    if should_be_blocked_due_to_bad_port(resource_url) {
+        
+        
+        
+        return Err(WebSocketError::RequestError("Request should be blocked due to bad port."));
+    }
+
+    
+    let net_url = replace_host_in_url(resource_url.clone());
+    let mut request = try!(Client::connect(net_url.as_url()));
+
+    
+    
+    request.headers.set(Host {
+        hostname: resource_url.host_str().unwrap().to_owned(),
+        port: resource_url.port(),
+    });
+
+    
+    if !protocols.is_empty() {
+        request.headers.set(WebSocketProtocol(protocols.clone()));
+    }
+
+    
+    
+
+    
+    
+    request.headers.set(Origin(origin));
+
+    
+    
+    http_loader::set_request_cookies(&resource_url, &mut request.headers, &cookie_jar);
+
+    
+    let response = try!(request.send());
+
+    
+    try!(response.validate());
+
+    
+    
+    let protocol_in_use = response.protocol().and_then(|header| {
+        
+        header.first().cloned()
+    });
+    if let Some(ref protocol_name) = protocol_in_use {
+        if !protocols.is_empty() && !protocols.iter().any(|p| (&**p).eq_ignore_ascii_case(protocol_name)) {
+            return Err(WebSocketError::ProtocolError("Protocol in Use not in client-supplied protocol list"));
+        };
+    };
+
+    
+    
+    if let Some(cookies) = response.headers.get::<SetCookie>() {
+        let mut jar = cookie_jar.write().unwrap();
+        for cookie in &**cookies {
+            if let Some(cookie) = Cookie::new_wrapped(cookie.clone(), resource_url, CookieSource::HTTP) {
+                jar.push(cookie, resource_url, CookieSource::HTTP);
+            }
+        }
+    }
+
+    let (sender, receiver) = response.begin().split();
+    Ok((protocol_in_use, sender, receiver))
 }
