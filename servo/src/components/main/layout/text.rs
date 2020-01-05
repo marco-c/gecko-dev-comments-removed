@@ -10,7 +10,7 @@ use gfx::text::text_run::TextRun;
 use gfx::text::util::{CompressWhitespaceNewline, transform_text};
 use layout::box::{RenderBox, RenderBoxUtils, TextRenderBox, UnscannedTextRenderBoxClass};
 use layout::context::LayoutContext;
-use layout::flow::FlowContext;
+use layout::flow::Flow;
 use servo_util::range::Range;
 
 
@@ -25,7 +25,7 @@ impl TextRunScanner {
         }
     }
 
-    pub fn scan_for_runs(&mut self, ctx: &LayoutContext, flow: &mut FlowContext) {
+    pub fn scan_for_runs(&mut self, ctx: &LayoutContext, flow: &mut Flow) {
         {
             let inline = flow.as_immutable_inline();
             
@@ -83,7 +83,7 @@ impl TextRunScanner {
     /// necessary.
     pub fn flush_clump_to_list(&mut self,
                                ctx: &LayoutContext,
-                               flow: &mut FlowContext,
+                               flow: &mut Flow,
                                last_whitespace: bool,
                                out_boxes: &mut ~[@RenderBox])
                                -> bool {
