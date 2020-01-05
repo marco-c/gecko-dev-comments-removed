@@ -39,6 +39,12 @@ Cu.import("resource://gre/modules/Services.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "fxAccounts",
   "resource://gre/modules/FxAccounts.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "getRepairRequestor",
+  "resource://services-sync/collection_repair.js");
+
+XPCOMUtils.defineLazyModuleGetter(this, "getRepairResponder",
+  "resource://services-sync/collection_repair.js");
+
 const CLIENTS_TTL = 1814400; 
 const CLIENTS_TTL_REFRESH = 604800; 
 const STALE_CLIENT_REMOTE_AGE = 604800; 
@@ -100,9 +106,13 @@ ClientEngine.prototype = {
     return Object.values(this._store._remoteClients).filter(v => !v.stale);
   },
 
-  remoteClientExists(id) {
+  remoteClient(id) {
     let client = this._store._remoteClients[id];
-    return !!(client && !client.stale);
+    return client && !client.stale ? client : null;
+  },
+
+  remoteClientExists(id) {
+    return !!this.remoteClient(id);
   },
 
   
@@ -250,6 +260,20 @@ ClientEngine.prototype = {
     );
   },
 
+  
+  
+  
+  getClientCommands(clientId) {
+    const allCommands = this._readCommands();
+    return allCommands[clientId] || [];
+  },
+
+  removeLocalCommand(command) {
+    
+    
+    this._addClientCommand(this.localID, command);
+  },
+
   _addClientCommand(clientId, command) {
     const allCommands = this._readCommands();
     const clientCommands = allCommands[clientId] || [];
@@ -300,10 +324,8 @@ ClientEngine.prototype = {
       
       delete this._incomingClients[this.localID];
       let names = new Set([this.localName]);
-      for (let [id, serverLastModified] of Object.entries(this._incomingClients)) {
+      for (let id in this._incomingClients) {
         let record = this._store._remoteClients[id];
-        
-        record.serverLastModified = serverLastModified;
         if (!names.has(record.name)) {
           names.add(record.name);
           continue;
@@ -327,14 +349,7 @@ ClientEngine.prototype = {
         this._modified.set(clientId, 0);
       }
     }
-    let updatedIDs = this._modified.ids();
     SyncEngine.prototype._uploadOutgoing.call(this);
-    
-    for (let id of updatedIDs) {
-      if (id != this.localID) {
-        this._store._remoteClients[id].serverLastModified = this.lastSync;
-      }
-    }
   },
 
   _onRecordsWritten(succeeded, failed) {
@@ -489,6 +504,8 @@ ClientEngine.prototype = {
     wipeEngine:  { args: 1, desc: "Delete all client data for engine" },
     logout:      { args: 0, desc: "Log out client" },
     displayURI:  { args: 3, desc: "Instruct a client to display a URI" },
+    repairRequest:  {args: 1, desc: "Instruct a client to initiate a repair"},
+    repairResponse: {args: 1, desc: "Instruct a client a repair request is complete"},
   },
 
   
@@ -543,12 +560,13 @@ ClientEngine.prototype = {
 
       const clearedCommands = this._readCommands()[this.localID];
       const commands = this.localCommands.filter(command => !hasDupeCommand(clearedCommands, command));
-
+      let didRemoveCommand = false;
       let URIsToDisplay = [];
       
       for (let rawCommand of commands) {
+        let shouldRemoveCommand = true; 
         let {command, args, flowID} = rawCommand;
-        this._log.debug("Processing command: " + command + "(" + args + ")");
+        this._log.debug("Processing command " + command, args);
 
         this.service.recordTelemetryEvent("processcommand", command, undefined,
                                           { flowID });
@@ -574,14 +592,65 @@ ClientEngine.prototype = {
             let [uri, clientId, title] = args;
             URIsToDisplay.push({ uri, clientId, title });
             break;
+          case "repairResponse": {
+            
+            
+            let response = args[0];
+            let requestor = getRepairRequestor(response.collection);
+            if (!requestor) {
+              this._log.warn("repairResponse for unknown collection", response);
+              break;
+            }
+            if (!requestor.continueRepairs(response)) {
+              this._log.warn("repairResponse couldn't continue the repair", response);
+            }
+            break;
+          }
+          case "repairRequest": {
+            
+            let request = args[0];
+            let responder = getRepairResponder(request.collection);
+            if (!responder) {
+              this._log.warn("repairRequest for unknown collection", request);
+              break;
+            }
+            try {
+              if (Async.promiseSpinningly(responder.repair(request, rawCommand))) {
+                
+                
+                
+                
+                
+                shouldRemoveCommand = false;
+              }
+            } catch (ex) {
+              if (Async.isShutdownException(ex)) {
+                
+                
+                throw ex;
+              }
+              
+              
+              
+              
+              
+              this._log.error("Failed to handle a repair request", ex);
+            }
+            break;
+          }
           default:
-            this._log.debug("Received an unknown command: " + command);
+            this._log.warn("Received an unknown command: " + command);
             break;
         }
         
-        this._addClientCommand(this.localID, rawCommand)
+        if (shouldRemoveCommand) {
+          this.removeLocalCommand(rawCommand);
+          didRemoveCommand = true;
+        }
       }
-      this._tracker.addChangedID(this.localID);
+      if (didRemoveCommand) {
+        this._tracker.addChangedID(this.localID);
+      }
 
       if (URIsToDisplay.length) {
         this._handleDisplayURIs(URIsToDisplay);
@@ -756,8 +825,7 @@ ClientStore.prototype = {
       
       
     } else {
-      record.cleartext = Object.assign({}, this._remoteClients[id]);
-      delete record.cleartext.serverLastModified; 
+      record.cleartext = this._remoteClients[id];
 
       
       if (commandsChanges && commandsChanges.length) {
