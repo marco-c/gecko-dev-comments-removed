@@ -33,7 +33,6 @@
 #include "nsWeakReference.h"
 #include "Units.h"
 #include "nsIWidget.h"
-#include "nsIPartialSHistory.h"
 
 class nsFrameLoader;
 class nsIFrameLoader;
@@ -356,14 +355,16 @@ public:
   virtual bool DeallocPDatePickerParent(PDatePickerParent* aDatePicker) override;
 
   virtual PDocAccessibleParent*
-  AllocPDocAccessibleParent(PDocAccessibleParent*, const uint64_t&) override;
+  AllocPDocAccessibleParent(PDocAccessibleParent*, const uint64_t&,
+                            const uint32_t&) override;
 
   virtual bool DeallocPDocAccessibleParent(PDocAccessibleParent*) override;
 
   virtual bool
   RecvPDocAccessibleConstructor(PDocAccessibleParent* aDoc,
                                 PDocAccessibleParent* aParentDoc,
-                                const uint64_t& aParentID) override;
+                                const uint64_t& aParentID,
+                                const uint32_t& aMsaaID) override;
 
   
 
@@ -630,10 +631,6 @@ protected:
 
   virtual bool RecvAudioChannelActivityNotification(const uint32_t& aAudioChannel,
                                                     const bool& aActive) override;
-
-  virtual bool RecvNotifySessionHistoryChange(const uint32_t& aCount) override;
-
-  virtual bool RecvRequestCrossBrowserNavigation(const uint32_t& aGlobalIndex) override;
 
   ContentCacheInParent mContentCache;
 

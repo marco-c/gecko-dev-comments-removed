@@ -465,15 +465,10 @@ DocAccessibleParent::GetXPCAccessible(ProxyAccessible* aProxy)
 
 
 
-
-
 bool
-DocAccessibleParent::RecvCOMProxy(const int32_t& aMsaaID,
-                                  const IAccessibleHolder& aCOMProxy,
+DocAccessibleParent::RecvCOMProxy(const IAccessibleHolder& aCOMProxy,
                                   IAccessibleHolder* aParentCOMProxy)
 {
-  WrapperFor(this)->SetID(aMsaaID);
-
   RefPtr<IAccessible> ptr(aCOMProxy.Get());
   SetCOMInterface(ptr);
 
@@ -484,13 +479,6 @@ DocAccessibleParent::RecvCOMProxy(const int32_t& aMsaaID,
   }
 
   aParentCOMProxy->Set(IAccessibleHolder::COMPtrType(rawNative));
-  return true;
-}
-
-bool
-DocAccessibleParent::RecvMsaaID(const int32_t& aMsaaID)
-{
-  WrapperFor(this)->SetID(aMsaaID);
   return true;
 }
 #endif 
