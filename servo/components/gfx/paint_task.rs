@@ -117,12 +117,6 @@ pub struct PaintTask<C> {
     time_profiler_chan: time::ProfilerChan,
 
     
-    mem_profiler_chan: mem::ProfilerChan,
-
-    
-    pub reporter_name: String,
-
-    
     root_stacking_context: Option<Arc<StackingContext>>,
 
     
@@ -171,12 +165,6 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                                                               time_profiler_chan.clone());
 
                 
-                let reporter = box chan.clone();
-                let reporter_name = format!("paint-reporter-{}", id.0);
-                mem_profiler_chan.send(mem::ProfilerMsg::RegisterReporter(reporter_name.clone(),
-                                                                          reporter));
-
-                
                 let mut paint_task = PaintTask {
                     id: id,
                     _url: url,
@@ -184,8 +172,6 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                     compositor: compositor,
                     constellation_chan: constellation_chan,
                     time_profiler_chan: time_profiler_chan,
-                    mem_profiler_chan: mem_profiler_chan,
-                    reporter_name: reporter_name,
                     root_stacking_context: None,
                     paint_permission: false,
                     current_epoch: None,
@@ -193,7 +179,16 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                     canvas_map: HashMap::new()
                 };
 
+                
+                let reporter = box chan.clone();
+                let reporter_name = format!("paint-reporter-{}", id.0);
+                let msg = mem::ProfilerMsg::RegisterReporter(reporter_name.clone(), reporter);
+                mem_profiler_chan.send(msg);
+
                 paint_task.start();
+
+                let msg = mem::ProfilerMsg::UnregisterReporter(reporter_name);
+                mem_profiler_chan.send(msg);
 
                 
                 for worker_thread in paint_task.worker_threads.iter_mut() {
@@ -270,9 +265,6 @@ impl<C> PaintTask<C> where C: PaintListener + Send + 'static {
                     
                 }
                 Msg::Exit(response_channel, _) => {
-                    let msg = mem::ProfilerMsg::UnregisterReporter(self.reporter_name.clone());
-                    self.mem_profiler_chan.send(msg);
-
                     
                     
                     self.compositor.notify_paint_task_exiting(self.id);
