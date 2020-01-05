@@ -3554,8 +3554,7 @@ nsCSSBorderRenderer::CreateWebRenderCommands(wr::DisplayListBuilder& aBuilder,
                                              layers::WebRenderDisplayItemLayer* aLayer,
                                              gfx::Rect aClipRect)
 {
-  LayoutDeviceRect outerRect = LayoutDeviceRect::FromUnknownRect(mOuterRect);
-  LayerRect transformedRect = aLayer->RelativeToParent(outerRect);
+  Rect transformedRect = aLayer->RelativeToParent(mOuterRect);
   WrBorderSide side[4];
   NS_FOR_CSS_SIDES(i) {
     side[i] = wr::ToWrBorderSide(ToDeviceColor(mBorderColors[i]), mBorderStyles[i]);
@@ -3586,8 +3585,6 @@ nsCSSBorderImageRenderer::CreateBorderImageRenderer(nsPresContext* aPresContext,
                                                     uint32_t aFlags,
                                                     DrawResult* aDrawResult)
 {
-  NS_PRECONDITION(aStyleBorder.IsBorderImageLoaded(),
-                  "drawing border image that isn't successfully loaded");
   MOZ_ASSERT(aDrawResult);
 
   if (aDirtyRect.IsEmpty()) {
