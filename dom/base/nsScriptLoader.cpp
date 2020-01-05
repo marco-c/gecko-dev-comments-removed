@@ -329,6 +329,14 @@ void nsModuleLoadRequest::Cancel()
 void
 nsModuleLoadRequest::SetReady()
 {
+  
+  
+  
+  
+  
+  
+  
+
 #ifdef DEBUG
   for (size_t i = 0; i < mImports.Length(); i++) {
     MOZ_ASSERT(mImports[i]->IsReadyToRun());
@@ -345,6 +353,8 @@ nsModuleLoadRequest::ModuleLoaded()
   
   
 
+  LOG(("ScriptLoadRequest (%p): Module loaded", this));
+
   mModuleScript = mLoader->GetFetchedModule(mURI);
   mLoader->StartFetchingModuleDependencies(this);
 }
@@ -354,6 +364,8 @@ nsModuleLoadRequest::DependenciesLoaded()
 {
   
   
+
+  LOG(("ScriptLoadRequest (%p): Module dependencies loaded", this));
 
   if (!mLoader->InstantiateModuleTree(this)) {
     LoadFailed();
@@ -369,6 +381,8 @@ nsModuleLoadRequest::DependenciesLoaded()
 void
 nsModuleLoadRequest::LoadFailed()
 {
+  LOG(("ScriptLoadRequest (%p): Module load failed", this));
+
   Cancel();
   mLoader->ProcessLoadedModuleTree(this);
   mLoader = nullptr;
@@ -784,6 +798,13 @@ nsScriptLoader::SetModuleFetchFinishedAndResumeWaitingRequests(nsModuleLoadReque
 {
   
   
+  
+  
+  
+  
+
+  LOG(("ScriptLoadRequest (%p): Module fetch finished (result == %d)",
+       aRequest, aResult));
 
   MOZ_ASSERT(!aRequest->IsReadyToRun());
 
@@ -830,6 +851,12 @@ nsScriptLoader::WaitForModuleFetch(nsModuleLoadRequest *aRequest)
 nsModuleScript*
 nsScriptLoader::GetFetchedModule(nsIURI* aURL) const
 {
+  if (LOG_ENABLED()) {
+    nsAutoCString url;
+    aURL->GetAsciiSpec(url);
+    LOG(("GetFetchedModule %s", url.get()));
+  }
+
   bool found;
   nsModuleScript* ms = mFetchedModules.GetWeak(aURL, &found);
   MOZ_ASSERT(found);
@@ -1082,8 +1109,13 @@ void
 nsScriptLoader::StartFetchingModuleDependencies(nsModuleLoadRequest* aRequest)
 {
   MOZ_ASSERT(aRequest->mModuleScript);
-  MOZ_ASSERT(!aRequest->mModuleScript->InstantiationFailed());
   MOZ_ASSERT(!aRequest->IsReadyToRun());
+
+  if (aRequest->mModuleScript->InstantiationFailed()) {
+    aRequest->LoadFailed();
+    return;
+  }
+
   aRequest->mProgress = nsModuleLoadRequest::Progress::FetchingImports;
 
   nsCOMArray<nsIURI> urls;
@@ -1226,6 +1258,8 @@ nsScriptLoader::InstantiateModuleTree(nsModuleLoadRequest* aRequest)
 
   MOZ_ASSERT(aRequest);
 
+  LOG(("ScriptLoadRequest (%p): Instantiate module tree", aRequest));
+
   nsModuleScript* ms = aRequest->mModuleScript;
   MOZ_ASSERT(ms);
   if (!ms->ModuleRecord()) {
@@ -1245,6 +1279,7 @@ nsScriptLoader::InstantiateModuleTree(nsModuleLoadRequest* aRequest)
 
   JS::RootedValue exception(jsapi.cx());
   if (!ok) {
+    LOG(("ScriptLoadRequest (%p): Instantiate failed", aRequest));
     MOZ_ASSERT(jsapi.HasException());
     if (!jsapi.StealException(&exception)) {
       return false;
@@ -1327,11 +1362,18 @@ nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest)
     return NS_OK;
   }
 
+  if (LOG_ENABLED()) {
+    nsAutoCString url;
+    aRequest->mURI->GetAsciiSpec(url);
+    LOG(("ScriptLoadRequest (%p): Start Load (url = %s)", aRequest, url.get()));
+  }
+
   if (aRequest->IsModuleRequest()) {
     
     
     nsModuleLoadRequest* request = aRequest->AsModuleRequest();
     if (ModuleMapContainsModule(request)) {
+      LOG(("ScriptLoadRequest (%p): Waiting for module fetch", aRequest));
       WaitForModuleFetch(request)
         ->Then(AbstractThread::GetCurrent(), __func__, request,
                &nsModuleLoadRequest::ModuleLoaded,
@@ -1341,6 +1383,7 @@ nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest)
 
     
     SetModuleFetchStarted(request);
+    LOG(("ScriptLoadRequest (%p): Start fetching module", aRequest));
   }
 
   nsContentPolicyType contentPolicyType = aRequest->IsPreload()
