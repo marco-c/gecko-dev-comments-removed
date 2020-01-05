@@ -1656,6 +1656,13 @@ RootClient.prototype = {
 
 
 
+  getRoot: DebuggerClient.requester({ type: "getRoot" }),
+
+   
+
+
+
+
 
   listTabs: DebuggerClient.requester({ type: "listTabs" }),
 

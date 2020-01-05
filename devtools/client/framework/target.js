@@ -288,7 +288,7 @@ TabTarget.prototype = {
 
   _getRoot: function () {
     return new Promise((resolve, reject) => {
-      this.client.listTabs(response => {
+      this.client.mainRoot.getRoot(response => {
         if (response.error) {
           reject(new Error(response.error + ": " + response.message));
           return;

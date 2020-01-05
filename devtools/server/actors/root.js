@@ -246,7 +246,36 @@ RootActor.prototype = {
 
   
 
+
+
+
+  onGetRoot: function () {
+    let reply = {
+      from: this.actorID,
+    };
+
+    
+    if (!this._globalActorPool) {
+      this._globalActorPool = new ActorPool(this.conn);
+      this.conn.addActorPool(this._globalActorPool);
+    }
+    this._createExtraActors(this._parameters.globalActorFactories, this._globalActorPool);
+
+    
+    this._appendExtraActors(reply);
+
+    return reply;
+  },
+
   
+
+  
+
+
+
+
+
+
 
 
 
@@ -258,18 +287,13 @@ RootActor.prototype = {
     }
 
     
-
-
-
+    
     tabList.onListChanged = this._onTabListChanged;
 
     
-
-
-
-
-
-
+    
+    
+    
     let newActorPool = new ActorPool(this.conn);
     let tabActorList = [];
     let selected;
@@ -287,36 +311,23 @@ RootActor.prototype = {
       newActorPool.addActor(tabActor);
       tabActorList.push(tabActor);
     }
+
     
-    if (!this._globalActorPool) {
-      this._globalActorPool = new ActorPool(this.conn);
-      this.conn.addActorPool(this._globalActorPool);
-    }
-    this._createExtraActors(this._parameters.globalActorFactories,
-      this._globalActorPool);
+    let reply = this.onGetRoot();
+
     
-
-
-
+    
     if (this._tabActorPool) {
       this.conn.removeActorPool(this._tabActorPool);
     }
     this._tabActorPool = newActorPool;
     this.conn.addActorPool(this._tabActorPool);
 
-    let reply = {
-      "from": this.actorID,
-      "selected": selected || 0,
-      "tabs": tabActorList.map(actor => actor.form())
-    };
-
     
-    if (this.url) {
-      reply.url = this.url;
-    }
-
-    
-    this._appendExtraActors(reply);
+    Object.assign(reply, {
+      selected: selected || 0,
+      tabs: tabActorList.map(actor => actor.form()),
+    });
 
     return reply;
   },
@@ -586,16 +597,17 @@ RootActor.prototype = {
 };
 
 RootActor.prototype.requestTypes = {
-  "listTabs": RootActor.prototype.onListTabs,
-  "getTab": RootActor.prototype.onGetTab,
-  "getWindow": RootActor.prototype.onGetWindow,
-  "listAddons": RootActor.prototype.onListAddons,
-  "listWorkers": RootActor.prototype.onListWorkers,
-  "listServiceWorkerRegistrations": RootActor.prototype.onListServiceWorkerRegistrations,
-  "listProcesses": RootActor.prototype.onListProcesses,
-  "getProcess": RootActor.prototype.onGetProcess,
-  "echo": RootActor.prototype.onEcho,
-  "protocolDescription": RootActor.prototype.onProtocolDescription
+  getRoot: RootActor.prototype.onGetRoot,
+  listTabs: RootActor.prototype.onListTabs,
+  getTab: RootActor.prototype.onGetTab,
+  getWindow: RootActor.prototype.onGetWindow,
+  listAddons: RootActor.prototype.onListAddons,
+  listWorkers: RootActor.prototype.onListWorkers,
+  listServiceWorkerRegistrations: RootActor.prototype.onListServiceWorkerRegistrations,
+  listProcesses: RootActor.prototype.onListProcesses,
+  getProcess: RootActor.prototype.onGetProcess,
+  echo: RootActor.prototype.onEcho,
+  protocolDescription: RootActor.prototype.onProtocolDescription
 };
 
 exports.RootActor = RootActor;
