@@ -10,6 +10,8 @@
 #include "nsString.h"
 #include "nsTArray.h"
 
+#include "mozILocaleService.h"
+
 namespace mozilla {
 namespace intl {
 
@@ -20,11 +22,29 @@ namespace intl {
 
 
 
-
-class LocaleService
+class LocaleService : public mozILocaleService
 {
 public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_MOZILOCALESERVICE
+
+  
+
+
+
+
+
+
   static LocaleService* GetInstance();
+
+  
+
+
+
+  static already_AddRefed<LocaleService> GetInstanceAddRefed()
+  {
+    return RefPtr<LocaleService>(GetInstance()).forget();
+  }
 
   
 
@@ -73,7 +93,9 @@ protected:
   nsTArray<nsCString> mAppLocales;
 
 private:
-  static StaticAutoPtr<LocaleService> sInstance;
+  virtual ~LocaleService() {};
+
+  static StaticRefPtr<LocaleService> sInstance;
 };
 
 } 
