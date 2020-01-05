@@ -2,6 +2,8 @@
 
 
 
+
+
 "use strict";
 
 
@@ -25,6 +27,23 @@ if (url.search.length > 1) {
   let host = window.QueryInterface(Ci.nsIInterfaceRequestor)
                    .getInterface(Ci.nsIDOMWindowUtils)
                    .containerElement;
+
+  
+  
+  if (!host) {
+    host = {
+      contentWindow: window,
+      contentDocument: document,
+      
+      
+      setAttribute() {},
+      ownerDocument: document,
+      
+      
+      
+      addEventListener() {},
+    };
+  }
 
   
   let tool = url.searchParams.get("tool");
