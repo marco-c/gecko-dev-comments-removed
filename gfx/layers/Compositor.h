@@ -312,14 +312,14 @@ public:
                     gfx::Float aOpacity,
                     const gfx::Matrix4x4& aTransform,
                     const gfx::Rect& aVisibleRect,
-                    const Maybe<gfx::Polygon3D>& aGeometry);
+                    const Maybe<gfx::Polygon>& aGeometry);
 
   void DrawGeometry(const gfx::Rect& aRect,
                     const gfx::IntRect& aClipRect,
                     const EffectChain &aEffectChain,
                     gfx::Float aOpacity,
                     const gfx::Matrix4x4& aTransform,
-                    const Maybe<gfx::Polygon3D>& aGeometry)
+                    const Maybe<gfx::Polygon>& aGeometry)
   {
     DrawGeometry(aRect, aClipRect, aEffectChain, aOpacity,
                  aTransform, aRect, aGeometry);
