@@ -82,3 +82,9 @@ licenses = [
 // except according to those terms.
 """,
 ]  
+
+
+licenses_toml = [
+    'license = "MPL-2.0"',
+    'license = "MIT/Apache-2.0"',
+]
