@@ -57,10 +57,10 @@ typedef struct {
 } CacheIndexHeader;
 
 struct CacheIndexRecord {
-  SHA1Sum::Hash mHash;
-  uint32_t      mFrecency;
-  uint32_t      mExpirationTime;
-  uint32_t      mAppId;
+  SHA1Sum::Hash   mHash;
+  uint32_t        mFrecency;
+  uint32_t        mExpirationTime;
+  OriginAttrsHash mOriginAttrsHash;
 
   
 
@@ -77,7 +77,7 @@ struct CacheIndexRecord {
   CacheIndexRecord()
     : mFrecency(0)
     , mExpirationTime(nsICacheEntry::NO_EXPIRATION_TIME)
-    , mAppId(nsILoadContextInfo::NO_APP_ID)
+    , mOriginAttrsHash(0)
     , mFlags(0)
   {}
 };
@@ -136,7 +136,7 @@ public:
                sizeof(SHA1Sum::Hash)) == 0);
     mRec->mFrecency = aOther.mRec->mFrecency;
     mRec->mExpirationTime = aOther.mRec->mExpirationTime;
-    mRec->mAppId = aOther.mRec->mAppId;
+    mRec->mOriginAttrsHash = aOther.mRec->mOriginAttrsHash;
     mRec->mFlags = aOther.mRec->mFlags;
     return *this;
   }
@@ -145,25 +145,22 @@ public:
   {
     mRec->mFrecency = 0;
     mRec->mExpirationTime = nsICacheEntry::NO_EXPIRATION_TIME;
-    mRec->mAppId = nsILoadContextInfo::NO_APP_ID;
+    mRec->mOriginAttrsHash = 0;
     mRec->mFlags = 0;
   }
 
-  void Init(uint32_t aAppId, bool aAnonymous, bool aInIsolatedMozBrowser, bool aPinned)
+  void Init(OriginAttrsHash aOriginAttrsHash, bool aAnonymous, bool aPinned)
   {
     MOZ_ASSERT(mRec->mFrecency == 0);
     MOZ_ASSERT(mRec->mExpirationTime == nsICacheEntry::NO_EXPIRATION_TIME);
-    MOZ_ASSERT(mRec->mAppId == nsILoadContextInfo::NO_APP_ID);
+    MOZ_ASSERT(mRec->mOriginAttrsHash == 0);
     
     MOZ_ASSERT((mRec->mFlags & ~kDirtyMask) == kFreshMask);
 
-    mRec->mAppId = aAppId;
+    mRec->mOriginAttrsHash = aOriginAttrsHash;
     mRec->mFlags |= kInitializedMask;
     if (aAnonymous) {
       mRec->mFlags |= kAnonymousMask;
-    }
-    if (aInIsolatedMozBrowser) {
-      mRec->mFlags |= kInIsolatedMozBrowserMask;
     }
     if (aPinned) {
       mRec->mFlags |= kPinnedMask;
@@ -174,12 +171,9 @@ public:
 
   bool IsInitialized() const { return !!(mRec->mFlags & kInitializedMask); }
 
-  uint32_t AppId() const { return mRec->mAppId; }
-  bool     Anonymous() const { return !!(mRec->mFlags & kAnonymousMask); }
-  bool     InIsolatedMozBrowser() const
-  {
-    return !!(mRec->mFlags & kInIsolatedMozBrowserMask);
-  }
+  mozilla::net::OriginAttrsHash OriginAttrsHash() const { return mRec->mOriginAttrsHash; }
+
+  bool Anonymous() const { return !!(mRec->mFlags & kAnonymousMask); }
 
   bool IsRemoved() const { return !!(mRec->mFlags & kRemovedMask); }
   void MarkRemoved() { mRec->mFlags |= kRemovedMask; }
@@ -242,7 +236,7 @@ public:
     
     NetworkEndian::writeUint32(&dst->mFrecency, dst->mFrecency);
     NetworkEndian::writeUint32(&dst->mExpirationTime, dst->mExpirationTime);
-    NetworkEndian::writeUint32(&dst->mAppId, dst->mAppId);
+    NetworkEndian::writeUint64(&dst->mOriginAttrsHash, dst->mOriginAttrsHash);
     NetworkEndian::writeUint32(&dst->mFlags, dst->mFlags);
 #endif
   }
@@ -255,17 +249,16 @@ public:
 
     mRec->mFrecency = NetworkEndian::readUint32(&src->mFrecency);
     mRec->mExpirationTime = NetworkEndian::readUint32(&src->mExpirationTime);
-    mRec->mAppId = NetworkEndian::readUint32(&src->mAppId);
+    mRec->mOriginAttrsHash = NetworkEndian::readUint64(&src->mOriginAttrsHash);
     mRec->mFlags = NetworkEndian::readUint32(&src->mFlags);
   }
 
   void Log() const {
-    LOG(("CacheIndexEntry::Log() [this=%p, hash=%08x%08x%08x%08x%08x, "
-         "fresh=%u, initialized=%u, removed=%u, dirty=%u, anonymous=%u, "
-         "inIsolatedMozBrowser=%u, appId=%u, frecency=%u, expirationTime=%u, "
-         "size=%u]",
+    LOG(("CacheIndexEntry::Log() [this=%p, hash=%08x%08x%08x%08x%08x, fresh=%u,"
+         " initialized=%u, removed=%u, dirty=%u, anonymous=%u, "
+         "originAttrsHash=%llx, frecency=%u, expirationTime=%u, size=%u]",
          this, LOGSHA1(mRec->mHash), IsFresh(), IsInitialized(), IsRemoved(),
-         IsDirty(), Anonymous(), InIsolatedMozBrowser(), AppId(), GetFrecency(),
+         IsDirty(), Anonymous(), OriginAttrsHash(), GetFrecency(),
          GetExpirationTime(), GetFileSize()));
   }
 
@@ -273,9 +266,8 @@ public:
                                            nsILoadContextInfo *aInfo)
   {
     if (!aInfo->IsPrivate() &&
-        aInfo->OriginAttributesPtr()->mAppId == aRec->mAppId &&
-        aInfo->IsAnonymous() == !!(aRec->mFlags & kAnonymousMask) &&
-        aInfo->OriginAttributesPtr()->mInIsolatedMozBrowser == !!(aRec->mFlags & kInIsolatedMozBrowserMask)) {
+        GetOriginAttrsHash(*aInfo->OriginAttributesPtr()) == aRec->mOriginAttrsHash &&
+        aInfo->IsAnonymous() == !!(aRec->mFlags & kAnonymousMask)) {
       return true;
     }
 
@@ -300,25 +292,24 @@ private:
 
   static const uint32_t kInitializedMask = 0x80000000;
   static const uint32_t kAnonymousMask   = 0x40000000;
-  static const uint32_t kInIsolatedMozBrowserMask   = 0x20000000;
 
   
   
-  static const uint32_t kRemovedMask     = 0x10000000;
+  static const uint32_t kRemovedMask     = 0x20000000;
 
   
   
-  static const uint32_t kDirtyMask       = 0x08000000;
+  static const uint32_t kDirtyMask       = 0x10000000;
 
   
   
   
-  static const uint32_t kFreshMask       = 0x04000000;
+  static const uint32_t kFreshMask       = 0x08000000;
 
   
-  static const uint32_t kPinnedMask      = 0x02000000;
+  static const uint32_t kPinnedMask      = 0x04000000;
 
-  static const uint32_t kReservedMask    = 0x01000000;
+  static const uint32_t kReservedMask    = 0x03000000;
 
   
   static const uint32_t kFileSizeMask    = 0x00FFFFFF;
@@ -385,7 +376,7 @@ public:
     if (mUpdateFlags & kExpirationUpdatedMask) {
       aDst->mRec->mExpirationTime = mRec->mExpirationTime;
     }
-    aDst->mRec->mAppId = mRec->mAppId;
+    aDst->mRec->mOriginAttrsHash = mRec->mOriginAttrsHash;
     if (mUpdateFlags & kFileSizeUpdatedMask) {
       aDst->mRec->mFlags = mRec->mFlags;
     } else {
@@ -625,9 +616,8 @@ public:
   
   
   static nsresult InitEntry(const SHA1Sum::Hash *aHash,
-                            uint32_t             aAppId,
+                            OriginAttrsHash      aOriginAttrsHash,
                             bool                 aAnonymous,
-                            bool                 aInIsolatedMozBrowser,
                             bool                 aPinned);
 
   
@@ -731,9 +721,8 @@ private:
   
   
   static bool IsCollision(CacheIndexEntry *aEntry,
-                          uint32_t         aAppId,
-                          bool             aAnonymous,
-                          bool             aInIsolatedMozBrowser);
+                          OriginAttrsHash  aOriginAttrsHash,
+                          bool             aAnonymous);
 
   
   static bool HasEntryChanged(CacheIndexEntry *aEntry,
