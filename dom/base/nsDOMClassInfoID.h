@@ -34,9 +34,6 @@ enum nsDOMClassInfoID
   eDOMClassInfo_XULTreeBuilder_id,
 #endif
 
-  
-  eDOMClassInfo_CSSFontFaceRule_id,
-
   eDOMClassInfo_ContentFrameMessageManager_id,
   eDOMClassInfo_ContentProcessMessageManager_id,
   eDOMClassInfo_ChromeMessageBroadcaster_id,
