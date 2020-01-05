@@ -13,6 +13,7 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/dom/TypedArray.h"
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
@@ -348,7 +349,7 @@ private:
   AudioContextState mAudioContextState;
   RefPtr<AudioDestinationNode> mDestination;
   RefPtr<AudioListener> mListener;
-  nsTArray<RefPtr<WebAudioDecodeJob> > mDecodeJobs;
+  nsTArray<UniquePtr<WebAudioDecodeJob> > mDecodeJobs;
   
   
   nsTArray<RefPtr<Promise>> mPromiseGripArray;
