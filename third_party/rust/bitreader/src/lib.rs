@@ -162,6 +162,15 @@ impl<'a> BitReader<'a> {
     }
 
     
+    
+    pub fn read_bool(&mut self) -> Result<bool> {
+        match try!(self.read_value(1, 1)) {
+            0 => Ok(false),
+            _ => Ok(true),
+        }
+    }
+
+    
     pub fn skip(&mut self, bit_count: u64) -> Result<()> {
         let end_position = self.position + bit_count;
         if end_position > self.bytes.len() as u64 * 8 {
@@ -302,6 +311,10 @@ impl fmt::Display for BitReaderError {
 
 
 
+
+
+
+
 pub trait ReadInto
     where Self: Sized
 {
@@ -328,3 +341,13 @@ impl_read_into!(i8, read_i8);
 impl_read_into!(i16, read_i16);
 impl_read_into!(i32, read_i32);
 impl_read_into!(i64, read_i64);
+
+
+impl ReadInto for bool {
+    fn read(reader: &mut BitReader, bits: u8) -> Result<Self> {
+        match try!(reader.read_u8(bits)) {
+            0 => Ok(false),
+            _ => Ok(true),
+        }
+    }
+}

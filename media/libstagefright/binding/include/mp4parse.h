@@ -99,6 +99,9 @@ mp4parse_parser* mp4parse_new(mp4parse_io const* io);
 void mp4parse_free(mp4parse_parser* parser);
 
 
+void mp4parse_log(bool enable);
+
+
 mp4parse_error mp4parse_read(mp4parse_parser* parser);
 
 
