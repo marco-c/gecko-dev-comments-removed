@@ -78,6 +78,12 @@ pub struct LayoutDataWrapper {
     pub data: Box<PrivateLayoutData>,
 }
 
+impl LayoutDataWrapper {
+    pub fn clear(&self) {
+        
+    }
+}
+
 #[allow(dead_code)]
 fn static_assertion(x: Option<LayoutDataWrapper>) {
     unsafe {

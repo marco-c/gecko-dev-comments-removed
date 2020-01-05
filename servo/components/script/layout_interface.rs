@@ -6,7 +6,7 @@
 
 
 
-use dom::node::LayoutDataRef;
+use dom::node::LayoutData;
 
 use geom::point::Point2D;
 use geom::rect::Rect;
@@ -41,7 +41,7 @@ pub enum Msg {
     
     
     
-    ReapLayoutData(LayoutDataRef),
+    ReapLayoutData(LayoutData),
 
     
     
