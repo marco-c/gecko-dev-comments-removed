@@ -817,12 +817,14 @@ Gecko_FontFamilyList_Clear(FontFamilyList* aList) {
 }
 
 void
-Gecko_FontFamilyList_AppendNamed(FontFamilyList* aList, nsIAtom* aName)
+Gecko_FontFamilyList_AppendNamed(FontFamilyList* aList, nsIAtom* aName, bool aQuoted)
 {
-  
-  
   FontFamilyName family;
   aName->ToString(family.mName);
+  if (aQuoted) {
+    family.mType = eFamily_named_quoted;
+  }
+
   aList->Append(family);
 }
 
