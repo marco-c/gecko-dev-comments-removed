@@ -30,11 +30,16 @@ nsresult SyncApplyUpdates(Classifier* aClassifier,
   
   
 
-  nsresult ret;
+  nsresult ret = NS_ERROR_FAILURE;
   bool done = false;
   auto onUpdateComplete = [&done, &ret](nsresult rv) {
-    ret = rv;
-    done = true;
+    
+    
+    nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([&done, &ret, rv] {
+      ret = rv;
+      done = true;
+    });
+    NS_DispatchToMainThread(r);
   };
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([&]() {
@@ -60,9 +65,7 @@ nsresult SyncApplyUpdates(Classifier* aClassifier,
     
     
     
-    if (!NS_ProcessNextEvent(NS_GetCurrentThread(), false)) {
-      PR_Sleep(PR_MillisecondsToInterval(100));
-    }
+    MOZ_ALWAYS_TRUE(NS_ProcessNextEvent(NS_GetCurrentThread(), true));
   }
 
   return ret;
