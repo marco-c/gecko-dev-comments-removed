@@ -2092,7 +2092,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   nsStyleCoord mLetterSpacing;          
   nsStyleCoord mLineHeight;             
   nsStyleCoord mTextIndent;             
-  nsStyleCoord mWebkitTextStrokeWidth;  
+  nscoord mWebkitTextStrokeWidth;       
 
   RefPtr<nsCSSShadowArray> mTextShadow; 
 
@@ -2138,7 +2138,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
   }
 
   bool HasWebkitTextStroke() const {
-    return mWebkitTextStrokeWidth.GetCoordValue() > 0;
+    return mWebkitTextStrokeWidth > 0;
   }
 
   
