@@ -414,14 +414,13 @@ struct WrExternalImage
   WrExternalImageIdType type;
 
   
+  uint32_t handle;
+  
   float u0, v0;
   float u1, v1;
 
   
-  uint32_t handle;
-
-  
-  uint8_t* buff;
+  const uint8_t* buff;
   size_t size;
 };
 

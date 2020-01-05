@@ -435,13 +435,12 @@ struct WrExternalImageStruct {
     image_type: WrExternalImageType,
 
     
+    handle: u32,
+    
     u0: f32,
     v0: f32,
     u1: f32,
     v1: f32,
-
-    
-    handle: u32,
 
     
     buff: *const u8,
