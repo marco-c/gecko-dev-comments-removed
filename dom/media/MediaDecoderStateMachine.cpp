@@ -3181,8 +3181,6 @@ bool MediaDecoderStateMachine::HasLowBufferedData()
 bool MediaDecoderStateMachine::HasLowBufferedData(int64_t aUsecs)
 {
   MOZ_ASSERT(OnTaskQueue());
-  MOZ_ASSERT(mState >= DECODER_STATE_DECODING,
-             "Must have loaded first frame for mBuffered to be valid");
 
   
   
