@@ -1,0 +1,41 @@
+
+
+
+
+
+
+"use strict";
+
+
+define(function (require, exports, module) {
+  
+  const React = require("devtools/client/shared/vendor/react");
+
+  
+  const { span } = React.DOM;
+
+  
+
+
+  const InfinityRep = React.createClass({
+    displayName: "Infinity",
+
+    render: function () {
+      return (
+        span({className: "objectBox objectBox-number"},
+          this.props.object.type
+        )
+      );
+    }
+  });
+
+  function supportsObject(object, type) {
+    return type == "Infinity" || type == "-Infinity";
+  }
+
+  
+  exports.InfinityRep = {
+    rep: InfinityRep,
+    supportsObject: supportsObject
+  };
+});

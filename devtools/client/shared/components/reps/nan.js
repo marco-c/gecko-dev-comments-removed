@@ -1,0 +1,41 @@
+
+
+
+
+
+
+"use strict";
+
+
+define(function (require, exports, module) {
+  
+  const React = require("devtools/client/shared/vendor/react");
+
+  
+  const { span } = React.DOM;
+
+  
+
+
+  const NaNRep = React.createClass({
+    displayName: "NaN",
+
+    render: function () {
+      return (
+        span({className: "objectBox objectBox-nan"},
+          "NaN"
+        )
+      );
+    }
+  });
+
+  function supportsObject(object, type) {
+    return type == "NaN";
+  }
+
+  
+  exports.NaNRep = {
+    rep: NaNRep,
+    supportsObject: supportsObject
+  };
+});
