@@ -137,11 +137,6 @@ bool pluginCrashInNestedLoop(InstanceData* instanceData);
 
 
 
-bool pluginTriggerXError(InstanceData* instanceData);
-
-
-
-
 
 
 
