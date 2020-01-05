@@ -1870,6 +1870,8 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             if let Some(pipeline_id) = rng.choose(&*pipeline_ids) {
                 if let Some(pipeline) = self.pipelines.get(pipeline_id) {
                     
+                    if pipeline.parent_info.is_none() { return; }
+                    
                     
                     info!("Randomly closing pipeline {}.", pipeline_id);
                     pipeline.force_exit();
