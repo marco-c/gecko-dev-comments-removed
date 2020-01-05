@@ -519,13 +519,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
 
 
-
-    bool IsSupportedDocument(const nsCString& aType);
-
-    
-
-
-
     bool MakePluginListener();
 
     

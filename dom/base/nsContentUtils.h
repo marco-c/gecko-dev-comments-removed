@@ -2798,6 +2798,23 @@ public:
 
   static Element* GetClosestNonNativeAnonymousAncestor(Element* aElement);
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  static uint32_t
+  HtmlObjectContentTypeForMIMEType(const nsCString& aMIMEType,
+                                   nsIContent* aContent);
+
 private:
   static bool InitializeEventTable();
 
