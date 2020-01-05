@@ -3,6 +3,7 @@
 
 
 
+
 #include "nsTextBoxFrame.h"
 
 #include "gfx2DGlue.h"
@@ -34,6 +35,7 @@
 #include "mozilla/Preferences.h"
 #include "nsLayoutUtils.h"
 #include "mozilla/Attributes.h"
+#include "nsUnicodeProperties.h"
 
 #ifdef ACCESSIBILITY
 #include "nsAccessibilityService.h"
@@ -674,8 +676,9 @@ nsTextBoxFrame::CalculateTitleForWidth(nsRenderingContext& aRenderingContext,
       titleWidth = 0;
     }
 
-    
-    
+    using mozilla::unicode::ClusterIterator;
+    using mozilla::unicode::ClusterReverseIterator;
+
     
     switch (mCropType)
     {
@@ -683,58 +686,73 @@ nsTextBoxFrame::CalculateTitleForWidth(nsRenderingContext& aRenderingContext,
         case CropNone:
         case CropRight:
         {
-            nscoord cwidth;
-            nscoord twidth = 0;
-            int length = mTitle.Length();
-            int i;
-            for (i = 0; i < length; ++i) {
-                char16_t ch = mTitle.CharAt(i);
-                
-                cwidth = nsLayoutUtils::AppUnitWidthOfString(ch, *fm,
-                                                             drawTarget);
-                if (twidth + cwidth > aWidth)
-                    break;
+            ClusterIterator iter(mTitle.Data(), mTitle.Length());
+            const char16_t* dataBegin = iter;
+            const char16_t* pos = dataBegin;
+            nscoord charWidth;
+            nscoord totalWidth = 0;
 
-                twidth += cwidth;
-                if (UCS2_CHAR_IS_BIDI(ch) ) {
-                  mState |= NS_FRAME_IS_BIDI;
+            while (!iter.AtEnd()) {
+                iter.Next();
+                const char16_t* nextPos = iter;
+                ptrdiff_t length = nextPos - pos;
+                charWidth = nsLayoutUtils::AppUnitWidthOfString(pos, length,
+                                                                *fm,
+                                                                drawTarget);
+                if (totalWidth + charWidth > aWidth) {
+                    break;
                 }
+
+                if (UCS2_CHAR_IS_BIDI(*pos)) {
+                    mState |= NS_FRAME_IS_BIDI;
+                }
+                pos = nextPos;
+                totalWidth += charWidth;
             }
 
-            if (i == 0)
+            if (pos == dataBegin) {
                 return titleWidth;
+            }
 
             
-            nsAutoString title( mTitle );
-            title.Truncate(i);
+            nsAutoString title(mTitle);
+            title.Truncate(pos - dataBegin);
             mCroppedTitle.Insert(title, 0);
         }
         break;
 
         case CropLeft:
         {
-            nscoord cwidth;
-            nscoord twidth = 0;
-            int length = mTitle.Length();
-            int i;
-            for (i=length-1; i >= 0; --i) {
-                char16_t ch = mTitle.CharAt(i);
-                cwidth = nsLayoutUtils::AppUnitWidthOfString(ch, *fm,
-                                                             drawTarget);
-                if (twidth + cwidth > aWidth)
-                    break;
+            ClusterReverseIterator iter(mTitle.Data(), mTitle.Length());
+            const char16_t* dataEnd = iter;
+            const char16_t* prevPos = dataEnd;
+            nscoord charWidth;
+            nscoord totalWidth = 0;
 
-                twidth += cwidth;
-                if (UCS2_CHAR_IS_BIDI(ch) ) {
-                  mState |= NS_FRAME_IS_BIDI;
+            while (!iter.AtEnd()) {
+                iter.Next();
+                const char16_t* pos = iter;
+                ptrdiff_t length = prevPos - pos;
+                charWidth = nsLayoutUtils::AppUnitWidthOfString(pos, length,
+                                                                *fm,
+                                                                drawTarget);
+                if (totalWidth + charWidth > aWidth) {
+                    break;
                 }
+
+                if (UCS2_CHAR_IS_BIDI(*pos)) {
+                    mState |= NS_FRAME_IS_BIDI;
+                }
+                prevPos = pos;
+                totalWidth += charWidth;
             }
 
-            if (i == length-1)
+            if (prevPos == dataEnd) {
                 return titleWidth;
+            }
 
             nsAutoString copy;
-            mTitle.Right(copy, length-1-i);
+            mTitle.Right(copy, dataEnd - prevPos);
             mCroppedTitle += copy;
         }
         break;
@@ -753,46 +771,56 @@ nsTextBoxFrame::CalculateTitleForWidth(nsRenderingContext& aRenderingContext,
             
             nscoord charWidth = 0;
             nscoord totalWidth = 0;
-            char16_t ch;
-            int leftPos, rightPos;
+            ClusterIterator leftIter(mTitle.Data(), mTitle.Length());
+            ClusterReverseIterator rightIter(mTitle.Data(), mTitle.Length());
+            const char16_t* dataBegin = leftIter;
+            const char16_t* dataEnd = rightIter;
+            const char16_t* leftPos = dataBegin;
+            const char16_t* rightPos = dataEnd;
+            const char16_t* pos;
+            ptrdiff_t length;
             nsAutoString leftString, rightString;
 
-            rightPos = mTitle.Length() - 1;
-            fm->SetTextRunRTL(false);
-            for (leftPos = 0; leftPos <= rightPos;) {
-                
-                ch = mTitle.CharAt(leftPos);
-                charWidth = nsLayoutUtils::AppUnitWidthOfString(ch, *fm,
+            while (leftPos < rightPos) {
+                leftIter.Next();
+                pos = leftIter;
+                length = pos - leftPos;
+                charWidth = nsLayoutUtils::AppUnitWidthOfString(leftPos, length,
+                                                                *fm,
                                                                 drawTarget);
-                totalWidth += charWidth;
-                if (totalWidth > aWidth)
-                    
+                if (totalWidth + charWidth > aWidth) {
                     break;
-                leftString.Insert(ch, leftString.Length());
-
-                if (UCS2_CHAR_IS_BIDI(ch))
-                    mState |= NS_FRAME_IS_BIDI;
-
-                
-                if (rightPos > leftPos) {
-                    
-                    ch = mTitle.CharAt(rightPos);
-                    charWidth =
-                        nsLayoutUtils::AppUnitWidthOfString(ch, *fm,
-                                                            drawTarget);
-                    totalWidth += charWidth;
-                    if (totalWidth > aWidth)
-                        
-                        break;
-                    rightString.Insert(ch, 0);
-
-                    if (UCS2_CHAR_IS_BIDI(ch))
-                        mState |= NS_FRAME_IS_BIDI;
                 }
 
-                
-                leftPos++;
-                rightPos--;
+                if (UCS2_CHAR_IS_BIDI(*leftPos)) {
+                    mState |= NS_FRAME_IS_BIDI;
+                }
+
+                leftString.Append(leftPos, length);
+                leftPos = pos;
+                totalWidth += charWidth;
+
+                if (leftPos >= rightPos) {
+                    break;
+                }
+
+                rightIter.Next();
+                pos = rightIter;
+                length = rightPos - pos;
+                charWidth = nsLayoutUtils::AppUnitWidthOfString(pos, length,
+                                                                *fm,
+                                                                drawTarget);
+                if (totalWidth + charWidth > aWidth) {
+                    break;
+                }
+
+                if (UCS2_CHAR_IS_BIDI(*pos)) {
+                    mState |= NS_FRAME_IS_BIDI;
+                }
+
+                rightString.Insert(pos, 0, length);
+                rightPos = pos;
+                totalWidth += charWidth;
             }
 
             mCroppedTitle = leftString + kEllipsis + rightString;
