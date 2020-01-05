@@ -2880,6 +2880,9 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", true);
 pref("dom.ipc.processCount", 1);
 
 
+pref("svg.disabled", false);
+
+
 pref("dom.ipc.processCount.webLargeAllocation", 2);
 
 
