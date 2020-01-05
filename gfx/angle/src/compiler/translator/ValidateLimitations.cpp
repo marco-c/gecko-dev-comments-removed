@@ -16,6 +16,17 @@ namespace sh
 namespace
 {
 
+int GetLoopSymbolId(TIntermLoop *loop)
+{
+    
+    
+    TIntermSequence *declSeq = loop->getInit()->getAsDeclarationNode()->getSequence();
+    TIntermBinary *declInit  = (*declSeq)[0]->getAsBinaryNode();
+    TIntermSymbol *symbol    = declInit->getLeft()->getAsSymbolNode();
+
+    return symbol->getId();
+}
+
 
 
 
@@ -28,10 +39,8 @@ namespace
 class ValidateConstIndexExpr : public TIntermTraverser
 {
   public:
-    ValidateConstIndexExpr(TLoopStack& stack)
-        : TIntermTraverser(true, false, false),
-          mValid(true),
-          mLoopStack(stack)
+    ValidateConstIndexExpr(const std::vector<int> &loopSymbols)
+        : TIntermTraverser(true, false, false), mValid(true), mLoopSymbolIds(loopSymbols)
     {
     }
 
@@ -44,14 +53,15 @@ class ValidateConstIndexExpr : public TIntermTraverser
         
         if (mValid)
         {
-            mValid = (symbol->getQualifier() == EvqConst) ||
-                     (mLoopStack.findLoop(symbol));
+            bool isLoopSymbol = std::find(mLoopSymbolIds.begin(), mLoopSymbolIds.end(),
+                                          symbol->getId()) != mLoopSymbolIds.end();
+            mValid = (symbol->getQualifier() == EvqConst) || isLoopSymbol;
         }
     }
 
   private:
     bool mValid;
-    TLoopStack& mLoopStack;
+    const std::vector<int> mLoopSymbolIds;
 };
 
 }  
@@ -80,9 +90,9 @@ bool ValidateLimitations::IsLimitedForLoop(TIntermLoop *loop)
     TIntermNode *body = loop->getBody();
     if (body != nullptr)
     {
-        validate.mLoopStack.push(loop);
+        validate.mLoopSymbolIds.push_back(GetLoopSymbolId(loop));
         body->traverse(&validate);
-        validate.mLoopStack.pop();
+        validate.mLoopSymbolIds.pop_back();
     }
     return (validate.mNumErrors == 0);
 }
@@ -140,9 +150,9 @@ bool ValidateLimitations::visitLoop(Visit, TIntermLoop *node)
     TIntermNode *body = node->getBody();
     if (body != NULL)
     {
-        mLoopStack.push(node);
+        mLoopSymbolIds.push_back(GetLoopSymbolId(node));
         body->traverse(this);
-        mLoopStack.pop();
+        mLoopSymbolIds.pop_back();
     }
 
     
@@ -163,12 +173,13 @@ void ValidateLimitations::error(TSourceLoc loc,
 
 bool ValidateLimitations::withinLoopBody() const
 {
-    return !mLoopStack.empty();
+    return !mLoopSymbolIds.empty();
 }
 
 bool ValidateLimitations::isLoopIndex(TIntermSymbol *symbol)
 {
-    return mLoopStack.findLoop(symbol) != NULL;
+    return std::find(mLoopSymbolIds.begin(), mLoopSymbolIds.end(), symbol->getId()) !=
+           mLoopSymbolIds.end();
 }
 
 bool ValidateLimitations::validateLoopType(TIntermLoop *node)
@@ -474,7 +485,7 @@ bool ValidateLimitations::isConstIndexExpr(TIntermNode *node)
 {
     ASSERT(node != NULL);
 
-    ValidateConstIndexExpr validate(mLoopStack);
+    ValidateConstIndexExpr validate(mLoopSymbolIds);
     node->traverse(&validate);
     return validate.isValid();
 }

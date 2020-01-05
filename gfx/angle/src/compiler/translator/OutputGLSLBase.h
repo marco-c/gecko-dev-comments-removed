@@ -10,7 +10,6 @@
 #include <set>
 
 #include "compiler/translator/IntermNode.h"
-#include "compiler/translator/LoopInfo.h"
 #include "compiler/translator/ParseContext.h"
 
 namespace sh
@@ -91,9 +90,6 @@ class TOutputGLSLBase : public TIntermTraverser
 
     
     std::set<int> mDeclaredStructs;
-
-    
-    TLoopStack mLoopUnrollStack;
 
     ShArrayIndexClampingStrategy mClampingStrategy;
 

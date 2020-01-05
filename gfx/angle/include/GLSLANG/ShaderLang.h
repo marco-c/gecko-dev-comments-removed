@@ -75,12 +75,29 @@ const ShCompileOptions SH_OBJECT_CODE                        = UINT64_C(1) << 2;
 const ShCompileOptions SH_VARIABLES                          = UINT64_C(1) << 3;
 const ShCompileOptions SH_LINE_DIRECTIVES                    = UINT64_C(1) << 4;
 const ShCompileOptions SH_SOURCE_PATH                        = UINT64_C(1) << 5;
-const ShCompileOptions SH_UNROLL_FOR_LOOP_WITH_INTEGER_INDEX = UINT64_C(1) << 6;
 
 
 
 
-const ShCompileOptions SH_UNROLL_FOR_LOOP_WITH_SAMPLER_ARRAY_INDEX = UINT64_C(1) << 7;
+
+
+
+
+const ShCompileOptions SH_DONT_REMOVE_INVARIANT_FOR_FRAGMENT_INPUT = UINT64_C(1) << 6;
+
+
+
+
+
+
+
+
+
+
+
+
+
+const ShCompileOptions SH_REMOVE_INVARIANT_AND_CENTROID_FOR_ESSL3 = UINT64_C(1) << 7;
 
 
 
@@ -185,29 +202,6 @@ const ShCompileOptions SH_EMULATE_ISNAN_FLOAT_FUNCTION = UINT64_C(1) << 27;
 
 
 const ShCompileOptions SH_USE_UNUSED_STANDARD_SHARED_BLOCKS = UINT64_C(1) << 28;
-
-
-
-
-
-
-
-
-const ShCompileOptions SH_DONT_REMOVE_INVARIANT_FOR_FRAGMENT_INPUT = UINT64_C(1) << 29;
-
-
-
-
-
-
-
-
-
-
-
-
-
-const ShCompileOptions SH_REMOVE_INVARIANT_AND_CENTROID_FOR_ESSL3 = UINT64_C(1) << 30;
 
 
 enum ShArrayIndexClampingStrategy
