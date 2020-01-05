@@ -60,14 +60,16 @@ EqualURIs(nsIURI *aURI1, nsIURI *aURI2)
 }
 
 static bool
-DefinitelyEqualURIs(css::URLValue* aURI1, css::URLValue* aURI2)
+DefinitelyEqualURIs(css::URLValueData* aURI1,
+                    css::URLValueData* aURI2)
 {
   return aURI1 == aURI2 ||
          (aURI1 && aURI2 && aURI1->DefinitelyEqualURIs(*aURI2));
 }
 
 static bool
-DefinitelyEqualURIsAndPrincipal(css::URLValue* aURI1, css::URLValue* aURI2)
+DefinitelyEqualURIsAndPrincipal(css::URLValueData* aURI1,
+                                css::URLValueData* aURI2)
 {
   return aURI1 == aURI2 ||
          (aURI1 && aURI2 && aURI1->DefinitelyEqualURIsAndPrincipal(*aURI2));
@@ -2545,7 +2547,8 @@ nsStyleImageLayers::HasLayerWithImage() const
     
     
     
-    if (mLayers[i].mSourceURI.GetSourceURL() || !mLayers[i].mImage.IsEmpty()) {
+    if ((mLayers[i].mSourceURI && mLayers[i].mSourceURI->GetURI()) ||
+        !mLayers[i].mImage.IsEmpty()) {
       return true;
     }
   }
@@ -2779,7 +2782,7 @@ nsStyleImageLayers::Layer::operator==(const Layer& aOther) const
          mImage == aOther.mImage &&
          mMaskMode == aOther.mMaskMode &&
          mComposite == aOther.mComposite &&
-         mSourceURI == aOther.mSourceURI;
+         DefinitelyEqualURIs(mSourceURI, aOther.mSourceURI);
 }
 
 nsChangeHint
@@ -2787,7 +2790,7 @@ nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aNewL
                                           nsChangeHint aPositionChangeHint) const
 {
   nsChangeHint hint = nsChangeHint(0);
-  if (mSourceURI != aNewLayer.mSourceURI) {
+  if (!DefinitelyEqualURIs(mSourceURI, aNewLayer.mSourceURI)) {
     hint |= nsChangeHint_RepaintFrame | nsChangeHint_UpdateEffects;
 
     
@@ -2802,17 +2805,21 @@ nsStyleImageLayers::Layer::CalcDifference(const nsStyleImageLayers::Layer& aNewL
     
     
     bool maybeSVGMask = false;
-    if (mSourceURI.IsLocalRef()) {
-      maybeSVGMask = true;
-    } else if (mSourceURI.GetSourceURL()) {
-      mSourceURI.GetSourceURL()->GetHasRef(&maybeSVGMask);
+    if (mSourceURI) {
+      if (mSourceURI->IsLocalRef()) {
+        maybeSVGMask = true;
+      } else if (mSourceURI->GetURI()) {
+        mSourceURI->GetURI()->GetHasRef(&maybeSVGMask);
+      }
     }
 
     if (!maybeSVGMask) {
-      if (aNewLayer.mSourceURI.IsLocalRef()) {
-        maybeSVGMask = true;
-      } else if (aNewLayer.mSourceURI.GetSourceURL()) {
-        aNewLayer.mSourceURI.GetSourceURL()->GetHasRef(&maybeSVGMask);
+      if (aNewLayer.mSourceURI) {
+        if (aNewLayer.mSourceURI->IsLocalRef()) {
+          maybeSVGMask = true;
+        } else if (aNewLayer.mSourceURI->GetURI()) {
+          aNewLayer.mSourceURI->GetURI()->GetHasRef(&maybeSVGMask);
+        }
       }
     }
 

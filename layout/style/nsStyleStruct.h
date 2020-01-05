@@ -705,7 +705,8 @@ struct nsStyleImageLayers {
   friend struct Layer;
   struct Layer {
     nsStyleImage  mImage;         
-    mozilla::FragmentOrURL mSourceURI;  
+    RefPtr<mozilla::css::URLValueData> mSourceURI;  
+                                  
                                   
                                   
                                   
