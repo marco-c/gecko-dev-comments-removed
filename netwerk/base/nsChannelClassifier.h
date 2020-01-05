@@ -59,6 +59,7 @@ private:
     nsresult ShouldEnableTrackingProtectionInternal(nsIChannel *aChannel,
                                                     bool *result);
 
+    bool AddonMayLoad(nsIChannel *aChannel, nsIURI *aUri);
 public:
     
     

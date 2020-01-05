@@ -207,8 +207,8 @@ var Service = {
   
   
   
-  checkAddonMayLoad(extension, uri) {
-    return extension.whiteListedHosts.matchesIgnoringPath(uri);
+  checkAddonMayLoad(extension, uri, explicit = false) {
+    return extension.whiteListedHosts.matchesIgnoringPath(uri, explicit);
   },
 
   generateBackgroundPageUrl(extension) {

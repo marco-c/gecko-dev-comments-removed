@@ -9,6 +9,7 @@
 #include "mozIThirdPartyUtil.h"
 #include "nsCharSeparatedTokenizer.h"
 #include "nsContentUtils.h"
+#include "nsIAddonPolicyService.h"
 #include "nsICacheEntry.h"
 #include "nsICachingChannel.h"
 #include "nsIChannel.h"
@@ -148,6 +149,10 @@ nsChannelClassifier::ShouldEnableTrackingProtectionInternal(nsIChannel *aChannel
       return NS_OK;
     }
 
+    if (AddonMayLoad(aChannel, chanURI)) {
+        return NS_OK;
+    }
+
     nsCOMPtr<nsIIOService> ios = do_GetService(NS_IOSERVICE_CONTRACTID, &rv);
     NS_ENSURE_SUCCESS(rv, rv);
 
@@ -231,6 +236,23 @@ nsChannelClassifier::ShouldEnableTrackingProtectionInternal(nsIChannel *aChannel
     
     
     return NotifyTrackingProtectionDisabled(aChannel);
+}
+
+bool
+nsChannelClassifier::AddonMayLoad(nsIChannel *aChannel, nsIURI *aUri)
+{
+    nsCOMPtr<nsILoadInfo> channelLoadInfo = aChannel->GetLoadInfo();
+    if (!channelLoadInfo)
+        return false;
+
+    
+    
+    
+    nsIPrincipal* loadingPrincipal = channelLoadInfo->LoadingPrincipal();
+    if (!loadingPrincipal)
+        return false;
+
+    return BasePrincipal::Cast(loadingPrincipal)->AddonAllowsLoad(aUri, true);
 }
 
 

@@ -264,6 +264,11 @@ public:
 
   already_AddRefed<BasePrincipal> CloneStrippingUserContextIdAndFirstPartyDomain();
 
+  
+  
+  
+  bool AddonAllowsLoad(nsIURI* aURI, bool aExplicit = false);
+
 protected:
   virtual ~BasePrincipal();
 
@@ -277,10 +282,6 @@ protected:
   
   virtual bool MayLoadInternal(nsIURI* aURI) = 0;
   friend class ::nsExpandedPrincipal;
-
-  
-  
-  bool AddonAllowsLoad(nsIURI* aURI);
 
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIContentSecurityPolicy> mPreloadCSP;
