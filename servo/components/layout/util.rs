@@ -9,6 +9,7 @@ use incremental::RestyleDamage;
 use parallel::DomParallelInfo;
 use wrapper::{LayoutNode, TLayoutNode, ThreadSafeLayoutNode};
 
+use azure::azure_hl::{Color};
 use gfx::display_list::OpaqueNode;
 use gfx;
 use libc::{c_void, uintptr_t};
@@ -169,11 +170,11 @@ impl OpaqueNodeMethods for OpaqueNode {
 
 pub trait ToGfxColor {
     
-    fn to_gfx_color(&self) -> gfx::color::Color;
+    fn to_gfx_color(&self) -> Color;
 }
 
 impl ToGfxColor for style::values::RGBA {
-    fn to_gfx_color(&self) -> gfx::color::Color {
+    fn to_gfx_color(&self) -> Color {
         gfx::color::rgba(self.red, self.green, self.blue, self.alpha)
     }
 }
