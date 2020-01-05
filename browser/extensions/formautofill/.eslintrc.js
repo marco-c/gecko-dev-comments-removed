@@ -266,11 +266,6 @@ module.exports = {
     "no-warning-comments": "off",
 
     
-    
-    
-    "object-shorthand": "off",
-
-    
     "one-var": "off",
 
     

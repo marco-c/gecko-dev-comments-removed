@@ -46,7 +46,7 @@ let FormAutofillParent = {
   
 
 
-  init: function() {
+  init() {
     let storePath =
       OS.Path.join(OS.Constants.Path.profileDir, PROFILE_JSON_FILE_NAME);
 
@@ -66,7 +66,7 @@ let FormAutofillParent = {
 
 
 
-  receiveMessage: function({name, data, target}) {
+  receiveMessage({name, data, target}) {
     switch (name) {
       case "FormAutofill:PopulateFieldValues":
         this._populateFieldValues(data, target);
@@ -84,7 +84,7 @@ let FormAutofillParent = {
 
 
 
-  getProfileStore: function() {
+  getProfileStore() {
     return this._profileStore;
   },
 
@@ -93,7 +93,7 @@ let FormAutofillParent = {
 
 
 
-  _uninit: function() {
+  _uninit() {
     if (this._profileStore) {
       this._profileStore._saveImmediately();
       this._profileStore = null;
