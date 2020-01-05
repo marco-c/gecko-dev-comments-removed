@@ -1394,9 +1394,16 @@ CustomizeMode.prototype = {
 
       let themes = [aDefaultTheme];
       let lwts = LightweightThemeManager.usedThemes;
+      let currentLwt = LightweightThemeManager.currentTheme;
+      let currentLwtIndex = lwts.indexOf(currentLwt);
+      if (currentLwtIndex > -1) {
+        
+        
+        
+        lwts = lwts.splice(currentLwtIndex, 1).concat(lwts);
+      }
       if (lwts.length > RECENT_LWT_COUNT)
         lwts.length = RECENT_LWT_COUNT;
-      let currentLwt = LightweightThemeManager.currentTheme;
       for (let lwt of lwts) {
         lwt.isActive = !!currentLwt && (lwt.id == currentLwt.id);
         themes.push(lwt);
