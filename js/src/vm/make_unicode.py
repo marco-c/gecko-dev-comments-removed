@@ -518,7 +518,7 @@ def make_unicode_file(version,
     index1, index2, shift = splitbins(index)
 
     
-    assert shift == 5
+    assert shift == 6
 
     same_upper_index1, same_upper_index2, same_upper_shift = splitbins(same_upper_index)
 

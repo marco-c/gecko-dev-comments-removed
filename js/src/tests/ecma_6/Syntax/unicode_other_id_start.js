@@ -4,9 +4,8 @@
 
 
 const otherIdStart = [
-    
-    
-    
+    0x1885,     
+    0x1886,     
     0x2118,     
     0x212E,     
     0x309B,     
@@ -14,13 +13,7 @@ const otherIdStart = [
 ];
 
 
-const otherIdStart_Unicode9 = [
-    0x1885,     
-    0x1886,     
-];
-
-
-for (let ident of [...otherIdStart, ...otherIdStart_Unicode9]) {
+for (let ident of otherIdStart) {
     eval(`
         let ${String.fromCodePoint(ident)} = 123;
         assertEq(${String.fromCodePoint(ident)}, 123);
@@ -36,7 +29,7 @@ for (let ident of [...otherIdStart, ...otherIdStart_Unicode9]) {
 }
 
 
-for (let ident of [...otherIdStart, ...otherIdStart_Unicode9]) {
+for (let ident of otherIdStart) {
     eval(`
         let A${String.fromCodePoint(ident)} = 123;
         assertEq(${String.fromCodePoint(0x41, ident)}, 123);

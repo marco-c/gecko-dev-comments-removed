@@ -50,19 +50,12 @@ const idStartSupplemental = [
 
 
 const otherIdStart = [
-    
-    
-    
+    0x1885,     
+    0x1886,     
     0x2118,     
     0x212E,     
     0x309B,     
     0x309C,     
-];
-
-
-const otherIdStart_Unicode9 = [
-    0x1885,     
-    0x1886,     
 ];
 
 
@@ -105,7 +98,7 @@ const otherIdContinue = [
     0x19DA,     
 ];
 
-for (let ident of [...idStart, ...otherIdStart, ...otherIdStart_Unicode9]) {
+for (let ident of [...idStart, ...otherIdStart]) {
     for (let count of leadingZeros) {
         let zeros = "0".repeat(count);
         eval(`
@@ -128,7 +121,7 @@ for (let ident of [...idContinue, ...idContinueSupplemental, ...otherIdContinue]
     }
 }
 
-for (let ident of [...idStart, ...otherIdStart, ...otherIdStart_Unicode9, ...idContinue, ...otherIdContinue]) {
+for (let ident of [...idStart, ...otherIdStart, ...idContinue, ...otherIdContinue]) {
     for (let zeros of leadingZeros) {
         eval(`
             let A\\u{${zeros}${ident.toString(16)}} = 123;
