@@ -14,6 +14,7 @@
 #include "FilteringWrapper.h"
 
 #include "jsfriendapi.h"
+#include "mozilla/ErrorResult.h"
 #include "mozilla/dom/BindingUtils.h"
 #include "mozilla/dom/LocationBinding.h"
 #include "mozilla/dom/WindowBinding.h"
@@ -273,6 +274,42 @@ AccessCheck::checkPassToPrivilegedCode(JSContext* cx, HandleObject wrapper, cons
             return false;
     }
     return true;
+}
+
+void
+AccessCheck::reportCrossOriginDenial(JSContext* cx, JS::HandleId id,
+                                     const nsACString& accessType)
+{
+    
+    
+    
+    
+    if (JS_IsExceptionPending(cx)) {
+        return;
+    }
+
+    nsAutoCString message;
+    if (JSID_IS_VOID(id)) {
+        message = NS_LITERAL_CSTRING("Permission denied to access object");
+    } else {
+        
+        
+        
+        JS::RootedValue idVal(cx, js::IdToValue(id));
+        nsAutoJSString propName;
+        JS::RootedString idStr(cx, JS_ValueToSource(cx, idVal));
+        if (!idStr || !propName.init(cx, idStr)) {
+            return;
+        }
+        message = NS_LITERAL_CSTRING("Permission denied to ") +
+                  accessType +
+                  NS_LITERAL_CSTRING(" property ") +
+                  NS_ConvertUTF16toUTF8(propName) +
+                  NS_LITERAL_CSTRING(" on cross-origin object");
+    }
+    ErrorResult rv;
+    rv.ThrowDOMException(NS_ERROR_DOM_SECURITY_ERR, message);
+    rv.MaybeSetPendingException(cx);
 }
 
 enum Access { READ = (1<<0), WRITE = (1<<1), NO_ACCESS = 0 };
