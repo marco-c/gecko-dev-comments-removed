@@ -345,7 +345,6 @@ NS_INTERFACE_MAP_BEGIN(HttpBaseChannel)
   NS_INTERFACE_MAP_ENTRY(nsITimedChannel)
   NS_INTERFACE_MAP_ENTRY(nsIConsoleReportCollector)
   NS_INTERFACE_MAP_ENTRY(nsIThrottledInputChannel)
-  NS_INTERFACE_MAP_ENTRY(nsIClassifiedChannel)
   if (aIID.Equals(NS_GET_IID(HttpBaseChannel))) {
     foundInterface = static_cast<nsIWritablePropertyBag*>(this);
   } else
@@ -2087,6 +2086,12 @@ HttpBaseChannel::GetRequestSucceeded(bool *aValue)
 NS_IMETHODIMP
 HttpBaseChannel::RedirectTo(nsIURI *targetURI)
 {
+  NS_ENSURE_ARG(targetURI);
+
+  nsAutoCString spec;
+  targetURI->GetAsciiSpec(spec);
+  LOG(("HttpBaseChannel::RedirectTo [this=%p, uri=%s]", this, spec.get()));
+
   
   
   
@@ -2970,6 +2975,8 @@ HttpBaseChannel::ReleaseListeners()
 void
 HttpBaseChannel::DoNotifyListener()
 {
+  LOG(("HttpBaseChannel::DoNotifyListener this=%p", this));
+
   if (mListener) {
     MOZ_ASSERT(!mOnStartRequestCalled,
                "We should not call OnStartRequest twice");
@@ -3248,12 +3255,6 @@ HttpBaseChannel::SetupReplacementChannel(nsIURI       *newURI,
   
   httpChannel->SetRequestContextID(mRequestContextID);
 
-  
-  nsCOMPtr<nsISupportsPriority> p = do_QueryInterface(newChannel);
-  if (p) {
-    p->SetPriority(mPriority);
-  }
-
   if (httpInternal) {
     
     httpInternal->SetThirdPartyFlags(mThirdPartyFlags);
@@ -3389,41 +3390,6 @@ HttpBaseChannel::SameOriginWithOriginalUri(nsIURI *aURI)
 }
 
 
-
-
-
-NS_IMETHODIMP
-HttpBaseChannel::GetMatchedList(nsACString& aList)
-{
-  aList = mMatchedList;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HttpBaseChannel::GetMatchedProvider(nsACString& aProvider)
-{
-  aProvider = mMatchedProvider;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HttpBaseChannel::GetMatchedPrefix(nsACString& aPrefix)
-{
-  aPrefix = mMatchedPrefix;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-HttpBaseChannel::SetMatchedInfo(const nsACString& aList,
-                                const nsACString& aProvider,
-                                const nsACString& aPrefix) {
-  NS_ENSURE_ARG(!aList.IsEmpty());
-
-  mMatchedList = aList;
-  mMatchedProvider = aProvider;
-  mMatchedPrefix = aPrefix;
-  return NS_OK;
-}
 
 
 
