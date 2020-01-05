@@ -788,6 +788,15 @@ class SchemaAPIManager extends EventEmitter {
     this.apis = new DefaultWeakMap(() => new Map());
 
     this._scriptScopes = [];
+    this._schemaApis = {
+      addon_parent: [],
+      addon_child: [],
+      content_parent: [],
+      content_child: [],
+      devtools_parent: [],
+      devtools_child: [],
+      proxy_script: [],
+    };
   }
 
   
@@ -1095,6 +1104,52 @@ class SchemaAPIManager extends EventEmitter {
 
     
     this._scriptScopes.push(scope);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  registerSchemaAPI(namespace, envType, getAPI) {
+    this._schemaApis[envType].push({namespace, getAPI});
+  }
+
+  
+
+
+
+
+
+
+  generateAPIs(context, obj) {
+    let apis = this._schemaApis[context.envType];
+    if (!apis) {
+      Cu.reportError(`No APIs have been registered for ${context.envType}`);
+      return;
+    }
+    SchemaAPIManager.generateAPIs(context, apis, obj);
   }
 
   

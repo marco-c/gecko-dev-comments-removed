@@ -143,6 +143,13 @@ let apiManager = new class extends SchemaAPIManager {
       }
     }
   }
+
+  registerSchemaAPI(namespace, envType, getAPI) {
+    if (envType == "addon_parent" || envType == "content_parent" ||
+        envType == "devtools_parent") {
+      super.registerSchemaAPI(namespace, envType, getAPI);
+    }
+  }
 }();
 
 
@@ -289,6 +296,7 @@ GlobalManager = {
   },
 
   injectInObject(context, isChromeCompat, dest) {
+    apiManager.generateAPIs(context, dest);
     SchemaAPIManager.generateAPIs(context, context.extension.apis, dest);
   },
 };
