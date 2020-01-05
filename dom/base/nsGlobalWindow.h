@@ -86,6 +86,7 @@ class nsIControllers;
 class nsIJSID;
 class nsIScriptContext;
 class nsIScriptTimeoutHandler;
+class nsITimeoutHandler;
 class nsIWebBrowserChrome;
 
 class nsDOMWindowList;
@@ -1440,7 +1441,7 @@ public:
   
   
   
-  nsresult SetTimeoutOrInterval(nsIScriptTimeoutHandler* aHandler,
+  nsresult SetTimeoutOrInterval(nsITimeoutHandler* aHandler,
                                 int32_t interval, bool aIsInterval,
                                 int32_t* aReturn);
   int32_t SetTimeoutOrInterval(JSContext* aCx,

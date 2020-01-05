@@ -14,7 +14,7 @@
 
 class nsGlobalWindow;
 class nsIPrincipal;
-class nsIScriptTimeoutHandler;
+class nsITimeoutHandler;
 class nsITimer;
 
 namespace mozilla {
@@ -85,7 +85,7 @@ public:
   PopupControlState mPopupState;
 
   
-  nsCOMPtr<nsIScriptTimeoutHandler> mScriptHandler;
+  nsCOMPtr<nsITimeoutHandler> mScriptHandler;
 
 private:
   ~Timeout();

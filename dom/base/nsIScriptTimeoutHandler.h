@@ -6,6 +6,7 @@
 #ifndef nsIScriptTimeoutHandler_h___
 #define nsIScriptTimeoutHandler_h___
 
+#include "nsITimeoutHandler.h"
 #include "nsTArray.h"
 #include "js/TypeDecls.h"
 #include "mozilla/Function.h"
@@ -26,7 +27,7 @@ class Function;
 
 
 
-class nsIScriptTimeoutHandler : public nsISupports
+class nsIScriptTimeoutHandler : public nsITimeoutHandler
 {
 public:
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_ISCRIPTTIMEOUTHANDLER_IID)
@@ -41,8 +42,6 @@ public:
   
   
   
-  virtual void GetLocation(const char **aFileName, uint32_t *aLineNo,
-                           uint32_t *aColumn) = 0;
 
   
   virtual const nsTArray<JS::Value>& GetArgs() = 0;
