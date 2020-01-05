@@ -128,6 +128,11 @@ function loadCallgraph(file)
 
     
     
+    for (var func of extraGCFunctions())
+        addGCFunction(func, "annotation");
+
+    
+    
     var worklist = [];
     for (var callee in callerGraph)
         suppressedFunctions[callee] = true;
