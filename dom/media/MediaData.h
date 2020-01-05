@@ -447,6 +447,12 @@ public:
     YUVColorSpace mYUVColorSpace = YUVColorSpace::BT601;
   };
 
+  class Listener {
+  public:
+    virtual void OnSentToCompositor() = 0;
+    virtual ~Listener() {}
+  };
+
   
   
   
@@ -530,8 +536,6 @@ public:
 
   int32_t mFrameID;
 
-  bool mSentToCompositor;
-
   VideoData(int64_t aOffset,
             int64_t aTime,
             int64_t aDuration,
@@ -540,8 +544,15 @@ public:
             IntSize aDisplay,
             uint32_t aFrameID);
 
+  void SetListener(UniquePtr<Listener> aListener);
+  void MarkSentToCompositor();
+  bool IsSentToCompositor() { return mSentToCompositor; }
+
 protected:
   ~VideoData();
+
+  bool mSentToCompositor;
+  UniquePtr<Listener> mListener;
 };
 
 class CryptoTrack
