@@ -40,6 +40,7 @@
 #include "nsIDOMElement.h"
 #include "nsIDOMNode.h"
 #include "nsIDOMText.h"
+#include "nsIFrame.h"
 #include "nsIHTMLAbsPosEditor.h"
 #include "nsIHTMLDocument.h"
 #include "nsINode.h"
@@ -1710,14 +1711,33 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
         *selNode->AsContent(), selOffset, HTMLEditor::EmptyContainers::no,
         getter_AddRefs(leftCite), getter_AddRefs(rightCite));
     NS_ENSURE_STATE(newOffset != -1);
+
+    
+    
+    
+    
+    
+    if (leftCite &&
+        leftCite->IsHTMLElement(nsGkAtoms::span) &&
+        leftCite->GetPrimaryFrame()->IsFrameOfType(nsIFrame::eBlockFrame)) {
+       nsCOMPtr<nsINode> lastChild = leftCite->GetLastChild();
+       if (lastChild && !lastChild->IsHTMLElement(nsGkAtoms::br)) {
+         
+         nsCOMPtr<Element> invisBR =
+           mHTMLEditor->CreateBR(leftCite, leftCite->Length());
+      }
+    }
+
     selNode = citeNode->GetParentNode();
     NS_ENSURE_STATE(mHTMLEditor);
     nsCOMPtr<Element> brNode = mHTMLEditor->CreateBR(selNode, newOffset);
     NS_ENSURE_STATE(brNode);
+
     
     aSelection->SetInterlinePosition(true);
     rv = aSelection->Collapse(selNode, newOffset);
     NS_ENSURE_SUCCESS(rv, rv);
+
     
     
     
@@ -1737,13 +1757,16 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
         wsObjAfterBR.NextVisibleNode(selNode, newOffset + 1,
                                      address_of(visNode), &visOffset, &wsType);
         if (wsType == WSType::normalWS || wsType == WSType::text ||
-            wsType == WSType::special) {
+            wsType == WSType::special ||
+            
+            wsType == WSType::thisBlock) {
           NS_ENSURE_STATE(mHTMLEditor);
           brNode = mHTMLEditor->CreateBR(selNode, newOffset);
           NS_ENSURE_STATE(brNode);
         }
       }
     }
+
     
     bool bEmptyCite = false;
     if (leftCite) {
@@ -1760,6 +1783,7 @@ HTMLEditRules::SplitMailCites(Selection* aSelection,
         }
       }
     }
+
     if (rightCite) {
       NS_ENSURE_STATE(mHTMLEditor);
       rv = mHTMLEditor->IsEmptyNode(rightCite, &bEmptyCite, true, false);
