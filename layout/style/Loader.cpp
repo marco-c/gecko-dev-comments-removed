@@ -1426,8 +1426,6 @@ Loader::InsertChildSheet(StyleSheet* aSheet,
   aParentRule->SetSheet(aSheet->AsGecko()); 
 
   LOG(("  Inserting into parent sheet"));
-  
-
   return NS_OK;
 }
 
@@ -1991,7 +1989,7 @@ Loader::LoadInlineStyle(nsIContent* aElement,
                         bool* aIsAlternate)
 {
   LOG(("css::Loader::LoadInlineStyle"));
-  NS_ASSERTION(mParsingDatas.Length() == 0, "We're in the middle of a parse?");
+  MOZ_ASSERT(mParsingDatas.IsEmpty(), "We're in the middle of a parse?");
 
   *aCompleted = true;
 
