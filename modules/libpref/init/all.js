@@ -117,6 +117,7 @@ pref("browser.download.forbid_open_with", false);
 
 
 pref("dom.quotaManager.testing", false);
+pref("dom.select_popup_in_parent.enabled", false);
 
 
 pref("dom.indexedDB.enabled", true);

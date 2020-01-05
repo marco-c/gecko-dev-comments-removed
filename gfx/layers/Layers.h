@@ -2291,6 +2291,12 @@ public:
 protected:
   friend class ReadbackProcessor;
 
+  
+  
+  
+  
+  void RemoveAllChildren();
+
   void DidInsertChild(Layer* aLayer);
   void DidRemoveChild(Layer* aLayer);
 

@@ -347,6 +347,9 @@ DWORD CurrentWindowsTimeGetter::sLastPostTime = 0;
 
 
 
+
+
+
 class TIPMessageHandler
 {
 public:
@@ -360,13 +363,16 @@ public:
   static void Initialize()
   {
     MOZ_ASSERT(!sInstance);
+    if (!IsWin8OrLater()) {
+      return;
+    }
+
     sInstance = new TIPMessageHandler();
     ClearOnShutdown(&sInstance);
   }
 
   static bool IsA11yBlocked()
   {
-    MOZ_ASSERT(sInstance);
     if (!sInstance) {
       return false;
     }
@@ -393,6 +399,17 @@ private:
     mHook = ::SetWindowsHookEx(WH_GETMESSAGE, &TIPHook, nullptr,
                                ::GetCurrentThreadId());
     MOZ_ASSERT(mHook);
+
+#if defined(_M_IX86)
+    if (!IsWin10OrLater()) {
+      
+      sTipTsfInterceptor.Init("tiptsf.dll");
+      DebugOnly<bool> ok = sTipTsfInterceptor.AddHook("ProcessCaretEvents",
+          reinterpret_cast<intptr_t>(&ProcessCaretEventsHook),
+          (void**) &sProcessCaretEventsStub);
+      MOZ_ASSERT(ok);
+    }
+#endif 
   }
 
   class MOZ_RAII A11yInstantiationBlocker
@@ -400,14 +417,18 @@ private:
   public:
     A11yInstantiationBlocker()
     {
-      MOZ_ASSERT(TIPMessageHandler::sInstance);
+      if (!TIPMessageHandler::sInstance) {
+        return;
+      }
       ++TIPMessageHandler::sInstance->mA11yBlockCount;
     }
 
     ~A11yInstantiationBlocker()
     {
-      MOZ_ASSERT(TIPMessageHandler::sInstance &&
-                 TIPMessageHandler::sInstance->mA11yBlockCount > 0);
+      if (!TIPMessageHandler::sInstance) {
+        return;
+      }
+      MOZ_ASSERT(TIPMessageHandler::sInstance->mA11yBlockCount > 0);
       --TIPMessageHandler::sInstance->mA11yBlockCount;
     }
   };
@@ -433,12 +454,33 @@ private:
     return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
   }
 
+#if defined(_M_IX86)
+  static void CALLBACK ProcessCaretEventsHook(HWINEVENTHOOK aWinEventHook,
+                                              DWORD aEvent, HWND aHwnd,
+                                              LONG aObjectId, LONG aChildId,
+                                              DWORD aGeneratingTid,
+                                              DWORD aEventTime)
+  {
+    A11yInstantiationBlocker block;
+    sProcessCaretEventsStub(aWinEventHook, aEvent, aHwnd, aObjectId, aChildId,
+                            aGeneratingTid, aEventTime);
+  }
+
+  static WindowsDllInterceptor sTipTsfInterceptor;
+  static WINEVENTPROC sProcessCaretEventsStub;
+#endif 
+
   static StaticAutoPtr<TIPMessageHandler> sInstance;
 
-  HHOOK     mHook;
-  UINT      mMessages[7];
-  uint32_t  mA11yBlockCount;
+  HHOOK                 mHook;
+  UINT                  mMessages[7];
+  uint32_t              mA11yBlockCount;
 };
+
+#if defined(_M_IX86)
+WindowsDllInterceptor TIPMessageHandler::sTipTsfInterceptor;
+WINEVENTPROC TIPMessageHandler::sProcessCaretEventsStub;
+#endif 
 
 StaticAutoPtr<TIPMessageHandler> TIPMessageHandler::sInstance;
 
