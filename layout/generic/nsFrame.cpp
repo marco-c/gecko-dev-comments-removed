@@ -8700,7 +8700,8 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
   
   
   
-  aOutValid = !aFrame->IsFrameOfType(nsIFrame::eSVGContainer)
+  aOutValid = !(aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)
+              || !aFrame->IsFrameOfType(nsIFrame::eSVGContainer)
               || aFrame->GetType() == nsGkAtoms::svgTextFrame;
 
   nsRect u;
