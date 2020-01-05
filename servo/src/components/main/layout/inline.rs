@@ -20,7 +20,7 @@ use gfx::font::FontMetrics;
 use gfx::font_context::FontContext;
 use servo_util::geometry::Au;
 use servo_util::geometry;
-use servo_util::range::Range;
+use servo_util::range::{Range, RangeIndex};
 use std::iter::Enumerate;
 use std::fmt;
 use std::mem;
@@ -56,9 +56,13 @@ use sync::Arc;
 
 
 pub struct LineBox {
-    pub range: Range<int>,
+    pub range: Range<BoxIndex>,
     pub bounds: Rect<Au>,
     pub green_zone: Size2D<Au>
+}
+
+range_index! {
+    struct BoxIndex(int)
 }
 
 struct LineboxScanner {
@@ -99,7 +103,7 @@ impl LineboxScanner {
     }
 
     fn reset_linebox(&mut self) {
-        self.pending_line.range.reset(0,0);
+        self.pending_line.range.reset(BoxIndex(0), BoxIndex(0));
         self.pending_line.bounds = Rect(Point2D(Au::new(0), self.cur_y), Size2D(Au::new(0), Au::new(0)));
         self.pending_line.green_zone = Size2D(Au::new(0), Au::new(0))
     }
@@ -146,7 +150,7 @@ impl LineboxScanner {
             }
         }
 
-        if self.pending_line.range.length() > 0 {
+        if self.pending_line.range.length() > BoxIndex(0) {
             debug!("LineboxScanner: Partially full linebox {:u} left at end of scanning.",
                     self.lines.len());
             self.flush_current_line();
@@ -193,7 +197,7 @@ impl LineboxScanner {
         let first_box_size = first_box.border_box.size;
         let splittable = first_box.can_split();
         debug!("LineboxScanner: box size: {}, splittable: {}", first_box_size, splittable);
-        let line_is_empty: bool = self.pending_line.range.length() == 0;
+        let line_is_empty: bool = self.pending_line.range.length() == BoxIndex(0);
 
         
         
@@ -349,7 +353,7 @@ impl LineboxScanner {
     
     
     fn try_append_to_line(&mut self, in_box: Box, flow: &mut InlineFlow) -> bool {
-        let line_is_empty = self.pending_line.range.length() == 0;
+        let line_is_empty = self.pending_line.range.length() == BoxIndex(0);
         if line_is_empty {
             let (line_bounds, _) = self.initial_line_placement(&in_box, self.cur_y, flow);
             self.pending_line.bounds.origin = line_bounds.origin;
@@ -444,11 +448,11 @@ impl LineboxScanner {
     fn push_box_to_line(&mut self, box_: Box) {
         debug!("LineboxScanner: Pushing box {} to line {:u}", box_.debug_id(), self.lines.len());
 
-        if self.pending_line.range.length() == 0 {
+        if self.pending_line.range.length() == BoxIndex(0) {
             assert!(self.new_boxes.len() <= (u16::MAX as uint));
-            self.pending_line.range.reset(self.new_boxes.len() as int, 0);
+            self.pending_line.range.reset(BoxIndex(self.new_boxes.len() as int), BoxIndex(0));
         }
-        self.pending_line.range.extend_by(1);
+        self.pending_line.range.extend_by(BoxIndex(1));
         self.pending_line.bounds.size.width = self.pending_line.bounds.size.width +
             box_.border_box.size.width;
         self.pending_line.bounds.size.height = Au::max(self.pending_line.bounds.size.height,
@@ -468,7 +472,10 @@ impl<'a> Iterator<(&'a Box, InlineFragmentContext<'a>)> for BoxIterator<'a> {
     fn next(&mut self) -> Option<(&'a Box, InlineFragmentContext<'a>)> {
         match self.iter.next() {
             None => None,
-            Some((i, fragment)) => Some((fragment, InlineFragmentContext::new(self.map, i as int))),
+            Some((i, fragment)) => Some((
+                fragment,
+                InlineFragmentContext::new(self.map, FragmentIndex(i as int)),
+            )),
         }
     }
 }
@@ -484,7 +491,10 @@ impl<'a> Iterator<(&'a mut Box, InlineFragmentContext<'a>)> for MutBoxIterator<'
     fn next(&mut self) -> Option<(&'a mut Box, InlineFragmentContext<'a>)> {
         match self.iter.next() {
             None => None,
-            Some((i, fragment)) => Some((fragment, InlineFragmentContext::new(self.map, i as int))),
+            Some((i, fragment)) => Some((
+                fragment,
+                InlineFragmentContext::new(self.map, FragmentIndex(i as int)),
+            )),
         }
     }
 }
@@ -518,7 +528,7 @@ impl InlineBoxes {
 
     
     pub fn push(&mut self, fragment: Box, style: Arc<ComputedValues>) {
-        self.map.push(style, Range::new(self.boxes.len() as int, 1));
+        self.map.push(style, Range::new(FragmentIndex(self.boxes.len() as int), FragmentIndex(1)));
         self.boxes.push(fragment)
     }
 
@@ -528,7 +538,7 @@ impl InlineBoxes {
             boxes: other_boxes,
             map: other_map
         } = other;
-        let adjustment = self.boxes.len();
+        let adjustment = FragmentIndex(self.boxes.len() as int);
         self.map.push_all(other_map, adjustment);
         self.boxes.push_all_move(other_boxes);
     }
@@ -713,8 +723,8 @@ impl InlineFlow {
             text_align::right => slack_width,
         };
 
-        for i in line.range.eachi() {
-            let box_ = boxes.get_mut(i as uint);
+        for i in line.range.each_index() {
+            let box_ = boxes.get_mut(i.to_uint());
             let size = box_.border_box.size;
             box_.border_box = Rect(Point2D(offset_x, box_.border_box.origin.y), size);
             offset_x = offset_x + size.width;
@@ -844,8 +854,8 @@ impl Flow for InlineFlow {
             let (mut largest_height_for_top_fragments, mut largest_height_for_bottom_fragments) =
                 (Au(0), Au(0));
 
-            for box_i in line.range.eachi() {
-                let fragment = self.boxes.boxes.get_mut(box_i as uint);
+            for box_i in line.range.each_index() {
+                let fragment = self.boxes.boxes.get_mut(box_i.to_uint());
 
                 let InlineMetrics {
                     height_above_baseline: mut height_above_baseline,
@@ -920,8 +930,8 @@ impl Flow for InlineFlow {
 
             
             
-            for box_i in line.range.eachi() {
-                let fragment = self.boxes.get_mut(box_i as uint);
+            for box_i in line.range.each_index() {
+                let fragment = self.boxes.get_mut(box_i.to_uint());
                 match fragment.vertical_align() {
                     vertical_align::top => {
                         fragment.border_box.origin.y = fragment.border_box.origin.y +
@@ -971,18 +981,23 @@ impl fmt::Show for InlineFlow {
     }
 }
 
+range_index! {
+    #[doc = "The index of a DOM element into the flat list of fragments."]
+    struct FragmentIndex(int)
+}
+
 
 
 pub struct FragmentRange {
     
     pub style: Arc<ComputedValues>,
     
-    pub range: Range<int>,
+    pub range: Range<FragmentIndex>,
 }
 
 impl FragmentRange {
     
-    fn new(style: Arc<ComputedValues>, range: Range<int>) -> FragmentRange {
+    fn new(style: Arc<ComputedValues>, range: Range<FragmentIndex>) -> FragmentRange {
         FragmentRange {
             style: style,
             range: range,
@@ -1003,14 +1018,14 @@ impl FragmentRange {
 
 struct FragmentFixupWorkItem {
     style: Arc<ComputedValues>,
-    new_start_index: int,
-    old_end_index: int,
+    new_start_index: FragmentIndex,
+    old_end_index: FragmentIndex,
 }
 
 
 pub struct RangeIterator<'a> {
     iter: Items<'a,FragmentRange>,
-    index: int,
+    index: FragmentIndex,
     seen_first: bool,
 }
 
@@ -1053,13 +1068,13 @@ impl FragmentMap {
     }
 
     
-    pub fn push(&mut self, style: Arc<ComputedValues>, range: Range<int>) {
+    pub fn push(&mut self, style: Arc<ComputedValues>, range: Range<FragmentIndex>) {
         self.list.push(FragmentRange::new(style, range))
     }
 
     
     
-    fn push_all(&mut self, other: FragmentMap, adjustment: uint) {
+    fn push_all(&mut self, other: FragmentMap, adjustment: FragmentIndex) {
         let FragmentMap {
             list: other_list
         } = other;
@@ -1070,19 +1085,19 @@ impl FragmentMap {
                 range: mut other_range
             } = other_range;
 
-            other_range.shift_by(adjustment as int);
+            other_range.shift_by(adjustment);
             self.push(other_style, other_range)
         }
     }
 
     
-    pub fn get_mut<'a>(&'a mut self, index: int) -> &'a mut FragmentRange {
-        &mut self.list.as_mut_slice()[index as uint]
+    pub fn get_mut<'a>(&'a mut self, index: FragmentIndex) -> &'a mut FragmentRange {
+        &mut self.list.as_mut_slice()[index.to_uint()]
     }
 
     
     #[inline(always)]
-    fn ranges_for_index<'a>(&'a self, index: int) -> RangeIterator<'a> {
+    fn ranges_for_index<'a>(&'a self, index: FragmentIndex) -> RangeIterator<'a> {
         RangeIterator {
             iter: self.list.as_slice().iter(),
             index: index,
@@ -1108,12 +1123,13 @@ impl FragmentMap {
 
         
         
-        for (old_fragment_index, old_fragment) in old_fragments.iter().enumerate() {
+        for (i, old_fragment) in old_fragments.iter().enumerate() {
+            let old_fragment_index = FragmentIndex(i as int);
             
             let new_fragment_start = match new_fragments_iter.peek() {
                 Some(&(index, new_fragment)) if new_fragment.node == old_fragment.node => {
                     
-                    index as int
+                    FragmentIndex(index as int)
                 }
                 Some(_) | None => {
                     
@@ -1136,7 +1152,7 @@ impl FragmentMap {
                 match old_list_iter.peek() {
                     None => break,
                     Some(fragment_range) => {
-                        if fragment_range.range.begin() > old_fragment_index as int {
+                        if fragment_range.range.begin() > old_fragment_index {
                             
                             break
                         }
@@ -1163,7 +1179,7 @@ impl FragmentMap {
                 match worklist.as_slice().last() {
                     None => break,
                     Some(last_work_item) => {
-                        if last_work_item.old_end_index > old_fragment_index as int + 1 {
+                        if last_work_item.old_end_index > old_fragment_index + FragmentIndex(1) {
                             
                             break
                         }
@@ -1173,10 +1189,12 @@ impl FragmentMap {
                 let new_last_index = match new_fragments_iter.peek() {
                     None => {
                         
-                        new_fragments.len()
+                        FragmentIndex(new_fragments.len() as int)
                     }
-                    Some(&(index, _)) => index,
-                } as int;
+                    Some(&(index, _)) => {
+                        FragmentIndex(index as int)
+                    },
+                };
 
                 let FragmentFixupWorkItem {
                     style,
@@ -1194,11 +1212,11 @@ impl FragmentMap {
 
 pub struct InlineFragmentContext<'a> {
     map: &'a FragmentMap,
-    index: int,
+    index: FragmentIndex,
 }
 
 impl<'a> InlineFragmentContext<'a> {
-    pub fn new<'a>(map: &'a FragmentMap, index: int) -> InlineFragmentContext<'a> {
+    pub fn new<'a>(map: &'a FragmentMap, index: FragmentIndex) -> InlineFragmentContext<'a> {
         InlineFragmentContext {
             map: map,
             index: index,
