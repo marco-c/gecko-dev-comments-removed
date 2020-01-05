@@ -35,9 +35,6 @@ public:
   virtual void SetInfinite(bool aInfinite) {}
 
   
-  virtual void SetMediaSeekable(bool aMediaSeekable) {}
-
-  
   virtual void NotifyNetworkError() {}
 
   
