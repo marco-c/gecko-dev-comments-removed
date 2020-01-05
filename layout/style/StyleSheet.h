@@ -63,9 +63,6 @@ public:
   mozilla::dom::CSSStyleSheetParsingMode ParsingModeDOM();
 
   
-  nsIDocument* GetDocument() const { return mDocument; }
-
-  
 
 
   bool IsComplete() const;
