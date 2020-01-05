@@ -8,9 +8,9 @@
 
 #include "mozilla/Attributes.h"         
 #include "mozilla/Preferences.h"        
+#include "mozilla/Services.h"           
 #include "mozilla/dom/Element.h"        
 #include "mozilla/dom/Selection.h"
-#include "mozilla/intl/LocaleService.h" 
 #include "mozilla/mozalloc.h"           
 #include "nsAString.h"                  
 #include "nsComponentManagerUtils.h"    
@@ -18,6 +18,7 @@
 #include "nsDependentSubstring.h"       
 #include "nsEditorSpellCheck.h"
 #include "nsError.h"                    
+#include "nsIChromeRegistry.h"          
 #include "nsIContent.h"                 
 #include "nsIContentPrefService.h"      
 #include "nsIContentPrefService2.h"     
@@ -48,7 +49,6 @@
 
 using namespace mozilla;
 using namespace mozilla::dom;
-using mozilla::intl::LocaleService;
 
 class UpdateDictionaryHolder {
   private:
@@ -916,16 +916,21 @@ nsEditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher)
   
   
   if (NS_FAILED(rv)) {
-    nsAutoCString utf8DictName;
-    LocaleService::GetInstance()->GetAppLocaleAsLangTag(utf8DictName);
+    nsCOMPtr<nsIXULChromeRegistry> packageRegistry =
+      mozilla::services::GetXULChromeRegistryService();
 
-    dictName.Assign(EmptyString());
-    AppendUTF8toUTF16(utf8DictName, dictName);
+    if (packageRegistry) {
+      nsAutoCString utf8DictName;
+      rv2 = packageRegistry->GetSelectedLocale(NS_LITERAL_CSTRING("global"),
+                                               false, utf8DictName);
+      dictName.Assign(EmptyString());
+      AppendUTF8toUTF16(utf8DictName, dictName);
 #ifdef DEBUG_DICT
-    printf("***** Trying locale |%s|\n",
-           NS_ConvertUTF16toUTF8(dictName).get());
+      printf("***** Trying locale |%s|\n",
+             NS_ConvertUTF16toUTF8(dictName).get());
 #endif
-    rv = TryDictionary (dictName, dictList, DICT_COMPARE_CASE_INSENSITIVE);
+      rv = TryDictionary (dictName, dictList, DICT_COMPARE_CASE_INSENSITIVE);
+    }
   }
 
   if (NS_FAILED(rv)) {

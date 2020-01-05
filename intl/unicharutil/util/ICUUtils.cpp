@@ -7,15 +7,14 @@
 
 #include "ICUUtils.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/intl/LocaleService.h"
 #include "nsIContent.h"
 #include "nsIDocument.h"
+#include "nsIToolkitChromeRegistry.h"
 #include "nsStringGlue.h"
 #include "unicode/uloc.h"
 #include "unicode/unum.h"
 
 using namespace mozilla;
-using mozilla::intl::LocaleService;
 
 
 
@@ -72,10 +71,16 @@ ICUUtils::LanguageTagIterForContent::GetNext(nsACString& aBCP47LangTag)
   if (mCurrentFallbackIndex < 2) {
     mCurrentFallbackIndex = 2;
     
-
-    nsAutoCString appLocale;
-    LocaleService::GetInstance()->GetAppLocaleAsBCP47(aBCP47LangTag);
-    return;
+    nsCOMPtr<nsIToolkitChromeRegistry> cr =
+      mozilla::services::GetToolkitChromeRegistryService();
+    nsAutoCString uaLangTag;
+    if (cr) {
+      cr->GetSelectedLocale(NS_LITERAL_CSTRING("global"), true, uaLangTag);
+    }
+    if (!uaLangTag.IsEmpty()) {
+      aBCP47LangTag = uaLangTag;
+      return;
+    }
   }
 
   

@@ -96,7 +96,8 @@ add_task(function* initializeState() {
     }
   });
 
-  gIsEnUsLocale = Services.locale.getAppLocaleAsLangTag() == "en-US";
+  let chrome = Cc["@mozilla.org/chrome/chrome-registry;1"].getService(Ci.nsIXULChromeRegistry);
+  gIsEnUsLocale = chrome.getSelectedLocale("global") == "en-US";
 
   
   
