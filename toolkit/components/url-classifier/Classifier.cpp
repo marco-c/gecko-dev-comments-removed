@@ -22,7 +22,6 @@
 #include "mozilla/Unused.h"
 #include "mozilla/TypedEnumBits.h"
 #include "nsIUrlClassifierUtils.h"
-#include "nsUrlClassifierDBService.h"
 
 
 extern mozilla::LazyLogModule gUrlClassifierDbServiceLog;
@@ -145,7 +144,6 @@ Classifier::GetPrivateStoreDirectory(nsIFile* aRootStoreDirectory,
 }
 
 Classifier::Classifier()
-  : mIsTableRequestResultOutdated(true)
 {
 }
 
@@ -350,16 +348,6 @@ Classifier::AbortUpdateAndReset(const nsCString& aTable)
 void
 Classifier::TableRequest(nsACString& aResult)
 {
-  MOZ_ASSERT(!NS_IsMainThread(),
-             "TableRequest must be called on the classifier worker thread.");
-
-  
-  
-  if (!mIsTableRequestResultOutdated) {
-    aResult = mTableRequestResult;
-    return;
-  }
-
   
   nsTArray<nsCString> tables;
   ActiveTables(tables);
@@ -399,13 +387,8 @@ Classifier::TableRequest(nsACString& aResult)
   
   nsCString metadata;
   nsresult rv = LoadMetadata(mRootStoreDirectory, metadata);
-  if (NS_SUCCEEDED(rv)) {
-    aResult.Append(metadata);
-  }
-
-  
-  mTableRequestResult = aResult;
-  mIsTableRequestResultOutdated = false;
+  NS_ENSURE_SUCCESS_VOID(rv);
+  aResult.Append(metadata);
 }
 
 
@@ -520,7 +503,19 @@ Classifier::Check(const nsACString& aSpec,
 nsresult
 Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
 {
-  Telemetry::AutoTimer<Telemetry::URLCLASSIFIER_CL_UPDATE_TIME> timer;
+  if (!aUpdates || aUpdates->Length() == 0) {
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIUrlClassifierUtils> urlUtil =
+    do_GetService(NS_URLCLASSIFIERUTILS_CONTRACTID);
+
+  nsCString provider;
+  
+  urlUtil->GetTelemetryProvider((*aUpdates)[0]->TableName(), provider);
+
+  Telemetry::AutoTimer<Telemetry::URLCLASSIFIER_CL_KEYED_UPDATE_TIME>
+    keyedTimer(provider);
 
   PRIntervalTime clockStart = 0;
   if (LOG_ENABLED()) {
@@ -550,10 +545,6 @@ Classifier::ApplyUpdates(nsTArray<TableUpdate*>* aUpdates)
         } else {
           rv = UpdateTableV4(aUpdates, updateTable);
         }
-
-        
-        
-        mIsTableRequestResultOutdated = true;
 
         if (NS_FAILED(rv)) {
           if (rv != NS_ERROR_OUT_OF_MEMORY) {
@@ -1030,9 +1021,6 @@ nsresult
 Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
                           const nsACString& aTable)
 {
-  MOZ_ASSERT(!NS_IsMainThread(),
-             "UpdateTableV4 must be called on the classifier worker thread.");
-
   LOG(("Classifier::UpdateTableV4(%s)", PromiseFlatCString(aTable).get()));
 
   if (!CheckValidUpdate(aUpdates, aTable)) {
