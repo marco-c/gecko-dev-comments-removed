@@ -6,7 +6,9 @@
 package org.mozilla.gecko.icons.processing;
 
 import android.support.v7.graphics.Palette;
+import android.util.Log;
 
+import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.icons.IconRequest;
 import org.mozilla.gecko.icons.IconResponse;
 
@@ -15,6 +17,7 @@ import org.mozilla.gecko.icons.IconResponse;
 
 
 public class ColorProcessor implements Processor {
+    private static final String LOGTAG = "GeckoColorProcessor";
     private static final int DEFAULT_COLOR = 0; 
 
     @Override
@@ -23,8 +26,16 @@ public class ColorProcessor implements Processor {
             return;
         }
 
-        final Palette palette = Palette.from(response.getBitmap()).generate();
+        try {
+            final Palette palette = Palette.from(response.getBitmap()).generate();
+            response.updateColor(palette.getVibrantColor(DEFAULT_COLOR));
+        } catch (ArrayIndexOutOfBoundsException e) {
+            
+            
+            
+            Log.e(LOGTAG, "Palette generation failed with ArrayIndexOutOfBoundsException", e);
 
-        response.updateColor(palette.getVibrantColor(DEFAULT_COLOR));
+            response.updateColor(DEFAULT_COLOR);
+        }
     }
 }
