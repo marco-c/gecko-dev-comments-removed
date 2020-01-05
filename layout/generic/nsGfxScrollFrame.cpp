@@ -5773,6 +5773,15 @@ ScrollFrameHelper::GetScrolledRect() const
   
   
   
+
+  if (result.x == 0 && result.y == 0 &&
+      result.width == mScrollPort.width &&
+      result.height == mScrollPort.height) {
+    
+    
+    return result;
+  }
+
   
   
   
