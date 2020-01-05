@@ -17,12 +17,7 @@ import buildconfig
 
 
 def main(output, input):
-    
-    
-    if buildconfig.substs['OS_ARCH'] not in ('Linux', 'Darwin'):
-        print "Error: unhandled OS_ARCH %s" % buildconfig.substs['OS_ARCH']
-        return 1
-    is_linux = buildconfig.substs['OS_ARCH'] == 'Linux'
+    is_darwin = buildconfig.substs['OS_ARCH'] == 'Darwin'
 
     with open(input, 'rb') as f:
         for line in f:
@@ -31,7 +26,7 @@ def main(output, input):
             if ';-' in line:
                 continue
             
-            if not is_linux and ';+' in line:
+            if is_darwin and ';+' in line:
                 continue
             
             line = line.replace(' DATA ', '')
@@ -43,12 +38,12 @@ def main(output, input):
             
             i = line.find(';')
             if i != -1:
-                if is_linux:
-                    line = line[:i+1]
-                else:
+                if is_darwin:
                     line = line[:i]
+                else:
+                    line = line[:i+1]
             
-            if line and not is_linux:
+            if line and is_darwin:
                 output.write('_')
             output.write(line)
             output.write('\n')
