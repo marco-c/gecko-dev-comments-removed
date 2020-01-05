@@ -324,8 +324,7 @@ public:
   
   
   virtual void Decrypt(GMPBuffer* aBuffer,
-                       GMPEncryptedBufferMetadata* aMetadata,
-                       uint64_t aDurationUsecs) = 0;
+                       GMPEncryptedBufferMetadata* aMetadata) = 0;
 
   
   
