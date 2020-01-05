@@ -4,7 +4,7 @@
 
 
 
-#include "mozilla/RestyleManagerBase.h"
+#include "mozilla/RestyleManager.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "nsIFrame.h"
 #include "nsIPresShellInlines.h"
