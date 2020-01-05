@@ -8,18 +8,14 @@ use js::jsapi::{JSTracer};
 use servo_util::task_state;
 use servo_util::task_state::{SCRIPT, IN_GC};
 
-use std::cell::{Cell, UnsafeCell};
-use std::kinds::marker;
+use std::cell::{RefCell, Ref, RefMut};
 
 
 
 
 
 pub struct DOMRefCell<T> {
-    value: UnsafeCell<T>,
-    borrow: Cell<BorrowFlag>,
-    nocopy: marker::NoCopy,
-    nosync: marker::NoSync,
+    value: RefCell<T>,
 }
 
 
@@ -31,7 +27,7 @@ impl<T> DOMRefCell<T> {
     
     pub unsafe fn borrow_for_layout<'a>(&'a self) -> &'a T {
         debug_assert!(task_state::get().is_layout());
-        &*self.value.get()
+        &*self.value.as_unsafe_cell().get()
     }
 
     
@@ -40,36 +36,24 @@ impl<T> DOMRefCell<T> {
     
     pub unsafe fn borrow_for_gc_trace<'a>(&'a self) -> &'a T {
         debug_assert!(task_state::get().contains(SCRIPT | IN_GC));
-        &*self.value.get()
+        &*self.value.as_unsafe_cell().get()
     }
 
     
     
     
     pub fn is_mutably_borrowed(&self) -> bool {
-        self.borrow.get() == WRITING
+        self.value.try_borrow().is_some()
     }
 
     pub fn try_borrow<'a>(&'a self) -> Option<Ref<'a, T>> {
         debug_assert!(task_state::get().is_script());
-        match self.borrow.get() {
-            WRITING => None,
-            borrow => {
-                self.borrow.set(borrow + 1);
-                Some(Ref { _parent: self })
-            }
-        }
+        self.value.try_borrow()
     }
 
     pub fn try_borrow_mut<'a>(&'a self) -> Option<RefMut<'a, T>> {
         debug_assert!(task_state::get().is_script());
-        match self.borrow.get() {
-            UNUSED => {
-                self.borrow.set(WRITING);
-                Some(RefMut { _parent: self })
-            },
-            _ => None
-        }
+        self.value.try_borrow_mut()
     }
 }
 
@@ -81,28 +65,15 @@ impl<T: JSTraceable> JSTraceable for DOMRefCell<T> {
 
 
 
-
-
-
-
-
-type BorrowFlag = uint;
-const UNUSED: BorrowFlag = 0;
-const WRITING: BorrowFlag = -1;
-
 impl<T> DOMRefCell<T> {
     pub fn new(value: T) -> DOMRefCell<T> {
         DOMRefCell {
-            value: UnsafeCell::new(value),
-            borrow: Cell::new(UNUSED),
-            nocopy: marker::NoCopy,
-            nosync: marker::NoSync,
+            value: RefCell::new(value),
         }
     }
 
     pub fn unwrap(self) -> T {
-        debug_assert!(self.borrow.get() == UNUSED);
-        unsafe{self.value.unwrap()}
+        self.value.unwrap()
     }
 
     pub fn borrow<'a>(&'a self) -> Ref<'a, T> {
@@ -117,52 +88,5 @@ impl<T> DOMRefCell<T> {
             Some(ptr) => ptr,
             None => panic!("DOMRefCell<T> already borrowed")
         }
-    }
-}
-
-pub struct Ref<'b, T:'b> {
-    _parent: &'b DOMRefCell<T>
-}
-
-#[unsafe_destructor]
-impl<'b, T> Drop for Ref<'b, T> {
-    fn drop(&mut self) {
-        let borrow = self._parent.borrow.get();
-        debug_assert!(borrow != WRITING && borrow != UNUSED);
-        self._parent.borrow.set(borrow - 1);
-    }
-}
-
-impl<'b, T> Deref<T> for Ref<'b, T> {
-    #[inline]
-    fn deref<'a>(&'a self) -> &'a T {
-        unsafe { &*self._parent.value.get() }
-    }
-}
-
-pub struct RefMut<'b, T:'b> {
-    _parent: &'b DOMRefCell<T>
-}
-
-#[unsafe_destructor]
-impl<'b, T> Drop for RefMut<'b, T> {
-    fn drop(&mut self) {
-        let borrow = self._parent.borrow.get();
-        debug_assert!(borrow == WRITING);
-        self._parent.borrow.set(UNUSED);
-    }
-}
-
-impl<'b, T> Deref<T> for RefMut<'b, T> {
-    #[inline]
-    fn deref<'a>(&'a self) -> &'a T {
-        unsafe { &*self._parent.value.get() }
-    }
-}
-
-impl<'b, T> DerefMut<T> for RefMut<'b, T> {
-    #[inline]
-    fn deref_mut<'a>(&'a mut self) -> &'a mut T {
-        unsafe { &mut *self._parent.value.get() }
     }
 }

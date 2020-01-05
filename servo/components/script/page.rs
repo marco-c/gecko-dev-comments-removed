@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::cell::{DOMRefCell, Ref, RefMut};
+use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::DocumentBinding::DocumentMethods;
 use dom::bindings::codegen::InheritTypes::NodeCast;
 use dom::bindings::js::{JS, JSRef, Temporary, OptionalRootable};
@@ -30,7 +30,7 @@ use servo_util::geometry::{Au, MAX_RECT};
 use servo_util::geometry;
 use servo_util::str::DOMString;
 use servo_util::smallvec::{SmallVec1, SmallVec};
-use std::cell::Cell;
+use std::cell::{Cell, Ref, RefMut};
 use std::comm::{channel, Receiver, Empty, Disconnected};
 use std::mem::replace;
 use std::num::abs;

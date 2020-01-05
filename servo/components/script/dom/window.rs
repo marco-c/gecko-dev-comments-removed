@@ -2,7 +2,7 @@
 
 
 
-use dom::bindings::cell::{DOMRefCell, Ref, RefMut};
+use dom::bindings::cell::DOMRefCell;
 use dom::bindings::codegen::Bindings::EventHandlerBinding::{OnErrorEventHandlerNonNull, EventHandlerNonNull};
 use dom::bindings::codegen::Bindings::WindowBinding;
 use dom::bindings::codegen::Bindings::WindowBinding::WindowMethods;
@@ -40,6 +40,7 @@ use url::{Url, UrlParser};
 
 use libc;
 use serialize::base64::{FromBase64, ToBase64, STANDARD};
+use std::cell::{Ref, RefMut};
 use std::default::Default;
 use std::rc::Rc;
 use time;
