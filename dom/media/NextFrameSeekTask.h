@@ -77,10 +77,6 @@ private:
 
   void OnVideoNotDecoded(const MediaResult& aError);
 
-  void SetCallbacks();
-
-  void CancelCallbacks();
-
   
   
   void UpdateSeekTargetTime();
@@ -96,11 +92,6 @@ private:
 
   const int64_t mCurrentTime;
   media::TimeUnit mDuration;
-
-  MediaEventListener mAudioCallback;
-  MediaEventListener mVideoCallback;
-  MediaEventListener mAudioWaitCallback;
-  MediaEventListener mVideoWaitCallback;
 };
 
 } 

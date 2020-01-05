@@ -44,9 +44,6 @@ AccurateSeekTask::AccurateSeekTask(const void* aDecoderID,
   
   NS_ASSERTION(aEnd.ToMicroseconds() != -1, "Should know end time by now");
   mTarget.SetTime(std::max(media::TimeUnit(), std::min(mTarget.GetTime(), aEnd)));
-
-  
-  SetCallbacks();
 }
 
 AccurateSeekTask::~AccurateSeekTask()
@@ -65,7 +62,6 @@ AccurateSeekTask::Discard()
 
   
   mSeekRequest.DisconnectIfExists();
-  CancelCallbacks();
 
   mIsDiscarded = true;
 }
@@ -392,7 +388,6 @@ AccurateSeekTask::OnAudioDecoded(MediaData* aAudioSample)
   } else {
     nsresult rv = DropAudioUpToSeekTarget(audio);
     if (NS_FAILED(rv)) {
-      CancelCallbacks();
       RejectIfExist(rv, __func__);
       return;
     }
@@ -453,7 +448,6 @@ AccurateSeekTask::OnNotDecoded(MediaData::Type aType,
   }
 
   
-  CancelCallbacks();
   RejectIfExist(aError, __func__);
 }
 
@@ -480,7 +474,6 @@ AccurateSeekTask::OnVideoDecoded(MediaData* aVideoSample)
   } else {
     nsresult rv = DropVideoUpToSeekTarget(video.get());
     if (NS_FAILED(rv)) {
-      CancelCallbacks();
       RejectIfExist(rv, __func__);
       return;
     }
@@ -493,58 +486,4 @@ AccurateSeekTask::OnVideoDecoded(MediaData* aVideoSample)
   MaybeFinishSeek();
 }
 
-void
-AccurateSeekTask::SetCallbacks()
-{
-  AssertOwnerThread();
-
-  mAudioCallback = mReader->AudioCallback().Connect(
-    OwnerThread(), [this] (AudioCallbackData aData) {
-    if (aData.is<MediaData*>()) {
-      OnAudioDecoded(aData.as<MediaData*>());
-    } else {
-      OnNotDecoded(MediaData::AUDIO_DATA,
-        aData.as<MediaResult>());
-    }
-  });
-
-  mVideoCallback = mReader->VideoCallback().Connect(
-    OwnerThread(), [this] (VideoCallbackData aData) {
-    typedef Tuple<MediaData*, TimeStamp> Type;
-    if (aData.is<Type>()) {
-      OnVideoDecoded(Get<0>(aData.as<Type>()));
-    } else {
-      OnNotDecoded(MediaData::VIDEO_DATA,
-        aData.as<MediaResult>());
-    }
-  });
-
-  mAudioWaitCallback = mReader->AudioWaitCallback().Connect(
-    OwnerThread(), [this] (WaitCallbackData aData) {
-    if (aData.is<MediaData::Type>()) {
-      HandleAudioWaited(aData.as<MediaData::Type>());
-    } else {
-      HandleNotWaited(aData.as<WaitForDataRejectValue>());
-    }
-  });
-
-  mVideoWaitCallback = mReader->VideoWaitCallback().Connect(
-    OwnerThread(), [this] (WaitCallbackData aData) {
-    if (aData.is<MediaData::Type>()) {
-      HandleVideoWaited(aData.as<MediaData::Type>());
-    } else {
-      HandleNotWaited(aData.as<WaitForDataRejectValue>());
-    }
-  });
-}
-
-void
-AccurateSeekTask::CancelCallbacks()
-{
-  AssertOwnerThread();
-  mAudioCallback.DisconnectIfExists();
-  mVideoCallback.DisconnectIfExists();
-  mAudioWaitCallback.DisconnectIfExists();
-  mVideoWaitCallback.DisconnectIfExists();
-}
 } 

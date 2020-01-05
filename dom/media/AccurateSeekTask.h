@@ -66,10 +66,6 @@ private:
 
   void OnNotDecoded(MediaData::Type, const MediaResult&);
 
-  void SetCallbacks();
-
-  void CancelCallbacks();
-
   void AdjustFastSeekIfNeeded(MediaData* aSample);
 
   
@@ -90,11 +86,6 @@ private:
 
 
   MozPromiseRequestHolder<MediaDecoderReader::SeekPromise> mSeekRequest;
-
-  MediaEventListener mAudioCallback;
-  MediaEventListener mVideoCallback;
-  MediaEventListener mAudioWaitCallback;
-  MediaEventListener mVideoWaitCallback;
 };
 
 } 

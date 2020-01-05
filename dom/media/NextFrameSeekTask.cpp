@@ -36,9 +36,6 @@ NextFrameSeekTask::NextFrameSeekTask(const void* aDecoderID,
 {
   AssertOwnerThread();
   MOZ_ASSERT(aInfo.HasVideo());
-
-  
-  SetCallbacks();
 }
 
 NextFrameSeekTask::~NextFrameSeekTask()
@@ -54,9 +51,6 @@ NextFrameSeekTask::Discard()
 
   
   RejectIfExist(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
-
-  
-  CancelCallbacks();
 
   mIsDiscarded = true;
 }
@@ -147,7 +141,6 @@ NextFrameSeekTask::HandleNotWaited(const WaitForDataRejectValue& aRejection)
   {
     if (NeedMoreVideo()) {
       
-      CancelCallbacks();
       RejectIfExist(NS_ERROR_DOM_MEDIA_CANCELED, __func__);
       return;
     }
@@ -340,10 +333,6 @@ NextFrameSeekTask::OnVideoNotDecoded(const MediaResult& aError)
         break;
       default:
         
-        
-        
-        CancelCallbacks();
-        
         RejectIfExist(aError, __func__);
         break;
     }
@@ -351,61 +340,6 @@ NextFrameSeekTask::OnVideoNotDecoded(const MediaResult& aError)
   }
 
   MaybeFinishSeek();
-}
-
-void
-NextFrameSeekTask::SetCallbacks()
-{
-  AssertOwnerThread();
-
-  
-  
-  mAudioCallback = mReader->AudioCallback().Connect(
-    OwnerThread(), [this] (AudioCallbackData aData) {
-    if (aData.is<MediaData*>()) {
-      OnAudioDecoded(aData.as<MediaData*>());
-    } else {
-      OnAudioNotDecoded(aData.as<MediaResult>());
-    }
-  });
-
-  mVideoCallback = mReader->VideoCallback().Connect(
-    OwnerThread(), [this] (VideoCallbackData aData) {
-    typedef Tuple<MediaData*, TimeStamp> Type;
-    if (aData.is<Type>()) {
-      OnVideoDecoded(Get<0>(aData.as<Type>()));
-    } else {
-      OnVideoNotDecoded(aData.as<MediaResult>());
-    }
-  });
-
-  mAudioWaitCallback = mReader->AudioWaitCallback().Connect(
-    OwnerThread(), [this] (WaitCallbackData aData) {
-    if (aData.is<MediaData::Type>()) {
-      HandleAudioWaited(aData.as<MediaData::Type>());
-    } else {
-      HandleNotWaited(aData.as<WaitForDataRejectValue>());
-    }
-  });
-
-  mVideoWaitCallback = mReader->VideoWaitCallback().Connect(
-    OwnerThread(), [this] (WaitCallbackData aData) {
-    if (aData.is<MediaData::Type>()) {
-      HandleVideoWaited(aData.as<MediaData::Type>());
-    } else {
-      HandleNotWaited(aData.as<WaitForDataRejectValue>());
-    }
-  });
-}
-
-void
-NextFrameSeekTask::CancelCallbacks()
-{
-  AssertOwnerThread();
-  mAudioCallback.DisconnectIfExists();
-  mVideoCallback.DisconnectIfExists();
-  mAudioWaitCallback.DisconnectIfExists();
-  mVideoWaitCallback.DisconnectIfExists();
 }
 
 void

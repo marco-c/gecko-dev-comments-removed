@@ -772,9 +772,6 @@ public:
     }
 
     
-    mMaster->CancelMediaDecoderReaderWrapperCallback();
-
-    
     if (mSeekJob.mTarget.IsAccurate() ||
         mSeekJob.mTarget.IsFast()) {
       mSeekTask = new AccurateSeekTask(
@@ -835,9 +832,6 @@ public:
     mSeekTaskRequest.DisconnectIfExists();
     mSeekJob.RejectIfExists(__func__);
     mSeekTask->Discard();
-
-    
-    mMaster->SetMediaDecoderReaderWrapperCallback();
   }
 
   State GetState() const override
@@ -2020,7 +2014,6 @@ MediaDecoderStateMachine::OnNotDecoded(MediaData::Type aType,
                                        const MediaResult& aError)
 {
   MOZ_ASSERT(OnTaskQueue());
-  MOZ_ASSERT(mState != DECODER_STATE_SEEKING);
 
   SAMPLE_LOG("OnNotDecoded (aType=%u, aError=%u)", aType, aError.Code());
 
