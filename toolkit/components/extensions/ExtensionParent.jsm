@@ -95,8 +95,7 @@ let apiManager = new class extends SchemaAPIManager {
   }
 
   registerSchemaAPI(namespace, envType, getAPI) {
-    if (envType == "addon_parent" || envType == "content_parent" ||
-        envType == "devtools_parent") {
+    if (envType == "addon_parent" || envType == "content_parent") {
       super.registerSchemaAPI(namespace, envType, getAPI);
     }
   }
@@ -322,8 +321,6 @@ class ExtensionPageContextParent extends ProxyContextParent {
     super(envType, extension, params, xulBrowser, extension.principal);
 
     this.viewType = params.viewType;
-
-    extension.emit("extension-proxy-context-load", this);
   }
 
   
@@ -340,12 +337,13 @@ class ExtensionPageContextParent extends ProxyContextParent {
   }
 
   get tabId() {
-    if (!apiManager.global.TabManager) {
-      return;  
+    let {getBrowserInfo} = apiManager.global;
+
+    if (getBrowserInfo) {
+      
+      return getBrowserInfo(this.xulBrowser).tabId;
     }
-    let {gBrowser} = this.xulBrowser.ownerGlobal;
-    let tab = gBrowser && gBrowser.getTabForBrowser(this.xulBrowser);
-    return tab && apiManager.global.TabManager.getId(tab);
+    return undefined;
   }
 
   onBrowserChange(browser) {
@@ -428,7 +426,7 @@ ParentAPIManager = {
     }
 
     let context;
-    if (envType == "addon_parent" || envType == "devtools_parent") {
+    if (envType == "addon_parent") {
       
       
       if (principal.URI.prePath !== extension.baseURI.prePath ||
