@@ -814,6 +814,18 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
         
         while (true) {
             
+            
+            
+            
+            
+            
+
+
+
+
+
+
+            
             var next = callContentFunction(iterator.next, iterator);
             if (!IsObject(next))
                 ThrowTypeError(JSMSG_NEXT_RETURNED_PRIMITIVE);
@@ -828,10 +840,16 @@ function ArrayFrom(items, mapfn=undefined, thisArg=undefined) {
             var nextValue = next.value;
 
             
-            var mappedValue = mapping ? callContentFunction(mapfn, thisArg, nextValue, k) : nextValue;
+            try {
+                var mappedValue = mapping ? callContentFunction(mapfn, thisArg, nextValue, k) : nextValue;
 
-            
-            _DefineDataProperty(A, k++, mappedValue);
+                
+                _DefineDataProperty(A, k++, mappedValue);
+            } catch (e) {
+                
+                IteratorCloseThrow(iterator);
+                throw e;
+            }
         }
     }
 
