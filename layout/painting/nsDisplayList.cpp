@@ -7353,9 +7353,7 @@ bool nsDisplayMask::ShouldPaintOnMaskLayer(LayerManager* aManager)
 
   
   
-  
-  
-  if (maskUsage.opacity != 1.0 || maskUsage.shouldApplyClipPath) {
+  if (maskUsage.shouldApplyClipPath) {
     return false;
   }
 
