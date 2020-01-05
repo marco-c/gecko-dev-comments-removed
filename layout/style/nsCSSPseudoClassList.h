@@ -120,7 +120,8 @@ CSS_PSEUDO_CLASS(mozWindowInactive, ":-moz-window-inactive", 0, "")
 
 
 
-CSS_PSEUDO_CLASS(mozTableBorderNonzero, ":-moz-table-border-nonzero", 0, "")
+CSS_PSEUDO_CLASS(mozTableBorderNonzero, ":-moz-table-border-nonzero",
+                 CSS_PSEUDO_CLASS_ENABLED_IN_UA_SHEETS, "")
 
 
 CSS_PSEUDO_CLASS(mozBrowserFrame, ":-moz-browser-frame",
