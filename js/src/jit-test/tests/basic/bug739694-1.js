@@ -1,3 +1,5 @@
+
+
 function newFunc(x) { new Function(x)(); }; try { newFunc("\
 var g = newGlobal();\
 g.h = function () {\

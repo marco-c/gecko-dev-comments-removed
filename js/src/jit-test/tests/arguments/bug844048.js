@@ -1,4 +1,5 @@
 
+
 function foo() {
   eval("\
     for (var arguments in arguments)\

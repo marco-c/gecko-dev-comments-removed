@@ -1,3 +1,5 @@
+
+
 function bug464403() {
     print(8);
     var u = [print, print, function(){}]

@@ -1,3 +1,5 @@
+
+
 N = 0;
 function n() {}
 s = n;

@@ -1,3 +1,5 @@
+
+
 function testBug504520Harder() {
     
     var vals = [1/0, -1/0, 0, 0/0];

@@ -1,6 +1,8 @@
 
 
 
+
+
 function foo(f) {
     f()
 }

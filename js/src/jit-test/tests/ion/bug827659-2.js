@@ -1,3 +1,5 @@
+
+
 function f(x) {
     return x["__proto__"]
 }

@@ -1,3 +1,5 @@
+
+
 function testThinForEach() {
     var a = ["red"];
     var n = 0;

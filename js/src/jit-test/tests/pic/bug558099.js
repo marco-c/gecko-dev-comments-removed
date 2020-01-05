@@ -1,3 +1,5 @@
+
+
 (function()[function() function() function() function() function() function() {}]);
 foo = [{
   text: "(function(){if(d){(1)}})",

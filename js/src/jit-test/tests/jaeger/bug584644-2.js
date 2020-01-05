@@ -1,3 +1,5 @@
+
+
 this.__defineSetter__("x", function(v) { return /a/.exec(v); })
 Function("\
   for each(w in[0,0,0]) {\

@@ -1,4 +1,6 @@
 
+
+
 c = {}.__proto__[1] = 3;
 (function() {
     function b(a) {

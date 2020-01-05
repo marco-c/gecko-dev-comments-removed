@@ -1,3 +1,5 @@
+
+
 function g() {
     function f(a) {
         delete a.x;

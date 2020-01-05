@@ -1,5 +1,7 @@
 
 
+
+
 function testWarn(code) {
   enableLastWarning();
   var g = newGlobal();

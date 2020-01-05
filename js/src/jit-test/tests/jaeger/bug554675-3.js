@@ -1,3 +1,5 @@
+
+
 (function() {
   try { (function() {
       for each(let x in [0, /x/, 0, {}]) {

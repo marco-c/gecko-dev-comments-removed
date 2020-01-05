@@ -1,3 +1,5 @@
+
+
 function testUndemoteLateGlobalSlots() {
     for each (aaa in ["", "", 0/0, ""]) {
         ++aaa;

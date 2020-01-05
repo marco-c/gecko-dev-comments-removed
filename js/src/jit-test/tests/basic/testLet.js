@@ -1,3 +1,5 @@
+
+
 var otherGlobal = newGlobal();
 
 function test(str, arg, result)

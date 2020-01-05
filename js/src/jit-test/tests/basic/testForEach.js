@@ -1,3 +1,5 @@
+
+
 function testForEach() {
     var r;
     var a = ["zero", "one", "two", "three"];

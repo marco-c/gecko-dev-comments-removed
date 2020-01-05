@@ -1,6 +1,8 @@
 
 
 
+
+
 function printStatus (msg) {}
 function printBugNumber (num) {}
 function reportCompare (expected, actual, description) {

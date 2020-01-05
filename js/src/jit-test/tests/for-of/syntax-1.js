@@ -1,5 +1,7 @@
 
 
+
+
 load(libdir + "asserts.js");
 
 function assertSyntaxError(code) {

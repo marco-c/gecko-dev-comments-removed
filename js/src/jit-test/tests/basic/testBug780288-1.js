@@ -1,3 +1,5 @@
+
+
 s = newGlobal()
 try {
   evalcx("\

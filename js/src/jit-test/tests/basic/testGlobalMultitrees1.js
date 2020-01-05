@@ -1,4 +1,6 @@
 
+
+
 function testGlobalMultitrees1() {
     (function() { 
       for (var j = 0; j < 4; ++j) {

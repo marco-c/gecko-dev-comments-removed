@@ -1,6 +1,8 @@
 
 
 
+
+
 for (let cc = 0; cc < 3; ++cc) {
     var c = cc;
     print("" + new Number(.5));

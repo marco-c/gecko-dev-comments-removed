@@ -1,3 +1,5 @@
+
+
 function testClosureIncrSideExit() {
     {
       let f = function (y) {
