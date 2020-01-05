@@ -63,6 +63,8 @@ class SandboxBroker;
 class SandboxBrokerPolicyFactory;
 #endif
 
+class PreallocatedProcessManagerImpl;
+
 namespace embedding {
 class PrintingParent;
 }
@@ -116,9 +118,16 @@ class ContentParent final : public PContentParent
   typedef mozilla::ipc::PrincipalInfo PrincipalInfo;
   typedef mozilla::dom::ClonedMessageData ClonedMessageData;
 
+  friend class mozilla::PreallocatedProcessManagerImpl;
+
 public:
 
   virtual bool IsContentParent() const override { return true; }
+
+  
+
+
+  static already_AddRefed<ContentParent> PreallocateProcess();
 
   
 
@@ -136,6 +145,22 @@ public:
 
 
   static void JoinAllSubprocesses();
+
+  static uint32_t GetPoolSize(const nsAString& aContentProcessType);
+
+  static uint32_t GetMaxProcessCount(const nsAString& aContentProcessType);
+
+  static bool IsMaxProcessCountReached(const nsAString& aContentProcessType);
+
+  
+
+
+
+
+  static already_AddRefed<ContentParent>
+  RandomSelect(const nsTArray<ContentParent*>& aContentParents,
+               ContentParent* aOpener,
+               int32_t maxContentParents);
 
   
 
@@ -713,6 +738,11 @@ private:
                                   TabParent* aTopLevel, const TabId& aTabId,
                                   uint64_t* aId);
 
+  
+
+
+  static nsTArray<ContentParent*>& GetOrCreatePool(const nsAString& aContentProcessType);
+
   virtual mozilla::ipc::IPCResult RecvInitBackground(Endpoint<mozilla::ipc::PBackgroundParent>&& aEndpoint) override;
 
   virtual mozilla::ipc::IPCResult RecvGetProcessAttributes(ContentParentId* aCpId,
@@ -964,6 +994,8 @@ private:
                                                   const nsCString& aCategory) override;
 
   virtual mozilla::ipc::IPCResult RecvPrivateDocShellsExist(const bool& aExist) override;
+
+  virtual mozilla::ipc::IPCResult RecvFirstIdle() override;
 
   virtual mozilla::ipc::IPCResult RecvAudioChannelChangeDefVolChannel(const int32_t& aChannel,
                                                                       const bool& aHidden) override;
