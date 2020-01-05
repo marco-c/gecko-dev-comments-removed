@@ -4,10 +4,10 @@ export load;
 export load_from_memory;
 export test_image_bin;
 
-import stb_image = stb_image::Image;
+use stb_image = stb_image::Image;
 
-
-
+// FIXME: Images must not be copied every frame. Instead we should atomically
+// reference count them.
 
 type Image = stb_image::Image;
 
