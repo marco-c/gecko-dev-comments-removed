@@ -1015,8 +1015,6 @@ pref("security.sandbox.content.level", 1);
 
 
 pref("security.sandbox.content.level", 2);
-pref("security.sandbox.content.write_path_whitelist", "");
-pref("security.sandbox.content.syscall_whitelist", "");
 #endif
 
 #if defined(XP_MACOSX) || defined(XP_WIN)

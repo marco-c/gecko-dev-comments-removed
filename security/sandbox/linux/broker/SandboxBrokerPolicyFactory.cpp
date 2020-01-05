@@ -6,7 +6,6 @@
 
 #include "SandboxBrokerPolicyFactory.h"
 #include "SandboxInfo.h"
-#include "SandboxLogging.h"
 
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Preferences.h"
@@ -68,7 +67,7 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   
   
   
-  policy->AddFilePrefix(rdwr, "/dev", "kgsl");  
+  policy->AddPrefix(rdwr, "/dev", "kgsl");  
   policy->AddPath(rdwr, "/dev/qemu_pipe"); 
 
   
@@ -139,9 +138,9 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory()
   }
 
   
-  policy->AddFilePrefix(rdwr, "/dev", "nvidia");
+  policy->AddPrefix(rdwr, "/dev", "nvidia");
 
-  
+    
   policy->AddDir(rdwr, "/dev/dri");
 
 #ifdef MOZ_ALSA
@@ -191,20 +190,6 @@ SandboxBrokerPolicyFactory::GetContentPolicy(int aPid)
 #else
   UniquePtr<SandboxBroker::Policy>
     policy(new SandboxBroker::Policy(*mCommonContentPolicy));
-
-  
-  
-  
-  nsAdoptingCString extraPathString =
-    Preferences::GetCString("security.sandbox.content.write_path_whitelist");
-  if (extraPathString) {
-    for (const nsCSubstring& path : extraPathString.Split(',')) {
-      nsCString trimPath(path);
-      trimPath.Trim(" ", true, true);
-      policy->AddDynamic(rdwr, trimPath.get());
-    }
-  }
-
   
   return policy;
 #endif

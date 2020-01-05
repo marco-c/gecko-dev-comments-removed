@@ -11,6 +11,7 @@
 #include "SandboxInfo.h"
 #include "SandboxInternal.h"
 #include "SandboxLogging.h"
+
 #include "mozilla/UniquePtr.h"
 
 #include <errno.h>
@@ -25,8 +26,6 @@
 #include <sys/syscall.h>
 #include <time.h>
 #include <unistd.h>
-#include <vector>
-#include <algorithm>
 
 #include "sandbox/linux/bpf_dsl/bpf_dsl.h"
 #include "sandbox/linux/system_headers/linux_seccomp.h"
@@ -348,9 +347,7 @@ public:
 
 
 class ContentSandboxPolicy : public SandboxPolicyCommon {
-private:
   SandboxBrokerClient* mBroker;
-  std::vector<int> mSyscallWhitelist;
 
   
   
@@ -500,10 +497,7 @@ private:
   }
 
 public:
-  explicit ContentSandboxPolicy(SandboxBrokerClient* aBroker,
-                                const std::vector<int>& aSyscallWhitelist)
-    : mBroker(aBroker),
-      mSyscallWhitelist(aSyscallWhitelist) {}
+  explicit ContentSandboxPolicy(SandboxBrokerClient* aBroker):mBroker(aBroker) { }
   virtual ~ContentSandboxPolicy() { }
   virtual ResultExpr PrctlPolicy() const override {
     
@@ -576,14 +570,6 @@ public:
 #endif
 
   virtual ResultExpr EvaluateSyscall(int sysno) const override {
-    
-    if (std::find(mSyscallWhitelist.begin(), mSyscallWhitelist.end(), sysno)
-        != mSyscallWhitelist.end()) {
-      if (SandboxInfo::Get().Test(SandboxInfo::kVerbose)) {
-        SANDBOX_LOG_ERROR("Allowing syscall nr %d via whitelist", sysno);
-      }
-      return Allow();
-    }
     if (mBroker) {
       
       switch (sysno) {
@@ -848,10 +834,9 @@ public:
 };
 
 UniquePtr<sandbox::bpf_dsl::Policy>
-GetContentSandboxPolicy(SandboxBrokerClient* aMaybeBroker,
-                        const std::vector<int>& aSyscallWhitelist)
+GetContentSandboxPolicy(SandboxBrokerClient* aMaybeBroker)
 {
-  return MakeUnique<ContentSandboxPolicy>(aMaybeBroker, aSyscallWhitelist);
+  return UniquePtr<sandbox::bpf_dsl::Policy>(new ContentSandboxPolicy(aMaybeBroker));
 }
 #endif 
 

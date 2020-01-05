@@ -24,8 +24,7 @@ MOZ_EXPORT void SandboxEarlyInit(GeckoProcessType aType);
 
 
 
-MOZ_EXPORT bool SetContentProcessSandbox(int aBrokerFd,
-                                         std::vector<int>& aSyscallWhitelist);
+MOZ_EXPORT bool SetContentProcessSandbox(int aBrokerFd);
 #endif
 
 #ifdef MOZ_GMP_SANDBOX
