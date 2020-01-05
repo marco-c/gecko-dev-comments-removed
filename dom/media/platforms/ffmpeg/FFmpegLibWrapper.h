@@ -23,23 +23,10 @@ struct FFmpegLibWrapper
   FFmpegLibWrapper();
   ~FFmpegLibWrapper();
 
-  enum class LinkResult
-  {
-    Success,
-    NoProvidedLib,
-    NoAVCodecVersion,
-    CannotUseLibAV57,
-    BlockedOldLibAVVersion,
-    UnknownFutureLibAVVersion,
-    UnknownFutureFFMpegVersion,
-    UnknownOlderFFMpegVersion,
-    MissingFFMpegFunction,
-    MissingLibAVFunction,
-  };
   
   
   
-  LinkResult Link();
+  bool Link();
 
   
   void Unlink();
