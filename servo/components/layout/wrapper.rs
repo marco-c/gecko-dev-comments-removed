@@ -30,6 +30,8 @@
 
 
 
+#![allow(unsafe_blocks)]
+
 use canvas::canvas_paint_task::CanvasMsg;
 use context::SharedLayoutContext;
 use css::node_style::StyledNode;

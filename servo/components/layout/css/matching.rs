@@ -4,6 +4,8 @@
 
 
 
+#![allow(unsafe_blocks)]
+
 use css::node_style::StyledNode;
 use incremental::{self, RestyleDamage};
 use util::{LayoutDataAccess, LayoutDataWrapper};

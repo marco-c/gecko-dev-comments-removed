@@ -95,6 +95,7 @@ impl Drop for Scope {
 
 
 
+#[allow(unsafe_blocks)]
 pub fn generate_unique_debug_id() -> u16 {
     unsafe { DEBUG_ID_COUNTER.fetch_add(1, Ordering::SeqCst) as u16 }
 }

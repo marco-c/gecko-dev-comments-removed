@@ -4,6 +4,8 @@
 
 
 
+#![allow(unsafe_blocks)]
+
 use css::matching::{ApplicableDeclarationsCache, StyleSharingCandidateCache};
 
 use geom::{Rect, Size2D};

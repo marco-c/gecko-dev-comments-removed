@@ -5,6 +5,8 @@
 
 
 
+#![allow(unsafe_blocks)]
+
 use css::node_style::StyledNode;
 use construct::ConstructionResult;
 use context::{SharedLayoutContext, SharedLayoutContextWrapper};

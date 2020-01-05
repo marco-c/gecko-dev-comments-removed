@@ -6,6 +6,8 @@
 
 
 
+#![allow(unsafe_blocks)]
+
 use flow::Flow;
 use flow;
 
