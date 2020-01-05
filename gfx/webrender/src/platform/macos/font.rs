@@ -6,10 +6,10 @@ use app_units::Au;
 use core_graphics::base::{kCGImageAlphaNoneSkipFirst, kCGImageAlphaPremultipliedLast};
 use core_graphics::base::kCGBitmapByteOrder32Little;
 use core_graphics::color_space::CGColorSpace;
-use core_graphics::context::CGContext;
+use core_graphics::context::{CGContext, CGTextDrawingMode};
 use core_graphics::data_provider::CGDataProvider;
 use core_graphics::font::{CGFont, CGGlyph};
-use core_graphics::geometry::CGPoint;
+use core_graphics::geometry::{CGPoint, CGSize, CGRect};
 use core_text::font::CTFont;
 use core_text::font_descriptor::kCTFontDefaultOrientation;
 use core_text;
@@ -158,6 +158,23 @@ impl FontContext {
         })
     }
 
+    #[allow(dead_code)]
+    fn print_glyph_data(&mut self, data: &Vec<u8>, width: usize, height: usize) {
+        
+        for i in 0..height {
+            let current_height = i * width * 4;
+
+            for pixel in data[current_height .. current_height + (width * 4)].chunks(4) {
+                let b = pixel[0];
+                let g = pixel[1];
+                let r = pixel[2];
+                let a = pixel[3];
+                print!("({}, {}, {}, {}) ", r, g, b, a);
+            }
+            println!("");
+        }
+    }
+
     pub fn rasterize_glyph(&mut self,
                            font_key: FontKey,
                            size: Au,
@@ -183,38 +200,91 @@ impl FontContext {
                                                                       &CGColorSpace::create_device_rgb(),
                                                                       context_flags);
 
+
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
                 let (antialias, smooth) = match render_mode {
                     FontRenderMode::Subpixel => (true, true),
                     FontRenderMode::Alpha => (true, false),
                     FontRenderMode::Mono => (false, false),
                 };
 
+                
+                cg_context.set_allows_font_subpixel_positioning(true);
+                cg_context.set_should_subpixel_position_fonts(true);
+
                 cg_context.set_allows_font_smoothing(smooth);
                 cg_context.set_should_smooth_fonts(smooth);
                 cg_context.set_allows_antialiasing(antialias);
                 cg_context.set_should_antialias(antialias);
-                cg_context.set_rgb_fill_color(1.0, 1.0, 1.0, 1.0);
 
                 let rasterization_origin = CGPoint {
                     x: -metrics.rasterized_left as f64,
                     y: metrics.rasterized_descent as f64,
                 };
+
+                
+                
+                cg_context.set_rgb_fill_color(1.0, 1.0, 1.0, 1.0);
+                let rect = CGRect {
+                    origin: CGPoint {
+                        x: 0.0,
+                        y: 0.0,
+                    },
+                    size: CGSize {
+                        width: metrics.rasterized_width as f64,
+                        height: metrics.rasterized_height as f64,
+                    }
+                };
+                cg_context.fill_rect(rect);
+
+                
+                cg_context.set_rgb_fill_color(0.0, 0.0, 0.0, 1.0);
+                cg_context.set_text_drawing_mode(CGTextDrawingMode::CGTextFill);
                 ct_font.draw_glyphs(&[glyph], &[rasterization_origin], cg_context.clone());
 
-                let rasterized_area = (metrics.rasterized_width * metrics.rasterized_height) as usize;
                 let mut rasterized_pixels = cg_context.data().to_vec();
 
-                match render_mode {
-                    FontRenderMode::Alpha | FontRenderMode::Mono => {
-                        for i in 0..rasterized_area {
-                            let alpha = (rasterized_pixels[i * 4 + 3] as f32) / 255.0;
-                            for channel in &mut rasterized_pixels[(i*4)..(i*4 + 3)] {
-                                *channel = ((*channel as f32) / alpha) as u8;
+                
+                
+                for i in 0..metrics.rasterized_height {
+                    let current_height = (i * metrics.rasterized_width * 4) as usize;
+                    let end_row = current_height + (metrics.rasterized_width as usize * 4);
+
+                    for mut pixel in rasterized_pixels[current_height .. end_row].chunks_mut(4) {
+                        pixel[0] = 255 - pixel[0];
+                        pixel[1] = 255 - pixel[1];
+                        pixel[2] = 255 - pixel[2];
+
+                        pixel[3] = match render_mode {
+                            FontRenderMode::Subpixel => 255,
+                            _ => {
+                                assert_eq!(pixel[0], pixel[1]);
+                                assert_eq!(pixel[0], pixel[2]);
+                                pixel[0]
                             }
-                        }
-                    }
-                    FontRenderMode::Subpixel => {}
-                }
+                        }; 
+                    } 
+                } 
 
                 Some(RasterizedGlyph {
                     width: metrics.rasterized_width,
