@@ -268,6 +268,9 @@ impl StyleSharingCandidate {
             return false
         }
 
+        
+        
+
         for attribute_info in style::common_style_affecting_attributes().iter() {
             match attribute_info.mode {
                 AttrIsPresentMode(flag) => {
@@ -292,6 +295,12 @@ impl StyleSharingCandidate {
                         _ => {}
                     }
                 }
+            }
+        }
+
+        for attribute_name in style::rare_style_affecting_attributes().iter() {
+            if element.get_attr(&ns!(""), attribute_name).is_some() {
+                return false
             }
         }
 

@@ -30,6 +30,9 @@ pub enum Msg {
     LoadStylesheetMsg(Url),
 
     
+    SetQuirksModeMsg,
+
+    
     ReflowMsg(Box<Reflow>),
 
     

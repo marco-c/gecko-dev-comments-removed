@@ -4,25 +4,73 @@
 
 
 
-use css::node_util::NodeUtil;
-use wrapper::ThreadSafeLayoutNode;
+use wrapper::{After, Before, Normal, ThreadSafeLayoutNode};
 
+use std::mem;
 use style::ComputedValues;
 use sync::Arc;
 
 
 pub trait StyledNode {
+    
+    
     fn style<'a>(&'a self) -> &'a Arc<ComputedValues>;
+    
+    fn has_style(&self) -> bool;
+    
     fn unstyle(self);
 }
 
 impl<'ln> StyledNode for ThreadSafeLayoutNode<'ln> {
     #[inline]
     fn style<'a>(&'a self) -> &'a Arc<ComputedValues> {
-        self.get_css_select_results()
+        unsafe {
+            let layout_data_ref = self.borrow_layout_data();
+            match self.get_pseudo_element_type() {
+                Before(_) => {
+                     mem::transmute(layout_data_ref.as_ref()
+                                                   .unwrap()
+                                                   .data
+                                                   .before_style
+                                                   .as_ref()
+                                                   .unwrap())
+                }
+                After(_) => {
+                    mem::transmute(layout_data_ref.as_ref()
+                                                  .unwrap()
+                                                  .data
+                                                  .after_style
+                                                  .as_ref()
+                                                  .unwrap())
+                }
+                Normal => {
+                    mem::transmute(layout_data_ref.as_ref()
+                                                  .unwrap()
+                                                  .shared_data
+                                                  .style
+                                                  .as_ref()
+                                                  .unwrap())
+                }
+            }
+        }
+    }
+
+    fn has_style(&self) -> bool {
+        let layout_data_ref = self.borrow_layout_data();
+        layout_data_ref.as_ref().unwrap().shared_data.style.is_some()
     }
 
     fn unstyle(self) {
-        self.remove_css_select_results()
+        let mut layout_data_ref = self.mutate_layout_data();
+        let layout_data = layout_data_ref.as_mut().expect("no layout data");
+
+        let style =
+            match self.get_pseudo_element_type() {
+                Before(_) => &mut layout_data.data.before_style,
+                After (_) => &mut layout_data.data.after_style,
+                Normal    => &mut layout_data.shared_data.style,
+            };
+
+        *style = None;
     }
 }

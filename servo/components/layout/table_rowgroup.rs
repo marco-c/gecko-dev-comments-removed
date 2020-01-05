@@ -9,11 +9,10 @@
 use block::{BlockFlow, ISizeAndMarginsComputer, MarginsMayNotCollapse};
 use construct::FlowConstructor;
 use context::LayoutContext;
-use flow::{TableRowGroupFlowClass, FlowClass, Flow, ImmutableFlowUtils};
+use flow::{Flow, FlowClass, TableRowGroupFlowClass};
 use fragment::{Fragment, FragmentBoundsIterator};
 use layout_debug;
-use model::IntrinsicISizesContribution;
-use table::{ColumnComputedInlineSize, ColumnIntrinsicInlineSize, InternalTable, TableFlow};
+use table::{ColumnComputedInlineSize, ColumnIntrinsicInlineSize, InternalTable};
 use wrapper::ThreadSafeLayoutNode;
 
 use servo_util::geometry::Au;
@@ -24,6 +23,7 @@ use sync::Arc;
 
 #[deriving(Encodable)]
 pub struct TableRowGroupFlow {
+    
     pub block_flow: BlockFlow,
 
     
@@ -91,54 +91,11 @@ impl Flow for TableRowGroupFlow {
         &mut self.column_computed_inline_sizes
     }
 
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
     fn bubble_inline_sizes(&mut self) {
         let _scope = layout_debug_scope!("table_rowgroup::bubble_inline_sizes {:x}",
                                          self.block_flow.base.debug_id());
-
-        let mut computation = IntrinsicISizesContribution::new();
-        for kid in self.block_flow.base.child_iter() {
-            assert!(kid.is_table_row());
-
-            
-            if self.column_intrinsic_inline_sizes.is_empty() {
-                
-                self.column_intrinsic_inline_sizes = kid.column_intrinsic_inline_sizes().clone();
-            } else {
-                let mut child_intrinsic_sizes =
-                    TableFlow::update_column_inline_sizes(&mut self.column_intrinsic_inline_sizes,
-                                                          kid.column_intrinsic_inline_sizes());
-
-                
-                let column_count = self.column_intrinsic_inline_sizes.len();
-                let child_column_count = kid.column_intrinsic_inline_sizes().len();
-                for i in range(column_count, child_column_count) {
-                    let this_column_inline_size = (*kid.column_intrinsic_inline_sizes())[i];
-
-                    
-                    child_intrinsic_sizes.minimum_inline_size =
-                        child_intrinsic_sizes.minimum_inline_size +
-                        this_column_inline_size.minimum_length;
-                    child_intrinsic_sizes.preferred_inline_size =
-                        child_intrinsic_sizes.preferred_inline_size +
-                        this_column_inline_size.preferred;
-                    self.column_intrinsic_inline_sizes.push(this_column_inline_size);
-                }
-
-                computation.union_block(&child_intrinsic_sizes)
-            }
-        }
-
-        self.block_flow.base.intrinsic_inline_sizes = computation.finish()
+        
+        
     }
 
     
