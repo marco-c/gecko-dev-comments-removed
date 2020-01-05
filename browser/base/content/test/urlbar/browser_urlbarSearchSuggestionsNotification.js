@@ -114,7 +114,8 @@ add_task(function* enable() {
   let enableButton = document.getAnonymousElementByAttribute(
     gURLBar.popup, "anonid", "search-suggestions-notification-enable"
   );
-  let searchPromise = promiseSuggestionsPresent();
+  let searchPromise = BrowserTestUtils.waitForCondition(suggestionsPresent,
+                                                        "waiting for suggestions");
   enableButton.click();
   yield searchPromise;
   
@@ -233,12 +234,6 @@ function suggestionsPresent() {
     }
   }
   return false;
-}
-
-function promiseSuggestionsPresent() {
-  return new Promise(resolve => {
-    waitForCondition(suggestionsPresent, resolve);
-  });
 }
 
 function assertVisible(visible, win=window) {
