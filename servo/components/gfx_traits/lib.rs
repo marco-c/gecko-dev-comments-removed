@@ -2,7 +2,7 @@
 
 
 
-#![feature(plugin, proc_macro)]
+#![feature(plugin)]
 #![plugin(plugins)]
 
 #![crate_name = "gfx_traits"]

@@ -23,8 +23,6 @@
 
 
 
-#![cfg_attr(feature = "servo", feature(proc_macro))]
-
 #![deny(warnings)]
 #![deny(missing_docs)]
 

@@ -2,7 +2,6 @@
 
 
 
-#![feature(proc_macro)]
 #![feature(step_trait)]
 
 #![deny(unsafe_code)]

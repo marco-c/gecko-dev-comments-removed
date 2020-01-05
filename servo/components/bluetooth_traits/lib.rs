@@ -2,8 +2,6 @@
 
 
 
-#![feature(proc_macro)]
-
 extern crate ipc_channel;
 extern crate regex;
 #[macro_use]
