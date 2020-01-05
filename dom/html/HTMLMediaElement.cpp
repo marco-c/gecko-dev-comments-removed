@@ -654,32 +654,14 @@ public:
     }
   }
 
-  bool
-  ShouldResetSuspend() const
-  {
-    
-    if (!mOwner->Paused() &&
-        mSuspended == nsISuspendedTypes::SUSPENDED_PAUSE_DISPOSABLE) {
-      return true;
-    }
-
-    
-    
-    if (mOwner->Paused() &&
-        mSuspended == nsISuspendedTypes::SUSPENDED_BLOCK) {
-      return true;
-    }
-
-    return false;
-  }
-
   void
-  NotifyPlayStateChanged()
+  NotifyPlayStarted()
   {
     MOZ_ASSERT(!mIsShutDown);
-    if (ShouldResetSuspend()) {
-      SetSuspended(nsISuspendedTypes::NONE_SUSPENDED);
-    }
+    
+    
+    
+    SetSuspended(nsISuspendedTypes::NONE_SUSPENDED);
     UpdateAudioChannelPlayingState();
   }
 
@@ -898,7 +880,7 @@ private:
     if (!IsSuspended()) {
       MOZ_LOG(AudioChannelService::GetAudioChannelLog(), LogLevel::Debug,
              ("HTMLMediaElement::AudioChannelAgentCallback, ResumeFromAudioChannel, "
-              "this = %p, don't need to be resumed!\n", this));
+              "this = %p, Error : resume without suspended!\n", this));
       return;
     }
 
@@ -2775,9 +2757,7 @@ HTMLMediaElement::Pause(ErrorResult& aRv)
   
   AddRemoveSelfReference();
   UpdateSrcMediaStreamPlaying();
-  if (mAudioChannelWrapper) {
-    mAudioChannelWrapper->NotifyPlayStateChanged();
-  }
+  UpdateAudioChannelPlayingState();
 
   if (!oldPaused) {
     FireTimeUpdate(false);
@@ -7152,7 +7132,7 @@ HTMLMediaElement::UpdateCustomPolicyAfterPlayed()
 {
   OpenUnsupportedMediaWithExternalAppIfNeeded();
   if (mAudioChannelWrapper) {
-    mAudioChannelWrapper->NotifyPlayStateChanged();
+    mAudioChannelWrapper->NotifyPlayStarted();
   }
 }
 
