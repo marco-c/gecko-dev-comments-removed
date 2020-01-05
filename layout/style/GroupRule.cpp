@@ -367,23 +367,5 @@ GroupRule::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 }
 
 
-
-
-
-ConditionRule::ConditionRule(uint32_t aLineNumber, uint32_t aColumnNumber)
-  : GroupRule(aLineNumber, aColumnNumber)
-{
-}
-
-ConditionRule::ConditionRule(const ConditionRule& aCopy)
-  : GroupRule(aCopy)
-{
-}
-
-ConditionRule::~ConditionRule()
-{
-}
-
-
 } 
 } 

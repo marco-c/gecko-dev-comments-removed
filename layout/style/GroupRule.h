@@ -101,12 +101,9 @@ protected:
 class ConditionRule : public GroupRule
 {
 protected:
-  ConditionRule(uint32_t aLineNumber, uint32_t aColumnNumber);
-  ConditionRule(const ConditionRule& aCopy);
-  virtual ~ConditionRule();
+  using GroupRule::GroupRule;
 
 public:
-
   
   
   
