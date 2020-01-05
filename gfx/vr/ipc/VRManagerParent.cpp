@@ -443,7 +443,8 @@ VRManagerParent::SendGamepadUpdate(const GamepadChangeEvent& aGamepadEvent)
 {
   
   
-  if (mIsContentChild || IsSameProcess()) {
+  if (mHaveControllerListener &&
+      (mIsContentChild || IsSameProcess())) {
     return PVRManagerParent::SendGamepadUpdate(aGamepadEvent);
   } else {
     return true;
