@@ -4758,14 +4758,14 @@ nsGridContainerFrame::Tracks::StretchFlexibleTracks(
                                          : ri->ComputedMaxISize();
   }
   Maybe<nsTArray<TrackSize>> origSizes;
+  bool applyMinMax = (minSize != 0 || maxSize != NS_UNCONSTRAINEDSIZE) &&
+                     aAvailableSize == NS_UNCONSTRAINEDSIZE;
   
   
   while (true) {
     float fr = FindUsedFlexFraction(aState, aGridItems, flexTracks,
                                     aFunctions, aAvailableSize);
     if (fr != 0.0f) {
-      bool applyMinMax = (minSize != 0 || maxSize != NS_UNCONSTRAINEDSIZE) &&
-                         aAvailableSize == NS_UNCONSTRAINEDSIZE;
       for (uint32_t i : flexTracks) {
         float flexFactor = aFunctions.MaxSizingFor(i).GetFlexFractionValue();
         nscoord flexLength = NSToCoordRound(flexFactor * fr);
@@ -4777,7 +4777,8 @@ nsGridContainerFrame::Tracks::StretchFlexibleTracks(
           base = flexLength;
         }
       }
-      if (applyMinMax && origSizes.isSome()) {
+      if (applyMinMax) {
+        applyMinMax = false;
         
         
         
@@ -4795,13 +4796,12 @@ nsGridContainerFrame::Tracks::StretchFlexibleTracks(
           aAvailableSize = minSize;
         }
         if (aAvailableSize != NS_UNCONSTRAINEDSIZE) {
-          
-          minSize = 0;
-          maxSize = NS_UNCONSTRAINEDSIZE;
           aAvailableSize = std::max(0, aAvailableSize - sumOfGridGaps);
           
-          mSizes = Move(*origSizes);
-          origSizes.reset();
+          if (origSizes.isSome()) {
+            mSizes = Move(*origSizes);
+            origSizes.reset();
+          } 
           if (aAvailableSize == 0) {
             break; 
           }
