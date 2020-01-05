@@ -581,25 +581,17 @@ impl Document {
     pub fn find_fragment_node(&self, fragid: &str) -> Option<Root<Element>> {
         
         
-        if fragid.is_empty() {
-            self.GetDocumentElement()
-        } else {
-            
-            percent_decode(fragid.as_bytes()).decode_utf8().ok()
-                
-                .and_then(|decoded_fragid| self.get_element_by_id(&Atom::from(decoded_fragid)))
-                
-                .or_else(|| self.get_anchor_by_name(fragid))
-                
-                .or_else(|| if fragid.eq_ignore_ascii_case("top") {
-                    self.GetDocumentElement()
-                } else {
-                    
-                    None
-                })
-        }
+        
+        percent_decode(fragid.as_bytes()).decode_utf8().ok()
+        
+            .and_then(|decoded_fragid| self.get_element_by_id(&Atom::from(decoded_fragid)))
+        
+            .or_else(|| self.get_anchor_by_name(fragid))
+        
     }
 
+    
+    
     
     pub fn check_and_scroll_fragment(&self, fragment: &str) {
         let target = self.find_fragment_node(fragment);
@@ -607,30 +599,27 @@ impl Document {
         
         self.set_target_element(target.r());
 
-        let point = if fragment.is_empty() || fragment.eq_ignore_ascii_case("top") {
+        let point = target.r().map(|element| {
+            
+            
+            
+            
+            let rect = element.upcast::<Node>().bounding_content_box();
+
+            
+            
+            
+            
+            
+            
+            (rect.origin.x.to_nearest_px() as f32, rect.origin.y.to_nearest_px() as f32)
+        }).or_else(|| if fragment.is_empty() || fragment.eq_ignore_ascii_case("top") {
             
             
             Some((0.0, 0.0))
         } else {
-            target.r().map(|element| {
-                
-                
-                
-                
-                let rect = element.upcast::<Node>().bounding_content_box();
-
-                
-                
-                
-                
-                
-                
-                
-                
-                (rect.origin.x.to_nearest_px() as f32,
-                 rect.origin.y.to_nearest_px() as f32)
-            })
-        };
+            None
+        });
 
         if let Some((x, y)) = point {
             
