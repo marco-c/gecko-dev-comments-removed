@@ -26,6 +26,7 @@ const NOTIFY_BROWSER_STATE_RESTORED = "sessionstore-browser-state-restored";
 const NOTIFY_LAST_SESSION_CLEARED = "sessionstore-last-session-cleared";
 const NOTIFY_RESTORING_ON_STARTUP = "sessionstore-restoring-on-startup";
 const NOTIFY_INITIATING_MANUAL_RESTORE = "sessionstore-initiating-manual-restore";
+const NOTIFY_CLOSED_OBJECTS_CHANGED = "sessionstore-closed-objects-changed";
 
 const NOTIFY_TAB_RESTORED = "sessionstore-debug-tab-restored"; 
 
@@ -169,6 +170,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "SessionCookies",
   "resource:///modules/sessionstore/SessionCookies.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "SessionFile",
   "resource:///modules/sessionstore/SessionFile.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "setTimeout",
+  "resource://gre/modules/Timer.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TabAttributes",
   "resource:///modules/sessionstore/TabAttributes.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TabCrashHandler",
@@ -468,6 +471,9 @@ var SessionStoreInternal = {
   _deferredInitialState: null,
 
   
+  _closedObjectsChanged: false,
+
+  
   _deferredInitialized: (function () {
     let deferred = {};
 
@@ -682,7 +688,9 @@ var SessionStoreInternal = {
         this.onBeforeBrowserWindowShown(aSubject);
         break;
       case "domwindowclosed": 
-        this.onClose(aSubject);
+        this.onClose(aSubject).then(() => {
+          this._notifyOfClosedObjectsChange();
+        });
         break;
       case "quit-application-granted":
         let syncShutdown = aData == "syncShutdown";
@@ -696,15 +704,19 @@ var SessionStoreInternal = {
         break;
       case "browser:purge-session-history": 
         this.onPurgeSessionHistory();
+        this._notifyOfClosedObjectsChange();
         break;
       case "browser:purge-domain-data":
         this.onPurgeDomainData(aData);
+        this._notifyOfClosedObjectsChange();
         break;
       case "nsPref:changed": 
         this.onPrefChange(aData);
+        this._notifyOfClosedObjectsChange();
         break;
       case "idle-daily":
         this.onIdleDaily();
+        this._notifyOfClosedObjectsChange();
         break;
     }
   },
@@ -944,6 +956,7 @@ var SessionStoreInternal = {
         if (!aEvent.detail.adoptedBy)
           this.onTabClose(win, target);
         this.onTabRemove(win, target);
+        this._notifyOfClosedObjectsChange();
         break;
       case "TabSelect":
         this.onTabSelect(win);
@@ -1160,7 +1173,7 @@ var SessionStoreInternal = {
 
           
           if (!normalTabsState.windows.length) {
-            this._closedWindows.splice(closedWindowIndex, 1);
+            this._removeClosedWindow(closedWindowIndex);
           }
           
           else {
@@ -1171,7 +1184,7 @@ var SessionStoreInternal = {
         else {
           
           
-          this._closedWindows.splice(closedWindowIndex, 1);
+          this._removeClosedWindow(closedWindowIndex);
           newWindowState = closedWindowState;
           delete newWindowState.hidden;
         }
@@ -1267,7 +1280,10 @@ var SessionStoreInternal = {
 
 
 
+
+
   onClose: function ssi_onClose(aWindow) {
+    let completionPromise = Promise.resolve();
     
     let isFullyLoaded = this._isWindowLoaded(aWindow);
     if (!isFullyLoaded) {
@@ -1282,7 +1298,7 @@ var SessionStoreInternal = {
 
     
     if (!aWindow.__SSi || !this._windows[aWindow.__SSi]) {
-      return;
+      return completionPromise;
     }
 
     
@@ -1377,7 +1393,7 @@ var SessionStoreInternal = {
         this.maybeSaveClosedWindow(winData, isLastWindow);
       }
 
-      TabStateFlusher.flushWindow(aWindow).then(() => {
+      completionPromise = TabStateFlusher.flushWindow(aWindow).then(() => {
         
         
         
@@ -1413,6 +1429,8 @@ var SessionStoreInternal = {
     for (let i = 0; i < tabbrowser.tabs.length; i++) {
       this.onTabRemove(aWindow, tabbrowser.tabs[i], true);
     }
+
+    return completionPromise;
   },
 
   
@@ -1491,8 +1509,9 @@ var SessionStoreInternal = {
         
         this._closedWindows.splice(index, 0, winData);
         this._capClosedWindows();
+        this._closedObjectsChanged = true;
       } else if (!shouldStore && alreadyStored) {
-        this._closedWindows.splice(winIndex, 1);
+        this._removeClosedWindow(winIndex);
       }
     }
   },
@@ -1669,13 +1688,19 @@ var SessionStoreInternal = {
     
     for (let ix in this._windows) {
       if (ix in openWindows) {
-        this._windows[ix]._closedTabs = [];
+        if (this._windows[ix]._closedTabs.length) {
+          this._windows[ix]._closedTabs = [];
+          this._closedObjectsChanged = true;
+        }
       } else {
         delete this._windows[ix];
       }
     }
     
-    this._closedWindows = [];
+    if (this._closedWindows.length) {
+      this._closedWindows = [];
+      this._closedObjectsChanged = true;
+    }
     
     var win = this._getMostRecentBrowserWindow();
     if (win) {
@@ -1705,8 +1730,10 @@ var SessionStoreInternal = {
     for (let ix in this._windows) {
       let closedTabs = this._windows[ix]._closedTabs;
       for (let i = closedTabs.length - 1; i >= 0; i--) {
-        if (closedTabs[i].state.entries.some(containsDomain, this))
+        if (closedTabs[i].state.entries.some(containsDomain, this)) {
           closedTabs.splice(i, 1);
+          this._closedObjectsChanged = true;
+        }
       }
     }
     
@@ -1758,7 +1785,10 @@ var SessionStoreInternal = {
       case "sessionstore.max_tabs_undo":
         this._max_tabs_undo = this._prefBranch.getIntPref("sessionstore.max_tabs_undo");
         for (let ix in this._windows) {
-          this._windows[ix]._closedTabs.splice(this._max_tabs_undo, this._windows[ix]._closedTabs.length);
+          if (this._windows[ix]._closedTabs.length > this._max_tabs_undo) {
+            this._windows[ix]._closedTabs.splice(this._max_tabs_undo, this._windows[ix]._closedTabs.length);
+            this._closedObjectsChanged = true;
+          }
         }
         break;
       case "sessionstore.max_windows_undo":
@@ -1914,6 +1944,7 @@ var SessionStoreInternal = {
 
     
     closedTabs.splice(index, 0, tabData);
+    this._closedObjectsChanged = true;
 
     
     if (closedTabs.length > this._max_tabs_undo) {
@@ -1934,6 +1965,7 @@ var SessionStoreInternal = {
   removeClosedTabData(closedTabs, index) {
     
     let [closedTab] = closedTabs.splice(index, 1);
+    this._closedObjectsChanged = true;
 
     
     
@@ -2063,6 +2095,8 @@ var SessionStoreInternal = {
 
     
     this._cleanupOldData(Object.keys(this._windows).map((key) => this._windows[key]._closedTabs));
+
+    this._notifyOfClosedObjectsChange();
   },
 
   
@@ -2079,6 +2113,7 @@ var SessionStoreInternal = {
         data.closedAt = data.closedAt || now;
         if (now - data.closedAt > TIME_TO_LIVE) {
           array.splice(i, 1);
+          this._closedObjectsChanged = true;
         }
       }
     }
@@ -2133,7 +2168,10 @@ var SessionStoreInternal = {
     });
 
     
-    this._closedWindows = [];
+    if (this._closedWindows.length) {
+      this._closedWindows = [];
+      this._closedObjectsChanged = true;
+    }
 
     
     this._restoreCount = state.windows ? state.windows.length : 0;
@@ -2144,6 +2182,9 @@ var SessionStoreInternal = {
 
     
     this.restoreWindows(window, state, {overwriteTabs: true});
+
+    
+    this._notifyOfClosedObjectsChange();
   },
 
   getWindowState: function ssi_getWindowState(aWindow) {
@@ -2165,6 +2206,9 @@ var SessionStoreInternal = {
     }
 
     this.restoreWindows(aWindow, aState, {overwriteTabs: aOverwrite});
+
+    
+    this._notifyOfClosedObjectsChange();
   },
 
   getTabState: function ssi_getTabState(aTab) {
@@ -2203,6 +2247,9 @@ var SessionStoreInternal = {
     }
 
     this.restoreTab(aTab, tabState);
+
+    
+    this._notifyOfClosedObjectsChange();
   },
 
   duplicateTab: function ssi_duplicateTab(aWindow, aTab, aDelta = 0, aRestoreImmediately = true) {
@@ -2317,6 +2364,9 @@ var SessionStoreInternal = {
     
     tab.linkedBrowser.focus();
 
+    
+    this._notifyOfClosedObjectsChange();
+
     return tab;
   },
 
@@ -2335,6 +2385,9 @@ var SessionStoreInternal = {
 
     
     this.removeClosedTabData(closedTabs, aIndex);
+
+    
+    this._notifyOfClosedObjectsChange();
   },
 
   getClosedWindowCount: function ssi_getClosedWindowCount() {
@@ -2351,11 +2404,15 @@ var SessionStoreInternal = {
     }
 
     
-    let state = { windows: this._closedWindows.splice(aIndex, 1) };
+    let state = { windows: this._removeClosedWindow(aIndex) };
     delete state.windows[0].closedAt; 
 
     let window = this._openWindowWithState(state);
     this.windowToFocus = window;
+
+    
+    this._notifyOfClosedObjectsChange();
+
     return window;
   },
 
@@ -2368,8 +2425,11 @@ var SessionStoreInternal = {
 
     
     let winData = this._closedWindows[aIndex];
-    this._closedWindows.splice(aIndex, 1);
+    this._removeClosedWindow(aIndex);
     this._saveableClosedWindowData.delete(winData);
+
+    
+    this._notifyOfClosedObjectsChange();
   },
 
   getWindowValue: function ssi_getWindowValue(aWindow, aKey) {
@@ -2584,6 +2644,7 @@ var SessionStoreInternal = {
     if (lastSessionState._closedWindows) {
       this._closedWindows = this._closedWindows.concat(lastSessionState._closedWindows);
       this._capClosedWindows();
+      this._closedObjectsChanged = true;
     }
 
     if (lastSessionState.scratchpads) {
@@ -2598,6 +2659,9 @@ var SessionStoreInternal = {
     this._updateSessionStartTime(lastSessionState);
 
     LastSession.clear();
+
+    
+    this._notifyOfClosedObjectsChange();
   },
 
   
@@ -2735,6 +2799,9 @@ var SessionStoreInternal = {
     });
 
     tab.linkedBrowser.__SS_restoreState = TAB_STATE_WILL_RESTORE;
+
+    
+    this._notifyOfClosedObjectsChange();
   },
 
   
@@ -3279,6 +3346,7 @@ var SessionStoreInternal = {
     
     if (root._closedWindows) {
       this._closedWindows = root._closedWindows;
+      this._closedObjectsChanged = true;
     }
 
     
@@ -3780,6 +3848,35 @@ var SessionStoreInternal = {
   },
 
   
+
+  
+
+
+
+
+
+
+
+
+  _removeClosedWindow(index) {
+    let windows = this._closedWindows.splice(index, 1);
+    this._closedObjectsChanged = true;
+    return windows;
+  },
+
+  
+
+
+
+  _notifyOfClosedObjectsChange() {
+    if (!this._closedObjectsChanged) {
+      return;
+    }
+    this._closedObjectsChanged = false;
+    setTimeout(() => {
+      Services.obs.notifyObservers(null, NOTIFY_CLOSED_OBJECTS_CHANGED, null);
+    }, 0);
+  },
 
   
 
@@ -4343,7 +4440,10 @@ var SessionStoreInternal = {
       if (normalWindowIndex >= this._max_windows_undo)
         spliceTo = normalWindowIndex + 1;
     }
-    this._closedWindows.splice(spliceTo, this._closedWindows.length);
+    if (spliceTo < this._closedWindows.length) {
+      this._closedWindows.splice(spliceTo, this._closedWindows.length);
+      this._closedObjectsChanged = true;
+    }
   },
 
   
