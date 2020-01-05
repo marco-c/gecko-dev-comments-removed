@@ -151,6 +151,15 @@ def bootstrap(topdir):
 
     
     
+    try:
+        topdir.decode('ascii')
+    except UnicodeDecodeError:
+        print('Cannot run mach in a path with Unicode characters.')
+        print('Current path:', topdir)
+        sys.exit(1)
+
+    
+    
     if ' ' in topdir:
         print('Cannot run mach in a path with spaces.')
         print('Current path:', topdir)
