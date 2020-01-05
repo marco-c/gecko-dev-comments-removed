@@ -430,13 +430,6 @@ public:
 
   
   
-  PinchGestureInput(PinchGestureType aType, uint32_t aTime,
-                    TimeStamp aTimeStamp, const ScreenPoint& aFocusPoint,
-                    float aCurrentSpan, float aPreviousSpan,
-                    Modifiers aModifiers);
-
-  
-  
   PinchGestureInput(PinchGestureType aType, uint32_t aTime, TimeStamp aTimeStamp,
                     const ParentLayerPoint& aLocalFocusPoint, float aCurrentSpan,
                     float aPreviousSpan, Modifiers aModifiers);

@@ -1442,8 +1442,8 @@ nsEventStatus AsyncPanZoomController::OnScaleEnd(const PinchGestureInput& aEvent
   
   if (aEvent.mFocusPoint.x != -1 && aEvent.mFocusPoint.y != -1) {
     mPanDirRestricted = false;
-    mX.StartTouch(aEvent.mFocusPoint.x, aEvent.mTime);
-    mY.StartTouch(aEvent.mFocusPoint.y, aEvent.mTime);
+    mX.StartTouch(aEvent.mLocalFocusPoint.x, aEvent.mTime);
+    mY.StartTouch(aEvent.mLocalFocusPoint.y, aEvent.mTime);
     SetState(TOUCHING);
   } else {
     
