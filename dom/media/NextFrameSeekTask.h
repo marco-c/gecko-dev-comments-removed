@@ -57,12 +57,6 @@ public:
   
 
 
-  MediaQueue<MediaData>& mAudioQueue;
-  MediaQueue<MediaData>& mVideoQueue;
-
-  
-
-
   const int64_t mCurrentTime;
   media::TimeUnit mDuration;
 };
