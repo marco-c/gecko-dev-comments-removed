@@ -53,7 +53,6 @@ const {getClientCssProperties} = require("devtools/shared/fronts/css-properties"
 
 
 
-
 const CSS_STATES = {
   "null": "null",
   property: "property",    
@@ -73,7 +72,6 @@ const SELECTOR_STATES = {
   attribute: "attribute",  
   value: "value",          
 };
-
 
 
 

@@ -64,7 +64,6 @@ const COMPAT = {
   
   
   
-  
   PREFERENCE_KEYS: [
     
     [ "network",     "netwarn",    null,         "networkinfo", ],  
@@ -76,7 +75,6 @@ const COMPAT = {
     [ "secerror",    "secwarn",    null,         null,          ],  
     [ "servererror", "serverwarn", "serverinfo", "serverlog",   ],  
   ],
-  
   
   
 

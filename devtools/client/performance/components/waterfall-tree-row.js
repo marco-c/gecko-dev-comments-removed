@@ -11,12 +11,9 @@
 const { DOM: dom, PropTypes } = require("devtools/client/shared/vendor/react");
 const { MarkerBlueprintUtils } = require("../modules/marker-blueprint-utils");
 
-
-const LEVEL_INDENT = 10;
-
-const ARROW_NODE_OFFSET = -14;
-
-const WATERFALL_MARKER_TIMEBAR_WIDTH_MIN = 5;
+const LEVEL_INDENT = 10; 
+const ARROW_NODE_OFFSET = -14; 
+const WATERFALL_MARKER_TIMEBAR_WIDTH_MIN = 5; 
 
 function buildMarkerSidebar(blueprint, props) {
   const { marker, level, sidebarWidth } = props;

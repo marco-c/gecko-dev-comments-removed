@@ -12,12 +12,9 @@ const { DOM: dom, PropTypes } = require("devtools/client/shared/vendor/react");
 const { L10N } = require("../modules/global");
 const { TickUtils } = require("../modules/waterfall-ticks");
 
-
-const WATERFALL_HEADER_TICKS_MULTIPLE = 5;
-
-const WATERFALL_HEADER_TICKS_SPACING_MIN = 50;
-
-const WATERFALL_HEADER_TEXT_PADDING = 3;
+const WATERFALL_HEADER_TICKS_MULTIPLE = 5; 
+const WATERFALL_HEADER_TICKS_SPACING_MIN = 50; 
+const WATERFALL_HEADER_TEXT_PADDING = 3; 
 
 function WaterfallHeader(props) {
   let { startTime, dataScale, sidebarWidth, waterfallWidth } = props;

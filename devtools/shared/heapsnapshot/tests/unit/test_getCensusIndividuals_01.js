@@ -4,7 +4,6 @@
 
 
 
-
 function run_test() {
   const stack1 = saveStack(1);
   const stack2 = saveStack(1);

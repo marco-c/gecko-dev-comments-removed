@@ -8,7 +8,7 @@ const Tree = createFactory(require("devtools/client/shared/components/tree"));
 const WaterfallTreeRow = createFactory(require("./waterfall-tree-row"));
 
 
-const WATERFALL_TREE_ROW_HEIGHT = 15;
+const WATERFALL_TREE_ROW_HEIGHT = 15; 
 
 
 

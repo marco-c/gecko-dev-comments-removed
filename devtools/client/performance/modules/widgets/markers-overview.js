@@ -19,29 +19,20 @@ const { MarkerBlueprintUtils } = require("devtools/client/performance/modules/ma
 const { TickUtils } = require("devtools/client/performance/modules/waterfall-ticks");
 const { TIMELINE_BLUEPRINT } = require("devtools/client/performance/modules/markers");
 
-
-const OVERVIEW_HEADER_HEIGHT = 14;
-
-const OVERVIEW_ROW_HEIGHT = 11;
+const OVERVIEW_HEADER_HEIGHT = 14; 
+const OVERVIEW_ROW_HEIGHT = 11; 
 
 const OVERVIEW_SELECTION_LINE_COLOR = "#666";
 const OVERVIEW_CLIPHEAD_LINE_COLOR = "#555";
 
-
-const OVERVIEW_HEADER_TICKS_MULTIPLE = 100;
-
-const OVERVIEW_HEADER_TICKS_SPACING_MIN = 75;
-
-const OVERVIEW_HEADER_TEXT_FONT_SIZE = 9;
+const OVERVIEW_HEADER_TICKS_MULTIPLE = 100; 
+const OVERVIEW_HEADER_TICKS_SPACING_MIN = 75; 
+const OVERVIEW_HEADER_TEXT_FONT_SIZE = 9; 
 const OVERVIEW_HEADER_TEXT_FONT_FAMILY = "sans-serif";
-
-const OVERVIEW_HEADER_TEXT_PADDING_LEFT = 6;
-
-const OVERVIEW_HEADER_TEXT_PADDING_TOP = 1;
-
-const OVERVIEW_MARKER_WIDTH_MIN = 4;
-
-const OVERVIEW_GROUP_VERTICAL_PADDING = 5;
+const OVERVIEW_HEADER_TEXT_PADDING_LEFT = 6; 
+const OVERVIEW_HEADER_TEXT_PADDING_TOP = 1; 
+const OVERVIEW_MARKER_WIDTH_MIN = 4; 
+const OVERVIEW_GROUP_VERTICAL_PADDING = 5; 
 
 
 

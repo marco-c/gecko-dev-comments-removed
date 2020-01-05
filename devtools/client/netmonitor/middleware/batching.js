@@ -6,8 +6,7 @@
 
 const { BATCH_ACTIONS, BATCH_ENABLE, BATCH_RESET } = require("../constants");
 
-
-const REQUESTS_REFRESH_RATE = 50;
+const REQUESTS_REFRESH_RATE = 50; 
 
 
 
