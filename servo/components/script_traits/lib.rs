@@ -30,12 +30,13 @@ mod script_msg;
 
 use app_units::Au;
 use devtools_traits::ScriptToDevtoolsControlMsg;
+use euclid::Size2D;
 use euclid::length::Length;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use libc::c_void;
-use msg::compositor_msg::{Epoch, LayerId, ScriptToCompositorMsg};
+use msg::compositor_msg::{Epoch, LayerId};
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId, WindowSizeData};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData, SubpageId};
 use msg::constellation_msg::{MouseButton, MouseEventType};
@@ -288,4 +289,35 @@ pub trait ScriptTaskFactory {
     
     fn clone_layout_channel(_phantom: Option<&mut Self>, pair: &OpaqueScriptLayoutChannel)
                             -> Box<Any + Send>;
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum ScriptToCompositorMsg {
+    
+    ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>, bool),
+    
+    
+    SetTitle(PipelineId, Option<String>),
+    
+    SendKeyEvent(Key, KeyState, KeyModifiers),
+    
+    GetClientWindow(IpcSender<(Size2D<u32>, Point2D<i32>)>),
+    
+    MoveTo(Point2D<i32>),
+    
+    ResizeTo(Size2D<u32>),
+    
+    TouchEventProcessed(EventResult),
+    
+    Exit,
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum EventResult {
+    
+    DefaultAllowed,
+    
+    DefaultPrevented,
 }
