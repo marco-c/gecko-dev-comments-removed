@@ -34,8 +34,7 @@ use servo_msg::constellation_msg;
 use servo_util::opts::Opts;
 use servo_util::time::{profile, ProfilerChan, Timer};
 use servo_util::{time, url};
-use std::cmp;
-use std::comm::{Empty, Disconnected, Data, Port};
+use std::comm::{Empty, Disconnected, Data, Sender, Receiver};
 use std::path::Path;
 use std::rc::Rc;
 use time::precise_time_s;
@@ -46,7 +45,7 @@ pub struct IOCompositor {
     window: Rc<Window>,
 
     
-    port: Port<Msg>,
+    port: Receiver<Msg>,
 
     
     context: RenderContext,
@@ -114,7 +113,7 @@ pub struct IOCompositor {
 impl IOCompositor {
     pub fn new(app: &Application,
                opts: Opts,
-               port: Port<Msg>,
+               port: Receiver<Msg>,
                constellation_chan: ConstellationChan,
                profiler_chan: ProfilerChan) -> IOCompositor {
         let window: Rc<Window> = WindowMethods::new(app);
@@ -124,7 +123,7 @@ impl IOCompositor {
         
         
         let root_layer = Rc::new(ContainerLayer());
-        let window_size = window.borrow().size();
+        let window_size = window.size();
 
         IOCompositor {
             window: window,
@@ -154,7 +153,7 @@ impl IOCompositor {
 
     pub fn create(app: &Application,
                   opts: Opts,
-                  port: Port<Msg>,
+                  port: Receiver<Msg>,
                   constellation_chan: ConstellationChan,
                   profiler_chan: ProfilerChan) {
         let mut compositor = IOCompositor::new(app,
@@ -187,7 +186,7 @@ impl IOCompositor {
             }
 
             
-            let msg = self.window.borrow().recv();
+            let msg = self.window.recv();
             self.handle_window_message(msg);
 
             
@@ -247,7 +246,7 @@ impl IOCompositor {
                 }
 
                 (Data(ChangeReadyState(ready_state)), false) => {
-                    self.window.borrow().set_ready_state(ready_state);
+                    self.window.set_ready_state(ready_state);
                     self.ready_state = ready_state;
                 }
 
@@ -320,7 +319,7 @@ impl IOCompositor {
     }
 
     fn change_render_state(&mut self, render_state: RenderState) {
-        self.window.borrow().set_render_state(render_state);
+        self.window.set_render_state(render_state);
         if render_state == IdleRenderState {
             self.composite_ready = true;
         }
@@ -336,14 +335,14 @@ impl IOCompositor {
 
     fn set_ids(&mut self,
                frame_tree: SendableFrameTree,
-               response_chan: Chan<()>,
+               response_chan: Sender<()>,
                new_constellation_chan: ConstellationChan) {
         response_chan.send(());
 
         self.root_pipeline = Some(frame_tree.pipeline.clone());
 
         
-        let window_size = self.window.borrow().size();
+        let window_size = self.window.size();
         let window_size = Size2D(window_size.width as uint,
                                  window_size.height as uint);
         {
@@ -378,13 +377,10 @@ impl IOCompositor {
                                                           self.opts.tile_size,
                                                           self.opts.cpu_painting);
 
-            {
-                let current_child = self.root_layer.borrow().first_child.borrow();
-                match *current_child.get() {
-                    None => {}
-                    Some(ref old_layer) => {
-                        ContainerLayer::remove_child(self.root_layer.clone(), old_layer.clone())
-                    }
+            match self.root_layer.first_child.get() {
+                None => {}
+                Some(ref old_layer) => {
+                    ContainerLayer::remove_child(self.root_layer.clone(), old_layer.clone())
                 }
             }
 
@@ -685,10 +681,12 @@ impl IOCompositor {
         let window_size = &self.window_size;
 
         // Determine zoom amount
-        self.world_zoom = cmp::max(self.world_zoom * magnification, 1.0);
+        self.world_zoom = (self.world_zoom * magnification).max(1.0);
         let world_zoom = self.world_zoom;
 
-        self.root_layer.borrow().common.with_mut(|common| common.set_transform(identity().scale(world_zoom, world_zoom, 1f32)));
+        {
+            self.root_layer.common.borrow_mut().set_transform(identity().scale(world_zoom, world_zoom, 1f32));
+        }
 
         // Scroll as needed
         let page_delta = Point2D(window_size.width as f32 * (1.0 / world_zoom - 1.0 / old_world_zoom) * 0.5,
@@ -736,7 +734,7 @@ impl IOCompositor {
         profile(time::CompositingCategory, self.profiler_chan.clone(), || {
             debug!("compositor: compositing");
             // Adjust the layer dimensions as necessary to correspond to the size of the window.
-            self.scene.size = self.window.borrow().size();
+            self.scene.size = self.window.size();
             // Render the scene.
             match self.compositor_layer {
                 Some(ref mut layer) => {
@@ -786,7 +784,7 @@ impl IOCompositor {
             self.shutting_down = true;
         }
 
-        self.window.borrow().present();
+        self.window.present();
 
         let exit = self.opts.exit_after_load;
         if exit {

@@ -8,16 +8,16 @@
 
 use dom::node::LayoutDataRef;
 
-use extra::url::Url;
 use geom::point::Point2D;
 use geom::rect::Rect;
 use geom::size::Size2D;
 use script_task::{ScriptChan};
 use servo_util::geometry::Au;
 use std::cmp;
-use std::comm::Chan;
+use std::comm::{channel, Receiver, Sender};
 use std::libc::c_void;
 use style::Stylesheet;
+use url::Url;
 
 
 
@@ -42,7 +42,7 @@ pub enum Msg {
     
     
     
-    PrepareToExitMsg(Chan<()>),
+    PrepareToExitMsg(Sender<()>),
 
     
     
@@ -52,12 +52,12 @@ pub enum Msg {
 
 pub enum LayoutQuery {
     
-    ContentBoxQuery(TrustedNodeAddress, Chan<ContentBoxResponse>),
+    ContentBoxQuery(TrustedNodeAddress, Sender<ContentBoxResponse>),
     
-    ContentBoxesQuery(TrustedNodeAddress, Chan<ContentBoxesResponse>),
+    ContentBoxesQuery(TrustedNodeAddress, Sender<ContentBoxesResponse>),
     
-    HitTestQuery(TrustedNodeAddress, Point2D<f32>, Chan<Result<HitTestResponse, ()>>),
-    MouseOverQuery(TrustedNodeAddress, Point2D<f32>, Chan<Result<MouseOverResponse, ()>>),
+    HitTestQuery(TrustedNodeAddress, Point2D<f32>, Sender<Result<HitTestResponse, ()>>),
+    MouseOverQuery(TrustedNodeAddress, Point2D<f32>, Sender<Result<MouseOverResponse, ()>>),
 }
 
 
@@ -74,7 +74,7 @@ pub struct HitTestResponse(UntrustedNodeAddress);
 pub struct MouseOverResponse(~[UntrustedNodeAddress]);
 
 
-#[deriving(Eq, Ord)]
+#[deriving(Eq, Ord, TotalEq, TotalOrd)]
 pub enum DocumentDamageLevel {
     
     ReflowDocumentDamage,
@@ -125,18 +125,18 @@ pub struct Reflow {
     
     window_size: Size2D<uint>,
     
-    script_join_chan: Chan<()>,
+    script_join_chan: Sender<()>,
     
     id: uint
 }
 
 
 #[deriving(Clone)]
-pub struct LayoutChan(Chan<Msg>);
+pub struct LayoutChan(Sender<Msg>);
 
 impl LayoutChan {
-    pub fn new() -> (Port<Msg>, LayoutChan) {
-        let (port, chan) = Chan::new();
+    pub fn new() -> (Receiver<Msg>, LayoutChan) {
+        let (chan, port) = channel();
         (port, LayoutChan(chan))
     }
 }

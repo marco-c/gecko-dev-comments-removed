@@ -3,7 +3,7 @@
 
 
 use style::{Stylesheet, Stylist, UserAgentOrigin, with_errors_silenced};
-use extra::url;
+use url;
 
 
 pub fn new_stylist() -> Stylist {

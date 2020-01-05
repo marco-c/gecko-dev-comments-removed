@@ -2,11 +2,15 @@
 
 
 
+#[feature(phase)];
+#[phase(syntax, link)]
+extern crate log;
+
 use std::io;
 use std::io::Writer;
-use std::vec::raw::buf_as_slice;
 use std::cast::transmute;
 use std::mem::size_of;
+use std::slice::raw::buf_as_slice;
 
 fn hexdump_slice(buf: &[u8]) {
     let mut stderr = io::stderr();
