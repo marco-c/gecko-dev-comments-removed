@@ -19,8 +19,7 @@ Cu.import("chrome://marionette/content/driver.js");
 Cu.import("chrome://marionette/content/error.js");
 Cu.import("chrome://marionette/content/message.js");
 
-
-loader.loadSubScript("resource://devtools/shared/transport/transport.js");
+Cu.import("chrome://marionette/content/transport.js");
 
 const logger = Log.repository.getLogger("Marionette");
 
