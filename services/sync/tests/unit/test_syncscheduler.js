@@ -841,7 +841,7 @@ add_task(async function test_sync_X_Weave_Backoff() {
   do_check_true(Status.backoffInterval >= BACKOFF * 1000);
   
   
-  let minimumExpectedDelay = (BACKOFF - 3) * 1000;
+  let minimumExpectedDelay = (BACKOFF - 20) * 1000;
   do_check_true(Status.minimumNextSync >= Date.now() + minimumExpectedDelay);
 
   
