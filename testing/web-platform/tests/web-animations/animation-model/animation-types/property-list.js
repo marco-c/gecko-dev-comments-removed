@@ -1235,8 +1235,7 @@ var gCSSProperties = {
   },
   'stroke-dasharray': {
     
-    types: [
-    ]
+    types: [ 'dasharray' ]
   },
   'stroke-dashoffset': {
     
@@ -1260,13 +1259,11 @@ var gCSSProperties = {
   },
   'stroke-miterlimit': {
     
-    types: [
-    ]
+    types: [ 'positiveNumber' ]
   },
   'stroke-opacity': {
     
-    types: [
-    ]
+    types: [ 'opacity' ]
   },
   'stroke-width': {
     
