@@ -22,11 +22,7 @@
 }
 
 *|*::-moz-table-wrapper {
-  
-
-
   display: inherit !important; 
-  -moz-top-layer: inherit !important;
   margin: inherit ! important;
   padding: 0 ! important;
   border: none ! important;
