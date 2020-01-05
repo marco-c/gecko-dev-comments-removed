@@ -138,6 +138,9 @@ private:
   void
   HandleResponse();
 
+  void
+  HandleResponse(bool aResponse);
+
   
   virtual void
   ActorDestroy(ActorDestroyReason aWhy) override;
