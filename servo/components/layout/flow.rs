@@ -791,17 +791,8 @@ pub struct BaseFlow {
     pub block_container_explicit_block_size: Option<Au>,
 
     
-    
-    pub absolute_static_i_offset: Au,
-
-    
-    pub fixed_static_i_offset: Au,
-
-    
     pub absolute_cb: ContainingBlockLink,
 
-    
-    
     
     
     pub absolute_position_info: AbsolutePositionInfo,
@@ -968,8 +959,6 @@ impl BaseFlow {
             collapsible_margins: CollapsibleMargins::new(),
             stacking_relative_position: Point2D::zero(),
             abs_descendants: Descendants::new(),
-            absolute_static_i_offset: Au(0),
-            fixed_static_i_offset: Au(0),
             block_container_inline_size: Au(0),
             block_container_writing_mode: writing_mode,
             block_container_explicit_block_size: None,
