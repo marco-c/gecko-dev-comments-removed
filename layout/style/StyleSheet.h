@@ -21,9 +21,11 @@ class nsIDocument;
 class nsINode;
 class nsIPrincipal;
 class nsMediaList;
+class nsCSSRuleProcessor;
 
 namespace mozilla {
 
+struct ChildSheetListBuilder;
 class CSSStyleSheet;
 class ServoStyleSheet;
 struct StyleSheetInfo;
@@ -235,6 +237,8 @@ protected:
 
   RefPtr<nsMediaList> mMedia;
 
+  RefPtr<StyleSheet> mNext;
+
   
   
   
@@ -247,6 +251,13 @@ protected:
   
   
   DocumentAssociationMode mDocumentAssociationMode;
+
+  friend class ::nsCSSRuleProcessor;
+  friend struct mozilla::ChildSheetListBuilder;
+
+  
+  
+  friend class mozilla::CSSStyleSheet;
 };
 
 } 
