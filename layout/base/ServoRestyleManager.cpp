@@ -39,12 +39,9 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
     return;
   }
 
-  if (mInStyleRefresh && aRestyleHint == eRestyle_CSSAnimations) {
-    
-    
-    
-    return;
-  }
+  
+  
+  MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal());
 
   if (aRestyleHint == 0 && !aMinChangeHint) {
     return; 
@@ -52,13 +49,8 @@ ServoRestyleManager::PostRestyleEvent(Element* aElement,
 
   
   
-  MOZ_ASSERT_IF(mInStyleRefresh, aRestyleHint == 0);
-
   
-  
-  
-  if (mReentrantChanges) {
-    MOZ_ASSERT(aRestyleHint == 0);
+  if (mReentrantChanges && !aRestyleHint) {
     mReentrantChanges->AppendElement(ReentrantChange { aElement, aMinChangeHint });
     return;
   }
@@ -392,10 +384,12 @@ ServoRestyleManager::ProcessPendingRestyles()
   
   PresContext()->RefreshDriver()->MostRecentRefresh();
 
-  mInStyleRefresh = true;
 
   
-  if (styleSet->StyleDocument()) {
+  
+  
+  mInStyleRefresh = true;
+  while (styleSet->StyleDocument()) {
 
     PresContext()->EffectCompositor()->ClearElementsToRestyle();
 
@@ -434,12 +428,11 @@ ServoRestyleManager::ProcessPendingRestyles()
     }
     mReentrantChanges = nullptr;
 
-    styleSet->AssertTreeIsClean();
-
     IncrementRestyleGeneration();
   }
 
   mInStyleRefresh = false;
+  styleSet->AssertTreeIsClean();
 
   
   
