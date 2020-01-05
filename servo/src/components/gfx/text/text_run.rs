@@ -5,7 +5,6 @@
 use font::{Font, FontDescriptor, RunMetrics, FontStyle, FontMetrics};
 use servo_util::geometry::Au;
 use servo_util::range::Range;
-use servo_util::vec::{Comparator, FullBinarySearchMethods};
 use std::slice::Items;
 use style::computed_values::text_decoration;
 use sync::Arc;
@@ -20,55 +19,36 @@ pub struct TextRun {
     pub font_style: FontStyle,
     pub decoration: text_decoration::T,
     
-    pub glyphs: Arc<Vec<GlyphRun>>,
-}
-
-
-#[deriving(Clone)]
-pub struct GlyphRun {
-    
-    glyph_store: Arc<GlyphStore>,
-    
-    range: Range<CharIndex>,
+    pub glyphs: Arc<Vec<Arc<GlyphStore>>>,
 }
 
 pub struct SliceIterator<'a> {
-    glyph_iter: Items<'a, GlyphRun>,
+    glyph_iter: Items<'a, Arc<GlyphStore>>,
     range:      Range<CharIndex>,
-}
-
-struct CharIndexComparator;
-
-impl Comparator<CharIndex,GlyphRun> for CharIndexComparator {
-    fn compare(&self, key: &CharIndex, value: &GlyphRun) -> Ordering {
-        if *key < value.range.begin() {
-            Less
-        } else if *key >= value.range.end() {
-            Greater
-        } else {
-            Equal
-        }
-    }
+    offset:     CharIndex,
 }
 
 impl<'a> Iterator<(&'a GlyphStore, CharIndex, Range<CharIndex>)> for SliceIterator<'a> {
     
     #[inline(always)]
     fn next(&mut self) -> Option<(&'a GlyphStore, CharIndex, Range<CharIndex>)> {
-        let slice_glyphs = self.glyph_iter.next();
-        if slice_glyphs.is_none() {
-            return None;
-        }
-        let slice_glyphs = slice_glyphs.unwrap();
+        loop {
+            let slice_glyphs = self.glyph_iter.next();
+            if slice_glyphs.is_none() {
+                return None;
+            }
+            let slice_glyphs = slice_glyphs.unwrap();
 
-        let mut char_range = self.range.intersect(&slice_glyphs.range);
-        let slice_range_begin = slice_glyphs.range.begin();
-        char_range.shift_by(-slice_range_begin);
-        if !char_range.is_empty() {
-            return Some((&*slice_glyphs.glyph_store, slice_range_begin, char_range))
-        }
+            let slice_range = Range::new(self.offset, slice_glyphs.char_len());
+            let mut char_range = self.range.intersect(&slice_range);
+            char_range.shift_by(-self.offset);
 
-        return None;
+            let old_offset = self.offset;
+            self.offset = self.offset + slice_glyphs.char_len();
+            if !char_range.is_empty() {
+                return Some((&**slice_glyphs, old_offset, char_range))
+            }
+        }
     }
 }
 
@@ -131,20 +111,20 @@ impl<'a> TextRun {
         return run;
     }
 
-    pub fn break_and_shape(font: &mut Font, text: &str) -> Vec<GlyphRun> {
+    pub fn break_and_shape(font: &mut Font, text: &str) -> Vec<Arc<GlyphStore>> {
         
 
         let mut glyphs = vec!();
-        let (mut byte_i, mut char_i) = (0u, CharIndex(0));
+        let mut byte_i = 0u;
         let mut cur_slice_is_whitespace = false;
-        let (mut byte_last_boundary, mut char_last_boundary) = (0, CharIndex(0));
+        let mut byte_last_boundary = 0;
         while byte_i < text.len() {
             let range = text.char_range_at(byte_i);
             let ch = range.ch;
             let next = range.next;
 
-            // Slices alternate between whitespace and non-whitespace,
-            // representing line break opportunities.
+            
+            
             let can_break_before = if cur_slice_is_whitespace {
                 match ch {
                     ' ' | '\t' | '\n' => false,
@@ -163,45 +143,36 @@ impl<'a> TextRun {
                 }
             };
 
-            // Create a glyph store for this slice if it's nonempty.
+            
             if can_break_before && byte_i > byte_last_boundary {
                 let slice = text.slice(byte_last_boundary, byte_i).to_string();
                 debug!("creating glyph store for slice {} (ws? {}), {} - {} in run {}",
                         slice, !cur_slice_is_whitespace, byte_last_boundary, byte_i, text);
-                glyphs.push(GlyphRun {
-                    glyph_store: font.shape_text(slice, !cur_slice_is_whitespace),
-                    range: Range::new(char_last_boundary, char_i - char_last_boundary),
-                });
+                glyphs.push(font.shape_text(slice, !cur_slice_is_whitespace));
                 byte_last_boundary = byte_i;
-                char_last_boundary = char_i;
             }
 
             byte_i = next;
-            char_i = char_i + CharIndex(1);
         }
 
-        // Create a glyph store for the final slice if it's nonempty.
+        
         if byte_i > byte_last_boundary {
             let slice = text.slice_from(byte_last_boundary).to_string();
             debug!("creating glyph store for final slice {} (ws? {}), {} - {} in run {}",
                 slice, cur_slice_is_whitespace, byte_last_boundary, text.len(), text);
-            glyphs.push(GlyphRun {
-                glyph_store: font.shape_text(slice, cur_slice_is_whitespace),
-                range: Range::new(char_last_boundary, char_i - char_last_boundary),
-            });
+            glyphs.push(font.shape_text(slice, cur_slice_is_whitespace));
         }
 
         glyphs
     }
 
     pub fn char_len(&self) -> CharIndex {
-        match self.glyphs.last() {
-            None => CharIndex(0),
-            Some(ref glyph_run) => glyph_run.range.end(),
-        }
+        self.glyphs.iter().fold(CharIndex(0), |len, slice_glyphs| {
+            len + slice_glyphs.char_len()
+        })
     }
 
-    pub fn glyphs(&'a self) -> &'a Vec<GlyphRun> {
+    pub fn glyphs(&'a self) -> &'a Vec<Arc<GlyphStore>> {
         &*self.glyphs
     }
 
@@ -221,8 +192,8 @@ impl<'a> TextRun {
     }
 
     pub fn advance_for_range(&self, range: &Range<CharIndex>) -> Au {
-        // TODO(Issue #199): alter advance direction for RTL
-        // TODO(Issue #98): using inter-char and inter-word spacing settings  when measuring text
+        
+        
         self.iter_slices_for_range(range)
             .fold(Au(0), |advance, (glyphs, _, slice_range)| {
                 advance + glyphs.advance_for_char_range(&slice_range)
@@ -251,19 +222,11 @@ impl<'a> TextRun {
         max_piece_width
     }
 
-    
-    fn index_of_first_glyph_run_containing(&self, index: CharIndex) -> Option<uint> {
-        self.glyphs.as_slice().binary_search_index_by(&index, CharIndexComparator)
-    }
-
     pub fn iter_slices_for_range(&'a self, range: &Range<CharIndex>) -> SliceIterator<'a> {
-        let index = match self.index_of_first_glyph_run_containing(range.begin()) {
-            None => self.glyphs.len(),
-            Some(index) => index,
-        };
         SliceIterator {
-            glyph_iter: self.glyphs.slice_from(index).iter(),
+            glyph_iter: self.glyphs.iter(),
             range:      *range,
+            offset:     CharIndex(0),
         }
     }
 
