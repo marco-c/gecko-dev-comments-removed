@@ -225,6 +225,11 @@ function buildOptionListForChildren(node) {
         textContent = "";
       }
 
+      
+      
+      
+      
+      DOMUtils.addPseudoClassLock(child, ":checked", false);
       let cs = getComputedStyles(child);
 
       let info = {
@@ -237,15 +242,15 @@ function buildOptionListForChildren(node) {
         
         textDirection: cs.direction,
         tooltip: child.title,
-        
-        
-        
-        
-        
-        
-        
+        backgroundColor: cs.backgroundColor,
+        color: cs.color,
         children: tagName == "OPTGROUP" ? buildOptionListForChildren(child) : []
       };
+
+      
+      
+      DOMUtils.clearPseudoClassLocks(child);
+
       result.push(info);
     }
   }
