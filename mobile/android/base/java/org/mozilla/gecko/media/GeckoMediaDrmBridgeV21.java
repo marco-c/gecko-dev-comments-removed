@@ -55,9 +55,9 @@ public class GeckoMediaDrmBridgeV21 implements GeckoMediaDrm {
     private MediaCrypto mCrypto;
     protected MediaDrm mDrm;
 
-    public static int LICENSE_REQUEST_INITIAL = 0; 
-    public static int LICENSE_REQUEST_RENEWAL = 1; 
-    public static int LICENSE_REQUEST_RELEASE = 2; 
+    public static final int LICENSE_REQUEST_INITIAL = 0; 
+    public static final int LICENSE_REQUEST_RENEWAL = 1; 
+    public static final int LICENSE_REQUEST_RELEASE = 2; 
 
     
     private static class PendingCreateSessionData {
