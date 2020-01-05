@@ -3,8 +3,8 @@
 
 
 use std::borrow::ToOwned;
-use std::old_io as io;
-use std::old_io::File;
+use std::fs::File;
+use std::io::Read;
 
 
 
@@ -23,8 +23,10 @@ impl FontTemplateData {
             },
             None => {
                 
-                let mut file = File::open_mode(&Path::new(identifier), io::Open, io::Read).unwrap();
-                file.read_to_end().unwrap()
+                let mut file = File::open(identifier).unwrap();
+                let mut buffer = vec![];
+                file.read_to_end(&mut buffer).unwrap();
+                buffer
             },
         };
 
