@@ -378,15 +378,16 @@ KeyframeEffectReadOnly::CompositeValue(
   const StyleAnimationValue& aUnderlyingValue,
   CompositeOperation aCompositeOperation)
 {
+  
+  
+  if (aValueToComposite.IsNull()) {
+    return aUnderlyingValue;
+  }
+
   switch (aCompositeOperation) {
     case dom::CompositeOperation::Replace:
       return aValueToComposite;
     case dom::CompositeOperation::Add: {
-      
-      
-      if (aValueToComposite.IsNull()) {
-        return aUnderlyingValue;
-      }
       StyleAnimationValue result(aValueToComposite);
       return StyleAnimationValue::Add(aProperty,
                                       aUnderlyingValue,
@@ -463,29 +464,17 @@ KeyframeEffectReadOnly::CompositeValue(
 {
   MOZ_ASSERT(mTarget, "CompositeValue should be called with target element");
 
-  StyleAnimationValue result = aValueToComposite;
-
-  if (aCompositeOperation == CompositeOperation::Replace) {
-    MOZ_ASSERT(!aValueToComposite.IsNull(),
-      "Input value should be valid in case of replace composite");
-    
-    return result;
-  }
-
   
   if (mDocument->IsStyledByServo()) {
-    return result;
+    return aValueToComposite;
   }
 
-  MOZ_ASSERT(!aValueToComposite.IsNull() ||
-             aCompositeOperation == CompositeOperation::Add,
-             "InputValue should be null only if additive composite");
-
-  result = GetUnderlyingStyle(aProperty, aAnimationRule);
+  StyleAnimationValue underlyingValue =
+    GetUnderlyingStyle(aProperty, aAnimationRule);
 
   return CompositeValue(aProperty,
                         aValueToComposite,
-                        result,
+                        underlyingValue,
                         aCompositeOperation);
 }
 
@@ -502,8 +491,7 @@ KeyframeEffectReadOnly::EnsureBaseStyles(
 
   for (const AnimationProperty& property : aProperties) {
     for (const AnimationPropertySegment& segment : property.mSegments) {
-      if (segment.mFromComposite == dom::CompositeOperation::Replace &&
-          segment.mToComposite == dom::CompositeOperation::Replace) {
+      if (segment.HasReplacableValues()) {
         continue;
       }
 
@@ -1231,16 +1219,33 @@ KeyframeEffectReadOnly::GetKeyframes(JSContext*& aCx,
         Servo_DeclarationBlock_SerializeOneValue(
           propertyValue.mServoDeclarationBlock,
           propertyValue.mProperty, &stringValue);
+      } else if (nsCSSProps::IsShorthand(propertyValue.mProperty)) {
+         
+         
+         
+         propertyValue.mValue.AppendToString(
+           eCSSProperty_UNKNOWN, stringValue, nsCSSValue::eNormalized);
       } else {
-        
-        
-        
-        nsCSSPropertyID propertyForSerializing =
-          nsCSSProps::IsShorthand(propertyValue.mProperty)
-          ? eCSSProperty_UNKNOWN
-          : propertyValue.mProperty;
-        propertyValue.mValue.AppendToString(
-          propertyForSerializing, stringValue, nsCSSValue::eNormalized);
+        nsCSSValue cssValue = propertyValue.mValue;
+        if (cssValue.GetUnit() == eCSSUnit_Null) {
+          
+          
+          
+          
+          
+          
+          DebugOnly<bool> uncomputeResult =
+            StyleAnimationValue::UncomputeValue(
+              propertyValue.mProperty, Move(BaseStyle(propertyValue.mProperty)),
+              cssValue);
+
+          MOZ_ASSERT(uncomputeResult,
+                     "Unable to get specified value from computed value");
+          MOZ_ASSERT(cssValue.GetUnit() != eCSSUnit_Null,
+                     "Got null computed value");
+        }
+        cssValue.AppendToString(propertyValue.mProperty,
+                                stringValue, nsCSSValue::eNormalized);
       }
 
       const char* name = nsCSSProps::PropertyIDLName(propertyValue.mProperty);
@@ -1629,8 +1634,7 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
       
       
       
-      if (segment.mFromComposite != CompositeOperation::Replace ||
-          segment.mToComposite != CompositeOperation::Replace) {
+      if (!segment.HasReplacableValues()) {
         mCumulativeChangeHint = ~nsChangeHint_Hints_CanIgnoreIfNotVisible;
         return;
       }

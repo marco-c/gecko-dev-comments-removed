@@ -598,10 +598,10 @@ GetMinAndMaxScaleForAnimationProperty(const nsIFrame* aFrame,
       for (const AnimationPropertySegment& segment : prop.mSegments) {
         
         
-        if (segment.mFromComposite == dom::CompositeOperation::Replace) {
+        if (segment.HasReplacableFromValue()) {
           UpdateMinMaxScale(aFrame, segment.mFromValue, aMinScale, aMaxScale);
         }
-        if (segment.mToComposite == dom::CompositeOperation::Replace) {
+        if (segment.HasReplacableToValue()) {
           UpdateMinMaxScale(aFrame, segment.mToValue, aMinScale, aMaxScale);
         }
       }
