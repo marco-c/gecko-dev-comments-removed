@@ -538,24 +538,14 @@ ClampColorStops(nsTArray<ColorStop>& aStops)
 
 namespace mozilla {
 
-Maybe<nsCSSGradientRenderer>
+nsCSSGradientRenderer
 nsCSSGradientRenderer::Create(nsPresContext* aPresContext,
                              nsStyleGradient* aGradient,
-                             const nsRect& aDest,
-                             const nsRect& aFillArea,
-                             const nsSize& aRepeatSize,
-                             const CSSIntRect& aSrc,
                              const nsSize& aIntrinsicSize)
 {
-  if (aDest.IsEmpty() || aFillArea.IsEmpty()) {
-    return Nothing();
-  }
-
   nscoord appUnitsPerDevPixel = aPresContext->AppUnitsPerDevPixel();
   gfxSize srcSize = gfxSize(gfxFloat(aIntrinsicSize.width)/appUnitsPerDevPixel,
                             gfxFloat(aIntrinsicSize.height)/appUnitsPerDevPixel);
-
-  bool cellContainsFill = aDest.Contains(aFillArea);
 
   
   
@@ -648,16 +638,52 @@ nsCSSGradientRenderer::Create(nsPresContext* aPresContext,
     }
   }
 
+  ResolveMidpoints(stops);
+
+  nsCSSGradientRenderer renderer;
+  renderer.mPresContext = aPresContext;
+  renderer.mGradient = aGradient;
+  renderer.mStops = std::move(stops);
+  renderer.mLineStart = lineStart;
+  renderer.mLineEnd = lineEnd;
+  renderer.mRadiusX = radiusX;
+  renderer.mRadiusY = radiusY;
+  return renderer;
+}
+
+void
+nsCSSGradientRenderer::Paint(gfxContext& aContext,
+                             const nsRect& aDest,
+                             const nsRect& aFillArea,
+                             const nsSize& aRepeatSize,
+                             const CSSIntRect& aSrc,
+                             const nsRect& aDirtyRect,
+                             float aOpacity)
+{
+  PROFILER_LABEL("nsCSSRendering", "PaintGradient",
+    js::ProfileEntry::Category::GRAPHICS);
+  Telemetry::AutoTimer<Telemetry::GRADIENT_DURATION, Telemetry::Microsecond> gradientTimer;
+
+  if (aDest.IsEmpty() || aFillArea.IsEmpty()) {
+    return;
+  }
+
+  nscoord appUnitsPerDevPixel = mPresContext->AppUnitsPerDevPixel();
+
+  gfxFloat lineLength = NS_hypot(mLineEnd.x - mLineStart.x,
+                                 mLineEnd.y - mLineStart.y);
+  bool cellContainsFill = aDest.Contains(aFillArea);
+
   
   
   
   bool forceRepeatToCoverTiles =
-    aGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR &&
-    (lineStart.x == lineEnd.x) != (lineStart.y == lineEnd.y) &&
+    mGradient->mShape == NS_STYLE_GRADIENT_SHAPE_LINEAR &&
+    (mLineStart.x == mLineEnd.x) != (mLineStart.y == mLineEnd.y) &&
     aRepeatSize.width == aDest.width && aRepeatSize.height == aDest.height &&
-    !aGradient->mRepeating && !aSrc.IsEmpty() && !cellContainsFill;
-  bool forceRepeatToCoverTilesFlip = false;
+    !mGradient->mRepeating && !aSrc.IsEmpty() && !cellContainsFill;
 
+  gfxMatrix matrix;
   if (forceRepeatToCoverTiles) {
     
     double rectLen;
@@ -667,9 +693,9 @@ nsCSSGradientRenderer::Create(nsPresContext* aPresContext,
     
     
     
-    if (lineStart.x > lineEnd.x || lineStart.y > lineEnd.y) {
-      std::swap(lineStart, lineEnd);
-      forceRepeatToCoverTilesFlip = true;
+    if (mLineStart.x > mLineEnd.x || mLineStart.y > mLineEnd.y) {
+      std::swap(mLineStart, mLineEnd);
+      matrix.Scale(-1, -1);
     }
 
     
@@ -678,37 +704,37 @@ nsCSSGradientRenderer::Create(nsPresContext* aPresContext,
     
     gfxRect srcRectDev = nsLayoutUtils::RectToGfxRect(
       CSSPixel::ToAppUnits(aSrc), appUnitsPerDevPixel);
-    if (lineStart.x != lineEnd.x) {
+    if (mLineStart.x != mLineEnd.x) {
       rectLen = srcRectDev.width;
-      offset = (srcRectDev.x - lineStart.x) / lineLength;
-      lineStart.x = srcRectDev.x;
-      lineEnd.x = srcRectDev.XMost();
+      offset = (srcRectDev.x - mLineStart.x) / lineLength;
+      mLineStart.x = srcRectDev.x;
+      mLineEnd.x = srcRectDev.XMost();
     } else {
       rectLen = srcRectDev.height;
-      offset = (srcRectDev.y - lineStart.y) / lineLength;
-      lineStart.y = srcRectDev.y;
-      lineEnd.y = srcRectDev.YMost();
+      offset = (srcRectDev.y - mLineStart.y) / lineLength;
+      mLineStart.y = srcRectDev.y;
+      mLineEnd.y = srcRectDev.YMost();
     }
 
     
     double scale = lineLength / rectLen;
-    for (size_t i = 0; i < stops.Length(); i++) {
-      stops[i].mPosition = (stops[i].mPosition - offset) * fabs(scale);
+    for (size_t i = 0; i < mStops.Length(); i++) {
+      mStops[i].mPosition = (mStops[i].mPosition - offset) * fabs(scale);
     }
 
     
-    ClampColorStops(stops);
+    ClampColorStops(mStops);
 
     lineLength = rectLen;
   }
 
   
-  double firstStop = stops[0].mPosition;
-  if (aGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR && firstStop < 0.0) {
-    if (aGradient->mRepeating) {
+  double firstStop = mStops[0].mPosition;
+  if (mGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR && firstStop < 0.0) {
+    if (mGradient->mRepeating) {
       
       
-      double lastStop = stops[stops.Length() - 1].mPosition;
+      double lastStop = mStops[mStops.Length() - 1].mPosition;
       double stopDelta = lastStop - firstStop;
       
       
@@ -719,22 +745,22 @@ nsCSSGradientRenderer::Create(nsPresContext* aPresContext,
         
         
         double offset = instanceCount*stopDelta;
-        for (uint32_t i = 0; i < stops.Length(); i++) {
-          stops[i].mPosition += offset;
+        for (uint32_t i = 0; i < mStops.Length(); i++) {
+          mStops[i].mPosition += offset;
         }
       }
     } else {
       
       
       
-      for (uint32_t i = 0; i < stops.Length(); i++) {
-        double pos = stops[i].mPosition;
+      for (uint32_t i = 0; i < mStops.Length(); i++) {
+        double pos = mStops[i].mPosition;
         if (pos < 0.0) {
-          stops[i].mPosition = 0.0;
+          mStops[i].mPosition = 0.0;
           
           
-          if (i < stops.Length() - 1) {
-            double nextPos = stops[i + 1].mPosition;
+          if (i < mStops.Length() - 1) {
+            double nextPos = mStops[i + 1].mPosition;
             
             
             
@@ -747,77 +773,16 @@ nsCSSGradientRenderer::Create(nsPresContext* aPresContext,
               
               
               float frac = float((0.0 - pos)/(nextPos - pos));
-              stops[i].mColor =
-                InterpolateColor(stops[i].mColor, stops[i + 1].mColor, frac);
+              mStops[i].mColor =
+                InterpolateColor(mStops[i].mColor, mStops[i + 1].mColor, frac);
             }
           }
         }
       }
     }
-    firstStop = stops[0].mPosition;
+    firstStop = mStops[0].mPosition;
     MOZ_ASSERT(firstStop >= 0.0, "Failed to fix stop offsets");
   }
-
-  double lastStop = stops[stops.Length() - 1].mPosition;
-  double stopDelta = lastStop - firstStop;
-  bool zeroRadius = aGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR &&
-                      (radiusX < 1e-6 || radiusY < 1e-6);
-  if (stopDelta < 1e-6 || lineLength < 1e-6 || zeroRadius) {
-    
-    
-    
-    
-    if (aGradient->mRepeating || zeroRadius) {
-      radiusX = radiusY = 0.0;
-    }
-
-    
-    
-    
-    
-    
-    Color firstColor(stops[0].mColor);
-    Color lastColor(stops.LastElement().mColor);
-    stops.Clear();
-
-    if (!aGradient->mRepeating && !zeroRadius) {
-      stops.AppendElement(ColorStop(firstStop, false, firstColor));
-    }
-    stops.AppendElement(ColorStop(firstStop, false, lastColor));
-  }
-
-  ResolveMidpoints(stops);
-
-  nsCSSGradientRenderer renderer;
-  renderer.mPresContext = aPresContext;
-  renderer.mGradient = aGradient;
-  renderer.mSrc = aSrc;
-  renderer.mDest = aDest;
-  renderer.mFillArea = aFillArea;
-  renderer.mRepeatSize = aRepeatSize;
-  renderer.mStops = std::move(stops);
-  renderer.mLineStart = lineStart;
-  renderer.mLineEnd = lineEnd;
-  renderer.mRadiusX = radiusX;
-  renderer.mRadiusY = radiusY;
-  renderer.mForceRepeatToCoverTiles = forceRepeatToCoverTiles;
-  renderer.mForceRepeatToCoverTilesFlip = forceRepeatToCoverTilesFlip;
-  return Some(renderer);
-}
-
-void
-nsCSSGradientRenderer::Paint(gfxContext& aContext,
-                             const nsRect& aDirtyRect,
-                             float aOpacity)
-{
-  PROFILER_LABEL("nsCSSRendering", "PaintGradient",
-    js::ProfileEntry::Category::GRAPHICS);
-  Telemetry::AutoTimer<Telemetry::GRADIENT_DURATION, Telemetry::Microsecond> gradientTimer;
-
-  nscoord appUnitsPerDevPixel = mPresContext->AppUnitsPerDevPixel();
-
-  double firstStop = mStops[0].mPosition;
-  double lastStop = mStops[mStops.Length() - 1].mPosition;
 
   if (mGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR && !mGradient->mRepeating) {
     
@@ -828,6 +793,7 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
     firstStop = 0;
   }
 
+  double lastStop = mStops[mStops.Length() - 1].mPosition;
   
   
   
@@ -835,6 +801,19 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
   double stopOrigin = firstStop;
   double stopEnd = lastStop;
   double stopDelta = lastStop - firstStop;
+  bool zeroRadius = mGradient->mShape != NS_STYLE_GRADIENT_SHAPE_LINEAR &&
+                      (mRadiusX < 1e-6 || mRadiusY < 1e-6);
+  if (stopDelta < 1e-6 || lineLength < 1e-6 || zeroRadius) {
+    
+    
+    
+    
+    if (mGradient->mRepeating || zeroRadius) {
+      mRadiusX = mRadiusY = 0.0;
+    }
+    stopDelta = 0.0;
+    lastStop = firstStop;
+  }
 
   
   
@@ -845,12 +824,6 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
     stopEnd = std::max(stopEnd, 1.0);
   }
   stopScale = 1.0/(stopEnd - stopOrigin);
-
-  
-  gfxMatrix matrix;
-  if (mForceRepeatToCoverTilesFlip) {
-    matrix.Scale(-1, -1);
-  }
 
   
   RefPtr<gfxPattern> gradientPattern;
@@ -901,15 +874,31 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
     }
   }
   
-  matrix.Translate(gfxPoint(mPresContext->CSSPixelsToDevPixels(mSrc.x),
-                            mPresContext->CSSPixelsToDevPixels(mSrc.y)));
-  matrix.Scale(gfxFloat(mPresContext->CSSPixelsToAppUnits(mSrc.width))/mDest.width,
-               gfxFloat(mPresContext->CSSPixelsToAppUnits(mSrc.height))/mDest.height);
+  matrix.Translate(gfxPoint(mPresContext->CSSPixelsToDevPixels(aSrc.x),
+                            mPresContext->CSSPixelsToDevPixels(aSrc.y)));
+  matrix.Scale(gfxFloat(mPresContext->CSSPixelsToAppUnits(aSrc.width))/aDest.width,
+               gfxFloat(mPresContext->CSSPixelsToAppUnits(aSrc.height))/aDest.height);
   gradientPattern->SetMatrix(matrix);
+
+  if (stopDelta == 0.0) {
+    
+    
+    
+    
+    
+    Color firstColor(mStops[0].mColor);
+    Color lastColor(mStops.LastElement().mColor);
+    mStops.Clear();
+
+    if (!mGradient->mRepeating && !zeroRadius) {
+      mStops.AppendElement(ColorStop(firstStop, false, firstColor));
+    }
+    mStops.AppendElement(ColorStop(firstStop, false, lastColor));
+  }
 
   ResolvePremultipliedAlpha(mStops);
 
-  bool isRepeat = mGradient->mRepeating || mForceRepeatToCoverTiles;
+  bool isRepeat = mGradient->mRepeating || forceRepeatToCoverTiles;
 
   
   
@@ -936,11 +925,11 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
   
   
   nsRect dirty;
-  if (!dirty.IntersectRect(aDirtyRect, mFillArea))
+  if (!dirty.IntersectRect(aDirtyRect, aFillArea))
     return;
 
   gfxRect areaToFill =
-    nsLayoutUtils::RectToGfxRect(mFillArea, appUnitsPerDevPixel);
+    nsLayoutUtils::RectToGfxRect(aFillArea, appUnitsPerDevPixel);
   gfxRect dirtyAreaToFill = nsLayoutUtils::RectToGfxRect(dirty, appUnitsPerDevPixel);
   dirtyAreaToFill.RoundOut();
 
@@ -948,22 +937,22 @@ nsCSSGradientRenderer::Paint(gfxContext& aContext,
   bool isCTMPreservingAxisAlignedRectangles = ctm.PreservesAxisAlignedRectangles();
 
   
-  nscoord xStart = FindTileStart(dirty.x, mDest.x, mRepeatSize.width);
-  nscoord yStart = FindTileStart(dirty.y, mDest.y, mRepeatSize.height);
-  nscoord xEnd = mForceRepeatToCoverTiles ? xStart + mDest.width : dirty.XMost();
-  nscoord yEnd = mForceRepeatToCoverTiles ? yStart + mDest.height : dirty.YMost();
+  nscoord xStart = FindTileStart(dirty.x, aDest.x, aRepeatSize.width);
+  nscoord yStart = FindTileStart(dirty.y, aDest.y, aRepeatSize.height);
+  nscoord xEnd = forceRepeatToCoverTiles ? xStart + aDest.width : dirty.XMost();
+  nscoord yEnd = forceRepeatToCoverTiles ? yStart + aDest.height : dirty.YMost();
 
   
-  for (nscoord y = yStart; y < yEnd; y += mRepeatSize.height) {
-    for (nscoord x = xStart; x < xEnd; x += mRepeatSize.width) {
+  for (nscoord y = yStart; y < yEnd; y += aRepeatSize.height) {
+    for (nscoord x = xStart; x < xEnd; x += aRepeatSize.width) {
       
       gfxRect tileRect = nsLayoutUtils::RectToGfxRect(
-                      nsRect(x, y, mDest.width, mDest.height),
+                      nsRect(x, y, aDest.width, aDest.height),
                       appUnitsPerDevPixel);
       
       
       gfxRect fillRect =
-        mForceRepeatToCoverTiles ? areaToFill : tileRect.Intersect(areaToFill);
+        forceRepeatToCoverTiles ? areaToFill : tileRect.Intersect(areaToFill);
       
       
       gfxPoint snappedFillRectTopLeft = fillRect.TopLeft();
@@ -1019,8 +1008,7 @@ nsCSSGradientRenderer::BuildWebRenderParameters(float aOpacity,
                                                 LayoutDevicePoint& aLineEnd,
                                                 LayoutDeviceSize& aGradientRadius)
 {
-  bool isRepeat = mGradient->mRepeating || mForceRepeatToCoverTiles;
-  aMode = isRepeat ? WrGradientExtendMode::Repeat : WrGradientExtendMode::Clamp;
+  aMode = mGradient->mRepeating ? WrGradientExtendMode::Repeat : WrGradientExtendMode::Clamp;
 
   aStops.SetLength(mStops.Length());
   for(uint32_t i = 0; i < mStops.Length(); i++) {
@@ -1040,8 +1028,16 @@ nsCSSGradientRenderer::BuildWebRenderParameters(float aOpacity,
 void
 nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuilder,
                                                   layers::WebRenderDisplayItemLayer* aLayer,
+                                                  const nsRect& aDest,
+                                                  const nsRect& aFillArea,
+                                                  const nsSize& aRepeatSize,
+                                                  const CSSIntRect& aSrc,
                                                   float aOpacity)
 {
+  if (aDest.IsEmpty() || aFillArea.IsEmpty()) {
+    return;
+  }
+
   WrGradientExtendMode extendMode;
   nsTArray<WrGradientStop> stops;
   LayoutDevicePoint lineStart;
@@ -1052,9 +1048,9 @@ nsCSSGradientRenderer::BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuild
   nscoord appUnitsPerDevPixel = mPresContext->AppUnitsPerDevPixel();
 
   
-  LayoutDeviceRect clipBounds = LayoutDevicePixel::FromAppUnits(mFillArea, appUnitsPerDevPixel);
-  LayoutDeviceRect firstTileBounds = LayoutDevicePixel::FromAppUnits(mDest, appUnitsPerDevPixel);
-  LayoutDeviceSize tileRepeat = LayoutDevicePixel::FromAppUnits(mRepeatSize, appUnitsPerDevPixel);
+  LayoutDeviceRect clipBounds = LayoutDevicePixel::FromAppUnits(aFillArea, appUnitsPerDevPixel);
+  LayoutDeviceRect firstTileBounds = LayoutDevicePixel::FromAppUnits(aDest, appUnitsPerDevPixel);
+  LayoutDeviceSize tileRepeat = LayoutDevicePixel::FromAppUnits(aRepeatSize, appUnitsPerDevPixel);
 
   
   

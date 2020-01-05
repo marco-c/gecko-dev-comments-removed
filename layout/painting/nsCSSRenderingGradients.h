@@ -39,23 +39,29 @@ public:
 
 
 
+  static nsCSSGradientRenderer Create(nsPresContext* aPresContext,
+                                      nsStyleGradient* aGradient,
+                                      const nsSize& aIntrinsiceSize);
+
+  
 
 
 
 
 
 
-  static Maybe<nsCSSGradientRenderer> Create(nsPresContext* aPresContext,
-                                             nsStyleGradient* aGradient,
-                                             const nsRect& aDest,
-                                             const nsRect& aFill,
-                                             const nsSize& aRepeatSize,
-                                             const mozilla::CSSIntRect& aSrc,
-                                             const nsSize& aIntrinsiceSize);
+
 
   void Paint(gfxContext& aContext,
+             const nsRect& aDest,
+             const nsRect& aFill,
+             const nsSize& aRepeatSize,
+             const mozilla::CSSIntRect& aSrc,
              const nsRect& aDirtyRect,
              float aOpacity = 1.0);
+
+  
+
 
   void BuildWebRenderParameters(float aOpacity,
                                 WrGradientExtendMode& aMode,
@@ -64,8 +70,21 @@ public:
                                 LayoutDevicePoint& aLineEnd,
                                 LayoutDeviceSize& aGradientRadius);
 
+  
+
+
+
+
+
+
+
+
   void BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuilder,
                                   layers::WebRenderDisplayItemLayer* aLayer,
+                                  const nsRect& aDest,
+                                  const nsRect& aFill,
+                                  const nsSize& aRepeatSize,
+                                  const mozilla::CSSIntRect& aSrc,
                                   float aOpacity = 1.0);
 
 private:
@@ -73,16 +92,9 @@ private:
 
   nsPresContext* mPresContext;
   nsStyleGradient* mGradient;
-  CSSIntRect mSrc;
-  nsRect mDest;
-  nsRect mDirtyRect;
-  nsRect mFillArea;
-  nsSize mRepeatSize;
   nsTArray<ColorStop> mStops;
   gfxPoint mLineStart, mLineEnd;
   double mRadiusX, mRadiusY;
-  bool mForceRepeatToCoverTiles;
-  bool mForceRepeatToCoverTilesFlip;
 };
 
 } 
