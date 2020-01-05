@@ -383,6 +383,16 @@ description#identity-popup-content-verifier,
   50% { opacity: 0; }
 }
 
+.identity-popup-permission-label,
+.identity-popup-permission-state-label {
+  
+
+
+
+
+  margin-top: -0.1em;
+}
+
 .identity-popup-permission-label {
   margin-inline-start: 1em;
 }
