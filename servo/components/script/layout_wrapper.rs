@@ -59,13 +59,13 @@ use std::marker::PhantomData;
 use std::mem::transmute;
 use std::sync::Arc;
 use std::sync::atomic::Ordering;
+use style;
 use style::attr::AttrValue;
 use style::computed_values::display;
 use style::context::{QuirksMode, SharedStyleContext};
 use style::data::ElementData;
-use style::dom::{DirtyDescendants, LayoutIterator, NodeInfo, OpaqueNode, PresentationalHintsSynthetizer};
-use style::dom::{TElement, TNode};
-use style::dom::UnsafeNode;
+use style::dom::{DescendantsBit, DirtyDescendants, LayoutIterator, NodeInfo, OpaqueNode};
+use style::dom::{PresentationalHintsSynthetizer, TElement, TNode, UnsafeNode};
 use style::element_state::*;
 use style::properties::{ComputedValues, PropertyDeclarationBlock};
 use style::selector_parser::{NonTSPseudoClass, PseudoElement, SelectorImpl};
@@ -409,6 +409,11 @@ impl<'le> TElement for ServoLayoutElement<'le> {
         unsafe { self.as_node().node.get_flag(HAS_DIRTY_DESCENDANTS) }
     }
 
+    unsafe fn note_descendants<B: DescendantsBit<Self>>(&self) {
+        debug_assert!(self.get_data().is_some());
+        style::dom::raw_note_descendants::<Self, B>(*self);
+    }
+
     unsafe fn set_dirty_descendants(&self) {
         debug_assert!(self.as_node().node.get_flag(IS_IN_DOC));
         self.as_node().node.set_flag(HAS_DIRTY_DESCENDANTS, true)
@@ -488,6 +493,9 @@ impl<'le> ServoLayoutElement<'le> {
         }
     }
 
+    
+    
+    
     
     
     

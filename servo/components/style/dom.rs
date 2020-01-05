@@ -223,6 +223,44 @@ fn fmt_subtree<F, N: TNode>(f: &mut fmt::Formatter, stringify: &F, n: N, indent:
 }
 
 
+
+
+
+
+
+
+
+
+
+pub unsafe fn raw_note_descendants<E, B>(element: E) -> bool
+    where E: TElement,
+          B: DescendantsBit<E>,
+{
+    debug_assert!(!thread_state::get().is_worker());
+    
+    
+    debug_assert!(element.get_data().is_some(),
+                  "You should ensure you only flag styled elements");
+
+    let mut curr = Some(element);
+    while let Some(el) = curr {
+        if B::has(el) {
+            break;
+        }
+        B::set(el);
+        curr = el.parent_element();
+    }
+
+    
+    
+    if cfg!(feature = "gecko") {
+        debug_assert!(element.descendants_bit_is_propagated::<B>());
+    }
+
+    curr.is_none()
+}
+
+
 pub trait PresentationalHintsSynthetizer {
     
     
@@ -304,26 +342,15 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     
     
     
+    
+    
+    
+    unsafe fn note_descendants<B: DescendantsBit<Self>>(&self);
+
+    
+    
+    
     unsafe fn set_dirty_descendants(&self);
-
-    
-    
-    
-    
-    unsafe fn note_descendants<B: DescendantsBit<Self>>(&self) {
-        debug_assert!(!thread_state::get().is_worker());
-        let mut curr = Some(*self);
-        while curr.is_some() && !B::has(curr.unwrap()) {
-            B::set(curr.unwrap());
-            curr = curr.unwrap().parent_element();
-        }
-
-        
-        
-        if cfg!(feature = "gecko") {
-            debug_assert!(self.descendants_bit_is_propagated::<B>());
-        }
-    }
 
     
     fn descendants_bit_is_propagated<B: DescendantsBit<Self>>(&self) -> bool {
