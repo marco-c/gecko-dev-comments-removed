@@ -7367,12 +7367,20 @@ nsCSSFrameConstructor::ContentAppended(nsIContent*     aContainer,
   }
 
   
+  
+  
+  
+  
+  bool isNewlyAddedContentForServo = aContainer->IsStyledByServo() &&
+                                     !RestyleManager()->AsBase()->IsInStyleRefresh();
+
+  
   if (!GetContentInsertionFrameFor(aContainer) &&
       !aContainer->IsActiveChildrenElement()) {
     
     
     
-    if (aContainer->IsStyledByServo()) {
+    if (isNewlyAddedContentForServo) {
       aContainer->AsElement()->NoteDirtyDescendantsForServo();
     }
     return NS_OK;
@@ -7380,22 +7388,15 @@ nsCSSFrameConstructor::ContentAppended(nsIContent*     aContainer,
 
   if (aAllowLazyConstruction &&
       MaybeConstructLazily(CONTENTAPPEND, aContainer, aFirstNewContent)) {
-    if (aContainer->IsStyledByServo()) {
+    if (isNewlyAddedContentForServo) {
       aContainer->AsElement()->NoteDirtyDescendantsForServo();
     }
     return NS_OK;
   }
 
   
-  if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
-    
-    
-    
-    
-    
-    if (!RestyleManager()->AsBase()->IsInStyleRefresh()) {
-      set->StyleNewChildren(aContainer->AsElement());
-    }
+  if (isNewlyAddedContentForServo) {
+    mPresShell->StyleSet()->AsServo()->StyleNewChildren(aContainer->AsElement());
   }
 
   LAYOUT_PHASE_TEMP_EXIT();
@@ -7825,6 +7826,15 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
 
   
   
+  
+  
+  
+  bool isNewlyAddedContentForServo = aContainer->IsStyledByServo() &&
+                                     !RestyleManager()->AsBase()->IsInStyleRefresh();
+
+
+  
+  
   {
     nsContainerFrame* parentFrame = GetContentInsertionFrameFor(aContainer);
     
@@ -7834,7 +7844,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
       
       
       
-      if (aContainer->IsStyledByServo()) {
+      if (isNewlyAddedContentForServo) {
         aContainer->AsElement()->NoteDirtyDescendantsForServo();
       }
       return NS_OK;
@@ -7846,7 +7856,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
 
     if (aAllowLazyConstruction &&
         MaybeConstructLazily(CONTENTINSERT, aContainer, aStartChild)) {
-      if (aContainer->IsStyledByServo()) {
+      if (isNewlyAddedContentForServo) {
         aContainer->AsElement()->NoteDirtyDescendantsForServo();
       }
       return NS_OK;
@@ -7854,15 +7864,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
   }
 
   
-  if (ServoStyleSet* set = mPresShell->StyleSet()->GetAsServo()) {
-    
-    
-    
-    
-    
-    if (!RestyleManager()->AsBase()->IsInStyleRefresh()) {
-      set->StyleNewChildren(aContainer->AsElement());
-    }
+  if (isNewlyAddedContentForServo) {
+    mPresShell->StyleSet()->AsServo()->StyleNewChildren(aContainer->AsElement());
   }
 
   InsertionPoint insertion;
