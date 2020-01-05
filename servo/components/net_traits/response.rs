@@ -25,7 +25,7 @@ pub enum ResponseType {
 }
 
 
-#[derive(Clone, Copy, Deserialize, Serialize, HeapSizeOf)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, HeapSizeOf)]
 pub enum TerminationReason {
     EndUserAbort,
     Fatal,
@@ -61,7 +61,7 @@ pub enum CacheState {
 }
 
 
-#[derive(Clone, Copy, HeapSizeOf, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, HeapSizeOf, Deserialize, Serialize)]
 pub enum HttpsState {
     None,
     Deprecated,
@@ -75,7 +75,7 @@ pub enum ResponseMsg {
 }
 
 
-#[derive(Clone, HeapSizeOf)]
+#[derive(Debug, Clone, HeapSizeOf)]
 pub struct Response {
     pub response_type: ResponseType,
     pub termination_reason: Option<TerminationReason>,
