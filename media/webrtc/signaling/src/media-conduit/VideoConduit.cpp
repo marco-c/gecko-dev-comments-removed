@@ -1674,7 +1674,7 @@ MediaConduitErrorCode
 WebrtcVideoConduit::DeliverPacket(const void* data, int len)
 {
   
-  if ( !mCall) {
+  if (!mCall) {
     CSFLogError(logTag, "Error: %s when not receiving", __FUNCTION__);
     return kMediaConduitSessionNotInited;
   }
