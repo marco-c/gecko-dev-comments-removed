@@ -2333,9 +2333,21 @@ public:
 
 
 
-  typedef bool (* SortLEQ)(nsDisplayItem* aItem1, nsDisplayItem* aItem2,
-                             void* aClosure);
-  void Sort(SortLEQ aCmp, void* aClosure);
+
+  template<typename Item, typename Comparator>
+  void Sort(const Comparator& aComparator) {
+    nsTArray<Item> items;
+
+    while (nsDisplayItem* item = RemoveBottom()) {
+      items.AppendElement(Item(item));
+    }
+
+    std::stable_sort(items.begin(), items.end(), aComparator);
+
+    for (Item& item : items) {
+      AppendToTop(item);
+    }
+  }
 
   
 
