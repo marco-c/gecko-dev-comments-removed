@@ -7,22 +7,23 @@
 
 
 
+use dom::event::ResizeEvent;
+use scripting::script_task::{ScriptMsg, SendEventMsg};
 
-
-use dom::event::{Event, ResizeEvent};
+use core::comm::{Port, SharedChan};
 
 pub struct ResizeRateLimiter {
     
-     dom_event_chan: comm::SharedChan<Event>,
-    
-     last_response_port: Option<comm::Port<()>>,
-    
-     next_resize_event: Option<(uint, uint)>
+    priv script_chan: SharedChan<ScriptMsg>,
+    /// The port we are waiting on for a response to the last resize event
+    priv last_response_port: Option<Port<()>>,
+    /// The next window resize event we should fire
+    priv next_resize_event: Option<(uint, uint)>
 }
 
-pub fn ResizeRateLimiter(dom_event_chan: comm::SharedChan<Event>) -> ResizeRateLimiter {
+pub fn ResizeRateLimiter(script_chan: SharedChan<ScriptMsg>) -> ResizeRateLimiter {
     ResizeRateLimiter {
-        dom_event_chan: dom_event_chan,
+        script_chan: script_chan,
         last_response_port: None,
         next_resize_event: None
     }
@@ -64,7 +65,7 @@ pub impl ResizeRateLimiter {
 
     priv fn send_event(&mut self, width: uint, height: uint) {
         let (port, chan) = comm::stream();
-        self.dom_event_chan.send(ResizeEvent(width, height, chan));
+        self.script_chan.send(SendEventMsg(ResizeEvent(width, height, chan)));
         self.last_response_port = Some(port);
     }
 }
