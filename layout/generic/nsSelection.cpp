@@ -6403,9 +6403,15 @@ Selection::NotifySelectionListeners()
 
   
   
+  AutoRestore<bool> calledByJSRestorer(mCalledByJS);
+  mCalledByJS = false;
+
   
   
-  if (mSelectionType == SelectionType::eNormal && mCalledByJS) {
+  
+  
+  if (mSelectionType == SelectionType::eNormal &&
+      calledByJSRestorer.SavedValue()) {
     nsPIDOMWindowOuter* window = GetWindow();
     nsIDocument* document = GetDocument();
     
@@ -6438,11 +6444,6 @@ Selection::NotifySelectionListeners()
       }
     }
   }
-
-  
-  
-  AutoRestore<bool> calledFromExternalRestorer(mCalledByJS);
-  mCalledByJS = false;
 
   if (mFrameSelection->GetBatching()) {
     mFrameSelection->SetDirty();
