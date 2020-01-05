@@ -429,7 +429,7 @@ fn render_text(layout_context: &LayoutContext,
                                                              info));
     
     
-    let fragments = TextRunScanner::new().scan_for_runs(layout_context.font_context(), fragments);
+    let fragments = TextRunScanner::new().scan_for_runs(&mut layout_context.font_context(), fragments);
     debug_assert!(fragments.len() >= 1);
     fragments.fragments.into_iter().next().unwrap().specific
 }
