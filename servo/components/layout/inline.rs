@@ -169,7 +169,9 @@ bitflags! {
 struct LineBreaker {
     
     floats: Floats,
+    
     new_fragments: Vec<Fragment>,
+    
     work_list: RingBuf<Fragment>,
     
     pending_line: Line,
@@ -222,9 +224,31 @@ impl LineBreaker {
     fn scan_for_lines(&mut self, flow: &mut InlineFlow, layout_context: &LayoutContext) {
         self.reset_scanner();
 
+        
         debug!("LineBreaker: scanning for lines, {} fragments", flow.fragments.len());
         let mut old_fragments = mem::replace(&mut flow.fragments, InlineFragments::new());
-        self.reflow_fragments(old_fragments.fragments.iter(), flow, layout_context);
+        let mut old_fragment_iter = old_fragments.fragments.into_iter();
+
+        
+        
+        
+        
+        
+        
+        self.lines = mem::replace(&mut flow.lines, Vec::new());
+        match self.lines.as_slice().last() {
+            None => {}
+            Some(last_line) => {
+                for _ in range(FragmentIndex(0), last_line.range.end()) {
+                    self.new_fragments.push(old_fragment_iter.next().unwrap())
+                }
+            }
+        }
+
+        
+        self.reflow_fragments(old_fragment_iter, flow, layout_context);
+
+        
         old_fragments.fragments = mem::replace(&mut self.new_fragments, vec![]);
         flow.fragments = old_fragments;
         flow.lines = mem::replace(&mut self.lines, Vec::new());
@@ -235,22 +259,13 @@ impl LineBreaker {
                               mut old_fragment_iter: I,
                               flow: &'a InlineFlow,
                               layout_context: &LayoutContext)
-                              where I: Iterator<&'a Fragment> {
+                              where I: Iterator<Fragment> {
         loop {
             
             
-            let fragment = if self.work_list.is_empty() {
-                match old_fragment_iter.next() {
-                    None => break,
-                    Some(fragment) => {
-                        debug!("LineBreaker: working with fragment from flow: {}", fragment);
-                        (*fragment).clone()
-                    }
-                }
-            } else {
-                debug!("LineBreaker: working with fragment from work list: {}",
-                       self.work_list.front());
-                self.work_list.pop_front().unwrap()
+            let fragment = match self.next_unbroken_fragment(&mut old_fragment_iter) {
+                None => break,
+                Some(fragment) => fragment,
             };
 
             
@@ -286,6 +301,65 @@ impl LineBreaker {
             debug!("LineBreaker: partially full line {} at end of scanning; committing it",
                     self.lines.len());
             self.flush_current_line()
+        }
+    }
+
+    
+    
+    
+    fn next_fragment<I>(&mut self, old_fragment_iter: &mut I) -> Option<Fragment>
+                        where I: Iterator<Fragment> {
+        if self.work_list.is_empty() {
+            return match old_fragment_iter.next() {
+                None => None,
+                Some(fragment) => {
+                    debug!("LineBreaker: working with fragment from flow: {}", fragment);
+                    Some(fragment)
+                }
+            }
+        }
+
+        debug!("LineBreaker: working with fragment from work list: {}", self.work_list.front());
+        self.work_list.pop_front()
+    }
+
+    
+    
+    
+    
+    fn next_unbroken_fragment<I>(&mut self, old_fragment_iter: &mut I) -> Option<Fragment>
+                                 where I: Iterator<Fragment> {
+        let mut result = match self.next_fragment(old_fragment_iter) {
+            None => return None,
+            Some(fragment) => fragment,
+        };
+
+        loop {
+            
+            
+            result.restore_new_line_pos();
+
+            let candidate = match self.next_fragment(old_fragment_iter) {
+                None => return Some(result),
+                Some(fragment) => fragment,
+            };
+
+            let need_to_merge = match (&mut result.specific, &candidate.specific) {
+                (&ScannedTextFragment(ref mut result_info),
+                 &ScannedTextFragment(ref candidate_info))
+                    if arc_ptr_eq(&result_info.run, &candidate_info.run) &&
+                        result_info.range.end() + CharIndex(1) == candidate_info.range.begin() => {
+                    
+                    result_info.range.extend_by(candidate_info.range.length() + CharIndex(1));
+                    true
+                }
+                _ => false,
+            };
+
+            if !need_to_merge {
+                self.work_list.push_front(candidate);
+                return Some(result)
+            }
         }
     }
 
@@ -637,58 +711,6 @@ impl InlineFragments {
     pub fn get_mut<'a>(&'a mut self, index: uint) -> &'a mut Fragment {
         &mut self.fragments[index]
     }
-
-    
-    
-    pub fn merge_broken_lines(&mut self) {
-        let mut work: RingBuf<Fragment> =
-            mem::replace(&mut self.fragments, Vec::new()).into_iter().collect();
-
-        let mut out: Vec<Fragment> = Vec::new();
-
-        loop {
-            let mut left: Fragment =
-                match work.pop_front() {
-                    None       => break,
-                    Some(work) => work,
-                };
-
-            let right: Fragment =
-                match work.pop_front() {
-                    None => {
-                        out.push(left);
-                        break;
-                    }
-                    Some(work) => work,
-                };
-
-            left.restore_new_line_pos();
-
-            let right_is_from_same_fragment =
-                match (&mut left.specific, &right.specific) {
-                    (&ScannedTextFragment(ref mut left_info),
-                     &ScannedTextFragment(ref right_info)) => {
-                        if arc_ptr_eq(&left_info.run, &right_info.run)
-                        && left_info.range.end() + CharIndex(1) == right_info.range.begin() {
-                            left_info.range.extend_by(right_info.range.length() + CharIndex(1));
-                            true
-                        } else {
-                            false
-                        }
-                    }
-                    _ => false,
-                };
-
-            if right_is_from_same_fragment {
-                work.push_front(left);
-            } else {
-                out.push(left);
-                work.push_front(right);
-            }
-        }
-
-        mem::replace(&mut self.fragments, out);
-    }
 }
 
 
@@ -1016,8 +1038,6 @@ impl Flow for InlineFlow {
         
         
         
-        debug!("lines: {}", self.lines);
-        self.fragments.merge_broken_lines();
         self.lines = Vec::new();
 
         
