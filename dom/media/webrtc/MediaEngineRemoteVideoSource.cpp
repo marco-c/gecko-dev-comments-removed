@@ -420,53 +420,19 @@ MediaEngineRemoteVideoSource::DeliverFrame(unsigned char* buffer,
 size_t
 MediaEngineRemoteVideoSource::NumCapabilities() const
 {
+  mHardcodedCapabilities.Clear();
   int num = mozilla::camera::GetChildAndCall(
       &mozilla::camera::CamerasChild::NumberOfCapabilities,
       mCapEngine,
       GetUUID().get());
-  if (num > 0) {
-    return num;
+  if (num < 1) {
+    
+    
+    
+    mHardcodedCapabilities.AppendElement(webrtc::CaptureCapability());
+    num = mHardcodedCapabilities.Length(); 
   }
-
-  switch(mMediaSource) {
-  case dom::MediaSourceEnum::Camera:
-#ifdef XP_MACOSX
-    
-    
-    
-    
-    
-
-    if (mHardcodedCapabilities.IsEmpty()) {
-      for (int i = 0; i < 9; i++) {
-        webrtc::CaptureCapability c;
-        c.width = 1920 - i*128;
-        c.height = 1080 - i*72;
-        c.maxFPS = 30;
-        mHardcodedCapabilities.AppendElement(c);
-      }
-      for (int i = 0; i < 16; i++) {
-        webrtc::CaptureCapability c;
-        c.width = 640 - i*40;
-        c.height = 480 - i*30;
-        c.maxFPS = 30;
-        mHardcodedCapabilities.AppendElement(c);
-      }
-    }
-    break;
-#endif
-  default:
-    webrtc::CaptureCapability c;
-    
-    
-    c.width = 0; 
-    c.height = 0;
-    c.maxFPS = 0;
-    mHardcodedCapabilities.AppendElement(c);
-    break;
-  }
-
-  return mHardcodedCapabilities.Length();
+  return num;
 }
 
 bool
