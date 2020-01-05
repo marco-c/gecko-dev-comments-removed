@@ -142,7 +142,7 @@ struct TTCHeaderVersion1
   Tag		ttcTag;		
   FixedVersion<>version;	
 
-  ArrayOf<OffsetTo<OffsetTable, ULONG>, ULONG>
+  ArrayOf<LOffsetTo<OffsetTable>, ULONG>
 		table;		
 
   public:

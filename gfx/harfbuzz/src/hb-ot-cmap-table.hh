@@ -380,9 +380,9 @@ struct VariationSelectorRecord
   }
 
   UINT24	varSelector;	
-  OffsetTo<DefaultUVS, ULONG>
+  LOffsetTo<DefaultUVS>
 		defaultUVS;	
-  OffsetTo<NonDefaultUVS, ULONG>
+  LOffsetTo<NonDefaultUVS>
 		nonDefaultUVS;	
   public:
   DEFINE_SIZE_STATIC (11);
@@ -486,7 +486,7 @@ struct EncodingRecord
 
   USHORT	platformID;	
   USHORT	encodingID;	
-  OffsetTo<CmapSubtable, ULONG>
+  LOffsetTo<CmapSubtable>
 		subtable;	
   public:
   DEFINE_SIZE_STATIC (8);

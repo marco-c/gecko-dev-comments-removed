@@ -2313,7 +2313,7 @@ struct GSUBGPOS
 		featureList; 	
   OffsetTo<LookupList>
 		lookupList; 	
-  OffsetTo<FeatureVariations, ULONG>
+  LOffsetTo<FeatureVariations>
 		featureVars;	
 
 

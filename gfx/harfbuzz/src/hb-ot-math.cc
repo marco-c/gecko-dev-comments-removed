@@ -26,7 +26,7 @@
 
 #include "hb-open-type-private.hh"
 
-#include "hb-ot-layout-math-table.hh"
+#include "hb-ot-math-table.hh"
 
 HB_SHAPER_DATA_ENSURE_DECLARE(ot, face)
 
@@ -34,27 +34,9 @@ static inline const OT::MATH&
 _get_math (hb_face_t *face)
 {
   if (unlikely (!hb_ot_shaper_face_data_ensure (face))) return OT::Null(OT::MATH);
-
   hb_ot_layout_t * layout = hb_ot_layout_from_face (face);
-
-retry:
-  const OT::MATH *math = (const OT::MATH *) hb_atomic_ptr_get (&layout->math);
-
-  if (unlikely (!math))
-  {
-    hb_blob_t *blob = OT::Sanitizer<OT::MATH>::sanitize (face->reference_table (HB_OT_TAG_MATH));
-    math = OT::Sanitizer<OT::MATH>::lock_instance (blob);
-    if (!hb_atomic_ptr_cmpexch (&layout->math, NULL, math))
-    {
-      hb_blob_destroy (blob);
-      goto retry;
-    }
-    layout->math_blob = blob;
-  }
-
-  return *math;
+  return *(layout->math.get ());
 }
-
 
 
 

@@ -32,7 +32,7 @@
 
 
 enum {
-  NONE,
+  _JMO,
 
   LJMO,
   VJMO,

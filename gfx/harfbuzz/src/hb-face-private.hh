@@ -50,12 +50,16 @@ struct hb_face_t {
   void                      *user_data;
   hb_destroy_func_t          destroy;
 
-  unsigned int index;
-  mutable unsigned int upem;
-  mutable unsigned int num_glyphs;
+  unsigned int index;			
+  mutable unsigned int upem;		
+  mutable unsigned int num_glyphs;	
 
-  struct hb_shaper_data_t shaper_data;
+  struct hb_shaper_data_t shaper_data;	
 
+  
+  
+
+  
   struct plan_node_t {
     hb_shape_plan_t *shape_plan;
     plan_node_t *next;

@@ -295,7 +295,7 @@ struct MarkGlyphSetsFormat1
 
   protected:
   USHORT	format;			
-  ArrayOf<OffsetTo<Coverage, ULONG> >
+  ArrayOf<LOffsetTo<Coverage> >
 		coverage;		
 
   public:
@@ -443,7 +443,7 @@ struct GDEF
 
 
 
-  OffsetTo<VariationStore, ULONG>
+  LOffsetTo<VariationStore>
 		varStore;		
 
 
