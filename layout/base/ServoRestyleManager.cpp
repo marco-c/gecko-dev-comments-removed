@@ -87,6 +87,18 @@ ServoRestyleManager::RebuildAllStyleData(nsChangeHint aExtraHint,
                                          nsRestyleHint aRestyleHint)
 {
   NS_WARNING("stylo: ServoRestyleManager::RebuildAllStyleData not implemented");
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  StyleSet()->RecomputeDefaultComputedStyles();
 }
 
 void

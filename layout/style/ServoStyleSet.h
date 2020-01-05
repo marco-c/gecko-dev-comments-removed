@@ -162,6 +162,12 @@ public:
   void AssertTreeIsClean() {}
 #endif
 
+  
+
+
+
+  void RecomputeDefaultComputedStyles();
+
 private:
   already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
                                               nsStyleContext* aParentContext,
