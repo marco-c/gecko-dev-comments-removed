@@ -262,25 +262,9 @@ PluginInstanceChild::DoNPP_New()
         return rv;
     }
 
-    Initialize();
-
-#if defined(XP_MACOSX) && defined(__i386__)
-    
-    
-    
-    
-    
-    if (EventModel() == NPEventModelCarbon) {
-      
-      
-      
-      SendNegotiatedCarbon();
-
-      
-      rv = NPERR_MODULE_LOAD_FAILED_ERROR;
+    if (!Initialize()) {
+        rv = NPERR_MODULE_LOAD_FAILED_ERROR;
     }
-#endif
-
     return rv;
 }
 
@@ -387,12 +371,14 @@ PluginInstanceChild::NPN_GetValue(NPNVariable aVar,
     case NPNVxDisplay:
         if (!mWsInfo.display) {
             
-           Initialize();
+           if (!Initialize()) {
+               return NPERR_GENERIC_ERROR;
+           }
            NS_ASSERTION(mWsInfo.display, "We should have a valid display!");
         }
         *(void **)aValue = mWsInfo.display;
         return NPERR_NO_ERROR;
-    
+
 #elif defined(OS_WIN)
     case NPNVToolkit:
         return NPERR_GENERIC_ERROR;
@@ -1428,7 +1414,7 @@ PluginInstanceChild::Initialize()
 
     if (mWsInfo.display) {
         
-        return false;
+        return true;
     }
 
     
@@ -1448,7 +1434,18 @@ PluginInstanceChild::Initialize()
     else {
         mWsInfo.display = xt_client_get_display();
     }
-#endif 
+#endif
+
+#if defined(XP_MACOSX) && defined(__i386__)
+    
+    
+    
+    
+    
+    if (EventModel() == NPEventModelCarbon) {
+        return false;
+    }
+#endif
 
     return true;
 }
