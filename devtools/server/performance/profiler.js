@@ -20,7 +20,7 @@ const PROFILER_SYSTEM_EVENTS = [
 ];
 
 
-const BUFFER_STATUS_INTERVAL_DEFAULT = 5000; 
+const BUFFER_STATUS_INTERVAL_DEFAULT = 5000;
 
 loader.lazyGetter(this, "nsIProfilerModule", () => {
   return Cc["@mozilla.org/tools/profiler;1"].getService(Ci.nsIProfiler);
@@ -238,7 +238,13 @@ const ProfilerManager = (function () {
       let isActive = nsIProfilerModule.IsActive();
       let elapsedTime = isActive ? nsIProfilerModule.getElapsedTime() : undefined;
       let { position, totalSize, generation } = this.getBufferInfo();
-      return { isActive: isActive, currentTime: elapsedTime, position, totalSize, generation };
+      return {
+        isActive,
+        currentTime: elapsedTime,
+        position,
+        totalSize,
+        generation
+      };
     },
 
     
@@ -247,7 +253,9 @@ const ProfilerManager = (function () {
 
 
     getSharedLibraryInformation: function () {
-      return { sharedLibraryInformation: nsIProfilerModule.getSharedLibraryInformation() };
+      return {
+        sharedLibraryInformation: nsIProfilerModule.getSharedLibraryInformation()
+      };
     },
 
     
@@ -276,7 +284,8 @@ const ProfilerManager = (function () {
       
       
       
-      if (topic === "console-api-profiler" && (action === "profile" || action === "profileEnd")) {
+      if (topic === "console-api-profiler" &&
+          (action === "profile" || action === "profileEnd")) {
         let { isActive, currentTime } = this.isActive();
 
         
@@ -284,10 +293,9 @@ const ProfilerManager = (function () {
         if (!isActive && action === "profile") {
           this.start();
           details = { profileLabel, currentTime: 0 };
-        }
-        
-        
-        else if (!isActive) {
+        } else if (!isActive) {
+          
+          
           return;
         }
 
@@ -340,7 +348,9 @@ const ProfilerManager = (function () {
 
 
     emitEvent: function (eventName, data) {
-      let subscribers = Array.from(consumers).filter(c => c.subscribedEvents.has(eventName));
+      let subscribers = Array.from(consumers).filter(c => {
+        return c.subscribedEvents.has(eventName);
+      });
 
       for (let subscriber of subscribers) {
         events.emit(subscriber, eventName, data);
@@ -377,12 +387,12 @@ const ProfilerManager = (function () {
     _updateProfilerStatusPolling: function () {
       if (this._profilerStatusSubscribers > 0 && nsIProfilerModule.IsActive()) {
         if (!this._poller) {
-          this._poller = new DeferredTask(this._emitProfilerStatus.bind(this), this._profilerStatusInterval);
+          this._poller = new DeferredTask(this._emitProfilerStatus.bind(this),
+                                          this._profilerStatusInterval);
         }
         this._poller.arm();
-      }
-      
-      else if (this._poller) {
+      } else if (this._poller) {
+        
         this._poller.disarm();
       }
     },
@@ -414,47 +424,65 @@ var Profiler = exports.Profiler = Class({
   
 
 
-  start: function (options) { return ProfilerManager.start(options); },
+  start: function (options) {
+    return ProfilerManager.start(options);
+  },
 
   
 
 
-  stop: function () { return ProfilerManager.stop(); },
+  stop: function () {
+    return ProfilerManager.stop();
+  },
 
   
 
 
-  getProfile: function (request = {}) { return ProfilerManager.getProfile(request); },
+  getProfile: function (request = {}) {
+    return ProfilerManager.getProfile(request);
+  },
 
   
 
 
-  getFeatures: function () { return ProfilerManager.getFeatures(); },
+  getFeatures: function () {
+    return ProfilerManager.getFeatures();
+  },
 
   
 
 
-  getBufferInfo: function () { return ProfilerManager.getBufferInfo(); },
+  getBufferInfo: function () {
+    return ProfilerManager.getBufferInfo();
+  },
 
   
 
 
-  getStartOptions: function () { return ProfilerManager.getStartOptions(); },
+  getStartOptions: function () {
+    return ProfilerManager.getStartOptions();
+  },
 
   
 
 
-  isActive: function () { return ProfilerManager.isActive(); },
+  isActive: function () {
+    return ProfilerManager.isActive();
+  },
 
   
 
 
-  getSharedLibraryInformation: function () { return ProfilerManager.getSharedLibraryInformation(); },
+  getSharedLibraryInformation: function () {
+    return ProfilerManager.getSharedLibraryInformation();
+  },
 
   
 
 
-  setProfilerStatusInterval: function (interval) { return ProfilerManager.setProfilerStatusInterval(interval); },
+  setProfilerStatusInterval: function (interval) {
+    return ProfilerManager.setProfilerStatusInterval(interval);
+  },
 
   
 
@@ -535,7 +563,8 @@ function cycleBreaker(key, value) {
 
 function sanitizeHandler(handler, identifier) {
   return DevToolsUtils.makeInfallible(function (subject, topic, data) {
-    subject = (subject && !Cu.isXrayWrapper(subject) && subject.wrappedJSObject) || subject;
+    subject = (subject && !Cu.isXrayWrapper(subject) && subject.wrappedJSObject)
+              || subject;
     subject = JSON.parse(JSON.stringify(subject, cycleBreaker));
     data = (data && !Cu.isXrayWrapper(data) && data.wrappedJSObject) || data;
     data = JSON.parse(JSON.stringify(data, cycleBreaker));

@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { on, once, off, emit } = require("sdk/event/core");
+const { on, off } = require("sdk/event/core");
 const { Class } = require("sdk/core/heritage");
 
 
@@ -11,7 +11,7 @@ const { Class } = require("sdk/core/heritage");
 
 
 
-var Framerate = exports.Framerate = Class({
+exports.Framerate = Class({
   initialize: function (tabActor) {
     this.tabActor = tabActor;
     this._contentWin = tabActor.window;

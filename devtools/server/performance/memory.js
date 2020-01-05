@@ -32,7 +32,7 @@ loader.lazyRequireGetter(this, "ChildProcessActor",
 
 
 
-var Memory = exports.Memory = Class({
+exports.Memory = Class({
   extends: EventTarget,
 
   
@@ -148,9 +148,12 @@ var Memory = exports.Memory = Class({
     
     
     if (!boundaries) {
-      boundaries = this.parent instanceof ChromeActor || this.parent instanceof ChildProcessActor
-        ? { runtime: true }
-        : { debugger: this.dbg };
+      if (this.parent instanceof ChromeActor ||
+          this.parent instanceof ChildProcessActor) {
+        boundaries = { runtime: true };
+      } else {
+        boundaries = { debugger: this.dbg };
+      }
     }
     const path = ThreadSafeChromeUtils.saveHeapSnapshot(boundaries);
     return HeapSnapshotFileUtils.getSnapshotIdFromPath(path);
@@ -179,29 +182,31 @@ var Memory = exports.Memory = Class({
 
 
 
-  startRecordingAllocations: expectState("attached", function (options = {}) {
+  startRecordingAllocations: expectState("attached", function ({
+    probability = 1,
+    drainAllocationsTimeout = null,
+    maxLogLength = null
+  }) {
     if (this.isRecordingAllocations()) {
       return this._getCurrentTime();
     }
 
     this._frameCache.initFrames();
 
-    this.dbg.memory.allocationSamplingProbability = options.probability != null
-      ? options.probability
-      : 1.0;
-
-    this.drainAllocationsTimeoutTimer = typeof options.drainAllocationsTimeout === "number" ? options.drainAllocationsTimeout : null;
+    this.dbg.memory.allocationSamplingProbability = probability;
+    this.drainAllocationsTimeoutTimer = drainAllocationsTimeout;
 
     if (this.drainAllocationsTimeoutTimer != null) {
       if (this._poller) {
         this._poller.disarm();
       }
-      this._poller = new DeferredTask(this._emitAllocations, this.drainAllocationsTimeoutTimer);
+      this._poller = new DeferredTask(this._emitAllocations,
+                                      this.drainAllocationsTimeoutTimer);
       this._poller.arm();
     }
 
-    if (options.maxLogLength != null) {
-      this.dbg.memory.maxAllocationsLogLength = options.maxLogLength;
+    if (maxLogLength != null) {
+      this.dbg.memory.maxAllocationsLogLength = maxLogLength;
     }
     this.dbg.memory.trackingAllocationSites = true;
 
@@ -238,6 +243,7 @@ var Memory = exports.Memory = Class({
   }, "getting allocations settings"),
 
   
+
 
 
 
@@ -369,7 +375,8 @@ var Memory = exports.Memory = Class({
 
     try {
       this._mgr.sizeOfTab(this.parent.window, jsObjectsSize, jsStringsSize, jsOtherSize,
-                          domSize, styleSize, otherSize, totalSize, jsMilliseconds, nonJSMilliseconds);
+                          domSize, styleSize, otherSize, totalSize, jsMilliseconds,
+                          nonJSMilliseconds);
       result.total = totalSize.value;
       result.domSize = domSize.value;
       result.styleSize = styleSize.value;
@@ -404,8 +411,8 @@ var Memory = exports.Memory = Class({
     }
   },
 
-
   
+
 
 
 
@@ -419,7 +426,8 @@ var Memory = exports.Memory = Class({
 
 
   _getCurrentTime: function () {
-    return (this.parent.isRootActor ? this.parent.docShell : this.parent.originalDocShell).now();
+    return (this.parent.isRootActor ? this.parent.docShell :
+                                      this.parent.originalDocShell).now();
   },
 
 });

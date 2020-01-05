@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { Cc, Ci, Cu, Cr } = require("chrome");
+const { Cu } = require("chrome");
 const { Task } = require("devtools/shared/task");
 
 loader.lazyRequireGetter(this, "Services");
@@ -52,7 +52,7 @@ const DRAIN_ALLOCATIONS_TIMEOUT = 2000;
 
 
 
-const PerformanceRecorder = exports.PerformanceRecorder = Class({
+exports.PerformanceRecorder = Class({
   extends: EventTarget,
 
   initialize: function (conn, tabActor) {
@@ -171,7 +171,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
-  _onConsoleProfileStart: Task.async(function* ({ profileLabel, currentTime: startTime }) {
+  _onConsoleProfileStart: Task.async(function* ({ profileLabel, currentTime }) {
     let recordings = this._recordings;
 
     
@@ -183,7 +183,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
     
     events.emit(this, "console-profile-start");
 
-    let model = yield this.startRecording(extend({}, getPerformanceRecordingPrefs(), {
+    yield this.startRecording(extend({}, getPerformanceRecordingPrefs(), {
       console: true,
       label: profileLabel
     }));
@@ -204,7 +204,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
     if (!data) {
       return;
     }
-    let { profileLabel, currentTime: endTime } = data;
+    let { profileLabel } = data;
 
     let pending = this._recordings.filter(r => r.isConsole() && r.isRecording());
     if (pending.length === 0) {
@@ -216,16 +216,16 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
     
     if (profileLabel) {
       model = pending.find(e => e.getLabel() === profileLabel);
-    }
-    
-    else {
+    } else {
+      
       model = pending[pending.length - 1];
     }
 
     
     
     if (!model) {
-      Cu.reportError("console.profileEnd() called with label that does not match a recording.");
+      Cu.reportError(
+        "console.profileEnd() called with label that does not match a recording.");
       return;
     }
 
@@ -291,7 +291,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
     let reasons = [];
 
     if (!Profiler.canProfile()) {
-      success = false,
+      success = false;
       reasons.push("profiler-unavailable");
     }
 
@@ -326,7 +326,9 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
       if (data.isActive) {
         return data;
       }
-      let startData = yield this._profiler.start(mapRecordingOptions("profiler", options));
+      let startData = yield this._profiler.start(
+        mapRecordingOptions("profiler", options)
+      );
 
       
       
@@ -347,9 +349,10 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
       if (this._memory.getState() === "detached") {
         this._memory.attach();
       }
-      memoryStart = this._memory.startRecordingAllocations(extend(mapRecordingOptions("memory", options), {
+      let recordingOptions = extend(mapRecordingOptions("memory", options), {
         drainAllocationsTimeout: DRAIN_ALLOCATIONS_TIMEOUT
-      }));
+      });
+      memoryStart = this._memory.startRecordingAllocations(recordingOptions);
     }
 
     let [profilerStartData, timelineStartData, memoryStartData] = yield promise.all([
@@ -359,7 +362,11 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
     let data = Object.create(null);
     
     
-    let startTimes = [profilerStartData.currentTime, memoryStartData, timelineStartData].filter(Boolean);
+    let startTimes = [
+      profilerStartData.currentTime,
+      memoryStartData,
+      timelineStartData
+    ].filter(Boolean);
     data.startTime = Math.min(...startTimes);
     data.position = profilerStartData.position;
     data.generation = profilerStartData.generation;
@@ -383,6 +390,7 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
+
   stopRecording: Task.async(function* (model) {
     
     
@@ -394,7 +402,6 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
     
     
     
-    let endTime = Date.now();
     events.emit(this, "recording-stopping", model);
 
     
@@ -482,13 +489,17 @@ const PerformanceRecorder = exports.PerformanceRecorder = Class({
 
 
 
+
 function getPerformanceRecordingPrefs() {
   return {
     withMarkers: true,
     withMemory: Services.prefs.getBoolPref("devtools.performance.ui.enable-memory"),
     withTicks: Services.prefs.getBoolPref("devtools.performance.ui.enable-framerate"),
-    withAllocations: Services.prefs.getBoolPref("devtools.performance.ui.enable-allocations"),
-    allocationsSampleProbability: +Services.prefs.getCharPref("devtools.performance.memory.sample-probability"),
-    allocationsMaxLogLength: Services.prefs.getIntPref("devtools.performance.memory.max-log-length")
+    withAllocations:
+      Services.prefs.getBoolPref("devtools.performance.ui.enable-allocations"),
+    allocationsSampleProbability:
+      +Services.prefs.getCharPref("devtools.performance.memory.sample-probability"),
+    allocationsMaxLogLength:
+      Services.prefs.getIntPref("devtools.performance.memory.max-log-length")
   };
 }

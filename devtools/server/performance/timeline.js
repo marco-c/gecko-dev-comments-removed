@@ -34,12 +34,12 @@ loader.lazyRequireGetter(this, "EventTarget", "sdk/event/target", true);
 
 
 
-const DEFAULT_TIMELINE_DATA_PULL_TIMEOUT = 200; 
+const DEFAULT_TIMELINE_DATA_PULL_TIMEOUT = 200;
 
 
 
 
-var Timeline = exports.Timeline = Class({
+exports.Timeline = Class({
   extends: EventTarget,
 
   
@@ -135,7 +135,9 @@ var Timeline = exports.Timeline = Class({
               marker.stack = this._stackFrames.addFrame(Cu.waiveXrays(marker.stack));
             }
             if (marker.endStack) {
-              marker.endStack = this._stackFrames.addFrame(Cu.waiveXrays(marker.endStack));
+              marker.endStack = this._stackFrames.addFrame(
+                Cu.waiveXrays(marker.endStack)
+              );
             }
           }
 
@@ -334,7 +336,9 @@ var Timeline = exports.Timeline = Class({
 
 
 
-  _onGarbageCollection: function ({ collections, gcCycleNumber, reason, nonincrementalReason }) {
+  _onGarbageCollection: function ({
+    collections, gcCycleNumber, reason, nonincrementalReason
+  }) {
     let docShells = this.docShells;
     if (!this._isRecording || !docShells.length) {
       return;
@@ -342,7 +346,9 @@ var Timeline = exports.Timeline = Class({
 
     let endTime = docShells[0].now();
 
-    events.emit(this, "markers", collections.map(({ startTimestamp: start, endTimestamp: end }) => {
+    events.emit(this, "markers", collections.map(({
+      startTimestamp: start, endTimestamp: end
+    }) => {
       return {
         name: "GarbageCollection",
         causeName: reason,
