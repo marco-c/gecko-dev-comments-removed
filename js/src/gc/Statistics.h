@@ -314,6 +314,12 @@ struct Statistics
     size_t slicesLength() const { return slices.length(); }
 
     
+    void maybePrintProfileHeaders();
+
+    
+    void printProfileHeader();
+
+    
     void printTotalProfileTimes();
 
   private:
@@ -429,7 +435,6 @@ FOR_EACH_GC_PROFILE_TIME(DEFINE_TIME_KEY)
     double computeMMU(int64_t resolution) const;
 
     void printSliceProfile();
-    static void printProfileHeader();
     static void printProfileTimes(const ProfileTimes& times);
 };
 

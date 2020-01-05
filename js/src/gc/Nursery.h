@@ -258,6 +258,9 @@ class Nursery
 #endif
 
     
+    void printProfileHeader();
+
+    
     void printTotalProfileTimes();
 
   private:
@@ -458,7 +461,6 @@ class Nursery
     void endProfile(ProfileKey key);
     void maybeStartProfile(ProfileKey key);
     void maybeEndProfile(ProfileKey key);
-    static void printProfileHeader();
     static void printProfileTimes(const ProfileTimes& times);
 
     friend class TenuringTracer;
