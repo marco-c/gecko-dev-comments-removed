@@ -411,6 +411,9 @@ IonCacheIRCompiler::init()
         MOZ_CRASH("Invalid cache");
     }
 
+    if (liveRegs_)
+        liveFloatRegs_ = LiveFloatRegisterSet(liveRegs_->fpus());
+
     allocator.initAvailableRegs(available);
     allocator.initAvailableRegsAfterSpill();
     return true;
@@ -591,7 +594,7 @@ IonCacheIRCompiler::emitGuardSpecificAtom()
 
     
     
-    LiveRegisterSet volatileRegs(RegisterSet::Volatile());
+    LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(), liveVolatileFloatRegs());
     masm.PushRegsInMask(volatileRegs);
 
     masm.setupUnalignedABICall(scratch);
@@ -1085,13 +1088,10 @@ IonCacheIRCompiler::emitAddAndStoreSlotShared(CacheOp op)
         
         
         
-        
         int32_t numNewSlots = int32StubField(reader.stubOffset());
         MOZ_ASSERT(numNewSlots > 0);
 
-        AllocatableRegisterSet regs(RegisterSet::Volatile());
-        LiveRegisterSet save(regs.asLiveSet());
-
+        LiveRegisterSet save(GeneralRegisterSet::Volatile(), liveVolatileFloatRegs());
         masm.PushRegsInMask(save);
 
         masm.setupUnalignedABICall(scratch1);

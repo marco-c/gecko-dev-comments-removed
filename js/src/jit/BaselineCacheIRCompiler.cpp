@@ -322,7 +322,7 @@ BaselineCacheIRCompiler::emitGuardSpecificAtom()
 
     
     
-    LiveRegisterSet volatileRegs(RegisterSet::Volatile());
+    LiveRegisterSet volatileRegs(GeneralRegisterSet::Volatile(), liveVolatileFloatRegs());
     masm.PushRegsInMask(volatileRegs);
 
     masm.setupUnalignedABICall(scratch);
@@ -806,15 +806,14 @@ BaselineCacheIRCompiler::emitAddAndStoreSlotShared(CacheOp op)
         
         
         
+        
         Address numNewSlotsAddr = stubAddress(reader.stubOffset());
 
         FailurePath* failure;
         if (!addFailurePath(&failure))
             return false;
 
-        AllocatableRegisterSet regs(RegisterSet::Volatile());
-        LiveRegisterSet save(regs.asLiveSet());
-
+        LiveRegisterSet save(GeneralRegisterSet::Volatile(), liveVolatileFloatRegs());
         masm.PushRegsInMask(save);
 
         masm.setupUnalignedABICall(scratch1);
@@ -1697,6 +1696,9 @@ BaselineCacheIRCompiler::init(CacheKind kind)
 #endif
         break;
     }
+
+    
+    liveFloatRegs_ = LiveFloatRegisterSet(FloatRegisterSet());
 
     allocator.initAvailableRegs(available);
     outputUnchecked_.emplace(R0);
