@@ -148,8 +148,6 @@ public:
   void InsertChild(nsView *aParent, nsView *aChild, nsView *aSibling,
                    bool aAfter);
 
-  void InsertChild(nsView *aParent, nsView *aChild, int32_t aZIndex);
-
   
 
 

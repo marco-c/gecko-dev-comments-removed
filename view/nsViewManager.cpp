@@ -937,15 +937,6 @@ nsViewManager::InsertChild(nsView *aParent, nsView *aChild, nsView *aSibling,
 }
 
 void
-nsViewManager::InsertChild(nsView *aParent, nsView *aChild, int32_t aZIndex)
-{
-  
-  
-  SetViewZIndex(aChild, false, aZIndex);
-  InsertChild(aParent, aChild, nullptr, true);
-}
-
-void
 nsViewManager::RemoveChild(nsView *aChild)
 {
   NS_ASSERTION(aChild, "aChild must not be null");
