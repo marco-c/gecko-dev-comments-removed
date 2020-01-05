@@ -9,7 +9,6 @@
 
 
 #include "gfxUtils.h"
-#include "mozilla/Preferences.h"
 #include "nsContentUtils.h"
 #include "nsIFrame.h"
 #include "nsPresContext.h"
@@ -22,23 +21,9 @@ SVGImageContext::MaybeStoreContextPaint(Maybe<SVGImageContext>& aContext,
                                         nsIFrame* aFromFrame,
                                         imgIContainer* aImgContainer)
 {
-  static bool sEnabledForContent = false;
-  static bool sEnabledForContentCached = false;
-
-  if (!sEnabledForContentCached) {
-    Preferences::AddBoolVarCache(&sEnabledForContent,
-                                 "svg.context-properties.content.enabled", false);
-    sEnabledForContentCached = true;
-  }
-
+  
   if (!aFromFrame->StyleSVG()->ExposesContextProperties()) {
     
-    
-    return;
-  }
-
-  if (!sEnabledForContent &&
-      !nsContentUtils::IsChromeDoc(aFromFrame->PresContext()->Document())) {
     
     return;
   }
