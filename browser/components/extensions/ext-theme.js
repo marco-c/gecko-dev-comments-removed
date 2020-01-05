@@ -6,122 +6,57 @@ XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
                                   "resource://gre/modules/Preferences.jsm");
 
 
-let themeMap = new WeakMap();
-
-
-class Theme {
-  
-
-
-  constructor() {
-    
-    this.lwtStyles = {};
-  }
-
-  
-
-
-
-
-
-
-  load(details) {
-    if (details.colors) {
-      this.loadColors(details.colors);
-    }
-
-    if (details.images) {
-      this.loadImages(details.images);
-    }
-
-    
-    if (this.lwtStyles.headerURL &&
-        this.lwtStyles.accentcolor &&
-        this.lwtStyles.textcolor) {
-      Services.obs.notifyObservers(null,
-        "lightweight-theme-styling-update",
-        JSON.stringify(this.lwtStyles));
-    }
-  }
-
-  
-
-
-
-
-  loadColors(colors) {
-    let {accentcolor, textcolor} = colors;
-
-    if (accentcolor) {
-      this.lwtStyles.accentcolor = accentcolor;
-    }
-
-    if (textcolor) {
-      this.lwtStyles.textcolor = textcolor;
-    }
-  }
-
-  
-
-
-
-
-  loadImages(images) {
-    let {headerURL} = images;
-
-    if (headerURL) {
-      this.lwtStyles.headerURL = headerURL;
-    }
-  }
-
-  
-
-
-  unload() {
-    Services.obs.notifyObservers(null,
-      "lightweight-theme-styling-update",
-      null);
-  }
-}
-
-
 extensions.on("manifest_theme", (type, directive, extension, manifest) => {
-  if (!Preferences.get("extensions.webextensions.themes.enabled")) {
-    
+  let enabled = Preferences.get("extensions.webextensions.themes.enabled");
+
+  if (!enabled || !manifest || !manifest.theme) {
     return;
   }
+  
+  let lwtStyles = {footerURL: ""};
+  if (manifest.theme.colors) {
+    let colors = manifest.theme.colors;
+    for (let color of Object.getOwnPropertyNames(colors)) {
+      let val = colors[color];
+      
+      if (val === null) {
+        continue;
+      }
 
-  let theme = new Theme();
-  theme.load(manifest.theme);
-  themeMap.set(extension, theme);
+      if (color == "accentcolor") {
+        lwtStyles.accentcolor = val;
+        continue;
+      }
+      if (color == "textcolor") {
+        lwtStyles.textcolor = val;
+      }
+    }
+  }
+
+  if (manifest.theme.images) {
+    let images = manifest.theme.images;
+    for (let image of Object.getOwnPropertyNames(images)) {
+      let val = images[image];
+      if (val === null) {
+        continue;
+      }
+
+      if (image == "headerURL") {
+        lwtStyles.headerURL = val;
+      }
+    }
+  }
+
+  if (lwtStyles.headerURL &&
+      lwtStyles.accentcolor &&
+      lwtStyles.textcolor) {
+    Services.obs.notifyObservers(null,
+      "lightweight-theme-styling-update",
+      JSON.stringify(lwtStyles));
+  }
 });
 
 extensions.on("shutdown", (type, extension) => {
-  let theme = themeMap.get(extension);
-
-  
-  if (!theme) {
-    return;
-  }
-
-  theme.unload();
+  Services.obs.notifyObservers(null, "lightweight-theme-styling-update", null);
 });
 
-
-extensions.registerSchemaAPI("theme", "addon_parent", context => {
-  let {extension} = context;
-  return {
-    theme: {
-      update(details) {
-        let theme = themeMap.get(extension);
-
-        
-        if (!theme) {
-          return;
-        }
-
-        theme.load(details);
-      },
-    },
-  };
-});
