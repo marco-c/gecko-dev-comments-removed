@@ -31,14 +31,22 @@ function assertBuiltinFunction(o, name, arity) {
 
     assertEq(typeof fn, "function");
     assertEq(Object.getPrototypeOf(fn), Function.prototype);
-    
-    
+    assertEq(isConstructor(fn), false);
 
-    arraysEqual(Object.getOwnPropertyNames(fn).sort(), ["length", "name", "arguments", "caller"].sort());
+    assertEq(arraysEqual(Object.getOwnPropertyNames(fn).sort(), ["length", "name"].sort()), true);
 
-    
     assertDataDescriptor(Object.getOwnPropertyDescriptor(fn, "length"), {
         value: arity,
+        writable: false,
+        enumerable: false,
+        configurable: true
+    });
+
+    var functionName = typeof name === "symbol"
+                       ? String(name).replace(/^Symbol\((.+)\)$/, "[$1]")
+                       : name;
+    assertDataDescriptor(Object.getOwnPropertyDescriptor(fn, "name"), {
+        value: functionName,
         writable: false,
         enumerable: false,
         configurable: true
@@ -59,7 +67,7 @@ assertEq(Object.getPrototypeOf(iterProto),
          Object.getPrototypeOf(Object.getPrototypeOf([][Symbol.iterator]())));
 
 
-arraysEqual(Object.getOwnPropertyNames(iterProto).sort(), ["next"]);
+assertEq(arraysEqual(Object.getOwnPropertyNames(iterProto).sort(), ["next"]), true);
 
 
 assertBuiltinFunction(iterProto, "next", 0);
