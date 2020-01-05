@@ -10,7 +10,7 @@
 #[cfg(windows)]
 extern crate kernel32;
 
-use deque::{Abort, BufferPool, Data, Empty, Stealer, Worker};
+use deque::{self, Abort, Data, Empty, Stealer, Worker};
 #[cfg(not(windows))]
 use libc::usleep;
 use rand::{Rng, XorShiftRng, weak_rng};
@@ -25,7 +25,7 @@ use thread_state;
 
 
 
-pub struct WorkUnit<QueueData, WorkData> {
+pub struct WorkUnit<QueueData, WorkData: Send> {
     
     pub fun: extern "Rust" fn(WorkData, &mut WorkerProxy<QueueData, WorkData>),
     
@@ -33,7 +33,7 @@ pub struct WorkUnit<QueueData, WorkData> {
 }
 
 
-enum WorkerMsg<QueueData: 'static, WorkData: 'static> {
+enum WorkerMsg<QueueData: 'static, WorkData: 'static + Send> {
     
     Start(Worker<WorkUnit<QueueData, WorkData>>, *mut AtomicUsize, *const QueueData),
     
@@ -44,19 +44,19 @@ enum WorkerMsg<QueueData: 'static, WorkData: 'static> {
     Exit,
 }
 
-unsafe impl<QueueData: 'static, WorkData: 'static> Send for WorkerMsg<QueueData, WorkData> {}
+unsafe impl<QueueData: 'static, WorkData: 'static + Send> Send for WorkerMsg<QueueData, WorkData> {}
 
 
-enum SupervisorMsg<QueueData: 'static, WorkData: 'static> {
+enum SupervisorMsg<QueueData: 'static, WorkData: 'static + Send> {
     Finished,
     HeapSizeOfTLS(usize),
     ReturnDeque(usize, Worker<WorkUnit<QueueData, WorkData>>),
 }
 
-unsafe impl<QueueData: 'static, WorkData: 'static> Send for SupervisorMsg<QueueData, WorkData> {}
+unsafe impl<QueueData: 'static, WorkData: 'static + Send> Send for SupervisorMsg<QueueData, WorkData> {}
 
 
-struct WorkerInfo<QueueData: 'static, WorkData: 'static> {
+struct WorkerInfo<QueueData: 'static, WorkData: 'static + Send> {
     
     chan: Sender<WorkerMsg<QueueData, WorkData>>,
     
@@ -66,7 +66,7 @@ struct WorkerInfo<QueueData: 'static, WorkData: 'static> {
 }
 
 
-struct WorkerThread<QueueData: 'static, WorkData: 'static> {
+struct WorkerThread<QueueData: 'static, WorkData: 'static + Send> {
     
     index: usize,
     
@@ -79,7 +79,7 @@ struct WorkerThread<QueueData: 'static, WorkData: 'static> {
     rng: XorShiftRng,
 }
 
-unsafe impl<QueueData: 'static, WorkData: 'static> Send for WorkerThread<QueueData, WorkData> {}
+unsafe impl<QueueData: 'static, WorkData: 'static + Send> Send for WorkerThread<QueueData, WorkData> {}
 
 const SPINS_UNTIL_BACKOFF: u32 = 128;
 const BACKOFF_INCREMENT_IN_US: u32 = 5;
@@ -208,7 +208,7 @@ impl<QueueData: Sync, WorkData: Send> WorkerThread<QueueData, WorkData> {
 }
 
 
-pub struct WorkerProxy<'a, QueueData: 'a, WorkData: 'a> {
+pub struct WorkerProxy<'a, QueueData: 'a, WorkData: 'a + Send> {
     worker: &'a mut Worker<WorkUnit<QueueData, WorkData>>,
     ref_count: *mut AtomicUsize,
     queue_data: &'a QueueData,
@@ -239,7 +239,7 @@ impl<'a, QueueData: 'static, WorkData: Send + 'static> WorkerProxy<'a, QueueData
 }
 
 
-pub struct WorkQueue<QueueData: 'static, WorkData: 'static> {
+pub struct WorkQueue<QueueData: 'static, WorkData: 'static + Send> {
     
     workers: Vec<WorkerInfo<QueueData, WorkData>>,
     
@@ -259,8 +259,7 @@ impl<QueueData: Sync, WorkData: Send> WorkQueue<QueueData, WorkData> {
         let (mut infos, mut threads) = (vec!(), vec!());
         for i in 0..thread_count {
             let (worker_chan, worker_port) = channel();
-            let pool = BufferPool::new();
-            let (worker, thief) = pool.deque();
+            let (worker, thief) = deque::new();
             infos.push(WorkerInfo {
                 chan: worker_chan,
                 deque: Some(worker),
