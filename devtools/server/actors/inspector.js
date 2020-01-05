@@ -1759,6 +1759,8 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
 
 
 
+
+
   addPseudoClassLock: function (node, pseudo, options = {}) {
     if (isNodeDead(node)) {
       return;
@@ -1772,7 +1774,9 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
       }
     }
 
-    this._addPseudoClassLock(node, pseudo);
+    let enabled = options.enabled === undefined ||
+                  options.enabled;
+    this._addPseudoClassLock(node, pseudo, enabled);
 
     if (!options.parents) {
       return;
@@ -1782,7 +1786,7 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     let cur;
     while ((cur = walker.parentNode())) {
       let curNode = this._ref(cur);
-      this._addPseudoClassLock(curNode, pseudo);
+      this._addPseudoClassLock(curNode, pseudo, enabled);
     }
   },
 
@@ -1794,11 +1798,11 @@ var WalkerActor = protocol.ActorClassWithSpec(walkerSpec, {
     });
   },
 
-  _addPseudoClassLock: function (node, pseudo) {
+  _addPseudoClassLock: function (node, pseudo, enabled) {
     if (node.rawNode.nodeType !== Ci.nsIDOMNode.ELEMENT_NODE) {
       return false;
     }
-    DOMUtils.addPseudoClassLock(node.rawNode, pseudo);
+    DOMUtils.addPseudoClassLock(node.rawNode, pseudo, enabled);
     this._activePseudoClassLocks.add(node);
     this._queuePseudoClassMutation(node);
     return true;
