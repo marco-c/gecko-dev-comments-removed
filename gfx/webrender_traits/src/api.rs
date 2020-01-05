@@ -6,16 +6,135 @@ use byteorder::{LittleEndian, WriteBytesExt};
 use channel::{self, MsgSender, PayloadHelperMethods, PayloadSender};
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use std::cell::Cell;
-use {ApiMsg, ColorF, Epoch, ImageDescriptor};
-use {FontKey, IdNamespace, ImageKey, NativeFontHandle, PipelineId};
-use {RenderApiSender, ResourceId, ScrollEventPhase, ScrollLayerState, ScrollLocation, ServoScrollRootId};
-use {GlyphKey, GlyphDimensions, ImageData, WebGLContextId, WebGLCommand, TileSize};
-use {DeviceIntSize, DynamicProperties, LayoutPoint, LayoutSize, WorldPoint, PropertyBindingKey, PropertyBindingId};
-use {DeviceUintRect, DeviceUintSize};
-use {BuiltDisplayList, AuxiliaryLists};
-use VRCompositorCommand;
-use {ExternalEvent, PageZoomFactor};
+use {ColorF, ImageDescriptor};
+use {FontKey, ImageKey, NativeFontHandle, ServoScrollRootId};
+use {GlyphKey, GlyphDimensions, ImageData, WebGLContextId, WebGLCommand};
+use {DeviceIntSize, LayoutPoint, LayoutSize, WorldPoint};
+use {DeviceIntPoint, DeviceUintRect, DeviceUintSize, LayoutTransform};
+use {BuiltDisplayList, BuiltDisplayListDescriptor, AuxiliaryLists, AuxiliaryListsDescriptor};
+use std::fmt;
 use std::marker::PhantomData;
+
+pub type TileSize = u16;
+
+#[derive(Clone, Deserialize, Serialize)]
+pub enum ApiMsg {
+    AddRawFont(FontKey, Vec<u8>),
+    AddNativeFont(FontKey, NativeFontHandle),
+    DeleteFont(FontKey),
+    
+    GetGlyphDimensions(Vec<GlyphKey>, MsgSender<Vec<Option<GlyphDimensions>>>),
+    
+    AddImage(ImageKey, ImageDescriptor, ImageData, Option<TileSize>),
+    
+    UpdateImage(ImageKey, ImageDescriptor, Vec<u8>),
+    
+    DeleteImage(ImageKey),
+    CloneApi(MsgSender<IdNamespace>),
+    
+    
+    
+    
+    SetRootDisplayList(Option<ColorF>,
+                       Epoch,
+                       PipelineId,
+                       LayoutSize,
+                       BuiltDisplayListDescriptor,
+                       AuxiliaryListsDescriptor,
+                       bool),
+    SetPageZoom(ZoomFactor),
+    SetPinchZoom(ZoomFactor),
+    SetPan(DeviceIntPoint),
+    SetRootPipeline(PipelineId),
+    SetWindowParameters(DeviceUintSize, DeviceUintRect),
+    Scroll(ScrollLocation, WorldPoint, ScrollEventPhase),
+    ScrollLayersWithScrollId(LayoutPoint, PipelineId, ServoScrollRootId),
+    TickScrollingBounce,
+    TranslatePointToLayerSpace(WorldPoint, MsgSender<(LayoutPoint, PipelineId)>),
+    GetScrollLayerState(MsgSender<Vec<ScrollLayerState>>),
+    RequestWebGLContext(DeviceIntSize, GLContextAttributes, MsgSender<Result<(WebGLContextId, GLLimits), String>>),
+    ResizeWebGLContext(WebGLContextId, DeviceIntSize),
+    WebGLCommand(WebGLContextId, WebGLCommand),
+    GenerateFrame(Option<DynamicProperties>),
+    
+    VRCompositorCommand(WebGLContextId, VRCompositorCommand),
+    
+    
+    
+    ExternalEvent(ExternalEvent),
+    ShutDown,
+}
+
+impl fmt::Debug for ApiMsg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            &ApiMsg::AddRawFont(..) => { write!(f, "ApiMsg::AddRawFont") }
+            &ApiMsg::AddNativeFont(..) => { write!(f, "ApiMsg::AddNativeFont") }
+            &ApiMsg::DeleteFont(..) => { write!(f, "ApiMsg::DeleteFont") }
+            &ApiMsg::GetGlyphDimensions(..) => { write!(f, "ApiMsg::GetGlyphDimensions") }
+            &ApiMsg::AddImage(..) => { write!(f, "ApiMsg::AddImage") }
+            &ApiMsg::UpdateImage(..) => { write!(f, "ApiMsg::UpdateImage") }
+            &ApiMsg::DeleteImage(..) => { write!(f, "ApiMsg::DeleteImage") }
+            &ApiMsg::CloneApi(..) => { write!(f, "ApiMsg::CloneApi") }
+            &ApiMsg::SetRootDisplayList(..) => { write!(f, "ApiMsg::SetRootDisplayList") }
+            &ApiMsg::SetRootPipeline(..) => { write!(f, "ApiMsg::SetRootPipeline") }
+            &ApiMsg::Scroll(..) => { write!(f, "ApiMsg::Scroll") }
+            &ApiMsg::ScrollLayersWithScrollId(..) => { write!(f, "ApiMsg::ScrollLayersWithScrollId") }
+            &ApiMsg::TickScrollingBounce => { write!(f, "ApiMsg::TickScrollingBounce") }
+            &ApiMsg::TranslatePointToLayerSpace(..) => { write!(f, "ApiMsg::TranslatePointToLayerSpace") }
+            &ApiMsg::GetScrollLayerState(..) => { write!(f, "ApiMsg::GetScrollLayerState") }
+            &ApiMsg::RequestWebGLContext(..) => { write!(f, "ApiMsg::RequestWebGLContext") }
+            &ApiMsg::ResizeWebGLContext(..) => { write!(f, "ApiMsg::ResizeWebGLContext") }
+            &ApiMsg::WebGLCommand(..) => { write!(f, "ApiMsg::WebGLCommand") }
+            &ApiMsg::GenerateFrame(..) => { write!(f, "ApiMsg::GenerateFrame") }
+            &ApiMsg::VRCompositorCommand(..) => { write!(f, "ApiMsg::VRCompositorCommand") }
+            &ApiMsg::ExternalEvent(..) => { write!(f, "ApiMsg::ExternalEvent") }
+            &ApiMsg::ShutDown => { write!(f, "ApiMsg::ShutDown") }
+            &ApiMsg::SetPageZoom(..) => { write!(f, "ApiMsg::SetPageZoom") }
+            &ApiMsg::SetPinchZoom(..) => { write!(f, "ApiMsg::SetPinchZoom") }
+            &ApiMsg::SetPan(..) => { write!(f, "ApiMsg::SetPan") }
+            &ApiMsg::SetWindowParameters(..) => { write!(f, "ApiMsg::SetWindowParameters") }
+        }
+    }
+}
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize)]
+pub struct Epoch(pub u32);
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
+pub struct PipelineId(pub u32, pub u32);
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct IdNamespace(pub u32);
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct ResourceId(pub u32);
+
+
+#[repr(C)]
+#[derive(Clone, Deserialize, Serialize)]
+pub struct ExternalEvent {
+    raw: usize,
+}
+
+unsafe impl Send for ExternalEvent {}
+
+impl ExternalEvent {
+    pub fn from_raw(raw: usize) -> Self { ExternalEvent { raw: raw } }
+    
+    pub fn unwrap(self) -> usize { self.raw }
+}
+
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct RenderApiSender {
+    api_sender: MsgSender<ApiMsg>,
+    payload_sender: PayloadSender,
+}
 
 impl RenderApiSender {
     pub fn new(api_sender: MsgSender<ApiMsg>,
@@ -199,8 +318,18 @@ impl RenderApi {
         self.api_sender.send(msg).unwrap();
     }
 
-    pub fn set_page_zoom(&self, page_zoom: PageZoomFactor) {
+    pub fn set_page_zoom(&self, page_zoom: ZoomFactor) {
         let msg = ApiMsg::SetPageZoom(page_zoom);
+        self.api_sender.send(msg).unwrap();
+    }
+
+    pub fn set_pinch_zoom(&self, pinch_zoom: ZoomFactor) {
+        let msg = ApiMsg::SetPinchZoom(pinch_zoom);
+        self.api_sender.send(msg).unwrap();
+    }
+
+    pub fn set_pan(&self, pan: DeviceIntPoint) {
+        let msg = ApiMsg::SetPan(pan);
         self.api_sender.send(msg).unwrap();
     }
 
@@ -292,4 +421,140 @@ impl RenderApi {
         self.next_id.set(ResourceId(id + 1));
         (namespace, id)
     }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub enum ScrollEventPhase {
+    
+    Start,
+    
+    
+    Move(bool),
+    
+    End,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+pub struct ScrollLayerState {
+    pub pipeline_id: PipelineId,
+    pub scroll_root_id: ServoScrollRootId,
+    pub scroll_offset: LayoutPoint,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub enum ScrollLocation {
+    
+    Delta(LayoutPoint),
+    
+    Start,
+    
+    End
+}
+
+
+#[derive(Clone, Copy, Serialize, Deserialize, Debug)]
+pub struct ZoomFactor(f32);
+
+impl ZoomFactor {
+    
+    pub fn new(scale: f32) -> ZoomFactor {
+        ZoomFactor(scale)
+    }
+
+    
+    pub fn get(&self) -> f32 {
+        self.0
+    }
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize, Eq, Hash)]
+pub struct PropertyBindingId {
+    namespace: u32,
+    uid: u32,
+}
+
+
+
+#[repr(C)]
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub struct PropertyBindingKey<T> {
+    pub id: PropertyBindingId,
+    _phantom: PhantomData<T>,
+}
+
+
+impl<T: Copy> PropertyBindingKey<T> {
+    pub fn with(&self, value: T) -> PropertyValue<T> {
+        PropertyValue {
+            key: *self,
+            value: value,
+        }
+    }
+}
+
+
+
+
+#[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
+pub enum PropertyBinding<T> {
+    Value(T),
+    Binding(PropertyBindingKey<T>),
+}
+
+impl<T> From<T> for PropertyBinding<T> {
+    fn from(value: T) -> PropertyBinding<T> {
+        PropertyBinding::Value(value)
+    }
+}
+
+impl<T> From<PropertyBindingKey<T>> for PropertyBinding<T> {
+    fn from(key: PropertyBindingKey<T>) -> PropertyBinding<T> {
+        PropertyBinding::Binding(key)
+    }
+}
+
+
+
+#[derive(Clone, Copy, Debug, Deserialize, Serialize)]
+pub struct PropertyValue<T> {
+    pub key: PropertyBindingKey<T>,
+    pub value: T,
+}
+
+
+
+
+#[derive(Clone, Deserialize, Serialize, Debug)]
+pub struct DynamicProperties {
+    pub transforms: Vec<PropertyValue<LayoutTransform>>,
+    pub floats: Vec<PropertyValue<f32>>,
+}
+
+pub type VRCompositorId = u64;
+
+
+#[derive(Clone, Deserialize, Serialize)]
+pub enum VRCompositorCommand {
+    Create(VRCompositorId),
+    SyncPoses(VRCompositorId, f64, f64, MsgSender<Result<Vec<u8>,()>>),
+    SubmitFrame(VRCompositorId, [f32; 4], [f32; 4]),
+    Release(VRCompositorId)
+}
+
+
+
+pub trait VRCompositorHandler: Send {
+    fn handle(&mut self, command: VRCompositorCommand, texture_id: Option<u32>);
+}
+
+pub trait RenderNotifier: Send {
+    fn new_frame_ready(&mut self);
+    fn new_scroll_frame_ready(&mut self, composite_needed: bool);
+    fn external_event(&mut self, _evt: ExternalEvent) { unimplemented!() }
+    fn shut_down(&mut self) {}
+}
+
+
+pub trait RenderDispatcher: Send {
+    fn dispatch(&self, Box<Fn() + Send>);
 }
