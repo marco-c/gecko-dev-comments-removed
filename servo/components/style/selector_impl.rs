@@ -5,6 +5,7 @@
 
 
 use element_state::ElementState;
+use restyle_hints;
 use selectors::Element;
 use selectors::parser::SelectorImpl;
 use std::fmt::Debug;
@@ -13,13 +14,16 @@ use stylesheets::Stylesheet;
 pub type AttrString = <TheSelectorImpl as SelectorImpl>::AttrString;
 
 #[cfg(feature = "servo")]
-pub use servo_selector_impl::ServoSelectorImpl;
+pub use servo_selector_impl::*;
 
 #[cfg(feature = "servo")]
-pub use servo_selector_impl::{ServoSelectorImpl as TheSelectorImpl, PseudoElement, NonTSPseudoClass};
+pub use servo_selector_impl::{ServoSelectorImpl as TheSelectorImpl, ServoElementSnapshot as ElementSnapshot};
 
 #[cfg(feature = "gecko")]
-pub use gecko_selector_impl::{GeckoSelectorImpl as TheSelectorImpl, PseudoElement, NonTSPseudoClass};
+pub use gecko_selector_impl::*;
+
+#[cfg(feature = "gecko")]
+pub use gecko_selector_impl::{GeckoSelectorImpl as TheSelectorImpl};
 
 
 
@@ -69,6 +73,8 @@ impl PseudoElementCascadeType {
 }
 
 pub trait ElementExt: Element<Impl=TheSelectorImpl, AttrString=<TheSelectorImpl as SelectorImpl>::AttrString> {
+    type Snapshot: restyle_hints::ElementSnapshot<AttrString = Self::AttrString> + 'static;
+
     fn is_link(&self) -> bool;
 }
 
