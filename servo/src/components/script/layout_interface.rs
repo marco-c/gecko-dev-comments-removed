@@ -38,9 +38,9 @@ pub enum Msg {
 
 pub enum LayoutQuery {
     
-    ContentBoxQuery(AbstractNode<ScriptView>, Chan<Result<ContentBoxResponse, ()>>),
+    ContentBoxQuery(AbstractNode<ScriptView>, Chan<ContentBoxResponse>),
     
-    ContentBoxesQuery(AbstractNode<ScriptView>, Chan<Result<ContentBoxesResponse, ()>>),
+    ContentBoxesQuery(AbstractNode<ScriptView>, Chan<ContentBoxesResponse>),
     
     HitTestQuery(AbstractNode<ScriptView>, Point2D<f32>, Chan<Result<HitTestResponse, ()>>),
 }
