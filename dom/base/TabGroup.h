@@ -115,6 +115,7 @@ public:
                    nsIDocShellTreeItem** aFoundItem);
 
   nsTArray<nsPIDOMWindowOuter*> GetTopLevelWindows();
+  const nsTArray<nsPIDOMWindowOuter*>& GetWindows() { return mWindows; }
 
   
   

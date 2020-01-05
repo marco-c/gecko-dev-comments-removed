@@ -2808,6 +2808,39 @@ nsGlobalWindow::ComputeIsSecureContext(nsIDocument* aDocument, SecureContextFlag
   return false;
 }
 
+static JS::CompartmentCreationOptions&
+SelectZoneGroup(nsGlobalWindow* aNewInner,
+                JS::CompartmentCreationOptions& aOptions)
+{
+  JS::CompartmentCreationOptions options;
+
+  if (aNewInner->GetOuterWindow()) {
+    nsGlobalWindow *top = aNewInner->GetTopInternal();
+
+    
+    if (top && top->GetGlobalJSObject()) {
+      return aOptions.setExistingZone(top->GetGlobalJSObject());
+    }
+  }
+
+  
+  if (XRE_IsParentProcess()) {
+    return aOptions.setNewZoneInSystemZoneGroup();
+  }
+
+  
+  
+  RefPtr<TabGroup> tabGroup = aNewInner->TabGroup();
+  for (nsPIDOMWindowOuter* outer : tabGroup->GetWindows()) {
+    nsGlobalWindow* window = nsGlobalWindow::Cast(outer);
+    if (JSObject* global = window->GetGlobalJSObject()) {
+      return aOptions.setNewZoneInExistingZoneGroup(global);
+    }
+  }
+
+  return aOptions.setNewZoneInNewZoneGroup();
+}
+
 
 
 
@@ -2831,22 +2864,15 @@ CreateNativeGlobalForInner(JSContext* aCx,
   nsCOMPtr<nsIExpandedPrincipal> nsEP = do_QueryInterface(aPrincipal);
   MOZ_RELEASE_ASSERT(!nsEP, "DOMWindow with nsEP is not supported");
 
-  nsGlobalWindow *top = nullptr;
-  if (aNewInner->GetOuterWindow()) {
-    top = aNewInner->GetTopInternal();
-  }
-
   JS::CompartmentOptions options;
+
+  SelectZoneGroup(aNewInner, options.creationOptions());
 
   
   
   
   if (nsContentUtils::IsSystemPrincipal(aPrincipal)) {
     options.creationOptions().setAddonId(MapURIToAddonID(aURI));
-  }
-
-  if (top && top->GetGlobalJSObject()) {
-    options.creationOptions().setExistingZone(top->GetGlobalJSObject());
   }
 
   options.creationOptions().setSecureContext(aIsSecureContext);
@@ -5755,6 +5781,11 @@ nsGlobalWindow::GetOuterSize(CallerType aCallerType, ErrorResult& aError)
   if (!treeOwnerAsWin) {
     aError.Throw(NS_ERROR_FAILURE);
     return nsIntSize(0, 0);
+  }
+
+  nsGlobalWindow* rootWindow = nsGlobalWindow::Cast(GetPrivateRoot());
+  if (rootWindow) {
+    rootWindow->FlushPendingNotifications(FlushType::Layout);
   }
 
   nsIntSize sizeDevPixels;
