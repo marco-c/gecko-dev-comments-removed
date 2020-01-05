@@ -1295,6 +1295,10 @@ function TypedArraySubarray(begin, end) {
     var srcLength = TypedArrayLength(obj);
 
     
+    
+    var srcByteOffset = TypedArrayByteOffset(obj);
+
+    
     var relativeBegin = ToInteger(begin);
     var beginIndex = relativeBegin < 0 ? std_Math_max(srcLength + relativeBegin, 0)
                                        : std_Math_min(relativeBegin, srcLength);
@@ -1309,9 +1313,6 @@ function TypedArraySubarray(begin, end) {
 
     
     var elementShift = TypedArrayElementShift(obj);
-
-    
-    var srcByteOffset = TypedArrayByteOffset(obj);
 
     
     var beginByteOffset = srcByteOffset + (beginIndex << elementShift);
