@@ -26,7 +26,7 @@ class nsAString;
 struct nsMediaFeature;
 
 namespace mozilla {
-class CSSStyleSheet;
+class StyleSheet;
 namespace css {
 class DocumentRule;
 } 
@@ -278,7 +278,7 @@ public:
   bool Matches(nsPresContext* aPresContext,
                  nsMediaQueryResultCacheKey* aKey);
 
-  void SetStyleSheet(mozilla::CSSStyleSheet* aSheet);
+  void SetStyleSheet(mozilla::StyleSheet* aSheet);
   void AppendQuery(nsAutoPtr<nsMediaQuery>& aQuery) {
     
     mArray.AppendElement(aQuery.forget());
@@ -313,6 +313,6 @@ protected:
   
   
   
-  mozilla::CSSStyleSheet* mStyleSheet;
+  mozilla::StyleSheet* mStyleSheet;
 };
 #endif 

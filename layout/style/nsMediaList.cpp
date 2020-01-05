@@ -11,8 +11,8 @@
 #include "nsMediaList.h"
 
 #include "mozAutoDocUpdate.h"
-#include "mozilla/CSSStyleSheet.h"
 #include "mozilla/dom/MediaListBinding.h"
+#include "mozilla/StyleSheet.h"
 #include "nsCSSParser.h"
 
 template <class Numeric>
@@ -556,7 +556,7 @@ nsMediaList::Matches(nsPresContext* aPresContext,
 }
 
 void
-nsMediaList::SetStyleSheet(CSSStyleSheet* aSheet)
+nsMediaList::SetStyleSheet(StyleSheet* aSheet)
 {
   NS_ASSERTION(aSheet == mStyleSheet || !aSheet || !mStyleSheet,
                "multiple style sheets competing for one media list");
