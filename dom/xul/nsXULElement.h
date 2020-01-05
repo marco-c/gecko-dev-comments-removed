@@ -567,6 +567,8 @@ public:
     already_AddRefed<nsIXULTemplateBuilder> GetBuilder();
     already_AddRefed<nsIRDFResource> GetResource(mozilla::ErrorResult& rv);
     nsIControllers* GetControllers(mozilla::ErrorResult& rv);
+    
+    
     already_AddRefed<mozilla::dom::BoxObject> GetBoxObject(mozilla::ErrorResult& rv);
     void Click(mozilla::dom::CallerType aCallerType);
     void DoCommand();
