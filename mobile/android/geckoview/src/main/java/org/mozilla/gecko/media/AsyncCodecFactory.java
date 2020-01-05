@@ -4,11 +4,14 @@
 
 package org.mozilla.gecko.media;
 
+import android.os.Build;
+
 import java.io.IOException;
 
 public final class AsyncCodecFactory {
     public static AsyncCodec create(String name) throws IOException {
-        
-        return new JellyBeanAsyncCodec(name);
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP
+               ? new LollipopAsyncCodec(name)
+               : new JellyBeanAsyncCodec(name);
     }
 }
