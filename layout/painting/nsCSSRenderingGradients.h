@@ -13,6 +13,14 @@
 
 namespace mozilla {
 
+namespace layers {
+class WebRenderDisplayItemLayer;
+} 
+
+namespace wr {
+  class DisplayListBuilder;
+}
+
 
 
 struct ColorStop {
@@ -48,6 +56,10 @@ public:
              const nsRect& aDirtyRect,
              float aOpacity = 1.0);
 
+  void BuildWebRenderDisplayItems(wr::DisplayListBuilder& aBuilder,
+                                  layers::WebRenderDisplayItemLayer* aLayer,
+                                  float aOpacity = 1.0);
+
 private:
   nsCSSGradientRenderer() {}
 
@@ -60,7 +72,7 @@ private:
   nsSize mRepeatSize;
   nsTArray<ColorStop> mStops;
   gfxPoint mLineStart, mLineEnd;
-  double mRadiusX, mRadiusY;   
+  double mRadiusX, mRadiusY;
   bool mForceRepeatToCoverTiles;
   bool mForceRepeatToCoverTilesFlip;
 };
