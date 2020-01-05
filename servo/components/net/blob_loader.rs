@@ -46,6 +46,7 @@ pub fn load_blob(load_data: LoadData, start_chan: LoadConsumer,
         
         status: Some(RawStatus(200, "OK".into())),
         https_state: HttpsState::None,
+        referrer: None
     };
 
     if let Ok(chan) =

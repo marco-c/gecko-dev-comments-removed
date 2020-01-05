@@ -565,6 +565,9 @@ pub struct Metadata {
 
     
     pub https_state: HttpsState,
+
+    
+    pub referrer: Option<Url>,
 }
 
 impl Metadata {
@@ -578,6 +581,7 @@ impl Metadata {
             
             status: Some(RawStatus(200, "OK".into())),
             https_state: HttpsState::None,
+            referrer: None,
         }
     }
 
