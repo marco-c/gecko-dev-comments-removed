@@ -568,6 +568,7 @@ class MOZ_RAII AutoUnlockHelperThreadState : public UnlockGuard<Mutex>
 struct ParseTask
 {
     ParseTaskKind kind;
+    JSContext* cx;
     OwningCompileOptions options;
     
     
@@ -587,7 +588,7 @@ struct ParseTask
     LifoAlloc alloc;
 
     
-    JSObject* parseGlobal;
+    JSObject* exclusiveContextGlobal;
 
     
     JS::OffThreadCompileCallback callback;
@@ -603,24 +604,24 @@ struct ParseTask
 
     
     
-    Vector<frontend::CompileError*, 0, SystemAllocPolicy> errors;
+    Vector<frontend::CompileError*> errors;
     bool overRecursed;
     bool outOfMemory;
 
-    ParseTask(ParseTaskKind kind, JSContext* cx, JSObject* parseGlobal,
-              const char16_t* chars, size_t length,
+    ParseTask(ParseTaskKind kind, JSContext* cx, JSObject* exclusiveContextGlobal,
+              JSContext* initCx, const char16_t* chars, size_t length,
               JS::OffThreadCompileCallback callback, void* callbackData);
-    ParseTask(ParseTaskKind kind, JSContext* cx, JSObject* parseGlobal,
-              JS::TranscodeBuffer& buffer, size_t cursor,
+    ParseTask(ParseTaskKind kind, JSContext* cx, JSObject* exclusiveContextGlobal,
+              JSContext* initCx, JS::TranscodeBuffer& buffer, size_t cursor,
               JS::OffThreadCompileCallback callback, void* callbackData);
     bool init(JSContext* cx, const ReadOnlyCompileOptions& options);
 
     void activate(JSRuntime* rt);
-    virtual void parse(JSContext* cx) = 0;
+    virtual void parse() = 0;
     bool finish(JSContext* cx);
 
     bool runtimeMatches(JSRuntime* rt) {
-        return parseGlobal->runtimeFromAnyThread() == rt;
+        return cx->runtimeMatches(rt);
     }
 
     virtual ~ParseTask();
@@ -630,26 +631,26 @@ struct ParseTask
 
 struct ScriptParseTask : public ParseTask
 {
-    ScriptParseTask(JSContext* cx, JSObject* parseGlobal,
-                    const char16_t* chars, size_t length,
+    ScriptParseTask(JSContext* cx, JSObject* exclusiveContextGlobal,
+                    JSContext* initCx, const char16_t* chars, size_t length,
                     JS::OffThreadCompileCallback callback, void* callbackData);
-    void parse(JSContext* cx) override;
+    void parse() override;
 };
 
 struct ModuleParseTask : public ParseTask
 {
-    ModuleParseTask(JSContext* cx, JSObject* parseGlobal,
-                    const char16_t* chars, size_t length,
+    ModuleParseTask(JSContext* cx, JSObject* exclusiveContextGlobal,
+                    JSContext* initCx, const char16_t* chars, size_t length,
                     JS::OffThreadCompileCallback callback, void* callbackData);
-    void parse(JSContext* cx) override;
+    void parse() override;
 };
 
 struct ScriptDecodeTask : public ParseTask
 {
-    ScriptDecodeTask(JSContext* cx, JSObject* parseGlobal,
-                     JS::TranscodeBuffer& buffer, size_t cursor,
+    ScriptDecodeTask(JSContext* cx, JSObject* exclusiveContextGlobal,
+                     JSContext* initCx, JS::TranscodeBuffer& buffer, size_t cursor,
                      JS::OffThreadCompileCallback callback, void* callbackData);
-    void parse(JSContext* cx) override;
+    void parse() override;
 };
 
 

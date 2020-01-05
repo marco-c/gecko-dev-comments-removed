@@ -51,6 +51,7 @@ JS::Zone::Zone(JSRuntime* rt, ZoneGroup* group)
     initialShapes_(group, this, InitialShapeSet()),
     data(group, nullptr),
     isSystem(group, false),
+    usedByExclusiveThread(false),
 #ifdef DEBUG
     gcLastZoneGroupIndex(group, 0),
 #endif
@@ -104,8 +105,7 @@ Zone::setNeedsIncrementalBarrier(bool needs, ShouldUpdateJit updateJit)
         jitUsingBarriers_ = needs;
     }
 
-    MOZ_ASSERT_IF(needs && isAtomsZone(),
-                  !runtimeFromActiveCooperatingThread()->hasHelperThreadZones());
+    MOZ_ASSERT_IF(needs && isAtomsZone(), !runtimeFromActiveCooperatingThread()->exclusiveThreadsPresent());
     MOZ_ASSERT_IF(needs, canCollect());
     needsIncrementalBarrier_ = needs;
 }
@@ -295,7 +295,7 @@ Zone::gcNumber()
 {
     
     
-    return usedByHelperThread() ? 0 : runtimeFromActiveCooperatingThread()->gc.gcNumber();
+    return usedByExclusiveThread ? 0 : runtimeFromActiveCooperatingThread()->gc.gcNumber();
 }
 
 js::jit::JitZone*
@@ -324,10 +324,10 @@ bool
 Zone::canCollect()
 {
     
-    if (usedByHelperThread())
+    if (usedByExclusiveThread)
         return false;
     JSRuntime* rt = runtimeFromAnyThread();
-    if (isAtomsZone() && rt->hasHelperThreadZones())
+    if (isAtomsZone() && rt->exclusiveThreadsPresent())
         return false;
     return true;
 }

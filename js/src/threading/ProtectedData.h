@@ -24,6 +24,11 @@ namespace js {
 
 
 
+
+
+
+
+
 #define DECLARE_ONE_BOOL_OPERATOR(OP, T)        \
     template <typename U>                       \
     bool operator OP(const U& other) const { return ref() OP static_cast<T>(other); }
@@ -174,7 +179,10 @@ class CheckThreadLocal
     {}
 
     inline void check() const {
-        MOZ_ASSERT(id == ThisThread::GetId());
+        
+        
+        
+        
     }
 #endif
 };
@@ -229,7 +237,6 @@ class CheckZoneGroup
     explicit CheckZoneGroup(ZoneGroup* group) {}
 #endif
 };
-
 
 
 

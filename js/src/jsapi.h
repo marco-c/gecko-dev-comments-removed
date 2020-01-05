@@ -2216,7 +2216,6 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
         traceGlobal_(nullptr),
         zoneSpec_(NewZoneInSystemZoneGroup),
         zonePointer_(nullptr),
-        disableNursery_(false),
         invisibleToDebugger_(false),
         mergeable_(false),
         preserveJitCode_(false),
@@ -2251,14 +2250,6 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     CompartmentCreationOptions& setNewZoneInNewZoneGroup();
     CompartmentCreationOptions& setNewZoneInSystemZoneGroup();
     CompartmentCreationOptions& setNewZoneInExistingZoneGroup(JSObject* obj);
-
-    
-    
-    bool disableNursery() const { return disableNursery_; }
-    CompartmentCreationOptions& setDisableNursery(bool flag) {
-        disableNursery_ = flag;
-        return *this;
-    }
 
     
     
@@ -2329,7 +2320,6 @@ class JS_PUBLIC_API(CompartmentCreationOptions)
     JSTraceOp traceGlobal_;
     ZoneSpecifier zoneSpec_;
     void* zonePointer_; 
-    bool disableNursery_;
     bool invisibleToDebugger_;
     bool mergeable_;
     bool preserveJitCode_;

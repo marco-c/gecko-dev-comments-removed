@@ -443,7 +443,7 @@ JSContext::enterCompartment(
 {
     enterCompartmentDepth_++;
 
-    if (!c->zone()->isAtomsZone())
+    if (!c->zone()->isAtomsZone() && !c->zone()->usedByExclusiveThread)
         enterZoneGroup(c->zone()->group());
 
     c->enter();
@@ -479,7 +479,7 @@ JSContext::leaveCompartment(
     setCompartment(oldCompartment, maybeLock);
     if (startingCompartment) {
         startingCompartment->leave();
-        if (!startingCompartment->zone()->isAtomsZone())
+        if (!startingCompartment->zone()->isAtomsZone() && !startingCompartment->zone()->usedByExclusiveThread)
             leaveZoneGroup(startingCompartment->zone()->group());
     }
 }
@@ -488,6 +488,14 @@ inline void
 JSContext::setCompartment(JSCompartment* comp,
                           const js::AutoLockForExclusiveAccess* maybeLock )
 {
+    
+    MOZ_ASSERT_IF(helperThread() && !runtime_->isAtomsCompartment(comp),
+                  comp->zone()->usedByExclusiveThread);
+
+    
+    MOZ_ASSERT_IF(this == runtime()->activeContext() && comp,
+                  !comp->zone()->usedByExclusiveThread);
+
     
     MOZ_ASSERT_IF(runtime_->isAtomsCompartment(comp), maybeLock != nullptr);
     MOZ_ASSERT_IF(runtime_->isAtomsCompartment(comp) || runtime_->isAtomsCompartment(compartment_),
@@ -503,7 +511,8 @@ JSContext::setCompartment(JSCompartment* comp,
     MOZ_ASSERT_IF(comp, comp->hasBeenEntered());
 
     
-    MOZ_ASSERT_IF(comp && !comp->zone()->isAtomsZone(),
+    
+    MOZ_ASSERT_IF(comp && !comp->zone()->isAtomsZone() && !comp->zone()->usedByExclusiveThread,
                   comp->zone()->group()->ownedByCurrentThread());
 
     compartment_ = comp;

@@ -572,21 +572,21 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
 #endif
 
     
-    js::UnprotectedData<size_t> numHelperThreadZones;
+    js::UnprotectedData<size_t> numExclusiveThreads;
 
     friend class js::AutoLockForExclusiveAccess;
 
   public:
-    void setUsedByHelperThread(JS::Zone* zone);
-    void clearUsedByHelperThread(JS::Zone* zone);
+    void setUsedByExclusiveThread(JS::Zone* zone);
+    void clearUsedByExclusiveThread(JS::Zone* zone);
 
-    bool hasHelperThreadZones() const {
-        return numHelperThreadZones > 0;
+    bool exclusiveThreadsPresent() const {
+        return numExclusiveThreads > 0;
     }
 
 #ifdef DEBUG
     bool currentThreadHasExclusiveAccess() const {
-        return (!hasHelperThreadZones() && activeThreadHasExclusiveAccess) ||
+        return (!exclusiveThreadsPresent() && activeThreadHasExclusiveAccess) ||
             exclusiveAccessLock.ownedByCurrentThread();
     }
 #endif

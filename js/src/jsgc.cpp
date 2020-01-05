@@ -3033,7 +3033,7 @@ GCRuntime::triggerZoneGC(Zone* zone, JS::gcreason::Reason reason)
 {
     
     if (!CurrentThreadCanAccessRuntime(rt)) {
-        MOZ_ASSERT(zone->usedByHelperThread() || zone->isAtomsZone());
+        MOZ_ASSERT(zone->usedByExclusiveThread || zone->isAtomsZone());
         return false;
     }
 
@@ -3050,7 +3050,7 @@ GCRuntime::triggerZoneGC(Zone* zone, JS::gcreason::Reason reason)
 
     if (zone->isAtomsZone()) {
         
-        if (TlsContext.get()->keepAtoms || rt->hasHelperThreadZones()) {
+        if (TlsContext.get()->keepAtoms || rt->exclusiveThreadsPresent()) {
             
 
             fullGCForAtomsRequested_ = true;
@@ -3492,6 +3492,14 @@ Zone::sweepCompartments(FreeOp* fop, bool keepAtleastOne, bool destroyingRuntime
 void
 GCRuntime::sweepZones(FreeOp* fop, ZoneGroup* group, bool destroyingRuntime)
 {
+    MOZ_ASSERT_IF(destroyingRuntime, numActiveZoneIters == 0);
+    MOZ_ASSERT_IF(destroyingRuntime, arenasEmptyAtShutdown);
+
+    if (rt->gc.numActiveZoneIters)
+        return;
+
+    assertBackgroundSweepingFinished();
+
     JSZoneCallback callback = rt->destroyZoneCallback;
 
     Zone** read = group->zones().begin();
@@ -3539,14 +3547,6 @@ GCRuntime::sweepZones(FreeOp* fop, ZoneGroup* group, bool destroyingRuntime)
 void
 GCRuntime::sweepZoneGroups(FreeOp* fop, bool destroyingRuntime)
 {
-    MOZ_ASSERT_IF(destroyingRuntime, numActiveZoneIters == 0);
-    MOZ_ASSERT_IF(destroyingRuntime, arenasEmptyAtShutdown);
-
-    if (rt->gc.numActiveZoneIters)
-        return;
-
-    assertBackgroundSweepingFinished();
-
     ZoneGroup** read = groups.ref().begin();
     ZoneGroup** end = groups.ref().end();
     ZoneGroup** write = read;
@@ -3853,7 +3853,7 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
 
 
 
-    if (!TlsContext.get()->keepAtoms || rt->hasHelperThreadZones()) {
+    if (!TlsContext.get()->keepAtoms || rt->exclusiveThreadsPresent()) {
         Zone* atomsZone = rt->atomsCompartment(lock)->zone();
         if (atomsZone->isGCScheduled()) {
             MOZ_ASSERT(!atomsZone->isCollecting());
@@ -6290,7 +6290,7 @@ GCRuntime::gcCycle(bool nonincrementalByAPI, SliceBudget& budget, JS::gcreason::
 
     
     
-    MOZ_ASSERT_IF(rt->activeGCInAtomsZone(), !rt->hasHelperThreadZones());
+    MOZ_ASSERT_IF(rt->activeGCInAtomsZone(), !rt->exclusiveThreadsPresent());
 
     auto result = budgetIncrementalGC(nonincrementalByAPI, reason, budget, session.lock);
 
@@ -6683,7 +6683,7 @@ ZoneGroup::minorGC(JS::gcreason::Reason reason, gcstats::Phase phase)
 
     {
         AutoLockGC lock(runtime);
-        for (ZonesInGroupIter zone(this); !zone.done(); zone.next())
+        for (ZonesIter zone(runtime, WithAtoms); !zone.done(); zone.next())
             runtime->gc.maybeAllocTriggerZoneGC(zone, lock);
     }
 }
@@ -6790,10 +6790,7 @@ js::NewCompartment(JSContext* cx, JSPrincipals* principals,
         break;
     }
 
-    if (group) {
-        
-        group->enter();
-    } else {
+    if (!group) {
         MOZ_ASSERT(!zone);
         group = cx->new_<ZoneGroup>(rt);
         if (!group)
@@ -6801,11 +6798,7 @@ js::NewCompartment(JSContext* cx, JSPrincipals* principals,
 
         groupHolder.reset(group);
 
-        size_t nurseryBytes =
-            options.creationOptions().disableNursery()
-            ? 0
-            : rt->gc.tunables.gcMaxNurseryBytes();
-        if (!group->init(nurseryBytes)) {
+        if (!group->init(rt->gc.tunables.gcMaxNurseryBytes())) {
             ReportOutOfMemory(cx);
             return nullptr;
         }
@@ -6872,7 +6865,6 @@ js::NewCompartment(JSContext* cx, JSPrincipals* principals,
 
     zoneHolder.forget();
     groupHolder.forget();
-    group->leave();
     return compartment.forget();
 }
 
@@ -7838,16 +7830,9 @@ js::gc::detail::CellIsMarkedGrayIfKnown(const Cell* cell)
     
     
     
-    
-    
-    
-    
-    
-    
     auto tc = &cell->asTenured();
-    auto rt = tc->runtimeFromAnyThread();
-    if (!CurrentThreadCanAccessRuntime(rt) ||
-        !rt->gc.areGrayBitsValid() ||
+    auto rt = tc->runtimeFromActiveCooperatingThread();
+    if (!rt->gc.areGrayBitsValid() ||
         (rt->gc.isIncrementalGCInProgress() && !tc->zone()->wasGCStarted()))
     {
         return false;

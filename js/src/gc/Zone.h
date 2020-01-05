@@ -468,9 +468,7 @@ struct Zone : public JS::shadow::Zone,
 
     js::ZoneGroupData<bool> isSystem;
 
-    bool usedByHelperThread() {
-        return !isAtomsZone() && group()->usedByHelperThread;
-    }
+    mozilla::Atomic<bool> usedByExclusiveThread;
 
 #ifdef DEBUG
     js::ZoneGroupData<unsigned> gcLastZoneGroupIndex;
@@ -602,6 +600,9 @@ namespace js {
 
 
 
+
+
+
 class ZoneGroupsIter
 {
     gc::AutoEnterIteration iterMarker;
@@ -612,18 +613,13 @@ class ZoneGroupsIter
     explicit ZoneGroupsIter(JSRuntime* rt) : iterMarker(&rt->gc) {
         it = rt->gc.groups.ref().begin();
         end = rt->gc.groups.ref().end();
-
-        if (!done() && (*it)->usedByHelperThread)
-            next();
     }
 
     bool done() const { return it == end; }
 
     void next() {
         MOZ_ASSERT(!done());
-        do {
-            it++;
-        } while (!done() && (*it)->usedByHelperThread);
+        it++;
     }
 
     ZoneGroup* get() const {
@@ -707,7 +703,7 @@ class ZonesIter
             if (zone.ref().done()) {
                 zone.reset();
                 group.next();
-            } else {
+            } else if (!zone.ref().get()->usedByExclusiveThread) {
                 break;
             }
         }
