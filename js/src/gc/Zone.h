@@ -166,7 +166,7 @@ struct Zone : public JS::shadow::Zone,
     
     
     template <typename T, typename... Args>
-    js::gc::ZoneCellIter<T> cellIter(Args... args) {
+    js::gc::ZoneCellIter<T> cellIter(Args&&... args) {
         return js::gc::ZoneCellIter<T>(const_cast<Zone*>(this), mozilla::Forward<Args>(args)...);
     }
 

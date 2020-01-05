@@ -589,7 +589,7 @@ class ReadBarriered : public ReadBarrieredBase<T>
     
     
     ReadBarriered(ReadBarriered&& v)
-      : ReadBarrieredBase<T>(mozilla::Forward<ReadBarriered<T>>(v))
+      : ReadBarrieredBase<T>(mozilla::Move(v))
     {
         this->post(JS::GCPolicy<T>::initial(), v.value);
     }
