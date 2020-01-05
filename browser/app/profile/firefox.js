@@ -162,6 +162,7 @@ pref("extensions.update.background.url", "https://versioncheck-bg.addons.mozilla
 pref("extensions.update.interval", 86400);  
                                             
 
+pref("extensions.dss.enabled", false);          
 pref("extensions.dss.switchPending", false);    
                                                 
 
@@ -1524,6 +1525,10 @@ pref("media.webspeech.synth.enabled", true);
 pref("browser.esedbreader.loglevel", "Error");
 
 pref("browser.laterrun.enabled", false);
+
+#ifdef NIGHTLY_BUILD
+pref("dom.ipc.processPrelaunch.enabled", true);
+#endif
 
 #ifdef EARLY_BETA_OR_EARLIER
 pref("browser.migrate.automigrate.enabled", true);
