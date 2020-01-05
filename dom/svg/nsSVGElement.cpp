@@ -1512,23 +1512,12 @@ nsSVGElement::WillChangeValue(nsIAtom* aName)
   
   
   
+  
+  
+  
+  
   nsAttrValue emptyOrOldAttrValue;
   const nsAttrValue* attrValue = GetParsedAttr(aName);
-
-  
-  
-  
-  
-  
-  nsAttrValueOrString attrStringOrValue(attrValue ? *attrValue
-                                                  : emptyOrOldAttrValue);
-  DebugOnly<nsresult> rv =
-    BeforeSetAttr(kNameSpaceID_None, aName, &attrStringOrValue,
-                  kNotifyDocumentObservers);
-  
-  
-  
-  MOZ_ASSERT(NS_SUCCEEDED(rv), "Unexpected failure from BeforeSetAttr");
 
   
   
@@ -1544,6 +1533,21 @@ nsSVGElement::WillChangeValue(nsIAtom* aName)
                   : static_cast<uint8_t>(nsIDOMMutationEvent::ADDITION);
   nsNodeUtils::AttributeWillChange(this, kNameSpaceID_None, aName, modType,
                                    nullptr);
+
+  
+  
+  
+  
+  
+  nsAttrValueOrString attrStringOrValue(attrValue ? *attrValue
+                                                  : emptyOrOldAttrValue);
+  DebugOnly<nsresult> rv =
+    BeforeSetAttr(kNameSpaceID_None, aName, &attrStringOrValue,
+                  kNotifyDocumentObservers);
+  
+  
+  
+  MOZ_ASSERT(NS_SUCCEEDED(rv), "Unexpected failure from BeforeSetAttr");
 
   return emptyOrOldAttrValue;
 }
