@@ -1106,7 +1106,11 @@ toolbar[brighttext] #close-button {
   #minimize-button,
   #restore-button,
   #close-button {
-    list-style-image: url("chrome://global/skin/icons/windowControls.png");
+    
+    list-style-image: url("chrome://global/skin/icons/windowControls.png") !important;
+    
+
+    background-color: transparent !important;
     padding: 0;
   }
 
