@@ -273,7 +273,7 @@ nsUrlClassifierDBServiceWorker::DoLookup(const nsACString& spec,
   nsAutoPtr<LookupResultArray> completes(new LookupResultArray());
 
   for (uint32_t i = 0; i < results->Length(); i++) {
-    if (!mMissCache.Contains(results->ElementAt(i).hash.prefix)) {
+    if (!mMissCache.Contains(results->ElementAt(i).hash.fixedLengthPrefix)) {
       completes->AppendElement(results->ElementAt(i));
     }
   }
@@ -283,7 +283,7 @@ nsUrlClassifierDBServiceWorker::DoLookup(const nsACString& spec,
       
       
       
-      AddNoise(completes->ElementAt(i).hash.prefix,
+      AddNoise(completes->ElementAt(i).hash.fixedLengthPrefix,
                completes->ElementAt(i).mTableName,
                mGethashNoise, *completes);
       break;
@@ -343,9 +343,9 @@ nsUrlClassifierDBServiceWorker::AddNoise(const Prefix aPrefix,
     if (!result)
       return NS_ERROR_OUT_OF_MEMORY;
 
-    result->hash.prefix = noiseEntries[i];
+    result->hash.fixedLengthPrefix = noiseEntries[i];
     result->mNoise = true;
-
+    result->mPartialHashLength = PREFIX_SIZE; 
     result->mTableName.Assign(tableName);
   }
 
@@ -964,9 +964,20 @@ nsUrlClassifierLookupCallback::LookupComplete(nsTArray<LookupResult>* results)
            StringBeginsWith(result.mTableName, NS_LITERAL_CSTRING("test-"))) &&
           mDBService->GetCompleter(result.mTableName,
                                    getter_AddRefs(completer))) {
+
+        
+        
         nsAutoCString partialHash;
-        partialHash.Assign(reinterpret_cast<char*>(&result.hash.prefix),
-                           PREFIX_SIZE);
+        if (StringEndsWith(result.mTableName, NS_LITERAL_CSTRING("-proto"))) {
+          
+          partialHash = result.PartialHash();
+        } else {
+          
+          
+          
+          partialHash.Assign(reinterpret_cast<char*>(&result.hash.fixedLengthPrefix),
+                             PREFIX_SIZE);
+        }
 
         nsresult rv = completer->Complete(partialHash,
                                           gethashUrl,
@@ -1081,17 +1092,17 @@ nsUrlClassifierLookupCallback::HandleResults()
     
     
     if (result.mNoise) {
-      LOG(("Skipping result %X from table %s (noise)",
-           result.hash.prefix.ToUint32(), result.mTableName.get()));
+      LOG(("Skipping result %s from table %s (noise)",
+           result.PartialHashHex().get(), result.mTableName.get()));
       continue;
     } else if (!result.Confirmed()) {
       LOG(("Skipping result %X from table %s (not confirmed)",
-           result.hash.prefix.ToUint32(), result.mTableName.get()));
+           result.PartialHashHex().get(), result.mTableName.get()));
       continue;
     }
 
     LOG(("Confirmed result %X from table %s",
-         result.hash.prefix.ToUint32(), result.mTableName.get()));
+         result.PartialHashHex().get(), result.mTableName.get()));
 
     if (tables.IndexOf(result.mTableName) == nsTArray<nsCString>::NoIndex) {
       tables.AppendElement(result.mTableName);
@@ -1107,7 +1118,7 @@ nsUrlClassifierLookupCallback::HandleResults()
     for (uint32_t i = 0; i < mResults->Length(); i++) {
       LookupResult &result = mResults->ElementAt(i);
       if (!result.Confirmed() && !result.mNoise) {
-        cacheMisses->AppendElement(result.PrefixHash());
+        cacheMisses->AppendElement(result.hash.fixedLengthPrefix);
       }
     }
     
