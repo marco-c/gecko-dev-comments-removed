@@ -9670,49 +9670,41 @@ nsContentUtils::AttemptLargeAllocationLoad(nsIHttpChannel* aChannel)
     return false;
   }
 
+  nsIDocShell* docShell = outer->GetDocShell();
   nsIDocument* doc = outer->GetExtantDoc();
 
   
   
-  if (NS_WARN_IF(!XRE_IsContentProcess())) {
-    if (doc) {
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      NS_LITERAL_CSTRING("DOM"),
-                                      doc,
-                                      nsContentUtils::eDOM_PROPERTIES,
-                                      "LargeAllocationNonE10S");
-    }
-    return false;
+  const char* errorName = nullptr;
+  switch (docShell->GetProcessLockReason()) {
+    case nsIDocShell::PROCESS_LOCK_NON_CONTENT:
+      errorName = "LargeAllocationNonE10S";
+      break;
+    case nsIDocShell::PROCESS_LOCK_IFRAME:
+      errorName = "LargeAllocationIFrame";
+      break;
+    case nsIDocShell::PROCESS_LOCK_RELATED_CONTEXTS:
+      errorName = "LargeAllocationRelatedBrowsingContexts";
+      break;
+    case nsIDocShell::PROCESS_LOCK_NONE:
+      
+      break;
+    default:
+      MOZ_ASSERT(false, "Should be unreachable!");
+      return false;
   }
 
-  
-  if (NS_WARN_IF(outer->GetScriptableParentOrNull())) {
+  if (errorName) {
     if (doc) {
       nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
                                       NS_LITERAL_CSTRING("DOM"),
                                       doc,
                                       nsContentUtils::eDOM_PROPERTIES,
-                                      "LargeAllocationInIFrame");
+                                      errorName);
     }
-    return false;
-  }
 
-  
-  
-  TabGroup* tabGroup = nsGlobalWindow::Cast(outer)->TabGroup();
-  nsTArray<nsPIDOMWindowOuter*> toplevelWindows = tabGroup->GetTopLevelWindows();
-  if (NS_WARN_IF(toplevelWindows.Length() > 1)) {
-    if (doc) {
-      nsContentUtils::ReportToConsole(nsIScriptError::warningFlag,
-                                      NS_LITERAL_CSTRING("DOM"),
-                                      doc,
-                                      nsContentUtils::eDOM_PROPERTIES,
-                                      "LargeAllocationRelatedBrowsingContexts");
-    }
     return false;
   }
-  MOZ_ASSERT(toplevelWindows.Length() == 1);
-  MOZ_ASSERT(toplevelWindows[0] == outer);
 
   
   
@@ -9751,7 +9743,7 @@ nsContentUtils::AttemptLargeAllocationLoad(nsIHttpChannel* aChannel)
   
   
   nsCOMPtr<nsIDocShellTreeOwner> treeOwner;
-  outer->GetDocShell()->GetTreeOwner(getter_AddRefs(treeOwner));
+  docShell->GetTreeOwner(getter_AddRefs(treeOwner));
   NS_ENSURE_TRUE(treeOwner, false);
 
   nsCOMPtr<nsIWebBrowserChrome3> wbc3 = do_GetInterface(treeOwner);
@@ -9768,7 +9760,7 @@ nsContentUtils::AttemptLargeAllocationLoad(nsIHttpChannel* aChannel)
 
   
   bool reloadSucceeded = false;
-  rv = wbc3->ReloadInFreshProcess(outer->GetDocShell(), uri, referrer, &reloadSucceeded);
+  rv = wbc3->ReloadInFreshProcess(docShell, uri, referrer, &reloadSucceeded);
   NS_ENSURE_SUCCESS(rv, false);
 
   return reloadSucceeded;
