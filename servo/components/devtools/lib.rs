@@ -419,7 +419,7 @@ fn run_server(sender: Sender<DevtoolsControlMsg>,
                         worker_id))) =>
                 handle_console_message(actors.clone(), id, worker_id, console_message,
                                        &actor_pipelines, &actor_workers),
-            Ok(DevtoolsControlMsg::FromChrome(ChromeToDevtoolsControlMsg::NetworkEventMessage(
+            Ok(DevtoolsControlMsg::FromChrome(ChromeToDevtoolsControlMsg::NetworkEvent(
                         request_id, network_event))) => {
                 
                 let mut connections = Vec::<TcpStream>::new();
