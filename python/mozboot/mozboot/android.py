@@ -258,7 +258,7 @@ def suggest_mozconfig(sdk_path=None, ndk_path=None, artifact_mode=False):
         print(MOBILE_ANDROID_MOZCONFIG_TEMPLATE % (sdk_path, ndk_path))
 
 
-def android_ndk_url(os_name, ver='r11b'):
+def android_ndk_url(os_name, ver='r11c'):
     
     base_url = 'https://dl.google.com/android/repository/android-ndk'
 
