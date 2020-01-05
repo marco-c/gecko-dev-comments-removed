@@ -15,7 +15,7 @@ module.exports = createClass({
 
   propTypes: {
     viewport: PropTypes.shape(Types.viewport).isRequired,
-    onChangeDevice: PropTypes.func.isRequired,
+    onRemoveDevice: PropTypes.func.isRequired,
     onResizeViewport: PropTypes.func.isRequired,
   },
 
@@ -114,7 +114,10 @@ module.exports = createClass({
     }
 
     
-    this.props.onChangeDevice({ name: "" });
+    
+    if (this.props.viewport.device) {
+      this.props.onRemoveDevice();
+    }
     this.props.onResizeViewport(parseInt(this.state.width, 10),
                                 parseInt(this.state.height, 10));
   },
