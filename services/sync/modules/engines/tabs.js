@@ -7,7 +7,7 @@ this.EXPORTED_SYMBOLS = ["TabEngine", "TabSetRecord"];
 var {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 const TABS_TTL = 1814400;          
-const TAB_ENTRIES_LIMIT = 25;      
+const TAB_ENTRIES_LIMIT = 5;      
 
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
@@ -211,9 +211,12 @@ TabStore.prototype = {
 
     
     
+    
     let size = JSON.stringify(tabs).length;
     let origLength = tabs.length;
-    const MAX_TAB_SIZE = 20000;
+    const MAX_TAB_SIZE = (this.engine.service.serverConfiguration ?
+                          this.engine.service.serverConfiguration.max_record_payload_bytes :
+                          28672) / 4 * 3 - 1500;
     if (size > MAX_TAB_SIZE) {
       
       let cutoff = Math.ceil(tabs.length * MAX_TAB_SIZE / size);
