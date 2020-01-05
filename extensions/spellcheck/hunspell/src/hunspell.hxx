@@ -70,29 +70,26 @@
 
 
 
-#ifndef MYSPELLMGR_HXX_
-#define MYSPELLMGR_HXX_
 
 #include "hunvisapi.h"
-#include "w_char.hxx"
-#include <string>
+
+#include "hashmgr.hxx"
+#include "affixmgr.hxx"
+#include "suggestmgr.hxx"
+#include "langnum.hxx"
 #include <vector>
 
 #define SPELL_XML "<?xml?>"
 
+#define MAXDIC 20
 #define MAXSUGGESTION 15
 #define MAXSHARPS 5
-#define MAXWORDLEN 176
 
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1)
-#  define H_DEPRECATED __attribute__((__deprecated__))
-#elif defined(_MSC_VER) && (_MSC_VER >= 1300)
-#  define H_DEPRECATED __declspec(deprecated)
-#else
-#  define H_DEPRECATED
-#endif
+#define HUNSPELL_OK (1 << 0)
+#define HUNSPELL_OK_WARN (1 << 1)
 
-class HunspellImpl;
+#ifndef _MYSPELLMGR_HXX_
+#define _MYSPELLMGR_HXX_
 
 class LIBHUNSPELL_DLL_EXPORTED Hunspell {
  private:
@@ -100,10 +97,21 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
   Hunspell& operator=(const Hunspell&);
 
  private:
-  HunspellImpl* m_Impl;
+  AffixMgr* pAMgr;
+  HashMgr* pHMgr[MAXDIC];
+  int maxdic;
+  SuggestMgr* pSMgr;
+  char* affixpath;
+  char* encoding;
+  struct cs_info* csconv;
+  int langnum;
+  int utf8;
+  int complexprefixes;
+  char** wordbreak;
 
  public:
   
+
 
 
 
@@ -126,18 +134,8 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
 
 
-  bool spell(const std::string& word, int* info = NULL, std::string* root = NULL);
-  H_DEPRECATED int spell(const char* word, int* info = NULL, char** root = NULL);
 
-  
-
-
-
-
-
-
-  std::vector<std::string> suggest(const std::string& word);
-  H_DEPRECATED int suggest(char*** slst, const char* word);
+  int spell(const char* word, int* info = NULL, char** root = NULL);
 
   
 
@@ -147,37 +145,7 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
 
 
-  std::vector<std::string> suffix_suggest(const std::string& root_word);
-  H_DEPRECATED int suffix_suggest(char*** slst, const char* root_word);
-
-  
-  H_DEPRECATED void free_list(char*** slst, int n);
-
-  const std::string& get_dict_encoding() const;
-  H_DEPRECATED const char* get_dic_encoding() const;
-
-  
-
-  
-  std::vector<std::string> analyze(const std::string& word);
-  H_DEPRECATED int analyze(char*** slst, const char* word);
-
-  
-  std::vector<std::string> stem(const std::string& word);
-  H_DEPRECATED int stem(char*** slst, const char* word);
-
-  
-
-
-
-
-
-  std::vector<std::string> stem(const std::vector<std::string>& morph);
-  H_DEPRECATED int stem(char*** slst, char** morph, int n);
-
-  
-  std::vector<std::string> generate(const std::string& word, const std::string& word2);
-  H_DEPRECATED int generate(char*** slst, const char* word, const char* word2);
+  int suggest(char*** slst, const char* word);
 
   
 
@@ -186,38 +154,105 @@ class LIBHUNSPELL_DLL_EXPORTED Hunspell {
 
 
 
-  std::vector<std::string> generate(const std::string& word, const std::vector<std::string>& pl);
-  H_DEPRECATED int generate(char*** slst, const char* word, char** desc, int n);
+
+  int suffix_suggest(char*** slst, const char* root_word);
+
+  
+
+  void free_list(char*** slst, int n);
+
+  char* get_dic_encoding();
 
   
 
   
 
-  int add(const std::string& word);
+  int analyze(char*** slst, const char* word);
+
+  
+
+  int stem(char*** slst, const char* word);
 
   
 
 
 
 
-  int add_with_affix(const std::string& word, const std::string& example);
+
+
+  int stem(char*** slst, char** morph, int n);
 
   
 
-  int remove(const std::string& word);
+  int generate(char*** slst, const char* word, const char* word2);
+
+  
+
+
+
+
+
+
+
+  int generate(char*** slst, const char* word, char** desc, int n);
 
   
 
   
-  const std::string& get_wordchars() const;
-  const std::vector<w_char>& get_wordchars_utf16() const;
 
-  const std::string& get_version() const;
+  int add(const char* word);
+
+  
+
+
+
+
+  int add_with_affix(const char* word, const char* example);
+
+  
+
+  int remove(const char* word);
+
+  
+
+  
+  const char* get_wordchars();
+  const std::vector<w_char>& get_wordchars_utf16();
+
+  struct cs_info* get_csconv();
+  const char* get_version();
 
   int get_langnum() const;
 
   
-  bool input_conv(const std::string& word, std::string& dest);
+  int input_conv(const char* word, char* dest, size_t destsize);
+
+ private:
+  void cleanword(std::string& dest, const char*, int* pcaptype, int* pabbrev);
+  size_t cleanword2(std::string& dest,
+                    std::vector<w_char>& dest_u,
+                    const char*,
+                    int* w_len,
+                    int* pcaptype,
+                    size_t* pabbrev);
+  void mkinitcap(std::string& u8);
+  int mkinitcap2(std::string& u8, std::vector<w_char>& u16);
+  int mkinitsmall2(std::string& u8, std::vector<w_char>& u16);
+  void mkallcap(std::string& u8);
+  int mkallsmall2(std::string& u8, std::vector<w_char>& u16);
+  struct hentry* checkword(const char*, int* info, char** root);
+  std::string sharps_u8_l1(const std::string& source);
+  hentry*
+  spellsharps(std::string& base, size_t start_pos, int, int, int* info, char** root);
+  int is_keepcase(const hentry* rv);
+  int insert_sug(char*** slst, const char* word, int ns);
+  void cat_result(std::string& result, char* st);
+  char* stem_description(const char* desc);
+  int spellml(char*** slst, const char* word);
+  std::string get_xml_par(const char* par);
+  const char* get_xml_pos(const char* s, const char* attr);
+  int get_xml_list(char*** slst, const char* list, const char* tag);
+  int check_xml_par(const char* q, const char* attr, const char* value);
 };
 
 #endif

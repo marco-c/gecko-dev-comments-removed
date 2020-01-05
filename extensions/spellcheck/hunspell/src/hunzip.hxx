@@ -41,14 +41,12 @@
 
 
 
-#ifndef HUNZIP_HXX_
-#define HUNZIP_HXX_
+#ifndef _HUNZIP_HXX_
+#define _HUNZIP_HXX_
 
 #include "hunvisapi.h"
 
 #include <stdio.h>
-#include <fstream>
-#include <vector>
 
 #define BUFSIZE 65536
 #define HZIP_EXTENSION ".hz"
@@ -70,9 +68,9 @@ class LIBHUNSPELL_DLL_EXPORTED Hunzip {
 
  protected:
   char* filename;
-  std::ifstream fin;
+  FILE* fin;
   int bufsiz, lastbit, inc, inbits, outc;
-  std::vector<bit> dec;     
+  struct bit* dec;          
   char in[BUFSIZE];         
   char out[BUFSIZE + 1];    
   char line[BUFSIZE + 50];  
@@ -83,8 +81,7 @@ class LIBHUNSPELL_DLL_EXPORTED Hunzip {
  public:
   Hunzip(const char* filename, const char* key = NULL);
   ~Hunzip();
-  bool is_open() { return fin.is_open(); }
-  bool getline(std::string& dest);
+  const char* getline();
 };
 
 #endif

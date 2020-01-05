@@ -99,7 +99,7 @@ public:
   void LoadDictionaryList(bool aNotifyChildProcesses);
 
   
-  nsresult ConvertCharset(const char16_t* aStr, std::string* aDst);
+  nsresult ConvertCharset(const char16_t* aStr, char ** aDst);
 
   NS_DECL_NSIMEMORYREPORTER
 

@@ -38,8 +38,8 @@
 
 
 
-#ifndef MYSPELLMGR_H_
-#define MYSPELLMGR_H_
+#ifndef _MYSPELLMGR_H_
+#define _MYSPELLMGR_H_
 
 #include "hunvisapi.h"
 
@@ -68,7 +68,7 @@ LIBHUNSPELL_DLL_EXPORTED int Hunspell_add_dic(Hunhandle* pHunspell,
 
 LIBHUNSPELL_DLL_EXPORTED int Hunspell_spell(Hunhandle* pHunspell, const char*);
 
-LIBHUNSPELL_DLL_EXPORTED const char* Hunspell_get_dic_encoding(Hunhandle* pHunspell);
+LIBHUNSPELL_DLL_EXPORTED char* Hunspell_get_dic_encoding(Hunhandle* pHunspell);
 
 
 

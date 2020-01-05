@@ -38,10 +38,8 @@
 
 
 
-#ifndef W_CHAR_HXX_
-#define W_CHAR_HXX_
-
-#include <string>
+#ifndef __WCHARHXX__
+#define __WCHARHXX__
 
 #ifndef GCC
 struct w_char {
@@ -68,8 +66,10 @@ struct __attribute__((packed)) w_char {
 
 
 struct replentry {
-  std::string pattern;
-  std::string outstrings[4]; 
+  char* pattern;
+  char* pattern2;
+  bool start;
+  bool end;
 };
 
 #endif
