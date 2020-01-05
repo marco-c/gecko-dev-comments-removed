@@ -86,14 +86,19 @@ nsSimplePageSequenceFrame::SetDesiredSize(ReflowOutput& aDesiredSize,
                                           nscoord aWidth,
                                           nscoord aHeight)
 {
-    
-    
-    
-    
-    aDesiredSize.Width() = std::max(aReflowInput.AvailableWidth(),
-                                nscoord(aWidth * PresContext()->GetPrintPreviewScale()));
-    aDesiredSize.Height() = std::max(aReflowInput.ComputedHeight(),
-                                 nscoord(aHeight * PresContext()->GetPrintPreviewScale()));
+  
+  
+  
+  
+  WritingMode wm = aReflowInput.GetWritingMode();
+  nscoord scaledWidth = aWidth * PresContext()->GetPrintPreviewScale();
+  nscoord scaledHeight = aHeight * PresContext()->GetPrintPreviewScale();
+
+  nscoord scaledISize = (wm.IsVertical() ? scaledHeight : scaledWidth);
+  nscoord scaledBSize = (wm.IsVertical() ? scaledWidth : scaledHeight);
+
+  aDesiredSize.ISize(wm) = std::max(scaledISize, aReflowInput.AvailableISize());
+  aDesiredSize.BSize(wm) = std::max(scaledBSize, aReflowInput.ComputedBSize());
 }
 
 
@@ -133,11 +138,16 @@ nsSimplePageSequenceFrame::ComputeCenteringMargin(
   return NSToCoordRound(scaledExtraSpace * 0.5 / ppScale);
 }
 
+
+
+
+
+
 void
-nsSimplePageSequenceFrame::Reflow(nsPresContext*          aPresContext,
-                                  ReflowOutput&     aDesiredSize,
+nsSimplePageSequenceFrame::Reflow(nsPresContext*     aPresContext,
+                                  ReflowOutput&      aDesiredSize,
                                   const ReflowInput& aReflowInput,
-                                  nsReflowStatus&          aStatus)
+                                  nsReflowStatus&    aStatus)
 {
   MarkInReflow();
   NS_PRECONDITION(aPresContext->IsRootPaginatedDocument(),
@@ -163,7 +173,7 @@ nsSimplePageSequenceFrame::Reflow(nsPresContext*          aPresContext,
         nsMargin pageCSSMargin = child->GetUsedMargin();
         nscoord centeringMargin =
           ComputeCenteringMargin(aReflowInput.ComputedWidth(),
-                                 child->GetRect().width,
+                                 child->GetRect().Width(),
                                  pageCSSMargin);
         nscoord newX = pageCSSMargin.left + centeringMargin;
 
@@ -242,13 +252,15 @@ nsSimplePageSequenceFrame::Reflow(nsPresContext*          aPresContext,
 
     
     ReflowInput kidReflowInput(aPresContext, aReflowInput, kidFrame,
-                                     LogicalSize(kidFrame->GetWritingMode(),
+                               LogicalSize(kidFrame->GetWritingMode(),
                                                  pageSize));
     nsReflowStatus  status;
 
-    kidReflowInput.SetComputedWidth(kidReflowInput.AvailableWidth());
+    kidReflowInput.SetComputedISize(kidReflowInput.AvailableISize());
     
-    PR_PL(("AV W: %d   H: %d\n", kidReflowInput.AvailableWidth(), kidReflowInput.AvailableHeight()));
+    PR_PL(("AV ISize: %d   BSize: %d\n",
+           kidReflowInput.AvailableISize(),
+           kidReflowInput.AvailableBSize()));
 
     nsMargin pageCSSMargin = kidReflowInput.ComputedPhysicalMargin();
     y += pageCSSMargin.top;
