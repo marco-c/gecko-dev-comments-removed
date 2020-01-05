@@ -921,22 +921,22 @@ nsContainerFrame::DoInlineIntrinsicISize(nsRenderingContext *aRenderingContext,
 
 LogicalSize
 nsContainerFrame::ComputeAutoSize(nsRenderingContext* aRenderingContext,
-                                  WritingMode aWM,
-                                  const LogicalSize& aCBSize,
-                                  nscoord aAvailableISize,
-                                  const LogicalSize& aMargin,
-                                  const LogicalSize& aBorder,
-                                  const LogicalSize& aPadding,
-                                  bool aShrinkWrap)
+                                  WritingMode         aWM,
+                                  const LogicalSize&  aCBSize,
+                                  nscoord             aAvailableISize,
+                                  const LogicalSize&  aMargin,
+                                  const LogicalSize&  aBorder,
+                                  const LogicalSize&  aPadding,
+                                  ComputeSizeFlags    aFlags)
 {
   LogicalSize result(aWM, 0xdeadbeef, NS_UNCONSTRAINEDSIZE);
   nscoord availBased = aAvailableISize - aMargin.ISize(aWM) -
                        aBorder.ISize(aWM) - aPadding.ISize(aWM);
   
-  if (aShrinkWrap || IsFrameOfType(eReplaced)) {
+  if ((aFlags & ComputeSizeFlags::eShrinkWrap) || IsFrameOfType(eReplaced)) {
     
     if (StylePosition()->ISize(aWM).GetUnit() == eStyleUnit_Auto) {
-      result.ISize(aWM) = ShrinkWidthToFit(aRenderingContext, availBased);
+      result.ISize(aWM) = ShrinkWidthToFit(aRenderingContext, availBased, aFlags);
     }
   } else {
     result.ISize(aWM) = availBased;

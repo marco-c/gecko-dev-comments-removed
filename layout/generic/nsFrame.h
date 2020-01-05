@@ -266,14 +266,14 @@ public:
   virtual nsSize GetIntrinsicRatio() override;
 
   virtual mozilla::LogicalSize
-  ComputeSize(nsRenderingContext *aRenderingContext,
-              mozilla::WritingMode aWritingMode,
+  ComputeSize(nsRenderingContext*         aRenderingContext,
+              mozilla::WritingMode        aWM,
               const mozilla::LogicalSize& aCBSize,
-              nscoord aAvailableISize,
+              nscoord                     aAvailableISize,
               const mozilla::LogicalSize& aMargin,
               const mozilla::LogicalSize& aBorder,
               const mozilla::LogicalSize& aPadding,
-              ComputeSizeFlags aFlags) override;
+              ComputeSizeFlags            aFlags) override;
 
   
   
@@ -295,21 +295,22 @@ public:
 
 
   virtual mozilla::LogicalSize
-  ComputeAutoSize(nsRenderingContext *aRenderingContext,
-                  mozilla::WritingMode aWritingMode,
+  ComputeAutoSize(nsRenderingContext*         aRenderingContext,
+                  mozilla::WritingMode        aWM,
                   const mozilla::LogicalSize& aCBSize,
-                  nscoord aAvailableISize,
+                  nscoord                     aAvailableISize,
                   const mozilla::LogicalSize& aMargin,
                   const mozilla::LogicalSize& aBorder,
                   const mozilla::LogicalSize& aPadding,
-                  bool aShrinkWrap);
+                  ComputeSizeFlags            aFlags);
 
   
 
 
 
-  nscoord ShrinkWidthToFit(nsRenderingContext *aRenderingContext,
-                           nscoord aWidthInCB);
+  nscoord ShrinkWidthToFit(nsRenderingContext* aRenderingContext,
+                           nscoord             aISizeInCB,
+                           ComputeSizeFlags    aFlags);
 
   
 
