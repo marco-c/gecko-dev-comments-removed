@@ -192,9 +192,6 @@ int main(int argc, char* argv[])
   DllBlocklist_Initialize();
 #endif
 
-  
-  XPCOMGlueEnablePreload();
-
   rv = XPCOMGlueStartup(exePath);
   if (NS_FAILED(rv)) {
     Output("Couldn't load XPCOM.\n");

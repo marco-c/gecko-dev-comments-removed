@@ -355,9 +355,6 @@ InitXPCOMGlue(const char *argv0, nsIFile **xreDirectory)
     return NS_ERROR_FAILURE;
   }
 
-  
-  XPCOMGlueEnablePreload();
-
   rv = XPCOMGlueStartup(exePath);
   if (NS_FAILED(rv)) {
     Output("Couldn't load XPCOM.\n");
