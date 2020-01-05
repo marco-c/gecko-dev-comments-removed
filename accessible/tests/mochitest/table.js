@@ -417,7 +417,6 @@ function testTableSelection(aIdentifier, aCellsArray, aMsg)
   var selRows = new Array();
 
   
-  var selrowCount = 0;
   for (var rowIdx = 0; rowIdx < rowCount; rowIdx++) {
     var isRowSelected = true;
     for (var colIdx = 0; colIdx < colsCount; colIdx++) {
@@ -539,7 +538,6 @@ function testUnselectTableColumn(aIdentifier, aColIdx, aCellsArray)
 
   var rowCount = aCellsArray.length;
   for (var rowIdx = 0; rowIdx < rowCount; rowIdx++) {
-    var cellState = aCellsArray[rowIdx][aColIdx];
     
     var [origRowIdx, origColIdx] =
       getOrigRowAndColumn(aCellsArray, rowIdx, aColIdx);

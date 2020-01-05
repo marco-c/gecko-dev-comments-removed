@@ -2,23 +2,30 @@
 
 module.exports = {
   "extends": [
-    "../.eslintrc.js"
+    "plugin:mozilla/recommended"
   ],
-  "globals": {
-    "Cc": true,
-    "Ci": true,
-    "Components": true,
-    "console": true,
-    "Cu": true,
-    "dump": true,
-    "Services": true,
-    "XPCOMUtils": true
-  },
   "rules": {
     
     "complexity": ["error", 42],
 
     
-    "max-nested-callbacks": ["error", 10],
+    
+    
+    "brace-style": "off",
+    "consistent-return": "off",
+    "func-call-spacing": "off",
+    "quotes": "off",
+    "object-shorthand": "off",
+    "space-before-function-paren": "off",
+    "space-infix-ops": "off",
+    "key-spacing": "off",
+    "keyword-spacing": "off",
+    "no-else-return": "off",
+    "no-multi-spaces": "off",
+    "no-trailing-spaces": "off",
+    "no-unexpected-multiline": "off",
+    "no-unsafe-finally": "off",
+    "no-useless-call": "off",
+    "spaced-comment": "off",
   }
 };
