@@ -523,7 +523,7 @@ impl ToGfxMatrix for ComputedMatrix {
 
 
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Serialize)]
 pub struct SizeConstraint {
     min_size: Au,
     max_size: Option<Au>,

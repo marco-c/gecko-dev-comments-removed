@@ -35,7 +35,7 @@ use style::values::computed::{LengthOrPercentageOrAutoOrContent, LengthOrPercent
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 enum AxisSize {
     Definite(Au),
     MinMax(SizeConstraint),
@@ -102,7 +102,7 @@ fn from_flex_basis(flex_basis: LengthOrPercentageOrAutoOrContent,
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 struct FlexItem {
     
     pub main_size: Au,
@@ -240,7 +240,7 @@ impl FlexItem {
 
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 struct FlexLine {
     
     pub range: Range<usize>,
@@ -330,7 +330,7 @@ impl FlexLine {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct FlexFlow {
     
     block_flow: BlockFlow,
@@ -496,7 +496,7 @@ impl FlexFlow {
                                       inline_end_content_edge: Au,
                                       content_inline_size: Au) {
         let _scope = layout_debug_scope!("flex::block_mode_assign_inline_sizes");
-        debug!("block_mode_assign_inline_sizes");
+        debug!("flex::block_mode_assign_inline_sizes");
 
         
         let containing_block_mode = self.block_flow.base.writing_mode;
