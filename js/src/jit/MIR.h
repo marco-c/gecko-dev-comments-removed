@@ -3105,6 +3105,10 @@ class MTest
     
     
     void cacheOperandMightEmulateUndefined(CompilerConstraintList* constraints);
+    MDefinition* foldsDoubleNegation(TempAllocator& alloc);
+    MDefinition* foldsConstant(TempAllocator& alloc);
+    MDefinition* foldsTypes(TempAllocator& alloc);
+    MDefinition* foldsNeedlessControlFlow(TempAllocator& alloc);
     MDefinition* foldsTo(TempAllocator& alloc) override;
     void filtersUndefinedOrNull(bool trueBranch, MDefinition** subject, bool* filtersUndefined,
                                 bool* filtersNull);
