@@ -1039,6 +1039,13 @@ ArrayBufferObject::create(JSContext* cx, uint32_t nbytes, BufferContents content
 
     
     
+    if (nbytes > INT32_MAX) {
+        JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_BAD_ARRAY_LENGTH);
+        return nullptr;
+    }
+
+    
+    
     
     
     size_t reservedSlots = JSCLASS_RESERVED_SLOTS(&class_);
