@@ -389,17 +389,6 @@ private:
 
   
   
-  
-  void ConstructMediaTracks();
-
-  
-  
-  
-  void RemoveMediaTracks();
-
-
-  
-  
   void PlaybackEnded();
 
   void OnSeekRejected();
@@ -684,11 +673,6 @@ protected:
   
   
   bool mMinimizePreroll;
-
-  
-  
-  
-  bool mMediaTracksConstructed;
 
   
   bool mFiredMetadataLoaded;

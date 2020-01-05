@@ -1747,6 +1747,10 @@ private:
   
   bool mHasSuspendTaint;
 
+  
+  
+  bool mMediaTracksConstructed;
+
   Visibility mVisibilityState;
 
   UniquePtr<ErrorSink> mErrorSink;
