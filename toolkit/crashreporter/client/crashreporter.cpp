@@ -13,9 +13,10 @@
 #include <fstream>
 #include <sstream>
 #include <memory>
-#include <time.h>
-#include <stdlib.h>
-#include <string.h>
+#include <ctime>
+#include <cstdlib>
+#include <cstring>
+#include <string>
 
 using std::string;
 using std::istream;
@@ -198,7 +199,7 @@ static string GetDumpLocalID()
 
 
 
-static void AppendStackTracesToEventFile(const string& aStackTraces)
+static void AppendToEventFile(const string& aKey, const string& aValue)
 {
   if (gEventsPath.empty()) {
     
@@ -210,7 +211,7 @@ static void AppendStackTracesToEventFile(const string& aStackTraces)
   ofstream* f = UIOpenWrite(path.c_str(), true);
 
   if (f->is_open()) {
-    *f << "StackTraces=" << aStackTraces;
+    *f << aKey << "=" << aValue << std::endl;
     f->close();
   }
 
@@ -265,8 +266,9 @@ static void OpenLogFile()
 static bool ReadConfig()
 {
   string iniPath;
-  if (!UIGetIniPath(iniPath))
+  if (!UIGetIniPath(iniPath)) {
     return false;
+  }
 
   if (!ReadStringsFromFile(iniPath, gStrings, true))
     return false;
@@ -513,20 +515,16 @@ bool CheckEndOfLifed(string version)
   return UIFileExists(reportPath);
 }
 
-#ifndef RELEASE_OR_BETA
-
 static string
-GetMinidumpAnalyzerPath()
+GetProgramPath(const string& exename)
 {
   string path = gArgv[0];
   size_t pos = path.rfind(UI_CRASH_REPORTER_FILENAME BIN_SUFFIX);
   path.erase(pos);
-  path.append(UI_MINIDUMP_ANALYZER_FILENAME BIN_SUFFIX);
+  path.append(exename + BIN_SUFFIX);
 
   return path;
 }
-
-#endif
 
 int main(int argc, char** argv)
 {
@@ -552,7 +550,9 @@ int main(int argc, char** argv)
 #ifndef RELEASE_OR_BETA
     
     
-    UIRunMinidumpAnalyzer(GetMinidumpAnalyzerPath(), gReporterDumpFile);
+    string empty;
+    UIRunProgram(GetProgramPath(UI_MINIDUMP_ANALYZER_FILENAME),
+                 gReporterDumpFile, empty,  true);
 #endif
 
     
@@ -641,9 +641,16 @@ int main(int argc, char** argv)
     }
 
     
+    string pingUuid;
+
+    if (SendCrashPing(queryParameters, pingUuid)) {
+      AppendToEventFile("CrashPingUUID", pingUuid);
+    }
+
+    
     auto stackTracesItr = queryParameters.find("StackTraces");
     if (stackTracesItr != queryParameters.end()) {
-      AppendStackTracesToEventFile(stackTracesItr->second);
+      AppendToEventFile(stackTracesItr->first, stackTracesItr->second);
     }
 
     if (!UIFileExists(gReporterDumpFile)) {

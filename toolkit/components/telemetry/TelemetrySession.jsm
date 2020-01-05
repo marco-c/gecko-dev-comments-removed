@@ -22,6 +22,7 @@ Cu.import("resource://gre/modules/Timer.jsm");
 Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/AppConstants.jsm");
+Cu.import("resource://gre/modules/ClientID.jsm");
 
 const Utils = TelemetryUtils;
 
@@ -66,7 +67,7 @@ const PREF_PREVIOUS_BUILDID = PREF_BRANCH + "previousBuildID";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 const PREF_ASYNC_PLUGIN_INIT = "dom.ipc.plugins.asyncInit.enabled";
 const PREF_UNIFIED = PREF_BRANCH + "unified";
-
+const PREF_SERVER = PREF_BRANCH + "server";
 
 const MESSAGE_TELEMETRY_PAYLOAD = "Telemetry:Payload";
 const MESSAGE_TELEMETRY_THREAD_HANGS = "Telemetry:ChildThreadHangs";
@@ -204,11 +205,24 @@ function getPingType(aPayload) {
 
 
 
-function annotateCrashReport(sessionId) {
+
+
+
+
+function annotateCrashReport(sessionId, clientId, telemetryServer) {
   try {
     const cr = Cc["@mozilla.org/toolkit/crash-reporter;1"];
     if (cr) {
-      cr.getService(Ci.nsICrashReporter).setTelemetrySessionId(sessionId);
+      const crs = cr.getService(Ci.nsICrashReporter);
+
+      crs.setTelemetrySessionId(sessionId);
+
+      
+      
+      if (Utils.isTelemetryEnabled) {
+        crs.annotateCrashReport("TelemetryClientId", clientId);
+        crs.annotateCrashReport("TelemetryServerURL", telemetryServer);
+      }
     }
   } catch (e) {
     
@@ -1471,7 +1485,10 @@ var Impl = {
     
     this._sessionStartDate = this._subsessionStartDate;
 
-    annotateCrashReport(this._sessionId);
+    
+    
+    annotateCrashReport(this._sessionId, ClientID.getCachedClientID(),
+                        Preferences.get(PREF_SERVER, undefined));
 
     
     this._thirdPartyCookies = new ThirdPartyCookieProbe();
@@ -1498,9 +1515,9 @@ var Impl = {
     ppml.addMessageListener(MESSAGE_TELEMETRY_PAYLOAD, this);
     ppml.addMessageListener(MESSAGE_TELEMETRY_THREAD_HANGS, this);
     ppml.addMessageListener(MESSAGE_TELEMETRY_USS, this);
-},
+  },
 
-
+  
 
 
 
@@ -1525,6 +1542,10 @@ var Impl = {
         }
 
         Telemetry.asyncFetchTelemetryData(function() {});
+
+        
+        annotateCrashReport(this._sessionId, yield ClientID.getClientID(),
+                            Preferences.get(PREF_SERVER, undefined));
 
         if (IS_UNIFIED_TELEMETRY) {
           

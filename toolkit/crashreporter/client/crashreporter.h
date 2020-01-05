@@ -39,6 +39,11 @@ std::string WideToUTF8(const std::wstring& wide, bool* success = 0);
 
 #define UI_CRASH_REPORTER_FILENAME "crashreporter"
 #define UI_MINIDUMP_ANALYZER_FILENAME "minidump-analyzer"
+#ifndef XP_MACOSX
+#define UI_PING_SENDER_FILENAME "pingsender"
+#else
+#define UI_PING_SENDER_FILENAME "../../../pingsender"
+#endif
 
 typedef std::map<std::string, std::string> StringTable;
 
@@ -112,6 +117,9 @@ namespace CrashReporter {
   void DeleteDump();
   bool ShouldEnableSending();
 
+  
+  bool SendCrashPing(StringTable& strings, std::string& pingUuid);
+
   static const unsigned int kSaveCount = 10;
 }
 
@@ -148,8 +156,16 @@ std::ofstream* UIOpenWrite(const std::string& filename,
                            bool append=false,
                            bool binary=false);
 void UIPruneSavedDumps(const std::string& directory);
-void UIRunMinidumpAnalyzer(const std::string& exename,
-                           const std::string& filename);
+
+
+
+
+
+
+bool UIRunProgram(const std::string& exename,
+                  const std::string& arg,
+                  const std::string& data,
+                  bool wait = false);
 
 #ifdef _MSC_VER
 # pragma warning( pop )
