@@ -601,12 +601,45 @@ RuleRewriter.prototype = {
 
 
   sanitizePropertyValue: function (text) {
+    
+    
+    
+    
+    
+    text = text.replace(/;$/, "");
     let lexer = getCSSLexer(text);
 
     let result = "";
     let previousOffset = 0;
-    let braceDepth = 0;
+    let parenStack = [];
     let anySanitized = false;
+
+    
+    let pushParen = (token, closer) => {
+      result += text.substring(previousOffset, token.startOffset);
+      parenStack.push({closer, offset: result.length});
+      result += text.substring(token.startOffset, token.endOffset);
+      previousOffset = token.endOffset;
+    };
+
+    
+    let popSomeParens = (closer) => {
+      while (parenStack.length > 0) {
+        let paren = parenStack.pop();
+
+        if (paren.closer === closer) {
+          return true;
+        }
+
+        
+        
+        result = result.substring(0, paren.offset) + "\\" +
+          result.substring(paren.offset);
+        anySanitized = true;
+      }
+      return false;
+    };
+
     while (true) {
       let token = lexer.nextToken();
       if (!token) {
@@ -624,14 +657,22 @@ RuleRewriter.prototype = {
             break;
 
           case "{":
-            ++braceDepth;
+            pushParen(token, "}");
+            break;
+
+          case "(":
+            pushParen(token, ")");
+            break;
+
+          case "[":
+            pushParen(token, "]");
             break;
 
           case "}":
-            --braceDepth;
-            if (braceDepth < 0) {
-              
-              braceDepth = 0;
+          case ")":
+          case "]":
+            
+            if (!popSomeParens(token.text)) {
               
               result += text.substring(previousOffset, token.startOffset);
               
@@ -641,8 +682,13 @@ RuleRewriter.prototype = {
             }
             break;
         }
+      } else if (token.tokenType === "function") {
+        pushParen(token, ")");
       }
     }
+
+    
+    popSomeParens(null);
 
     
     result += text.substring(previousOffset, text.length);
