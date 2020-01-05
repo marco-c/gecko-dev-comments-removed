@@ -9,7 +9,9 @@
 #include "mozilla/Array.h"
 #include "mozilla/Atomics.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/TaggedAnonymousMemory.h"
+#include "mozilla/XorShift128PlusRNG.h"
 
 #include "jsfriendapi.h"
 #include "jsmath.h"
@@ -418,10 +420,16 @@ class ProcessExecutableMemory
     uint8_t* base_;
 
     
-    
-    
     Mutex lock_;
+
+    
+    
     mozilla::Atomic<size_t, mozilla::ReleaseAcquire> pagesAllocated_;
+
+    
+    size_t cursor_;
+
+    mozilla::Maybe<mozilla::non_crypto::XorShift128PlusRNG> rng_;
     PageBitSet<MaxCodePages> pages_;
 
   public:
@@ -429,6 +437,8 @@ class ProcessExecutableMemory
       : base_(nullptr),
         lock_(mutexid::ProcessExecutableRegion),
         pagesAllocated_(0),
+        cursor_(0),
+        rng_(),
         pages_()
     {}
 
@@ -443,6 +453,10 @@ class ProcessExecutableMemory
             return false;
 
         base_ = static_cast<uint8_t*>(p);
+
+        mozilla::Array<uint64_t, 2> seed;
+        GenerateXorShift128PlusSeed(seed);
+        rng_.emplace(seed[0], seed[1]);
         return true;
     }
 
@@ -461,6 +475,7 @@ class ProcessExecutableMemory
         MOZ_ASSERT(pagesAllocated_ == 0);
         DeallocateProcessExecutableMemory(base_, MaxCodeBytesPerProcess);
         base_ = nullptr;
+        rng_.reset();
         MOZ_ASSERT(!initialized());
     }
 
@@ -479,12 +494,8 @@ ProcessExecutableMemory::allocate(size_t bytes, ProtectionSetting protection)
     MOZ_ASSERT(initialized());
     MOZ_ASSERT(bytes > 0);
     MOZ_ASSERT((bytes % ExecutableCodePageSize) == 0);
-    MOZ_ASSERT(bytes <= MaxCodeBytesPerProcess);
 
     size_t numPages = bytes / ExecutableCodePageSize;
-
-    
-    uint64_t seed = js::GenerateRandomSeed();
 
     
     void* p = nullptr;
@@ -496,9 +507,10 @@ ProcessExecutableMemory::allocate(size_t bytes, ProtectionSetting protection)
         if (pagesAllocated_ + numPages >= MaxCodePages)
             return nullptr;
 
+        MOZ_ASSERT(bytes <= MaxCodeBytesPerProcess);
+
         
-        
-        size_t page = seed % MaxCodePages;
+        size_t page = cursor_ + (rng_.ref().next() % 2);
 
         for (size_t i = 0; i < MaxCodePages; i++) {
             
@@ -523,6 +535,12 @@ ProcessExecutableMemory::allocate(size_t bytes, ProtectionSetting protection)
 
             pagesAllocated_ += numPages;
             MOZ_ASSERT(pagesAllocated_ <= MaxCodePages);
+
+            
+            
+            
+            if (numPages <= 2)
+                cursor_ = page + numPages;
 
             p = base_ + page * ExecutableCodePageSize;
             break;
@@ -559,6 +577,11 @@ ProcessExecutableMemory::deallocate(void* addr, size_t bytes)
 
     for (size_t i = 0; i < numPages; i++)
         pages_.remove(firstPage + i);
+
+    
+    
+    if (firstPage < cursor_)
+        cursor_ = firstPage;
 }
 
 static ProcessExecutableMemory execMemory;
