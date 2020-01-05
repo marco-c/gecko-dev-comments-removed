@@ -540,7 +540,6 @@ class Marionette(object):
 
     CONTEXT_CHROME = 'chrome'  
     CONTEXT_CONTENT = 'content'  
-    DEFAULT_CRASH_TIMEOUT = 10
     DEFAULT_SOCKET_TIMEOUT = 60
     DEFAULT_STARTUP_TIMEOUT = 120
     DEFAULT_SHUTDOWN_TIMEOUT = 65  
@@ -794,11 +793,8 @@ class Marionette(object):
 
         return crash_count > 0
 
-    def handle_socket_failure(self, crashed=False):
-        """Handle socket failures for the currently running instance.
-
-        :param crashed: Optional flag which indicates that the process has been crashed,
-            and no further socket checks have to be performed. Defaults to False.
+    def handle_socket_failure(self):
+        """Handle socket failures for the currently running application instance.
 
         If the application crashed then clean-up internal states, or in case of a content
         crash also kill the process. If there are other reasons for a socket failure,
@@ -809,26 +805,26 @@ class Marionette(object):
             exc, val, tb = sys.exc_info()
 
             
-            if crashed:
-                returncode = self.instance.runner.wait(timeout=self.DEFAULT_CRASH_TIMEOUT)
+            
+            returncode = self.instance.runner.wait(timeout=self.DEFAULT_SHUTDOWN_TIMEOUT)
 
-                if returncode == 0:
-                    message = 'Content process crashed'
-                else:
-                    message = 'Process crashed (Exit code: {returncode})'
-                self.delete_session(send_request=False, reset_session_id=True)
-
+            if returncode is None:
+                message = ('Process killed because the connection to Marionette server is '
+                           'lost. Check gecko.log for errors')
+                self.quit()
             else:
                 
-                
-                returncode = self.instance.runner.wait(timeout=self.DEFAULT_SHUTDOWN_TIMEOUT)
-                if returncode is None:
-                    self.quit()
-                    message = ('Process killed because the connection to Marionette server is '
-                               'lost. Check gecko.log for errors')
+                crash_count = self.check_for_crash()
+
+                if crash_count > 0:
+                    if returncode == 0:
+                        message = 'Content process crashed'
+                    else:
+                        message = 'Process crashed (Exit code: {returncode})'
                 else:
-                    message = 'Process has been closed (Exit code: {returncode})'
-                    self.delete_session(send_request=False, reset_session_id=True)
+                    message = 'Process has been unexpectedly closed (Exit code: {returncode})'
+
+                self.delete_session(send_request=False, reset_session_id=True)
 
             if exc:
                 message += ' (Reason: {reason})'
