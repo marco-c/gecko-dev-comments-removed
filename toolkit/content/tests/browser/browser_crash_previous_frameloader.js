@@ -8,22 +8,30 @@
 
 
 
-function cleanUpMinidump(subject) {
+
+function getCrashDumpId(subject) {
   Assert.ok(subject instanceof Ci.nsIPropertyBag2,
             "Subject needs to be a nsIPropertyBag2 to clean up properly");
-  let dumpID = subject.getPropertyAsAString("dumpID");
 
-  Assert.ok(dumpID, "There should be a dumpID");
-  if (dumpID) {
+  return subject.getPropertyAsAString("dumpID");
+}
+
+
+
+
+
+
+function cleanUpMinidump(id) {
+  if (id) {
     let dir = Services.dirsvc.get("ProfD", Ci.nsIFile);
     dir.append("minidumps");
 
     let file = dir.clone();
-    file.append(dumpID + ".dmp");
+    file.append(id + ".dmp");
     file.remove(true);
 
     file = dir.clone();
-    file.append(dumpID + ".extra");
+    file.append(id + ".extra");
     file.remove(true);
   }
 }
@@ -104,7 +112,13 @@ add_task(function* test_crash_in_previous_frameloader() {
 
     
     
-    cleanUpMinidump(subject);
+    let dumpID = getCrashDumpId(subject);
+
+    Assert.ok(dumpID, "There should be a dumpID");
+    if (dumpID) {
+      yield Services.crashmanager.ensureCrashIsPresent(dumpID);
+      cleanUpMinidump(dumpID);
+    }
 
     info("Content process is gone!");
     Assert.ok(!sawTabCrashed,
