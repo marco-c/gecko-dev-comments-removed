@@ -305,6 +305,13 @@ MobileViewportManager::UpdateDisplayPortMargins()
       
       return;
     }
+    nsRect displayportBase =
+      nsRect(nsPoint(0, 0), nsLayoutUtils::CalculateCompositionSizeForFrame(root));
+    
+    
+    
+    MOZ_ASSERT(mPresShell->GetPresContext()->IsRootContentDocument());
+    nsLayoutUtils::SetDisplayPortBaseIfNotSet(root->GetContent(), displayportBase);
     nsIScrollableFrame* scrollable = do_QueryFrame(root);
     nsLayoutUtils::CalculateAndSetDisplayPortMargins(scrollable,
       nsLayoutUtils::RepaintMode::DoNotRepaint);
