@@ -440,7 +440,7 @@ KeyframeEffectReadOnly::GetUnderlyingStyle(
 {
   StyleAnimationValue result;
 
-  if (aAnimationRule->HasValue(aProperty)) {
+  if (aAnimationRule && aAnimationRule->HasValue(aProperty)) {
     
     
     DebugOnly<bool> success = aAnimationRule->GetValue(aProperty, result);
@@ -623,11 +623,6 @@ KeyframeEffectReadOnly::ComposeStyle(
     } else {
       
 
-      if (!aStyleRule.mGecko) {
-        
-        aStyleRule.mGecko = new AnimValuesStyleRule();
-      }
-
       StyleAnimationValue fromValue =
         CompositeValue(prop.mProperty, aStyleRule.mGecko,
                        segment->mFromValue.mGecko,
@@ -638,6 +633,11 @@ KeyframeEffectReadOnly::ComposeStyle(
                        segment->mToComposite);
       if (fromValue.IsNull() || toValue.IsNull()) {
         continue;
+      }
+
+      if (!aStyleRule.mGecko) {
+        
+        aStyleRule.mGecko = new AnimValuesStyleRule();
       }
 
       
