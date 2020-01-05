@@ -5470,6 +5470,14 @@ BytecodeEmitter::wrapWithDestructuringIteratorCloseTryNote(int32_t iterDepth, In
 {
     MOZ_ASSERT(this->stackDepth >= iterDepth);
 
+    
+    
+    
+    
+    
+    if (!emit1(JSOP_TRY_DESTRUCTURING_ITERCLOSE))
+        return false;
+
     ptrdiff_t start = offset();
     if (!emitter(this))
         return false;
