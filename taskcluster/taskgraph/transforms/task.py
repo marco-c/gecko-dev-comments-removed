@@ -89,20 +89,7 @@ task_description_schema = Schema({
         'product': Any('firefox', 'mobile'),
 
         
-        'job-name': Any(
-            
-            
-            basestring,
-
-            
-            
-            
-            {
-                
-                Optional('buildbot'): basestring,
-                Required('gecko-v2'): basestring,
-            }
-        ),
+        'job-name': basestring,
 
         
         
@@ -314,15 +301,10 @@ GROUP_NAMES = {
 }
 UNKNOWN_GROUP_NAME = "Treeherder group {} has no name; add it to " + __file__
 
-BUILDBOT_ROUTE_TEMPLATES = [
-    "index.buildbot.branches.{project}.{job-name-buildbot}",
-    "index.buildbot.revisions.{head_rev}.{project}.{job-name-buildbot}",
-]
-
 V2_ROUTE_TEMPLATES = [
-    "index.gecko.v2.{project}.latest.{product}.{job-name-gecko-v2}",
-    "index.gecko.v2.{project}.pushdate.{build_date_long}.{product}.{job-name-gecko-v2}",
-    "index.gecko.v2.{project}.revision.{head_rev}.{product}.{job-name-gecko-v2}",
+    "index.gecko.v2.{project}.latest.{product}.{job-name}",
+    "index.gecko.v2.{project}.pushdate.{build_date_long}.{product}.{job-name}",
+    "index.gecko.v2.{project}.revision.{head_rev}.{product}.{job-name}",
 ]
 
 
@@ -521,30 +503,17 @@ def add_index_routes(config, tasks):
             continue
 
         job_name = index['job-name']
-        
-        if isinstance(job_name, basestring):
-            base_name, type_name = job_name.rsplit('-', 1)
-            job_name = {
-                'buildbot': base_name,
-                'gecko-v2': '{}-{}'.format(base_name, type_name),
-            }
-
-        if job_name['gecko-v2'] not in JOB_NAME_WHITELIST:
-            raise Exception(JOB_NAME_WHITELIST_ERROR.format(job_name['gecko-v2']))
+        if job_name not in JOB_NAME_WHITELIST:
+            raise Exception(JOB_NAME_WHITELIST_ERROR.format(job_name))
 
         subs = config.params.copy()
-        for n in job_name:
-            subs['job-name-' + n] = job_name[n]
+        subs['job-name'] = job_name
         subs['build_date_long'] = time.strftime("%Y.%m.%d.%Y%m%d%H%M%S",
                                                 time.gmtime(config.params['build_date']))
         subs['product'] = index['product']
 
-        if 'buildbot' in job_name:
-            for tpl in BUILDBOT_ROUTE_TEMPLATES:
-                routes.append(tpl.format(**subs))
-        if 'gecko-v2' in job_name:
-            for tpl in V2_ROUTE_TEMPLATES:
-                routes.append(tpl.format(**subs))
+        for tpl in V2_ROUTE_TEMPLATES:
+            routes.append(tpl.format(**subs))
 
         
         extra_index = task.setdefault('extra', {}).setdefault('index', {})
@@ -665,7 +634,7 @@ def check_v2_routes():
     for mh, tg in [
             ('{index}', 'index'),
             ('{build_product}', '{product}'),
-            ('{build_name}-{build_type}', '{job-name-gecko-v2}'),
+            ('{build_name}-{build_type}', '{job-name}'),
             ('{year}.{month}.{day}.{pushdate}', '{build_date_long}')]:
         routes = [r.replace(mh, tg) for r in routes]
 
