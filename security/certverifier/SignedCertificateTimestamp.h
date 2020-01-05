@@ -78,15 +78,6 @@ struct SignedCertificateTimestamp
     V1 = 0,
   };
 
-  
-  
-  
-  enum class Origin {
-    Embedded = 0,
-    TLSExtension = 1,
-    OCSPResponse = 2,
-  };
-
   Version version;
   Buffer logId;
   
@@ -94,7 +85,32 @@ struct SignedCertificateTimestamp
   uint64_t timestamp;
   Buffer extensions;
   DigitallySigned signature;
+
+  
+  
+
+  enum class Origin {
+    Unknown,
+    Embedded,
+    TLSExtension,
+    OCSPResponse
+  };
+
+  enum class VerificationStatus {
+    None,
+    
+    OK,
+    
+    UnknownLog,
+    
+    InvalidSignature,
+    
+    
+    InvalidTimestamp
+  };
+
   Origin origin;
+  VerificationStatus verificationStatus;
 };
 
 

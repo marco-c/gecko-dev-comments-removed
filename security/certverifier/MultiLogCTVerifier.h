@@ -8,44 +8,14 @@
 #define MultiLogCTVerifier_h
 
 #include "CTLogVerifier.h"
+#include "CTVerifyResult.h"
 #include "mozilla/Vector.h"
 #include "pkix/Input.h"
 #include "pkix/Result.h"
+#include "pkix/Time.h"
 #include "SignedCertificateTimestamp.h"
 
 namespace mozilla { namespace ct {
-
-typedef Vector<SignedCertificateTimestamp> SCTList;
-
-
-class CTVerifyResult
-{
-public:
-  
-  SCTList verifiedScts;
-
-  
-  SCTList invalidScts;
-
-  
-  SCTList unknownLogsScts;
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  size_t decodingErrors;
-
-  void Reset();
-};
 
 
 
@@ -82,15 +52,12 @@ public:
   
   
   
-  
-  
-  
   pkix::Result Verify(pkix::Input cert,
                       pkix::Input issuerSubjectPublicKeyInfo,
                       pkix::Input sctListFromCert,
                       pkix::Input sctListFromOCSPResponse,
                       pkix::Input sctListFromTLSExtension,
-                      uint64_t time,
+                      pkix::Time time,
                       CTVerifyResult& result);
 
 private:
@@ -100,14 +67,14 @@ private:
   pkix::Result VerifySCTs(pkix::Input encodedSctList,
                           const LogEntry& expectedEntry,
                           SignedCertificateTimestamp::Origin origin,
-                          uint64_t time,
+                          pkix::Time time,
                           CTVerifyResult& result);
 
   
   
   pkix::Result VerifySingleSCT(SignedCertificateTimestamp&& sct,
                                const ct::LogEntry& expectedEntry,
-                               uint64_t time,
+                               pkix::Time time,
                                CTVerifyResult& result);
 
   

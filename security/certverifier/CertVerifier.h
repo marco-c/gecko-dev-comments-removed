@@ -8,10 +8,21 @@
 #define CertVerifier_h
 
 #include "BRNameMatchingPolicy.h"
+#include "CTVerifyResult.h"
 #include "OCSPCache.h"
 #include "ScopedNSSTypes.h"
 #include "mozilla/Telemetry.h"
+#include "mozilla/UniquePtr.h"
 #include "pkix/pkixtypes.h"
+
+namespace mozilla { namespace ct {
+
+
+
+
+class MultiLogCTVerifier;
+
+} } 
 
 namespace mozilla { namespace psm {
 
@@ -49,6 +60,21 @@ public:
   void Reset() { accumulateForRoot = false; accumulateResult = false; }
 };
 
+class CertificateTransparencyInfo
+{
+public:
+  
+  bool enabled;
+  
+  bool processedSCTs;
+  
+  mozilla::ct::CTVerifyResult verifyResult;
+
+  void Reset() { enabled = false; processedSCTs = false; verifyResult.Reset(); }
+};
+
+class NSSCertDBTrustDomain;
+
 class CertVerifier
 {
 public:
@@ -79,15 +105,18 @@ public:
                 UniqueCERTCertList& builtChain,
                        Flags flags = 0,
         const SECItem* stapledOCSPResponse = nullptr,
+        const SECItem* sctsFromTLS = nullptr,
        SECOidTag* evOidPolicy = nullptr,
        OCSPStaplingStatus* ocspStaplingStatus = nullptr,
        KeySizeStatus* keySizeStatus = nullptr,
        SHA1ModeResult* sha1ModeResult = nullptr,
-       PinningTelemetryInfo* pinningTelemetryInfo = nullptr);
+       PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
+       CertificateTransparencyInfo* ctInfo = nullptr);
 
   SECStatus VerifySSLServerCert(
                     const UniqueCERTCertificate& peerCert,
         const SECItem* stapledOCSPResponse,
+        const SECItem* sctsFromTLS,
                     mozilla::pkix::Time time,
         void* pinarg,
                     const char* hostname,
@@ -98,7 +127,8 @@ public:
     OCSPStaplingStatus* ocspStaplingStatus = nullptr,
     KeySizeStatus* keySizeStatus = nullptr,
     SHA1ModeResult* sha1ModeResult = nullptr,
-    PinningTelemetryInfo* pinningTelemetryInfo = nullptr);
+    PinningTelemetryInfo* pinningTelemetryInfo = nullptr,
+    CertificateTransparencyInfo* ctInfo = nullptr);
 
   enum PinningMode {
     pinningDisabled = 0,
@@ -126,11 +156,17 @@ public:
   enum OcspStrictConfig { ocspRelaxed = 0, ocspStrict };
   enum OcspGetConfig { ocspGetDisabled = 0, ocspGetEnabled = 1 };
 
+  enum class CertificateTransparencyMode {
+    Disabled = 0,
+    TelemetryOnly = 1,
+  };
+
   CertVerifier(OcspDownloadConfig odc, OcspStrictConfig osc,
                OcspGetConfig ogc, uint32_t certShortLifetimeInDays,
                PinningMode pinningMode, SHA1Mode sha1Mode,
                BRNameMatchingPolicy::Mode nameMatchingMode,
-               NetscapeStepUpPolicy netscapeStepUpPolicy);
+               NetscapeStepUpPolicy netscapeStepUpPolicy,
+               CertificateTransparencyMode ctMode);
   ~CertVerifier();
 
   void ClearOCSPCache() { mOCSPCache.Clear(); }
@@ -143,9 +179,22 @@ public:
   const SHA1Mode mSHA1Mode;
   const BRNameMatchingPolicy::Mode mNameMatchingMode;
   const NetscapeStepUpPolicy mNetscapeStepUpPolicy;
+  const CertificateTransparencyMode mCTMode;
 
 private:
   OCSPCache mOCSPCache;
+
+  
+  
+  UniquePtr<mozilla::ct::MultiLogCTVerifier> mCTVerifier;
+
+  void LoadKnownCTLogs();
+  mozilla::pkix::Result VerifySignedCertificateTimestamps(
+                     NSSCertDBTrustDomain& trustDomain,
+                     const UniqueCERTCertList& builtChain,
+                     mozilla::pkix::Input sctsFromTLS,
+                     mozilla::pkix::Time time,
+     CertificateTransparencyInfo* ctInfo);
 
   
   

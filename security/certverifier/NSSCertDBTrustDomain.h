@@ -145,14 +145,22 @@ public:
                    mozilla::pkix::AuxiliaryExtension extension,
                    mozilla::pkix::Input extensionData) override;
 
+  
+  
+  void ResetAccumulatedState();
+
   CertVerifier::OCSPStaplingStatus GetOCSPStaplingStatus() const
   {
     return mOCSPStaplingStatus;
   }
-  void ResetOCSPStaplingStatus()
-  {
-    mOCSPStaplingStatus = CertVerifier::OCSP_STAPLING_NEVER_CHECKED;
-  }
+
+  
+  
+  
+  
+
+  mozilla::pkix::Input GetSCTListFromCertificate() const;
+  mozilla::pkix::Input GetSCTListFromOCSPStapling() const;
 
 private:
   enum EncodedResponseSource {
@@ -180,6 +188,9 @@ private:
   const char* mHostname; 
   nsCOMPtr<nsICertBlocklist> mCertBlocklist;
   CertVerifier::OCSPStaplingStatus mOCSPStaplingStatus;
+  
+  UniqueSECItem mSCTListFromCertificate;
+  UniqueSECItem mSCTListFromOCSPStapling;
 };
 
 } } 

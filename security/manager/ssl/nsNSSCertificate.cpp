@@ -1317,7 +1317,10 @@ nsNSSCertificate::hasValidEVOidTag(SECOidTag& resultOidTag, bool& validEV)
     nullptr ,
     nullptr ,
     unusedBuiltChain,
-    flags, nullptr , &resultOidTag);
+    flags,
+    nullptr ,
+    nullptr ,
+    &resultOidTag);
 
   if (rv != SECSuccess) {
     resultOidTag = SEC_OID_UNKNOWN;

@@ -1,0 +1,18 @@
+
+
+
+
+
+
+#include "CTVerifyResult.h"
+
+namespace mozilla { namespace ct {
+
+void
+CTVerifyResult::Reset()
+{
+  scts.clear();
+  decodingErrors = 0;
+}
+
+} } 
