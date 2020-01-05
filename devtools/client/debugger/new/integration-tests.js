@@ -1,13 +1,13 @@
 (function webpackUniversalModuleDefinition(root, factory) {
 	if(typeof exports === 'object' && typeof module === 'object')
-		module.exports = factory(require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/client/shared/vendor/react-dom"), require("devtools/shared/flags"));
+		module.exports = factory(require("Services"), require("devtools/shared/flags"));
 	else if(typeof define === 'function' && define.amd)
-		define(["devtools/client/shared/vendor/react", "Services", "devtools/client/shared/vendor/react-dom", "devtools/shared/flags"], factory);
+		define(["Services", "devtools/shared/flags"], factory);
 	else {
-		var a = typeof exports === 'object' ? factory(require("devtools/client/shared/vendor/react"), require("Services"), require("devtools/client/shared/vendor/react-dom"), require("devtools/shared/flags")) : factory(root["devtools/client/shared/vendor/react"], root["Services"], root["devtools/client/shared/vendor/react-dom"], root["devtools/shared/flags"]);
+		var a = typeof exports === 'object' ? factory(require("Services"), require("devtools/shared/flags")) : factory(root["Services"], root["devtools/shared/flags"]);
 		for(var i in a) (typeof exports === 'object' ? exports : root)[i] = a[i];
 	}
-})(this, function(__WEBPACK_EXTERNAL_MODULE_2__, __WEBPACK_EXTERNAL_MODULE_29__, __WEBPACK_EXTERNAL_MODULE_31__, __WEBPACK_EXTERNAL_MODULE_121__) {
+})(this, function(__WEBPACK_EXTERNAL_MODULE_29__, __WEBPACK_EXTERNAL_MODULE_121__) {
 return  (function(modules) { 
  	
  	var installedModules = {};
@@ -50,38 +50,30 @@ return  (function(modules) {
  	return __webpack_require__(0);
  })
 
- ([
+ ({
 
+ 0:
  function(module, exports, __webpack_require__) {
 
-	module.exports = __webpack_require__(744);
+	module.exports = __webpack_require__(757);
 
 
  },
-,
 
- function(module, exports) {
-
-	module.exports = __WEBPACK_EXTERNAL_MODULE_2__;
-
- },
-,
-,
-,
-
+ 6:
  function(module, exports, __webpack_require__) {
 
 	var Symbol = __webpack_require__(7),
 	    getRawTag = __webpack_require__(10),
 	    objectToString = __webpack_require__(11);
-	
+
 	
 	var nullTag = '[object Null]',
 	    undefinedTag = '[object Undefined]';
-	
+
 	
 	var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
-	
+
 	
 
 
@@ -97,70 +89,74 @@ return  (function(modules) {
 	    ? getRawTag(value)
 	    : objectToString(value);
 	}
-	
+
 	module.exports = baseGetTag;
 
 
  },
 
+ 7:
  function(module, exports, __webpack_require__) {
 
 	var root = __webpack_require__(8);
-	
+
 	
 	var Symbol = root.Symbol;
-	
+
 	module.exports = Symbol;
 
 
  },
 
+ 8:
  function(module, exports, __webpack_require__) {
 
 	var freeGlobal = __webpack_require__(9);
-	
+
 	
 	var freeSelf = typeof self == 'object' && self && self.Object === Object && self;
-	
+
 	
 	var root = freeGlobal || freeSelf || Function('return this')();
-	
+
 	module.exports = root;
 
 
  },
 
+ 9:
  function(module, exports) {
 
 	(function(global) {
 	var freeGlobal = typeof global == 'object' && global && global.Object === Object && global;
-	
+
 	module.exports = freeGlobal;
-	
+
 	}.call(exports, (function() { return this; }())))
 
  },
 
+ 10:
  function(module, exports, __webpack_require__) {
 
 	var Symbol = __webpack_require__(7);
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
 
 
 	var nativeObjectToString = objectProto.toString;
-	
+
 	
 	var symToStringTag = Symbol ? Symbol.toStringTag : undefined;
-	
+
 	
 
 
@@ -171,12 +167,12 @@ return  (function(modules) {
 	function getRawTag(value) {
 	  var isOwn = hasOwnProperty.call(value, symToStringTag),
 	      tag = value[symToStringTag];
-	
+
 	  try {
 	    value[symToStringTag] = undefined;
 	    var unmasked = true;
 	  } catch (e) {}
-	
+
 	  var result = nativeObjectToString.call(value);
 	  if (unmasked) {
 	    if (isOwn) {
@@ -187,24 +183,25 @@ return  (function(modules) {
 	  }
 	  return result;
 	}
-	
+
 	module.exports = getRawTag;
 
 
  },
 
+ 11:
  function(module, exports) {
 
 	
 	var objectProto = Object.prototype;
-	
+
 	
 
 
 
 
 	var nativeObjectToString = objectProto.toString;
-	
+
 	
 
 
@@ -215,13 +212,13 @@ return  (function(modules) {
 	function objectToString(value) {
 	  return nativeObjectToString.call(value);
 	}
-	
+
 	module.exports = objectToString;
 
 
  },
-,
 
+ 13:
  function(module, exports) {
 
 	
@@ -237,12 +234,13 @@ return  (function(modules) {
 	    return func(transform(arg));
 	  };
 	}
-	
+
 	module.exports = overArg;
 
 
  },
 
+ 14:
  function(module, exports) {
 
 	
@@ -272,8606 +270,20 @@ return  (function(modules) {
 	function isObjectLike(value) {
 	  return value != null && typeof value == 'object';
 	}
-	
+
 	module.exports = isObjectLike;
 
 
  },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
 
- function(module, exports, __webpack_require__) {
-
-	const { KeyShortcuts } = __webpack_require__(27);
-	const { DebuggerTransport } = __webpack_require__(41);
-	const { DebuggerClient } = __webpack_require__(53);
-	const PrefsHelper = __webpack_require__(57).PrefsHelper;
-	const { TargetFactory } = __webpack_require__(58);
-	const DevToolsUtils = __webpack_require__(42);
-	const AppConstants = __webpack_require__(44);
-	const EventEmitter = __webpack_require__(34);
-	const WebsocketTransport = __webpack_require__(59);
-	const Menu = __webpack_require__(60);
-	const MenuItem = __webpack_require__(61);
-	const Tree = __webpack_require__(62);
-	const sourceUtils = __webpack_require__(63);
-	const frame = __webpack_require__(64);
-	
-	module.exports = {
-	  KeyShortcuts,
-	  PrefsHelper,
-	  DebuggerClient,
-	  DebuggerTransport,
-	  TargetFactory,
-	  DevToolsUtils,
-	  AppConstants,
-	  EventEmitter,
-	  WebsocketTransport,
-	  Menu,
-	  MenuItem,
-	  Tree,
-	  sourceUtils,
-	  frame
-	};
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	const { Services: { appinfo }} = __webpack_require__(28);
-	const EventEmitter = __webpack_require__(34);
-	const isOSX = appinfo.OS === "Darwin";
-	"use strict";
-	
-	
-	const ElectronKeysMapping = {
-	  "F1": "DOM_VK_F1",
-	  "F2": "DOM_VK_F2",
-	  "F3": "DOM_VK_F3",
-	  "F4": "DOM_VK_F4",
-	  "F5": "DOM_VK_F5",
-	  "F6": "DOM_VK_F6",
-	  "F7": "DOM_VK_F7",
-	  "F8": "DOM_VK_F8",
-	  "F9": "DOM_VK_F9",
-	  "F10": "DOM_VK_F10",
-	  "F11": "DOM_VK_F11",
-	  "F12": "DOM_VK_F12",
-	  "F13": "DOM_VK_F13",
-	  "F14": "DOM_VK_F14",
-	  "F15": "DOM_VK_F15",
-	  "F16": "DOM_VK_F16",
-	  "F17": "DOM_VK_F17",
-	  "F18": "DOM_VK_F18",
-	  "F19": "DOM_VK_F19",
-	  "F20": "DOM_VK_F20",
-	  "F21": "DOM_VK_F21",
-	  "F22": "DOM_VK_F22",
-	  "F23": "DOM_VK_F23",
-	  "F24": "DOM_VK_F24",
-	  "Space": "DOM_VK_SPACE",
-	  "Backspace": "DOM_VK_BACK_SPACE",
-	  "Delete": "DOM_VK_DELETE",
-	  "Insert": "DOM_VK_INSERT",
-	  "Return": "DOM_VK_RETURN",
-	  "Enter": "DOM_VK_RETURN",
-	  "Up": "DOM_VK_UP",
-	  "Down": "DOM_VK_DOWN",
-	  "Left": "DOM_VK_LEFT",
-	  "Right": "DOM_VK_RIGHT",
-	  "Home": "DOM_VK_HOME",
-	  "End": "DOM_VK_END",
-	  "PageUp": "DOM_VK_PAGE_UP",
-	  "PageDown": "DOM_VK_PAGE_DOWN",
-	  "Escape": "DOM_VK_ESCAPE",
-	  "Esc": "DOM_VK_ESCAPE",
-	  "Tab": "DOM_VK_TAB",
-	  "VolumeUp": "DOM_VK_VOLUME_UP",
-	  "VolumeDown": "DOM_VK_VOLUME_DOWN",
-	  "VolumeMute": "DOM_VK_VOLUME_MUTE",
-	  "PrintScreen": "DOM_VK_PRINTSCREEN",
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function KeyShortcuts({ window, target }) {
-	  this.window = window;
-	  this.target = target || window;
-	  this.keys = new Map();
-	  this.eventEmitter = new EventEmitter();
-	  this.target.addEventListener("keydown", this);
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-	KeyShortcuts.parseElectronKey = function(window, str) {
-	  let modifiers = str.split("+");
-	  let key = modifiers.pop();
-	
-	  let shortcut = {
-	    ctrl: false,
-	    meta: false,
-	    alt: false,
-	    shift: false,
-	    
-	    key: undefined,
-	    
-	    keyCode: undefined,
-	  };
-	  for (let mod of modifiers) {
-	    if (mod === "Alt") {
-	      shortcut.alt = true;
-	    } else if (["Command", "Cmd"].includes(mod)) {
-	      shortcut.meta = true;
-	    } else if (["CommandOrControl", "CmdOrCtrl"].includes(mod)) {
-	      if (isOSX) {
-	        shortcut.meta = true;
-	      } else {
-	        shortcut.ctrl = true;
-	      }
-	    } else if (["Control", "Ctrl"].includes(mod)) {
-	      shortcut.ctrl = true;
-	    } else if (mod === "Shift") {
-	      shortcut.shift = true;
-	    } else {
-	      console.error("Unsupported modifier:", mod, "from key:", str);
-	      return null;
-	    }
-	  }
-	
-	  
-	  
-	  if (key === "Plus") {
-	    key = "+";
-	  }
-	
-	  if (typeof key === "string" && key.length === 1) {
-	    
-	    shortcut.key = key.toLowerCase();
-	  } else if (key in ElectronKeysMapping) {
-	    
-	    key = ElectronKeysMapping[key];
-	    shortcut.keyCode = window.KeyboardEvent[key];
-	    
-	    shortcut.keyCodeString = key;
-	    shortcut.key = key;
-	  } else {
-	    console.error("Unsupported key:", key);
-	    return null;
-	  }
-	
-	  return shortcut;
-	};
-	
-	KeyShortcuts.stringify = function(shortcut) {
-	  let list = [];
-	  if (shortcut.alt) {
-	    list.push("Alt");
-	  }
-	  if (shortcut.ctrl) {
-	    list.push("Ctrl");
-	  }
-	  if (shortcut.meta) {
-	    list.push("Cmd");
-	  }
-	  if (shortcut.shift) {
-	    list.push("Shift");
-	  }
-	  let key;
-	  if (shortcut.key) {
-	    key = shortcut.key.toUpperCase();
-	  } else {
-	    key = shortcut.keyCodeString;
-	  }
-	  list.push(key);
-	  return list.join("+");
-	};
-	
-	KeyShortcuts.prototype = {
-	  destroy() {
-	    this.target.removeEventListener("keydown", this);
-	    this.keys.clear();
-	  },
-	
-	  doesEventMatchShortcut(event, shortcut) {
-	    if (shortcut.meta != event.metaKey) {
-	      return false;
-	    }
-	    if (shortcut.ctrl != event.ctrlKey) {
-	      return false;
-	    }
-	    if (shortcut.alt != event.altKey) {
-	      return false;
-	    }
-	    
-	    
-	    if (shortcut.shift != event.shiftKey && event.key &&
-	        event.key.match(/[a-zA-Z]/)) {
-	      return false;
-	    }
-	    if (shortcut.keyCode) {
-	      return event.keyCode == shortcut.keyCode;
-	    } else if (event.key in ElectronKeysMapping) {
-	      return ElectronKeysMapping[event.key] === shortcut.key;
-	    }
-	
-	    
-	    let key = event.key || String.fromCharCode(event.keyCode);
-	
-	    
-	    
-	    
-	    return key.toLowerCase() == shortcut.key ||
-	      (shortcut.key.match(/^[0-9]$/) &&
-	       event.keyCode == shortcut.key.charCodeAt(0));
-	  },
-	
-	  handleEvent(event) {
-	    for (let [key, shortcut] of this.keys) {
-	      if (this.doesEventMatchShortcut(event, shortcut)) {
-	        this.eventEmitter.emit(key, event);
-	      }
-	    }
-	  },
-	
-	  on(key, listener) {
-	    if (typeof listener !== "function") {
-	      throw new Error("KeyShortcuts.on() expects a function as " +
-	                      "second argument");
-	    }
-	    if (!this.keys.has(key)) {
-	      let shortcut = KeyShortcuts.parseElectronKey(this.window, key);
-	      
-	      if (!shortcut) {
-	        return;
-	      }
-	      this.keys.set(key, shortcut);
-	    }
-	    this.eventEmitter.on(key, listener);
-	  },
-	
-	  off(key, listener) {
-	    this.eventEmitter.off(key, listener);
-	  },
-	};
-	exports.KeyShortcuts = KeyShortcuts;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	const Services = __webpack_require__(29);
-	const SplitBox = __webpack_require__(30);
-	
-	const sprintf = __webpack_require__(33).sprintf;
-	
-	module.exports = {
-	  Services,
-	  SplitBox,
-	  
-	  sprintf
-	};
-
-
- },
-
+ 29:
  function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_29__;
 
  },
 
- function(module, exports, __webpack_require__) {
-
-	const React = __webpack_require__(2);
-	const ReactDOM = __webpack_require__(31);
-	const Draggable = React.createFactory(__webpack_require__(32));
-	const { DOM: dom, PropTypes } = React;
-	
-	
-
-
-
-	const SplitBox = React.createClass({
-	
-	  propTypes: {
-	    
-	    className: PropTypes.string,
-	    
-	    initialSize: PropTypes.any,
-	    
-	    initialWidth: PropTypes.number,
-	    
-	    initialHeight: PropTypes.number,
-	    
-	    startPanel: PropTypes.any,
-	    
-	    startPanelCollapsed: PropTypes.bool,
-	    
-	    minSize: PropTypes.any,
-	    
-	    maxSize: PropTypes.any,
-	    
-	    endPanel: PropTypes.any,
-	    
-	    endPanelCollapsed: PropTypes.bool,
-	    
-	    endPanelControl: PropTypes.bool,
-	    
-	    splitterSize: PropTypes.number,
-	    
-	    vert: PropTypes.bool,
-	    
-	    style: PropTypes.object
-	  },
-	
-	  displayName: "SplitBox",
-	
-	  getDefaultProps() {
-	    return {
-	      splitterSize: 5,
-	      vert: true,
-	      endPanelControl: false,
-	      endPanelCollapsed: false,
-	      startPanelCollapsed: false
-	    };
-	  },
-	
-	  
-
-
-
-
-	  getInitialState() {
-	    return {
-	      vert: this.props.vert,
-	      width: this.props.initialWidth || this.props.initialSize,
-	      height: this.props.initialHeight || this.props.initialSize
-	    };
-	  },
-	
-	  componentWillReceiveProps(nextProps) {
-	    if (this.props.vert !== nextProps.vert) {
-	      this.setState({ vert: nextProps.vert });
-	    }
-	  },
-	
-	  
-	
-	  
-
-
-
-
-	  onStartMove() {
-	    const splitBox = ReactDOM.findDOMNode(this);
-	    const doc = splitBox.ownerDocument;
-	    let defaultCursor = doc.documentElement.style.cursor;
-	    doc.documentElement.style.cursor =
-	      (this.state.vert ? "ew-resize" : "ns-resize");
-	
-	    splitBox.classList.add("dragging");
-	
-	    this.setState({
-	      defaultCursor: defaultCursor
-	    });
-	  },
-	
-	  onStopMove() {
-	    const splitBox = ReactDOM.findDOMNode(this);
-	    const doc = splitBox.ownerDocument;
-	    doc.documentElement.style.cursor = this.state.defaultCursor;
-	
-	    splitBox.classList.remove("dragging");
-	  },
-	
-	  screenX() {
-	    
-	    return window.screenX;
-	  },
-	
-	  screenY() {
-	    
-	    return window.screenY;
-	  },
-	
-	  
-
-
-
-
-	  onMove(x, y) {
-	    const node = ReactDOM.findDOMNode(this);
-	    const doc = node.ownerDocument;
-	    const win = doc.defaultView;
-	
-	    let size;
-	    let { endPanelControl } = this.props;
-	
-	    if (this.state.vert) {
-	      
-	      
-	      let dir = win.getComputedStyle(doc.documentElement).direction;
-	      if (dir == "rtl") {
-	        endPanelControl = !endPanelControl;
-	      }
-	
-	      let innerOffset = x - this.screenX();
-	      size = endPanelControl ?
-	        (node.offsetLeft + node.offsetWidth) - innerOffset :
-	        innerOffset - node.offsetLeft;
-	
-	      this.setState({
-	        width: size
-	      });
-	    } else {
-	      let innerOffset = y - this.screenY();
-	      size = endPanelControl ?
-	        (node.offsetTop + node.offsetHeight) - innerOffset :
-	        innerOffset - node.offsetTop;
-	
-	      this.setState({
-	        height: size
-	      });
-	    }
-	  },
-	
-	  
-	  preparePanelStyles() {
-	    const vert = this.state.vert;
-	    const {
-	      minSize, maxSize, startPanelCollapsed, endPanelControl,
-	      endPanelCollapsed } = this.props;
-	    let leftPanelStyle, rightPanelStyle;
-	
-	    
-	    if (vert) {
-	      let startWidth = endPanelControl ? null : this.state.width,
-	        endWidth = endPanelControl ? this.state.width : null;
-	
-	      leftPanelStyle = {
-	        maxWidth: endPanelControl ? null : maxSize,
-	        minWidth: endPanelControl ? null : minSize,
-	        width: startPanelCollapsed ? 0 : startWidth
-	      };
-	      rightPanelStyle = {
-	        maxWidth: endPanelControl ? maxSize : null,
-	        minWidth: endPanelControl ? minSize : null,
-	        width: endPanelCollapsed ? 0 : endWidth
-	      };
-	    } else {
-	      let startHeight = endPanelControl ? null : this.state.height,
-	        endHeight = endPanelControl ? this.state.height : null;
-	
-	      leftPanelStyle = {
-	        maxHeight: endPanelControl ? null : maxSize,
-	        minHeight: endPanelControl ? null : minSize,
-	        height: endPanelCollapsed ? maxSize : startHeight
-	      };
-	      rightPanelStyle = {
-	        maxHeight: endPanelControl ? maxSize : null,
-	        minHeight: endPanelControl ? minSize : null,
-	        height: startPanelCollapsed ? maxSize : endHeight
-	      };
-	    }
-	
-	    return { leftPanelStyle, rightPanelStyle };
-	  },
-	
-	  render() {
-	    const vert = this.state.vert;
-	    const {
-	      startPanelCollapsed,
-	      startPanel,
-	      endPanel,
-	      endPanelControl,
-	      splitterSize,
-	      endPanelCollapsed
-	    } = this.props;
-	
-	    let style = Object.assign({}, this.props.style);
-	
-	    
-	    let classNames = ["split-box"];
-	    classNames.push(vert ? "vert" : "horz");
-	    if (this.props.className) {
-	      classNames = classNames.concat(this.props.className.split(" "));
-	    }
-	
-	    const { leftPanelStyle, rightPanelStyle } = this.preparePanelStyles();
-	
-	    
-	    let splitterStyle = {
-	      flex: `0 0 ${splitterSize}px`
-	    };
-	
-	    return (
-	      dom.div({
-	        className: classNames.join(" "),
-	        style: style },
-	        !startPanelCollapsed ?
-	          dom.div({
-	            className: endPanelControl ? "uncontrolled" : "controlled",
-	            style: leftPanelStyle },
-	            startPanel
-	          ) : null,
-	        Draggable({
-	          className: "splitter",
-	          style: splitterStyle,
-	          onStart: this.onStartMove,
-	          onStop: this.onStopMove,
-	          onMove: this.onMove
-	        }),
-	        !endPanelCollapsed ?
-	          dom.div({
-	            className: endPanelControl ? "controlled" : "uncontrolled",
-	            style: rightPanelStyle },
-	            endPanel
-	          ) : null
-	      )
-	    );
-	  }
-	});
-	
-	module.exports = SplitBox;
-
-
- },
-
- function(module, exports) {
-
-	module.exports = __WEBPACK_EXTERNAL_MODULE_31__;
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	const React = __webpack_require__(2);
-	const ReactDOM = __webpack_require__(31);
-	const { DOM: dom, PropTypes } = React;
-	
-	const Draggable = React.createClass({
-	  displayName: "Draggable",
-	
-	  propTypes: {
-	    onMove: PropTypes.func.isRequired,
-	    onStart: PropTypes.func,
-	    onStop: PropTypes.func,
-	    style: PropTypes.object,
-	    className: PropTypes.string
-	  },
-	
-	  startDragging(ev) {
-	    ev.preventDefault();
-	    const doc = ReactDOM.findDOMNode(this).ownerDocument;
-	    doc.addEventListener("mousemove", this.onMove);
-	    doc.addEventListener("mouseup", this.onUp);
-	    this.props.onStart && this.props.onStart();
-	  },
-	
-	  onMove(ev) {
-	    ev.preventDefault();
-	    
-	    
-	    this.props.onMove(ev.screenX, ev.screenY);
-	  },
-	
-	  onUp(ev) {
-	    ev.preventDefault();
-	    const doc = ReactDOM.findDOMNode(this).ownerDocument;
-	    doc.removeEventListener("mousemove", this.onMove);
-	    doc.removeEventListener("mouseup", this.onUp);
-	    this.props.onStop && this.props.onStop();
-	  },
-	
-	  render() {
-	    return dom.div({
-	      style: this.props.style,
-	      className: this.props.className,
-	      onMouseDown: this.startDragging
-	    });
-	  }
-	});
-	
-	module.exports = Draggable;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	
-	
-	(function(window) {
-	    'use strict'
-	
-	    var re = {
-	        not_string: /[^s]/,
-	        not_bool: /[^t]/,
-	        not_type: /[^T]/,
-	        not_primitive: /[^v]/,
-	        number: /[diefg]/,
-	        numeric_arg: /bcdiefguxX/,
-	        json: /[j]/,
-	        not_json: /[^j]/,
-	        text: /^[^\x25]+/,
-	        modulo: /^\x25{2}/,
-	        placeholder: /^\x25(?:([1-9]\d*)\$|\(([^\)]+)\))?(\+)?(0|'[^$])?(-)?(\d+)?(?:\.(\d+))?([b-gijosStTuvxX])/,
-	        key: /^([a-z_][a-z_\d]*)/i,
-	        key_access: /^\.([a-z_][a-z_\d]*)/i,
-	        index_access: /^\[(\d+)\]/,
-	        sign: /^[\+\-]/
-	    }
-	
-	    function sprintf() {
-	        var key = arguments[0], cache = sprintf.cache
-	        if (!(cache[key] && cache.hasOwnProperty(key))) {
-	            cache[key] = sprintf.parse(key)
-	        }
-	        return sprintf.format.call(null, cache[key], arguments)
-	    }
-	
-	    sprintf.format = function(parse_tree, argv) {
-	        var cursor = 1, tree_length = parse_tree.length, node_type = '', arg, output = [], i, k, match, pad, pad_character, pad_length, is_positive = true, sign = ''
-	        for (i = 0; i < tree_length; i++) {
-	            node_type = get_type(parse_tree[i])
-	            if (node_type === 'string') {
-	                output[output.length] = parse_tree[i]
-	            }
-	            else if (node_type === 'array') {
-	                match = parse_tree[i] 
-	                if (match[2]) { 
-	                    arg = argv[cursor]
-	                    for (k = 0; k < match[2].length; k++) {
-	                        if (!arg.hasOwnProperty(match[2][k])) {
-	                            throw new Error(sprintf('[sprintf] property "%s" does not exist', match[2][k]))
-	                        }
-	                        arg = arg[match[2][k]]
-	                    }
-	                }
-	                else if (match[1]) { 
-	                    arg = argv[match[1]]
-	                }
-	                else { 
-	                    arg = argv[cursor++]
-	                }
-	
-	                if (re.not_type.test(match[8]) && re.not_primitive.test(match[8]) && get_type(arg) == 'function') {
-	                    arg = arg()
-	                }
-	
-	                if (re.numeric_arg.test(match[8]) && (get_type(arg) != 'number' && isNaN(arg))) {
-	                    throw new TypeError(sprintf("[sprintf] expecting number but found %s", get_type(arg)))
-	                }
-	
-	                if (re.number.test(match[8])) {
-	                    is_positive = arg >= 0
-	                }
-	
-	                switch (match[8]) {
-	                    case 'b':
-	                        arg = parseInt(arg, 10).toString(2)
-	                    break
-	                    case 'c':
-	                        arg = String.fromCharCode(parseInt(arg, 10))
-	                    break
-	                    case 'd':
-	                    case 'i':
-	                        arg = parseInt(arg, 10)
-	                    break
-	                    case 'j':
-	                        arg = JSON.stringify(arg, null, match[6] ? parseInt(match[6]) : 0)
-	                    break
-	                    case 'e':
-	                        arg = match[7] ? parseFloat(arg).toExponential(match[7]) : parseFloat(arg).toExponential()
-	                    break
-	                    case 'f':
-	                        arg = match[7] ? parseFloat(arg).toFixed(match[7]) : parseFloat(arg)
-	                    break
-	                    case 'g':
-	                        arg = match[7] ? parseFloat(arg).toPrecision(match[7]) : parseFloat(arg)
-	                    break
-	                    case 'o':
-	                        arg = arg.toString(8)
-	                    break
-	                    case 's':
-	                    case 'S':
-	                        arg = String(arg)
-	                        arg = (match[7] ? arg.substring(0, match[7]) : arg)
-	                    break
-	                    case 't':
-	                        arg = String(!!arg)
-	                        arg = (match[7] ? arg.substring(0, match[7]) : arg)
-	                    break
-	                    case 'T':
-	                        arg = get_type(arg)
-	                        arg = (match[7] ? arg.substring(0, match[7]) : arg)
-	                    break
-	                    case 'u':
-	                        arg = parseInt(arg, 10) >>> 0
-	                    break
-	                    case 'v':
-	                        arg = arg.valueOf()
-	                        arg = (match[7] ? arg.substring(0, match[7]) : arg)
-	                    break
-	                    case 'x':
-	                        arg = parseInt(arg, 10).toString(16)
-	                    break
-	                    case 'X':
-	                        arg = parseInt(arg, 10).toString(16).toUpperCase()
-	                    break
-	                }
-	                if (re.json.test(match[8])) {
-	                    output[output.length] = arg
-	                }
-	                else {
-	                    if (re.number.test(match[8]) && (!is_positive || match[3])) {
-	                        sign = is_positive ? '+' : '-'
-	                        arg = arg.toString().replace(re.sign, '')
-	                    }
-	                    else {
-	                        sign = ''
-	                    }
-	                    pad_character = match[4] ? match[4] === '0' ? '0' : match[4].charAt(1) : ' '
-	                    pad_length = match[6] - (sign + arg).length
-	                    pad = match[6] ? (pad_length > 0 ? str_repeat(pad_character, pad_length) : '') : ''
-	                    output[output.length] = match[5] ? sign + arg + pad : (pad_character === '0' ? sign + pad + arg : pad + sign + arg)
-	                }
-	            }
-	        }
-	        return output.join('')
-	    }
-	
-	    sprintf.cache = {}
-	
-	    sprintf.parse = function(fmt) {
-	        var _fmt = fmt, match = [], parse_tree = [], arg_names = 0
-	        while (_fmt) {
-	            if ((match = re.text.exec(_fmt)) !== null) {
-	                parse_tree[parse_tree.length] = match[0]
-	            }
-	            else if ((match = re.modulo.exec(_fmt)) !== null) {
-	                parse_tree[parse_tree.length] = '%'
-	            }
-	            else if ((match = re.placeholder.exec(_fmt)) !== null) {
-	                if (match[2]) {
-	                    arg_names |= 1
-	                    var field_list = [], replacement_field = match[2], field_match = []
-	                    if ((field_match = re.key.exec(replacement_field)) !== null) {
-	                        field_list[field_list.length] = field_match[1]
-	                        while ((replacement_field = replacement_field.substring(field_match[0].length)) !== '') {
-	                            if ((field_match = re.key_access.exec(replacement_field)) !== null) {
-	                                field_list[field_list.length] = field_match[1]
-	                            }
-	                            else if ((field_match = re.index_access.exec(replacement_field)) !== null) {
-	                                field_list[field_list.length] = field_match[1]
-	                            }
-	                            else {
-	                                throw new SyntaxError("[sprintf] failed to parse named argument key")
-	                            }
-	                        }
-	                    }
-	                    else {
-	                        throw new SyntaxError("[sprintf] failed to parse named argument key")
-	                    }
-	                    match[2] = field_list
-	                }
-	                else {
-	                    arg_names |= 2
-	                }
-	                if (arg_names === 3) {
-	                    throw new Error("[sprintf] mixing positional and named placeholders is not (yet) supported")
-	                }
-	                parse_tree[parse_tree.length] = match
-	            }
-	            else {
-	                throw new SyntaxError("[sprintf] unexpected placeholder")
-	            }
-	            _fmt = _fmt.substring(match[0].length)
-	        }
-	        return parse_tree
-	    }
-	
-	    var vsprintf = function(fmt, argv, _argv) {
-	        _argv = (argv || []).slice(0)
-	        _argv.splice(0, 0, fmt)
-	        return sprintf.apply(null, _argv)
-	    }
-	
-	    
-
-
-	    function get_type(variable) {
-	        if (typeof variable === 'number') {
-	            return 'number'
-	        }
-	        else if (typeof variable === 'string') {
-	            return 'string'
-	        }
-	        else {
-	            return Object.prototype.toString.call(variable).slice(8, -1).toLowerCase()
-	        }
-	    }
-	
-	    var preformattedPadding = {
-	        '0': ['', '0', '00', '000', '0000', '00000', '000000', '0000000'],
-	        ' ': ['', ' ', '  ', '   ', '    ', '     ', '      ', '       '],
-	        '_': ['', '_', '__', '___', '____', '_____', '______', '_______'],
-	    }
-	    function str_repeat(input, multiplier) {
-	        if (multiplier >= 0 && multiplier <= 7 && preformattedPadding[input]) {
-	            return preformattedPadding[input][multiplier]
-	        }
-	        return Array(multiplier + 1).join(input)
-	    }
-	
-	    
-
-
-	    if (true) {
-	        exports.sprintf = sprintf
-	        exports.vsprintf = vsprintf
-	    }
-	    else {
-	        window.sprintf = sprintf
-	        window.vsprintf = vsprintf
-	
-	        if (typeof define === 'function' && define.amd) {
-	            define(function() {
-	                return {
-	                    sprintf: sprintf,
-	                    vsprintf: vsprintf
-	                }
-	            })
-	        }
-	    }
-	})(typeof window === 'undefined' ? this : window);
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	
-
-
-	
-	var EventEmitter = function EventEmitter() {};
-	module.exports = EventEmitter;
-	
-	const { Cu } = __webpack_require__(35);
-	const promise = __webpack_require__(40);
-	
-	
-
-
-
-
-
-
-	EventEmitter.decorate = function EventEmitter_decorate (aObjectToDecorate) {
-	  let emitter = new EventEmitter();
-	  aObjectToDecorate.on = emitter.on.bind(emitter);
-	  aObjectToDecorate.off = emitter.off.bind(emitter);
-	  aObjectToDecorate.once = emitter.once.bind(emitter);
-	  aObjectToDecorate.emit = emitter.emit.bind(emitter);
-	};
-	
-	EventEmitter.prototype = {
-	  
-
-
-
-
-
-
-
-	  on: function EventEmitter_on(aEvent, aListener) {
-	    if (!this._eventEmitterListeners)
-	      this._eventEmitterListeners = new Map();
-	    if (!this._eventEmitterListeners.has(aEvent)) {
-	      this._eventEmitterListeners.set(aEvent, []);
-	    }
-	    this._eventEmitterListeners.get(aEvent).push(aListener);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  once: function EventEmitter_once(aEvent, aListener) {
-	    let deferred = promise.defer();
-	
-	    let handler = (aEvent, aFirstArg, ...aRest) => {
-	      this.off(aEvent, handler);
-	      if (aListener) {
-	        aListener.apply(null, [aEvent, aFirstArg, ...aRest]);
-	      }
-	      deferred.resolve(aFirstArg);
-	    };
-	
-	    handler._originalListener = aListener;
-	    this.on(aEvent, handler);
-	
-	    return deferred.promise;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  off: function EventEmitter_off(aEvent, aListener) {
-	    if (!this._eventEmitterListeners)
-	      return;
-	    let listeners = this._eventEmitterListeners.get(aEvent);
-	    if (listeners) {
-	      this._eventEmitterListeners.set(aEvent, listeners.filter(l => {
-	        return l !== aListener && l._originalListener !== aListener;
-	      }));
-	    }
-	  },
-	
-	  
-
-
-
-	  emit: function EventEmitter_emit(aEvent) {
-	    if (!this._eventEmitterListeners || !this._eventEmitterListeners.has(aEvent)) {
-	      return;
-	    }
-	
-	    let originalListeners = this._eventEmitterListeners.get(aEvent);
-	    for (let listener of this._eventEmitterListeners.get(aEvent)) {
-	      
-	      
-	      if (!this._eventEmitterListeners) {
-	        break;
-	      }
-	
-	      
-	      
-	      if (originalListeners === this._eventEmitterListeners.get(aEvent) ||
-	          this._eventEmitterListeners.get(aEvent).some(l => l === listener)) {
-	        try {
-	          listener.apply(null, arguments);
-	        }
-	        catch (ex) {
-	          
-	          let msg = ex + ": " + ex.stack;
-	          
-	          console.log(msg);
-	        }
-	      }
-	    }
-	  },
-	};
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	var { inDOMUtils } = __webpack_require__(36);
-	
-	var ourServices = {
-	  inIDOMUtils: inDOMUtils,
-	  nsIClipboardHelper: {
-	    copyString: () => {}
-	  },
-	  nsIXULChromeRegistry: {
-	    isLocaleRTL: () => {return false;}
-	  },
-	  nsIDOMParser: {
-	
-	  },
-	};
-	
-	module.exports = {
-	  Cc: name => {
-	    if(typeof console !== "undefined") {
-	      console.log('Cc sham for', name);
-	    }
-	    return {
-	      getService: (name) => ourServices[name],
-	      createInstance: (iface) => ourServices[iface],
-	    };
-	  },
-	  CC: (name, iface, method) => {
-	    if(typeof console !== "undefined") {
-	      console.log('CC sham for', name, iface, method);
-	    }
-	    return {
-	    };
-	  },
-	  Ci: {
-	    nsIThread: {
-	      "DISPATCH_NORMAL":0,
-	      "DISPATCH_SYNC":1
-	    },
-	    nsIDOMNode: typeof HTMLElement !== "undefined" ? HTMLElement : null,
-	    nsIFocusManager: {
-	      MOVEFOCUS_BACKWARD: 2,
-	      MOVEFOCUS_FORWARD: 1,
-	    },
-	    nsIDOMKeyEvent: {
-	
-	    },
-	    nsIDOMCSSRule: {"UNKNOWN_RULE":0,"STYLE_RULE":1,"CHARSET_RULE":2,"IMPORT_RULE":3,"MEDIA_RULE":4,"FONT_FACE_RULE":5,"PAGE_RULE":6,"KEYFRAMES_RULE":7,"KEYFRAME_RULE":8,"MOZ_KEYFRAMES_RULE":7,"MOZ_KEYFRAME_RULE":8,"NAMESPACE_RULE":10,"COUNTER_STYLE_RULE":11,"SUPPORTS_RULE":12,"FONT_FEATURE_VALUES_RULE":14},
-	    inIDOMUtils: "inIDOMUtils",
-	    nsIClipboardHelper: "nsIClipboardHelper",
-	    nsIXULChromeRegistry: "nsIXULChromeRegistry",
-	  },
-	  Cu: {
-	    reportError: msg => { (typeof console !== "undefined") ? console.error(msg) : dump(msg) },
-	    callFunctionWithAsyncStack: fn => fn(),
-	  },
-	  Cr: {},
-	  components: {
-	    isSuccessCode: () => (returnCode & 0x80000000) === 0,
-	  }
-	};
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-	
-	"use strict";
-	
-	var { CSSLexer } = __webpack_require__(37);
-	var { cssColors } = __webpack_require__(38);
-	var { cssProperties } = __webpack_require__(39);
-	
-	var cssRGBMap;
-	
-	
-	var EXCLUDE_SHORTHANDS = (1 << 0);
-	var INCLUDE_ALIASES = (1 << 1);
-	var TYPE_LENGTH = 0;
-	var TYPE_PERCENTAGE = 1;
-	var TYPE_COLOR = 2;
-	var TYPE_URL = 3;
-	var TYPE_ANGLE = 4;
-	var TYPE_FREQUENCY = 5;
-	var TYPE_TIME = 6;
-	var TYPE_GRADIENT = 7;
-	var TYPE_TIMING_FUNCTION = 8;
-	var TYPE_IMAGE_RECT = 9;
-	var TYPE_NUMBER = 10;
-	
-	function getCSSLexer(text) {
-	  return new CSSLexer(text);
-	}
-	
-	function rgbToColorName(r, g, b) {
-	  if (!cssRGBMap) {
-	    cssRGBMap = new Map();
-	    for (let name in cssColors) {
-	      cssRGBMap.set(JSON.stringify(cssColors[name]), name);
-	    }
-	  }
-	  let value = cssRGBMap.get(JSON.stringify([r, g, b]));
-	  if (!value) {
-	    throw new Error("no such color");
-	  }
-	  return value;
-	}
-	
-	
-	function _hslValue(n1, n2, hue) {
-	  if (hue > 6.0) {
-	    hue -= 6.0;
-	  } else if (hue < 0.0) {
-	    hue += 6.0;
-	  }
-	  var val;
-	  if (hue < 1.0) {
-	    val = n1 + (n2 - n1) * hue;
-	  } else if (hue < 3.0) {
-	    val = n2;
-	  } else if (hue < 4.0) {
-	    val = n1 + (n2 - n1) * (4.0 - hue);
-	  } else {
-	    val = n1;
-	  }
-	  return val;
-	}
-	
-	
-	
-	function hslToRGB([hue, saturation, lightness]) {
-	  var red;
-	  var green;
-	  var blue;
-	  if (saturation === 0) {
-	    red = lightness;
-	    green = lightness;
-	    blue = lightness;
-	  } else {
-	    var m2;
-	    if (lightness <= 0.5) {
-	      m2 = lightness * (1.0 + saturation);
-	    } else {
-	      m2 = lightness + saturation - (lightness * saturation);
-	    }
-	    var m1 = (2.0 * lightness) - m2;
-	    var f = _hslValue;
-	    var h6 = hue * 6.0;
-	    red = f(m1, m2, h6 + 2);
-	    green = f(m1, m2, h6);
-	    blue = f(m1, m2, h6 - 2);
-	  }
-	  return [red, green, blue];
-	}
-	
-	function colorToRGBA(name) {
-	  name = name.trim().toLowerCase();
-	  if (name in cssColors) {
-	    return cssColors[name];
-	  }
-	
-	  if (name === "transparent") {
-	    return [0, 0, 0, 0];
-	  }
-	
-	  let lexer = getCSSLexer(name);
-	
-	  let getToken = function() {
-	    while (true) {
-	      let token = lexer.nextToken();
-	      if (!token || token.tokenType !== "comment" ||
-	          token.tokenType !== "whitespace") {
-	        return token;
-	      }
-	    }
-	  };
-	
-	  let requireComma = function(token) {
-	    if (token.tokenType !== "symbol" || token.text !== ",") {
-	      return null;
-	    }
-	    return getToken();
-	  };
-	
-	  let func = getToken();
-	  if (!func || func.tokenType !== "function") {
-	    return null;
-	  }
-	  let alpha = false;
-	  if (func.text === "rgb" || func.text === "hsl") {
-	    
-	  } else if (func.text === "rgba" || func.text === "hsla") {
-	    alpha = true;
-	  } else {
-	    return null;
-	  }
-	
-	  let vals = [];
-	  for (let i = 0; i < 3; ++i) {
-	    let token = getToken();
-	    if (i > 0) {
-	      token = requireComma(token);
-	    }
-	    if (token.tokenType !== "number" || !token.isInteger) {
-	      return null;
-	    }
-	    let num = token.number;
-	    if (num < 0) {
-	      num = 0;
-	    } else if (num > 255) {
-	      num = 255;
-	    }
-	    vals.push(num);
-	  }
-	
-	  if (func.text === "hsl" || func.text === "hsla") {
-	    vals = hslToRGB(vals);
-	  }
-	
-	  if (alpha) {
-	    let token = requireComma(getToken());
-	    if (token.tokenType !== "number") {
-	      return null;
-	    }
-	    let num = token.number;
-	    if (num < 0) {
-	      num = 0;
-	    } else if (num > 1) {
-	      num = 1;
-	    }
-	    vals.push(num);
-	  } else {
-	    vals.push(1);
-	  }
-	
-	  let parenToken = getToken();
-	  if (!parenToken || parenToken.tokenType !== "symbol" ||
-	      parenToken.text !== ")") {
-	    return null;
-	  }
-	  if (getToken() !== null) {
-	    return null;
-	  }
-	
-	  return vals;
-	}
-	
-	function isValidCSSColor(name) {
-	  return colorToRGBA(name) !== null;
-	}
-	
-	function isVariable(name) {
-	  return name.startsWith("--");
-	}
-	
-	function cssPropertyIsShorthand(name) {
-	  if (isVariable(name)) {
-	    return false;
-	  }
-	  if (!(name in cssProperties)) {
-	    throw Error("unknown property " + name);
-	  }
-	  return !!cssProperties[name].subproperties;
-	}
-	
-	function getSubpropertiesForCSSProperty(name) {
-	  if (isVariable(name)) {
-	    return [name];
-	  }
-	  if (!(name in cssProperties)) {
-	    throw Error("unknown property " + name);
-	  }
-	  if ("subproperties" in cssProperties[name]) {
-	    return cssProperties[name].subproperties.slice();
-	  }
-	  return [name];
-	}
-	
-	function getCSSValuesForProperty(name) {
-	  if (isVariable(name)) {
-	    return ["initial", "inherit", "unset"];
-	  }
-	  if (!(name in cssProperties)) {
-	    throw Error("unknown property " + name);
-	  }
-	  return cssProperties[name].values.slice();
-	}
-	
-	function getCSSPropertyNames(flags) {
-	  let names = Object.keys(cssProperties);
-	  if ((flags & EXCLUDE_SHORTHANDS) !== 0) {
-	    names = names.filter((name) => cssProperties[name].subproperties);
-	  }
-	  if ((flags & INCLUDE_ALIASES) === 0) {
-	    names = names.filter((name) => !cssProperties[name].alias);
-	  }
-	  return names;
-	}
-	
-	function cssPropertySupportsType(name, type) {
-	  if (isVariable(name)) {
-	    return false;
-	  }
-	  if (!(name in cssProperties)) {
-	    throw Error("unknown property " + name);
-	  }
-	  return (cssProperties[name].supports & (1 << type)) !== 0;
-	}
-	
-	function isInheritedProperty(name) {
-	  if (isVariable(name)) {
-	    return true;
-	  }
-	  if (!(name in cssProperties)) {
-	    return false;
-	  }
-	  return cssProperties[name].inherited;
-	}
-	
-	function cssPropertyIsValid(name, value) {
-	  if (isVariable(name)) {
-	    return true;
-	  }
-	  if (!(name in cssProperties)) {
-	    return false;
-	  }
-	  let elt = document.createElement("div");
-	  elt.style = name + ":" + value;
-	  return elt.style.length > 0;
-	}
-	
-	exports.inDOMUtils = {
-	  getCSSLexer,
-	  rgbToColorName,
-	  colorToRGBA,
-	  isValidCSSColor,
-	  cssPropertyIsShorthand,
-	  getSubpropertiesForCSSProperty,
-	  getCSSValuesForProperty,
-	  getCSSPropertyNames,
-	  cssPropertySupportsType,
-	  isInheritedProperty,
-	  cssPropertyIsValid,
-	
-	  
-	  EXCLUDE_SHORTHANDS,
-	  INCLUDE_ALIASES,
-	  TYPE_LENGTH,
-	  TYPE_PERCENTAGE,
-	  TYPE_COLOR,
-	  TYPE_URL,
-	  TYPE_ANGLE,
-	  TYPE_FREQUENCY,
-	  TYPE_TIME,
-	  TYPE_GRADIENT,
-	  TYPE_TIMING_FUNCTION,
-	  TYPE_IMAGE_RECT,
-	  TYPE_NUMBER,
-	};
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_FACTORY__, __WEBPACK_AMD_DEFINE_ARRAY__, __WEBPACK_AMD_DEFINE_RESULT__;"use strict";
-	
-	(function (root, factory) {
-	    
-	    
-	    if (true) {
-	        !(__WEBPACK_AMD_DEFINE_ARRAY__ = [exports], __WEBPACK_AMD_DEFINE_FACTORY__ = (factory), __WEBPACK_AMD_DEFINE_RESULT__ = (typeof __WEBPACK_AMD_DEFINE_FACTORY__ === 'function' ? (__WEBPACK_AMD_DEFINE_FACTORY__.apply(exports, __WEBPACK_AMD_DEFINE_ARRAY__)) : __WEBPACK_AMD_DEFINE_FACTORY__), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-	    } else if (typeof exports !== 'undefined') {
-	        factory(exports);
-	    } else {
-	        factory(root);
-	    }
-	}(this, function (exports) {
-	
-	function between(num, first, last) { return num >= first && num <= last; }
-	function digit(code) { return between(code, 0x30,0x39); }
-	function hexdigit(code) { return digit(code) || between(code, 0x41,0x46) || between(code, 0x61,0x66); }
-	function uppercaseletter(code) { return between(code, 0x41,0x5a); }
-	function lowercaseletter(code) { return between(code, 0x61,0x7a); }
-	function letter(code) { return uppercaseletter(code) || lowercaseletter(code); }
-	function nonascii(code) { return code >= 0x80; }
-	function namestartchar(code) { return letter(code) || nonascii(code) || code == 0x5f; }
-	function namechar(code) { return namestartchar(code) || digit(code) || code == 0x2d; }
-	function nonprintable(code) { return between(code, 0,8) || code == 0xb || between(code, 0xe,0x1f) || code == 0x7f; }
-	function newline(code) { return code == 0xa; }
-	function whitespace(code) { return newline(code) || code == 9 || code == 0x20; }
-	
-	var maximumallowedcodepoint = 0x10ffff;
-	
-	var InvalidCharacterError = function(message) {
-		this.message = message;
-	};
-	InvalidCharacterError.prototype = new Error;
-	InvalidCharacterError.prototype.name = 'InvalidCharacterError';
-	
-	function stringFromCode(code) {
-		if(code <= 0xffff) return String.fromCharCode(code);
-		
-		code -= Math.pow(2, 20);
-		var lead = Math.floor(code/Math.pow(2, 10)) + 0xd800;
-		var trail = code % Math.pow(2, 10) + 0xdc00;
-		return String.fromCharCode(lead) + String.fromCharCode(trail);
-	}
-	
-	function* tokenize(str, options) {
-		if (options === undefined) {
-			options = {};
-		}
-		if (options.loc === undefined) {
-			options.loc = false;
-		}
-		if (options.offsets === undefined) {
-			options.offsets = false;
-		}
-		if (options.keepComments === undefined) {
-			options.keepComments = false;
-		}
-		if (options.startOffset === undefined) {
-			options.startOffset = 0;
-		}
-	
-		var i = options.startOffset - 1;
-		var code;
-	
-		
-		var line = 0;
-		var column = 0;
-		
-		var lastLineLength = 0;
-		var incrLineno = function() {
-			line += 1;
-			lastLineLength = column;
-			column = 0;
-		};
-		var locStart = {line:line, column:column};
-		var offsetStart = i;
-	
-		var codepoint = function(i) {
-			if(i >= str.length) {
-				return -1;
-			}
-			return str.charCodeAt(i);
-		};
-		var next = function(num) {
-			if(num === undefined)
-				num = 1;
-			if(num > 3)
-				throw "Spec Error: no more than three codepoints of lookahead.";
-	
-			var rcode;
-			for (var offset = i + 1; num-- > 0; ++offset) {
-				rcode = codepoint(offset);
-				if (rcode === 0xd && codepoint(offset+1) === 0xa) {
-					++offset;
-					rcode = 0xa;
-				} else if (rcode === 0xd || rcode === 0xc) {
-					rcode = 0xa;
-				} else if (rcode === 0x0) {
-					rcode = 0xfffd;
-				}
-			}
-	
-			return rcode;
-		};
-		var consume = function(num) {
-			if(num === undefined)
-				num = 1;
-			while(num-- > 0) {
-				++i;
-				code = codepoint(i);
-				if (code === 0xd && codepoint(i+1) === 0xa) {
-					++i;
-					code = 0xa;
-				} else if (code === 0xd || code === 0xc) {
-					code = 0xa;
-				} else if (code === 0x0) {
-					code = 0xfffd;
-				}
-				if(newline(code)) incrLineno();
-				else column++;
-			}
-			return true;
-		};
-		var reconsume = function() {
-			i -= 1;		
-			if (newline(code)) {
-				line -= 1;
-				column = lastLineLength;
-			} else {
-				column -= 1;
-			}
-			return true;
-		};
-		var eof = function(codepoint) {
-			if(codepoint === undefined) codepoint = code;
-			return codepoint == -1;
-		};
-		var donothing = function() {};
-		var parseerror = function() { console.log("Parse error at index " + i + ", processing codepoint 0x" + code.toString(16) + ".");return true; };
-	
-		var consumeAToken = function() {
-			consume();
-			if (!options.keepComments) {
-				while(code == 0x2f && next() == 0x2a) {
-					consumeAComment();
-					consume();
-				}
-			}
-			locStart.line = line;
-			locStart.column = column;
-			offsetStart = i;
-			if(whitespace(code)) {
-				while(whitespace(next())) consume();
-				return new WhitespaceToken;
-			}
-			else if(code == 0x2f && next() == 0x2a) return consumeAComment();
-			else if(code == 0x22) return consumeAStringToken();
-			else if(code == 0x23) {
-				if(namechar(next()) || areAValidEscape(next(1), next(2))) {
-					var token = new HashToken();
-					if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
-						token.type = "id";
-						token.tokenType = "id";
-					}
-					token.value = consumeAName();
-					token.text = token.value;
-					return token;
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x24) {
-				if(next() == 0x3d) {
-					consume();
-					return new SuffixMatchToken();
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x27) return consumeAStringToken();
-			else if(code == 0x28) return new OpenParenToken();
-			else if(code == 0x29) return new CloseParenToken();
-			else if(code == 0x2a) {
-				if(next() == 0x3d) {
-					consume();
-					return new SubstringMatchToken();
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x2b) {
-				if(startsWithANumber()) {
-					reconsume();
-					return consumeANumericToken();
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x2c) return new CommaToken();
-			else if(code == 0x2d) {
-				if(startsWithANumber()) {
-					reconsume();
-					return consumeANumericToken();
-				} else if(next(1) == 0x2d && next(2) == 0x3e) {
-					consume(2);
-					return new CDCToken();
-				} else if(startsWithAnIdentifier()) {
-					reconsume();
-					return consumeAnIdentlikeToken();
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x2e) {
-				if(startsWithANumber()) {
-					reconsume();
-					return consumeANumericToken();
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x3a) return new ColonToken;
-			else if(code == 0x3b) return new SemicolonToken;
-			else if(code == 0x3c) {
-				if(next(1) == 0x21 && next(2) == 0x2d && next(3) == 0x2d) {
-					consume(3);
-					return new CDOToken();
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x40) {
-				if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
-					return new AtKeywordToken(consumeAName());
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x5b) return new OpenSquareToken();
-			else if(code == 0x5c) {
-				if(startsWithAValidEscape()) {
-					reconsume();
-					return consumeAnIdentlikeToken();
-				} else {
-					parseerror();
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x5d) return new CloseSquareToken();
-			else if(code == 0x5e) {
-				if(next() == 0x3d) {
-					consume();
-					return new PrefixMatchToken();
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x7b) return new OpenCurlyToken();
-			else if(code == 0x7c) {
-				if(next() == 0x3d) {
-					consume();
-					return new DashMatchToken();
-				
-				
-				
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(code == 0x7d) return new CloseCurlyToken();
-			else if(code == 0x7e) {
-				if(next() == 0x3d) {
-					consume();
-					return new IncludeMatchToken();
-				} else {
-					return new DelimToken(code);
-				}
-			}
-			else if(digit(code)) {
-				reconsume();
-				return consumeANumericToken();
-			}
-			else if(namestartchar(code)) {
-				reconsume();
-				return consumeAnIdentlikeToken();
-			}
-			else if(eof()) return new EOFToken();
-			else return new DelimToken(code);
-		};
-	
-		var consumeAComment = function() {
-			consume();
-			var comment = "";
-			while(true) {
-				consume();
-				if(code == 0x2a && next() == 0x2f) {
-					consume();
-					break;
-				} else if(eof()) {
-					break;
-				}
-				comment += stringFromCode(code);
-			}
-			return new CommentToken(comment);
-		};
-	
-		var consumeANumericToken = function() {
-			var num = consumeANumber();
-			var token;
-			if(wouldStartAnIdentifier(next(1), next(2), next(3))) {
-				token = new DimensionToken();
-				token.value = num.value;
-				token.repr = num.repr;
-				token.type = num.type;
-				token.unit = consumeAName();
-				token.text = token.unit;
-			} else if(next() == 0x25) {
-				consume();
-				token = new PercentageToken();
-				token.value = num.value;
-				token.repr = num.repr;
-			} else {
-				var token = new NumberToken();
-				token.value = num.value;
-				token.repr = num.repr;
-				token.type = num.type;
-			}
-			token.number = token.value;
-			token.isInteger = token.type === "integer";
-			
-			return token;
-		};
-	
-		var consumeAnIdentlikeToken = function() {
-			var str = consumeAName();
-			if(str.toLowerCase() == "url" && next() == 0x28) {
-				consume();
-				while(whitespace(next(1)) && whitespace(next(2)))
-					consume();
-				if((next() == 0x22 || next() == 0x27) ||
-				   (whitespace(next()) && (next(2) == 0x22 || next(2) == 0x27))) {
-					while(whitespace(next()))
-						consume();
-					consume();
-					let str = consumeAStringToken();
-					while(whitespace(next()))
-						consume();
-					
-					consume();
-					return new URLToken(str.text);
-				} else {
-					return consumeAURLToken();
-				}
-			} else if(next() == 0x28) {
-				consume();
-				return new FunctionToken(str);
-			} else {
-				return new IdentToken(str);
-			}
-		};
-	
-		var consumeAStringToken = function(endingCodePoint) {
-			if(endingCodePoint === undefined) endingCodePoint = code;
-			var string = "";
-			while(consume()) {
-				if(code == endingCodePoint || eof()) {
-					return new StringToken(string);
-				} else if(newline(code)) {
-					reconsume();
-					return new BadStringToken(string);
-				} else if(code == 0x5c) {
-					if(eof(next())) {
-						donothing();
-					} else if(newline(next())) {
-						consume();
-					} else {
-						string += stringFromCode(consumeEscape());
-					}
-				} else {
-					string += stringFromCode(code);
-				}
-			}
-		};
-	
-		var consumeAURLToken = function() {
-			var token = new URLToken("");
-			while(whitespace(next())) consume();
-			if(eof(next())) return token;
-			while(consume()) {
-				if(code == 0x29 || eof()) {
-					break;
-				} else if(whitespace(code)) {
-					while(whitespace(next()))
-						consume();
-					if(next() == 0x29 || eof(next())) {
-						consume();
-						break;
-					} else {
-						consumeTheRemnantsOfABadURL();
-						return new BadURLToken();
-					}
-				} else if(code == 0x22 || code == 0x27 || code == 0x28 || nonprintable(code)) {
-					parseerror();
-					consumeTheRemnantsOfABadURL();
-					return new BadURLToken();
-				} else if(code == 0x5c) {
-					if(startsWithAValidEscape()) {
-						token.value += stringFromCode(consumeEscape());
-					} else {
-						parseerror();
-						consumeTheRemnantsOfABadURL();
-						return new BadURLToken();
-					}
-				} else {
-					token.value += stringFromCode(code);
-				}
-			}
-			token.text = token.value;
-			return token;
-		};
-	
-		var consumeEscape = function() {
-			
-			
-			consume();
-			if(hexdigit(code)) {
-				
-				var digits = [code];
-				for(var total = 0; total < 5; total++) {
-					if(hexdigit(next())) {
-						consume();
-						digits.push(code);
-					} else {
-						break;
-					}
-				}
-				if(whitespace(next())) consume();
-				var value = parseInt(digits.map(function(x){return String.fromCharCode(x);}).join(''), 16);
-				if( value > maximumallowedcodepoint ) value = 0xfffd;
-				return value;
-			} else if(eof()) {
-				return 0xfffd;
-			} else {
-				return code;
-			}
-		};
-	
-		var areAValidEscape = function(c1, c2) {
-			if(c1 != 0x5c) return false;
-			if(newline(c2)) return false;
-			return true;
-		};
-		var startsWithAValidEscape = function() {
-			return areAValidEscape(code, next());
-		};
-	
-		var wouldStartAnIdentifier = function(c1, c2, c3) {
-			if(c1 == 0x2d) {
-				return namestartchar(c2) || c2 == 0x2d || areAValidEscape(c2, c3);
-			} else if(namestartchar(c1)) {
-				return true;
-			} else if(c1 == 0x5c) {
-				return areAValidEscape(c1, c2);
-			} else {
-				return false;
-			}
-		};
-		var startsWithAnIdentifier = function() {
-			return wouldStartAnIdentifier(code, next(1), next(2));
-		};
-	
-		var wouldStartANumber = function(c1, c2, c3) {
-			if(c1 == 0x2b || c1 == 0x2d) {
-				if(digit(c2)) return true;
-				if(c2 == 0x2e && digit(c3)) return true;
-				return false;
-			} else if(c1 == 0x2e) {
-				if(digit(c2)) return true;
-				return false;
-			} else if(digit(c1)) {
-				return true;
-			} else {
-				return false;
-			}
-		};
-		var startsWithANumber = function() {
-			return wouldStartANumber(code, next(1), next(2));
-		};
-	
-		var consumeAName = function() {
-			var result = "";
-			while(consume()) {
-				if(namechar(code)) {
-					result += stringFromCode(code);
-				} else if(startsWithAValidEscape()) {
-					result += stringFromCode(consumeEscape());
-				} else {
-					reconsume();
-					return result;
-				}
-			}
-		};
-	
-		var consumeANumber = function() {
-			var repr = [];
-			var type = "integer";
-			if(next() == 0x2b || next() == 0x2d) {
-				consume();
-				repr += stringFromCode(code);
-			}
-			while(digit(next())) {
-				consume();
-				repr += stringFromCode(code);
-			}
-			if(next(1) == 0x2e && digit(next(2))) {
-				consume();
-				repr += stringFromCode(code);
-				consume();
-				repr += stringFromCode(code);
-				type = "number";
-				while(digit(next())) {
-					consume();
-					repr += stringFromCode(code);
-				}
-			}
-			var c1 = next(1), c2 = next(2), c3 = next(3);
-			if((c1 == 0x45 || c1 == 0x65) && digit(c2)) {
-				consume();
-				repr += stringFromCode(code);
-				consume();
-				repr += stringFromCode(code);
-				type = "number";
-				while(digit(next())) {
-					consume();
-					repr += stringFromCode(code);
-				}
-			} else if((c1 == 0x45 || c1 == 0x65) && (c2 == 0x2b || c2 == 0x2d) && digit(c3)) {
-				consume();
-				repr += stringFromCode(code);
-				consume();
-				repr += stringFromCode(code);
-				consume();
-				repr += stringFromCode(code);
-				type = "number";
-				while(digit(next())) {
-					consume();
-					repr += stringFromCode(code);
-				}
-			}
-			var value = convertAStringToANumber(repr);
-			return {type:type, value:value, repr:repr};
-		};
-	
-		var convertAStringToANumber = function(string) {
-			
-			return +string;
-		};
-	
-		var consumeTheRemnantsOfABadURL = function() {
-			while(consume()) {
-				if(code == 0x2d || eof()) {
-					return;
-				} else if(startsWithAValidEscape()) {
-					consumeEscape();
-					donothing();
-				} else {
-					donothing();
-				}
-			}
-		};
-	
-	
-	
-		var iterationCount = 0;
-		while(!eof(next())) {
-			var token = consumeAToken();
-			if (options.loc) {
-				token.loc = {};
-				token.loc.start = {line:locStart.line, column:locStart.column};
-				token.loc.end = {line:line, column:column};
-			}
-			if (options.offsets) {
-				token.startOffset = offsetStart;
-				token.endOffset = i + 1;
-			}
-			yield token;
-			iterationCount++;
-			if(iterationCount > str.length*2) return "I'm infinite-looping!";
-		}
-	}
-	
-	function CSSParserToken() { throw "Abstract Base Class"; }
-	CSSParserToken.prototype.toJSON = function() {
-		return {token: this.tokenType};
-	};
-	CSSParserToken.prototype.toString = function() { return this.tokenType; };
-	CSSParserToken.prototype.toSource = function() { return ''+this; };
-	
-	function BadStringToken(text) {
-		this.text = text;
-		return this;
-	}
-	BadStringToken.prototype = Object.create(CSSParserToken.prototype);
-	BadStringToken.prototype.tokenType = "bad_string";
-	
-	function BadURLToken() { return this; }
-	BadURLToken.prototype = Object.create(CSSParserToken.prototype);
-	BadURLToken.prototype.tokenType = "bad_url";
-	
-	function WhitespaceToken() { return this; }
-	WhitespaceToken.prototype = Object.create(CSSParserToken.prototype);
-	WhitespaceToken.prototype.tokenType = "whitespace";
-	WhitespaceToken.prototype.toString = function() { return "WS"; };
-	WhitespaceToken.prototype.toSource = function() { return " "; };
-	
-	function CDOToken() { return this; }
-	CDOToken.prototype = Object.create(CSSParserToken.prototype);
-	CDOToken.prototype.tokenType = "htmlcomment";
-	CDOToken.prototype.toSource = function() { return "<!--"; };
-	
-	function CDCToken() { return this; }
-	CDCToken.prototype = Object.create(CSSParserToken.prototype);
-	CDCToken.prototype.tokenType = "htmlcomment";
-	CDCToken.prototype.toSource = function() { return "-->"; };
-	
-	function ColonToken() { return this; }
-	ColonToken.prototype = Object.create(CSSParserToken.prototype);
-	ColonToken.prototype.tokenType = "symbol";
-	ColonToken.prototype.text = ":";
-	
-	function SemicolonToken() { return this; }
-	SemicolonToken.prototype = Object.create(CSSParserToken.prototype);
-	SemicolonToken.prototype.tokenType = "symbol";
-	SemicolonToken.prototype.text = ";";
-	
-	function CommaToken() { return this; }
-	CommaToken.prototype = Object.create(CSSParserToken.prototype);
-	CommaToken.prototype.tokenType = "symbol";
-	CommaToken.prototype.text = ",";
-	
-	function GroupingToken() { throw "Abstract Base Class"; }
-	GroupingToken.prototype = Object.create(CSSParserToken.prototype);
-	
-	function OpenCurlyToken() { this.value = "{"; this.mirror = "}"; return this; }
-	OpenCurlyToken.prototype = Object.create(GroupingToken.prototype);
-	OpenCurlyToken.prototype.tokenType = "symbol";
-	OpenCurlyToken.prototype.text = "{";
-	
-	function CloseCurlyToken() { this.value = "}"; this.mirror = "{"; return this; }
-	CloseCurlyToken.prototype = Object.create(GroupingToken.prototype);
-	CloseCurlyToken.prototype.tokenType = "symbol";
-	CloseCurlyToken.prototype.text = "}";
-	
-	function OpenSquareToken() { this.value = "["; this.mirror = "]"; return this; }
-	OpenSquareToken.prototype = Object.create(GroupingToken.prototype);
-	OpenSquareToken.prototype.tokenType = "symbol";
-	OpenSquareToken.prototype.text = "[";
-	
-	function CloseSquareToken() { this.value = "]"; this.mirror = "["; return this; }
-	CloseSquareToken.prototype = Object.create(GroupingToken.prototype);
-	CloseSquareToken.prototype.tokenType = "symbol";
-	CloseSquareToken.prototype.text = "]";
-	
-	function OpenParenToken() { this.value = "("; this.mirror = ")"; return this; }
-	OpenParenToken.prototype = Object.create(GroupingToken.prototype);
-	OpenParenToken.prototype.tokenType = "symbol";
-	OpenParenToken.prototype.text = "(";
-	
-	function CloseParenToken() { this.value = ")"; this.mirror = "("; return this; }
-	CloseParenToken.prototype = Object.create(GroupingToken.prototype);
-	CloseParenToken.prototype.tokenType = "symbol";
-	CloseParenToken.prototype.text = ")";
-	
-	function IncludeMatchToken() { return this; }
-	IncludeMatchToken.prototype = Object.create(CSSParserToken.prototype);
-	IncludeMatchToken.prototype.tokenType = "includes";
-	
-	function DashMatchToken() { return this; }
-	DashMatchToken.prototype = Object.create(CSSParserToken.prototype);
-	DashMatchToken.prototype.tokenType = "dashmatch";
-	
-	function PrefixMatchToken() { return this; }
-	PrefixMatchToken.prototype = Object.create(CSSParserToken.prototype);
-	PrefixMatchToken.prototype.tokenType = "beginsmatch";
-	
-	function SuffixMatchToken() { return this; }
-	SuffixMatchToken.prototype = Object.create(CSSParserToken.prototype);
-	SuffixMatchToken.prototype.tokenType = "endsmatch";
-	
-	function SubstringMatchToken() { return this; }
-	SubstringMatchToken.prototype = Object.create(CSSParserToken.prototype);
-	SubstringMatchToken.prototype.tokenType = "containsmatch";
-	
-	function ColumnToken() { return this; }
-	ColumnToken.prototype = Object.create(CSSParserToken.prototype);
-	ColumnToken.prototype.tokenType = "||";
-	
-	function EOFToken() { return this; }
-	EOFToken.prototype = Object.create(CSSParserToken.prototype);
-	EOFToken.prototype.tokenType = "EOF";
-	EOFToken.prototype.toSource = function() { return ""; };
-	
-	function DelimToken(code) {
-		this.value = stringFromCode(code);
-		this.text = this.value;
-		return this;
-	}
-	DelimToken.prototype = Object.create(CSSParserToken.prototype);
-	DelimToken.prototype.tokenType = "symbol";
-	DelimToken.prototype.toString = function() { return "DELIM("+this.value+")"; };
-	DelimToken.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.value = this.value;
-		return json;
-	};
-	DelimToken.prototype.toSource = function() {
-		if(this.value == "\\")
-			return "\\\n";
-		else
-			return this.value;
-	};
-	
-	function StringValuedToken() { throw "Abstract Base Class"; }
-	StringValuedToken.prototype = Object.create(CSSParserToken.prototype);
-	StringValuedToken.prototype.ASCIIMatch = function(str) {
-		return this.value.toLowerCase() == str.toLowerCase();
-	};
-	StringValuedToken.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.value = this.value;
-		return json;
-	};
-	
-	function IdentToken(val) {
-		this.value = val;
-		this.text = val;
-	}
-	IdentToken.prototype = Object.create(StringValuedToken.prototype);
-	IdentToken.prototype.tokenType = "ident";
-	IdentToken.prototype.toString = function() { return "IDENT("+this.value+")"; };
-	IdentToken.prototype.toSource = function() {
-		return escapeIdent(this.value);
-	};
-	
-	function FunctionToken(val) {
-		this.value = val;
-		this.text = val;
-		this.mirror = ")";
-	}
-	FunctionToken.prototype = Object.create(StringValuedToken.prototype);
-	FunctionToken.prototype.tokenType = "function";
-	FunctionToken.prototype.toString = function() { return "FUNCTION("+this.value+")"; };
-	FunctionToken.prototype.toSource = function() {
-		return escapeIdent(this.value) + "(";
-	};
-	
-	function AtKeywordToken(val) {
-		this.value = val;
-		this.text = val;
-	}
-	AtKeywordToken.prototype = Object.create(StringValuedToken.prototype);
-	AtKeywordToken.prototype.tokenType = "at";
-	AtKeywordToken.prototype.toString = function() { return "AT("+this.value+")"; };
-	AtKeywordToken.prototype.toSource = function() {
-		return "@" + escapeIdent(this.value);
-	};
-	
-	function HashToken(val) {
-		this.value = val;
-		this.text = val;
-		this.type = "unrestricted";
-	}
-	HashToken.prototype = Object.create(StringValuedToken.prototype);
-	HashToken.prototype.tokenType = "hash";
-	HashToken.prototype.toString = function() { return "HASH("+this.value+")"; };
-	HashToken.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.value = this.value;
-		json.type = this.type;
-		return json;
-	};
-	HashToken.prototype.toSource = function() {
-		if(this.type == "id") {
-			return "#" + escapeIdent(this.value);
-		} else {
-			return "#" + escapeHash(this.value);
-		}
-	};
-	
-	function StringToken(val) {
-		this.value = val;
-		this.text = val;
-	}
-	StringToken.prototype = Object.create(StringValuedToken.prototype);
-	StringToken.prototype.tokenType = "string";
-	StringToken.prototype.toString = function() {
-		return '"' + escapeString(this.value) + '"';
-	};
-	
-	function CommentToken(val) {
-		this.value = val;
-	}
-	CommentToken.prototype = Object.create(StringValuedToken.prototype);
-	CommentToken.prototype.tokenType = "comment";
-	CommentToken.prototype.toString = function() {
-		return '/*' + this.value + '*/';
-	}
-	CommentToken.prototype.toSource = CommentToken.prototype.toString;
-	
-	function URLToken(val) {
-		this.value = val;
-		this.text = val;
-	}
-	URLToken.prototype = Object.create(StringValuedToken.prototype);
-	URLToken.prototype.tokenType = "url";
-	URLToken.prototype.toString = function() { return "URL("+this.value+")"; };
-	URLToken.prototype.toSource = function() {
-		return 'url("' + escapeString(this.value) + '")';
-	};
-	
-	function NumberToken() {
-		this.value = null;
-		this.type = "integer";
-		this.repr = "";
-	}
-	NumberToken.prototype = Object.create(CSSParserToken.prototype);
-	NumberToken.prototype.tokenType = "number";
-	NumberToken.prototype.toString = function() {
-		if(this.type == "integer")
-			return "INT("+this.value+")";
-		return "NUMBER("+this.value+")";
-	};
-	NumberToken.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.value = this.value;
-		json.type = this.type;
-		json.repr = this.repr;
-		return json;
-	};
-	NumberToken.prototype.toSource = function() { return this.repr; };
-	
-	function PercentageToken() {
-		this.value = null;
-		this.repr = "";
-	}
-	PercentageToken.prototype = Object.create(CSSParserToken.prototype);
-	PercentageToken.prototype.tokenType = "percentage";
-	PercentageToken.prototype.toString = function() { return "PERCENTAGE("+this.value+")"; };
-	PercentageToken.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.value = this.value;
-		json.repr = this.repr;
-		return json;
-	};
-	PercentageToken.prototype.toSource = function() { return this.repr + "%"; };
-	
-	function DimensionToken() {
-		this.value = null;
-		this.type = "integer";
-		this.repr = "";
-		this.unit = "";
-	}
-	DimensionToken.prototype = Object.create(CSSParserToken.prototype);
-	DimensionToken.prototype.tokenType = "dimension";
-	DimensionToken.prototype.toString = function() { return "DIM("+this.value+","+this.unit+")"; };
-	DimensionToken.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.value = this.value;
-		json.type = this.type;
-		json.repr = this.repr;
-		json.unit = this.unit;
-		return json;
-	};
-	DimensionToken.prototype.toSource = function() {
-		var source = this.repr;
-		var unit = escapeIdent(this.unit);
-		if(unit[0].toLowerCase() == "e" && (unit[1] == "-" || between(unit.charCodeAt(1), 0x30, 0x39))) {
-			
-			
-			unit = "\\65 " + unit.slice(1, unit.length);
-		}
-		return source+unit;
-	};
-	
-	function escapeIdent(string) {
-		string = ''+string;
-		var result = '';
-		var firstcode = string.charCodeAt(0);
-		for(var i = 0; i < string.length; i++) {
-			var code = string.charCodeAt(i);
-			if(code === 0x0) {
-				throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
-			}
-	
-			if(
-				between(code, 0x1, 0x1f) || code == 0x7f ||
-				(i === 0 && between(code, 0x30, 0x39)) ||
-				(i == 1 && between(code, 0x30, 0x39) && firstcode == 0x2d)
-			) {
-				result += '\\' + code.toString(16) + ' ';
-			} else if(
-				code >= 0x80 ||
-				code == 0x2d ||
-				code == 0x5f ||
-				between(code, 0x30, 0x39) ||
-				between(code, 0x41, 0x5a) ||
-				between(code, 0x61, 0x7a)
-			) {
-				result += string[i];
-			} else {
-				result += '\\' + string[i];
-			}
-		}
-		return result;
-	}
-	
-	function escapeHash(string) {
-		
-		
-		
-		string = ''+string;
-		var result = '';
-		for(var i = 0; i < string.length; i++) {
-			var code = string.charCodeAt(i);
-			if(code === 0x0) {
-				throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
-			}
-	
-			if(
-				code >= 0x80 ||
-				code == 0x2d ||
-				code == 0x5f ||
-				between(code, 0x30, 0x39) ||
-				between(code, 0x41, 0x5a) ||
-				between(code, 0x61, 0x7a)
-			) {
-				result += string[i];
-			} else {
-				result += '\\' + code.toString(16) + ' ';
-			}
-		}
-		return result;
-	}
-	
-	function escapeString(string) {
-		string = ''+string;
-		var result = '';
-		for(var i = 0; i < string.length; i++) {
-			var code = string.charCodeAt(i);
-	
-			if(code === 0x0) {
-				throw new InvalidCharacterError('Invalid character: the input contains U+0000.');
-			}
-	
-			if(between(code, 0x1, 0x1f) || code == 0x7f) {
-				result += '\\' + code.toString(16) + ' ';
-			} else if(code == 0x22 || code == 0x5c) {
-				result += '\\' + string[i];
-			} else {
-				result += string[i];
-			}
-		}
-		return result;
-	}
-	
-	
-	exports.tokenize = tokenize;
-	exports.IdentToken = IdentToken;
-	exports.FunctionToken = FunctionToken;
-	exports.AtKeywordToken = AtKeywordToken;
-	exports.HashToken = HashToken;
-	exports.StringToken = StringToken;
-	exports.BadStringToken = BadStringToken;
-	exports.URLToken = URLToken;
-	exports.BadURLToken = BadURLToken;
-	exports.DelimToken = DelimToken;
-	exports.NumberToken = NumberToken;
-	exports.PercentageToken = PercentageToken;
-	exports.DimensionToken = DimensionToken;
-	exports.IncludeMatchToken = IncludeMatchToken;
-	exports.DashMatchToken = DashMatchToken;
-	exports.PrefixMatchToken = PrefixMatchToken;
-	exports.SuffixMatchToken = SuffixMatchToken;
-	exports.SubstringMatchToken = SubstringMatchToken;
-	exports.ColumnToken = ColumnToken;
-	exports.WhitespaceToken = WhitespaceToken;
-	exports.CDOToken = CDOToken;
-	exports.CDCToken = CDCToken;
-	exports.ColonToken = ColonToken;
-	exports.SemicolonToken = SemicolonToken;
-	exports.CommaToken = CommaToken;
-	exports.OpenParenToken = OpenParenToken;
-	exports.CloseParenToken = CloseParenToken;
-	exports.OpenSquareToken = OpenSquareToken;
-	exports.CloseSquareToken = CloseSquareToken;
-	exports.OpenCurlyToken = OpenCurlyToken;
-	exports.CloseCurlyToken = CloseCurlyToken;
-	exports.EOFToken = EOFToken;
-	exports.CSSParserToken = CSSParserToken;
-	exports.GroupingToken = GroupingToken;
-	
-	function TokenStream(tokens) {
-		
-		this.tokens = tokens;
-		this.token = undefined;
-		this.stored = [];
-	}
-	TokenStream.prototype.consume = function(num) {
-		if(num === undefined) num = 1;
-		while (num-- > 0) {
-			if (this.stored.length > 0) {
-				this.token = this.stored.shift();
-			} else {
-				var n = this.tokens.next();
-				while (!n.done && n.value instanceof CommentToken) {
-					n = this.tokens.next();
-				}
-				if (n.done) {
-					this.token = new EOFToken();
-					break;
-				}
-				this.token = n.value;
-			}
-		}
-		
-		return true;
-	};
-	TokenStream.prototype.next = function() {
-		if (this.stored.length === 0) {
-			var n = this.tokens.next();
-			while (!n.done && n.value instanceof CommentToken) {
-				n = this.tokens.next();
-			}
-			if (n.done)
-				return new EOFToken();
-			this.stored.push(n.value);
-		}
-		return this.stored[0];
-	};
-	TokenStream.prototype.reconsume = function() {
-		this.stored.unshift(this.token);
-	};
-	
-	function parseerror(s, msg) {
-		console.log("Parse error at token " + s.i + ": " + s.token + ".\n" + msg);
-		return true;
-	}
-	function donothing(){ return true; }
-	
-	function consumeAListOfRules(s, topLevel) {
-		var rules = [];
-		var rule;
-		while(s.consume()) {
-			if(s.token instanceof WhitespaceToken) {
-				continue;
-			} else if(s.token instanceof EOFToken) {
-				return rules;
-			} else if(s.token instanceof CDOToken || s.token instanceof CDCToken) {
-				if(topLevel == "top-level") continue;
-				s.reconsume();
-				if(rule = consumeAQualifiedRule(s)) rules.push(rule);
-			} else if(s.token instanceof AtKeywordToken) {
-				s.reconsume();
-				if(rule = consumeAnAtRule(s)) rules.push(rule);
-			} else {
-				s.reconsume();
-				if(rule = consumeAQualifiedRule(s)) rules.push(rule);
-			}
-		}
-	}
-	
-	function consumeAnAtRule(s) {
-		s.consume();
-		var rule = new AtRule(s.token.value);
-		while(s.consume()) {
-			if(s.token instanceof SemicolonToken || s.token instanceof EOFToken) {
-				return rule;
-			} else if(s.token instanceof OpenCurlyToken) {
-				rule.value = consumeASimpleBlock(s);
-				return rule;
-			} else {
-				s.reconsume();
-				rule.prelude.push(consumeAComponentValue(s));
-			}
-		}
-	}
-	
-	function consumeAQualifiedRule(s) {
-		var rule = new QualifiedRule();
-		while(s.consume()) {
-			if(s.token instanceof EOFToken) {
-				parseerror(s, "Hit EOF when trying to parse the prelude of a qualified rule.");
-				return;
-			} else if(s.token instanceof OpenCurlyToken) {
-				rule.value = consumeASimpleBlock(s);
-				return rule;
-			} else {
-				s.reconsume();
-				rule.prelude.push(consumeAComponentValue(s));
-			}
-		}
-	}
-	
-	function consumeAListOfDeclarations(s) {
-		var decls = [];
-		while(s.consume()) {
-			if(s.token instanceof WhitespaceToken || s.token instanceof SemicolonToken) {
-				donothing();
-			} else if(s.token instanceof EOFToken) {
-				return decls;
-			} else if(s.token instanceof AtKeywordToken) {
-				s.reconsume();
-				decls.push(consumeAnAtRule(s));
-			} else if(s.token instanceof IdentToken) {
-				var temp = [s.token];
-				while(!(s.next() instanceof SemicolonToken || s.next() instanceof EOFToken))
-					temp.push(consumeAComponentValue(s));
-				var decl;
-				if(decl = consumeADeclaration(new TokenStream(temp))) decls.push(decl);
-			} else {
-				parseerror(s);
-				s.reconsume();
-				while(!(s.next() instanceof SemicolonToken || s.next() instanceof EOFToken))
-					consumeAComponentValue(s);
-			}
-		}
-	}
-	
-	function consumeADeclaration(s) {
-		
-		s.consume();
-		var decl = new Declaration(s.token.value);
-		while(s.next() instanceof WhitespaceToken) s.consume();
-		if(!(s.next() instanceof ColonToken)) {
-			parseerror(s);
-			return;
-		} else {
-			s.consume();
-		}
-		while(!(s.next() instanceof EOFToken)) {
-			decl.value.push(consumeAComponentValue(s));
-		}
-		var foundImportant = false;
-		for(var i = decl.value.length - 1; i >= 0; i--) {
-			if(decl.value[i] instanceof WhitespaceToken) {
-				continue;
-			} else if(decl.value[i] instanceof IdentToken && decl.value[i].ASCIIMatch("important")) {
-				foundImportant = true;
-			} else if(foundImportant && decl.value[i] instanceof DelimToken && decl.value[i].value == "!") {
-				decl.value.splice(i, decl.value.length);
-				decl.important = true;
-				break;
-			} else {
-				break;
-			}
-		}
-		return decl;
-	}
-	
-	function consumeAComponentValue(s) {
-		s.consume();
-		if(s.token instanceof OpenCurlyToken || s.token instanceof OpenSquareToken || s.token instanceof OpenParenToken)
-			return consumeASimpleBlock(s);
-		if(s.token instanceof FunctionToken)
-			return consumeAFunction(s);
-		return s.token;
-	}
-	
-	function consumeASimpleBlock(s) {
-		var mirror = s.token.mirror;
-		var block = new SimpleBlock(s.token.value);
-		block.startToken = s.token;
-		while(s.consume()) {
-			if(s.token instanceof EOFToken || (s.token instanceof GroupingToken && s.token.value == mirror))
-				return block;
-			else {
-				s.reconsume();
-				block.value.push(consumeAComponentValue(s));
-			}
-		}
-	}
-	
-	function consumeAFunction(s) {
-		var func = new Func(s.token.value);
-		while(s.consume()) {
-			if(s.token instanceof EOFToken || s.token instanceof CloseParenToken)
-				return func;
-			else {
-				s.reconsume();
-				func.value.push(consumeAComponentValue(s));
-			}
-		}
-	}
-	
-	function normalizeInput(input) {
-		if(typeof input == "string")
-			return new TokenStream(tokenize(input));
-		if(input instanceof TokenStream)
-			return input;
-		if(typeof (input.next) == "function")
-			return new TokenStream(input);
-		if(input.length !== undefined)
-			return new TokenStream(input[Symbol.iterator]());
-		else throw SyntaxError(input);
-	}
-	
-	function parseAStylesheet(s) {
-		s = normalizeInput(s);
-		var sheet = new Stylesheet();
-		sheet.value = consumeAListOfRules(s, "top-level");
-		return sheet;
-	}
-	
-	function parseAListOfRules(s) {
-		s = normalizeInput(s);
-		return consumeAListOfRules(s);
-	}
-	
-	function parseARule(s) {
-		s = normalizeInput(s);
-		while(s.next() instanceof WhitespaceToken) s.consume();
-		if(s.next() instanceof EOFToken) throw SyntaxError();
-		var rule;
-		var startToken = s.next();
-		if(startToken instanceof AtKeywordToken) {
-			rule = consumeAnAtRule(s);
-		} else {
-			rule = consumeAQualifiedRule(s);
-			if(!rule) throw SyntaxError();
-		}
-		rule.startToken = startToken;
-		rule.endToken = s.token;
-		return rule;
-	}
-	
-	function parseADeclaration(s) {
-		s = normalizeInput(s);
-		while(s.next() instanceof WhitespaceToken) s.consume();
-		if(!(s.next() instanceof IdentToken)) throw SyntaxError();
-		var decl = consumeADeclaration(s);
-		if(decl)
-			return decl;
-		else
-			throw SyntaxError();
-	}
-	
-	function parseAListOfDeclarations(s) {
-		s = normalizeInput(s);
-		return consumeAListOfDeclarations(s);
-	}
-	
-	function parseAComponentValue(s) {
-		s = normalizeInput(s);
-		while(s.next() instanceof WhitespaceToken) s.consume();
-		if(s.next() instanceof EOFToken) throw SyntaxError();
-		var val = consumeAComponentValue(s);
-		if(!val) throw SyntaxError();
-		while(s.next() instanceof WhitespaceToken) s.consume();
-		if(s.next() instanceof EOFToken)
-			return val;
-		throw SyntaxError();
-	}
-	
-	function parseAListOfComponentValues(s) {
-		s = normalizeInput(s);
-		var vals = [];
-		while(true) {
-			var val = consumeAComponentValue(s);
-			if(val instanceof EOFToken)
-				return vals;
-			else
-				vals.push(val);
-		}
-	}
-	
-	function parseACommaSeparatedListOfComponentValues(s) {
-		s = normalizeInput(s);
-		var listOfCVLs = [];
-		while(true) {
-			var vals = [];
-			while(true) {
-				var val = consumeAComponentValue(s);
-				if(val instanceof EOFToken) {
-					listOfCVLs.push(vals);
-					return listOfCVLs;
-				} else if(val instanceof CommaToken) {
-					listOfCVLs.push(vals);
-					break;
-				} else {
-					vals.push(val);
-				}
-			}
-		}
-	}
-	
-	
-	function CSSParserRule() { throw "Abstract Base Class"; }
-	CSSParserRule.prototype.toString = function(indent) {
-		return JSON.stringify(this,null,indent);
-	};
-	CSSParserRule.prototype.toJSON = function() {
-		return {type:this.type, value:this.value};
-	};
-	
-	function Stylesheet() {
-		this.value = [];
-		return this;
-	}
-	Stylesheet.prototype = Object.create(CSSParserRule.prototype);
-	Stylesheet.prototype.type = "STYLESHEET";
-	
-	function AtRule(name) {
-		this.name = name;
-		this.prelude = [];
-		this.value = null;
-		return this;
-	}
-	AtRule.prototype = Object.create(CSSParserRule.prototype);
-	AtRule.prototype.type = "AT-RULE";
-	AtRule.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.name = this.name;
-		json.prelude = this.prelude;
-		return json;
-	};
-	
-	function QualifiedRule() {
-		this.prelude = [];
-		this.value = [];
-		return this;
-	}
-	QualifiedRule.prototype = Object.create(CSSParserRule.prototype);
-	QualifiedRule.prototype.type = "QUALIFIED-RULE";
-	QualifiedRule.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.prelude = this.prelude;
-		return json;
-	};
-	
-	function Declaration(name) {
-		this.name = name;
-		this.value = [];
-		this.important = false;
-		return this;
-	}
-	Declaration.prototype = Object.create(CSSParserRule.prototype);
-	Declaration.prototype.type = "DECLARATION";
-	Declaration.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.name = this.name;
-		json.important = this.important;
-		return json;
-	};
-	
-	function SimpleBlock(type) {
-		this.name = type;
-		this.value = [];
-		return this;
-	}
-	SimpleBlock.prototype = Object.create(CSSParserRule.prototype);
-	SimpleBlock.prototype.type = "BLOCK";
-	SimpleBlock.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.name = this.name;
-		return json;
-	};
-	
-	function Func(name) {
-		this.name = name;
-		this.value = [];
-		return this;
-	}
-	Func.prototype = Object.create(CSSParserRule.prototype);
-	Func.prototype.type = "FUNCTION";
-	Func.prototype.toJSON = function() {
-		var json = this.constructor.prototype.constructor.prototype.toJSON.call(this);
-		json.name = this.name;
-		return json;
-	};
-	
-	function CSSLexer(text) {
-		this.stream = tokenize(text, {
-			loc: true,
-			offsets: true,
-			keepComments: true
-		});
-		this.lineNumber = 0;
-		this.columnNumber = 0;
-		return this;
-	}
-	
-	CSSLexer.prototype.performEOFFixup = function(input, preserveBackslash) {
-		
-		return "";
-	};
-	
-	CSSLexer.prototype.nextToken = function() {
-		if (!this.stream) {
-			return null;
-		}
-		let v = this.stream.next();
-		if (v.done || v.value.tokenType === "EOF") {
-			this.stream = null;
-			return null;
-		}
-		this.lineNumber = v.value.loc.start.line;
-		this.columnNumber = v.value.loc.start.column;
-		return v.value;
-	};
-	
-	
-	exports.CSSParserRule = CSSParserRule;
-	exports.Stylesheet = Stylesheet;
-	exports.AtRule = AtRule;
-	exports.QualifiedRule = QualifiedRule;
-	exports.Declaration = Declaration;
-	exports.SimpleBlock = SimpleBlock;
-	exports.Func = Func;
-	exports.parseAStylesheet = parseAStylesheet;
-	exports.parseAListOfRules = parseAListOfRules;
-	exports.parseARule = parseARule;
-	exports.parseADeclaration = parseADeclaration;
-	exports.parseAListOfDeclarations = parseAListOfDeclarations;
-	exports.parseAComponentValue = parseAComponentValue;
-	exports.parseAListOfComponentValues = parseAListOfComponentValues;
-	exports.parseACommaSeparatedListOfComponentValues = parseACommaSeparatedListOfComponentValues;
-	exports.CSSLexer = CSSLexer;
-	
-	}));
-
-
- },
-
- function(module, exports) {
-
-	
-	var cssColors = {
-	  aliceblue: [240, 248, 255],
-	  antiquewhite: [250, 235, 215],
-	  aqua: [0, 255, 255],
-	  aquamarine: [127, 255, 212],
-	  azure: [240, 255, 255],
-	  beige: [245, 245, 220],
-	  bisque: [255, 228, 196],
-	  black: [0, 0, 0],
-	  blanchedalmond: [255, 235, 205],
-	  blue: [0, 0, 255],
-	  blueviolet: [138, 43, 226],
-	  brown: [165, 42, 42],
-	  burlywood: [222, 184, 135],
-	  cadetblue: [95, 158, 160],
-	  chartreuse: [127, 255, 0],
-	  chocolate: [210, 105, 30],
-	  coral: [255, 127, 80],
-	  cornflowerblue: [100, 149, 237],
-	  cornsilk: [255, 248, 220],
-	  crimson: [220, 20, 60],
-	  cyan: [0, 255, 255],
-	  darkblue: [0, 0, 139],
-	  darkcyan: [0, 139, 139],
-	  darkgoldenrod: [184, 134, 11],
-	  darkgray: [169, 169, 169],
-	  darkgreen: [0, 100, 0],
-	  darkgrey: [169, 169, 169],
-	  darkkhaki: [189, 183, 107],
-	  darkmagenta: [139, 0, 139],
-	  darkolivegreen: [85, 107, 47],
-	  darkorange: [255, 140, 0],
-	  darkorchid: [153, 50, 204],
-	  darkred: [139, 0, 0],
-	  darksalmon: [233, 150, 122],
-	  darkseagreen: [143, 188, 143],
-	  darkslateblue: [72, 61, 139],
-	  darkslategray: [47, 79, 79],
-	  darkslategrey: [47, 79, 79],
-	  darkturquoise: [0, 206, 209],
-	  darkviolet: [148, 0, 211],
-	  deeppink: [255, 20, 147],
-	  deepskyblue: [0, 191, 255],
-	  dimgray: [105, 105, 105],
-	  dimgrey: [105, 105, 105],
-	  dodgerblue: [30, 144, 255],
-	  firebrick: [178, 34, 34],
-	  floralwhite: [255, 250, 240],
-	  forestgreen: [34, 139, 34],
-	  fuchsia: [255, 0, 255],
-	  gainsboro: [220, 220, 220],
-	  ghostwhite: [248, 248, 255],
-	  gold: [255, 215, 0],
-	  goldenrod: [218, 165, 32],
-	  gray: [128, 128, 128],
-	  grey: [128, 128, 128],
-	  green: [0, 128, 0],
-	  greenyellow: [173, 255, 47],
-	  honeydew: [240, 255, 240],
-	  hotpink: [255, 105, 180],
-	  indianred: [205, 92, 92],
-	  indigo: [75, 0, 130],
-	  ivory: [255, 255, 240],
-	  khaki: [240, 230, 140],
-	  lavender: [230, 230, 250],
-	  lavenderblush: [255, 240, 245],
-	  lawngreen: [124, 252, 0],
-	  lemonchiffon: [255, 250, 205],
-	  lightblue: [173, 216, 230],
-	  lightcoral: [240, 128, 128],
-	  lightcyan: [224, 255, 255],
-	  lightgoldenrodyellow: [250, 250, 210],
-	  lightgray: [211, 211, 211],
-	  lightgreen: [144, 238, 144],
-	  lightgrey: [211, 211, 211],
-	  lightpink: [255, 182, 193],
-	  lightsalmon: [255, 160, 122],
-	  lightseagreen: [32, 178, 170],
-	  lightskyblue: [135, 206, 250],
-	  lightslategray: [119, 136, 153],
-	  lightslategrey: [119, 136, 153],
-	  lightsteelblue: [176, 196, 222],
-	  lightyellow: [255, 255, 224],
-	  lime: [0, 255, 0],
-	  limegreen: [50, 205, 50],
-	  linen: [250, 240, 230],
-	  magenta: [255, 0, 255],
-	  maroon: [128, 0, 0],
-	  mediumaquamarine: [102, 205, 170],
-	  mediumblue: [0, 0, 205],
-	  mediumorchid: [186, 85, 211],
-	  mediumpurple: [147, 112, 219],
-	  mediumseagreen: [60, 179, 113],
-	  mediumslateblue: [123, 104, 238],
-	  mediumspringgreen: [0, 250, 154],
-	  mediumturquoise: [72, 209, 204],
-	  mediumvioletred: [199, 21, 133],
-	  midnightblue: [25, 25, 112],
-	  mintcream: [245, 255, 250],
-	  mistyrose: [255, 228, 225],
-	  moccasin: [255, 228, 181],
-	  navajowhite: [255, 222, 173],
-	  navy: [0, 0, 128],
-	  oldlace: [253, 245, 230],
-	  olive: [128, 128, 0],
-	  olivedrab: [107, 142, 35],
-	  orange: [255, 165, 0],
-	  orangered: [255, 69, 0],
-	  orchid: [218, 112, 214],
-	  palegoldenrod: [238, 232, 170],
-	  palegreen: [152, 251, 152],
-	  paleturquoise: [175, 238, 238],
-	  palevioletred: [219, 112, 147],
-	  papayawhip: [255, 239, 213],
-	  peachpuff: [255, 218, 185],
-	  peru: [205, 133, 63],
-	  pink: [255, 192, 203],
-	  plum: [221, 160, 221],
-	  powderblue: [176, 224, 230],
-	  purple: [128, 0, 128],
-	  rebeccapurple: [102, 51, 153],
-	  red: [255, 0, 0],
-	  rosybrown: [188, 143, 143],
-	  royalblue: [65, 105, 225],
-	  saddlebrown: [139, 69, 19],
-	  salmon: [250, 128, 114],
-	  sandybrown: [244, 164, 96],
-	  seagreen: [46, 139, 87],
-	  seashell: [255, 245, 238],
-	  sienna: [160, 82, 45],
-	  silver: [192, 192, 192],
-	  skyblue: [135, 206, 235],
-	  slateblue: [106, 90, 205],
-	  slategray: [112, 128, 144],
-	  slategrey: [112, 128, 144],
-	  snow: [255, 250, 250],
-	  springgreen: [0, 255, 127],
-	  steelblue: [70, 130, 180],
-	  tan: [210, 180, 140],
-	  teal: [0, 128, 128],
-	  thistle: [216, 191, 216],
-	  tomato: [255, 99, 71],
-	  turquoise: [64, 224, 208],
-	  violet: [238, 130, 238],
-	  wheat: [245, 222, 179],
-	  white: [255, 255, 255],
-	  whitesmoke: [245, 245, 245],
-	  yellow: [255, 255, 0],
-	  yellowgreen: [154, 205, 50],
-	};
-	module.exports = { cssColors };
-
-
- },
-
- function(module, exports) {
-
-	
-	var cssProperties = {
-	  "-moz-appearance": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-gtk-info-bar", "-moz-mac-disclosure-button-closed", "-moz-mac-disclosure-button-open", "-moz-mac-fullscreen-button", "-moz-mac-help-button", "-moz-mac-vibrancy-dark", "-moz-mac-vibrancy-light", "-moz-win-borderless-glass", "-moz-win-browsertabbar-toolbox", "-moz-win-communications-toolbox", "-moz-win-exclude-glass", "-moz-win-glass", "-moz-win-media-toolbox", "-moz-window-button-box", "-moz-window-button-box-maximized", "-moz-window-button-close", "-moz-window-button-maximize", "-moz-window-button-minimize", "-moz-window-button-restore", "-moz-window-frame-bottom", "-moz-window-frame-left", "-moz-window-frame-right", "-moz-window-titlebar", "-moz-window-titlebar-maximized", "button", "button-arrow-down", "button-arrow-next", "button-arrow-previous", "button-arrow-up", "button-bevel", "button-focus", "caret", "checkbox", "checkbox-container", "checkbox-label", "checkmenuitem", "dialog", "dualbutton", "groupbox", "inherit", "initial", "listbox", "listitem", "menuarrow", "menubar", "menucheckbox", "menuimage", "menuitem", "menuitemtext", "menulist", "menulist-button", "menulist-text", "menulist-textfield", "menupopup", "menuradio", "menuseparator", "meterbar", "meterchunk", "none", "number-input", "progressbar", "progressbar-vertical", "progresschunk", "progresschunk-vertical", "radio", "radio-container", "radio-label", "radiomenuitem", "range", "range-thumb", "resizer", "resizerpanel", "scale-horizontal", "scale-vertical", "scalethumb-horizontal", "scalethumb-vertical", "scalethumbend", "scalethumbstart", "scalethumbtick", "scrollbar", "scrollbar-small", "scrollbarbutton-down", "scrollbarbutton-left", "scrollbarbutton-right", "scrollbarbutton-up", "scrollbarthumb-horizontal", "scrollbarthumb-vertical", "scrollbartrack-horizontal", "scrollbartrack-vertical", "searchfield", "separator", "spinner", "spinner-downbutton", "spinner-textfield", "spinner-upbutton", "splitter", "statusbar", "statusbarpanel", "tab", "tab-scroll-arrow-back", "tab-scroll-arrow-forward", "tabpanel", "tabpanels", "textfield", "textfield-multiline", "toolbar", "toolbarbutton", "toolbarbutton-dropdown", "toolbargripper", "toolbox", "tooltip", "treeheader", "treeheadercell", "treeheadersortarrow", "treeitem", "treeline", "treetwisty", "treetwistyopen", "treeview", "unset", "window", ],
-	  },
-	  "-moz-outline-radius-topleft": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-outline-radius-topright": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-outline-radius-bottomright": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-outline-radius-bottomleft": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-tab-size": {
-	    inherited: true,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "animation-delay": {
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "animation-direction": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["alternate", "alternate-reverse", "inherit", "initial", "normal", "reverse", "unset", ],
-	  },
-	  "animation-duration": {
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "animation-fill-mode": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["backwards", "both", "forwards", "inherit", "initial", "none", "unset", ],
-	  },
-	  "animation-iteration-count": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["infinite", "inherit", "initial", "unset", ],
-	  },
-	  "animation-name": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "none", "unset", ],
-	  },
-	  "animation-play-state": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "paused", "running", "unset", ],
-	  },
-	  "animation-timing-function": {
-	    inherited: false,
-	    supports: 256,
-	    values: ["cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "background-attachment": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["fixed", "inherit", "initial", "local", "scroll", "unset", ],
-	  },
-	  "background-clip": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["border-box", "content-box", "inherit", "initial", "padding-box", "unset", ],
-	  },
-	  "background-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "background-image": {
-	    inherited: false,
-	    supports: 648,
-	    values: ["-moz-element", "-moz-image-rect", "-moz-linear-gradient", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "inherit", "initial", "linear-gradient", "none", "radial-gradient", "repeating-linear-gradient", "repeating-radial-gradient", "unset", "url", ],
-	  },
-	  "background-blend-mode": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["color", "color-burn", "color-dodge", "darken", "difference", "exclusion", "hard-light", "hue", "inherit", "initial", "lighten", "luminosity", "multiply", "normal", "overlay", "saturation", "screen", "soft-light", "unset", ],
-	  },
-	  "background-origin": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["border-box", "content-box", "inherit", "initial", "padding-box", "unset", ],
-	  },
-	  "background-position": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "background-repeat": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "no-repeat", "repeat", "repeat-x", "repeat-y", "unset", ],
-	  },
-	  "background-size": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-binding": {
-	    inherited: false,
-	    supports: 8,
-	    values: ["inherit", "initial", "none", "unset", "url", ],
-	  },
-	  "block-size": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "border-block-end-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-block-end-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-block-end-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-block-start-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-block-start-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-block-start-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-bottom-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-border-bottom-colors": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-bottom-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-bottom-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-collapse": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["collapse", "inherit", "initial", "separate", "unset", ],
-	  },
-	  "border-image-source": {
-	    inherited: false,
-	    supports: 648,
-	    values: ["-moz-element", "-moz-image-rect", "-moz-linear-gradient", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "inherit", "initial", "linear-gradient", "none", "radial-gradient", "repeating-linear-gradient", "repeating-radial-gradient", "unset", "url", ],
-	  },
-	  "border-image-slice": {
-	    inherited: false,
-	    supports: 1026,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-image-width": {
-	    inherited: false,
-	    supports: 1027,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-image-outset": {
-	    inherited: false,
-	    supports: 1025,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-image-repeat": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-inline-end-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-inline-end-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-inline-end-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-inline-start-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-inline-start-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-inline-start-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-left-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-border-left-colors": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-left-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-left-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-right-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-border-right-colors": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-right-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-right-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-spacing": {
-	    inherited: true,
-	    supports: 1,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-top-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-border-top-colors": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-top-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-top-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-top-left-radius": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-top-right-radius": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-bottom-right-radius": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "border-bottom-left-radius": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "bottom": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "box-decoration-break": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["clone", "inherit", "initial", "slice", "unset", ],
-	  },
-	  "box-shadow": {
-	    inherited: false,
-	    supports: 5,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "box-sizing": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["border-box", "content-box", "inherit", "initial", "padding-box", "unset", ],
-	  },
-	  "caption-side": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["bottom", "bottom-outside", "inherit", "initial", "left", "right", "top", "top-outside", "unset", ],
-	  },
-	  "clear": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["both", "inherit", "initial", "inline-end", "inline-start", "left", "none", "right", "unset", ],
-	  },
-	  "clip": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "color": {
-	    inherited: true,
-	    supports: 4,
-	    values: ["aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-column-count": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["auto", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-column-fill": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["auto", "balance", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-column-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-column-gap": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "normal", "unset", ],
-	  },
-	  "-moz-column-rule-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-column-rule-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "-moz-column-rule-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "contain": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "layout", "none", "paint", "strict", "style", "unset", ],
-	  },
-	  "content": {
-	    inherited: false,
-	    supports: 8,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-control-character-visibility": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["hidden", "inherit", "initial", "unset", "visible", ],
-	  },
-	  "counter-increment": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "counter-reset": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "cursor": {
-	    inherited: true,
-	    supports: 8,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "direction": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "ltr", "rtl", "unset", ],
-	  },
-	  "display": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-box", "-moz-deck", "-moz-grid", "-moz-grid-group", "-moz-grid-line", "-moz-groupbox", "-moz-inline-box", "-moz-inline-grid", "-moz-inline-stack", "-moz-popup", "-moz-stack", "block", "contents", "flex", "grid", "inherit", "initial", "inline", "inline-block", "inline-flex", "inline-grid", "inline-table", "list-item", "none", "ruby", "ruby-base", "ruby-base-container", "ruby-text", "ruby-text-container", "table", "table-caption", "table-cell", "table-column", "table-column-group", "table-footer-group", "table-header-group", "table-row", "table-row-group", "unset", ],
-	  },
-	  "empty-cells": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["hide", "inherit", "initial", "show", "unset", ],
-	  },
-	  "align-content": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "align-items": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "align-self": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "flex-basis": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "flex-direction": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["column", "column-reverse", "inherit", "initial", "row", "row-reverse", "unset", ],
-	  },
-	  "flex-grow": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "flex-shrink": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "flex-wrap": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "nowrap", "unset", "wrap", "wrap-reverse", ],
-	  },
-	  "order": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "justify-content": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "justify-items": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "justify-self": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "float": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "inline-end", "inline-start", "left", "none", "right", "unset", ],
-	  },
-	  "-moz-float-edge": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["content-box", "inherit", "initial", "margin-box", "unset", ],
-	  },
-	  "font-family": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "font-feature-settings": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "font-kerning": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "none", "normal", "unset", ],
-	  },
-	  "font-language-override": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "normal", "unset", ],
-	  },
-	  "font-size": {
-	    inherited: true,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "large", "larger", "medium", "small", "smaller", "unset", "x-large", "x-small", "xx-large", "xx-small", ],
-	  },
-	  "font-size-adjust": {
-	    inherited: true,
-	    supports: 1024,
-	    values: ["inherit", "initial", "none", "unset", ],
-	  },
-	  "font-stretch": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["condensed", "expanded", "extra-condensed", "extra-expanded", "inherit", "initial", "normal", "semi-condensed", "semi-expanded", "ultra-condensed", "ultra-expanded", "unset", ],
-	  },
-	  "font-style": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "italic", "normal", "oblique", "unset", ],
-	  },
-	  "font-synthesis": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "font-variant-alternates": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "font-variant-caps": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["all-petite-caps", "all-small-caps", "inherit", "initial", "normal", "petite-caps", "small-caps", "titling-caps", "unicase", "unset", ],
-	  },
-	  "font-variant-east-asian": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "font-variant-ligatures": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "font-variant-numeric": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "font-variant-position": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "normal", "sub", "super", "unset", ],
-	  },
-	  "font-weight": {
-	    inherited: true,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-force-broken-image-icon": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-auto-flow": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-auto-columns": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-auto-rows": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-template-areas": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-template-columns": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-template-rows": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-column-start": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-column-end": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-row-start": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-row-end": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-column-gap": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "grid-row-gap": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "height": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "image-orientation": {
-	    inherited: true,
-	    supports: 16,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-image-region": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "ime-mode": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["active", "auto", "disabled", "inactive", "inherit", "initial", "normal", "unset", ],
-	  },
-	  "inline-size": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "left": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "letter-spacing": {
-	    inherited: true,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "normal", "unset", ],
-	  },
-	  "line-height": {
-	    inherited: true,
-	    supports: 1027,
-	    values: ["-moz-block-height", "inherit", "initial", "normal", "unset", ],
-	  },
-	  "list-style-image": {
-	    inherited: true,
-	    supports: 8,
-	    values: ["inherit", "initial", "none", "unset", "url", ],
-	  },
-	  "list-style-position": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "inside", "outside", "unset", ],
-	  },
-	  "list-style-type": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "margin-block-end": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "margin-block-start": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "margin-bottom": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "margin-inline-end": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "margin-inline-start": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "margin-left": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "margin-right": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "margin-top": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "marker-offset": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "max-block-size": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "none", "unset", ],
-	  },
-	  "max-height": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "calc", "inherit", "initial", "none", "unset", ],
-	  },
-	  "max-inline-size": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "calc", "inherit", "initial", "none", "unset", ],
-	  },
-	  "max-width": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "calc", "inherit", "initial", "none", "unset", ],
-	  },
-	  "min-height": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "min-block-size": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "min-inline-size": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "min-width": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "mix-blend-mode": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["color", "color-burn", "color-dodge", "darken", "difference", "exclusion", "hard-light", "hue", "inherit", "initial", "lighten", "luminosity", "multiply", "normal", "overlay", "saturation", "screen", "soft-light", "unset", ],
-	  },
-	  "isolation": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "isolate", "unset", ],
-	  },
-	  "object-fit": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["contain", "cover", "fill", "inherit", "initial", "none", "scale-down", "unset", ],
-	  },
-	  "object-position": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "offset-block-end": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "offset-block-start": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "offset-inline-end": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "offset-inline-start": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "opacity": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-orient": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["block", "horizontal", "inherit", "initial", "inline", "unset", "vertical", ],
-	  },
-	  "outline-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "outline-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["auto", "dashed", "dotted", "double", "groove", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "outline-width": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "outline-offset": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "overflow-x": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-hidden-unscrollable", "auto", "hidden", "inherit", "initial", "scroll", "unset", "visible", ],
-	  },
-	  "overflow-y": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-hidden-unscrollable", "auto", "hidden", "inherit", "initial", "scroll", "unset", "visible", ],
-	  },
-	  "padding-block-end": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "padding-block-start": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "padding-bottom": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "padding-inline-end": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "padding-inline-start": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "padding-left": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "padding-right": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "padding-top": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "page-break-after": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["always", "auto", "avoid", "inherit", "initial", "left", "right", "unset", ],
-	  },
-	  "page-break-before": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["always", "auto", "avoid", "inherit", "initial", "left", "right", "unset", ],
-	  },
-	  "page-break-inside": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["auto", "avoid", "inherit", "initial", "unset", ],
-	  },
-	  "paint-order": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "pointer-events": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["all", "auto", "fill", "inherit", "initial", "none", "painted", "stroke", "unset", "visible", "visiblefill", "visiblepainted", "visiblestroke", ],
-	  },
-	  "position": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["absolute", "fixed", "inherit", "initial", "relative", "static", "sticky", "unset", ],
-	  },
-	  "quotes": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "resize": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["both", "horizontal", "inherit", "initial", "none", "unset", "vertical", ],
-	  },
-	  "right": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "ruby-align": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["center", "inherit", "initial", "space-around", "space-between", "start", "unset", ],
-	  },
-	  "ruby-position": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "over", "under", "unset", ],
-	  },
-	  "scroll-behavior": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "smooth", "unset", ],
-	  },
-	  "scroll-snap-coordinate": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "scroll-snap-destination": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "scroll-snap-points-x": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "scroll-snap-points-y": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "scroll-snap-type-x": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "mandatory", "none", "proximity", "unset", ],
-	  },
-	  "scroll-snap-type-y": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "mandatory", "none", "proximity", "unset", ],
-	  },
-	  "table-layout": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["auto", "fixed", "inherit", "initial", "unset", ],
-	  },
-	  "text-align": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["-moz-center", "-moz-left", "-moz-right", "center", "end", "inherit", "initial", "justify", "left", "right", "start", "unset", ],
-	  },
-	  "-moz-text-align-last": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "center", "end", "inherit", "initial", "justify", "left", "right", "start", "unset", ],
-	  },
-	  "text-decoration-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "text-decoration-line": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "text-decoration-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-none", "dashed", "dotted", "double", "inherit", "initial", "solid", "unset", "wavy", ],
-	  },
-	  "text-indent": {
-	    inherited: true,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "text-orientation": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "mixed", "sideways", "sideways-right", "unset", "upright", ],
-	  },
-	  "text-overflow": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "text-shadow": {
-	    inherited: true,
-	    supports: 5,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-text-size-adjust": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "none", "unset", ],
-	  },
-	  "text-transform": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["capitalize", "full-width", "inherit", "initial", "lowercase", "none", "unset", "uppercase", ],
-	  },
-	  "transform": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "transform-box": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["border-box", "fill-box", "inherit", "initial", "unset", "view-box", ],
-	  },
-	  "transform-origin": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "perspective-origin": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "perspective": {
-	    inherited: false,
-	    supports: 1,
-	    values: ["inherit", "initial", "none", "unset", ],
-	  },
-	  "transform-style": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["flat", "inherit", "initial", "preserve-3d", "unset", ],
-	  },
-	  "backface-visibility": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["hidden", "inherit", "initial", "unset", "visible", ],
-	  },
-	  "top": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "transition-delay": {
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "transition-duration": {
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "transition-property": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["all", "inherit", "initial", "none", "unset", ],
-	  },
-	  "transition-timing-function": {
-	    inherited: false,
-	    supports: 256,
-	    values: ["cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "unicode-bidi": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-isolate", "-moz-isolate-override", "-moz-plaintext", "bidi-override", "embed", "inherit", "initial", "normal", "unset", ],
-	  },
-	  "-moz-user-focus": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["ignore", "inherit", "initial", "none", "normal", "select-after", "select-all", "select-before", "select-menu", "select-same", "unset", ],
-	  },
-	  "-moz-user-input": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "disabled", "enabled", "inherit", "initial", "none", "unset", ],
-	  },
-	  "-moz-user-modify": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "read-only", "read-write", "unset", "write-only", ],
-	  },
-	  "-moz-user-select": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-all", "-moz-none", "-moz-text", "all", "auto", "element", "elements", "inherit", "initial", "none", "text", "toggle", "tri-state", "unset", ],
-	  },
-	  "vertical-align": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "-moz-middle-with-baseline", "baseline", "bottom", "calc", "inherit", "initial", "middle", "sub", "super", "text-bottom", "text-top", "top", "unset", ],
-	  },
-	  "visibility": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["collapse", "hidden", "inherit", "initial", "unset", "visible", ],
-	  },
-	  "white-space": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["-moz-pre-space", "inherit", "initial", "normal", "nowrap", "pre", "pre-line", "pre-wrap", "unset", ],
-	  },
-	  "width": {
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-window-dragging": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["drag", "inherit", "initial", "no-drag", "unset", ],
-	  },
-	  "word-break": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["break-all", "inherit", "initial", "keep-all", "normal", "unset", ],
-	  },
-	  "word-spacing": {
-	    inherited: true,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "normal", "unset", ],
-	  },
-	  "word-wrap": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["break-word", "inherit", "initial", "normal", "unset", ],
-	  },
-	  "hyphens": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "manual", "none", "unset", ],
-	  },
-	  "writing-mode": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["horizontal-tb", "inherit", "initial", "lr", "lr-tb", "rl", "rl-tb", "sideways-lr", "sideways-rl", "tb", "tb-rl", "unset", "vertical-lr", "vertical-rl", ],
-	  },
-	  "z-index": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["auto", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-box-align": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["baseline", "center", "end", "inherit", "initial", "start", "stretch", "unset", ],
-	  },
-	  "-moz-box-direction": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "normal", "reverse", "unset", ],
-	  },
-	  "-moz-box-flex": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-box-orient": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["block-axis", "horizontal", "inherit", "initial", "inline-axis", "unset", "vertical", ],
-	  },
-	  "-moz-box-pack": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["center", "end", "inherit", "initial", "justify", "start", "unset", ],
-	  },
-	  "-moz-box-ordinal-group": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-stack-sizing": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["ignore", "inherit", "initial", "stretch-to-fit", "unset", ],
-	  },
-	  "clip-path": {
-	    inherited: false,
-	    supports: 8,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "clip-rule": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["evenodd", "inherit", "initial", "nonzero", "unset", ],
-	  },
-	  "color-interpolation": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "linearrgb", "srgb", "unset", ],
-	  },
-	  "color-interpolation-filters": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "linearrgb", "srgb", "unset", ],
-	  },
-	  "dominant-baseline": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["alphabetic", "auto", "central", "hanging", "ideographic", "inherit", "initial", "mathematical", "middle", "no-change", "reset-size", "text-after-edge", "text-before-edge", "unset", "use-script", ],
-	  },
-	  "fill": {
-	    inherited: true,
-	    supports: 12,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "fill-opacity": {
-	    inherited: true,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "fill-rule": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["evenodd", "inherit", "initial", "nonzero", "unset", ],
-	  },
-	  "filter": {
-	    inherited: false,
-	    supports: 8,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "flood-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "flood-opacity": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "image-rendering": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["-moz-crisp-edges", "auto", "inherit", "initial", "optimizequality", "optimizespeed", "unset", ],
-	  },
-	  "lighting-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "marker-end": {
-	    inherited: true,
-	    supports: 8,
-	    values: ["inherit", "initial", "none", "unset", "url", ],
-	  },
-	  "marker-mid": {
-	    inherited: true,
-	    supports: 8,
-	    values: ["inherit", "initial", "none", "unset", "url", ],
-	  },
-	  "marker-start": {
-	    inherited: true,
-	    supports: 8,
-	    values: ["inherit", "initial", "none", "unset", "url", ],
-	  },
-	  "mask": {
-	    inherited: false,
-	    supports: 8,
-	    values: ["inherit", "initial", "none", "unset", "url", ],
-	  },
-	  "mask-type": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["alpha", "inherit", "initial", "luminance", "unset", ],
-	  },
-	  "shape-rendering": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "crispedges", "geometricprecision", "inherit", "initial", "optimizespeed", "unset", ],
-	  },
-	  "stop-color": {
-	    inherited: false,
-	    supports: 4,
-	    values: ["aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "stop-opacity": {
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "stroke": {
-	    inherited: true,
-	    supports: 12,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "stroke-dasharray": {
-	    inherited: true,
-	    supports: 1027,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "stroke-dashoffset": {
-	    inherited: true,
-	    supports: 1027,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "stroke-linecap": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["butt", "inherit", "initial", "round", "square", "unset", ],
-	  },
-	  "stroke-linejoin": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["bevel", "inherit", "initial", "miter", "round", "unset", ],
-	  },
-	  "stroke-miterlimit": {
-	    inherited: true,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "stroke-opacity": {
-	    inherited: true,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "stroke-width": {
-	    inherited: true,
-	    supports: 1027,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "text-anchor": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["end", "inherit", "initial", "middle", "start", "unset", ],
-	  },
-	  "text-rendering": {
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "geometricprecision", "inherit", "initial", "optimizelegibility", "optimizespeed", "unset", ],
-	  },
-	  "vector-effect": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "non-scaling-stroke", "none", "unset", ],
-	  },
-	  "will-change": {
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-outline-radius": {
-	    subproperties: ["-moz-outline-radius-topleft", "-moz-outline-radius-topright", "-moz-outline-radius-bottomright", "-moz-outline-radius-bottomleft", ],
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "all": {
-	    subproperties: ["-moz-appearance", "-moz-outline-radius-topleft", "-moz-outline-radius-topright", "-moz-outline-radius-bottomright", "-moz-outline-radius-bottomleft", "-moz-tab-size", "-x-system-font", "animation-delay", "animation-direction", "animation-duration", "animation-fill-mode", "animation-iteration-count", "animation-name", "animation-play-state", "animation-timing-function", "background-attachment", "background-clip", "background-color", "background-image", "background-blend-mode", "background-origin", "background-position", "background-repeat", "background-size", "-moz-binding", "block-size", "border-block-end-color", "border-block-end-style", "border-block-end-width", "border-block-start-color", "border-block-start-style", "border-block-start-width", "border-bottom-color", "-moz-border-bottom-colors", "border-bottom-style", "border-bottom-width", "border-collapse", "border-image-source", "border-image-slice", "border-image-width", "border-image-outset", "border-image-repeat", "border-inline-end-color", "border-inline-end-style", "border-inline-end-width", "border-inline-start-color", "border-inline-start-style", "border-inline-start-width", "border-left-color", "-moz-border-left-colors", "border-left-style", "border-left-width", "border-right-color", "-moz-border-right-colors", "border-right-style", "border-right-width", "border-spacing", "border-top-color", "-moz-border-top-colors", "border-top-style", "border-top-width", "border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius", "bottom", "box-decoration-break", "box-shadow", "box-sizing", "caption-side", "clear", "clip", "color", "-moz-column-count", "-moz-column-fill", "-moz-column-width", "-moz-column-gap", "-moz-column-rule-color", "-moz-column-rule-style", "-moz-column-rule-width", "contain", "content", "-moz-control-character-visibility", "counter-increment", "counter-reset", "cursor", "display", "empty-cells", "align-content", "align-items", "align-self", "flex-basis", "flex-direction", "flex-grow", "flex-shrink", "flex-wrap", "order", "justify-content", "justify-items", "justify-self", "float", "-moz-float-edge", "font-family", "font-feature-settings", "font-kerning", "font-language-override", "font-size", "font-size-adjust", "-moz-osx-font-smoothing", "font-stretch", "font-style", "font-synthesis", "font-variant-alternates", "font-variant-caps", "font-variant-east-asian", "font-variant-ligatures", "font-variant-numeric", "font-variant-position", "font-weight", "-moz-force-broken-image-icon", "grid-auto-flow", "grid-auto-columns", "grid-auto-rows", "grid-template-areas", "grid-template-columns", "grid-template-rows", "grid-column-start", "grid-column-end", "grid-row-start", "grid-row-end", "grid-column-gap", "grid-row-gap", "height", "image-orientation", "-moz-image-region", "ime-mode", "inline-size", "left", "letter-spacing", "line-height", "list-style-image", "list-style-position", "list-style-type", "margin-block-end", "margin-block-start", "margin-bottom", "margin-inline-end", "margin-inline-start", "margin-left", "margin-right", "margin-top", "marker-offset", "max-block-size", "max-height", "max-inline-size", "max-width", "-moz-min-font-size-ratio", "min-height", "min-block-size", "min-inline-size", "min-width", "mix-blend-mode", "isolation", "object-fit", "object-position", "offset-block-end", "offset-block-start", "offset-inline-end", "offset-inline-start", "opacity", "-moz-orient", "outline-color", "outline-style", "outline-width", "outline-offset", "overflow-clip-box", "overflow-x", "overflow-y", "padding-block-end", "padding-block-start", "padding-bottom", "padding-inline-end", "padding-inline-start", "padding-left", "padding-right", "padding-top", "page-break-after", "page-break-before", "page-break-inside", "paint-order", "pointer-events", "position", "quotes", "resize", "right", "ruby-align", "ruby-position", "scroll-behavior", "scroll-snap-coordinate", "scroll-snap-destination", "scroll-snap-points-x", "scroll-snap-points-y", "scroll-snap-type-x", "scroll-snap-type-y", "table-layout", "text-align", "-moz-text-align-last", "text-combine-upright", "text-decoration-color", "text-decoration-line", "text-decoration-style", "text-indent", "text-orientation", "text-overflow", "text-shadow", "-moz-text-size-adjust", "text-transform", "transform", "transform-box", "transform-origin", "perspective-origin", "perspective", "transform-style", "backface-visibility", "top", "-moz-top-layer", "touch-action", "transition-delay", "transition-duration", "transition-property", "transition-timing-function", "-moz-user-focus", "-moz-user-input", "-moz-user-modify", "-moz-user-select", "vertical-align", "visibility", "white-space", "width", "-moz-window-dragging", "-moz-window-shadow", "word-break", "word-spacing", "word-wrap", "hyphens", "writing-mode", "z-index", "-moz-box-align", "-moz-box-direction", "-moz-box-flex", "-moz-box-orient", "-moz-box-pack", "-moz-box-ordinal-group", "-moz-stack-sizing", "clip-path", "clip-rule", "color-interpolation", "color-interpolation-filters", "dominant-baseline", "fill", "fill-opacity", "fill-rule", "filter", "flood-color", "flood-opacity", "image-rendering", "lighting-color", "marker-end", "marker-mid", "marker-start", "mask", "mask-type", "shape-rendering", "stop-color", "stop-opacity", "stroke", "stroke-dasharray", "stroke-dashoffset", "stroke-linecap", "stroke-linejoin", "stroke-miterlimit", "stroke-opacity", "stroke-width", "text-anchor", "text-rendering", "vector-effect", "will-change", ],
-	    inherited: false,
-	    supports: 2015,
-	    values: ["-moz-all", "-moz-available", "-moz-block-height", "-moz-box", "-moz-calc", "-moz-center", "-moz-crisp-edges", "-moz-deck", "-moz-element", "-moz-fit-content", "-moz-grid", "-moz-grid-group", "-moz-grid-line", "-moz-groupbox", "-moz-gtk-info-bar", "-moz-hidden-unscrollable", "-moz-image-rect", "-moz-inline-box", "-moz-inline-grid", "-moz-inline-stack", "-moz-left", "-moz-linear-gradient", "-moz-mac-disclosure-button-closed", "-moz-mac-disclosure-button-open", "-moz-mac-fullscreen-button", "-moz-mac-help-button", "-moz-mac-vibrancy-dark", "-moz-mac-vibrancy-light", "-moz-max-content", "-moz-middle-with-baseline", "-moz-min-content", "-moz-none", "-moz-popup", "-moz-pre-space", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "-moz-right", "-moz-stack", "-moz-text", "-moz-use-text-color", "-moz-win-borderless-glass", "-moz-win-browsertabbar-toolbox", "-moz-win-communications-toolbox", "-moz-win-exclude-glass", "-moz-win-glass", "-moz-win-media-toolbox", "-moz-window-button-box", "-moz-window-button-box-maximized", "-moz-window-button-close", "-moz-window-button-maximize", "-moz-window-button-minimize", "-moz-window-button-restore", "-moz-window-frame-bottom", "-moz-window-frame-left", "-moz-window-frame-right", "-moz-window-titlebar", "-moz-window-titlebar-maximized", "absolute", "active", "aliceblue", "all", "all-petite-caps", "all-small-caps", "alpha", "alphabetic", "alternate", "alternate-reverse", "always", "antiquewhite", "aqua", "aquamarine", "auto", "avoid", "azure", "backwards", "balance", "baseline", "beige", "bevel", "bisque", "black", "blanchedalmond", "block", "block-axis", "blue", "blueviolet", "border-box", "both", "bottom", "bottom-outside", "break-all", "break-word", "brown", "burlywood", "butt", "button", "button-arrow-down", "button-arrow-next", "button-arrow-previous", "button-arrow-up", "button-bevel", "button-focus", "cadetblue", "calc", "capitalize", "caret", "center", "central", "chartreuse", "checkbox", "checkbox-container", "checkbox-label", "checkmenuitem", "chocolate", "clone", "collapse", "color", "color-burn", "color-dodge", "column", "column-reverse", "condensed", "contain", "content-box", "contents", "coral", "cornflowerblue", "cornsilk", "cover", "crimson", "crispedges", "cubic-bezier", "currentColor", "cyan", "darkblue", "darkcyan", "darken", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dialog", "difference", "dimgray", "dimgrey", "disabled", "dodgerblue", "dotted", "double", "drag", "dualbutton", "ease", "ease-in", "ease-in-out", "ease-out", "element", "elements", "enabled", "end", "evenodd", "exclusion", "expanded", "extra-condensed", "extra-expanded", "fill", "fill-box", "firebrick", "fixed", "flat", "flex", "floralwhite", "forestgreen", "forwards", "fuchsia", "full-width", "gainsboro", "geometricprecision", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "grid", "groove", "groupbox", "hanging", "hard-light", "hidden", "hide", "honeydew", "horizontal", "horizontal-tb", "hotpink", "hsl", "hsla", "hue", "ideographic", "ignore", "inactive", "indianred", "indigo", "infinite", "inherit", "initial", "inline", "inline-axis", "inline-block", "inline-end", "inline-flex", "inline-grid", "inline-start", "inline-table", "inset", "inside", "isolate", "italic", "ivory", "justify", "keep-all", "khaki", "large", "larger", "lavender", "lavenderblush", "lawngreen", "layout", "left", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lighten", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linear", "linear-gradient", "linearrgb", "linen", "list-item", "listbox", "listitem", "local", "lowercase", "lr", "lr-tb", "luminance", "luminosity", "magenta", "mandatory", "manual", "margin-box", "maroon", "mathematical", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "menuarrow", "menubar", "menucheckbox", "menuimage", "menuitem", "menuitemtext", "menulist", "menulist-button", "menulist-text", "menulist-textfield", "menupopup", "menuradio", "menuseparator", "meterbar", "meterchunk", "middle", "midnightblue", "mintcream", "mistyrose", "miter", "mixed", "moccasin", "multiply", "navajowhite", "navy", "no-change", "no-drag", "no-repeat", "non-scaling-stroke", "none", "nonzero", "normal", "nowrap", "number-input", "oblique", "oldlace", "olive", "olivedrab", "optimizelegibility", "optimizequality", "optimizespeed", "orange", "orangered", "orchid", "outset", "outside", "over", "overlay", "padding-box", "paint", "painted", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "paused", "peachpuff", "peru", "petite-caps", "pink", "plum", "powderblue", "pre", "pre-line", "pre-wrap", "preserve-3d", "progressbar", "progressbar-vertical", "progresschunk", "progresschunk-vertical", "proximity", "purple", "radial-gradient", "radio", "radio-container", "radio-label", "radiomenuitem", "range", "range-thumb", "read-only", "read-write", "rebeccapurple", "red", "relative", "repeat", "repeat-x", "repeat-y", "repeating-linear-gradient", "repeating-radial-gradient", "reset-size", "resizer", "resizerpanel", "reverse", "rgb", "rgba", "ridge", "right", "rl", "rl-tb", "rosybrown", "round", "row", "row-reverse", "royalblue", "ruby", "ruby-base", "ruby-base-container", "ruby-text", "ruby-text-container", "running", "saddlebrown", "salmon", "sandybrown", "saturation", "scale-down", "scale-horizontal", "scale-vertical", "scalethumb-horizontal", "scalethumb-vertical", "scalethumbend", "scalethumbstart", "scalethumbtick", "screen", "scroll", "scrollbar", "scrollbar-small", "scrollbarbutton-down", "scrollbarbutton-left", "scrollbarbutton-right", "scrollbarbutton-up", "scrollbarthumb-horizontal", "scrollbarthumb-vertical", "scrollbartrack-horizontal", "scrollbartrack-vertical", "seagreen", "searchfield", "seashell", "select-after", "select-all", "select-before", "select-menu", "select-same", "semi-condensed", "semi-expanded", "separate", "separator", "show", "sideways", "sideways-lr", "sideways-right", "sideways-rl", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "slice", "small", "small-caps", "smaller", "smooth", "snow", "soft-light", "solid", "space-around", "space-between", "spinner", "spinner-downbutton", "spinner-textfield", "spinner-upbutton", "splitter", "springgreen", "square", "srgb", "start", "static", "statusbar", "statusbarpanel", "steelblue", "step-end", "step-start", "steps", "sticky", "stretch", "stretch-to-fit", "strict", "stroke", "style", "sub", "super", "tab", "tab-scroll-arrow-back", "tab-scroll-arrow-forward", "table", "table-caption", "table-cell", "table-column", "table-column-group", "table-footer-group", "table-header-group", "table-row", "table-row-group", "tabpanel", "tabpanels", "tan", "tb", "tb-rl", "teal", "text", "text-after-edge", "text-before-edge", "text-bottom", "text-top", "textfield", "textfield-multiline", "thick", "thin", "thistle", "titling-caps", "toggle", "tomato", "toolbar", "toolbarbutton", "toolbarbutton-dropdown", "toolbargripper", "toolbox", "tooltip", "top", "top-outside", "transparent", "treeheader", "treeheadercell", "treeheadersortarrow", "treeitem", "treeline", "treetwisty", "treetwistyopen", "treeview", "tri-state", "turquoise", "ultra-condensed", "ultra-expanded", "under", "unicase", "unset", "uppercase", "upright", "url", "use-script", "vertical", "vertical-lr", "vertical-rl", "view-box", "violet", "visible", "visiblefill", "visiblepainted", "visiblestroke", "wavy", "wheat", "white", "whitesmoke", "window", "wrap", "wrap-reverse", "write-only", "x-large", "x-small", "xx-large", "xx-small", "yellow", "yellowgreen", ],
-	  },
-	  "animation": {
-	    subproperties: ["animation-duration", "animation-timing-function", "animation-delay", "animation-direction", "animation-fill-mode", "animation-iteration-count", "animation-play-state", "animation-name", ],
-	    inherited: false,
-	    supports: 1344,
-	    values: ["alternate", "alternate-reverse", "backwards", "both", "cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "forwards", "infinite", "inherit", "initial", "linear", "none", "normal", "paused", "reverse", "running", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "background": {
-	    subproperties: ["background-color", "background-image", "background-repeat", "background-attachment", "background-position", "background-clip", "background-origin", "background-size", ],
-	    inherited: false,
-	    supports: 655,
-	    values: ["-moz-element", "-moz-image-rect", "-moz-linear-gradient", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "border-box", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "content-box", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "fixed", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linear-gradient", "linen", "local", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "no-repeat", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "padding-box", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "radial-gradient", "rebeccapurple", "red", "repeat", "repeat-x", "repeat-y", "repeating-linear-gradient", "repeating-radial-gradient", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "scroll", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "url", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border": {
-	    subproperties: ["border-top-width", "border-right-width", "border-bottom-width", "border-left-width", "border-top-style", "border-right-style", "border-bottom-style", "border-left-style", "border-top-color", "border-right-color", "border-bottom-color", "border-left-color", "-moz-border-top-colors", "-moz-border-right-colors", "-moz-border-bottom-colors", "-moz-border-left-colors", "border-image-source", "border-image-slice", "border-image-width", "border-image-outset", "border-image-repeat", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-element", "-moz-image-rect", "-moz-linear-gradient", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linear-gradient", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "radial-gradient", "rebeccapurple", "red", "repeating-linear-gradient", "repeating-radial-gradient", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "url", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-block-end": {
-	    subproperties: ["border-block-end-width", "border-block-end-style", "border-block-end-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-block-start": {
-	    subproperties: ["border-block-start-width", "border-block-start-style", "border-block-start-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-bottom": {
-	    subproperties: ["border-bottom-width", "border-bottom-style", "border-bottom-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-color": {
-	    subproperties: ["border-top-color", "border-right-color", "border-bottom-color", "border-left-color", ],
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-image": {
-	    subproperties: ["border-image-source", "border-image-slice", "border-image-width", "border-image-outset", "border-image-repeat", ],
-	    inherited: false,
-	    supports: 1675,
-	    values: ["-moz-element", "-moz-image-rect", "-moz-linear-gradient", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "inherit", "initial", "linear-gradient", "none", "radial-gradient", "repeating-linear-gradient", "repeating-radial-gradient", "unset", "url", ],
-	  },
-	  "border-inline-end": {
-	    subproperties: ["border-inline-end-width", "border-inline-end-style", "border-inline-end-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-inline-start": {
-	    subproperties: ["border-inline-start-width", "border-inline-start-style", "border-inline-start-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-left": {
-	    subproperties: ["border-left-width", "border-left-style", "border-left-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-right": {
-	    subproperties: ["border-right-width", "border-right-style", "border-right-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-style": {
-	    subproperties: ["border-top-style", "border-right-style", "border-bottom-style", "border-left-style", ],
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "border-top": {
-	    subproperties: ["border-top-width", "border-top-style", "border-top-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "border-width": {
-	    subproperties: ["border-top-width", "border-right-width", "border-bottom-width", "border-left-width", ],
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "border-radius": {
-	    subproperties: ["border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius", ],
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-columns": {
-	    subproperties: ["-moz-column-count", "-moz-column-width", ],
-	    inherited: false,
-	    supports: 1025,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-column-rule": {
-	    subproperties: ["-moz-column-rule-width", "-moz-column-rule-style", "-moz-column-rule-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "flex": {
-	    subproperties: ["flex-grow", "flex-shrink", "flex-basis", ],
-	    inherited: false,
-	    supports: 1027,
-	    values: ["-moz-available", "-moz-calc", "-moz-fit-content", "-moz-max-content", "-moz-min-content", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "flex-flow": {
-	    subproperties: ["flex-direction", "flex-wrap", ],
-	    inherited: false,
-	    supports: 0,
-	    values: ["column", "column-reverse", "inherit", "initial", "nowrap", "row", "row-reverse", "unset", "wrap", "wrap-reverse", ],
-	  },
-	  "font": {
-	    subproperties: ["font-family", "font-style", "font-weight", "font-size", "line-height", "font-size-adjust", "font-stretch", "-x-system-font", "font-feature-settings", "font-language-override", "font-kerning", "font-synthesis", "font-variant-alternates", "font-variant-caps", "font-variant-east-asian", "font-variant-ligatures", "font-variant-numeric", "font-variant-position", ],
-	    inherited: true,
-	    supports: 1027,
-	    values: ["-moz-block-height", "-moz-calc", "all-petite-caps", "all-small-caps", "auto", "calc", "condensed", "expanded", "extra-condensed", "extra-expanded", "inherit", "initial", "italic", "large", "larger", "medium", "none", "normal", "oblique", "petite-caps", "semi-condensed", "semi-expanded", "small", "small-caps", "smaller", "sub", "super", "titling-caps", "ultra-condensed", "ultra-expanded", "unicase", "unset", "x-large", "x-small", "xx-large", "xx-small", ],
-	  },
-	  "font-variant": {
-	    subproperties: ["font-variant-alternates", "font-variant-caps", "font-variant-east-asian", "font-variant-ligatures", "font-variant-numeric", "font-variant-position", ],
-	    inherited: true,
-	    supports: 0,
-	    values: ["all-petite-caps", "all-small-caps", "inherit", "initial", "normal", "petite-caps", "small-caps", "sub", "super", "titling-caps", "unicase", "unset", ],
-	  },
-	  "grid-template": {
-	    subproperties: ["grid-template-areas", "grid-template-columns", "grid-template-rows", ],
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid": {
-	    subproperties: ["grid-template-areas", "grid-template-columns", "grid-template-rows", "grid-auto-flow", "grid-auto-columns", "grid-auto-rows", "grid-column-gap", "grid-row-gap", ],
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "grid-column": {
-	    subproperties: ["grid-column-start", "grid-column-end", ],
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-row": {
-	    subproperties: ["grid-row-start", "grid-row-end", ],
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-area": {
-	    subproperties: ["grid-row-start", "grid-column-start", "grid-row-end", "grid-column-end", ],
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "grid-gap": {
-	    subproperties: ["grid-column-gap", "grid-row-gap", ],
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "list-style": {
-	    subproperties: ["list-style-type", "list-style-image", "list-style-position", ],
-	    inherited: true,
-	    supports: 8,
-	    values: ["inherit", "initial", "inside", "none", "outside", "unset", "url", ],
-	  },
-	  "margin": {
-	    subproperties: ["margin-top", "margin-right", "margin-bottom", "margin-left", ],
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "outline": {
-	    subproperties: ["outline-width", "outline-style", "outline-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "auto", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "overflow": {
-	    subproperties: ["overflow-x", "overflow-y", ],
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-hidden-unscrollable", "auto", "hidden", "inherit", "initial", "scroll", "unset", "visible", ],
-	  },
-	  "padding": {
-	    subproperties: ["padding-top", "padding-right", "padding-bottom", "padding-left", ],
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "scroll-snap-type": {
-	    subproperties: ["scroll-snap-type-x", "scroll-snap-type-y", ],
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "mandatory", "none", "proximity", "unset", ],
-	  },
-	  "text-decoration": {
-	    subproperties: ["text-decoration-color", "text-decoration-line", "text-decoration-style", ],
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-none", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wavy", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "transition": {
-	    subproperties: ["transition-property", "transition-duration", "transition-timing-function", "transition-delay", ],
-	    inherited: false,
-	    supports: 320,
-	    values: ["all", "cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "none", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "marker": {
-	    subproperties: ["marker-start", "marker-mid", "marker-end", ],
-	    inherited: true,
-	    supports: 8,
-	    values: ["inherit", "initial", "none", "unset", "url", ],
-	  },
-	  "-moz-transform": {
-	    alias: true,
-	    subproperties: ["transform", ],
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-transform-origin": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-perspective-origin": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-perspective": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1,
-	    values: ["inherit", "initial", "none", "unset", ],
-	  },
-	  "-moz-transform-style": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["flat", "inherit", "initial", "preserve-3d", "unset", ],
-	  },
-	  "-moz-backface-visibility": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["hidden", "inherit", "initial", "unset", "visible", ],
-	  },
-	  "-moz-border-image": {
-	    alias: true,
-	    subproperties: ["border-image-source", "border-image-slice", "border-image-width", "border-image-outset", "border-image-repeat", ],
-	    inherited: false,
-	    supports: 1675,
-	    values: ["-moz-element", "-moz-image-rect", "-moz-linear-gradient", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "inherit", "initial", "linear-gradient", "none", "radial-gradient", "repeating-linear-gradient", "repeating-radial-gradient", "unset", "url", ],
-	  },
-	  "-moz-transition": {
-	    alias: true,
-	    subproperties: ["transition-property", "transition-duration", "transition-timing-function", "transition-delay", ],
-	    inherited: false,
-	    supports: 320,
-	    values: ["all", "cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "none", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "-moz-transition-delay": {
-	    alias: true,
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-transition-duration": {
-	    alias: true,
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-transition-property": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["all", "inherit", "initial", "none", "unset", ],
-	  },
-	  "-moz-transition-timing-function": {
-	    alias: true,
-	    inherited: false,
-	    supports: 256,
-	    values: ["cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "-moz-animation": {
-	    alias: true,
-	    subproperties: ["animation-duration", "animation-timing-function", "animation-delay", "animation-direction", "animation-fill-mode", "animation-iteration-count", "animation-play-state", "animation-name", ],
-	    inherited: false,
-	    supports: 1344,
-	    values: ["alternate", "alternate-reverse", "backwards", "both", "cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "forwards", "infinite", "inherit", "initial", "linear", "none", "normal", "paused", "reverse", "running", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "-moz-animation-delay": {
-	    alias: true,
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-animation-direction": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["alternate", "alternate-reverse", "inherit", "initial", "normal", "reverse", "unset", ],
-	  },
-	  "-moz-animation-duration": {
-	    alias: true,
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-animation-fill-mode": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["backwards", "both", "forwards", "inherit", "initial", "none", "unset", ],
-	  },
-	  "-moz-animation-iteration-count": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1024,
-	    values: ["infinite", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-animation-name": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "none", "unset", ],
-	  },
-	  "-moz-animation-play-state": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "paused", "running", "unset", ],
-	  },
-	  "-moz-animation-timing-function": {
-	    alias: true,
-	    inherited: false,
-	    supports: 256,
-	    values: ["cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "-moz-box-sizing": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["border-box", "content-box", "inherit", "initial", "padding-box", "unset", ],
-	  },
-	  "-moz-font-feature-settings": {
-	    alias: true,
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-moz-font-language-override": {
-	    alias: true,
-	    inherited: true,
-	    supports: 0,
-	    values: ["inherit", "initial", "normal", "unset", ],
-	  },
-	  "-moz-padding-end": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-padding-start": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-margin-end": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-margin-start": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["-moz-calc", "auto", "calc", "inherit", "initial", "unset", ],
-	  },
-	  "-moz-border-end": {
-	    alias: true,
-	    subproperties: ["border-inline-end-width", "border-inline-end-style", "border-inline-end-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-border-end-color": {
-	    alias: true,
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-border-end-style": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "-moz-border-end-width": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "-moz-border-start": {
-	    alias: true,
-	    subproperties: ["border-inline-start-width", "border-inline-start-style", "border-inline-start-color", ],
-	    inherited: false,
-	    supports: 5,
-	    values: ["-moz-calc", "-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "calc", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "dashed", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "dotted", "double", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "groove", "hidden", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "inset", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "medium", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "none", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "outset", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "ridge", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "solid", "springgreen", "steelblue", "tan", "teal", "thick", "thin", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-border-start-color": {
-	    alias: true,
-	    inherited: false,
-	    supports: 4,
-	    values: ["-moz-use-text-color", "aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "bisque", "black", "blanchedalmond", "blue", "blueviolet", "brown", "burlywood", "cadetblue", "chartreuse", "chocolate", "coral", "cornflowerblue", "cornsilk", "crimson", "currentColor", "cyan", "darkblue", "darkcyan", "darkgoldenrod", "darkgray", "darkgreen", "darkgrey", "darkkhaki", "darkmagenta", "darkolivegreen", "darkorange", "darkorchid", "darkred", "darksalmon", "darkseagreen", "darkslateblue", "darkslategray", "darkslategrey", "darkturquoise", "darkviolet", "deeppink", "deepskyblue", "dimgray", "dimgrey", "dodgerblue", "firebrick", "floralwhite", "forestgreen", "fuchsia", "gainsboro", "ghostwhite", "gold", "goldenrod", "gray", "grey", "green", "greenyellow", "honeydew", "hotpink", "hsl", "hsla", "indianred", "indigo", "inherit", "initial", "ivory", "khaki", "lavender", "lavenderblush", "lawngreen", "lemonchiffon", "lightblue", "lightcoral", "lightcyan", "lightgoldenrodyellow", "lightgray", "lightgreen", "lightgrey", "lightpink", "lightsalmon", "lightseagreen", "lightskyblue", "lightslategray", "lightslategrey", "lightsteelblue", "lightyellow", "lime", "limegreen", "linen", "magenta", "maroon", "mediumaquamarine", "mediumblue", "mediumorchid", "mediumpurple", "mediumseagreen", "mediumslateblue", "mediumspringgreen", "mediumturquoise", "mediumvioletred", "midnightblue", "mintcream", "mistyrose", "moccasin", "navajowhite", "navy", "oldlace", "olive", "olivedrab", "orange", "orangered", "orchid", "palegoldenrod", "palegreen", "paleturquoise", "palevioletred", "papayawhip", "peachpuff", "peru", "pink", "plum", "powderblue", "purple", "rebeccapurple", "red", "rgb", "rgba", "rosybrown", "royalblue", "saddlebrown", "salmon", "sandybrown", "seagreen", "seashell", "sienna", "silver", "skyblue", "slateblue", "slategray", "slategrey", "snow", "springgreen", "steelblue", "tan", "teal", "thistle", "tomato", "transparent", "turquoise", "unset", "violet", "wheat", "white", "whitesmoke", "yellow", "yellowgreen", ],
-	  },
-	  "-moz-border-start-style": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["dashed", "dotted", "double", "groove", "hidden", "inherit", "initial", "inset", "none", "outset", "ridge", "solid", "unset", ],
-	  },
-	  "-moz-border-start-width": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1,
-	    values: ["-moz-calc", "calc", "inherit", "initial", "medium", "thick", "thin", "unset", ],
-	  },
-	  "-moz-hyphens": {
-	    alias: true,
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "manual", "none", "unset", ],
-	  },
-	  "-webkit-animation": {
-	    alias: true,
-	    subproperties: ["animation-duration", "animation-timing-function", "animation-delay", "animation-direction", "animation-fill-mode", "animation-iteration-count", "animation-play-state", "animation-name", ],
-	    inherited: false,
-	    supports: 1344,
-	    values: ["alternate", "alternate-reverse", "backwards", "both", "cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "forwards", "infinite", "inherit", "initial", "linear", "none", "normal", "paused", "reverse", "running", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "-webkit-animation-delay": {
-	    alias: true,
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-animation-direction": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["alternate", "alternate-reverse", "inherit", "initial", "normal", "reverse", "unset", ],
-	  },
-	  "-webkit-animation-duration": {
-	    alias: true,
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-animation-fill-mode": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["backwards", "both", "forwards", "inherit", "initial", "none", "unset", ],
-	  },
-	  "-webkit-animation-iteration-count": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1024,
-	    values: ["infinite", "inherit", "initial", "unset", ],
-	  },
-	  "-webkit-animation-name": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "none", "unset", ],
-	  },
-	  "-webkit-animation-play-state": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "paused", "running", "unset", ],
-	  },
-	  "-webkit-animation-timing-function": {
-	    alias: true,
-	    inherited: false,
-	    supports: 256,
-	    values: ["cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "-webkit-text-size-adjust": {
-	    alias: true,
-	    inherited: true,
-	    supports: 0,
-	    values: ["auto", "inherit", "initial", "none", "unset", ],
-	  },
-	  "-webkit-transform": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-transform-origin": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-transform-style": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["flat", "inherit", "initial", "preserve-3d", "unset", ],
-	  },
-	  "-webkit-backface-visibility": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["hidden", "inherit", "initial", "unset", "visible", ],
-	  },
-	  "-webkit-perspective": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1,
-	    values: ["inherit", "initial", "none", "unset", ],
-	  },
-	  "-webkit-perspective-origin": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-transition": {
-	    alias: true,
-	    subproperties: ["transition-property", "transition-duration", "transition-timing-function", "transition-delay", ],
-	    inherited: false,
-	    supports: 320,
-	    values: ["all", "cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "none", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "-webkit-transition-delay": {
-	    alias: true,
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-transition-duration": {
-	    alias: true,
-	    inherited: false,
-	    supports: 64,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-transition-property": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["all", "inherit", "initial", "none", "unset", ],
-	  },
-	  "-webkit-transition-timing-function": {
-	    alias: true,
-	    inherited: false,
-	    supports: 256,
-	    values: ["cubic-bezier", "ease", "ease-in", "ease-in-out", "ease-out", "inherit", "initial", "linear", "step-end", "step-start", "steps", "unset", ],
-	  },
-	  "-webkit-border-radius": {
-	    alias: true,
-	    subproperties: ["border-top-left-radius", "border-top-right-radius", "border-bottom-right-radius", "border-bottom-left-radius", ],
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-border-top-left-radius": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-border-top-right-radius": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-border-bottom-left-radius": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-border-bottom-right-radius": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-appearance": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-gtk-info-bar", "-moz-mac-disclosure-button-closed", "-moz-mac-disclosure-button-open", "-moz-mac-fullscreen-button", "-moz-mac-help-button", "-moz-mac-vibrancy-dark", "-moz-mac-vibrancy-light", "-moz-win-borderless-glass", "-moz-win-browsertabbar-toolbox", "-moz-win-communications-toolbox", "-moz-win-exclude-glass", "-moz-win-glass", "-moz-win-media-toolbox", "-moz-window-button-box", "-moz-window-button-box-maximized", "-moz-window-button-close", "-moz-window-button-maximize", "-moz-window-button-minimize", "-moz-window-button-restore", "-moz-window-frame-bottom", "-moz-window-frame-left", "-moz-window-frame-right", "-moz-window-titlebar", "-moz-window-titlebar-maximized", "button", "button-arrow-down", "button-arrow-next", "button-arrow-previous", "button-arrow-up", "button-bevel", "button-focus", "caret", "checkbox", "checkbox-container", "checkbox-label", "checkmenuitem", "dialog", "dualbutton", "groupbox", "inherit", "initial", "listbox", "listitem", "menuarrow", "menubar", "menucheckbox", "menuimage", "menuitem", "menuitemtext", "menulist", "menulist-button", "menulist-text", "menulist-textfield", "menupopup", "menuradio", "menuseparator", "meterbar", "meterchunk", "none", "number-input", "progressbar", "progressbar-vertical", "progresschunk", "progresschunk-vertical", "radio", "radio-container", "radio-label", "radiomenuitem", "range", "range-thumb", "resizer", "resizerpanel", "scale-horizontal", "scale-vertical", "scalethumb-horizontal", "scalethumb-vertical", "scalethumbend", "scalethumbstart", "scalethumbtick", "scrollbar", "scrollbar-small", "scrollbarbutton-down", "scrollbarbutton-left", "scrollbarbutton-right", "scrollbarbutton-up", "scrollbarthumb-horizontal", "scrollbarthumb-vertical", "scrollbartrack-horizontal", "scrollbartrack-vertical", "searchfield", "separator", "spinner", "spinner-downbutton", "spinner-textfield", "spinner-upbutton", "splitter", "statusbar", "statusbarpanel", "tab", "tab-scroll-arrow-back", "tab-scroll-arrow-forward", "tabpanel", "tabpanels", "textfield", "textfield-multiline", "toolbar", "toolbarbutton", "toolbarbutton-dropdown", "toolbargripper", "toolbox", "tooltip", "treeheader", "treeheadercell", "treeheadersortarrow", "treeitem", "treeline", "treetwisty", "treetwistyopen", "treeview", "unset", "window", ],
-	  },
-	  "-webkit-background-clip": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["border-box", "content-box", "inherit", "initial", "padding-box", "unset", ],
-	  },
-	  "-webkit-background-origin": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["border-box", "content-box", "inherit", "initial", "padding-box", "unset", ],
-	  },
-	  "-webkit-background-size": {
-	    alias: true,
-	    inherited: false,
-	    supports: 3,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-border-image": {
-	    alias: true,
-	    subproperties: ["border-image-source", "border-image-slice", "border-image-width", "border-image-outset", "border-image-repeat", ],
-	    inherited: false,
-	    supports: 1675,
-	    values: ["-moz-element", "-moz-image-rect", "-moz-linear-gradient", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "inherit", "initial", "linear-gradient", "none", "radial-gradient", "repeating-linear-gradient", "repeating-radial-gradient", "unset", "url", ],
-	  },
-	  "-webkit-border-image-outset": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1025,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-border-image-repeat": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-border-image-slice": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1026,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-border-image-source": {
-	    alias: true,
-	    inherited: false,
-	    supports: 648,
-	    values: ["-moz-element", "-moz-image-rect", "-moz-linear-gradient", "-moz-radial-gradient", "-moz-repeating-linear-gradient", "-moz-repeating-radial-gradient", "inherit", "initial", "linear-gradient", "none", "radial-gradient", "repeating-linear-gradient", "repeating-radial-gradient", "unset", "url", ],
-	  },
-	  "-webkit-border-image-width": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1027,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-box-shadow": {
-	    alias: true,
-	    inherited: false,
-	    supports: 5,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-box-sizing": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["border-box", "content-box", "inherit", "initial", "padding-box", "unset", ],
-	  },
-	  "-webkit-box-flex": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-box-ordinal-group": {
-	    alias: true,
-	    inherited: false,
-	    supports: 1024,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-box-align": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-box-pack": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["inherit", "initial", "unset", ],
-	  },
-	  "-webkit-user-select": {
-	    alias: true,
-	    inherited: false,
-	    supports: 0,
-	    values: ["-moz-all", "-moz-none", "-moz-text", "all", "auto", "element", "elements", "inherit", "initial", "none", "text", "toggle", "tri-state", "unset", ],
-	  },
-	};
-	module.exports = { cssProperties };
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-	
-	
-
-
-
-
-	
-	let p = typeof window != "undefined" ?  window.Promise : Promise;
-	p.defer = function defer() {
-	  var resolve, reject;
-	  var promise = new Promise(function() {
-	    resolve = arguments[0];
-	    reject = arguments[1];
-	  });
-	  return {
-	    resolve: resolve,
-	    reject: reject,
-	    promise: promise
-	  };
-	}
-	
-	module.exports = p;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-	
-	
-	
-
-
-	
-	
-	
-	
-	"use strict";
-	
-	const DevToolsUtils = __webpack_require__(42);
-	const { dumpn, dumpv } = DevToolsUtils;
-	const StreamUtils = __webpack_require__(48);
-	const { Packet, JSONPacket, BulkPacket } =
-	  __webpack_require__(49);
-	const promise = __webpack_require__(40);
-	const EventEmitter = __webpack_require__(34);
-	const utf8 = __webpack_require__(52);
-	
-	const PACKET_HEADER_MAX = 200;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function DebuggerTransport(socket) {
-	  EventEmitter.decorate(this);
-	
-	  this._socket = socket;
-	
-	  
-	  
-	  this._incomingHeader = "";
-	  
-	  this._incoming = null;
-	  
-	  this._outgoing = [];
-	
-	  this.hooks = null;
-	  this.active = false;
-	
-	  this._incomingEnabled = true;
-	  this._outgoingEnabled = true;
-	
-	  this.close = this.close.bind(this);
-	}
-	
-	DebuggerTransport.prototype = {
-	  
-
-
-
-
-
-
-
-	  send: function(object) {
-	    this.emit("send", object);
-	
-	    let packet = new JSONPacket(this);
-	    packet.object = object;
-	    this._outgoing.push(packet);
-	    this._flushOutgoing();
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  startBulkSend: function(header) {
-	    this.emit("startBulkSend", header);
-	
-	    let packet = new BulkPacket(this);
-	    packet.header = header;
-	    this._outgoing.push(packet);
-	    this._flushOutgoing();
-	    return packet.streamReadyForWriting;
-	  },
-	
-	  
-
-
-
-
-
-	  close: function(reason) {
-	    this.emit("onClosed", reason);
-	
-	    this.active = false;
-	    this._socket.close();
-	    this._destroyIncoming();
-	    this._destroyAllOutgoing();
-	    if (this.hooks) {
-	      this.hooks.onClosed(reason);
-	      this.hooks = null;
-	    }
-	    if (reason) {
-	      dumpn("Transport closed: " + DevToolsUtils.safeErrorString(reason));
-	    } else {
-	      dumpn("Transport closed.");
-	    }
-	  },
-	
-	  
-
-
-	  get _currentOutgoing() {
-	    return this._outgoing[0];
-	  },
-	
-	  
-
-
-
-	  _flushOutgoing: function() {
-	    if (!this._outgoingEnabled || this._outgoing.length === 0) {
-	      return;
-	    }
-	
-	    
-	    if (this._currentOutgoing.done) {
-	      this._finishCurrentOutgoing();
-	    }
-	
-	    if (this._outgoing.length > 0) {
-	      setTimeout(this.onOutputStreamReady.bind(this), 0);
-	    }
-	  },
-	
-	  
-
-
-
-
-	  pauseOutgoing: function() {
-	    this._outgoingEnabled = false;
-	  },
-	
-	  
-
-
-	  resumeOutgoing: function() {
-	    this._outgoingEnabled = true;
-	    this._flushOutgoing();
-	  },
-	
-	  
-	  
-
-
-
-
-	  onOutputStreamReady: DevToolsUtils.makeInfallible(function() {
-	    if (!this._outgoingEnabled || this._outgoing.length === 0) {
-	      return;
-	    }
-	
-	    try {
-	      this._currentOutgoing.write({
-	        write: data => {
-	          let count = data.length;
-	          this._socket.send(data);
-	          return count;
-	        }
-	      });
-	    } catch(e) {
-	      if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
-	        this.close(e.result);
-	        return;
-	      } else {
-	        throw e;
-	      }
-	    }
-	
-	    this._flushOutgoing();
-	  }, "DebuggerTransport.prototype.onOutputStreamReady"),
-	
-	  
-
-
-	  _finishCurrentOutgoing: function() {
-	    if (this._currentOutgoing) {
-	      this._currentOutgoing.destroy();
-	      this._outgoing.shift();
-	    }
-	  },
-	
-	  
-
-
-	  _destroyAllOutgoing: function() {
-	    for (let packet of this._outgoing) {
-	      packet.destroy();
-	    }
-	    this._outgoing = [];
-	  },
-	
-	  
-
-
-
-
-	  ready: function() {
-	    this.active = true;
-	    this._waitForIncoming();
-	  },
-	
-	  
-
-
-
-	  _waitForIncoming: function() {
-	    if (this._incomingEnabled && !this._socket.onmessage) {
-	      this._socket.onmessage = this.onInputStreamReady.bind(this);
-	    }
-	  },
-	
-	  
-
-
-
-
-	  pauseIncoming: function() {
-	    this._incomingEnabled = false;
-	  },
-	
-	  
-
-
-	  resumeIncoming: function() {
-	    this._incomingEnabled = true;
-	    this._flushIncoming();
-	    this._waitForIncoming();
-	  },
-	
-	  
-	  
-
-
-	  onInputStreamReady:
-	  DevToolsUtils.makeInfallible(function(event) {
-	    let data = event.data;
-	    
-	    
-	    data = utf8.encode(data);
-	    let stream = {
-	      available() {
-	        return data.length;
-	      },
-	      readBytes(count) {
-	        let result = data.slice(0, count);
-	        data = data.slice(count);
-	        return result;
-	      },
-	    };
-	
-	    try {
-	      while (data && this._incomingEnabled &&
-	             this._processIncoming(stream, stream.available())) {}
-	      this._waitForIncoming();
-	    } catch(e) {
-	      if (e.result != Cr.NS_BASE_STREAM_WOULD_BLOCK) {
-	        this.close(e.result);
-	      } else {
-	        throw e;
-	      }
-	    }
-	  }, "DebuggerTransport.prototype.onInputStreamReady"),
-	
-	  
-
-
-
-
-
-
-
-
-
-	  _processIncoming: function(stream, count) {
-	    dumpv("Data available: " + count);
-	
-	    if (!count) {
-	      dumpv("Nothing to read, skipping");
-	      return false;
-	    }
-	
-	    try {
-	      if (!this._incoming) {
-	        dumpv("Creating a new packet from incoming");
-	
-	        if (!this._readHeader(stream)) {
-	          return false; 
-	        }
-	
-	        
-	        
-	        this._incoming = Packet.fromHeader(this._incomingHeader, this);
-	        if (!this._incoming) {
-	          throw new Error("No packet types for header: " +
-	                          this._incomingHeader);
-	        }
-	      }
-	
-	      if (!this._incoming.done) {
-	        
-	        dumpv("Existing packet incomplete, keep reading");
-	        this._incoming.read(stream);
-	      }
-	    } catch(e) {
-	      let msg = "Error reading incoming packet: (" + e + " - " + e.stack + ")";
-	      dumpn(msg);
-	
-	      
-	      this.close();
-	      return false;
-	    }
-	
-	    if (!this._incoming.done) {
-	      
-	      dumpv("Packet not done, wait for more");
-	      return true;
-	    }
-	
-	    
-	    this._flushIncoming();
-	    return true;
-	  },
-	
-	  
-
-
-
-
-
-
-	  _readHeader: function(stream) {
-	    let amountToRead = PACKET_HEADER_MAX - this._incomingHeader.length;
-	    this._incomingHeader +=
-	      StreamUtils.delimitedRead(stream, ":", amountToRead);
-	    if (dumpv.wantVerbose) {
-	      dumpv("Header read: " + this._incomingHeader);
-	    }
-	
-	    if (this._incomingHeader.endsWith(":")) {
-	      if (dumpv.wantVerbose) {
-	        dumpv("Found packet header successfully: " + this._incomingHeader);
-	      }
-	      return true;
-	    }
-	
-	    if (this._incomingHeader.length >= PACKET_HEADER_MAX) {
-	      throw new Error("Failed to parse packet header!");
-	    }
-	
-	    
-	    return false;
-	  },
-	
-	  
-
-
-	  _flushIncoming: function() {
-	    if (!this._incoming.done) {
-	      return;
-	    }
-	    if (dumpn.wantLogging) {
-	      dumpn("Got: " + this._incoming);
-	    }
-	    this._destroyIncoming();
-	  },
-	
-	  
-
-
-
-	  _onJSONObjectReady: function(object) {
-	    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-	      
-	      if (this.active) {
-	        this.emit("onPacket", object);
-	        this.hooks.onPacket(object);
-	      }
-	    }, "DebuggerTransport instance's this.hooks.onPacket"));
-	  },
-	
-	  
-
-
-
-
-
-	  _onBulkReadReady: function(...args) {
-	    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-	      
-	      if (this.active) {
-	        this.emit("onBulkPacket", ...args);
-	        this.hooks.onBulkPacket(...args);
-	      }
-	    }, "DebuggerTransport instance's this.hooks.onBulkPacket"));
-	  },
-	
-	  
-
-
-
-	  _destroyIncoming: function() {
-	    if (this._incoming) {
-	      this._incoming.destroy();
-	    }
-	    this._incomingHeader = "";
-	    this._incoming = null;
-	  }
-	
-	};
-	
-	exports.DebuggerTransport = DebuggerTransport;
-	
-	
-
-
-
-
-
-
-
-
-
-
-	function LocalDebuggerTransport(other) {
-	  EventEmitter.decorate(this);
-	
-	  this.other = other;
-	  this.hooks = null;
-	
-	  
-
-
-
-
-	  this._serial = this.other ? this.other._serial : { count: 0 };
-	  this.close = this.close.bind(this);
-	}
-	
-	LocalDebuggerTransport.prototype = {
-	  
-
-
-
-	  send: function(packet) {
-	    this.emit("send", packet);
-	
-	    let serial = this._serial.count++;
-	    if (dumpn.wantLogging) {
-	      
-	      if (packet.from) {
-	        dumpn("Packet " + serial + " sent from " + uneval(packet.from));
-	      } else if (packet.to) {
-	        dumpn("Packet " + serial + " sent to " + uneval(packet.to));
-	      }
-	    }
-	    this._deepFreeze(packet);
-	    let other = this.other;
-	    if (other) {
-	      DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-	        
-	        if (dumpn.wantLogging) {
-	          dumpn("Received packet " + serial + ": " + JSON.stringify(packet, null, 2));
-	        }
-	        if (other.hooks) {
-	          other.emit("onPacket", packet);
-	          other.hooks.onPacket(packet);
-	        }
-	      }, "LocalDebuggerTransport instance's this.other.hooks.onPacket"));
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  startBulkSend: function({actor, type, length}) {
-	    this.emit("startBulkSend", {actor, type, length});
-	
-	    let serial = this._serial.count++;
-	
-	    dumpn("Sent bulk packet " + serial + " for actor " + actor);
-	    if (!this.other) {
-	      return;
-	    }
-	
-	    let pipe = new Pipe(true, true, 0, 0, null);
-	
-	    DevToolsUtils.executeSoon(DevToolsUtils.makeInfallible(() => {
-	      dumpn("Received bulk packet " + serial);
-	      if (!this.other.hooks) {
-	        return;
-	      }
-	
-	      
-	      let deferred = promise.defer();
-	      let packet = {
-	        actor: actor,
-	        type: type,
-	        length: length,
-	        copyTo: (output) => {
-	          let copying =
-	            StreamUtils.copyStream(pipe.inputStream, output, length);
-	          deferred.resolve(copying);
-	          return copying;
-	        },
-	        stream: pipe.inputStream,
-	        done: deferred
-	      };
-	
-	      this.other.emit("onBulkPacket", packet);
-	      this.other.hooks.onBulkPacket(packet);
-	
-	      
-	      deferred.promise.then(() => pipe.inputStream.close(), this.close);
-	    }, "LocalDebuggerTransport instance's this.other.hooks.onBulkPacket"));
-	
-	    
-	    let sendDeferred = promise.defer();
-	
-	    
-	    
-	    DevToolsUtils.executeSoon(() => {
-	      let copyDeferred = promise.defer();
-	
-	      sendDeferred.resolve({
-	        copyFrom: (input) => {
-	          let copying =
-	            StreamUtils.copyStream(input, pipe.outputStream, length);
-	          copyDeferred.resolve(copying);
-	          return copying;
-	        },
-	        stream: pipe.outputStream,
-	        done: copyDeferred
-	      });
-	
-	      
-	      copyDeferred.promise.then(() => pipe.outputStream.close(), this.close);
-	    });
-	
-	    return sendDeferred.promise;
-	  },
-	
-	  
-
-
-	  close: function() {
-	    this.emit("close");
-	
-	    if (this.other) {
-	      
-	      
-	      let other = this.other;
-	      this.other = null;
-	      other.close();
-	    }
-	    if (this.hooks) {
-	      try {
-	        this.hooks.onClosed();
-	      } catch(ex) {
-	        console.error(ex);
-	      }
-	      this.hooks = null;
-	    }
-	  },
-	
-	  
-
-
-	  ready: function() {},
-	
-	  
-
-
-	  _deepFreeze: function(object) {
-	    Object.freeze(object);
-	    for (let prop in object) {
-	      
-	      
-	      
-	      
-	      if (object.hasOwnProperty(prop) && typeof object === "object" &&
-	          !Object.isFrozen(object)) {
-	        this._deepFreeze(o[prop]);
-	      }
-	    }
-	  }
-	};
-	
-	exports.LocalDebuggerTransport = LocalDebuggerTransport;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function ChildDebuggerTransport(sender, prefix) {
-	  EventEmitter.decorate(this);
-	
-	  this._sender = sender.QueryInterface(Ci.nsIMessageSender);
-	  this._messageName = "debug:" + prefix + ":packet";
-	}
-	
-	
-
-
-
-
-	ChildDebuggerTransport.prototype = {
-	  constructor: ChildDebuggerTransport,
-	
-	  hooks: null,
-	
-	  ready: function () {
-	    this._sender.addMessageListener(this._messageName, this);
-	  },
-	
-	  close: function () {
-	    this._sender.removeMessageListener(this._messageName, this);
-	    this.emit("onClosed");
-	    this.hooks.onClosed();
-	  },
-	
-	  receiveMessage: function ({data}) {
-	    this.emit("onPacket", data);
-	    this.hooks.onPacket(data);
-	  },
-	
-	  send: function (packet) {
-	    this.emit("send", packet);
-	    this._sender.sendAsyncMessage(this._messageName, packet);
-	  },
-	
-	  startBulkSend: function() {
-	    throw new Error("Can't send bulk data to child processes.");
-	  }
-	};
-	
-	exports.ChildDebuggerTransport = ChildDebuggerTransport;
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	if (typeof WorkerGlobalScope === 'undefined') { 
-	  (function () { 
-	    
-
-
-
-	    function WorkerDebuggerTransport(dbg, id) {
-	      this._dbg = dbg;
-	      this._id = id;
-	      this.onMessage = this._onMessage.bind(this);
-	    }
-	
-	    WorkerDebuggerTransport.prototype = {
-	      constructor: WorkerDebuggerTransport,
-	
-	      ready: function () {
-	        this._dbg.addListener(this);
-	      },
-	
-	      close: function () {
-	        this._dbg.removeListener(this);
-	        if (this.hooks) {
-	          this.hooks.onClosed();
-	        }
-	      },
-	
-	      send: function (packet) {
-	        this._dbg.postMessage(JSON.stringify({
-	          type: "message",
-	          id: this._id,
-	          message: packet
-	        }));
-	      },
-	
-	      startBulkSend: function () {
-	        throw new Error("Can't send bulk data from worker threads!");
-	      },
-	
-	      _onMessage: function (message) {
-	        let packet = JSON.parse(message);
-	        if (packet.type !== "message" || packet.id !== this._id) {
-	          return;
-	        }
-	
-	        if (this.hooks) {
-	          this.hooks.onPacket(packet.message);
-	        }
-	      }
-	    };
-	
-	    exports.WorkerDebuggerTransport = WorkerDebuggerTransport;
-	  }).call(this);
-	} else {
-	  (function () { 
-	    
-
-
-
-	    function WorkerDebuggerTransport(scope, id) {
-	      this._scope = scope;
-	      this._id = id;
-	      this._onMessage = this._onMessage.bind(this);
-	    }
-	
-	    WorkerDebuggerTransport.prototype = {
-	      constructor: WorkerDebuggerTransport,
-	
-	      ready: function () {
-	        this._scope.addEventListener("message", this._onMessage);
-	      },
-	
-	      close: function () {
-	        this._scope.removeEventListener("message", this._onMessage);
-	        if (this.hooks) {
-	          this.hooks.onClosed();
-	        }
-	      },
-	
-	      send: function (packet) {
-	        this._scope.postMessage(JSON.stringify({
-	          type: "message",
-	          id: this._id,
-	          message: packet
-	        }));
-	      },
-	
-	      startBulkSend: function () {
-	        throw new Error("Can't send bulk data from worker threads!");
-	      },
-	
-	      _onMessage: function (event) {
-	        let packet = JSON.parse(event.data);
-	        if (packet.type !== "message" || packet.id !== this._id) {
-	          return;
-	        }
-	
-	        if (this.hooks) {
-	          this.hooks.onPacket(packet.message);
-	        }
-	      }
-	    };
-	
-	    exports.WorkerDebuggerTransport = WorkerDebuggerTransport;
-	  }).call(this);
-	}
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	
-	var { Ci, Cu, Cc, components } = __webpack_require__(35);
-	const { Services } = __webpack_require__(28);
-	var promise = __webpack_require__(40);
-	
-	const { FileUtils } = __webpack_require__(43);
-	
-	
-
-
-	exports.safeErrorString = function safeErrorString(aError) {
-	  try {
-	    let errorString = aError.toString();
-	    if (typeof errorString == "string") {
-	      
-	      
-	      try {
-	        if (aError.stack) {
-	          let stack = aError.stack.toString();
-	          if (typeof stack == "string") {
-	            errorString += "\nStack: " + stack;
-	          }
-	        }
-	      } catch (ee) { }
-	
-	      
-	      
-	      if (typeof aError.lineNumber == "number" && typeof aError.columnNumber == "number") {
-	        errorString += "Line: " + aError.lineNumber + ", column: " + aError.columnNumber;
-	      }
-	
-	      return errorString;
-	    }
-	  } catch (ee) { }
-	
-	  
-	  return Object.prototype.toString.call(aError);
-	};
-	
-	
-
-
-	exports.reportException = function reportException(aWho, aException) {
-	  let msg = aWho + " threw an exception: " + exports.safeErrorString(aException);
-	
-	  console.log(msg);
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-	exports.makeInfallible = function makeInfallible(aHandler, aName) {
-	  if (!aName)
-	    aName = aHandler.name;
-	
-	  return function() {
-	    
-	    return aHandler.apply(this, arguments);
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	  };
-	};
-	
-	
-
-
-	exports.executeSoon = function executeSoon(aFn) {
-	  setTimeout(aFn, 0);
-	};
-	
-	
-
-
-
-
-
-	exports.waitForTick = function waitForTick() {
-	  let deferred = promise.defer();
-	  exports.executeSoon(deferred.resolve);
-	  return deferred.promise;
-	};
-	
-	
-
-
-
-
-
-
-
-	exports.waitForTime = function waitForTime(aDelay) {
-	  let deferred = promise.defer();
-	  setTimeout(deferred.resolve, aDelay);
-	  return deferred.promise;
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	exports.yieldingEach = function yieldingEach(aArray, aFn) {
-	  const deferred = promise.defer();
-	
-	  let i = 0;
-	  let len = aArray.length;
-	  let outstanding = [deferred.promise];
-	
-	  (function loop() {
-	    const start = Date.now();
-	
-	    while (i < len) {
-	      
-	      
-	      
-	      
-	      if (Date.now() - start > 16) {
-	        exports.executeSoon(loop);
-	        return;
-	      }
-	
-	      try {
-	        outstanding.push(aFn(aArray[i], i++));
-	      } catch (e) {
-	        deferred.reject(e);
-	        return;
-	      }
-	    }
-	
-	    deferred.resolve();
-	  }());
-	
-	  return promise.all(outstanding);
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-	exports.defineLazyPrototypeGetter =
-	function defineLazyPrototypeGetter(aObject, aKey, aCallback) {
-	  Object.defineProperty(aObject, aKey, {
-	    configurable: true,
-	    get: function() {
-	      const value = aCallback.call(this);
-	
-	      Object.defineProperty(this, aKey, {
-	        configurable: true,
-	        writable: true,
-	        value: value
-	      });
-	
-	      return value;
-	    }
-	  });
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-	exports.getProperty = function getProperty(aObj, aKey) {
-	  let root = aObj;
-	  try {
-	    do {
-	      const desc = aObj.getOwnPropertyDescriptor(aKey);
-	      if (desc) {
-	        if ("value" in desc) {
-	          return desc.value;
-	        }
-	        
-	        return exports.hasSafeGetter(desc) ? desc.get.call(root).return : undefined;
-	      }
-	      aObj = aObj.proto;
-	    } while (aObj);
-	  } catch (e) {
-	    
-	    exports.reportException("getProperty", e);
-	  }
-	  return undefined;
-	};
-	
-	
-
-
-
-
-
-
-
-	exports.hasSafeGetter = function hasSafeGetter(aDesc) {
-	  
-	  
-	  try {
-	    let fn = aDesc.get.unwrap();
-	    return fn && fn.callable && fn.class == "Function" && fn.script === undefined;
-	  } catch (e) {
-	    
-	    return false;
-	  }
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-	exports.isSafeJSObject = function isSafeJSObject(aObj) {
-	  
-	  
-	  if (isWorker) {
-	    return false;
-	  }
-	
-	  if (Cu.getGlobalForObject(aObj) ==
-	      Cu.getGlobalForObject(exports.isSafeJSObject)) {
-	    return true; 
-	  }
-	
-	  let principal = Cu.getObjectPrincipal(aObj);
-	  if (Services.scriptSecurityManager.isSystemPrincipal(principal)) {
-	    return true; 
-	  }
-	
-	  return Cu.isXrayWrapper(aObj);
-	};
-	
-	exports.dumpn = function dumpn(str) {
-	  if (exports.dumpn.wantLogging) {
-	    console.log("DBG-SERVER: " + str + "\n");
-	  }
-	};
-	
-	
-	
-	exports.dumpn.wantLogging = false;
-	
-	
-
-
-	exports.dumpv = function(msg) {
-	  if (exports.dumpv.wantVerbose) {
-	    exports.dumpn(msg);
-	  }
-	};
-	
-	
-	
-	exports.dumpv.wantVerbose = false;
-	
-	
-
-
-
-
-
-
-
-
-
-	exports.update = function update(aTarget, ...aArgs) {
-	  for (let attrs of aArgs) {
-	    for (let key in attrs) {
-	      let desc = Object.getOwnPropertyDescriptor(attrs, key);
-	
-	      if (desc) {
-	        Object.defineProperty(aTarget, key, desc);
-	      }
-	    }
-	  }
-	
-	  return aTarget;
-	};
-	
-	
-
-
-
-
-
-	exports.values = function values(aObject) {
-	  return Object.keys(aObject).map(k => aObject[k]);
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-	exports.defineLazyGetter = function defineLazyGetter(aObject, aName, aLambda) {
-	  Object.defineProperty(aObject, aName, {
-	    get: function() {
-	      delete aObject[aName];
-	      return aObject[aName] = aLambda.apply(aObject);
-	    },
-	    configurable: true,
-	    enumerable: true
-	  });
-	};
-	
-	
-	let haveLoggedDeprecationMessage = false;
-	exports.dbg_assert = function dbg_assert(cond, e) {
-	  if (!haveLoggedDeprecationMessage) {
-	    haveLoggedDeprecationMessage = true;
-	    const deprecationMessage = "DevToolsUtils.dbg_assert is deprecated! Use DevToolsUtils.assert instead!"
-	          + Error().stack;
-	    console.log(deprecationMessage);
-	    if (typeof console === "object" && console && console.warn) {
-	      console.warn(deprecationMessage);
-	    }
-	  }
-	
-	  if (!cond) {
-	    return e;
-	  }
-	};
-	
-	const { AppConstants } = __webpack_require__(44);
-	
-	
-
-
-	exports.noop = function() { };
-	
-	function reallyAssert(condition, message) {
-	  if (!condition) {
-	    const err = new Error("Assertion failure: " + message);
-	    exports.reportException("DevToolsUtils.assert", err);
-	    throw err;
-	  }
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	Object.defineProperty(exports, "assert", {
-	  get: () => (AppConstants.DEBUG || AppConstants.DEBUG_JS_MODULES || this.testing)
-	    ? reallyAssert
-	    : exports.noop,
-	});
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-	exports.defineLazyModuleGetter = function defineLazyModuleGetter(aObject, aName,
-	                                                                 aResource,
-	                                                                 aSymbol)
-	{
-	  this.defineLazyGetter(aObject, aName, function XPCU_moduleLambda() {
-	    var temp = {};
-	    Cu.import(aResource, temp);
-	    return temp[aSymbol || aName];
-	  });
-	};
-	
-	const { NetUtil } = __webpack_require__(45);
-	
-	const { TextDecoder, OS } = __webpack_require__(46);
-	
-	const NetworkHelper = __webpack_require__(47);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function mainThreadFetch(aURL, aOptions = { loadFromCache: true,
-	                                          policy: Ci.nsIContentPolicy.TYPE_OTHER,
-	                                          window: null,
-	                                          charset: null }) {
-	  
-	  let url = aURL.split(" -> ").pop();
-	  let channel;
-	  try {
-	    channel = newChannelForURL(url, aOptions);
-	  } catch (ex) {
-	    return promise.reject(ex);
-	  }
-	
-	  
-	  channel.loadFlags = aOptions.loadFromCache
-	    ? channel.LOAD_FROM_CACHE
-	    : channel.LOAD_BYPASS_CACHE;
-	
-	  if (aOptions.window) {
-	    
-	    channel.loadGroup = aOptions.window.QueryInterface(Ci.nsIInterfaceRequestor)
-	                          .getInterface(Ci.nsIWebNavigation)
-	                          .QueryInterface(Ci.nsIDocumentLoader)
-	                          .loadGroup;
-	  }
-	
-	  let deferred = promise.defer();
-	  let onResponse = (stream, status, request) => {
-	    if (!components.isSuccessCode(status)) {
-	      deferred.reject(new Error(`Failed to fetch ${url}. Code ${status}.`));
-	      return;
-	    }
-	
-	    try {
-	      
-	      
-	      
-	      
-	
-	      
-	      let available = stream.available();
-	      let source = NetUtil.readInputStreamToString(stream, available);
-	      stream.close();
-	
-	      
-	      
-	      
-	      
-	      
-	      
-	      let charset = channel.contentCharset || aOptions.charset || "UTF-8";
-	      let unicodeSource = NetworkHelper.convertToUnicode(source, charset);
-	
-	      deferred.resolve({
-	        content: unicodeSource,
-	        contentType: request.contentType
-	      });
-	    } catch (ex) {
-	      let uri = request.originalURI;
-	      if (ex.name === "NS_BASE_STREAM_CLOSED" && uri instanceof Ci.nsIFileURL) {
-	        
-	        
-	        
-	
-	        uri.QueryInterface(Ci.nsIFileURL);
-	        let result = OS.File.read(uri.file.path).then(bytes => {
-	          
-	          let decoder = new TextDecoder();
-	          let content = decoder.decode(bytes);
-	
-	          
-	          
-	          return {
-	            content,
-	            contentType: "text/plain"
-	          };
-	        });
-	
-	        deferred.resolve(result);
-	      } else {
-	        deferred.reject(ex);
-	      }
-	    }
-	  };
-	
-	  
-	  try {
-	    NetUtil.asyncFetch(channel, onResponse);
-	  } catch (ex) {
-	    return promise.reject(ex);
-	  }
-	
-	  return deferred.promise;
-	}
-	
-	
-
-
-
-
-
-
-	function newChannelForURL(url, { policy }) {
-	  let channelOptions = {
-	    contentPolicyType: policy,
-	    loadUsingSystemPrincipal: true,
-	    uri: url
-	  };
-	
-	  try {
-	    return NetUtil.newChannel(channelOptions);
-	  } catch (e) {
-	    
-	    
-	    
-	    channelOptions.uri = "file://" + url;
-	
-	    return NetUtil.newChannel(channelOptions);
-	  }
-	}
-	
-	
-	
-	if (typeof WorkerGlobalScope === "undefined") { 
-	  exports.fetch = mainThreadFetch;
-	} else {
-	  
-	  
-	  
-	  exports.fetch = function(url, options) {
-	    return rpc("fetch", url, options);
-	  };
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	exports.settleAll = values => {
-	  if (values === null || typeof (values[Symbol.iterator]) != "function") {
-	    throw new Error("settleAll() expects an iterable.");
-	  }
-	
-	  let deferred = promise.defer();
-	
-	  values = Array.isArray(values) ? values : [...values];
-	  let countdown = values.length;
-	  let resolutionValues = new Array(countdown);
-	  let rejectionValue;
-	  let rejectionOccurred = false;
-	
-	  if (!countdown) {
-	    deferred.resolve(resolutionValues);
-	    return deferred.promise;
-	  }
-	
-	  function checkForCompletion() {
-	    if (--countdown > 0) {
-	      return;
-	    }
-	    if (!rejectionOccurred) {
-	      deferred.resolve(resolutionValues);
-	    } else {
-	      deferred.reject(rejectionValue);
-	    }
-	  }
-	
-	  for (let i = 0; i < values.length; i++) {
-	    let index = i;
-	    let value = values[i];
-	    let resolver = result => {
-	      resolutionValues[index] = result;
-	      checkForCompletion();
-	    };
-	    let rejecter = error => {
-	      if (!rejectionOccurred) {
-	        rejectionValue = error;
-	        rejectionOccurred = true;
-	      }
-	      checkForCompletion();
-	    };
-	
-	    if (value && typeof (value.then) == "function") {
-	      value.then(resolver, rejecter);
-	    } else {
-	      
-	      resolver(value);
-	    }
-	  }
-	
-	  return deferred.promise;
-	};
-	
-	
-
-
-
-	var testing = false;
-	Object.defineProperty(exports, "testing", {
-	  get: function() {
-	    return testing;
-	  },
-	  set: function(state) {
-	    testing = state;
-	  }
-	});
-	
-	
-
-
-
-
-
-
-	exports.openFileStream = function(filePath) {
-	  return new Promise((resolve, reject) => {
-	    const uri = NetUtil.newURI(new FileUtils.File(filePath));
-	    NetUtil.asyncFetch(
-	      { uri, loadUsingSystemPrincipal: true },
-	      (stream, result) => {
-	        if (!components.isSuccessCode(result)) {
-	          reject(new Error(`Could not open "${filePath}": result = ${result}`));
-	          return;
-	        }
-	
-	        resolve(stream);
-	      }
-	    );
-	  });
-	};
-	
-	exports.isGenerator = function(fn) {
-	  if (typeof fn !== "function") {
-	    return false;
-	  }
-	  let proto = Object.getPrototypeOf(fn);
-	  if (!proto) {
-	    return false;
-	  }
-	  let ctor = proto.constructor;
-	  if (!ctor) {
-	    return false;
-	  }
-	  return ctor.name == "GeneratorFunction";
-	};
-	
-	exports.isPromise = function(p) {
-	  return p && typeof p.then === "function";
-	};
-	
-	
-
-
-	exports.isSavedFrame = function(thing) {
-	  return Object.prototype.toString.call(thing) === "[object SavedFrame]";
-	};
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-	
-	module.exports = { AppConstants: {} };
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	"use strict";
-	
-	const {components, Cc, Ci, Cu} = __webpack_require__(35);
-	const { NetUtil } = __webpack_require__(45);
-	const DevToolsUtils = __webpack_require__(42);
-	
-	
-	const gNSURLStore = new Map();
-	
-	
-
-
-
-
-
-	var NetworkHelper = {
-	  
-
-
-
-
-
-
-
-
-
-	  convertToUnicode: function NH_convertToUnicode(aText, aCharset)
-	  {
-	    let conv = Cc("@mozilla.org/intl/scriptableunicodeconverter").
-	               createInstance(Ci.nsIScriptableUnicodeConverter);
-	    try {
-	      conv.charset = aCharset || "UTF-8";
-	      return conv.ConvertToUnicode(aText);
-	    }
-	    catch (ex) {
-	      return aText;
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  readAndConvertFromStream: function NH_readAndConvertFromStream(aStream, aCharset)
-	  {
-	    let text = null;
-	    try {
-	      text = NetUtil.readInputStreamToString(aStream, aStream.available())
-	      return this.convertToUnicode(text, aCharset);
-	    }
-	    catch (err) {
-	      return text;
-	    }
-	  },
-	
-	   
-
-
-
-
-
-
-
-
-
-	  readPostTextFromRequest: function NH_readPostTextFromRequest(aRequest, aCharset)
-	  {
-	    if (aRequest instanceof Ci.nsIUploadChannel) {
-	      let iStream = aRequest.uploadStream;
-	
-	      let isSeekableStream = false;
-	      if (iStream instanceof Ci.nsISeekableStream) {
-	        isSeekableStream = true;
-	      }
-	
-	      let prevOffset;
-	      if (isSeekableStream) {
-	        prevOffset = iStream.tell();
-	        iStream.seek(Ci.nsISeekableStream.NS_SEEK_SET, 0);
-	      }
-	
-	      
-	      let text = this.readAndConvertFromStream(iStream, aCharset);
-	
-	      
-	      
-	      
-	      if (isSeekableStream && prevOffset == 0) {
-	        iStream.seek(Ci.nsISeekableStream.NS_SEEK_SET, 0);
-	      }
-	      return text;
-	    }
-	    return null;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  readPostTextFromPage: function NH_readPostTextFromPage(aDocShell, aCharset)
-	  {
-	    let webNav = aDocShell.QueryInterface(Ci.nsIWebNavigation);
-	    return this.readPostTextFromPageViaWebNav(webNav, aCharset);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  readPostTextFromPageViaWebNav:
-	  function NH_readPostTextFromPageViaWebNav(aWebNav, aCharset)
-	  {
-	    if (aWebNav instanceof Ci.nsIWebPageDescriptor) {
-	      let descriptor = aWebNav.currentDescriptor;
-	
-	      if (descriptor instanceof Ci.nsISHEntry && descriptor.postData &&
-	          descriptor instanceof Ci.nsISeekableStream) {
-	        descriptor.seek(NS_SEEK_SET, 0);
-	
-	        return this.readAndConvertFromStream(descriptor, aCharset);
-	      }
-	    }
-	    return null;
-	  },
-	
-	  
-
-
-
-
-
-
-	  getAppIdForRequest: function NH_getAppIdForRequest(aRequest)
-	  {
-	    try {
-	      return this.getRequestLoadContext(aRequest).appId;
-	    } catch (ex) {
-	      
-	    }
-	    return null;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  getTopFrameForRequest: function NH_getTopFrameForRequest(aRequest)
-	  {
-	    try {
-	      return this.getRequestLoadContext(aRequest).topFrameElement;
-	    } catch (ex) {
-	      
-	    }
-	    return null;
-	  },
-	
-	  
-
-
-
-
-
-	  getWindowForRequest: function NH_getWindowForRequest(aRequest)
-	  {
-	    try {
-	      return this.getRequestLoadContext(aRequest).associatedWindow;
-	    } catch (ex) {
-	      
-	      
-	    }
-	    return null;
-	  },
-	
-	  
-
-
-
-
-
-	  getRequestLoadContext: function NH_getRequestLoadContext(aRequest)
-	  {
-	    try {
-	      return aRequest.notificationCallbacks.getInterface(Ci.nsILoadContext);
-	    } catch (ex) { }
-	
-	    try {
-	      return aRequest.loadGroup.notificationCallbacks.getInterface(Ci.nsILoadContext);
-	    } catch (ex) { }
-	
-	    return null;
-	  },
-	
-	  
-
-
-
-
-
-	  isTopLevelLoad: function(aRequest)
-	  {
-	    if (aRequest instanceof Ci.nsIChannel) {
-	      let loadInfo = aRequest.loadInfo;
-	      if (loadInfo && loadInfo.parentOuterWindowID == loadInfo.outerWindowID) {
-	        return (aRequest.loadFlags & Ci.nsIChannel.LOAD_DOCUMENT_URI);
-	      }
-	    }
-	
-	    return false;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  loadFromCache: function NH_loadFromCache(aUrl, aCharset, aCallback)
-	  {
-	    let channel = NetUtil.newChannel({uri: aUrl, loadUsingSystemPrincipal: true});
-	
-	    
-	    channel.loadFlags = Ci.nsIRequest.LOAD_FROM_CACHE |
-	      Ci.nsICachingChannel.LOAD_ONLY_FROM_CACHE |
-	      Ci.nsICachingChannel.LOAD_BYPASS_LOCAL_CACHE_IF_BUSY;
-	
-	    NetUtil.asyncFetch(
-	      channel,
-	      (aInputStream, aStatusCode, aRequest) => {
-	        if (!components.isSuccessCode(aStatusCode)) {
-	          aCallback(null);
-	          return;
-	        }
-	
-	        
-	        
-	        let aChannel = aRequest.QueryInterface(Ci.nsIChannel);
-	        let contentCharset = aChannel.contentCharset || aCharset;
-	
-	        
-	        aCallback(this.readAndConvertFromStream(aInputStream, contentCharset));
-	      });
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  parseCookieHeader: function NH_parseCookieHeader(aHeader)
-	  {
-	    let cookies = aHeader.split(";");
-	    let result = [];
-	
-	    cookies.forEach(function(aCookie) {
-	      let equal = aCookie.indexOf("=");
-	      let name = aCookie.substr(0, equal);
-	      let value = aCookie.substr(equal + 1);
-	      result.push({name: unescape(name.trim()),
-	                   value: unescape(value.trim())});
-	    });
-	
-	    return result;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  parseSetCookieHeader: function NH_parseSetCookieHeader(aHeader)
-	  {
-	    let rawCookies = aHeader.split(/\r\n|\n|\r/);
-	    let cookies = [];
-	
-	    rawCookies.forEach(function(aCookie) {
-	      let equal = aCookie.indexOf("=");
-	      let name = unescape(aCookie.substr(0, equal).trim());
-	      let parts = aCookie.substr(equal + 1).split(";");
-	      let value = unescape(parts.shift().trim());
-	
-	      let cookie = {name: name, value: value};
-	
-	      parts.forEach(function(aPart) {
-	        let part = aPart.trim();
-	        if (part.toLowerCase() == "secure") {
-	          cookie.secure = true;
-	        }
-	        else if (part.toLowerCase() == "httponly") {
-	          cookie.httpOnly = true;
-	        }
-	        else if (part.indexOf("=") > -1) {
-	          let pair = part.split("=");
-	          pair[0] = pair[0].toLowerCase();
-	          if (pair[0] == "path" || pair[0] == "domain") {
-	            cookie[pair[0]] = pair[1];
-	          }
-	          else if (pair[0] == "expires") {
-	            try {
-	              pair[1] = pair[1].replace(/-/g, ' ');
-	              cookie.expires = new Date(pair[1]).toISOString();
-	            }
-	            catch (ex) { }
-	          }
-	        }
-	      });
-	
-	      cookies.push(cookie);
-	    });
-	
-	    return cookies;
-	  },
-	
-	  
-	  
-	  mimeCategoryMap: {
-	    "text/plain": "txt",
-	    "text/html": "html",
-	    "text/xml": "xml",
-	    "text/xsl": "txt",
-	    "text/xul": "txt",
-	    "text/css": "css",
-	    "text/sgml": "txt",
-	    "text/rtf": "txt",
-	    "text/x-setext": "txt",
-	    "text/richtext": "txt",
-	    "text/javascript": "js",
-	    "text/jscript": "txt",
-	    "text/tab-separated-values": "txt",
-	    "text/rdf": "txt",
-	    "text/xif": "txt",
-	    "text/ecmascript": "js",
-	    "text/vnd.curl": "txt",
-	    "text/x-json": "json",
-	    "text/x-js": "txt",
-	    "text/js": "txt",
-	    "text/vbscript": "txt",
-	    "view-source": "txt",
-	    "view-fragment": "txt",
-	    "application/xml": "xml",
-	    "application/xhtml+xml": "xml",
-	    "application/atom+xml": "xml",
-	    "application/rss+xml": "xml",
-	    "application/vnd.mozilla.maybe.feed": "xml",
-	    "application/vnd.mozilla.xul+xml": "xml",
-	    "application/javascript": "js",
-	    "application/x-javascript": "js",
-	    "application/x-httpd-php": "txt",
-	    "application/rdf+xml": "xml",
-	    "application/ecmascript": "js",
-	    "application/http-index-format": "txt",
-	    "application/json": "json",
-	    "application/x-js": "txt",
-	    "multipart/mixed": "txt",
-	    "multipart/x-mixed-replace": "txt",
-	    "image/svg+xml": "svg",
-	    "application/octet-stream": "bin",
-	    "image/jpeg": "image",
-	    "image/jpg": "image",
-	    "image/gif": "image",
-	    "image/png": "image",
-	    "image/bmp": "image",
-	    "application/x-shockwave-flash": "flash",
-	    "video/x-flv": "flash",
-	    "audio/mpeg3": "media",
-	    "audio/x-mpeg-3": "media",
-	    "video/mpeg": "media",
-	    "video/x-mpeg": "media",
-	    "audio/ogg": "media",
-	    "application/ogg": "media",
-	    "application/x-ogg": "media",
-	    "application/x-midi": "media",
-	    "audio/midi": "media",
-	    "audio/x-mid": "media",
-	    "audio/x-midi": "media",
-	    "music/crescendo": "media",
-	    "audio/wav": "media",
-	    "audio/x-wav": "media",
-	    "text/json": "json",
-	    "application/x-json": "json",
-	    "application/json-rpc": "json",
-	    "application/x-web-app-manifest+json": "json",
-	    "application/manifest+json": "json"
-	  },
-	
-	  
-
-
-
-
-
-	  isTextMimeType: function NH_isTextMimeType(aMimeType)
-	  {
-	    if (aMimeType.indexOf("text/") == 0) {
-	      return true;
-	    }
-	
-	    
-	    
-	    
-	    
-	    if (/^application\/\w+(?:[\.-]\w+)*(?:\+xml|[-+]json)$/.test(aMimeType)) {
-	      return true;
-	    }
-	
-	    let category = this.mimeCategoryMap[aMimeType] || null;
-	    switch (category) {
-	      case "txt":
-	      case "js":
-	      case "json":
-	      case "css":
-	      case "html":
-	      case "svg":
-	      case "xml":
-	        return true;
-	
-	      default:
-	        return false;
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  parseSecurityInfo: function NH_parseSecurityInfo(securityInfo, httpActivity) {
-	    const info = {
-	      state: "insecure",
-	    };
-	
-	    
-	    if (!securityInfo) {
-	      return info;
-	    }
-	
-	    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	    securityInfo.QueryInterface(Ci.nsITransportSecurityInfo);
-	    securityInfo.QueryInterface(Ci.nsISSLStatusProvider);
-	
-	    const wpl = Ci.nsIWebProgressListener;
-	    const NSSErrorsService = Cc['@mozilla.org/nss_errors_service;1']
-	                               .getService(Ci.nsINSSErrorsService);
-	    const SSLStatus = securityInfo.SSLStatus;
-	    if (!NSSErrorsService.isNSSErrorCode(securityInfo.errorCode)) {
-	      const state = securityInfo.securityState;
-	
-	      let uri = null;
-	      if (httpActivity.channel && httpActivity.channel.URI) {
-	        uri = httpActivity.channel.URI;
-	      }
-	      if (uri && !uri.schemeIs("https") && !uri.schemeIs("wss")) {
-	        
-	        
-	        
-	        info.state = "insecure";
-	      } else if (state & wpl.STATE_IS_SECURE) {
-	        
-	        info.state = "secure";
-	      } else if (state & wpl.STATE_IS_BROKEN) {
-	        
-	        
-	        info.state = "weak";
-	        info.weaknessReasons = this.getReasonsForWeakness(state);
-	      } else if (state & wpl.STATE_IS_INSECURE) {
-	        
-	        
-	        return info;
-	      } else {
-	        DevToolsUtils.reportException("NetworkHelper.parseSecurityInfo",
-	          "Security state " + state + " has no known STATE_IS_* flags.");
-	        return info;
-	      }
-	
-	      
-	      info.cipherSuite = SSLStatus.cipherName;
-	
-	      
-	      info.protocolVersion = this.formatSecurityProtocol(SSLStatus.protocolVersion);
-	
-	      
-	      info.cert = this.parseCertificateInfo(SSLStatus.serverCert);
-	
-	      
-	      if (httpActivity.hostname) {
-	        const sss = Cc("@mozilla.org/ssservice;1")
-	                      .getService(Ci.nsISiteSecurityService);
-	
-	
-	        
-	        
-	        
-	        let flags = (httpActivity.private) ?
-	                      Ci.nsISocketProvider.NO_PERMANENT_STORAGE : 0;
-	
-	        let host = httpActivity.hostname;
-	
-	        info.hsts = sss.isSecureHost(sss.HEADER_HSTS, host, flags);
-	        info.hpkp = sss.isSecureHost(sss.HEADER_HPKP, host, flags);
-	      } else {
-	        DevToolsUtils.reportException("NetworkHelper.parseSecurityInfo",
-	          "Could not get HSTS/HPKP status as hostname is not available.");
-	        info.hsts = false;
-	        info.hpkp = false;
-	      }
-	
-	    } else {
-	      
-	      info.state = "broken";
-	      info.errorMessage = securityInfo.errorMessage;
-	    }
-	
-	    return info;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  parseCertificateInfo: function NH_parseCertifificateInfo(cert) {
-	    let info = {};
-	    if (cert) {
-	      info.subject = {
-	        commonName: cert.commonName,
-	        organization: cert.organization,
-	        organizationalUnit: cert.organizationalUnit,
-	      };
-	
-	      info.issuer = {
-	        commonName: cert.issuerCommonName,
-	        organization: cert.issuerOrganization,
-	        organizationUnit: cert.issuerOrganizationUnit,
-	      };
-	
-	      info.validity = {
-	        start: cert.validity.notBeforeLocalDay,
-	        end: cert.validity.notAfterLocalDay,
-	      };
-	
-	      info.fingerprint = {
-	        sha1: cert.sha1Fingerprint,
-	        sha256: cert.sha256Fingerprint,
-	      };
-	    } else {
-	      DevToolsUtils.reportException("NetworkHelper.parseCertificateInfo",
-	        "Secure connection established without certificate.");
-	    }
-	
-	    return info;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  formatSecurityProtocol: function NH_formatSecurityProtocol(version) {
-	    switch (version) {
-	      case Ci.nsISSLStatus.TLS_VERSION_1:
-	        return "TLSv1";
-	      case Ci.nsISSLStatus.TLS_VERSION_1_1:
-	        return "TLSv1.1";
-	      case Ci.nsISSLStatus.TLS_VERSION_1_2:
-	        return "TLSv1.2";
-	      default:
-	        DevToolsUtils.reportException("NetworkHelper.formatSecurityProtocol",
-	          "protocolVersion " + version + " is unknown.");
-	        return "Unknown";
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-	  getReasonsForWeakness: function NH_getReasonsForWeakness(state) {
-	    const wpl = Ci.nsIWebProgressListener;
-	
-	    
-	    
-	    
-	    let reasons = [];
-	
-	    if (state & wpl.STATE_IS_BROKEN) {
-	      let isCipher = state & wpl.STATE_USES_WEAK_CRYPTO;
-	
-	      if (isCipher) {
-	        reasons.push("cipher");
-	      }
-	
-	      if (!isCipher) {
-	        DevToolsUtils.reportException("NetworkHelper.getReasonsForWeakness",
-	          "STATE_IS_BROKEN without a known reason. Full state was: " + state);
-	      }
-	    }
-	
-	    return reasons;
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  parseQueryString: function(aQueryString) {
-	    
-	    
-	    
-	    if (!aQueryString) {
-	      return;
-	    }
-	
-	    
-	    let paramsArray = aQueryString.replace(/^[?&]/, "").split("&").map(e => {
-	      let param = e.split("=");
-	      return {
-	        name: param[0] ? NetworkHelper.convertToUnicode(unescape(param[0])) : "",
-	        value: param[1] ? NetworkHelper.convertToUnicode(unescape(param[1])) : ""
-	      }});
-	
-	    return paramsArray;
-	  },
-	
-	  
-
-
-	  nsIURL: function(aUrl, aStore = gNSURLStore) {
-	    if (aStore.has(aUrl)) {
-	      return aStore.get(aUrl);
-	    }
-	
-	    var uri = Services.io.newURI(aUrl).QueryInterface(Ci.nsIURL);
-	    aStore.set(aUrl, uri);
-	    return uri;
-	  }
-	};
-	
-	for (let prop of Object.getOwnPropertyNames(NetworkHelper)) {
-	  exports[prop] = NetworkHelper[prop];
-	}
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	const { Ci, Cc, Cr, CC } = __webpack_require__(35);
-	const { Services } = __webpack_require__(28);
-	const { dumpv } = __webpack_require__(42);
-	const EventEmitter = __webpack_require__(34);
-	const promise = __webpack_require__(40);
-	
-	const IOUtil = Cc("@mozilla.org/io-util;1").getService(Ci.nsIIOUtil);
-	
-	const ScriptableInputStream = CC("@mozilla.org/scriptableinputstream;1",
-	          "nsIScriptableInputStream", "init");
-	
-	const BUFFER_SIZE = 0x8000;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function copyStream(input, output, length) {
-	  let copier = new StreamCopier(input, output, length);
-	  return copier.copy();
-	}
-	
-	function StreamCopier(input, output, length) {
-	  EventEmitter.decorate(this);
-	  this._id = StreamCopier._nextId++;
-	  this.input = input;
-	  
-	  this.baseAsyncOutput = output;
-	  if (IOUtil.outputStreamIsBuffered(output)) {
-	    this.output = output;
-	  } else {
-	    this.output = Cc("@mozilla.org/network/buffered-output-stream;1")
-	                  .createInstance(Ci.nsIBufferedOutputStream);
-	    this.output.init(output, BUFFER_SIZE);
-	  }
-	  this._length = length;
-	  this._amountLeft = length;
-	  this._deferred = promise.defer();
-	
-	  this._copy = this._copy.bind(this);
-	  this._flush = this._flush.bind(this);
-	  this._destroy = this._destroy.bind(this);
-	
-	  
-	  
-	  
-	  
-	  this.then = this._deferred.promise.then.bind(this._deferred.promise);
-	  this.then(this._destroy, this._destroy);
-	
-	  
-	  
-	  this._streamReadyCallback = this._copy;
-	}
-	StreamCopier._nextId = 0;
-	
-	StreamCopier.prototype = {
-	
-	  copy: function() {
-	    
-	    
-	    Services.tm.dispatchToMainThread(() => {
-	      try {
-	        this._copy();
-	      } catch (e) {
-	        this._deferred.reject(e);
-	      }
-	    });
-	    return this;
-	  },
-	
-	  _copy: function() {
-	    let bytesAvailable = this.input.available();
-	    let amountToCopy = Math.min(bytesAvailable, this._amountLeft);
-	    this._debug("Trying to copy: " + amountToCopy);
-	
-	    let bytesCopied;
-	    try {
-	      bytesCopied = this.output.writeFrom(this.input, amountToCopy);
-	    } catch (e) {
-	      if (e.result == Cr.NS_BASE_STREAM_WOULD_BLOCK) {
-	        this._debug("Base stream would block, will retry");
-	        this._debug("Waiting for output stream");
-	        this.baseAsyncOutput.asyncWait(this, 0, 0, Services.tm.currentThread);
-	        return;
-	      } else {
-	        throw e;
-	      }
-	    }
-	
-	    this._amountLeft -= bytesCopied;
-	    this._debug("Copied: " + bytesCopied +
-	                ", Left: " + this._amountLeft);
-	    this._emitProgress();
-	
-	    if (this._amountLeft === 0) {
-	      this._debug("Copy done!");
-	      this._flush();
-	      return;
-	    }
-	
-	    this._debug("Waiting for input stream");
-	    this.input.asyncWait(this, 0, 0, Services.tm.currentThread);
-	  },
-	
-	  _emitProgress: function() {
-	    this.emit("progress", {
-	      bytesSent: this._length - this._amountLeft,
-	      totalBytes: this._length
-	    });
-	  },
-	
-	  _flush: function() {
-	    try {
-	      this.output.flush();
-	    } catch (e) {
-	      if (e.result == Cr.NS_BASE_STREAM_WOULD_BLOCK ||
-	          e.result == Cr.NS_ERROR_FAILURE) {
-	        this._debug("Flush would block, will retry");
-	        this._streamReadyCallback = this._flush;
-	        this._debug("Waiting for output stream");
-	        this.baseAsyncOutput.asyncWait(this, 0, 0, Services.tm.currentThread);
-	        return;
-	      } else {
-	        throw e;
-	      }
-	    }
-	    this._deferred.resolve();
-	  },
-	
-	  _destroy: function() {
-	    this._destroy = null;
-	    this._copy = null;
-	    this._flush = null;
-	    this.input = null;
-	    this.output = null;
-	  },
-	
-	  
-	  onInputStreamReady: function() {
-	    this._streamReadyCallback();
-	  },
-	
-	  
-	  onOutputStreamReady: function() {
-	    this._streamReadyCallback();
-	  },
-	
-	  _debug: function(msg) {
-	    
-	    
-	    dumpv("Copier: " + this._id + " " + msg);
-	  }
-	
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function delimitedRead(stream, delimiter, count) {
-	  dumpv("Starting delimited read for " + delimiter + " up to " +
-	        count + " bytes");
-	
-	  let scriptableStream;
-	  if (stream.readBytes) {
-	    scriptableStream = stream;
-	  } else {
-	    scriptableStream = new ScriptableInputStream(stream);
-	  }
-	
-	  let data = "";
-	
-	  
-	  count = Math.min(count, stream.available());
-	
-	  if (count <= 0) {
-	    return data;
-	  }
-	
-	  let char;
-	  while (char !== delimiter && count > 0) {
-	    char = scriptableStream.readBytes(1);
-	    count--;
-	    data += char;
-	  }
-	
-	  return data;
-	}
-	
-	module.exports = {
-	  copyStream: copyStream,
-	  delimitedRead: delimitedRead
-	};
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	"use strict";
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	const { Cc, Ci, Cu } = __webpack_require__(35);
-	const DevToolsUtils = __webpack_require__(42);
-	const { dumpn, dumpv } = DevToolsUtils;
-	const StreamUtils = __webpack_require__(48);
-	const promise = __webpack_require__(40);
-	
-	
-
-
-
-
-
-	const utf8 = __webpack_require__(50);
-	
-	
-	
-	
-	const PACKET_LENGTH_MAX = Math.pow(2, 40);
-	
-	
-
-
-	function Packet(transport) {
-	  this._transport = transport;
-	  this._length = 0;
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-	Packet.fromHeader = function(header, transport) {
-	  return JSONPacket.fromHeader(header, transport) ||
-	         BulkPacket.fromHeader(header, transport);
-	};
-	
-	Packet.prototype = {
-	
-	  get length() {
-	    return this._length;
-	  },
-	
-	  set length(length) {
-	    if (length > PACKET_LENGTH_MAX) {
-	      throw Error("Packet length " + length + " exceeds the max length of " +
-	                  PACKET_LENGTH_MAX);
-	    }
-	    this._length = length;
-	  },
-	
-	  destroy: function() {
-	    this._transport = null;
-	  }
-	
-	};
-	
-	exports.Packet = Packet;
-	
-	
-
-
-
-
-
-
-
-
-	function JSONPacket(transport) {
-	  Packet.call(this, transport);
-	  this._data = "";
-	  this._done = false;
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-	JSONPacket.fromHeader = function(header, transport) {
-	  let match = this.HEADER_PATTERN.exec(header);
-	
-	  if (!match) {
-	    return null;
-	  }
-	
-	  dumpv("Header matches JSON packet");
-	  let packet = new JSONPacket(transport);
-	  packet.length = +match[1];
-	  return packet;
-	};
-	
-	JSONPacket.HEADER_PATTERN = /^(\d+):$/;
-	
-	JSONPacket.prototype = Object.create(Packet.prototype);
-	
-	Object.defineProperty(JSONPacket.prototype, "object", {
-	  
-
-
-	  get: function() { return this._object; },
-	
-	  
-
-
-	  set: function(object) {
-	    this._object = object;
-	    let data = JSON.stringify(object);
-	    this._data = data;
-	    this.length = this._data.length;
-	  }
-	});
-	
-	JSONPacket.prototype.read = function(stream, scriptableStream) {
-	  dumpv("Reading JSON packet");
-	
-	  
-	  this._readData(stream, scriptableStream);
-	
-	  if (!this.done) {
-	    
-	    return;
-	  }
-	
-	  let json = this._data;
-	  try {
-	    json = utf8.decode(json);
-	    this._object = JSON.parse(json);
-	  } catch(e) {
-	    let msg = "Error parsing incoming packet: " + json + " (" + e +
-	              " - " + e.stack + ")";
-	    if (console.error) {
-	      console.error(msg);
-	    }
-	    dumpn(msg);
-	    return;
-	  }
-	
-	  this._transport._onJSONObjectReady(this._object);
-	}
-	
-	JSONPacket.prototype._readData = function(stream, scriptableStream) {
-	  if (!scriptableStream) {
-	    scriptableStream = stream;
-	  }
-	  if (dumpv.wantVerbose) {
-	    dumpv("Reading JSON data: _l: " + this.length + " dL: " +
-	          this._data.length + " sA: " + stream.available());
-	  }
-	  let bytesToRead = Math.min(this.length - this._data.length,
-	                             stream.available());
-	  this._data += scriptableStream.readBytes(bytesToRead);
-	  this._done = this._data.length === this.length;
-	}
-	
-	JSONPacket.prototype.write = function(stream) {
-	  dumpv("Writing JSON packet");
-	
-	  if (this._outgoing === undefined) {
-	    
-	    this._outgoing = this.length + ":" + this._data;
-	  }
-	
-	  let written = stream.write(this._outgoing, this._outgoing.length);
-	  this._outgoing = this._outgoing.slice(written);
-	  this._done = !this._outgoing.length;
-	}
-	
-	Object.defineProperty(JSONPacket.prototype, "done", {
-	  get: function() { return this._done; }
-	});
-	
-	JSONPacket.prototype.toString = function() {
-	  return JSON.stringify(this._object, null, 2);
-	}
-	
-	exports.JSONPacket = JSONPacket;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function BulkPacket(transport) {
-	  Packet.call(this, transport);
-	  this._done = false;
-	  this._readyForWriting = promise.defer();
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-	BulkPacket.fromHeader = function(header, transport) {
-	  let match = this.HEADER_PATTERN.exec(header);
-	
-	  if (!match) {
-	    return null;
-	  }
-	
-	  dumpv("Header matches bulk packet");
-	  let packet = new BulkPacket(transport);
-	  packet.header = {
-	    actor: match[1],
-	    type: match[2],
-	    length: +match[3]
-	  };
-	  return packet;
-	};
-	
-	BulkPacket.HEADER_PATTERN = /^bulk ([^: ]+) ([^: ]+) (\d+):$/;
-	
-	BulkPacket.prototype = Object.create(Packet.prototype);
-	
-	BulkPacket.prototype.read = function(stream) {
-	  dumpv("Reading bulk packet, handing off input stream");
-	
-	  
-	  this._transport.pauseIncoming();
-	
-	  let deferred = promise.defer();
-	
-	  this._transport._onBulkReadReady({
-	    actor: this.actor,
-	    type: this.type,
-	    length: this.length,
-	    copyTo: (output) => {
-	      dumpv("CT length: " + this.length);
-	      let copying = StreamUtils.copyStream(stream, output, this.length);
-	      deferred.resolve(copying);
-	      return copying;
-	    },
-	    stream: stream,
-	    done: deferred
-	  });
-	
-	  
-	  deferred.promise.then(() => {
-	    dumpv("onReadDone called, ending bulk mode");
-	    this._done = true;
-	    this._transport.resumeIncoming();
-	  }, this._transport.close);
-	
-	  
-	  this.read = () => {
-	    throw new Error("Tried to read() a BulkPacket's stream multiple times.");
-	  };
-	}
-	
-	BulkPacket.prototype.write = function(stream) {
-	  dumpv("Writing bulk packet");
-	
-	  if (this._outgoingHeader === undefined) {
-	    dumpv("Serializing bulk packet header");
-	    
-	    this._outgoingHeader = "bulk " + this.actor + " " + this.type + " " +
-	                           this.length + ":";
-	  }
-	
-	  
-	  if (this._outgoingHeader.length) {
-	    dumpv("Writing bulk packet header");
-	    let written = stream.write(this._outgoingHeader,
-	                               this._outgoingHeader.length);
-	    this._outgoingHeader = this._outgoingHeader.slice(written);
-	    return;
-	  }
-	
-	  dumpv("Handing off output stream");
-	
-	  
-	  this._transport.pauseOutgoing();
-	
-	  let deferred = promise.defer();
-	
-	  this._readyForWriting.resolve({
-	    copyFrom: (input) => {
-	      dumpv("CF length: " + this.length);
-	      let copying = StreamUtils.copyStream(input, stream, this.length);
-	      deferred.resolve(copying);
-	      return copying;
-	    },
-	    stream: stream,
-	    done: deferred
-	  });
-	
-	  
-	  deferred.promise.then(() => {
-	    dumpv("onWriteDone called, ending bulk mode");
-	    this._done = true;
-	    this._transport.resumeOutgoing();
-	  }, this._transport.close);
-	
-	  
-	  this.write = () => {
-	    throw new Error("Tried to write() a BulkPacket's stream multiple times.");
-	  };
-	}
-	
-	Object.defineProperty(BulkPacket.prototype, "streamReadyForWriting", {
-	  get: function() {
-	    return this._readyForWriting.promise;
-	  }
-	});
-	
-	Object.defineProperty(BulkPacket.prototype, "header", {
-	  get: function() {
-	    return {
-	      actor: this.actor,
-	      type: this.type,
-	      length: this.length
-	    };
-	  },
-	
-	  set: function(header) {
-	    this.actor = header.actor;
-	    this.type = header.type;
-	    this.length = header.length;
-	  },
-	});
-	
-	Object.defineProperty(BulkPacket.prototype, "done", {
-	  get: function() { return this._done; },
-	});
-	
-	
-	BulkPacket.prototype.toString = function() {
-	  return "Bulk: " + JSON.stringify(this.header, null, 2);
-	}
-	
-	exports.BulkPacket = BulkPacket;
-	
-	
-
-
-
-
-
-
-
-	function RawPacket(transport, data) {
-	  Packet.call(this, transport);
-	  this._data = data;
-	  this.length = data.length;
-	  this._done = false;
-	}
-	
-	RawPacket.prototype = Object.create(Packet.prototype);
-	
-	RawPacket.prototype.read = function(stream) {
-	  
-	  throw Error("Not implmented.");
-	}
-	
-	RawPacket.prototype.write = function(stream) {
-	  let written = stream.write(this._data, this._data.length);
-	  this._data = this._data.slice(written);
-	  this._done = !this._data.length;
-	}
-	
-	Object.defineProperty(RawPacket.prototype, "done", {
-	  get: function() { return this._done; }
-	});
-	
-	exports.RawPacket = RawPacket;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_RESULT__;(function(module, global) {
-	;(function(root) {
-	
-		
-		var freeExports = typeof exports == 'object' && exports;
-	
-		
-		var freeModule = typeof module == 'object' && module &&
-			module.exports == freeExports && module;
-	
-		
-		
-		var freeGlobal = typeof global == 'object' && global;
-		if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
-			root = freeGlobal;
-		}
-	
-		
-	
-		var stringFromCharCode = String.fromCharCode;
-	
-		
-		function ucs2decode(string) {
-			var output = [];
-			var counter = 0;
-			var length = string.length;
-			var value;
-			var extra;
-			while (counter < length) {
-				value = string.charCodeAt(counter++);
-				if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-					
-					extra = string.charCodeAt(counter++);
-					if ((extra & 0xFC00) == 0xDC00) { 
-						output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-					} else {
-						
-						
-						output.push(value);
-						counter--;
-					}
-				} else {
-					output.push(value);
-				}
-			}
-			return output;
-		}
-	
-		
-		function ucs2encode(array) {
-			var length = array.length;
-			var index = -1;
-			var value;
-			var output = '';
-			while (++index < length) {
-				value = array[index];
-				if (value > 0xFFFF) {
-					value -= 0x10000;
-					output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
-					value = 0xDC00 | value & 0x3FF;
-				}
-				output += stringFromCharCode(value);
-			}
-			return output;
-		}
-	
-		function checkScalarValue(codePoint) {
-			if (codePoint >= 0xD800 && codePoint <= 0xDFFF) {
-				throw Error(
-					'Lone surrogate U+' + codePoint.toString(16).toUpperCase() +
-					' is not a scalar value'
-				);
-			}
-		}
-		
-	
-		function createByte(codePoint, shift) {
-			return stringFromCharCode(((codePoint >> shift) & 0x3F) | 0x80);
-		}
-	
-		function encodeCodePoint(codePoint) {
-			if ((codePoint & 0xFFFFFF80) == 0) { 
-				return stringFromCharCode(codePoint);
-			}
-			var symbol = '';
-			if ((codePoint & 0xFFFFF800) == 0) { 
-				symbol = stringFromCharCode(((codePoint >> 6) & 0x1F) | 0xC0);
-			}
-			else if ((codePoint & 0xFFFF0000) == 0) { 
-				checkScalarValue(codePoint);
-				symbol = stringFromCharCode(((codePoint >> 12) & 0x0F) | 0xE0);
-				symbol += createByte(codePoint, 6);
-			}
-			else if ((codePoint & 0xFFE00000) == 0) { 
-				symbol = stringFromCharCode(((codePoint >> 18) & 0x07) | 0xF0);
-				symbol += createByte(codePoint, 12);
-				symbol += createByte(codePoint, 6);
-			}
-			symbol += stringFromCharCode((codePoint & 0x3F) | 0x80);
-			return symbol;
-		}
-	
-		function utf8encode(string) {
-			var codePoints = ucs2decode(string);
-			var length = codePoints.length;
-			var index = -1;
-			var codePoint;
-			var byteString = '';
-			while (++index < length) {
-				codePoint = codePoints[index];
-				byteString += encodeCodePoint(codePoint);
-			}
-			return byteString;
-		}
-	
-		
-	
-		function readContinuationByte() {
-			if (byteIndex >= byteCount) {
-				throw Error('Invalid byte index');
-			}
-	
-			var continuationByte = byteArray[byteIndex] & 0xFF;
-			byteIndex++;
-	
-			if ((continuationByte & 0xC0) == 0x80) {
-				return continuationByte & 0x3F;
-			}
-	
-			
-			throw Error('Invalid continuation byte');
-		}
-	
-		function decodeSymbol() {
-			var byte1;
-			var byte2;
-			var byte3;
-			var byte4;
-			var codePoint;
-	
-			if (byteIndex > byteCount) {
-				throw Error('Invalid byte index');
-			}
-	
-			if (byteIndex == byteCount) {
-				return false;
-			}
-	
-			
-			byte1 = byteArray[byteIndex] & 0xFF;
-			byteIndex++;
-	
-			
-			if ((byte1 & 0x80) == 0) {
-				return byte1;
-			}
-	
-			
-			if ((byte1 & 0xE0) == 0xC0) {
-				var byte2 = readContinuationByte();
-				codePoint = ((byte1 & 0x1F) << 6) | byte2;
-				if (codePoint >= 0x80) {
-					return codePoint;
-				} else {
-					throw Error('Invalid continuation byte');
-				}
-			}
-	
-			
-			if ((byte1 & 0xF0) == 0xE0) {
-				byte2 = readContinuationByte();
-				byte3 = readContinuationByte();
-				codePoint = ((byte1 & 0x0F) << 12) | (byte2 << 6) | byte3;
-				if (codePoint >= 0x0800) {
-					checkScalarValue(codePoint);
-					return codePoint;
-				} else {
-					throw Error('Invalid continuation byte');
-				}
-			}
-	
-			
-			if ((byte1 & 0xF8) == 0xF0) {
-				byte2 = readContinuationByte();
-				byte3 = readContinuationByte();
-				byte4 = readContinuationByte();
-				codePoint = ((byte1 & 0x0F) << 0x12) | (byte2 << 0x0C) |
-					(byte3 << 0x06) | byte4;
-				if (codePoint >= 0x010000 && codePoint <= 0x10FFFF) {
-					return codePoint;
-				}
-			}
-	
-			throw Error('Invalid UTF-8 detected');
-		}
-	
-		var byteArray;
-		var byteCount;
-		var byteIndex;
-		function utf8decode(byteString) {
-			byteArray = ucs2decode(byteString);
-			byteCount = byteArray.length;
-			byteIndex = 0;
-			var codePoints = [];
-			var tmp;
-			while ((tmp = decodeSymbol()) !== false) {
-				codePoints.push(tmp);
-			}
-			return ucs2encode(codePoints);
-		}
-	
-		
-	
-		var utf8 = {
-			'version': '2.0.0',
-			'encode': utf8encode,
-			'decode': utf8decode
-		};
-	
-		
-		
-		if (
-			true
-		) {
-			!(__WEBPACK_AMD_DEFINE_RESULT__ = function() {
-				return utf8;
-			}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-		}	else if (freeExports && !freeExports.nodeType) {
-			if (freeModule) { 
-				freeModule.exports = utf8;
-			} else { 
-				var object = {};
-				var hasOwnProperty = object.hasOwnProperty;
-				for (var key in utf8) {
-					hasOwnProperty.call(utf8, key) && (freeExports[key] = utf8[key]);
-				}
-			}
-		} else { 
-			root.utf8 = utf8;
-		}
-	
-	}(this));
-	
-	}.call(exports, __webpack_require__(51)(module), (function() { return this; }())))
-
- },
-
+ 51:
  function(module, exports) {
 
 	module.exports = function(module) {
@@ -8888,6862 +300,11 @@ return  (function(modules) {
 
  },
 
- function(module, exports, __webpack_require__) {
-
-	var __WEBPACK_AMD_DEFINE_RESULT__;(function(module, global) {
-	;(function(root) {
-	
-		
-		var freeExports = typeof exports == 'object' && exports;
-	
-		
-		var freeModule = typeof module == 'object' && module &&
-			module.exports == freeExports && module;
-	
-		
-		
-		var freeGlobal = typeof global == 'object' && global;
-		if (freeGlobal.global === freeGlobal || freeGlobal.window === freeGlobal) {
-			root = freeGlobal;
-		}
-	
-		
-	
-		var stringFromCharCode = String.fromCharCode;
-	
-		
-		function ucs2decode(string) {
-			var output = [];
-			var counter = 0;
-			var length = string.length;
-			var value;
-			var extra;
-			while (counter < length) {
-				value = string.charCodeAt(counter++);
-				if (value >= 0xD800 && value <= 0xDBFF && counter < length) {
-					
-					extra = string.charCodeAt(counter++);
-					if ((extra & 0xFC00) == 0xDC00) { 
-						output.push(((value & 0x3FF) << 10) + (extra & 0x3FF) + 0x10000);
-					} else {
-						
-						
-						output.push(value);
-						counter--;
-					}
-				} else {
-					output.push(value);
-				}
-			}
-			return output;
-		}
-	
-		
-		function ucs2encode(array) {
-			var length = array.length;
-			var index = -1;
-			var value;
-			var output = '';
-			while (++index < length) {
-				value = array[index];
-				if (value > 0xFFFF) {
-					value -= 0x10000;
-					output += stringFromCharCode(value >>> 10 & 0x3FF | 0xD800);
-					value = 0xDC00 | value & 0x3FF;
-				}
-				output += stringFromCharCode(value);
-			}
-			return output;
-		}
-	
-		function checkScalarValue(codePoint) {
-			if (codePoint >= 0xD800 && codePoint <= 0xDFFF) {
-				throw Error(
-					'Lone surrogate U+' + codePoint.toString(16).toUpperCase() +
-					' is not a scalar value'
-				);
-			}
-		}
-		
-	
-		function createByte(codePoint, shift) {
-			return stringFromCharCode(((codePoint >> shift) & 0x3F) | 0x80);
-		}
-	
-		function encodeCodePoint(codePoint) {
-			if ((codePoint & 0xFFFFFF80) == 0) { 
-				return stringFromCharCode(codePoint);
-			}
-			var symbol = '';
-			if ((codePoint & 0xFFFFF800) == 0) { 
-				symbol = stringFromCharCode(((codePoint >> 6) & 0x1F) | 0xC0);
-			}
-			else if ((codePoint & 0xFFFF0000) == 0) { 
-				checkScalarValue(codePoint);
-				symbol = stringFromCharCode(((codePoint >> 12) & 0x0F) | 0xE0);
-				symbol += createByte(codePoint, 6);
-			}
-			else if ((codePoint & 0xFFE00000) == 0) { 
-				symbol = stringFromCharCode(((codePoint >> 18) & 0x07) | 0xF0);
-				symbol += createByte(codePoint, 12);
-				symbol += createByte(codePoint, 6);
-			}
-			symbol += stringFromCharCode((codePoint & 0x3F) | 0x80);
-			return symbol;
-		}
-	
-		function utf8encode(string) {
-			var codePoints = ucs2decode(string);
-			var length = codePoints.length;
-			var index = -1;
-			var codePoint;
-			var byteString = '';
-			while (++index < length) {
-				codePoint = codePoints[index];
-				byteString += encodeCodePoint(codePoint);
-			}
-			return byteString;
-		}
-	
-		
-	
-		function readContinuationByte() {
-			if (byteIndex >= byteCount) {
-				throw Error('Invalid byte index');
-			}
-	
-			var continuationByte = byteArray[byteIndex] & 0xFF;
-			byteIndex++;
-	
-			if ((continuationByte & 0xC0) == 0x80) {
-				return continuationByte & 0x3F;
-			}
-	
-			
-			throw Error('Invalid continuation byte');
-		}
-	
-		function decodeSymbol() {
-			var byte1;
-			var byte2;
-			var byte3;
-			var byte4;
-			var codePoint;
-	
-			if (byteIndex > byteCount) {
-				throw Error('Invalid byte index');
-			}
-	
-			if (byteIndex == byteCount) {
-				return false;
-			}
-	
-			
-			byte1 = byteArray[byteIndex] & 0xFF;
-			byteIndex++;
-	
-			
-			if ((byte1 & 0x80) == 0) {
-				return byte1;
-			}
-	
-			
-			if ((byte1 & 0xE0) == 0xC0) {
-				var byte2 = readContinuationByte();
-				codePoint = ((byte1 & 0x1F) << 6) | byte2;
-				if (codePoint >= 0x80) {
-					return codePoint;
-				} else {
-					throw Error('Invalid continuation byte');
-				}
-			}
-	
-			
-			if ((byte1 & 0xF0) == 0xE0) {
-				byte2 = readContinuationByte();
-				byte3 = readContinuationByte();
-				codePoint = ((byte1 & 0x0F) << 12) | (byte2 << 6) | byte3;
-				if (codePoint >= 0x0800) {
-					checkScalarValue(codePoint);
-					return codePoint;
-				} else {
-					throw Error('Invalid continuation byte');
-				}
-			}
-	
-			
-			if ((byte1 & 0xF8) == 0xF0) {
-				byte2 = readContinuationByte();
-				byte3 = readContinuationByte();
-				byte4 = readContinuationByte();
-				codePoint = ((byte1 & 0x0F) << 0x12) | (byte2 << 0x0C) |
-					(byte3 << 0x06) | byte4;
-				if (codePoint >= 0x010000 && codePoint <= 0x10FFFF) {
-					return codePoint;
-				}
-			}
-	
-			throw Error('Invalid UTF-8 detected');
-		}
-	
-		var byteArray;
-		var byteCount;
-		var byteIndex;
-		function utf8decode(byteString) {
-			byteArray = ucs2decode(byteString);
-			byteCount = byteArray.length;
-			byteIndex = 0;
-			var codePoints = [];
-			var tmp;
-			while ((tmp = decodeSymbol()) !== false) {
-				codePoints.push(tmp);
-			}
-			return ucs2encode(codePoints);
-		}
-	
-		
-	
-		var utf8 = {
-			'version': '2.0.0',
-			'encode': utf8encode,
-			'decode': utf8decode
-		};
-	
-		
-		
-		if (
-			true
-		) {
-			!(__WEBPACK_AMD_DEFINE_RESULT__ = function() {
-				return utf8;
-			}.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
-		}	else if (freeExports && !freeExports.nodeType) {
-			if (freeModule) { 
-				freeModule.exports = utf8;
-			} else { 
-				var object = {};
-				var hasOwnProperty = object.hasOwnProperty;
-				for (var key in utf8) {
-					hasOwnProperty.call(utf8, key) && (freeExports[key] = utf8[key]);
-				}
-			}
-		} else { 
-			root.utf8 = utf8;
-		}
-	
-	}(this));
-	
-	}.call(exports, __webpack_require__(51)(module), (function() { return this; }())))
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-	
-	
-
-
-	
-	const { Ci, Cu, components } = __webpack_require__(35);
-	const { Services } = __webpack_require__(28);
-	const DevToolsUtils = __webpack_require__(42);
-	
-	
-	
-	const promise = __webpack_require__(40);
-	
-	const events = __webpack_require__(54);
-	const { WebConsoleClient } = __webpack_require__(56);
-	
-	
-	
-	const noop = () => {};
-	
-	
-
-
-
-
-
-
-
-
-
-
-	function eventSource(aProto) {
-	  
-
-
-
-
-
-
-
-
-
-	  aProto.addListener = function(aName, aListener) {
-	    if (typeof aListener != "function") {
-	      throw TypeError("Listeners must be functions.");
-	    }
-	
-	    if (!this._listeners) {
-	      this._listeners = {};
-	    }
-	
-	    this._getListeners(aName).push(aListener);
-	  };
-	
-	  
-
-
-
-
-
-
-
-
-	  aProto.addOneTimeListener = function(aName, aListener) {
-	    let l = (...args) => {
-	      this.removeListener(aName, l);
-	      aListener.apply(null, args);
-	    };
-	    this.addListener(aName, l);
-	  };
-	
-	  
-
-
-
-
-
-
-
-
-
-	  aProto.removeListener = function(aName, aListener) {
-	    if (!this._listeners || (aListener && !this._listeners[aName])) {
-	      return;
-	    }
-	
-	    if (!aListener) {
-	      this._listeners[aName] = [];
-	    }
-	    else {
-	      this._listeners[aName] =
-	        this._listeners[aName].filter(function(l) { return l != aListener; });
-	    }
-	  };
-	
-	  
-
-
-
-
-
-
-	  aProto._getListeners = function(aName) {
-	    if (aName in this._listeners) {
-	      return this._listeners[aName];
-	    }
-	    this._listeners[aName] = [];
-	    return this._listeners[aName];
-	  };
-	
-	  
-
-
-
-
-
-
-
-
-	  aProto.emit = function() {
-	    if (!this._listeners) {
-	      return;
-	    }
-	
-	    let name = arguments[0];
-	    let listeners = this._getListeners(name).slice(0);
-	
-	    for (let listener of listeners) {
-	      try {
-	        listener.apply(null, arguments);
-	      } catch (e) {
-	        
-	        DevToolsUtils.reportException("notify event '" + name + "'", e);
-	      }
-	    }
-	  };
-	}
-	
-	
-
-
-
-	const ThreadStateTypes = {
-	  "paused": "paused",
-	  "resumed": "attached",
-	  "detached": "detached"
-	};
-	
-	
-
-
-
-	const UnsolicitedNotifications = {
-	  "consoleAPICall": "consoleAPICall",
-	  "eventNotification": "eventNotification",
-	  "fileActivity": "fileActivity",
-	  "lastPrivateContextExited": "lastPrivateContextExited",
-	  "logMessage": "logMessage",
-	  "networkEvent": "networkEvent",
-	  "networkEventUpdate": "networkEventUpdate",
-	  "newGlobal": "newGlobal",
-	  "newScript": "newScript",
-	  "tabDetached": "tabDetached",
-	  "tabListChanged": "tabListChanged",
-	  "reflowActivity": "reflowActivity",
-	  "addonListChanged": "addonListChanged",
-	  "workerListChanged": "workerListChanged",
-	  "serviceWorkerRegistrationListChanged": "serviceWorkerRegistrationList",
-	  "tabNavigated": "tabNavigated",
-	  "frameUpdate": "frameUpdate",
-	  "pageError": "pageError",
-	  "documentLoad": "documentLoad",
-	  "enteredFrame": "enteredFrame",
-	  "exitedFrame": "exitedFrame",
-	  "appOpen": "appOpen",
-	  "appClose": "appClose",
-	  "appInstall": "appInstall",
-	  "appUninstall": "appUninstall",
-	  "evaluationResult": "evaluationResult",
-	  "newSource": "newSource",
-	  "updatedSource": "updatedSource",
-	};
-	
-	
-
-
-
-	const UnsolicitedPauses = {
-	  "resumeLimit": "resumeLimit",
-	  "debuggerStatement": "debuggerStatement",
-	  "breakpoint": "breakpoint",
-	  "DOMEvent": "DOMEvent",
-	  "watchpoint": "watchpoint",
-	  "exception": "exception"
-	};
-	
-	
-
-
-
-
-	const DebuggerClient = exports.DebuggerClient = function(aTransport)
-	{
-	  this._transport = aTransport;
-	  this._transport.hooks = this;
-	
-	  
-	  this._clients = new Map();
-	
-	  this._pendingRequests = new Map();
-	  this._activeRequests = new Map();
-	  this._eventsEnabled = true;
-	
-	  this.traits = {};
-	
-	  this.request = this.request.bind(this);
-	  this.localTransport = this._transport.onOutputStreamReady === undefined;
-	
-	  
-
-
-
-	  this.mainRoot = null;
-	  this.expectReply("root", (aPacket) => {
-	    this.mainRoot = new RootClient(this, aPacket);
-	    this.emit("connected", aPacket.applicationType, aPacket.traits);
-	  });
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	DebuggerClient.requester = function(aPacketSkeleton, config = {}) {
-	  let { telemetry, before, after } = config;
-	  return DevToolsUtils.makeInfallible(function(...args) {
-	    let histogram, startTime;
-	    if (telemetry) {
-	      let transportType = this._transport.onOutputStreamReady === undefined
-	        ? "LOCAL_"
-	        : "REMOTE_";
-	      let histogramId = "DEVTOOLS_DEBUGGER_RDP_"
-	        + transportType + telemetry + "_MS";
-	      histogram = Services.telemetry.getHistogramById(histogramId);
-	      startTime = +new Date();
-	    }
-	    let outgoingPacket = {
-	      to: aPacketSkeleton.to || this.actor
-	    };
-	
-	    let maxPosition = -1;
-	    for (let k of Object.keys(aPacketSkeleton)) {
-	      if (aPacketSkeleton[k] instanceof DebuggerClient.Argument) {
-	        let { position } = aPacketSkeleton[k];
-	        outgoingPacket[k] = aPacketSkeleton[k].getArgument(args);
-	        maxPosition = Math.max(position, maxPosition);
-	      } else {
-	        outgoingPacket[k] = aPacketSkeleton[k];
-	      }
-	    }
-	
-	    if (before) {
-	      outgoingPacket = before.call(this, outgoingPacket);
-	    }
-	
-	    return this.request(outgoingPacket, DevToolsUtils.makeInfallible((aResponse) => {
-	      if (after) {
-	        let { from } = aResponse;
-	        aResponse = after.call(this, aResponse);
-	        if (!aResponse.from) {
-	          aResponse.from = from;
-	        }
-	      }
-	
-	      
-	      let thisCallback = args[maxPosition + 1];
-	      if (thisCallback) {
-	        thisCallback(aResponse);
-	      }
-	
-	      if (histogram) {
-	        histogram.add(+new Date() - startTime);
-	      }
-	    }, "DebuggerClient.requester request callback"));
-	  }, "DebuggerClient.requester");
-	};
-	
-	function args(aPos) {
-	  return new DebuggerClient.Argument(aPos);
-	}
-	
-	DebuggerClient.Argument = function(aPosition) {
-	  this.position = aPosition;
-	};
-	
-	DebuggerClient.Argument.prototype.getArgument = function(aParams) {
-	  if (!(this.position in aParams)) {
-	    throw new Error("Bad index into params: " + this.position);
-	  }
-	  return aParams[this.position];
-	};
-	
-	
-	DebuggerClient.socketConnect = function(options) {
-	  
-	  return DebuggerSocket.connect(options);
-	};
-	DevToolsUtils.defineLazyGetter(DebuggerClient, "Authenticators", () => {
-	  return Authentication.Authenticators;
-	});
-	DevToolsUtils.defineLazyGetter(DebuggerClient, "AuthenticationResult", () => {
-	  return Authentication.AuthenticationResult;
-	});
-	
-	DebuggerClient.prototype = {
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-	  connect: function(aOnConnected) {
-	    return Promise.race([
-	      new Promise((resolve, reject) => {
-	        this.emit("connect");
-	
-	        
-	        
-	        events.emit(DebuggerClient, "connect", this);
-	
-	        this.addOneTimeListener("connected", (aName, aApplicationType, aTraits) => {
-	          this.traits = aTraits;
-	          if (aOnConnected) {
-	            aOnConnected(aApplicationType, aTraits);
-	          }
-	          resolve([aApplicationType, aTraits]);
-	        });
-	
-	        this._transport.ready();
-	      }),
-	      new Promise((resolve, reject) => {
-	        setTimeout(() => reject(new Error("Connect timeout error")), 6000);
-	      })
-	    ]);
-	  },
-	
-	  
-
-
-
-
-
-
-	  close: function(aOnClosed) {
-	    
-	    
-	    this._eventsEnabled = false;
-	
-	    let cleanup = () => {
-	      this._transport.close();
-	      this._transport = null;
-	    };
-	
-	    
-	    
-	    
-	    if (this._closed) {
-	      cleanup();
-	      if (aOnClosed) {
-	        aOnClosed();
-	      }
-	      return;
-	    }
-	
-	    if (aOnClosed) {
-	      this.addOneTimeListener("closed", function(aEvent) {
-	        aOnClosed();
-	      });
-	    }
-	
-	    
-	    
-	    
-	    let clients = [...this._clients.values()];
-	    this._clients.clear();
-	    const detachClients = () => {
-	      let client = clients.pop();
-	      if (!client) {
-	        
-	        cleanup();
-	        return;
-	      }
-	      if (client.detach) {
-	        client.detach(detachClients);
-	        return;
-	      }
-	      detachClients();
-	    };
-	    detachClients();
-	  },
-	
-	  
-
-
-
-	  listTabs: function(aOnResponse) { return this.mainRoot.listTabs(aOnResponse); },
-	
-	  
-
-
-
-	  listAddons: function(aOnResponse) { return this.mainRoot.listAddons(aOnResponse); },
-	
-	  getTab: function(aFilter) { return this.mainRoot.getTab(aFilter); },
-	
-	  
-
-
-
-
-
-
-
-
-	  attachTab: function(aTabActor, aOnResponse = noop) {
-	    if (this._clients.has(aTabActor)) {
-	      let cachedTab = this._clients.get(aTabActor);
-	      let cachedResponse = {
-	        cacheDisabled: cachedTab.cacheDisabled,
-	        javascriptEnabled: cachedTab.javascriptEnabled,
-	        traits: cachedTab.traits,
-	      };
-	      DevToolsUtils.executeSoon(() => aOnResponse(cachedResponse, cachedTab));
-	      return promise.resolve([cachedResponse, cachedTab]);
-	    }
-	
-	    let packet = {
-	      to: aTabActor,
-	      type: "attach"
-	    };
-	    return this.request(packet).then(aResponse => {
-	      let tabClient;
-	      if (!aResponse.error) {
-	        tabClient = new TabClient(this, aResponse);
-	        this.registerClient(tabClient);
-	      }
-	      aOnResponse(aResponse, tabClient);
-	      return [aResponse, tabClient];
-	    });
-	  },
-	
-	  attachWorker: function DC_attachWorker(aWorkerActor, aOnResponse = noop) {
-	    let workerClient = this._clients.get(aWorkerActor);
-	    if (workerClient !== undefined) {
-	      let response = {
-	        from: workerClient.actor,
-	        type: "attached",
-	        url: workerClient.url
-	      };
-	      DevToolsUtils.executeSoon(() => aOnResponse(response, workerClient));
-	      return promise.resolve([response, workerClient]);
-	    }
-	
-	    return this.request({ to: aWorkerActor, type: "attach" }).then(aResponse => {
-	      if (aResponse.error) {
-	        aOnResponse(aResponse, null);
-	        return [aResponse, null];
-	      }
-	
-	      let workerClient = new WorkerClient(this, aResponse);
-	      this.registerClient(workerClient);
-	      aOnResponse(aResponse, workerClient);
-	      return [aResponse, workerClient];
-	    });
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  attachAddon: function DC_attachAddon(aAddonActor, aOnResponse = noop) {
-	    let packet = {
-	      to: aAddonActor,
-	      type: "attach"
-	    };
-	    return this.request(packet).then(aResponse => {
-	      let addonClient;
-	      if (!aResponse.error) {
-	        addonClient = new AddonClient(this, aAddonActor);
-	        this.registerClient(addonClient);
-	        this.activeAddon = addonClient;
-	      }
-	      aOnResponse(aResponse, addonClient);
-	      return [aResponse, addonClient];
-	    });
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-	  attachConsole:
-	  function(aConsoleActor, aListeners, aOnResponse = noop) {
-	    let packet = {
-	      to: aConsoleActor,
-	      type: "startListeners",
-	      listeners: aListeners,
-	    };
-	
-	    return this.request(packet).then(aResponse => {
-	      let consoleClient;
-	      if (!aResponse.error) {
-	        if (this._clients.has(aConsoleActor)) {
-	          consoleClient = this._clients.get(aConsoleActor);
-	        } else {
-	          consoleClient = new WebConsoleClient(this, aResponse);
-	          this.registerClient(consoleClient);
-	        }
-	      }
-	      aOnResponse(aResponse, consoleClient);
-	      return [aResponse, consoleClient];
-	    });
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  attachThread: function(aThreadActor, aOnResponse = noop, aOptions = {}) {
-	    if (this._clients.has(aThreadActor)) {
-	      let client = this._clients.get(aThreadActor);
-	      DevToolsUtils.executeSoon(() => aOnResponse({}, client));
-	      return promise.resolve([{}, client]);
-	    }
-	
-	    let packet = {
-	      to: aThreadActor,
-	      type: "attach",
-	      options: aOptions
-	    };
-	    return this.request(packet).then(aResponse => {
-	      if (!aResponse.error) {
-	        var threadClient = new ThreadClient(this, aThreadActor);
-	        this.registerClient(threadClient);
-	      }
-	      aOnResponse(aResponse, threadClient);
-	      return [aResponse, threadClient];
-	    });
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  attachTracer: function(aTraceActor, aOnResponse = noop) {
-	    if (this._clients.has(aTraceActor)) {
-	      let client = this._clients.get(aTraceActor);
-	      DevToolsUtils.executeSoon(() => aOnResponse({}, client));
-	      return promise.resolve([{}, client]);
-	    }
-	
-	    let packet = {
-	      to: aTraceActor,
-	      type: "attach"
-	    };
-	    return this.request(packet).then(aResponse => {
-	      if (!aResponse.error) {
-	        var traceClient = new TraceClient(this, aTraceActor);
-	        this.registerClient(traceClient);
-	      }
-	      aOnResponse(aResponse, traceClient);
-	      return [aResponse, traceClient];
-	    });
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getProcess: function(aId) {
-	    let packet = {
-	      to: "root",
-	      type: "getProcess"
-	    };
-	    if (typeof (aId) == "number") {
-	      packet.id = aId;
-	    }
-	    return this.request(packet);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  release: DebuggerClient.requester({
-	    to: args(0),
-	    type: "release"
-	  }, {
-	    telemetry: "RELEASE"
-	  }),
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  request: function(aRequest, aOnResponse) {
-	    if (!this.mainRoot) {
-	      throw Error("Have not yet received a hello packet from the server.");
-	    }
-	    let type = aRequest.type || "";
-	    if (!aRequest.to) {
-	      throw Error("'" + type + "' request packet has no destination.");
-	    }
-	    if (this._closed) {
-	      let msg = "'" + type + "' request packet to " +
-	                "'" + aRequest.to + "' " +
-	               "can't be sent as the connection is closed.";
-	      let resp = { error: "connectionClosed", message: msg };
-	      if (aOnResponse) {
-	        aOnResponse(resp);
-	      }
-	      return promise.reject(resp);
-	    }
-	
-	    let request = new Request(aRequest);
-	    request.format = "json";
-	    request.stack = components.stack;
-	    if (aOnResponse) {
-	      request.on("json-reply", aOnResponse);
-	    }
-	
-	    this._sendOrQueueRequest(request);
-	
-	    
-	    
-	    let deferred = promise.defer();
-	    function listenerJson(resp) {
-	      request.off("json-reply", listenerJson);
-	      request.off("bulk-reply", listenerBulk);
-	      if (resp.error) {
-	        deferred.reject(resp);
-	      } else {
-	        deferred.resolve(resp);
-	      }
-	    }
-	    function listenerBulk(resp) {
-	      request.off("json-reply", listenerJson);
-	      request.off("bulk-reply", listenerBulk);
-	      deferred.resolve(resp);
-	    }
-	    request.on("json-reply", listenerJson);
-	    request.on("bulk-reply", listenerBulk);
-	    request.then = deferred.promise.then.bind(deferred.promise);
-	
-	    return request;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  startBulkRequest: function(request) {
-	    if (!this.traits.bulk) {
-	      throw Error("Server doesn't support bulk transfers");
-	    }
-	    if (!this.mainRoot) {
-	      throw Error("Have not yet received a hello packet from the server.");
-	    }
-	    if (!request.type) {
-	      throw Error("Bulk packet is missing the required 'type' field.");
-	    }
-	    if (!request.actor) {
-	      throw Error("'" + request.type + "' bulk packet has no destination.");
-	    }
-	    if (!request.length) {
-	      throw Error("'" + request.type + "' bulk packet has no length.");
-	    }
-	
-	    request = new Request(request);
-	    request.format = "bulk";
-	
-	    this._sendOrQueueRequest(request);
-	
-	    return request;
-	  },
-	
-	  
-
-
-	  _sendOrQueueRequest(request) {
-	    let actor = request.actor;
-	    if (!this._activeRequests.has(actor)) {
-	      this._sendRequest(request);
-	    } else {
-	      this._queueRequest(request);
-	    }
-	  },
-	
-	  
-
-
-
-
-	  _sendRequest(request) {
-	    let actor = request.actor;
-	    this.expectReply(actor, request);
-	
-	    if (request.format === "json") {
-	      this._transport.send(request.request);
-	      return false;
-	    }
-	
-	    this._transport.startBulkSend(request.request).then((...args) => {
-	      request.emit("bulk-send-ready", ...args);
-	    });
-	  },
-	
-	  
-
-
-
-	  _queueRequest(request) {
-	    let actor = request.actor;
-	    let queue = this._pendingRequests.get(actor) || [];
-	    queue.push(request);
-	    this._pendingRequests.set(actor, queue);
-	  },
-	
-	  
-
-
-	  _attemptNextRequest(actor) {
-	    if (this._activeRequests.has(actor)) {
-	      return;
-	    }
-	    let queue = this._pendingRequests.get(actor);
-	    if (!queue) {
-	      return;
-	    }
-	    let request = queue.shift();
-	    if (queue.length === 0) {
-	      this._pendingRequests.delete(actor);
-	    }
-	    this._sendRequest(request);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  expectReply: function(aActor, aRequest) {
-	    if (this._activeRequests.has(aActor)) {
-	      throw Error("clashing handlers for next reply from " + uneval(aActor));
-	    }
-	
-	    
-	    
-	    if (typeof aRequest === "function") {
-	      let handler = aRequest;
-	      aRequest = new Request();
-	      aRequest.on("json-reply", handler);
-	    }
-	
-	    this._activeRequests.set(aActor, aRequest);
-	  },
-	
-	  
-	
-	  
-
-
-
-
-
-	  onPacket: function(aPacket) {
-	    if (!aPacket.from) {
-	      DevToolsUtils.reportException(
-	        "onPacket",
-	        new Error("Server did not specify an actor, dropping packet: " +
-	                  JSON.stringify(aPacket)));
-	      return;
-	    }
-	
-	    
-	    
-	    let front = this.getActor(aPacket.from);
-	    if (front) {
-	      front.onPacket(aPacket);
-	      return;
-	    }
-	
-	    if (this._clients.has(aPacket.from) && aPacket.type) {
-	      let client = this._clients.get(aPacket.from);
-	      let type = aPacket.type;
-	      if (client.events.indexOf(type) != -1) {
-	        client.emit(type, aPacket);
-	        
-	        return;
-	      }
-	    }
-	
-	    let activeRequest;
-	    
-	    
-	    
-	    if (this._activeRequests.has(aPacket.from) &&
-	        !(aPacket.type in UnsolicitedNotifications) &&
-	        !(aPacket.type == ThreadStateTypes.paused &&
-	          aPacket.why.type in UnsolicitedPauses)) {
-	      activeRequest = this._activeRequests.get(aPacket.from);
-	      this._activeRequests.delete(aPacket.from);
-	    }
-	
-	    
-	    
-	    
-	    this._attemptNextRequest(aPacket.from);
-	
-	    
-	    if (aPacket.type in ThreadStateTypes &&
-	        this._clients.has(aPacket.from) &&
-	        typeof this._clients.get(aPacket.from)._onThreadState == "function") {
-	      this._clients.get(aPacket.from)._onThreadState(aPacket);
-	    }
-	
-	    
-	    if (!this.traits.noNeedToFakeResumptionOnNavigation) {
-	      
-	      
-	      
-	      if (aPacket.type == UnsolicitedNotifications.tabNavigated &&
-	          this._clients.has(aPacket.from) &&
-	          this._clients.get(aPacket.from).thread) {
-	        let thread = this._clients.get(aPacket.from).thread;
-	        let resumption = { from: thread._actor, type: "resumed" };
-	        thread._onThreadState(resumption);
-	      }
-	    }
-	
-	    
-	    
-	    if (aPacket.type) {
-	      this.emit(aPacket.type, aPacket);
-	    }
-	
-	    if (activeRequest) {
-	      let emitReply = () => activeRequest.emit("json-reply", aPacket);
-	      if (activeRequest.stack) {
-	        Cu.callFunctionWithAsyncStack(emitReply, activeRequest.stack,
-	                                      "DevTools RDP");
-	      } else {
-	        emitReply();
-	      }
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  onBulkPacket: function(packet) {
-	    let { actor, type, length } = packet;
-	
-	    if (!actor) {
-	      DevToolsUtils.reportException(
-	        "onBulkPacket",
-	        new Error("Server did not specify an actor, dropping bulk packet: " +
-	                  JSON.stringify(packet)));
-	      return;
-	    }
-	
-	    
-	    
-	    if (!this._activeRequests.has(actor)) {
-	      return;
-	    }
-	
-	    let activeRequest = this._activeRequests.get(actor);
-	    this._activeRequests.delete(actor);
-	
-	    
-	    
-	    
-	    this._attemptNextRequest(actor);
-	
-	    activeRequest.emit("bulk-reply", packet);
-	  },
-	
-	  
-
-
-
-
-
-
-	  onClosed: function(aStatus) {
-	    this._closed = true;
-	    this.emit("closed");
-	
-	    
-	    let reject = function(type, request, actor) {
-	      
-	      
-	      let msg;
-	      if (request.request) {
-	        msg = "'" + request.request.type + "' " + type + " request packet" +
-	              " to '" + actor + "' " +
-	              "can't be sent as the connection just closed.";
-	      } else {
-	        msg = "server side packet from '" + actor + "' can't be received " +
-	              "as the connection just closed.";
-	      }
-	      let packet = { error: "connectionClosed", message: msg };
-	      request.emit("json-reply", packet);
-	    };
-	
-	    let pendingRequests = new Map(this._pendingRequests);
-	    this._pendingRequests.clear();
-	    pendingRequests.forEach((list, actor) => {
-	      list.forEach(request => reject("pending", request, actor));
-	    });
-	    let activeRequests = new Map(this._activeRequests);
-	    this._activeRequests.clear();
-	    activeRequests.forEach(reject.bind(null, "active"));
-	
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    for (let pool of this._pools) {
-	      pool.cleanup();
-	    }
-	  },
-	
-	  registerClient: function(client) {
-	    let actorID = client.actor;
-	    if (!actorID) {
-	      throw new Error("DebuggerServer.registerClient expects " +
-	                      "a client instance with an `actor` attribute.");
-	    }
-	    if (!Array.isArray(client.events)) {
-	      throw new Error("DebuggerServer.registerClient expects " +
-	                      "a client instance with an `events` attribute " +
-	                      "that is an array.");
-	    }
-	    if (client.events.length > 0 && typeof (client.emit) != "function") {
-	      throw new Error("DebuggerServer.registerClient expects " +
-	                      "a client instance with non-empty `events` array to" +
-	                      "have an `emit` function.");
-	    }
-	    if (this._clients.has(actorID)) {
-	      throw new Error("DebuggerServer.registerClient already registered " +
-	                      "a client for this actor.");
-	    }
-	    this._clients.set(actorID, client);
-	  },
-	
-	  unregisterClient: function(client) {
-	    let actorID = client.actor;
-	    if (!actorID) {
-	      throw new Error("DebuggerServer.unregisterClient expects " +
-	                      "a Client instance with a `actor` attribute.");
-	    }
-	    this._clients.delete(actorID);
-	  },
-	
-	  
-
-
-	  __pools: null,
-	  get _pools() {
-	    if (this.__pools) {
-	      return this.__pools;
-	    }
-	    this.__pools = new Set();
-	    return this.__pools;
-	  },
-	
-	  addActorPool: function(pool) {
-	    this._pools.add(pool);
-	  },
-	  removeActorPool: function(pool) {
-	    this._pools.delete(pool);
-	  },
-	  getActor: function(actorID) {
-	    let pool = this.poolFor(actorID);
-	    return pool ? pool.get(actorID) : null;
-	  },
-	
-	  poolFor: function(actorID) {
-	    for (let pool of this._pools) {
-	      if (pool.has(actorID)) return pool;
-	    }
-	    return null;
-	  },
-	
-	  
-
-
-	  activeAddon: null
-	};
-	
-	eventSource(DebuggerClient.prototype);
-	
-	function Request(request) {
-	  this.request = request;
-	}
-	
-	Request.prototype = {
-	
-	  on: function(type, listener) {
-	    events.on(this, type, listener);
-	  },
-	
-	  off: function(type, listener) {
-	    events.off(this, type, listener);
-	  },
-	
-	  once: function(type, listener) {
-	    events.once(this, type, listener);
-	  },
-	
-	  emit: function(type, ...args) {
-	    events.emit(this, type, ...args);
-	  },
-	
-	  get actor() { return this.request.to || this.request.actor; }
-	
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-	function TabClient(aClient, aForm) {
-	  this.client = aClient;
-	  this._actor = aForm.from;
-	  this._threadActor = aForm.threadActor;
-	  this.javascriptEnabled = aForm.javascriptEnabled;
-	  this.cacheDisabled = aForm.cacheDisabled;
-	  this.thread = null;
-	  this.request = this.client.request;
-	  this.traits = aForm.traits || {};
-	  this.events = ["workerListChanged"];
-	}
-	
-	TabClient.prototype = {
-	  get actor() { return this._actor; },
-	  get _transport() { return this.client._transport; },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  attachThread: function(aOptions = {}, aOnResponse = noop) {
-	    if (this.thread) {
-	      DevToolsUtils.executeSoon(() => aOnResponse({}, this.thread));
-	      return promise.resolve([{}, this.thread]);
-	    }
-	
-	    let packet = {
-	      to: this._threadActor,
-	      type: "attach",
-	      options: aOptions
-	    };
-	    return this.request(packet).then(aResponse => {
-	      if (!aResponse.error) {
-	        this.thread = new ThreadClient(this, this._threadActor);
-	        this.client.registerClient(this.thread);
-	      }
-	      aOnResponse(aResponse, this.thread);
-	      return [aResponse, this.thread];
-	    });
-	  },
-	
-	  
-
-
-
-
-
-	  detach: DebuggerClient.requester({
-	    type: "detach"
-	  }, {
-	    before: function(aPacket) {
-	      if (this.thread) {
-	        this.thread.detach();
-	      }
-	      return aPacket;
-	    },
-	    after: function(aResponse) {
-	      this.client.unregisterClient(this);
-	      return aResponse;
-	    },
-	    telemetry: "TABDETACH"
-	  }),
-	
-	  
-
-
-	  focus: DebuggerClient.requester({
-	    type: "focus"
-	  }, {}),
-	
-	  
-
-
-
-
-
-
-	  reload: function(options = { force: false }) {
-	    return this._reload(options);
-	  },
-	  _reload: DebuggerClient.requester({
-	    type: "reload",
-	    options: args(0)
-	  }, {
-	    telemetry: "RELOAD"
-	  }),
-	
-	  
-
-
-
-
-
-	  navigateTo: DebuggerClient.requester({
-	    type: "navigateTo",
-	    url: args(0)
-	  }, {
-	    telemetry: "NAVIGATETO"
-	  }),
-	
-	  
-
-
-
-
-
-
-
-	  reconfigure: DebuggerClient.requester({
-	    type: "reconfigure",
-	    options: args(0)
-	  }, {
-	    telemetry: "RECONFIGURETAB"
-	  }),
-	
-	  listWorkers: DebuggerClient.requester({
-	    type: "listWorkers"
-	  }, {
-	    telemetry: "LISTWORKERS"
-	  }),
-	
-	  attachWorker: function(aWorkerActor, aOnResponse) {
-	    this.client.attachWorker(aWorkerActor, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  resolveLocation: DebuggerClient.requester({
-	    type: "resolveLocation",
-	    location: args(0)
-	  }),
-	};
-	
-	eventSource(TabClient.prototype);
-	
-	function WorkerClient(aClient, aForm) {
-	  this.client = aClient;
-	  this._actor = aForm.from;
-	  this._isClosed = false;
-	  this._url = aForm.url;
-	
-	  this._onClose = this._onClose.bind(this);
-	
-	  this.addListener("close", this._onClose);
-	
-	  this.traits = {};
-	}
-	
-	WorkerClient.prototype = {
-	  get _transport() {
-	    return this.client._transport;
-	  },
-	
-	  get request() {
-	    return this.client.request;
-	  },
-	
-	  get actor() {
-	    return this._actor;
-	  },
-	
-	  get url() {
-	    return this._url;
-	  },
-	
-	  get isClosed() {
-	    return this._isClosed;
-	  },
-	
-	  detach: DebuggerClient.requester({ type: "detach" }, {
-	    after: function(aResponse) {
-	      if (this.thread) {
-	        this.client.unregisterClient(this.thread);
-	      }
-	      this.client.unregisterClient(this);
-	      return aResponse;
-	    },
-	
-	    telemetry: "WORKERDETACH"
-	  }),
-	
-	  attachThread: function(aOptions = {}, aOnResponse = noop) {
-	    if (this.thread) {
-	      let response = [{
-	        type: "connected",
-	        threadActor: this.thread._actor,
-	        consoleActor: this.consoleActor,
-	      }, this.thread];
-	      DevToolsUtils.executeSoon(() => aOnResponse(response));
-	      return response;
-	    }
-	
-	    
-	    return this.request({
-	      to: this._actor,
-	      type: "connect",
-	      options: aOptions,
-	    }).then(connectReponse => {
-	      if (connectReponse.error) {
-	        aOnResponse(connectReponse, null);
-	        return [connectResponse, null];
-	      }
-	
-	      return this.request({
-	        to: connectReponse.threadActor,
-	        type: "attach",
-	        options: aOptions
-	      }).then(attachResponse => {
-	        if (attachResponse.error) {
-	          aOnResponse(attachResponse, null);
-	        }
-	
-	        this.thread = new ThreadClient(this, connectReponse.threadActor);
-	        this.consoleActor = connectReponse.consoleActor;
-	        this.client.registerClient(this.thread);
-	
-	        aOnResponse(connectReponse, this.thread);
-	        return [connectResponse, this.thread];
-	      });
-	    });
-	  },
-	
-	  _onClose: function() {
-	    this.removeListener("close", this._onClose);
-	
-	    if (this.thread) {
-	      this.client.unregisterClient(this.thread);
-	    }
-	    this.client.unregisterClient(this);
-	    this._isClosed = true;
-	  },
-	
-	  reconfigure: function() {
-	    return Promise.resolve();
-	  },
-	
-	  events: ["close"]
-	};
-	
-	eventSource(WorkerClient.prototype);
-	
-	function AddonClient(aClient, aActor) {
-	  this._client = aClient;
-	  this._actor = aActor;
-	  this.request = this._client.request;
-	  this.events = [];
-	}
-	
-	AddonClient.prototype = {
-	  get actor() { return this._actor; },
-	  get _transport() { return this._client._transport; },
-	
-	  
-
-
-
-
-
-	  detach: DebuggerClient.requester({
-	    type: "detach"
-	  }, {
-	    after: function(aResponse) {
-	      if (this._client.activeAddon === this) {
-	        this._client.activeAddon = null;
-	      }
-	      this._client.unregisterClient(this);
-	      return aResponse;
-	    },
-	    telemetry: "ADDONDETACH"
-	  })
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function RootClient(aClient, aGreeting) {
-	  this._client = aClient;
-	  this.actor = aGreeting.from;
-	  this.applicationType = aGreeting.applicationType;
-	  this.traits = aGreeting.traits;
-	}
-	exports.RootClient = RootClient;
-	
-	RootClient.prototype = {
-	  constructor: RootClient,
-	
-	  
-
-
-
-
-
-	  listTabs: DebuggerClient.requester({ type: "listTabs" },
-	                                     { telemetry: "LISTTABS" }),
-	
-	  
-
-
-
-
-
-	  listAddons: DebuggerClient.requester({ type: "listAddons" },
-	                                       { telemetry: "LISTADDONS" }),
-	
-	  
-
-
-
-
-
-	  listWorkers: DebuggerClient.requester({ type: "listWorkers" },
-	                                        { telemetry: "LISTWORKERS" }),
-	
-	  
-
-
-
-
-
-	  listServiceWorkerRegistrations: DebuggerClient.requester({ type: "listServiceWorkerRegistrations" },
-	                                                           { telemetry: "LISTSERVICEWORKERREGISTRATIONS" }),
-	
-	  
-
-
-
-
-
-	  listProcesses: DebuggerClient.requester({ type: "listProcesses" },
-	                                          { telemetry: "LISTPROCESSES" }),
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  getTab: function(aFilter) {
-	    let packet = {
-	      to: this.actor,
-	      type: "getTab"
-	    };
-	
-	    if (aFilter) {
-	      if (typeof (aFilter.outerWindowID) == "number") {
-	        packet.outerWindowID = aFilter.outerWindowID;
-	      } else if (typeof (aFilter.tabId) == "number") {
-	        packet.tabId = aFilter.tabId;
-	      } else if ("tab" in aFilter) {
-	        let browser = aFilter.tab.linkedBrowser;
-	        if (browser.frameLoader.tabParent) {
-	          
-	          packet.tabId = browser.frameLoader.tabParent.tabId;
-	        } else {
-	          
-	          let windowUtils = browser.contentWindow
-	            .QueryInterface(Ci.nsIInterfaceRequestor)
-	            .getInterface(Ci.nsIDOMWindowUtils);
-	          packet.outerWindowID = windowUtils.outerWindowID;
-	        }
-	      } else {
-	        
-	        
-	        throw new Error("Unsupported argument given to getTab request");
-	      }
-	    }
-	
-	    return this.request(packet);
-	  },
-	
-	  
-
-
-
-
-
-	  protocolDescription: DebuggerClient.requester({ type: "protocolDescription" },
-	                                                 { telemetry: "PROTOCOLDESCRIPTION" }),
-	
-	  
-
-
-
-	  get _transport() { return this._client._transport; },
-	  get request() { return this._client.request; }
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-	function ThreadClient(aClient, aActor) {
-	  this._parent = aClient;
-	  this.client = aClient instanceof DebuggerClient ? aClient : aClient.client;
-	  this._actor = aActor;
-	  this._frameCache = [];
-	  this._scriptCache = {};
-	  this._pauseGrips = {};
-	  this._threadGrips = {};
-	  this.request = this.client.request;
-	}
-	
-	ThreadClient.prototype = {
-	  _state: "paused",
-	  get state() { return this._state; },
-	  get paused() { return this._state === "paused"; },
-	
-	  _pauseOnExceptions: false,
-	  _ignoreCaughtExceptions: false,
-	  _pauseOnDOMEvents: null,
-	
-	  _actor: null,
-	  get actor() { return this._actor; },
-	
-	  get _transport() { return this.client._transport; },
-	
-	  _assertPaused: function(aCommand) {
-	    if (!this.paused) {
-	      throw Error(aCommand + " command sent while not paused. Currently " + this._state);
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-	  _doResume: DebuggerClient.requester({
-	    type: "resume",
-	    resumeLimit: args(0)
-	  }, {
-	    before: function(aPacket) {
-	      this._assertPaused("resume");
-	
-	      
-	      
-	      this._state = "resuming";
-	
-	      if (this._pauseOnExceptions) {
-	        aPacket.pauseOnExceptions = this._pauseOnExceptions;
-	      }
-	      if (this._ignoreCaughtExceptions) {
-	        aPacket.ignoreCaughtExceptions = this._ignoreCaughtExceptions;
-	      }
-	      if (this._pauseOnDOMEvents) {
-	        aPacket.pauseOnDOMEvents = this._pauseOnDOMEvents;
-	      }
-	      return aPacket;
-	    },
-	    after: function(aResponse) {
-	      if (aResponse.error) {
-	        
-	        this._state = "paused";
-	      }
-	      return aResponse;
-	    },
-	    telemetry: "RESUME"
-	  }),
-	
-	  
-
-
-
-
-
-
-
-	  reconfigure: DebuggerClient.requester({
-	    type: "reconfigure",
-	    options: args(0)
-	  }, {
-	    telemetry: "RECONFIGURETHREAD"
-	  }),
-	
-	  
-
-
-	  resume: function(aOnResponse) {
-	    return this._doResume(null, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-	  resumeThenPause: function(aOnResponse) {
-	    return this._doResume({ type: "break" }, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-	  stepOver: function(aOnResponse) {
-	    return this._doResume({ type: "next" }, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-	  stepIn: function(aOnResponse) {
-	    return this._doResume({ type: "step" }, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-	  stepOut: function(aOnResponse) {
-	    return this._doResume({ type: "finish" }, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-	  interrupt: function(aOnResponse) {
-	    return this._doInterrupt(null, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-	  breakOnNext: function(aOnResponse) {
-	    return this._doInterrupt("onNext", aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-	  _doInterrupt: DebuggerClient.requester({
-	    type: "interrupt",
-	    when: args(0)
-	  }, {
-	    telemetry: "INTERRUPT"
-	  }),
-	
-	  
-
-
-
-
-
-
-
-	  pauseOnExceptions: function(aPauseOnExceptions,
-	                               aIgnoreCaughtExceptions,
-	                               aOnResponse = noop) {
-	    this._pauseOnExceptions = aPauseOnExceptions;
-	    this._ignoreCaughtExceptions = aIgnoreCaughtExceptions;
-	
-	    
-	    if (!this.paused) {
-	      return this.interrupt(aResponse => {
-	        if (aResponse.error) {
-	          
-	          aOnResponse(aResponse);
-	          return aResponse;
-	        }
-	        return this.resume(aOnResponse);
-	      });
-	    }
-	
-	    aOnResponse();
-	    return promise.resolve();
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  pauseOnDOMEvents: function(events, onResponse = noop) {
-	    this._pauseOnDOMEvents = events;
-	    
-	    
-	    
-	    if (this.paused) {
-	      DevToolsUtils.executeSoon(() => onResponse({}));
-	      return {};
-	    }
-	    return this.interrupt(response => {
-	      
-	      if (response.error) {
-	        onResponse(response);
-	        return response;
-	      }
-	      return this.resume(onResponse);
-	    });
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  eval: DebuggerClient.requester({
-	    type: "clientEvaluate",
-	    frame: args(0),
-	    expression: args(1)
-	  }, {
-	    before: function(aPacket) {
-	      this._assertPaused("eval");
-	      
-	      
-	      this._state = "resuming";
-	      return aPacket;
-	    },
-	    after: function(aResponse) {
-	      if (aResponse.error) {
-	        
-	        this._state = "paused";
-	      }
-	      return aResponse;
-	    },
-	    telemetry: "CLIENTEVALUATE"
-	  }),
-	
-	  
-
-
-
-
-
-	  detach: DebuggerClient.requester({
-	    type: "detach"
-	  }, {
-	    after: function(aResponse) {
-	      this.client.unregisterClient(this);
-	      this._parent.thread = null;
-	      return aResponse;
-	    },
-	    telemetry: "THREADDETACH"
-	  }),
-	
-	  
-
-
-
-
-
-
-
-	  releaseMany: DebuggerClient.requester({
-	    type: "releaseMany",
-	    actors: args(0),
-	  }, {
-	    telemetry: "RELEASEMANY"
-	  }),
-	
-	  
-
-
-
-
-
-	  threadGrips: DebuggerClient.requester({
-	    type: "threadGrips",
-	    actors: args(0)
-	  }, {
-	    telemetry: "THREADGRIPS"
-	  }),
-	
-	  
-
-
-
-
-
-	  eventListeners: DebuggerClient.requester({
-	    type: "eventListeners"
-	  }, {
-	    telemetry: "EVENTLISTENERS"
-	  }),
-	
-	  
-
-
-
-
-
-	  getSources: DebuggerClient.requester({
-	    type: "sources"
-	  }, {
-	    telemetry: "SOURCES"
-	  }),
-	
-	  
-
-
-
-	  _clearScripts: function() {
-	    if (Object.keys(this._scriptCache).length > 0) {
-	      this._scriptCache = {};
-	      this.emit("scriptscleared");
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  getFrames: DebuggerClient.requester({
-	    type: "frames",
-	    start: args(0),
-	    count: args(1)
-	  }, {
-	    telemetry: "FRAMES"
-	  }),
-	
-	  
-
-
-
-
-	  get cachedFrames() { return this._frameCache; },
-	
-	  
-
-
-	  get moreFrames() {
-	    return this.paused && (!this._frameCache || this._frameCache.length == 0
-	          || !this._frameCache[this._frameCache.length - 1].oldest);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-	  fillFrames: function(aTotal, aCallback = noop) {
-	    this._assertPaused("fillFrames");
-	    if (this._frameCache.length >= aTotal) {
-	      return false;
-	    }
-	
-	    let numFrames = this._frameCache.length;
-	
-	    this.getFrames(numFrames, aTotal - numFrames, (aResponse) => {
-	      if (aResponse.error) {
-	        aCallback(aResponse);
-	        return;
-	      }
-	
-	      let threadGrips = DevToolsUtils.values(this._threadGrips);
-	
-	      for (let i in aResponse.frames) {
-	        let frame = aResponse.frames[i];
-	        if (!frame.where.source) {
-	          
-	          
-	          for (let grip of threadGrips) {
-	            if (grip instanceof SourceClient && grip.url === frame.url) {
-	              frame.where.source = grip._form;
-	            }
-	          }
-	        }
-	
-	        this._frameCache[frame.depth] = frame;
-	      }
-	
-	      
-	      
-	      this.emit("framesadded");
-	
-	      aCallback(aResponse);
-	    });
-	
-	    return true;
-	  },
-	
-	  
-
-
-
-	  _clearFrames: function() {
-	    if (this._frameCache.length > 0) {
-	      this._frameCache = [];
-	      this.emit("framescleared");
-	    }
-	  },
-	
-	  
-
-
-
-
-
-	  pauseGrip: function(aGrip) {
-	    if (aGrip.actor in this._pauseGrips) {
-	      return this._pauseGrips[aGrip.actor];
-	    }
-	
-	    let client = new ObjectClient(this.client, aGrip);
-	    this._pauseGrips[aGrip.actor] = client;
-	    return client;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  _longString: function(aGrip, aGripCacheName) {
-	    if (aGrip.actor in this[aGripCacheName]) {
-	      return this[aGripCacheName][aGrip.actor];
-	    }
-	
-	    let client = new LongStringClient(this.client, aGrip);
-	    this[aGripCacheName][aGrip.actor] = client;
-	    return client;
-	  },
-	
-	  
-
-
-
-
-
-
-	  pauseLongString: function(aGrip) {
-	    return this._longString(aGrip, "_pauseGrips");
-	  },
-	
-	  
-
-
-
-
-
-
-	  threadLongString: function(aGrip) {
-	    return this._longString(aGrip, "_threadGrips");
-	  },
-	
-	  
-
-
-
-
-
-	  _clearObjectClients: function(aGripCacheName) {
-	    for (let id in this[aGripCacheName]) {
-	      this[aGripCacheName][id].valid = false;
-	    }
-	    this[aGripCacheName] = {};
-	  },
-	
-	  
-
-
-
-	  _clearPauseGrips: function() {
-	    this._clearObjectClients("_pauseGrips");
-	  },
-	
-	  
-
-
-
-	  _clearThreadGrips: function() {
-	    this._clearObjectClients("_threadGrips");
-	  },
-	
-	  
-
-
-
-	  _onThreadState: function(aPacket) {
-	    this._state = ThreadStateTypes[aPacket.type];
-	    
-	    
-	    
-	    this._lastPausePacket = aPacket.type === "resumed" ? null : aPacket;
-	    this._clearFrames();
-	    this._clearPauseGrips();
-	    aPacket.type === ThreadStateTypes.detached && this._clearThreadGrips();
-	    this.client._eventsEnabled && this.emit(aPacket.type, aPacket);
-	  },
-	
-	  getLastPausePacket: function() {
-	    return this._lastPausePacket;
-	  },
-	
-	  
-
-
-	  environment: function(aForm) {
-	    return new EnvironmentClient(this.client, aForm);
-	  },
-	
-	  
-
-
-	  source: function(aForm) {
-	    if (aForm.actor in this._threadGrips) {
-	      return this._threadGrips[aForm.actor];
-	    }
-	
-	    return this._threadGrips[aForm.actor] = new SourceClient(this, aForm);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getPrototypesAndProperties: DebuggerClient.requester({
-	    type: "prototypesAndProperties",
-	    actors: args(0)
-	  }, {
-	    telemetry: "PROTOTYPESANDPROPERTIES"
-	  }),
-	
-	  events: ["newSource"]
-	};
-	
-	eventSource(ThreadClient.prototype);
-	
-	
-
-
-
-
-
-
-
-
-
-
-	function TraceClient(aClient, aActor) {
-	  this._client = aClient;
-	  this._actor = aActor;
-	  this._activeTraces = new Set();
-	  this._waitingPackets = new Map();
-	  this._expectedPacket = 0;
-	  this.request = this._client.request;
-	  this.events = [];
-	}
-	
-	TraceClient.prototype = {
-	  get actor() { return this._actor; },
-	  get tracing() { return this._activeTraces.size > 0; },
-	
-	  get _transport() { return this._client._transport; },
-	
-	  
-
-
-	  detach: DebuggerClient.requester({
-	    type: "detach"
-	  }, {
-	    after: function(aResponse) {
-	      this._client.unregisterClient(this);
-	      return aResponse;
-	    },
-	    telemetry: "TRACERDETACH"
-	  }),
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  startTrace: DebuggerClient.requester({
-	    type: "startTrace",
-	    name: args(1),
-	    trace: args(0)
-	  }, {
-	    after: function(aResponse) {
-	      if (aResponse.error) {
-	        return aResponse;
-	      }
-	
-	      if (!this.tracing) {
-	        this._waitingPackets.clear();
-	        this._expectedPacket = 0;
-	      }
-	      this._activeTraces.add(aResponse.name);
-	
-	      return aResponse;
-	    },
-	    telemetry: "STARTTRACE"
-	  }),
-	
-	  
-
-
-
-
-
-
-
-
-
-	  stopTrace: DebuggerClient.requester({
-	    type: "stopTrace",
-	    name: args(0)
-	  }, {
-	    after: function(aResponse) {
-	      if (aResponse.error) {
-	        return aResponse;
-	      }
-	
-	      this._activeTraces.delete(aResponse.name);
-	
-	      return aResponse;
-	    },
-	    telemetry: "STOPTRACE"
-	  })
-	};
-	
-	
-
-
-
-
-
-
-
-	function ObjectClient(aClient, aGrip)
-	{
-	  this._grip = aGrip;
-	  this._client = aClient;
-	  this.request = this._client.request;
-	}
-	exports.ObjectClient = ObjectClient;
-	
-	ObjectClient.prototype = {
-	  get actor() { return this._grip.actor; },
-	  get _transport() { return this._client._transport; },
-	
-	  valid: true,
-	
-	  get isFrozen() {
-	    return this._grip.frozen;
-	  },
-	  get isSealed() {
-	    return this._grip.sealed;
-	  },
-	  get isExtensible() {
-	    return this._grip.extensible;
-	  },
-	
-	  getDefinitionSite: DebuggerClient.requester({
-	    type: "definitionSite"
-	  }, {
-	    before: function(aPacket) {
-	      if (this._grip.class != "Function") {
-	        throw new Error("getDefinitionSite is only valid for function grips.");
-	      }
-	      return aPacket;
-	    }
-	  }),
-	
-	  
-
-
-
-
-
-
-
-	  getParameterNames: DebuggerClient.requester({
-	    type: "parameterNames"
-	  }, {
-	    before: function(aPacket) {
-	      if (this._grip.class !== "Function") {
-	        throw new Error("getParameterNames is only valid for function grips.");
-	      }
-	      return aPacket;
-	    },
-	    telemetry: "PARAMETERNAMES"
-	  }),
-	
-	  
-
-
-
-
-
-	  getOwnPropertyNames: DebuggerClient.requester({
-	    type: "ownPropertyNames"
-	  }, {
-	    telemetry: "OWNPROPERTYNAMES"
-	  }),
-	
-	  
-
-
-
-
-	  getPrototypeAndProperties: DebuggerClient.requester({
-	    type: "prototypeAndProperties"
-	  }, {
-	    telemetry: "PROTOTYPEANDPROPERTIES"
-	  }),
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  enumProperties: DebuggerClient.requester({
-	    type: "enumProperties",
-	    options: args(0)
-	  }, {
-	    after: function(aResponse) {
-	      if (aResponse.iterator) {
-	        return { iterator: new PropertyIteratorClient(this._client, aResponse.iterator) };
-	      }
-	      return aResponse;
-	    },
-	    telemetry: "ENUMPROPERTIES"
-	  }),
-	
-	  
-
-
-
-
-
-	  enumEntries: DebuggerClient.requester({
-	    type: "enumEntries"
-	  }, {
-	    before: function(packet) {
-	      if (!["Map", "WeakMap", "Set", "WeakSet"].includes(this._grip.class)) {
-	        throw new Error("enumEntries is only valid for Map/Set-like grips.");
-	      }
-	      return packet;
-	    },
-	    after: function(response) {
-	      if (response.iterator) {
-	        return {
-	          iterator: new PropertyIteratorClient(this._client, response.iterator)
-	        };
-	      }
-	      return response;
-	    }
-	  }),
-	
-	  
-
-
-
-
-
-	  getProperty: DebuggerClient.requester({
-	    type: "property",
-	    name: args(0)
-	  }, {
-	    telemetry: "PROPERTY"
-	  }),
-	
-	  
-
-
-
-
-	  getPrototype: DebuggerClient.requester({
-	    type: "prototype"
-	  }, {
-	    telemetry: "PROTOTYPE"
-	  }),
-	
-	  
-
-
-
-
-	  getDisplayString: DebuggerClient.requester({
-	    type: "displayString"
-	  }, {
-	    telemetry: "DISPLAYSTRING"
-	  }),
-	
-	  
-
-
-
-
-	  getScope: DebuggerClient.requester({
-	    type: "scope"
-	  }, {
-	    before: function(aPacket) {
-	      if (this._grip.class !== "Function") {
-	        throw new Error("scope is only valid for function grips.");
-	      }
-	      return aPacket;
-	    },
-	    telemetry: "SCOPE"
-	  }),
-	
-	  
-
-
-	  getDependentPromises: DebuggerClient.requester({
-	    type: "dependentPromises"
-	  }, {
-	    before: function(aPacket) {
-	      if (this._grip.class !== "Promise") {
-	        throw new Error("getDependentPromises is only valid for promise " +
-	          "grips.");
-	      }
-	      return aPacket;
-	    }
-	  }),
-	
-	  
-
-
-	  getPromiseAllocationStack: DebuggerClient.requester({
-	    type: "allocationStack"
-	  }, {
-	    before: function(aPacket) {
-	      if (this._grip.class !== "Promise") {
-	        throw new Error("getAllocationStack is only valid for promise grips.");
-	      }
-	      return aPacket;
-	    }
-	  }),
-	
-	  
-
-
-	  getPromiseFulfillmentStack: DebuggerClient.requester({
-	    type: "fulfillmentStack"
-	  }, {
-	    before: function(packet) {
-	      if (this._grip.class !== "Promise") {
-	        throw new Error("getPromiseFulfillmentStack is only valid for " +
-	          "promise grips.");
-	      }
-	      return packet;
-	    }
-	  }),
-	
-	  
-
-
-	  getPromiseRejectionStack: DebuggerClient.requester({
-	    type: "rejectionStack"
-	  }, {
-	    before: function(packet) {
-	      if (this._grip.class !== "Promise") {
-	        throw new Error("getPromiseRejectionStack is only valid for " +
-	          "promise grips.");
-	      }
-	      return packet;
-	    }
-	  })
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-	function PropertyIteratorClient(aClient, aGrip) {
-	  this._grip = aGrip;
-	  this._client = aClient;
-	  this.request = this._client.request;
-	}
-	
-	PropertyIteratorClient.prototype = {
-	  get actor() { return this._grip.actor; },
-	
-	  
-
-
-	  get count() { return this._grip.count; },
-	
-	  
-
-
-
-
-
-
-
-
-	  names: DebuggerClient.requester({
-	    type: "names",
-	    indexes: args(0)
-	  }, {}),
-	
-	  
-
-
-
-
-
-
-
-
-
-	  slice: DebuggerClient.requester({
-	    type: "slice",
-	    start: args(0),
-	    count: args(1)
-	  }, {}),
-	
-	  
-
-
-
-
-
-	  all: DebuggerClient.requester({
-	    type: "all"
-	  }, {}),
-	};
-	
-	
-
-
-
-
-
-
-
-
-	function LongStringClient(aClient, aGrip) {
-	  this._grip = aGrip;
-	  this._client = aClient;
-	  this.request = this._client.request;
-	}
-	exports.LongStringClient = LongStringClient;
-	
-	LongStringClient.prototype = {
-	  get actor() { return this._grip.actor; },
-	  get length() { return this._grip.length; },
-	  get initial() { return this._grip.initial; },
-	  get _transport() { return this._client._transport; },
-	
-	  valid: true,
-	
-	  
-
-
-
-
-
-
-
-
-
-	  substring: DebuggerClient.requester({
-	    type: "substring",
-	    start: args(0),
-	    end: args(1)
-	  }, {
-	    telemetry: "SUBSTRING"
-	  }),
-	};
-	
-	
-
-
-
-
-
-
-
-	function SourceClient(aClient, aForm) {
-	  this._form = aForm;
-	  this._isBlackBoxed = aForm.isBlackBoxed;
-	  this._isPrettyPrinted = aForm.isPrettyPrinted;
-	  this._activeThread = aClient;
-	  this._client = aClient.client;
-	}
-	
-	SourceClient.prototype = {
-	  get _transport() {
-	    return this._client._transport;
-	  },
-	  get isBlackBoxed() {
-	    return this._isBlackBoxed;
-	  },
-	  get isPrettyPrinted() {
-	    return this._isPrettyPrinted;
-	  },
-	  get actor() {
-	    return this._form.actor;
-	  },
-	  get request() {
-	    return this._client.request;
-	  },
-	  get url() {
-	    return this._form.url;
-	  },
-	
-	  
-
-
-
-
-
-	  blackBox: DebuggerClient.requester({
-	    type: "blackbox"
-	  }, {
-	    telemetry: "BLACKBOX",
-	    after: function(aResponse) {
-	      if (!aResponse.error) {
-	        this._isBlackBoxed = true;
-	        if (this._activeThread) {
-	          this._activeThread.emit("blackboxchange", this);
-	        }
-	      }
-	      return aResponse;
-	    }
-	  }),
-	
-	  
-
-
-
-
-
-	  unblackBox: DebuggerClient.requester({
-	    type: "unblackbox"
-	  }, {
-	    telemetry: "UNBLACKBOX",
-	    after: function(aResponse) {
-	      if (!aResponse.error) {
-	        this._isBlackBoxed = false;
-	        if (this._activeThread) {
-	          this._activeThread.emit("blackboxchange", this);
-	        }
-	      }
-	      return aResponse;
-	    }
-	  }),
-	
-	  
-
-
-
-
-
-	  getExecutableLines: function(cb = noop) {
-	    let packet = {
-	      to: this._form.actor,
-	      type: "getExecutableLines"
-	    };
-	
-	    return this._client.request(packet).then(res => {
-	      cb(res.lines);
-	      return res.lines;
-	    });
-	  },
-	
-	  
-
-
-	  source: function(aCallback = noop) {
-	    let packet = {
-	      to: this._form.actor,
-	      type: "source"
-	    };
-	    return this._client.request(packet).then(aResponse => {
-	      return this._onSourceResponse(aResponse, aCallback);
-	    });
-	  },
-	
-	  
-
-
-	  prettyPrint: function(aIndent, aCallback = noop) {
-	    const packet = {
-	      to: this._form.actor,
-	      type: "prettyPrint",
-	      indent: aIndent
-	    };
-	    return this._client.request(packet).then(aResponse => {
-	      if (!aResponse.error) {
-	        this._isPrettyPrinted = true;
-	        this._activeThread._clearFrames();
-	        this._activeThread.emit("prettyprintchange", this);
-	      }
-	      return this._onSourceResponse(aResponse, aCallback);
-	    });
-	  },
-	
-	  
-
-
-	  disablePrettyPrint: function(aCallback = noop) {
-	    const packet = {
-	      to: this._form.actor,
-	      type: "disablePrettyPrint"
-	    };
-	    return this._client.request(packet).then(aResponse => {
-	      if (!aResponse.error) {
-	        this._isPrettyPrinted = false;
-	        this._activeThread._clearFrames();
-	        this._activeThread.emit("prettyprintchange", this);
-	      }
-	      return this._onSourceResponse(aResponse, aCallback);
-	    });
-	  },
-	
-	  _onSourceResponse: function(aResponse, aCallback) {
-	    if (aResponse.error) {
-	      aCallback(aResponse);
-	      return aResponse;
-	    }
-	
-	    if (typeof aResponse.source === "string") {
-	      aCallback(aResponse);
-	      return aResponse;
-	    }
-	
-	    let { contentType, source } = aResponse;
-	    let longString = this._activeThread.threadLongString(source);
-	    return longString.substring(0, longString.length).then(function(aResponse) {
-	      if (aResponse.error) {
-	        aCallback(aResponse);
-	        return aReponse;
-	      }
-	
-	      let response = {
-	        source: aResponse.substring,
-	        contentType: contentType
-	      };
-	      aCallback(response);
-	      return response;
-	    });
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-	  setBreakpoint: function({ line, column, condition, noSliding }, aOnResponse = noop) {
-	    
-	    let doSetBreakpoint = aCallback => {
-	      let root = this._client.mainRoot;
-	      let location = {
-	        line: line,
-	        column: column
-	      };
-	
-	      let packet = {
-	        to: this.actor,
-	        type: "setBreakpoint",
-	        location: location,
-	        condition: condition,
-	        noSliding: noSliding
-	      };
-	
-	      
-	      
-	      if (!root.traits.debuggerSourceActors) {
-	        packet.to = this._activeThread.actor;
-	        packet.location.url = this.url;
-	      }
-	
-	      return this._client.request(packet).then(aResponse => {
-	        
-	        
-	        let bpClient;
-	        if (aResponse.actor) {
-	          bpClient = new BreakpointClient(
-	            this._client,
-	            this,
-	            aResponse.actor,
-	            location,
-	            root.traits.conditionalBreakpoints ? condition : undefined
-	          );
-	        }
-	        aOnResponse(aResponse, bpClient);
-	        if (aCallback) {
-	          aCallback();
-	        }
-	        return [aResponse, bpClient];
-	      });
-	    };
-	
-	    
-	    if (this._activeThread.paused) {
-	      return doSetBreakpoint();
-	    }
-	    
-	    return this._activeThread.interrupt().then(aResponse => {
-	      if (aResponse.error) {
-	        
-	        aOnResponse(aResponse);
-	        return aResponse;
-	      }
-	
-	      const { type, why } = aResponse;
-	      const cleanUp = type == "paused" && why.type == "interrupted"
-	            ? () => this._activeThread.resume()
-	            : noop;
-	
-	      return doSetBreakpoint(cleanUp);
-	    });
-	  }
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function BreakpointClient(aClient, aSourceClient, aActor, aLocation, aCondition) {
-	  this._client = aClient;
-	  this._actor = aActor;
-	  this.location = aLocation;
-	  this.location.actor = aSourceClient.actor;
-	  this.location.url = aSourceClient.url;
-	  this.source = aSourceClient;
-	  this.request = this._client.request;
-	
-	  
-	  if (aCondition) {
-	    this.condition = aCondition;
-	  }
-	}
-	
-	BreakpointClient.prototype = {
-	
-	  _actor: null,
-	  get actor() { return this._actor; },
-	  get _transport() { return this._client._transport; },
-	
-	  
-
-
-	  remove: DebuggerClient.requester({
-	    type: "delete"
-	  }, {
-	    telemetry: "DELETE"
-	  }),
-	
-	  
-
-
-	  hasCondition: function() {
-	    let root = this._client.mainRoot;
-	    
-	    
-	    if (root.traits.conditionalBreakpoints) {
-	      return "condition" in this;
-	    } else {
-	      return "conditionalExpression" in this;
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-	  getCondition: function() {
-	    let root = this._client.mainRoot;
-	    if (root.traits.conditionalBreakpoints) {
-	      return this.condition;
-	    } else {
-	      return this.conditionalExpression;
-	    }
-	  },
-	
-	  
-
-
-	  setCondition: function(gThreadClient, aCondition, noSliding) {
-	    let root = this._client.mainRoot;
-	    let deferred = promise.defer();
-	
-	    if (root.traits.conditionalBreakpoints) {
-	      let info = {
-	        line: this.location.line,
-	        column: this.location.column,
-	        condition: aCondition,
-	        noSliding
-	      };
-	
-	      
-	      
-	      this.remove(aResponse => {
-	        if (aResponse && aResponse.error) {
-	          deferred.reject(aResponse);
-	          return;
-	        }
-	
-	        this.source.setBreakpoint(info, (aResponse, aNewBreakpoint) => {
-	          if (aResponse && aResponse.error) {
-	            deferred.reject(aResponse);
-	          } else {
-	            deferred.resolve(aNewBreakpoint);
-	          }
-	        });
-	      });
-	    } else {
-	      
-	      if (aCondition === "") {
-	        delete this.conditionalExpression;
-	      }
-	      else {
-	        this.conditionalExpression = aCondition;
-	      }
-	      deferred.resolve(this);
-	    }
-	
-	    return deferred.promise;
-	  }
-	};
-	
-	eventSource(BreakpointClient.prototype);
-	
-	
-
-
-
-
-
-
-
-	function EnvironmentClient(aClient, aForm) {
-	  this._client = aClient;
-	  this._form = aForm;
-	  this.request = this._client.request;
-	}
-	exports.EnvironmentClient = EnvironmentClient;
-	
-	EnvironmentClient.prototype = {
-	
-	  get actor() {
-	    return this._form.actor;
-	  },
-	  get _transport() { return this._client._transport; },
-	
-	  
-
-
-	  getBindings: DebuggerClient.requester({
-	    type: "bindings"
-	  }, {
-	    telemetry: "BINDINGS"
-	  }),
-	
-	  
-
-
-
-	  assign: DebuggerClient.requester({
-	    type: "assign",
-	    name: args(0),
-	    value: args(1)
-	  }, {
-	    telemetry: "ASSIGN"
-	  })
-	};
-	
-	eventSource(EnvironmentClient.prototype);
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	(function(module) {
-
-
-	"use strict";
-	
-	module.metadata = {
-	  "stability": "unstable"
-	};
-	
-	const UNCAUGHT_ERROR = 'An error event was emitted for which there was no listener.';
-	const BAD_LISTENER = 'The event listener must be a function.';
-	
-	const { ns } = __webpack_require__(55);
-	
-	const event = ns();
-	
-	const EVENT_TYPE_PATTERN = /^on([A-Z]\w+$)/;
-	exports.EVENT_TYPE_PATTERN = EVENT_TYPE_PATTERN;
-	
-	
-	
-	
-	const observers = function observers(target, type) {
-	  if (!target) throw TypeError("Event target must be an object");
-	  let listeners = event(target);
-	  return type in listeners ? listeners[type] : listeners[type] = [];
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-	function on(target, type, listener) {
-	  if (typeof(listener) !== 'function')
-	    throw new Error(BAD_LISTENER);
-	
-	  let listeners = observers(target, type);
-	  if (!~listeners.indexOf(listener))
-	    listeners.push(listener);
-	}
-	exports.on = on;
-	
-	
-	var onceWeakMap = new WeakMap();
-	
-	
-	
-
-
-
-
-
-
-
-
-
-	function once(target, type, listener) {
-	  let replacement = function observer(...args) {
-	    off(target, type, observer);
-	    onceWeakMap.delete(listener);
-	    listener.apply(target, args);
-	  };
-	  onceWeakMap.set(listener, replacement);
-	  on(target, type, replacement);
-	}
-	exports.once = once;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function emit (target, type, ...args) {
-	  emitOnObject(target, type, target, ...args);
-	}
-	exports.emit = emit;
-	
-	
-
-
-	function emitOnObject(target, type, thisArg, ...args) {
-	  let all = observers(target, '*').length;
-	  let state = observers(target, type);
-	  let listeners = state.slice();
-	  let count = listeners.length;
-	  let index = 0;
-	
-	  
-	  
-	  if (count === 0 && type === 'error' && all === 0)
-	    console.exception(args[0]);
-	  while (index < count) {
-	    try {
-	      let listener = listeners[index];
-	      
-	      if (~state.indexOf(listener))
-	        listener.apply(thisArg, args);
-	    }
-	    catch (error) {
-	      
-	      
-	      if (type !== 'error') emit(target, 'error', error);
-	      else console.exception(error);
-	    }
-	    index++;
-	  }
-	   
-	  if (type !== '*') emit(target, '*', type, ...args);
-	}
-	exports.emitOnObject = emitOnObject;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-	function off(target, type, listener) {
-	  let length = arguments.length;
-	  if (length === 3) {
-	    if (onceWeakMap.has(listener)) {
-	      listener = onceWeakMap.get(listener);
-	      onceWeakMap.delete(listener);
-	    }
-	
-	    let listeners = observers(target, type);
-	    let index = listeners.indexOf(listener);
-	    if (~index)
-	      listeners.splice(index, 1);
-	  }
-	  else if (length === 2) {
-	    observers(target, type).splice(0);
-	  }
-	  else if (length === 1) {
-	    let listeners = event(target);
-	    Object.keys(listeners).forEach(type => delete listeners[type]);
-	  }
-	}
-	exports.off = off;
-	
-	
-
-
-
-	function count(target, type) {
-	  return observers(target, type).length;
-	}
-	exports.count = count;
-	
-	
-
-
-
-
-
-
-
-
-
-
-	function setListeners(target, listeners) {
-	  Object.keys(listeners || {}).forEach(key => {
-	    let match = EVENT_TYPE_PATTERN.exec(key);
-	    let type = match && match[1].toLowerCase();
-	    if (!type) return;
-	
-	    let listener = listeners[key];
-	    if (typeof(listener) === 'function')
-	      on(target, type, listener);
-	  });
-	}
-	exports.setListeners = setListeners;
-	
-	}.call(exports, __webpack_require__(51)(module)))
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	(function(module) {
-
-
-	
-	"use strict";
-	
-	module.metadata = {
-	  "stability": "unstable"
-	};
-	
-	const create = Object.create;
-	const prototypeOf = Object.getPrototypeOf;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-	function ns() {
-	  const map = new WeakMap();
-	  return function namespace(target) {
-	    if (!target)        
-	      return target;
-	    
-	    
-	    if (!map.has(target))
-	      map.set(target, create(namespace(prototypeOf(target) || null)));
-	
-	    return map.get(target);
-	  };
-	};
-	
-	
-	
-	exports.ns = ns;
-	exports.Namespace = ns;
-	
-	}.call(exports, __webpack_require__(51)(module)))
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-	
-	
-
-
-	
-	"use strict";
-	
-	const {Cc, Ci, Cu} = __webpack_require__(35);
-	const DevToolsUtils = __webpack_require__(42);
-	const EventEmitter = __webpack_require__(34);
-	const promise = __webpack_require__(40);
-	const {LongStringClient} = __webpack_require__(53);
-	
-	
-
-
-
-
-
-
-
-
-
-	function WebConsoleClient(aDebuggerClient, aResponse)
-	{
-	  this._actor = aResponse.from;
-	  this._client = aDebuggerClient;
-	  this._longStrings = {};
-	  this.traits = aResponse.traits || {};
-	  this.events = [];
-	  this._networkRequests = new Map();
-	
-	  this.pendingEvaluationResults = new Map();
-	  this.onEvaluationResult = this.onEvaluationResult.bind(this);
-	  this.onNetworkEvent = this._onNetworkEvent.bind(this);
-	  this.onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
-	
-	  this._client.addListener("evaluationResult", this.onEvaluationResult);
-	  this._client.addListener("networkEvent", this.onNetworkEvent);
-	  this._client.addListener("networkEventUpdate", this.onNetworkEventUpdate);
-	  EventEmitter.decorate(this);
-	}
-	
-	exports.WebConsoleClient = WebConsoleClient;
-	
-	WebConsoleClient.prototype = {
-	  _longStrings: null,
-	  traits: null,
-	
-	  
-
-
-
-
-
-	  _networkRequests: null,
-	
-	  getNetworkRequest(actorId) {
-	    return this._networkRequests.get(actorId);
-	  },
-	
-	  hasNetworkRequest(actorId) {
-	    return this._networkRequests.has(actorId);
-	  },
-	
-	  removeNetworkRequest(actorId) {
-	    this._networkRequests.delete(actorId);
-	  },
-	
-	  getNetworkEvents() {
-	    return this._networkRequests.values();
-	  },
-	
-	  get actor() { return this._actor; },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  _onNetworkEvent: function (type, packet)
-	  {
-	    if (packet.from == this._actor) {
-	      let actor = packet.eventActor;
-	      let networkInfo = {
-	        _type: "NetworkEvent",
-	        timeStamp: actor.timeStamp,
-	        node: null,
-	        actor: actor.actor,
-	        discardRequestBody: true,
-	        discardResponseBody: true,
-	        startedDateTime: actor.startedDateTime,
-	        request: {
-	          url: actor.url,
-	          method: actor.method,
-	        },
-	        isXHR: actor.isXHR,
-	        response: {},
-	        timings: {},
-	        updates: [], 
-	        private: actor.private,
-	        fromCache: actor.fromCache
-	      };
-	      this._networkRequests.set(actor.actor, networkInfo);
-	
-	      this.emit("networkEvent", networkInfo);
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  _onNetworkEventUpdate: function (type, packet)
-	  {
-	    let networkInfo = this.getNetworkRequest(packet.from);
-	    if (!networkInfo) {
-	      return;
-	    }
-	
-	    networkInfo.updates.push(packet.updateType);
-	
-	    switch (packet.updateType) {
-	      case "requestHeaders":
-	        networkInfo.request.headersSize = packet.headersSize;
-	        break;
-	      case "requestPostData":
-	        networkInfo.discardRequestBody = packet.discardRequestBody;
-	        networkInfo.request.bodySize = packet.dataSize;
-	        break;
-	      case "responseStart":
-	        networkInfo.response.httpVersion = packet.response.httpVersion;
-	        networkInfo.response.status = packet.response.status;
-	        networkInfo.response.statusText = packet.response.statusText;
-	        networkInfo.response.headersSize = packet.response.headersSize;
-	        networkInfo.response.remoteAddress = packet.response.remoteAddress;
-	        networkInfo.response.remotePort = packet.response.remotePort;
-	        networkInfo.discardResponseBody = packet.response.discardResponseBody;
-	        break;
-	      case "responseContent":
-	        networkInfo.response.content = {
-	          mimeType: packet.mimeType,
-	        };
-	        networkInfo.response.bodySize = packet.contentSize;
-	        networkInfo.response.transferredSize = packet.transferredSize;
-	        networkInfo.discardResponseBody = packet.discardResponseBody;
-	        break;
-	      case "eventTimings":
-	        networkInfo.totalTime = packet.totalTime;
-	        break;
-	      case "securityInfo":
-	        networkInfo.securityInfo = packet.state;
-	        break;
-	    }
-	
-	    this.emit("networkEventUpdate", {
-	      packet: packet,
-	      networkInfo
-	    });
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  getCachedMessages: function WCC_getCachedMessages(types, aOnResponse)
-	  {
-	    let packet = {
-	      to: this._actor,
-	      type: "getCachedMessages",
-	      messageTypes: types,
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  inspectObjectProperties:
-	  function WCC_inspectObjectProperties(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "inspectProperties",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  evaluateJS: function WCC_evaluateJS(aString, aOnResponse, aOptions = {})
-	  {
-	    let packet = {
-	      to: this._actor,
-	      type: "evaluateJS",
-	      text: aString,
-	      bindObjectActor: aOptions.bindObjectActor,
-	      frameActor: aOptions.frameActor,
-	      url: aOptions.url,
-	      selectedNodeActor: aOptions.selectedNodeActor,
-	      selectedObjectActor: aOptions.selectedObjectActor,
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-	  evaluateJSAsync: function(aString, aOnResponse, aOptions = {})
-	  {
-	    
-	    if (!this.traits.evaluateJSAsync) {
-	      this.evaluateJS(aString, aOnResponse, aOptions);
-	      return;
-	    }
-	
-	    let packet = {
-	      to: this._actor,
-	      type: "evaluateJSAsync",
-	      text: aString,
-	      bindObjectActor: aOptions.bindObjectActor,
-	      frameActor: aOptions.frameActor,
-	      url: aOptions.url,
-	      selectedNodeActor: aOptions.selectedNodeActor,
-	      selectedObjectActor: aOptions.selectedObjectActor,
-	    };
-	
-	    this._client.request(packet, response => {
-	      
-	      
-	      if (this.pendingEvaluationResults) {
-	        this.pendingEvaluationResults.set(response.resultID, aOnResponse);
-	      }
-	    });
-	  },
-	
-	  
-
-
-	  onEvaluationResult: function(aNotification, aPacket) {
-	    
-	    
-	    
-	    if (aPacket.from !== this._actor) {
-	      return;
-	    }
-	
-	    
-	    
-	    
-	    let onResponse = this.pendingEvaluationResults.get(aPacket.resultID);
-	    if (onResponse) {
-	      onResponse(aPacket);
-	      this.pendingEvaluationResults.delete(aPacket.resultID);
-	    } else {
-	      DevToolsUtils.reportException("onEvaluationResult",
-	        "No response handler for an evaluateJSAsync result (resultID: " + aPacket.resultID + ")");
-	    }
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-	  autocomplete: function WCC_autocomplete(aString, aCursor, aOnResponse, aFrameActor)
-	  {
-	    let packet = {
-	      to: this._actor,
-	      type: "autocomplete",
-	      text: aString,
-	      cursor: aCursor,
-	      frameActor: aFrameActor,
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-	  clearMessagesCache: function WCC_clearMessagesCache()
-	  {
-	    let packet = {
-	      to: this._actor,
-	      type: "clearMessagesCache",
-	    };
-	    this._client.request(packet);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getPreferences: function WCC_getPreferences(aPreferences, aOnResponse)
-	  {
-	    let packet = {
-	      to: this._actor,
-	      type: "getPreferences",
-	      preferences: aPreferences,
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  setPreferences: function WCC_setPreferences(aPreferences, aOnResponse)
-	  {
-	    let packet = {
-	      to: this._actor,
-	      type: "setPreferences",
-	      preferences: aPreferences,
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getRequestHeaders: function WCC_getRequestHeaders(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "getRequestHeaders",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getRequestCookies: function WCC_getRequestCookies(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "getRequestCookies",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getRequestPostData: function WCC_getRequestPostData(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "getRequestPostData",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getResponseHeaders: function WCC_getResponseHeaders(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "getResponseHeaders",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getResponseCookies: function WCC_getResponseCookies(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "getResponseCookies",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getResponseContent: function WCC_getResponseContent(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "getResponseContent",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getEventTimings: function WCC_getEventTimings(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "getEventTimings",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  getSecurityInfo: function WCC_getSecurityInfo(aActor, aOnResponse)
-	  {
-	    let packet = {
-	      to: aActor,
-	      type: "getSecurityInfo",
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  sendHTTPRequest: function WCC_sendHTTPRequest(aData, aOnResponse) {
-	    let packet = {
-	      to: this._actor,
-	      type: "sendHTTPRequest",
-	      request: aData
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  startListeners: function WCC_startListeners(aListeners, aOnResponse)
-	  {
-	    let packet = {
-	      to: this._actor,
-	      type: "startListeners",
-	      listeners: aListeners,
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-	  stopListeners: function WCC_stopListeners(aListeners, aOnResponse)
-	  {
-	    let packet = {
-	      to: this._actor,
-	      type: "stopListeners",
-	      listeners: aListeners,
-	    };
-	    this._client.request(packet, aOnResponse);
-	  },
-	
-	  
-
-
-
-
-
-
-
-	  longString: function WCC_longString(aGrip)
-	  {
-	    if (aGrip.actor in this._longStrings) {
-	      return this._longStrings[aGrip.actor];
-	    }
-	
-	    let client = new LongStringClient(this._client, aGrip);
-	    this._longStrings[aGrip.actor] = client;
-	    return client;
-	  },
-	
-	  
-
-
-
-
-
-
-	  detach: function WCC_detach(aOnResponse)
-	  {
-	    this._client.removeListener("evaluationResult", this.onEvaluationResult);
-	    this._client.removeListener("networkEvent", this.onNetworkEvent);
-	    this._client.removeListener("networkEventUpdate", this.onNetworkEventUpdate);
-	    this.stopListeners(null, aOnResponse);
-	    this._longStrings = null;
-	    this._client = null;
-	    this.pendingEvaluationResults.clear();
-	    this.pendingEvaluationResults = null;
-	    this.clearNetworkRequests();
-	    this._networkRequests = null;
-	  },
-	
-	  clearNetworkRequests: function () {
-	    this._networkRequests.clear();
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-	  getString: function(stringGrip) {
-	    
-	    if (typeof stringGrip != "object" || stringGrip.type != "longString") {
-	      return promise.resolve(stringGrip); 
-	    }
-	
-	    
-	    if (stringGrip._fullText) {
-	      return stringGrip._fullText.promise;
-	    }
-	
-	    let deferred = stringGrip._fullText = promise.defer();
-	    let { actor, initial, length } = stringGrip;
-	    let longStringClient = this.longString(stringGrip);
-	
-	    longStringClient.substring(initial.length, length, aResponse => {
-	      if (aResponse.error) {
-	        DevToolsUtils.reportException("getString",
-	            aResponse.error + ": " + aResponse.message);
-	
-	        deferred.reject(aResponse);
-	        return;
-	      }
-	      deferred.resolve(initial + aResponse.substring);
-	    });
-	
-	    return deferred.promise;
-	  }
-	};
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	const { Services } = __webpack_require__(28);
-	const EventEmitter = __webpack_require__(34);
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function PrefsHelper(prefsRoot = "", prefsBlueprint = {}) {
-	  EventEmitter.decorate(this);
-	
-	  let cache = new Map();
-	
-	  for (let accessorName in prefsBlueprint) {
-	    let [prefType, prefName] = prefsBlueprint[accessorName];
-	    map(this, cache, accessorName, prefType, prefsRoot, prefName);
-	  }
-	
-	  let observer = makeObserver(this, cache, prefsRoot, prefsBlueprint);
-	  this.registerObserver = () => observer.register();
-	  this.unregisterObserver = () => observer.unregister();
-	}
-	
-	
-
-
-
-
-
-
-
-
-	function get(cache, prefType, prefsRoot, prefName) {
-	  let cachedPref = cache.get(prefName);
-	  if (cachedPref !== undefined) {
-	    return cachedPref;
-	  }
-	  let value = Services.prefs["get" + prefType + "Pref"](
-	    [prefsRoot, prefName].join(".")
-	  );
-	  cache.set(prefName, value);
-	  return value;
-	}
-	
-	
-
-
-
-
-
-
-
-
-	function set(cache, prefType, prefsRoot, prefName, value) {
-	  Services.prefs["set" + prefType + "Pref"](
-	    [prefsRoot, prefName].join("."),
-	    value
-	  );
-	  cache.set(prefName, value);
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function map(self, cache, accessorName, prefType, prefsRoot, prefName,
-	             serializer = { in: e => e, out: e => e }) {
-	  if (prefName in self) {
-	    throw new Error(`Can't use ${prefName} because it overrides a property` +
-	                    "on the instance.");
-	  }
-	  if (prefType == "Json") {
-	    map(self, cache, accessorName, "Char", prefsRoot, prefName, {
-	      in: JSON.parse,
-	      out: JSON.stringify
-	    });
-	    return;
-	  }
-	  if (prefType == "Float") {
-	    map(self, cache, accessorName, "Char", prefsRoot, prefName, {
-	      in: Number.parseFloat,
-	      out: (n) => n + ""
-	    });
-	    return;
-	  }
-	
-	  Object.defineProperty(self, accessorName, {
-	    get: () => serializer.in(get(cache, prefType, prefsRoot, prefName)),
-	    set: (e) => set(cache, prefType, prefsRoot, prefName, serializer.out(e))
-	  });
-	}
-	
-	
-
-
-
-
-
-
-
-	function accessorNameForPref(somePrefName, prefsBlueprint) {
-	  for (let accessorName in prefsBlueprint) {
-	    let [, prefName] = prefsBlueprint[accessorName];
-	    if (somePrefName == prefName) {
-	      return accessorName;
-	    }
-	  }
-	  return "";
-	}
-	
-	
-
-
-
-
-
-
-
-
-	function makeObserver(self, cache, prefsRoot, prefsBlueprint) {
-	  return {
-	    register: function() {
-	      this._branch = Services.prefs.getBranch(prefsRoot + ".");
-	      this._branch.addObserver("", this);
-	    },
-	    unregister: function() {
-	      this._branch.removeObserver("", this);
-	    },
-	    observe: function(subject, topic, prefName) {
-	      
-	      
-	      let accessorName = accessorNameForPref(prefName, prefsBlueprint);
-	      if (!(accessorName in self)) {
-	        return;
-	      }
-	      cache.delete(prefName);
-	      self.emit("pref-changed", accessorName, self[accessorName]);
-	    }
-	  };
-	}
-	
-	exports.PrefsHelper = PrefsHelper;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	const promise = __webpack_require__(40);
-	const EventEmitter = __webpack_require__(34);
-	
-	
-	const { DebuggerClient } = __webpack_require__(53);
-	
-	const targets = new WeakMap();
-	const promiseTargets = new WeakMap();
-	
-	
-
-
-	exports.TargetFactory = {
-	  
-
-
-
-
-
-
-	  forTab: function(tab) {
-	    let target = targets.get(tab);
-	    if (target == null) {
-	      target = new TabTarget(tab);
-	      targets.set(tab, target);
-	    }
-	    return target;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-	  forRemoteTab: function(options) {
-	    let targetPromise = promiseTargets.get(options);
-	    if (targetPromise == null) {
-	      let target = new TabTarget(options);
-	      targetPromise = target.makeRemote().then(() => target);
-	      promiseTargets.set(options, targetPromise);
-	    }
-	    return targetPromise;
-	  },
-	
-	  forWorker: function(workerClient) {
-	    let target = targets.get(workerClient);
-	    if (target == null) {
-	      target = new WorkerTarget(workerClient);
-	      targets.set(workerClient, target);
-	    }
-	    return target;
-	  },
-	
-	  
-
-
-
-
-
-
-	  isKnownTab: function(tab) {
-	    return targets.has(tab);
-	  },
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	
-	
-
-
-
-	function TabTarget(tab) {
-	  EventEmitter.decorate(this);
-	  this.destroy = this.destroy.bind(this);
-	  this._handleThreadState = this._handleThreadState.bind(this);
-	  this.on("thread-resumed", this._handleThreadState);
-	  this.on("thread-paused", this._handleThreadState);
-	  this.activeTab = this.activeConsole = null;
-	  
-	  
-	  if (tab && !["client", "form", "chrome"].every(tab.hasOwnProperty, tab)) {
-	    this._tab = tab;
-	    this._setupListeners();
-	  } else {
-	    this._form = tab.form;
-	    this._client = tab.client;
-	    this._chrome = tab.chrome;
-	  }
-	  
-	  if (typeof tab.isTabActor == "boolean") {
-	    this._isTabActor = tab.isTabActor;
-	  } else {
-	    this._isTabActor = true;
-	  }
-	}
-	
-	TabTarget.prototype = {
-	  _webProgressListener: null,
-	
-	  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	  getActorDescription: function(actorName) {
-	    if (!this.client) {
-	      throw new Error("TabTarget#getActorDescription() can only be called on " +
-	                      "remote tabs.");
-	    }
-	
-	    let deferred = promise.defer();
-	
-	    if (this._protocolDescription &&
-	        this._protocolDescription.types[actorName]) {
-	      deferred.resolve(this._protocolDescription.types[actorName]);
-	    } else {
-	      this.client.mainRoot.protocolDescription(description => {
-	        this._protocolDescription = description;
-	        deferred.resolve(description.types[actorName]);
-	      });
-	    }
-	
-	    return deferred.promise;
-	  },
-	
-	  
-
-
-
-
-
-
-	  hasActor: function(actorName) {
-	    if (!this.client) {
-	      throw new Error("TabTarget#hasActor() can only be called on remote " +
-	                      "tabs.");
-	    }
-	    if (this.form) {
-	      return !!this.form[actorName + "Actor"];
-	    }
-	    return false;
-	  },
-	
-	  
-
-
-
-
-
-
-
-
-
-
-	  actorHasMethod: function(actorName, methodName) {
-	    if (!this.client) {
-	      throw new Error("TabTarget#actorHasMethod() can only be called on " +
-	                      "remote tabs.");
-	    }
-	    return this.getActorDescription(actorName).then(desc => {
-	      if (desc && desc.methods) {
-	        return !!desc.methods.find(method => method.name === methodName);
-	      }
-	      return false;
-	    });
-	  },
-	
-	  
-
-
-
-
-
-	  getTrait: function(traitName) {
-	    if (!this.client) {
-	      throw new Error("TabTarget#getTrait() can only be called on remote " +
-	                      "tabs.");
-	    }
-	
-	    
-	    
-	    if (this.form.traits && traitName in this.form.traits) {
-	      return this.form.traits[traitName];
-	    }
-	
-	    return this.client.traits[traitName];
-	  },
-	
-	  get tab() {
-	    return this._tab;
-	  },
-	
-	  get form() {
-	    return this._form;
-	  },
-	
-	  
-	  
-	  get root() {
-	    if (!this._root) {
-	      this._root = this._getRoot();
-	    }
-	    return this._root;
-	  },
-	
-	  _getRoot: function() {
-	    return new Promise((resolve, reject) => {
-	      this.client.listTabs(response => {
-	        if (response.error) {
-	          reject(new Error(response.error + ": " + response.message));
-	          return;
-	        }
-	
-	        resolve(response);
-	      });
-	    });
-	  },
-	
-	  get client() {
-	    return this._client;
-	  },
-	
-	  
-	  
-	  
-	  
-	  get chrome() {
-	    return this._chrome;
-	  },
-	
-	  
-	  
-	  
-	  get isTabActor() {
-	    return this._isTabActor;
-	  },
-	
-	  get window() {
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    if (this._tab && this._tab.linkedBrowser) {
-	      return this._tab.linkedBrowser.contentWindow;
-	    }
-	    return null;
-	  },
-	
-	  get name() {
-	    if (this._tab && this._tab.linkedBrowser.contentDocument) {
-	      return this._tab.linkedBrowser.contentDocument.title;
-	    }
-	    if (this.isAddon) {
-	      return this._form.name;
-	    }
-	    return this._form.title;
-	  },
-	
-	  get url() {
-	    return this._tab ? this._tab.linkedBrowser.currentURI.spec :
-	                       this._form.url;
-	  },
-	
-	  get isRemote() {
-	    return !this.isLocalTab;
-	  },
-	
-	  get isAddon() {
-	    return !!(this._form && this._form.actor &&
-	              this._form.actor.match(/conn\d+\.addon\d+/));
-	  },
-	
-	  get isLocalTab() {
-	    return !!this._tab;
-	  },
-	
-	  get isMultiProcess() {
-	    return !this.window;
-	  },
-	
-	  get isThreadPaused() {
-	    return !!this._isThreadPaused;
-	  },
-	
-	  
-
-
-
-
-	  makeRemote: function() {
-	    if (this._remote) {
-	      return this._remote.promise;
-	    }
-	
-	    this._remote = promise.defer();
-	
-	    if (this.isLocalTab) {
-	      
-	      
-	      if (!DebuggerServer.initialized) {
-	        DebuggerServer.init();
-	        DebuggerServer.addBrowserActors();
-	      }
-	
-	      this._client = new DebuggerClient(DebuggerServer.connectPipe());
-	      
-	      this._chrome = false;
-	    }
-	
-	    this._setupRemoteListeners();
-	
-	    let attachTab = () => {
-	      this._client.attachTab(this._form.actor, (response, tabClient) => {
-	        if (!tabClient) {
-	          this._remote.reject("Unable to attach to the tab");
-	          return;
-	        }
-	        this.activeTab = tabClient;
-	        this.threadActor = response.threadActor;
-	        attachConsole();
-	      });
-	    };
-	
-	    let onConsoleAttached = (response, consoleClient) => {
-	      if (!consoleClient) {
-	        this._remote.reject("Unable to attach to the console");
-	        return;
-	      }
-	      this.activeConsole = consoleClient;
-	      this._remote.resolve(null);
-	    };
-	
-	    let attachConsole = () => {
-	      this._client.attachConsole(this._form.consoleActor,
-	                                 [ "NetworkActivity" ],
-	                                 onConsoleAttached);
-	    };
-	
-	    if (this.isLocalTab) {
-	      this._client.connect(() => {
-	        this._client.getTab({ tab: this.tab }).then(response => {
-	          this._form = response.tab;
-	          attachTab();
-	        });
-	      });
-	    } else if (this.isTabActor) {
-	      
-	      
-	      attachTab();
-	    } else {
-	      
-	      
-	      attachConsole();
-	    }
-	
-	    return this._remote.promise;
-	  },
-	
-	  
-
-
-	  _setupListeners: function() {
-	    this._webProgressListener = new TabWebProgressListener(this);
-	    this.tab.linkedBrowser.addProgressListener(this._webProgressListener);
-	    this.tab.addEventListener("TabClose", this);
-	    this.tab.parentNode.addEventListener("TabSelect", this);
-	    this.tab.ownerDocument.defaultView.addEventListener("unload", this);
-	  },
-	
-	  
-
-
-	  _teardownListeners: function() {
-	    if (this._webProgressListener) {
-	      this._webProgressListener.destroy();
-	    }
-	
-	    this._tab.ownerDocument.defaultView.removeEventListener("unload", this);
-	    this._tab.removeEventListener("TabClose", this);
-	    this._tab.parentNode.removeEventListener("TabSelect", this);
-	  },
-	
-	  
-
-
-	  _setupRemoteListeners: function() {
-	    this.client.addListener("closed", this.destroy);
-	
-	    this._onTabDetached = (aType, aPacket) => {
-	      
-	      if (aPacket.from == this._form.actor) {
-	        this.destroy();
-	      }
-	    };
-	    this.client.addListener("tabDetached", this._onTabDetached);
-	
-	    this._onTabNavigated = (aType, aPacket) => {
-	      let event = Object.create(null);
-	      event.url = aPacket.url;
-	      event.title = aPacket.title;
-	      event.nativeConsoleAPI = aPacket.nativeConsoleAPI;
-	      event.isFrameSwitching = aPacket.isFrameSwitching;
-	      
-	      
-	      if (aPacket.state == "start") {
-	        event._navPayload = this._navRequest;
-	        this.emit("will-navigate", event);
-	        this._navRequest = null;
-	      } else {
-	        event._navPayload = this._navWindow;
-	        this.emit("navigate", event);
-	        this._navWindow = null;
-	      }
-	    };
-	    this.client.addListener("tabNavigated", this._onTabNavigated);
-	
-	    this._onFrameUpdate = (aType, aPacket) => {
-	      this.emit("frame-update", aPacket);
-	    };
-	    this.client.addListener("frameUpdate", this._onFrameUpdate);
-	  },
-	
-	  
-
-
-	  _teardownRemoteListeners: function() {
-	    this.client.removeListener("closed", this.destroy);
-	    this.client.removeListener("tabNavigated", this._onTabNavigated);
-	    this.client.removeListener("tabDetached", this._onTabDetached);
-	    this.client.removeListener("frameUpdate", this._onFrameUpdate);
-	  },
-	
-	  
-
-
-	  handleEvent: function(event) {
-	    switch (event.type) {
-	      case "TabClose":
-	      case "unload":
-	        this.destroy();
-	        break;
-	      case "TabSelect":
-	        if (this.tab.selected) {
-	          this.emit("visible", event);
-	        } else {
-	          this.emit("hidden", event);
-	        }
-	        break;
-	    }
-	  },
-	
-	  
-
-
-	  _handleThreadState: function(event) {
-	    switch (event) {
-	      case "thread-resumed":
-	        this._isThreadPaused = false;
-	        break;
-	      case "thread-paused":
-	        this._isThreadPaused = true;
-	        break;
-	    }
-	  },
-	
-	  
-
-
-	  destroy: function() {
-	    
-	    
-	    if (this._destroyer) {
-	      return this._destroyer.promise;
-	    }
-	
-	    this._destroyer = promise.defer();
-	
-	    
-	    this.emit("close");
-	
-	    
-	    
-	    this.off("thread-resumed", this._handleThreadState);
-	    this.off("thread-paused", this._handleThreadState);
-	
-	    if (this._tab) {
-	      this._teardownListeners();
-	    }
-	
-	    let cleanupAndResolve = () => {
-	      this._cleanup();
-	      this._destroyer.resolve(null);
-	    };
-	    
-	    
-	    if (this._tab && !this._client) {
-	      cleanupAndResolve();
-	    } else if (this._client) {
-	      
-	      
-	      this._teardownRemoteListeners();
-	
-	      if (this.isLocalTab) {
-	        
-	        
-	        this._client.close(cleanupAndResolve);
-	      } else if (this.activeTab) {
-	        
-	        
-	        
-	        
-	        this.activeTab.detach();
-	        cleanupAndResolve();
-	      } else {
-	        cleanupAndResolve();
-	      }
-	    }
-	
-	    return this._destroyer.promise;
-	  },
-	
-	  
-
-
-	  _cleanup: function() {
-	    if (this._tab) {
-	      targets.delete(this._tab);
-	    } else {
-	      promiseTargets.delete(this._form);
-	    }
-	    this.activeTab = null;
-	    this.activeConsole = null;
-	    this._client = null;
-	    this._tab = null;
-	    this._form = null;
-	    this._remote = null;
-	  },
-	
-	  toString: function() {
-	    let id = this._tab ? this._tab : (this._form && this._form.actor);
-	    return `TabTarget:${id}`;
-	  },
-	};
-	
-	function WorkerTarget(workerClient) {
-	  EventEmitter.decorate(this);
-	  this._workerClient = workerClient;
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-	WorkerTarget.prototype = {
-	  destroy: function() {},
-	
-	  get isRemote() {
-	    return true;
-	  },
-	
-	  get isTabActor() {
-	    return true;
-	  },
-	
-	  get url() {
-	    return this._workerClient.url;
-	  },
-	
-	  get isWorkerTarget() {
-	    return true;
-	  },
-	
-	  get form() {
-	    return {
-	      consoleActor: this._workerClient.consoleActor
-	    };
-	  },
-	
-	  get activeTab() {
-	    return this._workerClient;
-	  },
-	
-	  get client() {
-	    return this._workerClient.client;
-	  },
-	
-	  destroy: function() {},
-	
-	  hasActor: function(name) {
-	    return false;
-	  },
-	
-	  getTrait: function() {
-	    return undefined;
-	  },
-	
-	  makeRemote: function() {
-	    return Promise.resolve();
-	  }
-	};
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	"use strict";
-	
-	const EventEmitter = __webpack_require__(34);
-	
-	function WebSocketDebuggerTransport(socket) {
-	  EventEmitter.decorate(this);
-	
-	  this.active = false;
-	  this.hooks = null;
-	  this.socket = socket;
-	}
-	
-	WebSocketDebuggerTransport.prototype = {
-	  ready() {
-	    if (this.active) {
-	      return;
-	    }
-	
-	    this.socket.addEventListener("message", this);
-	    this.socket.addEventListener("close", this);
-	
-	    this.active = true;
-	  },
-	
-	  send(object) {
-	    this.emit("send", object);
-	    if (this.socket) {
-	      this.socket.send(JSON.stringify(object));
-	    }
-	  },
-	
-	  startBulkSend() {
-	    throw new Error("Bulk send is not supported by WebSocket transport");
-	  },
-	
-	  close() {
-	    this.emit("close");
-	    this.active = false;
-	
-	    this.socket.removeEventListener("message", this);
-	    this.socket.removeEventListener("close", this);
-	    this.socket.close();
-	    this.socket = null;
-	
-	    if (this.hooks) {
-	      this.hooks.onClosed();
-	      this.hooks = null;
-	    }
-	  },
-	
-	  handleEvent(event) {
-	    switch (event.type) {
-	      case "message":
-	        this.onMessage(event);
-	        break;
-	      case "close":
-	        this.close();
-	        break;
-	    }
-	  },
-	
-	  onMessage({ data }) {
-	    if (typeof data !== "string") {
-	      throw new Error("Binary messages are not supported by WebSocket transport");
-	    }
-	
-	    let object = JSON.parse(data);
-	    this.emit("packet", object);
-	    if (this.hooks) {
-	      this.hooks.onPacket(object);
-	    }
-	  },
-	};
-	
-	module.exports = WebSocketDebuggerTransport;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-	
-	
-
-
-	
-	"use strict";
-	
-	const EventEmitter = __webpack_require__(34);
-	
-	
-
-
-
-
-
-
-
-
-
-	function Menu({ id = null } = {}) {
-	  this.menuitems = [];
-	  this.id = id;
-	
-	  Object.defineProperty(this, "items", {
-	    get() {
-	      return this.menuitems;
-	    }
-	  });
-	
-	  EventEmitter.decorate(this);
-	}
-	
-	
-
-
-
-
-	Menu.prototype.append = function (menuItem) {
-	  this.menuitems.push(menuItem);
-	};
-	
-	
-
-
-
-
-
-	Menu.prototype.insert = function (pos, menuItem) {
-	  throw Error("Not implemented");
-	};
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-	Menu.prototype.popup = function (screenX, screenY, toolbox) {
-	  let doc = toolbox.doc;
-	  let popupset = doc.querySelector("popupset");
-	  
-	  
-	  
-	  
-	  let popup = popupset.querySelector("menupopup[menu-api=\"true\"]");
-	  if (popup) {
-	    popup.hidePopup();
-	  }
-	
-	  popup = this.createPopup(doc)
-	  popup.setAttribute("menu-api", "true");
-	
-	  if (this.id) {
-	    popup.id = this.id;
-	  }
-	  this._createMenuItems(popup);
-	
-	  
-	  popup.addEventListener("popuphidden", (e) => {
-	    if (e.target === popup) {
-	      popup.remove();
-	      this.emit("close", popup);
-	    }
-	  });
-	
-	  popup.addEventListener("popupshown", (e) => {
-	    if (e.target === popup) {
-	      this.emit("open", popup);
-	    }
-	  });
-	
-	  popupset.appendChild(popup);
-	  popup.openPopupAtScreen(screenX, screenY, true);
-	};
-	
-	Menu.prototype.createPopup = function(doc) {
-	  return doc.createElement("menupopup");
-	}
-	
-	Menu.prototype._createMenuItems = function (parent) {
-	  let doc = parent.ownerDocument;
-	  this.menuitems.forEach(item => {
-	    if (!item.visible) {
-	      return;
-	    }
-	
-	    if (item.submenu) {
-	      let menupopup = doc.createElement("menupopup");
-	      item.submenu._createMenuItems(menupopup);
-	
-	      let menu = doc.createElement("menu");
-	      menu.appendChild(menupopup);
-	      menu.setAttribute("label", item.label);
-	      if (item.disabled) {
-	        menu.setAttribute("disabled", "true");
-	      }
-	      if (item.accesskey) {
-	        menu.setAttribute("accesskey", item.accesskey);
-	      }
-	      if (item.id) {
-	        menu.id = item.id;
-	      }
-	      parent.appendChild(menu);
-	    } else if (item.type === "separator") {
-	      let menusep = doc.createElement("menuseparator");
-	      parent.appendChild(menusep);
-	    } else {
-	      let menuitem = doc.createElement("menuitem");
-	      menuitem.setAttribute("label", item.label);
-	      menuitem.textContent = item.label;
-	      menuitem.addEventListener("command", () => item.click());
-	
-	      if (item.type === "checkbox") {
-	        menuitem.setAttribute("type", "checkbox");
-	      }
-	      if (item.type === "radio") {
-	        menuitem.setAttribute("type", "radio");
-	      }
-	      if (item.disabled) {
-	        menuitem.setAttribute("disabled", "true");
-	      }
-	      if (item.checked) {
-	        menuitem.setAttribute("checked", "true");
-	      }
-	      if (item.accesskey) {
-	        menuitem.setAttribute("accesskey", item.accesskey);
-	      }
-	      if (item.id) {
-	        menuitem.id = item.id;
-	      }
-	
-	      parent.appendChild(menuitem);
-	    }
-	  });
-	};
-	
-	Menu.setApplicationMenu = () => {
-	  throw Error("Not implemented");
-	};
-	
-	Menu.sendActionToFirstResponder = () => {
-	  throw Error("Not implemented");
-	};
-	
-	Menu.buildFromTemplate = () => {
-	  throw Error("Not implemented");
-	};
-	
-	module.exports = Menu;
-
-
- },
-
- function(module, exports) {
-
-	
-	
-	
-
-
-	
-	"use strict";
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function MenuItem({
-	    accesskey = null,
-	    checked = false,
-	    click = () => {},
-	    disabled = false,
-	    label = "",
-	    id = null,
-	    submenu = null,
-	    type = "normal",
-	    visible = true,
-	} = { }) {
-	  this.accesskey = accesskey;
-	  this.checked = checked;
-	  this.click = click;
-	  this.disabled = disabled;
-	  this.id = id;
-	  this.label = label;
-	  this.submenu = submenu;
-	  this.type = type;
-	  this.visible = visible;
-	}
-	
-	module.exports = MenuItem;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	const { DOM: dom, createClass, createFactory, PropTypes } = __webpack_require__(2);
-	
-	
-	
-	
-	
-	const AUTO_EXPAND_DEPTH = 0; 
-	
-	
-
-
-
-	const ArrowExpander = createFactory(createClass({
-	  displayName: "ArrowExpander",
-	
-	  shouldComponentUpdate(nextProps, nextState) {
-	    return this.props.item !== nextProps.item
-	      || this.props.visible !== nextProps.visible
-	      || this.props.expanded !== nextProps.expanded;
-	  },
-	
-	  render() {
-	    const attrs = {
-	      className: "arrow theme-twisty",
-	      onClick: this.props.expanded
-	        ? () => this.props.onCollapse(this.props.item)
-	        : e => this.props.onExpand(this.props.item, e.altKey)
-	    };
-	
-	    if (this.props.expanded) {
-	      attrs.className += " open";
-	    }
-	
-	    if (!this.props.visible) {
-	      attrs.style = Object.assign({}, this.props.style || {}, {
-	        visibility: "hidden"
-	      });
-	    }
-	
-	    return dom.div(attrs, this.props.children);
-	  }
-	}));
-	
-	const TreeNode = createFactory(createClass({
-	  displayName: "TreeNode",
-	
-	  componentDidMount() {
-	    if (this.props.focused) {
-	      this.refs.button.focus();
-	    }
-	  },
-	
-	  componentDidUpdate() {
-	    if (this.props.focused) {
-	      this.refs.button.focus();
-	    }
-	  },
-	
-	  shouldComponentUpdate(nextProps) {
-	    return this.props.item !== nextProps.item ||
-	      this.props.focused !== nextProps.focused ||
-	      this.props.expanded !== nextProps.expanded;
-	  },
-	
-	  render() {
-	    const arrow = ArrowExpander({
-	      item: this.props.item,
-	      expanded: this.props.expanded,
-	      visible: this.props.hasChildren,
-	      onExpand: this.props.onExpand,
-	      onCollapse: this.props.onCollapse,
-	    });
-	
-	    let isOddRow = this.props.index % 2;
-	    return dom.div(
-	      {
-	        className: `tree-node div ${isOddRow ? "tree-node-odd" : ""}`,
-	        onFocus: this.props.onFocus,
-	        onClick: this.props.onFocus,
-	        onBlur: this.props.onBlur,
-	        style: {
-	          padding: 0,
-	          margin: 0
-	        }
-	      },
-	
-	      this.props.renderItem(this.props.item,
-	                            this.props.depth,
-	                            this.props.focused,
-	                            arrow,
-	                            this.props.expanded),
-	
-	      
-	      
-	      dom.button(this._buttonAttrs)
-	    );
-	  },
-	
-	  _buttonAttrs: {
-	    ref: "button",
-	    style: {
-	      opacity: 0,
-	      width: "0 !important",
-	      height: "0 !important",
-	      padding: "0 !important",
-	      outline: "none",
-	      MozAppearance: "none",
-	      
-	      
-	      
-	      MozMarginStart: "-1000px !important",
-	    }
-	  }
-	}));
-	
-	
-
-
-
-
-
-
-	function oncePerAnimationFrame(fn) {
-	  let animationId = null;
-	  let argsToPass = null;
-	  return function(...args) {
-	    argsToPass = args;
-	    if (animationId !== null) {
-	      return;
-	    }
-	
-	    animationId = requestAnimationFrame(() => {
-	      fn.call(this, ...argsToPass);
-	      animationId = null;
-	      argsToPass = null;
-	    });
-	  };
-	}
-	
-	const NUMBER_OF_OFFSCREEN_ITEMS = 1;
-	
-	
-
-
-
-
-
-	const Tree = module.exports = createClass({
-	  displayName: "Tree",
-	
-	  propTypes: {
-	    
-	
-	    
-	    getParent: PropTypes.func.isRequired,
-	    
-	    getChildren: PropTypes.func.isRequired,
-	    
-	    
-	    renderItem: PropTypes.func.isRequired,
-	    
-	    getRoots: PropTypes.func.isRequired,
-	    
-	    getKey: PropTypes.func.isRequired,
-	    
-	    
-	    isExpanded: PropTypes.func.isRequired,
-	    
-	    
-	    itemHeight: PropTypes.number.isRequired,
-	
-	    
-	
-	    
-	    focused: PropTypes.any,
-	    
-	    onFocus: PropTypes.func,
-	    
-	    autoExpandDepth: PropTypes.number,
-	    
-	    
-	    autoExpandAll: PropTypes.bool,
-	    
-	    onExpand: PropTypes.func,
-	    onCollapse: PropTypes.func,
-	  },
-	
-	  getDefaultProps() {
-	    return {
-	      autoExpandDepth: AUTO_EXPAND_DEPTH,
-	      autoExpandAll: true
-	    };
-	  },
-	
-	  getInitialState() {
-	    return {
-	      scroll: 0,
-	      height: window.innerHeight,
-	      seen: new Set(),
-	    };
-	  },
-	
-	  componentDidMount() {
-	    window.addEventListener("resize", this._updateHeight);
-	    this._autoExpand(this.props);
-	    this._updateHeight();
-	  },
-	
-	  componentWillUnmount() {
-	    window.removeEventListener("resize", this._updateHeight);
-	  },
-	
-	  componentWillReceiveProps(nextProps) {
-	    this._autoExpand(nextProps);
-	    this._updateHeight();
-	  },
-	
-	  _autoExpand(props) {
-	    if (!props.autoExpandDepth) {
-	      return;
-	    }
-	
-	    
-	    
-	    
-	    const autoExpand = (item, currentDepth) => {
-	      if (currentDepth >= props.autoExpandDepth ||
-	          this.state.seen.has(item)) {
-	        return;
-	      }
-	
-	      props.onExpand(item);
-	      this.state.seen.add(item);
-	
-	      const children = props.getChildren(item);
-	      const length = children.length;
-	      for (let i = 0; i < length; i++) {
-	        autoExpand(children[i], currentDepth + 1);
-	      }
-	    };
-	
-	    const roots = props.getRoots();
-	    const length = roots.length;
-	    if (props.autoExpandAll) {
-	      for (let i = 0; i < length; i++) {
-	        autoExpand(roots[i], 0);
-	      }
-	    } else if (length != 0) {
-	      autoExpand(roots[0], 0);
-	    }
-	  },
-	
-	  render() {
-	    const traversal = this._dfsFromRoots();
-	
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	
-	    const renderItem = i => {
-	      let { item, depth } = traversal[i];
-	      return TreeNode({
-	        key: this.props.getKey(item, i),
-	        index: i,
-	        item: item,
-	        depth: depth,
-	        renderItem: this.props.renderItem,
-	        focused: this.props.focused === item,
-	        expanded: this.props.isExpanded(item),
-	        hasChildren: !!this.props.getChildren(item).length,
-	        onExpand: this._onExpand,
-	        onCollapse: this._onCollapse,
-	        onFocus: () => this._focus(i, item),
-	      });
-	    };
-	
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	    
-	
-	    const style = Object.assign({}, this.props.style || {}, {
-	      padding: 0,
-	      margin: 0
-	    });
-	
-	    return dom.div(
-	      {
-	        className: "tree",
-	        ref: "tree",
-	        onKeyDown: this._onKeyDown,
-	        onKeyPress: this._preventArrowKeyScrolling,
-	        onKeyUp: this._preventArrowKeyScrolling,
-	        onScroll: this._onScroll,
-	        style
-	      },
-	      
-	      
-	      
-	      
-	      
-	      
-	      
-	      traversal.map((v, i) => renderItem(i))
-	    );
-	  },
-	
-	  _preventArrowKeyScrolling(e) {
-	    switch (e.key) {
-	      case "ArrowUp":
-	      case "ArrowDown":
-	      case "ArrowLeft":
-	      case "ArrowRight":
-	        e.preventDefault();
-	        e.stopPropagation();
-	        if (e.nativeEvent) {
-	          if (e.nativeEvent.preventDefault) {
-	            e.nativeEvent.preventDefault();
-	          }
-	          if (e.nativeEvent.stopPropagation) {
-	            e.nativeEvent.stopPropagation();
-	          }
-	        }
-	    }
-	  },
-	
-	  
-
-
-	  _updateHeight() {
-	    this.setState({
-	      height: this.refs.tree.clientHeight
-	    });
-	  },
-	
-	  
-
-
-	  _dfs(item, maxDepth = Infinity, traversal = [], _depth = 0) {
-	    traversal.push({ item, depth: _depth });
-	
-	    if (!this.props.isExpanded(item)) {
-	      return traversal;
-	    }
-	
-	    const nextDepth = _depth + 1;
-	
-	    if (nextDepth > maxDepth) {
-	      return traversal;
-	    }
-	
-	    const children = this.props.getChildren(item);
-	    const length = children.length;
-	    for (let i = 0; i < length; i++) {
-	      this._dfs(children[i], maxDepth, traversal, nextDepth);
-	    }
-	
-	    return traversal;
-	  },
-	
-	  
-
-
-	  _dfsFromRoots(maxDepth = Infinity) {
-	    const traversal = [];
-	
-	    const roots = this.props.getRoots();
-	    const length = roots.length;
-	    for (let i = 0; i < length; i++) {
-	      this._dfs(roots[i], maxDepth, traversal);
-	    }
-	
-	    return traversal;
-	  },
-	
-	  
-
-
-
-
-
-	  _onExpand: oncePerAnimationFrame(function(item, expandAllChildren) {
-	    if (this.props.onExpand) {
-	      this.props.onExpand(item);
-	
-	      if (expandAllChildren) {
-	        const children = this._dfs(item);
-	        const length = children.length;
-	        for (let i = 0; i < length; i++) {
-	          this.props.onExpand(children[i].item);
-	        }
-	      }
-	    }
-	  }),
-	
-	  
-
-
-
-
-	  _onCollapse: oncePerAnimationFrame(function(item) {
-	    if (this.props.onCollapse) {
-	      this.props.onCollapse(item);
-	    }
-	  }),
-	
-	  
-
-
-
-
-
-
-
-
-
-	  _focus(index, item) {
-	    if (item !== undefined) {
-	      const itemStartPosition = index * this.props.itemHeight;
-	      const itemEndPosition = (index + 1) * this.props.itemHeight;
-	
-	      
-	      
-	      
-	      
-	      
-	      
-	      if (this.state.scroll > itemStartPosition) {
-	        this.refs.tree.scrollTop = itemStartPosition;
-	      } else if ((this.state.scroll + this.state.height) < itemEndPosition) {
-	        this.refs.tree.scrollTop = itemEndPosition - this.state.height;
-	      }
-	    }
-	
-	    if (this.props.onFocus) {
-	      this.props.onFocus(item);
-	    }
-	  },
-	
-	  
-
-
-	  _onBlur() {
-	    this._focus(0, undefined);
-	  },
-	
-	  
-
-
-
-
-
-	  _onScroll: oncePerAnimationFrame(function(e) {
-	    this.setState({
-	      scroll: Math.max(this.refs.tree.scrollTop, 0),
-	      height: this.refs.tree.clientHeight
-	    });
-	  }),
-	
-	  
-
-
-
-
-	  _onKeyDown(e) {
-	    if (this.props.focused == null) {
-	      return;
-	    }
-	
-	    
-	    if (e.altKey || e.ctrlKey || e.shiftKey || e.metaKey) {
-	      return;
-	    }
-	
-	    this._preventArrowKeyScrolling(e);
-	
-	    switch (e.key) {
-	      case "ArrowUp":
-	        this._focusPrevNode();
-	        return;
-	
-	      case "ArrowDown":
-	        this._focusNextNode();
-	        return;
-	
-	      case "ArrowLeft":
-	        if (this.props.isExpanded(this.props.focused)
-	            && this.props.getChildren(this.props.focused).length) {
-	          this._onCollapse(this.props.focused);
-	        } else {
-	          this._focusParentNode();
-	        }
-	        return;
-	
-	      case "ArrowRight":
-	        if (!this.props.isExpanded(this.props.focused)) {
-	          this._onExpand(this.props.focused);
-	        } else {
-	          this._focusNextNode();
-	        }
-	        return;
-	    }
-	  },
-	
-	  
-
-
-	  _focusPrevNode: oncePerAnimationFrame(function() {
-	    
-	    
-	    
-	
-	    let prev;
-	    let prevIndex;
-	
-	    const traversal = this._dfsFromRoots();
-	    const length = traversal.length;
-	    for (let i = 0; i < length; i++) {
-	      const item = traversal[i].item;
-	      if (item === this.props.focused) {
-	        break;
-	      }
-	      prev = item;
-	      prevIndex = i;
-	    }
-	
-	    if (prev === undefined) {
-	      return;
-	    }
-	
-	    this._focus(prevIndex, prev);
-	  }),
-	
-	  
-
-
-
-	  _focusNextNode: oncePerAnimationFrame(function() {
-	    
-	    
-	    
-	
-	    const traversal = this._dfsFromRoots();
-	    const length = traversal.length;
-	    let i = 0;
-	
-	    while (i < length) {
-	      if (traversal[i].item === this.props.focused) {
-	        break;
-	      }
-	      i++;
-	    }
-	
-	    if (i + 1 < traversal.length) {
-	      this._focus(i + 1, traversal[i + 1].item);
-	    }
-	  }),
-	
-	  
-
-
-
-	  _focusParentNode: oncePerAnimationFrame(function() {
-	    const parent = this.props.getParent(this.props.focused);
-	    if (!parent) {
-	      return;
-	    }
-	
-	    const traversal = this._dfsFromRoots();
-	    const length = traversal.length;
-	    let parentIndex = 0;
-	    for (; parentIndex < length; parentIndex++) {
-	      if (traversal[parentIndex].item === parent) {
-	        break;
-	      }
-	    }
-	
-	    this._focus(parentIndex, parent);
-	  }),
-	});
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-	"use strict";
-	
-	
-	
-	
-	
-	
-	const l10n = {
-	  getStr: () => {}
-	}
-	
-	
-	const CHAR_CODE_A = "a".charCodeAt(0);
-	const CHAR_CODE_C = "c".charCodeAt(0);
-	const CHAR_CODE_D = "d".charCodeAt(0);
-	const CHAR_CODE_E = "e".charCodeAt(0);
-	const CHAR_CODE_F = "f".charCodeAt(0);
-	const CHAR_CODE_H = "h".charCodeAt(0);
-	const CHAR_CODE_I = "i".charCodeAt(0);
-	const CHAR_CODE_J = "j".charCodeAt(0);
-	const CHAR_CODE_L = "l".charCodeAt(0);
-	const CHAR_CODE_M = "m".charCodeAt(0);
-	const CHAR_CODE_O = "o".charCodeAt(0);
-	const CHAR_CODE_P = "p".charCodeAt(0);
-	const CHAR_CODE_R = "r".charCodeAt(0);
-	const CHAR_CODE_S = "s".charCodeAt(0);
-	const CHAR_CODE_T = "t".charCodeAt(0);
-	const CHAR_CODE_U = "u".charCodeAt(0);
-	const CHAR_CODE_COLON = ":".charCodeAt(0);
-	const CHAR_CODE_SLASH = "/".charCodeAt(0);
-	const CHAR_CODE_CAP_S = "S".charCodeAt(0);
-	
-	
-	const gURLStore = new Map();
-	
-	const gSourceNamesStore = new Map();
-	
-	
-
-
-
-
-
-
-
-
-	
-	function parseURL(location) {
-	  let url = gURLStore.get(location);
-	
-	  if (url !== void 0) {
-	    return url;
-	  }
-	
-	  try {
-	    url = new URL(location);
-	    
-	    
-	    
-	    url = {
-	      href: url.href,
-	      protocol: url.protocol,
-	      host: url.host,
-	      hostname: url.hostname,
-	      port: url.port || null,
-	      pathname: url.pathname,
-	      search: url.search,
-	      hash: url.hash,
-	      username: url.username,
-	      password: url.password,
-	      origin: url.origin,
-	    };
-	
-	    
-	    
-	    
-	    
-	    let isChrome = isChromeScheme(location);
-	
-	    url.fileName = url.pathname ?
-	      (url.pathname.slice(url.pathname.lastIndexOf("/") + 1) || "/") :
-	      "/";
-	
-	    if (isChrome) {
-	      url.hostname = null;
-	      url.host = null;
-	    }
-	
-	    gURLStore.set(location, url);
-	    return url;
-	  } catch (e) {
-	    gURLStore.set(location, null);
-	    return null;
-	  }
-	}
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function getSourceNames(source) {
-	  let data = gSourceNamesStore.get(source);
-	
-	  if (data) {
-	    return data;
-	  }
-	
-	  let short, long, host;
-	  const sourceStr = source ? String(source) : "";
-	
-	  
-	  if (isDataScheme(sourceStr)) {
-	    let commaIndex = sourceStr.indexOf(",");
-	    if (commaIndex > -1) {
-	      
-	      
-	      short = `data:${sourceStr.substring(commaIndex + 1)}`.slice(0, 100);
-	      let result = { short, long: sourceStr };
-	      gSourceNamesStore.set(source, result);
-	      return result;
-	    }
-	  }
-	
-	  
-	  
-	  if (isScratchpadScheme(sourceStr)) {
-	    let result = { short: sourceStr, long: sourceStr };
-	    gSourceNamesStore.set(source, result);
-	    return result;
-	  }
-	
-	  const parsedUrl = parseURL(sourceStr);
-	
-	  if (!parsedUrl) {
-	    
-	    long = sourceStr;
-	    short = sourceStr.slice(0, 100);
-	  } else {
-	    host = parsedUrl.host;
-	
-	    long = parsedUrl.href;
-	    if (parsedUrl.hash) {
-	      long = long.replace(parsedUrl.hash, "");
-	    }
-	    if (parsedUrl.search) {
-	      long = long.replace(parsedUrl.search, "");
-	    }
-	
-	    short = parsedUrl.fileName;
-	    
-	    
-	    
-	    if (short === "/" && parsedUrl.pathname !== "/") {
-	      short = parseURL(long.replace(/\/$/, "")).fileName;
-	    }
-	  }
-	
-	  if (!short) {
-	    if (!long) {
-	      long = UNKNOWN_SOURCE_STRING;
-	    }
-	    short = long.slice(0, 100);
-	  }
-	
-	  let result = { short, long, host };
-	  gSourceNamesStore.set(source, result);
-	  return result;
-	}
-	
-	
-	
-	
-	
-	
-	
-	function isColonSlashSlash(location, i = 0) {
-	  return location.charCodeAt(++i) === CHAR_CODE_COLON &&
-	         location.charCodeAt(++i) === CHAR_CODE_SLASH &&
-	         location.charCodeAt(++i) === CHAR_CODE_SLASH;
-	}
-	
-	
-
-
-	function isScratchpadScheme(location, i = 0) {
-	  return location.charCodeAt(i) === CHAR_CODE_CAP_S &&
-	         location.charCodeAt(++i) === CHAR_CODE_C &&
-	         location.charCodeAt(++i) === CHAR_CODE_R &&
-	         location.charCodeAt(++i) === CHAR_CODE_A &&
-	         location.charCodeAt(++i) === CHAR_CODE_T &&
-	         location.charCodeAt(++i) === CHAR_CODE_C &&
-	         location.charCodeAt(++i) === CHAR_CODE_H &&
-	         location.charCodeAt(++i) === CHAR_CODE_P &&
-	         location.charCodeAt(++i) === CHAR_CODE_A &&
-	         location.charCodeAt(++i) === CHAR_CODE_D &&
-	         location.charCodeAt(++i) === CHAR_CODE_SLASH;
-	}
-	
-	function isDataScheme(location, i = 0) {
-	  return location.charCodeAt(i) === CHAR_CODE_D &&
-	         location.charCodeAt(++i) === CHAR_CODE_A &&
-	         location.charCodeAt(++i) === CHAR_CODE_T &&
-	         location.charCodeAt(++i) === CHAR_CODE_A &&
-	         location.charCodeAt(++i) === CHAR_CODE_COLON;
-	}
-	
-	function isContentScheme(location, i = 0) {
-	  let firstChar = location.charCodeAt(i);
-	
-	  switch (firstChar) {
-	    
-	    case CHAR_CODE_H:
-	      if (location.charCodeAt(++i) === CHAR_CODE_T &&
-	          location.charCodeAt(++i) === CHAR_CODE_T &&
-	          location.charCodeAt(++i) === CHAR_CODE_P) {
-	        if (location.charCodeAt(i + 1) === CHAR_CODE_S) {
-	          ++i;
-	        }
-	        return isColonSlashSlash(location, i);
-	      }
-	      return false;
-	
-	    
-	    case CHAR_CODE_F:
-	      if (location.charCodeAt(++i) === CHAR_CODE_I &&
-	          location.charCodeAt(++i) === CHAR_CODE_L &&
-	          location.charCodeAt(++i) === CHAR_CODE_E) {
-	        return isColonSlashSlash(location, i);
-	      }
-	      return false;
-	
-	    
-	    case CHAR_CODE_A:
-	      if (location.charCodeAt(++i) == CHAR_CODE_P &&
-	          location.charCodeAt(++i) == CHAR_CODE_P) {
-	        return isColonSlashSlash(location, i);
-	      }
-	      return false;
-	
-	    default:
-	      return false;
-	  }
-	}
-	
-	function isChromeScheme(location, i = 0) {
-	  let firstChar = location.charCodeAt(i);
-	
-	  switch (firstChar) {
-	    
-	    case CHAR_CODE_C:
-	      if (location.charCodeAt(++i) === CHAR_CODE_H &&
-	          location.charCodeAt(++i) === CHAR_CODE_R &&
-	          location.charCodeAt(++i) === CHAR_CODE_O &&
-	          location.charCodeAt(++i) === CHAR_CODE_M &&
-	          location.charCodeAt(++i) === CHAR_CODE_E) {
-	        return isColonSlashSlash(location, i);
-	      }
-	      return false;
-	
-	    
-	    case CHAR_CODE_R:
-	      if (location.charCodeAt(++i) === CHAR_CODE_E &&
-	          location.charCodeAt(++i) === CHAR_CODE_S &&
-	          location.charCodeAt(++i) === CHAR_CODE_O &&
-	          location.charCodeAt(++i) === CHAR_CODE_U &&
-	          location.charCodeAt(++i) === CHAR_CODE_R &&
-	          location.charCodeAt(++i) === CHAR_CODE_C &&
-	          location.charCodeAt(++i) === CHAR_CODE_E) {
-	        return isColonSlashSlash(location, i);
-	      }
-	      return false;
-	
-	    
-	    case CHAR_CODE_J:
-	      if (location.charCodeAt(++i) === CHAR_CODE_A &&
-	          location.charCodeAt(++i) === CHAR_CODE_R &&
-	          location.charCodeAt(++i) === CHAR_CODE_COLON &&
-	          location.charCodeAt(++i) === CHAR_CODE_F &&
-	          location.charCodeAt(++i) === CHAR_CODE_I &&
-	          location.charCodeAt(++i) === CHAR_CODE_L &&
-	          location.charCodeAt(++i) === CHAR_CODE_E) {
-	        return isColonSlashSlash(location, i);
-	      }
-	      return false;
-	
-	    default:
-	      return false;
-	  }
-	}
-	
-	
-
-
-
-
-
-
-	function getSourceMappedFile(source) {
-	  
-	  
-	  
-	  
-	  if (source.lastIndexOf("/") >= 0) {
-	    source = source.slice(source.lastIndexOf("/") + 1);
-	  } else if (source.lastIndexOf("\\") >= 0) {
-	    source = source.slice(source.lastIndexOf("\\") + 1);
-	  }
-	  return source;
-	}
-	
-	exports.parseURL = parseURL;
-	exports.getSourceNames = getSourceNames;
-	exports.isScratchpadScheme = isScratchpadScheme;
-	exports.isChromeScheme = isChromeScheme;
-	exports.isContentScheme = isContentScheme;
-	exports.isDataScheme = isDataScheme;
-	exports.getSourceMappedFile = getSourceMappedFile;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	
-
-
-	
-	"use strict";
-	
-	const { DOM: dom, createClass, PropTypes } = __webpack_require__(2);
-	const { getSourceNames, parseURL,
-	        isScratchpadScheme, getSourceMappedFile } = __webpack_require__(63);
-	
-	
-	
-	
-	
-	const l10n = { getStr: () => {} };
-	const webl10n = { getStr: () => {} };
-	
-	module.exports = createClass({
-	  displayName: "Frame",
-	
-	  propTypes: {
-	    
-	    frame: PropTypes.shape({
-	      functionDisplayName: PropTypes.string,
-	      source: PropTypes.string.isRequired,
-	      line: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
-	      column: PropTypes.oneOfType([ PropTypes.string, PropTypes.number ]),
-	    }).isRequired,
-	    
-	    onClick: PropTypes.func.isRequired,
-	    
-	    showFunctionName: PropTypes.bool,
-	    
-	    showAnonymousFunctionName: PropTypes.bool,
-	    
-	    showHost: PropTypes.bool,
-	    
-	    showEmptyPathAsHost: PropTypes.bool,
-	    
-	    showFullSourceUrl: PropTypes.bool,
-	    
-	    sourceMapService: PropTypes.object,
-	  },
-	
-	  getDefaultProps() {
-	    return {
-	      showFunctionName: false,
-	      showAnonymousFunctionName: false,
-	      showHost: false,
-	      showEmptyPathAsHost: false,
-	      showFullSourceUrl: false,
-	    };
-	  },
-	
-	  componentWillMount() {
-	    const sourceMapService = this.props.sourceMapService;
-	    if (sourceMapService) {
-	      const source = this.getSource();
-	      sourceMapService.subscribe(source, this.onSourceUpdated);
-	    }
-	  },
-	
-	  componentWillUnmount() {
-	    const sourceMapService = this.props.sourceMapService;
-	    if (sourceMapService) {
-	      const source = this.getSource();
-	      sourceMapService.unsubscribe(source, this.onSourceUpdated);
-	    }
-	  },
-	
-	  
-
-
-
-
-	  onSourceUpdated(event, location, resolvedLocation) {
-	    const frame = this.getFrame(resolvedLocation);
-	    this.setState({
-	      frame,
-	      isSourceMapped: true,
-	    });
-	  },
-	
-	  
-
-
-
-
-
-	  getSource(frame) {
-	    frame = frame || this.props.frame;
-	    const { source, line, column } = frame;
-	    return {
-	      url: source,
-	      line,
-	      column,
-	    };
-	  },
-	
-	  
-
-
-
-
-
-	  getFrame(source) {
-	    const { url, line, column } = source;
-	    return {
-	      source: url,
-	      line,
-	      column,
-	      functionDisplayName: this.props.frame.functionDisplayName,
-	    };
-	  },
-	
-	  render() {
-	    let frame, isSourceMapped;
-	    let {
-	      onClick,
-	      showFunctionName,
-	      showAnonymousFunctionName,
-	      showHost,
-	      showEmptyPathAsHost,
-	      showFullSourceUrl
-	    } = this.props;
-	
-	    if (this.state && this.state.isSourceMapped) {
-	      frame = this.state.frame;
-	      isSourceMapped = this.state.isSourceMapped;
-	    } else {
-	      frame = this.props.frame;
-	    }
-	
-	    let source = frame.source ? String(frame.source) : "";
-	    let line = frame.line != void 0 ? Number(frame.line) : null;
-	    let column = frame.column != void 0 ? Number(frame.column) : null;
-	
-	    const { short, long, host } = getSourceNames(source);
-	    
-	    
-	    
-	    
-	    
-	    
-	    const isLinkable = !!(isScratchpadScheme(source) || parseURL(source))
-	      || isSourceMapped;
-	    const elements = [];
-	    const sourceElements = [];
-	    let sourceEl;
-	
-	    let tooltip = long;
-	
-	    
-	    const shouldDisplayLine = isLinkable && line;
-	
-	    
-	    
-	    
-	    
-	    if (shouldDisplayLine) {
-	      tooltip += `:${line}`;
-	      
-	      if (column) {
-	        tooltip += `:${column}`;
-	      }
-	    }
-	
-	    let attributes = {
-	      "data-url": long,
-	      className: "frame-link",
-	    };
-	
-	    if (showFunctionName) {
-	      let functionDisplayName = frame.functionDisplayName;
-	      if (!functionDisplayName && showAnonymousFunctionName) {
-	        functionDisplayName = webl10n.getStr("stacktrace.anonymousFunction");
-	      }
-	
-	      if (functionDisplayName) {
-	        elements.push(
-	          dom.span({ className: "frame-link-function-display-name" },
-	            functionDisplayName),
-	          " "
-	        );
-	      }
-	    }
-	
-	    let displaySource = showFullSourceUrl ? long : short;
-	    if (isSourceMapped) {
-	      displaySource = getSourceMappedFile(displaySource);
-	    } else if (showEmptyPathAsHost && (displaySource === "" || displaySource === "/")) {
-	      displaySource = host;
-	    }
-	
-	    sourceElements.push(dom.span({
-	      className: "frame-link-filename",
-	    }, displaySource));
-	
-	    
-	    if (shouldDisplayLine) {
-	      let lineInfo = `:${line}`;
-	      
-	      attributes["data-line"] = line;
-	
-	      
-	      if (column) {
-	        lineInfo += `:${column}`;
-	        
-	        attributes["data-column"] = column;
-	      }
-	
-	      sourceElements.push(dom.span({ className: "frame-link-line" }, lineInfo));
-	    }
-	
-	    
-	    
-	    let sourceInnerEl = dom.span({
-	      className: "frame-link-source-inner",
-	      title: isLinkable ?
-	        l10n.getFormatStr("frame.viewsourceindebugger", tooltip) : tooltip,
-	    }, sourceElements);
-	
-	    
-	    
-	    if (isLinkable) {
-	      sourceEl = dom.a({
-	        onClick: e => {
-	          e.preventDefault();
-	          onClick(this.getSource(frame));
-	        },
-	        href: source,
-	        className: "frame-link-source",
-	        draggable: false,
-	      }, sourceInnerEl);
-	    } else {
-	      sourceEl = dom.span({
-	        className: "frame-link-source",
-	      }, sourceInnerEl);
-	    }
-	    elements.push(sourceEl);
-	
-	    if (showHost && host) {
-	      elements.push(" ", dom.span({ className: "frame-link-host" }, host));
-	    }
-	
-	    return dom.span(attributes, ...elements);
-	  }
-	});
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	const feature = __webpack_require__(66);
-	
-	module.exports = feature;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	const pick = __webpack_require__(67);
-	const put = __webpack_require__(112);
-	const fs = __webpack_require__(118);
-	const path = __webpack_require__(119);
-	
-	let config;
-	
-	const flag = __webpack_require__(121);
-	
-	
-
-
-
-	function getValue(key) {
-	  return pick(config, key);
-	}
-	
-	function setValue(key, value) {
-	  return put(config, key, value);
-	}
-	
-	function isEnabled(key) {
-	  return config.features &&
-	    typeof config.features[key] == "object" ?
-	    config.features[key].enabled :
-	    config.features[key];
-	}
-	
-	function isDevelopment() {
-	  if (isFirefoxPanel()) {
-	    
-	    return ("production") === "development";
-	  }
-	  return ("production") !== "production";
-	}
-	
-	function isTesting() {
-	  return flag.testing;
-	}
-	
-	function isFirefoxPanel() {
-	  return ("firefox-panel") == "firefox-panel";
-	}
-	
-	function isApplication() {
-	  return ("firefox-panel") == "application";
-	}
-	
-	function isFirefox() {
-	  return /firefox/i.test(navigator.userAgent);
-	}
-	
-	function setConfig(value) {
-	  config = value;
-	}
-	
-	function getConfig() {
-	  return config;
-	}
-	
-	function updateLocalConfig(relativePath) {
-	  const localConfigPath = path.resolve(relativePath, "../configs/local.json");
-	  try {
-	    const output = JSON.stringify(config, null, 2);
-	    fs.writeFileSync(localConfigPath, output);
-	    return output;
-	  } catch (err) {
-	    return "{}";
-	  }
-	}
-	
-	module.exports = {
-	  isEnabled,
-	  getValue,
-	  setValue,
-	  isDevelopment,
-	  isTesting,
-	  isFirefoxPanel,
-	  isApplication,
-	  isFirefox,
-	  getConfig,
-	  setConfig,
-	  updateLocalConfig
-	};
-
-
- },
-
+ 67:
  function(module, exports, __webpack_require__) {
 
 	var baseGet = __webpack_require__(68);
-	
+
 	
 
 
@@ -15773,17 +334,18 @@ return  (function(modules) {
 	  var result = object == null ? undefined : baseGet(object, path);
 	  return result === undefined ? defaultValue : result;
 	}
-	
+
 	module.exports = get;
 
 
  },
 
+ 68:
  function(module, exports, __webpack_require__) {
 
 	var castPath = __webpack_require__(69),
 	    toKey = __webpack_require__(111);
-	
+
 	
 
 
@@ -15794,28 +356,29 @@ return  (function(modules) {
 
 	function baseGet(object, path) {
 	  path = castPath(path, object);
-	
+
 	  var index = 0,
 	      length = path.length;
-	
+
 	  while (object != null && index < length) {
 	    object = object[toKey(path[index++])];
 	  }
 	  return (index && index == length) ? object : undefined;
 	}
-	
+
 	module.exports = baseGet;
 
 
  },
 
+ 69:
  function(module, exports, __webpack_require__) {
 
 	var isArray = __webpack_require__(70),
 	    isKey = __webpack_require__(71),
 	    stringToPath = __webpack_require__(73),
 	    toString = __webpack_require__(108);
-	
+
 	
 
 
@@ -15830,12 +393,13 @@ return  (function(modules) {
 	  }
 	  return isKey(value, object) ? [value] : stringToPath(toString(value));
 	}
-	
+
 	module.exports = castPath;
 
 
  },
 
+ 70:
  function(module, exports) {
 
 	
@@ -15862,21 +426,22 @@ return  (function(modules) {
 
 
 	var isArray = Array.isArray;
-	
+
 	module.exports = isArray;
 
 
  },
 
+ 71:
  function(module, exports, __webpack_require__) {
 
 	var isArray = __webpack_require__(70),
 	    isSymbol = __webpack_require__(72);
-	
+
 	
 	var reIsDeepProp = /\.|\[(?:[^[\]]*|(["'])(?:(?!\1)[^\\]|\\.)*?\1)\]/,
 	    reIsPlainProp = /^\w*$/;
-	
+
 	
 
 
@@ -15897,20 +462,21 @@ return  (function(modules) {
 	  return reIsPlainProp.test(value) || !reIsDeepProp.test(value) ||
 	    (object != null && value in Object(object));
 	}
-	
+
 	module.exports = isKey;
 
 
  },
 
+ 72:
  function(module, exports, __webpack_require__) {
 
 	var baseGetTag = __webpack_require__(6),
 	    isObjectLike = __webpack_require__(14);
-	
+
 	
 	var symbolTag = '[object Symbol]';
-	
+
 	
 
 
@@ -15932,23 +498,24 @@ return  (function(modules) {
 	  return typeof value == 'symbol' ||
 	    (isObjectLike(value) && baseGetTag(value) == symbolTag);
 	}
-	
+
 	module.exports = isSymbol;
 
 
  },
 
+ 73:
  function(module, exports, __webpack_require__) {
 
 	var memoizeCapped = __webpack_require__(74);
-	
+
 	
 	var reLeadingDot = /^\./,
 	    rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(?:\.|\[\])(?:\.|\[\]|$))/g;
-	
+
 	
 	var reEscapeChar = /\\(\\)?/g;
-	
+
 	
 
 
@@ -15966,19 +533,20 @@ return  (function(modules) {
 	  });
 	  return result;
 	});
-	
+
 	module.exports = stringToPath;
 
 
  },
 
+ 74:
  function(module, exports, __webpack_require__) {
 
 	var memoize = __webpack_require__(75);
-	
+
 	
 	var MAX_MEMOIZE_SIZE = 500;
-	
+
 	
 
 
@@ -15994,23 +562,24 @@ return  (function(modules) {
 	    }
 	    return key;
 	  });
-	
+
 	  var cache = result.cache;
 	  return result;
 	}
-	
+
 	module.exports = memoizeCapped;
 
 
  },
 
+ 75:
  function(module, exports, __webpack_require__) {
 
 	var MapCache = __webpack_require__(76);
-	
+
 	
 	var FUNC_ERROR_TEXT = 'Expected a function';
-	
+
 	
 
 
@@ -16063,7 +632,7 @@ return  (function(modules) {
 	    var args = arguments,
 	        key = resolver ? resolver.apply(this, args) : args[0],
 	        cache = memoized.cache;
-	
+
 	    if (cache.has(key)) {
 	      return cache.get(key);
 	    }
@@ -16074,15 +643,16 @@ return  (function(modules) {
 	  memoized.cache = new (memoize.Cache || MapCache);
 	  return memoized;
 	}
-	
+
 	
 	memoize.Cache = MapCache;
-	
+
 	module.exports = memoize;
 
 
  },
 
+ 76:
  function(module, exports, __webpack_require__) {
 
 	var mapCacheClear = __webpack_require__(77),
@@ -16090,7 +660,7 @@ return  (function(modules) {
 	    mapCacheGet = __webpack_require__(105),
 	    mapCacheHas = __webpack_require__(106),
 	    mapCacheSet = __webpack_require__(107);
-	
+
 	
 
 
@@ -16101,32 +671,33 @@ return  (function(modules) {
 	function MapCache(entries) {
 	  var index = -1,
 	      length = entries == null ? 0 : entries.length;
-	
+
 	  this.clear();
 	  while (++index < length) {
 	    var entry = entries[index];
 	    this.set(entry[0], entry[1]);
 	  }
 	}
-	
+
 	
 	MapCache.prototype.clear = mapCacheClear;
 	MapCache.prototype['delete'] = mapCacheDelete;
 	MapCache.prototype.get = mapCacheGet;
 	MapCache.prototype.has = mapCacheHas;
 	MapCache.prototype.set = mapCacheSet;
-	
+
 	module.exports = MapCache;
 
 
  },
 
+ 77:
  function(module, exports, __webpack_require__) {
 
 	var Hash = __webpack_require__(78),
 	    ListCache = __webpack_require__(93),
 	    Map = __webpack_require__(101);
-	
+
 	
 
 
@@ -16142,12 +713,13 @@ return  (function(modules) {
 	    'string': new Hash
 	  };
 	}
-	
+
 	module.exports = mapCacheClear;
 
 
  },
 
+ 78:
  function(module, exports, __webpack_require__) {
 
 	var hashClear = __webpack_require__(79),
@@ -16155,7 +727,7 @@ return  (function(modules) {
 	    hashGet = __webpack_require__(90),
 	    hashHas = __webpack_require__(91),
 	    hashSet = __webpack_require__(92);
-	
+
 	
 
 
@@ -16166,30 +738,31 @@ return  (function(modules) {
 	function Hash(entries) {
 	  var index = -1,
 	      length = entries == null ? 0 : entries.length;
-	
+
 	  this.clear();
 	  while (++index < length) {
 	    var entry = entries[index];
 	    this.set(entry[0], entry[1]);
 	  }
 	}
-	
+
 	
 	Hash.prototype.clear = hashClear;
 	Hash.prototype['delete'] = hashDelete;
 	Hash.prototype.get = hashGet;
 	Hash.prototype.has = hashHas;
 	Hash.prototype.set = hashSet;
-	
+
 	module.exports = Hash;
 
 
  },
 
+ 79:
  function(module, exports, __webpack_require__) {
 
 	var nativeCreate = __webpack_require__(80);
-	
+
 	
 
 
@@ -16201,29 +774,31 @@ return  (function(modules) {
 	  this.__data__ = nativeCreate ? nativeCreate(null) : {};
 	  this.size = 0;
 	}
-	
+
 	module.exports = hashClear;
 
 
  },
 
+ 80:
  function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(81);
-	
+
 	
 	var nativeCreate = getNative(Object, 'create');
-	
+
 	module.exports = nativeCreate;
 
 
  },
 
+ 81:
  function(module, exports, __webpack_require__) {
 
 	var baseIsNative = __webpack_require__(82),
 	    getValue = __webpack_require__(88);
-	
+
 	
 
 
@@ -16236,44 +811,45 @@ return  (function(modules) {
 	  var value = getValue(object, key);
 	  return baseIsNative(value) ? value : undefined;
 	}
-	
+
 	module.exports = getNative;
 
 
  },
 
+ 82:
  function(module, exports, __webpack_require__) {
 
 	var isFunction = __webpack_require__(83),
 	    isMasked = __webpack_require__(85),
 	    isObject = __webpack_require__(84),
 	    toSource = __webpack_require__(87);
-	
+
 	
 
 
 
 	var reRegExpChar = /[\\^$.*+?()[\]{}|]/g;
-	
+
 	
 	var reIsHostCtor = /^\[object .+?Constructor\]$/;
-	
+
 	
 	var funcProto = Function.prototype,
 	    objectProto = Object.prototype;
-	
+
 	
 	var funcToString = funcProto.toString;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 	var reIsNative = RegExp('^' +
 	  funcToString.call(hasOwnProperty).replace(reRegExpChar, '\\$&')
 	  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
 	);
-	
+
 	
 
 
@@ -16289,23 +865,24 @@ return  (function(modules) {
 	  var pattern = isFunction(value) ? reIsNative : reIsHostCtor;
 	  return pattern.test(toSource(value));
 	}
-	
+
 	module.exports = baseIsNative;
 
 
  },
 
+ 83:
  function(module, exports, __webpack_require__) {
 
 	var baseGetTag = __webpack_require__(6),
 	    isObject = __webpack_require__(84);
-	
+
 	
 	var asyncTag = '[object AsyncFunction]',
 	    funcTag = '[object Function]',
 	    genTag = '[object GeneratorFunction]',
 	    proxyTag = '[object Proxy]';
-	
+
 	
 
 
@@ -16332,12 +909,13 @@ return  (function(modules) {
 	  var tag = baseGetTag(value);
 	  return tag == funcTag || tag == genTag || tag == asyncTag || tag == proxyTag;
 	}
-	
+
 	module.exports = isFunction;
 
 
  },
 
+ 84:
  function(module, exports) {
 
 	
@@ -16369,22 +947,23 @@ return  (function(modules) {
 	  var type = typeof value;
 	  return value != null && (type == 'object' || type == 'function');
 	}
-	
+
 	module.exports = isObject;
 
 
  },
 
+ 85:
  function(module, exports, __webpack_require__) {
 
 	var coreJsData = __webpack_require__(86);
-	
+
 	
 	var maskSrcKey = (function() {
 	  var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
 	  return uid ? ('Symbol(src)_1.' + uid) : '';
 	}());
-	
+
 	
 
 
@@ -16395,32 +974,34 @@ return  (function(modules) {
 	function isMasked(func) {
 	  return !!maskSrcKey && (maskSrcKey in func);
 	}
-	
+
 	module.exports = isMasked;
 
 
  },
 
+ 86:
  function(module, exports, __webpack_require__) {
 
 	var root = __webpack_require__(8);
-	
+
 	
 	var coreJsData = root['__core-js_shared__'];
-	
+
 	module.exports = coreJsData;
 
 
  },
 
+ 87:
  function(module, exports) {
 
 	
 	var funcProto = Function.prototype;
-	
+
 	
 	var funcToString = funcProto.toString;
-	
+
 	
 
 
@@ -16439,12 +1020,13 @@ return  (function(modules) {
 	  }
 	  return '';
 	}
-	
+
 	module.exports = toSource;
 
 
  },
 
+ 88:
  function(module, exports) {
 
 	
@@ -16458,12 +1040,13 @@ return  (function(modules) {
 	function getValue(object, key) {
 	  return object == null ? undefined : object[key];
 	}
-	
+
 	module.exports = getValue;
 
 
  },
 
+ 89:
  function(module, exports) {
 
 	
@@ -16481,25 +1064,26 @@ return  (function(modules) {
 	  this.size -= result ? 1 : 0;
 	  return result;
 	}
-	
+
 	module.exports = hashDelete;
 
 
  },
 
+ 90:
  function(module, exports, __webpack_require__) {
 
 	var nativeCreate = __webpack_require__(80);
-	
+
 	
 	var HASH_UNDEFINED = '__lodash_hash_undefined__';
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
@@ -16517,22 +1101,23 @@ return  (function(modules) {
 	  }
 	  return hasOwnProperty.call(data, key) ? data[key] : undefined;
 	}
-	
+
 	module.exports = hashGet;
 
 
  },
 
+ 91:
  function(module, exports, __webpack_require__) {
 
 	var nativeCreate = __webpack_require__(80);
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
@@ -16546,19 +1131,20 @@ return  (function(modules) {
 	  var data = this.__data__;
 	  return nativeCreate ? (data[key] !== undefined) : hasOwnProperty.call(data, key);
 	}
-	
+
 	module.exports = hashHas;
 
 
  },
 
+ 92:
  function(module, exports, __webpack_require__) {
 
 	var nativeCreate = __webpack_require__(80);
-	
+
 	
 	var HASH_UNDEFINED = '__lodash_hash_undefined__';
-	
+
 	
 
 
@@ -16575,12 +1161,13 @@ return  (function(modules) {
 	  data[key] = (nativeCreate && value === undefined) ? HASH_UNDEFINED : value;
 	  return this;
 	}
-	
+
 	module.exports = hashSet;
 
 
  },
 
+ 93:
  function(module, exports, __webpack_require__) {
 
 	var listCacheClear = __webpack_require__(94),
@@ -16588,7 +1175,7 @@ return  (function(modules) {
 	    listCacheGet = __webpack_require__(98),
 	    listCacheHas = __webpack_require__(99),
 	    listCacheSet = __webpack_require__(100);
-	
+
 	
 
 
@@ -16599,26 +1186,27 @@ return  (function(modules) {
 	function ListCache(entries) {
 	  var index = -1,
 	      length = entries == null ? 0 : entries.length;
-	
+
 	  this.clear();
 	  while (++index < length) {
 	    var entry = entries[index];
 	    this.set(entry[0], entry[1]);
 	  }
 	}
-	
+
 	
 	ListCache.prototype.clear = listCacheClear;
 	ListCache.prototype['delete'] = listCacheDelete;
 	ListCache.prototype.get = listCacheGet;
 	ListCache.prototype.has = listCacheHas;
 	ListCache.prototype.set = listCacheSet;
-	
+
 	module.exports = ListCache;
 
 
  },
 
+ 94:
  function(module, exports) {
 
 	
@@ -16632,22 +1220,23 @@ return  (function(modules) {
 	  this.__data__ = [];
 	  this.size = 0;
 	}
-	
+
 	module.exports = listCacheClear;
 
 
  },
 
+ 95:
  function(module, exports, __webpack_require__) {
 
 	var assocIndexOf = __webpack_require__(96);
-	
+
 	
 	var arrayProto = Array.prototype;
-	
+
 	
 	var splice = arrayProto.splice;
-	
+
 	
 
 
@@ -16660,7 +1249,7 @@ return  (function(modules) {
 	function listCacheDelete(key) {
 	  var data = this.__data__,
 	      index = assocIndexOf(data, key);
-	
+
 	  if (index < 0) {
 	    return false;
 	  }
@@ -16673,16 +1262,17 @@ return  (function(modules) {
 	  --this.size;
 	  return true;
 	}
-	
+
 	module.exports = listCacheDelete;
 
 
  },
 
+ 96:
  function(module, exports, __webpack_require__) {
 
 	var eq = __webpack_require__(97);
-	
+
 	
 
 
@@ -16700,12 +1290,13 @@ return  (function(modules) {
 	  }
 	  return -1;
 	}
-	
+
 	module.exports = assocIndexOf;
 
 
  },
 
+ 97:
  function(module, exports) {
 
 	
@@ -16743,16 +1334,17 @@ return  (function(modules) {
 	function eq(value, other) {
 	  return value === other || (value !== value && other !== other);
 	}
-	
+
 	module.exports = eq;
 
 
  },
 
+ 98:
  function(module, exports, __webpack_require__) {
 
 	var assocIndexOf = __webpack_require__(96);
-	
+
 	
 
 
@@ -16765,19 +1357,20 @@ return  (function(modules) {
 	function listCacheGet(key) {
 	  var data = this.__data__,
 	      index = assocIndexOf(data, key);
-	
+
 	  return index < 0 ? undefined : data[index][1];
 	}
-	
+
 	module.exports = listCacheGet;
 
 
  },
 
+ 99:
  function(module, exports, __webpack_require__) {
 
 	var assocIndexOf = __webpack_require__(96);
-	
+
 	
 
 
@@ -16790,16 +1383,17 @@ return  (function(modules) {
 	function listCacheHas(key) {
 	  return assocIndexOf(this.__data__, key) > -1;
 	}
-	
+
 	module.exports = listCacheHas;
 
 
  },
 
+ 100:
  function(module, exports, __webpack_require__) {
 
 	var assocIndexOf = __webpack_require__(96);
-	
+
 	
 
 
@@ -16813,7 +1407,7 @@ return  (function(modules) {
 	function listCacheSet(key, value) {
 	  var data = this.__data__,
 	      index = assocIndexOf(data, key);
-	
+
 	  if (index < 0) {
 	    ++this.size;
 	    data.push([key, value]);
@@ -16822,29 +1416,31 @@ return  (function(modules) {
 	  }
 	  return this;
 	}
-	
+
 	module.exports = listCacheSet;
 
 
  },
 
+ 101:
  function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(81),
 	    root = __webpack_require__(8);
-	
+
 	
 	var Map = getNative(root, 'Map');
-	
+
 	module.exports = Map;
 
 
  },
 
+ 102:
  function(module, exports, __webpack_require__) {
 
 	var getMapData = __webpack_require__(103);
-	
+
 	
 
 
@@ -16859,16 +1455,17 @@ return  (function(modules) {
 	  this.size -= result ? 1 : 0;
 	  return result;
 	}
-	
+
 	module.exports = mapCacheDelete;
 
 
  },
 
+ 103:
  function(module, exports, __webpack_require__) {
 
 	var isKeyable = __webpack_require__(104);
-	
+
 	
 
 
@@ -16883,12 +1480,13 @@ return  (function(modules) {
 	    ? data[typeof key == 'string' ? 'string' : 'hash']
 	    : data.map;
 	}
-	
+
 	module.exports = getMapData;
 
 
  },
 
+ 104:
  function(module, exports) {
 
 	
@@ -16904,16 +1502,17 @@ return  (function(modules) {
 	    ? (value !== '__proto__')
 	    : (value === null);
 	}
-	
+
 	module.exports = isKeyable;
 
 
  },
 
+ 105:
  function(module, exports, __webpack_require__) {
 
 	var getMapData = __webpack_require__(103);
-	
+
 	
 
 
@@ -16926,16 +1525,17 @@ return  (function(modules) {
 	function mapCacheGet(key) {
 	  return getMapData(this, key).get(key);
 	}
-	
+
 	module.exports = mapCacheGet;
 
 
  },
 
+ 106:
  function(module, exports, __webpack_require__) {
 
 	var getMapData = __webpack_require__(103);
-	
+
 	
 
 
@@ -16948,16 +1548,17 @@ return  (function(modules) {
 	function mapCacheHas(key) {
 	  return getMapData(this, key).has(key);
 	}
-	
+
 	module.exports = mapCacheHas;
 
 
  },
 
+ 107:
  function(module, exports, __webpack_require__) {
 
 	var getMapData = __webpack_require__(103);
-	
+
 	
 
 
@@ -16971,21 +1572,22 @@ return  (function(modules) {
 	function mapCacheSet(key, value) {
 	  var data = getMapData(this, key),
 	      size = data.size;
-	
+
 	  data.set(key, value);
 	  this.size += data.size == size ? 0 : 1;
 	  return this;
 	}
-	
+
 	module.exports = mapCacheSet;
 
 
  },
 
+ 108:
  function(module, exports, __webpack_require__) {
 
 	var baseToString = __webpack_require__(109);
-	
+
 	
 
 
@@ -17010,26 +1612,27 @@ return  (function(modules) {
 	function toString(value) {
 	  return value == null ? '' : baseToString(value);
 	}
-	
+
 	module.exports = toString;
 
 
  },
 
+ 109:
  function(module, exports, __webpack_require__) {
 
 	var Symbol = __webpack_require__(7),
 	    arrayMap = __webpack_require__(110),
 	    isArray = __webpack_require__(70),
 	    isSymbol = __webpack_require__(72);
-	
+
 	
 	var INFINITY = 1 / 0;
-	
+
 	
 	var symbolProto = Symbol ? Symbol.prototype : undefined,
 	    symbolToString = symbolProto ? symbolProto.toString : undefined;
-	
+
 	
 
 
@@ -17053,12 +1656,13 @@ return  (function(modules) {
 	  var result = (value + '');
 	  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
 	}
-	
+
 	module.exports = baseToString;
 
 
  },
 
+ 110:
  function(module, exports) {
 
 	
@@ -17074,25 +1678,26 @@ return  (function(modules) {
 	  var index = -1,
 	      length = array == null ? 0 : array.length,
 	      result = Array(length);
-	
+
 	  while (++index < length) {
 	    result[index] = iteratee(array[index], index, array);
 	  }
 	  return result;
 	}
-	
+
 	module.exports = arrayMap;
 
 
  },
 
+ 111:
  function(module, exports, __webpack_require__) {
 
 	var isSymbol = __webpack_require__(72);
-	
+
 	
 	var INFINITY = 1 / 0;
-	
+
 	
 
 
@@ -17107,16 +1712,17 @@ return  (function(modules) {
 	  var result = (value + '');
 	  return (result == '0' && (1 / value) == -INFINITY) ? '-0' : result;
 	}
-	
+
 	module.exports = toKey;
 
 
  },
 
+ 112:
  function(module, exports, __webpack_require__) {
 
 	var baseSet = __webpack_require__(113);
-	
+
 	
 
 
@@ -17148,12 +1754,13 @@ return  (function(modules) {
 	function set(object, path, value) {
 	  return object == null ? object : baseSet(object, path, value);
 	}
-	
+
 	module.exports = set;
 
 
  },
 
+ 113:
  function(module, exports, __webpack_require__) {
 
 	var assignValue = __webpack_require__(114),
@@ -17161,7 +1768,7 @@ return  (function(modules) {
 	    isIndex = __webpack_require__(117),
 	    isObject = __webpack_require__(84),
 	    toKey = __webpack_require__(111);
-	
+
 	
 
 
@@ -17177,16 +1784,16 @@ return  (function(modules) {
 	    return object;
 	  }
 	  path = castPath(path, object);
-	
+
 	  var index = -1,
 	      length = path.length,
 	      lastIndex = length - 1,
 	      nested = object;
-	
+
 	  while (nested != null && ++index < length) {
 	    var key = toKey(path[index]),
 	        newValue = value;
-	
+
 	    if (index != lastIndex) {
 	      var objValue = nested[key];
 	      newValue = customizer ? customizer(objValue, key, nested) : undefined;
@@ -17201,23 +1808,24 @@ return  (function(modules) {
 	  }
 	  return object;
 	}
-	
+
 	module.exports = baseSet;
 
 
  },
 
+ 114:
  function(module, exports, __webpack_require__) {
 
 	var baseAssignValue = __webpack_require__(115),
 	    eq = __webpack_require__(97);
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
@@ -17235,16 +1843,17 @@ return  (function(modules) {
 	    baseAssignValue(object, key, value);
 	  }
 	}
-	
+
 	module.exports = assignValue;
 
 
  },
 
+ 115:
  function(module, exports, __webpack_require__) {
 
 	var defineProperty = __webpack_require__(116);
-	
+
 	
 
 
@@ -17266,16 +1875,17 @@ return  (function(modules) {
 	    object[key] = value;
 	  }
 	}
-	
+
 	module.exports = baseAssignValue;
 
 
  },
 
+ 116:
  function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(81);
-	
+
 	var defineProperty = (function() {
 	  try {
 	    var func = getNative(Object, 'defineProperty');
@@ -17283,20 +1893,21 @@ return  (function(modules) {
 	    return func;
 	  } catch (e) {}
 	}());
-	
+
 	module.exports = defineProperty;
 
 
  },
 
+ 117:
  function(module, exports) {
 
 	
 	var MAX_SAFE_INTEGER = 9007199254740991;
-	
+
 	
 	var reIsUint = /^(?:0|[1-9]\d*)$/;
-	
+
 	
 
 
@@ -17311,18 +1922,20 @@ return  (function(modules) {
 	    (typeof value == 'number' || reIsUint.test(value)) &&
 	    (value > -1 && value % 1 == 0 && value < length);
 	}
-	
+
 	module.exports = isIndex;
 
 
  },
 
+ 118:
  function(module, exports) {
 
-
+	
 
  },
 
+ 119:
  function(module, exports, __webpack_require__) {
 
 	(function(process) {
@@ -17345,7 +1958,7 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	
 	
 	
@@ -17365,17 +1978,17 @@ return  (function(modules) {
 	      up--;
 	    }
 	  }
-	
+
 	  
 	  if (allowAboveRoot) {
 	    for (; up--; up) {
 	      parts.unshift('..');
 	    }
 	  }
-	
+
 	  return parts;
 	}
-	
+
 	
 	
 	var splitPathRe =
@@ -17383,64 +1996,64 @@ return  (function(modules) {
 	var splitPath = function(filename) {
 	  return splitPathRe.exec(filename).slice(1);
 	};
-	
+
 	
 	
 	exports.resolve = function() {
 	  var resolvedPath = '',
 	      resolvedAbsolute = false;
-	
+
 	  for (var i = arguments.length - 1; i >= -1 && !resolvedAbsolute; i--) {
 	    var path = (i >= 0) ? arguments[i] : process.cwd();
-	
+
 	    
 	    if (typeof path !== 'string') {
 	      throw new TypeError('Arguments to path.resolve must be strings');
 	    } else if (!path) {
 	      continue;
 	    }
-	
+
 	    resolvedPath = path + '/' + resolvedPath;
 	    resolvedAbsolute = path.charAt(0) === '/';
 	  }
-	
+
 	  
 	  
-	
+
 	  
 	  resolvedPath = normalizeArray(filter(resolvedPath.split('/'), function(p) {
 	    return !!p;
 	  }), !resolvedAbsolute).join('/');
-	
+
 	  return ((resolvedAbsolute ? '/' : '') + resolvedPath) || '.';
 	};
-	
+
 	
 	
 	exports.normalize = function(path) {
 	  var isAbsolute = exports.isAbsolute(path),
 	      trailingSlash = substr(path, -1) === '/';
-	
+
 	  
 	  path = normalizeArray(filter(path.split('/'), function(p) {
 	    return !!p;
 	  }), !isAbsolute).join('/');
-	
+
 	  if (!path && !isAbsolute) {
 	    path = '.';
 	  }
 	  if (path && trailingSlash) {
 	    path += '/';
 	  }
-	
+
 	  return (isAbsolute ? '/' : '') + path;
 	};
-	
+
 	
 	exports.isAbsolute = function(path) {
 	  return path.charAt(0) === '/';
 	};
-	
+
 	
 	exports.join = function() {
 	  var paths = Array.prototype.slice.call(arguments, 0);
@@ -17451,32 +2064,32 @@ return  (function(modules) {
 	    return p;
 	  }).join('/'));
 	};
-	
-	
+
+
 	
 	
 	exports.relative = function(from, to) {
 	  from = exports.resolve(from).substr(1);
 	  to = exports.resolve(to).substr(1);
-	
+
 	  function trim(arr) {
 	    var start = 0;
 	    for (; start < arr.length; start++) {
 	      if (arr[start] !== '') break;
 	    }
-	
+
 	    var end = arr.length - 1;
 	    for (; end >= 0; end--) {
 	      if (arr[end] !== '') break;
 	    }
-	
+
 	    if (start > end) return [];
 	    return arr.slice(start, end - start + 1);
 	  }
-	
+
 	  var fromParts = trim(from.split('/'));
 	  var toParts = trim(to.split('/'));
-	
+
 	  var length = Math.min(fromParts.length, toParts.length);
 	  var samePartsLength = length;
 	  for (var i = 0; i < length; i++) {
@@ -17485,39 +2098,39 @@ return  (function(modules) {
 	      break;
 	    }
 	  }
-	
+
 	  var outputParts = [];
 	  for (var i = samePartsLength; i < fromParts.length; i++) {
 	    outputParts.push('..');
 	  }
-	
+
 	  outputParts = outputParts.concat(toParts.slice(samePartsLength));
-	
+
 	  return outputParts.join('/');
 	};
-	
+
 	exports.sep = '/';
 	exports.delimiter = ':';
-	
+
 	exports.dirname = function(path) {
 	  var result = splitPath(path),
 	      root = result[0],
 	      dir = result[1];
-	
+
 	  if (!root && !dir) {
 	    
 	    return '.';
 	  }
-	
+
 	  if (dir) {
 	    
 	    dir = dir.substr(0, dir.length - 1);
 	  }
-	
+
 	  return root + dir;
 	};
-	
-	
+
+
 	exports.basename = function(path, ext) {
 	  var f = splitPath(path)[2];
 	  
@@ -17526,12 +2139,12 @@ return  (function(modules) {
 	  }
 	  return f;
 	};
-	
-	
+
+
 	exports.extname = function(path) {
 	  return splitPath(path)[3];
 	};
-	
+
 	function filter (xs, f) {
 	    if (xs.filter) return xs.filter(f);
 	    var res = [];
@@ -17540,7 +2153,7 @@ return  (function(modules) {
 	    }
 	    return res;
 	}
-	
+
 	
 	var substr = 'ab'.substr(-1) === 'b'
 	    ? function (str, start, len) { return str.substr(start, len) }
@@ -17549,24 +2162,25 @@ return  (function(modules) {
 	        return str.substr(start, len);
 	    }
 	;
-	
+
 	}.call(exports, __webpack_require__(120)))
 
  },
 
+ 120:
  function(module, exports) {
 
 	
 	var process = module.exports = {};
+
 	
 	
 	
 	
-	
-	
+
 	var cachedSetTimeout;
 	var cachedClearTimeout;
-	
+
 	function defaultSetTimout() {
 	    throw new Error('setTimeout has not been defined');
 	}
@@ -17615,8 +2229,8 @@ return  (function(modules) {
 	            return cachedSetTimeout.call(this, fun, 0);
 	        }
 	    }
-	
-	
+
+
 	}
 	function runClearTimeout(marker) {
 	    if (cachedClearTimeout === clearTimeout) {
@@ -17641,15 +2255,15 @@ return  (function(modules) {
 	            return cachedClearTimeout.call(this, marker);
 	        }
 	    }
-	
-	
-	
+
+
+
 	}
 	var queue = [];
 	var draining = false;
 	var currentQueue;
 	var queueIndex = -1;
-	
+
 	function cleanUpNextTick() {
 	    if (!draining || !currentQueue) {
 	        return;
@@ -17664,14 +2278,14 @@ return  (function(modules) {
 	        drainQueue();
 	    }
 	}
-	
+
 	function drainQueue() {
 	    if (draining) {
 	        return;
 	    }
 	    var timeout = runTimeout(cleanUpNextTick);
 	    draining = true;
-	
+
 	    var len = queue.length;
 	    while(len) {
 	        currentQueue = queue;
@@ -17688,7 +2302,7 @@ return  (function(modules) {
 	    draining = false;
 	    runClearTimeout(timeout);
 	}
-	
+
 	process.nextTick = function (fun) {
 	    var args = new Array(arguments.length - 1);
 	    if (arguments.length > 1) {
@@ -17701,7 +2315,7 @@ return  (function(modules) {
 	        runTimeout(drainQueue);
 	    }
 	};
-	
+
 	
 	function Item(fun, array) {
 	    this.fun = fun;
@@ -17716,9 +2330,9 @@ return  (function(modules) {
 	process.argv = [];
 	process.version = ''; 
 	process.versions = {};
-	
+
 	function noop() {}
-	
+
 	process.on = noop;
 	process.addListener = noop;
 	process.once = noop;
@@ -17726,11 +2340,15 @@ return  (function(modules) {
 	process.removeListener = noop;
 	process.removeAllListeners = noop;
 	process.emit = noop;
-	
+	process.prependListener = noop;
+	process.prependOnceListener = noop;
+
+	process.listeners = function (name) { return [] }
+
 	process.binding = function (name) {
 	    throw new Error('process.binding is not supported');
 	};
-	
+
 	process.cwd = function () { return '/' };
 	process.chdir = function (dir) {
 	    throw new Error('process.chdir is not supported');
@@ -17740,88 +2358,14 @@ return  (function(modules) {
 
  },
 
+ 121:
  function(module, exports) {
 
 	module.exports = __WEBPACK_EXTERNAL_MODULE_121__;
 
  },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
 
+ 198:
  function(module, exports, __webpack_require__) {
 
 	var DataView = __webpack_require__(199),
@@ -17831,23 +2375,23 @@ return  (function(modules) {
 	    WeakMap = __webpack_require__(202),
 	    baseGetTag = __webpack_require__(6),
 	    toSource = __webpack_require__(87);
-	
+
 	
 	var mapTag = '[object Map]',
 	    objectTag = '[object Object]',
 	    promiseTag = '[object Promise]',
 	    setTag = '[object Set]',
 	    weakMapTag = '[object WeakMap]';
-	
+
 	var dataViewTag = '[object DataView]';
-	
+
 	
 	var dataViewCtorString = toSource(DataView),
 	    mapCtorString = toSource(Map),
 	    promiseCtorString = toSource(Promise),
 	    setCtorString = toSource(Set),
 	    weakMapCtorString = toSource(WeakMap);
-	
+
 	
 
 
@@ -17856,7 +2400,7 @@ return  (function(modules) {
 
 
 	var getTag = baseGetTag;
-	
+
 	
 	if ((DataView && getTag(new DataView(new ArrayBuffer(1))) != dataViewTag) ||
 	    (Map && getTag(new Map) != mapTag) ||
@@ -17867,7 +2411,7 @@ return  (function(modules) {
 	    var result = baseGetTag(value),
 	        Ctor = result == objectTag ? value.constructor : undefined,
 	        ctorString = Ctor ? toSource(Ctor) : '';
-	
+
 	    if (ctorString) {
 	      switch (ctorString) {
 	        case dataViewCtorString: return dataViewTag;
@@ -17880,64 +2424,69 @@ return  (function(modules) {
 	    return result;
 	  };
 	}
-	
+
 	module.exports = getTag;
 
 
  },
 
+ 199:
  function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(81),
 	    root = __webpack_require__(8);
-	
+
 	
 	var DataView = getNative(root, 'DataView');
-	
+
 	module.exports = DataView;
 
 
  },
 
+ 200:
  function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(81),
 	    root = __webpack_require__(8);
-	
+
 	
 	var Promise = getNative(root, 'Promise');
-	
+
 	module.exports = Promise;
 
 
  },
 
+ 201:
  function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(81),
 	    root = __webpack_require__(8);
-	
+
 	
 	var Set = getNative(root, 'Set');
-	
+
 	module.exports = Set;
 
 
  },
 
+ 202:
  function(module, exports, __webpack_require__) {
 
 	var getNative = __webpack_require__(81),
 	    root = __webpack_require__(8);
-	
+
 	
 	var WeakMap = getNative(root, 'WeakMap');
-	
+
 	module.exports = WeakMap;
 
 
  },
 
+ 203:
  function(module, exports) {
 
 	
@@ -17950,25 +2499,25 @@ return  (function(modules) {
 	function mapToArray(map) {
 	  var index = -1,
 	      result = Array(map.size);
-	
+
 	  map.forEach(function(value, key) {
 	    result[++index] = [key, value];
 	  });
 	  return result;
 	}
-	
+
 	module.exports = mapToArray;
 
 
  },
-,
 
+ 205:
  function(module, exports, __webpack_require__) {
 
 	var arrayLikeKeys = __webpack_require__(206),
 	    baseKeys = __webpack_require__(217),
 	    isArrayLike = __webpack_require__(220);
-	
+
 	
 
 
@@ -18000,12 +2549,13 @@ return  (function(modules) {
 	function keys(object) {
 	  return isArrayLike(object) ? arrayLikeKeys(object) : baseKeys(object);
 	}
-	
+
 	module.exports = keys;
 
 
  },
 
+ 206:
  function(module, exports, __webpack_require__) {
 
 	var baseTimes = __webpack_require__(207),
@@ -18014,13 +2564,13 @@ return  (function(modules) {
 	    isBuffer = __webpack_require__(210),
 	    isIndex = __webpack_require__(117),
 	    isTypedArray = __webpack_require__(212);
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
@@ -18037,7 +2587,7 @@ return  (function(modules) {
 	      skipIndexes = isArr || isArg || isBuff || isType,
 	      result = skipIndexes ? baseTimes(value.length, String) : [],
 	      length = result.length;
-	
+
 	  for (var key in value) {
 	    if ((inherited || hasOwnProperty.call(value, key)) &&
 	        !(skipIndexes && (
@@ -18055,12 +2605,13 @@ return  (function(modules) {
 	  }
 	  return result;
 	}
-	
+
 	module.exports = arrayLikeKeys;
 
 
  },
 
+ 207:
  function(module, exports) {
 
 	
@@ -18075,32 +2626,33 @@ return  (function(modules) {
 	function baseTimes(n, iteratee) {
 	  var index = -1,
 	      result = Array(n);
-	
+
 	  while (++index < n) {
 	    result[index] = iteratee(index);
 	  }
 	  return result;
 	}
-	
+
 	module.exports = baseTimes;
 
 
  },
 
+ 208:
  function(module, exports, __webpack_require__) {
 
 	var baseIsArguments = __webpack_require__(209),
 	    isObjectLike = __webpack_require__(14);
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-	
+
 	
 
 
@@ -18123,20 +2675,21 @@ return  (function(modules) {
 	  return isObjectLike(value) && hasOwnProperty.call(value, 'callee') &&
 	    !propertyIsEnumerable.call(value, 'callee');
 	};
-	
+
 	module.exports = isArguments;
 
 
  },
 
+ 209:
  function(module, exports, __webpack_require__) {
 
 	var baseGetTag = __webpack_require__(6),
 	    isObjectLike = __webpack_require__(14);
-	
+
 	
 	var argsTag = '[object Arguments]';
-	
+
 	
 
 
@@ -18147,32 +2700,33 @@ return  (function(modules) {
 	function baseIsArguments(value) {
 	  return isObjectLike(value) && baseGetTag(value) == argsTag;
 	}
-	
+
 	module.exports = baseIsArguments;
 
 
  },
 
+ 210:
  function(module, exports, __webpack_require__) {
 
 	(function(module) {var root = __webpack_require__(8),
 	    stubFalse = __webpack_require__(211);
-	
+
 	
 	var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
-	
+
 	
 	var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
-	
+
 	
 	var moduleExports = freeModule && freeModule.exports === freeExports;
-	
+
 	
 	var Buffer = moduleExports ? root.Buffer : undefined;
-	
+
 	
 	var nativeIsBuffer = Buffer ? Buffer.isBuffer : undefined;
-	
+
 	
 
 
@@ -18191,13 +2745,14 @@ return  (function(modules) {
 
 
 	var isBuffer = nativeIsBuffer || stubFalse;
-	
+
 	module.exports = isBuffer;
-	
+
 	}.call(exports, __webpack_require__(51)(module)))
 
  },
 
+ 211:
  function(module, exports) {
 
 	
@@ -18216,21 +2771,22 @@ return  (function(modules) {
 	function stubFalse() {
 	  return false;
 	}
-	
+
 	module.exports = stubFalse;
 
 
  },
 
+ 212:
  function(module, exports, __webpack_require__) {
 
 	var baseIsTypedArray = __webpack_require__(213),
 	    baseUnary = __webpack_require__(215),
 	    nodeUtil = __webpack_require__(216);
-	
+
 	
 	var nodeIsTypedArray = nodeUtil && nodeUtil.isTypedArray;
-	
+
 	
 
 
@@ -18249,18 +2805,19 @@ return  (function(modules) {
 
 
 	var isTypedArray = nodeIsTypedArray ? baseUnary(nodeIsTypedArray) : baseIsTypedArray;
-	
+
 	module.exports = isTypedArray;
 
 
  },
 
+ 213:
  function(module, exports, __webpack_require__) {
 
 	var baseGetTag = __webpack_require__(6),
 	    isLength = __webpack_require__(214),
 	    isObjectLike = __webpack_require__(14);
-	
+
 	
 	var argsTag = '[object Arguments]',
 	    arrayTag = '[object Array]',
@@ -18275,7 +2832,7 @@ return  (function(modules) {
 	    setTag = '[object Set]',
 	    stringTag = '[object String]',
 	    weakMapTag = '[object WeakMap]';
-	
+
 	var arrayBufferTag = '[object ArrayBuffer]',
 	    dataViewTag = '[object DataView]',
 	    float32Tag = '[object Float32Array]',
@@ -18287,7 +2844,7 @@ return  (function(modules) {
 	    uint8ClampedTag = '[object Uint8ClampedArray]',
 	    uint16Tag = '[object Uint16Array]',
 	    uint32Tag = '[object Uint32Array]';
-	
+
 	
 	var typedArrayTags = {};
 	typedArrayTags[float32Tag] = typedArrayTags[float64Tag] =
@@ -18303,7 +2860,7 @@ return  (function(modules) {
 	typedArrayTags[objectTag] = typedArrayTags[regexpTag] =
 	typedArrayTags[setTag] = typedArrayTags[stringTag] =
 	typedArrayTags[weakMapTag] = false;
-	
+
 	
 
 
@@ -18315,17 +2872,18 @@ return  (function(modules) {
 	  return isObjectLike(value) &&
 	    isLength(value.length) && !!typedArrayTags[baseGetTag(value)];
 	}
-	
+
 	module.exports = baseIsTypedArray;
 
 
  },
 
+ 214:
  function(module, exports) {
 
 	
 	var MAX_SAFE_INTEGER = 9007199254740991;
-	
+
 	
 
 
@@ -18356,12 +2914,13 @@ return  (function(modules) {
 	  return typeof value == 'number' &&
 	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 	}
-	
+
 	module.exports = isLength;
 
 
  },
 
+ 215:
  function(module, exports) {
 
 	
@@ -18376,52 +2935,54 @@ return  (function(modules) {
 	    return func(value);
 	  };
 	}
-	
+
 	module.exports = baseUnary;
 
 
  },
 
+ 216:
  function(module, exports, __webpack_require__) {
 
 	(function(module) {var freeGlobal = __webpack_require__(9);
-	
+
 	
 	var freeExports = typeof exports == 'object' && exports && !exports.nodeType && exports;
-	
+
 	
 	var freeModule = freeExports && typeof module == 'object' && module && !module.nodeType && module;
-	
+
 	
 	var moduleExports = freeModule && freeModule.exports === freeExports;
-	
+
 	
 	var freeProcess = moduleExports && freeGlobal.process;
-	
+
 	
 	var nodeUtil = (function() {
 	  try {
 	    return freeProcess && freeProcess.binding && freeProcess.binding('util');
 	  } catch (e) {}
 	}());
-	
+
 	module.exports = nodeUtil;
-	
+
 	}.call(exports, __webpack_require__(51)(module)))
 
  },
 
+ 217:
  function(module, exports, __webpack_require__) {
 
 	var isPrototype = __webpack_require__(218),
 	    nativeKeys = __webpack_require__(219);
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
@@ -18441,17 +3002,18 @@ return  (function(modules) {
 	  }
 	  return result;
 	}
-	
+
 	module.exports = baseKeys;
 
 
  },
 
+ 218:
  function(module, exports) {
 
 	
 	var objectProto = Object.prototype;
-	
+
 	
 
 
@@ -18462,32 +3024,34 @@ return  (function(modules) {
 	function isPrototype(value) {
 	  var Ctor = value && value.constructor,
 	      proto = (typeof Ctor == 'function' && Ctor.prototype) || objectProto;
-	
+
 	  return value === proto;
 	}
-	
+
 	module.exports = isPrototype;
 
 
  },
 
+ 219:
  function(module, exports, __webpack_require__) {
 
 	var overArg = __webpack_require__(13);
-	
+
 	
 	var nativeKeys = overArg(Object.keys, Object);
-	
+
 	module.exports = nativeKeys;
 
 
  },
 
+ 220:
  function(module, exports, __webpack_require__) {
 
 	var isFunction = __webpack_require__(83),
 	    isLength = __webpack_require__(214);
-	
+
 	
 
 
@@ -18516,25 +3080,21 @@ return  (function(modules) {
 	function isArrayLike(value) {
 	  return value != null && isLength(value.length) && !isFunction(value);
 	}
-	
+
 	module.exports = isArrayLike;
 
 
  },
-,
-,
-,
-,
-,
 
+ 226:
  function(module, exports, __webpack_require__) {
 
 	
-	
-	var { PrefsHelper } = __webpack_require__(26);
-	const { Services: { pref }} = __webpack_require__(28);
-	const { isDevelopment } = __webpack_require__(65);
-	
+
+	var { PrefsHelper } = __webpack_require__(830);
+	const { Services: { pref } } = __webpack_require__(830);
+	const { isDevelopment } = __webpack_require__(828);
+
 	if (isDevelopment()) {
 	  pref("devtools.debugger.client-source-maps-enabled", true);
 	  pref("devtools.debugger.pause-on-exceptions", false);
@@ -18545,8 +3105,10 @@ return  (function(modules) {
 	  pref("devtools.debugger.end-panel-collapsed", false);
 	  pref("devtools.debugger.tabs", "[]");
 	  pref("devtools.debugger.pending-selected-location", "{}");
+	  pref("devtools.debugger.pending-breakpoints", "[]");
+	  pref("devtools.debugger.expressions", "[]");
 	}
-	
+
 	const prefs = new PrefsHelper("devtools", {
 	  clientSourceMapsEnabled: ["Bool", "debugger.client-source-maps-enabled"],
 	  pauseOnExceptions: ["Bool", "debugger.pause-on-exceptions"],
@@ -18556,162 +3118,162 @@ return  (function(modules) {
 	  startPanelCollapsed: ["Bool", "debugger.start-panel-collapsed"],
 	  endPanelCollapsed: ["Bool", "debugger.end-panel-collapsed"],
 	  tabs: ["Json", "debugger.tabs"],
-	  pendingSelectedLocation: ["Json", "debugger.pending-selected-location"]
+	  pendingSelectedLocation: ["Json", "debugger.pending-selected-location"],
+	  pendingBreakpoints: ["Json", "debugger.pending-breakpoints"],
+	  expressions: ["Json", "debugger.expressions"]
 	});
-	
+
 	module.exports = { prefs };
 
 
  },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
 
+ 264:
+ function(module, exports, __webpack_require__) {
+
+	var baseMatches = __webpack_require__(265),
+	    baseMatchesProperty = __webpack_require__(294),
+	    identity = __webpack_require__(298),
+	    isArray = __webpack_require__(70),
+	    property = __webpack_require__(299);
+
+	
+
+
+
+
+
+
+	function baseIteratee(value) {
+	  
+	  
+	  if (typeof value == 'function') {
+	    return value;
+	  }
+	  if (value == null) {
+	    return identity;
+	  }
+	  if (typeof value == 'object') {
+	    return isArray(value)
+	      ? baseMatchesProperty(value[0], value[1])
+	      : baseMatches(value);
+	  }
+	  return property(value);
+	}
+
+	module.exports = baseIteratee;
+
+
+ },
+
+ 265:
+ function(module, exports, __webpack_require__) {
+
+	var baseIsMatch = __webpack_require__(266),
+	    getMatchData = __webpack_require__(291),
+	    matchesStrictComparable = __webpack_require__(293);
+
+	
+
+
+
+
+
+
+	function baseMatches(source) {
+	  var matchData = getMatchData(source);
+	  if (matchData.length == 1 && matchData[0][2]) {
+	    return matchesStrictComparable(matchData[0][0], matchData[0][1]);
+	  }
+	  return function(object) {
+	    return object === source || baseIsMatch(object, source, matchData);
+	  };
+	}
+
+	module.exports = baseMatches;
+
+
+ },
+
+ 266:
+ function(module, exports, __webpack_require__) {
+
+	var Stack = __webpack_require__(267),
+	    baseIsEqual = __webpack_require__(273);
+
+	
+	var COMPARE_PARTIAL_FLAG = 1,
+	    COMPARE_UNORDERED_FLAG = 2;
+
+	
+
+
+
+
+
+
+
+
+
+	function baseIsMatch(object, source, matchData, customizer) {
+	  var index = matchData.length,
+	      length = index,
+	      noCustomizer = !customizer;
+
+	  if (object == null) {
+	    return !length;
+	  }
+	  object = Object(object);
+	  while (index--) {
+	    var data = matchData[index];
+	    if ((noCustomizer && data[2])
+	          ? data[1] !== object[data[0]]
+	          : !(data[0] in object)
+	        ) {
+	      return false;
+	    }
+	  }
+	  while (++index < length) {
+	    data = matchData[index];
+	    var key = data[0],
+	        objValue = object[key],
+	        srcValue = data[1];
+
+	    if (noCustomizer && data[2]) {
+	      if (objValue === undefined && !(key in object)) {
+	        return false;
+	      }
+	    } else {
+	      var stack = new Stack;
+	      if (customizer) {
+	        var result = customizer(objValue, srcValue, key, object, source, stack);
+	      }
+	      if (!(result === undefined
+	            ? baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG, customizer, stack)
+	            : result
+	          )) {
+	        return false;
+	      }
+	    }
+	  }
+	  return true;
+	}
+
+	module.exports = baseIsMatch;
+
+
+ },
+
+ 267:
  function(module, exports, __webpack_require__) {
 
 	var ListCache = __webpack_require__(93),
-	    stackClear = __webpack_require__(367),
-	    stackDelete = __webpack_require__(368),
-	    stackGet = __webpack_require__(369),
-	    stackHas = __webpack_require__(370),
-	    stackSet = __webpack_require__(371);
-	
+	    stackClear = __webpack_require__(268),
+	    stackDelete = __webpack_require__(269),
+	    stackGet = __webpack_require__(270),
+	    stackHas = __webpack_require__(271),
+	    stackSet = __webpack_require__(272);
+
 	
 
 
@@ -18723,23 +3285,24 @@ return  (function(modules) {
 	  var data = this.__data__ = new ListCache(entries);
 	  this.size = data.size;
 	}
-	
+
 	
 	Stack.prototype.clear = stackClear;
 	Stack.prototype['delete'] = stackDelete;
 	Stack.prototype.get = stackGet;
 	Stack.prototype.has = stackHas;
 	Stack.prototype.set = stackSet;
-	
+
 	module.exports = Stack;
 
 
  },
 
+ 268:
  function(module, exports, __webpack_require__) {
 
 	var ListCache = __webpack_require__(93);
-	
+
 	
 
 
@@ -18751,12 +3314,13 @@ return  (function(modules) {
 	  this.__data__ = new ListCache;
 	  this.size = 0;
 	}
-	
+
 	module.exports = stackClear;
 
 
  },
 
+ 269:
  function(module, exports) {
 
 	
@@ -18771,16 +3335,17 @@ return  (function(modules) {
 	function stackDelete(key) {
 	  var data = this.__data__,
 	      result = data['delete'](key);
-	
+
 	  this.size = data.size;
 	  return result;
 	}
-	
+
 	module.exports = stackDelete;
 
 
  },
 
+ 270:
  function(module, exports) {
 
 	
@@ -18795,12 +3360,13 @@ return  (function(modules) {
 	function stackGet(key) {
 	  return this.__data__.get(key);
 	}
-	
+
 	module.exports = stackGet;
 
 
  },
 
+ 271:
  function(module, exports) {
 
 	
@@ -18815,21 +3381,22 @@ return  (function(modules) {
 	function stackHas(key) {
 	  return this.__data__.has(key);
 	}
-	
+
 	module.exports = stackHas;
 
 
  },
 
+ 272:
  function(module, exports, __webpack_require__) {
 
 	var ListCache = __webpack_require__(93),
 	    Map = __webpack_require__(101),
 	    MapCache = __webpack_require__(76);
-	
+
 	
 	var LARGE_ARRAY_SIZE = 200;
-	
+
 	
 
 
@@ -18855,617 +3422,18 @@ return  (function(modules) {
 	  this.size = data.size;
 	  return this;
 	}
-	
+
 	module.exports = stackSet;
 
 
  },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
 
+ 273:
  function(module, exports, __webpack_require__) {
 
-	var arrayFilter = __webpack_require__(383),
-	    stubArray = __webpack_require__(384);
-	
-	
-	var objectProto = Object.prototype;
-	
-	
-	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-	
-	
-	var nativeGetSymbols = Object.getOwnPropertySymbols;
-	
-	
-
-
-
-
-
-
-	var getSymbols = !nativeGetSymbols ? stubArray : function(object) {
-	  if (object == null) {
-	    return [];
-	  }
-	  object = Object(object);
-	  return arrayFilter(nativeGetSymbols(object), function(symbol) {
-	    return propertyIsEnumerable.call(object, symbol);
-	  });
-	};
-	
-	module.exports = getSymbols;
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-
-	function arrayFilter(array, predicate) {
-	  var index = -1,
-	      length = array == null ? 0 : array.length,
-	      resIndex = 0,
-	      result = [];
-	
-	  while (++index < length) {
-	    var value = array[index];
-	    if (predicate(value, index, array)) {
-	      result[resIndex++] = value;
-	    }
-	  }
-	  return result;
-	}
-	
-	module.exports = arrayFilter;
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function stubArray() {
-	  return [];
-	}
-	
-	module.exports = stubArray;
-
-
- },
-,
-,
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-	function arrayPush(array, values) {
-	  var index = -1,
-	      length = values.length,
-	      offset = array.length;
-	
-	  while (++index < length) {
-	    array[offset + index] = values[index];
-	  }
-	  return array;
-	}
-	
-	module.exports = arrayPush;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var baseGetAllKeys = __webpack_require__(389),
-	    getSymbols = __webpack_require__(382),
-	    keys = __webpack_require__(205);
-	
-	
-
-
-
-
-
-
-	function getAllKeys(object) {
-	  return baseGetAllKeys(object, keys, getSymbols);
-	}
-	
-	module.exports = getAllKeys;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var arrayPush = __webpack_require__(387),
-	    isArray = __webpack_require__(70);
-	
-	
-
-
-
-
-
-
-
-
-
-
-	function baseGetAllKeys(object, keysFunc, symbolsFunc) {
-	  var result = keysFunc(object);
-	  return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
-	}
-	
-	module.exports = baseGetAllKeys;
-
-
- },
-,
-,
-,
-,
-
- function(module, exports, __webpack_require__) {
-
-	var root = __webpack_require__(8);
-	
-	
-	var Uint8Array = root.Uint8Array;
-	
-	module.exports = Uint8Array;
-
-
- },
-,
-,
-,
-,
-,
-,
-,
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-	function setToArray(set) {
-	  var index = -1,
-	      result = Array(set.size);
-	
-	  set.forEach(function(value) {
-	    result[++index] = value;
-	  });
-	  return result;
-	}
-	
-	module.exports = setToArray;
-
-
- },
-,
-,
-,
-,
-,
-,
-
- function(module, exports, __webpack_require__) {
-
-	var MapCache = __webpack_require__(76),
-	    setCacheAdd = __webpack_require__(410),
-	    setCacheHas = __webpack_require__(411);
-	
-	
-
-
-
-
-
-
-
-	function SetCache(values) {
-	  var index = -1,
-	      length = values == null ? 0 : values.length;
-	
-	  this.__data__ = new MapCache;
-	  while (++index < length) {
-	    this.add(values[index]);
-	  }
-	}
-	
-	
-	SetCache.prototype.add = SetCache.prototype.push = setCacheAdd;
-	SetCache.prototype.has = setCacheHas;
-	
-	module.exports = SetCache;
-
-
- },
-
- function(module, exports) {
-
-	
-	var HASH_UNDEFINED = '__lodash_hash_undefined__';
-	
-	
-
-
-
-
-
-
-
-
-
-	function setCacheAdd(value) {
-	  this.__data__.set(value, HASH_UNDEFINED);
-	  return this;
-	}
-	
-	module.exports = setCacheAdd;
-
-
- },
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-
-	function setCacheHas(value) {
-	  return this.__data__.has(value);
-	}
-	
-	module.exports = setCacheHas;
-
-
- },
-,
-,
-,
-,
-,
-,
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-	function cacheHas(cache, key) {
-	  return cache.has(key);
-	}
-	
-	module.exports = cacheHas;
-
-
- },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-
- function(module, exports) {
-
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-	function identity(value) {
-	  return value;
-	}
-	
-	module.exports = identity;
-
-
- },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-
- function(module, exports, __webpack_require__) {
-
-	var baseMatches = __webpack_require__(523),
-	    baseMatchesProperty = __webpack_require__(534),
-	    identity = __webpack_require__(436),
-	    isArray = __webpack_require__(70),
-	    property = __webpack_require__(538);
-	
-	
-
-
-
-
-
-
-	function baseIteratee(value) {
-	  
-	  
-	  if (typeof value == 'function') {
-	    return value;
-	  }
-	  if (value == null) {
-	    return identity;
-	  }
-	  if (typeof value == 'object') {
-	    return isArray(value)
-	      ? baseMatchesProperty(value[0], value[1])
-	      : baseMatches(value);
-	  }
-	  return property(value);
-	}
-	
-	module.exports = baseIteratee;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var baseIsMatch = __webpack_require__(524),
-	    getMatchData = __webpack_require__(531),
-	    matchesStrictComparable = __webpack_require__(533);
-	
-	
-
-
-
-
-
-
-	function baseMatches(source) {
-	  var matchData = getMatchData(source);
-	  if (matchData.length == 1 && matchData[0][2]) {
-	    return matchesStrictComparable(matchData[0][0], matchData[0][1]);
-	  }
-	  return function(object) {
-	    return object === source || baseIsMatch(object, source, matchData);
-	  };
-	}
-	
-	module.exports = baseMatches;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var Stack = __webpack_require__(366),
-	    baseIsEqual = __webpack_require__(525);
-	
-	
-	var COMPARE_PARTIAL_FLAG = 1,
-	    COMPARE_UNORDERED_FLAG = 2;
-	
-	
-
-
-
-
-
-
-
-
-
-	function baseIsMatch(object, source, matchData, customizer) {
-	  var index = matchData.length,
-	      length = index,
-	      noCustomizer = !customizer;
-	
-	  if (object == null) {
-	    return !length;
-	  }
-	  object = Object(object);
-	  while (index--) {
-	    var data = matchData[index];
-	    if ((noCustomizer && data[2])
-	          ? data[1] !== object[data[0]]
-	          : !(data[0] in object)
-	        ) {
-	      return false;
-	    }
-	  }
-	  while (++index < length) {
-	    data = matchData[index];
-	    var key = data[0],
-	        objValue = object[key],
-	        srcValue = data[1];
-	
-	    if (noCustomizer && data[2]) {
-	      if (objValue === undefined && !(key in object)) {
-	        return false;
-	      }
-	    } else {
-	      var stack = new Stack;
-	      if (customizer) {
-	        var result = customizer(objValue, srcValue, key, object, source, stack);
-	      }
-	      if (!(result === undefined
-	            ? baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG, customizer, stack)
-	            : result
-	          )) {
-	        return false;
-	      }
-	    }
-	  }
-	  return true;
-	}
-	
-	module.exports = baseIsMatch;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	var baseIsEqualDeep = __webpack_require__(526),
+	var baseIsEqualDeep = __webpack_require__(274),
 	    isObjectLike = __webpack_require__(14);
-	
+
 	
 
 
@@ -19489,37 +3457,38 @@ return  (function(modules) {
 	  }
 	  return baseIsEqualDeep(value, other, bitmask, customizer, baseIsEqual, stack);
 	}
-	
+
 	module.exports = baseIsEqual;
 
 
  },
 
+ 274:
  function(module, exports, __webpack_require__) {
 
-	var Stack = __webpack_require__(366),
-	    equalArrays = __webpack_require__(527),
-	    equalByTag = __webpack_require__(529),
-	    equalObjects = __webpack_require__(530),
+	var Stack = __webpack_require__(267),
+	    equalArrays = __webpack_require__(275),
+	    equalByTag = __webpack_require__(281),
+	    equalObjects = __webpack_require__(284),
 	    getTag = __webpack_require__(198),
 	    isArray = __webpack_require__(70),
 	    isBuffer = __webpack_require__(210),
 	    isTypedArray = __webpack_require__(212);
-	
+
 	
 	var COMPARE_PARTIAL_FLAG = 1;
-	
+
 	
 	var argsTag = '[object Arguments]',
 	    arrayTag = '[object Array]',
 	    objectTag = '[object Object]';
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
@@ -19539,14 +3508,14 @@ return  (function(modules) {
 	      othIsArr = isArray(other),
 	      objTag = objIsArr ? arrayTag : getTag(object),
 	      othTag = othIsArr ? arrayTag : getTag(other);
-	
+
 	  objTag = objTag == argsTag ? objectTag : objTag;
 	  othTag = othTag == argsTag ? objectTag : othTag;
-	
+
 	  var objIsObj = objTag == objectTag,
 	      othIsObj = othTag == objectTag,
 	      isSameTag = objTag == othTag;
-	
+
 	  if (isSameTag && isBuffer(object)) {
 	    if (!isBuffer(other)) {
 	      return false;
@@ -19563,11 +3532,11 @@ return  (function(modules) {
 	  if (!(bitmask & COMPARE_PARTIAL_FLAG)) {
 	    var objIsWrapped = objIsObj && hasOwnProperty.call(object, '__wrapped__'),
 	        othIsWrapped = othIsObj && hasOwnProperty.call(other, '__wrapped__');
-	
+
 	    if (objIsWrapped || othIsWrapped) {
 	      var objUnwrapped = objIsWrapped ? object.value() : object,
 	          othUnwrapped = othIsWrapped ? other.value() : other;
-	
+
 	      stack || (stack = new Stack);
 	      return equalFunc(objUnwrapped, othUnwrapped, bitmask, customizer, stack);
 	    }
@@ -19578,22 +3547,23 @@ return  (function(modules) {
 	  stack || (stack = new Stack);
 	  return equalObjects(object, other, bitmask, customizer, equalFunc, stack);
 	}
-	
+
 	module.exports = baseIsEqualDeep;
 
 
  },
 
+ 275:
  function(module, exports, __webpack_require__) {
 
-	var SetCache = __webpack_require__(409),
-	    arraySome = __webpack_require__(528),
-	    cacheHas = __webpack_require__(418);
-	
+	var SetCache = __webpack_require__(276),
+	    arraySome = __webpack_require__(279),
+	    cacheHas = __webpack_require__(280);
+
 	
 	var COMPARE_PARTIAL_FLAG = 1,
 	    COMPARE_UNORDERED_FLAG = 2;
-	
+
 	
 
 
@@ -19611,7 +3581,7 @@ return  (function(modules) {
 	  var isPartial = bitmask & COMPARE_PARTIAL_FLAG,
 	      arrLength = array.length,
 	      othLength = other.length;
-	
+
 	  if (arrLength != othLength && !(isPartial && othLength > arrLength)) {
 	    return false;
 	  }
@@ -19623,15 +3593,15 @@ return  (function(modules) {
 	  var index = -1,
 	      result = true,
 	      seen = (bitmask & COMPARE_UNORDERED_FLAG) ? new SetCache : undefined;
-	
+
 	  stack.set(array, other);
 	  stack.set(other, array);
-	
+
 	  
 	  while (++index < arrLength) {
 	    var arrValue = array[index],
 	        othValue = other[index];
-	
+
 	    if (customizer) {
 	      var compared = isPartial
 	        ? customizer(othValue, arrValue, index, other, array, stack)
@@ -19667,12 +3637,94 @@ return  (function(modules) {
 	  stack['delete'](other);
 	  return result;
 	}
-	
+
 	module.exports = equalArrays;
 
 
  },
 
+ 276:
+ function(module, exports, __webpack_require__) {
+
+	var MapCache = __webpack_require__(76),
+	    setCacheAdd = __webpack_require__(277),
+	    setCacheHas = __webpack_require__(278);
+
+	
+
+
+
+
+
+
+
+	function SetCache(values) {
+	  var index = -1,
+	      length = values == null ? 0 : values.length;
+
+	  this.__data__ = new MapCache;
+	  while (++index < length) {
+	    this.add(values[index]);
+	  }
+	}
+
+	
+	SetCache.prototype.add = SetCache.prototype.push = setCacheAdd;
+	SetCache.prototype.has = setCacheHas;
+
+	module.exports = SetCache;
+
+
+ },
+
+ 277:
+ function(module, exports) {
+
+	
+	var HASH_UNDEFINED = '__lodash_hash_undefined__';
+
+	
+
+
+
+
+
+
+
+
+
+	function setCacheAdd(value) {
+	  this.__data__.set(value, HASH_UNDEFINED);
+	  return this;
+	}
+
+	module.exports = setCacheAdd;
+
+
+ },
+
+ 278:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function setCacheHas(value) {
+	  return this.__data__.has(value);
+	}
+
+	module.exports = setCacheHas;
+
+
+ },
+
+ 279:
  function(module, exports) {
 
 	
@@ -19688,7 +3740,7 @@ return  (function(modules) {
 	function arraySome(array, predicate) {
 	  var index = -1,
 	      length = array == null ? 0 : array.length;
-	
+
 	  while (++index < length) {
 	    if (predicate(array[index], index, array)) {
 	      return true;
@@ -19696,25 +3748,46 @@ return  (function(modules) {
 	  }
 	  return false;
 	}
-	
+
 	module.exports = arraySome;
 
 
  },
 
+ 280:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+	function cacheHas(cache, key) {
+	  return cache.has(key);
+	}
+
+	module.exports = cacheHas;
+
+
+ },
+
+ 281:
  function(module, exports, __webpack_require__) {
 
 	var Symbol = __webpack_require__(7),
-	    Uint8Array = __webpack_require__(394),
+	    Uint8Array = __webpack_require__(282),
 	    eq = __webpack_require__(97),
-	    equalArrays = __webpack_require__(527),
+	    equalArrays = __webpack_require__(275),
 	    mapToArray = __webpack_require__(203),
-	    setToArray = __webpack_require__(402);
-	
+	    setToArray = __webpack_require__(283);
+
 	
 	var COMPARE_PARTIAL_FLAG = 1,
 	    COMPARE_UNORDERED_FLAG = 2;
-	
+
 	
 	var boolTag = '[object Boolean]',
 	    dateTag = '[object Date]',
@@ -19725,14 +3798,14 @@ return  (function(modules) {
 	    setTag = '[object Set]',
 	    stringTag = '[object String]',
 	    symbolTag = '[object Symbol]';
-	
+
 	var arrayBufferTag = '[object ArrayBuffer]',
 	    dataViewTag = '[object DataView]';
-	
+
 	
 	var symbolProto = Symbol ? Symbol.prototype : undefined,
 	    symbolValueOf = symbolProto ? symbolProto.valueOf : undefined;
-	
+
 	
 
 
@@ -19759,38 +3832,38 @@ return  (function(modules) {
 	      }
 	      object = object.buffer;
 	      other = other.buffer;
-	
+
 	    case arrayBufferTag:
 	      if ((object.byteLength != other.byteLength) ||
 	          !equalFunc(new Uint8Array(object), new Uint8Array(other))) {
 	        return false;
 	      }
 	      return true;
-	
+
 	    case boolTag:
 	    case dateTag:
 	    case numberTag:
 	      
 	      
 	      return eq(+object, +other);
-	
+
 	    case errorTag:
 	      return object.name == other.name && object.message == other.message;
-	
+
 	    case regexpTag:
 	    case stringTag:
 	      
 	      
 	      
 	      return object == (other + '');
-	
+
 	    case mapTag:
 	      var convert = mapToArray;
-	
+
 	    case setTag:
 	      var isPartial = bitmask & COMPARE_PARTIAL_FLAG;
 	      convert || (convert = setToArray);
-	
+
 	      if (object.size != other.size && !isPartial) {
 	        return false;
 	      }
@@ -19800,13 +3873,13 @@ return  (function(modules) {
 	        return stacked == other;
 	      }
 	      bitmask |= COMPARE_UNORDERED_FLAG;
-	
+
 	      
 	      stack.set(object, other);
 	      var result = equalArrays(convert(object), convert(other), bitmask, customizer, equalFunc, stack);
 	      stack['delete'](object);
 	      return result;
-	
+
 	    case symbolTag:
 	      if (symbolValueOf) {
 	        return symbolValueOf.call(object) == symbolValueOf.call(other);
@@ -19814,25 +3887,64 @@ return  (function(modules) {
 	  }
 	  return false;
 	}
-	
+
 	module.exports = equalByTag;
 
 
  },
 
+ 282:
  function(module, exports, __webpack_require__) {
 
-	var getAllKeys = __webpack_require__(388);
+	var root = __webpack_require__(8);
+
 	
+	var Uint8Array = root.Uint8Array;
+
+	module.exports = Uint8Array;
+
+
+ },
+
+ 283:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+	function setToArray(set) {
+	  var index = -1,
+	      result = Array(set.size);
+
+	  set.forEach(function(value) {
+	    result[++index] = value;
+	  });
+	  return result;
+	}
+
+	module.exports = setToArray;
+
+
+ },
+
+ 284:
+ function(module, exports, __webpack_require__) {
+
+	var getAllKeys = __webpack_require__(285);
+
 	
 	var COMPARE_PARTIAL_FLAG = 1;
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
@@ -19852,7 +3964,7 @@ return  (function(modules) {
 	      objLength = objProps.length,
 	      othProps = getAllKeys(other),
 	      othLength = othProps.length;
-	
+
 	  if (objLength != othLength && !isPartial) {
 	    return false;
 	  }
@@ -19871,13 +3983,13 @@ return  (function(modules) {
 	  var result = true;
 	  stack.set(object, other);
 	  stack.set(other, object);
-	
+
 	  var skipCtor = isPartial;
 	  while (++index < objLength) {
 	    key = objProps[index];
 	    var objValue = object[key],
 	        othValue = other[key];
-	
+
 	    if (customizer) {
 	      var compared = isPartial
 	        ? customizer(othValue, objValue, key, other, object, stack)
@@ -19896,7 +4008,7 @@ return  (function(modules) {
 	  if (result && !skipCtor) {
 	    var objCtor = object.constructor,
 	        othCtor = other.constructor;
-	
+
 	    
 	    if (objCtor != othCtor &&
 	        ('constructor' in object && 'constructor' in other) &&
@@ -19909,17 +4021,194 @@ return  (function(modules) {
 	  stack['delete'](other);
 	  return result;
 	}
-	
+
 	module.exports = equalObjects;
 
 
  },
 
+ 285:
  function(module, exports, __webpack_require__) {
 
-	var isStrictComparable = __webpack_require__(532),
+	var baseGetAllKeys = __webpack_require__(286),
+	    getSymbols = __webpack_require__(288),
 	    keys = __webpack_require__(205);
+
 	
+
+
+
+
+
+
+	function getAllKeys(object) {
+	  return baseGetAllKeys(object, keys, getSymbols);
+	}
+
+	module.exports = getAllKeys;
+
+
+ },
+
+ 286:
+ function(module, exports, __webpack_require__) {
+
+	var arrayPush = __webpack_require__(287),
+	    isArray = __webpack_require__(70);
+
+	
+
+
+
+
+
+
+
+
+
+
+	function baseGetAllKeys(object, keysFunc, symbolsFunc) {
+	  var result = keysFunc(object);
+	  return isArray(object) ? result : arrayPush(result, symbolsFunc(object));
+	}
+
+	module.exports = baseGetAllKeys;
+
+
+ },
+
+ 287:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+	function arrayPush(array, values) {
+	  var index = -1,
+	      length = values.length,
+	      offset = array.length;
+
+	  while (++index < length) {
+	    array[offset + index] = values[index];
+	  }
+	  return array;
+	}
+
+	module.exports = arrayPush;
+
+
+ },
+
+ 288:
+ function(module, exports, __webpack_require__) {
+
+	var arrayFilter = __webpack_require__(289),
+	    stubArray = __webpack_require__(290);
+
+	
+	var objectProto = Object.prototype;
+
+	
+	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
+
+	
+	var nativeGetSymbols = Object.getOwnPropertySymbols;
+
+	
+
+
+
+
+
+
+	var getSymbols = !nativeGetSymbols ? stubArray : function(object) {
+	  if (object == null) {
+	    return [];
+	  }
+	  object = Object(object);
+	  return arrayFilter(nativeGetSymbols(object), function(symbol) {
+	    return propertyIsEnumerable.call(object, symbol);
+	  });
+	};
+
+	module.exports = getSymbols;
+
+
+ },
+
+ 289:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+	function arrayFilter(array, predicate) {
+	  var index = -1,
+	      length = array == null ? 0 : array.length,
+	      resIndex = 0,
+	      result = [];
+
+	  while (++index < length) {
+	    var value = array[index];
+	    if (predicate(value, index, array)) {
+	      result[resIndex++] = value;
+	    }
+	  }
+	  return result;
+	}
+
+	module.exports = arrayFilter;
+
+
+ },
+
+ 290:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function stubArray() {
+	  return [];
+	}
+
+	module.exports = stubArray;
+
+
+ },
+
+ 291:
+ function(module, exports, __webpack_require__) {
+
+	var isStrictComparable = __webpack_require__(292),
+	    keys = __webpack_require__(205);
+
 	
 
 
@@ -19930,25 +4219,26 @@ return  (function(modules) {
 	function getMatchData(object) {
 	  var result = keys(object),
 	      length = result.length;
-	
+
 	  while (length--) {
 	    var key = result[length],
 	        value = object[key];
-	
+
 	    result[length] = [key, value, isStrictComparable(value)];
 	  }
 	  return result;
 	}
-	
+
 	module.exports = getMatchData;
 
 
  },
 
+ 292:
  function(module, exports, __webpack_require__) {
 
 	var isObject = __webpack_require__(84);
-	
+
 	
 
 
@@ -19960,12 +4250,13 @@ return  (function(modules) {
 	function isStrictComparable(value) {
 	  return value === value && !isObject(value);
 	}
-	
+
 	module.exports = isStrictComparable;
 
 
  },
 
+ 293:
  function(module, exports) {
 
 	
@@ -19986,26 +4277,27 @@ return  (function(modules) {
 	      (srcValue !== undefined || (key in Object(object)));
 	  };
 	}
-	
+
 	module.exports = matchesStrictComparable;
 
 
  },
 
+ 294:
  function(module, exports, __webpack_require__) {
 
-	var baseIsEqual = __webpack_require__(525),
+	var baseIsEqual = __webpack_require__(273),
 	    get = __webpack_require__(67),
-	    hasIn = __webpack_require__(535),
+	    hasIn = __webpack_require__(295),
 	    isKey = __webpack_require__(71),
-	    isStrictComparable = __webpack_require__(532),
-	    matchesStrictComparable = __webpack_require__(533),
+	    isStrictComparable = __webpack_require__(292),
+	    matchesStrictComparable = __webpack_require__(293),
 	    toKey = __webpack_require__(111);
-	
+
 	
 	var COMPARE_PARTIAL_FLAG = 1,
 	    COMPARE_UNORDERED_FLAG = 2;
-	
+
 	
 
 
@@ -20025,17 +4317,18 @@ return  (function(modules) {
 	      : baseIsEqual(srcValue, objValue, COMPARE_PARTIAL_FLAG | COMPARE_UNORDERED_FLAG);
 	  };
 	}
-	
+
 	module.exports = baseMatchesProperty;
 
 
  },
 
+ 295:
  function(module, exports, __webpack_require__) {
 
-	var baseHasIn = __webpack_require__(536),
-	    hasPath = __webpack_require__(537);
-	
+	var baseHasIn = __webpack_require__(296),
+	    hasPath = __webpack_require__(297);
+
 	
 
 
@@ -20065,12 +4358,13 @@ return  (function(modules) {
 	function hasIn(object, path) {
 	  return object != null && hasPath(object, path, baseHasIn);
 	}
-	
+
 	module.exports = hasIn;
 
 
  },
 
+ 296:
  function(module, exports) {
 
 	
@@ -20084,12 +4378,13 @@ return  (function(modules) {
 	function baseHasIn(object, key) {
 	  return object != null && key in Object(object);
 	}
-	
+
 	module.exports = baseHasIn;
 
 
  },
 
+ 297:
  function(module, exports, __webpack_require__) {
 
 	var castPath = __webpack_require__(69),
@@ -20098,7 +4393,7 @@ return  (function(modules) {
 	    isIndex = __webpack_require__(117),
 	    isLength = __webpack_require__(214),
 	    toKey = __webpack_require__(111);
-	
+
 	
 
 
@@ -20110,11 +4405,11 @@ return  (function(modules) {
 
 	function hasPath(object, path, hasFunc) {
 	  path = castPath(path, object);
-	
+
 	  var index = -1,
 	      length = path.length,
 	      result = false;
-	
+
 	  while (++index < length) {
 	    var key = toKey(path[index]);
 	    if (!(result = object != null && hasFunc(object, key))) {
@@ -20129,19 +4424,48 @@ return  (function(modules) {
 	  return !!length && isLength(length) && isIndex(key, length) &&
 	    (isArray(object) || isArguments(object));
 	}
-	
+
 	module.exports = hasPath;
 
 
  },
 
+ 298:
+ function(module, exports) {
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function identity(value) {
+	  return value;
+	}
+
+	module.exports = identity;
+
+
+ },
+
+ 299:
  function(module, exports, __webpack_require__) {
 
-	var baseProperty = __webpack_require__(539),
-	    basePropertyDeep = __webpack_require__(540),
+	var baseProperty = __webpack_require__(300),
+	    basePropertyDeep = __webpack_require__(301),
 	    isKey = __webpack_require__(71),
 	    toKey = __webpack_require__(111);
-	
+
 	
 
 
@@ -20167,12 +4491,13 @@ return  (function(modules) {
 	function property(path) {
 	  return isKey(path) ? baseProperty(toKey(path)) : basePropertyDeep(path);
 	}
-	
+
 	module.exports = property;
 
 
  },
 
+ 300:
  function(module, exports) {
 
 	
@@ -20187,16 +4512,17 @@ return  (function(modules) {
 	    return object == null ? undefined : object[key];
 	  };
 	}
-	
+
 	module.exports = baseProperty;
 
 
  },
 
+ 301:
  function(module, exports, __webpack_require__) {
 
 	var baseGet = __webpack_require__(68);
-	
+
 	
 
 
@@ -20209,104 +4535,17 @@ return  (function(modules) {
 	    return baseGet(object, path);
 	  };
 	}
-	
+
 	module.exports = basePropertyDeep;
 
 
  },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
 
+ 395:
  function(module, exports, __webpack_require__) {
 
-	var createBaseFor = __webpack_require__(630);
-	
+	var createBaseFor = __webpack_require__(396);
+
 	
 
 
@@ -20319,12 +4558,13 @@ return  (function(modules) {
 
 
 	var baseFor = createBaseFor();
-	
+
 	module.exports = baseFor;
 
 
  },
 
+ 396:
  function(module, exports) {
 
 	
@@ -20340,7 +4580,7 @@ return  (function(modules) {
 	        iterable = Object(object),
 	        props = keysFunc(object),
 	        length = props.length;
-	
+
 	    while (length--) {
 	      var key = props[fromRight ? length : ++index];
 	      if (iteratee(iterable[key], key, iterable) === false) {
@@ -20350,143 +4590,31 @@ return  (function(modules) {
 	    return object;
 	  };
 	}
-	
+
 	module.exports = createBaseFor;
 
 
  },
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
-,
 
+ 757:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
-	var tests = __webpack_require__(745);
-	
-	var _require = __webpack_require__(753),
+
+	var tests = __webpack_require__(758);
+
+	var _require = __webpack_require__(766),
 	    setupTestRunner = _require.setupTestRunner;
-	
-	var utils = __webpack_require__(747);
-	
-	var _require2 = __webpack_require__(65),
+
+	var utils = __webpack_require__(760);
+
+	var _require2 = __webpack_require__(828),
 	    isDevelopment = _require2.isDevelopment;
-	
+
 	if (isDevelopment()) {
-	  __webpack_require__(779);
+	  __webpack_require__(792);
 	}
-	
+
 	module.exports = Object.assign({}, tests, {
 	  setupTestRunner,
 	  utils
@@ -20494,85 +4622,90 @@ return  (function(modules) {
 
  },
 
+ 758:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	module.exports = {
-	  asm: __webpack_require__(746),
-	  breaking: __webpack_require__(756),
-	  breakpoints: __webpack_require__(757),
-	  breakpointsCond: __webpack_require__(758),
-	  callStack: __webpack_require__(759),
-	  expressions: __webpack_require__(760),
-	  debuggerButtons: __webpack_require__(761),
-	  editorSelect: __webpack_require__(762),
-	  editorGutter: __webpack_require__(763),
-	  editorHighlight: __webpack_require__(764),
-	  keyboardNavigation: __webpack_require__(765),
-	  keyboardShortcuts: __webpack_require__(766),
-	  iframes: __webpack_require__(767),
-	  navigation: __webpack_require__(768),
-	  pauseOnExceptions: __webpack_require__(769),
-	  prettyPrint: __webpack_require__(770),
-	  prettyPrintPaused: __webpack_require__(771),
-	  returnvalues: __webpack_require__(772),
-	  scopes: __webpack_require__(773),
-	  searching: __webpack_require__(774),
-	  sources: __webpack_require__(775),
-	  sourceMaps: __webpack_require__(776),
-	  sourceMaps2: __webpack_require__(777),
-	  sourceMapsBogus: __webpack_require__(778)
+	  asm: __webpack_require__(759),
+	  breaking: __webpack_require__(769),
+	  breakpoints: __webpack_require__(770),
+	  breakpointsCond: __webpack_require__(771),
+	  callStack: __webpack_require__(772),
+	  expressions: __webpack_require__(773),
+	  debuggerButtons: __webpack_require__(774),
+	  editorSelect: __webpack_require__(775),
+	  editorPreview: __webpack_require__(1013),
+	  editorGutter: __webpack_require__(776),
+	  editorHighlight: __webpack_require__(777),
+	  keyboardNavigation: __webpack_require__(778),
+	  keyboardShortcuts: __webpack_require__(779),
+	  iframes: __webpack_require__(780),
+	  navigation: __webpack_require__(781),
+	  pauseOnExceptions: __webpack_require__(782),
+	  prettyPrint: __webpack_require__(783),
+	  prettyPrintPaused: __webpack_require__(784),
+	  returnvalues: __webpack_require__(785),
+	  scopes: __webpack_require__(786),
+	  scopesMutations: __webpack_require__(1014),
+	  searching: __webpack_require__(787),
+	  sources: __webpack_require__(788),
+	  sourceMaps: __webpack_require__(789),
+	  sourceMaps2: __webpack_require__(790),
+	  sourceMapsBogus: __webpack_require__(791),
+	  tabs: __webpack_require__(1015)
 	};
 
  },
 
+ 759:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var asm = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var is = ctx.is;
-	
+
 	    var dbg = yield initDebugger("doc-asm.html");
-	
+
 	    var getSelectedSource = dbg.selectors.getSelectedSource,
 	        getState = dbg.getState;
-	
-	
+
+
 	    yield reload(dbg);
-	
+
 	    
 	    
 	    yield waitForPaused(dbg);
 	    yield resume(dbg);
-	
+
 	    yield waitForSources(dbg, "doc-asm.html", "asm.js");
-	
+
 	    
 	    is(findAllElements(dbg, "sourceNodes").length, 2);
-	
+
 	    clickElement(dbg, "sourceArrow", 2);
 	    is(findAllElements(dbg, "sourceNodes").length, 4);
-	
-	    selectSource(dbg, 'asm.js');
-	
+
+	    selectSource(dbg, "asm.js");
+
 	    yield addBreakpoint(dbg, "asm.js", 7);
 	    invokeInTab(dbg, "runAsm");
-	
+
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "asm.js", 7);
 	  });
-	
+
 	  return function asm(_x) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    invokeInTab = _require.invokeInTab,
 	    assertPausedLocation = _require.assertPausedLocation,
@@ -20584,29 +4717,31 @@ return  (function(modules) {
 	    resume = _require.resume,
 	    selectSource = _require.selectSource,
 	    waitForSources = _require.waitForSources;
-	
+
 	module.exports = asm;
 
  },
 
+ 760:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
-	var wait = __webpack_require__(748);
-	var assert = __webpack_require__(752);
-	var mocha = __webpack_require__(753);
-	var commands = __webpack_require__(754);
-	var shared = __webpack_require__(749);
-	
+
+	var wait = __webpack_require__(761);
+	var assert = __webpack_require__(765);
+	var mocha = __webpack_require__(766);
+	var commands = __webpack_require__(767);
+	var shared = __webpack_require__(762);
+
 	module.exports = Object.assign({}, wait, assert, mocha, commands, shared);
 
  },
 
+ 761:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	
 
 
@@ -20627,12 +4762,12 @@ return  (function(modules) {
 	      });
 	    });
 	  });
-	
+
 	  return function waitForState(_x, _x2) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	var waitForPaused = (() => {
 	  var _ref2 = _asyncToGenerator(function* (dbg) {
 	    
@@ -20651,25 +4786,25 @@ return  (function(modules) {
 	      return sourceText && !sourceText.get("loading");
 	    });
 	  });
-	
+
 	  return function waitForPaused(_x3) {
 	    return _ref2.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
+
+
+
 	var waitForDispatch = (() => {
 	  var _ref3 = _asyncToGenerator(function* (dbg, type) {
 	    var _ref4 = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : {},
@@ -20677,10 +4812,10 @@ return  (function(modules) {
 	        useLaunchpad = _ref4$useLaunchpad === undefined ? false : _ref4$useLaunchpad,
 	        _ref4$eventRepeat = _ref4.eventRepeat,
 	        eventRepeat = _ref4$eventRepeat === undefined ? 1 : _ref4$eventRepeat;
-	
+
 	    var store = useLaunchpad ? dbg.launchpadStore : dbg.store;
 	    var count = 0;
-	
+
 	    info("Waiting for " + type + " to dispatch " + eventRepeat + " time(s)");
 	    while (count < eventRepeat) {
 	      yield _afterDispatchDone(store, type);
@@ -20688,16 +4823,16 @@ return  (function(modules) {
 	      info(type + " dispatched " + count + " time(s)");
 	    }
 	  });
-	
+
 	  return function waitForDispatch(_x4, _x5) {
 	    return _ref3.apply(this, arguments);
 	  };
 	})();
+
 	
 	
-	
-	
-	
+
+
 	var _afterDispatchDone = (() => {
 	  var _ref5 = _asyncToGenerator(function* (store, type) {
 	    return new Promise(function (resolve) {
@@ -20717,18 +4852,18 @@ return  (function(modules) {
 	      });
 	    });
 	  });
-	
+
 	  return function _afterDispatchDone(_x7, _x8) {
 	    return _ref5.apply(this, arguments);
 	  };
 	})();
+
 	
 	
 	
 	
-	
-	
-	
+
+
 	var waitForNextDispatch = (() => {
 	  var _ref6 = _asyncToGenerator(function* (store, type) {
 	    return new Promise(function (resolve) {
@@ -20746,45 +4881,45 @@ return  (function(modules) {
 	      });
 	    });
 	  });
-	
+
 	  return function waitForNextDispatch(_x9, _x10) {
 	    return _ref6.apply(this, arguments);
 	  };
 	})();
-	
+
 	var waitForTime = (() => {
 	  var _ref7 = _asyncToGenerator(function* (time) {
 	    return new Promise(function (resolve, reject) {
 	      setTimeout(resolve, time);
 	    });
 	  });
-	
+
 	  return function waitForTime(_x11) {
 	    return _ref7.apply(this, arguments);
 	  };
 	})();
-	
+
 	var waitForSources = (() => {
 	  var _ref8 = _asyncToGenerator(function* (dbg) {
 	    for (var _len = arguments.length, sources = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
 	      sources[_key - 1] = arguments[_key];
 	    }
-	
+
 	    if (sources.length === 0) {
 	      return Promise.resolve();
 	    }
-	
+
 	    function sourceExists(state, url) {
 	      return getSources(state).some(s => {
 	        var sourceUrl = s.get("url");
 	        return sourceUrl && sourceUrl.includes(url);
 	      });
 	    }
-	
+
 	    info("Waiting on sources: " + sources.join(", "));
 	    var getSources = dbg.selectors.getSources,
 	        store = dbg.store;
-	
+
 	    return Promise.all(sources.map(function (url) {
 	      if (!sourceExists(store.getState(), url)) {
 	        return waitForState(dbg, function () {
@@ -20793,28 +4928,28 @@ return  (function(modules) {
 	      }
 	    }));
 	  });
-	
+
 	  return function waitForSources(_x12) {
 	    return _ref8.apply(this, arguments);
 	  };
 	})();
-	
+
 	var waitForElement = (() => {
 	  var _ref9 = _asyncToGenerator(function* (dbg, selector) {
 	    return waitUntil(function () {
 	      return findElementWithSelector(dbg, selector);
 	    });
 	  });
-	
+
 	  return function waitForElement(_x13, _x14) {
 	    return _ref9.apply(this, arguments);
 	  };
 	})();
-	
+
 	var waitUntil = (() => {
 	  var _ref10 = _asyncToGenerator(function* (predicate) {
 	    var interval = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 20;
-	
+
 	    return new Promise(function (resolve) {
 	      var timer = setInterval(function () {
 	        if (predicate()) {
@@ -20824,28 +4959,28 @@ return  (function(modules) {
 	      }, interval);
 	    });
 	  });
-	
+
 	  return function waitUntil(_x15) {
 	    return _ref10.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
+
 	var waitForThreadEvents = (() => {
 	  var _ref11 = _asyncToGenerator(function* (dbg, eventName) {
 	    info("Waiting for thread event '" + eventName + "' to fire.");
 	    var thread = dbg.threadClient;
-	
+
 	    return new Promise(function (resolve, reject) {
 	      thread.addListener(eventName, function onEvent(eventName) {
 	        info("Thread event '" + eventName + "' fired.");
@@ -20854,17 +4989,17 @@ return  (function(modules) {
 	      });
 	    });
 	  });
-	
+
 	  return function waitForThreadEvents(_x17, _x18) {
 	    return _ref11.apply(this, arguments);
 	  };
 	})();
-	
+
 	var waitForTargetEvent = (() => {
 	  var _ref12 = _asyncToGenerator(function* (dbg, eventName) {
 	    info("Waiting for target event '" + eventName + "' to fire.");
 	    var tabTarget = dbg.tabTarget;
-	
+
 	    return new Promise(function (resolve, reject) {
 	      tabTarget.on(eventName, function onEvent(eventName) {
 	        info("Thread event '" + eventName + "' fired.");
@@ -20873,18 +5008,18 @@ return  (function(modules) {
 	      });
 	    });
 	  });
-	
+
 	  return function waitForTargetEvent(_x19, _x20) {
 	    return _ref12.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(749),
+
+	var _require = __webpack_require__(762),
 	    findElementWithSelector = _require.findElementWithSelector,
 	    info = _require.info;
-	
+
 	module.exports = {
 	  waitForPaused,
 	  waitForDispatch,
@@ -20898,12 +5033,13 @@ return  (function(modules) {
 
  },
 
+ 762:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
-	var mapValues = __webpack_require__(750);
-	
+
+	var mapValues = __webpack_require__(763);
+
 	var selectors = {
 	  callStackHeader: ".call-stack-pane ._header",
 	  callStackBody: ".call-stack-pane .pane",
@@ -20932,90 +5068,91 @@ return  (function(modules) {
 	  sourceFooter: ".source-footer",
 	  sourceNode: i => `.sources-list .tree-node:nth-child(${i}) .node`,
 	  sourceNodes: ".sources-list .tree-node",
-	  sourceArrow: i => `.sources-list .tree-node:nth-child(${i}) .arrow`
+	  sourceArrow: i => `.sources-list .tree-node:nth-child(${i}) .arrow`,
+	  sourceTabs: `.source-tabs`
 	};
-	
+
 	function findElement(dbg, elementName) {
 	  for (var _len = arguments.length, args = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
 	    args[_key - 2] = arguments[_key];
 	  }
-	
+
 	  var selector = getSelector.apply(undefined, [elementName].concat(args));
 	  return findElementWithSelector(dbg, selector);
 	}
-	
+
 	function findElementWithSelector(dbg, selector) {
 	  return dbg.win.document.querySelector(selector);
 	}
-	
+
 	function findAllElements(dbg, elementName) {
 	  for (var _len2 = arguments.length, args = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
 	    args[_key2 - 2] = arguments[_key2];
 	  }
-	
+
 	  var selector = getSelector.apply(undefined, [elementName].concat(args));
 	  return dbg.win.document.querySelectorAll(selector);
 	}
-	
+
 	function getSelector(elementName) {
 	  var selector = selectors[elementName];
 	  if (!selector) {
 	    throw new Error(`The selector ${elementName} is not defined`);
 	  }
-	
+
 	  if (typeof selector == "function") {
 	    for (var _len3 = arguments.length, args = Array(_len3 > 1 ? _len3 - 1 : 0), _key3 = 1; _key3 < _len3; _key3++) {
 	      args[_key3 - 1] = arguments[_key3];
 	    }
-	
+
 	    selector = selector.apply(undefined, args);
 	  }
-	
+
 	  return selector;
 	}
-	
+
 	function findSource(dbg, url) {
 	  if (typeof url !== "string") {
 	    
 	    
 	    return url;
 	  }
-	
+
 	  var sources = dbg.selectors.getSources(dbg.getState());
 	  var source = sources.find(s => {
 	    var sourceUrl = s.get("url");
 	    return sourceUrl && sourceUrl.includes(url);
 	  });
-	
+
 	  if (!source) {
 	    throw new Error("Unable to find source: " + url);
 	  }
-	
+
 	  return source.toJS();
 	}
-	
+
 	function isPaused(dbg) {
 	  var getPause = dbg.selectors.getPause,
 	      getState = dbg.getState;
-	
+
 	  return !!getPause(getState());
 	}
-	
+
 	function isVisibleWithin(outerEl, innerEl) {
 	  var innerRect = innerEl.getBoundingClientRect();
 	  var outerRect = outerEl.getBoundingClientRect();
 	  return innerRect.top > outerRect.top && innerRect.bottom < outerRect.bottom;
 	}
-	
+
 	function info(msg) {
 	  var message = `INFO: ${msg}\n`;
 	  if (typeof dump == "function") {
 	    dump(message);
 	  }
-	
+
 	  console.log(message);
 	}
-	
+
 	module.exports = {
 	  findElement,
 	  findElementWithSelector,
@@ -21030,12 +5167,13 @@ return  (function(modules) {
 
  },
 
+ 763:
  function(module, exports, __webpack_require__) {
 
 	var baseAssignValue = __webpack_require__(115),
-	    baseForOwn = __webpack_require__(751),
-	    baseIteratee = __webpack_require__(522);
-	
+	    baseForOwn = __webpack_require__(764),
+	    baseIteratee = __webpack_require__(264);
+
 	
 
 
@@ -21067,23 +5205,24 @@ return  (function(modules) {
 	function mapValues(object, iteratee) {
 	  var result = {};
 	  iteratee = baseIteratee(iteratee, 3);
-	
+
 	  baseForOwn(object, function(value, key, object) {
 	    baseAssignValue(result, key, iteratee(value, key, object));
 	  });
 	  return result;
 	}
-	
+
 	module.exports = mapValues;
 
 
  },
 
+ 764:
  function(module, exports, __webpack_require__) {
 
-	var baseFor = __webpack_require__(629),
+	var baseFor = __webpack_require__(395),
 	    keys = __webpack_require__(205);
-	
+
 	
 
 
@@ -21095,52 +5234,53 @@ return  (function(modules) {
 	function baseForOwn(object, iteratee) {
 	  return object && baseFor(object, iteratee, keys);
 	}
-	
+
 	module.exports = baseForOwn;
 
 
  },
 
+ 765:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
-	var _require = __webpack_require__(749),
+
+	var _require = __webpack_require__(762),
 	    findSource = _require.findSource,
 	    findElement = _require.findElement,
 	    isVisibleWithin = _require.isVisibleWithin,
 	    isPaused = _require.isPaused;
-	
+
 	function assertPausedLocation(dbg, ctx, source, line) {
 	  var _dbg$selectors = dbg.selectors,
 	      getSelectedSource = _dbg$selectors.getSelectedSource,
 	      getPause = _dbg$selectors.getPause,
 	      getState = dbg.getState;
-	
+
 	  source = findSource(dbg, source);
-	
+
 	  var is = ctx.is,
 	      ok = ctx.ok;
-	
+
 	  
-	
+
 	  is(getSelectedSource(getState()).get("id"), source.id);
-	
+
 	  
 	  var location = getPause(getState()).getIn(["frame", "location"]);
 	  is(location.get("sourceId"), source.id);
 	  is(location.get("line"), line);
-	
+
 	  
 	  ok(dbg.win.cm.lineInfo(line - 1).wrapClass.includes("debug-line"), "Line is highlighted as paused");
 	}
-	
+
 	function assertNotPaused(dbg, ctx) {
 	  var ok = ctx.ok;
-	
+
 	  ok(!isPaused(dbg), "not paused");
 	}
-	
+
 	function assertHighlightLocation(dbg, ctx, source, line) {
 	  var _dbg$selectors2 = dbg.selectors,
 	      getSelectedSource = _dbg$selectors2.getSelectedSource,
@@ -21148,19 +5288,19 @@ return  (function(modules) {
 	      getState = dbg.getState;
 	  var is = ctx.is,
 	      ok = ctx.ok;
-	
+
 	  source = findSource(dbg, source);
-	
+
 	  
 	  is(getSelectedSource(getState()).get("url"), source.url);
-	
+
 	  
 	  var lineEl = findElement(dbg, "highlightLine");
 	  ok(lineEl, "Line is highlighted");
 	  ok(isVisibleWithin(findElement(dbg, "codeMirror"), lineEl), "Highlighted line is visible");
 	  ok(dbg.win.cm.lineInfo(line - 1).wrapClass.includes("highlight-line"), "Line is highlighted");
 	}
-	
+
 	module.exports = {
 	  assertPausedLocation,
 	  assertNotPaused,
@@ -21169,10 +5309,11 @@ return  (function(modules) {
 
  },
 
+ 766:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var initDebugger = (() => {
 	  var _ref = _asyncToGenerator(function* (url) {
 	    Services.prefs.clearUserPref("devtools.debugger.tabs");
@@ -21181,36 +5322,48 @@ return  (function(modules) {
 	    var toolbox = yield openNewTabAndToolbox(url, "jsdebugger");
 	    return createDebuggerContext(toolbox);
 	  });
-	
+
 	  return function initDebugger(_x) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(749),
+
+	var _require = __webpack_require__(762),
 	    info = _require.info;
-	
-	var ContentTask, gBrowser, isLinux, cmdOrCtrl, keyMappings, openNewTabAndToolbox, Services, EXAMPLE_URL, EventUtils;
-	
+
+	var ContentTask, gBrowser, isLinux, isMac, cmdOrCtrl, keyMappings, openNewTabAndToolbox, Services, EXAMPLE_URL, EventUtils;
+
 	function setKeyboardMapping(isLinux, cmdOrCtrl) {
+	  
+	  
+	  
+	  var endKey = isMac ? { code: "VK_RIGHT", modifiers: cmdOrCtrl } : { code: "VK_END" };
+	  var startKey = isMac ? { code: "VK_LEFT", modifiers: cmdOrCtrl } : { code: "VK_HOME" };
 	  return {
 	    sourceSearch: { code: "p", modifiers: cmdOrCtrl },
 	    fileSearch: { code: "f", modifiers: cmdOrCtrl },
-	    "Enter": { code: "VK_RETURN" },
-	    "Up": { code: "VK_UP" },
-	    "Down": { code: "VK_DOWN" },
-	    "Tab": { code: "VK_TAB" },
-	    "Escape": { code: "VK_ESCAPE" },
+	    Enter: { code: "VK_RETURN" },
+	    Up: { code: "VK_UP" },
+	    Down: { code: "VK_DOWN" },
+	    Right: { code: "VK_RIGHT" },
+	    Left: { code: "VK_LEFT" },
+	    End: endKey,
+	    Start: startKey,
+	    Tab: { code: "VK_TAB" },
+	    Escape: { code: "VK_ESCAPE" },
 	    pauseKey: { code: "VK_F8" },
 	    resumeKey: { code: "VK_F8" },
 	    stepOverKey: { code: "VK_F10" },
 	    stepInKey: { code: "VK_F11", modifiers: { ctrlKey: isLinux } },
-	    stepOutKey: { code: "VK_F11", modifiers: { ctrlKey: isLinux, shiftKey: true } }
+	    stepOutKey: {
+	      code: "VK_F11",
+	      modifiers: { ctrlKey: isLinux, shiftKey: true }
+	    }
 	  };
 	}
-	
+
 	function setupTestRunner(context) {
 	  ContentTask = context.ContentTask;
 	  gBrowser = context.gBrowser;
@@ -21219,35 +5372,36 @@ return  (function(modules) {
 	  EXAMPLE_URL = context.EXAMPLE_URL;
 	  EventUtils = context.EventUtils;
 	  isLinux = Services.appinfo.OS === "Linux";
+	  isMac = Services.appinfo.OS === "Darwin";
 	  cmdOrCtrl = isLinux ? { ctrlKey: true } : { metaKey: true };
 	  keyMappings = setKeyboardMapping(isLinux, cmdOrCtrl);
 	}
-	
+
 	function invokeInTab(dbg, fnc) {
 	  info(`Invoking function ${fnc} in tab`);
 	  return ContentTask.spawn(gBrowser.selectedBrowser, fnc, function* (fnc) {
 	    content.wrappedJSObject[fnc](); 
 	  });
 	}
-	
+
 	function evalInTab(dbg, script) {
 	  info(`evaling script ${script}`);
 	  return ContentTask.spawn(gBrowser.selectedBrowser, script, function (script) {
 	    content.eval(script);
 	  });
 	}
-	
+
 	function selectMenuItem(dbg, index) {
 	  
 	  var doc = dbg.toolbox.win.document;
-	
+
 	  
-	  var popup = doc.querySelector("menupopup[menu-api=\"true\"]");
-	
+	  var popup = doc.querySelector('menupopup[menu-api="true"]');
+
 	  var item = popup.querySelector(`menuitem:nth-child(${index})`);
 	  return EventUtils.synthesizeMouseAtCenter(item, {}, dbg.toolbox.win);
 	}
-	
+
 	
 
 
@@ -21261,25 +5415,25 @@ return  (function(modules) {
 	  var keyEvent = keyMappings[keyName];
 	  var code = keyEvent.code,
 	      modifiers = keyEvent.modifiers;
-	
+
 	  return EventUtils.synthesizeKey(code, modifiers || {}, dbg.win);
 	}
-	
+
 	function type(dbg, string) {
 	  string.split("").forEach(char => {
 	    EventUtils.synthesizeKey(char, {}, dbg.win);
 	  });
 	}
-	
+
 	function countSources(dbg) {
 	  var sources = dbg.selectors.getSources(dbg.getState());
 	  return sources.size;
 	}
-	
+
 	function createDebuggerContext(toolbox) {
 	  var win = toolbox.getPanel("jsdebugger").panelWin;
 	  var store = win.Debugger.store;
-	
+
 	  return {
 	    actions: win.Debugger.actions,
 	    selectors: win.Debugger.selectors,
@@ -21291,7 +5445,7 @@ return  (function(modules) {
 	    win: win
 	  };
 	}
-	
+
 	module.exports = {
 	  invokeInTab,
 	  evalInTab,
@@ -21307,10 +5461,11 @@ return  (function(modules) {
 
  },
 
+ 767:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	
 
 
@@ -21327,173 +5482,174 @@ return  (function(modules) {
 	    var source = findSource(dbg, url);
 	    var hasText = !!dbg.selectors.getSourceText(dbg.getState(), source.id);
 	    yield dbg.actions.selectSource(source.id, { line });
-	
+
 	    if (!hasText) {
 	      yield waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
 	    }
 	  });
-	
+
 	  return function selectSource(_x, _x2, _x3) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
 	var stepOver = (() => {
 	  var _ref2 = _asyncToGenerator(function* (dbg) {
 	    info("Stepping over");
 	    dbg.actions.stepOver();
 	    return waitForPaused(dbg);
 	  });
-	
+
 	  return function stepOver(_x4) {
 	    return _ref2.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
 	var stepIn = (() => {
 	  var _ref3 = _asyncToGenerator(function* (dbg) {
 	    info("Stepping in");
 	    dbg.actions.stepIn();
 	    return waitForPaused(dbg);
 	  });
-	
+
 	  return function stepIn(_x5) {
 	    return _ref3.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
 	var stepOut = (() => {
 	  var _ref4 = _asyncToGenerator(function* (dbg) {
 	    info("Stepping out");
 	    dbg.actions.stepOut();
 	    return waitForPaused(dbg);
 	  });
-	
+
 	  return function stepOut(_x6) {
 	    return _ref4.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
 	var resume = (() => {
 	  var _ref5 = _asyncToGenerator(function* (dbg) {
 	    info("Resuming");
 	    dbg.actions.resume();
 	    return waitForThreadEvents(dbg, "resumed");
 	  });
-	
+
 	  return function resume(_x7) {
 	    return _ref5.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
+
 	var reload = (() => {
 	  var _ref6 = _asyncToGenerator(function* (dbg) {
+	    yield dbg.client.reload();
+	    yield waitForDispatch(dbg, "NAVIGATE");
+
 	    for (var _len = arguments.length, sources = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
 	      sources[_key - 1] = arguments[_key];
 	    }
-	
-	    return dbg.client.reload().then(function () {
-	      return waitForSources.apply(undefined, [dbg].concat(sources));
-	    });
+
+	    return waitForSources.apply(undefined, [dbg].concat(sources));
 	  });
-	
+
 	  return function reload(_x8) {
 	    return _ref6.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
+
+
 	var navigate = (() => {
 	  var _ref7 = _asyncToGenerator(function* (dbg, url) {
 	    dbg.client.navigate(url);
-	
+
 	    for (var _len2 = arguments.length, sources = Array(_len2 > 2 ? _len2 - 2 : 0), _key2 = 2; _key2 < _len2; _key2++) {
 	      sources[_key2 - 2] = arguments[_key2];
 	    }
-	
+
 	    return waitForSources.apply(undefined, [dbg].concat(sources));
 	  });
-	
+
 	  return function navigate(_x9, _x10) {
 	    return _ref7.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
+
+
+
 	var addBreakpoint = (() => {
 	  var _ref8 = _asyncToGenerator(function* (dbg, source, line, col) {
 	    source = findSource(dbg, source);
@@ -21501,149 +5657,150 @@ return  (function(modules) {
 	    dbg.actions.addBreakpoint({ sourceId, line, col });
 	    return waitForDispatch(dbg, "ADD_BREAKPOINT");
 	  });
-	
+
 	  return function addBreakpoint(_x11, _x12, _x13, _x14) {
 	    return _ref8.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
+
+
+
 	var removeBreakpoint = (() => {
 	  var _ref9 = _asyncToGenerator(function* (dbg, sourceId, line, col) {
 	    return dbg.actions.removeBreakpoint({ sourceId, line, col });
 	  });
-	
+
 	  return function removeBreakpoint(_x15, _x16, _x17, _x18) {
 	    return _ref9.apply(this, arguments);
 	  };
 	})();
-	
-	
-
-
-
-
-
-
-
-
 
 	
-	
+
+
+
+
+
+
+
+
+
+
+
 	var togglePauseOnExceptions = (() => {
 	  var _ref10 = _asyncToGenerator(function* (dbg, pauseOnExceptions, ignoreCaughtExceptions) {
 	    var command = dbg.actions.pauseOnExceptions(pauseOnExceptions, ignoreCaughtExceptions);
-	
+
 	    if (!isPaused(dbg)) {
 	      return waitForThreadEvents(dbg, "resumed");
 	    }
-	
+
 	    return command;
 	  });
-	
+
 	  return function togglePauseOnExceptions(_x19, _x20, _x21) {
 	    return _ref10.apply(this, arguments);
 	  };
 	})();
-	
+
 	var clickElement = (() => {
 	  var _ref11 = _asyncToGenerator(function* (dbg, elementName) {
 	    for (var _len3 = arguments.length, args = Array(_len3 > 2 ? _len3 - 2 : 0), _key3 = 2; _key3 < _len3; _key3++) {
 	      args[_key3 - 2] = arguments[_key3];
 	    }
-	
+
 	    var selector = getSelector.apply(undefined, [elementName].concat(args));
 	    var el = dbg.win.document.querySelector(selector);
 	    clickEl(dbg.win, el);
 	  });
-	
+
 	  return function clickElement(_x22, _x23) {
 	    return _ref11.apply(this, arguments);
 	  };
 	})();
-	
+
 	var dblClickElement = (() => {
 	  var _ref12 = _asyncToGenerator(function* (dbg, elementName) {
 	    for (var _len4 = arguments.length, args = Array(_len4 > 2 ? _len4 - 2 : 0), _key4 = 2; _key4 < _len4; _key4++) {
 	      args[_key4 - 2] = arguments[_key4];
 	    }
-	
+
 	    var selector = getSelector.apply(undefined, [elementName].concat(args));
 	    var el = dbg.win.document.querySelector(selector);
 	    dblClickEl(dbg.win, el);
 	  });
-	
+
 	  return function dblClickElement(_x24, _x25) {
 	    return _ref12.apply(this, arguments);
 	  };
 	})();
-	
+
 	var rightClickElement = (() => {
 	  var _ref13 = _asyncToGenerator(function* (dbg, elementName) {
 	    for (var _len5 = arguments.length, args = Array(_len5 > 2 ? _len5 - 2 : 0), _key5 = 2; _key5 < _len5; _key5++) {
 	      args[_key5 - 2] = arguments[_key5];
 	    }
-	
+
 	    var selector = getSelector.apply(undefined, [elementName].concat(args));
 	    var el = dbg.win.document.querySelector(selector);
-	    info('right click on the gutter', el);
+	    info("right click on the gutter", el);
 	    rightClickEl(dbg.win, el);
 	  });
-	
+
 	  return function rightClickElement(_x26, _x27) {
 	    return _ref13.apply(this, arguments);
 	  };
 	})();
+
 	
-	
-	
-	
+
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(755),
+
+	var _require = __webpack_require__(768),
 	    clickEl = _require.clickEl,
 	    rightClickEl = _require.rightClickEl,
-	    dblClickEl = _require.dblClickEl;
-	
+	    dblClickEl = _require.dblClickEl,
+	    mouseOverEl = _require.mouseOverEl;
+
 	function info(msg) {
 	  console.log(`info: ${msg}\n`);
 	}
-	
-	var _require2 = __webpack_require__(753),
+
+	var _require2 = __webpack_require__(766),
 	    evalInTab = _require2.evalInTab,
 	    invokeInTab = _require2.invokeInTab,
 	    selectMenuItem = _require2.selectMenuItem,
 	    pressKey = _require2.pressKey,
 	    type = _require2.type;
-	
-	var _require3 = __webpack_require__(749),
+
+	var _require3 = __webpack_require__(762),
 	    selectors = _require3.selectors,
 	    findSource = _require3.findSource,
 	    getSelector = _require3.getSelector,
 	    info = _require3.info,
 	    isPaused = _require3.isPaused;
-	
-	var _require4 = __webpack_require__(748),
+
+	var _require4 = __webpack_require__(761),
 	    waitForSources = _require4.waitForSources,
 	    waitForDispatch = _require4.waitForDispatch,
 	    waitForPaused = _require4.waitForPaused,
 	    waitForThreadEvents = _require4.waitForThreadEvents;
-	
+
 	var winObj = typeof window == "Object" ? window : {};
 	winObj.resumeTest = undefined;
-	
+
 	
 
 
@@ -21655,7 +5812,7 @@ return  (function(modules) {
 	  info("Test paused. Invoke resumeTest to continue.");
 	  return new Promise(resolve => resumeTest = resolve);
 	}
-	
+
 	module.exports = {
 	  selectSource,
 	  stepOver,
@@ -21668,6 +5825,7 @@ return  (function(modules) {
 	  removeBreakpoint,
 	  togglePauseOnExceptions,
 	  clickElement,
+	  mouseOverEl,
 	  navigate,
 	  invokeInTab,
 	  evalInTab,
@@ -21681,52 +5839,53 @@ return  (function(modules) {
 
  },
 
+ 768:
  function(module, exports) {
 
 	"use strict";
-	
+
 	function triggerMouseEvent(_ref) {
 	  var type = _ref.type,
 	      _ref$props = _ref.props,
 	      props = _ref$props === undefined ? {} : _ref$props,
 	      win = _ref.win,
 	      el = _ref.el;
-	
+
 	  var event = new win.Event(type, {
-	    "view": win,
-	    "bubbles": true,
-	    "cancelable": true
+	    view: win,
+	    bubbles: true,
+	    cancelable: true
 	  });
-	
+
 	  var rect = el.getBoundingClientRect();
 	  event = Object.assign(event, props, {
 	    clientX: (rect.left + rect.right) / 2,
 	    clientY: (rect.top + rect.bottom) / 2
 	  });
-	
+
 	  el.dispatchEvent(event);
 	}
-	
+
 	function clickEl(win, el) {
 	  triggerMouseEvent({
 	    type: "mousedown",
 	    win: win,
 	    el
 	  });
-	
+
 	  triggerMouseEvent({
 	    type: "click",
 	    win: win,
 	    el
 	  });
-	
+
 	  return triggerMouseEvent({
 	    type: "mouseup",
 	    win: win,
 	    el
 	  });
 	}
-	
+
 	function rightClickEl(win, el) {
 	  return triggerMouseEvent({
 	    type: "contextmenu",
@@ -21735,7 +5894,7 @@ return  (function(modules) {
 	    el
 	  });
 	}
-	
+
 	function dblClickEl(win, el) {
 	  return triggerMouseEvent({
 	    type: "dblclick",
@@ -21743,22 +5902,32 @@ return  (function(modules) {
 	    el
 	  });
 	}
-	
+
+	function mouseOverEl(win, el) {
+	  triggerMouseEvent({
+	    type: "mouseover",
+	    win: win,
+	    el
+	  });
+	}
+
 	module.exports = {
 	  clickEl,
 	  rightClickEl,
-	  dblClickEl
+	  dblClickEl,
+	  mouseOverEl
 	};
 
  },
 
+ 769:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    assertPausedLocation = _require.assertPausedLocation,
 	    findSource = _require.findSource,
 	    findElement = _require.findElement,
@@ -21773,176 +5942,177 @@ return  (function(modules) {
 	    waitForDispatch = _require.waitForDispatch,
 	    setupTestRunner = _require.setupTestRunner,
 	    initDebugger = _require.initDebugger;
-	
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is;
-	
+
 	    var dbg = yield initDebugger("doc-scripts.html", "scripts.html");
 	    var getSelectedSource = dbg.selectors.getSelectedSource,
 	        getState = dbg.getState;
-	
+
 	    
 	    
-	
+
 	    yield addBreakpoint(dbg, "scripts.html", 18);
 	    reload(dbg);
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "scripts.html", 18);
 	    yield resume(dbg);
-	
+
 	    var paused = waitForPaused(dbg);
-	
+
 	    
 	    invokeInTab(dbg, "doEval");
-	
+
 	    yield paused;
 	    yield resume(dbg);
 	    var source = getSelectedSource(getState()).toJS();
 	    ok(!source.url, "It is an eval source");
-	
+
 	    yield addBreakpoint(dbg, source, 5);
 	    invokeInTab(dbg, "evaledFunc");
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, source, 5);
 	  });
-	
+
 	  function breaking(_x) {
 	    return _ref.apply(this, arguments);
 	  }
-	
+
 	  return breaking;
 	})();
 
  },
 
+ 770:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var removeBreakpoint = (() => {
 	  var _ref = _asyncToGenerator(function* (dbg, index) {
 	    var bp = findElement(dbg, "breakpointItem", index);
 	    bp.querySelector(".close-btn").click();
 	    yield waitForDispatch(dbg, "REMOVE_BREAKPOINT");
 	  });
-	
+
 	  return function removeBreakpoint(_x, _x2) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	var disableBreakpoint = (() => {
 	  var _ref2 = _asyncToGenerator(function* (dbg, index) {
 	    toggleBreakpoint(dbg, index);
 	    yield waitForDispatch(dbg, "REMOVE_BREAKPOINT");
 	  });
-	
+
 	  return function disableBreakpoint(_x3, _x4) {
 	    return _ref2.apply(this, arguments);
 	  };
 	})();
-	
+
 	var enableBreakpoint = (() => {
 	  var _ref3 = _asyncToGenerator(function* (dbg, index) {
 	    toggleBreakpoint(dbg, index);
 	    yield waitForDispatch(dbg, "ADD_BREAKPOINT");
 	  });
-	
+
 	  return function enableBreakpoint(_x5, _x6) {
 	    return _ref3.apply(this, arguments);
 	  };
 	})();
-	
+
 	var toggleBreakpoints = (() => {
 	  var _ref4 = _asyncToGenerator(function* (dbg) {
 	    clickElement(dbg, "toggleBreakpoints");
 	    yield waitForDispatch(dbg, "TOGGLE_BREAKPOINTS");
 	  });
-	
+
 	  return function toggleBreakpoints(_x7) {
 	    return _ref4.apply(this, arguments);
 	  };
 	})();
-	
+
 	var toggle = (() => {
 	  var _ref5 = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	    var dbg = yield initDebugger("doc-scripts.html");
-	
+
+	    var dbg = yield initDebugger("doc-scripts.html", "simple2");
+
 	    
 	    yield selectSource(dbg, "simple2");
 	    yield addBreakpoint(dbg, "simple2", 3);
 	    yield addBreakpoint(dbg, "simple2", 5);
-	
+
 	    
 	    yield disableBreakpoint(dbg, 1);
 	    var bp1 = findBreakpoint(dbg, "simple2", 3);
 	    var bp2 = findBreakpoint(dbg, "simple2", 5);
 	    is(bp1.disabled, true, "first breakpoint is disabled");
 	    is(bp2.disabled, false, "second breakpoint is enabled");
-	
+
 	    
 	    yield disableBreakpoint(dbg, 2);
 	    yield enableBreakpoint(dbg, 2);
 	    bp2 = findBreakpoint(dbg, "simple2", 5);
 	    is(bp2.disabled, false, "second breakpoint is enabled");
 	  });
-	
+
 	  return function toggle(_x8) {
 	    return _ref5.apply(this, arguments);
 	  };
 	})();
+
 	
-	
-	
-	
+
+
 	var toggleAll = (() => {
 	  var _ref6 = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
+
 	    var dbg = yield initDebugger("doc-scripts.html");
-	
+
 	    
 	    yield selectSource(dbg, "simple2");
 	    yield addBreakpoint(dbg, "simple2", 3);
 	    yield addBreakpoint(dbg, "simple2", 5);
-	
+
 	    
 	    yield toggleBreakpoints(dbg);
 	    var bp1 = findBreakpoint(dbg, "simple2", 3);
 	    var bp2 = findBreakpoint(dbg, "simple2", 5);
 	    is(bp1.disabled, true, "first breakpoint is disabled");
 	    is(bp2.disabled, true, "second breakpoint is disabled");
-	
+
 	    
 	    yield toggleBreakpoints(dbg);
 	    bp1 = findBreakpoint(dbg, "simple2", 3);
 	    bp2 = findBreakpoint(dbg, "simple2", 5);
 	    is(bp1.disabled, false, "first breakpoint is enabled");
 	    is(bp2.disabled, false, "second breakpoint is enabled");
-	
+
 	    
 	    yield removeBreakpoint(dbg, 1);
 	    yield removeBreakpoint(dbg, 1);
 	    var bps = findBreakpoints(dbg);
 	    is(bps.size, 0, "breakpoints are removed");
 	  });
-	
+
 	  return function toggleAll(_x9) {
 	    return _ref6.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    findElement = _require.findElement,
@@ -21951,28 +6121,28 @@ return  (function(modules) {
 	    clickElement = _require.clickElement,
 	    addBreakpoint = _require.addBreakpoint,
 	    waitForDispatch = _require.waitForDispatch;
-	
+
 	function toggleBreakpoint(dbg, index) {
 	  var bp = findElement(dbg, "breakpointItem", index);
 	  var input = bp.querySelector("input");
 	  input.click();
 	}
-	
+
 	function findBreakpoint(dbg, url, line) {
 	  var getBreakpoint = dbg.selectors.getBreakpoint,
 	      getState = dbg.getState;
-	
+
 	  var source = findSource(dbg, url);
 	  return getBreakpoint(getState(), { sourceId: source.id, line });
 	}
-	
+
 	function findBreakpoints(dbg) {
 	  var getBreakpoints = dbg.selectors.getBreakpoints,
 	      getState = dbg.getState;
-	
+
 	  return getBreakpoints(getState());
 	}
-	
+
 	module.exports = {
 	  toggle,
 	  toggleAll
@@ -21980,32 +6150,33 @@ return  (function(modules) {
 
  },
 
+ 771:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var setConditionalBreakpoint = (() => {
 	  var _ref = _asyncToGenerator(function* (dbg, _ref2, index, condition) {
 	    var info = _ref2.info;
-	
+
 	    info("right click on the gutter");
 	    rightClickElement(dbg, "gutter", index);
 	    selectMenuItem(dbg, 2);
 	    yield waitForElement(dbg, cbInput);
 	    var el = findElementWithSelector(dbg, cbInput);
-	
+
 	    type(dbg, condition);
 	    pressKey(dbg, "Enter");
 	  });
-	
+
 	  return function setConditionalBreakpoint(_x, _x2, _x3, _x4) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    waitForPaused = _require.waitForPaused,
 	    waitForElement = _require.waitForElement,
 	    waitForDispatch = _require.waitForDispatch,
@@ -22019,45 +6190,45 @@ return  (function(modules) {
 	    type = _require.type,
 	    pressKey = _require.pressKey,
 	    initDebugger = _require.initDebugger;
-	
+
 	var cbInput = ".conditional-breakpoint-panel input";
-	
+
 	function findBreakpoint(dbg, url, line) {
 	  var getBreakpoint = dbg.selectors.getBreakpoint,
 	      getState = dbg.getState;
-	
+
 	  var source = findSource(dbg, url);
 	  return getBreakpoint(getState(), { sourceId: source.id, line });
 	}
-	
+
 	module.exports = (() => {
 	  var _ref3 = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-scripts.html", "simple2");
 	    yield selectSource(dbg, "simple2");
-	
+
 	    info("Adding a conditional Breakpoint");
 	    yield setConditionalBreakpoint(dbg, ctx, 5, "1");
 	    yield waitForDispatch(dbg, "ADD_BREAKPOINT");
 	    var bp = findBreakpoint(dbg, "simple2", 5);
 	    is(bp.condition, "1", "breakpoint is created with the condition");
-	
+
 	    info("Editing a conditional Breakpoint");
 	    yield setConditionalBreakpoint(dbg, ctx, 5, "2");
 	    yield waitForDispatch(dbg, "SET_BREAKPOINT_CONDITION");
 	    bp = findBreakpoint(dbg, "simple2", 5);
 	    is(bp.condition, "12", "breakpoint is created with the condition");
-	
+
 	    info("Removing a conditional breakpoint");
 	    clickElement(dbg, "gutter", 5);
 	    yield waitForDispatch(dbg, "REMOVE_BREAKPOINT");
 	    bp = findBreakpoint(dbg, "simple2", 5);
 	    is(bp, undefined, "breakpoint was removed");
-	
+
 	    info("Adding a condition to a breakpoint");
 	    clickElement(dbg, "gutter", 5);
 	    yield waitForDispatch(dbg, "ADD_BREAKPOINT");
@@ -22065,92 +6236,98 @@ return  (function(modules) {
 	    bp = findBreakpoint(dbg, "simple2", 5);
 	    is(bp.condition, "1", "breakpoint is created with the condition");
 	  });
-	
+
 	  function breakpointsCond(_x5) {
 	    return _ref3.apply(this, arguments);
 	  }
-	
+
 	  return breakpointsCond;
 	})();
 
  },
 
+ 772:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var test1 = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-script-switching.html");
-	
+
 	    toggleCallStack(dbg);
-	
+
 	    var notPaused = findElement(dbg, "callStackBody").innerText.trim();
 	    is(notPaused, "Not Paused", "Not paused message is shown");
-	
+
 	    invokeInTab(dbg, "firstCall");
 	    yield waitForPaused(dbg);
-	
+
 	    ok(isFrameSelected(dbg, 1, "secondCall"), "the first frame is selected");
-	
+
 	    clickElement(dbg, "frame", 2);
 	    ok(isFrameSelected(dbg, 2, "firstCall"), "the second frame is selected");
-	
+
 	    var button = toggleButton(dbg);
 	    ok(!button, "toggle button shouldn't be there");
 	  });
-	
+
 	  return function test1(_x) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	var test2 = (() => {
 	  var _ref2 = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
-	    var dbg = yield initDebugger("doc-frames.html");
-	
+
+
+	    var dbg = yield initDebugger("doc-frames.html", "frames");
+
+	    
+	    if (isPaused(dbg)) {
+	      yield resume(dbg);
+	    }
+
 	    toggleCallStack(dbg);
-	
+
 	    invokeInTab(dbg, "startRecursion");
 	    yield waitForPaused(dbg);
-	
+
 	    ok(isFrameSelected(dbg, 1, "recurseA"), "the first frame is selected");
-	
+
 	    
 	    var button = toggleButton(dbg);
 	    var frames = findAllElements(dbg, "frames");
 	    is(button.innerText, "Expand Rows", "toggle button should be expand");
 	    is(frames.length, 7, "There should be at most seven frames");
-	
+
 	    button.click();
-	
+
 	    button = toggleButton(dbg);
 	    frames = findAllElements(dbg, "frames");
 	    is(button.innerText, "Collapse Rows", "toggle button should be collapse");
-	
+
 	    
 	    var frameCount = environment == "mocha" ? 23 : 22;
 	    is(frames.length, frameCount, "All of the frames should be shown");
 	  });
-	
+
 	  return function test2(_x2) {
 	    return _ref2.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    environment = _require.environment,
 	    assertPausedLocation = _require.assertPausedLocation,
@@ -22159,30 +6336,32 @@ return  (function(modules) {
 	    clickElement = _require.clickElement,
 	    findElement = _require.findElement,
 	    findAllElements = _require.findAllElements,
+	    isPaused = _require.isPaused,
+	    resume = _require.resume,
 	    reload = _require.reload;
+
 	
-	
-	
-	
+
+
 	function isFrameSelected(dbg, index, title) {
 	  var $frame = findElement(dbg, "frame", index);
 	  var frame = dbg.selectors.getSelectedFrame(dbg.getState());
-	
+
 	  var elSelected = $frame.classList.contains("selected");
 	  var titleSelected = frame.displayName == title;
-	
+
 	  return elSelected && titleSelected;
 	}
-	
+
 	function toggleButton(dbg) {
 	  var callStackBody = findElement(dbg, "callStackBody");
 	  return callStackBody.querySelector(".show-more");
 	}
-	
+
 	function toggleCallStack(dbg) {
 	  return findElement(dbg, "callStackHeader").click();
 	}
-	
+
 	module.exports = {
 	  test1,
 	  test2
@@ -22190,25 +6369,26 @@ return  (function(modules) {
 
  },
 
+ 773:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var addExpression = (() => {
 	  var _ref = _asyncToGenerator(function* (dbg, input) {
 	    info("Adding an expression");
 	    findElementWithSelector(dbg, selectors.input).focus();
 	    type(dbg, input);
 	    pressKey(dbg, "Enter");
-	
+
 	    yield waitForDispatch(dbg, "EVALUATE_EXPRESSION");
 	  });
-	
+
 	  return function addExpression(_x, _x2) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	var editExpression = (() => {
 	  var _ref2 = _asyncToGenerator(function* (dbg, input) {
 	    info("updating the expression");
@@ -22217,12 +6397,12 @@ return  (function(modules) {
 	    pressKey(dbg, "Enter");
 	    yield waitForDispatch(dbg, "EVALUATE_EXPRESSION");
 	  });
-	
+
 	  return function editExpression(_x3, _x4) {
 	    return _ref2.apply(this, arguments);
 	  };
 	})();
-	
+
 	var deleteExpression = (() => {
 	  var _ref3 = _asyncToGenerator(function* (dbg, index) {
 	    info("Deleting the expression");
@@ -22230,15 +6410,15 @@ return  (function(modules) {
 	    clickElement(dbg, "expressionClose", index);
 	    yield deleteExpression;
 	  });
-	
+
 	  return function deleteExpression(_x5, _x6) {
 	    return _ref3.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    findSource = _require.findSource,
@@ -22253,50 +6433,50 @@ return  (function(modules) {
 	    invokeInTab = _require.invokeInTab,
 	    clickElement = _require.clickElement,
 	    dblClickElement = _require.dblClickElement;
-	
-	
-
-
-
-
 
 	
+
+
+
+
+
+
 	var selectors = {
 	  input: "input.input-expression"
 	};
-	
+
 	function getLabel(dbg, index) {
 	  return findElement(dbg, "expressionNode", index).innerText;
 	}
-	
+
 	function getValue(dbg, index) {
 	  return findElement(dbg, "expressionValue", index).innerText;
 	}
-	
+
 	module.exports = (() => {
 	  var _ref4 = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info,
 	        requestLongerTimeout = ctx.requestLongerTimeout;
-	
+
 	    var dbg = yield initDebugger("doc-script-switching.html");
-	
+
 	    invokeInTab(dbg, "firstCall");
 	    yield waitForPaused(dbg);
-	
+
 	    yield addExpression(dbg, "f");
 	    is(getLabel(dbg, 1), "f");
 	    is(getValue(dbg, 1), "ReferenceError");
-	
+
 	    yield editExpression(dbg, "oo");
-	    is(getLabel(dbg, 1), "foo");
-	    is(getValue(dbg, 1), "function foo()");
-	
+	    is(getLabel(dbg, 1), "foo()");
+	    is(getValue(dbg, 1), "");
+
 	    yield deleteExpression(dbg, 1);
 	    is(findAllElements(dbg, "expressionNodes").length, 0);
 	  });
-	
+
 	  return function (_x7) {
 	    return _ref4.apply(this, arguments);
 	  };
@@ -22304,13 +6484,14 @@ return  (function(modules) {
 
  },
 
+ 774:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    waitForPaused = _require.waitForPaused,
@@ -22318,22 +6499,22 @@ return  (function(modules) {
 	    clickElement = _require.clickElement,
 	    findElement = _require.findElement,
 	    reload = _require.reload;
-	
+
 	function clickStepOver(dbg) {
 	  clickElement(dbg, "stepOver");
 	  return waitForPaused(dbg);
 	}
-	
+
 	function clickStepIn(dbg) {
 	  clickElement(dbg, "stepIn");
 	  return waitForPaused(dbg);
 	}
-	
+
 	function clickStepOut(dbg) {
 	  clickElement(dbg, "stepOut");
 	  return waitForPaused(dbg);
 	}
-	
+
 	
 
 
@@ -22347,36 +6528,36 @@ return  (function(modules) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-debugger-statements.html");
-	
+
 	    yield reload(dbg);
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 8);
-	
+
 	    
 	    clickElement(dbg, "resume");
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 12);
-	
+
 	    
 	    yield clickStepOver(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 13);
-	
+
 	    
 	    yield clickStepIn(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 18);
-	
+
 	    
 	    yield clickStepOver(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 20);
-	
+
 	    
 	    yield clickStepOut(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 20);
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -22384,13 +6565,14 @@ return  (function(modules) {
 
  },
 
+ 775:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    findSource = _require.findSource,
@@ -22403,70 +6585,70 @@ return  (function(modules) {
 	    stepOut = _require.stepOut,
 	    resume = _require.resume,
 	    isVisibleWithin = _require.isVisibleWithin;
+
 	
 	
+
 	
-	
-	
-	
-	
+
+
 	function isElementVisible(dbg, elementName) {
 	  var bpLine = findElement(dbg, elementName);
 	  var cm = findElement(dbg, "codeMirror");
 	  return bpLine && isVisibleWithin(cm, bpLine);
 	}
-	
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info,
 	        requestLongerTimeout = ctx.requestLongerTimeout;
-	
+
 	    
 	    
 	    
-	
+
 	    requestLongerTimeout(2);
-	
+
 	    var dbg = yield initDebugger("doc-scripts.html");
 	    var getSelectedSource = dbg.selectors.getSelectedSource,
 	        getState = dbg.getState;
-	
+
 	    var simple1 = findSource(dbg, "simple1.js");
 	    var simple2 = findSource(dbg, "simple2.js");
-	
+
 	    
 	    yield addBreakpoint(dbg, simple1, 4);
 	    ok(!getSelectedSource(getState()), "No selected source");
-	
+
 	    
 	    invokeInTab(dbg, "main");
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, simple1, 4);
-	
+
 	    
 	    
 	    yield stepIn(dbg);
 	    assertPausedLocation(dbg, ctx, simple2, 2);
-	
+
 	    
 	    yield stepOut(dbg);
 	    yield stepOut(dbg);
 	    assertPausedLocation(dbg, ctx, simple1, 5);
 	    yield resume(dbg);
-	
+
 	    
 	    
 	    var longSrc = findSource(dbg, "long.js");
 	    yield addBreakpoint(dbg, longSrc, 66);
-	
+
 	    invokeInTab(dbg, "testModel");
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, longSrc, 66);
 	    ok(isElementVisible(dbg, "breakpoint"), "Breakpoint is visible");
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -22474,13 +6656,14 @@ return  (function(modules) {
 
  },
 
+ 776:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    clickElement = _require.clickElement,
 	    assertPausedLocation = _require.assertPausedLocation,
@@ -22490,58 +6673,58 @@ return  (function(modules) {
 	    assertHighlightLocation = _require.assertHighlightLocation,
 	    waitForPaused = _require.waitForPaused,
 	    waitForDispatch = _require.waitForDispatch;
+
 	
 	
+
 	
-	
-	
-	
-	
+
+
 	function clickGutter(dbg, line) {
 	  clickElement(dbg, "gutter", line);
 	}
-	
+
 	function getLineEl(dbg, line) {
 	  var lines = dbg.win.document.querySelectorAll(".CodeMirror-code > div");
 	  return lines[line - 1];
 	}
-	
+
 	function assertEditorBreakpoint(dbg, ctx, line, shouldExist) {
 	  var ok = ctx.ok;
-	
+
 	  var exists = !!getLineEl(dbg, line).querySelector(".new-breakpoint");
 	  ok(exists === shouldExist, "Breakpoint " + (shouldExist ? "exists" : "does not exist") + " on line " + line);
 	}
-	
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-scripts.html");
 	    var _dbg$selectors = dbg.selectors,
 	        getBreakpoints = _dbg$selectors.getBreakpoints,
 	        getBreakpoint = _dbg$selectors.getBreakpoint,
 	        getState = dbg.getState;
-	
+
 	    var source = findSource(dbg, "simple1.js");
-	
+
 	    yield selectSource(dbg, source.url);
-	
+
 	    
 	    clickGutter(dbg, 4);
 	    yield waitForDispatch(dbg, "ADD_BREAKPOINT");
 	    is(getBreakpoints(getState()).size, 1, "One breakpoint exists");
 	    assertEditorBreakpoint(dbg, ctx, 4, true);
-	
+
 	    
 	    clickGutter(dbg, 4);
 	    yield waitForDispatch(dbg, "REMOVE_BREAKPOINT");
 	    is(getBreakpoints(getState()).size, 0, "No breakpoints exist");
 	    assertEditorBreakpoint(dbg, ctx, 4, false);
-	
+
 	    
 	    clickGutter(dbg, 2);
 	    yield waitForDispatch(dbg, "ADD_BREAKPOINT");
@@ -22549,7 +6732,7 @@ return  (function(modules) {
 	    ok(getBreakpoint(getState(), { sourceId: source.id, line: 4 }), "Breakpoint has correct line");
 	    assertEditorBreakpoint(dbg, ctx, 2, false);
 	    assertEditorBreakpoint(dbg, ctx, 4, true);
-	
+
 	    
 	    
 	    clickGutter(dbg, 2);
@@ -22557,13 +6740,13 @@ return  (function(modules) {
 	    is(getBreakpoints(getState()).size, 1, "One breakpoint exists");
 	    assertEditorBreakpoint(dbg, ctx, 2, false);
 	    assertEditorBreakpoint(dbg, ctx, 4, true);
-	
+
 	    clickGutter(dbg, 4);
 	    yield waitForDispatch(dbg, "REMOVE_BREAKPOINT");
 	    is(getBreakpoints(getState()).size, 0, "No breakpoints exist");
 	    assertEditorBreakpoint(dbg, ctx, 4, false);
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -22571,13 +6754,14 @@ return  (function(modules) {
 
  },
 
+ 777:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    findSource = _require.findSource,
@@ -22587,50 +6771,49 @@ return  (function(modules) {
 	    findAllElements = _require.findAllElements,
 	    waitForPaused = _require.waitForPaused,
 	    waitForDispatch = _require.waitForDispatch;
+
 	
 	
 	
-	
-	
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info,
 	        EXAMPLE_URL = ctx.EXAMPLE_URL;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-scripts.html");
 	    var getSourceText = dbg.selectors.getSourceText,
 	        getState = dbg.getState;
-	
+
 	    var sourceUrl = EXAMPLE_URL + "long.js";
-	
+
 	    
 	    
 	    
 	    dbg.actions.selectSourceURL(sourceUrl, { line: 66 });
-	
+
 	    
 	    
 	    yield waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
-	    assertHighlightLocation(dbg, ctx, "long.js", 66);
-	
+
 	    
 	    yield selectSource(dbg, "long.js", 16);
 	    assertHighlightLocation(dbg, ctx, "long.js", 16);
-	
+
 	    
 	    
 	    yield selectSource(dbg, "long.js", 17);
 	    yield selectSource(dbg, "long.js", 18);
 	    assertHighlightLocation(dbg, ctx, "long.js", 18);
 	    is(findAllElements(dbg, "highlightLine").length, 1, "Only 1 line is highlighted");
-	
+
 	    
 	    
 	    selectSource(dbg, "simple1.js", 6);
-	
+
 	    
 	    
 	    var simple1 = findSource(dbg, "simple1.js");
@@ -22639,7 +6822,7 @@ return  (function(modules) {
 	    ok(getSourceText(getState(), simple1.id).get("text"));
 	    assertHighlightLocation(dbg, ctx, "simple1.js", 6);
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -22647,171 +6830,172 @@ return  (function(modules) {
 
  },
 
+ 778:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var keyboardNavigation = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-scripts.html");
 	    var doc = dbg.win.document;
-	
+
 	    yield selectSource(dbg, "simple2");
-	
+
 	    yield waitForElement(dbg, ".CodeMirror");
 	    var editor = findElementWithSelector(dbg, ".CodeMirror");
 	    var textarea = findElementWithSelector(dbg, "textarea");
 	    editor.focus();
-	
+
 	    info("Enter code editor");
 	    pressKey(dbg, "Enter");
 	    is(textarea, doc.activeElement, "Editor is enabled");
-	
+
 	    info("Exit code editor and focus on container");
 	    pressKey(dbg, "Escape");
 	    is(editor, doc.activeElement, "Focused on container");
-	
+
 	    info("Enter code editor");
 	    pressKey(dbg, "Tab");
 	    is(textarea, doc.activeElement, "Editor is enabled");
 	  });
-	
+
 	  return function keyboardNavigation(_x) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    waitForElement = _require.waitForElement,
 	    findElement = _require.findElement,
 	    findElementWithSelector = _require.findElementWithSelector,
 	    selectSource = _require.selectSource,
 	    pressKey = _require.pressKey;
-	
+
 	module.exports = keyboardNavigation;
 
  },
 
+ 779:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var keyboardShortcuts = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var info = ctx.info;
-	
+
 	    var dbg = yield initDebugger("doc-debugger-statements.html");
-	
+
 	    yield reload(dbg);
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 8);
-	
+
 	    yield pressResume(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 12);
-	
+
 	    yield pressStepIn(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 13);
-	
+
 	    yield pressStepOut(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 14);
-	
+
 	    yield pressStepOver(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 9);
 	  });
-	
+
 	  return function keyboardShortcuts(_x) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    waitForElement = _require.waitForElement,
 	    waitForPaused = _require.waitForPaused,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    pressKey = _require.pressKey,
 	    reload = _require.reload;
-	
+
 	function pressResume(dbg) {
 	  pressKey(dbg, "resumeKey");
 	  return waitForPaused(dbg);
 	}
-	
+
 	function pressStepOver(dbg) {
 	  pressKey(dbg, "stepOverKey");
 	  return waitForPaused(dbg);
 	}
-	
+
 	function pressStepIn(dbg) {
 	  pressKey(dbg, "stepInKey");
 	  return waitForPaused(dbg);
 	}
-	
+
 	function pressStepOut(dbg) {
 	  pressKey(dbg, "stepOutKey");
 	  return waitForPaused(dbg);
 	}
-	
-	;
-	
+
 	module.exports = keyboardShortcuts;
 
  },
 
+ 780:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    reload = _require.reload,
 	    resume = _require.resume,
 	    waitForPaused = _require.waitForPaused;
-	
+
 	
 
 
 
 
-	
-	
+
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-iframes.html");
-	
+
 	    
 	    yield reload(dbg);
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "iframes.html", 8);
-	
+
 	    
 	    yield resume(dbg);
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 8);
-	
+
 	    
 	    yield resume(dbg);
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "debugger-statements.html", 12);
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -22819,13 +7003,14 @@ return  (function(modules) {
 
  },
 
+ 781:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    invokeInTab = _require.invokeInTab,
 	    waitForElement = _require.waitForElement,
@@ -22836,12 +7021,12 @@ return  (function(modules) {
 	    waitForDispatch = _require.waitForDispatch,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    reload = _require.reload;
-	
+
 	function countSources(dbg) {
 	  var sources = dbg.selectors.getSources(dbg.getState());
 	  return sources.size;
 	}
-	
+
 	
 
 
@@ -22851,40 +7036,40 @@ return  (function(modules) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-script-switching.html");
 	    var _dbg$selectors = dbg.selectors,
 	        getSelectedSource = _dbg$selectors.getSelectedSource,
 	        getPause = _dbg$selectors.getPause,
 	        getState = dbg.getState;
-	
-	
+
+
 	    invokeInTab(dbg, "firstCall");
 	    yield waitForPaused(dbg);
-	
+
 	    yield navigate(dbg, "doc-scripts.html", "simple1.js");
 	    yield addBreakpoint(dbg, "simple1.js", 4);
 	    invokeInTab(dbg, "main");
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "simple1.js", 4);
 	    is(countSources(dbg), 4, "4 sources are loaded.");
-	
+
 	    yield navigate(dbg, "about:blank");
 	    yield waitForDispatch(dbg, "NAVIGATE");
 	    is(countSources(dbg), 0, "0 sources are loaded.");
 	    ok(!getPause(getState()), "No pause state exists");
-	
+
 	    yield navigate(dbg, "doc-scripts.html", "simple1.js", "simple2.js", "long.js", "scripts.html");
-	
+
 	    is(countSources(dbg), 4, "4 sources are loaded.");
-	
+
 	    
 	    yield selectSource(dbg, "long.js");
 	    yield reload(dbg, "long.js");
 	    ok(getSelectedSource(getState()).get("url").includes("long.js"), "Selected source is long.js");
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -22892,29 +7077,11 @@ return  (function(modules) {
 
  },
 
+ 782:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
-	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
-	    initDebugger = _require.initDebugger,
-	    assertPausedLocation = _require.assertPausedLocation,
-	    invokeInTab = _require.invokeInTab,
-	    togglePauseOnExceptions = _require.togglePauseOnExceptions,
-	    waitForPaused = _require.waitForPaused,
-	    isPaused = _require.isPaused,
-	    resume = _require.resume;
-	
-	function uncaughtException(dbg) {
-	  return invokeInTab(dbg, "uncaughtException").catch(() => {});
-	}
-	
-	function caughtException(dbg) {
-	  return invokeInTab(dbg, "caughtException");
-	}
-	
+
 	
 
 
@@ -22922,34 +7089,33 @@ return  (function(modules) {
 
 
 
-	module.exports = (() => {
+	var testButton = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
 	    var dbg = yield initDebugger("doc-exceptions.html");
-	
+
 	    
 	    yield togglePauseOnExceptions(dbg, false, false);
 	    yield uncaughtException(dbg);
 	    ok(!isPaused(dbg));
-	
+
 	    
 	    yield togglePauseOnExceptions(dbg, true, false);
 	    uncaughtException(dbg);
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "exceptions.js", 2);
 	    yield resume(dbg);
-	
+
 	    
 	    yield togglePauseOnExceptions(dbg, true, false);
 	    caughtException(dbg);
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "exceptions.js", 15);
 	    yield resume(dbg);
-	
+
 	    
 	    yield togglePauseOnExceptions(dbg, true, true);
 	    caughtException(dbg);
@@ -22957,59 +7123,116 @@ return  (function(modules) {
 	    assertPausedLocation(dbg, ctx, "exceptions.js", 17);
 	    yield resume(dbg);
 	  });
-	
-	  return function (_x) {
+
+	  return function testButton(_x) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
 
+	var testReloading = (() => {
+	  var _ref2 = _asyncToGenerator(function* (ctx) {
+	    var ok = ctx.ok,
+	        is = ctx.is,
+	        info = ctx.info;
+
+
+	    var dbg = yield initDebugger("doc-exceptions.html");
+
+	    yield togglePauseOnExceptions(dbg, true, false);
+	    dbg = yield initDebugger("doc-exceptions.html");
+	    assertPOEState(dbg, ctx, true, false);
+	  });
+
+	  return function testReloading(_x2) {
+	    return _ref2.apply(this, arguments);
+	  };
+	})();
+
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+	var _require = __webpack_require__(760),
+	    initDebugger = _require.initDebugger,
+	    assertPausedLocation = _require.assertPausedLocation,
+	    invokeInTab = _require.invokeInTab,
+	    togglePauseOnExceptions = _require.togglePauseOnExceptions,
+	    waitForPaused = _require.waitForPaused,
+	    isPaused = _require.isPaused,
+	    resume = _require.resume,
+	    reload = _require.reload;
+
+	function uncaughtException(dbg) {
+	  return invokeInTab(dbg, "uncaughtException").catch(() => {});
+	}
+
+	function caughtException(dbg) {
+	  return invokeInTab(dbg, "caughtException");
+	}
+
+	function assertPOEState(dbg, ctx, pause, ignore) {
+	  var is = ctx.is;
+	  var getState = dbg.getState,
+	      _dbg$selectors = dbg.selectors,
+	      getShouldPauseOnExceptions = _dbg$selectors.getShouldPauseOnExceptions,
+	      getShouldIgnoreCaughtExceptions = _dbg$selectors.getShouldIgnoreCaughtExceptions;
+
+
+	  is(getShouldPauseOnExceptions(getState()), pause);
+	  is(getShouldIgnoreCaughtExceptions(getState()), ignore);
+	}
+
+	module.exports = {
+	  testButton,
+	  testReloading
+	};
+
  },
 
+ 783:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var prettyPrint = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is;
-	
+
 	    var dbg = yield initDebugger("doc-minified.html", "math.min");
-	
+
 	    yield selectSource(dbg, "math.min.js");
-	
+
 	    clickElement(dbg, "prettyPrintButton");
 	    yield waitForDispatch(dbg, "TOGGLE_PRETTY_PRINT");
-	
+
 	    var ppSrc = findSource(dbg, "math.min.js:formatted");
 	    ok(ppSrc, "Pretty-printed source exists");
-	
+
 	    yield addBreakpoint(dbg, ppSrc, 18);
-	
+
 	    invokeInTab(dbg, "arithmetic");
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, ppSrc, 18);
-	
+
 	    yield stepOver(dbg);
 	    assertPausedLocation(dbg, ctx, ppSrc, 27);
 	    yield resume(dbg);
-	
+
 	    
 	    
 	    ok(!findElement(dbg, "sourceFooter"), "Footer is hidden");
-	
+
 	    yield selectSource(dbg, "math.min.js");
 	    ok(findElement(dbg, "sourceFooter"), "Footer is hidden");
 	  });
-	
+
 	  return function prettyPrint(_x) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    waitForPaused = _require.waitForPaused,
@@ -23022,18 +7245,19 @@ return  (function(modules) {
 	    stepOver = _require.stepOver,
 	    invokeInTab = _require.invokeInTab,
 	    resume = _require.resume;
-	
+
 	module.exports = prettyPrint;
 
  },
 
+ 784:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    selectSource = _require.selectSource,
@@ -23043,33 +7267,33 @@ return  (function(modules) {
 	    waitForPaused = _require.waitForPaused,
 	    waitForDispatch = _require.waitForDispatch,
 	    clickElement = _require.clickElement;
+
 	
-	
-	
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-minified.html");
-	
+
 	    yield selectSource(dbg, "math.min.js");
 	    yield addBreakpoint(dbg, "math.min.js", 2);
-	
+
 	    invokeInTab(dbg, "arithmetic");
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "math.min.js", 2);
-	
+
 	    clickElement(dbg, "prettyPrintButton");
 	    yield waitForDispatch(dbg, "TOGGLE_PRETTY_PRINT");
-	
+
 	    assertPausedLocation(dbg, ctx, "math.min.js:formatted", 18);
-	
+
 	    yield resume(dbg);
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -23077,64 +7301,73 @@ return  (function(modules) {
 
  },
 
+ 785:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var testReturnValue = (() => {
 	  var _ref = _asyncToGenerator(function* (dbg, ctx, val) {
-	    var is = ctx.is;
-	
+	    var is = ctx.is,
+	        ok = ctx.ok;
+
+
 	    evalInTab(dbg, `return_something(${val})`);
 	    yield waitForPaused(dbg);
-	
+
 	    
 	    
 	    yield stepIn(dbg);
 	    yield stepIn(dbg);
 	    yield stepIn(dbg);
-	
 	    is(getLabel(dbg, 1), "return_something", "check for return_something");
-	    is(getLabel(dbg, 2), "<return>", "check for <return>");
-	    is(getValue(dbg, 2), val, `check value is ${val}`);
-	
+
+	    
+	    var label = getLabel(dbg, 2);
+	    if (val === "undefined") {
+	      ok(label !== "<return>", "do not show <return> for undefined");
+	    } else {
+	      is(label, "<return>", "check for <return>");
+	      is(getValue(dbg, 2), val, `check value is ${val}`);
+	    }
+
 	    yield resume(dbg);
 	    assertNotPaused(dbg, ctx);
 	  });
-	
+
 	  return function testReturnValue(_x, _x2, _x3) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	var testThrowValue = (() => {
 	  var _ref2 = _asyncToGenerator(function* (dbg, ctx, val) {
 	    var is = ctx.is;
-	
+
 	    evalInTab(dbg, `throw_something(${val})`).catch(function () {});
 	    yield waitForPaused(dbg);
-	
+
 	    
 	    yield stepIn(dbg);
-	
+
 	    is(getLabel(dbg, 1), "callee", "check for callee");
 	    is(getLabel(dbg, 2), "<exception>", "check for <exception>");
 	    is(getValue(dbg, 2), val, `check exception value is ${val}`);
-	
+
 	    yield resume(dbg);
 	    yield waitForPaused(dbg);
 	    yield resume(dbg);
 	    assertNotPaused(dbg, ctx);
 	  });
-	
+
 	  return function testThrowValue(_x4, _x5, _x6) {
 	    return _ref2.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    evalInTab = _require.evalInTab,
 	    assertNotPaused = _require.assertNotPaused,
 	    findElement = _require.findElement,
@@ -23142,40 +7375,32 @@ return  (function(modules) {
 	    togglePauseOnExceptions = _require.togglePauseOnExceptions,
 	    resume = _require.resume,
 	    stepIn = _require.stepIn,
-	    waitForPaused = _require.waitForPaused,
-	    pauseTest = _require.pauseTest,
-	    resumeTest = _require.resumeTest;
-	
+	    waitForPaused = _require.waitForPaused;
+
 	function getLabel(dbg, index) {
 	  return findElement(dbg, "scopeNode", index).innerText;
 	}
-	
+
 	function getValue(dbg, index) {
 	  return findElement(dbg, "scopeValue", index).innerText;
 	}
-	
+
 	function toggleScopes(dbg) {
 	  return findElement(dbg, "scopesHeader").click();
 	}
-	
+
 	module.exports = (() => {
 	  var _ref3 = _asyncToGenerator(function* (ctx) {
-	    var is = ctx.is,
-	        info = ctx.info;
-	
+	    var info = ctx.info;
+
 	    var dbg = yield initDebugger("doc-return-values.html");
 	    toggleScopes(dbg);
 	    yield togglePauseOnExceptions(dbg, true, false);
-	
-	    var TESTS = ["57", "0", "false", "undefined", "null"];
-	
-	    for (var test of TESTS) {
-	      info(`testing ${test}`);
-	      yield testReturnValue(dbg, ctx, test);
-	      yield testThrowValue(dbg, ctx, test);
-	    }
+
+	    yield testReturnValue(dbg, ctx, "57");
+	    yield testThrowValue(dbg, ctx, "57");
 	  });
-	
+
 	  return function (_x7) {
 	    return _ref3.apply(this, arguments);
 	  };
@@ -23183,13 +7408,72 @@ return  (function(modules) {
 
  },
 
+ 786:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
+	var expandingProperties = (() => {
+	  var _ref = _asyncToGenerator(function* (ctx) {
+	    var ok = ctx.ok,
+	        is = ctx.is,
+	        info = ctx.info;
+
+	    var dbg = yield initDebugger("doc-script-switching.html", "script-switching-01", "script-switching-02");
+
+	    toggleScopes(dbg);
+	    invokeInTab(dbg, "firstCall");
+
+	    yield waitForPaused(dbg);
+
+	    is(getLabel(dbg, 1), "secondCall");
+	    is(getLabel(dbg, 2), "<this>");
+	    is(getLabel(dbg, 4), "foo()");
+
+	    toggleNode(dbg, 4);
+	    yield waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
+	    is(getLabel(dbg, 5), "prototype");
+
+	    yield stepOver(dbg);
+	    is(getLabel(dbg, 4), "foo()");
+	    is(getLabel(dbg, 5), "prototype");
+	  });
+
+	  return function expandingProperties(_x) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
+
+	var changingScopes = (() => {
+	  var _ref2 = _asyncToGenerator(function* (ctx) {
+	    var ok = ctx.ok,
+	        is = ctx.is,
+	        info = ctx.info;
+
+	    var dbg = yield initDebugger("doc-script-switching.html", "script-switching-01", "script-switching-02");
+
+	    toggleScopes(dbg);
+	    invokeInTab(dbg, "firstCall");
+
+	    yield waitForPaused(dbg);
+
+	    clickElement(dbg, "frame", 2);
+	    is(getLabel(dbg, 1), "firstCall");
+	    is(getLabel(dbg, 2), "<this>");
+
+	    toggleNode(dbg, 2);
+	    yield waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
+	    is(getLabel(dbg, 5), "CSS2Properties()");
+	  });
+
+	  return function changingScopes(_x2) {
+	    return _ref2.apply(this, arguments);
+	  };
+	})();
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    waitForPaused = _require.waitForPaused,
 	    invokeInTab = _require.invokeInTab,
@@ -23199,61 +7483,34 @@ return  (function(modules) {
 	    waitForTime = _require.waitForTime,
 	    waitForDispatch = _require.waitForDispatch,
 	    stepOver = _require.stepOver;
-	
+
 	function toggleNode(dbg, index) {
 	  clickElement(dbg, "scopeNode", index);
 	}
-	
+
 	function getLabel(dbg, index) {
 	  return findElement(dbg, "scopeNode", index).innerText;
 	}
-	
+
 	function toggleScopes(dbg) {
 	  return findElement(dbg, "scopesHeader").click();
 	}
-	
-	module.exports = (() => {
-	  var _ref = _asyncToGenerator(function* (ctx) {
-	    var ok = ctx.ok,
-	        is = ctx.is,
-	        info = ctx.info;
-	
-	    console.log('>>> starting');
-	    var dbg = yield initDebugger("doc-script-switching.html", "script-switching-01", "script-switching-02");
-	
-	    toggleScopes(dbg);
-	    invokeInTab(dbg, "firstCall");
-	
-	    yield waitForPaused(dbg);
-	    console.log('>>> first call and paused');
-	
-	    is(getLabel(dbg, 1), "secondCall");
-	    is(getLabel(dbg, 2), "<this>");
-	    is(getLabel(dbg, 4), "foo");
-	
-	    toggleNode(dbg, 4);
-	    yield waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
-	    is(getLabel(dbg, 5), "length");
-	
-	    yield stepOver(dbg);
-	    is(getLabel(dbg, 4), "foo");
-	    is(getLabel(dbg, 5), "length");
-	  });
-	
-	  return function (_x) {
-	    return _ref.apply(this, arguments);
-	  };
-	})();
+
+	module.exports = {
+	  expandingProperties,
+	  changingScopes
+	};
 
  },
 
+ 787:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    waitForPaused = _require.waitForPaused,
 	    pressKey = _require.pressKey,
@@ -23264,40 +7521,40 @@ return  (function(modules) {
 	    clickElement = _require.clickElement,
 	    findElement = _require.findElement,
 	    waitForDispatch = _require.waitForDispatch;
+
 	
-	
-	
-	
+
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
+
 	    var dbg = yield initDebugger("doc-script-switching.html");
-	
+
 	    pressKey(dbg, "sourceSearch");
 	    yield waitForElement(dbg, "input");
 	    findElementWithSelector(dbg, "input").focus();
 	    type(dbg, "sw");
 	    pressKey(dbg, "Enter");
-	
+
 	    yield waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
 	    var source = dbg.selectors.getSelectedSource(dbg.getState());
 	    ok(source.get("url").match(/switching-01/), "first source is selected");
-	
+
 	    
 	    pressKey(dbg, "sourceSearch");
 	    findElementWithSelector(dbg, "input").focus();
 	    type(dbg, "sw");
 	    pressKey(dbg, "Down");
 	    pressKey(dbg, "Enter");
-	
+
 	    yield waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
 	    source = dbg.selectors.getSelectedSource(dbg.getState());
 	    ok(source.get("url").match(/switching-02/), "second source is selected");
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -23305,10 +7562,11 @@ return  (function(modules) {
 
  },
 
+ 788:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	var waitForSourceCount = (() => {
 	  var _ref = _asyncToGenerator(function* (dbg, i) {
 	    
@@ -23317,15 +7575,15 @@ return  (function(modules) {
 	      return countSources(dbg) === i;
 	    });
 	  });
-	
+
 	  return function waitForSourceCount(_x, _x2) {
 	    return _ref.apply(this, arguments);
 	  };
 	})();
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    environment = _require.environment,
 	    clickElement = _require.clickElement,
@@ -23340,83 +7598,82 @@ return  (function(modules) {
 	    waitForDispatch = _require.waitForDispatch,
 	    waitUntil = _require.waitUntil,
 	    waitForTime = _require.waitForTime;
+
 	
-	
-	
+
 	function countSources(dbg) {
 	  return findAllElements(dbg, "sourceNodes").length;
 	}
-	
+
 	function toggleDirectory(dbg, index) {
 	  return clickElement(dbg, "sourceArrow", index);
 	}
-	
+
 	function clickNode(dbg, index) {
 	  return clickElement(dbg, "sourceNode", index);
 	}
-	
+
 	function getSourceNode(dbg, index) {
 	  return findElement(dbg, "sourceNode", index).textContent;
 	}
-	
+
 	function getFocusedNode(dbg) {
 	  return findElementWithSelector(dbg, ".sources-list .focused");
 	}
-	
+
 	module.exports = (() => {
 	  var _ref2 = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-sources.html");
 	    var getSelectedSource = dbg.selectors.getSelectedSource,
 	        getState = dbg.getState;
-	
-	
+
+
 	    yield waitForSources(dbg, "simple1", "simple2", "nested-source", "long.js", "doc-sources.html");
-	
+
 	    
 	    yield waitForTime(200);
-	
+
 	    
 	    is(countSources(dbg), 2);
-	
+
 	    toggleDirectory(dbg, 2);
 	    is(countSources(dbg), 7);
-	
+
 	    toggleDirectory(dbg, 3);
-	
+
 	    is(countSources(dbg), 8);
-	
+
 	    
 	    ok(!getFocusedNode(dbg), "Source is not focused");
-	
+
 	    var selected = waitForDispatch(dbg, "SELECT_SOURCE");
 	    clickNode(dbg, 4);
 	    yield selected;
-	
+
 	    ok(getFocusedNode(dbg), "Source is focused");
-	
+
 	    ok(getSelectedSource(getState()).get("url").includes("nested-source.js"), "The right source is selected");
-	
+
 	    
 	    invokeInTab(dbg, "loadScript");
-	
 	    yield waitForSourceCount(dbg, 9);
-	
+
 	    is(getSourceNode(dbg, 7), "math.min.js", "The dynamic script exists");
-	
+
 	    if (environment == "mochitest") {
 	      
 	      evalInTab(dbg, "window.evaledFunc = function() {} //# sourceURL=evaled.js");
-	
+
 	      yield waitForSourceCount(dbg, 11);
 	      is(findElement(dbg, "sourceNode", 2).textContent, "evaled.js", "The eval script exists");
 	    }
 	  });
-	
+
 	  return function (_x3) {
 	    return _ref2.apply(this, arguments);
 	  };
@@ -23424,13 +7681,14 @@ return  (function(modules) {
 
  },
 
+ 789:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    findSource = _require.findSource,
@@ -23442,70 +7700,71 @@ return  (function(modules) {
 	    stepOver = _require.stepOver,
 	    invokeInTab = _require.invokeInTab,
 	    waitForPaused = _require.waitForPaused;
+
 	
 	
-	
-	
+
 	module.exports = (() => {
-	   var _ref = _asyncToGenerator(function* (ctx) {
-	      var ok = ctx.ok,
-	          is = ctx.is,
-	          info = ctx.info;
-	
-	
-	      var dbg = yield initDebugger("doc-sourcemaps.html");
-	      var _dbg$selectors = dbg.selectors,
-	          getBreakpoint = _dbg$selectors.getBreakpoint,
-	          getBreakpoints = _dbg$selectors.getBreakpoints,
-	          getState = dbg.getState;
-	
-	
-	      yield waitForSources(dbg, "entry.js", "output.js", "times2.js", "opts.js");
-	      ok(true, "Original sources exist");
-	      var entrySrc = findSource(dbg, "entry.js");
-	
-	      yield selectSource(dbg, entrySrc);
-	      ok(dbg.win.cm.getValue().includes("window.keepMeAlive"), "Original source text loaded correctly");
-	
-	      
-	      
-	      yield addBreakpoint(dbg, entrySrc, 13);
-	      is(getBreakpoints(getState()).size, 1, "One breakpoint exists");
-	      ok(getBreakpoint(getState(), { sourceId: entrySrc.id, line: 13 }), "Breakpoint has correct line");
-	
-	      
-	      yield addBreakpoint(dbg, "entry.js", 15);
-	      is(getBreakpoints(getState()).size, 2, "Two breakpoints exist");
-	      ok(getBreakpoint(getState(), { sourceId: entrySrc.id, line: 15 }), "Breakpoint has correct line");
-	
-	      invokeInTab(dbg, "keepMeAlive");
-	      yield waitForPaused(dbg);
-	      assertPausedLocation(dbg, ctx, entrySrc, 15);
-	
-	      yield stepIn(dbg);
-	      assertPausedLocation(dbg, ctx, "times2.js", 2);
-	      yield stepOver(dbg);
-	      assertPausedLocation(dbg, ctx, "times2.js", 3);
-	
-	      yield stepOut(dbg);
-	      yield stepOut(dbg);
-	      assertPausedLocation(dbg, ctx, "entry.js", 16);
-	   });
-	
-	   return function (_x) {
-	      return _ref.apply(this, arguments);
-	   };
+	  var _ref = _asyncToGenerator(function* (ctx) {
+	    var ok = ctx.ok,
+	        is = ctx.is,
+	        info = ctx.info;
+
+
+	    var dbg = yield initDebugger("doc-sourcemaps.html");
+	    var _dbg$selectors = dbg.selectors,
+	        getBreakpoint = _dbg$selectors.getBreakpoint,
+	        getBreakpoints = _dbg$selectors.getBreakpoints,
+	        getState = dbg.getState;
+
+
+	    yield waitForSources(dbg, "entry.js", "output.js", "times2.js", "opts.js");
+	    ok(true, "Original sources exist");
+	    var entrySrc = findSource(dbg, "entry.js");
+
+	    yield selectSource(dbg, entrySrc);
+	    ok(dbg.win.cm.getValue().includes("window.keepMeAlive"), "Original source text loaded correctly");
+
+	    
+	    
+	    yield addBreakpoint(dbg, entrySrc, 13);
+	    is(getBreakpoints(getState()).size, 1, "One breakpoint exists");
+	    ok(getBreakpoint(getState(), { sourceId: entrySrc.id, line: 13 }), "Breakpoint has correct line");
+
+	    
+	    yield addBreakpoint(dbg, "entry.js", 15);
+	    is(getBreakpoints(getState()).size, 2, "Two breakpoints exist");
+	    ok(getBreakpoint(getState(), { sourceId: entrySrc.id, line: 15 }), "Breakpoint has correct line");
+
+	    invokeInTab(dbg, "keepMeAlive");
+	    yield waitForPaused(dbg);
+	    assertPausedLocation(dbg, ctx, entrySrc, 15);
+
+	    yield stepIn(dbg);
+	    assertPausedLocation(dbg, ctx, "times2.js", 2);
+	    yield stepOver(dbg);
+	    assertPausedLocation(dbg, ctx, "times2.js", 3);
+
+	    yield stepOut(dbg);
+	    yield stepOut(dbg);
+	    assertPausedLocation(dbg, ctx, "entry.js", 16);
+	  });
+
+	  return function (_x) {
+	    return _ref.apply(this, arguments);
+	  };
 	})();
 
  },
 
+ 790:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    assertPausedLocation = _require.assertPausedLocation,
 	    findSource = _require.findSource,
@@ -23514,43 +7773,43 @@ return  (function(modules) {
 	    addBreakpoint = _require.addBreakpoint,
 	    invokeInTab = _require.invokeInTab,
 	    waitForPaused = _require.waitForPaused;
+
 	
 	
+
 	
-	
-	
-	
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
+
 	    var dbg = yield initDebugger("doc-sourcemaps2.html");
 	    var _dbg$selectors = dbg.selectors,
 	        getBreakpoint = _dbg$selectors.getBreakpoint,
 	        getBreakpoints = _dbg$selectors.getBreakpoints,
 	        getState = dbg.getState;
-	
-	
+
+
 	    yield waitForSources(dbg, "main.js", "main.min.js");
-	
+
 	    ok(true, "Original sources exist");
 	    var mainSrc = findSource(dbg, "main.js");
-	
+
 	    yield selectSource(dbg, mainSrc);
-	
+
 	    
 	    yield addBreakpoint(dbg, mainSrc, 4);
 	    is(getBreakpoints(getState()).size, 1, "One breakpoint exists");
 	    ok(getBreakpoint(getState(), { sourceId: mainSrc.id, line: 4 }), "Breakpoint has correct line");
-	
+
 	    invokeInTab(dbg, "logMessage");
-	
+
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "main.js", 4);
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -23558,13 +7817,14 @@ return  (function(modules) {
 
  },
 
+ 791:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	var _require = __webpack_require__(747),
+
+	var _require = __webpack_require__(760),
 	    initDebugger = _require.initDebugger,
 	    countSources = _require.countSources,
 	    assertPausedLocation = _require.assertPausedLocation,
@@ -23572,36 +7832,36 @@ return  (function(modules) {
 	    addBreakpoint = _require.addBreakpoint,
 	    invokeInTab = _require.invokeInTab,
 	    waitForPaused = _require.waitForPaused;
+
 	
 	
-	
-	
+
 	module.exports = (() => {
 	  var _ref = _asyncToGenerator(function* (ctx) {
 	    var ok = ctx.ok,
 	        is = ctx.is,
 	        info = ctx.info;
-	
-	
+
+
 	    var dbg = yield initDebugger("doc-sourcemap-bogus.html");
 	    var getSources = dbg.selectors.getSources,
 	        getState = dbg.getState;
-	
-	
+
+
 	    yield selectSource(dbg, "bogus-map.js");
-	
+
 	    
 	    
 	    yield addBreakpoint(dbg, "bogus-map.js", 4);
 	    invokeInTab(dbg, "runCode");
 	    yield waitForPaused(dbg);
 	    assertPausedLocation(dbg, ctx, "bogus-map.js", 4);
-	
+
 	    
 	    
 	    is(countSources(dbg), 1, "Only 1 source exists");
 	  });
-	
+
 	  return function (_x) {
 	    return _ref.apply(this, arguments);
 	  };
@@ -23609,234 +7869,235 @@ return  (function(modules) {
 
  },
 
+ 792:
  function(module, exports, __webpack_require__) {
 
 	"use strict";
-	
+
 	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
-	
-	__webpack_require__(780);
-	var expect = __webpack_require__(787);
-	
+
+	__webpack_require__(793);
+	var expect = __webpack_require__(800);
+
 	var _require = __webpack_require__(226),
 	    prefs = _require.prefs;
-	
-	var _require2 = __webpack_require__(745),
-	    asm = _require2.asm,
-	    breaking = _require2.breaking,
-	    breakpoints = _require2.breakpoints,
-	    breakpointsCond = _require2.breakpointsCond,
-	    callStack = _require2.callStack,
-	    expressions = _require2.expressions,
-	    debuggerButtons = _require2.debuggerButtons,
-	    editorSelect = _require2.editorSelect,
-	    editorGutter = _require2.editorGutter,
-	    editorHighlight = _require2.editorHighlight,
-	    keyboardNavigation = _require2.keyboardNavigation,
-	    keyboardShortcuts = _require2.keyboardShortcuts,
-	    iframes = _require2.iframes,
-	    navigation = _require2.navigation,
-	    pauseOnExceptions = _require2.pauseOnExceptions,
-	    prettyPrint = _require2.prettyPrint,
-	    prettyPrintPaused = _require2.prettyPrintPaused,
-	    returnvalues = _require2.returnvalues,
-	    scopes = _require2.scopes,
-	    searching = _require2.searching,
-	    sources = _require2.sources,
-	    sourceMaps = _require2.sourceMaps,
-	    sourceMaps2 = _require2.sourceMaps2,
-	    sourceMapsBogus = _require2.sourceMapsBogus;
-	
+
+	var tests = __webpack_require__(758);
+	Object.assign(window, { prefs }, tests);
+
 	window.ok = function ok(expected) {
 	  expect(expected).to.be.truthy;
 	};
-	
+
 	window.is = function is(expected, actual) {
 	  expect(expected).to.equal(actual);
 	};
-	
+
 	window.info = function info(msg) {
 	  console.log(`info: ${msg}\n`);
 	};
-	
+
 	window.requestLongerTimeout = function () {};
-	
+
 	var ctx = { ok, is, info, requestLongerTimeout };
-	
-	mocha.setup({ timeout: 10000, ui: 'bdd' });
-	
+
+	mocha.setup({ timeout: 10000, ui: "bdd" });
+
 	describe("Tests", () => {
 	  beforeEach(() => {
 	    prefs.pauseOnExceptions = false;
 	    prefs.ignoreCaughtExceptions = false;
 	    prefs.pendingSelectedLocation = {};
+	    prefs.expressions = [];
+	    prefs.pendingBreakpoints = [];
 	    prefs.tabs = [];
 	  });
-	
+
+	  afterEach(() => {
+	    prefs.pauseOnExceptions = false;
+	    prefs.ignoreCaughtExceptions = false;
+	    prefs.pendingSelectedLocation = {};
+	    prefs.expressions = [];
+	    prefs.pendingBreakpoints = [];
+	    prefs.tabs = [];
+	  });
+
 	  it("asm", _asyncToGenerator(function* () {
-	    yield asm(ctx);
+	    return yield asm(ctx);
 	  }));
-	
+
 	  it("breakpoints - toggle", _asyncToGenerator(function* () {
-	    yield breakpoints.toggle(ctx);
+	    return yield breakpoints.toggle(ctx);
 	  }));
-	
+
 	  it("breakpoints - toggleAll", _asyncToGenerator(function* () {
-	    yield breakpoints.toggleAll(ctx);
+	    return yield breakpoints.toggleAll(ctx);
 	  }));
-	
+
 	  it("breaking", _asyncToGenerator(function* () {
-	    yield breaking(ctx);
+	    return yield breaking(ctx);
 	  }));
-	
-	  it("pretty print", _asyncToGenerator(function* () {
-	    yield prettyPrint(ctx);
-	  }));
-	
+
 	  it("conditional breakpoints", _asyncToGenerator(function* () {
-	    yield breakpointsCond(ctx);
+	    return yield breakpointsCond(ctx);
 	  }));
-	
+
 	  it("expressions", _asyncToGenerator(function* () {
-	    yield expressions(ctx);
+	    return yield expressions(ctx);
 	  }));
-	
+
 	  it("editor select", _asyncToGenerator(function* () {
-	    yield editorSelect(ctx);
+	    return yield editorSelect(ctx);
 	  }));
-	
+
 	  it("editor gutter", _asyncToGenerator(function* () {
-	    yield editorGutter(ctx);
+	    return yield editorGutter(ctx);
 	  }));
-	
+
 	  xit("editor highlight", _asyncToGenerator(function* () {
-	    yield editorHighlight(ctx);
+	    return yield editorHighlight(ctx);
 	  }));
-	
+
+	  xit("editor preview", _asyncToGenerator(function* () {
+	    return yield editorPreview(ctx);
+	  }));
+
 	  xit("keyboard navigation", _asyncToGenerator(function* () {
-	    yield keyboardNavigation(ctx);
+	    return yield keyboardNavigation(ctx);
 	  }));
-	
+
 	  xit("keyboard shortcuts", _asyncToGenerator(function* () {
-	    yield keyboardShortcuts(ctx);
+	    return yield keyboardShortcuts(ctx);
 	  }));
-	
+
 	  xit("navigation", _asyncToGenerator(function* () {
-	    yield navigation(ctx);
+	    return yield navigation(ctx);
 	  }));
-	
+
 	  it("call stack test 1", _asyncToGenerator(function* () {
-	    yield callStack.test1(ctx);
+	    return yield callStack.test1(ctx);
 	  }));
-	
+
 	  it("call stack test 2", _asyncToGenerator(function* () {
-	    yield callStack.test2(ctx);
+	    return yield callStack.test2(ctx);
 	  }));
-	
+
 	  it("debugger buttons", _asyncToGenerator(function* () {
-	    yield debuggerButtons(ctx);
+	    return yield debuggerButtons(ctx);
 	  }));
-	
+
 	  it("iframes", _asyncToGenerator(function* () {
-	    yield iframes(ctx);
+	    return yield iframes(ctx);
 	  }));
-	
-	  
-	  it("pause on exceptions", _asyncToGenerator(function* () {
-	    yield pauseOnExceptions(ctx);
+
+	  it("pause on exceptions - button", _asyncToGenerator(function* () {
+	    return yield pauseOnExceptions.testButton(ctx);
 	  }));
-	
+
+	  it("pause on exceptions - reloading", _asyncToGenerator(function* () {
+	    return yield pauseOnExceptions.testReloading(ctx);
+	  }));
+
 	  it("pretty print", _asyncToGenerator(function* () {
-	    yield prettyPrint(ctx);
+	    return yield prettyPrint(ctx);
 	  }));
-	
-	  
+
 	  it("pretty print paused", _asyncToGenerator(function* () {
-	    yield prettyPrintPaused(ctx);
+	    return yield prettyPrintPaused(ctx);
 	  }));
-	
+
 	  it("returnvalues", _asyncToGenerator(function* () {
-	    yield returnvalues(ctx);
+	    return yield returnvalues(ctx);
 	  }));
-	
+
 	  xit("searching", _asyncToGenerator(function* () {
-	    yield searching(ctx);
+	    return yield searching(ctx);
 	  }));
-	
-	  
-	  it("scopes", _asyncToGenerator(function* () {
-	    yield scopes(ctx);
+
+	  it("scopes - expanding properties", _asyncToGenerator(function* () {
+	    return yield scopes.expandingProperties(ctx);
 	  }));
-	
-	  
+	  it("scopes - changing scopes", _asyncToGenerator(function* () {
+	    return yield scopes.changingScopes(ctx);
+	  }));
+
+	  it("render the expected scopes when variable mutates while stepping", _asyncToGenerator(function* () {
+	    return yield scopesMutations(ctx);
+	  }));
+
 	  it("sources", _asyncToGenerator(function* () {
-	    yield sources(ctx);
+	    return yield sources(ctx);
 	  }));
-	
+
 	  
 	  
 	  xit("source maps", _asyncToGenerator(function* () {
-	    yield sourceMaps(ctx);
+	    return yield sourceMaps(ctx);
 	  }));
-	
+
 	  it("source maps 2", _asyncToGenerator(function* () {
-	    yield sourceMaps2(ctx);
+	    return yield sourceMaps2(ctx);
 	  }));
-	
+
 	  
 	  xit("source maps bogus", _asyncToGenerator(function* () {
-	    yield sourceMapsBogus(ctx);
+	    return yield sourceMapsBogus(ctx);
+	  }));
+
+	  it("tabs", _asyncToGenerator(function* () {
+	    return yield tabs(ctx);
 	  }));
 	});
-	
+
 	mocha.run();
 
  },
 
- function(module, exports, __webpack_require__) {
+ 793:
+ function(module, exports) {
 
-	var require;var require;var __WEBPACK_AMD_DEFINE_RESULT__;(function(global, Buffer, setImmediate) {(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return require(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
+	(function e(t,n,r){function s(o,u){if(!n[o]){if(!t[o]){var a=typeof require=="function"&&require;if(!u&&a)return a(o,!0);if(i)return i(o,!0);var f=new Error("Cannot find module '"+o+"'");throw f.code="MODULE_NOT_FOUND",f}var l=n[o]={exports:{}};t[o][0].call(l.exports,function(e){var n=t[o][1][e];return s(n?n:e)},l,l.exports,e,t,n,r)}return n[o].exports}var i=typeof require=="function"&&require;for(var o=0;o<r.length;o++)s(r[o]);return s})({1:[function(require,module,exports){
 	(function (process,global){
 	'use strict';
-	
-	
-	
+
 	
 	
 
-
 	
+
+
+
 	process.stdout = require('browser-stdout')();
-	
+
 	var Mocha = require('./lib/mocha');
-	
-	
-
-
-
 
 	
+
+
+
+
+
 	var mocha = new Mocha({ reporter: 'html' });
-	
+
 	
 
 
-	
+
 	var Date = global.Date;
 	var setTimeout = global.setTimeout;
 	var setInterval = global.setInterval;
 	var clearTimeout = global.clearTimeout;
 	var clearInterval = global.clearInterval;
-	
+
 	var uncaughtExceptionHandlers = [];
-	
+
 	var originalOnerrorHandler = global.onerror;
-	
+
 	
 
 
 
-	
+
 	process.removeListener = function (e, fn) {
 	  if (e === 'uncaughtException') {
 	    if (originalOnerrorHandler) {
@@ -23850,11 +8111,11 @@ return  (function(modules) {
 	    }
 	  }
 	};
-	
+
 	
 
 
-	
+
 	process.on = function (e, fn) {
 	  if (e === 'uncaughtException') {
 	    global.onerror = function (err, url, line) {
@@ -23864,15 +8125,15 @@ return  (function(modules) {
 	    uncaughtExceptionHandlers.push(fn);
 	  }
 	};
-	
+
 	
 	
 	
 	mocha.suite.removeAllListeners('pre-require');
-	
+
 	var immediateQueue = [];
 	var immediateTimeout;
-	
+
 	function timeslice () {
 	  var immediateStart = new Date().getTime();
 	  while (immediateQueue.length && (new Date().getTime() - immediateStart) < 100) {
@@ -23884,18 +8145,18 @@ return  (function(modules) {
 	    immediateTimeout = null;
 	  }
 	}
-	
+
 	
 
 
-	
+
 	Mocha.Runner.immediately = function (callback) {
 	  immediateQueue.push(callback);
 	  if (!immediateTimeout) {
 	    immediateTimeout = setTimeout(timeslice, 0);
 	  }
 	};
-	
+
 	
 
 
@@ -23907,22 +8168,22 @@ return  (function(modules) {
 	  });
 	  throw err;
 	};
-	
+
 	
 
 
 
-	
+
 	mocha.ui = function (ui) {
 	  Mocha.prototype.ui.call(this, ui);
 	  this.suite.emit('pre-require', global, null, this);
 	  return this;
 	};
-	
+
 	
 
 
-	
+
 	mocha.setup = function (opts) {
 	  if (typeof opts === 'string') {
 	    opts = { ui: opts };
@@ -23934,15 +8195,15 @@ return  (function(modules) {
 	  }
 	  return this;
 	};
-	
+
 	
 
 
-	
+
 	mocha.run = function (fn) {
 	  var options = mocha.options;
 	  mocha.globals('location');
-	
+
 	  var query = Mocha.utils.parseQuery(global.location.search || '');
 	  if (query.grep) {
 	    mocha.grep(query.grep);
@@ -23953,7 +8214,7 @@ return  (function(modules) {
 	  if (query.invert) {
 	    mocha.invert();
 	  }
-	
+
 	  return Mocha.prototype.run.call(mocha, function (err) {
 	    
 	    var document = global.document;
@@ -23965,50 +8226,50 @@ return  (function(modules) {
 	    }
 	  });
 	};
-	
+
 	
 
 
 
-	
+
 	Mocha.process = process;
-	
+
 	
 
 
-	
+
 	global.Mocha = Mocha;
 	global.mocha = mocha;
-	
+
 	
 	
 	
 	module.exports = global;
-	
+
 	}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"./lib/mocha":14,"_process":67,"browser-stdout":41}],2:[function(require,module,exports){
 	'use strict';
-	
+
 	function noop () {}
-	
+
 	module.exports = function () {
 	  return noop;
 	};
-	
+
 	},{}],3:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	exports.EventEmitter = EventEmitter;
-	
+
 	
 
 
 	var objToString = Object.prototype.toString;
-	
+
 	
 
 
@@ -24019,14 +8280,14 @@ return  (function(modules) {
 	function isArray (val) {
 	  return objToString.call(val) === '[object Array]';
 	}
-	
+
 	
 
 
 
 
 	function EventEmitter () {}
-	
+
 	
 
 
@@ -24039,7 +8300,7 @@ return  (function(modules) {
 	  if (!this.$events) {
 	    this.$events = {};
 	  }
-	
+
 	  if (!this.$events[name]) {
 	    this.$events[name] = fn;
 	  } else if (isArray(this.$events[name])) {
@@ -24047,12 +8308,12 @@ return  (function(modules) {
 	  } else {
 	    this.$events[name] = [this.$events[name], fn];
 	  }
-	
+
 	  return this;
 	};
-	
+
 	EventEmitter.prototype.addListener = EventEmitter.prototype.on;
-	
+
 	
 
 
@@ -24063,18 +8324,18 @@ return  (function(modules) {
 
 	EventEmitter.prototype.once = function (name, fn) {
 	  var self = this;
-	
+
 	  function on () {
 	    self.removeListener(name, on);
 	    fn.apply(this, arguments);
 	  }
-	
+
 	  on.listener = fn;
 	  this.on(name, on);
-	
+
 	  return this;
 	};
-	
+
 	
 
 
@@ -24086,23 +8347,23 @@ return  (function(modules) {
 	EventEmitter.prototype.removeListener = function (name, fn) {
 	  if (this.$events && this.$events[name]) {
 	    var list = this.$events[name];
-	
+
 	    if (isArray(list)) {
 	      var pos = -1;
-	
+
 	      for (var i = 0, l = list.length; i < l; i++) {
 	        if (list[i] === fn || (list[i].listener && list[i].listener === fn)) {
 	          pos = i;
 	          break;
 	        }
 	      }
-	
+
 	      if (pos < 0) {
 	        return this;
 	      }
-	
+
 	      list.splice(pos, 1);
-	
+
 	      if (!list.length) {
 	        delete this.$events[name];
 	      }
@@ -24110,10 +8371,10 @@ return  (function(modules) {
 	      delete this.$events[name];
 	    }
 	  }
-	
+
 	  return this;
 	};
-	
+
 	
 
 
@@ -24126,14 +8387,14 @@ return  (function(modules) {
 	    this.$events = {};
 	    return this;
 	  }
-	
+
 	  if (this.$events && this.$events[name]) {
 	    this.$events[name] = null;
 	  }
-	
+
 	  return this;
 	};
-	
+
 	
 
 
@@ -24145,18 +8406,18 @@ return  (function(modules) {
 	  if (!this.$events) {
 	    this.$events = {};
 	  }
-	
+
 	  if (!this.$events[name]) {
 	    this.$events[name] = [];
 	  }
-	
+
 	  if (!isArray(this.$events[name])) {
 	    this.$events[name] = [this.$events[name]];
 	  }
-	
+
 	  return this.$events[name];
 	};
-	
+
 	
 
 
@@ -24168,39 +8429,39 @@ return  (function(modules) {
 	  if (!this.$events) {
 	    return false;
 	  }
-	
+
 	  var handler = this.$events[name];
-	
+
 	  if (!handler) {
 	    return false;
 	  }
-	
+
 	  var args = Array.prototype.slice.call(arguments, 1);
-	
+
 	  if (typeof handler === 'function') {
 	    handler.apply(this, args);
 	  } else if (isArray(handler)) {
 	    var listeners = handler.slice();
-	
+
 	    for (var i = 0, l = listeners.length; i < l; i++) {
 	      listeners[i].apply(this, args);
 	    }
 	  } else {
 	    return false;
 	  }
-	
+
 	  return true;
 	};
-	
+
 	},{}],4:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	module.exports = Progress;
-	
+
 	
 
 
@@ -24210,7 +8471,7 @@ return  (function(modules) {
 	  this.fontSize(11);
 	  this.font('helvetica, arial, sans-serif');
 	}
-	
+
 	
 
 
@@ -24222,7 +8483,7 @@ return  (function(modules) {
 	  this._size = size;
 	  return this;
 	};
-	
+
 	
 
 
@@ -24234,7 +8495,7 @@ return  (function(modules) {
 	  this._text = text;
 	  return this;
 	};
-	
+
 	
 
 
@@ -24246,7 +8507,7 @@ return  (function(modules) {
 	  this._fontSize = size;
 	  return this;
 	};
-	
+
 	
 
 
@@ -24257,7 +8518,7 @@ return  (function(modules) {
 	  this._font = family;
 	  return this;
 	};
-	
+
 	
 
 
@@ -24268,7 +8529,7 @@ return  (function(modules) {
 	  this.percent = n;
 	  return this;
 	};
-	
+
 	
 
 
@@ -24284,43 +8545,43 @@ return  (function(modules) {
 	    var y = half;
 	    var rad = half - 1;
 	    var fontSize = this._fontSize;
-	
+
 	    ctx.font = fontSize + 'px ' + this._font;
-	
+
 	    var angle = Math.PI * 2 * (percent / 100);
 	    ctx.clearRect(0, 0, size, size);
-	
+
 	    
 	    ctx.strokeStyle = '#9f9f9f';
 	    ctx.beginPath();
 	    ctx.arc(x, y, rad, 0, angle, false);
 	    ctx.stroke();
-	
+
 	    
 	    ctx.strokeStyle = '#eee';
 	    ctx.beginPath();
 	    ctx.arc(x, y, rad - 1, 0, angle, true);
 	    ctx.stroke();
-	
+
 	    
 	    var text = this._text || (percent | 0) + '%';
 	    var w = ctx.measureText(text).width;
-	
+
 	    ctx.fillText(text, x - w / 2 + 1, y + fontSize / 2 - 1);
 	  } catch (err) {
 	    
 	  }
 	  return this;
 	};
-	
+
 	},{}],5:[function(require,module,exports){
 	(function (global){
 	'use strict';
-	
+
 	exports.isatty = function isatty () {
 	  return true;
 	};
-	
+
 	exports.getWindowSize = function getWindowSize () {
 	  if ('innerHeight' in global) {
 	    return [global.innerHeight, global.innerWidth];
@@ -24328,30 +8589,30 @@ return  (function(modules) {
 	  
 	  return [640, 480];
 	};
-	
+
 	}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{}],6:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var JSON = require('json3');
-	
+
 	
 
 
-	
+
 	module.exports = Context;
-	
+
 	
 
 
 
 
 	function Context () {}
-	
+
 	
 
 
@@ -24366,7 +8627,7 @@ return  (function(modules) {
 	  this.test = this._runnable = runnable;
 	  return this;
 	};
-	
+
 	
 
 
@@ -24381,7 +8642,7 @@ return  (function(modules) {
 	  this.runnable().timeout(ms);
 	  return this;
 	};
-	
+
 	
 
 
@@ -24393,7 +8654,7 @@ return  (function(modules) {
 	  this.runnable().enableTimeouts(enabled);
 	  return this;
 	};
-	
+
 	
 
 
@@ -24405,7 +8666,7 @@ return  (function(modules) {
 	  this.runnable().slow(ms);
 	  return this;
 	};
-	
+
 	
 
 
@@ -24416,7 +8677,7 @@ return  (function(modules) {
 	  this.runnable().skip();
 	  return this;
 	};
-	
+
 	
 
 
@@ -24431,7 +8692,7 @@ return  (function(modules) {
 	  this.runnable().retries(n);
 	  return this;
 	};
-	
+
 	
 
 
@@ -24443,23 +8704,23 @@ return  (function(modules) {
 	    return key === 'runnable' || key === 'test' ? undefined : val;
 	  }, 2);
 	};
-	
+
 	},{"json3":54}],7:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Runnable = require('./runnable');
 	var inherits = require('./utils').inherits;
-	
+
 	
 
 
-	
+
 	module.exports = Hook;
-	
+
 	
 
 
@@ -24471,12 +8732,12 @@ return  (function(modules) {
 	  Runnable.call(this, title, fn);
 	  this.type = 'hook';
 	}
-	
+
 	
 
 
 	inherits(Hook, Runnable);
-	
+
 	
 
 
@@ -24490,19 +8751,19 @@ return  (function(modules) {
 	    this._error = null;
 	    return err;
 	  }
-	
+
 	  this._error = err;
 	};
-	
+
 	},{"./runnable":33,"./utils":38}],8:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Test = require('../test');
-	
+
 	
 
 
@@ -24522,10 +8783,10 @@ return  (function(modules) {
 
 	module.exports = function (suite) {
 	  var suites = [suite];
-	
+
 	  suite.on('pre-require', function (context, file, mocha) {
 	    var common = require('./common')(suites, context, mocha);
-	
+
 	    context.before = common.before;
 	    context.after = common.after;
 	    context.beforeEach = common.beforeEach;
@@ -24536,7 +8797,7 @@ return  (function(modules) {
 
 
 
-	
+
 	    context.describe = context.context = function (title, fn) {
 	      return common.suite.create({
 	        title: title,
@@ -24544,11 +8805,11 @@ return  (function(modules) {
 	        fn: fn
 	      });
 	    };
-	
+
 	    
 
 
-	
+
 	    context.xdescribe = context.xcontext = context.describe.skip = function (title, fn) {
 	      return common.suite.skip({
 	        title: title,
@@ -24556,11 +8817,11 @@ return  (function(modules) {
 	        fn: fn
 	      });
 	    };
-	
+
 	    
 
 
-	
+
 	    context.describe.only = function (title, fn) {
 	      return common.suite.only({
 	        title: title,
@@ -24568,13 +8829,13 @@ return  (function(modules) {
 	        fn: fn
 	      });
 	    };
-	
+
 	    
 
 
 
 
-	
+
 	    context.it = context.specify = function (title, fn) {
 	      var suite = suites[0];
 	      if (suite.isPending()) {
@@ -24585,23 +8846,23 @@ return  (function(modules) {
 	      suite.addTest(test);
 	      return test;
 	    };
-	
+
 	    
 
 
-	
+
 	    context.it.only = function (title, fn) {
 	      return common.test.only(mocha, context.it(title, fn));
 	    };
-	
+
 	    
 
 
-	
+
 	    context.xit = context.xspecify = context.it.skip = function (title) {
 	      context.it(title);
 	    };
-	
+
 	    
 
 
@@ -24610,12 +8871,12 @@ return  (function(modules) {
 	    };
 	  });
 	};
-	
+
 	},{"../test":36,"./common":9}],9:[function(require,module,exports){
 	'use strict';
-	
+
 	var Suite = require('../suite');
-	
+
 	
 
 
@@ -24638,7 +8899,7 @@ return  (function(modules) {
 	        suite.run();
 	      };
 	    },
-	
+
 	    
 
 
@@ -24648,7 +8909,7 @@ return  (function(modules) {
 	    before: function (name, fn) {
 	      suites[0].beforeAll(name, fn);
 	    },
-	
+
 	    
 
 
@@ -24658,7 +8919,7 @@ return  (function(modules) {
 	    after: function (name, fn) {
 	      suites[0].afterAll(name, fn);
 	    },
-	
+
 	    
 
 
@@ -24668,7 +8929,7 @@ return  (function(modules) {
 	    beforeEach: function (name, fn) {
 	      suites[0].beforeEach(name, fn);
 	    },
-	
+
 	    
 
 
@@ -24678,7 +8939,7 @@ return  (function(modules) {
 	    afterEach: function (name, fn) {
 	      suites[0].afterEach(name, fn);
 	    },
-	
+
 	    suite: {
 	      
 
@@ -24692,7 +8953,7 @@ return  (function(modules) {
 	        opts.isOnly = true;
 	        return this.create(opts);
 	      },
-	
+
 	      
 
 
@@ -24704,7 +8965,7 @@ return  (function(modules) {
 	        opts.pending = true;
 	        return this.create(opts);
 	      },
-	
+
 	      
 
 
@@ -24730,13 +8991,13 @@ return  (function(modules) {
 	        } else if (typeof opts.fn === 'undefined' && !suite.pending) {
 	          throw new Error('Suite "' + suite.fullTitle() + '" was defined but no callback was supplied. Supply a callback or explicitly skip the suite.');
 	        }
-	
+
 	        return suite;
 	      }
 	    },
-	
+
 	    test: {
-	
+
 	      
 
 
@@ -24749,7 +9010,7 @@ return  (function(modules) {
 	        mocha.options.hasOnly = true;
 	        return test;
 	      },
-	
+
 	      
 
 
@@ -24758,7 +9019,7 @@ return  (function(modules) {
 	      skip: function (title) {
 	        context.test(title);
 	      },
-	
+
 	      
 
 
@@ -24770,17 +9031,17 @@ return  (function(modules) {
 	    }
 	  };
 	};
-	
+
 	},{"../suite":35}],10:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Suite = require('../suite');
 	var Test = require('../test');
-	
+
 	
 
 
@@ -24800,9 +9061,9 @@ return  (function(modules) {
 
 	module.exports = function (suite) {
 	  var suites = [suite];
-	
+
 	  suite.on('require', visit);
-	
+
 	  function visit (obj, file) {
 	    var suite;
 	    for (var key in obj) {
@@ -24835,24 +9096,24 @@ return  (function(modules) {
 	    }
 	  }
 	};
-	
+
 	},{"../suite":35,"../test":36}],11:[function(require,module,exports){
 	'use strict';
-	
+
 	exports.bdd = require('./bdd');
 	exports.tdd = require('./tdd');
 	exports.qunit = require('./qunit');
 	exports.exports = require('./exports');
-	
+
 	},{"./bdd":8,"./exports":10,"./qunit":12,"./tdd":13}],12:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Test = require('../test');
-	
+
 	
 
 
@@ -24880,10 +9141,10 @@ return  (function(modules) {
 
 	module.exports = function (suite) {
 	  var suites = [suite];
-	
+
 	  suite.on('pre-require', function (context, file, mocha) {
 	    var common = require('./common')(suites, context, mocha);
-	
+
 	    context.before = common.before;
 	    context.after = common.after;
 	    context.beforeEach = common.beforeEach;
@@ -24892,7 +9153,7 @@ return  (function(modules) {
 	    
 
 
-	
+
 	    context.suite = function (title) {
 	      if (suites.length > 1) {
 	        suites.shift();
@@ -24903,11 +9164,11 @@ return  (function(modules) {
 	        fn: false
 	      });
 	    };
-	
+
 	    
 
 
-	
+
 	    context.suite.only = function (title) {
 	      if (suites.length > 1) {
 	        suites.shift();
@@ -24918,42 +9179,42 @@ return  (function(modules) {
 	        fn: false
 	      });
 	    };
-	
+
 	    
 
 
 
 
-	
+
 	    context.test = function (title, fn) {
 	      var test = new Test(title, fn);
 	      test.file = file;
 	      suites[0].addTest(test);
 	      return test;
 	    };
-	
+
 	    
 
 
-	
+
 	    context.test.only = function (title, fn) {
 	      return common.test.only(mocha, context.test(title, fn));
 	    };
-	
+
 	    context.test.skip = common.test.skip;
 	    context.test.retries = common.test.retries;
 	  });
 	};
-	
+
 	},{"../test":36,"./common":9}],13:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Test = require('../test');
-	
+
 	
 
 
@@ -24981,16 +9242,16 @@ return  (function(modules) {
 
 	module.exports = function (suite) {
 	  var suites = [suite];
-	
+
 	  suite.on('pre-require', function (context, file, mocha) {
 	    var common = require('./common')(suites, context, mocha);
-	
+
 	    context.setup = common.beforeEach;
 	    context.teardown = common.afterEach;
 	    context.suiteSetup = common.before;
 	    context.suiteTeardown = common.after;
 	    context.run = mocha.options.delay && common.runWithSuite(suite);
-	
+
 	    
 
 
@@ -25002,7 +9263,7 @@ return  (function(modules) {
 	        fn: fn
 	      });
 	    };
-	
+
 	    
 
 
@@ -25013,7 +9274,7 @@ return  (function(modules) {
 	        fn: fn
 	      });
 	    };
-	
+
 	    
 
 
@@ -25024,7 +9285,7 @@ return  (function(modules) {
 	        fn: fn
 	      });
 	    };
-	
+
 	    
 
 
@@ -25039,58 +9300,58 @@ return  (function(modules) {
 	      suite.addTest(test);
 	      return test;
 	    };
-	
+
 	    
 
 
-	
+
 	    context.test.only = function (title, fn) {
 	      return common.test.only(mocha, context.test(title, fn));
 	    };
-	
+
 	    context.test.skip = common.test.skip;
 	    context.test.retries = common.test.retries;
 	  });
 	};
-	
+
 	},{"../test":36,"./common":9}],14:[function(require,module,exports){
 	(function (process,global,__dirname){
 	'use strict';
-	
+
 	
 
 
 
-
-	
-	
 
 
 	
+
+
+
 	var escapeRe = require('escape-string-regexp');
 	var path = require('path');
 	var reporters = require('./reporters');
 	var utils = require('./utils');
-	
+
 	
 
 
-	
+
 	exports = module.exports = Mocha;
-	
+
 	
 
 
-	
+
 	if (!process.browser) {
 	  var cwd = process.cwd();
 	  module.paths.push(cwd, path.join(cwd, 'node_modules'));
 	}
-	
+
 	
 
 
-	
+
 	exports.utils = utils;
 	exports.interfaces = require('./interfaces');
 	exports.reporters = reporters;
@@ -25100,7 +9361,7 @@ return  (function(modules) {
 	exports.Suite = require('./suite');
 	exports.Hook = require('./hook');
 	exports.Test = require('./test');
-	
+
 	
 
 
@@ -25111,7 +9372,7 @@ return  (function(modules) {
 	function image (name) {
 	  return path.join(__dirname, '../images', name + '.png');
 	}
-	
+
 	
 
 
@@ -25159,7 +9420,7 @@ return  (function(modules) {
 	    this.slow(options.slow);
 	  }
 	}
-	
+
 	
 
 
@@ -25173,7 +9434,7 @@ return  (function(modules) {
 	  this.suite.bail(bail);
 	  return this;
 	};
-	
+
 	
 
 
@@ -25184,7 +9445,7 @@ return  (function(modules) {
 	  this.files.push(file);
 	  return this;
 	};
-	
+
 	
 
 
@@ -25227,7 +9488,7 @@ return  (function(modules) {
 	  this.options.reporterOptions = reporterOptions;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25245,7 +9506,7 @@ return  (function(modules) {
 	    }
 	  }
 	  this._ui = this._ui(this.suite);
-	
+
 	  this.suite.on('pre-require', function (context) {
 	    exports.afterEach = context.afterEach || context.teardown;
 	    exports.after = context.after || context.suiteTeardown;
@@ -25261,10 +9522,10 @@ return  (function(modules) {
 	    exports.test = context.test || context.it;
 	    exports.run = context.run;
 	  });
-	
+
 	  return this;
 	};
-	
+
 	
 
 
@@ -25281,7 +9542,7 @@ return  (function(modules) {
 	  });
 	  fn && fn();
 	};
-	
+
 	
 
 
@@ -25289,7 +9550,7 @@ return  (function(modules) {
 
 	Mocha.prototype._growl = function (runner, reporter) {
 	  var notify = require('growl');
-	
+
 	  runner.on('end', function () {
 	    var stats = reporter.stats;
 	    if (stats.failures) {
@@ -25304,7 +9565,7 @@ return  (function(modules) {
 	    }
 	  });
 	};
-	
+
 	
 
 
@@ -25315,7 +9576,7 @@ return  (function(modules) {
 	Mocha.prototype.fgrep = function (str) {
 	  return this.grep(new RegExp(escapeRe(str)));
 	};
-	
+
 	
 
 
@@ -25345,7 +9606,7 @@ return  (function(modules) {
 	  this.options.invert = true;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25359,7 +9620,7 @@ return  (function(modules) {
 	  this.options.ignoreLeaks = Boolean(ignore);
 	  return this;
 	};
-	
+
 	
 
 
@@ -25370,7 +9631,7 @@ return  (function(modules) {
 	  this.options.ignoreLeaks = false;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25381,7 +9642,7 @@ return  (function(modules) {
 	  this.options.fullStackTrace = true;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25392,7 +9653,7 @@ return  (function(modules) {
 	  this.options.growl = true;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25406,7 +9667,7 @@ return  (function(modules) {
 	  this.options.globals = (this.options.globals || []).concat(globals);
 	  return this;
 	};
-	
+
 	
 
 
@@ -25422,7 +9683,7 @@ return  (function(modules) {
 	  }
 	  return this;
 	};
-	
+
 	
 
 
@@ -25436,7 +9697,7 @@ return  (function(modules) {
 	  this.options.useInlineDiffs = inlineDiffs !== undefined && inlineDiffs;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25450,7 +9711,7 @@ return  (function(modules) {
 	  this.suite.timeout(timeout);
 	  return this;
 	};
-	
+
 	
 
 
@@ -25462,7 +9723,7 @@ return  (function(modules) {
 	  this.suite.retries(n);
 	  return this;
 	};
-	
+
 	
 
 
@@ -25476,7 +9737,7 @@ return  (function(modules) {
 	  this.suite.slow(slow);
 	  return this;
 	};
-	
+
 	
 
 
@@ -25490,7 +9751,7 @@ return  (function(modules) {
 	  this.suite.enableTimeouts(arguments.length && enabled !== undefined ? enabled : true);
 	  return this;
 	};
-	
+
 	
 
 
@@ -25501,7 +9762,7 @@ return  (function(modules) {
 	  this.options.asyncOnly = true;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25511,7 +9772,7 @@ return  (function(modules) {
 	  this.options.noHighlighting = true;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25522,7 +9783,7 @@ return  (function(modules) {
 	  this.options.allowUncaught = true;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25531,7 +9792,7 @@ return  (function(modules) {
 	  this.options.delay = true;
 	  return this;
 	};
-	
+
 	
 
 
@@ -25566,7 +9827,7 @@ return  (function(modules) {
 	    exports.reporters.Base.useColors = options.useColors;
 	  }
 	  exports.reporters.Base.inlineDiffs = options.useInlineDiffs;
-	
+
 	  function done (failures) {
 	    if (reporter.done) {
 	      reporter.done(failures, fn);
@@ -25574,24 +9835,24 @@ return  (function(modules) {
 	      fn && fn(failures);
 	    }
 	  }
-	
+
 	  return runner.run(done);
 	};
-	
+
 	}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {},"/lib")
 	},{"./context":6,"./hook":7,"./interfaces":11,"./reporters":21,"./runnable":33,"./runner":34,"./suite":35,"./test":36,"./utils":38,"_process":67,"escape-string-regexp":47,"growl":49,"path":42}],15:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var s = 1000;
 	var m = s * 60;
 	var h = m * 60;
 	var d = h * 24;
 	var y = d * 365.25;
-	
+
 	
 
 
@@ -25612,7 +9873,7 @@ return  (function(modules) {
 	  
 	  return options['long'] ? longFormat(val) : shortFormat(val);
 	};
-	
+
 	
 
 
@@ -25654,7 +9915,7 @@ return  (function(modules) {
 	      
 	  }
 	}
-	
+
 	
 
 
@@ -25677,7 +9938,7 @@ return  (function(modules) {
 	  }
 	  return ms + 'ms';
 	}
-	
+
 	
 
 
@@ -25692,7 +9953,7 @@ return  (function(modules) {
 	    plural(ms, s, 'second') ||
 	    ms + ' ms';
 	}
-	
+
 	
 
 
@@ -25710,16 +9971,16 @@ return  (function(modules) {
 	  }
 	  return Math.ceil(ms / n) + ' ' + name + 's';
 	}
-	
+
 	},{}],16:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	module.exports = Pending;
-	
+
 	
 
 
@@ -25728,32 +9989,32 @@ return  (function(modules) {
 	function Pending (message) {
 	  this.message = message;
 	}
-	
+
 	},{}],17:[function(require,module,exports){
 	(function (process,global){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var tty = require('tty');
 	var diff = require('diff');
 	var ms = require('../ms');
 	var utils = require('../utils');
 	var supportsColor = process.browser ? null : require('supports-color');
-	
+
 	
 
 
-	
+
 	exports = module.exports = Base;
-	
+
 	
 
 
 
-	
+
 	
 	var Date = global.Date;
 	var setTimeout = global.setTimeout;
@@ -25761,29 +10022,29 @@ return  (function(modules) {
 	var clearTimeout = global.clearTimeout;
 	var clearInterval = global.clearInterval;
 	
-	
+
 	
 
 
-	
+
 	var isatty = tty.isatty(1) && tty.isatty(2);
-	
+
 	
 
 
-	
+
 	exports.useColors = !process.browser && (supportsColor || (process.env.MOCHA_COLORS !== undefined));
-	
+
 	
 
 
-	
+
 	exports.inlineDiffs = false;
-	
+
 	
 
 
-	
+
 	exports.colors = {
 	  pass: 90,
 	  fail: 31,
@@ -25805,11 +10066,11 @@ return  (function(modules) {
 	  'diff added': 32,
 	  'diff removed': 31
 	};
-	
+
 	
 
 
-	
+
 	exports.symbols = {
 	  ok: '✓',
 	  err: '✖',
@@ -25817,14 +10078,14 @@ return  (function(modules) {
 	  comma: ',',
 	  bang: '!'
 	};
-	
+
 	
 	if (process.platform === 'win32') {
 	  exports.symbols.ok = '\u221A';
 	  exports.symbols.err = '\u00D7';
 	  exports.symbols.dot = '.';
 	}
-	
+
 	
 
 
@@ -25842,42 +10103,42 @@ return  (function(modules) {
 	  }
 	  return '\u001b[' + exports.colors[type] + 'm' + str + '\u001b[0m';
 	};
-	
+
 	
 
 
-	
+
 	exports.window = {
 	  width: 75
 	};
-	
+
 	if (isatty) {
 	  exports.window.width = process.stdout.getWindowSize
 	      ? process.stdout.getWindowSize(1)[0]
 	      : tty.getWindowSize()[1];
 	}
-	
+
 	
 
 
-	
+
 	exports.cursor = {
 	  hide: function () {
 	    isatty && process.stdout.write('\u001b[?25l');
 	  },
-	
+
 	  show: function () {
 	    isatty && process.stdout.write('\u001b[?25h');
 	  },
-	
+
 	  deleteLine: function () {
 	    isatty && process.stdout.write('\u001b[2K');
 	  },
-	
+
 	  beginningOfLine: function () {
 	    isatty && process.stdout.write('\u001b[0G');
 	  },
-	
+
 	  CR: function () {
 	    if (isatty) {
 	      exports.cursor.deleteLine();
@@ -25887,14 +10148,14 @@ return  (function(modules) {
 	    }
 	  }
 	};
-	
-	
-
-
-
-
 
 	
+
+
+
+
+
+
 	exports.list = function (failures) {
 	  console.log();
 	  failures.forEach(function (test, i) {
@@ -25902,7 +10163,7 @@ return  (function(modules) {
 	    var fmt = color('error title', '  %s) %s:\n') +
 	      color('error message', '     %s') +
 	      color('error stack', '\n%s\n');
-	
+
 	    
 	    var msg;
 	    var err = test.err;
@@ -25919,7 +10180,7 @@ return  (function(modules) {
 	    var actual = err.actual;
 	    var expected = err.expected;
 	    var escape = true;
-	
+
 	    if (index === -1) {
 	      msg = message;
 	    } else {
@@ -25928,7 +10189,7 @@ return  (function(modules) {
 	      
 	      stack = stack.slice(index + 1);
 	    }
-	
+
 	    
 	    if (err.uncaught) {
 	      msg = 'Uncaught ' + msg;
@@ -25940,65 +10201,65 @@ return  (function(modules) {
 	        err.actual = actual = utils.stringify(actual);
 	        err.expected = expected = utils.stringify(expected);
 	      }
-	
+
 	      fmt = color('error title', '  %s) %s:\n%s') + color('error stack', '\n%s\n');
 	      var match = message.match(/^([^:]+): expected/);
 	      msg = '\n      ' + color('error message', match ? match[1] : msg);
-	
+
 	      if (exports.inlineDiffs) {
 	        msg += inlineDiff(err, escape);
 	      } else {
 	        msg += unifiedDiff(err, escape);
 	      }
 	    }
-	
+
 	    
 	    stack = stack.replace(/^/gm, '  ');
-	
+
 	    console.log(fmt, (i + 1), test.fullTitle(), msg, stack);
 	  });
 	};
-	
-	
-
-
-
-
-
-
-
-
-
 
 	
+
+
+
+
+
+
+
+
+
+
+
 	function Base (runner) {
 	  var stats = this.stats = { suites: 0, tests: 0, passes: 0, pending: 0, failures: 0 };
 	  var failures = this.failures = [];
-	
+
 	  if (!runner) {
 	    return;
 	  }
 	  this.runner = runner;
-	
+
 	  runner.stats = stats;
-	
+
 	  runner.on('start', function () {
 	    stats.start = new Date();
 	  });
-	
+
 	  runner.on('suite', function (suite) {
 	    stats.suites = stats.suites || 0;
 	    suite.root || stats.suites++;
 	  });
-	
+
 	  runner.on('test end', function () {
 	    stats.tests = stats.tests || 0;
 	    stats.tests++;
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    stats.passes = stats.passes || 0;
-	
+
 	    if (test.duration > test.slow()) {
 	      test.speed = 'slow';
 	    } else if (test.duration > test.slow() / 2) {
@@ -26006,27 +10267,27 @@ return  (function(modules) {
 	    } else {
 	      test.speed = 'fast';
 	    }
-	
+
 	    stats.passes++;
 	  });
-	
+
 	  runner.on('fail', function (test, err) {
 	    stats.failures = stats.failures || 0;
 	    stats.failures++;
 	    test.err = err;
 	    failures.push(test);
 	  });
-	
+
 	  runner.on('end', function () {
 	    stats.end = new Date();
 	    stats.duration = new Date() - stats.start;
 	  });
-	
+
 	  runner.on('pending', function () {
 	    stats.pending++;
 	  });
 	}
-	
+
 	
 
 
@@ -26036,39 +10297,39 @@ return  (function(modules) {
 	Base.prototype.epilogue = function () {
 	  var stats = this.stats;
 	  var fmt;
-	
+
 	  console.log();
-	
+
 	  
 	  fmt = color('bright pass', ' ') +
 	    color('green', ' %d passing') +
 	    color('light', ' (%s)');
-	
+
 	  console.log(fmt,
 	    stats.passes || 0,
 	    ms(stats.duration));
-	
+
 	  
 	  if (stats.pending) {
 	    fmt = color('pending', ' ') +
 	      color('pending', ' %d pending');
-	
+
 	    console.log(fmt, stats.pending);
 	  }
-	
+
 	  
 	  if (stats.failures) {
 	    fmt = color('fail', '  %d failing');
-	
+
 	    console.log(fmt, stats.failures);
-	
+
 	    Base.list(this.failures);
 	    console.log();
 	  }
-	
+
 	  console.log();
 	};
-	
+
 	
 
 
@@ -26081,7 +10342,7 @@ return  (function(modules) {
 	  str = String(str);
 	  return Array(len - str.length + 1).join(' ') + str;
 	}
-	
+
 	
 
 
@@ -26092,7 +10353,7 @@ return  (function(modules) {
 
 	function inlineDiff (err, escape) {
 	  var msg = errorDiff(err, 'WordsWithSpace', escape);
-	
+
 	  
 	  var lines = msg.split('\n');
 	  if (lines.length > 4) {
@@ -26101,7 +10362,7 @@ return  (function(modules) {
 	      return pad(++i, width) + ' |' + ' ' + str;
 	    }).join('\n');
 	  }
-	
+
 	  
 	  msg = '\n' +
 	    color('diff removed', 'actual') +
@@ -26110,12 +10371,12 @@ return  (function(modules) {
 	    '\n\n' +
 	    msg +
 	    '\n';
-	
+
 	  
 	  msg = msg.replace(/^/gm, '      ');
 	  return msg;
 	}
-	
+
 	
 
 
@@ -26155,7 +10416,7 @@ return  (function(modules) {
 	    '\n\n' +
 	    lines.map(cleanUp).filter(notBlank).join('\n');
 	}
-	
+
 	
 
 
@@ -26178,7 +10439,7 @@ return  (function(modules) {
 	    return str.value;
 	  }).join('');
 	}
-	
+
 	
 
 
@@ -26191,7 +10452,7 @@ return  (function(modules) {
 	    .replace(/\r/g, '<CR>')
 	    .replace(/\n/g, '<LF>\n');
 	}
-	
+
 	
 
 
@@ -26205,12 +10466,12 @@ return  (function(modules) {
 	    return color(name, str);
 	  }).join('\n');
 	}
-	
+
 	
 
 
 	var objToString = Object.prototype.toString;
-	
+
 	
 
 
@@ -26222,24 +10483,24 @@ return  (function(modules) {
 	function sameType (a, b) {
 	  return objToString.call(a) === objToString.call(b);
 	}
-	
+
 	}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"../ms":15,"../utils":38,"_process":67,"diff":46,"supports-color":42,"tty":5}],18:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var utils = require('../utils');
-	
+
 	
 
 
-	
+
 	exports = module.exports = Doc;
-	
+
 	
 
 
@@ -26248,13 +10509,13 @@ return  (function(modules) {
 
 	function Doc (runner) {
 	  Base.call(this, runner);
-	
+
 	  var indents = 2;
-	
+
 	  function indent () {
 	    return Array(indents).join('  ');
 	  }
-	
+
 	  runner.on('suite', function (suite) {
 	    if (suite.root) {
 	      return;
@@ -26265,7 +10526,7 @@ return  (function(modules) {
 	    console.log('%s<h1>%s</h1>', indent(), utils.escape(suite.title));
 	    console.log('%s<dl>', indent());
 	  });
-	
+
 	  runner.on('suite end', function (suite) {
 	    if (suite.root) {
 	      return;
@@ -26275,13 +10536,13 @@ return  (function(modules) {
 	    console.log('%s</section>', indent());
 	    --indents;
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    console.log('%s  <dt>%s</dt>', indent(), utils.escape(test.title));
 	    var code = utils.escape(utils.clean(test.body));
 	    console.log('%s  <dd><pre><code>%s</code></pre></dd>', indent(), code);
 	  });
-	
+
 	  runner.on('fail', function (test, err) {
 	    console.log('%s  <dt class="error">%s</dt>', indent(), utils.escape(test.title));
 	    var code = utils.escape(utils.clean(test.body));
@@ -26289,25 +10550,25 @@ return  (function(modules) {
 	    console.log('%s  <dd class="error">%s</dd>', indent(), utils.escape(err));
 	  });
 	}
-	
+
 	},{"../utils":38,"./base":17}],19:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var inherits = require('../utils').inherits;
 	var color = Base.color;
-	
+
 	
 
 
-	
+
 	exports = module.exports = Dot;
-	
+
 	
 
 
@@ -26316,22 +10577,22 @@ return  (function(modules) {
 
 	function Dot (runner) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var width = Base.window.width * 0.75 | 0;
 	  var n = -1;
-	
+
 	  runner.on('start', function () {
 	    process.stdout.write('\n');
 	  });
-	
+
 	  runner.on('pending', function () {
 	    if (++n % width === 0) {
 	      process.stdout.write('\n  ');
 	    }
 	    process.stdout.write(color('pending', Base.symbols.comma));
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    if (++n % width === 0) {
 	      process.stdout.write('\n  ');
@@ -26342,46 +10603,46 @@ return  (function(modules) {
 	      process.stdout.write(color(test.speed, Base.symbols.dot));
 	    }
 	  });
-	
+
 	  runner.on('fail', function () {
 	    if (++n % width === 0) {
 	      process.stdout.write('\n  ');
 	    }
 	    process.stdout.write(color('fail', Base.symbols.bang));
 	  });
-	
+
 	  runner.on('end', function () {
 	    console.log();
 	    self.epilogue();
 	  });
 	}
-	
+
 	
 
 
 	inherits(Dot, Base);
-	
+
 	}).call(this,require('_process'))
 	},{"../utils":38,"./base":17,"_process":67}],20:[function(require,module,exports){
 	(function (global){
 	'use strict';
+
 	
-	
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var utils = require('../utils');
 	var Progress = require('../browser/progress');
 	var escapeRe = require('escape-string-regexp');
 	var escape = utils.escape;
-	
+
 	
 
 
-	
+
 	
 	var Date = global.Date;
 	var setTimeout = global.setTimeout;
@@ -26389,24 +10650,24 @@ return  (function(modules) {
 	var clearTimeout = global.clearTimeout;
 	var clearInterval = global.clearInterval;
 	
-	
+
 	
 
 
-	
+
 	exports = module.exports = HTML;
-	
+
 	
 
 
-	
+
 	var statsTemplate = '<ul id="mocha-stats">' +
 	  '<li class="progress"><canvas width="40" height="40"></canvas></li>' +
 	  '<li class="passes"><a href="javascript:void(0);">passes:</a> <em>0</em></li>' +
 	  '<li class="failures"><a href="javascript:void(0);">failures:</a> <em>0</em></li>' +
 	  '<li class="duration">duration: <em>0</em>s</li>' +
 	  '</ul>';
-	
+
 	
 
 
@@ -26415,7 +10676,7 @@ return  (function(modules) {
 
 	function HTML (runner) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var stats = this.stats;
 	  var stat = fragment(statsTemplate);
@@ -26431,7 +10692,7 @@ return  (function(modules) {
 	  var progress;
 	  var ctx;
 	  var root = document.getElementById('mocha');
-	
+
 	  if (canvas.getContext) {
 	    var ratio = window.devicePixelRatio || 1;
 	    canvas.style.width = canvas.width;
@@ -26442,11 +10703,11 @@ return  (function(modules) {
 	    ctx.scale(ratio, ratio);
 	    progress = new Progress();
 	  }
-	
+
 	  if (!root) {
 	    return error('#mocha div missing, add it to your document');
 	  }
-	
+
 	  
 	  on(passesLink, 'click', function (evt) {
 	    evt.preventDefault();
@@ -26457,7 +10718,7 @@ return  (function(modules) {
 	      hideSuitesWithout('test pass');
 	    }
 	  });
-	
+
 	  
 	  on(failuresLink, 'click', function (evt) {
 	    evt.preventDefault();
@@ -26468,29 +10729,29 @@ return  (function(modules) {
 	      hideSuitesWithout('test fail');
 	    }
 	  });
-	
+
 	  root.appendChild(stat);
 	  root.appendChild(report);
-	
+
 	  if (progress) {
 	    progress.size(40);
 	  }
-	
+
 	  runner.on('suite', function (suite) {
 	    if (suite.root) {
 	      return;
 	    }
-	
+
 	    
 	    var url = self.suiteURL(suite);
 	    var el = fragment('<li class="suite"><h1><a href="%s">%s</a></h1></li>', url, escape(suite.title));
-	
+
 	    
 	    stack[0].appendChild(el);
 	    stack.unshift(document.createElement('ul'));
 	    el.appendChild(stack[0]);
 	  });
-	
+
 	  runner.on('suite end', function (suite) {
 	    if (suite.root) {
 	      updateStats();
@@ -26498,29 +10759,29 @@ return  (function(modules) {
 	    }
 	    stack.shift();
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    var url = self.testURL(test);
 	    var markup = '<li class="test pass %e"><h2>%e<span class="duration">%ems</span> ' +
-	      '<a href="%s" class="replay">‣</a></h2></li>';
+	      '<a href="%s" class="replay">&#x2023;</a></h2></li>';
 	    var el = fragment(markup, test.speed, test.title, test.duration, url);
 	    self.addCodeToggle(el, test.body);
 	    appendToStack(el);
 	    updateStats();
 	  });
-	
+
 	  runner.on('fail', function (test) {
-	    var el = fragment('<li class="test fail"><h2>%e <a href="%e" class="replay">‣</a></h2></li>',
+	    var el = fragment('<li class="test fail"><h2>%e <a href="%e" class="replay">&#x2023;</a></h2></li>',
 	      test.title, self.testURL(test));
 	    var stackString; 
 	    var message = test.err.toString();
-	
+
 	    
 	    
 	    if (message === '[object Error]') {
 	      message = test.err.message;
 	    }
-	
+
 	    if (test.err.stack) {
 	      var indexOfMessage = test.err.stack.indexOf(test.err.message);
 	      if (indexOfMessage === -1) {
@@ -26532,9 +10793,9 @@ return  (function(modules) {
 	      
 	      stackString = '\n(' + test.err.sourceURL + ':' + test.err.line + ')';
 	    }
-	
+
 	    stackString = stackString || '';
-	
+
 	    if (test.err.htmlMessage && stackString) {
 	      el.appendChild(fragment('<div class="html-error">%s\n<pre class="error">%e</pre></div>',
 	        test.err.htmlMessage, stackString));
@@ -26543,32 +10804,32 @@ return  (function(modules) {
 	    } else {
 	      el.appendChild(fragment('<pre class="error">%e%e</pre>', message, stackString));
 	    }
-	
+
 	    self.addCodeToggle(el, test.body);
 	    appendToStack(el);
 	    updateStats();
 	  });
-	
+
 	  runner.on('pending', function (test) {
 	    var el = fragment('<li class="test pass pending"><h2>%e</h2></li>', test.title);
 	    appendToStack(el);
 	    updateStats();
 	  });
-	
+
 	  function appendToStack (el) {
 	    
 	    if (stack[0]) {
 	      stack[0].appendChild(el);
 	    }
 	  }
-	
+
 	  function updateStats () {
 	    
 	    var percent = stats.tests / runner.total * 100 | 0;
 	    if (progress) {
 	      progress.update(percent).draw(ctx);
 	    }
-	
+
 	    
 	    var ms = new Date() - stats.start;
 	    text(passes, stats.passes);
@@ -26576,7 +10837,7 @@ return  (function(modules) {
 	    text(duration, (ms / 1000).toFixed(2));
 	  }
 	}
-	
+
 	
 
 
@@ -26585,15 +10846,15 @@ return  (function(modules) {
 
 	function makeUrl (s) {
 	  var search = window.location.search;
-	
+
 	  
 	  if (search) {
 	    search = search.replace(/[?&]grep=[^&\s]*/g, '').replace(/^&/, '?');
 	  }
-	
+
 	  return window.location.pathname + (search ? search + '&' : '?') + 'grep=' + encodeURIComponent(escapeRe(s));
 	}
-	
+
 	
 
 
@@ -26602,7 +10863,7 @@ return  (function(modules) {
 	HTML.prototype.suiteURL = function (suite) {
 	  return makeUrl(suite.fullTitle());
 	};
-	
+
 	
 
 
@@ -26611,7 +10872,7 @@ return  (function(modules) {
 	HTML.prototype.testURL = function (test) {
 	  return makeUrl(test.fullTitle());
 	};
-	
+
 	
 
 
@@ -26620,16 +10881,16 @@ return  (function(modules) {
 
 	HTML.prototype.addCodeToggle = function (el, contents) {
 	  var h2 = el.getElementsByTagName('h2')[0];
-	
+
 	  on(h2, 'click', function () {
 	    pre.style.display = pre.style.display === 'none' ? 'block' : 'none';
 	  });
-	
+
 	  var pre = fragment('<pre><code>%e</code></pre>', utils.clean(contents));
 	  el.appendChild(pre);
 	  pre.style.display = 'none';
 	};
-	
+
 	
 
 
@@ -26638,7 +10899,7 @@ return  (function(modules) {
 	function error (msg) {
 	  document.body.appendChild(fragment('<div id="mocha-error">%s</div>', msg));
 	}
-	
+
 	
 
 
@@ -26648,7 +10909,7 @@ return  (function(modules) {
 	  var args = arguments;
 	  var div = document.createElement('div');
 	  var i = 1;
-	
+
 	  div.innerHTML = html.replace(/%([se])/g, function (_, type) {
 	    switch (type) {
 	      case 's': return String(args[i++]);
@@ -26656,10 +10917,10 @@ return  (function(modules) {
 	      
 	    }
 	  });
-	
+
 	  return div.firstChild;
 	}
-	
+
 	
 
 
@@ -26675,7 +10936,7 @@ return  (function(modules) {
 	    }
 	  }
 	}
-	
+
 	
 
 
@@ -26685,7 +10946,7 @@ return  (function(modules) {
 	    els[i].className = els[i].className.replace('suite hidden', 'suite');
 	  }
 	}
-	
+
 	
 
 
@@ -26699,7 +10960,7 @@ return  (function(modules) {
 	    el.innerText = contents;
 	  }
 	}
-	
+
 	
 
 
@@ -26710,11 +10971,11 @@ return  (function(modules) {
 	    el.attachEvent('on' + event, fn);
 	  }
 	}
-	
+
 	}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"../browser/progress":4,"../utils":38,"./base":17,"escape-string-regexp":47}],21:[function(require,module,exports){
 	'use strict';
-	
+
 	
 	
 	exports.Base = exports.base = require('./base');
@@ -26732,24 +10993,24 @@ return  (function(modules) {
 	exports.Progress = exports.progress = require('./progress');
 	exports.Landing = exports.landing = require('./landing');
 	exports.JSONStream = exports['json-stream'] = require('./json-stream');
-	
+
 	},{"./base":17,"./doc":18,"./dot":19,"./html":20,"./json":23,"./json-stream":22,"./landing":24,"./list":25,"./markdown":26,"./min":27,"./nyan":28,"./progress":29,"./spec":30,"./tap":31,"./xunit":32}],22:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var JSON = require('json3');
-	
+
 	
 
 
-	
+
 	exports = module.exports = List;
-	
+
 	
 
 
@@ -26758,30 +11019,30 @@ return  (function(modules) {
 
 	function List (runner) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var total = runner.total;
-	
+
 	  runner.on('start', function () {
 	    console.log(JSON.stringify(['start', { total: total }]));
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    console.log(JSON.stringify(['pass', clean(test)]));
 	  });
-	
+
 	  runner.on('fail', function (test, err) {
 	    test = clean(test);
 	    test.err = err.message;
 	    test.stack = err.stack || null;
 	    console.log(JSON.stringify(['fail', test]));
 	  });
-	
+
 	  runner.on('end', function () {
 	    process.stdout.write(JSON.stringify(['end', self.stats]));
 	  });
 	}
-	
+
 	
 
 
@@ -26798,24 +11059,24 @@ return  (function(modules) {
 	    currentRetry: test.currentRetry()
 	  };
 	}
-	
+
 	}).call(this,require('_process'))
 	},{"./base":17,"_process":67,"json3":54}],23:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
-	
+
 	
 
 
-	
+
 	exports = module.exports = JSONReporter;
-	
+
 	
 
 
@@ -26824,29 +11085,29 @@ return  (function(modules) {
 
 	function JSONReporter (runner) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var tests = [];
 	  var pending = [];
 	  var failures = [];
 	  var passes = [];
-	
+
 	  runner.on('test end', function (test) {
 	    tests.push(test);
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    passes.push(test);
 	  });
-	
+
 	  runner.on('fail', function (test) {
 	    failures.push(test);
 	  });
-	
+
 	  runner.on('pending', function (test) {
 	    pending.push(test);
 	  });
-	
+
 	  runner.on('end', function () {
 	    var obj = {
 	      stats: self.stats,
@@ -26855,13 +11116,13 @@ return  (function(modules) {
 	      failures: failures.map(clean),
 	      passes: passes.map(clean)
 	    };
-	
+
 	    runner.testResults = obj;
-	
+
 	    process.stdout.write(JSON.stringify(obj, null, 2));
 	  });
 	}
-	
+
 	
 
 
@@ -26879,7 +11140,7 @@ return  (function(modules) {
 	    err: errorJSON(test.err || {})
 	  };
 	}
-	
+
 	
 
 
@@ -26894,45 +11155,45 @@ return  (function(modules) {
 	  }, err);
 	  return res;
 	}
-	
+
 	}).call(this,require('_process'))
 	},{"./base":17,"_process":67}],24:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var inherits = require('../utils').inherits;
 	var cursor = Base.cursor;
 	var color = Base.color;
-	
+
 	
 
 
-	
+
 	exports = module.exports = Landing;
-	
+
 	
 
 
-	
+
 	Base.colors.plane = 0;
-	
+
 	
 
 
-	
+
 	Base.colors['plane crash'] = 31;
-	
+
 	
 
 
-	
+
 	Base.colors.runway = 90;
-	
+
 	
 
 
@@ -26941,7 +11202,7 @@ return  (function(modules) {
 
 	function Landing (runner) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var width = Base.window.width * 0.75 | 0;
 	  var total = runner.total;
@@ -26949,27 +11210,27 @@ return  (function(modules) {
 	  var plane = color('plane', '✈');
 	  var crashed = -1;
 	  var n = 0;
-	
+
 	  function runway () {
 	    var buf = Array(width).join('-');
 	    return '  ' + color('runway', buf);
 	  }
-	
+
 	  runner.on('start', function () {
 	    stream.write('\n\n\n  ');
 	    cursor.hide();
 	  });
-	
+
 	  runner.on('test end', function (test) {
 	    
 	    var col = crashed === -1 ? width * ++n / total | 0 : crashed;
-	
+
 	    
 	    if (test.state === 'failed') {
 	      plane = color('plane crash', '✈');
 	      crashed = col;
 	    }
-	
+
 	    
 	    stream.write('\u001b[' + (width + 1) + 'D\u001b[2A');
 	    stream.write(runway());
@@ -26980,39 +11241,39 @@ return  (function(modules) {
 	    stream.write(runway());
 	    stream.write('\u001b[0m');
 	  });
-	
+
 	  runner.on('end', function () {
 	    cursor.show();
 	    console.log();
 	    self.epilogue();
 	  });
 	}
-	
+
 	
 
 
 	inherits(Landing, Base);
-	
+
 	}).call(this,require('_process'))
 	},{"../utils":38,"./base":17,"_process":67}],25:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var inherits = require('../utils').inherits;
 	var color = Base.color;
 	var cursor = Base.cursor;
-	
+
 	
 
 
-	
+
 	exports = module.exports = List;
-	
+
 	
 
 
@@ -27021,24 +11282,24 @@ return  (function(modules) {
 
 	function List (runner) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var n = 0;
-	
+
 	  runner.on('start', function () {
 	    console.log();
 	  });
-	
+
 	  runner.on('test', function (test) {
 	    process.stdout.write(color('pass', '    ' + test.fullTitle() + ': '));
 	  });
-	
+
 	  runner.on('pending', function (test) {
 	    var fmt = color('checkmark', '  -') +
 	      color('pending', ' %s');
 	    console.log(fmt, test.fullTitle());
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    var fmt = color('checkmark', '  ' + Base.symbols.ok) +
 	      color('pass', ' %s: ') +
@@ -27046,44 +11307,44 @@ return  (function(modules) {
 	    cursor.CR();
 	    console.log(fmt, test.fullTitle(), test.duration);
 	  });
-	
+
 	  runner.on('fail', function (test) {
 	    cursor.CR();
 	    console.log(color('fail', '  %d) %s'), ++n, test.fullTitle());
 	  });
-	
+
 	  runner.on('end', self.epilogue.bind(self));
 	}
-	
+
 	
 
 
 	inherits(List, Base);
-	
+
 	}).call(this,require('_process'))
 	},{"../utils":38,"./base":17,"_process":67}],26:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var utils = require('../utils');
-	
+
 	
 
 
-	
+
 	var SUITE_PREFIX = '$';
-	
+
 	
 
 
-	
+
 	exports = module.exports = Markdown;
-	
+
 	
 
 
@@ -27092,26 +11353,26 @@ return  (function(modules) {
 
 	function Markdown (runner) {
 	  Base.call(this, runner);
-	
+
 	  var level = 0;
 	  var buf = '';
-	
+
 	  function title (str) {
 	    return Array(level).join('#') + ' ' + str;
 	  }
-	
+
 	  function mapTOC (suite, obj) {
 	    var ret = obj;
 	    var key = SUITE_PREFIX + suite.title;
-	
+
 	    obj = obj[key] = obj[key] || { suite: suite };
 	    suite.suites.forEach(function (suite) {
 	      mapTOC(suite, obj);
 	    });
-	
+
 	    return ret;
 	  }
-	
+
 	  function stringifyTOC (obj, level) {
 	    ++level;
 	    var buf = '';
@@ -27129,25 +11390,25 @@ return  (function(modules) {
 	    }
 	    return buf;
 	  }
-	
+
 	  function generateTOC (suite) {
 	    var obj = mapTOC(suite, {});
 	    return stringifyTOC(obj, 0);
 	  }
-	
+
 	  generateTOC(runner.suite);
-	
+
 	  runner.on('suite', function (suite) {
 	    ++level;
 	    var slug = utils.slug(suite.fullTitle());
 	    buf += '<a name="' + slug + '"></a>' + '\n';
 	    buf += title(suite.title) + '\n';
 	  });
-	
+
 	  runner.on('suite end', function () {
 	    --level;
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    var code = utils.clean(test.body);
 	    buf += test.title + '.\n';
@@ -27155,32 +11416,32 @@ return  (function(modules) {
 	    buf += code + '\n';
 	    buf += '```\n\n';
 	  });
-	
+
 	  runner.on('end', function () {
 	    process.stdout.write('# TOC\n');
 	    process.stdout.write(generateTOC(runner.suite));
 	    process.stdout.write(buf);
 	  });
 	}
-	
+
 	}).call(this,require('_process'))
 	},{"../utils":38,"./base":17,"_process":67}],27:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var inherits = require('../utils').inherits;
-	
+
 	
 
 
-	
+
 	exports = module.exports = Min;
-	
+
 	
 
 
@@ -27189,54 +11450,54 @@ return  (function(modules) {
 
 	function Min (runner) {
 	  Base.call(this, runner);
-	
+
 	  runner.on('start', function () {
 	    
 	    process.stdout.write('\u001b[2J');
 	    
 	    process.stdout.write('\u001b[1;3H');
 	  });
-	
+
 	  runner.on('end', this.epilogue.bind(this));
 	}
-	
+
 	
 
 
 	inherits(Min, Base);
-	
+
 	}).call(this,require('_process'))
 	},{"../utils":38,"./base":17,"_process":67}],28:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var inherits = require('../utils').inherits;
-	
+
 	
 
 
-	
+
 	exports = module.exports = NyanCat;
-	
-	
-
-
-
-
 
 	
+
+
+
+
+
+
 	function NyanCat (runner) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var width = Base.window.width * 0.75 | 0;
 	  var nyanCatWidth = this.nyanCatWidth = 11;
-	
+
 	  this.colorIndex = 0;
 	  this.numberOfLines = 4;
 	  this.rainbowColors = self.generateColors();
@@ -27244,24 +11505,24 @@ return  (function(modules) {
 	  this.tick = 0;
 	  this.trajectories = [[], [], [], []];
 	  this.trajectoryWidthMax = (width - nyanCatWidth);
-	
+
 	  runner.on('start', function () {
 	    Base.cursor.hide();
 	    self.draw();
 	  });
-	
+
 	  runner.on('pending', function () {
 	    self.draw();
 	  });
-	
+
 	  runner.on('pass', function () {
 	    self.draw();
 	  });
-	
+
 	  runner.on('fail', function () {
 	    self.draw();
 	  });
-	
+
 	  runner.on('end', function () {
 	    Base.cursor.show();
 	    for (var i = 0; i < self.numberOfLines; i++) {
@@ -27270,18 +11531,18 @@ return  (function(modules) {
 	    self.epilogue();
 	  });
 	}
-	
+
 	
 
 
 	inherits(NyanCat, Base);
-	
-	
-
-
-
 
 	
+
+
+
+
+
 	NyanCat.prototype.draw = function () {
 	  this.appendRainbow();
 	  this.drawScoreboard();
@@ -27289,41 +11550,41 @@ return  (function(modules) {
 	  this.drawNyanCat();
 	  this.tick = !this.tick;
 	};
-	
-	
-
-
-
-
 
 	
+
+
+
+
+
+
 	NyanCat.prototype.drawScoreboard = function () {
 	  var stats = this.stats;
-	
+
 	  function draw (type, n) {
 	    write(' ');
 	    write(Base.color(type, n));
 	    write('\n');
 	  }
-	
+
 	  draw('green', stats.passes);
 	  draw('fail', stats.failures);
 	  draw('pending', stats.pending);
 	  write('\n');
-	
+
 	  this.cursorUp(this.numberOfLines);
 	};
-	
-	
-
-
-
 
 	
+
+
+
+
+
 	NyanCat.prototype.appendRainbow = function () {
 	  var segment = this.tick ? '_' : '-';
 	  var rainbowified = this.rainbowify(segment);
-	
+
 	  for (var index = 0; index < this.numberOfLines; index++) {
 	    var trajectory = this.trajectories[index];
 	    if (trajectory.length >= this.trajectoryWidthMax) {
@@ -27332,25 +11593,25 @@ return  (function(modules) {
 	    trajectory.push(rainbowified);
 	  }
 	};
-	
-	
-
-
-
 
 	
+
+
+
+
+
 	NyanCat.prototype.drawRainbow = function () {
 	  var self = this;
-	
+
 	  this.trajectories.forEach(function (line) {
 	    write('\u001b[' + self.scoreboardWidth + 'C');
 	    write(line.join(''));
 	    write('\n');
 	  });
-	
+
 	  this.cursorUp(this.numberOfLines);
 	};
-	
+
 	
 
 
@@ -27361,37 +11622,37 @@ return  (function(modules) {
 	  var startWidth = this.scoreboardWidth + this.trajectories[0].length;
 	  var dist = '\u001b[' + startWidth + 'C';
 	  var padding = '';
-	
+
 	  write(dist);
 	  write('_,------,');
 	  write('\n');
-	
+
 	  write(dist);
 	  padding = self.tick ? '  ' : '   ';
 	  write('_|' + padding + '/\\_/\\ ');
 	  write('\n');
-	
+
 	  write(dist);
 	  padding = self.tick ? '_' : '__';
 	  var tail = self.tick ? '~' : '^';
 	  write(tail + '|' + padding + this.face() + ' ');
 	  write('\n');
-	
+
 	  write(dist);
 	  padding = self.tick ? ' ' : '  ';
 	  write(padding + '""  "" ');
 	  write('\n');
-	
+
 	  this.cursorUp(this.numberOfLines);
 	};
-	
-	
-
-
-
-
 
 	
+
+
+
+
+
+
 	NyanCat.prototype.face = function () {
 	  var stats = this.stats;
 	  if (stats.failures) {
@@ -27403,29 +11664,29 @@ return  (function(modules) {
 	  }
 	  return '( - .-)';
 	};
-	
-	
-
-
-
-
 
 	
+
+
+
+
+
+
 	NyanCat.prototype.cursorUp = function (n) {
 	  write('\u001b[' + n + 'A');
 	};
-	
-	
-
-
-
-
 
 	
+
+
+
+
+
+
 	NyanCat.prototype.cursorDown = function (n) {
 	  write('\u001b[' + n + 'B');
 	};
-	
+
 	
 
 
@@ -27434,7 +11695,7 @@ return  (function(modules) {
 
 	NyanCat.prototype.generateColors = function () {
 	  var colors = [];
-	
+
 	  for (var i = 0; i < (6 * 7); i++) {
 	    var pi3 = Math.floor(Math.PI / 3);
 	    var n = (i * (1.0 / 6));
@@ -27443,10 +11704,10 @@ return  (function(modules) {
 	    var b = Math.floor(3 * Math.sin(n + 4 * pi3) + 3);
 	    colors.push(36 * r + 6 * g + b + 16);
 	  }
-	
+
 	  return colors;
 	};
-	
+
 	
 
 
@@ -27462,7 +11723,7 @@ return  (function(modules) {
 	  this.colorIndex += 1;
 	  return '\u001b[38;5;' + color + 'm' + str + '\u001b[0m';
 	};
-	
+
 	
 
 
@@ -27471,33 +11732,33 @@ return  (function(modules) {
 	function write (string) {
 	  process.stdout.write(string);
 	}
-	
+
 	}).call(this,require('_process'))
 	},{"../utils":38,"./base":17,"_process":67}],29:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var inherits = require('../utils').inherits;
 	var color = Base.color;
 	var cursor = Base.cursor;
-	
+
 	
 
 
-	
+
 	exports = module.exports = Progress;
-	
+
 	
 
 
-	
+
 	Base.colors.progress = 90;
-	
+
 	
 
 
@@ -27507,13 +11768,13 @@ return  (function(modules) {
 
 	function Progress (runner, options) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var width = Base.window.width * 0.50 | 0;
 	  var total = runner.total;
 	  var complete = 0;
 	  var lastN = -1;
-	
+
 	  
 	  options = options || {};
 	  options.open = options.open || '[';
@@ -27521,27 +11782,27 @@ return  (function(modules) {
 	  options.incomplete = options.incomplete || Base.symbols.dot;
 	  options.close = options.close || ']';
 	  options.verbose = false;
-	
+
 	  
 	  runner.on('start', function () {
 	    console.log();
 	    cursor.hide();
 	  });
-	
+
 	  
 	  runner.on('test end', function () {
 	    complete++;
-	
+
 	    var percent = complete / total;
 	    var n = width * percent | 0;
 	    var i = width - n;
-	
+
 	    if (n === lastN && !options.verbose) {
 	      
 	      return;
 	    }
 	    lastN = n;
-	
+
 	    cursor.CR();
 	    process.stdout.write('\u001b[J');
 	    process.stdout.write(color('progress', '  ' + options.open));
@@ -27552,7 +11813,7 @@ return  (function(modules) {
 	      process.stdout.write(color('progress', ' ' + complete + ' of ' + total));
 	    }
 	  });
-	
+
 	  
 	  
 	  runner.on('end', function () {
@@ -27561,30 +11822,30 @@ return  (function(modules) {
 	    self.epilogue();
 	  });
 	}
-	
+
 	
 
 
 	inherits(Progress, Base);
-	
+
 	}).call(this,require('_process'))
 	},{"../utils":38,"./base":17,"_process":67}],30:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var inherits = require('../utils').inherits;
 	var color = Base.color;
-	
+
 	
 
 
-	
+
 	exports = module.exports = Spec;
-	
+
 	
 
 
@@ -27593,36 +11854,36 @@ return  (function(modules) {
 
 	function Spec (runner) {
 	  Base.call(this, runner);
-	
+
 	  var self = this;
 	  var indents = 0;
 	  var n = 0;
-	
+
 	  function indent () {
 	    return Array(indents).join('  ');
 	  }
-	
+
 	  runner.on('start', function () {
 	    console.log();
 	  });
-	
+
 	  runner.on('suite', function (suite) {
 	    ++indents;
 	    console.log(color('suite', '%s%s'), indent(), suite.title);
 	  });
-	
+
 	  runner.on('suite end', function () {
 	    --indents;
 	    if (indents === 1) {
 	      console.log();
 	    }
 	  });
-	
+
 	  runner.on('pending', function (test) {
 	    var fmt = indent() + color('pending', '  - %s');
 	    console.log(fmt, test.title);
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    var fmt;
 	    if (test.speed === 'fast') {
@@ -27638,34 +11899,34 @@ return  (function(modules) {
 	      console.log(fmt, test.title, test.duration);
 	    }
 	  });
-	
+
 	  runner.on('fail', function (test) {
 	    console.log(indent() + color('fail', '  %d) %s'), ++n, test.title);
 	  });
-	
+
 	  runner.on('end', self.epilogue.bind(self));
 	}
-	
+
 	
 
 
 	inherits(Spec, Base);
-	
+
 	},{"../utils":38,"./base":17}],31:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
-	
+
 	
 
 
-	
+
 	exports = module.exports = TAP;
-	
+
 	
 
 
@@ -27674,29 +11935,29 @@ return  (function(modules) {
 
 	function TAP (runner) {
 	  Base.call(this, runner);
-	
+
 	  var n = 1;
 	  var passes = 0;
 	  var failures = 0;
-	
+
 	  runner.on('start', function () {
 	    var total = runner.grepTotal(runner.suite);
 	    console.log('%d..%d', 1, total);
 	  });
-	
+
 	  runner.on('test end', function () {
 	    ++n;
 	  });
-	
+
 	  runner.on('pending', function (test) {
 	    console.log('ok %d %s # SKIP -', n, title(test));
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    passes++;
 	    console.log('ok %d %s', n, title(test));
 	  });
-	
+
 	  runner.on('fail', function (test, err) {
 	    failures++;
 	    console.log('not ok %d %s', n, title(test));
@@ -27704,14 +11965,14 @@ return  (function(modules) {
 	      console.log(err.stack.replace(/^/gm, '  '));
 	    }
 	  });
-	
+
 	  runner.on('end', function () {
 	    console.log('# tests ' + (passes + failures));
 	    console.log('# pass ' + passes);
 	    console.log('# fail ' + failures);
 	  });
 	}
-	
+
 	
 
 
@@ -27722,15 +11983,15 @@ return  (function(modules) {
 	function title (test) {
 	  return test.fullTitle().replace(/#/g, '');
 	}
-	
+
 	},{"./base":17}],32:[function(require,module,exports){
 	(function (process,global){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Base = require('./base');
 	var utils = require('../utils');
 	var inherits = utils.inherits;
@@ -27738,11 +11999,11 @@ return  (function(modules) {
 	var escape = utils.escape;
 	var mkdirp = require('mkdirp');
 	var path = require('path');
-	
+
 	
 
 
-	
+
 	
 	var Date = global.Date;
 	var setTimeout = global.setTimeout;
@@ -27750,13 +12011,13 @@ return  (function(modules) {
 	var clearTimeout = global.clearTimeout;
 	var clearInterval = global.clearInterval;
 	
-	
+
 	
 
 
-	
+
 	exports = module.exports = XUnit;
-	
+
 	
 
 
@@ -27765,11 +12026,11 @@ return  (function(modules) {
 
 	function XUnit (runner, options) {
 	  Base.call(this, runner);
-	
+
 	  var stats = this.stats;
 	  var tests = [];
 	  var self = this;
-	
+
 	  if (options && options.reporterOptions && options.reporterOptions.output) {
 	    if (!fs.createWriteStream) {
 	      throw new Error('file output not supported in browser');
@@ -27777,19 +12038,19 @@ return  (function(modules) {
 	    mkdirp.sync(path.dirname(options.reporterOptions.output));
 	    self.fileStream = fs.createWriteStream(options.reporterOptions.output);
 	  }
-	
+
 	  runner.on('pending', function (test) {
 	    tests.push(test);
 	  });
-	
+
 	  runner.on('pass', function (test) {
 	    tests.push(test);
 	  });
-	
+
 	  runner.on('fail', function (test) {
 	    tests.push(test);
 	  });
-	
+
 	  runner.on('end', function () {
 	    self.write(tag('testsuite', {
 	      name: 'Mocha Tests',
@@ -27800,20 +12061,20 @@ return  (function(modules) {
 	      timestamp: (new Date()).toUTCString(),
 	      time: (stats.duration / 1000) || 0
 	    }, false));
-	
+
 	    tests.forEach(function (t) {
 	      self.test(t);
 	    });
-	
+
 	    self.write('</testsuite>');
 	  });
 	}
-	
+
 	
 
 
 	inherits(XUnit, Base);
-	
+
 	
 
 
@@ -27829,7 +12090,7 @@ return  (function(modules) {
 	    fn(failures);
 	  }
 	};
-	
+
 	
 
 
@@ -27844,7 +12105,7 @@ return  (function(modules) {
 	    console.log(line);
 	  }
 	};
-	
+
 	
 
 
@@ -27856,7 +12117,7 @@ return  (function(modules) {
 	    name: test.title,
 	    time: (test.duration / 1000) || 0
 	  };
-	
+
 	  if (test.state === 'failed') {
 	    var err = test.err;
 	    this.write(tag('testcase', attrs, false, tag('failure', {}, false, escape(err.message) + '\n' + escape(err.stack))));
@@ -27866,7 +12127,7 @@ return  (function(modules) {
 	    this.write(tag('testcase', attrs, true));
 	  }
 	};
-	
+
 	
 
 
@@ -27880,29 +12141,29 @@ return  (function(modules) {
 	  var end = close ? '/>' : '>';
 	  var pairs = [];
 	  var tag;
-	
+
 	  for (var key in attrs) {
 	    if (Object.prototype.hasOwnProperty.call(attrs, key)) {
 	      pairs.push(key + '="' + escape(attrs[key]) + '"');
 	    }
 	  }
-	
+
 	  tag = '<' + name + (pairs.length ? ' ' + pairs.join(' ') : '') + end;
 	  if (content) {
 	    tag += content + '</' + name + end;
 	  }
 	  return tag;
 	}
-	
+
 	}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"../utils":38,"./base":17,"_process":67,"fs":42,"mkdirp":64,"path":42}],33:[function(require,module,exports){
 	(function (global){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var EventEmitter = require('events').EventEmitter;
 	var JSON = require('json3');
 	var Pending = require('./pending');
@@ -27910,11 +12171,11 @@ return  (function(modules) {
 	var milliseconds = require('./ms');
 	var utils = require('./utils');
 	var create = require('lodash.create');
-	
+
 	
 
 
-	
+
 	
 	var Date = global.Date;
 	var setTimeout = global.setTimeout;
@@ -27922,19 +12183,19 @@ return  (function(modules) {
 	var clearTimeout = global.clearTimeout;
 	var clearInterval = global.clearInterval;
 	
-	
+
 	
 
 
-	
+
 	var toString = Object.prototype.toString;
-	
+
 	
 
 
-	
+
 	module.exports = Runnable;
-	
+
 	
 
 
@@ -27959,14 +12220,14 @@ return  (function(modules) {
 	  this._currentRetry = 0;
 	  this.pending = false;
 	}
-	
+
 	
 
 
 	Runnable.prototype = create(EventEmitter.prototype, {
 	  constructor: Runnable
 	});
-	
+
 	
 
 
@@ -27992,7 +12253,7 @@ return  (function(modules) {
 	  }
 	  return this;
 	};
-	
+
 	
 
 
@@ -28011,7 +12272,7 @@ return  (function(modules) {
 	  this._slow = ms;
 	  return this;
 	};
-	
+
 	
 
 
@@ -28027,7 +12288,7 @@ return  (function(modules) {
 	  this._enableTimeouts = enabled;
 	  return this;
 	};
-	
+
 	
 
 
@@ -28036,7 +12297,7 @@ return  (function(modules) {
 	Runnable.prototype.skip = function () {
 	  throw new Pending('sync skip');
 	};
-	
+
 	
 
 
@@ -28045,7 +12306,7 @@ return  (function(modules) {
 	Runnable.prototype.isPending = function () {
 	  return this.pending || (this.parent && this.parent.isPending());
 	};
-	
+
 	
 
 
@@ -28057,7 +12318,7 @@ return  (function(modules) {
 	  }
 	  this._retries = n;
 	};
-	
+
 	
 
 
@@ -28069,7 +12330,7 @@ return  (function(modules) {
 	  }
 	  this._currentRetry = n;
 	};
-	
+
 	
 
 
@@ -28080,7 +12341,7 @@ return  (function(modules) {
 	Runnable.prototype.fullTitle = function () {
 	  return this.parent.fullTitle() + ' ' + this.title;
 	};
-	
+
 	
 
 
@@ -28089,7 +12350,7 @@ return  (function(modules) {
 	Runnable.prototype.clearTimeout = function () {
 	  clearTimeout(this.timer);
 	};
-	
+
 	
 
 
@@ -28110,7 +12371,7 @@ return  (function(modules) {
 	    return val;
 	  }, 2);
 	};
-	
+
 	
 
 
@@ -28119,7 +12380,7 @@ return  (function(modules) {
 	Runnable.prototype.resetTimeout = function () {
 	  var self = this;
 	  var ms = this.timeout() || 1e9;
-	
+
 	  if (!this._enableTimeouts) {
 	    return;
 	  }
@@ -28133,7 +12394,7 @@ return  (function(modules) {
 	    self.timedOut = true;
 	  }, ms);
 	};
-	
+
 	
 
 
@@ -28146,7 +12407,7 @@ return  (function(modules) {
 	  }
 	  this._allowedGlobals = globals;
 	};
-	
+
 	
 
 
@@ -28159,12 +12420,12 @@ return  (function(modules) {
 	  var ctx = this.ctx;
 	  var finished;
 	  var emitted;
-	
+
 	  
 	  if (ctx && ctx.runnable) {
 	    ctx.runnable(this);
 	  }
-	
+
 	  
 	  function multiple (err) {
 	    if (emitted) {
@@ -28173,7 +12434,7 @@ return  (function(modules) {
 	    emitted = true;
 	    self.emit('error', err || new Error('done() called multiple times; stacktrace may be inaccurate'));
 	  }
-	
+
 	  
 	  function done (err) {
 	    var ms = self.timeout();
@@ -28183,7 +12444,7 @@ return  (function(modules) {
 	    if (finished) {
 	      return multiple(err || self._trace);
 	    }
-	
+
 	    self.clearTimeout();
 	    self.duration = new Date() - start;
 	    finished = true;
@@ -28193,14 +12454,14 @@ return  (function(modules) {
 	    }
 	    fn(err);
 	  }
-	
+
 	  
 	  this.callback = done;
-	
+
 	  
 	  if (this.async) {
 	    this.resetTimeout();
-	
+
 	    
 	    this.skip = function asyncSkip () {
 	      done(new Pending('async skip call'));
@@ -28209,7 +12470,7 @@ return  (function(modules) {
 	      
 	      throw new Pending('async skip; aborting execution');
 	    };
-	
+
 	    if (this.allowUncaught) {
 	      return callFnAsync(this.fn);
 	    }
@@ -28221,13 +12482,13 @@ return  (function(modules) {
 	    }
 	    return;
 	  }
-	
+
 	  if (this.allowUncaught) {
 	    callFn(this.fn);
 	    done();
 	    return;
 	  }
-	
+
 	  
 	  try {
 	    if (this.isPending()) {
@@ -28239,7 +12500,7 @@ return  (function(modules) {
 	    emitted = true;
 	    done(utils.getError(err));
 	  }
-	
+
 	  function callFn (fn) {
 	    var result = fn.call(ctx);
 	    if (result && typeof result.then === 'function') {
@@ -28258,11 +12519,11 @@ return  (function(modules) {
 	      if (self.asyncOnly) {
 	        return done(new Error('--async-only option in use without declaring `done()` or returning a promise'));
 	      }
-	
+
 	      done();
 	    }
 	  }
-	
+
 	  function callFnAsync (fn) {
 	    var result = fn.call(ctx, function (err) {
 	      if (err instanceof Error || toString.call(err) === '[object Error]') {
@@ -28278,21 +12539,21 @@ return  (function(modules) {
 	      if (result && utils.isPromise(result)) {
 	        return done(new Error('Resolution method is overspecified. Specify a callback *or* return a Promise; not both.'));
 	      }
-	
+
 	      done();
 	    });
 	  }
 	};
-	
+
 	}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"./ms":15,"./pending":16,"./utils":38,"debug":2,"events":3,"json3":54,"lodash.create":60}],34:[function(require,module,exports){
 	(function (process,global){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var EventEmitter = require('events').EventEmitter;
 	var Pending = require('./pending');
 	var utils = require('./utils');
@@ -28308,11 +12569,11 @@ return  (function(modules) {
 	var type = utils.type;
 	var undefinedError = utils.undefinedError;
 	var isArray = utils.isArray;
-	
+
 	
 
 
-	
+
 	var globals = [
 	  'setTimeout',
 	  'clearTimeout',
@@ -28323,13 +12584,13 @@ return  (function(modules) {
 	  'setImmediate',
 	  'clearImmediate'
 	];
-	
+
 	
 
 
-	
+
 	module.exports = Runner;
-	
+
 	
 
 
@@ -28371,7 +12632,7 @@ return  (function(modules) {
 	  this.grep(this._defaultGrep);
 	  this.globals(this.globalProps().concat(extraGlobals()));
 	}
-	
+
 	
 
 
@@ -28379,12 +12640,12 @@ return  (function(modules) {
 
 
 	Runner.immediately = global.setImmediate || process.nextTick;
-	
+
 	
 
 
 	inherits(Runner, EventEmitter);
-	
+
 	
 
 
@@ -28404,7 +12665,7 @@ return  (function(modules) {
 	  this.total = this.grepTotal(this.suite);
 	  return this;
 	};
-	
+
 	
 
 
@@ -28418,7 +12679,7 @@ return  (function(modules) {
 	Runner.prototype.grepTotal = function (suite) {
 	  var self = this;
 	  var total = 0;
-	
+
 	  suite.eachTest(function (test) {
 	    var match = self._grep.test(test.fullTitle());
 	    if (self._invert) {
@@ -28428,10 +12689,10 @@ return  (function(modules) {
 	      total++;
 	    }
 	  });
-	
+
 	  return total;
 	};
-	
+
 	
 
 
@@ -28440,7 +12701,7 @@ return  (function(modules) {
 
 	Runner.prototype.globalProps = function () {
 	  var props = keys(global);
-	
+
 	  
 	  for (var i = 0; i < globals.length; ++i) {
 	    if (~indexOf(props, globals[i])) {
@@ -28448,10 +12709,10 @@ return  (function(modules) {
 	    }
 	    props.push(globals[i]);
 	  }
-	
+
 	  return props;
 	};
-	
+
 	
 
 
@@ -28469,7 +12730,7 @@ return  (function(modules) {
 	  this._globals = this._globals.concat(arr);
 	  return this;
 	};
-	
+
 	
 
 
@@ -28480,29 +12741,29 @@ return  (function(modules) {
 	    return;
 	  }
 	  var ok = this._globals;
-	
+
 	  var globals = this.globalProps();
 	  var leaks;
-	
+
 	  if (test) {
 	    ok = ok.concat(test._allowedGlobals || []);
 	  }
-	
+
 	  if (this.prevGlobalsLength === globals.length) {
 	    return;
 	  }
 	  this.prevGlobalsLength = globals.length;
-	
+
 	  leaks = filterLeaks(ok, globals);
 	  this._globals = this._globals.concat(leaks);
-	
+
 	  if (leaks.length > 1) {
 	    this.fail(test, new Error('global leaks detected: ' + leaks.join(', ') + ''));
 	  } else if (leaks.length) {
 	    this.fail(test, new Error('global leak detected: ' + leaks[0]));
 	  }
 	};
-	
+
 	
 
 
@@ -28514,14 +12775,14 @@ return  (function(modules) {
 	  if (test.isPending()) {
 	    return;
 	  }
-	
+
 	  ++this.failures;
 	  test.state = 'failed';
-	
+
 	  if (!(err instanceof Error || err && typeof err.message === 'string')) {
 	    err = new Error('the ' + type(err) + ' ' + stringify(err) + ' was thrown, throw an Error :)');
 	  }
-	
+
 	  try {
 	    err.stack = (this.fullStackTrace || !err.stack)
 	      ? err.stack
@@ -28529,10 +12790,10 @@ return  (function(modules) {
 	  } catch (ignored) {
 	    
 	  }
-	
+
 	  this.emit('fail', test, err);
 	};
-	
+
 	
 
 
@@ -28558,43 +12819,43 @@ return  (function(modules) {
 	    hook.originalTitle = hook.originalTitle || hook.title;
 	    hook.title = hook.originalTitle + ' for "' + hook.ctx.currentTest.title + '"';
 	  }
-	
+
 	  this.fail(hook, err);
 	  if (this.suite.bail()) {
 	    this.emit('end');
 	  }
 	};
-	
-	
-
-
-
-
-
 
 	
+
+
+
+
+
+
+
 	Runner.prototype.hook = function (name, fn) {
 	  var suite = this.suite;
 	  var hooks = suite['_' + name];
 	  var self = this;
-	
+
 	  function next (i) {
 	    var hook = hooks[i];
 	    if (!hook) {
 	      return fn();
 	    }
 	    self.currentRunnable = hook;
-	
+
 	    hook.ctx.currentTest = self.test;
-	
+
 	    self.emit('hook', hook);
-	
+
 	    if (!hook.listeners('error').length) {
 	      hook.on('error', function (err) {
 	        self.failHook(hook, err);
 	      });
 	    }
-	
+
 	    hook.run(function (err) {
 	      var testError = hook.error();
 	      if (testError) {
@@ -28613,7 +12874,7 @@ return  (function(modules) {
 	          }
 	        } else {
 	          self.failHook(hook, err);
-	
+
 	          
 	          return fn(err);
 	        }
@@ -28623,12 +12884,12 @@ return  (function(modules) {
 	      next(++i);
 	    });
 	  }
-	
+
 	  Runner.immediately(function () {
 	    next(0);
 	  });
 	};
-	
+
 	
 
 
@@ -28641,29 +12902,29 @@ return  (function(modules) {
 	Runner.prototype.hooks = function (name, suites, fn) {
 	  var self = this;
 	  var orig = this.suite;
-	
+
 	  function next (suite) {
 	    self.suite = suite;
-	
+
 	    if (!suite) {
 	      self.suite = orig;
 	      return fn();
 	    }
-	
+
 	    self.hook(name, function (err) {
 	      if (err) {
 	        var errSuite = self.suite;
 	        self.suite = orig;
 	        return fn(err, errSuite);
 	      }
-	
+
 	      next(suites.pop());
 	    });
 	  }
-	
+
 	  next(suites.pop());
 	};
-	
+
 	
 
 
@@ -28675,7 +12936,7 @@ return  (function(modules) {
 	  var suites = [this.suite].concat(this.parents()).reverse();
 	  this.hooks(name, suites, fn);
 	};
-	
+
 	
 
 
@@ -28687,7 +12948,7 @@ return  (function(modules) {
 	  var suites = [this.suite].concat(this.parents());
 	  this.hooks(name, suites, fn);
 	};
-	
+
 	
 
 
@@ -28704,7 +12965,7 @@ return  (function(modules) {
 	  }
 	  return suites;
 	};
-	
+
 	
 
 
@@ -28714,14 +12975,14 @@ return  (function(modules) {
 	Runner.prototype.runTest = function (fn) {
 	  var self = this;
 	  var test = this.test;
-	
+
 	  if (!test) {
 	    return;
 	  }
 	  if (this.asyncOnly) {
 	    test.asyncOnly = true;
 	  }
-	
+
 	  if (this.allowUncaught) {
 	    test.allowUncaught = true;
 	    return test.run(fn);
@@ -28735,7 +12996,7 @@ return  (function(modules) {
 	    fn(err);
 	  }
 	};
-	
+
 	
 
 
@@ -28747,15 +13008,15 @@ return  (function(modules) {
 	  var self = this;
 	  var tests = suite.tests.slice();
 	  var test;
-	
+
 	  function hookErr (_, errSuite, after) {
 	    
 	    var orig = self.suite;
-	
+
 	    
 	    
 	    self.suite = after ? errSuite.parent : errSuite;
-	
+
 	    if (self.suite) {
 	      
 	      self.hookUp('afterEach', function (err2, errSuite2) {
@@ -28773,29 +13034,29 @@ return  (function(modules) {
 	      fn(errSuite);
 	    }
 	  }
-	
+
 	  function next (err, errSuite) {
 	    
 	    if (self.failures && suite._bail) {
 	      return fn();
 	    }
-	
+
 	    if (self._abort) {
 	      return fn();
 	    }
-	
+
 	    if (err) {
 	      return hookErr(err, errSuite, true);
 	    }
-	
+
 	    
 	    test = tests.shift();
-	
+
 	    
 	    if (!test) {
 	      return fn();
 	    }
-	
+
 	    
 	    var match = self._grep.test(test.fullTitle());
 	    if (self._invert) {
@@ -28817,13 +13078,13 @@ return  (function(modules) {
 	      }
 	      return;
 	    }
-	
+
 	    if (test.isPending()) {
 	      self.emit('pending', test);
 	      self.emit('test end', test);
 	      return next();
 	    }
-	
+
 	    
 	    self.emit('test', self.test = test);
 	    self.hookDown('beforeEach', function (err, errSuite) {
@@ -28847,7 +13108,7 @@ return  (function(modules) {
 	            var clonedTest = test.clone();
 	            clonedTest.currentRetry(retry + 1);
 	            tests.unshift(clonedTest);
-	
+
 	            
 	            
 	            return self.hookUp('afterEach', next);
@@ -28855,14 +13116,14 @@ return  (function(modules) {
 	            self.fail(test, err);
 	          }
 	          self.emit('test end', test);
-	
+
 	          if (err instanceof Pending) {
 	            return next();
 	          }
-	
+
 	          return self.hookUp('afterEach', next);
 	        }
-	
+
 	        test.state = 'passed';
 	        self.emit('pass', test);
 	        self.emit('test end', test);
@@ -28870,12 +13131,12 @@ return  (function(modules) {
 	      });
 	    });
 	  }
-	
+
 	  this.next = next;
 	  this.hookErr = hookErr;
 	  next();
 	};
-	
+
 	
 
 
@@ -28888,15 +13149,15 @@ return  (function(modules) {
 	  var self = this;
 	  var total = this.grepTotal(suite);
 	  var afterAllHookCalled = false;
-	
+
 	  debug('run suite %s', suite.fullTitle());
-	
+
 	  if (!total || (self.failures && suite._bail)) {
 	    return fn();
 	  }
-	
+
 	  this.emit('suite', this.suite = suite);
-	
+
 	  function next (errSuite) {
 	    if (errSuite) {
 	      
@@ -28909,16 +13170,16 @@ return  (function(modules) {
 	      
 	      return done(errSuite);
 	    }
-	
+
 	    if (self._abort) {
 	      return done();
 	    }
-	
+
 	    var curr = suite.suites[i++];
 	    if (!curr) {
 	      return done();
 	    }
-	
+
 	    
 	    
 	    
@@ -28930,30 +13191,30 @@ return  (function(modules) {
 	      self.runSuite(curr, next);
 	    }
 	  }
-	
+
 	  function done (errSuite) {
 	    self.suite = suite;
 	    self.nextSuite = next;
-	
+
 	    if (afterAllHookCalled) {
 	      fn(errSuite);
 	    } else {
 	      
 	      
 	      afterAllHookCalled = true;
-	
+
 	      
 	      delete self.test;
-	
+
 	      self.hook('afterAll', function () {
 	        self.emit('suite end', suite);
 	        fn(errSuite);
 	      });
 	    }
 	  }
-	
+
 	  this.nextSuite = next;
-	
+
 	  this.hook('beforeAll', function (err) {
 	    if (err) {
 	      return done();
@@ -28961,7 +13222,7 @@ return  (function(modules) {
 	    self.runTests(suite, next);
 	  });
 	};
-	
+
 	
 
 
@@ -28978,13 +13239,13 @@ return  (function(modules) {
 	    err = undefinedError();
 	  }
 	  err.uncaught = true;
-	
+
 	  var runnable = this.currentRunnable;
-	
+
 	  if (!runnable) {
 	    runnable = new Runnable('Uncaught error outside test suite');
 	    runnable.parent = this.suite;
-	
+
 	    if (this.started) {
 	      this.fail(runnable, err);
 	    } else {
@@ -28993,25 +13254,25 @@ return  (function(modules) {
 	      this.fail(runnable, err);
 	      this.emit('end');
 	    }
-	
+
 	    return;
 	  }
-	
+
 	  runnable.clearTimeout();
-	
+
 	  
 	  if (runnable.state || runnable.isPending()) {
 	    return;
 	  }
 	  this.fail(runnable, err);
-	
+
 	  
 	  if (runnable.type === 'test') {
 	    this.emit('test end', runnable);
 	    this.hookUp('afterEach', this.next);
 	    return;
 	  }
-	
+
 	 
 	  if (runnable.type === 'hook') {
 	    var errSuite = this.suite;
@@ -29026,11 +13287,11 @@ return  (function(modules) {
 	    
 	    return this.nextSuite(errSuite);
 	  }
-	
+
 	  
 	  this.emit('end');
 	};
-	
+
 	
 
 
@@ -29047,28 +13308,28 @@ return  (function(modules) {
 	      delete arr[i].fn;
 	    }
 	  }
-	
+
 	  if (isArray(suite._beforeAll)) {
 	    cleanArrReferences(suite._beforeAll);
 	  }
-	
+
 	  if (isArray(suite._beforeEach)) {
 	    cleanArrReferences(suite._beforeEach);
 	  }
-	
+
 	  if (isArray(suite._afterAll)) {
 	    cleanArrReferences(suite._afterAll);
 	  }
-	
+
 	  if (isArray(suite._afterEach)) {
 	    cleanArrReferences(suite._afterEach);
 	  }
-	
+
 	  for (var i = 0; i < suite.tests.length; i++) {
 	    delete suite.tests[i].fn;
 	  }
 	}
-	
+
 	
 
 
@@ -29082,18 +13343,18 @@ return  (function(modules) {
 	Runner.prototype.run = function (fn) {
 	  var self = this;
 	  var rootSuite = this.suite;
-	
+
 	  
 	  if (this.hasOnly) {
 	    filterOnly(rootSuite);
 	  }
-	
+
 	  fn = fn || function () {};
-	
+
 	  function uncaught (err) {
 	    self.uncaught(err);
 	  }
-	
+
 	  function start () {
 	    self.started = true;
 	    self.emit('start');
@@ -29102,22 +13363,22 @@ return  (function(modules) {
 	      self.emit('end');
 	    });
 	  }
-	
+
 	  debug('start');
-	
+
 	  
 	  this.on('suite end', cleanSuiteReferences);
-	
+
 	  
 	  this.on('end', function () {
 	    debug('end');
 	    process.removeListener('uncaughtException', uncaught);
 	    fn(self.failures);
 	  });
-	
+
 	  
 	  process.on('uncaughtException', uncaught);
-	
+
 	  if (this._delay) {
 	    
 	    
@@ -29126,10 +13387,10 @@ return  (function(modules) {
 	  } else {
 	    start();
 	  }
-	
+
 	  return this;
 	};
-	
+
 	
 
 
@@ -29139,10 +13400,10 @@ return  (function(modules) {
 	Runner.prototype.abort = function () {
 	  debug('aborting');
 	  this._abort = true;
-	
+
 	  return this;
 	};
-	
+
 	
 
 
@@ -29173,7 +13434,7 @@ return  (function(modules) {
 	  
 	  return suite.tests.length || suite.suites.length;
 	}
-	
+
 	
 
 
@@ -29184,7 +13445,7 @@ return  (function(modules) {
 	function hasOnly (suite) {
 	  return suite._onlyTests.length || suite._onlySuites.length || some(suite.suites, hasOnly);
 	}
-	
+
 	
 
 
@@ -29199,25 +13460,25 @@ return  (function(modules) {
 	    if (/^\d+/.test(key)) {
 	      return false;
 	    }
-	
+
 	    
 	    
 	    
 	    if (global.navigator && (/^getInterface/).test(key)) {
 	      return false;
 	    }
-	
+
 	    
 	    
 	    if (global.navigator && (/^\d+/).test(key)) {
 	      return false;
 	    }
-	
+
 	    
 	    if (/^mocha-/.test(key)) {
 	      return false;
 	    }
-	
+
 	    var matched = filter(ok, function (ok) {
 	      if (~ok.indexOf('*')) {
 	        return key.indexOf(ok.split('*')[0]) === 0;
@@ -29227,7 +13488,7 @@ return  (function(modules) {
 	    return !matched.length && (!global.navigator || key !== 'onerror');
 	  });
 	}
-	
+
 	
 
 
@@ -29240,38 +13501,38 @@ return  (function(modules) {
 	    var nodeVersion = utils.reduce(parts, function (a, v) {
 	      return a << 8 | v;
 	    });
-	
+
 	    
-	
+
 	    if (nodeVersion < 0x00090B) {
 	      return ['errno'];
 	    }
 	  }
-	
+
 	  return [];
 	}
-	
+
 	}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"./pending":16,"./runnable":33,"./utils":38,"_process":67,"debug":2,"events":3}],35:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var EventEmitter = require('events').EventEmitter;
 	var Hook = require('./hook');
 	var utils = require('./utils');
 	var inherits = utils.inherits;
 	var debug = require('debug')('mocha:suite');
 	var milliseconds = require('./ms');
-	
+
 	
 
 
-	
+
 	exports = module.exports = Suite;
-	
+
 	
 
 
@@ -29289,7 +13550,7 @@ return  (function(modules) {
 	  parent.addSuite(suite);
 	  return suite;
 	};
-	
+
 	
 
 
@@ -29322,12 +13583,12 @@ return  (function(modules) {
 	  this._onlySuites = [];
 	  this.delayed = false;
 	}
-	
+
 	
 
 
 	inherits(Suite, EventEmitter);
-	
+
 	
 
 
@@ -29345,7 +13606,7 @@ return  (function(modules) {
 	  suite.bail(this.bail());
 	  return suite;
 	};
-	
+
 	
 
 
@@ -29367,7 +13628,7 @@ return  (function(modules) {
 	  this._timeout = parseInt(ms, 10);
 	  return this;
 	};
-	
+
 	
 
 
@@ -29383,7 +13644,7 @@ return  (function(modules) {
 	  this._retries = parseInt(n, 10) || 0;
 	  return this;
 	};
-	
+
 	
 
 
@@ -29399,7 +13660,7 @@ return  (function(modules) {
 	  this._enableTimeouts = enabled;
 	  return this;
 	};
-	
+
 	
 
 
@@ -29418,7 +13679,7 @@ return  (function(modules) {
 	  this._slow = ms;
 	  return this;
 	};
-	
+
 	
 
 
@@ -29434,7 +13695,7 @@ return  (function(modules) {
 	  this._bail = bail;
 	  return this;
 	};
-	
+
 	
 
 
@@ -29443,7 +13704,7 @@ return  (function(modules) {
 	Suite.prototype.isPending = function () {
 	  return this.pending || (this.parent && this.parent.isPending());
 	};
-	
+
 	
 
 
@@ -29461,7 +13722,7 @@ return  (function(modules) {
 	    title = fn.name;
 	  }
 	  title = '"before all" hook' + (title ? ': ' + title : '');
-	
+
 	  var hook = new Hook(title, fn);
 	  hook.parent = this;
 	  hook.timeout(this.timeout());
@@ -29473,7 +13734,7 @@ return  (function(modules) {
 	  this.emit('beforeAll', hook);
 	  return this;
 	};
-	
+
 	
 
 
@@ -29491,7 +13752,7 @@ return  (function(modules) {
 	    title = fn.name;
 	  }
 	  title = '"after all" hook' + (title ? ': ' + title : '');
-	
+
 	  var hook = new Hook(title, fn);
 	  hook.parent = this;
 	  hook.timeout(this.timeout());
@@ -29503,7 +13764,7 @@ return  (function(modules) {
 	  this.emit('afterAll', hook);
 	  return this;
 	};
-	
+
 	
 
 
@@ -29521,7 +13782,7 @@ return  (function(modules) {
 	    title = fn.name;
 	  }
 	  title = '"before each" hook' + (title ? ': ' + title : '');
-	
+
 	  var hook = new Hook(title, fn);
 	  hook.parent = this;
 	  hook.timeout(this.timeout());
@@ -29533,7 +13794,7 @@ return  (function(modules) {
 	  this.emit('beforeEach', hook);
 	  return this;
 	};
-	
+
 	
 
 
@@ -29551,7 +13812,7 @@ return  (function(modules) {
 	    title = fn.name;
 	  }
 	  title = '"after each" hook' + (title ? ': ' + title : '');
-	
+
 	  var hook = new Hook(title, fn);
 	  hook.parent = this;
 	  hook.timeout(this.timeout());
@@ -29563,7 +13824,7 @@ return  (function(modules) {
 	  this.emit('afterEach', hook);
 	  return this;
 	};
-	
+
 	
 
 
@@ -29582,7 +13843,7 @@ return  (function(modules) {
 	  this.emit('suite', suite);
 	  return this;
 	};
-	
+
 	
 
 
@@ -29601,7 +13862,7 @@ return  (function(modules) {
 	  this.emit('test', test);
 	  return this;
 	};
-	
+
 	
 
 
@@ -29618,7 +13879,7 @@ return  (function(modules) {
 	  }
 	  return this.title;
 	};
-	
+
 	
 
 
@@ -29630,7 +13891,7 @@ return  (function(modules) {
 	    return sum + suite.total();
 	  }, 0) + this.tests.length;
 	};
-	
+
 	
 
 
@@ -29646,7 +13907,7 @@ return  (function(modules) {
 	  });
 	  return this;
 	};
-	
+
 	
 
 
@@ -29655,24 +13916,24 @@ return  (function(modules) {
 	    this.emit('run');
 	  }
 	};
-	
+
 	},{"./hook":7,"./ms":15,"./utils":38,"debug":2,"events":3}],36:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
-	
+
 	var Runnable = require('./runnable');
 	var create = require('lodash.create');
 	var isString = require('./utils').isString;
-	
+
 	
 
 
-	
+
 	module.exports = Test;
-	
+
 	
 
 
@@ -29688,14 +13949,14 @@ return  (function(modules) {
 	  this.pending = !fn;
 	  this.type = 'test';
 	}
-	
+
 	
 
 
 	Test.prototype = create(Runnable.prototype, {
 	  constructor: Test
 	});
-	
+
 	Test.prototype.clone = function () {
 	  var test = new Test(this.title, this.fn);
 	  test.timeout(this.timeout());
@@ -29709,10 +13970,10 @@ return  (function(modules) {
 	  test.ctx = this.ctx;
 	  return test;
 	};
-	
+
 	},{"./runnable":33,"./utils":38,"lodash.create":60}],37:[function(require,module,exports){
 	'use strict';
-	
+
 	
 
 
@@ -29723,7 +13984,7 @@ return  (function(modules) {
 	  var n = number.toString();
 	  return n.length === 1 ? '0' + n : n;
 	}
-	
+
 	
 
 
@@ -29742,23 +14003,23 @@ return  (function(modules) {
 	    + '.' + String((date.getUTCMilliseconds()/1000).toFixed(3)).slice(2, 5)
 	    + 'Z';
 	}
-	
+
 	
 
 
-	
+
 	module.exports = toISOString;
-	
+
 	},{}],38:[function(require,module,exports){
 	(function (process,Buffer){
 	'use strict';
+
 	
-	
-	
+
 	
 
 
-	
+
 	var JSON = require('json3');
 	var basename = require('path').basename;
 	var debug = require('debug')('mocha:watch');
@@ -29771,15 +14032,15 @@ return  (function(modules) {
 	var watchFile = require('fs').watchFile;
 	var lstatSync = require('fs').lstatSync;
 	var toISOString = require('./to-iso-string');
-	
+
 	
 
 
-	
+
 	var ignore = ['node_modules', '.git'];
-	
+
 	exports.inherits = require('util').inherits;
-	
+
 	
 
 
@@ -29794,7 +14055,7 @@ return  (function(modules) {
 	    .replace(/</g, '&lt;')
 	    .replace(/>/g, '&gt;');
 	};
-	
+
 	
 
 
@@ -29808,7 +14069,7 @@ return  (function(modules) {
 	    fn.call(scope, arr[i], i);
 	  }
 	};
-	
+
 	
 
 
@@ -29819,7 +14080,7 @@ return  (function(modules) {
 	exports.isString = function (obj) {
 	  return typeof obj === 'string';
 	};
-	
+
 	
 
 
@@ -29836,7 +14097,7 @@ return  (function(modules) {
 	  }
 	  return result;
 	};
-	
+
 	
 
 
@@ -29854,7 +14115,7 @@ return  (function(modules) {
 	  }
 	  return -1;
 	};
-	
+
 	
 
 
@@ -29866,14 +14127,14 @@ return  (function(modules) {
 
 	var reduce = exports.reduce = function (arr, fn, val) {
 	  var rval = val;
-	
+
 	  for (var i = 0, l = arr.length; i < l; i++) {
 	    rval = fn(rval, arr[i], i, arr);
 	  }
-	
+
 	  return rval;
 	};
-	
+
 	
 
 
@@ -29884,17 +14145,17 @@ return  (function(modules) {
 
 	exports.filter = function (arr, fn) {
 	  var ret = [];
-	
+
 	  for (var i = 0, l = arr.length; i < l; i++) {
 	    var val = arr[i];
 	    if (fn(val, i, arr)) {
 	      ret.push(val);
 	    }
 	  }
-	
+
 	  return ret;
 	};
-	
+
 	
 
 
@@ -29911,7 +14172,7 @@ return  (function(modules) {
 	  }
 	  return false;
 	};
-	
+
 	
 
 
@@ -29922,16 +14183,16 @@ return  (function(modules) {
 	exports.keys = typeof Object.keys === 'function' ? Object.keys : function (obj) {
 	  var keys = [];
 	  var has = Object.prototype.hasOwnProperty; 
-	
+
 	  for (var key in obj) {
 	    if (has.call(obj, key)) {
 	      keys.push(key);
 	    }
 	  }
-	
+
 	  return keys;
 	};
-	
+
 	
 
 
@@ -29951,7 +14212,7 @@ return  (function(modules) {
 	    });
 	  });
 	};
-	
+
 	
 
 
@@ -29962,9 +14223,9 @@ return  (function(modules) {
 	var isArray = typeof Array.isArray === 'function' ? Array.isArray : function (obj) {
 	  return Object.prototype.toString.call(obj) === '[object Array]';
 	};
-	
+
 	exports.isArray = isArray;
-	
+
 	
 
 
@@ -29975,7 +14236,7 @@ return  (function(modules) {
 	    return Array.prototype.slice.call(this, 0);
 	  };
 	}
-	
+
 	
 
 
@@ -29986,7 +14247,7 @@ return  (function(modules) {
 	function ignored (path) {
 	  return !~ignore.indexOf(path);
 	}
-	
+
 	
 
 
@@ -29999,9 +14260,9 @@ return  (function(modules) {
 	exports.files = function (dir, ext, ret) {
 	  ret = ret || [];
 	  ext = ext || ['js'];
-	
+
 	  var re = new RegExp('\\.(' + ext.join('|') + ')$');
-	
+
 	  readdirSync(dir)
 	    .filter(ignored)
 	    .forEach(function (path) {
@@ -30012,10 +14273,10 @@ return  (function(modules) {
 	        ret.push(path);
 	      }
 	    });
-	
+
 	  return ret;
 	};
-	
+
 	
 
 
@@ -30029,7 +14290,7 @@ return  (function(modules) {
 	    .replace(/ +/g, '-')
 	    .replace(/[^-\w]/g, '');
 	};
-	
+
 	
 
 
@@ -30041,16 +14302,16 @@ return  (function(modules) {
 	    .replace(/\r\n?|[\n\u2028\u2029]/g, '\n').replace(/^\uFEFF/, '')
 	    
 	    .replace(/^function(?:\s*|\s+[^(]*)\([^)]*\)\s*\{((?:.|\n)*?)\s*\}$|^\([^)]*\)\s*=>\s*(?:\{((?:.|\n)*?)\s*\}|((?:.|\n)*))$/, '$1$2$3');
-	
+
 	  var spaces = str.match(/^\n?( *)/)[1].length;
 	  var tabs = str.match(/^\n?(\t*)/)[1].length;
 	  var re = new RegExp('^\n?' + (tabs ? '\t' : ' ') + '{' + (tabs || spaces) + '}', 'gm');
-	
+
 	  str = str.replace(re, '');
-	
+
 	  return exports.trim(str);
 	};
-	
+
 	
 
 
@@ -30061,7 +14322,7 @@ return  (function(modules) {
 	exports.trim = function (str) {
 	  return str.replace(/^\s+|\s+$/g, '');
 	};
-	
+
 	
 
 
@@ -30074,12 +14335,12 @@ return  (function(modules) {
 	    var i = pair.indexOf('=');
 	    var key = pair.slice(0, i);
 	    var val = pair.slice(++i);
-	
+
 	    obj[key] = decodeURIComponent(val);
 	    return obj;
 	  }, {});
 	};
-	
+
 	
 
 
@@ -30098,7 +14359,7 @@ return  (function(modules) {
 	    .replace(/\bnew[ \t]+(\w+)/gm, '<span class="keyword">new</span> <span class="init">$1</span>')
 	    .replace(/\b(function|new|throw|return|var|if|else)\b/gm, '<span class="keyword">$1</span>');
 	}
-	
+
 	
 
 
@@ -30111,7 +14372,7 @@ return  (function(modules) {
 	    code[i].innerHTML = highlight(code[i].innerHTML);
 	  }
 	};
-	
+
 	
 
 
@@ -30138,7 +14399,7 @@ return  (function(modules) {
 	      return value.toString();
 	  }
 	}
-	
+
 	
 
 
@@ -30172,7 +14433,7 @@ return  (function(modules) {
 	    .replace(/^\[.+\s(.+?)\]$/, '$1')
 	    .toLowerCase();
 	};
-	
+
 	
 
 
@@ -30190,7 +14451,7 @@ return  (function(modules) {
 
 	exports.stringify = function (value) {
 	  var typeHint = type(value);
-	
+
 	  if (!~indexOf(['object', 'array', 'function'], typeHint)) {
 	    if (typeHint === 'buffer') {
 	      var json = value.toJSON();
@@ -30198,7 +14459,7 @@ return  (function(modules) {
 	      return jsonStringify(json.data && json.type ? json.data : json, 2)
 	        .replace(/,(\n|$)/g, '$1');
 	    }
-	
+
 	    
 	    
 	    if (typeHint === 'string' && typeof value === 'object') {
@@ -30211,16 +14472,16 @@ return  (function(modules) {
 	      return jsonStringify(value);
 	    }
 	  }
-	
+
 	  for (var prop in value) {
 	    if (Object.prototype.hasOwnProperty.call(value, prop)) {
 	      return jsonStringify(exports.canonicalize(value, null, typeHint), 2).replace(/,(\n|$)/g, '$1');
 	    }
 	  }
-	
+
 	  return emptyRepresentation(value, typeHint);
 	};
-	
+
 	
 
 
@@ -30235,7 +14496,7 @@ return  (function(modules) {
 	    
 	    return _stringify(object);
 	  }
-	
+
 	  depth = depth || 1;
 	  var space = spaces * depth;
 	  var str = isArray(object) ? '[' : '{';
@@ -30245,7 +14506,7 @@ return  (function(modules) {
 	  function repeat (s, n) {
 	    return new Array(n).join(s);
 	  }
-	
+
 	  function _stringify (val) {
 	    switch (type(val)) {
 	      case 'null':
@@ -30286,7 +14547,7 @@ return  (function(modules) {
 	    }
 	    return val;
 	  }
-	
+
 	  for (var i in object) {
 	    if (!Object.prototype.hasOwnProperty.call(object, i)) {
 	      continue; 
@@ -30297,12 +14558,12 @@ return  (function(modules) {
 	      _stringify(object[i]) +                    
 	      (length ? ',' : '');                       
 	  }
-	
+
 	  return str +
 	    
 	    (str.length !== 1 ? '\n' + repeat(' ', --space) + end : end);
 	}
-	
+
 	
 
 
@@ -30313,7 +14574,7 @@ return  (function(modules) {
 	exports.isBuffer = function (value) {
 	  return typeof Buffer !== 'undefined' && Buffer.isBuffer(value);
 	};
-	
+
 	
 
 
@@ -30344,13 +14605,13 @@ return  (function(modules) {
 	    fn();
 	    stack.pop();
 	  }
-	
+
 	  stack = stack || [];
-	
+
 	  if (indexOf(stack, value) !== -1) {
 	    return '[Circular]';
 	  }
-	
+
 	  switch (typeHint) {
 	    case 'undefined':
 	    case 'buffer':
@@ -30394,10 +14655,10 @@ return  (function(modules) {
 	    default:
 	      canonicalizedObj = value + '';
 	  }
-	
+
 	  return canonicalizedObj;
 	};
-	
+
 	
 
 
@@ -30410,7 +14671,7 @@ return  (function(modules) {
 	exports.lookupFiles = function lookupFiles (path, extensions, recursive) {
 	  var files = [];
 	  var re = new RegExp('\\.(' + extensions.join('|') + ')$');
-	
+
 	  if (!exists(path)) {
 	    if (exists(path + '.js')) {
 	      path += '.js';
@@ -30422,7 +14683,7 @@ return  (function(modules) {
 	      return files;
 	    }
 	  }
-	
+
 	  try {
 	    var stat = statSync(path);
 	    if (stat.isFile()) {
@@ -30432,7 +14693,7 @@ return  (function(modules) {
 	    
 	    return;
 	  }
-	
+
 	  readdirSync(path).forEach(function (file) {
 	    file = join(path, file);
 	    try {
@@ -30452,31 +14713,31 @@ return  (function(modules) {
 	    }
 	    files.push(file);
 	  });
-	
+
 	  return files;
 	};
-	
-	
-
-
-
 
 	
+
+
+
+
+
 	exports.undefinedError = function () {
 	  return new Error('Caught undefined error, did you throw without specifying what?');
 	};
-	
-	
-
-
-
-
 
 	
+
+
+
+
+
+
 	exports.getError = function (err) {
 	  return err || exports.undefinedError();
 	};
-	
+
 	
 
 
@@ -30497,14 +14758,14 @@ return  (function(modules) {
 	    cwd = (typeof location === 'undefined' ? window.location : location).href.replace(/\/[^\/]*$/, '/');
 	    slash = '/';
 	  }
-	
+
 	  function isMochaInternal (line) {
 	    return (~line.indexOf('node_modules' + slash + 'mocha' + slash)) ||
 	      (~line.indexOf('node_modules' + slash + 'mocha.js')) ||
 	      (~line.indexOf('bower_components' + slash + 'mocha.js')) ||
 	      (~line.indexOf(slash + 'mocha.js'));
 	  }
-	
+
 	  function isNodeInternal (line) {
 	    return (~line.indexOf('(timers.js:')) ||
 	      (~line.indexOf('(events.js:')) ||
@@ -30513,32 +14774,32 @@ return  (function(modules) {
 	      (~line.indexOf('GeneratorFunctionPrototype.next (native)')) ||
 	      false;
 	  }
-	
+
 	  return function (stack) {
 	    stack = stack.split('\n');
-	
+
 	    stack = reduce(stack, function (list, line) {
 	      if (isMochaInternal(line)) {
 	        return list;
 	      }
-	
+
 	      if (is.node && isNodeInternal(line)) {
 	        return list;
 	      }
-	
+
 	      
 	      if (/\(?.+:\d+:\d+\)?$/.test(line)) {
 	        line = line.replace(cwd, '');
 	      }
-	
+
 	      list.push(line);
 	      return list;
 	    }, []);
-	
+
 	    return stack.join('\n');
 	  };
 	};
-	
+
 	
 
 
@@ -30548,40 +14809,40 @@ return  (function(modules) {
 	exports.isPromise = function isPromise (value) {
 	  return typeof value === 'object' && typeof value.then === 'function';
 	};
-	
+
 	
 
 
 
 	exports.noop = function () {};
-	
+
 	}).call(this,require('_process'),require("buffer").Buffer)
 	},{"./to-iso-string":37,"_process":67,"buffer":44,"debug":2,"fs":42,"glob":42,"json3":54,"path":42,"util":84}],39:[function(require,module,exports){
 	'use strict'
-	
+
 	exports.byteLength = byteLength
 	exports.toByteArray = toByteArray
 	exports.fromByteArray = fromByteArray
-	
+
 	var lookup = []
 	var revLookup = []
 	var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
-	
+
 	var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 	for (var i = 0, len = code.length; i < len; ++i) {
 	  lookup[i] = code[i]
 	  revLookup[code.charCodeAt(i)] = i
 	}
-	
+
 	revLookup['-'.charCodeAt(0)] = 62
 	revLookup['_'.charCodeAt(0)] = 63
-	
+
 	function placeHoldersCount (b64) {
 	  var len = b64.length
 	  if (len % 4 > 0) {
 	    throw new Error('Invalid string. Length must be a multiple of 4')
 	  }
-	
+
 	  
 	  
 	  
@@ -30589,31 +14850,31 @@ return  (function(modules) {
 	  
 	  return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0
 	}
-	
+
 	function byteLength (b64) {
 	  
 	  return b64.length * 3 / 4 - placeHoldersCount(b64)
 	}
-	
+
 	function toByteArray (b64) {
 	  var i, j, l, tmp, placeHolders, arr
 	  var len = b64.length
 	  placeHolders = placeHoldersCount(b64)
-	
+
 	  arr = new Arr(len * 3 / 4 - placeHolders)
-	
+
 	  
 	  l = placeHolders > 0 ? len - 4 : len
-	
+
 	  var L = 0
-	
+
 	  for (i = 0, j = 0; i < l; i += 4, j += 3) {
 	    tmp = (revLookup[b64.charCodeAt(i)] << 18) | (revLookup[b64.charCodeAt(i + 1)] << 12) | (revLookup[b64.charCodeAt(i + 2)] << 6) | revLookup[b64.charCodeAt(i + 3)]
 	    arr[L++] = (tmp >> 16) & 0xFF
 	    arr[L++] = (tmp >> 8) & 0xFF
 	    arr[L++] = tmp & 0xFF
 	  }
-	
+
 	  if (placeHolders === 2) {
 	    tmp = (revLookup[b64.charCodeAt(i)] << 2) | (revLookup[b64.charCodeAt(i + 1)] >> 4)
 	    arr[L++] = tmp & 0xFF
@@ -30622,14 +14883,14 @@ return  (function(modules) {
 	    arr[L++] = (tmp >> 8) & 0xFF
 	    arr[L++] = tmp & 0xFF
 	  }
-	
+
 	  return arr
 	}
-	
+
 	function tripletToBase64 (num) {
 	  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F]
 	}
-	
+
 	function encodeChunk (uint8, start, end) {
 	  var tmp
 	  var output = []
@@ -30639,7 +14900,7 @@ return  (function(modules) {
 	  }
 	  return output.join('')
 	}
-	
+
 	function fromByteArray (uint8) {
 	  var tmp
 	  var len = uint8.length
@@ -30647,12 +14908,12 @@ return  (function(modules) {
 	  var output = ''
 	  var parts = []
 	  var maxChunkLength = 16383 
-	
+
 	  
 	  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
 	    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
 	  }
-	
+
 	  
 	  if (extraBytes === 1) {
 	    tmp = uint8[len - 1]
@@ -30666,32 +14927,32 @@ return  (function(modules) {
 	    output += lookup[(tmp << 2) & 0x3F]
 	    output += '='
 	  }
-	
+
 	  parts.push(output)
-	
+
 	  return parts.join('')
 	}
-	
+
 	},{}],40:[function(require,module,exports){
-	
+
 	},{}],41:[function(require,module,exports){
 	(function (process){
 	var WritableStream = require('stream').Writable
 	var inherits = require('util').inherits
-	
+
 	module.exports = BrowserStdout
-	
-	
+
+
 	inherits(BrowserStdout, WritableStream)
-	
+
 	function BrowserStdout(opts) {
 	  if (!(this instanceof BrowserStdout)) return new BrowserStdout(opts)
-	
+
 	  opts = opts || {}
 	  WritableStream.call(this, opts)
 	  this.label = (opts.label !== undefined) ? opts.label : 'stdout'
 	}
-	
+
 	BrowserStdout.prototype._write = function(chunks, encoding, cb) {
 	  var output = chunks.toString ? chunks.toString() : chunks
 	  if (this.label === false) {
@@ -30701,14 +14962,14 @@ return  (function(modules) {
 	  }
 	  process.nextTick(cb)
 	}
-	
+
 	}).call(this,require('_process'))
 	},{"_process":67,"stream":79,"util":84}],42:[function(require,module,exports){
 	arguments[4][40][0].apply(exports,arguments)
 	},{"dup":40}],43:[function(require,module,exports){
 	(function (global){
 	'use strict';
-	
+
 	var buffer = require('buffer');
 	var Buffer = buffer.Buffer;
 	var SlowBuffer = buffer.SlowBuffer;
@@ -30800,7 +15061,7 @@ return  (function(modules) {
 	      return new Buffer(value.data);
 	    }
 	  }
-	
+
 	  throw new TypeError('First argument must be a string, Buffer, ' + 'ArrayBuffer, Array, or array-like object.');
 	}
 	exports.allocUnsafeSlow = function allocUnsafeSlow(size) {
@@ -30815,7 +15076,7 @@ return  (function(modules) {
 	  }
 	  return new SlowBuffer(size);
 	}
-	
+
 	}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"buffer":44}],44:[function(require,module,exports){
 	(function (global){
@@ -30826,17 +15087,17 @@ return  (function(modules) {
 
 
 	
-	
+
 	'use strict'
-	
+
 	var base64 = require('base64-js')
 	var ieee754 = require('ieee754')
 	var isArray = require('isarray')
-	
+
 	exports.Buffer = Buffer
 	exports.SlowBuffer = SlowBuffer
 	exports.INSPECT_MAX_BYTES = 50
-	
+
 	
 
 
@@ -30864,12 +15125,12 @@ return  (function(modules) {
 	Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
 	  ? global.TYPED_ARRAY_SUPPORT
 	  : typedArraySupport()
-	
+
 	
 
 
 	exports.kMaxLength = kMaxLength()
-	
+
 	function typedArraySupport () {
 	  try {
 	    var arr = new Uint8Array(1)
@@ -30881,13 +15142,13 @@ return  (function(modules) {
 	    return false
 	  }
 	}
-	
+
 	function kMaxLength () {
 	  return Buffer.TYPED_ARRAY_SUPPORT
 	    ? 0x7fffffff
 	    : 0x3fffffff
 	}
-	
+
 	function createBuffer (that, length) {
 	  if (kMaxLength() < length) {
 	    throw new RangeError('Invalid typed array length')
@@ -30903,25 +15164,25 @@ return  (function(modules) {
 	    }
 	    that.length = length
 	  }
-	
+
 	  return that
 	}
-	
-	
-
-
-
-
-
-
-
 
 	
+
+
+
+
+
+
+
+
+
 	function Buffer (arg, encodingOrOffset, length) {
 	  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
 	    return new Buffer(arg, encodingOrOffset, length)
 	  }
-	
+
 	  
 	  if (typeof arg === 'number') {
 	    if (typeof encodingOrOffset === 'string') {
@@ -30933,31 +15194,31 @@ return  (function(modules) {
 	  }
 	  return from(this, arg, encodingOrOffset, length)
 	}
-	
+
 	Buffer.poolSize = 8192 
-	
+
 	
 	Buffer._augment = function (arr) {
 	  arr.__proto__ = Buffer.prototype
 	  return arr
 	}
-	
+
 	function from (that, value, encodingOrOffset, length) {
 	  if (typeof value === 'number') {
 	    throw new TypeError('"value" argument must not be a number')
 	  }
-	
+
 	  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
 	    return fromArrayBuffer(that, value, encodingOrOffset, length)
 	  }
-	
+
 	  if (typeof value === 'string') {
 	    return fromString(that, value, encodingOrOffset)
 	  }
-	
+
 	  return fromObject(that, value)
 	}
-	
+
 	
 
 
@@ -30969,7 +15230,7 @@ return  (function(modules) {
 	Buffer.from = function (value, encodingOrOffset, length) {
 	  return from(null, value, encodingOrOffset, length)
 	}
-	
+
 	if (Buffer.TYPED_ARRAY_SUPPORT) {
 	  Buffer.prototype.__proto__ = Uint8Array.prototype
 	  Buffer.__proto__ = Uint8Array
@@ -30982,7 +15243,7 @@ return  (function(modules) {
 	    })
 	  }
 	}
-	
+
 	function assertSize (size) {
 	  if (typeof size !== 'number') {
 	    throw new TypeError('"size" argument must be a number')
@@ -30990,7 +15251,7 @@ return  (function(modules) {
 	    throw new RangeError('"size" argument must not be negative')
 	  }
 	}
-	
+
 	function alloc (that, size, fill, encoding) {
 	  assertSize(size)
 	  if (size <= 0) {
@@ -31006,7 +15267,7 @@ return  (function(modules) {
 	  }
 	  return createBuffer(that, size)
 	}
-	
+
 	
 
 
@@ -31014,7 +15275,7 @@ return  (function(modules) {
 	Buffer.alloc = function (size, fill, encoding) {
 	  return alloc(null, size, fill, encoding)
 	}
-	
+
 	function allocUnsafe (that, size) {
 	  assertSize(size)
 	  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0)
@@ -31025,7 +15286,7 @@ return  (function(modules) {
 	  }
 	  return that
 	}
-	
+
 	
 
 
@@ -31038,31 +15299,31 @@ return  (function(modules) {
 	Buffer.allocUnsafeSlow = function (size) {
 	  return allocUnsafe(null, size)
 	}
-	
+
 	function fromString (that, string, encoding) {
 	  if (typeof encoding !== 'string' || encoding === '') {
 	    encoding = 'utf8'
 	  }
-	
+
 	  if (!Buffer.isEncoding(encoding)) {
 	    throw new TypeError('"encoding" must be a valid string encoding')
 	  }
-	
+
 	  var length = byteLength(string, encoding) | 0
 	  that = createBuffer(that, length)
-	
+
 	  var actual = that.write(string, encoding)
-	
+
 	  if (actual !== length) {
 	    
 	    
 	    
 	    that = that.slice(0, actual)
 	  }
-	
+
 	  return that
 	}
-	
+
 	function fromArrayLike (that, array) {
 	  var length = array.length < 0 ? 0 : checked(array.length) | 0
 	  that = createBuffer(that, length)
@@ -31071,18 +15332,18 @@ return  (function(modules) {
 	  }
 	  return that
 	}
-	
+
 	function fromArrayBuffer (that, array, byteOffset, length) {
 	  array.byteLength 
-	
+
 	  if (byteOffset < 0 || array.byteLength < byteOffset) {
 	    throw new RangeError('\'offset\' is out of bounds')
 	  }
-	
+
 	  if (array.byteLength < byteOffset + (length || 0)) {
 	    throw new RangeError('\'length\' is out of bounds')
 	  }
-	
+
 	  if (byteOffset === undefined && length === undefined) {
 	    array = new Uint8Array(array)
 	  } else if (length === undefined) {
@@ -31090,7 +15351,7 @@ return  (function(modules) {
 	  } else {
 	    array = new Uint8Array(array, byteOffset, length)
 	  }
-	
+
 	  if (Buffer.TYPED_ARRAY_SUPPORT) {
 	    
 	    that = array
@@ -31101,20 +15362,20 @@ return  (function(modules) {
 	  }
 	  return that
 	}
-	
+
 	function fromObject (that, obj) {
 	  if (Buffer.isBuffer(obj)) {
 	    var len = checked(obj.length) | 0
 	    that = createBuffer(that, len)
-	
+
 	    if (that.length === 0) {
 	      return that
 	    }
-	
+
 	    obj.copy(that, 0, 0, len)
 	    return that
 	  }
-	
+
 	  if (obj) {
 	    if ((typeof ArrayBuffer !== 'undefined' &&
 	        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
@@ -31123,15 +15384,15 @@ return  (function(modules) {
 	      }
 	      return fromArrayLike(that, obj)
 	    }
-	
+
 	    if (obj.type === 'Buffer' && isArray(obj.data)) {
 	      return fromArrayLike(that, obj.data)
 	    }
 	  }
-	
+
 	  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
 	}
-	
+
 	function checked (length) {
 	  
 	  
@@ -31141,28 +15402,28 @@ return  (function(modules) {
 	  }
 	  return length | 0
 	}
-	
+
 	function SlowBuffer (length) {
 	  if (+length != length) { 
 	    length = 0
 	  }
 	  return Buffer.alloc(+length)
 	}
-	
+
 	Buffer.isBuffer = function isBuffer (b) {
 	  return !!(b != null && b._isBuffer)
 	}
-	
+
 	Buffer.compare = function compare (a, b) {
 	  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
 	    throw new TypeError('Arguments must be Buffers')
 	  }
-	
+
 	  if (a === b) return 0
-	
+
 	  var x = a.length
 	  var y = b.length
-	
+
 	  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
 	    if (a[i] !== b[i]) {
 	      x = a[i]
@@ -31170,12 +15431,12 @@ return  (function(modules) {
 	      break
 	    }
 	  }
-	
+
 	  if (x < y) return -1
 	  if (y < x) return 1
 	  return 0
 	}
-	
+
 	Buffer.isEncoding = function isEncoding (encoding) {
 	  switch (String(encoding).toLowerCase()) {
 	    case 'hex':
@@ -31194,16 +15455,16 @@ return  (function(modules) {
 	      return false
 	  }
 	}
-	
+
 	Buffer.concat = function concat (list, length) {
 	  if (!isArray(list)) {
 	    throw new TypeError('"list" argument must be an Array of Buffers')
 	  }
-	
+
 	  if (list.length === 0) {
 	    return Buffer.alloc(0)
 	  }
-	
+
 	  var i
 	  if (length === undefined) {
 	    length = 0
@@ -31211,7 +15472,7 @@ return  (function(modules) {
 	      length += list[i].length
 	    }
 	  }
-	
+
 	  var buffer = Buffer.allocUnsafe(length)
 	  var pos = 0
 	  for (i = 0; i < list.length; ++i) {
@@ -31224,7 +15485,7 @@ return  (function(modules) {
 	  }
 	  return buffer
 	}
-	
+
 	function byteLength (string, encoding) {
 	  if (Buffer.isBuffer(string)) {
 	    return string.length
@@ -31236,10 +15497,10 @@ return  (function(modules) {
 	  if (typeof string !== 'string') {
 	    string = '' + string
 	  }
-	
+
 	  var len = string.length
 	  if (len === 0) return 0
-	
+
 	  
 	  var loweredCase = false
 	  for (;;) {
@@ -31269,13 +15530,13 @@ return  (function(modules) {
 	  }
 	}
 	Buffer.byteLength = byteLength
-	
+
 	function slowToString (encoding, start, end) {
 	  var loweredCase = false
-	
+
 	  
 	  
-	
+
 	  
 	  
 	  
@@ -31288,50 +15549,50 @@ return  (function(modules) {
 	  if (start > this.length) {
 	    return ''
 	  }
-	
+
 	  if (end === undefined || end > this.length) {
 	    end = this.length
 	  }
-	
+
 	  if (end <= 0) {
 	    return ''
 	  }
-	
+
 	  
 	  end >>>= 0
 	  start >>>= 0
-	
+
 	  if (end <= start) {
 	    return ''
 	  }
-	
+
 	  if (!encoding) encoding = 'utf8'
-	
+
 	  while (true) {
 	    switch (encoding) {
 	      case 'hex':
 	        return hexSlice(this, start, end)
-	
+
 	      case 'utf8':
 	      case 'utf-8':
 	        return utf8Slice(this, start, end)
-	
+
 	      case 'ascii':
 	        return asciiSlice(this, start, end)
-	
+
 	      case 'latin1':
 	      case 'binary':
 	        return latin1Slice(this, start, end)
-	
+
 	      case 'base64':
 	        return base64Slice(this, start, end)
-	
+
 	      case 'ucs2':
 	      case 'ucs-2':
 	      case 'utf16le':
 	      case 'utf-16le':
 	        return utf16leSlice(this, start, end)
-	
+
 	      default:
 	        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
 	        encoding = (encoding + '').toLowerCase()
@@ -31339,17 +15600,17 @@ return  (function(modules) {
 	    }
 	  }
 	}
-	
+
 	
 	
 	Buffer.prototype._isBuffer = true
-	
+
 	function swap (b, n, m) {
 	  var i = b[n]
 	  b[n] = b[m]
 	  b[m] = i
 	}
-	
+
 	Buffer.prototype.swap16 = function swap16 () {
 	  var len = this.length
 	  if (len % 2 !== 0) {
@@ -31360,7 +15621,7 @@ return  (function(modules) {
 	  }
 	  return this
 	}
-	
+
 	Buffer.prototype.swap32 = function swap32 () {
 	  var len = this.length
 	  if (len % 4 !== 0) {
@@ -31372,7 +15633,7 @@ return  (function(modules) {
 	  }
 	  return this
 	}
-	
+
 	Buffer.prototype.swap64 = function swap64 () {
 	  var len = this.length
 	  if (len % 8 !== 0) {
@@ -31386,20 +15647,20 @@ return  (function(modules) {
 	  }
 	  return this
 	}
-	
+
 	Buffer.prototype.toString = function toString () {
 	  var length = this.length | 0
 	  if (length === 0) return ''
 	  if (arguments.length === 0) return utf8Slice(this, 0, length)
 	  return slowToString.apply(this, arguments)
 	}
-	
+
 	Buffer.prototype.equals = function equals (b) {
 	  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
 	  if (this === b) return true
 	  return Buffer.compare(this, b) === 0
 	}
-	
+
 	Buffer.prototype.inspect = function inspect () {
 	  var str = ''
 	  var max = exports.INSPECT_MAX_BYTES
@@ -31409,12 +15670,12 @@ return  (function(modules) {
 	  }
 	  return '<Buffer ' + str + '>'
 	}
-	
+
 	Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
 	  if (!Buffer.isBuffer(target)) {
 	    throw new TypeError('Argument must be a Buffer')
 	  }
-	
+
 	  if (start === undefined) {
 	    start = 0
 	  }
@@ -31427,11 +15688,11 @@ return  (function(modules) {
 	  if (thisEnd === undefined) {
 	    thisEnd = this.length
 	  }
-	
+
 	  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
 	    throw new RangeError('out of range index')
 	  }
-	
+
 	  if (thisStart >= thisEnd && start >= end) {
 	    return 0
 	  }
@@ -31441,21 +15702,21 @@ return  (function(modules) {
 	  if (start >= end) {
 	    return 1
 	  }
-	
+
 	  start >>>= 0
 	  end >>>= 0
 	  thisStart >>>= 0
 	  thisEnd >>>= 0
-	
+
 	  if (this === target) return 0
-	
+
 	  var x = thisEnd - thisStart
 	  var y = end - start
 	  var len = Math.min(x, y)
-	
+
 	  var thisCopy = this.slice(thisStart, thisEnd)
 	  var targetCopy = target.slice(start, end)
-	
+
 	  for (var i = 0; i < len; ++i) {
 	    if (thisCopy[i] !== targetCopy[i]) {
 	      x = thisCopy[i]
@@ -31463,12 +15724,12 @@ return  (function(modules) {
 	      break
 	    }
 	  }
-	
+
 	  if (x < y) return -1
 	  if (y < x) return 1
 	  return 0
 	}
-	
+
 	
 	
 	
@@ -31481,7 +15742,7 @@ return  (function(modules) {
 	function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
 	  
 	  if (buffer.length === 0) return -1
-	
+
 	  
 	  if (typeof byteOffset === 'string') {
 	    encoding = byteOffset
@@ -31496,7 +15757,7 @@ return  (function(modules) {
 	    
 	    byteOffset = dir ? 0 : (buffer.length - 1)
 	  }
-	
+
 	  
 	  if (byteOffset < 0) byteOffset = buffer.length + byteOffset
 	  if (byteOffset >= buffer.length) {
@@ -31506,12 +15767,12 @@ return  (function(modules) {
 	    if (dir) byteOffset = 0
 	    else return -1
 	  }
-	
+
 	  
 	  if (typeof val === 'string') {
 	    val = Buffer.from(val, encoding)
 	  }
-	
+
 	  
 	  if (Buffer.isBuffer(val)) {
 	    
@@ -31531,15 +15792,15 @@ return  (function(modules) {
 	    }
 	    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
 	  }
-	
+
 	  throw new TypeError('val must be string, number or Buffer')
 	}
-	
+
 	function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
 	  var indexSize = 1
 	  var arrLength = arr.length
 	  var valLength = val.length
-	
+
 	  if (encoding !== undefined) {
 	    encoding = String(encoding).toLowerCase()
 	    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
@@ -31553,7 +15814,7 @@ return  (function(modules) {
 	      byteOffset /= 2
 	    }
 	  }
-	
+
 	  function read (buf, i) {
 	    if (indexSize === 1) {
 	      return buf[i]
@@ -31561,7 +15822,7 @@ return  (function(modules) {
 	      return buf.readUInt16BE(i * indexSize)
 	    }
 	  }
-	
+
 	  var i
 	  if (dir) {
 	    var foundIndex = -1
@@ -31587,22 +15848,22 @@ return  (function(modules) {
 	      if (found) return i
 	    }
 	  }
-	
+
 	  return -1
 	}
-	
+
 	Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
 	  return this.indexOf(val, byteOffset, encoding) !== -1
 	}
-	
+
 	Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
 	  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
 	}
-	
+
 	Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
 	  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
 	}
-	
+
 	function hexWrite (buf, string, offset, length) {
 	  offset = Number(offset) || 0
 	  var remaining = buf.length - offset
@@ -31614,11 +15875,11 @@ return  (function(modules) {
 	      length = remaining
 	    }
 	  }
-	
+
 	  
 	  var strLen = string.length
 	  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
-	
+
 	  if (length > strLen / 2) {
 	    length = strLen / 2
 	  }
@@ -31629,27 +15890,27 @@ return  (function(modules) {
 	  }
 	  return i
 	}
-	
+
 	function utf8Write (buf, string, offset, length) {
 	  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
 	}
-	
+
 	function asciiWrite (buf, string, offset, length) {
 	  return blitBuffer(asciiToBytes(string), buf, offset, length)
 	}
-	
+
 	function latin1Write (buf, string, offset, length) {
 	  return asciiWrite(buf, string, offset, length)
 	}
-	
+
 	function base64Write (buf, string, offset, length) {
 	  return blitBuffer(base64ToBytes(string), buf, offset, length)
 	}
-	
+
 	function ucs2Write (buf, string, offset, length) {
 	  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
 	}
-	
+
 	Buffer.prototype.write = function write (string, offset, length, encoding) {
 	  
 	  if (offset === undefined) {
@@ -31677,43 +15938,43 @@ return  (function(modules) {
 	      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
 	    )
 	  }
-	
+
 	  var remaining = this.length - offset
 	  if (length === undefined || length > remaining) length = remaining
-	
+
 	  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
 	    throw new RangeError('Attempt to write outside buffer bounds')
 	  }
-	
+
 	  if (!encoding) encoding = 'utf8'
-	
+
 	  var loweredCase = false
 	  for (;;) {
 	    switch (encoding) {
 	      case 'hex':
 	        return hexWrite(this, string, offset, length)
-	
+
 	      case 'utf8':
 	      case 'utf-8':
 	        return utf8Write(this, string, offset, length)
-	
+
 	      case 'ascii':
 	        return asciiWrite(this, string, offset, length)
-	
+
 	      case 'latin1':
 	      case 'binary':
 	        return latin1Write(this, string, offset, length)
-	
+
 	      case 'base64':
 	        
 	        return base64Write(this, string, offset, length)
-	
+
 	      case 'ucs2':
 	      case 'ucs-2':
 	      case 'utf16le':
 	      case 'utf-16le':
 	        return ucs2Write(this, string, offset, length)
-	
+
 	      default:
 	        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
 	        encoding = ('' + encoding).toLowerCase()
@@ -31721,14 +15982,14 @@ return  (function(modules) {
 	    }
 	  }
 	}
-	
+
 	Buffer.prototype.toJSON = function toJSON () {
 	  return {
 	    type: 'Buffer',
 	    data: Array.prototype.slice.call(this._arr || this, 0)
 	  }
 	}
-	
+
 	function base64Slice (buf, start, end) {
 	  if (start === 0 && end === buf.length) {
 	    return base64.fromByteArray(buf)
@@ -31736,11 +15997,11 @@ return  (function(modules) {
 	    return base64.fromByteArray(buf.slice(start, end))
 	  }
 	}
-	
+
 	function utf8Slice (buf, start, end) {
 	  end = Math.min(buf.length, end)
 	  var res = []
-	
+
 	  var i = start
 	  while (i < end) {
 	    var firstByte = buf[i]
@@ -31749,10 +16010,10 @@ return  (function(modules) {
 	      : (firstByte > 0xDF) ? 3
 	      : (firstByte > 0xBF) ? 2
 	      : 1
-	
+
 	    if (i + bytesPerSequence <= end) {
 	      var secondByte, thirdByte, fourthByte, tempCodePoint
-	
+
 	      switch (bytesPerSequence) {
 	        case 1:
 	          if (firstByte < 0x80) {
@@ -31790,7 +16051,7 @@ return  (function(modules) {
 	          }
 	      }
 	    }
-	
+
 	    if (codePoint === null) {
 	      
 	      
@@ -31802,25 +16063,25 @@ return  (function(modules) {
 	      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
 	      codePoint = 0xDC00 | codePoint & 0x3FF
 	    }
-	
+
 	    res.push(codePoint)
 	    i += bytesPerSequence
 	  }
-	
+
 	  return decodeCodePointsArray(res)
 	}
-	
+
 	
 	
 	
 	var MAX_ARGUMENTS_LENGTH = 0x1000
-	
+
 	function decodeCodePointsArray (codePoints) {
 	  var len = codePoints.length
 	  if (len <= MAX_ARGUMENTS_LENGTH) {
 	    return String.fromCharCode.apply(String, codePoints) 
 	  }
-	
+
 	  
 	  var res = ''
 	  var i = 0
@@ -31832,40 +16093,40 @@ return  (function(modules) {
 	  }
 	  return res
 	}
-	
+
 	function asciiSlice (buf, start, end) {
 	  var ret = ''
 	  end = Math.min(buf.length, end)
-	
+
 	  for (var i = start; i < end; ++i) {
 	    ret += String.fromCharCode(buf[i] & 0x7F)
 	  }
 	  return ret
 	}
-	
+
 	function latin1Slice (buf, start, end) {
 	  var ret = ''
 	  end = Math.min(buf.length, end)
-	
+
 	  for (var i = start; i < end; ++i) {
 	    ret += String.fromCharCode(buf[i])
 	  }
 	  return ret
 	}
-	
+
 	function hexSlice (buf, start, end) {
 	  var len = buf.length
-	
+
 	  if (!start || start < 0) start = 0
 	  if (!end || end < 0 || end > len) end = len
-	
+
 	  var out = ''
 	  for (var i = start; i < end; ++i) {
 	    out += toHex(buf[i])
 	  }
 	  return out
 	}
-	
+
 	function utf16leSlice (buf, start, end) {
 	  var bytes = buf.slice(start, end)
 	  var res = ''
@@ -31874,28 +16135,28 @@ return  (function(modules) {
 	  }
 	  return res
 	}
-	
+
 	Buffer.prototype.slice = function slice (start, end) {
 	  var len = this.length
 	  start = ~~start
 	  end = end === undefined ? len : ~~end
-	
+
 	  if (start < 0) {
 	    start += len
 	    if (start < 0) start = 0
 	  } else if (start > len) {
 	    start = len
 	  }
-	
+
 	  if (end < 0) {
 	    end += len
 	    if (end < 0) end = 0
 	  } else if (end > len) {
 	    end = len
 	  }
-	
+
 	  if (end < start) end = start
-	
+
 	  var newBuf
 	  if (Buffer.TYPED_ARRAY_SUPPORT) {
 	    newBuf = this.subarray(start, end)
@@ -31907,10 +16168,10 @@ return  (function(modules) {
 	      newBuf[i] = this[i + start]
 	    }
 	  }
-	
+
 	  return newBuf
 	}
-	
+
 	
 
 
@@ -31918,76 +16179,76 @@ return  (function(modules) {
 	  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
 	  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
 	}
-	
+
 	Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
 	  offset = offset | 0
 	  byteLength = byteLength | 0
 	  if (!noAssert) checkOffset(offset, byteLength, this.length)
-	
+
 	  var val = this[offset]
 	  var mul = 1
 	  var i = 0
 	  while (++i < byteLength && (mul *= 0x100)) {
 	    val += this[offset + i] * mul
 	  }
-	
+
 	  return val
 	}
-	
+
 	Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
 	  offset = offset | 0
 	  byteLength = byteLength | 0
 	  if (!noAssert) {
 	    checkOffset(offset, byteLength, this.length)
 	  }
-	
+
 	  var val = this[offset + --byteLength]
 	  var mul = 1
 	  while (byteLength > 0 && (mul *= 0x100)) {
 	    val += this[offset + --byteLength] * mul
 	  }
-	
+
 	  return val
 	}
-	
+
 	Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 1, this.length)
 	  return this[offset]
 	}
-	
+
 	Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 2, this.length)
 	  return this[offset] | (this[offset + 1] << 8)
 	}
-	
+
 	Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 2, this.length)
 	  return (this[offset] << 8) | this[offset + 1]
 	}
-	
+
 	Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
-	
+
 	  return ((this[offset]) |
 	      (this[offset + 1] << 8) |
 	      (this[offset + 2] << 16)) +
 	      (this[offset + 3] * 0x1000000)
 	}
-	
+
 	Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
-	
+
 	  return (this[offset] * 0x1000000) +
 	    ((this[offset + 1] << 16) |
 	    (this[offset + 2] << 8) |
 	    this[offset + 3])
 	}
-	
+
 	Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
 	  offset = offset | 0
 	  byteLength = byteLength | 0
 	  if (!noAssert) checkOffset(offset, byteLength, this.length)
-	
+
 	  var val = this[offset]
 	  var mul = 1
 	  var i = 0
@@ -31995,17 +16256,17 @@ return  (function(modules) {
 	    val += this[offset + i] * mul
 	  }
 	  mul *= 0x80
-	
+
 	  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
-	
+
 	  return val
 	}
-	
+
 	Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
 	  offset = offset | 0
 	  byteLength = byteLength | 0
 	  if (!noAssert) checkOffset(offset, byteLength, this.length)
-	
+
 	  var i = byteLength
 	  var mul = 1
 	  var val = this[offset + --i]
@@ -32013,74 +16274,74 @@ return  (function(modules) {
 	    val += this[offset + --i] * mul
 	  }
 	  mul *= 0x80
-	
+
 	  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
-	
+
 	  return val
 	}
-	
+
 	Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 1, this.length)
 	  if (!(this[offset] & 0x80)) return (this[offset])
 	  return ((0xff - this[offset] + 1) * -1)
 	}
-	
+
 	Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 2, this.length)
 	  var val = this[offset] | (this[offset + 1] << 8)
 	  return (val & 0x8000) ? val | 0xFFFF0000 : val
 	}
-	
+
 	Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 2, this.length)
 	  var val = this[offset + 1] | (this[offset] << 8)
 	  return (val & 0x8000) ? val | 0xFFFF0000 : val
 	}
-	
+
 	Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
-	
+
 	  return (this[offset]) |
 	    (this[offset + 1] << 8) |
 	    (this[offset + 2] << 16) |
 	    (this[offset + 3] << 24)
 	}
-	
+
 	Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
-	
+
 	  return (this[offset] << 24) |
 	    (this[offset + 1] << 16) |
 	    (this[offset + 2] << 8) |
 	    (this[offset + 3])
 	}
-	
+
 	Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
 	  return ieee754.read(this, offset, true, 23, 4)
 	}
-	
+
 	Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
 	  return ieee754.read(this, offset, false, 23, 4)
 	}
-	
+
 	Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 8, this.length)
 	  return ieee754.read(this, offset, true, 52, 8)
 	}
-	
+
 	Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 8, this.length)
 	  return ieee754.read(this, offset, false, 52, 8)
 	}
-	
+
 	function checkInt (buf, value, offset, ext, max, min) {
 	  if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
 	  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
 	  if (offset + ext > buf.length) throw new RangeError('Index out of range')
 	}
-	
+
 	Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32089,17 +16350,17 @@ return  (function(modules) {
 	    var maxBytes = Math.pow(2, 8 * byteLength) - 1
 	    checkInt(this, value, offset, byteLength, maxBytes, 0)
 	  }
-	
+
 	  var mul = 1
 	  var i = 0
 	  this[offset] = value & 0xFF
 	  while (++i < byteLength && (mul *= 0x100)) {
 	    this[offset + i] = (value / mul) & 0xFF
 	  }
-	
+
 	  return offset + byteLength
 	}
-	
+
 	Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32108,17 +16369,17 @@ return  (function(modules) {
 	    var maxBytes = Math.pow(2, 8 * byteLength) - 1
 	    checkInt(this, value, offset, byteLength, maxBytes, 0)
 	  }
-	
+
 	  var i = byteLength - 1
 	  var mul = 1
 	  this[offset + i] = value & 0xFF
 	  while (--i >= 0 && (mul *= 0x100)) {
 	    this[offset + i] = (value / mul) & 0xFF
 	  }
-	
+
 	  return offset + byteLength
 	}
-	
+
 	Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32127,7 +16388,7 @@ return  (function(modules) {
 	  this[offset] = (value & 0xff)
 	  return offset + 1
 	}
-	
+
 	function objectWriteUInt16 (buf, value, offset, littleEndian) {
 	  if (value < 0) value = 0xffff + value + 1
 	  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
@@ -32135,7 +16396,7 @@ return  (function(modules) {
 	      (littleEndian ? i : 1 - i) * 8
 	  }
 	}
-	
+
 	Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32148,7 +16409,7 @@ return  (function(modules) {
 	  }
 	  return offset + 2
 	}
-	
+
 	Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32161,14 +16422,14 @@ return  (function(modules) {
 	  }
 	  return offset + 2
 	}
-	
+
 	function objectWriteUInt32 (buf, value, offset, littleEndian) {
 	  if (value < 0) value = 0xffffffff + value + 1
 	  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
 	    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
 	  }
 	}
-	
+
 	Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32183,7 +16444,7 @@ return  (function(modules) {
 	  }
 	  return offset + 4
 	}
-	
+
 	Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32198,16 +16459,16 @@ return  (function(modules) {
 	  }
 	  return offset + 4
 	}
-	
+
 	Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
 	  value = +value
 	  offset = offset | 0
 	  if (!noAssert) {
 	    var limit = Math.pow(2, 8 * byteLength - 1)
-	
+
 	    checkInt(this, value, offset, byteLength, limit - 1, -limit)
 	  }
-	
+
 	  var i = 0
 	  var mul = 1
 	  var sub = 0
@@ -32218,19 +16479,19 @@ return  (function(modules) {
 	    }
 	    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
 	  }
-	
+
 	  return offset + byteLength
 	}
-	
+
 	Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
 	  value = +value
 	  offset = offset | 0
 	  if (!noAssert) {
 	    var limit = Math.pow(2, 8 * byteLength - 1)
-	
+
 	    checkInt(this, value, offset, byteLength, limit - 1, -limit)
 	  }
-	
+
 	  var i = byteLength - 1
 	  var mul = 1
 	  var sub = 0
@@ -32241,10 +16502,10 @@ return  (function(modules) {
 	    }
 	    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
 	  }
-	
+
 	  return offset + byteLength
 	}
-	
+
 	Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32254,7 +16515,7 @@ return  (function(modules) {
 	  this[offset] = (value & 0xff)
 	  return offset + 1
 	}
-	
+
 	Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32267,7 +16528,7 @@ return  (function(modules) {
 	  }
 	  return offset + 2
 	}
-	
+
 	Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32280,7 +16541,7 @@ return  (function(modules) {
 	  }
 	  return offset + 2
 	}
-	
+
 	Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32295,7 +16556,7 @@ return  (function(modules) {
 	  }
 	  return offset + 4
 	}
-	
+
 	Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -32311,12 +16572,12 @@ return  (function(modules) {
 	  }
 	  return offset + 4
 	}
-	
+
 	function checkIEEE754 (buf, value, offset, ext, max, min) {
 	  if (offset + ext > buf.length) throw new RangeError('Index out of range')
 	  if (offset < 0) throw new RangeError('Index out of range')
 	}
-	
+
 	function writeFloat (buf, value, offset, littleEndian, noAssert) {
 	  if (!noAssert) {
 	    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
@@ -32324,15 +16585,15 @@ return  (function(modules) {
 	  ieee754.write(buf, value, offset, littleEndian, 23, 4)
 	  return offset + 4
 	}
-	
+
 	Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
 	  return writeFloat(this, value, offset, true, noAssert)
 	}
-	
+
 	Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
 	  return writeFloat(this, value, offset, false, noAssert)
 	}
-	
+
 	function writeDouble (buf, value, offset, littleEndian, noAssert) {
 	  if (!noAssert) {
 	    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
@@ -32340,15 +16601,15 @@ return  (function(modules) {
 	  ieee754.write(buf, value, offset, littleEndian, 52, 8)
 	  return offset + 8
 	}
-	
+
 	Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
 	  return writeDouble(this, value, offset, true, noAssert)
 	}
-	
+
 	Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
 	  return writeDouble(this, value, offset, false, noAssert)
 	}
-	
+
 	
 	Buffer.prototype.copy = function copy (target, targetStart, start, end) {
 	  if (!start) start = 0
@@ -32356,27 +16617,27 @@ return  (function(modules) {
 	  if (targetStart >= target.length) targetStart = target.length
 	  if (!targetStart) targetStart = 0
 	  if (end > 0 && end < start) end = start
-	
+
 	  
 	  if (end === start) return 0
 	  if (target.length === 0 || this.length === 0) return 0
-	
+
 	  
 	  if (targetStart < 0) {
 	    throw new RangeError('targetStart out of bounds')
 	  }
 	  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
 	  if (end < 0) throw new RangeError('sourceEnd out of bounds')
-	
+
 	  
 	  if (end > this.length) end = this.length
 	  if (target.length - targetStart < end - start) {
 	    end = target.length - targetStart + start
 	  }
-	
+
 	  var len = end - start
 	  var i
-	
+
 	  if (this === target && start < targetStart && targetStart < end) {
 	    
 	    for (i = len - 1; i >= 0; --i) {
@@ -32394,10 +16655,10 @@ return  (function(modules) {
 	      targetStart
 	    )
 	  }
-	
+
 	  return len
 	}
-	
+
 	
 	
 	
@@ -32428,21 +16689,21 @@ return  (function(modules) {
 	  } else if (typeof val === 'number') {
 	    val = val & 255
 	  }
-	
+
 	  
 	  if (start < 0 || this.length < start || this.length < end) {
 	    throw new RangeError('Out of range index')
 	  }
-	
+
 	  if (end <= start) {
 	    return this
 	  }
-	
+
 	  start = start >>> 0
 	  end = end === undefined ? this.length : end >>> 0
-	
+
 	  if (!val) val = 0
-	
+
 	  var i
 	  if (typeof val === 'number') {
 	    for (i = start; i < end; ++i) {
@@ -32457,15 +16718,15 @@ return  (function(modules) {
 	      this[i + start] = bytes[i % len]
 	    }
 	  }
-	
+
 	  return this
 	}
+
 	
 	
-	
-	
+
 	var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
-	
+
 	function base64clean (str) {
 	  
 	  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
@@ -32477,27 +16738,27 @@ return  (function(modules) {
 	  }
 	  return str
 	}
-	
+
 	function stringtrim (str) {
 	  if (str.trim) return str.trim()
 	  return str.replace(/^\s+|\s+$/g, '')
 	}
-	
+
 	function toHex (n) {
 	  if (n < 16) return '0' + n.toString(16)
 	  return n.toString(16)
 	}
-	
+
 	function utf8ToBytes (string, units) {
 	  units = units || Infinity
 	  var codePoint
 	  var length = string.length
 	  var leadSurrogate = null
 	  var bytes = []
-	
+
 	  for (var i = 0; i < length; ++i) {
 	    codePoint = string.charCodeAt(i)
-	
+
 	    
 	    if (codePoint > 0xD7FF && codePoint < 0xE000) {
 	      
@@ -32512,29 +16773,29 @@ return  (function(modules) {
 	          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
 	          continue
 	        }
-	
+
 	        
 	        leadSurrogate = codePoint
-	
+
 	        continue
 	      }
-	
+
 	      
 	      if (codePoint < 0xDC00) {
 	        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
 	        leadSurrogate = codePoint
 	        continue
 	      }
-	
+
 	      
 	      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
 	    } else if (leadSurrogate) {
 	      
 	      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
 	    }
-	
+
 	    leadSurrogate = null
-	
+
 	    
 	    if (codePoint < 0x80) {
 	      if ((units -= 1) < 0) break
@@ -32564,10 +16825,10 @@ return  (function(modules) {
 	      throw new Error('Invalid code point')
 	    }
 	  }
-	
+
 	  return bytes
 	}
-	
+
 	function asciiToBytes (str) {
 	  var byteArray = []
 	  for (var i = 0; i < str.length; ++i) {
@@ -32576,27 +16837,27 @@ return  (function(modules) {
 	  }
 	  return byteArray
 	}
-	
+
 	function utf16leToBytes (str, units) {
 	  var c, hi, lo
 	  var byteArray = []
 	  for (var i = 0; i < str.length; ++i) {
 	    if ((units -= 2) < 0) break
-	
+
 	    c = str.charCodeAt(i)
 	    hi = c >> 8
 	    lo = c % 256
 	    byteArray.push(lo)
 	    byteArray.push(hi)
 	  }
-	
+
 	  return byteArray
 	}
-	
+
 	function base64ToBytes (str) {
 	  return base64.toByteArray(base64clean(str))
 	}
-	
+
 	function blitBuffer (src, dst, offset, length) {
 	  for (var i = 0; i < length; ++i) {
 	    if ((i + offset >= dst.length) || (i >= src.length)) break
@@ -32604,11 +16865,11 @@ return  (function(modules) {
 	  }
 	  return i
 	}
-	
+
 	function isnan (val) {
 	  return val !== val 
 	}
-	
+
 	}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"base64-js":39,"ieee754":50,"isarray":53}],45:[function(require,module,exports){
 	(function (Buffer){
@@ -32632,10 +16893,10 @@ return  (function(modules) {
 	
 	
 	
+
 	
 	
-	
-	
+
 	function isArray(arg) {
 	  if (Array.isArray) {
 	    return Array.isArray(arg);
@@ -32643,67 +16904,67 @@ return  (function(modules) {
 	  return objectToString(arg) === '[object Array]';
 	}
 	exports.isArray = isArray;
-	
+
 	function isBoolean(arg) {
 	  return typeof arg === 'boolean';
 	}
 	exports.isBoolean = isBoolean;
-	
+
 	function isNull(arg) {
 	  return arg === null;
 	}
 	exports.isNull = isNull;
-	
+
 	function isNullOrUndefined(arg) {
 	  return arg == null;
 	}
 	exports.isNullOrUndefined = isNullOrUndefined;
-	
+
 	function isNumber(arg) {
 	  return typeof arg === 'number';
 	}
 	exports.isNumber = isNumber;
-	
+
 	function isString(arg) {
 	  return typeof arg === 'string';
 	}
 	exports.isString = isString;
-	
+
 	function isSymbol(arg) {
 	  return typeof arg === 'symbol';
 	}
 	exports.isSymbol = isSymbol;
-	
+
 	function isUndefined(arg) {
 	  return arg === void 0;
 	}
 	exports.isUndefined = isUndefined;
-	
+
 	function isRegExp(re) {
 	  return objectToString(re) === '[object RegExp]';
 	}
 	exports.isRegExp = isRegExp;
-	
+
 	function isObject(arg) {
 	  return typeof arg === 'object' && arg !== null;
 	}
 	exports.isObject = isObject;
-	
+
 	function isDate(d) {
 	  return objectToString(d) === '[object Date]';
 	}
 	exports.isDate = isDate;
-	
+
 	function isError(e) {
 	  return (objectToString(e) === '[object Error]' || e instanceof Error);
 	}
 	exports.isError = isError;
-	
+
 	function isFunction(arg) {
 	  return typeof arg === 'function';
 	}
 	exports.isFunction = isFunction;
-	
+
 	function isPrimitive(arg) {
 	  return arg === null ||
 	         typeof arg === 'boolean' ||
@@ -32713,17 +16974,17 @@ return  (function(modules) {
 	         typeof arg === 'undefined';
 	}
 	exports.isPrimitive = isPrimitive;
-	
+
 	exports.isBuffer = Buffer.isBuffer;
-	
+
 	function objectToString(o) {
 	  return Object.prototype.toString.call(o);
 	}
-	
+
 	}).call(this,{"isBuffer":require("../../is-buffer/index.js")})
 	},{"../../is-buffer/index.js":52}],46:[function(require,module,exports){
 	
-	
+
 	
 
 
@@ -32740,15 +17001,15 @@ return  (function(modules) {
 
 	(function(global, undefined) {
 	  var objectPrototypeToString = Object.prototype.toString;
-	
+
 	  
 	  function map(arr, mapper, that) {
 	    if (Array.prototype.map) {
 	      return Array.prototype.map.call(arr, mapper, that);
 	    }
-	
+
 	    var other = new Array(arr.length);
-	
+
 	    for (var i = 0, n = arr.length; i < n; i++) {
 	      other[i] = mapper.call(that, arr[i], i, arr);
 	    }
@@ -32772,26 +17033,26 @@ return  (function(modules) {
 	    n = n.replace(/</g, '&lt;');
 	    n = n.replace(/>/g, '&gt;');
 	    n = n.replace(/"/g, '&quot;');
-	
+
 	    return n;
 	  }
-	
+
 	  
 	  
 	  function canonicalize(obj, stack, replacementStack) {
 	    stack = stack || [];
 	    replacementStack = replacementStack || [];
-	
+
 	    var i;
-	
+
 	    for (i = 0; i < stack.length; i += 1) {
 	      if (stack[i] === obj) {
 	        return replacementStack[i];
 	      }
 	    }
-	
+
 	    var canonicalizedObj;
-	
+
 	    if ('[object Array]' === objectPrototypeToString.call(obj)) {
 	      stack.push(obj);
 	      canonicalizedObj = new Array(obj.length);
@@ -32822,13 +17083,13 @@ return  (function(modules) {
 	    }
 	    return canonicalizedObj;
 	  }
-	
+
 	  function buildValues(components, newString, oldString, useLongestToken) {
 	    var componentPos = 0,
 	        componentLen = components.length,
 	        newPos = 0,
 	        oldPos = 0;
-	
+
 	    for (; componentPos < componentLen; componentPos++) {
 	      var component = components[componentPos];
 	      if (!component.removed) {
@@ -32838,13 +17099,13 @@ return  (function(modules) {
 	            var oldValue = oldString[oldPos + i];
 	            return oldValue.length > value.length ? oldValue : value;
 	          });
-	
+
 	          component.value = value.join('');
 	        } else {
 	          component.value = newString.slice(newPos, newPos + component.count).join('');
 	        }
 	        newPos += component.count;
-	
+
 	        
 	        if (!component.added) {
 	          oldPos += component.count;
@@ -32852,7 +17113,7 @@ return  (function(modules) {
 	      } else {
 	        component.value = oldString.slice(oldPos, oldPos + component.count).join('');
 	        oldPos += component.count;
-	
+
 	        
 	        
 	        
@@ -32863,17 +17124,17 @@ return  (function(modules) {
 	        }
 	      }
 	    }
-	
+
 	    return components;
 	  }
-	
+
 	  function Diff(ignoreWhitespace) {
 	    this.ignoreWhitespace = ignoreWhitespace;
 	  }
 	  Diff.prototype = {
 	    diff: function(oldString, newString, callback) {
 	      var self = this;
-	
+
 	      function done(value) {
 	        if (callback) {
 	          setTimeout(function() { callback(undefined, value); }, 0);
@@ -32882,7 +17143,7 @@ return  (function(modules) {
 	          return value;
 	        }
 	      }
-	
+
 	      
 	      if (newString === oldString) {
 	        return done([{ value: newString }]);
@@ -32893,22 +17154,22 @@ return  (function(modules) {
 	      if (!oldString) {
 	        return done([{ value: newString, added: true }]);
 	      }
-	
+
 	      newString = this.tokenize(newString);
 	      oldString = this.tokenize(oldString);
-	
+
 	      var newLen = newString.length, oldLen = oldString.length;
 	      var editLength = 1;
 	      var maxEditLength = newLen + oldLen;
 	      var bestPath = [{ newPos: -1, components: [] }];
-	
+
 	      
 	      var oldPos = this.extractCommon(bestPath[0], newString, oldString, 0);
 	      if (bestPath[0].newPos + 1 >= newLen && oldPos + 1 >= oldLen) {
 	        
 	        return done([{value: newString.join('')}]);
 	      }
-	
+
 	      
 	      function execEditLength() {
 	        for (var diagonalPath = -1 * editLength; diagonalPath <= editLength; diagonalPath += 2) {
@@ -32920,7 +17181,7 @@ return  (function(modules) {
 	            
 	            bestPath[diagonalPath - 1] = undefined;
 	          }
-	
+
 	          var canAdd = addPath && addPath.newPos + 1 < newLen,
 	              canRemove = removePath && 0 <= oldPos && oldPos < oldLen;
 	          if (!canAdd && !canRemove) {
@@ -32928,7 +17189,7 @@ return  (function(modules) {
 	            bestPath[diagonalPath] = undefined;
 	            continue;
 	          }
-	
+
 	          
 	          
 	          
@@ -32940,9 +17201,9 @@ return  (function(modules) {
 	            basePath.newPos++;
 	            self.pushComponent(basePath.components, true, undefined);
 	          }
-	
+
 	          oldPos = self.extractCommon(basePath, newString, oldString, diagonalPath);
-	
+
 	          
 	          if (basePath.newPos + 1 >= newLen && oldPos + 1 >= oldLen) {
 	            return done(buildValues(basePath.components, newString, oldString, self.useLongestToken));
@@ -32951,10 +17212,10 @@ return  (function(modules) {
 	            bestPath[diagonalPath] = basePath;
 	          }
 	        }
-	
+
 	        editLength++;
 	      }
-	
+
 	      
 	      
 	      
@@ -32966,7 +17227,7 @@ return  (function(modules) {
 	            if (editLength > maxEditLength) {
 	              return callback();
 	            }
-	
+
 	            if (!execEditLength()) {
 	              exec();
 	            }
@@ -32981,7 +17242,7 @@ return  (function(modules) {
 	        }
 	      }
 	    },
-	
+
 	    pushComponent: function(components, added, removed) {
 	      var last = components[components.length - 1];
 	      if (last && last.added === added && last.removed === removed) {
@@ -32997,22 +17258,22 @@ return  (function(modules) {
 	          oldLen = oldString.length,
 	          newPos = basePath.newPos,
 	          oldPos = newPos - diagonalPath,
-	
+
 	          commonCount = 0;
 	      while (newPos + 1 < newLen && oldPos + 1 < oldLen && this.equals(newString[newPos + 1], oldString[oldPos + 1])) {
 	        newPos++;
 	        oldPos++;
 	        commonCount++;
 	      }
-	
+
 	      if (commonCount) {
 	        basePath.components.push({count: commonCount});
 	      }
-	
+
 	      basePath.newPos = newPos;
 	      return oldPos;
 	    },
-	
+
 	    equals: function(left, right) {
 	      var reWhitespace = /\S/;
 	      return left === right || (this.ignoreWhitespace && !reWhitespace.test(left) && !reWhitespace.test(right));
@@ -33021,25 +17282,25 @@ return  (function(modules) {
 	      return value.split('');
 	    }
 	  };
-	
+
 	  var CharDiff = new Diff();
-	
+
 	  var WordDiff = new Diff(true);
 	  var WordWithSpaceDiff = new Diff();
 	  WordDiff.tokenize = WordWithSpaceDiff.tokenize = function(value) {
 	    return removeEmpty(value.split(/(\s+|\b)/));
 	  };
-	
+
 	  var CssDiff = new Diff(true);
 	  CssDiff.tokenize = function(value) {
 	    return removeEmpty(value.split(/([{}:;,]|\s+)/));
 	  };
-	
+
 	  var LineDiff = new Diff();
-	
+
 	  var TrimmedLineDiff = new Diff();
 	  TrimmedLineDiff.ignoreTrim = true;
-	
+
 	  LineDiff.tokenize = TrimmedLineDiff.tokenize = function(value) {
 	    var retLines = [],
 	        lines = value.split(/^/m);
@@ -33047,7 +17308,7 @@ return  (function(modules) {
 	      var line = lines[i],
 	          lastLine = lines[i - 1],
 	          lastLineLastChar = lastLine && lastLine[lastLine.length - 1];
-	
+
 	      
 	      if (line === '\n' && lastLineLastChar === '\r') {
 	          retLines[retLines.length - 1] = retLines[retLines.length - 1].slice(0, -1) + '\r\n';
@@ -33062,24 +17323,24 @@ return  (function(modules) {
 	        retLines.push(line);
 	      }
 	    }
-	
+
 	    return retLines;
 	  };
-	
+
 	  var PatchDiff = new Diff();
 	  PatchDiff.tokenize = function(value) {
 	    var ret = [],
 	        linesAndNewlines = value.split(/(\n|\r\n)/);
-	
+
 	    
 	    if (!linesAndNewlines[linesAndNewlines.length - 1]) {
 	      linesAndNewlines.pop();
 	    }
-	
+
 	    
 	    for (var i = 0; i < linesAndNewlines.length; i++) {
 	      var line = linesAndNewlines[i];
-	
+
 	      if (i % 2) {
 	        ret[ret.length - 1] += line;
 	      } else {
@@ -33088,12 +17349,12 @@ return  (function(modules) {
 	    }
 	    return ret;
 	  };
-	
+
 	  var SentenceDiff = new Diff();
 	  SentenceDiff.tokenize = function(value) {
 	    return removeEmpty(value.split(/(\S.+?[.!?])(?=\s+|$)/));
 	  };
-	
+
 	  var JsonDiff = new Diff();
 	  
 	  
@@ -33102,18 +17363,18 @@ return  (function(modules) {
 	  JsonDiff.equals = function(left, right) {
 	    return LineDiff.equals(left.replace(/,([\r\n])/g, '$1'), right.replace(/,([\r\n])/g, '$1'));
 	  };
-	
+
 	  var JsDiff = {
 	    Diff: Diff,
-	
+
 	    diffChars: function(oldStr, newStr, callback) { return CharDiff.diff(oldStr, newStr, callback); },
 	    diffWords: function(oldStr, newStr, callback) { return WordDiff.diff(oldStr, newStr, callback); },
 	    diffWordsWithSpace: function(oldStr, newStr, callback) { return WordWithSpaceDiff.diff(oldStr, newStr, callback); },
 	    diffLines: function(oldStr, newStr, callback) { return LineDiff.diff(oldStr, newStr, callback); },
 	    diffTrimmedLines: function(oldStr, newStr, callback) { return TrimmedLineDiff.diff(oldStr, newStr, callback); },
-	
+
 	    diffSentences: function(oldStr, newStr, callback) { return SentenceDiff.diff(oldStr, newStr, callback); },
-	
+
 	    diffCss: function(oldStr, newStr, callback) { return CssDiff.diff(oldStr, newStr, callback); },
 	    diffJson: function(oldObj, newObj, callback) {
 	      return JsonDiff.diff(
@@ -33122,64 +17383,64 @@ return  (function(modules) {
 	        callback
 	      );
 	    },
-	
+
 	    createTwoFilesPatch: function(oldFileName, newFileName, oldStr, newStr, oldHeader, newHeader) {
 	      var ret = [];
-	
+
 	      if (oldFileName == newFileName) {
 	        ret.push('Index: ' + oldFileName);
 	      }
 	      ret.push('===================================================================');
 	      ret.push('--- ' + oldFileName + (typeof oldHeader === 'undefined' ? '' : '\t' + oldHeader));
 	      ret.push('+++ ' + newFileName + (typeof newHeader === 'undefined' ? '' : '\t' + newHeader));
-	
+
 	      var diff = PatchDiff.diff(oldStr, newStr);
 	      diff.push({value: '', lines: []});   
-	
+
 	      
 	      function contextLines(lines) {
 	        return map(lines, function(entry) { return ' ' + entry; });
 	      }
-	
+
 	      
 	      function eofNL(curRange, i, current) {
 	        var last = diff[diff.length - 2],
 	            isLast = i === diff.length - 2,
 	            isLastOfType = i === diff.length - 3 && current.added !== last.added;
-	
+
 	        
 	        if (!(/\n$/.test(current.value)) && (isLast || isLastOfType)) {
 	          curRange.push('\\ No newline at end of file');
 	        }
 	      }
-	
+
 	      var oldRangeStart = 0, newRangeStart = 0, curRange = [],
 	          oldLine = 1, newLine = 1;
 	      for (var i = 0; i < diff.length; i++) {
 	        var current = diff[i],
 	            lines = current.lines || current.value.replace(/\n$/, '').split('\n');
 	        current.lines = lines;
-	
+
 	        if (current.added || current.removed) {
 	          
 	          if (!oldRangeStart) {
 	            var prev = diff[i - 1];
 	            oldRangeStart = oldLine;
 	            newRangeStart = newLine;
-	
+
 	            if (prev) {
 	              curRange = contextLines(prev.lines.slice(-4));
 	              oldRangeStart -= curRange.length;
 	              newRangeStart -= curRange.length;
 	            }
 	          }
-	
+
 	          
 	          curRange.push.apply(curRange, map(lines, function(entry) {
 	            return (current.added ? '+' : '-') + entry;
 	          }));
 	          eofNL(curRange, i, current);
-	
+
 	          
 	          if (current.added) {
 	            newLine += lines.length;
@@ -33205,7 +17466,7 @@ return  (function(modules) {
 	              if (lines.length <= 4) {
 	                eofNL(ret, i, current);
 	              }
-	
+
 	              oldRangeStart = 0;
 	              newRangeStart = 0;
 	              curRange = [];
@@ -33215,26 +17476,26 @@ return  (function(modules) {
 	          newLine += lines.length;
 	        }
 	      }
-	
+
 	      return ret.join('\n') + '\n';
 	    },
-	
+
 	    createPatch: function(fileName, oldStr, newStr, oldHeader, newHeader) {
 	      return JsDiff.createTwoFilesPatch(fileName, fileName, oldStr, newStr, oldHeader, newHeader);
 	    },
-	
+
 	    applyPatch: function(oldStr, uniDiff) {
 	      var diffstr = uniDiff.split('\n'),
 	          hunks = [],
 	          i = 0,
 	          remEOFNL = false,
 	          addEOFNL = false;
-	
+
 	      
 	      while (i < diffstr.length && !(/^@@/.test(diffstr[i]))) {
 	        i++;
 	      }
-	
+
 	      
 	      for (; i < diffstr.length; i++) {
 	        if (diffstr[i][0] === '@') {
@@ -33261,7 +17522,7 @@ return  (function(modules) {
 	          }
 	        }
 	      }
-	
+
 	      
 	      var lines = oldStr.split('\n');
 	      for (i = hunks.length - 1; i >= 0; i--) {
@@ -33274,7 +17535,7 @@ return  (function(modules) {
 	        }
 	        Array.prototype.splice.apply(lines, [hunk.start - 1, hunk.oldlength].concat(hunk.added));
 	      }
-	
+
 	      
 	      if (remEOFNL) {
 	        while (!lines[lines.length - 1]) {
@@ -33285,7 +17546,7 @@ return  (function(modules) {
 	      }
 	      return lines.join('\n');
 	    },
-	
+
 	    convertChangesToXML: function(changes) {
 	      var ret = [];
 	      for (var i = 0; i < changes.length; i++) {
@@ -33295,9 +17556,9 @@ return  (function(modules) {
 	        } else if (change.removed) {
 	          ret.push('<del>');
 	        }
-	
+
 	        ret.push(escapeHTML(change.value));
-	
+
 	        if (change.added) {
 	          ret.push('</ins>');
 	        } else if (change.removed) {
@@ -33306,7 +17567,7 @@ return  (function(modules) {
 	      }
 	      return ret.join('');
 	    },
-	
+
 	    
 	    convertChangesToDMP: function(changes) {
 	      var ret = [],
@@ -33321,15 +17582,15 @@ return  (function(modules) {
 	        } else {
 	          operation = 0;
 	        }
-	
+
 	        ret.push([operation, change.value]);
 	      }
 	      return ret;
 	    },
-	
+
 	    canonicalize: canonicalize
 	  };
-	
+
 	  
 	  
 	  if (typeof module !== 'undefined' && module.exports) {
@@ -33341,20 +17602,20 @@ return  (function(modules) {
 	    global.JsDiff = JsDiff;
 	  }
 	}(this));
-	
+
 	},{}],47:[function(require,module,exports){
 	'use strict';
-	
+
 	var matchOperatorsRe = /[|\\{}()[\]^$+*?.]/g;
-	
+
 	module.exports = function (str) {
 		if (typeof str !== 'string') {
 			throw new TypeError('Expected a string');
 		}
-	
+
 		return str.replace(matchOperatorsRe, '\\$&');
 	};
-	
+
 	},{}],48:[function(require,module,exports){
 	
 	
@@ -33376,23 +17637,23 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	function EventEmitter() {
 	  this._events = this._events || {};
 	  this._maxListeners = this._maxListeners || undefined;
 	}
 	module.exports = EventEmitter;
-	
+
 	
 	EventEmitter.EventEmitter = EventEmitter;
-	
+
 	EventEmitter.prototype._events = undefined;
 	EventEmitter.prototype._maxListeners = undefined;
-	
+
 	
 	
 	EventEmitter.defaultMaxListeners = 10;
-	
+
 	
 	
 	EventEmitter.prototype.setMaxListeners = function(n) {
@@ -33401,13 +17662,13 @@ return  (function(modules) {
 	  this._maxListeners = n;
 	  return this;
 	};
-	
+
 	EventEmitter.prototype.emit = function(type) {
 	  var er, handler, len, args, i, listeners;
-	
+
 	  if (!this._events)
 	    this._events = {};
-	
+
 	  
 	  if (type === 'error') {
 	    if (!this._events.error ||
@@ -33423,12 +17684,12 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  handler = this._events[type];
-	
+
 	  if (isUndefined(handler))
 	    return false;
-	
+
 	  if (isFunction(handler)) {
 	    switch (arguments.length) {
 	      
@@ -33453,26 +17714,26 @@ return  (function(modules) {
 	    for (i = 0; i < len; i++)
 	      listeners[i].apply(this, args);
 	  }
-	
+
 	  return true;
 	};
-	
+
 	EventEmitter.prototype.addListener = function(type, listener) {
 	  var m;
-	
+
 	  if (!isFunction(listener))
 	    throw TypeError('listener must be a function');
-	
+
 	  if (!this._events)
 	    this._events = {};
-	
+
 	  
 	  
 	  if (this._events.newListener)
 	    this.emit('newListener', type,
 	              isFunction(listener.listener) ?
 	              listener.listener : listener);
-	
+
 	  if (!this._events[type])
 	    
 	    this._events[type] = listener;
@@ -33482,7 +17743,7 @@ return  (function(modules) {
 	  else
 	    
 	    this._events[type] = [this._events[type], listener];
-	
+
 	  
 	  if (isObject(this._events[type]) && !this._events[type].warned) {
 	    if (!isUndefined(this._maxListeners)) {
@@ -33490,7 +17751,7 @@ return  (function(modules) {
 	    } else {
 	      m = EventEmitter.defaultMaxListeners;
 	    }
-	
+
 	    if (m && m > 0 && this._events[type].length > m) {
 	      this._events[type].warned = true;
 	      console.error('(node) warning: possible EventEmitter memory ' +
@@ -33503,53 +17764,53 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  return this;
 	};
-	
+
 	EventEmitter.prototype.on = EventEmitter.prototype.addListener;
-	
+
 	EventEmitter.prototype.once = function(type, listener) {
 	  if (!isFunction(listener))
 	    throw TypeError('listener must be a function');
-	
+
 	  var fired = false;
-	
+
 	  function g() {
 	    this.removeListener(type, g);
-	
+
 	    if (!fired) {
 	      fired = true;
 	      listener.apply(this, arguments);
 	    }
 	  }
-	
+
 	  g.listener = listener;
 	  this.on(type, g);
-	
+
 	  return this;
 	};
-	
+
 	
 	EventEmitter.prototype.removeListener = function(type, listener) {
 	  var list, position, length, i;
-	
+
 	  if (!isFunction(listener))
 	    throw TypeError('listener must be a function');
-	
+
 	  if (!this._events || !this._events[type])
 	    return this;
-	
+
 	  list = this._events[type];
 	  length = list.length;
 	  position = -1;
-	
+
 	  if (list === listener ||
 	      (isFunction(list.listener) && list.listener === listener)) {
 	    delete this._events[type];
 	    if (this._events.removeListener)
 	      this.emit('removeListener', type, listener);
-	
+
 	  } else if (isObject(list)) {
 	    for (i = length; i-- > 0;) {
 	      if (list[i] === listener ||
@@ -33558,30 +17819,30 @@ return  (function(modules) {
 	        break;
 	      }
 	    }
-	
+
 	    if (position < 0)
 	      return this;
-	
+
 	    if (list.length === 1) {
 	      list.length = 0;
 	      delete this._events[type];
 	    } else {
 	      list.splice(position, 1);
 	    }
-	
+
 	    if (this._events.removeListener)
 	      this.emit('removeListener', type, listener);
 	  }
-	
+
 	  return this;
 	};
-	
+
 	EventEmitter.prototype.removeAllListeners = function(type) {
 	  var key, listeners;
-	
+
 	  if (!this._events)
 	    return this;
-	
+
 	  
 	  if (!this._events.removeListener) {
 	    if (arguments.length === 0)
@@ -33590,7 +17851,7 @@ return  (function(modules) {
 	      delete this._events[type];
 	    return this;
 	  }
-	
+
 	  
 	  if (arguments.length === 0) {
 	    for (key in this._events) {
@@ -33601,9 +17862,9 @@ return  (function(modules) {
 	    this._events = {};
 	    return this;
 	  }
-	
+
 	  listeners = this._events[type];
-	
+
 	  if (isFunction(listeners)) {
 	    this.removeListener(type, listeners);
 	  } else if (listeners) {
@@ -33612,10 +17873,10 @@ return  (function(modules) {
 	      this.removeListener(type, listeners[listeners.length - 1]);
 	  }
 	  delete this._events[type];
-	
+
 	  return this;
 	};
-	
+
 	EventEmitter.prototype.listeners = function(type) {
 	  var ret;
 	  if (!this._events || !this._events[type])
@@ -33626,11 +17887,11 @@ return  (function(modules) {
 	    ret = this._events[type].slice();
 	  return ret;
 	};
-	
+
 	EventEmitter.prototype.listenerCount = function(type) {
 	  if (this._events) {
 	    var evlistener = this._events[type];
-	
+
 	    if (isFunction(evlistener))
 	      return 1;
 	    else if (evlistener)
@@ -33638,35 +17899,35 @@ return  (function(modules) {
 	  }
 	  return 0;
 	};
-	
+
 	EventEmitter.listenerCount = function(emitter, type) {
 	  return emitter.listenerCount(type);
 	};
-	
+
 	function isFunction(arg) {
 	  return typeof arg === 'function';
 	}
-	
+
 	function isNumber(arg) {
 	  return typeof arg === 'number';
 	}
-	
+
 	function isObject(arg) {
 	  return typeof arg === 'object' && arg !== null;
 	}
-	
+
 	function isUndefined(arg) {
 	  return arg === void 0;
 	}
-	
+
 	},{}],49:[function(require,module,exports){
 	(function (process){
 	
-	
+
 	
 
 
-	
+
 	var exec = require('child_process').exec
 	  , fs = require('fs')
 	  , path = require('path')
@@ -33674,17 +17935,17 @@ return  (function(modules) {
 	  , os = require('os')
 	  , quote = JSON.stringify
 	  , cmd;
-	
+
 	function which(name) {
 	  var paths = process.env.PATH.split(':');
 	  var loc;
-	
+
 	  for (var i = 0, len = paths.length; i < len; ++i) {
 	    loc = path.join(paths[i], name);
 	    if (exists(loc)) return loc;
 	  }
 	}
-	
+
 	switch(os.type()) {
 	  case 'Darwin':
 	    if (which('terminal-notifier')) {
@@ -33779,57 +18040,57 @@ return  (function(modules) {
 	    };
 	    break;
 	}
-	
+
 	
 
 
-	
+
 	exports = module.exports = growl;
-	
+
 	
 
 
-	
+
 	exports.version = '1.4.1'
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	function growl(msg, options, fn) {
 	  var image
 	    , args
 	    , options = options || {}
 	    , fn = fn || function(){};
-	
+
 	  if (options.exec) {
 	    cmd = {
 	        type: "Custom"
@@ -33837,11 +18098,11 @@ return  (function(modules) {
 	      , range: []
 	    };
 	  }
-	
+
 	  
 	  if (!cmd) return fn(new Error('growl not supported on this platform'));
 	  args = [cmd.pkg];
-	
+
 	  
 	  if (image = options.image) {
 	    switch(cmd.type) {
@@ -33867,10 +18128,10 @@ return  (function(modules) {
 	        break;
 	    }
 	  }
-	
+
 	  
 	  if (options.sticky) args.push(cmd.sticky);
-	
+
 	  
 	  if (options.priority) {
 	    var priority = options.priority + '';
@@ -33879,17 +18140,17 @@ return  (function(modules) {
 	      args.push(cmd.priority, options.priority);
 	    }
 	  }
-	
+
 	  
 	  if(options.sound && cmd.type === 'Darwin-NotificationCenter'){
 	    args.push(cmd.sound, options.sound)
 	  }
-	
+
 	  
 	  if (options.name && cmd.type === "Darwin-Growl") {
 	    args.push('--name', options.name);
 	  }
-	
+
 	  switch(cmd.type) {
 	    case 'Darwin-Growl':
 	      args.push(cmd.msg);
@@ -33947,11 +18208,11 @@ return  (function(modules) {
 	      })(args[0]);
 	      break;
 	  }
-	
+
 	  
 	  exec(args.join(' '), fn);
 	};
-	
+
 	}).call(this,require('_process'))
 	},{"_process":67,"child_process":42,"fs":42,"os":65,"path":42}],50:[function(require,module,exports){
 	exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -33963,19 +18224,19 @@ return  (function(modules) {
 	  var i = isLE ? (nBytes - 1) : 0
 	  var d = isLE ? -1 : 1
 	  var s = buffer[offset + i]
-	
+
 	  i += d
-	
+
 	  e = s & ((1 << (-nBits)) - 1)
 	  s >>= (-nBits)
 	  nBits += eLen
 	  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-	
+
 	  m = e & ((1 << (-nBits)) - 1)
 	  e >>= (-nBits)
 	  nBits += mLen
 	  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-	
+
 	  if (e === 0) {
 	    e = 1 - eBias
 	  } else if (e === eMax) {
@@ -33986,7 +18247,7 @@ return  (function(modules) {
 	  }
 	  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
 	}
-	
+
 	exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 	  var e, m, c
 	  var eLen = nBytes * 8 - mLen - 1
@@ -33996,9 +18257,9 @@ return  (function(modules) {
 	  var i = isLE ? 0 : (nBytes - 1)
 	  var d = isLE ? 1 : -1
 	  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
-	
+
 	  value = Math.abs(value)
-	
+
 	  if (isNaN(value) || value === Infinity) {
 	    m = isNaN(value) ? 1 : 0
 	    e = eMax
@@ -34017,7 +18278,7 @@ return  (function(modules) {
 	      e++
 	      c /= 2
 	    }
-	
+
 	    if (e + eBias >= eMax) {
 	      m = 0
 	      e = eMax
@@ -34029,16 +18290,16 @@ return  (function(modules) {
 	      e = 0
 	    }
 	  }
-	
+
 	  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
-	
+
 	  e = (e << mLen) | m
 	  eLen += mLen
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
-	
+
 	  buffer[offset + i - d] |= s * 128
 	}
-	
+
 	},{}],51:[function(require,module,exports){
 	if (typeof Object.create === 'function') {
 	  
@@ -34063,7 +18324,7 @@ return  (function(modules) {
 	    ctor.prototype.constructor = ctor
 	  }
 	}
-	
+
 	},{}],52:[function(require,module,exports){
 	
 
@@ -34071,29 +18332,29 @@ return  (function(modules) {
 
 
 
-	
+
 	
 	
 	module.exports = function (obj) {
 	  return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
 	}
-	
+
 	function isBuffer (obj) {
 	  return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
 	}
-	
+
 	
 	function isSlowBuffer (obj) {
 	  return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 	}
-	
+
 	},{}],53:[function(require,module,exports){
 	var toString = {}.toString;
-	
+
 	module.exports = Array.isArray || function (arr) {
 	  return toString.call(arr) == '[object Array]';
 	};
-	
+
 	},{}],54:[function(require,module,exports){
 	(function (global){
 	
@@ -34101,33 +18362,33 @@ return  (function(modules) {
 	  
 	  
 	  var isLoader = false;
-	
+
 	  
 	  var objectTypes = {
 	    "function": true,
 	    "object": true
 	  };
-	
+
 	  
 	  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
-	
+
 	  
 	  
 	  
 	  
 	  var root = objectTypes[typeof window] && window || this,
 	      freeGlobal = freeExports && objectTypes[typeof module] && module && !module.nodeType && typeof global == "object" && global;
-	
+
 	  if (freeGlobal && (freeGlobal["global"] === freeGlobal || freeGlobal["window"] === freeGlobal || freeGlobal["self"] === freeGlobal)) {
 	    root = freeGlobal;
 	  }
-	
+
 	  
 	  
 	  function runInContext(context, exports) {
 	    context || (context = root["Object"]());
 	    exports || (exports = root["Object"]());
-	
+
 	    
 	    var Number = context["Number"] || root["Number"],
 	        String = context["String"] || root["String"],
@@ -34137,18 +18398,18 @@ return  (function(modules) {
 	        TypeError = context["TypeError"] || root["TypeError"],
 	        Math = context["Math"] || root["Math"],
 	        nativeJSON = context["JSON"] || root["JSON"];
-	
+
 	    
 	    if (typeof nativeJSON == "object" && nativeJSON) {
 	      exports.stringify = nativeJSON.stringify;
 	      exports.parse = nativeJSON.parse;
 	    }
-	
+
 	    
 	    var objectProto = Object.prototype,
 	        getClass = objectProto.toString,
 	        isProperty, forEach, undef;
-	
+
 	    
 	    var isExtended = new Date(-3509827334573292);
 	    try {
@@ -34160,7 +18421,7 @@ return  (function(modules) {
 	        
 	        isExtended.getUTCHours() == 10 && isExtended.getUTCMinutes() == 37 && isExtended.getUTCSeconds() == 6 && isExtended.getUTCMilliseconds() == 708;
 	    } catch (exception) {}
-	
+
 	    
 	    
 	    function has(name) {
@@ -34291,7 +18552,7 @@ return  (function(modules) {
 	      }
 	      return has[name] = !!isSupported;
 	    }
-	
+
 	    if (!has("json")) {
 	      
 	      var functionClass = "[object Function]",
@@ -34300,10 +18561,10 @@ return  (function(modules) {
 	          stringClass = "[object String]",
 	          arrayClass = "[object Array]",
 	          booleanClass = "[object Boolean]";
-	
+
 	      
 	      var charIndexBuggy = has("bug-string-char-index");
-	
+
 	      
 	      if (!isExtended) {
 	        var floor = Math.floor;
@@ -34316,7 +18577,7 @@ return  (function(modules) {
 	          return Months[month] + 365 * (year - 1970) + floor((year - 1969 + (month = +(month > 1))) / 4) - floor((year - 1901 + month) / 100) + floor((year - 1601 + month) / 400);
 	        };
 	      }
-	
+
 	      
 	      
 	      if (!(isProperty = objectProto.hasOwnProperty)) {
@@ -34352,19 +18613,19 @@ return  (function(modules) {
 	          return isProperty.call(this, property);
 	        };
 	      }
-	
+
 	      
 	      
 	      forEach = function (object, callback) {
 	        var size = 0, Properties, members, property;
-	
+
 	        
 	        
 	        
 	        (Properties = function () {
 	          this.valueOf = 0;
 	        }).prototype.valueOf = 0;
-	
+
 	        
 	        members = new Properties();
 	        for (property in members) {
@@ -34374,7 +18635,7 @@ return  (function(modules) {
 	          }
 	        }
 	        Properties = members = null;
-	
+
 	        
 	        if (!size) {
 	          
@@ -34426,7 +18687,7 @@ return  (function(modules) {
 	        }
 	        return forEach(object, callback);
 	      };
-	
+
 	      
 	      
 	      
@@ -34444,7 +18705,7 @@ return  (function(modules) {
 	          13: "\\r",
 	          9: "\\t"
 	        };
-	
+
 	        
 	        
 	        var leadingZeroes = "000000";
@@ -34453,7 +18714,7 @@ return  (function(modules) {
 	          
 	          return (leadingZeroes + (value || 0)).slice(-width);
 	        };
-	
+
 	        
 	        
 	        
@@ -34480,7 +18741,7 @@ return  (function(modules) {
 	          }
 	          return result + '"';
 	        };
-	
+
 	        
 	        
 	        var serialize = function (property, object, callback, properties, whitespace, indentation, stack) {
@@ -34609,7 +18870,7 @@ return  (function(modules) {
 	            return result;
 	          }
 	        };
-	
+
 	        
 	        exports.stringify = function (source, filter, width) {
 	          var whitespace, callback, properties, className;
@@ -34639,11 +18900,11 @@ return  (function(modules) {
 	          return serialize("", (value = {}, value[""] = source, value), callback, properties, whitespace, "", []);
 	        };
 	      }
-	
+
 	      
 	      if (!has("json-parse")) {
 	        var fromCharCode = String.fromCharCode;
-	
+
 	        
 	        
 	        var Unescapes = {
@@ -34656,16 +18917,16 @@ return  (function(modules) {
 	          102: "\f",
 	          114: "\r"
 	        };
-	
+
 	        
 	        var Index, Source;
-	
+
 	        
 	        var abort = function () {
 	          Index = Source = null;
 	          throw SyntaxError();
 	        };
-	
+
 	        
 	        
 	        
@@ -34825,7 +19086,7 @@ return  (function(modules) {
 	          
 	          return "$";
 	        };
-	
+
 	        
 	        var get = function (value) {
 	          var results, hasMembers;
@@ -34908,7 +19169,7 @@ return  (function(modules) {
 	          }
 	          return value;
 	        };
-	
+
 	        
 	        var update = function (source, property, callback) {
 	          var element = walk(source, property, callback);
@@ -34918,7 +19179,7 @@ return  (function(modules) {
 	            source[property] = element;
 	          }
 	        };
-	
+
 	        
 	        
 	        
@@ -34940,7 +19201,7 @@ return  (function(modules) {
 	          }
 	          return callback.call(source, property, value);
 	        };
-	
+
 	        
 	        exports.parse = function (source, callback) {
 	          var result, value;
@@ -34957,11 +19218,11 @@ return  (function(modules) {
 	        };
 	      }
 	    }
-	
+
 	    exports["runInContext"] = runInContext;
 	    return exports;
 	  }
-	
+
 	  if (freeExports && !isLoader) {
 	    
 	    runInContext(root, freeExports);
@@ -34970,7 +19231,7 @@ return  (function(modules) {
 	    var nativeJSON = root.JSON,
 	        previousJSON = root["JSON3"],
 	        isRestored = false;
-	
+
 	    var JSON3 = runInContext(root, (root["JSON3"] = {
 	      
 	      
@@ -34984,21 +19245,21 @@ return  (function(modules) {
 	        return JSON3;
 	      }
 	    }));
-	
+
 	    root.JSON = {
 	      "parse": JSON3.parse,
 	      "stringify": JSON3.stringify
 	    };
 	  }
-	
+
 	  
 	  if (isLoader) {
-	    !(__WEBPACK_AMD_DEFINE_RESULT__ = function () {
+	    define(function () {
 	      return JSON3;
-	    }.call(exports, __webpack_require__, exports, module), __WEBPACK_AMD_DEFINE_RESULT__ !== undefined && (module.exports = __WEBPACK_AMD_DEFINE_RESULT__));
+	    });
 	  }
 	}).call(this);
-	
+
 	}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{}],55:[function(require,module,exports){
 	
@@ -35011,7 +19272,7 @@ return  (function(modules) {
 
 	var baseCopy = require('lodash._basecopy'),
 	    keys = require('lodash.keys');
-	
+
 	
 
 
@@ -35026,9 +19287,9 @@ return  (function(modules) {
 	    ? object
 	    : baseCopy(source, keys(source), object);
 	}
-	
+
 	module.exports = baseAssign;
-	
+
 	},{"lodash._basecopy":56,"lodash.keys":63}],56:[function(require,module,exports){
 	
 
@@ -35038,7 +19299,7 @@ return  (function(modules) {
 
 
 
-	
+
 	
 
 
@@ -35050,19 +19311,19 @@ return  (function(modules) {
 
 	function baseCopy(source, props, object) {
 	  object || (object = {});
-	
+
 	  var index = -1,
 	      length = props.length;
-	
+
 	  while (++index < length) {
 	    var key = props[index];
 	    object[key] = source[key];
 	  }
 	  return object;
 	}
-	
+
 	module.exports = baseCopy;
-	
+
 	},{}],57:[function(require,module,exports){
 	
 
@@ -35072,7 +19333,7 @@ return  (function(modules) {
 
 
 
-	
+
 	
 
 
@@ -35092,7 +19353,7 @@ return  (function(modules) {
 	    return result || {};
 	  };
 	}());
-	
+
 	
 
 
@@ -35119,9 +19380,9 @@ return  (function(modules) {
 	  var type = typeof value;
 	  return !!value && (type == 'object' || type == 'function');
 	}
-	
+
 	module.exports = baseCreate;
-	
+
 	},{}],58:[function(require,module,exports){
 	
 
@@ -35131,13 +19392,13 @@ return  (function(modules) {
 
 
 
-	
+
 	
 	var funcTag = '[object Function]';
-	
+
 	
 	var reIsHostCtor = /^\[object .+?Constructor\]$/;
-	
+
 	
 
 
@@ -35148,28 +19409,28 @@ return  (function(modules) {
 	function isObjectLike(value) {
 	  return !!value && typeof value == 'object';
 	}
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var fnToString = Function.prototype.toString;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
 
 	var objToString = objectProto.toString;
-	
+
 	
 	var reIsNative = RegExp('^' +
 	  fnToString.call(hasOwnProperty).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
 	  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
 	);
-	
+
 	
 
 
@@ -35182,7 +19443,7 @@ return  (function(modules) {
 	  var value = object == null ? undefined : object[key];
 	  return isNative(value) ? value : undefined;
 	}
-	
+
 	
 
 
@@ -35205,7 +19466,7 @@ return  (function(modules) {
 	  
 	  return isObject(value) && objToString.call(value) == funcTag;
 	}
-	
+
 	
 
 
@@ -35232,7 +19493,7 @@ return  (function(modules) {
 	  var type = typeof value;
 	  return !!value && (type == 'object' || type == 'function');
 	}
-	
+
 	
 
 
@@ -35258,9 +19519,9 @@ return  (function(modules) {
 	  }
 	  return isObjectLike(value) && reIsHostCtor.test(value);
 	}
-	
+
 	module.exports = getNative;
-	
+
 	},{}],59:[function(require,module,exports){
 	
 
@@ -35270,16 +19531,16 @@ return  (function(modules) {
 
 
 
-	
+
 	
 	var reIsUint = /^\d+$/;
-	
+
 	
 
 
 
 	var MAX_SAFE_INTEGER = 9007199254740991;
-	
+
 	
 
 
@@ -35292,7 +19553,7 @@ return  (function(modules) {
 	    return object == null ? undefined : object[key];
 	  };
 	}
-	
+
 	
 
 
@@ -35304,7 +19565,7 @@ return  (function(modules) {
 
 
 	var getLength = baseProperty('length');
-	
+
 	
 
 
@@ -35315,7 +19576,7 @@ return  (function(modules) {
 	function isArrayLike(value) {
 	  return value != null && isLength(getLength(value));
 	}
-	
+
 	
 
 
@@ -35329,7 +19590,7 @@ return  (function(modules) {
 	  length = length == null ? MAX_SAFE_INTEGER : length;
 	  return value > -1 && value % 1 == 0 && value < length;
 	}
-	
+
 	
 
 
@@ -35352,7 +19613,7 @@ return  (function(modules) {
 	  }
 	  return false;
 	}
-	
+
 	
 
 
@@ -35365,7 +19626,7 @@ return  (function(modules) {
 	function isLength(value) {
 	  return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 	}
-	
+
 	
 
 
@@ -35392,9 +19653,9 @@ return  (function(modules) {
 	  var type = typeof value;
 	  return !!value && (type == 'object' || type == 'function');
 	}
-	
+
 	module.exports = isIterateeCall;
-	
+
 	},{}],60:[function(require,module,exports){
 	
 
@@ -35407,7 +19668,7 @@ return  (function(modules) {
 	var baseAssign = require('lodash._baseassign'),
 	    baseCreate = require('lodash._basecreate'),
 	    isIterateeCall = require('lodash._isiterateecall');
-	
+
 	
 
 
@@ -35449,9 +19710,9 @@ return  (function(modules) {
 	  }
 	  return properties ? baseAssign(result, properties) : result;
 	}
-	
+
 	module.exports = create;
-	
+
 	},{"lodash._baseassign":55,"lodash._basecreate":57,"lodash._isiterateecall":59}],61:[function(require,module,exports){
 	
 
@@ -35461,31 +19722,31 @@ return  (function(modules) {
 
 
 
-	
+
 	
 	var MAX_SAFE_INTEGER = 9007199254740991;
-	
+
 	
 	var argsTag = '[object Arguments]',
 	    funcTag = '[object Function]',
 	    genTag = '[object GeneratorFunction]';
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
 
 
 	var objectToString = objectProto.toString;
-	
+
 	
 	var propertyIsEnumerable = objectProto.propertyIsEnumerable;
-	
+
 	
 
 
@@ -35509,7 +19770,7 @@ return  (function(modules) {
 	  return isArrayLikeObject(value) && hasOwnProperty.call(value, 'callee') &&
 	    (!propertyIsEnumerable.call(value, 'callee') || objectToString.call(value) == argsTag);
 	}
-	
+
 	
 
 
@@ -35538,7 +19799,7 @@ return  (function(modules) {
 	function isArrayLike(value) {
 	  return value != null && isLength(value.length) && !isFunction(value);
 	}
-	
+
 	
 
 
@@ -35567,7 +19828,7 @@ return  (function(modules) {
 	function isArrayLikeObject(value) {
 	  return isObjectLike(value) && isArrayLike(value);
 	}
-	
+
 	
 
 
@@ -35591,7 +19852,7 @@ return  (function(modules) {
 	  var tag = isObject(value) ? objectToString.call(value) : '';
 	  return tag == funcTag || tag == genTag;
 	}
-	
+
 	
 
 
@@ -35622,7 +19883,7 @@ return  (function(modules) {
 	  return typeof value == 'number' &&
 	    value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 	}
-	
+
 	
 
 
@@ -35652,7 +19913,7 @@ return  (function(modules) {
 	  var type = typeof value;
 	  return !!value && (type == 'object' || type == 'function');
 	}
-	
+
 	
 
 
@@ -35680,9 +19941,9 @@ return  (function(modules) {
 	function isObjectLike(value) {
 	  return !!value && typeof value == 'object';
 	}
-	
+
 	module.exports = isArguments;
-	
+
 	},{}],62:[function(require,module,exports){
 	
 
@@ -35692,14 +19953,14 @@ return  (function(modules) {
 
 
 
-	
+
 	
 	var arrayTag = '[object Array]',
 	    funcTag = '[object Function]';
-	
+
 	
 	var reIsHostCtor = /^\[object .+?Constructor\]$/;
-	
+
 	
 
 
@@ -35710,37 +19971,37 @@ return  (function(modules) {
 	function isObjectLike(value) {
 	  return !!value && typeof value == 'object';
 	}
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var fnToString = Function.prototype.toString;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 
 
 
 	var objToString = objectProto.toString;
-	
+
 	
 	var reIsNative = RegExp('^' +
 	  fnToString.call(hasOwnProperty).replace(/[\\^$.*+?()[\]{}|]/g, '\\$&')
 	  .replace(/hasOwnProperty|(function).*?(?=\\\()| for .+?(?=\\\])/g, '$1.*?') + '$'
 	);
-	
+
 	
 	var nativeIsArray = getNative(Array, 'isArray');
-	
+
 	
 
 
 
 	var MAX_SAFE_INTEGER = 9007199254740991;
-	
+
 	
 
 
@@ -35753,7 +20014,7 @@ return  (function(modules) {
 	  var value = object == null ? undefined : object[key];
 	  return isNative(value) ? value : undefined;
 	}
-	
+
 	
 
 
@@ -35766,7 +20027,7 @@ return  (function(modules) {
 	function isLength(value) {
 	  return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 	}
-	
+
 	
 
 
@@ -35786,7 +20047,7 @@ return  (function(modules) {
 	var isArray = nativeIsArray || function(value) {
 	  return isObjectLike(value) && isLength(value.length) && objToString.call(value) == arrayTag;
 	};
-	
+
 	
 
 
@@ -35809,7 +20070,7 @@ return  (function(modules) {
 	  
 	  return isObject(value) && objToString.call(value) == funcTag;
 	}
-	
+
 	
 
 
@@ -35836,7 +20097,7 @@ return  (function(modules) {
 	  var type = typeof value;
 	  return !!value && (type == 'object' || type == 'function');
 	}
-	
+
 	
 
 
@@ -35862,9 +20123,9 @@ return  (function(modules) {
 	  }
 	  return isObjectLike(value) && reIsHostCtor.test(value);
 	}
-	
+
 	module.exports = isArray;
-	
+
 	},{}],63:[function(require,module,exports){
 	
 
@@ -35877,25 +20138,25 @@ return  (function(modules) {
 	var getNative = require('lodash._getnative'),
 	    isArguments = require('lodash.isarguments'),
 	    isArray = require('lodash.isarray');
-	
+
 	
 	var reIsUint = /^\d+$/;
-	
+
 	
 	var objectProto = Object.prototype;
-	
+
 	
 	var hasOwnProperty = objectProto.hasOwnProperty;
-	
+
 	
 	var nativeKeys = getNative(Object, 'keys');
-	
+
 	
 
 
 
 	var MAX_SAFE_INTEGER = 9007199254740991;
-	
+
 	
 
 
@@ -35908,7 +20169,7 @@ return  (function(modules) {
 	    return object == null ? undefined : object[key];
 	  };
 	}
-	
+
 	
 
 
@@ -35920,7 +20181,7 @@ return  (function(modules) {
 
 
 	var getLength = baseProperty('length');
-	
+
 	
 
 
@@ -35931,7 +20192,7 @@ return  (function(modules) {
 	function isArrayLike(value) {
 	  return value != null && isLength(getLength(value));
 	}
-	
+
 	
 
 
@@ -35945,7 +20206,7 @@ return  (function(modules) {
 	  length = length == null ? MAX_SAFE_INTEGER : length;
 	  return value > -1 && value % 1 == 0 && value < length;
 	}
-	
+
 	
 
 
@@ -35958,7 +20219,7 @@ return  (function(modules) {
 	function isLength(value) {
 	  return typeof value == 'number' && value > -1 && value % 1 == 0 && value <= MAX_SAFE_INTEGER;
 	}
-	
+
 	
 
 
@@ -35971,13 +20232,13 @@ return  (function(modules) {
 	  var props = keysIn(object),
 	      propsLength = props.length,
 	      length = propsLength && object.length;
-	
+
 	  var allowIndexes = !!length && isLength(length) &&
 	    (isArray(object) || isArguments(object));
-	
+
 	  var index = -1,
 	      result = [];
-	
+
 	  while (++index < propsLength) {
 	    var key = props[index];
 	    if ((allowIndexes && isIndex(key, length)) || hasOwnProperty.call(object, key)) {
@@ -35986,7 +20247,7 @@ return  (function(modules) {
 	  }
 	  return result;
 	}
-	
+
 	
 
 
@@ -36013,7 +20274,7 @@ return  (function(modules) {
 	  var type = typeof value;
 	  return !!value && (type == 'object' || type == 'function');
 	}
-	
+
 	
 
 
@@ -36049,7 +20310,7 @@ return  (function(modules) {
 	  }
 	  return isObject(object) ? nativeKeys(object) : [];
 	};
-	
+
 	
 
 
@@ -36082,13 +20343,13 @@ return  (function(modules) {
 	  var length = object.length;
 	  length = (length && isLength(length) &&
 	    (isArray(object) || isArguments(object)) && length) || 0;
-	
+
 	  var Ctor = object.constructor,
 	      index = -1,
 	      isProto = typeof Ctor == 'function' && Ctor.prototype === object,
 	      result = Array(length),
 	      skipIndexes = length > 0;
-	
+
 	  while (++index < length) {
 	    result[index] = (index + '');
 	  }
@@ -36100,17 +20361,17 @@ return  (function(modules) {
 	  }
 	  return result;
 	}
-	
+
 	module.exports = keys;
-	
+
 	},{"lodash._getnative":58,"lodash.isarguments":61,"lodash.isarray":62}],64:[function(require,module,exports){
 	(function (process){
 	var path = require('path');
 	var fs = require('fs');
 	var _0777 = parseInt('0777', 8);
-	
+
 	module.exports = mkdirP.mkdirp = mkdirP.mkdirP = mkdirP;
-	
+
 	function mkdirP (p, opts, f, made) {
 	    if (typeof opts === 'function') {
 	        f = opts;
@@ -36143,7 +20404,7 @@ return  (function(modules) {
 	                    else mkdirP(p, opts, cb, made);
 	                });
 	                break;
-	
+
 	            
 	            
 	            
@@ -36158,7 +20419,7 @@ return  (function(modules) {
 	        }
 	    });
 	}
-	
+
 	mkdirP.sync = function sync (p, opts, made) {
 	    if (!opts || typeof opts !== 'object') {
 	        opts = { mode: opts };
@@ -36171,9 +20432,9 @@ return  (function(modules) {
 	        mode = _0777 & (~process.umask());
 	    }
 	    if (!made) made = null;
-	
+
 	    p = path.resolve(p);
-	
+
 	    try {
 	        xfs.mkdirSync(p, mode);
 	        made = made || p;
@@ -36184,7 +20445,7 @@ return  (function(modules) {
 	                made = sync(path.dirname(p), opts, made);
 	                sync(p, opts, made);
 	                break;
-	
+
 	            
 	            
 	            
@@ -36200,62 +20461,62 @@ return  (function(modules) {
 	                break;
 	        }
 	    }
-	
+
 	    return made;
 	};
-	
+
 	}).call(this,require('_process'))
 	},{"_process":67,"fs":42,"path":42}],65:[function(require,module,exports){
 	exports.endianness = function () { return 'LE' };
-	
+
 	exports.hostname = function () {
 	    if (typeof location !== 'undefined') {
 	        return location.hostname
 	    }
 	    else return '';
 	};
-	
+
 	exports.loadavg = function () { return [] };
-	
+
 	exports.uptime = function () { return 0 };
-	
+
 	exports.freemem = function () {
 	    return Number.MAX_VALUE;
 	};
-	
+
 	exports.totalmem = function () {
 	    return Number.MAX_VALUE;
 	};
-	
+
 	exports.cpus = function () { return [] };
-	
+
 	exports.type = function () { return 'Browser' };
-	
+
 	exports.release = function () {
 	    if (typeof navigator !== 'undefined') {
 	        return navigator.appVersion;
 	    }
 	    return '';
 	};
-	
+
 	exports.networkInterfaces
 	= exports.getNetworkInterfaces
 	= function () { return {} };
-	
+
 	exports.arch = function () { return 'javascript' };
-	
+
 	exports.platform = function () { return 'browser' };
-	
+
 	exports.tmpdir = exports.tmpDir = function () {
 	    return '/tmp';
 	};
-	
+
 	exports.EOL = '\n';
-	
+
 	},{}],66:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	if (!process.version ||
 	    process.version.indexOf('v0.') === 0 ||
 	    process.version.indexOf('v1.') === 0 && process.version.indexOf('v1.8.') !== 0) {
@@ -36263,7 +20524,7 @@ return  (function(modules) {
 	} else {
 	  module.exports = process.nextTick;
 	}
-	
+
 	function nextTick(fn, arg1, arg2, arg3) {
 	  if (typeof fn !== 'function') {
 	    throw new TypeError('"callback" argument must be a function');
@@ -36297,20 +20558,20 @@ return  (function(modules) {
 	    });
 	  }
 	}
-	
+
 	}).call(this,require('_process'))
 	},{"_process":67}],67:[function(require,module,exports){
 	
 	var process = module.exports = {};
+
 	
 	
 	
 	
-	
-	
+
 	var cachedSetTimeout;
 	var cachedClearTimeout;
-	
+
 	function defaultSetTimout() {
 	    throw new Error('setTimeout has not been defined');
 	}
@@ -36359,8 +20620,8 @@ return  (function(modules) {
 	            return cachedSetTimeout.call(this, fun, 0);
 	        }
 	    }
-	
-	
+
+
 	}
 	function runClearTimeout(marker) {
 	    if (cachedClearTimeout === clearTimeout) {
@@ -36385,15 +20646,15 @@ return  (function(modules) {
 	            return cachedClearTimeout.call(this, marker);
 	        }
 	    }
-	
-	
-	
+
+
+
 	}
 	var queue = [];
 	var draining = false;
 	var currentQueue;
 	var queueIndex = -1;
-	
+
 	function cleanUpNextTick() {
 	    if (!draining || !currentQueue) {
 	        return;
@@ -36408,14 +20669,14 @@ return  (function(modules) {
 	        drainQueue();
 	    }
 	}
-	
+
 	function drainQueue() {
 	    if (draining) {
 	        return;
 	    }
 	    var timeout = runTimeout(cleanUpNextTick);
 	    draining = true;
-	
+
 	    var len = queue.length;
 	    while(len) {
 	        currentQueue = queue;
@@ -36432,7 +20693,7 @@ return  (function(modules) {
 	    draining = false;
 	    runClearTimeout(timeout);
 	}
-	
+
 	process.nextTick = function (fun) {
 	    var args = new Array(arguments.length - 1);
 	    if (arguments.length > 1) {
@@ -36445,7 +20706,7 @@ return  (function(modules) {
 	        runTimeout(drainQueue);
 	    }
 	};
-	
+
 	
 	function Item(fun, array) {
 	    this.fun = fun;
@@ -36460,9 +20721,9 @@ return  (function(modules) {
 	process.argv = [];
 	process.version = ''; 
 	process.versions = {};
-	
+
 	function noop() {}
-	
+
 	process.on = noop;
 	process.addListener = noop;
 	process.once = noop;
@@ -36470,30 +20731,30 @@ return  (function(modules) {
 	process.removeListener = noop;
 	process.removeAllListeners = noop;
 	process.emit = noop;
-	
+
 	process.binding = function (name) {
 	    throw new Error('process.binding is not supported');
 	};
-	
+
 	process.cwd = function () { return '/' };
 	process.chdir = function (dir) {
 	    throw new Error('process.chdir is not supported');
 	};
 	process.umask = function() { return 0; };
-	
+
 	},{}],68:[function(require,module,exports){
 	module.exports = require("./lib/_stream_duplex.js")
-	
+
 	},{"./lib/_stream_duplex.js":69}],69:[function(require,module,exports){
 	
 	
 	
 	
-	
+
 	'use strict';
+
 	
-	
-	
+
 	var objectKeys = Object.keys || function (obj) {
 	  var keys = [];
 	  for (var key in obj) {
@@ -36501,60 +20762,60 @@ return  (function(modules) {
 	  }return keys;
 	};
 	
-	
+
 	module.exports = Duplex;
-	
+
 	
 	var processNextTick = require('process-nextick-args');
 	
-	
+
 	
 	var util = require('core-util-is');
 	util.inherits = require('inherits');
 	
-	
+
 	var Readable = require('./_stream_readable');
 	var Writable = require('./_stream_writable');
-	
+
 	util.inherits(Duplex, Readable);
-	
+
 	var keys = objectKeys(Writable.prototype);
 	for (var v = 0; v < keys.length; v++) {
 	  var method = keys[v];
 	  if (!Duplex.prototype[method]) Duplex.prototype[method] = Writable.prototype[method];
 	}
-	
+
 	function Duplex(options) {
 	  if (!(this instanceof Duplex)) return new Duplex(options);
-	
+
 	  Readable.call(this, options);
 	  Writable.call(this, options);
-	
+
 	  if (options && options.readable === false) this.readable = false;
-	
+
 	  if (options && options.writable === false) this.writable = false;
-	
+
 	  this.allowHalfOpen = true;
 	  if (options && options.allowHalfOpen === false) this.allowHalfOpen = false;
-	
+
 	  this.once('end', onend);
 	}
-	
+
 	
 	function onend() {
 	  
 	  
 	  if (this.allowHalfOpen || this._writableState.ended) return;
-	
+
 	  
 	  
 	  processNextTick(onEndNT, this);
 	}
-	
+
 	function onEndNT(self) {
 	  self.end();
 	}
-	
+
 	function forEach(xs, f) {
 	  for (var i = 0, l = xs.length; i < l; i++) {
 	    f(xs[i], i);
@@ -36564,53 +20825,53 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	'use strict';
-	
+
 	module.exports = PassThrough;
-	
+
 	var Transform = require('./_stream_transform');
-	
+
 	
 	var util = require('core-util-is');
 	util.inherits = require('inherits');
 	
-	
+
 	util.inherits(PassThrough, Transform);
-	
+
 	function PassThrough(options) {
 	  if (!(this instanceof PassThrough)) return new PassThrough(options);
-	
+
 	  Transform.call(this, options);
 	}
-	
+
 	PassThrough.prototype._transform = function (chunk, encoding, cb) {
 	  cb(null, chunk);
 	};
 	},{"./_stream_transform":72,"core-util-is":45,"inherits":51}],71:[function(require,module,exports){
 	(function (process){
 	'use strict';
-	
+
 	module.exports = Readable;
-	
+
 	
 	var processNextTick = require('process-nextick-args');
 	
-	
+
 	
 	var isArray = require('isarray');
 	
-	
+
 	Readable.ReadableState = ReadableState;
-	
+
 	
 	var EE = require('events').EventEmitter;
-	
+
 	var EElistenerCount = function (emitter, type) {
 	  return emitter.listeners(type).length;
 	};
 	
-	
+
 	
 	var Stream;
 	(function () {
@@ -36621,17 +20882,17 @@ return  (function(modules) {
 	  }
 	})();
 	
-	
+
 	var Buffer = require('buffer').Buffer;
 	
 	var bufferShim = require('buffer-shims');
 	
-	
+
 	
 	var util = require('core-util-is');
 	util.inherits = require('inherits');
 	
-	
+
 	
 	var debugUtil = require('util');
 	var debug = void 0;
@@ -36641,12 +20902,12 @@ return  (function(modules) {
 	  debug = function () {};
 	}
 	
-	
+
 	var BufferList = require('./internal/streams/BufferList');
 	var StringDecoder;
-	
+
 	util.inherits(Readable, Stream);
-	
+
 	function prependListener(emitter, event, fn) {
 	  if (typeof emitter.prependListener === 'function') {
 	    return emitter.prependListener(event, fn);
@@ -36658,28 +20919,28 @@ return  (function(modules) {
 	    if (!emitter._events || !emitter._events[event]) emitter.on(event, fn);else if (isArray(emitter._events[event])) emitter._events[event].unshift(fn);else emitter._events[event] = [fn, emitter._events[event]];
 	  }
 	}
-	
+
 	var Duplex;
 	function ReadableState(options, stream) {
 	  Duplex = Duplex || require('./_stream_duplex');
-	
+
 	  options = options || {};
-	
+
 	  
 	  
 	  this.objectMode = !!options.objectMode;
-	
+
 	  if (stream instanceof Duplex) this.objectMode = this.objectMode || !!options.readableObjectMode;
-	
+
 	  
 	  
 	  var hwm = options.highWaterMark;
 	  var defaultHwm = this.objectMode ? 16 : 16 * 1024;
 	  this.highWaterMark = hwm || hwm === 0 ? hwm : defaultHwm;
-	
+
 	  
 	  this.highWaterMark = ~ ~this.highWaterMark;
-	
+
 	  
 	  
 	  
@@ -36691,35 +20952,35 @@ return  (function(modules) {
 	  this.ended = false;
 	  this.endEmitted = false;
 	  this.reading = false;
-	
+
 	  
 	  
 	  
 	  
 	  this.sync = true;
-	
+
 	  
 	  
 	  this.needReadable = false;
 	  this.emittedReadable = false;
 	  this.readableListening = false;
 	  this.resumeScheduled = false;
-	
+
 	  
 	  
 	  
 	  this.defaultEncoding = options.defaultEncoding || 'utf8';
-	
+
 	  
 	  
 	  this.ranOut = false;
-	
+
 	  
 	  this.awaitDrain = 0;
-	
+
 	  
 	  this.readingMore = false;
-	
+
 	  this.decoder = null;
 	  this.encoding = null;
 	  if (options.encoding) {
@@ -36728,30 +20989,30 @@ return  (function(modules) {
 	    this.encoding = options.encoding;
 	  }
 	}
-	
+
 	var Duplex;
 	function Readable(options) {
 	  Duplex = Duplex || require('./_stream_duplex');
-	
+
 	  if (!(this instanceof Readable)) return new Readable(options);
-	
+
 	  this._readableState = new ReadableState(options, this);
-	
+
 	  
 	  this.readable = true;
-	
+
 	  if (options && typeof options.read === 'function') this._read = options.read;
-	
+
 	  Stream.call(this);
 	}
-	
+
 	
 	
 	
 	
 	Readable.prototype.push = function (chunk, encoding) {
 	  var state = this._readableState;
-	
+
 	  if (!state.objectMode && typeof chunk === 'string') {
 	    encoding = encoding || state.defaultEncoding;
 	    if (encoding !== state.encoding) {
@@ -36759,20 +21020,20 @@ return  (function(modules) {
 	      encoding = '';
 	    }
 	  }
-	
+
 	  return readableAddChunk(this, state, chunk, encoding, false);
 	};
-	
+
 	
 	Readable.prototype.unshift = function (chunk) {
 	  var state = this._readableState;
 	  return readableAddChunk(this, state, chunk, '', true);
 	};
-	
+
 	Readable.prototype.isPaused = function () {
 	  return this._readableState.flowing === false;
 	};
-	
+
 	function readableAddChunk(stream, state, chunk, encoding, addToFront) {
 	  var er = chunkInvalid(state, chunk);
 	  if (er) {
@@ -36793,9 +21054,9 @@ return  (function(modules) {
 	        chunk = state.decoder.write(chunk);
 	        skipAdd = !state.objectMode && chunk.length === 0;
 	      }
-	
+
 	      if (!addToFront) state.reading = false;
-	
+
 	      
 	      
 	      if (!skipAdd) {
@@ -36807,20 +21068,20 @@ return  (function(modules) {
 	          
 	          state.length += state.objectMode ? 1 : chunk.length;
 	          if (addToFront) state.buffer.unshift(chunk);else state.buffer.push(chunk);
-	
+
 	          if (state.needReadable) emitReadable(stream);
 	        }
 	      }
-	
+
 	      maybeReadMore(stream, state);
 	    }
 	  } else if (!addToFront) {
 	    state.reading = false;
 	  }
-	
+
 	  return needMoreData(state);
 	}
-	
+
 	
 	
 	
@@ -36831,7 +21092,7 @@ return  (function(modules) {
 	function needMoreData(state) {
 	  return !state.ended && (state.needReadable || state.length < state.highWaterMark || state.length === 0);
 	}
-	
+
 	
 	Readable.prototype.setEncoding = function (enc) {
 	  if (!StringDecoder) StringDecoder = require('string_decoder/').StringDecoder;
@@ -36839,7 +21100,7 @@ return  (function(modules) {
 	  this._readableState.encoding = enc;
 	  return this;
 	};
-	
+
 	
 	var MAX_HWM = 0x800000;
 	function computeNewHighWaterMark(n) {
@@ -36858,7 +21119,7 @@ return  (function(modules) {
 	  }
 	  return n;
 	}
-	
+
 	
 	
 	function howMuchToRead(n, state) {
@@ -36878,16 +21139,16 @@ return  (function(modules) {
 	  }
 	  return state.length;
 	}
-	
+
 	
 	Readable.prototype.read = function (n) {
 	  debug('read', n);
 	  n = parseInt(n, 10);
 	  var state = this._readableState;
 	  var nOrig = n;
-	
+
 	  if (n !== 0) state.emittedReadable = false;
-	
+
 	  
 	  
 	  
@@ -36896,15 +21157,15 @@ return  (function(modules) {
 	    if (state.length === 0 && state.ended) endReadable(this);else emitReadable(this);
 	    return null;
 	  }
-	
+
 	  n = howMuchToRead(n, state);
-	
+
 	  
 	  if (n === 0 && state.ended) {
 	    if (state.length === 0) endReadable(this);
 	    return null;
 	  }
-	
+
 	  
 	  
 	  
@@ -36926,17 +21187,17 @@ return  (function(modules) {
 	  
 	  
 	  
-	
+
 	  
 	  var doRead = state.needReadable;
 	  debug('need readable', doRead);
-	
+
 	  
 	  if (state.length === 0 || state.length - n < state.highWaterMark) {
 	    doRead = true;
 	    debug('length less than watermark', doRead);
 	  }
-	
+
 	  
 	  
 	  if (state.ended || state.reading) {
@@ -36955,31 +21216,31 @@ return  (function(modules) {
 	    
 	    if (!state.reading) n = howMuchToRead(nOrig, state);
 	  }
-	
+
 	  var ret;
 	  if (n > 0) ret = fromList(n, state);else ret = null;
-	
+
 	  if (ret === null) {
 	    state.needReadable = true;
 	    n = 0;
 	  } else {
 	    state.length -= n;
 	  }
-	
+
 	  if (state.length === 0) {
 	    
 	    
 	    if (!state.ended) state.needReadable = true;
-	
+
 	    
 	    if (nOrig !== n && state.ended) endReadable(this);
 	  }
-	
+
 	  if (ret !== null) this.emit('data', ret);
-	
+
 	  return ret;
 	};
-	
+
 	function chunkInvalid(state, chunk) {
 	  var er = null;
 	  if (!Buffer.isBuffer(chunk) && typeof chunk !== 'string' && chunk !== null && chunk !== undefined && !state.objectMode) {
@@ -36987,7 +21248,7 @@ return  (function(modules) {
 	  }
 	  return er;
 	}
-	
+
 	function onEofChunk(stream, state) {
 	  if (state.ended) return;
 	  if (state.decoder) {
@@ -36998,11 +21259,11 @@ return  (function(modules) {
 	    }
 	  }
 	  state.ended = true;
-	
+
 	  
 	  emitReadable(stream);
 	}
-	
+
 	
 	
 	
@@ -37015,13 +21276,13 @@ return  (function(modules) {
 	    if (state.sync) processNextTick(emitReadable_, stream);else emitReadable_(stream);
 	  }
 	}
-	
+
 	function emitReadable_(stream) {
 	  debug('emit readable');
 	  stream.emit('readable');
 	  flow(stream);
 	}
-	
+
 	
 	
 	
@@ -37034,7 +21295,7 @@ return  (function(modules) {
 	    processNextTick(maybeReadMore_, stream, state);
 	  }
 	}
-	
+
 	function maybeReadMore_(stream, state) {
 	  var len = state.length;
 	  while (!state.reading && !state.flowing && !state.ended && state.length < state.highWaterMark) {
@@ -37046,7 +21307,7 @@ return  (function(modules) {
 	  }
 	  state.readingMore = false;
 	}
-	
+
 	
 	
 	
@@ -37054,11 +21315,11 @@ return  (function(modules) {
 	Readable.prototype._read = function (n) {
 	  this.emit('error', new Error('not implemented'));
 	};
-	
+
 	Readable.prototype.pipe = function (dest, pipeOpts) {
 	  var src = this;
 	  var state = this._readableState;
-	
+
 	  switch (state.pipesCount) {
 	    case 0:
 	      state.pipes = dest;
@@ -37072,12 +21333,12 @@ return  (function(modules) {
 	  }
 	  state.pipesCount += 1;
 	  debug('pipe count=%d opts=%j', state.pipesCount, pipeOpts);
-	
+
 	  var doEnd = (!pipeOpts || pipeOpts.end !== false) && dest !== process.stdout && dest !== process.stderr;
-	
+
 	  var endFn = doEnd ? onend : cleanup;
 	  if (state.endEmitted) processNextTick(endFn);else src.once('end', endFn);
-	
+
 	  dest.on('unpipe', onunpipe);
 	  function onunpipe(readable) {
 	    debug('onunpipe');
@@ -37085,19 +21346,19 @@ return  (function(modules) {
 	      cleanup();
 	    }
 	  }
-	
+
 	  function onend() {
 	    debug('onend');
 	    dest.end();
 	  }
-	
+
 	  
 	  
 	  
 	  
 	  var ondrain = pipeOnDrain(src);
 	  dest.on('drain', ondrain);
-	
+
 	  var cleanedUp = false;
 	  function cleanup() {
 	    debug('cleanup');
@@ -37110,9 +21371,9 @@ return  (function(modules) {
 	    src.removeListener('end', onend);
 	    src.removeListener('end', cleanup);
 	    src.removeListener('data', ondata);
-	
+
 	    cleanedUp = true;
-	
+
 	    
 	    
 	    
@@ -37120,7 +21381,7 @@ return  (function(modules) {
 	    
 	    if (state.awaitDrain && (!dest._writableState || dest._writableState.needDrain)) ondrain();
 	  }
-	
+
 	  
 	  
 	  
@@ -37144,7 +21405,7 @@ return  (function(modules) {
 	      src.pause();
 	    }
 	  }
-	
+
 	  
 	  
 	  function onerror(er) {
@@ -37153,10 +21414,10 @@ return  (function(modules) {
 	    dest.removeListener('error', onerror);
 	    if (EElistenerCount(dest, 'error') === 0) dest.emit('error', er);
 	  }
-	
+
 	  
 	  prependListener(dest, 'error', onerror);
-	
+
 	  
 	  function onclose() {
 	    dest.removeListener('finish', onfinish);
@@ -37169,24 +21430,24 @@ return  (function(modules) {
 	    unpipe();
 	  }
 	  dest.once('finish', onfinish);
-	
+
 	  function unpipe() {
 	    debug('unpipe');
 	    src.unpipe(dest);
 	  }
-	
+
 	  
 	  dest.emit('pipe', src);
-	
+
 	  
 	  if (!state.flowing) {
 	    debug('pipe resume');
 	    src.resume();
 	  }
-	
+
 	  return dest;
 	};
-	
+
 	function pipeOnDrain(src) {
 	  return function () {
 	    var state = src._readableState;
@@ -37198,20 +21459,20 @@ return  (function(modules) {
 	    }
 	  };
 	}
-	
+
 	Readable.prototype.unpipe = function (dest) {
 	  var state = this._readableState;
-	
+
 	  
 	  if (state.pipesCount === 0) return this;
-	
+
 	  
 	  if (state.pipesCount === 1) {
 	    
 	    if (dest && dest !== state.pipes) return this;
-	
+
 	    if (!dest) dest = state.pipes;
-	
+
 	    
 	    state.pipes = null;
 	    state.pipesCount = 0;
@@ -37219,9 +21480,9 @@ return  (function(modules) {
 	    if (dest) dest.emit('unpipe', this);
 	    return this;
 	  }
-	
+
 	  
-	
+
 	  if (!dest) {
 	    
 	    var dests = state.pipes;
@@ -37229,30 +21490,30 @@ return  (function(modules) {
 	    state.pipes = null;
 	    state.pipesCount = 0;
 	    state.flowing = false;
-	
+
 	    for (var _i = 0; _i < len; _i++) {
 	      dests[_i].emit('unpipe', this);
 	    }return this;
 	  }
-	
+
 	  
 	  var i = indexOf(state.pipes, dest);
 	  if (i === -1) return this;
-	
+
 	  state.pipes.splice(i, 1);
 	  state.pipesCount -= 1;
 	  if (state.pipesCount === 1) state.pipes = state.pipes[0];
-	
+
 	  dest.emit('unpipe', this);
-	
+
 	  return this;
 	};
-	
+
 	
 	
 	Readable.prototype.on = function (ev, fn) {
 	  var res = Stream.prototype.on.call(this, ev, fn);
-	
+
 	  if (ev === 'data') {
 	    
 	    if (this._readableState.flowing !== false) this.resume();
@@ -37268,16 +21529,16 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  return res;
 	};
 	Readable.prototype.addListener = Readable.prototype.on;
-	
+
 	function nReadingNextTick(self) {
 	  debug('readable nexttick read 0');
 	  self.read(0);
 	}
-	
+
 	
 	
 	Readable.prototype.resume = function () {
@@ -37289,27 +21550,27 @@ return  (function(modules) {
 	  }
 	  return this;
 	};
-	
+
 	function resume(stream, state) {
 	  if (!state.resumeScheduled) {
 	    state.resumeScheduled = true;
 	    processNextTick(resume_, stream, state);
 	  }
 	}
-	
+
 	function resume_(stream, state) {
 	  if (!state.reading) {
 	    debug('resume read 0');
 	    stream.read(0);
 	  }
-	
+
 	  state.resumeScheduled = false;
 	  state.awaitDrain = 0;
 	  stream.emit('resume');
 	  flow(stream);
 	  if (state.flowing && !state.reading) stream.read(0);
 	}
-	
+
 	Readable.prototype.pause = function () {
 	  debug('call pause flowing=%j', this._readableState.flowing);
 	  if (false !== this._readableState.flowing) {
@@ -37319,20 +21580,20 @@ return  (function(modules) {
 	  }
 	  return this;
 	};
-	
+
 	function flow(stream) {
 	  var state = stream._readableState;
 	  debug('flow', state.flowing);
 	  while (state.flowing && stream.read() !== null) {}
 	}
-	
+
 	
 	
 	
 	Readable.prototype.wrap = function (stream) {
 	  var state = this._readableState;
 	  var paused = false;
-	
+
 	  var self = this;
 	  stream.on('end', function () {
 	    debug('wrapped end');
@@ -37340,24 +21601,24 @@ return  (function(modules) {
 	      var chunk = state.decoder.end();
 	      if (chunk && chunk.length) self.push(chunk);
 	    }
-	
+
 	    self.push(null);
 	  });
-	
+
 	  stream.on('data', function (chunk) {
 	    debug('wrapped data');
 	    if (state.decoder) chunk = state.decoder.write(chunk);
-	
+
 	    
 	    if (state.objectMode && (chunk === null || chunk === undefined)) return;else if (!state.objectMode && (!chunk || !chunk.length)) return;
-	
+
 	    var ret = self.push(chunk);
 	    if (!ret) {
 	      paused = true;
 	      stream.pause();
 	    }
 	  });
-	
+
 	  
 	  
 	  for (var i in stream) {
@@ -37369,13 +21630,13 @@ return  (function(modules) {
 	      }(i);
 	    }
 	  }
-	
+
 	  
 	  var events = ['error', 'close', 'destroy', 'pause', 'resume'];
 	  forEach(events, function (ev) {
 	    stream.on(ev, self.emit.bind(self, ev));
 	  });
-	
+
 	  
 	  
 	  self._read = function (n) {
@@ -37385,13 +21646,13 @@ return  (function(modules) {
 	      stream.resume();
 	    }
 	  };
-	
+
 	  return self;
 	};
-	
+
 	
 	Readable._fromList = fromList;
-	
+
 	
 	
 	
@@ -37399,7 +21660,7 @@ return  (function(modules) {
 	function fromList(n, state) {
 	  
 	  if (state.length === 0) return null;
-	
+
 	  var ret;
 	  if (state.objectMode) ret = state.buffer.shift();else if (!n || n >= state.length) {
 	    
@@ -37409,10 +21670,10 @@ return  (function(modules) {
 	    
 	    ret = fromListPartial(n, state.buffer, state.decoder);
 	  }
-	
+
 	  return ret;
 	}
-	
+
 	
 	
 	
@@ -37431,7 +21692,7 @@ return  (function(modules) {
 	  }
 	  return ret;
 	}
-	
+
 	
 	
 	
@@ -37461,7 +21722,7 @@ return  (function(modules) {
 	  list.length -= c;
 	  return ret;
 	}
-	
+
 	
 	
 	
@@ -37491,20 +21752,20 @@ return  (function(modules) {
 	  list.length -= c;
 	  return ret;
 	}
-	
+
 	function endReadable(stream) {
 	  var state = stream._readableState;
-	
+
 	  
 	  
 	  if (state.length > 0) throw new Error('"endReadable()" called on non-empty stream');
-	
+
 	  if (!state.endEmitted) {
 	    state.ended = true;
 	    processNextTick(endReadableNT, state, stream);
 	  }
 	}
-	
+
 	function endReadableNT(state, stream) {
 	  
 	  if (!state.endEmitted && state.length === 0) {
@@ -37513,13 +21774,13 @@ return  (function(modules) {
 	    stream.emit('end');
 	  }
 	}
-	
+
 	function forEach(xs, f) {
 	  for (var i = 0, l = xs.length; i < l; i++) {
 	    f(xs[i], i);
 	  }
 	}
-	
+
 	function indexOf(xs, x) {
 	  for (var i = 0, l = xs.length; i < l; i++) {
 	    if (xs[i] === x) return i;
@@ -37569,90 +21830,90 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	'use strict';
-	
+
 	module.exports = Transform;
-	
+
 	var Duplex = require('./_stream_duplex');
-	
+
 	
 	var util = require('core-util-is');
 	util.inherits = require('inherits');
 	
-	
+
 	util.inherits(Transform, Duplex);
-	
+
 	function TransformState(stream) {
 	  this.afterTransform = function (er, data) {
 	    return afterTransform(stream, er, data);
 	  };
-	
+
 	  this.needTransform = false;
 	  this.transforming = false;
 	  this.writecb = null;
 	  this.writechunk = null;
 	  this.writeencoding = null;
 	}
-	
+
 	function afterTransform(stream, er, data) {
 	  var ts = stream._transformState;
 	  ts.transforming = false;
-	
+
 	  var cb = ts.writecb;
-	
+
 	  if (!cb) return stream.emit('error', new Error('no writecb in Transform class'));
-	
+
 	  ts.writechunk = null;
 	  ts.writecb = null;
-	
+
 	  if (data !== null && data !== undefined) stream.push(data);
-	
+
 	  cb(er);
-	
+
 	  var rs = stream._readableState;
 	  rs.reading = false;
 	  if (rs.needReadable || rs.length < rs.highWaterMark) {
 	    stream._read(rs.highWaterMark);
 	  }
 	}
-	
+
 	function Transform(options) {
 	  if (!(this instanceof Transform)) return new Transform(options);
-	
+
 	  Duplex.call(this, options);
-	
+
 	  this._transformState = new TransformState(this);
-	
+
 	  
 	  var stream = this;
-	
+
 	  
 	  this._readableState.needReadable = true;
-	
+
 	  
 	  
 	  
 	  this._readableState.sync = false;
-	
+
 	  if (options) {
 	    if (typeof options.transform === 'function') this._transform = options.transform;
-	
+
 	    if (typeof options.flush === 'function') this._flush = options.flush;
 	  }
-	
+
 	  this.once('prefinish', function () {
 	    if (typeof this._flush === 'function') this._flush(function (er) {
 	      done(stream, er);
 	    });else done(stream);
 	  });
 	}
-	
+
 	Transform.prototype.push = function (chunk, encoding) {
 	  this._transformState.needTransform = false;
 	  return Duplex.prototype.push.call(this, chunk, encoding);
 	};
-	
+
 	
 	
 	
@@ -37666,7 +21927,7 @@ return  (function(modules) {
 	Transform.prototype._transform = function (chunk, encoding, cb) {
 	  throw new Error('Not implemented');
 	};
-	
+
 	Transform.prototype._write = function (chunk, encoding, cb) {
 	  var ts = this._transformState;
 	  ts.writecb = cb;
@@ -37677,13 +21938,13 @@ return  (function(modules) {
 	    if (ts.needTransform || rs.needReadable || rs.length < rs.highWaterMark) this._read(rs.highWaterMark);
 	  }
 	};
-	
+
 	
 	
 	
 	Transform.prototype._read = function (n) {
 	  var ts = this._transformState;
-	
+
 	  if (ts.writechunk !== null && ts.writecb && !ts.transforming) {
 	    ts.transforming = true;
 	    this._transform(ts.writechunk, ts.writeencoding, ts.afterTransform);
@@ -37693,19 +21954,19 @@ return  (function(modules) {
 	    ts.needTransform = true;
 	  }
 	};
-	
+
 	function done(stream, er) {
 	  if (er) return stream.emit('error', er);
-	
+
 	  
 	  
 	  var ws = stream._writableState;
 	  var ts = stream._transformState;
-	
+
 	  if (ws.length) throw new Error('Calling transform done when ws.length != 0');
-	
+
 	  if (ts.transforming) throw new Error('Calling transform done when still transforming');
-	
+
 	  return stream.push(null);
 	}
 	},{"./_stream_duplex":69,"core-util-is":45,"inherits":51}],73:[function(require,module,exports){
@@ -37713,32 +21974,32 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	'use strict';
-	
+
 	module.exports = Writable;
-	
+
 	
 	var processNextTick = require('process-nextick-args');
 	
-	
+
 	
 	var asyncWrite = !process.browser && ['v0.10', 'v0.9.'].indexOf(process.version.slice(0, 5)) > -1 ? setImmediate : processNextTick;
 	
-	
+
 	Writable.WritableState = WritableState;
-	
+
 	
 	var util = require('core-util-is');
 	util.inherits = require('inherits');
 	
-	
+
 	
 	var internalUtil = {
 	  deprecate: require('util-deprecate')
 	};
 	
-	
+
 	
 	var Stream;
 	(function () {
@@ -37749,45 +22010,45 @@ return  (function(modules) {
 	  }
 	})();
 	
-	
+
 	var Buffer = require('buffer').Buffer;
 	
 	var bufferShim = require('buffer-shims');
 	
-	
+
 	util.inherits(Writable, Stream);
-	
+
 	function nop() {}
-	
+
 	function WriteReq(chunk, encoding, cb) {
 	  this.chunk = chunk;
 	  this.encoding = encoding;
 	  this.callback = cb;
 	  this.next = null;
 	}
-	
+
 	var Duplex;
 	function WritableState(options, stream) {
 	  Duplex = Duplex || require('./_stream_duplex');
-	
+
 	  options = options || {};
-	
+
 	  
 	  
 	  this.objectMode = !!options.objectMode;
-	
+
 	  if (stream instanceof Duplex) this.objectMode = this.objectMode || !!options.writableObjectMode;
-	
+
 	  
 	  
 	  
 	  var hwm = options.highWaterMark;
 	  var defaultHwm = this.objectMode ? 16 : 16 * 1024;
 	  this.highWaterMark = hwm || hwm === 0 ? hwm : defaultHwm;
-	
+
 	  
 	  this.highWaterMark = ~ ~this.highWaterMark;
-	
+
 	  this.needDrain = false;
 	  
 	  this.ending = false;
@@ -37795,73 +22056,73 @@ return  (function(modules) {
 	  this.ended = false;
 	  
 	  this.finished = false;
-	
+
 	  
 	  
 	  
 	  var noDecode = options.decodeStrings === false;
 	  this.decodeStrings = !noDecode;
-	
+
 	  
 	  
 	  
 	  this.defaultEncoding = options.defaultEncoding || 'utf8';
-	
+
 	  
 	  
 	  
 	  this.length = 0;
-	
+
 	  
 	  this.writing = false;
-	
+
 	  
 	  this.corked = 0;
-	
+
 	  
 	  
 	  
 	  
 	  this.sync = true;
-	
+
 	  
 	  
 	  
 	  this.bufferProcessing = false;
-	
+
 	  
 	  this.onwrite = function (er) {
 	    onwrite(stream, er);
 	  };
-	
+
 	  
 	  this.writecb = null;
-	
+
 	  
 	  this.writelen = 0;
-	
+
 	  this.bufferedRequest = null;
 	  this.lastBufferedRequest = null;
-	
+
 	  
 	  
 	  this.pendingcb = 0;
-	
+
 	  
 	  
 	  this.prefinished = false;
-	
+
 	  
 	  this.errorEmitted = false;
-	
+
 	  
 	  this.bufferedRequestCount = 0;
-	
+
 	  
 	  
 	  this.corkedRequestsFree = new CorkedRequest(this);
 	}
-	
+
 	WritableState.prototype.getBuffer = function writableStateGetBuffer() {
 	  var current = this.bufferedRequest;
 	  var out = [];
@@ -37871,7 +22132,7 @@ return  (function(modules) {
 	  }
 	  return out;
 	};
-	
+
 	(function () {
 	  try {
 	    Object.defineProperty(WritableState.prototype, 'buffer', {
@@ -37881,41 +22142,41 @@ return  (function(modules) {
 	    });
 	  } catch (_) {}
 	})();
-	
+
 	var Duplex;
 	function Writable(options) {
 	  Duplex = Duplex || require('./_stream_duplex');
-	
+
 	  
 	  
 	  if (!(this instanceof Writable) && !(this instanceof Duplex)) return new Writable(options);
-	
+
 	  this._writableState = new WritableState(options, this);
-	
+
 	  
 	  this.writable = true;
-	
+
 	  if (options) {
 	    if (typeof options.write === 'function') this._write = options.write;
-	
+
 	    if (typeof options.writev === 'function') this._writev = options.writev;
 	  }
-	
+
 	  Stream.call(this);
 	}
-	
+
 	
 	Writable.prototype.pipe = function () {
 	  this.emit('error', new Error('Cannot pipe, not readable'));
 	};
-	
+
 	function writeAfterEnd(stream, cb) {
 	  var er = new Error('write after end');
 	  
 	  stream.emit('error', er);
 	  processNextTick(cb, er);
 	}
-	
+
 	
 	
 	
@@ -37939,44 +22200,44 @@ return  (function(modules) {
 	  }
 	  return valid;
 	}
-	
+
 	Writable.prototype.write = function (chunk, encoding, cb) {
 	  var state = this._writableState;
 	  var ret = false;
-	
+
 	  if (typeof encoding === 'function') {
 	    cb = encoding;
 	    encoding = null;
 	  }
-	
+
 	  if (Buffer.isBuffer(chunk)) encoding = 'buffer';else if (!encoding) encoding = state.defaultEncoding;
-	
+
 	  if (typeof cb !== 'function') cb = nop;
-	
+
 	  if (state.ended) writeAfterEnd(this, cb);else if (validChunk(this, state, chunk, cb)) {
 	    state.pendingcb++;
 	    ret = writeOrBuffer(this, state, chunk, encoding, cb);
 	  }
-	
+
 	  return ret;
 	};
-	
+
 	Writable.prototype.cork = function () {
 	  var state = this._writableState;
-	
+
 	  state.corked++;
 	};
-	
+
 	Writable.prototype.uncork = function () {
 	  var state = this._writableState;
-	
+
 	  if (state.corked) {
 	    state.corked--;
-	
+
 	    if (!state.writing && !state.corked && !state.finished && !state.bufferProcessing && state.bufferedRequest) clearBuffer(this, state);
 	  }
 	};
-	
+
 	Writable.prototype.setDefaultEncoding = function setDefaultEncoding(encoding) {
 	  
 	  if (typeof encoding === 'string') encoding = encoding.toLowerCase();
@@ -37984,29 +22245,29 @@ return  (function(modules) {
 	  this._writableState.defaultEncoding = encoding;
 	  return this;
 	};
-	
+
 	function decodeChunk(state, chunk, encoding) {
 	  if (!state.objectMode && state.decodeStrings !== false && typeof chunk === 'string') {
 	    chunk = bufferShim.from(chunk, encoding);
 	  }
 	  return chunk;
 	}
-	
+
 	
 	
 	
 	function writeOrBuffer(stream, state, chunk, encoding, cb) {
 	  chunk = decodeChunk(state, chunk, encoding);
-	
+
 	  if (Buffer.isBuffer(chunk)) encoding = 'buffer';
 	  var len = state.objectMode ? 1 : chunk.length;
-	
+
 	  state.length += len;
-	
+
 	  var ret = state.length < state.highWaterMark;
 	  
 	  if (!ret) state.needDrain = true;
-	
+
 	  if (state.writing || state.corked) {
 	    var last = state.lastBufferedRequest;
 	    state.lastBufferedRequest = new WriteReq(chunk, encoding, cb);
@@ -38019,10 +22280,10 @@ return  (function(modules) {
 	  } else {
 	    doWrite(stream, state, false, len, chunk, encoding, cb);
 	  }
-	
+
 	  return ret;
 	}
-	
+
 	function doWrite(stream, state, writev, len, chunk, encoding, cb) {
 	  state.writelen = len;
 	  state.writecb = cb;
@@ -38031,37 +22292,37 @@ return  (function(modules) {
 	  if (writev) stream._writev(chunk, state.onwrite);else stream._write(chunk, encoding, state.onwrite);
 	  state.sync = false;
 	}
-	
+
 	function onwriteError(stream, state, sync, er, cb) {
 	  --state.pendingcb;
 	  if (sync) processNextTick(cb, er);else cb(er);
-	
+
 	  stream._writableState.errorEmitted = true;
 	  stream.emit('error', er);
 	}
-	
+
 	function onwriteStateUpdate(state) {
 	  state.writing = false;
 	  state.writecb = null;
 	  state.length -= state.writelen;
 	  state.writelen = 0;
 	}
-	
+
 	function onwrite(stream, er) {
 	  var state = stream._writableState;
 	  var sync = state.sync;
 	  var cb = state.writecb;
-	
+
 	  onwriteStateUpdate(state);
-	
+
 	  if (er) onwriteError(stream, state, sync, er, cb);else {
 	    
 	    var finished = needFinish(state);
-	
+
 	    if (!finished && !state.corked && !state.bufferProcessing && state.bufferedRequest) {
 	      clearBuffer(stream, state);
 	    }
-	
+
 	    if (sync) {
 	      
 	      asyncWrite(afterWrite, stream, state, finished, cb);
@@ -38071,14 +22332,14 @@ return  (function(modules) {
 	      }
 	  }
 	}
-	
+
 	function afterWrite(stream, state, finished, cb) {
 	  if (!finished) onwriteDrain(stream, state);
 	  state.pendingcb--;
 	  cb();
 	  finishMaybe(stream, state);
 	}
-	
+
 	
 	
 	
@@ -38088,28 +22349,28 @@ return  (function(modules) {
 	    stream.emit('drain');
 	  }
 	}
-	
+
 	
 	function clearBuffer(stream, state) {
 	  state.bufferProcessing = true;
 	  var entry = state.bufferedRequest;
-	
+
 	  if (stream._writev && entry && entry.next) {
 	    
 	    var l = state.bufferedRequestCount;
 	    var buffer = new Array(l);
 	    var holder = state.corkedRequestsFree;
 	    holder.entry = entry;
-	
+
 	    var count = 0;
 	    while (entry) {
 	      buffer[count] = entry;
 	      entry = entry.next;
 	      count += 1;
 	    }
-	
+
 	    doWrite(stream, state, true, state.length, buffer, '', holder.finish);
-	
+
 	    
 	    
 	    state.pendingcb++;
@@ -38127,7 +22388,7 @@ return  (function(modules) {
 	      var encoding = entry.encoding;
 	      var cb = entry.callback;
 	      var len = state.objectMode ? 1 : chunk.length;
-	
+
 	      doWrite(stream, state, false, len, chunk, encoding, cb);
 	      entry = entry.next;
 	      
@@ -38138,24 +22399,24 @@ return  (function(modules) {
 	        break;
 	      }
 	    }
-	
+
 	    if (entry === null) state.lastBufferedRequest = null;
 	  }
-	
+
 	  state.bufferedRequestCount = 0;
 	  state.bufferedRequest = entry;
 	  state.bufferProcessing = false;
 	}
-	
+
 	Writable.prototype._write = function (chunk, encoding, cb) {
 	  cb(new Error('not implemented'));
 	};
-	
+
 	Writable.prototype._writev = null;
-	
+
 	Writable.prototype.end = function (chunk, encoding, cb) {
 	  var state = this._writableState;
-	
+
 	  if (typeof chunk === 'function') {
 	    cb = chunk;
 	    chunk = null;
@@ -38164,30 +22425,30 @@ return  (function(modules) {
 	    cb = encoding;
 	    encoding = null;
 	  }
-	
+
 	  if (chunk !== null && chunk !== undefined) this.write(chunk, encoding);
-	
+
 	  
 	  if (state.corked) {
 	    state.corked = 1;
 	    this.uncork();
 	  }
-	
+
 	  
 	  if (!state.ending && !state.finished) endWritable(this, state, cb);
 	};
-	
+
 	function needFinish(state) {
 	  return state.ending && state.length === 0 && state.bufferedRequest === null && !state.finished && !state.writing;
 	}
-	
+
 	function prefinish(stream, state) {
 	  if (!state.prefinished) {
 	    state.prefinished = true;
 	    stream.emit('prefinish');
 	  }
 	}
-	
+
 	function finishMaybe(stream, state) {
 	  var need = needFinish(state);
 	  if (need) {
@@ -38201,7 +22462,7 @@ return  (function(modules) {
 	  }
 	  return need;
 	}
-	
+
 	function endWritable(stream, state, cb) {
 	  state.ending = true;
 	  finishMaybe(stream, state);
@@ -38211,15 +22472,15 @@ return  (function(modules) {
 	  state.ended = true;
 	  stream.writable = false;
 	}
-	
+
 	
 	
 	function CorkedRequest(state) {
 	  var _this = this;
-	
+
 	  this.next = null;
 	  this.entry = null;
-	
+
 	  this.finish = function (err) {
 	    var entry = _this.entry;
 	    _this.entry = null;
@@ -38239,34 +22500,34 @@ return  (function(modules) {
 	}).call(this,require('_process'))
 	},{"./_stream_duplex":69,"_process":67,"buffer":44,"buffer-shims":43,"core-util-is":45,"events":48,"inherits":51,"process-nextick-args":66,"util-deprecate":81}],74:[function(require,module,exports){
 	'use strict';
-	
+
 	var Buffer = require('buffer').Buffer;
 	
 	var bufferShim = require('buffer-shims');
 	
-	
+
 	module.exports = BufferList;
-	
+
 	function BufferList() {
 	  this.head = null;
 	  this.tail = null;
 	  this.length = 0;
 	}
-	
+
 	BufferList.prototype.push = function (v) {
 	  var entry = { data: v, next: null };
 	  if (this.length > 0) this.tail.next = entry;else this.head = entry;
 	  this.tail = entry;
 	  ++this.length;
 	};
-	
+
 	BufferList.prototype.unshift = function (v) {
 	  var entry = { data: v, next: this.head };
 	  if (this.length === 0) this.tail = entry;
 	  this.head = entry;
 	  ++this.length;
 	};
-	
+
 	BufferList.prototype.shift = function () {
 	  if (this.length === 0) return;
 	  var ret = this.head.data;
@@ -38274,12 +22535,12 @@ return  (function(modules) {
 	  --this.length;
 	  return ret;
 	};
-	
+
 	BufferList.prototype.clear = function () {
 	  this.head = this.tail = null;
 	  this.length = 0;
 	};
-	
+
 	BufferList.prototype.join = function (s) {
 	  if (this.length === 0) return '';
 	  var p = this.head;
@@ -38288,7 +22549,7 @@ return  (function(modules) {
 	    ret += s + p.data;
 	  }return ret;
 	};
-	
+
 	BufferList.prototype.concat = function (n) {
 	  if (this.length === 0) return bufferShim.alloc(0);
 	  if (this.length === 1) return this.head.data;
@@ -38304,7 +22565,7 @@ return  (function(modules) {
 	};
 	},{"buffer":44,"buffer-shims":43}],75:[function(require,module,exports){
 	module.exports = require("./lib/_stream_passthrough.js")
-	
+
 	},{"./lib/_stream_passthrough.js":70}],76:[function(require,module,exports){
 	(function (process){
 	var Stream = (function (){
@@ -38319,18 +22580,18 @@ return  (function(modules) {
 	exports.Duplex = require('./lib/_stream_duplex.js');
 	exports.Transform = require('./lib/_stream_transform.js');
 	exports.PassThrough = require('./lib/_stream_passthrough.js');
-	
+
 	if (!process.browser && process.env.READABLE_STREAM === 'disable' && Stream) {
 	  module.exports = Stream;
 	}
-	
+
 	}).call(this,require('_process'))
 	},{"./lib/_stream_duplex.js":69,"./lib/_stream_passthrough.js":70,"./lib/_stream_readable.js":71,"./lib/_stream_transform.js":72,"./lib/_stream_writable.js":73,"_process":67}],77:[function(require,module,exports){
 	module.exports = require("./lib/_stream_transform.js")
-	
+
 	},{"./lib/_stream_transform.js":72}],78:[function(require,module,exports){
 	module.exports = require("./lib/_stream_writable.js")
-	
+
 	},{"./lib/_stream_writable.js":73}],79:[function(require,module,exports){
 	
 	
@@ -38352,34 +22613,34 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	module.exports = Stream;
-	
+
 	var EE = require('events').EventEmitter;
 	var inherits = require('inherits');
-	
+
 	inherits(Stream, EE);
 	Stream.Readable = require('readable-stream/readable.js');
 	Stream.Writable = require('readable-stream/writable.js');
 	Stream.Duplex = require('readable-stream/duplex.js');
 	Stream.Transform = require('readable-stream/transform.js');
 	Stream.PassThrough = require('readable-stream/passthrough.js');
-	
+
 	
 	Stream.Stream = Stream;
+
+
+
 	
 	
-	
-	
-	
-	
+
 	function Stream() {
 	  EE.call(this);
 	}
-	
+
 	Stream.prototype.pipe = function(dest, options) {
 	  var source = this;
-	
+
 	  function ondata(chunk) {
 	    if (dest.writable) {
 	      if (false === dest.write(chunk) && source.pause) {
@@ -38387,40 +22648,40 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  source.on('data', ondata);
-	
+
 	  function ondrain() {
 	    if (source.readable && source.resume) {
 	      source.resume();
 	    }
 	  }
-	
+
 	  dest.on('drain', ondrain);
-	
+
 	  
 	  
 	  if (!dest._isStdio && (!options || options.end !== false)) {
 	    source.on('end', onend);
 	    source.on('close', onclose);
 	  }
-	
+
 	  var didOnEnd = false;
 	  function onend() {
 	    if (didOnEnd) return;
 	    didOnEnd = true;
-	
+
 	    dest.end();
 	  }
-	
-	
+
+
 	  function onclose() {
 	    if (didOnEnd) return;
 	    didOnEnd = true;
-	
+
 	    if (typeof dest.destroy === 'function') dest.destroy();
 	  }
-	
+
 	  
 	  function onerror(er) {
 	    cleanup();
@@ -38428,38 +22689,38 @@ return  (function(modules) {
 	      throw er; 
 	    }
 	  }
-	
+
 	  source.on('error', onerror);
 	  dest.on('error', onerror);
-	
+
 	  
 	  function cleanup() {
 	    source.removeListener('data', ondata);
 	    dest.removeListener('drain', ondrain);
-	
+
 	    source.removeListener('end', onend);
 	    source.removeListener('close', onclose);
-	
+
 	    source.removeListener('error', onerror);
 	    dest.removeListener('error', onerror);
-	
+
 	    source.removeListener('end', cleanup);
 	    source.removeListener('close', cleanup);
-	
+
 	    dest.removeListener('close', cleanup);
 	  }
-	
+
 	  source.on('end', cleanup);
 	  source.on('close', cleanup);
-	
+
 	  dest.on('close', cleanup);
-	
+
 	  dest.emit('pipe', source);
-	
+
 	  
 	  return dest;
 	};
-	
+
 	},{"events":48,"inherits":51,"readable-stream/duplex.js":68,"readable-stream/passthrough.js":75,"readable-stream/readable.js":76,"readable-stream/transform.js":77,"readable-stream/writable.js":78}],80:[function(require,module,exports){
 	
 	
@@ -38481,9 +22742,9 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	var Buffer = require('buffer').Buffer;
-	
+
 	var isBufferEncoding = Buffer.isEncoding
 	  || function(encoding) {
 	       switch (encoding && encoding.toLowerCase()) {
@@ -38491,14 +22752,14 @@ return  (function(modules) {
 	         default: return false;
 	       }
 	     }
-	
-	
+
+
 	function assertEncoding(encoding) {
 	  if (encoding && !isBufferEncoding(encoding)) {
 	    throw new Error('Unknown encoding: ' + encoding);
 	  }
 	}
-	
+
 	
 	
 	
@@ -38530,7 +22791,7 @@ return  (function(modules) {
 	      this.write = passThroughWrite;
 	      return;
 	  }
-	
+
 	  
 	  
 	  this.charBuffer = new Buffer(6);
@@ -38539,8 +22800,8 @@ return  (function(modules) {
 	  
 	  this.charLength = 0;
 	};
-	
-	
+
+
 	
 	
 	
@@ -38558,22 +22819,22 @@ return  (function(modules) {
 	    var available = (buffer.length >= this.charLength - this.charReceived) ?
 	        this.charLength - this.charReceived :
 	        buffer.length;
-	
+
 	    
 	    buffer.copy(this.charBuffer, this.charReceived, 0, available);
 	    this.charReceived += available;
-	
+
 	    if (this.charReceived < this.charLength) {
 	      
 	      return '';
 	    }
-	
+
 	    
 	    buffer = buffer.slice(available, buffer.length);
-	
+
 	    
 	    charStr = this.charBuffer.slice(0, this.charLength).toString(this.encoding);
-	
+
 	    
 	    var charCode = charStr.charCodeAt(charStr.length - 1);
 	    if (charCode >= 0xD800 && charCode <= 0xDBFF) {
@@ -38582,26 +22843,26 @@ return  (function(modules) {
 	      continue;
 	    }
 	    this.charReceived = this.charLength = 0;
-	
+
 	    
 	    if (buffer.length === 0) {
 	      return charStr;
 	    }
 	    break;
 	  }
-	
+
 	  
 	  this.detectIncompleteChar(buffer);
-	
+
 	  var end = buffer.length;
 	  if (this.charLength) {
 	    
 	    buffer.copy(this.charBuffer, 0, buffer.length - this.charReceived, end);
 	    end -= this.charReceived;
 	  }
-	
+
 	  charStr += buffer.toString(this.encoding, 0, end);
-	
+
 	  var end = charStr.length - 1;
 	  var charCode = charStr.charCodeAt(end);
 	  
@@ -38613,11 +22874,11 @@ return  (function(modules) {
 	    buffer.copy(this.charBuffer, 0, 0, size);
 	    return charStr.substring(0, end);
 	  }
-	
+
 	  
 	  return charStr;
 	};
-	
+
 	
 	
 	
@@ -38625,26 +22886,26 @@ return  (function(modules) {
 	StringDecoder.prototype.detectIncompleteChar = function(buffer) {
 	  
 	  var i = (buffer.length >= 3) ? 3 : buffer.length;
-	
+
 	  
 	  
 	  for (; i > 0; i--) {
 	    var c = buffer[buffer.length - i];
-	
+
 	    
-	
+
 	    
 	    if (i == 1 && c >> 5 == 0x06) {
 	      this.charLength = 2;
 	      break;
 	    }
-	
+
 	    
 	    if (i <= 2 && c >> 4 == 0x0E) {
 	      this.charLength = 3;
 	      break;
 	    }
-	
+
 	    
 	    if (i <= 3 && c >> 3 == 0x1E) {
 	      this.charLength = 4;
@@ -38653,68 +22914,68 @@ return  (function(modules) {
 	  }
 	  this.charReceived = i;
 	};
-	
+
 	StringDecoder.prototype.end = function(buffer) {
 	  var res = '';
 	  if (buffer && buffer.length)
 	    res = this.write(buffer);
-	
+
 	  if (this.charReceived) {
 	    var cr = this.charReceived;
 	    var buf = this.charBuffer;
 	    var enc = this.encoding;
 	    res += buf.slice(0, cr).toString(enc);
 	  }
-	
+
 	  return res;
 	};
-	
+
 	function passThroughWrite(buffer) {
 	  return buffer.toString(this.encoding);
 	}
-	
+
 	function utf16DetectIncompleteChar(buffer) {
 	  this.charReceived = buffer.length % 2;
 	  this.charLength = this.charReceived ? 2 : 0;
 	}
-	
+
 	function base64DetectIncompleteChar(buffer) {
 	  this.charReceived = buffer.length % 3;
 	  this.charLength = this.charReceived ? 3 : 0;
 	}
-	
+
 	},{"buffer":44}],81:[function(require,module,exports){
 	(function (global){
-	
+
 	
 
 
-	
+
 	module.exports = deprecate;
-	
-	
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 	function deprecate (fn, msg) {
 	  if (config('noDeprecation')) {
 	    return fn;
 	  }
-	
+
 	  var warned = false;
 	  function deprecated() {
 	    if (!warned) {
@@ -38729,18 +22990,18 @@ return  (function(modules) {
 	    }
 	    return fn.apply(this, arguments);
 	  }
-	
+
 	  return deprecated;
 	}
-	
-	
-
-
-
-
-
 
 	
+
+
+
+
+
+
+
 	function config (name) {
 	  
 	  try {
@@ -38752,7 +23013,7 @@ return  (function(modules) {
 	  if (null == val) return false;
 	  return String(val).toLowerCase() === 'true';
 	}
-	
+
 	}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{}],82:[function(require,module,exports){
 	arguments[4][51][0].apply(exports,arguments)
@@ -38785,7 +23046,7 @@ return  (function(modules) {
 	
 	
 	
-	
+
 	var formatRegExp = /%[sdj%]/g;
 	exports.format = function(f) {
 	  if (!isString(f)) {
@@ -38795,7 +23056,7 @@ return  (function(modules) {
 	    }
 	    return objects.join(' ');
 	  }
-	
+
 	  var i = 1;
 	  var args = arguments;
 	  var len = args.length;
@@ -38824,8 +23085,8 @@ return  (function(modules) {
 	  }
 	  return str;
 	};
-	
-	
+
+
 	
 	
 	
@@ -38836,11 +23097,11 @@ return  (function(modules) {
 	      return exports.deprecate(fn, msg).apply(this, arguments);
 	    };
 	  }
-	
+
 	  if (process.noDeprecation === true) {
 	    return fn;
 	  }
-	
+
 	  var warned = false;
 	  function deprecated() {
 	    if (!warned) {
@@ -38855,11 +23116,11 @@ return  (function(modules) {
 	    }
 	    return fn.apply(this, arguments);
 	  }
-	
+
 	  return deprecated;
 	};
-	
-	
+
+
 	var debugs = {};
 	var debugEnviron;
 	exports.debuglog = function(set) {
@@ -38879,8 +23140,8 @@ return  (function(modules) {
 	  }
 	  return debugs[set];
 	};
-	
-	
+
+
 	
 
 
@@ -38914,8 +23175,8 @@ return  (function(modules) {
 	  return formatValue(ctx, obj, ctx.depth);
 	}
 	exports.inspect = inspect;
-	
-	
+
+
 	
 	inspect.colors = {
 	  'bold' : [1, 22],
@@ -38932,7 +23193,7 @@ return  (function(modules) {
 	  'red' : [31, 39],
 	  'yellow' : [33, 39]
 	};
-	
+
 	
 	inspect.styles = {
 	  'special': 'cyan',
@@ -38945,11 +23206,11 @@ return  (function(modules) {
 	  
 	  'regexp': 'red'
 	};
-	
-	
+
+
 	function stylizeWithColor(str, styleType) {
 	  var style = inspect.styles[styleType];
-	
+
 	  if (style) {
 	    return '\u001b[' + inspect.colors[style][0] + 'm' + str +
 	           '\u001b[' + inspect.colors[style][1] + 'm';
@@ -38957,24 +23218,24 @@ return  (function(modules) {
 	    return str;
 	  }
 	}
-	
-	
+
+
 	function stylizeNoColor(str, styleType) {
 	  return str;
 	}
-	
-	
+
+
 	function arrayToHash(array) {
 	  var hash = {};
-	
+
 	  array.forEach(function(val, idx) {
 	    hash[val] = true;
 	  });
-	
+
 	  return hash;
 	}
-	
-	
+
+
 	function formatValue(ctx, value, recurseTimes) {
 	  
 	  
@@ -38991,28 +23252,28 @@ return  (function(modules) {
 	    }
 	    return ret;
 	  }
-	
+
 	  
 	  var primitive = formatPrimitive(ctx, value);
 	  if (primitive) {
 	    return primitive;
 	  }
-	
+
 	  
 	  var keys = Object.keys(value);
 	  var visibleKeys = arrayToHash(keys);
-	
+
 	  if (ctx.showHidden) {
 	    keys = Object.getOwnPropertyNames(value);
 	  }
-	
+
 	  
 	  
 	  if (isError(value)
 	      && (keys.indexOf('message') >= 0 || keys.indexOf('description') >= 0)) {
 	    return formatError(value);
 	  }
-	
+
 	  
 	  if (keys.length === 0) {
 	    if (isFunction(value)) {
@@ -39029,40 +23290,40 @@ return  (function(modules) {
 	      return formatError(value);
 	    }
 	  }
-	
+
 	  var base = '', array = false, braces = ['{', '}'];
-	
+
 	  
 	  if (isArray(value)) {
 	    array = true;
 	    braces = ['[', ']'];
 	  }
-	
+
 	  
 	  if (isFunction(value)) {
 	    var n = value.name ? ': ' + value.name : '';
 	    base = ' [Function' + n + ']';
 	  }
-	
+
 	  
 	  if (isRegExp(value)) {
 	    base = ' ' + RegExp.prototype.toString.call(value);
 	  }
-	
+
 	  
 	  if (isDate(value)) {
 	    base = ' ' + Date.prototype.toUTCString.call(value);
 	  }
-	
+
 	  
 	  if (isError(value)) {
 	    base = ' ' + formatError(value);
 	  }
-	
+
 	  if (keys.length === 0 && (!array || value.length == 0)) {
 	    return braces[0] + base + braces[1];
 	  }
-	
+
 	  if (recurseTimes < 0) {
 	    if (isRegExp(value)) {
 	      return ctx.stylize(RegExp.prototype.toString.call(value), 'regexp');
@@ -39070,9 +23331,9 @@ return  (function(modules) {
 	      return ctx.stylize('[Object]', 'special');
 	    }
 	  }
-	
+
 	  ctx.seen.push(value);
-	
+
 	  var output;
 	  if (array) {
 	    output = formatArray(ctx, value, recurseTimes, visibleKeys, keys);
@@ -39081,13 +23342,13 @@ return  (function(modules) {
 	      return formatProperty(ctx, value, recurseTimes, visibleKeys, key, array);
 	    });
 	  }
-	
+
 	  ctx.seen.pop();
-	
+
 	  return reduceToSingleString(output, base, braces);
 	}
-	
-	
+
+
 	function formatPrimitive(ctx, value) {
 	  if (isUndefined(value))
 	    return ctx.stylize('undefined', 'undefined');
@@ -39105,13 +23366,13 @@ return  (function(modules) {
 	  if (isNull(value))
 	    return ctx.stylize('null', 'null');
 	}
-	
-	
+
+
 	function formatError(value) {
 	  return '[' + Error.prototype.toString.call(value) + ']';
 	}
-	
-	
+
+
 	function formatArray(ctx, value, recurseTimes, visibleKeys, keys) {
 	  var output = [];
 	  for (var i = 0, l = value.length; i < l; ++i) {
@@ -39130,8 +23391,8 @@ return  (function(modules) {
 	  });
 	  return output;
 	}
-	
-	
+
+
 	function formatProperty(ctx, value, recurseTimes, visibleKeys, key, array) {
 	  var name, str, desc;
 	  desc = Object.getOwnPropertyDescriptor(value, key) || { value: value[key] };
@@ -39186,11 +23447,11 @@ return  (function(modules) {
 	      name = ctx.stylize(name, 'string');
 	    }
 	  }
-	
+
 	  return name + ': ' + str;
 	}
-	
-	
+
+
 	function reduceToSingleString(output, base, braces) {
 	  var numLinesEst = 0;
 	  var length = output.reduce(function(prev, cur) {
@@ -39198,7 +23459,7 @@ return  (function(modules) {
 	    if (cur.indexOf('\n') >= 0) numLinesEst++;
 	    return prev + cur.replace(/\u001b\[\d\d?m/g, '').length + 1;
 	  }, 0);
-	
+
 	  if (length > 60) {
 	    return braces[0] +
 	           (base === '' ? '' : base + '\n ') +
@@ -39207,79 +23468,79 @@ return  (function(modules) {
 	           ' ' +
 	           braces[1];
 	  }
-	
+
 	  return braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
 	}
-	
-	
+
+
 	
 	
 	function isArray(ar) {
 	  return Array.isArray(ar);
 	}
 	exports.isArray = isArray;
-	
+
 	function isBoolean(arg) {
 	  return typeof arg === 'boolean';
 	}
 	exports.isBoolean = isBoolean;
-	
+
 	function isNull(arg) {
 	  return arg === null;
 	}
 	exports.isNull = isNull;
-	
+
 	function isNullOrUndefined(arg) {
 	  return arg == null;
 	}
 	exports.isNullOrUndefined = isNullOrUndefined;
-	
+
 	function isNumber(arg) {
 	  return typeof arg === 'number';
 	}
 	exports.isNumber = isNumber;
-	
+
 	function isString(arg) {
 	  return typeof arg === 'string';
 	}
 	exports.isString = isString;
-	
+
 	function isSymbol(arg) {
 	  return typeof arg === 'symbol';
 	}
 	exports.isSymbol = isSymbol;
-	
+
 	function isUndefined(arg) {
 	  return arg === void 0;
 	}
 	exports.isUndefined = isUndefined;
-	
+
 	function isRegExp(re) {
 	  return isObject(re) && objectToString(re) === '[object RegExp]';
 	}
 	exports.isRegExp = isRegExp;
-	
+
 	function isObject(arg) {
 	  return typeof arg === 'object' && arg !== null;
 	}
 	exports.isObject = isObject;
-	
+
 	function isDate(d) {
 	  return isObject(d) && objectToString(d) === '[object Date]';
 	}
 	exports.isDate = isDate;
-	
+
 	function isError(e) {
 	  return isObject(e) &&
 	      (objectToString(e) === '[object Error]' || e instanceof Error);
 	}
 	exports.isError = isError;
-	
+
 	function isFunction(arg) {
 	  return typeof arg === 'function';
 	}
 	exports.isFunction = isFunction;
-	
+
 	function isPrimitive(arg) {
 	  return arg === null ||
 	         typeof arg === 'boolean' ||
@@ -39289,22 +23550,22 @@ return  (function(modules) {
 	         typeof arg === 'undefined';
 	}
 	exports.isPrimitive = isPrimitive;
-	
+
 	exports.isBuffer = require('./support/isBuffer');
-	
+
 	function objectToString(o) {
 	  return Object.prototype.toString.call(o);
 	}
-	
-	
+
+
 	function pad(n) {
 	  return n < 10 ? '0' + n.toString(10) : n.toString(10);
 	}
-	
-	
+
+
 	var months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep',
 	              'Oct', 'Nov', 'Dec'];
-	
+
 	
 	function timestamp() {
 	  var d = new Date();
@@ -39313,14 +23574,14 @@ return  (function(modules) {
 	              pad(d.getSeconds())].join(':');
 	  return [d.getDate(), months[d.getMonth()], time].join(' ');
 	}
-	
-	
+
+
 	
 	exports.log = function() {
 	  console.log('%s - %s', timestamp(), exports.format.apply(exports, arguments));
 	};
-	
-	
+
+
 	
 
 
@@ -39335,11 +23596,11 @@ return  (function(modules) {
 
 
 	exports.inherits = require('inherits');
-	
+
 	exports._extend = function(origin, add) {
 	  
 	  if (!add || !isObject(add)) return origin;
-	
+
 	  var keys = Object.keys(add);
 	  var i = keys.length;
 	  while (i--) {
@@ -39347,18 +23608,18 @@ return  (function(modules) {
 	  }
 	  return origin;
 	};
-	
+
 	function hasOwnProperty(obj, prop) {
 	  return Object.prototype.hasOwnProperty.call(obj, prop);
 	}
-	
+
 	}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 	},{"./support/isBuffer":83,"_process":67,"inherits":82}]},{},[1]);
-	
-	}.call(exports, (function() { return this; }()), __webpack_require__(781).Buffer, __webpack_require__(785).setImmediate))
+
 
  },
 
+ 794:
  function(module, exports, __webpack_require__) {
 
 	(function(global) {
@@ -39368,17 +23629,17 @@ return  (function(modules) {
 
 
 	
-	
+
 	'use strict'
-	
-	var base64 = __webpack_require__(782)
-	var ieee754 = __webpack_require__(783)
-	var isArray = __webpack_require__(784)
-	
+
+	var base64 = __webpack_require__(795)
+	var ieee754 = __webpack_require__(796)
+	var isArray = __webpack_require__(797)
+
 	exports.Buffer = Buffer
 	exports.SlowBuffer = SlowBuffer
 	exports.INSPECT_MAX_BYTES = 50
-	
+
 	
 
 
@@ -39406,12 +23667,12 @@ return  (function(modules) {
 	Buffer.TYPED_ARRAY_SUPPORT = global.TYPED_ARRAY_SUPPORT !== undefined
 	  ? global.TYPED_ARRAY_SUPPORT
 	  : typedArraySupport()
-	
+
 	
 
 
 	exports.kMaxLength = kMaxLength()
-	
+
 	function typedArraySupport () {
 	  try {
 	    var arr = new Uint8Array(1)
@@ -39423,13 +23684,13 @@ return  (function(modules) {
 	    return false
 	  }
 	}
-	
+
 	function kMaxLength () {
 	  return Buffer.TYPED_ARRAY_SUPPORT
 	    ? 0x7fffffff
 	    : 0x3fffffff
 	}
-	
+
 	function createBuffer (that, length) {
 	  if (kMaxLength() < length) {
 	    throw new RangeError('Invalid typed array length')
@@ -39445,25 +23706,25 @@ return  (function(modules) {
 	    }
 	    that.length = length
 	  }
-	
+
 	  return that
 	}
-	
-	
-
-
-
-
-
-
-
 
 	
+
+
+
+
+
+
+
+
+
 	function Buffer (arg, encodingOrOffset, length) {
 	  if (!Buffer.TYPED_ARRAY_SUPPORT && !(this instanceof Buffer)) {
 	    return new Buffer(arg, encodingOrOffset, length)
 	  }
-	
+
 	  
 	  if (typeof arg === 'number') {
 	    if (typeof encodingOrOffset === 'string') {
@@ -39475,31 +23736,31 @@ return  (function(modules) {
 	  }
 	  return from(this, arg, encodingOrOffset, length)
 	}
-	
+
 	Buffer.poolSize = 8192 
-	
+
 	
 	Buffer._augment = function (arr) {
 	  arr.__proto__ = Buffer.prototype
 	  return arr
 	}
-	
+
 	function from (that, value, encodingOrOffset, length) {
 	  if (typeof value === 'number') {
 	    throw new TypeError('"value" argument must not be a number')
 	  }
-	
+
 	  if (typeof ArrayBuffer !== 'undefined' && value instanceof ArrayBuffer) {
 	    return fromArrayBuffer(that, value, encodingOrOffset, length)
 	  }
-	
+
 	  if (typeof value === 'string') {
 	    return fromString(that, value, encodingOrOffset)
 	  }
-	
+
 	  return fromObject(that, value)
 	}
-	
+
 	
 
 
@@ -39511,7 +23772,7 @@ return  (function(modules) {
 	Buffer.from = function (value, encodingOrOffset, length) {
 	  return from(null, value, encodingOrOffset, length)
 	}
-	
+
 	if (Buffer.TYPED_ARRAY_SUPPORT) {
 	  Buffer.prototype.__proto__ = Uint8Array.prototype
 	  Buffer.__proto__ = Uint8Array
@@ -39524,7 +23785,7 @@ return  (function(modules) {
 	    })
 	  }
 	}
-	
+
 	function assertSize (size) {
 	  if (typeof size !== 'number') {
 	    throw new TypeError('"size" argument must be a number')
@@ -39532,7 +23793,7 @@ return  (function(modules) {
 	    throw new RangeError('"size" argument must not be negative')
 	  }
 	}
-	
+
 	function alloc (that, size, fill, encoding) {
 	  assertSize(size)
 	  if (size <= 0) {
@@ -39548,7 +23809,7 @@ return  (function(modules) {
 	  }
 	  return createBuffer(that, size)
 	}
-	
+
 	
 
 
@@ -39556,7 +23817,7 @@ return  (function(modules) {
 	Buffer.alloc = function (size, fill, encoding) {
 	  return alloc(null, size, fill, encoding)
 	}
-	
+
 	function allocUnsafe (that, size) {
 	  assertSize(size)
 	  that = createBuffer(that, size < 0 ? 0 : checked(size) | 0)
@@ -39567,7 +23828,7 @@ return  (function(modules) {
 	  }
 	  return that
 	}
-	
+
 	
 
 
@@ -39580,31 +23841,31 @@ return  (function(modules) {
 	Buffer.allocUnsafeSlow = function (size) {
 	  return allocUnsafe(null, size)
 	}
-	
+
 	function fromString (that, string, encoding) {
 	  if (typeof encoding !== 'string' || encoding === '') {
 	    encoding = 'utf8'
 	  }
-	
+
 	  if (!Buffer.isEncoding(encoding)) {
 	    throw new TypeError('"encoding" must be a valid string encoding')
 	  }
-	
+
 	  var length = byteLength(string, encoding) | 0
 	  that = createBuffer(that, length)
-	
+
 	  var actual = that.write(string, encoding)
-	
+
 	  if (actual !== length) {
 	    
 	    
 	    
 	    that = that.slice(0, actual)
 	  }
-	
+
 	  return that
 	}
-	
+
 	function fromArrayLike (that, array) {
 	  var length = array.length < 0 ? 0 : checked(array.length) | 0
 	  that = createBuffer(that, length)
@@ -39613,18 +23874,18 @@ return  (function(modules) {
 	  }
 	  return that
 	}
-	
+
 	function fromArrayBuffer (that, array, byteOffset, length) {
 	  array.byteLength 
-	
+
 	  if (byteOffset < 0 || array.byteLength < byteOffset) {
 	    throw new RangeError('\'offset\' is out of bounds')
 	  }
-	
+
 	  if (array.byteLength < byteOffset + (length || 0)) {
 	    throw new RangeError('\'length\' is out of bounds')
 	  }
-	
+
 	  if (byteOffset === undefined && length === undefined) {
 	    array = new Uint8Array(array)
 	  } else if (length === undefined) {
@@ -39632,7 +23893,7 @@ return  (function(modules) {
 	  } else {
 	    array = new Uint8Array(array, byteOffset, length)
 	  }
-	
+
 	  if (Buffer.TYPED_ARRAY_SUPPORT) {
 	    
 	    that = array
@@ -39643,20 +23904,20 @@ return  (function(modules) {
 	  }
 	  return that
 	}
-	
+
 	function fromObject (that, obj) {
 	  if (Buffer.isBuffer(obj)) {
 	    var len = checked(obj.length) | 0
 	    that = createBuffer(that, len)
-	
+
 	    if (that.length === 0) {
 	      return that
 	    }
-	
+
 	    obj.copy(that, 0, 0, len)
 	    return that
 	  }
-	
+
 	  if (obj) {
 	    if ((typeof ArrayBuffer !== 'undefined' &&
 	        obj.buffer instanceof ArrayBuffer) || 'length' in obj) {
@@ -39665,15 +23926,15 @@ return  (function(modules) {
 	      }
 	      return fromArrayLike(that, obj)
 	    }
-	
+
 	    if (obj.type === 'Buffer' && isArray(obj.data)) {
 	      return fromArrayLike(that, obj.data)
 	    }
 	  }
-	
+
 	  throw new TypeError('First argument must be a string, Buffer, ArrayBuffer, Array, or array-like object.')
 	}
-	
+
 	function checked (length) {
 	  
 	  
@@ -39683,28 +23944,28 @@ return  (function(modules) {
 	  }
 	  return length | 0
 	}
-	
+
 	function SlowBuffer (length) {
 	  if (+length != length) { 
 	    length = 0
 	  }
 	  return Buffer.alloc(+length)
 	}
-	
+
 	Buffer.isBuffer = function isBuffer (b) {
 	  return !!(b != null && b._isBuffer)
 	}
-	
+
 	Buffer.compare = function compare (a, b) {
 	  if (!Buffer.isBuffer(a) || !Buffer.isBuffer(b)) {
 	    throw new TypeError('Arguments must be Buffers')
 	  }
-	
+
 	  if (a === b) return 0
-	
+
 	  var x = a.length
 	  var y = b.length
-	
+
 	  for (var i = 0, len = Math.min(x, y); i < len; ++i) {
 	    if (a[i] !== b[i]) {
 	      x = a[i]
@@ -39712,12 +23973,12 @@ return  (function(modules) {
 	      break
 	    }
 	  }
-	
+
 	  if (x < y) return -1
 	  if (y < x) return 1
 	  return 0
 	}
-	
+
 	Buffer.isEncoding = function isEncoding (encoding) {
 	  switch (String(encoding).toLowerCase()) {
 	    case 'hex':
@@ -39736,16 +23997,16 @@ return  (function(modules) {
 	      return false
 	  }
 	}
-	
+
 	Buffer.concat = function concat (list, length) {
 	  if (!isArray(list)) {
 	    throw new TypeError('"list" argument must be an Array of Buffers')
 	  }
-	
+
 	  if (list.length === 0) {
 	    return Buffer.alloc(0)
 	  }
-	
+
 	  var i
 	  if (length === undefined) {
 	    length = 0
@@ -39753,7 +24014,7 @@ return  (function(modules) {
 	      length += list[i].length
 	    }
 	  }
-	
+
 	  var buffer = Buffer.allocUnsafe(length)
 	  var pos = 0
 	  for (i = 0; i < list.length; ++i) {
@@ -39766,7 +24027,7 @@ return  (function(modules) {
 	  }
 	  return buffer
 	}
-	
+
 	function byteLength (string, encoding) {
 	  if (Buffer.isBuffer(string)) {
 	    return string.length
@@ -39778,10 +24039,10 @@ return  (function(modules) {
 	  if (typeof string !== 'string') {
 	    string = '' + string
 	  }
-	
+
 	  var len = string.length
 	  if (len === 0) return 0
-	
+
 	  
 	  var loweredCase = false
 	  for (;;) {
@@ -39811,13 +24072,13 @@ return  (function(modules) {
 	  }
 	}
 	Buffer.byteLength = byteLength
-	
+
 	function slowToString (encoding, start, end) {
 	  var loweredCase = false
-	
+
 	  
 	  
-	
+
 	  
 	  
 	  
@@ -39830,50 +24091,50 @@ return  (function(modules) {
 	  if (start > this.length) {
 	    return ''
 	  }
-	
+
 	  if (end === undefined || end > this.length) {
 	    end = this.length
 	  }
-	
+
 	  if (end <= 0) {
 	    return ''
 	  }
-	
+
 	  
 	  end >>>= 0
 	  start >>>= 0
-	
+
 	  if (end <= start) {
 	    return ''
 	  }
-	
+
 	  if (!encoding) encoding = 'utf8'
-	
+
 	  while (true) {
 	    switch (encoding) {
 	      case 'hex':
 	        return hexSlice(this, start, end)
-	
+
 	      case 'utf8':
 	      case 'utf-8':
 	        return utf8Slice(this, start, end)
-	
+
 	      case 'ascii':
 	        return asciiSlice(this, start, end)
-	
+
 	      case 'latin1':
 	      case 'binary':
 	        return latin1Slice(this, start, end)
-	
+
 	      case 'base64':
 	        return base64Slice(this, start, end)
-	
+
 	      case 'ucs2':
 	      case 'ucs-2':
 	      case 'utf16le':
 	      case 'utf-16le':
 	        return utf16leSlice(this, start, end)
-	
+
 	      default:
 	        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
 	        encoding = (encoding + '').toLowerCase()
@@ -39881,17 +24142,17 @@ return  (function(modules) {
 	    }
 	  }
 	}
-	
+
 	
 	
 	Buffer.prototype._isBuffer = true
-	
+
 	function swap (b, n, m) {
 	  var i = b[n]
 	  b[n] = b[m]
 	  b[m] = i
 	}
-	
+
 	Buffer.prototype.swap16 = function swap16 () {
 	  var len = this.length
 	  if (len % 2 !== 0) {
@@ -39902,7 +24163,7 @@ return  (function(modules) {
 	  }
 	  return this
 	}
-	
+
 	Buffer.prototype.swap32 = function swap32 () {
 	  var len = this.length
 	  if (len % 4 !== 0) {
@@ -39914,7 +24175,7 @@ return  (function(modules) {
 	  }
 	  return this
 	}
-	
+
 	Buffer.prototype.swap64 = function swap64 () {
 	  var len = this.length
 	  if (len % 8 !== 0) {
@@ -39928,20 +24189,20 @@ return  (function(modules) {
 	  }
 	  return this
 	}
-	
+
 	Buffer.prototype.toString = function toString () {
 	  var length = this.length | 0
 	  if (length === 0) return ''
 	  if (arguments.length === 0) return utf8Slice(this, 0, length)
 	  return slowToString.apply(this, arguments)
 	}
-	
+
 	Buffer.prototype.equals = function equals (b) {
 	  if (!Buffer.isBuffer(b)) throw new TypeError('Argument must be a Buffer')
 	  if (this === b) return true
 	  return Buffer.compare(this, b) === 0
 	}
-	
+
 	Buffer.prototype.inspect = function inspect () {
 	  var str = ''
 	  var max = exports.INSPECT_MAX_BYTES
@@ -39951,12 +24212,12 @@ return  (function(modules) {
 	  }
 	  return '<Buffer ' + str + '>'
 	}
-	
+
 	Buffer.prototype.compare = function compare (target, start, end, thisStart, thisEnd) {
 	  if (!Buffer.isBuffer(target)) {
 	    throw new TypeError('Argument must be a Buffer')
 	  }
-	
+
 	  if (start === undefined) {
 	    start = 0
 	  }
@@ -39969,11 +24230,11 @@ return  (function(modules) {
 	  if (thisEnd === undefined) {
 	    thisEnd = this.length
 	  }
-	
+
 	  if (start < 0 || end > target.length || thisStart < 0 || thisEnd > this.length) {
 	    throw new RangeError('out of range index')
 	  }
-	
+
 	  if (thisStart >= thisEnd && start >= end) {
 	    return 0
 	  }
@@ -39983,21 +24244,21 @@ return  (function(modules) {
 	  if (start >= end) {
 	    return 1
 	  }
-	
+
 	  start >>>= 0
 	  end >>>= 0
 	  thisStart >>>= 0
 	  thisEnd >>>= 0
-	
+
 	  if (this === target) return 0
-	
+
 	  var x = thisEnd - thisStart
 	  var y = end - start
 	  var len = Math.min(x, y)
-	
+
 	  var thisCopy = this.slice(thisStart, thisEnd)
 	  var targetCopy = target.slice(start, end)
-	
+
 	  for (var i = 0; i < len; ++i) {
 	    if (thisCopy[i] !== targetCopy[i]) {
 	      x = thisCopy[i]
@@ -40005,12 +24266,12 @@ return  (function(modules) {
 	      break
 	    }
 	  }
-	
+
 	  if (x < y) return -1
 	  if (y < x) return 1
 	  return 0
 	}
-	
+
 	
 	
 	
@@ -40023,7 +24284,7 @@ return  (function(modules) {
 	function bidirectionalIndexOf (buffer, val, byteOffset, encoding, dir) {
 	  
 	  if (buffer.length === 0) return -1
-	
+
 	  
 	  if (typeof byteOffset === 'string') {
 	    encoding = byteOffset
@@ -40038,7 +24299,7 @@ return  (function(modules) {
 	    
 	    byteOffset = dir ? 0 : (buffer.length - 1)
 	  }
-	
+
 	  
 	  if (byteOffset < 0) byteOffset = buffer.length + byteOffset
 	  if (byteOffset >= buffer.length) {
@@ -40048,12 +24309,12 @@ return  (function(modules) {
 	    if (dir) byteOffset = 0
 	    else return -1
 	  }
-	
+
 	  
 	  if (typeof val === 'string') {
 	    val = Buffer.from(val, encoding)
 	  }
-	
+
 	  
 	  if (Buffer.isBuffer(val)) {
 	    
@@ -40073,15 +24334,15 @@ return  (function(modules) {
 	    }
 	    return arrayIndexOf(buffer, [ val ], byteOffset, encoding, dir)
 	  }
-	
+
 	  throw new TypeError('val must be string, number or Buffer')
 	}
-	
+
 	function arrayIndexOf (arr, val, byteOffset, encoding, dir) {
 	  var indexSize = 1
 	  var arrLength = arr.length
 	  var valLength = val.length
-	
+
 	  if (encoding !== undefined) {
 	    encoding = String(encoding).toLowerCase()
 	    if (encoding === 'ucs2' || encoding === 'ucs-2' ||
@@ -40095,7 +24356,7 @@ return  (function(modules) {
 	      byteOffset /= 2
 	    }
 	  }
-	
+
 	  function read (buf, i) {
 	    if (indexSize === 1) {
 	      return buf[i]
@@ -40103,7 +24364,7 @@ return  (function(modules) {
 	      return buf.readUInt16BE(i * indexSize)
 	    }
 	  }
-	
+
 	  var i
 	  if (dir) {
 	    var foundIndex = -1
@@ -40129,22 +24390,22 @@ return  (function(modules) {
 	      if (found) return i
 	    }
 	  }
-	
+
 	  return -1
 	}
-	
+
 	Buffer.prototype.includes = function includes (val, byteOffset, encoding) {
 	  return this.indexOf(val, byteOffset, encoding) !== -1
 	}
-	
+
 	Buffer.prototype.indexOf = function indexOf (val, byteOffset, encoding) {
 	  return bidirectionalIndexOf(this, val, byteOffset, encoding, true)
 	}
-	
+
 	Buffer.prototype.lastIndexOf = function lastIndexOf (val, byteOffset, encoding) {
 	  return bidirectionalIndexOf(this, val, byteOffset, encoding, false)
 	}
-	
+
 	function hexWrite (buf, string, offset, length) {
 	  offset = Number(offset) || 0
 	  var remaining = buf.length - offset
@@ -40156,11 +24417,11 @@ return  (function(modules) {
 	      length = remaining
 	    }
 	  }
-	
+
 	  
 	  var strLen = string.length
 	  if (strLen % 2 !== 0) throw new TypeError('Invalid hex string')
-	
+
 	  if (length > strLen / 2) {
 	    length = strLen / 2
 	  }
@@ -40171,27 +24432,27 @@ return  (function(modules) {
 	  }
 	  return i
 	}
-	
+
 	function utf8Write (buf, string, offset, length) {
 	  return blitBuffer(utf8ToBytes(string, buf.length - offset), buf, offset, length)
 	}
-	
+
 	function asciiWrite (buf, string, offset, length) {
 	  return blitBuffer(asciiToBytes(string), buf, offset, length)
 	}
-	
+
 	function latin1Write (buf, string, offset, length) {
 	  return asciiWrite(buf, string, offset, length)
 	}
-	
+
 	function base64Write (buf, string, offset, length) {
 	  return blitBuffer(base64ToBytes(string), buf, offset, length)
 	}
-	
+
 	function ucs2Write (buf, string, offset, length) {
 	  return blitBuffer(utf16leToBytes(string, buf.length - offset), buf, offset, length)
 	}
-	
+
 	Buffer.prototype.write = function write (string, offset, length, encoding) {
 	  
 	  if (offset === undefined) {
@@ -40219,43 +24480,43 @@ return  (function(modules) {
 	      'Buffer.write(string, encoding, offset[, length]) is no longer supported'
 	    )
 	  }
-	
+
 	  var remaining = this.length - offset
 	  if (length === undefined || length > remaining) length = remaining
-	
+
 	  if ((string.length > 0 && (length < 0 || offset < 0)) || offset > this.length) {
 	    throw new RangeError('Attempt to write outside buffer bounds')
 	  }
-	
+
 	  if (!encoding) encoding = 'utf8'
-	
+
 	  var loweredCase = false
 	  for (;;) {
 	    switch (encoding) {
 	      case 'hex':
 	        return hexWrite(this, string, offset, length)
-	
+
 	      case 'utf8':
 	      case 'utf-8':
 	        return utf8Write(this, string, offset, length)
-	
+
 	      case 'ascii':
 	        return asciiWrite(this, string, offset, length)
-	
+
 	      case 'latin1':
 	      case 'binary':
 	        return latin1Write(this, string, offset, length)
-	
+
 	      case 'base64':
 	        
 	        return base64Write(this, string, offset, length)
-	
+
 	      case 'ucs2':
 	      case 'ucs-2':
 	      case 'utf16le':
 	      case 'utf-16le':
 	        return ucs2Write(this, string, offset, length)
-	
+
 	      default:
 	        if (loweredCase) throw new TypeError('Unknown encoding: ' + encoding)
 	        encoding = ('' + encoding).toLowerCase()
@@ -40263,14 +24524,14 @@ return  (function(modules) {
 	    }
 	  }
 	}
-	
+
 	Buffer.prototype.toJSON = function toJSON () {
 	  return {
 	    type: 'Buffer',
 	    data: Array.prototype.slice.call(this._arr || this, 0)
 	  }
 	}
-	
+
 	function base64Slice (buf, start, end) {
 	  if (start === 0 && end === buf.length) {
 	    return base64.fromByteArray(buf)
@@ -40278,11 +24539,11 @@ return  (function(modules) {
 	    return base64.fromByteArray(buf.slice(start, end))
 	  }
 	}
-	
+
 	function utf8Slice (buf, start, end) {
 	  end = Math.min(buf.length, end)
 	  var res = []
-	
+
 	  var i = start
 	  while (i < end) {
 	    var firstByte = buf[i]
@@ -40291,10 +24552,10 @@ return  (function(modules) {
 	      : (firstByte > 0xDF) ? 3
 	      : (firstByte > 0xBF) ? 2
 	      : 1
-	
+
 	    if (i + bytesPerSequence <= end) {
 	      var secondByte, thirdByte, fourthByte, tempCodePoint
-	
+
 	      switch (bytesPerSequence) {
 	        case 1:
 	          if (firstByte < 0x80) {
@@ -40332,7 +24593,7 @@ return  (function(modules) {
 	          }
 	      }
 	    }
-	
+
 	    if (codePoint === null) {
 	      
 	      
@@ -40344,25 +24605,25 @@ return  (function(modules) {
 	      res.push(codePoint >>> 10 & 0x3FF | 0xD800)
 	      codePoint = 0xDC00 | codePoint & 0x3FF
 	    }
-	
+
 	    res.push(codePoint)
 	    i += bytesPerSequence
 	  }
-	
+
 	  return decodeCodePointsArray(res)
 	}
-	
+
 	
 	
 	
 	var MAX_ARGUMENTS_LENGTH = 0x1000
-	
+
 	function decodeCodePointsArray (codePoints) {
 	  var len = codePoints.length
 	  if (len <= MAX_ARGUMENTS_LENGTH) {
 	    return String.fromCharCode.apply(String, codePoints) 
 	  }
-	
+
 	  
 	  var res = ''
 	  var i = 0
@@ -40374,40 +24635,40 @@ return  (function(modules) {
 	  }
 	  return res
 	}
-	
+
 	function asciiSlice (buf, start, end) {
 	  var ret = ''
 	  end = Math.min(buf.length, end)
-	
+
 	  for (var i = start; i < end; ++i) {
 	    ret += String.fromCharCode(buf[i] & 0x7F)
 	  }
 	  return ret
 	}
-	
+
 	function latin1Slice (buf, start, end) {
 	  var ret = ''
 	  end = Math.min(buf.length, end)
-	
+
 	  for (var i = start; i < end; ++i) {
 	    ret += String.fromCharCode(buf[i])
 	  }
 	  return ret
 	}
-	
+
 	function hexSlice (buf, start, end) {
 	  var len = buf.length
-	
+
 	  if (!start || start < 0) start = 0
 	  if (!end || end < 0 || end > len) end = len
-	
+
 	  var out = ''
 	  for (var i = start; i < end; ++i) {
 	    out += toHex(buf[i])
 	  }
 	  return out
 	}
-	
+
 	function utf16leSlice (buf, start, end) {
 	  var bytes = buf.slice(start, end)
 	  var res = ''
@@ -40416,28 +24677,28 @@ return  (function(modules) {
 	  }
 	  return res
 	}
-	
+
 	Buffer.prototype.slice = function slice (start, end) {
 	  var len = this.length
 	  start = ~~start
 	  end = end === undefined ? len : ~~end
-	
+
 	  if (start < 0) {
 	    start += len
 	    if (start < 0) start = 0
 	  } else if (start > len) {
 	    start = len
 	  }
-	
+
 	  if (end < 0) {
 	    end += len
 	    if (end < 0) end = 0
 	  } else if (end > len) {
 	    end = len
 	  }
-	
+
 	  if (end < start) end = start
-	
+
 	  var newBuf
 	  if (Buffer.TYPED_ARRAY_SUPPORT) {
 	    newBuf = this.subarray(start, end)
@@ -40449,10 +24710,10 @@ return  (function(modules) {
 	      newBuf[i] = this[i + start]
 	    }
 	  }
-	
+
 	  return newBuf
 	}
-	
+
 	
 
 
@@ -40460,76 +24721,76 @@ return  (function(modules) {
 	  if ((offset % 1) !== 0 || offset < 0) throw new RangeError('offset is not uint')
 	  if (offset + ext > length) throw new RangeError('Trying to access beyond buffer length')
 	}
-	
+
 	Buffer.prototype.readUIntLE = function readUIntLE (offset, byteLength, noAssert) {
 	  offset = offset | 0
 	  byteLength = byteLength | 0
 	  if (!noAssert) checkOffset(offset, byteLength, this.length)
-	
+
 	  var val = this[offset]
 	  var mul = 1
 	  var i = 0
 	  while (++i < byteLength && (mul *= 0x100)) {
 	    val += this[offset + i] * mul
 	  }
-	
+
 	  return val
 	}
-	
+
 	Buffer.prototype.readUIntBE = function readUIntBE (offset, byteLength, noAssert) {
 	  offset = offset | 0
 	  byteLength = byteLength | 0
 	  if (!noAssert) {
 	    checkOffset(offset, byteLength, this.length)
 	  }
-	
+
 	  var val = this[offset + --byteLength]
 	  var mul = 1
 	  while (byteLength > 0 && (mul *= 0x100)) {
 	    val += this[offset + --byteLength] * mul
 	  }
-	
+
 	  return val
 	}
-	
+
 	Buffer.prototype.readUInt8 = function readUInt8 (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 1, this.length)
 	  return this[offset]
 	}
-	
+
 	Buffer.prototype.readUInt16LE = function readUInt16LE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 2, this.length)
 	  return this[offset] | (this[offset + 1] << 8)
 	}
-	
+
 	Buffer.prototype.readUInt16BE = function readUInt16BE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 2, this.length)
 	  return (this[offset] << 8) | this[offset + 1]
 	}
-	
+
 	Buffer.prototype.readUInt32LE = function readUInt32LE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
-	
+
 	  return ((this[offset]) |
 	      (this[offset + 1] << 8) |
 	      (this[offset + 2] << 16)) +
 	      (this[offset + 3] * 0x1000000)
 	}
-	
+
 	Buffer.prototype.readUInt32BE = function readUInt32BE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
-	
+
 	  return (this[offset] * 0x1000000) +
 	    ((this[offset + 1] << 16) |
 	    (this[offset + 2] << 8) |
 	    this[offset + 3])
 	}
-	
+
 	Buffer.prototype.readIntLE = function readIntLE (offset, byteLength, noAssert) {
 	  offset = offset | 0
 	  byteLength = byteLength | 0
 	  if (!noAssert) checkOffset(offset, byteLength, this.length)
-	
+
 	  var val = this[offset]
 	  var mul = 1
 	  var i = 0
@@ -40537,17 +24798,17 @@ return  (function(modules) {
 	    val += this[offset + i] * mul
 	  }
 	  mul *= 0x80
-	
+
 	  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
-	
+
 	  return val
 	}
-	
+
 	Buffer.prototype.readIntBE = function readIntBE (offset, byteLength, noAssert) {
 	  offset = offset | 0
 	  byteLength = byteLength | 0
 	  if (!noAssert) checkOffset(offset, byteLength, this.length)
-	
+
 	  var i = byteLength
 	  var mul = 1
 	  var val = this[offset + --i]
@@ -40555,74 +24816,74 @@ return  (function(modules) {
 	    val += this[offset + --i] * mul
 	  }
 	  mul *= 0x80
-	
+
 	  if (val >= mul) val -= Math.pow(2, 8 * byteLength)
-	
+
 	  return val
 	}
-	
+
 	Buffer.prototype.readInt8 = function readInt8 (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 1, this.length)
 	  if (!(this[offset] & 0x80)) return (this[offset])
 	  return ((0xff - this[offset] + 1) * -1)
 	}
-	
+
 	Buffer.prototype.readInt16LE = function readInt16LE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 2, this.length)
 	  var val = this[offset] | (this[offset + 1] << 8)
 	  return (val & 0x8000) ? val | 0xFFFF0000 : val
 	}
-	
+
 	Buffer.prototype.readInt16BE = function readInt16BE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 2, this.length)
 	  var val = this[offset + 1] | (this[offset] << 8)
 	  return (val & 0x8000) ? val | 0xFFFF0000 : val
 	}
-	
+
 	Buffer.prototype.readInt32LE = function readInt32LE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
-	
+
 	  return (this[offset]) |
 	    (this[offset + 1] << 8) |
 	    (this[offset + 2] << 16) |
 	    (this[offset + 3] << 24)
 	}
-	
+
 	Buffer.prototype.readInt32BE = function readInt32BE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
-	
+
 	  return (this[offset] << 24) |
 	    (this[offset + 1] << 16) |
 	    (this[offset + 2] << 8) |
 	    (this[offset + 3])
 	}
-	
+
 	Buffer.prototype.readFloatLE = function readFloatLE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
 	  return ieee754.read(this, offset, true, 23, 4)
 	}
-	
+
 	Buffer.prototype.readFloatBE = function readFloatBE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 4, this.length)
 	  return ieee754.read(this, offset, false, 23, 4)
 	}
-	
+
 	Buffer.prototype.readDoubleLE = function readDoubleLE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 8, this.length)
 	  return ieee754.read(this, offset, true, 52, 8)
 	}
-	
+
 	Buffer.prototype.readDoubleBE = function readDoubleBE (offset, noAssert) {
 	  if (!noAssert) checkOffset(offset, 8, this.length)
 	  return ieee754.read(this, offset, false, 52, 8)
 	}
-	
+
 	function checkInt (buf, value, offset, ext, max, min) {
 	  if (!Buffer.isBuffer(buf)) throw new TypeError('"buffer" argument must be a Buffer instance')
 	  if (value > max || value < min) throw new RangeError('"value" argument is out of bounds')
 	  if (offset + ext > buf.length) throw new RangeError('Index out of range')
 	}
-	
+
 	Buffer.prototype.writeUIntLE = function writeUIntLE (value, offset, byteLength, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40631,17 +24892,17 @@ return  (function(modules) {
 	    var maxBytes = Math.pow(2, 8 * byteLength) - 1
 	    checkInt(this, value, offset, byteLength, maxBytes, 0)
 	  }
-	
+
 	  var mul = 1
 	  var i = 0
 	  this[offset] = value & 0xFF
 	  while (++i < byteLength && (mul *= 0x100)) {
 	    this[offset + i] = (value / mul) & 0xFF
 	  }
-	
+
 	  return offset + byteLength
 	}
-	
+
 	Buffer.prototype.writeUIntBE = function writeUIntBE (value, offset, byteLength, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40650,17 +24911,17 @@ return  (function(modules) {
 	    var maxBytes = Math.pow(2, 8 * byteLength) - 1
 	    checkInt(this, value, offset, byteLength, maxBytes, 0)
 	  }
-	
+
 	  var i = byteLength - 1
 	  var mul = 1
 	  this[offset + i] = value & 0xFF
 	  while (--i >= 0 && (mul *= 0x100)) {
 	    this[offset + i] = (value / mul) & 0xFF
 	  }
-	
+
 	  return offset + byteLength
 	}
-	
+
 	Buffer.prototype.writeUInt8 = function writeUInt8 (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40669,7 +24930,7 @@ return  (function(modules) {
 	  this[offset] = (value & 0xff)
 	  return offset + 1
 	}
-	
+
 	function objectWriteUInt16 (buf, value, offset, littleEndian) {
 	  if (value < 0) value = 0xffff + value + 1
 	  for (var i = 0, j = Math.min(buf.length - offset, 2); i < j; ++i) {
@@ -40677,7 +24938,7 @@ return  (function(modules) {
 	      (littleEndian ? i : 1 - i) * 8
 	  }
 	}
-	
+
 	Buffer.prototype.writeUInt16LE = function writeUInt16LE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40690,7 +24951,7 @@ return  (function(modules) {
 	  }
 	  return offset + 2
 	}
-	
+
 	Buffer.prototype.writeUInt16BE = function writeUInt16BE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40703,14 +24964,14 @@ return  (function(modules) {
 	  }
 	  return offset + 2
 	}
-	
+
 	function objectWriteUInt32 (buf, value, offset, littleEndian) {
 	  if (value < 0) value = 0xffffffff + value + 1
 	  for (var i = 0, j = Math.min(buf.length - offset, 4); i < j; ++i) {
 	    buf[offset + i] = (value >>> (littleEndian ? i : 3 - i) * 8) & 0xff
 	  }
 	}
-	
+
 	Buffer.prototype.writeUInt32LE = function writeUInt32LE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40725,7 +24986,7 @@ return  (function(modules) {
 	  }
 	  return offset + 4
 	}
-	
+
 	Buffer.prototype.writeUInt32BE = function writeUInt32BE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40740,16 +25001,16 @@ return  (function(modules) {
 	  }
 	  return offset + 4
 	}
-	
+
 	Buffer.prototype.writeIntLE = function writeIntLE (value, offset, byteLength, noAssert) {
 	  value = +value
 	  offset = offset | 0
 	  if (!noAssert) {
 	    var limit = Math.pow(2, 8 * byteLength - 1)
-	
+
 	    checkInt(this, value, offset, byteLength, limit - 1, -limit)
 	  }
-	
+
 	  var i = 0
 	  var mul = 1
 	  var sub = 0
@@ -40760,19 +25021,19 @@ return  (function(modules) {
 	    }
 	    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
 	  }
-	
+
 	  return offset + byteLength
 	}
-	
+
 	Buffer.prototype.writeIntBE = function writeIntBE (value, offset, byteLength, noAssert) {
 	  value = +value
 	  offset = offset | 0
 	  if (!noAssert) {
 	    var limit = Math.pow(2, 8 * byteLength - 1)
-	
+
 	    checkInt(this, value, offset, byteLength, limit - 1, -limit)
 	  }
-	
+
 	  var i = byteLength - 1
 	  var mul = 1
 	  var sub = 0
@@ -40783,10 +25044,10 @@ return  (function(modules) {
 	    }
 	    this[offset + i] = ((value / mul) >> 0) - sub & 0xFF
 	  }
-	
+
 	  return offset + byteLength
 	}
-	
+
 	Buffer.prototype.writeInt8 = function writeInt8 (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40796,7 +25057,7 @@ return  (function(modules) {
 	  this[offset] = (value & 0xff)
 	  return offset + 1
 	}
-	
+
 	Buffer.prototype.writeInt16LE = function writeInt16LE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40809,7 +25070,7 @@ return  (function(modules) {
 	  }
 	  return offset + 2
 	}
-	
+
 	Buffer.prototype.writeInt16BE = function writeInt16BE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40822,7 +25083,7 @@ return  (function(modules) {
 	  }
 	  return offset + 2
 	}
-	
+
 	Buffer.prototype.writeInt32LE = function writeInt32LE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40837,7 +25098,7 @@ return  (function(modules) {
 	  }
 	  return offset + 4
 	}
-	
+
 	Buffer.prototype.writeInt32BE = function writeInt32BE (value, offset, noAssert) {
 	  value = +value
 	  offset = offset | 0
@@ -40853,12 +25114,12 @@ return  (function(modules) {
 	  }
 	  return offset + 4
 	}
-	
+
 	function checkIEEE754 (buf, value, offset, ext, max, min) {
 	  if (offset + ext > buf.length) throw new RangeError('Index out of range')
 	  if (offset < 0) throw new RangeError('Index out of range')
 	}
-	
+
 	function writeFloat (buf, value, offset, littleEndian, noAssert) {
 	  if (!noAssert) {
 	    checkIEEE754(buf, value, offset, 4, 3.4028234663852886e+38, -3.4028234663852886e+38)
@@ -40866,15 +25127,15 @@ return  (function(modules) {
 	  ieee754.write(buf, value, offset, littleEndian, 23, 4)
 	  return offset + 4
 	}
-	
+
 	Buffer.prototype.writeFloatLE = function writeFloatLE (value, offset, noAssert) {
 	  return writeFloat(this, value, offset, true, noAssert)
 	}
-	
+
 	Buffer.prototype.writeFloatBE = function writeFloatBE (value, offset, noAssert) {
 	  return writeFloat(this, value, offset, false, noAssert)
 	}
-	
+
 	function writeDouble (buf, value, offset, littleEndian, noAssert) {
 	  if (!noAssert) {
 	    checkIEEE754(buf, value, offset, 8, 1.7976931348623157E+308, -1.7976931348623157E+308)
@@ -40882,15 +25143,15 @@ return  (function(modules) {
 	  ieee754.write(buf, value, offset, littleEndian, 52, 8)
 	  return offset + 8
 	}
-	
+
 	Buffer.prototype.writeDoubleLE = function writeDoubleLE (value, offset, noAssert) {
 	  return writeDouble(this, value, offset, true, noAssert)
 	}
-	
+
 	Buffer.prototype.writeDoubleBE = function writeDoubleBE (value, offset, noAssert) {
 	  return writeDouble(this, value, offset, false, noAssert)
 	}
-	
+
 	
 	Buffer.prototype.copy = function copy (target, targetStart, start, end) {
 	  if (!start) start = 0
@@ -40898,27 +25159,27 @@ return  (function(modules) {
 	  if (targetStart >= target.length) targetStart = target.length
 	  if (!targetStart) targetStart = 0
 	  if (end > 0 && end < start) end = start
-	
+
 	  
 	  if (end === start) return 0
 	  if (target.length === 0 || this.length === 0) return 0
-	
+
 	  
 	  if (targetStart < 0) {
 	    throw new RangeError('targetStart out of bounds')
 	  }
 	  if (start < 0 || start >= this.length) throw new RangeError('sourceStart out of bounds')
 	  if (end < 0) throw new RangeError('sourceEnd out of bounds')
-	
+
 	  
 	  if (end > this.length) end = this.length
 	  if (target.length - targetStart < end - start) {
 	    end = target.length - targetStart + start
 	  }
-	
+
 	  var len = end - start
 	  var i
-	
+
 	  if (this === target && start < targetStart && targetStart < end) {
 	    
 	    for (i = len - 1; i >= 0; --i) {
@@ -40936,10 +25197,10 @@ return  (function(modules) {
 	      targetStart
 	    )
 	  }
-	
+
 	  return len
 	}
-	
+
 	
 	
 	
@@ -40970,21 +25231,21 @@ return  (function(modules) {
 	  } else if (typeof val === 'number') {
 	    val = val & 255
 	  }
-	
+
 	  
 	  if (start < 0 || this.length < start || this.length < end) {
 	    throw new RangeError('Out of range index')
 	  }
-	
+
 	  if (end <= start) {
 	    return this
 	  }
-	
+
 	  start = start >>> 0
 	  end = end === undefined ? this.length : end >>> 0
-	
+
 	  if (!val) val = 0
-	
+
 	  var i
 	  if (typeof val === 'number') {
 	    for (i = start; i < end; ++i) {
@@ -40999,15 +25260,15 @@ return  (function(modules) {
 	      this[i + start] = bytes[i % len]
 	    }
 	  }
-	
+
 	  return this
 	}
+
 	
 	
-	
-	
+
 	var INVALID_BASE64_RE = /[^+\/0-9A-Za-z-_]/g
-	
+
 	function base64clean (str) {
 	  
 	  str = stringtrim(str).replace(INVALID_BASE64_RE, '')
@@ -41019,27 +25280,27 @@ return  (function(modules) {
 	  }
 	  return str
 	}
-	
+
 	function stringtrim (str) {
 	  if (str.trim) return str.trim()
 	  return str.replace(/^\s+|\s+$/g, '')
 	}
-	
+
 	function toHex (n) {
 	  if (n < 16) return '0' + n.toString(16)
 	  return n.toString(16)
 	}
-	
+
 	function utf8ToBytes (string, units) {
 	  units = units || Infinity
 	  var codePoint
 	  var length = string.length
 	  var leadSurrogate = null
 	  var bytes = []
-	
+
 	  for (var i = 0; i < length; ++i) {
 	    codePoint = string.charCodeAt(i)
-	
+
 	    
 	    if (codePoint > 0xD7FF && codePoint < 0xE000) {
 	      
@@ -41054,29 +25315,29 @@ return  (function(modules) {
 	          if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
 	          continue
 	        }
-	
+
 	        
 	        leadSurrogate = codePoint
-	
+
 	        continue
 	      }
-	
+
 	      
 	      if (codePoint < 0xDC00) {
 	        if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
 	        leadSurrogate = codePoint
 	        continue
 	      }
-	
+
 	      
 	      codePoint = (leadSurrogate - 0xD800 << 10 | codePoint - 0xDC00) + 0x10000
 	    } else if (leadSurrogate) {
 	      
 	      if ((units -= 3) > -1) bytes.push(0xEF, 0xBF, 0xBD)
 	    }
-	
+
 	    leadSurrogate = null
-	
+
 	    
 	    if (codePoint < 0x80) {
 	      if ((units -= 1) < 0) break
@@ -41106,10 +25367,10 @@ return  (function(modules) {
 	      throw new Error('Invalid code point')
 	    }
 	  }
-	
+
 	  return bytes
 	}
-	
+
 	function asciiToBytes (str) {
 	  var byteArray = []
 	  for (var i = 0; i < str.length; ++i) {
@@ -41118,27 +25379,27 @@ return  (function(modules) {
 	  }
 	  return byteArray
 	}
-	
+
 	function utf16leToBytes (str, units) {
 	  var c, hi, lo
 	  var byteArray = []
 	  for (var i = 0; i < str.length; ++i) {
 	    if ((units -= 2) < 0) break
-	
+
 	    c = str.charCodeAt(i)
 	    hi = c >> 8
 	    lo = c % 256
 	    byteArray.push(lo)
 	    byteArray.push(hi)
 	  }
-	
+
 	  return byteArray
 	}
-	
+
 	function base64ToBytes (str) {
 	  return base64.toByteArray(base64clean(str))
 	}
-	
+
 	function blitBuffer (src, dst, offset, length) {
 	  for (var i = 0; i < length; ++i) {
 	    if ((i + offset >= dst.length) || (i >= src.length)) break
@@ -41146,42 +25407,43 @@ return  (function(modules) {
 	  }
 	  return i
 	}
-	
+
 	function isnan (val) {
 	  return val !== val 
 	}
-	
+
 	}.call(exports, (function() { return this; }())))
 
  },
 
+ 795:
  function(module, exports) {
 
 	'use strict'
-	
+
 	exports.byteLength = byteLength
 	exports.toByteArray = toByteArray
 	exports.fromByteArray = fromByteArray
-	
+
 	var lookup = []
 	var revLookup = []
 	var Arr = typeof Uint8Array !== 'undefined' ? Uint8Array : Array
-	
+
 	var code = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
 	for (var i = 0, len = code.length; i < len; ++i) {
 	  lookup[i] = code[i]
 	  revLookup[code.charCodeAt(i)] = i
 	}
-	
+
 	revLookup['-'.charCodeAt(0)] = 62
 	revLookup['_'.charCodeAt(0)] = 63
-	
+
 	function placeHoldersCount (b64) {
 	  var len = b64.length
 	  if (len % 4 > 0) {
 	    throw new Error('Invalid string. Length must be a multiple of 4')
 	  }
-	
+
 	  
 	  
 	  
@@ -41189,31 +25451,31 @@ return  (function(modules) {
 	  
 	  return b64[len - 2] === '=' ? 2 : b64[len - 1] === '=' ? 1 : 0
 	}
-	
+
 	function byteLength (b64) {
 	  
 	  return b64.length * 3 / 4 - placeHoldersCount(b64)
 	}
-	
+
 	function toByteArray (b64) {
 	  var i, j, l, tmp, placeHolders, arr
 	  var len = b64.length
 	  placeHolders = placeHoldersCount(b64)
-	
+
 	  arr = new Arr(len * 3 / 4 - placeHolders)
-	
+
 	  
 	  l = placeHolders > 0 ? len - 4 : len
-	
+
 	  var L = 0
-	
+
 	  for (i = 0, j = 0; i < l; i += 4, j += 3) {
 	    tmp = (revLookup[b64.charCodeAt(i)] << 18) | (revLookup[b64.charCodeAt(i + 1)] << 12) | (revLookup[b64.charCodeAt(i + 2)] << 6) | revLookup[b64.charCodeAt(i + 3)]
 	    arr[L++] = (tmp >> 16) & 0xFF
 	    arr[L++] = (tmp >> 8) & 0xFF
 	    arr[L++] = tmp & 0xFF
 	  }
-	
+
 	  if (placeHolders === 2) {
 	    tmp = (revLookup[b64.charCodeAt(i)] << 2) | (revLookup[b64.charCodeAt(i + 1)] >> 4)
 	    arr[L++] = tmp & 0xFF
@@ -41222,14 +25484,14 @@ return  (function(modules) {
 	    arr[L++] = (tmp >> 8) & 0xFF
 	    arr[L++] = tmp & 0xFF
 	  }
-	
+
 	  return arr
 	}
-	
+
 	function tripletToBase64 (num) {
 	  return lookup[num >> 18 & 0x3F] + lookup[num >> 12 & 0x3F] + lookup[num >> 6 & 0x3F] + lookup[num & 0x3F]
 	}
-	
+
 	function encodeChunk (uint8, start, end) {
 	  var tmp
 	  var output = []
@@ -41239,7 +25501,7 @@ return  (function(modules) {
 	  }
 	  return output.join('')
 	}
-	
+
 	function fromByteArray (uint8) {
 	  var tmp
 	  var len = uint8.length
@@ -41247,12 +25509,12 @@ return  (function(modules) {
 	  var output = ''
 	  var parts = []
 	  var maxChunkLength = 16383 
-	
+
 	  
 	  for (var i = 0, len2 = len - extraBytes; i < len2; i += maxChunkLength) {
 	    parts.push(encodeChunk(uint8, i, (i + maxChunkLength) > len2 ? len2 : (i + maxChunkLength)))
 	  }
-	
+
 	  
 	  if (extraBytes === 1) {
 	    tmp = uint8[len - 1]
@@ -41266,15 +25528,16 @@ return  (function(modules) {
 	    output += lookup[(tmp << 2) & 0x3F]
 	    output += '='
 	  }
-	
+
 	  parts.push(output)
-	
+
 	  return parts.join('')
 	}
 
 
  },
 
+ 796:
  function(module, exports) {
 
 	exports.read = function (buffer, offset, isLE, mLen, nBytes) {
@@ -41286,19 +25549,19 @@ return  (function(modules) {
 	  var i = isLE ? (nBytes - 1) : 0
 	  var d = isLE ? -1 : 1
 	  var s = buffer[offset + i]
-	
+
 	  i += d
-	
+
 	  e = s & ((1 << (-nBits)) - 1)
 	  s >>= (-nBits)
 	  nBits += eLen
 	  for (; nBits > 0; e = e * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-	
+
 	  m = e & ((1 << (-nBits)) - 1)
 	  e >>= (-nBits)
 	  nBits += mLen
 	  for (; nBits > 0; m = m * 256 + buffer[offset + i], i += d, nBits -= 8) {}
-	
+
 	  if (e === 0) {
 	    e = 1 - eBias
 	  } else if (e === eMax) {
@@ -41309,7 +25572,7 @@ return  (function(modules) {
 	  }
 	  return (s ? -1 : 1) * m * Math.pow(2, e - mLen)
 	}
-	
+
 	exports.write = function (buffer, value, offset, isLE, mLen, nBytes) {
 	  var e, m, c
 	  var eLen = nBytes * 8 - mLen - 1
@@ -41319,9 +25582,9 @@ return  (function(modules) {
 	  var i = isLE ? 0 : (nBytes - 1)
 	  var d = isLE ? 1 : -1
 	  var s = value < 0 || (value === 0 && 1 / value < 0) ? 1 : 0
-	
+
 	  value = Math.abs(value)
-	
+
 	  if (isNaN(value) || value === Infinity) {
 	    m = isNaN(value) ? 1 : 0
 	    e = eMax
@@ -41340,7 +25603,7 @@ return  (function(modules) {
 	      e++
 	      c /= 2
 	    }
-	
+
 	    if (e + eBias >= eMax) {
 	      m = 0
 	      e = eMax
@@ -41352,23 +25615,24 @@ return  (function(modules) {
 	      e = 0
 	    }
 	  }
-	
+
 	  for (; mLen >= 8; buffer[offset + i] = m & 0xff, i += d, m /= 256, mLen -= 8) {}
-	
+
 	  e = (e << mLen) | m
 	  eLen += mLen
 	  for (; eLen > 0; buffer[offset + i] = e & 0xff, i += d, e /= 256, eLen -= 8) {}
-	
+
 	  buffer[offset + i - d] |= s * 128
 	}
 
 
  },
 
+ 797:
  function(module, exports) {
 
 	var toString = {}.toString;
-	
+
 	module.exports = Array.isArray || function (arr) {
 	  return toString.call(arr) == '[object Array]';
 	};
@@ -41376,281 +25640,30 @@ return  (function(modules) {
 
  },
 
- function(module, exports, __webpack_require__) {
-
-	var apply = Function.prototype.apply;
-	
-	
-	
-	exports.setTimeout = function() {
-	  return new Timeout(apply.call(setTimeout, window, arguments), clearTimeout);
-	};
-	exports.setInterval = function() {
-	  return new Timeout(apply.call(setInterval, window, arguments), clearInterval);
-	};
-	exports.clearTimeout =
-	exports.clearInterval = function(timeout) {
-	  if (timeout) {
-	    timeout.close();
-	  }
-	};
-	
-	function Timeout(id, clearFn) {
-	  this._id = id;
-	  this._clearFn = clearFn;
-	}
-	Timeout.prototype.unref = Timeout.prototype.ref = function() {};
-	Timeout.prototype.close = function() {
-	  this._clearFn.call(window, this._id);
-	};
-	
-	
-	exports.enroll = function(item, msecs) {
-	  clearTimeout(item._idleTimeoutId);
-	  item._idleTimeout = msecs;
-	};
-	
-	exports.unenroll = function(item) {
-	  clearTimeout(item._idleTimeoutId);
-	  item._idleTimeout = -1;
-	};
-	
-	exports._unrefActive = exports.active = function(item) {
-	  clearTimeout(item._idleTimeoutId);
-	
-	  var msecs = item._idleTimeout;
-	  if (msecs >= 0) {
-	    item._idleTimeoutId = setTimeout(function onTimeout() {
-	      if (item._onTimeout)
-	        item._onTimeout();
-	    }, msecs);
-	  }
-	};
-	
-	
-	__webpack_require__(786);
-	exports.setImmediate = setImmediate;
-	exports.clearImmediate = clearImmediate;
-
-
- },
-
- function(module, exports, __webpack_require__) {
-
-	(function(global, process) {(function (global, undefined) {
-	    "use strict";
-	
-	    if (global.setImmediate) {
-	        return;
-	    }
-	
-	    var nextHandle = 1; 
-	    var tasksByHandle = {};
-	    var currentlyRunningATask = false;
-	    var doc = global.document;
-	    var registerImmediate;
-	
-	    function setImmediate(callback) {
-	      
-	      if (typeof callback !== "function") {
-	        callback = new Function("" + callback);
-	      }
-	      
-	      var args = new Array(arguments.length - 1);
-	      for (var i = 0; i < args.length; i++) {
-	          args[i] = arguments[i + 1];
-	      }
-	      
-	      var task = { callback: callback, args: args };
-	      tasksByHandle[nextHandle] = task;
-	      registerImmediate(nextHandle);
-	      return nextHandle++;
-	    }
-	
-	    function clearImmediate(handle) {
-	        delete tasksByHandle[handle];
-	    }
-	
-	    function run(task) {
-	        var callback = task.callback;
-	        var args = task.args;
-	        switch (args.length) {
-	        case 0:
-	            callback();
-	            break;
-	        case 1:
-	            callback(args[0]);
-	            break;
-	        case 2:
-	            callback(args[0], args[1]);
-	            break;
-	        case 3:
-	            callback(args[0], args[1], args[2]);
-	            break;
-	        default:
-	            callback.apply(undefined, args);
-	            break;
-	        }
-	    }
-	
-	    function runIfPresent(handle) {
-	        
-	        
-	        if (currentlyRunningATask) {
-	            
-	            
-	            setTimeout(runIfPresent, 0, handle);
-	        } else {
-	            var task = tasksByHandle[handle];
-	            if (task) {
-	                currentlyRunningATask = true;
-	                try {
-	                    run(task);
-	                } finally {
-	                    clearImmediate(handle);
-	                    currentlyRunningATask = false;
-	                }
-	            }
-	        }
-	    }
-	
-	    function installNextTickImplementation() {
-	        registerImmediate = function(handle) {
-	            process.nextTick(function () { runIfPresent(handle); });
-	        };
-	    }
-	
-	    function canUsePostMessage() {
-	        
-	        
-	        if (global.postMessage && !global.importScripts) {
-	            var postMessageIsAsynchronous = true;
-	            var oldOnMessage = global.onmessage;
-	            global.onmessage = function() {
-	                postMessageIsAsynchronous = false;
-	            };
-	            global.postMessage("", "*");
-	            global.onmessage = oldOnMessage;
-	            return postMessageIsAsynchronous;
-	        }
-	    }
-	
-	    function installPostMessageImplementation() {
-	        
-	        
-	        
-	
-	        var messagePrefix = "setImmediate$" + Math.random() + "$";
-	        var onGlobalMessage = function(event) {
-	            if (event.source === global &&
-	                typeof event.data === "string" &&
-	                event.data.indexOf(messagePrefix) === 0) {
-	                runIfPresent(+event.data.slice(messagePrefix.length));
-	            }
-	        };
-	
-	        if (global.addEventListener) {
-	            global.addEventListener("message", onGlobalMessage, false);
-	        } else {
-	            global.attachEvent("onmessage", onGlobalMessage);
-	        }
-	
-	        registerImmediate = function(handle) {
-	            global.postMessage(messagePrefix + handle, "*");
-	        };
-	    }
-	
-	    function installMessageChannelImplementation() {
-	        var channel = new MessageChannel();
-	        channel.port1.onmessage = function(event) {
-	            var handle = event.data;
-	            runIfPresent(handle);
-	        };
-	
-	        registerImmediate = function(handle) {
-	            channel.port2.postMessage(handle);
-	        };
-	    }
-	
-	    function installReadyStateChangeImplementation() {
-	        var html = doc.documentElement;
-	        registerImmediate = function(handle) {
-	            
-	            
-	            var script = doc.createElement("script");
-	            script.onreadystatechange = function () {
-	                runIfPresent(handle);
-	                script.onreadystatechange = null;
-	                html.removeChild(script);
-	                script = null;
-	            };
-	            html.appendChild(script);
-	        };
-	    }
-	
-	    function installSetTimeoutImplementation() {
-	        registerImmediate = function(handle) {
-	            setTimeout(runIfPresent, 0, handle);
-	        };
-	    }
-	
-	    
-	    var attachTo = Object.getPrototypeOf && Object.getPrototypeOf(global);
-	    attachTo = attachTo && attachTo.setTimeout ? attachTo : global;
-	
-	    
-	    if ({}.toString.call(global.process) === "[object process]") {
-	        
-	        installNextTickImplementation();
-	
-	    } else if (canUsePostMessage()) {
-	        
-	        installPostMessageImplementation();
-	
-	    } else if (global.MessageChannel) {
-	        
-	        installMessageChannelImplementation();
-	
-	    } else if (doc && "onreadystatechange" in doc.createElement("script")) {
-	        
-	        installReadyStateChangeImplementation();
-	
-	    } else {
-	        
-	        installSetTimeoutImplementation();
-	    }
-	
-	    attachTo.setImmediate = setImmediate;
-	    attachTo.clearImmediate = clearImmediate;
-	}(typeof self === "undefined" ? typeof global === "undefined" ? this : global : self));
-	
-	}.call(exports, (function() { return this; }()), __webpack_require__(120)))
-
- },
-
+ 800:
  function(module, exports, __webpack_require__) {
 
 	(function(module, Buffer) {(function (global, module) {
-	
+
 	  var exports = module.exports;
-	
+
 	  
 
 
-	
+
 	  module.exports = expect;
 	  expect.Assertion = Assertion;
-	
+
 	  
 
 
-	
+
 	  expect.version = '0.3.1';
-	
+
 	  
 
 
-	
+
 	  var flags = {
 	      not: ['to', 'be', 'have', 'include', 'only']
 	    , to: ['be', 'have', 'include', 'only', 'not']
@@ -41658,49 +25671,49 @@ return  (function(modules) {
 	    , have: ['own']
 	    , be: ['an']
 	  };
-	
+
 	  function expect (obj) {
 	    return new Assertion(obj);
 	  }
-	
+
 	  
 
 
 
 
-	
+
 	  function Assertion (obj, flag, parent) {
 	    this.obj = obj;
 	    this.flags = {};
-	
+
 	    if (undefined != parent) {
 	      this.flags[flag] = true;
-	
+
 	      for (var i in parent.flags) {
 	        if (parent.flags.hasOwnProperty(i)) {
 	          this.flags[i] = true;
 	        }
 	      }
 	    }
-	
+
 	    var $flags = flag ? flags[flag] : keys(flags)
 	      , self = this;
-	
+
 	    if ($flags) {
 	      for (var i = 0, l = $flags.length; i < l; i++) {
 	        
 	        if (this.flags[$flags[i]]) continue;
-	
+
 	        var name = $flags[i]
 	          , assertion = new Assertion(this.obj, name, this)
-	
+
 	        if ('function' == typeof Assertion.prototype[name]) {
 	          
 	          var old = this[name];
 	          this[name] = function () {
 	            return old.apply(self, arguments);
 	          };
-	
+
 	          for (var fn in Assertion.prototype) {
 	            if (Assertion.prototype.hasOwnProperty(fn) && fn != name) {
 	              this[name][fn] = bind(assertion[fn], assertion);
@@ -41712,18 +25725,18 @@ return  (function(modules) {
 	      }
 	    }
 	  }
-	
+
 	  
 
 
 
 
-	
+
 	  Assertion.prototype.assert = function (truth, msg, error, expected) {
 	    var msg = this.flags.not ? error : msg
 	      , ok = this.flags.not ? !truth : truth
 	      , err;
-	
+
 	    if (!ok) {
 	      err = new Error(msg.call(this));
 	      if (arguments.length > 3) {
@@ -41733,50 +25746,50 @@ return  (function(modules) {
 	      }
 	      throw err;
 	    }
-	
+
 	    this.and = new Assertion(this.obj);
 	  };
-	
+
 	  
 
 
 
 
-	
+
 	  Assertion.prototype.ok = function () {
 	    this.assert(
 	        !!this.obj
 	      , function(){ return 'expected ' + i(this.obj) + ' to be truthy' }
 	      , function(){ return 'expected ' + i(this.obj) + ' to be falsy' });
 	  };
-	
+
 	  
 
 
 
 
-	
+
 	  Assertion.prototype.withArgs = function() {
 	    expect(this.obj).to.be.a('function');
 	    var fn = this.obj;
 	    var args = Array.prototype.slice.call(arguments);
 	    return expect(function() { fn.apply(null, args); });
 	  };
-	
+
 	  
 
 
 
 
 
-	
+
 	  Assertion.prototype.throwError =
 	  Assertion.prototype.throwException = function (fn) {
 	    expect(this.obj).to.be.a('function');
-	
+
 	    var thrown = false
 	      , not = this.flags.not;
-	
+
 	    try {
 	      this.obj();
 	    } catch (e) {
@@ -41792,29 +25805,29 @@ return  (function(modules) {
 	      }
 	      thrown = true;
 	    }
-	
+
 	    if (isRegExp(fn) && not) {
 	      
 	      
 	      this.flags.not = false;
 	    }
-	
+
 	    var name = this.obj.name || 'fn';
 	    this.assert(
 	        thrown
 	      , function(){ return 'expected ' + name + ' to throw an exception' }
 	      , function(){ return 'expected ' + name + ' not to throw an exception' });
 	  };
-	
+
 	  
 
 
 
 
-	
+
 	  Assertion.prototype.empty = function () {
 	    var expectation;
-	
+
 	    if ('object' == typeof this.obj && null !== this.obj && !isArray(this.obj)) {
 	      if ('number' == typeof this.obj.length) {
 	        expectation = !this.obj.length;
@@ -41825,24 +25838,24 @@ return  (function(modules) {
 	      if ('string' != typeof this.obj) {
 	        expect(this.obj).to.be.an('object');
 	      }
-	
+
 	      expect(this.obj).to.have.property('length');
 	      expectation = !this.obj.length;
 	    }
-	
+
 	    this.assert(
 	        expectation
 	      , function(){ return 'expected ' + i(this.obj) + ' to be empty' }
 	      , function(){ return 'expected ' + i(this.obj) + ' to not be empty' });
 	    return this;
 	  };
-	
+
 	  
 
 
 
 
-	
+
 	  Assertion.prototype.be =
 	  Assertion.prototype.equal = function (obj) {
 	    this.assert(
@@ -41851,13 +25864,13 @@ return  (function(modules) {
 	      , function(){ return 'expected ' + i(this.obj) + ' to not equal ' + i(obj) });
 	    return this;
 	  };
-	
+
 	  
 
 
 
 
-	
+
 	  Assertion.prototype.eql = function (obj) {
 	    this.assert(
 	        expect.eql(this.obj, obj)
@@ -41866,7 +25879,7 @@ return  (function(modules) {
 	      , obj);
 	    return this;
 	  };
-	
+
 	  
 
 
@@ -41874,7 +25887,7 @@ return  (function(modules) {
 
 
 
-	
+
 	  Assertion.prototype.within = function (start, finish) {
 	    var range = start + '..' + finish;
 	    this.assert(
@@ -41883,19 +25896,19 @@ return  (function(modules) {
 	      , function(){ return 'expected ' + i(this.obj) + ' to not be within ' + range });
 	    return this;
 	  };
-	
+
 	  
 
 
 
 
-	
+
 	  Assertion.prototype.a =
 	  Assertion.prototype.an = function (type) {
 	    if ('string' == typeof type) {
 	      
 	      var n = /^[aeiou]/.test(type) ? 'n' : '';
-	
+
 	      
 	      this.assert(
 	          'array' == type ? isArray(this.obj) :
@@ -41913,17 +25926,17 @@ return  (function(modules) {
 	        , function(){ return 'expected ' + i(this.obj) + ' to be an instance of ' + name }
 	        , function(){ return 'expected ' + i(this.obj) + ' not to be an instance of ' + name });
 	    }
-	
+
 	    return this;
 	  };
-	
+
 	  
 
 
 
 
 
-	
+
 	  Assertion.prototype.greaterThan =
 	  Assertion.prototype.above = function (n) {
 	    this.assert(
@@ -41932,14 +25945,14 @@ return  (function(modules) {
 	      , function(){ return 'expected ' + i(this.obj) + ' to be below ' + n });
 	    return this;
 	  };
-	
+
 	  
 
 
 
 
 
-	
+
 	  Assertion.prototype.lessThan =
 	  Assertion.prototype.below = function (n) {
 	    this.assert(
@@ -41948,14 +25961,14 @@ return  (function(modules) {
 	      , function(){ return 'expected ' + i(this.obj) + ' to be above ' + n });
 	    return this;
 	  };
-	
+
 	  
 
 
 
 
 
-	
+
 	  Assertion.prototype.match = function (regexp) {
 	    this.assert(
 	        regexp.exec(this.obj)
@@ -41963,14 +25976,14 @@ return  (function(modules) {
 	      , function(){ return 'expected ' + i(this.obj) + ' not to match ' + regexp });
 	    return this;
 	  };
-	
+
 	  
 
 
 
 
 
-	
+
 	  Assertion.prototype.length = function (n) {
 	    expect(this.obj).to.have.property('length');
 	    var len = this.obj.length;
@@ -41980,7 +25993,7 @@ return  (function(modules) {
 	      , function(){ return 'expected ' + i(this.obj) + ' to not have a length of ' + len });
 	    return this;
 	  };
-	
+
 	  
 
 
@@ -41988,7 +26001,7 @@ return  (function(modules) {
 
 
 
-	
+
 	  Assertion.prototype.property = function (name, val) {
 	    if (this.flags.own) {
 	      this.assert(
@@ -41997,7 +26010,7 @@ return  (function(modules) {
 	        , function(){ return 'expected ' + i(this.obj) + ' to not have own property ' + i(name) });
 	      return this;
 	    }
-	
+
 	    if (this.flags.not && undefined !== val) {
 	      if (undefined === this.obj[name]) {
 	        throw new Error(i(this.obj) + ' has no property ' + i(name));
@@ -42009,13 +26022,13 @@ return  (function(modules) {
 	      } catch (e) {
 	        hasProp = undefined !== this.obj[name]
 	      }
-	
+
 	      this.assert(
 	          hasProp
 	        , function(){ return 'expected ' + i(this.obj) + ' to have a property ' + i(name) }
 	        , function(){ return 'expected ' + i(this.obj) + ' to not have a property ' + i(name) });
 	    }
-	
+
 	    if (undefined !== val) {
 	      this.assert(
 	          val === this.obj[name]
@@ -42024,18 +26037,18 @@ return  (function(modules) {
 	        , function(){ return 'expected ' + i(this.obj) + ' to not have a property ' + i(name)
 	          + ' of ' + i(val) });
 	    }
-	
+
 	    this.obj = this.obj[name];
 	    return this;
 	  };
-	
+
 	  
 
 
 
 
 
-	
+
 	  Assertion.prototype.string =
 	  Assertion.prototype.contain = function (obj) {
 	    if ('string' == typeof this.obj) {
@@ -42051,7 +26064,7 @@ return  (function(modules) {
 	    }
 	    return this;
 	  };
-	
+
 	  
 
 
@@ -42059,31 +26072,31 @@ return  (function(modules) {
 
 
 
-	
+
 	  Assertion.prototype.key =
 	  Assertion.prototype.keys = function ($keys) {
 	    var str
 	      , ok = true;
-	
+
 	    $keys = isArray($keys)
 	      ? $keys
 	      : Array.prototype.slice.call(arguments);
-	
+
 	    if (!$keys.length) throw new Error('keys required');
-	
+
 	    var actual = keys(this.obj)
 	      , len = $keys.length;
-	
+
 	    
 	    ok = every($keys, function (key) {
 	      return ~indexOf(actual, key);
 	    });
-	
+
 	    
 	    if (!this.flags.not && this.flags.only) {
 	      ok = ok && $keys.length == actual.length;
 	    }
-	
+
 	    
 	    if (len > 1) {
 	      $keys = map($keys, function (key) {
@@ -42094,22 +26107,22 @@ return  (function(modules) {
 	    } else {
 	      str = i($keys[0]);
 	    }
-	
+
 	    
 	    str = (len > 1 ? 'keys ' : 'key ') + str;
-	
+
 	    
 	    str = (!this.flags.only ? 'include ' : 'only have ') + str;
-	
+
 	    
 	    this.assert(
 	        ok
 	      , function(){ return 'expected ' + i(this.obj) + ' to ' + str }
 	      , function(){ return 'expected ' + i(this.obj) + ' to not ' + str });
-	
+
 	    return this;
 	  };
-	
+
 	  
 
 
@@ -42121,24 +26134,24 @@ return  (function(modules) {
 	    this.assert(false, error, error);
 	    return this;
 	  };
-	
+
 	  
 
 
-	
+
 	  function bind (fn, scope) {
 	    return function () {
 	      return fn.apply(scope, arguments);
 	    }
 	  }
-	
+
 	  
 
 
 
 
 
-	
+
 	  function every (arr, fn, thisObj) {
 	    var scope = thisObj || global;
 	    for (var i = 0, j = arr.length; i < j; ++i) {
@@ -42148,29 +26161,29 @@ return  (function(modules) {
 	    }
 	    return true;
 	  }
-	
+
 	  
 
 
 
 
 
-	
+
 	  function indexOf (arr, o, i) {
 	    if (Array.prototype.indexOf) {
 	      return Array.prototype.indexOf.call(arr, o, i);
 	    }
-	
+
 	    if (arr.length === undefined) {
 	      return -1;
 	    }
-	
+
 	    for (var j = arr.length, i = i < 0 ? i + j < 0 ? 0 : i + j : i || 0
 	        ; i < j && arr[i] !== o; i++);
-	
+
 	    return j <= i ? -1 : i;
 	  }
-	
+
 	  
 	  var getOuterHTML = function(element) {
 	    if ('outerHTML' in element) return element.outerHTML;
@@ -42187,7 +26200,7 @@ return  (function(modules) {
 	      return html;
 	    }
 	  };
-	
+
 	  
 	  var isDOMElement = function (object) {
 	    if (typeof HTMLElement === 'object') {
@@ -42199,21 +26212,21 @@ return  (function(modules) {
 	        typeof object.nodeName === 'string';
 	    }
 	  };
-	
+
 	  
 
 
 
 
 
-	
+
 	  function i (obj, showHidden, depth) {
 	    var seen = [];
-	
+
 	    function stylize (str) {
 	      return str;
 	    }
-	
+
 	    function format (value, recurseTimes) {
 	      
 	      
@@ -42224,21 +26237,21 @@ return  (function(modules) {
 	          !(value.constructor && value.constructor.prototype === value)) {
 	        return value.inspect(recurseTimes);
 	      }
-	
+
 	      
 	      switch (typeof value) {
 	        case 'undefined':
 	          return stylize('undefined', 'undefined');
-	
+
 	        case 'string':
 	          var simple = '\'' + json.stringify(value).replace(/^"|"$/g, '')
 	                                                   .replace(/'/g, "\\'")
 	                                                   .replace(/\\"/g, '"') + '\'';
 	          return stylize(simple, 'string');
-	
+
 	        case 'number':
 	          return stylize('' + value, 'number');
-	
+
 	        case 'boolean':
 	          return stylize('' + value, 'boolean');
 	      }
@@ -42246,15 +26259,15 @@ return  (function(modules) {
 	      if (value === null) {
 	        return stylize('null', 'null');
 	      }
-	
+
 	      if (isDOMElement(value)) {
 	        return getOuterHTML(value);
 	      }
-	
+
 	      
 	      var visible_keys = keys(value);
 	      var $keys = showHidden ? Object.getOwnPropertyNames(value) : visible_keys;
-	
+
 	      
 	      if (typeof value === 'function' && $keys.length === 0) {
 	        if (isRegExp(value)) {
@@ -42264,7 +26277,7 @@ return  (function(modules) {
 	          return stylize('[Function' + name + ']', 'special');
 	        }
 	      }
-	
+
 	      
 	      if (isDate(value) && $keys.length === 0) {
 	        return stylize(value.toUTCString(), 'date');
@@ -42274,7 +26287,7 @@ return  (function(modules) {
 	      if (value instanceof Error) {
 	        return stylize("["+value.toString()+"]", 'Error');
 	      }
-	
+
 	      var base, type, braces;
 	      
 	      if (isArray(value)) {
@@ -42284,7 +26297,7 @@ return  (function(modules) {
 	        type = 'Object';
 	        braces = ['{', '}'];
 	      }
-	
+
 	      
 	      if (typeof value === 'function') {
 	        var n = value.name ? ': ' + value.name : '';
@@ -42292,16 +26305,16 @@ return  (function(modules) {
 	      } else {
 	        base = '';
 	      }
-	
+
 	      
 	      if (isDate(value)) {
 	        base = ' ' + value.toUTCString();
 	      }
-	
+
 	      if ($keys.length === 0) {
 	        return braces[0] + base + braces[1];
 	      }
-	
+
 	      if (recurseTimes < 0) {
 	        if (isRegExp(value)) {
 	          return stylize('' + value, 'regexp');
@@ -42309,9 +26322,9 @@ return  (function(modules) {
 	          return stylize('[Object]', 'special');
 	        }
 	      }
-	
+
 	      seen.push(value);
-	
+
 	      var output = map($keys, function (key) {
 	        var name, str;
 	        if (value.__lookupGetter__) {
@@ -42367,19 +26380,19 @@ return  (function(modules) {
 	            name = stylize(name, 'string');
 	          }
 	        }
-	
+
 	        return name + ': ' + str;
 	      });
-	
+
 	      seen.pop();
-	
+
 	      var numLinesEst = 0;
 	      var length = reduce(output, function (prev, cur) {
 	        numLinesEst++;
 	        if (indexOf(cur, '\n') >= 0) numLinesEst++;
 	        return prev + cur.length + 1;
 	      }, 0);
-	
+
 	      if (length > 50) {
 	        output = braces[0] +
 	                 (base === '' ? '' : base + '\n ') +
@@ -42387,22 +26400,22 @@ return  (function(modules) {
 	                 output.join(',\n  ') +
 	                 ' ' +
 	                 braces[1];
-	
+
 	      } else {
 	        output = braces[0] + base + ' ' + output.join(', ') + ' ' + braces[1];
 	      }
-	
+
 	      return output;
 	    }
 	    return format(obj, (typeof depth === 'undefined' ? 2 : depth));
 	  }
-	
+
 	  expect.stringify = i;
-	
+
 	  function isArray (ar) {
 	    return Object.prototype.toString.call(ar) === '[object Array]';
 	  }
-	
+
 	  function isRegExp(re) {
 	    var s;
 	    try {
@@ -42410,7 +26423,7 @@ return  (function(modules) {
 	    } catch (e) {
 	      return false;
 	    }
-	
+
 	    return re instanceof RegExp || 
 	           
 	           typeof(re) === 'function' &&
@@ -42420,41 +26433,41 @@ return  (function(modules) {
 	           re.exec &&
 	           s.match(/^\/.*\/[gim]{0,3}$/);
 	  }
-	
+
 	  function isDate(d) {
 	    return d instanceof Date;
 	  }
-	
+
 	  function keys (obj) {
 	    if (Object.keys) {
 	      return Object.keys(obj);
 	    }
-	
+
 	    var keys = [];
-	
+
 	    for (var i in obj) {
 	      if (Object.prototype.hasOwnProperty.call(obj, i)) {
 	        keys.push(i);
 	      }
 	    }
-	
+
 	    return keys;
 	  }
-	
+
 	  function map (arr, mapper, that) {
 	    if (Array.prototype.map) {
 	      return Array.prototype.map.call(arr, mapper, that);
 	    }
-	
+
 	    var other= new Array(arr.length);
-	
+
 	    for (var i= 0, n = arr.length; i<n; i++)
 	      if (i in arr)
 	        other[i] = mapper.call(that, arr[i], i, arr);
-	
+
 	    return other;
 	  }
-	
+
 	  function reduce (arr, fun) {
 	    if (Array.prototype.reduce) {
 	      return Array.prototype.reduce.apply(
@@ -42462,16 +26475,16 @@ return  (function(modules) {
 	        , Array.prototype.slice.call(arguments, 1)
 	      );
 	    }
-	
+
 	    var len = +this.length;
-	
+
 	    if (typeof fun !== "function")
 	      throw new TypeError();
-	
+
 	    
 	    if (len === 0 && arguments.length === 1)
 	      throw new TypeError();
-	
+
 	    var i = 0;
 	    if (arguments.length >= 2) {
 	      var rv = arguments[1];
@@ -42481,28 +26494,28 @@ return  (function(modules) {
 	          rv = this[i++];
 	          break;
 	        }
-	
+
 	        
 	        if (++i >= len)
 	          throw new TypeError();
 	      } while (true);
 	    }
-	
+
 	    for (; i < len; i++) {
 	      if (i in this)
 	        rv = fun.call(null, rv, this[i], i, this);
 	    }
-	
+
 	    return rv;
 	  }
-	
+
 	  
 
 
 
 
 
-	
+
 	  expect.eql = function eql(actual, expected) {
 	    
 	    if (actual === expected) {
@@ -42510,18 +26523,18 @@ return  (function(modules) {
 	    } else if ('undefined' != typeof Buffer
 	      && Buffer.isBuffer(actual) && Buffer.isBuffer(expected)) {
 	      if (actual.length != expected.length) return false;
-	
+
 	      for (var i = 0; i < actual.length; i++) {
 	        if (actual[i] !== expected[i]) return false;
 	      }
-	
+
 	      return true;
-	
+
 	      
 	      
 	    } else if (actual instanceof Date && expected instanceof Date) {
 	      return actual.getTime() === expected.getTime();
-	
+
 	      
 	      
 	    } else if (typeof actual != 'object' && typeof expected != 'object') {
@@ -42540,20 +26553,20 @@ return  (function(modules) {
 	      return objEquiv(actual, expected);
 	    }
 	  };
-	
+
 	  function isUndefinedOrNull (value) {
 	    return value === null || value === undefined;
 	  }
-	
+
 	  function isArguments (object) {
 	    return Object.prototype.toString.call(object) == '[object Arguments]';
 	  }
-	
+
 	  function regExpEquiv (a, b) {
 	    return a.source === b.source && a.global === b.global &&
 	           a.ignoreCase === b.ignoreCase && a.multiline === b.multiline;
 	  }
-	
+
 	  function objEquiv (a, b) {
 	    if (isUndefinedOrNull(a) || isUndefinedOrNull(b))
 	      return false;
@@ -42596,24 +26609,24 @@ return  (function(modules) {
 	    }
 	    return true;
 	  }
-	
+
 	  var json = (function () {
 	    "use strict";
-	
+
 	    if ('object' == typeof JSON && JSON.parse && JSON.stringify) {
 	      return {
 	          parse: nativeJSON.parse
 	        , stringify: nativeJSON.stringify
 	      }
 	    }
-	
+
 	    var JSON = {};
-	
+
 	    function f(n) {
 	        
 	        return n < 10 ? '0' + n : n;
 	    }
-	
+
 	    function date(d, key) {
 	      return isFinite(d.valueOf()) ?
 	          d.getUTCFullYear()     + '-' +
@@ -42623,7 +26636,7 @@ return  (function(modules) {
 	          f(d.getUTCMinutes())   + ':' +
 	          f(d.getUTCSeconds())   + 'Z' : null;
 	    }
-	
+
 	    var cx = /[\u0000\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
 	        escapable = /[\\\"\x00-\x1f\x7f-\x9f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/g,
 	        gap,
@@ -42638,15 +26651,15 @@ return  (function(modules) {
 	            '\\': '\\\\'
 	        },
 	        rep;
-	
-	
+
+
 	    function quote(string) {
-	
+
 	  
 	  
 	  
 	  
-	
+
 	        escapable.lastIndex = 0;
 	        return escapable.test(string) ? '"' + string.replace(escapable, function (a) {
 	            var c = meta[a];
@@ -42654,12 +26667,12 @@ return  (function(modules) {
 	                '\\u' + ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
 	        }) + '"' : '"' + string + '"';
 	    }
-	
-	
+
+
 	    function str(key, holder) {
-	
+
 	  
-	
+
 	        var i,          
 	            k,          
 	            v,          
@@ -42667,82 +26680,82 @@ return  (function(modules) {
 	            mind = gap,
 	            partial,
 	            value = holder[key];
-	
+
 	  
-	
+
 	        if (value instanceof Date) {
 	            value = date(key);
 	        }
-	
+
 	  
 	  
-	
+
 	        if (typeof rep === 'function') {
 	            value = rep.call(holder, key, value);
 	        }
-	
+
 	  
-	
+
 	        switch (typeof value) {
 	        case 'string':
 	            return quote(value);
-	
+
 	        case 'number':
-	
+
 	  
-	
+
 	            return isFinite(value) ? String(value) : 'null';
-	
+
 	        case 'boolean':
 	        case 'null':
-	
+
 	  
 	  
 	  
-	
+
 	            return String(value);
-	
+
 	  
 	  
-	
+
 	        case 'object':
-	
+
 	  
 	  
-	
+
 	            if (!value) {
 	                return 'null';
 	            }
-	
+
 	  
-	
+
 	            gap += indent;
 	            partial = [];
-	
+
 	  
-	
+
 	            if (Object.prototype.toString.apply(value) === '[object Array]') {
-	
+
 	  
 	  
-	
+
 	                length = value.length;
 	                for (i = 0; i < length; i += 1) {
 	                    partial[i] = str(i, value) || 'null';
 	                }
-	
+
 	  
 	  
-	
+
 	                v = partial.length === 0 ? '[]' : gap ?
 	                    '[\n' + gap + partial.join(',\n' + gap) + '\n' + mind + ']' :
 	                    '[' + partial.join(',') + ']';
 	                gap = mind;
 	                return v;
 	            }
-	
+
 	  
-	
+
 	            if (rep && typeof rep === 'object') {
 	                length = rep.length;
 	                for (i = 0; i < length; i += 1) {
@@ -42755,9 +26768,9 @@ return  (function(modules) {
 	                    }
 	                }
 	            } else {
-	
+
 	  
-	
+
 	                for (k in value) {
 	                    if (Object.prototype.hasOwnProperty.call(value, k)) {
 	                        v = str(k, value);
@@ -42767,10 +26780,10 @@ return  (function(modules) {
 	                    }
 	                }
 	            }
-	
+
 	  
 	  
-	
+
 	            v = partial.length === 0 ? '{}' : gap ?
 	                '{\n' + gap + partial.join(',\n' + gap) + '\n' + mind + '}' :
 	                '{' + partial.join(',') + '}';
@@ -42778,64 +26791,64 @@ return  (function(modules) {
 	            return v;
 	        }
 	    }
-	
+
 	  
-	
+
 	    JSON.stringify = function (value, replacer, space) {
-	
+
 	  
 	  
 	  
 	  
 	  
-	
+
 	        var i;
 	        gap = '';
 	        indent = '';
-	
+
 	  
 	  
-	
+
 	        if (typeof space === 'number') {
 	            for (i = 0; i < space; i += 1) {
 	                indent += ' ';
 	            }
-	
+
 	  
-	
+
 	        } else if (typeof space === 'string') {
 	            indent = space;
 	        }
-	
+
 	  
 	  
-	
+
 	        rep = replacer;
 	        if (replacer && typeof replacer !== 'function' &&
 	                (typeof replacer !== 'object' ||
 	                typeof replacer.length !== 'number')) {
 	            throw new Error('JSON.stringify');
 	        }
-	
+
 	  
 	  
-	
+
 	        return str('', {'': value});
 	    };
-	
+
 	  
-	
+
 	    JSON.parse = function (text, reviver) {
 	    
 	    
-	
+
 	        var j;
-	
+
 	        function walk(holder, key) {
-	
+
 	    
 	    
-	
+
 	            var k, v, value = holder[key];
 	            if (value && typeof value === 'object') {
 	                for (k in value) {
@@ -42851,12 +26864,12 @@ return  (function(modules) {
 	            }
 	            return reviver.call(holder, key, value);
 	        }
-	
-	
+
+
 	    
 	    
 	    
-	
+
 	        text = String(text);
 	        cx.lastIndex = 0;
 	        if (cx.test(text)) {
@@ -42865,12 +26878,12 @@ return  (function(modules) {
 	                    ('0000' + a.charCodeAt(0).toString(16)).slice(-4);
 	            });
 	        }
-	
+
 	    
 	    
 	    
 	    
-	
+
 	    
 	    
 	    
@@ -42878,46 +26891,1259 @@ return  (function(modules) {
 	    
 	    
 	    
-	
+
 	        if (/^[\],:{}\s]*$/
 	                .test(text.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g, '@')
 	                    .replace(/"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g, ']')
 	                    .replace(/(?:^|:|,)(?:\s*\[)+/g, ''))) {
-	
+
 	    
 	    
 	    
 	    
-	
+
 	            j = eval('(' + text + ')');
-	
+
 	    
 	    
-	
+
 	            return typeof reviver === 'function' ?
 	                walk({'': j}, '') : j;
 	        }
-	
+
 	    
-	
+
 	        throw new SyntaxError('JSON.parse');
 	    };
-	
+
 	    return JSON;
 	  })();
-	
+
 	  if ('undefined' != typeof window) {
 	    window.expect = module.exports;
 	  }
-	
+
 	})(
 	    this
 	  ,  true ? module : {exports: {}}
 	);
+
+	}.call(exports, __webpack_require__(51)(module), __webpack_require__(794).Buffer))
+
+ },
+
+ 828:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var feature = __webpack_require__(829);
+
+	module.exports = feature;
+
+ },
+
+ 829:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var pick = __webpack_require__(67);
+	var put = __webpack_require__(112);
+	var fs = __webpack_require__(118);
+	var path = __webpack_require__(119);
+
+	var config = void 0;
+
+	var flag = __webpack_require__(121);
+
+	function isBrowser() {
+	  return typeof window == "object" && typeof module == "undefined";
+	}
+
 	
-	}.call(exports, __webpack_require__(51)(module), __webpack_require__(781).Buffer))
+
+
+
+	function getValue(key) {
+	  return pick(config, key);
+	}
+
+	function setValue(key, value) {
+	  return put(config, key, value);
+	}
+
+	function isEnabled(key) {
+	  return config.features && typeof config.features[key] == "object" ? config.features[key].enabled : config.features[key];
+	}
+
+	function isDevelopment() {
+	  if (isBrowser()) {
+	    if (true) {
+	      return false;
+	    }
+	    var href = window.location ? window.location.href : "";
+	    return href.match(/^file:/) || href.match(/localhost:/);
+	  }
+
+	  if (isFirefoxPanel()) {
+	    
+	    return ("production") === "development";
+	  }
+	  return ("production") !== "production";
+	}
+
+	function isTesting() {
+	  return flag.testing;
+	}
+
+	function isFirefoxPanel() {
+	  return ("firefox-panel") == "firefox-panel";
+	}
+
+	function isApplication() {
+	  return ("firefox-panel") == "application";
+	}
+
+	function isFirefox() {
+	  return (/firefox/i.test(navigator.userAgent)
+	  );
+	}
+
+	function setConfig(value) {
+	  config = value;
+	}
+
+	function getConfig() {
+	  return config;
+	}
+
+	function updateLocalConfig(relativePath) {
+	  var localConfigPath = path.resolve(relativePath, "../configs/local.json");
+	  var output = JSON.stringify(config, null, 2);
+	  fs.writeFileSync(localConfigPath, output, { flag: "w" });
+	  return output;
+	}
+
+	module.exports = {
+	  isEnabled,
+	  getValue,
+	  setValue,
+	  isDevelopment,
+	  isTesting,
+	  isFirefoxPanel,
+	  isApplication,
+	  isFirefox,
+	  getConfig,
+	  setConfig,
+	  updateLocalConfig
+	};
+
+ },
+
+ 830:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var Menu = __webpack_require__(967);
+	var MenuItem = __webpack_require__(970);
+
+	var _require = __webpack_require__(971),
+	    PrefsHelper = _require.PrefsHelper;
+
+	var Services = __webpack_require__(29);
+
+	var _require2 = __webpack_require__(972),
+	    KeyShortcuts = _require2.KeyShortcuts;
+
+	module.exports = {
+	  KeyShortcuts,
+	  Menu,
+	  MenuItem,
+	  PrefsHelper,
+	  Services
+	};
+
+ },
+
+ 967:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var EventEmitter = __webpack_require__(968);
+
+	
+
+
+
+
+
+
+
+
+
+	function Menu() {
+	  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+	      _ref$id = _ref.id,
+	      id = _ref$id === undefined ? null : _ref$id;
+
+	  this.menuitems = [];
+	  this.id = id;
+
+	  Object.defineProperty(this, "items", {
+	    get() {
+	      return this.menuitems;
+	    }
+	  });
+
+	  EventEmitter.decorate(this);
+	}
+
+	
+
+
+
+
+	Menu.prototype.append = function (menuItem) {
+	  this.menuitems.push(menuItem);
+	};
+
+	
+
+
+
+
+
+	Menu.prototype.insert = function (pos, menuItem) {
+	  throw Error("Not implemented");
+	};
+
+	
+
+
+
+
+
+
+
+
+
+
+
+	Menu.prototype.popup = function (screenX, screenY, toolbox) {
+	  var doc = toolbox.doc;
+	  var popupset = doc.querySelector("popupset");
+	  
+	  
+	  
+	  
+	  var popup = popupset.querySelector("menupopup[menu-api=\"true\"]");
+	  if (popup) {
+	    popup.hidePopup();
+	  }
+
+	  popup = this.createPopup(doc);
+	  popup.setAttribute("menu-api", "true");
+
+	  if (this.id) {
+	    popup.id = this.id;
+	  }
+	  this._createMenuItems(popup);
+
+	  
+	  popup.addEventListener("popuphidden", e => {
+	    if (e.target === popup) {
+	      popup.remove();
+	      this.emit("close", popup);
+	    }
+	  });
+
+	  popup.addEventListener("popupshown", e => {
+	    if (e.target === popup) {
+	      this.emit("open", popup);
+	    }
+	  });
+
+	  popupset.appendChild(popup);
+	  popup.openPopupAtScreen(screenX, screenY, true);
+	};
+
+	Menu.prototype.createPopup = function (doc) {
+	  return doc.createElement("menupopup");
+	};
+
+	Menu.prototype._createMenuItems = function (parent) {
+	  var doc = parent.ownerDocument;
+	  this.menuitems.forEach(item => {
+	    if (!item.visible) {
+	      return;
+	    }
+
+	    if (item.submenu) {
+	      var menupopup = doc.createElement("menupopup");
+	      item.submenu._createMenuItems(menupopup);
+
+	      var menuitem = doc.createElement("menuitem");
+	      menuitem.setAttribute("label", item.label);
+	      menuitem.textContent = item.label;
+	      var menu = doc.createElement("menu");
+	      menu.appendChild(menuitem);
+	      menu.appendChild(menupopup);
+	      if (item.disabled) {
+	        menu.setAttribute("disabled", "true");
+	      }
+	      if (item.accesskey) {
+	        menu.setAttribute("accesskey", item.accesskey);
+	      }
+	      if (item.id) {
+	        menu.id = item.id;
+	      }
+	      parent.appendChild(menu);
+	    } else if (item.type === "separator") {
+	      var menusep = doc.createElement("menuseparator");
+	      parent.appendChild(menusep);
+	    } else {
+	      var _menuitem = doc.createElement("menuitem");
+	      _menuitem.setAttribute("label", item.label);
+	      _menuitem.textContent = item.label;
+	      _menuitem.addEventListener("command", () => item.click());
+
+	      if (item.type === "checkbox") {
+	        _menuitem.setAttribute("type", "checkbox");
+	      }
+	      if (item.type === "radio") {
+	        _menuitem.setAttribute("type", "radio");
+	      }
+	      if (item.disabled) {
+	        _menuitem.setAttribute("disabled", "true");
+	      }
+	      if (item.checked) {
+	        _menuitem.setAttribute("checked", "true");
+	      }
+	      if (item.accesskey) {
+	        _menuitem.setAttribute("accesskey", item.accesskey);
+	      }
+	      if (item.id) {
+	        _menuitem.id = item.id;
+	      }
+
+	      parent.appendChild(_menuitem);
+	    }
+	  });
+	};
+
+	Menu.setApplicationMenu = () => {
+	  throw Error("Not implemented");
+	};
+
+	Menu.sendActionToFirstResponder = () => {
+	  throw Error("Not implemented");
+	};
+
+	Menu.buildFromTemplate = () => {
+	  throw Error("Not implemented");
+	};
+
+	module.exports = Menu;
+
+ },
+
+ 968:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var EventEmitter = function EventEmitter() {};
+	module.exports = EventEmitter;
+
+	var promise = __webpack_require__(969);
+
+	
+
+
+
+
+
+
+	EventEmitter.decorate = function EventEmitter_decorate(aObjectToDecorate) {
+	  var emitter = new EventEmitter();
+	  aObjectToDecorate.on = emitter.on.bind(emitter);
+	  aObjectToDecorate.off = emitter.off.bind(emitter);
+	  aObjectToDecorate.once = emitter.once.bind(emitter);
+	  aObjectToDecorate.emit = emitter.emit.bind(emitter);
+	};
+
+	EventEmitter.prototype = {
+	  
+
+
+
+
+
+
+
+	  on: function EventEmitter_on(aEvent, aListener) {
+	    if (!this._eventEmitterListeners) this._eventEmitterListeners = new Map();
+	    if (!this._eventEmitterListeners.has(aEvent)) {
+	      this._eventEmitterListeners.set(aEvent, []);
+	    }
+	    this._eventEmitterListeners.get(aEvent).push(aListener);
+	  },
+
+	  
+
+
+
+
+
+
+
+
+
+
+
+
+
+	  once: function EventEmitter_once(aEvent, aListener) {
+	    var _this = this;
+
+	    var deferred = promise.defer();
+
+	    var handler = function (aEvent, aFirstArg) {
+	      for (var _len = arguments.length, aRest = Array(_len > 2 ? _len - 2 : 0), _key = 2; _key < _len; _key++) {
+	        aRest[_key - 2] = arguments[_key];
+	      }
+
+	      _this.off(aEvent, handler);
+	      if (aListener) {
+	        aListener.apply(null, [aEvent, aFirstArg].concat(aRest));
+	      }
+	      deferred.resolve(aFirstArg);
+	    };
+
+	    handler._originalListener = aListener;
+	    this.on(aEvent, handler);
+
+	    return deferred.promise;
+	  },
+
+	  
+
+
+
+
+
+
+
+
+	  off: function EventEmitter_off(aEvent, aListener) {
+	    if (!this._eventEmitterListeners) return;
+	    var listeners = this._eventEmitterListeners.get(aEvent);
+	    if (listeners) {
+	      this._eventEmitterListeners.set(aEvent, listeners.filter(l => {
+	        return l !== aListener && l._originalListener !== aListener;
+	      }));
+	    }
+	  },
+
+	  
+
+
+
+	  emit: function EventEmitter_emit(aEvent) {
+	    var _this2 = this,
+	        _arguments = arguments;
+
+	    if (!this._eventEmitterListeners || !this._eventEmitterListeners.has(aEvent)) {
+	      return;
+	    }
+
+	    var originalListeners = this._eventEmitterListeners.get(aEvent);
+
+	    var _loop = function (listener) {
+	      
+	      
+	      if (!_this2._eventEmitterListeners) {
+	        return "break";
+	      }
+
+	      
+	      
+	      if (originalListeners === _this2._eventEmitterListeners.get(aEvent) || _this2._eventEmitterListeners.get(aEvent).some(l => l === listener)) {
+	        try {
+	          listener.apply(null, _arguments);
+	        } catch (ex) {
+	          
+	          var msg = ex + ": " + ex.stack;
+	          
+	          console.log(msg);
+	        }
+	      }
+	    };
+
+	    for (var listener of this._eventEmitterListeners.get(aEvent)) {
+	      var _ret = _loop(listener);
+
+	      if (_ret === "break") break;
+	    }
+	  }
+	};
+
+ },
+
+ 969:
+ function(module, exports) {
+
+	"use strict";
+
+	
+
+
+
+	
+
+
+
+
+
+	var p = typeof window != "undefined" ? window.Promise : Promise;
+	p.defer = function defer() {
+	  var resolve, reject;
+	  var promise = new Promise(function () {
+	    resolve = arguments[0];
+	    reject = arguments[1];
+	  });
+	  return {
+	    resolve: resolve,
+	    reject: reject,
+	    promise: promise
+	  };
+	};
+
+	module.exports = p;
+
+ },
+
+ 970:
+ function(module, exports) {
+
+	"use strict";
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function MenuItem() {
+	  var _ref = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {},
+	      _ref$accesskey = _ref.accesskey,
+	      accesskey = _ref$accesskey === undefined ? null : _ref$accesskey,
+	      _ref$checked = _ref.checked,
+	      checked = _ref$checked === undefined ? false : _ref$checked,
+	      _ref$click = _ref.click,
+	      click = _ref$click === undefined ? () => {} : _ref$click,
+	      _ref$disabled = _ref.disabled,
+	      disabled = _ref$disabled === undefined ? false : _ref$disabled,
+	      _ref$label = _ref.label,
+	      label = _ref$label === undefined ? "" : _ref$label,
+	      _ref$id = _ref.id,
+	      id = _ref$id === undefined ? null : _ref$id,
+	      _ref$submenu = _ref.submenu,
+	      submenu = _ref$submenu === undefined ? null : _ref$submenu,
+	      _ref$type = _ref.type,
+	      type = _ref$type === undefined ? "normal" : _ref$type,
+	      _ref$visible = _ref.visible,
+	      visible = _ref$visible === undefined ? true : _ref$visible;
+
+	  this.accesskey = accesskey;
+	  this.checked = checked;
+	  this.click = click;
+	  this.disabled = disabled;
+	  this.id = id;
+	  this.label = label;
+	  this.submenu = submenu;
+	  this.type = type;
+	  this.visible = visible;
+	}
+
+	module.exports = MenuItem;
+
+ },
+
+ 971:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+	
+
+
+
+	var Services = __webpack_require__(29);
+	var EventEmitter = __webpack_require__(968);
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function PrefsHelper() {
+	  var prefsRoot = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : "";
+	  var prefsBlueprint = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+
+	  EventEmitter.decorate(this);
+
+	  var cache = new Map();
+
+	  for (var accessorName in prefsBlueprint) {
+	    var _prefsBlueprint$acces = _slicedToArray(prefsBlueprint[accessorName], 2),
+	        prefType = _prefsBlueprint$acces[0],
+	        prefName = _prefsBlueprint$acces[1];
+
+	    map(this, cache, accessorName, prefType, prefsRoot, prefName);
+	  }
+
+	  var observer = makeObserver(this, cache, prefsRoot, prefsBlueprint);
+	  this.registerObserver = () => observer.register();
+	  this.unregisterObserver = () => observer.unregister();
+	}
+
+	
+
+
+
+
+
+
+
+
+	function get(cache, prefType, prefsRoot, prefName) {
+	  var cachedPref = cache.get(prefName);
+	  if (cachedPref !== undefined) {
+	    return cachedPref;
+	  }
+	  var value = Services.prefs["get" + prefType + "Pref"]([prefsRoot, prefName].join("."));
+	  cache.set(prefName, value);
+	  return value;
+	}
+
+	
+
+
+
+
+
+
+
+
+	function set(cache, prefType, prefsRoot, prefName, value) {
+	  Services.prefs["set" + prefType + "Pref"]([prefsRoot, prefName].join("."), value);
+	  cache.set(prefName, value);
+	}
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function map(self, cache, accessorName, prefType, prefsRoot, prefName) {
+	  var serializer = arguments.length > 6 && arguments[6] !== undefined ? arguments[6] : { in: e => e, out: e => e };
+
+	  if (prefName in self) {
+	    throw new Error(`Can't use ${prefName} because it overrides a property` + "on the instance.");
+	  }
+	  if (prefType == "Json") {
+	    map(self, cache, accessorName, "Char", prefsRoot, prefName, {
+	      in: JSON.parse,
+	      out: JSON.stringify
+	    });
+	    return;
+	  }
+	  if (prefType == "Float") {
+	    map(self, cache, accessorName, "Char", prefsRoot, prefName, {
+	      in: Number.parseFloat,
+	      out: n => n + ""
+	    });
+	    return;
+	  }
+
+	  Object.defineProperty(self, accessorName, {
+	    get: () => serializer.in(get(cache, prefType, prefsRoot, prefName)),
+	    set: e => set(cache, prefType, prefsRoot, prefName, serializer.out(e))
+	  });
+	}
+
+	
+
+
+
+
+
+
+
+	function accessorNameForPref(somePrefName, prefsBlueprint) {
+	  for (var accessorName in prefsBlueprint) {
+	    var _prefsBlueprint$acces2 = _slicedToArray(prefsBlueprint[accessorName], 2),
+	        prefName = _prefsBlueprint$acces2[1];
+
+	    if (somePrefName == prefName) {
+	      return accessorName;
+	    }
+	  }
+	  return "";
+	}
+
+	
+
+
+
+
+
+
+
+
+	function makeObserver(self, cache, prefsRoot, prefsBlueprint) {
+	  return {
+	    register: function () {
+	      this._branch = Services.prefs.getBranch(prefsRoot + ".");
+	      this._branch.addObserver("", this);
+	    },
+	    unregister: function () {
+	      this._branch.removeObserver("", this);
+	    },
+	    observe: function (subject, topic, prefName) {
+	      
+	      
+	      var accessorName = accessorNameForPref(prefName, prefsBlueprint);
+	      if (!(accessorName in self)) {
+	        return;
+	      }
+	      cache.delete(prefName);
+	      self.emit("pref-changed", accessorName, self[accessorName]);
+	    }
+	  };
+	}
+
+	exports.PrefsHelper = PrefsHelper;
+
+ },
+
+ 972:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	var _slicedToArray = function () { function sliceIterator(arr, i) { var _arr = []; var _n = true; var _d = false; var _e = undefined; try { for (var _i = arr[Symbol.iterator](), _s; !(_n = (_s = _i.next()).done); _n = true) { _arr.push(_s.value); if (i && _arr.length === i) break; } } catch (err) { _d = true; _e = err; } finally { try { if (!_n && _i["return"]) _i["return"](); } finally { if (_d) throw _e; } } return _arr; } return function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { return sliceIterator(arr, i); } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } }; }();
+
+	var _require = __webpack_require__(29),
+	    appinfo = _require.appinfo;
+
+	var EventEmitter = __webpack_require__(968);
+	var isOSX = appinfo.OS === "Darwin";
+
+	
+	var ElectronKeysMapping = {
+	  "F1": "DOM_VK_F1",
+	  "F2": "DOM_VK_F2",
+	  "F3": "DOM_VK_F3",
+	  "F4": "DOM_VK_F4",
+	  "F5": "DOM_VK_F5",
+	  "F6": "DOM_VK_F6",
+	  "F7": "DOM_VK_F7",
+	  "F8": "DOM_VK_F8",
+	  "F9": "DOM_VK_F9",
+	  "F10": "DOM_VK_F10",
+	  "F11": "DOM_VK_F11",
+	  "F12": "DOM_VK_F12",
+	  "F13": "DOM_VK_F13",
+	  "F14": "DOM_VK_F14",
+	  "F15": "DOM_VK_F15",
+	  "F16": "DOM_VK_F16",
+	  "F17": "DOM_VK_F17",
+	  "F18": "DOM_VK_F18",
+	  "F19": "DOM_VK_F19",
+	  "F20": "DOM_VK_F20",
+	  "F21": "DOM_VK_F21",
+	  "F22": "DOM_VK_F22",
+	  "F23": "DOM_VK_F23",
+	  "F24": "DOM_VK_F24",
+	  "Space": "DOM_VK_SPACE",
+	  "Backspace": "DOM_VK_BACK_SPACE",
+	  "Delete": "DOM_VK_DELETE",
+	  "Insert": "DOM_VK_INSERT",
+	  "Return": "DOM_VK_RETURN",
+	  "Enter": "DOM_VK_RETURN",
+	  "Up": "DOM_VK_UP",
+	  "Down": "DOM_VK_DOWN",
+	  "Left": "DOM_VK_LEFT",
+	  "Right": "DOM_VK_RIGHT",
+	  "Home": "DOM_VK_HOME",
+	  "End": "DOM_VK_END",
+	  "PageUp": "DOM_VK_PAGE_UP",
+	  "PageDown": "DOM_VK_PAGE_DOWN",
+	  "Escape": "DOM_VK_ESCAPE",
+	  "Esc": "DOM_VK_ESCAPE",
+	  "Tab": "DOM_VK_TAB",
+	  "VolumeUp": "DOM_VK_VOLUME_UP",
+	  "VolumeDown": "DOM_VK_VOLUME_DOWN",
+	  "VolumeMute": "DOM_VK_VOLUME_MUTE",
+	  "PrintScreen": "DOM_VK_PRINTSCREEN"
+	};
+
+	
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	function KeyShortcuts(_ref) {
+	  var window = _ref.window,
+	      target = _ref.target;
+
+	  this.window = window;
+	  this.target = target || window;
+	  this.keys = new Map();
+	  this.eventEmitter = new EventEmitter();
+	  this.target.addEventListener("keydown", this);
+	}
+
+	
+
+
+
+
+
+
+
+
+
+
+	KeyShortcuts.parseElectronKey = function (window, str) {
+	  var modifiers = str.split("+");
+	  var key = modifiers.pop();
+
+	  var shortcut = {
+	    ctrl: false,
+	    meta: false,
+	    alt: false,
+	    shift: false,
+	    
+	    key: undefined,
+	    
+	    keyCode: undefined
+	  };
+	  for (var mod of modifiers) {
+	    if (mod === "Alt") {
+	      shortcut.alt = true;
+	    } else if (["Command", "Cmd"].includes(mod)) {
+	      shortcut.meta = true;
+	    } else if (["CommandOrControl", "CmdOrCtrl"].includes(mod)) {
+	      if (isOSX) {
+	        shortcut.meta = true;
+	      } else {
+	        shortcut.ctrl = true;
+	      }
+	    } else if (["Control", "Ctrl"].includes(mod)) {
+	      shortcut.ctrl = true;
+	    } else if (mod === "Shift") {
+	      shortcut.shift = true;
+	    } else {
+	      console.error("Unsupported modifier:", mod, "from key:", str);
+	      return null;
+	    }
+	  }
+
+	  
+	  
+	  if (key === "Plus") {
+	    key = "+";
+	  }
+
+	  if (typeof key === "string" && key.length === 1) {
+	    
+	    shortcut.key = key.toLowerCase();
+	  } else if (key in ElectronKeysMapping) {
+	    
+	    key = ElectronKeysMapping[key];
+	    shortcut.keyCode = window.KeyboardEvent[key];
+	    
+	    shortcut.keyCodeString = key;
+	    shortcut.key = key;
+	  } else {
+	    console.error("Unsupported key:", key);
+	    return null;
+	  }
+
+	  return shortcut;
+	};
+
+	KeyShortcuts.stringify = function (shortcut) {
+	  var list = [];
+	  if (shortcut.alt) {
+	    list.push("Alt");
+	  }
+	  if (shortcut.ctrl) {
+	    list.push("Ctrl");
+	  }
+	  if (shortcut.meta) {
+	    list.push("Cmd");
+	  }
+	  if (shortcut.shift) {
+	    list.push("Shift");
+	  }
+	  var key = void 0;
+	  if (shortcut.key) {
+	    key = shortcut.key.toUpperCase();
+	  } else {
+	    key = shortcut.keyCodeString;
+	  }
+	  list.push(key);
+	  return list.join("+");
+	};
+
+	KeyShortcuts.prototype = {
+	  destroy() {
+	    this.target.removeEventListener("keydown", this);
+	    this.keys.clear();
+	  },
+
+	  doesEventMatchShortcut(event, shortcut) {
+	    if (shortcut.meta != event.metaKey) {
+	      return false;
+	    }
+	    if (shortcut.ctrl != event.ctrlKey) {
+	      return false;
+	    }
+	    if (shortcut.alt != event.altKey) {
+	      return false;
+	    }
+	    
+	    
+	    if (shortcut.shift != event.shiftKey && event.key && event.key.match(/[a-zA-Z]/)) {
+	      return false;
+	    }
+	    if (shortcut.keyCode) {
+	      return event.keyCode == shortcut.keyCode;
+	    } else if (event.key in ElectronKeysMapping) {
+	      return ElectronKeysMapping[event.key] === shortcut.key;
+	    }
+
+	    
+	    var key = event.key || String.fromCharCode(event.keyCode);
+
+	    
+	    
+	    
+	    return key.toLowerCase() == shortcut.key || shortcut.key.match(/^[0-9]$/) && event.keyCode == shortcut.key.charCodeAt(0);
+	  },
+
+	  handleEvent(event) {
+	    for (var _ref2 of this.keys) {
+	      var _ref3 = _slicedToArray(_ref2, 2);
+
+	      var key = _ref3[0];
+	      var shortcut = _ref3[1];
+
+	      if (this.doesEventMatchShortcut(event, shortcut)) {
+	        this.eventEmitter.emit(key, event);
+	      }
+	    }
+	  },
+
+	  on(key, listener) {
+	    if (typeof listener !== "function") {
+	      throw new Error("KeyShortcuts.on() expects a function as " + "second argument");
+	    }
+	    if (!this.keys.has(key)) {
+	      var shortcut = KeyShortcuts.parseElectronKey(this.window, key);
+	      
+	      if (!shortcut) {
+	        return;
+	      }
+	      this.keys.set(key, shortcut);
+	    }
+	    this.eventEmitter.on(key, listener);
+	  },
+
+	  off(key, listener) {
+	    this.eventEmitter.off(key, listener);
+	  }
+	};
+	exports.KeyShortcuts = KeyShortcuts;
+
+ },
+
+ 1013:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+	var _require = __webpack_require__(760),
+	    initDebugger = _require.initDebugger,
+	    assertPausedLocation = _require.assertPausedLocation,
+	    findSource = _require.findSource,
+	    addBreakpoint = _require.addBreakpoint,
+	    assertHighlightLocation = _require.assertHighlightLocation,
+	    selectSource = _require.selectSource,
+	    invokeInTab = _require.invokeInTab,
+	    mouseOverEl = _require.mouseOverEl,
+	    findAllElements = _require.findAllElements,
+	    waitForPaused = _require.waitForPaused,
+	    waitForDispatch = _require.waitForDispatch;
+
+	
+	
+	
+
+	module.exports = (() => {
+	  var _ref = _asyncToGenerator(function* (ctx) {
+	    var ok = ctx.ok,
+	        is = ctx.is,
+	        info = ctx.info,
+	        EXAMPLE_URL = ctx.EXAMPLE_URL;
+
+
+	    var dbg = yield initDebugger("doc-scripts.html", "long.js");
+	    yield addBreakpoint(dbg, "long.js", 82);
+
+	    invokeInTab(dbg, "toggleModel");
+	    yield waitForPaused(dbg);
+	    var el = dbg.win.cm.getWrapperElement().querySelectorAll(".CodeMirror-line ")[50].querySelector(".cm-variable-2");
+
+	    mouseOverEl(dbg.win, el);
+	    assertPausedLocation(dbg, ctx, "long.js", 82);
+	  });
+
+	  return function (_x) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
+
+ },
+
+ 1014:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+	var _require = __webpack_require__(760),
+	    clickElement = _require.clickElement,
+	    evalInTab = _require.evalInTab,
+	    findElement = _require.findElement,
+	    initDebugger = _require.initDebugger,
+	    invokeInTab = _require.invokeInTab,
+	    resume = _require.resume,
+	    stepOver = _require.stepOver,
+	    waitForDispatch = _require.waitForDispatch,
+	    waitForPaused = _require.waitForPaused,
+	    waitForTime = _require.waitForTime;
+
+	function getScopeNodeLabel(dbg, index) {
+	  return findElement(dbg, "scopeNode", index).innerText;
+	}
+
+	function getScopeNodeValue(dbg, index) {
+	  return findElement(dbg, "scopeValue", index).innerText;
+	}
+
+	function expandNode(dbg, index) {
+	  var onLoadProperties = onLoadObjectProperties(dbg);
+	  clickElement(dbg, "scopeNode", index);
+	  return onLoadProperties;
+	}
+
+	function toggleScopes(dbg) {
+	  return findElement(dbg, "scopesHeader").click();
+	}
+
+	function onLoadObjectProperties(dbg) {
+	  return waitForDispatch(dbg, "LOAD_OBJECT_PROPERTIES");
+	}
+
+	module.exports = (() => {
+	  var _ref = _asyncToGenerator(function* (ctx) {
+	    var ok = ctx.ok,
+	        is = ctx.is,
+	        info = ctx.info;
+
+	    console.log(">>> starting");
+	    var dbg = yield initDebugger("doc-script-mutate.html", "script-mutate");
+
+	    toggleScopes(dbg);
+
+	    var onPaused = waitForPaused(dbg);
+	    invokeInTab(dbg, "mutate");
+	    yield onPaused;
+
+	    is(getScopeNodeLabel(dbg, 2), "<this>", 'The second element in the scope panel is "<this>"');
+	    is(getScopeNodeLabel(dbg, 3), "phonebook", 'The third element in the scope panel is "phonebook"');
+
+	    
+	    yield expandNode(dbg, 3);
+	    is(getScopeNodeLabel(dbg, 4), "S", 'The fourth element in the scope panel is "S"');
+
+	    
+	    yield expandNode(dbg, 4);
+	    is(getScopeNodeLabel(dbg, 5), "sarah", 'The fifth element in the scope panel is "sarah"');
+	    is(getScopeNodeLabel(dbg, 6), "serena", 'The sixth element in the scope panel is "serena"');
+
+	    
+	    yield expandNode(dbg, 5);
+	    is(getScopeNodeLabel(dbg, 6), "lastName", 'The sixth element in the scope panel is now "lastName"');
+	    is(getScopeNodeValue(dbg, 6), '"Doe"', 'The "lastName" element has the expected "Doe" value');
+
+	    info("Resuming");
+	    onPaused = waitForPaused(dbg);
+	    yield resume(dbg);
+	    yield onPaused;
+
+	    is(getScopeNodeLabel(dbg, 6), "lastName", 'The sixth element in the scope panel is still "lastName"');
+	    is(getScopeNodeValue(dbg, 6), '"Doe"', 'The "lastName" property is still "Doe", but it should be "Pierce"' + "since it was changed in the script.");
+
+	    onPaused = waitForPaused(dbg);
+	    yield resume(dbg);
+	    yield onPaused;
+	    is(getScopeNodeLabel(dbg, 6), "lastName", 'The sixth element in the scope panel is still "lastName"');
+	    is(getScopeNodeLabel(dbg, 7), "__proto__", 'The seventh element in the scope panel is still "__proto__", ' + 'but it should be now "timezone", since it was added to the "sarah" object ' + "in the script");
+	    is(getScopeNodeValue(dbg, 7), "Object", 'The seventh element in the scope panel has the value "Object", ' + 'but it should be "PST"');
+
+	    yield resume(dbg);
+	  });
+
+	  return function (_x) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
+
+ },
+
+ 1015:
+ function(module, exports, __webpack_require__) {
+
+	"use strict";
+
+	function _asyncToGenerator(fn) { return function () { var gen = fn.apply(this, arguments); return new Promise(function (resolve, reject) { function step(key, arg) { try { var info = gen[key](arg); var value = info.value; } catch (error) { reject(error); return; } if (info.done) { resolve(value); } else { return Promise.resolve(value).then(function (value) { step("next", value); }, function (err) { step("throw", err); }); } } return step("next"); }); }; }
+
+	var _require = __webpack_require__(760),
+	    initDebugger = _require.initDebugger,
+	    reload = _require.reload,
+	    selectSource = _require.selectSource,
+	    findElement = _require.findElement,
+	    waitForDispatch = _require.waitForDispatch;
+
+	function countTabs(dbg) {
+	  return findElement(dbg, "sourceTabs").children.length;
+	}
+
+	module.exports = (() => {
+	  var _ref = _asyncToGenerator(function* (ctx) {
+	    var ok = ctx.ok,
+	        is = ctx.is,
+	        info = ctx.info,
+	        requestLongerTimeout = ctx.requestLongerTimeout;
+
+
+	    var dbg = yield initDebugger("doc-scripts.html", "simple1", "simple2");
+
+	    yield selectSource(dbg, "simple1");
+	    yield selectSource(dbg, "simple2");
+	    expect(countTabs(dbg)).to.equal(2);
+
+	    
+	    dbg = yield initDebugger("doc-scripts.html", "simple1", "simple2");
+	    expect(countTabs(dbg)).to.equal(2);
+	    yield selectSource(dbg, "simple2");
+
+	    
+	    yield reload(dbg, "simple1", "simple2");
+	    yield waitForDispatch(dbg, "LOAD_SOURCE_TEXT");
+	    expect(countTabs(dbg)).to.equal(2);
+	  });
+
+	  return function (_x) {
+	    return _ref.apply(this, arguments);
+	  };
+	})();
 
  }
- ])
+
+ })
 });
 ;
