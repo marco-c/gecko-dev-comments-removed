@@ -37,6 +37,11 @@ struct ThreeDPoint final
   void Normalize()
   {
     
+    
+    if (IsZero()) {
+      return;
+    }
+    
     double invMax = 1 / MaxNorm();
     x *= invMax;
     y *= invMax;
