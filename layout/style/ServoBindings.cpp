@@ -1821,19 +1821,6 @@ ShutdownServo()
   Servo_Shutdown();
 }
 
-namespace mozilla {
-
-void
-AssertIsMainThreadOrServoFontMetricsLocked()
-{
-  if (!NS_IsMainThread()) {
-    MOZ_ASSERT(sServoFontMetricsLock);
-    sServoFontMetricsLock->AssertCurrentThreadOwns();
-  }
-}
-
-} 
-
 GeckoFontMetrics
 Gecko_GetFontMetrics(RawGeckoPresContextBorrowed aPresContext,
                      bool aIsVertical,
@@ -1841,20 +1828,13 @@ Gecko_GetFontMetrics(RawGeckoPresContextBorrowed aPresContext,
                      nscoord aFontSize,
                      bool aUseUserFontSet)
 {
+  
+  
+  MOZ_ASSERT(NS_IsMainThread());
   MutexAutoLock lock(*sServoFontMetricsLock);
   GeckoFontMetrics ret;
-
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-
   nsPresContext* presContext = const_cast<nsPresContext*>(aPresContext);
   presContext->SetUsesExChUnits(true);
   RefPtr<nsFontMetrics> fm = nsRuleNode::GetMetricsFor(presContext, aIsVertical,
