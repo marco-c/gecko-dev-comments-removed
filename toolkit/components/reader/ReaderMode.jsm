@@ -141,17 +141,26 @@ this.ReaderMode = {
       return null;
     }
 
+    let outerHash = "";
+    try {
+      let uriObj = Services.io.newURI(url, null, null);
+      url = uriObj.specIgnoringRef;
+      outerHash = uriObj.ref;
+    } catch (ex) {  }
+
     let searchParams = new URLSearchParams(url.substring("about:reader?".length));
     if (!searchParams.has("url")) {
       return null;
     }
-    let encodedURL = searchParams.get("url");
-    try {
-      return decodeURIComponent(encodedURL);
-    } catch (e) {
-      Cu.reportError("Error decoding original URL: " + e);
-      return encodedURL;
+    let originalUrl = searchParams.get("url");
+    if (outerHash) {
+      try {
+        let uriObj = Services.io.newURI(originalUrl, null, null);
+        uriObj = Services.io.newURI('#' + outerHash, null, uriObj);
+        originalUrl = uriObj.spec;
+      } catch (ex) {}
     }
+    return originalUrl;
   },
 
   
@@ -196,14 +205,13 @@ this.ReaderMode = {
 
 
   parseDocument: Task.async(function* (doc) {
-    let documentURI = Services.io.newURI(doc.documentURI, null, null);
-    let baseURI = Services.io.newURI(doc.baseURI, null, null);
-    if (!this._shouldCheckUri(documentURI) || !this._shouldCheckUri(baseURI, true)) {
+    let uri = Services.io.newURI(doc.documentURI, null, null);
+    if (!this._shouldCheckUri(uri)) {
       this.log("Reader mode disabled for URI");
       return null;
     }
 
-    return yield this._readerParse(baseURI, doc);
+    return yield this._readerParse(uri, doc);
   }),
 
   
@@ -214,13 +222,8 @@ this.ReaderMode = {
 
 
   downloadAndParseDocument: Task.async(function* (url) {
+    let uri = Services.io.newURI(url, null, null);
     let doc = yield this._downloadDocument(url);
-    let uri = Services.io.newURI(doc.baseURI, null, null);
-    if (!this._shouldCheckUri(uri, true)) {
-      this.log("Reader mode disabled for URI");
-      return null;
-    }
-
     return yield this._readerParse(uri, doc);
   }),
 
@@ -373,7 +376,7 @@ this.ReaderMode = {
     "youtube.com",
   ],
 
-  _shouldCheckUri: function (uri, isBaseUri = false) {
+  _shouldCheckUri: function (uri) {
     if (!(uri.schemeIs("http") || uri.schemeIs("https"))) {
       this.log("Not parsing URI scheme: " + uri.scheme);
       return false;
@@ -387,11 +390,11 @@ this.ReaderMode = {
     }
     
     let asciiHost = uri.asciiHost;
-    if (!isBaseUri && this._blockedHosts.some(blockedHost => asciiHost.endsWith(blockedHost))) {
+    if (this._blockedHosts.some(blockedHost => asciiHost.endsWith(blockedHost))) {
       return false;
     }
 
-    if (!isBaseUri && (!uri.filePath || uri.filePath == "/")) {
+    if (!uri.filePath || uri.filePath == "/") {
       this.log("Not parsing home page: " + uri.spec);
       return false;
     }
