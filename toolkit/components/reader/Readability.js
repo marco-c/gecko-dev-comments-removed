@@ -119,7 +119,7 @@ Readability.prototype = {
   
   
   REGEXPS: {
-    unlikelyCandidates: /banner|combx|comment|community|disqus|extra|foot|header|legends|menu|modal|related|remark|rss|shoutbox|sidebar|skyscraper|sponsor|ad-break|agegate|pagination|pager|popup/i,
+    unlikelyCandidates: /banner|combx|comment|community|cover-wrap|disqus|extra|foot|header|legends|menu|modal|related|remark|rss|shoutbox|sidebar|skyscraper|sponsor|ad-break|agegate|pagination|pager|popup|yom-remote/i,
     okMaybeItsACandidate: /and|article|body|column|main|shadow/i,
     positive: /article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story/i,
     negative: /hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|modal|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,
@@ -178,12 +178,25 @@ Readability.prototype = {
 
 
 
+  _replaceNodeTags: function(nodeList, newTagName) {
+    for (var i = nodeList.length - 1; i >= 0; i--) {
+      var node = nodeList[i];
+      this._setNodeTag(node, newTagName);
+    }
+  },
+
+  
 
 
 
 
 
-  _forEachNode: function(nodeList, fn, backward) {
+
+
+
+
+
+  _forEachNode: function(nodeList, fn) {
     Array.prototype.forEach.call(nodeList, fn, this);
   },
 
@@ -362,9 +375,7 @@ Readability.prototype = {
       this._replaceBrs(doc.body);
     }
 
-    this._forEachNode(doc.getElementsByTagName("font"), function(fontNode) {
-      this._setNodeTag(fontNode, "SPAN");
-    });
+    this._replaceNodeTags(doc.getElementsByTagName("font"), "SPAN");
   },
 
   
@@ -1062,12 +1073,15 @@ Readability.prototype = {
       metadata.excerpt = values["twitter:description"];
     }
 
-    if ("og:title" in values) {
-      
-      metadata.title = values["og:title"];
-    } else if ("twitter:title" in values) {
-      
-      metadata.title = values["twitter:title"];
+    metadata.title = this._getArticleTitle();
+    if (!metadata.title) {
+      if ("og:title" in values) {
+        
+        metadata.title = values["og:title"];
+      } else if ("twitter:title" in values) {
+        
+        metadata.title = values["twitter:title"];
+      }
     }
 
     return metadata;
@@ -1857,7 +1871,7 @@ Readability.prototype = {
     this._prepDocument();
 
     var metadata = this._getArticleMetadata();
-    var articleTitle = metadata.title || this._getArticleTitle();
+    var articleTitle = metadata.title;
 
     var articleContent = this._grabArticle();
     if (!articleContent)
