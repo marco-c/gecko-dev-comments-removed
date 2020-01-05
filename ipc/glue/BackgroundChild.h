@@ -87,10 +87,6 @@ private:
   
   static void
   Startup();
-
-  
-  static PBackgroundChild*
-  Alloc(Transport* aTransport, ProcessId aOtherProcess);
 };
 
 } 

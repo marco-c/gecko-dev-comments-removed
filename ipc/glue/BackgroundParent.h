@@ -26,6 +26,8 @@ namespace ipc {
 
 class PBackgroundParent;
 
+template<class PFooSide> class Endpoint;
+
 
 
 class BackgroundParent final
@@ -69,10 +71,9 @@ public:
 
 private:
   
-  static PBackgroundParent*
+  static bool
   Alloc(ContentParent* aContent,
-        Transport* aTransport,
-        ProcessId aOtherProcess);
+        Endpoint<PBackgroundParent>&& aEndpoint);
 };
 
 
