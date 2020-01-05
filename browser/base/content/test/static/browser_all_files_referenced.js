@@ -153,8 +153,6 @@ var whitelist = new Set([
   {file: "chrome://marionette/content/test_dialog.properties"},
   {file: "chrome://marionette/content/test_dialog.xul"},
   
-  {file: "chrome://mozapps/content/extensions/list.xul"},
-  
   {file: "chrome://mozapps/skin/downloads/buttons.png", platforms: ["macosx"]},
   {file: "chrome://mozapps/skin/downloads/downloadButtons.png", platforms: ["linux", "win"]},
   
