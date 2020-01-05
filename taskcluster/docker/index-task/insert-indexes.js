@@ -8,7 +8,10 @@ let index = new taskcluster.Index({
 });
 
 
-let queue = new taskcluster.Queue();
+let queue = new taskcluster.Queue({
+    delayFactor:    750,  
+    retries:        8,    
+});
 
 
 let taskId = process.env.TARGET_TASKID;
@@ -37,7 +40,7 @@ queue.task(taskId).then(task => task.expires).then(expires => {
 }).catch(err => {
   console.log('Error:\n%s', err);
   if (err.stack) {
-    console.log('Stack:\n%s', err.stack());
+    console.log('Stack:\n%s', err.stack);
   }
   console.log('Properties:\n%j', err);
   throw err;
