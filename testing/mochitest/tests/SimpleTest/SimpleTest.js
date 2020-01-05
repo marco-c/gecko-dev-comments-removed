@@ -259,6 +259,8 @@ SimpleTest.setExpected = function () {
       SimpleTest.expected = parent.TestRunner.expected.filter(([pat]) => pat != "ASSERTION");
       SimpleTest.num_failed = new Array(SimpleTest.expected.length);
       SimpleTest.num_failed.fill(0);
+      
+      SimpleTest.requestCompleteLog();
     }
   }
 }
@@ -280,6 +282,8 @@ SimpleTest.ok = function (condition, name, diag, stack = null) {
     } else if (!test.result && usesFailurePatterns()) {
       if (recordIfMatchesFailurePattern(name, diag)) {
         test.result = true;
+        
+        name = '[suppressed] ' + name;
       }
       var successInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
       var failureInfo = {status:"FAIL", expected:"PASS", message:"TEST-UNEXPECTED-FAIL"};
@@ -344,6 +348,8 @@ SimpleTest.todo = function(condition, name, diag) {
       
       
       test.result = false;
+      
+      name = '[suppressed] ' + name;
     }
     var successInfo = {status:"PASS", expected:"FAIL", message:"TEST-UNEXPECTED-PASS"};
     var failureInfo = {status:"FAIL", expected:"FAIL", message:"TEST-KNOWN-FAIL"};
