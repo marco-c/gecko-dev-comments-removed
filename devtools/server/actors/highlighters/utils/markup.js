@@ -121,14 +121,21 @@ function installHelperSheet(win, source, type = "agent") {
 }
 exports.installHelperSheet = installHelperSheet;
 
-function isNodeValid(node) {
+
+
+
+
+
+
+
+function isNodeValid(node, nodeType = Ci.nsIDOMNode.ELEMENT_NODE) {
   
   if (!node || Cu.isDeadWrapper(node)) {
     return false;
   }
 
   
-  if (node.nodeType !== node.ELEMENT_NODE) {
+  if (node.nodeType !== nodeType) {
     return false;
   }
 
