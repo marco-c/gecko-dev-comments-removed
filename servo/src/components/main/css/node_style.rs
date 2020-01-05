@@ -9,8 +9,6 @@ use layout::incremental::RestyleDamage;
 
 use style::ComputedValues;
 use script::dom::node::{AbstractNode, LayoutView};
-use servo_util::tree::TreeNodeRef;
-
 
 
 pub trait StyledNode {
@@ -20,7 +18,8 @@ pub trait StyledNode {
 
 impl StyledNode for AbstractNode<LayoutView> {
     fn style(&self) -> &ComputedValues {
-        assert!(self.is_element()); 
+        
+        
         let results = self.get_css_select_results();
         results
     }

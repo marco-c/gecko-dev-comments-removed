@@ -882,7 +882,7 @@ pub struct DisplayBoxes {
 
 pub struct LayoutData {
     
-    applicable_declarations: ~[@[PropertyDeclaration]],
+    applicable_declarations: ~[Arc<~[PropertyDeclaration]>],
 
     
     style: Option<ComputedValues>,
@@ -902,9 +902,19 @@ impl LayoutData {
             applicable_declarations: ~[],
             style: None,
             restyle_damage: None,
-            boxes: DisplayBoxes { display_list: None, range: None },
+            boxes: DisplayBoxes {
+                display_list: None,
+                range: None,
+            },
         }
     }
+}
+
+
+
+fn assert_is_sendable<T:Send>(_: T) {}
+fn assert_layout_data_is_sendable() {
+    assert_is_sendable(LayoutData::new())
 }
 
 impl AbstractNode<LayoutView> {
