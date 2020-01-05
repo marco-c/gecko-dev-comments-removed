@@ -1732,6 +1732,34 @@ public:
 
   static SamplingFilter GetSamplingFilterForFrame(nsIFrame* aFrame);
 
+  static inline void InitDashPattern(StrokeOptions& aStrokeOptions,
+                                     uint8_t aBorderStyle) {
+    if (aBorderStyle == NS_STYLE_BORDER_STYLE_DOTTED) {
+      static Float dot[] = { 1.f, 1.f };
+      aStrokeOptions.mDashLength = MOZ_ARRAY_LENGTH(dot);
+      aStrokeOptions.mDashPattern = dot;
+    } else if (aBorderStyle == NS_STYLE_BORDER_STYLE_DASHED) {
+      static Float dash[] = { 5.f, 5.f };
+      aStrokeOptions.mDashLength = MOZ_ARRAY_LENGTH(dash);
+      aStrokeOptions.mDashPattern = dash;
+    } else {
+      aStrokeOptions.mDashLength = 0;
+      aStrokeOptions.mDashPattern = nullptr;
+    }
+  }
+
+  
+
+
+  static gfxRect RectToGfxRect(const nsRect& aRect,
+                               int32_t aAppUnitsPerDevPixel);
+
+  static gfxPoint PointToGfxPoint(const nsPoint& aPoint,
+                                  int32_t aAppUnitsPerPixel) {
+    return gfxPoint(gfxFloat(aPoint.x) / aAppUnitsPerPixel,
+                    gfxFloat(aPoint.y) / aAppUnitsPerPixel);
+  }
+
   
 
 
@@ -1802,34 +1830,6 @@ public:
                               const nsRect&       aDirty,
                               uint32_t            aImageFlags,
                               float               aOpacity = 1.0);
-
-  static inline void InitDashPattern(StrokeOptions& aStrokeOptions,
-                                     uint8_t aBorderStyle) {
-    if (aBorderStyle == NS_STYLE_BORDER_STYLE_DOTTED) {
-      static Float dot[] = { 1.f, 1.f };
-      aStrokeOptions.mDashLength = MOZ_ARRAY_LENGTH(dot);
-      aStrokeOptions.mDashPattern = dot;
-    } else if (aBorderStyle == NS_STYLE_BORDER_STYLE_DASHED) {
-      static Float dash[] = { 5.f, 5.f };
-      aStrokeOptions.mDashLength = MOZ_ARRAY_LENGTH(dash);
-      aStrokeOptions.mDashPattern = dash;
-    } else {
-      aStrokeOptions.mDashLength = 0;
-      aStrokeOptions.mDashPattern = nullptr;
-    }
-  }
-
-  
-
-
-  static gfxRect RectToGfxRect(const nsRect& aRect,
-                               int32_t aAppUnitsPerDevPixel);
-
-  static gfxPoint PointToGfxPoint(const nsPoint& aPoint,
-                                  int32_t aAppUnitsPerPixel) {
-    return gfxPoint(gfxFloat(aPoint.x) / aAppUnitsPerPixel,
-                    gfxFloat(aPoint.y) / aAppUnitsPerPixel);
-  }
 
   
 
