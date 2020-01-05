@@ -194,14 +194,15 @@ SetIconInfo(const RefPtr<Database>& aDB,
 
   nsCOMPtr<mozIStorageStatement> insertStmt = aDB->GetStatement(
     "INSERT INTO moz_icons "
-      "(icon_url, fixed_icon_url_hash, width, expire_ms, data) "
-    "VALUES (:url, hash(fixup_url(:url)), :width, :expire, :data) "
+      "(icon_url, fixed_icon_url_hash, width, root, expire_ms, data) "
+    "VALUES (:url, hash(fixup_url(:url)), :width, :root, :expire, :data) "
   );
   NS_ENSURE_STATE(insertStmt);
   nsCOMPtr<mozIStorageStatement> updateStmt = aDB->GetStatement(
     "UPDATE moz_icons SET width = :width, "
                          "expire_ms = :expire, "
-                         "data = :data "
+                         "data = :data, "
+                         "root = :root "
     "WHERE id = :id "
   );
   NS_ENSURE_STATE(updateStmt);
@@ -232,9 +233,13 @@ SetIconInfo(const RefPtr<Database>& aDB,
       rv = updateStmt->BindInt64ByName(NS_LITERAL_CSTRING("expire"),
                                        aIcon.expiration / 1000);
       NS_ENSURE_SUCCESS(rv, rv);
+      rv = updateStmt->BindInt32ByName(NS_LITERAL_CSTRING("root"),
+                                       aIcon.rootIcon);
+      NS_ENSURE_SUCCESS(rv, rv);
       rv = updateStmt->BindBlobByName(NS_LITERAL_CSTRING("data"),
                                 TO_INTBUFFER(payload.data),
                                 payload.data.Length());
+      NS_ENSURE_SUCCESS(rv, rv);
       rv = updateStmt->Execute();
       NS_ENSURE_SUCCESS(rv, rv);
       
@@ -246,6 +251,10 @@ SetIconInfo(const RefPtr<Database>& aDB,
       NS_ENSURE_SUCCESS(rv, rv);
       rv = insertStmt->BindInt32ByName(NS_LITERAL_CSTRING("width"),
                                        payload.width);
+      NS_ENSURE_SUCCESS(rv, rv);
+
+      rv = insertStmt->BindInt32ByName(NS_LITERAL_CSTRING("root"),
+                                       aIcon.rootIcon);
       NS_ENSURE_SUCCESS(rv, rv);
       rv = insertStmt->BindInt64ByName(NS_LITERAL_CSTRING("expire"),
                                        aIcon.expiration / 1000);
@@ -306,7 +315,7 @@ FetchIconInfo(const RefPtr<Database>& aDB,
 
   nsCOMPtr<mozIStorageStatement> stmt = aDB->GetStatement(
     "/* do not warn (bug no: not worth having a compound index) */ "
-    "SELECT id, expire_ms, data, width "
+    "SELECT id, expire_ms, data, width, root "
     "FROM moz_icons "
     "WHERE fixed_icon_url_hash = hash(fixup_url(:url)) "
       "AND icon_url = :url "
@@ -340,18 +349,22 @@ FetchIconInfo(const RefPtr<Database>& aDB,
     uint32_t dataLen = 0;
     rv = stmt->GetBlob(2, &dataLen, &data);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
-
     payload.data.Adopt(TO_CHARBUFFER(data), dataLen);
+
     int32_t width;
     rv = stmt->GetInt32(3, &width);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
     payload.width = width;
-
     if (payload.width == UINT16_MAX) {
       payload.mimeType.AssignLiteral(SVG_MIME_TYPE);
     } else {
       payload.mimeType.AssignLiteral(PNG_MIME_TYPE);
     }
+
+    int32_t rootIcon;
+    rv = stmt->GetInt32(4, &rootIcon);
+    MOZ_ASSERT(NS_SUCCEEDED(rv));
+    _icon.rootIcon = rootIcon;
 
     if (aPreferredWidth == 0 || _icon.payloads.Length() == 0) {
       _icon.payloads.AppendElement(payload);
@@ -376,33 +389,28 @@ FetchIconPerSpec(const RefPtr<Database>& aDB,
   MOZ_ASSERT(!aPageSpec.IsEmpty(), "Page spec must not be empty.");
   MOZ_ASSERT(!NS_IsMainThread());
 
-  enum IconType {
-    ePerfectMatch,
-    eRootMatch
-  };
-
+  
+  
+  
+  
+  
   nsCOMPtr<mozIStorageStatement> stmt = aDB->GetStatement(
     "/* do not warn (bug no: not worth having a compound index) */ "
-    "SELECT width, icon_url, :type_perfect_match AS type "
+    "SELECT width, icon_url, root "
     "FROM moz_icons i "
     "JOIN moz_icons_to_pages ON i.id = icon_id "
     "JOIN moz_pages_w_icons p ON p.id = page_id "
     "WHERE page_url_hash = hash(:url) AND page_url = :url "
     "UNION ALL "
-    "SELECT width, icon_url, :type_root_match AS type " 
+    "SELECT width, icon_url, root "
     "FROM moz_icons i "
     "WHERE fixed_icon_url_hash = hash(fixup_url(:root_icon_url)) "
-    "ORDER BY type ASC, width DESC "
+    "ORDER BY width DESC, root ASC "
   );
   NS_ENSURE_STATE(stmt);
   mozStorageStatementScoper scoper(stmt);
 
-  nsresult rv = stmt->BindInt32ByName(NS_LITERAL_CSTRING("type_perfect_match"),
-                                      ePerfectMatch);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = stmt->BindInt32ByName(NS_LITERAL_CSTRING("type_root_match"), eRootMatch);
-  NS_ENSURE_SUCCESS(rv, rv);
-  rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("url"), aPageSpec);
+  nsresult rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("url"), aPageSpec);
   NS_ENSURE_SUCCESS(rv, rv);
   nsAutoCString rootIconFixedUrl(aPageHost);
   if (!rootIconFixedUrl.IsEmpty()) {
@@ -418,12 +426,7 @@ FetchIconPerSpec(const RefPtr<Database>& aDB,
   while (NS_SUCCEEDED(stmt->ExecuteStep(&hasResult)) && hasResult) {
     int32_t width;
     rv = stmt->GetInt32(0, &width);
-    int32_t t;
-    rv = stmt->GetInt32(2, &t);
-    NS_ENSURE_SUCCESS(rv, rv);
-    IconType type = t == 0 ? ePerfectMatch : eRootMatch;
-    if (!aIconData.spec.IsEmpty() &&
-        (width < aPreferredWidth || type == eRootMatch)) {
+    if (!aIconData.spec.IsEmpty() && width < aPreferredWidth) {
       
       
       break;
@@ -833,67 +836,72 @@ AsyncAssociateIconToPage::Run()
   
   
   
-  
-  
-  
-  
-  
-  
-  if (mPage.id != 0)  {
+  if (!mIcon.rootIcon) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if (mPage.id != 0)  {
+      nsCOMPtr<mozIStorageStatement> stmt;
+      stmt = DB->GetStatement(
+        "DELETE FROM moz_icons_to_pages WHERE icon_id IN ( "
+          "SELECT icon_id FROM moz_icons_to_pages "
+          "JOIN moz_icons i ON icon_id = i.id "
+          "WHERE page_id = :page_id "
+            "AND expire_ms < strftime('%s','now','localtime','start of day','-7 days','utc') * 1000 "
+        ") "
+      );
+      NS_ENSURE_STATE(stmt);
+      mozStorageStatementScoper scoper(stmt);
+      rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("page_id"), mPage.id);
+      NS_ENSURE_SUCCESS(rv, rv);
+      rv = stmt->Execute();
+      NS_ENSURE_SUCCESS(rv, rv);
+    } else {
+      
+      
+      
+      nsCOMPtr<mozIStorageStatement> stmt;
+      stmt = DB->GetStatement(
+        "INSERT OR IGNORE INTO moz_pages_w_icons (page_url, page_url_hash) "
+        "VALUES (:page_url, hash(:page_url)) "
+      );
+      NS_ENSURE_STATE(stmt);
+      mozStorageStatementScoper scoper(stmt);
+      rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("page_url"), mPage.spec);
+      NS_ENSURE_SUCCESS(rv, rv);
+      rv = stmt->Execute();
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    
     nsCOMPtr<mozIStorageStatement> stmt;
     stmt = DB->GetStatement(
-      "DELETE FROM moz_icons_to_pages WHERE icon_id IN ( "
-        "SELECT icon_id FROM moz_icons_to_pages "
-        "JOIN moz_icons i ON icon_id = i.id "
-        "WHERE page_id = :page_id "
-          "AND expire_ms < strftime('%s','now','localtime','start of day','-7 days','utc') * 1000 "
-      ") "
+      "INSERT OR IGNORE INTO moz_icons_to_pages (page_id, icon_id) "
+      "VALUES ((SELECT id from moz_pages_w_icons WHERE page_url_hash = hash(:page_url) AND page_url = :page_url), "
+              ":icon_id) "
     );
     NS_ENSURE_STATE(stmt);
-    mozStorageStatementScoper scoper(stmt);
-    rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("page_id"), mPage.id);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = stmt->Execute();
-    NS_ENSURE_SUCCESS(rv, rv);
-  } else {
-    
-    
-    
-    nsCOMPtr<mozIStorageStatement> stmt;
-    stmt = DB->GetStatement(
-      "INSERT OR IGNORE INTO moz_pages_w_icons (page_url, page_url_hash) "
-      "VALUES (:page_url, hash(:page_url)) "
-    );
-    NS_ENSURE_STATE(stmt);
-    mozStorageStatementScoper scoper(stmt);
-    rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("page_url"), mPage.spec);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = stmt->Execute();
-    NS_ENSURE_SUCCESS(rv, rv);
-  }
 
-  
-  nsCOMPtr<mozIStorageStatement> stmt;
-  stmt = DB->GetStatement(
-    "INSERT OR IGNORE INTO moz_icons_to_pages (page_id, icon_id) "
-    "VALUES ((SELECT id from moz_pages_w_icons WHERE page_url_hash = hash(:page_url) AND page_url = :page_url), "
-            ":icon_id) "
-  );
-  NS_ENSURE_STATE(stmt);
-
-  
-  
-  
-  
-  for (const auto& payload : mIcon.payloads) {
-    mozStorageStatementScoper scoper(stmt);
-    nsCOMPtr<mozIStorageBindingParams> params;
-    rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("page_url"), mPage.spec);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("icon_id"), payload.id);
-    NS_ENSURE_SUCCESS(rv, rv);
-    rv = stmt->Execute();
-    NS_ENSURE_SUCCESS(rv, rv);
+    
+    
+    
+    
+    for (const auto& payload : mIcon.payloads) {
+      mozStorageStatementScoper scoper(stmt);
+      nsCOMPtr<mozIStorageBindingParams> params;
+      rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("page_url"), mPage.spec);
+      NS_ENSURE_SUCCESS(rv, rv);
+      rv = stmt->BindInt64ByName(NS_LITERAL_CSTRING("icon_id"), payload.id);
+      NS_ENSURE_SUCCESS(rv, rv);
+      rv = stmt->Execute();
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
   }
 
   mIcon.status |= ICON_STATUS_ASSOCIATED;
@@ -1231,7 +1239,7 @@ FetchAndConvertUnsupportedPayloads::ConvertPayload(int64_t aId,
   
   if (aPayload.Length() == 0 ||
       !imgLoader::SupportImageWithMimeType(PromiseFlatCString(aMimeType).get(),
-                                           AcceptedMimeTypes::IMAGES)) {
+                                           AcceptedMimeTypes::IMAGES_AND_DOCUMENTS)) {
     return NS_ERROR_FAILURE;
   }
 
