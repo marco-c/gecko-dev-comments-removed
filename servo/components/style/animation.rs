@@ -426,14 +426,13 @@ fn compute_style_for_animation_step(context: &SharedStyleContext,
             };
 
             let computed =
-                properties::apply_declarations(context.viewport_size(),
+                properties::apply_declarations(&context.stylist.device,
                                                 false,
                                                iter,
                                                previous_style,
                                                previous_style,
-                                               &context.default_computed_values,
                                                 None,
-                                               context.error_reporter.clone(),
+                                               &*context.error_reporter,
                                                 None,
                                                CascadeFlags::empty());
             computed

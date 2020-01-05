@@ -2,9 +2,8 @@
 
 
 
-use cssparser::Color;
 use style_traits::ToCss;
-use values::specified::{BorderStyle, CSSColor};
+use values::specified::{BorderStyle, Color, CSSColor};
 use std::fmt;
 
 #[allow(missing_docs)]

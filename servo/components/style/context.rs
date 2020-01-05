@@ -14,7 +14,6 @@ use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
 use matching::StyleSharingCandidateCache;
 use parking_lot::RwLock;
-use properties::ComputedValues;
 use selector_parser::PseudoElement;
 use selectors::matching::ElementSelectorFlags;
 use servo_config::opts;
@@ -73,7 +72,7 @@ pub struct SharedStyleContext {
     pub expired_animations: Arc<RwLock<HashMap<OpaqueNode, Vec<Animation>>>>,
 
     
-    pub error_reporter: Box<ParseErrorReporter + Sync>,
+    pub error_reporter: Box<ParseErrorReporter>,
 
     
     pub local_context_creation_data: Mutex<ThreadLocalStyleContextCreationInfo>,
@@ -84,10 +83,6 @@ pub struct SharedStyleContext {
 
     
     pub quirks_mode: QuirksMode,
-
-    
-    
-    pub default_computed_values: Arc<ComputedValues>,
 }
 
 impl SharedStyleContext {

@@ -2,11 +2,11 @@
 
 
 
-use app_units::Au;
 use cssparser::Parser;
-use euclid::size::Size2D;
+use euclid::size::TypedSize2D;
 use media_queries::CSSErrorReporterTest;
 use std::f32::consts::PI;
+use style::media_queries::{Device, MediaType};
 use style::parser::ParserContext;
 use style::properties::ComputedValues;
 use style::stylesheets::Origin;
@@ -43,11 +43,12 @@ fn test_linear_gradient() {
     
     
     
-    let container = Size2D::new(Au::default(), Au::default());
+    let viewport_size = TypedSize2D::new(0., 0.);
     let initial_style = ComputedValues::initial_values();
+    let device = Device::new(MediaType::Screen, viewport_size);
     let specified_context = Context {
         is_root_element: true,
-        viewport_size: container,
+        device: &device,
         inherited_style: initial_style,
         layout_parent_style: initial_style,
         style: initial_style.clone(),

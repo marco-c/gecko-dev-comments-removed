@@ -12,7 +12,7 @@ use error_reporting::ParseErrorReporter;
 use gecko_bindings::sugar::refptr::{GeckoArcPrincipal, GeckoArcURI};
 use servo_url::ServoUrl;
 use style_traits::OneOrMoreCommaSeparated;
-use stylesheets::{MemoryHoleReporter, Origin};
+use stylesheets::Origin;
 
 
 #[cfg(not(feature = "gecko"))]
@@ -67,7 +67,7 @@ pub struct ParserContext<'a> {
     
     pub base_url: &'a ServoUrl,
     
-    pub error_reporter: Box<ParseErrorReporter + Send>,
+    pub error_reporter: &'a ParseErrorReporter,
     
     pub extra_data: ParserContextExtraData,
 }
@@ -76,7 +76,7 @@ impl<'a> ParserContext<'a> {
     
     pub fn new_with_extra_data(stylesheet_origin: Origin,
                                base_url: &'a ServoUrl,
-                               error_reporter: Box<ParseErrorReporter + Send>,
+                               error_reporter: &'a ParseErrorReporter,
                                extra_data: ParserContextExtraData)
                                -> ParserContext<'a> {
         ParserContext {
@@ -90,22 +90,27 @@ impl<'a> ParserContext<'a> {
     
     pub fn new(stylesheet_origin: Origin,
                base_url: &'a ServoUrl,
-               error_reporter: Box<ParseErrorReporter + Send>)
+               error_reporter: &'a ParseErrorReporter)
                -> ParserContext<'a> {
         let extra_data = ParserContextExtraData::default();
         Self::new_with_extra_data(stylesheet_origin, base_url, error_reporter, extra_data)
     }
 
     
-    pub fn new_for_cssom(base_url: &'a ServoUrl) -> ParserContext<'a> {
-        Self::new(Origin::User, base_url, Box::new(MemoryHoleReporter))
+    pub fn new_for_cssom(base_url: &'a ServoUrl,
+                         error_reporter: &'a ParseErrorReporter)
+                         -> ParserContext<'a> {
+        Self::new(Origin::User, base_url, error_reporter)
     }
 }
 
 
 
 
-pub fn log_css_error(input: &mut Parser, position: SourcePosition, message: &str, parsercontext: &ParserContext) {
+pub fn log_css_error(input: &mut Parser,
+                     position: SourcePosition,
+                     message: &str,
+                     parsercontext: &ParserContext) {
     let servo_url = parsercontext.base_url;
     parsercontext.error_reporter.report_error(input, position, message, servo_url);
 }
