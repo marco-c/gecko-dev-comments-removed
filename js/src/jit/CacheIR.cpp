@@ -72,6 +72,8 @@ GetPropIRGenerator::tryAttachStub(Maybe<CacheIRWriter>& writer)
             return false;
         if (!emitted_ && !tryAttachModuleNamespace(*writer, obj, objId))
             return false;
+        if (!emitted_ && !tryAttachWindowProxy(*writer, obj, objId))
+            return false;
         return true;
     }
 
@@ -136,6 +138,9 @@ CanAttachNativeGetProp(JSContext* cx, HandleObject obj, HandleId id,
         if (engine == ICStubEngine::Baseline)
             return CanAttachCallGetter;
     }
+
+    if (IsCacheableGetPropCallNative(obj, holder, shape))
+        return CanAttachCallGetter;
 
     return CanAttachNone;
 }
@@ -255,6 +260,13 @@ EmitCallGetterResult(CacheIRWriter& writer, JSObject* obj, JSObject* holder,
         writer.guardShape(holderId, holder->as<NativeObject>().lastProperty());
     }
 
+    if (IsCacheableGetPropCallNative(obj, holder, shape)) {
+        JSFunction* target = &shape->getterValue().toObject().as<JSFunction>();
+        MOZ_ASSERT(target->isNative());
+        writer.callNativeGetterResult(objId, target);
+        return;
+    }
+
     MOZ_ASSERT(IsCacheableGetPropCallScripted(obj, holder, shape));
 
     JSFunction* target = &shape->getterValue().toObject().as<JSFunction>();
@@ -299,6 +311,55 @@ GetPropIRGenerator::tryAttachNative(CacheIRWriter& writer, HandleObject obj, Obj
         MOZ_CRASH("Bad NativeGetPropCacheability");
     }
 
+    return true;
+}
+
+bool
+GetPropIRGenerator::tryAttachWindowProxy(CacheIRWriter& writer, HandleObject obj,
+                                         ObjOperandId objId)
+{
+    
+    
+
+    MOZ_ASSERT(!emitted_);
+
+    if (!IsWindowProxy(obj))
+        return true;
+
+    
+    
+    
+    MOZ_ASSERT(obj->getClass() == cx_->maybeWindowProxyClass());
+    MOZ_ASSERT(ToWindowIfWindowProxy(obj) == cx_->global());
+
+    
+    
+    HandleObject windowObj = cx_->global();
+    RootedShape shape(cx_);
+    RootedNativeObject holder(cx_);
+    RootedId id(cx_, NameToId(name_));
+    NativeGetPropCacheability type = CanAttachNativeGetProp(cx_, windowObj, id, &holder, &shape, pc_,
+                                                            engine_, isTemporarilyUnoptimizable_);
+    if (type != CanAttachCallGetter ||
+        !IsCacheableGetPropCallNative(windowObj, holder, shape))
+    {
+        return true;
+    }
+
+    
+    
+    JSFunction* callee = &shape->getterObject()->as<JSFunction>();
+    MOZ_ASSERT(callee->isNative());
+    if (!callee->jitInfo() || callee->jitInfo()->needsOuterizedThisObject())
+        return true;
+
+    emitted_ = true;
+
+    
+    
+    writer.guardClass(objId, GuardClassKind::WindowProxy);
+    ObjOperandId windowObjId = writer.loadObject(windowObj);
+    EmitCallGetterResult(writer, windowObj, holder, shape, windowObjId);
     return true;
 }
 

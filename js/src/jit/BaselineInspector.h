@@ -129,10 +129,16 @@ class BaselineInspector
     LexicalEnvironmentObject* templateNamedLambdaObject();
     CallObject* templateCallObject();
 
-    MOZ_MUST_USE bool commonGetPropFunction(jsbytecode* pc, JSObject** holder, Shape** holderShape,
+    
+    
+    
+    
+    MOZ_MUST_USE bool commonGetPropFunction(jsbytecode* pc, bool innerized,
+                                            JSObject** holder, Shape** holderShape,
                                             JSFunction** commonGetter, Shape** globalShape,
                                             bool* isOwnProperty, ReceiverVector& receivers,
                                             ObjectGroupVector& convertUnboxedGroups);
+
     MOZ_MUST_USE bool commonSetPropFunction(jsbytecode* pc, JSObject** holder, Shape** holderShape,
                                             JSFunction** commonSetter, bool* isOwnProperty,
                                             ReceiverVector& receivers,
