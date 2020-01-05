@@ -57,10 +57,10 @@ const SCHEMA_VERSION = 1;
 
 const VALID_FIELDS = [
   "organization",
-  "streetAddress",
-  "addressLevel2",
-  "addressLevel1",
-  "postalCode",
+  "street-address",
+  "address-level2",
+  "address-level1",
+  "postal-code",
   "country",
   "tel",
   "email",
@@ -71,12 +71,12 @@ const MOCK_MODE = false;
 const MOCK_STORAGE = [{
   guid: "test-guid-1",
   organization: "Sesame Street",
-  streetAddress: "123 Sesame Street.",
+  "street-address": "123 Sesame Street.",
   tel: "1-345-345-3456",
 }, {
   guid: "test-guid-2",
   organization: "Mozilla",
-  streetAddress: "331 E. Evelyn Avenue",
+  "street-address": "331 E. Evelyn Avenue",
   tel: "1-650-903-0800",
 }];
 

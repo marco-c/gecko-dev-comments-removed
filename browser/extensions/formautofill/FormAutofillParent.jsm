@@ -46,7 +46,7 @@ let FormAutofillParent = {
   
 
 
-  init() {
+  init: function() {
     let storePath =
       OS.Path.join(OS.Constants.Path.profileDir, PROFILE_JSON_FILE_NAME);
 
@@ -66,7 +66,7 @@ let FormAutofillParent = {
 
 
 
-  receiveMessage({name, data, target}) {
+  receiveMessage: function({name, data, target}) {
     switch (name) {
       case "FormAutofill:PopulateFieldValues":
         this._populateFieldValues(data, target);
@@ -84,7 +84,7 @@ let FormAutofillParent = {
 
 
 
-  getProfileStore() {
+  getProfileStore: function() {
     return this._profileStore;
   },
 
@@ -93,7 +93,7 @@ let FormAutofillParent = {
 
 
 
-  _uninit() {
+  _uninit: function() {
     if (this._profileStore) {
       this._profileStore._saveImmediately();
       this._profileStore = null;
@@ -154,18 +154,6 @@ let FormAutofillParent = {
 
 
 
-  _camelCase(str) {
-    return str.toLowerCase().replace(/-([a-z])/g, s => s[1].toUpperCase());
-  },
-
-  
-
-
-
-
-
-
-
 
 
 
@@ -174,11 +162,8 @@ let FormAutofillParent = {
 
 
   _getDataByFieldName(profile, fieldName) {
-    let key = this._camelCase(fieldName);
-
     
-
-    return profile[key];
+    return profile[fieldName];
   },
 
   
