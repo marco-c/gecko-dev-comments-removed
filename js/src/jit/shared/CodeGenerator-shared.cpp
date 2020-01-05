@@ -79,7 +79,7 @@ CodeGeneratorShared::CodeGeneratorShared(MIRGenerator* gen, LIRGraph* graph, Mac
     if (gen->isProfilerInstrumentationEnabled())
         masm.enableProfilingInstrumentation();
 
-    if (gen->compilingAsmJS()) {
+    if (gen->compilingWasm()) {
         
         
         
@@ -116,7 +116,7 @@ bool
 CodeGeneratorShared::generatePrologue()
 {
     MOZ_ASSERT(masm.framePushed() == 0);
-    MOZ_ASSERT(!gen->compilingAsmJS());
+    MOZ_ASSERT(!gen->compilingWasm());
 
 #ifdef JS_USE_LINK_REGISTER
     masm.pushReturnAddress();
@@ -140,7 +140,7 @@ CodeGeneratorShared::generatePrologue()
 bool
 CodeGeneratorShared::generateEpilogue()
 {
-    MOZ_ASSERT(!gen->compilingAsmJS());
+    MOZ_ASSERT(!gen->compilingWasm());
     masm.bind(&returnLabel_);
 
     emitTracelogIonStop();
@@ -166,7 +166,7 @@ CodeGeneratorShared::generateOutOfLineCode()
     for (size_t i = 0; i < outOfLineCode_.length(); i++) {
         
         
-        if (!gen->compilingAsmJS()) {
+        if (!gen->compilingWasm()) {
             if (!addNativeToBytecodeEntry(outOfLineCode_[i]->bytecodeSite()))
                 return false;
         }
@@ -198,7 +198,7 @@ CodeGeneratorShared::addOutOfLineCode(OutOfLineCode* code, const BytecodeSite* s
 {
     code->setFramePushed(masm.framePushed());
     code->setBytecodeSite(site);
-    MOZ_ASSERT_IF(!gen->compilingAsmJS(), code->script()->containsPC(code->pc()));
+    MOZ_ASSERT_IF(!gen->compilingWasm(), code->script()->containsPC(code->pc()));
     masm.propagateOOM(outOfLineCode_.append(code));
 }
 
@@ -1462,7 +1462,7 @@ CodeGeneratorShared::visitOutOfLineTruncateSlow(OutOfLineTruncateSlow* ool)
     Register dest = ool->dest();
 
     saveVolatile(dest);
-    masm.outOfLineTruncateSlow(src, dest, ool->widenFloatToDouble(), gen->compilingAsmJS());
+    masm.outOfLineTruncateSlow(src, dest, ool->widenFloatToDouble(), gen->compilingWasm());
     restoreVolatile(dest);
 
     masm.jump(ool->rejoin());
@@ -1561,7 +1561,7 @@ CodeGeneratorShared::labelForBackedgeWithImplicitCheck(MBasicBlock* mir)
     
     
     
-    if (!gen->compilingAsmJS() && mir->isLoopHeader() && mir->id() <= current->mir()->id()) {
+    if (!gen->compilingWasm() && mir->isLoopHeader() && mir->id() <= current->mir()->id()) {
         for (LInstructionIterator iter = mir->lir()->begin(); iter != mir->lir()->end(); iter++) {
             if (iter->isMoveGroup()) {
                 

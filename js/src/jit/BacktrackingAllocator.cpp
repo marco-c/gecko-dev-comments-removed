@@ -2597,7 +2597,7 @@ BacktrackingAllocator::trySplitAcrossHotcode(LiveBundle* bundle, bool* success)
     
     
     
-    if (compilingAsmJS()) {
+    if (compilingWasm()) {
         SplitPositionVector splitPositions;
         if (!splitPositions.append(hotRange->from()) || !splitPositions.append(hotRange->to()))
             return false;

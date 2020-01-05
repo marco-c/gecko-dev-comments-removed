@@ -283,7 +283,7 @@ ConvertToBailingBlock(TempAllocator& alloc, MBasicBlock* block)
 bool
 jit::PruneUnusedBranches(MIRGenerator* mir, MIRGraph& graph)
 {
-    MOZ_ASSERT(!mir->compilingAsmJS(), "AsmJS compilation have no code coverage support.");
+    MOZ_ASSERT(!mir->compilingWasm(), "AsmJS compilation have no code coverage support.");
 
     
     
@@ -1909,7 +1909,7 @@ TypeAnalyzer::tryEmitFloatOperations()
 {
     
     
-    if (mir->compilingAsmJS())
+    if (mir->compilingWasm())
         return true;
 
     

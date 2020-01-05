@@ -1975,7 +1975,7 @@ RangeAnalysis::analyzeLoop(MBasicBlock* header)
     for (MPhiIterator iter(header->phisBegin()); iter != header->phisEnd(); iter++)
         analyzeLoopPhi(header, iterationBound, *iter);
 
-    if (!mir->compilingAsmJS()) {
+    if (!mir->compilingWasm()) {
         
 
         Vector<MBoundsCheck*, 0, JitAllocPolicy> hoistedChecks(alloc());
@@ -2691,7 +2691,7 @@ MCompare::needTruncation(TruncateKind kind)
     
     
     
-    if (block()->info().compilingAsmJS())
+    if (block()->info().compilingWasm())
        return false;
 
     if (!isDoubleComparison())
@@ -3103,7 +3103,7 @@ RangeAnalysis::truncate()
     
     
     
-    MOZ_ASSERT(!mir->compilingAsmJS());
+    MOZ_ASSERT(!mir->compilingWasm());
 
     Vector<MDefinition*, 16, SystemAllocPolicy> worklist;
 
