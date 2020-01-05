@@ -4575,22 +4575,27 @@ Tab.prototype = {
     
   },
 
-  ShouldNotifyMediaPlaybackChange: function(inactive) {
+  ShouldNotifyMediaPlaybackChange: function(activeState) {
     
     
     
+    
+    if (activeState === "inactive") {
+      return true;
+    }
+
     const mediaDurationThreshold = 1.0;
 
     let audioElements = this.browser.contentDocument.getElementsByTagName("audio");
     for (let audio of audioElements) {
-      if (audio.paused == inactive && audio.duration < mediaDurationThreshold) {
+      if (!audio.paused && audio.duration < mediaDurationThreshold) {
         return false;
       }
     }
 
     let videoElements = this.browser.contentDocument.getElementsByTagName("video");
     for (let video of videoElements) {
-      if (video.paused == inactive && video.duration < mediaDurationThreshold) {
+      if (!video.paused && video.duration < mediaDurationThreshold) {
         return false;
       }
     }
@@ -4626,14 +4631,13 @@ Tab.prototype = {
           return;
         }
 
-        let isInactive = (aData === "inactive");
-        if (!this.ShouldNotifyMediaPlaybackChange(isInactive)) {
+        if (!this.ShouldNotifyMediaPlaybackChange(aData)) {
           return;
         }
 
         let status;
         if (aTopic == "media-playback") {
-          status = isInactive ? "end" : "start";
+          status = (aData === "inactive") ? "end" : "start";
         } else if (aTopic == "media-playback-resumed") {
           status = "resume";
         }
