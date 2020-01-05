@@ -135,13 +135,20 @@ pub struct StoredRestyleHint(RestyleHint);
 
 impl StoredRestyleHint {
     
-    pub fn propagate(&self) -> Self {
+    pub fn propagate(&mut self) -> Self {
+        use std::mem;
+
         
         
         
-        StoredRestyleHint(if self.0.contains(RESTYLE_CSS_ANIMATIONS) {
-            RestyleHint::empty()
-        } else if self.0.contains(RESTYLE_DESCENDANTS) {
+        if self.0.contains(RESTYLE_CSS_ANIMATIONS) {
+            self.0.remove(RESTYLE_CSS_ANIMATIONS);
+            return Self::empty();
+        }
+
+        
+        let hint = mem::replace(&mut self.0, RestyleHint::empty());
+        StoredRestyleHint(if hint.contains(RESTYLE_DESCENDANTS) {
             RESTYLE_SELF | RESTYLE_DESCENDANTS
         } else {
             RestyleHint::empty()
@@ -178,11 +185,6 @@ impl StoredRestyleHint {
     
     pub fn insert(&mut self, other: &Self) {
         self.0 |= other.0
-    }
-
-    
-    pub fn remove_animation_hint(&mut self) {
-        self.0.remove(RESTYLE_CSS_ANIMATIONS)
     }
 
     
