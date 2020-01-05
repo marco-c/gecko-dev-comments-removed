@@ -4855,49 +4855,42 @@ MultiprocessBlockPolicy() {
     return gMultiprocessBlockPolicy;
   }
 
-  bool disabledForA11y = false;
-
+#if defined(XP_WIN)
   
-
-
-
-
-
-
-
-
-
-
-  disabledForA11y = Preferences::GetBool(kAccessibilityLoadedLastSessionPref, false);
-  if (!disabledForA11y  &&
-      Preferences::HasUserValue(kAccessibilityLastRunDatePref)) {
-    #define ONE_WEEK_IN_SECONDS (60*60*24*7)
-    uint32_t a11yRunDate = Preferences::GetInt(kAccessibilityLastRunDatePref, 0);
-    MOZ_ASSERT(0 != a11yRunDate);
+  if (!IsVistaOrLater()) {
+    bool disabledForA11y = false;
     
-    uint32_t now = PRTimeToSeconds(PR_Now());
-    uint32_t difference = now - a11yRunDate;
-    if (difference > ONE_WEEK_IN_SECONDS || !a11yRunDate) {
-      Preferences::ClearUser(kAccessibilityLastRunDatePref);
-    } else {
-      disabledForA11y = true;
+
+
+
+
+
+
+
+
+
+
+    disabledForA11y = Preferences::GetBool(kAccessibilityLoadedLastSessionPref, false);
+    if (!disabledForA11y  &&
+        Preferences::HasUserValue(kAccessibilityLastRunDatePref)) {
+      #define ONE_WEEK_IN_SECONDS (60*60*24*7)
+      uint32_t a11yRunDate = Preferences::GetInt(kAccessibilityLastRunDatePref, 0);
+      MOZ_ASSERT(0 != a11yRunDate);
+      
+      uint32_t now = PRTimeToSeconds(PR_Now());
+      uint32_t difference = now - a11yRunDate;
+      if (difference > ONE_WEEK_IN_SECONDS || !a11yRunDate) {
+        Preferences::ClearUser(kAccessibilityLastRunDatePref);
+      } else {
+        disabledForA11y = true;
+      }
+    }
+    if (disabledForA11y) {
+      gMultiprocessBlockPolicy = kE10sDisabledForAccessibility;
+      return gMultiprocessBlockPolicy;
     }
   }
-
-  bool doAccessibilityCheck = true;
-#if defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA)
-  
-  
-  doAccessibilityCheck = false;
-#elif defined(XP_WIN)
-  
-  doAccessibilityCheck = !IsVistaOrLater();
 #endif
-
-  if (doAccessibilityCheck && disabledForA11y) {
-    gMultiprocessBlockPolicy = kE10sDisabledForAccessibility;
-    return gMultiprocessBlockPolicy;
-  }
 
   
 
