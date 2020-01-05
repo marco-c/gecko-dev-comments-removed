@@ -32,6 +32,7 @@ const {ViewHelpers, Heritage, WidgetMethods, setNamedTimeout} =
   require("devtools/client/shared/widgets/view-helpers");
 const {gDevTools} = require("devtools/client/framework/devtools");
 const {Curl, CurlUtils} = require("devtools/client/shared/curl");
+const {Filters, isFreetextMatch} = require("devtools/client/netmonitor/filter-predicates");
 
 
 
@@ -1130,7 +1131,7 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
   _enableFilter: function (type) {
     
-    if (Object.keys(this._allFilterPredicates).indexOf(type) == -1) {
+    if (!Object.keys(Filters).includes(type)) {
       return;
     }
 
@@ -1152,35 +1153,12 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
 
   get _filterPredicate() {
-    let filterPredicates = this._allFilterPredicates;
     let currentFreetextFilter = this._currentFreetextFilter;
 
     return requestItem => {
-      return this._activeFilters.some(filterName => {
-        return filterPredicates[filterName].call(this, requestItem) &&
-          filterPredicates.freetext.call(this, requestItem,
-            currentFreetextFilter);
-      });
-    };
-  },
-
-  
-
-
-  get _allFilterPredicates() {
-    return {
-      all: () => true,
-      html: this.isHtml,
-      css: this.isCss,
-      js: this.isJs,
-      xhr: this.isXHR,
-      fonts: this.isFont,
-      images: this.isImage,
-      media: this.isMedia,
-      flash: this.isFlash,
-      ws: this.isWS,
-      other: this.isOther,
-      freetext: this.isFreetextMatch
+      const { attachment } = requestItem;
+      return this._activeFilters.some(filterName => Filters[filterName](attachment)) &&
+          isFreetextMatch(attachment, currentFreetextFilter);
     };
   },
 
@@ -1301,125 +1279,6 @@ RequestsMenuView.prototype = Heritage.extend(WidgetMethods, {
 
     this.empty();
     this.refreshSummary();
-  },
-
-  
-
-
-
-
-
-
-
-  isHtml: function ({ attachment: { mimeType } }) {
-    return mimeType && mimeType.includes("/html");
-  },
-
-  isCss: function ({ attachment: { mimeType } }) {
-    return mimeType && mimeType.includes("/css");
-  },
-
-  isJs: function ({ attachment: { mimeType } }) {
-    return mimeType && (
-      mimeType.includes("/ecmascript") ||
-      mimeType.includes("/javascript") ||
-      mimeType.includes("/x-javascript"));
-  },
-
-  isXHR: function (item) {
-    
-    
-    return item.attachment.isXHR && !this.isWS(item);
-  },
-
-  isFont: function ({ attachment: { url, mimeType } }) {
-    
-    return (mimeType && (
-        mimeType.includes("font/") ||
-        mimeType.includes("/font"))) ||
-      url.includes(".eot") ||
-      url.includes(".ttf") ||
-      url.includes(".otf") ||
-      url.includes(".woff");
-  },
-
-  isImage: function ({ attachment: { mimeType } }) {
-    return mimeType && mimeType.includes("image/");
-  },
-
-  isMedia: function ({ attachment: { mimeType } }) {
-    
-    return mimeType && (
-      mimeType.includes("audio/") ||
-      mimeType.includes("video/") ||
-      mimeType.includes("model/"));
-  },
-
-  isFlash: function ({ attachment: { url, mimeType } }) {
-    
-    return (mimeType && (
-        mimeType.includes("/x-flv") ||
-        mimeType.includes("/x-shockwave-flash"))) ||
-      url.includes(".swf") ||
-      url.includes(".flv");
-  },
-
-  isWS: function ({ attachment: { requestHeaders, responseHeaders } }) {
-    
-    
-
-    if (!requestHeaders || !Array.isArray(requestHeaders.headers)) {
-      return false;
-    }
-
-    
-    let upgradeHeader = requestHeaders.headers.find(header => {
-      return (header.name == "Upgrade");
-    });
-
-    
-    
-    
-    if (!upgradeHeader && responseHeaders &&
-        Array.isArray(responseHeaders.headers)) {
-      upgradeHeader = responseHeaders.headers.find(header => {
-        return (header.name == "Upgrade");
-      });
-    }
-
-    
-    
-    if (!upgradeHeader || upgradeHeader.value != "websocket") {
-      return false;
-    }
-
-    return true;
-  },
-
-  isOther: function (e) {
-    return !this.isHtml(e) &&
-           !this.isCss(e) &&
-           !this.isJs(e) &&
-           !this.isXHR(e) &&
-           !this.isFont(e) &&
-           !this.isImage(e) &&
-           !this.isMedia(e) &&
-           !this.isFlash(e) &&
-           !this.isWS(e);
-  },
-
-  isFreetextMatch: function ({ attachment: { url } }, text) {
-    let lowerCaseUrl = url.toLowerCase();
-    let lowerCaseText = text.toLowerCase();
-    let textLength = text.length;
-    
-    if (text.startsWith("-") && textLength > 1) {
-      lowerCaseText = lowerCaseText.substring(1, textLength);
-      return !lowerCaseUrl.includes(lowerCaseText);
-    }
-
-    
-    return !text || lowerCaseUrl.includes(lowerCaseText);
   },
 
   
@@ -2947,7 +2806,7 @@ NetworkDetailsView.prototype = {
     $("#raw-headers").hidden = true;
     $("#response-content-image-box").hidden = true;
 
-    let isHtml = RequestsMenuView.prototype.isHtml({ attachment: data });
+    let isHtml = Filters.html(data);
 
     
     this.sidebar.toggleTab(isHtml, "preview-tab");
@@ -3838,8 +3697,7 @@ PerformanceStatisticsView.prototype = {
 
   _sanitizeChartDataSource: function (items, emptyCache) {
     let data = [
-      "html", "css", "js", "xhr", "fonts", "images", "media", "flash", "ws",
-      "other"
+      "html", "css", "js", "xhr", "fonts", "images", "media", "flash", "ws", "other"
     ].map(e => ({
       cached: 0,
       count: 0,
@@ -3852,31 +3710,31 @@ PerformanceStatisticsView.prototype = {
       let details = requestItem.attachment;
       let type;
 
-      if (RequestsMenuView.prototype.isHtml(requestItem)) {
+      if (Filters.html(details)) {
         
         type = 0;
-      } else if (RequestsMenuView.prototype.isCss(requestItem)) {
+      } else if (Filters.css(details)) {
         
         type = 1;
-      } else if (RequestsMenuView.prototype.isJs(requestItem)) {
+      } else if (Filters.js(details)) {
         
         type = 2;
-      } else if (RequestsMenuView.prototype.isFont(requestItem)) {
+      } else if (Filters.fonts(details)) {
         
         type = 4;
-      } else if (RequestsMenuView.prototype.isImage(requestItem)) {
+      } else if (Filters.images(details)) {
         
         type = 5;
-      } else if (RequestsMenuView.prototype.isMedia(requestItem)) {
+      } else if (Filters.media(details)) {
         
         type = 6;
-      } else if (RequestsMenuView.prototype.isFlash(requestItem)) {
+      } else if (Filters.flash(details)) {
         
         type = 7;
-      } else if (RequestsMenuView.prototype.isWS(requestItem)) {
+      } else if (Filters.ws(details)) {
         
         type = 8;
-      } else if (RequestsMenuView.prototype.isXHR(requestItem)) {
+      } else if (Filters.xhr(details)) {
         
         
         type = 3;
