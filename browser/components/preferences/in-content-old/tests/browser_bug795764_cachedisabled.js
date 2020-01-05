@@ -12,16 +12,21 @@ function test() {
     "browser.cache.disk.enable",
     "browser.cache.memory.enable",
   ];
+  for (let pref of prefs) {
+    Services.prefs.setBoolPref(pref, false);
+  }
+
+  
+  
+  let principal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin("https://www.foo.com");
+  Services.perms.addFromPrincipal(principal, "persistent-storage", Ci.nsIPermissionManager.ALLOW_ACTION);
 
   registerCleanupFunction(function() {
     for (let pref of prefs) {
       Services.prefs.clearUserPref(pref);
     }
+    Services.perms.removeFromPrincipal(principal, "persistent-storage");
   });
-
-  for (let pref of prefs) {
-    Services.prefs.setBoolPref(pref, false);
-  }
 
   open_preferences(runTest);
 }
@@ -31,11 +36,19 @@ function runTest(win) {
 
   let tab = win.document;
   let elements = tab.getElementById("mainPrefPane").children;
+  let offlineGroupDisabled = !SpecialPowers.getBoolPref("browser.preferences.offlineGroup.enabled");
 
   
   win.gotoPref("paneAdvanced");
   for (let element of elements) {
     if (element.nodeName == "preferences") {
+      continue;
+    }
+    
+    
+    
+    if (element.id == "offlineGroup" && offlineGroupDisabled) {
+      is_element_hidden(element, "Disabled offlineGroup should be hidden");
       continue;
     }
     let attributeValue = element.getAttribute("data-category");
