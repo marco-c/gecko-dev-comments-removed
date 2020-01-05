@@ -2,37 +2,41 @@
 
 
 
-function checkState(tab) {
+let checkState = Task.async(function*(browser) {
   
   
   
   
   
   
+
+  let deferred = {};
+  deferred.promise = new Promise(resolve => deferred.resolve = resolve);
 
   let popStateCount = 0;
 
-  tab.linkedBrowser.addEventListener("popstate", function(aEvent) {
-    let contentWindow = tab.linkedBrowser.contentWindow;
+  browser.addEventListener("popstate", function(aEvent) {
     if (popStateCount == 0) {
       popStateCount++;
 
-      is(tab.linkedBrowser.contentWindow.testState, "foo",
-         "testState after going back");
-
       ok(aEvent.state, "Event should have a state property.");
-      is(JSON.stringify(tab.linkedBrowser.contentWindow.history.state), JSON.stringify({obj1:1}),
-         "first popstate object.");
 
-      
-      let doc = contentWindow.document;
-      ok(!doc.getElementById("new-elem"),
-         "doc shouldn't contain new-elem before we add it.");
-      let elem = doc.createElement("div");
-      elem.id = "new-elem";
-      doc.body.appendChild(elem);
+      ContentTask.spawn(browser, null, function() {
+        is(content.testState, "foo",
+           "testState after going back");
+        is(JSON.stringify(content.history.state), JSON.stringify({obj1:1}),
+           "first popstate object.");
 
-      tab.linkedBrowser.goForward();
+        
+        let doc = content.document;
+        ok(!doc.getElementById("new-elem"),
+           "doc shouldn't contain new-elem before we add it.");
+        let elem = doc.createElement("div");
+        elem.id = "new-elem";
+        doc.body.appendChild(elem);
+      }).then(() => {
+        browser.goForward();
+      });
     } else if (popStateCount == 1) {
       popStateCount++;
       
@@ -41,75 +45,76 @@ function checkState(tab) {
       
       
       
-      ContentTask.spawn(tab.linkedBrowser, aEvent.state, function(state) {
+      ContentTask.spawn(browser, aEvent.state, function(state) {
         Assert.equal(Cu.waiveXrays(state).obj3.toString(),
           "/^a$/", "second popstate object.");
-      }).then(function() {
+
         
         
         
-        let doc = contentWindow.document;
+        let doc = content.document;
         let newElem = doc.getElementById("new-elem");
         ok(newElem, "doc should contain new-elem.");
         newElem.remove();
         ok(!doc.getElementById("new-elem"), "new-elem should be removed.");
-
-        tab.linkedBrowser.removeEventListener("popstate", arguments.callee, true);
-        gBrowser.removeTab(tab);
-        finish();
+      }).then(() => {
+        browser.removeEventListener("popstate", arguments.callee, true);
+        deferred.resolve();
       });
     }
   });
 
   
   
-  tab.linkedBrowser.contentWindow.testState = "foo";
-
-  
-  tab.linkedBrowser.goBack();
-}
-
-function test() {
-  
-  
-
-  waitForExplicitFinish();
-
-  
-  
-  
-  let tab = gBrowser.addTab("about:blank");
-  let browser = tab.linkedBrowser;
-
-  promiseBrowserLoaded(browser).then(() => {
-    browser.loadURI("http://example.com", null, null);
-
-    promiseBrowserLoaded(browser).then(() => {
-      
-      
-      
-      
-      
-      function contentTest() {
-        let history = content.window.history;
-        history.pushState({obj1:1}, "title-obj1");
-        history.pushState({obj2:2}, "title-obj2", "?page2");
-        history.replaceState({obj3:/^a$/}, "title-obj3");
-      }
-      ContentTask.spawn(browser, null, contentTest).then(function() {
-        return TabStateFlusher.flush(tab.linkedBrowser);
-      }).then(() => {
-        let state = ss.getTabState(tab);
-        gBrowser.removeTab(tab);
-
-        
-        
-        let tab2 = gBrowser.addTab("about:blank");
-        ss.setTabState(tab2, state, true);
-
-        
-        promiseTabRestored(tab2).then(() => checkState(tab2));
-      });
-    });
+  yield ContentTask.spawn(browser, null, function() {
+    content.testState = "foo";
   });
-}
+
+  
+  browser.goBack();
+
+  yield deferred.promise;
+});
+
+add_task(function* test() {
+  
+  
+
+  
+  
+  
+  let state;
+  yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function* (browser) {
+    BrowserTestUtils.loadURI(browser, "http://example.com");
+    yield BrowserTestUtils.browserLoaded(browser);
+
+    
+    
+    
+    
+    
+    function contentTest() {
+      let history = content.window.history;
+      history.pushState({obj1:1}, "title-obj1");
+      history.pushState({obj2:2}, "title-obj2", "?page2");
+      history.replaceState({obj3:/^a$/}, "title-obj3");
+    }
+    yield ContentTask.spawn(browser, null, contentTest);
+    yield TabStateFlusher.flush(browser);
+
+    state = ss.getTabState(gBrowser.getTabForBrowser(browser));
+  });
+
+  
+  
+  yield BrowserTestUtils.withNewTab({ gBrowser, url: "about:blank" }, function* (browser) {
+    let tab2 = gBrowser.getTabForBrowser(browser);
+
+    let tabRestoredPromise = promiseTabRestored(tab2);
+    ss.setTabState(tab2, state, true);
+
+    
+    yield tabRestoredPromise;
+    yield checkState(browser);
+  });
+});
