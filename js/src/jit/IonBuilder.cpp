@@ -502,12 +502,6 @@ IonBuilder::canInlineTarget(JSFunction* target, CallInfo& callInfo)
         return DontInline(inlineScript, "Script is debuggee");
     }
 
-    TypeSet::ObjectKey* targetKey = TypeSet::ObjectKey::get(target);
-    if (targetKey->unknownProperties()) {
-        trackOptimizationOutcome(TrackedOutcome::CantInlineUnknownProps);
-        return DontInline(inlineScript, "Target type has unknown properties");
-    }
-
     return InliningDecision_Inline;
 }
 
@@ -2322,16 +2316,6 @@ IonBuilder::inspectOpcode(JSOp op)
         pushConstant(MagicValue(JS_IS_CONSTRUCTING));
         return Ok();
 
-      case JSOP_OPTIMIZE_SPREADCALL:
-      {
-        
-        
-        MDefinition* arr = current->peek(-1);
-        arr->setImplicitlyUsedUnchecked();
-        pushConstant(BooleanValue(false));
-        return Ok();
-      }
-
       default:
         break;
     }
@@ -4009,10 +3993,6 @@ IonBuilder::makeInliningDecision(JSObject* targetArg, CallInfo& callInfo)
         outerBaseline->setMaxInliningDepth(scriptInlineDepth);
 
     
-
-    
-    TypeSet::ObjectKey* targetKey = TypeSet::ObjectKey::get(target);
-    targetKey->watchStateChangeForInlinedCall(constraints());
 
     outerBuilder->inlinedBytecodeLength_ += targetScript->length();
 

@@ -261,7 +261,6 @@ class TypeSet
         bool unknownProperties();
         bool hasFlags(CompilerConstraintList* constraints, ObjectGroupFlags flags);
         bool hasStableClassAndProto(CompilerConstraintList* constraints);
-        void watchStateChangeForInlinedCall(CompilerConstraintList* constraints);
         void watchStateChangeForTypedArrayData(CompilerConstraintList* constraints);
         void watchStateChangeForUnboxedConvertedToNative(CompilerConstraintList* constraints);
         HeapTypeSetKey property(jsid id);
@@ -1086,14 +1085,122 @@ bool
 ClassCanHaveExtraProperties(const Class* clasp);
 
 
+
+
+
+
+
+class CompilerOutput
+{
+    
+    
+    JSScript* script_;
+
+    
+    bool pendingInvalidation_ : 1;
+
+    
+    
+    uint32_t sweepIndex_ : 31;
+
+  public:
+    static const uint32_t INVALID_SWEEP_INDEX = static_cast<uint32_t>(1 << 31) - 1;
+
+    CompilerOutput()
+      : script_(nullptr),
+        pendingInvalidation_(false), sweepIndex_(INVALID_SWEEP_INDEX)
+    {}
+
+    explicit CompilerOutput(JSScript* script)
+      : script_(script),
+        pendingInvalidation_(false), sweepIndex_(INVALID_SWEEP_INDEX)
+    {}
+
+    JSScript* script() const { return script_; }
+
+    inline jit::IonScript* ion() const;
+
+    bool isValid() const {
+        return script_ != nullptr;
+    }
+    void invalidate() {
+        script_ = nullptr;
+    }
+
+    void setPendingInvalidation() {
+        pendingInvalidation_ = true;
+    }
+    bool pendingInvalidation() {
+        return pendingInvalidation_;
+    }
+
+    void setSweepIndex(uint32_t index) {
+        if (index >= INVALID_SWEEP_INDEX)
+            MOZ_CRASH();
+        sweepIndex_ = index;
+    }
+    uint32_t sweepIndex() {
+        MOZ_ASSERT(sweepIndex_ != INVALID_SWEEP_INDEX);
+        return sweepIndex_;
+    }
+};
+
+class RecompileInfo
+{
+    
+    
+    uint32_t outputIndex : 31;
+
+    
+    
+    uint32_t generation : 1;
+
+  public:
+    RecompileInfo(uint32_t outputIndex, uint32_t generation)
+      : outputIndex(outputIndex), generation(generation)
+    {}
+
+    RecompileInfo()
+      : outputIndex(JS_BITMASK(31)), generation(0)
+    {}
+
+    bool operator==(const RecompileInfo& other) const {
+        return outputIndex == other.outputIndex && generation == other.generation;
+    }
+
+    CompilerOutput* compilerOutput(TypeZone& types) const;
+    CompilerOutput* compilerOutput(JSContext* cx) const;
+    bool shouldSweep(TypeZone& types);
+};
+
+
+
+typedef Vector<RecompileInfo, 1, SystemAllocPolicy> RecompileInfoVector;
+
+
 class TypeScript
 {
     friend class ::JSScript;
 
     
+    
+    
+    
+    RecompileInfoVector inlinedCompilations_;
+
+    
     StackTypeSet typeArray_[1];
 
   public:
+    RecompileInfoVector& inlinedCompilations() {
+        return inlinedCompilations_;
+    }
+    MOZ_MUST_USE bool addInlinedCompilation(RecompileInfo info) {
+        if (!inlinedCompilations_.empty() && inlinedCompilations_.back() == info)
+            return true;
+        return inlinedCompilations_.append(info);
+    }
+
     
     StackTypeSet* typeArray() const {
         
@@ -1235,95 +1342,6 @@ class HeapTypeSetKey
     bool constant(CompilerConstraintList* constraints, Value* valOut);
     bool couldBeConstant(CompilerConstraintList* constraints);
 };
-
-
-
-
-
-
-
-class CompilerOutput
-{
-    
-    
-    JSScript* script_;
-
-    
-    bool pendingInvalidation_ : 1;
-
-    
-    
-    uint32_t sweepIndex_ : 31;
-
-  public:
-    static const uint32_t INVALID_SWEEP_INDEX = static_cast<uint32_t>(1 << 31) - 1;
-
-    CompilerOutput()
-      : script_(nullptr),
-        pendingInvalidation_(false), sweepIndex_(INVALID_SWEEP_INDEX)
-    {}
-
-    explicit CompilerOutput(JSScript* script)
-      : script_(script),
-        pendingInvalidation_(false), sweepIndex_(INVALID_SWEEP_INDEX)
-    {}
-
-    JSScript* script() const { return script_; }
-
-    inline jit::IonScript* ion() const;
-
-    bool isValid() const {
-        return script_ != nullptr;
-    }
-    void invalidate() {
-        script_ = nullptr;
-    }
-
-    void setPendingInvalidation() {
-        pendingInvalidation_ = true;
-    }
-    bool pendingInvalidation() {
-        return pendingInvalidation_;
-    }
-
-    void setSweepIndex(uint32_t index) {
-        if (index >= INVALID_SWEEP_INDEX)
-            MOZ_CRASH();
-        sweepIndex_ = index;
-    }
-    uint32_t sweepIndex() {
-        MOZ_ASSERT(sweepIndex_ != INVALID_SWEEP_INDEX);
-        return sweepIndex_;
-    }
-};
-
-class RecompileInfo
-{
-    
-    
-    uint32_t outputIndex : 31;
-
-    
-    
-    uint32_t generation : 1;
-
-  public:
-    RecompileInfo(uint32_t outputIndex, uint32_t generation)
-      : outputIndex(outputIndex), generation(generation)
-    {}
-
-    RecompileInfo()
-      : outputIndex(JS_BITMASK(31)), generation(0)
-    {}
-
-    CompilerOutput* compilerOutput(TypeZone& types) const;
-    CompilerOutput* compilerOutput(JSContext* cx) const;
-    bool shouldSweep(TypeZone& types);
-};
-
-
-
-typedef Vector<RecompileInfo, 1, SystemAllocPolicy> RecompileInfoVector;
 
 struct AutoEnterAnalysis;
 
