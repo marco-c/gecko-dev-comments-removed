@@ -74,17 +74,12 @@ read_procmaps(lul::LUL* aLUL)
 }
 
 
-
 void
-logging_sink_for_LUL(const char* str) {
+logging_sink_for_LUL(const char* str)
+{
   
-  size_t n = strlen(str);
-  if (n > 0 && str[n-1] == '\n') {
-    char* tmp = strdup(str);
-    tmp[n-1] = 0;
-    LOG(tmp);
-    free(tmp);
-  } else {
-    LOG(str);
-  }
+  
+  
+  
+  MOZ_LOG(gProfilerLog, mozilla::LogLevel::Verbose, ("[%d] %s", getpid(), str));
 }
