@@ -4,8 +4,6 @@
 
 
 
-
-
 "use strict";
 
 const ToolDefinitions = require("devtools/client/definitions").Tools;
@@ -50,9 +48,11 @@ const HTML_NS = "http://www.w3.org/1999/xhtml";
 
 
 
-function UpdateProcess(win, generator, options) {
+function UpdateProcess(win, array, options) {
   this.win = win;
-  this.iter = _Iterator(generator);
+  this.index = 0;
+  this.array = array;
+
   this.onItem = options.onItem || function () {};
   this.onBatch = options.onBatch || function () {};
   this.onDone = options.onDone || function () {};
@@ -63,6 +63,11 @@ function UpdateProcess(win, generator, options) {
 }
 
 UpdateProcess.prototype = {
+  
+
+
+  ERROR_ITERATION_DONE: new Error("UpdateProcess iteration done"),
+
   
 
 
@@ -92,7 +97,7 @@ UpdateProcess.prototype = {
       this._runBatch();
       this.schedule();
     } catch (e) {
-      if (e instanceof StopIteration) {
+      if (e === this.ERROR_ITERATION_DONE) {
         this.onBatch();
         this.onDone();
         return;
@@ -105,15 +110,25 @@ UpdateProcess.prototype = {
   _runBatch: function () {
     let time = Date.now();
     while (!this.canceled) {
-      
-      let next = this.iter.next();
-      this.onItem(next[1]);
+      let next = this._next();
+      this.onItem(next);
       if ((Date.now() - time) > this.threshold) {
         this.onBatch();
         return;
       }
     }
-  }
+  },
+
+  
+
+
+
+  _next: function () {
+    if (this.index < this.array.length) {
+      return this.array[this.index++];
+    }
+    throw this.ERROR_ITERATION_DONE;
+  },
 };
 
 
