@@ -1020,7 +1020,7 @@ public:
     
     Reader()->ReleaseResources();
 
-    mMaster->ScheduleStateMachine();
+    Step();
   }
 
   void Exit() override
