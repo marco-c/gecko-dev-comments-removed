@@ -26,8 +26,9 @@ public:
     
 
 
-    virtual bool matches(const txXPathNode& aNode,
-                          txIMatchContext* aContext) = 0;
+    virtual nsresult matches(const txXPathNode& aNode,
+                             txIMatchContext* aContext,
+                             bool& aMatched) = 0;
 
     
 
@@ -86,7 +87,8 @@ public:
 };
 
 #define TX_DECL_PATTERN_BASE \
-    bool matches(const txXPathNode& aNode, txIMatchContext* aContext) override; \
+    nsresult matches(const txXPathNode& aNode, txIMatchContext* aContext, \
+                     bool& aMatched) override; \
     double getDefaultPriority() override; \
     virtual Expr* getSubExprAt(uint32_t aPos) override; \
     virtual void setSubExprAt(uint32_t aPos, Expr* aExpr) override; \

@@ -88,7 +88,8 @@ public:
 
 
 
-    virtual bool isStripSpaceAllowed(const txXPathNode& aNode) = 0;
+    virtual nsresult isStripSpaceAllowed(const txXPathNode& aNode,
+                                         bool& aAllowed) = 0;
 
     
 
@@ -106,7 +107,7 @@ public:
 #define TX_DECL_MATCH_CONTEXT \
     nsresult getVariable(int32_t aNamespace, nsIAtom* aLName, \
                          txAExprResult*& aResult); \
-    bool isStripSpaceAllowed(const txXPathNode& aNode); \
+    nsresult isStripSpaceAllowed(const txXPathNode& aNode, bool& aAllowed); \
     void* getPrivateContext(); \
     txResultRecycler* recycler(); \
     void receiveError(const nsAString& aMsg, nsresult aRes)
