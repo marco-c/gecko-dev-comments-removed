@@ -94,6 +94,8 @@ pub struct NewLayoutInfo {
     
     pub subpage_id: SubpageId,
     
+    pub frame_type: FrameType,
+    
     pub load_data: LoadData,
     
     
@@ -307,7 +309,7 @@ pub struct InitialScriptState {
     pub id: PipelineId,
     
     
-    pub parent_info: Option<(PipelineId, SubpageId)>,
+    pub parent_info: Option<(PipelineId, SubpageId, FrameType)>,
     
     pub control_chan: IpcSender<ConstellationControlMsg>,
     
