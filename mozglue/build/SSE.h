@@ -90,6 +90,7 @@
 
 
 
+
 #if defined(__GNUC__) && (defined(__i386__) || defined(__x86_64__))
 
 #ifdef __MMX__
@@ -135,6 +136,10 @@
 #ifdef __AVX2__
   
   #define MOZILLA_PRESUME_AVX2 1
+#endif
+#ifdef __AES__
+  
+  #define MOZILLA_PRESUME_AES 1
 #endif
 
 
@@ -216,6 +221,9 @@ namespace mozilla {
 #endif
 #if !defined(MOZILLA_PRESUME_AVX2)
     extern bool MFBT_DATA avx2_enabled;
+#endif
+#if !defined(MOZILLA_PRESUME_AES)
+    extern bool MFBT_DATA aes_enabled;
 #endif
 
 
@@ -324,6 +332,16 @@ namespace mozilla {
   inline bool supports_avx2() { return sse_private::avx2_enabled; }
 #else
   inline bool supports_avx2() { return false; }
+#endif
+
+#if defined(MOZILLA_PRESUME_AES)
+#define MOZILLA_MAY_SUPPORT_AES 1
+  inline bool supports_aes() { return true; }
+#elif defined(MOZILLA_SSE_HAVE_CPUID_DETECTION)
+#define MOZILLA_MAY_SUPPORT_AES 1
+  inline bool supports_aes() { return sse_private::aes_enabled; }
+#else
+  inline bool supports_aes() { return false; }
 #endif
 
 
