@@ -770,11 +770,6 @@ public:
       return;
     }
 
-    
-    if (mMaster->mHasSuspendTaint) {
-      return;
-    }
-
     mMaster->mVideoDecodeSuspended = true;
     mMaster->mOnPlaybackEvent.Notify(MediaEventType::EnterVideoSuspend);
     Reader()->SetVideoBlankDecode(true);
@@ -1767,14 +1762,9 @@ public:
   void HandleVideoSuspendTimeout() override
   {
     
-     if (!mMaster->HasVideo()) {
-       return;
-     }
-
-     
-     if (mMaster->mHasSuspendTaint) {
-       return;
-     }
+    if (!mMaster->HasVideo()) {
+     return;
+    }
 
     mMaster->mVideoDecodeSuspended = true;
     mMaster->mOnPlaybackEvent.Notify(MediaEventType::EnterVideoSuspend);
