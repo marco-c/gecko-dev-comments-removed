@@ -45,12 +45,24 @@ public:
   void UpdateApzAnimationInProgress(bool aInProgress, TimeDuration aVsyncInterval);
 
 private:
+  
+  struct AnimationData {
+    
+    TimeStamp mStart;
+    
+    uint32_t mFrameCount;
+
+    AnimationData()
+      : mFrameCount(0)
+    {
+    }
+  };
+
   void AnimationStarted();
   void AnimationEnded();
   void UpdateAnimationThroughput(const char* aLabel,
                                  bool aInProgress,
-                                 TimeStamp& aStartTime,
-                                 uint32_t& aFrameCount,
+                                 AnimationData& aAnimationData,
                                  TimeDuration aVsyncInterval,
                                  Telemetry::HistogramID aHistogram);
 
@@ -63,17 +75,9 @@ private:
   uint64_t mMaxLayerAreaAnimated;
 
   
-  TimeStamp mChromeAnimationStart;
-  
-  uint32_t mChromeAnimationFrameCount;
-  
-  TimeStamp mContentAnimationStart;
-  
-  uint32_t mContentAnimationFrameCount;
-  
-  TimeStamp mApzAnimationStart;
-  
-  uint32_t mApzAnimationFrameCount;
+  AnimationData mChromeAnimation;
+  AnimationData mContentAnimation;
+  AnimationData mApzAnimation;
 };
 
 } 
