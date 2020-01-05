@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #ifndef CacheFileMetadata__h__
 #define CacheFileMetadata__h__
@@ -19,17 +19,17 @@ class nsICacheEntryMetaDataVisitor;
 namespace mozilla {
 namespace net {
 
-// Flags stored in CacheFileMetadataHeader.mFlags
 
-// Whether an entry is a pinned entry (created with
-// nsICacheStorageService.pinningCacheStorage.)
+
+
+
 static const uint32_t kCacheEntryIsPinned = 1 << 0;
 
-// By multiplying with the current half-life we convert the frecency
-// to time independent of half-life value.  The range fits 32bits.
-// When decay time changes on next run of the browser, we convert
-// the frecency value to a correct internal representation again.
-// It might not be 100% accurate, but for the purpose it suffice.
+
+
+
+
+
 #define FRECENCY2INT(aFrecency) \
   ((uint32_t)((aFrecency) * CacheObserver::HalfLifeSeconds()))
 #define INT2FRECENCY(aInt) \
@@ -156,6 +156,7 @@ public:
 
   CacheHash::Hash16_t GetHash(uint32_t aIndex);
   nsresult            SetHash(uint32_t aIndex, CacheHash::Hash16_t aHash);
+  nsresult            RemoveHash(uint32_t aIndex);
 
   nsresult AddFlags(uint32_t aFlags);
   nsresult RemoveFlags(uint32_t aFlags);
@@ -167,8 +168,8 @@ public:
   nsresult GetLastModified(uint32_t *_retval);
   nsresult GetLastFetched(uint32_t *_retval);
   nsresult GetFetchCount(uint32_t *_retval);
-  // Called by upper layers to indicate the entry this metadata belongs
-  // with has been fetched, i.e. delivered to the consumer.
+  
+  
   nsresult OnFetched();
 
   int64_t  Offset() { return mOffset; }
@@ -187,7 +188,7 @@ public:
   virtual bool IsKilled() override { return mListener && mListener->IsKilled(); }
   void InitEmptyMetadata();
 
-  // Memory reporting
+  
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 
@@ -205,8 +206,8 @@ private:
   uint32_t                            mHashArraySize;
   uint32_t                            mHashCount;
   int64_t                             mOffset;
-  char                               *mBuf; // used for parsing, then points
-                                            // to elements
+  char                               *mBuf; 
+                                            
   uint32_t                            mBufSize;
   char                               *mWriteBuf;
   CacheFileMetadataHeader             mMetaHdr;
@@ -221,7 +222,7 @@ private:
 };
 
 
-} // namespace net
-} // namespace mozilla
+} 
+} 
 
 #endif
