@@ -10,7 +10,9 @@ import android.content.Intent;
 import android.graphics.Bitmap;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
+import android.support.annotation.VisibleForTesting;
 import android.support.customtabs.CustomTabsIntent;
 
 import java.util.ArrayList;
@@ -23,6 +25,10 @@ import java.util.List;
 class IntentUtil {
 
     public static final int NO_ANIMATION_RESOURCE = -1;
+
+    @VisibleForTesting
+    @ColorInt
+    protected static final int DEFAULT_ACTION_BAR_COLOR = 0xFF363b40; 
 
     
     private static final String PREFIX = Build.VERSION.SDK_INT >= Build.VERSION_CODES.M
@@ -64,6 +70,23 @@ class IntentUtil {
     static Bitmap getActionButtonIcon(@NonNull Intent intent) {
         final Bundle bundle = getActionButtonBundle(intent);
         return (bundle == null) ? null : (Bitmap) bundle.getParcelable(CustomTabsIntent.KEY_ICON);
+    }
+
+    
+
+
+
+
+
+
+    @ColorInt
+    static int getToolbarColor(@NonNull Intent intent) {
+        @ColorInt int toolbarColor = intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR,
+                DEFAULT_ACTION_BAR_COLOR);
+
+        
+        toolbarColor = 0xFF000000 | toolbarColor;
+        return toolbarColor;
     }
 
     

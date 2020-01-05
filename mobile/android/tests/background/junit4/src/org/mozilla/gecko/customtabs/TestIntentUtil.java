@@ -128,6 +128,24 @@ public class TestIntentUtil {
     }
 
     @Test
+    public void testToolbarColor() {
+        final CustomTabsIntent.Builder builder = new CustomTabsIntent.Builder();
+
+        Assert.assertEquals(IntentUtil.getToolbarColor(builder.build().intent),
+                IntentUtil.DEFAULT_ACTION_BAR_COLOR);
+
+        
+        builder.setToolbarColor(0xFF0000);
+        Assert.assertEquals(IntentUtil.getToolbarColor(builder.build().intent), 0xFFFF0000);
+        builder.setToolbarColor(0xFFFF0000);
+        Assert.assertEquals(IntentUtil.getToolbarColor(builder.build().intent), 0xFFFF0000);
+
+        
+        builder.setToolbarColor(0x0000FF00);
+        Assert.assertEquals(IntentUtil.getToolbarColor(builder.build().intent), 0xFF00FF00);
+    }
+
+    @Test
     public void testMenuShareItem() {
         final CustomTabsIntent.Builder builderNoShareItem = new CustomTabsIntent.Builder();
         Assert.assertFalse(IntentUtil.hasShareItem(builderNoShareItem.build().intent));
