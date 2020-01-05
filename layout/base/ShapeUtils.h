@@ -36,7 +36,7 @@ struct ShapeUtils final
   
   
   static nsPoint ComputeCircleOrEllipseCenter(
-    StyleBasicShape* const aBasicShape,
+    const StyleBasicShape* aBasicShape,
     const nsRect& aRefBox);
 
   
@@ -44,7 +44,7 @@ struct ShapeUtils final
   
   
   static nscoord ComputeCircleRadius(
-    mozilla::StyleBasicShape* const aBasicShape,
+    const StyleBasicShape* aBasicShape,
     const nsPoint& aCenter, const nsRect& aRefBox);
 
   
@@ -53,14 +53,14 @@ struct ShapeUtils final
   
   
   static nsSize ComputeEllipseRadii(
-    mozilla::StyleBasicShape* const aBasicShape,
+    const StyleBasicShape* aBasicShape,
     const nsPoint& aCenter, const nsRect& aRefBox);
 
   
   
   
   static nsRect ComputeInsetRect(
-    mozilla::StyleBasicShape* const aBasicShape,
+    const StyleBasicShape* aBasicShape,
     const nsRect& aRefBox);
 
   
@@ -69,7 +69,7 @@ struct ShapeUtils final
   
   
   static bool ComputeInsetRadii(
-    mozilla::StyleBasicShape* const aBasicShape,
+    const StyleBasicShape* aBasicShape,
     const nsRect& aInsetRect,
     const nsRect& aRefBox,
     nscoord aRadii[8]);
