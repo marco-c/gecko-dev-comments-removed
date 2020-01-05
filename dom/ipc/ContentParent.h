@@ -354,6 +354,10 @@ public:
 
   bool RequestRunToCompletion();
 
+  bool IsAvailable() const
+  {
+    return mIsAvailable;
+  }
   bool IsAlive() const override;
 
   virtual bool IsForBrowser() const override
@@ -615,6 +619,14 @@ protected:
   void OnCompositorUnexpectedShutdown() override;
 
 private:
+  
+
+
+
+
+
+
+
   static nsClassHashtable<nsStringHashKey, nsTArray<ContentParent*>>* sBrowserContentParents;
   static nsTArray<ContentParent*>* sPrivateContent;
   static StaticAutoPtr<LinkedList<ContentParent> > sContentParents;
@@ -693,6 +705,12 @@ private:
 
 
   bool ShouldKeepProcessAlive() const;
+
+  
+
+
+
+  void MarkAsTroubled();
 
   
 
@@ -1139,6 +1157,8 @@ private:
   
   int32_t mNumDestroyingTabs;
   
+  
+  bool mIsAvailable;
   
   
   
