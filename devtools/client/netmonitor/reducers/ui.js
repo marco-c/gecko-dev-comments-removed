@@ -1,0 +1,40 @@
+
+
+
+
+"use strict";
+
+const I = require("devtools/client/shared/vendor/immutable");
+const {
+  OPEN_SIDEBAR,
+  TOGGLE_SIDEBAR,
+} = require("../constants");
+
+const Sidebar = I.Record({
+  open: false,
+});
+
+const UI = I.Record({
+  sidebar: new Sidebar(),
+});
+
+function openSidebar(state, action) {
+  return state.setIn(["sidebar", "open"], action.open);
+}
+
+function toggleSidebar(state, action) {
+  return state.setIn(["sidebar", "open"], !state.sidebar.open);
+}
+
+function ui(state = new UI(), action) {
+  switch (action.type) {
+    case OPEN_SIDEBAR:
+      return openSidebar(state, action);
+    case TOGGLE_SIDEBAR:
+      return toggleSidebar(state, action);
+    default:
+      return state;
+  }
+}
+
+module.exports = ui;

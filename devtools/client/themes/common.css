@@ -2,7 +2,9 @@
 
 
 
+
 @import url("resource://devtools/client/themes/splitters.css");
+@namespace html url("http://www.w3.org/1999/xhtml");
 
 :root {
   font: message-box;
@@ -33,6 +35,10 @@
   font-size: 80%;
 }
 
+
+html|button, html|select {
+  font: message-box;
+}
 
 
 
