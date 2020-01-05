@@ -67,6 +67,8 @@ public:
   nsresult DispatchAfterPendingOpens(nsIRunnable* aRunnable);
   bool IsCurrentThread();
 
+  uint32_t QueueSize(bool highPriority);
+
   
 
 

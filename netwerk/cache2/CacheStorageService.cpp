@@ -2011,6 +2011,14 @@ CacheStorageService::GetCacheEntryInfo(CacheEntry* aEntry,
 }
 
 
+uint32_t CacheStorageService::CacheQueueSize(bool highPriority)
+{
+  RefPtr<CacheIOThread> thread = CacheFileIOManager::IOThread();
+  MOZ_ASSERT(thread);
+  return thread->QueueSize(highPriority);
+}
+
+
 
 namespace {
 
