@@ -469,6 +469,18 @@ public:
 
   static LayerTreeState* GetIndirectShadowTree(uint64_t aId);
 
+  
+
+
+
+
+
+
+
+
+  static APZCTreeManagerParent* GetApzcTreeManagerParentForRoot(
+        uint64_t aContentLayersId);
+
 #if defined(XP_WIN) || defined(MOZ_WIDGET_GTK)
   
 
