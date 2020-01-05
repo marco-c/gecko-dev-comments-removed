@@ -38,22 +38,20 @@ const kRGBRE = /^rgba?\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*/i;
 const kModalIdPrefix = "cedee4d0-74c5-4f2d-ab43-4d37c0f9d463";
 const kModalOutlineId = kModalIdPrefix + "-findbar-modalHighlight-outline";
 const kOutlineBoxColor = "255,197,53";
-const kOutlineBoxBorderSize = 2;
-const kOutlineBoxBorderRadius = 3;
 const kModalStyles = {
   outlineNode: [
     ["background-color", `rgb(${kOutlineBoxColor})`],
     ["background-clip", "padding-box"],
-    ["border", `${kOutlineBoxBorderSize}px solid`],
+    ["border", "2px solid"],
     ["-moz-border-top-colors", `rgba(${kOutlineBoxColor},.1) rgba(${kOutlineBoxColor},.4) rgba(${kOutlineBoxColor},.7)`],
     ["-moz-border-right-colors", `rgba(${kOutlineBoxColor},.1) rgba(${kOutlineBoxColor},.4) rgba(${kOutlineBoxColor},.7)`],
     ["-moz-border-bottom-colors", `rgba(${kOutlineBoxColor},.1) rgba(${kOutlineBoxColor},.4) rgba(${kOutlineBoxColor},.7)`],
     ["-moz-border-left-colors", `rgba(${kOutlineBoxColor},.1) rgba(${kOutlineBoxColor},.4) rgba(${kOutlineBoxColor},.7)`],
-    ["border-radius", `${kOutlineBoxBorderRadius}px`],
-    ["box-shadow", `0 ${kOutlineBoxBorderSize}px 0 0 rgba(0,0,0,.1)`],
+    ["border-radius", "3px"],
+    ["box-shadow", "0 2px 0 0 rgba(0,0,0,.1)"],
     ["color", "#000"],
     ["display", "-moz-box"],
-    ["margin", `-${kOutlineBoxBorderSize}px 0 0 -${kOutlineBoxBorderSize}px !important`],
+    ["margin", "-2px 0 0 -2px !important"],
     ["overflow", "hidden"],
     ["pointer-events", "none"],
     ["position", "absolute"],
@@ -72,9 +70,6 @@ const kModalStyles = {
     ["pointer-events", "none"],
     ["position", "absolute"],
     ["z-index", 1]
-  ],
-  maskNodeTransition: [
-    ["transition", "background .2s ease-in"]
   ],
   maskNodeDebug: [
     ["z-index", 2147483646],
@@ -163,12 +158,9 @@ FinderHighlighter.prototype = {
 
 
 
-
-
   getForWindow(window, propName = null) {
     if (!gWindows.has(window)) {
       gWindows.set(window, {
-        detectedGeometryChange: false,
         dynamicRangesSet: new Set(),
         frames: new Map(),
         modalHighlightRectsMap: new Map(),
@@ -221,16 +213,15 @@ FinderHighlighter.prototype = {
         linksOnly, word,
         finder: this.finder,
         listener: this,
-        useCache: true
+        useCache: true,
+        window
       };
       if (this.iterator._areParamsEqual(params, dict.lastIteratorParams))
         return this._found;
       if (params) {
         yield this.iterator.start(params);
-        if (this._found) {
+        if (this._found)
           this.finder._outlineLink(true);
-          dict.updateAllRanges = true;
-        }
       }
     } else {
       this.hide(window);
@@ -438,6 +429,8 @@ FinderHighlighter.prototype = {
         this.show(window);
       else
         this._maybeCreateModalHighlightNodes(window);
+
+      this._updateRangeOutline(dict, textContent);
     }
 
     let outlineNode = dict.modalHighlightOutline;
@@ -829,7 +822,7 @@ FinderHighlighter.prototype = {
       bounds = this._getRootBounds(window);
 
     let topBounds = this._getRootBounds(window.top, false);
-    let rects = [];
+    let rects = new Set();
     
     
     
@@ -839,7 +832,7 @@ FinderHighlighter.prototype = {
       rect.y += bounds.y;
       
       if (rect.intersects(topBounds))
-        rects.push(rect);
+        rects.add(rect);
     }
     return rects;
   },
@@ -864,12 +857,7 @@ FinderHighlighter.prototype = {
 
     
     dict = dict || this.getForWindow(window.top);
-    let oldRects = dict.modalHighlightRectsMap.get(range);
     dict.modalHighlightRectsMap.set(range, rects);
-    
-    
-    if (oldRects && oldRects.length && !rects.length)
-      dict.detectedGeometryChange = true;
     if (checkIfDynamic && this._isInDynamicContainer(range))
       dict.dynamicRangesSet.add(range);
     return rects;
@@ -916,7 +904,7 @@ FinderHighlighter.prototype = {
     textContent = textContent || this._getRangeContentArray(range);
 
     let outlineAnonNode = dict.modalHighlightOutline;
-    let rectCount = rects.length;
+    let rectCount = rects.size;
     
     
     
@@ -959,43 +947,13 @@ FinderHighlighter.prototype = {
       
       
       let text = (i == rectCount - 1) ? textContent.slice(i).join(" ") : textContent[i];
-
-      
-      
-      
-      
-      
-      
-      
-      let intersectingSides = new Set();
-      let previous = rects[i - 1];
-      if (previous &&
-          rect.left - previous.right <= 2 * kOutlineBoxBorderSize) {
-        intersectingSides.add("left");
-      }
-      let next = rects[i + 1];
-      if (next &&
-          next.left - rect.right <= 2 * kOutlineBoxBorderSize) {
-        intersectingSides.add("right");
-      }
-      let borderStyles = [...intersectingSides].map(side => [ "border-" + side, 0 ]);
-      if (intersectingSides.size) {
-        borderStyles.push([ "margin",  `-${kOutlineBoxBorderSize}px 0 0 ${
-          intersectingSides.has("left") ? 0 : -kOutlineBoxBorderSize}px !important`]);
-        borderStyles.push([ "border-radius",
-          (intersectingSides.has("left") ? 0 : kOutlineBoxBorderRadius) + "px " +
-          (intersectingSides.has("right") ? 0 : kOutlineBoxBorderRadius) + "px " +
-          (intersectingSides.has("right") ? 0 : kOutlineBoxBorderRadius) + "px " +
-          (intersectingSides.has("left") ? 0 : kOutlineBoxBorderRadius) + "px" ]);
-      }
-
       ++i;
       let outlineStyle = this._getStyleString(kModalStyles.outlineNode, [
         ["top", rect.top + "px"],
         ["left", rect.left + "px"],
         ["height", rect.height + "px"],
         ["width", rect.width + "px"]
-      ], borderStyles, kDebug ? kModalStyles.outlineNodeDebug : []);
+      ], kDebug ? kModalStyles.outlineNodeDebug : []);
       fontStyle.lineHeight = rect.height + "px";
       let textStyle = this._getStyleString(kModalStyles.outlineText) + "; " +
         this._getHTMLFontStyle(fontStyle);
@@ -1078,6 +1036,8 @@ FinderHighlighter.prototype = {
       return;
     }
 
+    this._updateRangeOutline(dict);
+
     
     this._repaintHighlightAllMask(window, false);
   },
@@ -1111,26 +1071,20 @@ FinderHighlighter.prototype = {
     let maskStyle = this._getStyleString(kModalStyles.maskNode,
       [ ["width", width + "px"], ["height", height + "px"] ],
       dict.brightText ? kModalStyles.maskNodeBrightText : [],
-      paintContent ? kModalStyles.maskNodeTransition : [],
       kDebug ? kModalStyles.maskNodeDebug : []);
     dict.modalHighlightAllMask.setAttributeForElement(kMaskId, "style", maskStyle);
-
-    this._updateRangeOutline(dict);
+    if (dict.brightText)
+      dict.modalHighlightAllMask.setAttributeForElement(kMaskId, "brighttext", "true");
 
     let allRects = [];
     if (paintContent || dict.modalHighlightAllMask) {
+      this._updateRangeOutline(dict);
       this._updateDynamicRangesRects(dict);
 
       let DOMRect = window.DOMRect;
       for (let [range, rects] of dict.modalHighlightRectsMap) {
         if (dict.updateAllRanges)
           rects = this._updateRangeRects(range);
-
-        
-        
-        if (dict.detectedGeometryChange)
-          return;
-
         if (this._checkOverlap(dict.currentFoundRange, range))
           continue;
         for (let rect of rects)
@@ -1210,10 +1164,8 @@ FinderHighlighter.prototype = {
 
       let { width: previousWidth, height: previousHeight } = dict.lastWindowDimensions;
       let { width, height } = dict.lastWindowDimensions = this._getWindowDimensions(window);
-      let pageContentChanged = dict.detectedGeometryChange ||
-                               (Math.abs(previousWidth - width) > kContentChangeThresholdPx ||
+      let pageContentChanged = (Math.abs(previousWidth - width) > kContentChangeThresholdPx ||
                                 Math.abs(previousHeight - height) > kContentChangeThresholdPx);
-      dict.detectedGeometryChange = false;
       
       
       if (pageContentChanged)

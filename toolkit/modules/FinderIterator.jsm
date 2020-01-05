@@ -118,7 +118,7 @@ this.FinderIterator = {
     let window = finder._getWindow();
     let resolver;
     let promise = new Promise(resolve => resolver = resolve);
-    let iterParams = { caseSensitive, entireWord, linksOnly, useCache, word };
+    let iterParams = { caseSensitive, entireWord, linksOnly, useCache, window, word };
 
     this._listeners.set(listener, { limit, onEnd: resolver });
 
@@ -150,7 +150,7 @@ this.FinderIterator = {
     
     this.running = true;
     this._currentParams = iterParams;
-    this._findAllRanges(finder, window, ++this._spawnId);
+    this._findAllRanges(finder, ++this._spawnId);
 
     return promise;
   },
@@ -205,7 +205,7 @@ this.FinderIterator = {
     this.running = true;
     this._currentParams = iterParams;
 
-    this._findAllRanges(finder, finder._getWindow(), ++this._spawnId);
+    this._findAllRanges(finder, ++this._spawnId);
     this._notifyListeners("restart", iterParams);
   },
 
@@ -309,6 +309,7 @@ this.FinderIterator = {
       paramSet1.caseSensitive === paramSet2.caseSensitive &&
       paramSet1.entireWord === paramSet2.entireWord &&
       paramSet1.linksOnly === paramSet2.linksOnly &&
+      paramSet1.window === paramSet2.window &&
       NLP.levenshtein(paramSet1.word, paramSet2.word) <= allowDistance);
   },
 
@@ -416,8 +417,7 @@ this.FinderIterator = {
 
 
 
-
-  _findAllRanges: Task.async(function* (finder, window, spawnId) {
+  _findAllRanges: Task.async(function* (finder, spawnId) {
     if (this._timeout) {
       if (this._timer)
         clearTimeout(this._timer);
@@ -431,10 +431,10 @@ this.FinderIterator = {
 
     this._notifyListeners("start", this.params);
 
+    let { linksOnly, window, word } = this._currentParams;
     
     
     let frames = [window].concat(this._collectFrames(window, finder));
-    let { linksOnly, word } = this._currentParams;
     let iterCount = 0;
     for (let frame of frames) {
       for (let range of this._iterateDocument(this._currentParams, frame)) {
