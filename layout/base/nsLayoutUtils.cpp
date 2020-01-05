@@ -9412,17 +9412,9 @@ nsLayoutUtils::ComputeGeometryBox(nsIFrame* aFrame,
   
   
   
-  nsRect r = HasCSSBoxLayout(aFrame)
-             ? ComputeHTMLReferenceRect(aFrame, aGeometryBox)
-             : ComputeSVGReferenceRect(aFrame, aGeometryBox);
+  nsRect r = (aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)
+             ? ComputeSVGReferenceRect(aFrame, aGeometryBox)
+             : ComputeHTMLReferenceRect(aFrame, aGeometryBox);
 
   return r;
-}
-
- bool
-nsLayoutUtils::HasCSSBoxLayout(nsIFrame* aFrame)
-{
-  
-  return !aFrame->IsFrameOfType(nsIFrame::eSVG) ||
-          aFrame->GetType() == nsGkAtoms::svgOuterSVGFrame;
 }
