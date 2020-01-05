@@ -5,58 +5,89 @@
 
 
 #include "MemoryReportRequest.h"
+#include "mozilla/dom/ContentChild.h"
 
 namespace mozilla {
 namespace dom {
 
-MemoryReportRequestParent::MemoryReportRequestParent(uint32_t aGeneration)
-  : mGeneration(aGeneration)
+MemoryReportRequestHost::MemoryReportRequestHost(uint32_t aGeneration)
+  : mGeneration(aGeneration),
+    mSuccess(false)
 {
-  MOZ_COUNT_CTOR(MemoryReportRequestParent);
+  MOZ_COUNT_CTOR(MemoryReportRequestHost);
   mReporterManager = nsMemoryReporterManager::GetOrCreate();
   NS_WARNING_ASSERTION(mReporterManager, "GetOrCreate failed");
 }
 
-mozilla::ipc::IPCResult
-MemoryReportRequestParent::RecvReport(const MemoryReport& aReport)
+void
+MemoryReportRequestHost::RecvReport(const MemoryReport& aReport)
 {
+  
+  
+  
+  if (aReport.generation() != mGeneration) {
+    return;
+  }
+
   if (mReporterManager) {
     mReporterManager->HandleChildReport(mGeneration, aReport);
   }
-  return IPC_OK();
-}
-
-mozilla::ipc::IPCResult
-MemoryReportRequestParent::Recv__delete__()
-{
-  
-  
-  
-  
-  return IPC_OK();
 }
 
 void
-MemoryReportRequestParent::ActorDestroy(ActorDestroyReason aWhy)
+MemoryReportRequestHost::Finish(uint32_t aGeneration)
 {
+  
+  if (mGeneration != aGeneration) {
+    return;
+  }
+  mSuccess = true;
+}
+
+MemoryReportRequestHost::~MemoryReportRequestHost()
+{
+  MOZ_COUNT_DTOR(MemoryReportRequestHost);
+
   if (mReporterManager) {
-    mReporterManager->EndProcessReport(mGeneration, aWhy == Deletion);
+    mReporterManager->EndProcessReport(mGeneration, mSuccess);
     mReporterManager = nullptr;
   }
 }
 
-MemoryReportRequestParent::~MemoryReportRequestParent()
+NS_IMPL_ISUPPORTS(MemoryReportRequestClient, nsIRunnable)
+
+ void
+MemoryReportRequestClient::Start(uint32_t aGeneration,
+                                 bool aAnonymize,
+                                 bool aMinimizeMemoryUsage,
+                                 const MaybeFileDesc& aDMDFile,
+                                 const nsACString& aProcessString)
 {
-  MOZ_ASSERT(!mReporterManager);
-  MOZ_COUNT_DTOR(MemoryReportRequestParent);
+  RefPtr<MemoryReportRequestClient> request = new MemoryReportRequestClient(
+    aGeneration,
+    aAnonymize,
+    aDMDFile,
+    aProcessString);
+
+  DebugOnly<nsresult> rv;
+  if (aMinimizeMemoryUsage) {
+    nsCOMPtr<nsIMemoryReporterManager> mgr =
+      do_GetService("@mozilla.org/memory-reporter-manager;1");
+    rv = mgr->MinimizeMemoryUsage(request);
+    
+  } else {
+    rv = request->Run();
+  }
+
+  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "actor operation failed");
 }
 
-NS_IMPL_ISUPPORTS(MemoryReportRequestChild, nsIRunnable)
-
-MemoryReportRequestChild::MemoryReportRequestChild(
-  bool aAnonymize, const MaybeFileDesc& aDMDFile,
-  const nsACString& aProcessString)
- : mAnonymize(aAnonymize),
+MemoryReportRequestClient::MemoryReportRequestClient(uint32_t aGeneration,
+                                                     bool aAnonymize,
+                                                     const MaybeFileDesc& aDMDFile,
+                                                     const nsACString& aProcessString)
+ : mGeneration(aGeneration),
+   mAnonymize(aAnonymize),
    mProcessString(aProcessString)
 {
   if (aDMDFile.type() == MaybeFileDesc::TFileDescriptor) {
@@ -64,7 +95,7 @@ MemoryReportRequestChild::MemoryReportRequestChild(
   }
 }
 
-MemoryReportRequestChild::~MemoryReportRequestChild()
+MemoryReportRequestClient::~MemoryReportRequestClient()
 {
 }
 
@@ -73,9 +104,9 @@ class HandleReportCallback final : public nsIHandleReportCallback
 public:
   NS_DECL_ISUPPORTS
 
-  explicit HandleReportCallback(MemoryReportRequestChild* aActor,
+  explicit HandleReportCallback(uint32_t aGeneration,
                                 const nsACString& aProcess)
-  : mActor(aActor)
+  : mGeneration(aGeneration)
   , mProcess(aProcess)
   { }
 
@@ -85,14 +116,20 @@ public:
                       nsISupports* aUnused) override
   {
     MemoryReport memreport(mProcess, nsCString(aPath), aKind, aUnits,
-                           aAmount, nsCString(aDescription));
-    mActor->SendReport(memreport);
+                           aAmount, mGeneration, nsCString(aDescription));
+    switch (XRE_GetProcessType()) {
+      case GeckoProcessType_Content:
+        ContentChild::GetSingleton()->SendAddMemoryReport(memreport);
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unhandled process type");
+    }
     return NS_OK;
   }
 private:
   ~HandleReportCallback() = default;
 
-  RefPtr<MemoryReportRequestChild> mActor;
+  uint32_t mGeneration;
   const nsCString mProcess;
 };
 
@@ -106,21 +143,28 @@ class FinishReportingCallback final : public nsIFinishReportingCallback
 public:
   NS_DECL_ISUPPORTS
 
-  explicit FinishReportingCallback(MemoryReportRequestChild* aActor)
-  : mActor(aActor)
+  explicit FinishReportingCallback(uint32_t aGeneration)
+  : mGeneration(aGeneration)
   {
   }
 
   NS_IMETHOD Callback(nsISupports* aUnused) override
   {
-    bool sent = PMemoryReportRequestChild::Send__delete__(mActor);
+    bool sent = false;
+    switch (XRE_GetProcessType()) {
+      case GeckoProcessType_Content:
+        sent = ContentChild::GetSingleton()->SendFinishMemoryReport(mGeneration);
+        break;
+      default:
+        MOZ_ASSERT_UNREACHABLE("Unhandled process type");
+    }
     return sent ? NS_OK : NS_ERROR_FAILURE;
   }
 
 private:
   ~FinishReportingCallback() = default;
 
-  RefPtr<MemoryReportRequestChild> mActor;
+  uint32_t mGeneration;
 };
 
 NS_IMPL_ISUPPORTS(
@@ -128,7 +172,7 @@ NS_IMPL_ISUPPORTS(
 , nsIFinishReportingCallback
 )
 
-NS_IMETHODIMP MemoryReportRequestChild::Run()
+NS_IMETHODIMP MemoryReportRequestClient::Run()
 {
   nsCOMPtr<nsIMemoryReporterManager> mgr =
     do_GetService("@mozilla.org/memory-reporter-manager;1");
@@ -136,9 +180,9 @@ NS_IMETHODIMP MemoryReportRequestChild::Run()
   
   
   RefPtr<HandleReportCallback> handleReport =
-    new HandleReportCallback(this, mProcessString);
+    new HandleReportCallback(mGeneration, mProcessString);
   RefPtr<FinishReportingCallback> finishReporting =
-    new FinishReportingCallback(this);
+    new FinishReportingCallback(mGeneration);
 
   nsresult rv =
     mgr->GetReportsForThisProcessExtended(handleReport, nullptr, mAnonymize,
