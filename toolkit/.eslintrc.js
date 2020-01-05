@@ -249,7 +249,14 @@ module.exports = {
     "dump": true,
     "KeyEvent": false,
     "openDialog": false,
+    "MenuBoxObject": false,
     "sizeToContent": false,
     "SharedArrayBuffer": false,
+    
+    
+    "StopIteration": false,
+    
+    
+    "uneval": false
   }
 };
