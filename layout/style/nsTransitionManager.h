@@ -405,12 +405,6 @@ public:
   void SortEvents()      { mEventDispatcher.SortEvents(); }
   void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
 
-  
-  
-  
-  void StopTransitionsForElement(mozilla::dom::Element* aElement,
-                                 mozilla::CSSPseudoElementType aPseudoType);
-
 protected:
   virtual ~nsTransitionManager() {}
 

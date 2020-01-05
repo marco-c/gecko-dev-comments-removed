@@ -357,12 +357,6 @@ public:
   void SortEvents()      { mEventDispatcher.SortEvents(); }
   void ClearEventQueue() { mEventDispatcher.ClearEventQueue(); }
 
-  
-  
-  
-  void StopAnimationsForElement(mozilla::dom::Element* aElement,
-                                mozilla::CSSPseudoElementType aPseudoType);
-
 protected:
   ~nsAnimationManager() override = default;
 
