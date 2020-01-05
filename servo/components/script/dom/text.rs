@@ -44,6 +44,7 @@ impl Text {
 
 impl TextMethods for Text {
     
+    
     fn SplitText(&self, offset: u32) -> Fallible<Root<Text>> {
         let cdata = self.upcast::<CharacterData>();
         
@@ -72,10 +73,6 @@ impl TextMethods for Text {
         }
         
         cdata.DeleteData(offset, count).unwrap();
-        if parent.is_none() {
-            
-            node.ranges().clamp_above(&node, offset);
-        }
         
         Ok(new_node)
     }
