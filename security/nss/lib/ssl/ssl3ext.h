@@ -55,6 +55,9 @@ struct TLSExtensionDataStr {
     PRUint16 negotiated[SSL_MAX_EXTENSIONS];
 
     
+    PRUint16 paddingLen;
+
+    
     PRBool ticketTimestampVerified;
     PRBool emptySessionTicket;
     PRBool sentSessionTicketInClientHello;
@@ -130,9 +133,8 @@ SECStatus ssl3_RegisterExtensionSender(const sslSocket *ss,
 PRInt32 ssl3_CallHelloExtensionSenders(sslSocket *ss, PRBool append, PRUint32 maxBytes,
                                        const ssl3HelloExtensionSender *sender);
 
-unsigned int ssl3_CalculatePaddingExtensionLength(unsigned int clientHelloLength);
-PRInt32 ssl3_AppendPaddingExtension(sslSocket *ss, unsigned int extensionLen,
-                                    PRUint32 maxBytes);
+void ssl3_CalculatePaddingExtLen(sslSocket *ss,
+                                 unsigned int clientHelloLength);
 
 
 SECStatus ssl3_ExtAppendHandshake(const sslSocket *ss, const void *void_src,

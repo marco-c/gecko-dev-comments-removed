@@ -1757,7 +1757,7 @@ tls13_HandleCertificateRequest(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
     TLS13CertificateRequest *certRequest = NULL;
     SECItem context = { siBuffer, NULL, 0 };
     PLArenaPool *arena;
-    PRUint32 extensionsLength;
+    SECItem extensionsData = { siBuffer, NULL, 0 };
 
     SSL_TRC(3, ("%d: TLS13[%d]: handle certificate_request sequence",
                 SSL_GETPID(), ss->fd));
@@ -1816,13 +1816,15 @@ tls13_HandleCertificateRequest(sslSocket *ss, SSL3Opaque *b, PRUint32 length)
         goto loser; 
 
     
-    rv = ssl3_ConsumeHandshakeNumber(ss, &extensionsLength, 2, &b, &length);
+    rv = ssl3_ConsumeHandshakeVariable(ss, &extensionsData, 2, &b, &length);
     if (rv != SECSuccess) {
-        goto loser; 
+        goto loser;
     }
-    if (extensionsLength != length) {
-        FATAL_ERROR(ss, SSL_ERROR_RX_MALFORMED_CERT_REQUEST,
-                    illegal_parameter);
+
+    
+    rv = ssl3_HandleExtensions(ss, &extensionsData.data, &extensionsData.len,
+                               certificate_request);
+    if (rv != SECSuccess) {
         goto loser;
     }
 
@@ -4034,7 +4036,8 @@ tls13_ExtensionAllowed(PRUint16 extension, SSL3HandshakeType message)
                 (message == hello_retry_request) ||
                 (message == encrypted_extensions) ||
                 (message == new_session_ticket) ||
-                (message == certificate));
+                (message == certificate) ||
+                (message == certificate_request));
 
     for (i = 0; i < PR_ARRAY_SIZE(KnownExtensions); i++) {
         if (KnownExtensions[i].ex_value == extension)

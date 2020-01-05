@@ -2185,55 +2185,73 @@ ssl3_ClientSendSigAlgsXtn(const sslSocket *ss, TLSExtensionData *xtnData, PRBool
 
 
 
-unsigned int
-ssl3_CalculatePaddingExtensionLength(unsigned int clientHelloLength)
+void
+ssl3_CalculatePaddingExtLen(sslSocket *ss,
+                            unsigned int clientHelloLength)
 {
     unsigned int recordLength = 1  +
                                 3  +
                                 clientHelloLength;
-    unsigned int extensionLength;
+    unsigned int extensionLen;
 
-    if (recordLength < 256 || recordLength >= 512) {
-        return 0;
+    
+    if (IS_DTLS(ss) ||
+        ss->vrange.max < SSL_LIBRARY_VERSION_TLS_1_0 ||
+        ss->firstHsDone) {
+        return;
     }
 
-    extensionLength = 512 - recordLength;
     
 
 
 
-    if (extensionLength < 4 + 1) {
-        extensionLength = 4 + 1;
+    if (recordLength < 256 || recordLength >= 512) {
+        return;
     }
 
-    return extensionLength;
+    extensionLen = 512 - recordLength;
+    
+
+
+    if (extensionLen < 4 + 1) {
+        extensionLen = 4 + 1;
+    }
+
+    ss->xtnData.paddingLen = extensionLen - 4;
 }
 
 
 
 
 PRInt32
-ssl3_AppendPaddingExtension(sslSocket *ss, unsigned int extensionLen,
-                            PRUint32 maxBytes)
+ssl3_ClientSendPaddingExtension(const sslSocket *ss, TLSExtensionData *xtnData,
+                                PRBool append, PRUint32 maxBytes)
 {
-    unsigned int paddingLen = extensionLen - 4;
-    static unsigned char padding[252];
+    static unsigned char padding[252] = { 0 };
+    unsigned int extensionLen;
+    SECStatus rv;
 
-    if (extensionLen == 0) {
+    
+
+    if (!append || !xtnData->paddingLen) {
         return 0;
     }
 
+    extensionLen = xtnData->paddingLen + 4;
     if (extensionLen > maxBytes ||
-        !paddingLen ||
-        paddingLen > sizeof(padding)) {
+        xtnData->paddingLen > sizeof(padding)) {
         PORT_Assert(0);
         return -1;
     }
 
-    if (SECSuccess != ssl3_ExtAppendHandshakeNumber(ss, ssl_padding_xtn, 2))
+    rv = ssl3_ExtAppendHandshakeNumber(ss, ssl_padding_xtn, 2);
+    if (rv != SECSuccess) {
         return -1;
-    if (SECSuccess != ssl3_ExtAppendHandshakeVariable(ss, padding, paddingLen, 2))
+    }
+    rv = ssl3_ExtAppendHandshakeVariable(ss, padding, xtnData->paddingLen, 2);
+    if (rv != SECSuccess) {
         return -1;
+    }
 
     return extensionLen;
 }

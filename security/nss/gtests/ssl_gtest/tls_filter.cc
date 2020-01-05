@@ -386,28 +386,7 @@ PacketFilter::Action ChainedPacketFilter::Filter(const DataBuffer& input,
   return changed ? CHANGE : KEEP;
 }
 
-PacketFilter::Action TlsExtensionFilter::FilterHandshake(
-    const HandshakeHeader& header, const DataBuffer& input,
-    DataBuffer* output) {
-  if (header.handshake_type() == kTlsHandshakeClientHello) {
-    TlsParser parser(input);
-    if (!FindClientHelloExtensions(&parser, header)) {
-      return KEEP;
-    }
-    return FilterExtensions(&parser, input, output);
-  }
-  if (header.handshake_type() == kTlsHandshakeServerHello) {
-    TlsParser parser(input);
-    if (!FindServerHelloExtensions(&parser)) {
-      return KEEP;
-    }
-    return FilterExtensions(&parser, input, output);
-  }
-  return KEEP;
-}
-
-bool TlsExtensionFilter::FindClientHelloExtensions(TlsParser* parser,
-                                                   const TlsVersioned& header) {
+bool FindClientHelloExtensions(TlsParser* parser, const TlsVersioned& header) {
   if (!parser->Skip(2 + 32)) {  
     return false;
   }
@@ -426,7 +405,7 @@ bool TlsExtensionFilter::FindClientHelloExtensions(TlsParser* parser,
   return true;
 }
 
-bool TlsExtensionFilter::FindServerHelloExtensions(TlsParser* parser) {
+bool FindServerHelloExtensions(TlsParser* parser, const TlsVersioned& header) {
   uint32_t vtmp;
   if (!parser->Read(&vtmp, 2)) {
     return false;
@@ -449,6 +428,92 @@ bool TlsExtensionFilter::FindServerHelloExtensions(TlsParser* parser) {
     }
   }
   return true;
+}
+
+static bool FindHelloRetryExtensions(TlsParser* parser,
+                                     const TlsVersioned& header) {
+  
+  if (!parser->Skip(2)) {  
+    return false;
+  }
+  return true;
+}
+
+bool FindEncryptedExtensions(TlsParser* parser, const TlsVersioned& header) {
+  return true;
+}
+
+static bool FindCertReqExtensions(TlsParser* parser,
+                                  const TlsVersioned& header) {
+  if (!parser->SkipVariable(1)) {  
+    return false;
+  }
+  
+  if (!parser->SkipVariable(2)) {  
+    return false;
+  }
+  if (!parser->SkipVariable(2)) {  
+    return false;
+  }
+  return true;
+}
+
+
+static bool FindCertificateExtensions(TlsParser* parser,
+                                      const TlsVersioned& header) {
+  if (!parser->SkipVariable(1)) {  
+    return false;
+  }
+  if (!parser->Skip(3)) {  
+    return false;
+  }
+  if (!parser->SkipVariable(3)) {  
+    return false;
+  }
+  return true;
+}
+
+static bool FindNewSessionTicketExtensions(TlsParser* parser,
+                                           const TlsVersioned& header) {
+  if (!parser->Skip(8)) {  
+    return false;
+  }
+  if (!parser->SkipVariable(2)) {  
+    return false;
+  }
+  return true;
+}
+
+static const std::map<uint16_t, TlsExtensionFinder> kExtensionFinders = {
+    {kTlsHandshakeClientHello, FindClientHelloExtensions},
+    {kTlsHandshakeServerHello, FindServerHelloExtensions},
+    {kTlsHandshakeHelloRetryRequest, FindHelloRetryExtensions},
+    {kTlsHandshakeEncryptedExtensions, FindEncryptedExtensions},
+    {kTlsHandshakeCertificateRequest, FindCertReqExtensions},
+    {kTlsHandshakeCertificate, FindCertificateExtensions},
+    {kTlsHandshakeNewSessionTicket, FindNewSessionTicketExtensions}};
+
+bool TlsExtensionFilter::FindExtensions(TlsParser* parser,
+                                        const HandshakeHeader& header) {
+  auto it = kExtensionFinders.find(header.handshake_type());
+  if (it == kExtensionFinders.end()) {
+    return false;
+  }
+  return (it->second)(parser, header);
+}
+
+PacketFilter::Action TlsExtensionFilter::FilterHandshake(
+    const HandshakeHeader& header, const DataBuffer& input,
+    DataBuffer* output) {
+  if (handshake_types_.count(header.handshake_type()) == 0) {
+    return KEEP;
+  }
+
+  TlsParser parser(input);
+  if (!FindExtensions(&parser, header)) {
+    return KEEP;
+  }
+  return FilterExtensions(&parser, input, output);
 }
 
 PacketFilter::Action TlsExtensionFilter::FilterExtensions(

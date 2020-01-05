@@ -413,8 +413,7 @@ typedef enum {
 
 
 
-
-#define SSL_MAX_EXTENSIONS 19
+#define SSL_MAX_EXTENSIONS 20
 
 
 typedef enum {
