@@ -163,13 +163,13 @@ LoginManager.prototype = {
         delete this._pwmgr._prefBranch;
         this._pwmgr = null;
       } else if (topic == "passwordmgr-storage-replace") {
-        (async function() {
+        (async () => {
           await this._pwmgr._storage.terminate();
           this._pwmgr._initStorage();
           await this._pwmgr.initializationPromise;
           Services.obs.notifyObservers(null,
                        "passwordmgr-storage-replace-complete");
-        }.bind(this))();
+        })();
       } else if (topic == "gather-telemetry") {
         
         

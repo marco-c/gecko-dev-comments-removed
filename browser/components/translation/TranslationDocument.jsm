@@ -208,7 +208,7 @@ this.TranslationDocument.prototype = {
 
 
   _swapDocumentContent(target) {
-    (async function() {
+    (async () => {
       
       
       const YIELD_INTERVAL = 100;
@@ -221,7 +221,7 @@ this.TranslationDocument.prototype = {
           await CommonUtils.laterTickResolvingPromise();
         }
       }
-    }.bind(this))();
+    })();
   }
 };
 

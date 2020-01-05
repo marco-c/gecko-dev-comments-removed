@@ -330,7 +330,7 @@ var DirectoryLinksProvider = {
     this._directoryFilePath = OS.Path.join(OS.Constants.Path.localProfileDir, DIRECTORY_LINKS_FILE);
     this._lastDownloadMS = 0;
 
-    return (async function() {
+    return (async () => {
       
       let doesFileExists = await OS.File.exists(this._directoryFilePath);
       if (doesFileExists) {
@@ -339,7 +339,7 @@ var DirectoryLinksProvider = {
       }
       
       await this._fetchAndCacheLinksIfNecessary();
-    }.bind(this))();
+    })();
   },
 
   

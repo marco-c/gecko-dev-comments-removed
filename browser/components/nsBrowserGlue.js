@@ -1496,7 +1496,7 @@ BrowserGlue.prototype = {
         () => BookmarkHTMLUtils.exportToFile(BookmarkHTMLUtils.defaultPath));
     }
 
-    (async function() {
+    (async () => {
       
       
       let restoreDefaultBookmarks = false;
@@ -1631,7 +1631,7 @@ BrowserGlue.prototype = {
         this._idleService.addIdleObserver(this, this._bookmarksBackupIdleTime);
       }
 
-    }.bind(this))().catch(ex => {
+    })().catch(ex => {
       Cu.reportError(ex);
     }).then(() => {
       

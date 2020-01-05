@@ -922,7 +922,7 @@ nsPlacesExpiration.prototype = {
 
   _expireWithActionAndLimit:
   function PEX__expireWithActionAndLimit(aAction, aLimit) {
-    (async function() {
+    (async () => {
       
       
       
@@ -947,7 +947,7 @@ nsPlacesExpiration.prototype = {
 
       
       this._db.executeAsync(boundStatements, boundStatements.length, this);
-    }.bind(this))().catch(Cu.reportError);
+    })().catch(Cu.reportError);
   },
 
   

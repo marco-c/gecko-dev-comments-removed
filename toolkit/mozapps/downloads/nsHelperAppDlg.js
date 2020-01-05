@@ -248,7 +248,7 @@ nsUnknownContentTypeDialog.prototype = {
       }
     }
 
-    (async function() {
+    (async () => {
       if (!aForcePrompt) {
         
         
@@ -362,7 +362,7 @@ nsUnknownContentTypeDialog.prototype = {
           aLauncher.saveDestinationAvailable(result);
         });
       });
-    }.bind(this))().then(null, Components.utils.reportError);
+    })().then(null, Components.utils.reportError);
   },
 
   getFinalLeafName: function (aLeafName, aFileExt)

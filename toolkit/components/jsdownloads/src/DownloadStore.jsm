@@ -97,7 +97,7 @@ this.DownloadStore.prototype = {
 
 
   load: function DS_load() {
-    return (async function task_DS_load() {
+    return (async () => {
       let bytes;
       try {
         bytes = await OS.File.read(this.path);
@@ -136,7 +136,7 @@ this.DownloadStore.prototype = {
           Cu.reportError(ex);
         }
       }
-    }.bind(this))();
+    })();
   },
 
   
@@ -149,7 +149,7 @@ this.DownloadStore.prototype = {
 
 
   save: function DS_save() {
-    return (async function task_DS_save() {
+    return (async () => {
       let downloads = await this.list.getAll();
 
       
@@ -193,6 +193,6 @@ this.DownloadStore.prototype = {
           
         }
       }
-    }.bind(this))();
+    })();
   },
 };

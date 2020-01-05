@@ -615,7 +615,7 @@ Experiments.Experiments.prototype = {
 
 
   getExperiments() {
-    return (async function() {
+    return (async () => {
       await this._loadTask;
       let list = [];
 
@@ -639,7 +639,7 @@ Experiments.Experiments.prototype = {
       
       list.sort((a, b) => b.endDate - a.endDate);
       return list;
-    }.bind(this))();
+    })();
   },
 
   
@@ -733,7 +733,7 @@ Experiments.Experiments.prototype = {
 
 
   lastActiveToday() {
-    return (async function getMostRecentActiveExperimentTask() {
+    return (async () => {
       let experiments = await this.getExperiments();
 
       
@@ -748,14 +748,14 @@ Experiments.Experiments.prototype = {
         }
       }
       return null;
-    }.bind(this))();
+    })();
   },
 
   _run() {
     this._log.trace("_run");
     this._checkForShutdown();
     if (!this._mainTask) {
-      this._mainTask = (async function() {
+      this._mainTask = (async () => {
         try {
           await this._main();
         } catch (e) {
@@ -776,7 +776,7 @@ Experiments.Experiments.prototype = {
             throw ex;
           }
         }
-      }.bind(this))();
+      })();
     }
     return this._mainTask;
   },
