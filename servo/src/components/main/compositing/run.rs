@@ -426,4 +426,8 @@ pub fn run_compositor(compositor: &CompositorTask) {
         None => {}
         Some(ref mut layer) => layer.forget_all_tiles(),
     }
+
+    
+    
+    while compositor.port.peek() { compositor.port.recv(); }
 }
