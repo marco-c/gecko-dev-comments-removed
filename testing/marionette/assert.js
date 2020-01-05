@@ -133,7 +133,15 @@ assert.mobile = function (msg = "") {
 
 assert.window = function (win, msg = "") {
   msg = msg || "Unable to locate window";
-  return assert.that(w => w && w.document.defaultView, msg, NoSuchWindowError)(win);
+  return assert.that(w => {
+    try {
+      return w && w.document.defaultView;
+
+    
+    } catch (e if e.name === "TypeError") {
+      return null;
+    }
+  }, msg, NoSuchWindowError)(win);
 }
 
 
