@@ -348,6 +348,34 @@ KeyframeEffectReadOnly::CompositeValue(
 }
 
 StyleAnimationValue
+KeyframeEffectReadOnly::GetUnderlyingStyle(
+  nsCSSPropertyID aProperty,
+  const RefPtr<AnimValuesStyleRule>& aAnimationRule)
+{
+  StyleAnimationValue result;
+
+  if (aAnimationRule->HasValue(aProperty)) {
+    
+    
+    DebugOnly<bool> success = aAnimationRule->GetValue(aProperty, result);
+    MOZ_ASSERT(success, "AnimValuesStyleRule::GetValue should not fail");
+  } else {
+    
+    
+    
+    RefPtr<nsStyleContext> styleContext = GetTargetStyleContext();
+    result = EffectCompositor::GetBaseStyle(aProperty,
+                                            styleContext,
+                                            *mTarget->mElement,
+                                            mTarget->mPseudoType);
+    MOZ_ASSERT(!result.IsNull(), "The base style should be set");
+    SetNeedsBaseStyle(aProperty);
+  }
+
+  return result;
+}
+
+StyleAnimationValue
 KeyframeEffectReadOnly::CompositeValue(
   nsCSSPropertyID aProperty,
   const RefPtr<AnimValuesStyleRule>& aAnimationRule,
@@ -374,23 +402,7 @@ KeyframeEffectReadOnly::CompositeValue(
              aCompositeOperation == CompositeOperation::Add,
              "InputValue should be null only if additive composite");
 
-  if (aAnimationRule->HasValue(aProperty)) {
-    
-    
-    DebugOnly<bool> success = aAnimationRule->GetValue(aProperty, result);
-    MOZ_ASSERT(success, "AnimValuesStyleRule::GetValue should not fail");
-  } else {
-    
-    
-    
-    RefPtr<nsStyleContext> styleContext = GetTargetStyleContext();
-    result = EffectCompositor::GetBaseStyle(aProperty,
-                                            styleContext,
-                                            *mTarget->mElement,
-                                            mTarget->mPseudoType);
-    MOZ_ASSERT(!result.IsNull(), "The base style should be set");
-    SetNeedsBaseStyle(aProperty);
-  }
+  result = GetUnderlyingStyle(aProperty, aAnimationRule);
 
   return CompositeValue(aProperty,
                         aValueToComposite,
@@ -533,14 +545,17 @@ KeyframeEffectReadOnly::ComposeStyle(
         prop.mSegments.LastElement();
       
       
+      StyleAnimationValue lastValue = lastSegment.mToValue.IsNull()
+        ? GetUnderlyingStyle(prop.mProperty, aStyleRule)
+        : lastSegment.mToValue;
       fromValue =
         StyleAnimationValue::Accumulate(prop.mProperty,
-                                        lastSegment.mToValue,
+                                        lastValue,
                                         Move(fromValue),
                                         computedTiming.mCurrentIteration);
       toValue =
         StyleAnimationValue::Accumulate(prop.mProperty,
-                                        lastSegment.mToValue,
+                                        lastValue,
                                         Move(toValue),
                                         computedTiming.mCurrentIteration);
     }
