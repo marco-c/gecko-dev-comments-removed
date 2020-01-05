@@ -21,6 +21,7 @@ use std::mem;
 use std::path::Path;
 use std::process;
 use std::ptr;
+use std::sync::atomic::{AtomicBool, Ordering, ATOMIC_BOOL_INIT};
 use url::{self, Url};
 
 
@@ -422,21 +423,17 @@ pub fn from_cmdline_args(args: &[String]) {
     set(opts);
 }
 
-static mut EXPERIMENTAL_ENABLED: bool = false;
+static EXPERIMENTAL_ENABLED: AtomicBool = ATOMIC_BOOL_INIT;
 
 
 
 
 pub fn set_experimental_enabled(new_value: bool) {
-    unsafe {
-        EXPERIMENTAL_ENABLED = new_value;
-    }
+    EXPERIMENTAL_ENABLED.store(new_value, Ordering::SeqCst);
 }
 
 pub fn experimental_enabled() -> bool {
-    unsafe {
-        EXPERIMENTAL_ENABLED
-    }
+    EXPERIMENTAL_ENABLED.load(Ordering::SeqCst)
 }
 
 
