@@ -3,9 +3,9 @@
 
 
 use content_blocker_parser::{RuleList, parse_list};
+use servo_config::resource_files::read_resource_file;
 use std::str;
 use std::sync::Arc;
-use util::resource_files::read_resource_file;
 
 lazy_static! {
     pub static ref BLOCKED_CONTENT_RULES: Arc<Option<RuleList>> = Arc::new(create_rule_list());

@@ -2,8 +2,8 @@
 
 
 
+use servo_config::opts::parse_url_or_filename;
 use std::path::Path;
-use util::opts::parse_url_or_filename;
 
 #[cfg(not(target_os = "windows"))]
 const FAKE_CWD: &'static str = "/fake/cwd";

@@ -10,6 +10,12 @@
 
 
 
+#![feature(nonzero)]
+
+extern crate core;
+#[macro_use] extern crate lazy_static;
+#[macro_use] extern crate log;
+
 use core::nonzero::NonZero;
 use std::cell::{Cell, UnsafeCell};
 use std::ops::Deref;

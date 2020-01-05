@@ -14,10 +14,10 @@
 
 
 
+use servo_config::resource_files::read_resource_file;
 use std::collections::HashSet;
 use std::iter::FromIterator;
 use std::str::from_utf8;
-use util::resource_files::read_resource_file;
 
 #[derive(Clone,Debug)]
 pub struct PubDomainRules {

@@ -5,7 +5,7 @@
 
 
 use js::jsapi::{HandleObject, JSContext};
-use util::prefs::PREFS;
+use servo_config::prefs::PREFS;
 
 
 pub struct Guard<T: Clone + Copy> {

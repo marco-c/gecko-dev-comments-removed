@@ -2,10 +2,10 @@
 
 
 
+use servo_config::basedir;
+use servo_config::prefs::{PREFS, PrefValue, read_prefs_from_file};
 use std::fs::{self, File};
 use std::io::{Read, Write};
-use util::basedir;
-use util::prefs::{PREFS, PrefValue, read_prefs_from_file};
 
 #[test]
 fn test_create_pref() {

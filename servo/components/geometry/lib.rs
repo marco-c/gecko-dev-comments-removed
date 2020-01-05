@@ -2,6 +2,10 @@
 
 
 
+extern crate app_units;
+#[macro_use] extern crate euclid;
+#[macro_use] extern crate heapsize;
+
 use app_units::{Au, MAX_AU};
 use euclid::point::Point2D;
 use euclid::rect::Rect;

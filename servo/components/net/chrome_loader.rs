@@ -2,10 +2,10 @@
 
 
 
+use servo_config::resource_files::resources_dir_path;
 use servo_url::ServoUrl;
 use std::fs::canonicalize;
 use url::percent_encoding::percent_decode;
-use util::resource_files::resources_dir_path;
 
 pub fn resolve_chrome_url(url: &ServoUrl) -> Result<ServoUrl, ()> {
     assert_eq!(url.scheme(), "chrome");

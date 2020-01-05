@@ -3,7 +3,7 @@
 
 
 use dom::bindings::str::DOMString;
-use util::opts;
+use servo_config::opts;
 
 pub fn Product() -> DOMString {
     DOMString::from("Gecko")

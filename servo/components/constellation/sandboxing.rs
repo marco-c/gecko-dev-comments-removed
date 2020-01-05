@@ -3,8 +3,8 @@
 
 
 use gaol::profile::{Operation, PathPattern, Profile};
+use servo_config::resource_files;
 use std::path::PathBuf;
-use util::resource_files;
 
 
 #[cfg(target_os = "macos")]

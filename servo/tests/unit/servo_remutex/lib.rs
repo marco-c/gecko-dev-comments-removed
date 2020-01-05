@@ -10,10 +10,14 @@
 
 
 
+#![cfg(test)]
+
+extern crate servo_remutex;
+
+use servo_remutex::{ReentrantMutex, ReentrantMutexGuard};
 use std::cell::RefCell;
 use std::sync::Arc;
 use std::thread;
-use util::remutex::{ReentrantMutex, ReentrantMutexGuard};
 
 #[test]
 fn smoke() {
