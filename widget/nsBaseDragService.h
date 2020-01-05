@@ -131,6 +131,11 @@ protected:
   void OpenDragPopup();
 
   
+
+
+  void DiscardInternalTransferData();
+
+  
   
   bool TakeDragEventDispatchedToChildProcess()
   {
