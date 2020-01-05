@@ -21,7 +21,6 @@
 #include "nsAutoPtr.h"
 #include "nsIDocument.h"
 #include "nsIIncrementalStreamLoader.h"
-#include "nsIURIClassifier.h"
 #include "nsURIHashKey.h"
 #include "mozilla/CORSMode.h"
 #include "mozilla/dom/SRIMetadata.h"
@@ -84,7 +83,6 @@ public:
       mIsXSLT(false),
       mIsCanceled(false),
       mWasCompiledOMT(false),
-      mIsTracking(false),
       mOffThreadToken(nullptr),
       mScriptTextBuf(nullptr),
       mScriptTextLength(0),
@@ -134,11 +132,6 @@ public:
     return mOffThreadToken ?  &mOffThreadToken : nullptr;
   }
 
-  bool IsTracking() const
-  {
-    return mIsTracking;
-  }
-
   enum class Progress {
     Loading,
     Compiling,
@@ -172,7 +165,6 @@ public:
   bool mIsXSLT;           
   bool mIsCanceled;       
   bool mWasCompiledOMT;   
-  bool mIsTracking;       
   void* mOffThreadToken;  
   nsString mSourceMapURL; 
   char16_t* mScriptTextBuf; 
@@ -275,14 +267,6 @@ public:
   void DropDocumentReference()
   {
     mDocument = nullptr;
-  }
-
-  
-
-
-  nsIDocument* GetDocument() const
-  {
-    return mDocument;
   }
 
   
@@ -414,7 +398,7 @@ public:
 
 
 
-  nsresult OnStreamComplete(nsIChannel* aChannel,
+  nsresult OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                             nsISupports* aContext,
                             nsresult aChannelStatus,
                             nsresult aSRIStatus,
@@ -577,7 +561,7 @@ private:
 
   uint32_t NumberOfProcessors();
   nsresult PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
-                                nsIChannel* aChannel,
+                                nsIIncrementalStreamLoader* aLoader,
                                 nsresult aStatus,
                                 mozilla::Vector<char16_t> &aString);
 
@@ -663,22 +647,17 @@ private:
   nsCOMPtr<nsIConsoleReportCollector> mReporter;
 };
 
-class nsScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver,
-                                  private nsIURIClassifierCallback
+class nsScriptLoadHandler final : public nsIIncrementalStreamLoaderObserver
 {
 public:
   explicit nsScriptLoadHandler(nsScriptLoader* aScriptLoader,
                                nsScriptLoadRequest *aRequest,
                                mozilla::dom::SRICheckDataVerifier *aSRIDataVerifier);
 
-  nsresult Init();
-
   NS_DECL_ISUPPORTS
   NS_DECL_NSIINCREMENTALSTREAMLOADEROBSERVER
 
 private:
-  NS_DECL_NSIURICLASSIFIERCALLBACK
-
   virtual ~nsScriptLoadHandler();
 
   
@@ -697,12 +676,6 @@ private:
                      bool aEndOfStream);
 
   
-
-
-
-  nsresult MaybeInvokeOnStreamComplete();
-
-  
   RefPtr<nsScriptLoader>        mScriptLoader;
 
   
@@ -712,22 +685,13 @@ private:
   nsAutoPtr<mozilla::dom::SRICheckDataVerifier> mSRIDataVerifier;
 
   
-  nsresult                      mChannelStatus;
-
-  
   nsresult                      mSRIStatus;
-
-  
-  nsresult                      mClassificationStatus;
 
   
   nsCOMPtr<nsIUnicodeDecoder>   mDecoder;
 
   
   mozilla::Vector<char16_t>     mBuffer;
-
-  
-  nsCOMPtr<nsIChannel>          mChannel;
 };
 
 class nsAutoScriptLoaderDisabler
