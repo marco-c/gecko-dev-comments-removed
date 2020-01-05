@@ -192,6 +192,11 @@ ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
                                          mozilla::TraversalRootBehavior aRootBehavior) {
   ResolveMappedAttrDeclarationBlocks();
 
+  
+  
+  
+  mozilla::Unused << aRoot->OwnerDoc()->GetRootElement();
+
   MOZ_ASSERT(!sInServoTraversal);
   sInServoTraversal = true;
   Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior);

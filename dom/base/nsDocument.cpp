@@ -4039,6 +4039,10 @@ nsDocument::GetRootElementInternal() const
 {
   
   
+  MOZ_ASSERT(NS_IsMainThread());
+
+  
+  
   uint32_t i;
   for (i = mChildren.ChildCount(); i > 0; --i) {
     nsIContent* child = mChildren.ChildAt(i - 1);
