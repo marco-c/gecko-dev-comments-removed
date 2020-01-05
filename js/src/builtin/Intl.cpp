@@ -771,15 +771,11 @@ static const JSFunctionSpec collator_methods[] = {
 
 
 
-
 static bool
 Collator(JSContext* cx, const CallArgs& args, bool construct)
 {
     RootedObject obj(cx);
 
-    
-    
-    
     if (!construct) {
         
         JSObject* intl = cx->global()->getOrCreateIntlObject(cx);
@@ -803,19 +799,11 @@ Collator(JSContext* cx, const CallArgs& args, bool construct)
             construct = true;
         }
     }
-
     if (construct) {
         
-        RootedObject proto(cx);
-        if (args.isConstructing() && !GetPrototypeFromCallableConstructor(cx, args, &proto))
+        RootedObject proto(cx, cx->global()->getOrCreateCollatorPrototype(cx));
+        if (!proto)
             return false;
-
-        if (!proto) {
-            proto = cx->global()->getOrCreateCollatorPrototype(cx);
-            if (!proto)
-                return false;
-        }
-
         obj = NewObjectWithGivenProto(cx, &CollatorClass, proto);
         if (!obj)
             return false;
@@ -823,6 +811,7 @@ Collator(JSContext* cx, const CallArgs& args, bool construct)
         obj->as<NativeObject>().setReservedSlot(UCOLLATOR_SLOT, PrivateValue(nullptr));
     }
 
+    
     RootedValue locales(cx, args.length() > 0 ? args[0] : UndefinedValue());
     RootedValue options(cx, args.length() > 1 ? args[1] : UndefinedValue());
 
@@ -830,6 +819,7 @@ Collator(JSContext* cx, const CallArgs& args, bool construct)
     if (!IntlInitialize(cx, obj, cx->names().InitializeCollator, locales, options))
         return false;
 
+    
     args.rval().setObject(*obj);
     return true;
 }
@@ -846,7 +836,6 @@ js::intl_Collator(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     MOZ_ASSERT(args.length() == 2);
-    MOZ_ASSERT(!args.isConstructing());
     
     
     return Collator(cx, args, true);
@@ -1274,15 +1263,11 @@ static const JSFunctionSpec numberFormat_methods[] = {
 
 
 
-
 static bool
 NumberFormat(JSContext* cx, const CallArgs& args, bool construct)
 {
     RootedObject obj(cx);
 
-    
-    
-    
     if (!construct) {
         
         JSObject* intl = cx->global()->getOrCreateIntlObject(cx);
@@ -1306,19 +1291,11 @@ NumberFormat(JSContext* cx, const CallArgs& args, bool construct)
             construct = true;
         }
     }
-
     if (construct) {
         
-        RootedObject proto(cx);
-        if (args.isConstructing() && !GetPrototypeFromCallableConstructor(cx, args, &proto))
+        RootedObject proto(cx, cx->global()->getOrCreateNumberFormatPrototype(cx));
+        if (!proto)
             return false;
-
-        if (!proto) {
-            proto = cx->global()->getOrCreateNumberFormatPrototype(cx);
-            if (!proto)
-                return false;
-        }
-
         obj = NewObjectWithGivenProto(cx, &NumberFormatClass, proto);
         if (!obj)
             return false;
@@ -1326,6 +1303,7 @@ NumberFormat(JSContext* cx, const CallArgs& args, bool construct)
         obj->as<NativeObject>().setReservedSlot(UNUMBER_FORMAT_SLOT, PrivateValue(nullptr));
     }
 
+    
     RootedValue locales(cx, args.length() > 0 ? args[0] : UndefinedValue());
     RootedValue options(cx, args.length() > 1 ? args[1] : UndefinedValue());
 
@@ -1333,6 +1311,7 @@ NumberFormat(JSContext* cx, const CallArgs& args, bool construct)
     if (!IntlInitialize(cx, obj, cx->names().InitializeNumberFormat, locales, options))
         return false;
 
+    
     args.rval().setObject(*obj);
     return true;
 }
@@ -1349,7 +1328,6 @@ js::intl_NumberFormat(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     MOZ_ASSERT(args.length() == 2);
-    MOZ_ASSERT(!args.isConstructing());
     
     
     
@@ -1753,15 +1731,11 @@ static const JSFunctionSpec dateTimeFormat_methods[] = {
 
 
 
-
 static bool
 DateTimeFormat(JSContext* cx, const CallArgs& args, bool construct)
 {
     RootedObject obj(cx);
 
-    
-    
-    
     if (!construct) {
         
         JSObject* intl = cx->global()->getOrCreateIntlObject(cx);
@@ -1785,19 +1759,11 @@ DateTimeFormat(JSContext* cx, const CallArgs& args, bool construct)
             construct = true;
         }
     }
-
     if (construct) {
         
-        RootedObject proto(cx);
-        if (args.isConstructing() && !GetPrototypeFromCallableConstructor(cx, args, &proto))
+        RootedObject proto(cx, cx->global()->getOrCreateDateTimeFormatPrototype(cx));
+        if (!proto)
             return false;
-
-        if (!proto) {
-            proto = cx->global()->getOrCreateDateTimeFormatPrototype(cx);
-            if (!proto)
-                return false;
-        }
-
         obj = NewObjectWithGivenProto(cx, &DateTimeFormatClass, proto);
         if (!obj)
             return false;
@@ -1805,6 +1771,7 @@ DateTimeFormat(JSContext* cx, const CallArgs& args, bool construct)
         obj->as<NativeObject>().setReservedSlot(UDATE_FORMAT_SLOT, PrivateValue(nullptr));
     }
 
+    
     RootedValue locales(cx, args.length() > 0 ? args[0] : UndefinedValue());
     RootedValue options(cx, args.length() > 1 ? args[1] : UndefinedValue());
 
@@ -1812,6 +1779,7 @@ DateTimeFormat(JSContext* cx, const CallArgs& args, bool construct)
     if (!IntlInitialize(cx, obj, cx->names().InitializeDateTimeFormat, locales, options))
         return false;
 
+    
     args.rval().setObject(*obj);
     return true;
 }
@@ -1828,7 +1796,6 @@ js::intl_DateTimeFormat(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
     MOZ_ASSERT(args.length() == 2);
-    MOZ_ASSERT(!args.isConstructing());
     
     
     
