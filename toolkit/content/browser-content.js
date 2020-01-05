@@ -554,6 +554,13 @@ var Printing = {
       headStyleElement.setAttribute("type", "text/css");
       content.document.head.appendChild(headStyleElement);
 
+      
+      headStyleElement = content.document.createElement("link");
+      headStyleElement.setAttribute("rel", "stylesheet");
+      headStyleElement.setAttribute("href", "chrome://global/content/simplifyMode.css");
+      headStyleElement.setAttribute("type", "text/css");
+      content.document.head.appendChild(headStyleElement);
+
       content.document.body.innerHTML = "";
 
       
@@ -566,12 +573,6 @@ var Printing = {
       headerElement.setAttribute("id", "reader-header");
       headerElement.setAttribute("class", "header");
       containerElement.appendChild(headerElement);
-
-      
-      let controlHeaderStyle = content.document.createElement("style");
-      controlHeaderStyle.setAttribute("scoped", "");
-      controlHeaderStyle.textContent = "@import url(\"chrome://global/content/simplifyMode.css\");";
-      headerElement.appendChild(controlHeaderStyle);
 
       
       let titleElement = content.document.createElement("h1");
