@@ -444,9 +444,6 @@ protected:
   void FinishDecodeFirstFrame();
 
   
-  bool CheckIfDecodeComplete();
-
-  
   void RunStateMachine();
 
   bool IsStateMachineScheduled() const;
