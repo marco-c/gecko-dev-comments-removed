@@ -50,6 +50,8 @@ pub enum ChildProcess {
 
 pub struct Pipeline {
     pub id: PipelineId,
+    
+    pub frame_id: FrameId,
     pub parent_info: Option<(PipelineId, FrameType)>,
     pub script_chan: IpcSender<ConstellationControlMsg>,
     
@@ -73,7 +75,7 @@ pub struct Pipeline {
     pub visible: bool,
     
     
-    pub frame: Option<FrameId>,
+    pub is_mature: bool,
 }
 
 
@@ -83,6 +85,8 @@ pub struct Pipeline {
 pub struct InitialPipelineState {
     
     pub id: PipelineId,
+    
+    pub frame_id: FrameId,
     
     
     pub parent_info: Option<(PipelineId, FrameType)>,
@@ -255,6 +259,7 @@ impl Pipeline {
         }
 
         let pipeline = Pipeline::new(state.id,
+                                     state.frame_id,
                                      state.parent_info,
                                      script_chan,
                                      pipeline_chan,
@@ -271,6 +276,7 @@ impl Pipeline {
     }
 
     fn new(id: PipelineId,
+           frame_id: FrameId,
            parent_info: Option<(PipelineId, FrameType)>,
            script_chan: IpcSender<ConstellationControlMsg>,
            layout_chan: IpcSender<LayoutControlMsg>,
@@ -283,6 +289,7 @@ impl Pipeline {
            -> Pipeline {
         Pipeline {
             id: id,
+            frame_id: frame_id,
             parent_info: parent_info,
             script_chan: script_chan,
             layout_chan: layout_chan,
@@ -295,7 +302,7 @@ impl Pipeline {
             running_animations: false,
             visible: visible,
             is_private: is_private,
-            frame: None,
+            is_mature: false,
         }
     }
 
