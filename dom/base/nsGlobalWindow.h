@@ -1600,7 +1600,8 @@ public:
   
   
   
-  bool WindowExists(const nsAString& aName, bool aLookForCallerOnJSStack);
+  bool WindowExists(const nsAString& aName, bool aForceNoOpener,
+                    bool aLookForCallerOnJSStack);
 
   already_AddRefed<nsIWidget> GetMainWidget();
   nsIWidget* GetNearestWidget() const;

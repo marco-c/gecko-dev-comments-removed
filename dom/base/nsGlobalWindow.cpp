@@ -53,6 +53,7 @@
 #include "nsJSUtils.h"
 #include "jsapi.h"              
 #include "jswrapper.h"
+#include "nsCharSeparatedTokenizer.h"
 #include "nsReadableUtils.h"
 #include "nsDOMClassInfo.h"
 #include "nsJSEnvironment.h"
@@ -6057,10 +6058,17 @@ GetCallerDocShellTreeItem()
 
 bool
 nsGlobalWindow::WindowExists(const nsAString& aName,
+                             bool aForceNoOpener,
                              bool aLookForCallerOnJSStack)
 {
   NS_PRECONDITION(IsOuterWindow(), "Must be outer window");
   NS_PRECONDITION(mDocShell, "Must have docshell");
+
+  if (aForceNoOpener) {
+    return aName.LowerCaseEqualsLiteral("_self") ||
+           aName.LowerCaseEqualsLiteral("_top") ||
+           aName.LowerCaseEqualsLiteral("_parent");
+  }
 
   nsCOMPtr<nsIDocShellTreeItem> caller;
   if (aLookForCallerOnJSStack) {
@@ -11822,12 +11830,24 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
               nsIPrincipal::APP_STATUS_INSTALLED;
   }
 
+  bool forceNoOpener = false;
+  
+  
+  nsCharSeparatedTokenizerTemplate<nsContentUtils::IsHTMLWhitespace> tok(
+    aOptions, ',');
+  while (tok.hasMoreTokens()) {
+    if (tok.nextToken().EqualsLiteral("noopener")) {
+      forceNoOpener = true;
+      break;
+    }
+  }
+
   
   
   
   
   const bool checkForPopup = !nsContentUtils::LegacyIsCallerChromeOrNativeCode() &&
-    !isApp && !aDialog && !WindowExists(aName, !aCalledNoScript);
+    !isApp && !aDialog && !WindowExists(aName, forceNoOpener, !aCalledNoScript);
 
   
   
@@ -11915,6 +11935,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
                                 options_ptr,  true,
                                 aDialog, aNavigate, argv,
                                 isPopupSpamWindow,
+                                forceNoOpener,
                                 getter_AddRefs(domReturn));
     } else {
       
@@ -11935,6 +11956,7 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
                                 options_ptr,  false,
                                 aDialog, aNavigate, aExtraArgument,
                                 isPopupSpamWindow,
+                                forceNoOpener,
                                 getter_AddRefs(domReturn));
 
     }

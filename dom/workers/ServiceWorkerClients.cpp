@@ -609,6 +609,10 @@ private:
                            false, false, true, nullptr,
                            
                             false,
+                           
+                           
+                           
+                            false,
                            getter_AddRefs(newWindow));
       nsCOMPtr<nsPIDOMWindowOuter> pwindow = nsPIDOMWindowOuter::From(newWindow);
       pwindow.forget(aWindow);

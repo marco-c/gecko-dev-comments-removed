@@ -71,7 +71,9 @@ protected:
 
   
   
+  
   nsPIDOMWindowOuter* SafeGetWindowByName(const nsAString& aName,
+                                          bool aForceNoOpener,
                                           mozIDOMWindowProxy* aCurrentWindow);
 
   
@@ -85,6 +87,7 @@ protected:
                               bool aNavigate,
                               nsIArray* aArgv,
                               bool aIsPopupSpam,
+                              bool aForceNoOpener,
                               mozIDOMWindowProxy** aResult);
 
   static nsresult URIfromURL(const char* aURL,
@@ -107,6 +110,7 @@ protected:
   static nsresult ReadyOpenedDocShellItem(nsIDocShellTreeItem* aOpenedItem,
                                           nsPIDOMWindowOuter* aParent,
                                           bool aWindowIsNew,
+                                          bool aForceNoOpener,
                                           mozIDOMWindowProxy** aOpenedWindow);
   static void SizeOpenedWindow(nsIDocShellTreeOwner* aTreeOwner,
                                mozIDOMWindowProxy* aParent,
