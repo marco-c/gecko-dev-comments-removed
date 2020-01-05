@@ -251,7 +251,7 @@ class MachCommands(CommandBase):
 
         
         
-        content_json = re.sub(r'//.*$', '', content_decoded, flags=re.MULTILINE)
+        content_json = re.sub(r'(^|\s+)//.*$', '', content_decoded, flags=re.MULTILINE)
 
         try:
             pins_and_static_preloads = json.loads(content_json)
