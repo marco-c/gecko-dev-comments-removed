@@ -369,6 +369,21 @@ Zone::fixupAfterMovingGC()
     fixupInitialShapeTable();
 }
 
+bool
+Zone::addTypeDescrObject(JSContext* cx, HandleObject obj)
+{
+    
+    
+    MOZ_ASSERT(!IsInsideNursery(obj));
+
+    if (!typeDescrObjects.put(obj)) {
+        ReportOutOfMemory(cx);
+        return false;
+    }
+
+    return true;
+}
+
 ZoneList::ZoneList()
   : head(nullptr), tail(nullptr)
 {}

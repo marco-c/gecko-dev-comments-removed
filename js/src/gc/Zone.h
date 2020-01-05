@@ -355,11 +355,16 @@ struct Zone : public JS::shadow::Zone,
     
     
     
-    using TypeDescrObjectSet = js::GCHashSet<js::HeapPtr<JSObject*>,
-                                             js::MovableCellHasher<js::HeapPtr<JSObject*>>,
+    
+    
+    
+    
+    using TypeDescrObjectSet = js::GCHashSet<JSObject*,
+                                             js::MovableCellHasher<JSObject*>,
                                              js::SystemAllocPolicy>;
     JS::WeakCache<TypeDescrObjectSet> typeDescrObjects;
 
+    bool addTypeDescrObject(JSContext* cx, HandleObject obj);
 
     
     
