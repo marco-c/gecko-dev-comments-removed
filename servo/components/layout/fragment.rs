@@ -356,6 +356,8 @@ impl Fragment {
     
     
     
+    
+    
     pub fn new(constructor: &mut FlowConstructor, node: &ThreadSafeLayoutNode) -> Fragment {
         let style = node.style().clone();
         let writing_mode = style.writing_mode;
@@ -373,7 +375,8 @@ impl Fragment {
     }
 
     
-    pub fn new_from_specific_info(node: &ThreadSafeLayoutNode, specific: SpecificFragmentInfo) -> Fragment {
+    pub fn new_from_specific_info(node: &ThreadSafeLayoutNode, specific: SpecificFragmentInfo)
+                                  -> Fragment {
         let style = node.style().clone();
         let writing_mode = style.writing_mode;
         Fragment {
