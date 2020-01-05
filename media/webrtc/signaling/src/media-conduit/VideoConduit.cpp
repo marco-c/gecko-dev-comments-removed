@@ -2000,7 +2000,8 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
   }
   
   
-  for (size_t i = 0; i < codecInfo->mSimulcastEncodings.size(); ++i) {
+  size_t numberOfSimulcastEncodings = std::min(codecInfo->mSimulcastEncodings.size(), (size_t)webrtc::kMaxSimulcastStreams);
+  for (size_t i = 0; i < numberOfSimulcastEncodings; ++i) {
     const VideoCodecConfig::SimulcastEncoding& encoding =
       codecInfo->mSimulcastEncodings[i];
     
@@ -2044,10 +2045,10 @@ WebrtcVideoConduit::CodecConfigToWebRTCCodec(const VideoCodecConfig* codecInfo,
     }
     
     
-    cinst.simulcastStream[codecInfo->mSimulcastEncodings.size()-i-1] = stream;
+    cinst.simulcastStream[numberOfSimulcastEncodings-i-1] = stream;
   }
 
-  cinst.numberOfSimulcastStreams = codecInfo->mSimulcastEncodings.size();
+  cinst.numberOfSimulcastStreams = numberOfSimulcastEncodings;
 }
 
 
