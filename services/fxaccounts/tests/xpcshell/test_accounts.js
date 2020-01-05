@@ -29,6 +29,7 @@ log.level = Log.Level.Debug;
 
 Services.prefs.setCharPref("identity.fxaccounts.loglevel", "Trace");
 Log.repository.getLogger("FirefoxAccounts").level = Log.Level.Trace;
+Services.prefs.setCharPref("services.crypto.jwcrypto.log.level", "Debug");
 
 
 Services.prefs.setCharPref("identity.fxaccounts.remote.oauth.uri", "https://example.com/v1");
