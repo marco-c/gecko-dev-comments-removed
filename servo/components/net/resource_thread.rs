@@ -574,7 +574,7 @@ impl CoreResourceManager {
                 return
             }
         };
-        debug!("resource_thread: loading url: {}", load_data.url);
+        debug!("loading url: {}", load_data.url);
 
         loader.call_box((load_data,
                          consumer,
@@ -593,6 +593,7 @@ impl CoreResourceManager {
             blocked_content: BLOCKED_CONTENT_RULES.clone(),
         };
         let ua = self.user_agent.clone();
+        let dc = self.devtools_chan.clone();
         spawn_named(format!("fetch thread for {}", init.url), move || {
             let request = Request::from_init(init);
             
@@ -600,7 +601,7 @@ impl CoreResourceManager {
             
             
             let mut target = Some(Box::new(sender) as Box<FetchTaskTarget + Send + 'static>);
-            let context = FetchContext { state: http_state, user_agent: ua };
+            let context = FetchContext { state: http_state, user_agent: ua, devtools_chan: dc };
             fetch(Rc::new(request), &mut target, context);
         })
     }
