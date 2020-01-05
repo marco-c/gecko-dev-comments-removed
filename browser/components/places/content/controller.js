@@ -1488,29 +1488,31 @@ var PlacesControllerDragHelper = {
         continue;
 
       let data = dt.mozGetDataAt(flavor, i);
-      let dragged;
+      let nodes;
       try {
-        dragged = PlacesUtils.unwrapNodes(data, flavor)[0];
+        nodes = PlacesUtils.unwrapNodes(data, flavor);
       } catch (e) {
         return false;
       }
 
-      
-      if (ip.isTag &&
-          dragged.type != PlacesUtils.TYPE_X_MOZ_URL &&
-          (dragged.type != PlacesUtils.TYPE_X_MOZ_PLACE ||
-           (dragged.uri && dragged.uri.startsWith("place:")) ))
-        return false;
+      for (let dragged of nodes) {
+        
+        if (ip.isTag &&
+            dragged.type != PlacesUtils.TYPE_X_MOZ_URL &&
+            (dragged.type != PlacesUtils.TYPE_X_MOZ_PLACE ||
+             (dragged.uri && dragged.uri.startsWith("place:")) ))
+          return false;
 
-      
-      
-      if (dragged.type == PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER ||
-          (dragged.uri && dragged.uri.startsWith("place:")) ) {
-        let parentId = ip.itemId;
-        while (parentId != PlacesUtils.placesRootId) {
-          if (dragged.concreteId == parentId || dragged.id == parentId)
-            return false;
-          parentId = PlacesUtils.bookmarks.getFolderIdForItem(parentId);
+        
+        
+        if (dragged.type == PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER ||
+            (dragged.uri && dragged.uri.startsWith("place:")) ) {
+          let parentId = ip.itemId;
+          while (parentId != PlacesUtils.placesRootId) {
+            if (dragged.concreteId == parentId || dragged.id == parentId)
+              return false;
+            parentId = PlacesUtils.bookmarks.getFolderIdForItem(parentId);
+          }
         }
       }
     }
@@ -1576,63 +1578,77 @@ var PlacesControllerDragHelper = {
     let parentGuid = PlacesUIUtils.useAsyncTransactions ?
                        (yield insertionPoint.promiseGuid()) : null;
     let tagName = insertionPoint.tagName;
+
+    
+    let duplicable = new Map();
+    duplicable.set(PlacesUtils.TYPE_UNICODE, new Set());
+    duplicable.set(PlacesUtils.TYPE_X_MOZ_URL, new Set());
+
     for (let i = 0; i < dropCount; ++i) {
       let flavor = this.getFirstValidFlavor(dt.mozTypesAt(i));
       if (!flavor)
         return;
 
       let data = dt.mozGetDataAt(flavor, i);
-      let unwrapped;
+      if (duplicable.has(flavor)) {
+        let handled = duplicable.get(flavor);
+        if (handled.has(data))
+          continue;
+        handled.add(data);
+      }
+
+      let nodes;
       if (flavor != TAB_DROP_TYPE) {
-        
-        unwrapped = PlacesUtils.unwrapNodes(data, flavor)[0];
+        nodes = PlacesUtils.unwrapNodes(data, flavor);
       } else if (data instanceof XULElement && data.localName == "tab" &&
                data.ownerGlobal instanceof ChromeWindow) {
         let uri = data.linkedBrowser.currentURI;
         let spec = uri ? uri.spec : "about:blank";
-        unwrapped = { uri: spec,
-                      title: data.label,
-                      type: PlacesUtils.TYPE_X_MOZ_URL};
+        nodes = [{ uri: spec,
+                   title: data.label,
+                   type: PlacesUtils.TYPE_X_MOZ_URL}];
       } else
         throw new Error("bogus data was passed as a tab");
 
-      let index = insertionPoint.index;
+      for (let unwrapped of nodes) {
+        let index = insertionPoint.index;
 
-      
-      
-      
-      let dragginUp = insertionPoint.itemId == unwrapped.parent &&
-                      index < PlacesUtils.bookmarks.getItemIndex(unwrapped.id);
-      if (index != -1 && dragginUp)
-        index += movedCount++;
-
-      
-      if (insertionPoint.isTag) {
-        let uri = NetUtil.newURI(unwrapped.uri);
-        let tagItemId = insertionPoint.itemId;
-        if (PlacesUIUtils.useAsyncTransactions)
-          transactions.push(PlacesTransactions.Tag({ uri, tag: tagName }));
-        else
-          transactions.push(new PlacesTagURITransaction(uri, [tagItemId]));
-      } else {
         
         
-        if (!doCopy && !PlacesControllerDragHelper.canMoveUnwrappedNode(unwrapped)) {
-          Components.utils.reportError("Tried to move an unmovable Places " +
-                                       "node, reverting to a copy operation.");
-          doCopy = true;
-        }
-        if (PlacesUIUtils.useAsyncTransactions) {
-          transactions.push(
-            PlacesUIUtils.getTransactionForData(unwrapped,
-                                                flavor,
-                                                parentGuid,
-                                                index,
-                                                doCopy));
+        
+        let dragginUp = insertionPoint.itemId == unwrapped.parent &&
+                        index < PlacesUtils.bookmarks.getItemIndex(unwrapped.id);
+        if (index != -1 && dragginUp)
+          index += movedCount++;
+
+        
+        if (insertionPoint.isTag) {
+          let uri = NetUtil.newURI(unwrapped.uri);
+          let tagItemId = insertionPoint.itemId;
+          if (PlacesUIUtils.useAsyncTransactions)
+            transactions.push(PlacesTransactions.Tag({ uri, tag: tagName }));
+          else
+            transactions.push(new PlacesTagURITransaction(uri, [tagItemId]));
         } else {
-          transactions.push(PlacesUIUtils.makeTransaction(unwrapped,
-                              flavor, insertionPoint.itemId,
-                              index, doCopy));
+          
+          
+          if (!doCopy && !PlacesControllerDragHelper.canMoveUnwrappedNode(unwrapped)) {
+            Components.utils.reportError("Tried to move an unmovable Places " +
+                                         "node, reverting to a copy operation.");
+            doCopy = true;
+          }
+          if (PlacesUIUtils.useAsyncTransactions) {
+            transactions.push(
+              PlacesUIUtils.getTransactionForData(unwrapped,
+                                                  flavor,
+                                                  parentGuid,
+                                                  index,
+                                                  doCopy));
+          } else {
+            transactions.push(PlacesUIUtils.makeTransaction(unwrapped,
+                                flavor, insertionPoint.itemId,
+                                index, doCopy));
+          }
         }
       }
     }
