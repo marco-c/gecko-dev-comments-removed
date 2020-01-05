@@ -595,7 +595,7 @@ public:
       CASES_FOR_stat:
       CASES_FOR_lstat:
       CASES_FOR_fstatat:
-      case __NR_chmod:
+      CASES_FOR_chmod:
       case __NR_link:
       case __NR_mkdir:
       case __NR_symlink:
