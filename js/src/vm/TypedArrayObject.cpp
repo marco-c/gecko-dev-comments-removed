@@ -687,16 +687,17 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     }
 
     
-
-
-
-
-
+    
+    
+    
+    
+    
     static bool
     class_constructor(JSContext* cx, unsigned argc, Value* vp)
     {
         CallArgs args = CallArgsFromVp(argc, vp);
 
+        
         if (!ThrowIfNotConstructing(cx, args, "typed array"))
             return false;
 
@@ -715,7 +716,9 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         RootedObject newTarget(cx, &args.newTarget().toObject());
 
         
+        
         if (args.length() == 0 || !args[0].isObject()) {
+            
             uint64_t len;
             if (!ToIndex(cx, args.get(0), JSMSG_BAD_ARRAY_LENGTH, &len))
                 return nullptr;
@@ -726,15 +729,7 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         RootedObject dataObj(cx, &args[0].toObject());
 
         
-
-
-
-
-
-
-
-
-
+        
         if (!UncheckedUnwrap(dataObj)->is<ArrayBufferObjectMaybeShared>())
             return fromArray(cx, dataObj, newTarget);
 
@@ -967,9 +962,16 @@ class TypedArrayObjectTemplate : public TypedArrayObject
         return true;
     }
 
+    
+    
     static JSObject*
     fromLength(JSContext* cx, uint64_t nelements, HandleObject newTarget = nullptr)
     {
+        
+        
+
+        
+        
         RootedObject proto(cx);
         if (!GetPrototypeForInstance(cx, newTarget, &proto))
             return nullptr;
