@@ -423,10 +423,6 @@ TargetEventsHandler.prototype = {
           
           gStore.dispatch(Actions.clearTimingMarkers());
         }
-        
-        if (NetMonitorController.getCurrentActivity() == ACTIVITY_TYPE.NONE) {
-          NetMonitorView.showNetworkInspectorView();
-        }
 
         window.emit(EVENTS.TARGET_WILL_NAVIGATE);
         break;
