@@ -229,8 +229,7 @@ pub trait FragmentDisplayListBuilding {
     
     fn adjust_clipping_region_for_children(&self,
                                            current_clip: &mut ClippingRegion,
-                                           stacking_relative_border_box: &Rect<Au>,
-                                           is_absolutely_positioned: bool);
+                                           stacking_relative_border_box: &Rect<Au>);
 
     
     
@@ -1444,8 +1443,7 @@ impl FragmentDisplayListBuilding for Fragment {
 
     fn adjust_clipping_region_for_children(&self,
                                            current_clip: &mut ClippingRegion,
-                                           stacking_relative_border_box: &Rect<Au>,
-                                           is_absolutely_positioned: bool) {
+                                           stacking_relative_border_box: &Rect<Au>) {
         // Don't clip if we're text.
         if self.is_scanned_text_fragment() {
             return
