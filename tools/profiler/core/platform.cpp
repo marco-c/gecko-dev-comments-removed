@@ -49,7 +49,7 @@
 #endif
 
 #if defined(SPS_OS_android) && !defined(MOZ_WIDGET_GONK)
-class GeckoJavaSampler : public java::GeckoJavaSampler::Natives<GeckoJavaSampler>
+class GeckoJavaSampler : public mozilla::java::GeckoJavaSampler::Natives<GeckoJavaSampler>
 {
 private:
   GeckoJavaSampler();
@@ -783,7 +783,7 @@ profiler_start(int aProfileEntries, double aInterval,
     if (javaInterval < 10) {
       aInterval = 10;
     }
-    java::GeckoJavaSampler::Start(javaInterval, 1000);
+    mozilla::java::GeckoJavaSampler::Start(javaInterval, 1000);
   }
 #endif
 
@@ -1253,6 +1253,11 @@ profiler_add_marker(const char *aMarker, ProfilerMarkerPayload *aPayload)
 
 
 
+
+
+
+
+#include "Sampler.cpp"
 
 
 
