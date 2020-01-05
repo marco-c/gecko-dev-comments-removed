@@ -1237,8 +1237,9 @@ MappedAttrParser::ParseMappedAttrValue(nsIAtom* aMappedAttrName,
       RefPtr<URLExtraData> data = new URLExtraData(mBaseURI, mDocURI,
                                                    mElement->NodePrincipal());
       
-      changed = Servo_DeclarationBlock_SetPropertyById(mDecl->AsServo()->Raw(), propertyID,
-                                                       &value, false, data);
+      changed = Servo_DeclarationBlock_SetPropertyById(
+        mDecl->AsServo()->Raw(), propertyID, &value, false, data,
+        LengthParsingMode::SVG);
     }
 
     if (changed) {
