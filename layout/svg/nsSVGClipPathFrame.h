@@ -89,6 +89,26 @@ public:
   
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+  DrawResult
+  PaintClipMask(gfxContext& aMaskContext, nsIFrame* aClippedFrame,
+                const gfxMatrix& aMatrix, Matrix* aMaskTransform,
+                SourceSurface* aExtraMask, const Matrix& aExtraMasksTransform);
+
+  
+
+
   bool PointIsInsideClipPath(nsIFrame* aClippedFrame, const gfxPoint &aPoint);
 
   
@@ -136,6 +156,9 @@ private:
 
   
   virtual gfxMatrix GetCanvasTM() override;
+
+  already_AddRefed<DrawTarget>
+  CreateClipMask(gfxContext& aReferenceContext, IntPoint& aOffset);
 
   
   
