@@ -791,7 +791,7 @@ js::XDRScript(XDRState<mode>* xdr, HandleScope scriptEnclosingScope, HandleScrip
                 } else if (function->isInterpreted()) {
                     funEnclosingScope = function->nonLazyScript()->enclosingScope();
                 } else {
-                    MOZ_ASSERT(function->isAsmJSNative());
+                    MOZ_ASSERT(function->isWasmNative());
                     return xdr->fail(JS::TranscodeResult_Failure_AsmJSNotSupported);
                 }
 
@@ -3210,7 +3210,7 @@ js::detail::CopyScript(JSContext* cx, HandleScript src, HandleScript dst,
                 RootedFunction innerFun(cx, &obj->as<JSFunction>());
                 if (innerFun->isNative()) {
                     if (cx->compartment() != innerFun->compartment()) {
-                        MOZ_ASSERT(innerFun->isAsmJSNative());
+                        MOZ_ASSERT(innerFun->isWasmNative());
                         JS_ReportErrorASCII(cx, "AsmJS modules do not yet support cloning.");
                         return false;
                     }

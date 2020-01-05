@@ -782,7 +782,7 @@ void mergeStacksIntoProfile(ThreadProfile& aProfile, TickSample* aSample, Native
                                         startBufferGen);
       for (; jsCount < maxFrames && !jsIter.done(); ++jsIter) {
         
-        if (aSample->isSamplingCurrentThread || jsIter.isAsmJS()) {
+        if (aSample->isSamplingCurrentThread || jsIter.isWasm()) {
           uint32_t extracted = jsIter.extractStack(jsFrames, jsCount, maxFrames);
           jsCount += extracted;
           if (jsCount == maxFrames)
@@ -900,7 +900,7 @@ void mergeStacksIntoProfile(ThreadProfile& aProfile, TickSample* aSample, Native
       
       
       if (aSample->isSamplingCurrentThread ||
-          jsFrame.kind == JS::ProfilingFrameIterator::Frame_AsmJS) {
+          jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
         addDynamicTag(aProfile, 'c', jsFrame.label.get());
       } else {
         MOZ_ASSERT(jsFrame.kind == JS::ProfilingFrameIterator::Frame_Ion ||
