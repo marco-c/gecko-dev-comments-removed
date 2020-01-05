@@ -5,6 +5,7 @@
 
 
 use layout::flow::FlowContext;
+use layout::incremental::RestyleDamage;
 
 use newcss::complete::CompleteSelectResults;
 use script::dom::node::{AbstractNode, LayoutView};
@@ -16,6 +17,9 @@ pub struct LayoutData {
     style: Option<CompleteSelectResults>,
 
     
+    restyle_damage: Option<RestyleDamage>,
+
+    
     flow: Option<FlowContext>,
 }
 
@@ -24,6 +28,7 @@ impl LayoutData {
     pub fn new() -> LayoutData {
         LayoutData {
             style: None,
+            restyle_damage: None,
             flow: None,
         }
     }

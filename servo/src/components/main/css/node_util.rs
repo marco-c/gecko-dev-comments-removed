@@ -3,6 +3,7 @@
 
 
 use layout::aux::LayoutAuxMethods;
+use layout::incremental::RestyleDamage;
 
 use std::cast::transmute;
 use newcss::complete::CompleteSelectResults;
@@ -11,6 +12,10 @@ use script::dom::node::{AbstractNode, LayoutView};
 pub trait NodeUtil<'self> {
     fn get_css_select_results(self) -> &'self CompleteSelectResults;
     fn set_css_select_results(self, decl: CompleteSelectResults);
+    fn have_css_select_results(self) -> bool;
+
+    fn get_restyle_damage(self) -> RestyleDamage;
+    fn set_restyle_damage(self, damage: RestyleDamage);
 }
 
 impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
@@ -33,11 +38,42 @@ impl<'self> NodeUtil<'self> for AbstractNode<LayoutView> {
     }
 
     
+    fn have_css_select_results(self) -> bool {
+        self.has_layout_data() && self.layout_data().style.is_some()
+    }
+
+    
     fn set_css_select_results(self, decl: CompleteSelectResults) {
         if !self.has_layout_data() {
             fail!(~"set_css_select_results() called on a node without aux data!");
         }
 
         self.layout_data().style = Some(decl);
+    }
+
+    
+    
+    fn get_restyle_damage(self) -> RestyleDamage {
+        
+        
+        let default = if self.is_element() {
+            RestyleDamage::all()
+        } else {
+            RestyleDamage::none()
+        };
+
+        if !self.has_layout_data() {
+            return default;
+        }
+        self.layout_data().restyle_damage.get_or_default(default)
+    }
+
+    
+    fn set_restyle_damage(self, damage: RestyleDamage) {
+        if !self.has_layout_data() {
+            fail!(~"set_restyle_damage() called on a node without aux data!");
+        }
+
+        self.layout_data().restyle_damage = Some(damage);
     }
 }
