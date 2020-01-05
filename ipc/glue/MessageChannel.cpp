@@ -654,6 +654,16 @@ MessageChannel::Clear()
     
     
 
+#if !defined(ANDROID)
+    if (!Unsound_IsClosed()) {
+#if defined(MOZ_CRASHREPORTER)
+        CrashReporter::AnnotateCrashReport(NS_LITERAL_CSTRING("ProtocolName"),
+                                           nsDependentCString(mName));
+#endif
+        MOZ_CRASH("MessageChannel destroyed without being closed");
+    }
+#endif
+
     if (gParentProcessBlocker == this) {
         gParentProcessBlocker = nullptr;
     }
