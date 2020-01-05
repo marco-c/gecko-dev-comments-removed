@@ -1053,17 +1053,5 @@ LayerTransactionParent::RecvRecordPaintTimes(const PaintTiming& aTiming)
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult
-LayerTransactionParent::RecvGetTextureFactoryIdentifier(TextureFactoryIdentifier* aIdentifier)
-{
-  if (!mLayerManager) {
-    
-    return IPC_OK();
-  }
-
-  *aIdentifier = mLayerManager->GetTextureFactoryIdentifier();
-  return IPC_OK();
-}
-
 } 
 } 
