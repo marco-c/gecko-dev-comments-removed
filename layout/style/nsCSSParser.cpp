@@ -232,6 +232,12 @@ public:
                         nsCSSValue& aValue,
                         bool aSuppressErrors );
 
+  bool ParseMarginString(const nsSubstring& aBuffer,
+                         nsIURI* aURL, 
+                         uint32_t aLineNumber, 
+                         nsCSSValue& aValue,
+                         bool aSuppressErrors );
+
   nsresult ParseSelectorString(const nsSubstring& aSelectorString,
                                nsIURI* aURL, 
                                uint32_t aLineNumber, 
@@ -1158,7 +1164,8 @@ protected:
   void AppendValue(nsCSSPropertyID aPropID, const nsCSSValue& aValue);
   bool ParseBoxProperties(const nsCSSPropertyID aPropIDs[]);
   bool ParseGroupedBoxProperty(int32_t aVariantMask,
-                               nsCSSValue& aValue);
+                               nsCSSValue& aValue,
+                               uint32_t aRestrictions);
   bool ParseBoxCornerRadius(const nsCSSPropertyID aPropID);
   bool ParseBoxCornerRadiiInternals(nsCSSValue array[]);
   bool ParseBoxCornerRadii(const nsCSSPropertyID aPropIDs[]);
@@ -2270,6 +2277,32 @@ CSSParserImpl::ParseColorString(const nsSubstring& aBuffer,
 
   ReleaseScanner();
   return colorParsed;
+}
+
+bool
+CSSParserImpl::ParseMarginString(const nsSubstring& aBuffer,
+                                 nsIURI* aURI, 
+                                 uint32_t aLineNumber, 
+                                 nsCSSValue& aValue,
+                                 bool aSuppressErrors )
+{
+  nsCSSScanner scanner(aBuffer, aLineNumber);
+  css::ErrorReporter reporter(scanner, mSheet, mChildLoader, aURI);
+  InitScanner(scanner, reporter, aURI, aURI, nullptr);
+
+  nsAutoSuppressErrors suppressErrors(this, aSuppressErrors);
+
+  
+  bool marginParsed = ParseGroupedBoxProperty(VARIANT_LP, aValue, 0) && !GetToken(true);
+
+  if (aSuppressErrors) {
+    CLEAR_ERROR();
+  } else {
+    OUTPUT_ERROR();
+  }
+
+  ReleaseScanner();
+  return marginParsed;
 }
 
 bool
@@ -11197,7 +11230,8 @@ CSSParserImpl::ParseBoxProperties(const nsCSSPropertyID aPropIDs[])
 
 bool
 CSSParserImpl::ParseGroupedBoxProperty(int32_t aVariantMask,
-                                        nsCSSValue& aValue)
+                                        nsCSSValue& aValue,
+                                       uint32_t aRestrictions)
 {
   nsCSSRect& result = aValue.SetRectValue();
 
@@ -11206,7 +11240,7 @@ CSSParserImpl::ParseGroupedBoxProperty(int32_t aVariantMask,
     CSSParseResult parseResult =
       ParseVariantWithRestrictions(result.*(nsCSSRect::sides[index]),
                                    aVariantMask, nullptr,
-                                   CSS_PROPERTY_VALUE_NONNEGATIVE);
+                                   aRestrictions);
     if (parseResult == CSSParseResult::NotFound) {
       break;
     }
@@ -13212,7 +13246,8 @@ CSSParserImpl::ParseBorderImageSlice(bool aAcceptsInherit,
 
   
   nsCSSValue imageSliceBoxValue;
-  if (!ParseGroupedBoxProperty(VARIANT_PN, imageSliceBoxValue)) {
+  if (!ParseGroupedBoxProperty(VARIANT_PN, imageSliceBoxValue,
+                               CSS_PROPERTY_VALUE_NONNEGATIVE)) {
     if (!hasFill && aConsumedTokens) {
       *aConsumedTokens = false;
     }
@@ -13256,7 +13291,7 @@ CSSParserImpl::ParseBorderImageWidth(bool aAcceptsInherit)
   }
 
   
-  if (!ParseGroupedBoxProperty(VARIANT_ALPN, value)) {
+  if (!ParseGroupedBoxProperty(VARIANT_ALPN, value, CSS_PROPERTY_VALUE_NONNEGATIVE)) {
     return false;
   }
 
@@ -13279,7 +13314,7 @@ CSSParserImpl::ParseBorderImageOutset(bool aAcceptsInherit)
   }
 
   
-  if (!ParseGroupedBoxProperty(VARIANT_LN, value)) {
+  if (!ParseGroupedBoxProperty(VARIANT_LN, value, CSS_PROPERTY_VALUE_NONNEGATIVE)) {
     return false;
   }
 
@@ -17994,6 +18029,17 @@ nsCSSParser::ParseColorString(const nsSubstring& aBuffer,
 {
   return static_cast<CSSParserImpl*>(mImpl)->
     ParseColorString(aBuffer, aURI, aLineNumber, aValue, aSuppressErrors);
+}
+
+bool
+nsCSSParser::ParseMarginString(const nsSubstring& aBuffer,
+                               nsIURI*            aURI,
+                               uint32_t           aLineNumber,
+                               nsCSSValue&        aValue,
+                               bool               aSuppressErrors )
+{
+  return static_cast<CSSParserImpl*>(mImpl)->
+    ParseMarginString(aBuffer, aURI, aLineNumber, aValue, aSuppressErrors);
 }
 
 nsresult

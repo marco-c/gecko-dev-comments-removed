@@ -329,47 +329,6 @@ public:
   NS_IMETHOD_(MozExternalRefCountType) Release(void) override { return TransactionIdAllocator::Release(); }
   virtual void WillRefresh(mozilla::TimeStamp aTime) override;
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  static mozilla::Maybe<mozilla::TimeStamp> GetIdleDeadlineHint();
-
-  bool SkippedPaints() const
-  {
-    return mSkippedPaints;
-  }
-
 private:
   typedef nsTObserverArray<nsARefreshObserver*> ObserverArray;
   typedef nsTHashtable<nsISupportsHashKey> RequestTable;
@@ -386,6 +345,7 @@ private:
   void DispatchPendingEvents();
   void DispatchAnimationEvents();
   void RunFrameRequestCallbacks(mozilla::TimeStamp aNowTime);
+
   void Tick(int64_t aNowEpoch, mozilla::TimeStamp aNowTime);
 
   enum EnsureTimerStartedFlags {
@@ -408,6 +368,7 @@ private:
   static double GetThrottledTimerInterval();
 
   static mozilla::TimeDuration GetMinRecomputeVisibilityInterval();
+  static mozilla::TimeDuration GetMinNotifyIntersectionObserversInterval();
 
   bool HaveFrameRequestCallbacks() const {
     return mFrameRequestCallbackDocs.Length() != 0;
@@ -443,6 +404,8 @@ private:
   
   const mozilla::TimeDuration mMinRecomputeVisibilityInterval;
 
+  const mozilla::TimeDuration mMinNotifyIntersectionObserversInterval;
+
   bool mThrottled;
   bool mNeedToRecomputeVisibility;
   bool mTestControllingRefreshes;
@@ -473,6 +436,7 @@ private:
   mozilla::TimeStamp mTickStart;
   mozilla::TimeStamp mNextThrottledFrameRequestTick;
   mozilla::TimeStamp mNextRecomputeVisibilityTick;
+  mozilla::TimeStamp mNextNotifyIntersectionObserversTick;
 
   
   ObserverArray mObservers[3];

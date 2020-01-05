@@ -102,7 +102,6 @@ EXPORTS += [
     'nsIScriptObjectPrincipal.h',
     'nsIScriptTimeoutHandler.h',
     'nsIStyleSheetLinkingElement.h',
-    'nsITimeoutHandler.h',
     'nsJSEnvironment.h',
     'nsJSUtils.h',
     'nsLineBreaker.h',
@@ -167,6 +166,7 @@ EXPORTS.mozilla.dom += [
     'DOMError.h',
     'DOMException.h',
     'DOMImplementation.h',
+    'DOMIntersectionObserver.h',
     'DOMMatrix.h',
     'DOMParser.h',
     'DOMPoint.h',
@@ -185,8 +185,6 @@ EXPORTS.mozilla.dom += [
     'FragmentOrElement.h',
     'FromParser.h',
     'GroupedSHistory.h',
-    'IdleDeadline.h',
-    'IdleRequest.h',
     'ImageEncoder.h',
     'ImageTracker.h',
     'ImportManager.h',
@@ -211,7 +209,6 @@ EXPORTS.mozilla.dom += [
     'StyleSheetList.h',
     'SubtleCrypto.h',
     'Text.h',
-    'Timeout.h',
     'TreeWalker.h',
     'WebKitCSSMatrix.h',
     'WebSocket.h',
@@ -254,8 +251,6 @@ UNIFIED_SOURCES += [
     'FormData.cpp',
     'FragmentOrElement.cpp',
     'GroupedSHistory.cpp',
-    'IdleDeadline.cpp',
-    'IdleRequest.cpp',
     'ImageEncoder.cpp',
     'ImageTracker.cpp',
     'ImportManager.cpp',
@@ -356,7 +351,6 @@ UNIFIED_SOURCES += [
     'Text.cpp',
     'TextInputProcessor.cpp',
     'ThirdPartyUtil.cpp',
-    'Timeout.cpp',
     'TreeWalker.cpp',
     'WebKitCSSMatrix.cpp',
     'WebSocket.cpp',
@@ -371,6 +365,8 @@ if CONFIG['MOZ_WEBRTC']:
 
 # these files couldn't be in UNIFIED_SOURCES for now for reasons given below:
 SOURCES += [
+    # Several conflicts with other bindings.
+    'DOMIntersectionObserver.cpp',
     # Because of OS X headers.
     'nsContentUtils.cpp',
     # this file doesn't like windows.h
