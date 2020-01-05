@@ -80,6 +80,10 @@ impl GlobalStaticData {
 
 
 
+pub const DOM_PROTO_UNFORGEABLE_HOLDER_SLOT: u32 = 0;
+
+
+
 pub const DOM_PROTOTYPE_SLOT: u32 = js::JSCLASS_GLOBAL_SLOT_COUNT;
 
 
@@ -182,7 +186,11 @@ pub struct NativeProperties {
     
     pub methods: Option<&'static [JSFunctionSpec]>,
     
+    pub unforgeable_methods: Option<&'static [JSFunctionSpec]>,
+    
     pub attrs: Option<&'static [JSPropertySpec]>,
+    
+    pub unforgeable_attrs: Option<&'static [JSPropertySpec]>,
     
     pub consts: Option<&'static [ConstantSpec]>,
     
