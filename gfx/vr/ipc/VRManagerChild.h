@@ -47,7 +47,7 @@ public:
   
   void RemoveListener(dom::VREventObserver* aObserver);
 
-  uint32_t GetInputFrameID();
+  int GetInputFrameID();
   bool GetVRDisplays(nsTArray<RefPtr<VRDisplayClient> >& aDisplays);
   bool RefreshVRDisplaysWithCallback(dom::Navigator* aNavigator);
 
@@ -157,7 +157,7 @@ private:
   nsTArray<dom::Navigator*> mNavigatorCallbacks;
   dom::GamepadManager* mGamepadManager;
 
-  uint32_t mInputFrameID;
+  int32_t mInputFrameID;
 
   MessageLoop* mMessageLoop;
 
