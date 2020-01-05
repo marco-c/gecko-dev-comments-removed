@@ -1267,6 +1267,8 @@ IdleGCTimerCallback(nsITimer* aTimer, void* aClosure)
   workerPrivate->GarbageCollectInternal(workerPrivate->GetJSContext(),
                                         true ,
                                         false );
+  
+  workerPrivate->CancelGCTimers();
 }
 
 class UpdateContextOptionsRunnable final : public WorkerControlRunnable
@@ -1409,6 +1411,11 @@ private:
   WorkerRun(JSContext* aCx, WorkerPrivate* aWorkerPrivate) override
   {
     aWorkerPrivate->GarbageCollectInternal(aCx, mShrinking, mCollectChildren);
+    if (mShrinking) {
+      
+      
+      aWorkerPrivate->CancelGCTimers();
+    }
     return true;
   }
 };
@@ -4718,7 +4725,9 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
       }
     }
 
+    bool hadDebuggerOrNormalRunnables = false;
     if (debuggerRunnablesPending || normalRunnablesPending) {
+      hadDebuggerOrNormalRunnables = true;
       
       SetGCTimerMode(PeriodicTimer);
     }
@@ -4760,7 +4769,8 @@ WorkerPrivate::DoRunLoop(JSContext* aCx)
       }
     }
 
-    if (!debuggerRunnablesPending && !normalRunnablesPending) {
+    if (hadDebuggerOrNormalRunnables &&
+        (!debuggerRunnablesPending && !normalRunnablesPending)) {
       
       
       SetGCTimerMode(IdleTimer);
@@ -4857,9 +4867,8 @@ WorkerPrivate::InitializeGCTimers()
   
   
   
-  
-  mGCTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
-  MOZ_ASSERT(mGCTimer);
+  mPeriodicGCTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
+  mIdleGCTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
 
   mPeriodicGCTimerRunning = false;
   mIdleGCTimerRunning = false;
@@ -4869,24 +4878,28 @@ void
 WorkerPrivate::SetGCTimerMode(GCTimerMode aMode)
 {
   AssertIsOnWorkerThread();
-  MOZ_ASSERT(mGCTimer);
+  MOZ_ASSERT(mPeriodicGCTimer);
+  MOZ_ASSERT(mIdleGCTimer);
 
-  if ((aMode == PeriodicTimer && mPeriodicGCTimerRunning) ||
-      (aMode == IdleTimer && mIdleGCTimerRunning)) {
+  
+  
+  
+  if (aMode == PeriodicTimer && mPeriodicGCTimerRunning) {
     return;
   }
 
-  MOZ_ALWAYS_SUCCEEDS(mGCTimer->Cancel());
+  if (aMode == IdleTimer || aMode == NoTimer) {
+    MOZ_ALWAYS_SUCCEEDS(mPeriodicGCTimer->Cancel());
+    mPeriodicGCTimerRunning = false;
+  }
 
-  mPeriodicGCTimerRunning = false;
-  mIdleGCTimerRunning = false;
-  LOG(WorkerLog(),
-      ("Worker %p canceled GC timer because %s\n", this,
-       aMode == PeriodicTimer ?
-       "periodic" :
-       aMode == IdleTimer ? "idle" : "none"));
+  if (aMode == IdleTimer && mIdleGCTimerRunning) {
+    return;
+  }
 
   if (aMode == NoTimer) {
+    MOZ_ALWAYS_SUCCEEDS(mIdleGCTimer->Cancel());
+    mIdleGCTimerRunning = false;
     return;
   }
 
@@ -4896,32 +4909,29 @@ WorkerPrivate::SetGCTimerMode(GCTimerMode aMode)
   int16_t type = nsITimer::TYPE_ONE_SHOT;
   nsTimerCallbackFunc callback = nullptr;
   const char* name = nullptr;
+  nsITimer* timer = nullptr;
 
   if (aMode == PeriodicTimer) {
     delay = PERIODIC_GC_TIMER_DELAY_SEC * 1000;
     type = nsITimer::TYPE_REPEATING_SLACK;
     callback = PeriodicGCTimerCallback;
     name = "dom::workers::PeriodicGCTimerCallback";
-  }
-  else {
+    timer = mPeriodicGCTimer;
+    mPeriodicGCTimerRunning = true;
+    LOG(WorkerLog(), ("Worker %p scheduled periodic GC timer\n", this));
+  } else {
     delay = IDLE_GC_TIMER_DELAY_SEC * 1000;
     type = nsITimer::TYPE_ONE_SHOT;
     callback = IdleGCTimerCallback;
     name = "dom::workers::IdleGCTimerCallback";
-  }
-
-  MOZ_ALWAYS_SUCCEEDS(mGCTimer->SetTarget(mWorkerControlEventTarget));
-  MOZ_ALWAYS_SUCCEEDS(
-    mGCTimer->InitWithNamedFuncCallback(callback, this, delay, type, name));
-
-  if (aMode == PeriodicTimer) {
-    LOG(WorkerLog(), ("Worker %p scheduled periodic GC timer\n", this));
-    mPeriodicGCTimerRunning = true;
-  }
-  else {
-    LOG(WorkerLog(), ("Worker %p scheduled idle GC timer\n", this));
+    timer = mIdleGCTimer;
     mIdleGCTimerRunning = true;
+    LOG(WorkerLog(), ("Worker %p scheduled idle GC timer\n", this));
   }
+
+  MOZ_ALWAYS_SUCCEEDS(timer->SetTarget(mWorkerControlEventTarget));
+  MOZ_ALWAYS_SUCCEEDS(
+    timer->InitWithNamedFuncCallback(callback, this, delay, type, name));
 }
 
 void
@@ -4929,14 +4939,14 @@ WorkerPrivate::ShutdownGCTimers()
 {
   AssertIsOnWorkerThread();
 
-  MOZ_ASSERT(mGCTimer);
-
   
-  MOZ_ALWAYS_SUCCEEDS(mGCTimer->Cancel());
+  MOZ_ALWAYS_SUCCEEDS(mPeriodicGCTimer->Cancel());
+  MOZ_ALWAYS_SUCCEEDS(mIdleGCTimer->Cancel());
 
-  LOG(WorkerLog(), ("Worker %p killed the GC timer\n", this));
+  LOG(WorkerLog(), ("Worker %p killed the GC timers\n", this));
 
-  mGCTimer = nullptr;
+  mPeriodicGCTimer = nullptr;
+  mIdleGCTimer = nullptr;
   mPeriodicGCTimerRunning = false;
   mIdleGCTimerRunning = false;
 }
