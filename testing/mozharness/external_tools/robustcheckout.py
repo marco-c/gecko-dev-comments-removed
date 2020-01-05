@@ -143,6 +143,16 @@ def robustcheckout(ui, url, dest, upstream=None, revision=None, branch=None,
     
     ui.setconfig('worker', 'backgroundclose', False)
 
+    
+    
+    
+    
+    
+    
+    ui.setconfig('progress', 'delay', 1.0)
+    ui.setconfig('progress', 'refresh', 1.0)
+    ui.setconfig('progress', 'assume-tty', True)
+
     sharebase = os.path.realpath(sharebase)
 
     return _docheckout(ui, url, dest, upstream, revision, branch, purge,
