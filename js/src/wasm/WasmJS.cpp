@@ -31,6 +31,7 @@
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmModule.h"
 #include "wasm/WasmSignalHandlers.h"
+#include "wasm/WasmValidate.h"
 
 #include "jsobjinlines.h"
 
@@ -1896,12 +1897,8 @@ WebAssembly_validate(JSContext* cx, unsigned argc, Value* vp)
     if (!GetBufferSource(cx, callArgs, "WebAssembly.validate", &bytecode))
         return false;
 
-    CompileArgs compileArgs;
-    if (!InitCompileArgs(cx, &compileArgs))
-        return false;
-
     UniqueChars error;
-    bool validated = !!Compile(*bytecode, compileArgs, &error);
+    bool validated = Validate(*bytecode, &error);
 
     
     
