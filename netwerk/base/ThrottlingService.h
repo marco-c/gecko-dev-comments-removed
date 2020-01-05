@@ -50,7 +50,7 @@ private:
   uint32_t mSuspendPeriod; 
   uint32_t mResumePeriod; 
   nsCOMPtr<nsITimer> mTimer;
-  typedef nsInterfaceHashtable<nsIDHashKey, nsIHttpChannel> ChannelHash;
+  typedef nsInterfaceHashtable<nsUint64HashKey, nsIHttpChannel> ChannelHash;
   ChannelHash mChannelHash;
 
   
