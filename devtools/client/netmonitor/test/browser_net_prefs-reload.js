@@ -8,6 +8,7 @@
 
 
 add_task(function* () {
+  let Actions = require("devtools/client/netmonitor/actions/index");
   let { monitor } = yield initNetMonitor(SIMPLE_URL);
   info("Starting test... ");
 
@@ -19,6 +20,7 @@ add_task(function* () {
   
   
   let getView = () => monitor.panelWin.NetMonitorView;
+  let getStore = () => monitor.panelWin.gStore;
 
   let prefsToCheck = {
     filters: {
@@ -29,7 +31,8 @@ add_task(function* () {
       validateValue: ($) => getView().RequestsMenu._activeFilters,
       
       
-      modifyFrontend: ($, value) => value.forEach(e => getView().RequestsMenu.filterOn(e))
+      modifyFrontend: ($, value) => value.forEach(e =>
+        getStore().dispatch(Actions.toggleFilter(e)))
     },
     networkDetailsWidth: {
       newValue: ~~(Math.random() * 200 + 100),
