@@ -1850,9 +1850,7 @@ nsJSContext::LoadEnd()
     return;
   }
 
-  
   sLoadingInProgress = false;
-  PokeGC(JS::gcreason::LOAD_END);
 }
 
 
