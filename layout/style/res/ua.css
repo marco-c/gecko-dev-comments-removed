@@ -39,15 +39,20 @@
   page-break-inside: inherit;
   vertical-align: inherit; 
   line-height: inherit; 
-  align-self: inherit;
-  justify-self: inherit;
-  order: inherit;   
   
   transform: inherit;
   transform-origin: inherit;
   
   backface-visibility: inherit;
   clip: inherit;
+  
+  align-self: inherit;
+  justify-self: inherit;
+  grid-column-start: inherit;
+  grid-column-end: inherit;
+  grid-row-start: inherit;
+  grid-row-end: inherit;
+  order: inherit;
 }
 
 *|*::-moz-table-row {
