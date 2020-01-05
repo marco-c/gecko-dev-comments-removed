@@ -2011,6 +2011,29 @@ profiler_start(int aProfileEntries, double aInterval,
     gFeatures[i] = aFeatures[i];
   }
 
+  bool mainThreadIO = hasFeature(aFeatures, aFeatureCount, "mainthreadio");
+  bool privacyMode  = hasFeature(aFeatures, aFeatureCount, "privacy");
+
+#if defined(PROFILE_JAVA)
+  gProfileJava = mozilla::jni::IsFennec() &&
+                      hasFeature(aFeatures, aFeatureCount, "java");
+#endif
+  gProfileJS   = hasFeature(aFeatures, aFeatureCount, "js");
+  gTaskTracer  = hasFeature(aFeatures, aFeatureCount, "tasktracer");
+
+  gAddLeafAddresses = hasFeature(aFeatures, aFeatureCount, "leaf");
+  gDisplayListDump  = hasFeature(aFeatures, aFeatureCount, "displaylistdump");
+  gLayersDump       = hasFeature(aFeatures, aFeatureCount, "layersdump");
+  gProfileGPU       = hasFeature(aFeatures, aFeatureCount, "gpu");
+  gProfileMemory    = hasFeature(aFeatures, aFeatureCount, "memory");
+  gProfileRestyle   = hasFeature(aFeatures, aFeatureCount, "restyle");
+  
+  
+  
+  gProfileThreads   = hasFeature(aFeatures, aFeatureCount, "threads") ||
+                      aFilterCount > 0;
+  gUseStackWalk     = hasFeature(aFeatures, aFeatureCount, "stackwalk");
+
   gEntrySize = aProfileEntries ? aProfileEntries : PROFILE_DEFAULT_ENTRY;
   gInterval = aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL;
   gBuffer = new ProfileBuffer(gEntrySize);
@@ -2037,28 +2060,6 @@ profiler_start(int aProfileEntries, double aInterval,
 #endif
 
   gGatherer = new mozilla::ProfileGatherer(gSampler);
-
-  bool mainThreadIO = hasFeature(aFeatures, aFeatureCount, "mainthreadio");
-  bool privacyMode  = hasFeature(aFeatures, aFeatureCount, "privacy");
-
-#if defined(PROFILE_JAVA)
-  gProfileJava = mozilla::jni::IsFennec() &&
-                      hasFeature(aFeatures, aFeatureCount, "java");
-#endif
-  gProfileJS   = hasFeature(aFeatures, aFeatureCount, "js");
-  gTaskTracer  = hasFeature(aFeatures, aFeatureCount, "tasktracer");
-
-  gAddLeafAddresses = hasFeature(aFeatures, aFeatureCount, "leaf");
-  gDisplayListDump  = hasFeature(aFeatures, aFeatureCount, "displaylistdump");
-  gLayersDump       = hasFeature(aFeatures, aFeatureCount, "layersdump");
-  gProfileGPU       = hasFeature(aFeatures, aFeatureCount, "gpu");
-  gProfileMemory    = hasFeature(aFeatures, aFeatureCount, "memory");
-  gProfileRestyle   = hasFeature(aFeatures, aFeatureCount, "restyle");
-  
-  
-  gProfileThreads   = hasFeature(aFeatures, aFeatureCount, "threads") ||
-                      aFilterCount > 0;
-  gUseStackWalk     = hasFeature(aFeatures, aFeatureCount, "stackwalk");
 
   MOZ_ASSERT(!gIsActive && !gIsPaused);
   PlatformStart();
