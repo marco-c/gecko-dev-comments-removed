@@ -270,7 +270,7 @@ private:
   
 
 
-  nsresult ComputeUserSpaceToFilterSpaceScale();
+  bool ComputeUserSpaceToFilterSpaceScale();
 
   
 
@@ -302,6 +302,8 @@ private:
 
 
   gfxMatrix GetUserSpaceToFrameSpaceInCSSPxTransform() const;
+
+  bool ComputeTargetBBoxInFilterSpace();
 
   
 
