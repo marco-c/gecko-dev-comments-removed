@@ -135,6 +135,15 @@ class BufferSlice
             memcpy(&instructions[length()], source, numBytes);
         bytelength_ += numBytes;
     }
+
+    MOZ_ALWAYS_INLINE
+    void putU32Aligned(uint32_t value) {
+        MOZ_ASSERT(bytelength_ + 4 <= SliceSize);
+        MOZ_ASSERT((bytelength_ & 3) == 0);
+        MOZ_ASSERT((uintptr_t(&instructions[0]) & 3) == 0);
+        *reinterpret_cast<uint32_t*>(&instructions[bytelength_]) = value;
+        bytelength_ += 4;
+    }
 };
 
 template<int SliceSize, class Inst>
@@ -232,6 +241,16 @@ class AssemblerBuffer
 
     BufferOffset putInt(uint32_t value) {
         return putBytes(sizeof(value), &value);
+    }
+
+    MOZ_ALWAYS_INLINE
+    BufferOffset putU32Aligned(uint32_t value) {
+        if (!ensureSpace(sizeof(value)))
+            return BufferOffset();
+
+        BufferOffset ret = nextOffset();
+        tail->putU32Aligned(value);
+        return ret;
     }
 
     
@@ -357,7 +376,8 @@ class AssemblerBuffer
     
     Inst* getInst(BufferOffset off) {
         const int offset = off.getOffset();
-        MOZ_RELEASE_ASSERT(off.assigned() && offset >= 0 && (unsigned)offset < size());
+        
+        MOZ_ASSERT(off.assigned() && offset >= 0 && unsigned(offset) < size());
 
         
         if (offset >= int(bufferSize))
