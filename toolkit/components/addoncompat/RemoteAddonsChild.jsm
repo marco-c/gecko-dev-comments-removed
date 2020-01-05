@@ -24,6 +24,9 @@ XPCOMUtils.defineLazyServiceGetter(this, "contentSecManager",
                                    "@mozilla.org/contentsecuritymanager;1",
                                    "nsIContentSecurityManager");
 
+const TELEMETRY_SHOULD_LOAD_LOADING_KEY = "ADDON_CONTENT_POLICY_SHIM_BLOCKING_LOADING_MS";
+const TELEMETRY_SHOULD_LOAD_LOADED_KEY = "ADDON_CONTENT_POLICY_SHIM_BLOCKING_LOADED_MS";
+
 
 
 function setDefault(dict, key, default_) {
@@ -155,9 +158,16 @@ var ContentPolicyChild = {
   _classID: Components.ID("6e869130-635c-11e2-bcfd-0800200c9a66"),
   _contractID: "@mozilla.org/addon-child/policy;1",
 
+  
+  
+  timings: new WeakMap(),
+
   init() {
     let registrar = Components.manager.QueryInterface(Ci.nsIComponentRegistrar);
     registrar.registerFactory(this._classID, this._classDescription, this._contractID, this);
+
+    this.loadingHistogram = Services.telemetry.getKeyedHistogramById(TELEMETRY_SHOULD_LOAD_LOADING_KEY);
+    this.loadedHistogram = Services.telemetry.getKeyedHistogramById(TELEMETRY_SHOULD_LOAD_LOADED_KEY);
 
     NotificationTracker.watch("content-policy", this);
   },
@@ -175,8 +185,69 @@ var ContentPolicyChild = {
     }
   },
 
+  
+  
+  
+  
+  getTimings(context) {
+    if (!Services.telemetry.canRecordExtended) {
+      return null;
+    }
+
+    let doc;
+    if (context instanceof Ci.nsIDOMNode) {
+      doc = context.ownerDocument;
+    } else if (context instanceof Ci.nsIDOMDocument) {
+      doc = context;
+    } else if (context instanceof Ci.nsIDOMWindow) {
+      doc = context.document;
+    }
+
+    if (!doc) {
+      return null;
+    }
+
+    let map = this.timings.get(doc);
+    if (!map) {
+      
+      
+      map = new Map();
+      this.timings.set(doc, map);
+
+      
+      
+      
+      let eventName = doc.readyState == "complete" ? "pagehide" : "load";
+
+      let listener = event => {
+        if (event.target == doc) {
+          event.currentTarget.removeEventListener(eventName, listener, true);
+          this.logTelemetry(doc, eventName);
+        }
+      };
+      doc.defaultView.addEventListener(eventName, listener, true);
+    }
+    return map;
+  },
+
+  
+  
+  
+  logTelemetry(doc, eventName) {
+    let map = this.timings.get(doc);
+    this.timings.delete(doc);
+
+    let histogram = eventName == "load" ? this.loadingHistogram : this.loadedHistogram;
+
+    for (let [addon, time] of map.entries()) {
+      histogram.add(addon, time);
+    }
+  },
+
   shouldLoad(contentType, contentLocation, requestOrigin,
                        node, mimeTypeGuess, extra, requestPrincipal) {
+    let startTime = Cu.now();
+
     let addons = NotificationTracker.findSuffixes(["content-policy"]);
     let [prefetched, cpows] = Prefetcher.prefetch("ContentPolicy.shouldLoad",
                                                   addons, {InitNode: node});
@@ -192,6 +263,17 @@ var ContentPolicyChild = {
       requestPrincipal,
       prefetched,
     }, cpows);
+
+    let timings = this.getTimings(node);
+    if (timings) {
+      let delta = Cu.now() - startTime;
+
+      for (let addon of addons) {
+        let old = timings.get(addon) || 0;
+        timings.set(addon, old + delta);
+      }
+    }
+
     if (rval.length != 1) {
       return Ci.nsIContentPolicy.ACCEPT;
     }
