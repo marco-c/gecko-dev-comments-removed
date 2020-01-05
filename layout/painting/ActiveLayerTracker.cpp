@@ -105,7 +105,7 @@ public:
 
   
   
-  nsWeakFrame mAnimatingScrollHandlerFrame;
+  AutoWeakFrame mAnimatingScrollHandlerFrame;
   
   
   EnumSet<ActivityIndex> mScrollHandlerInducedActivity;
@@ -132,7 +132,7 @@ public:
   virtual void NotifyExpired(LayerActivity* aObject);
 
 public:
-  nsWeakFrame mCurrentScrollHandlerFrame;
+  AutoWeakFrame mCurrentScrollHandlerFrame;
 
 private:
   bool mDestroying;

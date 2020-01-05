@@ -130,7 +130,7 @@ nsScrollbarButtonFrame::HandleButtonPress(nsPresContext* aPresContext,
 
   bool repeat = pressedButtonAction != 2;
   
-  nsWeakFrame weakFrame(this);
+  AutoWeakFrame weakFrame(this);
   mContent->SetAttr(kNameSpaceID_None, nsGkAtoms::active, NS_LITERAL_STRING("true"), true);
 
   nsIPresShell::SetCapturingContent(mContent, CAPTURE_IGNOREALLOWED);

@@ -185,7 +185,7 @@ protected:
   nsCOMPtr<nsPIBoxObject> mBoxObject;
 
   
-  nsWeakFrame mTopFrame;
+  AutoWeakFrame mTopFrame;
   nsIFrame* mBottomFrame;
   nsIFrame* mLinkupFrame;
 

@@ -54,7 +54,7 @@ public:
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(OverOutElementsWrapper)
 
-  nsWeakFrame mLastOverFrame;
+  AutoWeakFrame mLastOverFrame;
 
   nsCOMPtr<nsIContent> mLastOverElement;
 
@@ -408,7 +408,7 @@ protected:
                            EventMessage aMessage,
                            nsIContent* aRelatedTarget,
                            nsIContent* aTargetContent,
-                           nsWeakFrame& aTargetFrame);
+                           AutoWeakFrame& aTargetFrame);
   
 
 
@@ -420,7 +420,7 @@ protected:
                                             EventMessage aMessage,
                                             nsIPresShell* aPresShell,
                                             nsIContent* aMouseTarget,
-                                            nsWeakFrame aCurrentTarget,
+                                            AutoWeakFrame aCurrentTarget,
                                             bool aNoContentDispatch);
   nsresult SetClickCount(WidgetMouseEvent* aEvent, nsEventStatus* aStatus);
   nsresult CheckForAndDispatchClick(WidgetMouseEvent* aEvent,
@@ -930,9 +930,9 @@ private:
   
   static LayoutDeviceIntPoint sSynthCenteringPoint;
 
-  nsWeakFrame mCurrentTarget;
+  AutoWeakFrame mCurrentTarget;
   nsCOMPtr<nsIContent> mCurrentTargetContent;
-  static nsWeakFrame sLastDragOverFrame;
+  static AutoWeakFrame sLastDragOverFrame;
 
   
   

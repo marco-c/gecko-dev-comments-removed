@@ -250,7 +250,7 @@ nsTextControlFrame::EnsureEditorInitialized()
   nsIDocument* doc = mContent->GetComposedDoc();
   NS_ENSURE_TRUE(doc, NS_ERROR_FAILURE);
 
-  nsWeakFrame weakFrame(this);
+  AutoWeakFrame weakFrame(this);
 
   
   
@@ -711,7 +711,7 @@ nsresult nsTextControlFrame::SetFormProperty(nsIAtom* aName, const nsAString& aV
       
       
 
-      nsWeakFrame weakThis = this;
+      AutoWeakFrame weakThis = this;
       SelectAllOrCollapseToEndOfText(true);  
       if (!weakThis.IsAlive()) {
         return NS_OK;
@@ -1200,7 +1200,7 @@ nsTextControlFrame::SetValueChanged(bool aValueChanged)
   NS_ASSERTION(txtCtrl, "Content not a text control element");
 
   if (mUsePlaceholder) {
-    nsWeakFrame weakFrame(this);
+    AutoWeakFrame weakFrame(this);
     txtCtrl->UpdatePlaceholderVisibility(true);
     if (!weakFrame.IsAlive()) {
       return;
@@ -1256,7 +1256,7 @@ nsTextControlFrame::UpdateValueDisplay(bool aNotify,
   
   if (mUsePlaceholder && !aBeforeEditorInit)
   {
-    nsWeakFrame weakFrame(this);
+    AutoWeakFrame weakFrame(this);
     txtCtrl->UpdatePlaceholderVisibility(aNotify);
     NS_ENSURE_STATE(weakFrame.IsAlive());
   }

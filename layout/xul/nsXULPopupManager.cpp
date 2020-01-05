@@ -936,7 +936,7 @@ nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
   }
 
   
-  nsWeakFrame weakFrame(aPopupFrame);
+  AutoWeakFrame weakFrame(aPopupFrame);
   aPopupFrame->ShowPopup(aIsContextMenu);
   ENSURE_TRUE(weakFrame.IsAlive());
 
@@ -1187,7 +1187,7 @@ nsXULPopupManager::HidePopupCallback(nsIContent* aPopup,
 
   delete item;
 
-  nsWeakFrame weakFrame(aPopupFrame);
+  AutoWeakFrame weakFrame(aPopupFrame);
   aPopupFrame->HidePopup(aDeselectMenu, ePopupClosed);
   ENSURE_TRUE(weakFrame.IsAlive());
 
@@ -1265,10 +1265,10 @@ nsXULPopupManager::HidePopupsInList(const nsTArray<nsMenuPopupFrame *> &aFrames)
   
   
   
-  nsTArray<nsWeakFrame> weakPopups(aFrames.Length());
+  nsTArray<AutoWeakFrame> weakPopups(aFrames.Length());
   uint32_t f;
   for (f = 0; f < aFrames.Length(); f++) {
-    nsWeakFrame* wframe = weakPopups.AppendElement();
+    AutoWeakFrame* wframe = weakPopups.AppendElement();
     if (wframe)
       *wframe = aFrames[f];
   }
@@ -2902,7 +2902,7 @@ nsXULMenuCommandEvent::Run()
 
   nsCOMPtr<nsIContent> popup;
   nsMenuFrame* menuFrame = do_QueryFrame(mMenu->GetPrimaryFrame());
-  nsWeakFrame weakFrame(menuFrame);
+  AutoWeakFrame weakFrame(menuFrame);
   if (menuFrame && mFlipChecked) {
     if (menuFrame->IsChecked()) {
       mMenu->UnsetAttr(kNameSpaceID_None, nsGkAtoms::checked, true);

@@ -329,7 +329,7 @@ private:
 
   
   
-  nsWeakFrame mDetachedSubdocFrame;
+  AutoWeakFrame mDetachedSubdocFrame;
   
   
   

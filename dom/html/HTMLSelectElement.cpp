@@ -278,7 +278,7 @@ HTMLSelectElement::InsertOptionsIntoList(nsIContent* aOptions,
     
     
     nsISelectControlFrame* selectFrame = nullptr;
-    nsWeakFrame weakSelectFrame;
+    AutoWeakFrame weakSelectFrame;
     bool didGetFrame = false;
 
     
@@ -931,7 +931,7 @@ HTMLSelectElement::SetOptionsSelectedByIndex(int32_t aStartIndex,
 
   nsISelectControlFrame* selectFrame = nullptr;
   bool didGetFrame = false;
-  nsWeakFrame weakSelectFrame;
+  AutoWeakFrame weakSelectFrame;
 
   if (aOptionsMask & IS_SELECTED) {
     

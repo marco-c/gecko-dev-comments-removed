@@ -609,7 +609,7 @@ nsSliderFrame::HandleEvent(nsPresContext* aPresContext,
         (uint32_t) ScrollInputMethod::MainThreadScrollbarTrackClick);
 
     
-    nsWeakFrame weakFrame(this);
+    AutoWeakFrame weakFrame(this);
     
     SetCurrentThumbPosition(scrollbar, pos - thumbLength/2, false, false);
     NS_ENSURE_TRUE(weakFrame.IsAlive(), NS_OK);
@@ -876,7 +876,7 @@ nsSliderFrame::SetCurrentPositionInternal(nsIContent* aScrollbar, int32_t aNewPo
 {
   nsCOMPtr<nsIContent> scrollbar = aScrollbar;
   nsIFrame* scrollbarBox = GetScrollbar();
-  nsWeakFrame weakFrame(this);
+  AutoWeakFrame weakFrame(this);
 
   mUserChanged = true;
 

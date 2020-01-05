@@ -304,7 +304,7 @@ public:
   {
     if (mSelection && mPresContext)
     {
-      nsWeakFrame frame =
+      AutoWeakFrame frame =
         mContent ? mPresContext->GetPrimaryFrameFor(mContent) : nullptr;
       if (!frame)
         return NS_OK;
@@ -4860,8 +4860,8 @@ Selection::DoAutoScroll(nsIFrame* aFrame, nsPoint& aPoint)
   if (!rootPC)
     return NS_OK;
   nsIFrame* rootmostFrame = rootPC->PresShell()->FrameManager()->GetRootFrame();
-  nsWeakFrame weakRootFrame(rootmostFrame);
-  nsWeakFrame weakFrame(aFrame);
+  AutoWeakFrame weakRootFrame(rootmostFrame);
+  AutoWeakFrame weakFrame(aFrame);
   
   
   nsPoint globalPoint = aPoint + aFrame->GetOffsetToCrossDoc(rootmostFrame);

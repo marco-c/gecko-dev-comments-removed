@@ -374,7 +374,7 @@ protected:
   void UpdateScrollbars(const ScrollParts& aParts);
 
   
-  void InvalidateScrollbars(const ScrollParts& aParts, nsWeakFrame& aWeakColumnsFrame);
+  void InvalidateScrollbars(const ScrollParts& aParts, AutoWeakFrame& aWeakColumnsFrame);
 
   
   void CheckOverflow(const ScrollParts& aParts);
