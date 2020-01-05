@@ -1066,9 +1066,7 @@ TextEditRules::WillOutputText(Selection* aSelection,
   *aCancel = false;
   *aHandled = false;
 
-  nsAutoString outputFormat(*aOutputFormat);
-  ToLowerCase(outputFormat);
-  if (outputFormat.EqualsLiteral("text/plain")) {
+  if (aOutputFormat->LowerCaseEqualsLiteral("text/plain")) {
     
     if (IsPasswordEditor()) {
       *aOutString = mPasswordText;
