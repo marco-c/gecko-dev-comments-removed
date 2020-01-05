@@ -1,6 +1,7 @@
 
 
 add_task(function* test_screenshot() {
+  requestLongerTimeout(2);
 
   
   yield SpecialPowers.pushPrefEnv({set: [[PREF_WC_REPORTER_ENDPOINT, NEW_ISSUE_PAGE]]});
