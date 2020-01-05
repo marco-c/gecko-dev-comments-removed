@@ -79,6 +79,17 @@ class IntentUtil {
 
 
 
+    static boolean hasToolbarColor(@NonNull Intent intent) {
+        return intent.hasExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR);
+    }
+
+    
+
+
+
+
+
+
     @ColorInt
     static int getToolbarColor(@NonNull Intent intent) {
         @ColorInt int toolbarColor = intent.getIntExtra(CustomTabsIntent.EXTRA_TOOLBAR_COLOR,
