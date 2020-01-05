@@ -61,7 +61,6 @@ impl DOMStringMapMethods for DOMStringMap {
 
     
     fn SupportedPropertyNames(&self) -> Vec<DOMString> {
-        
-        vec![]
+        self.element.supported_prop_names_custom_attr().iter().cloned().collect()
     }
 }
