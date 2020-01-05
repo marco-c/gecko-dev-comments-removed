@@ -362,11 +362,19 @@ MessageManagerTunnel.prototype = {
   OUTER_TO_INNER_MESSAGE_PREFIXES: [
     
     "debug:",
+    
+    "Findbar:",
+    
+    "Finder:",
   ],
 
   INNER_TO_OUTER_MESSAGE_PREFIXES: [
     
     "debug:",
+    
+    "Findbar:",
+    
+    "Finder:",
   ],
 
   OUTER_TO_INNER_FRAME_SCRIPTS: [
