@@ -10,6 +10,7 @@
 #include "StyleStructContext.h"
 #include "gfxFontFamilyList.h"
 #include "nsAttrValueInlines.h"
+#include "nsCSSParser.h"
 #include "nsCSSRuleProcessor.h"
 #include "nsContentUtils.h"
 #include "nsDOMTokenList.h"
@@ -20,6 +21,7 @@
 #include "nsINode.h"
 #include "nsIPrincipal.h"
 #include "nsNameSpaceManager.h"
+#include "nsNetUtil.h"
 #include "nsRuleNode.h"
 #include "nsString.h"
 #include "nsStyleStruct.h"
@@ -1025,6 +1027,41 @@ nsCSSValueBorrowedMut
 Gecko_CSSValue_GetArrayItem(nsCSSValueBorrowedMut aCSSValue, int32_t aIndex)
 {
   return &aCSSValue->GetArrayValue()->Item(aIndex);
+}
+
+void
+Gecko_LoadStyleSheet(css::Loader* aLoader,
+                     ServoStyleSheet* aParent,
+                     RawServoImportRuleStrong aImportRule,
+                     const uint8_t* aURLString,
+                     uint32_t aURLStringLength,
+                     const uint8_t* aMediaString,
+                     uint32_t aMediaStringLength)
+{
+  MOZ_ASSERT(aLoader, "Should've catched this before");
+  MOZ_ASSERT(aParent, "Only used for @import, so parent should exist!");
+  MOZ_ASSERT(aURLString, "Invalid URLs shouldn't be loaded!");
+  RefPtr<nsMediaList> media = new nsMediaList();
+  if (aMediaStringLength) {
+    MOZ_ASSERT(aMediaString);
+    
+    
+    nsDependentCSubstring medium(reinterpret_cast<const char*>(aMediaString),
+                                 aMediaStringLength);
+    nsCSSParser mediumParser(aLoader);
+    mediumParser.ParseMediaList(
+        NS_ConvertUTF8toUTF16(medium), nullptr, 0, media);
+  }
+
+  nsDependentCSubstring urlSpec(reinterpret_cast<const char*>(aURLString),
+                                aURLStringLength);
+
+  
+  nsCOMPtr<nsIURI> uri;
+  MOZ_ALWAYS_SUCCEEDS(NS_NewURI(getter_AddRefs(uri), urlSpec));
+
+  RefPtr<RawServoImportRule> import = aImportRule.Consume();
+  aLoader->LoadChildSheet(aParent, uri, media, nullptr, import, nullptr);
 }
 
 NS_IMPL_THREADSAFE_FFI_REFCOUNTING(nsCSSValueSharedList, CSSValueSharedList);
