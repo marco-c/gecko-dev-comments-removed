@@ -49,6 +49,9 @@ const PREF_ACCEPTED_POLICY_VERSION = PREF_BRANCH + "dataSubmissionPolicyAccepted
 const PREF_ACCEPTED_POLICY_DATE = PREF_BRANCH + "dataSubmissionPolicyNotifiedTime";
 
 
+const PREF_FIRST_RUN_URL = PREF_BRANCH + "firstRunURL";
+
+
 const DEPRECATED_FHR_PREFS = [
   PREF_BRANCH + "dataSubmissionPolicyAccepted",
   PREF_BRANCH + "dataSubmissionPolicyBypassAcceptance",
@@ -96,7 +99,7 @@ NotifyPolicyRequest.prototype = Object.freeze({
 
 
   onUserNotifyComplete: function() {
-    return TelemetryReportingPolicyImpl._infobarShownCallback();
+    return TelemetryReportingPolicyImpl._userNotified();
    },
 
   
@@ -160,7 +163,7 @@ this.TelemetryReportingPolicy = {
 
 
   testInfobarShown: function() {
-    return TelemetryReportingPolicyImpl._infobarShownCallback();
+    return TelemetryReportingPolicyImpl._userNotified();
   },
 };
 
@@ -389,8 +392,8 @@ var TelemetryReportingPolicyImpl = {
   
 
 
-  _infobarShownCallback: function() {
-    this._log.trace("_infobarShownCallback");
+  _userNotified() {
+    this._log.trace("_userNotified");
     this._recordNotificationData();
     TelemetrySend.notifyCanUpload();
   },
@@ -407,19 +410,85 @@ var TelemetryReportingPolicyImpl = {
     this._notificationInProgress = false;
   },
 
+  
+
+
+  _openFirstRunPage() {
+    let firstRunPolicyURL = Preferences.get(PREF_FIRST_RUN_URL, "");
+    if (!firstRunPolicyURL) {
+      return false;
+    }
+    firstRunPolicyURL = Services.urlFormatter.formatURL(firstRunPolicyURL);
+
+    let win;
+    try {
+      const { RecentWindow } = Cu.import("resource:///modules/RecentWindow.jsm", {});
+      win = RecentWindow.getMostRecentBrowserWindow();
+    } catch (e) {}
+
+    if (!win) {
+      this._log.info("Couldn't find browser window to open first-run page. Falling back to infobar.");
+      return false;
+    }
+
+    
+    
+    let progressListener = {};
+    progressListener.onStateChange =
+      (aBrowser, aWebProgress, aRequest, aStateFlags, aStatus) => {
+        if (aWebProgress.isTopLevel &&
+            aBrowser == tab.linkedBrowser &&
+            aStateFlags & Ci.nsIWebProgressListener.STATE_STOP &&
+            aStateFlags & Ci.nsIWebProgressListener.STATE_IS_NETWORK) {
+          let uri = aBrowser.documentURI;
+          if (uri && !/^about:(blank|neterror|certerror|blocked)/.test(uri.spec)) {
+            this._userNotified();
+          } else {
+            this._log.info("Failed to load first-run page. Falling back to infobar.");
+            this._showInfobar();
+          }
+          removeListeners();
+        }
+      };
+
+    let removeListeners = () => {
+      win.removeEventListener("unload", removeListeners);
+      win.gBrowser.removeTabsProgressListener(progressListener);
+    };
+
+    win.addEventListener("unload", removeListeners);
+    win.gBrowser.addTabsProgressListener(progressListener);
+
+    let tab = win.gBrowser.loadOneTab(firstRunPolicyURL, { inBackground: true });
+
+    return true;
+  },
+
   observe: function(aSubject, aTopic, aData) {
     if (aTopic != "sessionstore-windows-restored") {
       return;
     }
 
     const isFirstRun = Preferences.get(PREF_FIRST_RUN, true);
+    if (isFirstRun) {
+      
+      Preferences.set(PREF_FIRST_RUN, false);
+
+      try {
+        if (this._openFirstRunPage()) {
+          return;
+        }
+      } catch (e) {
+        this._log.error("Failed to open privacy policy tab: " + e);
+      }
+    }
+
+    
     const delay =
       isFirstRun ? NOTIFICATION_DELAY_FIRST_RUN_MSEC : NOTIFICATION_DELAY_NEXT_RUNS_MSEC;
 
     this._startupNotificationTimerId = Policy.setShowInfobarTimeout(
         
         () => this._showInfobar(), delay);
-    
-    Preferences.set(PREF_FIRST_RUN, false);
   },
 };
