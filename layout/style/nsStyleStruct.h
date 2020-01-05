@@ -882,14 +882,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBackground {
   nscolor mBackgroundColor;       
 };
 
-
-
-#define BORDER_COLOR_FOREGROUND   0x20
-#define OUTLINE_COLOR_INITIAL     0x80
-
-#define BORDER_COLOR_SPECIAL      0xA0
-#define BORDER_STYLE_MASK         0x1F
-
 #define NS_SPACING_MARGIN   0
 #define NS_SPACING_PADDING  1
 #define NS_SPACING_BORDER   2
@@ -1204,7 +1196,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   
   bool HasVisibleStyle(mozilla::css::Side aSide) const
   {
-    return IsVisibleBorderStyle(GetBorderStyle(aSide));
+    return IsVisibleBorderStyle(mBorderStyle[aSide]);
   }
 
   
@@ -1243,14 +1235,13 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   uint8_t GetBorderStyle(mozilla::css::Side aSide) const
   {
     NS_ASSERTION(aSide <= NS_SIDE_LEFT, "bad side");
-    return (mBorderStyle[aSide] & BORDER_STYLE_MASK);
+    return mBorderStyle[aSide];
   }
 
   void SetBorderStyle(mozilla::css::Side aSide, uint8_t aStyle)
   {
     NS_ASSERTION(aSide <= NS_SIDE_LEFT, "bad side");
-    mBorderStyle[aSide] &= ~BORDER_STYLE_MASK;
-    mBorderStyle[aSide] |= (aStyle & BORDER_STYLE_MASK);
+    mBorderStyle[aSide] = aStyle;
     mComputedBorder.Side(aSide) =
       (HasVisibleStyle(aSide) ? mBorder.Side(aSide) : 0);
   }
@@ -1258,27 +1249,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
   inline bool IsBorderImageLoaded() const
   {
     return mBorderImageSource.IsLoaded();
-  }
-
-  void GetBorderColor(mozilla::css::Side aSide, nscolor& aColor,
-                      bool& aForeground) const
-  {
-    aForeground = false;
-    NS_ASSERTION(aSide <= NS_SIDE_LEFT, "bad side");
-    if ((mBorderStyle[aSide] & BORDER_COLOR_SPECIAL) == 0) {
-      aColor = mBorderColor[aSide];
-    } else if (mBorderStyle[aSide] & BORDER_COLOR_FOREGROUND) {
-      aForeground = true;
-    } else {
-      NS_NOTREACHED("OUTLINE_COLOR_INITIAL should not be set here");
-    }
-  }
-
-  void SetBorderColor(mozilla::css::Side aSide, nscolor aColor)
-  {
-    NS_ASSERTION(aSide <= NS_SIDE_LEFT, "bad side");
-    mBorderColor[aSide] = aColor;
-    mBorderStyle[aSide] &= ~BORDER_COLOR_SPECIAL;
   }
 
   void TrackImage(nsPresContext* aContext)
@@ -1318,14 +1288,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder
       }
       last->mNext = colorEntry;
     }
-    mBorderStyle[aIndex] &= ~BORDER_COLOR_SPECIAL;
-  }
-
-  void SetBorderToForeground(mozilla::css::Side aSide)
-  {
-    NS_ASSERTION(aSide <= NS_SIDE_LEFT, "bad side");
-    mBorderStyle[aSide] &= ~BORDER_COLOR_SPECIAL;
-    mBorderStyle[aSide] |= BORDER_COLOR_FOREGROUND;
   }
 
   imgIRequest* GetBorderImageRequest() const
@@ -1351,6 +1313,22 @@ public:
   mozilla::StyleBoxDecorationBreak mBoxDecorationBreak; 
 
 protected:
+  uint8_t       mBorderStyle[4];  
+
+public:
+  
+  
+  union {
+    struct {
+      mozilla::StyleComplexColor mBorderTopColor;
+      mozilla::StyleComplexColor mBorderRightColor;
+      mozilla::StyleComplexColor mBorderBottomColor;
+      mozilla::StyleComplexColor mBorderLeftColor;
+    };
+    mozilla::StyleComplexColor mBorderColor[4];
+  };
+
+protected:
   
   
   
@@ -1372,14 +1350,24 @@ protected:
   
   nsMargin      mBorder;
 
-  uint8_t       mBorderStyle[4];  
-  nscolor       mBorderColor[4];  
-                                  
 private:
   nscoord       mTwipsPerPixel;
 
   nsStyleBorder& operator=(const nsStyleBorder& aOther) = delete;
 };
+
+#define ASSERT_BORDER_COLOR_FIELD(side_)                          \
+  static_assert(offsetof(nsStyleBorder, mBorder##side_##Color) == \
+                  offsetof(nsStyleBorder, mBorderColor) +         \
+                    size_t(mozilla::eSide##side_) *               \
+                    sizeof(mozilla::StyleComplexColor),           \
+                "mBorder" #side_ "Color must be at same offset "  \
+                "as mBorderColor[mozilla::eSide" #side_ "]")
+ASSERT_BORDER_COLOR_FIELD(Top);
+ASSERT_BORDER_COLOR_FIELD(Right);
+ASSERT_BORDER_COLOR_FIELD(Bottom);
+ASSERT_BORDER_COLOR_FIELD(Left);
+#undef ASSERT_BORDER_COLOR_FIELD
 
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline
@@ -1424,47 +1412,12 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleOutline
   
   nsStyleCoord  mOutlineWidth;    
   nscoord       mOutlineOffset;   
+  mozilla::StyleComplexColor mOutlineColor; 
+  uint8_t       mOutlineStyle;    
 
   nscoord GetOutlineWidth() const
   {
     return mActualOutlineWidth;
-  }
-
-  uint8_t GetOutlineStyle() const
-  {
-    return (mOutlineStyle & BORDER_STYLE_MASK);
-  }
-
-  void SetOutlineStyle(uint8_t aStyle)
-  {
-    mOutlineStyle &= ~BORDER_STYLE_MASK;
-    mOutlineStyle |= (aStyle & BORDER_STYLE_MASK);
-  }
-
-  
-  bool GetOutlineColor(nscolor& aColor) const
-  {
-    if ((mOutlineStyle & BORDER_COLOR_SPECIAL) == 0) {
-      aColor = mOutlineColor;
-      return true;
-    }
-    return false;
-  }
-
-  void SetOutlineColor(nscolor aColor)
-  {
-    mOutlineColor = aColor;
-    mOutlineStyle &= ~BORDER_COLOR_SPECIAL;
-  }
-
-  void SetOutlineInitialColor()
-  {
-    mOutlineStyle |= OUTLINE_COLOR_INITIAL;
-  }
-
-  bool GetOutlineInitialColor() const
-  {
-    return !!(mOutlineStyle & OUTLINE_COLOR_INITIAL);
   }
 
 protected:
@@ -1472,11 +1425,6 @@ protected:
   
   
   nscoord       mActualOutlineWidth;
-
-  nscolor       mOutlineColor;    
-
-  uint8_t       mOutlineStyle;    
-
   nscoord       mTwipsPerPixel;
 };
 
@@ -1997,43 +1945,6 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset
            mTextDecorationLine != NS_STYLE_TEXT_DECORATION_LINE_OVERRIDE_ALL;
   }
 
-  uint8_t GetDecorationStyle() const
-  {
-    return (mTextDecorationStyle & BORDER_STYLE_MASK);
-  }
-
-  void SetDecorationStyle(uint8_t aStyle)
-  {
-    MOZ_ASSERT((aStyle & BORDER_STYLE_MASK) == aStyle,
-               "style doesn't fit");
-    mTextDecorationStyle &= ~BORDER_STYLE_MASK;
-    mTextDecorationStyle |= (aStyle & BORDER_STYLE_MASK);
-  }
-
-  void GetDecorationColor(nscolor& aColor, bool& aForeground) const
-  {
-    aForeground = false;
-    if ((mTextDecorationStyle & BORDER_COLOR_SPECIAL) == 0) {
-      aColor = mTextDecorationColor;
-    } else if (mTextDecorationStyle & BORDER_COLOR_FOREGROUND) {
-      aForeground = true;
-    } else {
-      NS_NOTREACHED("OUTLINE_COLOR_INITIAL should not be set here");
-    }
-  }
-
-  void SetDecorationColor(nscolor aColor)
-  {
-    mTextDecorationColor = aColor;
-    mTextDecorationStyle &= ~BORDER_COLOR_SPECIAL;
-  }
-
-  void SetDecorationColorToForeground()
-  {
-    mTextDecorationStyle &= ~BORDER_COLOR_SPECIAL;
-    mTextDecorationStyle |= BORDER_COLOR_FOREGROUND;
-  }
-
   nsChangeHint CalcDifference(const nsStyleTextReset& aNewData) const;
   static nsChangeHint MaxDifference() {
     return nsChangeHint(
@@ -2051,13 +1962,11 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleTextReset
   nsStyleTextOverflow mTextOverflow;    
 
   uint8_t mTextDecorationLine;          
+  uint8_t mTextDecorationStyle;         
   uint8_t mUnicodeBidi;                 
   nscoord mInitialLetterSink;           
   float mInitialLetterSize;             
-protected:
-  uint8_t mTextDecorationStyle;         
-
-  nscolor mTextDecorationColor;         
+  mozilla::StyleComplexColor mTextDecorationColor; 
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleText
@@ -3377,6 +3286,12 @@ struct nsCursorImage
 
   nsCursorImage& operator=(const nsCursorImage& aOther);
 
+  bool operator==(const nsCursorImage& aOther) const;
+  bool operator!=(const nsCursorImage& aOther) const
+  {
+    return !(*this == aOther);
+  }
+
   void SetImage(imgIRequest *aImage) {
     if (mImage) {
       mImage->UnlockImage();
@@ -3432,17 +3347,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUserInterface
   mozilla::StyleUserFocus   mUserFocus;       
   uint8_t                   mPointerEvents;   
 
-  uint8_t   mCursor;          
-
-  uint32_t mCursorArrayLength;
-  nsCursorImage *mCursorArray;
-                              
-                              
-                              
-
-  
-  
-  void CopyCursorArrayFrom(const nsStyleUserInterface& aSource);
+  uint8_t mCursor;                            
+  nsTArray<nsCursorImage> mCursorImages;      
 
   inline uint8_t GetEffectivePointerEvents(nsIFrame* aFrame) const;
 };
@@ -3527,13 +3433,9 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleColumn
   nsStyleCoord mColumnWidth; 
   nsStyleCoord mColumnGap;   
 
-  nscolor      mColumnRuleColor;  
+  mozilla::StyleComplexColor mColumnRuleColor; 
   uint8_t      mColumnRuleStyle;  
   uint8_t      mColumnFill;  
-
-  
-  
-  bool mColumnRuleColorIsForeground;
 
   void SetColumnRuleWidth(nscoord aWidth) {
     mColumnRuleWidth = NS_ROUND_BORDER_TO_PIXELS(aWidth, mTwipsPerPixel);

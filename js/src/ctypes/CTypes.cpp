@@ -3907,7 +3907,7 @@ BuildTypeName(JSContext* cx, JSObject* typeObj_)
   
   
   TypeCode prevGrouping = CType::GetTypeCode(typeObj), currentGrouping;
-  while (1) {
+  while (true) {
     currentGrouping = CType::GetTypeCode(typeObj);
     switch (currentGrouping) {
     case TYPE_pointer: {
