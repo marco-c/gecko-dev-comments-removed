@@ -7,6 +7,7 @@
 
 
 use actor::{Actor, ActorRegistry};
+use actors::console::ConsoleActor;
 use protocol::JsonPacketStream;
 
 use serialize::json;
@@ -74,7 +75,7 @@ impl Actor for TabActor {
     }
 
     fn handle_message(&self,
-                      _registry: &ActorRegistry,
+                      registry: &ActorRegistry,
                       msg_type: &String,
                       _msg: &json::JsonObject,
                       stream: &mut TcpStream) -> bool {
@@ -95,15 +96,21 @@ impl Actor for TabActor {
                     javascriptEnabled: true,
                     traits: TabTraits,
                 };
+                let console_actor = registry.find::<ConsoleActor>(self.console.as_slice());
+                console_actor.streams.borrow_mut().push(stream.clone());
                 stream.write_json_packet(&msg);
                 true
             }
 
+            
+            
             "detach" => {
                 let msg = TabDetachedReply {
                     from: self.name(),
                     __type__: "detached".to_string(),
                 };
+                let console_actor = registry.find::<ConsoleActor>(self.console.as_slice());
+                console_actor.streams.borrow_mut().pop();
                 stream.write_json_packet(&msg);
                 true
             }
