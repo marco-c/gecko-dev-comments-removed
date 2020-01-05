@@ -123,7 +123,7 @@ class BasePopup {
     this.destroyed = true;
     this.browserLoadedDeferred.reject(new Error("Popup destroyed"));
     return this.browserReady.then(() => {
-      this.destroyBrowser(this.browser);
+      this.destroyBrowser(this.browser, true);
       this.browser.remove();
 
       this.viewNode.removeEventListener(this.DESTROY_EVENT, this);
@@ -141,8 +141,9 @@ class BasePopup {
     });
   }
 
-  destroyBrowser(browser) {
+  destroyBrowser(browser, finalize = false) {
     let mm = browser.messageManager;
+    
     
     
     if (mm) {
@@ -151,6 +152,8 @@ class BasePopup {
       mm.removeMessageListener("Extension:BrowserContentLoaded", this);
       mm.removeMessageListener("Extension:BrowserResized", this);
       mm.removeMessageListener("Extension:DOMWindowClose", this);
+    } else if (finalize) {
+      this.receiveMessage = () => {};
     }
   }
 
@@ -228,6 +231,10 @@ class BasePopup {
     this.browser.setAttribute("webextension-view-type", "popup");
     this.browser.setAttribute("tooltip", "aHTMLTooltip");
 
+    if (this.extension.remote) {
+      this.browser.setAttribute("remote", "true");
+    }
+
     
     
     
@@ -238,27 +245,33 @@ class BasePopup {
     
     
 
+
+    let readyPromise;
+    if (this.extension.remote) {
+      readyPromise = promiseEvent(this.browser, "XULFrameLoaderCreated");
+    } else {
+      readyPromise = promiseEvent(this.browser, "load");
+    }
+
     viewNode.appendChild(this.browser);
 
     extensions.emit("extension-browser-inserted", this.browser);
 
-    let initBrowser = browser => {
-      let mm = browser.messageManager;
+    readyPromise = readyPromise.then(() => {
+      let mm = this.browser.messageManager;
       mm.addMessageListener("DOMTitleChanged", this);
       mm.addMessageListener("Extension:BrowserBackgroundChanged", this);
       mm.addMessageListener("Extension:BrowserContentLoaded", this);
       mm.addMessageListener("Extension:BrowserResized", this);
       mm.addMessageListener("Extension:DOMWindowClose", this, true);
-    };
+      return this.browser;
+    });
 
     if (!popupURL) {
-      initBrowser(this.browser);
-      return this.browser;
+      return readyPromise;
     }
 
-    return promiseEvent(this.browser, "load").then(() => {
-      initBrowser(this.browser);
-
+    return readyPromise.then(() => {
       let mm = this.browser.messageManager;
 
       mm.loadFrameScript(
@@ -368,7 +381,7 @@ class PanelPopup extends BasePopup {
   closePopup() {
     promisePopupShown(this.viewNode).then(() => {
       
-      if (this.viewNode) {
+      if (this.viewNode && this.viewNode.hidePopup) {
         this.viewNode.hidePopup();
       }
     });
@@ -457,7 +470,7 @@ class ViewPopup extends BasePopup {
 
       
       let browser = this.browser;
-      this.createBrowser(this.viewNode);
+      yield this.createBrowser(this.viewNode);
 
       this.browser.swapDocShells(browser);
       this.destroyBrowser(browser);
