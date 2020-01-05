@@ -36,6 +36,70 @@ class TabBase {
     this.activeTabWindowID = null;
   }
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  sendMessage(context, messageName, data = {}, options = null) {
+    let {browser, innerWindowID} = this;
+
+    options = Object.assign({}, options);
+    options.recipient = Object.assign({innerWindowID}, options.recipient);
+
+    return context.sendMessage(browser.messageManager, messageName,
+                               data, options);
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  capture(context, options = null) {
+    if (!options) {
+      options = {};
+    }
+    if (options.format == null) {
+      options.format = "png";
+    }
+    if (options.quality == null) {
+      options.quality = 92;
+    }
+
+    let message = {
+      options,
+      width: this.width,
+      height: this.height,
+    };
+
+    return this.sendMessage(context, "Extension:Capture", message);
+  }
+
   get innerWindowID() {
     return this.browser.innerWindowID;
   }
@@ -196,12 +260,7 @@ class TabBase {
       options.css_origin = "author";
     }
 
-    let {browser} = this;
-    let recipient = {
-      innerWindowID: browser.innerWindowID,
-    };
-
-    return context.sendMessage(browser.messageManager, "Extension:Execute", {options}, {recipient});
+    return this.sendMessage(context, "Extension:Execute", {options});
   }
 
   executeScript(context, details) {
