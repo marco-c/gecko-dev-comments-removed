@@ -5285,10 +5285,6 @@ pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", fa
 
 
 
-pref("layout.accessiblecaret.timeout_ms", 0);
-
-
-
 pref("layout.accessiblecaret.use_long_tap_injector", false);
 
 

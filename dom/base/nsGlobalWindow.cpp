@@ -1487,7 +1487,8 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
 #ifdef DEBUG
     mIsValidatingTabGroup(false),
 #endif
-    mCanSkipCCGeneration(0)
+    mCanSkipCCGeneration(0),
+    mAutoActivateVRDisplayID(0)
 {
   AssertIsOnMainThread();
 
@@ -3781,6 +3782,27 @@ nsGlobalWindow::PostHandleEvent(EventChainPostVisitor& aVisitor)
     mIsHandlingResizeEvent = false;
   } else if (aVisitor.mEvent->mMessage == eUnload &&
              aVisitor.mEvent->IsTrusted()) {
+
+    
+    
+    
+    
+    for (auto display : mVRDisplays) {
+      if (display->IsPresenting()) {
+        
+        
+        nsGlobalWindow* outer = GetOuterWindowInternal();
+        if (outer) {
+          outer->SetAutoActivateVRDisplayID(display->DisplayId());
+        }
+
+        
+        
+        
+        
+        break;
+      }
+    }
     
     
     if (mDoc) {
@@ -3813,6 +3835,16 @@ nsGlobalWindow::PostHandleEvent(EventChainPostVisitor& aVisitor)
       
       
       EventDispatcher::Dispatch(element, nullptr, &event, nullptr, &status);
+    }
+
+    uint32_t autoActivateVRDisplayID = 0;
+    nsGlobalWindow* outer = GetOuterWindowInternal();
+    if (outer) {
+      autoActivateVRDisplayID = outer->GetAutoActivateVRDisplayID();
+    }
+    if (autoActivateVRDisplayID) {
+      DispatchVRDisplayActivate(autoActivateVRDisplayID,
+                                VRDisplayEventReason::Navigation);
     }
   }
 
@@ -6337,7 +6369,7 @@ nsGlobalWindow::GetScrollMaxY(ErrorResult& aError)
   FORWARD_TO_OUTER_OR_THROW(GetScrollBoundaryOuter, (eSideBottom), aError, 0);
 }
 
-CSSIntPoint
+CSSPoint
 nsGlobalWindow::GetScrollXY(bool aDoFlush)
 {
   MOZ_ASSERT(IsOuterWindow());
@@ -6361,30 +6393,30 @@ nsGlobalWindow::GetScrollXY(bool aDoFlush)
     return GetScrollXY(true);
   }
 
-  return sf->GetScrollPositionCSSPixels();
+  return CSSPoint::FromAppUnits(scrollPos);
 }
 
-int32_t
+double
 nsGlobalWindow::GetScrollXOuter()
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
   return GetScrollXY(false).x;
 }
 
-int32_t
+double
 nsGlobalWindow::GetScrollX(ErrorResult& aError)
 {
   FORWARD_TO_OUTER_OR_THROW(GetScrollXOuter, (), aError, 0);
 }
 
-int32_t
+double
 nsGlobalWindow::GetScrollYOuter()
 {
   MOZ_RELEASE_ASSERT(IsOuterWindow());
   return GetScrollXY(false).y;
 }
 
-int32_t
+double
 nsGlobalWindow::GetScrollY(ErrorResult& aError)
 {
   FORWARD_TO_OUTER_OR_THROW(GetScrollYOuter, (), aError, 0);
@@ -13503,6 +13535,22 @@ nsGlobalWindow::NotifyActiveVRDisplaysChanged()
   }
 }
 
+uint32_t
+nsGlobalWindow::GetAutoActivateVRDisplayID()
+{
+  MOZ_ASSERT(IsOuterWindow());
+  uint32_t retVal = mAutoActivateVRDisplayID;
+  mAutoActivateVRDisplayID = 0;
+  return retVal;
+}
+
+void
+nsGlobalWindow::SetAutoActivateVRDisplayID(uint32_t aAutoActivateVRDisplayID)
+{
+  MOZ_ASSERT(IsOuterWindow());
+  mAutoActivateVRDisplayID = aAutoActivateVRDisplayID;
+}
+
 void
 nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
                                           mozilla::dom::VRDisplayEventReason aReason)
@@ -13510,10 +13558,14 @@ nsGlobalWindow::DispatchVRDisplayActivate(uint32_t aDisplayID,
   
   
   for (auto display : mVRDisplays) {
-    if (display->DisplayId() == aDisplayID
-        && !display->IsAnyPresenting()) {
-      
-      
+    if (display->DisplayId() == aDisplayID) {
+      if (aReason != VRDisplayEventReason::Navigation &&
+          display->IsAnyPresenting()) {
+        
+        
+        
+        continue;
+      }
 
       VRDisplayEventInit init;
       init.mBubbles = false;
