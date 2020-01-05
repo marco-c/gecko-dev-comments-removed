@@ -245,6 +245,7 @@ class BasePopup {
     this.browser.setAttribute("transparent", "true");
     this.browser.setAttribute("class", "webextension-popup-browser");
     this.browser.setAttribute("webextension-view-type", "popup");
+    this.browser.setAttribute("tooltip", "aHTMLTooltip");
 
     
     
