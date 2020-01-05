@@ -108,15 +108,6 @@ public:
   virtual nsresult OSProtocolHandlerExists(const char *aScheme,
                                                        bool *aExists) = 0;
 
-  
-
-
-
-
-
-  virtual bool GetMIMETypeFromOSForExtension(const nsACString& aExtension,
-                                             nsACString& aMIMEType);
-
 protected:
   virtual ~nsExternalHelperAppService();
 
