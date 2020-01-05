@@ -224,6 +224,12 @@ DelayedDeleteSubprocess(GeckoChildProcessHost* aSubprocess)
 }
 
 void
+GPUProcessHost::KillProcess()
+{
+  KillHard("DiagnosticKill");
+}
+
+void
 GPUProcessHost::DestroyProcess()
 {
   

@@ -134,6 +134,12 @@ public:
   bool NotifyGpuObservers(const char* aTopic);
 
   
+  void KillProcess();
+
+  
+  base::ProcessId GPUProcessPid();
+
+  
   GPUChild* GetGPUChild() {
     return mGPUChild;
   }

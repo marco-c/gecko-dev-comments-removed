@@ -96,6 +96,9 @@ public:
 
   void SetListener(Listener* aListener);
 
+  
+  void KillProcess();
+
 private:
   
   void OnChannelConnectedTask();
