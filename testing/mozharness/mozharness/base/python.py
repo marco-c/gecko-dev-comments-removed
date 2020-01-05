@@ -240,24 +240,6 @@ class VirtualenvMixin(object):
                 command += ['--no-index']
             for opt in global_options:
                 command += ["--global-option", opt]
-        elif install_method == 'easy_install':
-            if not module:
-                self.fatal("module parameter required with install_method='easy_install'")
-            if requirements:
-                
-                
-                self.install_module(requirements=requirements,
-                                    install_method='pip')
-            
-            
-            default = 'easy_install'
-            if self._is_windows():
-                
-                
-                
-                
-                default = [self.query_python_path(), self.query_python_path('easy_install-script.py')]
-            command = self.query_exe('easy_install', default=default, return_type="list")
         else:
             self.fatal("install_module() doesn't understand an install_method of %s!" % install_method)
 
