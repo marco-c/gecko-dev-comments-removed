@@ -550,15 +550,6 @@ CustomElementRegistry::Define(const nsAString& aName,
                               const ElementDefinitionOptions& aOptions,
                               ErrorResult& aRv)
 {
-  
-  
-  DocGroup* docGroup = mWindow->GetDocGroup();
-  if (!docGroup) {
-    aRv.Throw(NS_ERROR_UNEXPECTED);
-    return;
-  }
-
-  AutoCEReaction ceReaction(docGroup->CustomElementReactionsStack());
   aRv.MightThrowJSException();
 
   AutoJSAPI jsapi;

@@ -6140,6 +6140,7 @@ nsDocument::RegisterElement(JSContext* aCx, const nsAString& aType,
     return;
   }
 
+  AutoCEReaction ceReaction(this->GetDocGroup()->CustomElementReactionsStack());
   
   nsAutoString lcType;
   nsContentUtils::ASCIIToLower(aType, lcType);
