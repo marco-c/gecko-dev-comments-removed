@@ -16,6 +16,10 @@ void TrivialCtorDtorChecker::check(
       "class %0 must have trivial constructors and destructors";
   const CXXRecordDecl *Node = Result.Nodes.getNodeAs<CXXRecordDecl>("node");
 
+  if (!Node->hasDefinition()) {
+    return;
+  }
+
   
   
   
