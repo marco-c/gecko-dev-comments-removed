@@ -103,6 +103,13 @@ public:
   void Splice(const char* aStr);
 
   
+  void SplicedJSONProperty(const char* aMaybePropertyName,
+                           const char* aJsonValue)
+  {
+    Scalar(aMaybePropertyName, aJsonValue);
+  }
+
+  
   
   
   virtual void TakeAndSplice(ChunkedJSONWriteFunc* aFunc);
