@@ -706,30 +706,36 @@ nsStyleContext::SetStyleBits()
   
   
   
-  
-  
-  
 
   
   
   if (mParent && mParent->HasTextDecorationLines()) {
-    mBits |= NS_STYLE_HAS_TEXT_DECORATION_LINES;
+    AddStyleBit(NS_STYLE_HAS_TEXT_DECORATION_LINES);
   } else {
     
     if (StyleTextReset()->HasTextDecorationLines()) {
-      mBits |= NS_STYLE_HAS_TEXT_DECORATION_LINES;
+      AddStyleBit(NS_STYLE_HAS_TEXT_DECORATION_LINES);
     }
   }
 
   if ((mParent && mParent->HasPseudoElementData()) || IsPseudoElement()) {
-    mBits |= NS_STYLE_HAS_PSEUDO_ELEMENT_DATA;
+    AddStyleBit(NS_STYLE_HAS_PSEUDO_ELEMENT_DATA);
   }
 
   
   const nsStyleDisplay* disp = StyleDisplay();
   if ((mParent && mParent->IsInDisplayNoneSubtree()) ||
       disp->mDisplay == mozilla::StyleDisplay::None) {
-    mBits |= NS_STYLE_IN_DISPLAY_NONE_SUBTREE;
+    AddStyleBit(NS_STYLE_IN_DISPLAY_NONE_SUBTREE);
+  }
+
+  
+  if (mPseudoTag == nsCSSAnonBoxes::mozText && mParent &&
+      mParent->StyleVisibility()->mWritingMode !=
+        NS_STYLE_WRITING_MODE_HORIZONTAL_TB &&
+      mParent->StyleText()->mTextCombineUpright ==
+        NS_STYLE_TEXT_COMBINE_UPRIGHT_ALL) {
+    AddStyleBit(NS_STYLE_IS_TEXT_COMBINED);
   }
 }
 
@@ -793,7 +799,6 @@ nsStyleContext::ApplyStyleFixups(bool aSkipParentDisplayBasedStyleFixup)
                "incorrectly based on the old writing mode value");
     nsStyleVisibility* mutableVis = GET_UNIQUE_STYLE_DATA(Visibility);
     mutableVis->mWritingMode = NS_STYLE_WRITING_MODE_HORIZONTAL_TB;
-    AddStyleBit(NS_STYLE_IS_TEXT_COMBINED);
   }
 
   
