@@ -16,6 +16,9 @@
   text-overflow: inherit;
   overflow: inherit;
   overflow-clip-box: inherit;
+  
+
+  border-radius: inherit;
   padding: inherit;
   block-size: 100%; 
   
