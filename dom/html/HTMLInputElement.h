@@ -1486,8 +1486,8 @@ protected:
 
 
 
-  void GetSelectionRange(uint32_t* aSelectionStart,
-                         uint32_t* aSelectionEnd,
+  void GetSelectionRange(int32_t* aSelectionStart,
+                         int32_t* aSelectionEnd,
                          ErrorResult& aRv);
 
   nsCOMPtr<nsIControllers> mControllers;

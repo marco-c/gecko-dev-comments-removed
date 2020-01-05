@@ -2417,8 +2417,8 @@ public:
 
   static void GetSelectionInTextControl(mozilla::dom::Selection* aSelection,
                                         Element* aRoot,
-                                        uint32_t& aOutStartOffset,
-                                        uint32_t& aOutEndOffset);
+                                        int32_t& aOutStartOffset,
+                                        int32_t& aOutEndOffset);
 
   
 
