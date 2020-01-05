@@ -92,6 +92,12 @@ impl<T: Reflectable> Unrooted<T> {
     }
 
     
+    #[allow(unrooted_must_root)]
+    pub fn from_temporary(ptr: Temporary<T>) -> Unrooted<T> {
+        Unrooted::from_js(ptr.inner)
+    }
+
+    
     pub fn reflector<'a>(&'a self) -> &'a Reflector {
         unsafe {
             (**self.ptr).reflector()
