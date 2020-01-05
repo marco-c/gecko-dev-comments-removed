@@ -325,6 +325,9 @@ pref("devtools.webconsole.new-frontend-enabled", false);
 #endif
 
 
+pref("devtools.webconsole.use-reps-bundle", false);
+
+
 pref("devtools.sourcemap.locations.enabled", false);
 
 
@@ -359,7 +362,12 @@ pref("devtools.editor.autocomplete", true);
 pref("devtools.telemetry.tools.opened.version", "{}");
 
 
+
+#ifdef RELEASE_OR_BETA
+pref("devtools.jsonview.enabled", false);
+#else
 pref("devtools.jsonview.enabled", true);
+#endif
 
 
 pref("devtools.responsive.html.enabled", true);
