@@ -9,9 +9,6 @@
 
 #include "BasicLayers.h"
 #include "gfxPrefs.h"
-#ifdef MOZ_ENABLE_D3D9_LAYER
-# include "LayerManagerD3D9.h"
-#endif 
 #include "mozilla/BrowserElementParent.h"
 #include "mozilla/EventForwards.h"  
 #include "mozilla/ViewportFrame.h"
