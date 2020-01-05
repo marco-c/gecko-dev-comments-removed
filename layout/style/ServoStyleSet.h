@@ -161,9 +161,16 @@ public:
   
   
   
+  
   already_AddRefed<nsStyleContext>
   ResolveTransientStyle(dom::Element* aElement,
-                        mozilla::CSSPseudoElementType aPseudoType);
+                        nsIAtom* aPseudoTag,
+                        CSSPseudoElementType aPseudoType);
+
+  
+  
+  already_AddRefed<ServoComputedValues>
+  ResolveTransientServoStyle(dom::Element* aElement, nsIAtom* aPseudoTag);
 
   
   

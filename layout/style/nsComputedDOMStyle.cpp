@@ -620,7 +620,7 @@ nsComputedDOMStyle::DoGetStyleContextNoFlush(Element* aElement,
   
   
   if (ServoStyleSet* servoSet = styleSet->GetAsServo()) {
-    return servoSet->ResolveTransientStyle(aElement, type);
+    return servoSet->ResolveTransientStyle(aElement, aPseudo, type);
   }
 
   RefPtr<nsStyleContext> parentContext;
