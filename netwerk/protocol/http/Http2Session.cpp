@@ -2514,10 +2514,6 @@ Http2Session::ReadSegmentsAgain(nsAHttpSegmentReader *reader,
       return *countRead ? NS_OK : NS_BASE_STREAM_WOULD_BLOCK;
     }
 
-    if (!m0RTTStreams.Contains(stream->StreamID())) {
-      m0RTTStreams.AppendElement(stream->StreamID());
-    }
-
     
     
     count -= (mOutputQueueUsed - mOutputQueueSent);
@@ -2538,6 +2534,12 @@ Http2Session::ReadSegmentsAgain(nsAHttpSegmentReader *reader,
     
     
     *countRead += earlyDataUsed;
+  }
+
+  if (mAttemptingEarlyData && !m0RTTStreams.Contains(stream->StreamID())) {
+    LOG3(("Http2Session::ReadSegmentsAgain adding stream %d to m0RTTStreams\n",
+          stream->StreamID()));
+    m0RTTStreams.AppendElement(stream->StreamID());
   }
 
   
