@@ -217,8 +217,19 @@ const DownloadsIndicatorView = {
     }
     this._initialized = true;
 
+    this._setIndicatorType();
     window.addEventListener("unload", this.onWindowUnload);
     DownloadsCommon.getIndicatorData(window).addView(this);
+  },
+
+  _setIndicatorType() {
+    
+    
+    let node = CustomizableUI.getWidget("downloads-button")
+                             .forWindow(window).node;
+
+    node.classList.toggle("withProgressBar",
+                          !DownloadsCommon.arrowStyledIndicator);
   },
 
   
@@ -415,17 +426,36 @@ const DownloadsIndicatorView = {
 
 
 
+
+
+
   set percentComplete(aValue) {
+    
+    
+    
+    
+    
+    const PROGRESS_ICON_EMPTY_HEIGHT_PERCENT = 35;
+    const PROGRESS_ICON_FULL_HEIGHT_PERCENT = 87;
+
     if (!this._operational) {
       return this._percentComplete;
     }
 
     if (this._percentComplete !== aValue) {
       this._percentComplete = aValue;
-      if (this._percentComplete >= 0)
+      this._refreshAttention();
+
+      if (this._percentComplete >= 0) {
         this.indicator.setAttribute("progress", "true");
-      else
+        this._progressIcon.style.height = (this._percentComplete *
+          (PROGRESS_ICON_FULL_HEIGHT_PERCENT -
+           PROGRESS_ICON_EMPTY_HEIGHT_PERCENT) / 100 +
+           PROGRESS_ICON_EMPTY_HEIGHT_PERCENT) + "%";
+      } else {
         this.indicator.removeAttribute("progress");
+        this._progressIcon.style.height = "0";
+      }
       
       
       this._indicatorProgress.setAttribute("value", Math.max(aValue, 0));
@@ -463,29 +493,39 @@ const DownloadsIndicatorView = {
     if (!this._operational) {
       return this._attention;
     }
-
     if (this._attention != aValue) {
       this._attention = aValue;
+      this._refreshAttention();
+    }
+    return this._attention;
+  },
 
-      
-      
-      let widgetGroup = CustomizableUI.getWidget("downloads-button");
-      let inMenu = widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL;
+  _refreshAttention() {
+    
+    
+    let widgetGroup = CustomizableUI.getWidget("downloads-button");
+    let inMenu = widgetGroup.areaType == CustomizableUI.TYPE_MENU_PANEL;
 
-      if (aValue == DownloadsCommon.ATTENTION_NONE) {
-        this.indicator.removeAttribute("attention");
-        if (inMenu) {
-          gMenuButtonBadgeManager.removeBadge(gMenuButtonBadgeManager.BADGEID_DOWNLOAD);
-        }
-      } else {
-        this.indicator.setAttribute("attention", aValue);
-        if (inMenu) {
-          let badgeClass = "download-" + aValue;
-          gMenuButtonBadgeManager.addBadge(gMenuButtonBadgeManager.BADGEID_DOWNLOAD, badgeClass);
-        }
+    
+    
+    let suppressAttention = DownloadsCommon.arrowStyledIndicator && !inMenu &&
+      this._attention == DownloadsCommon.ATTENTION_SUCCESS &&
+      this._percentComplete >= 0;
+
+    if (suppressAttention || this._attention == DownloadsCommon.ATTENTION_NONE) {
+      this.indicator.removeAttribute("attention");
+      if (inMenu) {
+        gMenuButtonBadgeManager.removeBadge(
+                                      gMenuButtonBadgeManager.BADGEID_DOWNLOAD);
+      }
+    } else {
+      this.indicator.setAttribute("attention", this._attention);
+      if (inMenu) {
+        let badgeClass = "download-" + this._attention;
+        gMenuButtonBadgeManager.addBadge(
+                          gMenuButtonBadgeManager.BADGEID_DOWNLOAD, badgeClass);
       }
     }
-    return aValue;
   },
   _attention: DownloadsCommon.ATTENTION_NONE,
 
@@ -539,6 +579,7 @@ const DownloadsIndicatorView = {
   _indicator: null,
   __indicatorCounter: null,
   __indicatorProgress: null,
+  __progressIcon: null,
 
   
 
@@ -576,6 +617,11 @@ const DownloadsIndicatorView = {
       (this.__indicatorProgress = document.getElementById("downloads-indicator-progress"));
   },
 
+  get _progressIcon() {
+    return this.__progressIcon ||
+      (this.__progressIcon = document.getElementById("downloads-indicator-progress-icon"));
+  },
+
   get notifier() {
     return this._notifier ||
       (this._notifier = document.getElementById("downloads-notification-anchor"));
@@ -583,6 +629,7 @@ const DownloadsIndicatorView = {
 
   _onCustomizedAway() {
     this._indicator = null;
+    this.__progressIcon = null;
     this.__indicatorCounter = null;
     this.__indicatorProgress = null;
   },

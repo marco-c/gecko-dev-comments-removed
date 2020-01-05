@@ -151,6 +151,13 @@ this.DownloadsCommon = {
 
 
 
+  arrowStyledIndicator: true,
+
+  
+
+
+
+
   get strings() {
     let strings = {};
     let sb = Services.strings.createBundle(kDownloadsStringBundleUrl);
