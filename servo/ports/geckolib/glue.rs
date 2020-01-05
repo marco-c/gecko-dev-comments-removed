@@ -3,6 +3,7 @@
 
 
 use app_units::Au;
+use atomic_refcell::AtomicRefMut;
 use cssparser::Parser;
 use cssparser::ToCss as ParserToCss;
 use env_logger;
@@ -16,7 +17,6 @@ use std::mem::transmute;
 use std::ptr;
 use std::sync::{Arc, Mutex};
 use style::arc_ptr_eq;
-use style::atomic_refcell::AtomicRefMut;
 use style::context::{QuirksMode, ReflowGoal, SharedStyleContext, StyleContext};
 use style::context::{ThreadLocalStyleContext, ThreadLocalStyleContextCreationInfo};
 use style::data::{ElementData, ElementStyles, RestyleData};
