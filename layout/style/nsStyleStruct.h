@@ -1337,8 +1337,8 @@ public:
   nsStyleSides   mBorderImageOutset;  
 
   uint8_t        mBorderImageFill;    
-  mozilla::StyleBorderImageRepeat mBorderImageRepeatH; 
-  mozilla::StyleBorderImageRepeat mBorderImageRepeatV; 
+  uint8_t        mBorderImageRepeatH; 
+  uint8_t        mBorderImageRepeatV; 
   mozilla::StyleFloatEdge mFloatEdge; 
   mozilla::StyleBoxDecorationBreak mBoxDecorationBreak; 
 
