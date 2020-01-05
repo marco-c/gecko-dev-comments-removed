@@ -105,7 +105,32 @@ SharedRGBImage::GetTextureClient(KnowsCompositor* aForwarder)
 already_AddRefed<gfx::SourceSurface>
 SharedRGBImage::GetAsSourceSurface()
 {
-  return nullptr;
+  NS_ASSERTION(NS_IsMainThread(), "Must be main thread");
+
+  if (mSourceSurface) {
+    RefPtr<gfx::SourceSurface> surface(mSourceSurface);
+    return surface.forget();
+  }
+
+  RefPtr<gfx::SourceSurface> surface;
+  {
+    
+    
+    
+    
+    BufferTextureData* decoded_buffer =
+      mTextureClient->GetInternalData()->AsBufferTextureData();
+    RefPtr<gfx::DrawTarget> drawTarget = decoded_buffer->BorrowDrawTarget();
+
+    if (!drawTarget) {
+      return nullptr;
+    }
+
+    surface = drawTarget->Snapshot();
+  }
+
+  mSourceSurface = surface;
+  return surface.forget();
 }
 
 } 
