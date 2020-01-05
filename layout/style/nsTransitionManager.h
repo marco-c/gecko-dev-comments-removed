@@ -167,18 +167,6 @@ public:
     
     
     
-    
-    
-    
-    if (mTimeline) {
-      mTimeline->NotifyAnimationUpdated(*this);
-    }
-
-    
-    
-    
-    
-    
     mOwningElement = OwningElementRef();
   }
 

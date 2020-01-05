@@ -787,12 +787,21 @@ Animation::CancelNoUpdate()
   mHoldTime.SetNull();
   mStartTime.SetNull();
 
-  UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
-
   if (mTimeline) {
     mTimeline->RemoveAnimation(this);
   }
   MaybeQueueCancelEvent(activeTime);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  UpdateTiming(SeekFlag::NoSeek, SyncNotifyFlag::Async);
 }
 
 bool

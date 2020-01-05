@@ -110,7 +110,6 @@ public:
   void PauseFromStyle();
   void CancelFromStyle() override
   {
-
     
     
     
