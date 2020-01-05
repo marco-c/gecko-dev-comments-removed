@@ -40,31 +40,33 @@ namespace mozilla {
 
 struct nsFrameContinuationState : public nsVoidPtrHashKey
 {
-  explicit nsFrameContinuationState(const void *aFrame) : nsVoidPtrHashKey(aFrame) {}
+  explicit nsFrameContinuationState(const void *aFrame)
+    : nsVoidPtrHashKey(aFrame)
+  {}
 
   
 
 
 
-  nsIFrame* mFirstVisualFrame;
+  nsIFrame* mFirstVisualFrame { nullptr };
 
   
 
 
 
-  uint32_t mFrameCount;
+  uint32_t mFrameCount { 0 };
 
   
 
 
 
-  bool mHasContOnPrevLines;
+  bool mHasContOnPrevLines { false };
 
   
 
 
 
-  bool mHasContOnNextLines;
+  bool mHasContOnNextLines { false };
 };
 
 
