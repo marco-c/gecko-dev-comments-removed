@@ -100,9 +100,9 @@ add_task(function* test_simpleQuery() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  
+  let resultIndexHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX");
   let resultTypeHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE");
-  
+  resultIndexHist.clear();
   resultTypeHist.clear();
 
   let search_hist = getSearchCountsHistogram();
@@ -130,8 +130,8 @@ add_task(function* test_simpleQuery() {
   checkEvents(events, [["navigation", "search", "urlbar", "enter", {engine: "other-MozSearch"}]]);
 
   
-  
-  
+  let resultIndexes = resultIndexHist.snapshot();
+  checkHistogramResults(resultIndexes, 0, "FX_URLBAR_SELECTED_RESULT_INDEX");
 
   let resultTypes = resultTypeHist.snapshot();
   checkHistogramResults(resultTypes,
@@ -145,9 +145,9 @@ add_task(function* test_searchAlias() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  
+  let resultIndexHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX");
   let resultTypeHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE");
-  
+  resultIndexHist.clear();
   resultTypeHist.clear();
 
   let search_hist = getSearchCountsHistogram();
@@ -175,8 +175,8 @@ add_task(function* test_searchAlias() {
   checkEvents(events, [["navigation", "search", "urlbar", "alias", {engine: "other-MozSearch"}]]);
 
   
-  
-  
+  let resultIndexes = resultIndexHist.snapshot();
+  checkHistogramResults(resultIndexes, 0, "FX_URLBAR_SELECTED_RESULT_INDEX");
 
   let resultTypes = resultTypeHist.snapshot();
   checkHistogramResults(resultTypes,
@@ -190,9 +190,9 @@ add_task(function* test_oneOff() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  
+  let resultIndexHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX");
   let resultTypeHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE");
-  
+  resultIndexHist.clear();
   resultTypeHist.clear();
 
   let search_hist = getSearchCountsHistogram();
@@ -223,8 +223,8 @@ add_task(function* test_oneOff() {
   checkEvents(events, [["navigation", "search", "urlbar", "oneoff", {engine: "other-MozSearch"}]]);
 
   
-  
-  
+  let resultIndexes = resultIndexHist.snapshot();
+  checkHistogramResults(resultIndexes, 0, "FX_URLBAR_SELECTED_RESULT_INDEX");
 
   let resultTypes = resultTypeHist.snapshot();
   checkHistogramResults(resultTypes,
@@ -238,9 +238,9 @@ add_task(function* test_suggestion() {
   
   Services.telemetry.clearScalars();
   Services.telemetry.clearEvents();
-  
+  let resultIndexHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_INDEX");
   let resultTypeHist = Services.telemetry.getHistogramById("FX_URLBAR_SELECTED_RESULT_TYPE");
-  
+  resultIndexHist.clear();
   resultTypeHist.clear();
 
   let search_hist = getSearchCountsHistogram();
@@ -283,8 +283,8 @@ add_task(function* test_suggestion() {
   checkEvents(events, [["navigation", "search", "urlbar", "suggestion", {engine: searchEngineId}]]);
 
   
-  
-  
+  let resultIndexes = resultIndexHist.snapshot();
+  checkHistogramResults(resultIndexes, 3, "FX_URLBAR_SELECTED_RESULT_INDEX");
 
   let resultTypes = resultTypeHist.snapshot();
   checkHistogramResults(resultTypes,
