@@ -5,10 +5,10 @@
 
 
 use devtools_traits::PreciseTime;
-use rustc_serialize::json;
+use serde_json::Value;
 use std::any::Any;
 use std::cell::{Cell, RefCell};
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::mem::replace;
 use std::net::TcpStream;
 use std::sync::{Arc, Mutex};
@@ -26,7 +26,7 @@ pub trait Actor: Any + ActorAsAny {
     fn handle_message(&self,
                       registry: &ActorRegistry,
                       msg_type: &str,
-                      msg: &json::Object,
+                      msg: &BTreeMap<String, Value>,
                       stream: &mut TcpStream) -> Result<ActorMessageStatus, ()>;
     fn name(&self) -> String;
 }
@@ -150,7 +150,7 @@ impl ActorRegistry {
     
     
     pub fn handle_message(&mut self,
-                          msg: &json::Object,
+                          msg: &BTreeMap<String, Value>,
                           stream: &mut TcpStream)
                           -> Result<(), ()> {
         let to = msg.get("to").unwrap().as_string().unwrap();
