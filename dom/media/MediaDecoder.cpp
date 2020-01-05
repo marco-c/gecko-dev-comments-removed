@@ -997,9 +997,6 @@ MediaDecoder::FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
   mInfo = aInfo.forget();
 
   Invalidate();
-  if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
-    mOwner->FirstFrameLoaded();
-  }
 
   
   mResource->EnsureCacheUpToDate();
@@ -1015,6 +1012,12 @@ MediaDecoder::FirstFrameLoaded(nsAutoPtr<MediaInfo> aInfo,
   
   
   NotifySuspendedStatusChanged();
+
+  
+  
+  if (aEventVisibility != MediaDecoderEventVisibility::Suppressed) {
+    mOwner->FirstFrameLoaded();
+  }
 }
 
 void
