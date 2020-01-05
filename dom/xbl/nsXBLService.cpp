@@ -418,7 +418,17 @@ public:
     nsIPresShell* presShell = mElement->OwnerDoc()->GetShell();
     ServoStyleSet* servoSet = presShell ? presShell->StyleSet()->GetAsServo() : nullptr;
     if (servoSet) {
-      servoSet->StyleNewChildren(mElement);
+      
+      
+      
+      
+      
+      
+      if (MOZ_UNLIKELY(!mElement->HasServoData())) {
+        servoSet->StyleNewSubtree(mElement);
+      } else {
+        servoSet->StyleNewChildren(mElement);
+      }
     }
   }
 
