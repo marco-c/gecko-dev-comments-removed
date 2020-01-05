@@ -19,7 +19,7 @@
 #ifndef wasm_binary_format_h
 #define wasm_binary_format_h
 
-#include "wasm/WasmTypes.h"
+#include "wasm/WasmCode.h"
 
 namespace js {
 namespace wasm {
@@ -629,6 +629,44 @@ EncodeLocalEntries(Encoder& d, const ValTypeVector& locals);
 
 MOZ_MUST_USE bool
 DecodeLocalEntries(Decoder& d, ModuleKind kind, ValTypeVector* locals);
+
+
+
+
+
+
+
+
+
+struct ModuleEnvironment
+{
+    ModuleKind                kind;
+    MemoryUsage               memoryUsage;
+    mozilla::Atomic<uint32_t> minMemoryLength;
+    Maybe<uint32_t>           maxMemoryLength;
+
+    SigWithIdVector           sigs;
+    SigWithIdPtrVector        funcSigs;
+    Uint32Vector              funcImportGlobalDataOffsets;
+    GlobalDescVector          globals;
+    TableDescVector           tables;
+    Uint32Vector              asmJSSigToTableIndex;
+
+    explicit ModuleEnvironment(ModuleKind kind = ModuleKind::Wasm)
+      : kind(kind),
+        memoryUsage(MemoryUsage::None),
+        minMemoryLength(0)
+    {}
+
+    bool isAsmJS() const {
+        return kind == ModuleKind::AsmJS;
+    }
+    bool funcIsImport(uint32_t funcIndex) const {
+        return funcIndex < funcImportGlobalDataOffsets.length();
+    }
+};
+
+typedef UniquePtr<ModuleEnvironment> UniqueModuleEnvironment;
 
 
 

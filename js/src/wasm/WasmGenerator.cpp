@@ -24,6 +24,7 @@
 #include <algorithm>
 
 #include "wasm/WasmBaselineCompile.h"
+#include "wasm/WasmCompile.h"
 #include "wasm/WasmIonCompile.h"
 #include "wasm/WasmStubs.h"
 
@@ -99,7 +100,7 @@ ModuleGenerator::~ModuleGenerator()
 }
 
 bool
-ModuleGenerator::init(UniqueModuleGeneratorData shared, const CompileArgs& args,
+ModuleGenerator::init(UniqueModuleEnvironment shared, const CompileArgs& args,
                       Metadata* maybeAsmJSMetadata)
 {
     shared_ = Move(shared);
