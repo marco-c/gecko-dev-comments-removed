@@ -31,40 +31,24 @@ pub enum ExceptionHandling {
 }
 
 
-#[derive(JSTraceable, PartialEq)]
-pub struct CallbackFunction {
-    object: CallbackObject,
+
+
+#[derive(Default, JSTraceable)]
+pub struct CallbackObject {
+    
+    callback: Heap<*mut JSObject>,
 }
 
-impl CallbackFunction {
-    
-    pub fn new() -> CallbackFunction {
-        CallbackFunction {
-            object: CallbackObject {
-                callback: Heap::default(),
-            },
+impl CallbackObject {
+    fn new() -> CallbackObject {
+        CallbackObject {
+            callback: Heap::default(),
         }
     }
 
-    
-    
-    pub fn init(&mut self, callback: *mut JSObject) {
-        self.object.callback.set(callback);
+    pub fn get(&self) -> *mut JSObject {
+        self.callback.get()
     }
-}
-
-
-#[derive(JSTraceable, PartialEq)]
-pub struct CallbackInterface {
-    object: CallbackObject,
-}
-
-
-
-#[derive(JSTraceable)]
-struct CallbackObject {
-    
-    callback: Heap<*mut JSObject>,
 }
 
 impl PartialEq for CallbackObject {
@@ -75,35 +59,63 @@ impl PartialEq for CallbackObject {
 
 
 
+
 pub trait CallbackContainer {
     
     fn new(callback: *mut JSObject) -> Rc<Self>;
     
-    fn callback(&self) -> *mut JSObject;
+    fn callback_holder(&self) -> &CallbackObject;
+    
+    fn callback(&self) -> *mut JSObject {
+        self.callback_holder().get()
+    }
 }
 
-impl CallbackInterface {
-    
-    pub fn callback(&self) -> *mut JSObject {
-        self.object.callback.get()
-    }
+
+
+#[derive(JSTraceable, PartialEq)]
+pub struct CallbackFunction {
+    object: CallbackObject,
 }
 
 impl CallbackFunction {
     
-    pub fn callback(&self) -> *mut JSObject {
-        self.object.callback.get()
+    pub fn new() -> CallbackFunction {
+        CallbackFunction {
+            object: CallbackObject::new(),
+        }
     }
+
+    
+    pub fn callback_holder(&self) -> &CallbackObject {
+        &self.object
+    }
+
+    
+    
+    pub fn init(&mut self, callback: *mut JSObject) {
+        self.object.callback.set(callback);
+    }
+}
+
+
+
+#[derive(JSTraceable, PartialEq)]
+pub struct CallbackInterface {
+    object: CallbackObject,
 }
 
 impl CallbackInterface {
     
     pub fn new() -> CallbackInterface {
         CallbackInterface {
-            object: CallbackObject {
-                callback: Heap::default(),
-            },
+            object: CallbackObject::new(),
         }
+    }
+
+    
+    pub fn callback_holder(&self) -> &CallbackObject {
+        &self.object
     }
 
     
@@ -116,7 +128,7 @@ impl CallbackInterface {
     
     pub fn get_callable_property(&self, cx: *mut JSContext, name: &str) -> Fallible<JSVal> {
         rooted!(in(cx) let mut callable = UndefinedValue());
-        rooted!(in(cx) let obj = self.callback());
+        rooted!(in(cx) let obj = self.callback_holder().get());
         unsafe {
             let c_name = CString::new(name).unwrap();
             if !JS_GetProperty(cx, obj.handle(), c_name.as_ptr(), callable.handle_mut()) {
@@ -133,6 +145,7 @@ impl CallbackInterface {
 }
 
 
+
 pub fn wrap_call_this_object<T: DomObject>(cx: *mut JSContext,
                                            p: &T,
                                            rval: MutableHandleObject) {
@@ -145,6 +158,7 @@ pub fn wrap_call_this_object<T: DomObject>(cx: *mut JSContext,
         }
     }
 }
+
 
 
 
