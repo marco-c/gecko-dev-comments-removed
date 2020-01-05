@@ -10846,7 +10846,9 @@ nsGlobalWindow::GetLocalStorage(ErrorResult& aError)
       }
     }
 
-    MOZ_DIAGNOSTIC_ASSERT((principal->GetPrivateBrowsingId() > 0) == IsPrivateBrowsing());
+    
+    
+    
 
     nsCOMPtr<nsIDOMStorage> storage;
     aError = storageManager->CreateStorage(AsInner(), principal, documentURI,
