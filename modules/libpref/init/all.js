@@ -2915,6 +2915,8 @@ pref("dom.ipc.plugins.asyncdrawing.enabled", false);
 #else
 
 pref("dom.ipc.plugins.asyncdrawing.enabled", true);
+
+pref("dom.ipc.plugins.forcedirect.enabled", true);
 #endif
 
 #ifdef NIGHTLY_BUILD
@@ -2922,6 +2924,9 @@ pref("dom.ipc.processCount", 2);
 #else
 pref("dom.ipc.processCount", 1);
 #endif
+
+
+pref("dom.ipc.processCount.extension", 1);
 
 
 pref("svg.disabled", false);
