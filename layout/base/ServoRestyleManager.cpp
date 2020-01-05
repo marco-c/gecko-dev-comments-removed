@@ -323,10 +323,6 @@ ServoRestyleManager::ProcessPendingRestyles()
     return;
   }
 
-  if (!HasPendingRestyles()) {
-    return;
-  }
-
   
   
   
@@ -335,10 +331,11 @@ ServoRestyleManager::ProcessPendingRestyles()
   ServoStyleSet* styleSet = StyleSet();
   nsIDocument* doc = PresContext()->Document();
 
+  mInStyleRefresh = true;
+
   
-  if (HasPendingRestyles()) {
-    mInStyleRefresh = true;
-    styleSet->StyleDocument();
+  if (styleSet->StyleDocument()) {
+
     PresContext()->EffectCompositor()->ClearElementsToRestyle();
 
     
@@ -377,8 +374,9 @@ ServoRestyleManager::ProcessPendingRestyles()
     mReentrantChanges = nullptr;
 
     styleSet->AssertTreeIsClean();
-    mInStyleRefresh = false;
   }
+
+  mInStyleRefresh = false;
 
   IncrementRestyleGeneration();
 
