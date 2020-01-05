@@ -123,8 +123,7 @@ pub trait ParallelPreorderDomTraversal : PreorderDomTraversal {
             
             self.process(node);
 
-            
-            let child_count = node.children().count();
+            let child_count = node.children_count();
 
             
             {
