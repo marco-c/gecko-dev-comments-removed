@@ -828,6 +828,8 @@ bool WebrtcVideoConduit::GetRTCPReceiverReport(DOMHighResTimeStamp* timestamp,
     int64_t rtt = mRecvStream->GetRtt();
     if (rtt >= 0) {
       *rttMs = rtt;
+    } else {
+      *rttMs = 0;
     }
   }
   return true;
@@ -1175,16 +1177,24 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
     
     
     
-    auto ssrc = mRecvStreamConfig.rtp.remote_ssrc;
-    do {
+    
+    MOZ_ASSERT(!mSendStreamConfig.rtp.ssrcs.empty());
+    auto ssrc = mSendStreamConfig.rtp.ssrcs.front();
+    Unused << NS_WARN_IF(ssrc == mRecvStreamConfig.rtp.remote_ssrc);
+
+    while (ssrc == mRecvStreamConfig.rtp.remote_ssrc || ssrc == 0) {
       SECStatus rv = PK11_GenerateRandom(reinterpret_cast<unsigned char*>(&ssrc), sizeof(ssrc));
       if (rv != SECSuccess) {
         return kMediaConduitUnknownError;
       }
-    } while (ssrc == mRecvStreamConfig.rtp.remote_ssrc || ssrc == 0);
+    }
     
 
     mRecvStreamConfig.rtp.local_ssrc = ssrc;
+    CSFLogDebug(logTag, "%s (%p): Local SSRC 0x%08x (of %u), remote SSRC 0x%08x",
+                __FUNCTION__, (void*) this, ssrc,
+                (uint32_t) mSendStreamConfig.rtp.ssrcs.size(),
+                mRecvStreamConfig.rtp.remote_ssrc);
 
     
     mRecvCodecList.SwapElements(recv_codecs);
