@@ -71,6 +71,17 @@ pref("extensions.screenshots.system-disabled", true);
 pref("extensions.autoDisableScopes", 15);
 
 
+
+pref("extensions.geckoProfiler.symbols.url", "http://symbols.mozilla.org/");
+pref("extensions.geckoProfiler.acceptedExtensionIds", "geckoprofiler@mozilla.com");
+#if defined(XP_LINUX) || defined (XP_MACOSX)
+pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,remoteBreakpad,nm");
+#else // defined(XP_WIN)
+pref("extensions.geckoProfiler.getSymbolRules", "localBreakpad,remoteBreakpad");
+#endif
+
+
+
 pref("extensions.webextensions.base-content-security-policy", "script-src 'self' https://* moz-extension: blob: filesystem: 'unsafe-eval' 'unsafe-inline'; object-src 'self' https://* moz-extension: blob: filesystem:;");
 pref("extensions.webextensions.default-content-security-policy", "script-src 'self'; object-src 'self';");
 
