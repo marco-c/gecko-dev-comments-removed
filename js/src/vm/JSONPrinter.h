@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 
+#include "jsdtoa.h"
+
 #include "mozilla/TimeStamp.h"
 
 #include "js/TypeDecls.h"
@@ -22,6 +24,7 @@ class JSONPrinter
     int indentLevel_;
     bool first_;
     GenericPrinter& out_;
+    DtoaState* dtoaState_;
 
     void indent();
 
@@ -29,8 +32,15 @@ class JSONPrinter
     explicit JSONPrinter(GenericPrinter& out)
       : indentLevel_(0),
         first_(true),
-        out_(out)
-    { }
+        out_(out),
+        dtoaState_(nullptr)
+    {
+    }
+
+    ~JSONPrinter() {
+        if (dtoaState_)
+            DestroyDtoaState(dtoaState_);
+    }
 
     void beginObject();
     void beginObjectProperty(const char* name);
@@ -47,9 +57,10 @@ class JSONPrinter
 
     
     
-    
     enum TimePrecision { SECONDS, MILLISECONDS };
     void property(const char* name, const mozilla::TimeDuration& dur, TimePrecision precision);
+
+    void floatProperty(const char* name, double value, size_t precision);
 
     void beginStringProperty(const char* name);
     void endStringProperty();

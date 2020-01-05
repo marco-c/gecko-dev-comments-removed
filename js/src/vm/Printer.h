@@ -94,8 +94,10 @@ class Sprinter final : public GenericPrinter
 
     void checkInvariants() const;
 
-    const char* string() const;
-    const char* stringEnd() const;
+    const char* string() const { return base; }
+    const char* stringEnd() const { return base + offset; }
+    char* release();
+
     
     char* stringAt(ptrdiff_t off) const;
     
