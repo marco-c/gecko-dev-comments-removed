@@ -579,7 +579,9 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     video_stream.max_framerate = mSendingFramerate;
     auto& simulcastEncoding = codecConfig->mSimulcastEncodings[idx];
     
-    video_stream.temporal_layer_thresholds_bps.clear();
+    
+    
+    video_stream.temporal_layer_thresholds_bps.resize(streamCount > 1 ? 3 : 1);
     
     video_stream.max_bitrate_bps = MinIgnoreZero(simulcastEncoding.constraints.maxBr,
                                                  kDefaultMaxBitrate_bps);
