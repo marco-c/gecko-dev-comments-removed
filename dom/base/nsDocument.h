@@ -920,7 +920,7 @@ public:
   void DecreaseEventSuppression() {
     MOZ_ASSERT(mEventsSuppressed);
     --mEventsSuppressed;
-    MaybeRescheduleAnimationFrameNotifications();
+    UpdateFrameRequestCallbackSchedulingState();
   }
 
   virtual nsIDocument* GetTemplateContentsOwner() override;
@@ -1534,12 +1534,6 @@ private:
   
   void EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
                                        bool aUpdateCSSLoader);
-
-  
-  void RevokeAnimationFrameNotifications();
-  
-  
-  void MaybeRescheduleAnimationFrameNotifications();
 
   void ClearAllBoxObjects();
 

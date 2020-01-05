@@ -2967,6 +2967,13 @@ protected:
     return mId;
   }
 
+  
+  
+  
+  
+  
+  void UpdateFrameRequestCallbackSchedulingState(nsIPresShell* aOldShell = nullptr);
+
   nsCString mReferrer;
   nsString mLastModified;
 
@@ -3189,6 +3196,11 @@ protected:
 
   
   bool mHasScrollLinkedEffect : 1;
+
+  
+  
+  
+  bool mFrameRequestCallbacksScheduled : 1;
 
   
   nsCompatibility mCompatMode;
