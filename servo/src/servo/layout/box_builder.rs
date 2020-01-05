@@ -7,6 +7,7 @@ import base::{bk_block, bk_inline, bk_intrinsic, bk_text, box};
 import base::{box_kind, btree, node_methods, ntree, rd_tree_ops};
 import base::wr_tree_ops;
 import style::style::{di_block, di_inline, style_methods};
+import text::text_box;
 import util::tree;
 
 export box_builder_methods;
@@ -118,9 +119,9 @@ impl box_builder_priv for node {
     "]
     fn determine_box_kind() -> box_kind {
         alt self.rd({ |n| n.kind }) {
-            nk_img(size) { bk_intrinsic(@size) }
-            nk_div       { bk_block            }
-            nk_text(s)   { bk_text(s)          }
+            nk_img(size) { bk_intrinsic(@size)   }
+            nk_div       { bk_block              }
+            nk_text(s)   { bk_text(@text_box(s)) }
         }
     }
 }
