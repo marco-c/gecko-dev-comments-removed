@@ -641,6 +641,21 @@ WebAuthentication::U2FAuthGetAssertion(const RefPtr<AssertionRequest>& aRequest,
   aRequest->SetFailure(NS_ERROR_DOM_NOT_ALLOWED_ERR);
 }
 
+nsresult
+WebAuthentication::RelaxSameOrigin(const nsAString& aInputRpId,
+                                    nsACString& aRelaxedRpId)
+{
+  MOZ_ASSERT(mParent);
+  nsCOMPtr<nsIDocument> document = mParent->GetDoc();
+  if (!document || !document->IsHTMLDocument()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  
+  aRelaxedRpId.Assign(NS_ConvertUTF16toUTF8(aInputRpId));
+  return NS_OK;
+}
+
 already_AddRefed<Promise>
 WebAuthentication::MakeCredential(JSContext* aCx, const Account& aAccount,
                   const Sequence<ScopedCredentialParameters>& aCryptoParameters,
@@ -702,9 +717,10 @@ WebAuthentication::MakeCredential(JSContext* aCx, const Account& aAccount,
     
     
 
-    
-
-    rpId.Assign(NS_ConvertUTF16toUTF8(aOptions.mRpId.Value()));
+    if (NS_FAILED(RelaxSameOrigin(aOptions.mRpId.Value(), rpId))) {
+      promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+      return promise.forget();
+    }
   }
 
   CryptoBuffer rpIdHash;
@@ -901,9 +917,10 @@ WebAuthentication::GetAssertion(const ArrayBufferViewOrArrayBuffer& aChallenge,
     
     
 
-    
-
-    rpId.Assign(NS_ConvertUTF16toUTF8(aOptions.mRpId.Value()));
+    if (NS_FAILED(RelaxSameOrigin(aOptions.mRpId.Value(), rpId))) {
+      promise->MaybeReject(NS_ERROR_DOM_SECURITY_ERR);
+      return promise.forget();
+    }
   }
 
   CryptoBuffer rpIdHash;
