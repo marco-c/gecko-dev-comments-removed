@@ -44,6 +44,7 @@ user_pref("media.preload.auto", 3);
 user_pref("media.cache_size", 1000);
 user_pref("media.volume_scale", "0.01");
 user_pref("media.test.dumpDebugInfo", true);
+user_pref("media.dormant-on-pause-timeout-ms", -1); 
 user_pref("security.warn_viewing_mixed", false);
 user_pref("app.update.enabled", false);
 user_pref("app.update.staging.enabled", false);
