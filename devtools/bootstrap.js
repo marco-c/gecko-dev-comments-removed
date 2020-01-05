@@ -12,18 +12,6 @@ const Ci = Components.interfaces;
 const {Services} = Cu.import("resource://gre/modules/Services.jsm", {});
 const {NetUtil} = Cu.import("resource://gre/modules/NetUtil.jsm", {});
 
-let prefs = {
-  
-  "browser.dom.window.dump.enabled": true,
-  
-  "devtools.chrome.enabled": true,
-  "devtools.debugger.remote-enabled": true,
-  
-  "devtools.debugger.prompt-connection": false,
-};
-
-
-let originalPrefValues = {};
 
 let listener;
 
@@ -283,18 +271,6 @@ function startup(data) {
   });
   listener.start();
 
-  
-  originalPrefValues = {};
-  for (let name in prefs) {
-    let value = prefs[name];
-    let userValue = Services.prefs.getBoolPref(name);
-    
-    if (userValue != value) {
-      Services.prefs.setBoolPref(name, value);
-      originalPrefValues[name] = userValue;
-    }
-  }
-
   reload();
 }
 function shutdown(data, reason) {
@@ -305,15 +281,6 @@ function shutdown(data, reason) {
 
   listener.stop();
   listener = null;
-
-  
-  for (let name in originalPrefValues) {
-    let userValue = Services.prefs.getBoolPref(name);
-    
-    if (userValue == prefs[name]) {
-      Services.prefs.setBoolPref(name, originalPrefValues[name]);
-    }
-  }
 
   unload("disable");
 }
