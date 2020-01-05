@@ -4,7 +4,7 @@
 
 
 
-use dom::bindings::global::GlobalRef;
+use dom::bindings::global::{GlobalRef, GlobalRoot, global_root_from_reflector};
 use dom::bindings::js::Root;
 use js::jsapi::{HandleObject, JSContext, JSObject};
 use std::cell::UnsafeCell;
@@ -75,4 +75,9 @@ pub trait Reflectable {
     fn reflector(&self) -> &Reflector;
     
     fn init_reflector(&mut self, obj: *mut JSObject);
+
+    
+    fn global(&self) -> GlobalRoot where Self: Sized {
+        global_root_from_reflector(self)
+    }
 }

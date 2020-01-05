@@ -44,17 +44,6 @@ pub enum GlobalRoot {
     Worker(Root<WorkerGlobalScope>),
 }
 
-
-
-#[derive(JSTraceable, HeapSizeOf)]
-#[must_root]
-pub enum GlobalField {
-    
-    Window(JS<window::Window>),
-    
-    Worker(JS<WorkerGlobalScope>),
-}
-
 impl<'a> GlobalRef<'a> {
     
     
@@ -269,25 +258,6 @@ impl GlobalRoot {
         match *self {
             GlobalRoot::Window(ref window) => GlobalRef::Window(window.r()),
             GlobalRoot::Worker(ref worker) => GlobalRef::Worker(worker.r()),
-        }
-    }
-}
-
-impl GlobalField {
-    
-    #[allow(unrooted_must_root)]
-    pub fn from_rooted(global: &GlobalRef) -> GlobalField {
-        match *global {
-            GlobalRef::Window(window) => GlobalField::Window(JS::from_ref(window)),
-            GlobalRef::Worker(worker) => GlobalField::Worker(JS::from_ref(worker)),
-        }
-    }
-
-    
-    pub fn root(&self) -> GlobalRoot {
-        match *self {
-            GlobalField::Window(ref window) => GlobalRoot::Window(Root::from_ref(window)),
-            GlobalField::Worker(ref worker) => GlobalRoot::Worker(Root::from_ref(worker)),
         }
     }
 }
