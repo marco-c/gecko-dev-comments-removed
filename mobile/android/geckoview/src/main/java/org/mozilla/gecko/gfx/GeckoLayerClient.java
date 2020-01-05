@@ -267,7 +267,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         
         
 
-        post(new Runnable() {
+        mView.post(new Runnable() {
             @Override
             public void run() {
                 mView.requestRender();
@@ -318,7 +318,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
             
             
             
-            setViewportMetrics(newMetrics);
+            setViewportMetrics(newMetrics, true);
 
             
             
@@ -641,35 +641,8 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         setViewportSize(viewportSize.width, viewportSize.height, null);
     }
 
-    
-    @Override
-    public ImmutableViewportMetrics getViewportMetrics() {
+    ImmutableViewportMetrics getViewportMetrics() {
         return mViewportMetrics;
-    }
-
-    
-    @Override
-    public FullScreenState getFullScreenState() {
-        return mView.getFullScreenState();
-    }
-
-    
-    @Override
-    public PointF getVisibleEndOfLayerView() {
-        return mToolbarAnimator.getVisibleEndOfLayerView();
-    }
-
-    
-    @Override
-    public void setAnimationTarget(ImmutableViewportMetrics metrics) {
-    }
-
-    
-
-
-    @Override
-    public void setViewportMetrics(ImmutableViewportMetrics metrics) {
-        setViewportMetrics(metrics, true);
     }
 
     
@@ -713,48 +686,12 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
     }
 
     
-
-
-
-
-
-
-
-
-    @Override
-    public void scrollBy(float dx, float dy) {
-        
-        mViewportMetrics = mViewportMetrics.offsetViewportBy(dx, dy);
-        viewportMetricsChanged(true);
-    }
-
-    
     @Override
     public void panZoomStopped() {
         mToolbarAnimator.onPanZoomStopped();
     }
 
-    
-    @Override
-    public boolean post(Runnable action) {
-        return mView.post(action);
-    }
-
-    
-    @Override
-    public void postRenderTask(RenderTask task) {
-        mView.postRenderTask(task);
-    }
-
-    
-    @Override
-    public void removeRenderTask(RenderTask task) {
-        mView.removeRenderTask(task);
-    }
-
-    
-    @Override
-    public Object getLock() {
+    Object getLock() {
         return this;
     }
 
@@ -765,8 +702,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
 
 
 
-    @Override
-    public PointF convertViewPointToLayerPoint(PointF viewPoint) {
+    PointF convertViewPointToLayerPoint(PointF viewPoint) {
         if (!mGeckoIsReady) {
             return null;
         }
@@ -790,8 +726,7 @@ class GeckoLayerClient implements LayerView.Listener, PanZoomTarget
         return layerPoint;
     }
 
-    @Override
-    public Matrix getMatrixForLayerRectToViewRect() {
+    Matrix getMatrixForLayerRectToViewRect() {
         if (!mGeckoIsReady) {
             return null;
         }
