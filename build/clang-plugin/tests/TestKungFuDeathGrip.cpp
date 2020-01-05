@@ -35,6 +35,7 @@ public:
     nsCOMPtr<Type> never_referenced;
     nsCOMPtr<Type> kfdg_t1(this);
     nsCOMPtr<Type> kfdg_t2 = this;
+    nsCOMPtr<Type> kfdg_t3 = (this);
 
     nsCOMPtr<Type> kfdg_m1(p); 
     nsCOMPtr<Type> kfdg_m2 = p; 
@@ -51,8 +52,9 @@ public:
 
 
     RefPtr<Type> never_referenced2;
-    RefPtr<Type> kfdg_t3(this);
-    RefPtr<Type> kfdg_t4 = this;
+    RefPtr<Type> kfdg_t4(this);
+    RefPtr<Type> kfdg_t5 = this;
+    RefPtr<Type> kfdg_t6 = (this);
 
     RefPtr<Type> kfdg_m5(p); 
     RefPtr<Type> kfdg_m6 = p; 
