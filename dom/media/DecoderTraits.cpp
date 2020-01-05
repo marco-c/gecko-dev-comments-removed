@@ -113,13 +113,6 @@ DecoderTraits::IsMP4SupportedType(const MediaContentType& aType,
 }
 
 static bool
-IsWaveSupportedType(const nsACString& aType,
-                    const nsAString& aCodecs = EmptyString())
-{
-  return WaveDecoder::CanHandleMediaType(aType, aCodecs);
-}
-
-static bool
 IsFlacSupportedType(const nsACString& aType,
                    const nsAString& aCodecs = EmptyString())
 {
@@ -147,9 +140,8 @@ CanHandleCodecsType(const MediaContentType& aType,
       return CANPLAY_NO;
     }
   }
-  if (IsWaveSupportedType(mimeType.Type().AsString())) {
-    if (IsWaveSupportedType(aType.Type().AsString(),
-                            aType.ExtendedType().Codecs().AsString())) {
+  if (WaveDecoder::IsSupportedType(MediaContentType(mimeType))) {
+    if (WaveDecoder::IsSupportedType(aType)) {
       return CANPLAY_YES;
     } else {
       
@@ -249,7 +241,7 @@ CanHandleMediaType(const MediaContentType& aType,
   if (OggDecoder::IsSupportedType(mimeType)) {
     return CANPLAY_MAYBE;
   }
-  if (IsWaveSupportedType(mimeType.Type().AsString())) {
+  if (WaveDecoder::IsSupportedType(mimeType)) {
     return CANPLAY_MAYBE;
   }
 #ifdef MOZ_FMP4
@@ -302,7 +294,7 @@ bool DecoderTraits::ShouldHandleMediaType(const char* aMIMEType,
     return false;
   }
 
-  if (IsWaveSupportedType(contentType->Type().AsString())) {
+  if (WaveDecoder::IsSupportedType(*contentType)) {
     
     
     
@@ -353,7 +345,7 @@ InstantiateDecoder(const MediaContentType& aType,
     decoder = new OggDecoder(aOwner);
     return decoder.forget();
   }
-  if (IsWaveSupportedType(aType.Type().AsString())) {
+  if (WaveDecoder::IsSupportedType(aType)) {
     decoder = new WaveDecoder(aOwner);
     return decoder.forget();
   }
@@ -432,7 +424,7 @@ MediaDecoderReader* DecoderTraits::CreateReader(const nsACString& aType, Abstrac
   if (ADTSDecoder::IsSupportedType(*type)) {
     decoderReader = new MediaFormatReader(aDecoder, new ADTSDemuxer(aDecoder->GetResource()));
   } else
-  if (IsWaveSupportedType(aType)) {
+  if (WaveDecoder::IsSupportedType(*type)) {
     decoderReader = new MediaFormatReader(aDecoder, new WAVDemuxer(aDecoder->GetResource()));
   } else
   if (IsFlacSupportedType(aType)) {
