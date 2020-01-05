@@ -483,15 +483,21 @@ public:
   ~DemuxerProxy()
   {
     MOZ_COUNT_DTOR(DemuxerProxy);
+  }
+
+  RefPtr<ShutdownPromise> Shutdown()
+  {
     mData->mAudioDemuxer = nullptr;
     mData->mVideoDemuxer = nullptr;
     RefPtr<Data> data = mData.forget();
-    mTaskQueue->Dispatch(
+    return InvokeAsync(mTaskQueue, __func__, [data]() {
       
       
       
       
-      NS_NewRunnableFunction([data]() { data->mDemuxer = nullptr; }));
+      data->mDemuxer = nullptr;
+      return ShutdownPromise::CreateAndResolve(true, __func__);
+    });
   }
 
   RefPtr<MediaDataDemuxer::InitPromise> Init();
@@ -885,13 +891,10 @@ MediaFormatReader::Shutdown()
     promises.AppendElement(ShutdownDecoderWithPromise(TrackInfo::kVideoTrack));
   }
 
+  promises.AppendElement(mDemuxer->Shutdown());
   mDemuxer = nullptr;
-  mCompositorUpdatedListener.DisconnectIfExists();
 
-  if (promises.IsEmpty()) {
-    TearDownDecoders();
-    return MediaDecoderReader::Shutdown();
-  }
+  mCompositorUpdatedListener.DisconnectIfExists();
 
   RefPtr<ShutdownPromise> p = mShutdownPromise.Ensure(__func__);
   ShutdownPromise::All(OwnerThread(), promises)
