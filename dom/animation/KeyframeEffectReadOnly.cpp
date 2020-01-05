@@ -274,6 +274,13 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 {
   MOZ_ASSERT(aStyleContext);
 
+  
+  
+  
+  if (mIsComposingStyle) {
+    return;
+  }
+
   nsTArray<AnimationProperty> properties = BuildProperties(aStyleContext);
 
   if (mProperties == properties) {
