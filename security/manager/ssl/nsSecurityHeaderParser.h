@@ -2,12 +2,12 @@
 
 
 
-#ifndef nsSecurityHeaderParser_h__
-#define nsSecurityHeaderParser_h__
+#ifndef nsSecurityHeaderParser_h
+#define nsSecurityHeaderParser_h
 
-#include "nsString.h"
 #include "mozilla/LinkedList.h"
 #include "nsCOMPtr.h"
+#include "nsString.h"
 
 
 class nsSecurityHeaderDirective : public mozilla::LinkedListElement<nsSecurityHeaderDirective> {
@@ -36,7 +36,9 @@ public:
 
 class nsSecurityHeaderParser {
 public:
-  explicit nsSecurityHeaderParser(const char *aHeader);
+  
+  
+  explicit nsSecurityHeaderParser(const nsCString& aHeader);
   ~nsSecurityHeaderParser();
 
   
