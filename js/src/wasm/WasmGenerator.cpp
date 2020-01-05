@@ -250,6 +250,8 @@ typedef HashMap<uint32_t, uint32_t, DefaultHasher<uint32_t>, SystemAllocPolicy> 
 bool
 ModuleGenerator::patchCallSites(TrapExitOffsetArray* maybeTrapExits)
 {
+    MacroAssembler::AutoPrepareForPatching patching(masm_);
+
     masm_.haltingAlign(CodeAlignment);
 
     
@@ -338,6 +340,24 @@ ModuleGenerator::patchCallSites(TrapExitOffsetArray* maybeTrapExits)
           }
         }
     }
+
+    return true;
+}
+
+bool
+ModuleGenerator::patchFarJumps(const TrapExitOffsetArray& trapExits)
+{
+    MacroAssembler::AutoPrepareForPatching patching(masm_);
+
+    for (CallThunk& callThunk : metadata_->callThunks) {
+        uint32_t funcIndex = callThunk.u.funcIndex;
+        callThunk.u.codeRangeIndex = funcToCodeRange_[funcIndex];
+        CodeOffset farJump(callThunk.offset);
+        masm_.patchFarJump(farJump, funcCodeRange(funcIndex).funcNonProfilingEntry());
+    }
+
+    for (const TrapFarJump& farJump : masm_.trapFarJumps())
+        masm_.patchFarJump(farJump.jump, trapExits[farJump.trap].begin);
 
     return true;
 }
@@ -531,21 +551,14 @@ ModuleGenerator::finishCodegen()
     linkData_.interruptOffset = interruptExit.begin;
 
     
+    
+    
 
     if (!patchCallSites(&trapExits))
         return false;
 
-    
-
-    for (CallThunk& callThunk : metadata_->callThunks) {
-        uint32_t funcIndex = callThunk.u.funcIndex;
-        callThunk.u.codeRangeIndex = funcToCodeRange_[funcIndex];
-        CodeOffset farJump(callThunk.offset);
-        masm_.patchFarJump(farJump, funcCodeRange(funcIndex).funcNonProfilingEntry());
-    }
-
-    for (const TrapFarJump& farJump : masm_.trapFarJumps())
-        masm_.patchFarJump(farJump.jump, trapExits[farJump.trap].begin);
+    if (!patchFarJumps(trapExits))
+        return false;
 
     
 
