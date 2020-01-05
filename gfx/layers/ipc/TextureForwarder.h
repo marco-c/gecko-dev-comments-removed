@@ -9,9 +9,9 @@
 
 #include <stdint.h>                     
 #include "gfxTypes.h"
-#include "mozilla/layers/ISurfaceAllocator.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureClient.h"  
+#include "mozilla/layers/KnowsCompositor.h"
 
 namespace mozilla {
 namespace layers {
@@ -31,8 +31,7 @@ public:
 
 
 
-class LayersIPCChannel : public LayersIPCActor
-                       , public ShmemAllocator {
+class LayersIPCChannel : public LayersIPCActor {
 public:
   NS_IMETHOD_(MozExternalRefCountType) AddRef(void) = 0;
   NS_IMETHOD_(MozExternalRefCountType) Release(void) = 0;
@@ -48,6 +47,15 @@ public:
   virtual FixedSizeSmallShmemSectionAllocator* GetTileLockAllocator() { return nullptr; }
 
   virtual void CancelWaitForRecycle(uint64_t aTextureId) = 0;
+
+  virtual bool AllocShmem(size_t aSize,
+                          mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
+                          mozilla::ipc::Shmem* aShmem) = 0;
+  virtual bool AllocUnsafeShmem(size_t aSize,
+                                mozilla::ipc::SharedMemory::SharedMemoryType aShmType,
+                                mozilla::ipc::Shmem* aShmem) = 0;
+  virtual void DeallocShmem(mozilla::ipc::Shmem& aShmem) = 0;
+
 protected:
   virtual ~LayersIPCChannel() {}
 };
@@ -67,69 +75,6 @@ public:
     LayersBackend aLayersBackend,
     TextureFlags aFlags,
     uint64_t aSerial) = 0;
-};
-
-
-
-
-
-class KnowsCompositor {
-public:
-  NS_IMETHOD_(MozExternalRefCountType) AddRef(void) = 0;
-  NS_IMETHOD_(MozExternalRefCountType) Release(void) = 0;
-
-  KnowsCompositor()
-    : mSerial(++sSerialCounter)
-  {}
-
-  void IdentifyTextureHost(const TextureFactoryIdentifier& aIdentifier);
-
-  SyncObject* GetSyncObject() { return mSyncObject; }
-
-  int32_t GetMaxTextureSize() const
-  {
-    return mTextureFactoryIdentifier.mMaxTextureSize;
-  }
-
-  
-
-
-
-
-  LayersBackend GetCompositorBackendType() const
-  {
-    return mTextureFactoryIdentifier.mParentBackend;
-  }
-
-  bool SupportsTextureBlitting() const
-  {
-    return mTextureFactoryIdentifier.mSupportsTextureBlitting;
-  }
-
-  bool SupportsPartialUploads() const
-  {
-    return mTextureFactoryIdentifier.mSupportsPartialUploads;
-  }
-
-  const TextureFactoryIdentifier& GetTextureFactoryIdentifier() const
-  {
-    return mTextureFactoryIdentifier;
-  }
-
-  int32_t GetSerial() { return mSerial; }
-
-  
-
-
-  virtual TextureForwarder* GetTextureForwarder() = 0;
-  virtual LayersIPCActor* GetLayersIPCActor() = 0;
-
-protected:
-  TextureFactoryIdentifier mTextureFactoryIdentifier;
-  RefPtr<SyncObject> mSyncObject;
-
-  const int32_t mSerial;
-  static mozilla::Atomic<int32_t> sSerialCounter;
 };
 
 } 
