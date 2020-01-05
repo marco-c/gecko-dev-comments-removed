@@ -5568,10 +5568,6 @@ MediaStream* HTMLMediaElement::GetSrcMediaStream() const
   if (!mSrcStream) {
     return nullptr;
   }
-  if (mSrcStream->GetCameraStream()) {
-    
-    return mSrcStream->GetCameraStream();
-  }
   return mSrcStream->GetPlaybackStream();
 }
 

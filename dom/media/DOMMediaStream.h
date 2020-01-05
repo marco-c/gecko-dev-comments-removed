@@ -616,9 +616,6 @@ protected:
   friend class PlaybackStreamListener;
 
   
-  void CreateAndAddPlaybackStreamListener(MediaStream*);
-
-  
 
 
 

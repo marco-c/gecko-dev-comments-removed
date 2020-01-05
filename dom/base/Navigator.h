@@ -24,7 +24,6 @@ class nsPluginArray;
 class nsMimeTypeArray;
 class nsPIDOMWindowInner;
 class nsIDOMNavigatorSystemMessages;
-class nsDOMCameraManager;
 class nsDOMDeviceStorage;
 class nsIPrincipal;
 class nsIURI;
@@ -230,7 +229,6 @@ public:
   InputPortManager* GetInputPortManager(ErrorResult& aRv);
   already_AddRefed<LegacyMozTCPSocket> MozTCPSocket();
   network::Connection* GetConnection(ErrorResult& aRv);
-  nsDOMCameraManager* GetMozCameras(ErrorResult& aRv);
   MediaDevices* GetMediaDevices(ErrorResult& aRv);
 
 #ifdef MOZ_B2G_RIL
@@ -281,8 +279,6 @@ public:
 
   
   static bool HasWakeLockSupport(JSContext* , JSObject* );
-  static bool HasCameraSupport(JSContext* ,
-                               JSObject* aGlobal);
   static bool HasWifiManagerSupport(JSContext* ,
                                   JSObject* aGlobal);
 #ifdef MOZ_NFC
@@ -347,7 +343,6 @@ private:
 #ifdef MOZ_AUDIO_CHANNEL_MANAGER
   RefPtr<system::AudioChannelManager> mAudioChannelManager;
 #endif
-  RefPtr<nsDOMCameraManager> mCameraManager;
   RefPtr<MediaDevices> mMediaDevices;
   nsTArray<nsWeakPtr> mDeviceStorageStores;
   RefPtr<time::TimeManager> mTimeManager;
