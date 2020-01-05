@@ -87,7 +87,8 @@ public:
   void CreateNeededFrames();
 
 private:
-  void CreateNeededFrames(nsIContent* aContent);
+  void CreateNeededFrames(nsIContent* aContent,
+                          TreeMatchContext& aTreeMatchContext);
 
   enum Operation {
     CONTENTAPPEND,
@@ -202,16 +203,22 @@ public:
 
   
   
+  
+  
+  
+  
+  
   nsresult ContentAppended(nsIContent* aContainer,
                            nsIContent* aFirstNewContent,
-                           bool        aAllowLazyConstruction);
+                           bool aAllowLazyConstruction,
+                           TreeMatchContext* aProvidedTreeMatchContext = nullptr);
 
   
   
-  nsresult ContentInserted(nsIContent*            aContainer,
-                           nsIContent*            aChild,
+  nsresult ContentInserted(nsIContent* aContainer,
+                           nsIContent* aChild,
                            nsILayoutHistoryState* aFrameState,
-                           bool                   aAllowLazyConstruction);
+                           bool aAllowLazyConstruction);
 
   
   
@@ -219,11 +226,17 @@ public:
   
   
   
-  nsresult ContentRangeInserted(nsIContent*            aContainer,
-                                nsIContent*            aStartChild,
-                                nsIContent*            aEndChild,
+  
+  
+  
+  
+  
+  nsresult ContentRangeInserted(nsIContent* aContainer,
+                                nsIContent* aStartChild,
+                                nsIContent* aEndChild,
                                 nsILayoutHistoryState* aFrameState,
-                                bool                   aAllowLazyConstruction);
+                                bool aAllowLazyConstruction,
+                                TreeMatchContext* aProvidedTreeMatchContext = nullptr);
 
   enum RemoveFlags {
     REMOVE_CONTENT, REMOVE_FOR_RECONSTRUCTION, REMOVE_DESTROY_FRAMES };
