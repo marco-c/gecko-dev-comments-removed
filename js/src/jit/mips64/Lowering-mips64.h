@@ -20,6 +20,9 @@ class LIRGeneratorMIPS64 : public LIRGeneratorMIPSShared
     { }
 
   protected:
+    void lowerInt64PhiInput(MPhi*, uint32_t, LBlock*, size_t);
+    void defineInt64Phi(MPhi*, size_t);
+
     
     LBoxAllocation useBoxFixed(MDefinition* mir, Register reg1, Register reg2,
                                bool useAtStart = false);
