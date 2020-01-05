@@ -21,7 +21,14 @@ class UnionMember
 {
   AlignedStorage2<T> mStorage;
 
+  
+  
+  UnionMember(const UnionMember&) = delete;
+
 public:
+  UnionMember() = default;
+  ~UnionMember() = default;
+
   T& SetValue()
   {
     new (mStorage.addr()) T();
