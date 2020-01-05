@@ -1050,11 +1050,8 @@ nsContextMenu.prototype = {
     }
 
     if (!this.isRemote) {
-      
-      
-      params.frameOuterWindowID = this.frameOuterWindowID;
+      params.frameOuterWindowID = WebNavigationFrames.getFrameId(this.target.ownerGlobal);
     }
-
     
     
     if ("userContextId" in params &&
