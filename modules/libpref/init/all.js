@@ -296,11 +296,11 @@ pref("media.dormant-on-pause-timeout-ms", 5000);
 pref("media.cache_size", 512000);
 
 
-pref("media.cache_resume_threshold", 999999);
+pref("media.cache_resume_threshold", 30);
 
 
 
-pref("media.cache_readahead_limit", 999999);
+pref("media.cache_readahead_limit", 60);
 
 
 pref("media.volume_scale", "1.0");
@@ -1547,9 +1547,6 @@ pref("network.http.referer.trimmingPolicy", 0);
 pref("network.http.referer.XOriginTrimmingPolicy", 0);
 
 pref("network.http.referer.XOriginPolicy", 0);
-
-
-pref("network.http.enablePerElementReferrer", true);
 
 
 pref("network.http.redirection-limit", 20);
