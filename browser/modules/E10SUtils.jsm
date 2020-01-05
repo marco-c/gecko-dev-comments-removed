@@ -73,7 +73,9 @@ this.E10SUtils = {
 
     
     
-    if (aURL.startsWith("data:")) {
+    
+    
+    if (aURL.startsWith("data:") || aURL.startsWith("blob:")) {
       return aPreferredRemoteType == NOT_REMOTE ? DEFAULT_REMOTE_TYPE
                                                 : aPreferredRemoteType;
     }
