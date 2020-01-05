@@ -16,6 +16,7 @@ namespace mozilla {
 
 class AbstractMediaDecoder;
 class DecoderDoctorDiagnostics;
+class MediaContentType;
 class MediaDecoder;
 class MediaDecoderOwner;
 class MediaDecoderReader;
@@ -28,6 +29,10 @@ enum CanPlayStatus {
 
 class DecoderTraits {
 public:
+  
+  static CanPlayStatus CanHandleContentType(const MediaContentType& aContentType,
+                                            DecoderDoctorDiagnostics* aDiagnostics);
+
   
   
   
