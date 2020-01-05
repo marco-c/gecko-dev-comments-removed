@@ -1174,9 +1174,16 @@ ElementRestyler::ElementRestyler(ParentContextFromChildFrame,
 #endif
 {
   MOZ_ASSERT_IF(mContent, !mContent->IsStyledByServo());
-  MOZ_ASSERT(!(mHintsHandledByAncestors & nsChangeHint_ReconstructFrame),
-             "why restyle descendants if we are reconstructing the frame for "
-             "an ancestor?");
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
 }
 
 ElementRestyler::ElementRestyler(nsPresContext* aPresContext,
