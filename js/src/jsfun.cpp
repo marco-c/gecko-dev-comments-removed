@@ -853,6 +853,10 @@ CreateFunctionPrototype(JSContext* cx, JSProtoKey key)
 
     
     
+    self->setPrototype(key, ObjectValue(*functionProto));
+
+    
+    
     
     
     

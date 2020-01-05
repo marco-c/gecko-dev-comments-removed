@@ -393,6 +393,9 @@ struct Zone : public JS::shadow::Zone,
     JS::WeakCache<js::BaseShapeSet> baseShapes;
 
     
+    
+    
+    
     JS::WeakCache<js::InitialShapeSet> initialShapes;
 
 #ifdef JSGC_HASH_TABLE_CHECKS
