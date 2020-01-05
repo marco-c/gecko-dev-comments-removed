@@ -70,7 +70,7 @@ protected:
     nsString mRealPath;
   };
   FallibleTArray<FileData> mTargetPathArray;
-  nsTHashtable<nsCStringHashKey> mExploredDirectories;
+  nsTHashtable<nsStringHashKey> mExploredDirectories;
 };
 
 
