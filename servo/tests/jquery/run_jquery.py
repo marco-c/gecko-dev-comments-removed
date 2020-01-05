@@ -49,6 +49,7 @@ TEST_SERVER_PORT = 8192
 REGEX_PATTERN = "^\[jQuery test\] \[([0-9]+)/([0-9]+)/([0-9]+)] (.*)"
 
 
+
 class TestResult:
     def __init__(self, success, fail, total, text):
         self.success = int(success)
@@ -94,7 +95,7 @@ def parse_string_to_results(buffer):
 
 def run_servo(servo_exe, module):
     url = "http://localhost:{0}/jquery/test/?module={1}".format(TEST_SERVER_PORT, module)
-    args = [ servo_exe, url, "-z", "-f" ]
+    args = [servo_exe, url, "-z", "-f"]
     proc = subprocess.Popen(args, stdout=subprocess.PIPE)
     while True:
         line = proc.stdout.readline()
@@ -108,8 +109,10 @@ def run_servo(servo_exe, module):
             pass
 
 
+
 def module_filename(module):
     return 'expected_{0}.txt'.format(module)
+
 
 
 def read_existing_results(module):
@@ -118,14 +121,17 @@ def read_existing_results(module):
         return parse_string_to_results(buffer)
 
 
+
 def write_results(module, results):
     with open(module_filename(module), 'w') as file:
         for result in test_results.itervalues():
             file.write(result.text + '\n')
 
 
+
 def print_usage():
     print("USAGE: {0} servo_binary jquery_base_dir test|update".format(sys.argv[0]))
+
 
 
 def run_http_server():
