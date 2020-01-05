@@ -12,7 +12,7 @@
 #include "nsXPCOM.h"
 #include "nsISupports.h"
 #include "mozilla/Logging.h"
-#include "mozilla/XREAppData.h"
+#include "nsXREAppData.h"
 #include "js/TypeDecls.h"
 
 #include "mozilla/ArrayUtils.h"
@@ -204,7 +204,7 @@
 
 
 XRE_API(int,
-        XRE_main, (int argc, char* argv[], const mozilla::XREAppData& aAppData,
+        XRE_main, (int argc, char* argv[], const nsXREAppData* aAppData,
                    uint32_t aFlags))
 
 
@@ -368,9 +368,27 @@ XRE_API(void,
 
 
 
+
+XRE_API(nsresult,
+        XRE_CreateAppData, (nsIFile* aINIFile,
+                            nsXREAppData** aAppData))
+
+
+
+
+
+
+
+
 XRE_API(nsresult,
         XRE_ParseAppData, (nsIFile* aINIFile,
-                           mozilla::XREAppData& aAppData))
+                           nsXREAppData* aAppData))
+
+
+
+
+XRE_API(void,
+        XRE_FreeAppData, (nsXREAppData* aAppData))
 
 enum GeckoProcessType
 {
