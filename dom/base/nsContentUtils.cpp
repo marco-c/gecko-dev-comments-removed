@@ -2077,6 +2077,22 @@ nsContentUtils::CanCallerAccess(nsPIDOMWindowInner* aWindow)
 
 
 bool
+nsContentUtils::CallerHasPermission(JSContext* aCx, const nsAString& aPerm)
+{
+  
+  if (IsSystemCaller(aCx)) {
+    return true;
+  }
+
+  JSCompartment* c = js::GetContextCompartment(aCx);
+  nsIPrincipal* p = nsJSPrincipals::get(JS_GetCompartmentPrincipals(c));
+
+  
+  return BasePrincipal::Cast(p)->AddonHasPermission(aPerm);
+}
+
+
+bool
 nsContentUtils::InProlog(nsINode *aNode)
 {
   NS_PRECONDITION(aNode, "missing node to nsContentUtils::InProlog");
