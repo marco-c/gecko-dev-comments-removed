@@ -324,7 +324,6 @@ pref("media.gonk.enabled", true);
 
 
 pref("media.eme.enabled", true);
-pref("media.eme.apiVisible", true);
 
 
 pref("media.video-queue.default-size", 3);

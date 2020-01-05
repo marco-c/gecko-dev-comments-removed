@@ -233,7 +233,6 @@ DEFAULT_TEST_PREFS = {
     
     'general.useragent.updates.enabled': False,
     'media.eme.enabled': True,
-    'media.eme.apiVisible': True,
     
     'dom.ipc.tabs.shutdownTimeoutSecs': 0,
     'general.useragent.locale': "en-US",

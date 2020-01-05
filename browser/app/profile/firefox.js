@@ -1376,7 +1376,6 @@ pref("media.eme.enabled", false);
 #else
 pref("media.eme.enabled", true);
 #endif
-pref("media.eme.apiVisible", true);
 
 
 

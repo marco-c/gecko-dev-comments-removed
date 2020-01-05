@@ -629,7 +629,6 @@ pref("media.mediadrm-widevinecdm.visible", true);
 
 
 pref("media.eme.enabled", true);
-pref("media.eme.apiVisible", true);
 
 
 pref("image.downscale-during-decode.enabled", true);
