@@ -1,0 +1,13 @@
+#ifndef ThirdPartyPaths_h__
+#define ThirdPartyPaths_h__
+
+#include <stdint.h>
+
+
+
+
+extern const char* MOZ_THIRD_PARTY_PATHS[];
+
+extern const uint32_t MOZ_THIRD_PARTY_PATHS_COUNT;
+
+#endif
