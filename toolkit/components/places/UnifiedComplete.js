@@ -1244,7 +1244,7 @@ Search.prototype = {
     
     
     try {
-      let prefixURI = NetUtil.newURI(this._strippedPrefix);
+      let prefixURI = NetUtil.newURI(this._strippedPrefix + match.token);
       let finalURI = NetUtil.newURI(match.url);
       if (prefixURI.scheme != finalURI.scheme)
         return false;
