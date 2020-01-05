@@ -4580,7 +4580,15 @@ nsDocument::SetScriptGlobalObject(nsIScriptGlobalObject *aScriptGlobalObject)
     }
   }
 
+  
+  
+  bool needOnloadBlocker = !mScriptGlobalObject && aScriptGlobalObject;
+
   mScriptGlobalObject = aScriptGlobalObject;
+
+  if (needOnloadBlocker) {
+    EnsureOnloadBlocker();
+  }
 
   if (aScriptGlobalObject) {
     
