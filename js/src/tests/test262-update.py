@@ -59,7 +59,7 @@ def tryParseTestFile(test262parser, source, testName):
         print("Please report this error to the test262 GitHub repository!")
         return None
 
-def createRefTestEntry(skip, skipIf, error):
+def createRefTestEntry(skip, skipIf, error, isModule):
     """
     Creates the |reftest| entry from the input list. Or the empty string if no
     reftest entry is required.
@@ -78,6 +78,9 @@ def createRefTestEntry(skip, skipIf, error):
 
     if error:
         terms.append("error:" + error)
+
+    if isModule:
+        terms.append("module")
 
     line = " ".join(terms)
     if comments:
@@ -208,6 +211,9 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     assert "$DONE" not in testSource or async, "Missing async attribute in: %s" % testName
 
     
+    isModule = "module" in testRec
+
+    
     
     
     
@@ -219,10 +225,6 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     isSupportFile = fileNameEndsWith(testName, "FIXTURE")
     if isSupportFile:
         refTestSkip.append("not a test file")
-
-    
-    if "module" in testRec or pathStartsWith(testName, "language", "module-code"):
-        refTestSkip.append("jstests don't yet support module tests")
 
     
     if "features" in testRec:
@@ -243,10 +245,10 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     else:
         testEpilogue = ""
 
-    refTest = createRefTestEntry(refTestSkip, refTestSkipIf, errorType)
+    refTest = createRefTestEntry(refTestSkip, refTestSkipIf, errorType, isModule)
 
     
-    noStrictVariant = raw or isSupportFile
+    noStrictVariant = raw or isModule or isSupportFile
     assert not (noStrictVariant and (onlyStrict or noStrict)),\
            "Unexpected onlyStrict or noStrict attribute: %s" % testName
 

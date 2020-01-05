@@ -537,7 +537,7 @@ function jsTestDriverBrowserInit()
     gczeal(Number(properties.gczeal));
   }
 
-  var testpathparts = properties.test.split(/\//);
+  var testpathparts = properties.test.split("/");
 
   if (testpathparts.length < 2)
   {
@@ -549,54 +549,97 @@ function jsTestDriverBrowserInit()
 
   
   
-  document.write('<script></script>');
-
-  
-  
   var prepath = "";
-  var i = 0;
-  for (var end = testpathparts.length - 1; i < end; i++) {
+  var scripts = [];
+  var end = testpathparts.length - 1;
+  for (var i = 0; i < end; i++) {
     prepath += testpathparts[i] + "/";
-    outputscripttag(prepath + "shell.js", properties);
-    outputscripttag(prepath + "browser.js", properties);
+
+    scripts.push({src: prepath + "shell.js", module: false});
+    scripts.push({src: prepath + "browser.js", module: false});
   }
 
   
-  outputscripttag(prepath + testpathparts[i], properties);
+  var moduleTest = !!properties.module;
+  scripts.push({src: prepath + testpathparts[end], module: moduleTest});
 
   
-  outputscripttag('js-test-driver-end.js', properties);
-  return;
-}
+  scripts.push({src: "js-test-driver-end.js", module: false});
 
-function outputscripttag(src, properties)
-{
-  if (!src)
-  {
-    return;
-  }
+  if (!moduleTest) {
+    
+    
+    document.write('<script></script>');
 
-  var s = '<script src="' +  src + '" charset="utf-8" ';
-
-  if (properties.language != 'type')
-  {
-    s += 'language="javascript';
-    if (properties.version)
-    {
-      s += properties.version;
+    var key, value;
+    if (properties.language !== "type") {
+      key = "language";
+      value = "javascript";
+      if (properties.version) {
+        value += properties.version;
+      }
+    } else {
+      key = "type";
+      value = properties.mimetype;
+      if (properties.version) {
+        value += ";version=" + properties.version;
+      }
     }
-  }
-  else
-  {
-    s += 'type="' + properties.mimetype;
-    if (properties.version)
-    {
-      s += ';version=' + properties.version;
-    }
-  }
-  s += '"><\/script>';
 
-  document.write(s);
+    for (var i = 0; i < scripts.length; i++) {
+      var src = scripts[i].src;
+      document.write(`<script src="${src}" charset="utf-8" ${key}="${value}"><\/script>`);
+    }
+  } else {
+    
+    
+
+    
+    var ReflectApply = Reflect.apply;
+    var NodePrototypeAppendChild = Node.prototype.appendChild;
+    var documentElement = document.documentElement;
+
+    
+    function appendScript(index) {
+      var script = scriptElements[index];
+      scriptElements[index] = null;
+      if (script !== null) {
+        ReflectApply(NodePrototypeAppendChild, documentElement, [script]);
+      }
+    }
+
+    
+    
+    var scriptElements = [];
+    for (var i = 0; i < scripts.length; i++) {
+      var spec = scripts[i];
+
+      var script = document.createElement("script");
+      script.charset = "utf-8";
+      if (spec.module) {
+        script.type = "module";
+      }
+      script.src = spec.src;
+
+      let nextScriptIndex = i + 1;
+      if (nextScriptIndex < scripts.length) {
+        var callNextAppend = () => appendScript(nextScriptIndex);
+        script.addEventListener("afterscriptexecute", callNextAppend, {once: true});
+
+        
+        
+        
+        if (spec.module) {
+          script.addEventListener("error", callNextAppend, {once: true});
+        }
+      }
+
+      scriptElements[i] = script;
+    }
+
+    
+    appendScript(0);
+  }
 }
 
 function jsTestDriverEnd()
