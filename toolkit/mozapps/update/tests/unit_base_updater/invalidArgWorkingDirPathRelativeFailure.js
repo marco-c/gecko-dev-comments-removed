@@ -23,7 +23,7 @@ function run_test() {
 
 
 function setupUpdaterTestFinished() {
-  runUpdate(STATE_AFTER_RUNUPDATE, false, 1, true, null, null, "test");
+  runUpdate(STATE_AFTER_RUNUPDATE, false, 1, true, null, null, "test", null);
 }
 
 

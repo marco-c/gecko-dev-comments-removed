@@ -5,9 +5,8 @@
 
 
 
-const STATE_AFTER_RUNUPDATE =
-  IS_SERVICE_TEST ? STATE_FAILED_SERVICE_INVALID_APPLYTO_DIR_STAGED_ERROR
-                  : STATE_FAILED_INVALID_APPLYTO_DIR_STAGED_ERROR;
+
+const STATE_AFTER_RUNUPDATE = STATE_FAILED_INVALID_CALLBACK_DIR_ERROR;
 
 function run_test() {
   if (!setupTestCommon()) {
@@ -23,8 +22,8 @@ function run_test() {
 
 
 function setupUpdaterTestFinished() {
-  let path = getApplyDirFile("..", false).path;
-  runUpdate(STATE_AFTER_RUNUPDATE, true, 1, true, null, null, path, null);
+  let path = getTestDirFile(FILE_HELPER_BIN).path;
+  runUpdate(STATE_AFTER_RUNUPDATE, false, 1, true, null, null, null, path);
 }
 
 
