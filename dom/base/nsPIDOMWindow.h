@@ -551,9 +551,12 @@ public:
   virtual already_AddRefed<nsPIDOMWindowOuter> GetOpener() = 0;
   virtual already_AddRefed<nsIDOMWindowCollection> GetFrames() = 0;
   
+  
+  
   virtual nsresult Open(const nsAString& aUrl, const nsAString& aName,
                         const nsAString& aOptions,
                         nsIDocShellLoadInfo* aLoadInfo,
+                        bool aForceNoOpener,
                         nsPIDOMWindowOuter **_retval) = 0;
   virtual nsresult OpenDialog(const nsAString& aUrl, const nsAString& aName,
                               const nsAString& aOptions,

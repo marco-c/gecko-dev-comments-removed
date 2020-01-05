@@ -954,6 +954,7 @@ public:
   nsresult Open(const nsAString& aUrl, const nsAString& aName,
                 const nsAString& aOptions,
                 nsIDocShellLoadInfo* aLoadInfo,
+                bool aForceNoOpener,
                 nsPIDOMWindowOuter **_retval) override;
   mozilla::dom::Navigator* GetNavigator(mozilla::ErrorResult& aError);
   nsIDOMNavigator* GetNavigator() override;
@@ -1476,6 +1477,12 @@ private:
 
 
 
+
+
+
+
+
+
   nsresult OpenInternal(const nsAString& aUrl,
                         const nsAString& aName,
                         const nsAString& aOptions,
@@ -1487,6 +1494,7 @@ private:
                         nsIArray *argv,
                         nsISupports *aExtraArgument,
                         nsIDocShellLoadInfo* aLoadInfo,
+                        bool aForceNoOpener,
                         nsPIDOMWindowOuter **aReturn);
 
 public:
