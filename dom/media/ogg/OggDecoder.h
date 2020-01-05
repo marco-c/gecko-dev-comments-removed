@@ -10,6 +10,8 @@
 
 namespace mozilla {
 
+class MediaContentType;
+
 class OggDecoder : public MediaDecoder
 {
 public:
@@ -40,10 +42,7 @@ public:
   
   
   
-  static bool CanHandleMediaType(const nsACString& aMIMETypeExcludingCodecs,
-                                 const nsAString& aCodecs);
-
-  static bool IsEnabled();
+  static bool IsSupportedType(const MediaContentType& aContentType);
 
 protected:
   void ShutdownBitChanged() override
