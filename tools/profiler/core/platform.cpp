@@ -1889,7 +1889,6 @@ profiler_shutdown()
   
   
   if (samplerThread) {
-    samplerThread->Join();
     delete samplerThread;
   }
 
@@ -2352,7 +2351,6 @@ profiler_start(int aEntries, double aInterval,
   
   
   if (samplerThread) {
-    samplerThread->Join();
     delete samplerThread;
   }
 
@@ -2478,7 +2476,6 @@ profiler_stop()
   
   
   
-  samplerThread->Join();
   delete samplerThread;
 
   LOG("END   profiler_stop");
