@@ -18,7 +18,6 @@ const { ADDON_SIGNING, REQUIRE_SIGNING } = CONSTANTS
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/AddonManager.jsm");
-
 Cu.import("resource://gre/modules/Preferences.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "AddonRepository",
@@ -1003,8 +1002,7 @@ var loadManifestFromWebManifest = Task.async(function*(aUri) {
     
     let rawManifest = extension.rawManifest;
 
-    
-    let creator = typeof(rawManifest.author) === 'string' ? rawManifest.author : null;
+    let creator = rawManifest.author;
     let homepageURL = rawManifest.homepage_url;
 
     

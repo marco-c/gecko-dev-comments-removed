@@ -12,6 +12,8 @@ var estraverse = require("estraverse");
 var path = require("path");
 var fs = require("fs");
 
+var modules = null;
+
 var definitions = [
   /^loader\.lazyGetter\(this, "(\w+)"/,
   /^loader\.lazyImporter\(this, "(\w+)"/,
@@ -30,7 +32,7 @@ var definitions = [
 ];
 
 var imports = [
-  /^(?:Cu|Components\.utils)\.import\(".*\/(.*?)\.jsm?"(?:, this)?\)/,
+  /^(?:Cu|Components\.utils)\.import\(".*\/((.*?)\.jsm?)"(?:, this)?\)/,
 ];
 
 module.exports = {
@@ -163,12 +165,18 @@ module.exports = {
 
 
 
-  convertExpressionToGlobal: function(node, isGlobal) {
+
+
+  convertExpressionToGlobals: function(node, isGlobal, repository) {
+    if (!modules) {
+      modules = require(path.join(repository, "tools", "lint", "eslint", "modules.json"));
+    }
+
     try {
       var source = this.getASTSource(node);
     }
     catch (e) {
-      return null;
+      return [];
     }
 
     for (var reg of definitions) {
@@ -176,10 +184,10 @@ module.exports = {
       if (match) {
         
         if (!isGlobal) {
-          return null;
+          return [];
         }
 
-        return match[1];
+        return [match[1]];
       }
     }
 
@@ -188,14 +196,18 @@ module.exports = {
       if (match) {
         
         if (node.expression.arguments.length > 1 && !isGlobal) {
-          return null;
+          return [];
         }
 
-        return match[1];
+        if (match[1] in modules) {
+          return modules[match[1]];
+        }
+
+        return [match[2]];
       }
     }
 
-    return null;
+    return [];
   },
 
   
@@ -362,8 +374,7 @@ module.exports = {
 
 
 
-  getRootDir: function(context) {
-    var fileName = this.getAbsoluteFilePath(context);
+  getRootDir: function(fileName) {
     var dirName = path.dirname(fileName);
 
     while (dirName && !fs.existsSync(path.join(dirName, ".eslintignore"))) {
