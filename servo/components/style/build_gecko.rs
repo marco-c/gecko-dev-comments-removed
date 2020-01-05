@@ -138,7 +138,12 @@ mod bindings {
             if cfg!(target_os = "linux") {
                 builder = builder.clang_arg("-DOS_LINUX=1");
             } else if cfg!(target_os = "macos") {
-                builder = builder.clang_arg("-DOS_MACOSX=1");
+                builder = builder.clang_arg("-DOS_MACOSX=1")
+                    .clang_arg("-stdlib=libc++")
+                    
+                    
+                    
+                    .clang_arg("--target=x86_64-apple-darwin");
             } else if cfg!(target_env = "msvc") {
                 builder = builder.clang_arg("-DOS_WIN=1").clang_arg("-DWIN32=1")
                     
