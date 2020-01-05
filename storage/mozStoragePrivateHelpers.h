@@ -65,7 +65,7 @@ void checkAndLogStatementPerformance(sqlite3_stmt *aStatement);
 
 
 
-nsIVariant *convertJSValToVariant(JSContext *aCtx, JS::Value aValue);
+nsIVariant *convertJSValToVariant(JSContext *aCtx, const JS::Value& aValue);
 
 
 
