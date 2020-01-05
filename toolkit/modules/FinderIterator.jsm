@@ -421,22 +421,8 @@ this.FinderIterator = {
     if (this._timeout) {
       if (this._timer)
         clearTimeout(this._timer);
-      if (this._runningFindResolver)
-        this._runningFindResolver();
-
-      let timeout = this._timeout;
-      let searchTerm = this._currentParams.word;
-      
-      
-      if (searchTerm.length == 1)
-        timeout *= 4;
-      else if (searchTerm.length == 2)
-        timeout *= 2;
-      yield new Promise(resolve => {
-        this._runningFindResolver = resolve;
-        this._timer = setTimeout(resolve, timeout);
-      });
-      this._timer = this._runningFindResolver = null;
+      yield new Promise(resolve => this._timer = setTimeout(resolve, this._timeout));
+      this._timer = null;
       
       
       if (!this.running || spawnId !== this._spawnId)
