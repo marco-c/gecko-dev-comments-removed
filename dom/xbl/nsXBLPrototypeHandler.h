@@ -83,7 +83,7 @@ public:
                         uint32_t aLineNumber);
 
   
-  explicit nsXBLPrototypeHandler(nsIContent* aKeyElement);
+  explicit nsXBLPrototypeHandler(nsIContent* aKeyElement, bool aReserved);
 
   
   explicit nsXBLPrototypeHandler(nsXBLPrototypeBinding* aBinding);
@@ -116,6 +116,7 @@ public:
 
   uint8_t GetPhase() { return mPhase; }
   uint8_t GetType() { return mType; }
+  bool GetIsReserved() { return mReserved; }
 
   nsXBLPrototypeHandler* GetNextHandler() { return mNextHandler; }
   void SetNextHandler(nsXBLPrototypeHandler* aHandler) { mNextHandler = aHandler; }
@@ -225,6 +226,8 @@ protected:
   uint8_t mMisc;             
                              
                              
+
+  bool mReserved;            
 
   int32_t mKeyMask;          
                              
