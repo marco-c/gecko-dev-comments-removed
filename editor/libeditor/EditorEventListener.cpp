@@ -357,6 +357,15 @@ EditorEventListener::DetachedFromEditorOrDefaultPrevented(
          aWidgetEvent->DefaultPrevented();
 }
 
+bool
+EditorEventListener::EnsureCommitCompoisition()
+{
+  MOZ_ASSERT(!DetachedFromEditor());
+  RefPtr<EditorBase> editorBase(mEditorBase);
+  editorBase->ForceCompositionEnd();
+  return !DetachedFromEditor();
+}
+
 NS_IMETHODIMP
 EditorEventListener::HandleEvent(nsIDOMEvent* aEvent)
 {
@@ -666,8 +675,7 @@ EditorEventListener::MouseClick(nsIDOMMouseEvent* aMouseEvent)
 
   
   
-  editorBase->ForceCompositionEnd();
-  if (DetachedFromEditor()) {
+  if (!EnsureCommitCompoisition()) {
     return NS_OK;
   }
 
@@ -768,8 +776,7 @@ EditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
   if (DetachedFromEditor()) {
     return NS_OK;
   }
-  RefPtr<EditorBase> editorBase(mEditorBase);
-  editorBase->ForceCompositionEnd();
+  Unused << EnsureCommitCompoisition();
   return NS_OK;
 }
 

@@ -82,6 +82,14 @@ HTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
     return NS_OK;
   }
 
+  
+  
+  
+  
+  if (!EnsureCommitCompoisition()) {
+    return NS_OK;
+  }
+
   WidgetMouseEvent* mousedownEvent =
     aMouseEvent->AsEvent()->WidgetEventPtr()->AsMouseEvent();
 
@@ -89,15 +97,8 @@ HTMLEditorEventListener::MouseDown(nsIDOMMouseEvent* aMouseEvent)
   
   
   if (!htmlEditor->IsAcceptableInputEvent(mousedownEvent)) {
-    
-    
-    
-    
     return EditorEventListener::MouseDown(aMouseEvent);
   }
-
-  
-  
 
   
   
