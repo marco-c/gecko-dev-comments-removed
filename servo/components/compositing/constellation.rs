@@ -1205,18 +1205,26 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
             
             
+            
+            
+            
+            
+            
+            
+            let (sender, receiver) = ipc::channel().unwrap();
+            let msg = LayoutControlMsg::GetWebFontLoadState(sender);
+            pipeline.layout_chan.0.send(msg).unwrap();
+            if receiver.recv().unwrap() {
+                return false;
+            }
+
+            
+            
             let (sender, receiver) = channel();
             let msg = ConstellationControlMsg::GetCurrentState(sender, frame.current);
             pipeline.script_chan.send(msg).unwrap();
             let result = receiver.recv().unwrap();
             if result == ScriptState::DocumentLoading {
-                return false;
-            }
-
-            let (sender, receiver) = ipc::channel().unwrap();
-            let msg = LayoutControlMsg::GetWebFontLoadState(sender);
-            pipeline.layout_chan.0.send(msg).unwrap();
-            if receiver.recv().unwrap() {
                 return false;
             }
 
