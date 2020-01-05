@@ -293,7 +293,7 @@ Layer::StartPendingAnimations(const TimeStamp& aReadyTime)
 
           
           if (anim.startTime().IsNull() && !anim.isNotPlaying()) {
-            anim.startTime() = aReadyTime - anim.holdTime() + anim.delay();
+            anim.startTime() = aReadyTime - anim.holdTime();
             updated = true;
           }
         }
