@@ -2,16 +2,14 @@
 
 
 
-use canvas_traits::{CanvasCommonMsg, CanvasMsg, CanvasPixelData, CanvasData, CanvasWebGLMsg};
-use canvas_traits::{FromLayoutMsg, FromPaintMsg};
+use canvas_traits::{CanvasCommonMsg, CanvasMsg, CanvasPixelData, CanvasData, CanvasWebGLMsg, FromLayoutMsg};
 use euclid::size::Size2D;
 use gleam::gl;
 use ipc_channel::ipc::{self, IpcSender, IpcSharedMemory};
 use ipc_channel::router::ROUTER;
-use layers::platform::surface::NativeSurface;
 use offscreen_gl_context::{ColorAttachmentType, GLContext, GLContextAttributes, NativeGLContext};
 use std::borrow::ToOwned;
-use std::sync::mpsc::{Sender, channel};
+use std::sync::mpsc::channel;
 use util::thread::spawn_named;
 use util::vec::byte_swap;
 use webrender_traits;
@@ -93,12 +91,6 @@ impl WebGLPaintThread {
                                 painter.send_data(chan),
                         }
                     }
-                    CanvasMsg::FromPaint(message) => {
-                        match message {
-                            FromPaintMsg::SendNativeSurface(chan) =>
-                                painter.send_native_surface(chan),
-                        }
-                    }
                     CanvasMsg::Canvas2d(_) => panic!("Wrong message sent to WebGLThread"),
                 }
             }
@@ -145,12 +137,6 @@ impl WebGLPaintThread {
                 chan.send(CanvasData::WebGL(id)).unwrap();
             }
         }
-    }
-
-    fn send_native_surface(&self, _: Sender<NativeSurface>) {
-        
-        
-        unimplemented!()
     }
 
     #[allow(unsafe_code)]

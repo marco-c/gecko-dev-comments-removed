@@ -610,7 +610,7 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
         }
     }
 
-    // TODO(ecoal95): Probably in the future we should keep track of the
+    // TODO(emilio): Probably in the future we should keep track of the
     // generated objects, either here or in the webgl thread
     // https://www.khronos.org/registry/webgl/specs/latest/1.0/#5.14.5
     fn CreateBuffer(&self) -> Option<Root<WebGLBuffer>> {
@@ -1117,7 +1117,6 @@ impl WebGLRenderingContextMethods for WebGLRenderingContext {
             return self.webgl_error(InvalidOperation);
         }
         
-
         let source = match source {
             Some(s) => s,
             None => return,
