@@ -384,6 +384,20 @@ MediaKeySession::Load(const nsAString& aSessionId, ErrorResult& aRv)
 
   
   
+  
+  if (mSessionType == MediaKeySessionType::Temporary) {
+    promise->MaybeReject(NS_ERROR_DOM_TYPE_ERR,
+                         NS_LITERAL_CSTRING("Trying to load() into a non-persistent session"));
+    EME_LOG("MediaKeySession[%p,''] Load() failed, can't load in a non-persistent session", this);
+    return promise.forget();
+  }
+
+  
+  
+  
+
+  
+  
   RefPtr<MediaKeySession> session(mKeys->GetPendingSession(Token()));
   MOZ_ASSERT(session == this, "Session should be awaiting id on its own token");
 
