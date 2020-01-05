@@ -13,7 +13,7 @@ use dom::window::Window;
 use dom::window::WindowHelpers;
 
 use util::str::DOMString;
-use url::Url;
+use url::{Url, UrlParser};
 
 #[dom_struct]
 pub struct Location {
@@ -39,7 +39,13 @@ impl Location {
 impl<'a> LocationMethods for &'a Location {
     
     fn Assign(self, url: DOMString) {
-        self.window.root().r().load_url(url);
+        let window = self.window.root();
+        
+        
+        let base_url = window.get_url();
+        if let Ok(url) = UrlParser::new().base_url(&base_url).parse(&url) {
+            window.load_url(url);
+        }
     }
 
     
