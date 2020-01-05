@@ -3,7 +3,7 @@
 
 
 use rustc::hir::def_id::DefId;
-use rustc::lint::{LateContext, LintContext};
+use rustc::lint::LateContext;
 use syntax::codemap::{ExpnFormat, Span};
 
 
@@ -28,15 +28,14 @@ pub fn match_def_path(cx: &LateContext, def_id: DefId, path: &[&str]) -> bool {
          .all(|(nm, p)| &*nm.as_interned_str() == *p)
 }
 
-pub fn in_derive_expn(cx: &LateContext, span: Span) -> bool {
-    cx.sess().codemap().with_expn_info(span.expn_id,
-            |info| {
-                if let Some(i) = info {
-                    if let ExpnFormat::MacroAttribute(n) = i.callee.format {
-                        if n.as_str().contains("derive") {
-                            true
-                        } else { false }
-                    } else { false }
-                } else { false }
-            })
+pub fn in_derive_expn(span: Span) -> bool {
+    if let Some(i) = span.ctxt.outer().expn_info() {
+        if let ExpnFormat::MacroAttribute(n) = i.callee.format {
+            n.as_str().contains("derive")
+        } else {
+            false
+        }
+    } else {
+        false
+    }
 }
