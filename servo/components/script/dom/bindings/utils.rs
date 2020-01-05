@@ -7,14 +7,17 @@
 use dom::bindings::codegen::PrototypeList;
 use dom::bindings::codegen::PrototypeList::MAX_PROTO_CHAIN_LENGTH;
 use dom::bindings::conversions::{native_from_reflector_jsmanaged, is_dom_class};
-use dom::bindings::error::throw_type_error;
+use dom::bindings::error::{Error, ErrorResult, Fallible, throw_type_error};
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{Temporary, Root};
 use dom::browsercontext;
 use dom::window;
+use util::namespace;
+use util::str::DOMString;
 
 use libc;
 use libc::c_uint;
+use std::borrow::ToOwned;
 use std::boxed;
 use std::cell::Cell;
 use std::ffi::CString;
@@ -43,6 +46,7 @@ use js::rust::with_compartment;
 use js::{JSPROP_ENUMERATE, JSPROP_READONLY, JSPROP_PERMANENT};
 use js::JSFUN_CONSTRUCTOR;
 use js;
+use string_cache::{Atom, Namespace};
 
 
 pub struct WindowProxyHandler(pub *const libc::c_void);
@@ -605,6 +609,68 @@ pub unsafe fn delete_property_by_id(cx: *mut JSContext, object: *mut JSObject,
 }
 
 
+pub fn validate_qualified_name(qualified_name: &str) -> ErrorResult {
+    match xml_name_type(qualified_name) {
+        XMLName::InvalidXMLName => {
+            
+            return Err(Error::InvalidCharacter);
+        },
+        XMLName::Name => {
+            
+            return Err(Error::Namespace);
+        },
+        XMLName::QName => Ok(())
+    }
+}
+
+
+
+pub fn validate_and_extract(namespace: Option<DOMString>, qualified_name: &str)
+                            -> Fallible<(Namespace, Option<DOMString>, Atom)> {
+    
+    let namespace = namespace::from_domstring(namespace);
+
+    
+    try!(validate_qualified_name(qualified_name));
+
+    let (prefix, local_name) = if qualified_name.contains(":") {
+        
+        let mut parts = qualified_name.splitn(1, ':');
+        let prefix = parts.next().unwrap();
+        debug_assert!(!prefix.is_empty());
+        let local_name = parts.next().unwrap();
+        debug_assert!(!local_name.contains(":"));
+        (Some(prefix), local_name)
+    } else {
+        (None, qualified_name)
+    };
+
+    match (namespace, prefix) {
+        (ns!(""), Some(_)) => {
+            // Step 6.
+            Err(Error::Namespace)
+        },
+        (ref ns, Some("xml")) if ns != &ns!(XML) => {
+            // Step 7.
+            Err(Error::Namespace)
+        },
+        (ref ns, p) if ns != &ns!(XMLNS) &&
+                      (qualified_name == "xmlns" || p == Some("xmlns")) => {
+            // Step 8.
+            Err(Error::Namespace)
+        },
+        (ns!(XMLNS), p) if qualified_name != "xmlns" && p != Some("xmlns") => {
+            // Step 9.
+            Err(Error::Namespace)
+        },
+        (ns, p) => {
+            // Step 10.
+            Ok((ns, p.map(|s| s.to_owned()), Atom::from_slice(local_name)))
+        }
+    }
+}
+
+/// Results of `xml_name_type`.
 #[derive(PartialEq)]
 #[allow(missing_docs)]
 pub enum XMLName {
@@ -613,8 +679,8 @@ pub enum XMLName {
     InvalidXMLName
 }
 
-
-
+/// Check if an element name is valid. See http://www.w3.org/TR/xml/#NT-Name
+/// for details.
 pub fn xml_name_type(name: &str) -> XMLName {
     fn is_valid_start(c: char) -> bool {
         match c {
