@@ -796,8 +796,10 @@ ValueNumberer::visitDefinition(MDefinition* def)
         
         def->setNotGuardUnchecked();
 
-        if (def->isGuardRangeBailouts())
-            sim->setGuardRangeBailoutsUnchecked();
+        if (def->isGuardRangeBailouts()) {
+            if (DeadIfUnused(sim))
+                sim->setGuardRangeBailoutsUnchecked();
+        }
 
         if (DeadIfUnused(def)) {
             if (!discardDefsRecursively(def))
