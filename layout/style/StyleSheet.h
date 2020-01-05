@@ -111,6 +111,8 @@ public:
 
   inline void SetPrincipal(nsIPrincipal* aPrincipal);
 
+  void SetTitle(const nsAString& aTitle) { mTitle = aTitle; }
+
   
   inline CORSMode GetCORSMode() const;
   
