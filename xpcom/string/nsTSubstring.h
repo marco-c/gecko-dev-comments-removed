@@ -378,6 +378,20 @@ public:
   MOZ_MUST_USE bool NS_FASTCALL Assign(const substring_tuple_type&,
                                        const fallible_t&);
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  void NS_FASTCALL Assign(const self_type& aStr, size_type aLength);
+  MOZ_MUST_USE bool NS_FASTCALL Assign(const self_type& aStr,
+                                       size_type aLength,
+                                       const fallible_t&);
+
 #if defined(CharT_is_PRUnichar) && defined(MOZ_USE_CHAR16_WRAPPER)
   void Assign(char16ptr_t aData)
   {
