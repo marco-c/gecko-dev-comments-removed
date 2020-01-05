@@ -53,7 +53,7 @@ CanvasRenderingContextHelper::ToBlob(JSContext* aCx,
 
       RefPtr<Blob> newBlob = Blob::Create(mGlobal, blob->Impl());
 
-      mBlobCallback->Call(*newBlob, rv);
+      mBlobCallback->Call(newBlob, rv);
 
       mGlobal = nullptr;
       mBlobCallback = nullptr;
@@ -64,6 +64,16 @@ CanvasRenderingContextHelper::ToBlob(JSContext* aCx,
     nsCOMPtr<nsIGlobalObject> mGlobal;
     RefPtr<BlobCallback> mBlobCallback;
   };
+
+   nsIntSize elemSize = GetWidthHeight();
+   if (elemSize.width == 0 || elemSize.height == 0) {
+     
+     
+     
+     BlobCallback* blobCallback = &aCallback;
+     blobCallback->Call(nullptr, aRv);
+     return;
+   }
 
   RefPtr<EncodeCompleteCallback> callback =
     new EncodeCallback(aGlobal, &aCallback);
