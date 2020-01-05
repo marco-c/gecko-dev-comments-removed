@@ -31,6 +31,9 @@
 
 
 
+
+
+
 var dateTimeFormatCache = new Record();
 
 
@@ -50,15 +53,15 @@ function GetCachedFormat(format, required, defaults) {
            "dateTimeFormatCache");
 
     var runtimeDefaultLocale = RuntimeDefaultLocale();
-    var localTZA = LocalTZA();
+    var icuDefaultTimeZone = intl_defaultTimeZone();
 
     var formatters;
     if (dateTimeFormatCache.runtimeDefaultLocale !== runtimeDefaultLocale ||
-        dateTimeFormatCache.localTZA !== localTZA)
+        dateTimeFormatCache.icuDefaultTimeZone !== icuDefaultTimeZone)
     {
         formatters = dateTimeFormatCache.formatters = new Record();
         dateTimeFormatCache.runtimeDefaultLocale = runtimeDefaultLocale;
-        dateTimeFormatCache.localTZA = localTZA;
+        dateTimeFormatCache.icuDefaultTimeZone = icuDefaultTimeZone;
     } else {
         formatters = dateTimeFormatCache.formatters;
     }
