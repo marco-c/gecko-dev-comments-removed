@@ -256,8 +256,6 @@ var gPage = {
   onPageVisibleAndLoaded() {
     
     this.reportLastVisibleTileIndex();
-    
-    this.maybeShowAutoMigrationUndoNotification();
   },
 
   reportLastVisibleTileIndex() {
@@ -285,9 +283,5 @@ var gPage = {
     }
 
     DirectoryLinksProvider.reportSitesAction(sites, "view", lastIndex);
-  },
-
-  maybeShowAutoMigrationUndoNotification() {
-    sendAsyncMessage("NewTab:MaybeShowAutoMigrationUndoNotification");
-  },
+  }
 };
