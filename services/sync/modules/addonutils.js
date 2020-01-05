@@ -493,7 +493,6 @@ AddonUtilsInternal.prototype = {
 
     if (!addon.appDisabled) {
       cb(null, addon);
-
     }
     
   },
