@@ -423,7 +423,7 @@ impl StackingContext {
         
         
         
-        if paint_context.layer_kind == LayerKind::Layer3D {
+        if paint_context.layer_kind == LayerKind::HasTransform {
             self.draw_into_context(&self.display_list,
                                    paint_context,
                                    &transform,
@@ -1022,7 +1022,7 @@ impl<'a> Iterator for DisplayItemIterator<'a> {
 impl DisplayItem {
     
     fn draw_into_context(&self, paint_context: &mut PaintContext) {
-        if paint_context.layer_kind == LayerKind::Layer2D {
+        if paint_context.layer_kind == LayerKind::NoTransform {
             let this_clip = &self.base().clip;
             match paint_context.transient_clip {
                 Some(ref transient_clip) if transient_clip == this_clip => {}
