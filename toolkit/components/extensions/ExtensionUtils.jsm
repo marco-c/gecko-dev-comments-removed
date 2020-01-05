@@ -502,6 +502,13 @@ class BaseContext {
       obj.close();
     }
   }
+
+  
+
+
+  close() {
+    this.unload();
+  }
 }
 
 

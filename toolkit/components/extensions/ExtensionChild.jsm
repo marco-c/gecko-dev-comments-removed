@@ -76,14 +76,15 @@ var apiManager = new class extends SchemaAPIManager {
 
 
 
-class WannabeChildAPIManager extends ChildAPIManager {
-  createProxyContextInConstructor(data) {
+class PseudoChildAPIManager extends ChildAPIManager {
+  createProxyContextInConstructor(originalData) {
     
-    data = Object.assign({}, data);
-    let {principal} = data;  
-    delete data.principal;
+    let data = Object.assign({}, originalData, {principal: null});
     data = Cu.cloneInto(data, {});
-    data.principal = principal;
+    
+    
+    data.principal = originalData.principal;
+
     let name = "API:CreateProxyContext";
     
     let target = this.context.contentWindow
@@ -105,7 +106,7 @@ class WannabeChildAPIManager extends ChildAPIManager {
     });
 
     
-    this.context.callOnClose({close: proxyContext.unload.bind(proxyContext)});
+    this.context.callOnClose(proxyContext);
   }
 
   getFallbackImplementation(namespace, name) {
@@ -248,7 +249,7 @@ defineLazyGetter(ExtensionContext.prototype, "childManager", function() {
     apiManager.global.initializeBackgroundPage(this.contentWindow);
   }
 
-  let childManager = new WannabeChildAPIManager(this, this.messageManager, localApis, {
+  let childManager = new PseudoChildAPIManager(this, this.messageManager, localApis, {
     envType: "addon_parent",
     viewType: this.viewType,
     url: this.uri.spec,
