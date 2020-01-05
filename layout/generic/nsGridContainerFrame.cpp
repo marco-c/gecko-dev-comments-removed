@@ -2719,16 +2719,6 @@ AlignJustifySelf(uint8_t aAlignment, bool aOverflowSafe, LogicalAxis aAxis,
   }
 }
 
-static bool
-SameSide(WritingMode aContainerWM, LogicalSide aContainerSide,
-         WritingMode aChildWM, LogicalSide aChildSide)
-{
-  MOZ_ASSERT(aContainerWM.PhysicalAxis(GetAxis(aContainerSide)) ==
-                 aChildWM.PhysicalAxis(GetAxis(aChildSide)));
-  return aContainerWM.PhysicalSide(aContainerSide) ==
-             aChildWM.PhysicalSide(aChildSide);
-}
-
 static void
 AlignSelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
           uint8_t aAlignSelf, nscoord aCBSize, const WritingMode aCBWM,
@@ -2746,18 +2736,18 @@ AlignSelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
     alignSelf = NS_STYLE_ALIGN_STRETCH;
   }
   WritingMode childWM = aRI.GetWritingMode();
-  bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
   
   
-  bool sameSide = SameSide(aCBWM, eLogicalSideBStart,
-                           childWM, isOrthogonal ? eLogicalSideIStart
-                                                 : eLogicalSideBStart);
+  bool sameSide = aCBWM.ParallelAxisStartsOnSameSide(eLogicalAxisBlock,
+                                                     childWM);
   nscoord baselineAdjust = 0;
   if (alignSelf == NS_STYLE_ALIGN_BASELINE ||
       alignSelf == NS_STYLE_ALIGN_LAST_BASELINE) {
     alignSelf = aGridItem.GetSelfBaseline(alignSelf, eLogicalAxisBlock,
                                           &baselineAdjust);
   }
+
+  bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
   LogicalAxis axis = isOrthogonal ? eLogicalAxisInline : eLogicalAxisBlock;
   AlignJustifySelf(alignSelf, overflowSafe, axis, sameSide, baselineAdjust,
                    aCBSize, aRI, aSize, aPos);
@@ -2776,12 +2766,10 @@ JustifySelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
     justifySelf = NS_STYLE_ALIGN_STRETCH;
   }
   WritingMode childWM = aRI.GetWritingMode();
-  bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
   
   
-  bool sameSide = SameSide(aCBWM, eLogicalSideIStart,
-                           childWM, isOrthogonal ? eLogicalSideBStart
-                                                 : eLogicalSideIStart);
+  bool sameSide = aCBWM.ParallelAxisStartsOnSameSide(eLogicalAxisInline,
+                                                     childWM);
   nscoord baselineAdjust = 0;
   
   
@@ -2801,6 +2789,7 @@ JustifySelf(const nsGridContainerFrame::GridItemInfo& aGridItem,
       break;
   }
 
+  bool isOrthogonal = aCBWM.IsOrthogonalTo(childWM);
   LogicalAxis axis = isOrthogonal ? eLogicalAxisBlock : eLogicalAxisInline;
   AlignJustifySelf(justifySelf, overflowSafe, axis, sameSide, baselineAdjust,
                    aCBSize, aRI, aSize, aPos);
@@ -4181,16 +4170,10 @@ nsGridContainerFrame::Tracks::InitializeItemBaselines(
                           selfAlignment == selfAlignEdge;
         if (!validCombo) {
           
+          LogicalAxis alignAxis = GetOrthogonalAxis(mAxis);
           
           
-          
-          auto side = isInlineAxis ? eLogicalSideBStart : eLogicalSideIStart;
-          
-          
-          
-          auto childSide = isInlineAxis == isOrthogonal ? eLogicalSideIStart
-                                                        : eLogicalSideBStart;
-          bool sameSide = SameSide(wm, side, childWM, childSide);
+          bool sameSide = wm.ParallelAxisStartsOnSameSide(alignAxis, childWM);
           switch (selfAlignment) {
             case NS_STYLE_ALIGN_LEFT:
               selfAlignment = !isInlineAxis || wm.IsBidiLTR() ? NS_STYLE_ALIGN_START

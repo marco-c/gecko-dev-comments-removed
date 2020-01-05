@@ -43,6 +43,11 @@ enum PhysicalAxis {
   eAxisHorizontal    = 0x1
 };
 
+inline LogicalAxis GetOrthogonalAxis(LogicalAxis aAxis)
+{
+  return aAxis == eLogicalAxisBlock ? eLogicalAxisInline : eLogicalAxisBlock;
+}
+
 inline bool IsInline(LogicalSide aSide) { return aSide & 0x2; }
 inline bool IsBlock(LogicalSide aSide) { return !IsInline(aSide); }
 inline bool IsEnd(LogicalSide aSide) { return aSide & 0x1; }
@@ -585,6 +590,35 @@ public:
   bool IsOrthogonalTo(const WritingMode& aOther) const
   {
     return IsVertical() != aOther.IsVertical();
+  }
+
+  
+
+
+
+
+
+
+
+
+  bool ParallelAxisStartsOnSameSide(LogicalAxis aLogicalAxis,
+                                    const WritingMode& aOther) const
+  {
+    Side myStartSide =
+      this->PhysicalSide(MakeLogicalSide(aLogicalAxis,
+                                         eLogicalEdgeStart));
+
+    
+    
+    LogicalAxis otherWMAxis = aOther.IsOrthogonalTo(*this) ?
+      GetOrthogonalAxis(aLogicalAxis) : aLogicalAxis;
+    Side otherWMStartSide =
+      aOther.PhysicalSide(MakeLogicalSide(otherWMAxis,
+                                          eLogicalEdgeStart));
+
+    NS_ASSERTION(myStartSide % 2 == otherWMStartSide % 2,
+                 "Should end up with sides in the same physical axis");
+    return myStartSide == otherWMStartSide;
   }
 
   uint8_t GetBits() const { return mWritingMode; }
