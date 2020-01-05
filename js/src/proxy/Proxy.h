@@ -81,6 +81,9 @@ proxy_Construct(JSContext* cx, unsigned argc, Value* vp);
 
 
 bool
+ProxyHasOwn(JSContext* cx, HandleObject proxy, HandleValue idVal, MutableHandleValue result);
+
+bool
 ProxyGetProperty(JSContext* cx, HandleObject proxy, HandleId id, MutableHandleValue vp);
 
 bool
