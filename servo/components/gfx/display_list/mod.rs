@@ -33,6 +33,10 @@ use std::slice::Items;
 use style::computed_values::border_style;
 use sync::Arc;
 
+
+
+pub use azure::azure_hl::GradientStop;
+
 pub mod optimizer;
 
 
@@ -295,6 +299,7 @@ pub enum DisplayItem {
     TextDisplayItemClass(Box<TextDisplayItem>),
     ImageDisplayItemClass(Box<ImageDisplayItem>),
     BorderDisplayItemClass(Box<BorderDisplayItem>),
+    GradientDisplayItemClass(Box<GradientDisplayItem>),
     LineDisplayItemClass(Box<LineDisplayItem>),
 
     
@@ -380,6 +385,22 @@ pub struct ImageDisplayItem {
     
     
     pub stretch_size: Size2D<Au>,
+}
+
+
+#[deriving(Clone)]
+pub struct GradientDisplayItem {
+    
+    pub base: BaseDisplayItem,
+
+    
+    pub start_point: Point2D<Au>,
+
+    
+    pub end_point: Point2D<Au>,
+
+    
+    pub stops: Vec<GradientStop>,
 }
 
 
@@ -482,6 +503,13 @@ impl DisplayItem {
                                            border.style)
             }
 
+            GradientDisplayItemClass(ref gradient) => {
+                render_context.draw_linear_gradient(&gradient.base.bounds,
+                                                    &gradient.start_point,
+                                                    &gradient.end_point,
+                                                    gradient.stops.as_slice());
+            }
+
             LineDisplayItemClass(ref line) => {
                 render_context.draw_line(&line.base.bounds,
                                           line.color,
@@ -498,6 +526,7 @@ impl DisplayItem {
             TextDisplayItemClass(ref text) => &text.base,
             ImageDisplayItemClass(ref image_item) => &image_item.base,
             BorderDisplayItemClass(ref border) => &border.base,
+            GradientDisplayItemClass(ref gradient) => &gradient.base,
             LineDisplayItemClass(ref line) => &line.base,
             PseudoDisplayItemClass(ref base) => &**base,
         }
@@ -509,6 +538,7 @@ impl DisplayItem {
             TextDisplayItemClass(ref mut text) => &mut text.base,
             ImageDisplayItemClass(ref mut image_item) => &mut image_item.base,
             BorderDisplayItemClass(ref mut border) => &mut border.base,
+            GradientDisplayItemClass(ref mut gradient) => &mut gradient.base,
             LineDisplayItemClass(ref mut line) => &mut line.base,
             PseudoDisplayItemClass(ref mut base) => &mut **base,
         }
@@ -535,6 +565,7 @@ impl fmt::Show for DisplayItem {
                 TextDisplayItemClass(_) => "Text",
                 ImageDisplayItemClass(_) => "Image",
                 BorderDisplayItemClass(_) => "Border",
+                GradientDisplayItemClass(_) => "Gradient",
                 LineDisplayItemClass(_) => "Line",
                 PseudoDisplayItemClass(_) => "Pseudo",
             },
@@ -544,3 +575,4 @@ impl fmt::Show for DisplayItem {
         )
     }
 }
+
