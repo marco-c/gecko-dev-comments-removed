@@ -248,6 +248,8 @@ pub enum Msg {
     
     GetClipboardContents(IpcSender<String>),
     
+    SetClipboardContents(String),
+    
     WebDriverCommand(WebDriverCommandMsg),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
