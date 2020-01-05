@@ -461,7 +461,24 @@ nsDocLoader::OnStartRequest(nsIRequest *request, nsISupports *aCtxt)
   NS_ASSERTION(!mIsLoadingDocument || mDocumentRequest,
                "mDocumentRequest MUST be set for the duration of a page load!");
 
-  doStartURLLoad(request);
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  int32_t extraFlags = 0;
+  if (mIsLoadingDocument &&
+      !bJustStartedLoading &&
+      (loadFlags & nsIChannel::LOAD_DOCUMENT_URI) &&
+      (loadFlags & nsIChannel::LOAD_REPLACE)) {
+    extraFlags = nsIWebProgressListener::STATE_IS_REDIRECTED_DOCUMENT;
+  }
+  doStartURLLoad(request, extraFlags);
 
   return NS_OK;
 }
@@ -765,7 +782,7 @@ void nsDocLoader::doStartDocumentLoad(void)
                     NS_OK);
 }
 
-void nsDocLoader::doStartURLLoad(nsIRequest *request)
+void nsDocLoader::doStartURLLoad(nsIRequest *request, int32_t aExtraFlags)
 {
 #if defined(DEBUG)
   nsAutoCString buffer;
@@ -780,7 +797,8 @@ void nsDocLoader::doStartURLLoad(nsIRequest *request)
   FireOnStateChange(this,
                     request,
                     nsIWebProgressListener::STATE_START |
-                    nsIWebProgressListener::STATE_IS_REQUEST,
+                    nsIWebProgressListener::STATE_IS_REQUEST |
+                    aExtraFlags,
                     NS_OK);
 }
 
