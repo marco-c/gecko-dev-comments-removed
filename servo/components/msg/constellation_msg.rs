@@ -268,7 +268,7 @@ pub enum Msg {
     
     CreateWebGLPaintTask(Size2D<i32>,
                          GLContextAttributes,
-                         IpcSender<(IpcSender<CanvasMsg>, usize)>),
+                         IpcSender<Result<(IpcSender<CanvasMsg>, usize), String>>),
 }
 
 #[derive(Clone, Eq, PartialEq, Deserialize, Serialize)]
