@@ -1900,7 +1900,6 @@ nsHttpChannel::ProcessAltService()
 nsresult
 nsHttpChannel::ProcessResponse()
 {
-    nsresult rv;
     uint32_t httpStatus = mResponseHead->Status();
 
     LOG(("nsHttpChannel::ProcessResponse [this=%p httpStatus=%u]\n",
@@ -1993,7 +1992,7 @@ nsHttpChannel::ProcessResponse()
     } else {
         
         
-        rv = ProcessSecurityHeaders();
+        DebugOnly<nsresult> rv = ProcessSecurityHeaders();
         MOZ_ASSERT(NS_SUCCEEDED(rv), "ProcessSTSHeader failed, continuing load.");
     }
 
@@ -2003,6 +2002,37 @@ nsHttpChannel::ProcessResponse()
 
     
     gHttpHandler->OnExamineResponse(this);
+
+    return ContinueProcessResponse1();
+}
+
+void
+nsHttpChannel::AsyncContinueProcessResponse()
+{
+    nsresult rv;
+    rv = ContinueProcessResponse1();
+    if (NS_FAILED(rv)) {
+        
+        
+        
+        
+        Unused << Cancel(rv);
+    }
+}
+
+nsresult
+nsHttpChannel::ContinueProcessResponse1()
+{
+    NS_PRECONDITION(!mCallOnResume, "How did that happen?");
+    nsresult rv;
+
+    if (mSuspendCount) {
+        LOG(("Waiting until resume to finish processing response [this=%p]\n", this));
+        mCallOnResume = &nsHttpChannel::AsyncContinueProcessResponse;
+        return NS_OK;
+    }
+
+    uint32_t httpStatus = mResponseHead->Status();
 
     
     
@@ -2042,22 +2072,22 @@ nsHttpChannel::ProcessResponse()
         nsCOMPtr<nsIURI> redirectTo;
         mAPIRedirectToURI.swap(redirectTo);
 
-        PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse1);
+        PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse2);
         rv = StartRedirectChannelToURI(redirectTo, nsIChannelEventSink::REDIRECT_TEMPORARY);
         if (NS_SUCCEEDED(rv)) {
             return NS_OK;
         }
-        PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse1);
+        PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse2);
     }
 
     
     
     
-    return ContinueProcessResponse1(NS_BINDING_FAILED);
+    return ContinueProcessResponse2(NS_BINDING_FAILED);
 }
 
 nsresult
-nsHttpChannel::ContinueProcessResponse1(nsresult rv)
+nsHttpChannel::ContinueProcessResponse2(nsresult rv)
 {
     if (NS_SUCCEEDED(rv)) {
         
@@ -2112,10 +2142,10 @@ nsHttpChannel::ContinueProcessResponse1(nsresult rv)
 #endif
         
         MaybeInvalidateCacheEntryForSubsequentGet();
-        PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse2);
+        PushRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse3);
         rv = AsyncProcessRedirection(httpStatus);
         if (NS_FAILED(rv)) {
-            PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse2);
+            PopRedirectAsyncFunc(&nsHttpChannel::ContinueProcessResponse3);
             LOG(("AsyncProcessRedirection failed [rv=%x]\n", rv));
             
             if (mCacheEntry)
@@ -2124,7 +2154,7 @@ nsHttpChannel::ContinueProcessResponse1(nsresult rv)
                 mStatus = rv;
                 DoNotifyListener();
             } else {
-                rv = ContinueProcessResponse2(rv);
+                rv = ContinueProcessResponse3(rv);
             }
         }
         break;
@@ -2232,7 +2262,7 @@ nsHttpChannel::ContinueProcessResponse1(nsresult rv)
 }
 
 nsresult
-nsHttpChannel::ContinueProcessResponse2(nsresult rv)
+nsHttpChannel::ContinueProcessResponse3(nsresult rv)
 {
     bool doNotRender = DoNotRender3xxBody(rv);
 
@@ -2248,7 +2278,7 @@ nsHttpChannel::ContinueProcessResponse2(nsresult rv)
             
             
             
-            LOG(("ContinueProcessResponse2 detected rejected Non-HTTP Redirection"));
+            LOG(("ContinueProcessResponse3 detected rejected Non-HTTP Redirection"));
             doNotRender = true;
             rv = NS_ERROR_CORRUPTED_CONTENT;
         }
@@ -2274,7 +2304,7 @@ nsHttpChannel::ContinueProcessResponse2(nsresult rv)
         return NS_OK;
     }
 
-    LOG(("ContinueProcessResponse2 got failure result [rv=%x]\n", rv));
+    LOG(("ContinueProcessResponse3 got failure result [rv=%x]\n", rv));
     if (mTransaction->ProxyConnectFailed()) {
         return ProcessFailedProxyConnect(mRedirectType);
     }
