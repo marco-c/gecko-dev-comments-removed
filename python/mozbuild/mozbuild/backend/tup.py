@@ -139,6 +139,15 @@ class TupOnly(CommonBackend, PartialBackend):
         backend_file = self._get_backend_file_for(obj)
 
         if isinstance(obj, GeneratedFile):
+            
+            skip_files = (
+                'buildid.h',
+                'source-repo.h',
+            )
+            if any(f in skip_files for f in obj.outputs):
+                
+                return False
+
             self._process_generated_file(backend_file, obj)
         elif isinstance(obj, Defines):
             self._process_defines(backend_file, obj)
