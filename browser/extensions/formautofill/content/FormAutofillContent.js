@@ -230,17 +230,16 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
   startSearch(searchString, searchParam, previousResult, listener) {
     this.forceStop = false;
-    let inputInfo;
+    let info = this.getInputDetails();
 
-    this.getInputInfo().then((info) => {
-      inputInfo = info;
-      return this.getProfiles({info, searchString});
-    }).then((profiles) => {
+    this.getProfiles({info, searchString}).then((profiles) => {
       if (this.forceStop) {
         return;
       }
 
-      let result = new ProfileAutoCompleteResult(searchString, inputInfo, profiles, {});
+      
+      
+      let result = new ProfileAutoCompleteResult(searchString, info, profiles, {});
 
       listener.onSearchResult(this, result);
     });
@@ -284,14 +283,20 @@ AutofillProfileAutoCompleteSearch.prototype = {
 
 
 
-  getInputInfo() {
-    let input = formFillController.getFocusedInput();
+  getInputDetails() {
+    
+    return FormAutofillContent.getInputDetails(formFillController.getFocusedInput());
+  },
 
+  
+
+
+
+
+
+  getFormDetails() {
     
-    
-    return new Promise((resolve) => {
-      resolve(FormAutofillHeuristics.getInfo(input));
-    });
+    return FormAutofillContent.getFormDetails(formFillController.getFocusedInput());
   },
 };
 
@@ -350,11 +355,69 @@ var FormAutofillContent = {
     }
   },
 
+  
+
+
+
+
+
+
+
+  getInputDetails(element) {
+    for (let formDetails of this._formsDetails) {
+      for (let detail of formDetails) {
+        if (element == detail.element) {
+          return this._serializeInfo(detail);
+        }
+      }
+    }
+    return null;
+  },
+
+  
+
+
+
+
+
+
+
+
+  getFormDetails(element) {
+    for (let formDetails of this._formsDetails) {
+      if (formDetails.some((detail) => detail.element == element)) {
+        return formDetails.map((detail) => this._serializeInfo(detail));
+      }
+    }
+    return null;
+  },
+
+  
+
+
+
+
+
+
+
+  _serializeInfo(detail) {
+    let info = Object.assign({}, detail);
+    delete info.element;
+    return info;
+  },
+
   _identifyAutofillFields(doc) {
     let forms = [];
+    this._formsDetails = [];
 
     
     for (let field of doc.getElementsByTagName("input")) {
+      
+      
+      if (!field.mozIsTextField(true)) {
+        continue;
+      }
+
       let formLike = FormLikeFactory.createFromField(field);
       if (!forms.some(form => form.rootElement === formLike.rootElement)) {
         forms.push(formLike);
@@ -370,6 +433,7 @@ var FormAutofillContent = {
         return;
       }
 
+      this._formsDetails.push(formHandler.fieldDetails);
       formHandler.fieldDetails.forEach(
         detail => this._markAsAutofillField(detail.element));
     });
