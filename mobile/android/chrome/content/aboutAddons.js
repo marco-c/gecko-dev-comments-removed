@@ -225,13 +225,14 @@ var Addons = {
     let updateable = (aAddon.permissions & AddonManager.PERM_CAN_UPGRADE) > 0;
     let uninstallable = (aAddon.permissions & AddonManager.PERM_CAN_UNINSTALL) > 0;
 
-    
     let optionsURL;
-    switch (aAddon.optionsType) {
+    switch (parseInt(aAddon.optionsType)) {
       case AddonManager.OPTIONS_TYPE_INLINE:
         optionsURL = aAddon.optionsURL || "";
         break;
       default:
+        
+        
         optionsURL = "";
     }
 
