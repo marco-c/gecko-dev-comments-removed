@@ -1,0 +1,17 @@
+
+
+
+
+
+
+
+"use strict";
+
+
+
+
+module.exports = {
+  processors: {
+    ".js": require("../lib/processors/self-hosted")
+  }
+};

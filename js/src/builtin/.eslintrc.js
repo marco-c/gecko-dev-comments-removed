@@ -5,6 +5,10 @@ module.exports = {
     "../../../toolkit/.eslintrc.js"
   ],
 
+  "plugins": [
+    "spidermonkey-js"
+  ],
+
   "rules": {
     
     "no-self-compare": "off",
