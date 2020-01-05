@@ -1072,7 +1072,8 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     
     bool functionFormalParametersAndBody(InHandling inHandling, YieldHandling yieldHandling,
                                          Node pn, FunctionSyntaxKind kind,
-                                         mozilla::Maybe<uint32_t> parameterListEnd = mozilla::Nothing());
+                                         mozilla::Maybe<uint32_t> parameterListEnd = mozilla::Nothing(),
+                                         bool isStandaloneFunction = false);
 
     
     
@@ -1347,8 +1348,8 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
                                      GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
                                      bool tryAnnexB,
                                      Directives inheritedDirectives, Directives* newDirectives);
-    bool finishFunctionScopes();
-    bool finishFunction();
+    bool finishFunctionScopes(bool isStandaloneFunction);
+    bool finishFunction(bool isStandaloneFunction = false);
     bool leaveInnerFunction(ParseContext* outerpc);
 
     bool matchOrInsertSemicolonHelper(TokenStream::Modifier modifier);
