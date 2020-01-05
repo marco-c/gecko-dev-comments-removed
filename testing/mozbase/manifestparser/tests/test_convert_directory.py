@@ -60,16 +60,12 @@ class TestDirectoryConversion(unittest.TestCase):
             
             manifest = convert([stub])
             out_tmpl = """[%(stub)s/bar]
-subsuite = 
 
 [%(stub)s/fleem]
-subsuite = 
 
 [%(stub)s/foo]
-subsuite = 
 
 [%(stub)s/subdir/subfile]
-subsuite = 
 
 """  
             self.assertEqual(str(manifest), out_tmpl % dict(stub=stub))
