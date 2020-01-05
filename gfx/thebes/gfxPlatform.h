@@ -456,7 +456,7 @@ public:
 
     static bool OffMainThreadCompositingEnabled();
 
-    void UpdateCanUseHardareVideoDecoding();
+    void UpdateCanUseHardwareVideoDecoding();
 
     
     void GetCompositorBackends(bool useAcceleration, nsTArray<mozilla::layers::LayersBackend>& aBackends);

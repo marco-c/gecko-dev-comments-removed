@@ -365,6 +365,10 @@ gfxWindowsPlatform::InitAcceleration()
   DeviceManagerDx::Init();
   DeviceManagerD3D9::Init();
 
+  
+  
+  UpdateCanUseHardwareVideoDecoding();
+
   InitializeConfig();
   InitializeDevices();
   UpdateANGLEConfig();
@@ -2030,7 +2034,7 @@ gfxWindowsPlatform::ImportGPUDeviceData(const mozilla::gfx::GPUDeviceData& aData
 
   
   
-  UpdateCanUseHardareVideoDecoding();
+  UpdateCanUseHardwareVideoDecoding();
 
   
   
