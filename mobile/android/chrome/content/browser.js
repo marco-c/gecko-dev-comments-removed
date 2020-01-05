@@ -233,34 +233,25 @@ lazilyLoadedObserverScripts.forEach(function (aScript) {
 
 
 [
-  ["Home", ["HomeBanner:Get", "HomePanels:Get", "HomePanels:Authenticate", "HomePanels:RefreshView",
-            "HomePanels:Installed", "HomePanels:Uninstalled"], "resource://gre/modules/Home.jsm"],
-].forEach(module => {
-  let [name, notifications, resource] = module;
-  XPCOMUtils.defineLazyModuleGetter(this, name, resource);
-  let observer = (s, t, d) => {
-    Services.obs.removeObserver(observer, t);
-    Services.obs.addObserver(this[name], t, false);
-    this[name].observe(s, t, d); 
-  };
-  notifications.forEach(notification => {
-    Services.obs.addObserver(observer, notification, false);
-  });
-});
-
-
-[
   ["ActionBarHandler", WindowEventDispatcher,
    ["TextSelection:Get", "TextSelection:Action", "TextSelection:End"],
    "chrome://browser/content/ActionBarHandler.js"],
   ["FindHelper", GlobalEventDispatcher,
    ["FindInPage:Opened", "FindInPage:Closed"],
    "chrome://browser/content/FindHelper.js"],
+  ["Home", GlobalEventDispatcher,
+   ["HomeBanner:Get", "HomePanels:Get", "HomePanels:Authenticate",
+    "HomePanels:RefreshView", "HomePanels:Installed", "HomePanels:Uninstalled"],
+   "resource://gre/modules/Home.jsm"],
 ].forEach(module => {
   let [name, dispatcher, events, script] = module;
   XPCOMUtils.defineLazyGetter(window, name, function() {
     let sandbox = {};
-    Services.scriptloader.loadSubScript(script, sandbox);
+    if (script.endsWith(".jsm")) {
+      Cu.import(script, sandbox);
+    } else {
+      Services.scriptloader.loadSubScript(script, sandbox);
+    }
     return sandbox[name];
   });
   let listener = (event, message, callback) => {

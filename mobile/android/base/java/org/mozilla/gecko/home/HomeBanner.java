@@ -154,7 +154,7 @@ public class HomeBanner extends LinearLayout
 
 
     public void update() {
-        GeckoAppShell.notifyObservers("HomeBanner:Get", null);
+        EventDispatcher.getInstance().dispatch("HomeBanner:Get", null);
     }
 
     @Override 
