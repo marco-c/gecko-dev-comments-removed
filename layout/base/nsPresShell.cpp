@@ -4477,7 +4477,7 @@ PresShell::ReconstructFrames(void)
 {
   NS_PRECONDITION(!mFrameConstructor->GetRootFrame() || mDidInitialize,
                   "Must not have root frame before initial reflow");
-  if (!mDidInitialize) {
+  if (!mDidInitialize || mIsDestroying) {
     
     return NS_OK;
   }
@@ -4487,6 +4487,10 @@ PresShell::ReconstructFrames(void)
   
   
   mDocument->FlushPendingNotifications(Flush_ContentAndNotify);
+
+  if (mIsDestroying) {
+    return NS_OK;
+  }
 
   nsAutoCauseReflowNotifier crNotifier(this);
   mFrameConstructor->BeginUpdate();
