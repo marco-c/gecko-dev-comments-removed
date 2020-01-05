@@ -6,6 +6,9 @@
 "use strict";
 
 
+requestLongerTimeout(2);
+
+
 
 const URL = "data:text/html;charset=utf-8,Toggling devtools quickly";
 
