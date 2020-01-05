@@ -5,13 +5,13 @@
 
 
 #include "nsLayoutDebugCLH.h"
+#include "nsArray.h"
 #include "nsString.h"
 #include "plstr.h"
 #include "nsCOMPtr.h"
 #include "nsIWindowWatcher.h"
 #include "nsIServiceManager.h"
 #include "nsIDOMWindow.h"
-#include "nsISupportsArray.h"
 #include "nsISupportsPrimitives.h"
 #include "nsICommandLine.h"
 
@@ -49,9 +49,7 @@ nsLayoutDebugCLH::Handle(nsICommandLine* aCmdLine)
 
     aCmdLine->RemoveArguments(idx, idx + !url.IsEmpty());
 
-    nsCOMPtr<nsISupportsArray> argsArray =
-        do_CreateInstance(NS_SUPPORTSARRAY_CONTRACTID, &rv);
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsCOMPtr<nsIMutableArray> argsArray = nsArray::Create();
 
     if (!url.IsEmpty())
     {
@@ -60,7 +58,7 @@ nsLayoutDebugCLH::Handle(nsICommandLine* aCmdLine)
         NS_ENSURE_TRUE(scriptableURL, NS_ERROR_FAILURE);
   
         scriptableURL->SetData(url);
-        argsArray->AppendElement(scriptableURL);
+        argsArray->AppendElement(scriptableURL,  false);
     }
 
     nsCOMPtr<nsIWindowWatcher> wwatch =

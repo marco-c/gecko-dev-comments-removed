@@ -187,8 +187,8 @@ function openWindow(parent, url, target, features, args, noExternalArgs) {
   }
 
   
-  var argArray = Components.classes["@mozilla.org/supports-array;1"]
-                    .createInstance(Components.interfaces.nsISupportsArray);
+  var argArray = Components.classes["@mozilla.org/array;1"]
+                    .createInstance(Components.interfaces.nsIMutableArray);
 
   
   var stringArgs = null;
@@ -207,36 +207,36 @@ function openWindow(parent, url, target, features, args, noExternalArgs) {
       sstring.data = uri;
       uriArray.AppendElement(sstring);
     });
-    argArray.AppendElement(uriArray);
+    argArray.appendElement(uriArray,  false);
   } else {
-    argArray.AppendElement(null);
+    argArray.appendElement(null,  false);
   }
 
   
   
   
-  argArray.AppendElement(null); 
-  argArray.AppendElement(null); 
-  argArray.AppendElement(null); 
-  argArray.AppendElement(null); 
+  argArray.appendElement(null,  false); 
+  argArray.appendElement(null,  false); 
+  argArray.appendElement(null,  false); 
+  argArray.appendElement(null,  false); 
 
   return Services.ww.openWindow(parent, url, target, features, argArray);
 }
 
 function openPreferences() {
-  var sa = Components.classes["@mozilla.org/supports-array;1"]
-                     .createInstance(Components.interfaces.nsISupportsArray);
+  var args = Components.classes["@mozilla.org/array;1"]
+                     .createInstance(Components.interfaces.nsIMutableArray);
 
   var wuri = Components.classes["@mozilla.org/supports-string;1"]
                        .createInstance(Components.interfaces.nsISupportsString);
   wuri.data = "about:preferences";
 
-  sa.AppendElement(wuri);
+  sa.appendElement(wuri,  false);
 
   Services.ww.openWindow(null, gBrowserContentHandler.chromeURL,
                          "_blank",
                          "chrome,dialog=no,all",
-                         sa);
+                         args);
 }
 
 function logSystemBasedSearch(engine) {
@@ -252,17 +252,17 @@ function doSearch(searchTerm, cmdLine) {
   var submission = engine.getSubmission(searchTerm, null, "system");
 
   
-  var sa = Components.classes["@mozilla.org/supports-array;1"]
-                     .createInstance(Components.interfaces.nsISupportsArray);
+  var args = Components.classes["@mozilla.org/array;1"]
+                     .createInstance(Components.interfaces.nsIMutableArray);
 
   var wuri = Components.classes["@mozilla.org/supports-string;1"]
                        .createInstance(Components.interfaces.nsISupportsString);
   wuri.data = submission.uri.spec;
 
-  sa.AppendElement(wuri);
-  sa.AppendElement(null);
-  sa.AppendElement(null);
-  sa.AppendElement(submission.postData);
+  args.appendElement(wuri,  false);
+  args.appendElement(null,  false);
+  args.appendElement(null,  false);
+  args.appendElement(submission.postData,  false);
 
   
   
@@ -271,7 +271,7 @@ function doSearch(searchTerm, cmdLine) {
                                 "_blank",
                                 "chrome,dialog=no,all" +
                                 gBrowserContentHandler.getFeatures(cmdLine),
-                                sa);
+                                args);
 }
 
 function nsBrowserContentHandler() {

@@ -259,8 +259,8 @@ function openLinkIn(url, where, params) {
 
   if (!w || where == "window") {
     
-    var sa = Cc["@mozilla.org/supports-array;1"].
-             createInstance(Ci.nsISupportsArray);
+    var sa = Cc["@mozilla.org/array;1"].
+             createInstance(Ci.nsIMutableArray);
 
     var wuri = Cc["@mozilla.org/supports-string;1"].
                createInstance(Ci.nsISupportsString);
@@ -292,14 +292,14 @@ function openLinkIn(url, where, params) {
                                  createInstance(Ci.nsISupportsPRUint32);
     userContextIdSupports.data = aUserContextId;
 
-    sa.AppendElement(wuri);
-    sa.AppendElement(charset);
-    sa.AppendElement(referrerURISupports);
-    sa.AppendElement(aPostData);
-    sa.AppendElement(allowThirdPartyFixupSupports);
-    sa.AppendElement(referrerPolicySupports);
-    sa.AppendElement(userContextIdSupports);
-    sa.AppendElement(aPrincipal);
+    sa.appendElement(wuri,  false);
+    sa.appendElement(charset,  false);
+    sa.appendElement(referrerURISupports,  false);
+    sa.appendElement(aPostData,  false);
+    sa.appendElement(allowThirdPartyFixupSupports,  false);
+    sa.appendElement(referrerPolicySupports,  false);
+    sa.appendElement(userContextIdSupports,  false);
+    sa.appendElement(aPrincipal,  false);
 
     let features = "chrome,dialog=no,all";
     if (aIsPrivate) {
@@ -684,12 +684,12 @@ function openPreferences(paneID, extraArgs)
   if (!win) {
     const Cc = Components.classes;
     const Ci = Components.interfaces;
-    let windowArguments = Cc["@mozilla.org/supports-array;1"]
-                            .createInstance(Ci.nsISupportsArray);
+    let windowArguments = Cc["@mozilla.org/array;1"]
+                            .createInstance(Ci.nsIMutableArray);
     let supportsStringPrefURL = Cc["@mozilla.org/supports-string;1"]
                                   .createInstance(Ci.nsISupportsString);
     supportsStringPrefURL.data = preferencesURL;
-    windowArguments.AppendElement(supportsStringPrefURL);
+    windowArguments.appendElement(supportsStringPrefURL,  false);
 
     win = Services.ww.openWindow(null, Services.prefs.getCharPref("browser.chromeURL"),
                                  "_blank", "chrome,dialog=no,all", windowArguments);
