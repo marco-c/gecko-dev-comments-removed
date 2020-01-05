@@ -244,6 +244,19 @@ public class testInputConnection extends JavascriptBridgeTest {
             assertTextAndSelectionAt("Can clear text", ic, "", 0);
 
             
+            getJS().syncCall("test_bug1123514");
+            
+            
+            ic.commitText("b", 1);
+            
+            
+            processGeckoEvents();
+            processInputConnectionEvents();
+
+            ic.deleteSurroundingText(2, 1);
+            assertTextAndSelectionAt("Can clear text", ic, "", 0);
+
+            
             processGeckoEvents();
             processInputConnectionEvents();
         }
