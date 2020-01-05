@@ -737,20 +737,21 @@ DXGITextureHostD3D11::GetDevice()
   if (mFlags & TextureFlags::INVALID_COMPOSITOR) {
     return nullptr;
   }
-
-  return mProvider->GetD3D11Device();
+  return mDevice;
 }
 
 void
 DXGITextureHostD3D11::SetTextureSourceProvider(TextureSourceProvider* aProvider)
 {
   if (!aProvider || !aProvider->GetD3D11Device()) {
+    mDevice = nullptr;
     mProvider = nullptr;
     mTextureSource = nullptr;
     return;
   }
 
   mProvider = aProvider;
+  mDevice = aProvider->GetD3D11Device();
 
   if (mTextureSource) {
     mTextureSource->SetTextureSourceProvider(aProvider);
@@ -776,6 +777,9 @@ DXGITextureHostD3D11::LockWithoutCompositor()
   
   
   
+  if (!mDevice) {
+    mDevice = DeviceManagerDx::Get()->GetCompositorDevice();
+  }
   return LockInternal();
 }
 
