@@ -5,14 +5,24 @@
 #ifndef PStunAddrsParams_h
 #define PStunAddrsParams_h
 
-#include "mtransport/nricestunaddr.h"
 #include "nsTArray.h"
+
+#ifdef MOZ_WEBRTC
+#include "mtransport/nricestunaddr.h"
+#endif
 
 namespace mozilla {
 namespace net {
 
 
+#ifdef MOZ_WEBRTC
 typedef nsTArray<NrIceStunAddr> NrIceStunAddrArray;
+#else
+
+
+
+typedef nsTArray<int> NrIceStunAddrArray;
+#endif
 
 } 
 } 

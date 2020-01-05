@@ -5,8 +5,16 @@
 #ifndef mozilla_net_NrIceStunAddrMessageUtils_h
 #define mozilla_net_NrIceStunAddrMessageUtils_h
 
+
+
+namespace mozilla {
+  class NrIceStunAddr;
+} 
+
 #include "ipc/IPCMessageUtils.h"
+#ifdef MOZ_WEBRTC
 #include "mtransport/nricestunaddr.h"
+#endif
 
 namespace IPC {
 
@@ -15,17 +23,20 @@ struct ParamTraits<mozilla::NrIceStunAddr>
 {
   static void Write(Message* aMsg, const mozilla::NrIceStunAddr &aParam)
   {
+#ifdef MOZ_WEBRTC
     const size_t bufSize = aParam.SerializationBufferSize();
     char* buffer = new char[bufSize];
     aParam.Serialize(buffer, bufSize);
     aMsg->WriteBytes((void*)buffer, bufSize);
     delete[] buffer;
+#endif
   }
 
   static bool Read(const Message* aMsg,
                    PickleIterator* aIter,
                    mozilla::NrIceStunAddr* aResult)
   {
+#ifdef MOZ_WEBRTC
     const size_t bufSize = aResult->SerializationBufferSize();
     char* buffer = new char[bufSize];
     bool result =
@@ -38,6 +49,9 @@ struct ParamTraits<mozilla::NrIceStunAddr>
     delete[] buffer;
 
     return result;
+#else
+    return false;
+#endif
   }
 };
 
