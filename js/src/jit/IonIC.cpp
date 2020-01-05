@@ -162,6 +162,9 @@ IonGetPropertyIC::update(JSContext* cx, HandleScript outerScript, IonGetProperty
         
         if (outerScript->hasIonScript())
             Invalidate(cx, outerScript);
+
+        
+        return true;
     }
 
     if (ic->kind() == CacheKind::GetProp) {
