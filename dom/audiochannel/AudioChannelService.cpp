@@ -36,6 +36,8 @@ using namespace mozilla;
 using namespace mozilla::dom;
 using namespace mozilla::hal;
 
+static mozilla::LazyLogModule gAudioChannelLog("AudioChannel");
+
 namespace {
 
 
@@ -226,13 +228,9 @@ AudioChannelService::Get()
   return service.forget();
 }
 
- PRLogModuleInfo*
+ LogModule*
 AudioChannelService::GetAudioChannelLog()
 {
-  static PRLogModuleInfo *gAudioChannelLog;
-  if (!gAudioChannelLog) {
-    gAudioChannelLog = PR_NewLogModule("AudioChannel");
-  }
   return gAudioChannelLog;
 }
 
