@@ -3344,8 +3344,6 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void)
 {
   NS_ENSURE_TRUE(mPluginWindow, NS_ERROR_NULL_POINTER);
 
-  nsresult rv = NS_ERROR_FAILURE;
-
   
   if (mWidget) {
     NS_WARNING("Trying to create a plugin widget twice!");
@@ -3355,15 +3353,21 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void)
   bool windowless = false;
   mInstance->IsWindowless(&windowless);
   if (!windowless) {
+#ifndef XP_WIN
+    
+    MOZ_ASSERT_UNREACHABLE();
+    return NS_ERROR_FAILURE;
+#else
     
     
+    nsresult rv = NS_ERROR_FAILURE;
+
     nsCOMPtr<nsIWidget> parentWidget;
     nsIDocument *doc = nullptr;
     nsCOMPtr<nsIContent> content = do_QueryReferent(mContent);
     if (content) {
       doc = content->OwnerDoc();
       parentWidget = nsContentUtils::WidgetForDocument(doc);
-#ifndef XP_MACOSX
       
       if (XRE_IsContentProcess()) {
         if (nsCOMPtr<nsPIDOMWindowOuter> window = doc->GetWindow()) {
@@ -3379,16 +3383,13 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void)
           }
         }
       }
-#endif 
     }
 
-#ifndef XP_MACOSX
     
     
     if (!mWidget && XRE_IsContentProcess()) {
       return NS_ERROR_UNEXPECTED;
     }
-#endif 
 
     if (!mWidget) {
       
@@ -3410,6 +3411,7 @@ NS_IMETHODIMP nsPluginInstanceOwner::CreateWidget(void)
     mWidget->EnableDragDrop(true);
     mWidget->Show(false);
     mWidget->Enable(false);
+#endif 
   }
 
   if (mPluginFrame) {
