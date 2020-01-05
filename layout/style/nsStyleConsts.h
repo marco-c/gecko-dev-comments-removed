@@ -334,11 +334,17 @@ enum class FillMode : uint32_t;
 
 
 
+
+
 #define NS_STYLE_IMAGELAYER_CLIP_BORDER              0
 #define NS_STYLE_IMAGELAYER_CLIP_PADDING             1
 #define NS_STYLE_IMAGELAYER_CLIP_CONTENT             2
+#define NS_STYLE_IMAGELAYER_CLIP_FILL                3
+#define NS_STYLE_IMAGELAYER_CLIP_STROKE              4
+#define NS_STYLE_IMAGELAYER_CLIP_VIEW                5
+#define NS_STYLE_IMAGELAYER_CLIP_NO_CLIP             6
 
-#define NS_STYLE_IMAGELAYER_CLIP_TEXT                3
+#define NS_STYLE_IMAGELAYER_CLIP_TEXT                7
 
 
 
@@ -349,9 +355,14 @@ enum class FillMode : uint32_t;
 
 
 
+
+
 #define NS_STYLE_IMAGELAYER_ORIGIN_BORDER            0
 #define NS_STYLE_IMAGELAYER_ORIGIN_PADDING           1
 #define NS_STYLE_IMAGELAYER_ORIGIN_CONTENT           2
+#define NS_STYLE_IMAGELAYER_ORIGIN_FILL              3
+#define NS_STYLE_IMAGELAYER_ORIGIN_STROKE            4
+#define NS_STYLE_IMAGELAYER_ORIGIN_VIEW              5
 
 
 
