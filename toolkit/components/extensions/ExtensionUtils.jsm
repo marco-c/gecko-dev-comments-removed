@@ -32,8 +32,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
                                   "resource://gre/modules/NetUtil.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Preferences",
                                   "resource://gre/modules/Preferences.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
-                                  "resource://gre/modules/PrivateBrowsingUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
                                   "resource://gre/modules/PromiseUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
@@ -51,6 +49,12 @@ function getConsole() {
 }
 
 XPCOMUtils.defineLazyGetter(this, "console", getConsole);
+
+
+
+
+
+class ExtensionError extends Error {}
 
 function filterStack(error) {
   return String(error.stack).replace(/(^.*(Task\.jsm|Promise-backend\.js).*\n)+/gm, "<Promise Chain>\n");
@@ -190,7 +194,7 @@ class BaseContext {
     this.extension = extension;
     this.jsonSandbox = null;
     this.active = true;
-    this.incognito = null;
+
     this.messageManager = null;
     this.docShell = null;
     this.contentWindow = null;
@@ -205,10 +209,6 @@ class BaseContext {
     this.innerWindowID = getInnerWindowID(contentWindow);
     this.messageManager = docShell.QueryInterface(Ci.nsIInterfaceRequestor)
                                   .getInterface(Ci.nsIContentFrameMessageManager);
-
-    if (this.incognito == null) {
-      this.incognito = PrivateBrowsingUtils.isContentWindowPrivate(contentWindow);
-    }
 
     MessageChannel.setupMessageManagers([this.messageManager]);
 
@@ -374,7 +374,7 @@ class BaseContext {
       return error;
     }
     let message;
-    if (instanceOf(error, "Object")) {
+    if (instanceOf(error, "Object") || error instanceof ExtensionError) {
       message = error.message;
     } else if (typeof error == "object" &&
         this.principal.subsumes(Cu.getObjectPrincipal(error))) {
@@ -502,13 +502,6 @@ class BaseContext {
       obj.close();
     }
   }
-
-  
-
-
-  close() {
-    this.unload();
-  }
 }
 
 
@@ -530,7 +523,12 @@ let IconDetails = {
       if (details.imageData) {
         let imageData = details.imageData;
 
-        if (typeof imageData == "string") {
+        
+        
+        
+        
+        
+        if (instanceOf(imageData, "ImageData")) {
           imageData = {"19": imageData};
         }
 
@@ -538,7 +536,7 @@ let IconDetails = {
           if (!INTEGER.test(size)) {
             throw new Error(`Invalid icon size ${size}, must be an integer`);
           }
-          result[size] = imageData[size];
+          result[size] = this.convertImageDataToDataURL(imageData[size], context);
         }
       }
 
@@ -637,6 +635,16 @@ let IconDetails = {
       image.onerror = reject;
       image.src = imageURL;
     });
+  },
+
+  convertImageDataToDataURL(imageData, context) {
+    let document = context.contentWindow.document;
+    let canvas = document.createElementNS("http://www.w3.org/1999/xhtml", "canvas");
+    canvas.width = imageData.width;
+    canvas.height = imageData.height;
+    canvas.getContext("2d").putImageData(imageData, 0, 0);
+
+    return canvas.toDataURL("image/png");
   },
 };
 
@@ -1746,7 +1754,11 @@ class LocalAPIImplementation extends SchemaAPIInterface {
   }
 
   addListener(listener, args) {
-    this.pathObj[this.name].addListener.call(null, listener, ...args);
+    try {
+      this.pathObj[this.name].addListener.call(null, listener, ...args);
+    } catch (e) {
+      throw this.context.normalizeError(e);
+    }
   }
 
   hasListener(listener) {
@@ -1878,10 +1890,10 @@ class ChildAPIManager {
 
       case "API:CallResult":
         let deferred = this.callPromises.get(data.callId);
-        if ("error" in data) {
-          deferred.reject(data.error);
+        if (data.lastError) {
+          deferred.reject({message: data.lastError});
         } else {
-          deferred.resolve(new SpreadArgs(data.result));
+          deferred.resolve(new SpreadArgs(data.args));
         }
         this.callPromises.delete(data.callId);
         break;
@@ -2234,6 +2246,7 @@ this.ExtensionUtils = {
   DefaultWeakMap,
   EventEmitter,
   EventManager,
+  ExtensionError,
   IconDetails,
   LocalAPIImplementation,
   LocaleData,
