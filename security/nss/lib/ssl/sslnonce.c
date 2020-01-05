@@ -5,6 +5,7 @@
 
 
 
+
 #include "cert.h"
 #include "pk11pub.h"
 #include "secitem.h"
@@ -458,6 +459,20 @@ ssl_Time(void)
     LL_L2UI(myTime, now);
 #endif
     return myTime;
+}
+
+PRBool
+ssl_TicketTimeValid(const NewSessionTicket *ticket)
+{
+    PRTime endTime;
+
+    if (ticket->ticket_lifetime_hint == 0) {
+        return PR_TRUE;
+    }
+
+    endTime = ticket->received_timestamp +
+              (PRTime)(ticket->ticket_lifetime_hint * PR_USEC_PER_MSEC);
+    return endTime > PR_Now();
 }
 
 void
