@@ -1278,20 +1278,104 @@ class ADBDevice(ADBCommand):
         :raises: * ADBTimeoutError
                  * ADBError
         """
-        ip_regexp = re.compile(r'(\w+)\s+UP\s+([1-9]\d{0,2}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
-        data = self.shell_output('netcfg')
-        for line in data.split("\n"):
-            match = ip_regexp.search(line)
+        if not interfaces:
+            interfaces = ["wlan0", "eth0"]
+            wifi_interface = self.shell_output('getprop wifi.interface', timeout=timeout)
+            self._logger.debug('get_ip_address: wifi_interface: %s' % wifi_interface)
+            if wifi_interface and wifi_interface not in interfaces:
+                interfaces = interfaces.append(wifi_interface)
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        re1_ip = re.compile(r'(\w+): ip ([0-9.]+) mask.*')
+        
+        
+
+        
+        
+        re2_interface = re.compile(r'(\w+)\s+Link')
+        re2_ip = re.compile(r'\s+inet addr:([0-9.]+)')
+
+        matched_interface = None
+        matched_ip = None
+        re_bad_addr = re.compile(r'127.0.0.1|0.0.0.0')
+
+        self._logger.debug('get_ip_address: ifconfig')
+        for interface in interfaces:
+            try:
+                output = self.shell_output('ifconfig %s' % interface,
+                                           timeout=timeout)
+            except ADBError:
+                output = ''
+
+            for line in output.split("\n"):
+                if not matched_interface:
+                    match = re1_ip.match(line)
+                    if match:
+                        matched_interface, matched_ip = match.groups()
+                    else:
+                        match = re2_interface.match(line)
+                        if match:
+                            matched_interface = match.group(1)
+                else:
+                    match = re2_ip.match(line)
+                    if match:
+                        matched_ip = match.group(1)
+
+                if matched_ip:
+                    if not re_bad_addr.match(matched_ip):
+                        self._logger.debug('get_ip_address: found: %s %s' %
+                                           (matched_interface, matched_ip))
+                        return matched_ip
+                    matched_interface = None
+                    matched_ip = None
+
+        self._logger.debug('get_ip_address: netcfg')
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        re3_netcfg = re.compile(r'(\w+)\s+UP\s+([1-9]\d{0,2}\.\d{1,3}\.\d{1,3}\.\d{1,3})')
+        try:
+            output = self.shell_output('netcfg', timeout=timeout)
+        except ADBError:
+            output = ''
+        for line in output.split("\n"):
+            match = re3_netcfg.search(line)
             if match:
-                interface, ip = match.groups()
-
-                if interface == "lo" or ip == "127.0.0.1":
-                    continue
-
-                if interfaces is None or interface in interfaces:
-                    return ip
-
-        return None
+                matched_interface, matched_ip = match.groups()
+                if matched_interface == "lo" or re_bad_addr.match(matched_ip):
+                    matched_interface = None
+                    matched_ip = None
+                elif matched_ip and matched_interface in interfaces:
+                    self._logger.debug('get_ip_address: found: %s %s' %
+                                       (matched_interface, matched_ip))
+                    return matched_ip
+        self._logger.debug('get_ip_address: not found')
+        return matched_ip
 
     
 
