@@ -6717,7 +6717,10 @@ nsHttpChannel::OnStopRequest(nsIRequest *request, nsISupports *ctxt, nsresult st
         
         
         
-        if (request == mTransactionPump && mCacheEntry &&
+        
+        
+        
+        if (request == mTransactionPump && mCacheEntry && !mDidReval &&
             !mAsyncOpenTime.IsNull() && !mOnStartRequestTimestamp.IsNull()) {
             nsAutoCString onStartTime;
             onStartTime.AppendInt( (uint64_t) (mOnStartRequestTimestamp - mAsyncOpenTime).ToMilliseconds());
