@@ -31,6 +31,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'fixed', 'local' ] ] }
     ]
   },
+  'background-color': {
+    
+    types: [
+    ]
+  },
   'background-blend-mode': {
     
     types: [
@@ -57,10 +62,80 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'padding-box', 'content-box' ] ] }
     ]
   },
+  'background-position': {
+    
+    types: [
+    ]
+  },
+  'background-position-x': {
+    
+    types: [
+    ]
+  },
+  'background-position-y': {
+    
+    types: [
+    ]
+  },
   'background-repeat': {
     
     types: [
       { type: 'discrete', options: [ [ 'space', 'round' ] ] }
+    ]
+  },
+  'background-size': {
+    
+    types: [
+    ]
+  },
+  'block-size': {
+    
+    types: [
+    ]
+  },
+  'border-block-end-color': {
+    
+    types: [
+    ]
+  },
+  'border-block-end-style': {
+    
+    types: [
+    ]
+  },
+  'border-block-end-width': {
+    
+    types: [
+    ]
+  },
+  'border-block-start-color': {
+    
+    types: [
+    ]
+  },
+  'border-block-start-style': {
+    
+    types: [
+    ]
+  },
+  'border-block-start-width': {
+    
+    types: [
+    ]
+  },
+  'border-bottom-color': {
+    
+    types: [
+    ]
+  },
+  'border-bottom-left-radius': {
+    
+    types: [
+    ]
+  },
+  'border-bottom-right-radius': {
+    
+    types: [
     ]
   },
   'border-bottom-style': {
@@ -69,10 +144,45 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'dotted', 'solid' ] ] }
     ]
   },
+  'border-bottom-width': {
+    
+    types: [
+    ]
+  },
   'border-collapse': {
     
     types: [
       { type: 'discrete', options: [ [ 'collapse', 'separate' ] ] }
+    ]
+  },
+  'border-inline-end-color': {
+    
+    types: [
+    ]
+  },
+  'border-inline-end-style': {
+    
+    types: [
+    ]
+  },
+  'border-inline-end-width': {
+    
+    types: [
+    ]
+  },
+  'border-inline-start-color': {
+    
+    types: [
+    ]
+  },
+  'border-inline-start-style': {
+    
+    types: [
+    ]
+  },
+  'border-inline-start-width': {
+    
+    types: [
     ]
   },
   'border-image-outset': {
@@ -107,10 +217,25 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ '1 1 1 1', '5 5 5 5' ] ] }
     ]
   },
+  'border-left-color': {
+    
+    types: [
+    ]
+  },
   'border-left-style': {
     
     types: [
       { type: 'discrete', options: [ [ 'dotted', 'solid' ] ] }
+    ]
+  },
+  'border-left-width': {
+    
+    types: [
+    ]
+  },
+  'border-right-color': {
+    
+    types: [
     ]
   },
   'border-right-style': {
@@ -119,16 +244,56 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'dotted', 'solid' ] ] }
     ]
   },
+  'border-right-width': {
+    
+    types: [
+    ]
+  },
+  'border-spacing': {
+    
+    types: [
+    ]
+  },
+  'border-top-color': {
+    
+    types: [
+    ]
+  },
+  'border-top-left-radius': {
+    
+    types: [
+    ]
+  },
+  'border-top-right-radius': {
+    
+    types: [
+    ]
+  },
   'border-top-style': {
     
     types: [
       { type: 'discrete', options: [ [ 'dotted', 'solid' ] ] }
     ]
   },
+  'border-top-width': {
+    
+    types: [
+    ]
+  },
+  'bottom': {
+    
+    types: [
+    ]
+  },
   'box-decoration-break': {
     
     types: [
       { type: 'discrete', options: [ [ 'slice', 'clone' ] ] }
+    ]
+  },
+  'box-shadow': {
+    
+    types: [
     ]
   },
   'box-sizing': {
@@ -149,10 +314,25 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'inline-start', 'inline-end' ] ] }
     ]
   },
+  'clip': {
+    
+    types: [
+    ]
+  },
+  'clip-path': {
+    
+    types: [
+    ]
+  },
   'clip-rule': {
     
     types: [
       { type: 'discrete', options: [ [ 'evenodd', 'nonzero' ] ] }
+    ]
+  },
+  'color': {
+    
+    types: [
     ]
   },
   'color-adjust': {
@@ -173,6 +353,21 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'sRGB', 'linearRGB' ] ] }
     ]
   },
+  'column-count': {
+    
+    types: [
+    ]
+  },
+  'column-gap': {
+    
+    types: [
+    ]
+  },
+  'column-rule-color': {
+    
+    types: [
+    ]
+  },
   'column-fill': {
     
     types: [
@@ -183,6 +378,16 @@ var gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ 'none', 'dotted' ] ] }
+    ]
+  },
+  'column-rule-width': {
+    
+    types: [
+    ]
+  },
+  'column-width': {
+    
+    types: [
     ]
   },
   'contain': {
@@ -236,10 +441,25 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'show', 'hide' ] ] }
     ]
   },
+  'fill': {
+    
+    types: [
+    ]
+  },
+  'fill-opacity': {
+    
+    types: [
+    ]
+  },
   'fill-rule': {
     
     types: [
       { type: 'discrete', options: [ [ 'evenodd', 'nonzero' ] ] }
+    ]
+  },
+  'filter': {
+    
+    types: [
     ]
   },
   'flex-basis': {
@@ -267,6 +487,31 @@ var gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ 'nowrap', 'wrap' ] ] }
+    ]
+  },
+  'flood-color': {
+    
+    types: [
+    ]
+  },
+  'flood-opacity': {
+    
+    types: [
+    ]
+  },
+  'font-size': {
+    
+    types: [
+    ]
+  },
+  'font-size-adjust': {
+    
+    types: [
+    ]
+  },
+  'font-stretch': {
+    
+    types: [
     ]
   },
   'font-style': {
@@ -355,6 +600,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'sub', 'super' ] ] }
     ]
   },
+  'font-weight': {
+    
+    types: [
+    ]
+  },
   'grid-auto-columns': {
     
     types: [
@@ -379,6 +629,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ '1', '5' ] ] }
     ]
   },
+  'grid-column-gap': {
+    
+    types: [
+    ]
+  },
   'grid-column-start': {
     
     types: [
@@ -389,6 +644,11 @@ var gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ '1', '5' ] ] }
+    ]
+  },
+  'grid-row-gap': {
+    
+    types: [
     ]
   },
   'grid-row-start': {
@@ -415,6 +675,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ '1px', '5px' ] ] }
     ]
   },
+  'height': {
+    
+    types: [
+    ]
+  },
   'hyphens': {
     
     types: [
@@ -427,6 +692,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ '0deg', '90deg' ] ] }
     ]
   },
+  'image-rendering': {
+    
+    types: [
+    ]
+  },
   'ime-mode': {
     
     types: [
@@ -437,6 +707,11 @@ var gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ '1 2', '3 4' ] ] }
+    ]
+  },
+  'inline-size': {
+    
+    types: [
     ]
   },
   'isolation': {
@@ -463,6 +738,26 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'baseline', 'last baseline' ] ] }
     ]
   },
+  'left': {
+    
+    types: [
+    ]
+  },
+  'letter-spacing': {
+    
+    types: [
+    ]
+  },
+  'lighting-color': {
+    
+    types: [
+    ]
+  },
+  'line-height': {
+    
+    types: [
+    ]
+  },
   'list-style-image': {
     
     types: [
@@ -481,6 +776,46 @@ var gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ 'circle', 'square' ] ] }
+    ]
+  },
+  'margin-block-end': {
+    
+    types: [
+    ]
+  },
+  'margin-block-start': {
+    
+    types: [
+    ]
+  },
+  'margin-bottom': {
+    
+    types: [
+    ]
+  },
+  'margin-inline-end': {
+    
+    types: [
+    ]
+  },
+  'margin-inline-start': {
+    
+    types: [
+    ]
+  },
+  'margin-left': {
+    
+    types: [
+    ]
+  },
+  'margin-right': {
+    
+    types: [
+    ]
+  },
+  'margin-top': {
+    
+    types: [
     ]
   },
   'marker-end': {
@@ -547,16 +882,76 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'content-box', 'border-box' ] ] }
     ]
   },
+  'mask-position': {
+    
+    types: [
+    ]
+  },
+  'mask-position-x': {
+    
+    types: [
+    ]
+  },
+  'mask-position-y': {
+    
+    types: [
+    ]
+  },
   'mask-repeat': {
     
     types: [
       { type: 'discrete', options: [ [ 'space', 'round' ] ] }
     ]
   },
+  'mask-size': {
+    
+    types: [
+    ]
+  },
   'mask-type': {
     
     types: [
       { type: 'discrete', options: [ [ 'alpha', 'luminance' ] ] }
+    ]
+  },
+  'max-block-size': {
+    
+    types: [
+    ]
+  },
+  'max-height': {
+    
+    types: [
+    ]
+  },
+  'max-inline-size': {
+    
+    types: [
+    ]
+  },
+  'max-width': {
+    
+    types: [
+    ]
+  },
+  'min-block-size': {
+    
+    types: [
+    ]
+  },
+  'min-height': {
+    
+    types: [
+    ]
+  },
+  'min-inline-size': {
+    
+    types: [
+    ]
+  },
+  'min-width': {
+    
+    types: [
     ]
   },
   'mix-blend-mode': {
@@ -571,14 +966,64 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'fill', 'contain' ] ] }
     ]
   },
+  'object-position': {
+    
+    types: [
+    ]
+  },
+  'offset-block-end': {
+    
+    types: [
+    ]
+  },
+  'offset-block-start': {
+    
+    types: [
+    ]
+  },
+  'offset-inline-end': {
+    
+    types: [
+    ]
+  },
+  'offset-inline-start': {
+    
+    types: [
+    ]
+  },
+  'opacity': {
+    
+    types: [
+    ]
+  },
   'order': {
     
     types: [ 'integer' ]
+  },
+  'outline-color': {
+    
+    types: [
+    ]
+  },
+  'outline-offset': {
+    
+    types: [
+    ]
   },
   'outline-style': {
     
     types: [
       { type: 'discrete', options: [ [ 'none', 'dotted' ] ] }
+    ]
+  },
+  'outline-width': {
+    
+    types: [
+    ]
+  },
+  'overflow': {
+    
+    types: [
     ]
   },
   'overflow-clip-box': {
@@ -605,6 +1050,46 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'visible', 'hidden' ] ] }
     ]
   },
+  'padding-block-end': {
+    
+    types: [
+    ]
+  },
+  'padding-block-start': {
+    
+    types: [
+    ]
+  },
+  'padding-bottom': {
+    
+    types: [
+    ]
+  },
+  'padding-inline-end': {
+    
+    types: [
+    ]
+  },
+  'padding-inline-start': {
+    
+    types: [
+    ]
+  },
+  'padding-left': {
+    
+    types: [
+    ]
+  },
+  'padding-right': {
+    
+    types: [
+    ]
+  },
+  'padding-top': {
+    
+    types: [
+    ]
+  },
   'page-break-after': {
     
     types: [
@@ -629,6 +1114,16 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'fill', 'stroke' ] ] }
     ]
   },
+  'perspective': {
+    
+    types: [
+    ]
+  },
+  'perspective-origin': {
+    
+    types: [
+    ]
+  },
   'pointer-events': {
     
     types: [
@@ -651,6 +1146,11 @@ var gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ 'both', 'horizontal' ] ] }
+    ]
+  },
+  'right': {
+    
+    types: [
     ]
   },
   'ruby-align': {
@@ -700,6 +1200,31 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'optimizeSpeed', 'crispEdges' ] ] }
     ]
   },
+  'stop-color': {
+    
+    types: [
+    ]
+  },
+  'stop-opacity': {
+    
+    types: [
+    ]
+  },
+  'stroke': {
+    
+    types: [
+    ]
+  },
+  'stroke-dasharray': {
+    
+    types: [
+    ]
+  },
+  'stroke-dashoffset': {
+    
+    types: [
+    ]
+  },
   'stroke-linecap': {
     
     types: [
@@ -714,6 +1239,21 @@ var gCSSProperties = {
     setup: t => {
       return createElement(t, 'rect');
     }
+  },
+  'stroke-miterlimit': {
+    
+    types: [
+    ]
+  },
+  'stroke-opacity': {
+    
+    types: [
+    ]
+  },
+  'stroke-width': {
+    
+    types: [
+    ]
   },
   'table-layout': {
     
@@ -745,6 +1285,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'all', 'none' ] ] }
     ]
   },
+  'text-decoration-color': {
+    
+    types: [
+    ]
+  },
   'text-decoration-line': {
     
     types: [
@@ -757,6 +1302,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'solid', 'dotted' ] ] }
     ]
   },
+  'text-emphasis-color': {
+    
+    types: [
+    ]
+  },
   'text-emphasis-position': {
     
     types: [
@@ -767,6 +1317,11 @@ var gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ 'filled circle', 'open dot' ] ] }
+    ]
+  },
+  'text-indent': {
+    
+    types: [
     ]
   },
   'text-orientation': {
@@ -787,6 +1342,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'optimizeSpeed', 'optimizeLegibility' ] ] }
     ]
   },
+  'text-shadow': {
+    
+    types: [
+    ]
+  },
   'text-transform': {
     
     types: [
@@ -799,10 +1359,25 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'auto', 'none' ] ] }
     ]
   },
+  'top': {
+    
+    types: [
+    ]
+  },
+  'transform': {
+    
+    types: [
+    ]
+  },
   'transform-box': {
     
     types: [
       { type: 'discrete', options: [ [ 'fill-box', 'border-box' ] ] }
+    ]
+  },
+  'transform-origin': {
+    
+    types: [
     ]
   },
   'transform-style': {
@@ -823,6 +1398,11 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'none', 'non-scaling-stroke' ] ] },
     ]
   },
+  'vertical-align': {
+    
+    types: [
+    ]
+  },
   'visibility': {
     
     types: [ 'visibility' ]
@@ -833,10 +1413,20 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'pre', 'nowrap' ] ] }
     ]
   },
+  'width': {
+    
+    types: [
+    ]
+  },
   'word-break': {
     
     types: [
       { type: 'discrete', options: [ [ 'keep-all', 'break-all' ] ] }
+    ]
+  },
+  'word-spacing': {
+    
+    types: [
     ]
   },
   'will-change': {
@@ -849,6 +1439,11 @@ var gCSSProperties = {
     
     types: [
       { type: 'discrete', options: [ [ 'vertical-rl', 'sideways-rl' ] ] }
+    ]
+  },
+  'z-index': {
+    
+    types: [
     ]
   },
 };
