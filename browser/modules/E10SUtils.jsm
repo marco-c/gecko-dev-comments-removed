@@ -194,7 +194,7 @@ this.E10SUtils = {
     return remoteType == this.getRemoteTypeForURIObject(aURI, true, remoteType);
   },
 
-  shouldLoadURI(aDocShell, aURI, aReferrer) {
+  shouldLoadURI(aDocShell, aURI, aReferrer, aHasPostData) {
     
     if (aDocShell.QueryInterface(Ci.nsIDocShellTreeItem).sameTypeParent)
       return true;
@@ -202,7 +202,9 @@ this.E10SUtils = {
     
     
     
-    if (Services.appinfo.remoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
+    
+    if (!aHasPostData &&
+        Services.appinfo.remoteType == LARGE_ALLOCATION_REMOTE_TYPE &&
         !aDocShell.awaitingLargeAlloc &&
         aDocShell.isOnlyToplevelInTabGroup) {
       return false;
