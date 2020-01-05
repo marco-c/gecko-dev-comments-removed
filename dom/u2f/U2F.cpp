@@ -437,6 +437,77 @@ U2FRunnable::U2FRunnable(const nsAString& aOrigin, const nsAString& aAppId)
 U2FRunnable::~U2FRunnable()
 {}
 
+
+
+
+
+ErrorCode
+U2FRunnable::EvaluateAppID()
+{
+  nsCOMPtr<nsIURLParser> urlParser =
+      do_GetService(NS_STDURLPARSER_CONTRACTID);
+
+  MOZ_ASSERT(urlParser);
+
+  uint32_t facetSchemePos;
+  int32_t facetSchemeLen;
+  uint32_t facetAuthPos;
+  int32_t facetAuthLen;
+  
+  nsAutoCString facetUrl = NS_ConvertUTF16toUTF8(mOrigin);
+  nsresult rv = urlParser->ParseURL(facetUrl.get(), mOrigin.Length(),
+                                    &facetSchemePos, &facetSchemeLen,
+                                    &facetAuthPos, &facetAuthLen,
+                                    nullptr, nullptr);      
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return ErrorCode::BAD_REQUEST;
+  }
+
+  nsAutoCString facetScheme(Substring(facetUrl, facetSchemePos, facetSchemeLen));
+  nsAutoCString facetAuth(Substring(facetUrl, facetAuthPos, facetAuthLen));
+
+  uint32_t appIdSchemePos;
+  int32_t appIdSchemeLen;
+  uint32_t appIdAuthPos;
+  int32_t appIdAuthLen;
+  
+  nsAutoCString appIdUrl = NS_ConvertUTF16toUTF8(mAppId);
+  rv = urlParser->ParseURL(appIdUrl.get(), mAppId.Length(),
+                           &appIdSchemePos, &appIdSchemeLen,
+                           &appIdAuthPos, &appIdAuthLen,
+                           nullptr, nullptr);      
+  if (NS_FAILED(rv)) {
+    return ErrorCode::BAD_REQUEST;
+  }
+
+  nsAutoCString appIdScheme(Substring(appIdUrl, appIdSchemePos, appIdSchemeLen));
+  nsAutoCString appIdAuth(Substring(appIdUrl, appIdAuthPos, appIdAuthLen));
+
+  
+  if (!facetScheme.LowerCaseEqualsLiteral("https")) {
+    return ErrorCode::BAD_REQUEST;
+  }
+
+  
+  if (mAppId.IsEmpty() || mAppId.EqualsLiteral("null")) {
+    mAppId.Assign(mOrigin);
+    return ErrorCode::OK;
+  }
+
+  
+  if (!appIdScheme.LowerCaseEqualsLiteral("https")) {
+    return ErrorCode::BAD_REQUEST;
+  }
+
+  
+  if (facetAuth == appIdAuth) {
+    return ErrorCode::OK;
+  }
+
+  
+  return ErrorCode::BAD_REQUEST;
+}
+
 U2FRegisterRunnable::U2FRegisterRunnable(const nsAString& aOrigin,
                                          const nsAString& aAppId,
                                          const Sequence<RegisterRequest>& aRegisterRequests,
@@ -860,77 +931,6 @@ U2FSignRunnable::Run()
   
   status->WaitGroupWait();
   return NS_OK;
-}
-
-
-
-
-
-ErrorCode
-U2FRunnable::EvaluateAppID()
-{
-  nsCOMPtr<nsIURLParser> urlParser =
-      do_GetService(NS_STDURLPARSER_CONTRACTID);
-
-  MOZ_ASSERT(urlParser);
-
-  uint32_t facetSchemePos;
-  int32_t facetSchemeLen;
-  uint32_t facetAuthPos;
-  int32_t facetAuthLen;
-  
-  nsAutoCString facetUrl = NS_ConvertUTF16toUTF8(mOrigin);
-  nsresult rv = urlParser->ParseURL(facetUrl.get(), mOrigin.Length(),
-                                    &facetSchemePos, &facetSchemeLen,
-                                    &facetAuthPos, &facetAuthLen,
-                                    nullptr, nullptr);      
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return ErrorCode::BAD_REQUEST;
-  }
-
-  nsAutoCString facetScheme(Substring(facetUrl, facetSchemePos, facetSchemeLen));
-  nsAutoCString facetAuth(Substring(facetUrl, facetAuthPos, facetAuthLen));
-
-  uint32_t appIdSchemePos;
-  int32_t appIdSchemeLen;
-  uint32_t appIdAuthPos;
-  int32_t appIdAuthLen;
-  
-  nsAutoCString appIdUrl = NS_ConvertUTF16toUTF8(mAppId);
-  rv = urlParser->ParseURL(appIdUrl.get(), mAppId.Length(),
-                           &appIdSchemePos, &appIdSchemeLen,
-                           &appIdAuthPos, &appIdAuthLen,
-                           nullptr, nullptr);      
-  if (NS_FAILED(rv)) {
-    return ErrorCode::BAD_REQUEST;
-  }
-
-  nsAutoCString appIdScheme(Substring(appIdUrl, appIdSchemePos, appIdSchemeLen));
-  nsAutoCString appIdAuth(Substring(appIdUrl, appIdAuthPos, appIdAuthLen));
-
-  
-  if (!facetScheme.LowerCaseEqualsLiteral("https")) {
-    return ErrorCode::BAD_REQUEST;
-  }
-
-  
-  if (mAppId.IsEmpty() || mAppId.EqualsLiteral("null")) {
-    mAppId.Assign(mOrigin);
-    return ErrorCode::OK;
-  }
-
-  
-  if (!appIdScheme.LowerCaseEqualsLiteral("https")) {
-    return ErrorCode::BAD_REQUEST;
-  }
-
-  
-  if (facetAuth == appIdAuth) {
-    return ErrorCode::OK;
-  }
-
-  
-  return ErrorCode::BAD_REQUEST;
 }
 
 U2F::U2F()
