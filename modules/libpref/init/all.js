@@ -4464,6 +4464,10 @@ pref("image.infer-src-animation.threshold-ms", 2000);
 pref("image.mem.discardable", true);
 
 
+
+pref("image.mem.shared", false);
+
+
 pref("image.mem.allow_locking_in_content_processes", true);
 
 
