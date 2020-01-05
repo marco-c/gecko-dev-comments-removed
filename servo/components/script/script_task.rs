@@ -1282,6 +1282,11 @@ impl ScriptTask {
 
     
     fn handle_freeze_msg(&self, id: PipelineId) {
+        
+        
+        if self.page.borrow().is_none() {
+            return
+        };
         let page = self.root_page();
         let page = page.find(id).expect("ScriptTask: received freeze msg for a
                     pipeline ID not associated with this script task. This is a bug.");
