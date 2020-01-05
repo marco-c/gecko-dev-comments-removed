@@ -8,6 +8,7 @@
 #define NS_SMILCOMPOSITOR_H_
 
 #include "mozilla/Move.h"
+#include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
 #include "nsTHashtable.h"
 #include "nsString.h"
@@ -74,8 +75,7 @@ public:
 
  private:
   
-  
-  nsISMILAttr* CreateSMILAttr();
+  mozilla::UniquePtr<nsISMILAttr> CreateSMILAttr();
 
   
   

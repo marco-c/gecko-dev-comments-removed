@@ -12,6 +12,7 @@
 #include "nsSVGElement.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/SVGAnimatedString.h"
+#include "mozilla/UniquePtr.h"
 
 class nsSVGString
 {
@@ -43,11 +44,9 @@ public:
   already_AddRefed<mozilla::dom::SVGAnimatedString>
   ToDOMAnimatedString(nsSVGElement* aSVGElement);
 
-  
-  nsISMILAttr* ToSMILAttr(nsSVGElement *aSVGElement);
+  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement *aSVGElement);
 
 private:
-
   nsAutoPtr<nsString> mAnimVal;
   uint8_t mAttrEnum; 
   bool mIsBaseSet;

@@ -15,6 +15,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/SVGAnimatedNumber.h"
+#include "mozilla/UniquePtr.h"
 
 class nsSMILValue;
 
@@ -56,11 +57,9 @@ public:
 
   already_AddRefed<mozilla::dom::SVGAnimatedNumber>
   ToDOMAnimatedNumber(nsSVGElement* aSVGElement);
-  
-  nsISMILAttr* ToSMILAttr(nsSVGElement* aSVGElement);
+  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aSVGElement);
 
 private:
-
   float mAnimVal;
   float mBaseVal;
   uint8_t mAttrEnum; 

@@ -39,6 +39,7 @@
 #include "mozilla/dom/WindowBinding.h"
 #include "mozilla/dom/ElementBinding.h"
 #include "mozilla/dom/Nullable.h"
+#include "mozilla/UniquePtr.h"
 #include "Units.h"
 #include "DOMIntersectionObserver.h"
 
@@ -318,9 +319,8 @@ public:
 
 
 
-
-
-  virtual nsISMILAttr* GetAnimatedAttr(int32_t aNamespaceID, nsIAtom* aName)
+  virtual UniquePtr<nsISMILAttr> GetAnimatedAttr(int32_t aNamespaceID,
+                                                 nsIAtom* aName)
   {
     return nullptr;
   }

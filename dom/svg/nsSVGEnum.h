@@ -13,6 +13,7 @@
 #include "nsSVGElement.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/dom/SVGAnimatedEnumeration.h"
+#include "mozilla/UniquePtr.h"
 
 class nsIAtom;
 class nsSMILValue;
@@ -56,8 +57,7 @@ public:
   already_AddRefed<mozilla::dom::SVGAnimatedEnumeration>
   ToDOMAnimatedEnum(nsSVGElement* aSVGElement);
 
-  
-  nsISMILAttr* ToSMILAttr(nsSVGElement* aSVGElement);
+  mozilla::UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aSVGElement);
 
 private:
   nsSVGEnumValue mAnimVal;

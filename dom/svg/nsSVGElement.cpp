@@ -2516,7 +2516,7 @@ nsSVGElement::RecompileScriptEventListeners()
   }
 }
 
-nsISMILAttr*
+UniquePtr<nsISMILAttr>
 nsSVGElement::GetAnimatedAttr(int32_t aNamespaceID, nsIAtom* aName)
 {
   if (aNamespaceID == kNameSpaceID_None) {
@@ -2529,7 +2529,7 @@ nsSVGElement::GetAnimatedAttr(int32_t aNamespaceID, nsIAtom* aName)
 
     
     if (aName == nsGkAtoms::mozAnimateMotionDummyAttr) {
-      return new SVGMotionSMILAttr(this);
+      return MakeUnique<SVGMotionSMILAttr>(this);
     }
 
     

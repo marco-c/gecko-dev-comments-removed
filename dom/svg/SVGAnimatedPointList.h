@@ -8,6 +8,7 @@
 #define MOZILLA_SVGANIMATEDPOINTLIST_H__
 
 #include "mozilla/Attributes.h"
+#include "mozilla/UniquePtr.h"
 #include "nsAutoPtr.h"
 #include "nsISMILAttr.h"
 #include "SVGPointList.h"
@@ -86,8 +87,7 @@ public:
     return !!mAnimVal;
   }
 
-  
-  nsISMILAttr* ToSMILAttr(nsSVGElement* aElement);
+  UniquePtr<nsISMILAttr> ToSMILAttr(nsSVGElement* aElement);
 
 private:
 
