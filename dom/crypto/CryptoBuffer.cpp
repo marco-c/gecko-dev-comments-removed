@@ -124,7 +124,7 @@ CryptoBuffer::FromJwkBase64(const nsString& aBase64)
 }
 
 nsresult
-CryptoBuffer::ToJwkBase64(nsString& aBase64)
+CryptoBuffer::ToJwkBase64(nsString& aBase64) const
 {
   
   if (Length() == 0) {
