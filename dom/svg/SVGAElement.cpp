@@ -187,23 +187,76 @@ SVGAElement::IsAttributeMapped(const nsIAtom* name) const
     SVGAElementBase::IsAttributeMapped(name);
 }
 
-bool
-SVGAElement::IsFocusableInternal(int32_t *aTabIndex, bool aWithMouse)
+int32_t
+SVGAElement::TabIndexDefault()
 {
-  nsCOMPtr<nsIURI> uri;
-  if (IsLink(getter_AddRefs(uri))) {
-    if (aTabIndex) {
-      *aTabIndex = ((sTabFocusModel & eTabFocus_linksMask) == 0 ? -1 : 0);
+  return 0;
+}
+
+static bool
+IsNodeInEditableRegion(nsINode* aNode)
+{
+  while (aNode) {
+    if (aNode->IsEditable()) {
+      return true;
     }
-    return true;
+    aNode = aNode->GetParent();
   }
-  if (nsSVGElement::IsFocusableInternal(aTabIndex, aWithMouse)) {
+  return false;
+}
+
+bool
+SVGAElement::IsSVGFocusable(bool* aIsFocusable, int32_t* aTabIndex)
+{
+  if (nsSVGElement::IsSVGFocusable(aIsFocusable, aTabIndex)) {
     return true;
   }
 
-  if (aTabIndex) {
+  
+  nsIDocument* doc = GetComposedDoc();
+  if (doc) {
+    nsIPresShell* presShell = doc->GetShell();
+    if (presShell) {
+      nsPresContext* presContext = presShell->GetPresContext();
+      if (presContext && !presContext->GetLinkHandler()) {
+        *aIsFocusable = false;
+        return false;
+      }
+    }
+  }
+
+  
+  
+  if (IsNodeInEditableRegion(this)) {
+    if (aTabIndex) {
+      *aTabIndex = -1;
+    }
+
+    *aIsFocusable = false;
+
+    return true;
+  }
+
+  if (!HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)) {
+    
+    if (!Link::HasURI()) {
+      
+      
+      if (aTabIndex) {
+        *aTabIndex = -1;
+      }
+
+      *aIsFocusable = false;
+
+      return false;
+    }
+  }
+
+  if (aTabIndex && (sTabFocusModel & eTabFocus_linksMask) == 0) {
     *aTabIndex = -1;
   }
+
+  *aIsFocusable = true;
 
   return false;
 }
