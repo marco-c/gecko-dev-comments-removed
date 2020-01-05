@@ -7396,7 +7396,11 @@ PresShell::HandleEvent(nsIFrame* aFrame,
 
     RefPtr<AccessibleCaretEventHub> eventHub =
       presShell ? presShell->GetAccessibleCaretEventHub() : nullptr;
-    if (eventHub) {
+    if (eventHub && *aEventStatus != nsEventStatus_eConsumeNoDefault) {
+      
+      
+      
+      
       *aEventStatus = eventHub->HandleEvent(aEvent);
       if (*aEventStatus == nsEventStatus_eConsumeNoDefault) {
         
