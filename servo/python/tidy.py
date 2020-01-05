@@ -482,6 +482,7 @@ def check_webidl_spec(file_name, contents):
         "//xhr.spec.whatwg.org",
         "//w3c.github.io",
         "//heycam.github.io/webidl",
+        "//webbluetoothcg.github.io/web-bluetooth/",
         
         "// This interface is entirely internal to Servo, and should not be" +
         " accessible to\n// web pages."
