@@ -919,15 +919,17 @@ IsValidSFNTVersion(uint32_t version)
 }
 
 
+
+
+
 static void
-CopySwapUTF16(const uint16_t *aInBuf, uint16_t *aOutBuf, uint32_t aLen)
+CopySwapUTF16(const char* aInBuf, char* aOutBuf, uint32_t aLen)
 {
-    const uint16_t *end = aInBuf + aLen;
+    const char* end = aInBuf + aLen * 2;
     while (aInBuf < end) {
-        uint16_t value = *aInBuf;
-        *aOutBuf = (value >> 8) | (value & 0xff) << 8;
-        aOutBuf++;
-        aInBuf++;
+        uint8_t b0 = *aInBuf++;
+        *aOutBuf++ = *aInBuf++;
+        *aOutBuf++ = b0;
     }
 }
 
@@ -1446,13 +1448,13 @@ gfxFontUtils::DecodeFontName(const char *aNameData, int32_t aByteLen,
     if (csName[0] == 0) {
         
         uint32_t strLen = aByteLen / 2;
-#ifdef IS_LITTLE_ENDIAN
         aName.SetLength(strLen);
-        CopySwapUTF16(reinterpret_cast<const uint16_t*>(aNameData),
-                      reinterpret_cast<uint16_t*>(aName.BeginWriting()), strLen);
+#ifdef IS_LITTLE_ENDIAN
+        CopySwapUTF16(aNameData, reinterpret_cast<char*>(aName.BeginWriting()),
+                      strLen);
 #else
-        aName.Assign(reinterpret_cast<const char16_t*>(aNameData), strLen);
-#endif    
+        memcpy(aName.BeginWriting(), aNameData, strLen * 2);
+#endif
         return true;
     }
 
