@@ -9,6 +9,7 @@
 #include "gfxMatrix.h"
 #include "gfxRect.h"
 #include "nsRegionFwd.h"
+#include "mozilla/gfx/Rect.h"
 
 class gfxContext;
 class gfxDrawable;
@@ -37,6 +38,7 @@ struct nsSize;
 class nsSVGIntegrationUtils final
 {
   typedef mozilla::gfx::DrawTarget DrawTarget;
+  typedef mozilla::gfx::IntRect IntRect;
   typedef mozilla::image::DrawResult DrawResult;
 
 public:
@@ -138,6 +140,8 @@ public:
     mozilla::layers::LayerManager* layerManager;
     bool handleOpacity; 
                         
+    IntRect maskRect;
+
     explicit PaintFramesParams(gfxContext& aCtx, nsIFrame* aFrame,
                                const nsRect& aDirtyRect,
                                const nsRect& aBorderArea,
@@ -202,6 +206,13 @@ public:
                           const DrawTarget* aDrawTarget,
                           const gfxMatrix& aContextMatrix,
                           uint32_t aFlags);
+
+  
+
+
+
+  static nsPoint
+  GetOffsetToBoundingBox(nsIFrame* aFrame);
 };
 
 #endif 
