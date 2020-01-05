@@ -10878,9 +10878,13 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
                                 &haveFirstLineStyle);
   }
 
+  const bool isFlexOrGridContainer = ::IsFlexOrGridContainer(aFrame);
+  
+  
   
   nsFrameConstructorSaveState floatSaveState;
-  if (ShouldSuppressFloatingOfDescendants(aFrame)) {
+  if (isFlexOrGridContainer ||
+      ShouldSuppressFloatingOfDescendants(aFrame)) {
     aState.PushFloatContainingBlock(nullptr, floatSaveState);
   } else if (aFrame->IsFloatContainingBlock()) {
     aState.PushFloatContainingBlock(aFrame, floatSaveState);
@@ -10933,6 +10937,14 @@ nsCSSFrameConstructor::ProcessChildren(nsFrameConstructorState& aState,
     const bool addChildItems = MOZ_LIKELY(mCurrentDepth < kMaxDepth);
     if (!addChildItems) {
       NS_WARNING("ProcessChildren max depth exceeded");
+    }
+
+    
+    
+    Maybe<TreeMatchContext::AutoParentDisplayBasedStyleFixupSkipper>
+      parentDisplayBasedStyleFixupSkipper;
+    if (!isFlexOrGridContainer) {
+      parentDisplayBasedStyleFixupSkipper.emplace(aState.mTreeMatchContext);
     }
 
     InsertionPoint insertion(aFrame, nullptr);
