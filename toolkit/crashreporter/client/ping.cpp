@@ -276,6 +276,30 @@ GenerateSubmissionUrl(const string& aUrl, const string& aId,
 
 
 
+static bool
+WritePing(const string& aPath, const string& aPing)
+{
+  ofstream* f = UIOpenWrite(aPath.c_str());
+  bool success = false;
+
+  if (f->is_open()) {
+    *f << aPing;
+    f->flush();
+
+    if (f->good()) {
+      success = true;
+    }
+
+    f->close();
+  }
+
+  delete f;
+  return success;
+}
+
+
+
+
 
 
 
@@ -284,7 +308,8 @@ GenerateSubmissionUrl(const string& aUrl, const string& aId,
 
 
 bool
-SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid)
+SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid,
+              const string& pingDir)
 {
   string clientId    = strings[kTelemetryClientId];
   string serverUrl   = strings[kTelemetryUrl];
@@ -313,9 +338,15 @@ SendCrashPing(StringTable& strings, const string& aHash, string& pingUuid)
   
   Json::FastWriter writer;
   string ping = writer.write(root);
+  string pingPath = pingDir + UI_DIR_SEPARATOR + uuid + ".json";
+
+  if (!WritePing(pingPath, ping)) {
+    return false;
+  }
 
   
-  if (UIRunProgram(GetProgramPath(UI_PING_SENDER_FILENAME), url, ping)) {
+  vector<string> args = { url, pingPath };
+  if (UIRunProgram(GetProgramPath(UI_PING_SENDER_FILENAME), args)) {
     pingUuid = uuid;
     return true;
   } else {

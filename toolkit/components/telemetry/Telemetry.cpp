@@ -18,7 +18,6 @@
 #include "mozilla/DebugOnly.h"
 #include "mozilla/Likely.h"
 #include "mozilla/MathAlgorithms.h"
-#include "mozilla/Scoped.h"
 #include "mozilla/Unused.h"
 
 #include "base/pickle.h"
@@ -80,6 +79,7 @@
 #include "mozilla/HangMonitor.h"
 #include "nsNativeCharsetUtils.h"
 #include "nsProxyRelease.h"
+#include "nsDirectoryServiceDefs.h"
 
 #if defined(MOZ_GECKO_PROFILER)
 #include "shared-libraries.h"
@@ -87,13 +87,6 @@
 #include "mozilla/StackWalk.h"
 #include "nsPrintfCString.h"
 #endif 
-
-namespace mozilla {
-  
-  MOZ_TYPE_SPECIFIC_SCOPED_POINTER_TEMPLATE(ScopedPRFileDesc,
-                                            PRFileDesc,
-                                            PR_Close);
-}
 
 namespace {
 
@@ -2855,27 +2848,34 @@ TelemetryImpl::FlushBatchedChildTelemetry()
 static nsresult
 LocatePingSender(nsAString& aPath)
 {
-  nsCOMPtr<nsIFile> xreAppDistDir;
-  nsresult rv = NS_GetSpecialDirectory(XRE_APP_DISTRIBUTION_DIR,
-                                       getter_AddRefs(xreAppDistDir));
+  nsCOMPtr<nsIFile> xreGreBinDir;
+  nsresult rv = NS_GetSpecialDirectory(NS_GRE_BIN_DIR,
+                                       getter_AddRefs(xreGreBinDir));
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return NS_ERROR_FAILURE;
   }
 
-  xreAppDistDir->AppendNative(NS_LITERAL_CSTRING("pingsender" BIN_SUFFIX));
-  xreAppDistDir->GetPath(aPath);
+  
+  bool exists = false;
+  if (NS_FAILED(xreGreBinDir->Exists(&exists)) || !exists) {
+    return NS_ERROR_FAILURE;
+  }
+
+  xreGreBinDir->AppendNative(NS_LITERAL_CSTRING("pingsender" BIN_SUFFIX));
+  xreGreBinDir->GetPath(aPath);
   return NS_OK;
 }
 
 #endif 
 
 NS_IMETHODIMP
-TelemetryImpl::RunPingSender(const nsACString& aUrl, const nsACString& aPing)
+TelemetryImpl::RunPingSender(const nsACString& aUrl,
+                             const nsACString& aPingFilePath)
 {
 #ifdef MOZ_WIDGET_ANDROID
   Unused << aUrl;
-  Unused << aPing;
+  Unused << aPingFilePath;
 
   return NS_ERROR_NOT_IMPLEMENTED;
 #else 
@@ -2887,52 +2887,29 @@ TelemetryImpl::RunPingSender(const nsACString& aUrl, const nsACString& aPing)
     return NS_ERROR_FAILURE;
   }
 
-  
-  ScopedPRFileDesc pipeRead;
-  ScopedPRFileDesc pipeWrite;
-
-  if (PR_CreatePipe(&pipeRead.rwget(), &pipeWrite.rwget()) != PR_SUCCESS) {
-    return NS_ERROR_FAILURE;
-  }
-
-  if ((PR_SetFDInheritable(pipeRead, PR_TRUE) != PR_SUCCESS) ||
-      (PR_SetFDInheritable(pipeWrite, PR_FALSE) != PR_SUCCESS)) {
-    return NS_ERROR_FAILURE;
-  }
-
   PRProcessAttr* attr = PR_NewProcessAttr();
   if (!attr) {
     return NS_ERROR_FAILURE;
   }
 
   
-  PR_ProcessAttrSetStdioRedirect(attr, PR_StandardInput, pipeRead);
+  
+  PR_ProcessAttrSetStdioRedirect(attr, PR_StandardOutput, PR_STDOUT);
 
-  UniquePtr<char[]> arg0(ToNewCString(path));
-  UniquePtr<char[]> arg1(ToNewCString(aUrl));
-
-  char* args[] = {
-    arg0.get(),
-    arg1.get(),
-    nullptr,
-  };
-  Unused << NS_WARN_IF(PR_CreateProcessDetached(args[0], args, nullptr, attr));
-  PR_DestroyProcessAttr(attr);
+  UniquePtr<char[]> asciiPath(ToNewCString(aPingFilePath));
+  UniquePtr<char[]> pingSenderPath(ToNewCString(path));
+  UniquePtr<char[]> serverURL(ToNewCString(aUrl));
 
   
-  size_t length = aPing.Length();
-  const char* s = aPing.BeginReading();
+  char* args[] = {
+    pingSenderPath.get(),
+    serverURL.get(),
+    asciiPath.get(),
+    nullptr,
+  };
 
-  while (length > 0) {
-    int result = PR_Write(pipeWrite, s, length);
-
-    if (result <= 0) {
-      return NS_ERROR_FAILURE;
-    }
-
-    s += result;
-    length -= result;
-  }
+  Unused << NS_WARN_IF(PR_CreateProcessDetached(args[0], args, nullptr, attr));
+  PR_DestroyProcessAttr(attr);
 
   return NS_OK;
 #endif

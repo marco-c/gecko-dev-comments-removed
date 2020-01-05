@@ -199,8 +199,6 @@ this.TelemetryController = Object.freeze({
 
 
 
-
-
   submitExternalPing(aType, aPayload, aOptions = {}) {
     aOptions.addClientId = aOptions.addClientId || false;
     aOptions.addEnvironment = aOptions.addEnvironment || false;
@@ -219,8 +217,6 @@ this.TelemetryController = Object.freeze({
   },
 
   
-
-
 
 
 
@@ -276,8 +272,6 @@ this.TelemetryController = Object.freeze({
   },
 
   
-
-
 
 
 
@@ -404,8 +398,6 @@ var Impl = {
 
 
 
-
-
   assemblePing: function assemblePing(aType, aPayload, aOptions = {}) {
     this._log.trace("assemblePing - Type " + aType + ", aOptions " + JSON.stringify(aOptions));
 
@@ -417,7 +409,7 @@ var Impl = {
     
     let pingData = {
       type: aType,
-      id: aOptions.overridePingId || Policy.generatePingId(),
+      id: Policy.generatePingId(),
       creationDate: (Policy.now()).toISOString(),
       version: PING_FORMAT_VERSION,
       application: this._getApplicationSection(),
@@ -461,8 +453,6 @@ var Impl = {
 
 
 
-
-
   _submitPingLogic: Task.async(function* (aType, aPayload, aOptions) {
     
     
@@ -489,8 +479,6 @@ var Impl = {
   }),
 
   
-
-
 
 
 
@@ -550,8 +538,6 @@ var Impl = {
 
 
 
-
-
   addPendingPing: function addPendingPing(aType, aPayload, aOptions) {
     this._log.trace("addPendingPing - Type " + aType + ", aOptions " + JSON.stringify(aOptions));
 
@@ -571,8 +557,6 @@ var Impl = {
   },
 
   
-
-
 
 
 

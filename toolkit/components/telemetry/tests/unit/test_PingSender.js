@@ -6,29 +6,50 @@
 
 "use strict";
 
-Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
-Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/osfile.jsm", this);
+Cu.import("resource://gre/modules/Preferences.jsm", this);
+Cu.import("resource://gre/modules/PromiseUtils.jsm", this);
+Cu.import("resource://gre/modules/Services.jsm", this);
+Cu.import("resource://gre/modules/TelemetryStorage.jsm", this);
+Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
+Cu.import("resource://gre/modules/Timer.jsm", this);
+
+const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
+const PREF_TELEMETRY_SERVER = "toolkit.telemetry.server";
+
+
+
+
+function waitForPingDeletion(pingId) {
+  const path = OS.Path.join(TelemetryStorage.pingDirectoryPath, pingId);
+
+  let checkFn = (resolve, reject) => setTimeout(() => {
+    OS.File.exists(path).then(exists => {
+      if (!exists) {
+        Assert.ok(true, pingId + " was deleted");
+        resolve();
+      } else {
+        checkFn(resolve, reject);
+      }
+    }, reject);
+  }, 250);
+
+  return new Promise((resolve, reject) => checkFn(resolve, reject));
+}
+
+add_task(function* setup() {
+  
+  do_get_profile(true);
+
+  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
+  Services.prefs.setBoolPref(PREF_FHR_UPLOAD_ENABLED, true);
+
+  
+  PingServer.start();
+});
 
 add_task(function* test_pingSender() {
   
-  const XRE_APP_DISTRIBUTION_DIR = "XREAppDist";
-  let dir = Cc["@mozilla.org/file/local;1"].createInstance(Ci.nsIFile);
-  dir.initWithPath(OS.Constants.Path.libDir);
-
-  Services.dirsvc.registerProvider({
-    getFile(aProp, aPersistent) {
-      aPersistent.value = true;
-      if (aProp == XRE_APP_DISTRIBUTION_DIR) {
-        return dir.clone();
-      }
-      return null;
-    }
-  });
-
-  PingServer.start();
-
-  const url = "http://localhost:" + PingServer.port + "/submit/telemetry/";
   const data = {
     type: "test-pingsender-type",
     id: TelemetryUtils.generateUUID(),
@@ -38,8 +59,43 @@ add_task(function* test_pingSender() {
       dummy: "stuff"
     }
   };
+  yield TelemetryStorage.savePing(data, true);
 
-  Telemetry.runPingSender(url, JSON.stringify(data));
+  
+  const pingPath = OS.Path.join(TelemetryStorage.pingDirectoryPath, data.id);
+
+  
+  
+  
+  let failingServer = new HttpServer();
+  let deferred404Hit = PromiseUtils.defer();
+  let hitCount = 0;
+  failingServer.registerPathHandler("/lookup_fail", (metadata, response) => {
+    response.setStatusLine("1.1", 404, "Not Found");
+    hitCount++;
+
+    if (hitCount >= 2) {
+      
+      Services.tm.currentThread.dispatch(() => deferred404Hit.resolve(),
+                                         Ci.nsIThread.DISPATCH_NORMAL);
+    }
+  });
+  failingServer.start(-1);
+
+  
+  const errorUrl = "http://localhost:" + failingServer.identity.primaryPort + "/lookup_fail";
+  Telemetry.runPingSender(errorUrl, pingPath);
+  Telemetry.runPingSender(errorUrl, pingPath);
+
+  
+  
+  yield deferred404Hit.promise;
+  Assert.ok((yield OS.File.exists(pingPath)),
+            "The pending ping must not be deleted if we fail to send using the PingSender");
+
+  
+  const url = "http://localhost:" + PingServer.port + "/submit/telemetry/";
+  Telemetry.runPingSender(url, pingPath);
 
   let req = yield PingServer.promiseNextRequest();
   let ping = decodeRequestPayload(req);
@@ -56,6 +112,13 @@ add_task(function* test_pingSender() {
                "Should have received the correct ping type.");
   Assert.deepEqual(ping.payload, data.payload,
                    "Should have received the correct payload.");
+
+  
+  yield waitForPingDeletion(data.id);
+
+  
+  
+  yield new Promise(r => failingServer.stop(r));
 });
 
 add_task(function* cleanup() {

@@ -119,7 +119,7 @@ namespace CrashReporter {
 
   
   bool SendCrashPing(StringTable& strings, const std::string& hash,
-                     std::string& pingUuid);
+                     std::string& pingUuid, const std::string& pingDir);
 
   static const unsigned int kSaveCount = 10;
 }
@@ -162,11 +162,12 @@ void UIPruneSavedDumps(const std::string& directory);
 
 
 
-
 bool UIRunProgram(const std::string& exename,
-                  const std::string& arg,
-                  const std::string& data,
+                  const std::vector<std::string>& args,
                   bool wait = false);
+
+
+std::string UIGetEnv(const std::string name);
 
 #ifdef _MSC_VER
 # pragma warning( pop )
