@@ -78,7 +78,12 @@ static sslOptions ssl_defaults = {
     PR_FALSE,              
     PR_FALSE,              
     PR_FALSE,              
-    PR_FALSE               
+    PR_FALSE,              
+#ifdef NSS_ENABLE_TLS13_SHORT_HEADERS
+    PR_TRUE 
+#else
+    PR_FALSE 
+#endif
 };
 
 

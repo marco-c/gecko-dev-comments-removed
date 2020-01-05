@@ -232,10 +232,15 @@ nssutil_ReadSecmodDB(const char *appName,
     internal = PR_FALSE;   
     skipParams = PR_FALSE; 
     paramsValue = NULL;    
-    while (fgets(line, sizeof(line), fd) != NULL) {
-        int len = PORT_Strlen(line);
+    do {
+        int len;
+
+        if (fgets(line, sizeof(line), fd) == NULL) {
+            goto endloop;
+        }
 
         
+        len = PORT_Strlen(line);
         if (len && line[len - 1] == '\n') {
             len--;
             line[len] = 0;
@@ -344,6 +349,7 @@ nssutil_ReadSecmodDB(const char *appName,
             continue;
         }
 
+    endloop:
         
 
 
@@ -379,7 +385,7 @@ nssutil_ReadSecmodDB(const char *appName,
         moduleString = NULL;
         internal = PR_FALSE;
         skipParams = PR_FALSE;
-    }
+    } while (!feof(fd));
 
     if (moduleString) {
         PORT_Free(moduleString);

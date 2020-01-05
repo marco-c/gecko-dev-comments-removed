@@ -39,6 +39,7 @@ static const ssl3ExtensionHandler clientHelloHandlers[] = {
     { ssl_tls13_early_data_xtn, &tls13_ServerHandleEarlyDataXtn },
     { ssl_tls13_psk_key_exchange_modes_xtn,
       &tls13_ServerHandlePskKeyExchangeModesXtn },
+    { ssl_tls13_short_header_xtn, &tls13_HandleShortHeaderXtn },
     { -1, NULL }
 };
 
@@ -58,6 +59,7 @@ static const ssl3ExtensionHandler serverHelloHandlersTLS[] = {
     { ssl_tls13_key_share_xtn, &tls13_ClientHandleKeyShareXtn },
     { ssl_tls13_pre_shared_key_xtn, &tls13_ClientHandlePreSharedKeyXtn },
     { ssl_tls13_early_data_xtn, &tls13_ClientHandleEarlyDataXtn },
+    { ssl_tls13_short_header_xtn, &tls13_HandleShortHeaderXtn },
     { -1, NULL }
 };
 
@@ -115,6 +117,7 @@ static const ssl3HelloExtensionSender clientHelloSendersTLS[SSL_MAX_EXTENSIONS] 
 
 
       { ssl_tls13_supported_versions_xtn, &tls13_ClientSendSupportedVersionsXtn },
+      { ssl_tls13_short_header_xtn, &tls13_SendShortHeaderXtn },
       { ssl_signature_algorithms_xtn, &ssl3_ClientSendSigAlgsXtn },
       { ssl_tls13_cookie_xtn, &tls13_ClientSendHrrCookieXtn },
       { ssl_tls13_psk_key_exchange_modes_xtn,

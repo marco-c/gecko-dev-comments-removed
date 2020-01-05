@@ -299,6 +299,12 @@ typedef struct SSLPreliminaryChannelInfoStr {
     PRUint16 cipherSuite;
 
     
+    
+
+
+    PRBool canSendEarlyData;
+
+    
 
 } SSLPreliminaryChannelInfo;
 
@@ -388,7 +394,8 @@ typedef enum {
     ssl_tls13_psk_key_exchange_modes_xtn = 45,
     ssl_tls13_ticket_early_data_info_xtn = 46,
     ssl_next_proto_nego_xtn = 13172,
-    ssl_renegotiation_info_xtn = 0xff01
+    ssl_renegotiation_info_xtn = 0xff01,
+    ssl_tls13_short_header_xtn = 0xff03
 } SSLExtensionType;
 
 
@@ -398,7 +405,7 @@ typedef enum {
 
 
 
-#define SSL_MAX_EXTENSIONS 18
+#define SSL_MAX_EXTENSIONS 19
 
 
 typedef enum {
