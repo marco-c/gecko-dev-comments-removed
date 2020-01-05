@@ -437,8 +437,11 @@ public:
 
     mDecodeStartTime = TimeStamp::Now();
 
-    mMaster->mIsAudioPrerolling = true;
-    mMaster->mIsVideoPrerolling = true;
+    
+    mMaster->mIsAudioPrerolling = !mMaster->DonePrerollingAudio() &&
+                                  !Reader()->IsWaitingAudioData();
+    mMaster->mIsVideoPrerolling = !mMaster->DonePrerollingVideo() &&
+                                  !Reader()->IsWaitingVideoData();
 
     
     mMaster->DispatchDecodeTasksIfNeeded();
@@ -452,8 +455,6 @@ public:
       TimeDuration decodeDuration = TimeStamp::Now() - mDecodeStartTime;
       SLOG("Exiting DECODING, decoded for %.3lfs", decodeDuration.ToSeconds());
     }
-    mMaster->mIsAudioPrerolling = false;
-    mMaster->mIsVideoPrerolling = false;
   }
 
   void Step() override
@@ -1048,9 +1049,8 @@ MediaDecoderStateMachine::OnAudioDecoded(MediaData* aAudioSample)
 
     case DECODER_STATE_DECODING: {
       Push(audio, MediaData::AUDIO_DATA);
-      if (mIsAudioPrerolling) {
-        
-        ScheduleStateMachine();
+      if (mIsAudioPrerolling && DonePrerollingAudio()) {
+        StopPrerollingAudio();
       }
       return;
     }
@@ -1237,9 +1237,8 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideoSample,
 
     case DECODER_STATE_DECODING: {
       Push(video, MediaData::VIDEO_DATA);
-      if (mIsVideoPrerolling) {
-        
-        ScheduleStateMachine();
+      if (mIsVideoPrerolling && DonePrerollingVideo()) {
+        StopPrerollingVideo();
       }
 
       
@@ -1411,16 +1410,6 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   if (IsPlaying()) {
     
     return;
-  }
-
-  if (mIsAudioPrerolling &&
-      (DonePrerollingAudio() || mReader->IsWaitingAudioData())) {
-    mIsAudioPrerolling = false;
-  }
-
-  if (mIsVideoPrerolling &&
-      (DonePrerollingVideo() || mReader->IsWaitingVideoData())) {
-    mIsVideoPrerolling = false;
   }
 
   bool playStatePermits = mPlayState == MediaDecoder::PLAY_STATE_PLAYING;
@@ -2775,7 +2764,13 @@ MediaDecoderStateMachine::SetPlaybackRate(double aPlaybackRate)
   mPlaybackRate = aPlaybackRate;
   mMediaSink->SetPlaybackRate(mPlaybackRate);
 
-  
+  if (mIsAudioPrerolling && DonePrerollingAudio()) {
+    StopPrerollingAudio();
+  }
+  if (mIsVideoPrerolling && DonePrerollingVideo()) {
+    StopPrerollingVideo();
+  }
+
   ScheduleStateMachine();
 }
 
@@ -2937,10 +2932,8 @@ MediaDecoderStateMachine::SetAudioCaptured(bool aCaptured)
   mAmpleAudioThresholdUsecs = mAudioCaptured ?
                               detail::AMPLE_AUDIO_USECS / 2 :
                               detail::AMPLE_AUDIO_USECS;
-
-  if (mIsAudioPrerolling) {
-    
-    ScheduleStateMachine();
+  if (mIsAudioPrerolling && DonePrerollingAudio()) {
+    StopPrerollingAudio();
   }
 }
 
