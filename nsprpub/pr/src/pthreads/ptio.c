@@ -2095,7 +2095,7 @@ static PRInt32 pt_TCP_SendTo(
 
 #ifdef _PR_HAVE_SOCKADDR_LEN
     
-    / to AF_INET6 and we set address length.
+    
     addrCopy = *addr;
     ((struct sockaddr*)&addrCopy)->sa_len = addr_len;
     ((struct sockaddr*)&addrCopy)->sa_family = md_af;
