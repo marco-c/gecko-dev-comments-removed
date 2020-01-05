@@ -1121,7 +1121,7 @@ Loader::CreateSheet(nsIURI* aURI,
       
       URIPrincipalReferrerPolicyAndCORSModeHashKey key(aURI, aLoaderPrincipal, aCORSMode, aReferrerPolicy);
 
-      StyleSheetHandle completeSheet;
+      StyleSheetHandle completeSheet = nullptr;
       mSheets->mCompleteSheets.Get(&key, &completeSheet);
       sheet = completeSheet;
       LOG(("  From completed: %p", sheet->AsVoidPtr()));
