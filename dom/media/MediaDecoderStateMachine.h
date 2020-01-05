@@ -735,6 +735,9 @@ private:
   bool mVideoDecodeSuspended;
 
   
+  bool mMediaSeekable = true;
+
+  
   DelayedScheduler mVideoDecodeSuspendTimer;
 
   
@@ -750,6 +753,7 @@ private:
   MediaEventListener mAudioQueueListener;
   MediaEventListener mVideoQueueListener;
   MediaEventListener mAudibleListener;
+  MediaEventListener mOnMediaNotSeekable;
 
   MediaEventProducerExc<nsAutoPtr<MediaInfo>,
                         nsAutoPtr<MetadataTags>,
@@ -807,9 +811,6 @@ private:
 
   
   Mirror<int64_t> mDecoderPosition;
-
-  
-  Mirror<bool> mMediaSeekable;
 
   
   Mirror<bool> mMediaSeekableOnlyInBufferedRanges;
