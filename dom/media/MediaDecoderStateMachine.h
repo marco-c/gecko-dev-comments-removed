@@ -270,6 +270,7 @@ private:
   class ShutdownState;
 
   static const char* ToStateStr(State aState);
+  static const char* ToStr(NextFrameStatus aStatus);
   const char* ToStateStr();
 
   
@@ -401,6 +402,7 @@ protected:
   
   
   void UpdateNextFrameStatus();
+  void UpdateNextFrameStatus(NextFrameStatus aStatus);
 
   
   
