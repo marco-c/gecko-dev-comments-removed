@@ -226,14 +226,12 @@ this.ReaderMode = {
 
 
   parseDocument: Task.async(function* (doc) {
-    let documentURI = Services.io.newURI(doc.documentURI);
-    let baseURI = Services.io.newURI(doc.baseURI);
-    if (!this._shouldCheckUri(documentURI) || !this._shouldCheckUri(baseURI, true)) {
+    if (!this._shouldCheckUri(doc.documentURIObject) || !this._shouldCheckUri(doc.baseURIObject, true)) {
       this.log("Reader mode disabled for URI");
       return null;
     }
 
-    return yield this._readerParse(baseURI, doc);
+    return yield this._readerParse(doc);
   }),
 
   
@@ -245,13 +243,12 @@ this.ReaderMode = {
 
   downloadAndParseDocument: Task.async(function* (url) {
     let doc = yield this._downloadDocument(url);
-    let uri = Services.io.newURI(doc.baseURI);
-    if (!this._shouldCheckUri(uri, true)) {
+    if (!this._shouldCheckUri(doc.documentURIObject) || !this._shouldCheckUri(doc.baseURIObject, true)) {
       this.log("Reader mode disabled for URI");
       return null;
     }
 
-    return yield this._readerParse(uri, doc);
+    return yield this._readerParse(doc);
   }),
 
   _downloadDocument(url) {
@@ -438,8 +435,7 @@ this.ReaderMode = {
 
 
 
-
-  _readerParse: Task.async(function* (uri, doc) {
+  _readerParse: Task.async(function* (doc) {
     let histogram = Services.telemetry.getHistogramById("READER_MODE_PARSE_RESULT");
     if (this.parseNodeLimit) {
       let numTags = doc.getElementsByTagName("*").length;
@@ -451,11 +447,11 @@ this.ReaderMode = {
     }
 
     let uriParam = {
-      spec: uri.spec,
-      host: uri.host,
-      prePath: uri.prePath,
-      scheme: uri.scheme,
-      pathBase: Services.io.newURI(".", null, uri).spec
+      spec: doc.baseURIObject.spec,
+      host: doc.baseURIObject.host,
+      prePath: doc.baseURIObject.prePath,
+      scheme: doc.baseURIObject.scheme,
+      pathBase: Services.io.newURI(".", null, doc.baseURIObject).spec
     };
 
     let serializer = Cc["@mozilla.org/xmlextras/xmlserializer;1"].
@@ -477,7 +473,9 @@ this.ReaderMode = {
     }
 
     
-    article.url = article.uri.spec;
+    
+    
+    article.url = doc.documentURI;
     delete article.uri;
 
     let flags = Ci.nsIDocumentEncoder.OutputSelectionOnly | Ci.nsIDocumentEncoder.OutputAbsoluteLinks;
