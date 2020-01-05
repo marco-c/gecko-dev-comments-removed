@@ -88,6 +88,13 @@ bool
 ProxyGetPropertyByValue(JSContext* cx, HandleObject proxy, HandleValue idVal,
                         MutableHandleValue vp);
 
+bool
+ProxySetProperty(JSContext* cx, HandleObject proxy, HandleId id, HandleValue val, bool strict);
+
+bool
+ProxySetPropertyByValue(JSContext* cx, HandleObject proxy, HandleValue idVal, HandleValue val,
+                        bool strict);
+
 } 
 
 #endif 
