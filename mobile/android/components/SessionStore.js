@@ -134,6 +134,45 @@ SessionStore.prototype = {
     }
   },
 
+  _purgeHistory: function ss_purgeHistory(topic) {
+    log(topic);
+    this._clearDisk();
+
+    
+    this._forgetClosedTabs();
+
+    
+    if (topic == "browser:purge-session-history") {
+      this._forEachBrowserWindow((window) => {
+        let tabs = window.BrowserApp.tabs;
+        for (let i = 0; i < tabs.length; i++) {
+          let data = tabs[i].browser.__SS_data;
+          let sHistory = data.entries;
+          
+          sHistory.push(sHistory[data.index - 1]);
+          
+          sHistory.splice(0, sHistory.length - 1);
+          data.index = 1;
+        }
+      });
+    }
+
+    if (this._loadState == STATE_RUNNING) {
+      
+      this.saveState();
+    } else if (this._loadState <= STATE_QUITTING) {
+      this.saveStateDelayed();
+      if (this._loadState == STATE_QUITTING_FLUSHED) {
+        this.flushPendingState();
+      }
+    }
+
+    Services.obs.notifyObservers(null, "sessionstore-state-purge-complete");
+    if (this._notifyClosedTabs) {
+      this._sendClosedTabsToJava(Services.wm.getMostRecentWindow("navigator:browser"));
+    }
+  },
+
   _clearDisk: function ss_clearDisk() {
     this._sessionDataIsGood = false;
     this._lastBackupTime = 0;
@@ -229,8 +268,6 @@ SessionStore.prototype = {
     }
   },
 
-  
-  
   observe: function ss_observe(aSubject, aTopic, aData) {
     let observerService = Services.obs;
     switch (aTopic) {
@@ -300,42 +337,7 @@ SessionStore.prototype = {
         break;
       case "browser:purge-session-tabs":
       case "browser:purge-session-history": 
-        log(aTopic);
-        this._clearDisk();
-
-        
-        this._forgetClosedTabs();
-
-        
-        if (aTopic == "browser:purge-session-history") {
-          this._forEachBrowserWindow((window) => {
-            let tabs = window.BrowserApp.tabs;
-            for (let i = 0; i < tabs.length; i++) {
-              let data = tabs[i].browser.__SS_data;
-              let sHistory = data.entries;
-              
-              sHistory.push(sHistory[data.index - 1]);
-              
-              sHistory.splice(0, sHistory.length - 1);
-              data.index = 1;
-            }
-          });
-        }
-
-        if (this._loadState == STATE_RUNNING) {
-          
-          this.saveState();
-        } else if (this._loadState <= STATE_QUITTING) {
-          this.saveStateDelayed();
-          if (this._loadState == STATE_QUITTING_FLUSHED) {
-            this.flushPendingState();
-          }
-        }
-
-        Services.obs.notifyObservers(null, "sessionstore-state-purge-complete");
-        if (this._notifyClosedTabs) {
-          this._sendClosedTabsToJava(Services.wm.getMostRecentWindow("navigator:browser"));
-        }
+        this._purgeHistory(aTopic);
         break;
       case "timer-callback":
         if (this._loadState == STATE_RUNNING) {
