@@ -7,6 +7,7 @@ use au::Au;
 
 use font::{
     Font,
+    FontTable,
     FontTableTag,
 };
 
@@ -192,15 +193,30 @@ extern fn get_font_table_func(_face: *hb_face_t, tag: hb_tag_t, user_data: *c_vo
     assert font.is_not_null();
 
     
-    
-    
     match (*font).get_table_for_tag(tag as FontTableTag) {
         None => return ptr::null(),
-        Some(table_buffer) => {
-            let blob: *hb_blob_t = vec::as_imm_buf(table_buffer, |buf: *u8, len: uint| {
-                hb_blob_create(buf as *c_char, len as c_uint, HB_MEMORY_MODE_READONLY, null(), null())
+        Some(ref font_table) => {
+            let skinny_font_table = ~font_table;
+            let skinny_font_table_ptr = ptr::to_unsafe_ptr(skinny_font_table);
+            let mut blob: *hb_blob_t = ptr::null();
+            (*skinny_font_table_ptr).with_buffer(|buf: *u8, len: uint| {
+                blob = hb_blob_create(buf as *c_char,
+                                      len as c_uint,
+                                      HB_MEMORY_MODE_READONLY,
+                                      cast::transmute(skinny_font_table_ptr), 
+                                      destroy_blob_func); 
             });
+            assert blob.is_not_null();
             return blob;
         }
     }
+}
+
+
+
+
+
+extern fn destroy_blob_func(user_data: *c_void) unsafe {
+    
+    let _wrapper : &~FontTable = cast::transmute(user_data);
 }
