@@ -1158,7 +1158,7 @@ SyncEngine.prototype = {
 
     
     if (this.lastModified == null || this.lastModified > this.lastSync) {
-      let resp = newitems.get();
+      let resp = newitems.getBatched();
       doApplyBatchAndPersistFailed.call(this);
       if (!resp.success) {
         resp.failureCode = ENGINE_DOWNLOAD_FAIL;

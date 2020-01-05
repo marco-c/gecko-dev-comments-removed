@@ -77,6 +77,10 @@ ADDONS_STORE_BATCH_SIZE:               1000000,
 APPS_STORE_BATCH_SIZE:                 50,      
 
 
+
+DEFAULT_DOWNLOAD_BATCH_SIZE:           1000,
+
+
 SINGLE_USER_THRESHOLD:                 1000,
 MULTI_DEVICE_THRESHOLD:                300,
 

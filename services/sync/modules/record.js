@@ -534,6 +534,9 @@ this.Collection = function Collection(uri, recordObj, service) {
   
   this._batch = null;
   this._commit = false;
+  
+  
+  this._offset = null;
 }
 Collection.prototype = {
   __proto__: Resource.prototype,
@@ -561,6 +564,8 @@ Collection.prototype = {
       args.push("batch=" + encodeURIComponent(this._batch));
     if (this._commit)
       args.push("commit=true");
+    if (this._offset)
+      args.push("offset=" + encodeURIComponent(this._offset));
 
     this.uri.query = (args.length > 0)? '?' + args.join('&') : '';
   },
@@ -610,6 +615,12 @@ Collection.prototype = {
     this._rebuildURL();
   },
 
+  get offset() { return this._offset; },
+  set offset(value) {
+    this._offset = value;
+    this._rebuildURL();
+  },
+
   
   get batch() { return this._batch; },
   set batch(value) {
@@ -623,12 +634,91 @@ Collection.prototype = {
     this._rebuildURL();
   },
 
+  
+  
+  
+  
+  
+  
+  getBatched(batchSize = DEFAULT_DOWNLOAD_BATCH_SIZE) {
+    let totalLimit = Number(this.limit) || Infinity;
+    if (batchSize <= 0 || batchSize >= totalLimit) {
+      
+      return this.get();
+    }
+
+    if (!this.full) {
+      throw new Error("getBatched is unimplemented for guid-only GETs");
+    }
+
+    
+    
+    
+    let { _onComplete, _onProgress, _onRecord } = this;
+    let recordBuffer = [];
+    let resp;
+    try {
+      this._onRecord = r => recordBuffer.push(r);
+      let lastModifiedTime;
+      this.limit = batchSize;
+
+      do {
+        this._onProgress = _onProgress;
+        this._onComplete = _onComplete;
+        if (batchSize + recordBuffer.length > totalLimit) {
+          this.limit = totalLimit - recordBuffer.length;
+        }
+        this._log.trace("Performing batched GET", { limit: this.limit, offset: this.offset });
+        
+        resp = this.get();
+        if (!resp.success) {
+          break;
+        }
+
+        
+        let lastModified = resp.headers["x-last-modified"];
+        if (!lastModifiedTime) {
+          lastModifiedTime = lastModified;
+          this.setHeader("X-If-Unmodified-Since", lastModified);
+        } else if (lastModified != lastModifiedTime) {
+          
+          throw new Error("X-Last-Modified changed in the middle of a download batch! " +
+                          `${lastModified} => ${lastModifiedTime}`)
+        }
+
+        
+        this.offset = resp.headers["x-weave-next-offset"];
+      } while (this.offset && totalLimit > recordBuffer.length);
+    } finally {
+      
+      
+      
+      
+      
+      this._onRecord = _onRecord;
+      this._limit = totalLimit;
+      this._offset = null;
+      delete this._headers["x-if-unmodified-since"];
+      this._rebuildURL();
+    }
+    if (resp.success && Async.checkAppReady()) {
+      
+      
+      for (let record of recordBuffer) {
+        this._onRecord(record);
+      }
+    }
+    return resp;
+  },
+
   set recordHandler(onRecord) {
     
     let coll = this;
 
     
     coll.setHeader("Accept", "application/newlines");
+
+    this._onRecord = onRecord;
 
     this._onProgress = function() {
       let newline;
@@ -640,7 +730,7 @@ Collection.prototype = {
         
         let record = new coll._recordObj();
         record.deserialize(json);
-        onRecord(record);
+        coll._onRecord(record);
       }
     };
   },
