@@ -164,6 +164,7 @@ public:
   NS_IMETHOD SetUserInput(const nsAString& aInput) override;
 
   
+  NS_IMETHOD_(uint32_t) GetType() const override { return mType; }
   NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(HTMLFormSubmission* aFormSubmission) override;
   NS_IMETHOD SaveState() override;
@@ -1608,6 +1609,12 @@ protected:
   
   static const double kMsPerDay;
 
+
+  
+
+
+
+  uint8_t                  mType;
   nsContentUtils::AutocompleteAttrState mAutocompleteAttrState;
   bool                     mDisabledChanged     : 1;
   bool                     mValueChanged        : 1;

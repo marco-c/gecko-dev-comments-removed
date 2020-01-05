@@ -3728,7 +3728,7 @@ nsCSSFrameConstructor::FindInputData(Element* aElement,
   nsCOMPtr<nsIFormControl> control = do_QueryInterface(aElement);
   NS_ASSERTION(control, "input doesn't implement nsIFormControl?");
 
-  auto controlType = control->ControlType();
+  auto controlType = control->GetType();
 
   
   

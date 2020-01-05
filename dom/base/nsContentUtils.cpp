@@ -2763,7 +2763,7 @@ nsContentUtils::GenerateStateKey(nsIContent* aContent,
     if (control && htmlFormControls && htmlForms) {
 
       
-      KeyAppendInt(control->ControlType(), aKey);
+      KeyAppendInt(control->GetType(), aKey);
 
       
       int32_t index = -1;

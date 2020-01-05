@@ -1979,7 +1979,7 @@ nsTextEditorState::GetParentNumberControl(nsFrame* aFrame) const
     
     
     
-    return (input->ControlType() == NS_FORM_INPUT_NUMBER) ? input : nullptr;
+    return (input->GetType() == NS_FORM_INPUT_NUMBER) ? input : nullptr;
   }
 
   return nullptr;

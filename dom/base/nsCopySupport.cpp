@@ -869,7 +869,7 @@ nsCopySupport::FireClipboardEvent(EventMessage aEventMessage,
     
     nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(srcNode);
     if (formControl) {
-      if (formControl->ControlType() == NS_FORM_INPUT_PASSWORD) {
+      if (formControl->GetType() == NS_FORM_INPUT_PASSWORD) {
         return false;
       }
     }

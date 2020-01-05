@@ -740,9 +740,8 @@ nsFormFillController::StartSearch(const nsAString &aSearchString, const nsAStrin
   
   
   
-  if (mFocusedInputNode &&
-      (mPwmgrInputs.Get(mFocusedInputNode) ||
-       formControl->ControlType() == NS_FORM_INPUT_PASSWORD)) {
+  if (mFocusedInputNode && (mPwmgrInputs.Get(mFocusedInputNode) ||
+                            formControl->GetType() == NS_FORM_INPUT_PASSWORD)) {
 
     
     
@@ -1034,7 +1033,7 @@ nsFormFillController::MaybeStartControllingInput(nsIDOMHTMLInputElement* aInput)
 
   bool isPwmgrInput = false;
   if (mPwmgrInputs.Get(inputNode) ||
-      formControl->ControlType() == NS_FORM_INPUT_PASSWORD) {
+      formControl->GetType() == NS_FORM_INPUT_PASSWORD) {
     isPwmgrInput = true;
   }
 
@@ -1049,7 +1048,7 @@ nsFormFillController::FocusEventDelayedCallback(nsIFormControl* aFormControl)
   nsCOMPtr<nsIFormControl> formControl = do_QueryInterface(mFocusedInputNode);
 
   if (!formControl || formControl != aFormControl ||
-      formControl->ControlType() != NS_FORM_INPUT_PASSWORD) {
+      formControl->GetType() != NS_FORM_INPUT_PASSWORD) {
     return;
   }
 
