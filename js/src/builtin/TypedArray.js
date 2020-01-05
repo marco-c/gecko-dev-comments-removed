@@ -2,8 +2,6 @@
 
 
 
-#include "TypedObjectConstants.h"
-
 function ViewedArrayBufferIfReified(tarray) {
     assert(IsTypedArray(tarray), "non-typed array asked for its buffer");
 
@@ -1650,7 +1648,7 @@ function ArrayBufferSlice(start, end) {
         ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
 
     
-    ArrayBufferCopyData(new_, O, first | 0, newLen | 0, isWrapped);
+    ArrayBufferCopyData(new_, 0, O, first | 0, newLen | 0, isWrapped);
 
     
     return new_;
@@ -1736,7 +1734,7 @@ function SharedArrayBufferSlice(start, end) {
         ThrowTypeError(JSMSG_SHORT_SHARED_ARRAY_BUFFER_RETURNED, newLen, actualLen);
 
     
-    SharedArrayBufferCopyData(new_, O, first | 0, newLen | 0, isWrapped);
+    SharedArrayBufferCopyData(new_, 0, O, first | 0, newLen | 0, isWrapped);
 
     
     return new_;
