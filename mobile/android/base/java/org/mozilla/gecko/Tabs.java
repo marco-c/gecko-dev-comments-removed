@@ -52,6 +52,9 @@ public class Tabs implements BundleEventListener {
     private volatile CopyOnWriteArrayList<Tab> mOrder = new CopyOnWriteArrayList<Tab>();
 
     
+    private final TabPositionCache tabPositionCache = new TabPositionCache();
+
+    
     
     private volatile Tab mSelectedTab;
 
@@ -239,6 +242,9 @@ public class Tabs implements BundleEventListener {
 
             if (tabIndex > -1) {
                 mOrder.add(tabIndex, tab);
+                if (tabPositionCache.mOrderPosition >= tabIndex) {
+                    tabPositionCache.mTabId = INVALID_TAB_ID;
+                }
             } else {
                 mOrder.add(tab);
             }
@@ -271,6 +277,7 @@ public class Tabs implements BundleEventListener {
             Tab tab = getTab(id);
             mOrder.remove(tab);
             mTabs.remove(id);
+            tabPositionCache.mTabId = INVALID_TAB_ID;
         }
     }
 
@@ -1077,6 +1084,21 @@ public class Tabs implements BundleEventListener {
     }
 
     
+    private static class TabPositionCache {
+        int mTabId;
+        int mOrderPosition;
+
+        TabPositionCache() {
+            mTabId = INVALID_TAB_ID;
+        }
+
+        void cache(int tabId, int position) {
+            mTabId = tabId;
+            mOrderPosition = position;
+        }
+    }
+
+    
 
 
 
@@ -1116,10 +1138,18 @@ public class Tabs implements BundleEventListener {
         
 
         synchronized (this) {
-            final int fromPosition = getOrderPositionForTab(fromTabId, fromPositionHint, true);
+            final int fromPosition;
+            if (tabPositionCache.mTabId == fromTabId) {
+                fromPosition = tabPositionCache.mOrderPosition;
+            } else {
+                fromPosition = getOrderPositionForTab(fromTabId, fromPositionHint, true);
+            }
+
             
             final int adjustedToPositionHint = fromPosition + (toPositionHint - fromPositionHint);
             final int toPosition = getOrderPositionForTab(toTabId, adjustedToPositionHint, fromPositionHint < toPositionHint);
+            
+            tabPositionCache.cache(fromTabId, toPosition);
 
             if (fromPosition == -1 || toPosition == -1) {
                 throw new IllegalStateException("Tabs search failed: (" + fromPositionHint + ", " + toPositionHint + ")" +
