@@ -29,6 +29,7 @@
 
 #include "gfxVROculus.h"
 
+#include "mozilla/layers/CompositorThread.h"
 #include "mozilla/dom/GamepadEventTypes.h"
 #include "mozilla/dom/GamepadBinding.h"
 
@@ -145,7 +146,7 @@ enum class OculusRightControllerButtonType : uint16_t {
 static const uint32_t kNumOculusButton = static_cast<uint32_t>
                                          (OculusLeftControllerButtonType::
                                          NumButtonType);
-static const uint32_t kNumOculusHaptcs = 0;  
+static const uint32_t kNumOculusHaptcs = 1;
 
 
 static bool
@@ -886,6 +887,8 @@ VRControllerOculus::VRControllerOculus(dom::GamepadHand aHand)
   : VRControllerHost(VRDeviceType::Oculus)
   , mIndexTrigger(0.0f)
   , mHandTrigger(0.0f)
+  , mVibrateThread(nullptr)
+  , mIsVibrateStopped(false)
 {
   MOZ_COUNT_CTOR_INHERITED(VRControllerOculus, VRControllerHost);
 
@@ -955,6 +958,144 @@ VRControllerOculus::SetHandTrigger(float aValue)
 VRControllerOculus::~VRControllerOculus()
 {
   MOZ_COUNT_DTOR_INHERITED(VRControllerOculus, VRControllerHost);
+}
+
+void
+VRControllerOculus::UpdateVibrateHaptic(ovrSession aSession,
+                                        uint32_t aHapticIndex,
+                                        double aIntensity,
+                                        double aDuration,
+                                        uint64_t aVibrateIndex,
+                                        uint32_t aPromiseID)
+{
+  
+  MOZ_ASSERT(mVibrateThread == NS_GetCurrentThread());
+
+  
+  if (mIsVibrateStopped) {
+    VibrateHapticComplete(aSession, aPromiseID, true);
+    return;
+  }
+  
+  if (mVibrateIndex != aVibrateIndex) {
+    VibrateHapticComplete(aSession, aPromiseID, false);
+    return;
+  }
+
+  const double duration = (aIntensity == 0) ? 0 : aDuration;
+  
+  const float amplitude = aIntensity > 1.0 ? 1.0 : aIntensity;
+  
+  
+  
+  const float frequency = (duration > 0) ? 1.0f : 0.0f;
+  ovrControllerType hand;
+
+  switch (GetHand()) {
+    case GamepadHand::Left:
+      hand = ovrControllerType::ovrControllerType_LTouch;
+      break;
+    case GamepadHand::Right:
+      hand = ovrControllerType::ovrControllerType_RTouch;
+      break;
+    default:
+      MOZ_ASSERT(false);
+      break;
+  }
+
+  
+  
+  ovrResult result = ovr_SetControllerVibration(aSession, hand, frequency,
+                                                (frequency == 0.0f) ? 0.0f : amplitude);
+  if (result != ovrSuccess) {
+    printf_stderr("%s hand ovr_SetControllerVibration skipped.\n",
+                  GamepadHandValues::strings[uint32_t(GetHand())].value);
+  }
+
+  
+  
+  
+  const double kVibrateRate = 2450.0;
+  const double remainingTime = (duration > kVibrateRate)
+                                ? (duration - kVibrateRate) : duration;
+
+  if (remainingTime) {
+    MOZ_ASSERT(mVibrateThread);
+
+    RefPtr<Runnable> runnable =
+      NewRunnableMethod<ovrSession, uint32_t, double, double, uint64_t, uint32_t>
+        (this, &VRControllerOculus::UpdateVibrateHaptic, aSession,
+         aHapticIndex, aIntensity, (duration > kVibrateRate) ? remainingTime : 0, aVibrateIndex, aPromiseID);
+    NS_DelayedDispatchToCurrentThread(runnable.forget(),
+                                      (duration > kVibrateRate) ? kVibrateRate : remainingTime);
+  } else {
+    VibrateHapticComplete(aSession, aPromiseID, true);
+  }
+}
+
+void
+VRControllerOculus::VibrateHapticComplete(ovrSession aSession, uint32_t aPromiseID,
+                                          bool aStop)
+{
+  if (aStop) {
+    ovrControllerType hand;
+
+    switch (GetHand()) {
+      case GamepadHand::Left:
+        hand = ovrControllerType::ovrControllerType_LTouch;
+        break;
+      case GamepadHand::Right:
+        hand = ovrControllerType::ovrControllerType_RTouch;
+        break;
+      default:
+        MOZ_ASSERT(false);
+        break;
+    }
+
+    ovrResult result = ovr_SetControllerVibration(aSession, hand, 0.0f, 0.0f);
+    if (result != ovrSuccess) {
+      printf_stderr("%s Haptics skipped.\n",
+                    GamepadHandValues::strings[uint32_t(GetHand())].value);
+    }
+  }
+
+  VRManager *vm = VRManager::Get();
+  MOZ_ASSERT(vm);
+
+  CompositorThreadHolder::Loop()->PostTask(NewRunnableMethod<uint32_t>
+    (vm, &VRManager::NotifyVibrateHapticCompleted, aPromiseID));
+}
+
+void
+VRControllerOculus::VibrateHaptic(ovrSession aSession,
+                                  uint32_t aHapticIndex,
+                                  double aIntensity,
+                                  double aDuration,
+                                  uint32_t aPromiseID)
+{
+  
+  if (!mVibrateThread) {
+    nsresult rv = NS_NewThread(getter_AddRefs(mVibrateThread));
+    MOZ_ASSERT(mVibrateThread);
+
+    if (NS_FAILED(rv)) {
+      MOZ_ASSERT(false, "Failed to create async thread.");
+    }
+  }
+  ++mVibrateIndex;
+  mIsVibrateStopped = false;
+
+  RefPtr<Runnable> runnable =
+       NewRunnableMethod<ovrSession, uint32_t, double, double, uint64_t, uint32_t>
+         (this, &VRControllerOculus::UpdateVibrateHaptic, aSession,
+          aHapticIndex, aIntensity, aDuration, mVibrateIndex, aPromiseID);
+  mVibrateThread->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
+}
+
+void
+VRControllerOculus::StopVibrateHaptic()
+{
+  mIsVibrateStopped = true;
 }
 
  already_AddRefed<VRSystemManagerOculus>
@@ -1263,11 +1404,30 @@ VRSystemManagerOculus::VibrateHaptic(uint32_t aControllerIdx,
                                      uint32_t aPromiseID)
 {
   
+  
+  if (!mSession) {
+    return;
+  }
+
+  RefPtr<impl::VRControllerOculus> controller = mOculusController[aControllerIdx];
+  MOZ_ASSERT(controller);
+
+  controller->VibrateHaptic(mSession, aHapticIndex, aIntensity, aDuration, aPromiseID);
 }
 
 void
 VRSystemManagerOculus::StopVibrateHaptic(uint32_t aControllerIdx)
 {
+  
+  
+  if (!mSession) {
+    return;
+  }
+
+  RefPtr<impl::VRControllerOculus> controller = mOculusController[aControllerIdx];
+  MOZ_ASSERT(controller);
+
+  controller->StopVibrateHaptic();
 }
 
 void

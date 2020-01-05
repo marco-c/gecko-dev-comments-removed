@@ -462,11 +462,11 @@ VRControllerOpenVR::UpdateVibrateHaptic(vr::IVRSystem* aVRSystem,
     return;
   }
 
-  double duration = (aIntensity == 0) ? 0 : aDuration;
+  const double duration = (aIntensity == 0) ? 0 : aDuration;
   
   
   
-  uint32_t microSec = (duration < 3.9 ? duration : 3.9) * 1000 * aIntensity;
+  const uint32_t microSec = (duration < 3.9 ? duration : 3.9) * 1000 * aIntensity;
   aVRSystem->TriggerHapticPulse(GetTrackedIndex(),
                                 aHapticIndex, microSec);
 
