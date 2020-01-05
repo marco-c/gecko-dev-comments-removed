@@ -157,7 +157,7 @@ add_task({
 
   
   let uniqueKey = TEST_STACK_KEYS[1] + "-UNIQUE-KEY-2";
-  updated = captureStacks(uniqueKey);
+  let updated = captureStacks(uniqueKey);
 
   
   Assert.equal(original.stacks.length + 1, updated.stacks.length);

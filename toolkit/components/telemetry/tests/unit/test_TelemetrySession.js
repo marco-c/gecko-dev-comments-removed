@@ -274,7 +274,7 @@ function checkScalars(processes) {
   const scalars = parentProcess.scalars;
   for (let name in scalars) {
     Assert.equal(typeof name, "string", "Scalar names must be strings.");
-    checkScalar(scalar[name]);
+    checkScalar(scalars [name]);
   }
 
   
@@ -286,7 +286,7 @@ function checkScalars(processes) {
     for (let key in keyedScalars[name]) {
       Assert.equal(typeof key, "string", "Keyed scalar keys must be strings.");
       Assert.ok(key.length <= 70, "Keyed scalar keys can't have more than 70 characters.");
-      checkScalar(scalar[name][key]);
+      checkScalar(scalars[name][key]);
     }
   }
 }
@@ -796,7 +796,7 @@ add_task(function* test_checkSubsessionHistograms() {
   
   
   
-  checkHistograms = (classic, subsession) => {
+  let checkHistograms = (classic, subsession) => {
     for (let id of Object.keys(classic)) {
       if (!registeredIds.has(id)) {
         continue;
@@ -814,7 +814,7 @@ add_task(function* test_checkSubsessionHistograms() {
   };
 
   
-  checkKeyedHistograms = (classic, subsession) => {
+  let checkKeyedHistograms = (classic, subsession) => {
     for (let id of Object.keys(classic)) {
       if (!registeredIds.has(id)) {
         continue;
@@ -953,7 +953,7 @@ add_task(function* test_checkSubsessionData() {
   let activeTicksAtSubsessionStart = sessionRecorder.activeTicks;
   let expectedActiveTicks = activeTicksAtSubsessionStart;
 
-  incrementActiveTicks = () => {
+  let incrementActiveTicks = () => {
     sessionRecorder.incrementActiveTicks();
     ++expectedActiveTicks;
   }

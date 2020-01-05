@@ -106,7 +106,7 @@ add_task(function* test_recording() {
 
   
   events = Telemetry.snapshotBuiltinEvents(OPTOUT, false);
-  filtered = expected.filter(e => e.optout == true);
+  let filtered = expected.filter(e => e.optout == true);
   checkEvents(events, filtered);
 });
 

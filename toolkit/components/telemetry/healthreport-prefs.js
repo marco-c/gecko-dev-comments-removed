@@ -2,6 +2,8 @@
 
 
 
+
+
 pref("datareporting.healthreport.infoURL", "https://www.mozilla.org/legal/privacy/firefox.html#health-report");
 
 

@@ -8,7 +8,6 @@ module.exports = {
   },
 
   "globals": {
-    "ChromeWorker": false,
     "onmessage": true,
     "sendAsyncMessage": false,
 

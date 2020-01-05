@@ -12,6 +12,8 @@ module.exports = {
 
   
   "globals": {
+    
+    "$": false,
     "add_task": false,
     "Assert": false,
     "EventUtils": false,
@@ -25,6 +27,7 @@ module.exports = {
     "is": false,
     "isDeeply": false,
     "isnot": false,
+    "netscape": false,
     "ok": false,
     "promise": false,
     "registerCleanupFunction": false,

@@ -201,6 +201,10 @@ function fakeSchedulerTimer(set, clear) {
 
 
 
+
+
+
+
 function fakeNow(...args) {
   const date = new Date(...args);
   const modules = [
@@ -308,6 +312,8 @@ if (runningInParent) {
   },
   () => {});
 
+  
+  
   do_register_cleanup(() => TelemetrySend.shutdown());
 }
 

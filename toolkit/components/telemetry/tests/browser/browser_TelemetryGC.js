@@ -112,6 +112,8 @@ add_task(function* test() {
     gBrowser.selectedBrowser.messageManager.loadFrameScript(`data:,(${f})()`, false);
   }
 
+  
+  
   function initScript() {
     const {GCTelemetry} = Components.utils.import("resource://gre/modules/GCTelemetry.jsm", {});
 

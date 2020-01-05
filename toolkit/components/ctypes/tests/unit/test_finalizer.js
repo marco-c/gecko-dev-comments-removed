@@ -259,7 +259,7 @@ function run_test()
 
 function test_cycles(size, tc) {
   
-  for (i = 0; i < size / 2; ++i) {
+  for (let i = 0; i < size / 2; ++i) {
     let a = {
       a: ctypes.CDataFinalizer(tc.acquire(i * 2), tc.release),
       b: {
@@ -325,7 +325,7 @@ function test_result_dispose(size, tc, cleanup) {
   }
   do_check_eq(count_finalized(size, tc), 0);
 
-  for (i = 0; i < size; ++i) {
+  for (let i = 0; i < size; ++i) {
     let witness = ref[i].dispose();
     ref[i] = null;
     if (!tc.released(i, witness)) {
@@ -367,7 +367,7 @@ function test_executing_dispose(size, tc, cleanup)
   ref = [];
 
   
-  for (i = 0; i < size; ++i) {
+  for (let i = 0; i < size; ++i) {
     tc.acquire(i);
   }
 
@@ -449,4 +449,3 @@ function test_do_not_execute_finalizers_on_referenced_stuff(size, tc, cleanup)
   
   do_check_eq(count_finalized(size, tc), 0);
 }
-

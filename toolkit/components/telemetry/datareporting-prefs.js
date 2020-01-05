@@ -2,6 +2,8 @@
 
 
 
+
+
 pref("datareporting.policy.dataSubmissionEnabled", true);
 pref("datareporting.policy.dataSubmissionPolicyNotifiedTime", "0");
 pref("datareporting.policy.dataSubmissionPolicyAcceptedVersion", 0);

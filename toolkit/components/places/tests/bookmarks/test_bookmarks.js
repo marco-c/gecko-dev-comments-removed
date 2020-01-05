@@ -357,7 +357,7 @@ add_task(function* test_bookmarks() {
   bs.removeFolderChildren(tmpFolder);
   
   try {
-    result = hs.executeQuery(query, options);
+    let result = hs.executeQuery(query, options);
     let rootNode = result.root;
     rootNode.containerOpen = true;
     do_check_eq(rootNode.childCount, 0);

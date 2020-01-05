@@ -834,7 +834,7 @@ tests.push({
     
     this._placeId = addPlace();
     
-    stmt = mDBConn.createStatement("INSERT INTO moz_historyvisits(place_id) VALUES (:place_id)");
+    let stmt = mDBConn.createStatement("INSERT INTO moz_historyvisits(place_id) VALUES (:place_id)");
     stmt.params["place_id"] = this._placeId;
     stmt.execute();
     stmt.reset();
@@ -960,7 +960,7 @@ tests.push({
     
     this._bookmarkId = addBookmark(this._placeId);
     
-    stmt = mDBConn.createStatement("INSERT INTO moz_anno_attributes (name) VALUES (:anno)");
+    let stmt = mDBConn.createStatement("INSERT INTO moz_anno_attributes (name) VALUES (:anno)");
     stmt.params['anno'] = this._usedItemAttribute;
     stmt.execute();
     stmt.finalize();

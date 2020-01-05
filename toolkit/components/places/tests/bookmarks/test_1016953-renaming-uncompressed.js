@@ -58,7 +58,7 @@ add_task(function* test_same_date_diff_hash() {
   let backupFile = OS.Path.join(backupFolder, filename);
   yield OS.File.move(tempPath, backupFile);
   yield PlacesBackups.create(); 
-  mostRecentBackupFile = yield PlacesBackups.getMostRecentBackup();
+  let mostRecentBackupFile = yield PlacesBackups.getMostRecentBackup();
 
   
   let converter = Cc["@mozilla.org/intl/scriptableunicodeconverter"].

@@ -411,7 +411,7 @@ add_task(function* test_midnightPingSendFuzzing() {
 add_task(function* test_changePingAfterSubmission() {
   
   let payload = { canary: "test" };
-  let pingPromise = TelemetryController.submitExternalPing(TEST_PING_TYPE, payload, options);
+  let pingPromise = TelemetryController.submitExternalPing(TEST_PING_TYPE, payload);
 
   
   payload.canary = "changed";

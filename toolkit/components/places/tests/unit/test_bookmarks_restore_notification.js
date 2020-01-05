@@ -116,7 +116,7 @@ function* checkObservers(expectPromises, expectedData) {
   
   
   if (resultSubject) {
-    Assert.equal(aSubject.QueryInterface(Ci.nsISupportsPRInt64).data,
+    Assert.equal(resultSubject.QueryInterface(Ci.nsISupportsPRInt64).data,
                 expectedData.folderId);
   } else {
     Assert.equal(expectedData.folderId, null);

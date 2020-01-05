@@ -1,6 +1,10 @@
 
 
 
+
+
+
+
 var tmp = {};
 Cu.import("resource://gre/modules/PageThumbs.jsm", tmp);
 Cu.import("resource://gre/modules/BackgroundPageThumbs.jsm", tmp);
