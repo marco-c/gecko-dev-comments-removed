@@ -794,6 +794,9 @@ BrowserGlue.prototype = {
     
     
     Services.ppmm.loadProcessScript("resource://pdf.js/pdfjschildbootstrap.js", true);
+    if (PdfJs.enabled) {
+      Services.ppmm.loadProcessScript("resource://pdf.js/pdfjschildbootstrap-enabled.js", true);
+    }
 
     if (AppConstants.platform == "win") {
       
