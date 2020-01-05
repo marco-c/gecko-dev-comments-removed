@@ -102,9 +102,9 @@ Timeout::InitTimer(nsIEventTarget* aTarget, uint32_t aDelay)
 
 #ifdef DEBUG
 bool
-Timeout::HasRefCntOne() const
+Timeout::HasRefCnt(uint32_t aCount) const
 {
-  return mRefCnt.get() == 1;
+  return mRefCnt.get() == aCount;
 }
 #endif 
 

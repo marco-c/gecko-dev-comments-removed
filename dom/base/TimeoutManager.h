@@ -18,6 +18,8 @@ class ThrottledEventQueue;
 
 namespace dom {
 
+class OrderedTimeoutIterator;
+
 
 class TimeoutManager final
 {
@@ -31,7 +33,11 @@ public:
   static uint32_t GetNestingLevel() { return sNestingLevel; }
   static void SetNestingLevel(uint32_t aLevel) { sNestingLevel = aLevel; }
 
-  bool HasTimeouts() const { return !mTimeouts.IsEmpty(); }
+  bool HasTimeouts() const
+  {
+    return !mNormalTimeouts.IsEmpty() ||
+           !mTrackingTimeouts.IsEmpty();
+  }
 
   nsresult SetTimeout(nsITimeoutHandler* aHandler,
                       int32_t interval, bool aIsInterval,
@@ -84,25 +90,29 @@ public:
   static void Initialize();
 
   
+  
   template <class Callable>
-  void ForEachTimeout(Callable c)
+  void ForEachUnorderedTimeout(Callable c)
   {
-    mTimeouts.ForEach(c);
+    mNormalTimeouts.ForEach(c);
+    mTrackingTimeouts.ForEach(c);
   }
 
   
   
+  
   template <class Callable>
-  void ForEachTimeoutAbortable(Callable c)
+  void ForEachUnorderedTimeoutAbortable(Callable c)
   {
-    mTimeouts.ForEachAbortable(c);
+    if (!mNormalTimeouts.ForEachAbortable(c)) {
+      mTrackingTimeouts.ForEachAbortable(c);
+    }
   }
 
 private:
   nsresult ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS);
 
 private:
-  typedef mozilla::LinkedList<mozilla::dom::Timeout> TimeoutList;
   struct Timeouts {
     Timeouts()
       : mTimeoutInsertionPoint(nullptr)
@@ -149,19 +159,25 @@ private:
       }
     }
 
+    
     template <class Callable>
-    void ForEachAbortable(Callable c)
+    bool ForEachAbortable(Callable c)
     {
       for (Timeout* timeout = GetFirst();
            timeout;
            timeout = timeout->getNext()) {
         if (c(timeout)) {
-          break;
+          return true;
         }
       }
+      return false;
     }
 
+    friend class OrderedTimeoutIterator;
+
   private:
+    typedef mozilla::LinkedList<mozilla::dom::Timeout> TimeoutList;
+
     
     
     
@@ -173,10 +189,15 @@ private:
     mozilla::dom::Timeout*    mTimeoutInsertionPoint;
   };
 
+  friend class OrderedTimeoutIterator;
+
   
   
   nsGlobalWindow&             mWindow;
-  Timeouts                    mTimeouts;
+  
+  Timeouts                    mNormalTimeouts;
+  
+  Timeouts                    mTrackingTimeouts;
   uint32_t                    mTimeoutIdCounter;
   uint32_t                    mTimeoutFiringDepth;
   mozilla::dom::Timeout*      mRunningTimeout;

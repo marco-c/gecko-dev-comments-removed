@@ -10,6 +10,7 @@
 #include "mozilla/TimeStamp.h"
 #include "nsITimeoutHandler.h"
 #include "mozilla/dom/TabGroup.h"
+#include "OrderedTimeoutIterator.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -133,7 +134,8 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
 {
   
   
-  if (!mWindow.GetExtantDoc()) {
+  nsCOMPtr<nsIDocument> doc = mWindow.GetExtantDoc();
+  if (!doc) {
     return NS_OK;
   }
 
@@ -228,8 +230,18 @@ TimeoutManager::SetTimeout(nsITimeoutHandler* aHandler,
     }
   }
 
-  mTimeouts.Insert(timeout, mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
-                                               : Timeouts::SortBy::TimeWhen);
+  const char* filename = nullptr;
+  uint32_t dummyLine = 0, dummyColumn = 0;
+  aHandler->GetLocation(&filename, &dummyLine, &dummyColumn);
+  bool isTracking = doc->IsScriptTracking(nsDependentCString(filename));
+
+  Timeouts::SortBy sort(mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
+                                           : Timeouts::SortBy::TimeWhen);
+  if (isTracking) {
+    mTrackingTimeouts.Insert(timeout, sort);
+  } else {
+    mNormalTimeouts.Insert(timeout, sort);
+  }
 
   timeout->mTimeoutId = GetTimeoutId(aReason);
   *aReturn = timeout->mTimeoutId;
@@ -242,7 +254,7 @@ TimeoutManager::ClearTimeout(int32_t aTimerId, Timeout::Reason aReason)
 {
   uint32_t timerId = (uint32_t)aTimerId;
 
-  ForEachTimeoutAbortable([&](Timeout* aTimeout) {
+  ForEachUnorderedTimeoutAbortable([&](Timeout* aTimeout) {
     if (aTimeout->mTimeoutId == timerId && aTimeout->mReason == aReason) {
       if (aTimeout->mRunning) {
         
@@ -276,9 +288,11 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
 
   NS_ASSERTION(!mWindow.IsFrozen(), "Timeout running on a window in the bfcache!");
 
-  Timeout* nextTimeout;
-  Timeout* last_expired_timeout;
-  Timeout* last_insertion_point;
+  Timeout* last_expired_normal_timeout = nullptr;
+  Timeout* last_expired_tracking_timeout = nullptr;
+  bool     last_expired_timeout_is_normal = false;
+  Timeout* last_normal_insertion_point = nullptr;
+  Timeout* last_tracking_insertion_point = nullptr;
   uint32_t firingDepth = mTimeoutFiringDepth + 1;
 
   
@@ -312,36 +326,53 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   
   
   
-  last_expired_timeout = nullptr;
-  for (Timeout* timeout = mTimeouts.GetFirst();
-       timeout && timeout->mWhen <= deadline;
-       timeout = timeout->getNext()) {
-    if (timeout->mFiringDepth == 0) {
-      
-      
-      timeout->mFiringDepth = firingDepth;
-      last_expired_timeout = timeout;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (timeout == aTimeout && !mWindow.IsChromeWindow()) {
+  {
+    
+    
+    OrderedTimeoutIterator expiredIter(mNormalTimeouts,
+                                       mTrackingTimeouts,
+                                       nullptr,
+                                       nullptr);
+    while (true) {
+      Timeout* timeout = expiredIter.Next();
+      if (!timeout || timeout->mWhen > deadline) {
         break;
       }
+
+      if (timeout->mFiringDepth == 0) {
+        
+        
+        timeout->mFiringDepth = firingDepth;
+        last_expired_timeout_is_normal = expiredIter.PickedNormalIter();
+        if (last_expired_timeout_is_normal) {
+          last_expired_normal_timeout = timeout;
+        } else {
+          last_expired_tracking_timeout = timeout;
+        }
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        if (timeout == aTimeout && !mWindow.IsChromeWindow()) {
+          break;
+        }
+      }
+
+      expiredIter.UpdateIterator();
     }
   }
 
   
   
   
-  if (!last_expired_timeout) {
+  if (!last_expired_normal_timeout && !last_expired_tracking_timeout) {
     return;
   }
 
@@ -350,92 +381,168 @@ TimeoutManager::RunTimeout(Timeout* aTimeout)
   
   
   
-  RefPtr<Timeout> dummy_timeout = new Timeout();
-  dummy_timeout->mFiringDepth = firingDepth;
-  dummy_timeout->mWhen = now;
-  last_expired_timeout->setNext(dummy_timeout);
-  RefPtr<Timeout> timeoutExtraRef(dummy_timeout);
+  RefPtr<Timeout> dummy_normal_timeout = new Timeout();
+  dummy_normal_timeout->mFiringDepth = firingDepth;
+  dummy_normal_timeout->mWhen = now;
+  if (last_expired_timeout_is_normal) {
+    last_expired_normal_timeout->setNext(dummy_normal_timeout);
+  }
 
-  last_insertion_point = mTimeouts.InsertionPoint();
+  RefPtr<Timeout> dummy_tracking_timeout = new Timeout();
+  dummy_tracking_timeout->mFiringDepth = firingDepth;
+  dummy_tracking_timeout->mWhen = now;
+  if (!last_expired_timeout_is_normal) {
+    last_expired_tracking_timeout->setNext(dummy_tracking_timeout);
+  }
+
+  RefPtr<Timeout> timeoutExtraRef1(dummy_normal_timeout);
+  RefPtr<Timeout> timeoutExtraRef2(dummy_tracking_timeout);
+
   
   
-  mTimeouts.SetInsertionPoint(dummy_timeout);
 
-  for (Timeout* timeout = mTimeouts.GetFirst();
-       timeout != dummy_timeout && !mWindow.IsFrozen();
-       timeout = nextTimeout) {
-    nextTimeout = timeout->getNext();
-
-    if (timeout->mFiringDepth != firingDepth) {
-      
-      
-
-      continue;
-    }
-
-    if (mWindow.IsSuspended()) {
-      
-      
-      timeout->mFiringDepth = 0;
-      continue;
-    }
-
+  last_normal_insertion_point = mNormalTimeouts.InsertionPoint();
+  if (last_expired_timeout_is_normal) {
     
     
+    mNormalTimeouts.SetInsertionPoint(dummy_normal_timeout);
+  }
 
+  last_tracking_insertion_point = mTrackingTimeouts.InsertionPoint();
+  if (!last_expired_timeout_is_normal) {
     
     
-    nsCOMPtr<nsIScriptContext> scx = mWindow.GetContextInternal();
-
-    if (!scx) {
-      
-      
-      continue;
-    }
-
-    
-    bool timeout_was_cleared = mWindow.RunTimeoutHandler(timeout, scx);
-
-    if (timeout_was_cleared) {
-      
-      
-      
-      
-      MOZ_ASSERT(dummy_timeout->HasRefCntOne(), "dummy_timeout may leak");
-      Unused << timeoutExtraRef.forget().take();
-
-      mTimeouts.SetInsertionPoint(last_insertion_point);
-
-      return;
-    }
-
-    
-    
-    bool needsReinsertion = RescheduleTimeout(timeout, now, !aTimeout);
-
-    
-    
-    nextTimeout = timeout->getNext();
-
-    timeout->remove();
-
-    if (needsReinsertion) {
-      
-      
-      mTimeouts.Insert(timeout, mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
-                                                   : Timeouts::SortBy::TimeWhen);
-    }
-
-    
-    timeout->Release();
+    mTrackingTimeouts.SetInsertionPoint(dummy_tracking_timeout);
   }
 
   
-  dummy_timeout->remove();
-  timeoutExtraRef = nullptr;
-  MOZ_ASSERT(dummy_timeout->HasRefCntOne(), "dummy_timeout may leak");
+  
+  
+  
+  
+  
+  {
+    
+    
+    OrderedTimeoutIterator runIter(mNormalTimeouts,
+                                   mTrackingTimeouts,
+                                   last_expired_normal_timeout ?
+                                     last_expired_normal_timeout->getNext() :
+                                     nullptr,
+                                   last_expired_tracking_timeout ?
+                                     last_expired_tracking_timeout->getNext() :
+                                     nullptr);
+    while (!mWindow.IsFrozen()) {
+      Timeout* timeout = runIter.Next();
+      MOZ_ASSERT(timeout != dummy_normal_timeout &&
+                 timeout != dummy_tracking_timeout,
+                 "We should have stopped iterating before getting to the dummy timeout");
+      if (!timeout) {
+        
+        break;
+      }
+      runIter.UpdateIterator();
 
-  mTimeouts.SetInsertionPoint(last_insertion_point);
+      if (timeout->mFiringDepth != firingDepth) {
+        
+        
+        continue;
+      }
+
+      if (mWindow.IsSuspended()) {
+        
+        
+        timeout->mFiringDepth = 0;
+        continue;
+      }
+
+      
+      
+
+      
+      
+      nsCOMPtr<nsIScriptContext> scx = mWindow.GetContextInternal();
+
+      if (!scx) {
+        
+        
+        continue;
+      }
+
+      
+      bool timeout_was_cleared = mWindow.RunTimeoutHandler(timeout, scx);
+
+      if (timeout_was_cleared) {
+        
+        runIter.Clear();
+
+        
+        
+        
+        
+        
+        
+        
+        
+        if (last_expired_timeout_is_normal) {
+          MOZ_ASSERT(dummy_normal_timeout->HasRefCnt(1), "dummy_normal_timeout may leak");
+          MOZ_ASSERT(dummy_tracking_timeout->HasRefCnt(2), "dummy_tracking_timeout may leak");
+          Unused << timeoutExtraRef1.forget().take();
+        } else {
+          MOZ_ASSERT(dummy_normal_timeout->HasRefCnt(2), "dummy_normal_timeout may leak");
+          MOZ_ASSERT(dummy_tracking_timeout->HasRefCnt(1), "dummy_tracking_timeout may leak");
+          Unused << timeoutExtraRef2.forget().take();
+        }
+
+        mNormalTimeouts.SetInsertionPoint(last_normal_insertion_point);
+        mTrackingTimeouts.SetInsertionPoint(last_tracking_insertion_point);
+
+        return;
+      }
+
+      
+      
+      bool needsReinsertion = RescheduleTimeout(timeout, now, !aTimeout);
+
+      
+      
+      runIter.UpdateIterator();
+
+      timeout->remove();
+
+      if (needsReinsertion) {
+        
+        
+        if (runIter.PickedTrackingIter()) {
+          mTrackingTimeouts.Insert(timeout,
+                                   mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
+                                                      : Timeouts::SortBy::TimeWhen);
+        } else {
+          mNormalTimeouts.Insert(timeout,
+                                 mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
+                                                    : Timeouts::SortBy::TimeWhen);
+        }
+      }
+
+      
+      timeout->Release();
+    }
+  }
+
+  
+  if (dummy_normal_timeout->isInList()) {
+    dummy_normal_timeout->remove();
+  }
+  timeoutExtraRef1 = nullptr;
+  MOZ_ASSERT(dummy_normal_timeout->HasRefCnt(1), "dummy_normal_timeout may leak");
+  if (dummy_tracking_timeout->isInList()) {
+    dummy_tracking_timeout->remove();
+  }
+  timeoutExtraRef2 = nullptr;
+  MOZ_ASSERT(dummy_tracking_timeout->HasRefCnt(1), "dummy_tracking_timeout may leak");
+
+  mNormalTimeouts.SetInsertionPoint(last_normal_insertion_point);
+  mTrackingTimeouts.SetInsertionPoint(last_tracking_insertion_point);
 
   MaybeApplyBackPressure();
 }
@@ -632,13 +739,22 @@ TimeoutManager::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS
     return NS_OK;
   }
 
+  auto minTimeout = DOMMinTimeoutValue();
   Timeouts::SortBy sortBy = mWindow.IsFrozen() ? Timeouts::SortBy::TimeRemaining
                                                : Timeouts::SortBy::TimeWhen;
 
-  return mTimeouts.ResetTimersForThrottleReduction(aPreviousThrottleDelayMS,
-                                                   DOMMinTimeoutValue(),
-                                                   sortBy,
-                                                   mWindow.GetThrottledEventQueue());
+  nsresult rv = mNormalTimeouts.ResetTimersForThrottleReduction(aPreviousThrottleDelayMS,
+                                                                minTimeout,
+                                                                sortBy,
+                                                                mWindow.GetThrottledEventQueue());
+  NS_ENSURE_SUCCESS(rv, rv);
+  rv = mTrackingTimeouts.ResetTimersForThrottleReduction(aPreviousThrottleDelayMS,
+                                                         minTimeout,
+                                                         sortBy,
+                                                         mWindow.GetThrottledEventQueue());
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  return NS_OK;
 }
 
 nsresult
@@ -736,7 +852,7 @@ TimeoutManager::ClearAllTimeouts()
 {
   bool seenRunningTimeout = false;
 
-  ForEachTimeout([&](Timeout* aTimeout) {
+  ForEachUnorderedTimeout([&](Timeout* aTimeout) {
     
 
 
@@ -764,11 +880,13 @@ TimeoutManager::ClearAllTimeouts()
   });
 
   if (seenRunningTimeout) {
-    mTimeouts.SetInsertionPoint(nullptr);
+    mNormalTimeouts.SetInsertionPoint(nullptr);
+    mTrackingTimeouts.SetInsertionPoint(nullptr);
   }
 
   
-  mTimeouts.Clear();
+  mNormalTimeouts.Clear();
+  mTrackingTimeouts.Clear();
 }
 
 void
@@ -826,7 +944,7 @@ TimeoutManager::EndRunningTimeout(Timeout* aTimeout)
 void
 TimeoutManager::UnmarkGrayTimers()
 {
-  ForEachTimeout([](Timeout* aTimeout) {
+  ForEachUnorderedTimeout([](Timeout* aTimeout) {
     if (aTimeout->mScriptHandler) {
       aTimeout->mScriptHandler->MarkForCC();
     }
@@ -836,7 +954,7 @@ TimeoutManager::UnmarkGrayTimers()
 void
 TimeoutManager::Suspend()
 {
-  ForEachTimeout([](Timeout* aTimeout) {
+  ForEachUnorderedTimeout([](Timeout* aTimeout) {
     
     
     
@@ -859,7 +977,7 @@ TimeoutManager::Resume()
   TimeStamp now = TimeStamp::Now();
   DebugOnly<bool> _seenDummyTimeout = false;
 
-  ForEachTimeout([&](Timeout* aTimeout) {
+  ForEachUnorderedTimeout([&](Timeout* aTimeout) {
     
     
     
@@ -905,7 +1023,7 @@ void
 TimeoutManager::Freeze()
 {
   TimeStamp now = TimeStamp::Now();
-  ForEachTimeout([&](Timeout* aTimeout) {
+  ForEachUnorderedTimeout([&](Timeout* aTimeout) {
     
     
     
@@ -928,7 +1046,7 @@ TimeoutManager::Thaw()
   TimeStamp now = TimeStamp::Now();
   DebugOnly<bool> _seenDummyTimeout = false;
 
-  ForEachTimeout([&](Timeout* aTimeout) {
+  ForEachUnorderedTimeout([&](Timeout* aTimeout) {
     
     
     
