@@ -122,7 +122,6 @@ HeaderTable.prototype.setSizeLimit = function setSizeLimit(limit) {
 
 
 
-
 HeaderTable.staticTable  = [
   [ ':authority'                  , ''            ],
   [ ':method'                     , 'GET'         ],
@@ -242,7 +241,7 @@ HeaderSetDecompressor.prototype._execute = function _execute(rep) {
   var entry, pair;
 
   if (rep.contextUpdate) {
-    this.setTableSizeLimit(rep.newMaxSize);
+    this._table.setSizeLimit(rep.newMaxSize);
   }
 
   
@@ -1091,11 +1090,20 @@ function Compressor(log, type) {
 
   assert((type === 'REQUEST') || (type === 'RESPONSE'));
   this._table = new HeaderTable(this._log);
+
+  this.tableSizeChangePending = false;
+  this.lowestTableSizePending = 0;
+  this.tableSizeSetting = DEFAULT_HEADER_TABLE_LIMIT;
 }
 
 
 Compressor.prototype.setTableSizeLimit = function setTableSizeLimit(size) {
   this._table.setSizeLimit(size);
+  if (!this.tableSizeChangePending || size < this.lowestTableSizePending) {
+    this.lowestTableSizePending = size;
+  }
+  this.tableSizeSetting = size;
+  this.tableSizeChangePending = true;
 };
 
 
@@ -1103,6 +1111,16 @@ Compressor.prototype.setTableSizeLimit = function setTableSizeLimit(size) {
 
 Compressor.prototype.compress = function compress(headers) {
   var compressor = new HeaderSetCompressor(this._log, this._table);
+
+  if (this.tableSizeChangePending) {
+    if (this.lowestTableSizePending < this.tableSizeSetting) {
+      compressor.send({contextUpdate: true, newMaxSize: this.lowestTableSizePending,
+                       name: "", value: "", index: 0});
+    }
+    compressor.send({contextUpdate: true, newMaxSize: this.tableSizeSetting,
+                     name: "", value: "", index: 0});
+    this.tableSizeChangePending = false;
+  }
   var colonHeaders = [];
   var nonColonHeaders = [];
 

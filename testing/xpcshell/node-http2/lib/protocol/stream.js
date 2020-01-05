@@ -567,8 +567,9 @@ Stream.prototype._transition = function transition(sending, frame) {
     
     case 'CLOSED':
       if (PRIORITY || (sending && RST_STREAM) ||
+          (receiving && WINDOW_UPDATE) ||
           (receiving && this._closedByUs &&
-           (this._closedWithRst || WINDOW_UPDATE || RST_STREAM || ALTSVC))) {
+           (this._closedWithRst || RST_STREAM || ALTSVC))) {
         
       } else {
         streamError = 'STREAM_CLOSED';
@@ -624,7 +625,7 @@ Stream.prototype._transition = function transition(sending, frame) {
     
     if (sending) {
       this._log.error(info, 'Sending illegal frame.');
-      throw new Error('Sending illegal frame (' + frame.type + ') in ' + this.state + ' state.');
+      return this.emit('error', new Error('Sending illegal frame (' + frame.type + ') in ' + this.state + ' state.'));
     }
 
     

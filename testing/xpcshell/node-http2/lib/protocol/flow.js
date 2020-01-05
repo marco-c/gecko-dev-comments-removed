@@ -167,7 +167,7 @@ Flow.prototype._read = function _read() {
     } while (moreNeeded && (this._queue.length > 0));
     this._readableState.sync = false;
 
-    assert((moreNeeded == false) ||                              
+    assert((!moreNeeded) ||                              
            (this._queue.length === 0) ||                         
            (!this._window && (this._queue[0].type === 'DATA'))); 
   }
@@ -249,8 +249,9 @@ Flow.prototype._parentPush = function _parentPush(frame) {
 
 Flow.prototype._push = function _push(frame) {
   var data = frame && (frame.type === 'DATA') && frame.data;
+  var maxFrameLength = (this._window < 16384) ? this._window : 16384;
 
-  if (!data || (data.length <= this._window)) {
+  if (!data || (data.length <= maxFrameLength)) {
     return this._parentPush(frame);
   }
 
@@ -261,12 +262,12 @@ Flow.prototype._push = function _push(frame) {
   else {
     this._log.trace({ frame: frame, size: frame.data.length, forwardable: this._window },
                     'Splitting out forwardable part of a DATA frame.');
-    frame.data = data.slice(this._window);
+    frame.data = data.slice(maxFrameLength);
     this._parentPush({
       type: 'DATA',
       flags: {},
       stream: frame.stream,
-      data: data.slice(0, this._window)
+      data: data.slice(0, maxFrameLength)
     });
     return null;
   }
@@ -323,7 +324,9 @@ Flow.prototype._increaseWindow = function _increaseWindow(size) {
       this._log.error('Flow control window grew too large.');
       this.emit('error', 'FLOW_CONTROL_ERROR');
     } else {
-      this.emit('window_update');
+      if (size != 0) {
+        this.emit('window_update');
+      }
     }
   }
 };

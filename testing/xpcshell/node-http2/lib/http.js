@@ -126,8 +126,6 @@
 
 
 
-
-
 var net = require('net');
 var url = require('url');
 var util = require('util');
@@ -150,7 +148,6 @@ var deprecatedHeaders = [
   'host',
   'keep-alive',
   'proxy-connection',
-  'te',
   'transfer-encoding',
   'upgrade'
 ];
@@ -257,7 +254,11 @@ IncomingMessage.prototype._onHeaders = function _onHeaders(headers) {
   
   for (var name in headers) {
     if (name[0] !== ':') {
-      this.headers[name] = headers[name];
+      if (name === 'set-cookie' && !Array.isArray(headers[name])) {
+        this.headers[name] = [headers[name]];
+      } else {
+        this.headers[name] = headers[name];
+      }
     }
   }
 
@@ -288,9 +289,10 @@ IncomingMessage.prototype._validateHeaders = function _validateHeaders(headers) 
   
   
   
+  
   for (var i = 0; i < deprecatedHeaders.length; i++) {
     var key = deprecatedHeaders[i];
-    if (key in headers) {
+    if (key in headers || (key === 'te' && headers[key] !== 'trailers')) {
       this._log.error({ key: key, value: headers[key] }, 'Deprecated header found');
       this.stream.reset('PROTOCOL_ERROR');
       return;
@@ -323,6 +325,7 @@ function OutgoingMessage() {
   this._headers = {};
   this._trailers = undefined;
   this.headersSent = false;
+  this.finished = false;
 
   this.on('finish', this._finish);
 }
@@ -345,6 +348,7 @@ OutgoingMessage.prototype._finish = function _finish() {
         this.stream.headers(this._trailers);
       }
     }
+    this.finished = true;
     this.stream.end();
   } else {
     this.once('socket', this._finish.bind(this));
@@ -353,11 +357,11 @@ OutgoingMessage.prototype._finish = function _finish() {
 
 OutgoingMessage.prototype.setHeader = function setHeader(name, value) {
   if (this.headersSent) {
-    throw new Error('Can\'t set headers after they are sent.');
+    return this.emit('error', new Error('Can\'t set headers after they are sent.'));
   } else {
     name = name.toLowerCase();
     if (deprecatedHeaders.indexOf(name) !== -1) {
-      throw new Error('Cannot set deprecated header: ' + name);
+      return this.emit('error', new Error('Cannot set deprecated header: ' + name));
     }
     this._headers[name] = value;
   }
@@ -365,7 +369,7 @@ OutgoingMessage.prototype.setHeader = function setHeader(name, value) {
 
 OutgoingMessage.prototype.removeHeader = function removeHeader(name) {
   if (this.headersSent) {
-    throw new Error('Can\'t remove headers after they are sent.');
+    return this.emit('error', new Error('Can\'t remove headers after they are sent.'));
   } else {
     delete this._headers[name.toLowerCase()];
   }
@@ -394,6 +398,36 @@ exports.ServerResponse = OutgoingResponse;
 
 
 
+function forwardEvent(event, source, target) {
+  function forward() {
+    var listeners = target.listeners(event);
+
+    var n = listeners.length;
+
+    
+    if (n === 0 && event === 'error') {
+      var args = [event];
+      args.push.apply(args, arguments);
+
+      target.emit.apply(target, args);
+      return;
+    }
+
+    for (var i = 0; i < n; ++i) {
+      listeners[i].apply(source, arguments);
+    }
+  }
+
+  source.on(event, forward);
+
+  
+  
+  return forward;
+}
+
+
+
+
 function Server(options) {
   options = util._extend({}, options);
 
@@ -416,13 +450,18 @@ function Server(options) {
     this._server.removeAllListeners('secureConnection');
     this._server.on('secureConnection', function(socket) {
       var negotiatedProtocol = socket.alpnProtocol || socket.npnProtocol;
-      if ((negotiatedProtocol === protocol.VERSION) && socket.servername) {
+      
+      
+      if (negotiatedProtocol === protocol.VERSION) {
         start(socket);
       } else {
         fallback(socket);
       }
     });
     this._server.on('request', this.emit.bind(this, 'request'));
+
+    forwardEvent('error', this._server, this);
+    forwardEvent('listening', this._server, this);
   }
 
   
@@ -458,6 +497,11 @@ Server.prototype._start = function _start(socket) {
     var response = new OutgoingResponse(stream);
     var request = new IncomingRequest(stream);
 
+    
+    request.remoteAddress = socket.remoteAddress;
+    request.remotePort = socket.remotePort;
+    request.connection = request.socket = response.socket = socket;
+
     request.once('ready', self.emit.bind(self, 'request', request, response));
   });
 
@@ -489,6 +533,8 @@ Server.prototype.listen = function listen(port, hostname) {
   this._log.info({ on: ((typeof hostname === 'string') ? (hostname + ':' + port) : port) },
                  'Listening for incoming connections');
   this._server.listen.apply(this._server, arguments);
+
+  return this._server;
 };
 
 Server.prototype.close = function close(callback) {
@@ -523,9 +569,9 @@ Object.defineProperty(Server.prototype, 'timeout', {
 
 Server.prototype.on = function on(event, listener) {
   if ((event === 'upgrade') || (event === 'timeout')) {
-    this._server.on(event, listener && listener.bind(this));
+    return this._server.on(event, listener && listener.bind(this));
   } else {
-    EventEmitter.prototype.on.call(this, event, listener);
+    return EventEmitter.prototype.on.call(this, event, listener);
   }
 };
 
@@ -534,6 +580,10 @@ Server.prototype.addContext = function addContext(hostname, credentials) {
   if (this._mode === 'tls') {
     this._server.addContext(hostname, credentials);
   }
+};
+
+Server.prototype.address = function address() {
+  return this._server.address()
 };
 
 function createServerRaw(options, requestListener) {
@@ -621,6 +671,10 @@ IncomingRequest.prototype._onHeaders = function _onHeaders(headers) {
   this.scheme = this._checkSpecialHeader(':scheme'   , headers[':scheme']);
   this.host   = this._checkSpecialHeader(':authority', headers[':authority']  );
   this.url    = this._checkSpecialHeader(':path'     , headers[':path']  );
+  if (!this.method || !this.scheme || !this.host || !this.url) {
+    
+    return;
+  }
 
   
   this.headers.host = this.host;
@@ -684,12 +738,17 @@ OutgoingResponse.prototype._implicitHeaders = function _implicitHeaders() {
   }
 };
 
+OutgoingResponse.prototype._implicitHeader = function() {
+  this._implicitHeaders();
+};
+
 OutgoingResponse.prototype.write = function write() {
   this._implicitHeaders();
   return OutgoingMessage.prototype.write.apply(this, arguments);
 };
 
 OutgoingResponse.prototype.end = function end() {
+  this.finshed = true;
   this._implicitHeaders();
   return OutgoingMessage.prototype.end.apply(this, arguments);
 };
@@ -757,7 +816,12 @@ function requestRaw(options, callback) {
   if (options.protocol && options.protocol !== "http:") {
     throw new Error('This interface only supports http-schemed URLs');
   }
-  return (options.agent || exports.globalAgent).request(options, callback);
+  if (options.agent && typeof(options.agent.request) === 'function') {
+    var agentOptions = util._extend({}, options);
+    delete agentOptions.agent;
+    return options.agent.request(agentOptions, callback);
+  }
+  return exports.globalAgent.request(options, callback);
 }
 
 function requestTLS(options, callback) {
@@ -768,7 +832,12 @@ function requestTLS(options, callback) {
   if (options.protocol && options.protocol !== "https:") {
     throw new Error('This interface only supports https-schemed URLs');
   }
-  return (options.agent || exports.globalAgent).request(options, callback);
+  if (options.agent && typeof(options.agent.request) === 'function') {
+    var agentOptions = util._extend({}, options);
+    delete agentOptions.agent;
+    return options.agent.request(agentOptions, callback);
+  }
+  return exports.globalAgent.request(options, callback);
 }
 
 function getRaw(options, callback) {
@@ -779,7 +848,12 @@ function getRaw(options, callback) {
   if (options.protocol && options.protocol !== "http:") {
     throw new Error('This interface only supports http-schemed URLs');
   }
-  return (options.agent || exports.globalAgent).get(options, callback);
+  if (options.agent && typeof(options.agent.get) === 'function') {
+    var agentOptions = util._extend({}, options);
+    delete agentOptions.agent;
+    return options.agent.get(agentOptions, callback);
+  }
+  return exports.globalAgent.get(options, callback);
 }
 
 function getTLS(options, callback) {
@@ -790,7 +864,12 @@ function getTLS(options, callback) {
   if (options.protocol && options.protocol !== "https:") {
     throw new Error('This interface only supports https-schemed URLs');
   }
-  return (options.agent || exports.globalAgent).get(options, callback);
+  if (options.agent && typeof(options.agent.get) === 'function') {
+    var agentOptions = util._extend({}, options);
+    delete agentOptions.agent;
+    return options.agent.get(agentOptions, callback);
+  }
+  return exports.globalAgent.get(options, callback);
 }
 
 
@@ -798,6 +877,7 @@ function getTLS(options, callback) {
 
 function Agent(options) {
   EventEmitter.call(this);
+  this.setMaxListeners(0);
 
   options = util._extend({}, options);
 
@@ -809,10 +889,9 @@ function Agent(options) {
   
   
   
-  var agentOptions = {};
-  agentOptions.ALPNProtocols = supportedProtocols;
-  agentOptions.NPNProtocols = supportedProtocols;
-  this._httpsAgent = new https.Agent(agentOptions);
+  options.ALPNProtocols = supportedProtocols;
+  options.NPNProtocols = supportedProtocols;
+  this._httpsAgent = new https.Agent(options);
 
   this.sockets = this._httpsAgent.sockets;
   this.requests = this._httpsAgent.requests;
@@ -834,7 +913,7 @@ Agent.prototype.request = function request(options, callback) {
 
   if (!options.plain && options.protocol === 'http:') {
     this._log.error('Trying to negotiate client request with Upgrade from HTTP/1.1');
-    throw new Error('HTTP1.1 -> HTTP2 upgrade is not yet supported.');
+    this.emit('error', new Error('HTTP1.1 -> HTTP2 upgrade is not yet supported.'));
   }
 
   var request = new OutgoingRequest(this._log);
@@ -848,6 +927,7 @@ Agent.prototype.request = function request(options, callback) {
     options.host,
     options.port
   ].join(':');
+  var self = this;
 
   
   if (key in this.endpoints) {
@@ -863,6 +943,18 @@ Agent.prototype.request = function request(options, callback) {
       port: options.port,
       localAddress: options.localAddress
     });
+
+    endpoint.socket.on('error', function (error) {
+      self._log.error('Socket error: ' + error.toString());
+      request.emit('error', error);
+    });
+
+    endpoint.on('error', function(error){
+      self._log.error('Connection error: ' + error.toString());
+      request.emit('error', error);
+    });
+
+    this.endpoints[key] = endpoint;
     endpoint.pipe(endpoint.socket).pipe(endpoint);
     request._start(endpoint.createStream(), options);
   }
@@ -870,12 +962,23 @@ Agent.prototype.request = function request(options, callback) {
   
   else {
     var started = false;
+    var createAgent = hasAgentOptions(options);
     options.ALPNProtocols = supportedProtocols;
     options.NPNProtocols = supportedProtocols;
     options.servername = options.host; 
-    options.agent = this._httpsAgent;
     options.ciphers = options.ciphers || cipherSuites;
+    if (createAgent) {
+      options.agent = new https.Agent(options);
+    } else if (options.agent == null) {
+      options.agent = this._httpsAgent;
+    }
     var httpsRequest = https.request(options);
+
+    httpsRequest.on('error', function (error) {
+      self._log.error('Socket error: ' + error.toString());
+      self.removeAllListeners(key);
+      request.emit('error', error);
+    });
 
     httpsRequest.on('socket', function(socket) {
       var negotiatedProtocol = socket.alpnProtocol || socket.npnProtocol;
@@ -886,7 +989,6 @@ Agent.prototype.request = function request(options, callback) {
       }
     });
 
-    var self = this;
     function negotiated() {
       var endpoint;
       var negotiatedProtocol = httpsRequest.socket.alpnProtocol || httpsRequest.socket.npnProtocol;
@@ -935,6 +1037,15 @@ Agent.prototype.get = function get(options, callback) {
   return request;
 };
 
+Agent.prototype.destroy = function(error) {
+  if (this._httpsAgent) {
+    this._httpsAgent.destroy();
+  }
+  for (var key in this.endpoints) {
+    this.endpoints[key].close(error);
+  }
+};
+
 function unbundleSocket(socket) {
   socket.removeAllListeners('data');
   socket.removeAllListeners('end');
@@ -944,6 +1055,17 @@ function unbundleSocket(socket) {
   socket.unpipe();
   delete socket.ondata;
   delete socket.onend;
+}
+
+function hasAgentOptions(options) {
+  return options.pfx != null ||
+    options.key != null ||
+    options.passphrase != null ||
+    options.cert != null ||
+    options.ca != null ||
+    options.ciphers != null ||
+    options.rejectUnauthorized != null ||
+    options.secureProtocol != null;
 }
 
 Object.defineProperty(Agent.prototype, 'maxSockets', {
@@ -971,6 +1093,7 @@ OutgoingRequest.prototype = Object.create(OutgoingMessage.prototype, { construct
 
 OutgoingRequest.prototype._start = function _start(stream, options) {
   this.stream = stream;
+  this.options = options;
 
   this._log = stream._log.child({ component: 'http' });
 
@@ -996,8 +1119,8 @@ OutgoingRequest.prototype._start = function _start(stream, options) {
   this.headersSent = true;
 
   this.emit('socket', this.stream);
-
   var response = new IncomingResponse(this.stream);
+  response.req = this;
   response.once('ready', this.emit.bind(this, 'response', response));
 
   this.stream.on('promise', this._onPromise.bind(this));

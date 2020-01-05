@@ -36,7 +36,6 @@
 
 
 
-
 exports.VERSION = 'h2';
 
 exports.Endpoint = require('./endpoint').Endpoint;

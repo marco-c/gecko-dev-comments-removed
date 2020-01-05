@@ -1,18 +1,25 @@
 var fs = require('fs');
 var path = require('path');
 var http2 = require('..');
+var urlParse = require('url').parse;
 
 
 http2.globalAgent = new http2.Agent({
+  rejectUnauthorized: true,
   log: require('../test/util').createLogger('client')
 });
 
 
-process.env.NODE_TLS_REJECT_UNAUTHORIZED = "0";
-
-
 var url = process.argv.pop();
-var request = process.env.HTTP2_PLAIN ? http2.raw.get(url) : http2.get(url);
+var options = urlParse(url);
+
+
+if (options.hostname == 'localhost') {
+  options.key = fs.readFileSync(path.join(__dirname, '/localhost.key'));
+  options.ca = fs.readFileSync(path.join(__dirname, '/localhost.crt'));
+}
+
+var request = process.env.HTTP2_PLAIN ? http2.raw.get(options) : http2.get(options);
 
 
 request.on('response', function(response) {
