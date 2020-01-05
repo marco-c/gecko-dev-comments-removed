@@ -66,18 +66,15 @@ using namespace mozilla::dom;
 
 #define SMOOTH_INTERVAL 100
 
-class nsListScrollSmoother final : public nsITimerCallback
+class nsListScrollSmoother final
 {
 private:
-  virtual ~nsListScrollSmoother();
+  ~nsListScrollSmoother();
 
 public:
-  NS_DECL_ISUPPORTS
+  NS_INLINE_DECL_REFCOUNTING(nsListScrollSmoother)
 
   explicit nsListScrollSmoother(nsListBoxBodyFrame* aOuter);
-
-  
-  NS_DECL_NSITIMERCALLBACK
 
   void Start();
   void Stop();
@@ -86,7 +83,7 @@ public:
   nsCOMPtr<nsITimer> mRepeatTimer;
   int32_t mDelta;
   nsListBoxBodyFrame* mOuter;
-}; 
+};
 
 nsListScrollSmoother::nsListScrollSmoother(nsListBoxBodyFrame* aOuter)
 {
@@ -99,19 +96,6 @@ nsListScrollSmoother::~nsListScrollSmoother()
   Stop();
 }
 
-NS_IMETHODIMP
-nsListScrollSmoother::Notify(nsITimer *timer)
-{
-  Stop();
-
-  NS_ASSERTION(mOuter, "mOuter is null, see bug #68365");
-  if (!mOuter) return NS_OK;
-
-  
-  mOuter->InternalPositionChangedCallback();
-  return NS_OK;
-}
-
 bool
 nsListScrollSmoother::IsRunning()
 {
@@ -121,9 +105,37 @@ nsListScrollSmoother::IsRunning()
 void
 nsListScrollSmoother::Start()
 {
+  nsTimerCallbackFunc scrollSmootherCallback = [](nsITimer* aTimer,
+                                                  void* aClosure) {
+    
+    
+    
+    auto self = static_cast<nsListScrollSmoother*>(aClosure);
+
+    self->Stop();
+
+    NS_ASSERTION(self->mOuter, "mOuter is null, see bug #68365");
+    if (self->mOuter) {
+      
+      self->mOuter->InternalPositionChangedCallback();
+    }
+  };
+
   Stop();
   mRepeatTimer = do_CreateInstance("@mozilla.org/timer;1");
-  mRepeatTimer->InitWithCallback(this, SMOOTH_INTERVAL, nsITimer::TYPE_ONE_SHOT);
+  nsIContent* content = nullptr;
+  if (mOuter) {
+    content = mOuter->GetContent();
+  }
+  if (content) {
+    mRepeatTimer->SetTarget(
+        content->OwnerDoc()->EventTargetFor(TaskCategory::Other));
+  }
+  mRepeatTimer->InitWithNamedFuncCallback(scrollSmootherCallback,
+                                          this,
+                                          SMOOTH_INTERVAL,
+                                          nsITimer::TYPE_ONE_SHOT,
+                                          "scrollSmootherCallback");
 }
 
 void
@@ -134,8 +146,6 @@ nsListScrollSmoother::Stop()
     mRepeatTimer = nullptr;
   }
 }
-
-NS_IMPL_ISUPPORTS(nsListScrollSmoother, nsITimerCallback)
 
 
 
