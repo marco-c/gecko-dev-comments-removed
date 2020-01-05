@@ -7,7 +7,7 @@ use constellation_msg::{Key, KeyState, KeyModifiers};
 use euclid::point::Point2D;
 use euclid::rect::Rect;
 use euclid::Matrix4;
-use layers::platform::surface::NativeGraphicsMetadata;
+use layers::platform::surface::NativeDisplay;
 use layers::layers::LayerBufferSet;
 use std::fmt::{Formatter, Debug};
 use std::fmt;
@@ -92,7 +92,7 @@ pub struct LayerProperties {
 
 
 pub trait PaintListener {
-    fn graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata>;
+    fn native_display(&mut self) -> Option<NativeDisplay>;
 
     
     

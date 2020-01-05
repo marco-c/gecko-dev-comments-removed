@@ -10,7 +10,7 @@ use euclid::point::TypedPoint2D;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;
 use layers::geometry::DevicePixel;
-use layers::platform::surface::NativeGraphicsMetadata;
+use layers::platform::surface::NativeDisplay;
 use msg::constellation_msg::{Key, KeyState, KeyModifiers};
 use net::net_error_list::NetError;
 use script_traits::MouseButton;
@@ -120,7 +120,7 @@ pub trait WindowMethods {
     fn hidpi_factor(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32>;
 
     
-    fn native_metadata(&self) -> NativeGraphicsMetadata;
+    fn native_display(&self) -> NativeDisplay;
 
     
     

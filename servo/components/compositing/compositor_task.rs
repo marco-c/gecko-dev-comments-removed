@@ -13,7 +13,7 @@ use windowing::{WindowEvent, WindowMethods};
 
 use euclid::point::Point2D;
 use euclid::rect::Rect;
-use layers::platform::surface::{NativeCompositingGraphicsContext, NativeGraphicsMetadata};
+use layers::platform::surface::NativeDisplay;
 use layers::layers::LayerBufferSet;
 use msg::compositor_msg::{Epoch, LayerId, LayerProperties, FrameTreeId};
 use msg::compositor_msg::{PaintListener, ScriptListener};
@@ -91,9 +91,9 @@ impl ScriptListener for Box<CompositorProxy+'static+Send> {
 
 
 impl PaintListener for Box<CompositorProxy+'static+Send> {
-    fn graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata> {
+    fn native_display(&mut self) -> Option<NativeDisplay> {
         let (chan, port) = channel();
-        self.send(Msg::GetGraphicsMetadata(chan));
+        self.send(Msg::GetNativeDisplay(chan));
         
         
         
@@ -141,7 +141,7 @@ pub enum Msg {
     
     
     
-    GetGraphicsMetadata(Sender<Option<NativeGraphicsMetadata>>),
+    GetNativeDisplay(Sender<Option<NativeDisplay>>),
 
     
     
@@ -191,7 +191,7 @@ impl Debug for Msg {
         match *self {
             Msg::Exit(..) => write!(f, "Exit"),
             Msg::ShutdownComplete(..) => write!(f, "ShutdownComplete"),
-            Msg::GetGraphicsMetadata(..) => write!(f, "GetGraphicsMetadata"),
+            Msg::GetNativeDisplay(..) => write!(f, "GetNativeDisplay"),
             Msg::InitializeLayersForPipeline(..) => write!(f, "InitializeLayersForPipeline"),
             Msg::SetLayerRect(..) => write!(f, "SetLayerRect"),
             Msg::ScrollFragmentPoint(..) => write!(f, "ScrollFragmentPoint"),
@@ -219,20 +219,6 @@ impl Debug for Msg {
 pub struct CompositorTask;
 
 impl CompositorTask {
-    
-    
-    
-    #[cfg(target_os="linux")]
-    pub fn create_graphics_context(native_metadata: &NativeGraphicsMetadata)
-                                    -> NativeCompositingGraphicsContext {
-        NativeCompositingGraphicsContext::from_display(native_metadata.display)
-    }
-    #[cfg(not(target_os="linux"))]
-    pub fn create_graphics_context(_: &NativeGraphicsMetadata)
-                                    -> NativeCompositingGraphicsContext {
-        NativeCompositingGraphicsContext::new()
-    }
-
     pub fn create<Window>(window: Option<Rc<Window>>,
                           sender: Box<CompositorProxy+Send>,
                           receiver: Box<CompositorReceiver>,
