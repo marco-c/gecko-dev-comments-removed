@@ -1022,6 +1022,16 @@ public:
   
 
 
+
+
+
+
+
+  virtual void PushDeviceSpaceClipRects(const IntRect* aRects, uint32_t aCount);
+
+  
+
+
   virtual void PopClip() = 0;
 
   

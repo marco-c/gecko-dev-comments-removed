@@ -20,6 +20,7 @@
 #include "mozilla/gfx/2D.h"
 #include "mozilla/gfx/DataSurfaceHelpers.h"
 #include "mozilla/gfx/Logging.h"
+#include "mozilla/gfx/PathHelpers.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -719,25 +720,41 @@ gfxUtils::ClipToRegion(gfxContext* aContext, const nsIntRegion& aRegion)
  void
 gfxUtils::ClipToRegion(DrawTarget* aTarget, const nsIntRegion& aRegion)
 {
-  if (!aRegion.IsComplex()) {
-    IntRect rect = aRegion.GetBounds();
-    aTarget->PushClipRect(Rect(rect.x, rect.y, rect.width, rect.height));
+  uint32_t numRects = aRegion.GetNumRects();
+  
+  
+  if (numRects == 1) {
+    aTarget->PushClipRect(Rect(aRegion.GetBounds()));
     return;
   }
 
-  RefPtr<PathBuilder> pb = aTarget->CreatePathBuilder();
-
-  for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
-    const IntRect& r = iter.Get();
-    pb->MoveTo(Point(r.x, r.y));
-    pb->LineTo(Point(r.XMost(), r.y));
-    pb->LineTo(Point(r.XMost(), r.YMost()));
-    pb->LineTo(Point(r.x, r.YMost()));
-    pb->Close();
+  
+  
+  
+  Matrix transform = aTarget->GetTransform();
+  if (transform.IsIntegerTranslation()) {
+    IntPoint translation = RoundedToInt(transform.GetTranslation());
+    AutoTArray<IntRect, 16> rects;
+    rects.SetLength(numRects);
+    uint32_t i = 0;
+    
+    for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
+      IntRect rect = iter.Get();
+      rect.MoveBy(translation);
+      rects[i++] = rect;
+    }
+    aTarget->PushDeviceSpaceClipRects(rects.Elements(), rects.Length());
+  } else {
+    
+    
+    
+    RefPtr<PathBuilder> pathBuilder = aTarget->CreatePathBuilder();
+    for (auto iter = aRegion.RectIter(); !iter.Done(); iter.Next()) {
+      AppendRectToPath(pathBuilder, Rect(iter.Get()));
+    }
+    RefPtr<Path> path = pathBuilder->Finish();
+    aTarget->PushClip(path);
   }
-  RefPtr<Path> path = pb->Finish();
-
-  aTarget->PushClip(path);
 }
 
  gfxFloat
