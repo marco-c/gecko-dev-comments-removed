@@ -19,7 +19,6 @@ function storageApiFactory(context) {
     
     
     let sanitized = {};
-    Cu.reportError(`princ: ${context.principal.origin}`);
     for (let [key, value] of Object.entries(items)) {
       sanitized[key] = ExtensionStorage.sanitize(value, context);
     }
