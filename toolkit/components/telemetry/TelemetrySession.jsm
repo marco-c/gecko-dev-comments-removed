@@ -598,6 +598,7 @@ this.TelemetrySession = Object.freeze({
 
 
   testReset() {
+    Impl._newProfilePingSent = false;
     Impl._sessionId = null;
     Impl._subsessionId = null;
     Impl._previousSessionId = null;
@@ -652,6 +653,23 @@ this.TelemetrySession = Object.freeze({
 
   observe(aSubject, aTopic, aData) {
     return Impl.observe(aSubject, aTopic, aData);
+  },
+  
+
+
+
+  markNewProfilePingSent() {
+    return Impl.markNewProfilePingSent();
+  },
+  
+
+
+
+
+
+
+  get newProfilePingSent() {
+    return Impl._newProfilePingSent;
   },
 });
 
@@ -723,7 +741,9 @@ var Impl = {
   _nextTotalMemoryId: 1,
   _USSFromChildProcesses: null,
   _lastEnvironmentChangeDate: 0,
-
+  
+  
+  _newProfilePingSent: false,
 
   get _log() {
     if (!this._logger) {
@@ -2134,6 +2154,9 @@ var Impl = {
     
     this._profileSubsessionCounter = data.profileSubsessionCounter +
                                      this._subsessionCounter;
+    
+    
+    this._newProfilePingSent = ("newProfilePingSent" in data) ? data.newProfilePingSent : true;
     return data;
   },
 
@@ -2145,6 +2168,7 @@ var Impl = {
       sessionId: this._sessionId,
       subsessionId: this._subsessionId,
       profileSubsessionCounter: this._profileSubsessionCounter,
+      newProfilePingSent: this._newProfilePingSent,
     };
   },
 
@@ -2209,5 +2233,11 @@ var Impl = {
     }
 
     return TelemetryController.saveAbortedSessionPing(payload);
+  },
+
+  async markNewProfilePingSent() {
+    this._log.trace("markNewProfilePingSent");
+    this._newProfilePingSent = true;
+    return TelemetryStorage.saveSessionData(this._getSessionDataObject());
   },
 };

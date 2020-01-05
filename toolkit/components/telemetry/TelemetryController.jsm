@@ -35,6 +35,8 @@ const PREF_LOG_DUMP = PREF_BRANCH_LOG + "dump";
 const PREF_CACHED_CLIENTID = PREF_BRANCH + "cachedClientID";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
 const PREF_UNIFIED = PREF_BRANCH + "unified";
+const PREF_NEWPROFILE_PING_ENABLED = PREF_BRANCH + "newProfilePing.enabled";
+const PREF_NEWPROFILE_PING_DELAY = PREF_BRANCH + "newProfilePing.delay";
 
 
 
@@ -46,6 +48,10 @@ const PING_FORMAT_VERSION = 4;
 const TELEMETRY_DELAY = Preferences.get("toolkit.telemetry.initDelay", 60) * 1000;
 
 const TELEMETRY_TEST_DELAY = 1;
+
+
+
+const NEWPROFILE_PING_DEFAULT_DELAY = 30 * 60 * 1000;
 
 
 const PING_TYPE_MAIN = "main";
@@ -311,6 +317,7 @@ var Impl = {
   _initialized: false,
   _initStarted: false, 
   _shuttingDown: false, 
+  _shutDown: false, 
   _logger: null,
   _prevValues: {},
   
@@ -330,6 +337,8 @@ var Impl = {
   _connectionsBarrier: new AsyncShutdown.Barrier("TelemetryController: Waiting for pending ping activity"),
   
   _testMode: false,
+  
+  _delayedNewPingTask: null,
 
   get _log() {
     if (!this._logger) {
@@ -485,7 +494,7 @@ var Impl = {
     this._log.trace("submitExternalPing - type: " + aType + ", aOptions: " + JSON.stringify(aOptions));
 
     
-    if (this._shuttingDown) {
+    if (this._shutDown) {
       const errorMessage = "submitExternalPing - Submission is not allowed after shutdown, discarding ping of type: " + aType;
       this._log.error(errorMessage);
       return Promise.reject(new Error(errorMessage));
@@ -657,6 +666,7 @@ var Impl = {
   setupTelemetry: function setupTelemetry(testing) {
     this._initStarted = true;
     this._shuttingDown = false;
+    this._shutDown = false;
     this._testMode = testing;
 
     this._log.trace("setupTelemetry");
@@ -711,6 +721,13 @@ var Impl = {
 
         
         yield TelemetrySession.delayedInit();
+
+        if (Preferences.get(PREF_NEWPROFILE_PING_ENABLED, false) &&
+            !TelemetrySession.newProfilePingSent) {
+          
+          this.scheduleNewProfilePing();
+        }
+
         
         
         
@@ -762,11 +779,17 @@ var Impl = {
       return;
     }
 
+    this._shuttingDown = true;
+
     Preferences.ignore(PREF_BRANCH_LOG, configureLogging);
     this._detachObservers();
 
     
     try {
+      if (this._delayedNewPingTask) {
+        await this._delayedNewPingTask.finalize();
+      }
+
       
       TelemetryReportingPolicy.shutdown();
       TelemetryEnvironment.shutdown();
@@ -788,7 +811,7 @@ var Impl = {
       
       this._initialized = false;
       this._initStarted = false;
-      this._shuttingDown = true;
+      this._shutDown = true;
     }
   },
 
@@ -805,6 +828,7 @@ var Impl = {
     
     if (!this._initStarted) {
       this._shuttingDown = true;
+      this._shutDown = true;
       return Promise.resolve();
     }
 
@@ -853,6 +877,7 @@ var Impl = {
       shutdownBarrier: this._shutdownBarrier.state,
       connectionsBarrier: this._connectionsBarrier.state,
       sendModule: TelemetrySend.getShutdownState(),
+      haveDelayedNewProfileTask: !!this._delayedNewPingTask,
     };
   },
 
@@ -952,5 +977,51 @@ var Impl = {
     await TelemetryEnvironment.testReset();
 
     await controllerSetup;
+  },
+
+  
+
+
+  scheduleNewProfilePing() {
+    this._log.trace("scheduleNewProfilePing");
+
+    const sendDelay =
+      Preferences.get(PREF_NEWPROFILE_PING_DELAY, NEWPROFILE_PING_DEFAULT_DELAY);
+
+    this._delayedNewPingTask = new DeferredTask(function* () {
+      try {
+        yield this.sendNewProfilePing();
+      } finally {
+        this._delayedNewPingTask = null;
+      }
+    }.bind(this), sendDelay);
+
+    this._delayedNewPingTask.arm();
+  },
+
+  
+
+
+  async sendNewProfilePing() {
+    this._log.trace("sendNewProfilePing - shutting down: " + this._shuttingDown);
+
+    
+    const payload = {
+      "reason": this._shuttingDown ? "shutdown" : "startup",
+    };
+
+    
+    
+    let options = {
+      addClientId: true,
+      addEnvironment: true,
+      usePingSender: this._shuttingDown,
+    };
+    
+    
+    
+    await TelemetryController.submitExternalPing("new-profile", payload, options)
+                             .then(() => TelemetrySession.markNewProfilePingSent(),
+                                   e => this._log.error("sendNewProfilePing - failed to submit new-profile ping", e));
   },
 };
