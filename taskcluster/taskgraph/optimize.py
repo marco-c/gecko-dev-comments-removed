@@ -212,7 +212,7 @@ def opt_seta(task, params):
         bbb_task = True
 
         
-        return True, None
+        return False, None
     else:
         label = task.label
 
