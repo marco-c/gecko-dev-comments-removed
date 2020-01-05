@@ -356,6 +356,14 @@ this.DownloadUtils = {
     let today = new Date(aNow.getFullYear(), aNow.getMonth(), aNow.getDate());
 
     
+    
+    const locale = typeof Intl === "undefined"
+                   ? undefined
+                   : Cc["@mozilla.org/chrome/chrome-registry;1"]
+                       .getService(Ci.nsIXULChromeRegistry)
+                       .getSelectedLocale("global", true);
+
+    
     let dateTimeCompact;
     if (aDate >= today) {
       
@@ -369,12 +377,15 @@ this.DownloadUtils = {
       dateTimeCompact = gBundle.GetStringFromName(gStr.yesterday);
     } else if (today - aDate < (6 * 24 * 60 * 60 * 1000)) {
       
-      dateTimeCompact = aDate.toLocaleFormat("%A");
+      dateTimeCompact = typeof Intl === "undefined"
+                        ? aDate.toLocaleFormat("%A")
+                        : aDate.toLocaleDateString(locale, { weekday: "long" });
     } else {
       
-      let month = aDate.toLocaleFormat("%B");
-      
-      let date = Number(aDate.toLocaleFormat("%d"));
+      let month = typeof Intl === "undefined"
+                  ? aDate.toLocaleFormat("%B")
+                  : aDate.toLocaleDateString(locale, { month: "long" });
+      let date = aDate.getDate();
       dateTimeCompact = gBundle.formatStringFromName(gStr.monthDate, [month, date], 2);
     }
 
