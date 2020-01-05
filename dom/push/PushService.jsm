@@ -829,9 +829,6 @@ this.PushService = {
         });
       });
     }).then(record => {
-      if (!record) {
-        throw new Error("Ignoring update for key ID " + keyID);
-      }
       gPushNotifier.notifySubscriptionModified(record.scope,
                                                record.principal);
       return record;
@@ -880,18 +877,16 @@ this.PushService = {
       }
       return record;
     }).then(record => {
-      if (record) {
-        if (record.isExpired()) {
-          this._recordDidNotNotify(kDROP_NOTIFICATION_REASON_EXPIRED);
-          
-          
-          
-          this._backgroundUnregister(record,
-            Ci.nsIPushErrorReporter.UNSUBSCRIBE_QUOTA_EXCEEDED);
-        } else {
-          gPushNotifier.notifySubscriptionModified(record.scope,
-                                                   record.principal);
-        }
+      if (record.isExpired()) {
+        this._recordDidNotNotify(kDROP_NOTIFICATION_REASON_EXPIRED);
+        
+        
+        
+        this._backgroundUnregister(record,
+          Ci.nsIPushErrorReporter.UNSUBSCRIBE_QUOTA_EXCEEDED);
+      } else {
+        gPushNotifier.notifySubscriptionModified(record.scope,
+                                                 record.principal);
       }
       if (this._updateQuotaTestCallback) {
         

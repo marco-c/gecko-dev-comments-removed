@@ -381,7 +381,6 @@ this.PushDB.prototype = {
 
 
 
-
   update: function(aKeyID, aUpdateFunc) {
     return new Promise((resolve, reject) =>
       this.newTxn(
@@ -393,14 +392,13 @@ this.PushDB.prototype = {
 
             let record = aEvent.target.result;
             if (!record) {
-              console.error("update: Record does not exist", aKeyID);
-              return;
+              throw new Error("Record " + aKeyID + " does not exist");
             }
             let newRecord = aUpdateFunc(this.toPushRecord(record));
             if (!this.isValidRecord(newRecord)) {
               console.error("update: Ignoring invalid update",
                 aKeyID, newRecord);
-              return;
+              throw new Error("Invalid update for record " + aKeyID);
             }
             function putRecord() {
               let req = aStore.put(newRecord);
