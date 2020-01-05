@@ -8040,8 +8040,7 @@ bool nsDisplayMask::TryMerge(nsDisplayItem* aItem)
 
   
   
-  const nsStyleSVGReset *style = mFrame->StyleSVGReset();
-  if (style->mMask.HasLayerWithImage()) {
+  if (mFrame->StyleSVGReset()->HasMask()) {
     return false;
   }
 

@@ -1227,6 +1227,25 @@ nsStyleSVGReset::CalcDifference(const nsStyleSVGReset& aNewData) const
   return hint;
 }
 
+bool
+nsStyleSVGReset::HasMask() const
+{
+  for (uint32_t i = 0; i < mMask.mImageCount; i++) {
+    
+    
+    
+    
+    
+    
+    if ((mMask.mLayers[i].mSourceURI && mMask.mLayers[i].mSourceURI->GetURI()) ||
+        !mMask.mLayers[i].mImage.IsEmpty()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 
 nsStyleSVGPaint::nsStyleSVGPaint(nsStyleSVGPaintType aType)
   : mType(aType)
@@ -2645,24 +2664,6 @@ nsStyleImageLayers::CalcDifference(const nsStyleImageLayers& aNewLayers,
   }
 
   return hint;
-}
-
-bool
-nsStyleImageLayers::HasLayerWithImage() const
-{
-  for (uint32_t i = 0; i < mImageCount; i++) {
-    
-    
-    
-    
-    
-    if ((mLayers[i].mSourceURI && mLayers[i].mSourceURI->GetURI()) ||
-        !mLayers[i].mImage.IsEmpty()) {
-      return true;
-    }
-  }
-
-  return false;
 }
 
 nsStyleImageLayers&
