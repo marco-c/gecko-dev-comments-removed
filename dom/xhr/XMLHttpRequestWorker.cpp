@@ -2413,7 +2413,6 @@ XMLHttpRequestWorker::GetResponse(JSContext* ,
     }
   }
 
-  JS::ExposeValueToActiveJS(mStateData.mResponse);
   aRv = mStateData.mResponseResult;
   aResponse.set(mStateData.mResponse);
 }

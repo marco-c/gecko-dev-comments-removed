@@ -207,9 +207,7 @@ nsXPCWrappedJS::QueryInterface(REFNSIID aIID, void** aInstancePtr)
     if (aIID.Equals(NS_GET_IID(nsIXPConnectWrappedJSUnmarkGray))) {
         *aInstancePtr = nullptr;
 
-        
-        
-        JS::ExposeObjectToActiveJS(mJSObj);
+        mJSObj.exposeToActiveJS();
 
         
         
@@ -318,9 +316,6 @@ nsXPCWrappedJS::GetWeakReference(nsIWeakReference** aInstancePtr)
 JSObject*
 nsXPCWrappedJS::GetJSObject()
 {
-    if (mJSObj) {
-        JS::ExposeObjectToActiveJS(mJSObj);
-    }
     return mJSObj;
 }
 

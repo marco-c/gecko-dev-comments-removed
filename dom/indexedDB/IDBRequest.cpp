@@ -341,7 +341,6 @@ IDBRequest::GetResult(JS::MutableHandle<JS::Value> aResult,
     return;
   }
 
-  JS::ExposeValueToActiveJS(mResultVal);
   aResult.set(mResultVal);
 }
 
@@ -367,7 +366,6 @@ IDBRequest::SetResultCallback(ResultCallback* aCallback)
     
     
     autoJS.Init();
-    JS::ExposeObjectToActiveJS(GetScriptOwner());
     ac.emplace(autoJS.cx(), GetScriptOwner());
   } else {
     

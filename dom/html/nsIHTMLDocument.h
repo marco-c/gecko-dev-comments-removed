@@ -48,7 +48,7 @@ public:
   
   
   virtual int32_t GetNumFormsSynchronous() = 0;
-  
+
   virtual bool IsWriting() = 0;
 
   
