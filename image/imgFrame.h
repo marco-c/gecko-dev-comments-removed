@@ -11,10 +11,10 @@
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Monitor.h"
 #include "mozilla/Move.h"
-#include "mozilla/VolatileBuffer.h"
 #include "gfxDrawable.h"
 #include "imgIContainer.h"
 #include "MainThreadUtils.h"
+#include "nsAutoPtr.h"
 
 namespace mozilla {
 namespace image {
@@ -210,14 +210,14 @@ public:
                           const nsIntRect& aRect,
                           SurfaceFormat aFormat,
                           uint8_t aPaletteDepth = 0,
-                          bool aNonPremult = false);
+                          bool aNonPremult = false,
+                          bool aIsAnimated = false);
 
-  nsresult InitForDecoder(const nsIntSize& aSize,
-                          SurfaceFormat aFormat,
-                          uint8_t aPaletteDepth = 0)
+  nsresult InitForAnimator(const nsIntSize& aSize,
+                           SurfaceFormat aFormat)
   {
     return InitForDecoder(aSize, nsIntRect(0, 0, aSize.width, aSize.height),
-                          aFormat, aPaletteDepth);
+                          aFormat, 0, false, true);
   }
 
 
@@ -395,11 +395,25 @@ private:
 
   mutable Monitor mMonitor;
 
-  RefPtr<DataSourceSurface> mImageSurface;
-  RefPtr<SourceSurface> mOptSurface;
+  
 
-  RefPtr<VolatileBuffer> mVBuf;
-  VolatileBufferPtr<uint8_t> mVBufPtr;
+
+
+
+  RefPtr<DataSourceSurface> mRawSurface;
+
+  
+
+
+
+  RefPtr<DataSourceSurface> mLockedSurface;
+
+  
+
+
+
+
+  RefPtr<SourceSurface> mOptSurface;
 
   nsIntRect mDecoded;
 
@@ -450,16 +464,27 @@ private:
 
 class DrawableFrameRef final
 {
+  typedef gfx::DataSourceSurface DataSourceSurface;
+
 public:
   DrawableFrameRef() { }
 
   explicit DrawableFrameRef(imgFrame* aFrame)
     : mFrame(aFrame)
-    , mRef(aFrame->mVBuf)
   {
-    if (mRef.WasBufferPurged()) {
-      mFrame = nullptr;
-      mRef = nullptr;
+    
+    
+    
+    
+    if (aFrame->mRawSurface) {
+      mRef = new DataSourceSurface::ScopedMap(aFrame->mRawSurface,
+                                              DataSourceSurface::READ_WRITE);
+      if (!mRef->IsMapped()) {
+        mFrame = nullptr;
+        mRef = nullptr;
+      }
+    } else {
+      MOZ_ASSERT(aFrame->mOptSurface || aFrame->GetIsPaletted());
     }
   }
 
@@ -503,7 +528,7 @@ private:
   DrawableFrameRef(const DrawableFrameRef& aOther) = delete;
 
   RefPtr<imgFrame> mFrame;
-  VolatileBufferPtr<uint8_t> mRef;
+  nsAutoPtr<DataSourceSurface::ScopedMap> mRef;
 };
 
 
