@@ -260,23 +260,20 @@ Sprinter::reportOutOfMemory()
     hadOOM_ = true;
 }
 
-ptrdiff_t
-Sprint(Sprinter* sp, const char* format, ...)
+bool
+Sprinter::jsprintf(const char* format, ...)
 {
     va_list ap;
-    char* bp;
-    ptrdiff_t offset;
-
     va_start(ap, format);
-    bp = JS_vsmprintf(format, ap);      
+
+    UniquePtr<char, JS::FreePolicy> chars(JS_vsmprintf(format, ap));      
     va_end(ap);
-    if (!bp) {
-        sp->reportOutOfMemory();
-        return -1;
+    if (!chars) {
+        reportOutOfMemory();
+        return false;
     }
-    offset = sp->put(bp);
-    js_free(bp);
-    return offset;
+
+    return put(chars.get()) >= 0;
 }
 
 const char js_EscapeMap[] = {
@@ -299,8 +296,10 @@ QuoteString(Sprinter* sp, const CharT* s, size_t length, char16_t quote)
     
     ptrdiff_t offset = sp->getOffset();
 
-    if (quote && Sprint(sp, "%c", char(quote)) < 0)
-        return nullptr;
+    if (quote) {
+        if (!sp->jsprintf("%c", char(quote)))
+            return nullptr;
+    }
 
     const CharT* end = s + length;
 
@@ -331,7 +330,7 @@ QuoteString(Sprinter* sp, const CharT* s, size_t length, char16_t quote)
         
         const char* escape;
         if (!(c >> 8) && c != 0 && (escape = strchr(js_EscapeMap, int(c))) != nullptr) {
-            if (Sprint(sp, "\\%c", escape[1]) < 0)
+            if (!sp->jsprintf("\\%c", escape[1]))
                 return nullptr;
         } else {
             
@@ -339,21 +338,25 @@ QuoteString(Sprinter* sp, const CharT* s, size_t length, char16_t quote)
 
 
 
-            if (Sprint(sp, (quote && !(c >> 8)) ? "\\x%02X" : "\\u%04X", c) < 0)
+            if (!sp->jsprintf((quote && !(c >> 8)) ? "\\x%02X" : "\\u%04X", c))
                 return nullptr;
         }
     }
 
     
-    if (quote && Sprint(sp, "%c", char(quote)) < 0)
-        return nullptr;
+    if (quote) {
+        if (!sp->jsprintf("%c", char(quote)))
+            return nullptr;
+    }
 
     
 
 
 
-    if (offset == sp->getOffset() && Sprint(sp, "") < 0)
-        return nullptr;
+    if (offset == sp->getOffset()) {
+        if (sp->put("") < 0)
+            return nullptr;
+    }
 
     return sp->stringAt(offset);
 }

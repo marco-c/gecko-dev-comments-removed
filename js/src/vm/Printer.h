@@ -112,6 +112,11 @@ class Sprinter final : public GenericPrinter
     using GenericPrinter::put; 
 
     
+    
+    
+    MOZ_MUST_USE bool jsprintf(const char* fmt, ...);
+
+    
     virtual int vprintf(const char* fmt, va_list ap) override;
 
     int putString(JSString* str);
@@ -208,9 +213,6 @@ class LSprinter final : public GenericPrinter
     
     virtual bool hadOutOfMemory() const override;
 };
-
-extern ptrdiff_t
-Sprint(Sprinter* sp, const char* format, ...);
 
 
 extern const char       js_EscapeMap[];
