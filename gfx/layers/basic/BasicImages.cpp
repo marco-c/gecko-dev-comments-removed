@@ -11,6 +11,7 @@
 #include "gfxASurface.h"                
 #include "gfxPlatform.h"                
 #include "gfxUtils.h"                   
+#include "mozilla/CheckedInt.h"
 #include "mozilla/mozalloc.h"           
 #include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
@@ -111,7 +112,13 @@ BasicPlanarYCbCrImage::CopyData(const Data& aData)
 
   gfxImageFormat iFormat = gfx::SurfaceFormatToImageFormat(format);
   mStride = gfxASurface::FormatStrideForWidth(iFormat, size.width);
-  mDecodedBuffer = AllocateBuffer(size.height * mStride);
+  mozilla::CheckedInt32 requiredBytes =
+    mozilla::CheckedInt32(size.height) * mozilla::CheckedInt32(mStride);
+  if (!requiredBytes.isValid()) {
+    
+    return false;
+  }
+  mDecodedBuffer = AllocateBuffer(requiredBytes.value());
   if (!mDecodedBuffer) {
     
     return false;
