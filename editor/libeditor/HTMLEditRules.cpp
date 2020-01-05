@@ -1956,6 +1956,19 @@ HTMLEditRules::WillDeleteSelection(Selection* aSelection,
                                    DeprecatedAbs(eo - so));
       NS_ENSURE_SUCCESS(rv, rv);
 
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
       DeleteNodeIfCollapsedText(nodeAsText);
 
       rv = InsertBRIfNeeded(aSelection);
