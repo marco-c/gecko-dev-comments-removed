@@ -9,15 +9,17 @@
 #define NSCATEGORYMANAGER_H
 
 #include "prio.h"
-#include "plarena.h"
 #include "nsClassHashtable.h"
 #include "nsICategoryManager.h"
 #include "nsIMemoryReporter.h"
+#include "mozilla/ArenaAllocator.h"
 #include "mozilla/MemoryReporting.h"
 #include "mozilla/Mutex.h"
 #include "mozilla/Attributes.h"
 
 class nsIMemoryReporter;
+
+typedef mozilla::ArenaAllocator<1024*8, 8> CategoryAllocator;
 
 
 #define NS_CATEGORYMANAGER_CID \
@@ -55,7 +57,7 @@ public:
                    const char* aValue,
                    bool aReplace,
                    char** aResult,
-                   PLArenaPool* aArena);
+                   CategoryAllocator* aArena);
 
   void DeleteLeaf(const char* aEntryName);
 
@@ -75,7 +77,7 @@ public:
   nsresult Enumerate(nsISimpleEnumerator** aResult);
 
   
-  static CategoryNode* Create(PLArenaPool* aArena);
+  static CategoryNode* Create(CategoryAllocator* aArena);
   ~CategoryNode();
   void operator delete(void*) {}
 
@@ -84,7 +86,7 @@ public:
 private:
   CategoryNode() : mLock("CategoryLeaf") {}
 
-  void* operator new(size_t aSize, PLArenaPool* aArena);
+  void* operator new(size_t aSize, CategoryAllocator* aArena);
 
   nsTHashtable<CategoryLeaf> mTable;
   mozilla::Mutex mLock;
@@ -137,7 +139,7 @@ private:
                        const char* aCategoryName, 
                        const char* aEntryName);
 
-  PLArenaPool mArena;
+  CategoryAllocator mArena;
   nsClassHashtable<nsDepCharHashKey, CategoryNode> mTable;
   mozilla::Mutex mLock;
   bool mSuppressNotifications;

@@ -8,13 +8,13 @@
 #include "TimerThread.h"
 
 #include "nsThreadUtils.h"
-#include "plarena.h"
 #include "pratom.h"
 
 #include "nsIObserverService.h"
 #include "nsIServiceManager.h"
 #include "mozilla/Services.h"
 #include "mozilla/ChaosMode.h"
+#include "mozilla/ArenaAllocator.h"
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/BinarySearch.h"
 
@@ -108,21 +108,20 @@ private:
     FreeEntry* mNext;
   };
 
-  PLArenaPool mPool;
+  ArenaAllocator<4096> mPool;
   FreeEntry* mFirstFree;
   mozilla::Monitor mMonitor;
 
 public:
   TimerEventAllocator()
-    : mFirstFree(nullptr)
+    : mPool()
+    , mFirstFree(nullptr)
     , mMonitor("TimerEventAllocator")
   {
-    PL_InitArenaPool(&mPool, "TimerEventPool", 4096,  0);
   }
 
   ~TimerEventAllocator()
   {
-    PL_FinishArenaPool(&mPool);
   }
 
   void* Alloc(size_t aSize);
@@ -221,10 +220,7 @@ TimerEventAllocator::Alloc(size_t aSize)
     p = mFirstFree;
     mFirstFree = mFirstFree->mNext;
   } else {
-    PL_ARENA_ALLOCATE(p, &mPool, aSize);
-    if (!p) {
-      return nullptr;
-    }
+    p = mPool.Allocate(aSize, fallible);
   }
 
   return p;
