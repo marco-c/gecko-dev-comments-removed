@@ -20,7 +20,7 @@
 
 #include "nsDebug.h"
 #include "nsXPCOM.h"
-#include <atomic>
+#include "mozilla/Atomics.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/Compiler.h"
@@ -307,55 +307,24 @@ public:
   void operator=(const ThreadSafeAutoRefCnt&) = delete;
 
   
-  MOZ_ALWAYS_INLINE nsrefcnt operator++()
-  {
-    
-    
-    
-    
-    
-    
-    
-    
-    return mValue.fetch_add(1, std::memory_order_relaxed) + 1;
-  }
-  MOZ_ALWAYS_INLINE nsrefcnt operator--()
-  {
-    
-    
-    
-    
-    nsrefcnt result = mValue.fetch_sub(1, std::memory_order_release) - 1;
-    if (result == 0) {
-      
-      
-      
-      
-      result = mValue.load(std::memory_order_acquire);
-    }
-    return result;
-  }
+  MOZ_ALWAYS_INLINE nsrefcnt operator++() { return ++mValue; }
+  MOZ_ALWAYS_INLINE nsrefcnt operator--() { return --mValue; }
 
   MOZ_ALWAYS_INLINE nsrefcnt operator=(nsrefcnt aValue)
   {
-    
-    
-    mValue.store(aValue, std::memory_order_release);
-    return aValue;
+    return (mValue = aValue);
   }
-  MOZ_ALWAYS_INLINE operator nsrefcnt() const { return get(); }
-  MOZ_ALWAYS_INLINE nsrefcnt get() const
-  {
-    
-    
-    return mValue.load(std::memory_order_acquire);
-  }
+  MOZ_ALWAYS_INLINE operator nsrefcnt() const { return mValue; }
+  MOZ_ALWAYS_INLINE nsrefcnt get() const { return mValue; }
 
   static const bool isThreadSafe = true;
 private:
   nsrefcnt operator++(int) = delete;
   nsrefcnt operator--(int) = delete;
-  std::atomic<nsrefcnt> mValue;
+  
+  
+  
+  Atomic<nsrefcnt> mValue;
 };
 } 
 
