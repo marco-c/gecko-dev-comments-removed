@@ -178,7 +178,7 @@ public:
   NativeThreadId mMainThread;
   time_t mStartTime;
   
-  uint32_t mProcessType;
+  GeckoProcessType mProcessType;
   bool mInitialized;
 };
 
