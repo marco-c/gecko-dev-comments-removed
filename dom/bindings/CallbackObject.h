@@ -79,7 +79,15 @@ public:
     Init(aCallback, aAsyncStack, aIncumbentGlobal);
   }
 
-  JS::Handle<JSObject*> Callback() const
+  
+  
+  
+  
+  
+  
+  
+  
+  JS::Handle<JSObject*> CallbackOrNull() const
   {
     mCallback.exposeToActiveJS();
     return CallbackPreserveColor();
@@ -160,10 +168,14 @@ protected:
 
   bool operator==(const CallbackObject& aOther) const
   {
-    JSObject* thisObj =
-      js::UncheckedUnwrap(CallbackPreserveColor());
-    JSObject* otherObj =
-      js::UncheckedUnwrap(aOther.CallbackPreserveColor());
+    JSObject* wrappedThis = CallbackPreserveColor();
+    JSObject* wrappedOther = aOther.CallbackPreserveColor();
+    if (!wrappedThis || !wrappedOther) {
+      return this == &aOther;
+    }
+
+    JSObject* thisObj = js::UncheckedUnwrap(wrappedThis);
+    JSObject* otherObj = js::UncheckedUnwrap(wrappedOther);
     return thisObj == otherObj;
   }
 
@@ -563,9 +575,9 @@ public:
   }
 
   
-  JS::Handle<JSObject*> Callback() const
+  JS::Handle<JSObject*> CallbackOrNull() const
   {
-    return this->get()->Callback();
+    return this->get()->CallbackOrNull();
   }
 
   ~RootedCallback()
