@@ -310,7 +310,7 @@ impl Document {
 
     
     pub fn base_element(&self) -> Option<Root<HTMLBaseElement>> {
-        self.base_element.get_rooted()
+        self.base_element.get()
     }
 
     
@@ -508,7 +508,7 @@ impl Document {
     
     
     pub fn get_focused_element(&self) -> Option<Root<Element>> {
-        self.focused.get_rooted()
+        self.focused.get()
     }
 
     
@@ -529,13 +529,13 @@ impl Document {
     pub fn commit_focus_transaction(&self, focus_type: FocusType) {
         
 
-        if let Some(ref elem) = self.focused.get_rooted() {
+        if let Some(ref elem) = self.focused.get() {
             elem.set_focus_state(false);
         }
 
         self.focused.set(self.possibly_focused.get().r());
 
-        if let Some(ref elem) = self.focused.get_rooted() {
+        if let Some(ref elem) = self.focused.get() {
             elem.set_focus_state(true);
 
             
@@ -1045,7 +1045,7 @@ impl Document {
 
         
         
-        if let Some(parser) = self.current_parser.get_rooted() {
+        if let Some(parser) = self.current_parser.get() {
             if parser.is_suspended() {
                 parser.resume();
             }
@@ -1063,7 +1063,7 @@ impl Document {
     
     
     fn maybe_execute_parser_blocking_script(&self) -> ParserBlockedByScript {
-        let script = match self.pending_parsing_blocking_script.get_rooted() {
+        let script = match self.pending_parsing_blocking_script.get() {
             None => return ParserBlockedByScript::Unblocked,
             Some(script) => script,
         };
@@ -1156,7 +1156,7 @@ impl Document {
     }
 
     pub fn get_current_parser(&self) -> Option<Root<ServoHTMLParser>> {
-        self.current_parser.get_rooted()
+        self.current_parser.get()
     }
 
     
@@ -1735,7 +1735,7 @@ impl DocumentMethods for Document {
 
     // https://html.spec.whatwg.org/multipage/#dom-document-currentscript
     fn GetCurrentScript(&self) -> Option<Root<HTMLScriptElement>> {
-        self.current_script.get_rooted()
+        self.current_script.get()
     }
 
     // https://html.spec.whatwg.org/multipage/#dom-document-body

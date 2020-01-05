@@ -71,7 +71,7 @@ impl UIEvent {
 impl UIEventMethods for UIEvent {
     
     fn GetView(&self) -> Option<Root<Window>> {
-        self.view.get_rooted()
+        self.view.get()
     }
 
     

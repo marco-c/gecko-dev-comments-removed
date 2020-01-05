@@ -168,12 +168,12 @@ impl EventMethods for Event {
 
     
     fn GetTarget(&self) -> Option<Root<EventTarget>> {
-        self.target.get_rooted()
+        self.target.get()
     }
 
     
     fn GetCurrentTarget(&self) -> Option<Root<EventTarget>> {
-        self.current_target.get_rooted()
+        self.current_target.get()
     }
 
     

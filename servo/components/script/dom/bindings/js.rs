@@ -374,12 +374,6 @@ impl<T: Reflectable> MutNullableHeap<JS<T>> {
     }
 
     
-    pub fn get_rooted(&self) -> Option<Root<T>> {
-        debug_assert!(task_state::get().is_script());
-        self.get()
-    }
-
-    
     pub fn set(&self, val: Option<&T>) {
         debug_assert!(task_state::get().is_script());
         unsafe {

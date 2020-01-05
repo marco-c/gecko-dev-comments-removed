@@ -106,6 +106,6 @@ impl StorageEventMethods for StorageEvent {
 
     
     fn GetStorageArea(&self) -> Option<Root<Storage>> {
-        self.storageArea.get_rooted()
+        self.storageArea.get()
     }
 }
