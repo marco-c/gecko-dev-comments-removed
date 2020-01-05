@@ -497,8 +497,7 @@ class MachCommands(CommandBase):
         
         bin_path = path.abspath(self.get_binary_path(release, dev))
 
-        return check_call(
-            [run_file, cmd, bin_path, base_dir])
+        return call([run_file, cmd, bin_path, base_dir])
 
     def dromaeo_test_runner(self, tests, release, dev):
         self.ensure_bootstrapped()
