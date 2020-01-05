@@ -173,12 +173,6 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
                                    Input candidateCertDER,
                                     TrustLevel& trustLevel)
 {
-#ifdef MOZ_NO_EV_CERTS
-  if (!policy.IsAnyPolicy()) {
-    return Result::ERROR_POLICY_VALIDATION_FAILED;
-  }
-#endif
-
   
   
   
@@ -250,12 +244,10 @@ NSSCertDBTrustDomain::GetCertTrust(EndEntityOrCA endEntityOrCA,
         trustLevel = TrustLevel::TrustAnchor;
         return Success;
       }
-#ifndef MOZ_NO_EV_CERTS
       if (CertIsAuthoritativeForEVPolicy(candidateCert, policy)) {
         trustLevel = TrustLevel::TrustAnchor;
         return Success;
       }
-#endif
     }
   }
 

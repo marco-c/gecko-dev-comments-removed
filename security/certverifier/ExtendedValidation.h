@@ -14,9 +14,7 @@ namespace mozilla { namespace pkix { struct CertPolicyId; } }
 
 namespace mozilla { namespace psm {
 
-#ifndef MOZ_NO_EV_CERTS
-void EnsureIdentityInfoLoaded();
-void CleanupIdentityInfo();
+nsresult LoadExtendedValidationInfo();
 SECStatus GetFirstEVPolicy(CERTCertificate* cert,
                             mozilla::pkix::CertPolicyId& policy,
                             SECOidTag& policyOidTag);
@@ -25,7 +23,6 @@ SECStatus GetFirstEVPolicy(CERTCertificate* cert,
 
 bool CertIsAuthoritativeForEVPolicy(const UniqueCERTCertificate& cert,
                                     const mozilla::pkix::CertPolicyId& policy);
-#endif
 
 } } 
 
