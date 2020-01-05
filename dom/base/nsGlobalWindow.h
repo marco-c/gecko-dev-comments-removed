@@ -106,7 +106,6 @@ struct ChannelPixelLayout;
 class Console;
 class Crypto;
 class CustomElementsRegistry;
-class DocGroup;
 class External;
 class Function;
 class Gamepad;
@@ -122,7 +121,6 @@ struct RequestInit;
 class RequestOrUSVString;
 class Selection;
 class SpeechSynthesis;
-class TabGroup;
 class U2F;
 class VRDisplay;
 class VREventObserver;
@@ -1711,14 +1709,9 @@ private:
   
   bool ComputeIsSecureContext(nsIDocument* aDocument);
 
-  
-  void InheritTabGroupFrom(nsPIDOMWindowOuter* aWindow); 
-  void SwitchDocGroup(); 
-
 public:
 
-  mozilla::dom::TabGroup* GetTabGroup();
-  mozilla::dom::DocGroup* GetDocGroup();
+  void GetConstellation(nsACString& aConstellation);
 
 protected:
   
@@ -1937,8 +1930,8 @@ protected:
 
   nsAutoPtr<mozilla::dom::VREventObserver> mVREventObserver;
 
-  RefPtr<mozilla::dom::DocGroup> mDocGroup; 
-  RefPtr<mozilla::dom::TabGroup> mTabGroup; 
+  uint64_t mStaticConstellation; 
+  nsCString mConstellation; 
 
   friend class nsDOMScriptableHelper;
   friend class nsDOMWindowUtils;
