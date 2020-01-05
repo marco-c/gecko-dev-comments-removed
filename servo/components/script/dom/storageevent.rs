@@ -108,6 +108,6 @@ impl StorageEventMethods for StorageEvent {
 
     
     fn GetStorageArea(&self) -> Option<Root<Storage>> {
-        self.storageArea.get().map(Root::from_rooted)
+        self.storageArea.get_rooted()
     }
 }

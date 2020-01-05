@@ -298,11 +298,11 @@ impl Node {
         assert!(new_child.next_sibling.get().is_none());
         match before {
             Some(ref before) => {
-                assert!(before.parent_node.get().map(Root::from_rooted).r() == Some(self));
+                assert!(before.parent_node.get_rooted().r() == Some(self));
                 let prev_sibling = before.GetPreviousSibling();
                 match prev_sibling {
                     None => {
-                        assert!(Some(*before) == self.first_child.get().map(Root::from_rooted).r());
+                        assert!(Some(*before) == self.first_child.get_rooted().r());
                         self.first_child.set(Some(JS::from_ref(new_child)));
                     },
                     Some(ref prev_sibling) => {
@@ -343,7 +343,7 @@ impl Node {
     
     
     fn remove_child(&self, child: &Node) {
-        assert!(child.parent_node.get().map(Root::from_rooted).r() == Some(self));
+        assert!(child.parent_node.get_rooted().r() == Some(self));
         let prev_sibling = child.GetPreviousSibling();
         match prev_sibling {
             None => {
@@ -788,7 +788,7 @@ impl Node {
         let doc = self.owner_doc();
         let node = try!(doc.r().node_from_nodes_and_strings(nodes));
         
-        let first_child = self.first_child.get().map(Root::from_rooted);
+        let first_child = self.first_child.get_rooted();
         Node::pre_insert(node.r(), self, first_child.r()).map(|_| ())
     }
 
@@ -1937,7 +1937,7 @@ impl NodeMethods for Node {
 
     
     fn GetParentNode(&self) -> Option<Root<Node>> {
-        self.parent_node.get().map(Root::from_rooted)
+        self.parent_node.get_rooted()
     }
 
     
@@ -1961,22 +1961,22 @@ impl NodeMethods for Node {
 
     
     fn GetFirstChild(&self) -> Option<Root<Node>> {
-        self.first_child.get().map(Root::from_rooted)
+        self.first_child.get_rooted()
     }
 
     
     fn GetLastChild(&self) -> Option<Root<Node>> {
-        self.last_child.get().map(Root::from_rooted)
+        self.last_child.get_rooted()
     }
 
     
     fn GetPreviousSibling(&self) -> Option<Root<Node>> {
-        self.prev_sibling.get().map(Root::from_rooted)
+        self.prev_sibling.get_rooted()
     }
 
     
     fn GetNextSibling(&self) -> Option<Root<Node>> {
-        self.next_sibling.get().map(Root::from_rooted)
+        self.next_sibling.get_rooted()
     }
 
     
@@ -2482,7 +2482,7 @@ impl VirtualMethods for Node {
                 self.children_count.set(added.len() as u32);
             },
         }
-        if let Some(list) = self.child_list.get().map(|list| list.root()) {
+        if let Some(list) = self.child_list.get_rooted() {
             list.as_children_list().children_changed(mutation);
         }
     }

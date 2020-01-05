@@ -290,7 +290,7 @@ impl Document {
 
     
     pub fn base_element(&self) -> Option<Root<HTMLBaseElement>> {
-        self.base_element.get().map(Root::from_rooted)
+        self.base_element.get_rooted()
     }
 
     
@@ -498,7 +498,7 @@ impl Document {
     
     
     pub fn get_focused_element(&self) -> Option<Root<Element>> {
-        self.focused.get().map(Root::from_rooted)
+        self.focused.get_rooted()
     }
 
     
@@ -519,14 +519,14 @@ impl Document {
     pub fn commit_focus_transaction(&self, focus_type: FocusType) {
         
 
-        if let Some(ref elem) = self.focused.get().map(|t| t.root()) {
+        if let Some(ref elem) = self.focused.get_rooted() {
             let node = NodeCast::from_ref(elem.r());
             node.set_focus_state(false);
         }
 
         self.focused.set(self.possibly_focused.get());
 
-        if let Some(ref elem) = self.focused.get().map(|t| t.root()) {
+        if let Some(ref elem) = self.focused.get_rooted() {
             let node = NodeCast::from_ref(elem.r());
             node.set_focus_state(true);
 
@@ -967,7 +967,7 @@ impl Document {
     }
 
     pub fn get_current_parser(&self) -> Option<Root<ServoHTMLParser>> {
-        self.current_parser.get().map(Root::from_rooted)
+        self.current_parser.get_rooted()
     }
 
     
@@ -1509,7 +1509,7 @@ impl DocumentMethods for Document {
 
     // https://html.spec.whatwg.org/#dom-document-currentscript
     fn GetCurrentScript(&self) -> Option<Root<HTMLScriptElement>> {
-        self.current_script.get().map(Root::from_rooted)
+        self.current_script.get_rooted()
     }
 
     // https://html.spec.whatwg.org/#dom-document-body
