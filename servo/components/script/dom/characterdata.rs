@@ -50,9 +50,7 @@ impl CharacterData {
 impl<'a> CharacterDataMethods for &'a CharacterData {
     
     fn Data(self) -> DOMString {
-        
-        let data = self.data.borrow();
-        data.clone()
+        self.data.borrow().clone()
     }
 
     
@@ -62,9 +60,7 @@ impl<'a> CharacterDataMethods for &'a CharacterData {
 
     
     fn Length(self) -> u32 {
-        
-        let data = self.data.borrow();
-        data.chars().count() as u32
+        self.data.borrow().chars().count() as u32
     }
 
     

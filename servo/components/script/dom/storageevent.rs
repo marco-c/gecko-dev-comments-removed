@@ -89,27 +89,19 @@ impl StorageEvent {
 
 impl<'a> StorageEventMethods for &'a StorageEvent {
     fn GetKey(self) -> Option<DOMString> {
-        
-        let key = self.key.borrow();
-        key.clone()
+        self.key.borrow().clone()
     }
 
     fn GetOldValue(self) -> Option<DOMString> {
-        
-        let oldValue = self.oldValue.borrow();
-        oldValue.clone()
+        self.oldValue.borrow().clone()
     }
 
     fn GetNewValue(self) -> Option<DOMString> {
-        
-        let newValue = self.newValue.borrow();
-        newValue.clone()
+        self.newValue.borrow().clone()
     }
 
     fn Url(self) -> DOMString {
-        
-        let url = self.url.borrow();
-        url.clone()
+        self.url.borrow().clone()
     }
 
     fn GetStorageArea(self) -> Option<Root<Storage>> {
