@@ -70,6 +70,14 @@ use std::sync::mpsc::TryRecvError::{Empty, Disconnected};
 use time;
 
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+#[jstraceable]
+enum WindowState {
+    Alive,
+    Zombie,     
+}
+
+
 #[derive(Debug)]
 pub enum ReflowReason {
     CachedPageNeededReflow,
@@ -170,7 +178,10 @@ pub struct Window {
     pending_reflow_count: Cell<u32>,
 
     
-    webdriver_script_chan: RefCell<Option<Sender<WebDriverJSResult>>>
+    webdriver_script_chan: RefCell<Option<Sender<WebDriverJSResult>>>,
+
+    
+    current_state: Cell<WindowState>,
 }
 
 impl Window {
@@ -179,6 +190,7 @@ impl Window {
         unsafe {
             *self.js_runtime.borrow_for_script_deallocation() = None;
             *self.browser_context.borrow_for_script_deallocation() = None;
+            self.current_state.set(WindowState::Zombie);
         }
     }
 
@@ -544,6 +556,7 @@ pub trait WindowHelpers {
     fn set_devtools_timeline_marker(self, marker: TimelineMarkerType, reply: Sender<TimelineMarker>);
     fn drop_devtools_timeline_markers(self);
     fn set_webdriver_script_chan(self, chan: Option<Sender<WebDriverJSResult>>);
+    fn is_alive(self) -> bool;
 }
 
 pub trait ScriptHelpers {
@@ -595,6 +608,7 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
         // which causes a panic!
         self.Gc();
 
+        self.current_state.set(WindowState::Zombie);
         *self.js_runtime.borrow_mut() = None;
         *self.browser_context.borrow_mut() = None;
     }
@@ -916,6 +930,10 @@ impl<'a> WindowHelpers for JSRef<'a, Window> {
     fn set_webdriver_script_chan(self, chan: Option<Sender<WebDriverJSResult>>) {
         *self.webdriver_script_chan.borrow_mut() = chan;
     }
+
+    fn is_alive(self) -> bool {
+        self.current_state.get() == WindowState::Alive
+    }
 }
 
 impl Window {
@@ -979,6 +997,7 @@ impl Window {
             layout_join_port: DOMRefCell::new(None),
             window_size: Cell::new(window_size),
             pending_reflow_count: Cell::new(0),
+            current_state: Cell::new(WindowState::Alive),
 
             devtools_marker_sender: RefCell::new(None),
             devtools_markers: RefCell::new(HashSet::new()),
