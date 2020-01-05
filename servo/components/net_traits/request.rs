@@ -33,7 +33,7 @@ pub enum Destination {
 }
 
 
-#[derive(Clone, PartialEq)]
+#[derive(Clone, PartialEq, Debug)]
 pub enum Origin {
     Client,
     Origin(UrlOrigin)
