@@ -405,7 +405,7 @@ public:
       new nsMainThreadPtrHolder<KeepAliveToken>(aKeepAliveToken);
   }
 
-  bool
+  nsresult
   DispatchExtendableEventOnWorkerScope(JSContext* aCx,
                                        WorkerGlobalScope* aWorkerScope,
                                        ExtendableEvent* aEvent,
@@ -419,7 +419,7 @@ public:
     RefPtr<KeepAliveHandler> keepAliveHandler =
       new KeepAliveHandler(mKeepAliveToken, aCallback);
     if (NS_WARN_IF(!keepAliveHandler->UseWorkerHolder())) {
-      return false;
+      return NS_ERROR_FAILURE;
     }
 
     
@@ -428,16 +428,24 @@ public:
 
     ErrorResult result;
     result = aWorkerScope->DispatchDOMEvent(nullptr, aEvent, nullptr, nullptr);
-    if (NS_WARN_IF(result.Failed()) || internalEvent->mFlags.mExceptionWasRaised) {
+    if (NS_WARN_IF(result.Failed())) {
       result.SuppressException();
-      return false;
+      return NS_ERROR_FAILURE;
     }
 
     
     
     keepAliveHandler->MaybeDone();
 
-    return true;
+    
+    
+    
+    if (internalEvent->mFlags.mExceptionWasRaised) {
+      result.SuppressException();
+      return NS_ERROR_XPC_JS_THREW_EXCEPTION;
+    }
+
+    return NS_OK;
   }
 };
 
@@ -497,8 +505,10 @@ public:
 
     extendableEvent->SetTrusted(true);
 
-    return DispatchExtendableEventOnWorkerScope(aCx, aWorkerPrivate->GlobalScope(),
-                                                extendableEvent, nullptr);
+    return NS_SUCCEEDED(DispatchExtendableEventOnWorkerScope(aCx,
+                                                             aWorkerPrivate->GlobalScope(),
+                                                             extendableEvent,
+                                                             nullptr));
   }
 };
 
@@ -759,8 +769,12 @@ LifecycleEventWorkerRunnable::DispatchLifecycleEvent(JSContext* aCx,
     return true;
   }
 
-  if (!DispatchExtendableEventOnWorkerScope(aCx, aWorkerPrivate->GlobalScope(),
-                                       event, watcher)) {
+  nsresult rv = DispatchExtendableEventOnWorkerScope(aCx,
+                                                     aWorkerPrivate->GlobalScope(),
+                                                     event,
+                                                     watcher);
+  
+  if (NS_FAILED(rv) && rv != NS_ERROR_XPC_JS_THREW_EXCEPTION) {
     watcher->ReportResult(false);
   }
 
@@ -823,7 +837,6 @@ public:
   {
     WorkerPrivate* workerPrivate = mWorkerPrivate;
     mWorkerPrivate->AssertIsOnWorkerThread();
-    mWorkerPrivate = nullptr;
 
     if (NS_WARN_IF(aReason > nsIPushErrorReporter::DELIVERY_INTERNAL_ERROR) ||
         mMessageId.IsEmpty()) {
@@ -901,8 +914,12 @@ public:
     }
     event->SetTrusted(true);
 
-    if (!DispatchExtendableEventOnWorkerScope(aCx, aWorkerPrivate->GlobalScope(),
-                                              event, errorReporter)) {
+    nsresult rv = DispatchExtendableEventOnWorkerScope(aCx,
+                                                       aWorkerPrivate->GlobalScope(),
+                                                       event,
+                                                       errorReporter);
+    if (NS_FAILED(rv)) {
+      
       errorReporter->Report(nsIPushErrorReporter::DELIVERY_UNCAUGHT_EXCEPTION);
     }
 
@@ -1230,8 +1247,12 @@ public:
     aWorkerPrivate->GlobalScope()->AllowWindowInteraction();
     RefPtr<AllowWindowInteractionHandler> allowWindowInteraction =
       new AllowWindowInteractionHandler(aWorkerPrivate);
-    if (!DispatchExtendableEventOnWorkerScope(aCx, aWorkerPrivate->GlobalScope(),
-                                              event, allowWindowInteraction)) {
+    nsresult rv = DispatchExtendableEventOnWorkerScope(aCx,
+                                                       aWorkerPrivate->GlobalScope(),
+                                                       event,
+                                                       allowWindowInteraction);
+    
+    if (NS_FAILED(rv) && rv != NS_ERROR_XPC_JS_THREW_EXCEPTION) {
       allowWindowInteraction->FinishedWithResult(Rejected);
     }
     aWorkerPrivate->GlobalScope()->ConsumeWindowInteraction();
@@ -1581,25 +1602,19 @@ private:
     event->PostInit(mInterceptedChannel, mRegistration, mScriptSpec);
     event->SetTrusted(true);
 
-    bool rv2 =
+    nsresult rv2 =
       DispatchExtendableEventOnWorkerScope(aCx, aWorkerPrivate->GlobalScope(),
                                            event, nullptr);
-    if (NS_WARN_IF(!rv2) || !event->WaitToRespond()) {
+    if (NS_WARN_IF(NS_FAILED(rv2)) || !event->WaitToRespond()) {
       nsCOMPtr<nsIRunnable> runnable;
       MOZ_ASSERT(!aWorkerPrivate->UsesSystemPrincipal(),
                  "We don't support system-principal serviceworkers");
       if (event->DefaultPrevented(CallerType::NonSystem)) {
-        event->ReportCanceled();
-      } else if (event->WidgetEventPtr()->mFlags.mExceptionWasRaised) {
-        
-      } else {
-        runnable = new ResumeRequest(mInterceptedChannel);
-      }
-
-      if (!runnable) {
         runnable = new CancelChannelRunnable(mInterceptedChannel,
                                              mRegistration,
                                              NS_ERROR_INTERCEPTION_FAILED);
+      } else {
+        runnable = new ResumeRequest(mInterceptedChannel);
       }
 
       MOZ_ALWAYS_SUCCEEDS(mWorkerPrivate->DispatchToMainThread(runnable.forget()));
