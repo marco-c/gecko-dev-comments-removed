@@ -175,6 +175,13 @@ public:
   already_AddRefed<ServoComputedValues>
     ResolveServoStyle(dom::Element* aElement, ConsumeStyleBehavior aConsume);
 
+  
+
+
+  ServoComputedValuesStrong RestyleWithAddedDeclaration(
+    RawServoDeclarationBlock* aDeclarations,
+    const ServoComputedValues* aPreviousStyle);
+
 private:
   already_AddRefed<nsStyleContext> GetContext(already_AddRefed<ServoComputedValues>,
                                               nsStyleContext* aParentContext,

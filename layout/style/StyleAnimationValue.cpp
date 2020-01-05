@@ -3672,7 +3672,8 @@ StyleAnimationValue::ComputeValues(
   
   auto declarations = const_cast<RawServoDeclarationBlock*>(&aDeclarations);
   RefPtr<ServoComputedValues> computedValues =
-    Servo_RestyleWithAddedDeclaration(declarations, previousStyle).Consume();
+    aStyleContext->PresContext()->StyleSet()->AsServo()->
+      RestyleWithAddedDeclaration(declarations, previousStyle).Consume();
   if (!computedValues) {
     return false;
   }
