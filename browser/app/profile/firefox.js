@@ -1377,6 +1377,12 @@ pref("media.eme.enabled", false);
 pref("media.eme.enabled", true);
 #endif
 
+#ifdef NIGHTLY_BUILD
+pref("media.eme.vp9-in-mp4.enabled", true);
+#else
+pref("media.eme.vp9-in-mp4.enabled", false);
+#endif
+
 
 
 pref("media.gmp.trial-create.enabled", true);
