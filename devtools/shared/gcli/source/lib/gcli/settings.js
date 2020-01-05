@@ -238,8 +238,7 @@ Object.defineProperty(Setting.prototype, 'value', {
         return imports.prefBranch.getIntPref(this.name);
 
       case imports.prefBranch.PREF_STRING:
-        var value = imports.prefBranch.getComplexValue(this.name,
-                Ci.nsISupportsString).data;
+        var value = imports.prefBranch.getStringPref(this.name);
         
         if (/^chrome:\/\/.+\/locale\/.+\.properties/.test(value)) {
           value = imports.prefBranch.getComplexValue(this.name,

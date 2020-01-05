@@ -46,7 +46,7 @@ var SocialServiceInternal = {
       if (!MANIFEST_PREFS.prefHasUserValue(pref))
         continue;
       try {
-        var manifest = JSON.parse(MANIFEST_PREFS.getComplexValue(pref, Ci.nsISupportsString).data);
+        var manifest = JSON.parse(MANIFEST_PREFS.getStringPref(pref));
         if (manifest && typeof(manifest) == "object" && manifest.origin)
           yield manifest;
       } catch (err) {
@@ -65,7 +65,7 @@ var SocialServiceInternal = {
     let prefs = MANIFEST_PREFS.getChildList("", []);
     for (let pref of prefs) {
       try {
-        var manifest = JSON.parse(MANIFEST_PREFS.getComplexValue(pref, Ci.nsISupportsString).data);
+        var manifest = JSON.parse(MANIFEST_PREFS.getStringPref(pref));
         if (manifest.origin == origin) {
           return pref;
         }
@@ -202,11 +202,8 @@ var ActiveProviders = {
   },
 
   _persist() {
-    let string = Cc["@mozilla.org/supports-string;1"].
-                 createInstance(Ci.nsISupportsString);
-    string.data = JSON.stringify(this._providers);
-    Services.prefs.setComplexValue("social.activeProviders",
-                                   Ci.nsISupportsString, string);
+    Services.prefs.setStringPref("social.activeProviders",
+                                 JSON.stringify(this._providers));
   }
 };
 
@@ -224,7 +221,7 @@ function migrateSettings() {
       let defaultManifest;
       try {
         prefname = getPrefnameFromOrigin(origin);
-        manifest = JSON.parse(Services.prefs.getComplexValue(prefname, Ci.nsISupportsString).data);
+        manifest = JSON.parse(Services.prefs.getStringPref(prefname));
       } catch (e) {
         
         
@@ -237,8 +234,7 @@ function migrateSettings() {
       let needsUpdate = !manifest.updateDate;
       
       try {
-        defaultManifest = Services.prefs.getDefaultBranch(null)
-                        .getComplexValue(prefname, Ci.nsISupportsString).data;
+        defaultManifest = Services.prefs.getDefaultBranch(null).getStringPref(prefname);
         defaultManifest = JSON.parse(defaultManifest);
       } catch (e) {
         
@@ -262,10 +258,7 @@ function migrateSettings() {
         if (!manifest.installDate)
           manifest.installDate = 0; 
 
-        let string = Cc["@mozilla.org/supports-string;1"].
-                     createInstance(Ci.nsISupportsString);
-        string.data = JSON.stringify(manifest);
-        Services.prefs.setComplexValue(prefname, Ci.nsISupportsString, string);
+        Services.prefs.setStringPref(prefname, JSON.stringify(manifest));
       }
       
       
@@ -291,7 +284,7 @@ function migrateSettings() {
     try {
       let manifest;
       try {
-        manifest = JSON.parse(manifestPrefs.getComplexValue(pref, Ci.nsISupportsString).data);
+        manifest = JSON.parse(manifestPrefs.getStringPref(pref));
       } catch (e) {
         
         continue;
@@ -305,10 +298,9 @@ function migrateSettings() {
           manifest.installDate = 0; 
         }
 
-        let string = Cc["@mozilla.org/supports-string;1"].createInstance(Ci.nsISupportsString);
-        string.data = JSON.stringify(manifest);
         
-        Services.prefs.setComplexValue("social.manifest." + pref, Ci.nsISupportsString, string);
+        Services.prefs.setStringPref("social.manifest." + pref,
+                                     JSON.stringify(manifest));
         ActiveProviders.add(manifest.origin);
         ActiveProviders.flush();
         
@@ -642,10 +634,8 @@ this.SocialService = {
       throw new Error("SocialService.installProvider: service configuration is invalid from " + aUpdateOrigin);
 
     
-    let string = Cc["@mozilla.org/supports-string;1"].
-                 createInstance(Ci.nsISupportsString);
-    string.data = JSON.stringify(manifest);
-    Services.prefs.setComplexValue(getPrefnameFromOrigin(manifest.origin), Ci.nsISupportsString, string);
+    Services.prefs.setStringPref(getPrefnameFromOrigin(manifest.origin),
+                                 JSON.stringify(manifest));
 
     
     
@@ -829,10 +819,8 @@ function AddonInstaller(sourceURI, aManifest, installCallback) {
       AddonManagerPrivate.callAddonListeners("onInstalling", addon, false);
     }
 
-    let string = Cc["@mozilla.org/supports-string;1"].
-                 createInstance(Ci.nsISupportsString);
-    string.data = JSON.stringify(aManifest);
-    Services.prefs.setComplexValue(getPrefnameFromOrigin(aManifest.origin), Ci.nsISupportsString, string);
+    Services.prefs.setStringPref(getPrefnameFromOrigin(aManifest.origin),
+                                 JSON.stringify(aManifest));
 
     if (isNewInstall) {
       AddonManagerPrivate.callAddonListeners("onInstalled", addon);
