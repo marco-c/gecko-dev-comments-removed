@@ -47,6 +47,12 @@
   pointer-events: none;
 }
 
+:-moz-native-anonymous .highlighter-container.box-model {
+  
+
+  z-index: 1;
+}
+
 :-moz-native-anonymous .highlighter-container [hidden] {
   display: none;
 }

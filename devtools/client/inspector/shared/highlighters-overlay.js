@@ -27,17 +27,26 @@ function HighlightersOverlay(view) {
   let {CssRuleView} = require("devtools/client/inspector/rules/rules");
   this.isRuleView = view instanceof CssRuleView;
 
-  this.highlighterUtils = this.view.inspector.toolbox.highlighterUtils;
-
-  this._onMouseMove = this._onMouseMove.bind(this);
-  this._onMouseOut = this._onMouseOut.bind(this);
-
   this.highlighters = {};
+
+  
+  this.gridHighlighterShown = null;
+  
+  this.hoveredHighlighterShown = null;
+  
+  this.selectorHighlighterShown = null;
+
+  this.highlighterUtils = this.view.inspector.toolbox.highlighterUtils;
 
   
   
   this.supportsHighlighters =
     this.highlighterUtils.supportsCustomHighlighters();
+
+  this._onClick = this._onClick.bind(this);
+  this._onMouseMove = this._onMouseMove.bind(this);
+  this._onMouseOut = this._onMouseOut.bind(this);
+  this._onWillNavigate = this._onWillNavigate.bind(this);
 
   EventEmitter.decorate(this);
 }
@@ -53,9 +62,14 @@ HighlightersOverlay.prototype = {
     }
 
     let el = this.view.element;
+    el.addEventListener("click", this._onClick, true);
     el.addEventListener("mousemove", this._onMouseMove, false);
     el.addEventListener("mouseout", this._onMouseOut, false);
     el.ownerDocument.defaultView.addEventListener("mouseout", this._onMouseOut, false);
+
+    if (this.isRuleView) {
+      this.view.inspector.target.on("will-navigate", this._onWillNavigate);
+    }
 
     this._isStarted = true;
   },
@@ -69,13 +83,50 @@ HighlightersOverlay.prototype = {
       return;
     }
 
-    this._hideCurrent();
-
     let el = this.view.element;
+    el.removeEventListener("click", this._onClick, true);
     el.removeEventListener("mousemove", this._onMouseMove, false);
     el.removeEventListener("mouseout", this._onMouseOut, false);
 
+    if (this.isRuleView) {
+      this.view.inspector.target.off("will-navigate", this._onWillNavigate);
+    }
+
     this._isStarted = false;
+  },
+
+  _onClick: function (event) {
+    
+    if (!this._isDisplayGridValue(event.target)) {
+      return;
+    }
+
+    event.stopPropagation();
+
+    this._getHighlighter("CssGridHighlighter").then(highlighter => {
+      let node = this.view.inspector.selection.nodeFront;
+
+      
+      
+      if (node === this.gridHighlighterShown) {
+        return highlighter.hide();
+      }
+
+      return highlighter.show(node);
+    }).then(isGridShown => {
+      
+      for (let gridIcon of this.view.element.querySelectorAll(".ruleview-grid")) {
+        gridIcon.classList.toggle("active", isGridShown);
+      }
+
+      if (isGridShown) {
+        this.gridHighlighterShown = this.view.inspector.selection.nodeFront;
+        this.emit("highlighter-shown");
+      } else {
+        this.gridHighlighterShown = null;
+        this.emit("highlighter-hidden");
+      }
+    }).catch(e => console.error(e));
   },
 
   _onMouseMove: function (event) {
@@ -85,7 +136,7 @@ HighlightersOverlay.prototype = {
     }
 
     
-    this._hideCurrent();
+    this._hideHoveredHighlighter();
 
     this._lastHovered = event.target;
 
@@ -102,7 +153,7 @@ HighlightersOverlay.prototype = {
     }
 
     if (type) {
-      this.highlighterShown = type;
+      this.hoveredHighlighterShown = type;
       let node = this.view.inspector.selection.nodeFront;
       this._getHighlighter(type)
           .then(highlighter => highlighter.show(node))
@@ -123,7 +174,16 @@ HighlightersOverlay.prototype = {
 
     
     this._lastHovered = null;
-    this._hideCurrent();
+    this._hideHoveredHighlighter();
+  },
+
+  
+
+
+  _onWillNavigate: function () {
+    this.gridHighlighterShown = null;
+    this.hoveredHighlighterShown = null;
+    this.selectorHighlighterShown = null;
   },
 
   
@@ -157,8 +217,37 @@ HighlightersOverlay.prototype = {
   
 
 
-  _hideCurrent: function () {
-    if (!this.highlighterShown || !this.highlighters[this.highlighterShown]) {
+
+
+
+
+  _isDisplayGridValue: function (node) {
+    return this.isRuleView && node.classList.contains("ruleview-grid");
+  },
+
+  
+
+
+  _hideGridHighlighter: function () {
+    if (!this.gridHighlighterShown || !this.highlighters.CssGridHighlighter) {
+      return;
+    }
+
+    let onHidden = this.highlighters.CssGridHighlighter.hide();
+    if (onHidden) {
+      onHidden.then(null, e => console.error(e));
+    }
+
+    this.gridHighlighterShown = null;
+    this.emit("highlighter-hidden");
+  },
+
+  
+
+
+  _hideHoveredHighlighter: function () {
+    if (!this.hoveredHighlighterShown ||
+        !this.highlighters[this.hoveredHighlighterShown]) {
       return;
     }
 
@@ -166,16 +255,17 @@ HighlightersOverlay.prototype = {
     
     
     
-    let onHidden = this.highlighters[this.highlighterShown].hide();
+    let onHidden = this.highlighters[this.hoveredHighlighterShown].hide();
     if (onHidden) {
       onHidden.then(null, e => console.error(e));
     }
 
-    this.highlighterShown = null;
+    this.hoveredHighlighterShown = null;
     this.emit("highlighter-hidden");
   },
 
   
+
 
 
 
@@ -208,8 +298,15 @@ HighlightersOverlay.prototype = {
       }
     }
 
-    this.view = null;
+    this.highlighters = null;
+
+    this.gridHighlighterShown = null;
+    this.hoveredHighlighterShown = null;
+    this.selectorHighlighterShown = null;
+
     this.highlighterUtils = null;
+    this.isRuleView = null;
+    this.view = null;
 
     this._isDestroyed = true;
   }
