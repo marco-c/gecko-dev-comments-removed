@@ -102,7 +102,7 @@ class BackgroundDecommitTask : public GCParallelTask
     void run() override;
 
   private:
-    UnprotectedData<ChunkVector> toDecommit;
+    ActiveThreadOrGCTaskData<ChunkVector> toDecommit;
 };
 
 
@@ -120,14 +120,14 @@ class GCSchedulingTunables
     UnprotectedData<size_t> gcMaxBytes_;
 
     
-    UnprotectedData<size_t> gcMaxNurseryBytes_;
+    ActiveThreadData<size_t> gcMaxNurseryBytes_;
 
     
 
 
 
 
-    UnprotectedData<size_t> gcZoneAllocThresholdBase_;
+    ActiveThreadOrGCTaskData<size_t> gcZoneAllocThresholdBase_;
 
     
     UnprotectedData<double> zoneAllocThresholdFactor_;
@@ -142,38 +142,38 @@ class GCSchedulingTunables
 
 
 
-    UnprotectedData<bool> dynamicHeapGrowthEnabled_;
+    ActiveThreadData<bool> dynamicHeapGrowthEnabled_;
 
     
 
 
 
-    UnprotectedData<uint64_t> highFrequencyThresholdUsec_;
+    ActiveThreadData<uint64_t> highFrequencyThresholdUsec_;
 
     
 
 
 
-    UnprotectedData<uint64_t> highFrequencyLowLimitBytes_;
-    UnprotectedData<uint64_t> highFrequencyHighLimitBytes_;
-    UnprotectedData<double> highFrequencyHeapGrowthMax_;
-    UnprotectedData<double> highFrequencyHeapGrowthMin_;
+    ActiveThreadData<uint64_t> highFrequencyLowLimitBytes_;
+    ActiveThreadData<uint64_t> highFrequencyHighLimitBytes_;
+    ActiveThreadData<double> highFrequencyHeapGrowthMax_;
+    ActiveThreadData<double> highFrequencyHeapGrowthMin_;
 
     
 
 
 
-    UnprotectedData<double> lowFrequencyHeapGrowth_;
+    ActiveThreadData<double> lowFrequencyHeapGrowth_;
 
     
 
 
-    UnprotectedData<bool> dynamicMarkSliceEnabled_;
+    ActiveThreadData<bool> dynamicMarkSliceEnabled_;
 
     
 
 
-    UnprotectedData<bool> refreshFrameSlicesEnabled_;
+    ActiveThreadData<bool> refreshFrameSlicesEnabled_;
 
     
 
@@ -526,7 +526,7 @@ class GCSchedulingState
 
 
 
-    UnprotectedData<bool> inHighFrequencyGCMode_;
+    ActiveThreadData<bool> inHighFrequencyGCMode_;
 
   public:
     GCSchedulingState()
@@ -545,8 +545,8 @@ class GCSchedulingState
 
 template<typename F>
 struct Callback {
-    UnprotectedData<F> op;
-    UnprotectedData<void*> data;
+    ActiveThreadData<F> op;
+    ActiveThreadData<void*> data;
 
     Callback()
       : op(nullptr), data(nullptr)
@@ -557,7 +557,7 @@ struct Callback {
 };
 
 template<typename F>
-using CallbackVector = UnprotectedData<Vector<Callback<F>, 4, SystemAllocPolicy>>;
+using CallbackVector = ActiveThreadData<Vector<Callback<F>, 4, SystemAllocPolicy>>;
 
 template <typename T, typename Iter0, typename Iter1>
 class ChainedIter
@@ -979,7 +979,7 @@ class GCRuntime
     UnprotectedData<JS::Zone*> systemZone;
 
     
-    UnprotectedData<ZoneGroupVector> groups;
+    ActiveThreadData<ZoneGroupVector> groups;
 
     
     WriteOnceData<Zone*> atomsZone;
@@ -1023,9 +1023,9 @@ class GCRuntime
     
     UnprotectedData<ChunkPool> fullChunks_;
 
-    UnprotectedData<RootedValueMap> rootsHash;
+    ActiveThreadData<RootedValueMap> rootsHash;
 
-    UnprotectedData<size_t> maxMallocBytes;
+    ActiveThreadData<size_t> maxMallocBytes;
 
     
     mozilla::Atomic<uint64_t, mozilla::ReleaseAcquire> nextCellUniqueId_;
@@ -1034,18 +1034,18 @@ class GCRuntime
 
 
     mozilla::Atomic<uint32_t, mozilla::ReleaseAcquire> numArenasFreeCommitted;
-    UnprotectedData<VerifyPreTracer*> verifyPreData;
+    ActiveThreadData<VerifyPreTracer*> verifyPreData;
 
   private:
     UnprotectedData<bool> chunkAllocationSinceLastGC;
-    UnprotectedData<int64_t> lastGCTime;
+    ActiveThreadData<int64_t> lastGCTime;
 
-    UnprotectedData<JSGCMode> mode;
+    ActiveThreadData<JSGCMode> mode;
 
     mozilla::Atomic<size_t, mozilla::ReleaseAcquire> numActiveZoneIters;
 
     
-    UnprotectedData<bool> cleanUpEverything;
+    ActiveThreadData<bool> cleanUpEverything;
 
     
     
@@ -1058,7 +1058,7 @@ class GCRuntime
         Okay,
         Failed
     };
-    UnprotectedData<GrayBufferState> grayBufferState;
+    ActiveThreadData<GrayBufferState> grayBufferState;
     bool hasBufferedGrayRoots() const { return grayBufferState == GrayBufferState::Okay; }
 
     
@@ -1079,83 +1079,83 @@ class GCRuntime
     mozilla::Atomic<JS::gcreason::Reason, mozilla::Relaxed> majorGCTriggerReason;
 
   public:
-    UnprotectedData<JS::gcreason::Reason> minorGCTriggerReason;
+    ActiveThreadData<JS::gcreason::Reason> minorGCTriggerReason;
 
   private:
     
-    UnprotectedData<bool> fullGCForAtomsRequested_;
+    ActiveThreadData<bool> fullGCForAtomsRequested_;
 
     
-    UnprotectedData<uint64_t> minorGCNumber;
+    ActiveThreadData<uint64_t> minorGCNumber;
 
     
-    UnprotectedData<uint64_t> majorGCNumber;
+    ActiveThreadData<uint64_t> majorGCNumber;
 
     
-    UnprotectedData<uint64_t> jitReleaseNumber;
+    ActiveThreadData<uint64_t> jitReleaseNumber;
 
     
-    UnprotectedData<uint64_t> number;
+    ActiveThreadData<uint64_t> number;
 
     
-    UnprotectedData<uint64_t> startNumber;
+    ActiveThreadData<uint64_t> startNumber;
 
     
-    UnprotectedData<bool> isIncremental;
+    ActiveThreadData<bool> isIncremental;
 
     
-    UnprotectedData<bool> isFull;
+    ActiveThreadData<bool> isFull;
 
     
-    UnprotectedData<bool> isCompacting;
+    ActiveThreadData<bool> isCompacting;
 
     
-    UnprotectedData<JSGCInvocationKind> invocationKind;
+    ActiveThreadData<JSGCInvocationKind> invocationKind;
 
     
-    UnprotectedData<JS::gcreason::Reason> initialReason;
-
-    
-
-
-
-    UnprotectedData<State> incrementalState;
-
-    
-    UnprotectedData<bool> lastMarkSlice;
-
-    
-    UnprotectedData<bool> sweepOnBackgroundThread;
-
-    
-    UnprotectedData<bool> releaseObservedTypes;
-
-    
-    UnprotectedData<BlackGrayEdgeVector> foundBlackGrayEdges;
-
-    
-    UnprotectedData<ZoneList> backgroundSweepZones;
+    ActiveThreadData<JS::gcreason::Reason> initialReason;
 
     
 
 
 
-    UnprotectedData<LifoAlloc> blocksToFreeAfterSweeping;
+    ActiveThreadOrGCTaskData<State> incrementalState;
+
+    
+    ActiveThreadData<bool> lastMarkSlice;
+
+    
+    ActiveThreadData<bool> sweepOnBackgroundThread;
+
+    
+    ActiveThreadData<bool> releaseObservedTypes;
+
+    
+    ActiveThreadData<BlackGrayEdgeVector> foundBlackGrayEdges;
+
+    
+    ActiveThreadOrGCTaskData<ZoneList> backgroundSweepZones;
+
+    
+
+
+
+    ActiveThreadOrGCTaskData<LifoAlloc> blocksToFreeAfterSweeping;
 
   private:
     
-    UnprotectedData<unsigned> zoneGroupIndex;
+    ActiveThreadData<unsigned> zoneGroupIndex;
 
     
 
 
-    UnprotectedData<JS::Zone*> zoneGroups;
-    UnprotectedData<JS::Zone*> currentZoneGroup;
-    UnprotectedData<bool> sweepingTypes;
-    UnprotectedData<unsigned> finalizePhase;
-    UnprotectedData<JS::Zone*> sweepZone;
-    UnprotectedData<AllocKind> sweepKind;
-    UnprotectedData<bool> abortSweepAfterCurrentGroup;
+    ActiveThreadData<JS::Zone*> zoneGroups;
+    ActiveThreadOrGCTaskData<JS::Zone*> currentZoneGroup;
+    ActiveThreadData<bool> sweepingTypes;
+    ActiveThreadData<unsigned> finalizePhase;
+    ActiveThreadData<JS::Zone*> sweepZone;
+    ActiveThreadData<AllocKind> sweepKind;
+    ActiveThreadData<bool> abortSweepAfterCurrentGroup;
 
     
 
@@ -1166,17 +1166,17 @@ class GCRuntime
     
 
 
-    UnprotectedData<Arena*> arenasAllocatedDuringSweep;
+    ActiveThreadData<Arena*> arenasAllocatedDuringSweep;
 
     
 
 
-    UnprotectedData<bool> startedCompacting;
-    UnprotectedData<ZoneList> zonesToMaybeCompact;
-    UnprotectedData<Arena*> relocatedArenasToRelease;
+    ActiveThreadData<bool> startedCompacting;
+    ActiveThreadData<ZoneList> zonesToMaybeCompact;
+    ActiveThreadData<Arena*> relocatedArenasToRelease;
 
 #ifdef JS_GC_ZEAL
-    UnprotectedData<MarkingValidator*> markingValidator;
+    ActiveThreadData<MarkingValidator*> markingValidator;
 #endif
 
     
@@ -1184,23 +1184,23 @@ class GCRuntime
 
 
 
-    UnprotectedData<bool> interFrameGC;
+    ActiveThreadData<bool> interFrameGC;
 
     
-    UnprotectedData<int64_t> defaultTimeBudget_;
-
-    
-
-
-
-    UnprotectedData<bool> incrementalAllowed;
+    ActiveThreadData<int64_t> defaultTimeBudget_;
 
     
 
 
-    UnprotectedData<bool> compactingEnabled;
 
-    UnprotectedData<bool> poked;
+    ActiveThreadData<bool> incrementalAllowed;
+
+    
+
+
+    ActiveThreadData<bool> compactingEnabled;
+
+    ActiveThreadData<bool> poked;
 
     
 
@@ -1227,16 +1227,16 @@ class GCRuntime
 
 
 #ifdef JS_GC_ZEAL
-    UnprotectedData<uint32_t> zealModeBits;
-    UnprotectedData<int> zealFrequency;
-    UnprotectedData<int> nextScheduled;
-    UnprotectedData<bool> deterministicOnly;
-    UnprotectedData<int> incrementalLimit;
+    ActiveThreadData<uint32_t> zealModeBits;
+    ActiveThreadData<int> zealFrequency;
+    ActiveThreadData<int> nextScheduled;
+    ActiveThreadData<bool> deterministicOnly;
+    ActiveThreadData<int> incrementalLimit;
 
-    UnprotectedData<Vector<JSObject*, 0, SystemAllocPolicy>> selectedForMarking;
+    ActiveThreadData<Vector<JSObject*, 0, SystemAllocPolicy>> selectedForMarking;
 #endif
 
-    UnprotectedData<bool> fullCompartmentChecks;
+    ActiveThreadData<bool> fullCompartmentChecks;
 
     Callback<JSGCCallback> gcCallback;
     Callback<JS::DoCycleCollectionCallback> gcDoCycleCollectionCallback;
@@ -1267,10 +1267,10 @@ class GCRuntime
     Callback<JSTraceDataOp> grayRootTracer;
 
     
-    UnprotectedData<bool> alwaysPreserveCode;
+    ActiveThreadData<bool> alwaysPreserveCode;
 
 #ifdef DEBUG
-    UnprotectedData<bool> arenasEmptyAtShutdown;
+    ActiveThreadData<bool> arenasEmptyAtShutdown;
 #endif
 
     
@@ -1286,7 +1286,7 @@ class GCRuntime
 
 
 
-    UnprotectedData<SortedArenaList> incrementalSweepList;
+    ActiveThreadData<SortedArenaList> incrementalSweepList;
 
     friend class js::GCHelperState;
     friend class MarkingValidator;

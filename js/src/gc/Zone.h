@@ -341,7 +341,7 @@ struct Zone : public JS::shadow::Zone,
 
   private:
     
-    js::UnprotectedData<CompartmentVector> compartments_;
+    js::ActiveThreadOrGCTaskData<CompartmentVector> compartments_;
   public:
     CompartmentVector& compartments() { return compartments_.ref(); }
 
@@ -410,7 +410,7 @@ struct Zone : public JS::shadow::Zone,
     mozilla::Atomic<ptrdiff_t, mozilla::ReleaseAcquire> gcMallocBytes;
 
     
-    js::UnprotectedData<size_t> gcMaxMallocBytes;
+    js::ActiveThreadData<size_t> gcMaxMallocBytes;
 
     
     
@@ -582,7 +582,7 @@ struct Zone : public JS::shadow::Zone,
     js::ZoneGroupData<js::jit::JitZone*> jitZone_;
 
     js::UnprotectedData<GCState> gcState_;
-    js::UnprotectedData<bool> gcScheduled_;
+    js::ActiveThreadData<bool> gcScheduled_;
     js::ZoneGroupData<bool> gcPreserveCode_;
     js::ZoneGroupData<bool> jitUsingBarriers_;
     js::ZoneGroupData<bool> keepShapeTables_;

@@ -202,6 +202,28 @@ enum class AllowedBackgroundThread
 };
 
 template <AllowedBackgroundThread Background>
+class CheckActiveThread
+{
+  public:
+    void check() const;
+};
+
+
+
+template <typename T>
+using ActiveThreadData =
+    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedBackgroundThread::None>, T>;
+
+
+
+template <typename T>
+using ActiveThreadOrGCTaskData =
+    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedBackgroundThread::GCTask>, T>;
+template <typename T>
+using ActiveThreadOrIonCompileData =
+    ProtectedDataNoCheckArgs<CheckActiveThread<AllowedBackgroundThread::IonCompile>, T>;
+
+template <AllowedBackgroundThread Background>
 class CheckZoneGroup
 {
 #ifdef DEBUG
@@ -227,15 +249,9 @@ using ZoneGroupData =
 template <typename T>
 using ZoneGroupOrGCTaskData =
     ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedBackgroundThread::GCTask>, T>;
-
-
-
 template <typename T>
 using ZoneGroupOrIonCompileData =
     ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedBackgroundThread::IonCompile>, T>;
-
-
-
 template <typename T>
 using ZoneGroupOrGCTaskOrIonCompileData =
     ProtectedDataZoneGroupArg<CheckZoneGroup<AllowedBackgroundThread::GCTaskOrIonCompile>, T>;
