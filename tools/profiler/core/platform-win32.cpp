@@ -35,44 +35,52 @@
 
 #include "nsMemoryReporterManager.h"
 
-class PlatformData {
- public:
-  
-  
-  
-  
-  
-  explicit PlatformData(int aThreadId) : profiled_thread_(OpenThread(
-                                               THREAD_GET_CONTEXT |
-                                               THREAD_SUSPEND_RESUME |
-                                               THREAD_QUERY_INFORMATION,
-                                               false,
-                                               aThreadId)) {}
+ Thread::tid_t
+Thread::GetCurrentId()
+{
+  return GetCurrentThreadId();
+}
 
-  ~PlatformData() {
+static void
+SleepMicro(int aMicroseconds)
+{
+  aMicroseconds = std::max(0, aMicroseconds);
+  int aMilliseconds = std::max(1, aMicroseconds / 1000);
+
+  ::Sleep(aMilliseconds);
+}
+
+class PlatformData
+{
+public:
+  
+  
+  
+  
+  
+  explicit PlatformData(int aThreadId)
+    : profiled_thread_(OpenThread(THREAD_GET_CONTEXT | THREAD_SUSPEND_RESUME |
+                                  THREAD_QUERY_INFORMATION,
+                                  false,
+                                  aThreadId))
+  {
+    MOZ_COUNT_CTOR(PlatformData);
+  }
+
+  ~PlatformData()
+  {
     if (profiled_thread_ != nullptr) {
       CloseHandle(profiled_thread_);
       profiled_thread_ = nullptr;
     }
+    MOZ_COUNT_DTOR(PlatformData);
   }
 
   HANDLE profiled_thread() { return profiled_thread_; }
 
- private:
+private:
   HANDLE profiled_thread_;
 };
-
-UniquePlatformData
-AllocPlatformData(int aThreadId)
-{
-  return UniquePlatformData(new PlatformData(aThreadId));
-}
-
-void
-PlatformDataDestructor::operator()(PlatformData* aData)
-{
-  delete aData;
-}
 
 uintptr_t
 GetThreadHandle(PlatformData* aData)
@@ -85,203 +93,168 @@ static const HANDLE kNoThread = INVALID_HANDLE_VALUE;
 
 
 
-class SamplerThread
+static unsigned int __stdcall
+ThreadEntry(void* aArg)
 {
-private:
-  static unsigned int __stdcall ThreadEntry(void* aArg) {
-    auto thread = static_cast<SamplerThread*>(aArg);
-    thread->Run();
-    return 0;
-  }
+  auto thread = static_cast<SamplerThread*>(aArg);
+  thread->Run();
+  return 0;
+}
 
-public:
-  SamplerThread(PS::LockRef aLock, uint32_t aActivityGeneration,
-                double aInterval)
+SamplerThread::SamplerThread(PS::LockRef aLock, uint32_t aActivityGeneration,
+                             double aIntervalMilliseconds)
     : mActivityGeneration(aActivityGeneration)
-    , mInterval(std::max(1, int(floor(aInterval + 0.5))))
-  {
-    
-    
-    
-    if (mInterval < 10) {
-      ::timeBeginPeriod(mInterval);
-    }
+    , mIntervalMicroseconds(
+        std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-    
-    
-    
-    mThread = reinterpret_cast<HANDLE>(
-        _beginthreadex(nullptr,
-                        0,
-                       ThreadEntry,
-                       this,
-                        0,
-                       (unsigned int*) &mThreadId));
-    if (mThread == 0) {
-      MOZ_CRASH("_beginthreadex failed");
-    }
+  
+  
+  
+  if (mIntervalMicroseconds < 10*1000) {
+    ::timeBeginPeriod(mIntervalMicroseconds / 1000);
   }
 
-  ~SamplerThread() {
-    WaitForSingleObject(mThread, INFINITE);
+  
+  
+  
+  mThread = reinterpret_cast<HANDLE>(
+      _beginthreadex(nullptr,
+                      0,
+                     ThreadEntry,
+                     this,
+                      0,
+                     nullptr));
+  if (mThread == 0) {
+    MOZ_CRASH("_beginthreadex failed");
+  }
+}
 
-    
-    if (mThread != kNoThread) {
-      CloseHandle(mThread);
-    }
+SamplerThread::~SamplerThread()
+{
+  WaitForSingleObject(mThread, INFINITE);
+
+  
+  if (mThread != kNoThread) {
+    CloseHandle(mThread);
+  }
+}
+
+void
+SamplerThread::Stop(PS::LockRef aLock)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  
+  
+  
+  
+  
+  
+  
+  
+  if (mIntervalMicroseconds < 10 * 1000) {
+    ::timeEndPeriod(mIntervalMicroseconds / 1000);
+  }
+}
+
+void
+SamplerThread::SuspendAndSampleAndResumeThread(
+  PS::LockRef aLock, ThreadInfo* aThreadInfo, bool aIsFirstProfiledThread)
+{
+  uintptr_t thread = GetThreadHandle(aThreadInfo->GetPlatformData());
+  HANDLE profiled_thread = reinterpret_cast<HANDLE>(thread);
+  if (profiled_thread == nullptr)
+    return;
+
+  
+  CONTEXT context;
+  memset(&context, 0, sizeof(context));
+
+  
+  
+  
+
+  TickSample sample;
+
+  
+  sample.threadInfo = aThreadInfo;
+  sample.timestamp = mozilla::TimeStamp::Now();
+
+  
+  sample.rssMemory = (aIsFirstProfiledThread && gPS->FeatureMemory(aLock))
+                   ? nsMemoryReporterManager::ResidentFast()
+                   : 0;
+  sample.ussMemory = 0;
+
+  
+  
+
+  static const DWORD kSuspendFailed = static_cast<DWORD>(-1);
+  if (SuspendThread(profiled_thread) == kSuspendFailed) {
+    return;
   }
 
-  void Stop(PS::LockRef aLock) {
-    
-    
-    
-    
-    
-    
-    
-    
-    if (mInterval < 10) {
-      ::timeEndPeriod(mInterval);
-    }
-  }
+  
+  
+  
 
-  void Run() {
-    
-
-    while (true) {
-      
-      {
-        PS::AutoLock lock(gPSMutex);
-
-        
-        
-        if (PS::ActivityGeneration(lock) != mActivityGeneration) {
-          return;
-        }
-
-        gPS->Buffer(lock)->deleteExpiredStoredMarkers();
-
-        if (!gPS->IsPaused(lock)) {
-          bool isFirstProfiledThread = true;
-
-          const PS::ThreadVector& threads = gPS->Threads(lock);
-          for (uint32_t i = 0; i < threads.size(); i++) {
-            ThreadInfo* info = threads[i];
-
-            if (!info->HasProfile() || info->IsPendingDelete()) {
-              
-              continue;
-            }
-
-            if (info->Stack()->CanDuplicateLastSampleDueToSleep() &&
-                gPS->Buffer(lock)->DuplicateLastSample(gPS->StartTime(lock),
-                                                       info->LastSample())) {
-              continue;
-            }
-
-            info->UpdateThreadResponsiveness();
-
-            SampleContext(lock, info, isFirstProfiledThread);
-
-            isFirstProfiledThread = false;
-          }
-        }
-        
-      }
-
-      ::Sleep(mInterval);
-    }
-  }
-
-  void SampleContext(PS::LockRef aLock, ThreadInfo* aThreadInfo,
-                     bool isFirstProfiledThread)
-  {
-    uintptr_t thread = GetThreadHandle(aThreadInfo->GetPlatformData());
-    HANDLE profiled_thread = reinterpret_cast<HANDLE>(thread);
-    if (profiled_thread == nullptr)
-      return;
-
-    
-    CONTEXT context;
-    memset(&context, 0, sizeof(context));
-
-    TickSample sample;
-
-    
-    sample.timestamp = mozilla::TimeStamp::Now();
-    sample.threadInfo = aThreadInfo;
-
-    
-    sample.rssMemory = (isFirstProfiledThread && gPS->FeatureMemory(aLock))
-                     ? nsMemoryReporterManager::ResidentFast()
-                     : 0;
-    sample.ussMemory = 0;
-
-    static const DWORD kSuspendFailed = static_cast<DWORD>(-1);
-    if (SuspendThread(profiled_thread) == kSuspendFailed) {
-      return;
-    }
-
-    
-    
-    
-
-    
-    
+  
+  
 #if defined(GP_ARCH_amd64)
-    context.ContextFlags = CONTEXT_FULL;
+  context.ContextFlags = CONTEXT_FULL;
 #else
-    context.ContextFlags = CONTEXT_CONTROL;
+  context.ContextFlags = CONTEXT_CONTROL;
 #endif
-    if (!GetThreadContext(profiled_thread, &context)) {
-      ResumeThread(profiled_thread);
-      return;
-    }
-
-#if defined(GP_ARCH_amd64)
-    sample.pc = reinterpret_cast<Address>(context.Rip);
-    sample.sp = reinterpret_cast<Address>(context.Rsp);
-    sample.fp = reinterpret_cast<Address>(context.Rbp);
-#else
-    sample.pc = reinterpret_cast<Address>(context.Eip);
-    sample.sp = reinterpret_cast<Address>(context.Esp);
-    sample.fp = reinterpret_cast<Address>(context.Ebp);
-#endif
-
-    sample.context = &context;
-
-    Tick(aLock, gPS->Buffer(aLock), &sample);
-
+  if (!GetThreadContext(profiled_thread, &context)) {
     ResumeThread(profiled_thread);
+    return;
   }
 
-private:
   
-  const uint32_t mActivityGeneration;
+  
 
   
-  HANDLE mThread;
-  Thread::tid_t mThreadId;
+  
+  
+  
+  
+
+#if defined(GP_ARCH_amd64)
+  sample.pc = reinterpret_cast<Address>(context.Rip);
+  sample.sp = reinterpret_cast<Address>(context.Rsp);
+  sample.fp = reinterpret_cast<Address>(context.Rbp);
+#else
+  sample.pc = reinterpret_cast<Address>(context.Eip);
+  sample.sp = reinterpret_cast<Address>(context.Esp);
+  sample.fp = reinterpret_cast<Address>(context.Ebp);
+#endif
+
+  sample.context = &context;
+
+  Tick(aLock, gPS->Buffer(aLock), &sample);
 
   
-  const int mInterval;
+  
 
-  SamplerThread(const SamplerThread&) = delete;
-  void operator=(const SamplerThread&) = delete;
-};
+  ResumeThread(profiled_thread);
+
+  
+  
+  
+}
+
+
+
 
 static void
 PlatformInit(PS::LockRef aLock)
 {
 }
 
- Thread::tid_t
-Thread::GetCurrentId()
-{
-  return GetCurrentThreadId();
-}
-
-void TickSample::PopulateContext(void* aContext)
+void
+TickSample::PopulateContext(void* aContext)
 {
   MOZ_ASSERT(aContext);
   CONTEXT* pContext = reinterpret_cast<CONTEXT*>(aContext);

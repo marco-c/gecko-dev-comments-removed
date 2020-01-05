@@ -34,222 +34,7 @@
 
 #include "nsMemoryReporterManager.h"
 
-using mozilla::TimeStamp;
-using mozilla::TimeDuration;
 
-
-
-class PlatformData {
- public:
-  PlatformData() : profiled_thread_(mach_thread_self())
-  {
-  }
-
-  ~PlatformData() {
-    
-    mach_port_deallocate(mach_task_self(), profiled_thread_);
-  }
-
-  thread_act_t profiled_thread() { return profiled_thread_; }
-
- private:
-  
-  
-  
-  thread_act_t profiled_thread_;
-};
-
-UniquePlatformData
-AllocPlatformData(int aThreadId)
-{
-  return UniquePlatformData(new PlatformData);
-}
-
-void
-PlatformDataDestructor::operator()(PlatformData* aData)
-{
-  delete aData;
-}
-
-
-
-
-class SamplerThread
-{
-private:
-  static void SetThreadName() {
-    
-    
-    int (*dynamic_pthread_setname_np)(const char*);
-    *reinterpret_cast<void**>(&dynamic_pthread_setname_np) =
-      dlsym(RTLD_DEFAULT, "pthread_setname_np");
-    if (!dynamic_pthread_setname_np)
-      return;
-
-    dynamic_pthread_setname_np("SamplerThread");
-  }
-
-  static void* ThreadEntry(void* aArg) {
-    auto thread = static_cast<SamplerThread*>(aArg);
-    SetThreadName();
-    thread->Run();
-    return nullptr;
-  }
-
-public:
-  SamplerThread(PS::LockRef aLock, uint32_t aActivityGeneration,
-                double aInterval)
-    : mActivityGeneration(aActivityGeneration)
-    , mIntervalMicro(std::max(1, int(floor(aInterval * 1000 + 0.5))))
-  {
-    pthread_attr_t* attr_ptr = nullptr;
-    if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
-      MOZ_CRASH("pthread_create failed");
-    }
-  }
-
-  ~SamplerThread() {
-    pthread_join(mThread, nullptr);
-  }
-
-  void Stop(PS::LockRef aLock) {}
-
-  void Run() {
-    
-
-    TimeDuration lastSleepOverhead = 0;
-    TimeStamp sampleStart = TimeStamp::Now();
-
-    while (true) {
-      
-      {
-        PS::AutoLock lock(gPSMutex);
-
-        
-        
-        if (PS::ActivityGeneration(lock) != mActivityGeneration) {
-          return;
-        }
-
-        gPS->Buffer(lock)->deleteExpiredStoredMarkers();
-
-        if (!gPS->IsPaused(lock)) {
-          bool isFirstProfiledThread = true;
-
-          const PS::ThreadVector& threads = gPS->Threads(lock);
-          for (uint32_t i = 0; i < threads.size(); i++) {
-            ThreadInfo* info = threads[i];
-
-            if (!info->HasProfile() || info->IsPendingDelete()) {
-              
-              continue;
-            }
-
-            if (info->Stack()->CanDuplicateLastSampleDueToSleep() &&
-                gPS->Buffer(lock)->DuplicateLastSample(gPS->StartTime(lock),
-                                                       info->LastSample())) {
-              continue;
-            }
-
-            info->UpdateThreadResponsiveness();
-
-            SampleContext(lock, info, isFirstProfiledThread);
-
-            isFirstProfiledThread = false;
-          }
-        }
-        
-      }
-
-      TimeStamp targetSleepEndTime = sampleStart + TimeDuration::FromMicroseconds(mIntervalMicro);
-      TimeStamp beforeSleep = TimeStamp::Now();
-      TimeDuration targetSleepDuration = targetSleepEndTime - beforeSleep;
-      double sleepTime = std::max(0.0, (targetSleepDuration - lastSleepOverhead).ToMicroseconds());
-      usleep(sleepTime);
-      sampleStart = TimeStamp::Now();
-      lastSleepOverhead = sampleStart - (beforeSleep + TimeDuration::FromMicroseconds(sleepTime));
-    }
-  }
-
-  void SampleContext(PS::LockRef aLock, ThreadInfo* aThreadInfo,
-                     bool isFirstProfiledThread)
-  {
-    thread_act_t profiled_thread =
-      aThreadInfo->GetPlatformData()->profiled_thread();
-
-    TickSample sample;
-
-    
-    sample.rssMemory = (isFirstProfiledThread && gPS->FeatureMemory(aLock))
-                     ? nsMemoryReporterManager::ResidentFast()
-                     : 0;
-    sample.ussMemory = 0;
-
-    
-    
-    
-
-    if (KERN_SUCCESS != thread_suspend(profiled_thread)) {
-      return;
-    }
-
-#if defined(GP_ARCH_amd64)
-    thread_state_flavor_t flavor = x86_THREAD_STATE64;
-    x86_thread_state64_t state;
-    mach_msg_type_number_t count = x86_THREAD_STATE64_COUNT;
-#if __DARWIN_UNIX03
-#define REGISTER_FIELD(name) __r ## name
-#else
-#define REGISTER_FIELD(name) r ## name
-#endif  
-#elif defined(GP_ARCH_x86)
-    thread_state_flavor_t flavor = i386_THREAD_STATE;
-    i386_thread_state_t state;
-    mach_msg_type_number_t count = i386_THREAD_STATE_COUNT;
-#if __DARWIN_UNIX03
-#define REGISTER_FIELD(name) __e ## name
-#else
-#define REGISTER_FIELD(name) e ## name
-#endif  
-#else
-#error Unsupported Mac OS X host architecture.
-#endif  
-
-    if (thread_get_state(profiled_thread,
-                         flavor,
-                         reinterpret_cast<natural_t*>(&state),
-                         &count) == KERN_SUCCESS) {
-      sample.pc = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
-      sample.sp = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
-      sample.fp = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
-      sample.timestamp = mozilla::TimeStamp::Now();
-      sample.threadInfo = aThreadInfo;
-
-#undef REGISTER_FIELD
-
-      Tick(aLock, gPS->Buffer(aLock), &sample);
-    }
-    thread_resume(profiled_thread);
-  }
-
-private:
-  
-  const uint32_t mActivityGeneration;
-
-  
-  pthread_t mThread;
-
-  
-  const int mIntervalMicro;
-
-  SamplerThread(const SamplerThread&) = delete;
-  void operator=(const SamplerThread&) = delete;
-};
-
-static void
-PlatformInit(PS::LockRef aLock)
-{
-}
 
  Thread::tid_t
 Thread::GetCurrentId()
@@ -257,8 +42,194 @@ Thread::GetCurrentId()
   return gettid();
 }
 
-void TickSample::PopulateContext(void* aContext)
+static void
+SleepMicro(int aMicroseconds)
 {
+  aMicroseconds = std::max(0, aMicroseconds);
+
+  usleep(aMicroseconds);
+  
+  
+  
+  
+}
+
+class PlatformData
+{
+public:
+  explicit PlatformData(int aThreadId) : profiled_thread_(mach_thread_self())
+  {
+    MOZ_COUNT_CTOR(PlatformData);
+  }
+
+  ~PlatformData() {
+    
+    mach_port_deallocate(mach_task_self(), profiled_thread_);
+
+    MOZ_COUNT_DTOR(PlatformData);
+  }
+
+  thread_act_t profiled_thread() { return profiled_thread_; }
+
+private:
+  
+  
+  
+  thread_act_t profiled_thread_;
+};
+
+
+
+
+static void
+SetThreadName()
+{
+  
+  
+  int (*dynamic_pthread_setname_np)(const char*);
+  *reinterpret_cast<void**>(&dynamic_pthread_setname_np) =
+    dlsym(RTLD_DEFAULT, "pthread_setname_np");
+  if (!dynamic_pthread_setname_np)
+    return;
+
+  dynamic_pthread_setname_np("SamplerThread");
+}
+
+static void*
+ThreadEntry(void* aArg)
+{
+  auto thread = static_cast<SamplerThread*>(aArg);
+  SetThreadName();
+  thread->Run();
+  return nullptr;
+}
+
+SamplerThread::SamplerThread(PS::LockRef aLock, uint32_t aActivityGeneration,
+                             double aIntervalMilliseconds)
+  : mActivityGeneration(aActivityGeneration)
+  , mIntervalMicroseconds(
+      std::max(1, int(floor(aIntervalMilliseconds * 1000 + 0.5))))
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+
+  pthread_attr_t* attr_ptr = nullptr;
+  if (pthread_create(&mThread, attr_ptr, ThreadEntry, this) != 0) {
+    MOZ_CRASH("pthread_create failed");
+  }
+}
+
+SamplerThread::~SamplerThread()
+{
+  pthread_join(mThread, nullptr);
+}
+
+void
+SamplerThread::Stop(PS::LockRef aLock)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+}
+
+void
+SamplerThread::SuspendAndSampleAndResumeThread(
+  PS::LockRef aLock, ThreadInfo* aThreadInfo, bool aIsFirstProfiledThread)
+{
+  thread_act_t samplee_thread =
+    aThreadInfo->GetPlatformData()->profiled_thread();
+
+  
+  
+  
+
+  TickSample sample;
+  sample.threadInfo = aThreadInfo;
+  sample.timestamp = mozilla::TimeStamp::Now();
+
+  
+  sample.rssMemory = (aIsFirstProfiledThread && gPS->FeatureMemory(aLock))
+                   ? nsMemoryReporterManager::ResidentFast()
+                   : 0;
+  sample.ussMemory = 0;
+
+  
+  
+
+  
+  
+  
+  
+
+  if (KERN_SUCCESS != thread_suspend(samplee_thread)) {
+    return;
+  }
+
+  
+  
+
+  
+  
+  
+  
+  
+
+#if defined(GP_ARCH_amd64)
+  thread_state_flavor_t flavor = x86_THREAD_STATE64;
+  x86_thread_state64_t state;
+  mach_msg_type_number_t count = x86_THREAD_STATE64_COUNT;
+# if __DARWIN_UNIX03
+#  define REGISTER_FIELD(name) __r ## name
+# else
+#  define REGISTER_FIELD(name) r ## name
+# endif  
+
+#elif defined(GP_ARCH_x86)
+  thread_state_flavor_t flavor = i386_THREAD_STATE;
+  i386_thread_state_t state;
+  mach_msg_type_number_t count = i386_THREAD_STATE_COUNT;
+# if __DARWIN_UNIX03
+#  define REGISTER_FIELD(name) __e ## name
+# else
+#  define REGISTER_FIELD(name) e ## name
+# endif  
+
+#else
+# error Unsupported Mac OS X host architecture.
+#endif  
+
+  if (thread_get_state(samplee_thread,
+                       flavor,
+                       reinterpret_cast<natural_t*>(&state),
+                       &count) == KERN_SUCCESS) {
+    sample.pc = reinterpret_cast<Address>(state.REGISTER_FIELD(ip));
+    sample.sp = reinterpret_cast<Address>(state.REGISTER_FIELD(sp));
+    sample.fp = reinterpret_cast<Address>(state.REGISTER_FIELD(bp));
+
+    Tick(aLock, gPS->Buffer(aLock), &sample);
+  }
+
+#undef REGISTER_FIELD
+
+  
+  
+
+  thread_resume(samplee_thread);
+
+  
+  
+  
+}
+
+
+
+
+static void
+PlatformInit(PS::LockRef aLock)
+{
+}
+
+void
+TickSample::PopulateContext(void* aContext)
+{
+  MOZ_ASSERT(!aContext);
   
 #if defined(GP_ARCH_amd64)
   asm (
