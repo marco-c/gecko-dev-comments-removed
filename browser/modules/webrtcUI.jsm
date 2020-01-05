@@ -373,6 +373,11 @@ function prompt(aBrowser, aRequest) {
     return;
   }
 
+  
+  
+  aBrowser.dispatchEvent(new aBrowser.ownerGlobal
+                                     .CustomEvent("PermissionStateChange"));
+
   let uri = Services.io.newURI(aRequest.documentURI);
   let host = getHost(uri);
   let chromeDoc = aBrowser.ownerDocument;

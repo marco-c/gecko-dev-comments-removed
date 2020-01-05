@@ -129,6 +129,13 @@ const TemporaryBlockedPermissions = {
   },
 };
 
+
+
+
+
+
+
+
 this.SitePermissions = {
   
   UNKNOWN: Services.perms.UNKNOWN_ACTION,
@@ -309,6 +316,9 @@ this.SitePermissions = {
 
 
 
+
+
+
   get(uri, permissionID, browser) {
     let result = { state: this.UNKNOWN, scope: this.SCOPE_PERSISTENT };
     if (this.isSupportedURI(uri)) {
@@ -343,6 +353,8 @@ this.SitePermissions = {
   },
 
   
+
+
 
 
 
@@ -401,6 +413,8 @@ this.SitePermissions = {
   },
 
   
+
+
 
 
 
