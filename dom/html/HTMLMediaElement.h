@@ -1273,6 +1273,9 @@ protected:
   bool IsAllowedToPlay();
 
   
+  void MaybeDoLoad();
+
+  
   
   bool IsTabActivated() const;
 
