@@ -577,7 +577,7 @@ CustomElementRegistry::Define(const nsAString& aName,
   }
 
   JSContext *cx = jsapi.cx();
-  JS::Rooted<JSObject*> constructor(cx, aFunctionConstructor.CallableOrNull());
+  JS::Rooted<JSObject*> constructor(cx, aFunctionConstructor.Callable());
 
   
 
@@ -772,13 +772,6 @@ CustomElementRegistry::Define(const nsAString& aName,
   
   nsCOMPtr<nsIAtom> localNameAtom(NS_Atomize(localName));
   LifecycleCallbacks* callbacks = callbacksHolder.forget();
-  CustomElementDefinition* definition =
-    new CustomElementDefinition(nameAtom,
-                                localNameAtom,
-                                constructor,
-                                constructorPrototype,
-                                callbacks,
-                                0 );
 
   
 
@@ -787,6 +780,14 @@ CustomElementRegistry::Define(const nsAString& aName,
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
+
+  CustomElementDefinition* definition =
+    new CustomElementDefinition(nameAtom,
+                                localNameAtom,
+                                constructor,
+                                constructorPrototype,
+                                callbacks,
+                                0 );
 
   mCustomDefinitions.Put(nameAtom, definition);
 
