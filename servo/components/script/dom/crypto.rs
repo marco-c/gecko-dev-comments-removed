@@ -15,7 +15,7 @@ use js::jsapi::{JSContext, JSObject};
 use js::jsapi::{JS_GetArrayBufferViewType, Type};
 use rand::{OsRng, Rng};
 
-no_jsmanaged_fields!(OsRng);
+unsafe_no_jsmanaged_fields!(OsRng);
 
 
 #[dom_struct]
