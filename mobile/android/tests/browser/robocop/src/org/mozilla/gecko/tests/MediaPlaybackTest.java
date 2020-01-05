@@ -26,7 +26,6 @@ import com.robotium.solo.Condition;
 abstract class MediaPlaybackTest extends BaseTest {
     private Context mContext;
     private int mPrevIcon = 0;
-    private boolean mPrevTabAudioPlaying = false;
 
     protected final void info(String msg) {
         mAsserter.dumpLog(msg);
@@ -74,19 +73,64 @@ abstract class MediaPlaybackTest extends BaseTest {
     
 
 
+    protected final void waitUntilTabMediaStarted(final Tab tab) {
+        if (tab.isMediaPlaying()) {
+            return;
+        }
+        
+        
+        
+        Actions.EventExpecter contentEventExpecter =
+                mActions.expectGlobalEvent(Actions.EventType.UI, "Tab:MediaPlaybackChange");
+        contentEventExpecter.blockForEvent();
+        contentEventExpecter.unregisterListener();
+    }
 
-    protected final void waitUntilTabAudioPlayingStateChanged() {
+    private final void waitUntilTabAudioPlayingStateChanged(final Tab tab,
+                                                            final boolean isTabPlaying) {
+        if (tab.isAudioPlaying() == isTabPlaying) {
+            return;
+        }
         waitForCondition(new Condition() {
             @Override
             public boolean isSatisfied() {
-                Tab tab = Tabs.getInstance().getSelectedTab();
-                if (tab.isAudioPlaying() != mPrevTabAudioPlaying) {
-                    mPrevTabAudioPlaying = tab.isAudioPlaying();
-                    return true;
-                }
-                return false;
+                return tab.isAudioPlaying() == isTabPlaying;
             }
         }, MAX_WAIT_MS);
+    }
+
+    private final void waitUntilTabMediaPlaybackChanged(final Tab tab,
+                                                        final boolean isTabPlaying) {
+        if (tab.isMediaPlaying() == isTabPlaying) {
+            return;
+        }
+        waitForCondition(new Condition() {
+            @Override
+            public boolean isSatisfied() {
+                return tab.isMediaPlaying() == isTabPlaying;
+            }
+        }, MAX_WAIT_MS);
+    }
+
+    
+
+
+
+
+    protected final void checkTabMediaPlayingState(final Tab tab,
+                                                   final boolean isTabPlaying) {
+        waitUntilTabMediaPlaybackChanged(tab, isTabPlaying);
+        mAsserter.ok(isTabPlaying == tab.isMediaPlaying(),
+                     "Checking the media playing state of tab, isTabPlaying = " + isTabPlaying,
+                     "Tab's media playing state is correct.");
+    }
+
+    protected final void checkTabAudioPlayingState(final Tab tab,
+                                                   final boolean isTabPlaying) {
+        waitUntilTabAudioPlayingStateChanged(tab, isTabPlaying);
+        mAsserter.ok(isTabPlaying == tab.isAudioPlaying(),
+                     "Checking the audio playing state of tab, isTabPlaying = " + isTabPlaying,
+                     "Tab's audio playing state is correct.");
     }
 
     
@@ -103,28 +147,29 @@ abstract class MediaPlaybackTest extends BaseTest {
 
 
 
+
     protected final void checkIfMediaPlayingSuccess(boolean isTabPlaying) {
         checkIfMediaPlayingSuccess(isTabPlaying, false);
     }
 
     protected final void checkIfMediaPlayingSuccess(boolean isTabPlaying,
                                                     boolean clearNotification) {
+        final Tab tab = Tabs.getInstance().getSelectedTab();
+        checkTabMediaPlayingState(tab, isTabPlaying);
+        checkMediaNotificationStatesAfterChanged(tab, isTabPlaying, clearNotification);
+
+        checkTabAudioPlayingState(tab, isTabPlaying);
         checkAudioFocusStateAfterChanged(isTabPlaying);
-        checkMediaNotificationStatesAfterChanged(isTabPlaying, clearNotification);
     }
 
     
 
 
 
-    protected final void checkMediaNotificationStatesAfterChanged(boolean isTabPlaying,
-                                                                  boolean clearNotification) {
+    protected final void checkMediaNotificationStatesAfterChanged(final Tab tab,
+                                                                  final boolean isTabPlaying,
+                                                                  final boolean clearNotification) {
         waitUntilNotificationUIChanged();
-
-        final Tab tab = Tabs.getInstance().getSelectedTab();
-        mAsserter.ok(isTabPlaying == tab.isMediaPlaying(),
-                     "Checking the media playing state of tab, isTabPlaying = " + isTabPlaying,
-                     "Tab's media playing state is correct.");
 
         if (clearNotification) {
             checkIfMediaNotificationBeCleared();
@@ -181,13 +226,6 @@ abstract class MediaPlaybackTest extends BaseTest {
 
 
     protected final void checkAudioFocusStateAfterChanged(boolean isTabPlaying) {
-        waitUntilTabAudioPlayingStateChanged();
-
-        final Tab tab = Tabs.getInstance().getSelectedTab();
-        mAsserter.ok(isTabPlaying == tab.isAudioPlaying(),
-                     "Checking the audio playing state of tab, isTabPlaying = " + isTabPlaying,
-                     "Tab's audio playing state is correct.");
-
         if (isTabPlaying) {
             mAsserter.is(AudioFocusAgent.getInstance().getAudioFocusState(),
                          State.OWN_FOCUS,
