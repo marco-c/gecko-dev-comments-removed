@@ -7459,7 +7459,13 @@ var gIdentityHandler = {
     }
 
     
-    if (gURLBar.getAttribute("pageproxystate") != "valid") {
+    
+    
+    
+    
+    
+    if (!this._sharingState &&
+        gURLBar.getAttribute("pageproxystate") != "valid") {
       return;
     }
 
