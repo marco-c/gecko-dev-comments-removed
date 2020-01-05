@@ -11,52 +11,41 @@ Components.utils.import("resource://gre/modules/Services.jsm");
 
 var URLBarZoom = {
 
-  init(aWindow) {
+  init: function(aWindow) {
     
-    Services.obs.addObserver(this, "browser-fullZoom:zoomChange", false);
-    Services.obs.addObserver(this, "browser-fullZoom:zoomReset", false);
-    Services.obs.addObserver(this, "browser-fullZoom:location-change", false);
+    Services.obs.addObserver(updateZoomButton, "browser-fullZoom:zoomChange", false);
+    Services.obs.addObserver(updateZoomButton, "browser-fullZoom:zoomReset", false);
+    Services.obs.addObserver(updateZoomButton, "browser-fullZoom:location-change", false);
   },
+}
 
-  observe(aSubject, aTopic) {
-    this.updateZoomButton(aSubject, aTopic);
-  },
+function updateZoomButton(aSubject, aTopic) {
+  let win = aSubject.ownerDocument.defaultView;
+  let customizableZoomControls = win.document.getElementById("zoom-controls");
+  let zoomResetButton = win.document.getElementById("urlbar-zoom-button");
+  let zoomFactor = Math.round(win.ZoomManager.zoom * 100);
 
-  updateZoomButton(aSubject, aTopic) {
+  
+  if (customizableZoomControls &&
+      customizableZoomControls.getAttribute("cui-areatype") == "toolbar") {
+    zoomResetButton.hidden = true;
+    return;
+  }
+  if (zoomFactor != 100) {
     
-    
-    
-    if (!aSubject.ownerGlobal) {
-      return;
+    if (zoomResetButton.hidden) {
+      zoomResetButton.hidden = false;
     }
-
-    let win = aSubject.ownerGlobal;
-    let customizableZoomControls = win.document.getElementById("zoom-controls");
-    let zoomResetButton = win.document.getElementById("urlbar-zoom-button");
-    let zoomFactor = Math.round(win.ZoomManager.zoom * 100);
-
     
-    if (customizableZoomControls &&
-        customizableZoomControls.getAttribute("cui-areatype") == "toolbar") {
-      zoomResetButton.hidden = true;
-      return;
-    }
-    if (zoomFactor != 100) {
-      
-      if (zoomResetButton.hidden) {
-        zoomResetButton.hidden = false;
-      }
-      
-      if (aTopic != "browser-fullZoom:location-change") {
-        zoomResetButton.setAttribute("animate", "true");
-      } else {
-        zoomResetButton.removeAttribute("animate");
-      }
-      zoomResetButton.setAttribute("label",
-        win.gNavigatorBundle.getFormattedString("urlbar-zoom-button.label", [zoomFactor]));
+    if (aTopic != "browser-fullZoom:location-change") {
+      zoomResetButton.setAttribute("animate", "true");
     } else {
-      
-      zoomResetButton.hidden = true;
+      zoomResetButton.removeAttribute("animate");
     }
-  },
-};
+    zoomResetButton.setAttribute("label",
+        win.gNavigatorBundle.getFormattedString("urlbar-zoom-button.label", [zoomFactor]));
+  
+  } else {
+      zoomResetButton.hidden = true;
+  }
+}
