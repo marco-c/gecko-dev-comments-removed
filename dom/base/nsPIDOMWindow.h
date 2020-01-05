@@ -45,7 +45,7 @@ class AudioContext;
 class Element;
 class Performance;
 class ServiceWorkerRegistration;
-class CustomElementsRegistry;
+class CustomElementRegistry;
 } 
 } 
 
@@ -95,7 +95,7 @@ public:
   const nsPIDOMWindowOuter* AsOuter() const;
 
   virtual nsPIDOMWindowOuter* GetPrivateRoot() = 0;
-  virtual mozilla::dom::CustomElementsRegistry* CustomElements() = 0;
+  virtual mozilla::dom::CustomElementRegistry* CustomElements() = 0;
   
   virtual void ActivateOrDeactivate(bool aActivate) = 0;
 

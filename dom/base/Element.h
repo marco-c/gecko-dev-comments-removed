@@ -136,7 +136,7 @@ class EventStateManager;
 namespace dom {
 
 class Animation;
-class CustomElementsRegistry;
+class CustomElementRegistry;
 class Link;
 class UndoManager;
 class DOMRect;
@@ -427,7 +427,7 @@ private:
   friend class ::nsFocusManager;
 
   
-  friend class CustomElementsRegistry;
+  friend class CustomElementRegistry;
 
   
   friend class Link;
