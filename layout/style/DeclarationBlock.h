@@ -63,6 +63,11 @@ public:
 
   void SetImmutable() const { mImmutable = true; }
 
+  
+
+
+  inline already_AddRefed<DeclarationBlock> EnsureMutable();
+
   void SetOwningRule(css::Rule* aRule) {
     MOZ_ASSERT(!mContainer.mOwningRule || !aRule,
                "should never overwrite one rule with another");

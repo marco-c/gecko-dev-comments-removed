@@ -279,7 +279,7 @@ nsDOMCSSDeclaration::ParsePropertyValue(const nsCSSPropertyID aPropID,
                                         const nsAString& aPropValue,
                                         bool aIsImportant)
 {
-  css::Declaration* olddecl = GetCSSDeclaration(eOperation_Modify)->AsGecko();
+  DeclarationBlock* olddecl = GetCSSDeclaration(eOperation_Modify);
   if (!olddecl) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -296,12 +296,13 @@ nsDOMCSSDeclaration::ParsePropertyValue(const nsCSSPropertyID aPropID,
   
   
   mozAutoDocConditionalContentUpdateBatch autoUpdate(DocToUpdate(), true);
-  RefPtr<css::Declaration> decl = olddecl->EnsureMutable();
+  RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
 
   nsCSSParser cssParser(env.mCSSLoader);
   bool changed;
-  cssParser.ParseProperty(aPropID, aPropValue, env.mSheetURI, env.mBaseURI,
-                          env.mPrincipal, decl, &changed, aIsImportant);
+  cssParser.ParseProperty(aPropID, aPropValue,
+                          env.mSheetURI, env.mBaseURI, env.mPrincipal,
+                          decl->AsGecko(), &changed, aIsImportant);
   if (!changed) {
     
     return NS_OK;
@@ -317,7 +318,7 @@ nsDOMCSSDeclaration::ParseCustomPropertyValue(const nsAString& aPropertyName,
 {
   MOZ_ASSERT(nsCSSProps::IsCustomPropertyName(aPropertyName));
 
-  css::Declaration* olddecl = GetCSSDeclaration(eOperation_Modify)->AsGecko();
+  DeclarationBlock* olddecl = GetCSSDeclaration(eOperation_Modify);
   if (!olddecl) {
     return NS_ERROR_NOT_AVAILABLE;
   }
@@ -334,14 +335,14 @@ nsDOMCSSDeclaration::ParseCustomPropertyValue(const nsAString& aPropertyName,
   
   
   mozAutoDocConditionalContentUpdateBatch autoUpdate(DocToUpdate(), true);
-  RefPtr<css::Declaration> decl = olddecl->EnsureMutable();
+  RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
 
   nsCSSParser cssParser(env.mCSSLoader);
   bool changed;
   cssParser.ParseVariable(Substring(aPropertyName,
                                     CSS_CUSTOM_NAME_PREFIX_LENGTH),
                           aPropValue, env.mSheetURI,
-                          env.mBaseURI, env.mPrincipal, decl,
+                          env.mBaseURI, env.mPrincipal, decl->AsGecko(),
                           &changed, aIsImportant);
   if (!changed) {
     
@@ -354,8 +355,7 @@ nsDOMCSSDeclaration::ParseCustomPropertyValue(const nsAString& aPropertyName,
 nsresult
 nsDOMCSSDeclaration::RemovePropertyInternal(nsCSSPropertyID aPropID)
 {
-  css::Declaration* olddecl =
-    GetCSSDeclaration(eOperation_RemoveProperty)->AsGecko();
+  DeclarationBlock* olddecl = GetCSSDeclaration(eOperation_RemoveProperty);
   if (!olddecl) {
     return NS_OK; 
   }
@@ -367,16 +367,15 @@ nsDOMCSSDeclaration::RemovePropertyInternal(nsCSSPropertyID aPropID)
   
   mozAutoDocConditionalContentUpdateBatch autoUpdate(DocToUpdate(), true);
 
-  RefPtr<css::Declaration> decl = olddecl->EnsureMutable();
-  decl->RemovePropertyByID(aPropID);
+  RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
+  decl->AsGecko()->RemovePropertyByID(aPropID);
   return SetCSSDeclaration(decl);
 }
 
 nsresult
 nsDOMCSSDeclaration::RemovePropertyInternal(const nsAString& aPropertyName)
 {
-  css::Declaration* olddecl =
-    GetCSSDeclaration(eOperation_RemoveProperty)->AsGecko();
+  DeclarationBlock* olddecl = GetCSSDeclaration(eOperation_RemoveProperty);
   if (!olddecl) {
     return NS_OK; 
   }
@@ -388,7 +387,7 @@ nsDOMCSSDeclaration::RemovePropertyInternal(const nsAString& aPropertyName)
   
   mozAutoDocConditionalContentUpdateBatch autoUpdate(DocToUpdate(), true);
 
-  RefPtr<css::Declaration> decl = olddecl->EnsureMutable();
-  decl->RemoveProperty(aPropertyName);
+  RefPtr<DeclarationBlock> decl = olddecl->EnsureMutable();
+  decl->AsGecko()->RemoveProperty(aPropertyName);
   return SetCSSDeclaration(decl);
 }
