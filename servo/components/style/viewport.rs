@@ -633,6 +633,7 @@ impl MaybeNew for ViewportConstraints {
             viewport_size: initial_viewport,
             inherited_style: ComputedValues::initial_values(),
             style: ComputedValues::initial_values().clone(),
+            font_metrics_provider: None, 
         };
 
         
