@@ -437,8 +437,8 @@ _PR_MD_TCPSENDTO(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
                            addrlen, buf, amount,
                            &rvSent, &fd->secret->ol) == TRUE) {
         
-        
-        
+
+
         rv = setsockopt((SOCKET)osfd, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0);
         if (rv != 0) {
             err = WSAGetLastError();
@@ -448,9 +448,9 @@ _PR_MD_TCPSENDTO(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
             return -1;
         }
         
-        
-        
-        
+
+
+
         fd->secret->alreadyConnected = PR_TRUE;
         return rvSent;
     } else {
@@ -462,12 +462,12 @@ _PR_MD_TCPSENDTO(PRFileDesc *fd, const void *buf, PRInt32 amount, PRIntn flags,
             return -1;
         } else if (fd->secret->nonblocking) {
             
-            
+
             fd->secret->overlappedActive = PR_TRUE;
             _PR_MD_MAP_CONNECT_ERROR(WSAEWOULDBLOCK);
             
-            
-            
+
+
             return amount;
         }
         while (err == ERROR_IO_PENDING) {

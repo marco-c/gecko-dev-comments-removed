@@ -316,8 +316,8 @@ static PRStatus PR_CALLBACK SocketConnectContinue(
         fd->secret->alreadyConnected = PR_FALSE;
     }
     
-    
-    
+
+
     if (fd->secret->overlappedActive) {
         PR_ASSERT(fd->secret->nonblocking);
         PRInt32 rvSent;
@@ -326,8 +326,8 @@ static PRStatus PR_CALLBACK SocketConnectContinue(
             PR_LOG(_pr_io_lm, PR_LOG_MIN,
                ("SocketConnectContinue GetOverlappedResult succeeded\n"));
             
-            
-            
+
+
             if (setsockopt((SOCKET)osfd, SOL_SOCKET, SO_UPDATE_CONNECT_CONTEXT, NULL, 0) != 0) {
                 err = WSAGetLastError();
                 PR_LOG(_pr_io_lm, PR_LOG_MIN,
