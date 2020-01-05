@@ -1520,7 +1520,7 @@ SetObjectElementOperation(JSContext* cx, HandleObject obj, HandleId id, HandleVa
         if ((uint32_t)i >= length) {
             
             if (script && script->hasBaselineScript() && IsSetElemPC(pc))
-                script->baselineScript()->noteArrayWriteHole(script->pcToOffset(pc));
+                script->baselineScript()->noteHasDenseAdd(script->pcToOffset(pc));
         }
     }
 

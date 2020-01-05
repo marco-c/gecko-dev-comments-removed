@@ -30,7 +30,7 @@ SetElemICInspector::sawOOBDenseWrite() const
     
     ICStub* stub = icEntry_->fallbackStub();
     if (stub->isSetElem_Fallback())
-        return stub->toSetElem_Fallback()->hasArrayWriteHole();
+        return stub->toSetElem_Fallback()->hasDenseAdd();
 
     return false;
 }
@@ -41,27 +41,10 @@ SetElemICInspector::sawOOBTypedArrayWrite() const
     if (!icEntry_)
         return false;
 
-    
-    for (ICStub* stub = icEntry_->firstStub(); stub; stub = stub->next()) {
-        if (!stub->isSetElem_TypedArray())
-            continue;
-        if (stub->toSetElem_TypedArray()->expectOutOfBounds())
-            return true;
-    }
-    return false;
-}
+    ICStub* stub = icEntry_->fallbackStub();
+    if (stub->isSetElem_Fallback())
+        return stub->toSetElem_Fallback()->hasTypedArrayOOB();
 
-bool
-SetElemICInspector::sawTypedArrayWrite() const
-{
-    if (!icEntry_)
-        return false;
-
-    
-    for (ICStub* stub = icEntry_->firstStub(); stub; stub = stub->next()) {
-        if (stub->isSetElem_TypedArray())
-            return true;
-    }
     return false;
 }
 
