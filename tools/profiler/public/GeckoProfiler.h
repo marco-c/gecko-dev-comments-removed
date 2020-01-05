@@ -231,8 +231,8 @@ PROFILER_FUNC_VOID(profiler_get_profile_jsobject_async(double aSinceTime = 0,
 
 PROFILER_FUNC_VOID(profiler_get_start_params(int* aEntrySize,
                                              double* aInterval,
-                                             mozilla::Vector<const char*>* aFilters,
-                                             mozilla::Vector<const char*>* aFeatures))
+                                             mozilla::Vector<const char*>* aFeatures,
+                                             mozilla::Vector<const char*>* aFilters))
 
 
 
