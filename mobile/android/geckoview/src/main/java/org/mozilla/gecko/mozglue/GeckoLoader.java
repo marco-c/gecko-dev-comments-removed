@@ -216,13 +216,6 @@ public final class GeckoLoader {
         }
 
         putenv("MOZ_LINKER_EXTRACT=1");
-        
-        File cacheDir = new File(linkerCache);
-        if (cacheDir.isDirectory()) {
-            cacheDir.setWritable(true, false);
-            cacheDir.setExecutable(true, false);
-            cacheDir.setReadable(true, false);
-        }
     }
 
     @RobocopTarget
