@@ -106,7 +106,7 @@ def run(paths, linters, fmt, rev, workdir, **lintargs):
     
     
     print(formatter(results).encode('utf-8', 'replace'))
-    return 1 if results else 0
+    return lint.return_code
 
 
 if __name__ == '__main__':
