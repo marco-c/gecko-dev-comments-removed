@@ -25,6 +25,14 @@ nsContainerFrame* NS_NewGridContainerFrame(nsIPresShell* aPresShell,
 namespace mozilla {
 
 
+template<typename Iterator> class CSSOrderAwareFrameIteratorT;
+typedef CSSOrderAwareFrameIteratorT<nsFrameList::iterator>
+  CSSOrderAwareFrameIterator;
+typedef CSSOrderAwareFrameIteratorT<nsFrameList::reverse_iterator>
+  ReverseCSSOrderAwareFrameIterator;
+
+
+
 
 struct ComputedGridTrackInfo
 {
@@ -219,11 +227,6 @@ public:
   struct TrackSize;
   struct GridItemInfo;
   struct GridReflowInput;
-  template<typename Iterator> class CSSOrderAwareFrameIteratorT;
-  typedef CSSOrderAwareFrameIteratorT<nsFrameList::iterator>
-    CSSOrderAwareFrameIterator;
-  typedef CSSOrderAwareFrameIteratorT<nsFrameList::reverse_iterator>
-    ReverseCSSOrderAwareFrameIterator;
   struct FindItemInGridOrderResult
   {
     
@@ -238,6 +241,9 @@ protected:
   typedef mozilla::LogicalPoint LogicalPoint;
   typedef mozilla::LogicalRect LogicalRect;
   typedef mozilla::LogicalSize LogicalSize;
+  typedef mozilla::CSSOrderAwareFrameIterator CSSOrderAwareFrameIterator;
+  typedef mozilla::ReverseCSSOrderAwareFrameIterator
+    ReverseCSSOrderAwareFrameIterator;
   typedef mozilla::WritingMode WritingMode;
   typedef mozilla::css::GridNamedArea GridNamedArea;
   typedef mozilla::layout::AutoFrameListPtr AutoFrameListPtr;
