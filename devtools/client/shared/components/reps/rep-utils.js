@@ -46,14 +46,7 @@ define(function (require, exports, module) {
     }
 
     
-    text = text + "";
-
-    
-    
-    
-    
-    let re = new RegExp("[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]", "g");
-    text = text.replace(re, "\ufffd");
+    text = sanitizeString(text + "");
 
     
     if (!limit || limit <= 0) {
@@ -74,6 +67,15 @@ define(function (require, exports, module) {
     }
 
     return text;
+  }
+
+  function sanitizeString(text) {
+    
+    
+    
+    
+    let re = new RegExp("[\x00-\x08\x0B\x0C\x0E-\x1F\x80-\x9F]", "g");
+    return text.replace(re, "\ufffd");
   }
 
   function parseURLParams(url) {
@@ -154,4 +156,5 @@ define(function (require, exports, module) {
   exports.parseURLEncodedText = parseURLEncodedText;
   exports.getFileName = getFileName;
   exports.getURLDisplayString = getURLDisplayString;
+  exports.sanitizeString = sanitizeString;
 });
