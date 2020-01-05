@@ -308,7 +308,7 @@ private:
     
     
     
-    Maybe<size_t> mNextInsertionIndex;
+    Maybe<uint32_t> mNextInsertionIndex;
     
     TrackBuffer mQueuedSamples;
     
@@ -381,9 +381,9 @@ private:
   
   
   
-  size_t RemoveFrames(const media::TimeIntervals& aIntervals,
-                      TrackData& aTrackData,
-                      uint32_t aStartIndex);
+  uint32_t RemoveFrames(const media::TimeIntervals& aIntervals,
+                        TrackData& aTrackData,
+                        uint32_t aStartIndex);
   
   void ResetEvictionIndex(TrackData& aTrackData);
   void UpdateEvictionIndex(TrackData& aTrackData, uint32_t aCurrentIndex);
@@ -391,7 +391,7 @@ private:
   uint32_t FindSampleIndex(const TrackBuffer& aTrackBuffer,
                            const media::TimeInterval& aInterval);
   const MediaRawData* GetSample(TrackInfo::TrackType aTrack,
-                                size_t aIndex,
+                                uint32_t aIndex,
                                 const media::TimeUnit& aExpectedDts,
                                 const media::TimeUnit& aExpectedPts,
                                 const media::TimeUnit& aFuzz);
