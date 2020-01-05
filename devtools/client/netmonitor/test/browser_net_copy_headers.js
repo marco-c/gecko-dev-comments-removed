@@ -41,9 +41,7 @@ add_task(function* () {
   ].join("\n");
 
   yield waitForClipboardPromise(function setup() {
-    
-    
-    monitor.toolbox.doc
+    monitor.panelWin.parent.document
       .querySelector("#request-list-context-copy-request-headers").click();
   }, function validate(result) {
     
@@ -66,9 +64,7 @@ add_task(function* () {
     document.querySelectorAll(".request-list-item")[0]);
 
   yield waitForClipboardPromise(function setup() {
-    
-    
-    monitor.toolbox.doc
+    monitor.panelWin.parent.document
       .querySelector("#response-list-context-copy-response-headers").click();
   }, function validate(result) {
     

@@ -28,9 +28,7 @@ add_task(function* () {
   let requestItem = getSortedRequests(gStore.getState()).get(0);
 
   yield waitForClipboardPromise(function setup() {
-    
-    
-    monitor.toolbox.doc
+    monitor.panelWin.parent.document
       .querySelector("#request-list-context-copy-url").click();
   }, requestItem.url);
 

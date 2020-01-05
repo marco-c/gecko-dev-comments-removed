@@ -4,6 +4,8 @@
 
 
 
+
+
 "use strict";
 
 const { DOM, createClass, PropTypes, createFactory } = require("devtools/client/shared/vendor/react");
@@ -26,7 +28,6 @@ let Tabbar = createClass({
     onSelect: PropTypes.func,
     showAllTabsMenu: PropTypes.bool,
     activeTabId: PropTypes.string,
-    toolbox: PropTypes.object,
     renderOnlySelected: PropTypes.bool,
   },
 
@@ -195,7 +196,8 @@ let Tabbar = createClass({
     let rect = target.getBoundingClientRect();
     let screenX = target.ownerDocument.defaultView.mozInnerScreenX;
     let screenY = target.ownerDocument.defaultView.mozInnerScreenY;
-    menu.popup(rect.left + screenX, rect.bottom + screenY, this.props.toolbox);
+    menu.popup(rect.left + screenX, rect.bottom + screenY,
+      { doc: window.parent.document });
 
     return menu;
   },

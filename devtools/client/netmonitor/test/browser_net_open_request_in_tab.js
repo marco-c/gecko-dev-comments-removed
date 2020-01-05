@@ -28,9 +28,7 @@ add_task(function* () {
     document.querySelectorAll(".request-list-item")[0]);
 
   let onTabOpen = once(gBrowser.tabContainer, "TabOpen", false);
-  
-  
-  monitor.toolbox.doc
+  monitor.panelWin.parent.document
     .querySelector("#request-list-context-newtab").click();
   yield onTabOpen;
 

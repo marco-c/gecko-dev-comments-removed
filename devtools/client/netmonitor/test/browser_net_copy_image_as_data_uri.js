@@ -25,9 +25,7 @@ add_task(function* () {
     document.querySelectorAll(".request-list-item")[5]);
 
   yield waitForClipboardPromise(function setup() {
-    
-    
-    monitor.toolbox.doc
+    monitor.panelWin.parent.document
       .querySelector("#request-list-context-copy-image-as-data-uri").click();
   }, TEST_IMAGE_DATA_URI);
 
