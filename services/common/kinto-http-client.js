@@ -389,21 +389,11 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     }
     this._backoffReleaseTime = null;
 
-    
-
-
-
-
-    this.defaultReqOptions = {
-      bucket: options.bucket || "default",
-      headers: options.headers || {},
-      retry: options.retry || 0,
-      safe: !!options.safe
-    };
-
-    this._options = options;
     this._requests = [];
     this._isBatch = !!options.batch;
+    this._retry = options.retry || 0;
+    this._safe = !!options.safe;
+    this._headers = options.headers || {};
 
     
     
@@ -507,28 +497,11 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
   bucket(name, options = {}) {
-    const bucketOptions = (0, _utils.omit)(this._getRequestOptions(options), "bucket");
-    return new _bucket2.default(this, name, bucketOptions);
-  }
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-  _getRequestOptions(options = {}) {
-    return _extends({}, this.defaultReqOptions, options, {
+    return new _bucket2.default(this, name, {
       batch: this._isBatch,
-      
-      headers: _extends({}, this.defaultReqOptions.headers, options.headers)
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options),
+      retry: this._getRetry(options)
     });
   }
 
@@ -539,94 +512,163 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  fetchServerInfo(options = {}) {
+
+
+
+
+  _getHeaders(options) {
+    return _extends({}, this._headers, options.headers);
+  }
+
+  
+
+
+
+
+
+
+
+
+  _getSafe(options) {
+    return _extends({ safe: this._safe }, options).safe;
+  }
+
+  
+
+
+
+
+  _getRetry(options) {
+    return _extends({ retry: this._retry }, options).retry;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  async _getHello(options = {}) {
+    const path = this.remote + (0, _endpoint2.default)("root");
+    const { json } = await this.http.request(path, { headers: this._getHeaders(options) }, { retry: this._getRetry(options) });
+    return json;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async fetchServerInfo(options = {}) {
     if (this.serverInfo) {
-      return Promise.resolve(this.serverInfo);
-    }
-    const reqOptions = this._getRequestOptions(options);
-    return this.http.request(this.remote + (0, _endpoint2.default)("root"), reqOptions).then(({ json }) => {
-      this.serverInfo = json;
       return this.serverInfo;
-    });
-  }
-
-  
-
-
-
-
-
-
-  fetchServerSettings(options = {}) {
-    return this.fetchServerInfo(options).then(({ settings }) => settings);
-  }
-
-  
-
-
-
-
-
-
-  fetchServerCapabilities(options = {}) {
-    return this.fetchServerInfo(options).then(({ capabilities }) => capabilities);
-  }
-
-  
-
-
-
-
-
-
-  fetchUser(options = {}) {
-    return this.fetchServerInfo(options).then(({ user }) => user);
-  }
-
-  
-
-
-
-
-
-
-  fetchHTTPApiVersion(options = {}) {
-    return this.fetchServerInfo(options).then(({ http_api_version }) => {
-      return http_api_version;
-    });
-  }
-
-  
-
-
-
-
-
-
-
-  _batchRequests(requests, options = {}) {
-    const reqOptions = this._getRequestOptions(options);
-    const { headers } = reqOptions;
-    if (!requests.length) {
-      return Promise.resolve([]);
     }
-    return this.fetchServerSettings().then(serverSettings => {
-      const maxRequests = serverSettings["batch_max_requests"];
-      if (maxRequests && requests.length > maxRequests) {
-        const chunks = (0, _utils.partition)(requests, maxRequests);
-        return (0, _utils.pMap)(chunks, chunk => this._batchRequests(chunk, options));
-      }
-      return this.execute(_extends({}, reqOptions, {
-        path: (0, _endpoint2.default)("batch"),
-        method: "POST",
-        body: {
-          defaults: { headers },
-          requests: requests
-        }
-      }))
-      
-      .then(({ responses }) => responses);
+    this.serverInfo = await this._getHello({ retry: this._getRetry(options) });
+    return this.serverInfo;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async fetchServerSettings(options) {
+    const { settings } = await this.fetchServerInfo(options);
+    return settings;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async fetchServerCapabilities(options = {}) {
+    const { capabilities } = await this.fetchServerInfo(options);
+    return capabilities;
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async fetchUser(options = {}) {
+    const { user } = await this._getHello(options);
+    return user;
+  }
+
+  
+
+
+
+
+
+
+
+
+  async fetchHTTPApiVersion(options = {}) {
+    const { http_api_version } = await this.fetchServerInfo(options);
+    return http_api_version;
+  }
+
+  
+
+
+
+
+
+
+
+  async _batchRequests(requests, options = {}) {
+    const headers = this._getHeaders(options);
+    if (!requests.length) {
+      return [];
+    }
+    const serverSettings = await this.fetchServerSettings({
+      retry: this._getRetry(options)
     });
+    const maxRequests = serverSettings["batch_max_requests"];
+    if (maxRequests && requests.length > maxRequests) {
+      const chunks = (0, _utils.partition)(requests, maxRequests);
+      return (0, _utils.pMap)(chunks, chunk => this._batchRequests(chunk, options));
+    }
+    const { responses } = await this.execute({
+      
+      
+      headers,
+      path: (0, _endpoint2.default)("batch"),
+      method: "POST",
+      body: {
+        defaults: { headers },
+        requests
+      }
+    }, { retry: this._getRetry(options) });
+    return responses;
   }
 
   
@@ -645,10 +687,14 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  batch(fn, options = {}) {
-    const rootBatch = new KintoClientBase(this.remote, _extends({}, this._options, this._getRequestOptions(options), {
-      batch: true
-    }));
+
+  async batch(fn, options = {}) {
+    const rootBatch = new KintoClientBase(this.remote, {
+      events: this.events,
+      batch: true,
+      safe: this._getSafe(options),
+      retry: this._getRetry(options)
+    });
     let bucketBatch, collBatch;
     if (options.bucket) {
       bucketBatch = rootBatch.bucket(options.bucket);
@@ -657,17 +703,13 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       }
     }
     const batchClient = collBatch || bucketBatch || rootBatch;
-    try {
-      fn(batchClient);
-    } catch (err) {
-      return Promise.reject(err);
-    }
-    return this._batchRequests(rootBatch._requests, options).then(responses => {
-      if (options.aggregate) {
-        return (0, _batch.aggregate)(responses, rootBatch._requests);
-      }
+    fn(batchClient);
+    const responses = await this._batchRequests(rootBatch._requests, options);
+    if (options.aggregate) {
+      return (0, _batch.aggregate)(responses, rootBatch._requests);
+    } else {
       return responses;
-    });
+    }
   }
 
   
@@ -681,25 +723,71 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  execute(request, options = { raw: false, stringify: true }) {
-    const { raw, stringify } = options;
+
+
+
+
+
+
+
+
+  async execute(request, options = {}) {
+    const { raw = false, stringify = true } = options;
     
     if (this._isBatch) {
       this._requests.push(request);
       
       
       const msg = "This result is generated from within a batch " + "operation and should not be consumed.";
-      return Promise.resolve(raw ? { json: msg, headers: { get() {} } } : msg);
+      return raw ? { json: msg, headers: { get() {} } } : msg;
     }
-    const promise = this.fetchServerSettings().then(_ => {
-      return this.http.request(this.remote + request.path, _extends({}, request, {
-        body: stringify ? JSON.stringify(request.body) : request.body
-      }));
-    });
-    return raw ? promise : promise.then(({ json }) => json);
+    const result = await this.http.request(this.remote + request.path, (0, _utils.cleanUndefinedProperties)({
+      
+      
+      
+      
+      
+      method: request.method,
+      headers: request.headers,
+      body: stringify ? JSON.stringify(request.body) : request.body
+    }), { retry: this._getRetry(options) });
+    return raw ? result : result.json;
   }
 
-  paginatedList(path, params, options = {}) {
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async paginatedList(path, params, options = {}) {
+    
+    
+    
     const { sort, filters, limit, pages, since } = _extends({
       sort: "-last_modified"
     }, params);
@@ -716,17 +804,17 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
     let results = [],
         current = 0;
 
-    const next = function (nextPage) {
+    const next = async function (nextPage) {
       if (!nextPage) {
         throw new Error("Pagination exhausted.");
       }
       return processNextPage(nextPage);
     };
 
-    const processNextPage = nextPage => {
+    const processNextPage = async function (nextPage) {
       const { headers } = options;
-      return this.http.request(nextPage, { headers }).then(handleResponse);
-    };
+      return handleResponse((await this.http.request(nextPage, { headers })));
+    }.bind(this);
 
     const pageResults = (results, nextPage, etag, totalRecords) => {
       
@@ -740,7 +828,7 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       };
     };
 
-    const handleResponse = ({ headers, json }) => {
+    const handleResponse = async function ({ headers, json }) {
       const nextPage = headers.get("Next-Page");
       const etag = headers.get("ETag");
       const totalRecords = parseInt(headers.get("Total-Records"), 10);
@@ -758,9 +846,16 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
       
       return processNextPage(nextPage);
     };
-    return this.execute(_extends({
-      path: path + "?" + querystring
-    }, options), { raw: true }).then(handleResponse);
+
+    return handleResponse((await this.execute(
+    
+    
+    
+    { headers: options.headers, path: path + "?" + querystring },
+    
+    
+    
+    { raw: true, retry: options.retry || 0 })));
   }
 
   
@@ -771,11 +866,18 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  listPermissions(options = {}) {
-    const reqOptions = this._getRequestOptions(options);
-    return this.execute(_extends({
-      path: (0, _endpoint2.default)("permissions")
-    }, reqOptions));
+
+
+
+  async listPermissions(options = {}) {
+    const path = (0, _endpoint2.default)("permissions");
+    
+    
+    const paginationOptions = _extends({ sort: "id" }, options);
+    return this.paginatedList(path, paginationOptions, {
+      headers: this._getHeaders(options),
+      retry: this._getRetry(options)
+    });
   }
 
   
@@ -785,10 +887,15 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  listBuckets(options = {}) {
+
+
+
+  async listBuckets(options = {}) {
     const path = (0, _endpoint2.default)("bucket");
-    const reqOptions = this._getRequestOptions(options);
-    return this.paginatedList(path, options, reqOptions);
+    return this.paginatedList(path, options, {
+      headers: this._getHeaders(options),
+      retry: this._getRetry(options)
+    });
   }
 
   
@@ -801,17 +908,18 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  createBucket(id, options = {}) {
-    if (!id) {
-      throw new Error("A bucket id is required.");
+
+
+  async createBucket(id, options = {}) {
+    const { data = {}, permissions } = options;
+    if (id != null) {
+      data.id = id;
     }
-    
-    
-    const reqOptions = this._getRequestOptions(options);
-    const { data = {}, permissions } = reqOptions;
-    data.id = id;
-    const path = (0, _endpoint2.default)("bucket", id);
-    return this.execute(requests.createRequest(path, { data, permissions }, reqOptions));
+    const path = data.id ? (0, _endpoint2.default)("bucket", data.id) : (0, _endpoint2.default)("bucket");
+    return this.execute(requests.createRequest(path, { data, permissions }, {
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    }), { retry: this._getRetry(options) });
   }
 
   
@@ -825,15 +933,20 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  deleteBucket(bucket, options = {}) {
+
+
+  async deleteBucket(bucket, options = {}) {
     const bucketObj = (0, _utils.toDataBody)(bucket);
     if (!bucketObj.id) {
       throw new Error("A bucket id is required.");
     }
     const path = (0, _endpoint2.default)("bucket", bucketObj.id);
-    const { last_modified } = { bucketObj };
-    const reqOptions = this._getRequestOptions(_extends({ last_modified }, options));
-    return this.execute(requests.deleteRequest(path, reqOptions));
+    const { last_modified } = _extends({}, bucketObj, options);
+    return this.execute(requests.deleteRequest(path, {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    }), { retry: this._getRetry(options) });
   }
 
   
@@ -847,10 +960,13 @@ let KintoClientBase = (_dec = (0, _utils.nobatch)("This operation is not support
 
 
 
-  deleteBuckets(options = {}) {
-    const reqOptions = this._getRequestOptions(options);
+  async deleteBuckets(options = {}) {
     const path = (0, _endpoint2.default)("bucket");
-    return this.execute(requests.deleteRequest(path, reqOptions));
+    return this.execute(requests.deleteRequest(path, {
+      last_modified: options.last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    }), { retry: this._getRetry(options) });
   }
 }, (_applyDecoratedDescriptor(_class.prototype, "fetchServerSettings", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerSettings"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchServerCapabilities", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "fetchServerCapabilities"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchUser", [_dec3], Object.getOwnPropertyDescriptor(_class.prototype, "fetchUser"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "fetchHTTPApiVersion", [_dec4], Object.getOwnPropertyDescriptor(_class.prototype, "fetchHTTPApiVersion"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "batch", [_dec5], Object.getOwnPropertyDescriptor(_class.prototype, "batch"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "listPermissions", [_dec6], Object.getOwnPropertyDescriptor(_class.prototype, "listPermissions"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "deleteBuckets", [_dec7], Object.getOwnPropertyDescriptor(_class.prototype, "deleteBuckets"), _class.prototype)), _class));
 exports.default = KintoClientBase;
@@ -887,7 +1003,8 @@ function aggregate(responses = [], requests = []) {
       acc.published.push(response.body);
     } else if (status === 404) {
       
-      const extracts = request.path.match(/(buckets|groups|collections|records)\/([^\/]+)$/);
+      const regex = /(buckets|groups|collections|records)\/([^\/]+)$/;
+      const extracts = request.path.match(regex);
       const id = extracts.length === 3 ? extracts[2] : undefined;
       acc.skipped.push({
         id,
@@ -985,6 +1102,7 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
+
   constructor(client, name, options = {}) {
     
 
@@ -998,13 +1116,23 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
     
 
 
-
-
-    this.options = options;
+    this._isBatch = !!options.batch;
     
 
 
-    this._isBatch = !!options.batch;
+    this._headers = options.headers || {};
+    this._retry = options.retry || 0;
+    this._safe = !!options.safe;
+  }
+
+  
+
+
+
+
+
+  _getHeaders(options) {
+    return _extends({}, this._headers, options.headers);
   }
 
   
@@ -1014,13 +1142,19 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  _bucketOptions(options = {}) {
-    const headers = _extends({}, this.options && this.options.headers, options.headers);
-    return _extends({}, this.options, options, {
-      headers,
-      bucket: this.name,
-      batch: this._isBatch
-    });
+
+
+  _getSafe(options) {
+    return _extends({ safe: this._safe }, options).safe;
+  }
+
+  
+
+
+
+
+  _getRetry(options) {
+    return _extends({ retry: this._retry }, options).retry;
   }
 
   
@@ -1033,7 +1167,12 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
   collection(name, options = {}) {
-    return new _collection2.default(this.client, this, name, this._bucketOptions(options));
+    return new _collection2.default(this.client, this, name, {
+      batch: this._isBatch,
+      headers: this._getHeaders(options),
+      retry: this._getRetry(options),
+      safe: this._getSafe(options)
+    });
   }
 
   
@@ -1043,10 +1182,17 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  getData(options = {}) {
-    const reqOptions = _extends({}, this._bucketOptions(options));
-    const request = _extends({}, reqOptions, { path: (0, _endpoint2.default)("bucket", this.name) });
-    return this.client.execute(request).then(res => res.data);
+
+
+  async getData(options = {}) {
+    const request = {
+      headers: this._getHeaders(options),
+      path: (0, _endpoint2.default)("bucket", this.name)
+    };
+    const { data } = await this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
+    return data;
   }
 
   
@@ -1059,7 +1205,9 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  setData(data, options = {}) {
+
+
+  async setData(data, options = {}) {
     if (!(0, _utils.isObject)(data)) {
       throw new Error("A bucket object is required.");
     }
@@ -1074,10 +1222,15 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
     }
 
     const path = (0, _endpoint2.default)("bucket", bucketId);
-    const { permissions } = options;
-    const reqOptions = _extends({}, this._bucketOptions(options));
-    const request = requests.updateRequest(path, { data: bucket, permissions }, reqOptions);
-    return this.client.execute(request);
+    const { patch, permissions } = options;
+    const { last_modified } = _extends({}, data, options);
+    const request = requests.updateRequest(path, { data: bucket, permissions }, {
+      last_modified,
+      patch,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1088,10 +1241,14 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  listHistory(options = {}) {
+
+
+  async listHistory(options = {}) {
     const path = (0, _endpoint2.default)("history", this.name);
-    const reqOptions = this._bucketOptions(options);
-    return this.client.paginatedList(path, options, reqOptions);
+    return this.client.paginatedList(path, options, {
+      headers: this._getHeaders(options),
+      retry: this._getRetry(options)
+    });
   }
 
   
@@ -1101,10 +1258,14 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  listCollections(options = {}) {
+
+
+  async listCollections(options = {}) {
     const path = (0, _endpoint2.default)("collection", this.name);
-    const reqOptions = this._bucketOptions(options);
-    return this.client.paginatedList(path, options, reqOptions);
+    return this.client.paginatedList(path, options, {
+      headers: this._getHeaders(options),
+      retry: this._getRetry(options)
+    });
   }
 
   
@@ -1118,13 +1279,17 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  createCollection(id, options = {}) {
-    const reqOptions = this._bucketOptions(options);
-    const { permissions, data = {} } = reqOptions;
+
+
+  async createCollection(id, options = {}) {
+    const { permissions, data = {} } = options;
     data.id = id;
     const path = (0, _endpoint2.default)("collection", this.name, id);
-    const request = requests.createRequest(path, { data, permissions }, reqOptions);
-    return this.client.execute(request);
+    const request = requests.createRequest(path, { data, permissions }, {
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1137,16 +1302,22 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  deleteCollection(collection, options = {}) {
+
+
+  async deleteCollection(collection, options = {}) {
     const collectionObj = (0, _utils.toDataBody)(collection);
     if (!collectionObj.id) {
       throw new Error("A collection id is required.");
     }
-    const { id, last_modified } = collectionObj;
-    const reqOptions = this._bucketOptions(_extends({ last_modified }, options));
+    const { id } = collectionObj;
+    const { last_modified } = _extends({}, collectionObj, options);
     const path = (0, _endpoint2.default)("collection", this.name, id);
-    const request = requests.deleteRequest(path, reqOptions);
-    return this.client.execute(request);
+    const request = requests.deleteRequest(path, {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1156,24 +1327,14 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  listGroups(options = {}) {
+
+
+  async listGroups(options = {}) {
     const path = (0, _endpoint2.default)("group", this.name);
-    const reqOptions = this._bucketOptions(options);
-    return this.client.paginatedList(path, options, reqOptions);
-  }
-
-  
-
-
-
-
-
-
-
-  getGroup(id, options = {}) {
-    const reqOptions = _extends({}, this._bucketOptions(options));
-    const request = _extends({}, reqOptions, { path: (0, _endpoint2.default)("group", this.name, id) });
-    return this.client.execute(request);
+    return this.client.paginatedList(path, options, {
+      headers: this._getHeaders(options),
+      retry: this._getRetry(options)
+    });
   }
 
   
@@ -1186,18 +1347,40 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
+  async getGroup(id, options = {}) {
+    const request = {
+      headers: this._getHeaders(options),
+      path: (0, _endpoint2.default)("group", this.name, id)
+    };
+    return this.client.execute(request, { retry: this._getRetry(options) });
+  }
+
+  
 
 
-  createGroup(id, members = [], options = {}) {
-    const reqOptions = this._bucketOptions(options);
+
+
+
+
+
+
+
+
+
+
+
+  async createGroup(id, members = [], options = {}) {
     const data = _extends({}, options.data, {
       id,
       members
     });
     const path = (0, _endpoint2.default)("group", this.name, id);
     const { permissions } = options;
-    const request = requests.createRequest(path, { data, permissions }, reqOptions);
-    return this.client.execute(request);
+    const request = requests.createRequest(path, { data, permissions }, {
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1212,19 +1395,26 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  updateGroup(group, options = {}) {
+
+
+  async updateGroup(group, options = {}) {
     if (!(0, _utils.isObject)(group)) {
       throw new Error("A group object is required.");
     }
     if (!group.id) {
       throw new Error("A group id is required.");
     }
-    const reqOptions = this._bucketOptions(options);
     const data = _extends({}, options.data, group);
     const path = (0, _endpoint2.default)("group", this.name, group.id);
-    const { permissions } = options;
-    const request = requests.updateRequest(path, { data, permissions }, reqOptions);
-    return this.client.execute(request);
+    const { patch, permissions } = options;
+    const { last_modified } = _extends({}, data, options);
+    const request = requests.updateRequest(path, { data, permissions }, {
+      last_modified,
+      patch,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1237,13 +1427,19 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  deleteGroup(group, options = {}) {
+
+
+  async deleteGroup(group, options = {}) {
     const groupObj = (0, _utils.toDataBody)(group);
-    const { id, last_modified } = groupObj;
-    const reqOptions = this._bucketOptions(_extends({ last_modified }, options));
+    const { id } = groupObj;
+    const { last_modified } = _extends({}, groupObj, options);
     const path = (0, _endpoint2.default)("group", this.name, id);
-    const request = requests.deleteRequest(path, reqOptions);
-    return this.client.execute(request);
+    const request = requests.deleteRequest(path, {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1253,10 +1449,17 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  getPermissions(options = {}) {
-    const reqOptions = this._bucketOptions(options);
-    const request = _extends({}, reqOptions, { path: (0, _endpoint2.default)("bucket", this.name) });
-    return this.client.execute(request).then(res => res.permissions);
+
+
+  async getPermissions(options = {}) {
+    const request = {
+      headers: this._getHeaders(options),
+      path: (0, _endpoint2.default)("bucket", this.name)
+    };
+    const { permissions } = await this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
+    return permissions;
   }
 
   
@@ -1269,16 +1472,20 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  setPermissions(permissions, options = {}) {
+
+
+  async setPermissions(permissions, options = {}) {
     if (!(0, _utils.isObject)(permissions)) {
       throw new Error("A permissions object is required.");
     }
     const path = (0, _endpoint2.default)("bucket", this.name);
-    const reqOptions = _extends({}, this._bucketOptions(options));
     const { last_modified } = options;
     const data = { last_modified };
-    const request = requests.updateRequest(path, { data, permissions }, reqOptions);
-    return this.client.execute(request);
+    const request = requests.updateRequest(path, { data, permissions }, {
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1291,8 +1498,67 @@ let Bucket = (_dec = (0, _utils.capable)(["history"]), (_class = class Bucket {
 
 
 
-  batch(fn, options = {}) {
-    return this.client.batch(fn, this._bucketOptions(options));
+
+
+  async addPermissions(permissions, options = {}) {
+    if (!(0, _utils.isObject)(permissions)) {
+      throw new Error("A permissions object is required.");
+    }
+    const path = (0, _endpoint2.default)("bucket", this.name);
+    const { last_modified } = options;
+    const request = requests.jsonPatchPermissionsRequest(path, permissions, "add", {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async removePermissions(permissions, options = {}) {
+    if (!(0, _utils.isObject)(permissions)) {
+      throw new Error("A permissions object is required.");
+    }
+    const path = (0, _endpoint2.default)("bucket", this.name);
+    const { last_modified } = options;
+    const request = requests.jsonPatchPermissionsRequest(path, permissions, "remove", {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+  async batch(fn, options = {}) {
+    return this.client.batch(fn, {
+      bucket: this.name,
+      headers: this._getHeaders(options),
+      retry: this._getRetry(options),
+      safe: this._getSafe(options),
+      aggregate: !!options.aggregate
+    });
   }
 }, (_applyDecoratedDescriptor(_class.prototype, "listHistory", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "listHistory"), _class.prototype)), _class));
 exports.default = Bucket;
@@ -1307,7 +1573,7 @@ exports.default = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
-var _dec, _dec2, _desc, _value, _class;
+var _dec, _dec2, _dec3, _desc, _value, _class;
 
 var _uuid = require("uuid");
 
@@ -1358,8 +1624,11 @@ function _applyDecoratedDescriptor(target, property, decorators, descriptor, con
 
 
 
-let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _utils.capable)(["attachments"]), (_class = class Collection {
+let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _utils.capable)(["attachments"]), _dec3 = (0, _utils.capable)(["history"]), (_class = class Collection {
   
+
+
+
 
 
 
@@ -1387,15 +1656,26 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
     
 
 
+    this._isBatch = !!options.batch;
 
-
-    this.options = _extends({}, this.bucket.options, options, {
-      headers: _extends({}, this.bucket.options && this.bucket.options.headers, options.headers)
-    });
     
 
 
-    this._isBatch = !!options.batch;
+    this._retry = options.retry || 0;
+    this._safe = !!options.safe;
+    
+    
+    this._headers = _extends({}, this.bucket._headers, options.headers);
+  }
+
+  
+
+
+
+
+
+  _getHeaders(options) {
+    return _extends({}, this._headers, options.headers);
   }
 
   
@@ -1406,11 +1686,18 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  _collOptions(options = {}) {
-    const headers = _extends({}, this.options && this.options.headers, options.headers);
-    return _extends({}, this.options, options, {
-      headers
-    });
+
+  _getSafe(options) {
+    return _extends({ safe: this._safe }, options).safe;
+  }
+
+  
+
+
+
+
+  _getRetry(options) {
+    return _extends({ retry: this._retry }, options).retry;
   }
 
   
@@ -1420,11 +1707,20 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  getTotalRecords(options = {}) {
+
+
+  async getTotalRecords(options = {}) {
     const path = (0, _endpoint2.default)("record", this.bucket.name, this.name);
-    const reqOptions = this._collOptions(options);
-    const request = _extends({}, reqOptions, { path, method: "HEAD" });
-    return this.client.execute(request, { raw: true }).then(({ headers }) => parseInt(headers.get("Total-Records"), 10));
+    const request = {
+      headers: this._getHeaders(options),
+      path,
+      method: "HEAD"
+    };
+    const { headers } = await this.client.execute(request, {
+      raw: true,
+      retry: this._getRetry(options)
+    });
+    return parseInt(headers.get("Total-Records"), 10);
   }
 
   
@@ -1434,11 +1730,15 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  getData(options = {}) {
-    const reqOptions = this._collOptions(options);
+
+
+  async getData(options = {}) {
     const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const request = _extends({}, reqOptions, { path });
-    return this.client.execute(request).then(res => res.data);
+    const request = { headers: this._getHeaders(options), path };
+    const { data } = await this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
+    return data;
   }
 
   
@@ -1451,16 +1751,23 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  setData(data, options = {}) {
+
+
+  async setData(data, options = {}) {
     if (!(0, _utils.isObject)(data)) {
       throw new Error("A collection object is required.");
     }
-    const reqOptions = this._collOptions(options);
-    const { permissions } = reqOptions;
+    const { patch, permissions } = options;
+    const { last_modified } = _extends({}, data, options);
 
     const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const request = requests.updateRequest(path, { data, permissions }, reqOptions);
-    return this.client.execute(request);
+    const request = requests.updateRequest(path, { data, permissions }, {
+      last_modified,
+      patch,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1470,11 +1777,15 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  getPermissions(options = {}) {
+
+
+  async getPermissions(options = {}) {
     const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
-    const reqOptions = this._collOptions(options);
-    const request = _extends({}, reqOptions, { path });
-    return this.client.execute(request).then(res => res.permissions);
+    const request = { headers: this._getHeaders(options), path };
+    const { permissions } = await this.client.execute(request, {
+      retry: this._getRetry(options)
+    });
+    return permissions;
   }
 
   
@@ -1487,15 +1798,19 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  setPermissions(permissions, options = {}) {
+
+
+  async setPermissions(permissions, options = {}) {
     if (!(0, _utils.isObject)(permissions)) {
       throw new Error("A permissions object is required.");
     }
-    const reqOptions = this._collOptions(options);
     const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
     const data = { last_modified: options.last_modified };
-    const request = requests.updateRequest(path, { data, permissions }, reqOptions);
-    return this.client.execute(request);
+    const request = requests.updateRequest(path, { data, permissions }, {
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1508,12 +1823,68 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  createRecord(record, options = {}) {
-    const reqOptions = this._collOptions(options);
-    const { permissions } = reqOptions;
+
+
+  async addPermissions(permissions, options = {}) {
+    if (!(0, _utils.isObject)(permissions)) {
+      throw new Error("A permissions object is required.");
+    }
+    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
+    const { last_modified } = options;
+    const request = requests.jsonPatchPermissionsRequest(path, permissions, "add", {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async removePermissions(permissions, options = {}) {
+    if (!(0, _utils.isObject)(permissions)) {
+      throw new Error("A permissions object is required.");
+    }
+    const path = (0, _endpoint2.default)("collection", this.bucket.name, this.name);
+    const { last_modified } = options;
+    const request = requests.jsonPatchPermissionsRequest(path, permissions, "remove", {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+  async createRecord(record, options = {}) {
+    const { permissions } = options;
     const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, record.id);
-    const request = requests.createRequest(path, { data: record, permissions }, reqOptions);
-    return this.client.execute(request);
+    const request = requests.createRequest(path, { data: record, permissions }, {
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1531,16 +1902,25 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  addAttachment(dataURI, record = {}, options = {}) {
-    const reqOptions = this._collOptions(options);
-    const { permissions } = reqOptions;
+
+
+  async addAttachment(dataURI, record = {}, options = {}) {
+    const { permissions } = options;
     const id = record.id || _uuid.v4.v4();
     const path = (0, _endpoint2.default)("attachment", this.bucket.name, this.name, id);
-    const addAttachmentRequest = requests.addAttachmentRequest(path, dataURI, {
-      data: record,
-      permissions
-    }, reqOptions);
-    return this.client.execute(addAttachmentRequest, { stringify: false }).then(() => this.getRecord(id));
+    const { last_modified } = _extends({}, record, options);
+    const addAttachmentRequest = requests.addAttachmentRequest(path, dataURI, { data: record, permissions }, {
+      last_modified,
+      filename: options.filename,
+      gzipped: options.gzipped,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    await this.client.execute(addAttachmentRequest, {
+      stringify: false,
+      retry: this._getRetry(options)
+    });
+    return this.getRecord(id);
   }
 
   
@@ -1553,11 +1933,17 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  removeAttachment(recordId, options = {}) {
-    const reqOptions = this._collOptions(options);
+
+
+  async removeAttachment(recordId, options = {}) {
+    const { last_modified } = options;
     const path = (0, _endpoint2.default)("attachment", this.bucket.name, this.name, recordId);
-    const request = requests.deleteRequest(path, reqOptions);
-    return this.client.execute(request);
+    const request = requests.deleteRequest(path, {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1571,18 +1957,25 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  updateRecord(record, options = {}) {
+
+
+  async updateRecord(record, options = {}) {
     if (!(0, _utils.isObject)(record)) {
       throw new Error("A record object is required.");
     }
     if (!record.id) {
       throw new Error("A record id is required.");
     }
-    const reqOptions = this._collOptions(options);
-    const { permissions } = reqOptions;
+    const { permissions } = options;
+    const { last_modified } = _extends({}, record, options);
     const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, record.id);
-    const request = requests.updateRequest(path, { data: record, permissions }, reqOptions);
-    return this.client.execute(request);
+    const request = requests.updateRequest(path, { data: record, permissions }, {
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options),
+      last_modified,
+      patch: !!options.patch
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1595,31 +1988,22 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  deleteRecord(record, options = {}) {
+
+
+  async deleteRecord(record, options = {}) {
     const recordObj = (0, _utils.toDataBody)(record);
     if (!recordObj.id) {
       throw new Error("A record id is required.");
     }
-    const { id, last_modified } = recordObj;
-    const reqOptions = this._collOptions(_extends({ last_modified }, options));
+    const { id } = recordObj;
+    const { last_modified } = _extends({}, recordObj, options);
     const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, id);
-    const request = requests.deleteRequest(path, reqOptions);
-    return this.client.execute(request);
-  }
-
-  
-
-
-
-
-
-
-
-  getRecord(id, options = {}) {
-    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, id);
-    const reqOptions = this._collOptions(options);
-    const request = _extends({}, reqOptions, { path });
-    return this.client.execute(request);
+    const request = requests.deleteRequest(path, {
+      last_modified,
+      headers: this._getHeaders(options),
+      safe: this._getSafe(options)
+    });
+    return this.client.execute(request, { retry: this._getRetry(options) });
   }
 
   
@@ -1632,6 +2016,13 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
+  async getRecord(id, options = {}) {
+    const path = (0, _endpoint2.default)("record", this.bucket.name, this.name, id);
+    const request = { headers: this._getHeaders(options), path };
+    return this.client.execute(request, { retry: this._getRetry(options) });
+  }
+
+  
 
 
 
@@ -1655,57 +2046,99 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  listRecords(options = {}) {
+
+
+
+
+
+
+
+
+
+
+
+  async listRecords(options = {}) {
     const path = (0, _endpoint2.default)("record", this.bucket.name, this.name);
-    const reqOptions = this._collOptions(options);
     if (options.hasOwnProperty("at")) {
-      return this._getSnapshot(options.at);
+      return this.getSnapshot(options.at);
     } else {
-      return this.client.paginatedList(path, options, reqOptions);
+      return this.client.paginatedList(path, options, {
+        headers: this._getHeaders(options),
+        retry: this._getRetry(options)
+      });
     }
   }
 
   
 
 
-  _getSnapshot(at) {
-    if (!Number.isInteger(at) || at <= 0) {
-      throw new Error("Invalid argument, expected a positive integer.");
+  async isHistoryComplete() {
+    
+    
+    const { data: [oldestHistoryEntry] } = await this.bucket.listHistory({
+      limit: 1,
+      filters: {
+        action: "create",
+        resource_name: "collection",
+        collection_id: this.name
+      }
+    });
+    return !!oldestHistoryEntry;
+  }
+
+  
+
+
+  async listChangesBackTo(at) {
+    
+    
+    if (!(await this.isHistoryComplete())) {
+      throw new Error("Computing a snapshot is only possible when the full history for a " + "collection is available. Here, the history plugin seems to have " + "been enabled after the creation of the collection.");
     }
-    
-    
-    return this.bucket.listHistory({
+    const { data: changes } = await this.bucket.listHistory({
       pages: Infinity, 
       sort: "-target.data.last_modified",
       filters: {
         resource_name: "record",
         collection_id: this.name,
-        "max_target.data.last_modified": String(at)
-      }
-    }).then(({ data: changes }) => {
-      const seenIds = new Set();
-      let snapshot = [];
-      for (const _ref of changes) {
-        const { target: { data: record } } = _ref;
-
-        if (record.deleted) {
-          seenIds.add(record.id); 
-          snapshot = snapshot.filter(r => r.id !== record.id);
-        } else if (!seenIds.has(record.id)) {
-          seenIds.add(record.id);
-          snapshot.push(record);
-        }
-      }
-      return {
-        last_modified: String(at),
-        data: snapshot.sort((a, b) => b.last_modified - a.last_modified),
-        next: () => {
-          throw new Error("Snapshots don't support pagination");
-        },
-        hasNextPage: false,
-        totalRecords: snapshot.length
-      };
+        "max_target.data.last_modified": String(at) }
     });
+    return changes;
+  }
+
+  
+
+
+
+  async getSnapshot(at) {
+    if (!Number.isInteger(at) || at <= 0) {
+      throw new Error("Invalid argument, expected a positive integer.");
+    }
+    
+    const changes = await this.listChangesBackTo(at);
+    
+    const seenIds = new Set();
+    let snapshot = [];
+    for (const _ref of changes) {
+      const { action, target: { data: record } } = _ref;
+
+      if (action == "delete") {
+        seenIds.add(record.id); 
+        snapshot = snapshot.filter(r => r.id !== record.id);
+      } else if (!seenIds.has(record.id)) {
+        seenIds.add(record.id);
+        snapshot.push(record);
+      }
+    }
+    return {
+      last_modified: String(at),
+      data: snapshot.sort((a, b) => b.last_modified - a.last_modified),
+      next: () => {
+        throw new Error("Snapshots don't support pagination");
+      },
+      hasNextPage: false,
+      totalRecords: snapshot.length
+    };
   }
 
   
@@ -1718,14 +2151,18 @@ let Collection = (_dec = (0, _utils.capable)(["attachments"]), _dec2 = (0, _util
 
 
 
-  batch(fn, options = {}) {
-    const reqOptions = this._collOptions(options);
-    return this.client.batch(fn, _extends({}, reqOptions, {
+
+  async batch(fn, options = {}) {
+    return this.client.batch(fn, {
       bucket: this.bucket.name,
-      collection: this.name
-    }));
+      collection: this.name,
+      headers: this._getHeaders(options),
+      retry: this._getRetry(options),
+      safe: this._getSafe(options),
+      aggregate: !!options.aggregate
+    });
   }
-}, (_applyDecoratedDescriptor(_class.prototype, "addAttachment", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "addAttachment"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "removeAttachment", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "removeAttachment"), _class.prototype)), _class));
+}, (_applyDecoratedDescriptor(_class.prototype, "addAttachment", [_dec], Object.getOwnPropertyDescriptor(_class.prototype, "addAttachment"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "removeAttachment", [_dec2], Object.getOwnPropertyDescriptor(_class.prototype, "removeAttachment"), _class.prototype), _applyDecoratedDescriptor(_class.prototype, "getSnapshot", [_dec3], Object.getOwnPropertyDescriptor(_class.prototype, "getSnapshot"), _class.prototype)), _class));
 exports.default = Collection;
 
 },{"./endpoint":11,"./requests":14,"./utils":15,"uuid":2}],11:[function(require,module,exports){
@@ -1805,6 +2242,8 @@ exports.default = undefined;
 
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
+var _utils = require("./utils");
+
 var _errors = require("./errors");
 
 var _errors2 = _interopRequireDefault(_errors);
@@ -1823,7 +2262,7 @@ let HTTP = class HTTP {
 
   static get DEFAULT_REQUEST_HEADERS() {
     return {
-      "Accept": "application/json",
+      Accept: "application/json",
       "Content-Type": "application/json"
     };
   }
@@ -1873,27 +2312,8 @@ let HTTP = class HTTP {
   
 
 
-
-
-
-
-
-
-
-
-
-
-
-  request(url, options = { headers: {}, retry: 0 }) {
-    let response, status, statusText, headers, hasTimedout;
-    
-    options.headers = _extends({}, HTTP.DEFAULT_REQUEST_HEADERS, options.headers);
-    
-    
-    if (options.body && typeof options.body.append === "function") {
-      delete options.headers["Content-Type"];
-    }
-    options.mode = this.requestMode;
+  timedFetch(url, options) {
+    let hasTimedout = false;
     return new Promise((resolve, reject) => {
       
       let _timeoutId;
@@ -1903,73 +2323,113 @@ let HTTP = class HTTP {
           reject(new Error("Request timeout."));
         }, this.timeout);
       }
-      fetch(url, options).then(res => {
-        if (!hasTimedout) {
-          if (_timeoutId) {
-            clearTimeout(_timeoutId);
-          }
-          resolve(res);
-        }
-      }).catch(err => {
-        if (!hasTimedout) {
-          if (_timeoutId) {
-            clearTimeout(_timeoutId);
-          }
-          reject(err);
-        }
-      });
-    }).then(res => {
-      response = res;
-      headers = res.headers;
-      status = res.status;
-      statusText = res.statusText;
-      this._checkForDeprecationHeader(headers);
-      this._checkForBackoffHeader(status, headers);
-
-      
-      const retryAfter = this._checkForRetryAfterHeader(status, headers);
-      
-      if (retryAfter && options.retry > 0) {
-        return new Promise((resolve, reject) => {
-          setTimeout(() => {
-            resolve(this.request(url, _extends({}, options, { retry: options.retry - 1 })));
-          }, retryAfter);
-        });
-      }
-
-      return Promise.resolve(res.text())
-      
-      .then(text => {
-        if (text.length === 0) {
-          return null;
-        }
-        
-        return JSON.parse(text);
-      }).catch(err => {
-        const error = new Error(`HTTP ${status || 0}; ${err}`);
-        error.response = response;
-        error.stack = err.stack;
-        throw error;
-      }).then(json => {
-        if (json && status >= 400) {
-          let message = `HTTP ${status} ${json.error || ""}: `;
-          if (json.errno && json.errno in _errors2.default) {
-            const errnoMsg = _errors2.default[json.errno];
-            message += errnoMsg;
-            if (json.message && json.message !== errnoMsg) {
-              message += ` (${json.message})`;
+      function proceedWithHandler(fn) {
+        return arg => {
+          if (!hasTimedout) {
+            if (_timeoutId) {
+              clearTimeout(_timeoutId);
             }
-          } else {
-            message += statusText || "";
+            fn(arg);
           }
-          const error = new Error(message.trim());
-          error.response = response;
-          error.data = json;
-          throw error;
-        }
-        return { status, json, headers };
-      });
+        };
+      }
+      fetch(url, options).then(proceedWithHandler(resolve)).catch(proceedWithHandler(reject));
     });
+  }
+
+  
+
+
+  async processResponse(response) {
+    const { status } = response;
+    const text = await response.text();
+    
+    if (text.length === 0) {
+      return this.formatResponse(response, null);
+    }
+    try {
+      return this.formatResponse(response, JSON.parse(text));
+    } catch (err) {
+      const error = new Error(`HTTP ${status || 0}; ${err}`);
+      error.response = response;
+      error.stack = err.stack;
+      throw error;
+    }
+  }
+
+  
+
+
+  formatResponse(response, json) {
+    const { status, statusText, headers } = response;
+    if (json && status >= 400) {
+      let message = `HTTP ${status} ${json.error || ""}: `;
+      if (json.errno && json.errno in _errors2.default) {
+        const errnoMsg = _errors2.default[json.errno];
+        message += errnoMsg;
+        if (json.message && json.message !== errnoMsg) {
+          message += ` (${json.message})`;
+        }
+      } else {
+        message += statusText || "";
+      }
+      const error = new Error(message.trim());
+      error.response = response;
+      error.data = json;
+      throw error;
+    }
+    return { status, json, headers };
+  }
+
+  
+
+
+  async retry(url, retryAfter, request, options) {
+    await (0, _utils.delay)(retryAfter);
+    return this.request(url, request, _extends({}, options, { retry: options.retry - 1 }));
+  }
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  async request(url, request = { headers: {} }, options = { retry: 0 }) {
+    
+    request.headers = _extends({}, HTTP.DEFAULT_REQUEST_HEADERS, request.headers);
+    
+    
+    if (request.body && typeof request.body.append === "function") {
+      delete request.headers["Content-Type"];
+    }
+    request.mode = this.requestMode;
+
+    const response = await this.timedFetch(url, request);
+    const { status, headers } = response;
+
+    this._checkForDeprecationHeader(headers);
+    this._checkForBackoffHeader(status, headers);
+
+    
+    const retryAfter = this._checkForRetryAfterHeader(status, headers);
+    
+    if (retryAfter && options.retry > 0) {
+      return this.retry(url, retryAfter, request, options);
+    } else {
+      return this.processResponse(response);
+    }
   }
 
   _checkForDeprecationHeader(headers) {
@@ -2012,7 +2472,7 @@ let HTTP = class HTTP {
 };
 exports.default = HTTP;
 
-},{"./errors":12}],14:[function(require,module,exports){
+},{"./errors":12,"./utils":15}],14:[function(require,module,exports){
 "use strict";
 
 Object.defineProperty(exports, "__esModule", {
@@ -2023,6 +2483,7 @@ var _extends = Object.assign || function (target) { for (var i = 1; i < argument
 
 exports.createRequest = createRequest;
 exports.updateRequest = updateRequest;
+exports.jsonPatchPermissionsRequest = jsonPatchPermissionsRequest;
 exports.deleteRequest = deleteRequest;
 exports.addAttachmentRequest = addAttachmentRequest;
 
@@ -2059,10 +2520,7 @@ function createRequest(path, { data, permissions }, options = {}) {
     method: data && data.id ? "PUT" : "POST",
     path,
     headers: _extends({}, headers, safeHeader(safe)),
-    body: {
-      data,
-      permissions
-    }
+    body: { data, permissions }
   };
 }
 
@@ -2070,11 +2528,7 @@ function createRequest(path, { data, permissions }, options = {}) {
 
 
 function updateRequest(path, { data, permissions }, options = {}) {
-  const {
-    headers,
-    safe,
-    patch
-  } = _extends({}, requestDefaults, options);
+  const { headers, safe, patch } = _extends({}, requestDefaults, options);
   const { last_modified } = _extends({}, data, options);
 
   if (Object.keys((0, _utils.omit)(data, "id", "last_modified")).length === 0) {
@@ -2085,10 +2539,34 @@ function updateRequest(path, { data, permissions }, options = {}) {
     method: patch ? "PATCH" : "PUT",
     path,
     headers: _extends({}, headers, safeHeader(safe, last_modified)),
-    body: {
-      data,
-      permissions
+    body: { data, permissions }
+  };
+}
+
+
+
+
+function jsonPatchPermissionsRequest(path, permissions, opType, options = {}) {
+  const { headers, safe, last_modified } = _extends({}, requestDefaults, options);
+
+  const ops = [];
+
+  for (const [type, principals] of Object.entries(permissions)) {
+    for (const principal of principals) {
+      ops.push({
+        op: opType,
+        path: `/permissions/${type}/${principal}`
+      });
     }
+  }
+
+  return {
+    method: "PATCH",
+    path,
+    headers: _extends({}, headers, safeHeader(safe, last_modified), {
+      "Content-Type": "application/json-patch+json"
+    }),
+    body: ops
   };
 }
 
@@ -2116,13 +2594,8 @@ function addAttachmentRequest(path, dataURI, { data, permissions } = {}, options
 
   const body = { data, permissions };
   const formData = (0, _utils.createFormData)(dataURI, body, options);
-  let customPath;
 
-  if (gzipped != null) {
-    customPath = path + "?gzipped=" + (gzipped ? "true" : "false");
-  } else {
-    customPath = path;
-  }
+  let customPath = gzipped != null ? customPath = path + "?gzipped=" + (gzipped ? "true" : "false") : path;
 
   return {
     method: "POST",
@@ -2142,6 +2615,7 @@ Object.defineProperty(exports, "__esModule", {
 var _extends = Object.assign || function (target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i]; for (var key in source) { if (Object.prototype.hasOwnProperty.call(source, key)) { target[key] = source[key]; } } } return target; };
 
 exports.partition = partition;
+exports.delay = delay;
 exports.pMap = pMap;
 exports.omit = omit;
 exports.toDataBody = toDataBody;
@@ -2154,6 +2628,7 @@ exports.isObject = isObject;
 exports.parseDataURL = parseDataURL;
 exports.extractFileInfo = extractFileInfo;
 exports.createFormData = createFormData;
+exports.cleanUndefinedProperties = cleanUndefinedProperties;
 
 
 
@@ -2181,18 +2656,27 @@ function partition(array, n) {
 
 
 
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
 
 
 
 
-function pMap(list, fn) {
+
+
+
+
+
+
+async function pMap(list, fn) {
   let results = [];
-  return list.reduce((promise, entry) => {
-    return promise.then(() => {
-      return Promise.resolve(fn(entry)).then(result => results = results.concat(result));
-    });
-  }, Promise.resolve()).then(() => results);
+  await list.reduce(async function (promise, entry) {
+    await promise;
+    results = results.concat((await fn(entry)));
+  }, Promise.resolve());
+  return results;
 }
 
 
@@ -2265,7 +2749,7 @@ function checkVersion(version, minVersion, maxVersion) {
   const [maxMajor, maxMinor] = extract(maxVersion);
   const checks = [verMajor < minMajor, verMajor === minMajor && verMinor < minMinor, verMajor > maxMajor, verMajor === maxMajor && verMinor >= maxMinor];
   if (checks.some(x => x)) {
-    throw new Error(`Version ${version} doesn't satisfy ` + `${minVersion} <= x < ${maxVersion}`);
+    throw new Error(`Version ${version} doesn't satisfy ${minVersion} <= x < ${maxVersion}`);
   }
 }
 
@@ -2316,9 +2800,10 @@ function capable(capabilities) {
           
           const client = "client" in this ? this.client : this;
           return client.fetchServerCapabilities().then(available => {
-            const missing = capabilities.filter(c => !available.hasOwnProperty(c));
+            const missing = capabilities.filter(c => !(c in available));
             if (missing.length > 0) {
-              throw new Error(`Required capabilities ${missing.join(", ")} ` + "not present on server");
+              const missingStr = missing.join(", ");
+              throw new Error(`Required capabilities ${missingStr} not present on server`);
             }
           }).then(() => fn.apply(this, args));
         };
@@ -2430,6 +2915,20 @@ function createFormData(dataURL, body, options = {}) {
     }
   }
   return formData;
+}
+
+
+
+
+
+function cleanUndefinedProperties(obj) {
+  const result = {};
+  for (const key in obj) {
+    if (typeof obj[key] !== "undefined") {
+      result[key] = obj[key];
+    }
+  }
+  return result;
 }
 
 },{}]},{},[1])(1)
