@@ -297,7 +297,9 @@ nsFileControlFrame::DnDListener::HandleEvent(nsIDOMEvent* aEvent)
     } else {
       bool blinkFileSystemEnabled =
         Preferences::GetBool("dom.webkitBlink.filesystem.enabled", false);
-      if (blinkFileSystemEnabled) {
+      bool dirPickerEnabled =
+        Preferences::GetBool("dom.input.dirpicker", false);
+      if (blinkFileSystemEnabled || dirPickerEnabled) {
         FileList* files = static_cast<FileList*>(fileList.get());
         if (files) {
           for (uint32_t i = 0; i < files->Length(); ++i) {
@@ -315,12 +317,22 @@ nsFileControlFrame::DnDListener::HandleEvent(nsIDOMEvent* aEvent)
       }
 
       
-      
-      
-      inputElement->SetFiles(fileList, true);
       if (blinkFileSystemEnabled) {
+        
+        
+        
+        inputElement->SetFiles(fileList, true);
         inputElement->UpdateEntries(array);
       }
+      
+      else if (dirPickerEnabled) {
+        inputElement->SetFilesOrDirectories(array, true);
+      }
+      
+      else {
+        inputElement->SetFiles(fileList, true);
+      }
+
       nsContentUtils::DispatchTrustedEvent(content->OwnerDoc(), content,
                                            NS_LITERAL_STRING("input"), true,
                                            false);
