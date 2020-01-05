@@ -355,8 +355,11 @@ ChromiumCDMProxy::Shutdown()
     cdm.swap(mCDM);
   }
   if (cdm) {
+    
+    
+    RefPtr<ChromiumCDMProxy> self(this);
     nsCOMPtr<nsIRunnable> task =
-      NewRunnableMethod(cdm, &gmp::ChromiumCDMParent::Shutdown);
+      NS_NewRunnableFunction([self, cdm]() { cdm->Shutdown(); });
     mGMPThread->Dispatch(task.forget());
   }
 }
