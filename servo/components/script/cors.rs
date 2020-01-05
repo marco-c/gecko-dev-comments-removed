@@ -64,7 +64,8 @@ impl CORSRequest {
                      destination: Url,
                      mode: RequestMode,
                      method: Method,
-                     headers: Headers)
+                     headers: Headers,
+                     same_origin_data_url_flag: bool)
                      -> Result<Option<CORSRequest>, ()> {
         if referer.scheme == destination.scheme && referer.host() == destination.host() &&
            referer.port() == destination.port() {
@@ -73,6 +74,11 @@ impl CORSRequest {
         match &*destination.scheme {
             
             
+            "about" if destination.path() == Some(&["blank".to_owned()]) => Ok(None),
+            
+            
+            
+            "data" if same_origin_data_url_flag && method == Method::Get => Ok(None),
             "http" | "https" => {
                 let mut req = CORSRequest::new(referer, destination, mode, method, headers);
                 req.preflight_flag = !is_simple_method(&req.method) ||
