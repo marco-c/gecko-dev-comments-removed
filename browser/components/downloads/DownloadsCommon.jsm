@@ -1195,11 +1195,16 @@ DownloadsIndicatorDataCtor.prototype = {
           Cu.reportError("Unknown reputation verdict: " +
                          download.error.reputationCheckVerdict);
       }
-    } else if (download.succeeded || download.error) {
+    } else if (download.succeeded) {
       
       if (this._attention != DownloadsCommon.ATTENTION_SEVERE &&
           this._attention != DownloadsCommon.ATTENTION_WARNING) {
         this.attention = DownloadsCommon.ATTENTION_SUCCESS;
+      }
+    } else if (download.error) {
+      
+      if (this._attention != DownloadsCommon.ATTENTION_SEVERE) {
+        this.attention = DownloadsCommon.ATTENTION_WARNING;
       }
     }
 
