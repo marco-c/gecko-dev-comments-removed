@@ -10,7 +10,7 @@ use euclid::{Size2D, TypedSize2D};
 use media_queries::MediaType;
 use properties::ComputedValues;
 use std::fmt;
-use style_traits::{ToCss, ViewportPx};
+use style_traits::{CSSPixel, ToCss};
 use style_traits::viewport::ViewportConstraints;
 use values::computed::{self, ToComputedValue};
 use values::specified;
@@ -24,13 +24,13 @@ pub struct Device {
     
     media_type: MediaType,
     
-    viewport_size: TypedSize2D<f32, ViewportPx>,
+    viewport_size: TypedSize2D<f32, CSSPixel>,
 }
 
 impl Device {
     
     pub fn new(media_type: MediaType,
-               viewport_size: TypedSize2D<f32, ViewportPx>)
+               viewport_size: TypedSize2D<f32, CSSPixel>)
                -> Device {
         Device {
             media_type: media_type,
@@ -53,7 +53,7 @@ impl Device {
 
     
     #[inline]
-    pub fn px_viewport_size(&self) -> TypedSize2D<f32, ViewportPx> {
+    pub fn px_viewport_size(&self) -> TypedSize2D<f32, CSSPixel> {
         self.viewport_size
     }
 

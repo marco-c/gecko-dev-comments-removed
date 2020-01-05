@@ -24,7 +24,7 @@ use net_traits::CoreResourceMsg;
 use net_traits::storage_thread::StorageType;
 use offscreen_gl_context::{GLContextAttributes, GLLimits};
 use servo_url::ServoUrl;
-use style_traits::PagePx;
+use style_traits::CSSPixel;
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
 
@@ -34,7 +34,7 @@ pub enum LayoutMsg {
     
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
-    FrameSizes(Vec<(PipelineId, TypedSize2D<f32, PagePx>)>),
+    FrameSizes(Vec<(PipelineId, TypedSize2D<f32, CSSPixel>)>),
     
     SetCursor(Cursor),
     

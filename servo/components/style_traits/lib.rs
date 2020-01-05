@@ -28,6 +28,24 @@ pub type UnsafeNode = (usize, usize);
 
 
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "servo", derive(Deserialize, Serialize, HeapSizeOf))]
+pub struct PinchZoomFactor(f32);
+
+impl PinchZoomFactor {
+    
+    pub fn new(scale: f32) -> PinchZoomFactor {
+        PinchZoomFactor(scale)
+    }
+
+    
+    pub fn get(&self) -> f32 {
+        self.0
+    }
+}
+
+
+
 
 
 
@@ -36,17 +54,7 @@ pub type UnsafeNode = (usize, usize);
 
 
 #[derive(Clone, Copy, Debug)]
-pub enum ViewportPx {}
-
-
-
-
-
-
-
-#[derive(Clone, Copy, Debug)]
-pub enum PagePx {}
-
+pub enum CSSPixel {}
 
 
 

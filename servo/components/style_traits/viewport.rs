@@ -4,9 +4,8 @@
 
 
 
-use {PagePx, ViewportPx};
+use {CSSPixel, PinchZoomFactor};
 use cssparser::{Parser, ToCss};
-use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;
 use std::ascii::AsciiExt;
 use std::fmt;
@@ -31,13 +30,13 @@ pub struct ViewportConstraints {
     
     
     
-    pub size: TypedSize2D<f32, ViewportPx>,
+    pub size: TypedSize2D<f32, CSSPixel>,
     
-    pub initial_zoom: ScaleFactor<f32, PagePx, ViewportPx>,
+    pub initial_zoom: PinchZoomFactor,
     
-    pub min_zoom: Option<ScaleFactor<f32, PagePx, ViewportPx>>,
+    pub min_zoom: Option<PinchZoomFactor>,
     
-    pub max_zoom: Option<ScaleFactor<f32, PagePx, ViewportPx>>,
+    pub max_zoom: Option<PinchZoomFactor>,
     
     pub user_zoom: UserZoom,
     

@@ -67,7 +67,7 @@ use servo_url::ServoUrl;
 use std::collections::HashMap;
 use std::fmt;
 use std::sync::mpsc::{Receiver, Sender};
-use style_traits::{PagePx, UnsafeNode, ViewportPx};
+use style_traits::{CSSPixel, UnsafeNode};
 use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 use webvr_traits::{WebVRDisplayEvent, WebVRMsg};
 
@@ -663,13 +663,10 @@ pub enum DevicePixel {}
 pub struct WindowSizeData {
     
     
-    pub initial_viewport: TypedSize2D<f32, ViewportPx>,
+    pub initial_viewport: TypedSize2D<f32, CSSPixel>,
 
     
-    pub visible_viewport: TypedSize2D<f32, PagePx>,
-
-    
-    pub device_pixel_ratio: ScaleFactor<f32, ViewportPx, DevicePixel>,
+    pub device_pixel_ratio: ScaleFactor<f32, CSSPixel, DevicePixel>,
 }
 
 
