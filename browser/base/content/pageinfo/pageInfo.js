@@ -848,97 +848,82 @@ function makePreview(row) {
          item.HTMLImageElement || item.SVGImageElement ||
          (item.HTMLObjectElement && mimeType && mimeType.startsWith("image/")) ||
          isBG) && isProtocolAllowed) {
-      
-      newImage.addEventListener("loadend", function() {
-        physWidth = newImage.width || 0;
-        physHeight = newImage.height || 0;
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        if (!isBG) {
-          newImage.width = ("width" in item && item.width) || newImage.naturalWidth;
-          newImage.height = ("height" in item && item.height) || newImage.naturalHeight;
-        } else {
-          
-          
-          newImage.width = item.naturalWidth || newImage.naturalWidth;
-          newImage.height = item.naturalHeight || newImage.naturalHeight;
-        }
-
-        if (item.SVGImageElement) {
-          newImage.width = item.SVGImageElementWidth;
-          newImage.height = item.SVGImageElementHeight;
-        }
-
-        width = newImage.width;
-        height = newImage.height;
-
-        document.getElementById("theimagecontainer").collapsed = false
-        document.getElementById("brokenimagecontainer").collapsed = true;
-
-        let imageSize = "";
-        if (url) {
-          if (width != physWidth || height != physHeight) {
-            imageSize = gBundle.getFormattedString("mediaDimensionsScaled",
-                                                   [formatNumber(physWidth),
-                                                    formatNumber(physHeight),
-                                                    formatNumber(width),
-                                                    formatNumber(height)]);
-          } else {
-            imageSize = gBundle.getFormattedString("mediaDimensions",
-                                                   [formatNumber(width),
-                                                    formatNumber(height)]);
-          }
-        }
-        setItemValue("imagedimensiontext", imageSize);
-      }, {once: true});
-
       newImage.setAttribute("src", url);
-    } else {
+      physWidth = newImage.width || 0;
+      physHeight = newImage.height || 0;
+
       
-      if (item.HTMLVideoElement && isProtocolAllowed) {
-        newImage = document.createElementNS("http://www.w3.org/1999/xhtml", "video");
-        newImage.id = "thepreviewimage";
-        newImage.src = url;
-        newImage.controls = true;
-        width = physWidth = item.videoWidth;
-        height = physHeight = item.videoHeight;
-
-        document.getElementById("theimagecontainer").collapsed = false;
-        document.getElementById("brokenimagecontainer").collapsed = true;
-      } else if (item.HTMLAudioElement && isProtocolAllowed) {
-        newImage = new Audio;
-        newImage.id = "thepreviewimage";
-        newImage.src = url;
-        newImage.controls = true;
-        isAudio = true;
-
-        document.getElementById("theimagecontainer").collapsed = false;
-        document.getElementById("brokenimagecontainer").collapsed = true;
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (!isBG) {
+        newImage.width = ("width" in item && item.width) || newImage.naturalWidth;
+        newImage.height = ("height" in item && item.height) || newImage.naturalHeight;
       } else {
         
         
-        document.getElementById("brokenimagecontainer").collapsed = false;
-        document.getElementById("theimagecontainer").collapsed = true;
+        newImage.width = item.naturalWidth || newImage.naturalWidth;
+        newImage.height = item.naturalHeight || newImage.naturalHeight;
       }
 
-      let imageSize = "";
-      if (url && !isAudio) {
+      if (item.SVGImageElement) {
+        newImage.width = item.SVGImageElementWidth;
+        newImage.height = item.SVGImageElementHeight;
+      }
+
+      width = newImage.width;
+      height = newImage.height;
+
+      document.getElementById("theimagecontainer").collapsed = false
+      document.getElementById("brokenimagecontainer").collapsed = true;
+    } else if (item.HTMLVideoElement && isProtocolAllowed) {
+      newImage = document.createElementNS("http://www.w3.org/1999/xhtml", "video");
+      newImage.id = "thepreviewimage";
+      newImage.src = url;
+      newImage.controls = true;
+      width = physWidth = item.videoWidth;
+      height = physHeight = item.videoHeight;
+
+      document.getElementById("theimagecontainer").collapsed = false;
+      document.getElementById("brokenimagecontainer").collapsed = true;
+    } else if (item.HTMLAudioElement && isProtocolAllowed) {
+      newImage = new Audio;
+      newImage.id = "thepreviewimage";
+      newImage.src = url;
+      newImage.controls = true;
+      isAudio = true;
+
+      document.getElementById("theimagecontainer").collapsed = false;
+      document.getElementById("brokenimagecontainer").collapsed = true;
+    } else {
+      
+      
+      document.getElementById("brokenimagecontainer").collapsed = false;
+      document.getElementById("theimagecontainer").collapsed = true;
+    }
+
+    let imageSize = "";
+    if (url && !isAudio) {
+      if (width != physWidth || height != physHeight) {
+        imageSize = gBundle.getFormattedString("mediaDimensionsScaled",
+                                               [formatNumber(physWidth),
+                                                formatNumber(physHeight),
+                                                formatNumber(width),
+                                                formatNumber(height)]);
+      } else {
         imageSize = gBundle.getFormattedString("mediaDimensions",
                                                [formatNumber(width),
                                                 formatNumber(height)]);
       }
-      setItemValue("imagedimensiontext", imageSize);
     }
+    setItemValue("imagedimensiontext", imageSize);
 
     makeBlockImage(url);
 
