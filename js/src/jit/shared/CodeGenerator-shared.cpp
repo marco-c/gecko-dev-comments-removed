@@ -1647,26 +1647,6 @@ CodeGeneratorShared::jumpToBlock(MBasicBlock* mir, Assembler::Condition cond)
 }
 #endif
 
-MOZ_MUST_USE bool
-CodeGeneratorShared::addCacheLocations(const CacheLocationList& locs, size_t* numLocs,
-                                       size_t* curIndex)
-{
-    size_t firstIndex = runtimeData_.length();
-    size_t numLocations = 0;
-    for (CacheLocationList::iterator iter = locs.begin(); iter != locs.end(); iter++) {
-        
-        
-        if (!allocateData(sizeof(CacheLocation), curIndex))
-            return false;
-        new (&runtimeData_[*curIndex]) CacheLocation(iter->pc, iter->script);
-        numLocations++;
-    }
-    MOZ_ASSERT(numLocations != 0);
-    *numLocs = numLocations;
-    *curIndex = firstIndex;
-    return true;
-}
-
 ReciprocalMulConstants
 CodeGeneratorShared::computeDivisionConstants(uint32_t d, int maxLog) {
     MOZ_ASSERT(maxLog >= 2 && maxLog <= 32);
