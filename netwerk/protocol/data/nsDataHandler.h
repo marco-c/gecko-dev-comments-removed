@@ -24,18 +24,18 @@ public:
     nsDataHandler();
 
     
-    static nsresult
+    static MOZ_MUST_USE nsresult
     Create(nsISupports* aOuter, const nsIID& aIID, void* *aResult);
 
     
     
     
     
-    static nsresult ParseURI(nsCString& spec,
-                             nsCString& contentType,
-                             nsCString* contentCharset,
-                             bool& isBase64,
-                             nsCString* dataBuffer);
+    static MOZ_MUST_USE nsresult ParseURI(nsCString& spec,
+                                          nsCString& contentType,
+                                          nsCString* contentCharset,
+                                          bool& isBase64,
+                                          nsCString* dataBuffer);
 };
 
 #endif 
