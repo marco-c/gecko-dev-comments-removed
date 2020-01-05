@@ -7,12 +7,33 @@
 
 #undef MOZ_DMD
 
+#include "TestHarness.h"
 #include "nsIMemoryReporter.h"
+
 #include "mozilla/Mutex.h"
 
-#include "gtest/gtest.h"
+#define PASS()                                  \
+    do {                                        \
+        passed(__FUNCTION__);                   \
+        return NS_OK;                           \
+    } while (0)
+
+#define FAIL(why)                               \
+    do {                                        \
+        fail("%s | %s - %s", __FILE__, __FUNCTION__, why); \
+        return NS_ERROR_FAILURE;                \
+    } while (0)
 
 
+
+#undef DD_TEST1
+#undef DD_TEST2
+#undef DD_TEST3
+#undef DD_TEST4
+
+
+
+#ifdef DD_TEST1
 
 static void
 AllocLockRecurseUnlockFree(int i)
@@ -30,25 +51,24 @@ AllocLockRecurseUnlockFree(int i)
 
 
 
-TEST(DeadlockDetectorScalability, LengthNDepChain)
+static nsresult
+LengthNDepChain(int N)
 {
-    const int N = 1 << 14; 
     AllocLockRecurseUnlockFree(N);
-    ASSERT_TRUE(true);
+    PASS();
 }
 
+#endif
 
 
 
+#ifdef DD_TEST2
 
 
 
-TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps)
+static nsresult
+OneLockNDeps(const int N, const int K)
 {
-    
-    const int N = 1 << 17; 
-    const int K = 100;
-
     mozilla::Mutex* lock = new mozilla::Mutex("deadlockDetector.scalability.t2.master");
     mozilla::Mutex** locks = new mozilla::Mutex*[N];
     if (!locks)
@@ -75,9 +95,14 @@ TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps)
         delete locks[i];
     delete[] locks;
 
-    ASSERT_TRUE(true);
+    PASS();
 }
 
+#endif
+
+
+
+#ifdef DD_TEST3
 
 
 
@@ -86,12 +111,9 @@ TEST(DeadlockDetectorScalability, DISABLED_OneLockNDeps)
 
 
 
-
-TEST(DeadlockDetectorScalability, MaxDepsNsq)
+static nsresult
+MaxDepsNsq(const int N, const int K)
 {
-    const int N = 1 << 10; 
-    const int K = 10;
-
     mozilla::Mutex** locks = new mozilla::Mutex*[N];
     if (!locks)
         NS_RUNTIMEABORT("couldn't allocate lock array");
@@ -117,20 +139,22 @@ TEST(DeadlockDetectorScalability, MaxDepsNsq)
         delete locks[i];
     delete[] locks;
 
-    ASSERT_TRUE(true);
+    PASS();
 }
 
+#endif
+
+
+
+#ifdef DD_TEST4
 
 
 
 
 
-
-TEST(DeadlockDetectorScalability, OneLockNDepsUsedSeveralTimes)
+static nsresult
+OneLockNDepsUsedSeveralTimes(const size_t N, const size_t K)
 {
-    const size_t N = 1 << 17; 
-    const size_t K = 3;
-
     
     mozilla::Mutex* lock_1 = new mozilla::Mutex("deadlockDetector.scalability.t4.master");
     for (size_t n = 0; n < N; n++) {
@@ -152,19 +176,58 @@ TEST(DeadlockDetectorScalability, OneLockNDepsUsedSeveralTimes)
     
     delete lock_1;
 
-    ASSERT_TRUE(true);
+    PASS();
 }
+
+#endif
 
 
 
 MOZ_DEFINE_MALLOC_SIZE_OF(DeadlockDetectorMallocSizeOf)
 
-
-
-TEST(DeadlockDetectorScalability, SizeOf)
+int
+main(int argc, char** argv)
 {
+    ScopedXPCOM xpcom("Deadlock detector scalability (" __FILE__ ")");
+    if (xpcom.failed())
+        return 1;
+
+    int rv = 0;
+
+    
+
+#ifndef DD_TEST1
+    puts("Skipping not-requested LengthNDepChain() test");
+#else
+    if (NS_FAILED(LengthNDepChain(1 << 14))) 
+        rv = 1;
+#endif
+
+#ifndef DD_TEST2
+    puts("Skipping not-requested OneLockNDeps() test");
+#else
+    
+    if (NS_FAILED(OneLockNDeps(1 << 17, 100))) 
+        rv = 1;
+#endif
+
+#ifndef DD_TEST3
+    puts("Skipping not-requested MaxDepsNsq() test");
+#else
+    if (NS_FAILED(MaxDepsNsq(1 << 10, 10))) 
+        rv = 1;
+#endif
+
+#ifndef DD_TEST4
+    puts("Skipping not-requested OneLockNDepsUsedSeveralTimes() test");
+#else
+    if (NS_FAILED(OneLockNDepsUsedSeveralTimes(1 << 17, 3))) 
+        rv = 1;
+#endif
+
     size_t memory_used = mozilla::BlockingResourceBase::SizeOfDeadlockDetector(
         DeadlockDetectorMallocSizeOf);
+    printf_stderr("Used %d bytes\n", (int)memory_used);
 
-    ASSERT_GT(memory_used, size_t(0));
+    return rv;
 }
