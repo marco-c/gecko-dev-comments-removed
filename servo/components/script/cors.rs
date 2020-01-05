@@ -69,7 +69,7 @@ impl CORSRequest {
            referer.port() == destination.port() {
             return Ok(None); 
         }
-        match destination.scheme.as_slice() {
+        match &*destination.scheme {
             
             
             "http" | "https" => {
@@ -221,7 +221,7 @@ impl CORSRequest {
         
         let methods_substep4 = [self.method.clone()];
         let mut methods = match response.headers.get() {
-            Some(&AccessControlAllowMethods(ref v)) => v.as_slice(),
+            Some(&AccessControlAllowMethods(ref v)) => &**v,
             _ => return error
         };
         let headers = match response.headers.get() {
@@ -420,7 +420,7 @@ impl CORSCache {
 fn is_simple_header(h: &HeaderView) -> bool {
     
     
-    match h.name().to_ascii_lowercase().as_slice() {
+    match &*h.name().to_ascii_lowercase() {
         "accept" | "accept-language" | "content-language" => true,
         "content-type" => match h.value() {
             Some(&ContentType(Mime(TopLevel::Text, SubLevel::Plain, _))) |
