@@ -1225,9 +1225,12 @@ pref("privacy.trackingprotection.pbmode.enabled",  true);
 
 pref("privacy.trackingprotection.annotate_channels",  false);
 
+
+pref("privacy.trackingprotection.lower_network_priority",  false);
+
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
-#if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA)
+#if defined(XP_WIN) && !defined(RELEASE_OR_BETA) || defined(MOZ_WIDGET_GTK) && !defined(RELEASE_OR_BETA) || defined(XP_MACOSX) && !defined(RELEASE_OR_BETA)
 pref("dom.event.highrestimestamp.enabled",  true);
 #else
 pref("dom.event.highrestimestamp.enabled",  false);
@@ -2628,6 +2631,9 @@ pref("layout.css.grid-template-subgrid-value.enabled", false);
 
 
 pref("layout.css.contain.enabled", false);
+
+
+pref("layout.css.display-flow-root.enabled", true);
 
 
 pref("layout.css.box-decoration-break.enabled", true);
@@ -5059,9 +5065,6 @@ pref("dom.forms.inputmode", false);
 #else
 pref("dom.forms.inputmode", true);
 #endif
-
-
-pref("dom.mozInputMethod.enabled", false);
 
 pref("dom.flyweb.enabled", false);
 
