@@ -8920,11 +8920,11 @@ nsDocShell::RestoreFromHistory()
   
   
   
-  privWinInner->NewSyncStateFromParentWindow();
+  privWinInner->SyncStateFromParentWindow();
 
   
   
-  privWinInner->NewResume();
+  privWinInner->Resume();
 
   
   

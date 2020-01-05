@@ -2256,11 +2256,11 @@ WorkerPrivateParent<Derived>::WorkerPrivateParent(
 
     
     
-    if (mLoadInfo.mWindow && mLoadInfo.mWindow->NewIsSuspended()) {
+    if (mLoadInfo.mWindow && mLoadInfo.mWindow->IsSuspended()) {
       ParentWindowPaused();
     }
 
-    if (mLoadInfo.mWindow && mLoadInfo.mWindow->NewIsFrozen()) {
+    if (mLoadInfo.mWindow && mLoadInfo.mWindow->IsFrozen()) {
       Freeze(mLoadInfo.mWindow);
     }
   }

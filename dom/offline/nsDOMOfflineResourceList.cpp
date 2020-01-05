@@ -558,7 +558,7 @@ nsDOMOfflineResourceList::SendEvent(const nsAString &aEventName)
 
   
   
-  if (GetOwner()->NewIsFrozen() || mPendingEvents.Count() > 0) {
+  if (GetOwner()->IsFrozen() || mPendingEvents.Count() > 0) {
     mPendingEvents.AppendObject(event);
     return NS_OK;
   }

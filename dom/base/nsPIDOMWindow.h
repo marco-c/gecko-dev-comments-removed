@@ -219,8 +219,8 @@ public:
   
   
   
-  virtual bool NewIsSuspended() const = 0;
-  virtual bool NewIsFrozen() const = 0;
+  virtual bool IsSuspended() const = 0;
+  virtual bool IsFrozen() const = 0;
 
   
   
@@ -823,8 +823,8 @@ public:
   
   
   
-  void NewSuspend();
-  void NewResume();
+  void Suspend();
+  void Resume();
 
   
   
@@ -833,12 +833,12 @@ public:
   
   
   
-  void NewFreeze();
-  void NewThaw();
+  void Freeze();
+  void Thaw();
 
   
   
-  void NewSyncStateFromParentWindow();
+  void SyncStateFromParentWindow();
 
 protected:
   void CreatePerformanceObjectIfNeeded();

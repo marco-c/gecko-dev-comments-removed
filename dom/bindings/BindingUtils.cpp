@@ -2732,7 +2732,7 @@ void
 HandlePrerenderingViolation(nsPIDOMWindowInner* aWindow)
 {
   
-  aWindow->NewFreeze();
+  aWindow->Freeze();
 
   
   nsCOMPtr<nsIDocument> doc = aWindow->GetExtantDoc();

@@ -8202,7 +8202,7 @@ nsDocument::CanSavePresentation(nsIRequest *aNewRequest)
   
   
   nsPIDOMWindowInner* win = GetInnerWindow();
-  if (win && win->NewIsSuspended() && !win->NewIsFrozen()) {
+  if (win && win->IsSuspended() && !win->IsFrozen()) {
     return false;
   }
 
