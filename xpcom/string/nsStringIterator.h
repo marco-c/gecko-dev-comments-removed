@@ -46,16 +46,6 @@ public:
   
   
 
-  pointer start() const
-  {
-    return mStart;
-  }
-
-  pointer end() const
-  {
-    return mEnd;
-  }
-
   pointer get() const
   {
     return mPosition;
@@ -177,16 +167,6 @@ public:
   }
   
   
-
-  pointer start() const
-  {
-    return mStart;
-  }
-
-  pointer end() const
-  {
-    return mEnd;
-  }
 
   pointer get() const
   {
