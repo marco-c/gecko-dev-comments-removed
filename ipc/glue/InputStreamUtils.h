@@ -17,23 +17,19 @@ namespace ipc {
 
 class FileDescriptor;
 
-void
-SerializeInputStream(nsIInputStream* aInputStream,
-                     InputStreamParams& aParams,
-                     nsTArray<FileDescriptor>& aFileDescriptors);
 
-void
-SerializeInputStream(nsIInputStream* aInputStream,
-                     OptionalInputStreamParams& aParams,
-                     nsTArray<FileDescriptor>& aFileDescriptors);
+class InputStreamHelper
+{
+public:
+  static void
+  SerializeInputStream(nsIInputStream* aInputStream,
+                       InputStreamParams& aParams,
+                       nsTArray<FileDescriptor>& aFileDescriptors);
 
-already_AddRefed<nsIInputStream>
-DeserializeInputStream(const InputStreamParams& aParams,
-                       const nsTArray<FileDescriptor>& aFileDescriptors);
-
-already_AddRefed<nsIInputStream>
-DeserializeInputStream(const OptionalInputStreamParams& aParams,
-                       const nsTArray<FileDescriptor>& aFileDescriptors);
+  static already_AddRefed<nsIInputStream>
+  DeserializeInputStream(const InputStreamParams& aParams,
+                         const nsTArray<FileDescriptor>& aFileDescriptors);
+};
 
 } 
 } 
