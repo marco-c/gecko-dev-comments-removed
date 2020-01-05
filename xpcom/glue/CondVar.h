@@ -46,7 +46,7 @@ public:
     
     mCvar = PR_NewCondVar(mLock->mLock);
     if (!mCvar) {
-      NS_RUNTIMEABORT("Can't allocate mozilla::CondVar");
+      MOZ_CRASH("Can't allocate mozilla::CondVar");
     }
   }
 

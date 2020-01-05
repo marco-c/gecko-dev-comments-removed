@@ -1063,7 +1063,7 @@ WrapNewBindingNonWrapperCachedObject(JSContext* cx,
   
   
   if (!value) {
-    NS_RUNTIMEABORT("Don't try to wrap null objects");
+    MOZ_CRASH("Don't try to wrap null objects");
   }
   
   JS::Rooted<JSObject*> obj(cx);

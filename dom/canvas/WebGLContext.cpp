@@ -1288,8 +1288,7 @@ WebGLContext::UpdateLastUseIndex()
     
     
     if (!sIndex.isValid())
-        NS_RUNTIMEABORT("Can't believe it's been 2^64 transactions already!");
-
+        MOZ_CRASH("Can't believe it's been 2^64 transactions already!");
     mLastUseIndex = sIndex.value();
 }
 

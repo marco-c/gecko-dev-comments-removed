@@ -138,7 +138,7 @@ IPDLUnitTestMain(void* aData)
         
         fprintf(stderr, MOZ_IPDL_TESTFAIL_LABEL "| %s | unknown unit test %s\n",
                 "<--->", testString);
-        NS_RUNTIMEABORT("can't continue");
+        MOZ_CRASH("can't continue");
     }
     gIPDLUnitTestName = testString;
 
@@ -189,7 +189,7 @@ IPDLUnitTestThreadMain(char *testString)
         
         fprintf(stderr, MOZ_IPDL_TESTFAIL_LABEL "| %s | unknown unit test %s\n",
                 "<--->", testString);
-        NS_RUNTIMEABORT("can't continue");
+        MOZ_CRASH("can't continue");
     }
     gIPDLUnitTestName = testString;
 

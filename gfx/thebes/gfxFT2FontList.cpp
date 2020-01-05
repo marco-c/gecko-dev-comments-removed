@@ -1231,7 +1231,7 @@ gfxFT2FontList::FindFonts()
 
     if (mFontFamilies.Count() == 0) {
         
-        NS_RUNTIMEABORT("Could not read the system fonts directory");
+        MOZ_CRASH("Could not read the system fonts directory");
     }
 
     

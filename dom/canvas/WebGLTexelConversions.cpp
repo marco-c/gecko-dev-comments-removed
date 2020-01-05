@@ -422,7 +422,7 @@ ConvertImage(size_t width, size_t height,
         
         
         
-        NS_RUNTIMEABORT("programming mistake in WebGL texture conversions");
+        MOZ_CRASH("programming mistake in WebGL texture conversions");
     }
 
     return true;

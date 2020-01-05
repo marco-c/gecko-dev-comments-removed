@@ -113,7 +113,7 @@ NeckoChild::AllocPFTPChannelChild(const PBrowserOrId& aBrowser,
                                   const FTPChannelCreationArgs& aOpenArgs)
 {
   
-  NS_RUNTIMEABORT("AllocPFTPChannelChild should not be called");
+  MOZ_CRASH("AllocPFTPChannelChild should not be called");
   return nullptr;
 }
 

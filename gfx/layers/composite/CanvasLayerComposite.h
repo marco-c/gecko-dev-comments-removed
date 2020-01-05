@@ -36,7 +36,7 @@ public:
   
   virtual void Initialize(const Data& aData) override
   {
-    NS_RUNTIMEABORT("Incompatibe surface type");
+    MOZ_CRASH("Incompatibe surface type");
   }
 
   virtual LayerRenderState GetRenderState() override;

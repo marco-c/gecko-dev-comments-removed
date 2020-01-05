@@ -123,7 +123,7 @@ nsWindow::DoDraw(void)
         if (mozilla::layers::LayersBackend::LAYERS_CLIENT == lm->GetBackendType()) {
             
         } else {
-            NS_RUNTIMEABORT("Unexpected layer manager type");
+            MOZ_CRASH("Unexpected layer manager type");
         }
 
         listener->DidPaintWindow();

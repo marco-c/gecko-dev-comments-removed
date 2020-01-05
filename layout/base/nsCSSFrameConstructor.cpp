@@ -340,20 +340,6 @@ IsFlexOrGridContainer(const nsIFrame* aFrame)
          t == nsGkAtoms::gridContainerFrame;
 }
 
-
-
-
-
-
-static inline bool
-IsFlexContainerForLegacyBox(const nsIFrame* aFrame,
-                            const nsIAtom* aFrameType)
-{
-  MOZ_ASSERT(aFrame->GetType() == aFrameType, "wrong aFrameType was passed");
-  return aFrameType == nsGkAtoms::flexContainerFrame &&
-    aFrame->HasAnyStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX);
-}
-
 #if DEBUG
 static void
 AssertAnonymousFlexOrGridItemParent(const nsIFrame* aChild,
@@ -9100,7 +9086,7 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
     newFrame = NS_NewDetailsFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
   } else {
-    NS_RUNTIMEABORT("unexpected frame type");
+    MOZ_CRASH("unexpected frame type");
   }
 
   
@@ -9935,17 +9921,13 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
   FrameConstructionItemList& aItems,
   nsIFrame* aParentFrame)
 {
-  if (aItems.IsEmpty()) {
-    return;
-  }
-  const nsIAtom* parentType = aParentFrame->GetType();
-  if (parentType != nsGkAtoms::flexContainerFrame &&
-      parentType != nsGkAtoms::gridContainerFrame) {
+  if (aItems.IsEmpty() ||
+      !::IsFlexOrGridContainer(aParentFrame)) {
     return;
   }
 
-  const bool isWebkitBox = IsFlexContainerForLegacyBox(aParentFrame,
-                                                       parentType);
+  const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aParentFrame);
+
   FCItemIterator iter(aItems);
   do {
     
@@ -12237,14 +12219,12 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
   
   
   
-  nsIAtom* frameType = aFrame->GetType();
-  if (frameType == nsGkAtoms::flexContainerFrame ||
-      frameType == nsGkAtoms::gridContainerFrame) {
+  if (::IsFlexOrGridContainer(aFrame)) {
     FCItemIterator iter(aItems);
 
     
     
-    const bool isWebkitBox = IsFlexContainerForLegacyBox(aFrame, frameType);
+    const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(aFrame);
     if (aPrevSibling && IsAnonymousFlexOrGridItem(aPrevSibling) &&
         iter.item().NeedsAnonFlexOrGridItem(aState, isWebkitBox)) {
       RecreateFramesForContent(aFrame->GetContent(), true,
@@ -12284,8 +12264,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
     
     
     nsIFrame* containerFrame = aFrame->GetParent();
-    const bool isWebkitBox =
-      IsFlexContainerForLegacyBox(containerFrame, containerFrame->GetType());
+    const bool isWebkitBox = nsFlexContainerFrame::IsLegacyBox(containerFrame);
     if (!iter.SkipItemsThatNeedAnonFlexOrGridItem(aState,
                                                   isWebkitBox)) {
       
@@ -12309,6 +12288,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
   
   
   
+  nsIAtom* frameType = aFrame->GetType();
   if (IsRubyPseudo(aFrame) ||
       frameType == nsGkAtoms::rubyFrame ||
       RubyUtils::IsRubyContainerBox(frameType)) {

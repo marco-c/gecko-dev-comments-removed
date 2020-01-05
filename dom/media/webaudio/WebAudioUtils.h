@@ -187,7 +187,7 @@ namespace WebAudioUtils {
     if (mozilla::IsNaN(f)) {
       
       
-      NS_RUNTIMEABORT("We should never see a NaN here");
+      MOZ_CRASH("We should never see a NaN here");
     }
 
     if (f > FloatType(numeric_limits<IntType>::max())) {

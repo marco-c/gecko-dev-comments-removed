@@ -43,7 +43,7 @@ PLayerChild*
 LayerTransactionChild::AllocPLayerChild()
 {
   
-  NS_RUNTIMEABORT("not reached");
+  MOZ_CRASH("not reached");
   return nullptr;
 }
 
