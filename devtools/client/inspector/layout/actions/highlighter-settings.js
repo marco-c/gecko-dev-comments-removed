@@ -5,10 +5,24 @@
 "use strict";
 
 const {
+  UPDATE_SHOW_GRID_LINE_NUMBERS,
   UPDATE_SHOW_INFINITE_LINES,
 } = require("./index");
 
 module.exports = {
+
+  
+
+
+
+
+
+  updateShowGridLineNumbers(enabled) {
+    return {
+      type: UPDATE_SHOW_GRID_LINE_NUMBERS,
+      enabled,
+    };
+  },
 
   
 

@@ -15,6 +15,9 @@ createEnum([
   "UPDATE_GRIDS",
 
   
+  "UPDATE_SHOW_GRID_LINE_NUMBERS",
+
+  
   "UPDATE_SHOW_INFINITE_LINES",
 
 ], module.exports);
