@@ -128,6 +128,13 @@ var gSubDialog = {
 
   handleEvent(aEvent) {
     switch (aEvent.type) {
+      case "click":
+        
+        
+        if (aEvent.target === this._overlay) {
+          this._frame.contentWindow.close();
+        }
+        break;
       case "command":
         this._frame.contentWindow.close();
         break;
@@ -390,10 +397,13 @@ var gSubDialog = {
     this._frame.addEventListener("load", this);
 
     chromeBrowser.addEventListener("unload", this, true);
+
     
     
     
     window.addEventListener("keydown", this, true);
+
+    this._overlay.addEventListener("click", this, true);
   },
 
   _removeDialogEventListeners() {
@@ -407,6 +417,9 @@ var gSubDialog = {
     this._frame.removeEventListener("load", this);
     this._frame.contentWindow.removeEventListener("dialogclosing", this);
     window.removeEventListener("keydown", this, true);
+
+    this._overlay.removeEventListener("click", this, true);
+
     if (this._resizeObserver) {
       this._resizeObserver.disconnect();
       this._resizeObserver = null;
