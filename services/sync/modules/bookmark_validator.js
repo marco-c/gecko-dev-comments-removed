@@ -662,9 +662,16 @@ class BookmarkValidator {
       }
       let differences = [];
       let structuralDifferences = [];
+
       
-      if ((client.title || "") !== (server.title || "")) {
-        differences.push('title');
+      
+      
+      
+      if (!SYNCED_ROOTS.includes(client.guid)) {
+        
+        if ((client.title || "") !== (server.title || "")) {
+          differences.push("title");
+        }
       }
 
       if (client.parentid || server.parentid) {
