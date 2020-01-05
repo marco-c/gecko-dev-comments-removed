@@ -1118,7 +1118,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType,
     case NS_THEME_MENULIST: {
       nsIContent* content = aFrame->GetContent();
       bool isHTML = content && content->IsHTMLElement();
-      bool useDropBorder = isHTML || IsMenuListEditable(aFrame);
+      bool isChrome = aFrame->GetContent()->IsInChromeDocument();
+      bool useDropBorder = isHTML || (isChrome && IsMenuListEditable(aFrame));
       EventStates eventState = GetContentState(aFrame, aWidgetType);
 
       
@@ -1179,7 +1180,8 @@ nsNativeThemeWin::GetThemePartAndState(nsIFrame* aFrame, uint8_t aWidgetType,
       else
         isOpen = IsOpenButton(aFrame);
 
-      if (isHTML || IsMenuListEditable(aFrame)) {
+      bool isChrome = aFrame->GetContent()->IsInChromeDocument();
+      if (isHTML || (isChrome && IsMenuListEditable(aFrame))) {
         if (isOpen) {
           
 
