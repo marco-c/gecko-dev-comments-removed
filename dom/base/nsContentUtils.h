@@ -2149,6 +2149,22 @@ public:
   
 
 
+  static bool AnimationsAPICoreEnabled()
+  {
+    return sAnimationsAPICoreEnabled;
+  }
+
+  
+
+
+  static bool AnimationsAPIElementAnimateEnabled()
+  {
+    return sAnimationsAPIElementAnimateEnabled;
+  }
+
+  
+
+
   static bool IsControlledByServiceWorker(nsIDocument* aDocument);
 
   
@@ -2947,6 +2963,8 @@ private:
   static bool sPrivacyResistFingerprinting;
   static bool sSendPerformanceTimingNotifications;
   static bool sUseActivityCursor;
+  static bool sAnimationsAPICoreEnabled;
+  static bool sAnimationsAPIElementAnimateEnabled;
   static uint32_t sCookiesLifetimePolicy;
   static uint32_t sCookiesBehavior;
 
