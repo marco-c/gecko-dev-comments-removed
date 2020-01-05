@@ -102,26 +102,6 @@ pub enum PseudoElementCascadeType {
     Precomputed,
 }
 
-impl PseudoElementCascadeType {
-    
-    #[inline]
-    pub fn is_eager(&self) -> bool {
-        *self == PseudoElementCascadeType::Eager
-    }
-
-    
-    #[inline]
-    pub fn is_lazy(&self) -> bool {
-        *self == PseudoElementCascadeType::Lazy
-    }
-
-    
-    #[inline]
-    pub fn is_precomputed(&self) -> bool {
-        *self == PseudoElementCascadeType::Precomputed
-    }
-}
-
 
 pub trait ElementExt: Element<Impl=SelectorImpl> + Debug {
     
@@ -140,27 +120,11 @@ impl SelectorImpl {
     
     
     #[inline]
-    pub fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
-        where F: FnMut(PseudoElement),
-    {
-        Self::each_pseudo_element(|pseudo| {
-            if Self::pseudo_element_cascade_type(&pseudo).is_eager() {
-                fun(pseudo)
-            }
-        })
-    }
-
-    
-    
-    
-    
-    
-    #[inline]
     pub fn each_precomputed_pseudo_element<F>(mut fun: F)
         where F: FnMut(PseudoElement),
     {
         Self::each_pseudo_element(|pseudo| {
-            if Self::pseudo_element_cascade_type(&pseudo).is_precomputed() {
+            if pseudo.is_precomputed() {
                 fun(pseudo)
             }
         })

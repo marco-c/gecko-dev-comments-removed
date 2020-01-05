@@ -19,6 +19,7 @@ use selectors::parser::{AttrSelector, SelectorMethods};
 use std::borrow::Cow;
 use std::fmt;
 use std::fmt::Debug;
+use std::mem;
 
 
 
@@ -26,10 +27,13 @@ use std::fmt::Debug;
 #[derive(Clone, Debug, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 #[allow(missing_docs)]
+#[repr(usize)]
 pub enum PseudoElement {
+    
+    After = 0,
     Before,
-    After,
     Selection,
+    
     DetailsSummary,
     DetailsContent,
     ServoText,
@@ -48,8 +52,8 @@ impl ToCss for PseudoElement {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         use self::PseudoElement::*;
         dest.write_str(match *self {
-            Before => "::before",
             After => "::after",
+            Before => "::before",
             Selection => "::selection",
             DetailsSummary => "::-servo-details-summary",
             DetailsContent => "::-servo-details-content",
@@ -67,25 +71,60 @@ impl ToCss for PseudoElement {
     }
 }
 
+
+pub const EAGER_PSEUDO_COUNT: usize = 3;
+
 impl PseudoElement {
     
     #[inline]
-    pub fn is_before_or_after(&self) -> bool {
-        match *self {
-            PseudoElement::Before |
-            PseudoElement::After => true,
-            _ => false,
-        }
+    pub fn eager_index(&self) -> usize {
+        debug_assert!(self.is_eager());
+        self.clone() as usize
     }
 
+    
+    #[inline]
+    pub fn from_eager_index(i: usize) -> Self {
+        assert!(i < EAGER_PSEUDO_COUNT);
+        let result: PseudoElement = unsafe { mem::transmute(i) };
+        debug_assert!(result.is_eager());
+        result
+    }
+
+    
+    #[inline]
+    pub fn is_before_or_after(&self) -> bool {
+        matches!(*self, PseudoElement::After | PseudoElement::Before)
+    }
+
+    
+    #[inline]
+    pub fn is_eager(&self) -> bool {
+        self.cascade_type() == PseudoElementCascadeType::Eager
+    }
+
+    
+    #[inline]
+    pub fn is_lazy(&self) -> bool {
+        self.cascade_type() == PseudoElementCascadeType::Lazy
+    }
+
+    
+    #[inline]
+    pub fn is_precomputed(&self) -> bool {
+        self.cascade_type() == PseudoElementCascadeType::Precomputed
+    }
+
+    
+    
     
     
     
     #[inline]
     pub fn cascade_type(&self) -> PseudoElementCascadeType {
         match *self {
-            PseudoElement::Before |
             PseudoElement::After |
+            PseudoElement::Before |
             PseudoElement::Selection => PseudoElementCascadeType::Eager,
             PseudoElement::DetailsSummary => PseudoElementCascadeType::Lazy,
             PseudoElement::DetailsContent |
@@ -370,6 +409,17 @@ impl SelectorImpl {
     }
 
     
+    
+    #[inline]
+    pub fn each_eagerly_cascaded_pseudo_element<F>(mut fun: F)
+        where F: FnMut(PseudoElement),
+    {
+        for i in 0..EAGER_PSEUDO_COUNT {
+            fun(PseudoElement::from_eager_index(i));
+        }
+    }
+
+    
     #[inline]
     pub fn each_pseudo_element<F>(mut fun: F)
         where F: FnMut(PseudoElement),
@@ -395,12 +445,6 @@ impl SelectorImpl {
     #[inline]
     pub fn pseudo_class_state_flag(pc: &NonTSPseudoClass) -> ElementState {
         pc.state_flag()
-    }
-
-    
-    #[inline]
-    pub fn pseudo_is_before_or_after(pseudo: &PseudoElement) -> bool {
-        pseudo.is_before_or_after()
     }
 }
 
