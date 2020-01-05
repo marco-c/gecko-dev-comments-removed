@@ -214,6 +214,11 @@ public:
 
   virtual bool HandleAudioDecoded(MediaData* aAudio) { return false; }
 
+  virtual bool HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart)
+  {
+    return false;
+  }
+
 protected:
   using Master = MediaDecoderStateMachine;
   explicit StateObject(Master* aPtr) : mMaster(aPtr) {}
@@ -424,6 +429,13 @@ public:
     mMaster->MaybeFinishDecodeFirstFrame();
     return true;
   }
+
+  bool HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  {
+    mMaster->Push(aVideo, MediaData::VIDEO_DATA);
+    mMaster->MaybeFinishDecodeFirstFrame();
+    return true;
+  }
 };
 
 class MediaDecoderStateMachine::DecodingState
@@ -497,7 +509,46 @@ public:
     return true;
   }
 
+  bool HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  {
+    mMaster->Push(aVideo, MediaData::VIDEO_DATA);
+    mMaster->MaybeStopPrerolling();
+    CheckSlowDecoding(aDecodeStart);
+    return true;
+  }
+
 private:
+  void CheckSlowDecoding(TimeStamp aDecodeStart)
+  {
+    
+    
+    
+    
+    
+    if (Reader()->IsAsync()) {
+      return;
+    }
+
+    TimeDuration decodeTime = TimeStamp::Now() - aDecodeStart;
+    int64_t adjustedTime = THRESHOLD_FACTOR * DurationToUsecs(decodeTime);
+    if (adjustedTime > mMaster->mLowAudioThresholdUsecs &&
+        !mMaster->HasLowBufferedData())
+    {
+      mMaster->mLowAudioThresholdUsecs =
+        std::min(adjustedTime, mMaster->mAmpleAudioThresholdUsecs);
+
+      mMaster->mAmpleAudioThresholdUsecs =
+        std::max(THRESHOLD_FACTOR * mMaster->mLowAudioThresholdUsecs,
+                 mMaster->mAmpleAudioThresholdUsecs);
+
+      SLOG("Slow video decode, set "
+           "mLowAudioThresholdUsecs=%lld "
+           "mAmpleAudioThresholdUsecs=%lld",
+           mMaster->mLowAudioThresholdUsecs,
+           mMaster->mAmpleAudioThresholdUsecs);
+    }
+  }
+
   
   TimeStamp mDecodeStartTime;
 };
@@ -534,6 +585,12 @@ public:
   }
 
   bool HandleAudioDecoded(MediaData* aAudio) override
+  {
+    MOZ_ASSERT(false);
+    return true;
+  }
+
+  bool HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
   {
     MOZ_ASSERT(false);
     return true;
@@ -615,6 +672,15 @@ public:
     
     
     mMaster->Push(aAudio, MediaData::AUDIO_DATA);
+    mMaster->ScheduleStateMachine();
+    return true;
+  }
+
+  bool HandleVideoDecoded(MediaData* aVideo, TimeStamp aDecodeStart) override
+  {
+    
+    
+    mMaster->Push(aVideo, MediaData::VIDEO_DATA);
     mMaster->ScheduleStateMachine();
     return true;
   }
@@ -1200,7 +1266,6 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideo,
                                          TimeStamp aDecodeStartTime)
 {
   MOZ_ASSERT(OnTaskQueue());
-  MOZ_ASSERT(mState != DECODER_STATE_SEEKING);
   MOZ_ASSERT(aVideo);
 
   
@@ -1208,51 +1273,7 @@ MediaDecoderStateMachine::OnVideoDecoded(MediaData* aVideo,
 
   SAMPLE_LOG("OnVideoDecoded [%lld,%lld]", aVideo->mTime, aVideo->GetEndTime());
 
-  switch (mState) {
-    case DECODER_STATE_BUFFERING: {
-      
-      
-      Push(aVideo, MediaData::VIDEO_DATA);
-      ScheduleStateMachine();
-      return;
-    }
-
-    case DECODER_STATE_DECODING_FIRSTFRAME: {
-      Push(aVideo, MediaData::VIDEO_DATA);
-      MaybeFinishDecodeFirstFrame();
-      return;
-    }
-
-    case DECODER_STATE_DECODING: {
-      Push(aVideo, MediaData::VIDEO_DATA);
-      MaybeStopPrerolling();
-
-      
-      
-      
-      
-      
-      if (mReader->IsAsync()) {
-        return;
-      }
-      TimeDuration decodeTime = TimeStamp::Now() - aDecodeStartTime;
-      if (THRESHOLD_FACTOR * DurationToUsecs(decodeTime) > mLowAudioThresholdUsecs &&
-          !HasLowBufferedData())
-      {
-        mLowAudioThresholdUsecs =
-          std::min(THRESHOLD_FACTOR * DurationToUsecs(decodeTime), mAmpleAudioThresholdUsecs);
-        mAmpleAudioThresholdUsecs = std::max(THRESHOLD_FACTOR * mLowAudioThresholdUsecs,
-                                              mAmpleAudioThresholdUsecs);
-        DECODER_LOG("Slow video decode, set mLowAudioThresholdUsecs=%lld mAmpleAudioThresholdUsecs=%lld",
-                    mLowAudioThresholdUsecs, mAmpleAudioThresholdUsecs);
-      }
-      return;
-    }
-    default: {
-      
-      return;
-    }
-  }
+  mStateObj->HandleVideoDecoded(aVideo, aDecodeStartTime);
 }
 
 bool
