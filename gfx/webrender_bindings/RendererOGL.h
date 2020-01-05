@@ -70,6 +70,12 @@ public:
               WrRenderer* aWrRenderer,
               layers::CompositorBridgeParentBase* aBridge);
 
+  
+  void Pause();
+
+  
+  bool Resume();
+
   layers::CompositorBridgeParentBase* GetCompositorBridge() { return mBridge; }
 
   WrRenderedEpochs* FlushRenderedEpochs();

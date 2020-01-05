@@ -264,6 +264,80 @@ WebRenderAPI::Readback(gfx::IntSize size,
 }
 
 void
+WebRenderAPI::Pause()
+{
+    class PauseEvent : public RendererEvent
+    {
+        public:
+            explicit PauseEvent(layers::SynchronousTask* aTask)
+                : mTask(aTask)
+            {
+                MOZ_COUNT_CTOR(PauseEvent);
+            }
+
+            ~PauseEvent()
+            {
+                MOZ_COUNT_DTOR(PauseEvent);
+            }
+
+            virtual void Run(RenderThread& aRenderThread, WindowId aWindowId) override
+            {
+                aRenderThread.Pause(aWindowId);
+                layers::AutoCompleteTask complete(mTask);
+            }
+
+            layers::SynchronousTask* mTask;
+    };
+
+    layers::SynchronousTask task("Pause");
+    auto event = MakeUnique<PauseEvent>(&task);
+    
+    
+    RunOnRenderThread(Move(event));
+
+    task.Wait();
+}
+
+bool
+WebRenderAPI::Resume()
+{
+    class ResumeEvent : public RendererEvent
+    {
+        public:
+            explicit ResumeEvent(layers::SynchronousTask* aTask, bool* aResult)
+                : mTask(aTask)
+                , mResult(aResult)
+            {
+                MOZ_COUNT_CTOR(ResumeEvent);
+            }
+
+            ~ResumeEvent()
+            {
+                MOZ_COUNT_DTOR(ResumeEvent);
+            }
+
+            virtual void Run(RenderThread& aRenderThread, WindowId aWindowId) override
+            {
+                *mResult = aRenderThread.Resume(aWindowId);
+                layers::AutoCompleteTask complete(mTask);
+            }
+
+            layers::SynchronousTask* mTask;
+            bool* mResult;
+    };
+
+    bool result = false;
+    layers::SynchronousTask task("Resume");
+    auto event = MakeUnique<ResumeEvent>(&task, &result);
+    
+    
+    RunOnRenderThread(Move(event));
+
+    task.Wait();
+    return result;
+}
+
+void
 WebRenderAPI::WaitFlushed()
 {
     class WaitFlushedEvent : public RendererEvent
@@ -290,8 +364,6 @@ WebRenderAPI::WaitFlushed()
 
     layers::SynchronousTask task("WaitFlushed");
     auto event = MakeUnique<WaitFlushedEvent>(&task);
-    
-    
     
     
     RunOnRenderThread(Move(event));
