@@ -36,15 +36,19 @@
 #ifndef GMOCK_INCLUDE_GMOCK_GMOCK_ACTIONS_H_
 #define GMOCK_INCLUDE_GMOCK_GMOCK_ACTIONS_H_
 
-#include <algorithm>
-#include <string>
-
 #ifndef _WIN32_WCE
 # include <errno.h>
 #endif
 
+#include <algorithm>
+#include <string>
+
 #include "gmock/internal/gmock-internal-utils.h"
 #include "gmock/internal/gmock-port.h"
+
+#if GTEST_HAS_STD_TYPE_TRAITS_  
+#include <type_traits>
+#endif
 
 namespace testing {
 
@@ -67,11 +71,12 @@ class ActionAdaptor;
 
 
 
+template <typename T, bool kDefaultConstructible>
+struct BuiltInDefaultValueGetter {
+  static T Get() { return T(); }
+};
 template <typename T>
-class BuiltInDefaultValue {
- public:
-  
-  static bool Exists() { return false; }
+struct BuiltInDefaultValueGetter<T, false> {
   static T Get() {
     Assert(false, __FILE__, __LINE__,
            "Default action undefined for the function return type.");
@@ -79,6 +84,40 @@ class BuiltInDefaultValue {
     
     
   }
+};
+
+
+
+
+
+
+
+
+template <typename T>
+class BuiltInDefaultValue {
+ public:
+#if GTEST_HAS_STD_TYPE_TRAITS_
+  
+  static bool Exists() {
+    return ::std::is_default_constructible<T>::value;
+  }
+
+  static T Get() {
+    return BuiltInDefaultValueGetter<
+        T, ::std::is_default_constructible<T>::value>::Get();
+  }
+
+#else  
+  
+  static bool Exists() {
+    return false;
+  }
+
+  static T Get() {
+    return BuiltInDefaultValueGetter<T, false>::Get();
+  }
+
+#endif  
 };
 
 
@@ -163,18 +202,27 @@ class DefaultValue {
   
   
   static void Set(T x) {
-    delete value_;
-    value_ = new T(x);
+    delete producer_;
+    producer_ = new FixedValueProducer(x);
+  }
+
+  
+  
+  
+  typedef T (*FactoryFunction)();
+  static void SetFactory(FactoryFunction factory) {
+    delete producer_;
+    producer_ = new FactoryValueProducer(factory);
   }
 
   
   static void Clear() {
-    delete value_;
-    value_ = NULL;
+    delete producer_;
+    producer_ = NULL;
   }
 
   
-  static bool IsSet() { return value_ != NULL; }
+  static bool IsSet() { return producer_ != NULL; }
 
   
   
@@ -186,11 +234,39 @@ class DefaultValue {
   
   
   static T Get() {
-    return value_ == NULL ?
-        internal::BuiltInDefaultValue<T>::Get() : *value_;
+    return producer_ == NULL ?
+        internal::BuiltInDefaultValue<T>::Get() : producer_->Produce();
   }
+
  private:
-  static const T* value_;
+  class ValueProducer {
+   public:
+    virtual ~ValueProducer() {}
+    virtual T Produce() = 0;
+  };
+
+  class FixedValueProducer : public ValueProducer {
+   public:
+    explicit FixedValueProducer(T value) : value_(value) {}
+    virtual T Produce() { return value_; }
+
+   private:
+    const T value_;
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(FixedValueProducer);
+  };
+
+  class FactoryValueProducer : public ValueProducer {
+   public:
+    explicit FactoryValueProducer(FactoryFunction factory)
+        : factory_(factory) {}
+    virtual T Produce() { return factory_(); }
+
+   private:
+    const FactoryFunction factory_;
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(FactoryValueProducer);
+  };
+
+  static ValueProducer* producer_;
 };
 
 
@@ -224,6 +300,7 @@ class DefaultValue<T&> {
     return address_ == NULL ?
         internal::BuiltInDefaultValue<T&>::Get() : *address_;
   }
+
  private:
   static T* address_;
 };
@@ -239,7 +316,7 @@ class DefaultValue<void> {
 
 
 template <typename T>
-const T* DefaultValue<T>::value_ = NULL;
+typename DefaultValue<T>::ValueProducer* DefaultValue<T>::producer_ = NULL;
 
 
 template <typename T>
@@ -423,6 +500,14 @@ class ActionAdaptor : public ActionInterface<F1> {
 
 
 
+template <typename T>
+struct ByMoveWrapper {
+  explicit ByMoveWrapper(T value) : payload(internal::move(value)) {}
+  T payload;
+};
+
+
+
 
 
 
@@ -451,7 +536,7 @@ class ReturnAction {
   
   
   
-  explicit ReturnAction(R value) : value_(value) {}
+  explicit ReturnAction(R value) : value_(new R(internal::move(value))) {}
 
   
   
@@ -467,14 +552,14 @@ class ReturnAction {
     
     typedef typename Function<F>::Result Result;
     GTEST_COMPILE_ASSERT_(
-        !internal::is_reference<Result>::value,
+        !is_reference<Result>::value,
         use_ReturnRef_instead_of_Return_to_return_a_reference);
-    return Action<F>(new Impl<F>(value_));
+    return Action<F>(new Impl<R, F>(value_));
   }
 
  private:
   
-  template <typename F>
+  template <typename R_, typename F>
   class Impl : public ActionInterface<F> {
    public:
     typedef typename Function<F>::Result Result;
@@ -487,20 +572,49 @@ class ReturnAction {
     
     
     
-    explicit Impl(R value)
-        : value_(::testing::internal::ImplicitCast_<Result>(value)) {}
+    explicit Impl(const linked_ptr<R>& value)
+        : value_before_cast_(*value),
+          value_(ImplicitCast_<Result>(value_before_cast_)) {}
 
     virtual Result Perform(const ArgumentTuple&) { return value_; }
 
    private:
-    GTEST_COMPILE_ASSERT_(!internal::is_reference<Result>::value,
+    GTEST_COMPILE_ASSERT_(!is_reference<Result>::value,
                           Result_cannot_be_a_reference_type);
+    
+    
+    R value_before_cast_;
     Result value_;
+
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(Impl);
+  };
+
+  
+  
+  template <typename R_, typename F>
+  class Impl<ByMoveWrapper<R_>, F> : public ActionInterface<F> {
+   public:
+    typedef typename Function<F>::Result Result;
+    typedef typename Function<F>::ArgumentTuple ArgumentTuple;
+
+    explicit Impl(const linked_ptr<R>& wrapper)
+        : performed_(false), wrapper_(wrapper) {}
+
+    virtual Result Perform(const ArgumentTuple&) {
+      GTEST_CHECK_(!performed_)
+          << "A ByMove() action should only be performed once.";
+      performed_ = true;
+      return internal::move(wrapper_->payload);
+    }
+
+   private:
+    bool performed_;
+    const linked_ptr<R> wrapper_;
 
     GTEST_DISALLOW_ASSIGN_(Impl);
   };
 
-  R value_;
+  const linked_ptr<R> value_;
 
   GTEST_DISALLOW_ASSIGN_(ReturnAction);
 };
@@ -509,11 +623,17 @@ class ReturnAction {
 class ReturnNullAction {
  public:
   
+  
+  
   template <typename Result, typename ArgumentTuple>
   static Result Perform(const ArgumentTuple&) {
+#if GTEST_LANG_CXX11
+    return nullptr;
+#else
     GTEST_COMPILE_ASSERT_(internal::is_pointer<Result>::value,
                           ReturnNull_can_be_used_to_return_a_pointer_only);
     return NULL;
+#endif  
   }
 };
 
@@ -690,7 +810,7 @@ class SetArgumentPointeeAction {
   template <typename Result, typename ArgumentTuple>
   void Perform(const ArgumentTuple& args) const {
     CompileAssertTypesEqual<void, Result>();
-    *::std::tr1::get<N>(args) = value_;
+    *::testing::get<N>(args) = value_;
   }
 
  private:
@@ -713,7 +833,7 @@ class SetArgumentPointeeAction<N, Proto, true> {
   template <typename Result, typename ArgumentTuple>
   void Perform(const ArgumentTuple& args) const {
     CompileAssertTypesEqual<void, Result>();
-    ::std::tr1::get<N>(args)->CopyFrom(*proto_);
+    ::testing::get<N>(args)->CopyFrom(*proto_);
   }
 
  private:
@@ -939,7 +1059,7 @@ Action<To>::Action(const Action<From>& from)
 
 template <typename R>
 internal::ReturnAction<R> Return(R value) {
-  return internal::ReturnAction<R>(value);
+  return internal::ReturnAction<R>(internal::move(value));
 }
 
 
@@ -964,6 +1084,15 @@ inline internal::ReturnRefAction<R> ReturnRef(R& x) {
 template <typename R>
 inline internal::ReturnRefOfCopyAction<R> ReturnRefOfCopy(const R& x) {
   return internal::ReturnRefOfCopyAction<R>(x);
+}
+
+
+
+
+
+template <typename R>
+internal::ByMoveWrapper<R> ByMove(R x) {
+  return internal::ByMoveWrapper<R>(internal::move(x));
 }
 
 

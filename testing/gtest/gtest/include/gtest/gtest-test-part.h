@@ -62,7 +62,7 @@ class GTEST_API_ TestPartResult {
                  int a_line_number,
                  const char* a_message)
       : type_(a_type),
-        file_name_(a_file_name),
+        file_name_(a_file_name == NULL ? "" : a_file_name),
         line_number_(a_line_number),
         summary_(ExtractSummary(a_message)),
         message_(a_message) {
@@ -73,7 +73,9 @@ class GTEST_API_ TestPartResult {
 
   
   
-  const char* file_name() const { return file_name_.c_str(); }
+  const char* file_name() const {
+    return file_name_.empty() ? NULL : file_name_.c_str();
+  }
 
   
   
@@ -96,21 +98,22 @@ class GTEST_API_ TestPartResult {
 
   
   bool fatally_failed() const { return type_ == kFatalFailure; }
+
  private:
   Type type_;
 
   
   
-  static internal::String ExtractSummary(const char* message);
+  static std::string ExtractSummary(const char* message);
 
   
   
-  internal::String file_name_;
+  std::string file_name_;
   
   
   int line_number_;
-  internal::String summary_;  
-  internal::String message_;  
+  std::string summary_;  
+  std::string message_;  
 };
 
 

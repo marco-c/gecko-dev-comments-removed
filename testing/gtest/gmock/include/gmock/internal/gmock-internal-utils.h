@@ -53,7 +53,7 @@ namespace internal {
 
 
 
-string ConvertIdentifierNameToWords(const char* id_name);
+GTEST_API_ string ConvertIdentifierNameToWords(const char* id_name);
 
 
 
@@ -73,7 +73,7 @@ struct PointeeOf<T*> { typedef T type; };
 
 
 template <typename Pointer>
-inline typename Pointer::element_type* GetRawPointer(const Pointer& p) {
+inline const typename Pointer::element_type* GetRawPointer(const Pointer& p) {
   return p.get();
 }
 
@@ -260,7 +260,7 @@ class FailureReporterInterface {
  public:
   
   enum FailureType {
-    NONFATAL, FATAL
+    kNonfatal, kFatal
   };
 
   virtual ~FailureReporterInterface() {}
@@ -271,7 +271,7 @@ class FailureReporterInterface {
 };
 
 
-FailureReporterInterface* GetFailureReporter();
+GTEST_API_ FailureReporterInterface* GetFailureReporter();
 
 
 
@@ -281,7 +281,7 @@ FailureReporterInterface* GetFailureReporter();
 inline void Assert(bool condition, const char* file, int line,
                    const string& msg) {
   if (!condition) {
-    GetFailureReporter()->ReportFailure(FailureReporterInterface::FATAL,
+    GetFailureReporter()->ReportFailure(FailureReporterInterface::kFatal,
                                         file, line, msg);
   }
 }
@@ -294,7 +294,7 @@ inline void Assert(bool condition, const char* file, int line) {
 inline void Expect(bool condition, const char* file, int line,
                    const string& msg) {
   if (!condition) {
-    GetFailureReporter()->ReportFailure(FailureReporterInterface::NONFATAL,
+    GetFailureReporter()->ReportFailure(FailureReporterInterface::kNonfatal,
                                         file, line, msg);
   }
 }
@@ -304,8 +304,8 @@ inline void Expect(bool condition, const char* file, int line) {
 
 
 enum LogSeverity {
-  INFO = 0,
-  WARNING = 1
+  kInfo = 0,
+  kWarning = 1
 };
 
 
@@ -319,7 +319,7 @@ const char kErrorVerbosity[] = "error";
 
 
 
-bool LogIsVisible(LogSeverity severity);
+GTEST_API_ bool LogIsVisible(LogSeverity severity);
 
 
 
@@ -328,7 +328,9 @@ bool LogIsVisible(LogSeverity severity);
 
 
 
-void Log(LogSeverity severity, const string& message, int stack_frames_to_skip);
+GTEST_API_ void Log(LogSeverity severity,
+                    const string& message,
+                    int stack_frames_to_skip);
 
 
 
@@ -348,14 +350,41 @@ template <typename T> struct remove_reference<T&> { typedef T type; };
 
 
 
+template <typename T> struct DecayArray { typedef T type; };  
+template <typename T, size_t N> struct DecayArray<T[N]> {
+  typedef const T* type;
+};
+
+
+
+template <typename T> struct DecayArray<T[]> {
+  typedef const T* type;
+};
+
+
+
+#ifdef _MSC_VER
+# pragma warning(push)
+# pragma warning(disable:4717)
+#endif
+
+
+
+
 
 
 template <typename T>
 inline T Invalid() {
-  return *static_cast<typename remove_reference<T>::type*>(NULL);
+  Assert(false, "", -1, "Internal error: attempt to return invalid value");
+  
+  
+  
+  return Invalid<T>();
 }
-template <>
-inline void Invalid<void>() {}
+
+#ifdef _MSC_VER
+# pragma warning(pop)
+#endif
 
 
 
@@ -418,16 +447,17 @@ class StlContainerView<Element[N]> {
     
     
     
-    return type(const_cast<Element*>(&array[0]), N, kReference);
+    return type(const_cast<Element*>(&array[0]), N,
+                RelationToSourceReference());
 #else
-    return type(array, N, kReference);
+    return type(array, N, RelationToSourceReference());
 #endif  
   }
   static type Copy(const Element (&array)[N]) {
 #if GTEST_OS_SYMBIAN
-    return type(const_cast<Element*>(&array[0]), N, kCopy);
+    return type(const_cast<Element*>(&array[0]), N, RelationToSourceCopy());
 #else
-    return type(array, N, kCopy);
+    return type(array, N, RelationToSourceCopy());
 #endif  
   }
 };
@@ -435,7 +465,7 @@ class StlContainerView<Element[N]> {
 
 
 template <typename ElementPointer, typename Size>
-class StlContainerView< ::std::tr1::tuple<ElementPointer, Size> > {
+class StlContainerView< ::testing::tuple<ElementPointer, Size> > {
  public:
   typedef GTEST_REMOVE_CONST_(
       typename internal::PointeeOf<ElementPointer>::type) RawElement;
@@ -443,13 +473,11 @@ class StlContainerView< ::std::tr1::tuple<ElementPointer, Size> > {
   typedef const type const_reference;
 
   static const_reference ConstReference(
-      const ::std::tr1::tuple<ElementPointer, Size>& array) {
-    using ::std::tr1::get;
-    return type(get<0>(array), get<1>(array), kReference);
+      const ::testing::tuple<ElementPointer, Size>& array) {
+    return type(get<0>(array), get<1>(array), RelationToSourceReference());
   }
-  static type Copy(const ::std::tr1::tuple<ElementPointer, Size>& array) {
-    using ::std::tr1::get;
-    return type(get<0>(array), get<1>(array), kCopy);
+  static type Copy(const ::testing::tuple<ElementPointer, Size>& array) {
+    return type(get<0>(array), get<1>(array), RelationToSourceCopy());
   }
 };
 
@@ -457,7 +485,27 @@ class StlContainerView< ::std::tr1::tuple<ElementPointer, Size> > {
 
 template <typename T> class StlContainerView<T&>;
 
+
+
+
+template <typename T>
+struct RemoveConstFromKey {
+  typedef T type;
+};
+
+
+template <typename K, typename V>
+struct RemoveConstFromKey<std::pair<const K, V> > {
+  typedef std::pair<K, V> type;
+};
+
+
+
+template <bool kValue>
+struct BooleanConstant {};
+
 }  
 }  
 
 #endif  
+

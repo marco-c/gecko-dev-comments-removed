@@ -46,12 +46,21 @@
 # include <unistd.h>
 #endif  
 
+#if GTEST_HAS_EXCEPTIONS
+# include <stdexcept>
+#endif
+
 #include <ctype.h>
+#include <float.h>
 #include <string.h>
 #include <iomanip>
 #include <limits>
+#include <map>
 #include <set>
+#include <string>
+#include <vector>
 
+#include "gtest/gtest-message.h"
 #include "gtest/internal/gtest-string.h"
 #include "gtest/internal/gtest-filepath.h"
 #include "gtest/internal/gtest-type-util.h"
@@ -66,36 +75,6 @@
 
 #define GTEST_CONCAT_TOKEN_(foo, bar) GTEST_CONCAT_TOKEN_IMPL_(foo, bar)
 #define GTEST_CONCAT_TOKEN_IMPL_(foo, bar) foo ## bar
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-template <typename T>
-inline void GTestStreamToHelper(std::ostream* os, const T& val) {
-  *os << val;
-}
 
 class ProtocolMessage;
 namespace proto2 { class Message; }
@@ -122,16 +101,8 @@ class TestInfoImpl;
 class UnitTestImpl;                    
 
 
-extern int g_init_gtest_count;
-
-
 
 GTEST_API_ extern const char kStackTraceMarker[];
-
-
-
-
-class Secret;
 
 
 
@@ -163,8 +134,23 @@ char (&IsNullLiteralHelper(...))[2];
 #endif  
 
 
-GTEST_API_ String AppendUserMessage(const String& gtest_msg,
-                                    const Message& user_msg);
+GTEST_API_ std::string AppendUserMessage(
+    const std::string& gtest_msg, const Message& user_msg);
+
+#if GTEST_HAS_EXCEPTIONS
+
+
+
+
+
+
+
+class GTEST_API_ GoogleTestFailureException : public ::std::runtime_error {
+ public:
+  explicit GoogleTestFailureException(const TestPartResult& failure);
+};
+
+#endif  
 
 
 class GTEST_API_ ScopedTrace {
@@ -185,76 +171,35 @@ class GTEST_API_ ScopedTrace {
                             
                             
 
+namespace edit_distance {
 
 
 
 
 
+enum EditType { kMatch, kAdd, kRemove, kReplace };
+GTEST_API_ std::vector<EditType> CalculateOptimalEdits(
+    const std::vector<size_t>& left, const std::vector<size_t>& right);
 
 
-template <typename T>
-String StreamableToString(const T& streamable);
+GTEST_API_ std::vector<EditType> CalculateOptimalEdits(
+    const std::vector<std::string>& left,
+    const std::vector<std::string>& right);
 
 
+GTEST_API_ std::string CreateUnifiedDiff(const std::vector<std::string>& left,
+                                         const std::vector<std::string>& right,
+                                         size_t context = 2);
 
-
-
-
-#if defined(__SYMBIAN32__)
-# define GTEST_CREF_WORKAROUND_ const&
-#else
-# define GTEST_CREF_WORKAROUND_
-#endif
-
-
-
-
-
-
-
-#define GTEST_FORMAT_IMPL_(operand2_type, operand1_printer)\
-inline String FormatForComparisonFailureMessage(\
-    operand2_type::value_type* GTEST_CREF_WORKAROUND_ str, \
-    const operand2_type& /*operand2*/) {\
-  return operand1_printer(str);\
-}\
-inline String FormatForComparisonFailureMessage(\
-    const operand2_type::value_type* GTEST_CREF_WORKAROUND_ str, \
-    const operand2_type& /*operand2*/) {\
-  return operand1_printer(str);\
-}
-
-GTEST_FORMAT_IMPL_(::std::string, String::ShowCStringQuoted)
-#if GTEST_HAS_STD_WSTRING
-GTEST_FORMAT_IMPL_(::std::wstring, String::ShowWideCStringQuoted)
-#endif  
-
-#if GTEST_HAS_GLOBAL_STRING
-GTEST_FORMAT_IMPL_(::string, String::ShowCStringQuoted)
-#endif  
-#if GTEST_HAS_GLOBAL_WSTRING
-GTEST_FORMAT_IMPL_(::wstring, String::ShowWideCStringQuoted)
-#endif  
-
-#undef GTEST_FORMAT_IMPL_
+}  
 
 
 
 
 
-#define GTEST_FORMAT_CHAR_PTR_IMPL_(CharType)                       \
-  template <typename T>                                             \
-  String FormatForComparisonFailureMessage(CharType* GTEST_CREF_WORKAROUND_ p, \
-                                           const T&) { \
-    return PrintToString(static_cast<const void*>(p));              \
-  }
-
-GTEST_FORMAT_CHAR_PTR_IMPL_(char)
-GTEST_FORMAT_CHAR_PTR_IMPL_(const char)
-GTEST_FORMAT_CHAR_PTR_IMPL_(wchar_t)
-GTEST_FORMAT_CHAR_PTR_IMPL_(const wchar_t)
-
-#undef GTEST_FORMAT_CHAR_PTR_IMPL_
+GTEST_API_ std::string DiffStrings(const std::string& left,
+                                   const std::string& right,
+                                   size_t* total_line_count);
 
 
 
@@ -273,12 +218,12 @@ GTEST_FORMAT_CHAR_PTR_IMPL_(const wchar_t)
 
 GTEST_API_ AssertionResult EqFailure(const char* expected_expression,
                                      const char* actual_expression,
-                                     const String& expected_value,
-                                     const String& actual_value,
+                                     const std::string& expected_value,
+                                     const std::string& actual_value,
                                      bool ignoring_case);
 
 
-GTEST_API_ String GetBoolAssertionFailureMessage(
+GTEST_API_ std::string GetBoolAssertionFailureMessage(
     const AssertionResult& assertion_result,
     const char* expression_text,
     const char* actual_predicate_value,
@@ -381,6 +326,9 @@ class FloatingPoint {
   }
 
   
+  static RawType Max();
+
+  
 
   
   const Bits &bits() const { return u_.bits_; }
@@ -459,6 +407,13 @@ class FloatingPoint {
 
   FloatingPointUnion u_;
 };
+
+
+
+template <>
+inline float FloatingPoint<float>::Max() { return FLT_MAX; }
+template <>
+inline double FloatingPoint<double>::Max() { return DBL_MAX; }
 
 
 
@@ -546,6 +501,14 @@ GTEST_API_ AssertionResult IsHRESULTFailure(const char* expr,
 typedef void (*SetUpTestCaseFunc)();
 typedef void (*TearDownTestCaseFunc)();
 
+struct CodeLocation {
+  CodeLocation(const string& a_file, int a_line) : file(a_file), line(a_line) {}
+
+  string file;
+  int line;
+};
+
+
 
 
 
@@ -564,9 +527,11 @@ typedef void (*TearDownTestCaseFunc)();
 
 
 GTEST_API_ TestInfo* MakeAndRegisterTestInfo(
-    const char* test_case_name, const char* name,
+    const char* test_case_name,
+    const char* name,
     const char* type_param,
     const char* value_param,
+    CodeLocation code_location,
     TypeId fixture_class_id,
     SetUpTestCaseFunc set_up_tc,
     TearDownTestCaseFunc tear_down_tc,
@@ -596,8 +561,19 @@ class GTEST_API_ TypedTestCasePState {
       fflush(stderr);
       posix::Abort();
     }
-    defined_test_names_.insert(test_name);
+    registered_tests_.insert(
+        ::std::make_pair(test_name, CodeLocation(file, line)));
     return true;
+  }
+
+  bool TestExists(const std::string& test_name) const {
+    return registered_tests_.count(test_name) > 0;
+  }
+
+  const CodeLocation& GetCodeLocation(const std::string& test_name) const {
+    RegisteredTestsMap::const_iterator it = registered_tests_.find(test_name);
+    GTEST_CHECK_(it != registered_tests_.end());
+    return it->second;
   }
 
   
@@ -607,8 +583,10 @@ class GTEST_API_ TypedTestCasePState {
       const char* file, int line, const char* registered_tests);
 
  private:
+  typedef ::std::map<std::string, CodeLocation> RegisteredTestsMap;
+
   bool registered_;
-  ::std::set<const char*> defined_test_names_;
+  RegisteredTestsMap registered_tests_;
 };
 
 
@@ -624,10 +602,15 @@ inline const char* SkipComma(const char* str) {
 
 
 
-inline String GetPrefixUntilComma(const char* str) {
+inline std::string GetPrefixUntilComma(const char* str) {
   const char* comma = strchr(str, ',');
-  return comma == NULL ? String(str) : String(str, comma - str);
+  return comma == NULL ? str : std::string(str, comma);
 }
+
+
+
+void SplitString(const ::std::string& str, char delimiter,
+                 ::std::vector< ::std::string>* dest);
 
 
 
@@ -643,8 +626,10 @@ class TypeParameterizedTest {
   
   
   
-  static bool Register(const char* prefix, const char* case_name,
-                       const char* test_names, int index) {
+  static bool Register(const char* prefix,
+                       CodeLocation code_location,
+                       const char* case_name, const char* test_names,
+                       int index) {
     typedef typename Types::Head Type;
     typedef Fixture<Type> FixtureClass;
     typedef typename GTEST_BIND_(TestSel, Type) TestClass;
@@ -652,11 +637,12 @@ class TypeParameterizedTest {
     
     
     MakeAndRegisterTestInfo(
-        String::Format("%s%s%s/%d", prefix, prefix[0] == '\0' ? "" : "/",
-                       case_name, index).c_str(),
-        GetPrefixUntilComma(test_names).c_str(),
+        (std::string(prefix) + (prefix[0] == '\0' ? "" : "/") + case_name + "/"
+         + StreamableToString(index)).c_str(),
+        StripTrailingSpaces(GetPrefixUntilComma(test_names)).c_str(),
         GetTypeName<Type>().c_str(),
         NULL,  
+        code_location,
         GetTypeId<FixtureClass>(),
         TestClass::SetUpTestCase,
         TestClass::TearDownTestCase,
@@ -664,7 +650,7 @@ class TypeParameterizedTest {
 
     
     return TypeParameterizedTest<Fixture, TestSel, typename Types::Tail>
-        ::Register(prefix, case_name, test_names, index + 1);
+        ::Register(prefix, code_location, case_name, test_names, index + 1);
   }
 };
 
@@ -672,8 +658,9 @@ class TypeParameterizedTest {
 template <GTEST_TEMPLATE_ Fixture, class TestSel>
 class TypeParameterizedTest<Fixture, TestSel, Types0> {
  public:
-  static bool Register(const char* , const char* ,
-                       const char* , int ) {
+  static bool Register(const char* , CodeLocation,
+                       const char* , const char* ,
+                       int ) {
     return true;
   }
 };
@@ -685,17 +672,31 @@ class TypeParameterizedTest<Fixture, TestSel, Types0> {
 template <GTEST_TEMPLATE_ Fixture, typename Tests, typename Types>
 class TypeParameterizedTestCase {
  public:
-  static bool Register(const char* prefix, const char* case_name,
-                       const char* test_names) {
+  static bool Register(const char* prefix, CodeLocation code_location,
+                       const TypedTestCasePState* state,
+                       const char* case_name, const char* test_names) {
+    std::string test_name = StripTrailingSpaces(
+        GetPrefixUntilComma(test_names));
+    if (!state->TestExists(test_name)) {
+      fprintf(stderr, "Failed to get code location for test %s.%s at %s.",
+              case_name, test_name.c_str(),
+              FormatFileLocation(code_location.file.c_str(),
+                                 code_location.line).c_str());
+      fflush(stderr);
+      posix::Abort();
+    }
+    const CodeLocation& test_location = state->GetCodeLocation(test_name);
+
     typedef typename Tests::Head Head;
 
     
     TypeParameterizedTest<Fixture, Head, Types>::Register(
-        prefix, case_name, test_names, 0);
+        prefix, test_location, case_name, test_names, 0);
 
     
     return TypeParameterizedTestCase<Fixture, typename Tests::Tail, Types>
-        ::Register(prefix, case_name, SkipComma(test_names));
+        ::Register(prefix, code_location, state,
+                   case_name, SkipComma(test_names));
   }
 };
 
@@ -703,8 +704,9 @@ class TypeParameterizedTestCase {
 template <GTEST_TEMPLATE_ Fixture, typename Types>
 class TypeParameterizedTestCase<Fixture, Templates0, Types> {
  public:
-  static bool Register(const char* , const char* ,
-                       const char* ) {
+  static bool Register(const char* , CodeLocation,
+                       const TypedTestCasePState* ,
+                       const char* , const char* ) {
     return true;
   }
 };
@@ -721,8 +723,8 @@ class TypeParameterizedTestCase<Fixture, Templates0, Types> {
 
 
 
-GTEST_API_ String GetCurrentOsStackTraceExceptTop(UnitTest* unit_test,
-                                                  int skip_count);
+GTEST_API_ std::string GetCurrentOsStackTraceExceptTop(
+    UnitTest* unit_test, int skip_count);
 
 
 
@@ -797,11 +799,17 @@ struct RemoveConst<const T> { typedef T type; };
 
 
 
-
-
-#if defined(_MSC_VER) || defined(__SUNPRO_CC) || defined(__IBMCPP__)
 template <typename T, size_t N>
 struct RemoveConst<const T[N]> {
+  typedef typename RemoveConst<T>::type type[N];
+};
+
+#if defined(_MSC_VER) && _MSC_VER < 1400
+
+
+
+template <typename T, size_t N>
+struct RemoveConst<T[N]> {
   typedef typename RemoveConst<T>::type type[N];
 };
 #endif
@@ -852,7 +860,7 @@ class ImplicitlyConvertible {
   
   
   
-  static From MakeFrom();
+  static typename AddReference<From>::type MakeFrom();
 
   
   
@@ -870,24 +878,19 @@ class ImplicitlyConvertible {
   
   
  public:
-  
-  
-  
-#ifdef _MSC_VER
-# pragma warning(push)          // Saves the current warning state.
-# pragma warning(disable:4244)  // Temporarily disables warning 4244.
-
-  static const bool value =
-      sizeof(Helper(ImplicitlyConvertible::MakeFrom())) == 1;
-# pragma warning(pop)           // Restores the warning state.
-#elif defined(__BORLANDC__)
+#if defined(__BORLANDC__)
   
   
   
   static const bool value = __is_convertible(From, To);
 #else
+  
+  
+  
+  GTEST_DISABLE_MSC_WARNINGS_PUSH_(4244)
   static const bool value =
       sizeof(Helper(ImplicitlyConvertible::MakeFrom())) == 1;
+  GTEST_DISABLE_MSC_WARNINGS_POP_()
 #endif  
 };
 template <typename From, typename To>
@@ -1014,11 +1017,10 @@ void CopyArray(const T* from, size_t size, U* to) {
 
 
 
-enum RelationToSource {
-  kReference,  
-  kCopy        
-               
-};
+
+
+struct RelationToSourceReference {};
+struct RelationToSourceCopy {};
 
 
 
@@ -1037,21 +1039,22 @@ class NativeArray {
   typedef const Element* const_iterator;
 
   
-  NativeArray(const Element* array, size_t count, RelationToSource relation) {
-    Init(array, count, relation);
+  NativeArray(const Element* array, size_t count, RelationToSourceReference) {
+    InitRef(array, count);
+  }
+
+  
+  NativeArray(const Element* array, size_t count, RelationToSourceCopy) {
+    InitCopy(array, count);
   }
 
   
   NativeArray(const NativeArray& rhs) {
-    Init(rhs.array_, rhs.size_, rhs.relation_to_source_);
+    (this->*rhs.clone_)(rhs.array_, rhs.size_);
   }
 
   ~NativeArray() {
-    
-    
-    static_cast<void>(StaticAssertTypeEqHelper<Element,
-        GTEST_REMOVE_REFERENCE_AND_CONST_(Element)>());
-    if (relation_to_source_ == kCopy)
+    if (clone_ != &NativeArray::InitRef)
       delete[] array_;
   }
 
@@ -1065,23 +1068,30 @@ class NativeArray {
   }
 
  private:
+  enum {
+    kCheckTypeIsNotConstOrAReference = StaticAssertTypeEqHelper<
+        Element, GTEST_REMOVE_REFERENCE_AND_CONST_(Element)>::value,
+  };
+
   
-  
-  void Init(const Element* array, size_t a_size, RelationToSource relation) {
-    if (relation == kReference) {
-      array_ = array;
-    } else {
-      Element* const copy = new Element[a_size];
-      CopyArray(array, a_size, copy);
-      array_ = copy;
-    }
+  void InitCopy(const Element* array, size_t a_size) {
+    Element* const copy = new Element[a_size];
+    CopyArray(array, a_size, copy);
+    array_ = copy;
     size_ = a_size;
-    relation_to_source_ = relation;
+    clone_ = &NativeArray::InitCopy;
+  }
+
+  
+  void InitRef(const Element* array, size_t a_size) {
+    array_ = array;
+    size_ = a_size;
+    clone_ = &NativeArray::InitRef;
   }
 
   const Element* array_;
   size_t size_;
-  RelationToSource relation_to_source_;
+  void (NativeArray::*clone_)(const Element*, size_t);
 
   GTEST_DISALLOW_ASSIGN_(NativeArray);
 };
@@ -1216,6 +1226,7 @@ class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class {\
   ::test_info_ =\
     ::testing::internal::MakeAndRegisterTestInfo(\
         #test_case_name, #test_name, NULL, NULL, \
+        ::testing::internal::CodeLocation(__FILE__, __LINE__), \
         (parent_id), \
         parent_class::SetUpTestCase, \
         parent_class::TearDownTestCase, \
@@ -1224,3 +1235,4 @@ class GTEST_TEST_CLASS_NAME_(test_case_name, test_name) : public parent_class {\
 void GTEST_TEST_CLASS_NAME_(test_case_name, test_name)::TestBody()
 
 #endif  
+

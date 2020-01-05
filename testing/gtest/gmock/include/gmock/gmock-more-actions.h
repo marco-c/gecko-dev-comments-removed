@@ -72,7 +72,7 @@ template <class Class, typename MethodPtr>
 class InvokeMethodAction {
  public:
   InvokeMethodAction(Class* obj_ptr, MethodPtr method_ptr)
-      : obj_ptr_(obj_ptr), method_ptr_(method_ptr) {}
+      : method_ptr_(method_ptr), obj_ptr_(obj_ptr) {}
 
   template <typename Result, typename ArgumentTuple>
   Result Perform(const ArgumentTuple& args) const {
@@ -81,11 +81,28 @@ class InvokeMethodAction {
   }
 
  private:
-  Class* const obj_ptr_;
+  
+  
+  
   const MethodPtr method_ptr_;
+  Class* const obj_ptr_;
 
   GTEST_DISALLOW_ASSIGN_(InvokeMethodAction);
 };
+
+
+
+
+
+template<typename InputIterator, typename OutputIterator>
+inline OutputIterator CopyElements(InputIterator first,
+                                   InputIterator last,
+                                   OutputIterator output) {
+  for (; first != last; ++first, ++output) {
+    *output = *first;
+  }
+  return output;
+}
 
 }  
 
@@ -144,7 +161,7 @@ WithArg(const InnerAction& action) {
 ACTION_TEMPLATE(ReturnArg,
                 HAS_1_TEMPLATE_PARAMS(int, k),
                 AND_0_VALUE_PARAMS()) {
-  return std::tr1::get<k>(args);
+  return ::testing::get<k>(args);
 }
 
 
@@ -152,7 +169,7 @@ ACTION_TEMPLATE(ReturnArg,
 ACTION_TEMPLATE(SaveArg,
                 HAS_1_TEMPLATE_PARAMS(int, k),
                 AND_1_VALUE_PARAMS(pointer)) {
-  *pointer = ::std::tr1::get<k>(args);
+  *pointer = ::testing::get<k>(args);
 }
 
 
@@ -160,7 +177,7 @@ ACTION_TEMPLATE(SaveArg,
 ACTION_TEMPLATE(SaveArgPointee,
                 HAS_1_TEMPLATE_PARAMS(int, k),
                 AND_1_VALUE_PARAMS(pointer)) {
-  *pointer = *::std::tr1::get<k>(args);
+  *pointer = *::testing::get<k>(args);
 }
 
 
@@ -168,13 +185,13 @@ ACTION_TEMPLATE(SaveArgPointee,
 ACTION_TEMPLATE(SetArgReferee,
                 HAS_1_TEMPLATE_PARAMS(int, k),
                 AND_1_VALUE_PARAMS(value)) {
-  typedef typename ::std::tr1::tuple_element<k, args_type>::type argk_type;
+  typedef typename ::testing::tuple_element<k, args_type>::type argk_type;
   
   
   
   GTEST_COMPILE_ASSERT_(internal::is_reference<argk_type>::value,
                         SetArgReferee_must_be_used_with_a_reference_argument);
-  ::std::tr1::get<k>(args) = value;
+  ::testing::get<k>(args) = value;
 }
 
 
@@ -186,14 +203,10 @@ ACTION_TEMPLATE(SetArrayArgument,
                 HAS_1_TEMPLATE_PARAMS(int, k),
                 AND_2_VALUE_PARAMS(first, last)) {
   
-  
 #ifdef _MSC_VER
-# pragma warning(push)          // Saves the current warning state.
-# pragma warning(disable:4996)  // Temporarily disables warning 4996.
-#endif
-  ::std::copy(first, last, ::std::tr1::get<k>(args));
-#ifdef _MSC_VER
-# pragma warning(pop)           // Restores the warning state.
+  internal::CopyElements(first, last, ::testing::get<k>(args));
+#else
+  ::std::copy(first, last, ::testing::get<k>(args));
 #endif
 }
 
@@ -202,7 +215,7 @@ ACTION_TEMPLATE(SetArrayArgument,
 ACTION_TEMPLATE(DeleteArg,
                 HAS_1_TEMPLATE_PARAMS(int, k),
                 AND_0_VALUE_PARAMS()) {
-  delete ::std::tr1::get<k>(args);
+  delete ::testing::get<k>(args);
 }
 
 

@@ -45,11 +45,10 @@
 #define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_TYPE_UTIL_H_
 
 #include "gtest/internal/gtest-port.h"
-#include "gtest/internal/gtest-string.h"
 
 
 
-# ifdef __GLIBCXX__
+# if GTEST_HAS_CXXABI_H_
 #  include <cxxabi.h>
 # elif defined(__HP_aCC)
 #  include <acxx_demangle.h>
@@ -62,19 +61,19 @@ namespace internal {
 
 
 template <typename T>
-String GetTypeName() {
+std::string GetTypeName() {
 # if GTEST_HAS_RTTI
 
   const char* const name = typeid(T).name();
-#  if defined(__GLIBCXX__) || defined(__HP_aCC)
+#  if GTEST_HAS_CXXABI_H_ || defined(__HP_aCC)
   int status = 0;
   
   
-#   ifdef __GLIBCXX__
+#   if GTEST_HAS_CXXABI_H_
   using abi::__cxa_demangle;
-#   endif 
+#   endif  
   char* const readable_name = __cxa_demangle(name, 0, 0, &status);
-  const String name_str(status == 0 ? readable_name : name);
+  const std::string name_str(status == 0 ? readable_name : name);
   free(readable_name);
   return name_str;
 #  else
@@ -3300,7 +3299,9 @@ struct Templates<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14,
 
 
 template <typename T>
-struct TypeList { typedef Types1<T> type; };
+struct TypeList {
+  typedef Types1<T> type;
+};
 
 template <typename T1, typename T2, typename T3, typename T4, typename T5,
     typename T6, typename T7, typename T8, typename T9, typename T10,

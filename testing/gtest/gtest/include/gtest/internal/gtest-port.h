@@ -33,8 +33,78 @@
 
 
 
+
+
+
+
+
+
+
 #ifndef GTEST_INCLUDE_GTEST_INTERNAL_GTEST_PORT_H_
 #define GTEST_INCLUDE_GTEST_INTERNAL_GTEST_PORT_H_
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -201,16 +271,28 @@
 # include <TargetConditionals.h>
 #endif
 
+#include <algorithm>  
 #include <iostream>  
 #include <sstream>  
 #include <string>  
+#include <utility>
+#include <vector>  
 
-#define GTEST_DEV_EMAIL_ "googletestframework@@googlegroups.com"
-#define GTEST_FLAG_PREFIX_ "gtest_"
-#define GTEST_FLAG_PREFIX_DASH_ "gtest-"
-#define GTEST_FLAG_PREFIX_UPPER_ "GTEST_"
-#define GTEST_NAME_ "Google Test"
-#define GTEST_PROJECT_URL_ "http://code.google.com/p/googletest/"
+#include "gtest/internal/gtest-port-arch.h"
+#include "gtest/internal/custom/gtest-port.h"
+
+#if !defined(GTEST_DEV_EMAIL_)
+# define GTEST_DEV_EMAIL_ "googletestframework@@googlegroups.com"
+# define GTEST_FLAG_PREFIX_ "gtest_"
+# define GTEST_FLAG_PREFIX_DASH_ "gtest-"
+# define GTEST_FLAG_PREFIX_UPPER_ "GTEST_"
+# define GTEST_NAME_ "Google Test"
+# define GTEST_PROJECT_URL_ "https://github.com/google/googletest/"
+#endif  
+
+#if !defined(GTEST_INIT_GOOGLE_TEST_NAME_)
+# define GTEST_INIT_GOOGLE_TEST_NAME_ "testing::InitGoogleTest"
+#endif  
 
 
 #ifdef __GNUC__
@@ -220,40 +302,21 @@
 #endif  
 
 
-#ifdef __CYGWIN__
-# define GTEST_OS_CYGWIN 1
-#elif defined __SYMBIAN32__
-# define GTEST_OS_SYMBIAN 1
-#elif defined _WIN32
-# define GTEST_OS_WINDOWS 1
-# ifdef _WIN32_WCE
-#  define GTEST_OS_WINDOWS_MOBILE 1
-# elif defined(__MINGW__) || defined(__MINGW32__)
-#  define GTEST_OS_WINDOWS_MINGW 1
-# else
-#  define GTEST_OS_WINDOWS_DESKTOP 1
-# endif  
-#elif defined __APPLE__
-# define GTEST_OS_MAC 1
-# if TARGET_OS_IPHONE
-#  define GTEST_OS_IOS 1
-# endif
-#elif defined __linux__
-# define GTEST_OS_LINUX 1
-# ifdef ANDROID
-#  define GTEST_OS_LINUX_ANDROID 1
-# endif  
-#elif defined __MVS__
-# define GTEST_OS_ZOS 1
-#elif defined(__sun) && defined(__SVR4)
-# define GTEST_OS_SOLARIS 1
-#elif defined(_AIX)
-# define GTEST_OS_AIX 1
-#elif defined(__hpux)
-# define GTEST_OS_HPUX 1
-#elif defined __native_client__
-# define GTEST_OS_NACL 1
-#endif  
+
+
+
+
+#if _MSC_VER >= 1500
+# define GTEST_DISABLE_MSC_WARNINGS_PUSH_(warnings) \
+    __pragma(warning(push))                        \
+    __pragma(warning(disable: warnings))
+# define GTEST_DISABLE_MSC_WARNINGS_POP_()          \
+    __pragma(warning(pop))
+#else
+
+# define GTEST_DISABLE_MSC_WARNINGS_PUSH_(warnings)
+# define GTEST_DISABLE_MSC_WARNINGS_POP_()
+#endif
 
 #ifndef GTEST_LANG_CXX11
 
@@ -271,23 +334,105 @@
 
 
 
-#if !GTEST_OS_WINDOWS
+
+
+
+
+
+
+#if GTEST_LANG_CXX11 && \
+    (!defined(__GLIBCXX__) || ( \
+        __GLIBCXX__ >= 20110325ul &&   \
+         \
+        __GLIBCXX__ != 20110416ul &&   \
+        __GLIBCXX__ != 20120313ul &&   \
+        __GLIBCXX__ != 20110428ul &&   \
+        __GLIBCXX__ != 20120702ul))   
+# define GTEST_STDLIB_CXX11 1
+#endif
+
+
+#if GTEST_STDLIB_CXX11
+# define GTEST_HAS_STD_BEGIN_AND_END_ 1
+# define GTEST_HAS_STD_FORWARD_LIST_ 1
+# define GTEST_HAS_STD_FUNCTION_ 1
+# define GTEST_HAS_STD_INITIALIZER_LIST_ 1
+# define GTEST_HAS_STD_MOVE_ 1
+# define GTEST_HAS_STD_SHARED_PTR_ 1
+# define GTEST_HAS_STD_TYPE_TRAITS_ 1
+# define GTEST_HAS_STD_UNIQUE_PTR_ 1
+#endif
+
+
+
+#if GTEST_LANG_CXX11
+# define GTEST_HAS_STD_TUPLE_ 1
+# if defined(__clang__)
+
+#  if defined(__has_include) && !__has_include(<tuple>)
+#   undef GTEST_HAS_STD_TUPLE_
+#  endif
+# elif defined(_MSC_VER)
+
+#  if defined(_CPPLIB_VER) && _CPPLIB_VER < 520
+#   undef GTEST_HAS_STD_TUPLE_
+#  endif
+# elif defined(__GLIBCXX__)
+
+
+
+#  if __GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 2)
+#   undef GTEST_HAS_STD_TUPLE_
+#  endif
+# endif
+#endif
+
+
+
+
+#if GTEST_OS_WINDOWS
+# if !GTEST_OS_WINDOWS_MOBILE
+#  include <direct.h>
+#  include <io.h>
+# endif
+
+#if GTEST_OS_WINDOWS_MINGW && !defined(__MINGW64_VERSION_MAJOR)
+
+
+typedef struct _CRITICAL_SECTION GTEST_CRITICAL_SECTION;
+#else
+
+
+
+typedef struct _RTL_CRITICAL_SECTION GTEST_CRITICAL_SECTION;
+#endif
+#else
 
 
 
 # include <unistd.h>
 # include <strings.h>
-#elif !GTEST_OS_WINDOWS_MOBILE
-# include <direct.h>
-# include <io.h>
+#endif  
+
+#if GTEST_OS_LINUX_ANDROID
+
+#  include <android/api-level.h>  
 #endif
 
 
 #ifndef GTEST_HAS_POSIX_RE
-# define GTEST_HAS_POSIX_RE (!GTEST_OS_WINDOWS)
+# if GTEST_OS_LINUX_ANDROID
+
+#  define GTEST_HAS_POSIX_RE (__ANDROID_API__ >= 9)
+# else
+#  define GTEST_HAS_POSIX_RE (!GTEST_OS_WINDOWS)
+# endif
 #endif
 
-#if GTEST_HAS_POSIX_RE
+#if GTEST_USES_PCRE
+
+
+#elif GTEST_HAS_POSIX_RE
 
 
 
@@ -322,6 +467,15 @@
 #   define _HAS_EXCEPTIONS 1
 #  endif  
 #  define GTEST_HAS_EXCEPTIONS _HAS_EXCEPTIONS
+# elif defined(__clang__)
+
+
+
+
+
+
+
+#  define GTEST_HAS_EXCEPTIONS (__EXCEPTIONS && __has_feature(cxx_exceptions))
 # elif defined(__GNUC__) && __EXCEPTIONS
 
 #  define GTEST_HAS_EXCEPTIONS 1
@@ -399,10 +553,26 @@
 # elif defined(__GNUC__) && (GTEST_GCC_VER_ >= 40302)
 
 #  ifdef __GXX_RTTI
-#   define GTEST_HAS_RTTI 1
+
+
+
+
+#   if GTEST_OS_LINUX_ANDROID && defined(_STLPORT_MAJOR) && \
+       !defined(__EXCEPTIONS)
+#    define GTEST_HAS_RTTI 0
+#   else
+#    define GTEST_HAS_RTTI 1
+#   endif  
 #  else
 #   define GTEST_HAS_RTTI 0
 #  endif  
+
+
+
+
+# elif defined(__clang__)
+
+#  define GTEST_HAS_RTTI __has_feature(cxx_rtti)
 
 
 
@@ -436,7 +606,8 @@
 
 
 
-# define GTEST_HAS_PTHREAD (GTEST_OS_LINUX || GTEST_OS_MAC || GTEST_OS_HPUX)
+# define GTEST_HAS_PTHREAD (GTEST_OS_LINUX || GTEST_OS_MAC || GTEST_OS_HPUX \
+    || GTEST_OS_QNX || GTEST_OS_FREEBSD || GTEST_OS_NACL)
 #endif  
 
 #if GTEST_HAS_PTHREAD
@@ -450,10 +621,24 @@
 
 
 
+#if !defined(GTEST_HAS_HASH_MAP_)
+# if _MSC_VER
+#  define GTEST_HAS_HASH_MAP_ 1  // Indicates that hash_map is available.
+#  define GTEST_HAS_HASH_SET_ 1  // Indicates that hash_set is available.
+# endif  
+#endif  
+
+
+
 
 #ifndef GTEST_HAS_TR1_TUPLE
+# if GTEST_OS_LINUX_ANDROID && defined(_STLPORT_MAJOR)
 
-# define GTEST_HAS_TR1_TUPLE 1
+#  define GTEST_HAS_TR1_TUPLE 0
+# else
+
+#  define GTEST_HAS_TR1_TUPLE 1
+# endif
 #endif  
 
 
@@ -470,8 +655,9 @@
 
 
 
+
 # if (defined(__GNUC__) && !defined(__CUDACC__) && (GTEST_GCC_VER_ >= 40000) \
-    && !defined(_LIBCPP_VERSION)) || _MSC_VER >= 1600
+      && !GTEST_OS_QNX && !defined(_LIBCPP_VERSION)) || _MSC_VER >= 1600
 #  define GTEST_ENV_HAS_TR1_TUPLE_ 1
 # endif
 
@@ -493,10 +679,20 @@
 
 
 
+#if GTEST_HAS_STD_TUPLE_
+# include <tuple>  
+# define GTEST_TUPLE_NAMESPACE_ ::std
+#endif  
+
+
+
 #if GTEST_HAS_TR1_TUPLE
+# ifndef GTEST_TUPLE_NAMESPACE_
+#  define GTEST_TUPLE_NAMESPACE_ ::std::tr1
+# endif  
 
 # if GTEST_USE_OWN_TR1_TUPLE
-#  include "gtest/internal/gtest-tuple.h"
+#  include "gtest/internal/gtest-tuple.h"  
 # elif GTEST_ENV_HAS_STD_TUPLE_
 #  include <tuple>
 
@@ -527,7 +723,7 @@ using ::std::tuple_size;
 
 
 #  define BOOST_TR1_DETAIL_CONFIG_HPP_INCLUDED
-#  include <tuple>
+#  include <tuple>  
 
 # elif defined(__GNUC__) && (GTEST_GCC_VER_ >= 40000)
 
@@ -562,8 +758,21 @@ using ::std::tuple_size;
 #ifndef GTEST_HAS_CLONE
 
 
-# if GTEST_OS_LINUX && !defined(__ia64__) && !(defined(ANDROID) && defined(__i386__))
-#  define GTEST_HAS_CLONE 1
+# if GTEST_OS_LINUX && !defined(__ia64__)
+#  if GTEST_OS_LINUX_ANDROID
+
+
+#    if defined(__LP64__) || \
+        (defined(__arm__) && __ANDROID_API__ >= 9) || \
+        (defined(__mips__) && __ANDROID_API__ >= 12) || \
+        (defined(__i386__) && __ANDROID_API__ >= 17)
+#     define GTEST_HAS_CLONE 1
+#    else
+#     define GTEST_HAS_CLONE 0
+#    endif
+#  else
+#   define GTEST_HAS_CLONE 1
+#  endif
 # else
 #  define GTEST_HAS_CLONE 0
 # endif  
@@ -575,7 +784,8 @@ using ::std::tuple_size;
 #ifndef GTEST_HAS_STREAM_REDIRECTION
 
 
-# if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_SYMBIAN
+# if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_SYMBIAN || \
+    GTEST_OS_WINDOWS_PHONE || GTEST_OS_WINDOWS_RT
 #  define GTEST_HAS_STREAM_REDIRECTION 0
 # else
 #  define GTEST_HAS_STREAM_REDIRECTION 1
@@ -589,9 +799,9 @@ using ::std::tuple_size;
 #if (GTEST_OS_LINUX || GTEST_OS_CYGWIN || GTEST_OS_SOLARIS || \
      (GTEST_OS_MAC && !GTEST_OS_IOS) || \
      (GTEST_OS_WINDOWS_DESKTOP && _MSC_VER >= 1400) || \
-     GTEST_OS_WINDOWS_MINGW || GTEST_OS_AIX || GTEST_OS_HPUX)
+     GTEST_OS_WINDOWS_MINGW || GTEST_OS_AIX || GTEST_OS_HPUX || \
+     GTEST_OS_OPENBSD || GTEST_OS_QNX || GTEST_OS_FREEBSD)
 # define GTEST_HAS_DEATH_TEST 1
-# include <vector>  
 #endif
 
 
@@ -655,7 +865,12 @@ using ::std::tuple_size;
 
 #if defined(__GNUC__) && !defined(COMPILER_ICC)
 # define GTEST_ATTRIBUTE_UNUSED_ __attribute__ ((unused))
-#else
+#elif defined(__clang__)
+# if __has_attribute(unused)
+#  define GTEST_ATTRIBUTE_UNUSED_ __attribute__ ((unused))
+# endif
+#endif
+#ifndef GTEST_ATTRIBUTE_UNUSED_
 # define GTEST_ATTRIBUTE_UNUSED_
 #endif
 
@@ -684,6 +899,19 @@ using ::std::tuple_size;
 
 
 
+
+
+
+
+
+# define GTEST_INTENTIONAL_CONST_COND_PUSH_() \
+    GTEST_DISABLE_MSC_WARNINGS_PUSH_(4127)
+# define GTEST_INTENTIONAL_CONST_COND_POP_() \
+    GTEST_DISABLE_MSC_WARNINGS_POP_()
+
+
+
+
 #ifndef GTEST_HAS_SEH
 
 
@@ -695,17 +923,22 @@ using ::std::tuple_size;
 #  define GTEST_HAS_SEH 0
 # endif
 
+#define GTEST_IS_THREADSAFE \
+    (GTEST_HAS_MUTEX_AND_THREAD_LOCAL_ \
+     || (GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT) \
+     || GTEST_HAS_PTHREAD)
+
 #endif  
 
 #ifdef _MSC_VER
-
 # if GTEST_LINKED_AS_SHARED_LIBRARY
 #  define GTEST_API_ __declspec(dllimport)
 # elif GTEST_CREATE_SHARED_LIBRARY
 #  define GTEST_API_ __declspec(dllexport)
 # endif
-
-#endif  
+#elif __GNUC__ >= 4 || defined(__clang__)
+# define GTEST_API_ __attribute__((visibility ("default")))
+#endif 
 
 #ifndef GTEST_API_
 # define GTEST_API_
@@ -718,13 +951,71 @@ using ::std::tuple_size;
 # define GTEST_NO_INLINE_
 #endif
 
+
+#if defined(__GLIBCXX__) || defined(_LIBCPP_VERSION)
+# define GTEST_HAS_CXXABI_H_ 1
+#else
+# define GTEST_HAS_CXXABI_H_ 0
+#endif
+
+
+
+#if defined(__clang__)
+# if __has_feature(memory_sanitizer)
+#  define GTEST_ATTRIBUTE_NO_SANITIZE_MEMORY_ \
+       __attribute__((no_sanitize_memory))
+# else
+#  define GTEST_ATTRIBUTE_NO_SANITIZE_MEMORY_
+# endif  
+#else
+# define GTEST_ATTRIBUTE_NO_SANITIZE_MEMORY_
+#endif  
+
+
+#if defined(__clang__)
+# if __has_feature(address_sanitizer)
+#  define GTEST_ATTRIBUTE_NO_SANITIZE_ADDRESS_ \
+       __attribute__((no_sanitize_address))
+# else
+#  define GTEST_ATTRIBUTE_NO_SANITIZE_ADDRESS_
+# endif  
+#else
+# define GTEST_ATTRIBUTE_NO_SANITIZE_ADDRESS_
+#endif  
+
+
+#if defined(__clang__)
+# if __has_feature(thread_sanitizer)
+#  define GTEST_ATTRIBUTE_NO_SANITIZE_THREAD_ \
+       __attribute__((no_sanitize_thread))
+# else
+#  define GTEST_ATTRIBUTE_NO_SANITIZE_THREAD_
+# endif  
+#else
+# define GTEST_ATTRIBUTE_NO_SANITIZE_THREAD_
+#endif  
+
 namespace testing {
 
 class Message;
 
+#if defined(GTEST_TUPLE_NAMESPACE_)
+
+
+
+using GTEST_TUPLE_NAMESPACE_::get;
+using GTEST_TUPLE_NAMESPACE_::make_tuple;
+using GTEST_TUPLE_NAMESPACE_::tuple;
+using GTEST_TUPLE_NAMESPACE_::tuple_size;
+using GTEST_TUPLE_NAMESPACE_::tuple_element;
+#endif  
+
 namespace internal {
 
-class String;
+
+
+
+class Secret;
 
 
 
@@ -741,13 +1032,19 @@ class String;
 
 
 
+#if GTEST_LANG_CXX11
+# define GTEST_COMPILE_ASSERT_(expr, msg) static_assert(expr, #msg)
+#else  
 template <bool>
-struct CompileAssert {
+  struct CompileAssert {
 };
 
-#define GTEST_COMPILE_ASSERT_(expr, msg) \
-  typedef ::testing::internal::CompileAssert<(bool(expr))> \
-      msg[bool(expr) ? 1 : -1] GTEST_ATTRIBUTE_UNUSED_
+# define GTEST_COMPILE_ASSERT_(expr, msg) \
+  typedef ::testing::internal::CompileAssert<(static_cast<bool>(expr))> \
+      msg[static_cast<bool>(expr) ? 1 : -1] GTEST_ATTRIBUTE_UNUSED_
+#endif  
+
+
 
 
 
@@ -797,7 +1094,12 @@ template <typename T1, typename T2>
 struct StaticAssertTypeEqHelper;
 
 template <typename T>
-struct StaticAssertTypeEqHelper<T, T> {};
+struct StaticAssertTypeEqHelper<T, T> {
+  enum { value = true };
+};
+
+
+#define GTEST_ARRAY_SIZE_(array) (sizeof(array) / sizeof(array[0]))
 
 #if GTEST_HAS_GLOBAL_STRING
 typedef ::string string;
@@ -845,6 +1147,12 @@ class scoped_ptr {
       ptr_ = p;
     }
   }
+
+  friend void swap(scoped_ptr& a, scoped_ptr& b) {
+    using std::swap;
+    swap(a.ptr_, b.ptr_);
+  }
+
  private:
   T* ptr_;
 
@@ -910,7 +1218,6 @@ class GTEST_API_ RE {
   
   
   
-  
   const char* pattern_;
   bool is_valid_;
 
@@ -969,13 +1276,18 @@ class GTEST_API_ GTestLog {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(GTestLog);
 };
 
-#define GTEST_LOG_(severity) \
+#if !defined(GTEST_LOG_)
+
+# define GTEST_LOG_(severity) \
     ::testing::internal::GTestLog(::testing::internal::GTEST_##severity, \
                                   __FILE__, __LINE__).GetStream()
 
 inline void LogToStderr() {}
 inline void FlushInfoLog() { fflush(NULL); }
 
+#endif  
+
+#if !defined(GTEST_CHECK_)
 
 
 
@@ -990,12 +1302,13 @@ inline void FlushInfoLog() { fflush(NULL); }
 
 
 
-#define GTEST_CHECK_(condition) \
+# define GTEST_CHECK_(condition) \
     GTEST_AMBIGUOUS_ELSE_BLOCKER_ \
     if (::testing::internal::IsTrue(condition)) \
       ; \
     else \
       GTEST_LOG_(FATAL) << "Condition " #condition " failed. "
+#endif  
 
 
 
@@ -1006,6 +1319,15 @@ inline void FlushInfoLog() { fflush(NULL); }
   if (const int gtest_error = (posix_call)) \
     GTEST_LOG_(FATAL) << #posix_call << "failed with error " \
                       << gtest_error
+
+#if GTEST_HAS_STD_MOVE_
+using std::move;
+#else  
+template <typename T>
+const T& move(const T& t) {
+  return t;
+}
+#endif  
 
 
 
@@ -1057,7 +1379,9 @@ inline To DownCast_(From* f) {
   
   
   
+  GTEST_INTENTIONAL_CONST_COND_PUSH_()
   if (false) {
+  GTEST_INTENTIONAL_CONST_COND_POP_()
     const To to = NULL;
     ::testing::internal::ImplicitCast_<From*>(to);
   }
@@ -1078,6 +1402,11 @@ template <class Derived, class Base>
 Derived* CheckedDowncastToActualType(Base* base) {
 #if GTEST_HAS_RTTI
   GTEST_CHECK_(typeid(*base) == typeid(Derived));
+#endif
+
+#if GTEST_HAS_DOWNCAST_
+  return ::down_cast<Derived*>(base);
+#elif GTEST_HAS_RTTI
   return dynamic_cast<Derived*>(base);  
 #else
   return static_cast<Derived*>(base);  
@@ -1093,27 +1422,36 @@ Derived* CheckedDowncastToActualType(Base* base) {
 
 
 GTEST_API_ void CaptureStdout();
-GTEST_API_ String GetCapturedStdout();
+GTEST_API_ std::string GetCapturedStdout();
 GTEST_API_ void CaptureStderr();
-GTEST_API_ String GetCapturedStderr();
+GTEST_API_ std::string GetCapturedStderr();
 
 #endif  
 
+
+GTEST_API_ std::string TempDir();
+
+
+GTEST_API_ size_t GetFileSize(FILE* file);
+
+
+GTEST_API_ std::string ReadEntireFile(FILE* file);
+
+
+GTEST_API_ const ::std::vector<testing::internal::string>& GetArgvs();
 
 #if GTEST_HAS_DEATH_TEST
 
+const ::std::vector<testing::internal::string>& GetInjectableArgvs();
+void SetInjectableArgvs(const ::std::vector<testing::internal::string>*
+                             new_argvs);
 
-extern ::std::vector<String> g_argvs;
-
-
-const ::std::vector<String>& GetArgvs();
 
 #endif  
 
 
-
-#if GTEST_HAS_PTHREAD
-
+#if GTEST_IS_THREADSAFE
+# if GTEST_HAS_PTHREAD
 
 
 
@@ -1124,7 +1462,13 @@ inline void SleepMilliseconds(int n) {
   };
   nanosleep(&time, NULL);
 }
+# endif  
 
+# if GTEST_HAS_NOTIFICATION_
+
+
+
+# elif GTEST_HAS_PTHREAD
 
 
 
@@ -1133,25 +1477,96 @@ inline void SleepMilliseconds(int n) {
 
 class Notification {
  public:
-  Notification() : notified_(false) {}
+  Notification() : notified_(false) {
+    GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_init(&mutex_, NULL));
+  }
+  ~Notification() {
+    pthread_mutex_destroy(&mutex_);
+  }
 
   
   
-  void Notify() { notified_ = true; }
+  void Notify() {
+    pthread_mutex_lock(&mutex_);
+    notified_ = true;
+    pthread_mutex_unlock(&mutex_);
+  }
 
   
   
   void WaitForNotification() {
-    while(!notified_) {
+    for (;;) {
+      pthread_mutex_lock(&mutex_);
+      const bool notified = notified_;
+      pthread_mutex_unlock(&mutex_);
+      if (notified)
+        break;
       SleepMilliseconds(10);
     }
   }
 
  private:
-  volatile bool notified_;
+  pthread_mutex_t mutex_;
+  bool notified_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Notification);
 };
+
+# elif GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT
+
+GTEST_API_ void SleepMilliseconds(int n);
+
+
+
+class GTEST_API_ AutoHandle {
+ public:
+  
+  
+  
+  
+  
+  typedef void* Handle;
+  AutoHandle();
+  explicit AutoHandle(Handle handle);
+
+  ~AutoHandle();
+
+  Handle Get() const;
+  void Reset();
+  void Reset(Handle handle);
+
+ private:
+  
+  bool IsCloseable() const;
+
+  Handle handle_;
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(AutoHandle);
+};
+
+
+
+
+
+
+
+class GTEST_API_ Notification {
+ public:
+  Notification();
+  void Notify();
+  void WaitForNotification();
+
+ private:
+  AutoHandle event_;
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(Notification);
+};
+# endif
+
+
+
+
+# if GTEST_HAS_PTHREAD && !GTEST_OS_WINDOWS_MINGW
 
 
 
@@ -1190,10 +1605,9 @@ extern "C" inline void* ThreadFuncWithCLinkage(void* thread) {
 template <typename T>
 class ThreadWithParam : public ThreadWithParamBase {
  public:
-  typedef void (*UserThreadFunc)(T);
+  typedef void UserThreadFunc(T);
 
-  ThreadWithParam(
-      UserThreadFunc func, T param, Notification* thread_can_start)
+  ThreadWithParam(UserThreadFunc* func, T param, Notification* thread_can_start)
       : func_(func),
         param_(param),
         thread_can_start_(thread_can_start),
@@ -1220,13 +1634,193 @@ class ThreadWithParam : public ThreadWithParamBase {
   }
 
  private:
-  const UserThreadFunc func_;  
+  UserThreadFunc* const func_;  
   const T param_;  
   
   
   Notification* const thread_can_start_;
   bool finished_;  
   pthread_t thread_;  
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(ThreadWithParam);
+};
+# endif  
+         
+
+# if GTEST_HAS_MUTEX_AND_THREAD_LOCAL_
+
+
+
+# elif GTEST_OS_WINDOWS && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class GTEST_API_ Mutex {
+ public:
+  enum MutexType { kStatic = 0, kDynamic = 1 };
+  
+  
+  
+  enum StaticConstructorSelector { kStaticMutex = 0 };
+
+  
+  
+  
+  explicit Mutex(StaticConstructorSelector ) {}
+
+  Mutex();
+  ~Mutex();
+
+  void Lock();
+
+  void Unlock();
+
+  
+  
+  void AssertHeld();
+
+ private:
+  
+  void ThreadSafeLazyInit();
+
+  
+  
+  unsigned int owner_thread_id_;
+
+  
+  
+  MutexType type_;
+  long critical_section_init_phase_;  
+  GTEST_CRITICAL_SECTION* critical_section_;
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(Mutex);
+};
+
+# define GTEST_DECLARE_STATIC_MUTEX_(mutex) \
+    extern ::testing::internal::Mutex mutex
+
+# define GTEST_DEFINE_STATIC_MUTEX_(mutex) \
+    ::testing::internal::Mutex mutex(::testing::internal::Mutex::kStaticMutex)
+
+
+
+
+
+
+class GTestMutexLock {
+ public:
+  explicit GTestMutexLock(Mutex* mutex)
+      : mutex_(mutex) { mutex_->Lock(); }
+
+  ~GTestMutexLock() { mutex_->Unlock(); }
+
+ private:
+  Mutex* const mutex_;
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(GTestMutexLock);
+};
+
+typedef GTestMutexLock MutexLock;
+
+
+
+class ThreadLocalValueHolderBase {
+ public:
+  virtual ~ThreadLocalValueHolderBase() {}
+};
+
+
+
+class ThreadLocalBase {
+ public:
+  
+  
+  
+  
+  virtual ThreadLocalValueHolderBase* NewValueForCurrentThread() const = 0;
+
+ protected:
+  ThreadLocalBase() {}
+  virtual ~ThreadLocalBase() {}
+
+ private:
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(ThreadLocalBase);
+};
+
+
+
+
+class GTEST_API_ ThreadLocalRegistry {
+ public:
+  
+  
+  static ThreadLocalValueHolderBase* GetValueOnCurrentThread(
+      const ThreadLocalBase* thread_local_instance);
+
+  
+  static void OnThreadLocalDestroyed(
+      const ThreadLocalBase* thread_local_instance);
+};
+
+class GTEST_API_ ThreadWithParamBase {
+ public:
+  void Join();
+
+ protected:
+  class Runnable {
+   public:
+    virtual ~Runnable() {}
+    virtual void Run() = 0;
+  };
+
+  ThreadWithParamBase(Runnable *runnable, Notification* thread_can_start);
+  virtual ~ThreadWithParamBase();
+
+ private:
+  AutoHandle thread_;
+};
+
+
+template <typename T>
+class ThreadWithParam : public ThreadWithParamBase {
+ public:
+  typedef void UserThreadFunc(T);
+
+  ThreadWithParam(UserThreadFunc* func, T param, Notification* thread_can_start)
+      : ThreadWithParamBase(new RunnableImpl(func, param), thread_can_start) {
+  }
+  virtual ~ThreadWithParam() {}
+
+ private:
+  class RunnableImpl : public Runnable {
+   public:
+    RunnableImpl(UserThreadFunc* func, T param)
+        : func_(func),
+          param_(param) {
+    }
+    virtual ~RunnableImpl() {}
+    virtual void Run() {
+      func_(param_);
+    }
+
+   private:
+    UserThreadFunc* const func_;
+    const T param_;
+
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(RunnableImpl);
+  };
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ThreadWithParam);
 };
@@ -1250,12 +1844,100 @@ class ThreadWithParam : public ThreadWithParamBase {
 
 
 
+
+
+
+
+
+
+
+
+template <typename T>
+class ThreadLocal : public ThreadLocalBase {
+ public:
+  ThreadLocal() : default_factory_(new DefaultValueHolderFactory()) {}
+  explicit ThreadLocal(const T& value)
+      : default_factory_(new InstanceValueHolderFactory(value)) {}
+
+  ~ThreadLocal() { ThreadLocalRegistry::OnThreadLocalDestroyed(this); }
+
+  T* pointer() { return GetOrCreateValue(); }
+  const T* pointer() const { return GetOrCreateValue(); }
+  const T& get() const { return *pointer(); }
+  void set(const T& value) { *pointer() = value; }
+
+ private:
+  
+  
+  class ValueHolder : public ThreadLocalValueHolderBase {
+   public:
+    ValueHolder() : value_() {}
+    explicit ValueHolder(const T& value) : value_(value) {}
+
+    T* pointer() { return &value_; }
+
+   private:
+    T value_;
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(ValueHolder);
+  };
+
+
+  T* GetOrCreateValue() const {
+    return static_cast<ValueHolder*>(
+        ThreadLocalRegistry::GetValueOnCurrentThread(this))->pointer();
+  }
+
+  virtual ThreadLocalValueHolderBase* NewValueForCurrentThread() const {
+    return default_factory_->MakeNewHolder();
+  }
+
+  class ValueHolderFactory {
+   public:
+    ValueHolderFactory() {}
+    virtual ~ValueHolderFactory() {}
+    virtual ValueHolder* MakeNewHolder() const = 0;
+
+   private:
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(ValueHolderFactory);
+  };
+
+  class DefaultValueHolderFactory : public ValueHolderFactory {
+   public:
+    DefaultValueHolderFactory() {}
+    virtual ValueHolder* MakeNewHolder() const { return new ValueHolder(); }
+
+   private:
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(DefaultValueHolderFactory);
+  };
+
+  class InstanceValueHolderFactory : public ValueHolderFactory {
+   public:
+    explicit InstanceValueHolderFactory(const T& value) : value_(value) {}
+    virtual ValueHolder* MakeNewHolder() const {
+      return new ValueHolder(value_);
+    }
+
+   private:
+    const T value_;  
+
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(InstanceValueHolderFactory);
+  };
+
+  scoped_ptr<ValueHolderFactory> default_factory_;
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(ThreadLocal);
+};
+
+# elif GTEST_HAS_PTHREAD
+
+
 class MutexBase {
  public:
   
   void Lock() {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_lock(&mutex_));
     owner_ = pthread_self();
+    has_owner_ = true;
   }
 
   
@@ -1263,14 +1945,15 @@ class MutexBase {
     
     
     
-    owner_ = 0;
+    
+    has_owner_ = false;
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_unlock(&mutex_));
   }
 
   
   
   void AssertHeld() const {
-    GTEST_CHECK_(owner_ == pthread_self())
+    GTEST_CHECK_(has_owner_ && pthread_equal(owner_, pthread_self()))
         << "The current thread is not holding the mutex @" << this;
   }
 
@@ -1281,16 +1964,23 @@ class MutexBase {
   
  public:
   pthread_mutex_t mutex_;  
+  
+  
+  
+  
+  
+  
+  bool has_owner_;
   pthread_t owner_;  
 };
 
 
-# define GTEST_DECLARE_STATIC_MUTEX_(mutex) \
-    extern ::testing::internal::MutexBase mutex
+#  define GTEST_DECLARE_STATIC_MUTEX_(mutex) \
+     extern ::testing::internal::MutexBase mutex
 
 
-# define GTEST_DEFINE_STATIC_MUTEX_(mutex) \
-    ::testing::internal::MutexBase mutex = { PTHREAD_MUTEX_INITIALIZER, 0 }
+#  define GTEST_DEFINE_STATIC_MUTEX_(mutex) \
+     ::testing::internal::MutexBase mutex = { PTHREAD_MUTEX_INITIALIZER, false, pthread_t() }
 
 
 
@@ -1298,7 +1988,7 @@ class Mutex : public MutexBase {
  public:
   Mutex() {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_init(&mutex_, NULL));
-    owner_ = 0;
+    has_owner_ = false;
   }
   ~Mutex() {
     GTEST_CHECK_POSIX_SUCCESS_(pthread_mutex_destroy(&mutex_));
@@ -1307,6 +1997,8 @@ class Mutex : public MutexBase {
  private:
   GTEST_DISALLOW_COPY_AND_ASSIGN_(Mutex);
 };
+
+
 
 
 
@@ -1344,41 +2036,14 @@ extern "C" inline void DeleteThreadLocalValue(void* value_holder) {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 template <typename T>
 class ThreadLocal {
  public:
-  ThreadLocal() : key_(CreateKey()),
-                  default_() {}
-  explicit ThreadLocal(const T& value) : key_(CreateKey()),
-                                         default_(value) {}
+  ThreadLocal()
+      : key_(CreateKey()), default_factory_(new DefaultValueHolderFactory()) {}
+  explicit ThreadLocal(const T& value)
+      : key_(CreateKey()),
+        default_factory_(new InstanceValueHolderFactory(value)) {}
 
   ~ThreadLocal() {
     
@@ -1398,6 +2063,7 @@ class ThreadLocal {
   
   class ValueHolder : public ThreadLocalValueHolderBase {
    public:
+    ValueHolder() : value_() {}
     explicit ValueHolder(const T& value) : value_(value) {}
 
     T* pointer() { return &value_; }
@@ -1423,22 +2089,54 @@ class ThreadLocal {
       return CheckedDowncastToActualType<ValueHolder>(holder)->pointer();
     }
 
-    ValueHolder* const new_holder = new ValueHolder(default_);
+    ValueHolder* const new_holder = default_factory_->MakeNewHolder();
     ThreadLocalValueHolderBase* const holder_base = new_holder;
     GTEST_CHECK_POSIX_SUCCESS_(pthread_setspecific(key_, holder_base));
     return new_holder->pointer();
   }
 
+  class ValueHolderFactory {
+   public:
+    ValueHolderFactory() {}
+    virtual ~ValueHolderFactory() {}
+    virtual ValueHolder* MakeNewHolder() const = 0;
+
+   private:
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(ValueHolderFactory);
+  };
+
+  class DefaultValueHolderFactory : public ValueHolderFactory {
+   public:
+    DefaultValueHolderFactory() {}
+    virtual ValueHolder* MakeNewHolder() const { return new ValueHolder(); }
+
+   private:
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(DefaultValueHolderFactory);
+  };
+
+  class InstanceValueHolderFactory : public ValueHolderFactory {
+   public:
+    explicit InstanceValueHolderFactory(const T& value) : value_(value) {}
+    virtual ValueHolder* MakeNewHolder() const {
+      return new ValueHolder(value_);
+    }
+
+   private:
+    const T value_;  
+
+    GTEST_DISALLOW_COPY_AND_ASSIGN_(InstanceValueHolderFactory);
+  };
+
   
   const pthread_key_t key_;
-  const T default_;  
+  scoped_ptr<ValueHolderFactory> default_factory_;
 
   GTEST_DISALLOW_COPY_AND_ASSIGN_(ThreadLocal);
 };
 
-# define GTEST_IS_THREADSAFE 1
+# endif  
 
-#else  
+#else
 
 
 
@@ -1448,6 +2146,8 @@ class ThreadLocal {
 class Mutex {
  public:
   Mutex() {}
+  void Lock() {}
+  void Unlock() {}
   void AssertHeld() const {}
 };
 
@@ -1455,6 +2155,11 @@ class Mutex {
   extern ::testing::internal::Mutex mutex
 
 # define GTEST_DEFINE_STATIC_MUTEX_(mutex) ::testing::internal::Mutex mutex
+
+
+
+
+
 
 class GTestMutexLock {
  public:
@@ -1476,11 +2181,7 @@ class ThreadLocal {
   T value_;
 };
 
-
-
-# define GTEST_IS_THREADSAFE 0
-
-#endif  
+#endif
 
 
 
@@ -1578,12 +2279,23 @@ inline bool IsUpper(char ch) {
 inline bool IsXDigit(char ch) {
   return isxdigit(static_cast<unsigned char>(ch)) != 0;
 }
+inline bool IsXDigit(wchar_t ch) {
+  const unsigned char low_byte = static_cast<unsigned char>(ch);
+  return ch == low_byte && isxdigit(low_byte) != 0;
+}
 
 inline char ToLower(char ch) {
   return static_cast<char>(tolower(static_cast<unsigned char>(ch)));
 }
 inline char ToUpper(char ch) {
   return static_cast<char>(toupper(static_cast<unsigned char>(ch)));
+}
+
+inline std::string StripTrailingSpaces(std::string str) {
+  std::string::iterator it = str.end();
+  while (it != str.begin() && IsSpace(*--it))
+    it = str.erase(it);
+  return str;
 }
 
 
@@ -1649,11 +2361,7 @@ inline bool IsDir(const StatStruct& st) { return S_ISDIR(st.st_mode); }
 
 
 
-#ifdef _MSC_VER
-
-# pragma warning(push)
-# pragma warning(disable:4996)
-#endif
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4996 )
 
 inline const char* StrNCpy(char* dest, const char* src, size_t n) {
   return strncpy(dest, src, n);
@@ -1663,7 +2371,7 @@ inline const char* StrNCpy(char* dest, const char* src, size_t n) {
 
 
 
-#if !GTEST_OS_WINDOWS_MOBILE
+#if !GTEST_OS_WINDOWS_MOBILE && !GTEST_OS_WINDOWS_PHONE && !GTEST_OS_WINDOWS_RT
 inline int ChDir(const char* dir) { return chdir(dir); }
 #endif
 inline FILE* FOpen(const char* path, const char* mode) {
@@ -1687,8 +2395,9 @@ inline int Close(int fd) { return close(fd); }
 inline const char* StrError(int errnum) { return strerror(errnum); }
 #endif
 inline const char* GetEnv(const char* name) {
-#if GTEST_OS_WINDOWS_MOBILE
+#if GTEST_OS_WINDOWS_MOBILE || GTEST_OS_WINDOWS_PHONE | GTEST_OS_WINDOWS_RT
   
+  static_cast<void>(name);  
   return NULL;
 #elif defined(__BORLANDC__) || defined(__SunOS_5_8) || defined(__SunOS_5_9)
   
@@ -1700,9 +2409,7 @@ inline const char* GetEnv(const char* name) {
 #endif
 }
 
-#ifdef _MSC_VER
-# pragma warning(pop)  // Restores the warning state.
-#endif
+GTEST_DISABLE_MSC_WARNINGS_POP_()
 
 #if GTEST_OS_WINDOWS_MOBILE
 
@@ -1714,6 +2421,23 @@ inline void Abort() { abort(); }
 #endif  
 
 }  
+
+
+
+
+
+
+#if _MSC_VER >= 1400 && !GTEST_OS_WINDOWS_MOBILE
+
+# define GTEST_SNPRINTF_(buffer, size, format, ...) \
+     _snprintf_s(buffer, size, size, format, __VA_ARGS__)
+#elif defined(_MSC_VER)
+
+
+# define GTEST_SNPRINTF_ _snprintf
+#else
+# define GTEST_SNPRINTF_ snprintf
+#endif
 
 
 
@@ -1767,7 +2491,6 @@ class TypeWithSize<4> {
 template <>
 class TypeWithSize<8> {
  public:
-
 #if GTEST_OS_WINDOWS
   typedef __int64 Int;
   typedef unsigned __int64 UInt;
@@ -1787,14 +2510,23 @@ typedef TypeWithSize<8>::Int TimeInMillis;
 
 
 
-#define GTEST_FLAG(name) FLAGS_gtest_##name
+#if !defined(GTEST_FLAG)
+# define GTEST_FLAG(name) FLAGS_gtest_##name
+#endif  
+
+#if !defined(GTEST_USE_OWN_FLAGFILE_FLAG_)
+# define GTEST_USE_OWN_FLAGFILE_FLAG_ 1
+#endif  
+
+#if !defined(GTEST_DECLARE_bool_)
+# define GTEST_FLAG_SAVER_ ::testing::internal::GTestFlagSaver
 
 
-#define GTEST_DECLARE_bool_(name) GTEST_API_ extern bool GTEST_FLAG(name)
-#define GTEST_DECLARE_int32_(name) \
+# define GTEST_DECLARE_bool_(name) GTEST_API_ extern bool GTEST_FLAG(name)
+# define GTEST_DECLARE_int32_(name) \
     GTEST_API_ extern ::testing::internal::Int32 GTEST_FLAG(name)
 #define GTEST_DECLARE_string_(name) \
-    GTEST_API_ extern ::testing::internal::String GTEST_FLAG(name)
+    GTEST_API_ extern ::std::string GTEST_FLAG(name)
 
 
 #define GTEST_DEFINE_bool_(name, default_val, doc) \
@@ -1802,7 +2534,15 @@ typedef TypeWithSize<8>::Int TimeInMillis;
 #define GTEST_DEFINE_int32_(name, default_val, doc) \
     GTEST_API_ ::testing::internal::Int32 GTEST_FLAG(name) = (default_val)
 #define GTEST_DEFINE_string_(name, default_val, doc) \
-    GTEST_API_ ::testing::internal::String GTEST_FLAG(name) = (default_val)
+    GTEST_API_ ::std::string GTEST_FLAG(name) = (default_val)
+
+#endif  
+
+
+#if !defined(GTEST_EXCLUSIVE_LOCK_REQUIRED_)
+# define GTEST_EXCLUSIVE_LOCK_REQUIRED_(locks)
+# define GTEST_LOCK_EXCLUDED_(locks)
+#endif  
 
 
 
@@ -1816,7 +2556,7 @@ bool ParseInt32(const Message& src_text, const char* str, Int32* value);
 
 bool BoolFromGTestEnv(const char* flag, bool default_val);
 GTEST_API_ Int32 Int32FromGTestEnv(const char* flag, Int32 default_val);
-const char* StringFromGTestEnv(const char* flag, const char* default_val);
+std::string StringFromGTestEnv(const char* flag, const char* default_val);
 
 }  
 }  

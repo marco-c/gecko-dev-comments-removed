@@ -103,6 +103,10 @@
 #include "gtest/internal/gtest-port.h"
 #include "gtest/internal/gtest-internal.h"
 
+#if GTEST_HAS_STD_TUPLE_
+# include <tuple>
+#endif
+
 namespace testing {
 
 
@@ -249,6 +253,103 @@ void DefaultPrintNonContainerTo(const T& value, ::std::ostream* os) {
 
 namespace testing {
 namespace internal {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template <typename ToPrint, typename OtherOperand>
+class FormatForComparison {
+ public:
+  static ::std::string Format(const ToPrint& value) {
+    return ::testing::PrintToString(value);
+  }
+};
+
+
+template <typename ToPrint, size_t N, typename OtherOperand>
+class FormatForComparison<ToPrint[N], OtherOperand> {
+ public:
+  static ::std::string Format(const ToPrint* value) {
+    return FormatForComparison<const ToPrint*, OtherOperand>::Format(value);
+  }
+};
+
+
+
+
+#define GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(CharType)                \
+  template <typename OtherOperand>                                      \
+  class FormatForComparison<CharType*, OtherOperand> {                  \
+   public:                                                              \
+    static ::std::string Format(CharType* value) {                      \
+      return ::testing::PrintToString(static_cast<const void*>(value)); \
+    }                                                                   \
+  }
+
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(char);
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const char);
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(wchar_t);
+GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_(const wchar_t);
+
+#undef GTEST_IMPL_FORMAT_C_STRING_AS_POINTER_
+
+
+
+
+#define GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(CharType, OtherStringType) \
+  template <>                                                           \
+  class FormatForComparison<CharType*, OtherStringType> {               \
+   public:                                                              \
+    static ::std::string Format(CharType* value) {                      \
+      return ::testing::PrintToString(value);                           \
+    }                                                                   \
+  }
+
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char, ::std::string);
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char, ::std::string);
+
+#if GTEST_HAS_GLOBAL_STRING
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(char, ::string);
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const char, ::string);
+#endif
+
+#if GTEST_HAS_GLOBAL_WSTRING
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(wchar_t, ::wstring);
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const wchar_t, ::wstring);
+#endif
+
+#if GTEST_HAS_STD_WSTRING
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(wchar_t, ::std::wstring);
+GTEST_IMPL_FORMAT_C_STRING_AS_STRING_(const wchar_t, ::std::wstring);
+#endif
+
+#undef GTEST_IMPL_FORMAT_C_STRING_AS_STRING_
+
+
+
+
+
+
+
+
+
+template <typename T1, typename T2>
+std::string FormatForComparisonFailureMessage(
+    const T1& value, const T2& ) {
+  return FormatForComparison<T1, T2>::Format(value);
+}
 
 
 
@@ -480,14 +581,16 @@ inline void PrintTo(const ::std::wstring& s, ::std::ostream* os) {
 }
 #endif  
 
-#if GTEST_HAS_TR1_TUPLE
-
-
-
+#if GTEST_HAS_TR1_TUPLE || GTEST_HAS_STD_TUPLE_
 
 
 template <typename T>
 void PrintTupleTo(const T& t, ::std::ostream* os);
+#endif  
+
+#if GTEST_HAS_TR1_TUPLE
+
+
 
 
 
@@ -561,6 +664,13 @@ void PrintTo(
 }
 #endif  
 
+#if GTEST_HAS_STD_TUPLE_
+template <typename... Types>
+void PrintTo(const ::std::tuple<Types...>& t, ::std::ostream* os) {
+  PrintTupleTo(t, os);
+}
+#endif  
+
 
 template <typename T1, typename T2>
 void PrintTo(const ::std::pair<T1, T2>& value, ::std::ostream* os) {
@@ -580,10 +690,7 @@ class UniversalPrinter {
  public:
   
   
-#ifdef _MSC_VER
-# pragma warning(push)          // Saves the current warning state.
-# pragma warning(disable:4180)  // Temporarily disables warning 4180.
-#endif  
+  GTEST_DISABLE_MSC_WARNINGS_PUSH_(4180)
 
   
   
@@ -600,9 +707,7 @@ class UniversalPrinter {
     PrintTo(value, os);
   }
 
-#ifdef _MSC_VER
-# pragma warning(pop)           // Restores the warning state.
-#endif  
+  GTEST_DISABLE_MSC_WARNINGS_POP_()
 };
 
 
@@ -630,9 +735,12 @@ void UniversalPrintArray(const T* begin, size_t len, ::std::ostream* os) {
   }
 }
 
-GTEST_API_ void UniversalPrintArray(const char* begin,
-                                    size_t len,
-                                    ::std::ostream* os);
+GTEST_API_ void UniversalPrintArray(
+    const char* begin, size_t len, ::std::ostream* os);
+
+
+GTEST_API_ void UniversalPrintArray(
+    const wchar_t* begin, size_t len, ::std::ostream* os);
 
 
 template <typename T, size_t N>
@@ -651,10 +759,7 @@ class UniversalPrinter<T&> {
  public:
   
   
-#ifdef _MSC_VER
-# pragma warning(push)          // Saves the current warning state.
-# pragma warning(disable:4180)  // Temporarily disables warning 4180.
-#endif  
+  GTEST_DISABLE_MSC_WARNINGS_PUSH_(4180)
 
   static void Print(const T& value, ::std::ostream* os) {
     
@@ -665,27 +770,78 @@ class UniversalPrinter<T&> {
     UniversalPrint(value, os);
   }
 
-#ifdef _MSC_VER
-# pragma warning(pop)           // Restores the warning state.
-#endif  
+  GTEST_DISABLE_MSC_WARNINGS_POP_()
 };
 
 
 
 
+
+template <typename T>
+class UniversalTersePrinter {
+ public:
+  static void Print(const T& value, ::std::ostream* os) {
+    UniversalPrint(value, os);
+  }
+};
+template <typename T>
+class UniversalTersePrinter<T&> {
+ public:
+  static void Print(const T& value, ::std::ostream* os) {
+    UniversalPrint(value, os);
+  }
+};
+template <typename T, size_t N>
+class UniversalTersePrinter<T[N]> {
+ public:
+  static void Print(const T (&value)[N], ::std::ostream* os) {
+    UniversalPrinter<T[N]>::Print(value, os);
+  }
+};
+template <>
+class UniversalTersePrinter<const char*> {
+ public:
+  static void Print(const char* str, ::std::ostream* os) {
+    if (str == NULL) {
+      *os << "NULL";
+    } else {
+      UniversalPrint(string(str), os);
+    }
+  }
+};
+template <>
+class UniversalTersePrinter<char*> {
+ public:
+  static void Print(char* str, ::std::ostream* os) {
+    UniversalTersePrinter<const char*>::Print(str, os);
+  }
+};
+
+#if GTEST_HAS_STD_WSTRING
+template <>
+class UniversalTersePrinter<const wchar_t*> {
+ public:
+  static void Print(const wchar_t* str, ::std::ostream* os) {
+    if (str == NULL) {
+      *os << "NULL";
+    } else {
+      UniversalPrint(::std::wstring(str), os);
+    }
+  }
+};
+#endif
+
+template <>
+class UniversalTersePrinter<wchar_t*> {
+ public:
+  static void Print(wchar_t* str, ::std::ostream* os) {
+    UniversalTersePrinter<const wchar_t*>::Print(str, os);
+  }
+};
+
 template <typename T>
 void UniversalTersePrint(const T& value, ::std::ostream* os) {
-  UniversalPrint(value, os);
-}
-inline void UniversalTersePrint(const char* str, ::std::ostream* os) {
-  if (str == NULL) {
-    *os << "NULL";
-  } else {
-    UniversalPrint(string(str), os);
-  }
-}
-inline void UniversalTersePrint(char* str, ::std::ostream* os) {
-  UniversalTersePrint(static_cast<const char*>(str), os);
+  UniversalTersePrinter<T>::Print(value, os);
 }
 
 
@@ -694,12 +850,64 @@ inline void UniversalTersePrint(char* str, ::std::ostream* os) {
 
 template <typename T>
 void UniversalPrint(const T& value, ::std::ostream* os) {
-  UniversalPrinter<T>::Print(value, os);
+  
+  
+  typedef T T1;
+  UniversalPrinter<T1>::Print(value, os);
 }
 
-#if GTEST_HAS_TR1_TUPLE
 typedef ::std::vector<string> Strings;
 
+
+
+
+
+
+
+
+template <typename TupleT>
+struct TuplePolicy;
+
+#if GTEST_HAS_TR1_TUPLE
+template <typename TupleT>
+struct TuplePolicy {
+  typedef TupleT Tuple;
+  static const size_t tuple_size = ::std::tr1::tuple_size<Tuple>::value;
+
+  template <size_t I>
+  struct tuple_element : ::std::tr1::tuple_element<I, Tuple> {};
+
+  template <size_t I>
+  static typename AddReference<
+      const typename ::std::tr1::tuple_element<I, Tuple>::type>::type get(
+      const Tuple& tuple) {
+    return ::std::tr1::get<I>(tuple);
+  }
+};
+template <typename TupleT>
+const size_t TuplePolicy<TupleT>::tuple_size;
+#endif  
+
+#if GTEST_HAS_STD_TUPLE_
+template <typename... Types>
+struct TuplePolicy< ::std::tuple<Types...> > {
+  typedef ::std::tuple<Types...> Tuple;
+  static const size_t tuple_size = ::std::tuple_size<Tuple>::value;
+
+  template <size_t I>
+  struct tuple_element : ::std::tuple_element<I, Tuple> {};
+
+  template <size_t I>
+  static const typename ::std::tuple_element<I, Tuple>::type& get(
+      const Tuple& tuple) {
+    return ::std::get<I>(tuple);
+  }
+};
+template <typename... Types>
+const size_t TuplePolicy< ::std::tuple<Types...> >::tuple_size;
+#endif  
+
+#if GTEST_HAS_TR1_TUPLE || GTEST_HAS_STD_TUPLE_
 
 
 
@@ -714,9 +922,14 @@ struct TuplePrefixPrinter {
   template <typename Tuple>
   static void PrintPrefixTo(const Tuple& t, ::std::ostream* os) {
     TuplePrefixPrinter<N - 1>::PrintPrefixTo(t, os);
-    *os << ", ";
-    UniversalPrinter<typename ::std::tr1::tuple_element<N - 1, Tuple>::type>
-        ::Print(::std::tr1::get<N - 1>(t), os);
+    GTEST_INTENTIONAL_CONST_COND_PUSH_()
+    if (N > 1) {
+    GTEST_INTENTIONAL_CONST_COND_POP_()
+      *os << ", ";
+    }
+    UniversalPrinter<
+        typename TuplePolicy<Tuple>::template tuple_element<N - 1>::type>
+        ::Print(TuplePolicy<Tuple>::template get<N - 1>(t), os);
   }
 
   
@@ -725,7 +938,7 @@ struct TuplePrefixPrinter {
   static void TersePrintPrefixToStrings(const Tuple& t, Strings* strings) {
     TuplePrefixPrinter<N - 1>::TersePrintPrefixToStrings(t, strings);
     ::std::stringstream ss;
-    UniversalTersePrint(::std::tr1::get<N - 1>(t), &ss);
+    UniversalTersePrint(TuplePolicy<Tuple>::template get<N - 1>(t), &ss);
     strings->push_back(ss.str());
   }
 };
@@ -742,31 +955,10 @@ struct TuplePrefixPrinter<0> {
 
 
 
-
-
-template <>
-struct TuplePrefixPrinter<1> {
-  template <typename Tuple>
-  static void PrintPrefixTo(const Tuple& t, ::std::ostream* os) {
-    UniversalPrinter<typename ::std::tr1::tuple_element<0, Tuple>::type>::
-        Print(::std::tr1::get<0>(t), os);
-  }
-
-  template <typename Tuple>
-  static void TersePrintPrefixToStrings(const Tuple& t, Strings* strings) {
-    ::std::stringstream ss;
-    UniversalTersePrint(::std::tr1::get<0>(t), &ss);
-    strings->push_back(ss.str());
-  }
-};
-
-
-
-template <typename T>
-void PrintTupleTo(const T& t, ::std::ostream* os) {
+template <typename Tuple>
+void PrintTupleTo(const Tuple& t, ::std::ostream* os) {
   *os << "(";
-  TuplePrefixPrinter< ::std::tr1::tuple_size<T>::value>::
-      PrintPrefixTo(t, os);
+  TuplePrefixPrinter<TuplePolicy<Tuple>::tuple_size>::PrintPrefixTo(t, os);
   *os << ")";
 }
 
@@ -776,7 +968,7 @@ void PrintTupleTo(const T& t, ::std::ostream* os) {
 template <typename Tuple>
 Strings UniversalTersePrintTupleFieldsToStrings(const Tuple& value) {
   Strings result;
-  TuplePrefixPrinter< ::std::tr1::tuple_size<Tuple>::value>::
+  TuplePrefixPrinter<TuplePolicy<Tuple>::tuple_size>::
       TersePrintPrefixToStrings(value, &result);
   return result;
 }
@@ -787,10 +979,15 @@ Strings UniversalTersePrintTupleFieldsToStrings(const Tuple& value) {
 template <typename T>
 ::std::string PrintToString(const T& value) {
   ::std::stringstream ss;
-  internal::UniversalTersePrint(value, &ss);
+  internal::UniversalTersePrinter<T>::Print(value, &ss);
   return ss.str();
 }
 
 }  
 
-#endif  
+
+
+
+#include "gtest/internal/custom/gtest-printers.h"
+
+#endif

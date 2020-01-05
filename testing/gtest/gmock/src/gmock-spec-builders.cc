@@ -53,12 +53,12 @@ namespace internal {
 
 
 
-GTEST_DEFINE_STATIC_MUTEX_(g_gmock_mutex);
+GTEST_API_ GTEST_DEFINE_STATIC_MUTEX_(g_gmock_mutex);
 
 
-void LogWithLocation(testing::internal::LogSeverity severity,
-                     const char* file, int line,
-                     const string& message) {
+GTEST_API_ void LogWithLocation(testing::internal::LogSeverity severity,
+                                const char* file, int line,
+                                const string& message) {
   ::std::ostringstream s;
   s << file << ":" << line << ": " << message << ::std::endl;
   Log(severity, s.str(), 0);
@@ -92,7 +92,8 @@ void ExpectationBase::SpecifyCardinality(const Cardinality& a_cardinality) {
 }
 
 
-void ExpectationBase::RetireAllPreRequisites() {
+void ExpectationBase::RetireAllPreRequisites()
+    GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
   if (is_retired()) {
     
     
@@ -111,8 +112,8 @@ void ExpectationBase::RetireAllPreRequisites() {
 
 
 
-
-bool ExpectationBase::AllPrerequisitesAreSatisfied() const {
+bool ExpectationBase::AllPrerequisitesAreSatisfied() const
+    GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
   g_gmock_mutex.AssertHeld();
   for (ExpectationSet::const_iterator it = immediate_prerequisites_.begin();
        it != immediate_prerequisites_.end(); ++it) {
@@ -124,9 +125,8 @@ bool ExpectationBase::AllPrerequisitesAreSatisfied() const {
 }
 
 
-
-void ExpectationBase::FindUnsatisfiedPrerequisites(
-    ExpectationSet* result) const {
+void ExpectationBase::FindUnsatisfiedPrerequisites(ExpectationSet* result) const
+    GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
   g_gmock_mutex.AssertHeld();
   for (ExpectationSet::const_iterator it = immediate_prerequisites_.begin();
        it != immediate_prerequisites_.end(); ++it) {
@@ -147,8 +147,8 @@ void ExpectationBase::FindUnsatisfiedPrerequisites(
 
 
 
-
-void ExpectationBase::DescribeCallCountTo(::std::ostream* os) const {
+void ExpectationBase::DescribeCallCountTo(::std::ostream* os) const
+    GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
   g_gmock_mutex.AssertHeld();
 
   
@@ -170,8 +170,8 @@ void ExpectationBase::DescribeCallCountTo(::std::ostream* os) const {
 
 
 
-
-void ExpectationBase::CheckActionCountIfNotDone() const {
+void ExpectationBase::CheckActionCountIfNotDone() const
+    GTEST_LOCK_EXCLUDED_(mutex_) {
   bool should_check = false;
   {
     MutexLock l(&mutex_);
@@ -217,7 +217,7 @@ void ExpectationBase::CheckActionCountIfNotDone() const {
       ss << " and a WillRepeatedly()";
     }
     ss << ".";
-    Log(WARNING, ss.str(), -1);  
+    Log(kWarning, ss.str(), -1);  
   }
 }
 
@@ -240,17 +240,27 @@ void ExpectationBase::UntypedTimes(const Cardinality& a_cardinality) {
 
 
 
-ThreadLocal<Sequence*> g_gmock_implicit_sequence;
+GTEST_API_ ThreadLocal<Sequence*> g_gmock_implicit_sequence;
 
 
 
 void ReportUninterestingCall(CallReaction reaction, const string& msg) {
+  
+  const int stack_frames_to_skip =
+      GMOCK_FLAG(verbose) == kInfoVerbosity ? 3 : -1;
   switch (reaction) {
-    case ALLOW:
-      Log(INFO, msg, 3);
+    case kAllow:
+      Log(kInfo, msg, stack_frames_to_skip);
       break;
-    case WARN:
-      Log(WARNING, msg, 3);
+    case kWarn:
+      Log(kWarning,
+          msg +
+          "\nNOTE: You can safely ignore the above warning unless this "
+          "call should not happen.  Do not suppress it by blindly adding "
+          "an EXPECT_CALL() if you don't mean to enforce the call.  "
+          "See https://github.com/google/googletest/blob/master/googlemock/docs/CookBook.md#"
+          "knowing-when-to-expect for details.\n",
+          stack_frames_to_skip);
       break;
     default:  
       Expect(false, NULL, -1, msg);
@@ -266,8 +276,8 @@ UntypedFunctionMockerBase::~UntypedFunctionMockerBase() {}
 
 
 
-
-void UntypedFunctionMockerBase::RegisterOwner(const void* mock_obj) {
+void UntypedFunctionMockerBase::RegisterOwner(const void* mock_obj)
+    GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
   {
     MutexLock l(&g_gmock_mutex);
     mock_obj_ = mock_obj;
@@ -278,9 +288,9 @@ void UntypedFunctionMockerBase::RegisterOwner(const void* mock_obj) {
 
 
 
-
-void UntypedFunctionMockerBase::SetOwnerAndName(
-    const void* mock_obj, const char* name) {
+void UntypedFunctionMockerBase::SetOwnerAndName(const void* mock_obj,
+                                                const char* name)
+    GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
   
   
   MutexLock l(&g_gmock_mutex);
@@ -290,8 +300,8 @@ void UntypedFunctionMockerBase::SetOwnerAndName(
 
 
 
-
-const void* UntypedFunctionMockerBase::MockObject() const {
+const void* UntypedFunctionMockerBase::MockObject() const
+    GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
   const void* mock_obj;
   {
     
@@ -307,8 +317,8 @@ const void* UntypedFunctionMockerBase::MockObject() const {
 
 
 
-
-const char* UntypedFunctionMockerBase::Name() const {
+const char* UntypedFunctionMockerBase::Name() const
+    GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
   const char* name;
   {
     
@@ -325,9 +335,9 @@ const char* UntypedFunctionMockerBase::Name() const {
 
 
 
-
-const UntypedActionResultHolderBase*
-UntypedFunctionMockerBase::UntypedInvokeWith(const void* const untyped_args) {
+UntypedActionResultHolderBase*
+UntypedFunctionMockerBase::UntypedInvokeWith(const void* const untyped_args)
+    GTEST_LOCK_EXCLUDED_(g_gmock_mutex) {
   if (untyped_expectations_.size() == 0) {
     
     
@@ -345,10 +355,10 @@ UntypedFunctionMockerBase::UntypedInvokeWith(const void* const untyped_args) {
     const bool need_to_report_uninteresting_call =
         
         
-        reaction == ALLOW ? LogIsVisible(INFO) :
+        reaction == kAllow ? LogIsVisible(kInfo) :
         
         
-        reaction == WARN ? LogIsVisible(WARNING) :
+        reaction == kWarn ? LogIsVisible(kWarning) :
         
         
         true;
@@ -363,7 +373,7 @@ UntypedFunctionMockerBase::UntypedInvokeWith(const void* const untyped_args) {
     this->UntypedDescribeUninterestingCall(untyped_args, &ss);
 
     
-    const UntypedActionResultHolderBase* const result =
+    UntypedActionResultHolderBase* const result =
         this->UntypedPerformDefaultAction(untyped_args, ss.str());
 
     
@@ -391,7 +401,8 @@ UntypedFunctionMockerBase::UntypedInvokeWith(const void* const untyped_args) {
   
   
   
-  const bool need_to_report_call = !found || is_excessive || LogIsVisible(INFO);
+  const bool need_to_report_call =
+      !found || is_excessive || LogIsVisible(kInfo);
   if (!need_to_report_call) {
     
     return
@@ -409,7 +420,7 @@ UntypedFunctionMockerBase::UntypedInvokeWith(const void* const untyped_args) {
     untyped_expectation->DescribeLocationTo(&loc);
   }
 
-  const UntypedActionResultHolderBase* const result =
+  UntypedActionResultHolderBase* const result =
       untyped_action == NULL ?
       this->UntypedPerformDefaultAction(untyped_args, ss.str()) :
       this->UntypedPerformAction(untyped_action, untyped_args);
@@ -427,7 +438,7 @@ UntypedFunctionMockerBase::UntypedInvokeWith(const void* const untyped_args) {
   } else {
     
     
-    Log(INFO, loc.str() + ss.str(), 2);
+    Log(kInfo, loc.str() + ss.str(), 2);
   }
 
   return result;
@@ -453,8 +464,8 @@ Expectation UntypedFunctionMockerBase::GetHandleOf(ExpectationBase* exp) {
 
 
 
-
-bool UntypedFunctionMockerBase::VerifyAndClearExpectationsLocked() {
+bool UntypedFunctionMockerBase::VerifyAndClearExpectationsLocked()
+    GTEST_EXCLUSIVE_LOCK_REQUIRED_(g_gmock_mutex) {
   g_gmock_mutex.AssertHeld();
   bool expectations_met = true;
   for (UntypedExpectations::const_iterator it =
@@ -480,7 +491,21 @@ bool UntypedFunctionMockerBase::VerifyAndClearExpectationsLocked() {
              untyped_expectation->line(), ss.str());
     }
   }
-  untyped_expectations_.clear();
+
+  
+  
+  
+  
+  
+  
+  
+  UntypedExpectations expectations_to_delete;
+  untyped_expectations_.swap(expectations_to_delete);
+
+  g_gmock_mutex.Unlock();
+  expectations_to_delete.clear();
+  g_gmock_mutex.Lock();
+
   return expectations_met;
 }
 
@@ -565,6 +590,7 @@ class MockObjectRegistry {
   }
 
   StateMap& states() { return states_; }
+
  private:
   StateMap states_;
 };
@@ -578,9 +604,9 @@ std::map<const void*, internal::CallReaction> g_uninteresting_call_reaction;
 
 
 
-
 void SetReactionOnUninterestingCalls(const void* mock_obj,
-                                     internal::CallReaction reaction) {
+                                     internal::CallReaction reaction)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
   g_uninteresting_call_reaction[mock_obj] = reaction;
 }
@@ -589,47 +615,47 @@ void SetReactionOnUninterestingCalls(const void* mock_obj,
 
 
 
-
-void Mock::AllowUninterestingCalls(const void* mock_obj) {
-  SetReactionOnUninterestingCalls(mock_obj, internal::ALLOW);
+void Mock::AllowUninterestingCalls(const void* mock_obj)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
+  SetReactionOnUninterestingCalls(mock_obj, internal::kAllow);
 }
 
 
 
-
-void Mock::WarnUninterestingCalls(const void* mock_obj) {
-  SetReactionOnUninterestingCalls(mock_obj, internal::WARN);
+void Mock::WarnUninterestingCalls(const void* mock_obj)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
+  SetReactionOnUninterestingCalls(mock_obj, internal::kWarn);
 }
 
 
 
-
-void Mock::FailUninterestingCalls(const void* mock_obj) {
-  SetReactionOnUninterestingCalls(mock_obj, internal::FAIL);
+void Mock::FailUninterestingCalls(const void* mock_obj)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
+  SetReactionOnUninterestingCalls(mock_obj, internal::kFail);
 }
 
 
 
-
-void Mock::UnregisterCallReaction(const void* mock_obj) {
+void Mock::UnregisterCallReaction(const void* mock_obj)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
   g_uninteresting_call_reaction.erase(mock_obj);
 }
 
 
 
-
 internal::CallReaction Mock::GetReactionOnUninterestingCalls(
-    const void* mock_obj) {
+    const void* mock_obj)
+        GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
   return (g_uninteresting_call_reaction.count(mock_obj) == 0) ?
-      internal::WARN : g_uninteresting_call_reaction[mock_obj];
+      internal::kDefault : g_uninteresting_call_reaction[mock_obj];
 }
 
 
 
-
-void Mock::AllowLeak(const void* mock_obj) {
+void Mock::AllowLeak(const void* mock_obj)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
   g_mock_object_registry.states()[mock_obj].leakable = true;
 }
@@ -637,8 +663,8 @@ void Mock::AllowLeak(const void* mock_obj) {
 
 
 
-
-bool Mock::VerifyAndClearExpectations(void* mock_obj) {
+bool Mock::VerifyAndClearExpectations(void* mock_obj)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
   return VerifyAndClearExpectationsLocked(mock_obj);
 }
@@ -646,8 +672,8 @@ bool Mock::VerifyAndClearExpectations(void* mock_obj) {
 
 
 
-
-bool Mock::VerifyAndClear(void* mock_obj) {
+bool Mock::VerifyAndClear(void* mock_obj)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
   ClearDefaultActionsLocked(mock_obj);
   return VerifyAndClearExpectationsLocked(mock_obj);
@@ -656,8 +682,8 @@ bool Mock::VerifyAndClear(void* mock_obj) {
 
 
 
-
-bool Mock::VerifyAndClearExpectationsLocked(void* mock_obj) {
+bool Mock::VerifyAndClearExpectationsLocked(void* mock_obj)
+    GTEST_EXCLUSIVE_LOCK_REQUIRED_(internal::g_gmock_mutex) {
   internal::g_gmock_mutex.AssertHeld();
   if (g_mock_object_registry.states().count(mock_obj) == 0) {
     
@@ -682,9 +708,9 @@ bool Mock::VerifyAndClearExpectationsLocked(void* mock_obj) {
 }
 
 
-
 void Mock::Register(const void* mock_obj,
-                    internal::UntypedFunctionMockerBase* mocker) {
+                    internal::UntypedFunctionMockerBase* mocker)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
   g_mock_object_registry.states()[mock_obj].function_mockers.insert(mocker);
 }
@@ -692,9 +718,9 @@ void Mock::Register(const void* mock_obj,
 
 
 
-
-void Mock::RegisterUseByOnCallOrExpectCall(
-    const void* mock_obj, const char* file, int line) {
+void Mock::RegisterUseByOnCallOrExpectCall(const void* mock_obj,
+                                           const char* file, int line)
+    GTEST_LOCK_EXCLUDED_(internal::g_gmock_mutex) {
   internal::MutexLock l(&internal::g_gmock_mutex);
   MockObjectState& state = g_mock_object_registry.states()[mock_obj];
   if (state.first_used_file == NULL) {
@@ -716,8 +742,8 @@ void Mock::RegisterUseByOnCallOrExpectCall(
 
 
 
-
-void Mock::UnregisterLocked(internal::UntypedFunctionMockerBase* mocker) {
+void Mock::UnregisterLocked(internal::UntypedFunctionMockerBase* mocker)
+    GTEST_EXCLUSIVE_LOCK_REQUIRED_(internal::g_gmock_mutex) {
   internal::g_gmock_mutex.AssertHeld();
   for (MockObjectRegistry::StateMap::iterator it =
            g_mock_object_registry.states().begin();
@@ -734,8 +760,8 @@ void Mock::UnregisterLocked(internal::UntypedFunctionMockerBase* mocker) {
 }
 
 
-
-void Mock::ClearDefaultActionsLocked(void* mock_obj) {
+void Mock::ClearDefaultActionsLocked(void* mock_obj)
+    GTEST_EXCLUSIVE_LOCK_REQUIRED_(internal::g_gmock_mutex) {
   internal::g_gmock_mutex.AssertHeld();
 
   if (g_mock_object_registry.states().count(mock_obj) == 0) {

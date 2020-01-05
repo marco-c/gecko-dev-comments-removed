@@ -51,7 +51,7 @@ namespace internal {
 
 
 
-string ConvertIdentifierNameToWords(const char* id_name) {
+GTEST_API_ string ConvertIdentifierNameToWords(const char* id_name) {
   string result;
   char prev_char = '\0';
   for (const char* p = id_name; *p != '\0'; prev_char = *(p++)) {
@@ -77,13 +77,13 @@ class GoogleTestFailureReporter : public FailureReporterInterface {
  public:
   virtual void ReportFailure(FailureType type, const char* file, int line,
                              const string& message) {
-    AssertHelper(type == FATAL ?
+    AssertHelper(type == kFatal ?
                  TestPartResult::kFatalFailure :
                  TestPartResult::kNonFatalFailure,
                  file,
                  line,
                  message.c_str()) = Message();
-    if (type == FATAL) {
+    if (type == kFatal) {
       posix::Abort();
     }
   }
@@ -91,7 +91,7 @@ class GoogleTestFailureReporter : public FailureReporterInterface {
 
 
 
-FailureReporterInterface* GetFailureReporter() {
+GTEST_API_ FailureReporterInterface* GetFailureReporter() {
   
   
   
@@ -107,7 +107,7 @@ static GTEST_DEFINE_STATIC_MUTEX_(g_log_mutex);
 
 
 
-bool LogIsVisible(LogSeverity severity) {
+GTEST_API_ bool LogIsVisible(LogSeverity severity) {
   if (GMOCK_FLAG(verbose) == kInfoVerbosity) {
     
     return true;
@@ -117,7 +117,7 @@ bool LogIsVisible(LogSeverity severity) {
   } else {
     
     
-    return severity == WARNING;
+    return severity == kWarning;
   }
 }
 
@@ -128,8 +128,9 @@ bool LogIsVisible(LogSeverity severity) {
 
 
 
-void Log(LogSeverity severity, const string& message,
-         int stack_frames_to_skip) {
+GTEST_API_ void Log(LogSeverity severity,
+                    const string& message,
+                    int stack_frames_to_skip) {
   if (!LogIsVisible(severity))
     return;
 
@@ -139,7 +140,7 @@ void Log(LogSeverity severity, const string& message,
   
   
 
-  if (severity == WARNING) {
+  if (severity == kWarning) {
     
     std::cout << "\nGMOCK WARNING:";
   }

@@ -52,6 +52,7 @@
 #define GTEST_INCLUDE_GTEST_GTEST_H_
 
 #include <limits>
+#include <ostream>
 #include <vector>
 
 #include "gtest/internal/gtest-internal.h"
@@ -151,26 +152,17 @@ class AssertHelper;
 class DefaultGlobalTestPartResultReporter;
 class ExecDeathTest;
 class NoExecDeathTest;
+class FinalSuccessChecker;
 class GTestFlagSaver;
+class StreamingListenerTest;
 class TestResultAccessor;
 class TestEventListenersAccessor;
 class TestEventRepeater;
+class UnitTestRecordPropertyTestHelper;
 class WindowsDeathTest;
 class UnitTestImpl* GetUnitTestImpl();
 void ReportFailureInUnknownLocation(TestPartResult::Type result_type,
-                                    const String& message);
-
-
-
-
-
-
-
-
-template <typename T>
-String StreamableToString(const T& streamable) {
-  return (Message() << streamable).GetString();
-}
+                                    const std::string& message);
 
 }  
 
@@ -266,8 +258,31 @@ class GTEST_API_ AssertionResult {
   
   
   AssertionResult(const AssertionResult& other);
+
+  GTEST_DISABLE_MSC_WARNINGS_PUSH_(4800 )
+
   
-  explicit AssertionResult(bool success) : success_(success) {}
+  
+  
+  
+  
+  
+  
+  template <typename T>
+  explicit AssertionResult(
+      const T& success,
+      typename internal::EnableIf<
+          !internal::ImplicitlyConvertible<T, AssertionResult>::value>::type*
+           = NULL)
+      : success_(success) {}
+
+  GTEST_DISABLE_MSC_WARNINGS_POP_()
+
+  
+  AssertionResult& operator=(AssertionResult other) {
+    swap(other);
+    return *this;
+  }
 
   
   operator bool() const { return success_; }  
@@ -309,14 +324,15 @@ class GTEST_API_ AssertionResult {
   }
 
   
+  void swap(AssertionResult& other);
+
+  
   bool success_;
   
   
   
   
   internal::scoped_ptr< ::std::string> message_;
-
-  GTEST_DISALLOW_ASSIGN_(AssertionResult);
 };
 
 
@@ -402,8 +418,9 @@ class GTEST_API_ Test {
   
   
   
-  static void RecordProperty(const char* key, const char* value);
-  static void RecordProperty(const char* key, int value);
+  
+  static void RecordProperty(const std::string& key, const std::string& value);
+  static void RecordProperty(const std::string& key, int value);
 
  protected:
   
@@ -435,8 +452,7 @@ class GTEST_API_ Test {
   
   void DeleteSelf_() { delete this; }
 
-  
-  const internal::GTestFlagSaver* const gtest_flag_saver_;
+  const internal::scoped_ptr< GTEST_FLAG_SAVER_ > gtest_flag_saver_;
 
   
   
@@ -472,7 +488,7 @@ class TestProperty {
   
   
   
-  TestProperty(const char* a_key, const char* a_value) :
+  TestProperty(const std::string& a_key, const std::string& a_value) :
     key_(a_key), value_(a_value) {
   }
 
@@ -487,15 +503,15 @@ class TestProperty {
   }
 
   
-  void SetValue(const char* new_value) {
+  void SetValue(const std::string& new_value) {
     value_ = new_value;
   }
 
  private:
   
-  internal::String key_;
+  std::string key_;
   
-  internal::String value_;
+  std::string value_;
 };
 
 
@@ -546,6 +562,7 @@ class GTEST_API_ TestResult {
 
  private:
   friend class TestInfo;
+  friend class TestCase;
   friend class UnitTest;
   friend class internal::DefaultGlobalTestPartResultReporter;
   friend class internal::ExecDeathTest;
@@ -571,12 +588,15 @@ class GTEST_API_ TestResult {
   
   
   
-  void RecordProperty(const TestProperty& test_property);
+  
+  void RecordProperty(const std::string& xml_element,
+                      const TestProperty& test_property);
 
   
   
   
-  static bool ValidateTestProperty(const TestProperty& test_property);
+  static bool ValidateTestProperty(const std::string& xml_element,
+                                   const TestProperty& test_property);
 
   
   void AddTestPartResult(const TestPartResult& test_part_result);
@@ -650,6 +670,12 @@ class GTEST_API_ TestInfo {
   }
 
   
+  const char* file() const { return location_.file.c_str(); }
+
+  
+  int line() const { return location_.line; }
+
+  
   
   
   
@@ -668,20 +694,30 @@ class GTEST_API_ TestInfo {
   bool should_run() const { return should_run_; }
 
   
+  bool is_reportable() const {
+    
+    
+    
+    return matches_filter_;
+  }
+
+  
   const TestResult* result() const { return &result_; }
 
  private:
-
 #if GTEST_HAS_DEATH_TEST
   friend class internal::DefaultDeathTestFactory;
 #endif  
   friend class Test;
   friend class TestCase;
   friend class internal::UnitTestImpl;
+  friend class internal::StreamingListenerTest;
   friend TestInfo* internal::MakeAndRegisterTestInfo(
-      const char* test_case_name, const char* name,
+      const char* test_case_name,
+      const char* name,
       const char* type_param,
       const char* value_param,
+      internal::CodeLocation code_location,
       internal::TypeId fixture_class_id,
       Test::SetUpTestCaseFunc set_up_tc,
       Test::TearDownTestCaseFunc tear_down_tc,
@@ -689,9 +725,11 @@ class GTEST_API_ TestInfo {
 
   
   
-  TestInfo(const char* test_case_name, const char* name,
-           const char* a_type_param,
-           const char* a_value_param,
+  TestInfo(const std::string& test_case_name,
+           const std::string& name,
+           const char* a_type_param,   
+           const char* a_value_param,  
+           internal::CodeLocation a_code_location,
            internal::TypeId fixture_class_id,
            internal::TestFactoryBase* factory);
 
@@ -718,6 +756,7 @@ class GTEST_API_ TestInfo {
   
   
   const internal::scoped_ptr<const ::std::string> value_param_;
+  internal::CodeLocation location_;
   const internal::TypeId fixture_class_id_;   
   bool should_run_;                 
   bool is_disabled_;                
@@ -778,7 +817,13 @@ class GTEST_API_ TestCase {
   int failed_test_count() const;
 
   
+  int reportable_disabled_test_count() const;
+
+  
   int disabled_test_count() const;
+
+  
+  int reportable_test_count() const;
 
   
   int test_to_run_count() const;
@@ -798,6 +843,10 @@ class GTEST_API_ TestCase {
   
   
   const TestInfo* GetTestInfo(int i) const;
+
+  
+  
+  const TestResult& ad_hoc_test_result() const { return ad_hoc_test_result_; }
 
  private:
   friend class Test;
@@ -852,8 +901,19 @@ class GTEST_API_ TestCase {
   }
 
   
+  
+  static bool TestReportableDisabled(const TestInfo* test_info) {
+    return test_info->is_reportable() && test_info->is_disabled_;
+  }
+
+  
   static bool TestDisabled(const TestInfo* test_info) {
     return test_info->is_disabled_;
+  }
+
+  
+  static bool TestReportable(const TestInfo* test_info) {
+    return test_info->is_reportable();
   }
 
   
@@ -868,7 +928,7 @@ class GTEST_API_ TestCase {
   void UnshuffleTests();
 
   
-  internal::String name_;
+  std::string name_;
   
   
   const internal::scoped_ptr<const ::std::string> type_param_;
@@ -887,6 +947,9 @@ class GTEST_API_ TestCase {
   bool should_run_;
   
   TimeInMillis elapsed_time_;
+  
+  
+  TestResult ad_hoc_test_result_;
 
   
   GTEST_DISALLOW_COPY_AND_ASSIGN_(TestCase);
@@ -1106,11 +1169,13 @@ class GTEST_API_ UnitTest {
 
   
   
-  const TestCase* current_test_case() const;
+  const TestCase* current_test_case() const
+      GTEST_LOCK_EXCLUDED_(mutex_);
 
   
   
-  const TestInfo* current_test_info() const;
+  const TestInfo* current_test_info() const
+      GTEST_LOCK_EXCLUDED_(mutex_);
 
   
   int random_seed() const;
@@ -1120,7 +1185,8 @@ class GTEST_API_ UnitTest {
   
   
   
-  internal::ParameterizedTestCaseRegistry& parameterized_test_registry();
+  internal::ParameterizedTestCaseRegistry& parameterized_test_registry()
+      GTEST_LOCK_EXCLUDED_(mutex_);
 #endif  
 
   
@@ -1143,13 +1209,23 @@ class GTEST_API_ UnitTest {
   int failed_test_count() const;
 
   
+  int reportable_disabled_test_count() const;
+
+  
   int disabled_test_count() const;
+
+  
+  int reportable_test_count() const;
 
   
   int total_test_count() const;
 
   
   int test_to_run_count() const;
+
+  
+  
+  TimeInMillis start_timestamp() const;
 
   
   TimeInMillis elapsed_time() const;
@@ -1164,6 +1240,10 @@ class GTEST_API_ UnitTest {
   
   
   const TestCase* GetTestCase(int i) const;
+
+  
+  
+  const TestResult& ad_hoc_test_result() const;
 
   
   
@@ -1188,12 +1268,16 @@ class GTEST_API_ UnitTest {
   void AddTestPartResult(TestPartResult::Type result_type,
                          const char* file_name,
                          int line_number,
-                         const internal::String& message,
-                         const internal::String& os_stack_trace);
+                         const std::string& message,
+                         const std::string& os_stack_trace)
+      GTEST_LOCK_EXCLUDED_(mutex_);
 
   
   
-  void RecordPropertyForCurrentTest(const char* key, const char* value);
+  
+  
+  
+  void RecordProperty(const std::string& key, const std::string& value);
 
   
   
@@ -1208,11 +1292,13 @@ class GTEST_API_ UnitTest {
   friend class Test;
   friend class internal::AssertHelper;
   friend class internal::ScopedTrace;
+  friend class internal::StreamingListenerTest;
+  friend class internal::UnitTestRecordPropertyTestHelper;
   friend Environment* AddGlobalTestEnvironment(Environment* env);
   friend internal::UnitTestImpl* internal::GetUnitTestImpl();
   friend void internal::ReportFailureInUnknownLocation(
       TestPartResult::Type result_type,
-      const internal::String& message);
+      const std::string& message);
 
   
   UnitTest();
@@ -1222,10 +1308,12 @@ class GTEST_API_ UnitTest {
 
   
   
-  void PushGTestTrace(const internal::TraceInfo& trace);
+  void PushGTestTrace(const internal::TraceInfo& trace)
+      GTEST_LOCK_EXCLUDED_(mutex_);
 
   
-  void PopGTestTrace();
+  void PopGTestTrace()
+      GTEST_LOCK_EXCLUDED_(mutex_);
 
   
   
@@ -1283,57 +1371,39 @@ namespace internal {
 
 
 
-
-
-
-
-
-
-
-
-
 template <typename T1, typename T2>
-String FormatForComparisonFailureMessage(const T1& value,
-                                         const T2& ) {
-  
-  
-  return ::testing::PrintToString(value);
-}
-
-
-template <typename T1, typename T2>
-AssertionResult CmpHelperEQ(const char* expected_expression,
-                            const char* actual_expression,
-                            const T1& expected,
-                            const T2& actual) {
-#ifdef _MSC_VER
-# pragma warning(push)          // Saves the current warning state.
-# pragma warning(disable:4389)  // Temporarily disables warning on
-                               
-#endif
-
-  if (expected == actual) {
-    return AssertionSuccess();
-  }
-
-#ifdef _MSC_VER
-# pragma warning(pop)          // Restores the warning state.
-#endif
-
-  return EqFailure(expected_expression,
-                   actual_expression,
-                   FormatForComparisonFailureMessage(expected, actual),
-                   FormatForComparisonFailureMessage(actual, expected),
+AssertionResult CmpHelperEQFailure(const char* lhs_expression,
+                                   const char* rhs_expression,
+                                   const T1& lhs, const T2& rhs) {
+  return EqFailure(lhs_expression,
+                   rhs_expression,
+                   FormatForComparisonFailureMessage(lhs, rhs),
+                   FormatForComparisonFailureMessage(rhs, lhs),
                    false);
 }
 
 
+template <typename T1, typename T2>
+AssertionResult CmpHelperEQ(const char* lhs_expression,
+                            const char* rhs_expression,
+                            const T1& lhs,
+                            const T2& rhs) {
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4389 )
+  if (lhs == rhs) {
+    return AssertionSuccess();
+  }
+GTEST_DISABLE_MSC_WARNINGS_POP_()
+
+  return CmpHelperEQFailure(lhs_expression, rhs_expression, lhs, rhs);
+}
 
 
-GTEST_API_ AssertionResult CmpHelperEQ(const char* expected_expression,
-                                       const char* actual_expression,
-                                       BiggestInt expected,
-                                       BiggestInt actual);
+
+
+GTEST_API_ AssertionResult CmpHelperEQ(const char* lhs_expression,
+                                       const char* rhs_expression,
+                                       BiggestInt lhs,
+                                       BiggestInt rhs);
 
 
 
@@ -1344,12 +1414,11 @@ class EqHelper {
  public:
   
   template <typename T1, typename T2>
-  static AssertionResult Compare(const char* expected_expression,
-                                 const char* actual_expression,
-                                 const T1& expected,
-                                 const T2& actual) {
-    return CmpHelperEQ(expected_expression, actual_expression, expected,
-                       actual);
+  static AssertionResult Compare(const char* lhs_expression,
+                                 const char* rhs_expression,
+                                 const T1& lhs,
+                                 const T2& rhs) {
+    return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs);
   }
 
   
@@ -1358,12 +1427,11 @@ class EqHelper {
   
   
   
-  static AssertionResult Compare(const char* expected_expression,
-                                 const char* actual_expression,
-                                 BiggestInt expected,
-                                 BiggestInt actual) {
-    return CmpHelperEQ(expected_expression, actual_expression, expected,
-                       actual);
+  static AssertionResult Compare(const char* lhs_expression,
+                                 const char* rhs_expression,
+                                 BiggestInt lhs,
+                                 BiggestInt rhs) {
+    return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs);
   }
 };
 
@@ -1378,26 +1446,25 @@ class EqHelper<true> {
   
   template <typename T1, typename T2>
   static AssertionResult Compare(
-      const char* expected_expression,
-      const char* actual_expression,
-      const T1& expected,
-      const T2& actual,
+      const char* lhs_expression,
+      const char* rhs_expression,
+      const T1& lhs,
+      const T2& rhs,
       
       
       
       
       
       typename EnableIf<!is_pointer<T2>::value>::type* = 0) {
-    return CmpHelperEQ(expected_expression, actual_expression, expected,
-                       actual);
+    return CmpHelperEQ(lhs_expression, rhs_expression, lhs, rhs);
   }
 
   
   
   template <typename T>
   static AssertionResult Compare(
-      const char* expected_expression,
-      const char* actual_expression,
+      const char* lhs_expression,
+      const char* rhs_expression,
       
       
       
@@ -1405,12 +1472,26 @@ class EqHelper<true> {
       
       
       Secret* ,
-      T* actual) {
+      T* rhs) {
     
-    return CmpHelperEQ(expected_expression, actual_expression,
-                       static_cast<T*>(NULL), actual);
+    return CmpHelperEQ(lhs_expression, rhs_expression,
+                       static_cast<T*>(NULL), rhs);
   }
 };
+
+
+
+
+template <typename T1, typename T2>
+AssertionResult CmpHelperOpFailure(const char* expr1, const char* expr2,
+                                   const T1& val1, const T2& val2,
+                                   const char* op) {
+  return AssertionFailure()
+         << "Expected: (" << expr1 << ") " << op << " (" << expr2
+         << "), actual: " << FormatForComparisonFailureMessage(val1, val2)
+         << " vs " << FormatForComparisonFailureMessage(val2, val1);
+}
+
 
 
 
@@ -1429,10 +1510,7 @@ AssertionResult CmpHelper##op_name(const char* expr1, const char* expr2, \
   if (val1 op val2) {\
     return AssertionSuccess();\
   } else {\
-    return AssertionFailure() \
-        << "Expected: (" << expr1 << ") " #op " (" << expr2\
-        << "), actual: " << FormatForComparisonFailureMessage(val1, val2)\
-        << " vs " << FormatForComparisonFailureMessage(val2, val1);\
+    return CmpHelperOpFailure(expr1, expr2, val1, val2, #op);\
   }\
 }\
 GTEST_API_ AssertionResult CmpHelper##op_name(\
@@ -1445,29 +1523,29 @@ GTEST_IMPL_CMP_HELPER_(NE, !=);
 
 GTEST_IMPL_CMP_HELPER_(LE, <=);
 
-GTEST_IMPL_CMP_HELPER_(LT, < );
+GTEST_IMPL_CMP_HELPER_(LT, <);
 
 GTEST_IMPL_CMP_HELPER_(GE, >=);
 
-GTEST_IMPL_CMP_HELPER_(GT, > );
+GTEST_IMPL_CMP_HELPER_(GT, >);
 
 #undef GTEST_IMPL_CMP_HELPER_
 
 
 
 
-GTEST_API_ AssertionResult CmpHelperSTREQ(const char* expected_expression,
-                                          const char* actual_expression,
-                                          const char* expected,
-                                          const char* actual);
+GTEST_API_ AssertionResult CmpHelperSTREQ(const char* s1_expression,
+                                          const char* s2_expression,
+                                          const char* s1,
+                                          const char* s2);
 
 
 
 
-GTEST_API_ AssertionResult CmpHelperSTRCASEEQ(const char* expected_expression,
-                                              const char* actual_expression,
-                                              const char* expected,
-                                              const char* actual);
+GTEST_API_ AssertionResult CmpHelperSTRCASEEQ(const char* s1_expression,
+                                              const char* s2_expression,
+                                              const char* s1,
+                                              const char* s2);
 
 
 
@@ -1489,10 +1567,10 @@ GTEST_API_ AssertionResult CmpHelperSTRCASENE(const char* s1_expression,
 
 
 
-GTEST_API_ AssertionResult CmpHelperSTREQ(const char* expected_expression,
-                                          const char* actual_expression,
-                                          const wchar_t* expected,
-                                          const wchar_t* actual);
+GTEST_API_ AssertionResult CmpHelperSTREQ(const char* s1_expression,
+                                          const char* s2_expression,
+                                          const wchar_t* s1,
+                                          const wchar_t* s2);
 
 
 
@@ -1550,28 +1628,28 @@ namespace internal {
 
 
 template <typename RawType>
-AssertionResult CmpHelperFloatingPointEQ(const char* expected_expression,
-                                         const char* actual_expression,
-                                         RawType expected,
-                                         RawType actual) {
-  const FloatingPoint<RawType> lhs(expected), rhs(actual);
+AssertionResult CmpHelperFloatingPointEQ(const char* lhs_expression,
+                                         const char* rhs_expression,
+                                         RawType lhs_value,
+                                         RawType rhs_value) {
+  const FloatingPoint<RawType> lhs(lhs_value), rhs(rhs_value);
 
   if (lhs.AlmostEquals(rhs)) {
     return AssertionSuccess();
   }
 
-  ::std::stringstream expected_ss;
-  expected_ss << std::setprecision(std::numeric_limits<RawType>::digits10 + 2)
-              << expected;
+  ::std::stringstream lhs_ss;
+  lhs_ss << std::setprecision(std::numeric_limits<RawType>::digits10 + 2)
+         << lhs_value;
 
-  ::std::stringstream actual_ss;
-  actual_ss << std::setprecision(std::numeric_limits<RawType>::digits10 + 2)
-            << actual;
+  ::std::stringstream rhs_ss;
+  rhs_ss << std::setprecision(std::numeric_limits<RawType>::digits10 + 2)
+         << rhs_value;
 
-  return EqFailure(expected_expression,
-                   actual_expression,
-                   StringStreamToString(&expected_ss),
-                   StringStreamToString(&actual_ss),
+  return EqFailure(lhs_expression,
+                   rhs_expression,
+                   StringStreamToString(&lhs_ss),
+                   StringStreamToString(&rhs_ss),
                    false);
 }
 
@@ -1613,9 +1691,9 @@ class GTEST_API_ AssertHelper {
         : type(t), file(srcfile), line(line_num), message(msg) { }
 
     TestPartResult::Type const type;
-    const char*        const file;
-    int                const line;
-    String             const message;
+    const char* const file;
+    int const line;
+    std::string const message;
 
    private:
     GTEST_DISALLOW_COPY_AND_ASSIGN_(AssertHelperData);
@@ -1674,7 +1752,12 @@ class WithParamInterface {
   
   
   
-  const ParamType& GetParam() const { return *parameter_; }
+  const ParamType& GetParam() const {
+    GTEST_CHECK_(parameter_ != NULL)
+        << "GetParam() can only be called inside a value-parameterized test "
+        << "-- did you intend to write TEST_P instead of TEST_F?";
+    return *parameter_;
+  }
 
  private:
   
@@ -1701,12 +1784,6 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 };
 
 #endif  
-
-
-
-
-
-
 
 
 
@@ -1780,13 +1857,13 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 
 
 #define EXPECT_TRUE(condition) \
-  GTEST_TEST_BOOLEAN_(condition, #condition, false, true, \
+  GTEST_TEST_BOOLEAN_((condition), #condition, false, true, \
                       GTEST_NONFATAL_FAILURE_)
 #define EXPECT_FALSE(condition) \
   GTEST_TEST_BOOLEAN_(!(condition), #condition, true, false, \
                       GTEST_NONFATAL_FAILURE_)
 #define ASSERT_TRUE(condition) \
-  GTEST_TEST_BOOLEAN_(condition, #condition, false, true, \
+  GTEST_TEST_BOOLEAN_((condition), #condition, false, true, \
                       GTEST_FATAL_FAILURE_)
 #define ASSERT_FALSE(condition) \
   GTEST_TEST_BOOLEAN_(!(condition), #condition, true, false, \
@@ -1842,12 +1919,12 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 
 
 
-#define EXPECT_EQ(expected, actual) \
+#define EXPECT_EQ(val1, val2) \
   EXPECT_PRED_FORMAT2(::testing::internal:: \
-                      EqHelper<GTEST_IS_NULL_LITERAL_(expected)>::Compare, \
-                      expected, actual)
-#define EXPECT_NE(expected, actual) \
-  EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperNE, expected, actual)
+                      EqHelper<GTEST_IS_NULL_LITERAL_(val1)>::Compare, \
+                      val1, val2)
+#define EXPECT_NE(val1, val2) \
+  EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperNE, val1, val2)
 #define EXPECT_LE(val1, val2) \
   EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperLE, val1, val2)
 #define EXPECT_LT(val1, val2) \
@@ -1857,10 +1934,10 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 #define EXPECT_GT(val1, val2) \
   EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperGT, val1, val2)
 
-#define GTEST_ASSERT_EQ(expected, actual) \
+#define GTEST_ASSERT_EQ(val1, val2) \
   ASSERT_PRED_FORMAT2(::testing::internal:: \
-                      EqHelper<GTEST_IS_NULL_LITERAL_(expected)>::Compare, \
-                      expected, actual)
+                      EqHelper<GTEST_IS_NULL_LITERAL_(val1)>::Compare, \
+                      val1, val2)
 #define GTEST_ASSERT_NE(val1, val2) \
   ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperNE, val1, val2)
 #define GTEST_ASSERT_LE(val1, val2) \
@@ -1915,21 +1992,21 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 
 
 
-#define EXPECT_STREQ(expected, actual) \
-  EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperSTREQ, expected, actual)
+#define EXPECT_STREQ(s1, s2) \
+  EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperSTREQ, s1, s2)
 #define EXPECT_STRNE(s1, s2) \
   EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperSTRNE, s1, s2)
-#define EXPECT_STRCASEEQ(expected, actual) \
-  EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperSTRCASEEQ, expected, actual)
+#define EXPECT_STRCASEEQ(s1, s2) \
+  EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperSTRCASEEQ, s1, s2)
 #define EXPECT_STRCASENE(s1, s2)\
   EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperSTRCASENE, s1, s2)
 
-#define ASSERT_STREQ(expected, actual) \
-  ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperSTREQ, expected, actual)
+#define ASSERT_STREQ(s1, s2) \
+  ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperSTREQ, s1, s2)
 #define ASSERT_STRNE(s1, s2) \
   ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperSTRNE, s1, s2)
-#define ASSERT_STRCASEEQ(expected, actual) \
-  ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperSTRCASEEQ, expected, actual)
+#define ASSERT_STRCASEEQ(s1, s2) \
+  ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperSTRCASEEQ, s1, s2)
 #define ASSERT_STRCASENE(s1, s2)\
   ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperSTRCASENE, s1, s2)
 
@@ -1947,21 +2024,21 @@ class TestWithParam : public Test, public WithParamInterface<T> {
 
 
 
-#define EXPECT_FLOAT_EQ(expected, actual)\
+#define EXPECT_FLOAT_EQ(val1, val2)\
   EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperFloatingPointEQ<float>, \
-                      expected, actual)
+                      val1, val2)
 
-#define EXPECT_DOUBLE_EQ(expected, actual)\
+#define EXPECT_DOUBLE_EQ(val1, val2)\
   EXPECT_PRED_FORMAT2(::testing::internal::CmpHelperFloatingPointEQ<double>, \
-                      expected, actual)
+                      val1, val2)
 
-#define ASSERT_FLOAT_EQ(expected, actual)\
+#define ASSERT_FLOAT_EQ(val1, val2)\
   ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperFloatingPointEQ<float>, \
-                      expected, actual)
+                      val1, val2)
 
-#define ASSERT_DOUBLE_EQ(expected, actual)\
+#define ASSERT_DOUBLE_EQ(val1, val2)\
   ASSERT_PRED_FORMAT2(::testing::internal::CmpHelperFloatingPointEQ<double>, \
-                      expected, actual)
+                      val1, val2)
 
 #define EXPECT_NEAR(val1, val2, abs_error)\
   EXPECT_PRED_FORMAT3(::testing::internal::DoubleNearPredFormat, \
@@ -2140,15 +2217,20 @@ bool StaticAssertTypeEq() {
   GTEST_TEST_(test_fixture, test_name, test_fixture, \
               ::testing::internal::GetTypeId<test_fixture>())
 
-
-
-
-
-
-
-#define RUN_ALL_TESTS()\
-  (::testing::UnitTest::GetInstance()->Run())
-
 }  
+
+
+
+
+
+
+
+
+
+int RUN_ALL_TESTS() GTEST_MUST_USE_RESULT_;
+
+inline int RUN_ALL_TESTS() {
+  return ::testing::UnitTest::GetInstance()->Run();
+}
 
 #endif

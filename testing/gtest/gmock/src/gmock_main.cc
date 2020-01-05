@@ -41,9 +41,9 @@
 #if GTEST_OS_WINDOWS_MOBILE
 # include <tchar.h>  
 
-int _tmain(int argc, TCHAR** argv) {
+GTEST_API_ int _tmain(int argc, TCHAR** argv) {
 #else
-int main(int argc, char** argv) {
+GTEST_API_ int main(int argc, char** argv) {
 #endif
   std::cout << "Running main() from gmock_main.cc\n";
   

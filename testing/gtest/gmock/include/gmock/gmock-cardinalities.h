@@ -80,7 +80,7 @@ class CardinalityInterface {
 
 
 
-class Cardinality {
+class GTEST_API_ Cardinality {
  public:
   
   
@@ -117,24 +117,25 @@ class Cardinality {
   
   static void DescribeActualCallCountTo(int actual_call_count,
                                         ::std::ostream* os);
+
  private:
   internal::linked_ptr<const CardinalityInterface> impl_;
 };
 
 
-Cardinality AtLeast(int n);
+GTEST_API_ Cardinality AtLeast(int n);
 
 
-Cardinality AtMost(int n);
+GTEST_API_ Cardinality AtMost(int n);
 
 
-Cardinality AnyNumber();
+GTEST_API_ Cardinality AnyNumber();
 
 
-Cardinality Between(int min, int max);
+GTEST_API_ Cardinality Between(int min, int max);
 
 
-Cardinality Exactly(int n);
+GTEST_API_ Cardinality Exactly(int n);
 
 
 inline Cardinality MakeCardinality(const CardinalityInterface* c) {

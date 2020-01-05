@@ -62,7 +62,7 @@ static const char* ParseGoogleMockFlagValue(const char* str,
   if (str == NULL || flag == NULL) return NULL;
 
   
-  const String flag_str = String::Format("--gmock_%s", flag);
+  const std::string flag_str = std::string("--gmock_") + flag;
   const size_t flag_len = flag_str.length();
   if (strncmp(str, flag_str.c_str(), flag_len) != 0) return NULL;
 
@@ -106,6 +106,7 @@ static bool ParseGoogleMockBoolFlag(const char* str, const char* flag,
 
 
 
+template <typename String>
 static bool ParseGoogleMockStringFlag(const char* str, const char* flag,
                                       String* value) {
   
@@ -131,7 +132,7 @@ void InitGoogleMockImpl(int* argc, CharType** argv) {
   if (*argc <= 0) return;
 
   for (int i = 1; i != *argc; i++) {
-    const String arg_string = StreamableToString(argv[i]);
+    const std::string arg_string = StreamableToString(argv[i]);
     const char* const arg = arg_string.c_str();
 
     
@@ -169,13 +170,13 @@ void InitGoogleMockImpl(int* argc, CharType** argv) {
 
 
 
-void InitGoogleMock(int* argc, char** argv) {
+GTEST_API_ void InitGoogleMock(int* argc, char** argv) {
   internal::InitGoogleMockImpl(argc, argv);
 }
 
 
 
-void InitGoogleMock(int* argc, wchar_t** argv) {
+GTEST_API_ void InitGoogleMock(int* argc, wchar_t** argv) {
   internal::InitGoogleMockImpl(argc, argv);
 }
 

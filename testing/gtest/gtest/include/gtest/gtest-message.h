@@ -48,8 +48,11 @@
 
 #include <limits>
 
-#include "gtest/internal/gtest-string.h"
-#include "gtest/internal/gtest-internal.h"
+#include "gtest/internal/gtest-port.h"
+
+
+
+void operator<<(const testing::internal::Secret&, int);
 
 namespace testing {
 
@@ -87,15 +90,7 @@ class GTEST_API_ Message {
 
  public:
   
-  
-  
-  
-  
-  Message() : ss_(new ::std::stringstream) {
-    
-    
-    *ss_ << std::setprecision(std::numeric_limits<double>::digits10 + 2);
-  }
+  Message();
 
   
   Message(const Message& msg) : ss_(new ::std::stringstream) {  
@@ -118,7 +113,22 @@ class GTEST_API_ Message {
   
   template <typename T>
   inline Message& operator <<(const T& val) {
-    ::GTestStreamToHelper(ss_.get(), val);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    using ::operator <<;
+    *ss_ << val;
     return *this;
   }
 
@@ -140,7 +150,7 @@ class GTEST_API_ Message {
     if (pointer == NULL) {
       *ss_ << "(null)";
     } else {
-      ::GTestStreamToHelper(ss_.get(), pointer);
+      *ss_ << pointer;
     }
     return *this;
   }
@@ -164,12 +174,8 @@ class GTEST_API_ Message {
 
   
   
-  Message& operator <<(const wchar_t* wide_c_str) {
-    return *this << internal::String::ShowWideCString(wide_c_str);
-  }
-  Message& operator <<(wchar_t* wide_c_str) {
-    return *this << internal::String::ShowWideCString(wide_c_str);
-  }
+  Message& operator <<(const wchar_t* wide_c_str);
+  Message& operator <<(wchar_t* wide_c_str);
 
 #if GTEST_HAS_STD_WSTRING
   
@@ -187,9 +193,7 @@ class GTEST_API_ Message {
   
   
   
-  internal::String GetString() const {
-    return internal::StringStreamToString(ss_.get());
-  }
+  std::string GetString() const;
 
  private:
 
@@ -203,12 +207,16 @@ class GTEST_API_ Message {
     if (pointer == NULL) {
       *ss_ << "(null)";
     } else {
-      ::GTestStreamToHelper(ss_.get(), pointer);
+      *ss_ << pointer;
     }
   }
   template <typename T>
-  inline void StreamHelper(internal::false_type , const T& value) {
-    ::GTestStreamToHelper(ss_.get(), value);
+  inline void StreamHelper(internal::false_type ,
+                           const T& value) {
+    
+    
+    using ::operator <<;
+    *ss_ << value;
   }
 #endif  
 
@@ -225,6 +233,18 @@ inline std::ostream& operator <<(std::ostream& os, const Message& sb) {
   return os << sb.GetString();
 }
 
+namespace internal {
+
+
+
+
+
+template <typename T>
+std::string StreamableToString(const T& streamable) {
+  return (Message() << streamable).GetString();
+}
+
+}  
 }  
 
 #endif  

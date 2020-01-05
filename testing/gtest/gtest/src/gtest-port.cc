@@ -35,12 +35,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <fstream>
 
-#if GTEST_OS_WINDOWS_MOBILE
-# include <windows.h>  
-#elif GTEST_OS_WINDOWS
+#if GTEST_OS_WINDOWS
+# include <windows.h>
 # include <io.h>
 # include <sys/stat.h>
+# include <map>  
 #else
 # include <unistd.h>
 #endif  
@@ -49,6 +50,17 @@
 # include <mach/mach_init.h>
 # include <mach/task.h>
 # include <mach/vm_map.h>
+#endif  
+
+#if GTEST_OS_QNX
+# include <devctl.h>
+# include <fcntl.h>
+# include <sys/procfs.h>
+#endif  
+
+#if GTEST_OS_AIX
+# include <procinfo.h>
+# include <sys/types.h>
 #endif  
 
 #include "gtest/gtest-spi.h"
@@ -77,9 +89,30 @@ const int kStdOutFileno = STDOUT_FILENO;
 const int kStdErrFileno = STDERR_FILENO;
 #endif  
 
-#if GTEST_OS_MAC
+#if GTEST_OS_LINUX
+
+namespace {
+template <typename T>
+T ReadProcFileField(const string& filename, int field) {
+  std::string dummy;
+  std::ifstream file(filename.c_str());
+  while (field-- > 0) {
+    file >> dummy;
+  }
+  T output = 0;
+  file >> output;
+  return output;
+}
+}  
 
 
+size_t GetThreadCount() {
+  const string filename =
+      (Message() << "/proc/" << getpid() << "/stat").GetString();
+  return ReadProcFileField<int>(filename, 19);
+}
+
+#elif GTEST_OS_MAC
 
 size_t GetThreadCount() {
   const task_t task = mach_task_self();
@@ -98,12 +131,428 @@ size_t GetThreadCount() {
   }
 }
 
+#elif GTEST_OS_QNX
+
+
+
+size_t GetThreadCount() {
+  const int fd = open("/proc/self/as", O_RDONLY);
+  if (fd < 0) {
+    return 0;
+  }
+  procfs_info process_info;
+  const int status =
+      devctl(fd, DCMD_PROC_INFO, &process_info, sizeof(process_info), NULL);
+  close(fd);
+  if (status == EOK) {
+    return static_cast<size_t>(process_info.num_threads);
+  } else {
+    return 0;
+  }
+}
+
+#elif GTEST_OS_AIX
+
+size_t GetThreadCount() {
+  struct procentry64 entry;
+  pid_t pid = getpid();
+  int status = getprocs64(&entry, sizeof(entry), NULL, 0, &pid, 1);
+  if (status == 1) {
+    return entry.pi_thcount;
+  } else {
+    return 0;
+  }
+}
+
 #else
 
 size_t GetThreadCount() {
   
   
   return 0;
+}
+
+#endif  
+
+#if GTEST_IS_THREADSAFE && GTEST_OS_WINDOWS
+
+void SleepMilliseconds(int n) {
+  ::Sleep(n);
+}
+
+AutoHandle::AutoHandle()
+    : handle_(INVALID_HANDLE_VALUE) {}
+
+AutoHandle::AutoHandle(Handle handle)
+    : handle_(handle) {}
+
+AutoHandle::~AutoHandle() {
+  Reset();
+}
+
+AutoHandle::Handle AutoHandle::Get() const {
+  return handle_;
+}
+
+void AutoHandle::Reset() {
+  Reset(INVALID_HANDLE_VALUE);
+}
+
+void AutoHandle::Reset(HANDLE handle) {
+  
+  if (handle_ != handle) {
+    if (IsCloseable()) {
+      ::CloseHandle(handle_);
+    }
+    handle_ = handle;
+  } else {
+    GTEST_CHECK_(!IsCloseable())
+        << "Resetting a valid handle to itself is likely a programmer error "
+            "and thus not allowed.";
+  }
+}
+
+bool AutoHandle::IsCloseable() const {
+  
+  
+  return handle_ != NULL && handle_ != INVALID_HANDLE_VALUE;
+}
+
+Notification::Notification()
+    : event_(::CreateEvent(NULL,   
+                           TRUE,   
+                           FALSE,  
+                           NULL)) {  
+  GTEST_CHECK_(event_.Get() != NULL);
+}
+
+void Notification::Notify() {
+  GTEST_CHECK_(::SetEvent(event_.Get()) != FALSE);
+}
+
+void Notification::WaitForNotification() {
+  GTEST_CHECK_(
+      ::WaitForSingleObject(event_.Get(), INFINITE) == WAIT_OBJECT_0);
+}
+
+Mutex::Mutex()
+    : owner_thread_id_(0),
+      type_(kDynamic),
+      critical_section_init_phase_(0),
+      critical_section_(new CRITICAL_SECTION) {
+  ::InitializeCriticalSection(critical_section_);
+}
+
+Mutex::~Mutex() {
+  
+  
+  
+  
+  
+  if (type_ == kDynamic) {
+    ::DeleteCriticalSection(critical_section_);
+    delete critical_section_;
+    critical_section_ = NULL;
+  }
+}
+
+void Mutex::Lock() {
+  ThreadSafeLazyInit();
+  ::EnterCriticalSection(critical_section_);
+  owner_thread_id_ = ::GetCurrentThreadId();
+}
+
+void Mutex::Unlock() {
+  ThreadSafeLazyInit();
+  
+  
+  
+  owner_thread_id_ = 0;
+  ::LeaveCriticalSection(critical_section_);
+}
+
+
+
+void Mutex::AssertHeld() {
+  ThreadSafeLazyInit();
+  GTEST_CHECK_(owner_thread_id_ == ::GetCurrentThreadId())
+      << "The current thread is not holding the mutex @" << this;
+}
+
+
+void Mutex::ThreadSafeLazyInit() {
+  
+  if (type_ == kStatic) {
+    switch (
+        ::InterlockedCompareExchange(&critical_section_init_phase_, 1L, 0L)) {
+      case 0:
+        
+        
+        owner_thread_id_ = 0;
+        critical_section_ = new CRITICAL_SECTION;
+        ::InitializeCriticalSection(critical_section_);
+        
+        
+        GTEST_CHECK_(::InterlockedCompareExchange(
+                          &critical_section_init_phase_, 2L, 1L) ==
+                      1L);
+        break;
+      case 1:
+        
+        
+        while (::InterlockedCompareExchange(&critical_section_init_phase_,
+                                            2L,
+                                            2L) != 2L) {
+          
+          
+          ::Sleep(0);
+        }
+        break;
+
+      case 2:
+        break;  
+
+      default:
+        GTEST_CHECK_(false)
+            << "Unexpected value of critical_section_init_phase_ "
+            << "while initializing a static mutex.";
+    }
+  }
+}
+
+namespace {
+
+class ThreadWithParamSupport : public ThreadWithParamBase {
+ public:
+  static HANDLE CreateThread(Runnable* runnable,
+                             Notification* thread_can_start) {
+    ThreadMainParam* param = new ThreadMainParam(runnable, thread_can_start);
+    DWORD thread_id;
+    
+    HANDLE thread_handle = ::CreateThread(
+        NULL,    
+        0,       
+        &ThreadWithParamSupport::ThreadMain,
+        param,   
+        0x0,     
+        &thread_id);  
+    GTEST_CHECK_(thread_handle != NULL) << "CreateThread failed with error "
+                                        << ::GetLastError() << ".";
+    if (thread_handle == NULL) {
+      delete param;
+    }
+    return thread_handle;
+  }
+
+ private:
+  struct ThreadMainParam {
+    ThreadMainParam(Runnable* runnable, Notification* thread_can_start)
+        : runnable_(runnable),
+          thread_can_start_(thread_can_start) {
+    }
+    scoped_ptr<Runnable> runnable_;
+    
+    Notification* thread_can_start_;
+  };
+
+  static DWORD WINAPI ThreadMain(void* ptr) {
+    
+    scoped_ptr<ThreadMainParam> param(static_cast<ThreadMainParam*>(ptr));
+    if (param->thread_can_start_ != NULL)
+      param->thread_can_start_->WaitForNotification();
+    param->runnable_->Run();
+    return 0;
+  }
+
+  
+  ThreadWithParamSupport();
+
+  GTEST_DISALLOW_COPY_AND_ASSIGN_(ThreadWithParamSupport);
+};
+
+}  
+
+ThreadWithParamBase::ThreadWithParamBase(Runnable *runnable,
+                                         Notification* thread_can_start)
+      : thread_(ThreadWithParamSupport::CreateThread(runnable,
+                                                     thread_can_start)) {
+}
+
+ThreadWithParamBase::~ThreadWithParamBase() {
+  Join();
+}
+
+void ThreadWithParamBase::Join() {
+  GTEST_CHECK_(::WaitForSingleObject(thread_.Get(), INFINITE) == WAIT_OBJECT_0)
+      << "Failed to join the thread with error " << ::GetLastError() << ".";
+}
+
+
+
+
+
+class ThreadLocalRegistryImpl {
+ public:
+  
+  
+  static ThreadLocalValueHolderBase* GetValueOnCurrentThread(
+      const ThreadLocalBase* thread_local_instance) {
+    DWORD current_thread = ::GetCurrentThreadId();
+    MutexLock lock(&mutex_);
+    ThreadIdToThreadLocals* const thread_to_thread_locals =
+        GetThreadLocalsMapLocked();
+    ThreadIdToThreadLocals::iterator thread_local_pos =
+        thread_to_thread_locals->find(current_thread);
+    if (thread_local_pos == thread_to_thread_locals->end()) {
+      thread_local_pos = thread_to_thread_locals->insert(
+          std::make_pair(current_thread, ThreadLocalValues())).first;
+      StartWatcherThreadFor(current_thread);
+    }
+    ThreadLocalValues& thread_local_values = thread_local_pos->second;
+    ThreadLocalValues::iterator value_pos =
+        thread_local_values.find(thread_local_instance);
+    if (value_pos == thread_local_values.end()) {
+      value_pos =
+          thread_local_values
+              .insert(std::make_pair(
+                  thread_local_instance,
+                  linked_ptr<ThreadLocalValueHolderBase>(
+                      thread_local_instance->NewValueForCurrentThread())))
+              .first;
+    }
+    return value_pos->second.get();
+  }
+
+  static void OnThreadLocalDestroyed(
+      const ThreadLocalBase* thread_local_instance) {
+    std::vector<linked_ptr<ThreadLocalValueHolderBase> > value_holders;
+    
+    
+    {
+      MutexLock lock(&mutex_);
+      ThreadIdToThreadLocals* const thread_to_thread_locals =
+          GetThreadLocalsMapLocked();
+      for (ThreadIdToThreadLocals::iterator it =
+          thread_to_thread_locals->begin();
+          it != thread_to_thread_locals->end();
+          ++it) {
+        ThreadLocalValues& thread_local_values = it->second;
+        ThreadLocalValues::iterator value_pos =
+            thread_local_values.find(thread_local_instance);
+        if (value_pos != thread_local_values.end()) {
+          value_holders.push_back(value_pos->second);
+          thread_local_values.erase(value_pos);
+          
+          
+        }
+      }
+    }
+    
+    
+  }
+
+  static void OnThreadExit(DWORD thread_id) {
+    GTEST_CHECK_(thread_id != 0) << ::GetLastError();
+    std::vector<linked_ptr<ThreadLocalValueHolderBase> > value_holders;
+    
+    
+    {
+      MutexLock lock(&mutex_);
+      ThreadIdToThreadLocals* const thread_to_thread_locals =
+          GetThreadLocalsMapLocked();
+      ThreadIdToThreadLocals::iterator thread_local_pos =
+          thread_to_thread_locals->find(thread_id);
+      if (thread_local_pos != thread_to_thread_locals->end()) {
+        ThreadLocalValues& thread_local_values = thread_local_pos->second;
+        for (ThreadLocalValues::iterator value_pos =
+            thread_local_values.begin();
+            value_pos != thread_local_values.end();
+            ++value_pos) {
+          value_holders.push_back(value_pos->second);
+        }
+        thread_to_thread_locals->erase(thread_local_pos);
+      }
+    }
+    
+    
+  }
+
+ private:
+  
+  typedef std::map<const ThreadLocalBase*,
+                   linked_ptr<ThreadLocalValueHolderBase> > ThreadLocalValues;
+  
+  
+  typedef std::map<DWORD, ThreadLocalValues> ThreadIdToThreadLocals;
+
+  
+  
+  typedef std::pair<DWORD, HANDLE> ThreadIdAndHandle;
+
+  static void StartWatcherThreadFor(DWORD thread_id) {
+    
+    
+    HANDLE thread = ::OpenThread(SYNCHRONIZE | THREAD_QUERY_INFORMATION,
+                                 FALSE,
+                                 thread_id);
+    GTEST_CHECK_(thread != NULL);
+    
+    
+    DWORD watcher_thread_id;
+    HANDLE watcher_thread = ::CreateThread(
+        NULL,   
+        0,      
+        &ThreadLocalRegistryImpl::WatcherThreadFunc,
+        reinterpret_cast<LPVOID>(new ThreadIdAndHandle(thread_id, thread)),
+        CREATE_SUSPENDED,
+        &watcher_thread_id);
+    GTEST_CHECK_(watcher_thread != NULL);
+    
+    
+    ::SetThreadPriority(watcher_thread,
+                        ::GetThreadPriority(::GetCurrentThread()));
+    ::ResumeThread(watcher_thread);
+    ::CloseHandle(watcher_thread);
+  }
+
+  
+  
+  static DWORD WINAPI WatcherThreadFunc(LPVOID param) {
+    const ThreadIdAndHandle* tah =
+        reinterpret_cast<const ThreadIdAndHandle*>(param);
+    GTEST_CHECK_(
+        ::WaitForSingleObject(tah->second, INFINITE) == WAIT_OBJECT_0);
+    OnThreadExit(tah->first);
+    ::CloseHandle(tah->second);
+    delete tah;
+    return 0;
+  }
+
+  
+  static ThreadIdToThreadLocals* GetThreadLocalsMapLocked() {
+    mutex_.AssertHeld();
+    static ThreadIdToThreadLocals* map = new ThreadIdToThreadLocals;
+    return map;
+  }
+
+  
+  static Mutex mutex_;
+  
+  static Mutex thread_map_mutex_;
+};
+
+Mutex ThreadLocalRegistryImpl::mutex_(Mutex::kStaticMutex);
+Mutex ThreadLocalRegistryImpl::thread_map_mutex_(Mutex::kStaticMutex);
+
+ThreadLocalValueHolderBase* ThreadLocalRegistry::GetValueOnCurrentThread(
+      const ThreadLocalBase* thread_local_instance) {
+  return ThreadLocalRegistryImpl::GetValueOnCurrentThread(
+      thread_local_instance);
+}
+
+void ThreadLocalRegistry::OnThreadLocalDestroyed(
+      const ThreadLocalBase* thread_local_instance) {
+  ThreadLocalRegistryImpl::OnThreadLocalDestroyed(thread_local_instance);
 }
 
 #endif  
@@ -222,7 +671,7 @@ bool AtomMatchesChar(bool escaped, char pattern_char, char ch) {
 }
 
 
-String FormatRegexSyntaxError(const char* regex, int index) {
+std::string FormatRegexSyntaxError(const char* regex, int index) {
   return (Message() << "Syntax error at index " << index
           << " in simple regular expression \"" << regex << "\": ").GetString();
 }
@@ -429,15 +878,15 @@ const char kUnknownFile[] = "unknown file";
 
 
 GTEST_API_ ::std::string FormatFileLocation(const char* file, int line) {
-  const char* const file_name = file == NULL ? kUnknownFile : file;
+  const std::string file_name(file == NULL ? kUnknownFile : file);
 
   if (line < 0) {
-    return String::Format("%s:", file_name).c_str();
+    return file_name + ":";
   }
 #ifdef _MSC_VER
-  return String::Format("%s(%d):", file_name, line).c_str();
+  return file_name + "(" + StreamableToString(line) + "):";
 #else
-  return String::Format("%s:%d:", file_name, line).c_str();
+  return file_name + ":" + StreamableToString(line) + ":";
 #endif  
 }
 
@@ -448,14 +897,13 @@ GTEST_API_ ::std::string FormatFileLocation(const char* file, int line) {
 
 GTEST_API_ ::std::string FormatCompilerIndependentFileLocation(
     const char* file, int line) {
-  const char* const file_name = file == NULL ? kUnknownFile : file;
+  const std::string file_name(file == NULL ? kUnknownFile : file);
 
   if (line < 0)
     return file_name;
   else
-    return String::Format("%s:%d", file_name, line).c_str();
+    return file_name + ":" + StreamableToString(line);
 }
-
 
 GTestLog::GTestLog(GTestLogSeverity severity, const char* file, int line)
     : severity_(severity) {
@@ -477,10 +925,7 @@ GTestLog::~GTestLog() {
 }
 
 
-#ifdef _MSC_VER
-# pragma warning(push)
-# pragma warning(disable: 4996)
-#endif  
+GTEST_DISABLE_MSC_WARNINGS_PUSH_(4996)
 
 #if GTEST_HAS_STREAM_REDIRECTION
 
@@ -488,8 +933,7 @@ GTestLog::~GTestLog() {
 class CapturedStream {
  public:
   
-  CapturedStream(int fd) : fd_(fd), uncaptured_fd_(dup(fd)) {
-
+  explicit CapturedStream(int fd) : fd_(fd), uncaptured_fd_(dup(fd)) {
 # if GTEST_OS_WINDOWS
     char temp_dir_path[MAX_PATH + 1] = { '\0' };  
     char temp_file_path[MAX_PATH + 1] = { '\0' };  
@@ -509,7 +953,26 @@ class CapturedStream {
     
     
     
+    
+#  if GTEST_OS_LINUX_ANDROID
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    char name_template[] = "/sdcard/gtest_captured_stream.XXXXXX";
+#  else
     char name_template[] = "/tmp/captured_stream.XXXXXX";
+#  endif  
     const int captured_fd = mkstemp(name_template);
     filename_ = name_template;
 # endif  
@@ -522,7 +985,7 @@ class CapturedStream {
     remove(filename_.c_str());
   }
 
-  String GetCapturedString() {
+  std::string GetCapturedString() {
     if (uncaptured_fd_ != -1) {
       
       fflush(NULL);
@@ -532,18 +995,12 @@ class CapturedStream {
     }
 
     FILE* const file = posix::FOpen(filename_.c_str(), "r");
-    const String content = ReadEntireFile(file);
+    const std::string content = ReadEntireFile(file);
     posix::FClose(file);
     return content;
   }
 
  private:
-  
-  static String ReadEntireFile(FILE* file);
-
-  
-  static size_t GetFileSize(FILE* file);
-
   const int fd_;  
   int uncaptured_fd_;
   
@@ -552,38 +1009,7 @@ class CapturedStream {
   GTEST_DISALLOW_COPY_AND_ASSIGN_(CapturedStream);
 };
 
-
-size_t CapturedStream::GetFileSize(FILE* file) {
-  fseek(file, 0, SEEK_END);
-  return static_cast<size_t>(ftell(file));
-}
-
-
-String CapturedStream::ReadEntireFile(FILE* file) {
-  const size_t file_size = GetFileSize(file);
-  char* const buffer = new char[file_size];
-
-  size_t bytes_last_read = 0;  
-  size_t bytes_read = 0;       
-
-  fseek(file, 0, SEEK_SET);
-
-  
-  
-  do {
-    bytes_last_read = fread(buffer+bytes_read, 1, file_size-bytes_read, file);
-    bytes_read += bytes_last_read;
-  } while (bytes_last_read > 0 && bytes_read < file_size);
-
-  const String content(buffer, bytes_read);
-  delete[] buffer;
-
-  return content;
-}
-
-# ifdef _MSC_VER
-#  pragma warning(pop)
-# endif  
+GTEST_DISABLE_MSC_WARNINGS_POP_()
 
 static CapturedStream* g_captured_stderr = NULL;
 static CapturedStream* g_captured_stdout = NULL;
@@ -598,8 +1024,8 @@ void CaptureStream(int fd, const char* stream_name, CapturedStream** stream) {
 }
 
 
-String GetCapturedStream(CapturedStream** captured_stream) {
-  const String content = (*captured_stream)->GetCapturedString();
+std::string GetCapturedStream(CapturedStream** captured_stream) {
+  const std::string content = (*captured_stream)->GetCapturedString();
 
   delete *captured_stream;
   *captured_stream = NULL;
@@ -618,21 +1044,79 @@ void CaptureStderr() {
 }
 
 
-String GetCapturedStdout() { return GetCapturedStream(&g_captured_stdout); }
+std::string GetCapturedStdout() {
+  return GetCapturedStream(&g_captured_stdout);
+}
 
 
-String GetCapturedStderr() { return GetCapturedStream(&g_captured_stderr); }
+std::string GetCapturedStderr() {
+  return GetCapturedStream(&g_captured_stderr);
+}
 
 #endif  
 
+std::string TempDir() {
+#if GTEST_OS_WINDOWS_MOBILE
+  return "\\temp\\";
+#elif GTEST_OS_WINDOWS
+  const char* temp_dir = posix::GetEnv("TEMP");
+  if (temp_dir == NULL || temp_dir[0] == '\0')
+    return "\\temp\\";
+  else if (temp_dir[strlen(temp_dir) - 1] == '\\')
+    return temp_dir;
+  else
+    return std::string(temp_dir) + "\\";
+#elif GTEST_OS_LINUX_ANDROID
+  return "/sdcard/";
+#else
+  return "/tmp/";
+#endif  
+}
+
+size_t GetFileSize(FILE* file) {
+  fseek(file, 0, SEEK_END);
+  return static_cast<size_t>(ftell(file));
+}
+
+std::string ReadEntireFile(FILE* file) {
+  const size_t file_size = GetFileSize(file);
+  char* const buffer = new char[file_size];
+
+  size_t bytes_last_read = 0;  
+  size_t bytes_read = 0;       
+
+  fseek(file, 0, SEEK_SET);
+
+  
+  
+  do {
+    bytes_last_read = fread(buffer+bytes_read, 1, file_size-bytes_read, file);
+    bytes_read += bytes_last_read;
+  } while (bytes_last_read > 0 && bytes_read < file_size);
+
+  const std::string content(buffer, bytes_read);
+  delete[] buffer;
+
+  return content;
+}
+
 #if GTEST_HAS_DEATH_TEST
 
+static const ::std::vector<testing::internal::string>* g_injected_test_argvs =
+                                        NULL;  
 
-::std::vector<String> g_argvs;
+void SetInjectableArgvs(const ::std::vector<testing::internal::string>* argvs) {
+  if (g_injected_test_argvs != argvs)
+    delete g_injected_test_argvs;
+  g_injected_test_argvs = argvs;
+}
 
-
-const ::std::vector<String>& GetArgvs() { return g_argvs; }
-
+const ::std::vector<testing::internal::string>& GetInjectableArgvs() {
+  if (g_injected_test_argvs != NULL) {
+    return *g_injected_test_argvs;
+  }
+  return GetArgvs();
+}
 #endif  
 
 #if GTEST_OS_WINDOWS_MOBILE
@@ -647,8 +1131,8 @@ void Abort() {
 
 
 
-static String FlagToEnvVar(const char* flag) {
-  const String full_flag =
+static std::string FlagToEnvVar(const char* flag) {
+  const std::string full_flag =
       (Message() << GTEST_FLAG_PREFIX_ << flag).GetString();
 
   Message env_var;
@@ -705,7 +1189,10 @@ bool ParseInt32(const Message& src_text, const char* str, Int32* value) {
 
 
 bool BoolFromGTestEnv(const char* flag, bool default_value) {
-  const String env_var = FlagToEnvVar(flag);
+#if defined(GTEST_GET_BOOL_FROM_ENV_)
+  return GTEST_GET_BOOL_FROM_ENV_(flag, default_value);
+#endif  
+  const std::string env_var = FlagToEnvVar(flag);
   const char* const string_value = posix::GetEnv(env_var.c_str());
   return string_value == NULL ?
       default_value : strcmp(string_value, "0") != 0;
@@ -715,7 +1202,10 @@ bool BoolFromGTestEnv(const char* flag, bool default_value) {
 
 
 Int32 Int32FromGTestEnv(const char* flag, Int32 default_value) {
-  const String env_var = FlagToEnvVar(flag);
+#if defined(GTEST_GET_INT32_FROM_ENV_)
+  return GTEST_GET_INT32_FROM_ENV_(flag, default_value);
+#endif  
+  const std::string env_var = FlagToEnvVar(flag);
   const char* const string_value = posix::GetEnv(env_var.c_str());
   if (string_value == NULL) {
     
@@ -736,10 +1226,33 @@ Int32 Int32FromGTestEnv(const char* flag, Int32 default_value) {
 
 
 
-const char* StringFromGTestEnv(const char* flag, const char* default_value) {
-  const String env_var = FlagToEnvVar(flag);
-  const char* const value = posix::GetEnv(env_var.c_str());
-  return value == NULL ? default_value : value;
+std::string StringFromGTestEnv(const char* flag, const char* default_value) {
+#if defined(GTEST_GET_STRING_FROM_ENV_)
+  return GTEST_GET_STRING_FROM_ENV_(flag, default_value);
+#endif  
+  const std::string env_var = FlagToEnvVar(flag);
+  const char* value = posix::GetEnv(env_var.c_str());
+  if (value != NULL) {
+    return value;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (strcmp(flag, "output") == 0) {
+    value = posix::GetEnv("XML_OUTPUT_FILE");
+    if (value != NULL) {
+      return std::string("xml:") + value;
+    }
+  }
+  return default_value;
 }
 
 }  

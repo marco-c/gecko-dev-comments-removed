@@ -61,11 +61,7 @@ class GTEST_API_ FilePath {
   FilePath() : pathname_("") { }
   FilePath(const FilePath& rhs) : pathname_(rhs.pathname_) { }
 
-  explicit FilePath(const char* pathname) : pathname_(pathname) {
-    Normalize();
-  }
-
-  explicit FilePath(const String& pathname) : pathname_(pathname) {
+  explicit FilePath(const std::string& pathname) : pathname_(pathname) {
     Normalize();
   }
 
@@ -78,7 +74,7 @@ class GTEST_API_ FilePath {
     pathname_ = rhs.pathname_;
   }
 
-  String ToString() const { return pathname_; }
+  const std::string& string() const { return pathname_; }
   const char* c_str() const { return pathname_.c_str(); }
 
   
@@ -112,7 +108,7 @@ class GTEST_API_ FilePath {
                                          const char* extension);
 
   
-  bool IsEmpty() const { return c_str() == NULL || *c_str() == '\0'; }
+  bool IsEmpty() const { return pathname_.empty(); }
 
   
   
@@ -201,7 +197,7 @@ class GTEST_API_ FilePath {
   
   const char* FindLastPathSeparator() const;
 
-  String pathname_;
+  std::string pathname_;
 };  
 
 }  
