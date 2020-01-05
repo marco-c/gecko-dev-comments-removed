@@ -232,9 +232,45 @@ richlistitem[type="download"]:last-child {
   margin: 4px 0 calc(1em / var(--downloads-item-font-size-factor) - 1em);
 }
 
-@item@:hover > .downloadMainArea > .downloadContainer > .downloadDetailsNormal,
-@item@:not(:hover) > .downloadMainArea > .downloadContainer > .downloadDetailsHover,
+
+
+
+
+
+
 .downloadDetailsFull {
+  display: none;
+}
+
+
+
+@item@:hover > .downloadMainArea > .downloadContainer > .downloadDetailsNormal,
+@item@:not(:hover) > .downloadMainArea > .downloadContainer > .downloadDetailsHover {
+  display: none;
+}
+
+
+
+@item@.downloadHoveringButton > .downloadMainArea > .downloadContainer > .downloadDetailsHover,
+@item@:not(.downloadHoveringButton) > .downloadMainArea > .downloadContainer > .downloadButtonLabels {
+  display: none;
+}
+
+
+
+@itemFinished@[exists] > .downloadMainArea:hover > .downloadContainer > .downloadDetailsHover,
+@itemNotFinished@ > .downloadMainArea > .downloadContainer > .downloadOpenFile,
+@item@:not([exists]) > .downloadMainArea > .downloadContainer > .downloadOpenFile,
+.downloadMainArea:not(:hover) > .downloadContainer > .downloadOpenFile {
+  display: none;
+}
+
+
+
+@item@[verdict] > .downloadMainArea > .downloadContainer > .downloadDetailsHover,
+@item@[verdict] > .downloadMainArea > .downloadContainer > .downloadButtonLabels,
+@item@:not([verdict]) > .downloadMainArea > .downloadContainer > .downloadShowMoreInfo,
+@item@:not(:hover) > .downloadMainArea > .downloadContainer > .downloadShowMoreInfo {
   display: none;
 }
 
