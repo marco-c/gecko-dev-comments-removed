@@ -2,13 +2,14 @@
 
 
 
+#![feature(env)]
 #![feature(io)]
 
 use std::old_io::process::{Command, ProcessExit, StdioContainer};
-use std::os;
+use std::env;
 
 fn main() {
-    let out_dir = os::getenv("OUT_DIR").unwrap();
+    let out_dir = env::var_string("OUT_DIR").unwrap();
     let result = Command::new("make")
         .args(&["-f", "makefile.cargo"])
         .stdout(StdioContainer::InheritFd(1))
