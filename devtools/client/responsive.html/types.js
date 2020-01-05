@@ -95,7 +95,7 @@ exports.location = PropTypes.string;
 
 exports.screenshot = {
 
-  isCapturing: PropTypes.bool.isRequired,
+  isCapturing: PropTypes.bool,
 
 };
 
@@ -105,7 +105,20 @@ exports.screenshot = {
 exports.touchSimulation = {
 
   
-  enabled: PropTypes.bool.isRequired,
+  enabled: PropTypes.bool,
+
+};
+
+
+
+
+exports.networkThrottling = {
+
+  
+  enabled: PropTypes.bool,
+
+  
+  profile: PropTypes.string,
 
 };
 
@@ -115,7 +128,7 @@ exports.touchSimulation = {
 exports.viewport = {
 
   
-  id: PropTypes.number.isRequired,
+  id: PropTypes.number,
 
   
   device: PropTypes.string,
