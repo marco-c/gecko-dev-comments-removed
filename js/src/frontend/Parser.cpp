@@ -5104,10 +5104,17 @@ Parser<ParseHandler>::matchInOrOf(bool* isForInp, bool* isForOfp)
 
 template <class ParseHandler>
 bool
-Parser<ParseHandler>::validateForInOrOfLHSExpression(Node target)
+Parser<ParseHandler>::validateForInOrOfLHSExpression(Node target, PossibleError* possibleError)
 {
-    if (handler.isUnparenthesizedDestructuringPattern(target))
-        return checkDestructuringPattern(target);
+    if (handler.isUnparenthesizedDestructuringPattern(target)) {
+        bool isDestructuring = checkDestructuringPattern(target);
+        
+        
+        
+        if (isDestructuring)
+            possibleError->setResolved();
+        return isDestructuring;
+    }
 
     
     if (!reportIfNotValidSimpleAssignmentTarget(target, ForInOrOfTarget))
@@ -5216,7 +5223,8 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
     
     
     
-    *forInitialPart = expr(InProhibited, yieldHandling, TripledotProhibited);
+    PossibleError possibleError(*this);
+    *forInitialPart = expr(InProhibited, yieldHandling, TripledotProhibited, &possibleError);
     if (!*forInitialPart)
         return false;
 
@@ -5229,6 +5237,8 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
     
     
     if (!isForIn && !isForOf) {
+        if (!possibleError.checkForExprErrors())
+            return false;
         *forHeadKind = PNK_FORHEAD;
         tokenStream.addModifierException(TokenStream::OperandIsNone);
         return true;
@@ -5253,7 +5263,9 @@ Parser<ParseHandler>::forHeadStart(YieldHandling yieldHandling,
 
     *forHeadKind = isForIn ? PNK_FORIN : PNK_FOROF;
 
-    if (!validateForInOrOfLHSExpression(*forInitialPart))
+    if (!validateForInOrOfLHSExpression(*forInitialPart, &possibleError))
+        return false;
+    if (!possibleError.checkForExprErrors())
         return false;
 
     
