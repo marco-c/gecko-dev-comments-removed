@@ -265,6 +265,9 @@ public:
   
   bool AddonAllowsLoad(nsIURI* aURI, bool aExplicit = false);
 
+  
+  bool FastEquals(nsIPrincipal* aOther);
+
 protected:
   virtual ~BasePrincipal();
 

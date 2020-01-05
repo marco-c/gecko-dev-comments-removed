@@ -333,12 +333,47 @@ BasePrincipal::Subsumes(nsIPrincipal* aOther, DocumentDomainConsideration aConsi
   return SubsumesInternal(aOther, aConsideration);
 }
 
+bool
+BasePrincipal::FastEquals(nsIPrincipal* aOther)
+{
+  auto other = Cast(aOther);
+  if (Kind() != other->Kind()) {
+    
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  if (Kind() == eNullPrincipal || Kind() == eSystemPrincipal) {
+    return this == other;
+  }
+
+  if (mOriginNoSuffix) {
+    if (Kind() == eCodebasePrincipal) {
+      return mOriginNoSuffix == other->mOriginNoSuffix &&
+             mOriginSuffix == other->mOriginSuffix;
+    }
+
+    MOZ_ASSERT(Kind() == eExpandedPrincipal);
+    return mOriginNoSuffix == other->mOriginNoSuffix;
+  }
+
+  
+  
+  return Subsumes(aOther, DontConsiderDocumentDomain) &&
+         other->Subsumes(this, DontConsiderDocumentDomain);
+}
+
 NS_IMETHODIMP
 BasePrincipal::Equals(nsIPrincipal *aOther, bool *aResult)
 {
   NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
-  *aResult = Subsumes(aOther, DontConsiderDocumentDomain) &&
-             Cast(aOther)->Subsumes(this, DontConsiderDocumentDomain);
+
+  *aResult = FastEquals(aOther);
+
   return NS_OK;
 }
 
@@ -355,6 +390,25 @@ NS_IMETHODIMP
 BasePrincipal::Subsumes(nsIPrincipal *aOther, bool *aResult)
 {
   NS_ENSURE_TRUE(aOther, NS_ERROR_INVALID_ARG);
+
+  
+  
+  
+  
+  
+  
+  
+  auto other = Cast(aOther);
+  if (Kind() == eNullPrincipal && other->Kind() == eNullPrincipal) {
+    *aResult = (this == other);
+    return NS_OK;
+  }
+  if (mOriginNoSuffix && FastEquals(aOther)) {
+    *aResult = true;
+    return NS_OK;
+  }
+
+  
   *aResult = Subsumes(aOther, DontConsiderDocumentDomain);
   return NS_OK;
 }
