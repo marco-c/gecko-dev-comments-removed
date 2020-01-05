@@ -19,7 +19,7 @@ use dom::messageevent::MessageEvent;
 use dom::worker::{SimpleWorkerErrorHandler, TrustedWorkerAddress, WorkerMessageHandler};
 use dom::workerglobalscope::WorkerGlobalScope;
 use dom::workerglobalscope::WorkerGlobalScopeInit;
-use ipc_channel::ipc::IpcReceiver;
+use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
 use ipc_channel::router::ROUTER;
 use js::jsapi::{HandleValue, JSContext, RootedValue};
 use js::jsapi::{JSAutoCompartment, JSAutoRequest};
@@ -30,7 +30,7 @@ use net_traits::load_whole_resource;
 use rand::random;
 use script_task::ScriptTaskEventCategory::WorkerEvent;
 use script_task::{ScriptTask, ScriptChan, ScriptPort, StackRootTLS, CommonScriptMsg};
-use script_traits::{TimerEvent, TimerEventChan, TimerSource};
+use script_traits::{TimerEvent, TimerSource};
 use std::mem::replace;
 use std::rc::Rc;
 use std::sync::mpsc::{Receiver, RecvError, Select, Sender, channel};
@@ -106,29 +106,6 @@ impl ScriptPort for Receiver<(TrustedWorkerAddress, WorkerScriptMsg)> {
 
 
 
-struct WorkerThreadTimerEventChan {
-    sender: Sender<(TrustedWorkerAddress, TimerEvent)>,
-    worker: TrustedWorkerAddress,
-}
-
-impl TimerEventChan for WorkerThreadTimerEventChan {
-    fn send(&self, event: TimerEvent) -> Result<(), ()> {
-        self.sender
-            .send((self.worker.clone(), event))
-            .map_err(|_| ())
-    }
-
-    fn clone(&self) -> Box<TimerEventChan + Send> {
-        box WorkerThreadTimerEventChan {
-            sender: self.sender.clone(),
-            worker: self.worker.clone(),
-        }
-    }
-}
-
-
-
-
 
 struct AutoWorkerReset<'a> {
     workerscope: &'a DedicatedWorkerGlobalScope,
@@ -183,7 +160,7 @@ impl DedicatedWorkerGlobalScope {
                      parent_sender: Box<ScriptChan + Send>,
                      own_sender: Sender<(TrustedWorkerAddress, WorkerScriptMsg)>,
                      receiver: Receiver<(TrustedWorkerAddress, WorkerScriptMsg)>,
-                     timer_event_chan: Box<TimerEventChan + Send>,
+                     timer_event_chan: IpcSender<TimerEvent>,
                      timer_event_port: Receiver<(TrustedWorkerAddress, TimerEvent)>)
                      -> DedicatedWorkerGlobalScope {
 
@@ -207,7 +184,7 @@ impl DedicatedWorkerGlobalScope {
                parent_sender: Box<ScriptChan + Send>,
                own_sender: Sender<(TrustedWorkerAddress, WorkerScriptMsg)>,
                receiver: Receiver<(TrustedWorkerAddress, WorkerScriptMsg)>,
-               timer_event_chan: Box<TimerEventChan + Send>,
+               timer_event_chan: IpcSender<TimerEvent>,
                timer_event_port: Receiver<(TrustedWorkerAddress, TimerEvent)>)
                -> Root<DedicatedWorkerGlobalScope> {
         let scope = box DedicatedWorkerGlobalScope::new_inherited(
@@ -249,15 +226,17 @@ impl DedicatedWorkerGlobalScope {
             ROUTER.route_ipc_receiver_to_mpsc_sender(from_devtools_receiver, devtools_mpsc_chan);
 
             let (timer_tx, timer_rx) = channel();
-            let timer_event_chan = box WorkerThreadTimerEventChan {
-                sender: timer_tx,
-                worker: worker.clone(),
-            };
+            let (timer_ipc_chan, timer_ipc_port) = ipc::channel().unwrap();
+            let worker_for_route = worker.clone();
+            ROUTER.add_route(timer_ipc_port.to_opaque(), box move |message| {
+                let event = message.to().unwrap();
+                timer_tx.send((worker_for_route.clone(), event)).unwrap();
+            });
 
             let global = DedicatedWorkerGlobalScope::new(
                 init, url, id, devtools_mpsc_port, runtime.clone(),
                 parent_sender.clone(), own_sender, receiver,
-                timer_event_chan, timer_rx);
+                timer_ipc_chan, timer_rx);
             // FIXME(njn): workers currently don't have a unique ID suitable for using in reporter
             // registration (#6631), so we instead use a random number and cross our fingers.
             let scope = global.upcast::<WorkerGlobalScope>();

@@ -68,6 +68,9 @@ pub struct CompositionPipeline {
 }
 
 
+
+
+
 pub struct InitialPipelineState {
     
     pub id: PipelineId,
@@ -77,7 +80,7 @@ pub struct InitialPipelineState {
     
     pub constellation_chan: ConstellationChan,
     
-    pub scheduler_chan: Sender<TimerEventRequest>,
+    pub scheduler_chan: IpcSender<TimerEventRequest>,
     
     pub compositor_proxy: Box<CompositorProxy + 'static + Send>,
     
@@ -315,7 +318,7 @@ pub struct PipelineContent {
     id: PipelineId,
     parent_info: Option<(PipelineId, SubpageId)>,
     constellation_chan: ConstellationChan,
-    scheduler_chan: Sender<TimerEventRequest>,
+    scheduler_chan: IpcSender<TimerEventRequest>,
     compositor_proxy: Box<CompositorProxy + Send + 'static>,
     devtools_chan: Option<IpcSender<ScriptToDevtoolsControlMsg>>,
     image_cache_task: ImageCacheTask,

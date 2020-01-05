@@ -190,23 +190,20 @@ pub enum CompositorEvent {
 pub struct OpaqueScriptLayoutChannel(pub (Box<Any + Send>, Box<Any + Send>));
 
 
-pub struct TimerEventRequest(pub Box<TimerEventChan + Send>, pub TimerSource, pub TimerEventId, pub MsDuration);
+#[derive(Deserialize, Serialize)]
+pub struct TimerEventRequest(pub IpcSender<TimerEvent>,
+                             pub TimerSource,
+                             pub TimerEventId,
+                             pub MsDuration);
 
 
 
 
+#[derive(Deserialize, Serialize)]
 pub struct TimerEvent(pub TimerSource, pub TimerEventId);
 
 
-pub trait TimerEventChan {
-    
-    fn send(&self, msg: TimerEvent) -> Result<(), ()>;
-    
-    fn clone(&self) -> Box<TimerEventChan + Send>;
-}
-
-
-#[derive(Copy, Clone, HeapSizeOf)]
+#[derive(Copy, Clone, HeapSizeOf, Deserialize, Serialize)]
 pub enum TimerSource {
     
     FromWindow(PipelineId),
@@ -215,7 +212,7 @@ pub enum TimerSource {
 }
 
 
-#[derive(PartialEq, Eq, Copy, Clone, Debug, HeapSizeOf)]
+#[derive(PartialEq, Eq, Copy, Clone, Debug, HeapSizeOf, Deserialize, Serialize)]
 pub struct TimerEventId(pub u32);
 
 
@@ -240,6 +237,9 @@ pub fn precise_time_ns() -> NsDuration {
 }
 
 
+
+
+
 pub struct InitialScriptState {
     
     pub id: PipelineId,
@@ -255,7 +255,7 @@ pub struct InitialScriptState {
     
     pub constellation_chan: ConstellationChan,
     
-    pub scheduler_chan: Sender<TimerEventRequest>,
+    pub scheduler_chan: IpcSender<TimerEventRequest>,
     
     pub failure_info: Failure,
     
