@@ -21,13 +21,16 @@ VariablesViewLink.propTypes = {
 
 function VariablesViewLink(props) {
   const { className, object, children } = props;
-
+  const classes = ["cm-variable"];
+  if (className) {
+    classes.push(className);
+  }
   return (
     dom.a({
       onClick: openVariablesView.bind(null, object),
       
       "data-link-actor-id": object.actor,
-      className: className || "cm-variable",
+      className: classes.join(" "),
       draggable: false,
     }, children)
   );
