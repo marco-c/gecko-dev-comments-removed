@@ -63,7 +63,6 @@ Decoder::Decoder(RasterImage* aImage)
   , mReachedTerminalState(false)
   , mDecodeDone(false)
   , mError(false)
-  , mDecodeAborted(false)
   , mShouldReportError(false)
 { }
 
@@ -203,9 +202,7 @@ Decoder::CompleteDecode()
 
   
   
-  
-  
-  if (!IsMetadataDecode() && !mDecodeDone && !WasAborted()) {
+  if (!mDecodeDone && !IsMetadataDecode()) {
     mShouldReportError = true;
 
     
@@ -223,10 +220,7 @@ Decoder::CompleteDecode()
       PostDecodeDone();
     } else {
       
-      if (!IsMetadataDecode()) {
-        mProgress |= FLAG_DECODE_COMPLETE;
-      }
-      mProgress |= FLAG_HAS_ERROR;
+      mProgress |= FLAG_DECODE_COMPLETE | FLAG_HAS_ERROR;
     }
   }
 
@@ -271,7 +265,6 @@ Decoder::FinalStatus() const
 {
   return DecoderFinalStatus(IsMetadataDecode(),
                             GetDecodeDone(),
-                            WasAborted(),
                             HasError(),
                             ShouldReportError());
 }

@@ -32,12 +32,10 @@ struct DecoderFinalStatus final
 {
   DecoderFinalStatus(bool aWasMetadataDecode,
                      bool aFinished,
-                     bool aWasAborted,
                      bool aHadError,
                      bool aShouldReportError)
     : mWasMetadataDecode(aWasMetadataDecode)
     , mFinished(aFinished)
-    , mWasAborted(aWasAborted)
     , mHadError(aHadError)
     , mShouldReportError(aShouldReportError)
   { }
@@ -47,11 +45,6 @@ struct DecoderFinalStatus final
 
   
   const bool mFinished : 1;
-
-  
-  
-  
-  const bool mWasAborted : 1;
 
   
   const bool mHadError : 1;
@@ -286,17 +279,6 @@ public:
 
   
   bool InFrame() const { return mInFrame; }
-
-  
-
-
-
-
-
-
-
-
-  bool WasAborted() const { return mDecodeAborted; }
 
   enum DecodeStyle {
       PROGRESSIVE, 
@@ -571,7 +553,6 @@ private:
   bool mReachedTerminalState : 1;
   bool mDecodeDone : 1;
   bool mError : 1;
-  bool mDecodeAborted : 1;
   bool mShouldReportError : 1;
 };
 

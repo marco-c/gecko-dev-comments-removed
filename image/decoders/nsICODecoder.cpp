@@ -100,7 +100,6 @@ nsICODecoder::GetFinalStateFromContainedDecoder()
 
   
   mDecodeDone = mContainedDecoder->GetDecodeDone();
-  mDecodeAborted = mContainedDecoder->WasAborted();
   mProgress |= mContainedDecoder->TakeProgress();
   mInvalidRect.UnionRect(mInvalidRect, mContainedDecoder->TakeInvalidRect());
   mCurrentFrame = mContainedDecoder->GetCurrentFrameRef();
