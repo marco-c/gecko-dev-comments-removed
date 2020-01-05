@@ -100,7 +100,7 @@ function ModuleResolveExport(exportName, resolveSet = [])
         let e = indirectExportEntries[i];
         if (exportName === e.exportName) {
             let importedModule = CallModuleResolveHook(module, e.moduleRequest,
-                                                       MODULE_STATE_INSTANTIATED);
+                                                       MODULE_STATE_PARSED);
             return callFunction(importedModule.resolveExport, importedModule, e.importName,
                                 resolveSet);
         }
@@ -120,7 +120,7 @@ function ModuleResolveExport(exportName, resolveSet = [])
     for (let i = 0; i < starExportEntries.length; i++) {
         let e = starExportEntries[i];
         let importedModule = CallModuleResolveHook(module, e.moduleRequest,
-                                                   MODULE_STATE_INSTANTIATED);
+                                                   MODULE_STATE_PARSED);
         let resolution = callFunction(importedModule.resolveExport, importedModule,
                                       exportName, resolveSet);
         if (resolution === "ambiguous")
@@ -267,6 +267,8 @@ function ModuleDeclarationInstantiation()
                     ThrowSyntaxError(JSMSG_MISSING_IMPORT, imp.importName);
                 if (resolution === "ambiguous")
                     ThrowSyntaxError(JSMSG_AMBIGUOUS_IMPORT, imp.importName);
+                if (resolution.module.state < MODULE_STATE_INSTANTIATED)
+                    ThrowInternalError(JSMSG_BAD_MODULE_STATE);
                 CreateImportBinding(env, imp.localName, resolution.module, resolution.bindingName);
             }
         }
