@@ -70,7 +70,7 @@ public:
     MozPromise<RefPtr<MetadataHolder>, MediaResult, IsExclusive>;
   using MediaDataPromise =
     MozPromise<RefPtr<MediaData>, MediaResult, IsExclusive>;
-  using SeekPromise = MozPromise<media::TimeUnit, nsresult, IsExclusive>;
+  using SeekPromise = MozPromise<media::TimeUnit, MediaResult, IsExclusive>;
 
   
   
