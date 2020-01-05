@@ -87,12 +87,12 @@ impl TextRunScanner {
     
     
     
-    pub fn flush_clump_to_list(&mut self,
-                               font_context: &mut FontContext,
-                               in_fragments: &[Fragment],
-                               out_fragments: &mut Vec<Fragment>,
-                               last_whitespace: bool)
-                               -> bool {
+    fn flush_clump_to_list(&mut self,
+                           font_context: &mut FontContext,
+                           in_fragments: &[Fragment],
+                           out_fragments: &mut Vec<Fragment>,
+                           last_whitespace: bool)
+                           -> bool {
         assert!(self.clump.length() > CharIndex(0));
 
         debug!("TextRunScanner: flushing fragments in range={}", self.clump);

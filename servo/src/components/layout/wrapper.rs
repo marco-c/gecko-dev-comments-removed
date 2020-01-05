@@ -536,7 +536,7 @@ impl<'ln> ThreadSafeLayoutNode<'ln> {
 
     
     
-    pub fn with_pseudo(&self, pseudo: PseudoElementType) -> ThreadSafeLayoutNode<'ln> {
+    fn with_pseudo(&self, pseudo: PseudoElementType) -> ThreadSafeLayoutNode<'ln> {
         ThreadSafeLayoutNode {
             node: self.node.clone(),
             pseudo: pseudo,
