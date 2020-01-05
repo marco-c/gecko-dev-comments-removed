@@ -514,6 +514,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 #ifdef MOZ_CLANG_PLUGIN
 #  define MOZ_MUST_OVERRIDE __attribute__((annotate("moz_must_override")))
 #  define MOZ_STACK_CLASS __attribute__((annotate("moz_stack_class")))
@@ -550,6 +559,10 @@
     __attribute__((annotate("moz_non_param")))
 #  define MOZ_REQUIRED_BASE_METHOD \
     __attribute__((annotate("moz_required_base_method")))
+#  define MOZ_MUST_RETURN_FROM_CALLER \
+    __attribute__((annotate("moz_must_return_from_caller")))
+#  define MOZ_MAY_CALL_AFTER_MUST_RETURN \
+    __attribute__((annotate("moz_may_call_after_must_return")))
 
 
 
@@ -586,6 +599,8 @@
 #  define MOZ_NON_PARAM
 #  define MOZ_NON_AUTOABLE
 #  define MOZ_REQUIRED_BASE_METHOD
+#  define MOZ_MUST_RETURN_FROM_CALLER
+#  define MOZ_MAY_CALL_AFTER_MUST_RETURN
 #endif 
 
 #define MOZ_RAII MOZ_NON_TEMPORARY_CLASS MOZ_STACK_CLASS
