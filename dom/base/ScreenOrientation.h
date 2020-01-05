@@ -53,7 +53,7 @@ public:
 
   
   OrientationType DeviceType(CallerType aCallerType) const;
-  uint16_t DeviceAngle() const;
+  uint16_t DeviceAngle(CallerType aCallerType) const;
 
   
   
