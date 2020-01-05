@@ -2202,6 +2202,18 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 
     var internalProps = std_Object_create(null);
 
@@ -2235,7 +2247,26 @@ function resolveDateTimeFormatInternals(lazyDateTimeFormatData) {
     var formatOpt = lazyDateTimeFormatData.formatOpt;
 
     
-    var pattern = toBestICUPattern(dataLocale, formatOpt);
+    var pattern;
+    if (lazyDateTimeFormatData.mozExtensions) {
+        if (lazyDateTimeFormatData.patternOption !== undefined) {
+            pattern = lazyDateTimeFormatData.patternOption;
+
+            internalProps.patternOption = lazyDateTimeFormatData.patternOption;
+        } else if (lazyDateTimeFormatData.dateStyle || lazyDateTimeFormatData.timeStyle) {
+            pattern = intl_patternForStyle(dataLocale,
+              lazyDateTimeFormatData.dateStyle, lazyDateTimeFormatData.timeStyle,
+              lazyDateTimeFormatData.timeZone);
+
+            internalProps.dateStyle = lazyDateTimeFormatData.dateStyle;
+            internalProps.timeStyle = lazyDateTimeFormatData.timeStyle;
+        } else {
+            pattern = toBestICUPattern(dataLocale, formatOpt);
+        }
+        internalProps.mozExtensions = true;
+    } else {
+      pattern = toBestICUPattern(dataLocale, formatOpt);
+    }
 
     
     internalProps.pattern = pattern;
@@ -2301,7 +2332,7 @@ function UnwrapDateTimeFormat(dtf, methodName) {
 
 
 
-function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options) {
+function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options, mozExtensions) {
     assert(IsObject(dateTimeFormat), "InitializeDateTimeFormat called with non-Object");
     assert(IsDateTimeFormat(dateTimeFormat),
            "InitializeDateTimeFormat called with non-DateTimeFormat");
@@ -2377,6 +2408,18 @@ function InitializeDateTimeFormat(dateTimeFormat, thisValue, locales, options) {
     
     var formatOpt = new Record();
     lazyDateTimeFormatData.formatOpt = formatOpt;
+
+    lazyDateTimeFormatData.mozExtensions = mozExtensions;
+
+    if (mozExtensions) {
+        let pattern = GetOption(options, "pattern", "string", undefined, undefined);
+        lazyDateTimeFormatData.patternOption = pattern;
+
+        let dateStyle = GetOption(options, "dateStyle", "string", ["full", "long", "medium", "short"], undefined);
+        lazyDateTimeFormatData.dateStyle = dateStyle;
+        let timeStyle = GetOption(options, "timeStyle", "string", ["full", "long", "medium", "short"], undefined);
+        lazyDateTimeFormatData.timeStyle = timeStyle;
+    }
 
     
     
@@ -2793,8 +2836,18 @@ function Intl_DateTimeFormat_resolvedOptions() {
         locale: internals.locale,
         calendar: internals.calendar,
         numberingSystem: internals.numberingSystem,
-        timeZone: internals.timeZone
+        timeZone: internals.timeZone,
     };
+
+    if (internals.mozExtensions) {
+        if (internals.patternOption !== undefined) {
+            result.pattern = internals.pattern;
+        } else if (internals.dateStyle || internals.timeStyle) {
+            result.dateStyle = internals.dateStyle;
+            result.timeStyle = internals.timeStyle;
+        }
+    }
+
     resolveICUPattern(internals.pattern, result);
     return result;
 }

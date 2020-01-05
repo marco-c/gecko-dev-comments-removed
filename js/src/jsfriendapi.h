@@ -2910,6 +2910,21 @@ ToWindowIfWindowProxy(JSObject* obj);
 extern bool
 AddPluralRulesConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
 
+
+
+
+
+
+
+
+
+
+
+
+
+extern bool
+AddMozDateTimeFormatConstructor(JSContext* cx, JS::Handle<JSObject*> intl);
+
 class MOZ_STACK_CLASS JS_FRIEND_API(AutoAssertNoContentJS)
 {
   public:
