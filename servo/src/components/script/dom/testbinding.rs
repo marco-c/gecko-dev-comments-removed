@@ -2,11 +2,16 @@
 
 
 
+use dom::bindings::js::JS;
 use dom::bindings::utils::{Reflector, Reflectable};
+use dom::blob::Blob;
+use dom::window::Window;
+use servo_util::str::DOMString;
 
 #[deriving(Encodable)]
 pub struct TestBinding {
     reflector: Reflector,
+    window: JS<Window>,
 }
 
 impl TestBinding {
@@ -32,6 +37,10 @@ impl TestBinding {
     pub fn SetFloatAttribute(&self, _: f32) {}
     pub fn DoubleAttribute(&self) -> f64 { 0. }
     pub fn SetDoubleAttribute(&self, _: f64) {}
+    pub fn StringAttribute(&self) -> DOMString { ~"" }
+    pub fn SetStringAttribute(&self, _: DOMString) {}
+    pub fn InterfaceAttribute(&self) -> JS<Blob> { Blob::new(&self.window) }
+    pub fn SetInterfaceAttribute(&self, _: &JS<Blob>) {}
 
     pub fn GetBooleanAttributeNullable(&self) -> Option<bool> { Some(false) }
     pub fn SetBooleanAttributeNullable(&self, _: Option<bool>) {}
@@ -55,6 +64,10 @@ impl TestBinding {
     pub fn SetFloatAttributeNullable(&self, _: Option<f32>) {}
     pub fn GetDoubleAttributeNullable(&self) -> Option<f64> { Some(0.) }
     pub fn SetDoubleAttributeNullable(&self, _: Option<f64>) {}
+    pub fn GetStringAttributeNullable(&self) -> Option<DOMString> { Some(~"") }
+    pub fn SetStringAttributeNullable(&self, _: Option<DOMString>) {}
+    pub fn GetInterfaceAttributeNullable(&self) -> Option<JS<Blob>> { Some(Blob::new(&self.window)) }
+    pub fn SetInterfaceAttributeNullable(&self, _: Option<JS<Blob>>) {}
 
     
     
@@ -67,6 +80,22 @@ impl TestBinding {
     
     
     
+    
+    pub fn PassOptionalString(&self, _: Option<DOMString>) {}
+    pub fn PassOptionalInterface(&self, _: Option<JS<Blob>>) {}
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    pub fn PassOptionalNullableString(&self, _: Option<Option<DOMString>>) {}
     
 
     pub fn PassOptionalBooleanWithDefault(&self, _: bool) {}
@@ -78,6 +107,7 @@ impl TestBinding {
     pub fn PassOptionalUnsignedLongWithDefault(&self, _: u32) {}
     pub fn PassOptionalLongLongWithDefault(&self, _: i64) {}
     pub fn PassOptionalUnsignedLongLongWithDefault(&self, _: u64) {}
+    pub fn PassOptionalStringWithDefault(&self, _: DOMString) {}
 
     pub fn PassOptionalNullableBooleanWithDefault(&self, _: Option<bool>) {}
     pub fn PassOptionalNullableByteWithDefault(&self, _: Option<i8>) {}
@@ -90,6 +120,8 @@ impl TestBinding {
     pub fn PassOptionalNullableUnsignedLongLongWithDefault(&self, _: Option<u64>) {}
     pub fn PassOptionalNullableFloatWithDefault(&self, _: Option<f32>) {}
     pub fn PassOptionalNullableDoubleWithDefault(&self, _: Option<f64>) {}
+    
+    pub fn PassOptionalNullableInterfaceWithDefault(&self, _: Option<JS<Blob>>) {}
 }
 
 impl Reflectable for TestBinding {
