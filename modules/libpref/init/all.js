@@ -4471,7 +4471,7 @@ pref("image.mem.discardable", true);
 
 
 
-pref("image.mem.animated.discardable", false);
+pref("image.mem.animated.discardable", true);
 
 
 
