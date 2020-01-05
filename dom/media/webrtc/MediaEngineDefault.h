@@ -98,6 +98,7 @@ protected:
   
   
   
+  
   Monitor mMonitor;
   RefPtr<layers::Image> mImage;
 
@@ -110,7 +111,8 @@ protected:
 
 class SineWaveGenerator;
 
-class MediaEngineDefaultAudioSource : public MediaEngineAudioSource
+class MediaEngineDefaultAudioSource : public nsITimerCallback,
+                                      public MediaEngineAudioSource
 {
 public:
   MediaEngineDefaultAudioSource();
@@ -133,14 +135,22 @@ public:
                    const nsString& aDeviceId,
                    const char** aOutBadConstraint) override;
   void SetDirectListeners(bool aHasDirectListeners) override {};
-  void inline AppendToSegment(AudioSegment& aSegment,
-                              TrackTicks aSamples,
-                              const PrincipalHandle& aPrincipalHandle);
+  void AppendToSegment(AudioSegment& aSegment,
+                       TrackTicks aSamples);
   void NotifyPull(MediaStreamGraph* aGraph,
                   SourceMediaStream *aSource,
                   TrackID aId,
                   StreamTime aDesiredTime,
-                  const PrincipalHandle& aPrincipalHandle) override;
+                  const PrincipalHandle& aPrincipalHandle) override
+  {
+#ifdef DEBUG
+    StreamTracks::Track* data = aSource->FindTrack(aId);
+    NS_WARNING_ASSERTION(
+      !data || data->IsEnded() ||
+      aDesiredTime <= aSource->GetEndOfAppendedData(aId),
+      "MediaEngineDefaultAudioSource data underrun");
+#endif
+  }
 
   void NotifyOutputData(MediaStreamGraph* aGraph,
                         AudioDataValue* aBuffer, size_t aFrames,
@@ -170,15 +180,19 @@ public:
       const nsString& aDeviceId) const override;
 
   NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSITIMERCALLBACK
 
 protected:
   ~MediaEngineDefaultAudioSource();
 
   TrackID mTrackID;
+  PrincipalHandle mPrincipalHandle;
+  nsCOMPtr<nsITimer> mTimer;
 
-  TrackTicks mLastNotify; 
+  TimeStamp mLastNotify;
+  TrackTicks mBufferSize;
 
-  
+  SourceMediaStream* mSource;
   nsAutoPtr<SineWaveGenerator> mSineGenerator;
 };
 
