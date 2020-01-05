@@ -21,6 +21,7 @@ namespace layers {
 
 WebRenderCompositorOGL::WebRenderCompositorOGL(GLContext* aGLContext)
   : Compositor(nullptr, nullptr)
+  , mGLContext(aGLContext)
   , mDestroyed(false)
 {
   MOZ_COUNT_CTOR(WebRenderCompositorOGL);
@@ -42,8 +43,25 @@ WebRenderCompositorOGL::Destroy()
 
   if (!mDestroyed) {
     mDestroyed = true;
-    mGLContext = nullptr;;
+    CleanupResources();
   }
+}
+
+void
+WebRenderCompositorOGL::CleanupResources()
+{
+  if (!mGLContext) {
+    return;
+  }
+
+  
+  
+  
+  
+  
+  mGLContext->MarkDestroyed();
+
+  mGLContext = nullptr;
 }
 
 bool
