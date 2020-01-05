@@ -1,13 +1,12 @@
 Components.utils.import("resource://devtools/client/framework/gDevTools.jsm");
 Components.utils.import("resource://gre/modules/Services.jsm");
 
-const { devtools } =
+const {devtools} =
   Components.utils.import("resource://devtools/shared/Loader.jsm", {});
 const { getActiveTab } = devtools.require("sdk/tabs/utils");
 const { getMostRecentBrowserWindow } = devtools.require("sdk/window/utils");
 const ThreadSafeChromeUtils = devtools.require("ThreadSafeChromeUtils");
-const { EVENTS } = devtools.require("devtools/client/netmonitor/constants");
-const { Task } = Cu.import("resource://gre/modules/Task.jsm", {});
+const {Task} = Cu.import("resource://gre/modules/Task.jsm", {});
 
 const webserver = Services.prefs.getCharPref("addon.test.damp.webserver");
 
@@ -116,8 +115,9 @@ Damp.prototype = {
   },
 
   waitForNetworkRequests: Task.async(function*(label, toolbox) {
+    const { NetMonitorController } = toolbox.getCurrentPanel().panelWin;
     const start = performance.now();
-    yield this.waitForAllRequestsFinished();
+    yield NetMonitorController.waitForAllRequestsFinished();
     const end = performance.now();
     this._results.push({
       name: label + ".requestsFinished.DAMP",
@@ -442,58 +442,6 @@ Damp.prototype = {
     if (this._onTestComplete) {
       this._onTestComplete(JSON.parse(JSON.stringify(this._results))); 
     }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  waitForAllRequestsFinished() {
-    let tab = getActiveTab(getMostRecentBrowserWindow());
-    let target = devtools.TargetFactory.forTab(tab);
-    let toolbox = gDevTools.getToolbox(target);
-    let window = toolbox.getCurrentPanel().panelWin;
-
-    return new Promise(resolve => {
-      
-      let requests = new Map();
-
-      function onRequest(_, id) {
-        requests.set(id, false);
-      }
-
-      function onTimings(_, id) {
-        requests.set(id, true);
-        maybeResolve();
-      }
-
-      function maybeResolve() {
-        
-        if (![...requests.values()].every(finished => finished)) {
-          return;
-        }
-
-        
-        window.off(EVENTS.NETWORK_EVENT, onRequest);
-        window.off(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
-        resolve();
-      }
-
-      window.on(EVENTS.NETWORK_EVENT, onRequest);
-      window.on(EVENTS.RECEIVED_EVENT_TIMINGS, onTimings);
-    });
   },
 
   startTest: function(doneCallback, config) {
