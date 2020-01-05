@@ -469,7 +469,6 @@ public:
     : mozilla::css::GroupRule(aLineNumber, aColumnNumber)
     , mName(aName)
   {
-    SetIsNotDOMBinding();
   }
 private:
   nsCSSKeyframesRule(const nsCSSKeyframesRule& aCopy);
@@ -491,6 +490,12 @@ public:
   
   uint16_t Type() const override;
   void GetCssTextImpl(nsAString& aCssText) const override;
+  
+  
+  using mozilla::css::GroupRule::CssRules;
+  
+  
+  nsCSSKeyframeRule* FindRule(const nsAString& aKey);
 
   
   virtual bool UseForPresentation(nsPresContext* aPresContext,
