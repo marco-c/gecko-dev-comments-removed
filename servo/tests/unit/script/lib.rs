@@ -2,8 +2,8 @@
 
 
 
-extern crate script;
 extern crate msg;
+extern crate script;
 extern crate util;
 
 #[cfg(all(test, target_pointer_width = "64"))] mod size_of;
