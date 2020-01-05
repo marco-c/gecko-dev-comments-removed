@@ -599,6 +599,10 @@ pref("media.video_stats.enabled", true);
 pref("media.decoder.recycle.enabled", false);
 
 
+
+pref("media.cubeb.log_level", "");
+
+
 pref("layers.amd-switchable-gfx.enabled", true);
 
 
