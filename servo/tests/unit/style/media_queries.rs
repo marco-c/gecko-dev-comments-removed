@@ -2,7 +2,7 @@
 
 
 
-use geom::size::Size2D;
+use euclid::size::Size2D;
 use style::stylesheets::{Stylesheet, CSSRuleIteratorExt};
 use style::stylesheets::Origin;
 use style::media_queries::*;

@@ -2,7 +2,7 @@
 
 
 
-use geom::point::Point2D;
+use euclid::point::Point2D;
 use std::cmp::{Ordering, PartialOrd};
 use std::iter::repeat;
 use std::mem;

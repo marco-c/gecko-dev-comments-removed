@@ -3,7 +3,7 @@
 
 
 use canvas_traits::{CanvasMsg, CanvasWebGLMsg, CanvasCommonMsg};
-use geom::size::Size2D;
+use euclid::size::Size2D;
 use core::nonzero::NonZero;
 use gleam::gl;
 use gleam::gl::types::{GLsizei};

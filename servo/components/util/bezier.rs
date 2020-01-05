@@ -6,7 +6,7 @@
 
 
 
-use geom::point::Point2D;
+use euclid::point::Point2D;
 
 const NEWTON_METHOD_ITERATIONS: u8 = 8;
 

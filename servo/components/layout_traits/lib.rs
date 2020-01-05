@@ -2,7 +2,7 @@
 
 
 
-extern crate geom;
+extern crate euclid;
 extern crate gfx;
 extern crate script_traits;
 extern crate msg;
@@ -16,7 +16,7 @@ extern crate util;
 
 
 
-use geom::rect::Rect;
+use euclid::rect::Rect;
 use gfx::font_cache_task::FontCacheTask;
 use gfx::paint_task::PaintChan;
 use msg::compositor_msg::{Epoch, LayerId};

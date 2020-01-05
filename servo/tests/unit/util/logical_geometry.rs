@@ -2,7 +2,7 @@
 
 
 
-use geom::{Size2D, Point2D, SideOffsets2D, Rect};
+use euclid::{Size2D, Point2D, SideOffsets2D, Rect};
 use util::logical_geometry::{WritingMode, LogicalSize, LogicalPoint, LogicalMargin, LogicalRect,
                              FLAG_RTL, FLAG_VERTICAL, FLAG_VERTICAL_LR, FLAG_SIDEWAYS_LEFT};
 
