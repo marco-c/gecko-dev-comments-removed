@@ -428,10 +428,16 @@ typedef MutableHandle<ModuleEnvironmentObject*> MutableHandleModuleEnvironmentOb
 
 class WasmFunctionCallObject : public EnvironmentObject
 {
+    
+    
+    
+    
+    static const uint32_t SCOPE_SLOT = 1;
+
   public:
     static const Class class_;
 
-    static const uint32_t RESERVED_SLOTS = 1;
+    static const uint32_t RESERVED_SLOTS = 2;
 
     static WasmFunctionCallObject* createHollowForDebug(JSContext* cx,
                                                         WasmFunctionScope* scope);
