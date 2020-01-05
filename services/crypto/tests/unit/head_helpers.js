@@ -29,6 +29,29 @@ updateAppInfo({
 });
 }
 
+function base64UrlDecode(s) {
+  s = s.replace(/-/g, "+");
+  s = s.replace(/_/g, "/");
+
+  
+  
+  switch (s.length % 4) {
+    case 0:
+      break; 
+    case 2:
+      s += "==";
+      break; 
+    case 3:
+      s += "=";
+      break; 
+    default:
+      throw new InputException("Illegal base64url string!");
+  }
+
+  
+  return atob(s);
+}
+
 
 function addResourceAlias() {
   Cu.import("resource://gre/modules/Services.jsm");
