@@ -16,7 +16,11 @@ add_task(function* test_storage_api_without_permissions() {
   let extension = ExtensionTestUtils.loadExtension({
     background() {
       
-      void browser.storage;
+      try {
+        browser.storage.onChanged.addListener(() => {});
+      } catch (e) {
+        
+      }
     },
 
     manifest: {
@@ -41,7 +45,7 @@ add_task(function* test_storage_api_without_permissions() {
 add_task(function* test_storage_api_with_permissions() {
   let extension = ExtensionTestUtils.loadExtension({
     background() {
-      void browser.storage;
+      browser.storage.onChanged.addListener(() => {});
     },
 
     manifest: {

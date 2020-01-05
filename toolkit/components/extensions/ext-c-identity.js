@@ -3,7 +3,7 @@
 
 "use strict";
 
-const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr, Constructor: CC} = Components;
+var {Constructor: CC} = Components;
 
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
@@ -18,8 +18,7 @@ let CryptoHash = CC("@mozilla.org/security/hash;1", "nsICryptoHash", "initWithSt
 
 Cu.importGlobalProperties(["URL", "XMLHttpRequest", "TextEncoder"]);
 
-Cu.import("resource://gre/modules/ExtensionUtils.jsm");
-const {
+var {
   promiseDocumentLoaded,
 } = ExtensionUtils;
 
@@ -107,53 +106,55 @@ function openOAuthWindow(details, redirectURI) {
   });
 }
 
-extensions.registerSchemaAPI("identity", "addon_child", context => {
-  let {extension} = context;
-  return {
-    identity: {
-      launchWebAuthFlow: function(details) {
-        
-        let url, redirectURI;
-        try {
-          url = new URL(details.url);
-        } catch (e) {
-          return Promise.reject({message: "details.url is invalid"});
-        }
-        try {
-          redirectURI = new URL(url.searchParams.get("redirect_uri"));
-          if (!redirectURI) {
-            return Promise.reject({message: "redirect_uri is missing"});
-          }
-        } catch (e) {
-          return Promise.reject({message: "redirect_uri is invalid"});
-        }
-        if (!redirectURI.href.startsWith(this.getRedirectURL())) {
+this.identity = class extends ExtensionAPI {
+  getAPI(context) {
+    let {extension} = context;
+    return {
+      identity: {
+        launchWebAuthFlow: function(details) {
           
-          Services.console.logStringMessage("WebExtensions: redirect_uri should use browser.identity.getRedirectURL");
-        }
+          let url, redirectURI;
+          try {
+            url = new URL(details.url);
+          } catch (e) {
+            return Promise.reject({message: "details.url is invalid"});
+          }
+          try {
+            redirectURI = new URL(url.searchParams.get("redirect_uri"));
+            if (!redirectURI) {
+              return Promise.reject({message: "redirect_uri is missing"});
+            }
+          } catch (e) {
+            return Promise.reject({message: "redirect_uri is invalid"});
+          }
+          if (!redirectURI.href.startsWith(this.getRedirectURL())) {
+            
+            Services.console.logStringMessage("WebExtensions: redirect_uri should use browser.identity.getRedirectURL");
+          }
 
-        
-        
-        return checkRedirected(details.url, redirectURI).catch((requestError) => {
           
-          if (requestError !== 0) {
-            Cu.reportError(`browser.identity auth check failed with ${requestError}`);
-            return Promise.reject({message: "Invalid request"});
-          }
-          if (!details.interactive) {
-            return Promise.reject({message: `Requires user interaction`});
-          }
+          
+          return checkRedirected(details.url, redirectURI).catch((requestError) => {
+            
+            if (requestError !== 0) {
+              Cu.reportError(`browser.identity auth check failed with ${requestError}`);
+              return Promise.reject({message: "Invalid request"});
+            }
+            if (!details.interactive) {
+              return Promise.reject({message: `Requires user interaction`});
+            }
 
-          return openOAuthWindow(details, redirectURI);
-        });
-      },
+            return openOAuthWindow(details, redirectURI);
+          });
+        },
 
-      getRedirectURL: function(path = "") {
-        let hash = computeHash(extension.id);
-        let url = new URL(`https://${hash}.${redirectDomain}/`);
-        url.pathname = path;
-        return url.href;
+        getRedirectURL: function(path = "") {
+          let hash = computeHash(extension.id);
+          let url = new URL(`https://${hash}.${redirectDomain}/`);
+          url.pathname = path;
+          return url.href;
+        },
       },
-    },
-  };
-});
+    };
+  }
+};
