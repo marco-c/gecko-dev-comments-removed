@@ -106,8 +106,8 @@ protected:
 
    
    nsresult ContentShellAdded(nsIDocShellTreeItem* aContentShell,
-                                          bool aPrimary, bool aTargetable,
-                                          const nsAString& aID);
+                              bool aPrimary,
+                              const nsAString& aID);
    nsresult ContentShellRemoved(nsIDocShellTreeItem* aContentShell);
    NS_IMETHOD GetPrimaryContentSize(int32_t* aWidth,
                                     int32_t* aHeight);
