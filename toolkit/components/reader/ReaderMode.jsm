@@ -196,13 +196,14 @@ this.ReaderMode = {
 
 
   parseDocument: Task.async(function* (doc) {
-    let uri = Services.io.newURI(doc.documentURI, null, null);
-    if (!this._shouldCheckUri(uri)) {
+    let documentURI = Services.io.newURI(doc.documentURI, null, null);
+    let baseURI = Services.io.newURI(doc.baseURI, null, null);
+    if (!this._shouldCheckUri(documentURI) || !this._shouldCheckUri(baseURI, true)) {
       this.log("Reader mode disabled for URI");
       return null;
     }
 
-    return yield this._readerParse(uri, doc);
+    return yield this._readerParse(baseURI, doc);
   }),
 
   
@@ -213,8 +214,13 @@ this.ReaderMode = {
 
 
   downloadAndParseDocument: Task.async(function* (url) {
-    let uri = Services.io.newURI(url, null, null);
     let doc = yield this._downloadDocument(url);
+    let uri = Services.io.newURI(doc.baseURI, null, null);
+    if (!this._shouldCheckUri(uri, true)) {
+      this.log("Reader mode disabled for URI");
+      return null;
+    }
+
     return yield this._readerParse(uri, doc);
   }),
 
@@ -367,7 +373,7 @@ this.ReaderMode = {
     "youtube.com",
   ],
 
-  _shouldCheckUri: function (uri) {
+  _shouldCheckUri: function (uri, isBaseUri = false) {
     if (!(uri.schemeIs("http") || uri.schemeIs("https"))) {
       this.log("Not parsing URI scheme: " + uri.scheme);
       return false;
@@ -381,11 +387,11 @@ this.ReaderMode = {
     }
     
     let asciiHost = uri.asciiHost;
-    if (this._blockedHosts.some(blockedHost => asciiHost.endsWith(blockedHost))) {
+    if (!isBaseUri && this._blockedHosts.some(blockedHost => asciiHost.endsWith(blockedHost))) {
       return false;
     }
 
-    if (!uri.filePath || uri.filePath == "/") {
+    if (!isBaseUri && (!uri.filePath || uri.filePath == "/")) {
       this.log("Not parsing home page: " + uri.spec);
       return false;
     }
