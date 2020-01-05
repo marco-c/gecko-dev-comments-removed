@@ -1721,37 +1721,6 @@ nsresult nsXULWindow::ContentShellAdded(nsIDocShellTreeItem* aContentShell,
       mPrimaryContentShell = nullptr;
   }
 
-  if (aTargetable) {
-#ifdef DEBUG
-    int32_t debugCount = mTargetableShells.Count();
-    int32_t debugCounter;
-    for (debugCounter = debugCount - 1; debugCounter >= 0; --debugCounter) {
-      nsCOMPtr<nsIDocShellTreeItem> curItem =
-        do_QueryReferent(mTargetableShells[debugCounter]);
-      NS_ASSERTION(!SameCOMIdentity(curItem, aContentShell),
-                   "Adding already existing item to mTargetableShells");
-    }
-#endif
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool inserted;
-    if (aPrimary || !mPrimaryContentShell) {
-      inserted = mTargetableShells.InsertObjectAt(contentShellWeak, 0);
-    } else {
-      inserted = mTargetableShells.AppendObject(contentShellWeak);
-    }
-    NS_ENSURE_TRUE(inserted, NS_ERROR_OUT_OF_MEMORY);
-  }
-
   return NS_OK;
 }
 
@@ -1771,15 +1740,6 @@ nsresult nsXULWindow::ContentShellRemoved(nsIDocShellTreeItem* aContentShell)
     }
   }
 
-  count = mTargetableShells.Count();
-  for (i = count - 1; i >= 0; --i) {
-    nsCOMPtr<nsIDocShellTreeItem> curItem =
-      do_QueryReferent(mTargetableShells[i]);
-    if (!curItem || SameCOMIdentity(curItem, aContentShell)) {
-      mTargetableShells.RemoveObjectAt(i);
-    }
-  }
-  
   return NS_OK;
 }
 
