@@ -477,6 +477,11 @@ Readability.prototype = {
     this._cleanStyles(articleContent);
 
     
+    
+    
+    this._markDataTables(articleContent);
+
+    
     this._cleanConditionally(articleContent, "form");
     this._cleanConditionally(articleContent, "fieldset");
     this._clean(articleContent, "object");
@@ -727,7 +732,7 @@ Readability.prototype = {
         if ((node.tagName === "DIV" || node.tagName === "SECTION" || node.tagName === "HEADER" ||
              node.tagName === "H1" || node.tagName === "H2" || node.tagName === "H3" ||
              node.tagName === "H4" || node.tagName === "H5" || node.tagName === "H6") &&
-            this._isEmptyElement(node)) {
+            this._isElementWithoutContent(node)) {
           node = this._removeAndGetNext(node);
           continue;
         }
@@ -1186,10 +1191,11 @@ Readability.prototype = {
     });
   },
 
-  _isEmptyElement: function(node) {
+  _isElementWithoutContent: function(node) {
     return node.nodeType === Node.ELEMENT_NODE &&
-      node.children.length == 0 &&
-      node.textContent.trim().length == 0;
+      node.textContent.trim().length == 0 &&
+      (node.children.length == 0 ||
+       node.children.length == node.getElementsByTagName("br").length + node.getElementsByTagName("hr").length);
   },
 
   
@@ -1717,19 +1723,107 @@ Readability.prototype = {
 
 
 
-  _hasAncestorTag: function(node, tagName, maxDepth) {
+
+  _hasAncestorTag: function(node, tagName, maxDepth, filterFn) {
     maxDepth = maxDepth || 3;
     tagName = tagName.toUpperCase();
     var depth = 0;
     while (node.parentNode) {
-      if (depth > maxDepth)
+      if (maxDepth > 0 && depth > maxDepth)
         return false;
-      if (node.parentNode.tagName === tagName)
+      if (node.parentNode.tagName === tagName && (!filterFn || filterFn(node.parentNode)))
         return true;
       node = node.parentNode;
       depth++;
     }
     return false;
+  },
+
+  
+
+
+  _getRowAndColumnCount: function(table) {
+    var rows = 0;
+    var columns = 0;
+    var trs = table.getElementsByTagName("tr");
+    for (var i = 0; i < trs.length; i++) {
+      var rowspan = trs[i].getAttribute("rowspan") || 0;
+      if (rowspan) {
+        rowspan = parseInt(rowspan, 10);
+      }
+      rows += (rowspan || 1);
+
+      
+      var columnsInThisRow = 0;
+      var cells = trs[i].getElementsByTagName("td");
+      for (var j = 0; j < cells.length; j++) {
+        var colspan = cells[j].getAttribute("colspan") || 0;
+        if (colspan) {
+          colspan = parseInt(colspan, 10);
+        }
+        columnsInThisRow += (colspan || 1);
+      }
+      columns = Math.max(columns, columnsInThisRow);
+    }
+    return {rows: rows, columns: columns};
+  },
+
+  
+
+
+
+
+  _markDataTables: function(root) {
+    var tables = root.getElementsByTagName("table");
+    for (var i = 0; i < tables.length; i++) {
+      var table = tables[i];
+      var role = table.getAttribute("role");
+      if (role == "presentation") {
+        table._readabilityDataTable = false;
+        continue;
+      }
+      var datatable = table.getAttribute("datatable");
+      if (datatable == "0") {
+        table._readabilityDataTable = false;
+        continue;
+      }
+      var summary = table.getAttribute("summary");
+      if (summary) {
+        table._readabilityDataTable = true;
+        continue;
+      }
+
+      var caption = table.getElementsByTagName("caption")[0];
+      if (caption && caption.childNodes.length > 0) {
+        table._readabilityDataTable = true;
+        continue;
+      }
+
+      
+      var dataTableDescendants = ["col", "colgroup", "tfoot", "thead", "th"];
+      var descendantExists = function(tag) {
+        return !!table.getElementsByTagName(tag)[0];
+      };
+      if (dataTableDescendants.some(descendantExists)) {
+        this.log("Data table because found data-y descendant");
+        table._readabilityDataTable = true;
+        continue;
+      }
+
+      
+      if (table.getElementsByTagName("table")[0]) {
+        table._readabilityDataTable = false;
+        continue;
+      }
+
+      var sizeInfo = this._getRowAndColumnCount(table);
+      if (sizeInfo.rows >= 10 || sizeInfo.columns > 4) {
+        table._readabilityDataTable = true;
+        continue;
+      }
+      
+      table._readabilityDataTable = sizeInfo.rows * sizeInfo.columns > 10;
+    }
   },
 
   
@@ -1750,6 +1844,15 @@ Readability.prototype = {
     
     
     this._removeNodes(e.getElementsByTagName(tag), function(node) {
+      
+      var isDataTable = function(t) {
+        return t._readabilityDataTable;
+      };
+
+      if (this._hasAncestorTag(node, "table", -1, isDataTable)) {
+        return false;
+      }
+
       var weight = this._getClassWeight(node);
       var contentScore = 0;
 
@@ -1765,7 +1868,7 @@ Readability.prototype = {
         
         var p = node.getElementsByTagName("p").length;
         var img = node.getElementsByTagName("img").length;
-        var li = node.getElementsByTagName("li").length-100;
+        var li = node.getElementsByTagName("li").length - 100;
         var input = node.getElementsByTagName("input").length;
 
         var embedCount = 0;

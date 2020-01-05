@@ -1017,46 +1017,6 @@
       }
     },
 
-    readScript: function (node) {
-      while (this.currentChar < this.html.length) {
-        var c = this.nextChar();
-        var nextC = this.peekNext();
-        if (c === "<") {
-          if (nextC === "!" || nextC === "?") {
-            
-            this.currentChar++;
-            node.appendChild(this.discardNextComment());
-            continue;
-          }
-          if (nextC === "/" && this.html.substr(this.currentChar, 8 ).toLowerCase() == "/script>") {
-            
-            this.currentChar--;
-            
-            return;
-          }
-        }
-        
-        
-        
-
-        var haveTextNode = node.lastChild && node.lastChild.nodeType === Node.TEXT_NODE;
-        var textNode = haveTextNode ? node.lastChild : new Text();
-        var n = this.html.indexOf("<", this.currentChar);
-        
-        
-        this.currentChar--;
-        if (n === -1) {
-          textNode.innerHTML += this.html.substring(this.currentChar, this.html.length);
-          this.currentChar = this.html.length;
-        } else {
-          textNode.innerHTML += this.html.substring(this.currentChar, n);
-          this.currentChar = n;
-        }
-        if (!haveTextNode)
-          node.appendChild(textNode);
-      }
-    },
-
     discardNextComment: function() {
       if (this.match("--")) {
         this.discardTo("-->");
@@ -1131,11 +1091,7 @@
 
       
       if (!closed) {
-        if (localName == "script") {
-          this.readScript(node);
-        } else {
-          this.readChildren(node);
-        }
+        this.readChildren(node);
         var closingTag = "</" + localName + ">";
         if (!this.match(closingTag)) {
           this.error("expected '" + closingTag + "' and got " + this.html.substr(this.currentChar, closingTag.length));
