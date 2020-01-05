@@ -197,20 +197,20 @@ function openWindow(parent, url, target, features, args, noExternalArgs) {
       var sstring = Components.classes["@mozilla.org/supports-string;1"]
                               .createInstance(nsISupportsString);
       sstring.data = uri;
-      uriArray.appendElement(sstring,  false);
+      uriArray.appendElement(sstring);
     });
-    argArray.appendElement(uriArray,  false);
+    argArray.appendElement(uriArray);
   } else {
-    argArray.appendElement(null,  false);
+    argArray.appendElement(null);
   }
 
   
   
   
-  argArray.appendElement(null,  false); 
-  argArray.appendElement(null,  false); 
-  argArray.appendElement(null,  false); 
-  argArray.appendElement(null,  false); 
+  argArray.appendElement(null); 
+  argArray.appendElement(null); 
+  argArray.appendElement(null); 
+  argArray.appendElement(null); 
 
   return Services.ww.openWindow(parent, url, target, features, argArray);
 }
@@ -223,7 +223,7 @@ function openPreferences() {
                        .createInstance(Components.interfaces.nsISupportsString);
   wuri.data = "about:preferences";
 
-  args.appendElement(wuri,  false);
+  args.appendElement(wuri);
 
   Services.ww.openWindow(null, gBrowserContentHandler.chromeURL,
                          "_blank",
@@ -251,10 +251,10 @@ function doSearch(searchTerm, cmdLine) {
                        .createInstance(Components.interfaces.nsISupportsString);
   wuri.data = submission.uri.spec;
 
-  args.appendElement(wuri,  false);
-  args.appendElement(null,  false);
-  args.appendElement(null,  false);
-  args.appendElement(submission.postData,  false);
+  args.appendElement(wuri);
+  args.appendElement(null);
+  args.appendElement(null);
+  args.appendElement(submission.postData);
 
   
   

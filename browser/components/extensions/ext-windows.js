@@ -123,19 +123,19 @@ this.windows = class extends ExtensionAPI {
             }
             createData.incognito = incognito;
 
-            args.appendElement(tab,  false);
+            args.appendElement(tab);
           } else if (createData.url !== null) {
             if (Array.isArray(createData.url)) {
               let array = Cc["@mozilla.org/array;1"].createInstance(Ci.nsIMutableArray);
               for (let url of createData.url) {
-                array.appendElement(mkstr(url),  false);
+                array.appendElement(mkstr(url));
               }
-              args.appendElement(array,  false);
+              args.appendElement(array);
             } else {
-              args.appendElement(mkstr(createData.url),  false);
+              args.appendElement(mkstr(createData.url));
             }
           } else {
-            args.appendElement(mkstr(aboutNewTabService.newTabURL),  false);
+            args.appendElement(mkstr(aboutNewTabService.newTabURL));
           }
 
           let features = ["chrome"];

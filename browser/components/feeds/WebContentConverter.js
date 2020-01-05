@@ -437,7 +437,7 @@ WebContentConverterRegistrar.prototype = {
           let eps = Cc["@mozilla.org/uriloader/external-protocol-service;1"].
                     getService(Ci.nsIExternalProtocolService);
           let handlerInfo = eps.getProtocolHandlerInfo(protocol);
-          handlerInfo.possibleApplicationHandlers.appendElement(handler, false);
+          handlerInfo.possibleApplicationHandlers.appendElement(handler);
 
           
           
