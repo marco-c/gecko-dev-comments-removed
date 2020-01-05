@@ -326,7 +326,8 @@ public:
 
 
 
-  void ComposeStyle(AnimationRule& aStyleRule,
+  template<typename ComposeAnimationResult>
+  void ComposeStyle(ComposeAnimationResult&& aComposeResult,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   void NotifyEffectTimingUpdated();

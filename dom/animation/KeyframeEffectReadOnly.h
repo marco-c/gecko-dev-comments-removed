@@ -258,7 +258,8 @@ public:
   
   
   
-  void ComposeStyle(AnimationRule& aStyleRule,
+  template<typename ComposeAnimationResult>
+  void ComposeStyle(ComposeAnimationResult&& aRestultContainer,
                     const nsCSSPropertyIDSet& aPropertiesToSkip);
 
   

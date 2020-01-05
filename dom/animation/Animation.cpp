@@ -14,6 +14,7 @@
 #include "mozilla/AsyncEventDispatcher.h" 
 #include "mozilla/Maybe.h" 
 #include "mozilla/AnimationRule.h" 
+#include "mozilla/TypeTraits.h" 
 #include "nsAnimationManager.h" 
 #include "nsDOMMutationObserver.h" 
 #include "nsIDocument.h" 
@@ -942,8 +943,9 @@ Animation::WillComposeStyle()
   }
 }
 
+template<typename ComposeAnimationResult>
 void
-Animation::ComposeStyle(AnimationRule& aStyleRule,
+Animation::ComposeStyle(ComposeAnimationResult&& aComposeResult,
                         const nsCSSPropertyIDSet& aPropertiesToSkip)
 {
   if (!mEffect) {
@@ -1005,7 +1007,8 @@ Animation::ComposeStyle(AnimationRule& aStyleRule,
 
     KeyframeEffectReadOnly* keyframeEffect = mEffect->AsKeyframeEffect();
     if (keyframeEffect) {
-      keyframeEffect->ComposeStyle(aStyleRule, aPropertiesToSkip);
+      keyframeEffect->ComposeStyle(Forward<ComposeAnimationResult>(aComposeResult),
+                                   aPropertiesToSkip);
     }
   }
 
@@ -1505,6 +1508,18 @@ Animation::IsRunningOnCompositor() const
          mEffect->AsKeyframeEffect() &&
          mEffect->AsKeyframeEffect()->IsRunningOnCompositor();
 }
+
+template
+void
+Animation::ComposeStyle<RefPtr<AnimValuesStyleRule>&>(
+  RefPtr<AnimValuesStyleRule>& aAnimationRule,
+  const nsCSSPropertyIDSet& aPropertiesToSkip);
+
+template
+void
+Animation::ComposeStyle<RefPtr<ServoAnimationRule>&>(
+  RefPtr<ServoAnimationRule>& aAnimationRule,
+  const nsCSSPropertyIDSet& aPropertiesToSkip);
 
 } 
 } 
