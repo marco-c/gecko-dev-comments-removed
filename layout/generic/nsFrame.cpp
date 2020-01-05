@@ -3983,7 +3983,7 @@ static FrameTarget GetSelectionClosestFrameForLine(
 {
   nsIFrame *frame = aLine->mFirstChild;
   
-  if (aLine == aParent->EndLine())
+  if (aLine == aParent->LinesEnd())
     return DrillDownToSelectionFrame(aParent, true, aFlags);
   nsIFrame *closestFromIStart = nullptr, *closestFromIEnd = nullptr;
   nscoord closestIStart = aLine->IStart(), closestIEnd = aLine->IEnd();
@@ -4044,8 +4044,8 @@ static FrameTarget GetSelectionClosestFrameForBlock(nsIFrame* aFrame,
     return FrameTarget::Null();
 
   
-  nsBlockFrame::LineIterator firstLine = bf->BeginLine();
-  nsBlockFrame::LineIterator end = bf->EndLine();
+  nsBlockFrame::LineIterator firstLine = bf->LinesBegin();
+  nsBlockFrame::LineIterator end = bf->LinesEnd();
   if (firstLine == end) {
     nsIContent *blockContent = aFrame->GetContent();
     if (blockContent) {
