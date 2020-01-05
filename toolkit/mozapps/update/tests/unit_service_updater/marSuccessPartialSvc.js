@@ -18,7 +18,9 @@ function run_test() {
   gTestFiles[gTestFiles.length - 2].comparePerms = 0o644;
   gTestDirs = gTestDirsPartialSuccess;
   setupDistributionDir();
-  setupUpdaterTest(FILE_PARTIAL_MAR, false);
+  
+  
+  setupUpdaterTest(FILE_PARTIAL_MAR, false, "test/../");
 }
 
 
@@ -32,13 +34,6 @@ function setupUpdaterTestFinished() {
 
 
 function runUpdateFinished() {
-  checkPostUpdateAppLog();
-}
-
-
-
-
-function checkPostUpdateAppLogFinished() {
   checkAppBundleModTime();
   standardInit();
   Assert.equal(readStatusState(), STATE_NONE,
@@ -49,7 +44,7 @@ function checkPostUpdateAppLogFinished() {
                "the update manager updateCount attribute" + MSG_SHOULD_EQUAL);
   Assert.equal(gUpdateManager.getUpdateAt(0).state, STATE_SUCCEEDED,
                "the update state" + MSG_SHOULD_EQUAL);
-  checkPostUpdateRunningFile(true);
+  checkPostUpdateRunningFile(false);
   checkFilesAfterUpdateSuccess(getApplyDirFile);
   checkUpdateLogContents(LOG_PARTIAL_SUCCESS);
   checkDistributionDir();
