@@ -184,8 +184,10 @@ protected:
   
   
   nsIFrame* GetFrameForFirstRangeStartOrLastRangeEnd(
-    nsDirection aDirection, int32_t* aOutOffset, nsINode** aOutNode = nullptr,
-    int32_t* aOutNodeOffset = nullptr) const;
+    nsDirection aDirection,
+    int32_t* aOutOffset,
+    nsIContent** aOutContent = nullptr,
+    int32_t* aOutContentOffset = nullptr) const;
 
   nsresult DragCaretInternal(const nsPoint& aPoint);
   nsPoint AdjustDragBoundary(const nsPoint& aPoint) const;
