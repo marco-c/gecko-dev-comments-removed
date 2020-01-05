@@ -438,12 +438,6 @@ public:
 
   virtual already_AddRefed<nsISupports> SaveWindowState() override;
   virtual nsresult RestoreWindowState(nsISupports *aState) override;
-  virtual void SuspendTimeouts(uint32_t aIncrease = 1,
-                               bool aFreezeChildren = true,
-                               bool aFreezeWorkers = true) override;
-  virtual nsresult ResumeTimeouts(bool aThawChildren = true,
-                                  bool aThawWorkers = true) override;
-  virtual uint32_t TimeoutSuspendCount() override;
 
   virtual void NewSuspend();
   virtual void NewResume();
@@ -454,10 +448,6 @@ public:
   virtual void NewSyncStateFromParentWindow();
 
   virtual nsresult FireDelayedDOMEvents() override;
-  virtual bool IsFrozen() const override
-  {
-    return mIsFrozen;
-  }
   virtual bool IsRunningTimeout() override { return mTimeoutFiringDepth > 0; }
 
   
@@ -1631,19 +1621,6 @@ public:
   already_AddRefed<nsIWidget> GetMainWidget();
   nsIWidget* GetNearestWidget() const;
 
-  void Freeze()
-  {
-    NS_ASSERTION(!IsFrozen(), "Double-freezing?");
-    mIsFrozen = true;
-    NotifyDOMWindowFrozen(this);
-  }
-
-  void Thaw()
-  {
-    mIsFrozen = false;
-    NotifyDOMWindowThawed(this);
-  }
-
   bool IsInModalState();
 
   
@@ -1770,14 +1747,6 @@ public:
   void GetConstellation(nsACString& aConstellation);
 
 protected:
-  
-  
-  
-  
-  
-  
-  bool                          mIsFrozen : 1;
-
   
   
   bool                          mFullScreen : 1;
@@ -1915,8 +1884,6 @@ protected:
 
   typedef nsTArray<RefPtr<mozilla::dom::StorageEvent>> nsDOMStorageEventArray;
   nsDOMStorageEventArray mPendingStorageEvents;
-
-  uint32_t mTimeoutsSuspendDepth;
 
   uint32_t mSuspendDepth;
   uint32_t mFreezeDepth;

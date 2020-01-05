@@ -216,17 +216,6 @@ public:
   virtual nsresult RestoreWindowState(nsISupports *aState) = 0;
 
   
-  virtual void SuspendTimeouts(uint32_t aIncrease = 1,
-                               bool aFreezeChildren = true,
-                               bool aFreezeWorkers = true) = 0;
-
-  
-  virtual nsresult ResumeTimeouts(bool aThawChildren = true,
-                                  bool aThawWorkers = true) = 0;
-
-  virtual uint32_t TimeoutSuspendCount() = 0;
-
-  
   
   
   
@@ -236,8 +225,6 @@ public:
   
   
   virtual nsresult FireDelayedDOMEvents() = 0;
-
-  virtual bool IsFrozen() const = 0;
 
   nsPIDOMWindowOuter* GetOuterWindow()
   {
