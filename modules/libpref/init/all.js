@@ -2836,6 +2836,8 @@ pref("plugins.click_to_play", false);
 #ifdef NIGHTLY_BUILD
 
 pref("plugins.navigator.hidden_ctp_plugin", "Shockwave Flash");
+#else
+pref("plugins.navigator.hidden_ctp_plugin", "");
 #endif
 
 pref("plugin.default.state", 2);
