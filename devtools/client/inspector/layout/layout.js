@@ -5,22 +5,9 @@
 "use strict";
 
 const Services = require("Services");
-const { Task } = require("devtools/shared/task");
 
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
-
-const SwatchColorPickerTooltip = require("devtools/client/shared/widgets/tooltip/SwatchColorPickerTooltip");
-
-const {
-  updateGridColor,
-  updateGridHighlighted,
-  updateGrids,
-} = require("./actions/grids");
-const {
-  updateShowGridLineNumbers,
-  updateShowInfiniteLines,
-} = require("./actions/highlighter-settings");
 
 const App = createFactory(require("./components/App"));
 
@@ -28,43 +15,19 @@ const { LocalizationHelper } = require("devtools/shared/l10n");
 const INSPECTOR_L10N =
   new LocalizationHelper("devtools/client/locales/inspector.properties");
 
-const SHOW_GRID_LINE_NUMBERS = "devtools.gridinspector.showGridLineNumbers";
 const SHOW_GRID_OUTLINE_PREF = "devtools.gridinspector.showGridOutline";
-const SHOW_INFINITE_LINES_PREF = "devtools.gridinspector.showInfiniteLines";
-
-
-const GRID_COLORS = [
-  "#05E4EE",
-  "#BB9DFF",
-  "#FFB53B",
-  "#71F362",
-  "#FF90FF",
-  "#FF90FF",
-  "#1B80FF",
-  "#FF2647"
-];
 
 function LayoutView(inspector, window) {
   this.document = window.document;
-  this.highlighters = inspector.highlighters;
   this.inspector = inspector;
   this.store = inspector.store;
-  this.walker = this.inspector.walker;
-
-  this.onGridLayoutChange = this.onGridLayoutChange.bind(this);
-  this.onHighlighterChange = this.onHighlighterChange.bind(this);
-  this.onSidebarSelect = this.onSidebarSelect.bind(this);
 
   this.init();
 }
 
 LayoutView.prototype = {
 
-  
-
-
-
-  init: Task.async(function* () {
+  init() {
     if (!this.inspector) {
       return;
     }
@@ -75,41 +38,20 @@ LayoutView.prototype = {
       onShowBoxModelHighlighter,
     } = this.inspector.boxmodel.getComponentProps();
 
-    this.layoutInspector = yield this.inspector.walker.getLayoutInspector();
-
-    this.loadHighlighterSettings();
-
-    this.highlighters.on("grid-highlighter-hidden", this.onHighlighterChange);
-    this.highlighters.on("grid-highlighter-shown", this.onHighlighterChange);
-    this.inspector.sidebar.on("select", this.onSidebarSelect);
-
-    
-    this.swatchColorPickerTooltip = new SwatchColorPickerTooltip(
-      this.inspector.toolbox.doc,
-      this.inspector,
-      {
-        supportsCssColor4ColorFunction: () => false
-      }
-    );
+    let {
+      getSwatchColorPickerTooltip,
+      setSelectedNode,
+      onSetGridOverlayColor,
+      onShowBoxModelHighlighterForNode,
+      onShowGridAreaHighlight,
+      onToggleGridHighlighter,
+      onToggleShowGridLineNumbers,
+      onToggleShowInfiniteLines,
+    } = this.inspector.gridInspector.getComponentProps();
 
     let app = App({
-      
-
-
-      getSwatchColorPickerTooltip: () => {
-        return this.swatchColorPickerTooltip;
-      },
-
-      
-
-
-
-
-
-      setSelectedNode: (nodeFront) => {
-        this.inspector.selection.setNodeFront(nodeFront, "layout-panel");
-      },
-
+      getSwatchColorPickerTooltip,
+      setSelectedNode,
       
 
 
@@ -123,127 +65,14 @@ LayoutView.prototype = {
       showGridOutline: Services.prefs.getBoolPref(SHOW_GRID_OUTLINE_PREF),
 
       onHideBoxModelHighlighter,
-
-      
-
-
-
-
-
-
-
-
-      onSetGridOverlayColor: (node, color) => {
-        this.store.dispatch(updateGridColor(node, color));
-        let { grids } = this.store.getState();
-
-        
-        
-        for (let grid of grids) {
-          if (grid.nodeFront === node && grid.highlighted) {
-            let highlighterSettings = this.getGridHighlighterSettings(node);
-            this.highlighters.showGridHighlighter(node, highlighterSettings);
-          }
-        }
-      },
-
+      onSetGridOverlayColor,
       onShowBoxModelEditor,
       onShowBoxModelHighlighter,
-
-     
-
-
-
-
-
-
-
-
-      onShowBoxModelHighlighterForNode: (nodeFront, options) => {
-        let toolbox = this.inspector.toolbox;
-        toolbox.highlighterUtils.highlightNodeFront(nodeFront, options);
-      },
-
-      
-
-
-
-
-
-
-
-
-
-
-
-
-      onShowGridAreaHighlight: (node, gridAreaName, color) => {
-        let { highlighterSettings } = this.store.getState();
-
-        highlighterSettings.showGridArea = gridAreaName;
-        highlighterSettings.color = color;
-
-        this.highlighters.showGridHighlighter(node, highlighterSettings);
-      },
-
-      
-
-
-
-
-
-
-
-      onToggleGridHighlighter: node => {
-        let highlighterSettings = this.getGridHighlighterSettings(node);
-        this.highlighters.toggleGridHighlighter(node, highlighterSettings);
-      },
-
-      
-
-
-
-
-
-
-
-
-      onToggleShowGridLineNumbers: enabled => {
-        this.store.dispatch(updateShowGridLineNumbers(enabled));
-        Services.prefs.setBoolPref(SHOW_GRID_LINE_NUMBERS, enabled);
-
-        let { grids } = this.store.getState();
-
-        for (let grid of grids) {
-          if (grid.highlighted) {
-            let highlighterSettings = this.getGridHighlighterSettings(grid.nodeFront);
-            this.highlighters.showGridHighlighter(grid.nodeFront, highlighterSettings);
-          }
-        }
-      },
-
-      
-
-
-
-
-
-
-
-
-      onToggleShowInfiniteLines: enabled => {
-        this.store.dispatch(updateShowInfiniteLines(enabled));
-        Services.prefs.setBoolPref(SHOW_INFINITE_LINES_PREF, enabled);
-
-        let { grids } = this.store.getState();
-
-        for (let grid of grids) {
-          if (grid.highlighted) {
-            let highlighterSettings = this.getGridHighlighterSettings(grid.nodeFront);
-            this.highlighters.showGridHighlighter(grid.nodeFront, highlighterSettings);
-          }
-        }
-      }
+      onShowBoxModelHighlighterForNode,
+      onShowGridAreaHighlight,
+      onToggleGridHighlighter,
+      onToggleShowGridLineNumbers,
+      onToggleShowInfiniteLines,
     });
 
     let provider = createElement(Provider, {
@@ -261,163 +90,15 @@ LayoutView.prototype = {
       provider,
       defaultTab == "layoutview"
     );
-  }),
+  },
 
   
-
 
 
   destroy() {
-    this.highlighters.off("grid-highlighter-hidden", this.onHighlighterChange);
-    this.highlighters.off("grid-highlighter-shown", this.onHighlighterChange);
-    this.inspector.sidebar.off("select", this.onSidebarSelect);
-    this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
-
     this.document = null;
     this.inspector = null;
-    this.layoutInspector = null;
     this.store = null;
-    this.walker = null;
-  },
-
-  
-
-
-
-
-
-
-  getGridColorForNodeFront(nodeFront) {
-    let { grids } = this.store.getState();
-
-    for (let grid of grids) {
-      if (grid.nodeFront === nodeFront) {
-        return grid.color;
-      }
-    }
-
-    return null;
-  },
-
-  
-
-
-
-
-
-  getGridHighlighterSettings(nodeFront) {
-    let { highlighterSettings } = this.store.getState();
-
-    
-    let color = this.getGridColorForNodeFront(nodeFront);
-
-    
-    return Object.assign({}, highlighterSettings, {
-      color
-    });
-  },
-
-  
-
-
-  isPanelVisible() {
-    return this.inspector.toolbox.currentToolId === "inspector" &&
-           this.inspector.sidebar &&
-           this.inspector.sidebar.getCurrentTabID() === "layoutview";
-  },
-
-  
-
-
-  loadHighlighterSettings() {
-    let { dispatch } = this.store;
-
-    let showGridLineNumbers = Services.prefs.getBoolPref(SHOW_GRID_LINE_NUMBERS);
-    let showInfinteLines = Services.prefs.getBoolPref(SHOW_INFINITE_LINES_PREF);
-
-    dispatch(updateShowGridLineNumbers(showGridLineNumbers));
-    dispatch(updateShowInfiniteLines(showInfinteLines));
-  },
-
-  
-
-
-
-
-
-
-  updateGridPanel: Task.async(function* (gridFronts) {
-    
-    if (!this.inspector || !this.store) {
-      return;
-    }
-
-    
-    if (!gridFronts) {
-      gridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
-    }
-
-    let grids = [];
-    for (let i = 0; i < gridFronts.length; i++) {
-      let grid = gridFronts[i];
-      let nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
-
-      let fallbackColor = GRID_COLORS[i % GRID_COLORS.length];
-      let color = this.getGridColorForNodeFront(nodeFront) || fallbackColor;
-
-      grids.push({
-        id: i,
-        color,
-        gridFragments: grid.gridFragments,
-        highlighted: nodeFront == this.highlighters.gridHighlighterShown,
-        nodeFront,
-      });
-    }
-
-    this.store.dispatch(updateGrids(grids));
-  }),
-
-  
-
-
-
-
-
-  onGridLayoutChange(grids) {
-    if (this.isPanelVisible()) {
-      this.updateGridPanel(grids);
-    }
-  },
-
-  
-
-
-
-
-
-
-
-
-
-  onHighlighterChange(event, nodeFront) {
-    let highlighted = event === "grid-highlighter-shown";
-    this.store.dispatch(updateGridHighlighted(nodeFront, highlighted));
-  },
-
-  
-
-
-
-
-
-  onSidebarSelect() {
-    if (!this.isPanelVisible()) {
-      this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
-      return;
-    }
-
-    this.layoutInspector.on("grid-layout-changed", this.onGridLayoutChange);
-    this.updateGridPanel();
   },
 
 };
