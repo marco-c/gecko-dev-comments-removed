@@ -159,18 +159,15 @@ AnimationHelper::SampleAnimationForEachNode(TimeStamp aTime,
 
     activeAnimations = true;
 
-    MOZ_ASSERT((!animation.originTime().IsNull() &&
-                animation.startTime().type() != MaybeTimeDuration::Tnull_t) ||
+    MOZ_ASSERT(!animation.startTime().IsNull() ||
                animation.isNotPlaying(),
-               "If we are playing, we should have an origin time and a start"
-               " time");
+               "Failed to resolve start time of play-pending animations");
     
     
     TimeDuration elapsedDuration = animation.isNotPlaying()
       ? animation.holdTime()
-      : (aTime - animation.originTime() -
-         animation.startTime().get_TimeDuration())
-        .MultDouble(animation.playbackRate());
+      : (aTime - animation.startTime())
+          .MultDouble(animation.playbackRate());
     TimingParams timing;
     timing.mDuration.emplace(animation.duration());
     timing.mDelay = animation.delay();
@@ -543,21 +540,18 @@ AnimationHelper::SampleAnimations(CompositorAnimationStorage* aStorage,
                                                           transformData.appUnitsPerDevPixel(),
                                                           0, &transformData.bounds());
         gfx::Matrix4x4 frameTransform = transform;
+        
+        
+        
+        if (!transformData.hasPerspectiveParent()) {
+           nsLayoutUtils::PostTranslate(transform, origin,
+                                        transformData.appUnitsPerDevPixel(),
+                                        true);
+        }
 
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-
-        
-        
-        
+        transform.PostScale(transformData.inheritedXScale(),
+                            transformData.inheritedYScale(),
+                            1);
 
         aStorage->SetAnimatedValue(iter.Key(),
                                    Move(transform), Move(frameTransform),
