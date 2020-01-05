@@ -281,7 +281,9 @@ private:
 
   
   
-  RefPtr<nsStyleContext> mNonInheritingStyleContexts[static_cast<nsCSSAnonBoxes::NonInheritingBase>(nsCSSAnonBoxes::NonInheriting::_Count)];
+  EnumeratedArray<nsCSSAnonBoxes::NonInheriting,
+                  nsCSSAnonBoxes::NonInheriting::_Count,
+                  RefPtr<nsStyleContext>> mNonInheritingStyleContexts;
 
   static bool sInServoTraversal;
 };
