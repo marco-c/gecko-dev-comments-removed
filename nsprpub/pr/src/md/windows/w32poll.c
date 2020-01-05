@@ -155,8 +155,7 @@ PRInt32 _PR_MD_PR_POLL(PRPollDesc *pds, PRIntn npds, PRIntervalTime timeout)
                 pd->out_flags = 0;  
                 
                 bottom = PR_GetIdentitiesLayer(pd->fd, PR_NSPR_IO_LAYER);
-                
-
+                PR_ASSERT(NULL != bottom);  
                 if ((NULL != bottom)
                 && (_PR_FILEDESC_OPEN == bottom->secret->state))
                 {

@@ -15,15 +15,6 @@ static PRDescIdentity sWinSockShutdownLayerIdentity;
 static PRIOMethods sWinSockShutdownLayerMethods;
 static PRIOMethods *sWinSockShutdownLayerMethodsPtr = nullptr;
 
-namespace mozilla {
-namespace net {
-
-extern PRDescIdentity nsNamedPipeLayerIdentity;
-
-} 
-} 
-
-
 PRStatus
 WinSockClose(PRFileDesc *aFd)
 {
@@ -52,12 +43,6 @@ nsresult mozilla::net::AttachShutdownLayer(PRFileDesc *aFd)
     sWinSockShutdownLayerMethods = *PR_GetDefaultIOMethods();
     sWinSockShutdownLayerMethods.close = WinSockClose;
     sWinSockShutdownLayerMethodsPtr = &sWinSockShutdownLayerMethods;
-  }
-
-  if (PR_GetIdentitiesLayer(aFd, mozilla::net::nsNamedPipeLayerIdentity)) {
-    
-    
-    return NS_OK;
   }
 
   PRFileDesc * layer;
