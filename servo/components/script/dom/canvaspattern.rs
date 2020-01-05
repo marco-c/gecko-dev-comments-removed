@@ -2,7 +2,7 @@
 
 
 
-use canvas_traits::{FillOrStrokeStyle, SurfaceStyle, RepetitionStyle};
+use canvas_traits::{FillOrStrokeStyle, RepetitionStyle, SurfaceStyle};
 use dom::bindings::codegen::Bindings::CanvasPatternBinding;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::Root;

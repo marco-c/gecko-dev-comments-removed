@@ -2,7 +2,7 @@
 
 
 
-use actor::{Actor, ActorRegistry, ActorMessageStatus};
+use actor::{Actor, ActorMessageStatus, ActorRegistry};
 use actors::timeline::HighResolutionStamp;
 use devtools_traits::DevtoolScriptControlMsg;
 use ipc_channel::ipc::IpcSender;

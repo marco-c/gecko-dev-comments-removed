@@ -2,7 +2,7 @@
 
 
 
-use cssparser::{Parser, Token, SourcePosition, Delimiter, TokenSerializationType, ToCss};
+use cssparser::{Delimiter, Parser, SourcePosition, ToCss, Token, TokenSerializationType};
 use properties::DeclaredValue;
 use std::ascii::AsciiExt;
 use std::collections::{HashMap, HashSet};

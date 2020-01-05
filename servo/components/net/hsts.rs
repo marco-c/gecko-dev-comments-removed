@@ -2,7 +2,7 @@
 
 
 
-use net_traits::{IncludeSubdomains, IPV4_REGEX, IPV6_REGEX};
+use net_traits::{IPV4_REGEX, IPV6_REGEX, IncludeSubdomains};
 use rustc_serialize::json::{decode};
 use std::str::{from_utf8};
 use time;
@@ -131,4 +131,3 @@ pub fn secure_url(url: &Url) -> Url {
         url.clone()
     }
 }
-

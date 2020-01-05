@@ -2,16 +2,15 @@
 
 
 
-#![feature(alloc)]
-#![feature(box_syntax)]
-
 
 #![cfg_attr(any(target_arch = "x86_64", target_arch = "aarch64"), feature(convert))]
+#![cfg_attr(any(target_os = "linux", target_os = "android"), feature(heap_api))]
 
+#![feature(alloc)]
+#![feature(box_syntax)]
 #![feature(custom_attribute)]
 #![feature(custom_derive)]
 #![feature(hashmap_hasher)]
-#![cfg_attr(any(target_os = "linux", target_os = "android"), feature(heap_api))]
 #![feature(mpsc_select)]
 #![feature(plugin)]
 #![feature(str_char)]
@@ -22,66 +21,71 @@
 #![plugin(serde_macros)]
 
 #[macro_use]
-extern crate log;
-extern crate serde;
-
-extern crate alloc;
-extern crate azure;
-#[macro_use] extern crate bitflags;
-extern crate fnv;
-extern crate euclid;
-extern crate ipc_channel;
+extern crate bitflags;
 #[macro_use]
 extern crate lazy_static;
-extern crate layers;
-extern crate libc;
+#[macro_use]
+extern crate log;
 #[macro_use]
 extern crate profile_traits;
-extern crate script_traits;
-extern crate rustc_serialize;
-extern crate net_traits;
 #[macro_use]
 extern crate util;
-extern crate msg;
-extern crate rand;
-
-#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
-extern crate simd;
-
-extern crate smallvec;
-extern crate string_cache;
-extern crate style;
-extern crate skia;
-extern crate time;
-extern crate url;
-
-extern crate gfx_traits;
+extern crate alloc;
+extern crate azure;
 extern crate canvas_traits;
-
-
-
-extern crate harfbuzz;
-
-
-#[cfg(any(target_os = "linux", target_os = "android"))]
-extern crate fontconfig;
-
-#[cfg(any(target_os = "linux", target_os = "android"))]
-extern crate freetype;
 
 
 #[cfg(target_os = "macos")] extern crate core_foundation;
 #[cfg(target_os = "macos")] extern crate core_graphics;
 #[cfg(target_os = "macos")] extern crate core_text;
 
+extern crate euclid;
+extern crate fnv;
+
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+extern crate fontconfig;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+extern crate freetype;
+
+extern crate gfx_traits;
+
+
+
+extern crate harfbuzz;
+
+extern crate ipc_channel;
+extern crate layers;
+extern crate libc;
+extern crate msg;
+extern crate net_traits;
+extern crate rand;
+extern crate rustc_serialize;
+extern crate script_traits;
+extern crate serde;
+
+#[cfg(any(target_arch = "x86_64", target_arch = "aarch64"))]
+extern crate simd;
+
+extern crate skia;
+extern crate smallvec;
+extern crate string_cache;
+extern crate style;
+extern crate time;
+extern crate url;
+
+
 pub use paint_context::PaintContext;
+
+
+mod filters;
 
 
 mod paint_context;
 
+#[deny(unsafe_code)]
 #[path = "display_list/mod.rs"]
 pub mod display_list;
-pub mod paint_task;
 
 
 pub mod font;
@@ -89,8 +93,7 @@ pub mod font_cache_task;
 pub mod font_context;
 pub mod font_template;
 
-
-mod filters;
+pub mod paint_task;
 
 
 #[path = "platform/mod.rs"]

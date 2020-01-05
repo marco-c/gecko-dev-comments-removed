@@ -3,7 +3,7 @@
 
 
 
-use canvas_traits::{CanvasMsg, CanvasWebGLMsg, WebGLResult, WebGLError};
+use canvas_traits::{CanvasMsg, CanvasWebGLMsg, WebGLError, WebGLResult};
 use dom::bindings::codegen::Bindings::WebGLProgramBinding;
 use dom::bindings::codegen::Bindings::WebGLRenderingContextBinding::WebGLRenderingContextConstants as constants;
 use dom::bindings::global::GlobalRef;

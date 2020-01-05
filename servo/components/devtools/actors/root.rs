@@ -7,7 +7,7 @@
 
 
 
-use actor::{Actor, ActorRegistry, ActorMessageStatus};
+use actor::{Actor, ActorMessageStatus, ActorRegistry};
 use actors::tab::{TabActor, TabActorMsg};
 use protocol::JsonPacketStream;
 use rustc_serialize::json;

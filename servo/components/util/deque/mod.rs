@@ -47,17 +47,15 @@
 
 
 
-pub use self::Stolen::{Empty, Abort, Data};
-
 use std::marker;
-use std::mem::{forget, align_of, size_of, transmute};
+use std::mem::{align_of, forget, size_of, transmute};
 use std::ptr;
 use alloc::heap::{allocate, deallocate};
 use std::sync::Arc;
-
 use std::sync::Mutex;
 use std::sync::atomic::Ordering::{Relaxed, SeqCst};
 use std::sync::atomic::{AtomicIsize, AtomicPtr};
+pub use self::Stolen::{Abort, Data, Empty};
 
 
 

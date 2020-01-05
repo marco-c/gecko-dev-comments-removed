@@ -2,7 +2,7 @@
 
 
 
-use actor::{Actor, ActorRegistry, ActorMessageStatus};
+use actor::{Actor, ActorMessageStatus, ActorRegistry};
 use msg::constellation_msg::WorkerId;
 use rustc_serialize::json;
 use std::net::TcpStream;

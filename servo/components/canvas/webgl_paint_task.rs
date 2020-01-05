@@ -2,8 +2,8 @@
 
 
 
-use canvas_traits::{CanvasMsg, CanvasWebGLMsg, CanvasCommonMsg, FromLayoutMsg, FromPaintMsg};
-use canvas_traits::{WebGLShaderParameter, WebGLFramebufferBindingRequest};
+use canvas_traits::{CanvasCommonMsg, CanvasMsg, CanvasWebGLMsg, FromLayoutMsg, FromPaintMsg};
+use canvas_traits::{WebGLFramebufferBindingRequest, WebGLShaderParameter};
 use core::nonzero::NonZero;
 use euclid::size::Size2D;
 use gleam::gl;
@@ -11,10 +11,10 @@ use gleam::gl::types::{GLsizei};
 use ipc_channel::ipc::{self, IpcSender, IpcSharedMemory};
 use ipc_channel::router::ROUTER;
 use layers::platform::surface::NativeSurface;
-use offscreen_gl_context::{GLContext, GLContextAttributes, ColorAttachmentType};
+use offscreen_gl_context::{ColorAttachmentType, GLContext, GLContextAttributes};
 use std::borrow::ToOwned;
 use std::slice::bytes::copy_memory;
-use std::sync::mpsc::{channel, Sender};
+use std::sync::mpsc::{Sender, channel};
 use util::task::spawn_named;
 use util::vec::byte_swap;
 

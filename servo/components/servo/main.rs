@@ -17,17 +17,15 @@
 
 #![feature(start)]
 
-
-extern crate servo;
-
-
-extern crate glutin_app as app;
-extern crate time;
-extern crate env_logger;
-
 #[cfg(target_os = "android")]
 #[macro_use]
 extern crate android_glue;
+
+extern crate glutin_app as app;
+extern crate env_logger;
+
+extern crate servo;
+extern crate time;
 
 use servo::Browser;
 use servo::compositing::windowing::WindowEvent;

@@ -2,7 +2,7 @@
 
 
 
-use actor::{Actor, ActorRegistry, ActorMessageStatus};
+use actor::{Actor, ActorMessageStatus, ActorRegistry};
 use protocol::JsonPacketStream;
 use rustc_serialize::json;
 use std::net::TcpStream;

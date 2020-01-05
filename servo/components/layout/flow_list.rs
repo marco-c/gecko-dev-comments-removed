@@ -4,7 +4,7 @@
 
 use flow::Flow;
 use flow_ref::{self, FlowRef};
-use std::collections::{linked_list, LinkedList};
+use std::collections::{LinkedList, linked_list};
 
 
 

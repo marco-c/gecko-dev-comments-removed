@@ -5,8 +5,8 @@
 
 
 
-use std::sync::mpsc::{channel, Receiver};
-use std::thread::{spawn, sleep_ms};
+use std::sync::mpsc::{Receiver, channel};
+use std::thread::{sleep_ms, spawn};
 
 pub fn oneshot(duration_ms: u32) -> Receiver<()> {
     let (tx, rx) = channel();

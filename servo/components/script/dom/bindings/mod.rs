@@ -132,9 +132,6 @@
 
 
 
-#![allow(unsafe_code)]
-#![deny(missing_docs, non_snake_case)]
-
 pub mod callback;
 pub mod cell;
 pub mod conversions;

@@ -2,7 +2,7 @@
 
 
 
-use std::cmp::{PartialOrd, PartialEq, Ordering};
+use std::cmp::{Ordering, PartialEq, PartialOrd};
 use std::marker::PhantomData;
 use std::ops;
 use super::smallvec::VecLike;
