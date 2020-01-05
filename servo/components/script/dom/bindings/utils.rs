@@ -41,6 +41,7 @@ use std::os::raw::c_void;
 use std::ptr;
 use std::slice;
 use util::non_geckolib::jsstring_to_str;
+use util::prefs;
 
 
 pub struct WindowProxyHandler(pub *const libc::c_void);
@@ -557,3 +558,31 @@ unsafe extern "C" fn instance_class_has_proto_at_depth(clasp: *const js::jsapi::
 pub const DOM_CALLBACKS: DOMCallbacks = DOMCallbacks {
     instanceClassMatchesProto: Some(instance_class_has_proto_at_depth),
 };
+
+
+pub struct Prefable<T: 'static> {
+    
+    pub pref: Option<&'static str>,
+    
+    pub specs: &'static [T],
+    
+    
+    pub terminator: bool,
+}
+
+impl<T> Prefable<T> {
+    
+    
+    pub fn specs(&self) -> &'static [T] {
+        if let Some(pref) = self.pref {
+            if !prefs::get_pref(pref).as_boolean().unwrap_or(false) {
+                return if self.terminator {
+                    &self.specs[self.specs.len() - 1..]
+                } else {
+                    &[]
+                };
+            }
+        }
+        self.specs
+    }
+}
