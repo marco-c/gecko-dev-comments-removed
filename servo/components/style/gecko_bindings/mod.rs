@@ -4,7 +4,6 @@
 
 #[allow(dead_code, improper_ctypes, non_camel_case_types)]
 pub mod bindings;
-pub mod ptr;
 
 
 
