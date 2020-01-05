@@ -49,8 +49,7 @@ pub fn dispatch_event<'a, 'b>(target: &JSRef<'a, EventTarget>,
                 event.current_target.assign(Some(cur_target.deref().clone()));
                 for listener in listeners.iter() {
                     
-                    
-                    assert!(listener.HandleEvent_(&**cur_target, event, ReportExceptions).is_ok());
+                    let _ = listener.HandleEvent_(&**cur_target, event, ReportExceptions);
 
                     if event.deref().stop_immediate {
                         break;
@@ -79,8 +78,8 @@ pub fn dispatch_event<'a, 'b>(target: &JSRef<'a, EventTarget>,
         for listeners in opt_listeners.iter() {
             for listener in listeners.iter() {
                 
-                
-                assert!(listener.HandleEvent_(target, event, ReportExceptions).is_ok());
+                let _ = listener.HandleEvent_(target, event, ReportExceptions);
+
                 if event.deref().stop_immediate {
                     break;
                 }
@@ -98,8 +97,7 @@ pub fn dispatch_event<'a, 'b>(target: &JSRef<'a, EventTarget>,
                     event.deref_mut().current_target.assign(Some(cur_target.deref().clone()));
                     for listener in listeners.iter() {
                         
-                        
-                        assert!(listener.HandleEvent_(&**cur_target, event, ReportExceptions).is_ok());
+                        let _ = listener.HandleEvent_(&**cur_target, event, ReportExceptions);
 
                         if event.deref().stop_immediate {
                             break;
