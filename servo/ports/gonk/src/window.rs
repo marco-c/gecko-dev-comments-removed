@@ -4,7 +4,7 @@
 
 
 
-use compositing::compositor_task::{mod, CompositorProxy, CompositorReceiver};
+use compositing::compositor_task::{self, CompositorProxy, CompositorReceiver};
 use compositing::windowing::{WindowEvent, WindowMethods};
 use geom::scale_factor::ScaleFactor;
 use geom::size::TypedSize2D;

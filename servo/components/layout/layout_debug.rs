@@ -5,7 +5,7 @@
 
 
 
-#![macro_escape]
+#![macro_use]
 
 use flow_ref::FlowRef;
 use flow;
