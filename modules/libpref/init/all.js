@@ -965,7 +965,7 @@ pref("devtools.debugger.prompt-connection", true);
 
 pref("devtools.debugger.forbid-certified-apps", true);
 
-pref("devtools.apps.forbidden-permissions", "embed-apps,embed-widgets");
+pref("devtools.apps.forbidden-permissions", "embed-apps");
 
 
 pref("devtools.defaultColorUnit", "authored");

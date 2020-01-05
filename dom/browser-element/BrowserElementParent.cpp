@@ -177,13 +177,6 @@ BrowserElementParent::DispatchOpenWindowEvent(Element* aOpenerFrameElement,
     return BrowserElementParent::OPEN_WINDOW_IGNORED;
   }
 
-  
-  nsCOMPtr<nsIMozBrowserFrame> browserFrame =
-    do_QueryInterface(aOpenerFrameElement);
-  if (browserFrame && browserFrame->GetReallyIsWidget()) {
-    return BrowserElementParent::OPEN_WINDOW_CANCELLED;
-  }
-
   nsEventStatus status = nsEventStatus_eIgnore;
   bool dispatchSucceeded =
     DispatchCustomDOMEvent(aOpenerFrameElement,

@@ -43,7 +43,6 @@
 #include "nsIDOMStorage.h"
 #include "nsIContentViewer.h"
 #include "nsIDocumentLoaderFactory.h"
-#include "nsIMozBrowserFrame.h"
 #include "nsCURILoader.h"
 #include "nsDocShellCID.h"
 #include "nsDOMCID.h"
@@ -10772,35 +10771,6 @@ nsDocShell::DoURILoad(nsIURI* aURI,
   } else {
     MOZ_ASSERT(aContentPolicyType == nsIContentPolicy::TYPE_DOCUMENT,
     "DoURILoad thinks this is a document and InternalLoad does not");
-  }
-
-
-  
-  
-  
-  
-  
-
-  
-  
-  bool isAbout = false;
-  rv = aURI->SchemeIs("about", &isAbout);
-  if (NS_SUCCEEDED(rv) && !isAbout &&
-      nsIDocShell::GetIsApp()) {
-    nsCOMPtr<Element> frameElement = mScriptGlobal->AsOuter()->GetFrameElementInternal();
-    if (frameElement) {
-      nsCOMPtr<nsIMozBrowserFrame> browserFrame = do_QueryInterface(frameElement);
-      
-      
-      
-      if (browserFrame && !browserFrame->GetReallyIsApp()) {
-        nsCOMPtr<nsIObserverService> serv = services::GetObserverService();
-        if (serv) {
-            serv->NotifyObservers(GetDocument(), "invalid-widget", nullptr);
-        }
-        return NS_ERROR_MALFORMED_URI;
-      }
-    }
   }
 
   
