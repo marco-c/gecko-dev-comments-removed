@@ -44,6 +44,8 @@ use std::cast;
 use std::cell::{RefCell, Ref, RefMut};
 use std::iter::{Map, Filter};
 use std::mem;
+use style::ComputedValues;
+use sync::Arc;
 
 use serialize::{Encoder, Encodable};
 
@@ -144,8 +146,15 @@ enum SuppressObserver {
 }
 
 
+pub struct SharedLayoutData {
+    
+    pub style: Option<Arc<ComputedValues>>,
+}
+
+
 pub struct LayoutData {
     chan: Option<LayoutChan>,
+    shared_data: SharedLayoutData,
     data: *(),
 }
 
