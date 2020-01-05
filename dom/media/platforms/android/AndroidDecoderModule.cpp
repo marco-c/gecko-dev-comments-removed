@@ -151,6 +151,13 @@ AndroidDecoderModule::SupportsMimeType(const nsACString& aMimeType,
     return false;
   }
 
+  
+  
+  if (aMimeType.EqualsLiteral("audio/opus")) {
+    LOG("Rejecting audio of type %s", aMimeType.Data());
+    return false;
+  }
+
   return java::HardwareCodecCapabilityUtils::FindDecoderCodecInfoForMimeType(
       nsCString(TranslateMimeType(aMimeType)));
 }
