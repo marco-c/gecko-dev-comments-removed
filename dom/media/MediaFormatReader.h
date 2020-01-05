@@ -249,7 +249,6 @@ private:
     
     bool mFlushed;
     MozPromiseHolder<ShutdownPromise> mShutdownPromise;
-    bool mShuttingDown = false; 
 
     MozPromiseRequestHolder<MediaDataDecoder::DecodePromise> mDrainRequest;
     DrainState mDrainState;
