@@ -833,11 +833,6 @@ nsSocketTransportService::MarkTheLastElementOfPendingQueue()
 NS_IMETHODIMP
 nsSocketTransportService::Run()
 {
-#ifdef MOZ_ENABLE_PROFILER_SPS
-    char stackBaseGuess; 
-    profiler_register_thread(PR_GetThreadName(PR_GetCurrentThread()), &stackBaseGuess);
-#endif 
-
     SOCKET_LOG(("STS thread init %d sockets\n", gMaxCount));
 
     psm::InitializeSSLServerCertVerificationThreads();
@@ -1018,10 +1013,6 @@ nsSocketTransportService::Run()
     psm::StopSSLServerCertVerificationThreads();
 
     SOCKET_LOG(("STS thread exit\n"));
-
-#ifdef MOZ_ENABLE_PROFILER_SPS
-    profiler_unregister_thread();
-#endif 
 
     return NS_OK;
 }
