@@ -599,7 +599,17 @@ AudioStream::DataCallback(void* aBuffer, long aFrames)
   auto writer = AudioBufferWriter(
     reinterpret_cast<AudioDataValue*>(aBuffer), mOutChannels, aFrames);
 
-  MOZ_ASSERT(mState != INITIALIZED);
+  if (!strcmp(cubeb_get_backend_id(CubebUtils::GetCubebContext()), "winmm")) {
+    
+    
+    if (mState == INITIALIZED) {
+      NS_WARNING("data callback fires before cubeb_stream_start() is called");
+      mAudioClock.UpdateFrameHistory(0, aFrames);
+      return writer.WriteZeros(aFrames);
+    }
+  } else {
+    MOZ_ASSERT(mState != INITIALIZED);
+  }
 
   
   
