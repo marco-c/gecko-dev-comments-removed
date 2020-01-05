@@ -194,7 +194,10 @@ public:
   {
     RefPtr<MediaDecoderStateMachine> self = this;
     nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction([self, aEndTime] () {
-      self->mFragmentEndTime = aEndTime;
+      
+      self->mFragmentEndTime = aEndTime >= 0
+        ? media::TimeUnit::FromMicroseconds(aEndTime)
+        : media::TimeUnit::Invalid();
     });
     OwnerThread()->Dispatch(r.forget());
   }
@@ -541,7 +544,7 @@ private:
   }
 
   
-  int64_t mFragmentEndTime;
+  media::TimeUnit mFragmentEndTime = media::TimeUnit::Invalid();
 
   
   RefPtr<media::MediaSink> mMediaSink;
