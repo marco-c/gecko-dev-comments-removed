@@ -31,6 +31,7 @@ const Strings = Services.strings.createBundle(
 const WorkerIcon = "chrome://devtools/skin/images/debugging-workers.svg";
 const MORE_INFO_URL = "https://developer.mozilla.org/en-US/docs/Tools/about%3Adebugging";
 const PROCESS_COUNT_PREF = "dom.ipc.processCount";
+const MULTI_OPTOUT_PREF = "dom.ipc.multiOptOut";
 
 module.exports = createClass({
   displayName: "WorkersPanel",
@@ -58,7 +59,20 @@ module.exports = createClass({
     client.addListener("processListChanged", this.updateWorkers);
     client.addListener("registration-changed", this.updateWorkers);
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     Services.prefs.addObserver(PROCESS_COUNT_PREF, this.updateMultiE10S);
+    Services.prefs.addObserver(MULTI_OPTOUT_PREF, this.updateMultiE10S);
 
     this.updateMultiE10S();
     this.updateWorkers();
@@ -72,6 +86,7 @@ module.exports = createClass({
     client.removeListener("registration-changed", this.updateWorkers);
 
     Services.prefs.removeObserver(PROCESS_COUNT_PREF, this.updateMultiE10S);
+    Services.prefs.removeObserver(MULTI_OPTOUT_PREF, this.updateMultiE10S);
   },
 
   updateMultiE10S() {
