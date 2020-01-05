@@ -471,8 +471,7 @@ uint8_t*
 Metadata::serialize(uint8_t* cursor) const
 {
     MOZ_ASSERT(!debugEnabled && debugTrapFarJumpOffsets.empty() &&
-               debugFuncArgTypes.empty() && debugFuncReturnTypes.empty() &&
-               debugFuncToCodeRange.empty());
+               debugFuncArgTypes.empty() && debugFuncToCodeRange.empty());
     cursor = WriteBytes(cursor, &pod(), sizeof(pod()));
     cursor = SerializeVector(cursor, funcImports);
     cursor = SerializeVector(cursor, funcExports);
@@ -513,7 +512,6 @@ Metadata::deserialize(const uint8_t* cursor)
     debugTrapFarJumpOffsets.clear();
     debugFuncToCodeRange.clear();
     debugFuncArgTypes.clear();
-    debugFuncReturnTypes.clear();
     return cursor;
 }
 
@@ -766,17 +764,10 @@ Code::createText(JSContext* cx)
 
 #if DEBUG
         
-        
         uint32_t lastLineno = 0;
         for (const ExprLoc& loc : maybeSourceMap_->exprlocs()) {
             MOZ_ASSERT(lastLineno <= loc.lineno);
             lastLineno = loc.lineno;
-        }
-        lastLineno = 0;
-        for (const FunctionLoc& loc : maybeSourceMap_->functionlocs()) {
-            MOZ_ASSERT(lastLineno <= loc.startLineno);
-            MOZ_ASSERT(loc.startLineno <= loc.endLineno);
-            lastLineno = loc.endLineno + 1;
         }
 #endif
     } else {
@@ -1193,13 +1184,6 @@ Code::debugGetLocalTypes(uint32_t funcIndex, ValTypeVector* locals, size_t* args
     Decoder d(maybeBytecode_->begin() + offsetInModule,  maybeBytecode_->end(),
               offsetInModule,  nullptr);
     return DecodeLocalEntries(d, metadata_->kind, locals);
-}
-
-ExprType
-Code::debugGetResultType(uint32_t funcIndex)
-{
-    MOZ_ASSERT(metadata_->debugEnabled);
-    return metadata_->debugFuncReturnTypes[funcIndex];
 }
 
 void
