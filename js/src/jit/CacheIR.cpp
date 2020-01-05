@@ -361,6 +361,35 @@ GeneratePrototypeGuards(CacheIRWriter& writer, JSObject* obj, JSObject* holder, 
 }
 
 static void
+GeneratePrototypeHoleGuards(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
+{
+    if (obj->hasUncacheableProto()) {
+        
+        writer.guardProto(objId, obj->staticPrototype());
+    }
+
+    JSObject* pobj = obj->staticPrototype();
+    while (pobj) {
+        ObjOperandId protoId = writer.loadObject(pobj);
+
+        
+        
+        
+        if (pobj->hasUncacheableProto() && !pobj->isSingleton())
+            writer.guardGroup(protoId, pobj->group());
+
+        
+        
+        writer.guardShape(protoId, pobj->as<NativeObject>().lastProperty());
+
+        
+        writer.guardNoDenseElements(protoId);
+
+        pobj = pobj->staticPrototype();
+    }
+}
+
+static void
 TestMatchingReceiver(CacheIRWriter& writer, JSObject* obj, Shape* shape, ObjOperandId objId,
                      Maybe<ObjOperandId>* expandoId)
 {
@@ -1338,31 +1367,7 @@ GetPropIRGenerator::tryAttachDenseElementHole(HandleObject obj, ObjOperandId obj
     
     writer.guardShape(objId, obj->as<NativeObject>().lastProperty());
 
-    if (obj->hasUncacheableProto()) {
-        
-        writer.guardProto(objId, obj->staticPrototype());
-    }
-
-    JSObject* pobj = obj->staticPrototype();
-    while (pobj) {
-        ObjOperandId protoId = writer.loadObject(pobj);
-
-        
-        
-        
-        if (pobj->hasUncacheableProto() && !pobj->isSingleton())
-            writer.guardGroup(protoId, pobj->group());
-
-        
-        
-        writer.guardShape(protoId, pobj->as<NativeObject>().lastProperty());
-
-        
-        writer.guardNoDenseElements(protoId);
-
-        pobj = pobj->staticPrototype();
-    }
-
+    GeneratePrototypeHoleGuards(writer, obj, objId);
     writer.loadDenseElementHoleResult(objId, indexId);
     writer.typeMonitorResult();
 
