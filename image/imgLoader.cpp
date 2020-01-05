@@ -55,6 +55,7 @@
 #include "nsILoadContext.h"
 #include "nsILoadGroupChild.h"
 #include "nsIDOMDocument.h"
+#include "nsIDocShell.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -587,6 +588,19 @@ ShouldLoadCachedImage(imgRequest* aImgRequest,
   
   
   if (insecureRedirect) {
+    
+    
+    
+    
+    
+    nsCOMPtr<nsIDocShell> docShell = NS_CP_GetDocShellFromContext(aLoadingContext);
+    if (docShell) {
+      nsIDocument* document = docShell->GetDocument();
+      if (document && document->GetUpgradeInsecureRequests(false)) {
+        return false;
+      }
+    }
+
     if (!nsContentUtils::IsSystemPrincipal(aLoadingPrincipal)) {
       
       nsCOMPtr<nsIURI> requestingLocation;
