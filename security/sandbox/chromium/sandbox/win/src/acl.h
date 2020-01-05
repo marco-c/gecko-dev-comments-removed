@@ -8,9 +8,7 @@
 #include <AccCtrl.h>
 #include <windows.h>
 
-#include <memory>
-
-#include "base/memory/free_deleter.h"
+#include "base/memory/scoped_ptr.h"
 #include "sandbox/win/src/sid.h"
 
 namespace sandbox {
@@ -18,7 +16,7 @@ namespace sandbox {
 
 bool GetDefaultDacl(
     HANDLE token,
-    std::unique_ptr<TOKEN_DEFAULT_DACL, base::FreeDeleter>* default_dacl);
+    scoped_ptr<TOKEN_DEFAULT_DACL, base::FreeDeleter>* default_dacl);
 
 
 
@@ -28,13 +26,7 @@ bool AddSidToDacl(const Sid& sid, ACL* old_dacl, ACCESS_MODE access_mode,
 
 
 
-bool AddSidToDefaultDacl(HANDLE token,
-                         const Sid& sid,
-                         ACCESS_MODE access_mode,
-                         ACCESS_MASK access);
-
-
-bool RevokeLogonSidFromDefaultDacl(HANDLE token);
+bool AddSidToDefaultDacl(HANDLE token, const Sid& sid, ACCESS_MASK access);
 
 
 

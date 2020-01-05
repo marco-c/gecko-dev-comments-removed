@@ -15,8 +15,6 @@
 
 #include "base/logging.h"
 
-namespace base {
-
 
 
 
@@ -27,6 +25,69 @@ void STLClearObject(T* obj) {
   
   
   obj->reserve(0);
+}
+
+
+
+
+
+
+
+
+
+
+template <class ForwardIterator>
+void STLDeleteContainerPointers(ForwardIterator begin, ForwardIterator end) {
+  while (begin != end) {
+    ForwardIterator temp = begin;
+    ++begin;
+    delete *temp;
+  }
+}
+
+
+
+
+
+
+
+
+template <class ForwardIterator>
+void STLDeleteContainerPairPointers(ForwardIterator begin,
+                                    ForwardIterator end) {
+  while (begin != end) {
+    ForwardIterator temp = begin;
+    ++begin;
+    delete temp->first;
+    delete temp->second;
+  }
+}
+
+
+
+
+template <class ForwardIterator>
+void STLDeleteContainerPairFirstPointers(ForwardIterator begin,
+                                         ForwardIterator end) {
+  while (begin != end) {
+    ForwardIterator temp = begin;
+    ++begin;
+    delete temp->first;
+  }
+}
+
+
+
+
+
+template <class ForwardIterator>
+void STLDeleteContainerPairSecondPointers(ForwardIterator begin,
+                                          ForwardIterator end) {
+  while (begin != end) {
+    ForwardIterator temp = begin;
+    ++begin;
+    delete temp->second;
+  }
 }
 
 
@@ -63,17 +124,15 @@ inline char* string_as_array(std::string* str) {
 
 
 
+
+
+
+
 template <class T>
 void STLDeleteElements(T* container) {
   if (!container)
     return;
-
-  for (auto it = container->begin(); it != container->end();) {
-    auto temp = it;
-    ++it;
-    delete *temp;
-  }
-
+  STLDeleteContainerPointers(container->begin(), container->end());
   container->clear();
 }
 
@@ -84,15 +143,45 @@ template <class T>
 void STLDeleteValues(T* container) {
   if (!container)
     return;
-
-  for (auto it = container->begin(); it != container->end();) {
-    auto temp = it;
-    ++it;
-    delete temp->second;
-  }
-
+  STLDeleteContainerPairSecondPointers(container->begin(), container->end());
   container->clear();
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+template<class T>
+class STLElementDeleter {
+ public:
+  STLElementDeleter<T>(T* container) : container_(container) {}
+  ~STLElementDeleter<T>() { STLDeleteElements(container_); }
+
+ private:
+  T* container_;
+};
+
+
+
+template<class T>
+class STLValueDeleter {
+ public:
+  STLValueDeleter<T>(T* container) : container_(container) {}
+  ~STLValueDeleter<T>() { STLDeleteValues(container_); }
+
+ private:
+  T* container_;
+};
 
 
 
@@ -108,6 +197,8 @@ bool ContainsValue(const Collection& collection, const Value& value) {
   return std::find(collection.begin(), collection.end(), value) !=
       collection.end();
 }
+
+namespace base {
 
 
 template <typename Container>

@@ -10,10 +10,8 @@
 #include <windows.h>
 
 #include "mozilla/Assertions.h"
-
-namespace sandbox {
-class TargetServices;
-}
+#include "base/MissingBasicTypes.h"
+#include "sandbox/win/src/sandbox.h"
 
 namespace mozilla {
 
@@ -45,7 +43,12 @@ public:
 
 
 
-  void StartSandbox();
+  void StartSandbox()
+  {
+    if (mTargetServices) {
+      mTargetServices->LowerToken();
+    }
+  }
 
   
 
@@ -53,7 +56,17 @@ public:
 
   bool BrokerDuplicateHandle(HANDLE aSourceHandle, DWORD aTargetProcessId,
                              HANDLE* aTargetHandle, DWORD aDesiredAccess,
-                             DWORD aOptions);
+                             DWORD aOptions)
+  {
+    if (!mTargetServices) {
+      return false;
+    }
+
+    sandbox::ResultCode result =
+      mTargetServices->DuplicateHandle(aSourceHandle, aTargetProcessId,
+                                       aTargetHandle, aDesiredAccess, aOptions);
+    return (sandbox::SBOX_ALL_OK == result);
+  }
 
 protected:
   SandboxTarget() :

@@ -46,15 +46,8 @@ class BASE_EXPORT WaitableEvent {
   
   
   
-  enum class ResetPolicy { MANUAL, AUTOMATIC };
-
   
-  
-  enum class InitialState { SIGNALED, NOT_SIGNALED };
-
-  
-  
-  WaitableEvent(ResetPolicy reset_policy, InitialState initial_state);
+  WaitableEvent(bool manual_reset, bool initially_signaled);
 
 #if defined(OS_WIN)
   
@@ -157,7 +150,7 @@ class BASE_EXPORT WaitableEvent {
   struct WaitableEventKernel :
       public RefCountedThreadSafe<WaitableEventKernel> {
    public:
-    WaitableEventKernel(ResetPolicy reset_policy, InitialState initial_state);
+    WaitableEventKernel(bool manual_reset, bool initially_signaled);
 
     bool Dequeue(Waiter* waiter, void* tag);
 
@@ -193,4 +186,4 @@ class BASE_EXPORT WaitableEvent {
 
 }  
 
-#endif
+#endif  

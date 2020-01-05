@@ -6,6 +6,29 @@
 #define BASE_BIND_H_
 
 #include "base/bind_internal.h"
+#include "base/callback_internal.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -24,58 +47,53 @@
 
 namespace base {
 
-
 template <typename Functor, typename... Args>
-inline OnceCallback<MakeUnboundRunType<Functor, Args...>>
-BindOnce(Functor&& functor, Args&&... args) {
-  using BindState = internal::MakeBindStateType<Functor, Args...>;
-  using UnboundRunType = MakeUnboundRunType<Functor, Args...>;
-  using Invoker = internal::Invoker<BindState, UnboundRunType>;
-  using CallbackType = OnceCallback<UnboundRunType>;
+base::Callback<
+    typename internal::BindState<
+        typename internal::FunctorTraits<Functor>::RunnableType,
+        typename internal::FunctorTraits<Functor>::RunType,
+        typename internal::CallbackParamTraits<Args>::StorageType...>
+            ::UnboundRunType>
+Bind(Functor functor, const Args&... args) {
+  
+  using RunnableType = typename internal::FunctorTraits<Functor>::RunnableType;
+  using RunType = typename internal::FunctorTraits<Functor>::RunType;
 
   
   
   
-  using PolymorphicInvoke = typename CallbackType::PolymorphicInvoke;
-  PolymorphicInvoke invoke_func = &Invoker::RunOnce;
+  using BoundRunType = typename RunnableType::RunType;
 
-  using InvokeFuncStorage = internal::BindStateBase::InvokeFuncStorage;
-  return CallbackType(new BindState(
-      reinterpret_cast<InvokeFuncStorage>(invoke_func),
-      std::forward<Functor>(functor),
-      std::forward<Args>(args)...));
-}
-
-
-template <typename Functor, typename... Args>
-inline RepeatingCallback<MakeUnboundRunType<Functor, Args...>>
-BindRepeating(Functor&& functor, Args&&... args) {
-  using BindState = internal::MakeBindStateType<Functor, Args...>;
-  using UnboundRunType = MakeUnboundRunType<Functor, Args...>;
-  using Invoker = internal::Invoker<BindState, UnboundRunType>;
-  using CallbackType = RepeatingCallback<UnboundRunType>;
+  using BoundArgs =
+      internal::TakeTypeListItem<sizeof...(Args),
+                                 internal::ExtractArgs<BoundRunType>>;
 
   
   
   
-  using PolymorphicInvoke = typename CallbackType::PolymorphicInvoke;
-  PolymorphicInvoke invoke_func = &Invoker::Run;
+  
+  
+  static_assert(!internal::HasNonConstReferenceItem<BoundArgs>::value,
+                "do not bind functions with nonconst ref");
 
-  using InvokeFuncStorage = internal::BindStateBase::InvokeFuncStorage;
-  return CallbackType(new BindState(
-      reinterpret_cast<InvokeFuncStorage>(invoke_func),
-      std::forward<Functor>(functor),
-      std::forward<Args>(args)...));
-}
+  const bool is_method = internal::HasIsMethodTag<RunnableType>::value;
 
+  
+  
+  
+  
+  static_assert(!internal::BindsArrayToFirstArg<is_method, Args...>::value,
+                "first bound argument to method cannot be array");
+  static_assert(
+      !internal::HasRefCountedParamAsRawPtr<is_method, Args...>::value,
+      "a parameter is a refcounted type and needs scoped_refptr");
 
+  using BindState = internal::BindState<
+      RunnableType, RunType,
+      typename internal::CallbackParamTraits<Args>::StorageType...>;
 
-
-template <typename Functor, typename... Args>
-inline Callback<MakeUnboundRunType<Functor, Args...>>
-Bind(Functor&& functor, Args&&... args) {
-  return BindRepeating(std::forward<Functor>(functor),
-                       std::forward<Args>(args)...);
+  return Callback<typename BindState::UnboundRunType>(
+      new BindState(internal::MakeRunnable(functor), args...));
 }
 
 }  

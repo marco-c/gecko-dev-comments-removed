@@ -6,7 +6,6 @@
 
 #include <stddef.h>
 
-#include "base/debug/activity_tracker.h"
 #include "base/debug/alias.h"
 #include "base/debug/profiler.h"
 #include "base/logging.h"
@@ -14,6 +13,7 @@
 #include "base/threading/thread_restrictions.h"
 #include "base/tracked_objects.h"
 #include "base/win/scoped_handle.h"
+#include "base/win/windows_version.h"
 
 namespace base {
 
@@ -100,8 +100,10 @@ bool CreateThreadInternal(size_t stack_size,
                           PlatformThreadHandle* out_thread_handle,
                           ThreadPriority priority) {
   unsigned int flags = 0;
-  if (stack_size > 0) {
+  if (stack_size > 0 && base::win::GetVersion() >= base::win::VERSION_XP) {
     flags = STACK_SIZE_PARAM_IS_A_RESERVATION;
+  } else {
+    stack_size = 0;
   }
 
   ThreadParams* params = new ThreadParams;
@@ -197,23 +199,12 @@ bool PlatformThread::CreateWithPriority(size_t stack_size, Delegate* delegate,
 
 
 bool PlatformThread::CreateNonJoinable(size_t stack_size, Delegate* delegate) {
-  return CreateNonJoinableWithPriority(stack_size, delegate,
-                                       ThreadPriority::NORMAL);
-}
-
-
-bool PlatformThread::CreateNonJoinableWithPriority(size_t stack_size,
-                                                   Delegate* delegate,
-                                                   ThreadPriority priority) {
-  return CreateThreadInternal(stack_size, delegate, nullptr ,
-                              priority);
+  return CreateThreadInternal(stack_size, delegate, nullptr,
+                              ThreadPriority::NORMAL);
 }
 
 
 void PlatformThread::Join(PlatformThreadHandle thread_handle) {
-  
-  base::debug::ScopedThreadJoinActivity thread_activity(&thread_handle);
-
   DCHECK(thread_handle.platform_handle());
   
   
@@ -226,19 +217,16 @@ void PlatformThread::Join(PlatformThreadHandle thread_handle) {
 
   
   
-  CHECK_EQ(WAIT_OBJECT_0,
-           WaitForSingleObject(thread_handle.platform_handle(), INFINITE));
+  DWORD result = WaitForSingleObject(thread_handle.platform_handle(), INFINITE);
+  if (result != WAIT_OBJECT_0) {
+    
+    DWORD error = GetLastError();
+    debug::Alias(&error);
+    debug::Alias(&result);
+    CHECK(false);
+  }
+
   CloseHandle(thread_handle.platform_handle());
-}
-
-
-void PlatformThread::Detach(PlatformThreadHandle thread_handle) {
-  CloseHandle(thread_handle.platform_handle());
-}
-
-
-bool PlatformThread::CanIncreaseCurrentThreadPriority() {
-  return true;
 }
 
 
@@ -263,7 +251,7 @@ void PlatformThread::SetCurrentThreadPriority(ThreadPriority priority) {
   }
   DCHECK_NE(desired_priority, THREAD_PRIORITY_ERROR_RETURN);
 
-#if DCHECK_IS_ON()
+#ifndef NDEBUG
   const BOOL success =
 #endif
       ::SetThreadPriority(PlatformThread::CurrentHandle().platform_handle(),

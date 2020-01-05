@@ -18,7 +18,7 @@ namespace base {
 
 
 template <typename Dst, typename Src>
-constexpr bool IsValueInRangeForNumericType(Src value) {
+inline bool IsValueInRangeForNumericType(Src value) {
   return internal::DstRangeRelationToSrcRange<Dst>(value) ==
          internal::RANGE_VALID;
 }
@@ -26,7 +26,7 @@ constexpr bool IsValueInRangeForNumericType(Src value) {
 
 
 template <typename T>
-constexpr typename std::enable_if<std::numeric_limits<T>::is_signed, bool>::type
+typename std::enable_if<std::numeric_limits<T>::is_signed, bool>::type
 IsValueNegative(T value) {
   static_assert(std::numeric_limits<T>::is_specialized,
                 "Argument must be numeric.");
@@ -34,61 +34,38 @@ IsValueNegative(T value) {
 }
 
 template <typename T>
-constexpr typename std::enable_if<!std::numeric_limits<T>::is_signed,
-                                  bool>::type IsValueNegative(T) {
+typename std::enable_if<!std::numeric_limits<T>::is_signed, bool>::type
+    IsValueNegative(T) {
   static_assert(std::numeric_limits<T>::is_specialized,
                 "Argument must be numeric.");
   return false;
 }
 
 
-struct CheckOnFailure {
+
+
+template <typename Dst, typename Src>
+inline Dst checked_cast(Src value) {
+  CHECK(IsValueInRangeForNumericType<Dst>(value));
+  return static_cast<Dst>(value);
+}
+
+
+struct SaturatedCastNaNBehaviorCheck {
   template <typename T>
-  static T HandleFailure() {
+  static T HandleNaN() {
     CHECK(false);
     return T();
   }
 };
 
 
-
-
-template <typename Dst,
-          class CheckHandler = CheckOnFailure,
-          typename Src>
-constexpr Dst checked_cast(Src value) {
-  
-  
-  return IsValueInRangeForNumericType<Dst>(value)
-             ? static_cast<Dst>(value)
-             : CheckHandler::template HandleFailure<Dst>();
-}
-
-
 struct SaturatedCastNaNBehaviorReturnZero {
   template <typename T>
-  static constexpr T HandleFailure() {
+  static T HandleNaN() {
     return T();
   }
 };
-
-namespace internal {
-
-
-template <typename Dst, class NaNHandler, typename Src>
-constexpr Dst saturated_cast_impl(const Src value,
-                                  const RangeConstraint constraint) {
-  return constraint == RANGE_VALID
-             ? static_cast<Dst>(value)
-             : (constraint == RANGE_UNDERFLOW
-                    ? std::numeric_limits<Dst>::min()
-                    : (constraint == RANGE_OVERFLOW
-                           ? std::numeric_limits<Dst>::max()
-                           : (constraint == RANGE_INVALID
-                                  ? NaNHandler::template HandleFailure<Dst>()
-                                  : (NOTREACHED(), static_cast<Dst>(value)))));
-}
-}  
 
 
 
@@ -97,18 +74,35 @@ constexpr Dst saturated_cast_impl(const Src value,
 template <typename Dst,
           class NaNHandler = SaturatedCastNaNBehaviorReturnZero,
           typename Src>
-constexpr Dst saturated_cast(Src value) {
-  return std::numeric_limits<Dst>::is_iec559
-             ? static_cast<Dst>(value)  
-             : internal::saturated_cast_impl<Dst, NaNHandler>(
-                   value, internal::DstRangeRelationToSrcRange<Dst>(value));
+inline Dst saturated_cast(Src value) {
+  
+  if (std::numeric_limits<Dst>::is_iec559)
+    return static_cast<Dst>(value);
+
+  switch (internal::DstRangeRelationToSrcRange<Dst>(value)) {
+    case internal::RANGE_VALID:
+      return static_cast<Dst>(value);
+
+    case internal::RANGE_UNDERFLOW:
+      return std::numeric_limits<Dst>::min();
+
+    case internal::RANGE_OVERFLOW:
+      return std::numeric_limits<Dst>::max();
+
+    
+    case internal::RANGE_INVALID:
+      return NaNHandler::template HandleNaN<Dst>();
+  }
+
+  NOTREACHED();
+  return static_cast<Dst>(value);
 }
 
 
 
 
 template <typename Dst, typename Src>
-constexpr Dst strict_cast(Src value) {
+inline Dst strict_cast(Src value) {
   static_assert(std::numeric_limits<Src>::is_specialized,
                 "Argument must be numeric.");
   static_assert(std::numeric_limits<Dst>::is_specialized,
@@ -140,27 +134,27 @@ class StrictNumeric {
  public:
   typedef T type;
 
-  constexpr StrictNumeric() : value_(0) {}
+  StrictNumeric() : value_(0) {}
 
   
   template <typename Src>
-  constexpr StrictNumeric(const StrictNumeric<Src>& rhs)
+  StrictNumeric(const StrictNumeric<Src>& rhs)
       : value_(strict_cast<T>(rhs.value_)) {}
 
   
   
   template <typename Src>
-  constexpr StrictNumeric(Src value)
+  StrictNumeric(Src value)
       : value_(strict_cast<T>(value)) {}
 
   
   template <typename Dst>
-  constexpr operator Dst() const {
+  operator Dst() const {
     return strict_cast<Dst>(value_);
   }
 
  private:
-  const T value_;
+  T value_;
 };
 
 

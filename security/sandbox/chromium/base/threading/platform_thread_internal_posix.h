@@ -5,7 +5,6 @@
 #ifndef BASE_THREADING_PLATFORM_THREAD_INTERNAL_POSIX_H_
 #define BASE_THREADING_PLATFORM_THREAD_INTERNAL_POSIX_H_
 
-#include "base/base_export.h"
 #include "base/threading/platform_thread.h"
 
 namespace base {
@@ -16,11 +15,7 @@ struct ThreadPriorityToNiceValuePair {
   ThreadPriority priority;
   int nice_value;
 };
-
-
-
-BASE_EXPORT extern
-const ThreadPriorityToNiceValuePair kThreadPriorityToNiceValueMap[4];
+extern const ThreadPriorityToNiceValuePair kThreadPriorityToNiceValueMap[4];
 
 
 
@@ -28,7 +23,7 @@ int ThreadPriorityToNiceValue(ThreadPriority priority);
 
 
 
-BASE_EXPORT ThreadPriority NiceValueToThreadPriority(int nice_value);
+ThreadPriority NiceValueToThreadPriority(int nice_value);
 
 
 

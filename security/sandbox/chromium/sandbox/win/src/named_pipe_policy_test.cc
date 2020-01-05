@@ -71,8 +71,12 @@ TEST(NamedPipePolicyTest, CreatePipe) {
   EXPECT_EQ(SBOX_TEST_SUCCEEDED,
             runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\testbleh"));
 
-  EXPECT_EQ(SBOX_TEST_DENIED,
-            runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\bleh"));
+  
+  
+  if (base::win::OSInfo::GetInstance()->version() >= base::win::VERSION_VISTA) {
+    EXPECT_EQ(SBOX_TEST_DENIED,
+              runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\bleh"));
+  }
 }
 
 
@@ -84,14 +88,18 @@ TEST(NamedPipePolicyTest, CreatePipeTraversal) {
                              TargetPolicy::NAMEDPIPES_ALLOW_ANY,
                               L"\\\\.\\pipe\\test*"));
 
-  EXPECT_EQ(SBOX_TEST_DENIED,
-            runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\test\\..\\bleh"));
-  EXPECT_EQ(SBOX_TEST_DENIED,
-            runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\test/../bleh"));
-  EXPECT_EQ(SBOX_TEST_DENIED,
-            runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\test\\../bleh"));
-  EXPECT_EQ(SBOX_TEST_DENIED,
-            runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\test/..\\bleh"));
+  
+  
+  if (base::win::OSInfo::GetInstance()->version() >= base::win::VERSION_VISTA) {
+    EXPECT_EQ(SBOX_TEST_DENIED,
+              runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\test\\..\\bleh"));
+    EXPECT_EQ(SBOX_TEST_DENIED,
+              runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\test/../bleh"));
+    EXPECT_EQ(SBOX_TEST_DENIED,
+              runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\test\\../bleh"));
+    EXPECT_EQ(SBOX_TEST_DENIED,
+              runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\test/..\\bleh"));
+  }
 }
 
 
@@ -121,8 +129,12 @@ TEST(NamedPipePolicyTest, CreatePipeStrictInterceptions) {
   EXPECT_EQ(SBOX_TEST_SUCCEEDED,
             runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\testbleh"));
 
-  EXPECT_EQ(SBOX_TEST_DENIED,
-            runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\bleh"));
+  
+  
+  if (base::win::OSInfo::GetInstance()->version() >= base::win::VERSION_VISTA) {
+    EXPECT_EQ(SBOX_TEST_DENIED,
+              runner.RunTest(L"NamedPipe_Create \\\\.\\pipe\\bleh"));
+  }
 }
 
 }  

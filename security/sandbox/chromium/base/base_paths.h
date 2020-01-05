@@ -34,6 +34,7 @@ enum BasePathKey {
   DIR_HOME,          
                      
                      
+                     
   FILE_EXE,          
   FILE_MODULE,       
                      

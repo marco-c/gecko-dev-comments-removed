@@ -12,7 +12,7 @@
 
 namespace base {
 
-typedef subtle::AtomicWord AtomicRefCount;
+typedef subtle::Atomic32 AtomicRefCount;
 
 
 inline void AtomicRefCountIncN(volatile AtomicRefCount *ptr,

@@ -9,15 +9,11 @@
 #include <unordered_map>
 
 #include "base/debug/alias.h"
-#include "base/debug/stack_trace.h"
 #include "base/hash.h"
 #include "base/lazy_instance.h"
 #include "base/logging.h"
 #include "base/macros.h"
 #include "base/synchronization/lock_impl.h"
-#include "base/threading/thread_local.h"
-#include "base/win/base_features.h"
-#include "base/win/current_module.h"
 
 extern "C" {
 __declspec(dllexport) void* GetHandleVerifier();
@@ -38,15 +34,19 @@ struct Info {
   const void* owner;
   const void* pc1;
   const void* pc2;
-  base::debug::StackTrace stack;
   DWORD thread_id;
 };
 typedef std::unordered_map<HANDLE, Info, HandleHash> HandleMap;
 
 
-
 typedef base::internal::LockImpl NativeLock;
 base::LazyInstance<NativeLock>::Leaky g_lock = LAZY_INSTANCE_INITIALIZER;
+
+bool CloseHandleWrapper(HANDLE handle) {
+  if (!::CloseHandle(handle))
+    CHECK(false);
+  return true;
+}
 
 
 
@@ -71,7 +71,7 @@ class AutoNativeLock {
 class ActiveVerifier {
  public:
   explicit ActiveVerifier(bool enabled)
-      : enabled_(enabled), lock_(g_lock.Pointer()) {
+      : enabled_(enabled), closing_(false), lock_(g_lock.Pointer()) {
   }
 
   
@@ -87,16 +87,14 @@ class ActiveVerifier {
                             const void* pc1, const void* pc2);
   virtual void Disable();
   virtual void OnHandleBeingClosed(HANDLE handle);
-  virtual HMODULE GetModule() const;
 
  private:
   ~ActiveVerifier();  
 
   static void InstallVerifier();
 
-  base::debug::StackTrace creation_stack_;
   bool enabled_;
-  base::ThreadLocalBoolean closing_;
+  bool closing_;
   NativeLock* lock_;
   HandleMap map_;
   DISALLOW_COPY_AND_ASSIGN(ActiveVerifier);
@@ -111,30 +109,11 @@ ActiveVerifier* ActiveVerifier::Get() {
   return g_active_verifier;
 }
 
-bool CloseHandleWrapper(HANDLE handle) {
-  if (!::CloseHandle(handle))
-    CHECK(false);  
-  return true;
-}
-
-
-
-void ThreadSafeAssignOrCreateActiveVerifier(ActiveVerifier* existing_verifier,
-                                            bool enabled) {
-  AutoNativeLock lock(g_lock.Get());
-  
-  
-  if (g_active_verifier)
-    return;
-  g_active_verifier =
-      existing_verifier ? existing_verifier : new ActiveVerifier(enabled);
-}
-
 
 void ActiveVerifier::InstallVerifier() {
-#if BUILDFLAG(SINGLE_MODULE_MODE_HANDLE_VERIFIER)
-  
-  ThreadSafeAssignOrCreateActiveVerifier(nullptr, true);
+#if defined(COMPONENT_BUILD)
+  AutoNativeLock lock(g_lock.Get());
+  g_active_verifier = new ActiveVerifier(true);
 #else
   
   
@@ -145,27 +124,17 @@ void ActiveVerifier::InstallVerifier() {
       reinterpret_cast<GetHandleVerifierFn>(::GetProcAddress(
           main_module, "GetHandleVerifier"));
 
-  
-  
-  
   if (!get_handle_verifier) {
-    ThreadSafeAssignOrCreateActiveVerifier(nullptr, false);
+    g_active_verifier = new ActiveVerifier(false);
     return;
   }
 
-  
-  if (get_handle_verifier == GetHandleVerifier) {
-    ThreadSafeAssignOrCreateActiveVerifier(nullptr, true);
-    return;
-  }
-
-  ActiveVerifier* main_module_verifier =
+  ActiveVerifier* verifier =
       reinterpret_cast<ActiveVerifier*>(get_handle_verifier());
 
   
-  DCHECK(main_module_verifier);
-
-  ThreadSafeAssignOrCreateActiveVerifier(main_module_verifier, false);
+  AutoNativeLock lock(g_lock.Get());
+  g_active_verifier = verifier ? verifier : new ActiveVerifier(true);
 #endif
 }
 
@@ -173,9 +142,10 @@ bool ActiveVerifier::CloseHandle(HANDLE handle) {
   if (!enabled_)
     return CloseHandleWrapper(handle);
 
-  closing_.Set(true);
+  AutoNativeLock lock(*lock_);
+  closing_ = true;
   CloseHandleWrapper(handle);
-  closing_.Set(false);
+  closing_ = false;
 
   return true;
 }
@@ -190,14 +160,13 @@ void ActiveVerifier::StartTracking(HANDLE handle, const void* owner,
 
   AutoNativeLock lock(*lock_);
 
-  Info handle_info = { owner, pc1, pc2, base::debug::StackTrace(), thread_id };
+  Info handle_info = { owner, pc1, pc2, thread_id };
   std::pair<HANDLE, Info> item(handle, handle_info);
   std::pair<HandleMap::iterator, bool> result = map_.insert(item);
   if (!result.second) {
     Info other = result.first->second;
     base::debug::Alias(&other);
-    base::debug::Alias(&creation_stack_);
-    CHECK(false);  
+    CHECK(false);
   }
 }
 
@@ -208,16 +177,13 @@ void ActiveVerifier::StopTracking(HANDLE handle, const void* owner,
 
   AutoNativeLock lock(*lock_);
   HandleMap::iterator i = map_.find(handle);
-  if (i == map_.end()) {
-    base::debug::Alias(&creation_stack_);
-    CHECK(false);  
-  }
+  if (i == map_.end())
+    CHECK(false);
 
   Info other = i->second;
   if (other.owner != owner) {
     base::debug::Alias(&other);
-    base::debug::Alias(&creation_stack_);
-    CHECK(false);  
+    CHECK(false);
   }
 
   map_.erase(i);
@@ -231,28 +197,23 @@ void ActiveVerifier::OnHandleBeingClosed(HANDLE handle) {
   if (!enabled_)
     return;
 
-  if (closing_.Get())
+  AutoNativeLock lock(*lock_);
+  if (closing_)
     return;
 
-  AutoNativeLock lock(*lock_);
   HandleMap::iterator i = map_.find(handle);
   if (i == map_.end())
     return;
 
   Info other = i->second;
   base::debug::Alias(&other);
-  base::debug::Alias(&creation_stack_);
-  CHECK(false);  
-}
-
-HMODULE ActiveVerifier::GetModule() const {
-  return CURRENT_MODULE();
+  CHECK(false);
 }
 
 }  
 
 void* GetHandleVerifier() {
-  return ActiveVerifier::Get();
+  return g_active_verifier;
 }
 
 namespace base {
@@ -281,10 +242,6 @@ void DisableHandleVerifier() {
 
 void OnHandleBeingClosed(HANDLE handle) {
   return ActiveVerifier::Get()->OnHandleBeingClosed(handle);
-}
-
-HMODULE GetHandleVerifierModuleForTesting() {
-  return g_active_verifier->GetModule();
 }
 
 }  

@@ -23,8 +23,7 @@ TEST(HandleInheritanceTests, TestStdoutInheritance) {
   base::ScopedTempDir temp_directory;
   base::FilePath temp_file_name;
   ASSERT_TRUE(temp_directory.CreateUniqueTempDir());
-  ASSERT_TRUE(
-      CreateTemporaryFileInDir(temp_directory.GetPath(), &temp_file_name));
+  ASSERT_TRUE(CreateTemporaryFileInDir(temp_directory.path(), &temp_file_name));
 
   SECURITY_ATTRIBUTES attrs = {};
   attrs.nLength = sizeof(attrs);
@@ -43,7 +42,11 @@ TEST(HandleInheritanceTests, TestStdoutInheritance) {
   std::string data;
   ASSERT_TRUE(base::ReadFileToString(base::FilePath(temp_file_name), &data));
   
-  ASSERT_EQ("Example output to stdout\r\n", data);
+  if (base::win::GetVersion() >= base::win::VERSION_VISTA) {
+    ASSERT_EQ("Example output to stdout\r\n", data);
+  } else {
+    ASSERT_EQ("", data);
+  }
 }
 
 }  

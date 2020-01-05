@@ -71,23 +71,11 @@ class ProcessPolicy {
   
   
   
-  
   static DWORD CreateProcessWAction(EvalResult eval_result,
                                     const ClientInfo& client_info,
                                     const base::string16 &app_name,
                                     const base::string16 &command_line,
-                                    const base::string16 &current_dir,
                                     PROCESS_INFORMATION* process_info);
-
-  
-  
-  static DWORD CreateThreadAction(const ClientInfo& client_info,
-                                  SIZE_T stack_size,
-                                  LPTHREAD_START_ROUTINE start_address,
-                                  PVOID parameter,
-                                  DWORD creation_flags,
-                                  LPDWORD thread_id,
-                                  HANDLE* handle);
 };
 
 }  

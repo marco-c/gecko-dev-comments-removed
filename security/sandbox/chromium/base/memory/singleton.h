@@ -22,7 +22,6 @@
 #include "base/at_exit.h"
 #include "base/atomicops.h"
 #include "base/base_export.h"
-#include "base/logging.h"
 #include "base/macros.h"
 #include "base/memory/aligned_memory.h"
 #include "base/threading/thread_restrictions.h"
@@ -64,7 +63,7 @@ struct DefaultSingletonTraits {
   
   static const bool kRegisterAtExit = true;
 
-#if DCHECK_IS_ON()
+#ifndef NDEBUG
   
   
   
@@ -79,7 +78,7 @@ struct DefaultSingletonTraits {
 template<typename Type>
 struct LeakySingletonTraits : public DefaultSingletonTraits<Type> {
   static const bool kRegisterAtExit = false;
-#if DCHECK_IS_ON()
+#ifndef NDEBUG
   static const bool kAllowedToAccessOnNonjoinableThread = true;
 #endif
 };
@@ -228,7 +227,7 @@ class Singleton {
 
   
   static Type* get() {
-#if DCHECK_IS_ON()
+#ifndef NDEBUG
     
     if (!Traits::kAllowedToAccessOnNonjoinableThread)
       ThreadRestrictions::AssertSingletonAllowed();

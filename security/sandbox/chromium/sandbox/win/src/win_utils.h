@@ -11,7 +11,6 @@
 
 #include "base/macros.h"
 #include "base/strings/string16.h"
-#include "sandbox/win/src/nt_internals.h"
 
 namespace sandbox {
 
@@ -108,17 +107,6 @@ bool WriteProtectedChildMemory(HANDLE child_process, void* address,
 
 
 bool IsPipe(const base::string16& path);
-
-
-DWORD GetLastErrorFromNtStatus(NTSTATUS status);
-
-
-
-
-
-
-
-void* GetProcessBaseAddress(HANDLE process);
 
 }  
 

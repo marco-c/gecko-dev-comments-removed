@@ -8,10 +8,10 @@
 #include <windows.h>
 
 #include "base/base_export.h"
-#include "base/gtest_prod_util.h"
 #include "base/location.h"
 #include "base/logging.h"
 #include "base/macros.h"
+#include "base/move.h"
 
 
 #if defined(COMPILER_MSVC)
@@ -36,6 +36,8 @@ namespace win {
 
 template <class Traits, class Verifier>
 class GenericScopedHandle {
+  MOVE_ONLY_TYPE_FOR_CPP_03(GenericScopedHandle)
+
  public:
   typedef typename Traits::Handle Handle;
 
@@ -106,11 +108,7 @@ class GenericScopedHandle {
   }
 
  private:
-  FRIEND_TEST_ALL_PREFIXES(ScopedHandleTest, ActiveVerifierWrongOwner);
-  FRIEND_TEST_ALL_PREFIXES(ScopedHandleTest, ActiveVerifierUntrackedHandle);
   Handle handle_;
-
-  DISALLOW_COPY_AND_ASSIGN(GenericScopedHandle);
 };
 
 #undef BASE_WIN_GET_CALLER
@@ -170,17 +168,13 @@ typedef GenericScopedHandle<HandleTraits, VerifierTraits> ScopedHandle;
 
 
 
-BASE_EXPORT void DisableHandleVerifier();
+void BASE_EXPORT DisableHandleVerifier();
 
 
 
 
 
-BASE_EXPORT void OnHandleBeingClosed(HANDLE handle);
-
-
-
-BASE_EXPORT HMODULE GetHandleVerifierModuleForTesting();
+void BASE_EXPORT OnHandleBeingClosed(HANDLE handle);
 
 }  
 }  

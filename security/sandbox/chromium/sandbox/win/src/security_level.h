@@ -156,9 +156,7 @@ const MitigationFlags MITIGATION_SEHOP                            = 0x00000004;
 
 
 
-
 const MitigationFlags MITIGATION_RELOCATE_IMAGE                   = 0x00000008;
-
 
 
 
@@ -188,25 +186,12 @@ const MitigationFlags MITIGATION_STRICT_HANDLE_CHECKS             = 0x00000100;
 
 
 
-
-
-
-
 const MitigationFlags MITIGATION_WIN32K_DISABLE                   = 0x00000200;
 
 
 
 
-
-
-
-
-const MitigationFlags MITIGATION_EXTENSION_POINT_DISABLE = 0x00000400;
-
-
-
-
-const MitigationFlags MITIGATION_NONSYSTEM_FONT_DISABLE = 0x00000800;
+const MitigationFlags MITIGATION_EXTENSION_DLL_DISABLE            = 0x00000400;
 
 
 
@@ -218,14 +203,6 @@ const MitigationFlags MITIGATION_DLL_SEARCH_ORDER        = 0x00000001ULL << 32;
 
 
 const MitigationFlags MITIGATION_HARDEN_TOKEN_IL_POLICY  = 0x00000001ULL << 33;
-
-
-
-const MitigationFlags MITIGATION_IMAGE_LOAD_NO_REMOTE = 0x00000001ULL << 52;
-
-
-
-const MitigationFlags MITIGATION_IMAGE_LOAD_NO_LOW_LABEL = 0x00000001ULL << 56;
 
 }  
 

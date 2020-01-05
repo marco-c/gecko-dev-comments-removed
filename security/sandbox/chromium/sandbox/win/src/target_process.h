@@ -9,10 +9,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <memory>
-
 #include "base/macros.h"
-#include "base/memory/free_deleter.h"
+#include "base/memory/scoped_ptr.h"
 #include "base/win/scoped_handle.h"
 #include "base/win/scoped_process_information.h"
 #include "sandbox/win/src/crosscall_server.h"
@@ -40,6 +38,7 @@ class TargetProcess {
   
   TargetProcess(base::win::ScopedHandle initial_token,
                 base::win::ScopedHandle lockdown_token,
+                base::win::ScopedHandle lowbox_token,
                 HANDLE job,
                 ThreadProvider* thread_pool);
   ~TargetProcess();
@@ -52,28 +51,21 @@ class TargetProcess {
   void Release() {}
 
   
-  ResultCode Create(const wchar_t* exe_path,
-                    const wchar_t* command_line,
-                    bool inherit_handles,
-                    const base::win::StartupInformation& startup_info,
-                    base::win::ScopedProcessInformation* target_info,
-                    DWORD* win_error);
-
-  
-  
-  
-  ResultCode AssignLowBoxToken(const base::win::ScopedHandle& token);
+  DWORD Create(const wchar_t* exe_path,
+               const wchar_t* command_line,
+               bool inherit_handles,
+               const base::win::StartupInformation& startup_info,
+               base::win::ScopedProcessInformation* target_info);
 
   
   void Terminate();
 
   
   
-  ResultCode Init(Dispatcher* ipc_dispatcher,
-                  void* policy,
-                  uint32_t shared_IPC_size,
-                  uint32_t shared_policy_size,
-                  DWORD* win_error);
+  DWORD Init(Dispatcher* ipc_dispatcher,
+             void* policy,
+             uint32_t shared_IPC_size,
+             uint32_t shared_policy_size);
 
   
   HANDLE Process() const {
@@ -119,17 +111,20 @@ class TargetProcess {
   
   base::win::ScopedHandle initial_token_;
   
+  
+  base::win::ScopedHandle lowbox_token_;
+  
   base::win::ScopedHandle shared_section_;
   
   HANDLE job_;
   
-  std::unique_ptr<SharedMemIPCServer> ipc_server_;
+  scoped_ptr<SharedMemIPCServer> ipc_server_;
   
   ThreadProvider* thread_pool_;
   
   void* base_address_;
   
-  std::unique_ptr<wchar_t, base::FreeDeleter> exe_name_;
+  scoped_ptr<wchar_t, base::FreeDeleter> exe_name_;
 
   
   friend TargetProcess* MakeTestTargetProcess(HANDLE process,

@@ -8,7 +8,6 @@
 #include <stdint.h>
 
 #include <list>
-#include <memory>
 
 #include "base/gtest_prod_util.h"
 #include "base/macros.h"
@@ -111,7 +110,8 @@ class SharedMemIPCServer {
   IPCControl* client_control_;
 
   
-  std::list<std::unique_ptr<ServerControl>> server_contexts_;
+  typedef std::list<ServerControl*> ServerContexts;
+  ServerContexts server_contexts_;
 
   
   

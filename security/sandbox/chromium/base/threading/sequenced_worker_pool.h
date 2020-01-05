@@ -8,16 +8,15 @@
 #include <stddef.h>
 
 #include <cstddef>
-#include <memory>
 #include <string>
 
 #include "base/base_export.h"
 #include "base/callback_forward.h"
-#include "base/compiler_specific.h"
 #include "base/macros.h"
 #include "base/memory/ref_counted.h"
+#include "base/memory/scoped_ptr.h"
+#include "base/single_thread_task_runner.h"
 #include "base/task_runner.h"
-#include "base/task_scheduler/task_traits.h"
 
 namespace tracked_objects {
 class Location;
@@ -25,9 +24,12 @@ class Location;
 
 namespace base {
 
-class SequencedTaskRunner;
+class SingleThreadTaskRunner;
 
 template <class T> class DeleteHelper;
+
+class SequencedTaskRunner;
+
 
 
 
@@ -166,57 +168,32 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   
   
-  
-  
-  
-  
-  
-  
-  static scoped_refptr<SequencedWorkerPool> GetWorkerPoolForCurrentThread();
+  static scoped_refptr<SequencedTaskRunner>
+  GetSequencedTaskRunnerForCurrentThread();
 
+  
+  
   
   
   static SequenceToken GetSequenceToken();
 
   
   
-  
-  
-  
-  
-  
-  
-  
-  
-  static void RedirectToTaskSchedulerForProcess();
-
-  
-  
-  
-  
-  
-  
-  static void ResetRedirectToTaskSchedulerForProcessForTesting();
+  static scoped_refptr<SequencedWorkerPool> GetWorkerPoolForCurrentThread();
 
   
   
   
 
-  
-  
-  
-  
   
   
   SequencedWorkerPool(size_t max_threads,
-                      const std::string& thread_name_prefix,
-                      base::TaskPriority task_priority);
+                      const std::string& thread_name_prefix);
 
   
   
   SequencedWorkerPool(size_t max_threads,
                       const std::string& thread_name_prefix,
-                      base::TaskPriority task_priority,
                       TestingObserver* observer);
 
   
@@ -230,7 +207,7 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   
   scoped_refptr<SequencedTaskRunner> GetSequencedTaskRunner(
-      SequenceToken token) WARN_UNUSED_RESULT;
+      SequenceToken token);
 
   
   
@@ -238,14 +215,14 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   
   scoped_refptr<SequencedTaskRunner> GetSequencedTaskRunnerWithShutdownBehavior(
       SequenceToken token,
-      WorkerShutdown shutdown_behavior) WARN_UNUSED_RESULT;
+      WorkerShutdown shutdown_behavior);
 
   
   
   
   
   scoped_refptr<TaskRunner> GetTaskRunnerWithShutdownBehavior(
-      WorkerShutdown shutdown_behavior) WARN_UNUSED_RESULT;
+      WorkerShutdown shutdown_behavior);
 
   
   
@@ -341,10 +318,12 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
 
   
   
+  bool IsRunningSequenceOnCurrentThread(SequenceToken sequence_token) const;
+
   
   
-  
-  
+  bool IsRunningSequence(SequenceToken sequence_token) const;
+
   
   
   
@@ -389,18 +368,13 @@ class BASE_EXPORT SequencedWorkerPool : public TaskRunner {
   friend class DeleteHelper<SequencedWorkerPool>;
 
   class Inner;
-  class PoolSequencedTaskRunner;
   class Worker;
 
-  
-  
-  bool IsRunningSequenceOnCurrentThread(SequenceToken sequence_token) const;
-
-  const scoped_refptr<SequencedTaskRunner> constructor_task_runner_;
+  const scoped_refptr<SingleThreadTaskRunner> constructor_task_runner_;
 
   
   
-  const std::unique_ptr<Inner> inner_;
+  const scoped_ptr<Inner> inner_;
 
   DISALLOW_COPY_AND_ASSIGN(SequencedWorkerPool);
 };

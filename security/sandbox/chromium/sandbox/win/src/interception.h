@@ -58,7 +58,6 @@ struct DllInterceptionData;
 
 
 
-
 class InterceptionManager {
   
   
@@ -132,13 +131,12 @@ class InterceptionManager {
   
   
   
-  ResultCode InitializeInterceptions();
+  bool InitializeInterceptions();
 
  private:
   
   struct InterceptionData {
     InterceptionData();
-    InterceptionData(const InterceptionData& other);
     ~InterceptionData();
 
     InterceptionType type;            
@@ -194,23 +192,23 @@ class InterceptionManager {
   
   
   
-  ResultCode CopyDataToChild(const void* local_buffer, size_t buffer_bytes,
-                             void** remote_buffer) const;
+  bool CopyDataToChild(const void* local_buffer, size_t buffer_bytes,
+                       void** remote_buffer) const;
 
   
   
   
   
   
-  ResultCode PatchNtdll(bool hot_patch_needed);
+  bool PatchNtdll(bool hot_patch_needed);
 
   
   
   
   
-  ResultCode PatchClientFunctions(DllInterceptionData* thunks,
-                                  size_t thunk_bytes,
-                                  DllInterceptionData* dll_data);
+  bool PatchClientFunctions(DllInterceptionData* thunks,
+                            size_t thunk_bytes,
+                            DllInterceptionData* dll_data);
 
   
   TargetProcess* child_;

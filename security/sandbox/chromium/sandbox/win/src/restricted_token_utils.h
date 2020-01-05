@@ -33,13 +33,9 @@ enum TokenType {
 
 
 
-
-
-
 DWORD CreateRestrictedToken(TokenLevel security_level,
                             IntegrityLevel integrity_level,
                             TokenType token_type,
-                            bool lockdown_default_dacl,
                             base::win::ScopedHandle* token);
 
 

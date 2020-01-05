@@ -104,23 +104,27 @@ namespace time_internal {
 int64_t SaturatedAdd(TimeDelta delta, int64_t value) {
   CheckedNumeric<int64_t> rv(delta.delta_);
   rv += value;
-  if (rv.IsValid())
-    return rv.ValueOrDie();
-  
-  if (value < 0)
-    return -std::numeric_limits<int64_t>::max();
-  return std::numeric_limits<int64_t>::max();
+  return FromCheckedNumeric(rv);
 }
 
 int64_t SaturatedSub(TimeDelta delta, int64_t value) {
   CheckedNumeric<int64_t> rv(delta.delta_);
   rv -= value;
-  if (rv.IsValid())
-    return rv.ValueOrDie();
+  return FromCheckedNumeric(rv);
+}
+
+int64_t FromCheckedNumeric(const CheckedNumeric<int64_t> value) {
+  if (value.IsValid())
+    return value.ValueUnsafe();
+
   
-  if (value < 0)
-    return std::numeric_limits<int64_t>::max();
-  return -std::numeric_limits<int64_t>::max();
+  
+  
+  
+  int64_t limit = std::numeric_limits<int64_t>::max();
+  if (value.validity() == internal::RANGE_UNDERFLOW)
+    limit = -limit;
+  return value.ValueOrDefault(limit);
 }
 
 }  
@@ -130,6 +134,11 @@ std::ostream& operator<<(std::ostream& os, TimeDelta time_delta) {
 }
 
 
+
+
+Time Time::Max() {
+  return Time(std::numeric_limits<int64_t>::max());
+}
 
 
 Time Time::FromTimeT(time_t tt) {
@@ -255,14 +264,6 @@ bool Time::FromStringInternal(const char* time_string,
   return true;
 }
 #endif
-
-
-bool Time::ExplodedMostlyEquals(const Exploded& lhs, const Exploded& rhs) {
-  return lhs.year == rhs.year && lhs.month == rhs.month &&
-         lhs.day_of_month == rhs.day_of_month && lhs.hour == rhs.hour &&
-         lhs.minute == rhs.minute && lhs.second == rhs.second &&
-         lhs.millisecond == rhs.millisecond;
-}
 
 std::ostream& operator<<(std::ostream& os, Time time) {
   Time::Exploded exploded;

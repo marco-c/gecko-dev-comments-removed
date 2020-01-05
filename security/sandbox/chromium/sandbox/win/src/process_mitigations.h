@@ -25,8 +25,7 @@ MitigationFlags FilterPostStartupProcessMitigations(MitigationFlags flags);
 
 
 void ConvertProcessMitigationsToPolicy(MitigationFlags flags,
-                                       DWORD64* policy_flags,
-                                       size_t* size);
+                                       DWORD64* policy_flags, size_t* size);
 
 
 

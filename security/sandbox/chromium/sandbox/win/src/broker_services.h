@@ -7,10 +7,8 @@
 
 #include <list>
 #include <map>
-#include <memory>
 #include <set>
 #include <utility>
-
 #include "base/compiler_specific.h"
 #include "base/macros.h"
 #include "base/win/scoped_handle.h"
@@ -52,11 +50,12 @@ class BrokerServicesBase final : public BrokerServices,
   ResultCode SpawnTarget(const wchar_t* exe_path,
                          const wchar_t* command_line,
                          TargetPolicy* policy,
-                         ResultCode* last_warning,
-                         DWORD* last_error,
                          PROCESS_INFORMATION* target) override;
   ResultCode WaitForAllTargets() override;
   ResultCode AddTargetPeer(HANDLE peer_process) override;
+  ResultCode InstallAppContainer(const wchar_t* sid,
+                                 const wchar_t* name) override;
+  ResultCode UninstallAppContainer(const wchar_t* sid) override;
 
   
   
@@ -91,16 +90,15 @@ class BrokerServicesBase final : public BrokerServices,
   CRITICAL_SECTION lock_;
 
   
-  std::unique_ptr<ThreadProvider> thread_pool_;
+  ThreadProvider* thread_pool_;
 
   
-  std::list<std::unique_ptr<JobTracker>> tracker_list_;
+  JobTrackerList tracker_list_;
 
   
   
   PeerTrackerMap peer_map_;
 
-  
   
   
   std::set<DWORD> child_process_ids_;

@@ -9,10 +9,10 @@
 #include <stdint.h>
 
 #include <map>
-#include <tuple>
 #include <vector>
 
 #include "base/macros.h"
+#include "base/tuple.h"
 #include "sandbox/sandbox_export.h"
 
 struct sock_filter;
@@ -80,7 +80,10 @@ class SANDBOX_EXPORT CodeGen {
   Program Compile(Node head);
 
  private:
-  using MemoKey = std::tuple<uint16_t, uint32_t, Node, Node>;
+  using MemoKey = base::Tuple<uint16_t, uint32_t, Node, Node>;
+  struct MemoKeyLess {
+    bool operator()(const MemoKey& lhs, const MemoKey& rhs) const;
+  };
 
   
   
@@ -109,7 +112,7 @@ class SANDBOX_EXPORT CodeGen {
   
   std::vector<Node> equivalent_;
 
-  std::map<MemoKey, Node> memos_;
+  std::map<MemoKey, Node, MemoKeyLess> memos_;
 
   DISALLOW_COPY_AND_ASSIGN(CodeGen);
 };

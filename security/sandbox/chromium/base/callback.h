@@ -7,6 +7,331 @@
 
 #include "base/callback_forward.h"
 #include "base/callback_internal.h"
+#include "base/template_util.h"
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -19,104 +344,60 @@
 
 namespace base {
 
+
+
+
+
+
+
+
+
+
+
+
 namespace internal {
-
-
-
-template <typename CallbackType>
-class RunMixin;
-
-
-template <typename R, typename... Args>
-class RunMixin<Callback<R(Args...), CopyMode::MoveOnly, RepeatMode::Once>> {
- private:
-  using CallbackType =
-      Callback<R(Args...), CopyMode::MoveOnly, RepeatMode::Once>;
-
- public:
-  using PolymorphicInvoke = R(*)(internal::BindStateBase*, Args&&...);
-
-  R Run(Args... args) && {
-    
-    
-    
-    
-    CallbackType cb = static_cast<CallbackType&&>(*this);
-    PolymorphicInvoke f =
-        reinterpret_cast<PolymorphicInvoke>(cb.polymorphic_invoke());
-    return f(cb.bind_state_.get(), std::forward<Args>(args)...);
-  }
-};
-
-
-template <typename R, typename... Args, CopyMode copy_mode>
-class RunMixin<Callback<R(Args...), copy_mode, RepeatMode::Repeating>> {
- private:
-  using CallbackType = Callback<R(Args...), copy_mode, RepeatMode::Repeating>;
-
- public:
-  using PolymorphicInvoke = R(*)(internal::BindStateBase*, Args&&...);
-
-  R Run(Args... args) const {
-    const CallbackType& cb = static_cast<const CallbackType&>(*this);
-    PolymorphicInvoke f =
-        reinterpret_cast<PolymorphicInvoke>(cb.polymorphic_invoke());
-    return f(cb.bind_state_.get(), std::forward<Args>(args)...);
-  }
-};
-
-template <typename From, typename To>
-struct IsCallbackConvertible : std::false_type {};
-
-template <typename Signature>
-struct IsCallbackConvertible<
-  Callback<Signature, CopyMode::Copyable, RepeatMode::Repeating>,
-  Callback<Signature, CopyMode::MoveOnly, RepeatMode::Once>> : std::true_type {
-};
-
+template <typename Runnable, typename RunType, typename... BoundArgsType>
+struct BindState;
 }  
 
-template <typename R,
-          typename... Args,
-          internal::CopyMode copy_mode,
-          internal::RepeatMode repeat_mode>
-class Callback<R(Args...), copy_mode, repeat_mode>
-    : public internal::CallbackBase<copy_mode>,
-      public internal::RunMixin<Callback<R(Args...), copy_mode, repeat_mode>> {
+template <typename R, typename... Args>
+class Callback<R(Args...)> : public internal::CallbackBase {
  public:
-  static_assert(repeat_mode != internal::RepeatMode::Once ||
-                copy_mode == internal::CopyMode::MoveOnly,
-                "OnceCallback must be MoveOnly.");
+  
+  
+  typedef R RunType(Args...);
 
-  using RunType = R(Args...);
+  Callback() : CallbackBase(nullptr) { }
 
-  Callback() : internal::CallbackBase<copy_mode>(nullptr) {}
-
-  explicit Callback(internal::BindStateBase* bind_state)
-      : internal::CallbackBase<copy_mode>(bind_state) {
-  }
-
-  template <typename OtherCallback,
-            typename = typename std::enable_if<
-                internal::IsCallbackConvertible<OtherCallback, Callback>::value
-            >::type>
-  Callback(OtherCallback other)
-      : internal::CallbackBase<copy_mode>(std::move(other)) {}
-
-  template <typename OtherCallback,
-            typename = typename std::enable_if<
-                internal::IsCallbackConvertible<OtherCallback, Callback>::value
-            >::type>
-  Callback& operator=(OtherCallback other) {
-    static_cast<internal::CallbackBase<copy_mode>&>(*this) = std::move(other);
-    return *this;
+  template <typename Runnable, typename BindRunType, typename... BoundArgsType>
+  explicit Callback(
+      internal::BindState<Runnable, BindRunType, BoundArgsType...>* bind_state)
+      : CallbackBase(bind_state) {
+    
+    
+    
+    PolymorphicInvoke invoke_func =
+        &internal::BindState<Runnable, BindRunType, BoundArgsType...>
+            ::InvokerType::Run;
+    polymorphic_invoke_ = reinterpret_cast<InvokeFuncStorage>(invoke_func);
   }
 
   bool Equals(const Callback& other) const {
-    return this->EqualsInternal(other);
+    return CallbackBase::Equals(other);
   }
 
-  friend class internal::RunMixin<Callback>;
+  R Run(typename internal::CallbackParamTraits<Args>::ForwardType... args)
+      const {
+    PolymorphicInvoke f =
+        reinterpret_cast<PolymorphicInvoke>(polymorphic_invoke_);
+
+    return f(bind_state_.get(), internal::CallbackForward(args)...);
+  }
+
+ private:
+  using PolymorphicInvoke =
+      R(*)(internal::BindStateBase*,
+           typename internal::CallbackParamTraits<Args>::ForwardType...);
 };
 
 }  

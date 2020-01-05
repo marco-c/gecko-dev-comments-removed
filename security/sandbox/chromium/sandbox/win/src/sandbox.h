@@ -72,16 +72,9 @@ class BrokerServices {
   
   
   
-  
-  
-  
-  
-  
   virtual ResultCode SpawnTarget(const wchar_t* exe_path,
                                  const wchar_t* command_line,
                                  TargetPolicy* policy,
-                                 ResultCode* last_warning,
-                                 DWORD* last_error,
                                  PROCESS_INFORMATION* target) = 0;
 
   
@@ -98,6 +91,15 @@ class BrokerServices {
   
   
   virtual ResultCode AddTargetPeer(HANDLE peer_process) = 0;
+
+  
+  
+  virtual ResultCode InstallAppContainer(const wchar_t* sid,
+                                         const wchar_t* name) = 0;
+
+  
+  
+  virtual ResultCode UninstallAppContainer(const wchar_t* sid) = 0;
 };
 
 

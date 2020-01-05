@@ -10,7 +10,6 @@
 #include <string>
 
 #include "base/base_export.h"
-#include "base/strings/string_piece.h"
 #include "build/build_config.h"
 
 namespace base {
@@ -19,24 +18,15 @@ namespace base {
 
 
 
-
-
 BASE_EXPORT std::string GenerateGUID();
 
 
+BASE_EXPORT bool IsValidGUID(const std::string& guid);
 
-
-
-
-BASE_EXPORT bool IsValidGUID(const base::StringPiece& guid);
-
-
-
-
-BASE_EXPORT bool IsValidGUIDOutputString(const base::StringPiece& guid);
-
+#if defined(OS_POSIX)
 
 BASE_EXPORT std::string RandomDataToGUIDString(const uint64_t bytes[2]);
+#endif
 
 }  
 

@@ -7,7 +7,6 @@
 
 #include "base/base_export.h"
 #include "base/compiler_specific.h"
-#include "base/sequence_token.h"
 #include "base/synchronization/lock.h"
 #include "base/threading/platform_thread.h"
 
@@ -32,29 +31,12 @@ class BASE_EXPORT ThreadCheckerImpl {
   void DetachFromThread();
 
  private:
-  void EnsureAssigned() const;
+  void EnsureThreadIdAssigned() const;
 
-  
-
-  
   mutable base::Lock lock_;
-
-  
-  mutable PlatformThreadRef thread_id_;
-
   
   
-  
-  
-  
-  
-  mutable TaskToken task_token_;
-
-  
-  
-  
-  
-  mutable SequenceToken sequence_token_;
+  mutable PlatformThreadRef valid_thread_id_;
 };
 
 }  

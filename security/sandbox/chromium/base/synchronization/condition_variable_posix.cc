@@ -118,8 +118,6 @@ void ConditionVariable::TimedWait(const TimeDelta& max_time) {
 #endif  
 #endif  
 
-  
-  
   DCHECK(rv == 0 || rv == ETIMEDOUT);
 #if DCHECK_IS_ON()
   user_lock_->CheckUnheldAndMark();
