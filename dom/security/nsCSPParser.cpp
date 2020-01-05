@@ -177,6 +177,32 @@ isValidHexDig(char16_t aHexDig)
           (aHexDig >= 'a' && aHexDig <= 'f'));
 }
 
+static bool
+isValidBase64Value(const char16_t* cur, const char16_t* end)
+{
+  
+
+  
+  if (end > cur && *(end-1) == EQUALS) end--;
+  if (end > cur && *(end-1) == EQUALS) end--;
+
+  
+  if (end == cur) {
+    return false;
+  }
+
+  
+  for (; cur < end; ++cur) {
+    if (!(isCharacterToken(*cur) || isNumberToken(*cur) ||
+          *cur == PLUS || *cur == SLASH ||
+          *cur == DASH || *cur == UNDERLINE)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 void
 nsCSPParser::resetCurChar(const nsAString& aToken)
 {
@@ -658,31 +684,6 @@ nsCSPParser::schemeSource()
   return new nsCSPSchemeSrc(scheme);
 }
 
-bool IsValidBase64Value(const char16_t* cur, const char16_t* end)
-{
-  
-  if (end > cur && *(end-1) == EQUALS) end--;
-  if (end > cur && *(end-1) == EQUALS) end--;
-
-  
-  if (end == cur) {
-    return false;
-  }
-
-  
-  for (; cur < end; ++cur) {
-    if (!((*cur >= 'a' && *cur <= 'z') ||
-          (*cur >= 'A' && *cur <= 'Z') ||
-          (*cur >= '0' && *cur <= '9') ||
-          *cur == PLUS || *cur == SLASH ||
-          *cur == DASH || *cur == UNDERLINE)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 
 nsCSPNonceSrc*
 nsCSPParser::nonceSource()
@@ -705,7 +706,7 @@ nsCSPParser::nonceSource()
   if (dashIndex < 0) {
     return nullptr;
   }
-  if (!IsValidBase64Value(expr.BeginReading() + dashIndex + 1, expr.EndReading())) {
+  if (!isValidBase64Value(expr.BeginReading() + dashIndex + 1, expr.EndReading())) {
     return nullptr;
   }
 
@@ -738,7 +739,7 @@ nsCSPParser::hashSource()
     return nullptr;
   }
 
-  if (!IsValidBase64Value(expr.BeginReading() + dashIndex + 1, expr.EndReading())) {
+  if (!isValidBase64Value(expr.BeginReading() + dashIndex + 1, expr.EndReading())) {
     return nullptr;
   }
 
