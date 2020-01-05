@@ -214,6 +214,7 @@ private:
   uint32_t mHashKey;
   
   TableFreshnessMap mTableFreshness;
+  TableFreshnessMap mNewTableFreshness;
 
   
   

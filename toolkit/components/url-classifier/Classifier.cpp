@@ -621,6 +621,8 @@ Classifier::RemoveUpdateIntermediaries()
   }
   mNewLookupCaches.Clear();
 
+  mNewTableFreshness.Clear();
+
   
   if (NS_FAILED(mUpdatingDirectory->Remove(true))) {
     
@@ -684,6 +686,11 @@ Classifier::SwapInNewTablesAndCleanup()
   
   
   MergeNewLookupCaches();
+
+  
+  for (auto itr = mNewTableFreshness.ConstIter(); !itr.Done(); itr.Next()) {
+    mTableFreshness.Put(itr.Key(), itr.Data());
+  }
 
   
   rv = RegenActiveTables();
@@ -1299,7 +1306,7 @@ Classifier::UpdateHashStore(nsTArray<TableUpdate*>* aUpdates,
 
   int64_t now = (PR_Now() / PR_USEC_PER_SEC);
   LOG(("Successfully updated %s", store.TableName().get()));
-  mTableFreshness.Put(store.TableName(), now);
+  mNewTableFreshness.Put(store.TableName(), now);
 
   return NS_OK;
 }
@@ -1401,7 +1408,7 @@ Classifier::UpdateTableV4(nsTArray<TableUpdate*>* aUpdates,
 
   int64_t now = (PR_Now() / PR_USEC_PER_SEC);
   LOG(("Successfully updated %s\n", PromiseFlatCString(aTable).get()));
-  mTableFreshness.Put(aTable, now);
+  mNewTableFreshness.Put(aTable, now);
 
   return NS_OK;
 }
