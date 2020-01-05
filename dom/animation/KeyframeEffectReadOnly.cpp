@@ -273,7 +273,21 @@ SpecifiedKeyframeArraysAreEqual(const nsTArray<Keyframe>& aA,
 void
 KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
 {
-  MOZ_ASSERT(aStyleContext);
+  DoUpdateProperties(Move(aStyleContext));
+}
+
+void
+KeyframeEffectReadOnly::UpdateProperties(
+  const ServoComputedStyleValues& aServoValues)
+{
+  DoUpdateProperties(aServoValues);
+}
+
+template<typename StyleType>
+void
+KeyframeEffectReadOnly::DoUpdateProperties(StyleType&& aStyle)
+{
+  MOZ_ASSERT_IF(IsPointer<StyleType>::value, aStyle);
 
   
   
@@ -284,11 +298,12 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
     return;
   }
 
-  nsTArray<AnimationProperty> properties = BuildProperties(Move(aStyleContext));
+  nsTArray<AnimationProperty> properties =
+    BuildProperties(Forward<StyleType>(aStyle));
 
   
   
-  EnsureBaseStyles(aStyleContext, properties);
+  EnsureBaseStyles(aStyle, properties);
 
   if (mProperties == properties) {
     return;
@@ -310,10 +325,7 @@ KeyframeEffectReadOnly::UpdateProperties(nsStyleContext* aStyleContext)
       runningOnCompositorProperties.HasProperty(property.mProperty);
   }
 
-  
-  if (aStyleContext->PresContext()->StyleSet()->IsGecko()) {
-    CalculateCumulativeChangeHint(aStyleContext);
-  }
+  CalculateCumulativeChangeHint(aStyle);
 
   MarkCascadeNeedsUpdate();
 
@@ -1574,6 +1586,10 @@ void
 KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
   nsStyleContext *aStyleContext)
 {
+  if (aStyleContext->PresContext()->StyleSet()->IsServo()) {
+    
+    return;
+  }
   mCumulativeChangeHint = nsChangeHint(0);
 
   for (const AnimationProperty& property : mProperties) {

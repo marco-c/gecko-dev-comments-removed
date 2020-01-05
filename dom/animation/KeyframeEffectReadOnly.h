@@ -230,6 +230,8 @@ public:
   
   
   void UpdateProperties(nsStyleContext* aStyleContext);
+  
+  void UpdateProperties(const ServoComputedStyleValues& aServoValues);
 
   
   
@@ -284,6 +286,10 @@ public:
   
   
   void CalculateCumulativeChangeHint(nsStyleContext* aStyleContext);
+  void CalculateCumulativeChangeHint(
+    const ServoComputedStyleValues& aServoValues)
+  {
+  }
 
   
   
@@ -385,6 +391,11 @@ protected:
   
   void EnsureBaseStyles(nsStyleContext* aStyleContext,
                         const nsTArray<AnimationProperty>& aProperties);
+  void EnsureBaseStyles(const ServoComputedStyleValues& aServoValues,
+                        const nsTArray<AnimationProperty>& aProperties)
+  {
+    
+  }
 
   
   StyleAnimationValue ResolveBaseStyle(nsCSSPropertyID aProperty,
@@ -421,6 +432,9 @@ protected:
 
 private:
   nsChangeHint mCumulativeChangeHint;
+
+  template<typename StyleType>
+  void DoUpdateProperties(StyleType&& aStyle);
 
   nsIFrame* GetAnimationFrame() const;
 
