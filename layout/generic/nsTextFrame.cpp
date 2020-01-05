@@ -5801,10 +5801,12 @@ nsTextFrame::ComputeSelectionUnderlineHeight(
       
       
       
-      int32_t defaultFontSize =
-        aPresContext->AppUnitsToDevPixels(nsStyleFont(aPresContext).mFont.size);
-      gfxFloat fontSize = std::min(gfxFloat(defaultFontSize),
-                                 aFontMetrics.emHeight);
+      nscoord defaultFontSize = aPresContext->GetDefaultFont(
+          kPresContext_DefaultVariableFont_ID, nullptr)->size;
+      int32_t zoomedFontSize = aPresContext->AppUnitsToDevPixels(
+          nsStyleFont::ZoomText(aPresContext, defaultFontSize));
+      gfxFloat fontSize = std::min(gfxFloat(zoomedFontSize),
+                                   aFontMetrics.emHeight);
       fontSize = std::max(fontSize, 1.0);
       return ceil(fontSize / 20);
     }
