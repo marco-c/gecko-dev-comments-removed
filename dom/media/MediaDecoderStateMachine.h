@@ -533,10 +533,6 @@ protected:
   
   int64_t GetDecodedAudioDuration();
 
-  
-  
-  void MaybeFinishDecodeFirstFrame();
-
   void FinishDecodeFirstFrame();
 
   
