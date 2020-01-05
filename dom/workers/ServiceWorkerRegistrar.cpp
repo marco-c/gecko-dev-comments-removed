@@ -1,9 +1,9 @@
 
-/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=8 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "ServiceWorkerRegistrar.h"
 #include "mozilla/dom/ServiceWorkerRegistrarTypes.h"
@@ -49,7 +49,7 @@ static const char* gSupportedRegistrarVersions[] = {
 
 StaticRefPtr<ServiceWorkerRegistrar> gServiceWorkerRegistrar;
 
-} // namespace
+} 
 
 NS_IMPL_ISUPPORTS(ServiceWorkerRegistrar,
                   nsIObserver)
@@ -78,7 +78,7 @@ ServiceWorkerRegistrar::Initialize()
   }
 }
 
-/* static */ already_AddRefed<ServiceWorkerRegistrar>
+ already_AddRefed<ServiceWorkerRegistrar>
 ServiceWorkerRegistrar::Get()
 {
   MOZ_ASSERT(XRE_IsParentProcess());
@@ -110,14 +110,16 @@ ServiceWorkerRegistrar::GetRegistrations(
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(aValues.IsEmpty());
 
-  // If we don't have the profile directory, profile is not started yet (and
-  // probably we are in a utest).
+  MonitorAutoLock lock(mMonitor);
+
+  
+  
   if (!mProfileDir) {
     return;
   }
 
-  // We care just about the first execution because this can be blocked by
-  // loading data from disk.
+  
+  
   static bool firstTime = true;
   TimeStamp startTime;
 
@@ -125,17 +127,13 @@ ServiceWorkerRegistrar::GetRegistrations(
     startTime = TimeStamp::NowLoRes();
   }
 
-  {
-    MonitorAutoLock lock(mMonitor);
-
-    // Waiting for data loaded.
-    mMonitor.AssertCurrentThreadOwns();
-    while (!mDataLoaded) {
-      mMonitor.Wait();
-    }
-
-    aValues.AppendElements(mData);
+  
+  mMonitor.AssertCurrentThreadOwns();
+  while (!mDataLoaded) {
+    mMonitor.Wait();
   }
+
+  aValues.AppendElements(mData);
 
   if (firstTime) {
     firstTime = false;
@@ -158,15 +156,15 @@ bool Equivalent(const ServiceWorkerRegistrationData& aLeft,
   const auto& leftPrincipal = aLeft.principal().get_ContentPrincipalInfo();
   const auto& rightPrincipal = aRight.principal().get_ContentPrincipalInfo();
 
-  // Only compare the attributes, not the spec part of the principal.
-  // The scope comparison above already covers the origin and codebase
-  // principals include the full path in their spec which is not what
-  // we want here.
+  
+  
+  
+  
   return aLeft.scope() == aRight.scope() &&
          leftPrincipal.attrs() == rightPrincipal.attrs();
 }
 
-} // anonymous namespace
+} 
 
 void
 ServiceWorkerRegistrar::RegisterServiceWorker(
@@ -259,7 +257,7 @@ ServiceWorkerRegistrar::LoadData()
 
   if (NS_WARN_IF(NS_FAILED(rv))) {
     DeleteData();
-    // Also if the reading failed we have to notify what is waiting for data.
+    
   }
 
   MonitorAutoLock lock(mMonitor);
@@ -271,18 +269,25 @@ ServiceWorkerRegistrar::LoadData()
 nsresult
 ServiceWorkerRegistrar::ReadData()
 {
-  // We cannot assert about the correct thread because normally this method
-  // runs on a IO thread, but in gTests we call it from the main-thread.
-
-  MOZ_ASSERT(mProfileDir);
+  
+  
 
   nsCOMPtr<nsIFile> file;
-  nsresult rv = mProfileDir->Clone(getter_AddRefs(file));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+
+  {
+    MonitorAutoLock lock(mMonitor);
+
+    if (!mProfileDir) {
+      return NS_ERROR_FAILURE;
+    }
+
+    nsresult rv = mProfileDir->Clone(getter_AddRefs(file));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
 
-  rv = file->Append(NS_LITERAL_STRING(SERVICEWORKERREGISTRAR_FILE));
+  nsresult rv = file->Append(NS_LITERAL_STRING(SERVICEWORKERREGISTRAR_FILE));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
@@ -427,7 +432,7 @@ ServiceWorkerRegistrar::ReadData()
 
       GET_LINE(entry->currentWorkerURL());
 
-      // default handlesFetch flag to Enabled
+      
       entry->currentWorkerHandlesFetch() = true;
 
       nsAutoCString cacheName;
@@ -447,7 +452,7 @@ ServiceWorkerRegistrar::ReadData()
         return NS_ERROR_INVALID_ARG;
       }
 
-      // principal spec is no longer used; we use scope directly instead
+      
       GET_LINE(unused);
 
       GET_LINE(entry->scope());
@@ -457,7 +462,7 @@ ServiceWorkerRegistrar::ReadData()
 
       GET_LINE(entry->currentWorkerURL());
 
-      // default handlesFetch flag to Enabled
+      
       entry->currentWorkerHandlesFetch() = true;
 
       nsAutoCString cacheName;
@@ -477,7 +482,7 @@ ServiceWorkerRegistrar::ReadData()
         return NS_ERROR_INVALID_ARG;
       }
 
-      // principal spec is no longer used; we use scope directly instead
+      
       GET_LINE(unused);
 
       GET_LINE(entry->scope());
@@ -485,19 +490,19 @@ ServiceWorkerRegistrar::ReadData()
       entry->principal() =
         mozilla::ipc::ContentPrincipalInfo(attrs, entry->scope());
 
-      // scriptSpec is no more used in latest version.
+      
       GET_LINE(unused);
 
       GET_LINE(entry->currentWorkerURL());
 
-      // default handlesFetch flag to Enabled
+      
       entry->currentWorkerHandlesFetch() = true;
 
       nsAutoCString cacheName;
       GET_LINE(cacheName);
       CopyUTF8toUTF16(cacheName, entry->cacheName());
 
-      // waitingCacheName is no more used in latest version.
+      
       GET_LINE(unused);
 
       entry->loadFlags() = nsIRequest::VALIDATE_ALWAYS;
@@ -519,28 +524,28 @@ ServiceWorkerRegistrar::ReadData()
 
   stream->Close();
 
-  // Copy data over to mData.
+  
   for (uint32_t i = 0; i < tmpData.Length(); ++i) {
     bool match = false;
     if (dedupe) {
       MOZ_ASSERT(overwrite);
-      // If this is an old profile, then we might need to deduplicate.  In
-      // theory this can be removed in the future (Bug 1248449)
+      
+      
       for (uint32_t j = 0; j < mData.Length(); ++j) {
-        // Use same comparison as RegisterServiceWorker. Scope contains
-        // basic origin information.  Combine with any principal attributes.
+        
+        
         if (Equivalent(tmpData[i], mData[j])) {
-          // Last match wins, just like legacy loading used to do in
-          // the ServiceWorkerManager.
+          
+          
           mData[j] = tmpData[i];
-          // Dupe found, so overwrite file with reduced list.
+          
           match = true;
           break;
         }
       }
     } else {
 #ifdef DEBUG
-      // Otherwise assert no duplications in debug builds.
+      
       for (uint32_t j = 0; j < mData.Length(); ++j) {
         MOZ_ASSERT(!Equivalent(tmpData[i], mData[j]));
       }
@@ -551,8 +556,8 @@ ServiceWorkerRegistrar::ReadData()
     }
   }
 
-  // Overwrite previous version.
-  // Cannot call SaveData directly because gtest uses main-thread.
+  
+  
   if (overwrite && NS_FAILED(WriteData())) {
     NS_WARNING("Failed to write data for the ServiceWorker Registations.");
     DeleteData();
@@ -564,23 +569,26 @@ ServiceWorkerRegistrar::ReadData()
 void
 ServiceWorkerRegistrar::DeleteData()
 {
-  // We cannot assert about the correct thread because normally this method
-  // runs on a IO thread, but in gTests we call it from the main-thread.
+  
+  
 
-  MOZ_ASSERT(mProfileDir);
+  nsCOMPtr<nsIFile> file;
 
   {
     MonitorAutoLock lock(mMonitor);
     mData.Clear();
+
+    if (!mProfileDir) {
+      return;
+    }
+
+    nsresult rv = mProfileDir->Clone(getter_AddRefs(file));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return;
+    }
   }
 
-  nsCOMPtr<nsIFile> file;
-  nsresult rv = mProfileDir->Clone(getter_AddRefs(file));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return;
-  }
-
-  rv = file->Append(NS_LITERAL_STRING(SERVICEWORKERREGISTRAR_FILE));
+  nsresult rv = file->Append(NS_LITERAL_STRING(SERVICEWORKERREGISTRAR_FILE));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return;
   }
@@ -726,23 +734,30 @@ ServiceWorkerRegistrar::IsSupportedVersion(const nsACString& aVersion) const
 nsresult
 ServiceWorkerRegistrar::WriteData()
 {
-  // We cannot assert about the correct thread because normally this method
-  // runs on a IO thread, but in gTests we call it from the main-thread.
-
-  MOZ_ASSERT(mProfileDir);
+  
+  
 
   nsCOMPtr<nsIFile> file;
-  nsresult rv = mProfileDir->Clone(getter_AddRefs(file));
+
+  {
+    MonitorAutoLock lock(mMonitor);
+
+    if (!mProfileDir) {
+      return NS_ERROR_FAILURE;
+    }
+
+    nsresult rv = mProfileDir->Clone(getter_AddRefs(file));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  }
+
+  nsresult rv = file->Append(NS_LITERAL_STRING(SERVICEWORKERREGISTRAR_FILE));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
-  rv = file->Append(NS_LITERAL_STRING(SERVICEWORKERREGISTRAR_FILE));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
-  }
-
-  // We need a lock to take a snapshot of the data.
+  
   nsTArray<ServiceWorkerRegistrationData> data;
   {
     MonitorAutoLock lock(mMonitor);
@@ -835,7 +850,9 @@ void
 ServiceWorkerRegistrar::ProfileStarted()
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(!mProfileDir);
+
+  MonitorAutoLock lock(mMonitor);
+  MOZ_DIAGNOSTIC_ASSERT(!mProfileDir);
 
   nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
                                        getter_AddRefs(mProfileDir));
@@ -859,6 +876,8 @@ void
 ServiceWorkerRegistrar::ProfileStopped()
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  MonitorAutoLock lock(mMonitor);
 
   if (!mProfileDir) {
     nsresult rv = NS_GetSpecialDirectory(NS_APP_USER_PROFILE_50_DIR,
@@ -908,8 +927,8 @@ ServiceWorkerRegistrar::Observe(nsISupports* aSubject, const char* aTopic,
       services::GetObserverService();
     observerService->RemoveObserver(this, "profile-after-change");
 
-    // The profile is fully loaded, now we can proceed with the loading of data
-    // from disk.
+    
+    
     ProfileStarted();
 
     return NS_OK;
@@ -920,7 +939,7 @@ ServiceWorkerRegistrar::Observe(nsISupports* aSubject, const char* aTopic,
       services::GetObserverService();
     observerService->RemoveObserver(this, "profile-before-change");
 
-    // Shutting down, let's sync the data.
+    
     ProfileStopped();
 
     return NS_OK;
@@ -930,5 +949,5 @@ ServiceWorkerRegistrar::Observe(nsISupports* aSubject, const char* aTopic,
   return NS_ERROR_UNEXPECTED;
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

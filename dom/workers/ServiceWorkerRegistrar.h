@@ -85,14 +85,14 @@ private:
 
 protected:
   
+  nsCOMPtr<nsIFile> mProfileDir;
   nsTArray<ServiceWorkerRegistrationData> mData;
   bool mDataLoaded;
 
+  
   bool mShuttingDown;
   bool* mShutdownCompleteFlag;
   uint32_t mRunnableCounter;
-
-  nsCOMPtr<nsIFile> mProfileDir;
 };
 
 } 
