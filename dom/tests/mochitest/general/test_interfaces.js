@@ -1119,8 +1119,6 @@ var interfaceNamesInGlobalScope =
 
     "SVGZoomAndPan",
 
-    "SVGZoomEvent",
-
     "Text",
 
     "TextDecoder",
