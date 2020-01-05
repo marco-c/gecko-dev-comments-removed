@@ -5,7 +5,7 @@
 
 
 use std::ascii::AsciiExt;
-use std::borrow::{ToOwned, Cow};
+use std::borrow::{Borrow, Cow, ToOwned};
 use std::fmt;
 use std::hash::{Hash, Hasher};
 use std::ops;
@@ -177,6 +177,13 @@ impl DOMString {
     
     pub fn bytes(&self) -> Bytes {
         self.0.bytes()
+    }
+}
+
+impl Borrow<str> for DOMString {
+    #[inline]
+    fn borrow(&self) -> &str {
+        &self.0
     }
 }
 
