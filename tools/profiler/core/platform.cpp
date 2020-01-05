@@ -171,7 +171,7 @@ public:
     type_ name_(LockRef) const { return m##name_; } \
     void Set##name_(LockRef, type_ a##name_) { m##name_ = a##name_; }
 
-  GET_AND_SET(TimeStamp, StartTime)
+  GET_AND_SET(TimeStamp, ProcessStartTime)
 
   GET_AND_SET(int, Entries)
 
@@ -233,7 +233,7 @@ public:
 
 private:
   
-  mozilla::TimeStamp mStartTime;
+  mozilla::TimeStamp mProcessStartTime;
 
   
   int mEntries;
@@ -1079,7 +1079,8 @@ Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
 {
   aBuffer->addTagThreadId(aSample.mThreadId, aSample.mLastSample);
 
-  mozilla::TimeDuration delta = aSample.mTimeStamp - gPS->StartTime(aLock);
+  mozilla::TimeDuration delta =
+    aSample.mTimeStamp - gPS->ProcessStartTime(aLock);
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
   NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
@@ -1194,7 +1195,7 @@ StreamTaskTracer(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
   aWriter.StartArrayProperty("data");
   {
     UniquePtr<nsTArray<nsCString>> data =
-      mozilla::tasktracer::GetLoggedData(gPS->StartTime(aLock));
+      mozilla::tasktracer::GetLoggedData(gPS->ProcessStartTime(aLock));
     for (uint32_t i = 0; i < data->Length(); ++i) {
       aWriter.StringElement((data->ElementAt(i)).get());
     }
@@ -1246,7 +1247,7 @@ StreamMetaJSCustomObject(PS::LockRef aLock, SpliceableJSONWriter& aWriter)
   
   
   mozilla::TimeDuration delta =
-    mozilla::TimeStamp::Now() - gPS->StartTime(aLock);
+    mozilla::TimeStamp::Now() - gPS->ProcessStartTime(aLock);
   aWriter.DoubleProperty(
     "startTime", static_cast<double>(PR_Now()/1000.0 - delta.ToMilliseconds()));
 
@@ -1392,16 +1393,16 @@ locked_profiler_stream_json_for_this_process(PS::LockRef aLock, SpliceableJSONWr
       if (!info->IsBeingProfiled()) {
         continue;
       }
-      info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
-                       aSinceTime);
+      info->StreamJSON(gPS->Buffer(aLock), aWriter,
+                       gPS->ProcessStartTime(aLock), aSinceTime);
     }
 
     const PS::ThreadVector& deadThreads = gPS->DeadThreads(aLock);
     for (size_t i = 0; i < deadThreads.size(); i++) {
       ThreadInfo* info = deadThreads.at(i);
       MOZ_ASSERT(info->IsBeingProfiled());
-      info->StreamJSON(gPS->Buffer(aLock), aWriter, gPS->StartTime(aLock),
-                       aSinceTime);
+      info->StreamJSON(gPS->Buffer(aLock), aWriter,
+                       gPS->ProcessStartTime(aLock), aSinceTime);
     }
 
 #if defined(PROFILE_JAVA)
@@ -1469,7 +1470,7 @@ ProfilerMarker::GetTime() const {
 }
 
 void ProfilerMarker::StreamJSON(SpliceableJSONWriter& aWriter,
-                                const TimeStamp& aStartTime,
+                                const TimeStamp& aProcessStartTime,
                                 UniqueStacks& aUniqueStacks) const
 {
   
@@ -1485,7 +1486,7 @@ void ProfilerMarker::StreamJSON(SpliceableJSONWriter& aWriter,
     if (mPayload) {
       aWriter.StartObjectElement();
       {
-          mPayload->StreamPayload(aWriter, aStartTime, aUniqueStacks);
+        mPayload->StreamPayload(aWriter, aProcessStartTime, aUniqueStacks);
       }
       aWriter.EndObject();
     }
@@ -1656,9 +1657,9 @@ SamplerThread::Run()
           
           if (info->Stack()->CanDuplicateLastSampleDueToSleep()) {
             bool dup_ok =
-              gPS->Buffer(lock)->DuplicateLastSample(info->ThreadId(),
-                                                     gPS->StartTime(lock),
-                                                     info->LastSample());
+              gPS->Buffer(lock)->DuplicateLastSample(
+                info->ThreadId(), gPS->ProcessStartTime(lock),
+                info->LastSample());
             if (dup_ok) {
               continue;
             }
@@ -1988,7 +1989,7 @@ profiler_init(void* aStackTop)
     gPS = new PS();
 
     bool ignore;
-    gPS->SetStartTime(lock, mozilla::TimeStamp::ProcessCreation(ignore));
+    gPS->SetProcessStartTime(lock, mozilla::TimeStamp::ProcessCreation(ignore));
 
     locked_register_thread(lock, kMainThreadName, aStackTop);
 
@@ -2320,9 +2321,6 @@ locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
 
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   MOZ_RELEASE_ASSERT(gPS && !gPS->IsActive(aLock));
-
-  bool ignore;
-  gPS->SetStartTime(aLock, mozilla::TimeStamp::ProcessCreation(ignore));
 
   
   int entries = aEntries > 0 ? aEntries : PROFILE_DEFAULT_ENTRIES;
@@ -2839,7 +2837,7 @@ profiler_time()
   PS::AutoLock lock(gPSMutex);
 
   mozilla::TimeDuration delta =
-    mozilla::TimeStamp::Now() - gPS->StartTime(lock);
+    mozilla::TimeStamp::Now() - gPS->ProcessStartTime(lock);
   return delta.ToMilliseconds();
 }
 
@@ -2968,7 +2966,7 @@ locked_profiler_add_marker(PS::LockRef aLock, const char* aMarker,
   mozilla::TimeStamp origin = (payload && !payload->GetStartTime().IsNull())
                             ? payload->GetStartTime()
                             : mozilla::TimeStamp::Now();
-  mozilla::TimeDuration delta = origin - gPS->StartTime(aLock);
+  mozilla::TimeDuration delta = origin - gPS->ProcessStartTime(aLock);
   stack->addMarker(aMarker, payload.release(), delta.ToMilliseconds());
 }
 
@@ -3079,7 +3077,8 @@ profiler_clear_js_context()
     ThreadInfo* info = FindLiveThreadInfo(lock);
     MOZ_RELEASE_ASSERT(info);
     if (info->IsBeingProfiled()) {
-      info->FlushSamplesAndMarkers(gPS->Buffer(lock), gPS->StartTime(lock));
+      info->FlushSamplesAndMarkers(gPS->Buffer(lock),
+                                   gPS->ProcessStartTime(lock));
     }
 
     gPS->SetIsPaused(lock, false);
