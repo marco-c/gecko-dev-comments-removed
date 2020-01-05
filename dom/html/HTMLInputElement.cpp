@@ -151,6 +151,8 @@ namespace dom {
 #define NS_CONTROL_TYPE(bits)  ((bits) & ~( \
   NS_OUTER_ACTIVATE_EVENT | NS_ORIGINAL_CHECKED_VALUE | NS_NO_CONTENT_DISPATCH | \
   NS_ORIGINAL_INDETERMINATE_VALUE))
+#define NS_PRE_HANDLE_BLUR_EVENT  (1 << 13)
+#define NS_PRE_HANDLE_INPUT_EVENT (1 << 14)
 
 
 
@@ -3872,15 +3874,8 @@ HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
   if (aVisitor.mEvent->mMessage == eBlur) {
     
     
-    
-    if (IsExperimentalMobileType(mType)) {
-      nsAutoString aValue;
-      GetNonFileValueInternal(aValue);
-      nsresult rv =
-        SetValueInternal(aValue, nsTextEditorState::eSetValue_Internal);
-      NS_ENSURE_SUCCESS(rv, rv);
-    }
-    FireChangeEventIfNeeded();
+    aVisitor.mWantsPreHandleEvent = true;
+    aVisitor.mItemFlags |= NS_PRE_HANDLE_BLUR_EVENT;
   }
 
   if (mType == NS_FORM_INPUT_RANGE &&
@@ -3993,18 +3988,10 @@ HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     }
     if (textControl && aVisitor.mEvent->mOriginalTarget == textControl) {
       if (aVisitor.mEvent->mMessage == eEditorInput) {
+        aVisitor.mWantsPreHandleEvent = true;
         
-        nsAutoString value;
-        numberControlFrame->GetValueOfAnonTextControl(value);
-        numberControlFrame->HandlingInputEvent(true);
-        nsWeakFrame weakNumberControlFrame(numberControlFrame);
-        rv = SetValueInternal(value,
-                              nsTextEditorState::eSetValue_BySetUserInput |
-                              nsTextEditorState::eSetValue_Notify);
-        NS_ENSURE_SUCCESS(rv, rv);
-        if (weakNumberControlFrame.IsAlive()) {
-          numberControlFrame->HandlingInputEvent(false);
-        }
+        
+        aVisitor.mItemFlags |= NS_PRE_HANDLE_INPUT_EVENT;
       }
       else if (aVisitor.mEvent->mMessage == eFormChange) {
         
@@ -4039,6 +4026,49 @@ HTMLInputElement::GetEventTargetParent(EventChainPreVisitor& aVisitor)
     }
   }
 
+  return rv;
+}
+
+nsresult
+HTMLInputElement::PreHandleEvent(EventChainVisitor& aVisitor)
+{
+  if (!aVisitor.mPresContext) {
+    return nsGenericHTMLElement::PreHandleEvent(aVisitor);
+  }
+  nsresult rv;
+  if (aVisitor.mItemFlags & NS_PRE_HANDLE_BLUR_EVENT) {
+    MOZ_ASSERT(aVisitor.mEvent->mMessage == eBlur);
+    
+    
+    
+    if (IsExperimentalMobileType(mType)) {
+      nsAutoString aValue;
+      GetNonFileValueInternal(aValue);
+      rv = SetValueInternal(aValue, nsTextEditorState::eSetValue_Internal);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+    FireChangeEventIfNeeded();
+  }
+  rv = nsGenericHTMLFormElementWithState::PreHandleEvent(aVisitor);
+  if (aVisitor.mItemFlags & NS_PRE_HANDLE_INPUT_EVENT) {
+    nsNumberControlFrame* numberControlFrame = do_QueryFrame(GetPrimaryFrame());
+    MOZ_ASSERT(aVisitor.mEvent->mMessage == eEditorInput);
+    MOZ_ASSERT(numberControlFrame);
+    MOZ_ASSERT(numberControlFrame->GetAnonTextControl() ==
+               aVisitor.mEvent->mOriginalTarget);
+    
+    nsAutoString value;
+    numberControlFrame->GetValueOfAnonTextControl(value);
+    numberControlFrame->HandlingInputEvent(true);
+    nsWeakFrame weakNumberControlFrame(numberControlFrame);
+    rv = SetValueInternal(value,
+                          nsTextEditorState::eSetValue_BySetUserInput |
+                          nsTextEditorState::eSetValue_Notify);
+    NS_ENSURE_SUCCESS(rv, rv);
+    if (weakNumberControlFrame.IsAlive()) {
+      numberControlFrame->HandlingInputEvent(false);
+    }
+  }
   return rv;
 }
 
