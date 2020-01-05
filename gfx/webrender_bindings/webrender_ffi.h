@@ -65,6 +65,14 @@ WR_DECL_FFI_2(WrFontKey, uint32_t, uint32_t)
 
 
 
+struct WrByteSlice {
+  uint8_t* mBuffer;
+  size_t mLength;
+};
+
+
+
+
 
 bool is_in_compositor_thread();
 bool is_in_main_thread();
@@ -529,7 +537,7 @@ wr_api_delete(WrAPI* api)
 WR_DESTRUCTOR_SAFE_FUNC;
 
 WR_INLINE void
-wr_api_add_image(WrAPI* api, WrImageKey key, const WrImageDescriptor* descriptor, uint8_t *buffer, size_t buffer_size)
+wr_api_add_image(WrAPI* api, WrImageKey key, const WrImageDescriptor* descriptor, const WrByteSlice aSlice)
 WR_FUNC;
 
 WR_INLINE void
@@ -546,7 +554,7 @@ WR_FUNC;
 WR_INLINE void
 wr_api_update_image(WrAPI* api, WrImageKey key,
                     const WrImageDescriptor* descriptor,
-                    uint8_t *bytes, size_t size)
+                    const WrByteSlice bytes)
 WR_FUNC;
 
 WR_INLINE void
