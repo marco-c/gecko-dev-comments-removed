@@ -28,11 +28,9 @@ public:
 private:
   virtual ~inDOMUtils();
 
-  
-  static nsresult GetRuleNodeForElement(mozilla::dom::Element* aElement,
-                                        nsIAtom* aPseudo,
-                                        nsStyleContext** aStyleContext,
-                                        nsRuleNode** aRuleNode);
+  static already_AddRefed<nsStyleContext>
+    GetCleanStyleContextForElement(mozilla::dom::Element* aElement,
+                                   nsIAtom* aPseudo);
 };
 
 
