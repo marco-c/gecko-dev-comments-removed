@@ -171,16 +171,9 @@ UseTileTexture(CompositableTextureHostRef& aTexture,
   }
 
   if (!aUpdateRect.IsEmpty()) {
-#ifdef MOZ_GFX_OPTIMIZE_MOBILE
-    aTexture->Updated(nullptr);
-#else
-    
-    
-    
     
     nsIntRegion region = aUpdateRect;
     aTexture->Updated(&region);
-#endif
   }
 
   aTexture->PrepareTextureSource(aTextureSource);
