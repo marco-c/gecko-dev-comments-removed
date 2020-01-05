@@ -474,34 +474,6 @@ private:
                                           HitTestingTreeNode* aNextSibling,
                                           TreeBuildingState& aState);
 
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  HitTestingTreeNode* UpdateHitTestingTree(TreeBuildingState& aState,
-                                           const LayerMetricsWrapper& aLayer,
-                                           uint64_t aLayersId,
-                                           const gfx::Matrix4x4& aAncestorTransform,
-                                           HitTestingTreeNode* aParent,
-                                           HitTestingTreeNode* aNextSibling);
-
   void PrintAPZCInfo(const LayerMetricsWrapper& aLayer,
                      const AsyncPanZoomController* apzc);
 
