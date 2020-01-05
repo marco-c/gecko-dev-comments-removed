@@ -176,6 +176,8 @@ function* testPopupSize(standardsMode, browserWin = window, arrowSide = "top") {
     }
   };
 
+  yield awaitBrowserLoaded(browser);
+
   
   
   yield new Promise(resolve => setTimeout(resolve, 100));
