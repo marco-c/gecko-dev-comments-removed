@@ -11,7 +11,7 @@ add_task(function* () {
   let hud = yield openNewTabAndConsole(TEST_URI);
 
   info("console.log with a string argument");
-  let receievedMessages = waitForMessages({
+  let receivedMessages = waitForMessages({
     hud,
     messages: [{
       
@@ -23,13 +23,14 @@ add_task(function* () {
     content.wrappedJSObject.stringLog();
   });
 
-  yield receievedMessages;
+  yield receivedMessages;
 
   info("evaluating a string constant");
   let jsterm = hud.jsterm;
-  yield jsterm.execute("\"string constant\"");
+  yield jsterm.execute("\"string\\nconstant\"");
   let msg = yield waitFor(() => findMessage(hud, "constant"));
   let body = msg.querySelector(".message-body");
   
-  ok(body.textContent.includes("\"string constant\""), "found expected text");
+  
+  ok(body.textContent.includes("\"string\nconstant\""), "found expected text");
 });
