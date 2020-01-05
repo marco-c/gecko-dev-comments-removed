@@ -2654,6 +2654,10 @@ this.Schemas = {
 
 
   checkPermissions(namespace, wrapperFuncs) {
+    if (!this.initialized) {
+      this.init();
+    }
+
     let ns = this.getNamespace(namespace);
     if (ns && ns.permissions) {
       return ns.permissions.some(perm => wrapperFuncs.hasPermission(perm));
@@ -2672,6 +2676,10 @@ this.Schemas = {
 
 
   inject(dest, wrapperFuncs) {
+    if (!this.initialized) {
+      this.init();
+    }
+
     let context = new InjectionContext(wrapperFuncs);
 
     this.rootNamespace.injectInto(dest, context);
@@ -2687,6 +2695,10 @@ this.Schemas = {
 
 
   normalize(obj, typeName, context) {
+    if (!this.initialized) {
+      this.init();
+    }
+
     let [namespaceName, prop] = typeName.split(".");
     let ns = this.getNamespace(namespaceName);
     let type = ns.get(prop);
