@@ -46,7 +46,7 @@ public class TelemetryCorePingBuilder extends TelemetryPingBuilder {
     private static final String PREF_SEQ_COUNT = "telemetry-seqCount";
 
     private static final String NAME = "core";
-    private static final int VERSION_VALUE = 8; 
+    private static final int VERSION_VALUE = 9; 
     private static final String OS_VALUE = "Android";
 
     private static final String ARCHITECTURE = "arch";
