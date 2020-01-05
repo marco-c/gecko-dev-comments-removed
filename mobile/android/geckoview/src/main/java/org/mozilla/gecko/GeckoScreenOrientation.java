@@ -57,30 +57,11 @@ public class GeckoScreenOrientation {
     
     private static GeckoScreenOrientation sInstance;
     
-    private static final ScreenOrientation DEFAULT_SCREEN_ORIENTATION = ScreenOrientation.DEFAULT;
-    
     private static final int DEFAULT_ROTATION = Surface.ROTATION_0;
-    
-    private ScreenOrientation mDefaultScreenOrientation;
     
     private ScreenOrientation mScreenOrientation;
     
     private boolean mShouldNotify = true;
-    
-    private static final String DEFAULT_SCREEN_ORIENTATION_PREF = "app.orientation.default";
-
-    public GeckoScreenOrientation() {
-        PrefsHelper.getPref(DEFAULT_SCREEN_ORIENTATION_PREF, new PrefsHelper.PrefHandlerBase() {
-            @Override public void prefValue(String pref, String value) {
-                
-                mDefaultScreenOrientation = screenOrientationFromArrayString(value);
-                setRequestedOrientation(mDefaultScreenOrientation);
-            }
-        });
-
-        mDefaultScreenOrientation = DEFAULT_SCREEN_ORIENTATION;
-        update();
-    }
 
     public static GeckoScreenOrientation getInstance() {
         if (sInstance == null) {
@@ -325,10 +306,10 @@ public class GeckoScreenOrientation {
 
     public static ScreenOrientation screenOrientationFromArrayString(String aArray) {
         List<String> orientations = Arrays.asList(aArray.split(","));
-        if (orientations.size() == 0) {
+        if ("".equals(aArray) || orientations.size() == 0) {
             
             Log.w(LOGTAG, "screenOrientationFromArrayString: no orientation in string");
-            return DEFAULT_SCREEN_ORIENTATION;
+            return ScreenOrientation.DEFAULT;
         }
 
         
@@ -361,7 +342,7 @@ public class GeckoScreenOrientation {
         }
 
         Log.w(LOGTAG, "screenOrientationFromString: unknown orientation string: " + aStr);
-        return DEFAULT_SCREEN_ORIENTATION;
+        return ScreenOrientation.DEFAULT;
     }
 
     
