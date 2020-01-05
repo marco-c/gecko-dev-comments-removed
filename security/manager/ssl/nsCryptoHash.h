@@ -4,13 +4,14 @@
 
 
 
-#ifndef _nsCryptoHash_h_
-#define _nsCryptoHash_h_
+#ifndef nsCryptoHash_h
+#define nsCryptoHash_h
 
-#include "nsICryptoHash.h"
-#include "nsICryptoHMAC.h"
-#include "nsNSSShutDown.h"
+#include "ScopedNSSTypes.h"
 #include "hasht.h"
+#include "nsICryptoHMAC.h"
+#include "nsICryptoHash.h"
+#include "nsNSSShutDown.h"
 #include "secmodt.h"
 
 class nsIInputStream;
@@ -29,7 +30,7 @@ public:
 private:
   ~nsCryptoHash();
 
-  HASHContext* mHashContext;
+  mozilla::UniqueHASHContext mHashContext;
   bool mInitialized;
 
   virtual void virtualDestroyNSSReference() override;
@@ -46,11 +47,10 @@ public:
 
 private:
   ~nsCryptoHMAC();
-  PK11Context* mHMACContext;
+  mozilla::UniquePK11Context mHMACContext;
 
   virtual void virtualDestroyNSSReference() override;
   void destructorSafeDestroyNSSReference();
 };
 
 #endif 
-
