@@ -49,6 +49,7 @@ class Element;
 class Performance;
 class ServiceWorkerRegistration;
 class Timeout;
+class TimeoutManager;
 class CustomElementRegistry;
 } 
 } 
@@ -619,6 +620,8 @@ protected:
 
   
   RefPtr<mozilla::dom::Performance> mPerformance;
+  
+  mozilla::UniquePtr<mozilla::dom::TimeoutManager> mTimeoutManager;
 
   typedef nsRefPtrHashtable<nsStringHashKey,
                             mozilla::dom::ServiceWorkerRegistration>
@@ -628,8 +631,6 @@ protected:
   uint32_t               mModalStateDepth;
 
   
-  mozilla::dom::Timeout *mRunningTimeout;
-
   uint32_t               mMutationBits;
 
   bool                   mIsDocumentLoaded;
@@ -849,6 +850,10 @@ public:
   
   
   void SyncStateFromParentWindow();
+
+  bool HasAudioContexts() const;
+
+  mozilla::dom::TimeoutManager& TimeoutManager();
 
 protected:
   void CreatePerformanceObjectIfNeeded();

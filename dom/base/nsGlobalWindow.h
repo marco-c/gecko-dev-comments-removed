@@ -56,7 +56,7 @@
 #include "nsSize.h"
 #include "nsCheapSets.h"
 #include "mozilla/dom/ImageBitmapSource.h"
-#include "mozilla/dom/Timeout.h"
+#include "mozilla/UniquePtr.h"
 
 #define DEFAULT_HOME_PAGE "www.mozilla.org"
 #define PREF_BROWSER_STARTUP_HOMEPAGE "browser.startup.homepage"
@@ -395,7 +395,7 @@ public:
   virtual void SyncStateFromParentWindow();
 
   virtual nsresult FireDelayedDOMEvents() override;
-  virtual bool IsRunningTimeout() override { return mTimeoutFiringDepth > 0; }
+  virtual bool IsRunningTimeout() override;
 
   
   virtual bool WouldReuseInnerWindow(nsIDocument* aNewDocument) override;
@@ -706,8 +706,6 @@ public:
   }
 
   void AddSizeOfIncludingThis(nsWindowSizes* aWindowSizes) const;
-
-  void UnmarkGrayTimers();
 
   
   void AddEventTargetObject(mozilla::DOMEventTargetHelper* aObject);
@@ -1257,6 +1255,7 @@ public:
   already_AddRefed<nsWindowRoot> GetWindowRoot(mozilla::ErrorResult& aError);
 
   mozilla::dom::Performance* GetPerformance();
+
 protected:
   
 
@@ -1466,11 +1465,6 @@ private:
 public:
   
   
-  
-  nsresult SetTimeoutOrInterval(nsITimeoutHandler* aHandler,
-                                int32_t interval, bool aIsInterval,
-                                mozilla::dom::Timeout::Reason aReason,
-                                int32_t* aReturn);
   int32_t SetTimeoutOrInterval(JSContext* aCx,
                                mozilla::dom::Function& aFunction,
                                int32_t aTimeout,
@@ -1479,23 +1473,9 @@ public:
   int32_t SetTimeoutOrInterval(JSContext* aCx, const nsAString& aHandler,
                                int32_t aTimeout, bool aIsInterval,
                                mozilla::ErrorResult& aError);
-  void ClearTimeoutOrInterval(int32_t aTimerId,
-                              mozilla::dom::Timeout::Reason aReason);
 
-  
-  void RunTimeout(mozilla::dom::Timeout* aTimeout);
-  void RunTimeout() { RunTimeout(nullptr); }
   
   bool RunTimeoutHandler(mozilla::dom::Timeout* aTimeout, nsIScriptContext* aScx);
-  
-  bool RescheduleTimeout(mozilla::dom::Timeout* aTimeout, const TimeStamp& now,
-                         bool aRunningPendingTimeouts);
-
-  void ClearAllTimeouts();
-  
-  
-  void InsertTimeoutIntoList(mozilla::dom::Timeout* aTimeout);
-  uint32_t GetTimeoutId(mozilla::dom::Timeout::Reason aReason);
 
   
   already_AddRefed<nsIDocShellTreeOwner> GetTreeOwner();
@@ -1617,8 +1597,6 @@ protected:
 
   virtual void UpdateParentTarget() override;
 
-  inline int32_t DOMMinTimeoutValue() const;
-
   void InitializeShowFocusRings();
 
   
@@ -1704,22 +1682,6 @@ private:
   friend class nsPIDOMWindow<mozIDOMWindowProxy>;
   friend class nsPIDOMWindow<mozIDOMWindow>;
   friend class nsPIDOMWindow<nsISupports>;
-
-  
-  
-  
-  void
-  MaybeApplyBackPressure();
-
-  
-  
-  void
-  CancelOrUpdateBackPressure();
-
-  
-  
-  
-  nsresult ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS);
 
   mozilla::dom::TabGroup* TabGroupInner();
   mozilla::dom::TabGroup* TabGroupOuter();
@@ -1853,17 +1815,6 @@ protected:
 
   
   RefPtr<mozilla::EventListenerManager> mListenerManager;
-  
-  
-  
-  
-  mozilla::LinkedList<mozilla::dom::Timeout> mTimeouts;
-  
-  
-  
-  mozilla::dom::Timeout*      mTimeoutInsertionPoint;
-  uint32_t                    mTimeoutIdCounter;
-  uint32_t                    mTimeoutFiringDepth;
   RefPtr<mozilla::dom::Location> mLocation;
   RefPtr<nsHistory>           mHistory;
   RefPtr<mozilla::dom::CustomElementRegistry> mCustomElements;
@@ -1874,10 +1825,9 @@ protected:
   typedef nsTArray<RefPtr<mozilla::dom::StorageEvent>> nsDOMStorageEventArray;
   nsDOMStorageEventArray mPendingStorageEvents;
 
+
   uint32_t mSuspendDepth;
   uint32_t mFreezeDepth;
-
-  int32_t mBackPressureDelayMS;
 
   
   uint32_t mFocusMethod;
@@ -1893,8 +1843,6 @@ protected:
   static void InsertIdleCallbackIntoList(mozilla::dom::IdleRequest* aRequest,
                                          IdleRequests& aList);
 
-   
-  uint32_t mIdleCallbackTimeoutCounter;
   
   uint32_t mIdleRequestCallbackCounter;
   IdleRequests mIdleRequestCallbacks;
@@ -1974,6 +1922,7 @@ protected:
   friend class nsDOMWindowUtils;
   friend class mozilla::dom::PostMessageEvent;
   friend class DesktopNotification;
+  friend class mozilla::dom::TimeoutManager;
 
   static WindowByIdTable* sWindowsById;
   static bool sWarnedAboutWindowInternal;

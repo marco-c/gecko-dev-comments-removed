@@ -23,6 +23,7 @@
 #include "mozilla/dom/StorageEvent.h"
 #include "mozilla/dom/StorageEventBinding.h"
 #include "mozilla/dom/Timeout.h"
+#include "mozilla/dom/TimeoutManager.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #if defined(MOZ_WIDGET_ANDROID) || defined(MOZ_WIDGET_GONK)
 #include "mozilla/dom/WindowOrientationObserver.h"
@@ -290,13 +291,10 @@ bool nsGlobalWindow::sIdleObserversAPIFuzzTimeDisabled = false;
 static int32_t              gRefCnt                    = 0;
 static int32_t              gOpenPopupSpamCount        = 0;
 static PopupControlState    gPopupControlState         = openAbused;
-static int32_t              gRunningTimeoutDepth       = 0;
 static bool                 gMouseDown                 = false;
 static bool                 gDragServiceDisabled       = false;
 static FILE                *gDumpFile                  = nullptr;
 static uint32_t             gSerialCounter             = 0;
-static TimeStamp            gLastRecordedRecentTimeouts;
-#define STATISTICS_INTERVAL (30 * PR_MSEC_PER_SEC)
 
 #ifdef DEBUG_jst
 int32_t gTimeoutCnt                                    = 0;
@@ -307,31 +305,6 @@ int32_t gTimeoutCnt                                    = 0;
 #endif
 
 #define DOM_TOUCH_LISTENER_ADDED "dom-touch-listener-added"
-
-
-#define DEFAULT_MIN_TIMEOUT_VALUE 4 // 4ms
-#define DEFAULT_MIN_BACKGROUND_TIMEOUT_VALUE 1000 // 1000ms
-static int32_t gMinTimeoutValue;
-static int32_t gMinBackgroundTimeoutValue;
-inline int32_t
-nsGlobalWindow::DOMMinTimeoutValue() const {
-  
-  int32_t value = std::max(mBackPressureDelayMS, 0);
-  
-  
-  bool isBackground = mAudioContexts.IsEmpty() && IsBackgroundInternal();
-  return
-    std::max(isBackground ? gMinBackgroundTimeoutValue : gMinTimeoutValue, value);
-}
-
-
-
-#define DOM_CLAMP_TIMEOUT_NESTING_LEVEL 5
-
-
-
-
-#define DOM_MAX_TIMEOUT_VALUE    DELAY_INTERVAL_LIMIT
 
 
 static uint32_t gThrottledIdlePeriodLength;
@@ -669,7 +642,7 @@ NextWindowID();
 template<class T>
 nsPIDOMWindow<T>::nsPIDOMWindow(nsPIDOMWindowOuter *aOuterWindow)
 : mFrameElement(nullptr), mDocShell(nullptr), mModalStateDepth(0),
-  mRunningTimeout(nullptr), mMutationBits(0), mIsDocumentLoaded(false),
+  mMutationBits(0), mIsDocumentLoaded(false),
   mIsHandlingResizeEvent(false), mIsInnerWindow(aOuterWindow != nullptr),
   mMayHavePaintEventListener(false), mMayHaveTouchEventListener(false),
   mMayHaveMouseEnterLeaveEventListener(false),
@@ -685,7 +658,12 @@ nsPIDOMWindow<T>::nsPIDOMWindow(nsPIDOMWindowOuter *aOuterWindow)
   
   mWindowID(NextWindowID()), mHasNotifiedGlobalCreated(false),
   mMarkedCCGeneration(0), mServiceWorkersTestingEnabled(false)
- {}
+{
+  if (aOuterWindow) {
+    mTimeoutManager =
+      MakeUnique<mozilla::dom::TimeoutManager>(*nsGlobalWindow::Cast(AsInner()));
+  }
+}
 
 template<class T>
 nsPIDOMWindow<T>::~nsPIDOMWindow() {}
@@ -1266,15 +1244,10 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
 #endif
     mNotifiedIDDestroyed(false),
     mAllowScriptsToClose(false),
-    mTimeoutInsertionPoint(nullptr),
-    mTimeoutIdCounter(1),
-    mTimeoutFiringDepth(0),
     mSuspendDepth(0),
     mFreezeDepth(0),
-    mBackPressureDelayMS(0),
     mFocusMethod(0),
     mSerial(0),
-    mIdleCallbackTimeoutCounter(1),
     mIdleRequestCallbackCounter(1),
 #ifdef DEBUG
     mSetOpenerWindowCalled(false),
@@ -1334,12 +1307,7 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
 
   static bool sFirstTime = true;
   if (sFirstTime) {
-    Preferences::AddIntVarCache(&gMinTimeoutValue,
-                                "dom.min_timeout_value",
-                                DEFAULT_MIN_TIMEOUT_VALUE);
-    Preferences::AddIntVarCache(&gMinBackgroundTimeoutValue,
-                                "dom.min_background_timeout_value",
-                                DEFAULT_MIN_BACKGROUND_TIMEOUT_VALUE);
+    TimeoutManager::Initialize();
     Preferences::AddBoolVarCache(&sIdleObserversAPIFuzzTimeDisabled,
                                  "dom.idle-observers-api.fuzz_time.disabled",
                                  false);
@@ -1766,7 +1734,9 @@ nsGlobalWindow::FreeInnerObjects()
   
   mozilla::dom::workers::CancelWorkersForWindow(AsInner());
 
-  ClearAllTimeouts();
+  if (mTimeoutManager) {
+    mTimeoutManager->ClearAllTimeouts();
+  }
 
   if (mIdleTimer) {
     mIdleTimer->Cancel();
@@ -1908,7 +1878,9 @@ NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_BEGIN(nsGlobalWindow)
     if (EventListenerManager* elm = tmp->GetExistingListenerManager()) {
       elm->MarkForCC();
     }
-    tmp->UnmarkGrayTimers();
+    if (tmp->mTimeoutManager) {
+      tmp->mTimeoutManager->UnmarkGrayTimers();
+    }
     return true;
   }
 NS_IMPL_CYCLE_COLLECTION_CAN_SKIP_END
@@ -1966,10 +1938,10 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INTERNAL(nsGlobalWindow)
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mListenerManager)
 
-  for (Timeout* timeout = tmp->mTimeouts.getFirst();
-       timeout;
-       timeout = timeout->getNext()) {
-    cb.NoteNativeChild(timeout, NS_CYCLE_COLLECTION_PARTICIPANT(Timeout));
+  if (tmp->mTimeoutManager) {
+    tmp->mTimeoutManager->ForEachTimeout([&cb](Timeout* timeout) {
+      cb.NoteNativeChild(timeout, NS_CYCLE_COLLECTION_PARTICIPANT(Timeout));
+    });
   }
 
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocation)
@@ -2136,18 +2108,6 @@ nsGlobalWindow::IsBlackForCC(bool aTracingNeeded)
           IsBlack()) &&
          (!aTracingNeeded ||
           HasNothingToTrace(static_cast<nsIDOMEventTarget*>(this)));
-}
-
-void
-nsGlobalWindow::UnmarkGrayTimers()
-{
-  for (Timeout* timeout = mTimeouts.getFirst();
-       timeout;
-       timeout = timeout->getNext()) {
-    if (timeout->mScriptHandler) {
-      timeout->mScriptHandler->MarkForCC();
-    }
-  }
 }
 
 
@@ -3164,8 +3124,6 @@ nsGlobalWindow::DetachFromDocShell()
   
   
 
-  NS_ASSERTION(mTimeouts.isEmpty(), "Uh, outer window holds timeouts!");
-
   
   
   
@@ -3655,113 +3613,6 @@ nsGlobalWindow::DefineArgumentsProperty(nsIArray *aArguments)
   return ctx->SetProperty(obj, "arguments", aArguments);
 }
 
-namespace {
-
-
-
-const uint32_t kThrottledEventQueueBackPressure = 5000;
-
-
-
-
-
-const double kBackPressureDelayMS = 500;
-
-
-
-int32_t
-CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
-{
-  
-  
-  MOZ_ASSERT(aBacklogDepth >= kThrottledEventQueueBackPressure);
-  double multiplier = static_cast<double>(aBacklogDepth) /
-                      static_cast<double>(kThrottledEventQueueBackPressure);
-  double value = kBackPressureDelayMS * multiplier;
-  if (value > INT32_MAX) {
-    value = INT32_MAX;
-  }
-  return static_cast<int32_t>(value);
-}
-
-} 
-
-void
-nsGlobalWindow::MaybeApplyBackPressure()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  
-  
-  
-  if (mBackPressureDelayMS > 0 || IsSuspended()) {
-    return;
-  }
-
-  RefPtr<ThrottledEventQueue> queue = TabGroup()->GetThrottledEventQueue();
-  if (!queue) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  if (queue->Length() < kThrottledEventQueueBackPressure) {
-    return;
-  }
-
-  
-  
-  
-  nsCOMPtr<nsIRunnable> r =
-    NewRunnableMethod(this, &nsGlobalWindow::CancelOrUpdateBackPressure);
-  nsresult rv = queue->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
-  NS_ENSURE_SUCCESS_VOID(rv);
-
-  
-  
-  mBackPressureDelayMS = CalculateNewBackPressureDelayMS(queue->Length());
-}
-
-void
-nsGlobalWindow::CancelOrUpdateBackPressure()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mBackPressureDelayMS > 0);
-
-  
-  
-  
-  
-  RefPtr<ThrottledEventQueue> queue = TabGroup()->GetThrottledEventQueue();
-  if (!queue || queue->Length() < kThrottledEventQueueBackPressure) {
-    int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
-    mBackPressureDelayMS = 0;
-    ResetTimersForThrottleReduction(oldBackPressureDelayMS);
-    return;
-  }
-
-  
-
-  
-  int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
-  mBackPressureDelayMS = CalculateNewBackPressureDelayMS(queue->Length());
-
-  
-  
-  
-  if (mBackPressureDelayMS < oldBackPressureDelayMS) {
-    ResetTimersForThrottleReduction(oldBackPressureDelayMS);
-  }
-
-  
-  nsCOMPtr<nsIRunnable> r =
-    NewRunnableMethod(this, &nsGlobalWindow::CancelOrUpdateBackPressure);
-  MOZ_ALWAYS_SUCCEEDS(queue->Dispatch(r.forget(), NS_DISPATCH_NORMAL));
-}
-
 
 
 
@@ -4070,6 +3921,18 @@ void
 nsPIDOMWindowInner::SyncStateFromParentWindow()
 {
   nsGlobalWindow::Cast(this)->SyncStateFromParentWindow();
+}
+
+bool
+nsPIDOMWindowInner::HasAudioContexts() const
+{
+  return !mAudioContexts.IsEmpty();
+}
+
+mozilla::dom::TimeoutManager&
+nsPIDOMWindowInner::TimeoutManager()
+{
+  return *mTimeoutManager;
 }
 
 SuspendTypes
@@ -8131,15 +7994,17 @@ nsGlobalWindow::ClearTimeout(int32_t aHandle)
   MOZ_RELEASE_ASSERT(IsInnerWindow());
 
   if (aHandle > 0) {
-    ClearTimeoutOrInterval(aHandle, Timeout::Reason::eTimeoutOrInterval);
+    mTimeoutManager->ClearTimeout(aHandle, Timeout::Reason::eTimeoutOrInterval);
   }
 }
 
 void
 nsGlobalWindow::ClearInterval(int32_t aHandle)
 {
+  MOZ_RELEASE_ASSERT(IsInnerWindow());
+
   if (aHandle > 0) {
-    ClearTimeoutOrInterval(aHandle, Timeout::Reason::eTimeoutOrInterval);
+    mTimeoutManager->ClearTimeout(aHandle, Timeout::Reason::eTimeoutOrInterval);
   }
 }
 
@@ -10130,23 +9995,25 @@ void nsGlobalWindow::SetIsBackground(bool aIsBackground)
 
   bool resetTimers = (!aIsBackground && AsOuter()->IsBackground());
   nsPIDOMWindow::SetIsBackground(aIsBackground);
-  if (resetTimers) {
-    ResetTimersForThrottleReduction(gMinBackgroundTimeoutValue);
+
+  if (aIsBackground) {
+    MOZ_ASSERT(!resetTimers);
+    return;
   }
 
-  if (!aIsBackground) {
-    nsGlobalWindow* inner = GetCurrentInnerWindowInternal();
-    if (inner) {
-      inner->UnthrottleIdleCallbackRequests();
-    }
+  nsGlobalWindow* inner = GetCurrentInnerWindowInternal();
+  if (!inner) {
+    return;
   }
+
+  if (resetTimers) {
+    inner->mTimeoutManager->ResetTimersForThrottleReduction();
+  }
+
+  inner->UnthrottleIdleCallbackRequests();
+
 #ifdef MOZ_GAMEPAD
-  if (!aIsBackground) {
-    nsGlobalWindow* inner = GetCurrentInnerWindowInternal();
-    if (inner) {
-      inner->SyncGamepadState();
-    }
-  }
+  inner->SyncGamepadState();
 #endif
 }
 
@@ -11944,21 +11811,7 @@ nsGlobalWindow::Suspend()
 
   mozilla::dom::workers::SuspendWorkersForWindow(AsInner());
 
-  for (Timeout* t = mTimeouts.getFirst(); t; t = t->getNext()) {
-    
-    
-    
-
-    
-    if (t->mTimer) {
-      t->mTimer->Cancel();
-      t->mTimer = nullptr;
-
-      
-      
-      t->Release();
-    }
-  }
+  mTimeoutManager->Suspend();
 
   
   for (uint32_t i = 0; i < mAudioContexts.Length(); ++i) {
@@ -12010,49 +11863,7 @@ nsGlobalWindow::Resume()
     RefPtr<Promise> d = mAudioContexts[i]->Resume(dummy);
   }
 
-  TimeStamp now = TimeStamp::Now();
-  DebugOnly<bool> _seenDummyTimeout = false;
-
-  for (Timeout* t = mTimeouts.getFirst(); t; t = t->getNext()) {
-    
-    
-    
-    if (!t->mWindow) {
-      NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
-      _seenDummyTimeout = true;
-      continue;
-    }
-
-    MOZ_ASSERT(!t->mTimer);
-
-    
-    
-    
-    
-    
-    
-    int32_t remaining = 0;
-    if (t->mWhen > now) {
-      remaining = static_cast<int32_t>((t->mWhen - now).ToMilliseconds());
-    }
-    uint32_t delay = std::max(remaining, DOMMinTimeoutValue());
-
-    t->mTimer = do_CreateInstance("@mozilla.org/timer;1");
-    if (!t->mTimer) {
-      t->remove();
-      continue;
-    }
-
-    nsresult rv = t->InitTimer(GetThrottledEventQueue(), delay);
-    if (NS_FAILED(rv)) {
-      t->mTimer = nullptr;
-      t->remove();
-      continue;
-    }
-
-    
-    t->AddRef();
-  }
+  mTimeoutManager->Resume();
 
   
   
@@ -12100,22 +11911,7 @@ nsGlobalWindow::FreezeInternal()
 
   mozilla::dom::workers::FreezeWorkersForWindow(AsInner());
 
-  TimeStamp now = TimeStamp::Now();
-  for (Timeout *t = mTimeouts.getFirst(); t; t = t->getNext()) {
-    
-    
-    
-    
-    if (t->mWhen > now) {
-      t->mTimeRemaining = t->mWhen - now;
-    } else {
-      t->mTimeRemaining = TimeDuration(0);
-    }
-
-    
-    
-    MOZ_ASSERT(!t->mTimer);
-  }
+  mTimeoutManager->Freeze();
 
   NotifyDOMWindowFrozen(this);
 }
@@ -12145,24 +11941,7 @@ nsGlobalWindow::ThawInternal()
     return;
   }
 
-  TimeStamp now = TimeStamp::Now();
-  DebugOnly<bool> _seenDummyTimeout = false;
-
-  for (Timeout *t = mTimeouts.getFirst(); t; t = t->getNext()) {
-    
-    
-    
-    if (!t->mWindow) {
-      NS_ASSERTION(!_seenDummyTimeout, "More than one dummy timeout?!");
-      _seenDummyTimeout = true;
-      continue;
-    }
-
-    
-    t->mWhen = now + t->mTimeRemaining;
-
-    MOZ_ASSERT(!t->mTimer);
-  }
+  mTimeoutManager->Thaw();
 
   mozilla::dom::workers::ThawWorkersForWindow(AsInner());
 
@@ -12315,6 +12094,13 @@ nsGlobalWindow::FireDelayedDOMEvents()
   }
 
   return NS_OK;
+}
+
+bool
+nsGlobalWindow::IsRunningTimeout()
+{
+  MOZ_ASSERT(IsInnerWindow());
+  return mTimeoutManager->IsRunningTimeout();
 }
 
 
@@ -12574,20 +12360,6 @@ nsGlobalWindow::OpenInternal(const nsAString& aUrl, const nsAString& aName,
 
 
 
-uint32_t sNestingLevel;
-
-uint32_t
-nsGlobalWindow::GetTimeoutId(Timeout::Reason aReason)
-{
-  switch (aReason) {
-    case Timeout::Reason::eIdleCallbackTimeout:
-      return ++mIdleCallbackTimeoutCounter;
-    case Timeout::Reason::eTimeoutOrInterval:
-    default:
-      return ++mTimeoutIdCounter;
-  }
-}
-
 nsGlobalWindow*
 nsGlobalWindow::InnerForSetTimeoutOrInterval(ErrorResult& aError)
 {
@@ -12694,117 +12466,6 @@ nsGlobalWindow::SetInterval(JSContext* aCx, const nsAString& aHandler,
   return SetTimeoutOrInterval(aCx, aHandler, timeout, isInterval, aError);
 }
 
-nsresult
-nsGlobalWindow::SetTimeoutOrInterval(nsITimeoutHandler* aHandler,
-                                     int32_t interval, bool aIsInterval,
-                                     Timeout::Reason aReason, int32_t* aReturn)
-{
-  MOZ_ASSERT(IsInnerWindow());
-
-  
-  
-  if (!mDoc) {
-    return NS_OK;
-  }
-
-  
-  
-  interval = std::max(aIsInterval ? 1 : 0, interval);
-
-  
-  
-  
-  uint32_t maxTimeoutMs = PR_IntervalToMilliseconds(DOM_MAX_TIMEOUT_VALUE);
-  if (static_cast<uint32_t>(interval) > maxTimeoutMs) {
-    interval = maxTimeoutMs;
-  }
-
-  RefPtr<Timeout> timeout = new Timeout();
-  timeout->mIsInterval = aIsInterval;
-  timeout->mInterval = interval;
-  timeout->mScriptHandler = aHandler;
-  timeout->mReason = aReason;
-
-  
-  uint32_t nestingLevel = sNestingLevel + 1;
-  uint32_t realInterval = interval;
-  if (aIsInterval || nestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL ||
-      mBackPressureDelayMS > 0 || IsBackgroundInternal()) {
-    
-    
-    realInterval = std::max(realInterval, uint32_t(DOMMinTimeoutValue()));
-  }
-
-  TimeDuration delta = TimeDuration::FromMilliseconds(realInterval);
-
-  if (IsFrozen()) {
-    
-    
-    
-    
-    timeout->mTimeRemaining = delta;
-  } else {
-    
-    
-    
-    timeout->mWhen = TimeStamp::Now() + delta;
-  }
-
-  
-  if (!IsSuspended()) {
-    MOZ_ASSERT(!timeout->mWhen.IsNull());
-
-    nsresult rv;
-    timeout->mTimer = do_CreateInstance("@mozilla.org/timer;1", &rv);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    RefPtr<Timeout> copy = timeout;
-
-    rv = timeout->InitTimer(GetThrottledEventQueue(), realInterval);
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-
-    
-    Unused << copy.forget();
-  }
-
-  timeout->mWindow = this;
-
-  if (!aIsInterval) {
-    timeout->mNestingLevel = nestingLevel;
-  }
-
-  
-  timeout->mPopupState = openAbused;
-
-  if (gRunningTimeoutDepth == 0 && gPopupControlState < openAbused) {
-    
-    
-    
-    
-
-    int32_t delay =
-      Preferences::GetInt("dom.disable_open_click_delay");
-
-    
-    
-    
-    if (interval <= delay) {
-      timeout->mPopupState = gPopupControlState;
-    }
-  }
-
-  InsertTimeoutIntoList(timeout);
-
-  timeout->mTimeoutId = GetTimeoutId(aReason);
-  *aReturn = timeout->mTimeoutId;
-
-  return NS_OK;
-}
-
 int32_t
 nsGlobalWindow::SetTimeoutOrInterval(JSContext *aCx, Function& aFunction,
                                      int32_t aTimeout,
@@ -12828,8 +12489,9 @@ nsGlobalWindow::SetTimeoutOrInterval(JSContext *aCx, Function& aFunction,
   }
 
   int32_t result;
-  aError = SetTimeoutOrInterval(handler, aTimeout, aIsInterval,
-                                Timeout::Reason::eTimeoutOrInterval, &result);
+  aError = mTimeoutManager->SetTimeout(handler, aTimeout, aIsInterval,
+                                      Timeout::Reason::eTimeoutOrInterval,
+                                      &result);
   return result;
 }
 
@@ -12855,8 +12517,9 @@ nsGlobalWindow::SetTimeoutOrInterval(JSContext* aCx, const nsAString& aHandler,
   }
 
   int32_t result;
-  aError = SetTimeoutOrInterval(handler, aTimeout, aIsInterval,
-                                Timeout::Reason::eTimeoutOrInterval, &result);
+  aError = mTimeoutManager->SetTimeout(handler, aTimeout, aIsInterval,
+                                      Timeout::Reason::eTimeoutOrInterval,
+                                      &result);
   return result;
 }
 
@@ -12864,11 +12527,12 @@ bool
 nsGlobalWindow::RunTimeoutHandler(Timeout* aTimeout,
                                   nsIScriptContext* aScx)
 {
+  MOZ_ASSERT(IsInnerWindow());
+
   
   
   RefPtr<Timeout> timeout = aTimeout;
-  Timeout* last_running_timeout = mRunningTimeout;
-  mRunningTimeout = timeout;
+  Timeout* last_running_timeout = mTimeoutManager->BeginRunningTimeout(timeout);
   timeout->mRunning = true;
 
   
@@ -12881,14 +12545,11 @@ nsGlobalWindow::RunTimeoutHandler(Timeout* aTimeout,
   
   timeout->mPopupState = openAbused;
 
-  ++gRunningTimeoutDepth;
-  ++mTimeoutFiringDepth;
-
   bool trackNestingLevel = !timeout->mIsInterval;
   uint32_t nestingLevel;
   if (trackNestingLevel) {
-    nestingLevel = sNestingLevel;
-    sNestingLevel = timeout->mNestingLevel;
+    nestingLevel = TimeoutManager::GetNestingLevel();
+    TimeoutManager::SetNestingLevel(timeout->mNestingLevel);
   }
 
   const char *reason;
@@ -12968,472 +12629,13 @@ nsGlobalWindow::RunTimeoutHandler(Timeout* aTimeout,
   Promise::PerformMicroTaskCheckpoint();
 
   if (trackNestingLevel) {
-    sNestingLevel = nestingLevel;
+    TimeoutManager::SetNestingLevel(nestingLevel);
   }
 
-  --mTimeoutFiringDepth;
-  --gRunningTimeoutDepth;
-
-  mRunningTimeout = last_running_timeout;
+  mTimeoutManager->EndRunningTimeout(last_running_timeout);
   timeout->mRunning = false;
 
   return timeout->mCleared;
-}
-
-bool
-nsGlobalWindow::RescheduleTimeout(Timeout* aTimeout, const TimeStamp& now,
-                                  bool aRunningPendingTimeouts)
-{
-  if (!aTimeout->mIsInterval) {
-    if (aTimeout->mTimer) {
-      
-      
-      
-      aTimeout->mTimer->Cancel();
-      aTimeout->mTimer = nullptr;
-      aTimeout->Release();
-    }
-    return false;
-  }
-
-  
-  
-  TimeDuration nextInterval =
-    TimeDuration::FromMilliseconds(std::max(aTimeout->mInterval,
-                                          uint32_t(DOMMinTimeoutValue())));
-
-  
-  
-  
-  TimeStamp firingTime;
-  if (aRunningPendingTimeouts) {
-    firingTime = now + nextInterval;
-  } else {
-    firingTime = aTimeout->mWhen + nextInterval;
-  }
-
-  TimeStamp currentNow = TimeStamp::Now();
-  TimeDuration delay = firingTime - currentNow;
-
-  
-  
-  
-  if (delay < TimeDuration(0)) {
-    delay = TimeDuration(0);
-  }
-
-  if (!aTimeout->mTimer) {
-    NS_ASSERTION(IsFrozen() || IsSuspended(),
-                 "How'd our timer end up null if we're not frozen or "
-                 "suspended?");
-
-    aTimeout->mTimeRemaining = delay;
-    return true;
-  }
-
-  aTimeout->mWhen = currentNow + delay;
-
-  
-  
-  nsresult rv = aTimeout->InitTimer(GetThrottledEventQueue(),
-                                    delay.ToMilliseconds());
-
-  if (NS_FAILED(rv)) {
-    NS_ERROR("Error initializing timer for DOM timeout!");
-
-    
-    
-    
-    
-    
-    
-    aTimeout->mTimer->Cancel();
-    aTimeout->mTimer = nullptr;
-
-    
-    
-    aTimeout->Release();
-
-    return false;
-  }
-
-  return true;
-}
-
-void
-nsGlobalWindow::RunTimeout(Timeout* aTimeout)
-{
-  if (IsSuspended()) {
-    return;
-  }
-
-  NS_ASSERTION(IsInnerWindow(), "Timeout running on outer window!");
-  NS_ASSERTION(!IsFrozen(), "Timeout running on a window in the bfcache!");
-
-  Timeout* nextTimeout;
-  Timeout* last_expired_timeout;
-  Timeout* last_insertion_point;
-  uint32_t firingDepth = mTimeoutFiringDepth + 1;
-
-  
-  
-  nsCOMPtr<nsIScriptGlobalObject> windowKungFuDeathGrip(this);
-
-  
-  
-  TimeStamp now = TimeStamp::Now();
-  TimeStamp deadline;
-
-  if (aTimeout && aTimeout->mWhen > now) {
-    
-    
-    
-    
-    
-
-    deadline = aTimeout->mWhen;
-  } else {
-    deadline = now;
-  }
-
-  
-  
-  
-  
-  
-  
-  last_expired_timeout = nullptr;
-  for (Timeout* timeout = mTimeouts.getFirst();
-       timeout && timeout->mWhen <= deadline;
-       timeout = timeout->getNext()) {
-    if (timeout->mFiringDepth == 0) {
-      
-      
-      timeout->mFiringDepth = firingDepth;
-      last_expired_timeout = timeout;
-
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      if (timeout == aTimeout && !IsChromeWindow()) {
-        break;
-      }
-    }
-  }
-
-  
-  
-  
-  if (!last_expired_timeout) {
-    return;
-  }
-
-  
-  TimeDuration recordingInterval = TimeDuration::FromMilliseconds(STATISTICS_INTERVAL);
-  if (gLastRecordedRecentTimeouts.IsNull() ||
-      now - gLastRecordedRecentTimeouts > recordingInterval) {
-    gLastRecordedRecentTimeouts = now;
-  }
-
-  
-  
-  
-  
-  
-  RefPtr<Timeout> dummy_timeout = new Timeout();
-  dummy_timeout->mFiringDepth = firingDepth;
-  dummy_timeout->mWhen = now;
-  last_expired_timeout->setNext(dummy_timeout);
-  RefPtr<Timeout> timeoutExtraRef(dummy_timeout);
-
-  last_insertion_point = mTimeoutInsertionPoint;
-  
-  
-  mTimeoutInsertionPoint = dummy_timeout;
-
-  for (Timeout* timeout = mTimeouts.getFirst();
-       timeout != dummy_timeout && !IsFrozen();
-       timeout = nextTimeout) {
-    nextTimeout = timeout->getNext();
-
-    if (timeout->mFiringDepth != firingDepth) {
-      
-      
-
-      continue;
-    }
-
-    if (IsSuspended()) {
-      
-      
-      timeout->mFiringDepth = 0;
-      continue;
-    }
-
-    
-    
-
-    
-    
-    nsCOMPtr<nsIScriptContext> scx = GetContextInternal();
-
-    if (!scx) {
-      
-      
-      continue;
-    }
-
-    
-    bool timeout_was_cleared = RunTimeoutHandler(timeout, scx);
-
-    if (timeout_was_cleared) {
-      
-      
-      
-      
-      MOZ_ASSERT(dummy_timeout->HasRefCntOne(), "dummy_timeout may leak");
-      Unused << timeoutExtraRef.forget().take();
-
-      mTimeoutInsertionPoint = last_insertion_point;
-
-      return;
-    }
-
-    
-    
-    bool needsReinsertion = RescheduleTimeout(timeout, now, !aTimeout);
-
-    
-    
-    nextTimeout = timeout->getNext();
-
-    timeout->remove();
-
-    if (needsReinsertion) {
-      
-      
-      InsertTimeoutIntoList(timeout);
-    }
-
-    
-    timeout->Release();
-  }
-
-  
-  dummy_timeout->remove();
-  timeoutExtraRef = nullptr;
-  MOZ_ASSERT(dummy_timeout->HasRefCntOne(), "dummy_timeout may leak");
-
-  mTimeoutInsertionPoint = last_insertion_point;
-
-  MaybeApplyBackPressure();
-}
-
-void
-nsGlobalWindow::ClearTimeoutOrInterval(int32_t aTimerId, Timeout::Reason aReason)
-{
-  MOZ_RELEASE_ASSERT(IsInnerWindow());
-
-  uint32_t timerId = (uint32_t)aTimerId;
-  Timeout* timeout;
-
-  for (timeout = mTimeouts.getFirst(); timeout; timeout = timeout->getNext()) {
-    if (timeout->mTimeoutId == timerId && timeout->mReason == aReason) {
-      if (timeout->mRunning) {
-        
-
-
-        timeout->mIsInterval = false;
-      }
-      else {
-        
-        timeout->remove();
-
-        if (timeout->mTimer) {
-          timeout->mTimer->Cancel();
-          timeout->mTimer = nullptr;
-          timeout->Release();
-        }
-        timeout->Release();
-      }
-      break;
-    }
-  }
-}
-
-nsresult nsGlobalWindow::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS)
-{
-  FORWARD_TO_INNER(ResetTimersForThrottleReduction, (aPreviousThrottleDelayMS),
-                   NS_ERROR_NOT_INITIALIZED);
-  MOZ_ASSERT(aPreviousThrottleDelayMS > 0);
-
-  if (IsFrozen() || IsSuspended()) {
-    return NS_OK;
-  }
-
-  TimeStamp now = TimeStamp::Now();
-
-  
-  
-  
-  
-  
-  
-  
-  for (Timeout* timeout = mTimeoutInsertionPoint ?
-         mTimeoutInsertionPoint->getNext() : mTimeouts.getFirst();
-       timeout; ) {
-    
-    
-    
-    if (timeout->mWhen <= now) {
-      timeout = timeout->getNext();
-      continue;
-    }
-
-    if (timeout->mWhen - now >
-        TimeDuration::FromMilliseconds(aPreviousThrottleDelayMS)) {
-      
-      
-      
-      break;
-    }
-
-    
-    
-    
-    TimeDuration interval =
-      TimeDuration::FromMilliseconds(std::max(timeout->mInterval,
-                                            uint32_t(DOMMinTimeoutValue())));
-    uint32_t oldIntervalMillisecs = 0;
-    timeout->mTimer->GetDelay(&oldIntervalMillisecs);
-    TimeDuration oldInterval = TimeDuration::FromMilliseconds(oldIntervalMillisecs);
-    if (oldInterval > interval) {
-      
-      TimeStamp firingTime =
-        std::max(timeout->mWhen - oldInterval + interval, now);
-
-      NS_ASSERTION(firingTime < timeout->mWhen,
-                   "Our firing time should strictly decrease!");
-
-      TimeDuration delay = firingTime - now;
-      timeout->mWhen = firingTime;
-
-      
-      
-
-      
-      
-      Timeout* nextTimeout = timeout->getNext();
-
-      
-      
-      
-      NS_ASSERTION(!nextTimeout ||
-                   timeout->mWhen < nextTimeout->mWhen, "How did that happen?");
-      timeout->remove();
-      
-      
-      uint32_t firingDepth = timeout->mFiringDepth;
-      InsertTimeoutIntoList(timeout);
-      timeout->mFiringDepth = firingDepth;
-      timeout->Release();
-
-      nsresult rv = timeout->InitTimer(GetThrottledEventQueue(),
-                                       delay.ToMilliseconds());
-
-      if (NS_FAILED(rv)) {
-        NS_WARNING("Error resetting non background timer for DOM timeout!");
-        return rv;
-      }
-
-      timeout = nextTimeout;
-    } else {
-      timeout = timeout->getNext();
-    }
-  }
-
-  return NS_OK;
-}
-
-void
-nsGlobalWindow::ClearAllTimeouts()
-{
-  Timeout* timeout;
-  Timeout* nextTimeout;
-
-  for (timeout = mTimeouts.getFirst(); timeout; timeout = nextTimeout) {
-    
-
-
-
-
-    if (mRunningTimeout == timeout)
-      mTimeoutInsertionPoint = nullptr;
-
-    nextTimeout = timeout->getNext();
-
-    if (timeout->mTimer) {
-      timeout->mTimer->Cancel();
-      timeout->mTimer = nullptr;
-
-      
-      
-      timeout->Release();
-    }
-
-    
-    
-    timeout->mCleared = true;
-
-    
-    timeout->Release();
-  }
-
-  
-  mTimeouts.clear();
-}
-
-void
-nsGlobalWindow::InsertTimeoutIntoList(Timeout* aTimeout)
-{
-  NS_ASSERTION(IsInnerWindow(),
-               "InsertTimeoutIntoList() called on outer window!");
-
-  
-  
-  
-  Timeout* prevSibling;
-  for (prevSibling = mTimeouts.getLast();
-       prevSibling && prevSibling != mTimeoutInsertionPoint &&
-         
-         
-         (IsFrozen() ?
-          prevSibling->mTimeRemaining > aTimeout->mTimeRemaining :
-          prevSibling->mWhen > aTimeout->mWhen);
-       prevSibling = prevSibling->getPrevious()) {
-    
-  }
-
-  
-  if (prevSibling) {
-    prevSibling->setNext(aTimeout);
-  } else {
-    mTimeouts.insertFront(aTimeout);
-  }
-
-  aTimeout->mFiringDepth = 0;
-
-  
-  
-  aTimeout->AddRef();
 }
 
 
