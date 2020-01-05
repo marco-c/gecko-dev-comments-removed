@@ -166,7 +166,7 @@ AccountState.prototype = {
     return this.storageManager.updateAccountData(updatedFields);
   },
 
-  resolve: function(result) {
+  resolve(result) {
     if (!this.isCurrent) {
       log.info("An accountState promise was resolved, but was actually rejected" +
                " due to a different user being signed in. Originally resolved" +
@@ -176,7 +176,7 @@ AccountState.prototype = {
     return Promise.resolve(result);
   },
 
-  reject: function(error) {
+  reject(error) {
     
     
     
@@ -312,7 +312,7 @@ function urlsafeBase64Encode(key) {
 
 
 
-this.FxAccounts = function (mockInternal) {
+this.FxAccounts = function(mockInternal) {
   let internal = new FxAccountsInternal();
   let external = {};
 
@@ -334,7 +334,7 @@ this.FxAccounts = function (mockInternal) {
   if (!internal.fxaPushService) {
     
     
-    XPCOMUtils.defineLazyGetter(internal, "fxaPushService", function () {
+    XPCOMUtils.defineLazyGetter(internal, "fxaPushService", function() {
       return Components.classes["@mozilla.org/fxaccounts/push;1"]
         .getService(Components.interfaces.nsISupports)
         .wrappedJSObject;
@@ -393,7 +393,7 @@ FxAccountsInternal.prototype = {
       let profileServerUrl = Services.urlFormatter.formatURLPref("identity.fxaccounts.remote.profile.uri");
       this._profile = new FxAccountsProfile({
         fxa: this,
-        profileServerUrl: profileServerUrl,
+        profileServerUrl,
       });
     }
     return this._profile;
@@ -411,7 +411,7 @@ FxAccountsInternal.prototype = {
 
 
 
-  notifyDevices: function(deviceIds, payload, TTL) {
+  notifyDevices(deviceIds, payload, TTL) {
     if (!Array.isArray(deviceIds)) {
       deviceIds = [deviceIds];
     }
@@ -433,11 +433,11 @@ FxAccountsInternal.prototype = {
 
 
 
-  now: function() {
+  now() {
     return this.fxAccountsClient.now();
   },
 
-  getAccountsClient: function() {
+  getAccountsClient() {
     return this.fxAccountsClient;
   },
 
@@ -714,7 +714,7 @@ FxAccountsInternal.prototype = {
     });
   },
 
-  checkVerificationStatus: function() {
+  checkVerificationStatus() {
     log.trace('checkVerificationStatus');
     let currentState = this.currentAccountState;
     return currentState.getUserAccountData().then(data => {
@@ -731,7 +731,7 @@ FxAccountsInternal.prototype = {
     });
   },
 
-  _destroyOAuthToken: function(tokenData) {
+  _destroyOAuthToken(tokenData) {
     let client = new FxAccountsOAuthGrantClient({
       serverURL: tokenData.server,
       client_id: FX_OAUTH_CLIENT_ID
@@ -739,7 +739,7 @@ FxAccountsInternal.prototype = {
     return client.destroyToken(tokenData.token)
   },
 
-  _destroyAllOAuthTokens: function(tokenInfos) {
+  _destroyAllOAuthTokens(tokenInfos) {
     
     let promises = [];
     for (let [key, tokenInfo] of Object.entries(tokenInfos || {})) {
@@ -864,7 +864,7 @@ FxAccountsInternal.prototype = {
 
 
 
-  getKeys: function() {
+  getKeys() {
     let currentState = this.currentAccountState;
     return currentState.getUserAccountData().then((userData) => {
       if (!userData) {
@@ -900,7 +900,7 @@ FxAccountsInternal.prototype = {
     ).then(result => currentState.resolve(result));
    },
 
-  fetchAndUnwrapKeys: function(keyFetchToken) {
+  fetchAndUnwrapKeys(keyFetchToken) {
     if (logPII) {
       log.debug("fetchAndUnwrapKeys: token: " + keyFetchToken);
     }
@@ -951,7 +951,7 @@ FxAccountsInternal.prototype = {
     }.bind(this)).then(result => currentState.resolve(result));
   },
 
-  getAssertionFromCert: function(data, keyPair, cert, audience) {
+  getAssertionFromCert(data, keyPair, cert, audience) {
     log.debug("getAssertionFromCert");
     let payload = {};
     let d = Promise.defer();
@@ -978,7 +978,7 @@ FxAccountsInternal.prototype = {
     return d.promise.then(result => currentState.resolve(result));
   },
 
-  getCertificateSigned: function(sessionToken, serializedPublicKey, lifetime) {
+  getCertificateSigned(sessionToken, serializedPublicKey, lifetime) {
     log.debug("getCertificateSigned: " + !!sessionToken + " " + !!serializedPublicKey);
     if (logPII) {
       log.debug("getCertificateSigned: " + sessionToken + " " + serializedPublicKey);
@@ -1003,7 +1003,7 @@ FxAccountsInternal.prototype = {
     let ignoreCachedAuthCredentials = false;
     try {
       ignoreCachedAuthCredentials = Services.prefs.getBoolPref("services.sync.debug.ignoreCachedAuthCredentials");
-    } catch(e) {
+    } catch (e) {
       
     }
     let mustBeValidUntil = this.now() + ASSERTION_USE_PERIOD;
@@ -1074,11 +1074,11 @@ FxAccountsInternal.prototype = {
     }
     return {
       keyPair: keyPair.rawKeyPair,
-      certificate: certificate,
+      certificate,
     }
   }),
 
-  getUserAccountData: function() {
+  getUserAccountData() {
     return this.currentAccountState.getUserAccountData();
   },
 
@@ -1089,7 +1089,7 @@ FxAccountsInternal.prototype = {
   
 
 
-  loadAndPoll: function() {
+  loadAndPoll() {
     let currentState = this.currentAccountState;
     return currentState.getUserAccountData()
       .then(data => {
@@ -1103,7 +1103,7 @@ FxAccountsInternal.prototype = {
       });
   },
 
-  startVerifiedCheck: function(data) {
+  startVerifiedCheck(data) {
     log.debug("startVerifiedCheck", data && data.verified);
     if (logPII) {
       log.debug("startVerifiedCheck with user data", data);
@@ -1125,7 +1125,7 @@ FxAccountsInternal.prototype = {
     );
   },
 
-  whenVerified: function(data) {
+  whenVerified(data) {
     let currentState = this.currentAccountState;
     if (data.verified) {
       log.debug("already verified");
@@ -1140,7 +1140,7 @@ FxAccountsInternal.prototype = {
     );
   },
 
-  notifyObservers: function(topic, data) {
+  notifyObservers(topic, data) {
     log.debug("Notifying observers of " + topic);
     Services.obs.notifyObservers(null, topic, data);
   },
@@ -1217,7 +1217,7 @@ FxAccountsInternal.prototype = {
   },
 
   
-  pollEmailStatusAgain: function (currentState, sessionToken, timeoutMs) {
+  pollEmailStatusAgain(currentState, sessionToken, timeoutMs) {
     let ageMs = Date.now() - this.pollStartDate;
     if (ageMs >= this.POLL_SESSION) {
       if (currentState.whenVerifiedDeferred) {
@@ -1238,11 +1238,11 @@ FxAccountsInternal.prototype = {
     }, timeoutMs);
   },
 
-  requiresHttps: function() {
+  requiresHttps() {
     let allowHttp = false;
     try {
       allowHttp = Services.prefs.getBoolPref("identity.fxaccounts.allowHttp");
-    } catch(e) {
+    } catch (e) {
       
     }
     return allowHttp !== true;
@@ -1280,7 +1280,7 @@ FxAccountsInternal.prototype = {
   
   
   
-  promiseAccountsChangeProfileURI: function(entrypoint, settingToEdit = null) {
+  promiseAccountsChangeProfileURI(entrypoint, settingToEdit = null) {
     let url = Services.urlFormatter.formatURLPref("identity.fxaccounts.settings.uri");
 
     if (settingToEdit) {
@@ -1309,7 +1309,7 @@ FxAccountsInternal.prototype = {
 
   
   
-  promiseAccountsManageURI: function(entrypoint) {
+  promiseAccountsManageURI(entrypoint) {
     let url = Services.urlFormatter.formatURLPref("identity.fxaccounts.settings.uri");
     if (this.requiresHttps() && !/^https:/.test(url)) { 
       throw new Error("Firefox Accounts server must use HTTPS");
@@ -1397,7 +1397,7 @@ FxAccountsInternal.prototype = {
       let token = result.access_token;
       
       if (token) {
-        let entry = {token: token, server: oAuthURL};
+        let entry = {token, server: oAuthURL};
         
         
         
@@ -1465,7 +1465,7 @@ FxAccountsInternal.prototype = {
 
 
 
-  _errorToErrorClass: function (aError) {
+  _errorToErrorClass(aError) {
     if (aError.errno) {
       let error = SERVER_ERRNO_TO_ERROR[aError.errno];
       return this._error(ERROR_TO_GENERAL_ERROR_CLASS[error] || ERROR_UNKNOWN, aError);
@@ -1479,7 +1479,7 @@ FxAccountsInternal.prototype = {
     return this._error(ERROR_UNKNOWN, aError);
   },
 
-  _error: function(aError, aDetails) {
+  _error(aError, aDetails) {
     log.error("FxA rejecting with error ${aError}, details: ${aDetails}", {aError, aDetails});
     let reason = new Error(aError);
     if (aDetails) {
@@ -1510,7 +1510,7 @@ FxAccountsInternal.prototype = {
 
 
 
-  getSignedInUserProfile: function () {
+  getSignedInUserProfile() {
     let currentState = this.currentAccountState;
     return this.profile.getProfile().then(
       profileData => {
@@ -1589,7 +1589,7 @@ FxAccountsInternal.prototype = {
       if (Services.prefs.getBoolPref("identity.fxaccounts.skipDeviceRegistration")) {
         return Promise.resolve();
       }
-    } catch(ignore) {}
+    } catch (ignore) {}
 
     if (!signedInUser.sessionToken) {
       return Promise.reject(new Error(

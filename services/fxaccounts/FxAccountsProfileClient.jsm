@@ -128,7 +128,7 @@ this.FxAccountsProfileClient.prototype = {
 
 
 
-  _rawRequest: function(path, method, token) {
+  _rawRequest(path, method, token) {
     return new Promise((resolve, reject) => {
       let profileDataUrl = this.serverURL + path;
       let request = new this._Request(profileDataUrl);
@@ -137,7 +137,7 @@ this.FxAccountsProfileClient.prototype = {
       request.setHeader("Authorization", "Bearer " + token);
       request.setHeader("Accept", "application/json");
 
-      request.onComplete = function (error) {
+      request.onComplete = function(error) {
         if (error) {
           return reject(new FxAccountsProfileClientError({
             error: ERROR_NETWORK,
@@ -192,7 +192,7 @@ this.FxAccountsProfileClient.prototype = {
 
 
 
-  fetchProfile: function () {
+  fetchProfile() {
     log.debug("FxAccountsProfileClient: Requested profile");
     return this._createRequest("/profile", "GET");
   },
@@ -204,7 +204,7 @@ this.FxAccountsProfileClient.prototype = {
 
 
 
-  fetchProfileImage: function () {
+  fetchProfileImage() {
     log.debug("FxAccountsProfileClient: Requested avatar");
     return this._createRequest("/avatar", "GET");
   }

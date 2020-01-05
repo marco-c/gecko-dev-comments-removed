@@ -1,22 +1,22 @@
-/* Any copyright is dedicated to the Public Domain.
-   http://creativecommons.org/publicdomain/zero/1.0/ */
 
-/*
- * The list of phases mapped to their corresponding profiles.  The object
- * here must be in strict JSON format, as it will get parsed by the Python
- * testrunner (no single quotes, extra comma's, etc).
- */
+
+
+
+
+
+
+
 
 var phases = { "phase1": "profile1",
                "phase2": "profile2",
                "phase3": "profile1",
                "phase4": "profile2" };
 
-/*
- * Bookmark asset lists: these define bookmarks that are used during the test
- */
 
-// the initial list of bookmarks to be added to the browser
+
+
+
+
 var bookmarks_initial = {
   "menu": [
     { uri: "http://www.google.com",
@@ -32,7 +32,7 @@ var bookmarks_initial = {
       title: "Bugzilla",
       keyword: "bz",
       changes: {
-        keyword: "bugzilla" 
+        keyword: "bugzilla"
       }
     },
     { folder: "foldera" },
@@ -81,8 +81,8 @@ var bookmarks_initial = {
   ]
 };
 
-// the state of bookmarks after the first 'modify' action has been performed
-// on them
+
+
 var bookmarks_after_first_modify = {
   "menu": [
     { uri: "http://www.apple.com/iphone/",
@@ -132,7 +132,7 @@ var bookmarks_after_first_modify = {
   ]
 };
 
-// a list of bookmarks to delete during a 'delete' action
+
 var bookmarks_to_delete = {
   "menu": [
     { uri: "http://www.google.com",
@@ -143,8 +143,8 @@ var bookmarks_to_delete = {
   ]
 };
 
-// the state of bookmarks after the second 'modify' action has been performed
-// on them
+
+
 var bookmarks_after_second_modify = {
   "menu": [
     { uri: "http://www.apple.com/iphone/",
@@ -178,8 +178,8 @@ var bookmarks_after_second_modify = {
   ]
 };
 
-// a list of bookmarks which should not be present after the last
-// 'delete' and 'modify' actions
+
+
 var bookmarks_absent = {
   "menu": [
     { uri: "http://www.google.com",
@@ -190,12 +190,12 @@ var bookmarks_absent = {
   ]
 };
 
-/*
- * History asset lists: these define history entries that are used during
- * the test
- */
 
-// the initial list of history items to add to the browser
+
+
+
+
+
 var history_initial = [
   { uri: "http://www.google.com/",
     title: "Google",
@@ -229,7 +229,7 @@ var history_initial = [
   }
 ];
 
-// a list of history entries to delete during a 'delete' action
+
 var history_to_delete = [
   { uri: "http://www.cnn.com/" },
   { begin: -24,
@@ -237,7 +237,7 @@ var history_to_delete = [
   { host: "www.google.com" }
 ];
 
-// the expected history entries after the first 'delete' action
+
 var history_after_delete = [
   { uri: "http://www.mozilla.com/",
     title: "Mozilla",
@@ -252,7 +252,7 @@ var history_after_delete = [
   }
 ];
 
-// history entries expected to not exist after a 'delete' action
+
 var history_absent = [
   { uri: "http://www.google.com/",
     title: "Google",
@@ -300,12 +300,12 @@ var history_absent = [
   }
 ];
 
-/*
- * Password asset lists: these define password entries that are used during
- * the test
- */
 
-// the initial list of passwords to add to the browser
+
+
+
+
+
 var passwords_initial = [
   { hostname: "http://www.example.com",
     submitURL: "http://login.example.com",
@@ -324,7 +324,7 @@ var passwords_initial = [
   }
 ];
 
-// the expected state of passwords after the first 'modify' action
+
 var passwords_after_first_modify = [
   { hostname: "http://www.example.com",
     submitURL: "http://login.example.com",
@@ -340,7 +340,7 @@ var passwords_after_first_modify = [
   }
 ];
 
-// a list of passwords to delete during a 'delete' action
+
 var passwords_to_delete = [
   { hostname: "http://www.example.com",
     realm: "login",
@@ -349,8 +349,8 @@ var passwords_to_delete = [
   }
 ];
 
-// a list of passwords expected to be absent after 'delete' and 'modify'
-// actions
+
+
 var passwords_absent = [
   { hostname: "http://www.example.com",
     realm: "login",
@@ -359,7 +359,7 @@ var passwords_absent = [
   }
 ];
 
-// the expected state of passwords after the seconds 'modify' action
+
 var passwords_after_second_modify = [
   { hostname: "http://www.example.com",
     submitURL: "http://login.example.com",
@@ -370,9 +370,9 @@ var passwords_after_second_modify = [
   }
 ];
 
-/*
- * Test phases
- */
+
+
+
 
 Phase('phase1', [
   [Bookmarks.add, bookmarks_initial],

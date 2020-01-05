@@ -114,9 +114,9 @@ this.HawkClient.prototype = {
 
 
 
-  _constructError: function(restResponse, error) {
+  _constructError(restResponse, error) {
     let errorObj = {
-      error: error,
+      error,
       
       
       
@@ -156,12 +156,12 @@ this.HawkClient.prototype = {
 
 
 
-  _updateClockOffset: function(dateString) {
+  _updateClockOffset(dateString) {
     try {
       let serverDateMsec = Date.parse(dateString);
       this._localtimeOffsetMsec = serverDateMsec - this.now();
       log.debug("Clock offset vs " + this.host + ": " + this._localtimeOffsetMsec);
-    } catch(err) {
+    } catch (err) {
       log.warn("Bad date header in server response: " + dateString);
     }
   },
@@ -180,7 +180,7 @@ this.HawkClient.prototype = {
   
 
 
-  now: function() {
+  now() {
     return Date.now();
   },
 
@@ -203,8 +203,8 @@ this.HawkClient.prototype = {
 
 
 
-  request: function(path, method, credentials=null, payloadObj={}, extraHeaders = {},
-                    retryOK=true) {
+  request(path, method, credentials = null, payloadObj = {}, extraHeaders = {},
+                    retryOK = true) {
     method = method.toLowerCase();
 
     let deferred = Promise.defer();
@@ -263,7 +263,7 @@ this.HawkClient.prototype = {
       let jsonResponse = {};
       try {
         jsonResponse = JSON.parse(restResponse.body);
-      } catch(notJSON) {}
+      } catch (notJSON) {}
 
       let okResponse = (200 <= status && status < 300);
       if (!okResponse || jsonResponse.error) {
@@ -275,7 +275,7 @@ this.HawkClient.prototype = {
       
       
       deferred.resolve(this.response);
-    };
+    }
 
     function onComplete(error) {
       try {
@@ -319,7 +319,7 @@ this.HawkClient.prototype = {
   observerPrefix: null,
 
   
-  _maybeNotifyBackoff: function (response, headerName) {
+  _maybeNotifyBackoff(response, headerName) {
     if (!this.observerPrefix || !response.headers) {
       return;
     }
@@ -339,7 +339,7 @@ this.HawkClient.prototype = {
   },
 
   
-  newHAWKAuthenticatedRESTRequest: function(uri, credentials, extra) {
+  newHAWKAuthenticatedRESTRequest(uri, credentials, extra) {
     return new HAWKAuthenticatedRESTRequest(uri, credentials, extra);
   },
 
