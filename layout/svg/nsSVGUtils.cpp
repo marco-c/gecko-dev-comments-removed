@@ -741,6 +741,8 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
     return DrawResult::TEMPORARY_ERROR;
   }
 
+  DrawResult result = DrawResult::SUCCESS;
+
   
 
   bool shouldGenerateMask = (maskUsage.opacity != 1.0f ||
@@ -753,13 +755,17 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
     RefPtr<SourceSurface> maskSurface;
 
     if (maskUsage.shouldGenerateMaskLayer) {
-      maskSurface =
-        maskFrame->GetMaskForMaskedFrame(&aContext, aFrame, aTransform,
-                                         maskUsage.opacity, &maskTransform);
+      uint8_t maskMode =
+        aFrame->StyleSVGReset()->mMask.mLayers[0].mMaskMode;
+      nsSVGMaskFrame::MaskParams params(&aContext, aFrame, aTransform,
+                                        maskUsage.opacity, &maskTransform,
+                                        maskMode);
+      Tie(result, maskSurface) = maskFrame->GetMaskForMaskedFrame(params);
 
       if (!maskSurface) {
         
-        return DrawResult::SUCCESS;
+        
+        return result;
       }
     }
 
@@ -768,11 +774,15 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
       RefPtr<SourceSurface> clipMaskSurface =
         clipPathFrame->GetClipMask(aContext, aFrame, aTransform,
                                    &clippedMaskTransform, maskSurface,
-                                   maskTransform);
+                                   maskTransform, &result);
 
       if (clipMaskSurface) {
         maskSurface = clipMaskSurface;
         maskTransform = clippedMaskTransform;
+      } else {
+        
+        
+        return result;
       }
     }
 
@@ -793,8 +803,6 @@ nsSVGUtils::PaintFrameWithEffects(nsIFrame *aFrame,
       nsCSSClipPathInstance::ApplyBasicShapeClip(aContext, aFrame);
     }
   }
-
-  DrawResult result = DrawResult::SUCCESS;
 
   
   if (effectProperties.HasValidFilter()) {
