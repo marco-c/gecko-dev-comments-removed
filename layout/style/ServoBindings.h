@@ -157,6 +157,10 @@ DECL_BORROWED_MUT_REF_TYPE_FOR(StyleChildrenIterator)
 extern "C" {
 
 
+NS_DECL_HOLDER_FFI_REFCOUNTING(nsIPrincipal, Principal)
+NS_DECL_HOLDER_FFI_REFCOUNTING(nsIURI, URI)
+
+
 uint32_t Gecko_ChildrenCount(RawGeckoNodeBorrowed node);
 bool Gecko_NodeIsElement(RawGeckoNodeBorrowed node);
 RawGeckoNodeBorrowedOrNull Gecko_GetParentNode(RawGeckoNodeBorrowed node);
@@ -249,6 +253,12 @@ void Gecko_CopyListStyleTypeFrom(nsStyleList* dst, const nsStyleList* src);
 
 void Gecko_SetNullImageValue(nsStyleImage* image);
 void Gecko_SetGradientImageValue(nsStyleImage* image, nsStyleGradient* gradient);
+void Gecko_SetUrlImageValue(nsStyleImage* image,
+                            const uint8_t* url_bytes,
+                            uint32_t url_length,
+                            ThreadSafeURIHolder* base_uri,
+                            ThreadSafeURIHolder* referrer,
+                            ThreadSafePrincipalHolder* principal);
 void Gecko_CopyImageValueFrom(nsStyleImage* image, const nsStyleImage* other);
 
 nsStyleGradient* Gecko_CreateGradient(uint8_t shape,
@@ -256,10 +266,6 @@ nsStyleGradient* Gecko_CreateGradient(uint8_t shape,
                                       bool repeating,
                                       bool legacy_syntax,
                                       uint32_t stops);
-
-
-NS_DECL_HOLDER_FFI_REFCOUNTING(nsIPrincipal, Principal)
-NS_DECL_HOLDER_FFI_REFCOUNTING(nsIURI, URI)
 
 
 void Gecko_SetMozBinding(nsStyleDisplay* style_struct,
