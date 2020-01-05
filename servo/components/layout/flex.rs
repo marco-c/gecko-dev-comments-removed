@@ -6,7 +6,7 @@
 
 #![deny(unsafe_code)]
 
-use app_units::Au;
+use app_units::{Au, MAX_AU};
 use block::BlockFlow;
 use context::LayoutContext;
 use display_list_builder::{DisplayListBuildState, FlexFlowDisplayListBuilding};
@@ -20,15 +20,19 @@ use fragment::{Fragment, FragmentBorderBoxIterator, Overflow};
 use gfx::display_list::StackingContext;
 use gfx_traits::StackingContextId;
 use layout_debug;
-use model::{IntrinsicISizes, MaybeAuto, MinMaxConstraint};
+use model::{Direction, IntrinsicISizes, MaybeAuto, MinMaxConstraint};
+use model::{specified, specified_or_none};
 use script_layout_interface::restyle_damage::{REFLOW, REFLOW_OUT_OF_FLOW};
-use std::cmp::max;
+use std::cmp::{max, min};
+use std::ops::Range;
 use std::sync::Arc;
-use style::computed_values::flex_direction;
-use style::context::SharedStyleContext;
+use style::computed_values::border_collapse;
+use style::computed_values::{align_content, align_self, flex_direction, flex_wrap, justify_content};
+use style::context::{SharedStyleContext, StyleContext};
 use style::logical_geometry::LogicalSize;
 use style::properties::ServoComputedValues;
-use style::values::computed::{LengthOrPercentage, LengthOrPercentageOrAuto, LengthOrPercentageOrNone};
+use style::values::computed::{LengthOrPercentage, LengthOrPercentageOrAuto};
+use style::values::computed::{LengthOrPercentageOrAutoOrContent, LengthOrPercentageOrNone};
 
 
 
@@ -51,13 +55,13 @@ impl AxisSize {
                     Some(size) => AxisSize::Definite(size.scale_by(percent)),
                     None => AxisSize::Infinite
                 }
-            },
+            }
             LengthOrPercentageOrAuto::Calc(calc) => {
                 match content_size {
                     Some(size) => AxisSize::Definite(size.scale_by(calc.percentage())),
                     None => AxisSize::Infinite
                 }
-            },
+            }
             LengthOrPercentageOrAuto::Auto => {
                 AxisSize::MinMax(MinMaxConstraint::new(content_size, min, max))
             }
@@ -69,21 +73,259 @@ impl AxisSize {
 
 
 
-#[derive(Debug)]
-enum Mode {
-    Inline,
-    Block
+fn from_flex_basis(flex_basis: LengthOrPercentageOrAutoOrContent,
+                   main_length: LengthOrPercentageOrAuto,
+                   containing_length: Option<Au>) -> MaybeAuto {
+    match (flex_basis, containing_length) {
+        (LengthOrPercentageOrAutoOrContent::Length(length), _) =>
+            MaybeAuto::Specified(length),
+        (LengthOrPercentageOrAutoOrContent::Percentage(percent), Some(size)) =>
+            MaybeAuto::Specified(size.scale_by(percent)),
+        (LengthOrPercentageOrAutoOrContent::Percentage(_), None) =>
+            MaybeAuto::Auto,
+        (LengthOrPercentageOrAutoOrContent::Calc(calc), Some(size)) =>
+            MaybeAuto::Specified(calc.length() + size.scale_by(calc.percentage())),
+        (LengthOrPercentageOrAutoOrContent::Calc(_), None) =>
+            MaybeAuto::Auto,
+        (LengthOrPercentageOrAutoOrContent::Content, _) =>
+            MaybeAuto::Auto,
+        (LengthOrPercentageOrAutoOrContent::Auto, Some(size)) =>
+            MaybeAuto::from_style(main_length, size),
+        (LengthOrPercentageOrAutoOrContent::Auto, None) => {
+            if let LengthOrPercentageOrAuto::Length(length) = main_length {
+                MaybeAuto::Specified(length)
+            } else {
+                MaybeAuto::Auto
+            }
+        }
+    }
 }
+
+
 
 #[derive(Debug)]
 struct FlexItem {
+    
+    pub main_size: Au,
+    
+    pub base_size: Au,
+    
+    pub min_size: Au,
+    
+    
+    pub max_size: Au,
+    
     pub flow: FlowRef,
+    
+    pub style: Arc<ServoComputedValues>,
+    
+    pub flex_grow: f32,
+    
+    pub flex_shrink: f32,
+    
+    pub order: i32,
+    
+    pub is_frozen: bool,
+    
+    pub is_strut: bool
 }
 
 impl FlexItem {
-    fn new(flow: FlowRef) -> FlexItem {
+    pub fn new(flow: FlowRef) -> FlexItem {
+        let style = flow.as_block().fragment.style.clone();
+        let flex_grow = style.get_position().flex_grow;
+        let flex_shrink = style.get_position().flex_shrink;
+        let order = style.get_position().order;
+        
+
         FlexItem {
-            flow: flow
+            main_size: Au(0),
+            base_size: Au(0),
+            min_size: Au(0),
+            max_size: MAX_AU,
+            flow: flow,
+            style: style,
+            flex_grow: flex_grow,
+            flex_shrink: flex_shrink,
+            order: order,
+            is_frozen: false,
+            is_strut: false
+        }
+    }
+
+    
+    
+    
+    pub fn init_sizes(&mut self, containing_length: Au, direction: Direction) {
+        let block = flow_ref::deref_mut(&mut self.flow).as_mut_block();
+        match direction {
+            
+            
+            
+            Direction::Inline => {
+                let basis = from_flex_basis(self.style.get_position().flex_basis,
+                                            self.style.content_inline_size(),
+                                            Some(containing_length));
+
+                
+                block.fragment.compute_border_and_padding(containing_length,
+                                                          border_collapse::T::separate);
+                block.fragment.compute_inline_direction_margins(containing_length);
+                block.fragment.compute_block_direction_margins(containing_length);
+
+                let content_size = block.base.intrinsic_inline_sizes.preferred_inline_size
+                    - block.fragment.surrounding_intrinsic_inline_size()
+                    + block.fragment.box_sizing_boundary(direction);
+                self.base_size = basis.specified_or_default(content_size);
+                self.max_size = specified_or_none(self.style.max_inline_size(), containing_length)
+                    .unwrap_or(MAX_AU);
+                self.min_size = specified(self.style.min_inline_size(), containing_length);
+            }
+            Direction::Block => {
+                let basis = from_flex_basis(self.style.get_position().flex_basis,
+                                            self.style.content_block_size(),
+                                            Some(containing_length));
+                let content_size = block.fragment.border_box.size.block
+                    - block.fragment.border_padding.block_start_end()
+                    + block.fragment.box_sizing_boundary(direction);
+                self.base_size = basis.specified_or_default(content_size);
+                self.max_size = specified_or_none(self.style.max_block_size(), containing_length)
+                    .unwrap_or(MAX_AU);
+                self.min_size = specified(self.style.min_block_size(), containing_length);
+            }
+        }
+    }
+
+    
+    
+    pub fn outer_main_size(&self, direction: Direction) -> Au {
+        let ref fragment = self.flow.as_block().fragment;
+        let outer_width = match direction {
+            Direction::Inline => {
+                fragment.border_padding.inline_start_end() + fragment.margin.inline_start_end()
+            }
+            Direction::Block => {
+                fragment.border_padding.block_start_end() + fragment.margin.block_start_end()
+            }
+        };
+        max(self.min_size, min(self.base_size, self.max_size))
+            - fragment.box_sizing_boundary(direction) + outer_width
+    }
+
+    
+    pub fn auto_margin_count(&self, direction: Direction) -> i32 {
+        let margin = self.style.logical_margin();
+        let mut margin_count = 0;
+        match direction {
+            Direction::Inline => {
+                if margin.inline_start == LengthOrPercentageOrAuto::Auto {
+                    margin_count += 1;
+                }
+                if margin.inline_end == LengthOrPercentageOrAuto::Auto {
+                    margin_count += 1;
+                }
+            }
+            Direction::Block => {
+                if margin.block_start == LengthOrPercentageOrAuto::Auto {
+                    margin_count += 1;
+                }
+                if margin.block_end == LengthOrPercentageOrAuto::Auto {
+                    margin_count += 1;
+                }
+            }
+        }
+        margin_count
+    }
+}
+
+
+
+#[derive(Debug)]
+struct FlexLine {
+    
+    pub range: Range<usize>,
+    
+    pub free_space: Au,
+    
+    pub auto_margin_count: i32,
+    
+    pub cross_size: Au,
+}
+
+impl FlexLine {
+    pub fn new(range: Range<usize>, free_space: Au, auto_margin_count: i32) -> FlexLine {
+        FlexLine {
+            range: range,
+            auto_margin_count: auto_margin_count,
+            free_space: free_space,
+            cross_size: Au(0)
+        }
+    }
+
+    
+    
+    
+    
+    pub fn flex_resolve(&mut self, items: &mut [FlexItem], collapse: bool) {
+        let mut total_grow = 0.0;
+        let mut total_shrink = 0.0;
+        let mut total_scaled = 0.0;
+        let mut active_count = 0;
+        
+        
+        
+        for item in items.iter_mut().filter(|i| !(i.is_strut && collapse)) {
+            item.main_size = max(item.min_size, min(item.base_size, item.max_size));
+            if item.main_size != item.base_size
+                || (self.free_space > Au(0) && item.flex_grow == 0.0)
+                || (self.free_space < Au(0) && item.flex_shrink == 0.0) {
+                    item.is_frozen = true;
+                } else {
+                    item.is_frozen = false;
+                    total_grow += item.flex_grow;
+                    total_shrink += item.flex_shrink;
+                    
+                    total_scaled += item.flex_shrink * item.base_size.0 as f32;
+                    active_count += 1;
+                }
+        }
+
+        let initial_free_space = self.free_space;
+        let mut total_variation = Au(1);
+        
+        while total_variation != Au(0) && self.free_space != Au(0) && active_count > 0 {
+            self.free_space =
+                
+                if self.free_space > Au(0) {
+                    min(initial_free_space.scale_by(total_grow), self.free_space)
+                } else {
+                    max(initial_free_space.scale_by(total_shrink), self.free_space)
+                };
+
+            total_variation = Au(0);
+            for item in items.iter_mut().filter(|i| !i.is_frozen).filter(|i| !(i.is_strut && collapse)) {
+                
+                let (factor, end_size) = if self.free_space > Au(0) {
+                    (item.flex_grow / total_grow, item.max_size)
+                } else {
+                    (item.flex_shrink * item.base_size.0 as f32 / total_scaled, item.min_size)
+                };
+                let variation = self.free_space.scale_by(factor);
+                if variation.0.abs() > (end_size - item.main_size).0.abs() {
+                    
+                    total_variation += end_size - item.main_size;
+                    item.main_size = end_size;
+                    item.is_frozen = true;
+                    active_count -= 1;
+                    total_shrink -= item.flex_shrink;
+                    total_grow -= item.flex_grow;
+                    total_scaled -= item.flex_shrink * item.base_size.0 as f32;
+                } else {
+                    total_variation += variation;
+                    item.main_size += variation;
+                }
+            }
+            self.free_space -= total_variation;
         }
     }
 }
@@ -95,36 +337,95 @@ pub struct FlexFlow {
     block_flow: BlockFlow,
     
     
-    main_mode: Mode,
+    main_mode: Direction,
     
     available_main_size: AxisSize,
     
     available_cross_size: AxisSize,
     
+    lines: Vec<FlexLine>,
+    
     items: Vec<FlexItem>,
     
-    is_reverse: bool
+    main_reverse: bool,
+    
+    is_wrappable: bool,
+    
+    cross_reverse: bool
 }
 
 impl FlexFlow {
     pub fn from_fragment(fragment: Fragment,
                          flotation: Option<FloatKind>)
                          -> FlexFlow {
-        let (main_mode, is_reverse) = match fragment.style.get_position().flex_direction {
-            flex_direction::T::row            => (Mode::Inline, false),
-            flex_direction::T::row_reverse    => (Mode::Inline, true),
-            flex_direction::T::column         => (Mode::Block, false),
-            flex_direction::T::column_reverse => (Mode::Block, true),
-        };
+        let main_mode;
+        let main_reverse;
+        let is_wrappable;
+        let cross_reverse;
+        {
+            let style = fragment.style();
+            let (mode, reverse) = match style.get_position().flex_direction {
+                flex_direction::T::row            => (Direction::Inline, false),
+                flex_direction::T::row_reverse    => (Direction::Inline, true),
+                flex_direction::T::column         => (Direction::Block, false),
+                flex_direction::T::column_reverse => (Direction::Block, true),
+            };
+            main_mode = mode;
+            main_reverse =
+                reverse == style.writing_mode.is_bidi_ltr();
+            let (wrappable, reverse) = match fragment.style.get_position().flex_wrap {
+                flex_wrap::T::nowrap              => (false, false),
+                flex_wrap::T::wrap                => (true, false),
+                flex_wrap::T::wrap_reverse        => (true, true),
+            };
+            is_wrappable = wrappable;
+            
+            cross_reverse = reverse;
+        }
 
         FlexFlow {
             block_flow: BlockFlow::from_fragment(fragment, flotation),
             main_mode: main_mode,
             available_main_size: AxisSize::Infinite,
             available_cross_size: AxisSize::Infinite,
+            lines: Vec::new(),
             items: Vec::new(),
-            is_reverse: is_reverse
+            main_reverse: main_reverse,
+            is_wrappable: is_wrappable,
+            cross_reverse: cross_reverse
         }
+    }
+
+    
+    
+    
+    
+    
+    
+    
+    fn get_flex_line(&mut self, container_size: Au) -> Option<FlexLine> {
+        let start = self.lines.last().map(|line| line.range.end).unwrap_or(0);
+        if start == self.items.len() {
+            return None;
+        }
+        let mut end = start;
+        let mut total_line_size = Au(0);
+        let mut margin_count = 0;
+
+        let items = &mut self.items[start..];
+        for mut item in items {
+            item.init_sizes(container_size, self.main_mode);
+            let outer_main_size = item.outer_main_size(self.main_mode);
+            if total_line_size + outer_main_size > container_size && end != start && self.is_wrappable {
+                break;
+            }
+            margin_count += item.auto_margin_count(self.main_mode);
+            total_line_size += outer_main_size;
+            end += 1;
+        }
+
+        let line = FlexLine::new(start..end, container_size - total_line_size, margin_count);
+        Some(line)
     }
 
     
@@ -226,9 +527,6 @@ impl FlexFlow {
         }
     }
 
-    
-    
-    
     fn inline_mode_assign_inline_sizes(&mut self,
                                        _shared_context: &SharedStyleContext,
                                        inline_start_content_edge: Au,
@@ -251,43 +549,113 @@ impl FlexFlow {
             AxisSize::Infinite => content_inline_size,
         };
 
-        let even_content_inline_size = inline_size / child_count;
-
         let container_mode = self.block_flow.base.block_container_writing_mode;
         self.block_flow.base.position.size.inline = inline_size;
 
-        let block_container_explicit_block_size = self.block_flow.base.block_container_explicit_block_size;
-        let mut inline_child_start = if !self.is_reverse {
-            inline_start_content_edge
-        } else {
-            self.block_flow.fragment.border_box.size.inline
-        };
-        for kid in &mut self.items {
-            let base = flow::mut_base(flow_ref::deref_mut(&mut kid.flow));
+        
+        let box_border = self.block_flow.fragment.box_sizing_boundary(Direction::Block);
 
-            base.block_container_inline_size = even_content_inline_size;
-            base.block_container_writing_mode = container_mode;
-            base.block_container_explicit_block_size = block_container_explicit_block_size;
-            if !self.is_reverse {
-              base.position.start.i = inline_child_start;
-              inline_child_start = inline_child_start + even_content_inline_size;
+        let parent_container_size = self.block_flow.explicit_block_containing_size(_shared_context);
+        
+        let explicit_content_size = self
+                                    .block_flow
+                                    .explicit_block_size(parent_container_size)
+                                    .map(|x| max(x - box_border, Au(0)));
+        let containing_block_text_align =
+            self.block_flow.fragment.style().get_inheritedtext().text_align;
+
+        while let Some(mut line) = self.get_flex_line(inline_size) {
+            let items = &mut self.items[line.range.clone()];
+            line.flex_resolve(items, false);
+            
+            
+
+            let item_count = items.len() as i32;
+            let mut cur_i = inline_start_content_edge;
+            let item_interval = if line.free_space >= Au(0) && line.auto_margin_count == 0 {
+                match self.block_flow.fragment.style().get_position().justify_content {
+                    justify_content::T::space_between => {
+                        if item_count == 1 {
+                            Au(0)
+                        } else {
+                            line.free_space / (item_count - 1)
+                        }
+                    }
+                    justify_content::T::space_around => {
+                        line.free_space / item_count
+                    }
+                    _ => Au(0),
+                }
             } else {
-              base.position.start.i = inline_child_start - base.intrinsic_inline_sizes.preferred_inline_size;
-              inline_child_start = inline_child_start - even_content_inline_size;
+                Au(0)
             };
+
+            match self.block_flow.fragment.style().get_position().justify_content {
+                
+                justify_content::T::center | justify_content::T::space_around => {
+                    cur_i += (line.free_space - item_interval * (item_count - 1)) / 2;
+                }
+                justify_content::T::flex_end => {
+                    cur_i += line.free_space;
+                }
+                _ => {}
+            }
+
+            for item in items.iter_mut() {
+                let mut block = flow_ref::deref_mut(&mut item.flow).as_mut_block();
+
+                block.base.block_container_writing_mode = container_mode;
+                block.base.block_container_inline_size = inline_size;
+                block.base.block_container_explicit_block_size = explicit_content_size;
+                
+                
+                
+                block.base.flags.set_text_align(containing_block_text_align);
+                
+                block.mark_as_flex();
+
+                let margin = block.fragment.style().logical_margin();
+                let auto_len =
+                    if line.auto_margin_count == 0 || line.free_space <= Au(0) {
+                        Au(0)
+                    } else {
+                        line.free_space / line.auto_margin_count
+                    };
+                let margin_inline_start = MaybeAuto::from_style(margin.inline_start, inline_size)
+                    .specified_or_default(auto_len);
+                let margin_inline_end = MaybeAuto::from_style(margin.inline_end, inline_size)
+                    .specified_or_default(auto_len);
+                let item_inline_size = item.main_size
+                    - block.fragment.box_sizing_boundary(self.main_mode)
+                    + block.fragment.border_padding.inline_start_end();
+                let item_outer_size = item_inline_size + block.fragment.margin.inline_start_end();
+
+                block.fragment.margin.inline_start = margin_inline_start;
+                block.fragment.margin.inline_end = margin_inline_end;
+                block.fragment.border_box.start.i = margin_inline_start;
+                block.fragment.border_box.size.inline = item_inline_size;
+                block.base.position.start.i = if !self.main_reverse {
+                    cur_i
+                } else {
+                    inline_start_content_edge * 2 + content_inline_size - cur_i  - item_outer_size
+                };
+                block.base.position.size.inline = item_outer_size;
+                cur_i += item_outer_size + item_interval;
+            }
+            self.lines.push(line);
         }
     }
 
     
     fn block_mode_assign_block_size<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
-        let mut cur_b = if !self.is_reverse {
+        let mut cur_b = if !self.main_reverse {
             self.block_flow.fragment.border_padding.block_start
         } else {
             self.block_flow.fragment.border_box.size.block
         };
         for kid in &mut self.items {
             let base = flow::mut_base(flow_ref::deref_mut(&mut kid.flow));
-            if !self.is_reverse {
+            if !self.main_reverse {
                 base.position.start.b = cur_b;
                 cur_b = cur_b + base.position.size.block;
             } else {
@@ -298,63 +666,134 @@ impl FlexFlow {
         self.block_flow.assign_block_size(layout_context)
     }
 
-    
-    
-    
     fn inline_mode_assign_block_size<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         let _scope = layout_debug_scope!("flex::inline_mode_assign_block_size");
 
-        let mut max_block_size = Au(0);
-        let thread_id = self.block_flow.base.thread_id;
-        for kid in self.block_flow.base.child_iter_mut() {
-            kid.assign_block_size_for_inorder_child_if_necessary(layout_context, thread_id);
+        let line_count = self.lines.len() as i32;
+        let line_align = self.block_flow.fragment.style().get_position().align_content;
+        let mut cur_b = self.block_flow.fragment.border_padding.block_start;
+        let mut total_cross_size = Au(0);
+        let mut line_interval = Au(0);
 
-            {
-                let child_fragment = &mut kid.as_mut_block().fragment;
+        for line in self.lines.iter_mut() {
+            for item in &self.items[line.range.clone()] {
+                let ref fragment = item.flow.as_block().fragment;
+                line.cross_size = max(line.cross_size,
+                                      fragment.border_box.size.block + fragment.margin.block_start_end());
+            }
+            total_cross_size += line.cross_size;
+        }
+
+        let box_border = self.block_flow.fragment.box_sizing_boundary(Direction::Block);
+        let parent_container_size =
+            self.block_flow.explicit_block_containing_size(layout_context.shared_context());
+        
+        let explicit_content_size = self
+                                    .block_flow
+                                    .explicit_block_size(parent_container_size)
+                                    .map(|x| max(x - box_border, Au(0)));
+
+        if let Some(container_block_size) = explicit_content_size {
+            let free_space = container_block_size - total_cross_size;
+            total_cross_size = container_block_size;
+
+            if line_align == align_content::T::stretch && free_space > Au(0) {
+                for line in self.lines.iter_mut() {
+                    line.cross_size += free_space / line_count;
+                }
+            }
+
+            line_interval = match line_align {
+                align_content::T::space_between => {
+                    if line_count == 1 {
+                        Au(0)
+                    } else {
+                        free_space / (line_count - 1)
+                    }
+                }
+                align_content::T::space_around => {
+                    free_space / line_count
+                }
+                _ => Au(0),
+            };
+
+            match line_align {
+                align_content::T::center | align_content::T::space_around => {
+                    cur_b += (free_space - line_interval * (line_count - 1)) / 2;
+                }
+                align_content::T::flex_end => {
+                    cur_b += free_space;
+                }
+                _ => {}
+            }
+        }
+
+        for line in &self.lines {
+            for mut item in self.items[line.range.clone()].iter_mut() {
+                let auto_margin_count = item.auto_margin_count(Direction::Block);
+                let mut block = flow_ref::deref_mut(&mut item.flow).as_mut_block();
+                let margin = block.fragment.style().logical_margin();
+
+                let mut margin_block_start = block.fragment.margin.block_start;
+                let mut margin_block_end = block.fragment.margin.block_end;
+                let mut free_space = line.cross_size - block.base.position.size.block
+                    - block.fragment.margin.block_start_end();
+
                 
-                let child_specified_block_size =
-                    MaybeAuto::from_style(child_fragment.style().content_block_size(),
-                                          Au(0)).specified_or_zero();
-                max_block_size =
-                    max(max_block_size,
-                        child_specified_block_size +
-                        child_fragment.border_padding.block_start_end());
+                
+                
+                if auto_margin_count > 0 {
+                    if margin.block_start == LengthOrPercentageOrAuto::Auto {
+                        margin_block_start = if free_space < Au(0) {
+                            Au(0)
+                        } else {
+                            free_space / auto_margin_count
+                        };
+                    }
+                    margin_block_end = line.cross_size - margin_block_start - block.base.position.size.block;
+                    free_space = Au(0);
+                }
+
+                let self_align = block.fragment.style().get_position().align_self;
+                if self_align == align_self::T::stretch &&
+                    block.fragment.style().content_block_size() == LengthOrPercentageOrAuto::Auto {
+                        free_space = Au(0);
+                        block.base.block_container_explicit_block_size = Some(line.cross_size);
+                        block.base.position.size.block =
+                            line.cross_size - margin_block_start - margin_block_end;
+                        block.fragment.border_box.size.block = block.base.position.size.block;
+                        
+                        
+                        
+                    }
+                block.base.position.start.b = margin_block_start +
+                    if !self.cross_reverse {
+                        cur_b
+                    } else {
+                        self.block_flow.fragment.border_padding.block_start * 2
+                            + total_cross_size - cur_b - line.cross_size
+                    };
+                
+                if free_space != Au(0) {
+                    let flex_cross = match self_align {
+                        align_self::T::flex_end => free_space,
+                        align_self::T::center => free_space / 2,
+                        _ => Au(0),
+                    };
+                    block.base.position.start.b +=
+                        if !self.cross_reverse {
+                            flex_cross
+                        } else {
+                            free_space - flex_cross
+                        };
+                }
             }
-            let child_node = flow::mut_base(kid);
-            child_node.position.start.b = Au(0);
-            max_block_size = max(max_block_size, child_node.position.size.block);
+            cur_b += line_interval + line.cross_size;
         }
+        let total_block_size = total_cross_size + self.block_flow.fragment.border_padding.block_start_end();
+        self.block_flow.fragment.border_box.size.block = total_block_size;
+        self.block_flow.base.position.size.block = total_block_size;
 
-        let mut block_size = max_block_size;
-        
-
-        block_size = match MaybeAuto::from_style(self.block_flow
-                                                     .fragment
-                                                     .style()
-                                                     .content_block_size(),
-                                                 Au(0)) {
-            MaybeAuto::Auto => block_size,
-            MaybeAuto::Specified(value) => max(value, block_size),
-        };
-
-        
-        let mut position = self.block_flow.fragment.border_box;
-        position.size.block = block_size;
-        self.block_flow.fragment.border_box = position;
-        self.block_flow.base.position.size.block = block_size;
-
-        
-        for kid in self.block_flow.base.child_iter_mut() {
-            {
-                let kid_fragment = &mut kid.as_mut_block().fragment;
-                let mut position = kid_fragment.border_box;
-                position.size.block = block_size;
-                kid_fragment.border_box = position;
-            }
-
-            
-            flow::mut_base(kid).position.size.block = block_size
-        }
     }
 }
 
@@ -384,22 +823,17 @@ impl Flow for FlexFlow {
 
         
         
+        let mut items = self.block_flow.base.children.iter_flow_ref_mut()
+            .filter(|flow| !flow.as_block().base.flags.contains(IS_ABSOLUTELY_POSITIONED))
+            .map(|flow| FlexItem::new(flow.clone()))
+            .collect::<Vec<FlexItem>>();
 
-        let mut items = self.block_flow.base.children.iter_flow_ref_mut().map(|flow| {
-            FlexItem::new(flow.clone())
-        }).collect::<Vec<FlexItem>>();
-
-        items.sort_by(|item1, item2| {
-            item1.flow.as_block().fragment.style.get_position().order.cmp(
-                &item2.flow.as_block().fragment.style.get_position().order
-                )
-        });
-
+        items.sort_by_key(|item| item.order);
         self.items = items;
 
         match self.main_mode {
-            Mode::Inline => self.inline_mode_bubble_inline_sizes(),
-            Mode::Block  => self.block_mode_bubble_inline_sizes()
+            Direction::Inline => self.inline_mode_bubble_inline_sizes(),
+            Direction::Block  => self.block_mode_bubble_inline_sizes()
         }
     }
 
@@ -458,15 +892,15 @@ impl Flow for FlexFlow {
         let content_inline_size = self.block_flow.fragment.border_box.size.inline - padding_and_borders;
 
         match self.main_mode {
-            Mode::Inline => {
+            Direction::Inline => {
                 self.available_main_size = available_inline_size;
                 self.available_cross_size = available_block_size;
                 self.inline_mode_assign_inline_sizes(shared_context,
                                                      inline_start_content_edge,
                                                      inline_end_content_edge,
                                                      content_inline_size)
-            },
-            Mode::Block  => {
+            }
+            Direction::Block  => {
                 self.available_main_size = available_block_size;
                 self.available_cross_size = available_inline_size;
                 self.block_mode_assign_inline_sizes(shared_context,
@@ -480,9 +914,9 @@ impl Flow for FlexFlow {
     fn assign_block_size<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         self.block_flow.assign_block_size(layout_context);
         match self.main_mode {
-            Mode::Inline =>
+            Direction::Inline =>
                 self.inline_mode_assign_block_size(layout_context),
-            Mode::Block  =>
+            Direction::Block  =>
                 self.block_mode_assign_block_size(layout_context)
         }
     }
