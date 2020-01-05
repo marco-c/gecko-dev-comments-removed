@@ -1429,9 +1429,7 @@ nsDocument::nsDocument(const char* aContentType)
 {
   SetContentTypeInternal(nsDependentCString(aContentType));
 
-  if (gDocumentLeakPRLog)
-    MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug,
-           ("DOCUMENT %p created", this));
+  MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug, ("DOCUMENT %p created", this));
 
   
   SetDOMStringToNull(mLastStyleSheetSet);
@@ -1488,9 +1486,7 @@ nsDocument::IsAboutPage() const
 
 nsDocument::~nsDocument()
 {
-  if (gDocumentLeakPRLog)
-    MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug,
-           ("DOCUMENT %p destroyed", this));
+  MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug, ("DOCUMENT %p destroyed", this));
 
   NS_ASSERTION(!mIsShowing, "Destroying a currently-showing document");
 
@@ -2112,10 +2108,8 @@ nsDocument::ResetToURI(nsIURI *aURI, nsILoadGroup *aLoadGroup,
 {
   NS_PRECONDITION(aURI, "Null URI passed to ResetToURI");
 
-  if (gDocumentLeakPRLog && MOZ_LOG_TEST(gDocumentLeakPRLog, LogLevel::Debug)) {
-    PR_LogPrint("DOCUMENT %p ResetToURI %s", this,
-                aURI->GetSpecOrDefault().get());
-  }
+  MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug,
+          ("DOCUMENT %p ResetToURI %s", this, aURI->GetSpecOrDefault().get()));
 
   mSecurityInfo = nullptr;
 
@@ -2435,11 +2429,12 @@ nsDocument::StartDocumentLoad(const char* aCommand, nsIChannel* aChannel,
                               nsIStreamListener **aDocListener,
                               bool aReset, nsIContentSink* aSink)
 {
-  if (gDocumentLeakPRLog && MOZ_LOG_TEST(gDocumentLeakPRLog, LogLevel::Debug)) {
+  if (MOZ_LOG_TEST(gDocumentLeakPRLog, LogLevel::Debug)) {
     nsCOMPtr<nsIURI> uri;
     aChannel->GetURI(getter_AddRefs(uri));
-    PR_LogPrint("DOCUMENT %p StartDocumentLoad %s",
-                this, uri ? uri->GetSpecOrDefault().get() : "");
+    MOZ_LOG(gDocumentLeakPRLog, LogLevel::Debug,
+            ("DOCUMENT %p StartDocumentLoad %s",
+             this, uri ? uri->GetSpecOrDefault().get() : ""));
   }
 
   MOZ_ASSERT(NodePrincipal()->GetAppId() != nsIScriptSecurityManager::UNKNOWN_APP_ID,
@@ -13075,10 +13070,9 @@ ArrayContainsTable(const nsTArray<nsCString>& aTableArray,
 
 
 FlashClassification
-nsDocument::PrincipalFlashClassification()
+nsDocument::PrincipalFlashClassification(bool aIsTopLevel)
 {
   nsresult rv;
-  bool isThirdPartyDoc = IsThirdParty();
 
   
   
@@ -13111,7 +13105,7 @@ nsDocument::PrincipalFlashClassification()
   Preferences::GetCString("urlclassifier.flashExceptTable",
                           &denyExceptionsTables);
   MaybeAddTableToTableList(denyExceptionsTables, tables);
-  if (isThirdPartyDoc) {
+  if (!aIsTopLevel) {
     Preferences::GetCString("urlclassifier.flashSubDocTable",
                             &subDocDenyTables);
     MaybeAddTableToTableList(subDocDenyTables, tables);
@@ -13156,7 +13150,7 @@ nsDocument::PrincipalFlashClassification()
     return FlashClassification::Allowed;
   }
 
-  if (isThirdPartyDoc && ArrayContainsTable(results, subDocDenyTables) &&
+  if (!aIsTopLevel && ArrayContainsTable(results, subDocDenyTables) &&
       !ArrayContainsTable(results, subDocDenyExceptionsTables)) {
     return FlashClassification::Denied;
   }
@@ -13179,7 +13173,7 @@ nsDocument::ComputeFlashClassification()
   bool isTopLevel = !parent;
   FlashClassification classification;
   if (isTopLevel) {
-    classification = PrincipalFlashClassification();
+    classification = PrincipalFlashClassification(isTopLevel);
   } else {
     nsCOMPtr<nsIDocument> parentDocument = GetParentDocument();
     if (!parentDocument) {
@@ -13191,7 +13185,7 @@ nsDocument::ComputeFlashClassification()
     if (parentClassification == FlashClassification::Denied) {
       classification = FlashClassification::Denied;
     } else {
-      classification = PrincipalFlashClassification();
+      classification = PrincipalFlashClassification(isTopLevel);
 
       
       
@@ -13224,84 +13218,4 @@ nsDocument::DocumentFlashClassification()
   }
 
   return mFlashClassification;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-bool
-nsDocument::IsThirdParty()
-{
-  if (mIsThirdParty.isSome()) {
-    return mIsThirdParty.value();
-  }
-
-  nsCOMPtr<nsIDocShellTreeItem> docshell = this->GetDocShell();
-  if (!docshell) {
-    mIsThirdParty.emplace(true);
-    return mIsThirdParty.value();
-  }
-
-  nsCOMPtr<nsIDocShellTreeItem> parent;
-  nsresult rv = docshell->GetSameTypeParent(getter_AddRefs(parent));
-  MOZ_ASSERT(NS_SUCCEEDED(rv),
-             "nsIDocShellTreeItem::GetSameTypeParent should never fail");
-  bool isTopLevel = !parent;
-
-  if (isTopLevel) {
-    mIsThirdParty.emplace(false);
-    return mIsThirdParty.value();
-  }
-
-  nsCOMPtr<nsIDocument> parentDocument = GetParentDocument();
-  if (!parentDocument) {
-    
-    mIsThirdParty.emplace(true);
-    return mIsThirdParty.value();
-  }
-
-  if (parentDocument->IsThirdParty()) {
-    mIsThirdParty.emplace(true);
-    return mIsThirdParty.value();
-  }
-
-  nsCOMPtr<nsIPrincipal> principal = GetPrincipal();
-  nsCOMPtr<nsIScriptObjectPrincipal> sop = do_QueryInterface(parentDocument,
-                                                             &rv);
-  if (NS_WARN_IF(NS_FAILED(rv) || !sop)) {
-    
-    mIsThirdParty.emplace(true);
-    return mIsThirdParty.value();
-  }
-  nsCOMPtr<nsIPrincipal> parentPrincipal = sop->GetPrincipal();
-
-  bool principalsMatch = false;
-  rv = principal->Equals(parentPrincipal, &principalsMatch);
-
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    
-    mIsThirdParty.emplace(true);
-    return mIsThirdParty.value();
-  }
-
-  if (!principalsMatch) {
-    mIsThirdParty.emplace(true);
-    return mIsThirdParty.value();
-  }
-
-  
-  mIsThirdParty.emplace(false);
-  return mIsThirdParty.value();
 }
