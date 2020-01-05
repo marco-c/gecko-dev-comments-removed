@@ -19,7 +19,6 @@ import sys
 class VendorRust(MozbuildObject):
     def get_cargo_path(self):
         try:
-            
             return self.substs['CARGO']
         except (BuildEnvironmentNotFoundException, KeyError):
             
