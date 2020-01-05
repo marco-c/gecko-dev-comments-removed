@@ -534,6 +534,19 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
       height = mSendingHeight;
       
     }
+  } else if (mMinBitrateEstimate) {
+    
+    
+    webrtc::Call::Config::BitrateConfig config;
+    config.min_bitrate_bps = mMinBitrateEstimate;
+    if (config.start_bitrate_bps < mMinBitrateEstimate) {
+      config.start_bitrate_bps = mMinBitrateEstimate;
+    }
+    if (config.max_bitrate_bps > 0 &&
+        config.max_bitrate_bps < mMinBitrateEstimate) {
+      config.max_bitrate_bps = mMinBitrateEstimate;
+    }
+    mCall->Call()->SetBitrateConfig(config);
   }
 
   for (size_t idx = streamCount - 1; streamCount > 0; idx--, streamCount--) {
@@ -576,9 +589,9 @@ WebrtcVideoConduit::ConfigureSendMediaCodec(const VideoCodecConfig* codecConfig)
     }
 
     video_stream.max_qp = kQpMax;
+    video_stream.SetRid(simulcastEncoding.rid);
     simulcast_config.jsScaleDownBy = simulcastEncoding.constraints.scaleDownBy;
     simulcast_config.jsMaxBitrate = simulcastEncoding.constraints.maxBr; 
-    mSendStreamConfig.rtp.rids.push_back(simulcastEncoding.rid);
 
     if (codecConfig->mName == "H264") {
       if (codecConfig->mEncodingConstraints.maxMbps > 0) {
