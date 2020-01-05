@@ -53,7 +53,6 @@ var EventEmitter = require("devtools/shared/event-emitter");
 
 
 
-
 function Selection(walker) {
   EventEmitter.decorate(this);
 
@@ -124,7 +123,6 @@ Selection.prototype = {
       value = parentNode;
     }
 
-    this.emit("before-new-node-front", value, reason);
     this._nodeFront = value;
     this.emit("new-node-front", value, this.reason);
   },
