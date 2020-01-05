@@ -195,10 +195,6 @@ const AnimationProperty*
 KeyframeEffectReadOnly::GetEffectiveAnimationOfProperty(
   nsCSSPropertyID aProperty) const
 {
-  if (!IsInEffect()) {
-    return nullptr;
-  }
-
   EffectSet* effectSet =
     EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);
   for (size_t propIdx = 0, propEnd = mProperties.Length();
@@ -1142,13 +1138,7 @@ KeyframeEffectReadOnly::ShouldBlockAsyncTransformAnimations(
   
   
   
-  
-  MOZ_ASSERT(mAnimation && mAnimation->IsPlaying());
-
-  
-  if (!IsInEffect()) {
-    return false;
-  }
+  MOZ_ASSERT(mAnimation && mAnimation->IsPlayableOnCompositor());
 
   EffectSet* effectSet =
     EffectSet::GetEffectSet(mTarget->mElement, mTarget->mPseudoType);
