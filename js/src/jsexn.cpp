@@ -166,15 +166,15 @@ js::CopyErrorReport(JSContext* cx, JSErrorReport* report)
     size_t linebufSize = 0;
     if (report->linebuf())
         linebufSize = (report->linebufLength() + 1) * sizeof(char16_t);
-    size_t ucmessageSize = 0;
-    if (report->ucmessage)
-        ucmessageSize = JS_CHARS_SIZE(report->ucmessage);
+    size_t messageSize = 0;
+    if (report->message())
+        messageSize = strlen(report->message().c_str()) + 1;
 
     
 
 
 
-    size_t mallocSize = sizeof(JSErrorReport) + ucmessageSize + linebufSize + filenameSize;
+    size_t mallocSize = sizeof(JSErrorReport) + messageSize + linebufSize + filenameSize;
     uint8_t* cursor = cx->pod_calloc<uint8_t>(mallocSize);
     if (!cursor)
         return nullptr;
@@ -182,10 +182,10 @@ js::CopyErrorReport(JSContext* cx, JSErrorReport* report)
     JSErrorReport* copy = (JSErrorReport*)cursor;
     cursor += sizeof(JSErrorReport);
 
-    if (report->ucmessage) {
-        copy->ucmessage = (const char16_t*)cursor;
-        js_memcpy(cursor, report->ucmessage, ucmessageSize);
-        cursor += ucmessageSize;
+    if (report->message()) {
+        copy->initBorrowedMessage((const char*)cursor);
+        js_memcpy(cursor, report->message().c_str(), messageSize);
+        cursor += messageSize;
     }
 
     if (report->linebuf()) {
@@ -536,8 +536,7 @@ js::ErrorToException(JSContext* cx, const char* message, JSErrorReport* reportp,
     AutoScopedAssign<bool> asa(&cx->generatingError, true);
 
     
-    RootedString messageStr(cx, reportp->ucmessage ? JS_NewUCStringCopyZ(cx, reportp->ucmessage)
-                                                   : JS_NewStringCopyZ(cx, message));
+    RootedString messageStr(cx, reportp->newMessageString(cx));
     if (!messageStr)
         return;
 
@@ -623,7 +622,7 @@ ErrorReportToString(JSContext* cx, JSErrorReport* reportp)
             return nullptr;
     }
 
-    RootedString message(cx, JS_NewUCStringCopyZ(cx, reportp->ucmessage));
+    RootedString message(cx, reportp->newMessageString(cx));
     if (!message)
         return nullptr;
 
@@ -649,7 +648,6 @@ ErrorReport::~ErrorReport()
         return;
 
     js_free(ownedMessage);
-    js_free(const_cast<char16_t*>(ownedReport.ucmessage));
 }
 
 void
@@ -845,8 +843,16 @@ ErrorReport::init(JSContext* cx, HandleValue exn,
             
             
             
-            if (str->ensureFlat(cx) && strChars.initTwoByte(cx, str))
-                ownedReport.ucmessage = strChars.twoByteChars();
+            char* utf8;
+            if (str->ensureFlat(cx) &&
+                strChars.initTwoByte(cx, str) &&
+                (utf8 = JS::CharsToNewUTF8CharsZ(cx, strChars.twoByteRange()).c_str()))
+            {
+                ownedReport.initOwnedMessage(utf8);
+            } else {
+                cx->clearPendingException();
+                str = nullptr;
+            }
         }
     }
 
