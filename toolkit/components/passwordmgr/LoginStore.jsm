@@ -97,6 +97,10 @@ LoginStore.prototype.constructor = LoginStore;
 
 
 LoginStore.prototype._dataPostProcessor = function(data) {
+  if (data.nextId === undefined) {
+    data.nextId = 1;
+  }
+
   
   if (!data.logins) {
     data.logins = [];
@@ -121,7 +125,7 @@ LoginStore.prototype._dataPostProcessor = function(data) {
 
 
 LoginStore.prototype._migrateDisabledHosts = function (data) {
-  for (let host of this.data.disabledHosts) {
+  for (let host of data.disabledHosts) {
     try {
       let uri = Services.io.newURI(host, null, null);
       Services.perms.add(uri, PERMISSION_SAVE_LOGINS, Services.perms.DENY_ACTION);
@@ -130,5 +134,5 @@ LoginStore.prototype._migrateDisabledHosts = function (data) {
     }
   }
 
-  delete this.data.disabledHosts;
+  delete data.disabledHosts;
 };

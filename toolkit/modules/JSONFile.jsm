@@ -83,6 +83,7 @@ const kSaveDelayMs = 1500;
 
 
 
+
 function JSONFile(config) {
   this.path = config.path;
 
@@ -93,7 +94,7 @@ function JSONFile(config) {
   if (config.saveDelayMs === undefined) {
     config.saveDelayMs = kSaveDelayMs;
   }
-  this._saver = new DeferredTask(() => this.save(), config.saveDelayMs);
+  this._saver = new DeferredTask(() => this._save(), config.saveDelayMs);
 
   AsyncShutdown.profileBeforeChange.addBlocker("JSON store: writing data",
                                                () => this._saver.finalize());
@@ -108,78 +109,94 @@ JSONFile.prototype = {
   
 
 
-
-
-
-  data: null,
-
-  
-
-
   dataReady: false,
 
   
 
 
+  _saver: null,
+
+  
+
+
+  _data: null,
+
+  
 
 
 
 
-  load() {
-    return Task.spawn(function* () {
-      try {
-        let bytes = yield OS.File.read(this.path);
 
-        
-        if (this.dataReady) {
-          return;
-        }
 
-        this.data = JSON.parse(gTextDecoder.decode(bytes));
-      } catch (ex) {
-        
-        
-        
-        
-        if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
-          Cu.reportError(ex);
 
-          
-          try {
-            let openInfo = yield OS.File.openUnique(this.path + ".corrupt",
-                                                    { humanReadable: true });
-            yield openInfo.file.close();
-            yield OS.File.move(this.path, openInfo.path);
-          } catch (e2) {
-            Cu.reportError(e2);
-          }
-        }
-
-        
-        
-        
-        
-        if (this.dataReady) {
-          return;
-        }
-
-        
-        this.data = {
-          nextId: 1,
-        };
-      }
-
-      this._processLoadedData();
-    }.bind(this));
+  get data() {
+    if (!this.dataReady) {
+      throw new Error("Data is not ready.");
+    }
+    return this._data;
   },
 
   
+
+
+
+
+
+
+
+  load: Task.async(function* () {
+    let data = {};
+
+    try {
+      let bytes = yield OS.File.read(this.path);
+
+      
+      if (this.dataReady) {
+        return;
+      }
+
+      data = JSON.parse(gTextDecoder.decode(bytes));
+    } catch (ex) {
+      
+      
+      
+      
+      if (!(ex instanceof OS.File.Error && ex.becauseNoSuchFile)) {
+        Cu.reportError(ex);
+
+        
+        try {
+          let openInfo = yield OS.File.openUnique(this.path + ".corrupt",
+                                                  { humanReadable: true });
+          yield openInfo.file.close();
+          yield OS.File.move(this.path, openInfo.path);
+        } catch (e2) {
+          Cu.reportError(e2);
+        }
+      }
+
+      
+      
+      
+      
+      if (this.dataReady) {
+        return;
+      }
+    }
+
+    this._processLoadedData(data);
+  }),
+
+  
+
 
 
   ensureDataReady() {
     if (this.dataReady) {
       return;
     }
+
+    let data = {};
 
     try {
       
@@ -188,8 +205,7 @@ JSONFile.prototype = {
                                             FileUtils.PERMS_FILE, 0);
       try {
         let json = Cc["@mozilla.org/dom/json;1"].createInstance(Ci.nsIJSON);
-        this.data = json.decodeFromStream(inputStream,
-                                          inputStream.available());
+        data = json.decodeFromStream(inputStream, inputStream.available());
       } finally {
         inputStream.close();
       }
@@ -214,24 +230,9 @@ JSONFile.prototype = {
           Cu.reportError(e2);
         }
       }
-
-      
-      this.data = {
-        nextId: 1,
-      };
     }
 
-    this._processLoadedData();
-  },
-
-  
-
-
-  _processLoadedData() {
-    if (this._dataPostProcessor) {
-      this.data = this._dataPostProcessor(this.data);
-    }
-    this.dataReady = true;
+    this._processLoadedData(data);
   },
 
   
@@ -244,23 +245,24 @@ JSONFile.prototype = {
   
 
 
-  _saver: null,
+
+
+
+
+
+
+  _save: Task.async(function* () {
+    
+    let bytes = gTextEncoder.encode(JSON.stringify(this._data));
+    yield OS.File.writeAtomic(this.path, bytes,
+                              { tmpPath: this.path + ".tmp" });
+  }),
 
   
 
 
-
-
-
-
-
-
-  save() {
-    return Task.spawn(function* () {
-      
-      let bytes = gTextEncoder.encode(JSON.stringify(this.data));
-      yield OS.File.writeAtomic(this.path, bytes,
-                                { tmpPath: this.path + ".tmp" });
-    }.bind(this));
+  _processLoadedData(data) {
+    this._data = this._dataPostProcessor ? this._dataPostProcessor(data) : data;
+    this.dataReady = true;
   },
 };
