@@ -36,6 +36,7 @@ public:
   { MOZ_COUNT_CTOR_INHERITED(DocAccessibleParent, ProxyAccessible); }
   ~DocAccessibleParent()
   {
+    LiveDocs().Remove(IProtocol::Id());
     MOZ_COUNT_DTOR_INHERITED(DocAccessibleParent, ProxyAccessible);
     MOZ_ASSERT(mChildDocs.Length() == 0);
     MOZ_ASSERT(!ParentDoc());
@@ -57,6 +58,11 @@ public:
     MOZ_ASSERT(mAccessibles.Count() == 0);
     mShutdown = true;
   }
+
+  
+
+
+  void AddToMap() { LiveDocs().Put(IProtocol::Id(), this); }
 
   
 
@@ -222,6 +228,13 @@ private:
   nsTHashtable<ProxyEntry> mAccessibles;
   bool mTopLevel;
   bool mShutdown;
+
+  static nsDataHashtable<nsUint64HashKey, DocAccessibleParent*>&
+    LiveDocs()
+    {
+      static nsDataHashtable<nsUint64HashKey, DocAccessibleParent*> sLiveDocs;
+      return sLiveDocs;
+    }
 };
 
 }

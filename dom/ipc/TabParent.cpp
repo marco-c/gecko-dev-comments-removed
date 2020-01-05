@@ -917,6 +917,7 @@ TabParent::RecvPDocAccessibleConstructor(PDocAccessibleParent* aDoc,
 {
 #ifdef ACCESSIBILITY
   auto doc = static_cast<a11y::DocAccessibleParent*>(aDoc);
+  doc->AddToMap();
 
   
   
