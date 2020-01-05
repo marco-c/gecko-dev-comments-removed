@@ -25,6 +25,7 @@ use std::cell::{Cell, RefCell};
 use std::borrow::ToOwned;
 use util::str::DOMString;
 
+use hyper::header::Host;
 use websocket::Message;
 use websocket::ws::sender::Sender as Sender_Object;
 use websocket::client::sender::Sender;
@@ -34,6 +35,7 @@ use websocket::client::request::Url;
 use websocket::Client;
 use websocket::header::Origin;
 use websocket::result::WebSocketResult;
+use websocket::ws::util::url::parse_url;
 
 #[derive(JSTraceable, PartialEq, Copy, Clone)]
 enum WebSocketRequestState {
@@ -63,47 +65,8 @@ pub struct WebSocket {
     sendCloseFrame: Cell<bool>
 }
 
-fn parse_web_socket_url(url_str: &str) -> Fallible<(Url, String, u16, String, bool)> {
-    
-    
-    let parsed_url = Url::parse(url_str);
-    let parsed_url = match parsed_url {
-        Ok(parsed_url) => parsed_url,
-        Err(_) => return Err(Error::Syntax),
-    };
 
-    
-    if parsed_url.fragment != None {
-        return Err(Error::Syntax);
-    }
-
-    
-    let secure = match parsed_url.scheme.as_ref() {
-        "ws" => false,
-        "wss" => true,
-        _ => return Err(Error::Syntax), 
-    };
-
-    let host = parsed_url.host().unwrap().serialize(); 
-    let port = parsed_url.port_or_default().unwrap(); 
-    let mut resource = parsed_url.path().unwrap().connect("/"); 
-    if resource.is_empty() {
-        resource = "/".to_owned(); 
-    }
-
-    
-    if let Some(ref query) = parsed_url.query {
-        resource.push('?');
-        resource.push_str(query);
-    }
-
-    
-    
-    Ok((parsed_url, host, port, resource, secure))
-}
-
-
-fn establish_a_websocket_connection(url: Url, origin: String)
+fn establish_a_websocket_connection(url: (Host, String, bool), origin: String)
     -> WebSocketResult<(Sender<WebSocketStream>, Receiver<WebSocketStream>)> {
     let mut request = try!(Client::connect(url));
     request.headers.set(Origin(origin));
@@ -137,9 +100,8 @@ impl WebSocket {
 
     pub fn new(global: GlobalRef, url: DOMString) -> Fallible<Root<WebSocket>> {
         
-        
-        
-        let (url, _, _, _, _) = try!(parse_web_socket_url(&url));
+        let parsed_url = try!(Url::parse(&url).map_err(|_| Error::Syntax));
+        let url = try!(parse_url(&parsed_url).map_err(|_| Error::Syntax));
 
         
 
@@ -148,7 +110,7 @@ impl WebSocket {
 
 
 
-        let ws = reflect_dom_object(box WebSocket::new_inherited(global, url.clone()),
+        let ws = reflect_dom_object(box WebSocket::new_inherited(global, parsed_url),
                                     global,
                                     WebSocketBinding::Wrap);
 
