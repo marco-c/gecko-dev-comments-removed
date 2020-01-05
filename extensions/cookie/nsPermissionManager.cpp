@@ -87,7 +87,11 @@ nsresult
 GetOriginFromPrincipal(nsIPrincipal* aPrincipal, nsACString& aOrigin)
 {
   nsresult rv = aPrincipal->GetOriginNoSuffix(aOrigin);
-  NS_ENSURE_SUCCESS(rv, rv);
+  
+  
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
 
   nsAutoCString suffix;
   rv = aPrincipal->GetOriginSuffix(suffix);
