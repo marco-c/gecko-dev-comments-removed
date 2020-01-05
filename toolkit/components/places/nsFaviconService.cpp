@@ -718,23 +718,20 @@ nsFaviconService::OptimizeIconSizes(IconData& aIcon)
 }
 
 nsresult
-nsFaviconService::GetFaviconDataAsync(nsIURI* aFaviconURI,
+nsFaviconService::GetFaviconDataAsync(const nsCString& aFaviconURI,
                                       mozIStorageStatementCallback *aCallback)
 {
   MOZ_ASSERT(aCallback, "Doesn't make sense to call this without a callback");
 
   nsCOMPtr<mozIStorageAsyncStatement> stmt = mDB->GetAsyncStatement(
+    "/*Do not warn (bug no: not worth adding an index */ "
     "SELECT data, width FROM moz_icons "
     "WHERE fixed_icon_url_hash = hash(fixup_url(:url)) AND icon_url = :url "
     "ORDER BY width DESC"
   );
   NS_ENSURE_STATE(stmt);
 
-  
-  
-  nsAutoCString faviconURI;
-  aFaviconURI->GetSpecIgnoringRef(faviconURI);
-  nsresult rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("url"), faviconURI);
+  nsresult rv = URIBinder::Bind(stmt, NS_LITERAL_CSTRING("url"), aFaviconURI);
   NS_ENSURE_SUCCESS(rv, rv);
 
   nsCOMPtr<mozIStoragePendingStatement> pendingStatement;
@@ -760,6 +757,39 @@ nsFaviconService::ConvertUnsupportedPayloads(mozIStorageConnection* aDBConn)
       (void)target->Dispatch(event, NS_DISPATCH_NORMAL);
     }
   }
+}
+
+NS_IMETHODIMP
+nsFaviconService::PreferredSizeFromURI(nsIURI* aURI, uint16_t* _size)
+{
+  *_size = UINT16_MAX;
+  nsAutoCString ref;
+  
+  if (NS_FAILED(aURI->GetRef(ref)) || ref.Length() == 0)
+    return NS_OK;
+
+  
+  int32_t start = ref.RFind("size=");
+  if (start >= 0 && ref.Length() > static_cast<uint32_t>(start) + 5) {
+    nsDependentCSubstring size;
+    
+    size.Rebind(ref, start + 5);
+    
+    auto begin = size.BeginReading(), end = size.EndReading();
+    for (auto ch = begin; ch < end; ++ch) {
+      if (*ch < '0' || *ch > '9') {
+        
+        return NS_OK;
+      }
+    }
+    
+    nsresult rv;
+    uint16_t val = PromiseFlatCString(size).ToInteger(&rv);
+    if (NS_SUCCEEDED(rv)) {
+      *_size = val;
+    }
+  }
+  return NS_OK;
 }
 
 

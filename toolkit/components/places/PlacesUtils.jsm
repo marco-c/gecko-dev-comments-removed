@@ -1671,6 +1671,23 @@ this.PlacesUtils = {
     return deferred.promise;
   },
 
+   
+
+
+
+
+
+
+
+
+
+
+
+  urlWithSizeRef(window, href, size) {
+    return href + (href.includes("#") ? "&" : "#") +
+           "size=" + (Math.round(size) * window.devicePixelRatio);
+  },
+
   
 
 

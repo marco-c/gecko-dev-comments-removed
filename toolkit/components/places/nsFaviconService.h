@@ -101,7 +101,7 @@ public:
 
 
 
-  nsresult GetFaviconDataAsync(nsIURI* aFaviconURI,
+  nsresult GetFaviconDataAsync(const nsCString& aFaviconSpec,
                                mozIStorageStatementCallback* aCallback);
 
   
