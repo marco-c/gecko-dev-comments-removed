@@ -2,11 +2,14 @@
 
 
 
-from __future__ import print_function, unicode_literals
+from __future__ import absolute_import, print_function, unicode_literals
 
 from textwrap import TextWrapper
 
-from mach.decorators import Command
+from mach.decorators import (
+    CommandProvider,
+    Command,
+)
 
 
 
