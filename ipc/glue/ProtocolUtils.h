@@ -152,6 +152,8 @@ public:
     typedef IPC::Message Message;
     typedef IPC::MessageInfo MessageInfo;
 
+    IProtocol() : mManager(nullptr) {}
+
     virtual int32_t Register(IProtocol*) = 0;
     virtual int32_t RegisterID(IProtocol*, int32_t) = 0;
     virtual IProtocol* Lookup(int32_t) = 0;
@@ -178,6 +180,14 @@ public:
     virtual Result OnCallReceived(const Message& aMessage, Message *& aReply) = 0;
 
     virtual int32_t GetProtocolTypeId() = 0;
+
+    IProtocol* Manager() const { return mManager; }
+
+protected:
+    void SetManager(IProtocol* aManager) { mManager = aManager; }
+
+private:
+    IProtocol* mManager;
 };
 
 typedef IPCMessageStart ProtocolId;
