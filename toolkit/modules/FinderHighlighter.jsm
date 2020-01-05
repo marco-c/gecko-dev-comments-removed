@@ -562,7 +562,7 @@ FinderHighlighter.prototype = {
 
 
   _getRootBounds(window, includeScroll = true) {
-    let dwu = this._getDWU(window);
+    let dwu = this._getDWU(window.top);
     let cssPageRect = Rect.fromRect(dwu.getRootBounds());
     let scrollX = {};
     let scrollY = {};
@@ -759,8 +759,9 @@ FinderHighlighter.prototype = {
 
 
 
+
   _isInDynamicContainer(range) {
-    const kFixed = new Set(["fixed", "sticky"]);
+    const kFixed = new Set(["fixed", "sticky", "scroll", "auto"]);
     let node = range.startContainer;
     while (node.nodeType != 1)
       node = node.parentNode;
@@ -776,8 +777,11 @@ FinderHighlighter.prototype = {
     }
 
     do {
-      if (kFixed.has(window.getComputedStyle(node, null).position))
+      let style = window.getComputedStyle(node, null);
+      if (kFixed.has(style.position) || kFixed.has(style.overflow) ||
+          kFixed.has(style.overflowX) || kFixed.has(style.overflowY)) {
         return true;
+      }
       node = node.parentNode;
     } while (node && node != document.documentElement)
 
@@ -856,11 +860,11 @@ FinderHighlighter.prototype = {
 
 
   _updateDynamicRangesRects(dict) {
-    for (let range of dict.dynamicRangesSet)
-      this._updateRangeRects(range, false, dict);
     
     for (let frame of dict.frames.keys())
       dict.frames.set(frame, null);
+    for (let range of dict.dynamicRangesSet)
+      this._updateRangeRects(range, false, dict);
   },
 
   
@@ -1128,7 +1132,7 @@ FinderHighlighter.prototype = {
 
     window = window.top;
     let dict = this.getForWindow(window);
-    let repaintDynamicRanges = (scrollOnly && !!dict.dynamicRangesSet.size);
+    let repaintDynamicRanges = ((scrollOnly || contentChanged) && !!dict.dynamicRangesSet.size);
 
     
     
