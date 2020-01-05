@@ -1296,10 +1296,19 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder* aMetadata)
   if (Info().mMetadataDuration.isSome()) {
     mMaster->RecomputeDuration();
   } else if (Info().mUnadjustedMetadataEndTime.isSome()) {
-    const TimeUnit unadjusted = Info().mUnadjustedMetadataEndTime.ref();
-    const TimeUnit adjustment = Info().mStartTime;
-    mMaster->mInfo->mMetadataDuration.emplace(unadjusted - adjustment);
-    mMaster->RecomputeDuration();
+    RefPtr<Master> master = mMaster;
+    Reader()->AwaitStartTime()->Then(OwnerThread(), __func__,
+      [master] () {
+        NS_ENSURE_TRUE_VOID(!master->IsShutdown());
+        auto& info = master->mInfo.ref();
+        TimeUnit unadjusted = info.mUnadjustedMetadataEndTime.ref();
+        TimeUnit adjustment = master->mReader->StartTime();
+        info.mMetadataDuration.emplace(unadjusted - adjustment);
+        master->RecomputeDuration();
+      }, [master, this] () {
+        SWARN("Adjusting metadata end time failed");
+      }
+    );
   }
 
   if (mMaster->HasVideo()) {
@@ -1309,11 +1318,22 @@ DecodeMetadataState::OnMetadataRead(MetadataHolder* aMetadata)
          mMaster->GetAmpleVideoFrames());
   }
 
-  MOZ_ASSERT(mMaster->mDuration.Ref().isSome());
+  
+  
+  
+  
+  
+  
+  bool waitingForCDM = Info().IsEncrypted() && !mMaster->mCDMProxy;
 
-  mMaster->EnqueueLoadedMetadataEvent();
+  mMaster->mNotifyMetadataBeforeFirstFrame =
+    mMaster->mDuration.Ref().isSome() || waitingForCDM;
 
-  if (Info().IsEncrypted() && !mMaster->mCDMProxy) {
+  if (mMaster->mNotifyMetadataBeforeFirstFrame) {
+    mMaster->EnqueueLoadedMetadataEvent();
+  }
+
+  if (waitingForCDM) {
     
     
     SetState<WaitForCDMState>(mPendingDormant);
@@ -1822,6 +1842,7 @@ MediaDecoderStateMachine::MediaDecoderStateMachine(MediaDecoder* aDecoder,
   mAudioCaptured(false),
   INIT_WATCHABLE(mAudioCompleted, false),
   INIT_WATCHABLE(mVideoCompleted, false),
+  mNotifyMetadataBeforeFirstFrame(false),
   mMinimizePreroll(false),
   mSentLoadedMetadataEvent(false),
   mSentFirstFrameLoadedEvent(false),
@@ -2951,6 +2972,11 @@ MediaDecoderStateMachine::FinishDecodeFirstFrame()
 
   
   mReader->ReadUpdatedMetadata(mInfo.ptr());
+
+  if (!mNotifyMetadataBeforeFirstFrame) {
+    
+    EnqueueLoadedMetadataEvent();
+  }
 
   EnqueueFirstFrameLoadedEvent();
 }
