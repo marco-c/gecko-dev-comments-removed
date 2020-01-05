@@ -67,6 +67,8 @@
 
 #define NS_TASKBAR_CONTRACTID "@mozilla.org/windows-taskbar;1"
 
+#define APP_REG_NAME_BASE L"Firefox-"
+
 using mozilla::IsWin8OrLater;
 using namespace mozilla;
 using namespace mozilla::gfx;
@@ -90,152 +92,6 @@ OpenKeyForReading(HKEY aKeyRoot, const nsAString& aKeyName, HKEY* aKey)
 
   return NS_OK;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-typedef struct {
-  const char* keyName;
-  const char* valueData;
-  const char* oldValueData;
-} SETTING;
-
-#define APP_REG_NAME_BASE L"Firefox-"
-#define VAL_FILE_ICON "%APPPATH%,1"
-#define VAL_OPEN "\"%APPPATH%\" -osint -url \"%1\""
-#define OLD_VAL_OPEN "\"%APPPATH%\" -requestPending -osint -url \"%1\""
-#define DI "\\DefaultIcon"
-#define SOC "\\shell\\open\\command"
-#define SOD "\\shell\\open\\ddeexec"
-
-#define FTP_SOC L"Software\\Classes\\ftp\\shell\\open\\command"
-
-#define MAKE_KEY_NAME1(PREFIX, MID) \
-  PREFIX MID
-
-
-
-
-
-
-
-
-
-
-static SETTING gSettings[] = {
-  
-  
-  
-  { MAKE_KEY_NAME1("FirefoxHTML", SOC), VAL_OPEN, OLD_VAL_OPEN },
-
-  
-  { MAKE_KEY_NAME1("FirefoxURL", SOC), VAL_OPEN, OLD_VAL_OPEN },
-
-  
-  { MAKE_KEY_NAME1("HTTP", DI), VAL_FILE_ICON },
-  { MAKE_KEY_NAME1("HTTP", SOC), VAL_OPEN, OLD_VAL_OPEN },
-  { MAKE_KEY_NAME1("HTTPS", DI), VAL_FILE_ICON },
-  { MAKE_KEY_NAME1("HTTPS", SOC), VAL_OPEN, OLD_VAL_OPEN }
-};
-
-
-
-
-static SETTING gDDESettings[] = {
-  
-  { MAKE_KEY_NAME1("Software\\Classes\\FirefoxHTML", SOD) },
-
-  
-  { MAKE_KEY_NAME1("Software\\Classes\\FirefoxURL", SOD) },
-
-  
-  { MAKE_KEY_NAME1("Software\\Classes\\FTP", SOD) },
-  { MAKE_KEY_NAME1("Software\\Classes\\HTTP", SOD) },
-  { MAKE_KEY_NAME1("Software\\Classes\\HTTPS", SOD) }
-};
 
 nsresult
 GetHelperPath(nsAutoString& aPath)
@@ -373,29 +229,6 @@ IsAARDefault(const RefPtr<IApplicationAssociationRegistration>& pAAR,
   return isDefault;
 }
 
-static void
-IsDefaultBrowserWin8(bool aCheckAllTypes, bool* aIsDefaultBrowser)
-{
-  RefPtr<IApplicationAssociationRegistration> pAAR;
-  HRESULT hr = CoCreateInstance(CLSID_ApplicationAssociationRegistration,
-                                nullptr,
-                                CLSCTX_INPROC,
-                                IID_IApplicationAssociationRegistration,
-                                getter_AddRefs(pAAR));
-  if (FAILED(hr)) {
-    return;
-  }
-
-  bool res = IsAARDefault(pAAR, L"http");
-  if (*aIsDefaultBrowser) {
-    *aIsDefaultBrowser = res;
-  }
-  res = IsAARDefault(pAAR, L".html");
-  if (*aIsDefaultBrowser && aCheckAllTypes) {
-    *aIsDefaultBrowser = res;
-  }
-}
-
 static nsresult
 GetAppRegName(nsAutoString &aAppRegName)
 {
@@ -414,53 +247,17 @@ GetAppRegName(nsAutoString &aAppRegName)
   rv = exeFile->GetParent(getter_AddRefs(appDir));
   NS_ENSURE_SUCCESS(rv, rv);
 
-  nsAutoString path;
-  rv = appDir->GetPath(path);
+  nsAutoString appDirStr;
+  rv = appDir->GetPath(appDirStr);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  uint64_t hash = CityHash64(static_cast<const char *>(path.get()),
-                             path.Length() * sizeof(nsAutoString::char_type));
-
   aAppRegName = APP_REG_NAME_BASE;
-  aAppRegName.AppendInt((int)hash, 16);
+  uint64_t hash = CityHash64(static_cast<const char *>(appDirStr.get()),
+                             appDirStr.Length() * sizeof(nsAutoString::char_type));
   aAppRegName.AppendInt((int)(hash >> 32), 16);
+  aAppRegName.AppendInt((int)hash, 16);
 
   return rv;
-}
-
-
-
-
-
-
-
-bool
-nsWindowsShellService::IsDefaultBrowserVista(bool aCheckAllTypes,
-                                             bool* aIsDefaultBrowser)
-{
-  RefPtr<IApplicationAssociationRegistration> pAAR;
-  HRESULT hr = CoCreateInstance(CLSID_ApplicationAssociationRegistration,
-                                nullptr,
-                                CLSCTX_INPROC,
-                                IID_IApplicationAssociationRegistration,
-                                getter_AddRefs(pAAR));
-  if (FAILED(hr)) {
-    return false;
-  }
-
-  if (aCheckAllTypes) {
-    BOOL res;
-    nsAutoString appRegName;
-    GetAppRegName(appRegName);
-    hr = pAAR->QueryAppIsDefaultAll(AL_EFFECTIVE,
-                                    appRegName.get(),
-                                    &res);
-    *aIsDefaultBrowser = res;
-  } else if (!IsWin8OrLater()) {
-    *aIsDefaultBrowser = IsAARDefault(pAAR, L"http");
-  }
-
-  return true;
 }
 
 NS_IMETHODIMP
@@ -468,193 +265,24 @@ nsWindowsShellService::IsDefaultBrowser(bool aStartupCheck,
                                         bool aForAllTypes,
                                         bool* aIsDefaultBrowser)
 {
-  
-  
-  *aIsDefaultBrowser = true;
+  mozilla::Unused << aStartupCheck;
 
-  wchar_t exePath[MAX_BUF];
-  if (!::GetModuleFileNameW(0, exePath, MAX_BUF))
-    return NS_ERROR_FAILURE;
+  *aIsDefaultBrowser = false;
 
-  
-  
-  if (!::GetLongPathNameW(exePath, exePath, MAX_BUF))
-    return NS_ERROR_FAILURE;
-
-  nsAutoString appLongPath(exePath);
-
-  HKEY theKey;
-  DWORD res;
-  nsresult rv;
-  wchar_t currValue[MAX_BUF];
-
-  SETTING* settings = gSettings;
-  if (!aForAllTypes && IsWin8OrLater()) {
-    
-    settings++;
+  RefPtr<IApplicationAssociationRegistration> pAAR;
+  HRESULT hr = CoCreateInstance(CLSID_ApplicationAssociationRegistration,
+                                nullptr,
+                                CLSCTX_INPROC,
+                                IID_IApplicationAssociationRegistration,
+                                getter_AddRefs(pAAR));
+  if (FAILED(hr)) {
+    return NS_OK;
   }
 
-  SETTING* end = gSettings + sizeof(gSettings) / sizeof(SETTING);
-
-  for (; settings < end; ++settings) {
-    NS_ConvertUTF8toUTF16 keyName(settings->keyName);
-    NS_ConvertUTF8toUTF16 valueData(settings->valueData);
-    int32_t offset = valueData.Find("%APPPATH%");
-    valueData.Replace(offset, 9, appLongPath);
-
-    rv = OpenKeyForReading(HKEY_CLASSES_ROOT, keyName, &theKey);
-    if (NS_FAILED(rv)) {
-      *aIsDefaultBrowser = false;
-      return NS_OK;
-    }
-
-    ::ZeroMemory(currValue, sizeof(currValue));
-    DWORD len = sizeof currValue;
-    res = ::RegQueryValueExW(theKey, L"", nullptr, nullptr,
-                             (LPBYTE)currValue, &len);
-    
-    ::RegCloseKey(theKey);
-    if (REG_FAILED(res) ||
-        _wcsicmp(valueData.get(), currValue)) {
-      
-      NS_ConvertUTF8toUTF16 oldValueData(settings->oldValueData);
-      offset = oldValueData.Find("%APPPATH%");
-      oldValueData.Replace(offset, 9, appLongPath);
-      
-      if (_wcsicmp(oldValueData.get(), currValue)) {
-        *aIsDefaultBrowser = false;
-        return NS_OK;
-      }
-
-      res = ::RegOpenKeyExW(HKEY_CLASSES_ROOT, keyName.get(),
-                            0, KEY_SET_VALUE, &theKey);
-      if (REG_FAILED(res)) {
-        
-        
-        *aIsDefaultBrowser = false;
-        return NS_OK;
-      }
-
-      res = ::RegSetValueExW(theKey, L"", 0, REG_SZ,
-                             (const BYTE *) valueData.get(),
-                             (valueData.Length() + 1) * sizeof(char16_t));
-      
-      ::RegCloseKey(theKey);
-      if (REG_FAILED(res)) {
-        
-        
-        *aIsDefaultBrowser = false;
-        return NS_OK;
-      }
-    }
-  }
-
-  
-  
-  if (*aIsDefaultBrowser) {
-    IsDefaultBrowserVista(aForAllTypes, aIsDefaultBrowser);
-    if (IsWin8OrLater()) {
-      IsDefaultBrowserWin8(aForAllTypes, aIsDefaultBrowser);
-    }
-  }
-
-  
-  
-  
-  
-  
+  *aIsDefaultBrowser = IsAARDefault(pAAR, L"http");
   if (*aIsDefaultBrowser && aForAllTypes) {
-    
-
-    end = gDDESettings + sizeof(gDDESettings) / sizeof(SETTING);
-
-    for (settings = gDDESettings; settings < end; ++settings) {
-      NS_ConvertUTF8toUTF16 keyName(settings->keyName);
-
-      rv = OpenKeyForReading(HKEY_CURRENT_USER, keyName, &theKey);
-      if (NS_FAILED(rv)) {
-        ::RegCloseKey(theKey);
-        
-        
-        *aIsDefaultBrowser = false;
-        return NS_OK;
-      }
-
-      ::ZeroMemory(currValue, sizeof(currValue));
-      DWORD len = sizeof currValue;
-      res = ::RegQueryValueExW(theKey, L"", nullptr, nullptr,
-                               (LPBYTE)currValue, &len);
-      
-      ::RegCloseKey(theKey);
-      if (REG_FAILED(res) || char16_t('\0') != *currValue) {
-        
-        
-        ::SHDeleteKeyW(HKEY_CURRENT_USER, keyName.get());
-        res = ::RegCreateKeyExW(HKEY_CURRENT_USER, keyName.get(), 0, nullptr,
-                                REG_OPTION_NON_VOLATILE, KEY_SET_VALUE,
-                                nullptr, &theKey, nullptr);
-        if (REG_FAILED(res)) {
-          
-          
-          *aIsDefaultBrowser = false;
-          return NS_OK;
-        }
-
-        res = ::RegSetValueExW(theKey, L"", 0, REG_SZ, (const BYTE *) L"",
-                               sizeof(char16_t));
-        
-        ::RegCloseKey(theKey);
-        if (REG_FAILED(res)) {
-          
-          
-          *aIsDefaultBrowser = false;
-          return NS_OK;
-        }
-      }
-    }
-
-    
-    
-    res = ::RegOpenKeyExW(HKEY_CURRENT_USER, FTP_SOC, 0, KEY_ALL_ACCESS,
-                          &theKey);
-    
-    
-    if (NS_FAILED(rv)) {
-      return NS_OK;
-    }
-
-    NS_ConvertUTF8toUTF16 oldValueOpen(OLD_VAL_OPEN);
-    int32_t offset = oldValueOpen.Find("%APPPATH%");
-    oldValueOpen.Replace(offset, 9, appLongPath);
-
-    ::ZeroMemory(currValue, sizeof(currValue));
-    DWORD len = sizeof currValue;
-    res = ::RegQueryValueExW(theKey, L"", nullptr, nullptr, (LPBYTE)currValue,
-                             &len);
-
-    
-    
-    if (REG_FAILED(res) ||
-        _wcsicmp(oldValueOpen.get(), currValue)) {
-      ::RegCloseKey(theKey);
-      return NS_OK;
-    }
-
-    NS_ConvertUTF8toUTF16 valueData(VAL_OPEN);
-    valueData.Replace(offset, 9, appLongPath);
-    res = ::RegSetValueExW(theKey, L"", 0, REG_SZ,
-                           (const BYTE *) valueData.get(),
-                           (valueData.Length() + 1) * sizeof(char16_t));
-    
-    ::RegCloseKey(theKey);
-    
-    
-    
-    if (REG_FAILED(res)) {
-      *aIsDefaultBrowser = false;
-    }
+    *aIsDefaultBrowser = IsAARDefault(pAAR, L".html");
   }
-
   return NS_OK;
 }
 
