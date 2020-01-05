@@ -219,6 +219,10 @@ const cryptoCollection = this.cryptoCollection = {
     }
   }),
 
+  isActive() {
+    return this.refCount != 0;
+  },
+
   
 
 
@@ -249,6 +253,13 @@ const cryptoCollection = this.cryptoCollection = {
       collectionKeys.generateDefaultKey();
     }
     return collectionKeys;
+  }),
+
+  updateKBHash: Task.async(function* (kbHash) {
+    const coll = yield this._kintoCollectionPromise;
+    yield coll.update({id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
+                       kbHash: kbHash},
+                      {patch: true});
   }),
 
   upsert: Task.async(function* (record) {
@@ -411,6 +422,7 @@ this.ExtensionStorageSync = {
         return;
       }
       yield this.ensureKeysFor(extIds);
+      yield this.checkSyncKeyRing();
       const promises = Array.from(collectionPromises.entries(), ([extension, collPromise]) => {
         return collPromise.then(coll => {
           return this.sync(extension, coll);
@@ -538,10 +550,13 @@ this.ExtensionStorageSync = {
       return collectionKeys;
     }
 
+    const kbHash = yield this.getKBHash();
     const newKeys = yield collectionKeys.ensureKeysFor(extIds);
     const newRecord = {
       id: STORAGE_SYNC_CRYPTO_KEYRING_RECORD_ID,
       keys: newKeys.asWBO().cleartext,
+      
+      kbHash: kbHash,
     };
     yield cryptoCollection.upsert(newRecord);
     const result = yield cryptoCollection.sync();
@@ -554,6 +569,97 @@ this.ExtensionStorageSync = {
 
     
     return newKeys;
+  }),
+
+  
+
+
+
+
+  getKBHash: Task.async(function* () {
+    const signedInUser = yield this._fxaService.getSignedInUser();
+    if (!signedInUser) {
+      throw new Error("User isn't signed in!");
+    }
+
+    if (!signedInUser.kB) {
+      throw new Error("User doesn't have kB??");
+    }
+
+    let kBbytes = CommonUtils.hexToBytes(signedInUser.kB);
+    let hasher = Cc["@mozilla.org/security/hash;1"]
+                    .createInstance(Ci.nsICryptoHash);
+    hasher.init(hasher.SHA256);
+    return CommonUtils.bytesAsHex(CryptoUtils.digestBytes(signedInUser.uid + kBbytes, hasher));
+  }),
+
+  
+
+
+  updateKeyRingKB: Task.async(function* () {
+    const signedInUser = yield this._fxaService.getSignedInUser();
+    if (!signedInUser) {
+      
+      
+      
+      
+      
+      
+      
+      return;
+    }
+
+    const thisKBHash = yield this.getKBHash();
+    yield cryptoCollection.updateKBHash(thisKBHash);
+  }),
+
+  
+
+
+
+
+
+
+
+  checkSyncKeyRing: Task.async(function* () {
+    if (!cryptoCollection.isActive()) {
+      
+      
+      
+      
+      log.info("Tried to check keyring, but no extensions are loaded. Ignoring.");
+      return;
+    }
+
+    yield this.updateKeyRingKB();
+
+    const cryptoKeyRecord = yield cryptoCollection.getKeyRingRecord();
+    if (cryptoKeyRecord && cryptoKeyRecord._status !== "synced") {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      yield cryptoCollection.sync();
+    }
   }),
 
   
