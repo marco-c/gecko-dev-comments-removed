@@ -6,6 +6,9 @@ use std::io::{File, IoResult};
 use std::path::Path;
 
 #[cfg(not(target_os = "android"))]
+use opts;
+
+#[cfg(not(target_os = "android"))]
 use std::io::fs::PathExtensions;
 #[cfg(not(target_os = "android"))]
 use std::os;
@@ -17,20 +20,25 @@ pub fn resources_dir_path() -> Path {
 
 #[cfg(not(target_os = "android"))]
 pub fn resources_dir_path() -> Path {
-    
-    
-    
-    let mut path = os::self_exe_path().expect("can't get exe path");
-    path.pop();
-    path.pop();
-    path.pop();
-    path.push("resources");
-    if !path.is_dir() {  
-        path.pop();
-        path.pop();
-        path.push("resources");
+    match opts::get().resources_path {
+        Some(ref path) => Path::new(path),
+        None => {
+            
+            
+            
+            let mut path = os::self_exe_path().expect("can't get exe path");
+            path.pop();
+            path.pop();
+            path.pop();
+            path.push("resources");
+            if !path.is_dir() {  
+                path.pop();
+                path.pop();
+                path.push("resources");
+            }
+            path
+        }
     }
-    path
 }
 
 
