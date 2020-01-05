@@ -181,5 +181,4 @@ def config_status(topobjdir='.', topsrcdir='.', defines=None,
 
     
     if MachCommandConditions.is_android(env):
-        if 'AndroidEclipse' not in options.backend:
-            print(ANDROID_IDE_ADVERTISEMENT)
+        print(ANDROID_IDE_ADVERTISEMENT)
