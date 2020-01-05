@@ -36,6 +36,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionAPIs",
                                   "resource://gre/modules/ExtensionAPI.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionCommon",
+                                  "resource://gre/modules/ExtensionCommon.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionPermissions",
                                   "resource://gre/modules/ExtensionPermissions.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionStorage",
@@ -84,13 +86,47 @@ var {
 const {
   classifyPermission,
   EventEmitter,
-  LocaleData,
   StartupCache,
   getUniqueId,
-  validateThemeManifest,
 } = ExtensionUtils;
 
 XPCOMUtils.defineLazyGetter(this, "console", ExtensionUtils.getConsole);
+
+XPCOMUtils.defineLazyGetter(this, "LocaleData", () => ExtensionCommon.LocaleData);
+
+
+
+XPCOMUtils.defineLazyGetter(this, "allowedThemeProperties", () => {
+  Cu.import("resource://gre/modules/ExtensionParent.jsm");
+  let propertiesInBaseManifest = ExtensionParent.baseManifestProperties;
+
+  
+  
+  
+  
+  return propertiesInBaseManifest.filter(prop => {
+    const propertiesToRemove = ["background", "content_scripts", "permissions"];
+    return !propertiesToRemove.includes(prop);
+  });
+});
+
+
+
+
+
+
+
+
+
+function validateThemeManifest(manifestProperties) {
+  let invalidProps = [];
+  for (let propName of manifestProperties) {
+    if (propName != "theme" && !allowedThemeProperties.includes(propName)) {
+      invalidProps.push(propName);
+    }
+  }
+  return invalidProps;
+}
 
 const LOGGER_ID_BASE = "addons.webextension.";
 const UUID_MAP_PREF = "extensions.webextensions.uuids";

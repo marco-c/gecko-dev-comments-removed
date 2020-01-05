@@ -2,10 +2,6 @@
 
 "use strict";
 
-var {
-  SingletonEventManager,
-} = ExtensionUtils;
-
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
                                   "resource://gre/modules/PlacesUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Task",

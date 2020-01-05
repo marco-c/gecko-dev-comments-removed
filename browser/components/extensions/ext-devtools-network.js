@@ -2,10 +2,6 @@
 
 "use strict";
 
-var {
-  SingletonEventManager,
-} = ExtensionUtils;
-
 this.devtools_network = class extends ExtensionAPI {
   getAPI(context) {
     return {

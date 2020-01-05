@@ -15,10 +15,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
-var {
-  SingletonEventManager,
-} = ExtensionUtils;
-
 
 
 function getSender(extension, target, sender) {

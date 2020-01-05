@@ -2,10 +2,6 @@
 
 "use strict";
 
-var {
-  SingletonEventManager,
-} = ExtensionUtils;
-
 this.omnibox = class extends ExtensionAPI {
   getAPI(context) {
     return {

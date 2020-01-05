@@ -10,10 +10,6 @@
 XPCOMUtils.defineLazyModuleGetter(this, "ProxyScriptContext",
                                   "resource://gre/modules/ProxyScriptContext.jsm");
 
-var {
-  SingletonEventManager,
-} = ExtensionUtils;
-
 
 let proxyScriptContextMap = new WeakMap();
 
