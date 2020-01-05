@@ -977,7 +977,8 @@ public:
   
   void NotifyDidPaintForSubtree(uint32_t aFlags, uint64_t aTransactionId = 0,
                                 const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp());
-  void FireDOMPaintEvent(nsInvalidateRequestList* aList, uint64_t aTransactionId);
+  void FireDOMPaintEvent(nsInvalidateRequestList* aList, uint64_t aTransactionId,
+                         mozilla::TimeStamp aTimeStamp = mozilla::TimeStamp());
 
   
   
