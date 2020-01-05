@@ -863,6 +863,18 @@ HandleFault(PEXCEPTION_POINTERS exception)
     if (!IsHeapAccessAddress(*instance, faultingAddress))
         return false;
 
+    
+    
+    
+    
+    
+    
+    
+    if (activation->interrupted()) {
+        MOZ_ASSERT(activation->resumePC() == pc);
+        activation->finishInterrupt();
+    }
+
     HandleMemoryAccess(context, pc, faultingAddress, *instance, activation, ppc);
     return true;
 }
@@ -1302,8 +1314,14 @@ RedirectJitCodeToInterruptCheck(JSContext* cx, CONTEXT* context)
         uint8_t* pc = *ppc;
         uint8_t* fp = ContextToFP(context);
 
+        
+        
+        
+        
+        
+        
         const Code* code = activation->compartment()->wasm.lookupCode(pc);
-        if (code && code->segment().containsFunctionPC(pc) && fp) {
+        if (code && code->segment().containsFunctionPC(pc) && fp && !activation->interrupted()) {
             activation->startInterrupt(pc, fp);
             *ppc = code->segment().interruptCode();
             return true;
