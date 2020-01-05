@@ -1102,10 +1102,9 @@ NS_IMETHODIMP HTMLMediaElement::Load()
 {
   LOG(LogLevel::Debug,
       ("%p Load() hasSrcAttrStream=%d hasSrcAttr=%d hasSourceChildren=%d "
-       "handlingInput=%d isCallerChromeOrNative=%d",
+       "handlingInput=%d",
        this, !!mSrcAttrStream, HasAttr(kNameSpaceID_None, nsGkAtoms::src),
-       HasSourceChildren(this), EventStateManager::IsHandlingUserInput(),
-       nsContentUtils::LegacyIsCallerChromeOrNativeCode()));
+       HasSourceChildren(this), EventStateManager::IsHandlingUserInput()));
 
   if (mIsRunningLoadMethod) {
     return NS_OK;
@@ -1127,8 +1126,7 @@ void HTMLMediaElement::DoLoad()
   
   
   
-  if (EventStateManager::IsHandlingUserInput() ||
-      nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
+  if (EventStateManager::IsHandlingUserInput()) {
     mHasUserInteraction = true;
   }
 
@@ -1849,7 +1847,7 @@ HTMLMediaElement::Seek(double aTime,
 
   
   
-  if (EventStateManager::IsHandlingUserInput() || nsContentUtils::LegacyIsCallerChromeOrNativeCode()) {
+  if (EventStateManager::IsHandlingUserInput()) {
     mHasUserInteraction = true;
   }
 
@@ -6039,8 +6037,7 @@ HTMLMediaElement::IsAllowedToPlay()
   
   if (!mHasUserInteraction &&
       !IsAutoplayEnabled() &&
-      !EventStateManager::IsHandlingUserInput() &&
-      !nsContentUtils::IsCallerChrome()) {
+      !EventStateManager::IsHandlingUserInput()) {
 #if defined(MOZ_WIDGET_ANDROID)
     nsContentUtils::DispatchTrustedEvent(OwnerDoc(),
                                          static_cast<nsIContent*>(this),
