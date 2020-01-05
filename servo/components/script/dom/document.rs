@@ -142,11 +142,11 @@ pub struct Document {
     scripting_enabled: Cell<bool>,
     
     
-    animation_frame_ident: Cell<i32>,
+    animation_frame_ident: Cell<u32>,
     
     
     #[ignore_heap_size_of = "closures are hard"]
-    animation_frame_list: RefCell<HashMap<i32, Box<FnBox(f64)>>>,
+    animation_frame_list: RefCell<HashMap<u32, Box<FnBox(f64)>>>,
     
     loader: DOMRefCell<DocumentLoader>,
     
@@ -870,7 +870,7 @@ impl Document {
     }
 
     
-    pub fn request_animation_frame(&self, callback: Box<FnBox(f64)>) -> i32 {
+    pub fn request_animation_frame(&self, callback: Box<FnBox(f64)>) -> u32 {
         let window = self.window.root();
         let window = window.r();
         let ident = self.animation_frame_ident.get() + 1;
@@ -888,7 +888,7 @@ impl Document {
     }
 
     
-    pub fn cancel_animation_frame(&self, ident: i32) {
+    pub fn cancel_animation_frame(&self, ident: u32) {
         self.animation_frame_list.borrow_mut().remove(&ident);
         if self.animation_frame_list.borrow().is_empty() {
             let window = self.window.root();
