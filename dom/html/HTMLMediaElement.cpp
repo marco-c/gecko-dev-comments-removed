@@ -5249,6 +5249,10 @@ void HTMLMediaElement::DecodeError(const MediaResult& aError)
   AudioTracks()->EmptyTracks();
   VideoTracks()->EmptyTracks();
   if (mIsLoadingFromSourceChildren) {
+    if (mDecoder) {
+      
+      ShutdownDecoder();
+    }
     mErrorSink->ResetError();
     if (mSourceLoadCandidate) {
       DispatchAsyncSourceError(mSourceLoadCandidate);
