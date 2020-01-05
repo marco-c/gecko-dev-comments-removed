@@ -461,6 +461,12 @@ public class HomePager extends ViewPager implements HomeScreen {
                 adapter.setCanLoadHint(true);
             }
         });
+
+        
+        
+        
+        final String panelType = ((HomeAdapter) getAdapter()).getPanelIdAtPosition(mDefaultPageIndex);
+        startNewPanelTelemetrySession(panelType);
     }
 
     @Override
