@@ -11,19 +11,10 @@
 
 class nsWifiAccessPoint;
 
-
-class WindowsWifiScannerInterface {
-public:
-  virtual ~WindowsWifiScannerInterface() {}
-
-  virtual nsresult GetAccessPointsFromWLAN(nsCOMArray<nsWifiAccessPoint> &accessPoints) = 0;
-};
-
-
-class WinWifiScanner : public WindowsWifiScannerInterface {
+class WinWifiScanner final {
  public:
   WinWifiScanner();
-  virtual ~WinWifiScanner();
+  ~WinWifiScanner();
 
   
 
