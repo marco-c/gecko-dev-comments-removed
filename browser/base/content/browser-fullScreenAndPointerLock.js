@@ -385,7 +385,10 @@ var FullScreen = {
         break;
       }
       case "DOMFullscreen:NewOrigin": {
-        PointerlockFsWarning.showFullScreen(aMessage.data.originNoSuffix);
+        
+        if (document.fullscreen) {
+          PointerlockFsWarning.showFullScreen(aMessage.data.originNoSuffix);
+        }
         break;
       }
       case "DOMFullscreen:Exit": {
