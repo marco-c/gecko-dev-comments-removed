@@ -329,7 +329,7 @@ FetchDriver::HttpFetch()
   if (uploadChan) {
     nsAutoCString contentType;
     ErrorResult result;
-    mRequest->Headers()->Get(NS_LITERAL_CSTRING("content-type"), contentType, result);
+    mRequest->Headers()->GetFirst(NS_LITERAL_CSTRING("content-type"), contentType, result);
     
     
     if (result.Failed()) {
