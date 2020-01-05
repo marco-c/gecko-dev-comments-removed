@@ -1191,6 +1191,16 @@ ContentChild::RecvReinitRendering(Endpoint<PCompositorBridgeChild>&& aCompositor
                                   Endpoint<PImageBridgeChild>&& aImageBridge,
                                   Endpoint<PVRManagerChild>&& aVRBridge)
 {
+  nsTArray<RefPtr<TabChild>> tabs = TabChild::GetAll();
+
+  
+  for (const auto& tabChild : tabs) {
+    if (tabChild->LayersId()) {
+      tabChild->InvalidateLayers();
+    }
+  }
+
+  
   if (!CompositorBridgeChild::ReinitForContent(Move(aCompositor))) {
     return false;
   }
@@ -1199,6 +1209,13 @@ ContentChild::RecvReinitRendering(Endpoint<PCompositorBridgeChild>&& aCompositor
   }
   if (!gfx::VRManagerChild::ReinitForContent(Move(aVRBridge))) {
     return false;
+  }
+
+  
+  for (const auto& tabChild : tabs) {
+    if (tabChild->LayersId()) {
+      tabChild->ReinitRendering();
+    }
   }
   return true;
 }

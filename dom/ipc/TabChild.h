@@ -243,6 +243,9 @@ public:
 
   static already_AddRefed<TabChild> FindTabChild(const TabId& aTabId);
 
+  
+  static nsTArray<RefPtr<TabChild>> GetAll();
+
 public:
   
 
@@ -558,6 +561,7 @@ public:
 
   void ClearCachedResources();
   void InvalidateLayers();
+  void ReinitRendering();
   void CompositorUpdated(const TextureFactoryIdentifier& aNewIdentifier);
 
   static inline TabChild* GetFrom(nsIDOMWindow* aWindow)
