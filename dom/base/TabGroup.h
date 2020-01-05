@@ -16,6 +16,7 @@
 #include "mozilla/RefPtr.h"
 
 namespace mozilla {
+class ThrottledEventQueue;
 namespace dom {
 
 
@@ -58,7 +59,7 @@ public:
   static TabGroup*
   GetChromeTabGroup();
 
-  TabGroup();
+  explicit TabGroup(bool aIsChrome = false);
 
   
   
@@ -99,10 +100,16 @@ public:
 
   nsTArray<nsPIDOMWindowOuter*> GetTopLevelWindows();
 
+  
+  
+  ThrottledEventQueue*
+  GetThrottledEventQueue() const;
+
 private:
   ~TabGroup();
   DocGroupMap mDocGroups;
   nsTArray<nsPIDOMWindowOuter*> mWindows;
+  RefPtr<ThrottledEventQueue> mThrottledEventQueue;
 };
 
 } 

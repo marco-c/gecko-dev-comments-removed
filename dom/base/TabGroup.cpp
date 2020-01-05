@@ -1,17 +1,43 @@
+
+
+
+
+
+
 #include "mozilla/dom/TabGroup.h"
+
 #include "mozilla/dom/DocGroup.h"
-#include "mozilla/Telemetry.h"
-#include "nsIURI.h"
-#include "nsIEffectiveTLDService.h"
-#include "mozilla/StaticPtr.h"
 #include "mozilla/ClearOnShutdown.h"
+#include "mozilla/StaticPtr.h"
+#include "mozilla/Telemetry.h"
+#include "mozilla/ThrottledEventQueue.h"
 #include "nsIDocShell.h"
+#include "nsIEffectiveTLDService.h"
+#include "nsIURI.h"
 
 namespace mozilla {
 namespace dom {
 
-TabGroup::TabGroup()
-{}
+static StaticRefPtr<TabGroup> sChromeTabGroup;
+
+TabGroup::TabGroup(bool aIsChrome)
+{
+  
+  
+  
+  if (aIsChrome) {
+    MOZ_ASSERT(!sChromeTabGroup);
+    return;
+  }
+
+  nsCOMPtr<nsIThread> mainThread;
+  NS_GetMainThread(getter_AddRefs(mainThread));
+  MOZ_DIAGNOSTIC_ASSERT(mainThread);
+
+  
+  
+  mThrottledEventQueue = ThrottledEventQueue::Create(mainThread);
+}
 
 TabGroup::~TabGroup()
 {
@@ -19,13 +45,11 @@ TabGroup::~TabGroup()
   MOZ_ASSERT(mWindows.IsEmpty());
 }
 
-static StaticRefPtr<TabGroup> sChromeTabGroup;
-
 TabGroup*
 TabGroup::GetChromeTabGroup()
 {
   if (!sChromeTabGroup) {
-    sChromeTabGroup = new TabGroup();
+    sChromeTabGroup = new TabGroup(true );
     ClearOnShutdown(&sChromeTabGroup);
   }
   return sChromeTabGroup;
@@ -128,6 +152,12 @@ TabGroup::GetTopLevelWindows()
   }
 
   return array;
+}
+
+ThrottledEventQueue*
+TabGroup::GetThrottledEventQueue() const
+{
+  return mThrottledEventQueue;
 }
 
 NS_IMPL_ISUPPORTS(TabGroup, nsISupports)
