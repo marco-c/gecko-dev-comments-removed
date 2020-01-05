@@ -91,6 +91,10 @@ const NOTIFICATION_CHUNK_SIZE = 300;
 const ONRESULT_CHUNK_SIZE = 300;
 
 
+const REMOVE_PAGES_CHUNKLEN = 300;
+
+
+
 const TIMERS_RESOLUTION_SKEW_MS = 16;
 
 
@@ -299,7 +303,6 @@ this.History = Object.freeze({
         urls.push(normalized.href);
       }
     }
-    let normalizedPages = {guids, urls};
 
     
     
@@ -308,8 +311,32 @@ this.History = Object.freeze({
       throw new TypeError("Invalid function: " + onResult);
     }
 
-    return PlacesUtils.withConnectionWrapper("History.jsm: remove",
-      db => remove(db, normalizedPages, onResult));
+    return Task.spawn(function* () {
+      let removedPages = false;
+      let count = 0;
+      while (guids.length || urls.length) {
+        if (count && count % 2 == 0) {
+          
+          
+          yield Promise.resolve();
+        }
+        count++;
+        let guidsSlice = guids.splice(0, REMOVE_PAGES_CHUNKLEN);
+        let urlsSlice = [];
+        if (guidsSlice.length < REMOVE_PAGES_CHUNKLEN) {
+          urlsSlice = urls.splice(0, REMOVE_PAGES_CHUNKLEN - guidsSlice.length);
+        }
+
+        let pages = {guids: guidsSlice, urls: urlsSlice};
+
+        let result =
+          yield PlacesUtils.withConnectionWrapper("History.jsm: remove",
+                                                  db => remove(db, pages, onResult));
+
+        removedPages = removedPages || result;
+      }
+      return removedPages;
+    });
   },
 
   
