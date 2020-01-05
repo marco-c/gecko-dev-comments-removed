@@ -623,7 +623,26 @@ public final class EventDispatcher extends JNIObject {
             this.callback = callback;
         }
 
-        private void makeCallback(final boolean callSuccess, final Object response) {
+        private void makeCallback(final boolean callSuccess, final Object rawResponse) {
+            final Object response;
+            if (rawResponse instanceof Number) {
+                
+                
+                
+                
+                
+                throw new UnsupportedOperationException(
+                        "Cannot use number as Java callback result");
+            } else if (rawResponse != null && rawResponse.getClass().isArray()) {
+                
+                throw new UnsupportedOperationException(
+                        "Cannot use arrays as Java callback result");
+            } else if (rawResponse instanceof Character) {
+                response = rawResponse.toString();
+            } else {
+                response = rawResponse;
+            }
+
             
             
             if (ThreadUtils.isOnThread(originalThread)) {
