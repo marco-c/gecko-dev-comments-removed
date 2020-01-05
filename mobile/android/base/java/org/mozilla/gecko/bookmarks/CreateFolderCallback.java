@@ -1,0 +1,10 @@
+
+
+
+
+
+package org.mozilla.gecko.bookmarks;
+
+interface CreateFolderCallback {
+    void onFolderCreated(long folderId, String title);
+}
