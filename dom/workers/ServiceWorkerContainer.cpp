@@ -207,9 +207,9 @@ ServiceWorkerContainer::Register(const nsAString& aScriptURL,
     }
   }
 
-  
-  
-  nsLoadFlags loadFlags = nsIRequest::LOAD_NORMAL;
+  bool useCache = aOptions.mUseCache.WasPassed() && aOptions.mUseCache.Value();
+  nsLoadFlags loadFlags = useCache ? nsIRequest::LOAD_NORMAL
+                                   : nsIRequest::VALIDATE_ALWAYS;
 
   
   
