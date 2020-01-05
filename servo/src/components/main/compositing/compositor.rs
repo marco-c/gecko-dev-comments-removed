@@ -39,12 +39,16 @@ use servo_util::{time, url};
 use std::comm::Port;
 use std::num::Orderable;
 use std::path::Path;
-use std::rc::Rc;
 
+
+use layers::temp_rc::Rc;
+
+
+use std::rc;
 
 pub struct IOCompositor {
     
-    window: Rc<Window>,
+    window: rc::Rc<Window>,
 
     
     port: Port<Msg>,
@@ -53,59 +57,59 @@ pub struct IOCompositor {
     context: RenderContext,
 
     
-    root_layer: @mut ContainerLayer,
+    root_layer: Rc<ContainerLayer>,
 
-    /// The canvas to paint a page.
+    
     scene: Scene,
 
-    /// The application window size.
+    
     window_size: Size2D<uint>,
 
-    /// The platform-specific graphics context.
+    
     graphics_context: NativeCompositingGraphicsContext,
 
-    /// Tracks whether the renderer has finished its first rendering
+    
     composite_ready: bool,
 
-    /// Tracks whether we are in the process of shutting down.
+    
     shutting_down: bool,
 
-    /// Tracks whether we should close compositor.
+    
     done: bool,
 
-    /// Tracks whether we need to re-composite a page.
+    
     recomposite: bool,
 
-    /// Keeps track of the current zoom factor.
+    
     world_zoom: f32,
 
-    /// Tracks whether the zoom action has happend recently.
+    
     zoom_action: bool,
 
-    /// The time of the last zoom action has started.
+    
     zoom_time: f64,
 
-    /// Current display/reflow status of the page
+    
     ready_state: ReadyState,
 
-    /// Whether the page being rendered has loaded completely.
-    /// Differs from ReadyState because we can finish loading (ready)
-    /// many times for a single page.
+    
+    
+    
     load_complete: bool,
 
-    /// The command line option flags.
+    
     opts: Opts,
 
-    /// The root CompositorLayer
+    
     compositor_layer: Option<CompositorLayer>,
 
-    /// The channel on which messages can be sent to the constellation.
+    
     constellation_chan: ConstellationChan,
 
-    /// The channel on which messages can be sent to the profiler.
+    
     profiler_chan: ProfilerChan,
 
-    /// Pending scroll to fragment event, if any 
+    
     fragment_point: Option<Point2D<f32>>
 }
 
@@ -116,13 +120,13 @@ impl IOCompositor {
                port: Port<Msg>,
                constellation_chan: ConstellationChan,
                profiler_chan: ProfilerChan) -> IOCompositor {
-        let window: Rc<Window> = WindowMethods::new(app);
+        let window: rc::Rc<Window> = WindowMethods::new(app);
 
-        // Create an initial layer tree.
-        //
-        // TODO: There should be no initial layer tree until the renderer creates one from the display
-        // list. This is only here because we don't have that logic in the renderer yet.
-        let root_layer = @mut ContainerLayer();
+        
+        
+        
+        
+        let root_layer = Rc::new(ContainerLayer());
         let window_size = window.borrow().size();
 
         IOCompositor {
@@ -130,7 +134,7 @@ impl IOCompositor {
             port: port,
             opts: opts,
             context: rendergl::init_render_context(),
-            root_layer: root_layer,
+            root_layer: root_layer.clone(),
             scene: Scene(ContainerLayerKind(root_layer), window_size, identity()),
             window_size: Size2D(window_size.width as uint, window_size.height as uint),
             graphics_context: CompositorTask::create_graphics_context(),
@@ -161,31 +165,31 @@ impl IOCompositor {
                                                constellation_chan,
                                                profiler_chan);
 
-        // Starts the compositor, which listens for messages on the specified port.
+        
         compositor.run();
     }
 
     fn run (&mut self) {
-        // Tell the constellation about the initial window size.
+        
         self.constellation_chan.send(ResizedWindowMsg(self.window_size));
 
-        // Enter the main event loop.
+        
         while !self.done {
-            // Check for new messages coming from the rendering task.
+            
             self.handle_message();
 
             if (self.done) {
-                // We have exited the compositor and passing window
-                // messages to script may crash.
+                
+                
                 debug!("Exiting the compositor due to a request from script.");
                 break;
             }
 
-            // Check for messages coming from the windowing system.
+            
             let msg = self.window.borrow().recv();
             self.handle_window_message(msg);
 
-            // If asked to recomposite and renderer has run at least once
+            
             if self.recomposite && self.composite_ready {
                 self.recomposite = false;
                 self.composite();
@@ -193,7 +197,7 @@ impl IOCompositor {
 
             Timer::sleep(10);
 
-            // If a pinch-zoom happened recently, ask for tiles at the new resolution
+            
             if self.zoom_action && precise_time_s() - self.zoom_time > 0.3 {
                 self.zoom_action = false;
                 self.ask_for_tiles();
@@ -201,17 +205,17 @@ impl IOCompositor {
 
         }
 
-        // Clear out the compositor layers so that painting tasks can destroy the buffers.
+        
         match self.compositor_layer {
             None => {}
             Some(ref mut layer) => layer.forget_all_tiles(),
         }
 
-        // Drain compositor port, sometimes messages contain channels that are blocking
-        // another task from finishing (i.e. SetIds)
+        
+        
         while self.port.try_recv().is_some() {}
 
-        // Tell the profiler to shut down.
+        
         self.profiler_chan.send(time::ExitMsg);
     }
 
@@ -286,9 +290,9 @@ impl IOCompositor {
                     self.load_complete = true;
                 }
 
-                // When we are shutting_down, we need to avoid performing operations
-                // such as Paint that may crash because we have begun tearing down
-                // the rest of our resources.
+                
+                
+                
                 (_, true) => { }
             }
         }
@@ -316,17 +320,23 @@ impl IOCompositor {
                new_constellation_chan: ConstellationChan) {
         response_chan.send(());
 
-        // This assumes there is at most one child, which should be the case.
-        match self.root_layer.first_child {
-            Some(old_layer) => self.root_layer.remove_child(old_layer),
-            None => {}
+        
+        
+        {
+            let tmp = self.root_layer.borrow().first_child.borrow();
+            match *tmp.get() {
+                Some(ref old_layer) => ContainerLayer::remove_child(self.root_layer.clone(),
+                                                                     old_layer.clone()),
+                None => {}
+            }
         }
 
         let layer = CompositorLayer::from_frame_tree(frame_tree,
                                                      self.opts.tile_size,
                                                      Some(10000000u),
                                                      self.opts.cpu_painting);
-        self.root_layer.add_child_start(ContainerLayerKind(layer.root_layer));
+        ContainerLayer::add_child_start(self.root_layer.clone(),
+                                        ContainerLayerKind(layer.root_layer.clone()));
 
         // If there's already a root layer, destroy it cleanly.
         match self.compositor_layer {
@@ -360,13 +370,17 @@ impl IOCompositor {
                                              Some(10000000u),
                                              self.opts.cpu_painting);
 
-        let current_child = self.root_layer.first_child;
-        // This assumes there is at most one child, which should be the case.
-        match current_child {
-            Some(old_layer) => self.root_layer.remove_child(old_layer),
-            None => {}
+        {
+            let current_child = self.root_layer.borrow().first_child.borrow();
+            // This assumes there is at most one child, which should be the case.
+            match *current_child.get() {
+                Some(ref old_layer) => ContainerLayer::remove_child(self.root_layer.clone(),
+                                                                     old_layer.clone()),
+                None => {}
+            }
         }
-        self.root_layer.add_child_start(ContainerLayerKind(new_layer.root_layer));
+        ContainerLayer::add_child_start(self.root_layer.clone(),
+                                        ContainerLayerKind(new_layer.root_layer.clone()));
         self.compositor_layer = Some(new_layer);
 
         self.ask_for_tiles();
@@ -617,7 +631,7 @@ impl IOCompositor {
         self.world_zoom = (self.world_zoom * magnification).max(&1.0);
         let world_zoom = self.world_zoom;
 
-        self.root_layer.common.set_transform(identity().scale(world_zoom, world_zoom, 1f32));
+        self.root_layer.borrow().common.with_mut(|common| common.set_transform(identity().scale(world_zoom, world_zoom, 1f32)));
 
         // Scroll as needed
         let page_delta = Point2D(window_size.width as f32 * (1.0 / world_zoom - 1.0 / old_world_zoom) * 0.5,
