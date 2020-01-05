@@ -240,6 +240,10 @@ function chromeFileExists(aURI) {
 }
 
 add_task(function* checkAllTheCSS() {
+  
+  
+  Services.console.reset();
+
   let appDir = Services.dirsvc.get("GreD", Ci.nsIFile);
   
   
