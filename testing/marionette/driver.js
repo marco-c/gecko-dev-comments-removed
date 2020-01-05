@@ -2737,7 +2737,7 @@ GeckoDriver.prototype.acceptConnections = function (cmd, resp) {
 
 
 
-GeckoDriver.prototype.quitApplication = function* (cmd, resp) {
+GeckoDriver.prototype.quit = function* (cmd, resp) {
   const quits = ["eConsiderQuit", "eAttemptQuit", "eForceQuit"];
 
   let flags = [];
@@ -3055,7 +3055,8 @@ GeckoDriver.prototype.commands = {
   "getTextFromDialog": GeckoDriver.prototype.getTextFromDialog,
   "sendKeysToDialog": GeckoDriver.prototype.sendKeysToDialog,
   "acceptConnections": GeckoDriver.prototype.acceptConnections,
-  "quitApplication": GeckoDriver.prototype.quitApplication,
+  "quitApplication": GeckoDriver.prototype.quit,  
+  "quit": GeckoDriver.prototype.quit,
 
   "localization:l10n:localizeEntity": GeckoDriver.prototype.localizeEntity,
   "localization:l10n:localizeProperty": GeckoDriver.prototype.localizeProperty,

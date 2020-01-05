@@ -1175,6 +1175,9 @@ class Marionette(object):
         body = None
         if len(flags) > 0:
             body = {"flags": list(flags)}
+
+        
+        
         self._send_message("quitApplication", body)
 
     @do_process_check
