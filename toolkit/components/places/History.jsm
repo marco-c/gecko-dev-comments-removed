@@ -697,7 +697,10 @@ var cleanupPages = Task.async(function*(db, pages) {
   if (pageIdsToRemove.length > 0) {
     let idsList = sqlList(pageIdsToRemove);
     
-    yield db.execute(`DELETE FROM moz_places WHERE id IN ( ${ idsList } )`);
+    
+    
+    yield db.execute(`DELETE FROM moz_places WHERE id IN ( ${ idsList } )
+                      AND foreign_count = 0 AND last_visit_date ISNULL`);
     
     
     yield db.executeCached(`DELETE FROM moz_updatehosts_temp`);
