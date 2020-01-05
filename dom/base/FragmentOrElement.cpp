@@ -1308,6 +1308,8 @@ public:
         
         
         
+        
+        
         nsCOMPtr<nsIContent> child =
           container->mAttrsAndChildren.TakeChildAt(childCount);
         if (childCount == 0) {
@@ -1416,6 +1418,8 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(FragmentOrElement)
       
       nsAutoScriptBlocker scriptBlocker;
       while (childCount-- > 0) {
+        
+        
         
         
         
