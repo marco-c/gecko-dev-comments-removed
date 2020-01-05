@@ -17,10 +17,6 @@
 namespace mozilla {
 namespace gfx {
 
-
-
-
-
 template<class Units>
 Point4DTyped<Units>
 CalculateEdgeIntersect(const Point4DTyped<Units>& aFirst,
@@ -62,10 +58,6 @@ ClipPointsAtInfinity(const nsTArray<Point4DTyped<Units>>& aPoints)
 
   return outPoints;
 }
-
-
-
-
 
 template<class Units>
 nsTArray<float>
@@ -155,8 +147,6 @@ ClipPointsWithPlane(const nsTArray<Point4DTyped<Units>>& aPoints,
 }
 
 
-
-
 template<class Units>
 class PolygonTyped {
   typedef Point3DTyped<Units> Point3DType;
@@ -182,9 +172,6 @@ public:
 #endif
   }
 
-  
-
-
   RectTyped<Units> BoundingBox() const
   {
     if (mPoints.IsEmpty()) {
@@ -207,8 +194,6 @@ public:
   }
 
   
-
-
   PolygonTyped<Units> ClipPolygon(const RectTyped<Units>& aRect) const
   {
     if (aRect.IsEmpty()) {
@@ -219,8 +204,6 @@ public:
   }
 
   
-
-
   PolygonTyped<Units> ClipPolygon(const PolygonTyped<Units>& aPolygon) const
   {
     const nsTArray<Point4DType>& points = aPolygon.GetPoints();
@@ -268,9 +251,6 @@ public:
     return PolygonTyped<Units>(Move(clippedPoints), mNormal);
   }
 
-  
-
-
   static PolygonTyped<Units> FromRect(const RectTyped<Units>& aRect)
   {
     nsTArray<Point4DType> points {
@@ -299,9 +279,6 @@ public:
     return mPoints.Length() < 3;
   }
 
-  
-
-
   nsTArray<TriangleTyped<Units>> ToTriangles() const
   {
     nsTArray<TriangleTyped<Units>> triangles;
@@ -310,11 +287,10 @@ public:
       return triangles;
     }
 
-    
     for (size_t i = 1; i < mPoints.Length() - 1; ++i) {
       TriangleTyped<Units> triangle(Point(mPoints[0].x, mPoints[0].y),
                                     Point(mPoints[i].x, mPoints[i].y),
-                                    Point(mPoints[i + 1].x, mPoints[i + 1].y));
+                                    Point(mPoints[i+1].x, mPoints[i+1].y));
       triangles.AppendElement(Move(triangle));
     }
 

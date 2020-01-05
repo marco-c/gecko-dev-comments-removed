@@ -20,17 +20,15 @@ namespace layers {
 class Layer;
 
 
-
-
 struct LayerPolygon {
-  explicit LayerPolygon(Layer* aLayer)
+  explicit LayerPolygon(Layer *aLayer)
     : layer(aLayer) {}
 
-  LayerPolygon(Layer* aLayer,
+  LayerPolygon(Layer *aLayer,
                gfx::Polygon&& aGeometry)
     : layer(aLayer), geometry(Some(Move(aGeometry))) {}
 
-  LayerPolygon(Layer* aLayer,
+  LayerPolygon(Layer *aLayer,
                nsTArray<gfx::Point4D>&& aPoints,
                const gfx::Point4D& aNormal)
     : layer(aLayer)
@@ -38,7 +36,7 @@ struct LayerPolygon {
     geometry.emplace(Move(aPoints), aNormal);
   }
 
-  Layer* layer;
+  Layer *layer;
   Maybe<gfx::Polygon> geometry;
 };
 
@@ -54,8 +52,6 @@ typedef mozilla::ArenaAllocator<4096, 8> BSPTreeArena;
 
 
 typedef std::list<LayerPolygon> LayerList;
-
-
 
 
 
@@ -92,8 +88,6 @@ struct BSPTreeNode {
 
 
 
-
-
 class BSPTree {
 public:
   
@@ -116,8 +110,6 @@ public:
   }
 
   
-
-
   nsTArray<LayerPolygon> GetDrawOrder() const
   {
     nsTArray<LayerPolygon> layers;
@@ -131,9 +123,7 @@ private:
   nsTArray<LayerList*> mListPointers;
 
   
-
-
-
+  
   void BuildDrawOrder(BSPTreeNode* aNode,
                       nsTArray<LayerPolygon>& aLayers) const;
 
