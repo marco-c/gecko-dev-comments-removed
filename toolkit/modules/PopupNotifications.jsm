@@ -392,6 +392,11 @@ PopupNotifications.prototype = {
 
 
 
+
+
+
+
+
   show: function PopupNotifications_show(browser, id, message, anchorID,
                                          mainAction, secondaryActions, options) {
     function isInvalidAction(a) {
@@ -475,7 +480,7 @@ PopupNotifications.prototype = {
       if (notification.options.persistWhileVisible &&
           this.isPanelOpen) {
         if ("persistence" in notification.options &&
-          notification.options.persistence)
+            notification.options.persistence)
           notification.options.persistence--;
         return true;
       }
@@ -587,6 +592,14 @@ PopupNotifications.prototype = {
   _dismiss: function PopupNotifications_dismiss(telemetryReason) {
     if (telemetryReason) {
       this.nextDismissReason = telemetryReason;
+    }
+
+    
+    
+    if (this.panel.firstChild &&
+        (telemetryReason == TELEMETRY_STAT_DISMISSAL_CLOSE_BUTTON ||
+         telemetryReason == TELEMETRY_STAT_DISMISSAL_NOT_NOW)) {
+      this.panel.firstChild.notification.options.persistent = false;
     }
 
     let browser = this.panel.firstChild &&
@@ -831,7 +844,7 @@ PopupNotifications.prototype = {
     
     
     
-    let promise = this._hidePanel().then(() => {
+    this._hidePanel().then(() => {
       
       
       
@@ -845,6 +858,12 @@ PopupNotifications.prototype = {
       }
 
       this._currentAnchorElement = anchorElement;
+
+      if (notificationsToShow.some(n => n.options.persistent)) {
+        this.panel.setAttribute("noautohide", "true");
+      } else {
+        this.panel.removeAttribute("noautohide");
+      }
 
       
       
@@ -932,8 +951,9 @@ PopupNotifications.prototype = {
     }
 
     
+    
     let notificationsToShow = notifications.filter(function(n) {
-      return !n.dismissed && !n.options.neverShow;
+      return (!n.dismissed || n.options.persistent) && !n.options.neverShow;
     });
 
     if (useIconBox) {
@@ -1111,7 +1131,7 @@ PopupNotifications.prototype = {
     }
 
     
-    this.panel.removeAttribute("noautofocus", "true");
+    this.panel.removeAttribute("noautofocus");
 
     this._reshowNotifications(anchor);
   },

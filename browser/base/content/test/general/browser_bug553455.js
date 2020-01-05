@@ -116,13 +116,13 @@ function waitForNotification(aId, aExpectedCount = 1) {
     yield observerPromise;
     yield panelEventPromise;
 
-    info("Saw a notification");
+    info("Saw a " + aId + " notification");
     ok(PopupNotifications.isPanelOpen, "Panel should be open");
     is(PopupNotifications.panel.childNodes.length, aExpectedCount, "Should be the right number of notifications");
     if (PopupNotifications.panel.childNodes.length) {
       let nodes = Array.from(PopupNotifications.panel.childNodes);
       let notification = nodes.find(n => n.id == aId + "-notification");
-      ok(notification, `Should have seen the right notification`);
+      ok(notification, "Should have seen the " + aId + " notification");
     }
 
     return PopupNotifications.panel;
@@ -512,7 +512,9 @@ function test_multiple() {
 function test_sequential() {
   return Task.spawn(function* () {
     
-    if (!Preferences.get("xpinstall.customConfirmationUI", false)) {
+    
+    
+    if (true || !Preferences.get("xpinstall.customConfirmationUI", false)) {
       return;
     }
     let pm = Services.perms;

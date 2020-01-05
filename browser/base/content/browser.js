@@ -5971,7 +5971,7 @@ var OfflineApps = {
 
     let anchorID = "indexedDB-notification-icon";
     PopupNotifications.show(browser, "offline-app-usage", message,
-                            anchorID, mainAction);
+                            anchorID, mainAction, null, { persistent: true });
 
     
     
@@ -6051,6 +6051,7 @@ var OfflineApps = {
                                                         [host]);
       let anchorID = "indexedDB-notification-icon";
       let options = {
+        persistent: true,
         controlledItems : [[Cu.getWeakReference(browser), docId, uri]]
       };
       notification = PopupNotifications.show(browser, notificationID, message,
@@ -6142,18 +6143,12 @@ var IndexedDBPromptHelper = {
       responseTopic = this._permissionsResponse;
     }
 
-    const hiddenTimeoutDuration = 30000; 
-    const firstTimeoutDuration = 300000; 
-
-    var timeoutId;
-
     var observer = requestor.getInterface(Ci.nsIObserver);
 
     var mainAction = {
       label: gNavigatorBundle.getString("offlineApps.allow"),
       accessKey: gNavigatorBundle.getString("offlineApps.allowAccessKey"),
       callback: function() {
-        clearTimeout(timeoutId);
         observer.observe(null, responseTopic,
                          Ci.nsIPermissionManager.ALLOW_ACTION);
       }
@@ -6164,61 +6159,15 @@ var IndexedDBPromptHelper = {
         label: gNavigatorBundle.getString("offlineApps.never"),
         accessKey: gNavigatorBundle.getString("offlineApps.neverAccessKey"),
         callback: function() {
-          clearTimeout(timeoutId);
           observer.observe(null, responseTopic,
                            Ci.nsIPermissionManager.DENY_ACTION);
         }
       }
     ];
 
-    
-    var notification;
-
-    function timeoutNotification() {
-      
-      if (notification) {
-        notification.remove();
-      }
-
-      
-      
-      clearTimeout(timeoutId);
-
-      
-      observer.observe(null, responseTopic,
-                       Ci.nsIPermissionManager.UNKNOWN_ACTION);
-    }
-
-    var options = {
-      eventCallback: function(state) {
-        
-        if (!timeoutId) {
-          return;
-        }
-
-        
-        if (state == "dismissed") {
-          clearTimeout(timeoutId);
-          timeoutId = setTimeout(timeoutNotification, hiddenTimeoutDuration);
-          return;
-        }
-
-        
-        
-        if (state == "shown") {
-          clearTimeout(timeoutId);
-        }
-      }
-    };
-
-    notification = PopupNotifications.show(browser, topic, message,
-                                           this._notificationIcon, mainAction,
-                                           secondaryActions, options);
-
-    
-    
-    
-    timeoutId = setTimeout(timeoutNotification, firstTimeoutDuration);
+    PopupNotifications.show(browser, topic, message,
+                            this._notificationIcon, mainAction,
+                            secondaryActions, { persistent: true });
   }
 };
 
