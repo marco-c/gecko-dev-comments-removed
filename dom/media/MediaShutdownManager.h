@@ -54,6 +54,8 @@ public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIASYNCSHUTDOWNBLOCKER
 
+  static void InitStatics();
+
   
   
   static MediaShutdownManager& Instance();
@@ -71,6 +73,7 @@ private:
 
   MediaShutdownManager();
   virtual ~MediaShutdownManager();
+  void RemoveBlocker();
 
   
   
