@@ -5,15 +5,18 @@
 #ifndef nsStartupCacheUtils_h_
 #define nsStartupCacheUtils_h_
 
+#include "nsString.h"
 #include "nsIStorageStream.h"
 #include "nsIObjectInputStream.h"
 #include "nsIObjectOutputStream.h"
 #include "mozilla/UniquePtr.h"
 
+class nsIURI;
+
 namespace mozilla {
 namespace scache {
 
-NS_EXPORT nsresult
+nsresult
 NewObjectInputStreamFromBuffer(UniquePtr<char[]> buffer, uint32_t len, 
                                nsIObjectInputStream** stream);
 
@@ -23,7 +26,7 @@ NewObjectInputStreamFromBuffer(UniquePtr<char[]> buffer, uint32_t len,
 
 
 
-NS_EXPORT nsresult
+nsresult
 NewObjectOutputWrappedStorageStream(nsIObjectOutputStream **wrapperStream,
                                     nsIStorageStream** stream,
                                     bool wantDebugStream);
@@ -31,11 +34,11 @@ NewObjectOutputWrappedStorageStream(nsIObjectOutputStream **wrapperStream,
 
 
 
-NS_EXPORT nsresult
+nsresult
 NewBufferFromStorageStream(nsIStorageStream *storageStream, 
                            UniquePtr<char[]>* buffer, uint32_t* len);
 
-NS_EXPORT nsresult
+nsresult
 PathifyURI(nsIURI *in, nsACString &out);
 } 
 } 
