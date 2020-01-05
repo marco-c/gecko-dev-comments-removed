@@ -20,7 +20,7 @@ class AnnexB
 public:
   
   
-  static bool ConvertSampleToAnnexB(mozilla::MediaRawData* aSample);
+  static bool ConvertSampleToAnnexB(mozilla::MediaRawData* aSample, bool aAddSPS = true);
   
   
   static bool ConvertSampleToAVCC(mozilla::MediaRawData* aSample);
