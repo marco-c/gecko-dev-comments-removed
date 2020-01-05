@@ -479,12 +479,9 @@ template <typename T>
 void
 js::TraceWeakEdge(JSTracer* trc, WeakRef<T>* thingp, const char* name)
 {
-    if (!trc->isMarkingTracer()) {
-        
-        if (trc->traceWeakEdges())
-            DispatchToTracer(trc, ConvertToBase(thingp->unsafeUnbarrieredForTracing()), name);
-        return;
-    }
+    
+    if (!trc->isMarkingTracer())
+        return DispatchToTracer(trc, ConvertToBase(thingp->unsafeUnbarrieredForTracing()), name);
 
     NoteWeakEdge(GCMarker::fromTracer(trc),
                  ConvertToBase(thingp->unsafeUnbarrieredForTracing()));
