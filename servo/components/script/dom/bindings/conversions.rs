@@ -44,17 +44,17 @@ pub trait IDLInterface {
 }
 
 
-pub trait ToJSValConvertible {
-    
+pub trait ToJSValConvertible for Sized? {
+    /// Convert `self` to a `JSVal`. JSAPI failure causes a task failure.
     fn to_jsval(&self, cx: *mut JSContext) -> JSVal;
 }
 
-
+/// A trait to convert `JSVal`s to Rust types.
 pub trait FromJSValConvertible<T> {
-    
-    
-    
-    
+    /// Convert `val` to type `Self`.
+    /// Optional configuration of type `T` can be passed as the `option`
+    /// argument.
+    /// If it returns `Err(())`, a JSAPI exception is pending.
     fn from_jsval(cx: *mut JSContext, val: JSVal, option: T) -> Result<Self, ()>;
 }
 
@@ -232,16 +232,22 @@ impl FromJSValConvertible<()> for f64 {
     }
 }
 
-impl ToJSValConvertible for DOMString {
+impl ToJSValConvertible for str {
     fn to_jsval(&self, cx: *mut JSContext) -> JSVal {
         unsafe {
-            let string_utf16: Vec<u16> = self.as_slice().utf16_units().collect();
+            let string_utf16: Vec<u16> = self.utf16_units().collect();
             let jsstr = JS_NewUCStringCopyN(cx, string_utf16.as_ptr(), string_utf16.len() as libc::size_t);
             if jsstr.is_null() {
                 panic!("JS_NewUCStringCopyN failed");
             }
             StringValue(&*jsstr)
         }
+    }
+}
+
+impl ToJSValConvertible for DOMString {
+    fn to_jsval(&self, cx: *mut JSContext) -> JSVal {
+        self.as_slice().to_jsval(cx)
     }
 }
 
