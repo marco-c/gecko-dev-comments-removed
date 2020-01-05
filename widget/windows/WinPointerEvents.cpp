@@ -120,11 +120,3 @@ WinPointerEvents::ShouldEnableInkCollector()
   
   return !IsWin8OrLater();
 }
-
-bool
-WinPointerEvents::ShouldRollupOnPointerEvent(WPARAM aWParam)
-{
-  
-  
-  return ShouldFireCompatibilityMouseEventsForPen(aWParam);
-}
