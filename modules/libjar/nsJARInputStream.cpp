@@ -7,6 +7,9 @@
 
 #include "nsJARInputStream.h"
 #include "zipstruct.h"         
+#ifdef MOZ_JAR_BROTLI
+#include "decode.h"  
+#endif
 #include "nsZipArchive.h"
 
 #include "nsEscape.h"
@@ -50,6 +53,15 @@ nsJARInputStream::InitFile(nsJAR *aJar, nsZipItem *item)
            mInCrc = item->CRC32();
            mOutCrc = crc32(0L, Z_NULL, 0);
            break;
+
+#ifdef MOZ_JAR_BROTLI
+       case MOZ_JAR_BROTLI:
+           mBrotliState = BrotliCreateState(nullptr, nullptr, nullptr);
+           mMode = MODE_BROTLI;
+           mInCrc = item->CRC32();
+           mOutCrc = crc32(0L, Z_NULL, 0);
+           break;
+#endif
 
        default:
            return NS_ERROR_NOT_IMPLEMENTED;
@@ -166,6 +178,9 @@ nsJARInputStream::Available(uint64_t *_retval)
         break;
 
       case MODE_INFLATE:
+#ifdef MOZ_JAR_BROTLI
+      case MODE_BROTLI:
+#endif
       case MODE_COPY:
         *_retval = mOutSize - mZs.total_out;
         break;
@@ -195,6 +210,9 @@ MOZ_WIN_MEM_TRY_BEGIN
         return ReadDirectory(aBuffer, aCount, aBytesRead);
 
       case MODE_INFLATE:
+#ifdef MOZ_JAR_BROTLI
+      case MODE_BROTLI:
+#endif
         if (mZs.total_out < mOutSize) {
           rv = ContinueInflate(aBuffer, aCount, aBytesRead);
         }
@@ -246,6 +264,11 @@ nsJARInputStream::Close()
     if (mMode == MODE_INFLATE) {
         inflateEnd(&mZs);
     }
+#ifdef MOZ_JAR_BROTLI
+    if (mMode == MODE_BROTLI) {
+        BrotliDestroyState(mBrotliState);
+    }
+#endif
     mMode = MODE_CLOSED;
     mFd = nullptr;
     return NS_OK;
@@ -255,6 +278,8 @@ nsresult
 nsJARInputStream::ContinueInflate(char* aBuffer, uint32_t aCount,
                                   uint32_t* aBytesRead)
 {
+    bool finished = false;
+
     
     NS_ASSERTION(aBuffer,"aBuffer parameter must not be null");
     NS_ASSERTION(aBytesRead,"aBytesRead parameter must not be null");
@@ -266,11 +291,39 @@ nsJARInputStream::ContinueInflate(char* aBuffer, uint32_t aCount,
     mZs.avail_out = std::min(aCount, (mOutSize-oldTotalOut));
     mZs.next_out = (unsigned char*)aBuffer;
 
-    
-    int zerr = inflate(&mZs, Z_SYNC_FLUSH);
-    if ((zerr != Z_OK) && (zerr != Z_STREAM_END)) {
-        nsZipArchive::sFileCorruptedReason = "nsJARInputStream: error while inflating";
-        return NS_ERROR_FILE_CORRUPTED;
+#ifndef MOZ_JAR_BROTLI
+    MOZ_ASSERT(mMode == MODE_INFLATE);
+#endif
+    if (mMode == MODE_INFLATE) {
+        
+        int zerr = inflate(&mZs, Z_SYNC_FLUSH);
+        if ((zerr != Z_OK) && (zerr != Z_STREAM_END)) {
+            nsZipArchive::sFileCorruptedReason = "nsJARInputStream: error while inflating";
+            return NS_ERROR_FILE_CORRUPTED;
+        }
+        finished = (zerr == Z_STREAM_END);
+#ifdef MOZ_JAR_BROTLI
+    } else {
+        MOZ_ASSERT(mMode == MODE_BROTLI);
+        
+
+
+        size_t avail_in = mZs.avail_in;
+        size_t avail_out = mZs.avail_out;
+        size_t total_out = mZs.total_out;
+        BrotliResult result = BrotliDecompressStream(
+            &avail_in, const_cast<const unsigned char**>(&mZs.next_in),
+            &avail_out, &mZs.next_out, &total_out, mBrotliState);
+        
+
+        mZs.total_out = total_out;
+        mZs.avail_in = avail_in;
+        if (result == BROTLI_RESULT_ERROR) {
+            nsZipArchive::sFileCorruptedReason = "nsJARInputStream: brotli decompression error";
+            return NS_ERROR_FILE_CORRUPTED;
+        }
+        finished = (result == BROTLI_RESULT_SUCCESS);
+#endif
     }
 
     *aBytesRead = (mZs.total_out - oldTotalOut);
@@ -280,8 +333,10 @@ nsJARInputStream::ContinueInflate(char* aBuffer, uint32_t aCount,
 
     
     
-    if (zerr == Z_STREAM_END || mZs.total_out == mOutSize) {
-        inflateEnd(&mZs);
+    if (finished || mZs.total_out == mOutSize) {
+        if (mMode == MODE_INFLATE) {
+            inflateEnd(&mZs);
+        }
 
         
         if (mOutCrc != mInCrc) {

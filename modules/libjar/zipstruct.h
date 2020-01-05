@@ -103,5 +103,8 @@ typedef struct ZipEnd_
 #define DEFLATED          8
 #define UNSUPPORTED       0xFF
 
+#ifdef NIGHTLY_BUILD
+#define MOZ_JAR_BROTLI    0x81
+#endif
 
 #endif 
