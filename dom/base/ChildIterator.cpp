@@ -513,6 +513,16 @@ StyleChildrenIterator::IsNeeded(const Element* aElement)
   }
 
   
+  
+  
+  
+  
+  if (aElement->GetProperty(nsGkAtoms::beforePseudoProperty) ||
+      aElement->GetProperty(nsGkAtoms::afterPseudoProperty)) {
+    return true;
+  }
+
+  
   nsIAnonymousContentCreator* ac = do_QueryFrame(aElement->GetPrimaryFrame());
   if (ac) {
     return true;
