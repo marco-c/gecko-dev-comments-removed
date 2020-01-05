@@ -2,6 +2,8 @@
 
 "use strict";
 
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionSearchHandler",
                                   "resource://gre/modules/ExtensionSearchHandler.jsm");
 var {
@@ -11,97 +13,92 @@ var {
 
 let gKeywordMap = new WeakMap();
 
-this.omnibox = class extends ExtensionAPI {
-  onManifestEntry(entryName) {
-    let {extension} = this;
-    let {manifest} = extension;
 
-    let keyword = manifest.omnibox.keyword;
-    try {
-      
-      ExtensionSearchHandler.registerKeyword(keyword, extension);
-      gKeywordMap.set(extension, keyword);
-    } catch (e) {
-      extension.manifestError(e.message);
-    }
+extensions.on("manifest_omnibox", (type, directive, extension, manifest) => {
+  let keyword = manifest.omnibox.keyword;
+  try {
+    
+    ExtensionSearchHandler.registerKeyword(keyword, extension);
+    gKeywordMap.set(extension, keyword);
+  } catch (e) {
+    extension.manifestError(e.message);
   }
+});
 
-  onShutdown(reason) {
-    let {extension} = this;
-
-    let keyword = gKeywordMap.get(extension);
-    if (keyword) {
-      ExtensionSearchHandler.unregisterKeyword(keyword);
-      gKeywordMap.delete(extension);
-    }
+extensions.on("shutdown", (type, extension) => {
+  let keyword = gKeywordMap.get(extension);
+  if (keyword) {
+    ExtensionSearchHandler.unregisterKeyword(keyword);
+    gKeywordMap.delete(extension);
   }
+});
 
-  getAPI(context) {
-    let {extension} = context;
-    return {
-      omnibox: {
-        setDefaultSuggestion(suggestion) {
-          let keyword = gKeywordMap.get(extension);
-          try {
-            
-            ExtensionSearchHandler.setDefaultSuggestion(keyword, suggestion);
-          } catch (e) {
-            return Promise.reject(e.message);
-          }
-        },
 
-        onInputStarted: new SingletonEventManager(context, "omnibox.onInputStarted", fire => {
-          let listener = (eventName) => {
-            fire.sync();
-          };
-          extension.on(ExtensionSearchHandler.MSG_INPUT_STARTED, listener);
-          return () => {
-            extension.off(ExtensionSearchHandler.MSG_INPUT_STARTED, listener);
-          };
-        }).api(),
-
-        onInputCancelled: new SingletonEventManager(context, "omnibox.onInputCancelled", fire => {
-          let listener = (eventName) => {
-            fire.sync();
-          };
-          extension.on(ExtensionSearchHandler.MSG_INPUT_CANCELLED, listener);
-          return () => {
-            extension.off(ExtensionSearchHandler.MSG_INPUT_CANCELLED, listener);
-          };
-        }).api(),
-
-        onInputEntered: new SingletonEventManager(context, "omnibox.onInputEntered", fire => {
-          let listener = (eventName, text, disposition) => {
-            fire.sync(text, disposition);
-          };
-          extension.on(ExtensionSearchHandler.MSG_INPUT_ENTERED, listener);
-          return () => {
-            extension.off(ExtensionSearchHandler.MSG_INPUT_ENTERED, listener);
-          };
-        }).api(),
+extensions.registerSchemaAPI("omnibox", "addon_parent", context => {
+  let {extension} = context;
+  return {
+    omnibox: {
+      setDefaultSuggestion(suggestion) {
+        let keyword = gKeywordMap.get(extension);
+        try {
+          
+          ExtensionSearchHandler.setDefaultSuggestion(keyword, suggestion);
+        } catch (e) {
+          return Promise.reject(e.message);
+        }
       },
 
-      omnibox_internal: {
-        addSuggestions(id, suggestions) {
-          let keyword = gKeywordMap.get(extension);
-          try {
-            ExtensionSearchHandler.addSuggestions(keyword, id, suggestions);
-          } catch (e) {
-            
-            
-          }
-        },
+      onInputStarted: new SingletonEventManager(context, "omnibox.onInputStarted", fire => {
+        let listener = (eventName) => {
+          fire.sync();
+        };
+        extension.on(ExtensionSearchHandler.MSG_INPUT_STARTED, listener);
+        return () => {
+          extension.off(ExtensionSearchHandler.MSG_INPUT_STARTED, listener);
+        };
+      }).api(),
 
-        onInputChanged: new SingletonEventManager(context, "omnibox_internal.onInputChanged", fire => {
-          let listener = (eventName, text, id) => {
-            fire.sync(text, id);
-          };
-          extension.on(ExtensionSearchHandler.MSG_INPUT_CHANGED, listener);
-          return () => {
-            extension.off(ExtensionSearchHandler.MSG_INPUT_CHANGED, listener);
-          };
-        }).api(),
+      onInputCancelled: new SingletonEventManager(context, "omnibox.onInputCancelled", fire => {
+        let listener = (eventName) => {
+          fire.sync();
+        };
+        extension.on(ExtensionSearchHandler.MSG_INPUT_CANCELLED, listener);
+        return () => {
+          extension.off(ExtensionSearchHandler.MSG_INPUT_CANCELLED, listener);
+        };
+      }).api(),
+
+      onInputEntered: new SingletonEventManager(context, "omnibox.onInputEntered", fire => {
+        let listener = (eventName, text, disposition) => {
+          fire.sync(text, disposition);
+        };
+        extension.on(ExtensionSearchHandler.MSG_INPUT_ENTERED, listener);
+        return () => {
+          extension.off(ExtensionSearchHandler.MSG_INPUT_ENTERED, listener);
+        };
+      }).api(),
+    },
+
+    omnibox_internal: {
+      addSuggestions(id, suggestions) {
+        let keyword = gKeywordMap.get(extension);
+        try {
+          ExtensionSearchHandler.addSuggestions(keyword, id, suggestions);
+        } catch (e) {
+          
+          
+        }
       },
-    };
-  }
-};
+
+      onInputChanged: new SingletonEventManager(context, "omnibox_internal.onInputChanged", fire => {
+        let listener = (eventName, text, id) => {
+          fire.sync(text, id);
+        };
+        extension.on(ExtensionSearchHandler.MSG_INPUT_CHANGED, listener);
+        return () => {
+          extension.off(ExtensionSearchHandler.MSG_INPUT_CHANGED, listener);
+        };
+      }).api(),
+    },
+  };
+});

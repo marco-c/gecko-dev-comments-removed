@@ -15,9 +15,56 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
 XPCOMUtils.defineLazyModuleGetter(this, "Services",
                                   "resource://gre/modules/Services.jsm");
 
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
 var {
   SingletonEventManager,
 } = ExtensionUtils;
+
+
+
+function getSender(extension, target, sender) {
+  let tabId;
+  if ("tabId" in sender) {
+    
+    
+    
+    tabId = sender.tabId;
+    delete sender.tabId;
+  } else if (target instanceof Ci.nsIDOMXULElement) {
+    tabId = tabTracker.getBrowserData(target).tabId;
+  }
+
+  if (tabId) {
+    let tab = extension.tabManager.get(tabId, null);
+    if (tab) {
+      sender.tab = tab.convert();
+    }
+  }
+}
+
+
+global.tabGetSender = getSender;
+
+
+extensions.on("page-shutdown", (type, context) => {
+  if (context.viewType == "tab") {
+    if (context.extension.id !== context.xulBrowser.contentPrincipal.addonId) {
+      
+      
+      
+      return;
+    }
+    let {gBrowser} = context.xulBrowser.ownerGlobal;
+    if (gBrowser) {
+      let nativeTab = gBrowser.getTabForBrowser(context.xulBrowser);
+      if (nativeTab) {
+        gBrowser.removeTab(nativeTab);
+      }
+    }
+  }
+});
+
 
 let tabListener = {
   tabReadyInitialized: false,
@@ -75,51 +122,460 @@ let tabListener = {
   },
 };
 
-this.tabs = class extends ExtensionAPI {
-  getAPI(context) {
-    let {extension} = context;
+extensions.registerSchemaAPI("tabs", "addon_parent", context => {
+  let {extension} = context;
 
-    let {tabManager} = extension;
+  let {tabManager} = extension;
 
-    function getTabOrActive(tabId) {
-      if (tabId !== null) {
-        return tabTracker.getTab(tabId);
-      }
-      return tabTracker.activeTab;
+  function getTabOrActive(tabId) {
+    if (tabId !== null) {
+      return tabTracker.getTab(tabId);
+    }
+    return tabTracker.activeTab;
+  }
+
+  async function promiseTabWhenReady(tabId) {
+    let tab;
+    if (tabId !== null) {
+      tab = tabManager.get(tabId);
+    } else {
+      tab = tabManager.getWrapper(tabTracker.activeTab);
     }
 
-    async function promiseTabWhenReady(tabId) {
-      let tab;
-      if (tabId !== null) {
-        tab = tabManager.get(tabId);
-      } else {
-        tab = tabManager.getWrapper(tabTracker.activeTab);
-      }
+    await tabListener.awaitTabReady(tab.nativeTab);
 
-      await tabListener.awaitTabReady(tab.nativeTab);
+    return tab;
+  }
 
-      return tab;
-    }
+  let self = {
+    tabs: {
+      onActivated: new WindowEventManager(context, "tabs.onActivated", "TabSelect", (fire, event) => {
+        let nativeTab = event.originalTarget;
+        let tabId = tabTracker.getId(nativeTab);
+        let windowId = windowTracker.getId(nativeTab.ownerGlobal);
+        fire.async({tabId, windowId});
+      }).api(),
 
-    let self = {
-      tabs: {
-        onActivated: new WindowEventManager(context, "tabs.onActivated", "TabSelect", (fire, event) => {
+      onCreated: new SingletonEventManager(context, "tabs.onCreated", fire => {
+        let listener = (eventName, event) => {
+          fire.async(tabManager.convert(event.nativeTab));
+        };
+
+        tabTracker.on("tab-created", listener);
+        return () => {
+          tabTracker.off("tab-created", listener);
+        };
+      }).api(),
+
+      
+
+
+
+
+
+      onHighlighted: new WindowEventManager(context, "tabs.onHighlighted", "TabSelect", (fire, event) => {
+        let nativeTab = event.originalTarget;
+        let tabIds = [tabTracker.getId(nativeTab)];
+        let windowId = windowTracker.getId(nativeTab.ownerGlobal);
+        fire.async({tabIds, windowId});
+      }).api(),
+
+      onAttached: new SingletonEventManager(context, "tabs.onAttached", fire => {
+        let listener = (eventName, event) => {
+          fire.async(event.tabId, {newWindowId: event.newWindowId, newPosition: event.newPosition});
+        };
+
+        tabTracker.on("tab-attached", listener);
+        return () => {
+          tabTracker.off("tab-attached", listener);
+        };
+      }).api(),
+
+      onDetached: new SingletonEventManager(context, "tabs.onDetached", fire => {
+        let listener = (eventName, event) => {
+          fire.async(event.tabId, {oldWindowId: event.oldWindowId, oldPosition: event.oldPosition});
+        };
+
+        tabTracker.on("tab-detached", listener);
+        return () => {
+          tabTracker.off("tab-detached", listener);
+        };
+      }).api(),
+
+      onRemoved: new SingletonEventManager(context, "tabs.onRemoved", fire => {
+        let listener = (eventName, event) => {
+          fire.async(event.tabId, {windowId: event.windowId, isWindowClosing: event.isWindowClosing});
+        };
+
+        tabTracker.on("tab-removed", listener);
+        return () => {
+          tabTracker.off("tab-removed", listener);
+        };
+      }).api(),
+
+      onReplaced: new SingletonEventManager(context, "tabs.onReplaced", fire => {
+        return () => {};
+      }).api(),
+
+      onMoved: new SingletonEventManager(context, "tabs.onMoved", fire => {
+        
+        
+        
+        
+        
+        
+        
+        
+        let ignoreNextMove = new WeakSet();
+
+        let openListener = event => {
+          ignoreNextMove.add(event.target);
+          
+          
+          Promise.resolve().then(() => {
+            ignoreNextMove.delete(event.target);
+          });
+        };
+
+        let moveListener = event => {
           let nativeTab = event.originalTarget;
-          let tabId = tabTracker.getId(nativeTab);
-          let windowId = windowTracker.getId(nativeTab.ownerGlobal);
-          fire.async({tabId, windowId});
-        }).api(),
 
-        onCreated: new SingletonEventManager(context, "tabs.onCreated", fire => {
-          let listener = (eventName, event) => {
-            fire.async(tabManager.convert(event.nativeTab));
-          };
+          if (ignoreNextMove.has(nativeTab)) {
+            ignoreNextMove.delete(nativeTab);
+            return;
+          }
 
-          tabTracker.on("tab-created", listener);
-          return () => {
-            tabTracker.off("tab-created", listener);
-          };
-        }).api(),
+          fire.async(tabTracker.getId(nativeTab), {
+            windowId: windowTracker.getId(nativeTab.ownerGlobal),
+            fromIndex: event.detail,
+            toIndex: nativeTab._tPos,
+          });
+        };
+
+        windowTracker.addListener("TabMove", moveListener);
+        windowTracker.addListener("TabOpen", openListener);
+        return () => {
+          windowTracker.removeListener("TabMove", moveListener);
+          windowTracker.removeListener("TabOpen", openListener);
+        };
+      }).api(),
+
+      onUpdated: new SingletonEventManager(context, "tabs.onUpdated", fire => {
+        const restricted = ["url", "favIconUrl", "title"];
+
+        function sanitize(extension, changeInfo) {
+          let result = {};
+          let nonempty = false;
+          for (let prop in changeInfo) {
+            if (extension.hasPermission("tabs") || !restricted.includes(prop)) {
+              nonempty = true;
+              result[prop] = changeInfo[prop];
+            }
+          }
+          return [nonempty, result];
+        }
+
+        let fireForTab = (tab, changed) => {
+          let [needed, changeInfo] = sanitize(extension, changed);
+          if (needed) {
+            fire.async(tab.id, changeInfo, tab.convert());
+          }
+        };
+
+        let listener = event => {
+          let needed = [];
+          if (event.type == "TabAttrModified") {
+            let changed = event.detail.changed;
+            if (changed.includes("image")) {
+              needed.push("favIconUrl");
+            }
+            if (changed.includes("muted")) {
+              needed.push("mutedInfo");
+            }
+            if (changed.includes("soundplaying")) {
+              needed.push("audible");
+            }
+            if (changed.includes("label")) {
+              needed.push("title");
+            }
+          } else if (event.type == "TabPinned") {
+            needed.push("pinned");
+          } else if (event.type == "TabUnpinned") {
+            needed.push("pinned");
+          }
+
+          let tab = tabManager.getWrapper(event.originalTarget);
+          let changeInfo = {};
+          for (let prop of needed) {
+            changeInfo[prop] = tab[prop];
+          }
+
+          fireForTab(tab, changeInfo);
+        };
+
+        let statusListener = ({browser, status, url}) => {
+          let {gBrowser} = browser.ownerGlobal;
+          let tabElem = gBrowser.getTabForBrowser(browser);
+          if (tabElem) {
+            let changed = {status};
+            if (url) {
+              changed.url = url;
+            }
+
+            fireForTab(tabManager.wrapTab(tabElem), changed);
+          }
+        };
+
+        windowTracker.addListener("status", statusListener);
+        windowTracker.addListener("TabAttrModified", listener);
+        windowTracker.addListener("TabPinned", listener);
+        windowTracker.addListener("TabUnpinned", listener);
+
+        return () => {
+          windowTracker.removeListener("status", statusListener);
+          windowTracker.removeListener("TabAttrModified", listener);
+          windowTracker.removeListener("TabPinned", listener);
+          windowTracker.removeListener("TabUnpinned", listener);
+        };
+      }).api(),
+
+      create(createProperties) {
+        return new Promise((resolve, reject) => {
+          let window = createProperties.windowId !== null ?
+            windowTracker.getWindow(createProperties.windowId, context) :
+            windowTracker.topWindow;
+
+          if (!window.gBrowser) {
+            let obs = (finishedWindow, topic, data) => {
+              if (finishedWindow != window) {
+                return;
+              }
+              Services.obs.removeObserver(obs, "browser-delayed-startup-finished");
+              resolve(window);
+            };
+            Services.obs.addObserver(obs, "browser-delayed-startup-finished", false);
+          } else {
+            resolve(window);
+          }
+        }).then(window => {
+          let url;
+
+          if (createProperties.url !== null) {
+            url = context.uri.resolve(createProperties.url);
+
+            if (!context.checkLoadURL(url, {dontReportErrors: true})) {
+              return Promise.reject({message: `Illegal URL: ${url}`});
+            }
+          }
+
+          if (createProperties.cookieStoreId && !extension.hasPermission("cookies")) {
+            return Promise.reject({message: `No permission for cookieStoreId: ${createProperties.cookieStoreId}`});
+          }
+
+          let options = {};
+          if (createProperties.cookieStoreId) {
+            if (!global.isValidCookieStoreId(createProperties.cookieStoreId)) {
+              return Promise.reject({message: `Illegal cookieStoreId: ${createProperties.cookieStoreId}`});
+            }
+
+            let privateWindow = PrivateBrowsingUtils.isBrowserPrivate(window.gBrowser);
+            if (privateWindow && !global.isPrivateCookieStoreId(createProperties.cookieStoreId)) {
+              return Promise.reject({message: `Illegal to set non-private cookieStoreId in a private window`});
+            }
+
+            if (!privateWindow && global.isPrivateCookieStoreId(createProperties.cookieStoreId)) {
+              return Promise.reject({message: `Illegal to set private cookieStoreId in a non-private window`});
+            }
+
+            if (global.isContainerCookieStoreId(createProperties.cookieStoreId)) {
+              let containerId = global.getContainerForCookieStoreId(createProperties.cookieStoreId);
+              if (!containerId) {
+                return Promise.reject({message: `No cookie store exists with ID ${createProperties.cookieStoreId}`});
+              }
+
+              options.userContextId = containerId;
+            }
+          }
+
+          
+          
+          options.disallowInheritPrincipal = true;
+
+          tabListener.initTabReady();
+          let nativeTab = window.gBrowser.addTab(url || window.BROWSER_NEW_TAB_URL, options);
+
+          let active = true;
+          if (createProperties.active !== null) {
+            active = createProperties.active;
+          }
+          if (active) {
+            window.gBrowser.selectedTab = nativeTab;
+          }
+
+          if (createProperties.index !== null) {
+            window.gBrowser.moveTabTo(nativeTab, createProperties.index);
+          }
+
+          if (createProperties.pinned) {
+            window.gBrowser.pinTab(nativeTab);
+          }
+
+          if (active && !url) {
+            window.focusAndSelectUrlBar();
+          }
+
+          if (createProperties.url && createProperties.url !== window.BROWSER_NEW_TAB_URL) {
+            
+            
+            
+
+            
+            
+            
+            
+            tabListener.initializingTabs.add(nativeTab);
+          }
+
+          return tabManager.convert(nativeTab);
+        });
+      },
+
+      async remove(tabs) {
+        if (!Array.isArray(tabs)) {
+          tabs = [tabs];
+        }
+
+        for (let tabId of tabs) {
+          let nativeTab = tabTracker.getTab(tabId);
+          nativeTab.ownerGlobal.gBrowser.removeTab(nativeTab);
+        }
+      },
+
+      async update(tabId, updateProperties) {
+        let nativeTab = getTabOrActive(tabId);
+
+        let tabbrowser = nativeTab.ownerGlobal.gBrowser;
+
+        if (updateProperties.url !== null) {
+          let url = context.uri.resolve(updateProperties.url);
+
+          if (!context.checkLoadURL(url, {dontReportErrors: true})) {
+            return Promise.reject({message: `Illegal URL: ${url}`});
+          }
+
+          nativeTab.linkedBrowser.loadURI(url);
+        }
+
+        if (updateProperties.active !== null) {
+          if (updateProperties.active) {
+            tabbrowser.selectedTab = nativeTab;
+          } else {
+            
+          }
+        }
+        if (updateProperties.muted !== null) {
+          if (nativeTab.muted != updateProperties.muted) {
+            nativeTab.toggleMuteAudio(extension.uuid);
+          }
+        }
+        if (updateProperties.pinned !== null) {
+          if (updateProperties.pinned) {
+            tabbrowser.pinTab(nativeTab);
+          } else {
+            tabbrowser.unpinTab(nativeTab);
+          }
+        }
+        
+
+        return tabManager.convert(nativeTab);
+      },
+
+      async reload(tabId, reloadProperties) {
+        let nativeTab = getTabOrActive(tabId);
+
+        let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
+        if (reloadProperties && reloadProperties.bypassCache) {
+          flags |= Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
+        }
+        nativeTab.linkedBrowser.reloadWithFlags(flags);
+      },
+
+      async get(tabId) {
+        return tabManager.get(tabId).convert();
+      },
+
+      getCurrent() {
+        let tabData;
+        if (context.tabId) {
+          tabData = tabManager.get(context.tabId).convert();
+        }
+        return Promise.resolve(tabData);
+      },
+
+      async query(queryInfo) {
+        if (queryInfo.url !== null) {
+          if (!extension.hasPermission("tabs")) {
+            return Promise.reject({message: 'The "tabs" permission is required to use the query API with the "url" parameter'});
+          }
+
+          queryInfo = Object.assign({}, queryInfo);
+          queryInfo.url = new MatchPattern(queryInfo.url);
+        }
+
+        return Array.from(tabManager.query(queryInfo, context),
+                          tab => tab.convert());
+      },
+
+      async captureVisibleTab(windowId, options) {
+        let window = windowId == null ?
+          windowTracker.topWindow :
+          windowTracker.getWindow(windowId, context);
+
+        let tab = tabManager.wrapTab(window.gBrowser.selectedTab);
+        await tabListener.awaitTabReady(tab.nativeTab);
+
+        return tab.capture(context, options);
+      },
+
+      async detectLanguage(tabId) {
+        let tab = await promiseTabWhenReady(tabId);
+
+        return tab.sendMessage(context, "Extension:DetectLanguage");
+      },
+
+      async executeScript(tabId, details) {
+        let tab = await promiseTabWhenReady(tabId);
+
+        return tab.executeScript(context, details);
+      },
+
+      async insertCSS(tabId, details) {
+        let tab = await promiseTabWhenReady(tabId);
+
+        return tab.insertCSS(context, details);
+      },
+
+      async removeCSS(tabId, details) {
+        let tab = await promiseTabWhenReady(tabId);
+
+        return tab.removeCSS(context, details);
+      },
+
+      async move(tabIds, moveProperties) {
+        let index = moveProperties.index;
+        let tabsMoved = [];
+        if (!Array.isArray(tabIds)) {
+          tabIds = [tabIds];
+        }
+
+        let destinationWindow = null;
+        if (moveProperties.windowId !== null) {
+          destinationWindow = windowTracker.getWindow(moveProperties.windowId);
+          
+          if (!destinationWindow) {
+            return Promise.reject({message: `Invalid window ID: ${moveProperties.windowId}`});
+          }
+        }
 
         
 
@@ -127,616 +583,205 @@ this.tabs = class extends ExtensionAPI {
 
 
 
-        onHighlighted: new WindowEventManager(context, "tabs.onHighlighted", "TabSelect", (fire, event) => {
-          let nativeTab = event.originalTarget;
-          let tabIds = [tabTracker.getId(nativeTab)];
-          let windowId = windowTracker.getId(nativeTab.ownerGlobal);
-          fire.async({tabIds, windowId});
-        }).api(),
 
-        onAttached: new SingletonEventManager(context, "tabs.onAttached", fire => {
-          let listener = (eventName, event) => {
-            fire.async(event.tabId, {newWindowId: event.newWindowId, newPosition: event.newPosition});
-          };
+        let indexMap = new Map();
 
-          tabTracker.on("tab-attached", listener);
-          return () => {
-            tabTracker.off("tab-attached", listener);
-          };
-        }).api(),
+        let tabs = tabIds.map(tabId => tabTracker.getTab(tabId));
+        for (let nativeTab of tabs) {
+          
+          let window = destinationWindow || nativeTab.ownerGlobal;
+          let gBrowser = window.gBrowser;
 
-        onDetached: new SingletonEventManager(context, "tabs.onDetached", fire => {
-          let listener = (eventName, event) => {
-            fire.async(event.tabId, {oldWindowId: event.oldWindowId, oldPosition: event.oldPosition});
-          };
+          let insertionPoint = indexMap.get(window) || index;
+          
+          if (insertionPoint == -1) {
+            insertionPoint = gBrowser.tabs.length;
+          }
 
-          tabTracker.on("tab-detached", listener);
-          return () => {
-            tabTracker.off("tab-detached", listener);
-          };
-        }).api(),
-
-        onRemoved: new SingletonEventManager(context, "tabs.onRemoved", fire => {
-          let listener = (eventName, event) => {
-            fire.async(event.tabId, {windowId: event.windowId, isWindowClosing: event.isWindowClosing});
-          };
-
-          tabTracker.on("tab-removed", listener);
-          return () => {
-            tabTracker.off("tab-removed", listener);
-          };
-        }).api(),
-
-        onReplaced: new SingletonEventManager(context, "tabs.onReplaced", fire => {
-          return () => {};
-        }).api(),
-
-        onMoved: new SingletonEventManager(context, "tabs.onMoved", fire => {
           
           
           
           
-          
-          
-          
-          
-          let ignoreNextMove = new WeakSet();
-
-          let openListener = event => {
-            ignoreNextMove.add(event.target);
-            
-            
-            Promise.resolve().then(() => {
-              ignoreNextMove.delete(event.target);
-            });
-          };
-
-          let moveListener = event => {
-            let nativeTab = event.originalTarget;
-
-            if (ignoreNextMove.has(nativeTab)) {
-              ignoreNextMove.delete(nativeTab);
-              return;
-            }
-
-            fire.async(tabTracker.getId(nativeTab), {
-              windowId: windowTracker.getId(nativeTab.ownerGlobal),
-              fromIndex: event.detail,
-              toIndex: nativeTab._tPos,
-            });
-          };
-
-          windowTracker.addListener("TabMove", moveListener);
-          windowTracker.addListener("TabOpen", openListener);
-          return () => {
-            windowTracker.removeListener("TabMove", moveListener);
-            windowTracker.removeListener("TabOpen", openListener);
-          };
-        }).api(),
-
-        onUpdated: new SingletonEventManager(context, "tabs.onUpdated", fire => {
-          const restricted = ["url", "favIconUrl", "title"];
-
-          function sanitize(extension, changeInfo) {
-            let result = {};
-            let nonempty = false;
-            for (let prop in changeInfo) {
-              if (extension.hasPermission("tabs") || !restricted.includes(prop)) {
-                nonempty = true;
-                result[prop] = changeInfo[prop];
-              }
-            }
-            return [nonempty, result];
+          let numPinned = gBrowser._numPinnedTabs;
+          let ok = nativeTab.pinned ? insertionPoint <= numPinned : insertionPoint >= numPinned;
+          if (!ok) {
+            continue;
           }
 
-          let fireForTab = (tab, changed) => {
-            let [needed, changeInfo] = sanitize(extension, changed);
-            if (needed) {
-              fire.async(tab.id, changeInfo, tab.convert());
-            }
-          };
+          indexMap.set(window, insertionPoint + 1);
 
-          let listener = event => {
-            let needed = [];
-            if (event.type == "TabAttrModified") {
-              let changed = event.detail.changed;
-              if (changed.includes("image")) {
-                needed.push("favIconUrl");
-              }
-              if (changed.includes("muted")) {
-                needed.push("mutedInfo");
-              }
-              if (changed.includes("soundplaying")) {
-                needed.push("audible");
-              }
-              if (changed.includes("label")) {
-                needed.push("title");
-              }
-            } else if (event.type == "TabPinned") {
-              needed.push("pinned");
-            } else if (event.type == "TabUnpinned") {
-              needed.push("pinned");
-            }
-
-            let tab = tabManager.getWrapper(event.originalTarget);
-            let changeInfo = {};
-            for (let prop of needed) {
-              changeInfo[prop] = tab[prop];
-            }
-
-            fireForTab(tab, changeInfo);
-          };
-
-          let statusListener = ({browser, status, url}) => {
-            let {gBrowser} = browser.ownerGlobal;
-            let tabElem = gBrowser.getTabForBrowser(browser);
-            if (tabElem) {
-              let changed = {status};
-              if (url) {
-                changed.url = url;
-              }
-
-              fireForTab(tabManager.wrapTab(tabElem), changed);
-            }
-          };
-
-          windowTracker.addListener("status", statusListener);
-          windowTracker.addListener("TabAttrModified", listener);
-          windowTracker.addListener("TabPinned", listener);
-          windowTracker.addListener("TabUnpinned", listener);
-
-          return () => {
-            windowTracker.removeListener("status", statusListener);
-            windowTracker.removeListener("TabAttrModified", listener);
-            windowTracker.removeListener("TabPinned", listener);
-            windowTracker.removeListener("TabUnpinned", listener);
-          };
-        }).api(),
-
-        create(createProperties) {
-          return new Promise((resolve, reject) => {
-            let window = createProperties.windowId !== null ?
-              windowTracker.getWindow(createProperties.windowId, context) :
-              windowTracker.topWindow;
-
-            if (!window.gBrowser) {
-              let obs = (finishedWindow, topic, data) => {
-                if (finishedWindow != window) {
-                  return;
-                }
-                Services.obs.removeObserver(obs, "browser-delayed-startup-finished");
-                resolve(window);
-              };
-              Services.obs.addObserver(obs, "browser-delayed-startup-finished", false);
-            } else {
-              resolve(window);
-            }
-          }).then(window => {
-            let url;
-
-            if (createProperties.url !== null) {
-              url = context.uri.resolve(createProperties.url);
-
-              if (!context.checkLoadURL(url, {dontReportErrors: true})) {
-                return Promise.reject({message: `Illegal URL: ${url}`});
-              }
-            }
-
-            if (createProperties.cookieStoreId && !extension.hasPermission("cookies")) {
-              return Promise.reject({message: `No permission for cookieStoreId: ${createProperties.cookieStoreId}`});
-            }
-
-            let options = {};
-            if (createProperties.cookieStoreId) {
-              if (!global.isValidCookieStoreId(createProperties.cookieStoreId)) {
-                return Promise.reject({message: `Illegal cookieStoreId: ${createProperties.cookieStoreId}`});
-              }
-
-              let privateWindow = PrivateBrowsingUtils.isBrowserPrivate(window.gBrowser);
-              if (privateWindow && !global.isPrivateCookieStoreId(createProperties.cookieStoreId)) {
-                return Promise.reject({message: `Illegal to set non-private cookieStoreId in a private window`});
-              }
-
-              if (!privateWindow && global.isPrivateCookieStoreId(createProperties.cookieStoreId)) {
-                return Promise.reject({message: `Illegal to set private cookieStoreId in a non-private window`});
-              }
-
-              if (global.isContainerCookieStoreId(createProperties.cookieStoreId)) {
-                let containerId = global.getContainerForCookieStoreId(createProperties.cookieStoreId);
-                if (!containerId) {
-                  return Promise.reject({message: `No cookie store exists with ID ${createProperties.cookieStoreId}`});
-                }
-
-                options.userContextId = containerId;
-              }
-            }
-
+          if (nativeTab.ownerGlobal != window) {
             
             
-            options.disallowInheritPrincipal = true;
-
-            tabListener.initTabReady();
-            let nativeTab = window.gBrowser.addTab(url || window.BROWSER_NEW_TAB_URL, options);
-
-            let active = true;
-            if (createProperties.active !== null) {
-              active = createProperties.active;
-            }
-            if (active) {
-              window.gBrowser.selectedTab = nativeTab;
-            }
-
-            if (createProperties.index !== null) {
-              window.gBrowser.moveTabTo(nativeTab, createProperties.index);
-            }
-
-            if (createProperties.pinned) {
-              window.gBrowser.pinTab(nativeTab);
-            }
-
-            if (active && !url) {
-              window.focusAndSelectUrlBar();
-            }
-
-            if (createProperties.url && createProperties.url !== window.BROWSER_NEW_TAB_URL) {
-              
-              
-              
-
-              
-              
-              
-              
-              tabListener.initializingTabs.add(nativeTab);
-            }
-
-            return tabManager.convert(nativeTab);
-          });
-        },
-
-        async remove(tabs) {
-          if (!Array.isArray(tabs)) {
-            tabs = [tabs];
-          }
-
-          for (let tabId of tabs) {
-            let nativeTab = tabTracker.getTab(tabId);
-            nativeTab.ownerGlobal.gBrowser.removeTab(nativeTab);
-          }
-        },
-
-        async update(tabId, updateProperties) {
-          let nativeTab = getTabOrActive(tabId);
-
-          let tabbrowser = nativeTab.ownerGlobal.gBrowser;
-
-          if (updateProperties.url !== null) {
-            let url = context.uri.resolve(updateProperties.url);
-
-            if (!context.checkLoadURL(url, {dontReportErrors: true})) {
-              return Promise.reject({message: `Illegal URL: ${url}`});
-            }
-
-            nativeTab.linkedBrowser.loadURI(url);
-          }
-
-          if (updateProperties.active !== null) {
-            if (updateProperties.active) {
-              tabbrowser.selectedTab = nativeTab;
-            } else {
-              
-            }
-          }
-          if (updateProperties.muted !== null) {
-            if (nativeTab.muted != updateProperties.muted) {
-              nativeTab.toggleMuteAudio(extension.uuid);
-            }
-          }
-          if (updateProperties.pinned !== null) {
-            if (updateProperties.pinned) {
-              tabbrowser.pinTab(nativeTab);
-            } else {
-              tabbrowser.unpinTab(nativeTab);
-            }
-          }
-          
-
-          return tabManager.convert(nativeTab);
-        },
-
-        async reload(tabId, reloadProperties) {
-          let nativeTab = getTabOrActive(tabId);
-
-          let flags = Ci.nsIWebNavigation.LOAD_FLAGS_NONE;
-          if (reloadProperties && reloadProperties.bypassCache) {
-            flags |= Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE;
-          }
-          nativeTab.linkedBrowser.reloadWithFlags(flags);
-        },
-
-        async get(tabId) {
-          return tabManager.get(tabId).convert();
-        },
-
-        getCurrent() {
-          let tabData;
-          if (context.tabId) {
-            tabData = tabManager.get(context.tabId).convert();
-          }
-          return Promise.resolve(tabData);
-        },
-
-        async query(queryInfo) {
-          if (queryInfo.url !== null) {
-            if (!extension.hasPermission("tabs")) {
-              return Promise.reject({message: 'The "tabs" permission is required to use the query API with the "url" parameter'});
-            }
-
-            queryInfo = Object.assign({}, queryInfo);
-            queryInfo.url = new MatchPattern(queryInfo.url);
-          }
-
-          return Array.from(tabManager.query(queryInfo, context),
-                            tab => tab.convert());
-        },
-
-        async captureVisibleTab(windowId, options) {
-          let window = windowId == null ?
-            windowTracker.topWindow :
-            windowTracker.getWindow(windowId, context);
-
-          let tab = tabManager.wrapTab(window.gBrowser.selectedTab);
-          await tabListener.awaitTabReady(tab.nativeTab);
-
-          return tab.capture(context, options);
-        },
-
-        async detectLanguage(tabId) {
-          let tab = await promiseTabWhenReady(tabId);
-
-          return tab.sendMessage(context, "Extension:DetectLanguage");
-        },
-
-        async executeScript(tabId, details) {
-          let tab = await promiseTabWhenReady(tabId);
-
-          return tab.executeScript(context, details);
-        },
-
-        async insertCSS(tabId, details) {
-          let tab = await promiseTabWhenReady(tabId);
-
-          return tab.insertCSS(context, details);
-        },
-
-        async removeCSS(tabId, details) {
-          let tab = await promiseTabWhenReady(tabId);
-
-          return tab.removeCSS(context, details);
-        },
-
-        async move(tabIds, moveProperties) {
-          let index = moveProperties.index;
-          let tabsMoved = [];
-          if (!Array.isArray(tabIds)) {
-            tabIds = [tabIds];
-          }
-
-          let destinationWindow = null;
-          if (moveProperties.windowId !== null) {
-            destinationWindow = windowTracker.getWindow(moveProperties.windowId);
-            
-            if (!destinationWindow) {
-              return Promise.reject({message: `Invalid window ID: ${moveProperties.windowId}`});
-            }
-          }
-
-          
-
-
-
-
-
-
-          let indexMap = new Map();
-
-          let tabs = tabIds.map(tabId => tabTracker.getTab(tabId));
-          for (let nativeTab of tabs) {
-            
-            let window = destinationWindow || nativeTab.ownerGlobal;
-            let gBrowser = window.gBrowser;
-
-            let insertionPoint = indexMap.get(window) || index;
-            
-            if (insertionPoint == -1) {
-              insertionPoint = gBrowser.tabs.length;
-            }
-
-            
-            
-            
-            
-            let numPinned = gBrowser._numPinnedTabs;
-            let ok = nativeTab.pinned ? insertionPoint <= numPinned : insertionPoint >= numPinned;
-            if (!ok) {
-              continue;
-            }
-
-            indexMap.set(window, insertionPoint + 1);
-
-            if (nativeTab.ownerGlobal != window) {
-              
-              
-              nativeTab = gBrowser.adoptTab(nativeTab, insertionPoint, false);
-            } else {
-              
-              gBrowser.moveTabTo(nativeTab, insertionPoint);
-            }
-            tabsMoved.push(nativeTab);
-          }
-
-          return tabsMoved.map(nativeTab => tabManager.convert(nativeTab));
-        },
-
-        duplicate(tabId) {
-          let nativeTab = tabTracker.getTab(tabId);
-
-          let gBrowser = nativeTab.ownerGlobal.gBrowser;
-          let newTab = gBrowser.duplicateTab(nativeTab);
-
-          return new Promise(resolve => {
-            
-            
-            
-            newTab.addEventListener("SSTabRestoring", function() {
-              
-
-              
-              
-              if (nativeTab.pinned) {
-                gBrowser.pinTab(newTab);
-              }
-              gBrowser.moveTabTo(newTab, nativeTab._tPos + 1);
-            }, {once: true});
-
-            newTab.addEventListener("SSTabRestored", function() {
-              
-              gBrowser.selectedTab = newTab;
-
-              resolve(tabManager.convert(newTab));
-            }, {once: true});
-          });
-        },
-
-        getZoom(tabId) {
-          let nativeTab = getTabOrActive(tabId);
-
-          let {ZoomManager} = nativeTab.ownerGlobal;
-          let zoom = ZoomManager.getZoomForBrowser(nativeTab.linkedBrowser);
-
-          return Promise.resolve(zoom);
-        },
-
-        setZoom(tabId, zoom) {
-          let nativeTab = getTabOrActive(tabId);
-
-          let {FullZoom, ZoomManager} = nativeTab.ownerGlobal;
-
-          if (zoom === 0) {
-            
-            return FullZoom.reset(nativeTab.linkedBrowser);
-          } else if (zoom >= ZoomManager.MIN && zoom <= ZoomManager.MAX) {
-            FullZoom.setZoom(zoom, nativeTab.linkedBrowser);
+            nativeTab = gBrowser.adoptTab(nativeTab, insertionPoint, false);
           } else {
-            return Promise.reject({
-              message: `Zoom value ${zoom} out of range (must be between ${ZoomManager.MIN} and ${ZoomManager.MAX})`,
+            
+            gBrowser.moveTabTo(nativeTab, insertionPoint);
+          }
+          tabsMoved.push(nativeTab);
+        }
+
+        return tabsMoved.map(nativeTab => tabManager.convert(nativeTab));
+      },
+
+      duplicate(tabId) {
+        let nativeTab = tabTracker.getTab(tabId);
+
+        let gBrowser = nativeTab.ownerGlobal.gBrowser;
+        let newTab = gBrowser.duplicateTab(nativeTab);
+
+        return new Promise(resolve => {
+          
+          
+          
+          newTab.addEventListener("SSTabRestoring", function() {
+            
+
+            
+            
+            if (nativeTab.pinned) {
+              gBrowser.pinTab(newTab);
+            }
+            gBrowser.moveTabTo(newTab, nativeTab._tPos + 1);
+          }, {once: true});
+
+          newTab.addEventListener("SSTabRestored", function() {
+            
+            gBrowser.selectedTab = newTab;
+
+            resolve(tabManager.convert(newTab));
+          }, {once: true});
+        });
+      },
+
+      getZoom(tabId) {
+        let nativeTab = getTabOrActive(tabId);
+
+        let {ZoomManager} = nativeTab.ownerGlobal;
+        let zoom = ZoomManager.getZoomForBrowser(nativeTab.linkedBrowser);
+
+        return Promise.resolve(zoom);
+      },
+
+      setZoom(tabId, zoom) {
+        let nativeTab = getTabOrActive(tabId);
+
+        let {FullZoom, ZoomManager} = nativeTab.ownerGlobal;
+
+        if (zoom === 0) {
+          
+          return FullZoom.reset(nativeTab.linkedBrowser);
+        } else if (zoom >= ZoomManager.MIN && zoom <= ZoomManager.MAX) {
+          FullZoom.setZoom(zoom, nativeTab.linkedBrowser);
+        } else {
+          return Promise.reject({
+            message: `Zoom value ${zoom} out of range (must be between ${ZoomManager.MIN} and ${ZoomManager.MAX})`,
+          });
+        }
+
+        return Promise.resolve();
+      },
+
+      _getZoomSettings(tabId) {
+        let nativeTab = getTabOrActive(tabId);
+
+        let {FullZoom} = nativeTab.ownerGlobal;
+
+        return {
+          mode: "automatic",
+          scope: FullZoom.siteSpecific ? "per-origin" : "per-tab",
+          defaultZoomFactor: 1,
+        };
+      },
+
+      getZoomSettings(tabId) {
+        return Promise.resolve(this._getZoomSettings(tabId));
+      },
+
+      setZoomSettings(tabId, settings) {
+        let nativeTab = getTabOrActive(tabId);
+
+        let currentSettings = this._getZoomSettings(tabTracker.getId(nativeTab));
+
+        if (!Object.keys(settings).every(key => settings[key] === currentSettings[key])) {
+          return Promise.reject(`Unsupported zoom settings: ${JSON.stringify(settings)}`);
+        }
+        return Promise.resolve();
+      },
+
+      onZoomChange: new SingletonEventManager(context, "tabs.onZoomChange", fire => {
+        let getZoomLevel = browser => {
+          let {ZoomManager} = browser.ownerGlobal;
+
+          return ZoomManager.getZoomForBrowser(browser);
+        };
+
+        
+        
+        let zoomLevels = new WeakMap();
+
+        
+        for (let window of windowTracker.browserWindows()) {
+          for (let nativeTab of window.gBrowser.tabs) {
+            let browser = nativeTab.linkedBrowser;
+            zoomLevels.set(browser, getZoomLevel(browser));
+          }
+        }
+
+        let tabCreated = (eventName, event) => {
+          let browser = event.nativeTab.linkedBrowser;
+          zoomLevels.set(browser, getZoomLevel(browser));
+        };
+
+
+        let zoomListener = event => {
+          let browser = event.originalTarget;
+
+          
+          
+          if (browser instanceof Ci.nsIDOMDocument) {
+            browser = browser.defaultView.QueryInterface(Ci.nsIInterfaceRequestor)
+                             .getInterface(Ci.nsIDocShell)
+                             .chromeEventHandler;
+          }
+
+          let {gBrowser} = browser.ownerGlobal;
+          let nativeTab = gBrowser.getTabForBrowser(browser);
+          if (!nativeTab) {
+            
+            return;
+          }
+
+          let oldZoomFactor = zoomLevels.get(browser);
+          let newZoomFactor = getZoomLevel(browser);
+
+          if (oldZoomFactor != newZoomFactor) {
+            zoomLevels.set(browser, newZoomFactor);
+
+            let tabId = tabTracker.getId(nativeTab);
+            fire.async({
+              tabId,
+              oldZoomFactor,
+              newZoomFactor,
+              zoomSettings: self.tabs._getZoomSettings(tabId),
             });
           }
+        };
 
-          return Promise.resolve();
-        },
+        tabTracker.on("tab-attached", tabCreated);
+        tabTracker.on("tab-created", tabCreated);
 
-        _getZoomSettings(tabId) {
-          let nativeTab = getTabOrActive(tabId);
+        windowTracker.addListener("FullZoomChange", zoomListener);
+        windowTracker.addListener("TextZoomChange", zoomListener);
+        return () => {
+          tabTracker.off("tab-attached", tabCreated);
+          tabTracker.off("tab-created", tabCreated);
 
-          let {FullZoom} = nativeTab.ownerGlobal;
-
-          return {
-            mode: "automatic",
-            scope: FullZoom.siteSpecific ? "per-origin" : "per-tab",
-            defaultZoomFactor: 1,
-          };
-        },
-
-        getZoomSettings(tabId) {
-          return Promise.resolve(this._getZoomSettings(tabId));
-        },
-
-        setZoomSettings(tabId, settings) {
-          let nativeTab = getTabOrActive(tabId);
-
-          let currentSettings = this._getZoomSettings(tabTracker.getId(nativeTab));
-
-          if (!Object.keys(settings).every(key => settings[key] === currentSettings[key])) {
-            return Promise.reject(`Unsupported zoom settings: ${JSON.stringify(settings)}`);
-          }
-          return Promise.resolve();
-        },
-
-        onZoomChange: new SingletonEventManager(context, "tabs.onZoomChange", fire => {
-          let getZoomLevel = browser => {
-            let {ZoomManager} = browser.ownerGlobal;
-
-            return ZoomManager.getZoomForBrowser(browser);
-          };
-
-          
-          
-          let zoomLevels = new WeakMap();
-
-          
-          for (let window of windowTracker.browserWindows()) {
-            for (let nativeTab of window.gBrowser.tabs) {
-              let browser = nativeTab.linkedBrowser;
-              zoomLevels.set(browser, getZoomLevel(browser));
-            }
-          }
-
-          let tabCreated = (eventName, event) => {
-            let browser = event.nativeTab.linkedBrowser;
-            zoomLevels.set(browser, getZoomLevel(browser));
-          };
-
-
-          let zoomListener = event => {
-            let browser = event.originalTarget;
-
-            
-            
-            if (browser instanceof Ci.nsIDOMDocument) {
-              browser = browser.defaultView.QueryInterface(Ci.nsIInterfaceRequestor)
-                               .getInterface(Ci.nsIDocShell)
-                               .chromeEventHandler;
-            }
-
-            let {gBrowser} = browser.ownerGlobal;
-            let nativeTab = gBrowser.getTabForBrowser(browser);
-            if (!nativeTab) {
-              
-              return;
-            }
-
-            let oldZoomFactor = zoomLevels.get(browser);
-            let newZoomFactor = getZoomLevel(browser);
-
-            if (oldZoomFactor != newZoomFactor) {
-              zoomLevels.set(browser, newZoomFactor);
-
-              let tabId = tabTracker.getId(nativeTab);
-              fire.async({
-                tabId,
-                oldZoomFactor,
-                newZoomFactor,
-                zoomSettings: self.tabs._getZoomSettings(tabId),
-              });
-            }
-          };
-
-          tabTracker.on("tab-attached", tabCreated);
-          tabTracker.on("tab-created", tabCreated);
-
-          windowTracker.addListener("FullZoomChange", zoomListener);
-          windowTracker.addListener("TextZoomChange", zoomListener);
-          return () => {
-            tabTracker.off("tab-attached", tabCreated);
-            tabTracker.off("tab-created", tabCreated);
-
-            windowTracker.removeListener("FullZoomChange", zoomListener);
-            windowTracker.removeListener("TextZoomChange", zoomListener);
-          };
-        }).api(),
-      },
-    };
-    return self;
-  }
-};
+          windowTracker.removeListener("FullZoomChange", zoomListener);
+          windowTracker.removeListener("TextZoomChange", zoomListener);
+        };
+      }).api(),
+    },
+  };
+  return self;
+});

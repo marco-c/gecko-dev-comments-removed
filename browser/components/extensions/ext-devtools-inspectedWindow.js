@@ -4,61 +4,61 @@
 
 
 
-var {
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
+const {
   SpreadArgs,
 } = ExtensionUtils;
 
-this.devtools_inspectedWindow = class extends ExtensionAPI {
-  getAPI(context) {
-    const {
-      WebExtensionInspectedWindowFront,
-    } = require("devtools/shared/fronts/webextension-inspected-window");
+extensions.registerSchemaAPI("devtools.inspectedWindow", "devtools_parent", context => {
+  const {
+    WebExtensionInspectedWindowFront,
+  } = require("devtools/shared/fronts/webextension-inspected-window");
 
-    
-    let waitForInspectedWindowFront;
-    async function getInspectedWindowFront() {
-      
-      
-      
-      
-      const clonedTarget = await getDevToolsTargetForContext(context);
-      return new WebExtensionInspectedWindowFront(clonedTarget.client, clonedTarget.form);
-    }
-
+  
+  let waitForInspectedWindowFront;
+  async function getInspectedWindowFront() {
     
     
-    const callerInfo = {
-      addonId: context.extension.id,
-      url: context.extension.baseURI.spec,
-    };
+    
+    
+    const clonedTarget = await getDevToolsTargetForContext(context);
+    return new WebExtensionInspectedWindowFront(clonedTarget.client, clonedTarget.form);
+  }
 
-    return {
-      devtools: {
-        inspectedWindow: {
-          async eval(expression, options) {
-            if (!waitForInspectedWindowFront) {
-              waitForInspectedWindowFront = getInspectedWindowFront();
-            }
+  
+  
+  const callerInfo = {
+    addonId: context.extension.id,
+    url: context.extension.baseURI.spec,
+  };
 
-            const front = await waitForInspectedWindowFront;
-            return front.eval(callerInfo, expression, options || {}).then(evalResult => {
-              
-              
-              return new SpreadArgs([evalResult.value, evalResult.exceptionInfo]);
-            });
-          },
-          async reload(options) {
-            const {ignoreCache, userAgent, injectedScript} = options || {};
+  return {
+    devtools: {
+      inspectedWindow: {
+        async eval(expression, options) {
+          if (!waitForInspectedWindowFront) {
+            waitForInspectedWindowFront = getInspectedWindowFront();
+          }
 
-            if (!waitForInspectedWindowFront) {
-              waitForInspectedWindowFront = getInspectedWindowFront();
-            }
+          const front = await waitForInspectedWindowFront;
+          return front.eval(callerInfo, expression, options || {}).then(evalResult => {
+            
+            
+            return new SpreadArgs([evalResult.value, evalResult.exceptionInfo]);
+          });
+        },
+        async reload(options) {
+          const {ignoreCache, userAgent, injectedScript} = options || {};
 
-            const front = await waitForInspectedWindowFront;
-            front.reload(callerInfo, {ignoreCache, userAgent, injectedScript});
-          },
+          if (!waitForInspectedWindowFront) {
+            waitForInspectedWindowFront = getInspectedWindowFront();
+          }
+
+          const front = await waitForInspectedWindowFront;
+          front.reload(callerInfo, {ignoreCache, userAgent, injectedScript});
         },
       },
-    };
-  }
-};
+    },
+  };
+});

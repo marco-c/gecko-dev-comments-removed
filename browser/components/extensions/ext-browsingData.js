@@ -2,6 +2,8 @@
 
 "use strict";
 
+const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
+
 Cu.import("resource://gre/modules/Task.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "PlacesUtils",
@@ -173,65 +175,63 @@ function doRemoval(options, dataToRemove, extension) {
   return Promise.all(removalPromises);
 }
 
-this.browsingData = class extends ExtensionAPI {
-  getAPI(context) {
-    let {extension} = context;
-    return {
-      browsingData: {
-        settings() {
-          const PREF_DOMAIN = "privacy.cpd.";
-          
-          
-          const PREF_LIST = ["cache", "cookies", "history", "formdata", "downloads"];
+extensions.registerSchemaAPI("browsingData", "addon_parent", context => {
+  let {extension} = context;
+  return {
+    browsingData: {
+      settings() {
+        const PREF_DOMAIN = "privacy.cpd.";
+        
+        
+        const PREF_LIST = ["cache", "cookies", "history", "formdata", "downloads"];
 
-          
-          
-          
-          
-          let clearRange = Sanitizer.getClearRange();
-          let since = clearRange ? clearRange[0] / 1000 : 0;
-          let options = {since};
+        
+        
+        
+        
+        let clearRange = Sanitizer.getClearRange();
+        let since = clearRange ? clearRange[0] / 1000 : 0;
+        let options = {since};
 
-          let dataToRemove = {};
-          let dataRemovalPermitted = {};
+        let dataToRemove = {};
+        let dataRemovalPermitted = {};
 
-          for (let item of PREF_LIST) {
-            
-            
-            const name = item === "formdata" ? "formData" : item;
-            dataToRemove[name] = Preferences.get(`${PREF_DOMAIN}${item}`);
-            
-            
-            dataRemovalPermitted[name] = true;
-          }
+        for (let item of PREF_LIST) {
+          
+          
+          const name = item === "formdata" ? "formData" : item;
+          dataToRemove[name] = Preferences.get(`${PREF_DOMAIN}${item}`);
+          
+          
+          dataRemovalPermitted[name] = true;
+        }
 
-          return Promise.resolve({options, dataToRemove, dataRemovalPermitted});
-        },
-        remove(options, dataToRemove) {
-          return doRemoval(options, dataToRemove, extension);
-        },
-        removeCache(options) {
-          return doRemoval(options, {cache: true});
-        },
-        removeCookies(options) {
-          return doRemoval(options, {cookies: true});
-        },
-        removeDownloads(options) {
-          return doRemoval(options, {downloads: true});
-        },
-        removeFormData(options) {
-          return doRemoval(options, {formData: true});
-        },
-        removeHistory(options) {
-          return doRemoval(options, {history: true});
-        },
-        removePasswords(options) {
-          return doRemoval(options, {passwords: true});
-        },
-        removePluginData(options) {
-          return doRemoval(options, {pluginData: true});
-        },
+        return Promise.resolve({options, dataToRemove, dataRemovalPermitted});
       },
-    };
-  }
-};
+      remove(options, dataToRemove) {
+        return doRemoval(options, dataToRemove, extension);
+      },
+      removeCache(options) {
+        return doRemoval(options, {cache: true});
+      },
+      removeCookies(options) {
+        return doRemoval(options, {cookies: true});
+      },
+      removeDownloads(options) {
+        return doRemoval(options, {downloads: true});
+      },
+      removeFormData(options) {
+        return doRemoval(options, {formData: true});
+      },
+      removeHistory(options) {
+        return doRemoval(options, {history: true});
+      },
+      removePasswords(options) {
+        return doRemoval(options, {passwords: true});
+      },
+      removePluginData(options) {
+        return doRemoval(options, {pluginData: true});
+      },
+    },
+  };
+});

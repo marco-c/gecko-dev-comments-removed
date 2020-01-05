@@ -2,23 +2,21 @@
 
 "use strict";
 
-this.devtools_inspectedWindow = class extends ExtensionAPI {
-  getAPI(context) {
-    
-    
-    
-    
-    let tabId = (context.devtoolsToolboxInfo &&
-                 context.devtoolsToolboxInfo.inspectedWindowTabId);
+extensions.registerSchemaAPI("devtools.inspectedWindow", "devtools_child", context => {
+  
+  
+  
+  
+  let tabId = (context.devtoolsToolboxInfo &&
+               context.devtoolsToolboxInfo.inspectedWindowTabId);
 
-    return {
-      devtools: {
-        inspectedWindow: {
-          get tabId() {
-            return tabId;
-          },
+  return {
+    devtools: {
+      inspectedWindow: {
+        get tabId() {
+          return tabId;
         },
       },
-    };
-  }
-};
+    },
+  };
+});

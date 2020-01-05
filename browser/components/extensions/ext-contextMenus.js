@@ -2,11 +2,11 @@
 
 "use strict";
 
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 Cu.import("resource://gre/modules/MatchPattern.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
-
-XPCOMUtils.defineLazyModuleGetter(this, "NetUtil",
-                                  "resource://gre/modules/NetUtil.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/AppConstants.jsm");
 
 var {
   ExtensionError,
@@ -243,9 +243,9 @@ var gMenuBuilder = {
       
       
       let actionFor = {
-        _execute_page_action: global.pageActionFor,
-        _execute_browser_action: global.browserActionFor,
-        _execute_sidebar_action: global.sidebarActionFor,
+        _execute_page_action: pageActionFor,
+        _execute_browser_action: browserActionFor,
+        _execute_sidebar_action: sidebarActionFor,
       }[item.command];
       if (actionFor) {
         let win = event.target.ownerGlobal;
@@ -596,69 +596,65 @@ const contextMenuTracker = {
 
 var gExtensionCount = 0;
 
-this.contextMenus = class extends ExtensionAPI {
-  onShutdown(reason) {
-    let {extension} = this;
-
-    if (gContextMenuMap.has(extension)) {
-      gContextMenuMap.delete(extension);
-      gRootItems.delete(extension);
-      if (--gExtensionCount == 0) {
-        contextMenuTracker.unregister();
-      }
-    }
+extensions.on("startup", (type, extension) => {
+  gContextMenuMap.set(extension, new Map());
+  if (++gExtensionCount == 1) {
+    contextMenuTracker.register();
   }
+});
 
-  getAPI(context) {
-    let {extension} = context;
+extensions.on("shutdown", (type, extension) => {
+  gContextMenuMap.delete(extension);
+  gRootItems.delete(extension);
+  if (--gExtensionCount == 0) {
+    contextMenuTracker.unregister();
+  }
+});
 
-    gContextMenuMap.set(extension, new Map());
-    if (++gExtensionCount == 1) {
-      contextMenuTracker.register();
-    }
 
-    return {
-      contextMenus: {
-        createInternal: function(createProperties) {
-          
-          
-          
-          let menuItem = new MenuItem(extension, createProperties);
-          gContextMenuMap.get(extension).set(menuItem.id, menuItem);
-        },
-
-        update: function(id, updateProperties) {
-          let menuItem = gContextMenuMap.get(extension).get(id);
-          if (menuItem) {
-            menuItem.setProps(updateProperties);
-          }
-        },
-
-        remove: function(id) {
-          let menuItem = gContextMenuMap.get(extension).get(id);
-          if (menuItem) {
-            menuItem.remove();
-          }
-        },
-
-        removeAll: function() {
-          let root = gRootItems.get(extension);
-          if (root) {
-            root.remove();
-          }
-        },
-
-        onClicked: new SingletonEventManager(context, "contextMenus.onClicked", fire => {
-          let listener = (event, info, tab) => {
-            fire.async(info, tab);
-          };
-
-          extension.on("webext-contextmenu-menuitem-click", listener);
-          return () => {
-            extension.off("webext-contextmenu-menuitem-click", listener);
-          };
-        }).api(),
+extensions.registerSchemaAPI("contextMenus", "addon_parent", context => {
+  let {extension} = context;
+  return {
+    contextMenus: {
+      createInternal: function(createProperties) {
+        
+        
+        
+        let menuItem = new MenuItem(extension, createProperties);
+        gContextMenuMap.get(extension).set(menuItem.id, menuItem);
       },
-    };
-  }
-};
+
+      update: function(id, updateProperties) {
+        let menuItem = gContextMenuMap.get(extension).get(id);
+        if (menuItem) {
+          menuItem.setProps(updateProperties);
+        }
+      },
+
+      remove: function(id) {
+        let menuItem = gContextMenuMap.get(extension).get(id);
+        if (menuItem) {
+          menuItem.remove();
+        }
+      },
+
+      removeAll: function() {
+        let root = gRootItems.get(extension);
+        if (root) {
+          root.remove();
+        }
+      },
+
+      onClicked: new SingletonEventManager(context, "contextMenus.onClicked", fire => {
+        let listener = (event, info, tab) => {
+          fire.async(info, tab);
+        };
+
+        extension.on("webext-contextmenu-menuitem-click", listener);
+        return () => {
+          extension.off("webext-contextmenu-menuitem-click", listener);
+        };
+      }).api(),
+    },
+  };
+});

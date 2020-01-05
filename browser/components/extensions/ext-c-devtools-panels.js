@@ -2,13 +2,14 @@
 
 "use strict";
 
-XPCOMUtils.defineLazyModuleGetter(this, "EventEmitter",
-                                  "resource://devtools/shared/event-emitter.js");
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 
-var {
+const {
   promiseDocumentLoaded,
   SingletonEventManager,
 } = ExtensionUtils;
+
+const {EventEmitter} = Cu.import("resource://devtools/shared/event-emitter.js", {});
 
 
 
@@ -131,26 +132,24 @@ class ChildDevToolsPanel extends EventEmitter {
   }
 }
 
-this.devtools_panels = class extends ExtensionAPI {
-  getAPI(context) {
-    return {
-      devtools: {
-        panels: {
-          create(title, icon, url) {
-            return context.cloneScope.Promise.resolve().then(async () => {
-              const panelId = await context.childManager.callParentAsyncFunction(
-                "devtools.panels.create", [title, icon, url]);
+extensions.registerSchemaAPI("devtools.panels", "devtools_child", context => {
+  return {
+    devtools: {
+      panels: {
+        create(title, icon, url) {
+          return context.cloneScope.Promise.resolve().then(async () => {
+            const panelId = await context.childManager.callParentAsyncFunction(
+              "devtools.panels.create", [title, icon, url]);
 
-              const devtoolsPanel = new ChildDevToolsPanel(context, {id: panelId});
+            const devtoolsPanel = new ChildDevToolsPanel(context, {id: panelId});
 
-              const devtoolsPanelAPI = Cu.cloneInto(devtoolsPanel.api(),
-                                                    context.cloneScope,
-                                                    {cloneFunctions: true});
-              return devtoolsPanelAPI;
-            });
-          },
+            const devtoolsPanelAPI = Cu.cloneInto(devtoolsPanel.api(),
+                                                  context.cloneScope,
+                                                  {cloneFunctions: true});
+            return devtoolsPanelAPI;
+          });
         },
       },
-    };
-  }
-};
+    },
+  };
+});

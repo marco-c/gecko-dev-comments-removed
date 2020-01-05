@@ -2,6 +2,7 @@
 
 "use strict";
 
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
   promiseObserved,
   SingletonEventManager,
@@ -53,56 +54,54 @@ function createSession(restored, extension, sessionId) {
   return Promise.resolve([sessionObj]);
 }
 
-this.sessions = class extends ExtensionAPI {
-  getAPI(context) {
-    let {extension} = context;
-    return {
-      sessions: {
-        getRecentlyClosed: function(filter) {
-          let maxResults = filter.maxResults == undefined ? this.MAX_SESSION_RESULTS : filter.maxResults;
-          return Promise.resolve(getRecentlyClosed(maxResults, extension));
-        },
-
-        restore: function(sessionId) {
-          let session, closedId;
-          if (sessionId) {
-            closedId = sessionId;
-            session = SessionStore.undoCloseById(closedId);
-          } else if (SessionStore.lastClosedObjectType == "window") {
-            
-            session = SessionStore.undoCloseWindow(0);
-          } else {
-            
-            
-            let recentlyClosedTabs = [];
-            for (let window of windowTracker.browserWindows()) {
-              let closedTabData = SessionStore.getClosedTabData(window, false);
-              for (let tab of closedTabData) {
-                recentlyClosedTabs.push(tab);
-              }
-            }
-
-            
-            recentlyClosedTabs.sort((a, b) => b.closedAt - a.closedAt);
-
-            
-            closedId = recentlyClosedTabs[0].closedId;
-            session = SessionStore.undoCloseById(closedId);
-          }
-          return createSession(session, extension, closedId);
-        },
-
-        onChanged: new SingletonEventManager(context, "sessions.onChanged", fire => {
-          let observer = () => {
-            fire.async();
-          };
-
-          Services.obs.addObserver(observer, SS_ON_CLOSED_OBJECTS_CHANGED, false);
-          return () => {
-            Services.obs.removeObserver(observer, SS_ON_CLOSED_OBJECTS_CHANGED);
-          };
-        }).api(),
+extensions.registerSchemaAPI("sessions", "addon_parent", context => {
+  let {extension} = context;
+  return {
+    sessions: {
+      getRecentlyClosed: function(filter) {
+        let maxResults = filter.maxResults == undefined ? this.MAX_SESSION_RESULTS : filter.maxResults;
+        return Promise.resolve(getRecentlyClosed(maxResults, extension));
       },
-    };
-  }
-};
+
+      restore: function(sessionId) {
+        let session, closedId;
+        if (sessionId) {
+          closedId = sessionId;
+          session = SessionStore.undoCloseById(closedId);
+        } else if (SessionStore.lastClosedObjectType == "window") {
+          
+          session = SessionStore.undoCloseWindow(0);
+        } else {
+          
+          
+          let recentlyClosedTabs = [];
+          for (let window of windowTracker.browserWindows()) {
+            let closedTabData = SessionStore.getClosedTabData(window, false);
+            for (let tab of closedTabData) {
+              recentlyClosedTabs.push(tab);
+            }
+          }
+
+          
+          recentlyClosedTabs.sort((a, b) => b.closedAt - a.closedAt);
+
+          
+          closedId = recentlyClosedTabs[0].closedId;
+          session = SessionStore.undoCloseById(closedId);
+        }
+        return createSession(session, extension, closedId);
+      },
+
+      onChanged: new SingletonEventManager(context, "sessions.onChanged", fire => {
+        let observer = () => {
+          fire.async();
+        };
+
+        Services.obs.addObserver(observer, SS_ON_CLOSED_OBJECTS_CHANGED, false);
+        return () => {
+          Services.obs.removeObserver(observer, SS_ON_CLOSED_OBJECTS_CHANGED);
+        };
+      }).api(),
+    },
+  };
+});

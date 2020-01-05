@@ -16,7 +16,7 @@ XPCOMUtils.defineLazyModuleGetter(this, "Task",
 
 Cu.import("resource://gre/modules/ExtensionParent.jsm");
 
-var {
+const {
   HiddenExtensionPage,
   watchExtensionProxyContextLoad,
 } = ExtensionParent;
@@ -250,13 +250,13 @@ class DevToolsPageDefinition {
 }
 
 
+
 let devToolsInitialized = false;
 initDevTools = function() {
   if (devToolsInitialized) {
     return;
   }
 
-  
   
   
   gDevTools.on("toolbox-created", (evt, toolbox) => {
@@ -292,35 +292,22 @@ initDevTools = function() {
       devtoolsPageDefinition.shutdownForTarget(target);
     }
   });
-  
 
   devToolsInitialized = true;
 };
 
-this.devtools = class extends ExtensionAPI {
-  onManifestEntry(entryName) {
-    let {extension} = this;
-    let {manifest} = extension;
 
-    
-    
-    let devtoolsPageDefinition = new DevToolsPageDefinition(extension, manifest.devtools_page);
-    devtoolsPageDefinitionMap.set(extension, devtoolsPageDefinition);
+
+extensions.on("manifest_devtools_page", (type, directive, extension, manifest) => {
+  let devtoolsPageDefinition = new DevToolsPageDefinition(extension, manifest[directive]);
+  devtoolsPageDefinitionMap.set(extension, devtoolsPageDefinition);
+});
+
+
+extensions.on("shutdown", (type, extension) => {
+  if (devtoolsPageDefinitionMap.has(extension)) {
+    devtoolsPageDefinitionMap.get(extension).shutdown();
+    devtoolsPageDefinitionMap.delete(extension);
   }
+});
 
-  onShutdown(reason) {
-    let {extension} = this;
-
-    
-    if (devtoolsPageDefinitionMap.has(extension)) {
-      devtoolsPageDefinitionMap.get(extension).shutdown();
-      devtoolsPageDefinitionMap.delete(extension);
-    }
-  }
-
-  getAPI(context) {
-    return {
-      devtools: {},
-    };
-  }
-};

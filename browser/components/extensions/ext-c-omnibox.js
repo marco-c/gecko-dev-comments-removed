@@ -2,29 +2,29 @@
 
 "use strict";
 
+Cu.import("resource://gre/modules/ExtensionUtils.jsm");
+
 var {
   SingletonEventManager,
 } = ExtensionUtils;
 
-this.omnibox = class extends ExtensionAPI {
-  getAPI(context) {
-    return {
-      omnibox: {
-        onInputChanged: new SingletonEventManager(context, "omnibox.onInputChanged", fire => {
-          let listener = (text, id) => {
-            fire.asyncWithoutClone(text, suggestions => {
-              context.childManager.callParentFunctionNoReturn("omnibox_internal.addSuggestions", [
-                id,
-                suggestions,
-              ]);
-            });
-          };
-          context.childManager.getParentEvent("omnibox_internal.onInputChanged").addListener(listener);
-          return () => {
-            context.childManager.getParentEvent("omnibox_internal.onInputChanged").removeListener(listener);
-          };
-        }).api(),
-      },
-    };
-  }
-};
+extensions.registerSchemaAPI("omnibox", "addon_child", context => {
+  return {
+    omnibox: {
+      onInputChanged: new SingletonEventManager(context, "omnibox.onInputChanged", fire => {
+        let listener = (text, id) => {
+          fire.asyncWithoutClone(text, suggestions => {
+            context.childManager.callParentFunctionNoReturn("omnibox_internal.addSuggestions", [
+              id,
+              suggestions,
+            ]);
+          });
+        };
+        context.childManager.getParentEvent("omnibox_internal.onInputChanged").addListener(listener);
+        return () => {
+          context.childManager.getParentEvent("omnibox_internal.onInputChanged").removeListener(listener);
+        };
+      }).api(),
+    },
+  };
+});
