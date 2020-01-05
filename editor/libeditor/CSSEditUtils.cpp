@@ -589,8 +589,8 @@ CSSEditUtils::RemoveCSSInlineStyle(nsIDOMNode* aNode,
   NS_ENSURE_STATE(element);
 
   
-  nsresult res = RemoveCSSProperty(*element, *aProperty, aPropertyValue);
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv = RemoveCSSProperty(*element, *aProperty, aPropertyValue);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   if (!element->IsHTMLElement(nsGkAtoms::span) ||
       HTMLEditor::HasAttributes(element)) {
@@ -903,12 +903,12 @@ CSSEditUtils::SetCSSEquivalentToHTMLStyle(Element* aElement,
   
   
   
-  nsresult res = SetCSSEquivalentToHTMLStyle(aElement->AsDOMNode(),
-                                             aProperty, aAttribute,
-                                             aValue, &count,
-                                             aSuppressTransaction);
-  NS_ASSERTION(NS_SUCCEEDED(res), "SetCSSEquivalentToHTMLStyle failed");
-  NS_ENSURE_SUCCESS(res, count);
+  nsresult rv = SetCSSEquivalentToHTMLStyle(aElement->AsDOMNode(),
+                                            aProperty, aAttribute,
+                                            aValue, &count,
+                                            aSuppressTransaction);
+  NS_ASSERTION(NS_SUCCEEDED(rv), "SetCSSEquivalentToHTMLStyle failed");
+  NS_ENSURE_SUCCESS(rv, count);
   return count;
 }
 
@@ -939,9 +939,9 @@ CSSEditUtils::SetCSSEquivalentToHTMLStyle(nsIDOMNode* aNode,
   
   *aCount = cssPropertyArray.Length();
   for (int32_t index = 0; index < *aCount; index++) {
-    nsresult res = SetCSSProperty(*element, *cssPropertyArray[index],
-                                  cssValueArray[index], aSuppressTransaction);
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = SetCSSProperty(*element, *cssPropertyArray[index],
+                                 cssValueArray[index], aSuppressTransaction);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
 }
@@ -987,11 +987,11 @@ CSSEditUtils::RemoveCSSEquivalentToHTMLStyle(Element* aElement,
   
   int32_t count = cssPropertyArray.Length();
   for (int32_t index = 0; index < count; index++) {
-    nsresult res = RemoveCSSProperty(*aElement,
-                                     *cssPropertyArray[index],
-                                     cssValueArray[index],
-                                     aSuppressTransaction);
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = RemoveCSSProperty(*aElement,
+                                    *cssPropertyArray[index],
+                                    cssValueArray[index],
+                                    aSuppressTransaction);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
   return NS_OK;
 }
@@ -1026,9 +1026,9 @@ CSSEditUtils::GetCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
   for (int32_t index = 0; index < count; index++) {
     nsAutoString valueString;
     
-    nsresult res = GetCSSInlinePropertyBase(theElement, cssPropertyArray[index],
-                                            valueString, aStyleType);
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = GetCSSInlinePropertyBase(theElement, cssPropertyArray[index],
+                                           valueString, aStyleType);
+    NS_ENSURE_SUCCESS(rv, rv);
     
     if (index) {
       aValueString.Append(char16_t(' '));
@@ -1067,10 +1067,10 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(nsINode* aNode,
 {
   MOZ_ASSERT(aNode && aProperty);
   bool isSet;
-  nsresult res = IsCSSEquivalentToHTMLInlineStyleSet(aNode->AsDOMNode(),
-                                                     aProperty, aAttribute,
-                                                     isSet, aValue, aStyleType);
-  NS_ENSURE_SUCCESS(res, false);
+  nsresult rv = IsCSSEquivalentToHTMLInlineStyleSet(aNode->AsDOMNode(),
+                                                    aProperty, aAttribute,
+                                                    isSet, aValue, aStyleType);
+  NS_ENSURE_SUCCESS(rv, false);
   return isSet;
 }
 
@@ -1091,9 +1091,10 @@ CSSEditUtils::IsCSSEquivalentToHTMLInlineStyleSet(
   do {
     valueString.Assign(htmlValueString);
     
-    nsresult res = GetCSSEquivalentToHTMLInlineStyleSet(node, aHTMLProperty, aHTMLAttribute,
-                                                        valueString, aStyleType);
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv =
+      GetCSSEquivalentToHTMLInlineStyleSet(node, aHTMLProperty, aHTMLAttribute,
+                                           valueString, aStyleType);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
     if (valueString.IsEmpty()) {
@@ -1398,8 +1399,10 @@ CSSEditUtils::SetCSSProperty(nsIDOMElement* aElement,
 {
   nsCOMPtr<nsIDOMCSSStyleDeclaration> cssDecl;
   uint32_t length;
-  nsresult res = GetInlineStyles(aElement, getter_AddRefs(cssDecl), &length);
-  if (NS_FAILED(res) || !cssDecl) return res;
+  nsresult rv = GetInlineStyles(aElement, getter_AddRefs(cssDecl), &length);
+  if (NS_FAILED(rv) || !cssDecl) {
+    return rv;
+  }
 
   return cssDecl->SetProperty(aProperty,
                               aValue,

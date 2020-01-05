@@ -58,8 +58,10 @@ static int32_t GetCSSFloatValue(nsIDOMCSSStyleDeclaration * aDecl,
 
   nsCOMPtr<nsIDOMCSSValue> value;
   
-  nsresult res = aDecl->GetPropertyCSSValue(aProperty, getter_AddRefs(value));
-  if (NS_FAILED(res) || !value) return 0;
+  nsresult rv = aDecl->GetPropertyCSSValue(aProperty, getter_AddRefs(value));
+  if (NS_FAILED(rv) || !value) {
+    return 0;
+  }
 
   
   
@@ -71,14 +73,14 @@ static int32_t GetCSSFloatValue(nsIDOMCSSStyleDeclaration * aDecl,
   switch (type) {
     case nsIDOMCSSPrimitiveValue::CSS_PX:
       
-      res = val->GetFloatValue(nsIDOMCSSPrimitiveValue::CSS_PX, &f);
-      NS_ENSURE_SUCCESS(res, 0);
+      rv = val->GetFloatValue(nsIDOMCSSPrimitiveValue::CSS_PX, &f);
+      NS_ENSURE_SUCCESS(rv, 0);
       break;
     case nsIDOMCSSPrimitiveValue::CSS_IDENT: {
       
       
       nsAutoString str;
-      res = val->GetStringValue(str);
+      val->GetStringValue(str);
       if (str.EqualsLiteral("thin"))
         f = 1;
       else if (str.EqualsLiteral("medium"))
@@ -192,18 +194,17 @@ HTMLEditor::CreateAnonymousElement(const nsAString& aTag,
   NS_ENSURE_TRUE(newElement, NS_ERROR_FAILURE);
 
   
-  nsresult res;
   if (aIsCreatedHidden) {
-    res = newElement->SetAttribute(NS_LITERAL_STRING("class"),
-                                   NS_LITERAL_STRING("hidden"));
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = newElement->SetAttribute(NS_LITERAL_STRING("class"),
+                                           NS_LITERAL_STRING("hidden"));
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
   if (!aAnonClass.IsEmpty()) {
-    res = newElement->SetAttribute(NS_LITERAL_STRING("_moz_anonclass"),
-                                   aAnonClass);
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = newElement->SetAttribute(NS_LITERAL_STRING("_moz_anonclass"),
+                                           aAnonClass);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   {
@@ -211,10 +212,11 @@ HTMLEditor::CreateAnonymousElement(const nsAString& aTag,
 
     
     newContent->SetIsNativeAnonymousRoot();
-    res = newContent->BindToTree(doc, parentContent, parentContent, true);
-    if (NS_FAILED(res)) {
+    nsresult rv =
+      newContent->BindToTree(doc, parentContent, parentContent, true);
+    if (NS_FAILED(rv)) {
       newContent->UnbindFromTree();
-      return res;
+      return rv;
     }
   }
 
@@ -319,9 +321,9 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
 
   nsCOMPtr<nsIDOMElement> focusElement;
   
-  nsresult res  = GetSelectionContainer(getter_AddRefs(focusElement));
+  nsresult rv = GetSelectionContainer(getter_AddRefs(focusElement));
   NS_ENSURE_TRUE(focusElement, NS_OK);
-  NS_ENSURE_SUCCESS(res, res);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   nsCOMPtr<dom::Element> focusElementNode = do_QueryInterface(focusElement);
@@ -332,8 +334,8 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
 
   
   nsAutoString focusTagName;
-  res = focusElement->GetTagName(focusTagName);
-  NS_ENSURE_SUCCESS(res, res);
+  rv = focusElement->GetTagName(focusTagName);
+  NS_ENSURE_SUCCESS(rv, rv);
   ToLowerCase(focusTagName);
   nsCOMPtr<nsIAtom> focusTagAtom = NS_Atomize(focusTagName);
 
@@ -341,18 +343,19 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
   if (mIsAbsolutelyPositioningEnabled) {
     
     
-    res = GetAbsolutelyPositionedSelectionContainer(getter_AddRefs(absPosElement));
-    NS_ENSURE_SUCCESS(res, res);
+    rv =
+      GetAbsolutelyPositionedSelectionContainer(getter_AddRefs(absPosElement));
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   nsCOMPtr<nsIDOMElement> cellElement;
   if (mIsObjectResizingEnabled || mIsInlineTableEditingEnabled) {
     
     
-    res = GetElementOrParentByTagName(NS_LITERAL_STRING("td"),
-                                      nullptr,
-                                      getter_AddRefs(cellElement));
-    NS_ENSURE_SUCCESS(res, res);
+    rv = GetElementOrParentByTagName(NS_LITERAL_STRING("td"),
+                                     nullptr,
+                                     getter_AddRefs(cellElement));
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   if (mIsObjectResizingEnabled && cellElement) {
@@ -385,22 +388,22 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
 
   if (mIsAbsolutelyPositioningEnabled && mAbsolutelyPositionedObject &&
       absPosElement != GetAsDOMNode(mAbsolutelyPositionedObject)) {
-    res = HideGrabber();
-    NS_ENSURE_SUCCESS(res, res);
+    rv = HideGrabber();
+    NS_ENSURE_SUCCESS(rv, rv);
     NS_ASSERTION(!mAbsolutelyPositionedObject, "HideGrabber failed");
   }
 
   if (mIsObjectResizingEnabled && mResizedObject &&
       GetAsDOMNode(mResizedObject) != focusElement) {
-    res = HideResizers();
-    NS_ENSURE_SUCCESS(res, res);
+    rv = HideResizers();
+    NS_ENSURE_SUCCESS(rv, rv);
     NS_ASSERTION(!mResizedObject, "HideResizers failed");
   }
 
   if (mIsInlineTableEditingEnabled && mInlineEditedCell &&
       mInlineEditedCell != cellElement) {
-    res = HideInlineTableEditingUI();
-    NS_ENSURE_SUCCESS(res, res);
+    rv = HideInlineTableEditingUI();
+    NS_ENSURE_SUCCESS(rv, rv);
     NS_ASSERTION(!mInlineEditedCell, "HideInlineTableEditingUI failed");
   }
 
@@ -413,31 +416,50 @@ HTMLEditor::CheckSelectionStateForAnonymousButtons(nsISelection* aSelection)
     if (nsGkAtoms::img == focusTagAtom) {
       mResizedObjectIsAnImage = true;
     }
-    if (mResizedObject)
-      res = RefreshResizers();
-    else
-      res = ShowResizers(focusElement);
-    NS_ENSURE_SUCCESS(res, res);
+    if (mResizedObject) {
+      nsresult rv = RefreshResizers();
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    } else {
+      nsresult rv = ShowResizers(focusElement);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
   }
 
   if (mIsAbsolutelyPositioningEnabled && absPosElement &&
       IsModifiableNode(absPosElement) && absPosElement != hostNode) {
-    if (mAbsolutelyPositionedObject)
-      res = RefreshGrabber();
-    else
-      res = ShowGrabberOnElement(absPosElement);
-    NS_ENSURE_SUCCESS(res, res);
+    if (mAbsolutelyPositionedObject) {
+      nsresult rv = RefreshGrabber();
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    } else {
+      nsresult rv = ShowGrabberOnElement(absPosElement);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
   }
 
   if (mIsInlineTableEditingEnabled && cellElement &&
       IsModifiableNode(cellElement) && cellElement != hostNode) {
-    if (mInlineEditedCell)
-      res = RefreshInlineTableEditingUI();
-    else
-      res = ShowInlineTableEditingUI(cellElement);
+    if (mInlineEditedCell) {
+      nsresult rv = RefreshInlineTableEditingUI();
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    } else {
+      nsresult rv = ShowInlineTableEditingUI(cellElement);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
   }
 
-  return res;
+  return NS_OK;
 }
 
 
@@ -458,8 +480,9 @@ HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
 
   
   bool isPositioned = false;
-  nsresult res = aElement->HasAttribute(NS_LITERAL_STRING("_moz_abspos"), &isPositioned);
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv =
+    aElement->HasAttribute(NS_LITERAL_STRING("_moz_abspos"), &isPositioned);
+  NS_ENSURE_SUCCESS(rv, rv);
   if (!isPositioned) {
     
     nsAutoString positionStr;
@@ -497,16 +520,17 @@ HTMLEditor::GetPositionAndDimensions(nsIDOMElement* aElement,
     }
     GetElementOrigin(aElement, aX, aY);
 
-    res = htmlElement->GetOffsetWidth(&aW);
-    NS_ENSURE_SUCCESS(res, res);
-    res = htmlElement->GetOffsetHeight(&aH);
+    if (NS_WARN_IF(NS_FAILED(htmlElement->GetOffsetWidth(&aW))) ||
+        NS_WARN_IF(NS_FAILED(htmlElement->GetOffsetHeight(&aH)))) {
+      return rv;
+    }
 
     aBorderLeft = 0;
     aBorderTop  = 0;
     aMarginLeft = 0;
     aMarginTop = 0;
   }
-  return res;
+  return NS_OK;
 }
 
 

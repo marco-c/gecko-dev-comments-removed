@@ -63,7 +63,6 @@ NS_IMETHODIMP
 DeleteRangeTransaction::DoTransaction()
 {
   MOZ_ASSERT(mRange && mEditorBase);
-  nsresult res;
 
   
   nsCOMPtr<nsINode> startParent = mRange->GetStartParent();
@@ -74,24 +73,26 @@ DeleteRangeTransaction::DoTransaction()
 
   if (startParent == endParent) {
     
-    res = CreateTxnsToDeleteBetween(startParent, startOffset, endOffset);
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv =
+      CreateTxnsToDeleteBetween(startParent, startOffset, endOffset);
+    NS_ENSURE_SUCCESS(rv, rv);
   } else {
     
     
-    res = CreateTxnsToDeleteContent(startParent, startOffset, nsIEditor::eNext);
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv =
+      CreateTxnsToDeleteContent(startParent, startOffset, nsIEditor::eNext);
+    NS_ENSURE_SUCCESS(rv, rv);
     
-    res = CreateTxnsToDeleteNodesBetween();
-    NS_ENSURE_SUCCESS(res, res);
+    rv = CreateTxnsToDeleteNodesBetween();
+    NS_ENSURE_SUCCESS(rv, rv);
     
-    res = CreateTxnsToDeleteContent(endParent, endOffset, nsIEditor::ePrevious);
-    NS_ENSURE_SUCCESS(res, res);
+    rv = CreateTxnsToDeleteContent(endParent, endOffset, nsIEditor::ePrevious);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   
-  res = EditAggregateTransaction::DoTransaction();
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv = EditAggregateTransaction::DoTransaction();
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   bool bAdjustSelection;
@@ -99,8 +100,8 @@ DeleteRangeTransaction::DoTransaction()
   if (bAdjustSelection) {
     RefPtr<Selection> selection = mEditorBase->GetSelection();
     NS_ENSURE_TRUE(selection, NS_ERROR_NULL_POINTER);
-    res = selection->Collapse(startParent, startOffset);
-    NS_ENSURE_SUCCESS(res, res);
+    rv = selection->Collapse(startParent, startOffset);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
   
 
@@ -152,8 +153,8 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
       new DeleteTextTransaction(*mEditorBase, *charDataNode, aStartOffset,
                                 numToDel, mRangeUpdater);
 
-    nsresult res = transaction->Init();
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = transaction->Init();
+    NS_ENSURE_SUCCESS(rv, rv);
 
     AppendChild(transaction);
     return NS_OK;
@@ -162,18 +163,20 @@ DeleteRangeTransaction::CreateTxnsToDeleteBetween(nsINode* aNode,
   nsCOMPtr<nsIContent> child = aNode->GetChildAt(aStartOffset);
   NS_ENSURE_STATE(child);
 
-  nsresult res = NS_OK;
+  
+  
+  nsresult rv = NS_OK;
   for (int32_t i = aStartOffset; i < aEndOffset; ++i) {
     RefPtr<DeleteNodeTransaction> transaction = new DeleteNodeTransaction();
-    res = transaction->Init(mEditorBase, child, mRangeUpdater);
-    if (NS_SUCCEEDED(res)) {
+    rv = transaction->Init(mEditorBase, child, mRangeUpdater);
+    if (NS_SUCCEEDED(rv)) {
       AppendChild(transaction);
     }
 
     child = child->GetNextSibling();
   }
 
-  NS_ENSURE_SUCCESS(res, res);
+  NS_ENSURE_SUCCESS(rv, rv);
   return NS_OK;
 }
 
@@ -201,8 +204,8 @@ DeleteRangeTransaction::CreateTxnsToDeleteContent(nsINode* aNode,
         new DeleteTextTransaction(*mEditorBase, *dataNode, start, numToDelete,
                                   mRangeUpdater);
 
-      nsresult res = transaction->Init();
-      NS_ENSURE_SUCCESS(res, res);
+      nsresult rv = transaction->Init();
+      NS_ENSURE_SUCCESS(rv, rv);
 
       AppendChild(transaction);
     }
@@ -216,16 +219,16 @@ DeleteRangeTransaction::CreateTxnsToDeleteNodesBetween()
 {
   nsCOMPtr<nsIContentIterator> iter = NS_NewContentSubtreeIterator();
 
-  nsresult res = iter->Init(mRange);
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv = iter->Init(mRange);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   while (!iter->IsDone()) {
     nsCOMPtr<nsINode> node = iter->GetCurrentNode();
     NS_ENSURE_TRUE(node, NS_ERROR_NULL_POINTER);
 
     RefPtr<DeleteNodeTransaction> transaction = new DeleteNodeTransaction();
-    res = transaction->Init(mEditorBase, node, mRangeUpdater);
-    NS_ENSURE_SUCCESS(res, res);
+    rv = transaction->Init(mEditorBase, node, mRangeUpdater);
+    NS_ENSURE_SUCCESS(rv, rv);
     AppendChild(transaction);
 
     iter->Next();

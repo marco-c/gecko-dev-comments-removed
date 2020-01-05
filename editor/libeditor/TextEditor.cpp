@@ -123,20 +123,22 @@ TextEditor::Init(nsIDOMDocument* aDoc,
   NS_PRECONDITION(aDoc, "bad arg");
   NS_ENSURE_TRUE(aDoc, NS_ERROR_NULL_POINTER);
 
-  nsresult res = NS_OK, rulesRes = NS_OK;
   if (mRules) {
     mRules->DetachEditor();
   }
 
+  nsresult rulesRv = NS_OK;
   {
     
-    AutoEditInitRulesTrigger rulesTrigger(this, rulesRes);
+    AutoEditInitRulesTrigger rulesTrigger(this, rulesRv);
 
     
-    res = EditorBase::Init(aDoc, aRoot, aSelCon, aFlags, aInitialValue);
+    nsresult rv = EditorBase::Init(aDoc, aRoot, aSelCon, aFlags, aInitialValue);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
   }
-
-  NS_ENSURE_SUCCESS(rulesRes, rulesRes);
+  NS_ENSURE_SUCCESS(rulesRv, rulesRv);
 
   
   
@@ -144,7 +146,7 @@ TextEditor::Init(nsIDOMDocument* aDoc,
     mRules->SetInitialValue(aInitialValue);
   }
 
-  return res;
+  return NS_OK;
 }
 
 static int32_t sNewlineHandlingPref = -1,
@@ -196,20 +198,21 @@ TextEditor::BeginEditorInit()
 nsresult
 TextEditor::EndEditorInit()
 {
-  nsresult res = NS_OK;
   NS_PRECONDITION(mInitTriggerCounter > 0, "ended editor init before we began?");
   mInitTriggerCounter--;
-  if (mInitTriggerCounter == 0)
-  {
-    res = InitRules();
-    if (NS_SUCCEEDED(res)) {
-      
-      
-      EnableUndo(false);
-      EnableUndo(true);
-    }
+  if (mInitTriggerCounter) {
+    return NS_OK;
   }
-  return res;
+
+  nsresult rv = InitRules();
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  
+  
+  EnableUndo(false);
+  EnableUndo(true);
+  return NS_OK;
 }
 
 NS_IMETHODIMP
@@ -459,7 +462,6 @@ TextEditor::CreateBRImpl(nsCOMPtr<nsIDOMNode>* aInOutParent,
 {
   NS_ENSURE_TRUE(aInOutParent && *aInOutParent && aInOutOffset && outBRNode, NS_ERROR_NULL_POINTER);
   *outBRNode = nullptr;
-  nsresult res;
 
   
   nsCOMPtr<nsIDOMNode> node = *aInOutParent;
@@ -486,20 +488,20 @@ TextEditor::CreateBRImpl(nsCOMPtr<nsIDOMNode>* aInOutParent,
     else
     {
       
-      res = SplitNode(node, theOffset, getter_AddRefs(tmp));
-      NS_ENSURE_SUCCESS(res, res);
+      nsresult rv = SplitNode(node, theOffset, getter_AddRefs(tmp));
+      NS_ENSURE_SUCCESS(rv, rv);
       tmp = GetNodeLocation(node, &offset);
     }
     
-    res = CreateNode(brType, tmp, offset, getter_AddRefs(brNode));
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = CreateNode(brType, tmp, offset, getter_AddRefs(brNode));
+    NS_ENSURE_SUCCESS(rv, rv);
     *aInOutParent = tmp;
     *aInOutOffset = offset+1;
   }
   else
   {
-    res = CreateNode(brType, node, theOffset, getter_AddRefs(brNode));
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = CreateNode(brType, node, theOffset, getter_AddRefs(brNode));
+    NS_ENSURE_SUCCESS(rv, rv);
     (*aInOutOffset)++;
   }
 
@@ -515,13 +517,13 @@ TextEditor::CreateBRImpl(nsCOMPtr<nsIDOMNode>* aInOutParent,
     {
       
       selection->SetInterlinePosition(true);
-      res = selection->Collapse(parent, offset+1);
+      selection->Collapse(parent, offset + 1);
     }
     else if (aSelect == ePrevious)
     {
       
       selection->SetInterlinePosition(true);
-      res = selection->Collapse(parent, offset);
+      selection->Collapse(parent, offset);
     }
   }
   return NS_OK;
@@ -551,19 +553,19 @@ TextEditor::InsertBR(nsCOMPtr<nsIDOMNode>* outBRNode)
   RefPtr<Selection> selection = GetSelection();
   NS_ENSURE_STATE(selection);
 
-  nsresult res;
   if (!selection->Collapsed()) {
-    res = DeleteSelection(nsIEditor::eNone, nsIEditor::eStrip);
-    NS_ENSURE_SUCCESS(res, res);
+    nsresult rv = DeleteSelection(nsIEditor::eNone, nsIEditor::eStrip);
+    NS_ENSURE_SUCCESS(rv, rv);
   }
 
   nsCOMPtr<nsIDOMNode> selNode;
   int32_t selOffset;
-  res = GetStartNodeAndOffset(selection, getter_AddRefs(selNode), &selOffset);
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv =
+    GetStartNodeAndOffset(selection, getter_AddRefs(selNode), &selOffset);
+  NS_ENSURE_SUCCESS(rv, rv);
 
-  res = CreateBR(selNode, selOffset, outBRNode);
-  NS_ENSURE_SUCCESS(res, res);
+  rv = CreateBR(selNode, selOffset, outBRNode);
+  NS_ENSURE_SUCCESS(rv, rv);
 
   
   selNode = GetNodeLocation(*outBRNode, &selOffset);
@@ -742,18 +744,17 @@ TextEditor::InsertText(const nsAString& aStringToInsert)
   ruleInfo.maxLength = mMaxTextLength;
 
   bool cancel, handled;
-  nsresult res = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
+  NS_ENSURE_SUCCESS(rv, rv);
   if (!cancel && !handled)
   {
     
   }
-  if (!cancel)
-  {
-    
-    res = rules->DidDoAction(selection, &ruleInfo, res);
+  if (cancel) {
+    return NS_OK;
   }
-  return res;
+  
+  return rules->DidDoAction(selection, &ruleInfo, rv);
 }
 
 NS_IMETHODIMP
@@ -774,8 +775,8 @@ TextEditor::InsertLineBreak()
   TextRulesInfo ruleInfo(EditAction::insertBreak);
   ruleInfo.maxLength = mMaxTextLength;
   bool cancel, handled;
-  nsresult res = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
-  NS_ENSURE_SUCCESS(res, res);
+  nsresult rv = rules->WillDoAction(selection, &ruleInfo, &cancel, &handled);
+  NS_ENSURE_SUCCESS(rv, rv);
   if (!cancel && !handled)
   {
     
@@ -798,23 +799,23 @@ TextEditor::InsertLineBreak()
     AutoTransactionsConserveSelection dontSpazMySelection(this);
 
     
-    res = InsertTextImpl(NS_LITERAL_STRING("\n"), address_of(selNode),
-                         &selOffset, doc);
-    if (!selNode) res = NS_ERROR_NULL_POINTER; 
-    if (NS_SUCCEEDED(res))
-    {
+    rv = InsertTextImpl(NS_LITERAL_STRING("\n"), address_of(selNode),
+                        &selOffset, doc);
+    if (!selNode) {
+      rv = NS_ERROR_NULL_POINTER; 
+    }
+    if (NS_SUCCEEDED(rv)) {
       
-      res = selection->Collapse(selNode, selOffset);
-
-      if (NS_SUCCEEDED(res))
-      {
+      rv = selection->Collapse(selNode, selOffset);
+      if (NS_SUCCEEDED(rv)) {
         
         nsCOMPtr<nsIDOMNode> endNode;
         int32_t endOffset;
-        res = GetEndNodeAndOffset(selection, getter_AddRefs(endNode), &endOffset);
+        rv = GetEndNodeAndOffset(selection,
+                                 getter_AddRefs(endNode), &endOffset);
 
-        if (NS_SUCCEEDED(res) && endNode == GetAsDOMNode(selNode)
-            && endOffset == selOffset) {
+        if (NS_SUCCEEDED(rv) &&
+            endNode == GetAsDOMNode(selNode) && endOffset == selOffset) {
           
           
           
@@ -824,13 +825,12 @@ TextEditor::InsertLineBreak()
       }
     }
   }
-  if (!cancel)
-  {
-    
-    res = rules->DidDoAction(selection, &ruleInfo, res);
-  }
 
-  return res;
+  if (!cancel) {
+    
+    rv = rules->DidDoAction(selection, &ruleInfo, rv);
+  }
+  return rv;
 }
 
 nsresult
@@ -1577,12 +1577,9 @@ TextEditor::EndOperation()
   nsCOMPtr<nsIEditRules> rules(mRules);
 
   
-  nsresult res = NS_OK;
-  if (rules) {
-    res = rules->AfterEdit(mAction, mDirection);
-  }
+  nsresult rv = rules ? rules->AfterEdit(mAction, mDirection) : NS_OK;
   EditorBase::EndOperation();  
-  return res;
+  return rv;
 }
 
 nsresult
