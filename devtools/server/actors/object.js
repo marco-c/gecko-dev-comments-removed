@@ -15,8 +15,8 @@ const { assert, dumpn } = DevToolsUtils;
 loader.lazyRequireGetter(this, "ThreadSafeChromeUtils");
 
 const TYPED_ARRAY_CLASSES = ["Uint8Array", "Uint8ClampedArray", "Uint16Array",
-      "Uint32Array", "Int8Array", "Int16Array", "Int32Array", "Float32Array",
-      "Float64Array"];
+                             "Uint32Array", "Int8Array", "Int16Array", "Int32Array",
+                             "Float32Array", "Float64Array"];
 
 
 
@@ -47,7 +47,7 @@ const OBJECT_PREVIEW_MAX_ITEMS = 10;
 
 
 function ObjectActor(obj, {
-  createValueGrip,
+  createValueGrip: createValueGripHook,
   sources,
   createEnvironmentActor,
   getGripDepth,
@@ -59,7 +59,7 @@ function ObjectActor(obj, {
          "Should not create object actors for optimized out values!");
   this.obj = obj;
   this.hooks = {
-    createValueGrip,
+    createValueGrip: createValueGripHook,
     sources,
     createEnvironmentActor,
     getGripDepth,
@@ -86,7 +86,7 @@ ObjectActor.prototype = {
 
     
     
-    if(this.obj.isProxy) {
+    if (this.obj.isProxy) {
       g.class = "Proxy";
       g.proxyTarget = this.hooks.createValueGrip(this.obj.proxyTarget);
       g.proxyHandler = this.hooks.createValueGrip(this.obj.proxyHandler);
@@ -114,7 +114,9 @@ ObjectActor.prototype = {
           
           g.ownPropertyLength = this.obj.getOwnPropertyNames().length;
         }
-      } catch (e) {}
+      } catch (e) {
+        
+      }
 
       let raw = this.obj.unsafeDereference();
 
@@ -570,7 +572,8 @@ ObjectActor.prototype = {
                         "object grips with a 'Promise' class." };
     }
 
-    let promises = this.obj.promiseDependentPromises.map(p => this.hooks.createValueGrip(p));
+    let promises = this.obj.promiseDependentPromises
+                           .map(p => this.hooks.createValueGrip(p));
 
     return { promises };
   },
@@ -677,7 +680,9 @@ ObjectActor.prototype = {
     
     try {
       source = this.hooks.sources().getSourceActorByURL(stack.source);
-    } catch (e) {}
+    } catch (e) {
+      
+    }
 
     if (!source) {
       return null;
@@ -1363,8 +1368,8 @@ DebuggerServer.ObjectActorPreviewers = {
       return true;
     }
 
-    grip.preview.ownProperties['<target>'] = {value: grip.proxyTarget};
-    grip.preview.ownProperties['<handler>'] = {value: grip.proxyHandler};
+    grip.preview.ownProperties["<target>"] = {value: grip.proxyTarget};
+    grip.preview.ownProperties["<handler>"] = {value: grip.proxyHandler};
 
     return true;
   }],
@@ -1680,7 +1685,6 @@ DebuggerServer.ObjectActorPreviewers.Object = [
         preview.nodeName = preview.nodeName.toLowerCase();
       }
 
-      let i = 0;
       preview.attributes = {};
       preview.attributesLength = rawObj.attributes.length;
       for (let attr of rawObj.attributes) {
@@ -1808,21 +1812,21 @@ DebuggerServer.ObjectActorPreviewers.Object = [
 
     
     
-    if(keys[0] >= OBJECT_PREVIEW_MAX_ITEMS) {
+    if (keys[0] >= OBJECT_PREVIEW_MAX_ITEMS) {
       return false;
     }
 
     
     
-    if(keys[keys.length-1] === "length") {
+    if (keys[keys.length - 1] === "length") {
       keys.pop();
       length = DevToolsUtils.getProperty(obj, "length");
     } else {
       
-      length = +keys[keys.length-1] + 1;
+      length = +keys[keys.length - 1] + 1;
     }
     
-    if(typeof length !== "number" || length >>> 0 !== length) {
+    if (typeof length !== "number" || length >>> 0 !== length) {
       return false;
     }
 
@@ -1831,10 +1835,10 @@ DebuggerServer.ObjectActorPreviewers.Object = [
     
     
     let prev = length;
-    for(let i = keys.length - 1; i >= 0; --i) {
+    for (let i = keys.length - 1; i >= 0; --i) {
       let key = keys[i];
       let numKey = key >>> 0; 
-      if (numKey + '' !== key || numKey >= prev) {
+      if (numKey + "" !== key || numKey >= prev) {
         return false;
       }
       prev = numKey;
@@ -1855,7 +1859,7 @@ DebuggerServer.ObjectActorPreviewers.Object = [
 
     for (let i = 0; i < numItems; ++i) {
       let desc = obj.getOwnPropertyDescriptor(i);
-      if (desc && 'value' in desc) {
+      if (desc && "value" in desc) {
         items.push(hooks.createValueGrip(desc.value));
       } else {
         items.push(null);
@@ -2178,8 +2182,7 @@ function createValueGrip(value, pool, makeObjectGrip) {
     case "object":
       if (value === null) {
         return { type: "null" };
-      }
-      else if (value.optimizedOut ||
+      } else if (value.optimizedOut ||
              value.uninitialized ||
              value.missingArguments) {
         

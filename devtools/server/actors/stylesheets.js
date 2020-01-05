@@ -38,8 +38,6 @@ var TRANSITION_RULE = `${TRANSITION_RULE_SELECTOR} {
   transition-property: all !important;
 }`;
 
-var LOAD_ERROR = "error-load";
-
 
 
 
@@ -61,12 +59,12 @@ let modifiedStyleSheets = new WeakMap();
 
 
 var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
-  initialize: function (aUrl, aSourceMap, aParentActor) {
+  initialize: function (url, sourceMap, parentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
-    this.url = aUrl;
-    this.sourceMap = aSourceMap;
-    this.parentActor = aParentActor;
+    this.url = url;
+    this.sourceMap = sourceMap;
+    this.parentActor = parentActor;
     this.conn = this.parentActor.conn;
 
     this.text = null;
@@ -93,9 +91,9 @@ var OriginalSourceActor = protocol.ActorClassWithSpec(originalSourceSpec, {
       policy: Ci.nsIContentPolicy.TYPE_INTERNAL_STYLESHEET,
       window: this.window
     };
-    return fetch(this.url, options).then(({content}) => {
-      this.text = content;
-      return content;
+    return fetch(this.url, options).then(({content: text}) => {
+      this.text = text;
+      return text;
     });
   },
 
@@ -126,21 +124,22 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     return this.mql ? this.mql.matches : null;
   },
 
-  initialize: function (aMediaRule, aParentActor) {
+  initialize: function (mediaRule, parentActor) {
     protocol.Actor.prototype.initialize.call(this, null);
 
-    this.rawRule = aMediaRule;
-    this.parentActor = aParentActor;
+    this.rawRule = mediaRule;
+    this.parentActor = parentActor;
     this.conn = this.parentActor.conn;
 
     this._matchesChange = this._matchesChange.bind(this);
 
-    this.line = DOMUtils.getRuleLine(aMediaRule);
-    this.column = DOMUtils.getRuleColumn(aMediaRule);
+    this.line = DOMUtils.getRuleLine(mediaRule);
+    this.column = DOMUtils.getRuleColumn(mediaRule);
 
     try {
-      this.mql = this.window.matchMedia(aMediaRule.media.mediaText);
+      this.mql = this.window.matchMedia(mediaRule.media.mediaText);
     } catch (e) {
+      
     }
 
     if (this.mql) {
@@ -148,8 +147,7 @@ var MediaRuleActor = protocol.ActorClassWithSpec(mediaRuleSpec, {
     }
   },
 
-  destroy: function ()
-  {
+  destroy: function () {
     if (this.mql) {
       this.mql.removeListener(this._matchesChange);
     }
@@ -237,8 +235,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  get styleSheetIndex()
-  {
+  get styleSheetIndex() {
     if (this._styleSheetIndex == -1) {
       for (let i = 0; i < this.document.styleSheets.length; i++) {
         if (this.document.styleSheets[i] == this.rawSheet) {
@@ -258,14 +255,14 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     }
   },
 
-  initialize: function (aStyleSheet, aParentActor, aWindow) {
+  initialize: function (styleSheet, parentActor, window) {
     protocol.Actor.prototype.initialize.call(this, null);
 
-    this.rawSheet = aStyleSheet;
-    this.parentActor = aParentActor;
+    this.rawSheet = styleSheet;
+    this.parentActor = parentActor;
     this.conn = this.parentActor.conn;
 
-    this._window = aWindow;
+    this._window = window;
 
     
     this.text = null;
@@ -306,8 +303,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     let rules;
     try {
       rules = this.rawSheet.cssRules;
-    }
-    catch (e) {
+    } catch (e) {
       
     }
 
@@ -355,8 +351,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     if (this.ownerNode) {
       if (this.ownerNode instanceof Ci.nsIDOMHTMLDocument) {
         docHref = this.ownerNode.location.href;
-      }
-      else if (this.ownerNode.ownerDocument && this.ownerNode.ownerDocument.location) {
+      } else if (this.ownerNode.ownerDocument && this.ownerNode.ownerDocument.location) {
         docHref = this.ownerNode.ownerDocument.location.href;
       }
     }
@@ -373,8 +368,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
     try {
       form.ruleCount = this.rawSheet.cssRules.length;
-    }
-    catch (e) {
+    } catch (e) {
       
       this.getCSSRules().then(() => {
         this._notifyPropertyChanged("ruleCount");
@@ -597,7 +591,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
   _clearOriginalSources: function () {
-    for (actor in this._originalSources) {
+    for (let actor in this._originalSources) {
       this.unmanage(actor);
     }
     this._originalSources = null;
@@ -606,16 +600,16 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
   
 
 
-  _setSourceMapRoot: function (aSourceMap, aAbsSourceMapURL, aScriptURL) {
-    if (aScriptURL.startsWith("blob:")) {
-      aScriptURL = aScriptURL.replace("blob:", "");
+  _setSourceMapRoot: function (sourceMap, absSourceMapURL, scriptURL) {
+    if (scriptURL.startsWith("blob:")) {
+      scriptURL = scriptURL.replace("blob:", "");
     }
     const base = dirname(
-      aAbsSourceMapURL.startsWith("data:")
-        ? aScriptURL
-        : aAbsSourceMapURL);
-    aSourceMap.sourceRoot = aSourceMap.sourceRoot
-      ? normalize(aSourceMap.sourceRoot, base)
+      absSourceMapURL.startsWith("data:")
+        ? scriptURL
+        : absSourceMapURL);
+    sourceMap.sourceRoot = sourceMap.sourceRoot
+      ? normalize(sourceMap.sourceRoot, base)
       : base;
   },
 
@@ -628,7 +622,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
   _extractSourceMapUrl: function (content) {
-    var matches = /sourceMappingURL\=([^\s\*]*)/.exec(content);
+    let matches = /sourceMappingURL\=([^\s\*]*)/.exec(content);
     if (matches) {
       return matches[1];
     }
@@ -689,8 +683,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
 
 
-  _getCSSCharset: function ()
-  {
+  _getCSSCharset: function () {
     let sheet = this.rawSheet;
     if (sheet) {
       
@@ -747,8 +740,7 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
 
     if (transition) {
       this._insertTransistionRule(kind);
-    }
-    else {
+    } else {
       events.emit(this, "style-applied", kind, this);
     }
 
@@ -770,16 +762,16 @@ var StyleSheetActor = protocol.ActorClassWithSpec(styleSheetSpec, {
     
     
     this.window.clearTimeout(this._transitionTimeout);
-    this._transitionTimeout = this.window.setTimeout(this._onTransitionEnd.bind(this, kind),
-                              TRANSITION_DURATION_MS + TRANSITION_BUFFER_MS);
+    this._transitionTimeout = this.window.setTimeout(
+      this._onTransitionEnd.bind(this, kind),
+      TRANSITION_DURATION_MS + TRANSITION_BUFFER_MS);
   },
 
   
 
 
 
-  _onTransitionEnd: function (kind)
-  {
+  _onTransitionEnd: function (kind) {
     this._transitionTimeout = null;
     removePseudoClassLock(this.document.documentElement, TRANSITION_PSEUDO_CLASS);
 
@@ -814,8 +806,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
     return this.window.document;
   },
 
-  form: function ()
-  {
+  form: function () {
     return { actor: this.actorID };
   },
 
@@ -883,8 +874,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
 
 
 
-  _addStyleSheets: function (win)
-  {
+  _addStyleSheets: function (win) {
     return Task.spawn(function* () {
       let doc = win.document;
       
@@ -948,8 +938,7 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
           
           let children = yield this._getImported(doc, actor);
           imported = imported.concat(children);
-        }
-        else if (rule.type != Ci.nsIDOMCSSRule.CHARSET_RULE) {
+        } else if (rule.type != Ci.nsIDOMCSSRule.CHARSET_RULE) {
           
           break;
         }
@@ -958,7 +947,6 @@ var StyleSheetsActor = protocol.ActorClassWithSpec(styleSheetsSpec, {
       return imported;
     }.bind(this));
   },
-
 
   
 
@@ -989,16 +977,16 @@ exports.StyleSheetsActor = StyleSheetsActor;
 
 
 
-function normalize(...aURLs) {
-  let base = Services.io.newURI(aURLs.pop());
+function normalize(...urls) {
+  let base = Services.io.newURI(urls.pop());
   let url;
-  while ((url = aURLs.pop())) {
+  while ((url = urls.pop())) {
     base = Services.io.newURI(url, null, base);
   }
   return base.spec;
 }
 
-function dirname(aPath) {
+function dirname(path) {
   return Services.io.newURI(
-    ".", null, Services.io.newURI(aPath)).spec;
+    ".", null, Services.io.newURI(path)).spec;
 }

@@ -6,6 +6,8 @@
 
 "use strict";
 
+
+
 const Services = require("Services");
 const { Cc, Ci, Cu } = require("chrome");
 const { DebuggerServer, ActorPool } = require("devtools/server/main");
@@ -49,10 +51,9 @@ if (isWorker) {
 
 
 
-function WebConsoleActor(aConnection, aParentActor)
-{
-  this.conn = aConnection;
-  this.parentActor = aParentActor;
+function WebConsoleActor(connection, parentActor) {
+  this.conn = connection;
+  this.parentActor = parentActor;
 
   this._actorPool = new ActorPool(this.conn);
   this.conn.addActorPool(this._actorPool);
@@ -69,7 +70,8 @@ function WebConsoleActor(aConnection, aParentActor)
   this.objectGrip = this.objectGrip.bind(this);
   this._onWillNavigate = this._onWillNavigate.bind(this);
   this._onChangedToplevelDocument = this._onChangedToplevelDocument.bind(this);
-  events.on(this.parentActor, "changed-toplevel-document", this._onChangedToplevelDocument);
+  events.on(this.parentActor, "changed-toplevel-document",
+            this._onChangedToplevelDocument);
   this._onObserverNotification = this._onObserverNotification.bind(this);
   if (this.parentActor.isRootActor) {
     Services.obs.addObserver(this._onObserverNotification,
@@ -176,8 +178,7 @@ WebConsoleActor.prototype =
 
 
 
-  _getWindowForBrowserConsole: function WCA__getWindowForBrowserConsole()
-  {
+  _getWindowForBrowserConsole: function () {
     
     let window = this._lastChromeWindow && this._lastChromeWindow.get();
     
@@ -209,11 +210,10 @@ WebConsoleActor.prototype =
 
 
 
-  _handleNewWindow: function WCA__handleNewWindow(window)
-  {
+  _handleNewWindow: function (window) {
     if (window) {
       if (this._hadChromeWindow) {
-        Services.console.logStringMessage('Webconsole context has changed');
+        Services.console.logStringMessage("Webconsole context has changed");
       }
       this._lastChromeWindow = Cu.getWeakReference(window);
       this._hadChromeWindow = true;
@@ -244,8 +244,8 @@ WebConsoleActor.prototype =
     return this._evalWindow || this.window;
   },
 
-  set evalWindow(aWindow) {
-    this._evalWindow = aWindow;
+  set evalWindow(window) {
+    this._evalWindow = window;
 
     if (!this._progressListenerActive) {
       events.on(this.parentActor, "will-navigate", this._onWillNavigate);
@@ -307,12 +307,11 @@ WebConsoleActor.prototype =
     return this.parentActor.threadActor.globalDebugObject;
   },
 
-  grip: function WCA_grip()
-  {
+  grip: function () {
     return { actor: this.actorID };
   },
 
-  hasNativeConsoleAPI: function WCA_hasNativeConsoleAPI(aWindow) {
+  hasNativeConsoleAPI: function (window) {
     if (isWorker) {
       
       return true;
@@ -322,10 +321,11 @@ WebConsoleActor.prototype =
     try {
       
       
-      let console = aWindow.wrappedJSObject.console;
-      isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE
+      let console = window.wrappedJSObject.console;
+      isNative = new XPCNativeWrapper(console).IS_NATIVE_CONSOLE;
+    } catch (ex) {
+      
     }
-    catch (ex) { }
     return isNative;
   },
 
@@ -400,18 +400,18 @@ WebConsoleActor.prototype =
 
 
 
-  createEnvironmentActor: function WCA_createEnvironmentActor(aEnvironment) {
-    if (!aEnvironment) {
+  createEnvironmentActor: function (environment) {
+    if (!environment) {
       return undefined;
     }
 
-    if (aEnvironment.actor) {
-      return aEnvironment.actor;
+    if (environment.actor) {
+      return environment.actor;
     }
 
-    let actor = new EnvironmentActor(aEnvironment, this);
+    let actor = new EnvironmentActor(environment, this);
     this._actorPool.addActor(actor);
-    aEnvironment.actor = actor;
+    environment.actor = actor;
 
     return actor;
   },
@@ -422,9 +422,8 @@ WebConsoleActor.prototype =
 
 
 
-  createValueGrip: function WCA_createValueGrip(aValue)
-  {
-    return createValueGrip(aValue, this._actorPool, this.objectGrip);
+  createValueGrip: function (value) {
+    return createValueGrip(value, this._actorPool, this.objectGrip);
   },
 
   
@@ -438,21 +437,19 @@ WebConsoleActor.prototype =
 
 
 
-  makeDebuggeeValue: function WCA_makeDebuggeeValue(aValue, aUseObjectGlobal)
-  {
-    if (aUseObjectGlobal && typeof aValue == "object") {
+  makeDebuggeeValue: function (value, useObjectGlobal) {
+    if (useObjectGlobal && typeof value == "object") {
       try {
-        let global = Cu.getGlobalForObject(aValue);
+        let global = Cu.getGlobalForObject(value);
         let dbgGlobal = this.dbg.makeGlobalObjectReference(global);
-        return dbgGlobal.makeDebuggeeValue(aValue);
-      }
-      catch (ex) {
+        return dbgGlobal.makeDebuggeeValue(value);
+      } catch (ex) {
         
         
       }
     }
     let dbgGlobal = this.dbg.makeGlobalObjectReference(this.window);
-    return dbgGlobal.makeDebuggeeValue(aValue);
+    return dbgGlobal.makeDebuggeeValue(value);
   },
 
   
@@ -465,9 +462,8 @@ WebConsoleActor.prototype =
 
 
 
-  objectGrip: function WCA_objectGrip(aObject, aPool)
-  {
-    let actor = new ObjectActor(aObject, {
+  objectGrip: function (object, pool) {
+    let actor = new ObjectActor(object, {
       getGripDepth: () => this._gripDepth,
       incrementGripDepth: () => this._gripDepth++,
       decrementGripDepth: () => this._gripDepth--,
@@ -477,7 +473,7 @@ WebConsoleActor.prototype =
       createEnvironmentActor: (env) => this.createEnvironmentActor(env),
       getGlobalDebugObject: () => this.globalDebugObject
     });
-    aPool.addActor(actor);
+    pool.addActor(actor);
     return actor.grip();
   },
 
@@ -491,10 +487,9 @@ WebConsoleActor.prototype =
 
 
 
-  longStringGrip: function WCA_longStringGrip(aString, aPool)
-  {
-    let actor = new LongStringActor(aString);
-    aPool.addActor(actor);
+  longStringGrip: function (string, pool) {
+    let actor = new LongStringActor(string);
+    pool.addActor(actor);
     return actor.grip();
   },
 
@@ -508,12 +503,11 @@ WebConsoleActor.prototype =
 
 
 
-  _createStringGrip: function NEA__createStringGrip(aString)
-  {
-    if (aString && stringIsLong(aString)) {
-      return this.longStringGrip(aString, this._actorPool);
+  _createStringGrip: function (string) {
+    if (string && stringIsLong(string)) {
+      return this.longStringGrip(string, this._actorPool);
     }
-    return aString;
+    return string;
   },
 
   
@@ -522,9 +516,8 @@ WebConsoleActor.prototype =
 
 
 
-  getActorByID: function WCA_getActorByID(aActorID)
-  {
-    return this._actorPool.get(aActorID);
+  getActorByID: function (actorID) {
+    return this._actorPool.get(actorID);
   },
 
   
@@ -533,9 +526,8 @@ WebConsoleActor.prototype =
 
 
 
-  releaseActor: function WCA_releaseActor(aActor)
-  {
-    this._actorPool.removeActor(aActor.actorID);
+  releaseActor: function (actor) {
+    this._actorPool.removeActor(actor.actorID);
   },
 
   
@@ -544,8 +536,7 @@ WebConsoleActor.prototype =
 
 
 
-  getLastConsoleInputEvaluation: function WCU_getLastConsoleInputEvaluation()
-  {
+  getLastConsoleInputEvaluation: function () {
     return this._lastConsoleInputEvaluation;
   },
 
@@ -559,8 +550,7 @@ WebConsoleActor.prototype =
 
 
 
-  onStartListeners: function WCA_onStartListeners(aRequest)
-  {
+  onStartListeners: function (request) {
     let startedListeners = [];
     let window = !this.parentActor.isRootActor ? this.window : null;
     let messageManager = null;
@@ -569,8 +559,8 @@ WebConsoleActor.prototype =
       messageManager = this.parentActor.messageManager;
     }
 
-    while (aRequest.listeners.length > 0) {
-      let listener = aRequest.listeners.shift();
+    while (request.listeners.length > 0) {
+      let listener = request.listeners.shift();
       switch (listener) {
         case "PageError":
           
@@ -588,9 +578,8 @@ WebConsoleActor.prototype =
           if (!this.consoleAPIListener) {
             
             
-            this.consoleAPIListener =
-              new ConsoleAPIListener(window, this,
-                                     this.parentActor.consoleAPIListenerOptions);
+            this.consoleAPIListener = new ConsoleAPIListener(
+              window, this, this.parentActor.consoleAPIListenerOptions);
             this.consoleAPIListener.init();
           }
           startedListeners.push(listener);
@@ -601,6 +590,7 @@ WebConsoleActor.prototype =
             break;
           }
           if (!this.networkMonitor) {
+            
             
             
             
@@ -636,8 +626,8 @@ WebConsoleActor.prototype =
               this.consoleProgressListener =
                 new ConsoleProgressListener(this.window, this);
             }
-            this.consoleProgressListener.startMonitor(this.consoleProgressListener.
-                                                      MONITOR_FILE_ACTIVITY);
+            this.consoleProgressListener.startMonitor(this.consoleProgressListener
+                                                      .MONITOR_FILE_ACTIVITY);
             startedListeners.push(listener);
           }
           break;
@@ -685,15 +675,14 @@ WebConsoleActor.prototype =
 
 
 
-  onStopListeners: function WCA_onStopListeners(aRequest)
-  {
+  onStopListeners: function (request) {
     let stoppedListeners = [];
 
     
     
-    let toDetach = aRequest.listeners ||
-                   ["PageError", "ConsoleAPI", "NetworkActivity",
-                    "FileActivity", "ServerLogging"];
+    let toDetach = request.listeners ||
+      ["PageError", "ConsoleAPI", "NetworkActivity",
+       "FileActivity", "ServerLogging"];
 
     while (toDetach.length > 0) {
       let listener = toDetach.shift();
@@ -729,8 +718,8 @@ WebConsoleActor.prototype =
           break;
         case "FileActivity":
           if (this.consoleProgressListener) {
-            this.consoleProgressListener.stopMonitor(this.consoleProgressListener.
-                                                     MONITOR_FILE_ACTIVITY);
+            this.consoleProgressListener.stopMonitor(this.consoleProgressListener
+                                                     .MONITOR_FILE_ACTIVITY);
             this.consoleProgressListener = null;
           }
           stoppedListeners.push(listener);
@@ -768,9 +757,8 @@ WebConsoleActor.prototype =
 
 
 
-  onGetCachedMessages: function WCA_onGetCachedMessages(aRequest)
-  {
-    let types = aRequest.messageTypes;
+  onGetCachedMessages: function (request) {
+    let types = request.messageTypes;
     if (!types) {
       return {
         error: "missingParameter",
@@ -794,15 +782,15 @@ WebConsoleActor.prototype =
 
           let cache = this.consoleAPIListener
                       .getCachedMessages(!this.parentActor.isRootActor);
-          cache.forEach((aMessage) => {
+          cache.forEach((cachedMessage) => {
             
             
-            if (aMessage.innerID === "ServiceWorker" &&
-                requestStartTime > aMessage.timeStamp) {
+            if (cachedMessage.innerID === "ServiceWorker" &&
+                requestStartTime > cachedMessage.timeStamp) {
               return;
             }
 
-            let message = this.prepareConsoleMessageForRemote(aMessage);
+            let message = this.prepareConsoleMessageForRemote(cachedMessage);
             message._type = type;
             messages.push(message);
           });
@@ -814,17 +802,16 @@ WebConsoleActor.prototype =
           }
           let cache = this.consoleServiceListener
                       .getCachedMessages(!this.parentActor.isRootActor);
-          cache.forEach((aMessage) => {
+          cache.forEach((cachedMessage) => {
             let message = null;
-            if (aMessage instanceof Ci.nsIScriptError) {
-              message = this.preparePageErrorForRemote(aMessage);
+            if (cachedMessage instanceof Ci.nsIScriptError) {
+              message = this.preparePageErrorForRemote(cachedMessage);
               message._type = type;
-            }
-            else {
+            } else {
               message = {
                 _type: "LogMessage",
-                message: this._createStringGrip(aMessage.message),
-                timeStamp: aMessage.timeStamp,
+                message: this._createStringGrip(cachedMessage.message),
+                timeStamp: cachedMessage.timeStamp,
               };
             }
             messages.push(message);
@@ -852,8 +839,7 @@ WebConsoleActor.prototype =
 
 
 
-  onEvaluateJSAsync: function WCA_onEvaluateJSAsync(aRequest)
-  {
+  onEvaluateJSAsync: function (request) {
     
     
 
@@ -865,7 +851,7 @@ WebConsoleActor.prototype =
     });
 
     
-    let response = this.onEvaluateJS(aRequest);
+    let response = this.onEvaluateJS(request);
     response.resultID = resultID;
 
     
@@ -882,17 +868,16 @@ WebConsoleActor.prototype =
 
 
 
-  onEvaluateJS: function WCA_onEvaluateJS(aRequest)
-  {
-    let input = aRequest.text;
+  onEvaluateJS: function (request) {
+    let input = request.text;
     let timestamp = Date.now();
 
     let evalOptions = {
-      bindObjectActor: aRequest.bindObjectActor,
-      frameActor: aRequest.frameActor,
-      url: aRequest.url,
-      selectedNodeActor: aRequest.selectedNodeActor,
-      selectedObjectActor: aRequest.selectedObjectActor,
+      bindObjectActor: request.bindObjectActor,
+      frameActor: request.frameActor,
+      url: request.url,
+      selectedNodeActor: request.selectedNodeActor,
+      selectedObjectActor: request.selectedObjectActor,
     };
 
     let evalInfo = this.evalWithDebugger(input, evalOptions);
@@ -900,7 +885,7 @@ WebConsoleActor.prototype =
     let helperResult = evalInfo.helperResult;
 
     let result, errorDocURL, errorMessage, errorNotes = null, errorGrip = null,
-        frame = null;
+      frame = null;
     if (evalResult) {
       if ("return" in evalResult) {
         result = evalResult.return;
@@ -940,7 +925,9 @@ WebConsoleActor.prototype =
         
         try {
           errorDocURL = ErrorDocs.GetURL(error);
-        } catch (ex) {}
+        } catch (ex) {
+          
+        }
 
         try {
           let line = error.errorLineNumber;
@@ -954,7 +941,9 @@ WebConsoleActor.prototype =
               column
             };
           }
-        } catch (ex) {}
+        } catch (ex) {
+          
+        }
 
         try {
           let notes = error.errorNotes;
@@ -971,7 +960,9 @@ WebConsoleActor.prototype =
               });
             }
           }
-        } catch (ex) {}
+        } catch (ex) {
+          
+        }
       }
     }
 
@@ -1008,9 +999,8 @@ WebConsoleActor.prototype =
 
 
 
-  onAutocomplete: function WCA_onAutocomplete(aRequest)
-  {
-    let frameActorId = aRequest.frameActor;
+  onAutocomplete: function (request) {
+    let frameActorId = request.frameActor;
     let dbgObject = null;
     let environment = null;
     let hadDebuggee = false;
@@ -1027,22 +1017,21 @@ WebConsoleActor.prototype =
         DevToolsUtils.reportException("onAutocomplete",
           Error("The frame actor was not found: " + frameActorId));
       }
-    }
-    
-    else {
+    } else {
+      
       hadDebuggee = this.dbg.hasDebuggee(this.evalWindow);
       dbgObject = this.dbg.addDebuggee(this.evalWindow);
     }
 
-    let result = JSPropertyProvider(dbgObject, environment, aRequest.text,
-                                    aRequest.cursor, frameActorId) || {};
+    let result = JSPropertyProvider(dbgObject, environment, request.text,
+                                    request.cursor, frameActorId) || {};
 
     if (!hadDebuggee && dbgObject) {
       this.dbg.removeDebuggee(this.evalWindow);
     }
 
     let matches = result.matches || [];
-    let reqText = aRequest.text.substr(0, aRequest.cursor);
+    let reqText = request.text.substr(0, request.cursor);
 
     
     
@@ -1070,8 +1059,7 @@ WebConsoleActor.prototype =
   
 
 
-  onClearMessagesCache: function WCA_onClearMessagesCache()
-  {
+  onClearMessagesCache: function () {
     
     let windowId = !this.parentActor.isRootActor ?
                    WebConsoleUtils.getInnerWindowId(this.window) : null;
@@ -1079,8 +1067,8 @@ WebConsoleActor.prototype =
                               .getService(Ci.nsIConsoleAPIStorage);
     ConsoleAPIStorage.clearEvents(windowId);
 
-    CONSOLE_WORKER_IDS.forEach((aId) => {
-      ConsoleAPIStorage.clearEvents(aId);
+    CONSOLE_WORKER_IDS.forEach((id) => {
+      ConsoleAPIStorage.clearEvents(id);
     });
 
     if (this.parentActor.isRootActor) {
@@ -1098,10 +1086,9 @@ WebConsoleActor.prototype =
 
 
 
-  onGetPreferences: function WCA_onGetPreferences(aRequest)
-  {
+  onGetPreferences: function (request) {
     let prefs = Object.create(null);
-    for (let key of aRequest.preferences) {
+    for (let key of request.preferences) {
       prefs[key] = this._prefs[key];
     }
     return { preferences: prefs };
@@ -1113,10 +1100,9 @@ WebConsoleActor.prototype =
 
 
 
-  onSetPreferences: function WCA_onSetPreferences(aRequest)
-  {
-    for (let key in aRequest.preferences) {
-      this._prefs[key] = aRequest.preferences[key];
+  onSetPreferences: function (request) {
+    for (let key in request.preferences) {
+      this._prefs[key] = request.preferences[key];
 
       if (this.networkMonitor) {
         if (key == "NetworkMonitor.saveRequestAndResponseBodies") {
@@ -1133,7 +1119,7 @@ WebConsoleActor.prototype =
         }
       }
     }
-    return { updated: Object.keys(aRequest.preferences) };
+    return { updated: Object.keys(request.preferences) };
   },
 
   
@@ -1152,12 +1138,11 @@ WebConsoleActor.prototype =
 
 
 
-  _getWebConsoleCommands: function (aDebuggerGlobal)
-  {
+  _getWebConsoleCommands: function (debuggerGlobal) {
     let helpers = {
       window: this.evalWindow,
       chromeWindow: this.chromeWindow.bind(this),
-      makeDebuggeeValue: aDebuggerGlobal.makeDebuggeeValue.bind(aDebuggerGlobal),
+      makeDebuggeeValue: debuggerGlobal.makeDebuggeeValue.bind(debuggerGlobal),
       createValueGrip: this.createValueGrip.bind(this),
       sandbox: Object.create(null),
       helperResult: null,
@@ -1191,7 +1176,7 @@ WebConsoleActor.prototype =
       }
       if (desc.value) {
         
-        desc.value = aDebuggerGlobal.makeDebuggeeValue(desc.value);
+        desc.value = debuggerGlobal.makeDebuggeeValue(desc.value);
       }
       Object.defineProperty(helpers.sandbox, name, desc);
     }
@@ -1260,29 +1245,28 @@ WebConsoleActor.prototype =
 
 
 
-  evalWithDebugger: function WCA_evalWithDebugger(aString, aOptions = {})
-  {
-    let trimmedString = aString.trim();
+  
+  evalWithDebugger: function (string, options = {}) {
+    let trimmedString = string.trim();
     
     if (trimmedString == "help" || trimmedString == "?") {
-      aString = "help()";
+      string = "help()";
     }
 
     
     if (trimmedString == "console.mihai()" || trimmedString == "console.mihai();") {
-      aString = "\"http://incompleteness.me/blog/2015/02/09/console-dot-mihai/\"";
+      string = "\"http://incompleteness.me/blog/2015/02/09/console-dot-mihai/\"";
     }
 
     
     let frame = null, frameActor = null;
-    if (aOptions.frameActor) {
-      frameActor = this.conn.getActor(aOptions.frameActor);
+    if (options.frameActor) {
+      frameActor = this.conn.getActor(options.frameActor);
       if (frameActor) {
         frame = frameActor.frame;
-      }
-      else {
+      } else {
         DevToolsUtils.reportException("evalWithDebugger",
-          Error("The frame actor was not found: " + aOptions.frameActor));
+          Error("The frame actor was not found: " + options.frameActor));
       }
     }
 
@@ -1298,9 +1282,9 @@ WebConsoleActor.prototype =
     
     
     let bindSelf = null;
-    if (aOptions.bindObjectActor || aOptions.selectedObjectActor) {
-      let objActor = this.getActorByID(aOptions.bindObjectActor ||
-                                       aOptions.selectedObjectActor);
+    if (options.bindObjectActor || options.selectedObjectActor) {
+      let objActor = this.getActorByID(options.bindObjectActor ||
+                                       options.selectedObjectActor);
       if (objActor) {
         let jsObj = objActor.obj.unsafeDereference();
         
@@ -1311,7 +1295,7 @@ WebConsoleActor.prototype =
         let _dbgWindow = dbg.makeGlobalObjectReference(global);
         bindSelf = dbgWindow.makeDebuggeeValue(jsObj);
 
-        if (aOptions.bindObjectActor) {
+        if (options.bindObjectActor) {
           dbgWindow = _dbgWindow;
         }
       }
@@ -1324,8 +1308,8 @@ WebConsoleActor.prototype =
       bindings._self = bindSelf;
     }
 
-    if (aOptions.selectedNodeActor) {
-      let actor = this.conn.getActor(aOptions.selectedNodeActor);
+    if (options.selectedNodeActor) {
+      let actor = this.conn.getActor(options.selectedNodeActor);
       if (actor) {
         helpers.selectedNode = actor.rawNode;
       }
@@ -1341,8 +1325,7 @@ WebConsoleActor.prototype =
         found$ = !!env.find("$");
         found$$ = !!env.find("$$");
       }
-    }
-    else {
+    } else {
       found$ = !!dbgWindow.getOwnPropertyDescriptor("$");
       found$$ = !!dbgWindow.getOwnPropertyDescriptor("$$");
     }
@@ -1358,11 +1341,11 @@ WebConsoleActor.prototype =
     }
 
     
-    helpers.evalInput = aString;
+    helpers.evalInput = string;
 
     let evalOptions;
-    if (typeof aOptions.url == "string") {
-      evalOptions = { url: aOptions.url };
+    if (typeof options.url == "string") {
+      evalOptions = { url: options.url };
     }
 
     
@@ -1379,10 +1362,9 @@ WebConsoleActor.prototype =
     let result;
 
     if (frame) {
-      result = frame.evalWithBindings(aString, bindings, evalOptions);
-    }
-    else {
-      result = dbgWindow.executeInGlobalWithBindings(aString, bindings, evalOptions);
+      result = frame.evalWithBindings(string, bindings, evalOptions);
+    } else {
+      result = dbgWindow.executeInGlobalWithBindings(string, bindings, evalOptions);
       
       
       
@@ -1392,15 +1374,16 @@ WebConsoleActor.prototype =
         
         
         try {
-          ast = Parser.reflectionAPI.parse(aString);
+          ast = Parser.reflectionAPI.parse(string);
         } catch (ex) {
           ast = {"body": []};
         }
         for (let line of ast.body) {
           
           
-          if (!(line.kind == "let" || line.kind == "const"))
+          if (!(line.kind == "let" || line.kind == "const")) {
             continue;
+          }
 
           let identifiers = [];
           for (let decl of line.declarations) {
@@ -1426,8 +1409,9 @@ WebConsoleActor.prototype =
                 
                 for (let prop of decl.id.properties) {
                   
-                  if (prop.key.type == "Identifier")
+                  if (prop.key.type == "Identifier") {
                     identifiers.push(prop.key.name);
+                  }
                   
                   if (prop.value.type == "Identifier") {
                     identifiers.push(prop.value.name);
@@ -1439,8 +1423,9 @@ WebConsoleActor.prototype =
             }
           }
 
-          for (let name of identifiers)
+          for (let name of identifiers) {
             dbgWindow.forceLexicalInitializationByName(name);
+          }
         }
       }
     }
@@ -1469,32 +1454,31 @@ WebConsoleActor.prototype =
       window: dbgWindow,
     };
   },
-
   
 
   
 
+  
 
 
 
 
 
-  onConsoleServiceMessage: function WCA_onConsoleServiceMessage(aMessage)
-  {
+
+  onConsoleServiceMessage: function (message) {
     let packet;
-    if (aMessage instanceof Ci.nsIScriptError) {
+    if (message instanceof Ci.nsIScriptError) {
       packet = {
         from: this.actorID,
         type: "pageError",
-        pageError: this.preparePageErrorForRemote(aMessage),
+        pageError: this.preparePageErrorForRemote(message),
       };
-    }
-    else {
+    } else {
       packet = {
         from: this.actorID,
         type: "logMessage",
-        message: this._createStringGrip(aMessage.message),
-        timeStamp: aMessage.timeStamp,
+        message: this._createStringGrip(message.message),
+        timeStamp: message.timeStamp,
       };
     }
     this.conn.send(packet);
@@ -1508,15 +1492,14 @@ WebConsoleActor.prototype =
 
 
 
-  preparePageErrorForRemote: function WCA_preparePageErrorForRemote(aPageError)
-  {
+  preparePageErrorForRemote: function (pageError) {
     let stack = null;
     
     
     
-    if (aPageError.stack && !Cu.isDeadWrapper(aPageError.stack)) {
+    if (pageError.stack && !Cu.isDeadWrapper(pageError.stack)) {
       stack = [];
-      let s = aPageError.stack;
+      let s = pageError.stack;
       while (s !== null) {
         stack.push({
           filename: s.source,
@@ -1527,13 +1510,13 @@ WebConsoleActor.prototype =
         s = s.parent;
       }
     }
-    let lineText = aPageError.sourceLine;
+    let lineText = pageError.sourceLine;
     if (lineText && lineText.length > DebuggerServer.LONG_STRING_INITIAL_LENGTH) {
       lineText = lineText.substr(0, DebuggerServer.LONG_STRING_INITIAL_LENGTH);
     }
 
     let notesArray = null;
-    let notes = aPageError.notes;
+    let notes = pageError.notes;
     if (notes && notes.length) {
       notesArray = [];
       for (let i = 0, len = notes.length; i < len; i++) {
@@ -1550,21 +1533,21 @@ WebConsoleActor.prototype =
     }
 
     return {
-      errorMessage: this._createStringGrip(aPageError.errorMessage),
-      errorMessageName: aPageError.errorMessageName,
-      exceptionDocURL: ErrorDocs.GetURL(aPageError),
-      sourceName: aPageError.sourceName,
+      errorMessage: this._createStringGrip(pageError.errorMessage),
+      errorMessageName: pageError.errorMessageName,
+      exceptionDocURL: ErrorDocs.GetURL(pageError),
+      sourceName: pageError.sourceName,
       lineText: lineText,
-      lineNumber: aPageError.lineNumber,
-      columnNumber: aPageError.columnNumber,
-      category: aPageError.category,
-      timeStamp: aPageError.timeStamp,
-      warning: !!(aPageError.flags & aPageError.warningFlag),
-      error: !!(aPageError.flags & aPageError.errorFlag),
-      exception: !!(aPageError.flags & aPageError.exceptionFlag),
-      strict: !!(aPageError.flags & aPageError.strictFlag),
-      info: !!(aPageError.flags & aPageError.infoFlag),
-      private: aPageError.isFromPrivateWindow,
+      lineNumber: pageError.lineNumber,
+      columnNumber: pageError.columnNumber,
+      category: pageError.category,
+      timeStamp: pageError.timeStamp,
+      warning: !!(pageError.flags & pageError.warningFlag),
+      error: !!(pageError.flags & pageError.errorFlag),
+      exception: !!(pageError.flags & pageError.exceptionFlag),
+      strict: !!(pageError.flags & pageError.strictFlag),
+      info: !!(pageError.flags & pageError.infoFlag),
+      private: pageError.isFromPrivateWindow,
       stacktrace: stack,
       notes: notesArray,
     };
@@ -1578,12 +1561,11 @@ WebConsoleActor.prototype =
 
 
 
-  onConsoleAPICall: function WCA_onConsoleAPICall(aMessage)
-  {
+  onConsoleAPICall: function (message) {
     let packet = {
       from: this.actorID,
       type: "consoleAPICall",
-      message: this.prepareConsoleMessageForRemote(aMessage),
+      message: this.prepareConsoleMessageForRemote(message),
     };
     this.conn.send(packet);
   },
@@ -1601,10 +1583,9 @@ WebConsoleActor.prototype =
 
 
 
-  onNetworkEvent: function WCA_onNetworkEvent(aEvent)
-  {
-    let actor = this.getNetworkEventActor(aEvent.channelId);
-    actor.init(aEvent);
+  onNetworkEvent: function (event) {
+    let actor = this.getNetworkEventActor(event.channelId);
+    actor.init(event);
 
     let packet = {
       from: this.actorID,
@@ -1626,7 +1607,7 @@ WebConsoleActor.prototype =
 
 
 
-  getNetworkEventActor: function WCA_getNetworkEventActor(channelId) {
+  getNetworkEventActor: function (channelId) {
     let actor = this._netEvents.get(channelId);
     if (actor) {
       
@@ -1701,12 +1682,11 @@ WebConsoleActor.prototype =
 
 
 
-  onFileActivity: function WCA_onFileActivity(aFileURI)
-  {
+  onFileActivity: function (fileURI) {
     let packet = {
       from: this.actorID,
       type: "fileActivity",
-      uri: aFileURI,
+      uri: fileURI,
     };
     this.conn.send(packet);
   },
@@ -1718,17 +1698,16 @@ WebConsoleActor.prototype =
 
 
 
-  onReflowActivity: function WCA_onReflowActivity(aReflowInfo)
-  {
+  onReflowActivity: function (reflowInfo) {
     let packet = {
       from: this.actorID,
       type: "reflowActivity",
-      interruptible: aReflowInfo.interruptible,
-      start: aReflowInfo.start,
-      end: aReflowInfo.end,
-      sourceURL: aReflowInfo.sourceURL,
-      sourceLine: aReflowInfo.sourceLine,
-      functionName: aReflowInfo.functionName
+      interruptible: reflowInfo.interruptible,
+      start: reflowInfo.start,
+      end: reflowInfo.end,
+      sourceURL: reflowInfo.sourceURL,
+      sourceLine: reflowInfo.sourceLine,
+      functionName: reflowInfo.functionName
     };
 
     this.conn.send(packet);
@@ -1742,11 +1721,10 @@ WebConsoleActor.prototype =
 
 
 
-  onServerLogCall: function WCA_onServerLogCall(aMessage)
-  {
+  onServerLogCall: function (message) {
     
     
-    let msg = Cu.cloneInto(aMessage, this.window);
+    let msg = Cu.cloneInto(message, this.window);
 
     
     
@@ -1782,10 +1760,8 @@ WebConsoleActor.prototype =
 
 
 
-  prepareConsoleMessageForRemote:
-  function WCA_prepareConsoleMessageForRemote(aMessage, aUseObjectGlobal = true)
-  {
-    let result = WebConsoleUtils.cloneObject(aMessage);
+  prepareConsoleMessageForRemote: function (message, useObjectGlobal = true) {
+    let result = WebConsoleUtils.cloneObject(message);
 
     result.workerType = WebConsoleUtils.getWorkerType(result) || "none";
 
@@ -1795,16 +1771,16 @@ WebConsoleActor.prototype =
     delete result.consoleID;
     delete result.originAttributes;
 
-    result.arguments = Array.map(aMessage.arguments || [], (aObj) => {
-      let dbgObj = this.makeDebuggeeValue(aObj, aUseObjectGlobal);
+    result.arguments = Array.map(message.arguments || [], (obj) => {
+      let dbgObj = this.makeDebuggeeValue(obj, useObjectGlobal);
       return this.createValueGrip(dbgObj);
     });
 
-    result.styles = Array.map(aMessage.styles || [], (aString) => {
-      return this.createValueGrip(aString);
+    result.styles = Array.map(message.styles || [], (string) => {
+      return this.createValueGrip(string);
     });
 
-    result.category = aMessage.category || "webdev";
+    result.category = message.category || "webdev";
 
     return result;
   },
@@ -1815,15 +1791,13 @@ WebConsoleActor.prototype =
 
 
 
-  chromeWindow: function WCA_chromeWindow()
-  {
+  chromeWindow: function () {
     let window = null;
     try {
       window = this.window.QueryInterface(Ci.nsIInterfaceRequestor)
              .getInterface(Ci.nsIWebNavigation).QueryInterface(Ci.nsIDocShell)
              .chromeEventHandler.ownerGlobal;
-    }
-    catch (ex) {
+    } catch (ex) {
       
       
     }
@@ -1841,9 +1815,8 @@ WebConsoleActor.prototype =
 
 
 
-  _onObserverNotification: function WCA__onObserverNotification(aSubject, aTopic)
-  {
-    switch (aTopic) {
+  _onObserverNotification: function (subject, topic) {
+    switch (topic) {
       case "last-pb-context-exited":
         this.conn.send({
           from: this.actorID,
@@ -1857,8 +1830,7 @@ WebConsoleActor.prototype =
 
 
 
-  _onWillNavigate: function WCA__onWillNavigate({ window, isTopLevel })
-  {
+  _onWillNavigate: function ({ window, isTopLevel }) {
     if (isTopLevel) {
       this._evalWindow = null;
       events.off(this.parentActor, "will-navigate", this._onWillNavigate);
@@ -1870,8 +1842,7 @@ WebConsoleActor.prototype =
 
 
 
-  _onChangedToplevelDocument: function WCA__onChangedToplevelDocument()
-  {
+  _onChangedToplevelDocument: function () {
     
     let listeners = [...this._listeners];
 
@@ -1949,8 +1920,7 @@ NetworkEventActor.prototype =
   
 
 
-  grip: function NEA_grip()
-  {
+  grip: function () {
     return {
       actor: this.actorID,
       startedDateTime: this._startedDateTime,
@@ -1968,8 +1938,7 @@ NetworkEventActor.prototype =
   
 
 
-  release: function NEA_release()
-  {
+  release: function () {
     for (let grip of this._longStringActors) {
       let actor = this.parent.getActorByID(grip.actor);
       if (actor) {
@@ -1987,8 +1956,7 @@ NetworkEventActor.prototype =
   
 
 
-  onRelease: function NEA_onRelease()
-  {
+  onRelease: function () {
     this.release();
     return {};
   },
@@ -2000,21 +1968,20 @@ NetworkEventActor.prototype =
 
 
 
-  init: function NEA_init(aNetworkEvent)
-  {
-    this._startedDateTime = aNetworkEvent.startedDateTime;
-    this._isXHR = aNetworkEvent.isXHR;
-    this._cause = aNetworkEvent.cause;
-    this._fromCache = aNetworkEvent.fromCache;
-    this._fromServiceWorker = aNetworkEvent.fromServiceWorker;
+  init: function (networkEvent) {
+    this._startedDateTime = networkEvent.startedDateTime;
+    this._isXHR = networkEvent.isXHR;
+    this._cause = networkEvent.cause;
+    this._fromCache = networkEvent.fromCache;
+    this._fromServiceWorker = networkEvent.fromServiceWorker;
 
     for (let prop of ["method", "url", "httpVersion", "headersSize"]) {
-      this._request[prop] = aNetworkEvent[prop];
+      this._request[prop] = networkEvent[prop];
     }
 
-    this._discardRequestBody = aNetworkEvent.discardRequestBody;
-    this._discardResponseBody = aNetworkEvent.discardResponseBody;
-    this._private = aNetworkEvent.private;
+    this._discardRequestBody = networkEvent.discardRequestBody;
+    this._discardResponseBody = networkEvent.discardResponseBody;
+    this._private = networkEvent.private;
   },
 
   
@@ -2023,8 +1990,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetRequestHeaders: function NEA_onGetRequestHeaders()
-  {
+  onGetRequestHeaders: function () {
     return {
       from: this.actorID,
       headers: this._request.headers,
@@ -2039,8 +2005,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetRequestCookies: function NEA_onGetRequestCookies()
-  {
+  onGetRequestCookies: function () {
     return {
       from: this.actorID,
       cookies: this._request.cookies,
@@ -2053,8 +2018,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetRequestPostData: function NEA_onGetRequestPostData()
-  {
+  onGetRequestPostData: function () {
     return {
       from: this.actorID,
       postData: this._request.postData,
@@ -2068,8 +2032,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetSecurityInfo: function NEA_onGetSecurityInfo()
-  {
+  onGetSecurityInfo: function () {
     return {
       from: this.actorID,
       securityInfo: this._securityInfo,
@@ -2082,8 +2045,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetResponseHeaders: function NEA_onGetResponseHeaders()
-  {
+  onGetResponseHeaders: function () {
     return {
       from: this.actorID,
       headers: this._response.headers,
@@ -2098,8 +2060,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetResponseCookies: function NEA_onGetResponseCookies()
-  {
+  onGetResponseCookies: function () {
     return {
       from: this.actorID,
       cookies: this._response.cookies,
@@ -2112,8 +2073,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetResponseContent: function NEA_onGetResponseContent()
-  {
+  onGetResponseContent: function () {
     return {
       from: this.actorID,
       content: this._response.content,
@@ -2127,8 +2087,7 @@ NetworkEventActor.prototype =
 
 
 
-  onGetEventTimings: function NEA_onGetEventTimings()
-  {
+  onGetEventTimings: function () {
     return {
       from: this.actorID,
       timings: this._timings,
@@ -2148,12 +2107,11 @@ NetworkEventActor.prototype =
 
 
 
-  addRequestHeaders: function NEA_addRequestHeaders(aHeaders, aRawHeaders)
-  {
-    this._request.headers = aHeaders;
-    this._prepareHeaders(aHeaders);
+  addRequestHeaders: function (headers, rawHeaders) {
+    this._request.headers = headers;
+    this._prepareHeaders(headers);
 
-    var rawHeaders = this.parent._createStringGrip(aRawHeaders);
+    rawHeaders = this.parent._createStringGrip(rawHeaders);
     if (typeof rawHeaders == "object") {
       this._longStringActors.add(rawHeaders);
     }
@@ -2163,7 +2121,7 @@ NetworkEventActor.prototype =
       from: this.actorID,
       type: "networkEventUpdate",
       updateType: "requestHeaders",
-      headers: aHeaders.length,
+      headers: headers.length,
       headersSize: this._request.headersSize,
     };
 
@@ -2176,16 +2134,15 @@ NetworkEventActor.prototype =
 
 
 
-  addRequestCookies: function NEA_addRequestCookies(aCookies)
-  {
-    this._request.cookies = aCookies;
-    this._prepareHeaders(aCookies);
+  addRequestCookies: function (cookies) {
+    this._request.cookies = cookies;
+    this._prepareHeaders(cookies);
 
     let packet = {
       from: this.actorID,
       type: "networkEventUpdate",
       updateType: "requestCookies",
-      cookies: aCookies.length,
+      cookies: cookies.length,
     };
 
     this.conn.send(packet);
@@ -2197,19 +2154,18 @@ NetworkEventActor.prototype =
 
 
 
-  addRequestPostData: function NEA_addRequestPostData(aPostData)
-  {
-    this._request.postData = aPostData;
-    aPostData.text = this.parent._createStringGrip(aPostData.text);
-    if (typeof aPostData.text == "object") {
-      this._longStringActors.add(aPostData.text);
+  addRequestPostData: function (postData) {
+    this._request.postData = postData;
+    postData.text = this.parent._createStringGrip(postData.text);
+    if (typeof postData.text == "object") {
+      this._longStringActors.add(postData.text);
     }
 
     let packet = {
       from: this.actorID,
       type: "networkEventUpdate",
       updateType: "requestPostData",
-      dataSize: aPostData.text.length,
+      dataSize: postData.text.length,
       discardRequestBody: this._discardRequestBody,
     };
 
@@ -2224,25 +2180,24 @@ NetworkEventActor.prototype =
 
 
 
-  addResponseStart: function NEA_addResponseStart(aInfo, aRawHeaders)
-  {
-    var rawHeaders = this.parent._createStringGrip(aRawHeaders);
+  addResponseStart: function (info, rawHeaders) {
+    rawHeaders = this.parent._createStringGrip(rawHeaders);
     if (typeof rawHeaders == "object") {
       this._longStringActors.add(rawHeaders);
     }
     this._response.rawHeaders = rawHeaders;
 
-    this._response.httpVersion = aInfo.httpVersion;
-    this._response.status = aInfo.status;
-    this._response.statusText = aInfo.statusText;
-    this._response.headersSize = aInfo.headersSize;
-    this._discardResponseBody = aInfo.discardResponseBody;
+    this._response.httpVersion = info.httpVersion;
+    this._response.status = info.status;
+    this._response.statusText = info.statusText;
+    this._response.headersSize = info.headersSize;
+    this._discardResponseBody = info.discardResponseBody;
 
     let packet = {
       from: this.actorID,
       type: "networkEventUpdate",
       updateType: "responseStart",
-      response: aInfo
+      response: info
     };
 
     this.conn.send(packet);
@@ -2254,8 +2209,7 @@ NetworkEventActor.prototype =
 
 
 
-  addSecurityInfo: function NEA_addSecurityInfo(info)
-  {
+  addSecurityInfo: function (info) {
     this._securityInfo = info;
 
     let packet = {
@@ -2274,16 +2228,15 @@ NetworkEventActor.prototype =
 
 
 
-  addResponseHeaders: function NEA_addResponseHeaders(aHeaders)
-  {
-    this._response.headers = aHeaders;
-    this._prepareHeaders(aHeaders);
+  addResponseHeaders: function (headers) {
+    this._response.headers = headers;
+    this._prepareHeaders(headers);
 
     let packet = {
       from: this.actorID,
       type: "networkEventUpdate",
       updateType: "responseHeaders",
-      headers: aHeaders.length,
+      headers: headers.length,
       headersSize: this._response.headersSize,
     };
 
@@ -2296,16 +2249,15 @@ NetworkEventActor.prototype =
 
 
 
-  addResponseCookies: function NEA_addResponseCookies(aCookies)
-  {
-    this._response.cookies = aCookies;
-    this._prepareHeaders(aCookies);
+  addResponseCookies: function (cookies) {
+    this._response.cookies = cookies;
+    this._prepareHeaders(cookies);
 
     let packet = {
       from: this.actorID,
       type: "networkEventUpdate",
       updateType: "responseCookies",
-      cookies: aCookies.length,
+      cookies: cookies.length,
     };
 
     this.conn.send(packet);
@@ -2319,24 +2271,22 @@ NetworkEventActor.prototype =
 
 
 
-  addResponseContent:
-  function NEA_addResponseContent(aContent, aDiscardedResponseBody)
-  {
-    this._response.content = aContent;
-    aContent.text = this.parent._createStringGrip(aContent.text);
-    if (typeof aContent.text == "object") {
-      this._longStringActors.add(aContent.text);
+  addResponseContent: function (content, discardedResponseBody) {
+    this._response.content = content;
+    content.text = this.parent._createStringGrip(content.text);
+    if (typeof content.text == "object") {
+      this._longStringActors.add(content.text);
     }
 
     let packet = {
       from: this.actorID,
       type: "networkEventUpdate",
       updateType: "responseContent",
-      mimeType: aContent.mimeType,
-      contentSize: aContent.size,
-      encoding: aContent.encoding,
-      transferredSize: aContent.transferredSize,
-      discardResponseBody: aDiscardedResponseBody,
+      mimeType: content.mimeType,
+      contentSize: content.size,
+      encoding: content.encoding,
+      transferredSize: content.transferredSize,
+      discardResponseBody: discardedResponseBody,
     };
 
     this.conn.send(packet);
@@ -2350,16 +2300,15 @@ NetworkEventActor.prototype =
 
 
 
-  addEventTimings: function NEA_addEventTimings(aTotal, aTimings)
-  {
-    this._totalTime = aTotal;
-    this._timings = aTimings;
+  addEventTimings: function (total, timings) {
+    this._totalTime = total;
+    this._timings = timings;
 
     let packet = {
       from: this.actorID,
       type: "networkEventUpdate",
       updateType: "eventTimings",
-      totalTime: aTotal
+      totalTime: total
     };
 
     this.conn.send(packet);
@@ -2372,9 +2321,8 @@ NetworkEventActor.prototype =
 
 
 
-  _prepareHeaders: function NEA__prepareHeaders(aHeaders)
-  {
-    for (let header of aHeaders) {
+  _prepareHeaders: function (headers) {
+    for (let header of headers) {
       header.value = this.parent._createStringGrip(header.value);
       if (typeof header.value == "object") {
         this._longStringActors.add(header.value);

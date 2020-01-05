@@ -5,12 +5,10 @@
 "use strict";
 
 const {Cc, Ci} = require("chrome");
-const Services = require("Services");
 const {XPCOMUtils} = require("resource://gre/modules/XPCOMUtils.jsm");
 const promise = require("promise");
 const events = require("sdk/event/core");
 const protocol = require("devtools/shared/protocol");
-const {Arg, method, RetVal} = protocol;
 const {fetch} = require("devtools/shared/DevToolsUtils");
 const {oldStyleSheetSpec, styleEditorSpec} = require("devtools/shared/specs/styleeditor");
 
@@ -18,18 +16,17 @@ loader.lazyGetter(this, "CssLogic", () => require("devtools/shared/inspector/css
 
 var TRANSITION_CLASS = "moz-styleeditor-transitioning";
 var TRANSITION_DURATION_MS = 500;
-var TRANSITION_RULE = "\
-:root.moz-styleeditor-transitioning, :root.moz-styleeditor-transitioning * {\
-transition-duration: " + TRANSITION_DURATION_MS + "ms !important; \
-transition-delay: 0ms !important;\
-transition-timing-function: ease-out !important;\
-transition-property: all !important;\
-}";
-
-var LOAD_ERROR = "error-load";
+var TRANSITION_RULE = ":root.moz-styleeditor-transitioning, " +
+                      ":root.moz-styleeditor-transitioning * {\n" +
+                        "transition-duration: " + TRANSITION_DURATION_MS +
+                          "ms !important;\n" +
+                        "transition-delay: 0ms !important;\n" +
+                        "transition-timing-function: ease-out !important;\n" +
+                        "transition-property: all !important;\n" +
+                      "}";
 
 var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
-  toString: function() {
+  toString: function () {
     return "[OldStyleSheetActor " + this.actorID + "]";
   },
 
@@ -59,8 +56,7 @@ var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
 
 
 
-  get styleSheetIndex()
-  {
+  get styleSheetIndex() {
     if (this._styleSheetIndex == -1) {
       for (let i = 0; i < this.document.styleSheets.length; i++) {
         if (this.document.styleSheets[i] == this.rawSheet) {
@@ -72,14 +68,14 @@ var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
     return this._styleSheetIndex;
   },
 
-  initialize: function (aStyleSheet, aParentActor, aWindow) {
+  initialize: function (styleSheet, parentActor, window) {
     protocol.Actor.prototype.initialize.call(this, null);
 
-    this.rawSheet = aStyleSheet;
-    this.parentActor = aParentActor;
+    this.rawSheet = styleSheet;
+    this.parentActor = parentActor;
     this.conn = this.parentActor.conn;
 
-    this._window = aWindow;
+    this._window = window;
 
     
     this.text = null;
@@ -133,8 +129,7 @@ var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
 
     try {
       form.ruleCount = this.rawSheet.cssRules.length;
-    }
-    catch (e) {
+    } catch (e) {
       
     }
     return form;
@@ -210,8 +205,7 @@ var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
 
 
 
-  _getCSSCharset: function ()
-  {
+  _getCSSCharset: function () {
     let sheet = this.rawSheet;
     if (sheet) {
       
@@ -265,8 +259,7 @@ var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
 
     if (transition) {
       this._insertTransistionRule();
-    }
-    else {
+    } else {
       this._notifyStyleApplied();
     }
   },
@@ -296,8 +289,7 @@ var OldStyleSheetActor = protocol.ActorClassWithSpec(oldStyleSheetSpec, {
 
 
 
-  _onTransitionEnd: function ()
-  {
+  _onTransitionEnd: function () {
     if (--this._transitionRefCount == 0) {
       this.document.documentElement.classList.remove(TRANSITION_CLASS);
       this.rawSheet.deleteRule(this.rawSheet.cssRules.length - 1);
@@ -313,7 +305,7 @@ exports.OldStyleSheetActor = OldStyleSheetActor;
 
 
 
-var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(styleEditorSpec, {
+var StyleEditorActor = protocol.ActorClassWithSpec(styleEditorSpec, {
   
 
 
@@ -328,8 +320,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
     return this.window.document;
   },
 
-  form: function ()
-  {
+  form: function () {
     return { actor: this.actorID };
   },
 
@@ -345,8 +336,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
   
 
 
-  destroy: function ()
-  {
+  destroy: function () {
     this._sheets.clear();
   },
 
@@ -362,8 +352,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
     
     if (this.document.readyState == "complete") {
       this._onDocumentLoaded();
-    }
-    else {
+    } else {
       this.window.addEventListener("load", this._onDocumentLoaded);
     }
     return {};
@@ -379,7 +368,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
     }
 
     let documents = [this.document];
-    var forms = [];
+    let forms = [];
     for (let doc of documents) {
       let sheetForms = this._addStyleSheets(doc.styleSheets);
       forms = forms.concat(sheetForms);
@@ -401,8 +390,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
 
 
 
-  _addStyleSheets: function (styleSheets)
-  {
+  _addStyleSheets: function (styleSheets) {
     let sheets = [];
     for (let i = 0; i < styleSheets.length; i++) {
       let styleSheet = styleSheets[i];
@@ -425,8 +413,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
 
 
 
-  _createStyleSheetActor: function (styleSheet)
-  {
+  _createStyleSheetActor: function (styleSheet) {
     if (this._sheets.has(styleSheet)) {
       return this._sheets.get(styleSheet);
     }
@@ -447,9 +434,9 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
 
 
   _getImported: function (styleSheet) {
-   let imported = [];
+    let imported = [];
 
-   for (let i = 0; i < styleSheet.cssRules.length; i++) {
+    for (let i = 0; i < styleSheet.cssRules.length; i++) {
       let rule = styleSheet.cssRules[i];
       if (rule.type == Ci.nsIDOMCSSRule.IMPORT_RULE) {
         
@@ -461,8 +448,7 @@ var StyleEditorActor = exports.StyleEditorActor = protocol.ActorClassWithSpec(st
 
         
         imported = imported.concat(this._getImported(rule.styleSheet));
-      }
-      else if (rule.type != Ci.nsIDOMCSSRule.CHARSET_RULE) {
+      } else if (rule.type != Ci.nsIDOMCSSRule.CHARSET_RULE) {
         
         break;
       }
@@ -510,19 +496,3 @@ XPCOMUtils.defineLazyGetter(this, "DOMUtils", function () {
 
 exports.StyleEditorActor = StyleEditorActor;
 
-
-
-
-function normalize(...aURLs) {
-  let base = Services.io.newURI(aURLs.pop());
-  let url;
-  while ((url = aURLs.pop())) {
-    base = Services.io.newURI(url, null, base);
-  }
-  return base.spec;
-}
-
-function dirname(aPath) {
-  return Services.io.newURI(
-    ".", null, Services.io.newURI(aPath)).spec;
-}
