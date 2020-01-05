@@ -716,6 +716,18 @@ public:
     CASES_FOR_getresgid:
       return Allow();
 
+    case __NR_prlimit64: {
+      
+      
+      
+      Arg<pid_t> pid(0);
+      
+      
+      Arg<uintptr_t> new_limit(2);
+      return If(AllOf(pid == 0, new_limit == 0), Allow())
+        .Else(InvalidSyscall());
+    }
+
     case __NR_umask:
     case __NR_kill:
     case __NR_wait4:
