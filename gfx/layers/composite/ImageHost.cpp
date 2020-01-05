@@ -10,7 +10,6 @@
 #include "ipc/IPCMessageUtils.h"        
 #include "mozilla/layers/Compositor.h"  
 #include "mozilla/layers/Effects.h"     
-#include "mozilla/layers/ImageContainerParent.h"
 #include "mozilla/layers/LayerManagerComposite.h"     
 #include "nsAString.h"
 #include "nsDebug.h"                    

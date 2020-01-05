@@ -9,7 +9,6 @@
 #include <stddef.h>                     
 #include <stdint.h>                     
 #include "CompositableTransactionParent.h"
-#include "ImageContainerParent.h"
 #include "mozilla/Assertions.h"         
 #include "mozilla/Attributes.h"         
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -33,8 +32,6 @@ class Shmem;
 namespace layers {
 
 struct ImageCompositeNotificationInfo;
-
-
 
 
 
@@ -92,8 +89,6 @@ public:
 
   PMediaSystemResourceManagerParent* AllocPMediaSystemResourceManagerParent() override;
   bool DeallocPMediaSystemResourceManagerParent(PMediaSystemResourceManagerParent* aActor) override;
-  virtual PImageContainerParent* AllocPImageContainerParent() override;
-  virtual bool DeallocPImageContainerParent(PImageContainerParent* actor) override;
 
   
   virtual mozilla::ipc::IPCResult RecvWillClose() override;

@@ -632,10 +632,6 @@ private:
   
   ProducerID mCurrentProducerID;
 
-  
-  
-  RefPtr<ImageContainerChild> mIPDLChild;
-
   static mozilla::Atomic<uint32_t> sGenerationCounter;
 };
 

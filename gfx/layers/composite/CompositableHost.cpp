@@ -11,7 +11,6 @@
 #include "gfxUtils.h"
 #include "ImageHost.h"                  
 #include "TiledContentHost.h"           
-#include "mozilla/layers/ImageContainerParent.h"
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/TextureHost.h"  
 #include "mozilla/RefPtr.h"                   
