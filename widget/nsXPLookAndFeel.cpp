@@ -444,7 +444,9 @@ nsXPLookAndFeel::Init()
   
   
   
-  Preferences::RegisterCallback(OnPrefChanged, "ui.");
+  Preferences::RegisterPrefixCallback(OnPrefChanged, "ui.");
+  
+  
   Preferences::RegisterCallback(OnPrefChanged, "accessibility.tabfocus");
 
   unsigned int i;
