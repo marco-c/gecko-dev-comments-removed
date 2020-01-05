@@ -1549,13 +1549,38 @@ impl ToAzurePoint for Point2D<Au> {
 
 pub trait ToAzureRect {
     fn to_nearest_azure_rect(&self) -> Rect<AzFloat>;
+    fn to_nearest_non_empty_azure_rect(&self) -> Rect<AzFloat>;
     fn to_azure_rect(&self) -> Rect<AzFloat>;
 }
 
 impl ToAzureRect for Rect<Au> {
+
+    
+    
     fn to_nearest_azure_rect(&self) -> Rect<AzFloat> {
+        
+        
+        
+        
+        
+        
+        
+        
+        let top_left = self.origin.to_nearest_azure_point();
+        let bottom_right = self.bottom_right().to_nearest_azure_point();
+        Rect::new(top_left, Size2D::new((bottom_right.x - top_left.x) as AzFloat,
+                                        (bottom_right.y - top_left.y) as AzFloat))
+    }
+
+    
+    
+    
+    
+    
+    fn to_nearest_non_empty_azure_rect(&self) -> Rect<AzFloat> {
         Rect::new(self.origin.to_nearest_azure_point(), self.size.to_nearest_azure_size())
     }
+
     fn to_azure_rect(&self) -> Rect<AzFloat> {
         Rect::new(self.origin.to_azure_point(), self.size.to_azure_size())
     }
@@ -1763,7 +1788,11 @@ impl DrawTargetExtensions for DrawTarget {
     }
 
     fn create_rectangular_path(&self, rect: &Rect<Au>) -> Path {
-        let rect = rect.to_nearest_azure_rect();
+        
+        
+        
+        let rect = rect.to_nearest_non_empty_azure_rect();
+
         let path_builder = self.create_path_builder();
         path_builder.move_to(rect.origin);
         path_builder.line_to(Point2D::new(rect.max_x(), rect.origin.y));
