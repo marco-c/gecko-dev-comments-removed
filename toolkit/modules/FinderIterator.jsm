@@ -466,7 +466,7 @@ this.FinderIterator = {
           return;
 
         
-        if (linksOnly && this._rangeStartsInLink(range))
+        if (linksOnly && !this._rangeStartsInLink(range))
           continue;
 
         this.ranges.push(range);
