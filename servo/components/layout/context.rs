@@ -79,6 +79,10 @@ pub struct SharedLayoutContext {
 
     
     pub dirty: Rect<Au>,
+
+    
+    
+    pub generation: uint,
 }
 
 pub struct LayoutContext<'a> {

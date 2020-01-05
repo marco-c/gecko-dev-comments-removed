@@ -2,7 +2,7 @@
 
 
 
-#[deriving(Eq, PartialEq, Clone, Encodable, Hash)]
+#[deriving(Eq, PartialEq, Clone, Encodable, Hash, Show)]
 pub enum Namespace {
     Null,
     HTML,
