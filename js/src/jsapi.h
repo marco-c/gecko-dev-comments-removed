@@ -2000,7 +2000,7 @@ struct JSPropertySpec {
     bool isAccessor() const {
         return !(flags & JSPROP_INTERNAL_USE_BIT);
     }
-    JS_PUBLIC_API(bool) getValue(JSContext* cx, JS::MutableHandleValue value) const;
+    bool getValue(JSContext* cx, JS::MutableHandleValue value) const;
 
     bool isSelfHosted() const {
         MOZ_ASSERT(isAccessor());
@@ -5530,7 +5530,7 @@ class JSErrorNotes
                      JSErrorCallback errorCallback, void* userRef,
                      const unsigned errorNumber, ...);
 
-    JS_PUBLIC_API(size_t) length();
+    size_t length();
 
     
     js::UniquePtr<JSErrorNotes> copy(JSContext* cx);
@@ -5556,8 +5556,8 @@ class JSErrorNotes
             return *note_;
         }
     };
-    JS_PUBLIC_API(iterator) begin();
-    JS_PUBLIC_API(iterator) end();
+    iterator begin();
+    iterator end();
 };
 
 
@@ -6461,7 +6461,7 @@ struct MaxFrames
 
 
 
-struct JS_PUBLIC_API(FirstSubsumedFrame)
+struct FirstSubsumedFrame
 {
     JSContext* cx;
     JSPrincipals* principals;
@@ -6682,7 +6682,7 @@ class AutoStopwatch;
 
 
 
-struct JS_PUBLIC_API(PerformanceGroup) {
+struct PerformanceGroup {
     PerformanceGroup();
 
     

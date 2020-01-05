@@ -340,7 +340,7 @@ GetDebuggeeGlobals(JSContext* cx, JSObject& dbgObj, AutoObjectVector& vector);
 
 
 
-class MOZ_STACK_CLASS JS_PUBLIC_API(AutoEntryMonitor) {
+class MOZ_STACK_CLASS AutoEntryMonitor {
     JSContext* cx_;
     AutoEntryMonitor* savedMonitor_;
 
