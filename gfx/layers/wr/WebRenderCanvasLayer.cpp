@@ -83,7 +83,6 @@ WebRenderCanvasLayer::RenderLayer(wr::DisplayListBuilder& aBuilder)
 
   aBuilder.PushStackingContext(wr::ToWrRect(relBounds),
                                1.0f,
-                               
                                transform,
                                mixBlendMode);
   aBuilder.PushImage(wr::ToWrRect(rect), clip, filter, key);
