@@ -71,8 +71,6 @@ XPCOMUtils.defineLazyGetter(this, "DownloadsLogger", () => {
   return new ConsoleAPI(consoleOptions);
 });
 
-const nsIDM = Ci.nsIDownloadManager;
-
 const kDownloadsStringBundleUrl =
   "chrome://browser/locale/downloads/downloads.properties";
 
@@ -124,7 +122,6 @@ var PrefObserver = {
 PrefObserver.register({
   
   animateNotifications: true,
-  showPanelDropmarker: true,
 });
 
 
@@ -135,6 +132,19 @@ PrefObserver.register({
 
 
 this.DownloadsCommon = {
+  
+  
+  DOWNLOAD_NOTSTARTED: -1,
+  DOWNLOAD_DOWNLOADING: 0,
+  DOWNLOAD_FINISHED: 1,
+  DOWNLOAD_FAILED: 2,
+  DOWNLOAD_CANCELED: 3,
+  DOWNLOAD_PAUSED: 4,
+  DOWNLOAD_BLOCKED_PARENTAL: 6,
+  DOWNLOAD_DIRTY: 8,
+  DOWNLOAD_BLOCKED_POLICY: 9,
+
+  
   ATTENTION_NONE: "",
   ATTENTION_SUCCESS: "success",
   ATTENTION_WARNING: "warning",
@@ -181,13 +191,6 @@ this.DownloadsCommon = {
 
   get animateNotifications() {
     return PrefObserver.animateNotifications;
-  },
-
-  
-
-
-  get showPanelDropmarker() {
-    return PrefObserver.showPanelDropmarker;
   },
 
   
@@ -256,27 +259,27 @@ this.DownloadsCommon = {
   stateOfDownload(download) {
     
     if (!download.stopped) {
-      return nsIDM.DOWNLOAD_DOWNLOADING;
+      return DownloadsCommon.DOWNLOAD_DOWNLOADING;
     }
     if (download.succeeded) {
-      return nsIDM.DOWNLOAD_FINISHED;
+      return DownloadsCommon.DOWNLOAD_FINISHED;
     }
     if (download.error) {
       if (download.error.becauseBlockedByParentalControls) {
-        return nsIDM.DOWNLOAD_BLOCKED_PARENTAL;
+        return DownloadsCommon.DOWNLOAD_BLOCKED_PARENTAL;
       }
       if (download.error.becauseBlockedByReputationCheck) {
-        return nsIDM.DOWNLOAD_DIRTY;
+        return DownloadsCommon.DOWNLOAD_DIRTY;
       }
-      return nsIDM.DOWNLOAD_FAILED;
+      return DownloadsCommon.DOWNLOAD_FAILED;
     }
     if (download.canceled) {
       if (download.hasPartialData) {
-        return nsIDM.DOWNLOAD_PAUSED;
+        return DownloadsCommon.DOWNLOAD_PAUSED;
       }
-      return nsIDM.DOWNLOAD_CANCELED;
+      return DownloadsCommon.DOWNLOAD_CANCELED;
     }
-    return nsIDM.DOWNLOAD_NOTSTARTED;
+    return DownloadsCommon.DOWNLOAD_NOTSTARTED;
   },
 
   
