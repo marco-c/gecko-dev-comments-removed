@@ -78,15 +78,17 @@ public:
 
 
 
-  TabId AllocateTabId(const TabId& aOpenerTabId,
-                      const IPCTabContext& aContext,
-                      const ContentParentId& aChildCpId);
+  bool RegisterRemoteFrame(const TabId& aTabId,
+                           const TabId& aOpenerTabId,
+                           const IPCTabContext& aContext,
+                           const ContentParentId& aChildCpId);
+
 
   
 
 
-  void DeallocateTabId(const ContentParentId& aChildCpId,
-                       const TabId& aChildTabId);
+  void UnregisterRemoteFrame(const ContentParentId& aChildCpId,
+                             const TabId& aChildTabId);
 
   
 
@@ -151,7 +153,6 @@ public:
 
 private:
   static StaticAutoPtr<ContentProcessManager> sSingleton;
-  TabId mUniqueId;
   std::map<ContentParentId, ContentProcessInfo> mContentParentMap;
 
   ContentProcessManager() {MOZ_COUNT_CTOR(ContentProcessManager);};

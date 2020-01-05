@@ -10,6 +10,7 @@
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/ContentParent.h"
 #include "mozilla/dom/ContentBridgeParent.h"
+#include "mozilla/dom/ContentProcessManager.h"
 #include "mozilla/dom/PTabContext.h"
 #include "mozilla/dom/PermissionMessageUtils.h"
 #include "mozilla/dom/TabParent.h"
@@ -138,12 +139,15 @@ nsIContentParent::AllocPBrowserParent(const TabId& aTabId,
   }
 
   uint32_t chromeFlags = aChromeFlags;
+  TabId openerTabId(0);
   if (aContext.type() == IPCTabContext::TPopupIPCTabContext) {
     
     
     
     const PopupIPCTabContext& popupContext = aContext.get_PopupIPCTabContext();
     auto opener = TabParent::GetFrom(popupContext.opener().get_PBrowserParent());
+    openerTabId = opener->GetTabId();
+
     
     
     nsCOMPtr<nsILoadContext> loadContext = opener->GetLoadContext();
@@ -155,6 +159,29 @@ nsIContentParent::AllocPBrowserParent(const TabId& aTabId,
     loadContext->GetUsePrivateBrowsing(&isPrivate);
     if (isPrivate) {
       chromeFlags |= nsIWebBrowserChrome::CHROME_PRIVATE_WINDOW;
+    }
+  }
+
+  if (openerTabId > 0 ||
+      aContext.type() == IPCTabContext::TUnsafeIPCTabContext) {
+    
+    
+    
+    
+    
+    
+    
+    MOZ_ASSERT(XRE_IsParentProcess());
+    if (!XRE_IsParentProcess()) {
+      return nullptr;
+    }
+
+    
+    
+    
+    ContentProcessManager* cpm = ContentProcessManager::GetSingleton();
+    if (!cpm->RegisterRemoteFrame(aTabId, openerTabId, aContext, aCpId)) {
+      return nullptr;
     }
   }
 
