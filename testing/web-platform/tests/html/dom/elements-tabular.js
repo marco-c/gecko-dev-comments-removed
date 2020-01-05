@@ -2,9 +2,6 @@
 var tabularElements = {
   table: {
     
-    sortable: "boolean",
-
-    
     align: "string",
     border: "string",
     frame: "string",

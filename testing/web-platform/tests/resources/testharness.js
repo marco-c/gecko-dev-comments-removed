@@ -523,11 +523,9 @@
     function promise_test(func, name, properties) {
         var test = async_test(name, properties);
         
-        test.step(function() {
-            if (!tests.promise_tests) {
-                tests.promise_tests = Promise.resolve();
-            }
-        });
+        if (!tests.promise_tests) {
+            tests.promise_tests = Promise.resolve();
+        }
         tests.promise_tests = tests.promise_tests.then(function() {
             return Promise.resolve(test.step(func, test, test))
                 .then(

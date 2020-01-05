@@ -1,14 +1,45 @@
 importScripts("/resources/testharness.js");
 var unexpected = [
+  
+  "SharedWorkerGlobalScope",
   "AbstractView",
   "AbstractWorker",
   "ApplicationCache",
   "Location",
   "Navigator",
-  "DOMImplementation",
   "Audio",
   "HTMLCanvasElement",
+  "Path",
+  "TextMetrics",
+  "CanvasProxy",
+  "CanvasRenderingContext2D",
+  "DrawingStyle",
+  "CanvasGradient",
+  "CanvasPattern",
+  "PopStateEvent",
+  "HashChangeEvent",
+  "PageTransitionEvent",
+  
+  "DOMImplementation",
+  
+  "ReadableStreamDefaultReader",
+  "ReadableStreamBYOBReader",
+  "ReadableStreamDefaultController",
+  "ReadableByteStreamController",
+  "WritableStreamDefaultWriter",
+  "WritableStreamDefaultController",
+  
+  "IDBEnvironment",
+  
+  "Database",
+  
+  "UIEvent",
+  "FocusEvent",
   "MouseEvent",
+  "WheelEvent",
+  "InputEvent",
+  "KeyboardEvent",
+  "CompositionEvent",
 ];
 for (var i = 0; i < unexpected.length; ++i) {
   test(function () {

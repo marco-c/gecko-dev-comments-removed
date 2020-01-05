@@ -1,3 +1,7 @@
+function testnamePrefix( qualifier, keysystem ) {
+    return ( qualifier || '' ) + ( keysystem === 'org.w3.clearkey' ? keysystem : 'drm' );
+}
+
 function getInitData(initDataType) {
 
     
@@ -92,6 +96,12 @@ function waitForEventAndRunStep(eventName, element, func, stepTest)
     element.addEventListener(eventName, stepTest.step_func(eventCallback), true);
 }
 
+function waitForEvent(eventName, element) {
+    return new Promise(function(resolve) {
+        element.addEventListener(eventName, resolve, true);
+    })
+}
+
 var consoleDiv = null;
 
 function consoleWrite(text)
@@ -174,26 +184,34 @@ function arrayBufferAsString(buffer)
 
 function dumpKeyStatuses(keyStatuses)
 {
-    consoleWrite("for (var entry of keyStatuses)");
-    for (var entry of keyStatuses) {
-        consoleWrite(arrayBufferAsString(entry[0]) + ": " + entry[1]);
+    var userAgent = navigator.userAgent.toLowerCase();
+    if (userAgent.indexOf('edge') === -1) {
+        consoleWrite("for (var entry of keyStatuses)");
+        for (var entry of keyStatuses) {
+            consoleWrite(arrayBufferAsString(entry[0]) + ": " + entry[1]);
+        }
+        consoleWrite("for (var keyId of keyStatuses.keys())");
+        for (var keyId of keyStatuses.keys()) {
+            consoleWrite(arrayBufferAsString(keyId));
+        }
+        consoleWrite("for (var status of keyStatuses.values())");
+        for (var status of keyStatuses.values()) {
+            consoleWrite(status);
+        }
+        consoleWrite("for (var entry of keyStatuses.entries())");
+        for (var entry of keyStatuses.entries()) {
+            consoleWrite(arrayBufferAsString(entry[0]) + ": " + entry[1]);
+        }
+        consoleWrite("keyStatuses.forEach()");
+        keyStatuses.forEach(function(status, keyId) {
+            consoleWrite(arrayBufferAsString(keyId) + ": " + status);
+        });
+    } else {
+        consoleWrite("keyStatuses.forEach()");
+        keyStatuses.forEach(function(keyId, status) {
+            consoleWrite(arrayBufferAsString(keyId) + ": " + status);
+        });
     }
-    consoleWrite("for (var keyId of keyStatuses.keys())");
-    for (var keyId of keyStatuses.keys()) {
-        consoleWrite(arrayBufferAsString(keyId));
-    }
-    consoleWrite("for (var status of keyStatuses.values())");
-    for (var status of keyStatuses.values()) {
-        consoleWrite(status);
-    }
-    consoleWrite("for (var entry of keyStatuses.entries())");
-    for (var entry of keyStatuses.entries()) {
-        consoleWrite(arrayBufferAsString(entry[0]) + ": " + entry[1]);
-    }
-    consoleWrite("keyStatuses.forEach()");
-    keyStatuses.forEach(function(status, keyId) {
-        consoleWrite(arrayBufferAsString(keyId) + ": " + status);
-    });
 }
 
 
@@ -206,19 +224,48 @@ function verifyKeyStatuses(keyStatuses, keys)
     var unexpected = keys.unexpected || [];
 
     
-    assert_equals(keyStatuses.size, expected.length);
+    assert_equals(keyStatuses.size, expected.length, "keystatuses should have expected size");
 
     
     expected.map(function(key) {
-        assert_true(keyStatuses.has(key));
-        assert_equals(keyStatuses.get(key), 'usable');
+        assert_true(keyStatuses.has(key), "keystatuses should have the expected keys");
+        assert_equals(keyStatuses.get(key), 'usable', "keystatus value should be 'usable'");
     });
 
     
     unexpected.map(function(key) {
-        assert_false(keyStatuses.has(key));
-        assert_equals(keyStatuses.get(key), undefined);
+        assert_false(keyStatuses.has(key), "keystatuses should not have unexpected keys");
+        assert_equals(keyStatuses.get(key), undefined, "keystatus for unexpected key should be undefined");
     });
+}
+
+
+
+
+function test_exception(testCase ) {
+    var func = testCase.func;
+    var exception = testCase.exception;
+    var args = Array.prototype.slice.call(arguments, 1);
+
+    
+    
+    
+    try {
+        return func.apply(null, args).then(
+            function (result) {
+                assert_unreached(format_value(func));
+            },
+            function (error) {
+                assert_equals(error.name, exception, format_value(func));
+                assert_not_equals(error.message, "", format_value(func));
+            }
+        );
+    } catch (e) {
+        
+        
+        assert_equals('TypeError', exception, format_value(func));
+        assert_equals(e.name, exception, format_value(func));
+    }
 }
 
 

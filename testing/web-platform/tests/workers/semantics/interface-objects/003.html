@@ -10,19 +10,95 @@
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 <!doctype html>
 <title>available interface objects in shared worker</title>
 <script src="/resources/testharness.js"></script>
 <script src="/resources/testharnessreport.js"></script>
 <div id=log></div>
 <script>
-async_test(function() {
-  var worker = new SharedWorker('#');
-  worker.port.onmessage = this.step_func(function(e) {
-    assert_equals(e.data, '', 'these interface objects were missing');
-    this.done();
-  });
-});
+setup(function() {
+  window.worker = new SharedWorker('#');
+  worker.port.onmessage = function(e) {
+    var result = e.data;
+    for (var i = 0; i < result.length; ++i) {
+      test(function() {
+        assert_true(result[i][1]);
+      }, "The " + result[i][0] + " interface object should be exposed");
+    }
+    done();
+  }
+}, {explicit_done: true});
 </script>
 
 

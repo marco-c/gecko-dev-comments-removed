@@ -23,41 +23,16 @@ ReflectionTests.start = new Date().getTime();
 
 
 
-
 ReflectionTests.resolveUrl = function(url) {
+    url = String(url);
     var el = document.createElement("a");
-    el.href = String(url);
+    el.href = url;
     var ret = el.protocol + "//" + el.host + el.pathname + el.search + el.hash;
     if (ret == "//") {
-        return "";
+        return url;
     } else {
         return ret;
     }
-};
-
-
-
-
-ReflectionTests.urlsExpected = function(urls) {
-    var expected = "";
-    
-    urls = urls + "";
-    var split = urls.split(" ");
-    for (var j = 0; j < split.length; j++) {
-        if (split[j] == "") {
-            continue;
-        }
-        var append = ReflectionTests.resolveUrl(split[j]);
-        if (append == "") {
-            continue;
-        }
-        if (expected == "") {
-            expected = append;
-        } else {
-            expected += " " + append;
-        }
-    }
-    return expected;
 };
 
 
@@ -186,6 +161,9 @@ ReflectionTests.typeMap = {
 
 
 
+
+
+
     "url": {
         "jsType": "string",
         "defaultVal": "",
@@ -196,31 +174,6 @@ ReflectionTests.typeMap = {
                      {"valueOf":function(){return "test-valueOf";}, toString:null}],
         "domExpected": ReflectionTests.resolveUrl,
         "idlIdlExpected": ReflectionTests.resolveUrl
-    },
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-    "urls": {
-        "jsType": "string",
-        "defaultVal": "",
-        "domTests": ["", " foo   ", "http://site.example/ foo  bar   baz",
-                     "//site.example/path???@#l", binaryString, undefined, 7, 1.5, true,
-                     false, {"test": 6}, NaN, +Infinity, -Infinity, "\0", null,
-                     {"toString":function(){return "test-toString";}},
-                     {"valueOf":function(){return "test-valueOf";}, toString:null}],
-        "domExpected": ReflectionTests.urlsExpected,
-        "idlIdlExpected": ReflectionTests.urlsExpected
     },
     
 

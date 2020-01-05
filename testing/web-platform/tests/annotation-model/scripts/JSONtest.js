@@ -29,6 +29,7 @@ function JSONtest(params) {
   this.Params = null;       
   this.Promise = null;             
   this.Properties = null;   
+  this.SkipFailures = [];   
   this.Test = null;         
   this.AssertionCounter = 0;
 
@@ -120,6 +121,10 @@ function JSONtest(params) {
 
       if (test.description) {
         this.DescriptionText = test.description;
+      }
+
+      if (test.hasOwnProperty("skipFailures") && Array.isArray(test.skipFailures) ) {
+        this.SkipFailures = test.skipFailures;
       }
 
       if (test.content) {
@@ -407,7 +412,7 @@ JSONtest.prototype = {
         var message = assert.hasOwnProperty('errorMessage') ?
           assert.errorMessage : "Result was not " + expected;
         var type = assert.hasOwnProperty('assertionType') ?
-          assert.assertionType : "must" ;
+          assert.assertionType.toLowerCase() : "must" ;
         if (!typeMap.hasOwnProperty(type)) {
           type = "must";
         }
@@ -507,39 +512,42 @@ JSONtest.prototype = {
           return ;
         }
 
-        if (testAction !== 'continue') {
+        if (testAction === 'continue') {
           
-          test(function() { }, "SKIPPED: " + assert.title);
-        } else {
           
-          test(function() {
-            var valid = validate(content) ;
+          
+          var valid = validate(content) ;
 
-            var result = this.determineResult(assert, valid) ;
+          var theResult = this.determineResult(assert, valid) ;
 
-            
-            theResults.push(result);
+          
+          theResults.push(theResult);
 
-            var newAction = this.determineAction(assert, result) ;
-            
-            testAction = newAction;
+          var newAction = this.determineAction(assert, theResult) ;
+          
+          testAction = newAction;
 
-            var err = ";";
-            if (validate.errors !== null) {
-              err = "; Errors: " + this.ajv.errorsText(validate.errors) + ";" ;
-            }
-            if (testAction === 'abort') {
-              err += "; Aborting execution of remaining assertions;";
-            } else if (testAction === 'skip') {
-              err += "; Skipping execution of remaining assertions at level " + level + ";";
-            }
-            if (result === false) {
-              
-              assert_true(result, typeMap[type] + message + err);
-            } else {
-              assert_true(result, err) ;
-            }
-          }.bind(this), "" + level + ":" + (num+1) + " " + assert.title);
+          
+          
+          if ( theResult === true || !this.SkipFailures.includes(type) ) {
+            test(function() {
+              var err = ";";
+              if (validate.errors !== null && !assert.hasOwnProperty("errorMessage")) {
+                err = "; Errors: " + this.ajv.errorsText(validate.errors) + ";" ;
+              }
+              if (testAction === 'abort') {
+                err += "; Aborting execution of remaining assertions;";
+              } else if (testAction === 'skip') {
+                err += "; Skipping execution of remaining assertions at level " + level + ";";
+              }
+              if (theResult === false) {
+                
+                assert_true(theResult, typeMap[type] + message + err);
+              } else {
+                assert_true(theResult, err) ;
+              }
+            }.bind(this), "" + level + ":" + (num+1) + " " + assert.title);
+          }
         }
       }.bind(this));
     }

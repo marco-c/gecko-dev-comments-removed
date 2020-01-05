@@ -1,12 +1,9 @@
 importScripts("/resources/testharness.js");
 var expected = [
+  
   "WorkerGlobalScope",
-  "EventTarget",
   "DedicatedWorkerGlobalScope",
-  "ErrorEvent",
-  "Event",
   "Worker",
-  "DOMException",
   "SharedWorker",
   "MessagePort",
   "MessageEvent",
@@ -14,12 +11,15 @@ var expected = [
   "MessageChannel",
   "WorkerLocation",
   "ImageData",
-  "File",
-  "Blob",
-  "FileList",
-  "XMLHttpRequest",
-  "ProgressEvent",
-  "FormData",
+  "ImageBitmap",
+  "CanvasPath",
+  "Path2D",
+  "PromiseRejectionEvent",
+  "EventSource",
+  "WebSocket",
+  "CloseEvent",
+  "BroadcastChannel",
+  
   "ArrayBuffer",
   "Int8Array",
   "Uint8Array",
@@ -31,14 +31,45 @@ var expected = [
   "Float32Array",
   "Float64Array",
   "DataView",
-  "CanvasProxy",
-  "ImageBitmap",
-  "CanvasRenderingContext2D",
-  "DrawingStyle",
-  "CanvasGradient",
-  "CanvasPattern",
-  "Path",
-  "TextMetrics"
+  
+  "XMLHttpRequestEventTarget",
+  "XMLHttpRequestUpload",
+  "XMLHttpRequest",
+  "ProgressEvent",
+  "FormData",
+  
+  "URL",
+  "URLSearchParams",
+  
+  "File",
+  "Blob",
+  "FileList",
+  "FileReader",
+  "FileReaderSync",
+  
+  "EventTarget",
+  "ErrorEvent",
+  "Event",
+  "CustomEvent",
+  
+  "DOMException",
+  
+  "ReadableStream",
+  "WritableStream",
+  "ByteLengthQueuingStrategy",
+  "CountQueuingStrategy",
+  
+  "IDBRequest",
+  "IDBOpenDBRequest",
+  "IDBVersionChangeEvent",
+  "IDBFactory",
+  "IDBDatabase",
+  "IDBObjectStore",
+  "IDBIndex",
+  "IDBKeyRange",
+  "IDBCursor",
+  "IDBCursorWithValue",
+  "IDBTransaction",
 ];
 for (var i = 0; i < expected.length; ++i) {
   test(function () {
