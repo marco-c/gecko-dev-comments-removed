@@ -17,8 +17,18 @@ const {
   getCurrentZoom,
   getDisplayPixelRatio,
   setIgnoreLayoutChanges,
+  getNodeBounds,
   getViewportDimensions,
 } = require("devtools/shared/layout/utils");
+const {
+  identity,
+  apply,
+  translate,
+  multiply,
+  scale,
+  getNodeTransformationMatrix,
+  getNodeTransformOrigin
+} = require("devtools/shared/layout/dom-matrix-2d");
 const { stringifyGridFragments } = require("devtools/server/actors/utils/css-grid-utils");
 
 const CSS_GRID_ENABLED_PREF = "layout.css.grid.enabled";
@@ -77,6 +87,7 @@ const CANVAS_SIZE = 4096;
 
 
 
+const CANVAS_INFINITY = CANVAS_SIZE << 8;
 
 
 
@@ -89,7 +100,69 @@ const CANVAS_SIZE = 4096;
 
 
 
-const roundedRect = function (ctx, x, y, width, height, radius) {
+
+
+
+
+
+function drawLine(ctx, x1, y1, x2, y2, matrix = identity()) {
+  let fromPoint = apply(matrix, [x1, y1]);
+  let toPoint = apply(matrix, [x2, y2]);
+
+  ctx.moveTo(Math.round(fromPoint[0]), Math.round(fromPoint[1]));
+  ctx.lineTo(Math.round(toPoint[0]), Math.round(toPoint[1]));
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function drawRect(ctx, x1, y1, x2, y2, matrix = identity()) {
+  let p = [
+    [x1, y1],
+    [x2, y1],
+    [x2, y2],
+    [x1, y2]
+  ].map(point => apply(matrix, point).map(Math.round));
+
+  ctx.beginPath();
+  ctx.moveTo(p[0][0], p[0][1]);
+  ctx.lineTo(p[1][0], p[1][1]);
+  ctx.lineTo(p[2][0], p[2][1]);
+  ctx.lineTo(p[3][0], p[3][1]);
+  ctx.closePath();
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function drawRoundedRect(ctx, x, y, width, height, radius) {
   ctx.beginPath();
   ctx.moveTo(x, y + radius);
   ctx.lineTo(x, y + height - radius);
@@ -102,7 +175,7 @@ const roundedRect = function (ctx, x, y, width, height, radius) {
   ctx.arcTo(x, y, x, y + radius, radius);
   ctx.stroke();
   ctx.fill();
-};
+}
 
 
 
@@ -663,10 +736,12 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.clearGridCell();
 
     
+    this.updateCurrentMatrix();
+
+    
     for (let i = 0; i < this.gridData.length; i++) {
       let fragment = this.gridData[i];
-      let quad = this.currentQuads.content[i];
-      this.renderFragment(fragment, quad);
+      this.renderFragment(fragment);
     }
 
     
@@ -876,6 +951,49 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.ctx.clearRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
   },
 
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  updateCurrentMatrix() {
+    let origin = getNodeTransformOrigin(this.currentNode);
+    let bounds = getNodeBounds(this.win, this.currentNode);
+    let nodeMatrix = getNodeTransformationMatrix(this.currentNode);
+
+    let ox = origin[0];
+    let oy = origin[1];
+
+    let m = identity();
+
+    
+    m = multiply(m, scale(getDisplayPixelRatio(this.win)));
+    
+    m = multiply(m, translate(bounds.p1.x, bounds.p1.y));
+    
+    m = multiply(m, scale(getCurrentZoom(this.win)));
+    
+    
+    if (nodeMatrix) {
+      m = multiply(m, translate(ox, oy));
+      m = multiply(m, nodeMatrix);
+      m = multiply(m, translate(-ox, -oy));
+      this.hasNodeTransformations = true;
+    } else {
+      this.hasNodeTransformations = false;
+    }
+
+    this.currentMatrix = m;
+  },
+
   getFirstRowLinePos(fragment) {
     return fragment.rows.lines[0].start;
   },
@@ -911,19 +1029,19 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     return trackIndex + 1;
   },
 
-  renderFragment(fragment, quad) {
-    this.renderLines(fragment.cols, quad, COLUMNS, "left", "top", "height",
+  renderFragment(fragment) {
+    this.renderLines(fragment.cols, COLUMNS, "left", "top", "height",
                      this.getFirstRowLinePos(fragment),
                      this.getLastRowLinePos(fragment));
-    this.renderLines(fragment.rows, quad, ROWS, "top", "left", "width",
+    this.renderLines(fragment.rows, ROWS, "top", "left", "width",
                      this.getFirstColLinePos(fragment),
                      this.getLastColLinePos(fragment));
 
     
     if (this.options.showGridLineNumbers) {
-      this.renderLineNumbers(fragment.cols, quad, COLUMNS, "left", "top",
+      this.renderLineNumbers(fragment.cols, COLUMNS, "left", "top",
                        this.getFirstRowLinePos(fragment));
-      this.renderLineNumbers(fragment.rows, quad, ROWS, "top", "left",
+      this.renderLineNumbers(fragment.rows, ROWS, "top", "left",
                        this.getFirstColLinePos(fragment));
     }
   },
@@ -952,11 +1070,10 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  renderLines(gridDimension, {bounds}, dimensionType, mainSide, crossSide,
+  renderLines(gridDimension, dimensionType, mainSide, crossSide,
               mainSize, startPos, endPos) {
-    let currentZoom = getCurrentZoom(this.win);
-    let lineStartPos = (bounds[crossSide] / currentZoom) + startPos;
-    let lineEndPos = (bounds[crossSide] / currentZoom) + endPos;
+    let lineStartPos = startPos;
+    let lineEndPos = endPos;
 
     if (this.options.showInfiniteLines) {
       lineStartPos = 0;
@@ -967,7 +1084,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
     for (let i = 0; i < gridDimension.lines.length; i++) {
       let line = gridDimension.lines[i];
-      let linePos = (bounds[mainSide] / currentZoom) + line.start;
+      let linePos = line.start;
 
       if (i == 0 || i == lastEdgeLineIndex) {
         this.renderLine(linePos, lineStartPos, lineEndPos, dimensionType, "edge");
@@ -992,17 +1109,13 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
 
-  renderLineNumbers(gridDimension, {bounds}, dimensionType, mainSide, crossSide,
+  renderLineNumbers(gridDimension, dimensionType, mainSide, crossSide,
               startPos) {
-    let zoom = getCurrentZoom(this.win);
-    let lineStartPos = (bounds[crossSide] / zoom) + startPos;
-    if (this.options.showInfiniteLines) {
-      lineStartPos = 0;
-    }
+    let lineStartPos = startPos;
 
     for (let i = 0; i < gridDimension.lines.length; i++) {
       let line = gridDimension.lines[i];
-      let linePos = (bounds[mainSide] / zoom) + line.start;
+      let linePos = line.start;
       this.renderGridLineNumber(line.number, linePos, lineStartPos, line.breadth,
         dimensionType);
     }
@@ -1031,8 +1144,8 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     let x = Math.round(this._canvasPosition.x * devicePixelRatio);
     let y = Math.round(this._canvasPosition.y * devicePixelRatio);
 
-    linePos = Math.round(linePos * devicePixelRatio);
-    startPos = Math.round(startPos * devicePixelRatio);
+    linePos = Math.round(linePos);
+    startPos = Math.round(startPos);
 
     this.ctx.save();
     this.ctx.setLineDash(GRID_LINES_PROPERTIES[lineType].lineDash);
@@ -1041,13 +1154,21 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.ctx.lineWidth = lineWidth;
 
     if (dimensionType === COLUMNS) {
-      endPos = isFinite(endPos) ? endPos * devicePixelRatio : CANVAS_SIZE + y;
-      this.ctx.moveTo(linePos, startPos);
-      this.ctx.lineTo(linePos, endPos);
+      if (isFinite(endPos)) {
+        endPos = Math.round(endPos);
+      } else {
+        endPos = CANVAS_INFINITY;
+        startPos = -endPos;
+      }
+      drawLine(this.ctx, linePos, startPos, linePos, endPos, this.currentMatrix);
     } else {
-      endPos = isFinite(endPos) ? endPos * devicePixelRatio : CANVAS_SIZE + x;
-      this.ctx.moveTo(startPos, linePos);
-      this.ctx.lineTo(endPos, linePos);
+      if (isFinite(endPos)) {
+        endPos = Math.round(endPos);
+      } else {
+        endPos = CANVAS_INFINITY;
+        startPos = -endPos;
+      }
+      drawLine(this.ctx, startPos, linePos, endPos, linePos, this.currentMatrix);
     }
 
     this.ctx.strokeStyle = this.color;
@@ -1073,12 +1194,13 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
 
   renderGridLineNumber(lineNumber, linePos, startPos, breadth, dimensionType) {
-    let { devicePixelRatio } = this.win;
     let displayPixelRatio = getDisplayPixelRatio(this.win);
+    let { devicePixelRatio } = this.win;
+    let offset = (displayPixelRatio / 2) % 1;
 
-    linePos = Math.round(linePos * devicePixelRatio);
-    startPos = Math.round(startPos * devicePixelRatio);
-    breadth = Math.round(breadth * devicePixelRatio);
+    linePos = Math.round(linePos);
+    startPos = Math.round(startPos);
+    breadth = Math.round(breadth);
 
     if (linePos + breadth < 0) {
       
@@ -1088,7 +1210,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.ctx.save();
     let canvasX = Math.round(this._canvasPosition.x * devicePixelRatio);
     let canvasY = Math.round(this._canvasPosition.y * devicePixelRatio);
-    this.ctx.translate(.5 - canvasX, .5 - canvasY);
+    this.ctx.translate(offset - canvasX, offset - canvasY);
 
     let fontSize = (GRID_FONT_SIZE * displayPixelRatio);
     this.ctx.font = fontSize + "px " + GRID_FONT_FAMILY;
@@ -1107,18 +1229,24 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     
     
     let x, y;
+
     if (dimensionType === COLUMNS) {
-      x = linePos - boxWidth / 2;
-      y = startPos - boxHeight / 2;
-      x += breadth / 2;
+      x = linePos + breadth / 2;
+      y = startPos;
     } else {
-      x = startPos - boxWidth / 2;
-      y = linePos - boxHeight / 2;
-      y += breadth / 2;
+      x = startPos;
+      y = linePos + breadth / 2;
     }
 
-    x = Math.max(x, padding);
-    y = Math.max(y, padding);
+    [x, y] = apply(this.currentMatrix, [x, y]);
+
+    x -= boxWidth / 2;
+    y -= boxHeight / 2;
+
+    if (!this.hasNodeTransformations) {
+      x = Math.max(x, padding);
+      y = Math.max(y, padding);
+    }
 
     
     
@@ -1126,7 +1254,7 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
     this.ctx.strokeStyle = this.color;
     this.ctx.fillStyle = "white";
     let radius = 2 * displayPixelRatio;
-    roundedRect(this.ctx, x, y, boxWidth, boxHeight, radius);
+    drawRoundedRect(this.ctx, x, y, boxWidth, boxHeight, radius);
 
     
     this.ctx.fillStyle = "black";
@@ -1152,24 +1280,40 @@ CssGridHighlighter.prototype = extend(AutoRefreshHighlighter.prototype, {
 
   renderGridGap(linePos, startPos, endPos, breadth, dimensionType) {
     let { devicePixelRatio } = this.win;
-    let x = Math.round(this._canvasPosition.x * devicePixelRatio);
-    let y = Math.round(this._canvasPosition.y * devicePixelRatio);
+    let displayPixelRatio = getDisplayPixelRatio(this.win);
+    let offset = (displayPixelRatio / 2) % 1;
 
-    linePos = Math.round(linePos * devicePixelRatio);
-    startPos = Math.round(startPos * devicePixelRatio);
-    breadth = Math.round(breadth * devicePixelRatio);
+    let canvasX = Math.round(this._canvasPosition.x * devicePixelRatio);
+    let canvasY = Math.round(this._canvasPosition.y * devicePixelRatio);
+
+    linePos = Math.round(linePos);
+    startPos = Math.round(startPos);
+    breadth = Math.round(breadth);
 
     this.ctx.save();
     this.ctx.fillStyle = this.getGridGapPattern(devicePixelRatio, dimensionType);
-    this.ctx.translate(.5 - x, .5 - y);
+    this.ctx.translate(offset - canvasX, offset - canvasY);
 
     if (dimensionType === COLUMNS) {
-      endPos = isFinite(endPos) ? Math.round(endPos * devicePixelRatio) : CANVAS_SIZE + y;
-      this.ctx.fillRect(linePos, startPos, breadth, endPos - startPos);
+      if (isFinite(endPos)) {
+        endPos = Math.round(endPos);
+      } else {
+        endPos = this._winDimensions.height;
+        startPos = -endPos;
+      }
+      drawRect(this.ctx, linePos, startPos, linePos + breadth, endPos,
+        this.currentMatrix);
     } else {
-      endPos = isFinite(endPos) ? Math.round(endPos * devicePixelRatio) : CANVAS_SIZE + x;
-      this.ctx.fillRect(startPos, linePos, endPos - startPos, breadth);
+      if (isFinite(endPos)) {
+        endPos = Math.round(endPos);
+      } else {
+        endPos = this._winDimensions.width;
+        startPos = -endPos;
+      }
+      drawRect(this.ctx, startPos, linePos, endPos, linePos + breadth,
+        this.currentMatrix);
     }
+    this.ctx.fill();
     this.ctx.restore();
   },
 
