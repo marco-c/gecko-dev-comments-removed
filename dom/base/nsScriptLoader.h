@@ -568,6 +568,13 @@ private:
 
 
 
+  nsresult RestartLoad(nsScriptLoadRequest *aRequest);
+
+  
+
+
+
+
 
 
   virtual void ProcessPendingRequestsAsync();
@@ -732,6 +739,9 @@ private:
   bool EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
                      const uint8_t* aData, uint32_t aDataLength,
                      bool aEndOfStream, nsCString& oCharset);
+
+  
+  nsresult EnsureKnownDataType(nsIIncrementalStreamLoader *aLoader);
 
   
   RefPtr<nsScriptLoader>        mScriptLoader;

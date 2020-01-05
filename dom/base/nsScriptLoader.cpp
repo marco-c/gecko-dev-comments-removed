@@ -33,6 +33,7 @@
 #include "nsIHttpChannel.h"
 #include "nsIHttpChannelInternal.h"
 #include "nsIClassOfService.h"
+#include "nsICacheInfoChannel.h"
 #include "nsITimedChannel.h"
 #include "nsIScriptElement.h"
 #include "nsIDOMHTMLScriptElement.h"
@@ -77,6 +78,11 @@ static LazyLogModule gScriptLoaderLog("ScriptLoader");
 #define LOG_ERROR(args)                                                       \
   MOZ_LOG(gScriptLoaderLog, mozilla::LogLevel::Error, args)
 
+
+
+static NS_NAMED_LITERAL_CSTRING(
+  kBytecodeMimeType, "javascript/moz-bytecode-" NS_STRINGIFY(MOZ_BUILDID));
+static NS_NAMED_LITERAL_CSTRING(kNullMimeType, "javascript/null");
 
 void
 ImplCycleCollectionUnlink(nsScriptLoadRequestList& aField);
@@ -1200,6 +1206,38 @@ nsScriptLoader::InstantiateModuleTree(nsModuleLoadRequest* aRequest)
   return true;
 }
 
+static bool
+IsBytecodeCacheEnabled()
+{
+  static bool sExposeTestInterfaceEnabled = false;
+  static bool sExposeTestInterfacePrefCached = false;
+  if (!sExposeTestInterfacePrefCached) {
+    sExposeTestInterfacePrefCached = true;
+    Preferences::AddBoolVarCache(&sExposeTestInterfaceEnabled,
+                                 "dom.script_loader.bytecode_cache.enabled",
+                                 false);
+  }
+  return sExposeTestInterfaceEnabled;
+}
+
+nsresult
+nsScriptLoader::RestartLoad(nsScriptLoadRequest *aRequest)
+{
+  MOZ_ASSERT(aRequest->IsBytecode());
+
+  
+  
+  aRequest->mProgress = nsScriptLoadRequest::Progress::Loading_Source;
+  nsresult rv = StartLoad(aRequest);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+
+  
+  
+  return NS_BINDING_RETARGETED;
+}
+
 nsresult
 nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest)
 {
@@ -1282,6 +1320,28 @@ nsScriptLoader::StartLoad(nsScriptLoadRequest *aRequest)
                               nsIChannel::LOAD_CLASSIFY_URI);
 
   NS_ENSURE_SUCCESS(rv, rv);
+
+  
+  
+  aRequest->mCacheInfo = nullptr;
+  nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(channel));
+  if (cic && IsBytecodeCacheEnabled() && aRequest->mJSVersion == JSVERSION_DEFAULT) {
+    if (!aRequest->IsLoadingSource()) {
+      
+      
+      LOG(("ScriptLoadRequest (%p): Maybe request bytecode", aRequest));
+      cic->PreferAlternativeDataType(kBytecodeMimeType);
+    } else {
+      
+      
+      
+      
+      
+      
+      LOG(("ScriptLoadRequest (%p): Request saving bytecode later", aRequest));
+      cic->PreferAlternativeDataType(kNullMimeType);
+    }
+  }
 
   nsIScriptElement *script = aRequest->mElement;
   nsCOMPtr<nsIClassOfService> cos(do_QueryInterface(channel));
@@ -2620,7 +2680,12 @@ nsScriptLoader::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
       mDocument->AddBlockedTrackingNode(cont);
     }
 
-    if (aRequest->mIsDefer) {
+    if (aChannelStatus == NS_BINDING_RETARGETED) {
+      
+      
+      
+      
+    } else if (aRequest->mIsDefer) {
       MOZ_ASSERT_IF(aRequest->IsModuleRequest(),
                     aRequest->AsModuleRequest()->IsTopLevel());
       if (aRequest->isInList()) {
@@ -2973,7 +3038,20 @@ nsScriptLoadHandler::OnIncrementalData(nsIIncrementalStreamLoader* aLoader,
     return NS_OK;
   }
 
-  mRequest->mDataType = nsScriptLoadRequest::DataType::Source;
+  nsresult rv = NS_OK;
+  if (mRequest->IsUnknownDataType()) {
+    rv = EnsureKnownDataType(aLoader);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
+  
+  if (mRequest->IsBytecode()) {
+    nsCOMPtr<nsIRequest> channelRequest;
+    aLoader->GetRequest(getter_AddRefs(channelRequest));
+    return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
+  }
+
+  MOZ_ASSERT(mRequest->IsSource());
   if (!EnsureDecoder(aLoader, aData, aDataLength,
                       false)) {
     return NS_OK;
@@ -3133,6 +3211,38 @@ nsScriptLoadHandler::EnsureDecoder(nsIIncrementalStreamLoader *aLoader,
   return true;
 }
 
+nsresult
+nsScriptLoadHandler::EnsureKnownDataType(nsIIncrementalStreamLoader *aLoader)
+{
+  MOZ_ASSERT(mRequest->IsUnknownDataType());
+  MOZ_ASSERT(mRequest->IsLoading());
+  if (mRequest->IsLoadingSource()) {
+    mRequest->mDataType = nsScriptLoadRequest::DataType::Source;
+    return NS_OK;
+  }
+
+  nsCOMPtr<nsIRequest> req;
+  nsresult rv = aLoader->GetRequest(getter_AddRefs(req));
+  MOZ_ASSERT(req, "StreamLoader's request went away prematurely");
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsICacheInfoChannel> cic(do_QueryInterface(req));
+  if (cic) {
+    nsAutoCString altDataType;
+    cic->GetAlternativeDataType(altDataType);
+    if (altDataType == kBytecodeMimeType) {
+      mRequest->mDataType = nsScriptLoadRequest::DataType::Bytecode;
+    } else {
+      mRequest->mDataType = nsScriptLoadRequest::DataType::Source;
+    }
+  } else {
+    mRequest->mDataType = nsScriptLoadRequest::DataType::Source;
+  }
+  MOZ_ASSERT(!mRequest->IsUnknownDataType());
+  MOZ_ASSERT(mRequest->IsLoading());
+  return NS_OK;
+}
+
 NS_IMETHODIMP
 nsScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                                       nsISupports* aContext,
@@ -3140,13 +3250,26 @@ nsScriptLoadHandler::OnStreamComplete(nsIIncrementalStreamLoader* aLoader,
                                       uint32_t aDataLength,
                                       const uint8_t* aData)
 {
+  nsresult rv = NS_OK;
   if (!mRequest->IsCanceled()) {
-    mRequest->mDataType = nsScriptLoadRequest::DataType::Source;
+    if (mRequest->IsUnknownDataType()) {
+      rv = EnsureKnownDataType(aLoader);
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
+
+    
+    if (mRequest->IsBytecode()) {
+      nsCOMPtr<nsIRequest> channelRequest;
+      aLoader->GetRequest(getter_AddRefs(channelRequest));
+      return channelRequest->Cancel(mScriptLoader->RestartLoad(mRequest));
+    }
+
+    MOZ_ASSERT(mRequest->IsSource());
     DebugOnly<bool> encoderSet =
       EnsureDecoder(aLoader, aData, aDataLength,  true);
     MOZ_ASSERT(encoderSet);
-    DebugOnly<nsresult> rv = DecodeRawData(aData, aDataLength,
-                                            true);
+    rv = DecodeRawData(aData, aDataLength,  true);
+    NS_ENSURE_SUCCESS(rv, rv);
 
     
     if (mSRIDataVerifier && NS_SUCCEEDED(mSRIStatus)) {
