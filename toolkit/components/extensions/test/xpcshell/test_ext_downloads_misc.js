@@ -102,14 +102,14 @@ function backgroundScript() {
   
   
   function waitForEvents(expected, options = {}) {
-    function compare(a, b) {
-      if (typeof b == "object" && b != null) {
-        if (typeof a != "object") {
+    function compare(received, expected) {
+      if (typeof expected == "object" && expected != null) {
+        if (typeof received != "object") {
           return false;
         }
-        return Object.keys(b).every(fld => compare(a[fld], b[fld]));
+        return Object.keys(expected).every(fld => compare(received[fld], expected[fld]));
       }
-      return (a == b);
+      return (received == expected);
     }
 
     const exact = ("exact" in options) ? options.exact : true;

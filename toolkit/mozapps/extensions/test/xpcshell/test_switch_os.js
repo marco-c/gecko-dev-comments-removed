@@ -32,10 +32,10 @@ add_task(function*() {
 
   let jData = loadJSON(gExtensionsJSON);
 
-  for (let addonInstance of jData.addons) {
-    if (addonInstance.id == ID) {
+  for (let addon of jData.addons) {
+    if (addon.id == ID) {
       
-      addonInstance.descriptor = AppConstants.platform == "win" ? "/foo/bar" : "C:\\foo\\bar";
+      addon.descriptor = AppConstants.platform == "win" ? "/foo/bar" : "C:\\foo\\bar";
     }
   }
 

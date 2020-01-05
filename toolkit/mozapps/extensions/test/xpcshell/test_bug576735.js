@@ -53,12 +53,12 @@ function run_test() {
 
     AddonManager.getAddonsByIDs(["addon1@tests.mozilla.org",
                                  "addon2@tests.mozilla.org"],
-                                function([a1_2, a2_2]) {
+                                function([a1, a2]) {
       
-      do_check_eq(a1_2, null);
+      do_check_eq(a1, null);
 
       
-      do_check_neq(a2_2, null);
+      do_check_neq(a2, null);
 
       do_execute_soon(do_test_finished);
     });

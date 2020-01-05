@@ -90,7 +90,7 @@ add_task(function* test_round_trip_perf() {
         }
 
         let count = 0;
-        port.onMessage.addListener(() => {
+        port.onMessage.addListener(msg => {
           if (count == 0) {
             
             
