@@ -24,12 +24,15 @@ class Theme {
 
 
 
-  constructor(baseURI) {
+
+
+  constructor(baseURI, logger) {
     
     this.lwtStyles = {
       icons: {},
     };
     this.baseURI = baseURI;
+    this.logger = logger;
   }
 
   
@@ -50,6 +53,10 @@ class Theme {
 
     if (details.icons) {
       this.loadIcons(details.icons);
+    }
+
+    if (details.properties) {
+      this.loadProperties(details.properties);
     }
 
     
@@ -108,6 +115,11 @@ class Theme {
       }
 
       switch (image) {
+        case "additional_backgrounds": {
+          let backgroundImages = val.map(img => this.baseURI.resolve(img));
+          this.lwtStyles.additionalBackgrounds = backgroundImages;
+          break;
+        }
         case "headerURL":
         case "theme_frame": {
           let resolvedURL = this.baseURI.resolve(val);
@@ -143,10 +155,76 @@ class Theme {
   
 
 
+
+
+
+
+  loadProperties(properties) {
+    let additionalBackgroundsCount = (this.lwtStyles.additionalBackgrounds &&
+      this.lwtStyles.additionalBackgrounds.length) || 0;
+    const assertValidAdditionalBackgrounds = (property, valueCount) => {
+      if (!additionalBackgroundsCount) {
+        this.logger.warn(`The '${property}' property takes effect only when one ` +
+          `or more additional background images are specified using the 'additional_backgrounds' property.`);
+        return false;
+      }
+      if (additionalBackgroundsCount !== valueCount) {
+        this.logger.warn(`The amount of values specified for '${property}' ` +
+          `(${valueCount}) is not equal to the amount of additional background ` +
+          `images (${additionalBackgroundsCount}), which may lead to unexpected results.`);
+      }
+      return true;
+    };
+
+    for (let property of Object.getOwnPropertyNames(properties)) {
+      let val = properties[property];
+
+      if (!val) {
+        continue;
+      }
+
+      switch (property) {
+        case "additional_backgrounds_alignment": {
+          if (!assertValidAdditionalBackgrounds(property, val.length)) {
+            break;
+          }
+
+          let alignment = [];
+          if (this.lwtStyles.headerURL) {
+            alignment.push("right top");
+          }
+          this.lwtStyles.backgroundsAlignment = alignment.concat(val).join(",");
+          break;
+        }
+        case "additional_backgrounds_tiling": {
+          if (!assertValidAdditionalBackgrounds(property, val.length)) {
+            break;
+          }
+
+          let tiling = [];
+          if (this.lwtStyles.headerURL) {
+            tiling.push("no-repeat");
+          }
+          for (let i = 0, l = this.lwtStyles.additionalBackgrounds.length; i < l; ++i) {
+            tiling.push(val[i] || "no-repeat");
+          }
+          this.lwtStyles.backgroundsTiling = tiling.join(",");
+          break;
+        }
+      }
+    }
+  }
+
+  
+
+
   unload() {
     let lwtStyles = {
       headerURL: "",
       accentcolor: "",
+      additionalBackgrounds: "",
+      backgroundsAlignment: "",
+      backgroundsTiling: "",
       textcolor: "",
       icons: {},
     };
@@ -168,7 +246,7 @@ extensions.on("manifest_theme", (type, directive, extension, manifest) => {
     return;
   }
 
-  let theme = new Theme(extension.baseURI);
+  let theme = new Theme(extension.baseURI, extension.logger);
   theme.load(manifest.theme);
   themeMap.set(extension, theme);
 });
@@ -201,7 +279,7 @@ extensions.registerSchemaAPI("theme", "addon_parent", context => {
           
           
           
-          theme = new Theme(extension.baseURI);
+          theme = new Theme(extension.baseURI, extension.logger);
           themeMap.set(extension, theme);
         }
 
