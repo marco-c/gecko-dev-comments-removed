@@ -42,7 +42,7 @@ static std::string getId(const char *bin_name)
 #if !defined(MOZ_WIDGET_GONK)
 
 #include "nsDebug.h"
-#ifdef ANDROID
+#if defined(SPS_OS_android)
 #include "ElfLoader.h" 
 #else
 #include <link.h> 
@@ -51,7 +51,7 @@ static std::string getId(const char *bin_name)
 #include <dlfcn.h>
 #include <sys/types.h>
 
-#ifdef ANDROID
+#if defined(SPS_OS_android)
 extern "C" MOZ_EXPORT __attribute__((weak))
 int dl_iterate_phdr(
           int (*callback) (struct dl_phdr_info *info,
@@ -99,7 +99,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
   SharedLibraryInfo info;
 
 #if !defined(MOZ_WIDGET_GONK)
-#ifdef ANDROID
+#if defined(SPS_OS_android)
   if (!dl_iterate_phdr) {
     
     
@@ -112,7 +112,7 @@ SharedLibraryInfo SharedLibraryInfo::GetInfoForSelf()
   dl_iterate_phdr(dl_iterate_callback, &info);
 #endif 
 
-#if defined(ANDROID) || defined(MOZ_WIDGET_GONK)
+#if defined(SPS_OS_android) || defined(MOZ_WIDGET_GONK)
   pid_t pid = getpid();
   char path[PATH_MAX];
   snprintf(path, PATH_MAX, "/proc/%d/maps", pid);

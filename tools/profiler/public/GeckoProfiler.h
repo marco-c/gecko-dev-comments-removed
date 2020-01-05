@@ -329,9 +329,7 @@ extern MOZ_THREAD_LOCAL(PseudoStack*) tlsPseudoStack;
 extern bool stack_key_initialized;
 
 #ifndef SAMPLE_FUNCTION_NAME
-# ifdef __GNUC__
-#  define SAMPLE_FUNCTION_NAME __FUNCTION__
-# elif defined(_MSC_VER)
+# if defined(__GNUC__) || defined(_MSC_VER)
 #  define SAMPLE_FUNCTION_NAME __FUNCTION__
 # else
 #  define SAMPLE_FUNCTION_NAME __func__  // defined in C99, supported in various C++ compilers. Just raw function name.
@@ -448,20 +446,10 @@ void profiler_get_gatherer(nsISupports** aRetVal);
 
 
 # define PROFILE_DEFAULT_INTERVAL 10
-#elif defined(ANDROID)
-
-
-
-
-
-
-
-
-
-#define PROFILE_DEFAULT_INTERVAL 1
 #else
 #define PROFILE_DEFAULT_INTERVAL 1
 #endif
+
 #define PROFILE_DEFAULT_FEATURES NULL
 #define PROFILE_DEFAULT_FEATURE_COUNT 0
 

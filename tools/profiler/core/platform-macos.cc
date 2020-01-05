@@ -214,7 +214,7 @@ public:
 
     if (KERN_SUCCESS != thread_suspend(profiled_thread)) return;
 
-#if V8_HOST_ARCH_X64
+#if defined(SPS_ARCH_amd64)
     thread_state_flavor_t flavor = x86_THREAD_STATE64;
     x86_thread_state64_t state;
     mach_msg_type_number_t count = x86_THREAD_STATE64_COUNT;
@@ -223,7 +223,7 @@ public:
 #else
 #define REGISTER_FIELD(name) r ## name
 #endif  
-#elif V8_HOST_ARCH_IA32
+#elif defined(SPS_ARCH_x86)
     thread_state_flavor_t flavor = i386_THREAD_STATE;
     i386_thread_state_t state;
     mach_msg_type_number_t count = i386_THREAD_STATE_COUNT;
@@ -295,7 +295,7 @@ Thread::GetCurrentId()
 void TickSample::PopulateContext(void* aContext)
 {
   
-#if defined(SPS_PLAT_amd64_darwin)
+#if defined(SPS_ARCH_amd64)
   asm (
       
       
@@ -306,7 +306,7 @@ void TickSample::PopulateContext(void* aContext)
       "=r"(sp),
       "=r"(fp)
   );
-#elif defined(SPS_PLAT_x86_darwin)
+#elif defined(SPS_ARCH_x86)
   asm (
       
       

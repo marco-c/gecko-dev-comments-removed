@@ -44,11 +44,6 @@
 #include <sys/prctl.h> 
 #include <stdlib.h>
 #include <sched.h>
-#ifdef ANDROID
-#include <android/log.h>
-#else
-#define __android_log_print(a, ...)
-#endif
 #include <ucontext.h>
 
 
@@ -114,7 +109,7 @@ Thread::GetCurrentId()
   return gettid();
 }
 
-#if !defined(ANDROID)
+#if !defined(SPS_OS_android)
 
 
 
@@ -159,40 +154,23 @@ static void SetSampleContext(TickSample* sample, void* context)
   
   ucontext_t* ucontext = reinterpret_cast<ucontext_t*>(context);
   mcontext_t& mcontext = ucontext->uc_mcontext;
-#if V8_HOST_ARCH_IA32
+#if defined(SPS_ARCH_x86)
   sample->pc = reinterpret_cast<Address>(mcontext.gregs[REG_EIP]);
   sample->sp = reinterpret_cast<Address>(mcontext.gregs[REG_ESP]);
   sample->fp = reinterpret_cast<Address>(mcontext.gregs[REG_EBP]);
-#elif V8_HOST_ARCH_X64
+#elif defined(SPS_ARCH_amd64)
   sample->pc = reinterpret_cast<Address>(mcontext.gregs[REG_RIP]);
   sample->sp = reinterpret_cast<Address>(mcontext.gregs[REG_RSP]);
   sample->fp = reinterpret_cast<Address>(mcontext.gregs[REG_RBP]);
-#elif V8_HOST_ARCH_ARM
-
-#if !defined(ANDROID) && (__GLIBC__ < 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ <= 3))
-  sample->pc = reinterpret_cast<Address>(mcontext.gregs[R15]);
-  sample->sp = reinterpret_cast<Address>(mcontext.gregs[R13]);
-  sample->fp = reinterpret_cast<Address>(mcontext.gregs[R11]);
-  sample->lr = reinterpret_cast<Address>(mcontext.gregs[R14]);
-#else
+#elif defined(SPS_ARCH_arm)
   sample->pc = reinterpret_cast<Address>(mcontext.arm_pc);
   sample->sp = reinterpret_cast<Address>(mcontext.arm_sp);
   sample->fp = reinterpret_cast<Address>(mcontext.arm_fp);
   sample->lr = reinterpret_cast<Address>(mcontext.arm_lr);
-#endif
-#elif V8_HOST_ARCH_MIPS
-  
-  UNIMPLEMENTED();
+#else
+# error "bad platform"
 #endif
 }
-
-#ifdef ANDROID
-#define V8_HOST_ARCH_ARM 1
-#define SYS_gettid __NR_gettid
-#define SYS_tgkill __NR_tgkill
-#else
-#define V8_HOST_ARCH_X64 1
-#endif
 
 static void
 SigprofHandler(int signal, siginfo_t* info, void* context)
@@ -224,6 +202,10 @@ SigprofHandler(int signal, siginfo_t* info, void* context)
   sem_post(&gSignalHandlingDone);
   errno = savedErrno;
 }
+
+#if defined(SPS_OS_android)
+#define SYS_tgkill __NR_tgkill
+#endif
 
 int tgkill(pid_t tgid, pid_t tid, int signalno) {
   return syscall(SYS_tgkill, tgid, tid, signalno);
@@ -429,7 +411,7 @@ PlatformStop()
   }
 }
 
-#ifdef ANDROID
+#if defined(SPS_OS_android)
 static struct sigaction gOldSigstartHandler;
 const int SIGSTART = SIGUSR2;
 
