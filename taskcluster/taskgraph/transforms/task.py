@@ -121,7 +121,7 @@ task_description_schema = Schema({
             
             
             
-            'build_date',
+            'pushdate',
         ),
     },
 
@@ -293,7 +293,7 @@ BUILDBOT_ROUTE_TEMPLATES = [
 
 V2_ROUTE_TEMPLATES = [
     "index.gecko.v2.{project}.latest.{product}.{job-name-gecko-v2}",
-    "index.gecko.v2.{project}.pushdate.{build_date_long}.{product}.{job-name-gecko-v2}",
+    "index.gecko.v2.{project}.pushdate.{pushdate_long}.{product}.{job-name-gecko-v2}",
     "index.gecko.v2.{project}.revision.{head_rev}.{product}.{job-name-gecko-v2}",
 ]
 
@@ -466,8 +466,9 @@ def add_index_routes(config, tasks):
         subs = config.params.copy()
         for n in job_name:
             subs['job-name-' + n] = job_name[n]
-        subs['build_date_long'] = time.strftime("%Y.%m.%d.%Y%m%d%H%M%S",
-                                              time.gmtime(config.params['build_date']))
+        subs['pushdate_long'] = time.strftime(
+            "%Y.%m.%d.%Y%m%d%H%M%S",
+            time.gmtime(config.params['pushdate']))
         subs['product'] = index['product']
 
         if 'buildbot' in job_name:
@@ -485,9 +486,9 @@ def add_index_routes(config, tasks):
             
             
             tier = task.get('treeherder', {}).get('tier', 3)
-            extra_index['rank'] = 0 if tier > 1 else int(config.params['build_date'])
-        elif rank == 'build_date':
-            extra_index['rank'] = int(config.params['build_date'])
+            extra_index['rank'] = 0 if tier > 1 else int(config.params['pushdate'])
+        elif rank == 'pushdate':
+            extra_index['rank'] = int(config.params['pushdate'])
         else:
             extra_index['rank'] = rank
 
@@ -597,7 +598,7 @@ def check_v2_routes():
             ('{index}', 'index'),
             ('{build_product}', '{product}'),
             ('{build_name}-{build_type}', '{job-name-gecko-v2}'),
-            ('{year}.{month}.{day}.{pushdate}', '{build_date_long}')]:
+            ('{year}.{month}.{day}.{pushdate}', '{pushdate_long}')]:
         routes = [r.replace(mh, tg) for r in routes]
 
     if sorted(routes) != sorted(V2_ROUTE_TEMPLATES):
