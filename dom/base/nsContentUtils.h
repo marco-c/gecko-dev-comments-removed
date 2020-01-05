@@ -771,6 +771,8 @@ public:
 
 
 
+
+
   static nsresult LoadImage(nsIURI* aURI,
                             nsINode* aContext,
                             nsIDocument* aLoadingDocument,
@@ -781,7 +783,8 @@ public:
                             int32_t aLoadFlags,
                             const nsAString& initiatorType,
                             imgRequestProxy** aRequest,
-                            uint32_t aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE);
+                            uint32_t aContentPolicyType = nsIContentPolicy::TYPE_INTERNAL_IMAGE,
+                            bool aUseUrgentStartForChannel = false);
 
   
 

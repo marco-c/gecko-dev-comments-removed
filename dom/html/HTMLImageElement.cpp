@@ -79,9 +79,11 @@ namespace dom {
 class ImageLoadTask : public Runnable
 {
 public:
-  ImageLoadTask(HTMLImageElement *aElement, bool aAlwaysLoad)
+  ImageLoadTask(HTMLImageElement *aElement, bool aAlwaysLoad,
+                bool aUseUrgentStartForChannel)
     : mElement(aElement)
     , mAlwaysLoad(aAlwaysLoad)
+    , mUseUrgentStartForChannel(aUseUrgentStartForChannel)
   {
     mDocument = aElement->OwnerDoc();
     mDocument->BlockOnload();
@@ -91,6 +93,7 @@ public:
   {
     if (mElement->mPendingImageLoadTask == this) {
       mElement->mPendingImageLoadTask = nullptr;
+      mElement->mUseUrgentStartForChannel = mUseUrgentStartForChannel;
       mElement->LoadSelectedImage(true, true, mAlwaysLoad);
     }
     mDocument->UnblockOnload(false);
@@ -106,6 +109,10 @@ private:
   RefPtr<HTMLImageElement> mElement;
   nsCOMPtr<nsIDocument> mDocument;
   bool mAlwaysLoad;
+
+  
+  
+  bool mUseUrgentStartForChannel;
 };
 
 HTMLImageElement::HTMLImageElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
@@ -412,6 +419,10 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       !aValue) {
     
     
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
+    
+    
     if (InResponsiveMode()) {
       if (mResponsiveSelector &&
           mResponsiveSelector->Content() == this) {
@@ -424,9 +435,17 @@ HTMLImageElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     }
   } else if (aName == nsGkAtoms::srcset &&
              aNameSpaceID == kNameSpaceID_None) {
+    
+    
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
     PictureSourceSrcsetChanged(this, attrVal.String(), aNotify);
   } else if (aName == nsGkAtoms::sizes &&
              aNameSpaceID == kNameSpaceID_None) {
+    
+    
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
     PictureSourceSizesChanged(this, attrVal.String(), aNotify);
   }
 
@@ -505,6 +524,10 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   if (aNameSpaceID == kNameSpaceID_None &&
       aName == nsGkAtoms::src) {
 
+    
+    
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
     if (InResponsiveMode()) {
       if (mResponsiveSelector &&
           mResponsiveSelector->Content() == this) {
@@ -562,6 +585,10 @@ HTMLImageElement::SetAttr(int32_t aNameSpaceID, nsIAtom* aName,
   
   
   if (forceReload) {
+    
+    
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
     if (InResponsiveMode()) {
       
       
@@ -602,6 +629,10 @@ HTMLImageElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
 
     
     
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
+    
+    
     
     QueueImageLoadTask(false);
   } else if (!InResponsiveMode() &&
@@ -611,6 +642,10 @@ HTMLImageElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     
     
     
+
+    
+    
+    mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
     
     
@@ -830,6 +865,10 @@ HTMLImageElement::CopyInnerTo(Element* aDest, bool aPreallocateChildren)
     
     if (!dest->InResponsiveMode() &&
         dest->HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
+      
+      
+      mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
       nsContentUtils::AddScriptRunner(
         NewRunnableMethod(dest, &HTMLImageElement::MaybeLoadImage));
     }
@@ -913,7 +952,9 @@ HTMLImageElement::QueueImageLoadTask(bool aAlwaysLoad)
   if (mPendingImageLoadTask) {
     alwaysLoad = alwaysLoad || mPendingImageLoadTask->AlwaysLoad();
   }
-  RefPtr<ImageLoadTask> task = new ImageLoadTask(this, alwaysLoad);
+  RefPtr<ImageLoadTask> task = new ImageLoadTask(this,
+                                                 alwaysLoad,
+                                                 mUseUrgentStartForChannel);
   
   
   mPendingImageLoadTask = task;

@@ -1361,6 +1361,10 @@ HTMLInputElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     } else if (aNotify && aName == nsGkAtoms::src &&
                mType == NS_FORM_INPUT_IMAGE) {
       if (aValue) {
+        
+        
+        mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
         LoadImage(aValue->String(), true, aNotify, eImageLoadType_Normal);
       } else {
         
@@ -5103,6 +5107,10 @@ HTMLInputElement::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
     if (HasAttr(kNameSpaceID_None, nsGkAtoms::src)) {
       
       
+      mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
+      
+      
       ClearBrokenState();
       RemoveStatesSilently(NS_EVENT_STATE_BROKEN);
       nsContentUtils::AddScriptRunner(
@@ -5292,6 +5300,10 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType, bool aNotify)
     
     nsAutoString src;
     if (GetAttr(kNameSpaceID_None, nsGkAtoms::src, src)) {
+      
+      
+      mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
+
       LoadImage(src, false, aNotify, eImageLoadType_Normal);
     }
   }

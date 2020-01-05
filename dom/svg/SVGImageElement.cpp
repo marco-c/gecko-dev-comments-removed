@@ -5,6 +5,7 @@
 
 
 #include "mozilla/ArrayUtils.h"
+#include "mozilla/EventStateManager.h"
 #include "mozilla/EventStates.h"
 
 #include "mozilla/dom/SVGImageElement.h"
@@ -132,6 +133,10 @@ SVGImageElement::LoadSVGImage(bool aForce, bool aNotify)
 
   if (baseURI && !href.IsEmpty())
     NS_MakeAbsoluteURI(href, href, baseURI);
+
+  
+  
+  mUseUrgentStartForChannel = EventStateManager::IsHandlingUserInput();
 
   return LoadImage(href, aForce, aNotify, eImageLoadType_Normal);
 }
