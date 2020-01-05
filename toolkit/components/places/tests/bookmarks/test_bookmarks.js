@@ -330,9 +330,8 @@ add_task(function* test_bookmarks() {
   do_check_eq("bar", k);
 
   
-  let u = bs.getURIForKeyword("bar");
-  do_check_eq("http://keywordtest.com/", u.spec);
-
+  let u = yield PlacesUtils.keywords.fetch("bar");
+  do_check_eq("http://keywordtest.com/", u.url);
   
   
   tmpFolder = bs.createFolder(testRoot, "removeFolderChildren",
