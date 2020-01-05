@@ -677,9 +677,6 @@ protected:
   bool mPinnedForSeek;
 
   
-  bool mPausedForPlaybackRateNull;
-
-  
   
   dom::AudioChannel mAudioChannel;
 

@@ -499,7 +499,6 @@ MediaDecoder::MediaDecoder(MediaDecoderOwner* aOwner)
   , mVideoFrameContainer(aOwner->GetVideoFrameContainer())
   , mPlaybackStatistics(new MediaChannelStatistics())
   , mPinnedForSeek(false)
-  , mPausedForPlaybackRateNull(false)
   , mMinimizePreroll(false)
   , mMediaTracksConstructed(false)
   , mFiredMetadataLoaded(false)
@@ -794,7 +793,7 @@ MediaDecoder::Play()
   UpdateDormantState(false , true );
 
   NS_ASSERTION(mDecoderStateMachine != nullptr, "Should have state machine.");
-  if (mPausedForPlaybackRateNull) {
+  if (mPlaybackRate == 0) {
     return NS_OK;
   }
 
@@ -1522,21 +1521,19 @@ void
 MediaDecoder::SetPlaybackRate(double aPlaybackRate)
 {
   MOZ_ASSERT(NS_IsMainThread());
+
+  double oldRate = mPlaybackRate;
   mPlaybackRate = aPlaybackRate;
-  if (mPlaybackRate == 0.0) {
-    mPausedForPlaybackRateNull = true;
+  if (aPlaybackRate == 0) {
     Pause();
     return;
   }
 
-  if (mPausedForPlaybackRateNull) {
+
+  if (oldRate == 0 && !mOwner->GetPaused()) {
     
-    mPausedForPlaybackRateNull = false;
     
-    
-    if (!mOwner->GetPaused()) {
-      Play();
-    }
+    Play();
   }
 
   if (mDecoderStateMachine) {
