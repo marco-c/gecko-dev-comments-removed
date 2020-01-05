@@ -168,9 +168,9 @@ struct cubeb_stream {
   
   cubeb_stream_params input_stream_params;
   cubeb_stream_params output_stream_params;
+  cubeb_devid input_device;
   bool is_default_input;
-  AudioDeviceID input_device;
-  AudioDeviceID output_device;
+  cubeb_devid output_device;
   
   void * user_ptr;
   
@@ -192,7 +192,7 @@ struct cubeb_stream {
   
   std::atomic<uint32_t> input_buffer_frames;
   
-  std::atomic<uint64_t> frames_played;
+  uint64_t frames_played;
   uint64_t frames_queued;
   std::atomic<int64_t> frames_read;
   std::atomic<bool> shutdown;
@@ -601,13 +601,13 @@ audiounit_property_listener_callback(AudioObjectID , UInt32 address_count,
       case kAudioHardwarePropertyDefaultOutputDevice: {
           LOG("Event[%d] - mSelector == kAudioHardwarePropertyDefaultOutputDevice", i);
           
-          stm->output_device = 0;
+          stm->output_device = nullptr;
         }
         break;
       case kAudioHardwarePropertyDefaultInputDevice: {
           LOG("Event[%d] - mSelector == kAudioHardwarePropertyDefaultInputDevice", i);
           
-          stm->input_device = 0;
+          stm->input_device = nullptr;
         }
       break;
       case kAudioDevicePropertyDeviceIsAlive: {
@@ -619,7 +619,7 @@ audiounit_property_listener_callback(AudioObjectID , UInt32 address_count,
             return noErr;
           }
           
-          stm->input_device = 0;
+          stm->input_device = nullptr;
         }
         break;
       case kAudioDevicePropertyDataSource:
@@ -758,7 +758,7 @@ audiounit_install_device_changed_callback(cubeb_stream * stm)
     }
 
     
-    AudioDeviceID dev = stm->input_device ? stm->input_device :
+    AudioDeviceID dev = stm->input_device ? reinterpret_cast<intptr_t>(stm->input_device) :
                                             audiounit_get_default_device_id(CUBEB_DEVICE_TYPE_INPUT);
     r = audiounit_add_listener(stm, dev, kAudioDevicePropertyDeviceIsAlive,
         kAudioObjectPropertyScopeGlobal, &audiounit_property_listener_callback);
@@ -1043,7 +1043,7 @@ static int
 audiounit_create_unit(AudioUnit * unit,
                       bool is_input,
                       const cubeb_stream_params * ,
-                      AudioDeviceID device)
+                      cubeb_devid device)
 {
   AudioComponentDescription desc;
   AudioComponent comp;
@@ -1060,7 +1060,7 @@ audiounit_create_unit(AudioUnit * unit,
   
   
   
-  bool use_default_output = device == 0 && !is_input;
+  bool use_default_output = device == NULL && !is_input;
   if (use_default_output) {
     desc.componentSubType = kAudioUnitSubType_DefaultOutput;
   } else {
@@ -1101,11 +1101,11 @@ audiounit_create_unit(AudioUnit * unit,
       return CUBEB_ERROR;
     }
 
-    if (device == 0) {
+    if (device == NULL) {
       assert(is_input);
       devid = audiounit_get_default_device_id(CUBEB_DEVICE_TYPE_INPUT);
     } else {
-      devid = device;
+      devid = reinterpret_cast<intptr_t>(device);
     }
     rv = AudioUnitSetProperty(*unit, kAudioOutputUnitProperty_CurrentDevice,
                               kAudioUnitScope_Global,
@@ -1560,13 +1560,14 @@ audiounit_stream_init(cubeb * context,
   stm->device_changed_callback = NULL;
   if (input_stream_params) {
     stm->input_stream_params = *input_stream_params;
-    stm->input_device = reinterpret_cast<uintptr_t>(input_device);
-    stm->is_default_input = stm->input_device == 0 ||
-                            (audiounit_get_default_device_id(CUBEB_DEVICE_TYPE_INPUT) == stm->input_device);
+    stm->input_device = input_device;
+    stm->is_default_input = input_device == nullptr ||
+                            (audiounit_get_default_device_id(CUBEB_DEVICE_TYPE_INPUT) ==
+                                                  reinterpret_cast<intptr_t>(input_device));
   }
   if (output_stream_params) {
     stm->output_stream_params = *output_stream_params;
-    stm->output_device = reinterpret_cast<uintptr_t>(output_device);
+    stm->output_device = output_device;
   }
 
   
@@ -1820,7 +1821,7 @@ int audiounit_stream_set_panning(cubeb_stream * stm, float panning)
 }
 
 int audiounit_stream_get_current_device(cubeb_stream * stm,
-                                        cubeb_device ** const device)
+                                        cubeb_device ** const  device)
 {
 #if TARGET_OS_IPHONE
   
@@ -2110,8 +2111,7 @@ audiounit_create_device_from_hwdev(AudioObjectID devid, cubeb_device_type type)
   adr.mSelector = kAudioDevicePropertyDeviceUID;
   if (AudioObjectGetPropertyData(devid, &adr, 0, NULL, &size, &str) == noErr && str != NULL) {
     ret->device_id = audiounit_strref_to_cstr_utf8(str);
-    static_assert(sizeof(cubeb_devid) >= sizeof(decltype(devid)), "cubeb_devid can't represent devid");
-    ret->devid = reinterpret_cast<cubeb_devid>(devid);
+    ret->devid = (cubeb_devid)(size_t)devid;
     ret->group_id = strdup(ret->device_id);
     CFRelease(str);
   }

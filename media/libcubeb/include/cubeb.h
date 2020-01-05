@@ -167,7 +167,7 @@ typedef enum {
 
 
 
-typedef void const * cubeb_devid;
+typedef void * cubeb_devid;
 
 
 typedef enum {
@@ -276,10 +276,10 @@ typedef enum {
 
 typedef struct {
   cubeb_devid devid;          
-  char const * device_id;     
-  char const * friendly_name; 
-  char const * group_id;      
-  char const * vendor_name;   
+  char * device_id;           
+  char * friendly_name;       
+  char * group_id;            
+  char * vendor_name;         
 
   cubeb_device_type type;     
   cubeb_device_state state;   
@@ -322,7 +322,7 @@ typedef struct {
 
 typedef long (* cubeb_data_callback)(cubeb_stream * stream,
                                      void * user_ptr,
-                                     void const * input_buffer,
+                                     const void * input_buffer,
                                      void * output_buffer,
                                      long nframes);
 
@@ -347,7 +347,7 @@ typedef void (* cubeb_device_collection_changed_callback)(cubeb * context,
                                                           void * user_ptr);
 
 
-typedef void (* cubeb_log_callback)(char const * fmt, ...);
+typedef void (* cubeb_log_callback)(const char * fmt, ...);
 
 
 
