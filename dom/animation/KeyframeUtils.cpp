@@ -510,8 +510,8 @@ KeyframeUtils::ApplySpacing(nsTArray<Keyframe>& aKeyframes,
   }
 
   
-  const Keyframe* const last = &aKeyframes.LastElement();
-  const RangedPtr<Keyframe> begin(aKeyframes.Elements(), aKeyframes.Length());
+  const Keyframe* const last = aKeyframes.cend() - 1;
+  const RangedPtr<Keyframe> begin(aKeyframes.begin(), aKeyframes.Length());
   RangedPtr<Keyframe> keyframeA = begin;
   while (keyframeA != last) {
     
