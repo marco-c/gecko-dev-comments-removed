@@ -297,6 +297,7 @@ impl IntrinsicISizes {
 }
 
 
+#[derive(Debug)]
 pub struct IntrinsicISizesContribution {
     
     pub content_intrinsic_sizes: IntrinsicISizes,
@@ -428,6 +429,20 @@ pub fn padding_from_style(style: &ComputedValues, containing_block_inline_size: 
         specified(padding_style.padding_right, containing_block_inline_size),
         specified(padding_style.padding_bottom, containing_block_inline_size),
         specified(padding_style.padding_left, containing_block_inline_size)))
+}
+
+
+
+
+
+#[inline]
+pub fn specified_margin_from_style(style: &ComputedValues) -> LogicalMargin<Au> {
+    let margin_style = style.get_margin();
+    LogicalMargin::from_physical(style.writing_mode, SideOffsets2D::new(
+        MaybeAuto::from_style(margin_style.margin_top, Au(0)).specified_or_zero(),
+        MaybeAuto::from_style(margin_style.margin_right, Au(0)).specified_or_zero(),
+        MaybeAuto::from_style(margin_style.margin_bottom, Au(0)).specified_or_zero(),
+        MaybeAuto::from_style(margin_style.margin_left, Au(0)).specified_or_zero()))
 }
 
 pub trait ToGfxMatrix {
