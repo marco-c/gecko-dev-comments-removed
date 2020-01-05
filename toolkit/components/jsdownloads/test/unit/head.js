@@ -161,9 +161,9 @@ function getTempFile(aLeafName) {
 
 
 function promiseExecuteSoon() {
-  let deferred = Promise.defer();
-  do_execute_soon(deferred.resolve);
-  return deferred.promise;
+  return new Promise(resolve => {
+    do_execute_soon(resolve);
+  });
 }
 
 
@@ -174,9 +174,9 @@ function promiseExecuteSoon() {
 
 
 function promiseTimeout(aTime) {
-  let deferred = Promise.defer();
-  do_timeout(aTime, deferred.resolve);
-  return deferred.promise;
+  return new Promise(resolve => {
+    do_timeout(aTime, resolve);
+  });
 }
 
 
@@ -190,29 +190,29 @@ function promiseTimeout(aTime) {
 
 
 function promiseWaitForVisit(aUrl) {
-  let deferred = Promise.defer();
+  return new Promise(resolve => {
 
-  let uri = NetUtil.newURI(aUrl);
+    let uri = NetUtil.newURI(aUrl);
 
-  PlacesUtils.history.addObserver({
-    QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver]),
-    onBeginUpdateBatch() {},
-    onEndUpdateBatch() {},
-    onVisit(aURI, aVisitID, aTime, aSessionID, aReferringID,
-                      aTransitionType, aGUID, aHidden) {
-      if (aURI.equals(uri)) {
-        PlacesUtils.history.removeObserver(this);
-        deferred.resolve([aTime, aTransitionType]);
-      }
-    },
-    onTitleChanged() {},
-    onDeleteURI() {},
-    onClearHistory() {},
-    onPageChanged() {},
-    onDeleteVisits() {},
+    PlacesUtils.history.addObserver({
+      QueryInterface: XPCOMUtils.generateQI([Ci.nsINavHistoryObserver]),
+      onBeginUpdateBatch() {},
+      onEndUpdateBatch() {},
+      onVisit(aURI, aVisitID, aTime, aSessionID, aReferringID,
+                        aTransitionType, aGUID, aHidden) {
+        if (aURI.equals(uri)) {
+          PlacesUtils.history.removeObserver(this);
+          resolve([aTime, aTransitionType]);
+        }
+      },
+      onTitleChanged() {},
+      onDeleteURI() {},
+      onClearHistory() {},
+      onPageChanged() {},
+      onDeleteVisits() {},
+    });
+
   });
-
-  return deferred.promise;
 }
 
 
@@ -226,14 +226,14 @@ function promiseWaitForVisit(aUrl) {
 
 
 function promiseIsURIVisited(aUrl) {
-  let deferred = Promise.defer();
+  return new Promise(resolve => {
 
-  PlacesUtils.asyncHistory.isURIVisited(NetUtil.newURI(aUrl),
-    function(aURI, aIsVisited) {
-      deferred.resolve(aIsVisited);
-    });
+    PlacesUtils.asyncHistory.isURIVisited(NetUtil.newURI(aUrl),
+      function(aURI, aIsVisited) {
+        resolve(aIsVisited);
+      });
 
-  return deferred.promise;
+  });
 }
 
 
@@ -329,39 +329,39 @@ function promiseStartLegacyDownload(aSourceUrl, aOptions) {
 
   let transfer = Cc["@mozilla.org/transfer;1"].createInstance(Ci.nsITransfer);
 
-  let deferred = Promise.defer();
+  return new Promise(resolve => {
 
-  Downloads.getList(Downloads.ALL).then(function(aList) {
-    
-    
-    aList.addView({
-      onDownloadAdded(aDownload) {
-        aList.removeView(this).then(null, do_report_unexpected_exception);
+    Downloads.getList(Downloads.ALL).then(function(aList) {
+      
+      
+      aList.addView({
+        onDownloadAdded(aDownload) {
+          aList.removeView(this).then(null, do_report_unexpected_exception);
 
-        
-        
-        let promise = aList.remove(aDownload);
+          
+          
+          let promise = aList.remove(aDownload);
 
-        
-        promise.then(() => deferred.resolve(aDownload),
-                     do_report_unexpected_exception);
-      },
+          
+          promise.then(() => resolve(aDownload),
+                       do_report_unexpected_exception);
+        },
+      }).then(null, do_report_unexpected_exception);
+
+      let isPrivate = aOptions && aOptions.isPrivate;
+
+      
+      
+      transfer.init(sourceURI, NetUtil.newURI(targetFile), null, mimeInfo, null,
+                    null, persist, isPrivate);
+      persist.progressListener = transfer;
+
+      
+      persist.savePrivacyAwareURI(sourceURI, null, null, 0, null, null, targetFile,
+                                  isPrivate);
     }).then(null, do_report_unexpected_exception);
 
-    let isPrivate = aOptions && aOptions.isPrivate;
-
-    
-    
-    transfer.init(sourceURI, NetUtil.newURI(targetFile), null, mimeInfo, null,
-                  null, persist, isPrivate);
-    persist.progressListener = transfer;
-
-    
-    persist.savePrivacyAwareURI(sourceURI, null, null, 0, null, null, targetFile,
-                                isPrivate);
-  }).then(null, do_report_unexpected_exception);
-
-  return deferred.promise;
+  });
 }
 
 
@@ -382,54 +382,54 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
   let sourceURI = NetUtil.newURI(aSourceUrl ||
                                  httpUrl("interruptible_resumable.txt"));
 
-  let deferred = Promise.defer();
+  return new Promise(resolve => {
 
-  Downloads.getList(Downloads.PUBLIC).then(function(aList) {
-    
-    
-    aList.addView({
-      onDownloadAdded(aDownload) {
-        aList.removeView(this).then(null, do_report_unexpected_exception);
+    Downloads.getList(Downloads.PUBLIC).then(function(aList) {
+      
+      
+      aList.addView({
+        onDownloadAdded(aDownload) {
+          aList.removeView(this).then(null, do_report_unexpected_exception);
 
-        
-        
-        let promise = aList.remove(aDownload);
+          
+          
+          let promise = aList.remove(aDownload);
 
-        
-        promise.then(() => deferred.resolve(aDownload),
-                     do_report_unexpected_exception);
-      },
+          
+          promise.then(() => resolve(aDownload),
+                       do_report_unexpected_exception);
+        },
+      }).then(null, do_report_unexpected_exception);
+
+      let channel = NetUtil.newChannel({
+        uri: sourceURI,
+        loadUsingSystemPrincipal: true
+      });
+
+      
+      channel.asyncOpen2({
+        contentListener: null,
+
+        onStartRequest(aRequest, aContext) {
+          let requestChannel = aRequest.QueryInterface(Ci.nsIChannel);
+          this.contentListener = gExternalHelperAppService.doContent(
+                                       requestChannel.contentType, aRequest, null, true);
+          this.contentListener.onStartRequest(aRequest, aContext);
+        },
+
+        onStopRequest(aRequest, aContext, aStatusCode) {
+          this.contentListener.onStopRequest(aRequest, aContext, aStatusCode);
+        },
+
+        onDataAvailable(aRequest, aContext, aInputStream, aOffset,
+                                  aCount) {
+          this.contentListener.onDataAvailable(aRequest, aContext, aInputStream,
+                                               aOffset, aCount);
+        },
+      });
     }).then(null, do_report_unexpected_exception);
 
-    let channel = NetUtil.newChannel({
-      uri: sourceURI,
-      loadUsingSystemPrincipal: true
-    });
-
-    
-    channel.asyncOpen2({
-      contentListener: null,
-
-      onStartRequest(aRequest, aContext) {
-        let requestChannel = aRequest.QueryInterface(Ci.nsIChannel);
-        this.contentListener = gExternalHelperAppService.doContent(
-                                     requestChannel.contentType, aRequest, null, true);
-        this.contentListener.onStartRequest(aRequest, aContext);
-      },
-
-      onStopRequest(aRequest, aContext, aStatusCode) {
-        this.contentListener.onStopRequest(aRequest, aContext, aStatusCode);
-      },
-
-      onDataAvailable(aRequest, aContext, aInputStream, aOffset,
-                                aCount) {
-        this.contentListener.onDataAvailable(aRequest, aContext, aInputStream,
-                                             aOffset, aCount);
-      },
-    });
-  }).then(null, do_report_unexpected_exception);
-
-  return deferred.promise;
+  });
 }
 
 
@@ -444,22 +444,22 @@ function promiseStartExternalHelperAppServiceDownload(aSourceUrl) {
 
 
 function promiseDownloadMidway(aDownload) {
-  let deferred = Promise.defer();
+  return new Promise(resolve => {
 
-  
-  let onchange = function() {
-    if (!aDownload.stopped && !aDownload.canceled && aDownload.progress == 50) {
-      aDownload.onchange = null;
-      deferred.resolve();
-    }
-  };
+    
+    let onchange = function() {
+      if (!aDownload.stopped && !aDownload.canceled && aDownload.progress == 50) {
+        aDownload.onchange = null;
+        resolve();
+      }
+    };
 
-  
-  
-  aDownload.onchange = onchange;
-  onchange();
+    
+    
+    aDownload.onchange = onchange;
+    onchange();
 
-  return deferred.promise;
+  });
 }
 
 
@@ -532,26 +532,26 @@ function promiseVerifyContents(aPath, aExpectedContents) {
       do_throw("File is empty: " + aPath);
     }
 
-    let deferred = Promise.defer();
-    NetUtil.asyncFetch(
-      { uri: NetUtil.newURI(file), loadUsingSystemPrincipal: true },
-      function(aInputStream, aStatus) {
-        do_check_true(Components.isSuccessCode(aStatus));
-        let contents = NetUtil.readInputStreamToString(aInputStream,
-                                                       aInputStream.available());
-        if (contents.length > TEST_DATA_SHORT.length * 2 ||
-            /[^\x20-\x7E]/.test(contents)) {
-          
-          do_check_eq(contents.length, aExpectedContents.length);
-          do_check_true(contents == aExpectedContents);
-        } else {
-          
-          do_check_eq(contents, aExpectedContents);
-        }
-        deferred.resolve();
-      });
+    await new Promise(resolve => {
+      NetUtil.asyncFetch(
+        { uri: NetUtil.newURI(file), loadUsingSystemPrincipal: true },
+        function(aInputStream, aStatus) {
+          do_check_true(Components.isSuccessCode(aStatus));
+          let contents = NetUtil.readInputStreamToString(aInputStream,
+                                                         aInputStream.available());
+          if (contents.length > TEST_DATA_SHORT.length * 2 ||
+              /[^\x20-\x7E]/.test(contents)) {
+            
+            do_check_eq(contents.length, aExpectedContents.length);
+            do_check_true(contents == aExpectedContents);
+          } else {
+            
+            do_check_eq(contents, aExpectedContents);
+          }
+          resolve();
+        });
 
-    await deferred.promise;
+    });
   })();
 }
 

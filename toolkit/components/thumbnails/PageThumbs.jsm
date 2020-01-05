@@ -82,17 +82,17 @@ const TaskUtils = {
 
 
   readBlob: function readBlob(blob) {
-    let deferred = Promise.defer();
-    let reader = new FileReader();
-    reader.onloadend = function onloadend() {
-      if (reader.readyState != FileReader.DONE) {
-        deferred.reject(reader.error);
-      } else {
-        deferred.resolve(reader.result);
-      }
-    };
-    reader.readAsArrayBuffer(blob);
-    return deferred.promise;
+    return new Promise((resolve, reject) => {
+      let reader = new FileReader();
+      reader.onloadend = function onloadend() {
+        if (reader.readyState != FileReader.DONE) {
+          reject(reader.error);
+        } else {
+          resolve(reader.result);
+        }
+      };
+      reader.readAsArrayBuffer(blob);
+    });
   }
 };
 
@@ -186,16 +186,16 @@ this.PageThumbs = {
       return null;
     }
 
-    let deferred = Promise.defer();
+    return new Promise(resolve => {
 
-    let canvas = this.createCanvas(aBrowser.contentWindow);
-    this.captureToCanvas(aBrowser, canvas, () => {
-      canvas.toBlob(blob => {
-        deferred.resolve(blob, this.contentType);
+      let canvas = this.createCanvas(aBrowser.contentWindow);
+      this.captureToCanvas(aBrowser, canvas, () => {
+        canvas.toBlob(blob => {
+          resolve(blob, this.contentType);
+        });
       });
-    });
 
-    return deferred.promise;
+    });
   },
 
   
@@ -307,55 +307,55 @@ this.PageThumbs = {
 
 
   _captureRemoteThumbnail(aBrowser, aWidth, aHeight, aArgs) {
-    let deferred = Promise.defer();
+    return new Promise(resolve => {
 
-    
-    
-    let index = gRemoteThumbId++;
-
-    
-    let mm = aBrowser.messageManager;
-
-    
-    let thumbFunc = function(aMsg) {
       
-      if (aMsg.data.id != index) {
-        return;
+      
+      let index = gRemoteThumbId++;
+
+      
+      let mm = aBrowser.messageManager;
+
+      
+      let thumbFunc = function(aMsg) {
+        
+        if (aMsg.data.id != index) {
+          return;
+        }
+
+        mm.removeMessageListener("Browser:Thumbnail:Response", thumbFunc);
+        let imageBlob = aMsg.data.thumbnail;
+        let doc = aBrowser.parentElement.ownerDocument;
+        let reader = new FileReader();
+        reader.addEventListener("loadend", function() {
+          let image = doc.createElementNS(PageThumbUtils.HTML_NAMESPACE, "img");
+          image.onload = function() {
+            let thumbnail = doc.createElementNS(PageThumbUtils.HTML_NAMESPACE, "canvas");
+            thumbnail.width = image.naturalWidth;
+            thumbnail.height = image.naturalHeight;
+            let ctx = thumbnail.getContext("2d");
+            ctx.drawImage(image, 0, 0);
+            resolve({
+              thumbnail
+            });
+          }
+          image.src = reader.result;
+        });
+        
+        reader.readAsDataURL(imageBlob);
       }
 
-      mm.removeMessageListener("Browser:Thumbnail:Response", thumbFunc);
-      let imageBlob = aMsg.data.thumbnail;
-      let doc = aBrowser.parentElement.ownerDocument;
-      let reader = new FileReader();
-      reader.addEventListener("loadend", function() {
-        let image = doc.createElementNS(PageThumbUtils.HTML_NAMESPACE, "img");
-        image.onload = function() {
-          let thumbnail = doc.createElementNS(PageThumbUtils.HTML_NAMESPACE, "canvas");
-          thumbnail.width = image.naturalWidth;
-          thumbnail.height = image.naturalHeight;
-          let ctx = thumbnail.getContext("2d");
-          ctx.drawImage(image, 0, 0);
-          deferred.resolve({
-            thumbnail
-          });
-        }
-        image.src = reader.result;
-      });
       
-      reader.readAsDataURL(imageBlob);
-    }
+      mm.addMessageListener("Browser:Thumbnail:Response", thumbFunc);
+      mm.sendAsyncMessage("Browser:Thumbnail:Request", {
+        canvasWidth: aWidth,
+        canvasHeight: aHeight,
+        background: PageThumbUtils.THUMBNAIL_BG_COLOR,
+        id: index,
+        additionalArgs: aArgs
+      });
 
-    
-    mm.addMessageListener("Browser:Thumbnail:Response", thumbFunc);
-    mm.sendAsyncMessage("Browser:Thumbnail:Request", {
-      canvasWidth: aWidth,
-      canvasHeight: aHeight,
-      background: PageThumbUtils.THUMBNAIL_BG_COLOR,
-      id: index,
-      additionalArgs: aArgs
     });
-
-    return deferred.promise;
   },
 
   

@@ -153,33 +153,33 @@ var DirectoryLinksProvider = {
 
 
   _downloadJsonData: function DirectoryLinksProvider__downloadJsonData(uri) {
-    let deferred = Promise.defer();
-    let xmlHttp = this._newXHR();
+    return new Promise((resolve, reject) => {
+      let xmlHttp = this._newXHR();
 
-    xmlHttp.onload = function(aResponse) {
-      let json = this.responseText;
-      if (this.status && this.status != 200) {
-        json = "{}";
+      xmlHttp.onload = function(aResponse) {
+        let json = this.responseText;
+        if (this.status && this.status != 200) {
+          json = "{}";
+        }
+        resolve(json);
+      };
+
+      xmlHttp.onerror = function(e) {
+        reject("Fetching " + uri + " results in error code: " + e.target.status);
+      };
+
+      try {
+        xmlHttp.open("GET", uri);
+        
+        xmlHttp.overrideMimeType(DIRECTORY_LINKS_TYPE);
+        
+        xmlHttp.setRequestHeader("Content-Type", DIRECTORY_LINKS_TYPE);
+        xmlHttp.send();
+      } catch (e) {
+        reject("Error fetching " + uri);
+        Cu.reportError(e);
       }
-      deferred.resolve(json);
-    };
-
-    xmlHttp.onerror = function(e) {
-      deferred.reject("Fetching " + uri + " results in error code: " + e.target.status);
-    };
-
-    try {
-      xmlHttp.open("GET", uri);
-      
-      xmlHttp.overrideMimeType(DIRECTORY_LINKS_TYPE);
-      
-      xmlHttp.setRequestHeader("Content-Type", DIRECTORY_LINKS_TYPE);
-      xmlHttp.send();
-    } catch (e) {
-      deferred.reject("Error fetching " + uri);
-      Cu.reportError(e);
-    }
-    return deferred.promise;
+    });
   },
 
   

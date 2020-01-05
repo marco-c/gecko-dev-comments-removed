@@ -28,9 +28,9 @@ const T = 100;
 
 
 function promiseTimeout(aTimeoutMs) {
-  let deferred = Promise.defer();
-  do_timeout(aTimeoutMs, deferred.resolve);
-  return deferred.promise;
+  return new Promise(resolve => {
+    do_timeout(aTimeoutMs, resolve);
+  });
 }
 
 function run_test() {

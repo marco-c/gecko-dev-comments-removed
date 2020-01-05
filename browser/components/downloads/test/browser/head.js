@@ -64,32 +64,32 @@ function promiseOpenAndLoadWindow(aOptions) {
 
 
 function promiseTabLoadEvent(tab, url, eventType = "load") {
-  let deferred = Promise.defer();
-  info("Wait tab event: " + eventType);
+  return new Promise(resolve => {
+    info("Wait tab event: " + eventType);
 
-  function handle(event) {
-    if (event.originalTarget != tab.linkedBrowser.contentDocument ||
-        event.target.location.href == "about:blank" ||
-        (url && event.target.location.href != url)) {
-      info("Skipping spurious '" + eventType + "'' event" +
-           " for " + event.target.location.href);
-      return;
+    function handle(event) {
+      if (event.originalTarget != tab.linkedBrowser.contentDocument ||
+          event.target.location.href == "about:blank" ||
+          (url && event.target.location.href != url)) {
+        info("Skipping spurious '" + eventType + "'' event" +
+             " for " + event.target.location.href);
+        return;
+      }
+      
+      realCleanup = () => {};
+      tab.linkedBrowser.removeEventListener(eventType, handle, true);
+      info("Tab event received: " + eventType);
+      resolve(event);
     }
+
     
-    realCleanup = () => {};
-    tab.linkedBrowser.removeEventListener(eventType, handle, true);
-    info("Tab event received: " + eventType);
-    deferred.resolve(event);
-  }
+    let realCleanup = () => tab.linkedBrowser.removeEventListener(eventType, handle, true);
+    registerCleanupFunction(() => realCleanup());
 
-  
-  let realCleanup = () => tab.linkedBrowser.removeEventListener(eventType, handle, true);
-  registerCleanupFunction(() => realCleanup());
-
-  tab.linkedBrowser.addEventListener(eventType, handle, true, true);
-  if (url)
-    tab.linkedBrowser.loadURI(url);
-  return deferred.promise;
+    tab.linkedBrowser.addEventListener(eventType, handle, true, true);
+    if (url)
+      tab.linkedBrowser.loadURI(url);
+  });
 }
 
 function promiseWindowClosed(win) {
@@ -107,30 +107,30 @@ function promiseWindowClosed(win) {
 
 
 function promiseFocus() {
-  let deferred = Promise.defer();
-  waitForFocus(deferred.resolve);
-  return deferred.promise;
+  return new Promise(resolve => {
+    waitForFocus(resolve);
+  });
 }
 
 function promisePanelOpened() {
-  let deferred = Promise.defer();
+  return new Promise(resolve => {
 
-  if (DownloadsPanel.panel && DownloadsPanel.panel.state == "open") {
-    return deferred.resolve();
-  }
-
-  
-  let originalOnPopupShown = DownloadsPanel.onPopupShown;
-  DownloadsPanel.onPopupShown = function() {
-    DownloadsPanel.onPopupShown = originalOnPopupShown;
-    originalOnPopupShown.apply(this, arguments);
+    if (DownloadsPanel.panel && DownloadsPanel.panel.state == "open") {
+      return resolve();
+    }
 
     
-    
-    setTimeout(deferred.resolve, 0);
-  };
+    let originalOnPopupShown = DownloadsPanel.onPopupShown;
+    DownloadsPanel.onPopupShown = function() {
+      DownloadsPanel.onPopupShown = originalOnPopupShown;
+      originalOnPopupShown.apply(this, arguments);
 
-  return deferred.promise;
+      
+      
+      setTimeout(resolve, 0);
+    };
+
+  });
 }
 
 async function task_resetState() {

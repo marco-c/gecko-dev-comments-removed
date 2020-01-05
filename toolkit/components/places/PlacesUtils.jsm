@@ -1604,23 +1604,23 @@ this.PlacesUtils = {
 
 
   setCharsetForURI: function PU_setCharsetForURI(aURI, aCharset) {
-    let deferred = Promise.defer();
+    return new Promise(resolve => {
 
-    
-    
-    Services.tm.dispatchToMainThread(function() {
-      if (aCharset && aCharset.length > 0) {
-        PlacesUtils.annotations.setPageAnnotation(
-          aURI, PlacesUtils.CHARSET_ANNO, aCharset, 0,
-          Ci.nsIAnnotationService.EXPIRE_NEVER);
-      } else {
-        PlacesUtils.annotations.removePageAnnotation(
-          aURI, PlacesUtils.CHARSET_ANNO);
-      }
-      deferred.resolve();
+      
+      
+      Services.tm.dispatchToMainThread(function() {
+        if (aCharset && aCharset.length > 0) {
+          PlacesUtils.annotations.setPageAnnotation(
+            aURI, PlacesUtils.CHARSET_ANNO, aCharset, 0,
+            Ci.nsIAnnotationService.EXPIRE_NEVER);
+        } else {
+          PlacesUtils.annotations.removePageAnnotation(
+            aURI, PlacesUtils.CHARSET_ANNO);
+        }
+        resolve();
+      });
+
     });
-
-    return deferred.promise;
   },
 
   
@@ -1631,20 +1631,20 @@ this.PlacesUtils = {
 
 
   getCharsetForURI: function PU_getCharsetForURI(aURI) {
-    let deferred = Promise.defer();
+    return new Promise(resolve => {
 
-    Services.tm.dispatchToMainThread(function() {
-      let charset = null;
+      Services.tm.dispatchToMainThread(function() {
+        let charset = null;
 
-      try {
-        charset = PlacesUtils.annotations.getPageAnnotation(aURI,
-                                                            PlacesUtils.CHARSET_ANNO);
-      } catch (ex) { }
+        try {
+          charset = PlacesUtils.annotations.getPageAnnotation(aURI,
+                                                              PlacesUtils.CHARSET_ANNO);
+        } catch (ex) { }
 
-      deferred.resolve(charset);
+        resolve(charset);
+      });
+
     });
-
-    return deferred.promise;
   },
 
   
@@ -1655,21 +1655,21 @@ this.PlacesUtils = {
 
 
   promisePlaceInfo: function PU_promisePlaceInfo(aPlaceIdentifier) {
-    let deferred = Promise.defer();
-    PlacesUtils.asyncHistory.getPlacesInfo(aPlaceIdentifier, {
-      _placeInfo: null,
-      handleResult: function handleResult(aPlaceInfo) {
-        this._placeInfo = aPlaceInfo;
-      },
-      handleError: function handleError(aResultCode, aPlaceInfo) {
-        deferred.reject(new Components.Exception("Error", aResultCode));
-      },
-      handleCompletion() {
-        deferred.resolve(this._placeInfo);
-      }
-    });
+    return new Promise((resolve, reject) => {
+      PlacesUtils.asyncHistory.getPlacesInfo(aPlaceIdentifier, {
+        _placeInfo: null,
+        handleResult: function handleResult(aPlaceInfo) {
+          this._placeInfo = aPlaceInfo;
+        },
+        handleError: function handleError(aResultCode, aPlaceInfo) {
+          reject(new Components.Exception("Error", aResultCode));
+        },
+        handleCompletion() {
+          resolve(this._placeInfo);
+        }
+      });
 
-    return deferred.promise;
+    });
   },
 
   
@@ -1681,19 +1681,19 @@ this.PlacesUtils = {
 
 
   promiseFaviconData(aPageUrl) {
-    let deferred = Promise.defer();
-    PlacesUtils.favicons.getFaviconDataForPage(NetUtil.newURI(aPageUrl),
-      function(aURI, aDataLen, aData, aMimeType) {
-        if (aURI) {
-          deferred.resolve({ uri: aURI,
-                             dataLen: aDataLen,
-                             data: aData,
-                             mimeType: aMimeType });
-        } else {
-          deferred.reject();
-        }
-      });
-    return deferred.promise;
+    return new Promise((resolve, reject) => {
+      PlacesUtils.favicons.getFaviconDataForPage(NetUtil.newURI(aPageUrl),
+        function(aURI, aDataLen, aData, aMimeType) {
+          if (aURI) {
+            resolve({ uri: aURI,
+                               dataLen: aDataLen,
+                               data: aData,
+                               mimeType: aMimeType });
+          } else {
+            reject();
+          }
+        });
+    });
   },
 
   
@@ -1704,19 +1704,19 @@ this.PlacesUtils = {
 
 
   promiseFaviconLinkUrl(aPageUrl) {
-    let deferred = Promise.defer();
-    if (!(aPageUrl instanceof Ci.nsIURI))
-      aPageUrl = NetUtil.newURI(aPageUrl);
+    return new Promise((resolve, reject) => {
+      if (!(aPageUrl instanceof Ci.nsIURI))
+        aPageUrl = NetUtil.newURI(aPageUrl);
 
-    PlacesUtils.favicons.getFaviconURLForPage(aPageUrl, uri => {
-      if (uri) {
-        uri = PlacesUtils.favicons.getFaviconLinkForIcon(uri);
-        deferred.resolve(uri);
-      } else {
-        deferred.reject("favicon not found for uri");
-      }
+      PlacesUtils.favicons.getFaviconURLForPage(aPageUrl, uri => {
+        if (uri) {
+          uri = PlacesUtils.favicons.getFaviconLinkForIcon(uri);
+          resolve(uri);
+        } else {
+          reject("favicon not found for uri");
+        }
+      });
     });
-    return deferred.promise;
   },
 
    

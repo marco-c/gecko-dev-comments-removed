@@ -10,17 +10,17 @@ const NHQO = Ci.nsINavHistoryQueryOptions;
 
 
 function promiseOnItemVisited() {
-  let defer = Promise.defer();
-  let bookmarksObserver = {
-    __proto__: NavBookmarkObserver.prototype,
-    onItemVisited: function BO_onItemVisited() {
-      PlacesUtils.bookmarks.removeObserver(this);
-      
-      do_execute_soon(defer.resolve);
-    }
-  };
-  PlacesUtils.bookmarks.addObserver(bookmarksObserver);
-  return defer.promise;
+  return new Promise(resolve => {
+    let bookmarksObserver = {
+      __proto__: NavBookmarkObserver.prototype,
+      onItemVisited: function BO_onItemVisited() {
+        PlacesUtils.bookmarks.removeObserver(this);
+        
+        do_execute_soon(resolve);
+      }
+    };
+    PlacesUtils.bookmarks.addObserver(bookmarksObserver);
+  });
 }
 
 function run_test() {

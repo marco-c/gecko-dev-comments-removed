@@ -226,37 +226,37 @@ add_task(async function test_frecency() {
     do_check_eq(numSearchesStarted, 1);
   };
 
-  let deferred = Promise.defer();
-  input.onSearchComplete = function() {
-    do_check_eq(numSearchesStarted, 1);
-    do_check_eq(controller.searchStatus,
-                Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH);
+  await new Promise(resolve => {
+    input.onSearchComplete = function() {
+      do_check_eq(numSearchesStarted, 1);
+      do_check_eq(controller.searchStatus,
+                  Ci.nsIAutoCompleteController.STATUS_COMPLETE_MATCH);
 
-    
-    do_check_eq(controller.matchCount, results.length);
+      
+      do_check_eq(controller.matchCount, results.length);
 
-    
-    for (var i = 0; i < controller.matchCount; i++) {
-      let searchURL = controller.getValueAt(i);
-      let expectURL = results[i][0].spec;
-      if (searchURL == expectURL) {
-        do_check_eq(controller.getValueAt(i), results[i][0].spec);
-        do_check_eq(controller.getCommentAt(i), results[i][2]);
-      } else {
-        
-        
-        
-        
-        let getFrecency = aURL => aURL.match(/frecency:(-?\d+)$/)[1];
-        print("### checking for same frecency between '" + searchURL +
-              "' and '" + expectURL + "'");
-        do_check_eq(getFrecency(searchURL), getFrecency(expectURL));
+      
+      for (var i = 0; i < controller.matchCount; i++) {
+        let searchURL = controller.getValueAt(i);
+        let expectURL = results[i][0].spec;
+        if (searchURL == expectURL) {
+          do_check_eq(controller.getValueAt(i), results[i][0].spec);
+          do_check_eq(controller.getCommentAt(i), results[i][2]);
+        } else {
+          
+          
+          
+          
+          let getFrecency = aURL => aURL.match(/frecency:(-?\d+)$/)[1];
+          print("### checking for same frecency between '" + searchURL +
+                "' and '" + expectURL + "'");
+          do_check_eq(getFrecency(searchURL), getFrecency(expectURL));
+        }
       }
-    }
-    deferred.resolve();
-  };
+      resolve();
+    };
 
-  controller.startSearch(searchTerm);
+    controller.startSearch(searchTerm);
 
-  await deferred.promise;
+  });
 });

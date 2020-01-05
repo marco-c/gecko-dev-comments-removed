@@ -21,12 +21,12 @@ add_task(async function test_watching_non_existing() {
 
   
   let watcher = makeWatcher();
-  let deferred = Promise.defer();
+  let error = await new Promise((resolve, reject) => {
 
-  
-  watcher.addPath(notExistingDir, deferred.reject, deferred.resolve);
+    
+    watcher.addPath(notExistingDir, reject, resolve);
 
-  
-  let error = await deferred.promise;
+    
+  });
   do_check_eq(error, Components.results.NS_ERROR_FILE_NOT_FOUND);
 });

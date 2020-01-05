@@ -72,24 +72,24 @@ add_task(async function test_add_visit() {
 
   
   let visitId;
-  let deferUpdatePlaces = Promise.defer();
-  PlacesUtils.asyncHistory.updatePlaces({
-    uri: NetUtil.newURI("http://book.ma.rk/"),
-    visits: [{ transitionType: TRANSITION_TYPED, visitDate: NOW }]
-  }, {
-    handleError: function TAV_handleError() {
-      deferUpdatePlaces.reject(new Error("Unexpected error in adding visit."));
-    },
-    handleResult(aPlaceInfo) {
-      visitId = aPlaceInfo.visits[0].visitId;
-    },
-    handleCompletion: function TAV_handleCompletion() {
-      deferUpdatePlaces.resolve();
-    }
-  });
+  await new Promise((resolve, reject) => {
+    PlacesUtils.asyncHistory.updatePlaces({
+      uri: NetUtil.newURI("http://book.ma.rk/"),
+      visits: [{ transitionType: TRANSITION_TYPED, visitDate: NOW }]
+    }, {
+      handleError: function TAV_handleError() {
+        reject(new Error("Unexpected error in adding visit."));
+      },
+      handleResult(aPlaceInfo) {
+        visitId = aPlaceInfo.visits[0].visitId;
+      },
+      handleCompletion: function TAV_handleCompletion() {
+        resolve();
+      }
+    });
 
-  
-  await deferUpdatePlaces.promise;
+    
+  });
   await observerPromise;
 
   
@@ -127,24 +127,24 @@ add_task(async function shutdown() {
   
   
   
-  let deferred = Promise.defer();
+  await new Promise(resolve => {
 
-  Services.obs.addObserver(function onNotification() {
-    Services.obs.removeObserver(onNotification, "places-will-close-connection");
-    do_check_true(true, "Observed fake places shutdown");
+    Services.obs.addObserver(function onNotification() {
+      Services.obs.removeObserver(onNotification, "places-will-close-connection");
+      do_check_true(true, "Observed fake places shutdown");
 
-    Services.tm.dispatchToMainThread(() => {
-      
-      PlacesUtils.bookmarks.QueryInterface(Ci.nsINavHistoryObserver)
-                           .onPageChanged(NetUtil.newURI("http://book.ma.rk/"),
-                                          Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON,
-                                          "test", "test");
-      deferred.resolve(promiseTopicObserved("places-connection-closed"));
-    });
-  }, "places-will-close-connection");
-  shutdownPlaces();
+      Services.tm.dispatchToMainThread(() => {
+        
+        PlacesUtils.bookmarks.QueryInterface(Ci.nsINavHistoryObserver)
+                             .onPageChanged(NetUtil.newURI("http://book.ma.rk/"),
+                                            Ci.nsINavHistoryObserver.ATTRIBUTE_FAVICON,
+                                            "test", "test");
+        resolve(promiseTopicObserved("places-connection-closed"));
+      });
+    }, "places-will-close-connection");
+    shutdownPlaces();
 
-  await deferred.promise;
+  });
 });
 
 function run_test() {

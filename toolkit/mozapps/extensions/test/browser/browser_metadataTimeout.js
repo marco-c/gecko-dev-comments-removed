@@ -44,50 +44,50 @@ ARContext.ServiceRequest = function() {
 
 
 function promise_open_compatibility_window(aInactiveAddonIds) {
-  let deferred = Promise.defer();
-  
-  
-  
-  requestLongerTimeout(2);
+  return new Promise(resolve => {
+    
+    
+    
+    requestLongerTimeout(2);
 
-  var variant = Cc["@mozilla.org/variant;1"].
-                createInstance(Ci.nsIWritableVariant);
-  variant.setFromVariant(aInactiveAddonIds);
+    var variant = Cc["@mozilla.org/variant;1"].
+                  createInstance(Ci.nsIWritableVariant);
+    variant.setFromVariant(aInactiveAddonIds);
 
-  
-  
-  var features = "chrome,centerscreen,dialog,titlebar";
-  var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].
-           getService(Ci.nsIWindowWatcher);
-  var win = ww.openWindow(null, URI_EXTENSION_UPDATE_DIALOG, "", features, variant);
+    
+    
+    var features = "chrome,centerscreen,dialog,titlebar";
+    var ww = Cc["@mozilla.org/embedcomp/window-watcher;1"].
+             getService(Ci.nsIWindowWatcher);
+    var win = ww.openWindow(null, URI_EXTENSION_UPDATE_DIALOG, "", features, variant);
 
-  win.addEventListener("load", function() {
-    function page_shown(aEvent) {
-      if (aEvent.target.pageid)
-        info("Page " + aEvent.target.pageid + " shown");
-    }
+    win.addEventListener("load", function() {
+      function page_shown(aEvent) {
+        if (aEvent.target.pageid)
+          info("Page " + aEvent.target.pageid + " shown");
+      }
 
-    win.removeEventListener("load", arguments.callee);
+      win.removeEventListener("load", arguments.callee);
 
-    info("Compatibility dialog opened");
+      info("Compatibility dialog opened");
 
-    win.addEventListener("pageshow", page_shown);
-    win.addEventListener("unload", function() {
-      win.removeEventListener("pageshow", page_shown);
-      dump("Compatibility dialog closed\n");
-    }, {once: true});
+      win.addEventListener("pageshow", page_shown);
+      win.addEventListener("unload", function() {
+        win.removeEventListener("pageshow", page_shown);
+        dump("Compatibility dialog closed\n");
+      }, {once: true});
 
-    deferred.resolve(win);
+      resolve(win);
+    });
   });
-  return deferred.promise;
 }
 
 function promise_window_close(aWindow) {
-  let deferred = Promise.defer();
-  aWindow.addEventListener("unload", function() {
-    deferred.resolve(aWindow);
-  }, {once: true});
-  return deferred.promise;
+  return new Promise(resolve => {
+    aWindow.addEventListener("unload", function() {
+      resolve(aWindow);
+    }, {once: true});
+  });
 }
 
 

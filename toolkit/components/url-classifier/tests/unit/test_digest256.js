@@ -29,31 +29,31 @@ function readFileToString(aFilename) {
 
 
 function registerTableUpdate(aTable, aFilename) {
-  let deferred = Promise.defer();
-  
-  if (!(aTable in gTables)) {
-    gTables[aTable] = [];
-  }
+  return new Promise(resolve => {
+    
+    if (!(aTable in gTables)) {
+      gTables[aTable] = [];
+    }
 
-  
-  let numChunks = gTables[aTable].length + 1;
-  let redirectPath = "/" + aTable + "-" + numChunks;
-  let redirectUrl = "localhost:4444" + redirectPath;
+    
+    let numChunks = gTables[aTable].length + 1;
+    let redirectPath = "/" + aTable + "-" + numChunks;
+    let redirectUrl = "localhost:4444" + redirectPath;
 
-  
-  
-  gTables[aTable].push(redirectUrl);
+    
+    
+    gTables[aTable].push(redirectUrl);
 
-  gHttpServ.registerPathHandler(redirectPath, function(request, response) {
-    do_print("Mock safebrowsing server handling request for " + redirectPath);
-    let contents = readFileToString(aFilename);
-    response.setHeader("Content-Type",
-                       "application/vnd.google.safebrowsing-update", false);
-    response.setStatusLine(request.httpVersion, 200, "OK");
-    response.bodyOutputStream.write(contents, contents.length);
-    deferred.resolve(contents);
+    gHttpServ.registerPathHandler(redirectPath, function(request, response) {
+      do_print("Mock safebrowsing server handling request for " + redirectPath);
+      let contents = readFileToString(aFilename);
+      response.setHeader("Content-Type",
+                         "application/vnd.google.safebrowsing-update", false);
+      response.setStatusLine(request.httpVersion, 200, "OK");
+      response.bodyOutputStream.write(contents, contents.length);
+      resolve(contents);
+    });
   });
-  return deferred.promise;
 }
 
 

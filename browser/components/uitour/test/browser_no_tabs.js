@@ -60,43 +60,43 @@ add_task(async function test_windowless_UITour() {
   Services.perms.add(pageURI, "uitour", Services.perms.ALLOW_ACTION);
 
   
-  let deferredPing = Promise.defer();
-
-  
-  let browserPromise = createHiddenBrowser(pageURL);
-  browserPromise.then(frameInfo => {
-    isnot(frameInfo.browser, null, "The browser must exist and not be null.");
+  await new Promise(resolve => {
 
     
-    frameInfo.browser.messageManager.loadFrameScript(
-      "chrome://browser/content/content-UITour.js", false);
+    let browserPromise = createHiddenBrowser(pageURL);
+    browserPromise.then(frameInfo => {
+      isnot(frameInfo.browser, null, "The browser must exist and not be null.");
+
+      
+      frameInfo.browser.messageManager.loadFrameScript(
+        "chrome://browser/content/content-UITour.js", false);
+
+      
+      frameInfo.browser.addEventListener("load", function loadListener() {
+        info("The test page was correctly loaded.");
+
+        frameInfo.browser.removeEventListener("load", loadListener, true);
+
+        
+        info("Testing access to the UITour API.");
+        let contentWindow = Cu.waiveXrays(frameInfo.browser.contentDocument.defaultView);
+        isnot(contentWindow, null, "The content window must exist and not be null.");
+
+        let uitourAPI = contentWindow.Mozilla.UITour;
+
+        
+        uitourAPI.ping(function() {
+          info("Ping response received from the UITour API.");
+
+          
+          destroyHiddenBrowser(frameInfo.frame, frameInfo.browser);
+
+          
+          resolve();
+        });
+      }, true);
+    });
 
     
-    frameInfo.browser.addEventListener("load", function loadListener() {
-      info("The test page was correctly loaded.");
-
-      frameInfo.browser.removeEventListener("load", loadListener, true);
-
-      
-      info("Testing access to the UITour API.");
-      let contentWindow = Cu.waiveXrays(frameInfo.browser.contentDocument.defaultView);
-      isnot(contentWindow, null, "The content window must exist and not be null.");
-
-      let uitourAPI = contentWindow.Mozilla.UITour;
-
-      
-      uitourAPI.ping(function() {
-        info("Ping response received from the UITour API.");
-
-        
-        destroyHiddenBrowser(frameInfo.frame, frameInfo.browser);
-
-        
-        deferredPing.resolve();
-      });
-    }, true);
   });
-
-  
-  await deferredPing.promise;
 });
