@@ -1676,7 +1676,7 @@ var BrowserApp = {
 
     switch (event) {
       case "Browser:LoadManifest": {
-        installManifest(browser, data.manifestUrl, data.iconSize);
+        installManifest(browser, data);
         break;
       }
 
@@ -2206,11 +2206,11 @@ var BrowserApp = {
   },
 };
 
-async function installManifest(browser, manifestUrl, iconSize) {
+async function installManifest(browser, data) {
   try {
-    const manifest = await Manifests.getManifest(browser, manifestUrl);
+    const manifest = await Manifests.getManifest(browser, data.manifestUrl);
     await manifest.install();
-    const icon = await manifest.icon(iconSize);
+    const icon = await manifest.icon(data.iconSize);
     GlobalEventDispatcher.sendRequest({
       type: "Website:AppInstalled",
       icon,
@@ -2220,6 +2220,12 @@ async function installManifest(browser, manifestUrl, iconSize) {
     });
   } catch (err) {
     Cu.reportError("Failed to install: " + err.message);
+    
+    GlobalEventDispatcher.sendRequest({
+      type: "Website:AppInstallFailed",
+      url: data.originalUrl,
+      title: data.originalTitle
+    });
   }
 }
 
@@ -4047,20 +4053,6 @@ Tab.prototype = {
           let errorExtra = decodeURIComponent(docURI.slice(error + 2, duffUrl));
           
           
-          if (errorExtra == "fileAccessDenied") {
-            
-            
-            RuntimePermissions.checkPermission(RuntimePermissions.WRITE_EXTERNAL_STORAGE).then((permissionAlreadyGranted) => {
-              if (!permissionAlreadyGranted) {
-                RuntimePermissions.waitForPermissions(RuntimePermissions.WRITE_EXTERNAL_STORAGE).then((permissionGranted) => {
-                  if (permissionGranted) {
-                    this.browser.reload();
-                  }
-                });
-              }
-            });
-          }
-
           UITelemetry.addEvent("neterror.1", "content", null, errorExtra);
           errorType = "neterror";
         }

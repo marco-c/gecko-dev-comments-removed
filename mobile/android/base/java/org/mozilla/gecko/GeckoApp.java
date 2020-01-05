@@ -762,28 +762,26 @@ public abstract class GeckoApp
         } else if ("PrivateBrowsing:Data".equals(event)) {
             mPrivateBrowsingSession = message.getString("session");
 
-        } else if ("RuntimePermissions:Check".equals(event)) {
-            final String[] permissions = message.getStringArray("permissions");
-            final boolean shouldPrompt = message.getBoolean("shouldPrompt", false);
+        } else if ("RuntimePermissions:Prompt".equals(event)) {
+            String[] permissions = message.getStringArray("permissions");
             if (callback == null || permissions == null) {
                 return;
             }
 
             Permissions.from(this)
-                    .withPermissions(permissions)
-                    .doNotPromptIf(!shouldPrompt)
-                    .andFallback(new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.sendSuccess(false);
-                        }
-                    })
-                    .run(new Runnable() {
-                        @Override
-                        public void run() {
-                            callback.sendSuccess(true);
-                        }
-                    });
+                       .withPermissions(permissions)
+                       .andFallback(new Runnable() {
+                           @Override
+                           public void run() {
+                               callback.sendSuccess(false);
+                           }
+                       })
+                       .run(new Runnable() {
+                           @Override
+                           public void run() {
+                               callback.sendSuccess(true);
+                           }
+                       });
 
         } else if ("Share:Text".equals(event)) {
             final String text = message.getString("text");
@@ -1314,7 +1312,7 @@ public abstract class GeckoApp
             "DOMFullScreen:Stop",
             "Permissions:Data",
             "PrivateBrowsing:Data",
-            "RuntimePermissions:Check",
+            "RuntimePermissions:Prompt",
             "Share:Text",
             "SystemUI:Visibility",
             "ToggleChrome:Focus",
@@ -2018,23 +2016,28 @@ public abstract class GeckoApp
             final GeckoBundle message = new GeckoBundle();
             message.putInt("iconSize", GeckoAppShell.getPreferredIconSize());
             message.putString("manifestUrl", manifestUrl);
+            message.putString("originalUrl", url);
+            message.putString("originalTitle", title);
             EventDispatcher.getInstance().dispatch("Browser:LoadManifest", message);
             return;
         }
 
-        
-        Icons.with(this)
-                .pageUrl(url)
-                .skipNetwork()
-                .skipMemory()
-                .forLauncherIcon()
-                .build()
-                .execute(new IconCallback() {
-                    @Override
-                    public void onIconResponse(IconResponse response) {
-                        createShortcut(title, url, response.getBitmap());
-                    }
-                });
+        createBrowserShortcut(title, url);
+    }
+
+    public void createBrowserShortcut(final String title, final String url) {
+      Icons.with(this)
+              .pageUrl(url)
+              .skipNetwork()
+              .skipMemory()
+              .forLauncherIcon()
+              .build()
+              .execute(new IconCallback() {
+                  @Override
+                  public void onIconResponse(IconResponse response) {
+                      createShortcut(title, url, response.getBitmap());
+                  }
+              });
     }
 
     public void createShortcut(final String aTitle, final String aURI, final Bitmap aIcon) {
@@ -2426,7 +2429,7 @@ public abstract class GeckoApp
             "DOMFullScreen:Stop",
             "Permissions:Data",
             "PrivateBrowsing:Data",
-            "RuntimePermissions:Check",
+            "RuntimePermissions:Prompt",
             "Share:Text",
             "SystemUI:Visibility",
             "ToggleChrome:Focus",
