@@ -589,6 +589,7 @@ frontend::CompileModule(JSContext* cx, const ReadOnlyCompileOptions& optionsInpu
     CompileOptions options(cx, optionsInput);
     options.maybeMakeStrictMode(true); 
     options.setIsRunOnce(true);
+    options.allowHTMLComments = false;
 
     RootedScope emptyGlobalScope(cx, &cx->global()->emptyGlobalScope());
     BytecodeCompiler compiler(cx, alloc, options, srcBuf, emptyGlobalScope,
