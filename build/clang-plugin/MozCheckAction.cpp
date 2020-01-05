@@ -2,7 +2,9 @@
 
 
 
+#include "plugin.h"
 #include "DiagnosticsMatcher.h"
+#include "clang/Frontend/FrontendPluginRegistry.h"
 
 class MozCheckAction : public PluginASTAction {
 public:
