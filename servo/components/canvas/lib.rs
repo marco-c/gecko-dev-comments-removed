@@ -3,6 +3,7 @@
 
 
 #![feature(collections)]
+#![feature(core)]
 #![feature(std_misc)]
 
 extern crate azure;
