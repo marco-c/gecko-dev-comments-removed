@@ -98,7 +98,7 @@
     }
   ]; // gTests
 
-  add_task(function* test() {
+  add_task(function* run_all() {
     for (let test of gTests) {
       info("Running: " + test.desc);
       yield test.run();

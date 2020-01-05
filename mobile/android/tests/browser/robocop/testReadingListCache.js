@@ -79,8 +79,8 @@ add_task(function* test_migrate_cache() {
 
     
     request.onupgradeneeded = event => {
-      let cacheDB = event.target.result;
-      cacheDB.createObjectStore("articles", { keyPath: "url" });
+      let cacheDB2 = event.target.result;
+      cacheDB2.createObjectStore("articles", { keyPath: "url" });
     };
 
     request.onsuccess = event => resolve(event.target.result);
