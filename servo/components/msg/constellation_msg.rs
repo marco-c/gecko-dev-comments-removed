@@ -294,7 +294,6 @@ pub enum ScriptMsg {
     NewFavicon(Url),
     
     NodeStatus(Option<String>),
-    PainterReady(PipelineId),
     
     RemoveIFrame(PipelineId),
     ScriptLoadedURLInIFrame(IframeLoadInfo),
@@ -304,6 +303,13 @@ pub enum ScriptMsg {
     SetCursor(Cursor),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum PaintMsg {
+    Ready(PipelineId),
+    Failure(Failure),
 }
 
 #[derive(Clone, Eq, PartialEq, Deserialize, Serialize, Debug)]
