@@ -2416,14 +2416,14 @@ function BrowserViewSourceOfDocument(aArgsOrDocument) {
     if (inTab) {
       let tabBrowser = gBrowser;
       let preferredRemoteType;
-      if (!tabBrowser) {
-        if (!args.browser) {
+      if (args.browser) {
+        preferredRemoteType = args.browser.remoteType;
+      } else {
+        if (!tabBrowser) {
           throw new Error("BrowserViewSourceOfDocument should be passed the " +
                           "subject browser if called from a window without " +
                           "gBrowser defined.");
         }
-        preferredRemoteType = args.browser.remoteType;
-      } else {
         
         
         
