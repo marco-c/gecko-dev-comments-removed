@@ -36,7 +36,8 @@ public:
 
 private:
   
-  GetDirectoryListingTaskChild(FileSystemBase* aFileSystem,
+  GetDirectoryListingTaskChild(nsIGlobalObject* aGlobalObject,
+                               FileSystemBase* aFileSystem,
                                Directory* aDirectory,
                                nsIFile* aTargetPath,
                                const nsAString& aFilters);

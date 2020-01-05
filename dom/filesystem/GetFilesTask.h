@@ -36,7 +36,8 @@ public:
 
 private:
   
-  GetFilesTaskChild(FileSystemBase* aFileSystem,
+  GetFilesTaskChild(nsIGlobalObject* aGlobalObject,
+                    FileSystemBase* aFileSystem,
                     Directory* aDirectory,
                     nsIFile* aTargetPath,
                     bool aRecursiveFlag);

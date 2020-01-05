@@ -138,7 +138,8 @@ protected:
   
 
 
-  explicit FileSystemTaskChildBase(FileSystemBase* aFileSystem);
+  FileSystemTaskChildBase(nsIGlobalObject* aGlobalObject,
+                          FileSystemBase* aFileSystem);
 
   virtual
   ~FileSystemTaskChildBase();
@@ -169,6 +170,7 @@ protected:
 
   nsresult mErrorValue;
   RefPtr<FileSystemBase> mFileSystem;
+  nsCOMPtr<nsIGlobalObject> mGlobalObject;
 
 private:
 
