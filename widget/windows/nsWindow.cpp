@@ -937,6 +937,14 @@ nsWindow::Create(nsIWidget* aParent,
     nsUXThemeData::UpdateTitlebarInfo(mWnd);
   }
 
+  static bool a11yPrimed = false;
+  if (!a11yPrimed &&
+      mWindowType == eWindowType_toplevel) {
+    a11yPrimed = true;
+    if (Preferences::GetInt("accessibility.force_disabled", 0) == -1) {
+      ::PostMessage(mWnd, MOZ_WM_STARTA11Y, 0, 0);
+    }
+  }
   return NS_OK;
 }
 
@@ -3028,7 +3036,6 @@ nsWindow::SetCursor(imgIContainer* aCursor,
 
 
 
-
 #ifdef MOZ_XUL
 nsTransparencyMode nsWindow::GetTransparencyMode()
 {
@@ -3037,19 +3044,7 @@ nsTransparencyMode nsWindow::GetTransparencyMode()
 
 void nsWindow::SetTransparencyMode(nsTransparencyMode aMode)
 {
-  nsWindow* window = GetTopLevelWindow(true);
-  MOZ_ASSERT(window);
-
-  if (!window || window->DestroyCalled()) {
-      return;
-  }
-
-  if (nsWindowType::eWindowType_toplevel == window->mWindowType) {
-      NS_WARNING("Cannot set transparency mode on top-level windows.");
-      return;
-  }
-
-  window->SetWindowTranslucencyInner(aMode);
+  GetTopLevelWindow(true)->SetWindowTranslucencyInner(aMode);
 }
 
 void nsWindow::UpdateOpaqueRegion(const LayoutDeviceIntRegion& aOpaqueRegion)
@@ -5059,6 +5054,11 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
         sCanQuit = abortQuit ? TRI_FALSE : TRI_TRUE;
       }
       *aRetValue = sCanQuit ? TRUE : FALSE;
+      result = true;
+      break;
+
+    case MOZ_WM_STARTA11Y:
+      (void*)GetAccessible();
       result = true;
       break;
 

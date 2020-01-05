@@ -16,6 +16,8 @@
 
 #define MOZ_WM_TRACE                      (WM_APP+0x0301)
 
+#define MOZ_WM_STARTA11Y                  (WM_APP+0x0302)
+
 
 #define MOZ_WM_MOUSEVWHEEL                (WM_APP+0x0310)
 #define MOZ_WM_MOUSEHWHEEL                (WM_APP+0x0311)
