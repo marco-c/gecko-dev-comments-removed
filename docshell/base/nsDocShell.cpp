@@ -9765,9 +9765,16 @@ nsDocShell::InternalLoad(nsIURI* aURI,
   if (aWindowTarget && *aWindowTarget) {
     
     nsCOMPtr<nsIDocShellTreeItem> targetItem;
-    rv = FindItemWithName(aWindowTarget, nullptr, this,
-                          getter_AddRefs(targetItem));
-    NS_ENSURE_SUCCESS(rv, rv);
+    nsDependentString name(aWindowTarget);
+    
+    if (!(aFlags & INTERNAL_LOAD_FLAGS_NO_OPENER) ||
+        name.LowerCaseEqualsLiteral("_self") ||
+        name.LowerCaseEqualsLiteral("_parent") ||
+        name.LowerCaseEqualsLiteral("_top")) {
+      rv = FindItemWithName(aWindowTarget, nullptr, this,
+                            getter_AddRefs(targetItem));
+      NS_ENSURE_SUCCESS(rv, rv);
+    }
 
     targetDocShell = do_QueryInterface(targetItem);
     if (targetDocShell) {
@@ -9995,6 +10002,54 @@ nsDocShell::InternalLoad(nsIURI* aURI,
       if (aURI) {
         aURI->GetSpec(spec);
       }
+      
+      
+      if (aFlags & INTERNAL_LOAD_FLAGS_NO_OPENER) {
+        
+        
+        MOZ_ASSERT(!aLoadReplace);
+        MOZ_ASSERT(aPrincipalToInherit == aTriggeringPrincipal);
+        MOZ_ASSERT(aFlags == INTERNAL_LOAD_FLAGS_NO_OPENER ||
+                   aFlags == (INTERNAL_LOAD_FLAGS_NO_OPENER |
+                              INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER));
+        MOZ_ASSERT(!aPostData);
+        MOZ_ASSERT(!aHeadersData);
+        MOZ_ASSERT(aLoadType == LOAD_LINK);
+        MOZ_ASSERT(!aSHEntry);
+        MOZ_ASSERT(aFirstParty); 
+
+        nsCOMPtr<nsIDocShellLoadInfo> loadInfo;
+        rv = CreateLoadInfo(getter_AddRefs(loadInfo));
+        if (NS_FAILED(rv)) {
+          return rv;
+        }
+
+        
+        
+        loadInfo->SetReferrer(aReferrer);
+        loadInfo->SetReferrerPolicy(aReferrerPolicy);
+        loadInfo->SetSendReferrer(!(aFlags &
+                                    INTERNAL_LOAD_FLAGS_DONT_SEND_REFERRER));
+        loadInfo->SetOriginalURI(aOriginalURI);
+        loadInfo->SetLoadReplace(aLoadReplace);
+        loadInfo->SetTriggeringPrincipal(aTriggeringPrincipal);
+        loadInfo->SetInheritPrincipal(
+          aFlags & INTERNAL_LOAD_FLAGS_INHERIT_PRINCIPAL);
+        
+        
+        loadInfo->SetPrincipalIsExplicit(true);
+        loadInfo->SetLoadType(ConvertLoadTypeToDocShellLoadInfo(LOAD_LINK));
+
+        rv = win->Open(NS_ConvertUTF8toUTF16(spec),
+                       name, 
+                       EmptyString(), 
+                       loadInfo,
+                       true, 
+                       getter_AddRefs(newWin));
+        MOZ_ASSERT(!newWin);
+        return rv;
+      }
+
       rv = win->OpenNoNavigate(NS_ConvertUTF8toUTF16(spec),
                                name,  
                                EmptyString(), 
@@ -10009,11 +10064,6 @@ nsDocShell::InternalLoad(nsIURI* aURI,
         if (!newDoc || newDoc->IsInitialDocument()) {
           isNewWindow = true;
           aFlags |= INTERNAL_LOAD_FLAGS_FIRST_LOAD;
-
-          
-          if (aFlags & INTERNAL_LOAD_FLAGS_NO_OPENER) {
-            piNewWin->SetOpenerWindow(nullptr, false);
-          }
         }
       }
 
