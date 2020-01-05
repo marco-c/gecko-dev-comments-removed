@@ -149,19 +149,34 @@ RuleEditor.prototype = {
     }
 
     if (this.rule.domRule.type !== CSSRule.KEYFRAME_RULE) {
-      let selector = this.rule.domRule.selectors
-               ? this.rule.domRule.selectors.join(", ")
-               : this.ruleView.inspector.selectionCssSelector;
+      Task.spawn(function* () {
+        let selector;
 
-      let selectorHighlighter = createChild(header, "span", {
-        class: "ruleview-selectorhighlighter" +
-               (this.ruleView.highlighters.selectorHighlighterShown === selector ?
-                " highlighted" : ""),
-        title: l10n("rule.selectorHighlighter.tooltip")
-      });
-      selectorHighlighter.addEventListener("click", () => {
-        this.ruleView.toggleSelectorHighlighter(selectorHighlighter, selector);
-      });
+        if (this.rule.domRule.selectors) {
+          
+          selector = this.rule.domRule.selectors.join(", ");
+        } else if (this.rule.inherited) {
+          
+          
+          selector = yield this.rule.inherited.getUniqueSelector();
+        } else {
+          
+          selector = this.ruleView.inspector.selectionCssSelector;
+        }
+
+        let selectorHighlighter = createChild(header, "span", {
+          class: "ruleview-selectorhighlighter" +
+                 (this.ruleView.highlighters.selectorHighlighterShown === selector ?
+                  " highlighted" : ""),
+          title: l10n("rule.selectorHighlighter.tooltip")
+        });
+        selectorHighlighter.addEventListener("click", () => {
+          this.ruleView.toggleSelectorHighlighter(selectorHighlighter, selector);
+        });
+
+        this.uniqueSelector = selector;
+        this.emit("selector-icon-created");
+      }.bind(this));
     }
 
     this.openBrace = createChild(header, "span", {
