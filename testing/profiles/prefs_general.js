@@ -233,10 +233,6 @@ user_pref("general.useragent.updates.enabled", false);
 
 user_pref("browser.webapps.checkForUpdates", 0);
 
-
-user_pref("dom.presentation.tcp_server.debug", true);
-
-user_pref("logging.Presentation", "debug");
 user_pref("dom.presentation.testing.simulate-receiver", false);
 
 
