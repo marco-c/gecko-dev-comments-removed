@@ -180,6 +180,11 @@ public:
                          bool *_retval) override;
 
   virtual void PreserveWrapper(nsISupports *aNative) override;
+
+  static nsIClassInfo *doCreate(nsDOMClassInfoData* aData)
+  {
+    return new nsEventTargetSH(aData);
+  }
 };
 
 
