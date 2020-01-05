@@ -7957,6 +7957,13 @@ Parser<ParseHandler>::unaryExpr(YieldHandling yieldHandling, TripledotHandling t
       }
 
       case TOK_AWAIT: {
+        if (!pc->isAsync()) {
+            
+            
+            report(ParseError, false, null(), JSMSG_RESERVED_ID, "await");
+            return null();
+        }
+
         TokenKind nextSameLine = TOK_EOF;
         if (!tokenStream.peekTokenSameLine(&nextSameLine, TokenStream::Operand))
             return null();
