@@ -13,6 +13,7 @@ import org.mozilla.gecko.AppConstants.Versions;
 import org.mozilla.gecko.R;
 import org.mozilla.gecko.Telemetry;
 import org.mozilla.gecko.TelemetryContract;
+import org.mozilla.gecko.activitystream.ActivityStream;
 import org.mozilla.gecko.animation.PropertyAnimator;
 import org.mozilla.gecko.animation.ViewHelper;
 import org.mozilla.gecko.home.HomeAdapter.OnAddPanelListener;
@@ -559,7 +560,17 @@ public class HomePager extends ViewPager implements HomeScreen {
         stopCurrentPanelTelemetrySession();
 
         mCurrentPanelSession = TelemetryContract.Session.HOME_PANEL;
-        mCurrentPanelSessionSuffix = panelId;
+
+        if (HomeConfig.TOP_SITES_PANEL_ID.equals(panelId) &&
+                ActivityStream.isEnabled(getContext())) {
+            
+            
+            
+            mCurrentPanelSessionSuffix = "activity_stream";
+        } else {
+            mCurrentPanelSessionSuffix = panelId;
+        }
+
         Telemetry.startUISession(mCurrentPanelSession, mCurrentPanelSessionSuffix);
     }
 
