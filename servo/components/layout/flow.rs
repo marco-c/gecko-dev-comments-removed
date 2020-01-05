@@ -435,6 +435,10 @@ pub trait MutableFlowUtils {
     
     
     fn collect_static_block_offsets_from_children(self);
+
+    
+    
+    fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ComputedValues>);
 }
 
 pub trait MutableOwnedFlowUtils {
@@ -1308,6 +1312,13 @@ impl<'a> MutableFlowUtils for &'a mut (Flow + 'a) {
             }
         }
         mut_base(self).abs_descendants.static_block_offsets = absolute_descendant_block_offsets
+    }
+
+    
+    
+    fn repair_style_and_bubble_inline_sizes(self, style: &Arc<ComputedValues>) {
+        self.repair_style(style);
+        self.bubble_inline_sizes();
     }
 }
 
