@@ -15,7 +15,6 @@ import java.util.Map;
 import org.mozilla.gecko.AboutPages;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.R;
-import org.mozilla.gecko.activitystream.ranking.HighlightsRanking;
 import org.mozilla.gecko.db.BrowserContract.ActivityStreamBlocklist;
 import org.mozilla.gecko.db.BrowserContract.Bookmarks;
 import org.mozilla.gecko.db.BrowserContract.Combined;
@@ -31,7 +30,6 @@ import org.mozilla.gecko.db.BrowserContract.TopSites;
 import org.mozilla.gecko.db.BrowserContract.UrlAnnotations;
 import org.mozilla.gecko.db.BrowserContract.PageMetadata;
 import org.mozilla.gecko.db.DBUtils.UpdateOperation;
-import org.mozilla.gecko.home.activitystream.model.Highlight;
 import org.mozilla.gecko.icons.IconsHelper;
 import org.mozilla.gecko.sync.Utils;
 import org.mozilla.gecko.sync.repositories.android.BrowserContractHelpers;
@@ -50,7 +48,6 @@ import android.content.UriMatcher;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
 import android.database.MatrixCursor;
-import android.database.MergeCursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteConstraintException;
 import android.database.sqlite.SQLiteCursor;
@@ -1505,7 +1502,12 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
 
     private int updateBookmarkParents(SQLiteDatabase db, ContentValues values, String selection, String[] selectionArgs) {
-        trace("Updating bookmark parents of " + selection + " (" + selectionArgs[0] + ")");
+        if (selectionArgs != null) {
+            trace("Updating bookmark parents of " + selection + " (" + selectionArgs[0] + ")");
+        } else {
+            trace("Updating bookmark parents of " + selection);
+        }
+
         String where = Bookmarks._ID + " IN (" +
                        " SELECT DISTINCT " + Bookmarks.PARENT +
                        " FROM " + TABLE_BOOKMARKS +
@@ -1546,7 +1548,32 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         debug("Inserting bookmark in database with URL: " + url);
         final SQLiteDatabase db = getWritableDatabase(uri);
         beginWrite(db);
-        return db.insertOrThrow(TABLE_BOOKMARKS, Bookmarks.TITLE, values);
+        final long insertedId = db.insertOrThrow(TABLE_BOOKMARKS, Bookmarks.TITLE, values);
+
+        if (insertedId == -1) {
+            Log.e(LOGTAG, "Unable to insert bookmark in database with URL: " + url);
+            return insertedId;
+        }
+
+        if (isCallerSync(uri)) {
+            
+            return insertedId;
+        }
+
+        
+        final long lastModified = values.getAsLong(Bookmarks.DATE_MODIFIED);
+        final ContentValues parentValues = new ContentValues();
+        parentValues.put(Bookmarks.DATE_MODIFIED, lastModified);
+
+        
+        
+        final long parentId = values.getAsLong(Bookmarks.PARENT);
+        db.update(TABLE_BOOKMARKS,
+                  parentValues,
+                  Bookmarks._ID + " = ?",
+                  new String[] { String.valueOf(parentId) });
+
+        return insertedId;
     }
 
 
@@ -1595,7 +1622,53 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         }
 
         beginWrite(db);
-        return db.update(TABLE_BOOKMARKS, values, inClause, null);
+
+        final int updated = db.update(TABLE_BOOKMARKS, values, inClause, null);
+        if (updated == 0) {
+            trace("No update on URI: " + uri);
+            return updated;
+        }
+
+        if (isCallerSync(uri)) {
+            
+            return updated;
+        }
+
+        final long oldParentId = getOldParentIdIfParentChanged(uri);
+        if (oldParentId == -1) {
+            
+            return updated;
+        }
+
+        final long newParentId = values.getAsLong(Bookmarks.PARENT);
+        final long lastModified = values.getAsLong(Bookmarks.DATE_MODIFIED);
+        final ContentValues parentValues = new ContentValues();
+        parentValues.put(Bookmarks.DATE_MODIFIED, lastModified);
+
+        
+        db.update(TABLE_BOOKMARKS, parentValues,
+                  Bookmarks._ID + " in (?, ?)",
+                  new String[] { String.valueOf(oldParentId), String.valueOf(newParentId) });
+
+        return updated;
+    }
+
+    
+
+
+
+
+    private long getOldParentIdIfParentChanged(Uri uri) {
+        final String oldParentId = uri.getQueryParameter(BrowserContract.PARAM_OLD_BOOKMARK_PARENT);
+        if (TextUtils.isEmpty(oldParentId)) {
+            return -1;
+        }
+
+        try {
+            return Long.parseLong(oldParentId);
+        } catch (NumberFormatException ignored) {
+            return -1;
+        }
     }
 
     private long insertHistory(Uri uri, ContentValues values) {
@@ -2098,15 +2171,20 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
         debug("Deleting bookmarks for URI: " + uri);
 
         final SQLiteDatabase db = getWritableDatabase(uri);
+        beginWrite(db);
 
         if (isCallerSync(uri)) {
-            beginWrite(db);
             return db.delete(TABLE_BOOKMARKS, selection, selectionArgs);
         }
 
         debug("Marking bookmarks as deleted for URI: " + uri);
 
-        ContentValues values = new ContentValues();
+        
+        final ContentValues parentValues = new ContentValues();
+        parentValues.put(Bookmarks.DATE_MODIFIED, System.currentTimeMillis());
+        updateBookmarkParents(db, parentValues, selection, selectionArgs);
+
+        final ContentValues values = new ContentValues();
         values.put(Bookmarks.IS_DELETED, 1);
         values.put(Bookmarks.POSITION, 0);
         values.putNull(Bookmarks.PARENT);
