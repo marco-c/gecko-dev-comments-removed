@@ -18,19 +18,19 @@ XPCOMUtils.defineLazyGetter(this, "Sanitizer", function() {
 
 
 function* runTests() {
-  yield Task.spawn(function*() {
+  yield (async function() {
     dontExpireThumbnailURLs([URL, URL_COPY]);
 
-    yield promiseClearHistory();
-    yield promiseAddVisitsAndRepopulateNewTabLinks(URL);
-    yield promiseCreateThumbnail();
+    await promiseClearHistory();
+    await promiseAddVisitsAndRepopulateNewTabLinks(URL);
+    await promiseCreateThumbnail();
 
     
-    yield PageThumbsStorage.copy(URL, URL_COPY);
+    await PageThumbsStorage.copy(URL, URL_COPY);
     let copy = new FileUtils.File(PageThumbsStorage.getFilePathForURL(URL_COPY));
     let mtime = copy.lastModifiedTime -= 60;
 
-    yield PageThumbsStorage.copy(URL, URL_COPY);
+    await PageThumbsStorage.copy(URL, URL_COPY);
     isnot(new FileUtils.File(PageThumbsStorage.getFilePathForURL(URL_COPY)).lastModifiedTime, mtime,
           "thumbnail file was updated");
 
@@ -41,37 +41,37 @@ function* runTests() {
     
     info("Clearing history");
     while (file.exists() || fileCopy.exists()) {
-      yield promiseClearHistory();
+      await promiseClearHistory();
     }
     info("History is clear");
 
     info("Repopulating");
-    yield promiseAddVisitsAndRepopulateNewTabLinks(URL);
-    yield promiseCreateThumbnail();
+    await promiseAddVisitsAndRepopulateNewTabLinks(URL);
+    await promiseCreateThumbnail();
 
     info("Clearing the last 10 minutes of browsing history");
     
-    yield promiseClearHistory(true);
+    await promiseClearHistory(true);
 
     info("Attempt to clear file");
     
-    yield promiseClearFile(file, URL);
+    await promiseClearFile(file, URL);
 
     info("Done");
-  });
+  })();
 }
 
-var promiseClearFile = Task.async(function*(aFile, aURL) {
+async function promiseClearFile(aFile, aURL) {
   if (!aFile.exists()) {
     return undefined;
   }
   
   
-  yield PlacesTestUtils.addVisits(makeURI(aURL));
-  yield promiseClearHistory(true);
+  await PlacesTestUtils.addVisits(makeURI(aURL));
+  await promiseClearHistory(true);
   
   return promiseClearFile(aFile, aURL);
-});
+}
 
 function promiseClearHistory(aUseRange) {
   let s = new Sanitizer();

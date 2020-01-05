@@ -9,5 +9,7 @@ module.exports = {
     
     
     "complexity": ["error", 41],
+
+    "mozilla/no-task": "error",
   }
 };

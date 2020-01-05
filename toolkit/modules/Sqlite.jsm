@@ -592,7 +592,7 @@ ConnectionData.prototype = Object.freeze({
           try {
             
             
-            result = await Task.spawn(func);
+            result = await Task.spawn(func); 
           } catch (ex) {
             
             
