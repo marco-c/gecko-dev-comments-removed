@@ -157,7 +157,6 @@ function loadTPSContentScript(browser) {
                        .getInterface(Ci.nsIDOMWindowUtils);
       let lastTransactionId = cwu.lastTransactionId;
       Services.profiler.AddMarker("Content waiting for id > " + lastTransactionId);
-
       addEventListener("MozAfterPaint", function onPaint(event) {
         Services.profiler.AddMarker("Content saw transaction id: " + event.transactionId);
         if (event.transactionId > lastTransactionId) {
@@ -401,6 +400,18 @@ function test(window) {
 
     let tabs = gBrowser.getTabsToTheEndFrom(initialTab);
     let times = [];
+
+    for (let tab of tabs) {
+      
+      
+      
+      
+      
+      
+      
+      yield switchToTab(tab);
+      yield switchToTab(initialTab);
+    }
 
     for (let tab of tabs) {
       yield forceGC(win, tab.linkedBrowser);
