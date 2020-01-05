@@ -6300,7 +6300,7 @@ class DownloadAddonInstall extends AddonInstall {
 
 
 
-  constructor(installLocation, url, options={}) {
+  constructor(installLocation, url, options = {}) {
     super(installLocation, url, options);
 
     this.browser = options.browser;
