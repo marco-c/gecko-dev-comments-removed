@@ -479,6 +479,13 @@ private:
 
 
 
+  bool IsReservedBySystem() const;
+
+  
+
+
+
+
 
 
 

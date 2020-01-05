@@ -1277,23 +1277,7 @@ NativeKey::InitWithKeyChar()
   mIsExtended = WinUtils::IsExtendedScanCode(mMsg.lParam);
   switch (mMsg.message) {
     case WM_KEYDOWN:
-    case WM_SYSKEYDOWN: {
-      
-      MSG charMsg;
-      while (GetFollowingCharMessage(charMsg)) {
-        
-        
-        if (charMsg.message == WM_NULL) {
-          continue;
-        }
-        MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
-          ("%p   NativeKey::InitWithKeyChar(), removed char message, %s",
-           this, ToString(charMsg).get()));
-        NS_WARN_IF(charMsg.hwnd != mMsg.hwnd);
-        mFollowingCharMsgs.AppendElement(charMsg);
-      }
-      MOZ_FALLTHROUGH;
-    }
+    case WM_SYSKEYDOWN:
     case WM_KEYUP:
     case WM_SYSKEYUP:
     case MOZ_WM_KEYDOWN:
@@ -1483,6 +1467,26 @@ NativeKey::InitWithKeyChar()
     KeyboardLayout::ConvertScanCodeToCodeNameIndex(
       GetScanCodeWithExtendedFlag());
 
+  
+  
+  if ((mMsg.message == WM_KEYDOWN || mMsg.message == WM_SYSKEYDOWN) &&
+      !IsReservedBySystem()) {
+    MSG charMsg;
+    while (GetFollowingCharMessage(charMsg)) {
+      
+      
+      if (charMsg.message == WM_NULL) {
+        continue;
+      }
+      MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
+        ("%p   NativeKey::InitWithKeyChar(), removed char message, %s",
+         this, ToString(charMsg).get()));
+      NS_WARN_IF(charMsg.hwnd != mMsg.hwnd);
+      mFollowingCharMsgs.AppendElement(charMsg);
+    }
+  }
+
+
   keyboardLayout->InitNativeKey(*this, mModKeyState);
 
   mIsDeadKey =
@@ -1661,6 +1665,22 @@ NativeKey::IsFollowedByNonControlCharMessage() const
   }
   return mFollowingCharMsgs[0].message == WM_CHAR &&
          !IsControlChar(static_cast<char16_t>(mFollowingCharMsgs[0].wParam));
+}
+
+bool
+NativeKey::IsReservedBySystem() const
+{
+  
+  if (mModKeyState.IsAlt() && !mModKeyState.IsControl() &&
+      mVirtualKeyCode == VK_SPACE) {
+    return true;
+  }
+
+  
+  
+  
+
+  return false;
 }
 
 bool
@@ -2248,18 +2268,16 @@ NativeKey::HandleKeyDownMessage(bool* aEventDispatched) const
     return true;
   }
 
+  if (IsReservedBySystem()) {
+    MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
+      ("%p   NativeKey::HandleKeyDownMessage(), doesn't dispatch keydown "
+       "event because the key combination is reserved by the system", this));
+    return false;
+  }
+
   bool defaultPrevented = false;
   if (mFakeCharMsgs || IsKeyMessageOnPlugin() ||
       !RedirectedKeyDownMessageManager::IsRedirectedMessage(mMsg)) {
-    
-    if (mModKeyState.IsAlt() && !mModKeyState.IsControl() &&
-        mVirtualKeyCode == VK_SPACE) {
-      MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
-        ("%p   NativeKey::HandleKeyDownMessage(), doesn't dispatch keydown "
-         "event due to Alt+Space", this));
-      return false;
-    }
-
     nsresult rv = mDispatcher->BeginNativeInputTransaction();
     if (NS_WARN_IF(NS_FAILED(rv))) {
       MOZ_LOG(sNativeKeyLogger, LogLevel::Error,
@@ -2490,11 +2508,11 @@ NativeKey::HandleCharMessage(const MSG& aCharMsg,
   }
 
   
-  if (mModKeyState.IsAlt() && !mModKeyState.IsControl() &&
-      mVirtualKeyCode == VK_SPACE) {
+  
+  if (IsReservedBySystem()) {
     MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
       ("%p   NativeKey::HandleCharMessage(), doesn't dispatch keypress "
-       "event due to Alt+Space", this));
+       "event because the key combination is reserved by the system", this));
     return false;
   }
 
@@ -2693,11 +2711,11 @@ NativeKey::HandleKeyUpMessage(bool* aEventDispatched) const
   }
 
   
-  if (mModKeyState.IsAlt() && !mModKeyState.IsControl() &&
-      mVirtualKeyCode == VK_SPACE) {
+  
+  if (IsReservedBySystem()) {
     MOZ_LOG(sNativeKeyLogger, LogLevel::Info,
       ("%p   NativeKey::HandleKeyUpMessage(), doesn't dispatch keyup "
-       "event due to Alt+Space", this));
+       "event because the key combination is reserved by the system", this));
     return false;
   }
 
@@ -2747,6 +2765,12 @@ NativeKey::NeedsToHandleWithoutFollowingCharMessages() const
   
   
   if (IsKeyMessageOnPlugin()) {
+    return true;
+  }
+
+  
+  
+  if (IsReservedBySystem()) {
     return true;
   }
 
