@@ -93,6 +93,13 @@ public:
   static nsIFrame* FrameForPseudoElement(const nsIContent* aContent,
                                          nsIAtom* aPseudoTagOrNull);
 
+  
+
+
+
+
+  static void ClearServoDataFromSubtree(nsIContent* aContent);
+
 protected:
   ~ServoRestyleManager() {}
 

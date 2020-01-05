@@ -34,6 +34,21 @@ ServoStyleSet::Init(nsPresContext* aPresContext)
 void
 ServoStyleSet::BeginShutdown()
 {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  if (Element* root = mPresContext->Document()->GetRootElement()) {
+    ServoRestyleManager::ClearServoDataFromSubtree(root);
+  }
 }
 
 void
