@@ -3,18 +3,18 @@
 
 
 
-import css::values::{DisInline, DisBlock, DisNone, Display, TextColor, BackgroundColor, FontSize,
+use css::values::{DisInline, DisBlock, DisNone, Display, TextColor, BackgroundColor, FontSize,
                      Height, Width, StyleDeclaration};
 
-import css = css::values;
-import tok = parser::css_lexer;
-import parser::css_lexer::Token;
-import comm::recv;
-import option::{map, is_none};
-import vec::push;
-import parser::parser_util::{parse_display_type, parse_font_size, parse_size};
-import util::color::parsing::parse_color;
-import vec::push;
+use css = css::values;
+use tok = lexer;
+use lexer::Token;
+use comm::recv;
+use option::{map, is_none};
+use vec::push;
+use parser_util::*;
+use util::color::parsing::parse_color;
+use vec::push;
 
 type TokenReader = {stream : pipes::Port<Token>, mut lookahead : Option<Token>};
 
