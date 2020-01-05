@@ -11,6 +11,7 @@ import android.util.Log;
 import org.mozilla.gecko.gfx.BitmapUtils;
 import org.mozilla.gecko.icons.IconRequest;
 import org.mozilla.gecko.icons.IconResponse;
+import org.mozilla.gecko.util.HardwareUtils;
 
 
 
@@ -26,6 +27,19 @@ public class ColorProcessor implements Processor {
             return;
         }
 
+        if (HardwareUtils.isX86System()) {
+            
+            
+            
+            
+            
+            extractColorUsingCustomImplementation(response);
+        } else {
+            extractColorUsingPaletteSupportLibrary(response);
+        }
+    }
+
+    private void extractColorUsingPaletteSupportLibrary(final IconResponse response) {
         try {
             final Palette palette = Palette.from(response.getBitmap()).generate();
             response.updateColor(palette.getVibrantColor(DEFAULT_COLOR));
@@ -37,5 +51,11 @@ public class ColorProcessor implements Processor {
 
             response.updateColor(DEFAULT_COLOR);
         }
+    }
+
+    private void extractColorUsingCustomImplementation(final IconResponse response) {
+        final int dominantColor = BitmapUtils.getDominantColor(response.getBitmap());
+
+        response.updateColor(dominantColor);
     }
 }
