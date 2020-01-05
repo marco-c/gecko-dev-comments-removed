@@ -167,7 +167,7 @@ var Management = new class extends SchemaAPIManager {
       super.registerSchemaAPI(namespace, "addon_parent", getAPI);
     }
   }
-};
+}();
 
 
 
