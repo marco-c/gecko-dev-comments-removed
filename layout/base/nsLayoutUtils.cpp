@@ -3528,72 +3528,77 @@ nsLayoutUtils::PaintFrame(nsRenderingContext* aRenderingContext, nsIFrame* aFram
     }
   }
 
-  builder.EnterPresShell(aFrame);
   nsRect dirtyRect = visibleRegion.GetBounds();
+
   {
-    
-    
-    
-    
-    
-    ViewID id = FrameMetrics::NULL_SCROLL_ID;
-    if (ignoreViewportScrolling && presContext->IsRootContentDocument()) {
-      if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
-        if (nsIContent* content = rootScrollFrame->GetContent()) {
-          id = nsLayoutUtils::FindOrCreateIDFor(content);
-        }
-      }
-    }
-    else if (presShell->GetDocument() && presShell->GetDocument()->IsRootDisplayDocument()
-        && !presShell->GetRootScrollFrame()) {
-      
-      
-      
-      
-      if (dom::Element* element = presShell->GetDocument()->GetDocumentElement()) {
-        id = nsLayoutUtils::FindOrCreateIDFor(element);
-      }
-    }
-
-    nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(&builder, id);
-
     PROFILER_LABEL("nsLayoutUtils", "PaintFrame::BuildDisplayList",
       js::ProfileEntry::Category::GRAPHICS);
-
+    GeckoProfilerTracingRAII tracer("Paint", "DisplayList");
 
     PaintTelemetry::AutoRecord record(PaintTelemetry::Metric::DisplayList);
-    aFrame->BuildDisplayListForStackingContext(&builder, dirtyRect, &list);
+
+    builder.EnterPresShell(aFrame);
+    {
+      
+      
+      
+      
+      
+      ViewID id = FrameMetrics::NULL_SCROLL_ID;
+      if (ignoreViewportScrolling && presContext->IsRootContentDocument()) {
+        if (nsIFrame* rootScrollFrame = presShell->GetRootScrollFrame()) {
+          if (nsIContent* content = rootScrollFrame->GetContent()) {
+            id = nsLayoutUtils::FindOrCreateIDFor(content);
+          }
+        }
+      }
+      else if (presShell->GetDocument() && presShell->GetDocument()->IsRootDisplayDocument()
+          && !presShell->GetRootScrollFrame()) {
+        
+        
+        
+        
+        if (dom::Element* element = presShell->GetDocument()->GetDocumentElement()) {
+          id = nsLayoutUtils::FindOrCreateIDFor(element);
+        }
+      }
+
+      nsDisplayListBuilder::AutoCurrentScrollParentIdSetter idSetter(&builder, id);
+
+      aFrame->BuildDisplayListForStackingContext(&builder, dirtyRect, &list);
+    }
+
+    nsIAtom* frameType = aFrame->GetType();
+
+    
+    
+    if (frameType == nsGkAtoms::viewportFrame &&
+        nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
+      nsRect bounds = nsRect(builder.ToReferenceFrame(aFrame),
+                             aFrame->GetSize());
+      nsDisplayListBuilder::AutoBuildingDisplayList
+        buildingDisplayList(&builder, aFrame, bounds, false);
+      presShell->AddPrintPreviewBackgroundItem(builder, list, aFrame, bounds);
+    } else if (frameType != nsGkAtoms::pageFrame) {
+      
+      
+      
+      
+      
+
+      
+      
+      
+      canvasArea.IntersectRect(canvasArea, visibleRegion.GetBounds());
+      nsDisplayListBuilder::AutoBuildingDisplayList
+        buildingDisplayList(&builder, aFrame, canvasArea, false);
+      presShell->AddCanvasBackgroundColorItem(
+             builder, list, aFrame, canvasArea, aBackstop);
+    }
+
+    builder.LeavePresShell(aFrame, &list);
   }
 
-  nsIAtom* frameType = aFrame->GetType();
-
-  
-  
-  if (frameType == nsGkAtoms::viewportFrame &&
-      nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
-    nsRect bounds = nsRect(builder.ToReferenceFrame(aFrame),
-                           aFrame->GetSize());
-    nsDisplayListBuilder::AutoBuildingDisplayList
-      buildingDisplayList(&builder, aFrame, bounds, false);
-    presShell->AddPrintPreviewBackgroundItem(builder, list, aFrame, bounds);
-  } else if (frameType != nsGkAtoms::pageFrame) {
-    
-    
-    
-    
-    
-
-    
-    
-    
-    canvasArea.IntersectRect(canvasArea, visibleRegion.GetBounds());
-    nsDisplayListBuilder::AutoBuildingDisplayList
-      buildingDisplayList(&builder, aFrame, canvasArea, false);
-    presShell->AddCanvasBackgroundColorItem(
-           builder, list, aFrame, canvasArea, aBackstop);
-  }
-
-  builder.LeavePresShell(aFrame, &list);
   Telemetry::AccumulateTimeDelta(Telemetry::PAINT_BUILD_DISPLAYLIST_TIME,
                                  startBuildDisplayList);
 
