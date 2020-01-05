@@ -44,6 +44,7 @@
 
 class nsIFrame;
 class nsIDOMMozNamedAttrMap;
+class nsIMozBrowserFrame;
 class nsIURI;
 class nsIScrollableFrame;
 class nsAttrValueOrString;
@@ -338,6 +339,16 @@ public:
 
 
   virtual bool IsInteractiveHTMLContent(bool aIgnoreTabindex) const;
+
+  
+
+
+
+
+
+
+
+  virtual nsIMozBrowserFrame* GetAsMozBrowserFrame() { return nullptr; }
 
   
 
