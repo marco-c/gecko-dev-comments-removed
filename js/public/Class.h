@@ -775,40 +775,45 @@ struct JSClass {
     void* reserved[3];
 };
 
-#define JSCLASS_HAS_PRIVATE             (1<<0)  // objects have private slot
-#define JSCLASS_DELAY_METADATA_BUILDER  (1<<1)  // class's initialization code
-                                                
-                                                
-#define JSCLASS_IS_WRAPPED_NATIVE       (1<<2)  // class is an XPCWrappedNative.
-                                                
-                                                
-                                                
-#define JSCLASS_PRIVATE_IS_NSISUPPORTS  (1<<3)  // private is (nsISupports*)
-#define JSCLASS_IS_DOMJSCLASS           (1<<4)  // objects are DOM
-#define JSCLASS_HAS_XRAYED_CONSTRUCTOR  (1<<5)  // if wrapped by an xray
-                                                
-                                                
-                                                
-                                                
-                                                
-                                                
-                                                
-                                                
-                                                
-                                                
-                                                
-                                                
-#define JSCLASS_EMULATES_UNDEFINED      (1<<6)  // objects of this class act
-                                                
-                                                
-#define JSCLASS_USERBIT1                (1<<7)  // Reserved for embeddings.
+
+static const uint32_t JSCLASS_HAS_PRIVATE = 1 << 0;
+
+
+static const uint32_t JSCLASS_DELAY_METADATA_BUILDER = 1 << 1;
+
+
+
+static const uint32_t JSCLASS_IS_WRAPPED_NATIVE = 1 << 2;
+
+
+static const uint32_t JSCLASS_PRIVATE_IS_NSISUPPORTS = 1 << 3;
+
+
+static const uint32_t JSCLASS_IS_DOMJSCLASS = 1 << 4;
 
 
 
 
-#define JSCLASS_RESERVED_SLOTS_SHIFT    8       // room for 8 flags below */
-#define JSCLASS_RESERVED_SLOTS_WIDTH    8       // and 16 above this field */
-#define JSCLASS_RESERVED_SLOTS_MASK     JS_BITMASK(JSCLASS_RESERVED_SLOTS_WIDTH)
+
+static const uint32_t JSCLASS_HAS_XRAYED_CONSTRUCTOR = 1 << 5;
+
+
+static const uint32_t JSCLASS_EMULATES_UNDEFINED = 1 << 6;
+
+
+static const uint32_t JSCLASS_USERBIT1 = 1 << 7;
+
+
+
+
+
+
+static const uintptr_t JSCLASS_RESERVED_SLOTS_SHIFT = 8;
+
+static const uint32_t JSCLASS_RESERVED_SLOTS_WIDTH = 8;
+
+static const uint32_t JSCLASS_RESERVED_SLOTS_MASK = JS_BITMASK(JSCLASS_RESERVED_SLOTS_WIDTH);
+
 #define JSCLASS_HAS_RESERVED_SLOTS(n)   (((n) & JSCLASS_RESERVED_SLOTS_MASK)  \
                                          << JSCLASS_RESERVED_SLOTS_SHIFT)
 #define JSCLASS_RESERVED_SLOTS(clasp)   (((clasp)->flags                      \
@@ -818,21 +823,19 @@ struct JSClass {
 #define JSCLASS_HIGH_FLAGS_SHIFT        (JSCLASS_RESERVED_SLOTS_SHIFT +       \
                                          JSCLASS_RESERVED_SLOTS_WIDTH)
 
-#define JSCLASS_IS_ANONYMOUS            (1<<(JSCLASS_HIGH_FLAGS_SHIFT+0))
-#define JSCLASS_IS_GLOBAL               (1<<(JSCLASS_HIGH_FLAGS_SHIFT+1))
-#define JSCLASS_INTERNAL_FLAG2          (1<<(JSCLASS_HIGH_FLAGS_SHIFT+2))
-#define JSCLASS_INTERNAL_FLAG3          (1<<(JSCLASS_HIGH_FLAGS_SHIFT+3))
-
-#define JSCLASS_IS_PROXY                (1<<(JSCLASS_HIGH_FLAGS_SHIFT+4))
-
-#define JSCLASS_SKIP_NURSERY_FINALIZE   (1<<(JSCLASS_HIGH_FLAGS_SHIFT+5))
+static const uint32_t JSCLASS_IS_ANONYMOUS =            1 << (JSCLASS_HIGH_FLAGS_SHIFT + 0);
+static const uint32_t JSCLASS_IS_GLOBAL =               1 << (JSCLASS_HIGH_FLAGS_SHIFT + 1);
+static const uint32_t JSCLASS_INTERNAL_FLAG2 =          1 << (JSCLASS_HIGH_FLAGS_SHIFT + 2);
+static const uint32_t JSCLASS_INTERNAL_FLAG3 =          1 << (JSCLASS_HIGH_FLAGS_SHIFT + 3);
+static const uint32_t JSCLASS_IS_PROXY =                1 << (JSCLASS_HIGH_FLAGS_SHIFT + 4);
+static const uint32_t JSCLASS_SKIP_NURSERY_FINALIZE =   1 << (JSCLASS_HIGH_FLAGS_SHIFT + 5);
 
 
-#define JSCLASS_USERBIT2                (1<<(JSCLASS_HIGH_FLAGS_SHIFT+6))
-#define JSCLASS_USERBIT3                (1<<(JSCLASS_HIGH_FLAGS_SHIFT+7))
+static const uint32_t JSCLASS_USERBIT2 =                1 << (JSCLASS_HIGH_FLAGS_SHIFT + 6);
+static const uint32_t JSCLASS_USERBIT3 =                1 << (JSCLASS_HIGH_FLAGS_SHIFT + 7);
 
-#define JSCLASS_BACKGROUND_FINALIZE     (1<<(JSCLASS_HIGH_FLAGS_SHIFT+8))
-#define JSCLASS_FOREGROUND_FINALIZE     (1<<(JSCLASS_HIGH_FLAGS_SHIFT+9))
+static const uint32_t JSCLASS_BACKGROUND_FINALIZE =     1 << (JSCLASS_HIGH_FLAGS_SHIFT + 8);
+static const uint32_t JSCLASS_FOREGROUND_FINALIZE =     1 << (JSCLASS_HIGH_FLAGS_SHIFT + 9);
 
 
 
@@ -850,10 +853,11 @@ struct JSClass {
 
 
 
-#define JSCLASS_GLOBAL_APPLICATION_SLOTS 5
-#define JSCLASS_GLOBAL_SLOT_COUNT                                             \
-    (JSCLASS_GLOBAL_APPLICATION_SLOTS + JSProto_LIMIT * 2 + 46)
-#define JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(n)                                    \
+static const uint32_t JSCLASS_GLOBAL_APPLICATION_SLOTS = 5;
+static const uint32_t JSCLASS_GLOBAL_SLOT_COUNT =
+    JSCLASS_GLOBAL_APPLICATION_SLOTS + JSProto_LIMIT * 2 + 46;
+
+#define JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(n)                              \
     (JSCLASS_IS_GLOBAL | JSCLASS_HAS_RESERVED_SLOTS(JSCLASS_GLOBAL_SLOT_COUNT + (n)))
 #define JSCLASS_GLOBAL_FLAGS                                                  \
     JSCLASS_GLOBAL_FLAGS_WITH_SLOTS(0)
@@ -862,8 +866,9 @@ struct JSClass {
    && JSCLASS_RESERVED_SLOTS(clasp) >= JSCLASS_GLOBAL_SLOT_COUNT)
 
 
-#define JSCLASS_CACHED_PROTO_SHIFT      (JSCLASS_HIGH_FLAGS_SHIFT + 10)
-#define JSCLASS_CACHED_PROTO_MASK       JS_BITMASK(js::JSCLASS_CACHED_PROTO_WIDTH)
+static const uint32_t JSCLASS_CACHED_PROTO_SHIFT = JSCLASS_HIGH_FLAGS_SHIFT + 10;
+static const uint32_t JSCLASS_CACHED_PROTO_MASK = JS_BITMASK(js::JSCLASS_CACHED_PROTO_WIDTH);
+
 #define JSCLASS_HAS_CACHED_PROTO(key)   (uint32_t(key) << JSCLASS_CACHED_PROTO_SHIFT)
 #define JSCLASS_CACHED_PROTO_KEY(clasp) ((JSProtoKey)                         \
                                          (((clasp)->flags                     \

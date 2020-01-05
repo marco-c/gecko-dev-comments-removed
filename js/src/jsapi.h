@@ -846,64 +846,81 @@ class MOZ_STACK_CLASS SourceBufferHolder final
 
 
 
-#define JSPROP_ENUMERATE        0x01    /* property is visible to for/in loop */
-#define JSPROP_READONLY         0x02    /* not settable: assignment is no-op.
-                                           This flag is only valid when neither
-                                           JSPROP_GETTER nor JSPROP_SETTER is
-                                           set. */
-#define JSPROP_PERMANENT        0x04    /* property cannot be deleted */
-#define JSPROP_PROPOP_ACCESSORS 0x08    /* Passed to JS_Define(UC)Property* and
-                                           JS_DefineElement if getters/setters
-                                           are JSGetterOp/JSSetterOp */
-#define JSPROP_GETTER           0x10    /* property holds getter function */
-#define JSPROP_SETTER           0x20    /* property holds setter function */
-#define JSPROP_SHARED           0x40    /* don't allocate a value slot for this
-                                           property; don't copy the property on
-                                           set of the same-named property in an
-                                           object that delegates to a prototype
-                                           containing this property */
-#define JSPROP_INTERNAL_USE_BIT 0x80    /* internal JS engine use only */
-#define JSFUN_STUB_GSOPS       0x200    /* use JS_PropertyStub getter/setter
-                                           instead of defaulting to class gsops
-                                           for property holding function */
 
-#define JSFUN_CONSTRUCTOR      0x400    /* native that can be called as a ctor */
 
-#define JSFUN_FLAGS_MASK       0x600    /* | of all the JSFUN_* flags */
+static const uint8_t JSPROP_ENUMERATE =        0x01;
+
+
+
+static const uint8_t JSPROP_READONLY =         0x02;
+
+
+static const uint8_t JSPROP_PERMANENT =        0x04;
+
+
+
+static const uint8_t JSPROP_PROPOP_ACCESSORS = 0x08;
+
+
+static const uint8_t JSPROP_GETTER =           0x10;
+
+
+static const uint8_t JSPROP_SETTER =           0x20;
 
 
 
 
+static const uint8_t JSPROP_SHARED =           0x40;
 
 
-#define JSPROP_REDEFINE_NONCONFIGURABLE 0x1000
-
-
-
-
+static const uint8_t JSPROP_INTERNAL_USE_BIT = 0x80;
 
 
 
+static const unsigned JSFUN_STUB_GSOPS =      0x200;
+
+
+static const unsigned JSFUN_CONSTRUCTOR =     0x400;
+
+
+static const unsigned JSFUN_FLAGS_MASK =      0x600;
 
 
 
 
 
 
-#define JSPROP_RESOLVING         0x2000
+static const unsigned JSPROP_REDEFINE_NONCONFIGURABLE = 0x1000;
 
-#define JSPROP_IGNORE_ENUMERATE  0x4000  /* ignore the value in JSPROP_ENUMERATE.
-                                            This flag only valid when defining over
-                                            an existing property. */
-#define JSPROP_IGNORE_READONLY   0x8000  /* ignore the value in JSPROP_READONLY.
-                                            This flag only valid when defining over
-                                            an existing property. */
-#define JSPROP_IGNORE_PERMANENT 0x10000  /* ignore the value in JSPROP_PERMANENT.
-                                            This flag only valid when defining over
-                                            an existing property. */
-#define JSPROP_IGNORE_VALUE     0x20000  /* ignore the Value in the descriptor. Nothing was
-                                            specified when passed to Object.defineProperty
-                                            from script. */
+
+
+
+
+
+
+
+
+
+
+
+
+static const unsigned JSPROP_RESOLVING =         0x2000;
+
+
+
+static const unsigned JSPROP_IGNORE_ENUMERATE =  0x4000;
+
+
+
+static const unsigned JSPROP_IGNORE_READONLY =   0x8000;
+
+
+
+static const unsigned JSPROP_IGNORE_PERMANENT = 0x10000;
+
+
+
+static const unsigned JSPROP_IGNORE_VALUE =     0x20000;
 
 
 extern JS_PUBLIC_API(int64_t)
