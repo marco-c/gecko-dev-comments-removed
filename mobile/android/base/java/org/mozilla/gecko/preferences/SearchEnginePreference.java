@@ -145,7 +145,7 @@ public class SearchEnginePreference extends CustomListPreference {
         mIdentifier = geckoEngine.getString("identifier");
 
         
-        if (mIdentifier.equals("null")) {
+        if (mIdentifier == null || mIdentifier.equals("null")) {
             mIdentifier = "other";
         }
 
