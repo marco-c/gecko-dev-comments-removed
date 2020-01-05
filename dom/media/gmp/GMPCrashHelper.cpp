@@ -19,7 +19,9 @@ GMPCrashHelper::Destroy()
     delete this;
   } else {
     
-    NS_DispatchToMainThread(mozilla::NewNonOwningRunnableMethod(this, &GMPCrashHelper::Destroy));
+    SystemGroup::Dispatch(
+      "GMPCrashHelper::Destroy", TaskCategory::Other,
+      NewNonOwningRunnableMethod(this, &GMPCrashHelper::Destroy));
   }
 }
 

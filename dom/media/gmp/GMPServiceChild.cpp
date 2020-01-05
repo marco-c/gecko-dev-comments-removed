@@ -1,7 +1,7 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 #include "GMPServiceChild.h"
 #include "mozilla/dom/ContentChild.h"
@@ -93,11 +93,11 @@ GeckoMediaPluginServiceChild::GetContentParent(GMPCrashHelper* aHelper,
                                      &rv);
 
       if (helper && pluginId) {
-        // Note: Even if the launch failed, we need to connect the crash
-        // helper so that if the launch failed due to the plugin crashing,
-        // we can report the crash via the crash reporter. The crash
-        // handling notification will arrive shortly if the launch failed
-        // due to the plugin crashing.
+        
+        
+        
+        
+        
         self->ConnectCrashHelper(pluginId, helper);
       }
 
@@ -189,12 +189,12 @@ GMPCapabilitiesToString()
   return s;
 }
 
-/* static */
+
 void
 GeckoMediaPluginServiceChild::UpdateGMPCapabilities(nsTArray<GMPCapabilityData>&& aCapabilities)
 {
   {
-    // The mutex should unlock before sending the "gmp-changed" observer service notification.
+    
     StaticMutexAutoLock lock(sGMPCapabilitiesMutex);
     if (!sGMPCapabilities) {
       sGMPCapabilities = new nsTArray<GMPCapabilityAndVersion>();
@@ -208,8 +208,8 @@ GeckoMediaPluginServiceChild::UpdateGMPCapabilities(nsTArray<GMPCapabilityData>&
     LOGD(("UpdateGMPCapabilities {%s}", GMPCapabilitiesToString().get()));
   }
 
-  // Fire a notification so that any MediaKeySystemAccess
-  // requests waiting on a CDM to download will retry.
+  
+  
   nsCOMPtr<nsIObserverService> obsService = mozilla::services::GetObserverService();
   MOZ_ASSERT(obsService);
   if (obsService) {
@@ -305,8 +305,9 @@ GeckoMediaPluginServiceChild::GetServiceChild()
     MozPromiseHolder<GetServiceChildPromise>* holder = mGetServiceChildPromises.AppendElement();
     RefPtr<GetServiceChildPromise> promise = holder->Ensure(__func__);
     if (mGetServiceChildPromises.Length() == 1) {
-        NS_DispatchToMainThread(WrapRunnable(contentChild,
-                                             &dom::ContentChild::SendCreateGMPService));
+      nsCOMPtr<nsIRunnable> r = WrapRunnable(
+        contentChild, &dom::ContentChild::SendCreateGMPService);
+      SystemGroup::Dispatch("SendCreateGMPService", TaskCategory::Other, r.forget());
     }
     return promise;
   }
@@ -421,7 +422,7 @@ private:
   ipc::Endpoint<PGMPServiceChild> mEndpoint;
 };
 
-/* static */
+
 bool
 GMPServiceChild::Create(Endpoint<PGMPServiceChild>&& aGMPService)
 {
@@ -441,5 +442,5 @@ GMPServiceChild::Create(Endpoint<PGMPServiceChild>&& aGMPService)
   return NS_SUCCEEDED(rv);
 }
 
-} // namespace gmp
-} // namespace mozilla
+} 
+} 

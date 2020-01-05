@@ -65,6 +65,8 @@ public:
 
   void UpdateContentProcessGMPCapabilities();
 
+  AbstractThread* MainThread() const { return mMainThread; }
+
 private:
   friend class GMPServiceParent;
 
@@ -202,6 +204,8 @@ private:
   
   
   MainThreadOnly<int32_t> mServiceUserCount;
+
+  const RefPtr<AbstractThread> mMainThread;
 };
 
 nsresult ReadSalt(nsIFile* aPath, nsACString& aOutData);
