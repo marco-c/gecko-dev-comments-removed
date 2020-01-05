@@ -5,7 +5,7 @@
 
 
 use dom::bindings::conversions::get_dom_class;
-use dom::bindings::utils::Reflectable;
+use dom::bindings::reflector::Reflectable;
 use libc::c_void;
 use util::mem::{HeapSizeOf, heap_size_of};
 

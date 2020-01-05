@@ -34,10 +34,12 @@
 
 use core::nonzero::NonZero;
 use dom::bindings::error::throw_type_error;
+use dom::bindings::inheritance::Castable;
 use dom::bindings::js::Root;
 use dom::bindings::num::Finite;
+use dom::bindings::reflector::{Reflectable, Reflector};
 use dom::bindings::str::{ByteString, USVString};
-use dom::bindings::utils::{DOMClass, Reflectable, Reflector};
+use dom::bindings::utils::DOMClass;
 use js;
 use js::glue::{GetProxyPrivate, IsWrapper, RUST_JS_NumberValue};
 use js::glue::{RUST_JSID_IS_STRING, RUST_JSID_TO_STRING, UnwrapObject};
@@ -55,7 +57,6 @@ use libc;
 use num::Float;
 use num::traits::{Bounded, Zero};
 use std::borrow::ToOwned;
-use std::mem;
 use std::rc::Rc;
 use std::{char, ptr, slice};
 use util::str::DOMString;
@@ -105,32 +106,6 @@ impl_as!(u64, u64);
 pub trait IDLInterface {
     
     fn derives(&'static DOMClass) -> bool;
-}
-
-
-
-pub trait Castable: IDLInterface + Reflectable + Sized {
-    
-    fn is<T>(&self) -> bool where T: DerivedFrom<Self> {
-        let class = unsafe {
-            get_dom_class(self.reflector().get_jsobject().get()).unwrap()
-        };
-        T::derives(class)
-    }
-
-    
-    fn upcast<T>(&self) -> &T where T: Castable, Self: DerivedFrom<T> {
-        unsafe { mem::transmute(self) }
-    }
-
-    
-    fn downcast<T>(&self) -> Option<&T> where T: DerivedFrom<Self> {
-        if self.is::<T>() {
-            Some(unsafe { mem::transmute(self) })
-        } else {
-            None
-        }
-    }
 }
 
 

@@ -3,7 +3,7 @@
 
 
 use dom::bindings::codegen::Bindings::EventBinding::EventMethods;
-use dom::bindings::conversions::Castable;
+use dom::bindings::inheritance::Castable;
 use dom::element::Element;
 use dom::event::{Event, EventBubbles, EventCancelable};
 use dom::eventtarget::EventTarget;
