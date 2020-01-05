@@ -646,9 +646,6 @@ private:
   
   double mPlaybackRate;
 
-  
-  
-  uint32_t mBufferingWait;
   int64_t  mLowDataThresholdUsecs;
 
   
