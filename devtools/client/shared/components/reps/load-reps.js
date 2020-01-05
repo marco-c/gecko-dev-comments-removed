@@ -14,6 +14,7 @@ define(function (require, exports, module) {
   let createFactories;
   let parseURLEncodedText;
   let parseURLParams;
+  let getSelectableInInspectorGrips;
 
   
   
@@ -25,6 +26,7 @@ define(function (require, exports, module) {
     createFactories = bundle.createFactories;
     parseURLEncodedText = bundle.parseURLEncodedText;
     parseURLParams = bundle.parseURLParams;
+    getSelectableInInspectorGrips = bundle.getSelectableInInspectorGrips;
   } else {
     
     
@@ -40,4 +42,5 @@ define(function (require, exports, module) {
   exports.createFactories = createFactories;
   exports.parseURLEncodedText = parseURLEncodedText;
   exports.parseURLParams = parseURLParams;
+  exports.getSelectableInInspectorGrips = getSelectableInInspectorGrips;
 });

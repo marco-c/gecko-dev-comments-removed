@@ -3,6 +3,15 @@
 
 
 
+
+
+
+
+
+
+
+
+
 "use strict";
 
 var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
@@ -47,7 +56,7 @@ function shallowRenderComponent(component, props) {
 
 function testRepRenderModes(modeTests, testName, componentUnderTest, gripStub,
   props = {}) {
-  modeTests.forEach(({mode, expectedOutput, message}) => {
+  modeTests.forEach(({mode, expectedOutput, message, title}) => {
     const modeString = typeof mode === "undefined" ? "no mode" : mode.toString();
     if (!message) {
       message = `${testName}: ${modeString} renders correctly.`;
@@ -55,8 +64,12 @@ function testRepRenderModes(modeTests, testName, componentUnderTest, gripStub,
 
     const rendered = renderComponent(
       componentUnderTest.rep,
-      Object.assign({}, { object: gripStub, mode }, props)
+      Object.assign({}, { object: gripStub, mode, title }, props)
     );
     is(rendered.textContent, expectedOutput, message);
   });
+}
+
+function getStubAttachedActorIds(gripStubs) {
+  return gripStubs.map(gripStub => gripStub.actor);
 }
