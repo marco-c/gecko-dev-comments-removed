@@ -56,6 +56,26 @@ public:
   
   const nsACString& AsString() const { return mMIMEType; }
 
+  
+  
+  bool operator==(const DependentMediaMIMEType& aOther) const
+  {
+    return mMIMEType.Equals(aOther.AsDependentString());
+  }
+  bool operator!=(const DependentMediaMIMEType& aOther) const
+  {
+    return !mMIMEType.Equals(aOther.AsDependentString());
+  }
+
+  bool operator==(const MediaMIMEType& aOther) const
+  {
+    return mMIMEType.Equals(aOther.mMIMEType);
+  }
+  bool operator!=(const MediaMIMEType& aOther) const
+  {
+    return !mMIMEType.Equals(aOther.mMIMEType);
+  }
+
 private:
   friend Maybe<MediaMIMEType> MakeMediaMIMEType(const nsAString& aType);
   friend class MediaExtendedMIMEType;
