@@ -1,0 +1,9 @@
+
+
+
+
+const {interfaces: Ci, classes: Cc, results: Cr, utils: Cu} = Components;
+
+Cu.import("resource://gre/modules/Services.jsm");
+
+var gProfD = do_get_profile().QueryInterface(Ci.nsILocalFile);
