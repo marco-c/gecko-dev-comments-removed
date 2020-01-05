@@ -124,9 +124,8 @@ public:
     
     
     
-    mIndex = mVariableBlockSize
-      ? frame_or_sample_num
-      : frame_or_sample_num * mBlocksize;
+    mIndex = mVariableBlockSize ? frame_or_sample_num
+                                : frame_or_sample_num * mBlocksize;
 
     
     if (sr_code < 12) {

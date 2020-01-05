@@ -395,10 +395,10 @@ AudioBuffer::StealJSArrayDataIntoSharedChannels(JSContext* aJSContext)
     
     
     MOZ_ASSERT(!isSharedMemory);
-    auto stolenData = arrayBuffer
-      ? static_cast<float*>(JS_StealArrayBufferContents(aJSContext,
-                                                        arrayBuffer))
-      : nullptr;
+    auto stolenData =
+      arrayBuffer ? static_cast<float*>(
+                      JS_StealArrayBufferContents(aJSContext, arrayBuffer))
+                  : nullptr;
     if (stolenData) {
       result->SetData(i, stolenData, js_free, stolenData);
     } else {

@@ -17,14 +17,13 @@
 #include "nsDataHashtable.h"
 #include "nsThreadUtils.h"
 
-namespace mozilla
-{
+namespace mozilla {
 
-namespace layers
-{
-  class ImageContainer;
-  class KnowsCompositor;
+namespace layers {
+class ImageContainer;
+class KnowsCompositor;
 } 
+
 class AbstractThread;
 class MediaResource;
 class ReentrantMonitor;
@@ -35,7 +34,8 @@ class GMPCrashHelper;
 
 typedef nsDataHashtable<nsCStringHashKey, nsCString> MetadataTags;
 
-static inline bool IsCurrentThread(nsIThread* aThread) {
+static inline bool IsCurrentThread(nsIThread* aThread)
+{
   return NS_GetCurrentThread() == aThread;
 }
 
@@ -59,7 +59,10 @@ public:
   
   virtual void NotifyDecodedFrames(const FrameStatisticsData& aStats) = 0;
 
-  virtual AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() { return nullptr; };
+  virtual AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull()
+  {
+    return nullptr;
+  };
 
   
   
@@ -74,7 +77,8 @@ public:
   
   
   
-  virtual MediaEventSource<RefPtr<layers::KnowsCompositor>>* CompositorUpdatedEvent()
+  virtual MediaEventSource<RefPtr<layers::KnowsCompositor>>*
+  CompositorUpdatedEvent()
   {
     return nullptr;
   }
@@ -82,7 +86,7 @@ public:
   
   
   
-  virtual void NotifyWaitingForKey() {}
+  virtual void NotifyWaitingForKey() { }
 
   
   
@@ -95,13 +99,12 @@ public:
   virtual AbstractThread* AbstractMainThread() const = 0;
 
 protected:
-  virtual void UpdateEstimatedMediaDuration(int64_t aDuration) {};
+  virtual void UpdateEstimatedMediaDuration(int64_t aDuration) { };
 public:
   void DispatchUpdateEstimatedMediaDuration(int64_t aDuration)
   {
-    NS_DispatchToMainThread(NewRunnableMethod<int64_t>(this,
-                                                       &AbstractMediaDecoder::UpdateEstimatedMediaDuration,
-                                                       aDuration));
+    NS_DispatchToMainThread(NewRunnableMethod<int64_t>(
+      this, &AbstractMediaDecoder::UpdateEstimatedMediaDuration, aDuration));
   }
 
   virtual VideoFrameContainer* GetVideoFrameContainer() = 0;
@@ -112,19 +115,22 @@ public:
   virtual MediaDecoderOwner* GetOwner() const = 0;
 
   
-  virtual void SetPlatformCanOffloadAudio(bool aCanOffloadAudio) {}
+  virtual void SetPlatformCanOffloadAudio(bool aCanOffloadAudio) { }
 
   virtual already_AddRefed<GMPCrashHelper> GetCrashHelper() { return nullptr; }
 
   
   
   
-  class AutoNotifyDecoded {
+  class AutoNotifyDecoded
+  {
   public:
     explicit AutoNotifyDecoded(AbstractMediaDecoder* aDecoder)
       : mDecoder(aDecoder)
-    {}
-    ~AutoNotifyDecoded() {
+    {
+    }
+    ~AutoNotifyDecoded()
+    {
       if (mDecoder) {
         mDecoder->NotifyDecodedFrames(mStats);
       }
@@ -138,8 +144,12 @@ public:
 
   
   
-  NS_IMETHOD Observe(nsISupports *aSubject, const char * aTopic, const char16_t * aData) override
-  { MOZ_CRASH("Forbidden method"); return NS_OK; }
+  NS_IMETHOD Observe(nsISupports* aSubject, const char* aTopic,
+                     const char16_t* aData) override
+  {
+    MOZ_CRASH("Forbidden method");
+    return NS_OK;
+  }
 };
 
 } 

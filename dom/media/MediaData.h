@@ -270,12 +270,14 @@ typedef AlignedBuffer<int16_t> AlignedShortBuffer;
 typedef AlignedBuffer<AudioDataValue> AlignedAudioBuffer;
 
 
-class MediaData {
+class MediaData
+{
 public:
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaData)
 
-  enum Type {
+  enum Type
+  {
     AUDIO_DATA = 0,
     VIDEO_DATA,
     RAW_DATA,
@@ -294,7 +296,8 @@ public:
     , mDuration(aDuration)
     , mFrames(aFrames)
     , mKeyframe(false)
-  {}
+  {
+  }
 
   
   const Type mType;
@@ -348,7 +351,8 @@ protected:
     , mDuration(0)
     , mFrames(aFrames)
     , mKeyframe(false)
-  {}
+  {
+  }
 
   virtual ~MediaData() {}
 
@@ -356,7 +360,8 @@ protected:
 
 
 
-class NullData : public MediaData {
+class NullData : public MediaData
+{
 public:
   NullData(int64_t aOffset, int64_t aTime, int64_t aDuration)
     : MediaData(NULL_DATA, aOffset, aTime, aDuration, 0)
@@ -366,7 +371,8 @@ public:
 };
 
 
-class AudioData : public MediaData {
+class AudioData : public MediaData
+{
 public:
 
   AudioData(int64_t aOffset,
@@ -411,7 +417,7 @@ public:
   AlignedAudioBuffer mAudioData;
 
 protected:
-  ~AudioData() {}
+  ~AudioData() { }
 };
 
 namespace layers {
@@ -422,7 +428,8 @@ class PlanarYCbCrImage;
 class VideoInfo;
 
 
-class VideoData : public MediaData {
+class VideoData : public MediaData
+{
 public:
   typedef gfx::IntRect IntRect;
   typedef gfx::IntSize IntSize;
@@ -437,8 +444,10 @@ public:
   
   
   
-  struct YCbCrBuffer {
-    struct Plane {
+  struct YCbCrBuffer
+  {
+    struct Plane
+    {
       uint8_t* mData;
       uint32_t mWidth;
       uint32_t mHeight;
@@ -451,7 +460,8 @@ public:
     YUVColorSpace mYUVColorSpace = YUVColorSpace::BT601;
   };
 
-  class Listener {
+  class Listener
+  {
   public:
     virtual void OnSentToCompositor() = 0;
     virtual ~Listener() {}
@@ -469,44 +479,48 @@ public:
 
   
   
-  static already_AddRefed<VideoData> CreateAndCopyData(const VideoInfo& aInfo,
-                                                       ImageContainer* aContainer,
-                                                       int64_t aOffset,
-                                                       int64_t aTime,
-                                                       int64_t aDuration,
-                                                       const YCbCrBuffer &aBuffer,
-                                                       bool aKeyframe,
-                                                       int64_t aTimecode,
-                                                       const IntRect& aPicture);
+  static already_AddRefed<VideoData> CreateAndCopyData(
+    const VideoInfo& aInfo,
+    ImageContainer* aContainer,
+    int64_t aOffset,
+    int64_t aTime,
+    int64_t aDuration,
+    const YCbCrBuffer &aBuffer,
+    bool aKeyframe,
+    int64_t aTimecode,
+    const IntRect& aPicture);
 
-  static already_AddRefed<VideoData> CreateAndCopyData(const VideoInfo& aInfo,
-                                                       ImageContainer* aContainer,
-                                                       int64_t aOffset,
-                                                       int64_t aTime,
-                                                       int64_t aDuration,
-                                                       const YCbCrBuffer &aBuffer,
-                                                       const YCbCrBuffer::Plane &aAlphaPlane,
-                                                       bool aKeyframe,
-                                                       int64_t aTimecode,
-                                                       const IntRect& aPicture);
+  static already_AddRefed<VideoData> CreateAndCopyData(
+    const VideoInfo& aInfo,
+    ImageContainer* aContainer,
+    int64_t aOffset,
+    int64_t aTime,
+    int64_t aDuration,
+    const YCbCrBuffer &aBuffer,
+    const YCbCrBuffer::Plane &aAlphaPlane,
+    bool aKeyframe,
+    int64_t aTimecode,
+    const IntRect& aPicture);
 
-  static already_AddRefed<VideoData> CreateAndCopyIntoTextureClient(const VideoInfo& aInfo,
-                                                                    int64_t aOffset,
-                                                                    int64_t aTime,
-                                                                    int64_t aDuration,
-                                                                    layers::TextureClient* aBuffer,
-                                                                    bool aKeyframe,
-                                                                    int64_t aTimecode,
-                                                                    const IntRect& aPicture);
+  static already_AddRefed<VideoData> CreateAndCopyIntoTextureClient(
+    const VideoInfo& aInfo,
+    int64_t aOffset,
+    int64_t aTime,
+    int64_t aDuration,
+    layers::TextureClient* aBuffer,
+    bool aKeyframe,
+    int64_t aTimecode,
+    const IntRect& aPicture);
 
-  static already_AddRefed<VideoData> CreateFromImage(const VideoInfo& aInfo,
-                                                     int64_t aOffset,
-                                                     int64_t aTime,
-                                                     int64_t aDuration,
-                                                     const RefPtr<Image>& aImage,
-                                                     bool aKeyframe,
-                                                     int64_t aTimecode,
-                                                     const IntRect& aPicture);
+  static already_AddRefed<VideoData> CreateFromImage(
+    const VideoInfo& aInfo,
+    int64_t aOffset,
+    int64_t aTime,
+    int64_t aDuration,
+    const RefPtr<Image>& aImage,
+    bool aKeyframe,
+    int64_t aTimecode,
+    const IntRect& aPicture);
 
   
   
@@ -553,7 +567,7 @@ protected:
 class CryptoTrack
 {
 public:
-  CryptoTrack() : mValid(false), mMode(0), mIVSize(0) {}
+  CryptoTrack() : mValid(false), mMode(0), mIVSize(0) { }
   bool mValid;
   int32_t mMode;
   int32_t mIVSize;
@@ -620,7 +634,8 @@ private:
   MediaRawData* mTarget;
 };
 
-class MediaRawData : public MediaData {
+class MediaRawData : public MediaData
+{
 public:
   MediaRawData();
   MediaRawData(const uint8_t* aData, size_t aSize);
@@ -676,10 +691,10 @@ private:
 class MediaByteBuffer : public nsTArray<uint8_t> {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaByteBuffer);
   MediaByteBuffer() = default;
-  explicit MediaByteBuffer(size_t aCapacity) : nsTArray<uint8_t>(aCapacity) {}
+  explicit MediaByteBuffer(size_t aCapacity) : nsTArray<uint8_t>(aCapacity) { }
 
 private:
-  ~MediaByteBuffer() {}
+  ~MediaByteBuffer() { }
 };
 
 } 

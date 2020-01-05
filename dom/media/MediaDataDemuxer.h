@@ -55,8 +55,8 @@ public:
   
   
   
-  virtual already_AddRefed<MediaTrackDemuxer> GetTrackDemuxer(TrackInfo::TrackType aType,
-                                                              uint32_t aTrackNumber) = 0;
+  virtual already_AddRefed<MediaTrackDemuxer> GetTrackDemuxer(
+    TrackInfo::TrackType aType, uint32_t aTrackNumber) = 0;
 
   
   virtual bool IsSeekable() const = 0;
@@ -101,15 +101,17 @@ class MediaTrackDemuxer
 public:
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaTrackDemuxer)
 
-  class SamplesHolder {
+  class SamplesHolder
+  {
   public:
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SamplesHolder)
     nsTArray<RefPtr<MediaRawData>> mSamples;
   private:
-    ~SamplesHolder() {}
+    ~SamplesHolder() { }
   };
 
-  class SkipFailureHolder {
+  class SkipFailureHolder
+  {
   public:
     SkipFailureHolder(const MediaResult& aFailure, uint32_t aSkipped)
       : mFailure(aFailure)
@@ -119,9 +121,13 @@ public:
     uint32_t mSkipped;
   };
 
-  typedef MozPromise<media::TimeUnit, MediaResult,  true> SeekPromise;
-  typedef MozPromise<RefPtr<SamplesHolder>, MediaResult,  true> SamplesPromise;
-  typedef MozPromise<uint32_t, SkipFailureHolder,  true> SkipAccessPointPromise;
+  typedef MozPromise<media::TimeUnit, MediaResult,  true>
+    SeekPromise;
+  typedef MozPromise<RefPtr<SamplesHolder>, MediaResult,
+                      true>
+    SamplesPromise;
+  typedef MozPromise<uint32_t, SkipFailureHolder,  true>
+    SkipAccessPointPromise;
 
   
   
@@ -207,7 +213,7 @@ public:
   }
 
 protected:
-  virtual ~MediaTrackDemuxer() {}
+  virtual ~MediaTrackDemuxer() { }
 };
 
 } 

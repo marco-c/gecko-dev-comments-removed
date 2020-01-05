@@ -1526,8 +1526,8 @@ MediaCache::AllocateAndWriteBlock(MediaCacheStream* aStream, const void* aData,
       bo->mLastUseTime = now;
       stream->mBlocks[streamBlockIndex] = blockIndex;
       if (streamBlockIndex*BLOCK_SIZE < stream->mStreamOffset) {
-        bo->mClass = aMode == MediaCacheStream::MODE_PLAYBACK
-          ? PLAYED_BLOCK : METADATA_BLOCK;
+        bo->mClass = aMode == MediaCacheStream::MODE_PLAYBACK ? PLAYED_BLOCK
+                                                              : METADATA_BLOCK;
         
         
         
@@ -1648,7 +1648,8 @@ MediaCache::NoteBlockUsage(MediaCacheStream* aStream, int32_t aBlockIndex,
   GetListForBlock(bo)->RemoveBlock(aBlockIndex);
   bo->mClass =
     (aMode == MediaCacheStream::MODE_METADATA || bo->mClass == METADATA_BLOCK)
-    ? METADATA_BLOCK : PLAYED_BLOCK;
+    ? METADATA_BLOCK
+    : PLAYED_BLOCK;
   
   
   GetListForBlock(bo)->AddFirstBlock(aBlockIndex);

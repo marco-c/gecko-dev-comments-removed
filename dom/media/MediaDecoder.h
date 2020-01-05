@@ -62,7 +62,8 @@ class MediaDecoder : public AbstractMediaDecoder
 public:
   
   
-  class ResourceCallback : public MediaResourceCallback {
+  class ResourceCallback : public MediaResourceCallback
+  {
     
     
     static const uint32_t sDelay = 500;
@@ -96,12 +97,15 @@ public:
     const RefPtr<AbstractThread> mAbstractMainThread;
   };
 
-  typedef MozPromise<bool , bool ,  true> SeekPromise;
+  typedef MozPromise<bool , bool ,
+                      true>
+    SeekPromise;
 
   NS_DECL_THREADSAFE_ISUPPORTS
 
   
-  enum PlayState {
+  enum PlayState
+  {
     PLAY_STATE_START,
     PLAY_STATE_LOADING,
     PLAY_STATE_PAUSED,
@@ -207,7 +211,8 @@ public:
   
   
   
-  virtual void AddOutputStream(ProcessedMediaStream* aStream, bool aFinishWhenEnded);
+  virtual void AddOutputStream(ProcessedMediaStream* aStream,
+                               bool aFinishWhenEnded);
   
   virtual void RemoveOutputStream(MediaStream* aStream);
 
@@ -430,7 +435,9 @@ private:
     return mAbstractMainThread;
   }
 
-  typedef MozPromise<RefPtr<CDMProxy>, bool ,  true> CDMProxyPromise;
+  typedef MozPromise<RefPtr<CDMProxy>, bool ,
+                      true>
+    CDMProxyPromise;
 
   
   
@@ -476,12 +483,15 @@ private:
     GetOwner()->UpdateReadyState();
   }
 
-  virtual MediaDecoderOwner::NextFrameStatus NextFrameStatus() { return mNextFrameStatus; }
+  virtual MediaDecoderOwner::NextFrameStatus NextFrameStatus()
+  {
+    return mNextFrameStatus;
+  }
   virtual MediaDecoderOwner::NextFrameStatus NextFrameBufferedStatus();
 
   
   
-  virtual void GetMozDebugReaderData(nsACString& aString) {}
+  virtual void GetMozDebugReaderData(nsACString& aString) { }
 
   virtual void DumpDebugInfo();
 
@@ -787,45 +797,46 @@ protected:
 
 public:
   AbstractCanonical<media::NullableTimeUnit>* CanonicalDurationOrNull() override;
-  AbstractCanonical<double>* CanonicalVolume() {
-    return &mVolume;
-  }
-  AbstractCanonical<bool>* CanonicalPreservesPitch() {
+  AbstractCanonical<double>* CanonicalVolume() { return &mVolume; }
+  AbstractCanonical<bool>* CanonicalPreservesPitch()
+  {
     return &mPreservesPitch;
   }
-  AbstractCanonical<media::NullableTimeUnit>* CanonicalEstimatedDuration() {
+  AbstractCanonical<media::NullableTimeUnit>* CanonicalEstimatedDuration()
+  {
     return &mEstimatedDuration;
   }
-  AbstractCanonical<Maybe<double>>* CanonicalExplicitDuration() {
+  AbstractCanonical<Maybe<double>>* CanonicalExplicitDuration()
+  {
     return &mExplicitDuration;
   }
-  AbstractCanonical<PlayState>* CanonicalPlayState() {
-    return &mPlayState;
-  }
-  AbstractCanonical<PlayState>* CanonicalNextPlayState() {
-    return &mNextState;
-  }
-  AbstractCanonical<bool>* CanonicalLogicallySeeking() {
+  AbstractCanonical<PlayState>* CanonicalPlayState() { return &mPlayState; }
+  AbstractCanonical<PlayState>* CanonicalNextPlayState() { return &mNextState; }
+  AbstractCanonical<bool>* CanonicalLogicallySeeking()
+  {
     return &mLogicallySeeking;
   }
-  AbstractCanonical<bool>* CanonicalSameOriginMedia() {
+  AbstractCanonical<bool>* CanonicalSameOriginMedia()
+  {
     return &mSameOriginMedia;
   }
-  AbstractCanonical<PrincipalHandle>* CanonicalMediaPrincipalHandle() {
+  AbstractCanonical<PrincipalHandle>* CanonicalMediaPrincipalHandle()
+  {
     return &mMediaPrincipalHandle;
   }
-  AbstractCanonical<double>* CanonicalPlaybackBytesPerSecond() {
+  AbstractCanonical<double>* CanonicalPlaybackBytesPerSecond()
+  {
     return &mPlaybackBytesPerSecond;
   }
-  AbstractCanonical<bool>* CanonicalPlaybackRateReliable() {
+  AbstractCanonical<bool>* CanonicalPlaybackRateReliable()
+  {
     return &mPlaybackRateReliable;
   }
-  AbstractCanonical<int64_t>* CanonicalDecoderPosition() {
+  AbstractCanonical<int64_t>* CanonicalDecoderPosition()
+  {
     return &mDecoderPosition;
   }
-  AbstractCanonical<bool>* CanonicalIsVisible() {
-    return &mIsVisible;
-  }
+  AbstractCanonical<bool>* CanonicalIsVisible() { return &mIsVisible; }
 
 private:
   
