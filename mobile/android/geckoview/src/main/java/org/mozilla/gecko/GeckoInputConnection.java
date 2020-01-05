@@ -323,16 +323,10 @@ class GeckoInputConnection
     }
 
     @Override
-    public void onTextChange(CharSequence text, int start, int oldEnd, int newEnd) {
+    public void onTextChange() {
 
         if (mUpdateRequest == null) {
-            
-            
-            final Editable editable = getEditable();
-            if (editable != null) {
-                onSelectionChange(Selection.getSelectionStart(editable),
-                                  Selection.getSelectionEnd(editable));
-            }
+            onSelectionChange();
             return;
         }
 
@@ -370,8 +364,8 @@ class GeckoInputConnection
                                 mUpdateExtract);
     }
 
-    @Override
-    public void onSelectionChange(int start, int end) {
+    @Override 
+    public void onSelectionChange() {
 
         if (mBatchEditCount > 0) {
             
