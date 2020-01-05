@@ -511,6 +511,19 @@ ClientLayerManager::GetCompositorSideAPZTestData(APZTestData* aData) const
   }
 }
 
+void
+ClientLayerManager::SetTransactionIdAllocator(TransactionIdAllocator* aAllocator)
+{
+  
+  
+  
+  if (mTransactionIdAllocator) {
+    mTransactionIdAllocator->ClearPendingTransactions();
+  }
+
+  mTransactionIdAllocator = aAllocator;
+}
+
 float
 ClientLayerManager::RequestProperty(const nsAString& aProperty)
 {

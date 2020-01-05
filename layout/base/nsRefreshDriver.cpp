@@ -1240,11 +1240,7 @@ nsRefreshDriver::RestoreNormalRefresh()
 TimeStamp
 nsRefreshDriver::MostRecentRefresh() const
 {
-  
-  
-  if (!ServoStyleSet::IsInServoTraversal()) {
-    const_cast<nsRefreshDriver*>(this)->EnsureTimerStarted();
-  }
+  const_cast<nsRefreshDriver*>(this)->EnsureTimerStarted();
 
   return mMostRecentRefresh;
 }
@@ -1327,10 +1323,6 @@ nsRefreshDriver::RemoveImageRequest(imgIRequest* aRequest)
 void
 nsRefreshDriver::EnsureTimerStarted(EnsureTimerStartedFlags aFlags)
 {
-  MOZ_ASSERT(!ServoStyleSet::IsInServoTraversal(),
-             "EnsureTimerStarted should be called only when we are not "
-             "in servo traversal");
-
   if (mTestControllingRefreshes)
     return;
 
@@ -2191,6 +2183,13 @@ nsRefreshDriver::RevokeTransactionId(uint64_t aTransactionId)
     FinishedWaitingForTransaction();
   }
   mPendingTransaction--;
+}
+
+void
+nsRefreshDriver::ClearPendingTransactions()
+{
+  mCompletedTransaction = mPendingTransaction;
+  mWaitingForTransaction = false;
 }
 
 mozilla::TimeStamp
