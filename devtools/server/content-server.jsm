@@ -8,18 +8,27 @@ const Ci = Components.interfaces;
 const Cc = Components.classes;
 const Cu = Components.utils;
 
-const { Services } = Cu.import("resource://gre/modules/Services.jsm", {});
-const { DevToolsLoader } = Cu.import("resource://devtools/shared/Loader.jsm", {});
-
 this.EXPORTED_SYMBOLS = ["init"];
 
-function init(msg) {
+let gLoader;
+
+function setupServer(mm) {
+  
+  
+  if (gLoader) {
+    return gLoader;
+  }
+
+  
+  let { DevToolsLoader } =
+    Cu.import("resource://devtools/shared/Loader.jsm", {});
+
   
   
   
-  let devtools = new DevToolsLoader();
-  devtools.invisibleToDebugger = true;
-  let { DebuggerServer, ActorPool } = devtools.require("devtools/server/main");
+  gLoader = new DevToolsLoader();
+  gLoader.invisibleToDebugger = true;
+  let { DebuggerServer } = gLoader.require("devtools/server/main");
 
   if (!DebuggerServer.initialized) {
     DebuggerServer.init();
@@ -31,26 +40,40 @@ function init(msg) {
   
   DebuggerServer.addChildActors();
 
+  
+  mm.addMessageListener("debug:content-process-destroy", function onDestroy() {
+    mm.removeMessageListener("debug:content-process-destroy", onDestroy);
+
+    DebuggerServer.destroy();
+    gLoader.destroy();
+    gLoader = null;
+  });
+
+  return gLoader;
+}
+
+function init(msg) {
   let mm = msg.target;
   mm.QueryInterface(Ci.nsISyncMessageSender);
   let prefix = msg.data.prefix;
 
   
+  let loader = setupServer(mm);
+
+  
+  
+  let { DebuggerServer } = loader.require("devtools/server/main");
   let conn = DebuggerServer.connectToParent(prefix, mm);
   conn.parentMessageManager = mm;
 
-  let { ChildProcessActor } = devtools.require("devtools/server/actors/child-process");
+  let { ChildProcessActor } =
+    loader.require("devtools/server/actors/child-process");
+  let { ActorPool } = loader.require("devtools/server/main");
   let actor = new ChildProcessActor(conn);
   let actorPool = new ActorPool(conn);
   actorPool.addActor(actor);
   conn.addActorPool(actorPool);
 
-  let response = {actor: actor.form()};
+  let response = { actor: actor.form() };
   mm.sendAsyncMessage("debug:content-process-actor", response);
-
-  mm.addMessageListener("debug:content-process-destroy", function onDestroy() {
-    mm.removeMessageListener("debug:content-process-destroy", onDestroy);
-
-    DebuggerServer.destroy();
-  });
 }
