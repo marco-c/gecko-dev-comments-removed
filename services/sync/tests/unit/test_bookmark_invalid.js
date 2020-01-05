@@ -1,6 +1,5 @@
 Cu.import("resource://gre/modules/PlacesUtils.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
-Cu.import("resource://gre/modules/Task.jsm");
 Cu.import("resource://services-sync/engines.js");
 Cu.import("resource://services-sync/engines/bookmarks.js");
 Cu.import("resource://services-sync/service.js");
@@ -12,7 +11,7 @@ var engine = Service.engineManager.get("bookmarks");
 var store = engine._store;
 var tracker = engine._tracker;
 
-add_task(function* test_ignore_invalid_uri() {
+add_task(async function test_ignore_invalid_uri() {
   _("Ensure that we don't die with invalid bookmarks.");
 
   
@@ -22,20 +21,20 @@ add_task(function* test_ignore_invalid_uri() {
                                                   "the title");
 
   
-  yield PlacesUtils.withConnectionWrapper("test_ignore_invalid_uri", Task.async(function* (db) {
-    yield db.execute(
+  await PlacesUtils.withConnectionWrapper("test_ignore_invalid_uri", async function(db) {
+    await db.execute(
       `UPDATE moz_places SET url = :url, url_hash = hash(:url)
        WHERE id = (SELECT b.fk FROM moz_bookmarks b
        WHERE b.id = :id LIMIT 1)`,
       { id: bmid, url: "<invalid url>" });
-  }));
+  });
 
   
   
   engine._buildGUIDMap();
 });
 
-add_task(function* test_ignore_missing_uri() {
+add_task(async function test_ignore_missing_uri() {
   _("Ensure that we don't die with a bookmark referencing an invalid bookmark id.");
 
   
@@ -45,12 +44,12 @@ add_task(function* test_ignore_missing_uri() {
                                                   "the title");
 
   
-  yield PlacesUtils.withConnectionWrapper("test_ignore_missing_uri", Task.async(function* (db) {
-    yield db.execute(
+  await PlacesUtils.withConnectionWrapper("test_ignore_missing_uri", async function(db) {
+    await db.execute(
       `UPDATE moz_bookmarks SET fk = 999999
        WHERE id = :id`
       , { id: bmid });
-  }));
+  });
 
   
   
