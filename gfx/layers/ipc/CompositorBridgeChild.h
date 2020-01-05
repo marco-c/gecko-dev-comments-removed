@@ -265,6 +265,9 @@ private:
                                                  const uint64_t& aEpoch,
                                                  const bool& aActive) override;
 
+  already_AddRefed<nsIEventTarget>
+  GetSpecificMessageEventTarget(const Message& aMsg) override;
+
   
   class SharedFrameMetricsData {
   public:
