@@ -329,6 +329,118 @@ private:
 Maybe<TimeStamp> CurrentWindowsTimeGetter::sBackwardsSkewStamp;
 DWORD CurrentWindowsTimeGetter::sLastPostTime = 0;
 
+#if defined(ACCESSIBILITY)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+class TIPMessageHandler
+{
+public:
+  ~TIPMessageHandler()
+  {
+    if (mHook) {
+      ::UnhookWindowsHookEx(mHook);
+    }
+  }
+
+  static void Initialize()
+  {
+    MOZ_ASSERT(!sInstance);
+    sInstance = new TIPMessageHandler();
+    ClearOnShutdown(&sInstance);
+  }
+
+  static bool IsA11yBlocked()
+  {
+    MOZ_ASSERT(sInstance);
+    if (!sInstance) {
+      return false;
+    }
+
+    return sInstance->mA11yBlockCount > 0;
+  }
+
+private:
+  TIPMessageHandler()
+    : mHook(nullptr)
+    , mA11yBlockCount(0)
+  {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    
+    mMessages[0] = ::RegisterWindowMessage(L"ImmersiveFocusNotification");
+    mMessages[1] = ::RegisterWindowMessage(L"TipCloseMenus");
+    mMessages[2] = ::RegisterWindowMessage(L"TabletInputPanelOpening");
+    mMessages[3] = ::RegisterWindowMessage(L"IHM Pen or Touch Event noticed");
+    mMessages[4] = ::RegisterWindowMessage(L"ProgrammabilityCaretVisibility");
+    mMessages[5] = ::RegisterWindowMessage(L"CaretTrackingUpdateIPHidden");
+    mMessages[6] = ::RegisterWindowMessage(L"CaretTrackingUpdateIPInfo");
+
+    mHook = ::SetWindowsHookEx(WH_GETMESSAGE, &TIPHook, nullptr,
+                               ::GetCurrentThreadId());
+    MOZ_ASSERT(mHook);
+  }
+
+  class MOZ_RAII A11yInstantiationBlocker
+  {
+  public:
+    A11yInstantiationBlocker()
+    {
+      MOZ_ASSERT(TIPMessageHandler::sInstance);
+      ++TIPMessageHandler::sInstance->mA11yBlockCount;
+    }
+
+    ~A11yInstantiationBlocker()
+    {
+      MOZ_ASSERT(TIPMessageHandler::sInstance &&
+                 TIPMessageHandler::sInstance->mA11yBlockCount > 0);
+      --TIPMessageHandler::sInstance->mA11yBlockCount;
+    }
+  };
+
+  friend class A11yInstantiationBlocker;
+
+  static LRESULT CALLBACK TIPHook(int aCode, WPARAM aWParam, LPARAM aLParam)
+  {
+    if (aCode < 0 || !sInstance) {
+      return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+    }
+
+    MSG* msg = reinterpret_cast<MSG*>(aLParam);
+    UINT& msgCode = msg->message;
+
+    for (uint32_t i = 0; i < ArrayLength(sInstance->mMessages); ++i) {
+      if (msgCode == sInstance->mMessages[i]) {
+        A11yInstantiationBlocker block;
+        return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+      }
+    }
+
+    return ::CallNextHookEx(nullptr, aCode, aWParam, aLParam);
+  }
+
+  static StaticAutoPtr<TIPMessageHandler> sInstance;
+
+  HHOOK     mHook;
+  UINT      mMessages[7];
+  uint32_t  mA11yBlockCount;
+};
+
+StaticAutoPtr<TIPMessageHandler> TIPMessageHandler::sInstance;
+
+#endif 
+
 } 
 
 
@@ -456,6 +568,9 @@ nsWindow::nsWindow()
     
     mozilla::widget::WinTaskbar::RegisterAppUserModelID();
     KeyboardLayout::GetInstance()->OnLayoutChange(::GetKeyboardLayout(0));
+#if defined(ACCESSIBILITY)
+    mozilla::TIPMessageHandler::Initialize();
+#endif 
     IMEHandler::Initialize();
     if (SUCCEEDED(::OleInitialize(nullptr))) {
       sIsOleInitialized = TRUE;
@@ -5599,7 +5714,7 @@ nsWindow::ProcessMessage(UINT msg, WPARAM& wParam, LPARAM& lParam,
       
       
       int32_t objId = static_cast<DWORD>(lParam);
-      if (objId == OBJID_CLIENT) { 
+      if (!TIPMessageHandler::IsA11yBlocked() && objId == OBJID_CLIENT) { 
         a11y::Accessible* rootAccessible = GetAccessible(); 
         if (rootAccessible) {
           IAccessible *msaaAccessible = nullptr;
