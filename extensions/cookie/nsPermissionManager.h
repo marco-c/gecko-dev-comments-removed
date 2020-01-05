@@ -18,6 +18,9 @@
 #include "nsHashKeys.h"
 #include "nsCOMArray.h"
 #include "nsDataHashtable.h"
+#include "nsIRunnable.h"
+#include "nsRefPtrHashtable.h"
+#include "mozilla/MozPromise.h"
 
 namespace mozilla {
 class OriginAttributesPattern;
@@ -323,6 +326,8 @@ private:
 
   bool PermissionAvaliable(nsIPrincipal* aPrincipal, const char* aType);
 
+  nsRefPtrHashtable<nsCStringHashKey, mozilla::GenericPromise::Private> mPermissionKeyPromiseMap;
+
   nsCOMPtr<mozIStorageConnection> mDBConn;
   nsCOMPtr<mozIStorageAsyncStatement> mStmtInsert;
   nsCOMPtr<mozIStorageAsyncStatement> mStmtDelete;
@@ -336,9 +341,6 @@ private:
 
   
   nsTArray<nsCString>          mTypeArray;
-
-  
-  nsTHashtable<nsCStringHashKey> mAvailablePermissionKeys;
 
   
   

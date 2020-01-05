@@ -40,11 +40,12 @@
 #include "nsToolkitCompsCID.h"
 #include "nsIObserverService.h"
 #include "nsPrintfCString.h"
+#include "mozilla/AbstractThread.h"
 
 static nsPermissionManager *gPermissionManager = nullptr;
 
-using mozilla::dom::ContentParent;
-using mozilla::Unused; 
+using namespace mozilla;
+using namespace mozilla::dom;
 
 static bool
 IsChildProcess()
@@ -848,6 +849,15 @@ nsPermissionManager::nsPermissionManager()
 
 nsPermissionManager::~nsPermissionManager()
 {
+  
+  
+  for (auto iter = mPermissionKeyPromiseMap.Iter(); !iter.Done(); iter.Next()) {
+    if (iter.Data()) {
+      iter.Data()->Reject(NS_ERROR_FAILURE, __func__);
+    }
+  }
+  mPermissionKeyPromiseMap.Clear();
+
   RemoveAllFromMemory();
   gPermissionManager = nullptr;
 }
@@ -3044,13 +3054,20 @@ nsPermissionManager::SetPermissionsWithKey(const nsACString& aPermissionKey,
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  
-  if (NS_WARN_IF(mAvailablePermissionKeys.Contains(aPermissionKey))) {
+  RefPtr<GenericPromise::Private> promise;
+  bool foundKey = mPermissionKeyPromiseMap.Get(aPermissionKey, getter_AddRefs(promise));
+  if (promise) {
+    MOZ_ASSERT(foundKey);
+    
+    
+    
+    promise->Resolve(true, __func__);
+  } else if (foundKey) {
     
     
     return NS_OK;
   }
-  mAvailablePermissionKeys.PutEntry(aPermissionKey);
+  mPermissionKeyPromiseMap.Put(aPermissionKey, nullptr);
 
   
   for (IPC::Permission& perm : aPerms) {
@@ -3171,7 +3188,11 @@ nsPermissionManager::PermissionAvaliable(nsIPrincipal* aPrincipal, const char* a
     nsAutoCString permissionKey;
     
     GetKeyForPermission(aPrincipal, aType, permissionKey);
-    if (!mAvailablePermissionKeys.Contains(permissionKey)) {
+
+    
+    
+    RefPtr<GenericPromise::Private> promise;
+    if (!mPermissionKeyPromiseMap.Get(permissionKey, getter_AddRefs(promise)) || promise) {
       
       
       NS_WARNING(nsPrintfCString("This content process hasn't received the "
@@ -3180,4 +3201,50 @@ nsPermissionManager::PermissionAvaliable(nsIPrincipal* aPrincipal, const char* a
     }
   }
   return true;
+}
+
+NS_IMETHODIMP
+nsPermissionManager::WhenPermissionsAvailable(nsIPrincipal* aPrincipal,
+                                              nsIRunnable* aRunnable)
+{
+  MOZ_ASSERT(aRunnable);
+
+  if (!XRE_IsContentProcess()) {
+    aRunnable->Run();
+    return NS_OK;
+  }
+
+  nsTArray<RefPtr<GenericPromise>> promises;
+  for (auto& key : GetAllKeysForPrincipal(aPrincipal)) {
+    RefPtr<GenericPromise::Private> promise;
+    if (!mPermissionKeyPromiseMap.Get(key, getter_AddRefs(promise))) {
+      
+      
+      
+      
+      promise = new GenericPromise::Private(__func__);
+      mPermissionKeyPromiseMap.Put(key, RefPtr<GenericPromise::Private>(promise).forget());
+    }
+
+    if (promise) {
+      promises.AppendElement(Move(promise));
+    }
+  }
+
+  
+  
+  
+  if (promises.IsEmpty()) {
+    aRunnable->Run();
+    return NS_OK;
+  }
+
+  RefPtr<nsIRunnable> runnable = aRunnable;
+  GenericPromise::All(AbstractThread::GetCurrent(), promises)->Then(
+    AbstractThread::GetCurrent(), __func__,
+    [runnable] () { runnable->Run(); },
+    [] () {
+      NS_WARNING("nsPermissionManager permission promise rejected. We're probably shutting down.");
+    });
+  return NS_OK;
 }
