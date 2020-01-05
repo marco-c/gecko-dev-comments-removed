@@ -7,46 +7,43 @@
 #ifndef MediaContentType_h_
 #define MediaContentType_h_
 
+#include "MediaMIMETypes.h"
 #include "mozilla/Maybe.h"
 #include "nsString.h"
 
 namespace mozilla {
 
 
-
 class MediaContentType
 {
 public:
-  
-  const nsACString& GetMIMEType() const { return mMIMEType; }
-
-  
-  bool HaveCodecs() const { return mHaveCodecs; }
-  
-  const nsAString& GetCodecs() const { return mCodecs; }
-
-  
-  Maybe<int32_t> GetWidth() const { return GetMaybeNumber(mWidth); }
-  Maybe<int32_t> GetHeight() const { return GetMaybeNumber(mHeight); }
-  Maybe<int32_t> GetFramerate() const { return GetMaybeNumber(mFramerate); }
-  Maybe<int32_t> GetBitrate() const { return GetMaybeNumber(mBitrate); }
-
-private:
-  friend Maybe<MediaContentType> MakeMediaContentType(const nsAString& aType);
-  bool Populate(const nsAString& aType);
-
-  Maybe<int32_t> GetMaybeNumber(int32_t aNumber) const
+  explicit MediaContentType(const MediaExtendedMIMEType& aType)
+    : mExtendedMIMEType(aType)
   {
-    return (aNumber < 0) ? Maybe<int32_t>(Nothing()) : Some(int32_t(aNumber));
+  }
+  explicit MediaContentType(MediaExtendedMIMEType&& aType)
+    : mExtendedMIMEType(Move(aType))
+  {
   }
 
-  nsCString mMIMEType; 
-  bool mHaveCodecs; 
-  nsString mCodecs;
-  int32_t mWidth; 
-  int32_t mHeight; 
-  int32_t mFramerate; 
-  int32_t mBitrate; 
+  const MediaExtendedMIMEType& ExtendedType() const { return mExtendedMIMEType; }
+
+  
+  const nsACString& GetMIMEType() const { return mExtendedMIMEType.Type(); }
+
+  
+  bool HaveCodecs() const { return mExtendedMIMEType.HaveCodecs(); }
+  
+  const nsAString& GetCodecs() const { return mExtendedMIMEType.GetCodecs(); }
+
+  
+  Maybe<int32_t> GetWidth() const { return mExtendedMIMEType.GetWidth(); }
+  Maybe<int32_t> GetHeight() const { return mExtendedMIMEType.GetHeight(); }
+  Maybe<int32_t> GetFramerate() const { return mExtendedMIMEType.GetFramerate(); }
+  Maybe<int32_t> GetBitrate() const { return mExtendedMIMEType.GetBitrate(); }
+
+private:
+  MediaExtendedMIMEType mExtendedMIMEType;
 };
 
 Maybe<MediaContentType> MakeMediaContentType(const nsAString& aType);
