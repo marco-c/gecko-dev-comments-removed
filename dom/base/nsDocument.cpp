@@ -7967,13 +7967,8 @@ nsDocument::FlushPendingNotifications(FlushType aType)
     mParentDocument->FlushPendingNotifications(parentType);
   }
 
-  
-  
   if (nsIPresShell* shell = GetShell()) {
-    if (shell->NeedFlush(aType)) {
-      nsCOMPtr<nsIPresShell> presShell = shell;
-      presShell->FlushPendingNotifications(aType);
-    }
+    shell->FlushPendingNotifications(aType);
   }
 }
 

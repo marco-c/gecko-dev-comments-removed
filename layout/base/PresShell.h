@@ -126,8 +126,8 @@ public:
   virtual void FrameNeedsToContinueReflow(nsIFrame *aFrame) override;
   virtual void CancelAllPendingReflows() override;
   virtual bool IsSafeToFlush() const override;
-  virtual void FlushPendingNotifications(mozilla::FlushType aType) override;
-  virtual void FlushPendingNotifications(mozilla::ChangesToFlush aType) override;
+  virtual void DoFlushPendingNotifications(mozilla::FlushType aType) override;
+  virtual void DoFlushPendingNotifications(mozilla::ChangesToFlush aType) override;
   virtual void DestroyFramesFor(nsIContent*  aContent,
                                 nsIContent** aDestroyedFramesFor) override;
   virtual void CreateFramesFor(nsIContent* aContent) override;
@@ -378,6 +378,8 @@ public:
                               size_t *aPresContextSize) override;
   size_t SizeOfTextRuns(mozilla::MallocSizeOf aMallocSizeOf) const;
 
+  virtual void AddInvalidateHiddenPresShellObserver(nsRefreshDriver *aDriver) override;
+
   
   
   struct ScrollIntoViewData {
@@ -410,11 +412,6 @@ public:
       const mozilla::WidgetGUIEvent* aEvent = nullptr) const override;
 
   void SetNextPaintCompressed() { mNextPaintCompressed = true; }
-
-  void NotifyStyleSheetServiceSheetAdded(mozilla::StyleSheet* aSheet,
-                                         uint32_t aSheetType) override;
-  void NotifyStyleSheetServiceSheetRemoved(mozilla::StyleSheet* aSheet,
-                                           uint32_t aSheetType) override;
 
 protected:
   virtual ~PresShell();
