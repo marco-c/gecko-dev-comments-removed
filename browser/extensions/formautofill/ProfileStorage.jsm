@@ -93,6 +93,9 @@ function ProfileStorage(path) {
 
 ProfileStorage.prototype = {
   
+  INTERNAL_FIELDS:
+    ["guid", "timeCreated", "timeLastUsed", "timeLastModified", "timesUsed"],
+  
 
 
 
