@@ -269,7 +269,6 @@ public:
     , bulletType(nullptr)
     , alignType(nullptr)
     , blockType(nullptr)
-    , insertElement(nullptr)
   {}
 
   
@@ -284,6 +283,8 @@ public:
 
   
   bool bOrdered;
+
+  
   bool entireList;
   const nsAString* bulletType;
 
@@ -292,9 +293,6 @@ public:
 
   
   const nsAString* blockType;
-
-  
-  const nsIDOMElement* insertElement;
 };
 
 
