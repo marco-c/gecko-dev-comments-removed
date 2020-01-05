@@ -37,7 +37,7 @@ pub struct Blob {
 fn is_ascii_printable(string: &DOMString) -> bool {
     
     
-    return string.chars().all(|c| { c >= '\x20' && c <= '\x7E' })
+    string.chars().all(|c| { c >= '\x20' && c <= '\x7E' })
 }
 
 impl Blob {

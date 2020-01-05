@@ -14,7 +14,7 @@ use std::borrow::ToOwned;
 
 
 pub trait Activatable {
-    fn as_element<'a>(&'a self) -> &'a Element;
+    fn as_element(&self) -> &Element;
 
     
     fn is_instance_activatable(&self) -> bool;
