@@ -223,6 +223,38 @@ function add_tests() {
 
   
 
+  let gObservedCnt = 0;
+  let protocolProxyService = Cc["@mozilla.org/network/protocol-proxy-service;1"]
+                               .getService(Ci.nsIProtocolProxyService);
+
+  
+  
+  function startObservingChannels(aFirstPartyDomain) {
+    
+    
+    let proxyFilter = {
+      applyFilter: function (aProxyService, aChannel, aProxy) {
+        
+        if (aChannel.originalURI.spec == "http://localhost:8888/") {
+          gObservedCnt++;
+          equal(aChannel.loadInfo.originAttributes.firstPartyDomain,
+                aFirstPartyDomain, "firstPartyDomain should match");
+        }
+        
+        return aProxy;
+      }
+    };
+    protocolProxyService.registerChannelFilter(proxyFilter, 0);
+    
+    return () => protocolProxyService.unregisterChannelFilter(proxyFilter);
+  }
+
+  let stopObservingChannels;
+  add_test(function() {
+    stopObservingChannels = startObservingChannels("foo.com");
+    run_next_test();
+  });
+
   
   add_ocsp_test("ocsp-stapling-none.example.com", PRErrorCodeSuccess,
                 [respondWithGoodOCSP],
@@ -234,11 +266,30 @@ function add_tests() {
                 "Noted OCSP server failure (firstPartyDomain = foo.com) -> a " +
                 "fetch should not have been attempted", "foo.com");
 
+  add_test(function() {
+    stopObservingChannels();
+    equal(gObservedCnt, 1, "should have observed only 1 OCSP requests");
+    gObservedCnt = 0;
+    run_next_test();
+  });
+
+  add_test(function() {
+    stopObservingChannels = startObservingChannels("bar.com");
+    run_next_test();
+  });
+
   
   add_ocsp_test("ocsp-stapling-none.example.com", PRErrorCodeSuccess,
                 [respondWithGoodOCSP],
                 "No stapled response (firstPartyDomain = bar.com) -> a fetch " +
                 "should have been attempted", "bar.com");
+
+  add_test(function() {
+    stopObservingChannels();
+    equal(gObservedCnt, 1, "should have observed only 1 OCSP requests");
+    gObservedCnt = 0;
+    run_next_test();
+  });
 
   
 
