@@ -4,6 +4,33 @@
 
 "use strict";
 
+const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+
+function* getNames(x) {
+  yield* Object.getOwnPropertyNames(x);
+  yield* Object.getOwnPropertySymbols(x);
+}
+
+
+function getOwnPropertyDescriptors(...objects) {
+  let descriptors = {};
+  for (let object of objects) {
+    for (let name of getNames(object)) {
+      descriptors[name] = getOwnPropertyDescriptor(object, name);
+    }
+  }
+  return descriptors;
+}
+
+
+
+
+
+function extend(prototype, properties) {
+  return Object.create(prototype,
+                       getOwnPropertyDescriptors(properties));
+}
+
 
 
 
@@ -127,6 +154,7 @@ function truncateString(str, maxLength) {
 }
 
 module.exports = {
+  extend,
   flashElementOn,
   flashElementOff,
   getAutocompleteMaxWidth,
