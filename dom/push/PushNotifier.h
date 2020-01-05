@@ -51,6 +51,10 @@ public:
   
   virtual nsresult HandleNoChildProcesses();
 
+  nsIPrincipal* GetPrincipal() {
+    return mPrincipal;
+  }
+
 protected:
   PushDispatcher(const nsACString& aScope,
                  nsIPrincipal* aPrincipal);
