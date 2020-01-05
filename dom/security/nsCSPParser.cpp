@@ -866,6 +866,11 @@ nsCSPParser::referrerDirectiveValue(nsCSPDirective* aDir)
   }
 
   
+  const char16_t* params[] = { mCurDir[1].get() };
+  logWarningErrorToConsole(nsIScriptError::warningFlag, "deprecatedReferrerDirective",
+                             params, ArrayLength(params));
+
+  
   mPolicy->setReferrerPolicy(&mCurDir[1]);
   mPolicy->addDirective(aDir);
 }
