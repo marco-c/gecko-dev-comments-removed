@@ -779,6 +779,27 @@ StyleAnimationValue::Add(nsCSSPropertyID aProperty,
         AddWeightedColors(1.0, color1, 1, color2));
       break;
     }
+    case eUnit_Filter: {
+      
+      
+      if (aA.GetCSSValueListValue()->mValue.GetUnit() == eCSSUnit_None) {
+        break;
+      }
+      UniquePtr<nsCSSValueList> resultList(aA.GetCSSValueListValue()->Clone());
+
+      
+      
+      if (result.GetCSSValueListValue()->mValue.GetUnit() != eCSSUnit_None) {
+        nsCSSValueList* listA = resultList.get();
+        while (listA->mNext) {
+          listA = listA->mNext;
+        }
+
+        listA->mNext = result.GetCSSValueListValue();
+      }
+      result.mValue.mCSSValueList = resultList.release();
+      break;
+    }
     case eUnit_Transform: {
       
       

@@ -472,8 +472,7 @@ var gCSSProperties = {
   },
   'filter': {
     
-    types: [
-    ]
+    types: [ 'filterList' ]
   },
   'flex-basis': {
     
