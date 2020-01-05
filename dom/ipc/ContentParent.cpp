@@ -2077,6 +2077,12 @@ ContentParent::RecvReadDataStorageArray(const nsString& aFilename,
                                         InfallibleTArray<DataStorageItem>* aValues)
 {
   
+  
+  if (mShutdownPending) {
+    return IPC_OK();
+  }
+
+  
   nsCOMPtr<nsISiteSecurityService> sss = do_GetService("@mozilla.org/ssservice;1");
 
   RefPtr<DataStorage> storage = DataStorage::Get(aFilename);
