@@ -241,7 +241,7 @@ public:
             int32_t aRangeBackColor, int32_t aRangeLineColor);
 
     
-    void OnImeUpdateComposition(int32_t aStart, int32_t aEnd);
+    void OnImeUpdateComposition(int32_t aStart, int32_t aEnd, int32_t aFlags);
 
     
     void OnImeRequestCursorUpdates(int aRequestMode);

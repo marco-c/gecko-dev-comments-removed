@@ -456,30 +456,41 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             mFocusedChild.onImeSynchronize();
             break;
 
-        case Action.TYPE_SET_SPAN:
+        case Action.TYPE_SET_SPAN: {
+            final boolean needUpdate = (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
+                                       ((action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0 ||
+                                        action.mSpanObject == Selection.SELECTION_START ||
+                                        action.mSpanObject == Selection.SELECTION_END);
+
             mText.shadowSetSpan(action.mSpanObject, action.mStart,
                                 action.mEnd, action.mSpanFlags);
             action.mSequence = TextUtils.substring(
                     mText.getShadowText(), action.mStart, action.mEnd);
 
-            mNeedUpdateComposition |= (action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 &&
-                    ((action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0 ||
-                     action.mSpanObject == Selection.SELECTION_START ||
-                     action.mSpanObject == Selection.SELECTION_END);
+            mNeedUpdateComposition |= needUpdate;
+            if (needUpdate) {
+                icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO |
+                                                              SEND_COMPOSITION_KEEP_CURRENT);
+            }
 
             mFocusedChild.onImeSynchronize();
             break;
-
-        case Action.TYPE_REMOVE_SPAN:
+        }
+        case Action.TYPE_REMOVE_SPAN: {
             final int flags = mText.getShadowText().getSpanFlags(action.mSpanObject);
+            final boolean needUpdate = (flags & Spanned.SPAN_INTERMEDIATE) == 0 &&
+                                       (flags & Spanned.SPAN_COMPOSING) != 0;
             mText.shadowRemoveSpan(action.mSpanObject);
 
-            mNeedUpdateComposition |= (flags & Spanned.SPAN_INTERMEDIATE) == 0 &&
-                    (flags & Spanned.SPAN_COMPOSING) != 0;
+            mNeedUpdateComposition |= needUpdate;
+            if (needUpdate) {
+                icMaybeSendComposition(mText.getShadowText(), SEND_COMPOSITION_NOTIFY_GECKO |
+                                                              SEND_COMPOSITION_KEEP_CURRENT);
+            }
 
             mFocusedChild.onImeSynchronize();
             break;
-
+        }
         case Action.TYPE_REPLACE_TEXT:
             
             
@@ -644,6 +655,9 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
     
     
     private static final int SEND_COMPOSITION_NOTIFY_GECKO = 2;
+    
+    
+    private static final int SEND_COMPOSITION_KEEP_CURRENT = 4;
 
     
 
@@ -656,8 +670,15 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
                                            final int flags) throws RemoteException {
         final boolean useEntireText = (flags & SEND_COMPOSITION_USE_ENTIRE_TEXT) != 0;
         final boolean notifyGecko = (flags & SEND_COMPOSITION_NOTIFY_GECKO) != 0;
+        final boolean keepCurrent = (flags & SEND_COMPOSITION_KEEP_CURRENT) != 0;
+        final int updateFlags = keepCurrent ?
+                GeckoEditableChild.FLAG_KEEP_CURRENT_COMPOSITION : 0;
 
-        mNeedUpdateComposition = false;
+        if (!keepCurrent) {
+            
+            
+            mNeedUpdateComposition = false;
+        }
 
         int selStart = Selection.getSelectionStart(sequence);
         int selEnd = Selection.getSelectionEnd(sequence);
@@ -691,7 +712,8 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             if (found) {
                 icSendComposition(text, selStart, selEnd, composingStart, composingEnd);
                 if (notifyGecko) {
-                    mFocusedChild.onImeUpdateComposition(composingStart, composingEnd);
+                    mFocusedChild.onImeUpdateComposition(
+                            composingStart, composingEnd, updateFlags);
                 }
                 return true;
             }
@@ -699,7 +721,7 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
 
         if (notifyGecko) {
             
-            mFocusedChild.onImeUpdateComposition(selStart, selEnd);
+            mFocusedChild.onImeUpdateComposition(selStart, selEnd, updateFlags);
         }
 
         if (DEBUG) {
@@ -1249,8 +1271,10 @@ final class GeckoEditable extends IGeckoEditableParent.Stub
             
             
             
-            mIgnoreSelectionChange = mIgnoreSelectionChange ||
-                    (action != null && action.mType == Action.TYPE_REPLACE_TEXT);
+            mIgnoreSelectionChange = mIgnoreSelectionChange || (action != null &&
+                    (action.mType == Action.TYPE_REPLACE_TEXT ||
+                     action.mType == Action.TYPE_SET_SPAN ||
+                     action.mType == Action.TYPE_REMOVE_SPAN));
             return;
 
         } else {
