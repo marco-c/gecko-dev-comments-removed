@@ -12,15 +12,10 @@ const PREF_BRANCH = BASE_PREF + ".";
 
 
 function getMaxContentParents(processType) {
-  let maxContentParents = -1;
-  try {
-    maxContentParents = Services.prefs.getIntPref(PREF_BRANCH + processType);
-  } catch (e) {
-    
-    maxContentParents = Services.prefs.getIntPref(BASE_PREF, 1);
-  }
-
-  return maxContentParents;
+  
+  
+  return Services.prefs.getIntPref(PREF_BRANCH + processType,
+                                   Services.prefs.getIntPref(BASE_PREF, 1));
 }
 
 

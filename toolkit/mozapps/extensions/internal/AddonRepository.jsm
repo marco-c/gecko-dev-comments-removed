@@ -469,14 +469,7 @@ this.AddonRepository = {
 
   get cacheEnabled() {
     let preference = PREF_GETADDONS_CACHE_ENABLED;
-    let enabled = false;
-    try {
-      enabled = Services.prefs.getBoolPref(preference);
-    } catch (e) {
-      logger.warn("cacheEnabled: Couldn't get pref: " + preference);
-    }
-
-    return enabled;
+    return Services.prefs.getBoolPref(preference, false);
   },
 
   
@@ -1486,10 +1479,8 @@ this.AddonRepository = {
 
   
   _formatURLPref(aPreference, aSubstitutions) {
-    let url = null;
-    try {
-      url = Services.prefs.getCharPref(aPreference);
-    } catch (e) {
+    let url = Services.prefs.getCharPref(aPreference, "");
+    if (!url) {
       logger.warn("_formatURLPref: Couldn't get pref: " + aPreference);
       return null;
     }

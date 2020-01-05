@@ -1923,16 +1923,10 @@ var CustomizableUIInternal = {
   
   
   loadSavedState() {
-    let state = null;
-    try {
-      state = Services.prefs.getCharPref(kPrefCustomizationState);
-    } catch (e) {
+    let state = Services.prefs.getCharPref(kPrefCustomizationState, "");
+    if (!state) {
       log.debug("No saved state found");
       
-      
-    }
-
-    if (!state) {
       return;
     }
     try {
