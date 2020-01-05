@@ -190,6 +190,7 @@ pub struct AutoMargins {
 }
 
 
+
 #[derive(Deserialize, Serialize)]
 pub enum DevtoolScriptControlMsg {
     
@@ -209,7 +210,7 @@ pub enum DevtoolScriptControlMsg {
     
     WantsLiveNotifications(PipelineId, bool),
     
-    SetTimelineMarkers(PipelineId, Vec<TimelineMarkerType>, IpcSender<TimelineMarker>),
+    SetTimelineMarkers(PipelineId, Vec<TimelineMarkerType>, IpcSender<Option<TimelineMarker>>),
     
     DropTimelineMarkers(PipelineId, Vec<TimelineMarkerType>),
     
