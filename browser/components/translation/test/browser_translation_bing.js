@@ -103,7 +103,7 @@ add_task(function* test_handling_out_of_valid_key_error() {
 
 
 
-function constructFixtureURL(filename){
+function constructFixtureURL(filename) {
   
   let server = Services.prefs.getCharPref("browser.translation.bing.authURL")
                              .replace("http://", "");

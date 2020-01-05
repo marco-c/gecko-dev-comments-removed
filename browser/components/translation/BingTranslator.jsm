@@ -286,7 +286,7 @@ BingRequest.prototype = {
 
 
   fireRequest: function() {
-    return Task.spawn(function *(){
+    return Task.spawn(function *() {
       
       let token = yield BingTokenManager.getToken();
       let auth = "Bearer " + token;

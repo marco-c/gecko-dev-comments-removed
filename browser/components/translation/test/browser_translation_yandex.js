@@ -91,7 +91,7 @@ add_task(function* test_preference_attribution() {
 
 
 
-function constructFixtureURL(filename){
+function constructFixtureURL(filename) {
   
   let server = Services.prefs.getCharPref("browser.translation.yandex.translateURLOverride")
                              .replace("http://", "");

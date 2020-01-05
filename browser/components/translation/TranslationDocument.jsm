@@ -166,7 +166,7 @@ this.TranslationDocument.prototype = {
         item.original.push(objInMap);
         str += this.generateTextForItem(objInMap);
         wasLastItemPlaceholder = false;
-      } else {
+      } else if (!wasLastItemPlaceholder) {
         
         
         
@@ -174,11 +174,9 @@ this.TranslationDocument.prototype = {
         
         
         
-        if (!wasLastItemPlaceholder) {
-          item.original.push(TranslationItem_NodePlaceholder);
-          str += '<br>';
-          wasLastItemPlaceholder = true;
-        }
+        item.original.push(TranslationItem_NodePlaceholder);
+        str += '<br>';
+        wasLastItemPlaceholder = true;
       }
     }
 
@@ -277,9 +275,15 @@ TranslationItem.prototype = {
   isSimpleRoot: false,
 
   toString: function() {
-    let rootType = this.isRoot
-                   ? (this.isSimpleRoot ? ' (simple root)' : ' (non simple root)')
-                   : '';
+    let rootType = "";
+    if (this.isRoot) {
+      if (this.isSimpleRoot) {
+        rootType = " (simple root)";
+      }
+      else {
+        rootType = " (non simple root)";
+      }
+    }
     return "[object TranslationItem: <" + this.nodeRef.localName + ">"
            + rootType + "]";
   },
