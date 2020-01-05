@@ -84,6 +84,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "TelemetrySend",
                                   "resource://gre/modules/TelemetrySend.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryReportingPolicy",
                                   "resource://gre/modules/TelemetryReportingPolicy.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "TelemetryModules",
+                                  "resource://gre/modules/TelemetryModules.jsm");
 
 
 
@@ -749,6 +751,9 @@ var Impl = {
         
         
         TelemetryStorage.removeFHRDatabase();
+
+        
+        TelemetryModules.start();
 
         this._delayedInitTaskDeferred.resolve();
       } catch (e) {
