@@ -345,6 +345,7 @@ pub fn cascade<'a>(custom_properties: &mut Option<HashMap<&'a Name, BorrowedSpec
             DeclaredValue::Initial => {
                 map.remove(&name);
             }
+            DeclaredValue::Unset | 
             DeclaredValue::Inherit => {}  
         }
     }
