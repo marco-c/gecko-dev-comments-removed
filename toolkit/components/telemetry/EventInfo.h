@@ -6,8 +6,6 @@
 #ifndef TelemetryEventInfo_h__
 #define TelemetryEventInfo_h__
 
-#include "TelemetryCommon.h"
-
 
 
 
@@ -30,9 +28,6 @@ struct CommonEventInfo {
 
   
   uint32_t dataset;
-
-  
-  mozilla::Telemetry::Common::RecordedProcessType record_in_processes;
 
   
   const char* expiration_version() const;

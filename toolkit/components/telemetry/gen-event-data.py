@@ -73,14 +73,13 @@ def write_common_event_table(events, output, string_table, extra_table):
         print("  // objects: [%s]" % ", ".join(e.objects), file=output)
 
         
-        print("  {%d, %d, %d, %d, %d, %s, %s}," %
+        print("  {%d, %d, %d, %d, %d, %s}," %
                 (string_table.stringIndex(e.category),
                  string_table.stringIndex(e.expiry_version),
                  extras[0], 
                  extras[1], 
                  e.expiry_day,
-                 e.dataset,
-                 " | ".join(e.record_in_processes_enum)),
+                 e.dataset),
               file=output)
 
     print("};", file=output)
