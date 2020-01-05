@@ -304,8 +304,7 @@ var gCSSProperties = {
   },
   'box-shadow': {
     
-    types: [
-    ]
+    types: [ 'boxShadowList' ],
   },
   'box-sizing': {
     
@@ -1351,8 +1350,12 @@ var gCSSProperties = {
   },
   'text-shadow': {
     
-    types: [
-    ]
+    types: [ 'textShadowList' ],
+    setup: t => {
+      var element = createElement(t);
+      element.style.color = 'green';
+      return element;
+    }
   },
   'text-transform': {
     

@@ -779,7 +779,8 @@ StyleAnimationValue::Add(nsCSSPropertyID aProperty,
         AddWeightedColors(1.0, color1, 1, color2));
       break;
     }
-    case eUnit_Filter: {
+    case eUnit_Filter:
+    case eUnit_Shadow: {
       
       
       if (aA.GetCSSValueListValue()->mValue.GetUnit() == eCSSUnit_None) {
