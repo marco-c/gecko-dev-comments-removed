@@ -74,8 +74,7 @@ onconnect = function(event) {
 
   
   
-  
-  (function() "Expected console warning: expression closures are deprecated");
+  (function() { return; 1; });
 
   event.ports[0].onmessage = function(event) {
     if (!(event instanceof MessageEvent)) {
