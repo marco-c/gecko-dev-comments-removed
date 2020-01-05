@@ -295,7 +295,10 @@ pub trait Flow: fmt::Debug + Sync {
     }
 
     
-    fn mark_as_root(&mut self) {}
+    fn mark_as_root(&mut self) {
+        debug!("called mark_as_root() on a flow of type {:?}", self.class());
+        panic!("called mark_as_root() on an unhandled flow");
+    }
 
     
     
