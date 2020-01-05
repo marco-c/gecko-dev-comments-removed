@@ -23,13 +23,6 @@ namespace mozilla {
 namespace css {
 class GroupRule;
 
-#define DECL_STYLE_RULE_INHERIT_NO_DOMRULE
-
-
-#define DECL_STYLE_RULE_INHERIT                            \
-  DECL_STYLE_RULE_INHERIT_NO_DOMRULE                       \
-  virtual nsIDOMCSSRule* GetDOMRule() override;
-
 class Rule : public nsIDOMCSSRule
            , public nsWrapperCache
 {
@@ -116,10 +109,6 @@ public:
 
 
   virtual already_AddRefed<Rule> Clone() const = 0;
-
-  
-  
-  virtual nsIDOMCSSRule* GetDOMRule() = 0;
 
   
   
