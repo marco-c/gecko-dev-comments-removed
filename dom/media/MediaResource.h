@@ -16,6 +16,7 @@
 #include "nsIInterfaceRequestor.h"
 #include "Intervals.h"
 #include "MediaCache.h"
+#include "MediaContainerType.h"
 #include "MediaData.h"
 #include "MediaResourceCallback.h"
 #include "mozilla/Atomics.h"
@@ -340,7 +341,7 @@ public:
   
   
   
-  virtual const nsCString& GetContentType() const = 0;
+  virtual const MediaContainerType& GetContentType() const = 0;
 
   
   virtual bool IsRealTime() {
@@ -383,7 +384,7 @@ public:
     
     
     size_t size = MediaResource::SizeOfExcludingThis(aMallocSizeOf);
-    size += mContentType.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+    size += mContainerType.SizeOfExcludingThis(aMallocSizeOf);
 
     return size;
   }
@@ -403,23 +404,22 @@ protected:
   BaseMediaResource(MediaResourceCallback* aCallback,
                     nsIChannel* aChannel,
                     nsIURI* aURI,
-                    const nsACString& aContentType) :
+                    const MediaContainerType& aContainerType) :
     mCallback(aCallback),
     mChannel(aChannel),
     mURI(aURI),
-    mContentType(aContentType),
+    mContainerType(aContainerType),
     mLoadInBackground(false)
   {
-    NS_ASSERTION(!mContentType.IsEmpty(), "Must know content type");
     mURI->GetSpec(mContentURL);
   }
   virtual ~BaseMediaResource()
   {
   }
 
-  const nsCString& GetContentType() const override
+  const MediaContainerType& GetContentType() const override
   {
-    return mContentType;
+    return mContainerType;
   }
 
   
@@ -444,7 +444,7 @@ protected:
   
   
   
-  const nsCString mContentType;
+  const MediaContainerType mContainerType;
 
   
   nsCString mContentURL;
@@ -511,7 +511,7 @@ public:
   ChannelMediaResource(MediaResourceCallback* aDecoder,
                        nsIChannel* aChannel,
                        nsIURI* aURI,
-                       const nsACString& aContentType);
+                       const MediaContainerType& aContainerType);
   ~ChannelMediaResource();
 
   

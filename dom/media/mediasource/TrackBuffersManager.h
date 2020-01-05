@@ -13,6 +13,7 @@
 #include "AutoTaskQueue.h"
 #include "mozilla/dom/SourceBufferBinding.h"
 
+#include "MediaContainerType.h"
 #include "MediaData.h"
 #include "MediaDataDemuxer.h"
 #include "MediaResult.h"
@@ -21,7 +22,6 @@
 #include "TimeUnits.h"
 #include "nsAutoPtr.h"
 #include "nsProxyRelease.h"
-#include "nsString.h"
 #include "nsTArray.h"
 
 namespace mozilla {
@@ -91,7 +91,7 @@ public:
 
   
   TrackBuffersManager(MediaSourceDecoder* aParentDecoder,
-                      const nsACString& aType);
+                      const MediaContainerType& aType);
 
   
   
@@ -212,7 +212,7 @@ private:
   
   bool mNewMediaSegmentStarted;
   bool mActiveTrack;
-  nsCString mType;
+  MediaContainerType mType;
 
   
   
