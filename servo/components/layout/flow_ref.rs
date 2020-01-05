@@ -20,7 +20,7 @@ pub type WeakFlowRef = Weak<Flow>;
 
 
 #[allow(unsafe_code)]
-pub fn deref_mut<'a>(r: &mut FlowRef) -> &'a mut Flow {
+pub fn deref_mut<'a>(r: &'a mut FlowRef) -> &'a mut Flow {
     let ptr: *const Flow = &**r;
     unsafe {
         &mut *(ptr as *mut Flow)
