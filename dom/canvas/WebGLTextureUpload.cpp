@@ -294,7 +294,11 @@ WebGLContext::FromDomElem(const char* funcName, TexImageTarget target, uint32_t 
                           uint32_t height, uint32_t depth, const dom::Element& elem,
                           ErrorResult* const out_error)
 {
-    uint32_t flags = nsLayoutUtils::SFE_WANT_IMAGE_SURFACE |
+    
+    
+    
+    uint32_t flags = nsLayoutUtils::SFE_WANT_FIRST_FRAME_IF_IMAGE |
+                     nsLayoutUtils::SFE_WANT_IMAGE_SURFACE |
                      nsLayoutUtils::SFE_USE_ELEMENT_SIZE_IF_VECTOR;
 
     if (mPixelStore_ColorspaceConversion == LOCAL_GL_NONE)
