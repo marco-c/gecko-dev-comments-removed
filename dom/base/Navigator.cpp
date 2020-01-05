@@ -1531,10 +1531,6 @@ Navigator::GetBattery(ErrorResult& aRv)
   }
   mBatteryPromise = batteryPromise;
 
-  
-  
-  Telemetry::Accumulate(Telemetry::BATTERY_STATUS_COUNT, 1);
-
   if (!mBatteryManager) {
     mBatteryManager = new battery::BatteryManager(mWindow);
     mBatteryManager->Init();
