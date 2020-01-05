@@ -1,17 +1,17 @@
 
 
 
+"use strict";
+
 
 
 
 const {
-  snapshotState: states,
   dominatorTreeState,
   viewState,
 } = require("devtools/client/memory/constants");
 const {
   takeSnapshotAndCensus,
-  selectSnapshotAndRefresh,
   fetchImmediatelyDominated,
 } = require("devtools/client/memory/actions/snapshot");
 const DominatorTreeLazyChildren

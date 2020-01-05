@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 let { setFilterString } = require("devtools/client/memory/actions/filter");

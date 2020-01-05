@@ -1,10 +1,11 @@
 
 
 
+"use strict";
+
 
 
 let {
-  snapshotState: states,
   dominatorTreeState,
   treeMapState,
 } = require("devtools/client/memory/constants");

@@ -1,5 +1,6 @@
 
 
+
 "use strict";
 
 
@@ -45,8 +46,8 @@ add_task(function* () {
 
   dispatch(takeSnapshotAndCensus(front, heapWorker));
   dispatch(takeSnapshotAndCensus(front, heapWorker));
-  yield waitUntilCensusState(store, s => s.census, [censusState.SAVED,
-                                                    censusState.SAVED]);
+  yield waitUntilCensusState(store, s => s.census,
+                             [censusState.SAVED, censusState.SAVED]);
 
   dispatch(changeView(viewState.DIFFING));
   dispatch(selectSnapshotForDiffingAndRefresh(heapWorker, getState().snapshots[0]));

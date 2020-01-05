@@ -2,6 +2,11 @@
 
 
 
+
+
+
+"use strict";
+
 const { assert } = require("devtools/shared/DevToolsUtils");
 const { MemoryFront } = require("devtools/shared/fronts/memory");
 const HeapAnalysesClient = require("devtools/shared/heapsnapshot/HeapAnalysesClient");
@@ -39,7 +44,9 @@ function catchAndIgnore(fn) {
   return function (...args) {
     try {
       fn(...args);
-    } catch (err) { }
+    } catch (err) {
+      
+    }
 
     return null;
   };
@@ -103,6 +110,7 @@ const treeMapModel = exports.treeMapModel = PropTypes.shape({
         assert(!treeMap.report, "Should not have a report");
         assert(!treeMap.error, "Should not have an error");
         break;
+
       case treeMapState.SAVED:
         assert(treeMap.report, "Should have a report");
         assert(!treeMap.error, "Should not have an error");
@@ -443,7 +451,7 @@ const individualsModel = exports.individuals = PropTypes.shape({
   }),
 });
 
-let appModel = exports.app = {
+exports.app = {
   
   front: PropTypes.instanceOf(MemoryFront),
 
@@ -494,7 +502,7 @@ let appModel = exports.app = {
           break;
 
         default:
-          assert(false, `Unexpected type of view: ${view.state}`);
+          assert(false, `Unexpected type of view: ${app.view.state}`);
       }
     })(app);
 
@@ -512,7 +520,7 @@ let appModel = exports.app = {
           break;
 
         default:
-          assert(false, `Unexpected type of view: ${view.state}`);
+          assert(false, `Unexpected type of view: ${app.view.state}`);
       }
     })(app);
   },

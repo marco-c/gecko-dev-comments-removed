@@ -2,19 +2,18 @@
 
 
 
-const { DOM: dom, createClass, PropTypes, createFactory } = require("devtools/client/shared/vendor/react");
-const { assert } = require("devtools/shared/DevToolsUtils");
-const { createParentMap } = require("devtools/shared/heapsnapshot/CensusUtils");
+"use strict";
+
+const { createClass, PropTypes, createFactory } = require("devtools/client/shared/vendor/react");
 const Tree = createFactory(require("devtools/client/shared/components/tree"));
 const DominatorTreeItem = createFactory(require("./dominator-tree-item"));
-const { L10N } = require("../utils");
 const { TREE_ROW_HEIGHT } = require("../constants");
 const models = require("../models");
 
 
 
 
-const Individuals = module.exports = createClass({
+module.exports = createClass({
   displayName: "Individuals",
 
   propTypes: {

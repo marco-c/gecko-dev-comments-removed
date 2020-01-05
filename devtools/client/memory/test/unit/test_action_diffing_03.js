@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 const { diffingState, snapshotState, viewState } = require("devtools/client/memory/constants");
@@ -34,9 +36,8 @@ add_task(function* () {
   dispatch(takeSnapshot(front, heapWorker));
   dispatch(takeSnapshot(front, heapWorker));
 
-  yield waitUntilSnapshotState(store, [snapshotState.SAVED,
-                                       snapshotState.SAVED,
-                                       snapshotState.SAVED]);
+  yield waitUntilSnapshotState(store,
+        [snapshotState.SAVED, snapshotState.SAVED, snapshotState.SAVED]);
   dispatch(takeSnapshot(front));
 
   

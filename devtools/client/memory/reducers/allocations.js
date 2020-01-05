@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const { assert } = require("devtools/shared/DevToolsUtils");
 const { actions } = require("../constants");
 

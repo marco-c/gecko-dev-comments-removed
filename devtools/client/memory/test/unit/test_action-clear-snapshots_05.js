@@ -1,10 +1,12 @@
 
 
 
+"use strict";
+
 
 
 let { takeSnapshotAndCensus, clearSnapshots } = require("devtools/client/memory/actions/snapshot");
-let { snapshotState: states, actions, treeMapState } = require("devtools/client/memory/constants");
+let { actions, treeMapState } = require("devtools/client/memory/constants");
 
 function run_test() {
   run_next_test();

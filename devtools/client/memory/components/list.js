@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
 
 
@@ -9,7 +11,7 @@ const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/ven
 
 
 
-const List = module.exports = createClass({
+module.exports = createClass({
   displayName: "List",
 
   propTypes: {

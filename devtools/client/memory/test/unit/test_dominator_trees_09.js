@@ -1,11 +1,12 @@
 
 
 
+"use strict";
+
 
 
 
 const {
-  snapshotState: states,
   dominatorTreeState,
   viewState,
   labelDisplays,
@@ -19,7 +20,6 @@ const {
 } = require("devtools/client/memory/actions/view");
 const {
   takeSnapshotAndCensus,
-  computeAndFetchDominatorTree,
 } = require("devtools/client/memory/actions/snapshot");
 
 function run_test() {

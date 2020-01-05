@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 let { takeSnapshotAndCensus, clearSnapshots } = require("devtools/client/memory/actions/snapshot");
@@ -22,8 +24,7 @@ add_task(function* () {
   dispatch(takeSnapshotAndCensus(front, heapWorker));
   dispatch(takeSnapshotAndCensus(front, heapWorker));
   yield waitUntilCensusState(store, snapshot => snapshot.treeMap,
-                             [treeMapState.SAVED, treeMapState.SAVED,
-                              treeMapState.SAVED]);
+    [treeMapState.SAVED, treeMapState.SAVED, treeMapState.SAVED]);
   ok(true, "snapshots created with a saved census");
 
   ok(true, "set first snapshot state to error");

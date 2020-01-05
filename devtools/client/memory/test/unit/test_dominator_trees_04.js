@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -25,10 +27,9 @@ add_task(function* () {
   let heapWorker = new HeapAnalysesClient();
   yield front.attach();
 
-  for (let intermediateSnapshotState of [states.SAVING,
-                                         states.READING,
-                                         states.READ]) {
-    dumpn(`Testing switching to the DOMINATOR_TREE view in the middle of the ${intermediateSnapshotState} snapshot state`);
+  for (let intermediateSnapshotState of [states.SAVING, states.READING, states.READ]) {
+    dumpn("Testing switching to the DOMINATOR_TREE view in the middle of the " +
+          `${intermediateSnapshotState} snapshot state`);
 
     let store = Store();
     let { getState, dispatch } = store;

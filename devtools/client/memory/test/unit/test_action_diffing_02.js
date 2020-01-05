@@ -1,9 +1,11 @@
 
 
 
+"use strict";
 
 
-const { snapshotState, censusState, viewState } = require("devtools/client/memory/constants");
+
+const { censusState, viewState } = require("devtools/client/memory/constants");
 const { toggleDiffing } = require("devtools/client/memory/actions/diffing");
 const { takeSnapshotAndCensus } = require("devtools/client/memory/actions/snapshot");
 const { changeView } = require("devtools/client/memory/actions/view");
@@ -26,9 +28,8 @@ add_task(function* () {
   dispatch(takeSnapshotAndCensus(front, heapWorker));
   dispatch(takeSnapshotAndCensus(front, heapWorker));
   dispatch(takeSnapshotAndCensus(front, heapWorker));
-  yield waitUntilCensusState(store, s => s.census, [censusState.SAVED,
-                                                    censusState.SAVED,
-                                                    censusState.SAVED]);
+  yield waitUntilCensusState(store, s => s.census,
+    [censusState.SAVED, censusState.SAVED, censusState.SAVED]);
 
   ok(getState().snapshots.some(s => s.selected),
      "One of the new snapshots is selected");

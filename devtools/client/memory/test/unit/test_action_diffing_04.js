@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 const {
@@ -38,9 +40,8 @@ add_task(function* () {
   dispatch(readSnapshot(heapWorker, s1));
   dispatch(readSnapshot(heapWorker, s2));
   dispatch(readSnapshot(heapWorker, s3));
-  yield waitUntilSnapshotState(store, [snapshotState.READ,
-                                       snapshotState.READ,
-                                       snapshotState.READ]);
+  yield waitUntilSnapshotState(store,
+    [snapshotState.READ, snapshotState.READ, snapshotState.READ]);
 
   dispatch(toggleDiffing());
   dispatch(selectSnapshotForDiffingAndRefresh(heapWorker,

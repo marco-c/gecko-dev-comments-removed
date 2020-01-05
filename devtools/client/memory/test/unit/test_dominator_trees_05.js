@@ -1,11 +1,12 @@
 
 
 
+"use strict";
+
 
 
 
 let {
-  snapshotState: states,
   dominatorTreeState,
   viewState,
   treeMapState,
@@ -30,8 +31,8 @@ add_task(function* () {
 
   dispatch(takeSnapshotAndCensus(front, heapWorker));
   dispatch(takeSnapshotAndCensus(front, heapWorker));
-  yield waitUntilCensusState(store, s => s.treeMap, [treeMapState.SAVED,
-                                                    treeMapState.SAVED]);
+  yield waitUntilCensusState(store, s => s.treeMap,
+                             [treeMapState.SAVED, treeMapState.SAVED]);
 
   ok(getState().snapshots[1].selected, "The second snapshot is selected");
 

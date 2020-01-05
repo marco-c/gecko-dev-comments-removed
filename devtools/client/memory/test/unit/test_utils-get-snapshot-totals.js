@@ -1,5 +1,6 @@
 
 
+
 "use strict";
 
 
@@ -7,7 +8,7 @@
 
 
 
-const { censusDisplays, snapshotState: states, viewState, censusState } = require("devtools/client/memory/constants");
+const { censusDisplays, viewState, censusState } = require("devtools/client/memory/constants");
 const { getSnapshotTotals } = require("devtools/client/memory/utils");
 const { takeSnapshotAndCensus } = require("devtools/client/memory/actions/snapshot");
 const { setCensusDisplayAndRefresh } = require("devtools/client/memory/actions/census-display");

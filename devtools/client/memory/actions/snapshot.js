@@ -34,7 +34,7 @@ const TaskCache = require("./task-cache");
 
 
 
-const takeSnapshotAndCensus = exports.takeSnapshotAndCensus = function (front, heapWorker) {
+exports.takeSnapshotAndCensus = function (front, heapWorker) {
   return function* (dispatch, getState) {
     const id = yield dispatch(takeSnapshot(front));
     if (id === null) {
@@ -82,7 +82,7 @@ const computeSnapshotData = exports.computeSnapshotData = function (heapWorker, 
 
 
 
-const selectSnapshotAndRefresh = exports.selectSnapshotAndRefresh = function (heapWorker, id) {
+exports.selectSnapshotAndRefresh = function (heapWorker, id) {
   return function* (dispatch, getState) {
     if (getState().diffing || getState().individuals) {
       dispatch(view.changeView(viewState.CENSUS));
@@ -200,7 +200,9 @@ function makeTakeCensusTask({ getDisplay, getFilter, getCensus, beginAction,
 
       
       assert(canTakeCensus(snapshot),
-             `Attempting to take a census when the snapshot is not in a ready state. snapshot.state = ${snapshot.state}, census.state = ${(getCensus(snapshot) || { state: null }).state}`);
+        "Attempting to take a census when the snapshot is not in a ready state. " +
+        `snapshot.state = ${snapshot.state}, ` +
+        `census.state = ${(getCensus(snapshot) || { state: null }).state}`);
 
       let report, parentMap;
       let display = getDisplay(getState());
@@ -322,7 +324,7 @@ const getCurrentCensusTaker = exports.getCurrentCensusTaker = function (currentV
 
 
 
-const focusIndividual = exports.focusIndividual = function (node) {
+exports.focusIndividual = function (node) {
   return {
     type: actions.FOCUS_INDIVIDUAL,
     node,
@@ -412,7 +414,7 @@ function (heapWorker, id, censusBreakdown, reportLeafIndex) {
 
 
 
-const refreshIndividuals = exports.refreshIndividuals = function (heapWorker) {
+exports.refreshIndividuals = function (heapWorker) {
   return function* (dispatch, getState) {
     assert(getState().view.state === viewState.INDIVIDUALS,
            "Should be in INDIVIDUALS view.");
@@ -453,7 +455,7 @@ const refreshIndividuals = exports.refreshIndividuals = function (heapWorker) {
 
 
 
-const refreshSelectedCensus = exports.refreshSelectedCensus = function (heapWorker) {
+exports.refreshSelectedCensus = function (heapWorker) {
   return function* (dispatch, getState) {
     let snapshot = getState().snapshots.find(s => s.selected);
     if (!snapshot || snapshot.state !== states.READ) {
@@ -479,7 +481,7 @@ const refreshSelectedCensus = exports.refreshSelectedCensus = function (heapWork
 
 
 
-const refreshSelectedTreeMap = exports.refreshSelectedTreeMap = function (heapWorker) {
+exports.refreshSelectedTreeMap = function (heapWorker) {
   return function* (dispatch, getState) {
     let snapshot = getState().snapshots.find(s => s.selected);
     if (!snapshot || snapshot.state !== states.READ) {
@@ -596,8 +598,7 @@ TaskCache.declareCacheableTask({
 
 
 
-const fetchImmediatelyDominated = exports.fetchImmediatelyDominated =
-TaskCache.declareCacheableTask({
+exports.fetchImmediatelyDominated = TaskCache.declareCacheableTask({
   getCacheKey(_, id, lazyChildren) {
     return `${id}-${lazyChildren.key()}`;
   },
@@ -630,7 +631,7 @@ TaskCache.declareCacheableTask({
         removeFromCache();
         reportException("actions/snapshot/fetchImmediatelyDominated", error);
         dispatch({ type: actions.DOMINATOR_TREE_ERROR, id, error });
-        return null;
+        return;
       }
     }
     while (display !== getState().labelDisplay);
@@ -643,6 +644,7 @@ TaskCache.declareCacheableTask({
       nodes: response.nodes,
       moreChildrenAvailable: response.moreChildrenAvailable,
     });
+    return;
   }
 });
 
@@ -684,7 +686,7 @@ TaskCache.declareCacheableTask({
 
 
 
-const refreshSelectedDominatorTree = exports.refreshSelectedDominatorTree = function (heapWorker) {
+exports.refreshSelectedDominatorTree = function (heapWorker) {
   return function* (dispatch, getState) {
     let snapshot = getState().snapshots.find(s => s.selected);
     if (!snapshot) {
@@ -731,7 +733,7 @@ const selectSnapshot = exports.selectSnapshot = function (id) {
 
 
 
-const clearSnapshots = exports.clearSnapshots = function (heapWorker) {
+exports.clearSnapshots = function (heapWorker) {
   return function* (dispatch, getState) {
     let snapshots = getState().snapshots.filter(s => {
       let snapshotReady = s.state === states.READ || s.state === states.ERROR;
@@ -769,7 +771,7 @@ const clearSnapshots = exports.clearSnapshots = function (heapWorker) {
 
 
 
-const deleteSnapshot = exports.deleteSnapshot = function (heapWorker, snapshot) {
+exports.deleteSnapshot = function (heapWorker, snapshot) {
   return function* (dispatch, getState) {
     dispatch({ type: actions.DELETE_SNAPSHOTS_START, ids: [snapshot.id] });
 
@@ -789,7 +791,7 @@ const deleteSnapshot = exports.deleteSnapshot = function (heapWorker, snapshot) 
 
 
 
-const expandCensusNode = exports.expandCensusNode = function (id, node) {
+exports.expandCensusNode = function (id, node) {
   return {
     type: actions.EXPAND_CENSUS_NODE,
     id,
@@ -802,7 +804,7 @@ const expandCensusNode = exports.expandCensusNode = function (id, node) {
 
 
 
-const collapseCensusNode = exports.collapseCensusNode = function (id, node) {
+exports.collapseCensusNode = function (id, node) {
   return {
     type: actions.COLLAPSE_CENSUS_NODE,
     id,
@@ -816,7 +818,7 @@ const collapseCensusNode = exports.collapseCensusNode = function (id, node) {
 
 
 
-const focusCensusNode = exports.focusCensusNode = function (id, node) {
+exports.focusCensusNode = function (id, node) {
   return {
     type: actions.FOCUS_CENSUS_NODE,
     id,
@@ -829,7 +831,7 @@ const focusCensusNode = exports.focusCensusNode = function (id, node) {
 
 
 
-const expandDominatorTreeNode = exports.expandDominatorTreeNode = function (id, node) {
+exports.expandDominatorTreeNode = function (id, node) {
   return {
     type: actions.EXPAND_DOMINATOR_TREE_NODE,
     id,
@@ -842,7 +844,7 @@ const expandDominatorTreeNode = exports.expandDominatorTreeNode = function (id, 
 
 
 
-const collapseDominatorTreeNode = exports.collapseDominatorTreeNode = function (id, node) {
+exports.collapseDominatorTreeNode = function (id, node) {
   return {
     type: actions.COLLAPSE_DOMINATOR_TREE_NODE,
     id,
@@ -856,7 +858,7 @@ const collapseDominatorTreeNode = exports.collapseDominatorTreeNode = function (
 
 
 
-const focusDominatorTreeNode = exports.focusDominatorTreeNode = function (id, node) {
+exports.focusDominatorTreeNode = function (id, node) {
   return {
     type: actions.FOCUS_DOMINATOR_TREE_NODE,
     id,

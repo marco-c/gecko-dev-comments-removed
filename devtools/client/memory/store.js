@@ -2,10 +2,11 @@
 
 
 
+"use strict";
+
 const { combineReducers } = require("../shared/vendor/redux");
 const createStore = require("../shared/redux/create-store");
 const reducers = require("./reducers");
-const { viewState } = require("./constants");
 const flags = require("devtools/shared/flags");
 
 module.exports = function () {

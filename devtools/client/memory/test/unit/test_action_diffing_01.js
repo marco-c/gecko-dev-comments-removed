@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 const { toggleDiffing } = require("devtools/client/memory/actions/diffing");

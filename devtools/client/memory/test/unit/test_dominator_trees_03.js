@@ -1,11 +1,12 @@
 
 
 
+"use strict";
+
 
 
 
 const {
-  snapshotState: states,
   dominatorTreeState,
   viewState,
 } = require("devtools/client/memory/constants");

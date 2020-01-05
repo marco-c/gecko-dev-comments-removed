@@ -1,11 +1,12 @@
 
 
 
+"use strict";
+
 
 
 
 let {
-  snapshotState: states,
   dominatorTreeState,
   labelDisplays,
   viewState,

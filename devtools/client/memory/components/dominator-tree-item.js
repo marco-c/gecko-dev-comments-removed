@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 const { assert, isSavedFrame } = require("devtools/shared/DevToolsUtils");
 const { DOM: dom, createClass, createFactory, PropTypes } = require("devtools/client/shared/vendor/react");
 const { L10N, formatNumber, formatPercent } = require("../utils");
@@ -16,7 +18,7 @@ const Separator = createFactory(createClass({
   }
 }));
 
-const DominatorTreeItem = module.exports = createClass({
+module.exports = createClass({
   displayName: "DominatorTreeItem",
 
   propTypes: {

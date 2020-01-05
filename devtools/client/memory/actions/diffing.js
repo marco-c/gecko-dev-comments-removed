@@ -1,6 +1,7 @@
 
 
 
+
 "use strict";
 
 const { assert, reportException } = require("devtools/shared/DevToolsUtils");
@@ -13,12 +14,10 @@ const {
   findSelectedSnapshot,
 } = require("../utils");
 
-const snapshotActions = require("./snapshot");
 
 
 
-
-const toggleDiffing = exports.toggleDiffing = function () {
+exports.toggleDiffing = function () {
   return function (dispatch, getState) {
     dispatch({
       type: actions.CHANGE_VIEW,
@@ -155,7 +154,7 @@ const refreshDiffing = exports.refreshDiffing = function (heapWorker) {
 
 
 
-const selectSnapshotForDiffingAndRefresh = exports.selectSnapshotForDiffingAndRefresh = function (heapWorker, snapshot) {
+exports.selectSnapshotForDiffingAndRefresh = function (heapWorker, snapshot) {
   return function* (dispatch, getState) {
     assert(getState().diffing,
            "If we are selecting for diffing, we must be in diffing mode");
@@ -169,7 +168,7 @@ const selectSnapshotForDiffingAndRefresh = exports.selectSnapshotForDiffingAndRe
 
 
 
-const expandDiffingCensusNode = exports.expandDiffingCensusNode = function (node) {
+exports.expandDiffingCensusNode = function (node) {
   return {
     type: actions.EXPAND_DIFFING_CENSUS_NODE,
     node,
@@ -181,7 +180,7 @@ const expandDiffingCensusNode = exports.expandDiffingCensusNode = function (node
 
 
 
-const collapseDiffingCensusNode = exports.collapseDiffingCensusNode = function (node) {
+exports.collapseDiffingCensusNode = function (node) {
   return {
     type: actions.COLLAPSE_DIFFING_CENSUS_NODE,
     node,
@@ -193,7 +192,7 @@ const collapseDiffingCensusNode = exports.collapseDiffingCensusNode = function (
 
 
 
-const focusDiffingCensusNode = exports.focusDiffingCensusNode = function (node) {
+exports.focusDiffingCensusNode = function (node) {
   return {
     type: actions.FOCUS_DIFFING_CENSUS_NODE,
     node,

@@ -2,10 +2,12 @@
 
 
 
-const { DOM: dom, createClass, PropTypes } = require("devtools/client/shared/vendor/react");
+"use strict";
+
+const { DOM: dom, createClass } = require("devtools/client/shared/vendor/react");
 const { L10N } = require("../utils");
 
-const DominatorTreeHeader = module.exports = createClass({
+module.exports = createClass({
   displayName: "DominatorTreeHeader",
 
   propTypes: { },

@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 let { takeSnapshotAndCensus, clearSnapshots, takeSnapshot } = require("devtools/client/memory/actions/snapshot");

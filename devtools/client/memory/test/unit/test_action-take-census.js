@@ -1,14 +1,15 @@
 
 
 
+"use strict";
 
 
 
 
-var { snapshotState: states, censusDisplays, censusState, censusState, viewState } = require("devtools/client/memory/constants");
+
+var { snapshotState: states, censusDisplays, censusState, viewState } = require("devtools/client/memory/constants");
 var actions = require("devtools/client/memory/actions/snapshot");
 var { changeView } = require("devtools/client/memory/actions/view");
-
 
 function run_test() {
   run_next_test();
@@ -55,5 +56,4 @@ add_task(function* () {
   ok(snapshot.census.report.children.length, "Census is in tree node form");
   equal(snapshot.census.display, censusDisplays.coarseType,
         "Snapshot stored correct display used for the census");
-
 });

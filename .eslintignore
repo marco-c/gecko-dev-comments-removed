@@ -40,7 +40,9 @@ python/**
 rdf/**
 startupcache/**
 testing/**
-tools/update-packaging/**
+!tools/lint/eslint/eslint-plugin-mozilla/
+tools/lint/eslint/eslint-plugin-mozilla/node_modules/**
+tools/**
 uriloader/**
 view/**
 widget/**
@@ -84,7 +86,6 @@ devtools/client/framework/**
 !devtools/client/framework/selection.js
 !devtools/client/framework/toolbox.js
 devtools/client/jsonview/lib/**
-devtools/client/memory/**
 devtools/client/netmonitor/test/**
 devtools/client/netmonitor/har/test/**
 devtools/client/projecteditor/**

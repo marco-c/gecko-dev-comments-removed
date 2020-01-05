@@ -2,11 +2,13 @@
 
 
 
+"use strict";
+
 const { DOM: dom, createClass } = require("devtools/client/shared/vendor/react");
 const { L10N } = require("../utils");
 const models = require("../models");
 
-const CensusHeader = module.exports = createClass({
+module.exports = createClass({
   displayName: "CensusHeader",
 
   propTypes: {

@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -43,15 +45,17 @@ add_task(function* () {
     }
   };
 
-
   let unsubscribe = store.subscribe(expectStates);
   store.dispatch(actions.takeSnapshotAndCensus(front, heapWorker));
 
-  yield waitUntilState(store, () => { return snapshotI === snapshotStates.length &&
-                                      censusI === censusStates.length; });
+  yield waitUntilState(store, () => {
+    return snapshotI === snapshotStates.length &&
+           censusI === censusStates.length;
+  });
   unsubscribe();
 
-  ok(true, "takeSnapshotAndCensus() produces the correct sequence of states in a snapshot");
+  ok(true,
+    "takeSnapshotAndCensus() produces the correct sequence of states in a snapshot");
   let snapshot = store.getState().snapshots[0];
   ok(snapshot.treeMap, "snapshot has tree map census data");
   ok(snapshot.selected, "snapshot is selected");

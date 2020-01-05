@@ -2,7 +2,9 @@
 
 
 
-const { Cu, Cc, Ci } = require("chrome");
+"use strict";
+
+const { Cc, Ci } = require("chrome");
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const STRINGS_URI = "devtools/client/locales/memory.properties";
@@ -337,7 +339,6 @@ exports.censusIsUpToDate = function (filter, display, census) {
 
 
 
-
 exports.canTakeCensus = function (snapshot) {
   return snapshot.state === states.READ &&
     ((!snapshot.census || snapshot.census.state === censusState.SAVED) ||
@@ -413,8 +414,8 @@ exports.getSnapshotTotals = function (census) {
 
 
 exports.openFilePicker = function ({ title, filters, defaultName, mode }) {
-  mode = mode === "save" ? Ci.nsIFilePicker.modeSave :
-         mode === "open" ? Ci.nsIFilePicker.modeOpen : null;
+  mode = mode === "save" ? Ci.nsIFilePicker.modeSave : null;
+  mode = mode === "open" ? Ci.nsIFilePicker.modeOpen : null;
 
   if (mode == void 0) {
     throw new Error("No valid mode specified for nsIFilePicker.");
