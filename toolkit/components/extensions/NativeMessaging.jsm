@@ -221,6 +221,30 @@ this.NativeApp = class extends EventEmitter {
 
 
 
+
+
+
+
+
+
+  static onConnectNative(context, messageManager, portId, sender, application) {
+    let app = new NativeApp(context, application);
+    let port = new ExtensionUtils.Port(context, messageManager, [messageManager], "", portId, sender, sender);
+    app.once("disconnect", (what, err) => port.disconnect(err && err.message));
+
+    
+    app.on("message", (what, msg) => port.postMessage(msg));
+    
+
+    port.registerOnMessage(msg => app.send(msg));
+    port.registerOnDisconnect(msg => app.close());
+  }
+
+  
+
+
+
+
   static encodeMessage(context, message) {
     message = context.jsonStringify(message);
     let buffer = new TextEncoder().encode(message).buffer;
@@ -383,49 +407,6 @@ this.NativeApp = class extends EventEmitter {
   
   close() {
     this._cleanup();
-  }
-
-  portAPI() {
-    let port = {
-      name: this.name,
-
-      disconnect: () => {
-        if (this._isDisconnected) {
-          throw new this.context.cloneScope.Error("Attempt to disconnect an already disconnected port");
-        }
-        this._cleanup();
-      },
-
-      postMessage: msg => {
-        msg = NativeApp.encodeMessage(this.context, msg);
-        this.send(msg);
-      },
-
-      onDisconnect: new ExtensionUtils.SingletonEventManager(this.context, "native.onDisconnect", fire => {
-        let listener = what => {
-          this.context.runSafeWithoutClone(fire, port);
-        };
-        this.on("disconnect", listener);
-        return () => {
-          this.off("disconnect", listener);
-        };
-      }).api(),
-
-      onMessage: new ExtensionUtils.SingletonEventManager(this.context, "native.onMessage", fire => {
-        let listener = (what, msg) => {
-          msg = Cu.cloneInto(msg, this.context.cloneScope);
-          this.context.runSafeWithoutClone(fire, msg, port);
-        };
-        this.on("message", listener);
-        return () => {
-          this.off("message", listener);
-        };
-      }).api(),
-    };
-
-    port = Cu.cloneInto(port, this.context.cloneScope, {cloneFunctions: true});
-
-    return port;
   }
 
   sendMessage(msg) {

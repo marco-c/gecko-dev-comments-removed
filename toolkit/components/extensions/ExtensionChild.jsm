@@ -111,9 +111,7 @@ class WannabeChildAPIManager extends ChildAPIManager {
     
     let shouldSynchronouslyUseParentAPI = false;
     
-    if (namespace == "runtime" && name == "connectNative" || 
-        namespace == "runtime" && name == "sendNativeMessage" || 
-        namespace == "webNavigation" || 
+    if (namespace == "webNavigation" || 
         namespace == "webRequest") { 
       shouldSynchronouslyUseParentAPI = true;
     }
