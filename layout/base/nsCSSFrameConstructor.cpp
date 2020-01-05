@@ -7369,6 +7369,12 @@ nsCSSFrameConstructor::ContentAppended(nsIContent*     aContainer,
   
   if (!GetContentInsertionFrameFor(aContainer) &&
       !aContainer->IsActiveChildrenElement()) {
+    
+    
+    
+    if (aContainer->IsStyledByServo()) {
+      aContainer->AsElement()->NoteDirtyDescendantsForServo();
+    }
     return NS_OK;
   }
 
@@ -7825,6 +7831,12 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent*            aContainer,
     
     
     if (!parentFrame && !aContainer->IsActiveChildrenElement()) {
+      
+      
+      
+      if (aContainer->IsStyledByServo()) {
+        aContainer->AsElement()->NoteDirtyDescendantsForServo();
+      }
       return NS_OK;
     }
 
