@@ -5,6 +5,7 @@
 
 #include "GPUProcessImpl.h"
 #include "mozilla/ipc/IOThreadChild.h"
+#include "nsXPCOM.h"
 
 namespace mozilla {
 namespace gfx {
@@ -31,6 +32,7 @@ GPUProcessImpl::Init()
 void
 GPUProcessImpl::CleanUp()
 {
+  NS_ShutdownXPCOM(nullptr);
 }
 
 } 
