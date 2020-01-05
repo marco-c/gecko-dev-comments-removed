@@ -4493,7 +4493,7 @@ Parser<ParseHandler>::declarationName(Node decl, DeclarationKind declKind, Token
             
             
             if (declKind == DeclarationKind::Const) {
-                reportWithNode(ParseError, false, binding, JSMSG_BAD_CONST_DECL);
+                errorAt(namePos.begin, JSMSG_BAD_CONST_DECL);
                 return null();
             }
         }
