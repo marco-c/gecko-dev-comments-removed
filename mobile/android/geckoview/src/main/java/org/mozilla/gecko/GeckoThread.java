@@ -8,11 +8,9 @@ package org.mozilla.gecko;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.annotation.WrapForJNI;
 import org.mozilla.gecko.mozglue.GeckoLoader;
+import org.mozilla.gecko.NativeQueue.StateHolder;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.ThreadUtils;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import android.content.Context;
 import android.content.res.Configuration;
@@ -28,19 +26,14 @@ import android.util.Log;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Locale;
-import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.StringTokenizer;
 
 public class GeckoThread extends Thread {
     private static final String LOGTAG = "GeckoThread";
 
-    public enum State {
+    public enum State implements NativeQueue.State {
         
         @WrapForJNI INITIAL(0),
         
@@ -73,46 +66,29 @@ public class GeckoThread extends Thread {
             this.rank = rank;
         }
 
-        public boolean is(final State other) {
+        @Override
+        public boolean is(final NativeQueue.State other) {
             return this == other;
         }
 
-        public boolean isAtLeast(final State other) {
-            return this.rank >= other.rank;
+        @Override
+        public boolean isAtLeast(final NativeQueue.State other) {
+            if (other instanceof State) {
+                return this.rank >= ((State) other).rank;
+            }
+            return false;
         }
+    }
 
-        public boolean isAtMost(final State other) {
-            return this.rank <= other.rank;
-        }
+    private static final StateHolder sStateHolder =
+        new StateHolder(State.INITIAL, State.RUNNING);
 
-        
-        public boolean isBetween(final State min, final State max) {
-            return this.rank >= min.rank && this.rank <= max.rank;
-        }
+     static StateHolder getStateHolder() {
+        return sStateHolder;
     }
 
     public static final State MIN_STATE = State.INITIAL;
     public static final State MAX_STATE = State.EXITED;
-
-    private static volatile State sState = State.INITIAL;
-
-    private static class QueuedCall {
-        public Method method;
-        public Object target;
-        public Object[] args;
-        public State state;
-
-        public QueuedCall(final Method method, final Object target,
-                          final Object[] args, final State state) {
-            this.method = method;
-            this.target = target;
-            this.args = args;
-            this.state = state;
-        }
-    }
-
-    private static final int QUEUED_CALLS_COUNT = 16;
-    private static final ArrayList<QueuedCall> QUEUED_CALLS = new ArrayList<>(QUEUED_CALLS_COUNT);
 
     private static final Runnable UI_THREAD_CALLBACK = new Runnable() {
         @Override
@@ -257,153 +233,6 @@ public class GeckoThread extends Thread {
     @RobocopTarget
     public static boolean isRunning() {
         return isState(State.RUNNING);
-    }
-
-    
-    private static void invokeMethod(final Method method, final Object obj, final Object[] args) {
-        try {
-            method.setAccessible(true);
-            method.invoke(obj, args);
-        } catch (final IllegalAccessException e) {
-            throw new IllegalStateException("Unexpected exception", e);
-        } catch (final InvocationTargetException e) {
-            throw new UnsupportedOperationException("Cannot make call", e.getCause());
-        }
-    }
-
-    
-    private static void queueNativeCallLocked(final Class<?> cls, final String methodName,
-                                              final Object obj, final Object[] args,
-                                              final State state) {
-        final ArrayList<Class<?>> argTypes = new ArrayList<>(args.length);
-        final ArrayList<Object> argValues = new ArrayList<>(args.length);
-
-        for (int i = 0; i < args.length; i++) {
-            if (args[i] instanceof Class) {
-                argTypes.add((Class<?>) args[i]);
-                argValues.add(args[++i]);
-                continue;
-            }
-            Class<?> argType = args[i].getClass();
-            if (argType == Boolean.class) argType = Boolean.TYPE;
-            else if (argType == Byte.class) argType = Byte.TYPE;
-            else if (argType == Character.class) argType = Character.TYPE;
-            else if (argType == Double.class) argType = Double.TYPE;
-            else if (argType == Float.class) argType = Float.TYPE;
-            else if (argType == Integer.class) argType = Integer.TYPE;
-            else if (argType == Long.class) argType = Long.TYPE;
-            else if (argType == Short.class) argType = Short.TYPE;
-            argTypes.add(argType);
-            argValues.add(args[i]);
-        }
-        final Method method;
-        try {
-            method = cls.getDeclaredMethod(
-                    methodName, argTypes.toArray(new Class<?>[argTypes.size()]));
-        } catch (final NoSuchMethodException e) {
-            throw new IllegalArgumentException("Cannot find method", e);
-        }
-
-        if (!Modifier.isNative(method.getModifiers())) {
-            
-            
-            
-            
-            
-            throw new UnsupportedOperationException("Not allowed to queue non-native methods");
-        }
-
-        if (isStateAtLeast(state)) {
-            invokeMethod(method, obj, argValues.toArray());
-            return;
-        }
-
-        QUEUED_CALLS.add(new QueuedCall(
-                method, obj, argValues.toArray(), state));
-    }
-
-    
-
-
-
-
-
-
-
-
-
-
-    public static void queueNativeCallUntil(final State state, final Class<?> cls,
-                                            final String methodName, final Object... args) {
-        synchronized (QUEUED_CALLS) {
-            queueNativeCallLocked(cls, methodName, null, args, state);
-        }
-    }
-
-    
-
-
-    public static void queueNativeCall(final Class<?> cls, final String methodName,
-                                       final Object... args) {
-        synchronized (QUEUED_CALLS) {
-            queueNativeCallLocked(cls, methodName, null, args, State.RUNNING);
-        }
-    }
-
-    
-
-
-
-
-
-
-
-
-    public static void queueNativeCallUntil(final State state, final Object obj,
-                                            final String methodName, final Object... args) {
-        synchronized (QUEUED_CALLS) {
-            queueNativeCallLocked(obj.getClass(), methodName, obj, args, state);
-        }
-    }
-
-    
-
-
-    public static void queueNativeCall(final Object obj, final String methodName,
-                                       final Object... args) {
-        synchronized (QUEUED_CALLS) {
-            queueNativeCallLocked(obj.getClass(), methodName, obj, args, State.RUNNING);
-        }
-    }
-
-    
-    private static void flushQueuedNativeCallsLocked(final State state) {
-        int lastSkipped = -1;
-        for (int i = 0; i < QUEUED_CALLS.size(); i++) {
-            final QueuedCall call = QUEUED_CALLS.get(i);
-            if (call == null) {
-                
-                continue;
-            }
-            if (!state.isAtLeast(call.state)) {
-                
-                lastSkipped = i;
-                continue;
-            }
-            
-            QUEUED_CALLS.set(i, null);
-
-            invokeMethod(call.method, call.target, call.args);
-        }
-        if (lastSkipped < 0) {
-            
-            QUEUED_CALLS.clear();
-            QUEUED_CALLS.trimToSize();
-        } else if (lastSkipped < QUEUED_CALLS.size() - 1) {
-            
-            
-            QUEUED_CALLS.subList(lastSkipped + 1, QUEUED_CALLS.size()).clear();
-        }
     }
 
     private static void loadGeckoLibs(final Context context, final String resourcePath) {
@@ -617,7 +446,7 @@ public class GeckoThread extends Thread {
 
 
     public static boolean isState(final State state) {
-        return sState.is(state);
+        return sStateHolder.getState().is(state);
     }
 
     
@@ -628,7 +457,7 @@ public class GeckoThread extends Thread {
 
 
     public static boolean isStateAtLeast(final State state) {
-        return sState.isAtLeast(state);
+        return sStateHolder.getState().isAtLeast(state);
     }
 
     
@@ -639,7 +468,7 @@ public class GeckoThread extends Thread {
 
 
     public static boolean isStateAtMost(final State state) {
-        return sState.isAtMost(state);
+        return state.isAtLeast(sStateHolder.getState());
     }
 
     
@@ -651,28 +480,18 @@ public class GeckoThread extends Thread {
 
 
     public static boolean isStateBetween(final State minState, final State maxState) {
-        return sState.isBetween(minState, maxState);
+        return isStateAtLeast(minState) && isStateAtMost(maxState);
     }
 
     @WrapForJNI(calledFrom = "gecko")
     private static void setState(final State newState) {
-        ThreadUtils.assertOnGeckoThread();
-        synchronized (QUEUED_CALLS) {
-            flushQueuedNativeCallsLocked(newState);
-            sState = newState;
-        }
+        sStateHolder.setState(newState);
     }
 
     @WrapForJNI(calledFrom = "gecko")
-    private static boolean checkAndSetState(final State currentState, final State newState) {
-        synchronized (QUEUED_CALLS) {
-            if (sState == currentState) {
-                flushQueuedNativeCallsLocked(newState);
-                sState = newState;
-                return true;
-            }
-        }
-        return false;
+    private static boolean checkAndSetState(final State expectedState,
+                                            final State newState) {
+        return sStateHolder.checkAndSetState(expectedState, newState);
     }
 
     @WrapForJNI(stubName = "SpeculativeConnect")
@@ -735,5 +554,37 @@ public class GeckoThread extends Thread {
     @WrapForJNI
     private static void requestUiThreadCallback(long delay) {
         ThreadUtils.getUiHandler().postDelayed(UI_THREAD_CALLBACK, delay);
+    }
+
+    
+
+
+    public static void queueNativeCall(final Class<?> cls, final String methodName,
+                                       final Object... args) {
+        NativeQueue.queueUntil(getStateHolder(), State.RUNNING, cls, methodName, args);
+    }
+
+    
+
+
+    public static void queueNativeCall(final Object obj, final String methodName,
+                                       final Object... args) {
+        NativeQueue.queueUntil(getStateHolder(), State.RUNNING, obj, methodName, args);
+    }
+
+    
+
+
+    public static void queueNativeCallUntil(final State state, final Object obj, final String methodName,
+                                       final Object... args) {
+        NativeQueue.queueUntil(getStateHolder(), state, obj, methodName, args);
+    }
+
+    
+
+
+    public static void queueNativeCallUntil(final State state, final Class<?> cls, final String methodName,
+                                       final Object... args) {
+        NativeQueue.queueUntil(getStateHolder(), state, cls, methodName, args);
     }
 }
