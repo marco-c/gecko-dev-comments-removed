@@ -115,6 +115,9 @@ impl Frame {
     }
 
     fn load(&mut self, pipeline_id: PipelineId) -> Vec<PipelineId> {
+        
+        
+        
         self.prev.push(self.current);
         self.current = pipeline_id;
         replace(&mut self.next, vec!())
@@ -351,9 +354,9 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 self.compositor_proxy.send(CompositorMsg::LoadComplete);
             }
             
-            ConstellationMsg::Navigate(direction) => {
+            ConstellationMsg::Navigate(pipeline_info, direction) => {
                 debug!("constellation got navigation message");
-                self.handle_navigate_msg(direction);
+                self.handle_navigate_msg(pipeline_info, direction);
             }
             
             ConstellationMsg::PainterReady(pipeline_id) => {
@@ -549,15 +552,17 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         }
     }
 
-    fn handle_navigate_msg(&mut self, direction: constellation_msg::NavigationDirection) {
+    fn handle_navigate_msg(&mut self,
+                           pipeline_info: Option<(PipelineId, SubpageId)>,
+                           direction: constellation_msg::NavigationDirection) {
         debug!("received message to navigate {:?}", direction);
 
         
         
-        
-        
-        
-        let frame_id = self.root_frame_id.unwrap();
+        let frame_id = pipeline_info.map_or(self.root_frame_id, |(containing_pipeline_id, subpage_id)| {
+            let pipeline_id = self.find_subpage(containing_pipeline_id, subpage_id).id;
+            self.pipeline_to_frame_map.get(&pipeline_id).map(|id| *id)
+        }).unwrap();
 
         
         let (prev_pipeline_id, next_pipeline_id) = {
