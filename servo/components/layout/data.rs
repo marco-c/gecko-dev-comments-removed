@@ -3,7 +3,7 @@
 
 
 use construct::ConstructionResult;
-use incremental::RestyleDamage;
+use script_layout_interface::restyle_damage::RestyleDamage;
 use style::servo::PrivateStyleData;
 
 

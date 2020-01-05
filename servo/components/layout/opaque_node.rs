@@ -2,41 +2,17 @@
 
 
 
-#![allow(unsafe_code)]
-
 use gfx::display_list::OpaqueNode;
-use libc::{c_void, uintptr_t};
-use script::layout_interface::LayoutJS;
-use script::layout_interface::Node;
-use script::layout_interface::TrustedNodeAddress;
+use libc::c_void;
 use script_traits::UntrustedNodeAddress;
 
 pub trait OpaqueNodeMethods {
-    
-    fn from_script_node(node: TrustedNodeAddress) -> Self;
-
-    
-    fn from_jsmanaged(node: &LayoutJS<Node>) -> Self;
-
     
     
     fn to_untrusted_node_address(&self) -> UntrustedNodeAddress;
 }
 
 impl OpaqueNodeMethods for OpaqueNode {
-    fn from_script_node(node: TrustedNodeAddress) -> OpaqueNode {
-        unsafe {
-            OpaqueNodeMethods::from_jsmanaged(&LayoutJS::from_trusted_node_address(node))
-        }
-    }
-
-    fn from_jsmanaged(node: &LayoutJS<Node>) -> OpaqueNode {
-        unsafe {
-            let ptr: uintptr_t = node.get_jsobject() as uintptr_t;
-            OpaqueNode(ptr)
-        }
-    }
-
     fn to_untrusted_node_address(&self) -> UntrustedNodeAddress {
         UntrustedNodeAddress(self.0 as *const c_void)
     }
