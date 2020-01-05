@@ -76,7 +76,6 @@ pub struct WebSocket {
     clean_close: Cell<bool>, 
     code: Cell<u16>, 
     reason: DOMRefCell<DOMString>, 
-    data: DOMRefCell<DOMString>, 
     binary_type: Cell<BinaryType>,
 }
 
@@ -116,7 +115,6 @@ impl WebSocket {
             clean_close: Cell::new(true),
             code: Cell::new(0),
             reason: DOMRefCell::new("".to_owned()),
-            data: DOMRefCell::new("".to_owned()),
             binary_type: Cell::new(BinaryType::Blob),
         }
 
