@@ -377,6 +377,12 @@ nsPluginArray::EnsurePlugins()
     }
   }
 
+  if (mPlugins.Length() == 0 && mCTPPlugins.Length() != 0) {
+    nsCOMPtr<nsPluginTag> hiddenTag = new nsPluginTag("Hidden Plugin", NULL, NULL, NULL, NULL,
+                                                      NULL, NULL, NULL, 0, 0, false);
+    mPlugins.AppendElement(new nsPluginElement(mWindow, hiddenTag));
+  }
+
   
   
   mPlugins.Sort();
