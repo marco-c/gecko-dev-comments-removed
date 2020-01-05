@@ -248,6 +248,13 @@ private:
 
     
     void     StartSpdy(uint8_t versionLevel);
+    
+    
+    void     Start0RTTSpdy(uint8_t versionLevel);
+
+    
+    nsresult TryTakeSubTransactions(nsTArray<RefPtr<nsAHttpTransaction> > &list);
+    nsresult MoveTransactionsToSpdy(nsresult status, nsTArray<RefPtr<nsAHttpTransaction> > &list);
 
     
     nsresult AddTransaction(nsAHttpTransaction *, int32_t);
@@ -370,6 +377,8 @@ private:
                                                              
     int64_t                        mContentBytesWritten0RTT;
     bool                           mEarlyDataNegotiated; 
+    nsCString                      mEarlyNegotiatedALPN;
+    bool                           mDid0RTTSpdy;
 };
 
 } 

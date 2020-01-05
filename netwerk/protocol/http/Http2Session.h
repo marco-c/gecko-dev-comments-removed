@@ -43,12 +43,13 @@ public:
   NS_DECL_NSAHTTPSEGMENTREADER
   NS_DECL_NSAHTTPSEGMENTWRITER
 
- Http2Session(nsISocketTransport *, uint32_t version);
+ Http2Session(nsISocketTransport *, uint32_t version, bool attemptingEarlyData);
 
   bool AddStream(nsAHttpTransaction *, int32_t,
                  bool, nsIInterfaceRequestor *) override;
   bool CanReuse() override { return !mShouldGoAway && !mClosed; }
   bool RoomForMoreStreams() override;
+  uint32_t SpdyVersion() override;
 
   
   
@@ -235,6 +236,8 @@ public:
   
   nsresult ReadSegmentsAgain(nsAHttpSegmentReader *, uint32_t, uint32_t *, bool *) override final;
   nsresult WriteSegmentsAgain(nsAHttpSegmentWriter *, uint32_t , uint32_t *, bool *) override final;
+  bool Do0RTT() override final { return true; }
+  nsresult Finish0RTT(bool aRestart, bool aAlpnChanged) override final;
 
 private:
 
@@ -494,6 +497,10 @@ private:
   bool mGoAwayOnPush;
 
   bool mUseH2Deps;
+
+  bool mAttemptingEarlyData;
+  
+  nsTArray<uint32_t> m0RTTStreams;
 
 private:
 
