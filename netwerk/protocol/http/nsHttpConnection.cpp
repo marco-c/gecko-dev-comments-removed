@@ -373,6 +373,13 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
     if (NS_FAILED(rv))
         goto npnComplete;
 
+    if (!m0RTTChecked) {
+        
+        mTransaction->OnTransportStatus(mSocketTransport,
+                                        NS_NET_STATUS_TLS_HANDSHAKE_STARTING,
+                                        0);
+    }
+
     rv = ssl->GetNegotiatedNPN(negotiatedNPN);
     if (!m0RTTChecked && (rv == NS_ERROR_NOT_CONNECTED) &&
         !mConnInfo->UsingProxy()) {
@@ -518,6 +525,10 @@ nsHttpConnection::EnsureNPNComplete(nsresult &aOut0RTTWriteHandshakeValue,
 npnComplete:
     LOG(("nsHttpConnection::EnsureNPNComplete [this=%p] setting complete to true", this));
     mNPNComplete = true;
+
+    mTransaction->OnTransportStatus(mSocketTransport,
+                                    NS_NET_STATUS_TLS_HANDSHAKE_ENDED,
+                                    0);
     if (mWaitingFor0RTTResponse) {
         
         mWaitingFor0RTTResponse = false;
