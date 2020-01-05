@@ -7,51 +7,62 @@
 
 
 
+
+
 HandlerServiceTestUtils.handlerService = gHandlerService;
 
+const pdfHandlerInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type");
+const gzipHandlerInfo =
+      HandlerServiceTestUtils.getHandlerInfo("application/x-gzip");
+const ircHandlerInfo =
+      HandlerServiceTestUtils.getHandlerInfo("irc");
 
-let webHandlerApp = Cc["@mozilla.org/uriloader/web-handler-app;1"]
-                      .createInstance(Ci.nsIWebHandlerApp);
-webHandlerApp.name = "Web Handler";
-webHandlerApp.uriTemplate = "https://www.example.com/?url=%s";
-let expectedWebHandlerApp = {
-  name: webHandlerApp.name,
-  uriTemplate: webHandlerApp.uriTemplate,
+let executable = Services.dirsvc.get("TmpD", Ci.nsIFile);
+let localHandler = {
+  name: "Local Handler",
+  executable: executable,
+  interfaces: [Ci.nsIHandlerApp, Ci.nsILocalHandlerApp, Ci.nsISupports],
+  QueryInterface: function(iid) {
+    if (!this.interfaces.some( function(v) { return iid.equals(v) } ))
+      throw Cr.NS_ERROR_NO_INTERFACE;
+    return this;
+  }
+};
+
+let webHandler = {
+  name: "Web Handler",
+  uriTemplate: "https://www.webhandler.com/?url=%s",
+  interfaces: [Ci.nsIHandlerApp, Ci.nsIWebHandlerApp, Ci.nsISupports],
+  QueryInterface: function(iid) {
+    if (!this.interfaces.some( function(v) { return iid.equals(v) } ))
+      throw Cr.NS_ERROR_NO_INTERFACE;
+    return this;
+  }
+};
+
+let dBusHandler = {
+  name: "DBus Handler",
+  service: "DBus Service",
+  method: "DBus method",
+  objectPath: "/tmp/PATH/DBus",
+  dBusInterface: "DBusInterface",
+  interfaces: [Ci.nsIHandlerApp, Ci.nsIDBusHandlerApp, Ci.nsISupports],
+  QueryInterface: function(iid) {
+    if (!this.interfaces.some( function(v) { return iid.equals(v) } ))
+      throw Cr.NS_ERROR_NO_INTERFACE;
+    return this;
+  }
 };
 
 
 
 
-let localHandlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"]
-                        .createInstance(Ci.nsILocalHandlerApp);
-localHandlerApp.name = "Local Handler";
-localHandlerApp.executable = FileUtils.getFile("TmpD", []);
-let expectedLocalHandlerApp = {
-  name: localHandlerApp.name,
-  executable: localHandlerApp.executable,
-};
+add_task(function* testLoadPredefined() {
+  yield prepareImportDB();
 
-
-
-
-
-
-
-
-
-function getKnownHandlerInfo(type) {
-  let handlerInfo = HandlerServiceTestUtils.getBlankHandlerInfo(type);
-  handlerInfo.preferredAction = Ci.nsIHandlerInfo.saveToDisk;
-  handlerInfo.alwaysAskBeforeHandling = false;
-  return handlerInfo;
-}
-
-
-
-
-
-function* assertAllHandlerInfosMatchTestData() {
-  let handlerInfos = HandlerServiceTestUtils.getAllHandlerInfos();
+  let handlerInfos =
+      HandlerServiceTestUtils.getAllHandlerInfos();
 
   
   
@@ -59,485 +70,29 @@ function* assertAllHandlerInfosMatchTestData() {
   
 
   HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
-    type: "example/type.handleinternally",
-    preferredAction: Ci.nsIHandlerInfo.handleInternally,
-    alwaysAskBeforeHandling: false,
-    fileExtensions: [
-      "example_one",
-    ],
-  });
-
-  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
-    type: "example/type.savetodisk",
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    alwaysAskBeforeHandling: true,
-    preferredApplicationHandler: {
-      name: "Example Default Handler",
-      uriTemplate: "https://www.example.com/?url=%s",
-    },
-    possibleApplicationHandlers: [{
-      name: "Example Default Handler",
-      uriTemplate: "https://www.example.com/?url=%s",
-    }],
-    fileExtensions: [
-      "example_two",
-      "example_three",
-    ],
-  });
-
-  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
-    type: "example/type.usehelperapp",
+    type: "irc",
     preferredAction: Ci.nsIHandlerInfo.useHelperApp,
     alwaysAskBeforeHandling: true,
-    preferredApplicationHandler: {
-      name: "Example Default Handler",
-      uriTemplate: "https://www.example.com/?url=%s",
-    },
     possibleApplicationHandlers: [{
-      name: "Example Default Handler",
-      uriTemplate: "https://www.example.com/?url=%s",
-    },{
-      name: "Example Possible Handler One",
-      uriTemplate: "http://www.example.com/?id=1&url=%s",
-    },{
-      name: "Example Possible Handler Two",
-      uriTemplate: "http://www.example.com/?id=2&url=%s",
-    }],
-    fileExtensions: [
-      "example_two",
-      "example_three",
-    ],
-  });
-
-  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
-    type: "example/type.usesystemdefault",
-    preferredAction: Ci.nsIHandlerInfo.useSystemDefault,
-    alwaysAskBeforeHandling: false,
-    possibleApplicationHandlers: [{
-      name: "Example Possible Handler",
-      uriTemplate: "http://www.example.com/?url=%s",
+      name: "Mibbit",
+      uriTemplate: "https://www.mibbit.com/?url=%s",
     }],
   });
 
   HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
-    type: "examplescheme.usehelperapp",
+    type: "ircs",
     preferredAction: Ci.nsIHandlerInfo.useHelperApp,
     alwaysAskBeforeHandling: true,
-    preferredApplicationHandler: {
-      name: "Example Default Handler",
-      uriTemplate: "https://www.example.com/?url=%s",
-    },
     possibleApplicationHandlers: [{
-      name: "Example Default Handler",
-      uriTemplate: "https://www.example.com/?url=%s",
-    },{
-      name: "Example Possible Handler One",
-      uriTemplate: "http://www.example.com/?id=1&url=%s",
-    },{
-      name: "Example Possible Handler Two",
-      uriTemplate: "http://www.example.com/?id=2&url=%s",
+      name: "Mibbit",
+      uriTemplate: "https://www.mibbit.com/?url=%s",
     }],
   });
-
-  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
-    type: "examplescheme.usesystemdefault",
-    preferredAction: Ci.nsIHandlerInfo.useSystemDefault,
-    alwaysAskBeforeHandling: false,
-    possibleApplicationHandlers: [{
-      name: "Example Possible Handler",
-      uriTemplate: "http://www.example.com/?url=%s",
-    }],
-  });
-
-  do_check_eq(handlerInfos.length, 0);
-}
-
-
-
-
-
-add_task(function* test_store_fillHandlerInfo_predefined() {
-  
-  yield copyTestDataToHandlerStore();
-  yield assertAllHandlerInfosMatchTestData();
-
-  
-  
-  
-  
-  let testHandlerInfos = HandlerServiceTestUtils.getAllHandlerInfos();
-  yield deleteHandlerStore();
-  for (let handlerInfo of HandlerServiceTestUtils.getAllHandlerInfos()) {
-    gHandlerService.remove(handlerInfo);
-  }
-  for (let handlerInfo of testHandlerInfos) {
-    gHandlerService.store(handlerInfo);
-  }
-
-  
-  yield unloadHandlerStore();
-  yield assertAllHandlerInfosMatchTestData();
-});
-
-
-
-
-
-add_task(function* test_store_remove_exists() {
-  
-  for (let type of ["example/type.usehelperapp",
-                    "examplescheme.usehelperapp"]) {
-    
-    yield deleteHandlerStore();
-    let handlerInfoPresent = HandlerServiceTestUtils.getHandlerInfo(type);
-    let handlerInfoAbsent = HandlerServiceTestUtils.getHandlerInfo(type + "2");
-
-    
-    handlerInfoAbsent.preferredAction = Ci.nsIHandlerInfo.saveToDisk;
-    handlerInfoAbsent.alwaysAskBeforeHandling = false;
-
-    yield copyTestDataToHandlerStore();
-
-    do_check_true(gHandlerService.exists(handlerInfoPresent));
-    do_check_false(gHandlerService.exists(handlerInfoAbsent));
-
-    gHandlerService.store(handlerInfoAbsent);
-    gHandlerService.remove(handlerInfoPresent);
-
-    yield unloadHandlerStore();
-
-    do_check_false(gHandlerService.exists(handlerInfoPresent));
-    do_check_true(gHandlerService.exists(handlerInfoAbsent));
-
-    Assert.throws(
-      () => gHandlerService.fillHandlerInfo(handlerInfoPresent, ""),
-      ex => ex.result == Cr.NS_ERROR_NOT_AVAILABLE);
-
-    let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo(type + "2");
-    HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
-      type: type + "2",
-      preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-      alwaysAskBeforeHandling: false,
-    });
-  }
-});
-
-
-
-
-
-
-add_task(function* test_store_preferredAction() {
-  yield deleteHandlerStore();
-
-  let handlerInfo = getKnownHandlerInfo("example/new");
-
-  for (let preferredAction of [Ci.nsIHandlerInfo.alwaysAsk, 999]) {
-    handlerInfo.preferredAction = preferredAction;
-    gHandlerService.store(handlerInfo);
-    gHandlerService.fillHandlerInfo(handlerInfo, "");
-    do_check_eq(handlerInfo.preferredAction, Ci.nsIHandlerInfo.useHelperApp);
-  }
-});
-
-
-
-
-
-
-add_task(function* test_store_localHandlerApp_missing() {
-  if (!("@mozilla.org/uriloader/dbus-handler-app;1" in Cc)) {
-    do_print("Skipping test because it does not apply to this platform.");
-    return;
-  }
-
-  let missingHandlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"]
-                            .createInstance(Ci.nsILocalHandlerApp);
-  missingHandlerApp.name = "Non-existing Handler";
-  missingHandlerApp.executable = FileUtils.getFile("TmpD", ["nonexisting"]);
-
-  yield deleteHandlerStore();
-
-  let handlerInfo = getKnownHandlerInfo("example/new");
-  handlerInfo.preferredApplicationHandler = missingHandlerApp;
-  handlerInfo.possibleApplicationHandlers.appendElement(missingHandlerApp);
-  handlerInfo.possibleApplicationHandlers.appendElement(webHandlerApp);
-  gHandlerService.store(handlerInfo);
-
-  yield unloadHandlerStore();
-
-  let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
-  HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
-    type: "example/new",
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    alwaysAskBeforeHandling: false,
-    possibleApplicationHandlers: [expectedWebHandlerApp],
-  });
-});
-
-
-
-
-add_task(function* test_store_dBusHandlerApp() {
-  if (!("@mozilla.org/uriloader/dbus-handler-app;1" in Cc)) {
-    do_print("Skipping test because it does not apply to this platform.");
-    return;
-  }
-
-  
-  let dBusHandlerApp = Cc["@mozilla.org/uriloader/dbus-handler-app;1"]
-                         .createInstance(Ci.nsIDBusHandlerApp);
-  dBusHandlerApp.name = "DBus Handler";
-  dBusHandlerApp.service = "test.method.server";
-  dBusHandlerApp.method = "Method";
-  dBusHandlerApp.dBusInterface = "test.method.Type";
-  dBusHandlerApp.objectPath = "/test/method/Object";
-  let expectedDBusHandlerApp = {
-    name: dBusHandlerApp.name,
-    service: dBusHandlerApp.service,
-    method: dBusHandlerApp.method,
-    dBusInterface: dBusHandlerApp.dBusInterface,
-    objectPath: dBusHandlerApp.objectPath,
-  };
-
-  yield deleteHandlerStore();
-
-  let handlerInfo = getKnownHandlerInfo("example/new");
-  handlerInfo.preferredApplicationHandler = dBusHandlerApp;
-  handlerInfo.possibleApplicationHandlers.appendElement(dBusHandlerApp);
-  gHandlerService.store(handlerInfo);
-
-  yield unloadHandlerStore();
-
-  let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
-  HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
-    type: "example/new",
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    alwaysAskBeforeHandling: false,
-    preferredApplicationHandler: expectedDBusHandlerApp,
-    possibleApplicationHandlers: [expectedDBusHandlerApp],
-  });
-});
-
-
-
-
-
-
-add_task(function* test_store_possibleApplicationHandlers_includes_preferred() {
-  yield deleteHandlerStore();
-
-  let handlerInfo = getKnownHandlerInfo("example/new");
-  handlerInfo.preferredApplicationHandler = localHandlerApp;
-  gHandlerService.store(handlerInfo);
-
-  yield unloadHandlerStore();
-
-  let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
-  HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
-    type: "example/new",
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    alwaysAskBeforeHandling: false,
-    preferredApplicationHandler: expectedLocalHandlerApp,
-    possibleApplicationHandlers: [expectedLocalHandlerApp],
-  });
-});
-
-
-
-
-
-
-
-add_task(function* test_store_possibleApplicationHandlers_preferred_first() {
-  yield deleteHandlerStore();
-
-  let handlerInfo = getKnownHandlerInfo("example/new");
-  handlerInfo.preferredApplicationHandler = webHandlerApp;
-  
-  handlerInfo.possibleApplicationHandlers.appendElement(localHandlerApp);
-  handlerInfo.possibleApplicationHandlers.appendElement(webHandlerApp);
-  gHandlerService.store(handlerInfo);
-
-  yield unloadHandlerStore();
-
-  let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
-  HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
-    type: "example/new",
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    alwaysAskBeforeHandling: false,
-    preferredApplicationHandler: expectedWebHandlerApp,
-    possibleApplicationHandlers: [
-      expectedWebHandlerApp,
-      expectedLocalHandlerApp,
-    ],
-  });
-});
-
-
-
-
-
-add_task(function* test_store_fileExtensions_lowercase() {
-  yield deleteHandlerStore();
-
-  let handlerInfo = getKnownHandlerInfo("example/new");
-  handlerInfo.appendExtension("extension_test1");
-  handlerInfo.appendExtension("EXTENSION_test2");
-  gHandlerService.store(handlerInfo);
-
-  yield unloadHandlerStore();
-
-  let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
-  HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
-    type: "example/new",
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    alwaysAskBeforeHandling: false,
-    fileExtensions: [
-      "extension_test1",
-      "extension_test2",
-    ],
-  });
-});
-
-
-
-
-
-add_task(function* test_store_no_duplicates() {
-  yield deleteHandlerStore();
-
-  let handlerInfo = getKnownHandlerInfo("example/new");
-  handlerInfo.preferredApplicationHandler = webHandlerApp;
-  handlerInfo.possibleApplicationHandlers.appendElement(webHandlerApp);
-  handlerInfo.possibleApplicationHandlers.appendElement(localHandlerApp);
-  handlerInfo.possibleApplicationHandlers.appendElement(localHandlerApp);
-  handlerInfo.possibleApplicationHandlers.appendElement(webHandlerApp);
-  handlerInfo.appendExtension("extension_test1");
-  handlerInfo.appendExtension("extension_test2");
-  handlerInfo.appendExtension("extension_test1");
-  handlerInfo.appendExtension("EXTENSION_test1");
-  gHandlerService.store(handlerInfo);
-
-  yield unloadHandlerStore();
-
-  let actualHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("example/new");
-  HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
-    type: "example/new",
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    alwaysAskBeforeHandling: false,
-    preferredApplicationHandler: expectedWebHandlerApp,
-    possibleApplicationHandlers: [
-      expectedWebHandlerApp,
-      expectedLocalHandlerApp,
-    ],
-    fileExtensions: [
-      "extension_test1",
-      "extension_test2",
-    ],
-  });
-});
-
-
-
-
-
-
-
-add_task(function* test_store_deletes_properties_except_extensions() {
-  yield deleteHandlerStore();
-
-  
-  
-  
-  let handlerInfo =
-      HandlerServiceTestUtils.getBlankHandlerInfo("example/type.savetodisk");
-  handlerInfo.preferredAction = Ci.nsIHandlerInfo.saveToDisk;
-  handlerInfo.alwaysAskBeforeHandling = false;
-
-  
-  
-  yield copyTestDataToHandlerStore();
-  gHandlerService.store(handlerInfo);
-
-  
-  yield unloadHandlerStore();
-  let actualHandlerInfo =
-      HandlerServiceTestUtils.getHandlerInfo("example/type.savetodisk");
-  HandlerServiceTestUtils.assertHandlerInfoMatches(actualHandlerInfo, {
-    type: "example/type.savetodisk",
-    preferredAction: Ci.nsIHandlerInfo.saveToDisk,
-    alwaysAskBeforeHandling: false,
-    fileExtensions: [
-      "example_two",
-      "example_three"
-    ],
-  });
-});
-
-
-
-
-add_task(function* test_fillHandlerInfo_overrideType() {
-  
-  for (let type of ["example/type.usesystemdefault",
-                    "examplescheme.usesystemdefault"]) {
-    yield deleteHandlerStore();
-
-    
-    let handlerInfoAbsent = HandlerServiceTestUtils.getHandlerInfo(type + "2");
-
-    
-    yield copyTestDataToHandlerStore();
-    gHandlerService.fillHandlerInfo(handlerInfoAbsent, type);
-    HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfoAbsent, {
-      
-      type: type + "2",
-      preferredAction: Ci.nsIHandlerInfo.useSystemDefault,
-      alwaysAskBeforeHandling: false,
-      possibleApplicationHandlers: [{
-        name: "Example Possible Handler",
-        uriTemplate: "http://www.example.com/?url=%s",
-      }],
-    });
-  }
-});
-
-
-
-
-add_task(function* test_getTypeFromExtension() {
-  yield copyTestDataToHandlerStore();
-
-  do_check_eq(gHandlerService.getTypeFromExtension(""), "");
-  do_check_eq(gHandlerService.getTypeFromExtension("example_unknown"), "");
-  do_check_eq(gHandlerService.getTypeFromExtension("example_one"),
-              "example/type.handleinternally");
-  do_check_eq(gHandlerService.getTypeFromExtension("EXAMPLE_one"),
-              "example/type.handleinternally");
-});
-
-
-
-
-
-function* assertAllHandlerInfosMatchDefaultHandlers() {
-  let handlerInfos = HandlerServiceTestUtils.getAllHandlerInfos();
-
-  for (let type of ["irc", "ircs"]) {
-    HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
-      type,
-      preferredActionOSDependent: true,
-      possibleApplicationHandlers: [{
-        name: "Mibbit",
-        uriTemplate: "https://www.mibbit.com/?url=%s",
-      }],
-    });
-  }
 
   HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
     type: "mailto",
-    preferredActionOSDependent: true,
+    preferredAction: Ci.nsIHandlerInfo.useSystemDefault,
+    alwaysAskBeforeHandling: false,
     possibleApplicationHandlers: [{
       name: "Yahoo! Mail",
       uriTemplate: "https://compose.mail.yahoo.com/?To=%s",
@@ -548,64 +103,436 @@ function* assertAllHandlerInfosMatchDefaultHandlers() {
   });
 
   HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
+    type: "nonexistent/type",
+    preferredAction: Ci.nsIHandlerInfo.handleInternally,
+    alwaysAskBeforeHandling: false,
+    fileExtensions: ["pdf"],
+  });
+
+  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfos.shift(), {
     type: "webcal",
-    preferredActionOSDependent: true,
+    preferredAction: Ci.nsIHandlerInfo.useHelperApp,
+    alwaysAskBeforeHandling: true,
+    preferredApplicationHandler: {
+      name: "30 Boxes",
+      uriTemplate: "http://30boxes.com/external/widget?refer=ff&url=%s",
+    },
     possibleApplicationHandlers: [{
+      name: "30 Boxes",
+      uriTemplate: "http://30boxes.com/external/widget?refer=ff&url=%s",
+    },{
       name: "30 Boxes",
       uriTemplate: "https://30boxes.com/external/widget?refer=ff&url=%s",
     }],
   });
 
   do_check_eq(handlerInfos.length, 0);
-}
-
-
-
-
-add_task(function* test_default_protocol_handlers() {
-  if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
-    do_print("This platform or locale does not have default handlers.");
-    return;
-  }
-
-  
-  yield deleteHandlerStore();
-
-  yield assertAllHandlerInfosMatchDefaultHandlers();
 });
 
 
 
 
+add_task(function* testImportAndReload() {
+  
+  yield prepareImportDB();
+  Assert.deepEqual(HandlerServiceTestUtils.getAllHandlerInfoTypes(),
+                   ["irc", "ircs", "mailto", "nonexistent/type", "webcal"]);
 
-add_task(function* test_default_protocol_handlers_no_duplicates() {
-  if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
-    do_print("This platform or locale does not have default handlers.");
+  
+  gHandlerService.store(gzipHandlerInfo);
+  gHandlerService.remove(pdfHandlerInfo);
+  yield reloadData();
+  Assert.deepEqual(HandlerServiceTestUtils.getAllHandlerInfoTypes(),
+                   ["application/x-gzip", "irc", "ircs", "mailto", "webcal"]);
+});
+
+
+add_task(function* testReloadWithoutDB() {
+  yield removeImportDB();
+  
+  
+  if (Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")){
+    Assert.deepEqual(HandlerServiceTestUtils.getAllHandlerInfoTypes(),
+                     ["irc", "ircs", "mailto", "webcal"]);
+  }
+});
+
+
+add_task(function* testExists() {
+  yield prepareImportDB();
+
+  do_check_true(gHandlerService.exists(pdfHandlerInfo));
+  do_check_false(gHandlerService.exists(gzipHandlerInfo));
+
+  
+  let handler = ircHandlerInfo;
+  gHandlerService.remove(handler);
+  do_check_false(gHandlerService.exists(handler));
+  gHandlerService.store(handler);
+  do_check_true(gHandlerService.exists(handler));
+});
+
+
+add_task(function* testGetTypeFromExtension() {
+  yield prepareImportDB();
+
+  let type = gHandlerService.getTypeFromExtension("doc");
+  do_check_eq(type, "");
+  type = gHandlerService.getTypeFromExtension("pdf");
+  do_check_eq(type, "nonexistent/type");
+
+  
+  gHandlerService.fillHandlerInfo(pdfHandlerInfo, "");
+
+  gHandlerService.remove(pdfHandlerInfo);
+  do_check_false(gHandlerService.exists(pdfHandlerInfo));
+  type = gHandlerService.getTypeFromExtension("pdf");
+  do_check_eq(type, "");
+
+  gHandlerService.store(pdfHandlerInfo);
+  do_check_true(gHandlerService.exists(pdfHandlerInfo));
+  type = gHandlerService.getTypeFromExtension("pdf");
+  do_check_eq(type, "nonexistent/type");
+});
+
+
+
+
+add_task(function* testStoreAndFillHandlerInfo() {
+  yield removeImportDB();
+
+  
+  
+  
+  let handlerInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type");
+  let handlerInfo2 =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type2");
+  handlerInfo2.preferredAction = Ci.nsIHandlerInfo.useSystemDefault;
+  handlerInfo2.preferredApplicationHandler = localHandler;
+  handlerInfo2.alwaysAskBeforeHandling = false;
+  handlerInfo2.appendExtension("type2");
+  gHandlerService.store(handlerInfo2);
+
+  gHandlerService.fillHandlerInfo(handlerInfo, "nonexistent/type2");
+  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfo, {
+    type: "nonexistent/type",
+    preferredAction: Ci.nsIHandlerInfo.useSystemDefault,
+    alwaysAskBeforeHandling: false,
+    fileExtensions: ["type2"],
+    preferredApplicationHandler: {
+      name: "Local Handler",
+      executable,
+    },
+    possibleApplicationHandlers: [{
+      name: "Local Handler",
+      executable,
+    }],
+  });
+});
+
+
+
+add_task(function* testFillHandlerInfoWithError() {
+  yield removeImportDB();
+
+  let handlerInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type");
+
+  Assert.throws(
+    () => gHandlerService.fillHandlerInfo(handlerInfo, "nonexistent/type2"),
+    ex => ex.result == Cr.NS_ERROR_NOT_AVAILABLE);
+});
+
+
+
+add_task(function* testPreferHandlerIsTheFirstOrder() {
+  yield removeImportDB();
+
+  let handlerInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type");
+  let handlerInfo2 =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type2");
+  handlerInfo2.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
+  handlerInfo2.preferredApplicationHandler = webHandler;
+  handlerInfo2.possibleApplicationHandlers.appendElement(localHandler);
+  handlerInfo2.possibleApplicationHandlers.appendElement(webHandler);
+  handlerInfo2.alwaysAskBeforeHandling = false;
+  gHandlerService.store(handlerInfo2);
+
+  gHandlerService.fillHandlerInfo(handlerInfo, "nonexistent/type2");
+  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfo, {
+    type: "nonexistent/type",
+    preferredAction: Ci.nsIHandlerInfo.useHelperApp,
+    alwaysAskBeforeHandling: false,
+    preferredApplicationHandler: {
+      name: webHandler.name,
+      uriTemplate: webHandler.uriTemplate,
+    },
+    possibleApplicationHandlers: [{
+      name: webHandler.name,
+      uriTemplate: webHandler.uriTemplate,
+    },{
+      name: "Local Handler",
+      executable,
+    }],
+  });
+});
+
+
+add_task(function* testStoreForWebHandler() {
+  yield removeImportDB();
+
+  let handlerInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type");
+  let handlerInfo2 =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type2");
+  handlerInfo2.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
+  handlerInfo2.preferredApplicationHandler = webHandler;
+  handlerInfo2.alwaysAskBeforeHandling = false;
+  gHandlerService.store(handlerInfo2);
+
+  gHandlerService.fillHandlerInfo(handlerInfo, "nonexistent/type2");
+  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfo, {
+    type: "nonexistent/type",
+    preferredAction: Ci.nsIHandlerInfo.useHelperApp,
+    alwaysAskBeforeHandling: false,
+    preferredApplicationHandler: {
+      name: webHandler.name,
+      uriTemplate: webHandler.uriTemplate,
+    },
+    possibleApplicationHandlers: [{
+      name: webHandler.name,
+      uriTemplate: webHandler.uriTemplate,
+    }],
+  });
+});
+
+
+add_task(function* testStoreForDBusHandler() {
+  if (!("@mozilla.org/uriloader/dbus-handler-app;1" in Cc)) {
+    do_print("Skipping test because it does not apply to this platform.");
     return;
   }
 
-  
-  yield deleteHandlerStore();
+  yield removeImportDB();
+
+  let handlerInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type");
+  let handlerInfo2 =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type2");
+  handlerInfo2.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
+  handlerInfo2.preferredApplicationHandler = dBusHandler;
+  handlerInfo2.alwaysAskBeforeHandling = false;
+  gHandlerService.store(handlerInfo2);
+
+  gHandlerService.fillHandlerInfo(handlerInfo, "nonexistent/type2");
+  let expectedHandler = {
+    name: dBusHandler.name,
+    service: dBusHandler.service,
+    method: dBusHandler.method,
+    dBusInterface: dBusHandler.dBusInterface,
+    objectPath: dBusHandler.objectPath,
+  };
+  HandlerServiceTestUtils.assertHandlerInfoMatches(handlerInfo, {
+    type: "nonexistent/type",
+    preferredAction: Ci.nsIHandlerInfo.useHelperApp,
+    alwaysAskBeforeHandling: false,
+    preferredApplicationHandler: expectedHandler,
+    possibleApplicationHandlers: [expectedHandler],
+  });
+});
+
+
+
+
+add_task(function* testIsInHandlerArray() {
+  if (AppConstants.platform == "android") {
+    do_print("Skipping test because it does not apply to this platform.");
+    return;
+  }
+  if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
+    do_print("Skipping test: No pref gecko.handlerService.defaultHandlersVersion.");
+    return;
+  }
+
+  yield removeImportDB();
+
+  let protoInfo = HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent");
+  do_check_eq(protoInfo.possibleApplicationHandlers.length, 0);
+  gHandlerService.fillHandlerInfo(protoInfo, "ircs");
+  do_check_eq(protoInfo.possibleApplicationHandlers.length, 1);
 
   
-  let ircHandlerInfo = HandlerServiceTestUtils.getHandlerInfo("irc");
-  gHandlerService.remove(ircHandlerInfo);
+  let ircInfo = HandlerServiceTestUtils.getHandlerInfo("irc");
+  gHandlerService.remove(ircInfo);
+  do_check_false(gHandlerService.exists(ircInfo));
 
-  let originalDefaultHandlersVersion = Services.prefs.getComplexValue(
+  let origPrefs = Services.prefs.getComplexValue(
     "gecko.handlerService.defaultHandlersVersion", Ci.nsIPrefLocalizedString);
 
   
-  Services.prefs.setStringPref("gecko.handlerService.defaultHandlersVersion",
-                               "999");
-
-  yield unloadHandlerStore();
-
-  
-  do_check_true(gHandlerService.exists(ircHandlerInfo));
+  let string = Cc["@mozilla.org/pref-localizedstring;1"]
+               .createInstance(Ci.nsIPrefLocalizedString);
+  string.data = "999";
+  Services.prefs.setComplexValue("gecko.handlerService.defaultHandlersVersion",
+                                 Ci.nsIPrefLocalizedString, string);
 
   
-  yield assertAllHandlerInfosMatchDefaultHandlers();
+  yield reloadData();
 
-  Services.prefs.setStringPref("gecko.handlerService.defaultHandlersVersion",
-                               originalDefaultHandlersVersion);
+  
+  do_check_true(gHandlerService.exists(ircInfo));
+
+  
+  protoInfo = HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent");
+  do_check_false(gHandlerService.exists(protoInfo));
+  gHandlerService.fillHandlerInfo(protoInfo, "ircs");
+  do_check_eq(protoInfo.possibleApplicationHandlers.length, 1);
+
+  
+  Services.prefs.setComplexValue("gecko.handlerService.defaultHandlersVersion",
+                                 Ci.nsIPrefLocalizedString, origPrefs);
+});
+
+
+
+
+add_task(function* testFillHandlerInfoForProtocol() {
+  if (AppConstants.platform == "android") {
+    do_print("Skipping test because it does not apply to this platform.");
+    return;
+  }
+  if (!Services.prefs.getPrefType("gecko.handlerService.defaultHandlersVersion")) {
+    do_print("Skipping test: No pref gecko.handlerService.defaultHandlersVersion.");
+    return;
+  }
+
+  yield removeImportDB();
+
+  let protoInfo = HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent");
+
+  let ircInfo = HandlerServiceTestUtils.getHandlerInfo("irc");
+  do_check_true(gHandlerService.exists(ircInfo));
+
+  gHandlerService.fillHandlerInfo(protoInfo, "irc");
+  HandlerServiceTestUtils.assertHandlerInfoMatches(protoInfo, {
+    type: "nonexistent",
+    preferredAction: Ci.nsIHandlerInfo.useHelperApp,
+    alwaysAskBeforeHandling: true,
+    possibleApplicationHandlers: [{
+      name: "Mibbit",
+      uriTemplate: "https://www.mibbit.com/?url=%s",
+    }],
+  });
+});
+
+
+
+add_task(function* testStoreForProtocol() {
+  yield removeImportDB();
+
+  let protoInfo = HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent");
+  let protoInfo2 = HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent2");
+  protoInfo2.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
+  protoInfo2.alwaysAskBeforeHandling = false;
+  protoInfo2.preferredApplicationHandler = webHandler;
+  gHandlerService.store(protoInfo2);
+
+  yield reloadData();
+  do_check_true(gHandlerService.exists(protoInfo2));
+
+  gHandlerService.fillHandlerInfo(protoInfo, "nonexistent2");
+  HandlerServiceTestUtils.assertHandlerInfoMatches(protoInfo, {
+    type: "nonexistent",
+    preferredAction: Ci.nsIHandlerInfo.useHelperApp,
+    alwaysAskBeforeHandling: false,
+    preferredApplicationHandler: {
+      name: webHandler.name,
+      uriTemplate: webHandler.uriTemplate,
+    },
+    possibleApplicationHandlers: [{
+      name: webHandler.name,
+      uriTemplate: webHandler.uriTemplate,
+    }],
+  });
+});
+
+
+add_task(function* testFillHandlerInfoWithoutOverrideType() {
+  yield removeImportDB();
+
+  
+  let mimeInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type");
+  let storedHandlerInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent/type");
+  storedHandlerInfo.preferredAction = Ci.nsIHandlerInfo.useSystemDefault;
+  storedHandlerInfo.preferredApplicationHandler = webHandler;
+  storedHandlerInfo.alwaysAskBeforeHandling = false;
+  gHandlerService.store(storedHandlerInfo);
+
+  
+  let protoInfo = HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent");
+  let storedProtoInfo =
+      HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent");
+  storedProtoInfo.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
+  storedProtoInfo.alwaysAskBeforeHandling = false;
+  storedProtoInfo.preferredApplicationHandler = webHandler;
+  gHandlerService.store(storedProtoInfo);
+
+  
+  for (let handlerInfo of [mimeInfo, protoInfo]) {
+    let handlerInfo2 = storedProtoInfo;
+    if (handlerInfo.type == "nonexistent/type") {
+      handlerInfo2 = storedHandlerInfo;
+    }
+    gHandlerService.fillHandlerInfo(handlerInfo, null);
+    do_check_eq(handlerInfo.preferredAction, handlerInfo2.preferredAction);
+    do_check_eq(handlerInfo.alwaysAskBeforeHandling,
+                handlerInfo2.alwaysAskBeforeHandling);
+    do_check_eq(handlerInfo.preferredApplicationHandler.name,
+                handlerInfo2.preferredApplicationHandler.name);
+    let apps = handlerInfo.possibleApplicationHandlers.enumerate();
+    let app;
+    if (AppConstants.platform == "android") {
+      app = apps.getNext().QueryInterface(Ci.nsIHandlerApp);
+      do_check_eq(app.name, "Android chooser");
+    }
+    app = apps.getNext().QueryInterface(Ci.nsIWebHandlerApp);
+    do_check_eq(app.name, webHandler.name);
+    do_check_eq(app.uriTemplate, webHandler.uriTemplate);
+  }
+});
+
+
+
+
+add_task(function* testPreferredActionHandling() {
+  yield removeImportDB();
+
+  let protoInfo = HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent");
+  let protoInfo2 = HandlerServiceTestUtils.getBlankHandlerInfo("nonexistent2");
+
+  for (let preferredAction of [
+    Ci.nsIHandlerInfo.saveToDisk,
+    Ci.nsIHandlerInfo.useHelperApp,
+    Ci.nsIHandlerInfo.handleInternally,
+    Ci.nsIHandlerInfo.useSystemDefault
+  ]) {
+    protoInfo2.preferredAction = preferredAction;
+    gHandlerService.store(protoInfo2);
+    gHandlerService.fillHandlerInfo(protoInfo, "nonexistent2");
+    do_check_eq(protoInfo.preferredAction, preferredAction);
+  }
+
+  for (let preferredAction of [
+    Ci.nsIHandlerInfo.alwaysAsk,
+    999
+  ]) {
+    protoInfo2.preferredAction = preferredAction;
+    gHandlerService.store(protoInfo2);
+    gHandlerService.fillHandlerInfo(protoInfo, "nonexistent2");
+    do_check_eq(protoInfo.preferredAction, Ci.nsIHandlerInfo.useHelperApp);
+  }
 });

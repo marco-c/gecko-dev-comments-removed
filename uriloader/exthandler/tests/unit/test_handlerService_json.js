@@ -5,61 +5,31 @@
 
 
 
+
+
 XPCOMUtils.defineLazyServiceGetter(this, "gHandlerService",
                                    "@mozilla.org/uriloader/handler-service-json;1",
                                    "nsIHandlerService");
 
+var scriptFile = do_get_file("common_test_handlerService.js");
+Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
 
-
-
-
-let unloadHandlerStore = Task.async(function* () {
-  
-  
-  
-  gHandlerService;
-
-  let promise = TestUtils.topicObserved("handlersvc-json-replace-complete");
-  Services.obs.notifyObservers(null, "handlersvc-json-replace");
-  yield promise;
-});
-
-
-
-
-let deleteHandlerStore = Task.async(function* () {
-  yield unloadHandlerStore();
-
-  yield OS.File.remove(jsonPath, { ignoreAbsent: true });
-});
-
-
-
-
-let copyTestDataToHandlerStore = Task.async(function* () {
-  yield unloadHandlerStore();
+var prepareImportDB = Task.async(function* () {
+  yield reloadData();
 
   yield OS.File.copy(do_get_file("handlers.json").path, jsonPath);
 });
 
-var scriptFile = do_get_file("common_test_handlerService.js");
-Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
+var removeImportDB = Task.async(function* () {
+  yield reloadData();
 
+  yield OS.File.remove(jsonPath, { ignoreAbsent: true });
+});
 
-
-
-
-add_task(function* test_store_keeps_unknown_properties() {
+var reloadData = Task.async(function* () {
   
-  yield deleteHandlerStore();
-  let handlerInfo =
-      HandlerServiceTestUtils.getHandlerInfo("example/type.handleinternally");
-
-  yield copyTestDataToHandlerStore();
-  gHandlerService.store(handlerInfo);
-
-  yield unloadHandlerStore();
-  let data = JSON.parse(new TextDecoder().decode(yield OS.File.read(jsonPath)));
-  do_check_eq(data.mimeTypes["example/type.handleinternally"].unknownProperty,
-              "preserved");
+  let svc = gHandlerService;
+  let promise = TestUtils.topicObserved("handlersvc-json-replace-complete");
+  Services.obs.notifyObservers(null, "handlersvc-json-replace");
+  yield promise;
 });

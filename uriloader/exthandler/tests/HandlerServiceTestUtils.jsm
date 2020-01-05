@@ -95,14 +95,6 @@ this.HandlerServiceTestUtils = {
       
       
       let handlerInfo = gMIMEService.getFromTypeAndExtension(type, null);
-      if (AppConstants.platform == "android") {
-        
-        while (handlerInfo.possibleApplicationHandlers.length > 1) {
-          handlerInfo.possibleApplicationHandlers.removeElementAt(1);
-        }
-      } else {
-        handlerInfo.possibleApplicationHandlers.clear();
-      }
       handlerInfo.setFileExtensions("");
       
       if (this.handlerService.exists(handlerInfo)) {
@@ -181,12 +173,9 @@ this.HandlerServiceTestUtils = {
                                                         : Ci.nsIHandlerInfo;
     Assert.ok(handlerInfo instanceof expectedInterface);
     Assert.equal(handlerInfo.type, expected.type);
-
-    if (!expected.preferredActionOSDependent) {
-      Assert.equal(handlerInfo.preferredAction, expected.preferredAction);
-      Assert.equal(handlerInfo.alwaysAskBeforeHandling,
-                   expected.alwaysAskBeforeHandling);
-    }
+    Assert.equal(handlerInfo.preferredAction, expected.preferredAction);
+    Assert.equal(handlerInfo.alwaysAskBeforeHandling,
+                 expected.alwaysAskBeforeHandling);
 
     if (expectedInterface == Ci.nsIMIMEInfo) {
       let fileExtensionsEnumerator = handlerInfo.getFileExtensions();
