@@ -1300,6 +1300,9 @@ XPCJSContext::InterruptCallback(JSContext* cx)
     XPCJSContext* self = XPCJSContext::Get();
 
     
+    profiler_js_interrupt_callback();
+
+    
     
     
     if (self->mSlowScriptCheckpoint.IsNull()) {

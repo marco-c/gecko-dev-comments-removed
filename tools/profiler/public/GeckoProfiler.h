@@ -288,7 +288,7 @@ PROFILER_FUNC(bool profiler_thread_is_sleeping(), false)
 
 
 
-PROFILER_FUNC_VOID(profiler_js_operation_callback())
+PROFILER_FUNC_VOID(profiler_js_interrupt_callback())
 
 PROFILER_FUNC(double profiler_time(), 0)
 

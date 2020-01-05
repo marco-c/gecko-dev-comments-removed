@@ -1737,6 +1737,14 @@ RegisterCurrentThread(PS::LockRef aLock, const char* aName,
 
   MaybeSetProfile(aLock, info);
 
+  
+  if (gPS->IsActive(aLock) && info->HasProfile() && gPS->FeatureJS(aLock)) {
+    
+    
+    aPseudoStack->startJSSampling();
+    aPseudoStack->pollJSSampling();
+  }
+
   threads.push_back(info);
 }
 
@@ -2328,12 +2336,20 @@ locked_profiler_start(PS::LockRef aLock, int aEntries, double aInterval,
 
     MaybeSetProfile(aLock, info);
 
-    if (info->IsPendingDelete() || !info->HasProfile()) {
-      continue;
+    if (info->HasProfile() && !info->IsPendingDelete()) {
+      info->Stack()->reinitializeOnResume();
+
+      if (featureJS) {
+        info->Stack()->startJSSampling();
+      }
     }
-    info->Stack()->reinitializeOnResume();
-    if (featureJS) {
-      info->Stack()->enableJSSampling();
+  }
+
+  if (featureJS) {
+    
+    
+    if (PseudoStack* stack = tlsPseudoStack.get()) {
+      stack->pollJSSampling();
     }
   }
 
@@ -2447,16 +2463,25 @@ locked_profiler_stop(PS::LockRef aLock)
   }
 #endif
 
-  
   PS::ThreadVector& threads = gPS->Threads(aLock);
   for (uint32_t i = 0; i < threads.size(); i++) {
     ThreadInfo* info = threads.at(i);
-    
-    
     if (info->IsPendingDelete()) {
+      
       delete info;
       threads.erase(threads.begin() + i);
       i--;
+    } else if (info->HasProfile() && gPS->FeatureJS(aLock)) {
+      
+      info->Stack()->stopJSSampling();
+    }
+  }
+
+  if (gPS->FeatureJS(aLock)) {
+    
+    
+    if (PseudoStack* stack = tlsPseudoStack.get()) {
+      stack->pollJSSampling();
     }
   }
 
@@ -2466,12 +2491,6 @@ locked_profiler_stop(PS::LockRef aLock)
 
   delete gPS->Buffer(aLock);
   gPS->SetBuffer(aLock, nullptr);
-
-  if (gPS->FeatureJS(aLock)) {
-    PseudoStack *stack = tlsPseudoStack.get();
-    MOZ_ASSERT(stack != nullptr);
-    stack->disableJSSampling();
-  }
 
   gPS->SetFeatureDisplayListDump(aLock, false);
   gPS->SetFeatureGPU(aLock, false);
@@ -2697,6 +2716,9 @@ profiler_unregister_thread()
     }
   }
 
+  
+  
+
   if (!wasPseudoStackTransferred) {
     delete tlsPseudoStack.get();
   }
@@ -2711,7 +2733,7 @@ profiler_thread_sleep()
   MOZ_RELEASE_ASSERT(gPS);
 
   PseudoStack *stack = tlsPseudoStack.get();
-  if (stack == nullptr) {
+  if (!stack) {
     return;
   }
   stack->setSleeping();
@@ -2725,7 +2747,7 @@ profiler_thread_wake()
   MOZ_RELEASE_ASSERT(gPS);
 
   PseudoStack *stack = tlsPseudoStack.get();
-  if (stack == nullptr) {
+  if (!stack) {
     return;
   }
   stack->setAwake();
@@ -2738,15 +2760,16 @@ profiler_thread_is_sleeping()
   MOZ_RELEASE_ASSERT(gPS);
 
   PseudoStack *stack = tlsPseudoStack.get();
-  if (stack == nullptr) {
+  if (!stack) {
     return false;
   }
   return stack->isSleeping();
 }
 
 void
-profiler_js_operation_callback()
+profiler_js_interrupt_callback()
 {
+  
   
 
   MOZ_RELEASE_ASSERT(gPS);
@@ -2756,7 +2779,7 @@ profiler_js_operation_callback()
     return;
   }
 
-  stack->jsOperationCallback();
+  stack->pollJSSampling();
 }
 
 double
@@ -3001,6 +3024,9 @@ profiler_clear_js_context()
 
     gPS->SetIsPaused(lock, false);
   }
+
+  
+  
 
   stack->mContext = nullptr;
 }

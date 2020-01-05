@@ -204,7 +204,7 @@ public:
     : mStackPointer(0)
     , mSleep(AWAKE)
     , mContext(nullptr)
-    , mStartJSSampling(false)
+    , mJSSampling(INACTIVE)
   {
     MOZ_COUNT_CTOR(PseudoStack);
   }
@@ -290,8 +290,12 @@ public:
                     mozilla::sig_safe_t(mozilla::ArrayLength(mStack)));
   }
 
+  
+  
   void setJSContext(JSContext* aContext)
   {
+    
+
     MOZ_ASSERT(aContext && !mContext);
 
     mContext = aContext;
@@ -300,34 +304,56 @@ public:
                                  (js::ProfileEntry*) mStack,
                                  (uint32_t*) &mStackPointer,
                                  (uint32_t) mozilla::ArrayLength(mStack));
-    if (mStartJSSampling) {
-      enableJSSampling();
-    }
+    pollJSSampling();
   }
 
-  void enableJSSampling()
+  
+  
+  
+  void startJSSampling()
   {
+    
+
+    MOZ_RELEASE_ASSERT(mJSSampling == INACTIVE ||
+                       mJSSampling == INACTIVE_REQUESTED);
+    mJSSampling = ACTIVE_REQUESTED;
+  }
+
+  
+  
+  void stopJSSampling()
+  {
+    
+
+    MOZ_RELEASE_ASSERT(mJSSampling == ACTIVE ||
+                       mJSSampling == ACTIVE_REQUESTED);
+    mJSSampling = INACTIVE_REQUESTED;
+  }
+
+  
+  void pollJSSampling()
+  {
+    
+
+    
     if (mContext) {
-      js::EnableContextProfilingStack(mContext, true);
-      js::RegisterContextProfilingEventMarker(mContext, &ProfilerJSEventMarker);
-      mStartJSSampling = false;
-    } else {
-      mStartJSSampling = true;
-    }
-  }
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      if (mJSSampling.compareExchange(ACTIVE_REQUESTED, ACTIVE)) {
+        js::EnableContextProfilingStack(mContext, true);
+        js::RegisterContextProfilingEventMarker(mContext,
+                                                &ProfilerJSEventMarker);
 
-  void jsOperationCallback()
-  {
-    if (mStartJSSampling) {
-      enableJSSampling();
-    }
-  }
-
-  void disableJSSampling()
-  {
-    mStartJSSampling = false;
-    if (mContext) {
-      js::EnableContextProfilingStack(mContext, false);
+      } else if (mJSSampling.compareExchange(INACTIVE_REQUESTED, INACTIVE)) {
+        js::EnableContextProfilingStack(mContext, false);
+      }
     }
   }
 
@@ -439,11 +465,55 @@ private:
 
 public:
   
+  
   JSContext* mContext;
 
 private:
   
-  bool mStartJSSampling;
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  static const int INACTIVE = 0;
+  static const int ACTIVE_REQUESTED = 1;
+  static const int ACTIVE = 2;
+  static const int INACTIVE_REQUESTED = 3;
+  mozilla::Atomic<int> mJSSampling;
 };
 
 #endif
