@@ -913,7 +913,7 @@ nsGridContainerFrame::GridItemInfo::Dump() const
       printf("flexing ");
     }
     if (state & ItemState::eFirstBaseline) {
-      printf("baseline %s-alignment ",
+      printf("first baseline %s-alignment ",
              (state & ItemState::eSelfBaseline) ? "self" : "content");
     }
     if (state & ItemState::eLastBaseline) {
@@ -4266,7 +4266,7 @@ nsGridContainerFrame::Tracks::InitializeItemBaselines(
     MOZ_ASSERT((state &
                 (ItemState::eFirstBaseline | ItemState::eLastBaseline)) !=
                (ItemState::eFirstBaseline | ItemState::eLastBaseline),
-               "baseline and last baseline bits are mutually exclusive");
+               "first/last baseline bits are mutually exclusive");
     MOZ_ASSERT((state &
                 (ItemState::eSelfBaseline | ItemState::eContentBaseline)) !=
                (ItemState::eSelfBaseline | ItemState::eContentBaseline),
@@ -4871,7 +4871,7 @@ nsGridContainerFrame::Tracks::AlignJustifyContent(
   switch (alignment) {
     case NS_STYLE_ALIGN_BASELINE:
     case NS_STYLE_ALIGN_LAST_BASELINE:
-      NS_WARNING("'NYI: baseline/last baseline' (bug 1151204)"); 
+      NS_WARNING("NYI: 'first/last baseline' (bug 1151204)"); 
       MOZ_FALLTHROUGH;
     case NS_STYLE_ALIGN_START:
       distribute = false;
