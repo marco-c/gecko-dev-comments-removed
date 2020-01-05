@@ -4,7 +4,9 @@
 
 use dom::bindings::str::USVString;
 
-use url::{Url, SchemeData};
+use url::{Url, UrlParser, SchemeData};
+
+use url::urlutils::{UrlUtils, UrlUtilsWrapper};
 
 use std::borrow::ToOwned;
 use std::fmt::Write;
@@ -23,6 +25,12 @@ impl UrlHelper {
     }
 
     
+    pub fn SetHash(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_fragment(&value.0);
+    }
+
+    
     pub fn Host(url: &Url) -> USVString {
         USVString(match url.scheme_data {
             SchemeData::NonRelative(..) => "".to_owned(),
@@ -37,8 +45,20 @@ impl UrlHelper {
     }
 
     
+    pub fn SetHost(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_host(&value.0);
+    }
+
+    
     pub fn Hostname(url: &Url) -> USVString {
         USVString(url.serialize_host().unwrap_or_else(|| "".to_owned()))
+    }
+
+    
+    pub fn SetHostname(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_host_and_port(&value.0);
     }
 
     
@@ -52,12 +72,23 @@ impl UrlHelper {
     }
 
     
+    pub fn SetPassword(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_password(&value.0);
+    }
+
+    
     pub fn Pathname(url: &Url) -> USVString {
-        
         USVString(match url.scheme_data {
             SchemeData::NonRelative(ref scheme_data) => scheme_data.clone(),
             SchemeData::Relative(..) => url.serialize_path().unwrap()
         })
+    }
+
+    
+    pub fn SetPathname(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_path(&value.0);
     }
 
     
@@ -69,8 +100,20 @@ impl UrlHelper {
     }
 
     
+    pub fn SetPort(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_port(&value.0);
+    }
+
+    
     pub fn Protocol(url: &Url) -> USVString {
         USVString(format!("{}:", url.scheme.clone()))
+    }
+
+    
+    pub fn SetProtocol(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_scheme(&value.0);
     }
 
     
@@ -97,7 +140,19 @@ impl UrlHelper {
     }
 
     
+    pub fn SetSearch(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_query(&value.0);
+    }
+
+    
     pub fn Username(url: &Url) -> USVString {
         USVString(url.username().unwrap_or("").to_owned())
+    }
+
+    
+    pub fn SetUsername(url: &mut Url, value: USVString) {
+        let mut wrapper = UrlUtilsWrapper { url: url, parser: &UrlParser::new() };
+        let _ = wrapper.set_username(&value.0);
     }
 }

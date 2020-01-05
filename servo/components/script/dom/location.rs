@@ -4,6 +4,7 @@
 
 use dom::bindings::codegen::Bindings::LocationBinding;
 use dom::bindings::codegen::Bindings::LocationBinding::LocationMethods;
+use dom::bindings::error::ErrorResult;
 use dom::bindings::global::GlobalRef;
 use dom::bindings::js::{JS, Root};
 use dom::bindings::str::USVString;
@@ -33,6 +34,18 @@ impl Location {
                            GlobalRef::Window(window),
                            LocationBinding::Wrap)
     }
+
+    fn get_url(&self) -> Url {
+        self.window.root().get_url()
+    }
+
+    fn set_url_component(&self, value: USVString,
+                         setter: fn(&mut Url, USVString)) {
+        let window = self.window.root();
+        let mut url = window.get_url();
+        setter(&mut url, value);
+        window.load_url(url);
+    }
 }
 
 impl LocationMethods for Location {
@@ -53,8 +66,8 @@ impl LocationMethods for Location {
     }
 
     
-    fn Href(&self) -> USVString {
-        UrlHelper::Href(&self.get_url())
+    fn SetHash(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetHash);
     }
 
     
@@ -63,8 +76,32 @@ impl LocationMethods for Location {
     }
 
     
+    fn SetHost(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetHost);
+    }
+
+    
     fn Hostname(&self) -> USVString {
         UrlHelper::Hostname(&self.get_url())
+    }
+
+    
+    fn SetHostname(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetHostname);
+    }
+
+    
+    fn Href(&self) -> USVString {
+        UrlHelper::Href(&self.get_url())
+    }
+
+    
+    fn SetHref(&self, value: USVString) -> ErrorResult {
+        let window = self.window.root();
+        if let Ok(url) = UrlParser::new().base_url(&window.get_url()).parse(&value.0) {
+            window.load_url(url);
+        };
+        Ok(())
     }
 
     
@@ -73,8 +110,18 @@ impl LocationMethods for Location {
     }
 
     
+    fn SetPassword(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetPassword);
+    }
+
+    
     fn Pathname(&self) -> USVString {
         UrlHelper::Pathname(&self.get_url())
+    }
+
+    
+    fn SetPathname(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetPathname);
     }
 
     
@@ -83,8 +130,18 @@ impl LocationMethods for Location {
     }
 
     
+    fn SetPort(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetPort);
+    }
+
+    
     fn Protocol(&self) -> USVString {
         UrlHelper::Protocol(&self.get_url())
+    }
+
+    
+    fn SetProtocol(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetProtocol);
     }
 
     
@@ -98,15 +155,17 @@ impl LocationMethods for Location {
     }
 
     
+    fn SetSearch(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetSearch);
+    }
+
+    
     fn Username(&self) -> USVString {
         UrlHelper::Username(&self.get_url())
     }
-}
 
-
-impl Location {
-    fn get_url(&self) -> Url {
-        let window = self.window.root();
-        window.r().get_url()
+    
+    fn SetUsername(&self, value: USVString) {
+        self.set_url_component(value, UrlHelper::SetUsername);
     }
 }
