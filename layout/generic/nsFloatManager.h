@@ -45,6 +45,26 @@ struct nsFlowAreaRect {
 
 #define NS_FLOAT_MANAGER_CACHE_SIZE 4
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class nsFloatManager {
 public:
   explicit nsFloatManager(nsIPresShell* aPresShell, mozilla::WritingMode aWM);
@@ -385,6 +405,8 @@ private:
   };
 
 #ifdef DEBUG
+  
+  
   mozilla::WritingMode mWritingMode;
 #endif
 
