@@ -396,8 +396,8 @@ protected:
 
 
 
-  void GetSelectionRange(int32_t* aSelectionStart,
-                         int32_t* aSelectionEnd,
+  void GetSelectionRange(uint32_t* aSelectionStart,
+                         uint32_t* aSelectionEnd,
                          ErrorResult& aRv);
 private:
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
