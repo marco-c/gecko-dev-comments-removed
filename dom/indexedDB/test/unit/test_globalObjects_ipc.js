@@ -5,7 +5,7 @@
 
 var testGenerator = testSteps();
 
-function testSteps()
+function* testSteps()
 {
   
   run_test_in_child("./GlobalObjectsChild.js", function() {
