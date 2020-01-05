@@ -187,21 +187,24 @@ extensions.registerSchemaAPI("browsingData", "addon_parent", context => {
 
         
         
-        let since = Sanitizer.getClearRange()[0] / 1000;
+        
+        
+        let clearRange = Sanitizer.getClearRange();
+        let since = clearRange ? clearRange[0] / 1000 : 0;
         let options = {since};
 
         let dataToRemove = {};
         let dataRemovalPermitted = {};
 
         for (let item of PREF_LIST) {
-          dataToRemove[item] = Preferences.get(`${PREF_DOMAIN}${item}`);
           
           
-          dataRemovalPermitted[item] = true;
+          const name = item === "formdata" ? "formData" : item;
+          dataToRemove[name] = Preferences.get(`${PREF_DOMAIN}${item}`);
+          
+          
+          dataRemovalPermitted[name] = true;
         }
-        
-        dataToRemove.formData = Preferences.get(`${PREF_DOMAIN}formdata`);
-        dataRemovalPermitted.formData = true;
 
         return Promise.resolve({options, dataToRemove, dataRemovalPermitted});
       },
