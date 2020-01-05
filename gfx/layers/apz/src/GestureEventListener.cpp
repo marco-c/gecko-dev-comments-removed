@@ -8,12 +8,12 @@
 #include <math.h>                       
 #include <stddef.h>                     
 #include "AsyncPanZoomController.h"     
-#include "InputBlockState.h"            
 #include "base/task.h"                  
 #include "gfxPrefs.h"                   
 #include "mozilla/SizePrintfMacros.h"   
 #include "nsDebug.h"                    
 #include "nsMathUtils.h"                
+#include "InputBlockState.h"
 
 #define GEL_LOG(...)
 
