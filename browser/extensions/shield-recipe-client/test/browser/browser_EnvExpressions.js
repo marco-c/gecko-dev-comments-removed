@@ -82,4 +82,13 @@ add_task(function* () {
     "[normandy.userId, normandy.injectedValue]",
     {normandy: {injectedValue: "injected"}});
   Assert.deepEqual(val, ["fake id", "injected"], "context is correctly merged");
+
+  
+  val = yield EnvExpressions.eval("normandy.distribution");
+  Assert.equal(val, "default", "distribution has a default value");
+
+  
+  yield SpecialPowers.pushPrefEnv({set: [["distribution.id", "funnelcake"]]});
+  val = yield EnvExpressions.eval("normandy.distribution");
+  Assert.equal(val, "funnelcake", "distribution is read from preferences");
 });

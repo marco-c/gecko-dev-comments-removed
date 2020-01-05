@@ -7,6 +7,14 @@ const {utils: Cu} = Components;
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Log.jsm");
+Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+
+XPCOMUtils.defineLazyModuleGetter(this, "LogManager",
+  "resource://shield-recipe-client/lib/LogManager.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "RecipeRunner",
+  "resource://shield-recipe-client/lib/RecipeRunner.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "CleanupManager",
+  "resource://shield-recipe-client/lib/CleanupManager.jsm");
 
 const REASONS = {
   APP_STARTUP: 1,      
@@ -53,19 +61,15 @@ this.startup = function() {
   }
 
   
-  Cu.import("resource://shield-recipe-client/lib/LogManager.jsm");
   LogManager.configure(Services.prefs.getIntPref(PREF_LOGGING_LEVEL));
   Preferences.observe(PREF_LOGGING_LEVEL, LogManager.configure);
+  CleanupManager.addCleanupHandler(
+    () => Preferences.ignore(PREF_LOGGING_LEVEL, LogManager.configure));
 
-  Cu.import("resource://shield-recipe-client/lib/RecipeRunner.jsm");
   RecipeRunner.init();
 };
 
 this.shutdown = function(data, reason) {
-  Preferences.ignore(PREF_LOGGING_LEVEL, LogManager.configure);
-
-  Cu.import("resource://shield-recipe-client/lib/CleanupManager.jsm");
-
   CleanupManager.cleanup();
 
   if (reason === REASONS.ADDON_DISABLE || reason === REASONS.ADDON_UNINSTALL) {
