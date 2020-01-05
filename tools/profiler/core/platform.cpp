@@ -574,9 +574,9 @@ struct AutoWalkJSStack
 
 static void
 MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
-                       TickSample* aSample, NativeStack& aNativeStack)
+                       const TickSample& aSample, NativeStack& aNativeStack)
 {
-  NotNull<PseudoStack*> pseudoStack = aSample->mPseudoStack;
+  NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
   volatile js::ProfileEntry* pseudoFrames = pseudoStack->mStack;
   uint32_t pseudoCount = pseudoStack->stackSize();
 
@@ -589,7 +589,7 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   uint32_t startBufferGen;
-  startBufferGen = aSample->mIsSynchronous
+  startBufferGen = aSample.mIsSynchronous
                  ? UINT32_MAX
                  : aBuffer->mGeneration;
   uint32_t jsCount = 0;
@@ -601,19 +601,19 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
     AutoWalkJSStack autoWalkJSStack;
     const uint32_t maxFrames = mozilla::ArrayLength(jsFrames);
 
-    if (aSample && autoWalkJSStack.walkAllowed) {
+    if (autoWalkJSStack.walkAllowed) {
       JS::ProfilingFrameIterator::RegisterState registerState;
-      registerState.pc = aSample->mPC;
-      registerState.sp = aSample->mSP;
-      registerState.lr = aSample->mLR;
-      registerState.fp = aSample->mFP;
+      registerState.pc = aSample.mPC;
+      registerState.sp = aSample.mSP;
+      registerState.lr = aSample.mLR;
+      registerState.fp = aSample.mFP;
 
       JS::ProfilingFrameIterator jsIter(pseudoStack->mContext,
                                         registerState,
                                         startBufferGen);
       for (; jsCount < maxFrames && !jsIter.done(); ++jsIter) {
         
-        if (aSample->mIsSynchronous || jsIter.isWasm()) {
+        if (aSample.mIsSynchronous || jsIter.isWasm()) {
           uint32_t extracted =
             jsIter.extractStack(jsFrames, jsCount, maxFrames);
           jsCount += extracted;
@@ -728,7 +728,7 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
       
       
       
-      if (aSample->mIsSynchronous ||
+      if (aSample.mIsSynchronous ||
           jsFrame.kind == JS::ProfilingFrameIterator::Frame_Wasm) {
         AddDynamicCodeLocationTag(aBuffer, jsFrame.label);
       } else {
@@ -758,7 +758,7 @@ MergeStacksIntoProfile(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   
-  if (!aSample->mIsSynchronous && pseudoStack->mContext) {
+  if (!aSample.mIsSynchronous && pseudoStack->mContext) {
     MOZ_ASSERT(aBuffer->mGeneration >= startBufferGen);
     uint32_t lapCount = aBuffer->mGeneration - startBufferGen;
     JS::UpdateJSContextProfilerSampleBufferGen(pseudoStack->mContext,
@@ -784,7 +784,7 @@ StackWalkCallback(uint32_t aFrameNumber, void* aPC, void* aSP, void* aClosure)
 
 static void
 DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
-                  TickSample* aSample)
+                  const TickSample& aSample)
 {
   void* pc_array[1000];
   void* sp_array[1000];
@@ -799,21 +799,21 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   
-  StackWalkCallback( 0, aSample->mPC, aSample->mSP, &nativeStack);
+  StackWalkCallback( 0, aSample.mPC, aSample.mSP, &nativeStack);
 
   uint32_t maxFrames = uint32_t(nativeStack.size - nativeStack.count);
 
 #if defined(GP_OS_darwin) || (defined(GP_PLAT_x86_windows))
-  void* stackEnd = aSample->mStackTop;
-  if (aSample->mFP >= aSample->mSP && aSample->mFP <= stackEnd) {
+  void* stackEnd = aSample.mStackTop;
+  if (aSample.mFP >= aSample.mSP && aSample.mFP <= stackEnd) {
     FramePointerStackWalk(StackWalkCallback,  0, maxFrames,
-                          &nativeStack, reinterpret_cast<void**>(aSample->mFP),
+                          &nativeStack, reinterpret_cast<void**>(aSample.mFP),
                           stackEnd);
   }
 #else
   
   
-  uintptr_t thread = GetThreadHandle(aSample->mPlatformData);
+  uintptr_t thread = GetThreadHandle(aSample.mPlatformData);
   MOZ_ASSERT(thread);
   MozStackWalk(StackWalkCallback,  0, maxFrames, &nativeStack,
                thread,  nullptr);
@@ -826,7 +826,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
 #ifdef USE_EHABI_STACKWALK
 static void
 DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
-                  TickSample* aSample)
+                  const TickSample& aSample)
 {
   void* pc_array[1000];
   void* sp_array[1000];
@@ -838,9 +838,9 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   };
 
   const mcontext_t* mcontext =
-    &reinterpret_cast<ucontext_t*>(aSample->mContext)->uc_mcontext;
+    &reinterpret_cast<ucontext_t*>(aSample.mContext)->uc_mcontext;
   mcontext_t savedContext;
-  NotNull<PseudoStack*> pseudoStack = aSample->mPseudoStack;
+  NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
 
   
   
@@ -884,7 +884,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
   
   
   nativeStack.count += EHABIStackWalk(*mcontext,
-                                      aSample->mStackTop,
+                                      aSample.mStackTop,
                                       sp_array + nativeStack.count,
                                       pc_array + nativeStack.count,
                                       nativeStack.size - nativeStack.count);
@@ -915,10 +915,10 @@ ASAN_memcpy(void* aDst, const void* aSrc, size_t aLen)
 
 static void
 DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
-                  TickSample* aSample)
+                  const TickSample& aSample)
 {
   const mcontext_t* mc =
-    &reinterpret_cast<ucontext_t*>(aSample->mContext)->uc_mcontext;
+    &reinterpret_cast<ucontext_t*>(aSample.mContext)->uc_mcontext;
 
   lul::UnwindRegs startRegs;
   memset(&startRegs, 0, sizeof(startRegs));
@@ -962,7 +962,7 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
 #else
 #   error "Unknown plat"
 #endif
-    uintptr_t end = reinterpret_cast<uintptr_t>(aSample->mStackTop);
+    uintptr_t end = reinterpret_cast<uintptr_t>(aSample.mStackTop);
     uintptr_t ws  = sizeof(void*);
     start &= ~(ws-1);
     end   &= ~(ws-1);
@@ -1032,27 +1032,27 @@ DoNativeBacktrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
 
 static void
 DoSampleStackTrace(PS::LockRef aLock, ProfileBuffer* aBuffer,
-                   TickSample* aSample)
+                   const TickSample& aSample)
 {
   NativeStack nativeStack = { nullptr, nullptr, 0, 0 };
   MergeStacksIntoProfile(aLock, aBuffer, aSample, nativeStack);
 
   if (gPS->FeatureLeaf(aLock)) {
-    aBuffer->addTag(ProfileBufferEntry::NativeLeafAddr((void*)aSample->mPC));
+    aBuffer->addTag(ProfileBufferEntry::NativeLeafAddr((void*)aSample.mPC));
   }
 }
 
 
 
 static void
-Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, TickSample* aSample)
+Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, const TickSample& aSample)
 {
-  aBuffer->addTagThreadId(aSample->mThreadId, aSample->mLastSample);
+  aBuffer->addTagThreadId(aSample.mThreadId, aSample.mLastSample);
 
-  mozilla::TimeDuration delta = aSample->mTimeStamp - gPS->StartTime(aLock);
+  mozilla::TimeDuration delta = aSample.mTimeStamp - gPS->StartTime(aLock);
   aBuffer->addTag(ProfileBufferEntry::Time(delta.ToMilliseconds()));
 
-  NotNull<PseudoStack*> pseudoStack = aSample->mPseudoStack;
+  NotNull<PseudoStack*> pseudoStack = aSample.mPseudoStack;
 
 #if defined(HAVE_NATIVE_UNWIND)
   if (gPS->FeatureStackWalk(aLock)) {
@@ -1065,7 +1065,7 @@ Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, TickSample* aSample)
 
   
   
-  if (!aSample->mIsSynchronous) {
+  if (!aSample.mIsSynchronous) {
     ProfilerMarkerLinkedList* pendingMarkersList =
       pseudoStack->getPendingMarkers();
     while (pendingMarkersList && pendingMarkersList->peek()) {
@@ -1075,21 +1075,21 @@ Tick(PS::LockRef aLock, ProfileBuffer* aBuffer, TickSample* aSample)
     }
   }
 
-  if (aSample->mResponsiveness && aSample->mResponsiveness->HasData()) {
+  if (aSample.mResponsiveness && aSample.mResponsiveness->HasData()) {
     mozilla::TimeDuration delta =
-      aSample->mResponsiveness->GetUnresponsiveDuration(aSample->mTimeStamp);
+      aSample.mResponsiveness->GetUnresponsiveDuration(aSample.mTimeStamp);
     aBuffer->addTag(ProfileBufferEntry::Responsiveness(delta.ToMilliseconds()));
   }
 
   
-  if (aSample->mRSSMemory != 0) {
-    double rssMemory = static_cast<double>(aSample->mRSSMemory);
+  if (aSample.mRSSMemory != 0) {
+    double rssMemory = static_cast<double>(aSample.mRSSMemory);
     aBuffer->addTag(ProfileBufferEntry::ResidentMemory(rssMemory));
   }
 
   
-  if (aSample->mUSSMemory != 0) {
-    double ussMemory = static_cast<double>(aSample->mUSSMemory);
+  if (aSample.mUSSMemory != 0) {
+    double ussMemory = static_cast<double>(aSample.mUSSMemory);
     aBuffer->addTag(ProfileBufferEntry::UnsharedMemory(ussMemory));
   }
 
@@ -1583,7 +1583,7 @@ public:
 
   
   
-  void SuspendAndSampleAndResumeThread(PS::LockRef aLock, TickSample* aSample);
+  void SuspendAndSampleAndResumeThread(PS::LockRef aLock, TickSample& aSample);
 
   
   void Run();
@@ -1698,7 +1698,7 @@ SamplerThread::Run()
 
           TickSample sample(info, rssMemory, ussMemory);
 
-          SuspendAndSampleAndResumeThread(lock, &sample);
+          SuspendAndSampleAndResumeThread(lock, sample);
         }
 
 #if defined(USE_LUL_STACKWALK)
@@ -2876,7 +2876,7 @@ profiler_get_backtrace()
 #endif
 #endif
 
-  Tick(lock, buffer, &sample);
+  Tick(lock, buffer, sample);
 
   return UniqueProfilerBacktrace(
     new ProfilerBacktrace("SyncProfile", tid, buffer));
