@@ -2,12 +2,11 @@
 
 
 
+from marionette import MarionetteTestCase
 from marionette_driver import By
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-
-class TestEnablePrivilege(FirefoxTestCase):
+class TestEnablePrivilege(MarionetteTestCase):
 
     def test_enable_privilege(self):
         with self.marionette.using_context('content'):

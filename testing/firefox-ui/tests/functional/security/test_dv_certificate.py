@@ -2,12 +2,12 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 from marionette_driver import Wait
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-
-class TestDVCertificate(FirefoxTestCase):
+class TestDVCertificate(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestDVCertificate, self).setUp()

@@ -2,17 +2,17 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from firefox_puppeteer.ui.browser.notifications import (
+    AddOnInstallFailedNotification,
+    AddOnInstallConfirmationNotification,
+)
+from marionette import MarionetteTestCase
 from marionette_driver import By
 from marionette_driver.errors import TimeoutException
 
-from firefox_ui_harness.testcases import FirefoxTestCase
-from firefox_puppeteer.ui.browser.notifications import (
-    AddOnInstallFailedNotification,
-    AddOnInstallConfirmationNotification
-)
 
-
-class TestNotifications(FirefoxTestCase):
+class TestNotifications(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestNotifications, self).setUp()

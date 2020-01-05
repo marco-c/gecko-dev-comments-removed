@@ -2,14 +2,13 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from firefox_puppeteer.ui.browser.window import BrowserWindow
+from marionette import MarionetteTestCase
 from marionette_driver import By, Wait
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-from firefox_puppeteer.ui.browser.window import BrowserWindow
-
-
-class TestAboutPrivateBrowsing(FirefoxTestCase):
+class TestAboutPrivateBrowsing(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestAboutPrivateBrowsing, self).setUp()

@@ -2,12 +2,12 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 from marionette_driver.errors import NoSuchElementException
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-
-class TestMenuBar(FirefoxTestCase):
+class TestMenuBar(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestMenuBar, self).setUp()

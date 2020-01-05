@@ -2,12 +2,12 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 from marionette_driver import Wait
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-
-class TestBrowserWindowShortcuts(FirefoxTestCase):
+class TestBrowserWindowShortcuts(PuppeteerMixin, MarionetteTestCase):
 
     def test_addons_manager(self):
         

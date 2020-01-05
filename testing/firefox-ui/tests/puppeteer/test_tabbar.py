@@ -2,12 +2,12 @@
 
 
 
-from firefox_ui_harness.testcases import FirefoxTestCase
-
+from firefox_puppeteer import PuppeteerMixin
 from firefox_puppeteer.errors import NoCertificateError
+from marionette import MarionetteTestCase
 
 
-class TestTabBar(FirefoxTestCase):
+class TestTabBar(PuppeteerMixin, MarionetteTestCase):
 
     def tearDown(self):
         try:
@@ -114,7 +114,7 @@ class TestTabBar(FirefoxTestCase):
         tabbar.close_tab(tabbar.tabs[1])
 
 
-class TestTab(FirefoxTestCase):
+class TestTab(PuppeteerMixin, MarionetteTestCase):
 
     def tearDown(self):
         try:

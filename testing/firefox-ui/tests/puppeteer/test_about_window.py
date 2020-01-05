@@ -2,10 +2,11 @@
 
 
 
-from firefox_ui_harness.testcases import FirefoxTestCase
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 
 
-class TestAboutWindow(FirefoxTestCase):
+class TestAboutWindow(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestAboutWindow, self).setUp()

@@ -2,10 +2,11 @@
 
 
 
-from firefox_ui_harness.testcases import FirefoxTestCase
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 
 
-class TestSanitize(FirefoxTestCase):
+class TestSanitize(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestSanitize, self).setUp()

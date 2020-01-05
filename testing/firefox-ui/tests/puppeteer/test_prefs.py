@@ -2,10 +2,11 @@
 
 
 
-from firefox_ui_harness.testcases import FirefoxTestCase
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 
 
-class testPreferences(FirefoxTestCase):
+class testPreferences(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(testPreferences, self).setUp()

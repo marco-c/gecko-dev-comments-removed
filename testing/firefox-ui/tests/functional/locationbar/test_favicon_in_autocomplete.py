@@ -2,12 +2,12 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 from marionette_driver import Wait
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-
-class TestFaviconInAutocomplete(FirefoxTestCase):
+class TestFaviconInAutocomplete(PuppeteerMixin, MarionetteTestCase):
 
     PREF_SUGGEST_SEARCHES = 'browser.urlbar.suggest.searches'
     PREF_SUGGEST_BOOKMARK = 'browser.urlbar.suggest.bookmark'

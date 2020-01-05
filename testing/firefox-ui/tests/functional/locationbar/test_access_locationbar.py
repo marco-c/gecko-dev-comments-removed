@@ -2,12 +2,12 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 from marionette_driver import Wait
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-
-class TestAccessLocationBar(FirefoxTestCase):
+class TestAccessLocationBar(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestAccessLocationBar, self).setUp()

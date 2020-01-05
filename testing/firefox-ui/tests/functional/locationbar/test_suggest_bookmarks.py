@@ -2,12 +2,12 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 from marionette_driver import By, Wait
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-
-class TestStarInAutocomplete(FirefoxTestCase):
+class TestStarInAutocomplete(PuppeteerMixin, MarionetteTestCase):
     """ This replaces
     http://hg.mozilla.org/qa/mozmill-tests/file/default/firefox/tests/functional/testAwesomeBar/testSuggestBookmarks.js
     Check a star appears in autocomplete list for a bookmarked page.

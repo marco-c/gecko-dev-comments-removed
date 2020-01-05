@@ -2,10 +2,11 @@
 
 
 
-from firefox_ui_harness.testcases import FirefoxTestCase
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 
 
-class TestRestoreWindowsAfterRestart(FirefoxTestCase):
+class TestRestoreWindowsAfterRestart(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestRestoreWindowsAfterRestart, self).setUp()

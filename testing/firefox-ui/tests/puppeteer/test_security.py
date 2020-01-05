@@ -2,12 +2,12 @@
 
 
 
-from firefox_ui_harness.testcases import FirefoxTestCase
-
+from firefox_puppeteer import PuppeteerMixin
 from firefox_puppeteer.errors import NoCertificateError
+from marionette import MarionetteTestCase
 
 
-class TestSecurity(FirefoxTestCase):
+class TestSecurity(PuppeteerMixin, MarionetteTestCase):
 
     def test_get_address_from_certificate(self):
         url = 'https://ssl-ev.mozqa.com'

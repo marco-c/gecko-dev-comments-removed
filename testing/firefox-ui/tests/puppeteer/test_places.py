@@ -2,12 +2,12 @@
 
 
 
+from firefox_puppeteer import PuppeteerMixin
+from marionette import MarionetteTestCase
 from marionette_driver import By, Wait
 
-from firefox_ui_harness.testcases import FirefoxTestCase
 
-
-class TestPlaces(FirefoxTestCase):
+class TestPlaces(PuppeteerMixin, MarionetteTestCase):
 
     def setUp(self):
         super(TestPlaces, self).setUp()
