@@ -229,11 +229,6 @@ protected:
   MediaDecoderReaderWrapper* Reader() const { return mMaster->mReader; }
   const MediaInfo& Info() const { return mMaster->Info(); }
 
-public:
-  
-  
-  
-  
   
   
   template <class S, typename... Ts>
@@ -258,7 +253,6 @@ public:
     return s->Enter(Move(aArgs)...);
   }
 
-protected:
   
   
   Master* mMaster;
