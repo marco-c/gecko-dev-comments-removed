@@ -454,6 +454,26 @@ private:
   void* mHandle;
 };
 
+
+
+
+
+class MOZ_STACK_CLASS AutoProfilerRegister final
+{
+public:
+  explicit AutoProfilerRegister(const char* aName)
+  {
+    profiler_register_thread(aName, this);
+  }
+  ~AutoProfilerRegister()
+  {
+    profiler_unregister_thread();
+  }
+private:
+  AutoProfilerRegister(const AutoProfilerRegister&) = delete;
+  AutoProfilerRegister& operator=(const AutoProfilerRegister&) = delete;
+};
+
 } 
 
 inline PseudoStack* mozilla_get_pseudo_stack(void)
