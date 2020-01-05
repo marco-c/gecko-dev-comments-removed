@@ -5005,8 +5005,10 @@ nsTableFrame::BCRecalcNeeded(nsStyleContext* aOldStyleContext,
     
     
     nsCOMPtr<nsIRunnable> evt = new nsDelayedCalcBCBorders(this);
-    NS_DispatchToCurrentThread(evt);
-    return true;
+    nsresult rv =
+      GetContent()->OwnerDoc()->Dispatch("nsDelayedCalcBCBorders",
+                                         TaskCategory::Other, evt.forget());
+    return NS_SUCCEEDED(rv);
   }
   return false;
 }
