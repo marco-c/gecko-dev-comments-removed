@@ -5,6 +5,7 @@
 
 
 use CompositorMsg as ConstellationMsg;
+use SendableFrameTree;
 use compositor::{self, CompositingReason};
 use euclid::point::Point2D;
 use euclid::size::Size2D;
@@ -22,11 +23,9 @@ use std::sync::mpsc::{Receiver, Sender, channel};
 use style_traits::cursor::Cursor;
 use style_traits::viewport::ViewportConstraints;
 use url::Url;
-use windowing::{WindowEvent, WindowMethods};
-pub use SendableFrameTree;
-pub use windowing;
 use webrender;
 use webrender_traits;
+use windowing::{WindowEvent, WindowMethods};
 
 
 
