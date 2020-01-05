@@ -7,7 +7,7 @@
 #![allow(unsafe_code)]
 
 use atomic_refcell::{AtomicRef, AtomicRefMut};
-use data::{NodeStyles, NodeData};
+use data::{ElementStyles, ElementData};
 use element_state::ElementState;
 use parking_lot::RwLock;
 use properties::{ComputedValues, PropertyDeclarationBlock};
@@ -123,23 +123,13 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
 
     
     
-    fn layout_parent_node(self, reflow_root: OpaqueNode) -> Option<Self>;
+    fn layout_parent_element(self, reflow_root: OpaqueNode) -> Option<Self::ConcreteElement>;
 
     fn debug_id(self) -> usize;
 
     fn as_element(&self) -> Option<Self::ConcreteElement>;
 
     fn as_document(&self) -> Option<Self::ConcreteDocument>;
-
-    
-    
-    
-    
-    fn deprecated_dirty_bit_is_set(&self) -> bool;
-
-    fn has_dirty_descendants(&self) -> bool;
-
-    unsafe fn set_dirty_descendants(&self);
 
     fn needs_dirty_on_viewport_size_changed(&self) -> bool;
 
@@ -148,71 +138,6 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     fn can_be_fragmented(&self) -> bool;
 
     unsafe fn set_can_be_fragmented(&self, value: bool);
-
-    
-    
-    fn store_children_to_process(&self, n: isize);
-
-    
-    
-    fn did_process_child(&self) -> isize;
-
-    
-    fn frame_has_style(&self) -> bool { false }
-
-    
-    
-    
-    
-    
-    fn get_styles_from_frame(&self) -> Option<NodeStyles> { None }
-
-    
-    
-    
-    
-    fn styling_mode(&self) -> StylingMode {
-        use self::StylingMode::*;
-
-        
-        if opts::get().nonincremental_layout {
-            return Initial;
-        }
-
-        
-        let mode_for_descendants = if self.has_dirty_descendants() {
-            Traverse
-        } else {
-            Stop
-        };
-
-        match self.borrow_data() {
-            
-            None if !self.frame_has_style() => Initial,
-            
-            None => mode_for_descendants,
-            Some(d) => {
-                if d.restyle_data.is_some() || self.deprecated_dirty_bit_is_set() {
-                    Restyle
-                } else {
-                    debug_assert!(!self.frame_has_style()); 
-                    mode_for_descendants
-                }
-            },
-        }
-    }
-
-    
-    
-    
-    fn begin_styling(&self) -> AtomicRefMut<NodeData>;
-
-    
-    
-    fn style_text_node(&self, style: Arc<ComputedValues>);
-
-    
-    fn borrow_data(&self) -> Option<AtomicRef<NodeData>>;
 
     fn parent_node(&self) -> Option<Self>;
 
@@ -268,7 +193,79 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     fn existing_style_for_restyle_damage<'a>(&'a self,
                                              current_computed_values: Option<&'a Arc<ComputedValues>>,
                                              pseudo: Option<&PseudoElement>)
-        -> Option<&'a <Self::ConcreteRestyleDamage as TRestyleDamage> ::PreExistingComputedValues>;
+        -> Option<&'a <Self::ConcreteRestyleDamage as TRestyleDamage>::PreExistingComputedValues>;
+
+    
+    
+    
+    
+    fn deprecated_dirty_bit_is_set(&self) -> bool;
+
+    fn has_dirty_descendants(&self) -> bool;
+
+    unsafe fn set_dirty_descendants(&self);
+
+    
+    
+    fn store_children_to_process(&self, n: isize);
+
+    
+    
+    fn did_process_child(&self) -> isize;
+
+
+    
+    fn frame_has_style(&self) -> bool { false }
+
+    
+    
+    
+    
+    
+    fn get_styles_from_frame(&self) -> Option<ElementStyles> { None }
+
+    
+    
+    
+    
+    fn styling_mode(&self) -> StylingMode {
+        use self::StylingMode::*;
+
+        
+        if opts::get().nonincremental_layout {
+            return Initial;
+        }
+
+        
+        let mode_for_descendants = if self.has_dirty_descendants() {
+            Traverse
+        } else {
+            Stop
+        };
+
+        match self.borrow_data() {
+            
+            None if !self.frame_has_style() => Initial,
+            
+            None => mode_for_descendants,
+            Some(d) => {
+                if d.restyle_data.is_some() || self.deprecated_dirty_bit_is_set() {
+                    Restyle
+                } else {
+                    debug_assert!(!self.frame_has_style()); 
+                    mode_for_descendants
+                }
+            },
+        }
+    }
+
+    
+    
+    
+    fn begin_styling(&self) -> AtomicRefMut<ElementData>;
+
+    
+    fn borrow_data(&self) -> Option<AtomicRef<ElementData>>;
 
     
     fn note_restyle_hint<C: DomTraversalContext<Self::ConcreteNode>>(&self, hint: RestyleHint) {
@@ -279,9 +276,8 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
         
         
-        let node = self.as_node();
-        let mut curr = node;
-        while let Some(parent) = curr.parent_node() {
+        let mut curr = *self;
+        while let Some(parent) = curr.parent_element() {
             if parent.has_dirty_descendants() { break }
             unsafe { parent.set_dirty_descendants(); }
             curr = parent;
@@ -289,22 +285,21 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
         
         if hint.contains(RESTYLE_SELF) {
-            unsafe { C::ensure_node_data(&node).borrow_mut().ensure_restyle_data(); }
+            unsafe { C::ensure_element_data(self).borrow_mut().ensure_restyle_data(); }
         
         } else if hint.contains(RESTYLE_DESCENDANTS) {
-            unsafe { node.set_dirty_descendants(); }
-            let mut current = node.first_child();
-            while let Some(node) = current {
-                unsafe { C::ensure_node_data(&node).borrow_mut().ensure_restyle_data(); }
-                current = node.next_sibling();
+            unsafe { self.set_dirty_descendants(); }
+            let mut current = self.first_child_element();
+            while let Some(el) = current {
+                unsafe { C::ensure_element_data(&el).borrow_mut().ensure_restyle_data(); }
+                current = el.next_sibling_element();
             }
         }
 
         if hint.contains(RESTYLE_LATER_SIBLINGS) {
             let mut next = ::selectors::Element::next_sibling_element(self);
             while let Some(sib) = next {
-                let sib_node = sib.as_node();
-                unsafe { C::ensure_node_data(&sib_node).borrow_mut().ensure_restyle_data() };
+                unsafe { C::ensure_element_data(&sib).borrow_mut().ensure_restyle_data() };
                 next = ::selectors::Element::next_sibling_element(&sib);
             }
         }

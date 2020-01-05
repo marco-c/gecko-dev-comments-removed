@@ -1,11 +1,11 @@
 
 
 use atomic_refcell::AtomicRefCell;
-use data::NodeData;
+use data::ElementData;
 pub use nsstring::nsStringRepr as nsString;
 pub type ServoUnsafeCell<T> = ::std::cell::UnsafeCell<T>;
 pub type ServoCell<T> = ::std::cell::Cell<T>;
-pub type ServoNodeData = AtomicRefCell<NodeData>;
+pub type ServoNodeData = AtomicRefCell<ElementData>;
 
 #[derive(Debug)]
 #[repr(C)]
