@@ -25,10 +25,10 @@ class nsCSSRuleProcessor;
 
 namespace mozilla {
 
-struct ChildSheetListBuilder;
 class CSSStyleSheet;
 class ServoStyleSheet;
 struct StyleSheetInfo;
+struct CSSStyleSheetInner;
 
 namespace dom {
 class CSSRuleList;
@@ -226,6 +226,16 @@ private:
                          ErrorResult& aRv);
 
 protected:
+  struct ChildSheetListBuilder {
+    RefPtr<StyleSheet>* sheetSlot;
+    StyleSheet* parent;
+
+    void SetParentLinks(StyleSheet* aSheet);
+
+    static void ReparentChildList(StyleSheet* aPrimarySheet,
+                                  StyleSheet* aFirstChild);
+  };
+
   void UnparentChildren();
 
   
@@ -274,13 +284,17 @@ protected:
   StyleSheetInfo* mInner;
 
   friend class ::nsCSSRuleProcessor;
-  friend struct mozilla::ChildSheetListBuilder;
 
   
   
   
   friend class mozilla::CSSStyleSheet;
   friend class mozilla::ServoStyleSheet;
+
+  
+  
+  friend struct mozilla::StyleSheetInfo;
+  friend struct mozilla::CSSStyleSheetInner;
 };
 
 } 
