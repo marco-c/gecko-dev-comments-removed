@@ -279,16 +279,33 @@ AutoSetRestoreSVGContextPaint::~AutoSetRestoreSVGContextPaint()
 
 
 
-void
-SVGEmbeddingContextPaint::SetFill(nscolor aFill)
+already_AddRefed<gfxPattern>
+SVGEmbeddingContextPaint::GetFillPattern(const DrawTarget* aDrawTarget,
+                                         float aFillOpacity,
+                                         const gfxMatrix& aCTM)
 {
-  mFill = new gfxPattern(ToDeviceColor(aFill));
+  if (!mFill) {
+    return nullptr;
+  }
+  
+  
+  
+  Color fill = *mFill;
+  fill.a *= aFillOpacity;
+  return do_AddRef(new gfxPattern(fill));
 }
 
-void
-SVGEmbeddingContextPaint::SetStroke(nscolor aStroke)
+already_AddRefed<gfxPattern>
+SVGEmbeddingContextPaint::GetStrokePattern(const DrawTarget* aDrawTarget,
+                                           float aStrokeOpacity,
+                                           const gfxMatrix& aCTM)
 {
-  mStroke = new gfxPattern(ToDeviceColor(aStroke));
+  if (!mStroke) {
+    return nullptr;
+  }
+  Color stroke = *mStroke;
+  stroke.a *= aStrokeOpacity;
+  return do_AddRef(new gfxPattern(stroke));
 }
 
 uint32_t
@@ -296,13 +313,17 @@ SVGEmbeddingContextPaint::Hash() const
 {
   uint32_t hash = 0;
 
-  Color color;
-
-  if (mFill && mFill->GetSolidColor(color)) {
-    hash = HashGeneric(hash, color.ToABGR());
+  if (mFill) {
+    hash = HashGeneric(hash, mFill->ToABGR());
+  } else {
+    
+    
+    
+    hash = 1;
   }
-  if (mStroke && mStroke->GetSolidColor(color)) {
-    hash = HashGeneric(hash, color.ToABGR());
+
+  if (mStroke) {
+    hash = HashGeneric(hash, mStroke->ToABGR());
   }
 
   return hash;
