@@ -51,6 +51,7 @@ impl HTMLMapElement {
     }
 
     pub fn Areas(&self) -> JS<HTMLCollection> {
+        
         let doc = self.htmlelement.element.node.owner_doc();
         let doc = doc.get();
         HTMLCollection::new(&doc.window, ~[])
