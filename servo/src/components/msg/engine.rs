@@ -5,8 +5,8 @@
 
 
 
-use core::comm::{Chan, SharedChan};
-use std::net::url::Url;
+use std::comm::{Chan, SharedChan};
+use extra::net::url::Url;
 
 #[deriving(Clone)]
 pub struct EngineChan {

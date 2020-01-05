@@ -2,6 +2,7 @@
 
 
 
+use std::vec;
 use geom::size::Size2D;
 
 #[deriving(Eq)]

@@ -8,11 +8,13 @@ use platform::macos::font::FontHandle;
 
 use core_text;
 
+use std::result;
+
 pub struct FontContextHandle {
     ctx: ()
 }
 
-pub impl FontContextHandle {
+impl FontContextHandle {
     
     pub fn new() -> FontContextHandle {
         FontContextHandle { ctx: () }

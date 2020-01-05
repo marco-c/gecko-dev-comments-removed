@@ -2,7 +2,7 @@
 
 
 
-use core::cmp::{Ord, Eq};
+use std::cmp::{Ord, Eq};
 
 pub trait BinarySearchMethods<'self, T: Ord + Eq> {
     fn binary_search(&self, key: &T) -> Option<&'self T>;

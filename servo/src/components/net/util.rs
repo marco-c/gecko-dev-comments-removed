@@ -2,7 +2,9 @@
 
 
 
-use core::comm::{Chan, Port};
+use std::comm;
+use std::comm::{Chan, Port};
+use std::task;
 
 pub fn spawn_listener<A: Owned>(f: ~fn(Port<A>)) -> Chan<A> {
     let (setup_port, setup_chan) = comm::stream();
