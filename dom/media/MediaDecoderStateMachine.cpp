@@ -535,6 +535,13 @@ public:
     return true;
   }
 
+  void HandleVideoSuspendTimeout() override
+  {
+    mMaster->mVideoDecodeSuspended = true;
+    mMaster->mOnPlaybackEvent.Notify(MediaEventType::EnterVideoSuspend);
+    Reader()->SetVideoBlankDecode(true);
+  }
+
   void DumpDebugInfo() override
   {
     SDUMP("mIsPrerolling=%d", mIsPrerolling);
@@ -1128,6 +1135,14 @@ DecodingState::Enter()
   
   
   MOZ_ASSERT(!mMaster->mQueuedSeek.Exists());
+
+  if (!mMaster->mIsVisible &&
+      !mMaster->mVideoDecodeSuspendTimer.IsScheduled() &&
+      !mMaster->mVideoDecodeSuspended) {
+    
+    
+    HandleVideoSuspendTimeout();
+  }
 
   if (mMaster->CheckIfDecodeComplete()) {
     SetState<CompletedState>();
