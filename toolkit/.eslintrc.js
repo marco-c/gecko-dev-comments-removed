@@ -106,9 +106,6 @@ module.exports = {
     "no-extra-boolean-cast": "error",
 
     
-    "no-extra-label": "error",
-
-    
     "no-extra-semi": "error",
 
     
@@ -182,12 +179,6 @@ module.exports = {
 
     
     "no-unsafe-finally": "error",
-
-    
-    "no-unsafe-negation": "error",
-
-    
-    "no-unused-labels": "error",
 
     
     "no-unused-vars": ["error", {
