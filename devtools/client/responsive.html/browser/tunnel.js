@@ -112,17 +112,6 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       
-      Object.defineProperty(outer, "outerWindowID", {
-        get() {
-          return inner.outerWindowID;
-        },
-        configurable: true,
-        enumerable: true,
-      });
-
-      
-      
-      
       
       
       
@@ -242,8 +231,8 @@ function tunnelToInnerBrowser(outer, inner) {
       
       
       browserWindow.browserDOMWindow
-                   .openURI(uri, null, Ci.nsIBrowserDOMWindow.OPEN_NEWTAB,
-                            Ci.nsIBrowserDOMWindow.OPEN_NEWTAB);
+        .openURI(uri, null, Ci.nsIBrowserDOMWindow.OPEN_NEWTAB,
+                 Ci.nsIBrowserDOMWindow.OPEN_NEW);
     },
 
     stop() {
@@ -285,7 +274,6 @@ function tunnelToInnerBrowser(outer, inner) {
       
       delete outer.frameLoader;
       delete outer[FRAME_LOADER];
-      delete outer.outerWindowID;
 
       
       
@@ -419,44 +407,20 @@ MessageManagerTunnel.prototype = {
 
   OUTER_TO_INNER_MESSAGE_PREFIXES: [
     
-    "ContextMenu:",
-    
     "debug:",
     
     "Findbar:",
     
     "Finder:",
-    
-    "InlineSpellChecker:",
-    
-    "PageInfo:",
-    
-    "Printing:",
-    
-    "Social:",
-    "PageMetadata:",
-    
-    "ViewSource:",
   ],
 
   INNER_TO_OUTER_MESSAGE_PREFIXES: [
     
-    "ContextMenu:",
-    
     "debug:",
     
     "Findbar:",
     
     "Finder:",
-    
-    "PageInfo:",
-    
-    "Printing:",
-    
-    "Social:",
-    "PageMetadata:",
-    
-    "ViewSource:",
   ],
 
   OUTER_TO_INNER_FRAME_SCRIPTS: [

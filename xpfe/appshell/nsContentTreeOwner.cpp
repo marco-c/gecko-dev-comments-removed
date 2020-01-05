@@ -781,6 +781,7 @@ nsContentTreeOwner::ProvideWindow(mozIDOMWindowProxy* aParent,
                                   nsIURI* aURI,
                                   const nsAString& aName,
                                   const nsACString& aFeatures,
+                                  bool aForceNoOpener,
                                   bool* aWindowIsNew,
                                   mozIDOMWindowProxy** aReturn)
 {
@@ -814,7 +815,7 @@ nsContentTreeOwner::ProvideWindow(mozIDOMWindowProxy* aParent,
 
     BrowserElementParent::OpenWindowResult opened =
       BrowserElementParent::OpenWindowInProcess(parent, aURI, aName,
-                                                aFeatures, aReturn);
+                                                aFeatures, aForceNoOpener, aReturn);
 
     
     
@@ -873,13 +874,19 @@ nsContentTreeOwner::ProvideWindow(mozIDOMWindowProxy* aParent,
   {
     dom::AutoNoJSAPI nojsapi;
 
+    uint32_t flags = nsIBrowserDOMWindow::OPEN_NEW;
+    if (aForceNoOpener) {
+      flags |= nsIBrowserDOMWindow::OPEN_NO_OPENER;
+    }
+
     
     
     
     
     
-    return browserDOMWin->OpenURI(nullptr, aParent, openLocation,
-                                  nsIBrowserDOMWindow::OPEN_NEW, aReturn);
+    return browserDOMWin->OpenURI(nullptr, aParent,
+                                  openLocation,
+                                  flags, aReturn);
   }
 }
 
