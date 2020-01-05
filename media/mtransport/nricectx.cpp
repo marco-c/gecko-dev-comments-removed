@@ -1124,7 +1124,8 @@ void NrIceCtx::SetConnectionState(ConnectionState state) {
         }
         break;
       case ICE_CTX_DISCONNECTED:
-        MOZ_CRASH("Transition from checking->disconnected should never happen");
+        
+        
         break;
       case ICE_CTX_CLOSED:
         
