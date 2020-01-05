@@ -11,7 +11,7 @@ use encoding::EncodingRef;
 use error_reporting::ParseErrorReporter;
 use font_face::{FontFaceRule, parse_font_face_block};
 use keyframes::{Keyframe, parse_keyframe_list};
-use media_queries::{Device, MediaQueryList, parse_media_query_list};
+use media_queries::{Device, MediaList, parse_media_query_list};
 use parking_lot::RwLock;
 use parser::{ParserContext, ParserContextExtraData, log_css_error};
 use properties::{PropertyDeclarationBlock, parse_property_declaration_list};
@@ -46,7 +46,7 @@ pub struct Stylesheet {
     
     pub rules: Vec<CSSRule>,
     
-    pub media: Option<MediaQueryList>,
+    pub media: Option<MediaList>,
     pub origin: Origin,
     pub dirty_on_viewport_size_change: bool,
 }
@@ -77,7 +77,7 @@ impl CSSRule {
     
     
     pub fn with_nested_rules_and_mq<F, R>(&self, mut f: F) -> R
-    where F: FnMut(&[CSSRule], Option<&MediaQueryList>) -> R {
+    where F: FnMut(&[CSSRule], Option<&MediaList>) -> R {
         match *self {
             CSSRule::Namespace(_) |
             CSSRule::Style(_) |
@@ -111,7 +111,7 @@ pub struct KeyframesRule {
 
 #[derive(Debug)]
 pub struct MediaRule {
-    pub media_queries: Arc<RwLock<MediaQueryList>>,
+    pub media_queries: Arc<RwLock<MediaList>>,
     pub rules: Vec<CSSRule>,
 }
 
@@ -188,7 +188,7 @@ impl Stylesheet {
     }
 
     
-    pub fn set_media(&mut self, media: Option<MediaQueryList>) {
+    pub fn set_media(&mut self, media: Option<MediaList>) {
         self.media = media;
     }
 
@@ -287,7 +287,7 @@ enum AtRulePrelude {
     
     FontFace,
     
-    Media(Arc<RwLock<MediaQueryList>>),
+    Media(Arc<RwLock<MediaList>>),
     
     Viewport,
     
