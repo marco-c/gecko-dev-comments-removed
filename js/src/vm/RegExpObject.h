@@ -79,9 +79,6 @@ RegExpAlloc(ExclusiveContext* cx, HandleObject proto = nullptr);
 extern JSObject*
 CloneRegExpObject(JSContext* cx, JSObject* regexp);
 
-extern JSObject*
-CreateRegExpPrototype(JSContext* cx, JSProtoKey key);
-
 
 
 
@@ -407,6 +404,7 @@ class RegExpObject : public NativeObject
     static const unsigned PRIVATE_SLOT = 3;
 
     static const Class class_;
+    static const Class protoClass_;
 
     
     

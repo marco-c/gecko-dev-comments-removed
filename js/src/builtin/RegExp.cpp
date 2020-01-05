@@ -577,14 +577,29 @@ js::regexp_clone(JSContext* cx, unsigned argc, Value* vp)
     return true;
 }
 
+MOZ_ALWAYS_INLINE bool
+IsRegExpInstanceOrPrototype(HandleValue v)
+{
+    if (!v.isObject())
+        return false;
+
+    return StandardProtoKeyOrNull(&v.toObject()) == JSProto_RegExp;
+}
+
 
 MOZ_ALWAYS_INLINE bool
 regexp_global_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsRegExpObject(args.thisv()));
-    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
+    MOZ_ASSERT(IsRegExpInstanceOrPrototype(args.thisv()));
 
     
+    if (!IsRegExpObject(args.thisv())) {
+        args.rval().setUndefined();
+        return true;
+    }
+
+    
+    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
     args.rval().setBoolean(reObj->global());
     return true;
 }
@@ -594,17 +609,23 @@ js::regexp_global(JSContext* cx, unsigned argc, JS::Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsRegExpObject, regexp_global_impl>(cx, args);
+    return CallNonGenericMethod<IsRegExpInstanceOrPrototype, regexp_global_impl>(cx, args);
 }
 
 
 MOZ_ALWAYS_INLINE bool
 regexp_ignoreCase_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsRegExpObject(args.thisv()));
-    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
+    MOZ_ASSERT(IsRegExpInstanceOrPrototype(args.thisv()));
 
     
+    if (!IsRegExpObject(args.thisv())) {
+        args.rval().setUndefined();
+        return true;
+    }
+
+    
+    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
     args.rval().setBoolean(reObj->ignoreCase());
     return true;
 }
@@ -614,17 +635,23 @@ js::regexp_ignoreCase(JSContext* cx, unsigned argc, JS::Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsRegExpObject, regexp_ignoreCase_impl>(cx, args);
+    return CallNonGenericMethod<IsRegExpInstanceOrPrototype, regexp_ignoreCase_impl>(cx, args);
 }
 
 
 MOZ_ALWAYS_INLINE bool
 regexp_multiline_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsRegExpObject(args.thisv()));
-    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
+    MOZ_ASSERT(IsRegExpInstanceOrPrototype(args.thisv()));
 
     
+    if (!IsRegExpObject(args.thisv())) {
+        args.rval().setUndefined();
+        return true;
+    }
+
+    
+    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
     args.rval().setBoolean(reObj->multiline());
     return true;
 }
@@ -634,17 +661,23 @@ js::regexp_multiline(JSContext* cx, unsigned argc, JS::Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsRegExpObject, regexp_multiline_impl>(cx, args);
+    return CallNonGenericMethod<IsRegExpInstanceOrPrototype, regexp_multiline_impl>(cx, args);
 }
 
 
 MOZ_ALWAYS_INLINE bool
 regexp_source_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsRegExpObject(args.thisv()));
-    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
+    MOZ_ASSERT(IsRegExpInstanceOrPrototype(args.thisv()));
 
     
+    if (!IsRegExpObject(args.thisv())) {
+        args.rval().setString(cx->names().emptyRegExp);
+        return true;
+    }
+
+    
+    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
     RootedAtom src(cx, reObj->getSource());
     if (!src)
         return false;
@@ -663,17 +696,23 @@ regexp_source(JSContext* cx, unsigned argc, JS::Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsRegExpObject, regexp_source_impl>(cx, args);
+    return CallNonGenericMethod<IsRegExpInstanceOrPrototype, regexp_source_impl>(cx, args);
 }
 
 
 MOZ_ALWAYS_INLINE bool
 regexp_sticky_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsRegExpObject(args.thisv()));
-    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
+    MOZ_ASSERT(IsRegExpInstanceOrPrototype(args.thisv()));
 
     
+    if (!IsRegExpObject(args.thisv())) {
+        args.rval().setUndefined();
+        return true;
+    }
+
+    
+    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
     args.rval().setBoolean(reObj->sticky());
     return true;
 }
@@ -683,16 +722,24 @@ js::regexp_sticky(JSContext* cx, unsigned argc, JS::Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsRegExpObject, regexp_sticky_impl>(cx, args);
+    return CallNonGenericMethod<IsRegExpInstanceOrPrototype, regexp_sticky_impl>(cx, args);
 }
 
 
 MOZ_ALWAYS_INLINE bool
 regexp_unicode_impl(JSContext* cx, const CallArgs& args)
 {
-    MOZ_ASSERT(IsRegExpObject(args.thisv()));
+    MOZ_ASSERT(IsRegExpInstanceOrPrototype(args.thisv()));
+
     
-    args.rval().setBoolean(args.thisv().toObject().as<RegExpObject>().unicode());
+    if (!IsRegExpObject(args.thisv())) {
+        args.rval().setUndefined();
+        return true;
+    }
+
+    
+    Rooted<RegExpObject*> reObj(cx, &args.thisv().toObject().as<RegExpObject>());
+    args.rval().setBoolean(reObj->unicode());
     return true;
 }
 
@@ -701,7 +748,7 @@ js::regexp_unicode(JSContext* cx, unsigned argc, JS::Value* vp)
 {
     
     CallArgs args = CallArgsFromVp(argc, vp);
-    return CallNonGenericMethod<IsRegExpObject, regexp_unicode_impl>(cx, args);
+    return CallNonGenericMethod<IsRegExpInstanceOrPrototype, regexp_unicode_impl>(cx, args);
 }
 
 const JSPropertySpec js::regexp_properties[] = {
@@ -828,25 +875,6 @@ const JSPropertySpec js::regexp_static_props[] = {
     JS_SELF_HOSTED_SYM_GET(species, "RegExpSpecies", 0),
     JS_PS_END
 };
-
-JSObject*
-js::CreateRegExpPrototype(JSContext* cx, JSProtoKey key)
-{
-    MOZ_ASSERT(key == JSProto_RegExp);
-
-    Rooted<RegExpObject*> proto(cx, cx->global()->createBlankPrototype<RegExpObject>(cx));
-    if (!proto)
-        return nullptr;
-    proto->NativeObject::setPrivate(nullptr);
-
-    if (!RegExpObject::assignInitialShape(cx, proto))
-        return nullptr;
-
-    RootedAtom source(cx, cx->names().empty);
-    proto->initAndZeroLastIndex(source, RegExpFlag(0), cx);
-
-    return proto;
-}
 
 template <typename CharT>
 static bool
