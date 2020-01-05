@@ -921,7 +921,7 @@ private:
   
   
   
-  static LayoutDeviceIntPoint sPreLockPoint;
+  LayoutDeviceIntPoint mPreLockPoint;
 
   
   
@@ -1015,7 +1015,7 @@ public:
   void KillClickHoldTimer();
   void FireContextClick();
 
-  static void SetPointerLock(nsIWidget* aWidget, nsIContent* aElement) ;
+  void SetPointerLock(nsIWidget* aWidget, nsIContent* aElement) ;
   static void sClickHoldCallback ( nsITimer* aTimer, void* aESM ) ;
 };
 
