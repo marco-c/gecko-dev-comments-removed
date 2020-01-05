@@ -39,6 +39,7 @@ const HAR_VERSION = "1.1";
 
 
 
+
 var HarBuilder = function (options) {
   this._options = options;
   this._pageMap = [];

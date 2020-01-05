@@ -4,13 +4,8 @@
 
 "use strict";
 
+const { getDisplayedRequests } = require("../selectors/index");
 const { SELECT_REQUEST } = require("../constants");
-const {
-  getDisplayedRequests,
-  getSortedRequests,
-} = require("../selectors/index");
-
-const PAGE_SIZE_ITEM_COUNT_RATIO = 5;
 
 
 
@@ -18,23 +13,11 @@ const PAGE_SIZE_ITEM_COUNT_RATIO = 5;
 function selectRequest(id) {
   return {
     type: SELECT_REQUEST,
-    id,
+    id
   };
 }
 
-
-
-
-function selectRequestByIndex(index) {
-  return (dispatch, getState) => {
-    const requests = getSortedRequests(getState());
-    let itemId;
-    if (index >= 0 && index < requests.size) {
-      itemId = requests.get(index).id;
-    }
-    dispatch(selectRequest(itemId));
-  };
-}
+const PAGE_SIZE_ITEM_COUNT_RATIO = 5;
 
 
 
@@ -67,6 +50,5 @@ function selectDelta(delta) {
 
 module.exports = {
   selectRequest,
-  selectRequestByIndex,
   selectDelta,
 };

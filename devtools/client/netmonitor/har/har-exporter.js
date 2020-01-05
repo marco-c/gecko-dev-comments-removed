@@ -70,6 +70,7 @@ const HarExporter = {
 
 
 
+
   save: function (options) {
     
     options.defaultFileName = Services.prefs.getCharPref(

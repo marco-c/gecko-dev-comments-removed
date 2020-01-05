@@ -11,20 +11,18 @@ add_task(function* () {
   let { tab, monitor } = yield initNetMonitor(SIMPLE_URL);
   info("Starting test... ");
 
-  let { document, gStore, windowRequire } = monitor.panelWin;
-  let Actions = windowRequire("devtools/client/netmonitor/actions/index");
-  let { EVENTS } = windowRequire("devtools/client/netmonitor/events");
-  let detailsPane = document.querySelector("#details-pane");
+  let { document, NetMonitorView } = monitor.panelWin;
+  let { RequestsMenu } = NetMonitorView;
   let detailsPanelToggleButton = document.querySelector(".network-details-panel-toggle");
   let clearButton = document.querySelector("#requests-menu-clear-button");
 
-  gStore.dispatch(Actions.batchEnable(false));
+  RequestsMenu.lazyUpdate = false;
 
   
-  assertNoRequestState();
+  assertNoRequestState(RequestsMenu, detailsPanelToggleButton);
 
   
-  let networkEvent = monitor.panelWin.once(EVENTS.NETWORK_EVENT);
+  let networkEvent = monitor.panelWin.once(monitor.panelWin.EVENTS.NETWORK_EVENT);
   tab.linkedBrowser.reload();
   yield networkEvent;
 
@@ -35,14 +33,14 @@ add_task(function* () {
   assertNoRequestState();
 
   
-  networkEvent = monitor.panelWin.once(EVENTS.NETWORK_EVENT);
+  networkEvent = monitor.panelWin.once(monitor.panelWin.EVENTS.NETWORK_EVENT);
   tab.linkedBrowser.reload();
   yield networkEvent;
 
   assertSingleRequestState();
 
   
-  EventUtils.sendMouseEvent({ type: "click" }, detailsPanelToggleButton);
+  EventUtils.sendMouseEvent({ type: "mousedown" }, detailsPanelToggleButton);
 
   ok(document.querySelector(".network-details-panel") &&
     !detailsPanelToggleButton.classList.contains("pane-collapsed"),
@@ -50,9 +48,9 @@ add_task(function* () {
 
   
   EventUtils.sendMouseEvent({ type: "click" }, clearButton);
-
   assertNoRequestState();
-  ok(!document.querySelector(".network-details-panel"),
+  ok(!document.querySelector(".network-details-panel") &&
+    detailsPanelToggleButton.classList.contains("pane-collapsed"),
     "The details pane should not be visible clicking 'clear'.");
 
   return teardown(monitor);
@@ -61,7 +59,7 @@ add_task(function* () {
 
 
   function assertSingleRequestState() {
-    is(gStore.getState().requests.requests.size, 1,
+    is(RequestsMenu.itemCount, 1,
       "The request menu should have one item at this point.");
     is(detailsPanelToggleButton.hasAttribute("disabled"), false,
       "The pane toggle button should be enabled after a request is made.");
@@ -71,7 +69,7 @@ add_task(function* () {
 
 
   function assertNoRequestState() {
-    is(gStore.getState().requests.requests.size, 0,
+    is(RequestsMenu.itemCount, 0,
       "The request menu should be empty at this point.");
     is(detailsPanelToggleButton.hasAttribute("disabled"), true,
       "The pane toggle button should be disabled when the request menu is cleared.");
