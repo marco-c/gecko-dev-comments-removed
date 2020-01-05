@@ -469,6 +469,11 @@ static inline HalfCorner operator++(HalfCorner& aHalfCorner) {
   return aHalfCorner;
 }
 
+constexpr bool HalfCornerIsX(HalfCorner aHalfCorner)
+{
+  return !(aHalfCorner % 2);
+}
+
 } 
 
 #endif 
