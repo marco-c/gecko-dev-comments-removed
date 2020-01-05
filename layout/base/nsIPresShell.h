@@ -643,7 +643,16 @@ public:
   inline void SetNeedLayoutFlush();
   inline void SetNeedThrottledAnimationFlush();
 
-  bool NeedStyleFlush() { return mNeedStyleFlush; }
+  bool ObservingStyleFlushes() const { return mObservingStyleFlushes; }
+  bool ObservingLayoutFlushes() const { return mObservingLayoutFlushes; }
+
+  void ObserveStyleFlushes()
+  {
+    if (!ObservingStyleFlushes())
+      DoObserveStyleFlushes();
+  }
+
+  bool NeedStyleFlush() const { return mNeedStyleFlush; }
 
   
 
@@ -1701,6 +1710,9 @@ protected:
   bool RemoveRefreshObserverInternal(nsARefreshObserver* aObserver,
                                      mozilla::FlushType aFlushType);
 
+  void DoObserveStyleFlushes();
+  void DoObserveLayoutFlushes();
+
   
 
 
@@ -1791,7 +1803,7 @@ public:
   }
 
   bool HasPendingReflow() const
-    { return mReflowScheduled || mReflowContinueTimer; }
+    { return mObservingLayoutFlushes || mReflowContinueTimer; }
 
   void SyncWindowProperties(nsView* aView);
 
@@ -1888,10 +1900,6 @@ protected:
   bool                      mIsFirstPaint : 1;
   bool                      mObservesMutationsForPrint : 1;
 
-  
-  
-  bool                      mReflowScheduled : 1;
-
   bool                      mSuppressInterruptibleReflows : 1;
   bool                      mScrollPositionClampingScrollPortSizeSet : 1;
 
@@ -1900,6 +1908,15 @@ protected:
 
   
   bool mNeedStyleFlush : 1;
+
+  
+  bool mObservingStyleFlushes: 1;
+
+  
+  
+  
+  
+  bool mObservingLayoutFlushes: 1;
 
   
   

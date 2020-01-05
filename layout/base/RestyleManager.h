@@ -44,12 +44,6 @@ public:
   
   uint32_t GetHoverGeneration() const { return mHoverGeneration; }
 
-  bool ObservingRefreshDriver() const { return mObservingRefreshDriver; }
-
-  void SetObservingRefreshDriver(bool aObserving) {
-      mObservingRefreshDriver = aObserving;
-  }
-
   void Disconnect() { mPresContext = nullptr; }
 
   static nsCString RestyleHintToString(nsRestyleHint aHint);
@@ -234,9 +228,6 @@ private:
   uint32_t mHoverGeneration;
 
   const StyleBackendType mType;
-
-  
-  bool mObservingRefreshDriver;
 
 protected:
   

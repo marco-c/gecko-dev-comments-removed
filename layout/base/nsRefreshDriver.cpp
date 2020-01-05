@@ -1868,9 +1868,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
           }
 
           nsCOMPtr<nsIPresShell> shellKungFuDeathGrip(shell);
-          RestyleManager* restyleManager =
-            shell->GetPresContext()->RestyleManager();
-          restyleManager->SetObservingRefreshDriver(false);
+          shell->mObservingStyleFlushes = false;
           shell->FlushPendingNotifications(ChangesToFlush(FlushType::Style, false));
           
           
@@ -1901,7 +1899,7 @@ nsRefreshDriver::Tick(int64_t aNowEpoch, TimeStamp aNowTime)
         }
 
         nsCOMPtr<nsIPresShell> shellKungFuDeathGrip(shell);
-        shell->mReflowScheduled = false;
+        shell->mObservingLayoutFlushes = false;
         shell->mSuppressInterruptibleReflows = false;
         FlushType flushType = HasPendingAnimations(shell)
                                ? FlushType::Layout
