@@ -536,6 +536,16 @@ PuppetWidget::ExecuteNativeKeyBinding(NativeKeyBindingsType aType,
 #ifdef MOZ_WIDGET_GONK
   return false;
 #else 
+  AutoCacheNativeKeyCommands autoCache(this);
+  if (!aEvent.mWidget && !mNativeKeyCommandsValid) {
+    MOZ_ASSERT(!aEvent.mFlags.mIsSynthesizedForTests);
+    
+    if (NS_WARN_IF(!aEvent.IsTrusted())) {
+      return false;
+    }
+    mTabChild->RequestNativeKeyBindings(&autoCache, &aEvent);
+  }
+
   MOZ_ASSERT(mNativeKeyCommandsValid);
 
   const nsTArray<mozilla::CommandInt>* commands = nullptr;
