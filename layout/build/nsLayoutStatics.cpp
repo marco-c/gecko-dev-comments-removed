@@ -102,6 +102,11 @@
 #include "Latency.h"
 #include "WebAudioUtils.h"
 
+#ifdef MOZ_WIDGET_GONK
+#include "nsVolumeService.h"
+using namespace mozilla::system;
+#endif
+
 #include "nsError.h"
 
 #include "nsJSEnvironment.h"
@@ -127,6 +132,7 @@
 #include "mozilla/ServoBindings.h"
 #include "mozilla/StaticPresData.h"
 #include "mozilla/dom/WebIDLGlobalNameHash.h"
+#include "mozilla/dom/ipc/IPCBlobInputStreamStorage.h"
 
 using namespace mozilla;
 using namespace mozilla::net;
@@ -315,6 +321,9 @@ nsLayoutStatics::Initialize()
   MediaPrefs::GetSingleton();
 #endif
 
+  
+  mozilla::dom::IPCBlobInputStreamStorage::Initialize();
+
   return NS_OK;
 }
 
@@ -396,6 +405,10 @@ nsLayoutStatics::Shutdown()
   CubebUtils::ShutdownLibrary();
   AsyncLatencyLogger::ShutdownLogger();
   WebAudioUtils::Shutdown();
+
+#ifdef MOZ_WIDGET_GONK
+  nsVolumeService::Shutdown();
+#endif
 
 #ifdef MOZ_WEBSPEECH
   nsSynthVoiceRegistry::Shutdown();
