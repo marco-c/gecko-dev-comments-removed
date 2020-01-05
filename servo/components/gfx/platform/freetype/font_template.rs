@@ -3,7 +3,7 @@
 
 
 use std::fs::File;
-use std::io::Read;
+use std::io::{Read, Error};
 use string_cache::Atom;
 use webrender_traits::NativeFontHandle;
 
@@ -18,24 +18,24 @@ pub struct FontTemplateData {
 }
 
 impl FontTemplateData {
-    pub fn new(identifier: Atom, font_data: Option<Vec<u8>>) -> FontTemplateData {
+    pub fn new(identifier: Atom, font_data: Option<Vec<u8>>) -> Result<FontTemplateData, Error> {
         let bytes = match font_data {
             Some(bytes) => {
                 bytes
             },
             None => {
                 
-                let mut file = File::open(&*identifier).unwrap();
+                let mut file = try!(File::open(&*identifier));
                 let mut buffer = vec![];
                 file.read_to_end(&mut buffer).unwrap();
                 buffer
             },
         };
 
-        FontTemplateData {
+        Ok(FontTemplateData {
             bytes: bytes,
             identifier: identifier,
-        }
+        })
     }
 
     
