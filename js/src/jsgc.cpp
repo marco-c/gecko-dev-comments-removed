@@ -226,9 +226,9 @@
 #include "js/SliceBudget.h"
 #include "proxy/DeadObjectProxy.h"
 #include "vm/Debugger.h"
+#include "vm/GeckoProfiler.h"
 #include "vm/ProxyObject.h"
 #include "vm/Shape.h"
-#include "vm/SPSProfiler.h"
 #include "vm/String.h"
 #include "vm/Symbol.h"
 #include "vm/Time.h"
@@ -2529,7 +2529,7 @@ GCRuntime::updatePointersToRelocatedCells(Zone* zone, AutoLockForExclusiveAccess
     for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next())
         comp->fixupAfterMovingGC();
     JSCompartment::fixupCrossCompartmentWrappersAfterMovingGC(&trc);
-    rt->spsProfiler.fixupStringsMapAfterMovingGC();
+    rt->geckoProfiler.fixupStringsMapAfterMovingGC();
 
     
     
@@ -7123,7 +7123,7 @@ js::gc::CheckHashTablesAfterMovingGC(JSRuntime* rt)
 
 
 
-    rt->spsProfiler.checkStringsMapAfterMovingGC();
+    rt->geckoProfiler.checkStringsMapAfterMovingGC();
     for (ZonesIter zone(rt, SkipAtoms); !zone.done(); zone.next()) {
         zone->checkUniqueIdTableAfterMovingGC();
         zone->checkInitialShapesTableAfterMovingGC();

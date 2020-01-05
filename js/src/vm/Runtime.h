@@ -45,10 +45,10 @@
 #include "vm/CodeCoverage.h"
 #include "vm/CommonPropertyNames.h"
 #include "vm/DateTime.h"
+#include "vm/GeckoProfiler.h"
 #include "vm/MallocProvider.h"
 #include "vm/Scope.h"
 #include "vm/SharedImmutableStringsCache.h"
-#include "vm/SPSProfiler.h"
 #include "vm/Stack.h"
 #include "vm/Stopwatch.h"
 #include "vm/Symbol.h"
@@ -910,7 +910,7 @@ struct JSRuntime : public JS::shadow::Runtime,
     mozilla::UniquePtr<js::SourceHook> sourceHook;
 
     
-    js::SPSProfiler     spsProfiler;
+    js::GeckoProfiler   geckoProfiler;
 
     
     bool                profilingScripts;

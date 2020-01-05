@@ -30,8 +30,8 @@
 #include "jit/VMFunctions.h"
 #include "vm/ArgumentsObject.h"
 #include "vm/Debugger.h"
+#include "vm/GeckoProfiler.h"
 #include "vm/Interpreter.h"
-#include "vm/SPSProfiler.h"
 #include "vm/TraceLogging.h"
 #include "vm/TypeInference.h"
 

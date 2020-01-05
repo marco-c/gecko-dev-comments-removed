@@ -362,7 +362,7 @@ js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc, TraceOrMarkRuntime traceOrM
         c->traceRoots(trc, traceOrMark);
 
     
-    rt->spsProfiler.trace(trc);
+    rt->geckoProfiler.trace(trc);
 
     
     HelperThreadState().trace(trc);

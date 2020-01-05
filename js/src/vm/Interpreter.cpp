@@ -374,7 +374,7 @@ js::RunScript(JSContext* cx, RunState& state)
     js::AutoStopwatch stopwatch(cx);
 #endif 
 
-    SPSEntryMarker marker(cx->runtime(), state.script());
+    GeckoProfilerEntryMarker marker(cx->runtime(), state.script());
 
     state.script()->ensureNonLazyCanonicalFunction();
 
@@ -1925,11 +1925,11 @@ CASE(JSOP_LOOPENTRY)
         if (status == jit::Method_Error)
             goto error;
         if (status == jit::Method_Compiled) {
-            bool wasSPS = REGS.fp()->hasPushedSPSFrame();
+            bool wasProfiler = REGS.fp()->hasPushedGeckoProfilerFrame();
 
             jit::JitExecStatus maybeOsr;
             {
-                SPSBaselineOSRMarker spsOSR(cx->runtime(), wasSPS);
+                GeckoProfilerBaselineOSRMarker osr(cx->runtime(), wasProfiler);
                 maybeOsr = jit::EnterBaselineAtBranch(cx, REGS.fp(), REGS.pc);
             }
 
@@ -1941,8 +1941,9 @@ CASE(JSOP_LOOPENTRY)
 
             
             
-            if (wasSPS)
-                cx->runtime()->spsProfiler.exit(script, script->functionNonDelazifying());
+            
+            if (wasProfiler)
+                cx->runtime()->geckoProfiler.exit(script, script->functionNonDelazifying());
 
             if (activation.entryFrame() != REGS.fp())
                 goto jit_return_pop_frame;
@@ -2883,8 +2884,8 @@ END_CASE(JSOP_EVAL)
 CASE(JSOP_SPREADNEW)
 CASE(JSOP_SPREADCALL)
 CASE(JSOP_SPREADSUPERCALL)
-    if (REGS.fp()->hasPushedSPSFrame())
-        cx->runtime()->spsProfiler.updatePC(script, REGS.pc);
+    if (REGS.fp()->hasPushedGeckoProfilerFrame())
+        cx->runtime()->geckoProfiler.updatePC(script, REGS.pc);
     
 
 CASE(JSOP_SPREADEVAL)
@@ -2928,8 +2929,8 @@ CASE(JSOP_CALLITER)
 CASE(JSOP_SUPERCALL)
 CASE(JSOP_FUNCALL)
 {
-    if (REGS.fp()->hasPushedSPSFrame())
-        cx->runtime()->spsProfiler.updatePC(script, REGS.pc);
+    if (REGS.fp()->hasPushedGeckoProfilerFrame())
+        cx->runtime()->geckoProfiler.updatePC(script, REGS.pc);
 
     MaybeConstruct construct = MaybeConstruct(*REGS.pc == JSOP_NEW || *REGS.pc == JSOP_SUPERCALL);
     unsigned argStackSlots = GET_ARGC(REGS.pc) + construct;

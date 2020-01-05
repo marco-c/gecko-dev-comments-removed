@@ -41,7 +41,7 @@ class CallObject;
 class FrameIter;
 class EnvironmentObject;
 class ScriptFrameIter;
-class SPSProfiler;
+class GeckoProfiler;
 class InterpreterFrame;
 class LexicalEnvironmentObject;
 class EnvironmentIter;
@@ -318,7 +318,7 @@ class InterpreterFrame
         DEBUGGEE               =       0x40,  
 
         
-        HAS_PUSHED_SPS_FRAME   =       0x80,  
+        HAS_PUSHED_PROF_FRAME  =       0x80,  
 
         
 
@@ -666,16 +666,16 @@ class InterpreterFrame
 
     
 
-    bool hasPushedSPSFrame() {
-        return !!(flags_ & HAS_PUSHED_SPS_FRAME);
+    bool hasPushedGeckoProfilerFrame() {
+        return !!(flags_ & HAS_PUSHED_PROF_FRAME);
     }
 
-    void setPushedSPSFrame() {
-        flags_ |= HAS_PUSHED_SPS_FRAME;
+    void setPushedGeckoProfilerFrame() {
+        flags_ |= HAS_PUSHED_PROF_FRAME;
     }
 
-    void unsetPushedSPSFrame() {
-        flags_ &= ~HAS_PUSHED_SPS_FRAME;
+    void unsetPushedGeckoProfilerFrame() {
+        flags_ &= ~HAS_PUSHED_PROF_FRAME;
     }
 
     

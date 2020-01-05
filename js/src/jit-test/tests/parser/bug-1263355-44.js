@@ -3,7 +3,7 @@ if (!('oomTest' in this))
 
 
 "use strict";
-enableSPSProfiling();
+enableGeckoProfiling();
 oomTest(function() {
     eval("(function() {})()");
 });

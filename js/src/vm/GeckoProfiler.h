@@ -4,8 +4,8 @@
 
 
 
-#ifndef vm_SPSProfiler_h
-#define vm_SPSProfiler_h
+#ifndef vm_GeckoProfiler_h
+#define vm_GeckoProfiler_h
 
 #include "mozilla/DebugOnly.h"
 #include "mozilla/GuardObjects.h"
@@ -105,6 +105,8 @@
 
 
 
+
+
 namespace js {
 
 
@@ -115,15 +117,15 @@ using ProfileStringMap = HashMap<JSScript*,
                                  DefaultHasher<JSScript*>,
                                  SystemAllocPolicy>;
 
-class AutoSPSEntry;
-class SPSEntryMarker;
-class SPSBaselineOSRMarker;
+class AutoGeckoProfilerEntry;
+class GeckoProfilerEntryMarker;
+class GeckoProfilerBaselineOSRMarker;
 
-class SPSProfiler
+class GeckoProfiler
 {
-    friend class AutoSPSEntry;
-    friend class SPSEntryMarker;
-    friend class SPSBaselineOSRMarker;
+    friend class AutoGeckoProfilerEntry;
+    friend class GeckoProfilerEntryMarker;
+    friend class GeckoProfilerBaselineOSRMarker;
 
     JSRuntime*           rt;
     ExclusiveData<ProfileStringMap> strings;
@@ -140,7 +142,7 @@ class SPSProfiler
     void pop();
 
   public:
-    explicit SPSProfiler(JSRuntime* rt);
+    explicit GeckoProfiler(JSRuntime* rt);
 
     bool init();
 
@@ -234,13 +236,13 @@ class MOZ_RAII AutoSuppressProfilerSampling
 };
 
 inline size_t
-SPSProfiler::stringsCount()
+GeckoProfiler::stringsCount()
 {
     return strings.lock()->count();
 }
 
 inline void
-SPSProfiler::stringsReset()
+GeckoProfiler::stringsReset()
 {
     strings.lock()->clear();
 }
@@ -250,16 +252,16 @@ SPSProfiler::stringsReset()
 
 
 
-class MOZ_RAII SPSEntryMarker
+class MOZ_RAII GeckoProfilerEntryMarker
 {
   public:
-    explicit SPSEntryMarker(JSRuntime* rt,
-                            JSScript* script
-                            MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    ~SPSEntryMarker();
+    explicit GeckoProfilerEntryMarker(JSRuntime* rt,
+                                      JSScript* script
+                                      MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    ~GeckoProfilerEntryMarker();
 
   private:
-    SPSProfiler* profiler;
+    GeckoProfiler* profiler;
     mozilla::DebugOnly<uint32_t> size_before;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
@@ -269,16 +271,16 @@ class MOZ_RAII SPSEntryMarker
 
 
 
-class MOZ_NONHEAP_CLASS AutoSPSEntry
+class MOZ_NONHEAP_CLASS AutoGeckoProfilerEntry
 {
   public:
-    explicit AutoSPSEntry(JSRuntime* rt, const char* label,
-                          ProfileEntry::Category category = ProfileEntry::Category::JS
-                          MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    ~AutoSPSEntry();
+    explicit AutoGeckoProfilerEntry(JSRuntime* rt, const char* label,
+                                    ProfileEntry::Category category = ProfileEntry::Category::JS
+                                    MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    ~AutoGeckoProfilerEntry();
 
   private:
-    SPSProfiler* profiler_;
+    GeckoProfiler* profiler_;
     mozilla::DebugOnly<uint32_t> sizeBefore_;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
@@ -288,19 +290,18 @@ class MOZ_NONHEAP_CLASS AutoSPSEntry
 
 
 
-class MOZ_RAII SPSBaselineOSRMarker
+class MOZ_RAII GeckoProfilerBaselineOSRMarker
 {
   public:
-    explicit SPSBaselineOSRMarker(JSRuntime* rt, bool hasSPSFrame
-                                  MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
-    ~SPSBaselineOSRMarker();
+    explicit GeckoProfilerBaselineOSRMarker(JSRuntime* rt, bool hasProfilerFrame
+                                            MOZ_GUARD_OBJECT_NOTIFIER_PARAM);
+    ~GeckoProfilerBaselineOSRMarker();
 
   private:
-    SPSProfiler* profiler;
+    GeckoProfiler* profiler;
     mozilla::DebugOnly<uint32_t> size_before;
     MOZ_DECL_USE_GUARD_OBJECT_NOTIFIER
 };
-
 
 
 
@@ -315,20 +316,20 @@ class MOZ_RAII SPSBaselineOSRMarker
 
 
 template<class Assembler, class Register>
-class SPSInstrumentation
+class GeckoProfilerInstrumentation
 {
-    SPSProfiler* profiler_; 
+    GeckoProfiler* profiler_; 
 
   public:
     
 
 
 
-    explicit SPSInstrumentation(SPSProfiler* profiler) : profiler_(profiler) {}
+    explicit GeckoProfilerInstrumentation(GeckoProfiler* profiler) : profiler_(profiler) {}
 
     
     bool enabled() { return profiler_ && profiler_->enabled(); }
-    SPSProfiler* profiler() { MOZ_ASSERT(enabled()); return profiler_; }
+    GeckoProfiler* profiler() { MOZ_ASSERT(enabled()); return profiler_; }
     void disable() { profiler_ = nullptr; }
 };
 

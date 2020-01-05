@@ -64,7 +64,7 @@ class CompileRuntime
     const JitRuntime* jitRuntime();
 
     
-    SPSProfiler& spsProfiler();
+    GeckoProfiler& geckoProfiler();
 
     bool jitSupportsFloatingPoint();
     bool hadOutOfMemory();
@@ -138,8 +138,8 @@ class JitCompileOptions
         return cloneSingletons_;
     }
 
-    bool spsSlowAssertionsEnabled() const {
-        return spsSlowAssertionsEnabled_;
+    bool profilerSlowAssertionsEnabled() const {
+        return profilerSlowAssertionsEnabled_;
     }
 
     bool offThreadCompilationAvailable() const {
@@ -148,7 +148,7 @@ class JitCompileOptions
 
   private:
     bool cloneSingletons_;
-    bool spsSlowAssertionsEnabled_;
+    bool profilerSlowAssertionsEnabled_;
     bool offThreadCompilationAvailable_;
 };
 

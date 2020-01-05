@@ -163,6 +163,7 @@ RegisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
 
     
     
+    
     AcquireStackWalkWorkaroundLock();
 
     bool success = RtlAddFunctionTable(&r->runtimeFunction, 1, reinterpret_cast<DWORD64>(p));
@@ -177,6 +178,7 @@ UnregisterExecutableMemory(void* p, size_t bytes, size_t pageSize)
 {
     ExceptionHandlerRecord* r = reinterpret_cast<ExceptionHandlerRecord*>(p);
 
+    
     
     
     AcquireStackWalkWorkaroundLock();

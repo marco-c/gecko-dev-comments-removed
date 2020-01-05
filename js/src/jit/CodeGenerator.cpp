@@ -9803,6 +9803,7 @@ CodeGenerator::link(JSContext* cx, CompilerConstraintList* constraints)
     ionScript->setSkipArgCheckEntryOffset(getSkipArgCheckEntryOffset());
 
     
+    
     if (isProfilerInstrumentationEnabled())
         ionScript->setHasProfilingInstrumentation();
 
