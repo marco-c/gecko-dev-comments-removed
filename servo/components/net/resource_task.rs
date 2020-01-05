@@ -57,14 +57,14 @@ pub fn start_sending(start_chan: LoadConsumer, metadata: Metadata) -> ProgressSe
 
 
 pub fn start_sending_sniffed(start_chan: LoadConsumer, metadata: Metadata,
-                             classifier: Arc<MIMEClassifier>, partial_body: &Vec<u8>)
+                             classifier: Arc<MIMEClassifier>, partial_body: &[u8])
                              -> ProgressSender {
     start_sending_sniffed_opt(start_chan, metadata, classifier, partial_body).ok().unwrap()
 }
 
 
 pub fn start_sending_sniffed_opt(start_chan: LoadConsumer, mut metadata: Metadata,
-                                 classifier: Arc<MIMEClassifier>, partial_body: &Vec<u8>)
+                                 classifier: Arc<MIMEClassifier>, partial_body: &[u8])
                                  -> Result<ProgressSender, ()> {
     if opts::get().sniff_mime_types {
         

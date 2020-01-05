@@ -102,7 +102,7 @@ pub trait CompositorLayer {
     fn collect_old_layers<Window>(&self,
                                   compositor: &mut IOCompositor<Window>,
                                   pipeline_id: PipelineId,
-                                  new_layers: &Vec<LayerProperties>)
+                                  new_layers: &[LayerProperties])
                                   where Window: WindowMethods;
 
     
@@ -282,7 +282,7 @@ impl CompositorLayer for Layer<CompositorData> {
     fn collect_old_layers<Window>(&self,
                                   compositor: &mut IOCompositor<Window>,
                                   pipeline_id: PipelineId,
-                                  new_layers: &Vec<LayerProperties>)
+                                  new_layers: &[LayerProperties])
                                   where Window: WindowMethods {
         
         

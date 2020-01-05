@@ -736,8 +736,8 @@ impl Interpolate for TextShadowList {
 
 
 
-fn can_interpolate_list(from_list: &Vec<TransformOperation>,
-                        to_list: &Vec<TransformOperation>) -> bool {
+fn can_interpolate_list(from_list: &[TransformOperation],
+                        to_list: &[TransformOperation]) -> bool {
     
     if from_list.len() != to_list.len() {
         return false;
@@ -763,8 +763,8 @@ fn can_interpolate_list(from_list: &Vec<TransformOperation>,
 
 
 
-fn interpolate_transform_list(from_list: &Vec<TransformOperation>,
-                              to_list: &Vec<TransformOperation>,
+fn interpolate_transform_list(from_list: &[TransformOperation],
+                              to_list: &[TransformOperation],
                               time: f64) -> TransformList {
     let mut result = vec!();
 
@@ -823,7 +823,7 @@ fn interpolate_transform_list(from_list: &Vec<TransformOperation>,
 
 
 
-fn build_identity_transform_list(list: &Vec<TransformOperation>) -> Vec<TransformOperation> {
+fn build_identity_transform_list(list: &[TransformOperation]) -> Vec<TransformOperation> {
     let mut result = vec!();
 
     for operation in list {
