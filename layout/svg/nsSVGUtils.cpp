@@ -1104,113 +1104,127 @@ nsSVGUtils::GetBBox(nsIFrame *aFrame, uint32_t aFlags)
   if (aFrame->GetContent()->IsNodeOfType(nsINode::eTEXT)) {
     aFrame = aFrame->GetParent();
   }
-  gfxRect bbox;
+
+  if (aFrame->IsSVGText()) {
+    
+    
+    
+    
+    nsIFrame* ancestor = GetFirstNonAAncestorFrame(aFrame);
+    if (ancestor && ancestor->IsSVGText()) {
+      while (ancestor->GetType() != nsGkAtoms::svgTextFrame) {
+        ancestor = ancestor->GetParent();
+      }
+    }
+    aFrame = ancestor;
+  }
+
   nsSVGDisplayableFrame* svg = do_QueryFrame(aFrame);
   const bool hasSVGLayout = aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT;
-  if (hasSVGLayout || aFrame->IsSVGText() ||
-      
-      (svg && !(aFlags & eUseFrameBoundsForOuterSVG))) {
+  if (hasSVGLayout && !svg) {
     
     
-    
-    
-    if (aFrame->IsSVGText()) {
-      nsIFrame* ancestor = GetFirstNonAAncestorFrame(aFrame);
-      if (ancestor && ancestor->IsSVGText()) {
-        while (ancestor->GetType() != nsGkAtoms::svgTextFrame) {
-          ancestor = ancestor->GetParent();
-        }
-      }
-      svg = do_QueryFrame(ancestor);
-    }
-    nsIContent* content = aFrame->GetContent();
-    if (content->IsSVGElement() &&
-        !static_cast<const nsSVGElement*>(content)->HasValidDimensions()) {
-      return bbox;
-    }
-
-    FrameProperties props = aFrame->Properties();
-
-    if (aFlags == eBBoxIncludeFillGeometry) {
-      gfxRect* prop = props.Get(ObjectBoundingBoxProperty());
-      if (prop) {
-        return *prop;
-      }
-    }
-
-    gfxMatrix matrix;
-    if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame) {
-      
-      
-      
-      
-      
-      MOZ_ASSERT(content->IsSVGElement(), "bad cast");
-      nsSVGElement *element = static_cast<nsSVGElement*>(content);
-      matrix = element->PrependLocalTransformsTo(matrix, eChildToUserSpace);
-    }
-    bbox = svg->GetBBoxContribution(ToMatrix(matrix), aFlags).ToThebesRect();
-    
-    if (aFlags & nsSVGUtils::eBBoxIncludeClipped) {
-      gfxRect clipRect(0, 0, 0, 0);
-      float x, y, width, height;
-      gfxMatrix tm;
-      gfxRect fillBBox =
-        svg->GetBBoxContribution(ToMatrix(tm),
-                                 nsSVGUtils::eBBoxIncludeFill).ToThebesRect();
-      x = fillBBox.x;
-      y = fillBBox.y;
-      width = fillBBox.width;
-      height = fillBBox.height;
-      bool hasClip = aFrame->StyleDisplay()->IsScrollableOverflow();
-      if (hasClip) {
-        clipRect =
-          nsSVGUtils::GetClipRectForFrame(aFrame, x, y, width, height);
-          if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame ||
-              aFrame->GetType() == nsGkAtoms::svgUseFrame) {
-            clipRect = matrix.TransformBounds(clipRect);
-          }
-      }
-      nsSVGEffects::EffectProperties effectProperties =
-        nsSVGEffects::GetEffectProperties(aFrame);
-      if (effectProperties.HasInvalidClipPath()) {
-        bbox = gfxRect(0, 0, 0, 0);
-      } else {
-        nsSVGClipPathFrame *clipPathFrame =
-          effectProperties.GetClipPathFrame();
-        if (clipPathFrame) {
-          SVGClipPathElement *clipContent =
-            static_cast<SVGClipPathElement*>(clipPathFrame->GetContent());
-          RefPtr<SVGAnimatedEnumeration> units = clipContent->ClipPathUnits();
-          if (units->AnimVal() == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
-            matrix.Translate(gfxPoint(x, y));
-            matrix.Scale(width, height);
-          } else if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame) {
-            matrix.Reset();
-          }
-          bbox =
-            clipPathFrame->GetBBoxForClipPathFrame(bbox, matrix).ToThebesRect();
-        }
-
-        if (hasClip) {
-          bbox = bbox.Intersect(clipRect);
-        }
-
-        if (bbox.IsEmpty()) {
-          bbox = gfxRect(0, 0, 0, 0);
-        }
-      }
-    }
-
-    if (aFlags == eBBoxIncludeFillGeometry) {
-      
-      
-      props.Set(ObjectBoundingBoxProperty(), new gfxRect(bbox));
-    }
-
-    return bbox;
+    return gfxRect();
   }
-  return nsSVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(aFrame);
+
+  const bool isOuterSVG = svg && !hasSVGLayout;
+  MOZ_ASSERT_IF(isOuterSVG, aFrame->GetType() == nsGkAtoms::svgOuterSVGFrame);
+  if (!svg ||
+      (isOuterSVG && (aFlags & eUseFrameBoundsForOuterSVG))) {
+    
+    MOZ_ASSERT(!hasSVGLayout);
+    return nsSVGIntegrationUtils::GetSVGBBoxForNonSVGFrame(aFrame);
+  }
+
+  MOZ_ASSERT(svg);
+
+  nsIContent* content = aFrame->GetContent();
+  if (content->IsSVGElement() &&
+      !static_cast<const nsSVGElement*>(content)->HasValidDimensions()) {
+    return gfxRect();
+  }
+
+  FrameProperties props = aFrame->Properties();
+
+  if (aFlags == eBBoxIncludeFillGeometry) {
+    gfxRect* prop = props.Get(ObjectBoundingBoxProperty());
+    if (prop) {
+      return *prop;
+    }
+  }
+
+  gfxMatrix matrix;
+  if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame) {
+    
+    
+    
+    
+    
+    MOZ_ASSERT(content->IsSVGElement(), "bad cast");
+    nsSVGElement *element = static_cast<nsSVGElement*>(content);
+    matrix = element->PrependLocalTransformsTo(matrix, eChildToUserSpace);
+  }
+  gfxRect bbox =
+    svg->GetBBoxContribution(ToMatrix(matrix), aFlags).ToThebesRect();
+  
+  if (aFlags & nsSVGUtils::eBBoxIncludeClipped) {
+    gfxRect clipRect(0, 0, 0, 0);
+    float x, y, width, height;
+    gfxMatrix tm;
+    gfxRect fillBBox =
+      svg->GetBBoxContribution(ToMatrix(tm),
+                               nsSVGUtils::eBBoxIncludeFill).ToThebesRect();
+    x = fillBBox.x;
+    y = fillBBox.y;
+    width = fillBBox.width;
+    height = fillBBox.height;
+    bool hasClip = aFrame->StyleDisplay()->IsScrollableOverflow();
+    if (hasClip) {
+      clipRect =
+        nsSVGUtils::GetClipRectForFrame(aFrame, x, y, width, height);
+        if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame ||
+            aFrame->GetType() == nsGkAtoms::svgUseFrame) {
+          clipRect = matrix.TransformBounds(clipRect);
+        }
+    }
+    nsSVGEffects::EffectProperties effectProperties =
+      nsSVGEffects::GetEffectProperties(aFrame);
+    if (effectProperties.HasInvalidClipPath()) {
+      bbox = gfxRect(0, 0, 0, 0);
+    } else {
+      nsSVGClipPathFrame *clipPathFrame =
+        effectProperties.GetClipPathFrame();
+      if (clipPathFrame) {
+        SVGClipPathElement *clipContent =
+          static_cast<SVGClipPathElement*>(clipPathFrame->GetContent());
+        RefPtr<SVGAnimatedEnumeration> units = clipContent->ClipPathUnits();
+        if (units->AnimVal() == SVG_UNIT_TYPE_OBJECTBOUNDINGBOX) {
+          matrix.Translate(gfxPoint(x, y));
+          matrix.Scale(width, height);
+        } else if (aFrame->GetType() == nsGkAtoms::svgForeignObjectFrame) {
+          matrix.Reset();
+        }
+        bbox =
+          clipPathFrame->GetBBoxForClipPathFrame(bbox, matrix).ToThebesRect();
+      }
+
+      if (hasClip) {
+        bbox = bbox.Intersect(clipRect);
+      }
+
+      if (bbox.IsEmpty()) {
+        bbox = gfxRect(0, 0, 0, 0);
+      }
+    }
+  }
+
+  if (aFlags == eBBoxIncludeFillGeometry) {
+    
+    
+    props.Set(ObjectBoundingBoxProperty(), new gfxRect(bbox));
+  }
+
+  return bbox;
 }
 
 gfxPoint
