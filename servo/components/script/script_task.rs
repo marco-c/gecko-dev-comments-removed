@@ -62,7 +62,7 @@ use script_traits::{CompositorEvent, MouseButton};
 use script_traits::ConstellationControlMsg;
 use script_traits::{NewLayoutInfo, OpaqueScriptLayoutChannel};
 use script_traits::{ScriptState, ScriptTaskFactory};
-use msg::compositor_msg::{LayerId, ScriptListener};
+use msg::compositor_msg::{LayerId, ScriptToCompositorMsg};
 use msg::constellation_msg::{ConstellationChan, FocusType};
 use msg::constellation_msg::{LoadData, PipelineId, SubpageId, MozBrowserEvent, WorkerId};
 use msg::constellation_msg::{Failure, WindowSizeData, PipelineExitType};
@@ -361,7 +361,7 @@ pub struct ScriptTask {
     constellation_chan: ConstellationChan,
 
     
-    compositor: DOMRefCell<ScriptListener>,
+    compositor: DOMRefCell<IpcSender<ScriptToCompositorMsg>>,
 
     
     image_cache_port: Receiver<ImageCacheResult>,
@@ -443,7 +443,7 @@ impl ScriptTaskFactory for ScriptTask {
     fn create(_phantom: Option<&mut ScriptTask>,
               id: PipelineId,
               parent_info: Option<(PipelineId, SubpageId)>,
-              compositor: ScriptListener,
+              compositor: IpcSender<ScriptToCompositorMsg>,
               layout_chan: &OpaqueScriptLayoutChannel,
               control_chan: Sender<ConstellationControlMsg>,
               control_port: Receiver<ConstellationControlMsg>,
@@ -579,7 +579,7 @@ impl ScriptTask {
     }
 
     
-    pub fn new(compositor: ScriptListener,
+    pub fn new(compositor: IpcSender<ScriptToCompositorMsg>,
                port: Receiver<MainThreadScriptMsg>,
                chan: MainThreadScriptChan,
                control_chan: Sender<ConstellationControlMsg>,
@@ -1329,7 +1329,7 @@ impl ScriptTask {
         
         
         
-        self.compositor.borrow_mut().close();
+        self.compositor.borrow_mut().send(ScriptToCompositorMsg::Exit).unwrap();
     }
 
     
@@ -1506,7 +1506,7 @@ impl ScriptTask {
                                  MainThreadScriptChan(sender.clone()),
                                  self.image_cache_channel.clone(),
                                  self.control_chan.clone(),
-                                 self.compositor.borrow_mut().dup(),
+                                 self.compositor.borrow_mut().clone(),
                                  self.image_cache_task.clone(),
                                  self.resource_task.clone(),
                                  self.storage_task.clone(),
@@ -1601,7 +1601,8 @@ impl ScriptTask {
         
         
         
-        self.compositor.borrow_mut().scroll_fragment_point(pipeline_id, LayerId::null(), point);
+        self.compositor.borrow_mut().send(ScriptToCompositorMsg::ScrollFragmentPoint(
+                                                 pipeline_id, LayerId::null(), point)).unwrap();
     }
 
     
@@ -1699,7 +1700,7 @@ impl ScriptTask {
                 let page = get_page(&self.root_page(), pipeline_id);
                 let document = page.document();
                 document.r().dispatch_key_event(
-                    key, state, modifiers, &mut *self.compositor.borrow_mut());
+                    key, state, modifiers, &mut self.compositor.borrow_mut());
             }
         }
     }
