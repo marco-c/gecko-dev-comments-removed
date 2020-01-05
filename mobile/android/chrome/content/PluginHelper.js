@@ -200,17 +200,6 @@ var PluginHelper = {
 
         break;
       }
-
-      case "PluginNotFound": {
-        
-        
-        let learnMoreLink = doc.getAnonymousElementByAttribute(plugin, "class", "unsupportedLearnMoreLink");
-        let learnMoreUrl = Services.urlFormatter.formatURLPref("app.support.baseURL");
-        learnMoreUrl += "mobile-flash-unsupported";
-        learnMoreLink.href = learnMoreUrl;
-        overlay.classList.add("visible");
-        break;
-      }
     }
   },
 
