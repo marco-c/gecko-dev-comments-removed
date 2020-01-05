@@ -243,6 +243,13 @@ Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode)
 
 
             script->resetWarmUpCounter();
+
+            
+
+
+
+            if (script->hasBaselineScript())
+                script->baselineScript()->setControlFlowGraph(nullptr);
         }
 
         
@@ -255,6 +262,13 @@ Zone::discardJitCode(FreeOp* fop, bool discardBaselineCode)
 
         if (discardBaselineCode)
             jitZone()->optimizedStubSpace()->freeAllAfterMinorGC(fop->runtime());
+
+        
+
+
+
+
+        jitZone()->cfgSpace()->lifoAlloc().freeAll();
     }
 }
 

@@ -15,6 +15,7 @@
 #include "jit/CompileInfo.h"
 #include "jit/ICStubSpace.h"
 #include "jit/IonCode.h"
+#include "jit/IonControlFlow.h"
 #include "jit/JitFrames.h"
 #include "jit/shared/Assembler-shared.h"
 #include "js/GCHashTable.h"
@@ -384,10 +385,15 @@ class JitZone
 {
     
     OptimizedICStubSpace optimizedStubSpace_;
+    
+    CFGSpace cfgSpace_;
 
   public:
     OptimizedICStubSpace* optimizedStubSpace() {
         return &optimizedStubSpace_;
+    }
+    CFGSpace* cfgSpace() {
+        return &cfgSpace_;
     }
 };
 
