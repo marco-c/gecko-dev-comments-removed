@@ -24,7 +24,7 @@ class nsIContentViewer;
 class nsIDocShellTreeItem;
 class nsILayoutHistoryState;
 class nsDocShellEditorData;
-class nsISupportsArray;
+class nsIMutableArray;
 
 
 
@@ -89,7 +89,7 @@ private:
   bool mExpired;
   nsCOMPtr<nsISupports> mWindowState;
   nsIntRect mViewerBounds;
-  nsCOMPtr<nsISupportsArray> mRefreshURIList;
+  nsCOMPtr<nsIMutableArray> mRefreshURIList;
   nsExpirationState mExpirationState;
   nsAutoPtr<nsDocShellEditorData> mEditorData;
 };
