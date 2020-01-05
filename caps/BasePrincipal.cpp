@@ -398,22 +398,6 @@ BasePrincipal::EqualsConsideringDomain(nsIPrincipal *aOther, bool *aResult)
 }
 
 bool
-BasePrincipal::EqualsIgnoringAddonId(nsIPrincipal *aOther)
-{
-  MOZ_ASSERT(aOther);
-
-  
-  
-  if (!dom::ChromeUtils::IsOriginAttributesEqualIgnoringAddonId(
-          OriginAttributesRef(), Cast(aOther)->OriginAttributesRef())) {
-    return false;
-  }
-
-  return SubsumesInternal(aOther, DontConsiderDocumentDomain) &&
-         Cast(aOther)->SubsumesInternal(this, DontConsiderDocumentDomain);
-}
-
-bool
 BasePrincipal::FastSubsumes(nsIPrincipal* aOther)
 {
   
