@@ -1127,11 +1127,7 @@ pref("services.sync.prefs.sync.xpinstall.whitelist.required", true);
 
 pref("services.sync.syncedTabs.showRemoteIcons", true);
 
-#ifdef NIGHTLY_BUILD
 pref("services.sync.sendTabToDevice.enabled", true);
-#else
-pref("services.sync.sendTabToDevice.enabled", false);
-#endif
 
 
 #ifdef MOZ_DEV_EDITION
