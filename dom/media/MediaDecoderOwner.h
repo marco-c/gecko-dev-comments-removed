@@ -11,6 +11,7 @@
 namespace mozilla {
 
 class AbstractThread;
+class GMPCrashHelper;
 class VideoFrameContainer;
 class MediaInfo;
 class MediaResult;
@@ -169,6 +170,9 @@ public:
   
   
   virtual void RemoveMediaTracks() = 0;
+
+  
+  virtual already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() = 0;
 };
 
 } 
