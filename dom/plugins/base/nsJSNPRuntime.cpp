@@ -1728,7 +1728,13 @@ NPObjWrapper_Finalize(js::FreeOp *fop, JSObject *obj)
   NPObject *npobj = (NPObject *)::JS_GetPrivate(obj);
   if (npobj) {
     if (sNPObjWrappers) {
-      sNPObjWrappers->Remove(npobj);
+      
+      
+      auto entry =
+        static_cast<NPObjWrapperHashEntry*>(sNPObjWrappers->Search(npobj));
+      if (entry && entry->mJSObj == obj) {
+        sNPObjWrappers->Remove(npobj);
+      }
     }
   }
 
@@ -1908,12 +1914,22 @@ nsNPObjWrapper::GetNewOrUsed(NPP npp, JSContext *cx, NPObject *npobj)
 
   if (entry->mJSObj) {
     
-    
-    JS::Rooted<JSObject*> obj(cx, entry->mJSObj);
-    if (!JS_WrapObject(cx, &obj)) {
-      return nullptr;
+    JSObject* obj = entry->mJSObj;
+    if (js::gc::EdgeNeedsSweepUnbarriered(&obj)) {
+      
+      
+      
+      
+      entry->mJSObj = nullptr;
+    } else {
+      
+      
+      JS::Rooted<JSObject*> obj(cx, entry->mJSObj);
+      if (!JS_WrapObject(cx, &obj)) {
+        return nullptr;
+      }
+      return obj;
     }
-    return obj;
   }
 
   entry->mNPObj = npobj;
