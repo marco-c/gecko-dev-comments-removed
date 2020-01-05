@@ -300,10 +300,15 @@ this.XPCOMUtils = {
 
 
 
+
+
+
+
   defineLazyPreferenceGetter: function XPCU_defineLazyPreferenceGetter(
                                    aObject, aName, aPreference,
                                    aDefaultValue = null,
-                                   aOnUpdate = null)
+                                   aOnUpdate = null,
+                                   aTransform = val => val)
   {
     
     
@@ -343,7 +348,7 @@ this.XPCOMUtils = {
 
     function lazyGetter() {
       if (observer.value === undefined) {
-        observer.value = Preferences.get(aPreference, aDefaultValue);
+        observer.value = aTransform(Preferences.get(aPreference, aDefaultValue));
       }
       return observer.value;
     }
