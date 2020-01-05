@@ -1376,6 +1376,35 @@ var AddonManagerInternal = {
     return uri.replace(/\+/g, "%2B");
   },
 
+  _updatePromptHandler(info) {
+    let oldPerms = info.existingAddon.userPermissions || {hosts: [], permissions: []};
+    let newPerms = info.addon.userPermissions;
+
+    
+    
+    
+    
+    
+    let difference = {
+      hosts: newPerms.hosts.filter(perm => !oldPerms.hosts.includes(perm)),
+      permissions: newPerms.permissions.filter(perm => !oldPerms.permissions.includes(perm)),
+    };
+
+    
+    if (difference.hosts.length == 0 && difference.permissions.length == 0) {
+      return Promise.resolve();
+    }
+
+    return new Promise((resolve, reject) => {
+      let subject = {wrappedJSObject: {
+        addon: info.addon,
+        permissions: difference,
+        resolve, reject
+      }};
+      Services.obs.notifyObservers(subject, "webextension-update-permissions", null);
+    });
+  },
+
   
 
 
@@ -1430,6 +1459,9 @@ var AddonManagerInternal = {
                   
                   
                   logger.debug(`Starting upgrade install of ${aAddon.id}`);
+                  if (WEBEXT_PERMISSION_PROMPTS) {
+                    aInstall.promptHandler = (...args) => AddonManagerInternal._updatePromptHandler(...args);
+                  }
                   aInstall.install();
                 }
               },
