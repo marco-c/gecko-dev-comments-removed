@@ -89,6 +89,7 @@
 #include "nsFontInflationData.h"
 #include "nsRegion.h"
 #include "nsIFrameInlines.h"
+#include "nsStyleChangeList.h"
 
 #include "mozilla/AsyncEventDispatcher.h"
 #include "mozilla/EffectCompositor.h"
@@ -99,6 +100,7 @@
 #include "mozilla/Preferences.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/css/ImageLoader.h"
 #include "mozilla/gfx/Tools.h"
 #include "nsPrintfCString.h"
@@ -10048,6 +10050,50 @@ nsFrame::BoxMetrics() const
   nsBoxLayoutMetrics* metrics = Properties().Get(BoxMetricsProperty());
   NS_ASSERTION(metrics, "A box layout method was called but InitBoxMetrics was never called");
   return metrics;
+}
+
+void
+nsFrame::UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
+                                   ServoStyleSet& aStyleSet,
+                                   nsStyleChangeList& aChangeList,
+                                   nsChangeHint aHintForThisFrame)
+{
+  MOZ_ASSERT(aChildFrame->GetParent() == this,
+             "This should only be used for children!");
+  MOZ_ASSERT(aChildFrame->GetContent() == GetContent(),
+             "What content node is it a frame for?");
+
+  
+  
+  nsIAtom* pseudo = aChildFrame->StyleContext()->GetPseudo();
+  MOZ_ASSERT(nsCSSAnonBoxes::IsAnonBox(pseudo), "Child is not an anon box?");
+
+  
+  RefPtr<nsStyleContext> newContext =
+    aStyleSet.ResolveAnonymousBoxStyle(pseudo, StyleContext());
+
+  
+  
+  
+  
+  
+  uint32_t equalStructs, samePointerStructs; 
+  nsChangeHint childHint = aChildFrame->StyleContext()->CalcStyleDifference(
+    newContext,
+    NS_HintsNotHandledForDescendantsIn(aHintForThisFrame),
+    &equalStructs,
+    &samePointerStructs);
+  if (childHint) {
+    aChangeList.AppendChange(aChildFrame, aChildFrame->GetContent(), childHint);
+  }
+
+  for (nsIFrame* kid = aChildFrame; kid; kid = kid->GetNextContinuation()) {
+    kid->SetStyleContext(newContext);
+  }
+
+  
+  
+  aChildFrame->UpdateStyleOfOwnedAnonBoxes(aStyleSet, aChangeList, childHint);
 }
 
  void

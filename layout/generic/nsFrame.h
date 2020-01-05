@@ -688,6 +688,13 @@ protected:
   
   void FireDOMEvent(const nsAString& aDOMEventName, nsIContent *aContent = nullptr);
 
+  
+  
+  void UpdateStyleOfChildAnonBox(nsIFrame* aChildFrame,
+                                 mozilla::ServoStyleSet& aStyleSet,
+                                 nsStyleChangeList& aChangeList,
+                                 nsChangeHint aHintForThisFrame);
+
 private:
   void BoxReflow(nsBoxLayoutState& aState,
                  nsPresContext*    aPresContext,
