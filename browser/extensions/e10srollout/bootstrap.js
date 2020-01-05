@@ -9,6 +9,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 Cu.import("resource://gre/modules/Preferences.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/UpdateUtils.jsm");
+Cu.import("resource://gre/modules/AppConstants.jsm");
 
  
 const TEST_THRESHOLD = {
@@ -22,6 +23,24 @@ const ADDON_ROLLOUT_POLICY = {
   "release": "50allmpc",
   "esr": "esrA", 
 };
+
+if (AppConstants.RELEASE_OR_BETA) {
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  TEST_THRESHOLD.default = TEST_THRESHOLD.release;
+  ADDON_ROLLOUT_POLICY.default = ADDON_ROLLOUT_POLICY.release;
+}
+
 
 const PREF_COHORT_SAMPLE       = "e10s.rollout.cohortSample";
 const PREF_COHORT_NAME         = "e10s.rollout.cohort";
