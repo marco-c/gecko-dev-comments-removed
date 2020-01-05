@@ -19,8 +19,6 @@ public:
   
   void StreamJSON(SpliceableJSONWriter& aWriter, UniqueStacks& aUniqueStacks);
 
-  virtual void EndUnwind();
-
 private:
   friend class ProfilerBacktrace;
 };

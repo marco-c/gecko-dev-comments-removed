@@ -19,12 +19,6 @@ SyncProfile::~SyncProfile()
   MOZ_COUNT_DTOR(SyncProfile);
 }
 
-void
-SyncProfile::EndUnwind()
-{
-  ThreadInfo::EndUnwind();
-}
-
 
 
 void
