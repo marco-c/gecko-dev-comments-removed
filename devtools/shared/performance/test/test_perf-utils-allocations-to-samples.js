@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 
@@ -65,9 +67,15 @@ var EXPECTED_OUTPUT = {
     },
     "data": [
       null,
-      [ null, 1 ], 
-      [ 1, 2 ],    
-      [ 2, 3 ]     
+
+      
+      [ null, 1 ],
+
+      
+      [ 1, 2 ],
+
+      
+      [ 2, 3 ]
     ]
   },
   frameTable: {

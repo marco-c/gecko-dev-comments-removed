@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 
 function run_test() {

@@ -2,20 +2,14 @@
 
 
 "use strict";
-var Cc = Components.classes;
-var Ci = Components.interfaces;
-var Cu = Components.utils;
-var Cr = Components.results;
-var CC = Components.Constructor;
 
+
+
+const { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 const { require } =
   Cu.import("resource://devtools/shared/Loader.jsm", {});
-const promise = require("promise");
 const defer = require("devtools/shared/defer");
-const { Task } = require("devtools/shared/task");
-
 const Services = require("Services");
-const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const xpcInspector = require("xpcInspector");
 const { DebuggerServer } = require("devtools/server/main");
 const { DebuggerClient } = require("devtools/shared/client/main");
@@ -32,42 +26,42 @@ Services.prefs.setBoolPref("devtools.debugger.remote-enabled", true);
 Services.prefs.setIntPref("devtools.remote.tls-handshake-timeout", 1000);
 
 
-function scriptErrorFlagsToKind(aFlags) {
-  var kind;
-  if (aFlags & Ci.nsIScriptError.warningFlag)
+function scriptErrorFlagsToKind(flags) {
+  let kind;
+  if (flags & Ci.nsIScriptError.warningFlag) {
     kind = "warning";
-  if (aFlags & Ci.nsIScriptError.exceptionFlag)
+  }
+  if (flags & Ci.nsIScriptError.exceptionFlag) {
     kind = "exception";
-  else
+  } else {
     kind = "error";
+  }
 
-  if (aFlags & Ci.nsIScriptError.strictFlag)
+  if (flags & Ci.nsIScriptError.strictFlag) {
     kind = "strict " + kind;
+  }
 
   return kind;
 }
 
 
 
-var errorCount = 0;
 var listener = {
-  observe: function (aMessage) {
-    errorCount++;
+  observe: function (message) {
+    let string;
     try {
-      
-      
-      var scriptError = aMessage.QueryInterface(Ci.nsIScriptError);
-      dump(aMessage.sourceName + ":" + aMessage.lineNumber + ": " +
-           scriptErrorFlagsToKind(aMessage.flags) + ": " +
-           aMessage.errorMessage + "\n");
-      var string = aMessage.errorMessage;
-    } catch (x) {
+      message.QueryInterface(Ci.nsIScriptError);
+      dump(message.sourceName + ":" + message.lineNumber + ": " +
+           scriptErrorFlagsToKind(message.flags) + ": " +
+           message.errorMessage + "\n");
+      string = message.errorMessage;
+    } catch (ex) {
       
       
       try {
-        var string = "" + aMessage.message;
-      } catch (x) {
-        var string = "<error converting error message to string>";
+        string = "" + message.message;
+      } catch (e) {
+        string = "<error converting error message to string>";
       }
     }
 
@@ -77,7 +71,7 @@ var listener = {
     }
 
     
-    if (!(aMessage.flags & Ci.nsIScriptError.strictFlag)) {
+    if (!(message.flags & Ci.nsIScriptError.strictFlag)) {
       do_print("head_dbg.js got console message: " + string + "\n");
     }
   }

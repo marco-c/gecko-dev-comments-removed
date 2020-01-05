@@ -1,6 +1,8 @@
 
 
 
+"use strict";
+
 
 
 function run_test() {
@@ -18,6 +20,7 @@ function run_test() {
   const o2 = {};
   let loader = new DevToolsLoader();
 
+  
   
   loader.require("devtools/shared/DevToolsUtils");
 

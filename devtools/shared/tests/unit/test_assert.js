@@ -2,6 +2,8 @@
 
 
 
+"use strict";
+
 
 
 ALLOW_CONSOLE_ERRORS = true;
@@ -32,5 +34,6 @@ function run_test() {
   }
 
   ok(assertionFailed,
-     "The assertion should have failed, which should throw an error when assertions are enabled.");
+     "The assertion should have failed, which should throw an error when assertions " +
+     "are enabled.");
 }

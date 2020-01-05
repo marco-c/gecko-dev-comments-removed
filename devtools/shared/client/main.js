@@ -7,7 +7,6 @@
 "use strict";
 
 const { Ci, Cu } = require("chrome");
-const Services = require("Services");
 const DevToolsUtils = require("devtools/shared/DevToolsUtils");
 const { getStack, callFunctionWithAsyncStack } = require("devtools/shared/platform/stack");
 
@@ -31,7 +30,7 @@ const noop = () => {};
 
 
 
-function eventSource(aProto) {
+function eventSource(proto) {
   
 
 
@@ -42,8 +41,8 @@ function eventSource(aProto) {
 
 
 
-  aProto.addListener = function (aName, aListener) {
-    if (typeof aListener != "function") {
+  proto.addListener = function (name, listener) {
+    if (typeof listener != "function") {
       throw TypeError("Listeners must be functions.");
     }
 
@@ -51,7 +50,7 @@ function eventSource(aProto) {
       this._listeners = {};
     }
 
-    this._getListeners(aName).push(aListener);
+    this._getListeners(name).push(listener);
   };
 
   
@@ -63,12 +62,12 @@ function eventSource(aProto) {
 
 
 
-  aProto.addOneTimeListener = function (aName, aListener) {
+  proto.addOneTimeListener = function (name, listener) {
     let l = (...args) => {
-      this.removeListener(aName, l);
-      aListener.apply(null, args);
+      this.removeListener(name, l);
+      listener.apply(null, args);
     };
-    this.addListener(aName, l);
+    this.addListener(name, l);
   };
 
   
@@ -81,17 +80,16 @@ function eventSource(aProto) {
 
 
 
-  aProto.removeListener = function (aName, aListener) {
-    if (!this._listeners || (aListener && !this._listeners[aName])) {
+  proto.removeListener = function (name, listener) {
+    if (!this._listeners || (listener && !this._listeners[name])) {
       return;
     }
 
-    if (!aListener) {
-      this._listeners[aName] = [];
-    }
-    else {
-      this._listeners[aName] =
-        this._listeners[aName].filter(function (l) { return l != aListener; });
+    if (!listener) {
+      this._listeners[name] = [];
+    } else {
+      this._listeners[name] =
+        this._listeners[name].filter(l => l != listener);
     }
   };
 
@@ -102,12 +100,12 @@ function eventSource(aProto) {
 
 
 
-  aProto._getListeners = function (aName) {
-    if (aName in this._listeners) {
-      return this._listeners[aName];
+  proto._getListeners = function (name) {
+    if (name in this._listeners) {
+      return this._listeners[name];
     }
-    this._listeners[aName] = [];
-    return this._listeners[aName];
+    this._listeners[name] = [];
+    return this._listeners[name];
   };
 
   
@@ -119,7 +117,7 @@ function eventSource(aProto) {
 
 
 
-  aProto.emit = function () {
+  proto.emit = function () {
     if (!this._listeners) {
       return;
     }
@@ -202,9 +200,8 @@ const UnsolicitedPauses = {
 
 
 
-const DebuggerClient = exports.DebuggerClient = function (aTransport)
-{
-  this._transport = aTransport;
+const DebuggerClient = exports.DebuggerClient = function (transport) {
+  this._transport = transport;
   this._transport.hooks = this;
 
   
@@ -224,9 +221,9 @@ const DebuggerClient = exports.DebuggerClient = function (aTransport)
 
 
   this.mainRoot = null;
-  this.expectReply("root", (aPacket) => {
-    this.mainRoot = new RootClient(this, aPacket);
-    this.emit("connected", aPacket.applicationType, aPacket.traits);
+  this.expectReply("root", (packet) => {
+    this.mainRoot = new RootClient(this, packet);
+    this.emit("connected", packet.applicationType, packet.traits);
   });
 };
 
@@ -249,21 +246,21 @@ const DebuggerClient = exports.DebuggerClient = function (aTransport)
 
 
 
-DebuggerClient.requester = function (aPacketSkeleton, config = {}) {
+DebuggerClient.requester = function (packetSkeleton, config = {}) {
   let { before, after } = config;
   return DevToolsUtils.makeInfallible(function (...args) {
     let outgoingPacket = {
-      to: aPacketSkeleton.to || this.actor
+      to: packetSkeleton.to || this.actor
     };
 
     let maxPosition = -1;
-    for (let k of Object.keys(aPacketSkeleton)) {
-      if (aPacketSkeleton[k] instanceof DebuggerClient.Argument) {
-        let { position } = aPacketSkeleton[k];
-        outgoingPacket[k] = aPacketSkeleton[k].getArgument(args);
+    for (let k of Object.keys(packetSkeleton)) {
+      if (packetSkeleton[k] instanceof DebuggerClient.Argument) {
+        let { position } = packetSkeleton[k];
+        outgoingPacket[k] = packetSkeleton[k].getArgument(args);
         maxPosition = Math.max(position, maxPosition);
       } else {
-        outgoingPacket[k] = aPacketSkeleton[k];
+        outgoingPacket[k] = packetSkeleton[k];
       }
     }
 
@@ -271,37 +268,37 @@ DebuggerClient.requester = function (aPacketSkeleton, config = {}) {
       outgoingPacket = before.call(this, outgoingPacket);
     }
 
-    return this.request(outgoingPacket, DevToolsUtils.makeInfallible((aResponse) => {
+    return this.request(outgoingPacket, DevToolsUtils.makeInfallible((response) => {
       if (after) {
-        let { from } = aResponse;
-        aResponse = after.call(this, aResponse);
-        if (!aResponse.from) {
-          aResponse.from = from;
+        let { from } = response;
+        response = after.call(this, response);
+        if (!response.from) {
+          response.from = from;
         }
       }
 
       
       let thisCallback = args[maxPosition + 1];
       if (thisCallback) {
-        thisCallback(aResponse);
+        thisCallback(response);
       }
     }, "DebuggerClient.requester request callback"));
   }, "DebuggerClient.requester");
 };
 
-function args(aPos) {
-  return new DebuggerClient.Argument(aPos);
+function arg(pos) {
+  return new DebuggerClient.Argument(pos);
 }
 
-DebuggerClient.Argument = function (aPosition) {
-  this.position = aPosition;
+DebuggerClient.Argument = function (position) {
+  this.position = position;
 };
 
-DebuggerClient.Argument.prototype.getArgument = function (aParams) {
-  if (!(this.position in aParams)) {
+DebuggerClient.Argument.prototype.getArgument = function (params) {
+  if (!(this.position in params)) {
     throw new Error("Bad index into params: " + this.position);
   }
-  return aParams[this.position];
+  return params[this.position];
 };
 
 
@@ -330,7 +327,7 @@ DebuggerClient.prototype = {
 
 
 
-  connect: function (aOnConnected) {
+  connect: function (onConnected) {
     let deferred = promise.defer();
     this.emit("connect");
 
@@ -338,12 +335,12 @@ DebuggerClient.prototype = {
     
     events.emit(DebuggerClient, "connect", this);
 
-    this.addOneTimeListener("connected", (aName, aApplicationType, aTraits) => {
-      this.traits = aTraits;
-      if (aOnConnected) {
-        aOnConnected(aApplicationType, aTraits);
+    this.addOneTimeListener("connected", (name, applicationType, traits) => {
+      this.traits = traits;
+      if (onConnected) {
+        onConnected(applicationType, traits);
       }
-      deferred.resolve([aApplicationType, aTraits]);
+      deferred.resolve([applicationType, traits]);
     });
 
     this._transport.ready();
@@ -360,10 +357,10 @@ DebuggerClient.prototype = {
 
 
 
-  close: function (aOnClosed) {
+  close: function (onClosed) {
     let deferred = promise.defer();
-    if (aOnClosed) {
-      deferred.promise.then(aOnClosed);
+    if (onClosed) {
+      deferred.promise.then(onClosed);
     }
 
     
@@ -413,15 +410,21 @@ DebuggerClient.prototype = {
 
 
 
-  listTabs: function (aOnResponse) { return this.mainRoot.listTabs(aOnResponse); },
+  listTabs: function (onResponse) {
+    return this.mainRoot.listTabs(onResponse);
+  },
 
   
 
 
 
-  listAddons: function (aOnResponse) { return this.mainRoot.listAddons(aOnResponse); },
+  listAddons: function (onResponse) {
+    return this.mainRoot.listAddons(onResponse);
+  },
 
-  getTab: function (aFilter) { return this.mainRoot.getTab(aFilter); },
+  getTab: function (filter) {
+    return this.mainRoot.getTab(filter);
+  },
 
   
 
@@ -432,55 +435,55 @@ DebuggerClient.prototype = {
 
 
 
-  attachTab: function (aTabActor, aOnResponse = noop) {
-    if (this._clients.has(aTabActor)) {
-      let cachedTab = this._clients.get(aTabActor);
+  attachTab: function (tabActor, onResponse = noop) {
+    if (this._clients.has(tabActor)) {
+      let cachedTab = this._clients.get(tabActor);
       let cachedResponse = {
         cacheDisabled: cachedTab.cacheDisabled,
         javascriptEnabled: cachedTab.javascriptEnabled,
         traits: cachedTab.traits,
       };
-      DevToolsUtils.executeSoon(() => aOnResponse(cachedResponse, cachedTab));
+      DevToolsUtils.executeSoon(() => onResponse(cachedResponse, cachedTab));
       return promise.resolve([cachedResponse, cachedTab]);
     }
 
     let packet = {
-      to: aTabActor,
+      to: tabActor,
       type: "attach"
     };
-    return this.request(packet).then(aResponse => {
+    return this.request(packet).then(response => {
       let tabClient;
-      if (!aResponse.error) {
-        tabClient = new TabClient(this, aResponse);
+      if (!response.error) {
+        tabClient = new TabClient(this, response);
         this.registerClient(tabClient);
       }
-      aOnResponse(aResponse, tabClient);
-      return [aResponse, tabClient];
+      onResponse(response, tabClient);
+      return [response, tabClient];
     });
   },
 
-  attachWorker: function DC_attachWorker(aWorkerActor, aOnResponse = noop) {
-    let workerClient = this._clients.get(aWorkerActor);
+  attachWorker: function (workerActor, onResponse = noop) {
+    let workerClient = this._clients.get(workerActor);
     if (workerClient !== undefined) {
       let response = {
         from: workerClient.actor,
         type: "attached",
         url: workerClient.url
       };
-      DevToolsUtils.executeSoon(() => aOnResponse(response, workerClient));
+      DevToolsUtils.executeSoon(() => onResponse(response, workerClient));
       return promise.resolve([response, workerClient]);
     }
 
-    return this.request({ to: aWorkerActor, type: "attach" }).then(aResponse => {
-      if (aResponse.error) {
-        aOnResponse(aResponse, null);
-        return [aResponse, null];
+    return this.request({ to: workerActor, type: "attach" }).then(response => {
+      if (response.error) {
+        onResponse(response, null);
+        return [response, null];
       }
 
-      let workerClient = new WorkerClient(this, aResponse);
+      workerClient = new WorkerClient(this, response);
       this.registerClient(workerClient);
-      aOnResponse(aResponse, workerClient);
-      return [aResponse, workerClient];
+      onResponse(response, workerClient);
+      return [response, workerClient];
     });
   },
 
@@ -493,20 +496,20 @@ DebuggerClient.prototype = {
 
 
 
-  attachAddon: function DC_attachAddon(aAddonActor, aOnResponse = noop) {
+  attachAddon: function (addonActor, onResponse = noop) {
     let packet = {
-      to: aAddonActor,
+      to: addonActor,
       type: "attach"
     };
-    return this.request(packet).then(aResponse => {
+    return this.request(packet).then(response => {
       let addonClient;
-      if (!aResponse.error) {
-        addonClient = new AddonClient(this, aAddonActor);
+      if (!response.error) {
+        addonClient = new AddonClient(this, addonActor);
         this.registerClient(addonClient);
         this.activeAddon = addonClient;
       }
-      aOnResponse(aResponse, addonClient);
-      return [aResponse, addonClient];
+      onResponse(response, addonClient);
+      return [response, addonClient];
     });
   },
 
@@ -522,25 +525,25 @@ DebuggerClient.prototype = {
 
 
   attachConsole:
-  function (aConsoleActor, aListeners, aOnResponse = noop) {
+  function (consoleActor, listeners, onResponse = noop) {
     let packet = {
-      to: aConsoleActor,
+      to: consoleActor,
       type: "startListeners",
-      listeners: aListeners,
+      listeners: listeners,
     };
 
-    return this.request(packet).then(aResponse => {
+    return this.request(packet).then(response => {
       let consoleClient;
-      if (!aResponse.error) {
-        if (this._clients.has(aConsoleActor)) {
-          consoleClient = this._clients.get(aConsoleActor);
+      if (!response.error) {
+        if (this._clients.has(consoleActor)) {
+          consoleClient = this._clients.get(consoleActor);
         } else {
-          consoleClient = new WebConsoleClient(this, aResponse);
+          consoleClient = new WebConsoleClient(this, response);
           this.registerClient(consoleClient);
         }
       }
-      aOnResponse(aResponse, consoleClient);
-      return [aResponse, consoleClient];
+      onResponse(response, consoleClient);
+      return [response, consoleClient];
     });
   },
 
@@ -556,25 +559,26 @@ DebuggerClient.prototype = {
 
 
 
-  attachThread: function (aThreadActor, aOnResponse = noop, aOptions = {}) {
-    if (this._clients.has(aThreadActor)) {
-      let client = this._clients.get(aThreadActor);
-      DevToolsUtils.executeSoon(() => aOnResponse({}, client));
+  attachThread: function (threadActor, onResponse = noop, options = {}) {
+    if (this._clients.has(threadActor)) {
+      let client = this._clients.get(threadActor);
+      DevToolsUtils.executeSoon(() => onResponse({}, client));
       return promise.resolve([{}, client]);
     }
 
     let packet = {
-      to: aThreadActor,
+      to: threadActor,
       type: "attach",
-      options: aOptions
+      options,
     };
-    return this.request(packet).then(aResponse => {
-      if (!aResponse.error) {
-        var threadClient = new ThreadClient(this, aThreadActor);
+    return this.request(packet).then(response => {
+      let threadClient;
+      if (!response.error) {
+        threadClient = new ThreadClient(this, threadActor);
         this.registerClient(threadClient);
       }
-      aOnResponse(aResponse, threadClient);
-      return [aResponse, threadClient];
+      onResponse(response, threadClient);
+      return [response, threadClient];
     });
   },
 
@@ -587,24 +591,25 @@ DebuggerClient.prototype = {
 
 
 
-  attachTracer: function (aTraceActor, aOnResponse = noop) {
-    if (this._clients.has(aTraceActor)) {
-      let client = this._clients.get(aTraceActor);
-      DevToolsUtils.executeSoon(() => aOnResponse({}, client));
+  attachTracer: function (traceActor, onResponse = noop) {
+    if (this._clients.has(traceActor)) {
+      let client = this._clients.get(traceActor);
+      DevToolsUtils.executeSoon(() => onResponse({}, client));
       return promise.resolve([{}, client]);
     }
 
     let packet = {
-      to: aTraceActor,
+      to: traceActor,
       type: "attach"
     };
-    return this.request(packet).then(aResponse => {
-      if (!aResponse.error) {
-        var traceClient = new TraceClient(this, aTraceActor);
+    return this.request(packet).then(response => {
+      let traceClient;
+      if (!response.error) {
+        traceClient = new TraceClient(this, traceActor);
         this.registerClient(traceClient);
       }
-      aOnResponse(aResponse, traceClient);
-      return [aResponse, traceClient];
+      onResponse(response, traceClient);
+      return [response, traceClient];
     });
   },
 
@@ -616,13 +621,13 @@ DebuggerClient.prototype = {
 
 
 
-  getProcess: function (aId) {
+  getProcess: function (id) {
     let packet = {
       to: "root",
       type: "getProcess"
     };
-    if (typeof (aId) == "number") {
-      packet.id = aId;
+    if (typeof (id) == "number") {
+      packet.id = id;
     }
     return this.request(packet);
   },
@@ -637,7 +642,7 @@ DebuggerClient.prototype = {
 
 
   release: DebuggerClient.requester({
-    to: args(0),
+    to: arg(0),
     type: "release"
   }),
 
@@ -688,30 +693,30 @@ DebuggerClient.prototype = {
 
 
 
-  request: function (aRequest, aOnResponse) {
+  request: function (packet, onResponse) {
     if (!this.mainRoot) {
       throw Error("Have not yet received a hello packet from the server.");
     }
-    let type = aRequest.type || "";
-    if (!aRequest.to) {
+    let type = packet.type || "";
+    if (!packet.to) {
       throw Error("'" + type + "' request packet has no destination.");
     }
     if (this._closed) {
       let msg = "'" + type + "' request packet to " +
-                "'" + aRequest.to + "' " +
+                "'" + packet.to + "' " +
                "can't be sent as the connection is closed.";
       let resp = { error: "connectionClosed", message: msg };
-      if (aOnResponse) {
-        aOnResponse(resp);
+      if (onResponse) {
+        onResponse(resp);
       }
       return promise.reject(resp);
     }
 
-    let request = new Request(aRequest);
+    let request = new Request(packet);
     request.format = "json";
     request.stack = getStack();
-    if (aOnResponse) {
-      request.on("json-reply", aOnResponse);
+    if (onResponse) {
+      request.on("json-reply", onResponse);
     }
 
     this._sendOrQueueRequest(request);
@@ -861,7 +866,7 @@ DebuggerClient.prototype = {
 
     if (request.format === "json") {
       this._transport.send(request.request);
-      return false;
+      return;
     }
 
     this._transport.startBulkSend(request.request).then((...args) => {
@@ -907,20 +912,20 @@ DebuggerClient.prototype = {
 
 
 
-  expectReply: function (aActor, aRequest) {
-    if (this._activeRequests.has(aActor)) {
-      throw Error("clashing handlers for next reply from " + uneval(aActor));
+  expectReply: function (actor, request) {
+    if (this._activeRequests.has(actor)) {
+      throw Error("clashing handlers for next reply from " + actor);
     }
 
     
     
-    if (typeof aRequest === "function") {
-      let handler = aRequest;
-      aRequest = new Request();
-      aRequest.on("json-reply", handler);
+    if (typeof request === "function") {
+      let handler = request;
+      request = new Request();
+      request.on("json-reply", handler);
     }
 
-    this._activeRequests.set(aActor, aRequest);
+    this._activeRequests.set(actor, request);
   },
 
   
@@ -931,20 +936,20 @@ DebuggerClient.prototype = {
 
 
 
-  onPacket: function (aPacket) {
-    if (!aPacket.from) {
+  onPacket: function (packet) {
+    if (!packet.from) {
       DevToolsUtils.reportException(
         "onPacket",
         new Error("Server did not specify an actor, dropping packet: " +
-                  JSON.stringify(aPacket)));
+                  JSON.stringify(packet)));
       return;
     }
 
     
     
-    let front = this.getActor(aPacket.from);
+    let front = this.getActor(packet.from);
     if (front) {
-      front.onPacket(aPacket);
+      front.onPacket(packet);
       return;
     }
 
@@ -952,17 +957,17 @@ DebuggerClient.prototype = {
     
     
     if (this.mainRoot &&
-        aPacket.from == this.mainRoot.actor &&
-        aPacket.type == "forwardingCancelled") {
-      this.purgeRequests(aPacket.prefix);
+        packet.from == this.mainRoot.actor &&
+        packet.type == "forwardingCancelled") {
+      this.purgeRequests(packet.prefix);
       return;
     }
 
-    if (this._clients.has(aPacket.from) && aPacket.type) {
-      let client = this._clients.get(aPacket.from);
-      let type = aPacket.type;
+    if (this._clients.has(packet.from) && packet.type) {
+      let client = this._clients.get(packet.from);
+      let type = packet.type;
       if (client.events.indexOf(type) != -1) {
-        client.emit(type, aPacket);
+        client.emit(type, packet);
         
         return;
       }
@@ -972,24 +977,24 @@ DebuggerClient.prototype = {
     
     
     
-    if (this._activeRequests.has(aPacket.from) &&
-        !(aPacket.type in UnsolicitedNotifications) &&
-        !(aPacket.type == ThreadStateTypes.paused &&
-          aPacket.why.type in UnsolicitedPauses)) {
-      activeRequest = this._activeRequests.get(aPacket.from);
-      this._activeRequests.delete(aPacket.from);
+    if (this._activeRequests.has(packet.from) &&
+        !(packet.type in UnsolicitedNotifications) &&
+        !(packet.type == ThreadStateTypes.paused &&
+          packet.why.type in UnsolicitedPauses)) {
+      activeRequest = this._activeRequests.get(packet.from);
+      this._activeRequests.delete(packet.from);
     }
 
     
     
     
-    this._attemptNextRequest(aPacket.from);
+    this._attemptNextRequest(packet.from);
 
     
-    if (aPacket.type in ThreadStateTypes &&
-        this._clients.has(aPacket.from) &&
-        typeof this._clients.get(aPacket.from)._onThreadState == "function") {
-      this._clients.get(aPacket.from)._onThreadState(aPacket);
+    if (packet.type in ThreadStateTypes &&
+        this._clients.has(packet.from) &&
+        typeof this._clients.get(packet.from)._onThreadState == "function") {
+      this._clients.get(packet.from)._onThreadState(packet);
     }
 
     
@@ -997,10 +1002,10 @@ DebuggerClient.prototype = {
       
       
       
-      if (aPacket.type == UnsolicitedNotifications.tabNavigated &&
-          this._clients.has(aPacket.from) &&
-          this._clients.get(aPacket.from).thread) {
-        let thread = this._clients.get(aPacket.from).thread;
+      if (packet.type == UnsolicitedNotifications.tabNavigated &&
+          this._clients.has(packet.from) &&
+          this._clients.get(packet.from).thread) {
+        let thread = this._clients.get(packet.from).thread;
         let resumption = { from: thread._actor, type: "resumed" };
         thread._onThreadState(resumption);
       }
@@ -1008,12 +1013,12 @@ DebuggerClient.prototype = {
 
     
     
-    if (aPacket.type) {
-      this.emit(aPacket.type, aPacket);
+    if (packet.type) {
+      this.emit(packet.type, packet);
     }
 
     if (activeRequest) {
-      let emitReply = () => activeRequest.emit("json-reply", aPacket);
+      let emitReply = () => activeRequest.emit("json-reply", packet);
       if (activeRequest.stack) {
         callFunctionWithAsyncStack(emitReply, activeRequest.stack,
                                    "DevTools RDP");
@@ -1054,7 +1059,7 @@ DebuggerClient.prototype = {
 
 
   onBulkPacket: function (packet) {
-    let { actor, type, length } = packet;
+    let { actor } = packet;
 
     if (!actor) {
       DevToolsUtils.reportException(
@@ -1280,7 +1285,9 @@ DebuggerClient.prototype = {
 
   poolFor: function (actorID) {
     for (let pool of this._pools) {
-      if (pool.has(actorID)) return pool;
+      if (pool.has(actorID)) {
+        return pool;
+      }
     }
     return null;
   },
@@ -1315,7 +1322,9 @@ Request.prototype = {
     events.emit(this, type, ...args);
   },
 
-  get actor() { return this.request.to || this.request.actor; }
+  get actor() {
+    return this.request.to || this.request.actor;
+  }
 
 };
 
@@ -1329,21 +1338,25 @@ Request.prototype = {
 
 
 
-function TabClient(aClient, aForm) {
-  this.client = aClient;
-  this._actor = aForm.from;
-  this._threadActor = aForm.threadActor;
-  this.javascriptEnabled = aForm.javascriptEnabled;
-  this.cacheDisabled = aForm.cacheDisabled;
+function TabClient(client, form) {
+  this.client = client;
+  this._actor = form.from;
+  this._threadActor = form.threadActor;
+  this.javascriptEnabled = form.javascriptEnabled;
+  this.cacheDisabled = form.cacheDisabled;
   this.thread = null;
   this.request = this.client.request;
-  this.traits = aForm.traits || {};
+  this.traits = form.traits || {};
   this.events = ["workerListChanged"];
 }
 
 TabClient.prototype = {
-  get actor() { return this._actor; },
-  get _transport() { return this.client._transport; },
+  get actor() {
+    return this._actor;
+  },
+  get _transport() {
+    return this.client._transport;
+  },
 
   
 
@@ -1355,24 +1368,24 @@ TabClient.prototype = {
 
 
 
-  attachThread: function (aOptions = {}, aOnResponse = noop) {
+  attachThread: function (options = {}, onResponse = noop) {
     if (this.thread) {
-      DevToolsUtils.executeSoon(() => aOnResponse({}, this.thread));
+      DevToolsUtils.executeSoon(() => onResponse({}, this.thread));
       return promise.resolve([{}, this.thread]);
     }
 
     let packet = {
       to: this._threadActor,
       type: "attach",
-      options: aOptions
+      options,
     };
-    return this.request(packet).then(aResponse => {
-      if (!aResponse.error) {
+    return this.request(packet).then(response => {
+      if (!response.error) {
         this.thread = new ThreadClient(this, this._threadActor);
         this.client.registerClient(this.thread);
       }
-      aOnResponse(aResponse, this.thread);
-      return [aResponse, this.thread];
+      onResponse(response, this.thread);
+      return [response, this.thread];
     });
   },
 
@@ -1385,15 +1398,15 @@ TabClient.prototype = {
   detach: DebuggerClient.requester({
     type: "detach"
   }, {
-    before: function (aPacket) {
+    before: function (packet) {
       if (this.thread) {
         this.thread.detach();
       }
-      return aPacket;
+      return packet;
     },
-    after: function (aResponse) {
+    after: function (response) {
       this.client.unregisterClient(this);
-      return aResponse;
+      return response;
     },
   }),
 
@@ -1416,7 +1429,7 @@ TabClient.prototype = {
   },
   _reload: DebuggerClient.requester({
     type: "reload",
-    options: args(0)
+    options: arg(0)
   }),
 
   
@@ -1427,7 +1440,7 @@ TabClient.prototype = {
 
   navigateTo: DebuggerClient.requester({
     type: "navigateTo",
-    url: args(0)
+    url: arg(0)
   }),
 
   
@@ -1440,15 +1453,15 @@ TabClient.prototype = {
 
   reconfigure: DebuggerClient.requester({
     type: "reconfigure",
-    options: args(0)
+    options: arg(0)
   }),
 
   listWorkers: DebuggerClient.requester({
     type: "listWorkers"
   }),
 
-  attachWorker: function (aWorkerActor, aOnResponse) {
-    this.client.attachWorker(aWorkerActor, aOnResponse);
+  attachWorker: function (workerActor, onResponse) {
+    this.client.attachWorker(workerActor, onResponse);
   },
 
   
@@ -1461,17 +1474,17 @@ TabClient.prototype = {
 
   resolveLocation: DebuggerClient.requester({
     type: "resolveLocation",
-    location: args(0)
+    location: arg(0)
   }),
 };
 
 eventSource(TabClient.prototype);
 
-function WorkerClient(aClient, aForm) {
-  this.client = aClient;
-  this._actor = aForm.from;
+function WorkerClient(client, form) {
+  this.client = client;
+  this._actor = form.from;
   this._isClosed = false;
-  this._url = aForm.url;
+  this._url = form.url;
 
   this._onClose = this._onClose.bind(this);
 
@@ -1502,23 +1515,23 @@ WorkerClient.prototype = {
   },
 
   detach: DebuggerClient.requester({ type: "detach" }, {
-    after: function (aResponse) {
+    after: function (response) {
       if (this.thread) {
         this.client.unregisterClient(this.thread);
       }
       this.client.unregisterClient(this);
-      return aResponse;
+      return response;
     },
   }),
 
-  attachThread: function (aOptions = {}, aOnResponse = noop) {
+  attachThread: function (options = {}, onResponse = noop) {
     if (this.thread) {
       let response = [{
         type: "connected",
         threadActor: this.thread._actor,
         consoleActor: this.consoleActor,
       }, this.thread];
-      DevToolsUtils.executeSoon(() => aOnResponse(response));
+      DevToolsUtils.executeSoon(() => onResponse(response));
       return response;
     }
 
@@ -1526,31 +1539,31 @@ WorkerClient.prototype = {
     return this.request({
       to: this._actor,
       type: "connect",
-      options: aOptions,
-    }).then(connectReponse => {
-      if (connectReponse.error) {
-        aOnResponse(connectReponse, null);
+      options,
+    }).then(connectResponse => {
+      if (connectResponse.error) {
+        onResponse(connectResponse, null);
         return [connectResponse, null];
       }
 
       return this.request({
-        to: connectReponse.threadActor,
+        to: connectResponse.threadActor,
         type: "attach",
-        options: aOptions
+        options,
       }).then(attachResponse => {
         if (attachResponse.error) {
-          aOnResponse(attachResponse, null);
+          onResponse(attachResponse, null);
         }
 
-        this.thread = new ThreadClient(this, connectReponse.threadActor);
-        this.consoleActor = connectReponse.consoleActor;
+        this.thread = new ThreadClient(this, connectResponse.threadActor);
+        this.consoleActor = connectResponse.consoleActor;
         this.client.registerClient(this.thread);
 
-        aOnResponse(connectReponse, this.thread);
+        onResponse(connectResponse, this.thread);
         return [connectResponse, this.thread];
       });
     }, error => {
-      aOnResponse(error, null);
+      onResponse(error, null);
     });
   },
 
@@ -1573,16 +1586,20 @@ WorkerClient.prototype = {
 
 eventSource(WorkerClient.prototype);
 
-function AddonClient(aClient, aActor) {
-  this._client = aClient;
-  this._actor = aActor;
+function AddonClient(client, actor) {
+  this._client = client;
+  this._actor = actor;
   this.request = this._client.request;
   this.events = [];
 }
 
 AddonClient.prototype = {
-  get actor() { return this._actor; },
-  get _transport() { return this._client._transport; },
+  get actor() {
+    return this._actor;
+  },
+  get _transport() {
+    return this._client._transport;
+  },
 
   
 
@@ -1593,12 +1610,12 @@ AddonClient.prototype = {
   detach: DebuggerClient.requester({
     type: "detach"
   }, {
-    after: function (aResponse) {
+    after: function (response) {
       if (this._client.activeAddon === this) {
         this._client.activeAddon = null;
       }
       this._client.unregisterClient(this);
-      return aResponse;
+      return response;
     },
   })
 };
@@ -1623,11 +1640,11 @@ AddonClient.prototype = {
 
 
 
-function RootClient(aClient, aGreeting) {
-  this._client = aClient;
-  this.actor = aGreeting.from;
-  this.applicationType = aGreeting.applicationType;
-  this.traits = aGreeting.traits;
+function RootClient(client, greeting) {
+  this._client = client;
+  this.actor = greeting.from;
+  this.applicationType = greeting.applicationType;
+  this.traits = greeting.traits;
 }
 exports.RootClient = RootClient;
 
@@ -1688,19 +1705,19 @@ RootClient.prototype = {
 
 
 
-  getTab: function (aFilter) {
+  getTab: function (filter) {
     let packet = {
       to: this.actor,
       type: "getTab"
     };
 
-    if (aFilter) {
-      if (typeof (aFilter.outerWindowID) == "number") {
-        packet.outerWindowID = aFilter.outerWindowID;
-      } else if (typeof (aFilter.tabId) == "number") {
-        packet.tabId = aFilter.tabId;
-      } else if ("tab" in aFilter) {
-        let browser = aFilter.tab.linkedBrowser;
+    if (filter) {
+      if (typeof (filter.outerWindowID) == "number") {
+        packet.outerWindowID = filter.outerWindowID;
+      } else if (typeof (filter.tabId) == "number") {
+        packet.tabId = filter.tabId;
+      } else if ("tab" in filter) {
+        let browser = filter.tab.linkedBrowser;
         if (browser.frameLoader.tabParent) {
           
           packet.tabId = browser.frameLoader.tabParent.tabId;
@@ -1736,8 +1753,12 @@ RootClient.prototype = {
 
 
 
-  get _transport() { return this._client._transport; },
-  get request() { return this._client.request; }
+  get _transport() {
+    return this._client._transport;
+  },
+  get request() {
+    return this._client.request;
+  }
 };
 
 
@@ -1751,10 +1772,10 @@ RootClient.prototype = {
 
 
 
-function ThreadClient(aClient, aActor) {
-  this._parent = aClient;
-  this.client = aClient instanceof DebuggerClient ? aClient : aClient.client;
-  this._actor = aActor;
+function ThreadClient(client, actor) {
+  this._parent = client;
+  this.client = client instanceof DebuggerClient ? client : client.client;
+  this._actor = actor;
   this._frameCache = [];
   this._scriptCache = {};
   this._pauseGrips = {};
@@ -1764,21 +1785,29 @@ function ThreadClient(aClient, aActor) {
 
 ThreadClient.prototype = {
   _state: "paused",
-  get state() { return this._state; },
-  get paused() { return this._state === "paused"; },
+  get state() {
+    return this._state;
+  },
+  get paused() {
+    return this._state === "paused";
+  },
 
   _pauseOnExceptions: false,
   _ignoreCaughtExceptions: false,
   _pauseOnDOMEvents: null,
 
   _actor: null,
-  get actor() { return this._actor; },
+  get actor() {
+    return this._actor;
+  },
 
-  get _transport() { return this.client._transport; },
+  get _transport() {
+    return this.client._transport;
+  },
 
-  _assertPaused: function (aCommand) {
+  _assertPaused: function (command) {
     if (!this.paused) {
-      throw Error(aCommand + " command sent while not paused. Currently " + this._state);
+      throw Error(command + " command sent while not paused. Currently " + this._state);
     }
   },
 
@@ -1795,9 +1824,9 @@ ThreadClient.prototype = {
 
   _doResume: DebuggerClient.requester({
     type: "resume",
-    resumeLimit: args(0)
+    resumeLimit: arg(0)
   }, {
-    before: function (aPacket) {
+    before: function (packet) {
       this._assertPaused("resume");
 
       
@@ -1806,29 +1835,29 @@ ThreadClient.prototype = {
       this._state = "resuming";
 
       if (this._pauseOnExceptions) {
-        aPacket.pauseOnExceptions = this._pauseOnExceptions;
+        packet.pauseOnExceptions = this._pauseOnExceptions;
       }
       if (this._ignoreCaughtExceptions) {
-        aPacket.ignoreCaughtExceptions = this._ignoreCaughtExceptions;
+        packet.ignoreCaughtExceptions = this._ignoreCaughtExceptions;
       }
       if (this._pauseOnDOMEvents) {
-        aPacket.pauseOnDOMEvents = this._pauseOnDOMEvents;
+        packet.pauseOnDOMEvents = this._pauseOnDOMEvents;
       }
-      return aPacket;
+      return packet;
     },
-    after: function (aResponse) {
-      if (aResponse.error && this._state == "resuming") {
+    after: function (response) {
+      if (response.error && this._state == "resuming") {
         
         
         
-        if (aResponse.state) {
-          this._state = ThreadStateTypes[aResponse.state];
+        if (response.state) {
+          this._state = ThreadStateTypes[response.state];
         } else {
           this._state = this._previousState;
         }
       }
       delete this._previousState;
-      return aResponse;
+      return response;
     },
   }),
 
@@ -1842,14 +1871,14 @@ ThreadClient.prototype = {
 
   reconfigure: DebuggerClient.requester({
     type: "reconfigure",
-    options: args(0)
+    options: arg(0)
   }),
 
   
 
 
-  resume: function (aOnResponse) {
-    return this._doResume(null, aOnResponse);
+  resume: function (onResponse) {
+    return this._doResume(null, onResponse);
   },
 
   
@@ -1858,8 +1887,8 @@ ThreadClient.prototype = {
 
 
 
-  resumeThenPause: function (aOnResponse) {
-    return this._doResume({ type: "break" }, aOnResponse);
+  resumeThenPause: function (onResponse) {
+    return this._doResume({ type: "break" }, onResponse);
   },
 
   
@@ -1868,8 +1897,8 @@ ThreadClient.prototype = {
 
 
 
-  stepOver: function (aOnResponse) {
-    return this._doResume({ type: "next" }, aOnResponse);
+  stepOver: function (onResponse) {
+    return this._doResume({ type: "next" }, onResponse);
   },
 
   
@@ -1878,8 +1907,8 @@ ThreadClient.prototype = {
 
 
 
-  stepIn: function (aOnResponse) {
-    return this._doResume({ type: "step" }, aOnResponse);
+  stepIn: function (onResponse) {
+    return this._doResume({ type: "step" }, onResponse);
   },
 
   
@@ -1888,8 +1917,8 @@ ThreadClient.prototype = {
 
 
 
-  stepOut: function (aOnResponse) {
-    return this._doResume({ type: "finish" }, aOnResponse);
+  stepOut: function (onResponse) {
+    return this._doResume({ type: "finish" }, onResponse);
   },
 
   
@@ -1898,8 +1927,8 @@ ThreadClient.prototype = {
 
 
 
-  interrupt: function (aOnResponse) {
-    return this._doInterrupt(null, aOnResponse);
+  interrupt: function (onResponse) {
+    return this._doInterrupt(null, onResponse);
   },
 
   
@@ -1908,8 +1937,8 @@ ThreadClient.prototype = {
 
 
 
-  breakOnNext: function (aOnResponse) {
-    return this._doInterrupt("onNext", aOnResponse);
+  breakOnNext: function (onResponse) {
+    return this._doInterrupt("onNext", onResponse);
   },
 
   
@@ -1920,7 +1949,7 @@ ThreadClient.prototype = {
 
   _doInterrupt: DebuggerClient.requester({
     type: "interrupt",
-    when: args(0)
+    when: arg(0)
   }),
 
   
@@ -1931,25 +1960,27 @@ ThreadClient.prototype = {
 
 
 
-  pauseOnExceptions: function (aPauseOnExceptions,
-                               aIgnoreCaughtExceptions,
-                               aOnResponse = noop) {
-    this._pauseOnExceptions = aPauseOnExceptions;
-    this._ignoreCaughtExceptions = aIgnoreCaughtExceptions;
+
+
+  pauseOnExceptions: function (pauseOnExceptions,
+                               ignoreCaughtExceptions,
+                               onResponse = noop) {
+    this._pauseOnExceptions = pauseOnExceptions;
+    this._ignoreCaughtExceptions = ignoreCaughtExceptions;
 
     
     if (!this.paused) {
-      return this.interrupt(aResponse => {
-        if (aResponse.error) {
+      return this.interrupt(response => {
+        if (response.error) {
           
-          aOnResponse(aResponse);
-          return aResponse;
+          onResponse(response);
+          return response;
         }
-        return this.resume(aOnResponse);
+        return this.resume(onResponse);
       });
     }
 
-    aOnResponse();
+    onResponse();
     return promise.resolve();
   },
 
@@ -1998,22 +2029,22 @@ ThreadClient.prototype = {
 
   eval: DebuggerClient.requester({
     type: "clientEvaluate",
-    frame: args(0),
-    expression: args(1)
+    frame: arg(0),
+    expression: arg(1)
   }, {
-    before: function (aPacket) {
+    before: function (packet) {
       this._assertPaused("eval");
       
       
       this._state = "resuming";
-      return aPacket;
+      return packet;
     },
-    after: function (aResponse) {
-      if (aResponse.error) {
+    after: function (response) {
+      if (response.error) {
         
         this._state = "paused";
       }
-      return aResponse;
+      return response;
     },
   }),
 
@@ -2026,10 +2057,10 @@ ThreadClient.prototype = {
   detach: DebuggerClient.requester({
     type: "detach"
   }, {
-    after: function (aResponse) {
+    after: function (response) {
       this.client.unregisterClient(this);
       this._parent.thread = null;
-      return aResponse;
+      return response;
     },
   }),
 
@@ -2043,7 +2074,7 @@ ThreadClient.prototype = {
 
   releaseMany: DebuggerClient.requester({
     type: "releaseMany",
-    actors: args(0),
+    actors: arg(0),
   }),
 
   
@@ -2054,7 +2085,7 @@ ThreadClient.prototype = {
 
   threadGrips: DebuggerClient.requester({
     type: "threadGrips",
-    actors: args(0)
+    actors: arg(0)
   }),
 
   
@@ -2102,8 +2133,8 @@ ThreadClient.prototype = {
 
   getFrames: DebuggerClient.requester({
     type: "frames",
-    start: args(0),
-    count: args(1)
+    start: arg(0),
+    count: arg(1)
   }),
 
   
@@ -2111,7 +2142,9 @@ ThreadClient.prototype = {
 
 
 
-  get cachedFrames() { return this._frameCache; },
+  get cachedFrames() {
+    return this._frameCache;
+  },
 
   
 
@@ -2132,24 +2165,24 @@ ThreadClient.prototype = {
 
 
 
-  fillFrames: function (aTotal, aCallback = noop) {
+  fillFrames: function (total, callback = noop) {
     this._assertPaused("fillFrames");
-    if (this._frameCache.length >= aTotal) {
+    if (this._frameCache.length >= total) {
       return false;
     }
 
     let numFrames = this._frameCache.length;
 
-    this.getFrames(numFrames, aTotal - numFrames, (aResponse) => {
-      if (aResponse.error) {
-        aCallback(aResponse);
+    this.getFrames(numFrames, total - numFrames, (response) => {
+      if (response.error) {
+        callback(response);
         return;
       }
 
       let threadGrips = DevToolsUtils.values(this._threadGrips);
 
-      for (let i in aResponse.frames) {
-        let frame = aResponse.frames[i];
+      for (let i in response.frames) {
+        let frame = response.frames[i];
         if (!frame.where.source) {
           
           
@@ -2167,7 +2200,7 @@ ThreadClient.prototype = {
       
       this.emit("framesadded");
 
-      aCallback(aResponse);
+      callback(response);
     });
 
     return true;
@@ -2190,13 +2223,13 @@ ThreadClient.prototype = {
 
 
 
-  pauseGrip: function (aGrip) {
-    if (aGrip.actor in this._pauseGrips) {
-      return this._pauseGrips[aGrip.actor];
+  pauseGrip: function (grip) {
+    if (grip.actor in this._pauseGrips) {
+      return this._pauseGrips[grip.actor];
     }
 
-    let client = new ObjectClient(this.client, aGrip);
-    this._pauseGrips[aGrip.actor] = client;
+    let client = new ObjectClient(this.client, grip);
+    this._pauseGrips[grip.actor] = client;
     return client;
   },
 
@@ -2210,13 +2243,13 @@ ThreadClient.prototype = {
 
 
 
-  _longString: function (aGrip, aGripCacheName) {
-    if (aGrip.actor in this[aGripCacheName]) {
-      return this[aGripCacheName][aGrip.actor];
+  _longString: function (grip, gripCacheName) {
+    if (grip.actor in this[gripCacheName]) {
+      return this[gripCacheName][grip.actor];
     }
 
-    let client = new LongStringClient(this.client, aGrip);
-    this[aGripCacheName][aGrip.actor] = client;
+    let client = new LongStringClient(this.client, grip);
+    this[gripCacheName][grip.actor] = client;
     return client;
   },
 
@@ -2227,8 +2260,8 @@ ThreadClient.prototype = {
 
 
 
-  pauseLongString: function (aGrip) {
-    return this._longString(aGrip, "_pauseGrips");
+  pauseLongString: function (grip) {
+    return this._longString(grip, "_pauseGrips");
   },
 
   
@@ -2238,8 +2271,8 @@ ThreadClient.prototype = {
 
 
 
-  threadLongString: function (aGrip) {
-    return this._longString(aGrip, "_threadGrips");
+  threadLongString: function (grip) {
+    return this._longString(grip, "_threadGrips");
   },
 
   
@@ -2248,11 +2281,11 @@ ThreadClient.prototype = {
 
 
 
-  _clearObjectClients: function (aGripCacheName) {
-    for (let id in this[aGripCacheName]) {
-      this[aGripCacheName][id].valid = false;
+  _clearObjectClients: function (gripCacheName) {
+    for (let id in this[gripCacheName]) {
+      this[gripCacheName][id].valid = false;
     }
-    this[aGripCacheName] = {};
+    this[gripCacheName] = {};
   },
 
   
@@ -2275,16 +2308,16 @@ ThreadClient.prototype = {
 
 
 
-  _onThreadState: function (aPacket) {
-    this._state = ThreadStateTypes[aPacket.type];
+  _onThreadState: function (packet) {
+    this._state = ThreadStateTypes[packet.type];
     
     
     
-    this._lastPausePacket = aPacket.type === "resumed" ? null : aPacket;
+    this._lastPausePacket = packet.type === "resumed" ? null : packet;
     this._clearFrames();
     this._clearPauseGrips();
-    aPacket.type === ThreadStateTypes.detached && this._clearThreadGrips();
-    this.client._eventsEnabled && this.emit(aPacket.type, aPacket);
+    packet.type === ThreadStateTypes.detached && this._clearThreadGrips();
+    this.client._eventsEnabled && this.emit(packet.type, packet);
   },
 
   getLastPausePacket: function () {
@@ -2294,19 +2327,20 @@ ThreadClient.prototype = {
   
 
 
-  environment: function (aForm) {
-    return new EnvironmentClient(this.client, aForm);
+  environment: function (form) {
+    return new EnvironmentClient(this.client, form);
   },
 
   
 
 
-  source: function (aForm) {
-    if (aForm.actor in this._threadGrips) {
-      return this._threadGrips[aForm.actor];
+  source: function (form) {
+    if (form.actor in this._threadGrips) {
+      return this._threadGrips[form.actor];
     }
 
-    return this._threadGrips[aForm.actor] = new SourceClient(this, aForm);
+    this._threadGrips[form.actor] = new SourceClient(this, form);
+    return this._threadGrips[form.actor];
   },
 
   
@@ -2319,7 +2353,7 @@ ThreadClient.prototype = {
 
   getPrototypesAndProperties: DebuggerClient.requester({
     type: "prototypesAndProperties",
-    actors: args(0)
+    actors: arg(0)
   }),
 
   events: ["newSource"]
@@ -2338,9 +2372,9 @@ eventSource(ThreadClient.prototype);
 
 
 
-function TraceClient(aClient, aActor) {
-  this._client = aClient;
-  this._actor = aActor;
+function TraceClient(client, actor) {
+  this._client = client;
+  this._actor = actor;
   this._activeTraces = new Set();
   this._waitingPackets = new Map();
   this._expectedPacket = 0;
@@ -2349,10 +2383,16 @@ function TraceClient(aClient, aActor) {
 }
 
 TraceClient.prototype = {
-  get actor() { return this._actor; },
-  get tracing() { return this._activeTraces.size > 0; },
+  get actor() {
+    return this._actor;
+  },
+  get tracing() {
+    return this._activeTraces.size > 0;
+  },
 
-  get _transport() { return this._client._transport; },
+  get _transport() {
+    return this._client._transport;
+  },
 
   
 
@@ -2360,9 +2400,9 @@ TraceClient.prototype = {
   detach: DebuggerClient.requester({
     type: "detach"
   }, {
-    after: function (aResponse) {
+    after: function (response) {
       this._client.unregisterClient(this);
-      return aResponse;
+      return response;
     },
   }),
 
@@ -2380,21 +2420,21 @@ TraceClient.prototype = {
 
   startTrace: DebuggerClient.requester({
     type: "startTrace",
-    name: args(1),
-    trace: args(0)
+    name: arg(1),
+    trace: arg(0)
   }, {
-    after: function (aResponse) {
-      if (aResponse.error) {
-        return aResponse;
+    after: function (response) {
+      if (response.error) {
+        return response;
       }
 
       if (!this.tracing) {
         this._waitingPackets.clear();
         this._expectedPacket = 0;
       }
-      this._activeTraces.add(aResponse.name);
+      this._activeTraces.add(response.name);
 
-      return aResponse;
+      return response;
     },
   }),
 
@@ -2410,16 +2450,16 @@ TraceClient.prototype = {
 
   stopTrace: DebuggerClient.requester({
     type: "stopTrace",
-    name: args(0)
+    name: arg(0)
   }, {
-    after: function (aResponse) {
-      if (aResponse.error) {
-        return aResponse;
+    after: function (response) {
+      if (response.error) {
+        return response;
       }
 
-      this._activeTraces.delete(aResponse.name);
+      this._activeTraces.delete(response.name);
 
-      return aResponse;
+      return response;
     },
   })
 };
@@ -2432,17 +2472,20 @@ TraceClient.prototype = {
 
 
 
-function ObjectClient(aClient, aGrip)
-{
-  this._grip = aGrip;
-  this._client = aClient;
+function ObjectClient(client, grip) {
+  this._grip = grip;
+  this._client = client;
   this.request = this._client.request;
 }
 exports.ObjectClient = ObjectClient;
 
 ObjectClient.prototype = {
-  get actor() { return this._grip.actor; },
-  get _transport() { return this._client._transport; },
+  get actor() {
+    return this._grip.actor;
+  },
+  get _transport() {
+    return this._client._transport;
+  },
 
   valid: true,
 
@@ -2459,11 +2502,11 @@ ObjectClient.prototype = {
   getDefinitionSite: DebuggerClient.requester({
     type: "definitionSite"
   }, {
-    before: function (aPacket) {
+    before: function (packet) {
       if (this._grip.class != "Function") {
         throw new Error("getDefinitionSite is only valid for function grips.");
       }
-      return aPacket;
+      return packet;
     }
   }),
 
@@ -2478,11 +2521,11 @@ ObjectClient.prototype = {
   getParameterNames: DebuggerClient.requester({
     type: "parameterNames"
   }, {
-    before: function (aPacket) {
-      if (this._grip["class"] !== "Function") {
+    before: function (packet) {
+      if (this._grip.class !== "Function") {
         throw new Error("getParameterNames is only valid for function grips.");
       }
-      return aPacket;
+      return packet;
     },
   }),
 
@@ -2525,13 +2568,13 @@ ObjectClient.prototype = {
 
   enumProperties: DebuggerClient.requester({
     type: "enumProperties",
-    options: args(0)
+    options: arg(0)
   }, {
-    after: function (aResponse) {
-      if (aResponse.iterator) {
-        return { iterator: new PropertyIteratorClient(this._client, aResponse.iterator) };
+    after: function (response) {
+      if (response.iterator) {
+        return { iterator: new PropertyIteratorClient(this._client, response.iterator) };
       }
-      return aResponse;
+      return response;
     },
   }),
 
@@ -2568,7 +2611,7 @@ ObjectClient.prototype = {
 
   getProperty: DebuggerClient.requester({
     type: "property",
-    name: args(0)
+    name: arg(0)
   }),
 
   
@@ -2597,11 +2640,11 @@ ObjectClient.prototype = {
   getScope: DebuggerClient.requester({
     type: "scope"
   }, {
-    before: function (aPacket) {
+    before: function (packet) {
       if (this._grip.class !== "Function") {
         throw new Error("scope is only valid for function grips.");
       }
-      return aPacket;
+      return packet;
     },
   }),
 
@@ -2611,12 +2654,12 @@ ObjectClient.prototype = {
   getDependentPromises: DebuggerClient.requester({
     type: "dependentPromises"
   }, {
-    before: function (aPacket) {
+    before: function (packet) {
       if (this._grip.class !== "Promise") {
         throw new Error("getDependentPromises is only valid for promise " +
           "grips.");
       }
-      return aPacket;
+      return packet;
     }
   }),
 
@@ -2626,11 +2669,11 @@ ObjectClient.prototype = {
   getPromiseAllocationStack: DebuggerClient.requester({
     type: "allocationStack"
   }, {
-    before: function (aPacket) {
+    before: function (packet) {
       if (this._grip.class !== "Promise") {
         throw new Error("getAllocationStack is only valid for promise grips.");
       }
-      return aPacket;
+      return packet;
     }
   }),
 
@@ -2678,19 +2721,23 @@ ObjectClient.prototype = {
 
 
 
-function PropertyIteratorClient(aClient, aGrip) {
-  this._grip = aGrip;
-  this._client = aClient;
+function PropertyIteratorClient(client, grip) {
+  this._grip = grip;
+  this._client = client;
   this.request = this._client.request;
 }
 
 PropertyIteratorClient.prototype = {
-  get actor() { return this._grip.actor; },
+  get actor() {
+    return this._grip.actor;
+  },
 
   
 
 
-  get count() { return this._grip.count; },
+  get count() {
+    return this._grip.count;
+  },
 
   
 
@@ -2703,7 +2750,7 @@ PropertyIteratorClient.prototype = {
 
   names: DebuggerClient.requester({
     type: "names",
-    indexes: args(0)
+    indexes: arg(0)
   }, {}),
 
   
@@ -2718,8 +2765,8 @@ PropertyIteratorClient.prototype = {
 
   slice: DebuggerClient.requester({
     type: "slice",
-    start: args(0),
-    count: args(1)
+    start: arg(0),
+    count: arg(1)
   }, {}),
 
   
@@ -2742,18 +2789,26 @@ PropertyIteratorClient.prototype = {
 
 
 
-function LongStringClient(aClient, aGrip) {
-  this._grip = aGrip;
-  this._client = aClient;
+function LongStringClient(client, grip) {
+  this._grip = grip;
+  this._client = client;
   this.request = this._client.request;
 }
 exports.LongStringClient = LongStringClient;
 
 LongStringClient.prototype = {
-  get actor() { return this._grip.actor; },
-  get length() { return this._grip.length; },
-  get initial() { return this._grip.initial; },
-  get _transport() { return this._client._transport; },
+  get actor() {
+    return this._grip.actor;
+  },
+  get length() {
+    return this._grip.length;
+  },
+  get initial() {
+    return this._grip.initial;
+  },
+  get _transport() {
+    return this._client._transport;
+  },
 
   valid: true,
 
@@ -2769,8 +2824,8 @@ LongStringClient.prototype = {
 
   substring: DebuggerClient.requester({
     type: "substring",
-    start: args(0),
-    end: args(1)
+    start: arg(0),
+    end: arg(1)
   }),
 };
 
@@ -2782,12 +2837,12 @@ LongStringClient.prototype = {
 
 
 
-function SourceClient(aClient, aForm) {
-  this._form = aForm;
-  this._isBlackBoxed = aForm.isBlackBoxed;
-  this._isPrettyPrinted = aForm.isPrettyPrinted;
-  this._activeThread = aClient;
-  this._client = aClient.client;
+function SourceClient(client, form) {
+  this._form = form;
+  this._isBlackBoxed = form.isBlackBoxed;
+  this._isPrettyPrinted = form.isPrettyPrinted;
+  this._activeThread = client;
+  this._client = client.client;
 }
 
 SourceClient.prototype = {
@@ -2819,14 +2874,14 @@ SourceClient.prototype = {
   blackBox: DebuggerClient.requester({
     type: "blackbox"
   }, {
-    after: function (aResponse) {
-      if (!aResponse.error) {
+    after: function (response) {
+      if (!response.error) {
         this._isBlackBoxed = true;
         if (this._activeThread) {
           this._activeThread.emit("blackboxchange", this);
         }
       }
-      return aResponse;
+      return response;
     }
   }),
 
@@ -2839,14 +2894,14 @@ SourceClient.prototype = {
   unblackBox: DebuggerClient.requester({
     type: "unblackbox"
   }, {
-    after: function (aResponse) {
-      if (!aResponse.error) {
+    after: function (response) {
+      if (!response.error) {
         this._isBlackBoxed = false;
         if (this._activeThread) {
           this._activeThread.emit("blackboxchange", this);
         }
       }
-      return aResponse;
+      return response;
     }
   }),
 
@@ -2871,78 +2926,78 @@ SourceClient.prototype = {
   
 
 
-  source: function (aCallback = noop) {
+  source: function (callback = noop) {
     let packet = {
       to: this._form.actor,
       type: "source"
     };
-    return this._client.request(packet).then(aResponse => {
-      return this._onSourceResponse(aResponse, aCallback);
+    return this._client.request(packet).then(response => {
+      return this._onSourceResponse(response, callback);
     });
   },
 
   
 
 
-  prettyPrint: function (aIndent, aCallback = noop) {
+  prettyPrint: function (indent, callback = noop) {
     const packet = {
       to: this._form.actor,
       type: "prettyPrint",
-      indent: aIndent
+      indent
     };
-    return this._client.request(packet).then(aResponse => {
-      if (!aResponse.error) {
+    return this._client.request(packet).then(response => {
+      if (!response.error) {
         this._isPrettyPrinted = true;
         this._activeThread._clearFrames();
         this._activeThread.emit("prettyprintchange", this);
       }
-      return this._onSourceResponse(aResponse, aCallback);
+      return this._onSourceResponse(response, callback);
     });
   },
 
   
 
 
-  disablePrettyPrint: function (aCallback = noop) {
+  disablePrettyPrint: function (callback = noop) {
     const packet = {
       to: this._form.actor,
       type: "disablePrettyPrint"
     };
-    return this._client.request(packet).then(aResponse => {
-      if (!aResponse.error) {
+    return this._client.request(packet).then(response => {
+      if (!response.error) {
         this._isPrettyPrinted = false;
         this._activeThread._clearFrames();
         this._activeThread.emit("prettyprintchange", this);
       }
-      return this._onSourceResponse(aResponse, aCallback);
+      return this._onSourceResponse(response, callback);
     });
   },
 
-  _onSourceResponse: function (aResponse, aCallback) {
-    if (aResponse.error) {
-      aCallback(aResponse);
-      return aResponse;
+  _onSourceResponse: function (response, callback) {
+    if (response.error) {
+      callback(response);
+      return response;
     }
 
-    if (typeof aResponse.source === "string") {
-      aCallback(aResponse);
-      return aResponse;
+    if (typeof response.source === "string") {
+      callback(response);
+      return response;
     }
 
-    let { contentType, source } = aResponse;
+    let { contentType, source } = response;
     let longString = this._activeThread.threadLongString(source);
-    return longString.substring(0, longString.length).then(function (aResponse) {
-      if (aResponse.error) {
-        aCallback(aResponse);
-        return aReponse;
+    return longString.substring(0, longString.length).then(function (resp) {
+      if (resp.error) {
+        callback(resp);
+        return resp;
       }
 
-      let response = {
-        source: aResponse.substring,
+      let newResponse = {
+        source: resp.substring,
         contentType: contentType
       };
-      aCallback(response);
-      return response;
+      callback(newResponse);
+      return newResponse;
     });
   },
 
@@ -2955,21 +3010,21 @@ SourceClient.prototype = {
 
 
 
-  setBreakpoint: function ({ line, column, condition, noSliding }, aOnResponse = noop) {
+  setBreakpoint: function ({ line, column, condition, noSliding }, onResponse = noop) {
     
-    let doSetBreakpoint = aCallback => {
+    let doSetBreakpoint = callback => {
       let root = this._client.mainRoot;
       let location = {
-        line: line,
-        column: column
+        line,
+        column,
       };
 
       let packet = {
         to: this.actor,
         type: "setBreakpoint",
-        location: location,
-        condition: condition,
-        noSliding: noSliding
+        location,
+        condition,
+        noSliding,
       };
 
       
@@ -2979,24 +3034,24 @@ SourceClient.prototype = {
         packet.location.url = this.url;
       }
 
-      return this._client.request(packet).then(aResponse => {
+      return this._client.request(packet).then(response => {
         
         
         let bpClient;
-        if (aResponse.actor) {
+        if (response.actor) {
           bpClient = new BreakpointClient(
             this._client,
             this,
-            aResponse.actor,
+            response.actor,
             location,
             root.traits.conditionalBreakpoints ? condition : undefined
           );
         }
-        aOnResponse(aResponse, bpClient);
-        if (aCallback) {
-          aCallback();
+        onResponse(response, bpClient);
+        if (callback) {
+          callback();
         }
-        return [aResponse, bpClient];
+        return [response, bpClient];
       });
     };
 
@@ -3005,14 +3060,14 @@ SourceClient.prototype = {
       return doSetBreakpoint();
     }
     
-    return this._activeThread.interrupt().then(aResponse => {
-      if (aResponse.error) {
+    return this._activeThread.interrupt().then(response => {
+      if (response.error) {
         
-        aOnResponse(aResponse);
-        return aResponse;
+        onResponse(response);
+        return response;
       }
 
-      const { type, why } = aResponse;
+      const { type, why } = response;
       const cleanUp = type == "paused" && why.type == "interrupted"
             ? () => this._activeThread.resume()
             : noop;
@@ -3037,26 +3092,30 @@ SourceClient.prototype = {
 
 
 
-function BreakpointClient(aClient, aSourceClient, aActor, aLocation, aCondition) {
-  this._client = aClient;
-  this._actor = aActor;
-  this.location = aLocation;
-  this.location.actor = aSourceClient.actor;
-  this.location.url = aSourceClient.url;
-  this.source = aSourceClient;
+function BreakpointClient(client, sourceClient, actor, location, condition) {
+  this._client = client;
+  this._actor = actor;
+  this.location = location;
+  this.location.actor = sourceClient.actor;
+  this.location.url = sourceClient.url;
+  this.source = sourceClient;
   this.request = this._client.request;
 
   
-  if (aCondition) {
-    this.condition = aCondition;
+  if (condition) {
+    this.condition = condition;
   }
 }
 
 BreakpointClient.prototype = {
 
   _actor: null,
-  get actor() { return this._actor; },
-  get _transport() { return this._client._transport; },
+  get actor() {
+    return this._actor;
+  },
+  get _transport() {
+    return this._client._transport;
+  },
 
   
 
@@ -3074,9 +3133,8 @@ BreakpointClient.prototype = {
     
     if (root.traits.conditionalBreakpoints) {
       return "condition" in this;
-    } else {
-      return "conditionalExpression" in this;
     }
+    return "conditionalExpression" in this;
   },
 
   
@@ -3090,15 +3148,14 @@ BreakpointClient.prototype = {
     let root = this._client.mainRoot;
     if (root.traits.conditionalBreakpoints) {
       return this.condition;
-    } else {
-      return this.conditionalExpression;
     }
+    return this.conditionalExpression;
   },
 
   
 
 
-  setCondition: function (gThreadClient, aCondition) {
+  setCondition: function (gThreadClient, condition) {
     let root = this._client.mainRoot;
     let deferred = promise.defer();
 
@@ -3106,32 +3163,31 @@ BreakpointClient.prototype = {
       let info = {
         line: this.location.line,
         column: this.location.column,
-        condition: aCondition
+        condition: condition
       };
 
       
       
-      this.remove(aResponse => {
-        if (aResponse && aResponse.error) {
-          deferred.reject(aResponse);
+      this.remove(response => {
+        if (response && response.error) {
+          deferred.reject(response);
           return;
         }
 
-        this.source.setBreakpoint(info, (aResponse, aNewBreakpoint) => {
-          if (aResponse && aResponse.error) {
-            deferred.reject(aResponse);
+        this.source.setBreakpoint(info, (resp, newBreakpoint) => {
+          if (resp && resp.error) {
+            deferred.reject(resp);
           } else {
-            deferred.resolve(aNewBreakpoint);
+            deferred.resolve(newBreakpoint);
           }
         });
       });
     } else {
       
-      if (aCondition === "") {
+      if (condition === "") {
         delete this.conditionalExpression;
-      }
-      else {
-        this.conditionalExpression = aCondition;
+      } else {
+        this.conditionalExpression = condition;
       }
       deferred.resolve(this);
     }
@@ -3150,9 +3206,9 @@ eventSource(BreakpointClient.prototype);
 
 
 
-function EnvironmentClient(aClient, aForm) {
-  this._client = aClient;
-  this._form = aForm;
+function EnvironmentClient(client, form) {
+  this._client = client;
+  this._form = form;
   this.request = this._client.request;
 }
 exports.EnvironmentClient = EnvironmentClient;
@@ -3162,7 +3218,9 @@ EnvironmentClient.prototype = {
   get actor() {
     return this._form.actor;
   },
-  get _transport() { return this._client._transport; },
+  get _transport() {
+    return this._client._transport;
+  },
 
   
 
@@ -3177,8 +3235,8 @@ EnvironmentClient.prototype = {
 
   assign: DebuggerClient.requester({
     type: "assign",
-    name: args(0),
-    value: args(1)
+    name: arg(0),
+    value: arg(1)
   })
 };
 
