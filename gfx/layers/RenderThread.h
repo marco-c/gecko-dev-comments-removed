@@ -22,6 +22,10 @@ namespace layers {
 class RendererOGL;
 class RenderThread;
 
+
+
+
+
 class RendererEvent
 {
 public:
@@ -29,24 +33,51 @@ public:
   virtual void Run(RenderThread& aRenderThread, wr::WindowId aWindow);
 };
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 class RenderThread final
 {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING_WITH_MAIN_THREAD_DESTRUCTION(RenderThread)
 
 public:
+  
   static RenderThread* Get();
 
   static void Start();
 
   static void ShutDown();
 
+  
+  
+  
+  
   static MessageLoop* Loop();
 
+  
   static bool IsInRenderThread();
 
+  
   void AddRenderer(wr::WindowId aWindowId, UniquePtr<RendererOGL> aRenderer);
 
+  
   void RemoveRenderer(wr::WindowId aWindowId);
+
+  
 
   
   void NewFrameReady(wr::WindowId aWindowId);
@@ -65,6 +96,7 @@ private:
 
   ~RenderThread();
 
+  
   void UpdateAndRender(wr::WindowId aWindowId);
 
   base::Thread* const mThread;
