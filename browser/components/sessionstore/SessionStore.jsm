@@ -898,7 +898,23 @@ var SessionStoreInternal = {
         }
 
         
-        this.updateTabLabelAndIcon(tab, tabData);
+        if (activePageData) {
+          if (activePageData.title) {
+            tab.label = activePageData.title;
+          } else if (activePageData.url != "about:blank") {
+            tab.label = activePageData.url;
+          }
+        } else if (tab.hasAttribute("customizemode")) {
+          win.gCustomizeMode.setTab(tab);
+        }
+
+        
+        if ("image" in tabData) {
+          
+          let loadingPrincipal = Utils.deserializePrincipal(tabData.iconLoadingPrincipal);
+          win.gBrowser.setIcon(tab, tabData.image, loadingPrincipal);
+          TabStateCache.update(browser, { image: null, iconLoadingPrincipal: null });
+        }
 
         let event = win.document.createEvent("Events");
         event.initEvent("SSTabRestoring", true, false);
@@ -2587,51 +2603,6 @@ var SessionStoreInternal = {
 
 
 
-
-
-
-
-
-  updateTabLabelAndIcon(tab, tabData = null) {
-    let browser = tab.linkedBrowser;
-    let win = browser.ownerGlobal;
-
-    if (!tabData) {
-      let tabData = TabState.collect(tab);
-      if (!tabData) {
-        throw new Error("tabData not found for given tab");
-      }
-    }
-
-    let activePageData = tabData.entries[tabData.index - 1] || null;
-
-    
-    if (activePageData) {
-      if (activePageData.title) {
-        tab.label = activePageData.title;
-      } else if (activePageData.url != "about:blank") {
-        tab.label = activePageData.url;
-      }
-    } else if (tab.hasAttribute("customizemode")) {
-      win.gCustomizeMode.setTab(tab);
-    }
-
-    
-    if ("image" in tabData) {
-      
-      let loadingPrincipal = Utils.deserializePrincipal(tabData.iconLoadingPrincipal);
-      win.gBrowser.setIcon(tab, tabData.image, loadingPrincipal);
-      TabStateCache.update(browser, { image: null, iconLoadingPrincipal: null });
-    }
-  },
-
-  
-
-
-
-
-
-
   restoreLastSession: function ssi_restoreLastSession() {
     
     if (!this.canRestoreLastSession) {
@@ -3623,10 +3594,6 @@ var SessionStoreInternal = {
 
     browser.messageManager.sendAsyncMessage("SessionStore:restoreHistory",
                                             {tabData, epoch, loadArguments});
-
-    
-    
-    this.updateTabLabelAndIcon(tab, tabData);
 
     
     if ("attributes" in tabData) {
