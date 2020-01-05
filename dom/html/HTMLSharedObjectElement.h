@@ -220,6 +220,21 @@ private:
 
   static void MapAttributesIntoRule(const nsMappedAttributes* aAttributes,
                                     nsRuleData* aData);
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  bool BlockEmbedContentLoading();
 };
 
 } 

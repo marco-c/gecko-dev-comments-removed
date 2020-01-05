@@ -334,21 +334,6 @@ class nsObjectLoadingContent : public nsImageLoadingContent
 
     virtual nsContentPolicyType GetContentPolicyType() const = 0;
 
-    
-
-
-
-
-
-
-
-
-
-
-
-
-    bool BlockEmbedOrObjectContentLoading();
-
   private:
 
     

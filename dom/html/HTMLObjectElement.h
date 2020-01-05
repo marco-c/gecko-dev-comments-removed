@@ -98,7 +98,7 @@ public:
 
   nsresult CopyInnerTo(Element* aDest);
 
-  void StartObjectLoad() { StartObjectLoad(true, false); }
+  void StartObjectLoad() { StartObjectLoad(true); }
 
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(HTMLObjectElement,
                                            nsGenericHTMLFormElement)
@@ -247,12 +247,12 @@ public:
     return GetContentDocument(aSubjectPrincipal);
   }
 
+private:
   
 
 
-  void StartObjectLoad(bool aNotify, bool aForceLoad);
+  void StartObjectLoad(bool aNotify);
 
-private:
   
 
 

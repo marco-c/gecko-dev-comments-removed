@@ -88,7 +88,6 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/HTMLObjectElementBinding.h"
 #include "mozilla/dom/HTMLSharedObjectElement.h"
-#include "mozilla/dom/HTMLObjectElement.h"
 #include "nsChannelClassifier.h"
 
 #ifdef XP_WIN
@@ -97,6 +96,13 @@
 #undef CreateEvent
 #endif
 #endif 
+
+#ifdef XP_MACOSX
+
+
+
+#include "mozilla/dom/HTMLObjectElement.h"
+#endif
 
 static NS_DEFINE_CID(kAppShellCID, NS_APPSHELL_CID);
 
@@ -3011,7 +3017,7 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   
   
   nsCOMPtr<nsIContent> thisContent =
-    do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
+  do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
   NS_ASSERTION(thisContent, "must be a content");
 
   if (!thisContent->IsHTMLElement() || mContentType.IsEmpty()) {
@@ -3023,8 +3029,6 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
   
   
   mType = eType_Null;
-
-  bool thisIsObject = thisContent->IsHTMLElement(nsGkAtoms::object);
 
   
   
@@ -3043,11 +3047,10 @@ nsObjectLoadingContent::LoadFallback(FallbackType aType, bool aNotify) {
           nsStyleUtil::IsSignificantChild(child, true, false)) {
         aType = eFallbackAlternate;
       }
-      if (thisIsObject) {
-        if (child->IsHTMLElement(nsGkAtoms::embed)) {
-          HTMLSharedObjectElement* embed = static_cast<HTMLSharedObjectElement*>(child);
-          embed->StartObjectLoad(true, true);
-        } else if (auto object = HTMLObjectElement::FromContent(child)) {
+      if (child->IsHTMLElement(nsGkAtoms::embed) &&
+          thisContent->IsHTMLElement(nsGkAtoms::object)) {
+        HTMLSharedObjectElement* object = static_cast<HTMLSharedObjectElement*>(child);
+        if (object) {
           object->StartObjectLoad(true, true);
         }
       }
@@ -3811,38 +3814,6 @@ nsObjectLoadingContent::MaybeFireErrorEvent()
                                            false, false);
     loadBlockingAsyncDispatcher->PostDOMEvent();
   }
-}
-
-bool
-nsObjectLoadingContent::BlockEmbedOrObjectContentLoading()
-{
-  nsCOMPtr<nsIContent> thisContent =
-    do_QueryInterface(static_cast<nsIImageLoadingContent*>(this));
-  if (!thisContent->IsHTMLElement(nsGkAtoms::embed) &&
-      !thisContent->IsHTMLElement(nsGkAtoms::object)) {
-    
-    return false;
-  }
-
-  
-  
-  for (nsIContent* parent = thisContent->GetParent();
-       parent;
-       parent = parent->GetParent()) {
-    if (parent->IsAnyOfHTMLElements(nsGkAtoms::video, nsGkAtoms::audio)) {
-      return true;
-    }
-    
-    
-    
-    if (HTMLObjectElement* object = HTMLObjectElement::FromContent(parent)) {
-      uint32_t type = object->DisplayedType();
-      if (type != eType_Null) {
-        return true;
-      }
-    }
-  }
-  return false;
 }
 
 

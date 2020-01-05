@@ -79,7 +79,7 @@ HTMLObjectElement::DoneAddingChildren(bool aHaveNotified)
   
   
   if (IsInComposedDoc()) {
-    StartObjectLoad(aHaveNotified, false);
+    StartObjectLoad(aHaveNotified);
   }
 }
 
@@ -310,8 +310,7 @@ HTMLObjectElement::SetAttr(int32_t aNameSpaceID, nsIAtom *aName,
   
   
   if (aNotify && IsInComposedDoc() && mIsDoneAddingChildren &&
-      aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::data &&
-      !BlockEmbedOrObjectContentLoading()) {
+      aNameSpaceID == kNameSpaceID_None && aName == nsGkAtoms::data) {
     return LoadObject(aNotify, true);
   }
 
@@ -328,8 +327,7 @@ HTMLObjectElement::UnsetAttr(int32_t aNameSpaceID, nsIAtom* aAttribute,
 
   
   if (aNotify && IsInComposedDoc() && mIsDoneAddingChildren &&
-      aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::data &&
-      !BlockEmbedOrObjectContentLoading()) {
+      aNameSpaceID == kNameSpaceID_None && aAttribute == nsGkAtoms::data) {
     return LoadObject(aNotify, true);
   }
 
@@ -537,16 +535,15 @@ HTMLObjectElement::GetAttributeMappingFunction() const
 }
 
 void
-HTMLObjectElement::StartObjectLoad(bool aNotify, bool aForce)
+HTMLObjectElement::StartObjectLoad(bool aNotify)
 {
   
   
-  if (!IsInComposedDoc() || !OwnerDoc()->IsActive() ||
-      BlockEmbedOrObjectContentLoading()) {
+  if (!IsInComposedDoc() || !OwnerDoc()->IsActive()) {
     return;
   }
 
-  LoadObject(aNotify, aForce);
+  LoadObject(aNotify);
   SetIsNetworkCreated(false);
 }
 
