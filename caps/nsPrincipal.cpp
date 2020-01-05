@@ -197,10 +197,6 @@ nsPrincipal::SubsumesInternal(nsIPrincipal* aOther,
     return true;
   }
 
-  if (OriginAttributesRef() != Cast(aOther)->OriginAttributesRef()) {
-    return false;
-  }
-
   
   
   
@@ -731,6 +727,9 @@ nsExpandedPrincipal::SubsumesInternal(nsIPrincipal* aOther,
     nsTArray< nsCOMPtr<nsIPrincipal> >* otherList;
     expanded->GetWhiteList(&otherList);
     for (uint32_t i = 0; i < otherList->Length(); ++i){
+      
+      
+      
       if (!SubsumesInternal((*otherList)[i], aConsideration)) {
         return false;
       }

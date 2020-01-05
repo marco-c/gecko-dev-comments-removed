@@ -289,6 +289,8 @@ public:
   NS_IMETHOD GetUserContextId(uint32_t* aUserContextId) final;
   NS_IMETHOD GetPrivateBrowsingId(uint32_t* aPrivateBrowsingId) final;
 
+  bool EqualsIgnoringAddonId(nsIPrincipal *aOther);
+
   virtual bool AddonHasPermission(const nsAString& aPerm);
 
   virtual bool IsOnCSSUnprefixingWhitelist() override { return false; }
@@ -321,6 +323,8 @@ protected:
   virtual ~BasePrincipal();
 
   virtual nsresult GetOriginInternal(nsACString& aOrigin) = 0;
+  
+  
   virtual bool SubsumesInternal(nsIPrincipal* aOther, DocumentDomainConsideration aConsider) = 0;
 
   
