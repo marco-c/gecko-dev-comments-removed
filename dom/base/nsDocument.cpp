@@ -12258,6 +12258,24 @@ nsIDocument::HasScriptsBlockedBySandbox()
   return mSandboxFlags & SANDBOXED_SCRIPTS;
 }
 
+bool
+nsIDocument::InlineScriptAllowedByCSP()
+{
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  nsresult rv = NodePrincipal()->GetCsp(getter_AddRefs(csp));
+  NS_ENSURE_SUCCESS(rv, true);
+  bool allowsInlineScript = true;
+  if (csp) {
+    nsresult rv = csp->GetAllowsInline(nsIContentPolicy::TYPE_SCRIPT,
+                                       EmptyString(), 
+                                       EmptyString(), 
+                                       0,             
+                                       &allowsInlineScript);
+    NS_ENSURE_SUCCESS(rv, true);
+  }
+  return allowsInlineScript;
+}
+
 static bool
 MightBeAboutOrChromeScheme(nsIURI* aURI)
 {
