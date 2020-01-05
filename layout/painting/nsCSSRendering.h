@@ -714,17 +714,17 @@ struct nsCSSRendering {
 
   
   
-  static void DrawTableBorderSegment(DrawTarget&          aDrawTarget,
-                                     uint8_t              aBorderStyle,
-                                     nscolor              aBorderColor,
-                                     const nsStyleBackground* aBGColor,
-                                     const nsRect&        aBorderRect,
-                                     int32_t              aAppUnitsPerDevPixel,
-                                     int32_t              aAppUnitsPerCSSPixel,
-                                     uint8_t              aStartBevelSide = 0,
-                                     nscoord              aStartBevelOffset = 0,
-                                     uint8_t              aEndBevelSide = 0,
-                                     nscoord              aEndBevelOffset = 0);
+  static void DrawTableBorderSegment(DrawTarget&   aDrawTarget,
+                                     uint8_t       aBorderStyle,
+                                     nscolor       aBorderColor,
+                                     nscolor       aBGColor,
+                                     const nsRect& aBorderRect,
+                                     int32_t       aAppUnitsPerDevPixel,
+                                     int32_t       aAppUnitsPerCSSPixel,
+                                     uint8_t       aStartBevelSide = 0,
+                                     nscoord       aStartBevelOffset = 0,
+                                     uint8_t       aEndBevelSide = 0,
+                                     nscoord       aEndBevelOffset = 0);
 
   
   
