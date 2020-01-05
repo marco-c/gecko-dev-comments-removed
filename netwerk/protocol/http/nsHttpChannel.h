@@ -117,6 +117,7 @@ public:
     NS_IMETHOD OnAuthAvailable() override;
     NS_IMETHOD OnAuthCancelled(bool userCancel) override;
     NS_IMETHOD CloseStickyConnection() override;
+    NS_IMETHOD ForceNoSpdy() override;
     
     
     
