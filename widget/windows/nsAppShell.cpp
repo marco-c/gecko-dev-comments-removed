@@ -25,6 +25,12 @@
 #include "nsComponentManagerUtils.h"
 #include "nsITimer.h"
 
+
+
+
+#define MOZ_WM_PRINTER_PROPERTIES_COMPLETION 0x5b7a
+#define MOZ_WM_PRINTER_PROPERTIES_FAILURE 0x5b7f
+
 using namespace mozilla;
 using namespace mozilla::widget;
 
@@ -372,6 +378,15 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
           continue;  
         }
 
+        
+        
+        
+        if (msg.message == MOZ_WM_PRINTER_PROPERTIES_COMPLETION ||
+            msg.message == MOZ_WM_PRINTER_PROPERTIES_FAILURE) {
+          mMsgsToRepost.push_back(msg);
+          continue;
+        }
+
         ::TranslateMessage(&msg);
         ::DispatchMessageW(&msg);
       }
@@ -406,4 +421,17 @@ nsAppShell::ProcessNextNativeEvent(bool mayWait)
   }
 
   return gotMessage;
+}
+
+nsresult
+nsAppShell::AfterProcessNextEvent(nsIThreadInternal* ,
+                                  bool )
+{
+  if (!mMsgsToRepost.empty()) {
+    for (MSG msg : mMsgsToRepost) {
+      ::PostMessageW(msg.hwnd, msg.message, msg.wParam, msg.lParam);
+    }
+    mMsgsToRepost.clear();
+  }
+  return NS_OK;
 }
