@@ -1082,6 +1082,18 @@ protected:
     RefPtr<nsSVGFilterChainObserver> filterChainObserver;
     mozilla::gfx::FilterDescription filter;
     nsTArray<RefPtr<mozilla::gfx::SourceSurface>> filterAdditionalImages;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     bool filterSourceGraphicTainted;
 
     bool imageSmoothingEnabled;

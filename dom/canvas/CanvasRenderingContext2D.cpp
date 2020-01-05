@@ -2843,6 +2843,11 @@ CanvasRenderingContext2D::UpdateFilter()
 {
   nsCOMPtr<nsIPresShell> presShell = GetPresShell();
   if (!presShell || presShell->IsDestroying()) {
+    
+    
+    CurrentState().filter = FilterDescription();
+    CurrentState().filterSourceGraphicTainted =
+      (mCanvasElement && mCanvasElement->IsWriteOnly());
     return;
   }
 
