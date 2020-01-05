@@ -41,11 +41,11 @@ const olderthansixmonths = today - (DAY_MICROSEC * 31 * 7);
 function* task_populateDB(aArray)
 {
   
-  for (let data of aArray) {
+  for (let arrayItem of aArray) {
     try {
       
       
-      var qdata = new queryData(data);
+      var qdata = new queryData(arrayItem);
       if (qdata.isVisit) {
         
         yield PlacesTestUtils.addVisits({
@@ -185,7 +185,7 @@ function* task_populateDB(aArray)
       }
     } catch (ex) {
       
-      do_print("Problem with this URI: " + data.uri);
+      do_print("Problem with this URI: " + arrayItem.uri);
       do_throw("Error creating database: " + ex + "\n");
     }
   }

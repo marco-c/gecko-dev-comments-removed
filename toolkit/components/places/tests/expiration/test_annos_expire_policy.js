@@ -82,11 +82,11 @@ add_task(function* test_annos_expire_policy() {
   
   setMaxPages(0);
 
-  let now = getExpirablePRTime();
+  let now_specific_to_test = getExpirablePRTime();
   
   for (let i = 0; i < 5; i++) {
     let pageURI = uri("http://item_anno." + i + ".mozilla.org/");
-    yield PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
+    yield PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now_specific_to_test++ });
     let bm = yield PlacesUtils.bookmarks.insert({
       parentGuid: PlacesUtils.bookmarks.unfiledGuid,
       url: pageURI,
@@ -139,7 +139,7 @@ add_task(function* test_annos_expire_policy() {
   
   for (let i = 0; i < 5; i++) {
     let pageURI = uri("http://page_anno." + i + ".mozilla.org/");
-    yield PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now++ });
+    yield PlacesTestUtils.addVisits({ uri: pageURI, visitDate: now_specific_to_test++ });
     
     add_old_anno(pageURI, "persist_days", "test", as.EXPIRE_DAYS, 6);
     

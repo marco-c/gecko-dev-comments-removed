@@ -11,7 +11,7 @@ registerCleanupFunction(function* cleanup_removeAllLoginsAndResetRecipes() {
     
     return;
   }
-  yield recipeParent.then(recipeParent => recipeParent.reset());
+  yield recipeParent.then(recipeParentResult => recipeParentResult.reset());
 });
 
 

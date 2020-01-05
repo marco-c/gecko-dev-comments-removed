@@ -41,8 +41,6 @@ var tests = [
 
 ];
 
-var currentTest;
-
 add_task(function* test() {
   
   Assert.throws(() => getInterval());
