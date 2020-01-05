@@ -1,3 +1,7 @@
+
+
+
+
 use image::base::Image;
 use resource::image_cache_task::{ImageReady, ImageNotReady, ImageFailed};
 use resource::local_image_cache::LocalImageCache;

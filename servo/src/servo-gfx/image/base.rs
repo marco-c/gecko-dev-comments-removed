@@ -1,3 +1,7 @@
+
+
+
+
 use stb_image = stb_image::image;
 
 // FIXME: Images must not be copied every frame. Instead we should atomically

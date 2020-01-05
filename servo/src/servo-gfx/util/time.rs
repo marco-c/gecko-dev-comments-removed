@@ -1,4 +1,8 @@
 
+
+
+
+
 use std::time::precise_time_ns;
 
 pub fn time<T>(msg: &str, callback: &fn() -> T) -> T{

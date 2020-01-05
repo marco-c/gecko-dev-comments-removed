@@ -1,3 +1,7 @@
+
+
+
+
 pub trait BoxedMutDebugMethods {
     fn dump(@mut self);
     fn dump_indent(@mut self, ident: uint);

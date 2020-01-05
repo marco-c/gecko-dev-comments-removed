@@ -5,6 +5,10 @@
 
 
 
+
+
+
+
 use dom::event::{Event, ResizeEvent};
 
 pub struct ResizeRateLimiter {

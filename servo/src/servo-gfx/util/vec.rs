@@ -1,3 +1,7 @@
+
+
+
+
 use core::cmp::{Ord, Eq};
 
 pub trait BinarySearchMethods<T: Ord + Eq> {

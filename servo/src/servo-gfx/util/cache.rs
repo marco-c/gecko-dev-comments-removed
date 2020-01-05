@@ -1,3 +1,7 @@
+
+
+
+
 pub trait Cache<K: Copy + Eq, V: Copy> {
     fn new(size: uint) -> Self;
     fn insert(&mut self, key: &K, value: V);

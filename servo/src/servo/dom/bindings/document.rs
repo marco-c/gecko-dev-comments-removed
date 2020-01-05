@@ -1,3 +1,7 @@
+
+
+
+
 use js::rust::{Compartment, jsobj};
 use js::{JS_ARGV, JSPROP_ENUMERATE, JSPROP_SHARED,
             JSVAL_NULL, JS_THIS_OBJECT, JS_SET_RVAL, JSPROP_NATIVE_ACCESSORS};
