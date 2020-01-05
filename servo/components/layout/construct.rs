@@ -226,7 +226,7 @@ impl<'a> FlowConstructor<'a> {
         
         
         let elem = node.as_element();
-        let data = match elem.get_attr(&ns!(""), "type") {
+        let data = match elem.get_attr(&ns!(""), &atom!("type")) {
             Some("checkbox") | Some("radio") => None,
             Some("button") | Some("submit") | Some("reset") =>
                 Some(node.get_input_value().len() as u32),
@@ -1158,7 +1158,7 @@ trait ObjectElement<'a> {
 impl<'ln> ObjectElement<'ln> for ThreadSafeLayoutNode<'ln> {
     fn get_type_and_data(&self) -> (Option<&'ln str>, Option<&'ln str>) {
         let elem = self.as_element();
-        (elem.get_attr(&ns!(""), "type"), elem.get_attr(&ns!(""), "data"))
+        (elem.get_attr(&ns!(""), &atom!("type")), elem.get_attr(&ns!(""), &atom!("data")))
     }
 
     fn has_object_data(&self) -> bool {
