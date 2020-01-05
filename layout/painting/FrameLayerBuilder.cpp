@@ -1545,6 +1545,11 @@ public:
   
   
   nsIntRegion mVisibilityComputedRegion;
+
+  
+
+
+  bool mDisabledAlpha;
 };
 
 
@@ -2395,6 +2400,8 @@ ContainerState::CreatePaintedLayer(PaintedLayerData* aData)
 
   
   PaintedDisplayItemLayerUserData* userData = new PaintedDisplayItemLayerUserData();
+  userData->mDisabledAlpha =
+    mParameters.mDisableSubpixelAntialiasingInDescendants;
   layer->SetUserData(&gPaintedDisplayItemLayerUserData, userData);
   ResetScrollPositionForLayerPixelAlignment(aData->mAnimatedGeometryRoot);
 
@@ -2494,10 +2501,19 @@ ContainerState::PreparePaintedLayerForUse(PaintedLayer* aLayer,
   aData->mVisibilityComputedRegion.SetEmpty();
 
   
-#ifndef MOZ_WIDGET_ANDROID
-  
   
   gfxPoint animatedGeometryRootTopLeft = scaledOffset - ThebesPoint(matrix.GetTranslation()) + mParameters.mOffset;
+  const bool disableAlpha =
+    mParameters.mDisableSubpixelAntialiasingInDescendants;
+  if (aData->mDisabledAlpha != disableAlpha) {
+    aData->mAnimatedGeometryRootPosition = animatedGeometryRootTopLeft;
+    InvalidateEntirePaintedLayer(aLayer, aAnimatedGeometryRoot, "change of subpixel-AA");
+    aData->mDisabledAlpha = disableAlpha;
+    return;
+  }
+
+  
+#ifndef MOZ_WIDGET_ANDROID
   
   
   
