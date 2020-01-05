@@ -150,6 +150,9 @@ static const size_t UINT32_CHAR_BUFFER_LENGTH = sizeof("4294967295") - 1;
 
 
 
+
+
+
 class JSString : public js::gc::TenuredCell
 {
   protected:
@@ -248,6 +251,8 @@ class JSString : public js::gc::TenuredCell
 
 
 
+
+
     static const uint32_t FLAT_BIT               = JS_BIT(0);
     static const uint32_t HAS_BASE_BIT           = JS_BIT(1);
     static const uint32_t INLINE_CHARS_BIT       = JS_BIT(2);
@@ -269,6 +274,9 @@ class JSString : public js::gc::TenuredCell
     static const uint32_t TYPE_FLAGS_MASK        = JS_BIT(6) - 1;
 
     static const uint32_t LATIN1_CHARS_BIT       = JS_BIT(6);
+
+    static const uint32_t INDEX_VALUE_BIT        = JS_BIT(7);
+    static const uint32_t INDEX_VALUE_SHIFT      = 16;
 
     static const uint32_t MAX_LENGTH             = js::MaxStringLength;
 
@@ -351,6 +359,16 @@ class JSString : public js::gc::TenuredCell
     }
     bool hasTwoByteChars() const {
         return !(d.u1.flags & LATIN1_CHARS_BIT);
+    }
+
+    
+    bool hasIndexValue() const {
+        return d.u1.flags & INDEX_VALUE_BIT;
+    }
+    uint32_t getIndexValue() const {
+        MOZ_ASSERT(hasIndexValue());
+        MOZ_ASSERT(isFlat());
+        return d.u1.flags >> INDEX_VALUE_SHIFT;
     }
 
     
@@ -752,13 +770,7 @@ class JSFlatString : public JSLinearString
     static inline JSFlatString* new_(JSContext* cx,
                                      const CharT* chars, size_t length);
 
-    
-
-
-
-
-
-    inline bool isIndex(uint32_t* indexp) const {
+    inline bool isIndexSlow(uint32_t* indexp) const {
         MOZ_ASSERT(JSString::isFlat());
         JS::AutoCheckCannotGC nogc;
         if (hasLatin1Chars()) {
@@ -767,6 +779,38 @@ class JSFlatString : public JSLinearString
         }
         const char16_t* s = twoByteChars(nogc);
         return JS7_ISDEC(*s) && isIndexSlow(s, length(), indexp);
+    }
+
+    
+
+
+
+
+
+    inline bool isIndex(uint32_t* indexp) const {
+        MOZ_ASSERT(JSString::isFlat());
+
+        if (JSString::hasIndexValue()) {
+            *indexp = getIndexValue();
+            return true;
+        }
+
+        return isIndexSlow(indexp);
+    }
+
+    inline void maybeInitializeIndex(uint32_t index, bool allowAtom = false) {
+        MOZ_ASSERT(JSString::isFlat());
+        MOZ_ASSERT_IF(hasIndexValue(), getIndexValue() == index);
+        MOZ_ASSERT_IF(!allowAtom, !isAtom());
+
+        if (hasIndexValue() || index > UINT16_MAX)
+            return;
+
+        mozilla::DebugOnly<uint32_t> containedIndex;
+        MOZ_ASSERT(isIndexSlow(&containedIndex));
+        MOZ_ASSERT(index == containedIndex);
+
+        d.u1.flags |= (index << INDEX_VALUE_SHIFT) | INDEX_VALUE_BIT;
     }
 
     
