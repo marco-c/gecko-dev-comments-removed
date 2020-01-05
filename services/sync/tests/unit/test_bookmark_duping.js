@@ -23,7 +23,7 @@ const store = engine._store;
 store._log.level = Log.Level.Trace;
 engine._log.level = Log.Level.Trace;
 
-function setup() {
+async function setup() {
  let server = serverForUsers({"foo": "password"}, {
     meta: {global: {engines: {bookmarks: {version: engine.version,
                                           syncID: engine.syncID}}}},
@@ -32,9 +32,15 @@ function setup() {
 
   generateNewKeys(Service.collectionKeys);
 
-  new SyncTestingInfrastructure(server.server);
+  await SyncTestingInfrastructure(server);
 
   let collection = server.user("foo").collection("bookmarks");
+
+  
+  
+  
+  
+  Service.scheduler.syncThreshold = 10000000;
 
   Svc.Obs.notify("weave:engine:start-tracking");   
 
@@ -130,7 +136,7 @@ async function validate(collection, expectedFailures = []) {
 add_task(async function test_dupe_bookmark() {
   _("Ensure that a bookmark we consider a dupe is handled correctly.");
 
-  let { server, collection } = this.setup();
+  let { server, collection } = await this.setup();
 
   try {
     
@@ -181,7 +187,7 @@ add_task(async function test_dupe_bookmark() {
 add_task(async function test_dupe_reparented_bookmark() {
   _("Ensure that a bookmark we consider a dupe from a different parent is handled correctly");
 
-  let { server, collection } = this.setup();
+  let { server, collection } = await this.setup();
 
   try {
     
@@ -247,7 +253,7 @@ add_task(async function test_dupe_reparented_bookmark() {
 add_task(async function test_dupe_reparented_locally_changed_bookmark() {
   _("Ensure that a bookmark with local changes we consider a dupe from a different parent is handled correctly");
 
-  let { server, collection } = this.setup();
+  let { server, collection } = await this.setup();
 
   try {
     
@@ -324,7 +330,7 @@ add_task(async function test_dupe_reparented_to_earlier_appearing_parent_bookmar
   _("Ensure that a bookmark we consider a dupe from a different parent that " +
     "appears in the same sync before the dupe item");
 
-  let { server, collection } = this.setup();
+  let { server, collection } = await this.setup();
 
   try {
     
@@ -401,7 +407,7 @@ add_task(async function test_dupe_reparented_to_later_appearing_parent_bookmark(
   _("Ensure that a bookmark we consider a dupe from a different parent that " +
     "doesn't exist locally as we process the child, but does appear in the same sync");
 
-  let { server, collection } = this.setup();
+  let { server, collection } = await this.setup();
 
   try {
     
@@ -478,7 +484,7 @@ add_task(async function test_dupe_reparented_to_future_arriving_parent_bookmark(
   _("Ensure that a bookmark we consider a dupe from a different parent that " +
     "doesn't exist locally and doesn't appear in this Sync is handled correctly");
 
-  let { server, collection } = this.setup();
+  let { server, collection } = await this.setup();
 
   try {
     
@@ -598,7 +604,7 @@ add_task(async function test_dupe_empty_folder() {
   _("Ensure that an empty folder we consider a dupe is handled correctly.");
   
   
-  let { server, collection } = this.setup();
+  let { server, collection } = await this.setup();
 
   try {
     
