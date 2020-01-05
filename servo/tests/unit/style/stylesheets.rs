@@ -3,7 +3,7 @@
 
 
 use cssparser::{self, Parser as CssParser, SourcePosition};
-use html5ever_atoms::{Namespace as NsAtom};
+use html5ever::{Namespace as NsAtom};
 use media_queries::CSSErrorReporterTest;
 use parking_lot::RwLock;
 use selectors::parser::*;

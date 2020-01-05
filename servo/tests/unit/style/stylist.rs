@@ -2,7 +2,7 @@
 
 
 
-use html5ever_atoms::LocalName;
+use html5ever::LocalName;
 use selectors::parser::LocalName as LocalNameSelector;
 use selectors::parser::Selector;
 use servo_atoms::Atom;

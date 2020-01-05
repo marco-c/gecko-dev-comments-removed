@@ -6,7 +6,7 @@
 
 use dom::bindings::error::{Error, ErrorResult, Fallible};
 use dom::bindings::str::DOMString;
-use html5ever_atoms::{Prefix, LocalName, Namespace};
+use html5ever::{Prefix, LocalName, Namespace};
 
 
 pub fn validate_qualified_name(qualified_name: &str) -> ErrorResult {
