@@ -457,6 +457,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
                           pipeline_id: PipelineId,
                           unprivileged_pipeline_content: UnprivilegedPipelineContent)
     {
+        
+        
+        
         let (server, token) =
             IpcOneShotServer::<IpcSender<UnprivilegedPipelineContent>>::new().unwrap();
 
@@ -724,7 +727,7 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
                 debug!("constellation got remove iframe message");
                 self.handle_remove_iframe_msg(pipeline_id);
                 if let Some(sender) = sender {
-                    sender.send(()).unwrap();
+                    sender.send(()).unwrap_or_else(|e| debug!("Error replying to remove iframe ({})", e));
                 }
             }
             Request::Script(FromScriptMsg::NewFavicon(url)) => {
@@ -1568,6 +1571,10 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
                                      pipeline_states: HashMap<PipelineId, Epoch>) -> ReadyToSave {
         
         
+        
+        
+        
+        
         if self.root_frame_id.is_none() {
             return ReadyToSave::NoRootFrame;
         }
@@ -1601,8 +1608,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             
             let (sender, receiver) = ipc::channel().unwrap();
             let msg = LayoutControlMsg::GetWebFontLoadState(sender);
-            pipeline.layout_chan.0.send(msg).unwrap();
-            if receiver.recv().unwrap() {
+            pipeline.layout_chan.0.send(msg)
+                .unwrap_or_else(|e| debug!("Get web font failed ({})", e));
+            if receiver.recv().unwrap_or(true) {
                 return ReadyToSave::WebFontNotLoaded;
             }
 
@@ -1681,7 +1689,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             self.close_pipeline(*pipeline_id, exit_mode);
         }
 
-        self.frames.remove(&frame_id).unwrap();
+        if let None = self.frames.remove(&frame_id) {
+            debug!("Closing frame {:?} twice.", frame_id);
+        }
 
         if let Some((parent_pipeline_id, _)) = parent_info {
             let parent_pipeline = match self.pipelines.get_mut(&parent_pipeline_id) {
@@ -1713,7 +1723,10 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
             self.close_frame(*child_frame, exit_mode);
         }
 
-        let pipeline = self.pipelines.remove(&pipeline_id).unwrap();
+        let pipeline = match self.pipelines.remove(&pipeline_id) {
+            Some(pipeline) => pipeline,
+            None => return debug!("Closing pipeline {:?} twice.", pipeline_id),
+        };
 
         
         if let Some(info) = pipeline.parent_info {
@@ -1791,6 +1804,9 @@ impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF>
     
     
     fn send_frame_tree_and_grant_paint_permission(&mut self) {
+        
+        
+        
         if let Some(root_frame_id) = self.root_frame_id {
             if let Some(frame_tree) = self.frame_to_sendable(root_frame_id) {
 
