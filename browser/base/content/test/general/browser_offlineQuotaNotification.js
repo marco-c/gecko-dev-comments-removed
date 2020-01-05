@@ -6,6 +6,8 @@
 
 
 
+
+
 const URL = "http://mochi.test:8888/browser/browser/base/content/test/general/offlineQuotaNotification.html";
 
 registerCleanupFunction(function() {

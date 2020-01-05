@@ -1,3 +1,5 @@
+
+
 function swapTabsAndCloseOther(a, b) {
   gBrowser.swapBrowsersAndCloseOther(gBrowser.tabs[b], gBrowser.tabs[a]);
 }

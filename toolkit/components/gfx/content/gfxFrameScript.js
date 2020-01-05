@@ -1,3 +1,5 @@
+
+
 var { classes: Cc, interfaces: Ci, utils: Cu } = Components;
 
 const gfxFrameScript = {

@@ -1,3 +1,5 @@
+
+
 add_task(function *() {
   yield pushPrefs(["ui.key.contentAccess", 5], ["ui.key.chromeAccess", 5]);
 

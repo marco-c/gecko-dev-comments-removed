@@ -1,6 +1,8 @@
 
 
 
+
+
 add_task(function* () {
   
   yield pushPrefs(["browser.newtabpage.rows", 1]);

@@ -2,6 +2,8 @@
 
 
 
+
+
 add_task(function* () {
   let firstLocation = "http://example.org/browser/browser/base/content/test/general/dummy_page.html";
   yield BrowserTestUtils.openNewForegroundTab(gBrowser, firstLocation);
