@@ -4,11 +4,13 @@
 
 use rustc::lint::Context;
 use rustc::middle::{ty, def};
+use rustc::middle::typeck::astconv::AstConv;
 
 use syntax::ptr::P;
-use syntax::ast;
+use syntax::{ast, ast_map};
 use syntax::ast::{TyPath, Path, AngleBracketedParameters, PathSegment, Ty};
 use syntax::attr::mark_used;
+
 
 
 
@@ -59,4 +61,33 @@ pub fn match_lang_ty(cx: &Context, ty: &Ty, value: &str) -> bool {
         };
     }
     found
+}
+
+
+
+pub fn unsafe_context(map: &ast_map::Map, id: ast::NodeId) -> bool {
+    match map.find(map.get_parent(id)) {
+        Some(ast_map::NodeImplItem(itm)) => {
+            match *itm {
+                ast::MethodImplItem(ref meth) => match meth.node {
+                    ast::MethDecl(_, _, _, _, style, _, _, _) => match style {
+                        ast::UnsafeFn => true,
+                        _ => false,
+                    },
+                    _ => false,
+                },
+                _ => false,
+            }
+        },
+        Some(ast_map::NodeItem(itm)) => {
+            match itm.node {
+                ast::ItemFn(_, style, _, _, _) => match style {
+                    ast::UnsafeFn => true,
+                    _ => false,
+                },
+                _ => false,
+            }
+        }
+        _ => false 
+    }
 }
