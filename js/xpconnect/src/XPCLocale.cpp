@@ -17,6 +17,7 @@
 #include "nsServiceManagerUtils.h"
 #include "mozilla/dom/EncodingUtils.h"
 #include "mozilla/intl/LocaleService.h"
+#include "mozilla/intl/OSPreferences.h"
 #include "mozilla/Preferences.h"
 #include "nsIUnicodeDecoder.h"
 
@@ -25,6 +26,7 @@
 using namespace JS;
 using mozilla::dom::EncodingUtils;
 using mozilla::intl::LocaleService;
+using mozilla::intl::OSPreferences;
 
 
 
@@ -165,9 +167,14 @@ private:
 
     if (!mDecoder) {
       
-      nsAutoCString appLocale;
-      LocaleService::GetInstance()->GetAppLocaleAsLangTag(appLocale);
-      NS_ConvertUTF8toUTF16 localeStr(appLocale);
+      
+      
+      
+      
+      
+      nsAutoCString osLocale;
+      OSPreferences::GetInstance()->GetSystemLocale(osLocale);
+      NS_ConvertUTF8toUTF16 localeStr(osLocale);
 
       nsCOMPtr<nsIPlatformCharset> platformCharset =
         do_GetService(NS_PLATFORMCHARSET_CONTRACTID, &rv);
