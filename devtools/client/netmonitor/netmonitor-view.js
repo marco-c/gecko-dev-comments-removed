@@ -23,10 +23,11 @@ const {PluralForm} = require("devtools/shared/plural-form");
 const {Filters} = require("./filter-predicates");
 const {getFormDataSections,
        formDataURI,
+       writeHeaderText,
+       getKeyWithEvent,
        getUriHostPort} = require("./request-utils");
 const {L10N} = require("./l10n");
 const {RequestsMenuView} = require("./requests-menu-view");
-const {CustomRequestView} = require("./custom-request-view");
 const {ToolbarView} = require("./toolbar-view");
 const {configureStore} = require("./store");
 const Actions = require("./actions/index");
@@ -337,6 +338,138 @@ SidebarView.prototype = {
 
     window.emit(EVENTS.SIDEBAR_POPULATED);
   })
+};
+
+
+
+
+function CustomRequestView() {
+  dumpn("CustomRequestView was instantiated");
+}
+
+CustomRequestView.prototype = {
+  
+
+
+  initialize: function () {
+    dumpn("Initializing the CustomRequestView");
+
+    this.updateCustomRequestEvent = getKeyWithEvent(this.onUpdate.bind(this));
+    $("#custom-pane").addEventListener("input",
+      this.updateCustomRequestEvent, false);
+  },
+
+  
+
+
+  destroy: function () {
+    dumpn("Destroying the CustomRequestView");
+
+    $("#custom-pane").removeEventListener("input",
+      this.updateCustomRequestEvent, false);
+  },
+
+  
+
+
+
+
+
+
+
+  populate: Task.async(function* (data) {
+    $("#custom-url-value").value = data.url;
+    $("#custom-method-value").value = data.method;
+    this.updateCustomQuery(data.url);
+
+    if (data.requestHeaders) {
+      let headers = data.requestHeaders.headers;
+      $("#custom-headers-value").value = writeHeaderText(headers);
+    }
+    if (data.requestPostData) {
+      let postData = data.requestPostData.postData.text;
+      $("#custom-postdata-value").value = yield gNetwork.getString(postData);
+    }
+
+    window.emit(EVENTS.CUSTOMREQUESTVIEW_POPULATED);
+  }),
+
+  
+
+
+
+
+
+  onUpdate: function (field) {
+    let selectedItem = NetMonitorView.RequestsMenu.selectedItem;
+    let value;
+
+    switch (field) {
+      case "method":
+        value = $("#custom-method-value").value.trim();
+        selectedItem.attachment.method = value;
+        break;
+      case "url":
+        value = $("#custom-url-value").value;
+        this.updateCustomQuery(value);
+        selectedItem.attachment.url = value;
+        break;
+      case "query":
+        let query = $("#custom-query-value").value;
+        this.updateCustomUrl(query);
+        field = "url";
+        value = $("#custom-url-value").value;
+        selectedItem.attachment.url = value;
+        break;
+      case "body":
+        value = $("#custom-postdata-value").value;
+        selectedItem.attachment.requestPostData = { postData: { text: value } };
+        break;
+      case "headers":
+        let headersText = $("#custom-headers-value").value;
+        value = parseHeadersText(headersText);
+        selectedItem.attachment.requestHeaders = { headers: value };
+        break;
+    }
+
+    NetMonitorView.RequestsMenu.updateMenuView(selectedItem, field, value);
+  },
+
+  
+
+
+
+
+
+  updateCustomQuery: function (url) {
+    let paramsArray = NetworkHelper.parseQueryString(
+      NetworkHelper.nsIURL(url).query);
+
+    if (!paramsArray) {
+      $("#custom-query").hidden = true;
+      return;
+    }
+
+    $("#custom-query").hidden = false;
+    $("#custom-query-value").value = writeQueryText(paramsArray);
+  },
+
+  
+
+
+
+
+
+  updateCustomUrl: function (queryText) {
+    let params = parseQueryText(queryText);
+    let queryString = writeQueryString(params);
+
+    let url = $("#custom-url-value").value;
+    let oldQuery = NetworkHelper.nsIURL(url).query;
+    let path = url.replace(oldQuery, queryString);
+
+    $("#custom-url-value").value = path;
+  }
 };
 
 
@@ -813,7 +946,7 @@ NetworkDetailsView.prototype = {
         let jsonScopeName = L10N.getStr("jsonScopeName");
         let jsonScope = this._params.addScope(jsonScopeName);
         jsonScope.expanded = true;
-        let jsonItem = jsonScope.addItem("", { enumerable: true });
+        let jsonItem = jsonScope.addItem(undefined, { enumerable: true });
         jsonItem.populate(jsonVal, { sorted: true });
       } else {
         
@@ -1397,6 +1530,77 @@ PerformanceStatisticsView.prototype = {
 
 var $ = (selector, target = document) => target.querySelector(selector);
 var $all = (selector, target = document) => target.querySelectorAll(selector);
+
+
+
+
+
+
+
+
+
+function parseHeadersText(text) {
+  return parseRequestText(text, "\\S+?", ":");
+}
+
+
+
+
+
+
+
+
+
+function parseQueryText(text) {
+  return parseRequestText(text, ".+?", "=");
+}
+
+
+
+
+
+
+
+
+
+
+function parseRequestText(text, namereg, divider) {
+  let regex = new RegExp("(" + namereg + ")\\" + divider + "\\s*(.+)");
+  let pairs = [];
+
+  for (let line of text.split("\n")) {
+    let matches;
+    if (matches = regex.exec(line)) { 
+      let [, name, value] = matches;
+      pairs.push({name: name, value: value});
+    }
+  }
+  return pairs;
+}
+
+
+
+
+
+
+
+
+
+function writeQueryText(params) {
+  return params.map(({name, value}) => name + "=" + value).join("\n");
+}
+
+
+
+
+
+
+
+
+
+function writeQueryString(params) {
+  return params.map(({name, value}) => name + "=" + value).join("&");
+}
 
 
 
