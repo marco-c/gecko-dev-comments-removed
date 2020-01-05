@@ -5,45 +5,6 @@
 #include "NonParamInsideFunctionDeclChecker.h"
 #include "CustomMatchers.h"
 
-class NonParamAnnotation : public CustomTypeAnnotation
-{
-public:
-  NonParamAnnotation() : CustomTypeAnnotation("moz_non_param", "non-param") {};
-
-protected:
-  
-  
-  
-  
-  bool hasFakeAnnotation(const TagDecl *D) const override {
-    
-    for (const Attr *A : D->attrs()) {
-      if (isa<AlignedAttr>(A)) {
-        D->dump();
-        return true;
-      }
-    }
-
-    
-    if (auto RD = dyn_cast<RecordDecl>(D)) {
-      for (auto F : RD->fields()) {
-        for (auto A : F->attrs()) {
-          if (isa<AlignedAttr>(A)) {
-            D->dump();
-
-            return true;
-          }
-        }
-      }
-    }
-
-    
-    
-    return false;
-  }
-};
-NonParamAnnotation NonParam;
-
 void NonParamInsideFunctionDeclChecker::registerMatchers(MatchFinder* AstMatcher) {
   AstMatcher->addMatcher(
       functionDecl(anyOf(allOf(isDefinition(),
