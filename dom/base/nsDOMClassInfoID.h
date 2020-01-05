@@ -20,6 +20,9 @@ enum nsDOMClassInfoID
   eDOMClassInfo_DOMConstructor_id,
 
   
+  eDOMClassInfo_CSSMediaRule_id,
+
+  
 #ifdef MOZ_XUL
   eDOMClassInfo_XULCommandDispatcher_id,
 #endif
@@ -33,6 +36,9 @@ enum nsDOMClassInfoID
   eDOMClassInfo_XULTemplateBuilder_id,
   eDOMClassInfo_XULTreeBuilder_id,
 #endif
+
+  eDOMClassInfo_CSSMozDocumentRule_id,
+  eDOMClassInfo_CSSSupportsRule_id,
 
   
   eDOMClassInfo_CSSFontFaceRule_id,
