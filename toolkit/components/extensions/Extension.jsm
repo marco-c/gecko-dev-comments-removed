@@ -32,6 +32,8 @@ XPCOMUtils.defineLazyModuleGetter(this, "AppConstants",
                                   "resource://gre/modules/AppConstants.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionAPIs",
                                   "resource://gre/modules/ExtensionAPI.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "ExtensionContext",
+                                  "resource://gre/modules/ExtensionChild.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ExtensionStorage",
                                   "resource://gre/modules/ExtensionStorage.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
@@ -85,7 +87,6 @@ var {
   EventEmitter,
   SchemaAPIManager,
   LocaleData,
-  Messenger,
   instanceOf,
   LocalAPIImplementation,
   flushJarCache,
@@ -110,7 +111,7 @@ const COMMENT_REGEXP = new RegExp(String.raw`
     //.*
   `.replace(/\s+/g, ""), "gm");
 
-var ExtensionContext, GlobalManager;
+var GlobalManager;
 
 
 var Management = new class extends SchemaAPIManager {
@@ -166,87 +167,6 @@ var Management = new class extends SchemaAPIManager {
     }
   }
 }();
-
-
-
-
-
-
-
-
-
-
-
-ExtensionContext = class extends BaseContext {
-  constructor(extension, params) {
-    
-    
-    super("addon_parent", extension);
-
-    let {type, uri} = params;
-    this.type = type;
-    this.uri = uri || extension.baseURI;
-
-    this.setContentWindow(params.contentWindow);
-
-    
-    
-    let sender = {id: extension.uuid};
-    if (uri) {
-      sender.url = uri.spec;
-    }
-    Management.emit("page-load", this, params, sender);
-
-    let filter = {extensionId: extension.id};
-    let optionalFilter = {};
-    
-    
-    
-    
-    this.messenger = new Messenger(this, [Services.cpmm, this.messageManager], sender, filter, optionalFilter);
-
-    if (this.externallyVisible) {
-      this.extension.views.add(this);
-    }
-  }
-
-  get cloneScope() {
-    return this.contentWindow;
-  }
-
-  get principal() {
-    return this.contentWindow.document.nodePrincipal;
-  }
-
-  get externallyVisible() {
-    return true;
-  }
-
-  
-  shutdown() {
-    Management.emit("page-shutdown", this);
-    this.unload();
-  }
-
-  
-  
-  unload() {
-    
-    
-    
-    if (this.unloaded) {
-      return;
-    }
-
-    super.unload();
-
-    Management.emit("page-unload", this);
-
-    if (this.externallyVisible) {
-      this.extension.views.delete(this);
-    }
-  }
-};
 
 
 
