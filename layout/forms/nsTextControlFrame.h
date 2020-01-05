@@ -323,7 +323,11 @@ private:
   
 
 
-  mozilla::dom::Element* GetRootNodeAndInitializeEditor();
+
+
+
+
+
   nsresult GetRootNodeAndInitializeEditor(nsIDOMElement **aRootElement);
 
   void FinishedInitializer() {
