@@ -295,6 +295,7 @@ function TypedArrayEvery(callbackfn) {
 }
 
 
+
 function TypedArrayFill(value, start = 0, end = undefined) {
     
     if (!IsObject(this) || !IsTypedArray(this)) {
@@ -302,13 +303,17 @@ function TypedArrayFill(value, start = 0, end = undefined) {
                             "TypedArrayFill");
     }
 
-    GetAttachedArrayBuffer(this);
-
     
     var O = this;
 
     
+    var buffer = GetAttachedArrayBuffer(this);
+
+    
     var len = TypedArrayLength(O);
+
+    
+    value = ToNumber(value);
 
     
     var relativeStart = ToInteger(start);
@@ -325,6 +330,16 @@ function TypedArrayFill(value, start = 0, end = undefined) {
     var final = relativeEnd < 0
                 ? std_Math_max(len + relativeEnd, 0)
                 : std_Math_min(relativeEnd, len);
+
+    
+    if (buffer === null) {
+        
+        
+        buffer = ViewedArrayBufferIfReified(O);
+    }
+
+    if (IsDetachedBuffer(buffer))
+        ThrowTypeError(JSMSG_TYPED_ARRAY_DETACHED);
 
     
     for (; k < final; k++) {
