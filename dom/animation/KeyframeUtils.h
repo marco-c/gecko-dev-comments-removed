@@ -16,6 +16,7 @@ class JSObject;
 class nsIDocument;
 class nsStyleContext;
 struct ServoComputedValues;
+struct RawServoDeclarationBlock;
 
 namespace mozilla {
 struct AnimationProperty;
@@ -161,6 +162,22 @@ public:
 
 
   static bool IsAnimatableProperty(nsCSSPropertyID aProperty);
+
+  
+
+
+
+
+
+
+
+
+
+
+  static already_AddRefed<RawServoDeclarationBlock> ParseProperty(
+    nsCSSPropertyID aProperty,
+    const nsAString& aValue,
+    nsIDocument* aDocument);
 };
 
 } 
