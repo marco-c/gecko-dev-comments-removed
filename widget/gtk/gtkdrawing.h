@@ -39,33 +39,13 @@ typedef struct {
   gint32 maxpos;
 } GtkWidgetState;
 
-
-
-
-struct MozGtkSize {
-  gint width;
-  gint height;
-
-  MozGtkSize operator+(const GtkBorder& aBorder) const
-  {
-    gint resultWidth = width + aBorder.left + aBorder.right;
-    gint resultHeight = height + aBorder.top + aBorder.bottom;
-    return {resultWidth, resultHeight};
-  }
-};
-
 typedef struct {
-  bool initialized;
-  struct {
-    MozGtkSize scrollbar;
-    MozGtkSize thumb;
-    MozGtkSize button;
-  } size;
-  struct {
-    GtkBorder scrollbar;
-    GtkBorder track;
-  } border;
-} ScrollbarGTKMetrics;
+  gint slider_width;
+  gint trough_border;
+  gint stepper_size;
+  gint stepper_spacing;
+  gint min_slider_size;
+} MozGtkScrollbarMetrics;
 
 typedef enum {
   MOZ_GTK_STEPPER_DOWN        = 1 << 0,
@@ -442,8 +422,11 @@ moz_gtk_get_scalethumb_metrics(GtkOrientation orient, gint* thumb_length, gint* 
 
 
 
-const ScrollbarGTKMetrics*
-GetScrollbarMetrics(GtkOrientation aOrientation);
+
+
+
+gint
+moz_gtk_get_scrollbar_metrics(MozGtkScrollbarMetrics* metrics);
 
 
 
@@ -533,6 +516,19 @@ GtkWidget* moz_gtk_get_scrollbar_widget(void);
 
 gint
 moz_gtk_get_tab_thickness(WidgetNodeType aNodeType);
+
+
+
+
+
+gboolean moz_gtk_has_scrollbar_buttons(void);
+
+
+
+
+
+void moz_gtk_get_widget_min_size(WidgetNodeType aGtkWidgetType, int* width,
+                                 int* height);
 
 #if (MOZ_WIDGET_GTK == 2)
 #ifdef __cplusplus
