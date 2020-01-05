@@ -81,9 +81,7 @@ public:
 
 protected:
   
-  class AutoPatternReferencer;
   nsSVGPatternFrame* GetReferencedPattern();
-  nsSVGPatternFrame* GetReferencedPatternIfNotInUse();
 
   
   uint16_t GetEnumValue(uint32_t aIndex, nsIContent *aDefault);
