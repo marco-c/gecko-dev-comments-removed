@@ -323,6 +323,20 @@ panelview:not([mainview]) .toolbarbutton-text,
   padding: 4px 0;
 }
 
+
+
+photonpanelmultiview panelview {
+  background: var(--arrowpanel-background);
+}
+
+photonpanelmultiview .panel-subview-body {
+  
+
+  -moz-box-flex: unset;
+}
+
+
+
 .cui-widget-panel.cui-widget-panelWithFooter > .panel-arrowcontainer > .panel-arrowcontent {
   padding-bottom: 0;
 }
