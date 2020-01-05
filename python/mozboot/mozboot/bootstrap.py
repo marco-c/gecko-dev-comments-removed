@@ -229,6 +229,7 @@ class Bootstrapper(object):
 
         hg_installed, hg_modern = self.instance.ensure_mercurial_modern()
         self.instance.ensure_python_modern()
+        self.instance.ensure_rust_modern()
 
         
         
