@@ -1254,10 +1254,9 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     bool functionArguments(YieldHandling yieldHandling, FunctionSyntaxKind kind,
                            Node funcpn);
 
-    Node functionDefinition(InHandling inHandling, YieldHandling yieldHandling, HandleAtom name,
-                            FunctionSyntaxKind kind,
-                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind,
-                            InvokedPrediction invoked = PredictUninvoked);
+    Node functionDefinition(Node func, InHandling inHandling, YieldHandling yieldHandling,
+                            HandleAtom name, FunctionSyntaxKind kind,
+                            GeneratorKind generatorKind, FunctionAsyncKind asyncKind);
 
     
     
