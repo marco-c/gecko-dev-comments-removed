@@ -1,19 +1,19 @@
 
 module.exports = {
   "extends": [
-    "../testing/xpcshell/xpcshell.eslintrc.js"
+    "plugin:mozilla/xpcshell-test"
   ],
   "rules": {
     
-    "camelcase": 0,
+    "camelcase": "off",
     
     
     
     
     
-    "no-undef": 0,
-    "block-scoped-var": 0,
+    "no-undef": "off",
+    "block-scoped-var": "off",
     
-    "mozilla/reject-some-requires": 0,
+    "mozilla/reject-some-requires": "off",
   }
 };

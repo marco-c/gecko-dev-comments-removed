@@ -5,5 +5,5 @@ module.exports = {
   
   
   
-  "extends": "../../../../../../testing/mochitest/mochitest.eslintrc.js"
+  "extends": "plugin:mozilla/mochitest-test"
 };

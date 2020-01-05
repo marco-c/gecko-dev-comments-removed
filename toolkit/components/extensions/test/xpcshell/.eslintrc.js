@@ -1,7 +1,7 @@
 "use strict";
 
-module.exports = { 
-  "extends": "../../../../../testing/xpcshell/xpcshell.eslintrc.js",
+module.exports = {
+  "extends": "plugin:mozilla/xpcshell-test",
 
   "globals": {
     "browser": false,
