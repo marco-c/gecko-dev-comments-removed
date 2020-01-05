@@ -16,13 +16,14 @@
 #include "mozilla/EditorUtils.h"
 #include "mozilla/HTMLEditor.h"
 #include "mozilla/MathAlgorithms.h"
+#include "mozilla/Move.h"
 #include "mozilla/Preferences.h"
+#include "mozilla/UniquePtr.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/Selection.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/OwningNonNull.h"
 #include "mozilla/mozalloc.h"
-#include "nsAutoPtr.h"
 #include "nsAString.h"
 #include "nsAlgorithm.h"
 #include "nsCRT.h"
@@ -1455,10 +1456,7 @@ HTMLEditRules::WillLoadHTML(Selection* aSelection,
   
 
   if (mBogusNode) {
-    if (NS_WARN_IF(!mHTMLEditor)) {
-      return NS_ERROR_UNEXPECTED;
-    }
-    mHTMLEditor->DeleteNode(mBogusNode);
+    mTextEditor->DeleteNode(mBogusNode);
     mBogusNode = nullptr;
   }
 
@@ -3802,10 +3800,7 @@ HTMLEditRules::WillCSSIndent(Selection* aSelection,
       } else {
         if (!curQuote) {
           
-          if (NS_WARN_IF(!mHTMLEditor)) {
-            return NS_ERROR_UNEXPECTED;
-          }
-          if (!mHTMLEditor->CanContainTag(*curParent, *nsGkAtoms::div)) {
+          if (!mTextEditor->CanContainTag(*curParent, *nsGkAtoms::div)) {
             return NS_OK; 
           }
 
@@ -4033,10 +4028,7 @@ HTMLEditRules::WillHTMLIndent(Selection* aSelection,
 
         if (!curQuote) {
           
-          if (NS_WARN_IF(!mHTMLEditor)) {
-            return NS_ERROR_UNEXPECTED;
-          }
-          if (!mHTMLEditor->CanContainTag(*curParent, *nsGkAtoms::blockquote)) {
+          if (!mTextEditor->CanContainTag(*curParent, *nsGkAtoms::blockquote)) {
             return NS_OK; 
           }
 
@@ -4508,20 +4500,21 @@ HTMLEditRules::CreateStyleForInsertText(Selection& aSelection,
   NS_ENSURE_STATE(rootElement);
 
   
-  nsAutoPtr<PropItem> item(mHTMLEditor->mTypeInState->TakeClearProperty());
+  UniquePtr<PropItem> item =
+    Move(mHTMLEditor->mTypeInState->TakeClearProperty());
   while (item && node != rootElement) {
     NS_ENSURE_STATE(mHTMLEditor);
     nsresult rv =
       mHTMLEditor->ClearStyle(address_of(node), &offset,
                               item->tag, &item->attr);
     NS_ENSURE_SUCCESS(rv, rv);
-    item = mHTMLEditor->mTypeInState->TakeClearProperty();
+    item = Move(mHTMLEditor->mTypeInState->TakeClearProperty());
     weDidSomething = true;
   }
 
   
   int32_t relFontSize = mHTMLEditor->mTypeInState->TakeRelativeFontSize();
-  item = mHTMLEditor->mTypeInState->TakeSetProperty();
+  item = Move(mHTMLEditor->mTypeInState->TakeSetProperty());
 
   if (item || relFontSize) {
     
@@ -4780,7 +4773,7 @@ HTMLEditRules::WillAlign(Selection& aSelection,
     
     if (!curDiv || transitionList[i]) {
       
-      if (!htmlEditor->CanContainTag(*curParent, *nsGkAtoms::div)) {
+      if (!mTextEditor->CanContainTag(*curParent, *nsGkAtoms::div)) {
         
         return NS_OK;
       }
@@ -6399,10 +6392,7 @@ HTMLEditRules::ReturnInParagraph(Selection* aSelection,
     } else {
       if (doesCRCreateNewP) {
         nsCOMPtr<nsIDOMNode> tmp;
-        if (NS_WARN_IF(!mHTMLEditor)) {
-          return NS_ERROR_UNEXPECTED;
-        }
-        rv = mHTMLEditor->SplitNode(aNode, aOffset, getter_AddRefs(tmp));
+        rv = mTextEditor->SplitNode(aNode, aOffset, getter_AddRefs(tmp));
         NS_ENSURE_SUCCESS(rv, rv);
         selNode = tmp;
       }
@@ -6624,7 +6614,7 @@ HTMLEditRules::ReturnInListItem(Selection& aSelection,
           nsCOMPtr<Element> newListItem =
             htmlEditor->CreateNode(listAtom, list, itemOffset + 1);
           NS_ENSURE_STATE(newListItem);
-          rv = htmlEditor->DeleteNode(&aListItem);
+          rv = mTextEditor->DeleteNode(&aListItem);
           NS_ENSURE_SUCCESS(rv, rv);
           rv = aSelection.Collapse(newListItem, 0);
           NS_ENSURE_SUCCESS(rv, rv);
@@ -8878,7 +8868,7 @@ HTMLEditRules::DocumentModifiedWorker()
   
   
   if (mBogusNode) {
-    htmlEditor->DeleteNode(mBogusNode);
+    mTextEditor->DeleteNode(mBogusNode);
     mBogusNode = nullptr;
   }
 

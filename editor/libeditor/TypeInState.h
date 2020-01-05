@@ -6,6 +6,7 @@
 #ifndef TypeInState_h
 #define TypeInState_h
 
+#include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISelectionListener.h"
@@ -63,13 +64,13 @@ public:
 
 
 
-  PropItem* TakeClearProperty();
+  UniquePtr<PropItem> TakeClearProperty();
 
   
 
 
 
-  PropItem* TakeSetProperty();
+  UniquePtr<PropItem> TakeSetProperty();
 
   
 
