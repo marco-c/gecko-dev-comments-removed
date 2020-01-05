@@ -334,6 +334,26 @@ private:
     
     media::TimeUnit mNextSampleTime;
 
+    struct EvictionIndex
+    {
+      EvictionIndex() { Reset(); }
+      void Reset()
+      {
+        mEvictable = 0;
+        mLastIndex = 0;
+      }
+      uint32_t mEvictable;
+      uint32_t mLastIndex;
+    };
+    
+    
+    
+    
+    
+    
+    
+    EvictionIndex mEvictionIndex;
+
     void ResetAppendState()
     {
       mLastDecodeTimestamp.reset();
@@ -363,6 +383,9 @@ private:
   size_t RemoveFrames(const media::TimeIntervals& aIntervals,
                       TrackData& aTrackData,
                       uint32_t aStartIndex);
+  
+  void ResetEvictionIndex(TrackData& aTrackData);
+  void UpdateEvictionIndex(TrackData& aTrackData, uint32_t aCurrentIndex);
   
   uint32_t FindSampleIndex(const TrackBuffer& aTrackBuffer,
                            const media::TimeInterval& aInterval);
