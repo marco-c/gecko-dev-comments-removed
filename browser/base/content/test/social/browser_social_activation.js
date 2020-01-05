@@ -111,32 +111,44 @@ function clickAddonRemoveButton(tab, aCallback) {
 }
 
 function activateOneProvider(manifest, finishActivation, aCallback) {
-  info("activating provider " + manifest.name);
-  let panel = document.getElementById("servicesInstall-notification");
-  BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popupshown").then(() => {
-    ok(!panel.hidden, "servicesInstall-notification panel opened");
-    BrowserTestUtils.waitForEvent(PopupNotifications.panel, "popuphidden").then(() => {
-      ok(panel.hidden, "servicesInstall-notification panel hidden");
-      if (!finishActivation) {
-        ok(panel.hidden, "activation panel is not showing");
-        executeSoon(aCallback);
-      } else {
-        waitForProviderLoad(manifest.origin).then(() => {
-          checkSocialUI();
-          executeSoon(aCallback);
-        });
-      }
-    });
-    if (finishActivation)
-      panel.button.click();
-    else
-      panel.closebutton.click();
-  });
+  Task.spawn(function* () {
+    info("activating provider " + manifest.name);
 
-  
-  activateProvider(manifest.origin, function() {
-    info("waiting on activation panel to open/close...");
-  });
+    
+    let popupShown = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
+                                                   "popupshown");
+    yield new Promise(resolve => activateProvider(manifest.origin, resolve));
+    yield popupShown;
+
+    info("servicesInstall-notification panel opened");
+
+    
+    let providerLoaded = finishActivation ?
+                         waitForProviderLoad(manifest.origin) : null;
+    let popupHidden = BrowserTestUtils.waitForEvent(PopupNotifications.panel,
+                                                    "popuphidden");
+
+    
+    let notification;
+    yield BrowserTestUtils.waitForCondition(
+          () => (notification = PopupNotifications.panel.childNodes[0]));
+    is(notification.id, "servicesInstall-notification");
+
+    if (finishActivation) {
+      notification.button.click();
+    } else {
+      notification.closebutton.click();
+    }
+
+    yield providerLoaded;
+    yield popupHidden;
+
+    info("servicesInstall-notification panel hidden");
+
+    if (finishActivation) {
+      checkSocialUI();
+    }
+  }).then(() => executeSoon(aCallback)).catch(ex => ok(false, ex));
 }
 
 var gTestDomains = ["https://example.com", "https://test1.example.com", "https://test2.example.com"];
