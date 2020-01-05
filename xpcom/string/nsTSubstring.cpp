@@ -83,17 +83,25 @@ nsTSubstring_CharT::MutatePrep(size_type aCapacity, char_type** aOldData,
     
     const size_type slowGrowthThreshold = 8 * 1024 * 1024;
 
+    
+    
+    const size_type neededExtraSpace =
+      sizeof(nsStringBuffer) / sizeof(char_type) + 1;
+
     size_type temp;
     if (aCapacity >= slowGrowthThreshold) {
       size_type minNewCapacity = curCapacity + (curCapacity >> 3); 
-      temp = XPCOM_MAX(aCapacity, minNewCapacity);
+      temp = XPCOM_MAX(aCapacity, minNewCapacity) + neededExtraSpace;
 
       
+      
+      
       const size_t MiB = 1 << 20;
-      temp = MiB * ((temp + MiB - 1) / MiB);
+      temp = (MiB * ((temp + MiB - 1) / MiB)) - neededExtraSpace;
     } else {
       
-      temp = mozilla::RoundUpPow2(aCapacity);
+      temp =
+        mozilla::RoundUpPow2(aCapacity + neededExtraSpace) - neededExtraSpace;
     }
 
     MOZ_ASSERT(XPCOM_MIN(temp, kMaxCapacity) >= aCapacity,
