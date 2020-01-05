@@ -790,7 +790,6 @@ Statistics::formatJsonPhaseTimes(const PhaseTimeTable phaseTimes)
 Statistics::Statistics(JSRuntime* rt)
   : runtime(rt),
     fp(nullptr),
-    gcDepth(0),
     nonincrementalReason_(gc::AbortReason::None),
     preBytes(0),
     maxPauseInInterval(0),
@@ -1064,8 +1063,7 @@ Statistics::endGC()
         printStats();
 
     
-    if (gcDepth == 1)
-        aborted = false;
+    aborted = false;
 }
 
 void
@@ -1093,7 +1091,6 @@ void
 Statistics::beginSlice(const ZoneGCStats& zoneStats, JSGCInvocationKind gckind,
                        SliceBudget budget, JS::gcreason::Reason reason)
 {
-    gcDepth++;
     this->zoneStats = zoneStats;
 
     bool first = !runtime->gc.isIncrementalGCInProgress();
@@ -1110,13 +1107,11 @@ Statistics::beginSlice(const ZoneGCStats& zoneStats, JSGCInvocationKind gckind,
     runtime->addTelemetry(JS_TELEMETRY_GC_REASON, reason);
 
     
-    if (gcDepth == 1) {
-        bool wasFullGC = zoneStats.isCollectingAllZones();
-        if (sliceCallback)
-            (*sliceCallback)(runtime->contextFromMainThread(),
-                             first ? JS::GC_CYCLE_BEGIN : JS::GC_SLICE_BEGIN,
-                             JS::GCDescription(!wasFullGC, gckind, reason));
-    }
+    bool wasFullGC = zoneStats.isCollectingAllZones();
+    if (sliceCallback)
+        (*sliceCallback)(runtime->contextFromMainThread(),
+                         first ? JS::GC_CYCLE_BEGIN : JS::GC_SLICE_BEGIN,
+                         JS::GCDescription(!wasFullGC, gckind, reason));
 }
 
 void
@@ -1157,7 +1152,7 @@ Statistics::endSlice()
         printSliceProfile();
 
     
-    if (gcDepth == 1 && !aborted) {
+    if (!aborted) {
         bool wasFullGC = zoneStats.isCollectingAllZones();
         if (sliceCallback)
             (*sliceCallback)(runtime->contextFromMainThread(),
@@ -1175,9 +1170,6 @@ Statistics::endSlice()
         for (size_t d = PHASE_DAG_NONE; d < NumTimingArrays; d++)
             PodZero(&phaseTimes[d][PHASE_GC_BEGIN], PHASE_LIMIT - PHASE_GC_BEGIN);
     }
-
-    gcDepth--;
-    MOZ_ASSERT(gcDepth >= 0);
 }
 
 bool
@@ -1247,14 +1239,13 @@ Statistics::resumePhases()
 void
 Statistics::beginPhase(Phase phase)
 {
+    
+    MOZ_ASSERT(phase != PHASE_GC_BEGIN && phase != PHASE_GC_END);
+
     Phase parent = phaseNestingDepth ? phaseNesting[phaseNestingDepth - 1] : PHASE_NO_PARENT;
 
     
-    
-    
-    
-    
-    if (parent == PHASE_GC_BEGIN || parent == PHASE_GC_END || parent == PHASE_MUTATOR) {
+    if (parent == PHASE_MUTATOR) {
         suspendPhases(PHASE_IMPLICIT_SUSPENSION);
         parent = phaseNestingDepth ? phaseNesting[phaseNestingDepth - 1] : PHASE_NO_PARENT;
     }

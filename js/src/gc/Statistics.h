@@ -213,7 +213,6 @@ struct Statistics
     
     
     
-    
     void suspendPhases(Phase suspension = PHASE_EXPLICIT_SUSPENSION);
 
     
@@ -329,12 +328,6 @@ struct Statistics
 
     
     FILE* fp;
-
-    
-
-
-
-    int gcDepth;
 
     ZoneGCStats zoneStats;
 
