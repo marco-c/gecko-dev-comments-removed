@@ -6615,14 +6615,6 @@ HTMLInputElement::GetSelectionRange(int32_t* aSelectionStart,
   if (IsInComposedDoc()) {
     GetComposedDoc()->FlushPendingNotifications(FlushType::Frames);
   }
-  if (!GetPrimaryFrame()) {
-    
-    
-    
-    
-    
-    return NS_ERROR_FAILURE;
-  }
 
   nsTextEditorState* state = GetEditorState();
   if (!state) {

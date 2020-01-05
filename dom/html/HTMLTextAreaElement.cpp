@@ -848,14 +848,6 @@ HTMLTextAreaElement::GetSelectionRange(int32_t* aSelectionStart,
   if (IsInComposedDoc()) {
     GetComposedDoc()->FlushPendingNotifications(FlushType::Frames);
   }
-  if (!GetPrimaryFrame()) {
-    
-    
-    
-    
-    
-    return NS_ERROR_FAILURE;
-  }
 
   return mState.GetSelectionRange(aSelectionStart, aSelectionEnd);
 }
