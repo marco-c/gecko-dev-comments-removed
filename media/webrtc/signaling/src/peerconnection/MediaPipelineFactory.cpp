@@ -446,6 +446,7 @@ MediaPipelineFactory::CreateOrUpdateMediaPipeline(
     if (NS_FAILED(rv)) {
       return rv;
     }
+    conduit->SetPCHandle(mPC->GetHandle());
   } else {
     
     return NS_OK;
@@ -839,11 +840,9 @@ MediaPipelineFactory::GetOrCreateVideoConduit(
     
     
     
-    if (ssrcs->empty()) {
-      MOZ_MTLOG(ML_ERROR, "No SSRC set for receive track");
-      return NS_ERROR_FAILURE;
+    if (!ssrcs->empty()) {
+      conduit->SetRemoteSSRC(ssrcs->front());
     }
-    conduit->SetRemoteSSRC(ssrcs->front());
 
     if (!extmaps.empty()) {
       conduit->AddLocalRTPExtensions(false, extmaps);

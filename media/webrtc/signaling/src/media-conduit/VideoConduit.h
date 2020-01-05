@@ -103,7 +103,7 @@ public:
 
 
 
-  virtual MediaConduitErrorCode ReceivedRTPPacket(const void* data, int len) override;
+  virtual MediaConduitErrorCode ReceivedRTPPacket(const void* data, int len, uint32_t ssrc) override;
 
   
 
@@ -261,6 +261,10 @@ public:
   }
 
   virtual uint64_t CodecPluginID() override;
+
+  virtual void SetPCHandle(const std::string& aPCHandle) override {
+    mPCHandle = aPCHandle;
+  }
 
   unsigned short SendingWidth() override {
     return mSendingWidth;
@@ -469,6 +473,7 @@ private:
   unsigned short mNumReceivingStreams;
   bool mVideoLatencyTestEnable;
   uint64_t mVideoLatencyAvg;
+  
   int mMinBitrate;
   int mStartBitrate;
   int mPrefMaxBitrate;
@@ -496,6 +501,17 @@ private:
   webrtc::VideoReceiveStream* mRecvStream;
   
   webrtc::VideoReceiveStream::Config mRecvStreamConfig;
+  
+  
+  
+  Atomic<bool> mRecvSSRCSet;
+  
+  bool mRecvSSRCSetInProgress;
+  struct QueuedPacket {
+    int mLen;
+    uint8_t mData[1];
+  };
+  nsTArray<UniquePtr<QueuedPacket>> mQueuedPackets;
 
   
   
@@ -508,6 +524,8 @@ private:
   nsCOMPtr<nsITimer> mVideoStatsTimer;
   SendStreamStatistics mSendStreamStats;
   ReceiveStreamStatistics mRecvStreamStats;
+
+  std::string mPCHandle;
 };
 } 
 

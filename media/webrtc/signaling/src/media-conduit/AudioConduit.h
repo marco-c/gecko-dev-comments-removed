@@ -57,7 +57,7 @@ public:
 
 
 
-  virtual MediaConduitErrorCode ReceivedRTPPacket(const void *data, int len) override;
+  virtual MediaConduitErrorCode ReceivedRTPPacket(const void *data, int len, uint32_t ssrc) override;
 
   
 
@@ -163,6 +163,7 @@ public:
                         size_t len) override;
 
   virtual uint64_t CodecPluginID() override { return 0; }
+  virtual void SetPCHandle(const std::string& aPCHandle) {}
 
   explicit WebrtcAudioConduit():
                       mVoiceEngine(nullptr),

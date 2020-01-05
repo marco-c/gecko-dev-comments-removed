@@ -198,6 +198,8 @@ WebrtcVideoConduit::WebrtcVideoConduit(RefPtr<WebRtcCallWrapper> aCall)
   , mSendStreamConfig(this) 
   , mRecvStream(nullptr)
   , mRecvStreamConfig(this) 
+  , mRecvSSRCSet(false)
+  , mRecvSSRCSetInProgress(false)
   , mSendCodecPlugin(nullptr)
   , mRecvCodecPlugin(nullptr)
   , mVideoStatsTimer(do_CreateInstance(NS_TIMER_CONTRACTID))
@@ -682,11 +684,12 @@ bool
 WebrtcVideoConduit::SetRemoteSSRC(unsigned int ssrc)
 {
   mRecvStreamConfig.rtp.remote_ssrc = ssrc;
-  unsigned int current_ssrc;
 
+  unsigned int current_ssrc;
   if (!GetRemoteSSRC(&current_ssrc)) {
     return false;
   }
+  mRecvSSRCSet = true;
 
   if (current_ssrc == ssrc || !mEngineReceiving) {
     return true;
@@ -1137,6 +1140,20 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
       mRecvStreamConfig.rtp.fec.red_rtx_payload_type = -1;
     }
 
+    if (!mRecvSSRCSet) {
+      
+      
+      
+      unsigned int ssrc;
+      do {
+        SECStatus rv = PK11_GenerateRandom(reinterpret_cast<unsigned char*>(&ssrc), sizeof(ssrc));
+        if (rv != SECSuccess) {
+          return kMediaConduitUnknownError;
+        }
+      } while (ssrc == 0); 
+
+      mRecvStreamConfig.rtp.remote_ssrc = ssrc;
+    }
     
     
     
@@ -1149,7 +1166,8 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
       if (rv != SECSuccess) {
         return kMediaConduitUnknownError;
       }
-    } while (ssrc == mRecvStreamConfig.rtp.remote_ssrc);
+    } while (ssrc == mRecvStreamConfig.rtp.remote_ssrc || ssrc == 0);
+    
 
     mRecvStreamConfig.rtp.local_ssrc = ssrc;
 
@@ -1157,8 +1175,8 @@ WebrtcVideoConduit::ConfigureRecvMediaCodecs(
     mRecvCodecList.SwapElements(recv_codecs);
     recv_codecs.Clear();
     mRecvStreamConfig.rtp.rtx.clear();
-    
     DeleteRecvStream();
+    
     MediaConduitErrorCode rval = CreateRecvStream();
     if (rval != kMediaConduitNoError) {
       CSFLogError(logTag, "%s Start Receive Error %d ", __FUNCTION__, rval);
@@ -1734,8 +1752,61 @@ WebrtcVideoConduit::DeliverPacket(const void* data, int len)
 }
 
 MediaConduitErrorCode
-WebrtcVideoConduit::ReceivedRTPPacket(const void* data, int len)
+WebrtcVideoConduit::ReceivedRTPPacket(const void* data, int len, uint32_t ssrc)
 {
+  bool queue = mRecvSSRCSetInProgress;
+  if (!mRecvSSRCSet && !mRecvSSRCSetInProgress) {
+    mRecvSSRCSetInProgress = true;
+    queue = true;
+    
+    
+    
+    
+
+    
+    RefPtr<WebrtcVideoConduit> self = this;
+    nsCOMPtr<nsIThread> thread;
+    if (NS_WARN_IF(NS_FAILED(NS_GetCurrentThread(getter_AddRefs(thread))))) {
+      return kMediaConduitRTPProcessingFailed;
+    }
+    NS_DispatchToMainThread(media::NewRunnableFrom([self, thread, ssrc]() mutable {
+          
+          
+          
+          
+          
+          WebrtcGmpPCHandleSetter setter(self->mPCHandle);
+          self->SetRemoteSSRC(ssrc); 
+          
+          thread->Dispatch(media::NewRunnableFrom([self]() mutable {
+                self->mRecvSSRCSetInProgress = false;
+                
+                for (auto& packet : self->mQueuedPackets) {
+                  CSFLogDebug(logTag, "%s: seq# %u, Len %d ", __FUNCTION__,
+                              (uint16_t)ntohs(((uint16_t*) packet->mData)[1]), packet->mLen);
+
+                  if (self->DeliverPacket(packet->mData, packet->mLen) != kMediaConduitNoError) {
+                    CSFLogError(logTag, "%s RTP Processing Failed", __FUNCTION__);
+                    
+                  }
+                }
+                self->mQueuedPackets.Clear();
+
+                return NS_OK;
+              }), NS_DISPATCH_NORMAL);
+          return NS_OK;
+        }));
+    
+  }
+  if (queue) {
+    
+    UniquePtr<QueuedPacket> packet((QueuedPacket*) malloc(sizeof(QueuedPacket) + len-1));
+    packet->mLen = len;
+    memcpy(packet->mData, data, len);
+    mQueuedPackets.AppendElement(Move(packet));
+    return kMediaConduitNoError;
+  }
+
   CSFLogDebug(logTag, "%s: seq# %u, Len %d ", __FUNCTION__,
               (uint16_t)ntohs(((uint16_t*) data)[1]), len);
 

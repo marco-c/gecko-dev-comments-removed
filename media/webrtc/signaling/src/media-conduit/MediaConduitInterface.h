@@ -196,7 +196,7 @@ public:
 
 
 
-  virtual MediaConduitErrorCode ReceivedRTPPacket(const void *data, int len) = 0;
+  virtual MediaConduitErrorCode ReceivedRTPPacket(const void *data, int len, uint32_t ssrc) = 0;
 
   
 
@@ -277,6 +277,8 @@ public:
                                    uint64_t* bytesSent) = 0;
 
   virtual uint64_t CodecPluginID() = 0;
+
+  virtual void SetPCHandle(const std::string& aPCHandle) = 0;
 
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MediaSessionConduit)
 
