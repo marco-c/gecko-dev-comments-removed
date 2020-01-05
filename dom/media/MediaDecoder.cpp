@@ -1316,6 +1316,12 @@ MediaDecoder::UpdateVideoDecodeMode()
   }
 
   
+  
+  if (mIsElementInTree && mElementVisibility == Visibility::UNTRACKED) {
+    return;
+  }
+
+  
   if (mHasSuspendTaint) {
     mDecoderStateMachine->SetVideoDecodeMode(VideoDecodeMode::Normal);
     return;
