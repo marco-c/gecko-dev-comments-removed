@@ -264,6 +264,15 @@ void nsBaseWidget::DestroyCompositor()
   
   
   
+  if (mCompositorVsyncDispatcher) {
+    mCompositorVsyncDispatcher->Shutdown();
+    mCompositorVsyncDispatcher = nullptr;
+  }
+
+  
+  
+  
+  
   
   
   
@@ -283,13 +292,6 @@ void nsBaseWidget::DestroyCompositor()
     
     RefPtr<CompositorSession> session = mCompositorSession.forget();
     session->Shutdown();
-  }
-
-  
-  
-  if (mCompositorVsyncDispatcher) {
-    mCompositorVsyncDispatcher->Shutdown();
-    mCompositorVsyncDispatcher = nullptr;
   }
 }
 
@@ -1363,15 +1365,9 @@ void nsBaseWidget::CreateCompositor(int aWidth, int aHeight)
 
   mLayerManager = lm.forget();
 
-  
-  
-#if defined(XP_MACOSX)
-  bool getCompositorFromThisWindow = true;
-#else
-  bool getCompositorFromThisWindow = (mWindowType == eWindowType_toplevel);
-#endif
-
-  if (getCompositorFromThisWindow) {
+  if (mWindowType == eWindowType_toplevel) {
+    
+    
     gfxPlatform::GetPlatform()->NotifyCompositorCreated(mLayerManager->GetCompositorBackendType());
   }
 }
