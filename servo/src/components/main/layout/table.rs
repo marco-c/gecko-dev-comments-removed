@@ -96,13 +96,6 @@ impl TableFlow {
         }
     }
 
-    pub fn teardown(&mut self) {
-        self.block_flow.teardown();
-        self.col_widths = vec!();
-        self.col_min_widths = vec!();
-        self.col_pref_widths = vec!();
-    }
-
     
     
     pub fn update_col_widths(self_widths: &mut Vec<Au>, kid_widths: &Vec<Au>) -> Au {
