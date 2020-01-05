@@ -1228,6 +1228,10 @@ nsCSPContext::PermitsAncestry(nsIDocShell* aDocShell, bool* outPermitsAncestry)
   
   while (NS_SUCCEEDED(treeItem->GetParent(getter_AddRefs(parentTreeItem))) &&
          parentTreeItem != nullptr) {
+    
+    if (parentTreeItem->ItemType() == nsIDocShellTreeItem::typeChrome) {
+      break;
+    }
 
     nsIDocument* doc = parentTreeItem->GetDocument();
     NS_ASSERTION(doc, "Could not get nsIDocument from nsIDocShellTreeItem in nsCSPContext::PermitsAncestry");
@@ -1236,12 +1240,6 @@ nsCSPContext::PermitsAncestry(nsIDocShell* aDocShell, bool* outPermitsAncestry)
     currentURI = doc->GetDocumentURI();
 
     if (currentURI) {
-      
-      bool isChrome = false;
-      rv = currentURI->SchemeIs("chrome", &isChrome);
-      NS_ENSURE_SUCCESS(rv, rv);
-      if (isChrome) { break; }
-
       
       rv = currentURI->CloneIgnoringRef(getter_AddRefs(uriClone));
       NS_ENSURE_SUCCESS(rv, rv);
