@@ -101,7 +101,7 @@ module.exports = {
     "generator-star-spacing": ["error", {"before": false, "after": true}],
 
     
-    "indent": ["error", 2, {"SwitchCase": 1}],
+    "indent": ["error", 2, {"SwitchCase": 1, "ArrayExpression": "first", "ObjectExpression": "first"}],
 
     
     "key-spacing": ["error", {"beforeColon": false, "afterColon": true, "mode": "minimum"}],

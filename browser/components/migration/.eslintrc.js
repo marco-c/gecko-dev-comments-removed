@@ -24,7 +24,7 @@ module.exports = {
     
     "dot-notation": "error",
     "eol-last": "error",
-    "indent": ["warn", 2, {"SwitchCase": 1}],
+    "indent": ["warn", 2, {"SwitchCase": 1, "ArrayExpression": "first", "ObjectExpression": "first"}],
     
     "keyword-spacing": "warn",
     "max-nested-callbacks": ["error", 3],
