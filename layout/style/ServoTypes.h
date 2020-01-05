@@ -71,6 +71,18 @@ enum class UpdateAnimationsTasks : uint8_t {
   CascadeResults   = 1 << 3,
 };
 
+
+enum class LengthParsingMode {
+  
+  
+  
+  Default,
+  
+  
+  
+  SVG,
+};
+
 MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(UpdateAnimationsTasks)
 
 } 
