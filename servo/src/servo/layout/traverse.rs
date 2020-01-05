@@ -1,16 +1,17 @@
 
 
-use layout::base::{Box, BoxTree};
+use layout::base::{RenderBox, RenderBoxTree};
 use layout::base::{FlowContext, FlowTree};
 
-trait BoxTraversals {
-    fn traverse_preorder(preorder_cb: &fn(@Box));
+
+trait RenderBoxTraversals {
+    fn traverse_preorder(preorder_cb: &fn(@RenderBox));
 }
 
-impl @Box : BoxTraversals {
-    fn traverse_preorder(preorder_cb: &fn(@Box)) {
+impl @RenderBox : RenderBoxTraversals {
+    fn traverse_preorder(preorder_cb: &fn(@RenderBox)) {
         preorder_cb(self);
-        do BoxTree.each_child(self) |child| { child.traverse_preorder(preorder_cb); true }
+        do RenderBoxTree.each_child(self) |child| { child.traverse_preorder(preorder_cb); true }
     }
 }
 

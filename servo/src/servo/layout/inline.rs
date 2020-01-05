@@ -1,18 +1,44 @@
 use au = gfx::geometry;
-use base::Box;
+use base::RenderBox;
 use core::dvec::DVec;
 use css::values::{BoxAuto, BoxLength, Px};
+use dl = gfx::display_list;
 use dom::rcu;
 use geom::point::Point2D;
+use geom::rect::Rect;
 use geom::size::Size2D;
 use gfx::geometry::au;
 use layout::context::LayoutContext;
-use layout::base::{FlowContext, InlineFlow, BoxTree, ImageBox, TextBox, GenericBox};
+use layout::base::{FlowContext, InlineFlow, RenderBoxTree, ImageBox, TextBox, GenericBox};
 use num::Num;
 use util::tree;
 
+/*
+Tentative design: (may not line up with reality)
+
+Lineboxes are represented as offsets into the child list, rather than
+as an object that "owns" boxes. Choosing a different set of line
+breaks requires a new list of offsets, and possibly some splitting and
+merging of TextBoxes.
+
+A similar list will keep track of the mapping between CSS boxes and
+the corresponding render boxes in the inline flow.
+
+After line breaks are determined, lender boxes in the inline flow may
+overlap visually. For example, in the case of nested inline CSS boxes,
+outer inlines must be at least as large as the inner inlines, for
+purposes of drawing noninherited things like backgrounds, borders,
+outlines.
+
+N.B. roc has an alternative design where the list instead consists of
+things like "start outer box, text, start inner box, text, end inner
+box, text, end outer box, text". This seems a little complicated to
+serve as the starting point, but the current design doesn't make it
+hard to try out that alternative.
+*/
+
 struct InlineFlowData {
-    boxes: ~DVec<@Box>
+    boxes: ~DVec<@RenderBox>
 }
 
 fn InlineFlowData() -> InlineFlowData {
@@ -28,6 +54,7 @@ trait InlineLayout {
     fn bubble_widths_inline(ctx: &LayoutContext);
     fn assign_widths_inline(ctx: &LayoutContext);
     fn assign_height_inline(ctx: &LayoutContext);
+    fn build_display_list_inline(a: &dl::DisplayListBuilder, b: &Rect<au>, c: &Point2D<au>, d: &dl::DisplayList);
 }
 
 impl @FlowContext : InlineLayout {
@@ -112,6 +139,29 @@ impl @FlowContext : InlineLayout {
     } 
 
     fn assign_height_inline(ctx: &LayoutContext) {
+        
+        
+    }
+
+    fn build_display_list_inline(builder: &dl::DisplayListBuilder, dirty: &Rect<au>, 
+                                 offset: &Point2D<au>, list: &dl::DisplayList) {
+
+        assert self.starts_inline_flow();
+
+        
+        
+
+        
+        
+        do self.access_inline |d| {
+            for d.boxes.each |box| {
+                box.build_display_list(builder, dirty, offset, list)
+            }
+        }
+
+        
+        
+        
         
         
     }
