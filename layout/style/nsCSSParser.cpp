@@ -1217,6 +1217,12 @@ protected:
                  const KTableEntry aKeywordTable[]);
 
   
+  
+  
+  
+  bool ParseAlignEnum(nsCSSValue& aValue, const KTableEntry aKeywordTable[]);
+
+  
   CSSParseResult ParseVariant(nsCSSValue& aValue,
                               uint32_t aVariantMask,
                               const KTableEntry aKeywordTable[]);
@@ -7573,6 +7579,44 @@ CSSParserImpl::ParseEnum(nsCSSValue& aValue,
   return false;
 }
 
+bool
+CSSParserImpl::ParseAlignEnum(nsCSSValue& aValue,
+                              const KTableEntry aKeywordTable[])
+{
+  MOZ_ASSERT(nsCSSProps::ValueToKeywordEnum(NS_STYLE_ALIGN_BASELINE,
+                                            aKeywordTable) !=
+               eCSSKeyword_UNKNOWN,
+             "Please use ParseEnum instead");
+  nsSubstring* ident = NextIdent();
+  if (!ident) {
+    return false;
+  }
+  nsCSSKeyword baselinePrefix = eCSSKeyword_first;
+  nsCSSKeyword keyword = nsCSSKeywords::LookupKeyword(*ident);
+  if (keyword == eCSSKeyword_first || keyword == eCSSKeyword_last) {
+    baselinePrefix = keyword;
+    ident = NextIdent();
+    if (!ident) {
+      return false;
+    }
+    keyword = nsCSSKeywords::LookupKeyword(*ident);
+  }
+  if (eCSSKeyword_UNKNOWN < keyword) {
+    int32_t value;
+    if (nsCSSProps::FindKeyword(keyword, aKeywordTable, value)) {
+      if (baselinePrefix == eCSSKeyword_last &&
+          keyword == eCSSKeyword_baseline) {
+        value = NS_STYLE_ALIGN_LAST_BASELINE;
+      }
+      aValue.SetIntValue(value, eCSSUnit_Enumerated);
+      return true;
+    }
+  }
+
+  
+  UngetToken();
+  return false;
+}
 
 struct UnitInfo {
   char name[6];  
@@ -10059,7 +10103,7 @@ CSSParserImpl::ParseJustifyItems()
       value.SetIntValue(value.GetIntValue() | legacy.GetIntValue(),
                         eCSSUnit_Enumerated);
     } else {
-      if (!ParseEnum(value, nsCSSProps::kAlignAutoNormalStretchBaseline)) {
+      if (!ParseAlignEnum(value, nsCSSProps::kAlignAutoNormalStretchBaseline)) {
         if (!ParseAlignJustifyPosition(value, nsCSSProps::kAlignSelfPosition) ||
             value.GetUnit() == eCSSUnit_Null) {
           return false;
@@ -10088,7 +10132,7 @@ CSSParserImpl::ParseAlignItems()
 {
   nsCSSValue value;
   if (!ParseSingleTokenVariant(value, VARIANT_INHERIT, nullptr)) {
-    if (!ParseEnum(value, nsCSSProps::kAlignNormalStretchBaseline)) {
+    if (!ParseAlignEnum(value, nsCSSProps::kAlignNormalStretchBaseline)) {
       if (!ParseAlignJustifyPosition(value, nsCSSProps::kAlignSelfPosition) ||
           value.GetUnit() == eCSSUnit_Null) {
         return false;
@@ -10106,7 +10150,7 @@ CSSParserImpl::ParseAlignJustifySelf(nsCSSPropertyID aPropID)
 {
   nsCSSValue value;
   if (!ParseSingleTokenVariant(value, VARIANT_INHERIT, nullptr)) {
-    if (!ParseEnum(value, nsCSSProps::kAlignAutoNormalStretchBaseline)) {
+    if (!ParseAlignEnum(value, nsCSSProps::kAlignAutoNormalStretchBaseline)) {
       if (!ParseAlignJustifyPosition(value, nsCSSProps::kAlignSelfPosition) ||
           value.GetUnit() == eCSSUnit_Null) {
         return false;
@@ -10125,7 +10169,7 @@ CSSParserImpl::ParseAlignJustifyContent(nsCSSPropertyID aPropID)
 {
   nsCSSValue value;
   if (!ParseSingleTokenVariant(value, VARIANT_INHERIT, nullptr)) {
-    if (!ParseEnum(value, nsCSSProps::kAlignNormalBaseline)) {
+    if (!ParseAlignEnum(value, nsCSSProps::kAlignNormalBaseline)) {
       nsCSSValue fallbackValue;
       if (!ParseEnum(value, nsCSSProps::kAlignContentDistribution)) {
         if (!ParseAlignJustifyPosition(fallbackValue,
