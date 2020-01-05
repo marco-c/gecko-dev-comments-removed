@@ -635,10 +635,11 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void)
     
     
     
-    ULONG sum = 0;
+    ULONG sumAll = 0;
 
     if (ret == ERROR_SUCCESS) {
         bool linkUp = false;
+        ULONG sum = 0;
 
         for (PIP_ADAPTER_ADDRESSES adapter = adapterList; adapter;
              adapter = adapter->Next) {
@@ -649,9 +650,9 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void)
                 continue;
             }
 
+            sum <<= 2;
             
             for (int i = 0; adapter->AdapterName[i]; ++i) {
-                sum <<= 2;
                 sum += adapter->AdapterName[i];
             }
 
@@ -665,6 +666,7 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void)
                 }
             }
             linkUp = true;
+            sumAll ^= sum;
         }
         mLinkUp = linkUp;
         mStatusKnown = true;
@@ -673,7 +675,7 @@ nsNotifyAddrListener::CheckAdaptersAddresses(void)
 
     if (mLinkUp) {
         
-        mIPInterfaceChecksum = sum;
+        mIPInterfaceChecksum = sumAll;
     }
 
     CoUninitialize();
