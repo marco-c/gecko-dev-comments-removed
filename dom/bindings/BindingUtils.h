@@ -2408,6 +2408,19 @@ XrayGetExpandoClass(JSContext* cx, JS::Handle<JSObject*> obj);
 
 
 
+bool
+XrayDeleteNamedProperty(JSContext* cx, JS::Handle<JSObject*> wrapper,
+                        JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
+                        JS::ObjectOpResult& opresult);
+
+
+
+
+
+
+
+
+
 
 
 

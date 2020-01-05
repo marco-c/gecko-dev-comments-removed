@@ -74,6 +74,11 @@ typedef bool
                            JS::Handle<JSObject*> obj,
                            JS::AutoIdVector& props);
 
+typedef bool
+(* DeleteNamedProperty)(JSContext* cx, JS::Handle<JSObject*> wrapper,
+                        JS::Handle<JSObject*> obj, JS::Handle<jsid> id,
+                        JS::ObjectOpResult& opresult);
+
 
 
 bool
@@ -276,6 +281,15 @@ struct NativePropertyHooks
   
   
   EnumerateOwnProperties mEnumerateOwnProperties;
+  
+  
+  
+  
+  
+  
+  
+  
+  DeleteNamedProperty mDeleteNamedProperty;
 
   
   NativePropertiesHolder mNativeProperties;
