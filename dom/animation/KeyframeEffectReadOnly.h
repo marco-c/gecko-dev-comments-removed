@@ -357,6 +357,18 @@ protected:
 
   
   
+  already_AddRefed<nsStyleContext>
+  GetTargetStyleContextWithoutAnimation();
+
+  enum AnimationStyle {
+    Skip,
+    Include
+  };
+  template<AnimationStyle aAnimationStyle>
+  already_AddRefed<nsStyleContext> DoGetTargetStyleContext();
+
+  
+  
   void MarkCascadeNeedsUpdate();
 
   
