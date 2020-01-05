@@ -1150,6 +1150,15 @@ nsIOService::SetConnectivityInternal(bool aConnectivity)
     
     mLastConnectivityChange = PR_IntervalNow();
 
+    if (mCaptivePortalService) {
+        if (aConnectivity && !xpc::AreNonLocalConnectionsDisabled()) {
+            
+            static_cast<CaptivePortalService*>(mCaptivePortalService.get())->Start();
+        } else {
+            static_cast<CaptivePortalService*>(mCaptivePortalService.get())->Stop();
+        }
+    }
+
     nsCOMPtr<nsIObserverService> observerService = services::GetObserverService();
     if (!observerService) {
         return NS_OK;
@@ -1617,8 +1626,6 @@ nsIOService::OnNetworkLinkEvent(const char *data)
     } else if (!strcmp(data, NS_NETWORK_LINK_DATA_DOWN)) {
         isUp = false;
     } else if (!strcmp(data, NS_NETWORK_LINK_DATA_UP)) {
-        
-        RecheckCaptivePortal();
         isUp = true;
     } else if (!strcmp(data, NS_NETWORK_LINK_DATA_UNKNOWN)) {
         nsresult rv = mNetworkLinkService->GetIsLinkUp(&isUp);
