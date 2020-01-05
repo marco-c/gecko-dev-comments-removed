@@ -27,8 +27,8 @@ enum class KeySizeStatus {
 enum class SHA1ModeResult {
   NeverChecked = 0,
   SucceededWithoutSHA1 = 1,
-  SucceededWithImportedRoot = 2,
-  SucceededWithImportedRootOrSHA1Before2016 = 3,
+  SucceededWithSHA1Before2016 = 2,
+  SucceededWithImportedRoot = 3,
   SucceededWithSHA1 = 4,
   Failed = 5,
 };
@@ -110,12 +110,8 @@ public:
   enum class SHA1Mode {
     Allowed = 0,
     Forbidden = 1,
-    
-    
-    
-    UsedToBeBefore2016ButNowIsForbidden = 2,
+    Before2016 = 2,
     ImportedRoot = 3,
-    ImportedRootOrBefore2016 = 4,
   };
 
   enum OcspDownloadConfig {
