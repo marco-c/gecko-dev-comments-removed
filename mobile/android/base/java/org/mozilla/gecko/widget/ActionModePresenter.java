@@ -1,0 +1,18 @@
+
+
+
+
+package org.mozilla.gecko.widget;
+
+import android.support.v7.view.ActionMode;
+
+
+
+
+public interface ActionModePresenter {
+    
+    void startActionMode(final ActionMode.Callback callback);
+
+    
+    void endActionMode();
+}

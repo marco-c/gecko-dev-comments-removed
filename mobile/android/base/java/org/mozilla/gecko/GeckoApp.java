@@ -39,14 +39,12 @@ import org.mozilla.gecko.updater.UpdateServiceHelper;
 import org.mozilla.gecko.util.ActivityResultHandler;
 import org.mozilla.gecko.util.ActivityUtils;
 import org.mozilla.gecko.util.BundleEventListener;
-import org.mozilla.gecko.util.ColorUtil;
 import org.mozilla.gecko.util.EventCallback;
 import org.mozilla.gecko.util.FileUtils;
 import org.mozilla.gecko.util.GeckoBundle;
 import org.mozilla.gecko.util.HardwareUtils;
 import org.mozilla.gecko.util.PrefUtils;
 import org.mozilla.gecko.util.ThreadUtils;
-import org.mozilla.gecko.webapps.WebAppActivity;
 
 import android.animation.Animator;
 import android.animation.ObjectAnimator;
@@ -112,6 +110,7 @@ import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.util.ViewUtil;
 import org.mozilla.gecko.widget.AnchoredPopup;
+import org.mozilla.gecko.widget.ActionModePresenter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -843,6 +842,18 @@ public abstract class GeckoApp
 
 
 
+
+
+
+    protected ActionModePresenter getTextSelectPresenter() {
+        return null;
+    }
+
+    
+
+
+
+
     private void showSiteSettingsDialog(final GeckoBundle[] permissions) {
         final AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle(R.string.site_settings_title);
@@ -1331,7 +1342,7 @@ public abstract class GeckoApp
         mMainLayout.getViewTreeObserver().addOnGlobalLayoutListener(this);
 
         if (Versions.preMarshmallow) {
-            mTextSelection = new ActionBarTextSelection(this);
+            mTextSelection = new ActionBarTextSelection(this, getTextSelectPresenter());
         } else {
             mTextSelection = new FloatingToolbarTextSelection(this, mLayerView);
         }
