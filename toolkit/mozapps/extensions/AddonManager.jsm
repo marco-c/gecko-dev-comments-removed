@@ -1380,15 +1380,7 @@ var AddonManagerInternal = {
     let oldPerms = info.existingAddon.userPermissions || {hosts: [], permissions: []};
     let newPerms = info.addon.userPermissions;
 
-    
-    
-    
-    
-    
-    let difference = {
-      hosts: newPerms.hosts.filter(perm => !oldPerms.hosts.includes(perm)),
-      permissions: newPerms.permissions.filter(perm => !oldPerms.permissions.includes(perm)),
-    };
+    let difference = Extension.comparePermissions(oldPerms, newPerms);
 
     
     if (difference.hosts.length == 0 && difference.permissions.length == 0) {
@@ -2849,24 +2841,12 @@ var AddonManagerInternal = {
       
       
       if (info.addon.userPermissions && WEBEXT_PERMISSION_PROMPTS) {
-        const observer = {
-          observe(subject, topic, data) {
-            if (topic == "webextension-permission-response"
-                && subject.wrappedJSObject.info.addon == info.addon) {
-              let answer = JSON.parse(data);
-              Services.obs.removeObserver(observer, "webextension-permission-response");
-              if (answer) {
-                resolve();
-              } else {
-                reject();
-              }
-            }
+        let subject = {
+          wrappedJSObject: {
+            target: browser,
+            info: Object.assign({resolve, reject}, info),
           }
         };
-
-        Services.obs.addObserver(observer, "webextension-permission-response", false);
-
-        let subject = {wrappedJSObject: {target: browser, info}};
         Services.obs.notifyObservers(subject, "webextension-permission-prompt", null);
       } else if (requireConfirm) {
         
