@@ -85,6 +85,9 @@ pub enum Msg {
     
     
     CreateLayoutTask(NewLayoutTaskInfo),
+
+    
+    SetFinalUrl(Url),
 }
 
 
