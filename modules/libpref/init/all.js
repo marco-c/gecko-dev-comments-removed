@@ -5009,6 +5009,16 @@ pref("dom.flyweb.enabled", false);
 
 
 #ifdef MOZ_B2G_RIL
+pref("dom.telephony.enabled", true);
+#else
+pref("dom.telephony.enabled", false);
+#endif
+
+
+pref("dom.telephony.defaultServiceId", 0);
+
+
+#ifdef MOZ_B2G_RIL
 pref("dom.icc.enabled", true);
 #else
 pref("dom.icc.enabled", false);
@@ -5502,4 +5512,11 @@ pref("security.mixed_content.use_hsts", false);
 
 
 pref("security.mixed_content.use_hsts", true);
+#endif
+
+
+#ifdef NIGHTLY_BUILD
+pref("dom.storageManager.enabled", true);
+#else
+pref("dom.storageManager.enabled", false);
 #endif
