@@ -16,7 +16,7 @@ use std::ascii::AsciiExt;
 use std::ops::Mul;
 use style_traits::ToCss;
 use style_traits::values::specified::AllowedNumericType;
-use super::{Angle, Number, SimplifiedValueNode, SimplifiedSumNode, Time};
+use super::{Angle, Number, SimplifiedValueNode, SimplifiedSumNode, Time, ToComputedValue};
 use values::{Auto, CSSFloat, Either, FONT_MEDIUM_PX, HasViewportPercentage, None_, Normal};
 use values::ExtremumLength;
 use values::computed::{ComputedValueAsSpecified, Context};
@@ -203,13 +203,121 @@ impl CharacterWidth {
 }
 
 
+const ABSOLUTE_LENGTH_MAX: i32 = (1 << 30);
+const ABSOLUTE_LENGTH_MIN: i32 = - (1 << 30);
+
+
+fn to_au_round(length: CSSFloat, au_per_unit: CSSFloat) -> Au {
+    Au(
+        (length * au_per_unit)
+        .min(ABSOLUTE_LENGTH_MAX as f32)
+        .max(ABSOLUTE_LENGTH_MIN as f32)
+        .round() as i32
+    )
+}
+
+
+#[derive(Clone, PartialEq, Copy, Debug)]
+#[cfg_attr(feature = "servo", derive(HeapSizeOf))]
+pub enum AbsoluteLength {
+    
+    Px(CSSFloat),
+    
+    In(CSSFloat),
+    
+    Cm(CSSFloat),
+    
+    Mm(CSSFloat),
+    
+    Q(CSSFloat),
+    
+    Pt(CSSFloat),
+    
+    Pc(CSSFloat),
+}
+
+impl AbsoluteLength {
+    fn is_zero(&self) -> bool {
+        match *self {
+            AbsoluteLength::Px(0.)
+            | AbsoluteLength::In(0.)
+            | AbsoluteLength::Cm(0.)
+            | AbsoluteLength::Mm(0.)
+            | AbsoluteLength::Q(0.)
+            | AbsoluteLength::Pt(0.)
+            | AbsoluteLength::Pc(0.) => true,
+            _ => false,
+        }
+    }
+}
+
+impl ToComputedValue for AbsoluteLength {
+    type ComputedValue = Au;
+
+    fn to_computed_value(&self, _: &Context) -> Au {
+        Au::from(*self)
+    }
+
+    fn from_computed_value(computed: &Au) -> AbsoluteLength {
+        AbsoluteLength::Px(computed.to_f32_px())
+    }
+}
+
+impl From<AbsoluteLength> for Au {
+    fn from(length: AbsoluteLength) -> Au {
+        match length {
+            AbsoluteLength::Px(value) => to_au_round(value, AU_PER_PX),
+            AbsoluteLength::In(value) => to_au_round(value, AU_PER_IN),
+            AbsoluteLength::Cm(value) => to_au_round(value, AU_PER_CM),
+            AbsoluteLength::Mm(value) => to_au_round(value, AU_PER_MM),
+            AbsoluteLength::Q(value) => to_au_round(value, AU_PER_Q),
+            AbsoluteLength::Pt(value) => to_au_round(value, AU_PER_PT),
+            AbsoluteLength::Pc(value) => to_au_round(value, AU_PER_PC),
+        }
+    }
+}
+
+impl ToCss for AbsoluteLength {
+    fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
+        match *self {
+            AbsoluteLength::Px(length) => write!(dest, "{}px", length),
+            AbsoluteLength::In(length) => write!(dest, "{}in", length),
+            AbsoluteLength::Cm(length) => write!(dest, "{}cm", length),
+            AbsoluteLength::Mm(length) => write!(dest, "{}mm", length),
+            AbsoluteLength::Q(length) => write!(dest, "{}q", length),
+            AbsoluteLength::Pt(length) => write!(dest, "{}pt", length),
+            AbsoluteLength::Pc(length) => write!(dest, "{}pc", length),
+        }
+    }
+}
+
+impl Mul<CSSFloat> for AbsoluteLength {
+    type Output = AbsoluteLength;
+
+    #[inline]
+    fn mul(self, scalar: CSSFloat) -> AbsoluteLength {
+        match self {
+            AbsoluteLength::Px(v) => AbsoluteLength::Px(v * scalar),
+            AbsoluteLength::In(v) => AbsoluteLength::In(v * scalar),
+            AbsoluteLength::Cm(v) => AbsoluteLength::Cm(v * scalar),
+            AbsoluteLength::Mm(v) => AbsoluteLength::Mm(v * scalar),
+            AbsoluteLength::Q(v) => AbsoluteLength::Q(v * scalar),
+            AbsoluteLength::Pt(v) => AbsoluteLength::Pt(v * scalar),
+            AbsoluteLength::Pc(v) => AbsoluteLength::Pc(v * scalar),
+        }
+    }
+}
+
+
 
 
 #[derive(Clone, PartialEq, Copy, Debug)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
 pub enum NoCalcLength {
     
-    Absolute(Au),  
+    
+    
+    Absolute(AbsoluteLength),
 
     
     
@@ -240,7 +348,7 @@ impl HasViewportPercentage for NoCalcLength {
 impl ToCss for NoCalcLength {
     fn to_css<W>(&self, dest: &mut W) -> fmt::Result where W: fmt::Write {
         match *self {
-            NoCalcLength::Absolute(length) => write!(dest, "{}px", length.to_f32_px()),
+            NoCalcLength::Absolute(length) => length.to_css(dest),
             NoCalcLength::FontRelative(length) => length.to_css(dest),
             NoCalcLength::ViewportPercentage(length) => length.to_css(dest),
             
@@ -255,7 +363,7 @@ impl Mul<CSSFloat> for NoCalcLength {
     #[inline]
     fn mul(self, scalar: CSSFloat) -> NoCalcLength {
         match self {
-            NoCalcLength::Absolute(Au(v)) => NoCalcLength::Absolute(Au(((v as f32) * scalar) as i32)),
+            NoCalcLength::Absolute(v) => NoCalcLength::Absolute(v * scalar),
             NoCalcLength::FontRelative(v) => NoCalcLength::FontRelative(v * scalar),
             NoCalcLength::ViewportPercentage(v) => NoCalcLength::ViewportPercentage(v * scalar),
             NoCalcLength::ServoCharacterWidth(_) => panic!("Can't multiply ServoCharacterWidth!"),
@@ -267,13 +375,13 @@ impl NoCalcLength {
     
     pub fn parse_dimension(value: CSSFloat, unit: &str) -> Result<NoCalcLength, ()> {
         match_ignore_ascii_case! { unit,
-            "px" => Ok(NoCalcLength::Absolute(Au((value * AU_PER_PX) as i32))),
-            "in" => Ok(NoCalcLength::Absolute(Au((value * AU_PER_IN) as i32))),
-            "cm" => Ok(NoCalcLength::Absolute(Au((value * AU_PER_CM) as i32))),
-            "mm" => Ok(NoCalcLength::Absolute(Au((value * AU_PER_MM) as i32))),
-            "q" => Ok(NoCalcLength::Absolute(Au((value * AU_PER_Q) as i32))),
-            "pt" => Ok(NoCalcLength::Absolute(Au((value * AU_PER_PT) as i32))),
-            "pc" => Ok(NoCalcLength::Absolute(Au((value * AU_PER_PC) as i32))),
+            "px" => Ok(NoCalcLength::Absolute(AbsoluteLength::Px(value))),
+            "in" => Ok(NoCalcLength::Absolute(AbsoluteLength::In(value))),
+            "cm" => Ok(NoCalcLength::Absolute(AbsoluteLength::Cm(value))),
+            "mm" => Ok(NoCalcLength::Absolute(AbsoluteLength::Mm(value))),
+            "q" => Ok(NoCalcLength::Absolute(AbsoluteLength::Q(value))),
+            "pt" => Ok(NoCalcLength::Absolute(AbsoluteLength::Pt(value))),
+            "pc" => Ok(NoCalcLength::Absolute(AbsoluteLength::Pc(value))),
             // font-relative
             "em" => Ok(NoCalcLength::FontRelative(FontRelativeLength::Em(value))),
             "ex" => Ok(NoCalcLength::FontRelative(FontRelativeLength::Ex(value))),
@@ -291,25 +399,28 @@ impl NoCalcLength {
     #[inline]
     
     pub fn zero() -> NoCalcLength {
-        NoCalcLength::Absolute(Au(0))
+        NoCalcLength::Absolute(AbsoluteLength::Px(0.))
     }
 
     #[inline]
     
     pub fn is_zero(&self) -> bool {
-        *self == NoCalcLength::Absolute(Au(0))
+        match *self {
+            NoCalcLength::Absolute(length) => length.is_zero(),
+            _ => false
+        }
     }
 
     #[inline]
     
     pub fn medium() -> NoCalcLength {
-        NoCalcLength::Absolute(Au::from_px(FONT_MEDIUM_PX))
+        NoCalcLength::Absolute(AbsoluteLength::Px(FONT_MEDIUM_PX as f32))
     }
 
     
     #[inline]
     pub fn from_px(px_value: CSSFloat) -> NoCalcLength {
-        NoCalcLength::Absolute(Au((px_value * AU_PER_PX) as i32))
+        NoCalcLength::Absolute(AbsoluteLength::Px(px_value))
     }
 }
 
@@ -738,8 +849,8 @@ impl CalcLengthOrPercentage {
             match value {
                 SimplifiedValueNode::Percentage(p) =>
                     percentage = Some(percentage.unwrap_or(0.) + p),
-                SimplifiedValueNode::Length(NoCalcLength::Absolute(Au(au))) =>
-                    absolute = Some(absolute.unwrap_or(0) + au),
+                SimplifiedValueNode::Length(NoCalcLength::Absolute(length)) =>
+                    absolute = Some(absolute.unwrap_or(0.) + Au::from(length).to_f32_px()),
                 SimplifiedValueNode::Length(NoCalcLength::ViewportPercentage(v)) =>
                     match v {
                         ViewportPercentageLength::Vw(val) =>
@@ -768,7 +879,7 @@ impl CalcLengthOrPercentage {
         }
 
         Ok(CalcLengthOrPercentage {
-            absolute: absolute.map(Au),
+            absolute: absolute.map(Au::from_f32_px),
             vw: vw,
             vh: vh,
             vmax: vmax,
@@ -1043,7 +1154,7 @@ impl LengthOrPercentage {
         
         
         let num = input.expect_number()?;
-        Ok(LengthOrPercentage::Length(NoCalcLength::Absolute(Au((AU_PER_PX * num) as i32))))
+        Ok(LengthOrPercentage::Length(NoCalcLength::Absolute(AbsoluteLength::Px(num))))
     }
 
     
@@ -1058,7 +1169,7 @@ impl LengthOrPercentage {
         
         let num = input.expect_number()?;
         if num >= 0. {
-            Ok(LengthOrPercentage::Length(NoCalcLength::Absolute(Au((AU_PER_PX * num) as i32))))
+            Ok(LengthOrPercentage::Length(NoCalcLength::Absolute(AbsoluteLength::Px(num))))
         } else {
             Err(())
         }
