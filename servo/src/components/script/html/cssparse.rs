@@ -10,7 +10,7 @@ use std::comm::Port;
 use std::task;
 use newcss::stylesheet::Stylesheet;
 use newcss::util::DataStream;
-use servo_net::resource_task::{ResourceTask, ProgressMsg, Load, Payload, Done};
+use servo_net::resource_task::{ResourceTask, ProgressMsg, Load, Payload, Done, UrlChange};
 use extra::url::Url;
 
 
@@ -57,10 +57,19 @@ fn data_stream(provenance: StylesheetProvenance, resource_task: ResourceTask) ->
 
 fn resource_port_to_data_stream(input_port: Port<ProgressMsg>) -> DataStream {
     return || {
-        match input_port.recv() {
-            Payload(data) => Some(data),
-            Done(*) => None
+        
+        let mut result = None;
+        loop {
+            match input_port.recv() {
+                UrlChange(*) => (),  
+                Payload(data) => {
+                    result = Some(data);
+                    break;
+                }
+                Done(*) => break
+            }
         }
+        result
     }
 }
 

@@ -22,6 +22,9 @@ pub enum ControlMsg {
 #[deriving(Eq)]
 pub enum ProgressMsg {
     
+    
+    UrlChange(Url),
+    
     Payload(~[u8]),
     /// Indicates loading is complete, either successfully or not
     Done(Result<(), ()>)
