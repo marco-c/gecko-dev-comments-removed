@@ -17,6 +17,9 @@ import sys
 from functools import partial
 from itertools import chain, imap
 
+
+UNSUPPORTED_FEATURES = set(["tail-call-optimization"])
+
 @contextlib.contextmanager
 def TemporaryDirectory():
     tmpDir = tempfile.mkdtemp()
@@ -56,26 +59,30 @@ def tryParseTestFile(test262parser, source, testName):
         print("Please report this error to the test262 GitHub repository!")
         return None
 
-def makeRefTestLine(refTest):
+def createRefTestEntry(skip, skipIf):
     """
-    Creates the |reftest| entry from the input list. Or None if no reftest
-    entry is required.
+    Creates the |reftest| entry from the input list. Or the empty string if no
+    reftest entry is required.
     """
 
-    (refTestSkip, refTestSkipIf) = refTest
+    terms = []
+    comments = []
 
-    if refTestSkip:
-        comments = ", ".join(refTestSkip)
-        return "skip -- %s" % comments
+    if skip:
+        terms.append("skip")
+        comments.extend(skip)
 
-    if refTestSkipIf:
-        conditions = "||".join([cond for (cond, _) in refTestSkipIf])
-        comments = ", ".join([comment for (_, comment) in refTestSkipIf])
-        return "skip-if(%s) -- %s" % (conditions, comments)
+    if skipIf:
+        terms.append("skip-if(" + "||".join([cond for (cond, _) in skipIf]) + ")")
+        comments.extend([comment for (_, comment) in skipIf])
 
-    return None
+    line = " ".join(terms)
+    if comments:
+        line += " -- " + ", ".join(comments)
 
-def createSource(testName, testSource, refTest, directive, epilogue):
+    return line
+
+def createSource(testSource, refTest, prologue, epilogue):
     """
     Returns the post-processed source for |testSource|.
     """
@@ -83,17 +90,17 @@ def createSource(testName, testSource, refTest, directive, epilogue):
     source = testSource
 
     
-    if directive:
-        source = directive + "\n" + source
+    if prologue:
+        source = prologue + "\n" + source
 
     
-    refTestLine = makeRefTestLine(refTest)
-    if refTestLine:
-        source = "// |reftest| " + refTestLine + "\n" + source
+    if refTest:
+        source = "// |reftest| " + refTest + "\n" + source
 
     
     
-    source += epilogue
+    if epilogue:
+        source += "\n" + epilogue + "\n"
 
     return source
 
@@ -175,7 +182,6 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     
     refTestSkip = []
     refTestSkipIf = []
-    refTest = (refTestSkip, refTestSkipIf)
 
     
     if testRec is None:
@@ -192,12 +198,11 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
     
     
     raw = "raw" in testRec
-    assert not (raw and (onlyStrict or noStrict))
 
     
     
     async = "async" in testRec
-    assert "$DONE" not in testSource or async
+    assert "$DONE" not in testSource or async, "Missing async attribute in: %s" % testName
 
     
     
@@ -217,11 +222,7 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
 
     
     if "features" in testRec:
-        
-        
-        unsupportedFeatures = set(["tail-call-optimization"])
-
-        unsupported = unsupportedFeatures.intersection(testRec["features"])
+        unsupported = UNSUPPORTED_FEATURES.intersection(testRec["features"])
         if unsupported:
             refTestSkip.append("%s is not supported" % ",".join(list(unsupported)))
 
@@ -233,24 +234,31 @@ def convertTestFile(test262parser, testSource, testName, includeSet, strictTests
         includeSet.update(testRec["includes"])
 
     
-    if not isNegative and not async:
-        testEpilogue = """
-reportCompare(0, 0);
-"""
+    if not isNegative and not async and not isSupportFile:
+        testEpilogue = "reportCompare(0, 0);"
     else:
         testEpilogue = ""
 
+    refTest = createRefTestEntry(refTestSkip, refTestSkipIf)
+
     
-    if raw or noStrict or not onlyStrict:
-        nonStrictSource = createSource(testName, testSource, refTest, "", testEpilogue)
+    noStrictVariant = raw or isSupportFile
+    assert not (noStrictVariant and (onlyStrict or noStrict)),\
+           "Unexpected onlyStrict or noStrict attribute: %s" % testName
+
+    
+    if noStrictVariant or noStrict or not onlyStrict:
+        testPrologue = ""
+        nonStrictSource = createSource(testSource, refTest, testPrologue, testEpilogue)
         testFileName = testName
         if isNegative:
             testFileName = addSuffixToFileName(testFileName, "-n")
         yield (testFileName, nonStrictSource)
 
     
-    if not raw and not isSupportFile and (onlyStrict or (not noStrict and strictTests)):
-        strictSource = createSource(testName, testSource, refTest, "'use strict';", testEpilogue)
+    if not noStrictVariant and (onlyStrict or (not noStrict and strictTests)):
+        testPrologue = "'use strict';"
+        strictSource = createSource(testSource, refTest, testPrologue, testEpilogue)
         testFileName = testName
         if not noStrict:
             testFileName = addSuffixToFileName(testFileName, "-strict")
@@ -318,6 +326,12 @@ def process_test262(test262Dir, test262OutDir, strictTests):
         for fileName in fileNames:
             filePath = os.path.join(dirPath, fileName)
             testName = os.path.relpath(filePath, testDir)
+
+            
+            (_, fileExt) = os.path.splitext(fileName)
+            if fileExt != ".js":
+                shutil.copyfile(filePath, os.path.join(test262OutDir, testName))
+                continue
 
             
             with io.open(filePath, "rb") as testFile:
