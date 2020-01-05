@@ -16,6 +16,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/Move.h" 
 #include "mozilla/Mutex.h"
+#include "mozilla/Sprintf.h"
 #include <vector>
 
 extern "C" {
@@ -33,7 +34,7 @@ static int ringbuffer_vlog(int facility,
   
   
   char temp[4096];
-  vsnprintf(temp, sizeof(temp), format, ap);
+  VsprintfLiteral(temp, format, ap);
 
   mozilla::RLogRingBuffer::GetInstance()->Log(std::string(temp));
   return 0;
