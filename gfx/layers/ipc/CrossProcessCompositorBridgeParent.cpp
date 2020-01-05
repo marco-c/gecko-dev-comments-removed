@@ -203,7 +203,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::Pipeli
                                                                 TextureFactoryIdentifier* aTextureFactoryIdentifier,
                                                                 uint32_t *aIdNamespace)
 {
-#ifndef MOZ_BUILD_WEBRENDER
+#ifndef MOZ_ENABLE_WEBRENDER
   
   
   MOZ_RELEASE_ASSERT(false);
@@ -223,7 +223,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::Pipeli
 
   WebRenderBridgeParent* parent = nullptr;
   RefPtr<wr::WebRenderAPI> api = root->GetWebRenderAPI();
-  RefPtr<WebRenderCompositableHolder> holder = new WebRenderCompositableHolder();
+  RefPtr<WebRenderCompositableHolder> holder = root->CompositableHolder();
   parent = new WebRenderBridgeParent(this, aPipelineId, nullptr, root->CompositorScheduler(), Move(api), Move(holder));
 
   parent->AddRef(); 
@@ -238,7 +238,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::Pipeli
 bool
 CrossProcessCompositorBridgeParent::DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor)
 {
-#ifndef MOZ_BUILD_WEBRENDER
+#ifndef MOZ_ENABLE_WEBRENDER
   
   
   MOZ_RELEASE_ASSERT(false);

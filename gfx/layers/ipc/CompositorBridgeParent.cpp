@@ -1579,7 +1579,7 @@ CompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipel
                                                     TextureFactoryIdentifier* aTextureFactoryIdentifier,
                                                     uint32_t* aIdNamespace)
 {
-#ifndef MOZ_BUILD_WEBRENDER
+#ifndef MOZ_ENABLE_WEBRENDER
   
   
   MOZ_RELEASE_ASSERT(false);
@@ -1614,7 +1614,7 @@ CompositorBridgeParent::AllocPWebRenderBridgeParent(const wr::PipelineId& aPipel
 bool
 CompositorBridgeParent::DeallocPWebRenderBridgeParent(PWebRenderBridgeParent* aActor)
 {
-#ifndef MOZ_BUILD_WEBRENDER
+#ifndef MOZ_ENABLE_WEBRENDER
   
   
   MOZ_RELEASE_ASSERT(false);
@@ -1838,6 +1838,8 @@ CompositorBridgeParent::NotifyDidCompositeToPipeline(const wr::PipelineId& aPipe
     return;
   }
   MOZ_ASSERT(mWrBridge);
+
+  mWrBridge->CompositableHolder()->Update(aPipelineId, aEpoch);
 
   if (mWrBridge->PipelineId() == aPipelineId) {
     uint64_t transactionId = mWrBridge->FlushTransactionIdsForEpoch(aEpoch);
