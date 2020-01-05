@@ -233,6 +233,11 @@ public:
     nsCSSPropertyID aProperty,
     const AnimationPerformanceWarning& aWarning);
 
+  
+  
+  
+  void PreTraverse();
+
 private:
   ~EffectCompositor() = default;
 
