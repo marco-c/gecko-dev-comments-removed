@@ -283,6 +283,26 @@ add_task(function* test_add_error_behaviour() {
   }
 });
 
+add_task(function* test_API_return_values() {
+  
+  
+  
+  let hist = Telemetry.getHistogramById("TELEMETRY_TEST_LINEAR");
+  let keyedHist = Telemetry.getKeyedHistogramById("TELEMETRY_TEST_KEYED_COUNT");
+
+  const RETURN_VALUES = [
+    hist.clear(),
+    hist.add(1),
+    keyedHist.clear(),
+    keyedHist.add("some-key", 1),
+  ];
+
+  for (let returnValue of RETURN_VALUES) {
+    Assert.strictEqual(returnValue, undefined,
+                       "The function must return undefined.");
+  }
+});
+
 add_task(function* test_getHistogramById() {
   try {
     Telemetry.getHistogramById("nonexistent");
@@ -553,6 +573,7 @@ add_task(function* test_keyed_count_histogram() {
   let testSnapShot = {};
 
   let h = Telemetry.getKeyedHistogramById(KEYED_ID);
+  h.clear();
   for (let i = 0; i < 4; ++i) {
     let key = KEYS[i];
     let value = i * 2 + 1;
