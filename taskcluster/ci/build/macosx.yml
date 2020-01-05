@@ -51,8 +51,8 @@ macosx64-qr/debug:
         product: firefox
         job-name: macosx64-qr-debug
     treeherder:
-        platform: osx-10-7-qr/debug
-        symbol: tc(B)
+        platform: osx-10-7/debug
+        symbol: tc(QR)
         tier: 2
     worker-type: aws-provisioner-v1/gecko-{level}-b-macosx64
     worker:
@@ -68,7 +68,6 @@ macosx64-qr/debug:
         secrets: true
         custom-build-variant-cfg: cross-qr-debug
         tooltool-downloads: internal
-    run-on-projects: [ 'graphics' ]
 
 macosx64-qr/opt:
     description: "MacOS X x64 QuantumRender"
@@ -76,8 +75,8 @@ macosx64-qr/opt:
         product: firefox
         job-name: macosx64-qr-opt
     treeherder:
-        platform: osx-10-7-qr/opt
-        symbol: tc(B)
+        platform: osx-10-7/opt
+        symbol: tc(QR)
         tier: 2
     worker-type: aws-provisioner-v1/gecko-{level}-b-macosx64
     worker:
@@ -93,4 +92,3 @@ macosx64-qr/opt:
         secrets: true
         custom-build-variant-cfg: cross-qr-opt
         tooltool-downloads: internal
-    run-on-projects: [ 'graphics' ]
