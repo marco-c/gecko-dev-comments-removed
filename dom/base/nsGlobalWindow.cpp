@@ -316,11 +316,13 @@ static int32_t gMinBackgroundTimeoutValue;
 inline int32_t
 nsGlobalWindow::DOMMinTimeoutValue() const {
   
+  int32_t value = std::max(mBackPressureDelayMS, 0);
+  
   
   bool isBackground = mAudioContexts.IsEmpty() &&
     (!mOuterWindow || mOuterWindow->IsBackground());
   return
-    std::max(isBackground ? gMinBackgroundTimeoutValue : gMinTimeoutValue, 0);
+    std::max(isBackground ? gMinBackgroundTimeoutValue : gMinTimeoutValue, value);
 }
 
 
@@ -1265,6 +1267,7 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
     mTimeoutFiringDepth(0),
     mSuspendDepth(0),
     mFreezeDepth(0),
+    mBackPressureDelayMS(0),
     mFocusMethod(0),
     mSerial(0),
     mIdleCallbackTimeoutCounter(1),
@@ -3643,6 +3646,37 @@ nsGlobalWindow::DefineArgumentsProperty(nsIArray *aArguments)
   return ctx->SetProperty(obj, "arguments", aArguments);
 }
 
+namespace {
+
+
+
+const uint32_t kThrottledEventQueueBackPressure = 5000;
+
+
+
+
+
+const double kBackPressureDelayMS = 500;
+
+
+
+int32_t
+CalculateNewBackPressureDelayMS(uint32_t aBacklogDepth)
+{
+  
+  
+  MOZ_ASSERT(aBacklogDepth >= kThrottledEventQueueBackPressure);
+  double multiplier = static_cast<double>(aBacklogDepth) /
+                      static_cast<double>(kThrottledEventQueueBackPressure);
+  double value = kBackPressureDelayMS * multiplier;
+  if (value > INT32_MAX) {
+    value = INT32_MAX;
+  }
+  return static_cast<int32_t>(value);
+}
+
+} 
+
 void
 nsGlobalWindow::MaybeApplyBackPressure()
 {
@@ -3651,37 +3685,72 @@ nsGlobalWindow::MaybeApplyBackPressure()
   
   
   
-  
-  if (IsSuspended()) {
+  if (mBackPressureDelayMS > 0 || IsSuspended()) {
     return;
   }
 
-  RefPtr<ThrottledEventQueue> taskQueue = TabGroup()->GetThrottledEventQueue();
-  if (!taskQueue) {
-    return;
-  }
-
-  
-  
-  
-  
-  
-  static const uint32_t kThrottledEventQueueBackPressure = 5000;
-  if (taskQueue->Length() < kThrottledEventQueueBackPressure) {
+  RefPtr<ThrottledEventQueue> queue = TabGroup()->GetThrottledEventQueue();
+  if (!queue) {
     return;
   }
 
   
   
-  nsCOMPtr<nsIRunnable> r = NewRunnableMethod(this, &nsGlobalWindow::Resume);
-  nsresult rv = taskQueue->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
+  
+  
+  
+  if (queue->Length() < kThrottledEventQueueBackPressure) {
+    return;
+  }
+
+  
+  
+  
+  nsCOMPtr<nsIRunnable> r =
+    NewRunnableMethod(this, &nsGlobalWindow::CancelOrUpdateBackPressure);
+  nsresult rv = queue->Dispatch(r.forget(), NS_DISPATCH_NORMAL);
   NS_ENSURE_SUCCESS_VOID(rv);
 
   
   
+  mBackPressureDelayMS = CalculateNewBackPressureDelayMS(queue->Length());
+}
+
+void
+nsGlobalWindow::CancelOrUpdateBackPressure()
+{
+  MOZ_ASSERT(NS_IsMainThread());
+  MOZ_ASSERT(mBackPressureDelayMS > 0);
+
   
   
-  Suspend();
+  
+  
+  RefPtr<ThrottledEventQueue> queue = TabGroup()->GetThrottledEventQueue();
+  if (!queue || queue->Length() < kThrottledEventQueueBackPressure) {
+    int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
+    mBackPressureDelayMS = 0;
+    ResetTimersForThrottleReduction(oldBackPressureDelayMS);
+    return;
+  }
+
+  
+
+  
+  int32_t oldBackPressureDelayMS = mBackPressureDelayMS;
+  mBackPressureDelayMS = CalculateNewBackPressureDelayMS(queue->Length());
+
+  
+  
+  
+  if (mBackPressureDelayMS < oldBackPressureDelayMS) {
+    ResetTimersForThrottleReduction(oldBackPressureDelayMS);
+  }
+
+  
+  nsCOMPtr<nsIRunnable> r =
+    NewRunnableMethod(this, &nsGlobalWindow::CancelOrUpdateBackPressure);
+  MOZ_ALWAYS_SUCCEEDS(queue->Dispatch(r.forget(), NS_DISPATCH_NORMAL));
 }
 
 
@@ -10070,7 +10139,7 @@ void nsGlobalWindow::SetIsBackground(bool aIsBackground)
   bool resetTimers = (!aIsBackground && AsOuter()->IsBackground());
   nsPIDOMWindow::SetIsBackground(aIsBackground);
   if (resetTimers) {
-    ResetTimersForNonBackgroundWindow();
+    ResetTimersForThrottleReduction(gMinBackgroundTimeoutValue);
   }
 
   if (!aIsBackground) {
@@ -12660,7 +12729,8 @@ nsGlobalWindow::SetTimeoutOrInterval(nsITimeoutHandler* aHandler,
   
   uint32_t nestingLevel = sNestingLevel + 1;
   uint32_t realInterval = interval;
-  if (aIsInterval || nestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL) {
+  if (aIsInterval || nestingLevel >= DOM_CLAMP_TIMEOUT_NESTING_LEVEL ||
+      mBackPressureDelayMS > 0) {
     
     
     realInterval = std::max(realInterval, uint32_t(DOMMinTimeoutValue()));
@@ -13199,10 +13269,11 @@ nsGlobalWindow::ClearTimeoutOrInterval(int32_t aTimerId, Timeout::Reason aReason
   }
 }
 
-nsresult nsGlobalWindow::ResetTimersForNonBackgroundWindow()
+nsresult nsGlobalWindow::ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS)
 {
-  FORWARD_TO_INNER(ResetTimersForNonBackgroundWindow, (),
+  FORWARD_TO_INNER(ResetTimersForThrottleReduction, (aPreviousThrottleDelayMS),
                    NS_ERROR_NOT_INITIALIZED);
+  MOZ_ASSERT(aPreviousThrottleDelayMS > 0);
 
   if (IsFrozen() || IsSuspended()) {
     return NS_OK;
@@ -13229,7 +13300,7 @@ nsresult nsGlobalWindow::ResetTimersForNonBackgroundWindow()
     }
 
     if (timeout->mWhen - now >
-        TimeDuration::FromMilliseconds(gMinBackgroundTimeoutValue)) {
+        TimeDuration::FromMilliseconds(aPreviousThrottleDelayMS)) {
       
       
       

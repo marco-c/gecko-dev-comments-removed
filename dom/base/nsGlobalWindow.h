@@ -1483,9 +1483,6 @@ public:
                               mozilla::dom::Timeout::Reason aReason);
 
   
-  nsresult ResetTimersForNonBackgroundWindow();
-
-  
   void RunTimeout(mozilla::dom::Timeout* aTimeout);
   void RunTimeout() { RunTimeout(nullptr); }
   
@@ -1714,6 +1711,16 @@ private:
   void
   MaybeApplyBackPressure();
 
+  
+  
+  void
+  CancelOrUpdateBackPressure();
+
+  
+  
+  
+  nsresult ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS);
+
   mozilla::dom::TabGroup* TabGroupInner();
   mozilla::dom::TabGroup* TabGroupOuter();
 
@@ -1867,6 +1874,8 @@ protected:
 
   uint32_t mSuspendDepth;
   uint32_t mFreezeDepth;
+
+  int32_t mBackPressureDelayMS;
 
   
   uint32_t mFocusMethod;
