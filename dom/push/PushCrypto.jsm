@@ -110,6 +110,28 @@ function getEncryptionParams(encryptField) {
 
 
 
+function getCryptoParamsFromPayload(payload) {
+  if (payload.byteLength < 21) {
+    throw new CryptoError('Truncated header', BAD_CRYPTO);
+  }
+  let rs = (payload[16] << 24) | (payload[17] << 16) | (payload[18] << 8) | payload[19];
+  let keyIdLen = payload[20];
+  if (keyIdLen != 65) {
+    throw new CryptoError('Invalid sender public key', BAD_DH_PARAM);
+  }
+  if (payload.byteLength <= 21 + keyIdLen) {
+    throw new CryptoError('Truncated payload', BAD_CRYPTO);
+  }
+  return {
+    salt: payload.slice(0, 16),
+    rs: rs,
+    senderKey: payload.slice(21, 21 + keyIdLen),
+    ciphertext: payload.slice(21 + keyIdLen),
+  };
+}
+
+
+
 
 function getCryptoParamsFromHeaders(headers) {
   if (!headers) {
@@ -117,10 +139,6 @@ function getCryptoParamsFromHeaders(headers) {
   }
 
   var keymap;
-  if (!headers.encoding) {
-    throw new CryptoError('Missing Content-Encoding header',
-                          BAD_ENCODING_HEADER);
-  }
   if (headers.encoding == AESGCM_ENCODING) {
     
     
@@ -138,9 +156,6 @@ function getCryptoParamsFromHeaders(headers) {
       throw new CryptoError('Missing Encryption-Key header',
                             BAD_ENCRYPTION_KEY_HEADER);
     }
-  } else {
-    throw new CryptoError('Unsupported Content-Encoding: ' + headers.encoding,
-                          BAD_ENCODING_HEADER);
   }
 
   var enc = getEncryptionParams(headers.encryption);
@@ -303,7 +318,8 @@ class Decoder {
                                               ['decrypt']);
 
       let r = await Promise.all(chunkArray(this.ciphertext, this.chunkSize)
-        .map((slice, index) => this.decodeChunk(slice, index, nonce, key)));
+        .map((slice, index, chunks) => this.decodeChunk(slice, index, nonce,
+          key, index >= chunks.length - 1)));
 
       return concatArray(r);
     } catch (error) {
@@ -355,13 +371,13 @@ class Decoder {
 
 
 
-  async decodeChunk(slice, index, nonce, key) {
+  async decodeChunk(slice, index, nonce, key, last) {
     let params = {
       name: 'AES-GCM',
       iv: generateNonce(nonce, index)
     };
     let decoded = await crypto.subtle.decrypt(params, key, slice);
-    return this.unpadChunk(new Uint8Array(decoded));
+    return this.unpadChunk(new Uint8Array(decoded), last);
   }
 
   
@@ -426,6 +442,54 @@ class OldSchemeDecoder extends Decoder {
 
   get padSize() {
     throw new Error('Missing `padSize` implementation');
+  }
+}
+
+
+
+var AES128GCM_ENCODING = 'aes128gcm';
+var AES128GCM_KEY_INFO = UTF8.encode('Content-Encoding: aes128gcm\0');
+var AES128GCM_AUTH_INFO = UTF8.encode('WebPush: info\0');
+
+class aes128gcmDecoder extends Decoder {
+  
+
+
+
+
+  async deriveKeyAndNonce(ikm) {
+    let authKdf = new hkdf(this.authenticationSecret, ikm);
+    let authInfo = concatArray([
+      AES128GCM_AUTH_INFO,
+      this.publicKey,
+      this.senderKey
+    ]);
+    let prk = await authKdf.extract(authInfo, 32);
+    let prkKdf = new hkdf(this.salt, prk);
+    return Promise.all([
+      prkKdf.extract(AES128GCM_KEY_INFO, 16),
+      prkKdf.extract(concatArray([NONCE_INFO, new Uint8Array([0])]), 12)
+    ]);
+  }
+
+  unpadChunk(decoded, last) {
+    let length = decoded.length;
+    while (length--) {
+      if (decoded[length] === 0) {
+        continue;
+      }
+      let recordPad = last ? 2 : 1;
+      if (decoded[length] != recordPad) {
+        throw new CryptoError('Padding is wrong!', BAD_PADDING);
+      }
+      return decoded.slice(0, length);
+    }
+    throw new CryptoError('Zero plaintext', BAD_PADDING);
+  }
+
+  
+  get chunkSize() {
+    return this.rs;
   }
 }
 
@@ -534,22 +598,43 @@ this.PushCrypto = {
 
 
 
-  async decrypt(privateKey, publicKey, authenticationSecret, headers,
-                ciphertext) {
-    
-    
-    let cryptoParams = getCryptoParamsFromHeaders(headers);
-    if (!cryptoParams) {
+  async decrypt(privateKey, publicKey, authenticationSecret, headers, payload) {
+    if (!headers) {
       return null;
     }
-    let decoder;
-    if (headers.encoding == AESGCM_ENCODING) {
-      decoder = new aesgcmDecoder(privateKey, publicKey, authenticationSecret,
-                                  cryptoParams, ciphertext);
-    } else {
-      decoder = new aesgcm128Decoder(privateKey, publicKey, cryptoParams,
-                                     ciphertext);
+
+    let encoding = headers.encoding;
+    if (!headers.encoding) {
+      throw new CryptoError('Missing Content-Encoding header',
+                            BAD_ENCODING_HEADER);
     }
+
+    let decoder;
+    if (encoding == AES128GCM_ENCODING) {
+      
+      
+      let cryptoParams = getCryptoParamsFromPayload(new Uint8Array(payload));
+      decoder = new aes128gcmDecoder(privateKey, publicKey,
+                                     authenticationSecret, cryptoParams,
+                                     cryptoParams.ciphertext);
+    } else if (encoding == AESGCM128_ENCODING || encoding == AESGCM_ENCODING) {
+      
+      
+      let cryptoParams = getCryptoParamsFromHeaders(headers);
+      if (headers.encoding == AESGCM_ENCODING) {
+        decoder = new aesgcmDecoder(privateKey, publicKey, authenticationSecret,
+                                    cryptoParams, payload);
+      } else {
+        decoder = new aesgcm128Decoder(privateKey, publicKey, cryptoParams,
+                                       payload);
+      }
+    }
+
+    if (!decoder) {
+      throw new CryptoError('Unsupported Content-Encoding: ' + encoding,
+                            BAD_ENCODING_HEADER);
+    }
+
     return decoder.decode();
   },
 };
