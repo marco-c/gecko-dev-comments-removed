@@ -9,6 +9,9 @@ const { createEnum } = require("devtools/client/shared/enum");
 createEnum([
 
   
+  "UPDATE_GEOMETRY_EDITOR_ENABLED",
+
+  
   "UPDATE_LAYOUT",
 
 ], module.exports);

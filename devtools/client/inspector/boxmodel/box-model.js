@@ -10,7 +10,10 @@ const { ReflowFront } = require("devtools/shared/fronts/reflow");
 
 const { InplaceEditor } = require("devtools/client/shared/inplace-editor");
 
-const { updateLayout } = require("./actions/box-model");
+const {
+  updateGeometryEditorEnabled,
+  updateLayout,
+} = require("./actions/box-model");
 
 const EditingSession = require("./utils/editing-session");
 
@@ -26,16 +29,21 @@ const NUMERIC = /^-?[\d\.]+$/;
 
 function BoxModel(inspector, window) {
   this.document = window.document;
+  this.highlighters = inspector.highlighters;
   this.inspector = inspector;
   this.store = inspector.store;
 
   this.updateBoxModel = this.updateBoxModel.bind(this);
 
   this.onHideBoxModelHighlighter = this.onHideBoxModelHighlighter.bind(this);
+  this.onHideGeometryEditor = this.onHideGeometryEditor.bind(this);
+  this.onMarkupViewLeave = this.onMarkupViewLeave.bind(this);
+  this.onMarkupViewNodeHover = this.onMarkupViewNodeHover.bind(this);
   this.onNewSelection = this.onNewSelection.bind(this);
   this.onShowBoxModelEditor = this.onShowBoxModelEditor.bind(this);
   this.onShowBoxModelHighlighter = this.onShowBoxModelHighlighter.bind(this);
   this.onSidebarSelect = this.onSidebarSelect.bind(this);
+  this.onToggleGeometryEditor = this.onToggleGeometryEditor.bind(this);
 
   this.inspector.selection.on("new-node-front", this.onNewSelection);
   this.inspector.sidebar.on("select", this.onSidebarSelect);
@@ -58,6 +66,7 @@ BoxModel.prototype = {
     }
 
     this.document = null;
+    this.highlighters = null;
     this.inspector = null;
     this.walker = null;
   },
@@ -71,6 +80,7 @@ BoxModel.prototype = {
       onHideBoxModelHighlighter: this.onHideBoxModelHighlighter,
       onShowBoxModelEditor: this.onShowBoxModelEditor,
       onShowBoxModelHighlighter: this.onShowBoxModelHighlighter,
+      onToggleGeometryEditor: this.onToggleGeometryEditor,
     };
   },
 
@@ -152,6 +162,13 @@ BoxModel.prototype = {
 
       
       
+      let isPositionEditable = yield this.inspector.pageStyle.isPositionEditable(node);
+      layout = Object.assign({}, layout, {
+        isPositionEditable,
+      });
+
+      
+      
       this.store.dispatch(updateLayout(layout));
 
       
@@ -173,7 +190,56 @@ BoxModel.prototype = {
   
 
 
-  onNewSelection: function () {
+  onHideBoxModelHighlighter() {
+    let toolbox = this.inspector.toolbox;
+    toolbox.highlighterUtils.unhighlight();
+  },
+
+  
+
+
+
+  onHideGeometryEditor() {
+    let { markup, selection, toolbox } = this.inspector;
+
+    this.highlighters.hideGeometryEditor();
+    this.store.dispatch(updateGeometryEditorEnabled(false));
+
+    toolbox.off("picker-started", this.onHideGeometryEditor);
+    selection.off("new-node-front", this.onHideGeometryEditor);
+    markup.off("leave", this.onMarkupViewLeave);
+    markup.off("node-hover", this.onMarkupViewNodeHover);
+  },
+
+  
+
+
+
+
+  onMarkupViewLeave() {
+    let state = this.store.getState();
+    let enabled = state.boxModel.geometryEditorEnabled;
+
+    if (!enabled) {
+      return;
+    }
+
+    let nodeFront = this.inspector.selection.nodeFront;
+    this.highlighters.showGeometryEditor(nodeFront);
+  },
+
+  
+
+
+
+  onMarkupViewNodeHover() {
+    this.highlighters.hideGeometryEditor();
+  },
+
+  
+
+
+  onNewSelection() {
     if (!this.isPanelVisibleAndNodeValid()) {
       return;
     }
@@ -184,14 +250,6 @@ BoxModel.prototype = {
     }
 
     this.updateBoxModel("new-selection");
-  },
-
-  
-
-
-  onHideBoxModelHighlighter() {
-    let toolbox = this.inspector.toolbox;
-    toolbox.highlighterUtils.unhighlight();
   },
 
   
@@ -294,6 +352,34 @@ BoxModel.prototype = {
     }
 
     this.updateBoxModel();
+  },
+
+  
+
+
+
+  onToggleGeometryEditor() {
+    let { markup, selection, toolbox } = this.inspector;
+    let nodeFront = this.inspector.selection.nodeFront;
+    let state = this.store.getState();
+    let enabled = !state.boxModel.geometryEditorEnabled;
+
+    this.highlighters.toggleGeometryHighlighter(nodeFront);
+    this.store.dispatch(updateGeometryEditorEnabled(enabled));
+
+    if (enabled) {
+      
+      toolbox.on("picker-started", this.onHideGeometryEditor);
+      selection.on("new-node-front", this.onHideGeometryEditor);
+      
+      markup.on("leave", this.onMarkupViewLeave);
+      markup.on("node-hover", this.onMarkupViewNodeHover);
+    } else {
+      toolbox.off("picker-started", this.onHideGeometryEditor);
+      selection.off("new-node-front", this.onHideGeometryEditor);
+      markup.off("leave", this.onMarkupViewLeave);
+      markup.off("node-hover", this.onMarkupViewNodeHover);
+    }
   },
 
 };

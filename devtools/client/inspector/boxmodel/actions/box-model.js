@@ -5,10 +5,24 @@
 "use strict";
 
 const {
+  UPDATE_GEOMETRY_EDITOR_ENABLED,
   UPDATE_LAYOUT,
 } = require("./index");
 
 module.exports = {
+
+  
+
+
+
+
+
+  updateGeometryEditorEnabled(enabled) {
+    return {
+      type: UPDATE_GEOMETRY_EDITOR_ENABLED,
+      enabled,
+    };
+  },
 
   
 
