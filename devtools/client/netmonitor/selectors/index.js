@@ -4,12 +4,60 @@
 
 "use strict";
 
-const filters = require("./filters");
-const requests = require("./requests");
-const ui = require("./ui");
+const { createSelector } = require("devtools/client/shared/vendor/reselect");
 
-Object.assign(exports,
-  filters,
-  requests,
-  ui
+
+
+
+
+
+
+
+function getTotalBytesOfRequests(items) {
+  if (!items.length) {
+    return 0;
+  }
+
+  let result = 0;
+  items.forEach((item) => {
+    let size = item.attachment.contentSize;
+    result += (typeof size == "number") ? size : 0;
+  });
+
+  return result;
+}
+
+
+
+
+
+
+
+
+function getTotalMillisOfRequests(items) {
+  if (!items.length) {
+    return null;
+  }
+
+  const oldest = items.reduce((prev, curr) =>
+    prev.attachment.startedMillis < curr.attachment.startedMillis ?
+      prev : curr);
+  const newest = items.reduce((prev, curr) =>
+    prev.attachment.startedMillis > curr.attachment.startedMillis ?
+      prev : curr);
+
+  return newest.attachment.endedMillis - oldest.attachment.startedMillis;
+}
+
+const getSummary = createSelector(
+  (state) => state.requests.items,
+  (requests) => ({
+    count: requests.length,
+    totalBytes: getTotalBytesOfRequests(requests),
+    totalMillis: getTotalMillisOfRequests(requests),
+  })
 );
+
+module.exports = {
+  getSummary,
+};

@@ -5,7 +5,34 @@
 
 
 
+
 "use strict";
+
+var { utils: Cu } = Components;
+
+
+const ACTIVITY_TYPE = {
+  
+  NONE: 0,
+
+  
+  RELOAD: {
+    WITH_CACHE_ENABLED: 1,
+    WITH_CACHE_DISABLED: 2,
+    WITH_CACHE_DEFAULT: 3
+  },
+
+  
+  ENABLE_CACHE: 3,
+  DISABLE_CACHE: 4
+};
+
+var BrowserLoaderModule = {};
+Cu.import("resource://devtools/client/shared/browser-loader.js", BrowserLoaderModule);
+var { loader, require } = BrowserLoaderModule.BrowserLoader({
+  baseURI: "resource://devtools/client/netmonitor/",
+  window
+});
 
 const promise = require("promise");
 const Services = require("Services");
@@ -14,22 +41,20 @@ const EventEmitter = require("devtools/shared/event-emitter");
 const Editor = require("devtools/client/sourceeditor/editor");
 const {TimelineFront} = require("devtools/shared/fronts/timeline");
 const {Task} = require("devtools/shared/task");
-const { ACTIVITY_TYPE } = require("./constants");
-const { EVENTS } = require("./events");
-const { configureStore } = require("./store");
+const {Prefs} = require("./prefs");
+const {EVENTS} = require("./events");
 const Actions = require("./actions/index");
-const { getDisplayedRequestById } = require("./selectors/index");
-const { Prefs } = require("./prefs");
 
-XPCOMUtils.defineConstant(window, "EVENTS", EVENTS);
-XPCOMUtils.defineConstant(window, "ACTIVITY_TYPE", ACTIVITY_TYPE);
-XPCOMUtils.defineConstant(window, "Editor", Editor);
-XPCOMUtils.defineConstant(window, "Prefs", Prefs);
-XPCOMUtils.defineLazyModuleGetter(window, "Chart",
+XPCOMUtils.defineConstant(this, "EVENTS", EVENTS);
+XPCOMUtils.defineConstant(this, "ACTIVITY_TYPE", ACTIVITY_TYPE);
+XPCOMUtils.defineConstant(this, "Editor", Editor);
+XPCOMUtils.defineConstant(this, "Prefs", Prefs);
+
+XPCOMUtils.defineLazyModuleGetter(this, "Chart",
   "resource://devtools/client/shared/widgets/Chart.jsm");
 
-
-window.gStore = configureStore();
+XPCOMUtils.defineLazyServiceGetter(this, "clipboardHelper",
+  "@mozilla.org/widget/clipboardhelper;1", "nsIClipboardHelper");
 
 
 
@@ -66,7 +91,6 @@ var NetMonitorController = {
     }
     this._shutdown = promise.defer();
     {
-      gStore.dispatch(Actions.batchReset());
       NetMonitorView.destroy();
       this.TargetEventsHandler.disconnect();
       this.NetworkEventsHandler.disconnect();
@@ -263,18 +287,19 @@ var NetMonitorController = {
     let deferred = promise.defer();
     let request = null;
     let inspector = function () {
-      request = getDisplayedRequestById(gStore.getState(), requestId);
+      let predicate = i => i.value === requestId;
+      request = NetMonitorView.RequestsMenu.getItemForPredicate(predicate);
       if (!request) {
         
         gStore.dispatch(Actions.toggleFilterType("all"));
-        request = getDisplayedRequestById(gStore.getState(), requestId);
+        request = NetMonitorView.RequestsMenu.getItemForPredicate(predicate);
       }
 
       
       
       if (request) {
         window.off(EVENTS.REQUEST_ADDED, inspector);
-        gStore.dispatch(Actions.selectRequest(request.id));
+        NetMonitorView.RequestsMenu.selectedItem = request;
         deferred.resolve();
       }
     };
@@ -373,14 +398,14 @@ TargetEventsHandler.prototype = {
         
         if (!Services.prefs.getBoolPref("devtools.webconsole.persistlog")) {
           NetMonitorView.RequestsMenu.reset();
-        } else {
-          
-          gStore.dispatch(Actions.clearTimingMarkers());
+          NetMonitorView.Sidebar.toggle(false);
         }
         
         if (NetMonitorController.getCurrentActivity() == ACTIVITY_TYPE.NONE) {
           NetMonitorView.showNetworkInspectorView();
         }
+        
+        NetMonitorController.NetworkEventsHandler.clearMarkers();
 
         window.emit(EVENTS.TARGET_WILL_NAVIGATE);
         break;
@@ -404,6 +429,8 @@ TargetEventsHandler.prototype = {
 
 
 function NetworkEventsHandler() {
+  this._markers = [];
+
   this._onNetworkEvent = this._onNetworkEvent.bind(this);
   this._onNetworkEventUpdate = this._onNetworkEventUpdate.bind(this);
   this._onDocLoadingMarker = this._onDocLoadingMarker.bind(this);
@@ -427,6 +454,19 @@ NetworkEventsHandler.prototype = {
 
   get timelineFront() {
     return NetMonitorController.timelineFront;
+  },
+
+  get firstDocumentDOMContentLoadedTimestamp() {
+    let marker = this._markers.filter(e => {
+      return e.name == "document::DOMContentLoaded";
+    })[0];
+
+    return marker ? marker.unixTime / 1000 : -1;
+  },
+
+  get firstDocumentLoadTimestamp() {
+    let marker = this._markers.filter(e => e.name == "document::Load")[0];
+    return marker ? marker.unixTime / 1000 : -1;
   },
 
   
@@ -485,7 +525,7 @@ NetworkEventsHandler.prototype = {
 
   _onDocLoadingMarker: function (marker) {
     window.emit(EVENTS.TIMELINE_EVENT, marker);
-    gStore.dispatch(Actions.addTimingMarker(marker));
+    this._markers.push(marker);
   },
 
   
@@ -507,7 +547,8 @@ NetworkEventsHandler.prototype = {
     } = networkInfo;
 
     NetMonitorView.RequestsMenu.addRequest(
-      actor, {startedDateTime, method, url, isXHR, cause, fromCache, fromServiceWorker}
+      actor, startedDateTime, method, url, isXHR, cause, fromCache,
+        fromServiceWorker
     );
     window.emit(EVENTS.NETWORK_EVENT, actor);
   },
@@ -596,7 +637,7 @@ NetworkEventsHandler.prototype = {
   _onRequestHeaders: function (response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       requestHeaders: response
-    }).then(() => {
+    }, () => {
       window.emit(EVENTS.RECEIVED_REQUEST_HEADERS, response.from);
     });
   },
@@ -610,7 +651,7 @@ NetworkEventsHandler.prototype = {
   _onRequestCookies: function (response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       requestCookies: response
-    }).then(() => {
+    }, () => {
       window.emit(EVENTS.RECEIVED_REQUEST_COOKIES, response.from);
     });
   },
@@ -624,7 +665,7 @@ NetworkEventsHandler.prototype = {
   _onRequestPostData: function (response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       requestPostData: response
-    }).then(() => {
+    }, () => {
       window.emit(EVENTS.RECEIVED_REQUEST_POST_DATA, response.from);
     });
   },
@@ -638,7 +679,7 @@ NetworkEventsHandler.prototype = {
   _onSecurityInfo: function (response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       securityInfo: response.securityInfo
-    }).then(() => {
+    }, () => {
       window.emit(EVENTS.RECEIVED_SECURITY_INFO, response.from);
     });
   },
@@ -652,7 +693,7 @@ NetworkEventsHandler.prototype = {
   _onResponseHeaders: function (response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       responseHeaders: response
-    }).then(() => {
+    }, () => {
       window.emit(EVENTS.RECEIVED_RESPONSE_HEADERS, response.from);
     });
   },
@@ -666,7 +707,7 @@ NetworkEventsHandler.prototype = {
   _onResponseCookies: function (response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       responseCookies: response
-    }).then(() => {
+    }, () => {
       window.emit(EVENTS.RECEIVED_RESPONSE_COOKIES, response.from);
     });
   },
@@ -680,7 +721,7 @@ NetworkEventsHandler.prototype = {
   _onResponseContent: function (response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       responseContent: response
-    }).then(() => {
+    }, () => {
       window.emit(EVENTS.RECEIVED_RESPONSE_CONTENT, response.from);
     });
   },
@@ -694,9 +735,16 @@ NetworkEventsHandler.prototype = {
   _onEventTimings: function (response) {
     NetMonitorView.RequestsMenu.updateRequest(response.from, {
       eventTimings: response
-    }).then(() => {
+    }, () => {
       window.emit(EVENTS.RECEIVED_EVENT_TIMINGS, response.from);
     });
+  },
+
+  
+
+
+  clearMarkers: function () {
+    this._markers.length = 0;
   },
 
   
@@ -718,7 +766,16 @@ NetworkEventsHandler.prototype = {
 
 
 
-EventEmitter.decorate(window);
+
+XPCOMUtils.defineLazyGetter(window, "isRTL", function () {
+  return window.getComputedStyle(document.documentElement, null)
+    .direction == "rtl";
+});
+
+
+
+
+EventEmitter.decorate(this);
 
 
 
@@ -738,4 +795,14 @@ Object.defineProperties(window, {
   }
 });
 
-exports.NetMonitorController = NetMonitorController;
+
+
+
+
+function dumpn(str) {
+  if (wantLogging) {
+    dump("NET-FRONTEND: " + str + "\n");
+  }
+}
+
+var wantLogging = Services.prefs.getBoolPref("devtools.debugger.log");

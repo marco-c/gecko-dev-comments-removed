@@ -201,7 +201,9 @@ HarCollector.prototype = {
     this.files.set(actor, file);
 
     
-    this.items.push(file);
+    this.items.push({
+      attachment: file
+    });
   },
 
   onNetworkEventUpdate: function (type, packet) {

@@ -5,22 +5,22 @@
 
 
 
+
+
 "use strict";
 
 const { testing: isTesting } = require("devtools/shared/flags");
-const promise = require("promise");
-const Editor = require("devtools/client/sourceeditor/editor");
-const { Task } = require("devtools/shared/task");
 const { ViewHelpers } = require("devtools/client/shared/widgets/view-helpers");
+const { configureStore } = require("./store");
 const { RequestsMenuView } = require("./requests-menu-view");
 const { CustomRequestView } = require("./custom-request-view");
 const { ToolbarView } = require("./toolbar-view");
 const { SidebarView } = require("./sidebar-view");
 const { DetailsView } = require("./details-view");
 const { PerformanceStatisticsView } = require("./performance-statistics-view");
-const { ACTIVITY_TYPE } = require("./constants");
-const Actions = require("./actions/index");
-const { Prefs } = require("./prefs");
+
+
+var gStore = configureStore();
 
 
 const WDA_DEFAULT_VERIFY_INTERVAL = 50;
@@ -80,6 +80,12 @@ var NetMonitorView = {
     this._detailsPane.setAttribute("width", Prefs.networkDetailsWidth);
     this._detailsPane.setAttribute("height", Prefs.networkDetailsHeight);
     this.toggleDetailsPane({ visible: false });
+
+    
+    if (!Prefs.statistics) {
+      $("#request-menu-context-perf").hidden = true;
+      $("#notice-perf-message").hidden = true;
+    }
   },
 
   
@@ -163,6 +169,7 @@ var NetMonitorView = {
 
   showNetworkInspectorView: function () {
     this._body.selectedPanel = $("#network-inspector-view");
+    this.RequestsMenu._flushWaterfallViews(true);
   },
 
   
@@ -185,7 +192,7 @@ var NetMonitorView = {
         
         
         
-        yield whenDataAvailable(requestsView.store, [
+        yield whenDataAvailable(requestsView, [
           "responseHeaders", "status", "contentSize", "mimeType", "totalTime"
         ]);
       } catch (ex) {
@@ -193,9 +200,8 @@ var NetMonitorView = {
         console.error(ex);
       }
 
-      const requests = requestsView.store.getState().requests.requests;
-      statisticsView.createPrimedCacheChart(requests);
-      statisticsView.createEmptyCacheChart(requests);
+      statisticsView.createPrimedCacheChart(requestsView.items);
+      statisticsView.createEmptyCacheChart(requestsView.items);
     });
   },
 
@@ -239,6 +245,8 @@ var NetMonitorView = {
 
 
 
+var $ = (selector, target = document) => target.querySelector(selector);
+var $all = (selector, target = document) => target.querySelectorAll(selector);
 
 
 
@@ -246,28 +254,31 @@ var NetMonitorView = {
 
 
 
-function whenDataAvailable(dataStore, mandatoryFields) {
-  return new Promise((resolve, reject) => {
-    let interval = setInterval(() => {
-      const { requests } = dataStore.getState().requests;
-      const allFieldsPresent = !requests.isEmpty() && requests.every(
-        item => mandatoryFields.every(
-          field => item.get(field) !== undefined
-        )
-      );
 
-      if (allFieldsPresent) {
-        clearInterval(interval);
-        clearTimeout(timer);
-        resolve();
-      }
-    }, WDA_DEFAULT_VERIFY_INTERVAL);
 
-    let timer = setTimeout(() => {
+
+
+
+function whenDataAvailable(requestsView, mandatoryFields) {
+  let deferred = promise.defer();
+
+  let interval = setInterval(() => {
+    const { attachments } = requestsView;
+    if (attachments.length > 0 && attachments.every(item => {
+      return mandatoryFields.every(field => field in item);
+    })) {
       clearInterval(interval);
-      reject(new Error("Timed out while waiting for data"));
-    }, WDA_DEFAULT_GIVE_UP_TIMEOUT);
-  });
+      clearTimeout(timer);
+      deferred.resolve();
+    }
+  }, WDA_DEFAULT_VERIFY_INTERVAL);
+
+  let timer = setTimeout(() => {
+    clearInterval(interval);
+    deferred.reject(new Error("Timed out while waiting for data"));
+  }, WDA_DEFAULT_GIVE_UP_TIMEOUT);
+
+  return deferred.promise;
 }
 
 
@@ -279,5 +290,3 @@ NetMonitorView.NetworkDetails = new DetailsView();
 NetMonitorView.RequestsMenu = new RequestsMenuView();
 NetMonitorView.CustomRequest = new CustomRequestView();
 NetMonitorView.PerformanceStatistics = new PerformanceStatisticsView();
-
-exports.NetMonitorView = NetMonitorView;
