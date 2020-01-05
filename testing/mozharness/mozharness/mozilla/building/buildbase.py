@@ -345,17 +345,13 @@ class BuildOptionParser(object):
         'asan': 'builds/releng_sub_%s_configs/%s_asan.py',
         'asan-tc': 'builds/releng_sub_%s_configs/%s_asan_tc.py',
         'tsan': 'builds/releng_sub_%s_configs/%s_tsan.py',
-        'b2g-debug': 'b2g/releng_sub_%s_configs/%s_debug.py',
         'cross-debug': 'builds/releng_sub_%s_configs/%s_cross_debug.py',
         'cross-opt': 'builds/releng_sub_%s_configs/%s_cross_opt.py',
         'debug': 'builds/releng_sub_%s_configs/%s_debug.py',
         'asan-and-debug': 'builds/releng_sub_%s_configs/%s_asan_and_debug.py',
         'asan-tc-and-debug': 'builds/releng_sub_%s_configs/%s_asan_tc_and_debug.py',
         'stat-and-debug': 'builds/releng_sub_%s_configs/%s_stat_and_debug.py',
-        'mulet': 'builds/releng_sub_%s_configs/%s_mulet.py',
         'code-coverage': 'builds/releng_sub_%s_configs/%s_code_coverage.py',
-        'graphene': 'builds/releng_sub_%s_configs/%s_graphene.py',
-        'horizon': 'builds/releng_sub_%s_configs/%s_horizon.py',
         'source': 'builds/releng_sub_%s_configs/%s_source.py',
         'api-15-gradle-dependencies': 'builds/releng_sub_%s_configs/%s_api_15_gradle_dependencies.py',
         'api-15': 'builds/releng_sub_%s_configs/%s_api_15.py',
@@ -1154,8 +1150,6 @@ or run without that action (ie: --no-{action})"
          This method is used both to figure out what revision to check out and
          to figure out what revision *was* checked out.
         """
-        
-        
         revision = None
         if 'revision' in self.buildbot_properties:
             revision = self.buildbot_properties['revision']
