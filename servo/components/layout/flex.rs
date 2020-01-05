@@ -27,6 +27,7 @@ use std::sync::Arc;
 use style::computed_values::flex_direction;
 use style::logical_geometry::LogicalSize;
 use style::properties::{ComputedValues, ServoComputedValues};
+use style::servo::SharedStyleContext;
 use style::values::computed::{LengthOrPercentage, LengthOrPercentageOrAuto, LengthOrPercentageOrNone};
 
 
@@ -184,7 +185,7 @@ impl FlexFlow {
     
     
     fn block_mode_assign_inline_sizes(&mut self,
-                                      _layout_context: &LayoutContext,
+                                      _shared_context: &SharedStyleContext,
                                       inline_start_content_edge: Au,
                                       inline_end_content_edge: Au,
                                       content_inline_size: Au) {
@@ -229,7 +230,7 @@ impl FlexFlow {
     
     
     fn inline_mode_assign_inline_sizes(&mut self,
-                                       _layout_context: &LayoutContext,
+                                       _shared_context: &SharedStyleContext,
                                        inline_start_content_edge: Au,
                                        _inline_end_content_edge: Au,
                                        content_inline_size: Au) {
@@ -402,7 +403,7 @@ impl Flow for FlexFlow {
         }
     }
 
-    fn assign_inline_sizes(&mut self, layout_context: &LayoutContext) {
+    fn assign_inline_sizes(&mut self, shared_context: &SharedStyleContext) {
         let _scope = layout_debug_scope!("flex::assign_inline_sizes {:x}", self.block_flow.base.debug_id());
         debug!("assign_inline_sizes");
 
@@ -413,7 +414,7 @@ impl Flow for FlexFlow {
         
         
         let containing_block_inline_size = self.block_flow.base.block_container_inline_size;
-        self.block_flow.compute_used_inline_size(layout_context, containing_block_inline_size);
+        self.block_flow.compute_used_inline_size(shared_context, containing_block_inline_size);
         if self.block_flow.base.flags.is_float() {
             self.block_flow.float.as_mut().unwrap().containing_inline_size = containing_block_inline_size
         }
@@ -460,7 +461,7 @@ impl Flow for FlexFlow {
             Mode::Inline => {
                 self.available_main_size = available_inline_size;
                 self.available_cross_size = available_block_size;
-                self.inline_mode_assign_inline_sizes(layout_context,
+                self.inline_mode_assign_inline_sizes(shared_context,
                                                      inline_start_content_edge,
                                                      inline_end_content_edge,
                                                      content_inline_size)
@@ -468,7 +469,7 @@ impl Flow for FlexFlow {
             Mode::Block  => {
                 self.available_main_size = available_block_size;
                 self.available_cross_size = available_inline_size;
-                self.block_mode_assign_inline_sizes(layout_context,
+                self.block_mode_assign_inline_sizes(shared_context,
                                                     inline_start_content_edge,
                                                     inline_end_content_edge,
                                                     content_inline_size)

@@ -20,6 +20,7 @@ use std::fmt;
 use std::sync::Arc;
 use style::logical_geometry::LogicalSize;
 use style::properties::ServoComputedValues;
+use style::servo::SharedStyleContext;
 use style::values::computed::LengthOrPercentageOrAuto;
 
 
@@ -81,7 +82,7 @@ impl Flow for TableColGroupFlow {
 
     
     
-    fn assign_inline_sizes(&mut self, _: &LayoutContext) {
+    fn assign_inline_sizes(&mut self, _: &SharedStyleContext) {
     }
 
     
