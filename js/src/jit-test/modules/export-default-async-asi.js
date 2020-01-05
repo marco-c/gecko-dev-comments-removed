@@ -1,4 +1,2 @@
-function async() { return 42; } 
-
 export default async 
 function async() { return 17; }
