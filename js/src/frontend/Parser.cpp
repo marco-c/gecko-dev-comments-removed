@@ -5654,12 +5654,6 @@ Parser<ParseHandler>::forStatement(YieldHandling yieldHandling)
             stmt.refineForKind(StatementKind::ForOfLoop);
         }
 
-        if (!handler.isDeclarationList(target)) {
-            MOZ_ASSERT(!forLoopLexicalScope);
-            if (!checkAndMarkAsAssignmentLhs(target, PlainAssignment))
-                return null();
-        }
-
         
         
         
