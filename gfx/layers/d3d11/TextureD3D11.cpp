@@ -249,7 +249,7 @@ D3D11TextureData::~D3D11TextureData()
   
   
   if (mDrawTarget) {
-    Lock(OpenMode::OPEN_NONE, nullptr);
+    Lock(OpenMode::OPEN_NONE);
     mDrawTarget = nullptr;
     Unlock();
   }
@@ -257,7 +257,7 @@ D3D11TextureData::~D3D11TextureData()
 }
 
 bool
-D3D11TextureData::Lock(OpenMode aMode, FenceHandle*)
+D3D11TextureData::Lock(OpenMode aMode)
 {
   if (!LockD3DTexture(mTexture.get())) {
     return false;
