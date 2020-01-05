@@ -585,8 +585,9 @@ LIRGenerator::visitApplyArgs(MApplyArgs* apply)
         tempFixed(CallTempReg2)); 
 
     
-    if (!apply->getSingleTarget())
-        assignSnapshot(lir, Bailout_NonJSFunctionCallee);
+    
+    
+    assignSnapshot(lir, Bailout_NonJSFunctionCallee);
 
     defineReturn(lir, apply);
     assignSafepoint(lir, apply);
