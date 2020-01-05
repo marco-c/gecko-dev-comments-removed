@@ -41,7 +41,7 @@ public:
   TextureForwarder* GetTextureForwarder() override;
   LayersIPCActor* GetLayersIPCActor() override;
 
-  uint64_t AllocExternalImageId(uint64_t aAsyncContainerID);
+  uint64_t AllocExternalImageId(const CompositableHandle& aHandle);
   uint64_t AllocExternalImageIdForCompositable(CompositableClient* aCompositable);
   void DeallocExternalImageId(uint64_t aImageId);
 
@@ -49,7 +49,6 @@ public:
 
 
 
-  using CompositableForwarder::Destroy;
   void Destroy();
   bool IPCOpen() const { return mIPCOpen && !mDestroyed; }
   bool IsDestroyed() const { return mDestroyed; }
@@ -67,10 +66,6 @@ private:
   uint64_t GetNextExternalImageId();
 
   
-  PCompositableChild* AllocPCompositableChild(const TextureInfo& aInfo) override;
-  bool DeallocPCompositableChild(PCompositableChild* aActor) override;
-
-  
   void Connect(CompositableClient* aCompositable,
                ImageContainer* aImageContainer = nullptr) override;
   void UseTiledLayerBuffer(CompositableClient* aCompositable,
@@ -78,8 +73,9 @@ private:
   void UpdateTextureRegion(CompositableClient* aCompositable,
                            const ThebesBufferData& aThebesBufferData,
                            const nsIntRegion& aUpdatedRegion) override;
+  void ReleaseCompositable(const CompositableHandle& aHandle) override;
   bool DestroyInTransaction(PTextureChild* aTexture, bool aSynchronously) override;
-  bool DestroyInTransaction(PCompositableChild* aCompositable, bool aSynchronously) override;
+  bool DestroyInTransaction(const CompositableHandle& aHandle);
   void RemoveTextureFromCompositable(CompositableClient* aCompositable,
                                      TextureClient* aTexture) override;
   void UseTextures(CompositableClient* aCompositable,
@@ -108,6 +104,7 @@ private:
 
   nsTArray<WebRenderCommand> mCommands;
   nsTArray<OpDestroy> mDestroyedActors;
+  nsDataHashtable<nsUint64HashKey, CompositableClient*> mCompositables;
   bool mIsInTransaction;
   bool mSyncTransaction;
 
