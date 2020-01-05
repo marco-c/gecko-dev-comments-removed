@@ -58,6 +58,13 @@ class PageProtectingVector final
 
     intptr_t unprotectedBytes;
 
+    
+
+
+
+
+    size_t protectionLowerBound;
+
     bool protectionEnabled;
     bool regionUnprotected;
 
@@ -65,6 +72,8 @@ class PageProtectingVector final
         unprotectedBytes += offsetToPage;
         offsetToPage = (pageSize - (uintptr_t(vector.begin()) & pageMask)) & pageMask;
         unprotectedBytes -= offsetToPage;
+        protectionEnabled = vector.capacity() >= protectionLowerBound &&
+                            vector.capacity() >= pageSize + offsetToPage;
     }
 
     void protect() {
@@ -92,6 +101,10 @@ class PageProtectingVector final
     void protectNewBuffer() {
         updateOffsetToPage();
         protect();
+    }
+
+    void unprotectOldBuffer() {
+        unprotect();
     }
 
     bool anyProtected(size_t first, size_t last) {
@@ -125,7 +138,7 @@ class PageProtectingVector final
 
         void emplace(PageProtectingVector* holder) {
             vector = holder;
-            vector->unprotect();
+            vector->unprotectOldBuffer();
         }
 
         explicit AutoUnprotect(PageProtectingVector* holder) {
@@ -146,23 +159,22 @@ class PageProtectingVector final
         offsetToPage(0),
         protectedBytes(0),
         unprotectedBytes(0),
+        protectionLowerBound(0),
         protectionEnabled(false),
-        regionUnprotected(false) { updateOffsetToPage(); }
+        regionUnprotected(false) { protectNewBuffer(); }
 
-    ~PageProtectingVector() { unprotect(); }
-
-    
-    void enableProtection() {
-        MOZ_ASSERT(!protectionEnabled);
-        protectionEnabled = true;
-        protectNewBuffer();
-    }
+    ~PageProtectingVector() { unprotectOldBuffer(); }
 
     
-    void disableProtection() {
-        MOZ_ASSERT(protectionEnabled);
-        unprotect();
-        protectionEnabled = false;
+
+
+
+    void setLowerBoundForProtection(size_t bytes) {
+        if (protectionLowerBound != bytes) {
+            unprotectOldBuffer();
+            protectionLowerBound = bytes;
+            protectNewBuffer();
+        }
     }
 
     
