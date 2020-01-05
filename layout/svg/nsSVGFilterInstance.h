@@ -192,7 +192,7 @@ private:
 
 
 
-  nsresult ComputeBounds();
+  bool ComputeBounds();
 
   
 

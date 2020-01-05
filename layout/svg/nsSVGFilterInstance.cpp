@@ -54,14 +54,14 @@ nsSVGFilterInstance::nsSVGFilterInstance(const nsStyleFilter& aFilter,
   mPrimitiveUnits =
     mFilterFrame->GetEnumValue(SVGFilterElement::PRIMITIVEUNITS);
 
-  if (NS_FAILED(ComputeBounds())) {
+  if (!ComputeBounds()) {
     return;
   }
 
   mInitialized = true;
 }
 
-nsresult
+bool
 nsSVGFilterInstance::ComputeBounds()
 {
   
@@ -79,15 +79,15 @@ nsSVGFilterInstance::ComputeBounds()
   static_assert(sizeof(mFilterElement->mLengthAttributes) == sizeof(XYWH),
                 "XYWH size incorrect");
   memcpy(XYWH, mFilterElement->mLengthAttributes,
-    sizeof(mFilterElement->mLengthAttributes));
+         sizeof(mFilterElement->mLengthAttributes));
   XYWH[0] = *mFilterFrame->GetLengthValue(SVGFilterElement::ATTR_X);
   XYWH[1] = *mFilterFrame->GetLengthValue(SVGFilterElement::ATTR_Y);
   XYWH[2] = *mFilterFrame->GetLengthValue(SVGFilterElement::ATTR_WIDTH);
   XYWH[3] = *mFilterFrame->GetLengthValue(SVGFilterElement::ATTR_HEIGHT);
   uint16_t filterUnits =
     mFilterFrame->GetEnumValue(SVGFilterElement::FILTERUNITS);
-  gfxRect userSpaceBounds = nsSVGUtils::GetRelativeRect(filterUnits,
-    XYWH, mTargetBBox, mMetrics);
+  gfxRect userSpaceBounds =
+    nsSVGUtils::GetRelativeRect(filterUnits, XYWH, mTargetBBox, mMetrics);
 
   
   
@@ -97,16 +97,16 @@ nsSVGFilterInstance::ComputeBounds()
   if (filterSpaceBounds.width <= 0 || filterSpaceBounds.height <= 0) {
     
     
-    return NS_ERROR_FAILURE;
+    return false;
   }
 
   
   if (!gfxUtils::GfxRectToIntRect(filterSpaceBounds, &mFilterSpaceBounds)) {
     
-    return NS_ERROR_FAILURE;
+    return false;
   }
 
-  return NS_OK;
+  return true;
 }
 
 nsSVGFilterFrame*
