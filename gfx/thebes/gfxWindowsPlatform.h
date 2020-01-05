@@ -184,11 +184,6 @@ public:
 
     mozilla::gfx::BackendType GetContentBackendFor(mozilla::layers::LayersBackend aLayers) override;
 
-    
-    
-    bool UseClearTypeForDownloadableFonts();
-    bool UseClearTypeAlways();
-
     static void GetDLLVersion(char16ptr_t aDLLPath, nsAString& aVersion);
 
     
@@ -246,9 +241,6 @@ protected:
 
 protected:
     RenderMode mRenderMode;
-
-    int8_t mUseClearTypeForDownloadableFonts;
-    int8_t mUseClearTypeAlways;
 
 private:
     void Init();

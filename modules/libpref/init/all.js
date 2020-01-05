@@ -3418,14 +3418,6 @@ pref("font.name.cursive.x-math", "Comic Sans MS");
 
 
 
-pref("gfx.font_rendering.cleartype.use_for_downloadable_fonts", true);
-
-
-pref("gfx.font_rendering.cleartype.always_use_for_content", false);
-
-
-
-
 
 
 
@@ -4533,7 +4525,13 @@ pref("webgl.max-acceptable-fb-status-invals", 0);
 
 pref("webgl.enable-webgl2", true);
 
+#ifdef RELEASE_OR_BETA
+
+pref("webgl.enable-debug-renderer-info", false);
+#else
 pref("webgl.enable-debug-renderer-info", true);
+#endif
+
 pref("webgl.renderer-string-override", "");
 pref("webgl.vendor-string-override", "");
 

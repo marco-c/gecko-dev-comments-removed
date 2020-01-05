@@ -461,8 +461,7 @@ gfxGDIFont::FillLogFont(LOGFONTW& aLogFont, gfxFloat aSize,
         weight = mNeedsBold ? 700 : fe->Weight();
     }
 
-    fe->FillLogFont(&aLogFont, weight, aSize, 
-                    (mAntialiasOption == kAntialiasSubpixel) ? true : false);
+    fe->FillLogFont(&aLogFont, weight, aSize);
 
     
     if (aUseGDIFakeItalic) {
