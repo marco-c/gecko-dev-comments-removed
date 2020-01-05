@@ -15,7 +15,7 @@ use std::borrow::Cow;
 use std::fmt::{self, Write};
 use std::sync::Arc;
 use style_traits::ToCss;
-use values::NoViewportPercentage;
+use values::HasViewportPercentage;
 use values::computed::ComputedValueAsSpecified;
 
 
@@ -202,4 +202,4 @@ impl ToCss for SpecifiedUrl {
 
 impl ComputedValueAsSpecified for SpecifiedUrl {}
 
-impl NoViewportPercentage for SpecifiedUrl {}
+no_viewport_percentage!(SpecifiedUrl);

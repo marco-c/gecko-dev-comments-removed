@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 <%namespace name="helpers" file="/helpers.mako.rs" />
 
@@ -22,9 +22,9 @@ ${helpers.predefined_type("column-width",
                    spec="https://drafts.csswg.org/css-multicol/#propdef-column-count">
     use std::fmt;
     use style_traits::ToCss;
-    use values::NoViewportPercentage;
+    use values::HasViewportPercentage;
 
-    impl NoViewportPercentage for SpecifiedValue {}
+    no_viewport_percentage!(SpecifiedValue);
 
     #[derive(Debug, Clone, Copy, PartialEq)]
     #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
@@ -147,7 +147,7 @@ ${helpers.single_keyword("column-fill", "auto balance", extra_prefixes="moz",
 ${helpers.predefined_type("column-rule-color", "CSSColor",
                           "::cssparser::Color::CurrentColor",
                           products="gecko", animatable=True, extra_prefixes="moz",
-                          complex_color=True, need_clone=True,
+                          complex_color=True, need_clone=True, boxed=True,
                           spec="https://drafts.csswg.org/css-multicol/#propdef-column-rule-color")}
 
 // It's not implemented in servo or gecko yet.
