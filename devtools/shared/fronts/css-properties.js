@@ -268,28 +268,22 @@ function normalizeCssData(db) {
     
     db = Object.assign({}, CSS_PROPERTIES_DB, db);
 
-    
-    if (!db.properties.color.supports) {
-      for (let name in db.properties) {
-        if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
-          db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
-        }
+    for (let name in db.properties) {
+      
+      if (typeof CSS_PROPERTIES_DB.properties[name] !== "object") {
+        continue;
       }
-    }
 
-    
-    if (!db.properties.color.values) {
-      for (let name in db.properties) {
-        if (typeof CSS_PROPERTIES_DB.properties[name] === "object") {
-          db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
-        }
+      
+      if (!db.properties.color.supports) {
+        db.properties[name].supports = CSS_PROPERTIES_DB.properties[name].supports;
       }
-    }
-
-    
-    
-    if (!db.properties.background.subproperties) {
-      for (let name in db.properties) {
+      
+      if (!db.properties.color.values) {
+        db.properties[name].values = CSS_PROPERTIES_DB.properties[name].values;
+      }
+      
+      if (!db.properties.background.subproperties) {
         db.properties[name].subproperties =
           CSS_PROPERTIES_DB.properties[name].subproperties;
       }
@@ -311,7 +305,8 @@ function reattachCssColorValues(db) {
 
     for (let name in db.properties) {
       const property = db.properties[name];
-      if (property.values[0] === "COLOR") {
+      
+      if (property.values && property.values[0] === "COLOR") {
         property.values.shift();
         property.values = property.values.concat(colors).sort();
       }
