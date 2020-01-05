@@ -5,9 +5,7 @@
 "use strict";
 
 const Cu = Components.utils;
-
-
-var { DER } = Cu.import("resource://testing-common/psm/DER.jsm", {});
+var { DER } = Cu.import("resource://gre/modules/psm/DER.jsm", {});
 
 const ERROR_UNSUPPORTED_ASN1 = "unsupported asn.1";
 const ERROR_TIME_NOT_VALID = "Time not valid";
