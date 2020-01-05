@@ -425,6 +425,14 @@ TabChild::TabChild(nsIContentChild* aManager,
   }
 }
 
+const CompositorOptions&
+TabChild::GetCompositorOptions() const
+{
+  
+  MOZ_ASSERT(mCompositorOptions);
+  return mCompositorOptions.ref();
+}
+
 bool
 TabChild::AsyncPanZoomEnabled() const
 {
@@ -2311,11 +2319,6 @@ TabChild::RecvSetDocShellIsActive(const bool& aIsActive,
   }
   mLayerObserverEpoch = aLayerObserverEpoch;
 
-  MOZ_ASSERT(mPuppetWidget);
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager());
-  MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT
-          || mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR);
-
   auto clearForcePaint = MakeScopeExit([&] {
     
     
@@ -2327,10 +2330,21 @@ TabChild::RecvSetDocShellIsActive(const bool& aIsActive,
     }
   });
 
-  
-  
-  
-  mPuppetWidget->GetLayerManager()->SetLayerObserverEpoch(aLayerObserverEpoch);
+  if (mCompositorOptions) {
+    
+    
+    
+    
+    MOZ_ASSERT(mPuppetWidget);
+    MOZ_ASSERT(mPuppetWidget->GetLayerManager());
+    MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_CLIENT
+            || mPuppetWidget->GetLayerManager()->GetBackendType() == LayersBackend::LAYERS_WR);
+
+    
+    
+    
+    mPuppetWidget->GetLayerManager()->SetLayerObserverEpoch(aLayerObserverEpoch);
+  }
 
   
   mIsPrerendered &= !aIsActive;

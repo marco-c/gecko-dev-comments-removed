@@ -338,13 +338,11 @@ public:
   virtual mozilla::ipc::IPCResult
   RecvShow(const ScreenIntSize& aSize,
            const ShowInfo& aInfo,
+           const TextureFactoryIdentifier& aTextureFactoryIdentifier,
+           const uint64_t& aLayersId,
+           PRenderFrameChild* aRenderFrame,
            const bool& aParentIsActive,
            const nsSizeMode& aSizeMode) override;
-
-  virtual mozilla::ipc::IPCResult
-  RecvInitRendering(const TextureFactoryIdentifier& aTextureFactoryIdentifier,
-                    const uint64_t& aLayersId,
-                    PRenderFrameChild* aRenderFrame) override;
 
   virtual mozilla::ipc::IPCResult
   RecvUpdateDimensions(const CSSRect& aRect,
@@ -566,8 +564,7 @@ public:
   void ClearCachedResources();
   void InvalidateLayers();
   void ReinitRendering();
-  void CompositorUpdated(const TextureFactoryIdentifier& aNewIdentifier,
-                         uint64_t aDeviceResetSeqNo);
+  void CompositorUpdated(const TextureFactoryIdentifier& aNewIdentifier);
 
   static inline TabChild* GetFrom(nsIDOMWindow* aWindow)
   {
@@ -621,6 +618,7 @@ public:
     return mParentIsActive;
   }
 
+  const mozilla::layers::CompositorOptions& GetCompositorOptions() const;
   bool AsyncPanZoomEnabled() const;
 
   virtual ScreenIntSize GetInnerSize() override;
@@ -661,17 +659,11 @@ public:
   uintptr_t GetNativeWindowHandle() const { return mNativeWindowHandle; }
 #endif
 
-  
-  
-  bool TakeAwaitingLargeAlloc();
-  bool IsAwaitingLargeAlloc();
-
-  
-  
-  
-  static bool InLargeAllocProcess()
+  bool TakeIsFreshProcess()
   {
-    return sInLargeAllocProcess;
+    bool wasFreshProcess = mIsFreshProcess;
+    mIsFreshProcess = false;
+    return wasFreshProcess;
   }
 
   already_AddRefed<nsISHistory> GetRelatedSHistory();
@@ -715,8 +707,7 @@ protected:
 
   virtual mozilla::ipc::IPCResult RecvNotifyPartialSHistoryDeactive() override;
 
-  virtual mozilla::ipc::IPCResult RecvSetIsLargeAllocation(const bool& aIsLA,
-                                                           const bool& aNewProcess) override;
+  virtual mozilla::ipc::IPCResult RecvSetFreshProcess() override;
 
 private:
   void HandleDoubleTap(const CSSPoint& aPoint, const Modifiers& aModifiers,
@@ -756,10 +747,6 @@ private:
   {
     mUnscaledInnerSize = aSize;
   }
-
-  bool SkipRepeatedKeyEvent(const WidgetKeyboardEvent& aEvent);
-
-  void UpdateRepeatedKeyEventEndTime(const WidgetKeyboardEvent& aEvent);
 
   class DelayedDeleteRunnable;
 
@@ -807,14 +794,7 @@ private:
   CSSSize mUnscaledInnerSize;
   bool mDidSetRealShowInfo;
   bool mDidLoadURLInit;
-  bool mAwaitingLA;
-
-  bool mSkipKeyPress;
-
-  
-  
-  
-  mozilla::TimeStamp mRepeatedKeyEventTime;
+  bool mIsFreshProcess;
 
   AutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
 
@@ -827,8 +807,6 @@ private:
   
   uintptr_t mNativeWindowHandle;
 #endif 
-
-  static bool sInLargeAllocProcess;
 
   DISALLOW_EVIL_CONSTRUCTORS(TabChild);
 };
