@@ -197,6 +197,7 @@ class LIRGeneratorShared : public MDefinitionVisitor
     
     
     inline LBoxAllocation useBoxOrTypedOrConstant(MDefinition* mir, bool useConstant);
+    inline LBoxAllocation useBoxOrTyped(MDefinition* mir);
 
     
     inline LInt64Allocation useInt64(MDefinition* mir, LUse::Policy policy, bool useAtStart);

@@ -4035,8 +4035,10 @@ IonBuilder::selectInliningTargets(const ObjectVector& targets, CallInfo& callInf
 static bool
 CanInlineGetPropertyCache(MGetPropertyCache* cache, MDefinition* thisDef)
 {
-    MOZ_ASSERT(cache->object()->type() == MIRType::Object);
-    if (cache->object() != thisDef)
+    if (cache->value()->type() != MIRType::Object)
+        return false;
+
+    if (cache->value() != thisDef)
         return false;
 
     InlinePropertyTable* table = cache->propTable();
@@ -4323,7 +4325,7 @@ IonBuilder::inlineObjectGroupFallback(CallInfo& callInfo, MBasicBlock* dispatchB
     
     
     DebugOnly<MDefinition*> checkObject = getPropBlock->pop();
-    MOZ_ASSERT(checkObject == cache->object());
+    MOZ_ASSERT(checkObject == cache->value());
 
     
     if (fallbackInfo.fun()->isGetPropertyCache()) {
@@ -4365,6 +4367,7 @@ IonBuilder::inlineCalls(CallInfo& callInfo, const ObjectVector& targets, BoolVec
     MOZ_ASSERT(choiceSet.length() == targets.length());
     MOZ_ASSERT_IF(!maybeCache, targets.length() >= 2);
     MOZ_ASSERT_IF(maybeCache, targets.length() >= 1);
+    MOZ_ASSERT_IF(maybeCache, maybeCache->value()->type() == MIRType::Object);
 
     MBasicBlock* dispatchBlock = current;
     callInfo.setImplicitlyUsedUnchecked();
@@ -4383,7 +4386,7 @@ IonBuilder::inlineCalls(CallInfo& callInfo, const ObjectVector& targets, BoolVec
     
     MDispatchInstruction* dispatch;
     if (maybeCache) {
-        dispatch = MObjectGroupDispatch::New(alloc(), maybeCache->object(), maybeCache->propTable());
+        dispatch = MObjectGroupDispatch::New(alloc(), maybeCache->value(), maybeCache->propTable());
         callInfo.fun()->setImplicitlyUsedUnchecked();
     } else {
         dispatch = MFunctionDispatch::New(alloc(), callInfo.fun());
@@ -4467,7 +4470,7 @@ IonBuilder::inlineCalls(CallInfo& callInfo, const ObjectVector& targets, BoolVec
         if (maybeCache) {
             
             
-            MOZ_ASSERT(callInfo.thisArg() == maybeCache->object());
+            MOZ_ASSERT(callInfo.thisArg() == maybeCache->value());
             TemporaryTypeSet* thisTypes = maybeCache->propTable()->buildTypeSetForFunction(target);
             if (!thisTypes)
                 return abort(AbortReason::Alloc);
@@ -4521,7 +4524,7 @@ IonBuilder::inlineCalls(CallInfo& callInfo, const ObjectVector& targets, BoolVec
             
             
             useFallback = false;
-            TemporaryTypeSet* objectTypes = maybeCache->object()->resultTypeSet();
+            TemporaryTypeSet* objectTypes = maybeCache->value()->resultTypeSet();
             for (uint32_t i = 0; i < objectTypes->getObjectCount(); i++) {
                 TypeSet::ObjectKey* obj = objectTypes->getObject(i);
                 if (!obj)
@@ -10079,31 +10082,7 @@ IonBuilder::jsop_getprop(PropertyName* name)
 
     
     trackOptimizationAttempt(TrackedStrategy::GetProp_InlineCache);
-    MOZ_TRY(getPropTryCache(&emitted, obj, name, barrier, types));
-    if (emitted)
-        return Ok();
-
-    
-    trackOptimizationAttempt(TrackedStrategy::GetProp_SharedCache);
-    MOZ_TRY(getPropTrySharedStub(&emitted, obj, types));
-    if (emitted)
-        return Ok();
-
-    
-    MCallGetProperty* call = MCallGetProperty::New(alloc(), obj, name);
-    current->add(call);
-    current->push(call);
-    MOZ_TRY(resumeAfter(call));
-
-    if (*pc == JSOP_CALLPROP && IsNullOrUndefined(obj->type())) {
-        
-        
-        
-        
-        return Ok();
-    }
-
-    return pushTypeBarrier(call, types, BarrierKind::TypeSet);
+    return getPropAddCache(obj, name, barrier, types);
 }
 
 AbortReasonOr<Ok>
@@ -10975,20 +10954,13 @@ IonBuilder::getPropTryInlineAccess(bool* emitted, MDefinition* obj, PropertyName
 }
 
 AbortReasonOr<Ok>
-IonBuilder::getPropTryCache(bool* emitted, MDefinition* obj, PropertyName* name,
+IonBuilder::getPropAddCache(MDefinition* obj, PropertyName* name,
                             BarrierKind barrier, TemporaryTypeSet* types)
 {
-    MOZ_ASSERT(*emitted == false);
-
     
     
-    if (obj->type() != MIRType::Object) {
-        TemporaryTypeSet* types = obj->resultTypeSet();
-        if (!types || !types->objectOrSentinel()) {
-            trackOptimizationOutcome(TrackedOutcome::NoTypeInfo);
-            return Ok();
-        }
-    }
+    if (obj->type() != MIRType::Object)
+        barrier = BarrierKind::TypeSet;
 
     
     
@@ -11058,37 +11030,15 @@ IonBuilder::getPropTryCache(bool* emitted, MDefinition* obj, PropertyName* name,
         rvalType = MIRType::Value;
     load->setResultType(rvalType);
 
-    MOZ_TRY(pushTypeBarrier(load, types, barrier));
+    if (*pc != JSOP_CALLPROP || !IsNullOrUndefined(obj->type())) {
+        
+        
+        
+        
+        MOZ_TRY(pushTypeBarrier(load, types, barrier));
+    }
 
     trackOptimizationSuccess();
-    *emitted = true;
-    return Ok();
-}
-
-AbortReasonOr<Ok>
-IonBuilder::getPropTrySharedStub(bool* emitted, MDefinition* obj, TemporaryTypeSet* types)
-{
-    MOZ_ASSERT(*emitted == false);
-
-    
-
-    if (JitOptions.disableSharedStubs)
-        return Ok();
-
-    MInstruction* stub = MUnarySharedStub::New(alloc(), obj);
-    current->add(stub);
-    current->push(stub);
-
-    MOZ_TRY(resumeAfter(stub));
-
-    
-    
-    
-    
-    if (*pc != JSOP_CALLPROP || !IsNullOrUndefined(obj->type()))
-        MOZ_TRY(pushTypeBarrier(stub, types, BarrierKind::TypeSet));
-
-    *emitted = true;
     return Ok();
 }
 
@@ -11169,11 +11119,9 @@ IonBuilder::getPropTryInnerize(bool* emitted, MDefinition* obj, PropertyName* na
     BarrierKind barrier = PropertyReadNeedsTypeBarrier(analysisContext, constraints(),
                                                        inner, name, types);
     trackOptimizationAttempt(TrackedStrategy::GetProp_InlineCache);
-    MOZ_TRY(getPropTryCache(emitted, inner, name, barrier, types));
-    if (*emitted)
-        return Ok();
+    MOZ_TRY(getPropAddCache(inner, name, barrier, types));
 
-    MOZ_ASSERT(*emitted == false);
+    *emitted = true;
     return Ok();
 }
 
