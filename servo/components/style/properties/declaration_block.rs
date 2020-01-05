@@ -40,6 +40,13 @@ impl Importance {
     }
 }
 
+impl Default for Importance {
+    #[inline]
+    fn default() -> Self {
+        Importance::Normal
+    }
+}
+
 
 #[derive(Debug, PartialEq, Clone)]
 #[cfg_attr(feature = "servo", derive(HeapSizeOf))]
