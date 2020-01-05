@@ -10,9 +10,10 @@ use {ApiMsg, ColorF, DisplayListBuilder, Epoch, ImageDescriptor};
 use {FontKey, IdNamespace, ImageKey, NativeFontHandle, PipelineId};
 use {RenderApiSender, ResourceId, ScrollEventPhase, ScrollLayerState, ScrollLocation, ServoScrollRootId};
 use {GlyphKey, GlyphDimensions, ImageData, WebGLContextId, WebGLCommand};
-use {DeviceIntSize, LayoutPoint, LayoutSize, WorldPoint};
+use {DeviceIntSize, DynamicProperties, LayoutPoint, LayoutSize, WorldPoint, PropertyBindingKey, PropertyBindingId};
 use VRCompositorCommand;
 use ExternalEvent;
+use std::marker::PhantomData;
 
 impl RenderApiSender {
     pub fn new(api_sender: MsgSender<ApiMsg>,
@@ -150,11 +151,15 @@ impl RenderApi {
     
     
     
+    
+    
+    
     pub fn set_root_display_list(&self,
                                  background_color: Option<ColorF>,
                                  epoch: Epoch,
                                  viewport_size: LayoutSize,
-                                 builder: DisplayListBuilder) {
+                                 builder: DisplayListBuilder,
+                                 preserve_frame_state: bool) {
         let pipeline_id = builder.pipeline_id;
         let (display_list, auxiliary_lists) = builder.finalize();
         let msg = ApiMsg::SetRootDisplayList(background_color,
@@ -162,7 +167,8 @@ impl RenderApi {
                                              pipeline_id,
                                              viewport_size,
                                              display_list.descriptor().clone(),
-                                             *auxiliary_lists.descriptor());
+                                             *auxiliary_lists.descriptor(),
+                                             preserve_frame_state);
         self.api_sender.send(msg).unwrap();
 
         let mut payload = vec![];
@@ -228,8 +234,11 @@ impl RenderApi {
         self.api_sender.send(msg).unwrap();
     }
 
-    pub fn generate_frame(&self) {
-        let msg = ApiMsg::GenerateFrame;
+    
+    
+    
+    pub fn generate_frame(&self, property_bindings: Option<DynamicProperties>) {
+        let msg = ApiMsg::GenerateFrame(property_bindings);
         self.api_sender.send(msg).unwrap();
     }
 
@@ -245,6 +254,19 @@ impl RenderApi {
 
     pub fn shut_down(&self) {
         self.api_sender.send(ApiMsg::ShutDown).unwrap();
+    }
+
+    
+    
+    pub fn generate_property_binding_key<T: Copy>(&self) -> PropertyBindingKey<T> {
+        let new_id = self.next_unique_id();
+        PropertyBindingKey {
+            id: PropertyBindingId {
+                namespace: new_id.0,
+                uid: new_id.1,
+            },
+            _phantom: PhantomData,
+        }
     }
 
     #[inline]

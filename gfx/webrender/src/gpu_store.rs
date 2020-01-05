@@ -2,24 +2,55 @@
 
 
 
-use renderer::MAX_VERTEX_TEXTURE_WIDTH;
+use device::TextureFilter;
+use std::marker::PhantomData;
 use std::mem;
+use webrender_traits::ImageFormat;
 
 #[derive(Debug, Copy, Clone, Eq, Hash, PartialEq)]
 pub struct GpuStoreAddress(pub i32);
 
+pub trait GpuStoreLayout {
+    fn image_format() -> ImageFormat;
 
-pub struct GpuStore<T> {
+    fn texture_width() -> usize;
+
+    fn texture_filter() -> TextureFilter;
+
+    fn texel_size() -> usize {
+        match Self::image_format() {
+            ImageFormat::RGBA8 => 4,
+            ImageFormat::RGBAF32 => 16,
+            _ => unreachable!(),
+        }
+    }
+
+    fn texels_per_item<T>() -> usize {
+        let item_size = mem::size_of::<T>();
+        let texel_size = Self::texel_size();
+        debug_assert!(item_size % texel_size == 0);
+        item_size / texel_size
+    }
+
+    fn items_per_row<T>() -> usize {
+        Self::texture_width() / Self::texels_per_item::<T>()
+    }
+}
+
+
+pub struct GpuStore<T, L> {
     data: Vec<T>,
+    layout: PhantomData<L>,
     
     
     
 }
 
-impl<T: Clone + Default> GpuStore<T> {
-    pub fn new() -> GpuStore<T> {
+impl<T: Clone + Default, L: GpuStoreLayout> GpuStore<T, L> {
+    pub fn new() -> GpuStore<T, L> {
         GpuStore {
             data: Vec::new(),
+            layout: PhantomData,
             
         }
     }
@@ -33,10 +64,7 @@ impl<T: Clone + Default> GpuStore<T> {
     
     
     pub fn build(&self) -> Vec<T> {
-        let item_size = mem::size_of::<T>();
-        debug_assert!(item_size % 16 == 0);
-        let vecs_per_item = item_size / 16;
-        let items_per_row = MAX_VERTEX_TEXTURE_WIDTH / vecs_per_item;
+        let items_per_row = L::items_per_row::<T>();
 
         let mut items = self.data.clone();
 
