@@ -15,6 +15,7 @@ module.exports = {
     
     "$": false,
     "add_task": false,
+    "addLoadEvent": false,
     "Assert": false,
     "EventUtils": false,
     "executeSoon": false,

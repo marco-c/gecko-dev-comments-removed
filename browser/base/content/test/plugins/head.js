@@ -11,6 +11,10 @@ XPCOMUtils.defineLazyModuleGetter(this, "PromiseUtils",
 
 
 
+
+
+
+
 function promiseInitContentBlocklistSvc(aBrowser) {
   return ContentTask.spawn(aBrowser, {}, function* () {
     try {

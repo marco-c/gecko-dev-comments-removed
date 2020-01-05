@@ -3,7 +3,11 @@
 
 
 
+
+
+
 function setup_crash() {
+  
   Components.utils.import("resource://gre/modules/AsyncShutdown.jsm", this);
   Components.utils.import("resource://gre/modules/Services.jsm", this);
   Components.utils.import("resource://gre/modules/Promise.jsm", this);

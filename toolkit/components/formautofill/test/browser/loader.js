@@ -12,6 +12,12 @@
 
 "use strict";
 
+var { classes: Cc, interfaces: Ci, utils: Cu, results: Cr } = Components;
+
+Cu.import("resource://gre/modules/XPCOMUtils.jsm", this);
+Cu.import("resource://gre/modules/Services.jsm", this);
+
+
 Services.scriptloader.loadSubScript(getRootDirectory(gTestPath) +
                                     "loader_common.js", this);
 
@@ -30,6 +36,7 @@ var Assert = {
 var add_task_in_parent_process = add_task;
 var add_task_in_child_process = function() {};
 var add_task_in_both_processes = add_task;
+
 
 Services.scriptloader.loadSubScript(getRootDirectory(gTestPath) +
                                     "head_common.js", this);

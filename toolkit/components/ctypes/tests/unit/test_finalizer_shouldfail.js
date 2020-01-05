@@ -63,20 +63,23 @@ function test_finalize_bad_construction() {
   must_throw(function() { ctypes.CDataFinalizer(dispose, dispose); });
 
   
-  must_throw(function() { ctypes.CDataFinalizer(init(0)); });
+  must_throw(function() { ctypes.CDataFinalizer(dispose); },
+             "TypeError: CDataFinalizer constructor takes two arguments");
 
   
-  must_throw(function() { ctypes.CDataFinalizer(init(0), dispose, dispose); });
+  must_throw(function() { ctypes.CDataFinalizer(dispose, dispose, dispose); },
+             "TypeError: CDataFinalizer constructor takes two arguments");
 
   
-  must_throw(function() { ctypes.CDataFinalizer(init(0), null); });
+  must_throw(function() { ctypes.CDataFinalizer(dispose, null); },
+             "TypeError: expected _a CData object_ of a function pointer type, got null");
 
   
   must_throw(function() {
     let a;
-    ctypes.CDataFinalizer(init(0), a);
-  });
-
+    ctypes.CDataFinalizer(dispose, a);
+  },
+  "TypeError: expected _a CData object_ of a function pointer type, got undefined");
 }
 
 
