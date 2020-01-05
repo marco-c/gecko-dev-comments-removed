@@ -80,7 +80,7 @@ pub struct EagerPseudoStyles(Option<Box<[Option<ComputedStyle>]>>);
 impl EagerPseudoStyles {
     
     pub fn is_empty(&self) -> bool {
-        self.0.is_some()
+        self.0.is_none()
     }
 
     
