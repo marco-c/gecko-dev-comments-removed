@@ -113,15 +113,34 @@ enum class StyleClear : uint8_t {
 };
 
 
-enum class StyleClipPathGeometryBox : uint8_t {
-  NoBox,
+
+enum class StyleGeometryBox : uint8_t {
   Content,
   Padding,
   Border,
-  Margin,
-  Fill,
-  Stroke,
-  View,
+  Margin,  
+           
+           
+           
+  Fill,    
+  Stroke,  
+  View,    
+  NoClip,  
+  Text,    
+  NoBox,   
+           
+           
+           
+           
+           
+           
+  MozAlmostPadding = 127 
+                         
+                         
+                         
+                         
+                         
+                         
 };
 
 
