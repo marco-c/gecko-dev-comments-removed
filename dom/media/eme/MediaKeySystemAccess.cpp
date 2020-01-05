@@ -134,16 +134,6 @@ MediaKeySystemAccess::GetKeySystemStatus(const nsAString& aKeySystem,
     return EnsureCDMInstalled(aKeySystem, aOutMessage);
   }
 
-  if (Preferences::GetBool("media.gmp-eme-adobe.visible", false)) {
-    if (IsPrimetimeKeySystem(aKeySystem)) {
-      if (!Preferences::GetBool("media.gmp-eme-adobe.enabled", false)) {
-        aOutMessage = NS_LITERAL_CSTRING("Adobe EME disabled");
-        return MediaKeySystemStatus::Cdm_disabled;
-      }
-      return EnsureCDMInstalled(aKeySystem, aOutMessage);
-    }
-  }
-
   if (IsWidevineKeySystem(aKeySystem)) {
     if (Preferences::GetBool("media.gmp-widevinecdm.visible", false)) {
       if (!Preferences::GetBool("media.gmp-widevinecdm.enabled", false)) {
@@ -326,7 +316,6 @@ GetSupportedKeySystems()
       
       
       
-      
       if (WMFDecoderModule::HasAAC()) {
         widevine.mMP4.SetCanDecrypt(EME_CODEC_AAC);
       }
@@ -451,7 +440,6 @@ CanDecryptAndDecode(const nsString& aKeySystem,
     
 
 #if defined(XP_WIN)
-    
     
     
     
