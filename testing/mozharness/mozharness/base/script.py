@@ -122,7 +122,9 @@ class PlatformMixin(object):
             
             return sys.maxsize > 2**32  
         else:
-            return '64' in platform.architecture()[0]  
+            
+            
+            return '64' in platform.machine()
 
 
 
