@@ -12,12 +12,7 @@ const LINK_VISIT_BONUS =
 const TYPED_VISIT_BONUS =
   Services.prefs.getIntPref("places.frecency.typedVisitBonus");
 
-
-
-Services.prefs.setCharPref("places.frecency.decayRate", "1.0");
-
 registerCleanupFunction(function*() {
-  Services.prefs.clearUserPref("places.frecency.decayRate");
   yield PlacesTestUtils.clearHistory();
 });
 
