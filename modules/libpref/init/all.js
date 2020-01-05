@@ -935,11 +935,6 @@ pref("toolkit.telemetry.debugSlowSql", false);
 
 pref("toolkit.telemetry.unified", true);
 
-
-pref("toolkit.identity.enabled", false);
-pref("toolkit.identity.debug", false);
-
-
 pref("toolkit.asyncshutdown.crash_timeout", 60000);
 
 pref("toolkit.asyncshutdown.log", false);
