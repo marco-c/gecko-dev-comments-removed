@@ -5,6 +5,7 @@
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/DebugOnly.h"
+#include "mozilla/ScopeExit.h"
 
 #include "Database.h"
 
@@ -433,6 +434,16 @@ Database::Init()
 {
   MOZ_ASSERT(NS_IsMainThread());
 
+  bool initSucceeded = false;
+  auto guard = MakeScopeExit([&]() {
+    if (!initSucceeded) {
+      
+      
+      
+      Shutdown();
+    }
+  });
+
   nsCOMPtr<mozIStorageService> storage =
     do_GetService(MOZ_STORAGE_SERVICE_CONTRACTID);
   NS_ENSURE_STATE(storage);
@@ -497,6 +508,7 @@ Database::Init()
 
   
   
+  initSucceeded = true;
   {
     
     nsCOMPtr<nsIAsyncShutdownClient> shutdownPhase = GetProfileChangeTeardownPhase();
