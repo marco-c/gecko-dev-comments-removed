@@ -133,6 +133,12 @@ public:
   NS_IMETHOD GetHref(nsAString& aHref) final;
   NS_IMETHOD GetTitle(nsAString& aTitle) final;
 
+  
+  
+  
+  inline void WillDirty();
+  inline void DidDirty();
+
 private:
   
   

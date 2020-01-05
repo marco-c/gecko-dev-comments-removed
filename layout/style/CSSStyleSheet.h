@@ -249,9 +249,6 @@ public:
   }
   virtual JSObject* WrapObject(JSContext* aCx, JS::Handle<JSObject*> aGivenProto) override;
 
-  
-  
-  
   void WillDirty();
   void DidDirty();
 
