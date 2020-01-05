@@ -242,6 +242,8 @@ class JS_FRIEND_API(BaseProxyHandler)
 
 
 
+
+
     typedef uint32_t Action;
     enum {
         NONE      = 0x00,
@@ -252,7 +254,7 @@ class JS_FRIEND_API(BaseProxyHandler)
         GET_PROPERTY_DESCRIPTOR = 0x10
     };
 
-    virtual bool enter(JSContext* cx, HandleObject wrapper, HandleId id, Action act,
+    virtual bool enter(JSContext* cx, HandleObject wrapper, HandleId id, Action act, bool mayThrow,
                        bool* bp) const;
 
     
@@ -546,7 +548,7 @@ class JS_FRIEND_API(AutoEnterPolicy)
         : context(nullptr)
 #endif
     {
-        allow = handler->hasSecurityPolicy() ? handler->enter(cx, wrapper, id, act, &rv)
+        allow = handler->hasSecurityPolicy() ? handler->enter(cx, wrapper, id, act, mayThrow, &rv)
                                              : true;
         recordEnter(cx, wrapper, id, act);
         
