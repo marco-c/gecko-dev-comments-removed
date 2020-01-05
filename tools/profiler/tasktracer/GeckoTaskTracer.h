@@ -25,7 +25,6 @@
 
 
 
-class Task;
 class nsIRunnable;
 class nsCString;
 
@@ -73,8 +72,6 @@ const PRTime GetStartTime();
 
 
 
-
-Task* CreateTracedTask(Task* aTask);
 
 already_AddRefed<nsIRunnable>
 CreateTracedRunnable(already_AddRefed<nsIRunnable>&& aRunnable);
