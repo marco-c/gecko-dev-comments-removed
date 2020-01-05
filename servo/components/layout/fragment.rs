@@ -1833,8 +1833,11 @@ pub struct ChildDisplayListAccumulator {
 
 impl ChildDisplayListAccumulator {
     
-    fn new(style: &ComputedValues, bounds: Rect<Au>, node: OpaqueNode,
-            level: StackingLevel, may_need_clip: bool)
+    fn new(style: &ComputedValues,
+           bounds: Rect<Au>,
+           node: OpaqueNode,
+           level: StackingLevel,
+           may_need_clip: bool)
            -> ChildDisplayListAccumulator {
         ChildDisplayListAccumulator {
             clip_display_item: match (may_need_clip, style.get_box().overflow) {
@@ -1871,7 +1874,7 @@ impl ChildDisplayListAccumulator {
 
     
     
-    pub fn finish(self, parent: &mut Flow, mut display_list: DisplayList) {
+    pub fn finish(self, display_list: &mut DisplayList) {
         let ChildDisplayListAccumulator {
             clip_display_item
         } = self;
@@ -1879,6 +1882,5 @@ impl ChildDisplayListAccumulator {
             None => {}
             Some(clip_display_item) => display_list.push(ClipDisplayItemClass(clip_display_item)),
         }
-        flow::mut_base(parent).display_list = display_list
     }
 }
