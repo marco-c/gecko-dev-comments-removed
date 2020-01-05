@@ -7,7 +7,7 @@
 
 
 
-use task::spawn_named_native;
+use task::spawn_named;
 use task_state;
 
 use libc::funcs::posix88::unistd::usleep;
@@ -248,7 +248,7 @@ impl<QueueData: Send, WorkData: Send> WorkQueue<QueueData, WorkData> {
         
         for (i, thread) in threads.into_iter().enumerate() {
 
-            spawn_named_native(
+            spawn_named(
                 format!("{} worker {}/{}", task_name, i+1, thread_count),
                 proc() {
                     task_state::initialize(state | task_state::IN_WORKER);
