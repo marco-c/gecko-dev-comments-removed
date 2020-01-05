@@ -39,6 +39,7 @@ extern crate layers;
 extern crate egl;
 extern crate url;
 extern crate net;
+extern crate env_logger;
 
 use util::opts;
 use net::resource_task;
@@ -55,6 +56,8 @@ struct BrowserWrapper {
 }
 
 fn main() {
+    env_logger::init().unwrap();
+
     
     if opts::from_cmdline_args(env::args().collect::<Vec<_>>().as_slice()) {
         resource_task::global_init();
