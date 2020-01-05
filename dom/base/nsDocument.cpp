@@ -104,6 +104,7 @@
 #include "nsIScriptSecurityManager.h"
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
+#include "nsNullPrincipal.h"
 
 #include "nsIDOMWindow.h"
 #include "nsPIDOMWindow.h"
@@ -1474,9 +1475,9 @@ nsIDocument::~nsIDocument()
 }
 
 bool
-nsDocument::IsAboutPage() const
+nsDocument::IsAboutPage()
 {
-  nsCOMPtr<nsIPrincipal> principal = NodePrincipal();
+  nsCOMPtr<nsIPrincipal> principal = GetPrincipal();
   nsCOMPtr<nsIURI> uri;
   principal->GetURI(getter_AddRefs(uri));
   bool isAboutScheme = true;
@@ -2739,7 +2740,7 @@ nsDocument::InitCSP(nsIChannel* aChannel)
   if (cspSandboxFlags & SANDBOXED_ORIGIN) {
     
     
-    principal = do_CreateInstance("@mozilla.org/nullprincipal;1");
+    principal = nsNullPrincipal::Create();
     SetPrincipal(principal);
   }
 
@@ -10193,13 +10194,7 @@ nsIDocument::WarnOnceAbout(DeprecatedOperations aOperation,
     return;
   }
   mDeprecationWarnedAbout[aOperation] = true;
-  
-  
-  
-  if (!static_cast<const nsDocument*>(this)->IsAboutPage()) {
-    const_cast<nsIDocument*>(this)->
-      SetDocumentAndPageUseCounter(OperationToUseCounter(aOperation));
-  }
+  const_cast<nsIDocument*>(this)->SetDocumentAndPageUseCounter(OperationToUseCounter(aOperation));
   uint32_t flags = asError ? nsIScriptError::errorFlag
                            : nsIScriptError::warningFlag;
   nsContentUtils::ReportToConsole(flags,
