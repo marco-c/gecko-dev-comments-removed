@@ -943,12 +943,6 @@ pref("browser.tabs.remote.desktopbehavior", true);
 
 
 
-pref("security.sandbox.windows.log", false);
-
-
-
-
-
 
 
 
@@ -1033,14 +1027,9 @@ pref("security.sandbox.content.tempDirSuffix", "");
 #endif
 
 #if defined(MOZ_SANDBOX)
-#if defined(XP_MACOSX)
-
-
-
 
 
 pref("security.sandbox.logging.enabled", true);
-#endif
 #endif
 
 
