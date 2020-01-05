@@ -258,9 +258,6 @@ public:
 
 
 
-
-
-
   static MOZ_MUST_USE bool
   UncomputeValue(nsCSSPropertyID aProperty,
                  const StyleAnimationValue& aComputedValue,
