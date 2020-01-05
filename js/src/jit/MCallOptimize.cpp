@@ -87,8 +87,6 @@ IonBuilder::inlineNativeCall(CallInfo& callInfo, JSFunction* target)
         return inlineArrayPush(callInfo);
       case InlinableNative::ArraySlice:
         return inlineArraySlice(callInfo);
-      case InlinableNative::ArraySplice:
-        return inlineArraySplice(callInfo);
 
       
       case InlinableNative::AtomicsCompareExchange:
@@ -664,45 +662,6 @@ IonBuilder::inlineArrayPopShift(CallInfo& callInfo, MArrayPopShift::Mode mode)
 
     MOZ_TRY(resumeAfter(ins));
     MOZ_TRY(pushTypeBarrier(ins, returnTypes, barrier));
-    return InliningStatus_Inlined;
-}
-
-IonBuilder::InliningResult
-IonBuilder::inlineArraySplice(CallInfo& callInfo)
-{
-    if (callInfo.argc() != 2 || callInfo.constructing()) {
-        trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
-        return InliningStatus_NotInlined;
-    }
-
-    
-    if (getInlineReturnType() != MIRType::Object)
-        return InliningStatus_NotInlined;
-    if (callInfo.thisArg()->type() != MIRType::Object)
-        return InliningStatus_NotInlined;
-    if (callInfo.getArg(0)->type() != MIRType::Int32)
-        return InliningStatus_NotInlined;
-    if (callInfo.getArg(1)->type() != MIRType::Int32)
-        return InliningStatus_NotInlined;
-
-    callInfo.setImplicitlyUsedUnchecked();
-
-    
-    
-    if (!BytecodeIsPopped(pc)) {
-        trackOptimizationOutcome(TrackedOutcome::CantInlineGeneric);
-        return InliningStatus_NotInlined;
-    }
-
-    MArraySplice* ins = MArraySplice::New(alloc(),
-                                          callInfo.thisArg(),
-                                          callInfo.getArg(0),
-                                          callInfo.getArg(1));
-
-    current->add(ins);
-    pushConstant(UndefinedValue());
-
-    MOZ_TRY(resumeAfter(ins));
     return InliningStatus_Inlined;
 }
 

@@ -627,7 +627,6 @@ class IonBuilder
     InliningResult inlineArrayPush(CallInfo& callInfo);
     InliningResult inlineArraySlice(CallInfo& callInfo);
     InliningResult inlineArrayJoin(CallInfo& callInfo);
-    InliningResult inlineArraySplice(CallInfo& callInfo);
 
     
     InliningResult inlineMathAbs(CallInfo& callInfo);
