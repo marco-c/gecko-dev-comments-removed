@@ -2,9 +2,10 @@
 
 
 
-#![feature(plugin, custom_derive, custom_attributes)]
+#![feature(plugin, custom_derive, alloc)]
 #![plugin(plugins)]
 extern crate util;
+extern crate libc;
 extern crate geom;
 
 #[cfg(test)] mod cache;
