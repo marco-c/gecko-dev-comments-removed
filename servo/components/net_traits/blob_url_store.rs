@@ -13,6 +13,10 @@ pub enum BlobURLStoreError {
     InvalidFileID,
     
     InvalidOrigin,
+    
+    InvalidEntry,
+    
+    External,
 }
 
 
