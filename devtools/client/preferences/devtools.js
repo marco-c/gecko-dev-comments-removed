@@ -71,6 +71,9 @@ pref("devtools.fontinspector.enabled", true);
 pref("devtools.layoutview.enabled", false);
 
 
+pref("devtools.gridinspector.showInfiniteLines", false);
+
+
 pref("devtools.eyedropper.zoom", 6);
 
 
