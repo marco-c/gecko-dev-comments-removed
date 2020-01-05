@@ -1552,11 +1552,14 @@ impl Node {
             }
         };
         
+        
         let old_previous_sibling = node.GetPreviousSibling();
         
-        
         let old_next_sibling = node.GetNextSibling();
+        
         parent.remove_child(node, cached_index);
+        
+        
         if let SuppressObserver::Unsuppressed = suppress_observers {
             vtable_for(&parent).children_changed(
                 &ChildrenMutation::replace(old_previous_sibling.r(),
