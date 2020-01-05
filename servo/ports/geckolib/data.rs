@@ -2,9 +2,9 @@
 
 
 
-use bindings::RawServoStyleSet;
 use euclid::Size2D;
 use euclid::size::TypedSize2D;
+use gecko_bindings::bindings::RawServoStyleSet;
 use num_cpus;
 use selector_impl::{Stylist, Stylesheet, SharedStyleContext};
 use std::cmp;
