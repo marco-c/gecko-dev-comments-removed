@@ -11,6 +11,7 @@
 #include "mozilla/OwningNonNull.h"      
 #include "mozilla/SelectionState.h"     
 #include "mozilla/StyleSheet.h"   
+#include "mozilla/UniquePtr.h"
 #include "mozilla/dom/Text.h"
 #include "nsCOMPtr.h"                   
 #include "nsCycleCollectionParticipant.h"
@@ -25,7 +26,6 @@
 #include "nsIWeakReferenceUtils.h"      
 #include "nsLiteralString.h"            
 #include "nsString.h"                   
-#include "nsTArray.h"                   
 #include "nsWeakReference.h"            
 #include "nscore.h"                     
 
@@ -996,24 +996,18 @@ protected:
   
   nsIAtom* mPlaceHolderName;
   
-  SelectionState* mSelState;
+  mozilla::UniquePtr<SelectionState> mSelState;
   nsString* mPhonetic;
   
   
   RefPtr<TextComposition> mComposition;
 
   
-  typedef AutoTArray<OwningNonNull<nsIEditActionListener>, 5>
-            AutoActionListenerArray;
-  AutoActionListenerArray mActionListeners;
+  nsTArray<OwningNonNull<nsIEditActionListener>> mActionListeners;
   
-  typedef AutoTArray<OwningNonNull<nsIEditorObserver>, 3>
-            AutoEditorObserverArray;
-  AutoEditorObserverArray mEditorObservers;
+  nsTArray<OwningNonNull<nsIEditorObserver>> mEditorObservers;
   
-  typedef AutoTArray<OwningNonNull<nsIDocumentStateListener>, 1>
-            AutoDocumentStateListenerArray;
-  AutoDocumentStateListenerArray mDocStateListeners;
+  nsTArray<OwningNonNull<nsIDocumentStateListener>> mDocStateListeners;
 
   
   SelectionState mSavedSel;
