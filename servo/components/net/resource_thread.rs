@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! A thread that takes a URL and streams back the binary data.
 
 use about_loader;
 use cookie;
@@ -39,7 +39,7 @@ pub enum ProgressSender {
 }
 
 impl ProgressSender {
-    
+    //XXXjdm return actual error
     pub fn send(&self, msg: ProgressMsg) -> Result<(), ()> {
         match *self {
             ProgressSender::Channel(ref c) => c.send(msg).map_err(|_| ()),
@@ -64,7 +64,7 @@ pub fn send_error(url: Url, err: String, start_chan: LoadConsumer) {
     }
 }
 
-
+/// For use by loaders in responding to a Load message that allows content sniffing.
 pub fn start_sending_sniffed(start_chan: LoadConsumer, metadata: Metadata,
                              classifier: Arc<MIMEClassifier>, partial_body: &[u8],
                              context: LoadContext)
@@ -72,13 +72,13 @@ pub fn start_sending_sniffed(start_chan: LoadConsumer, metadata: Metadata,
     start_sending_sniffed_opt(start_chan, metadata, classifier, partial_body, context).ok().unwrap()
 }
 
-
+/// For use by loaders in responding to a Load message that allows content sniffing.
 pub fn start_sending_sniffed_opt(start_chan: LoadConsumer, mut metadata: Metadata,
                                  classifier: Arc<MIMEClassifier>, partial_body: &[u8],
                                  context: LoadContext)
                                  -> Result<ProgressSender, ()> {
-    if prefs::get_pref("net.mime.sniff").as_boolean().unwrap_or(false) {
-        
+    if prefs::get_pref("network.mime.sniff").as_boolean().unwrap_or(false) {
+        // TODO: should be calculated in the resource loader, from pull requeset #4094
         let mut no_sniff = NoSniffFlag::OFF;
         let mut check_for_apache_bug = ApacheBugFlag::OFF;
 
@@ -110,7 +110,7 @@ pub fn start_sending_sniffed_opt(start_chan: LoadConsumer, mut metadata: Metadat
     start_sending_opt(start_chan, metadata)
 }
 
-
+/// For use by loaders in responding to a Load message.
 fn start_sending_opt(start_chan: LoadConsumer, metadata: Metadata) -> Result<ProgressSender, ()> {
     match start_chan {
         LoadConsumer::Channel(start_chan) => {
@@ -131,7 +131,7 @@ fn start_sending_opt(start_chan: LoadConsumer, metadata: Metadata) -> Result<Pro
     }
 }
 
-
+/// Create a ResourceThread
 pub fn new_resource_thread(user_agent: String,
                          devtools_chan: Option<Sender<DevtoolsControlMsg>>) -> ResourceThread {
     let hsts_preload = HstsList::from_servo_preload();
@@ -186,15 +186,15 @@ impl ResourceChannelManager {
     }
 }
 
-
+/// The optional resources required by the `CancellationListener`
 pub struct CancellableResource {
-    
+    /// The receiver which receives a message on load cancellation
     cancel_receiver: Receiver<()>,
-    
+    /// The `CancellationListener` is unique to this `ResourceId`
     resource_id: ResourceId,
-    
-    
-    
+    /// If we haven't initiated any cancel requests, then the loaders ask
+    /// the listener to remove the `ResourceId` in the `HashMap` of
+    /// `ResourceManager` once they finish loading
     resource_thread: ResourceThread,
 }
 
@@ -208,13 +208,13 @@ impl CancellableResource {
     }
 }
 
-
-
-
+/// A listener which is basically a wrapped optional receiver which looks
+/// for the load cancellation message. Some of the loading processes always keep
+/// an eye out for this message and stop loading stuff once they receive it.
 pub struct CancellationListener {
-    
+    /// We'll be needing the resources only if we plan to cancel it
     cancel_resource: Option<CancellableResource>,
-    
+    /// This lets us know whether the request has already been cancelled
     cancel_status: Cell<bool>,
 }
 
@@ -237,7 +237,7 @@ impl CancellationListener {
                     Err(_) => self.cancel_status.get(),
                 }
             },
-            None => false,      
+            None => false,      // channel doesn't exist!
         }
     }
 }
@@ -245,7 +245,7 @@ impl CancellationListener {
 impl Drop for CancellationListener {
     fn drop(&mut self) {
         if let Some(ref resource) = self.cancel_resource {
-            
+            // Ensure that the resource manager stops tracking this request now that it's terminated.
             let _ = resource.resource_thread.send(ControlMsg::Cancel(resource.resource_id));
         }
     }
