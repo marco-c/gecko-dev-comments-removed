@@ -34,6 +34,8 @@
 #include "mozilla/TimeStamp.h"
 #include "mozilla/Unused.h"
 #include "mozilla/dom/ScriptSettings.h"
+#include "nsIIdlePeriod.h"
+#include "nsIIncrementalRunnable.h"
 #include "nsThreadSyncDispatch.h"
 #include "LeakRefPtr.h"
 
@@ -594,6 +596,7 @@ nsThread::nsThread(MainThreadFlag aMainThread, uint32_t aStackSize)
   , mScriptObserver(nullptr)
   , mEvents(WrapNotNull(&mEventsRoot))
   , mEventsRoot(mLock)
+  , mIdleEvents(mLock)
   , mPriority(PRIORITY_NORMAL)
   , mThread(nullptr)
   , mNestedEventLoopDepth(0)
@@ -631,6 +634,8 @@ nsThread::Init()
 
   NS_ADDREF_THIS();
 
+  mIdlePeriod = new IdlePeriod();
+
   mShutdownRequired = true;
 
   
@@ -660,6 +665,8 @@ nsThread::InitCurrentThread()
 {
   mThread = PR_GetCurrentThread();
   SetupCurrentThreadForChaosMode();
+
+  mIdlePeriod = new IdlePeriod();
 
   nsThreadManager::get().RegisterCurrentThread(*this);
   return NS_OK;
@@ -960,6 +967,37 @@ nsThread::HasPendingEvents(bool* aResult)
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsThread::RegisterIdlePeriod(already_AddRefed<nsIIdlePeriod> aIdlePeriod)
+{
+  if (NS_WARN_IF(PR_GetCurrentThread() != mThread)) {
+    return NS_ERROR_NOT_SAME_THREAD;
+  }
+
+  MutexAutoLock lock(mLock);
+  mIdlePeriod = aIdlePeriod;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsThread::IdleDispatch(already_AddRefed<nsIRunnable> aEvent)
+{
+  MutexAutoLock lock(mLock);
+  LeakRefPtr<nsIRunnable> event(Move(aEvent));
+
+  if (NS_WARN_IF(!event)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  if (mEventsAreDoomed) {
+    NS_WARNING("An idle event was posted to a thread that will never run it (rejected)");
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  mIdleEvents.PutEvent(event.take(), lock);
+  return NS_OK;
+}
+
 #ifdef MOZ_CANARY
 void canary_alarm_handler(int signum);
 
@@ -1011,6 +1049,66 @@ void canary_alarm_handler(int signum)
       }                                                                        \
     }                                                                          \
   PR_END_MACRO
+
+void
+nsThread::GetIdleEvent(nsIRunnable** aEvent, MutexAutoLock& aProofOfLock)
+{
+  MOZ_ASSERT(PR_GetCurrentThread() == mThread);
+  MOZ_ASSERT(aEvent);
+
+  TimeStamp idleDeadline;
+  {
+    mIdlePeriod->GetIdlePeriodHint(&idleDeadline);
+  }
+
+  if (!idleDeadline || idleDeadline < TimeStamp::Now()) {
+    aEvent = nullptr;
+    return;
+  }
+
+  {
+    mIdleEvents.GetEvent(false, aEvent, aProofOfLock);
+  }
+
+  if (*aEvent) {
+    nsCOMPtr<nsIIncrementalRunnable> incrementalEvent(do_QueryInterface(*aEvent));
+    if (incrementalEvent) {
+      incrementalEvent->SetDeadline(idleDeadline);
+    }
+  }
+}
+
+void
+nsThread::GetEvent(bool aWait, nsIRunnable** aEvent, MutexAutoLock& aProofOfLock)
+{
+  MOZ_ASSERT(PR_GetCurrentThread() == mThread);
+  MOZ_ASSERT(aEvent);
+
+  
+  
+  {
+    mEvents->GetEvent(false, aEvent, aProofOfLock);
+  }
+
+  
+  
+  if (!*aEvent) {
+    
+    
+    
+    
+    
+    GetIdleEvent(aEvent, aProofOfLock);
+  }
+
+  
+  
+  
+  
+  if (!*aEvent && aWait) {
+    mEvents->GetEvent(aWait, aEvent, aProofOfLock);
+  }
+}
 
 NS_IMETHODIMP
 nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
@@ -1064,12 +1162,10 @@ nsThread::ProcessNextEvent(bool aMayWait, bool* aResult)
     
     
     
-
-    
     nsCOMPtr<nsIRunnable> event;
     {
       MutexAutoLock lock(mLock);
-      mEvents->GetEvent(reallyWait, getter_AddRefs(event), lock);
+      GetEvent(reallyWait, getter_AddRefs(event), lock);
     }
 
     *aResult = (event.get() != nullptr);
