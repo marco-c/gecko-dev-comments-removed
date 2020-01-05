@@ -130,7 +130,7 @@ void silk_NLSF_stabilize(
 
         
         for( i = 1; i < L; i++ )
-            NLSF_Q15[i] = silk_max_int( NLSF_Q15[i], NLSF_Q15[i-1] + NDeltaMin_Q15[i] );
+            NLSF_Q15[i] = silk_max_int( NLSF_Q15[i], silk_ADD_SAT16( NLSF_Q15[i-1], NDeltaMin_Q15[i] ) );
 
         
         NLSF_Q15[L-1] = silk_min_int( NLSF_Q15[L-1], (1<<15) - NDeltaMin_Q15[L] );
