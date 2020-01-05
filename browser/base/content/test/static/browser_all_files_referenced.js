@@ -133,8 +133,6 @@ var whitelist = new Set([
   
   {file: "chrome://browser/skin/preferences/saveFile.png", platforms: ["win"]},
   
-  {file: "chrome://formautofill/content/editProfile.xhtml"},
-  
   {file: "chrome://global/content/customizeToolbar.xul"},
   
   {file: "chrome://global/content/findUtils.js"},
