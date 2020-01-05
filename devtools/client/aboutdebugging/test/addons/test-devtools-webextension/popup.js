@@ -10,5 +10,4 @@
 
 function myWebExtensionPopupAddonFunction() {  
   console.log("Popup page function called", browser.runtime.getManifest());
-  window.close();
 }
