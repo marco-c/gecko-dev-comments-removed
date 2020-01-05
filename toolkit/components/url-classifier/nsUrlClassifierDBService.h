@@ -217,7 +217,7 @@ private:
   
   nsTArray<mozilla::safebrowsing::TableUpdate*> mTableUpdates;
 
-  int32_t mUpdateWait;
+  uint32_t mUpdateWaitSec;
 
   
   

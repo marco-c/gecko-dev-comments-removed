@@ -40,6 +40,8 @@ public:
   nsresult Begin();
   virtual nsresult AppendStream(const nsACString& aData) = 0;
 
+  uint32_t UpdateWaitSec() { return mUpdateWaitSec; }
+
   
   
   virtual void End() = 0;
@@ -55,7 +57,6 @@ public:
   
   
   virtual const nsTArray<ForwardedUpdate> &Forwards() const { return mForwards; }
-  virtual int32_t UpdateWait() { return 0; }
   virtual bool ResetRequested() { return false; }
 
 protected:
@@ -72,6 +73,9 @@ protected:
 
   
   nsTArray<nsCString> mRequestedTables;
+
+  
+  uint32_t mUpdateWaitSec;
 
 private:
   void CleanupUpdates();
@@ -91,7 +95,6 @@ public:
 
   
   virtual const nsTArray<ForwardedUpdate> &Forwards() const override { return mForwards; }
-  virtual int32_t UpdateWait() override { return mUpdateWait; }
   virtual bool ResetRequested() override { return mResetRequested; }
 
 private:
@@ -147,7 +150,6 @@ private:
   };
   ChunkState mChunkState;
 
-  uint32_t mUpdateWait;
   bool mResetRequested;
 
   

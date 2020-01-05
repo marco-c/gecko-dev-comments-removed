@@ -492,12 +492,15 @@ PROT_ListManager.prototype.makeUpdateRequestForEntry_ = function(updateUrl,
 
 
 PROT_ListManager.prototype.updateSuccess_ = function(tableList, updateUrl,
-                                                     waitForUpdate) {
+                                                     waitForUpdateSec) {
   log("update success for " + tableList + " from " + updateUrl + ": " +
-      waitForUpdate + "\n");
+      waitForUpdateSec + "\n");
+
+  
+
   var delay = 0;
-  if (waitForUpdate) {
-    delay = parseInt(waitForUpdate, 10) * 1000;
+  if (waitForUpdateSec) {
+    delay = parseInt(waitForUpdateSec, 10) * 1000;
   }
   
   
