@@ -2034,7 +2034,7 @@ IsHTMLStyleGeometryBox(StyleGeometryBox aBox)
 static StyleGeometryBox
 ComputeBoxValue(nsIFrame* aForFrame, StyleGeometryBox aBox)
 {
-  if (nsLayoutUtils::HasCSSBoxLayout(aForFrame)) {
+  if (!(aForFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
     
     
     if (IsSVGStyleGeometryBox(aBox)) {
