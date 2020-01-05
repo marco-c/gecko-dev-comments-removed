@@ -1773,7 +1773,9 @@ var Impl = {
 
       
       
-      let sendWithPingsender = Preferences.get(PREF_SHUTDOWN_PINGSENDER, true) &&
+      
+      
+      let sendWithPingsender = Preferences.get(PREF_SHUTDOWN_PINGSENDER, false) &&
                                !TelemetryReportingPolicy.isFirstRun();
 
       let options = {
