@@ -44,7 +44,7 @@ pub trait Activatable : Copy {
         
         let win = window_from_node(*element).root();
         let target: JSRef<EventTarget> = EventTargetCast::from_ref(*element);
-        let mouse = MouseEvent::new(*win, "click".to_string(), false, false, Some(*win), 1,
+        let mouse = MouseEvent::new(*win, "click".into_string(), false, false, Some(*win), 1,
                                     0, 0, 0, 0, ctrlKey, shiftKey, altKey, metaKey,
                                     0, None).root();
         let event: JSRef<Event> = EventCast::from_ref(*mouse);
