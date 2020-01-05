@@ -2327,7 +2327,7 @@ nsOfflineCacheDevice::CreateApplicationCache(const nsACString &group,
 
   
   
-  clientID.Append(nsPrintfCString("|%016lld|%d",
+  clientID.Append(nsPrintfCString("|%016" PRId64 "|%d",
                                   now / PR_USEC_PER_SEC,
                                   gNextTemporaryClientID++));
 

@@ -1,8 +1,8 @@
-/* -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
-/* vim: set ts=2 sts=2 et sw=2 tw=80: */
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this file,
- * You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
+
 
 #include "DetailedPromise.h"
 #include "mozilla/dom/DOMException.h"
@@ -32,18 +32,18 @@ DetailedPromise::DetailedPromise(nsIGlobalObject* aGlobal,
 
 DetailedPromise::~DetailedPromise()
 {
-  // It would be nice to assert that mResponded is identical to
-  // GetPromiseState() == PromiseState::Rejected.  But by now we've been
-  // unlinked, so don't have a reference to our actual JS Promise object
-  // anymore.
+  
+  
+  
+  
   MaybeReportTelemetry(Failed);
 }
 
 void
 DetailedPromise::MaybeReject(nsresult aArg, const nsACString& aReason)
 {
-  nsPrintfCString msg("%s promise rejected 0x%x '%s'", mName.get(), aArg,
-                      PromiseFlatCString(aReason).get());
+  nsPrintfCString msg("%s promise rejected 0x%" PRIx32 " '%s'", mName.get(),
+                      static_cast<uint32_t>(aArg), PromiseFlatCString(aReason).get());
   EME_LOG("%s", msg.get());
 
   MaybeReportTelemetry(Failed);
@@ -61,7 +61,7 @@ DetailedPromise::MaybeReject(ErrorResult&, const nsACString& aReason)
   NS_NOTREACHED("nsresult expected in MaybeReject()");
 }
 
-/* static */ already_AddRefed<DetailedPromise>
+ already_AddRefed<DetailedPromise>
 DetailedPromise::Create(nsIGlobalObject* aGlobal,
                         ErrorResult& aRv,
                         const nsACString& aName)
@@ -71,7 +71,7 @@ DetailedPromise::Create(nsIGlobalObject* aGlobal,
   return aRv.Failed() ? nullptr : promise.forget();
 }
 
-/* static */ already_AddRefed<DetailedPromise>
+ already_AddRefed<DetailedPromise>
 DetailedPromise::Create(nsIGlobalObject* aGlobal,
                         ErrorResult& aRv,
                         const nsACString& aName,
@@ -101,5 +101,5 @@ DetailedPromise::MaybeReportTelemetry(Status aStatus)
   Telemetry::Accumulate(tid, latency);
 }
 
-} // namespace dom
-} // namespace mozilla
+} 
+} 

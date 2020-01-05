@@ -640,8 +640,6 @@ txEXSLTFunctionCall::evaluate(txIEvalContext *aContext,
         {
             
             
-            char formatstr[] = "%04hd-%02ld-%02ldT%02ld:%02ld:%02ld.%03ld%c%02ld:%02ld";
-            
             PRExplodedTime prtime;
             PR_ExplodeTime(PR_Now(), PR_LocalTimeParameters, &prtime);
             
@@ -655,7 +653,10 @@ txEXSLTFunctionCall::evaluate(txIEvalContext *aContext,
             rv = aContext->recycler()->getStringResult(&strRes);
             NS_ENSURE_SUCCESS(rv, rv);
             
-            CopyASCIItoUTF16(nsPrintfCString(formatstr,
+            
+            CopyASCIItoUTF16(nsPrintfCString("%04hd-%02" PRId32 "-%02" PRId32
+                                             "T%02" PRId32 ":%02" PRId32 ":%02" PRId32
+                                             ".%03" PRId32 "%c%02" PRId32 ":%02" PRId32,
               prtime.tm_year, prtime.tm_month + 1, prtime.tm_mday,
               prtime.tm_hour, prtime.tm_min, prtime.tm_sec,
               prtime.tm_usec / 10000,

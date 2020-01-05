@@ -67,7 +67,7 @@ void ShutdownTaskTracer();
 
 
 
-void AddLabel(const char* aFormat, ...);
+void AddLabel(const char* aFormat, ...) MOZ_FORMAT_PRINTF(1, 2);
 
 void StartLogging();
 void StopLogging();
