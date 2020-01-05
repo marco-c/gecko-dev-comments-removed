@@ -57,7 +57,13 @@ DebuggerPanel.prototype = {
         let keysToClone = ["resumeKey", "stepOverKey", "stepInKey", "stepOutKey"];
         for (let key of keysToClone) {
           let elm = this.panelWin.document.getElementById(key);
-          this._toolbox.useKeyWithSplitConsole(elm, "jsdebugger");
+          let keycode = elm.getAttribute("keycode");
+          let modifiers = elm.getAttribute("modifiers");
+          let command = elm.getAttribute("command");
+          let handler = this._view.Toolbar.getCommandHandler(command);
+
+          let keyShortcut = this.translateToKeyShortcut(keycode, modifiers);
+          this._toolbox.useKeyWithSplitConsole(keyShortcut, handler, "jsdebugger");
         }
         this.isReady = true;
         this.emit("ready");
@@ -66,6 +72,40 @@ DebuggerPanel.prototype = {
       .then(null, function onError(aReason) {
         DevToolsUtils.reportException("DebuggerPanel.prototype.open", aReason);
       });
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  translateToKeyShortcut: function (keycode, modifiers) {
+    
+    keycode = keycode.replace("VK_", "");
+
+    
+    if (modifiers.includes("shift")) {
+      keycode = "Shift+" + keycode;
+    }
+    if (modifiers.includes("alt")) {
+      keycode = "Alt+" + keycode;
+    }
+    if (modifiers.includes("control")) {
+      keycode = "Ctrl+" + keycode;
+    }
+    if (modifiers.includes("meta")) {
+      keycode = "Cmd+" + keycode;
+    }
+    if (modifiers.includes("accel")) {
+      keycode = "CmdOrCtrl+" + keycode;
+    }
+
+    return keycode;
   },
 
   

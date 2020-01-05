@@ -101,11 +101,33 @@ ToolbarView.prototype = {
 
   _addCommands: function () {
     XULUtils.addCommands(document.getElementById("debuggerCommands"), {
-      resumeCommand: () => this._onResumePressed(),
-      stepOverCommand: () => this._onStepOverPressed(),
-      stepInCommand: () => this._onStepInPressed(),
-      stepOutCommand: () => this._onStepOutPressed()
+      resumeCommand: this.getCommandHandler("resumeCommand"),
+      stepOverCommand: this.getCommandHandler("stepOverCommand"),
+      stepInCommand: this.getCommandHandler("stepInCommand"),
+      stepOutCommand: this.getCommandHandler("stepOutCommand")
     });
+  },
+
+  
+
+
+
+
+
+
+  getCommandHandler: function (command) {
+    switch (command) {
+      case "resumeCommand":
+        return () => this._onResumePressed();
+      case "stepOverCommand":
+        return () => this._onStepOverPressed();
+      case "stepInCommand":
+        return () => this._onStepInPressed();
+      case "stepOutCommand":
+        return () => this._onStepOutPressed();
+      default:
+        return () => {};
+    }
   },
 
   
