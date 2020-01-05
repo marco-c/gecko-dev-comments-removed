@@ -1539,13 +1539,6 @@ HTMLEditor::CanPaste(int32_t aSelectionType,
   *aCanPaste = false;
 
   
-  nsCOMPtr<nsIDocument> doc = GetDocument();
-  if (doc && doc->IsHTMLOrXHTML()) {
-    *aCanPaste = true;
-    return NS_OK;
-  }
-
-  
   if (!IsModifiable()) {
     return NS_OK;
   }
