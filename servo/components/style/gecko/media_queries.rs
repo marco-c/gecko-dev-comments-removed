@@ -411,9 +411,10 @@ impl Expression {
             
             
             
-            
-            
             if input.try(|i| i.expect_colon()).is_err() {
+                if range != nsMediaExpression_Range::eEqual {
+                    return Err(())
+                }
                 return Ok(Expression::new(feature, None, range));
             }
 
