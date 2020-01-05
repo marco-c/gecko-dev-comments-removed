@@ -749,6 +749,7 @@ private:
   void DispatchDecodeTasksIfNeeded();
   void EnsureAudioDecodeTaskQueued();
   void EnsureVideoDecodeTaskQueued();
+  bool NeedToSkipToNextKeyframe();
   void MaybeStartBuffering();
 
   void CheckSlowDecoding(TimeStamp aDecodeStart)
@@ -2178,10 +2179,60 @@ DecodingState::EnsureVideoDecodeTaskQueued()
       mMaster->IsWaitingVideoData()) {
     return;
   }
-  mMaster->RequestVideoData(mMaster->NeedToSkipToNextKeyframe(),
+  mMaster->RequestVideoData(NeedToSkipToNextKeyframe(),
                             media::TimeUnit::FromMicroseconds(mMaster->GetMediaTime()));
 }
 
+bool
+MediaDecoderStateMachine::
+DecodingState::NeedToSkipToNextKeyframe()
+{
+  
+  if (!mMaster->mSentFirstFrameLoadedEvent) {
+    return false;
+  }
+
+  
+  
+  
+  if (!mMaster->mMediaSink->IsStarted()) {
+    return false;
+  }
+
+  if (!mMaster->IsVideoDecoding()) {
+    return false;
+  }
+
+  
+  
+  if (mMaster->mAudioCaptured && !mMaster->HasAudio()) {
+    return false;
+  }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool isLowOnDecodedAudio = !Reader()->IsAsync() &&
+                             mMaster->IsAudioDecoding() &&
+                             (mMaster->GetDecodedAudioDuration() <
+                              mMaster->mLowAudioThresholdUsecs * mMaster->mPlaybackRate);
+  bool isLowOnDecodedVideo = (mMaster->GetClock() - mMaster->mDecodedVideoEndTime) * mMaster->mPlaybackRate >
+                             LOW_VIDEO_THRESHOLD_USECS;
+  bool lowBuffered = mMaster->HasLowBufferedData();
+
+  if ((isLowOnDecodedAudio || isLowOnDecodedVideo) && !lowBuffered) {
+    SLOG("Skipping video decode to the next keyframe lowAudio=%d lowVideo=%d lowUndecoded=%d async=%d",
+         isLowOnDecodedAudio, isLowOnDecodedVideo, lowBuffered, Reader()->IsAsync());
+    return true;
+  }
+
+  return false;
+}
 
 void
 MediaDecoderStateMachine::
@@ -2606,62 +2657,6 @@ bool MediaDecoderStateMachine::HaveEnoughDecodedVideo()
 {
   MOZ_ASSERT(OnTaskQueue());
   return VideoQueue().GetSize() >= GetAmpleVideoFrames() * mPlaybackRate + 1;
-}
-
-bool
-MediaDecoderStateMachine::NeedToSkipToNextKeyframe()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  
-  if (!mSentFirstFrameLoadedEvent) {
-    return false;
-  }
-  MOZ_ASSERT(mState == DECODER_STATE_DECODING ||
-             mState == DECODER_STATE_BUFFERING ||
-             mState == DECODER_STATE_SEEKING);
-
-  
-  
-  
-  if (!mMediaSink->IsStarted()) {
-    return false;
-  }
-
-  
-  if (!IsVideoDecoding() || mState == DECODER_STATE_BUFFERING ||
-      mState == DECODER_STATE_SEEKING) {
-    return false;
-  }
-
-  
-  
-  if (mAudioCaptured && !HasAudio()) {
-    return false;
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  bool isLowOnDecodedAudio = !mReader->IsAsync() &&
-                             IsAudioDecoding() &&
-                             (GetDecodedAudioDuration() <
-                              mLowAudioThresholdUsecs * mPlaybackRate);
-  bool isLowOnDecodedVideo = (GetClock() - mDecodedVideoEndTime) * mPlaybackRate >
-                             LOW_VIDEO_THRESHOLD_USECS;
-  bool lowBuffered = HasLowBufferedData();
-
-  if ((isLowOnDecodedAudio || isLowOnDecodedVideo) && !lowBuffered) {
-    DECODER_LOG("Skipping video decode to the next keyframe lowAudio=%d lowVideo=%d lowUndecoded=%d async=%d",
-                isLowOnDecodedAudio, isLowOnDecodedVideo, lowBuffered, mReader->IsAsync());
-    return true;
-  }
-
-  return false;
 }
 
 void

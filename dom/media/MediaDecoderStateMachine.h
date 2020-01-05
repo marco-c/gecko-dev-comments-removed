@@ -466,10 +466,6 @@ private:
   void OnMediaSinkAudioError(nsresult aResult);
   void OnMediaSinkVideoError();
 
-  
-  
-  bool NeedToSkipToNextKeyframe();
-
   void* const mDecoderID;
   const RefPtr<FrameStatistics> mFrameStats;
   const RefPtr<VideoFrameContainer> mVideoFrameContainer;
