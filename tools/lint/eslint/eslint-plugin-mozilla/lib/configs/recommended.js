@@ -88,6 +88,9 @@ module.exports = {
     "max-depth": "off",
 
     
+    "max-nested-callbacks": ["error", 10],
+
+    
     
 
     
