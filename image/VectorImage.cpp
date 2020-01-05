@@ -846,31 +846,31 @@ VectorImage::Draw(gfxContext* aContext,
   AutoRestore<bool> autoRestoreIsDrawing(mIsDrawing);
   mIsDrawing = true;
 
-  Maybe<SVGImageContext> svgContext;
   
   
   
   
   
-  if ((aFlags & FLAG_FORCE_PRESERVEASPECTRATIO_NONE) && aSVGContext.isSome()) {
+  Maybe<SVGImageContext> newSVGContext;
+  if ((aFlags & FLAG_FORCE_PRESERVEASPECTRATIO_NONE) && aSVGContext) {
     Maybe<SVGPreserveAspectRatio> aspectRatio =
       Some(SVGPreserveAspectRatio(SVG_PRESERVEASPECTRATIO_NONE,
                                   SVG_MEETORSLICE_UNKNOWN));
-    svgContext = aSVGContext; 
-    svgContext->SetPreserveAspectRatio(aspectRatio);
-  } else {
-    svgContext = aSVGContext;
+    newSVGContext = aSVGContext; 
+    newSVGContext->SetPreserveAspectRatio(aspectRatio);
   }
 
   float animTime =
     (aWhichFrame == FRAME_FIRST) ? 0.0f
                                  : mSVGDocumentWrapper->GetCurrentTime();
-  AutoSVGRenderingState autoSVGState(svgContext, animTime,
+  AutoSVGRenderingState autoSVGState(newSVGContext ? newSVGContext : aSVGContext,
+                                     animTime,
                                      mSVGDocumentWrapper->GetRootSVGElem());
 
 
   SVGDrawingParameters params(aContext, aSize, aRegion, aSamplingFilter,
-                              svgContext, animTime, aFlags, aOpacity);
+                              newSVGContext ? newSVGContext : aSVGContext,
+                              animTime, aFlags, aOpacity);
 
   
   
