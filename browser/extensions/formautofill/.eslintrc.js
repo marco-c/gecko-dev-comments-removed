@@ -59,16 +59,6 @@ module.exports = {
     "no-array-constructor": "error",
    
     
-    
-    
-    
-    
-    "no-empty": "error",
-
-    
-    "no-spaced-func": "warn",
-
-    
     "no-unused-expressions": "error",
 
     
@@ -118,9 +108,6 @@ module.exports = {
     "no-eval": "error",
 
     
-    "no-extend-native": "error",
-
-    
     "no-fallthrough": "error",
 
     
@@ -163,9 +150,6 @@ module.exports = {
 
     
     "no-inner-declarations": "error",
-
-    
-    "no-label-var": "error",
 
     
     "no-new-wrappers": "error",

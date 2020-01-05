@@ -8,8 +8,25 @@ module.exports = {
   "rules": {
     
     
-    "complexity": ["error", {"max": 42}],
+    "complexity": ["error", {"max": 40}],
 
+    
+    
+    
+    
+    
+    "no-empty": "error",
+
+    
+    "no-spaced-func": "error",
+
+    
+    "max-nested-callbacks": ["error", 8],
+
+    
+    "no-extend-native": "error",
+
+    "no-mixed-spaces-and-tabs": "error",
     "no-shadow": "error",
   }
 };
