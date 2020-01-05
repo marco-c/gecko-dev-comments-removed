@@ -1598,14 +1598,20 @@ WebrtcVideoConduit::ReconfigureSendCodec(unsigned short width,
       static_cast<unsigned int>(video_stream.height), mSendingFramerate,
       video_stream.min_bitrate_bps, video_stream.max_bitrate_bps);
   });
-  if (!mSendStream->ReconfigureVideoEncoder(mEncoderConfig.GenerateConfig())) {
-    CSFLogError(logTag, "%s: ReconfigureVideoEncoder failed", __FUNCTION__);
-    return NS_ERROR_FAILURE;
-  }
-  if (frame) {
-    
-    mSendStream->Input()->IncomingCapturedFrame(*frame);
-    CSFLogDebug(logTag, "%s Inserted a frame from reconfig lambda", __FUNCTION__);
+  
+  
+  
+  if (mSendStream) {
+    if (!mSendStream->ReconfigureVideoEncoder(mEncoderConfig.GenerateConfig())) {
+      CSFLogError(logTag, "%s: ReconfigureVideoEncoder failed", __FUNCTION__);
+      return NS_ERROR_FAILURE;
+    }
+
+    if (frame) {
+      
+      mSendStream->Input()->IncomingCapturedFrame(*frame);
+      CSFLogDebug(logTag, "%s Inserted a frame from reconfig lambda", __FUNCTION__);
+    }
   }
   return NS_OK;
 }
@@ -1690,7 +1696,9 @@ WebrtcVideoConduit::SendVideoFrame(webrtc::VideoFrame& frame)
       }
     }
 
-    mSendStream->Input()->IncomingCapturedFrame(frame);
+    if (mSendStream) { 
+      mSendStream->Input()->IncomingCapturedFrame(frame);
+    }
   }
 
   mSendStreamStats.SentFrame();
