@@ -3381,7 +3381,10 @@ XMLHttpRequestMainThread::OnRedirectVerifyCallback(nsresult result)
   mRedirectCallback->OnRedirectVerifyCallback(result);
   mRedirectCallback = nullptr;
 
-  return result;
+  
+  
+  
+  return NS_OK;
 }
 
 
