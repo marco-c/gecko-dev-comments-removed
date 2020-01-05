@@ -38,7 +38,7 @@ add_task(function*() {
   
   let got = yield promiseNewChannelResponse(TEST_URI_GOOD);
   
-  Assert.ok(got.message === undefined, "should have failed to get any data");
+  Assert.ok(got.message.errno === 2, "should have failed with errno 2, no such channel");
 
   
   Services.perms.add(TEST_URI_GOOD,
@@ -78,7 +78,7 @@ add_task(function*() {
 
   
   got = yield promiseNewChannelResponse(TEST_URI_BAD);
-  Assert.ok(got.message === undefined, "should have failed to get any data");
+  Assert.ok(got.message.errno === 2, "should have failed with errno 2, no such channel");
 
   
   let webchannelWhitelistPref = "webchannel.allowObject.urlWhitelist";
