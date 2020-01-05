@@ -272,9 +272,6 @@ protected:
   }
 
 private:
-  
-  
-  
   friend class mozilla::dom::TabChildGlobal;
   friend class mozilla::dom::ProcessGlobal;
   friend class SandboxPrivate;

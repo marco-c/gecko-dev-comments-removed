@@ -194,7 +194,7 @@ public:
   
   
   
-  css::Rule* GetDOMOwnerRule() const final;
+  nsIDOMCSSRule* GetDOMOwnerRule() const final;
 
   void WillDirty();
   void DidDirty();

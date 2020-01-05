@@ -20,6 +20,12 @@ enum nsDOMClassInfoID
   eDOMClassInfo_DOMConstructor_id,
 
   
+  eDOMClassInfo_CSSStyleRule_id,
+  eDOMClassInfo_CSSImportRule_id,
+  eDOMClassInfo_CSSMediaRule_id,
+  eDOMClassInfo_CSSNameSpaceRule_id,
+
+  
 #ifdef MOZ_XUL
   eDOMClassInfo_XULCommandDispatcher_id,
 #endif
@@ -34,10 +40,26 @@ enum nsDOMClassInfoID
   eDOMClassInfo_XULTreeBuilder_id,
 #endif
 
+  eDOMClassInfo_CSSMozDocumentRule_id,
+  eDOMClassInfo_CSSSupportsRule_id,
+
+  
+  eDOMClassInfo_CSSFontFaceRule_id,
+
   eDOMClassInfo_ContentFrameMessageManager_id,
   eDOMClassInfo_ContentProcessMessageManager_id,
   eDOMClassInfo_ChromeMessageBroadcaster_id,
   eDOMClassInfo_ChromeMessageSender_id,
+
+  eDOMClassInfo_CSSKeyframeRule_id,
+  eDOMClassInfo_CSSKeyframesRule_id,
+
+  
+  eDOMClassInfo_CSSCounterStyleRule_id,
+
+  eDOMClassInfo_CSSPageRule_id,
+
+  eDOMClassInfo_CSSFontFeatureValuesRule_id,
 
   eDOMClassInfo_XULControlElement_id,
   eDOMClassInfo_XULLabeledControlElement_id,
