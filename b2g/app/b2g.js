@@ -200,7 +200,6 @@ pref("privacy.item.syncAccount", true);
 
 
 pref("geo.provider.use_mls", false);
-pref("geo.cell.scan", true);
 pref("geo.wifi.uri", "https://location.services.mozilla.com/v1/geolocate?key=%MOZILLA_API_KEY%");
 
 
