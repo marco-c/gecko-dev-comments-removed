@@ -156,7 +156,13 @@ nsPrefetchNode::OpenChannel()
             false);
     }
 
-    return mChannel->AsyncOpen2(this);
+    rv = mChannel->AsyncOpen2(this);
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      
+      
+      mChannel = nullptr;
+    }
+    return rv;
 }
 
 nsresult
