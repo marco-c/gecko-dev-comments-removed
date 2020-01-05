@@ -188,8 +188,6 @@ public:
 
 public: 
 
-    using InitLocalBlockListCallback = std::function<void(bool)>;
-
     void InternalSetUploadStream(nsIInputStream *uploadStream)
       { mUploadStream = uploadStream; }
     void SetUploadStreamHasHeaders(bool hasHeaders)
@@ -295,18 +293,7 @@ private:
     typedef nsresult (nsHttpChannel::*nsContinueRedirectionFunc)(nsresult result);
 
     bool     RequestIsConditional();
-
-    
-    
-    nsresult BeginConnectActual();
-
-    
-    
-    
-    
-    
-    nsresult BeginConnect();
-
+    MOZ_MUST_USE nsresult BeginConnect();
     MOZ_MUST_USE nsresult ContinueBeginConnectWithResult();
     void     ContinueBeginConnect();
     MOZ_MUST_USE nsresult Connect();
@@ -338,8 +325,6 @@ private:
     MOZ_MUST_USE nsresult ContinueOnStartRequest1(nsresult);
     MOZ_MUST_USE nsresult ContinueOnStartRequest2(nsresult);
     MOZ_MUST_USE nsresult ContinueOnStartRequest3(nsresult);
-
-    bool InitLocalBlockList(const InitLocalBlockListCallback& aCallback);
 
     
     void     HandleAsyncRedirect();
