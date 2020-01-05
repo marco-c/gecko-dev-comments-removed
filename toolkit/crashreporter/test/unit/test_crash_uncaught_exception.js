@@ -1,0 +1,16 @@
+
+
+
+function run_test() {
+  
+  do_crash(function() {
+             crashType = CrashTestUtils.CRASH_UNCAUGHT_EXCEPTION;
+             crashReporter.annotateCrashReport("TestKey", "TestValue");
+           },
+           function(mdump, extra) {
+             do_check_eq(extra.TestKey, "TestValue");
+           },
+          
+          true);
+}
+
