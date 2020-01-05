@@ -1,0 +1,21 @@
+
+
+
+
+"use strict";
+
+const { UPDATE_GRIDS } = require("./index");
+
+module.exports = {
+
+  
+
+
+  updateGrids(grids) {
+    return {
+      type: UPDATE_GRIDS,
+      grids,
+    };
+  },
+
+};

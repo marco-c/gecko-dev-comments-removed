@@ -3,3 +3,12 @@
 
 
 "use strict";
+
+const { createEnum } = require("devtools/client/shared/enum");
+
+createEnum([
+
+  
+  "UPDATE_GRIDS",
+
+], module.exports);

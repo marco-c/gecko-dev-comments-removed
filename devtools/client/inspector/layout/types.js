@@ -3,3 +3,21 @@
 
 
 "use strict";
+
+const { PropTypes } = require("devtools/client/shared/vendor/react");
+
+
+
+
+exports.grid = {
+
+  
+  id: PropTypes.number,
+
+  
+  nodeFront: PropTypes.object,
+
+  
+  gridFragments: PropTypes.object
+
+};

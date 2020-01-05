@@ -8,7 +8,7 @@
 
 
 
-const { createEnum } = require("../utils/enum");
+const { createEnum } = require("devtools/client/shared/enum");
 
 createEnum([
 

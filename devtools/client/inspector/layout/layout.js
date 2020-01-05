@@ -9,6 +9,7 @@ const { Task } = require("devtools/shared/task");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 
+const { updateGrids } = require("./actions/grids");
 const App = createFactory(require("./components/app"));
 const Store = require("./store");
 
@@ -115,7 +116,7 @@ LayoutView.prototype = {
       });
     }
 
-    
+    this.store.dispatch(updateGrids(grids));
   }),
 
   

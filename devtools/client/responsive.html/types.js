@@ -5,7 +5,7 @@
 "use strict";
 
 const { PropTypes } = require("devtools/client/shared/vendor/react");
-const { createEnum } = require("./utils/enum");
+const { createEnum } = require("devtools/client/shared/enum");
 
 
 
