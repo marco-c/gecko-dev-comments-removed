@@ -133,19 +133,22 @@ struct MOZ_STACK_CLASS BidiParagraphData
   AutoTArray<nsIFrame*, 16> mLogicalFrames;
   AutoTArray<nsLineBox*, 16> mLinePerFrame;
   nsDataHashtable<nsISupportsHashKey, int32_t> mContentToFrameIndex;
+  
+  nsPresContext*      mPresContext;
   bool                mIsVisual;
   nsBidiLevel         mParaLevel;
   nsIContent*         mPrevContent;
   nsBidi              mBidiEngine;
   nsIFrame*           mPrevFrame;
 
-  void Init(nsBlockFrame *aBlockFrame)
+  void Init(nsBlockFrame* aBlockFrame)
   {
     mPrevContent = nullptr;
 
     mParaLevel = nsBidiPresUtils::BidiLevelFromStyle(aBlockFrame->StyleContext());
 
-    mIsVisual = aBlockFrame->PresContext()->IsVisualMode();
+    mPresContext = aBlockFrame->PresContext();
+    mIsVisual = mPresContext->IsVisualMode();
     if (mIsVisual) {
       
 
@@ -713,8 +716,6 @@ nsresult
 nsBidiPresUtils::ResolveParagraph(nsBlockFrame* aBlockFrame,
                                   BidiParagraphData* aBpd)
 {
-  nsPresContext *presContext = aBlockFrame->PresContext();
-
   if (aBpd->BufferLength() < 1) {
     return NS_OK;
   }
@@ -742,7 +743,7 @@ nsBidiPresUtils::ResolveParagraph(nsBlockFrame* aBlockFrame,
   nsIContent* content = nullptr;
   int32_t     contentTextLength = 0;
 
-  FramePropertyTable *propTable = presContext->PropertyTable();
+  FramePropertyTable* propTable = aBpd->mPresContext->PropertyTable();
   nsLineBox* currentLine = nullptr;
   
 #ifdef DEBUG
