@@ -5126,6 +5126,48 @@ GCRuntime::sweepDebuggerOnMainThread(FreeOp* fop)
     }
 }
 
+void
+GCRuntime::sweepJitDataOnMainThread(FreeOp* fop)
+{
+    gcstats::AutoPhase ap(stats(), gcstats::PHASE_SWEEP_COMPARTMENTS);
+    gcstats::AutoSCC scc(stats(), sweepGroupIndex);
+
+    {
+        gcstats::AutoPhase ap(stats(), gcstats::PHASE_SWEEP_MISC);
+
+        
+        js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
+
+        for (GCCompartmentGroupIter c(rt); !c.done(); c.next())
+            c->sweepJitCompartment(fop);
+
+        for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
+            if (jit::JitZone* jitZone = zone->jitZone())
+                jitZone->sweep(fop);
+        }
+
+        
+        
+
+        
+        
+        jit::JitRuntime::SweepJitcodeGlobalTable(rt);
+    }
+
+    {
+        gcstats::AutoPhase apdc(stats(), gcstats::PHASE_SWEEP_DISCARD_CODE);
+        for (GCSweepGroupIter zone(rt); !zone.done(); zone.next())
+            zone->discardJitCode(fop);
+    }
+
+    {
+        gcstats::AutoPhase ap1(stats(), gcstats::PHASE_SWEEP_TYPES);
+        gcstats::AutoPhase ap2(stats(), gcstats::PHASE_SWEEP_TYPES_BEGIN);
+        for (GCSweepGroupIter zone(rt); !zone.done(); zone.next())
+            zone->beginSweepTypes(fop, releaseObservedTypes && !zone->isPreservingCode());
+    }
+}
+
 using WeakCacheTaskVector = mozilla::Vector<SweepWeakCacheTask, 0, SystemAllocPolicy>;
 
 template <typename Functor>
@@ -5245,43 +5287,10 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
                 startTask(task, gcstats::PHASE_SWEEP_MISC, helperLock);
         }
 
-        
-        
-        {
-            gcstats::AutoPhase ap(stats(), gcstats::PHASE_SWEEP_MISC);
-
-            
-            js::CancelOffThreadIonCompile(rt, JS::Zone::Sweep);
-
-            for (GCCompartmentGroupIter c(rt); !c.done(); c.next())
-                c->sweepJitCompartment(&fop);
-
-            for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
-                if (jit::JitZone* jitZone = zone->jitZone())
-                    jitZone->sweep(&fop);
-            }
-
-            
-            
-
-            
-            
-            jit::JitRuntime::SweepJitcodeGlobalTable(rt);
-        }
-
-        {
-            gcstats::AutoPhase apdc(stats(), gcstats::PHASE_SWEEP_DISCARD_CODE);
-            for (GCSweepGroupIter zone(rt); !zone.done(); zone.next())
-                zone->discardJitCode(&fop);
-        }
-
-        {
-            gcstats::AutoPhase ap1(stats(), gcstats::PHASE_SWEEP_TYPES);
-            gcstats::AutoPhase ap2(stats(), gcstats::PHASE_SWEEP_TYPES_BEGIN);
-            for (GCSweepGroupIter zone(rt); !zone.done(); zone.next())
-                zone->beginSweepTypes(&fop, releaseObservedTypes && !zone->isPreservingCode());
-        }
     }
+
+    
+    sweepJitDataOnMainThread(&fop);
 
     
     if (sweepingAtoms) {
