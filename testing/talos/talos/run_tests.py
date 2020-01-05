@@ -48,8 +48,8 @@ def buildCommandLine(test):
         raise TalosError("tpmanifest not found in test: %s" % test)
 
     
-    if test['sps_profile']:
-        LOG.info("sps profiling is enabled so talos is reducing the number "
+    if test['gecko_profile']:
+        LOG.info("Gecko profiling is enabled so talos is reducing the number "
                  "of cycles, please disregard reported numbers")
         for cycle_var in ['tppagecycles', 'tpcycles', 'cycles']:
             if test[cycle_var] > 2:
@@ -169,7 +169,7 @@ def run_tests(config, browser_config):
     talos_results = TalosResults()
 
     
-    if not browser_config['develop'] and not config['sps_profile']:
+    if not browser_config['develop'] and not config['gecko_profile']:
         results_urls = dict(
             
             
@@ -186,8 +186,8 @@ def run_tests(config, browser_config):
     if config['e10s']:
         talos_results.add_extra_option('e10s')
 
-    if config['sps_profile']:
-        talos_results.add_extra_option('spsProfile')
+    if config['gecko_profile']:
+        talos_results.add_extra_option('geckoProfile')
 
     testname = None
     
@@ -227,7 +227,7 @@ def run_tests(config, browser_config):
     
     if results_urls:
         talos_results.output(results_urls)
-        if browser_config['develop'] or config['sps_profile']:
+        if browser_config['develop'] or config['gecko_profile']:
             print("Thanks for running Talos locally. Results are in %s"
                   % (results_urls['output_urls']))
 
