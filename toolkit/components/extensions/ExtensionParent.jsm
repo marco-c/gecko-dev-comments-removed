@@ -106,6 +106,7 @@ let apiManager = new class extends SchemaAPIManager {
 
 ProxyMessenger = {
   _initialized: false,
+
   init() {
     if (this._initialized) {
       return;
@@ -115,15 +116,11 @@ ProxyMessenger = {
     
     
     
-    let pipmm = Services.ppmm.getChildAt(0);
     
     
     
     
-    
-    
-    
-    let messageManagers = [Services.mm, pipmm];
+    let messageManagers = [Services.mm, Services.ppmm];
 
     MessageChannel.addListener(messageManagers, "Extension:Connect", this);
     MessageChannel.addListener(messageManagers, "Extension:Message", this);
@@ -147,8 +144,9 @@ ProxyMessenger = {
       
       return;
     }
+
     let extension = GlobalManager.extensionMap.get(sender.extensionId);
-    let receiverMM = this._getMessageManagerForRecipient(recipient);
+    let receiverMM = this.getMessageManagerForRecipient(recipient);
     if (!extension || !receiverMM) {
       return Promise.reject({
         result: MessageChannel.RESULT_NO_HANDLER,
@@ -174,8 +172,9 @@ ProxyMessenger = {
 
 
 
-  _getMessageManagerForRecipient(recipient) {
-    let {extensionId, tabId} = recipient;
+
+  getMessageManagerForRecipient(recipient) {
+    let {tabId} = recipient;
     
     if (tabId) {
       
@@ -185,10 +184,9 @@ ProxyMessenger = {
     }
 
     
-    if (extensionId) {
-      
-      
-      return Services.ppmm.getChildAt(0);
+    let extension = GlobalManager.extensionMap.get(recipient.extensionId);
+    if (extension) {
+      return extension.parentMessageManager;
     }
 
     return null;
