@@ -904,12 +904,6 @@ Gecko_Atomize(const char* aString, uint32_t aLength)
   return NS_Atomize(nsDependentCSubstring(aString, aLength)).take();
 }
 
-nsIAtom*
-Gecko_Atomize16(const nsAString* aString)
-{
-  return NS_Atomize(*aString).take();
-}
-
 void
 Gecko_AddRefAtom(nsIAtom* aAtom)
 {
@@ -982,33 +976,6 @@ Gecko_CopyFontFamilyFrom(nsFont* dst, const nsFont* src)
 {
   dst->fontlist = src->fontlist;
 }
-
-void
-Gecko_nsFont_InitSystem(nsFont* aDest, int32_t aFontId,
-                        const nsStyleFont* aFont, RawGeckoPresContextBorrowed aPresContext)
-{
-
-  const nsFont* defaultVariableFont =
-    aPresContext->GetDefaultFont(kPresContext_DefaultVariableFont_ID,
-                                 aFont->mLanguage);
-
-  
-  
-  
-  
-  nsFont* system = new (aDest) nsFont(*defaultVariableFont);
-
-  *system = *defaultVariableFont;
-  LookAndFeel::FontID fontID = static_cast<LookAndFeel::FontID>(aFontId);
-  nsRuleNode::ComputeSystemFont(system, fontID, aPresContext);
-}
-
-void
-Gecko_nsFont_Destroy(nsFont* aDest)
-{
-  aDest->~nsFont();
-}
-
 
 void
 Gecko_SetImageOrientation(nsStyleVisibility* aVisibility,

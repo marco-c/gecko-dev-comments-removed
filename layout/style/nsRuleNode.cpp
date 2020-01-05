@@ -3567,58 +3567,6 @@ static int8_t ClampTo8Bit(int32_t aValue) {
 }
 
  void
-nsRuleNode::ComputeSystemFont(nsFont* aSystemFont, LookAndFeel::FontID aFontID,
-                              const nsPresContext* aPresContext)
-{
-  gfxFontStyle fontStyle;
-  float devPerCSS =
-    (float)nsPresContext::AppUnitsPerCSSPixel() /
-    aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom();
-  nsAutoString systemFontName;
-  if (LookAndFeel::GetFont(aFontID, systemFontName, fontStyle, devPerCSS)) {
-    systemFontName.Trim("\"'");
-    aSystemFont->fontlist = FontFamilyList(systemFontName, eUnquotedName);
-    aSystemFont->fontlist.SetDefaultFontType(eFamily_none);
-    aSystemFont->style = fontStyle.style;
-    aSystemFont->systemFont = fontStyle.systemFont;
-    aSystemFont->weight = fontStyle.weight;
-    aSystemFont->stretch = fontStyle.stretch;
-    aSystemFont->size =
-      NSFloatPixelsToAppUnits(fontStyle.size,
-                              aPresContext->DeviceContext()->
-                                AppUnitsPerDevPixelAtUnitFullZoom());
-    
-    aSystemFont->sizeAdjust = fontStyle.sizeAdjust;
-
-#ifdef XP_WIN
-    
-    
-    
-    
-
-    if (aFontID == LookAndFeel::eFont_Field ||
-        aFontID == LookAndFeel::eFont_Button ||
-        aFontID == LookAndFeel::eFont_List) {
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      aSystemFont->size =
-        std::max(defaultVariableFont->size -
-                 nsPresContext::CSSPointsToAppUnits(2), 0);
-    }
-#endif
-  }
-}
-
- void
 nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
                     uint8_t aGenericFontID, const nsRuleData* aRuleData,
                     const nsStyleFont* aParentFont,
@@ -3687,9 +3635,54 @@ nsRuleNode::SetFont(nsPresContext* aPresContext, nsStyleContext* aContext,
   nsFont systemFont = *defaultVariableFont;
   const nsCSSValue* systemFontValue = aRuleData->ValueForSystemFont();
   if (eCSSUnit_Enumerated == systemFontValue->GetUnit()) {
+    gfxFontStyle fontStyle;
     LookAndFeel::FontID fontID =
       (LookAndFeel::FontID)systemFontValue->GetIntValue();
-    ComputeSystemFont(&systemFont, fontID, aPresContext);
+    float devPerCSS =
+      (float)nsPresContext::AppUnitsPerCSSPixel() /
+      aPresContext->DeviceContext()->AppUnitsPerDevPixelAtUnitFullZoom();
+    nsAutoString systemFontName;
+    if (LookAndFeel::GetFont(fontID, systemFontName, fontStyle, devPerCSS)) {
+      systemFontName.Trim("\"'");
+      systemFont.fontlist = FontFamilyList(systemFontName, eUnquotedName);
+      systemFont.fontlist.SetDefaultFontType(eFamily_none);
+      systemFont.style = fontStyle.style;
+      systemFont.systemFont = fontStyle.systemFont;
+      systemFont.weight = fontStyle.weight;
+      systemFont.stretch = fontStyle.stretch;
+      systemFont.size =
+        NSFloatPixelsToAppUnits(fontStyle.size,
+                                aPresContext->DeviceContext()->
+                                  AppUnitsPerDevPixelAtUnitFullZoom());
+      
+      systemFont.sizeAdjust = fontStyle.sizeAdjust;
+
+#ifdef XP_WIN
+      
+      
+      
+      
+
+      if (fontID == LookAndFeel::eFont_Field ||
+          fontID == LookAndFeel::eFont_Button ||
+          fontID == LookAndFeel::eFont_List) {
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        systemFont.size =
+          std::max(defaultVariableFont->size -
+                 nsPresContext::CSSPointsToAppUnits(2), 0);
+      }
+#endif
+    }
   }
 
   
