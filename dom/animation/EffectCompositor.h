@@ -240,8 +240,7 @@ private:
   
   static void ComposeAnimationRule(dom::Element* aElement,
                                    CSSPseudoElementType aPseudoType,
-                                   CascadeLevel aCascadeLevel,
-                                   TimeStamp aRefreshTime);
+                                   CascadeLevel aCascadeLevel);
 
   static dom::Element* GetElementToRestyle(dom::Element* aElement,
                                            CSSPseudoElementType
