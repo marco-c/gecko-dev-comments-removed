@@ -2224,7 +2224,7 @@ Loader::LoadChildSheet(StyleSheet* aParentSheet,
   
   
   
-  if (aParentSheet->GetOwningDocument() && aParentSheet->IsGecko()) {
+  if (aParentSheet->GetAssociatedDocument() && aParentSheet->IsGecko()) {
     StyleSheet* topSheet = aParentSheet;
     while (StyleSheet* parent = topSheet->GetParentSheet()) {
       topSheet = parent;

@@ -117,7 +117,8 @@ public:
 
   
   CSSStyleSheet* GetParentSheet() const;  
-  void SetOwningDocument(nsIDocument* aDocument);
+  void SetAssociatedDocument(nsIDocument* aDocument,
+                             DocumentAssociationMode aAssociationMode);
 
   
   uint64_t FindOwningWindowInnerID() const;

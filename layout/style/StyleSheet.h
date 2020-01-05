@@ -106,8 +106,22 @@ public:
   inline bool HasRules() const;
 
   
-  nsIDocument* GetOwningDocument() const { return mDocument; }
-  inline void SetOwningDocument(nsIDocument* aDocument);
+  enum DocumentAssociationMode {
+    
+    
+    OwnedByDocument,
+    
+    
+    NotOwnedByDocument
+  };
+  nsIDocument* GetAssociatedDocument() const { return mDocument; }
+  bool IsOwnedByDocument() const {
+    return mDocumentAssociationMode == OwnedByDocument;
+  }
+  
+  inline void SetAssociatedDocument(nsIDocument* aDocument,
+                                    DocumentAssociationMode aMode);
+  inline void ClearAssociatedDocument();
   nsINode* GetOwnerNode() const { return mOwningNode; }
   inline StyleSheet* GetParentSheet() const;
 
@@ -225,6 +239,11 @@ protected:
 
   const StyleBackendType mType;
   bool                  mDisabled;
+
+  
+  
+  
+  DocumentAssociationMode mDocumentAssociationMode;
 };
 
 } 

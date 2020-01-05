@@ -2952,7 +2952,7 @@ HTMLEditor::EnableStyleSheet(const nsAString& aURL,
 
   
   nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
-  sheet->SetOwningDocument(doc);
+  sheet->SetAssociatedDocument(doc, StyleSheet::NotOwnedByDocument);
 
   if (sheet->IsServo()) {
     
@@ -2974,7 +2974,7 @@ HTMLEditor::EnableExistingStyleSheet(const nsAString& aURL)
 
   
   nsCOMPtr<nsIDocument> doc = do_QueryReferent(mDocWeak);
-  sheet->SetOwningDocument(doc);
+  sheet->SetAssociatedDocument(doc, StyleSheet::NotOwnedByDocument);
 
   if (sheet->IsServo()) {
     

@@ -55,12 +55,16 @@ ServoStyleSheet::HasRules() const
 }
 
 void
-ServoStyleSheet::SetOwningDocument(nsIDocument* aDocument)
+ServoStyleSheet::SetAssociatedDocument(nsIDocument* aDocument,
+                                       DocumentAssociationMode aAssociationMode)
 {
+  MOZ_ASSERT_IF(!aDocument, aAssociationMode == NotOwnedByDocument);
+
   
   
 
   mDocument = aDocument;
+  mDocumentAssociationMode = aAssociationMode;
 }
 
 ServoStyleSheet*
