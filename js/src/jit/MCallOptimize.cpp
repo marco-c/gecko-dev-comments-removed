@@ -517,6 +517,10 @@ IonBuilder::inlineArray(CallInfo& callInfo)
                                             arg);
             current->add(ins);
             current->push(ins);
+
+            
+            MOZ_TRY(resumeAfter(ins));
+
             return InliningStatus_Inlined;
         }
 
