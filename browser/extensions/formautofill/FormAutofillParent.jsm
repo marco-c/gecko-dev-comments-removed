@@ -33,11 +33,14 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/Services.jsm");
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 XPCOMUtils.defineLazyModuleGetter(this, "OS",
                                   "resource://gre/modules/osfile.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "ProfileStorage",
                                   "resource://formautofill/ProfileStorage.jsm");
+XPCOMUtils.defineLazyModuleGetter(this, "FormAutofillPreferences",
+                                  "resource://formautofill/FormAutofillPreferences.jsm");
 
 const PROFILE_JSON_FILE_NAME = "autofill-profiles.json";
 const ENABLED_PREF = "browser.formautofill.enabled";
@@ -50,17 +53,21 @@ FormAutofillParent.prototype = {
 
   _profileStore: null,
 
+  
+
+
+
   _enabled: false,
 
   
 
 
   init() {
-    let storePath =
-      OS.Path.join(OS.Constants.Path.profileDir, PROFILE_JSON_FILE_NAME);
-
+    let storePath = OS.Path.join(OS.Constants.Path.profileDir, PROFILE_JSON_FILE_NAME);
     this._profileStore = new ProfileStorage(storePath);
     this._profileStore.initialize();
+
+    Services.obs.addObserver(this, "advanced-pane-loaded", false);
 
     
     Services.prefs.addObserver(ENABLED_PREF, this, false);
@@ -71,15 +78,31 @@ FormAutofillParent.prototype = {
     Services.mm.addMessageListener("FormAutofill:getEnabledStatus", this);
   },
 
-  
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "advanced-pane-loaded": {
+        let formAutofillPreferences = new FormAutofillPreferences();
+        let document = subject.document;
+        let prefGroup = formAutofillPreferences.init(document);
+        let parentNode = document.getElementById("mainPrefPane");
+        let insertBeforeNode = document.getElementById("locationBarGroup");
+        parentNode.insertBefore(prefGroup, insertBeforeNode);
+        break;
+      }
 
+      case "nsPref:changed": {
+        
+        let currentStatus = this._getStatus();
+        if (currentStatus !== this._enabled) {
+          this._enabled = currentStatus;
+          this._onStatusChanged();
+        }
+        break;
+      }
 
-  observe() {
-    let currentStatus = this._getStatus();
-
-    if (currentStatus !== this._enabled) {
-      this._enabled = currentStatus;
-      this._onStatusChanged();
+      default: {
+        throw new Error(`FormAutofillParent: Unexpected topic observed: ${topic}`);
+      }
     }
   },
 
@@ -155,6 +178,8 @@ FormAutofillParent.prototype = {
 
     Services.mm.removeMessageListener("FormAutofill:PopulateFieldValues", this);
     Services.mm.removeMessageListener("FormAutofill:GetProfiles", this);
+    Services.obs.removeObserver(this, "advanced-pane-loaded");
+    Services.prefs.removeObserver(ENABLED_PREF, this);
   },
 
   
