@@ -87,9 +87,10 @@ public:
       existingBackgroundChild =
         ipc::BackgroundChild::SynchronouslyCreateForCurrentThread();
       LOG(("BackgroundChild: %p", existingBackgroundChild));
+      if (!existingBackgroundChild) {
+        return NS_ERROR_FAILURE;
+      }
     }
-    
-    MOZ_RELEASE_ASSERT(existingBackgroundChild);
 
     
     
