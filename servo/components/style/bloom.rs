@@ -181,7 +181,7 @@ impl StyleBloom {
 
         
         
-        while current_depth >= element_depth - 1 {
+        while current_depth > element_depth - 1 {
             self.pop::<E>().expect("Emilio is bad at math");
             current_depth -= 1;
         }
