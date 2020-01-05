@@ -33,6 +33,8 @@ use std::cell::RefCell;
 use std::comm::{channel, Sender, Receiver};
 use style::Stylesheet;
 use url::{Url, UrlParser};
+use http::headers::HeaderEnum;
+use time;
 
 macro_rules! handle_element(
     ($document: expr,
@@ -156,6 +158,30 @@ fn js_script_listener(to_parent: Sender<HtmlDiscoveryMessage>,
     }
 
     assert!(to_parent.send_opt(HtmlDiscoveredScript(result_vec)).is_ok());
+}
+
+
+
+fn parse_last_modified(timestamp: &str) -> String {
+    let format = "%m/%d/%Y %H:%M:%S";
+
+    
+    match time::strptime(timestamp, "%a, %d %b %Y %T %Z") {
+        Ok(t) => return t.to_local().strftime(format),
+        Err(_) => ()
+    }
+
+    
+    match time::strptime(timestamp, "%A, %d-%b-%y %T %Z") {
+        Ok(t) => return t.to_local().strftime(format),
+        Err(_) => ()
+    }
+
+    
+    match time::strptime(timestamp, "%c") {
+        Ok(t) => t.to_local().strftime(format),
+        Err(_) => String::from_str("")
+    }
 }
 
 
@@ -322,6 +348,18 @@ pub fn parse_html(page: &Page,
     let load_response = input_port.recv();
 
     debug!("Fetched page; metadata is {:?}", load_response.metadata);
+
+    load_response.metadata.headers.map(|headers| {
+        let header = headers.iter().find(|h|
+            h.header_name().as_slice().to_ascii_lower() == "last-modified".to_string()
+        );
+
+        match header {
+            Some(h) => document.set_last_modified(
+                parse_last_modified(h.header_value().as_slice())),
+            None => {},
+        };
+    });
 
     let base_url = &load_response.metadata.final_url;
 
