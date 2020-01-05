@@ -22,6 +22,7 @@ import org.mozilla.gecko.activitystream.ActivityStreamTelemetry;
 import org.mozilla.gecko.annotation.RobocopTarget;
 import org.mozilla.gecko.db.BrowserDB;
 import org.mozilla.gecko.home.HomePager;
+import org.mozilla.gecko.home.activitystream.model.Item;
 import org.mozilla.gecko.reader.SavedReaderViewHelper;
 import org.mozilla.gecko.util.Clipboard;
 import org.mozilla.gecko.util.HardwareUtils;
@@ -40,16 +41,9 @@ public abstract class ActivityStreamContextMenu
     }
 
     private final Context context;
-
-    private final String title;
-    private final String url;
+    private final Item item;
 
     private final ActivityStreamTelemetry.Extras.Builder telemetryExtraBuilder;
-
-    
-    
-    private @Nullable Boolean isBookmarked;
-    private @Nullable Boolean isPinned;
 
     private final HomePager.OnUrlOpenListener onUrlOpenListener;
     private final HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener;
@@ -65,19 +59,15 @@ public abstract class ActivityStreamContextMenu
      ActivityStreamContextMenu(final Context context,
                                                     final ActivityStreamTelemetry.Extras.Builder telemetryExtraBuilder,
                                                     final MenuMode mode,
-                                                    final String title, @NonNull final String url,
-                                                    @Nullable final Boolean isBookmarked, @Nullable final Boolean isPinned,
+                                                    final Item item,
                                                     HomePager.OnUrlOpenListener onUrlOpenListener,
                                                     HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener) {
         this.context = context;
+        this.item = item;
         this.telemetryExtraBuilder = telemetryExtraBuilder;
 
         this.mode = mode;
 
-        this.title = title;
-        this.url = url;
-        this.isBookmarked = isBookmarked;
-        this.isPinned = isPinned;
         this.onUrlOpenListener = onUrlOpenListener;
         this.onUrlOpenInBackgroundListener = onUrlOpenInBackgroundListener;
     }
@@ -90,12 +80,12 @@ public abstract class ActivityStreamContextMenu
 
      void postInit() {
         final MenuItem bookmarkItem = getItemByID(R.id.bookmark);
-        if (Boolean.TRUE.equals(this.isBookmarked)) {
+        if (Boolean.TRUE.equals(item.isBookmarked())) {
             bookmarkItem.setTitle(R.string.bookmark_remove);
         }
 
         final MenuItem pinItem = getItemByID(R.id.pin);
-        if (Boolean.TRUE.equals(this.isPinned)) {
+        if (Boolean.TRUE.equals(item.isPinned())) {
             pinItem.setTitle(R.string.contextmenu_top_sites_unpin);
         }
 
@@ -107,14 +97,14 @@ public abstract class ActivityStreamContextMenu
             dismissItem.setVisible(false);
         }
 
-        if (isBookmarked == null) {
+        if (item.isBookmarked() == null) {
             
             bookmarkItem.setEnabled(false);
 
             (new UIAsyncTask.WithoutParams<Boolean>(ThreadUtils.getBackgroundHandler()) {
                 @Override
                 protected Boolean doInBackground() {
-                    return BrowserDB.from(context).isBookmark(context.getContentResolver(), url);
+                    return BrowserDB.from(context).isBookmark(context.getContentResolver(), item.getUrl());
                 }
 
                 @Override
@@ -123,20 +113,20 @@ public abstract class ActivityStreamContextMenu
                         bookmarkItem.setTitle(R.string.bookmark_remove);
                     }
 
-                    isBookmarked = hasBookmark;
+                    item.updateBookmarked(hasBookmark);
                     bookmarkItem.setEnabled(true);
                 }
             }).execute();
         }
 
-        if (isPinned == null) {
+        if (item.isPinned() == null) {
             
             pinItem.setEnabled(false);
 
             (new UIAsyncTask.WithoutParams<Boolean>(ThreadUtils.getBackgroundHandler()) {
                 @Override
                 protected Boolean doInBackground() {
-                    return BrowserDB.from(context).isPinnedForAS(context.getContentResolver(), url);
+                    return BrowserDB.from(context).isPinnedForAS(context.getContentResolver(), item.getUrl());
                 }
 
                 @Override
@@ -145,7 +135,7 @@ public abstract class ActivityStreamContextMenu
                         pinItem.setTitle(R.string.contextmenu_top_sites_unpin);
                     }
 
-                    isPinned = hasPin;
+                    item.updatePinned(hasPin);
                     pinItem.setEnabled(true);
                 }
             }).execute();
@@ -158,7 +148,9 @@ public abstract class ActivityStreamContextMenu
         (new UIAsyncTask.WithoutParams<Boolean>(ThreadUtils.getBackgroundHandler()) {
             @Override
             protected Boolean doInBackground() {
-                final Cursor cursor = BrowserDB.from(context).getHistoryForURL(context.getContentResolver(), url);
+                final Item item = ActivityStreamContextMenu.this.item;
+
+                final Cursor cursor = BrowserDB.from(context).getHistoryForURL(context.getContentResolver(), item.getUrl());
                 
                 
                 if (cursor == null) {
@@ -180,33 +172,33 @@ public abstract class ActivityStreamContextMenu
 
 
     @Override
-    public boolean onNavigationItemSelected(MenuItem item) {
-        final int menuItemId = item.getItemId();
+    public boolean onNavigationItemSelected(MenuItem menuItem) {
+        final int menuItemId = menuItem.getItemId();
 
         
         
         
         telemetryExtraBuilder.fromMenuItemId(menuItemId);
 
-        switch (item.getItemId()) {
+        switch (menuItem.getItemId()) {
             case R.id.share:
                 
                 
                 
                 Telemetry.sendUIEvent(TelemetryContract.Event.SHARE, TelemetryContract.Method.LIST, "as_contextmenu");
 
-                IntentHelper.openUriExternal(url, "text/plain", "", "", Intent.ACTION_SEND, title, false);
+                IntentHelper.openUriExternal(item.getUrl(), "text/plain", "", "", Intent.ACTION_SEND, item.getTitle(), false);
                 break;
 
             case R.id.bookmark:
                 final TelemetryContract.Event telemetryEvent;
                 final String telemetryExtra;
                 SavedReaderViewHelper rch = SavedReaderViewHelper.getSavedReaderViewHelper(context);
-                final boolean isReaderViewPage = rch.isURLCached(url);
+                final boolean isReaderViewPage = rch.isURLCached(item.getUrl());
 
                 
                 
-                if (isBookmarked) {
+                if (item.isBookmarked()) {
                     telemetryEvent = TelemetryContract.Event.UNSAVE;
 
                     if (isReaderViewPage) {
@@ -230,13 +222,13 @@ public abstract class ActivityStreamContextMenu
                     public void run() {
                         final BrowserDB db = BrowserDB.from(context);
 
-                        if (isBookmarked) {
-                            db.removeBookmarksWithURL(context.getContentResolver(), url);
+                        if (item.isBookmarked()) {
+                            db.removeBookmarksWithURL(context.getContentResolver(), item.getUrl());
 
                         } else {
                             
                             
-                            db.addBookmark(context.getContentResolver(), title, url);
+                            db.addBookmark(context.getContentResolver(), item.getTitle(), item.getUrl());
                         }
                     }
                 });
@@ -245,7 +237,7 @@ public abstract class ActivityStreamContextMenu
             case R.id.pin:
                 
                 
-                if (isPinned) {
+                if (item.isPinned()) {
                     telemetryExtraBuilder.set(ActivityStreamTelemetry.Contract.ITEM, ActivityStreamTelemetry.Contract.ITEM_UNPIN);
                 } else {
                     telemetryExtraBuilder.set(ActivityStreamTelemetry.Contract.ITEM, ActivityStreamTelemetry.Contract.ITEM_PIN);
@@ -256,29 +248,29 @@ public abstract class ActivityStreamContextMenu
                     public void run() {
                         final BrowserDB db = BrowserDB.from(context);
 
-                        if (isPinned) {
-                            db.unpinSiteForAS(context.getContentResolver(), url);
+                        if (item.isPinned()) {
+                            db.unpinSiteForAS(context.getContentResolver(), item.getUrl());
                         } else {
-                            db.pinSiteForAS(context.getContentResolver(), url, title);
+                            db.pinSiteForAS(context.getContentResolver(), item.getUrl(), item.getTitle());
                         }
                     }
                 });
                 break;
 
             case R.id.copy_url:
-                Clipboard.setText(url);
+                Clipboard.setText(item.getUrl());
                 break;
 
             case R.id.add_homescreen:
-                GeckoAppShell.createShortcut(title, url);
+                GeckoAppShell.createShortcut(item.getTitle(), item.getUrl());
                 break;
 
             case R.id.open_new_tab:
-                onUrlOpenInBackgroundListener.onUrlOpenInBackground(url, EnumSet.noneOf(HomePager.OnUrlOpenInBackgroundListener.Flags.class));
+                onUrlOpenInBackgroundListener.onUrlOpenInBackground(item.getUrl(), EnumSet.noneOf(HomePager.OnUrlOpenInBackgroundListener.Flags.class));
                 break;
 
             case R.id.open_new_private_tab:
-                onUrlOpenInBackgroundListener.onUrlOpenInBackground(url, EnumSet.of(HomePager.OnUrlOpenInBackgroundListener.Flags.PRIVATE));
+                onUrlOpenInBackgroundListener.onUrlOpenInBackground(item.getUrl(), EnumSet.of(HomePager.OnUrlOpenInBackgroundListener.Flags.PRIVATE));
                 break;
 
             case R.id.dismiss:
@@ -286,8 +278,7 @@ public abstract class ActivityStreamContextMenu
                     @Override
                     public void run() {
                         BrowserDB.from(context)
-                                .blockActivityStreamSite(context.getContentResolver(),
-                                        url);
+                                .blockActivityStreamSite(context.getContentResolver(), item.getUrl());
                     }
                 });
                 break;
@@ -297,14 +288,13 @@ public abstract class ActivityStreamContextMenu
                     @Override
                     public void run() {
                         BrowserDB.from(context)
-                                .removeHistoryEntry(context.getContentResolver(),
-                                        url);
+                                .removeHistoryEntry(context.getContentResolver(), item.getUrl());
                     }
                 });
                 break;
 
             default:
-                throw new IllegalArgumentException("Menu item with ID=" + item.getItemId() + " not handled");
+                throw new IllegalArgumentException("Menu item with ID=" + menuItem.getItemId() + " not handled");
         }
 
         Telemetry.sendUIEvent(
@@ -321,9 +311,7 @@ public abstract class ActivityStreamContextMenu
     @RobocopTarget
     public static ActivityStreamContextMenu show(Context context,
                                                       View anchor, ActivityStreamTelemetry.Extras.Builder telemetryExtraBuilder,
-                                                      final MenuMode menuMode,
-                                                      final String title, @NonNull final String url,
-                                                      @Nullable final Boolean isBookmarked, @Nullable final Boolean isPinned,
+                                                      final MenuMode menuMode, final Item item,
                                                       HomePager.OnUrlOpenListener onUrlOpenListener,
                                                       HomePager.OnUrlOpenInBackgroundListener onUrlOpenInBackgroundListener,
                                                       final int tilesWidth, final int tilesHeight) {
@@ -332,15 +320,13 @@ public abstract class ActivityStreamContextMenu
         if (!HardwareUtils.isTablet()) {
             menu = new BottomSheetContextMenu(context,
                     telemetryExtraBuilder, menuMode,
-                    title, url, isBookmarked, isPinned,
-                    onUrlOpenListener, onUrlOpenInBackgroundListener,
+                    item, onUrlOpenListener, onUrlOpenInBackgroundListener,
                     tilesWidth, tilesHeight);
         } else {
             menu = new PopupContextMenu(context,
                     anchor,
                     telemetryExtraBuilder, menuMode,
-                    title, url, isBookmarked, isPinned,
-                    onUrlOpenListener, onUrlOpenInBackgroundListener);
+                    item, onUrlOpenListener, onUrlOpenInBackgroundListener);
         }
 
         menu.show();
