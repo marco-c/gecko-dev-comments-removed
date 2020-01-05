@@ -1288,7 +1288,11 @@ pref("privacy.trackingprotection.pbmode.enabled",  true);
 pref("privacy.trackingprotection.annotate_channels",  true);
 
 
-pref("privacy.trackingprotection.lower_network_priority",  false);
+#ifdef NIGHTLY_BUILD
+pref("privacy.trackingprotection.lower_network_priority", true);
+#else
+pref("privacy.trackingprotection.lower_network_priority", false);
+#endif
 
 pref("dom.event.contextmenu.enabled",       true);
 pref("dom.event.clipboardevents.enabled",   true);
