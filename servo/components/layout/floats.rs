@@ -56,14 +56,14 @@ struct FloatList {
     
     floats: PersistentList<Float>,
     
-    max_block_start: Au,
+    max_block_start: Option<Au>,
 }
 
 impl FloatList {
     fn new() -> FloatList {
         FloatList {
             floats: PersistentList::new(),
-            max_block_start: Au(0),
+            max_block_start: None,
         }
     }
 
@@ -247,15 +247,15 @@ impl Floats {
 
     
     pub fn add_float(&mut self, info: &PlacementInfo) {
-        let new_info;
-        {
-            new_info = PlacementInfo {
-                size: info.size,
-                ceiling: max(info.ceiling, self.list.max_block_start + self.offset.block),
-                max_inline_size: info.max_inline_size,
-                kind: info.kind
-            }
-        }
+        let new_info = PlacementInfo {
+            size: info.size,
+            ceiling: match self.list.max_block_start {
+                None => info.ceiling,
+                Some(max_block_start) => max(info.ceiling, max_block_start + self.offset.block),
+            },
+            max_inline_size: info.max_inline_size,
+            kind: info.kind
+        };
 
         debug!("add_float: added float with info {:?}", new_info);
 
@@ -269,7 +269,10 @@ impl Floats {
         };
 
         self.list.floats = self.list.floats.prepend_elem(new_float);
-        self.list.max_block_start = max(self.list.max_block_start, new_float.bounds.start.b);
+        self.list.max_block_start = match self.list.max_block_start {
+            None => Some(new_float.bounds.start.b),
+            Some(max_block_start) => Some(max(max_block_start, new_float.bounds.start.b)),
+        }
     }
 
     

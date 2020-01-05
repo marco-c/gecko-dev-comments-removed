@@ -114,8 +114,8 @@ impl MarginCollapseInfo {
     }
 
     pub fn initialize_block_start_margin(&mut self,
-                                 fragment: &Fragment,
-                                 can_collapse_block_start_margin_with_kids: bool) {
+                                         fragment: &Fragment,
+                                         can_collapse_block_start_margin_with_kids: bool) {
         if !can_collapse_block_start_margin_with_kids {
             self.state = MarginCollapseState::AccumulatingMarginIn
         }
@@ -239,25 +239,31 @@ impl MarginCollapseInfo {
     
     
     
-    pub fn advance_block_end_margin(&mut self, child_collapsible_margins: &CollapsibleMargins) -> Au {
+    pub fn advance_block_end_margin(&mut self, child_collapsible_margins: &CollapsibleMargins)
+                                    -> Au {
         match (self.state, *child_collapsible_margins) {
             (MarginCollapseState::AccumulatingCollapsibleTopMargin, CollapsibleMargins::None(..)) |
-            (MarginCollapseState::AccumulatingCollapsibleTopMargin, CollapsibleMargins::Collapse(..)) => {
+            (MarginCollapseState::AccumulatingCollapsibleTopMargin,
+             CollapsibleMargins::Collapse(..)) => {
                 
                 
                 panic!("should not be accumulating collapsible block_start margins anymore!")
             }
-            (MarginCollapseState::AccumulatingCollapsibleTopMargin, CollapsibleMargins::CollapseThrough(margin)) => {
+            (MarginCollapseState::AccumulatingCollapsibleTopMargin,
+             CollapsibleMargins::CollapseThrough(margin)) => {
                 self.block_start_margin.union(margin);
                 Au(0)
             }
-            (MarginCollapseState::AccumulatingMarginIn, CollapsibleMargins::None(_, block_end)) => {
+            (MarginCollapseState::AccumulatingMarginIn,
+             CollapsibleMargins::None(_, block_end)) => {
                 assert_eq!(self.margin_in.most_positive, Au(0));
                 assert_eq!(self.margin_in.most_negative, Au(0));
                 block_end
             }
-            (MarginCollapseState::AccumulatingMarginIn, CollapsibleMargins::Collapse(_, block_end)) |
-            (MarginCollapseState::AccumulatingMarginIn, CollapsibleMargins::CollapseThrough(block_end)) => {
+            (MarginCollapseState::AccumulatingMarginIn,
+             CollapsibleMargins::Collapse(_, block_end)) |
+            (MarginCollapseState::AccumulatingMarginIn,
+             CollapsibleMargins::CollapseThrough(block_end)) => {
                 self.margin_in.union(block_end);
                 Au(0)
             }
