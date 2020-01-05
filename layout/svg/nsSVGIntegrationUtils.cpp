@@ -110,9 +110,18 @@ private:
     
     
     
-    NS_ASSERTION(aFrame->GetParent()->StyleContext()->GetPseudo() ==
+    
+    
+    
+    
+    
+    
+    
+    NS_ASSERTION(nsSVGEffects::GetEffectProperties(aFrame).MightHaveNoneSVGMask() ||
+                 aFrame->GetParent()->StyleContext()->GetPseudo() ==
                    nsCSSAnonBoxes::mozAnonymousBlock,
                  "How did we getting here, then?");
+
     NS_ASSERTION(!aFrame->Properties().Get(
                    aFrame->PreTransformOverflowAreasProperty()),
                  "GetVisualOverflowRect() won't return the pre-effects rect!");
