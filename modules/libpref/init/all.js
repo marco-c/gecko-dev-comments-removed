@@ -1469,7 +1469,7 @@ pref("network.http.max-persistent-connections-per-server", 6);
 
 
 
-pref("network.http.max-urgent-start-excessive-connections-per-host", 10);
+pref("network.http.max-urgent-start-excessive-connections-per-host", 3);
 
 
 
