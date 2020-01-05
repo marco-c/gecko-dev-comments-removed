@@ -757,33 +757,12 @@ nsSVGIntegrationUtils::PaintMask(const PaintFramesParams& aParams)
     bool isOK = true;
     nsSVGClipPathFrame *clipPathFrame =
       effectProperties.GetClipPathFrame(&isOK);
-    
-    
-    
-    
-    
-    
-    
-    
-    RefPtr<SourceSurface> clipMaskSurface =
-      clipPathFrame->GetClipMask(ctx, frame, cssPxToDevPxMatrix,
-                                 &clipMaskTransform, nullptr,
-                                 ToMatrix(ctx.CurrentMatrix()), &result);
-
-    if (clipMaskSurface) {
-      gfxContextMatrixAutoSaveRestore matRestore(&ctx);
-      ctx.Multiply(ThebesMatrix(clipMaskTransform));
-      CompositionOp op = maskUsage.shouldGenerateMaskLayer
-                         ? CompositionOp::OP_IN : CompositionOp::OP_OVER;
-      target->MaskSurface(ColorPattern(Color(0.0, 0.0, 0.0, 1.0)),
-                          clipMaskSurface,
-                          Point(),
-                          DrawOptions(1.0, op));
-    } else {
-      
-      
-      return result;
-    }
+    RefPtr<SourceSurface> maskSurface =
+      maskUsage.shouldGenerateMaskLayer ? target->Snapshot() : nullptr;
+    result =
+      clipPathFrame->PaintClipMask(ctx, frame, cssPxToDevPxMatrix,
+                                   &clipMaskTransform, maskSurface,
+                                   ToMatrix(ctx.CurrentMatrix()));
   }
 
   return result;
