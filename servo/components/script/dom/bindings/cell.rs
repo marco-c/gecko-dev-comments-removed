@@ -43,6 +43,13 @@ impl<T> DOMRefCell<T> {
 
     
     
+    pub unsafe fn borrow_for_script_deallocation<'a>(&'a self) -> &'a mut T {
+        debug_assert!(task_state::get().contains(SCRIPT));
+        &mut *self.value.as_unsafe_cell().get()
+    }
+
+    
+    
     
     pub fn is_mutably_borrowed(&self) -> bool {
         self.value.try_borrow().is_some()
