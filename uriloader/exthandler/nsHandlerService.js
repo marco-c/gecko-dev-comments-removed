@@ -709,12 +709,7 @@ HandlerService.prototype = {
 
     var handler = aHandlerInfo.preferredApplicationHandler;
 
-    if (handler) {
-      
-      
-      if (this._handlerAppIsUnknownType(handler)) {
-        return;
-      }
+    if (handler && !this._handlerAppIsUnknownType(handler)) {
       this._storeHandlerApp(handlerID, handler);
 
       
@@ -728,6 +723,7 @@ HandlerService.prototype = {
       this._setResource(infoID, NC_PREFERRED_APP, handlerID);
     }
     else {
+      
       
       
       this._removeTarget(infoID, NC_PREFERRED_APP);

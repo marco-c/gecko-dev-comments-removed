@@ -39,8 +39,7 @@ HandlerService.prototype = {
   get _store() {
     if (!this.__store) {
       this.__store = new JSONFile({
-        path: OS.Path.join(OS.Constants.Path.profileDir,
-                           "handlers.json"),
+        path: OS.Path.join(OS.Constants.Path.profileDir, "handlers.json"),
         dataPostProcessor: this._dataPostProcessor.bind(this),
       });
       this.__store.ensureDataReady();
@@ -50,21 +49,26 @@ HandlerService.prototype = {
   },
 
   _dataPostProcessor(data) {
-    return data.schemes ? data : { version: {}, mimetypes: {}, schemes: {} };
+    return data.defaultHandlersVersion ? data : {
+      defaultHandlersVersion: {},
+      mimeTypes: {},
+      schemes: {},
+    };
   },
 
   _updateDB() {
     try {
-
       let locale = Services.locale.getAppLocaleAsLangTag();
       let prefsDefaultHandlersVersion = Number(Services.prefs.getComplexValue(
         "gecko.handlerService.defaultHandlersVersion",
         Ci.nsIPrefLocalizedString).data);
 
-      let defaultHandlersVersion = this._store.data.version[locale] || 0;
-      if (defaultHandlersVersion < prefsDefaultHandlersVersion ) {
+      let defaultHandlersVersion =
+          this._store.data.defaultHandlersVersion[locale] || 0;
+      if (defaultHandlersVersion < prefsDefaultHandlersVersion) {
         this._injectNewDefaults();
-        this._store.data.version[locale] = prefsDefaultHandlersVersion;
+        this._store.data.defaultHandlersVersion[locale] =
+          prefsDefaultHandlersVersion;
       }
     } catch (ex) {
       Cu.reportError(ex);
@@ -121,24 +125,13 @@ HandlerService.prototype = {
 
       for (let handlerNumber of Object.keys(schemes[scheme])) {
         let handlerApp = this.handlerAppFromSerializable(schemes[scheme][handlerNumber]);
-        if (!this._isInHandlerArray(possibleHandlers, handlerApp)) {
-          possibleHandlers.appendElement(handlerApp);
-        }
+        
+        
+        possibleHandlers.appendElement(handlerApp, false);
       }
 
       this.store(protoInfo);
     }
-  },
-
-  _isInHandlerArray(array, handler) {
-    let enumerator = array.enumerate();
-    while (enumerator.hasMoreElements()) {
-      let handlerApp = enumerator.getNext().QueryInterface(Ci.nsIHandlerApp);
-      if (handlerApp.equals(handler)) {
-        return true;
-      }
-    }
-    return false;
   },
 
   _onDBChange() {
@@ -163,9 +156,9 @@ HandlerService.prototype = {
 
   
   enumerate() {
-    let handlers = Cc["@mozilla.org/array;1"].
-                     createInstance(Ci.nsIMutableArray);
-    for (let type of Object.keys(this._store.data.mimetypes)) {
+    let handlers = Cc["@mozilla.org/array;1"]
+                     .createInstance(Ci.nsIMutableArray);
+    for (let type of Object.keys(this._store.data.mimeTypes)) {
       let handler = gMIMEService.getFromTypeAndExtension(type, null);
       handlers.appendElement(handler);
     }
@@ -178,46 +171,76 @@ HandlerService.prototype = {
 
   
   store(handlerInfo) {
-    let handlerObj = {
-      action: handlerInfo.preferredAction,
-      askBeforeHandling: handlerInfo.alwaysAskBeforeHandling,
-    };
+    let handlerList = this._getHandlerListByHandlerInfoType(handlerInfo);
 
-    let preferredHandler = handlerInfo.preferredApplicationHandler;
-    if (preferredHandler) {
-      let serializable = this.handlerAppToSerializable(preferredHandler);
-      if (serializable) {
-        handlerObj.preferredHandler = serializable;
+    
+    
+    let storedHandlerInfo = handlerList[handlerInfo.type];
+    if (!storedHandlerInfo) {
+      storedHandlerInfo = {};
+      handlerList[handlerInfo.type] = storedHandlerInfo;
+    }
+
+    
+    if (handlerInfo.preferredAction == Ci.nsIHandlerInfo.saveToDisk ||
+        handlerInfo.preferredAction == Ci.nsIHandlerInfo.useSystemDefault ||
+        handlerInfo.preferredAction == Ci.nsIHandlerInfo.handleInternally) {
+      storedHandlerInfo.action = handlerInfo.preferredAction;
+    } else {
+      storedHandlerInfo.action = Ci.nsIHandlerInfo.useHelperApp;
+    }
+
+    if (handlerInfo.alwaysAskBeforeHandling) {
+      storedHandlerInfo.ask = true;
+    } else {
+      delete storedHandlerInfo.ask;
+    }
+
+    
+    let handlers = [];
+    if (handlerInfo.preferredApplicationHandler) {
+      handlers.push(handlerInfo.preferredApplicationHandler);
+    }
+    let enumerator = handlerInfo.possibleApplicationHandlers.enumerate();
+    while (enumerator.hasMoreElements()) {
+      let handler = enumerator.getNext().QueryInterface(Ci.nsIHandlerApp);
+      
+      if (!handlers.some(h => h.equals(handler))) {
+        handlers.push(handler);
       }
     }
 
-    let apps = handlerInfo.possibleApplicationHandlers.enumerate();
-    let possibleHandlers = [];
-    while (apps.hasMoreElements()) {
-      let handler = apps.getNext().QueryInterface(Ci.nsIHandlerApp);
-      let serializable = this.handlerAppToSerializable(handler);
-      if (serializable) {
-        possibleHandlers.push(serializable);
+    
+    
+    
+    let serializableHandlers =
+        handlers.map(h => this.handlerAppToSerializable(h)).filter(h => h);
+    if (serializableHandlers.length) {
+      if (!handlerInfo.preferredApplicationHandler) {
+        serializableHandlers.unshift(null);
       }
-    }
-    if (possibleHandlers.length) {
-      handlerObj.possibleHandlers = possibleHandlers;
+      storedHandlerInfo.handlers = serializableHandlers;
+    } else {
+      delete storedHandlerInfo.handlers;
     }
 
     if (this._isMIMEInfo(handlerInfo)) {
       let extEnumerator = handlerInfo.getFileExtensions();
-      let extensions = [];
+      let extensions = storedHandlerInfo.extensions || [];
       while (extEnumerator.hasMore()) {
-        let extension = extEnumerator.getNext();
+        let extension = extEnumerator.getNext().toLowerCase();
+        
         if (!extensions.includes(extension)) {
           extensions.push(extension);
         }
       }
       if (extensions.length) {
-        handlerObj.fileExtensions = extensions;
+        storedHandlerInfo.extensions = extensions;
+      } else {
+        delete storedHandlerInfo.extensions;
       }
     }
-    this._getHandlerListByHandlerInfoType(handlerInfo)[handlerInfo.type] = handlerObj;
+
     this._store.saveSoon();
   },
 
@@ -230,42 +253,26 @@ HandlerService.prototype = {
                                      Cr.NS_ERROR_NOT_AVAILABLE);
     }
 
+    handlerInfo.preferredAction = storedHandlerInfo.action;
+    handlerInfo.alwaysAskBeforeHandling = !!storedHandlerInfo.ask;
+
     
-    if (storedHandlerInfo.action == Ci.nsIHandlerInfo.saveToDisk ||
-        storedHandlerInfo.action == Ci.nsIHandlerInfo.useSystemDefault ||
-        storedHandlerInfo.action == Ci.nsIHandlerInfo.handleInternally) {
-      handlerInfo.preferredAction = storedHandlerInfo.action;
-    } else {
-      handlerInfo.preferredAction = Ci.nsIHandlerInfo.useHelperApp;
-    }
-
-    let preferHandler = null;
-    if (storedHandlerInfo.preferredHandler) {
-      preferHandler = this.handlerAppFromSerializable(storedHandlerInfo.preferredHandler);
-    }
-    handlerInfo.preferredApplicationHandler = preferHandler;
-    if (preferHandler) {
-      handlerInfo.possibleApplicationHandlers.appendElement(preferHandler);
-    }
-
-    if (storedHandlerInfo.possibleHandlers) {
-      for (let handler of storedHandlerInfo.possibleHandlers) {
-        let possibleHandler = this.handlerAppFromSerializable(handler);
-        if (possibleHandler && (!preferHandler ||
-                                !possibleHandler.equals(preferHandler))) {
-          handlerInfo.possibleApplicationHandlers.appendElement(possibleHandler);
-        }
+    
+    let isFirstItem = true;
+    for (let handler of storedHandlerInfo.handlers || [null]) {
+      let handlerApp = this.handlerAppFromSerializable(handler || {});
+      if (isFirstItem) {
+        isFirstItem = false;
+        handlerInfo.preferredApplicationHandler = handlerApp;
+      }
+      if (handlerApp) {
+        handlerInfo.possibleApplicationHandlers.appendElement(handlerApp);
       }
     }
 
-    
-    handlerInfo.alwaysAskBeforeHandling = storedHandlerInfo.askBeforeHandling;
-
-    if (this._isMIMEInfo(handlerInfo)) {
-      if (storedHandlerInfo.fileExtensions) {
-        for (let extension of storedHandlerInfo.fileExtensions) {
-          handlerInfo.appendExtension(extension);
-        }
+    if (this._isMIMEInfo(handlerInfo) && storedHandlerInfo.extensions) {
+      for (let extension of storedHandlerInfo.extensions) {
+        handlerInfo.appendExtension(extension);
       }
     }
   },
@@ -313,19 +320,19 @@ HandlerService.prototype = {
         if (!file.exists()) {
           return null;
         }
-        handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"].
-                   createInstance(Ci.nsILocalHandlerApp);
+        handlerApp = Cc["@mozilla.org/uriloader/local-handler-app;1"]
+                       .createInstance(Ci.nsILocalHandlerApp);
         handlerApp.executable = file;
       } catch (ex) {
         return null;
       }
     } else if ("uriTemplate" in handlerObj) {
-      handlerApp = Cc["@mozilla.org/uriloader/web-handler-app;1"].
-                   createInstance(Ci.nsIWebHandlerApp);
+      handlerApp = Cc["@mozilla.org/uriloader/web-handler-app;1"]
+                     .createInstance(Ci.nsIWebHandlerApp);
       handlerApp.uriTemplate = handlerObj.uriTemplate;
     } else if ("service" in handlerObj) {
-      handlerApp = Cc["@mozilla.org/uriloader/dbus-handler-app;1"].
-                   createInstance(Ci.nsIDBusHandlerApp);
+      handlerApp = Cc["@mozilla.org/uriloader/dbus-handler-app;1"]
+                     .createInstance(Ci.nsIDBusHandlerApp);
       handlerApp.service = handlerObj.service;
       handlerApp.method = handlerObj.method;
       handlerApp.objectPath = handlerObj.objectPath;
@@ -343,7 +350,7 @@ HandlerService.prototype = {
 
 
   _getHandlerListByHandlerInfoType(handlerInfo) {
-    return this._isMIMEInfo(handlerInfo) ? this._store.data.mimetypes
+    return this._isMIMEInfo(handlerInfo) ? this._store.data.mimeTypes
                                          : this._store.data.schemes;
   },
 
@@ -372,16 +379,15 @@ HandlerService.prototype = {
   
   getTypeFromExtension(fileExtension) {
     let extension = fileExtension.toLowerCase();
-    let mimeTypes = this._store.data.mimetypes;
+    let mimeTypes = this._store.data.mimeTypes;
     for (let type of Object.keys(mimeTypes)) {
-      if (mimeTypes[type].fileExtensions &&
-          mimeTypes[type].fileExtensions.includes(extension)) {
-          return type;
+      if (mimeTypes[type].extensions &&
+          mimeTypes[type].extensions.includes(extension)) {
+        return type;
       }
     }
     return "";
   },
-
 };
 
 this.NSGetFactory = XPCOMUtils.generateNSGetFactory([HandlerService]);

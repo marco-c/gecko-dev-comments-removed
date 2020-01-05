@@ -5,31 +5,61 @@
 
 
 
-
-
 XPCOMUtils.defineLazyServiceGetter(this, "gHandlerService",
                                    "@mozilla.org/uriloader/handler-service-json;1",
                                    "nsIHandlerService");
 
-var scriptFile = do_get_file("common_test_handlerService.js");
-Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
 
-var prepareImportDB = Task.async(function* () {
-  yield reloadData();
 
-  yield OS.File.copy(do_get_file("handlers.json").path, jsonPath);
+
+
+let unloadHandlerStore = Task.async(function* () {
+  
+  
+  
+  gHandlerService;
+
+  let promise = TestUtils.topicObserved("handlersvc-json-replace-complete");
+  Services.obs.notifyObservers(null, "handlersvc-json-replace");
+  yield promise;
 });
 
-var removeImportDB = Task.async(function* () {
-  yield reloadData();
+
+
+
+let deleteHandlerStore = Task.async(function* () {
+  yield unloadHandlerStore();
 
   yield OS.File.remove(jsonPath, { ignoreAbsent: true });
 });
 
-var reloadData = Task.async(function* () {
+
+
+
+let copyTestDataToHandlerStore = Task.async(function* () {
+  yield unloadHandlerStore();
+
+  yield OS.File.copy(do_get_file("handlers.json").path, jsonPath);
+});
+
+var scriptFile = do_get_file("common_test_handlerService.js");
+Services.scriptloader.loadSubScript(NetUtil.newURI(scriptFile).spec);
+
+
+
+
+
+add_task(function* test_store_keeps_unknown_properties() {
   
-  let svc = gHandlerService;
-  let promise = TestUtils.topicObserved("handlersvc-json-replace-complete");
-  Services.obs.notifyObservers(null, "handlersvc-json-replace");
-  yield promise;
+  yield deleteHandlerStore();
+  let handlerInfo =
+      HandlerServiceTestUtils.getHandlerInfo("example/type.handleinternally");
+
+  yield copyTestDataToHandlerStore();
+  gHandlerService.store(handlerInfo);
+
+  yield unloadHandlerStore();
+  let data = JSON.parse(new TextDecoder().decode(yield OS.File.read(jsonPath)));
+  do_check_eq(data.mimeTypes["example/type.handleinternally"].unknownProperty,
+              "preserved");
 });
