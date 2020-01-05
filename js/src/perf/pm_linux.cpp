@@ -121,8 +121,8 @@ Impl::~Impl()
     
     
     
-    for (int i = 0; i < PerfMeasurement::NUM_MEASURABLE_EVENTS; i++) {
-        int fd = this->*(kSlots[i].fd);
+    for (const auto& slot : kSlots) {
+        int fd = this->*(slot.fd);
         if (fd != -1 && fd != group_leader)
             close(fd);
     }
@@ -140,8 +140,8 @@ Impl::init(EventMask toMeasure)
 
     EventMask measured = EventMask(0);
     struct perf_event_attr attr;
-    for (int i = 0; i < PerfMeasurement::NUM_MEASURABLE_EVENTS; i++) {
-        if (!(toMeasure & kSlots[i].bit))
+    for (const auto& slot : kSlots) {
+        if (!(toMeasure & slot.bit))
             continue;
 
         memset(&attr, 0, sizeof(attr));
@@ -150,8 +150,8 @@ Impl::init(EventMask toMeasure)
         
         
         
-        attr.type = kSlots[i].type;
-        attr.config = kSlots[i].config;
+        attr.type = slot.type;
+        attr.config = slot.config;
 
         
         
@@ -175,8 +175,8 @@ Impl::init(EventMask toMeasure)
         if (fd == -1)
             continue;
 
-        measured = EventMask(measured | kSlots[i].bit);
-        this->*(kSlots[i].fd) = fd;
+        measured = EventMask(measured | slot.bit);
+        this->*(slot.fd) = fd;
         if (group_leader == -1)
             group_leader = fd;
     }
@@ -207,15 +207,15 @@ Impl::stop(PerfMeasurement* counters)
     running = false;
 
     
-    for (int i = 0; i < PerfMeasurement::NUM_MEASURABLE_EVENTS; i++) {
-        int fd = this->*(kSlots[i].fd);
+    for (const auto& slot : kSlots) {
+        int fd = this->*(slot.fd);
         if (fd == -1)
             continue;
 
         if (read(fd, buf, sizeof(buf)) == sizeof(uint64_t)) {
             uint64_t cur;
             memcpy(&cur, buf, sizeof(uint64_t));
-            counters->*(kSlots[i].counter) += cur;
+            counters->*(slot.counter) += cur;
         }
 
         
@@ -273,11 +273,11 @@ PerfMeasurement::stop()
 void
 PerfMeasurement::reset()
 {
-    for (int i = 0; i < NUM_MEASURABLE_EVENTS; i++) {
-        if (eventsMeasured & kSlots[i].bit)
-            this->*(kSlots[i].counter) = 0;
+    for (const auto& slot : kSlots) {
+        if (eventsMeasured & slot.bit)
+            this->*(slot.counter) = 0;
         else
-            this->*(kSlots[i].counter) = -1;
+            this->*(slot.counter) = -1;
     }
 }
 
