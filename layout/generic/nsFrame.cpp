@@ -8703,9 +8703,14 @@ UnionBorderBoxes(nsIFrame* aFrame, bool aApplyTransform,
   aOutValid = !aFrame->IsFrameOfType(nsIFrame::eSVGContainer)
               || aFrame->GetType() == nsGkAtoms::svgTextFrame;
 
-  
-  
   nsRect u;
+
+  if (!aFrame->FrameMaintainsOverflow()) {
+    return u;
+  }
+
+  
+  
   bool doTransform = aApplyTransform && aFrame->IsTransformed();
   if (doTransform) {
     u = nsDisplayTransform::TransformRect(bounds, aFrame, &bounds);
