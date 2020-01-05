@@ -154,6 +154,7 @@ nsDirIndexParser::ParseFormat(const char* aFormatStr) {
   if (mFormat == nullptr)
     return NS_ERROR_OUT_OF_MEMORY;
   mFormat[num] = -1;
+  mFormat[0] = -1; 
   
   int formatNum=0;
   do {
@@ -192,7 +193,8 @@ nsDirIndexParser::ParseFormat(const char* aFormatStr) {
 }
 
 nsresult
-nsDirIndexParser::ParseData(nsIDirIndex *aIdx, char* aDataStr) {
+nsDirIndexParser::ParseData(nsIDirIndex *aIdx, char* aDataStr, int32_t aLineLen)
+{
   
   
 
@@ -202,37 +204,62 @@ nsDirIndexParser::ParseData(nsIDirIndex *aIdx, char* aDataStr) {
   }
 
   nsresult rv = NS_OK;
-
   nsAutoCString filename;
+  int32_t lineLen = aLineLen;
+
+  if (mFormat[0] == -1) {
+    
+    return NS_ERROR_ILLEGAL_VALUE;
+  }
 
   for (int32_t i = 0; mFormat[i] != -1; ++i) {
     
-    
-    if (! *aDataStr)
-      break;
+    if (!*aDataStr || (lineLen < 1)) {
+      return NS_ERROR_ILLEGAL_VALUE;
+    }
 
-    while (*aDataStr && nsCRT::IsAsciiSpace(*aDataStr))
+    while ((lineLen > 0) && nsCRT::IsAsciiSpace(*aDataStr)) {
       ++aDataStr;
+      --lineLen;
+    }
+
+    if (lineLen < 1) {
+      
+      return NS_ERROR_ILLEGAL_VALUE;
+    }
 
     char    *value = aDataStr;
-
     if (*aDataStr == '"' || *aDataStr == '\'') {
       
       const char quotechar = *(aDataStr++);
+      lineLen--;
       ++value;
-      while (*aDataStr && *aDataStr != quotechar)
+      while ((lineLen > 0) && *aDataStr != quotechar) {
         ++aDataStr;
-      *aDataStr++ = '\0';
+        --lineLen;
+      }
+      if (lineLen > 0) {
+        *aDataStr++ = '\0';
+        --lineLen;
+      }
 
-      if (! aDataStr) {
-        NS_WARNING("quoted value not terminated");
+      if (!lineLen) {
+        
+        return NS_ERROR_ILLEGAL_VALUE;
       }
     } else {
       
       value = aDataStr;
-      while (*aDataStr && (!nsCRT::IsAsciiSpace(*aDataStr)))
+      while ((lineLen > 0) && (!nsCRT::IsAsciiSpace(*aDataStr))) {
         ++aDataStr;
-      *aDataStr++ = '\0';
+        --lineLen;
+      }
+      if (lineLen > 0) {
+        *aDataStr++ = '\0';
+        --lineLen;
+      }
+      
+      
     }
 
     fieldType t = fieldType(mFormat[i]);
@@ -404,7 +431,7 @@ nsDirIndexParser::ProcessData(nsIRequest *aRequest, nsISupports *aCtxt) {
             if (NS_FAILED(rv))
               return rv;
             
-            rv = ParseData(idx, ((char *)buf) + 4);
+            rv = ParseData(idx, ((char *)buf) + 4, lineLen - 4);
             if (NS_FAILED(rv)) {
               return rv;
             }
