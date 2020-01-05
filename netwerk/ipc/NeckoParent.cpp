@@ -144,7 +144,7 @@ GetRequestingPrincipal(const FTPChannelCreationArgs& aArgs)
 
 
 
-static MOZ_NORETURN MOZ_COLD
+static MOZ_COLD
 void CrashWithReason(const char * reason)
 {
 #ifndef RELEASE_OR_BETA
