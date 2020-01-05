@@ -405,6 +405,11 @@ public:
     mMaster->mQueuedSeek.mTarget = aTarget;
     return mMaster->mQueuedSeek.mPromise.Ensure(__func__);
   }
+
+  void HandleVideoSuspendTimeout() override
+  {
+    
+  }
 };
 
 class MediaDecoderStateMachine::DecodingFirstFrameState
