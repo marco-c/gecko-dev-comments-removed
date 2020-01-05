@@ -41,8 +41,12 @@ public final class HardwareCodecCapabilityUtils {
   };
   private static final String[] adaptivePlaybackBlacklist =
   {
-    "GT-I9300", 
-    "SCH-I535"  
+    "GT-I9300",         
+    "SCH-I535",         
+    "SGH-M919",         
+    "GT-I9505",         
+    "SGH-I337",         
+    "SAMSUNG-SGH-I337"  
   };
 
   @WrapForJNI
@@ -92,11 +96,8 @@ public final class HardwareCodecCapabilityUtils {
   
   
   private static boolean isAdaptivePlaybackBlacklisted(String aMimeType) {
+    Log.d(LOGTAG, "The device ModelID is " + Build.MODEL);
     if (!aMimeType.equals("video/avc") && !aMimeType.equals("video/avc1")) {
-      return false;
-    }
-
-    if (!Build.VERSION.RELEASE.equals("4.4.2")) {
       return false;
     }
 
