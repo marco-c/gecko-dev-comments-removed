@@ -163,13 +163,13 @@ pub trait AsyncFetchListener {
 
 pub trait AsyncResponseListener {
     
-    fn headers_available(&self, metadata: Metadata);
+    fn headers_available(&mut self, metadata: Metadata);
     
     
-    fn data_available(&self, payload: Vec<u8>);
+    fn data_available(&mut self, payload: Vec<u8>);
     
     
-    fn response_complete(&self, status: Result<(), String>);
+    fn response_complete(&mut self, status: Result<(), String>);
 }
 
 
@@ -186,7 +186,7 @@ pub enum ResponseAction {
 
 impl ResponseAction {
     
-    pub fn process(self, listener: &AsyncResponseListener) {
+    pub fn process(self, listener: &mut AsyncResponseListener) {
         match self {
             ResponseAction::HeadersAvailable(m) => listener.headers_available(m),
             ResponseAction::DataAvailable(d) => listener.data_available(d),
