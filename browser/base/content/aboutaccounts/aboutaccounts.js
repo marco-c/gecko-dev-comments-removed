@@ -16,7 +16,6 @@ Cu.import("resource://gre/modules/FxAccountsCommon.js", fxAccountsCommon);
 Cu.import("resource://services-sync/util.js");
 
 const PREF_LAST_FXA_USER = "identity.fxaccounts.lastSignedInUserHash";
-const PREF_SYNC_SHOW_CUSTOMIZATION = "services.sync-setup.ui.showCustomizationDialog";
 
 const ACTION_URL_PARAM = "action";
 
@@ -197,9 +196,8 @@ var wrapper = {
   onLogin(accountData) {
     log("Received: 'login'. Data:" + JSON.stringify(accountData));
 
-    if (accountData.customizeSync) {
-      Services.prefs.setBoolPref(PREF_SYNC_SHOW_CUSTOMIZATION, true);
-    }
+    
+    
     delete accountData.customizeSync;
     
     
