@@ -134,6 +134,7 @@ public:
   bool GetPointerInfo(uint32_t aPointerId, POINTER_INFO *aPointerInfo);
   bool GetPointerPenInfo(uint32_t aPointerId, POINTER_PEN_INFO *aPenInfo);
   bool ShouldEnableInkCollector();
+  bool ShouldRollupOnPointerEvent(WPARAM aWParam);
 private:
   
   typedef BOOL (WINAPI* GetPointerTypePtr)(uint32_t aPointerId,
