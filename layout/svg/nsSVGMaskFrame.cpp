@@ -321,7 +321,7 @@ nsSVGMaskFrame::GetMaskForMaskedFrame(MaskParams& aParams)
 
   
   if (!maskSurfaceMatrix.Invert()) {
-    return MakePair(DrawResult::TEMPORARY_ERROR, RefPtr<SourceSurface>());
+    return MakePair(DrawResult::SUCCESS, RefPtr<SourceSurface>());
   }
 
   *aParams.maskTransform = ToMatrix(maskSurfaceMatrix);
