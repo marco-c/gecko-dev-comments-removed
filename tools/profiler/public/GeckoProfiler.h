@@ -113,10 +113,8 @@ enum TracingMetadata {
 
 static inline void profiler_tracing(const char* aCategory, const char* aInfo,
                                     TracingMetadata metaData = TRACING_DEFAULT) {}
-class ProfilerBacktrace;
-
 static inline void profiler_tracing(const char* aCategory, const char* aInfo,
-                                    ProfilerBacktrace* aCause,
+                                    UniqueProfilerBacktrace aCause,
                                     TracingMetadata metaData = TRACING_DEFAULT) {}
 
 
@@ -158,6 +156,9 @@ static inline void profiler_resume() {}
 
 static inline UniqueProfilerBacktrace profiler_get_backtrace() { return nullptr; }
 static inline void profiler_get_backtrace_noalloc(char *output, size_t outputSize) { return; }
+
+
+inline void ProfilerBacktraceDestructor::operator()(ProfilerBacktrace* aBacktrace) {}
 
 static inline bool profiler_is_active() { return false; }
 
