@@ -13,7 +13,7 @@ use layers::geometry::DevicePixel;
 use layers::platform::surface::NativeDisplay;
 use msg::constellation_msg::{Key, KeyModifiers, KeyState};
 use net_traits::net_error_list::NetError;
-use script_traits::{MouseButton, TouchEventType, TouchId};
+use script_traits::{MouseButton, TouchpadPressurePhase, TouchEventType, TouchId};
 use std::fmt::{Debug, Error, Formatter};
 use style_traits::cursor::Cursor;
 use url::Url;
@@ -51,6 +51,8 @@ pub enum WindowEvent {
     
     Resize(TypedSize2D<DevicePixel, u32>),
     
+    TouchpadPressure(TypedPoint2D<DevicePixel, f32>, f32, TouchpadPressurePhase),
+    
     Viewport(TypedPoint2D<DevicePixel, u32>, TypedSize2D<DevicePixel, u32>),
     
     LoadUrl(String),
@@ -84,6 +86,7 @@ impl Debug for WindowEvent {
             WindowEvent::Refresh => write!(f, "Refresh"),
             WindowEvent::InitializeCompositing => write!(f, "InitializeCompositing"),
             WindowEvent::Resize(..) => write!(f, "Resize"),
+            WindowEvent::TouchpadPressure(..) => write!(f, "TouchpadPressure"),
             WindowEvent::Viewport(..) => write!(f, "Viewport"),
             WindowEvent::KeyEvent(..) => write!(f, "Key"),
             WindowEvent::LoadUrl(..) => write!(f, "LoadUrl"),

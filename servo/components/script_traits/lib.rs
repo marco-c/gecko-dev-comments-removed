@@ -228,7 +228,20 @@ pub enum CompositorEvent {
     
     TouchEvent(TouchEventType, TouchId, Point2D<f32>),
     
+    TouchpadPressureEvent(Point2D<f32>, f32, TouchpadPressurePhase),
+    
     KeyEvent(Key, KeyState, KeyModifiers),
+}
+
+
+#[derive(Copy, Clone, HeapSizeOf, PartialEq, Deserialize, Serialize)]
+pub enum TouchpadPressurePhase {
+    
+    BeforeClick,
+    
+    AfterFirstClick,
+    
+    AfterSecondClick,
 }
 
 
