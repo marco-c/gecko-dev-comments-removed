@@ -61,32 +61,13 @@ loader.lazyRequireGetter(this, "KeyShortcuts",
 loader.lazyRequireGetter(this, "ZoomKeys",
   "devtools/client/shared/zoom-keys");
 loader.lazyRequireGetter(this, "settleAll",
-  "devtools/shared/ThreadSafeDevToolsUtils", "settleAll");
+  "devtools/shared/ThreadSafeDevToolsUtils", true);
+loader.lazyRequireGetter(this, "ToolboxButtons",
+  "devtools/client/definitions", true);
 
 loader.lazyGetter(this, "registerHarOverlay", () => {
   return require("devtools/client/netmonitor/har/toolbox-overlay").register;
 });
-
-
-
-
-const ToolboxButtons = exports.ToolboxButtons = [
-  { id: "command-button-frames",
-    isTargetSupported: target => {
-      return target.activeTab && target.activeTab.traits.frames;
-    }
-  },
-  { id: "command-button-splitconsole",
-    isTargetSupported: target => !target.isAddon },
-  { id: "command-button-responsive" },
-  { id: "command-button-paintflashing" },
-  { id: "command-button-scratchpad" },
-  { id: "command-button-screenshot" },
-  { id: "command-button-rulers" },
-  { id: "command-button-measure" },
-  { id: "command-button-noautohide",
-    isTargetSupported: target => target.chrome },
-];
 
 
 

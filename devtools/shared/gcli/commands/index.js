@@ -82,10 +82,10 @@ exports.devtoolsModules = [
 
 
 try {
-  const defaultTools = require("devtools/client/definitions").defaultTools;
+  const { defaultTools } = require("devtools/client/definitions");
   exports.devtoolsToolModules = defaultTools.map(def => def.commands || [])
                                    .reduce((prev, curr) => prev.concat(curr), []);
-} catch(e) {
+} catch (e) {
   
   exports.devtoolsToolModules = [];
 }
@@ -96,10 +96,10 @@ try {
 
 
 try {
-  const { ToolboxButtons } = require("devtools/client/framework/toolbox");
+  const { ToolboxButtons } = require("devtools/client/definitions");
   exports.devtoolsButtonModules = ToolboxButtons.map(def => def.commands || [])
                                      .reduce((prev, curr) => prev.concat(curr), []);
-} catch(e) {
+} catch (e) {
   
   exports.devtoolsButtonModules = [];
 }
