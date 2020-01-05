@@ -895,10 +895,14 @@ Module::instantiate(JSContext* cx,
     
     
     
+    
 
     const ShareableBytes* maybeBytecode = nullptr;
-    if (cx->compartment()->isDebuggee() || !metadata_->funcNames.empty())
+    if (cx->compartment()->isDebuggee() || metadata_->debugEnabled ||
+        !metadata_->funcNames.empty())
+    {
         maybeBytecode = bytecode_.get();
+    }
 
     auto codeSegment = CodeSegment::create(cx, code_, linkData_, *metadata_, memory);
     if (!codeSegment)
