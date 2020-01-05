@@ -28,6 +28,11 @@ fn main() {
     let ndk_path = Path::new(&ndk_path);
 
     
+    let android_platform = env::var("ANDROID_PLATFORM")
+        .ok()
+        .expect("Please set the ANDROID_PLATFORM environment variable")
+
+    
     
     
 
@@ -97,7 +102,7 @@ fn main() {
                                   .arg("--name")
                                   .arg("Servo")
                                   .arg("--target")
-                                  .arg("android-18")
+                                  .arg(&android_platform)
                                   .arg("--path")
                                   .arg(".")
                                   .stdout(Stdio::inherit())
