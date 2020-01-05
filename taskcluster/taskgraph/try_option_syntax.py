@@ -31,7 +31,6 @@ BUILD_KINDS = set([
     'valgrind',
     'static-analysis',
     'spidermonkey',
-    'b2g-device',
 ])
 
 
