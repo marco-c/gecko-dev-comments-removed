@@ -1220,11 +1220,9 @@ class GatherDecls(TcheckVisitor):
 
     def _canonicalType(self, itype, typespec, chmodallowed=0):
         loc = typespec.loc
-        
         if itype.isIPDL():
             if itype.isProtocol():
                 itype = ActorType(itype,
-                                  state=typespec.state,
                                   nullable=typespec.nullable)
             
             if 0 and chmodallowed and itype.isShmem():
