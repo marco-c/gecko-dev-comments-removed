@@ -46,6 +46,7 @@ const {
   getMessageManager,
   getUniqueId,
   injectAPI,
+  promiseEvent,
 } = ExtensionUtils;
 
 const {
@@ -862,16 +863,14 @@ class ContentGlobal {
     this.tabId = -1;
     this.windowId = -1;
     this.initialized = false;
+
     this.global.addMessageListener("Extension:InitExtensionView", this);
     this.global.addMessageListener("Extension:SetTabAndWindowId", this);
-
-    this.initialDocuments = new WeakSet();
   }
 
   uninit() {
     this.global.removeMessageListener("Extension:InitExtensionView", this);
     this.global.removeMessageListener("Extension:SetTabAndWindowId", this);
-    this.global.removeEventListener("DOMContentLoaded", this);
   }
 
   ensureInitialized() {
@@ -889,17 +888,12 @@ class ContentGlobal {
       case "Extension:InitExtensionView":
         
         this.global.removeMessageListener("Extension:InitExtensionView", this);
-        let {viewType, url} = data;
-        this.viewType = viewType;
-        this.global.addEventListener("DOMContentLoaded", this);
-        if (url) {
-          
-          
-          
-          let {document} = this.global.content;
-          this.initialDocuments.add(document);
-          document.location.replace(url);
-        }
+        this.viewType = data.viewType;
+
+        promiseEvent(this.global, "DOMContentLoaded", true).then(() => {
+          this.global.sendAsyncMessage("Extension:ExtensionViewLoaded");
+        });
+
         
       case "Extension:SetTabAndWindowId":
         this.handleSetTabAndWindowId(data);
@@ -909,6 +903,7 @@ class ContentGlobal {
 
   handleSetTabAndWindowId(data) {
     let {tabId, windowId} = data;
+
     if (tabId) {
       
       if (this.tabId !== -1 && tabId !== this.tabId) {
@@ -916,6 +911,7 @@ class ContentGlobal {
       }
       this.tabId = tabId;
     }
+
     if (windowId !== undefined) {
       
       
@@ -923,21 +919,6 @@ class ContentGlobal {
       this.windowId = windowId;
     }
     this.initialized = true;
-  }
-
-  
-  handleEvent(event) {
-    let {document} = this.global.content;
-    if (event.target === document) {
-      
-      
-      if (this.initialDocuments.has(document)) {
-        this.initialDocuments.delete(document);
-        return;
-      }
-      this.global.removeEventListener("DOMContentLoaded", this);
-      this.global.sendAsyncMessage("Extension:ExtensionViewLoaded");
-    }
   }
 }
 

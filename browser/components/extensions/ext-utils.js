@@ -225,6 +225,7 @@ class BasePopup {
     this.browser.setAttribute("disableglobalhistory", "true");
     this.browser.setAttribute("transparent", "true");
     this.browser.setAttribute("class", "webextension-popup-browser");
+    this.browser.setAttribute("webextension-view-type", "popup");
     this.browser.setAttribute("tooltip", "aHTMLTooltip");
 
     
@@ -240,14 +241,6 @@ class BasePopup {
     viewNode.appendChild(this.browser);
 
     extensions.emit("extension-browser-inserted", this.browser);
-    let windowId = WindowManager.getId(this.browser.ownerGlobal);
-    this.browser.messageManager.sendAsyncMessage("Extension:InitExtensionView", {
-      viewType: "popup",
-      windowId,
-    });
-    
-    
-    
 
     let initBrowser = browser => {
       let mm = browser.messageManager;
@@ -279,7 +272,7 @@ class BasePopup {
         stylesheets: this.STYLESHEETS,
       });
 
-      this.browser.setAttribute("src", popupURL);
+      this.browser.loadURI(popupURL);
     });
   }
 
