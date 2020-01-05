@@ -2,8 +2,8 @@
 
 
 
+use dom::bindings::str::DOMString;
 use util::opts;
-use util::str::DOMString;
 
 pub fn Product() -> DOMString {
     DOMString::from("Gecko")

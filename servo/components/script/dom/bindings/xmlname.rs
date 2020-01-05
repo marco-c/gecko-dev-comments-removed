@@ -5,8 +5,8 @@
 
 
 use dom::bindings::error::{Error, ErrorResult, Fallible};
+use dom::bindings::str::DOMString;
 use string_cache::{Atom, Namespace};
-use util::str::DOMString;
 
 
 pub fn validate_qualified_name(qualified_name: &str) -> ErrorResult {
