@@ -44,6 +44,7 @@
 #include "vm/Interpreter.h"
 #include "vm/RegExpObject.h"
 #include "vm/String.h"
+#include "vm/StringBuffer.h"
 #include "vm/TypedArrayCommon.h"
 #include "vm/WrapperObject.h"
 
@@ -478,21 +479,22 @@ intrinsic_MakeDefaultConstructor(JSContext* cx, unsigned argc, Value* vp)
 
 
 
-
-
 static bool
 intrinsic_FinishBoundFunctionInit(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    MOZ_ASSERT(args.length() == 4);
+    MOZ_ASSERT(args.length() == 3);
     MOZ_ASSERT(IsCallable(args[1]));
     MOZ_ASSERT(args[2].isNumber());
-    MOZ_ASSERT(args[3].isString());
 
     RootedFunction bound(cx, &args[0].toObject().as<JSFunction>());
     bound->setIsBoundFunction();
     RootedObject targetObj(cx, &args[1].toObject());
     MOZ_ASSERT(bound->getBoundFunctionTarget() == targetObj);
+
+    
+
+    
     if (targetObj->isConstructor())
         bound->setIsConstructor();
 
@@ -501,19 +503,79 @@ intrinsic_FinishBoundFunctionInit(JSContext* cx, unsigned argc, Value* vp)
     if (!GetPrototype(cx, targetObj, &proto))
         return false;
 
+    
     if (bound->staticPrototype() != proto) {
         if (!SetPrototype(cx, bound, proto))
             return false;
     }
 
-    bound->setExtendedSlot(BOUND_FUN_LENGTH_SLOT, args[2]);
-    MOZ_ASSERT(!bound->hasGuessedAtom());
+    double argCount = args[2].toNumber();
+    double length = 0.0;
 
     
-    RootedAtom name(cx, AtomizeString(cx, args[3].toString()));
-    if (!name)
-        return false;
-    bound->setAtom(name);
+    if (targetObj->is<JSFunction>() && !targetObj->as<JSFunction>().hasResolvedLength()) {
+        RootedValue targetLength(cx);
+        if (!targetObj->as<JSFunction>().getUnresolvedLength(cx, &targetLength))
+            return false;
+
+        length = Max(0.0, targetLength.toNumber() - argCount);
+    } else {
+        
+        bool hasLength;
+        RootedId idRoot(cx, NameToId(cx->names().length));
+        if (!HasOwnProperty(cx, targetObj, idRoot, &hasLength))
+            return false;
+
+        
+        if (hasLength) {
+            RootedValue targetLength(cx);
+            if (!GetProperty(cx, targetObj, targetObj, idRoot, &targetLength))
+                return false;
+
+            if (targetLength.isNumber())
+                length = Max(0.0, JS::ToInteger(targetLength.toNumber()) - argCount);
+        }
+
+        
+    }
+
+    
+    bound->setExtendedSlot(BOUND_FUN_LENGTH_SLOT, NumberValue(length));
+
+    
+    JSAtom* name = nullptr;
+    if (targetObj->is<JSFunction>() && !targetObj->as<JSFunction>().hasResolvedName())
+        name = targetObj->as<JSFunction>().getUnresolvedName(cx);
+
+    RootedString rootedName(cx);
+    if (name) {
+        rootedName = name;
+    } else {
+        
+        RootedValue targetName(cx);
+        if (!GetProperty(cx, targetObj, targetObj, cx->names().name, &targetName))
+            return false;
+
+        
+        if (targetName.isString())
+            rootedName = targetName.toString();
+    }
+
+    
+    MOZ_ASSERT(!bound->hasGuessedAtom());
+    if (rootedName && !rootedName->empty()) {
+        StringBuffer sb(cx);
+        if (!sb.append(cx->names().boundWithSpace) || !sb.append(rootedName))
+            return false;
+
+        RootedAtom nameAtom(cx, sb.finishAtom());
+        if (!nameAtom)
+            return false;
+
+        bound->setAtom(nameAtom);
+    } else {
+        bound->setAtom(cx->names().boundWithSpace);
+    }
 
     args.rval().setUndefined();
     return true;
@@ -2331,7 +2393,7 @@ static const JSFunctionSpec intrinsic_functions[] = {
     JS_FN("_ConstructorForTypedArray", intrinsic_ConstructorForTypedArray, 1,0),
     JS_FN("_NameForTypedArray",      intrinsic_NameForTypedArray, 1,0),
     JS_FN("DecompileArg",            intrinsic_DecompileArg,            2,0),
-    JS_FN("_FinishBoundFunctionInit", intrinsic_FinishBoundFunctionInit, 4,0),
+    JS_FN("_FinishBoundFunctionInit", intrinsic_FinishBoundFunctionInit, 3,0),
     JS_FN("RuntimeDefaultLocale",    intrinsic_RuntimeDefaultLocale,    0,0),
     JS_FN("LocalTZA",                intrinsic_LocalTZA,                0,0),
     JS_FN("AddContentTelemetry",     intrinsic_AddContentTelemetry,     2,0),

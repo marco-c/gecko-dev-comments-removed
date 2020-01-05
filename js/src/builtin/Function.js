@@ -29,37 +29,7 @@ function FunctionBind(thisArg, ...boundArgs) {
     }
 
     
-    var targetHasLength = callFunction(std_Object_hasOwnProperty, target, "length");
-
-    
-    var L;
-    if (targetHasLength) {
-        
-        var targetLen = target.length;
-        
-        if (typeof targetLen !== 'number') {
-            L = 0;
-        } else {
-            
-            L = std_Math_max(0, ToInteger(targetLen) - argCount);
-        }
-    } else {
-        
-        L = 0;
-    }
-
-    
-    var targetName = target.name;
-
-    
-    if (typeof targetName !== "string")
-        targetName = "";
-
-    
-    targetName = "bound " + targetName;
-
-    
-    _FinishBoundFunctionInit(F, target, L, targetName);
+    _FinishBoundFunctionInit(F, target, argCount);
 
     
     
