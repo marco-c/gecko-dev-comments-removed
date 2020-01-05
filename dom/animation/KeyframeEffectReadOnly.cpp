@@ -643,9 +643,10 @@ KeyframeEffectReadOnly::ConstructKeyframeEffect(const GlobalObject& aGlobal,
   
   
   
-  RefPtr<nsStyleContext> styleContext = effect->GetTargetStyleContext();
-  nsTArray<Keyframe> keyframes(aSource.mKeyframes);
-  effect->SetKeyframes(Move(keyframes), styleContext);
+  
+  
+  effect->mKeyframes = aSource.mKeyframes;
+  effect->mProperties = aSource.mProperties;
   return effect.forget();
 }
 

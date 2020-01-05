@@ -121,14 +121,16 @@ struct AnimationPropertySegment
   StyleAnimationValue mFromValue, mToValue;
   Maybe<ComputedTimingFunction> mTimingFunction;
 
-  bool operator==(const AnimationPropertySegment& aOther) const {
+  bool operator==(const AnimationPropertySegment& aOther) const
+  {
     return mFromKey == aOther.mFromKey &&
            mToKey == aOther.mToKey &&
            mFromValue == aOther.mFromValue &&
            mToValue == aOther.mToValue &&
            mTimingFunction == aOther.mTimingFunction;
   }
-  bool operator!=(const AnimationPropertySegment& aOther) const {
+  bool operator!=(const AnimationPropertySegment& aOther) const
+  {
     return !(*this == aOther);
   }
 };
@@ -154,15 +156,29 @@ struct AnimationProperty
 
   
   
+  AnimationProperty() = default;
+  AnimationProperty(const AnimationProperty& aOther)
+    : mProperty(aOther.mProperty), mSegments(aOther.mSegments) { }
+  AnimationProperty& operator=(const AnimationProperty& aOther)
+  {
+    mProperty = aOther.mProperty;
+    mSegments = aOther.mSegments;
+    return *this;
+  }
+
   
   
   
   
-  bool operator==(const AnimationProperty& aOther) const {
+  
+  
+  bool operator==(const AnimationProperty& aOther) const
+  {
     return mProperty == aOther.mProperty &&
            mSegments == aOther.mSegments;
   }
-  bool operator!=(const AnimationProperty& aOther) const {
+  bool operator!=(const AnimationProperty& aOther) const
+  {
     return !(*this == aOther);
   }
 };
