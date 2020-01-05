@@ -806,50 +806,7 @@ nsIContent::PreHandleEvent(EventChainPreVisitor& aVisitor)
 
   ShadowRoot* thisShadowRoot = ShadowRoot::FromNode(this);
   if (thisShadowRoot) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    bool stopEvent = false;
-    switch (aVisitor.mEvent->mMessage) {
-      case eImageAbort:
-      case eLoadError:
-      case eFormSelect:
-      case eFormChange:
-      case eLoad:
-      case eFormReset:
-      case eResize:
-      case eScroll:
-      case eSelectStart:
-        stopEvent = true;
-        break;
-      case eUnidentifiedEvent:
-        if (aVisitor.mDOMEvent) {
-          nsAutoString eventType;
-          aVisitor.mDOMEvent->GetType(eventType);
-          if (eventType.EqualsLiteral("abort") ||
-              eventType.EqualsLiteral("error") ||
-              eventType.EqualsLiteral("select") ||
-              eventType.EqualsLiteral("change") ||
-              eventType.EqualsLiteral("load") ||
-              eventType.EqualsLiteral("reset") ||
-              eventType.EqualsLiteral("resize") ||
-              eventType.EqualsLiteral("scroll")) {
-            stopEvent = true;
-          }
-        }
-        break;
-      default:
-        break;
-    }
-
-    if (stopEvent) {
+    if (!aVisitor.mEvent->mFlags.mComposed) {
       
       
       
