@@ -1,6 +1,13 @@
 
 
 
+
+
+
+
+
+
+
 if (!this.SharedArrayBuffer || !this.sharedArrayRawBufferCount) {
     reportCompare(true,true);
     quit(0);
