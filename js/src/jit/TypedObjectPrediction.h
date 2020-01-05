@@ -159,7 +159,7 @@ class TypedObjectPrediction {
     
     
     
-    bool hasKnownSize(int32_t* out) const;
+    bool hasKnownSize(uint32_t* out) const;
 
     
     

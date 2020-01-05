@@ -153,7 +153,7 @@ class LinearSum
 
     
     
-    MOZ_MUST_USE bool divide(int32_t scale);
+    MOZ_MUST_USE bool divide(uint32_t scale);
 
     int32_t constant() const { return constant_; }
     size_t numTerms() const { return terms_.length(); }
