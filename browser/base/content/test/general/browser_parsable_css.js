@@ -48,6 +48,14 @@ let whitelist = [
    isFromDevTools: false},
 ];
 
+if (!Services.prefs.getBoolPref("full-screen-api.unprefix.enabled")) {
+  whitelist.push({
+    sourceName: /res\/(ua|html)\.css$/i,
+    errorMessage: /Unknown pseudo-class .*\bfullscreen\b/i,
+    isFromDevTools: false
+  });
+}
+
 
 let allowedImageReferences = [
   
