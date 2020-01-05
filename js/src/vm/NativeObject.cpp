@@ -483,10 +483,7 @@ NativeObject::growSlotsDontReportOOM(JSContext* cx, NativeObject* obj, uint32_t 
 static void
 FreeSlots(JSContext* cx, HeapSlot* slots)
 {
-    
-    if (!cx->helperThread())
-        return cx->nursery().freeBuffer(slots);
-    js_free(slots);
+    return cx->nursery().freeBuffer(slots);
 }
 
 void

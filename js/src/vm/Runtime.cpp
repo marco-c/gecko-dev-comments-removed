@@ -133,7 +133,7 @@ JSRuntime::JSRuntime(JSRuntime* parentRuntime)
 #ifdef DEBUG
     activeThreadHasExclusiveAccess(false),
 #endif
-    numExclusiveThreads(0),
+    numHelperThreadZones(0),
     numCompartments(0),
     localeCallbacks(nullptr),
     defaultLocale(nullptr),
@@ -306,7 +306,7 @@ JSRuntime::destroyRuntime()
     MOZ_ASSERT(ionLazyLinkListSize_ == 0);
     MOZ_ASSERT(ionLazyLinkList().isEmpty());
 
-    MOZ_ASSERT(!numExclusiveThreads);
+    MOZ_ASSERT(!hasHelperThreadZones());
     AutoLockForExclusiveAccess lock(this);
 
     
@@ -752,20 +752,20 @@ JSRuntime::activeGCInAtomsZone()
 }
 
 void
-JSRuntime::setUsedByExclusiveThread(Zone* zone)
+JSRuntime::setUsedByHelperThread(Zone* zone)
 {
-    MOZ_ASSERT(!zone->usedByExclusiveThread);
+    MOZ_ASSERT(!zone->group()->usedByHelperThread);
     MOZ_ASSERT(!zone->wasGCStarted());
-    zone->usedByExclusiveThread = true;
-    numExclusiveThreads++;
+    zone->group()->usedByHelperThread = true;
+    numHelperThreadZones++;
 }
 
 void
-JSRuntime::clearUsedByExclusiveThread(Zone* zone)
+JSRuntime::clearUsedByHelperThread(Zone* zone)
 {
-    MOZ_ASSERT(zone->usedByExclusiveThread);
-    zone->usedByExclusiveThread = false;
-    numExclusiveThreads--;
+    MOZ_ASSERT(zone->group()->usedByHelperThread);
+    zone->group()->usedByHelperThread = false;
+    numHelperThreadZones--;
     if (gc.fullGCForAtomsRequested() && !TlsContext.get())
         gc.triggerFullGCForAtoms();
 }
@@ -783,9 +783,7 @@ js::CurrentThreadCanAccessZone(Zone* zone)
         return true;
 
     
-    
-    
-    return zone->usedByExclusiveThread;
+    return zone->usedByHelperThread() && zone->group()->ownedByCurrentThread();
 }
 
 #ifdef DEBUG

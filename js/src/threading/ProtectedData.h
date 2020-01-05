@@ -26,8 +26,9 @@ namespace js {
 
 
 
-
-
+#if defined(DEBUG) && !defined(ANDROID)
+#define JS_HAS_PROTECTED_DATA_CHECKS
+#endif
 
 #define DECLARE_ONE_BOOL_OPERATOR(OP, T)        \
     template <typename U>                       \
@@ -50,7 +51,7 @@ namespace js {
 class MOZ_RAII AutoNoteSingleThreadedRegion
 {
   public:
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
     static mozilla::Atomic<size_t> count;
     AutoNoteSingleThreadedRegion() { count++; }
     ~AutoNoteSingleThreadedRegion() { count--; }
@@ -70,7 +71,7 @@ class ProtectedData
     template <typename... Args>
     explicit ProtectedData(const Check& check, Args&&... args)
       : value(mozilla::Forward<Args>(args)...)
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
       , check(check)
 #endif
     {}
@@ -95,7 +96,7 @@ class ProtectedData
     T operator --(int) { return ref()--; }
 
     T& ref() {
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
         if (!AutoNoteSingleThreadedRegion::count)
             check.check();
 #endif
@@ -103,7 +104,7 @@ class ProtectedData
     }
 
     const T& ref() const {
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
         if (!AutoNoteSingleThreadedRegion::count)
             check.check();
 #endif
@@ -115,7 +116,7 @@ class ProtectedData
 
   private:
     T value;
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
     Check check;
 #endif
 };
@@ -156,7 +157,7 @@ class ProtectedDataZoneGroupArg : public ProtectedData<Check, T>
 
 class CheckUnprotected
 {
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
   public:
     inline void check() const {}
 #endif
@@ -170,7 +171,7 @@ using UnprotectedData = ProtectedDataNoCheckArgs<CheckUnprotected, T>;
 
 class CheckThreadLocal
 {
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
     Thread::Id id;
 
   public:
@@ -179,10 +180,7 @@ class CheckThreadLocal
     {}
 
     inline void check() const {
-        
-        
-        
-        
+        MOZ_ASSERT(id == ThisThread::GetId());
     }
 #endif
 };
@@ -226,7 +224,7 @@ using ActiveThreadOrIonCompileData =
 template <AllowedHelperThread Helper>
 class CheckZoneGroup
 {
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
     ZoneGroup* group;
 
   public:
@@ -237,6 +235,7 @@ class CheckZoneGroup
     explicit CheckZoneGroup(ZoneGroup* group) {}
 #endif
 };
+
 
 
 
@@ -267,7 +266,7 @@ enum class GlobalLock
 template <GlobalLock Lock, AllowedHelperThread Helper>
 class CheckGlobalLock
 {
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
   public:
     void check() const;
 #endif
@@ -310,7 +309,7 @@ class ProtectedDataWriteOnce
     template <typename... Args>
     explicit ProtectedDataWriteOnce(Args&&... args)
       : value(mozilla::Forward<Args>(args)...)
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
       , nwrites(0)
 #endif
     {}
@@ -330,7 +329,7 @@ class ProtectedDataWriteOnce
     const T& ref() const { return value; }
 
     T& writeRef() {
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
         if (!AutoNoteSingleThreadedRegion::count)
             check.check();
         
@@ -342,7 +341,7 @@ class ProtectedDataWriteOnce
 
   private:
     T value;
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
     Check check;
     size_t nwrites;
 #endif

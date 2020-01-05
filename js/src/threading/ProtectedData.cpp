@@ -13,7 +13,7 @@
 
 namespace js {
 
-#ifdef DEBUG
+#ifdef JS_HAS_PROTECTED_DATA_CHECKS
 
  mozilla::Atomic<size_t> AutoNoteSingleThreadedRegion::count(0);
 
@@ -47,7 +47,7 @@ CheckActiveThread<Helper>::check() const
         return;
 
     JSContext* cx = TlsContext.get();
-    MOZ_ASSERT(cx == cx->runtime()->activeContext());
+    MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
 #endif 
 }
 
@@ -63,10 +63,22 @@ CheckZoneGroup<Helper>::check() const
         return;
 
     if (group) {
-        
-        
-        
-        
+        if (group->usedByHelperThread) {
+            MOZ_ASSERT(group->ownedByCurrentThread());
+        } else {
+            
+            
+#ifndef XP_WIN
+            
+            
+            
+            
+            
+            
+            JSContext* cx = TlsContext.get();
+            MOZ_ASSERT(CurrentThreadCanAccessRuntime(cx->runtime()));
+#endif
+        }
     } else {
         
         

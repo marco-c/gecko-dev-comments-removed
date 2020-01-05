@@ -1487,8 +1487,10 @@ ArrayBufferViewObject::trace(JSTracer* trc, JSObject* objArg)
                 
                 
                 
-                Nursery& nursery = obj->zoneFromAnyThread()->group()->nursery();
-                nursery.maybeSetForwardingPointer(trc, srcData, dstData,  false);
+                if (trc->isTenuringTracer()) {
+                    Nursery& nursery = obj->zoneFromAnyThread()->group()->nursery();
+                    nursery.maybeSetForwardingPointer(trc, srcData, dstData,  false);
+                }
             } else {
                 MOZ_ASSERT_IF(buf.dataPointer() == nullptr, offset == 0);
 
