@@ -406,14 +406,13 @@ class Param(Node):
         self.typespec = typespec
 
 class TypeSpec(Node):
-    def __init__(self, loc, spec, array=0, nullable=0,
-                 myChmod=None, otherChmod=None):
+    def __init__(self, loc, spec):
         Node.__init__(self, loc)
         self.spec = spec                
-        self.array = array              
-        self.nullable = nullable        
-        self.myChmod = myChmod          
-        self.otherChmod = otherChmod    
+        self.array = 0                  
+        self.nullable = 0               
+        self.myChmod = None             
+        self.otherChmod = None          
 
     def basename(self):
         return self.spec.baseid
