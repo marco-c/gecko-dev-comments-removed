@@ -16,7 +16,6 @@
 
 
 
-#![feature(thread_local)]
 
 extern crate compositing;
 extern crate devtools;

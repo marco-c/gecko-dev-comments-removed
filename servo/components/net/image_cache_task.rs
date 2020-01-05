@@ -2,11 +2,11 @@
 
 
 
-use collections::borrow::ToOwned;
 use net_traits::image::base::{Image, load_from_memory};
 use net_traits::image_cache_task::{ImageState, ImageCacheTask, ImageCacheChan, ImageCacheCommand};
 use net_traits::image_cache_task::{ImageCacheResult, ImageResponse, UsePlaceholder};
 use net_traits::load_whole_resource;
+use std::borrow::ToOwned;
 use std::collections::HashMap;
 use std::collections::hash_map::Entry::{Occupied, Vacant};
 use std::mem;
