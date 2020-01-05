@@ -2,10 +2,12 @@
 
 
 
-use constellation_msg::PipelineId;
+#![allow(missing_docs)]
+
 use cookie_rs::Cookie;
 use euclid::rect::Rect;
 use ipc_channel::ipc::IpcSender;
+use msg::constellation_msg::PipelineId;
 use rustc_serialize::json::{Json, ToJson};
 use url::Url;
 

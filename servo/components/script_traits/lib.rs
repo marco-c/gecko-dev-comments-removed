@@ -13,16 +13,19 @@
 
 extern crate app_units;
 extern crate canvas_traits;
+extern crate cookie as cookie_rs;
 extern crate devtools_traits;
 extern crate euclid;
 extern crate gfx_traits;
 extern crate heapsize;
 extern crate ipc_channel;
+extern crate layers;
 extern crate libc;
 extern crate msg;
 extern crate net_traits;
 extern crate offscreen_gl_context;
 extern crate profile_traits;
+extern crate rustc_serialize;
 extern crate serde;
 extern crate style_traits;
 extern crate time;
@@ -30,6 +33,7 @@ extern crate url;
 extern crate util;
 
 mod script_msg;
+pub mod webdriver_msg;
 
 use app_units::Au;
 use devtools_traits::ScriptToDevtoolsControlMsg;
@@ -37,17 +41,18 @@ use euclid::Size2D;
 use euclid::length::Length;
 use euclid::point::Point2D;
 use euclid::rect::Rect;
+use euclid::scale_factor::ScaleFactor;
+use euclid::size::TypedSize2D;
 use gfx_traits::Epoch;
 use gfx_traits::LayerId;
 use gfx_traits::StackingContextId;
 use heapsize::HeapSizeOf;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
+use layers::geometry::DevicePixel;
 use libc::c_void;
-use msg::constellation_msg::{FrameId, FrameType, Key, KeyModifiers, KeyState, LoadData};
+use msg::constellation_msg::{FrameId, FrameType, Image, Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{NavigationDirection, PanicMsg, PipelineId};
-use msg::constellation_msg::{PipelineNamespaceId, SubpageId, WindowSizeData};
-use msg::constellation_msg::{WebDriverCommandMsg, WindowSizeType};
-use msg::webdriver_msg::WebDriverScriptCommand;
+use msg::constellation_msg::{PipelineNamespaceId, SubpageId, WindowSizeType};
 use net_traits::ResourceThreads;
 use net_traits::bluetooth_thread::BluetoothMethodMsg;
 use net_traits::image_cache_thread::ImageCacheThread;
@@ -57,7 +62,9 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::collections::HashMap;
 use std::sync::mpsc::{Sender, Receiver};
 use url::Url;
+use util::geometry::{PagePx, ViewportPx};
 use util::ipc::OptionalOpaqueIpcSender;
+use webdriver_msg::{LoadStatus, WebDriverScriptCommand};
 
 pub use script_msg::{LayoutMsg, ScriptMsg, EventResult};
 
@@ -520,6 +527,41 @@ pub struct StackingContextScrollState {
     pub stacking_context_id: StackingContextId,
     
     pub scroll_offset: Point2D<f32>,
+}
+
+
+#[derive(Copy, Clone, Deserialize, Serialize, HeapSizeOf)]
+pub struct WindowSizeData {
+    
+    
+    pub initial_viewport: TypedSize2D<ViewportPx, f32>,
+
+    
+    pub visible_viewport: TypedSize2D<PagePx, f32>,
+
+    
+    pub device_pixel_ratio: ScaleFactor<ViewportPx, DevicePixel, f32>,
+}
+
+
+#[derive(Deserialize, Serialize)]
+pub enum WebDriverCommandMsg {
+    
+    GetWindowSize(PipelineId, IpcSender<WindowSizeData>),
+    
+    LoadUrl(PipelineId, LoadData, IpcSender<LoadStatus>),
+    
+    Refresh(PipelineId, IpcSender<LoadStatus>),
+    
+    
+    ScriptCommand(PipelineId, WebDriverScriptCommand),
+    
+    SendKeys(PipelineId, Vec<(Key, KeyModifiers, KeyState)>),
+    
+    SetWindowSize(PipelineId, Size2D<u32>, IpcSender<WindowSizeData>),
+    
+    
+    TakeScreenshot(PipelineId, IpcSender<Option<Image>>),
 }
 
 
