@@ -515,7 +515,7 @@ D3D9DXVA2Manager::CreateDXVA2Decoder(const VideoInfo& aVideoInfo,
   desc.Format = (D3DFORMAT)MAKEFOURCC('N','V','1','2');
 
   
-  float framerate = 1000000.0 / aVideoInfo.mDuration;
+  float framerate = 1000000.0 / aVideoInfo.mDuration.ToMicroseconds();
   if (IsUnsupportedResolution(desc.SampleWidth, desc.SampleHeight, framerate)) {
     return false;
   }
@@ -739,7 +739,7 @@ D3D11DXVA2Manager::InitInternal(layers::KnowsCompositor* aKnowsCompositor,
   HRESULT hr;
 
   mDevice = aDevice;
-  
+
   if (!mDevice) {
     mDevice = gfx::DeviceManagerDx::Get()->CreateDecoderDevice();
     if (!mDevice) {
@@ -1102,7 +1102,7 @@ D3D11DXVA2Manager::CreateDXVA2Decoder(const VideoInfo& aVideoInfo,
   desc.SampleHeight = aVideoInfo.mImage.height;
 
   
-  float framerate = 1000000.0 / aVideoInfo.mDuration;
+  float framerate = 1000000.0 / aVideoInfo.mDuration.ToMicroseconds();
   if (IsUnsupportedResolution(desc.SampleWidth, desc.SampleHeight, framerate)) {
     return false;
   }
