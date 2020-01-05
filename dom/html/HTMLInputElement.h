@@ -1650,6 +1650,69 @@ private:
            aType == NS_FORM_INPUT_TIME;
   }
 
+  
+
+
+
+  static bool
+  IsDateTimeTypeSupported(uint8_t aDateTimeInputType);
+
+  
+
+
+
+  static bool
+  IsWebkitDirPickerEnabled();
+
+  
+
+
+
+  static bool
+  IsWebkitFileSystemEnabled();
+
+  
+
+
+
+  static bool
+  IsDirPickerEnabled();
+
+  
+
+
+
+  static bool
+  IsDatePickerEnabled();
+
+  
+
+
+
+  static bool
+  IsExperimentalFormsEnabled();
+
+  
+
+
+
+  static bool
+  IsInputDateTimeEnabled();
+
+  
+
+
+
+  static bool
+  IsInputNumberEnabled();
+
+  
+
+
+
+  static bool
+  IsInputColorEnabled();
+
   struct nsFilePickerFilter {
     nsFilePickerFilter()
       : mFilterMask(0) {}
