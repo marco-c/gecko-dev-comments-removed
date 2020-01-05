@@ -36,7 +36,7 @@ use dom::documentfragment::DocumentFragment;
 use dom::documenttype::DocumentType;
 use dom::domimplementation::DOMImplementation;
 use dom::element::{Element, ElementCreator, AttributeHandlers};
-use dom::element::{ElementTypeId, ActivationElementHelpers};
+use dom::element::{ElementTypeId, ActivationElementHelpers, FocusElementHelpers};
 use dom::event::{Event, EventBubbles, EventCancelable, EventHelpers};
 use dom::eventtarget::{EventTarget, EventTargetTypeId, EventTargetHelpers};
 use dom::htmlanchorelement::HTMLAnchorElement;
@@ -448,7 +448,9 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
 
     
     fn request_focus(self, elem: JSRef<Element>) {
-        self.possibly_focused.assign(Some(elem))
+        if elem.is_focusable_area() {
+            self.possibly_focused.assign(Some(elem))
+        }
     }
 
     
