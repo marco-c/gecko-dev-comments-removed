@@ -80,6 +80,16 @@ var ContentPolicy = {
 
   shouldLoad(policyType, contentLocation, requestOrigin,
              node, mimeTypeGuess, extra, requestPrincipal) {
+
+    
+    
+    
+    if (extra instanceof Ci.nsISupportsString) {
+      if (extra.data === "conPolCheckFromDocShell") {
+        return Ci.nsIContentPolicy.ACCEPT;
+      }
+    }
+
     if (requestPrincipal &&
         Services.scriptSecurityManager.isSystemPrincipal(requestPrincipal)) {
       return Ci.nsIContentPolicy.ACCEPT;
