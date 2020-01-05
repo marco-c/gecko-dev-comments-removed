@@ -641,21 +641,10 @@ private:
   RefPtr<CDMProxyPromise> mCDMProxyPromise;
 
 protected:
-  
-  
-  
-  
-  
-  
-  
-  
-  void AsyncResolveSeekDOMPromiseIfExists();
-  void AsyncRejectSeekDOMPromiseIfExists();
   void DiscardOngoingSeekIfExists();
   virtual void CallSeek(const SeekTarget& aTarget, dom::Promise* aPromise);
 
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
-  RefPtr<dom::Promise> mSeekDOMPromise;
 
   
   

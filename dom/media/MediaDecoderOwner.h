@@ -173,6 +173,12 @@ public:
 
   
   virtual already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() = 0;
+
+  
+  virtual void AsyncResolveSeekDOMPromiseIfExists() = 0;
+
+  
+  virtual void AsyncRejectSeekDOMPromiseIfExists() = 0;
 };
 
 } 

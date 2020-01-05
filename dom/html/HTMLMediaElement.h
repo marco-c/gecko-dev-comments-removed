@@ -782,6 +782,17 @@ public:
 
   already_AddRefed<GMPCrashHelper> CreateGMPCrashHelper() override;
 
+  
+  
+  
+  
+  
+  
+  
+  
+  void AsyncResolveSeekDOMPromiseIfExists() override;
+  void AsyncRejectSeekDOMPromiseIfExists() override;
+
 protected:
   virtual ~HTMLMediaElement();
 
@@ -1764,6 +1775,11 @@ private:
   
   
   nsTArray<nsResolveOrRejectPendingPlayPromisesRunner*> mPendingPlayPromisesRunners;
+
+  
+  
+  
+  RefPtr<dom::Promise> mSeekDOMPromise;
 };
 
 
