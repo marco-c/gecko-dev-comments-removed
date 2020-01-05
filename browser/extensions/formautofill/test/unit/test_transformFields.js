@@ -21,6 +21,22 @@ const COMPUTE_TESTCASES = [
 
   
   {
+    description: "Has split names",
+    profile: {
+      "given-name": "Timothy",
+      "additional-name": "John",
+      "family-name": "Berners-Lee",
+    },
+    expectedResult: {
+      "given-name": "Timothy",
+      "additional-name": "John",
+      "family-name": "Berners-Lee",
+      "name": "Timothy John Berners-Lee",
+    },
+  },
+
+  
+  {
     description: "\"street-address\" with single line",
     profile: {
       "street-address": "single line",
@@ -77,6 +93,45 @@ const NORMALIZE_TESTCASES = [
     expectedResult: {
     },
   },
+
+  
+  {
+    description: "Has \"name\", and the split names are omitted",
+    profile: {
+      "name": "Timothy John Berners-Lee",
+    },
+    expectedResult: {
+      "given-name": "Timothy",
+      "additional-name": "John",
+      "family-name": "Berners-Lee",
+    },
+  },
+  {
+    description: "Has both \"name\" and split names",
+    profile: {
+      "name": "John Doe",
+      "given-name": "Timothy",
+      "additional-name": "John",
+      "family-name": "Berners-Lee",
+    },
+    expectedResult: {
+      "given-name": "Timothy",
+      "additional-name": "John",
+      "family-name": "Berners-Lee",
+    },
+  },
+  {
+    description: "Has \"name\", and some of split names are omitted",
+    profile: {
+      "name": "John Doe",
+      "given-name": "Timothy",
+    },
+    expectedResult: {
+      "given-name": "Timothy",
+      "family-name": "Doe",
+    },
+  },
+
 
   
   {

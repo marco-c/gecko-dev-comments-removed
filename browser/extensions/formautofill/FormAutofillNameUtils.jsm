@@ -126,6 +126,10 @@ var FormAutofillNameUtils = {
     
     
 
+    if (!name) {
+      return false;
+    }
+
     let previousWasCJK = false;
     let wordCount = 0;
 

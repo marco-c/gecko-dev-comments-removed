@@ -100,15 +100,6 @@ ProfileAutoCompleteResult.prototype = {
     focusedFieldName = possibleNameFields.includes(focusedFieldName) ?
                        "name" : focusedFieldName;
 
-    
-    let clonedProfile = Object.assign({}, profile);
-    if (!clonedProfile.name) {
-      clonedProfile.name =
-        FormAutofillUtils.generateFullName(clonedProfile["given-name"],
-                                           clonedProfile["family-name"],
-                                           clonedProfile["additional-name"]);
-    }
-
     const secondaryLabelOrder = [
       "street-address",  
       "name",            
@@ -123,7 +114,7 @@ ProfileAutoCompleteResult.prototype = {
 
     for (const currentFieldName of secondaryLabelOrder) {
       if (focusedFieldName == currentFieldName ||
-          !clonedProfile[currentFieldName]) {
+          !profile[currentFieldName]) {
         continue;
       }
 
@@ -135,7 +126,7 @@ ProfileAutoCompleteResult.prototype = {
       }
 
       if (matching) {
-        return clonedProfile[currentFieldName];
+        return profile[currentFieldName];
       }
     }
 
