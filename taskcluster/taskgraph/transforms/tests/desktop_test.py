@@ -97,7 +97,7 @@ def allow_software_gl_layers(config, tests):
 
         
         
-        allow = not test['test-platform'].startswith('win') \
+        allow = test['test-platform'].startswith('linux') \
             and get_keyed_by(item=test, field='allow-software-gl-layers',
                              item_name=test['test-name'])
         if allow:
