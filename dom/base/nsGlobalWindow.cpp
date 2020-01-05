@@ -1215,7 +1215,6 @@ nsGlobalWindow::nsGlobalWindow(nsGlobalWindow *aOuterWindow)
     mHasSeenGamepadInput(false),
     mNotifiedIDDestroyed(false),
     mAllowScriptsToClose(false),
-    mTopLevelOuterContentWindow(false),
     mSuspendDepth(0),
     mFreezeDepth(0),
     mFocusMethod(0),
@@ -2909,7 +2908,7 @@ nsGlobalWindow::SetNewDocument(nsIDocument* aDocument,
     newInnerWindow->mChromeEventHandler = mChromeEventHandler;
   }
 
-  nsJSContext::PokeGC(JS::gcreason::SET_NEW_DOCUMENT, GetWrapperPreserveColor());
+  nsJSContext::PokeGC(JS::gcreason::SET_NEW_DOCUMENT);
   kungFuDeathGrip->DidInitializeContext();
 
   
@@ -3056,9 +3055,6 @@ nsGlobalWindow::SetDocShell(nsIDocShell* aDocShell)
   nsCOMPtr<nsPIDOMWindowOuter> parentWindow = GetScriptableParentOrNull();
   MOZ_RELEASE_ASSERT(!parentWindow || !mTabGroup || mTabGroup == Cast(parentWindow)->mTabGroup);
 
-  mTopLevelOuterContentWindow =
-    !mIsChrome && GetScriptableTopInternal() == this;
-
   NS_ASSERTION(!mNavigator, "Non-null mNavigator in outer window!");
 
   if (mFrames) {
@@ -3138,12 +3134,7 @@ nsGlobalWindow::DetachFromDocShell()
   mChromeEventHandler = nullptr; 
 
   if (mContext) {
-    
-    
-    
-    nsJSContext::PokeGC(JS::gcreason::SET_DOC_SHELL,
-                        (mTopLevelOuterContentWindow || mIsChrome) ?
-                          nullptr : GetWrapperPreserveColor());
+    nsJSContext::PokeGC(JS::gcreason::SET_DOC_SHELL);
     mContext = nullptr;
   }
 

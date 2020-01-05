@@ -1851,8 +1851,6 @@ protected:
   
   bool                   mAllowScriptsToClose : 1;
 
-  bool mTopLevelOuterContentWindow : 1;
-
   nsCOMPtr<nsIScriptContext>    mContext;
   nsWeakPtr                     mOpener;
   nsCOMPtr<nsIControllers>      mControllers;
