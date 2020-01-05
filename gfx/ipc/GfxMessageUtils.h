@@ -23,7 +23,6 @@
 #include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/CompositorTypes.h"
 #include "mozilla/layers/GeckoContentController.h"
-#include "mozilla/layers/LayerAttributes.h"
 #include "mozilla/layers/LayersTypes.h"
 #include "nsRect.h"
 #include "nsRegion.h"
@@ -715,19 +714,6 @@ struct ParamTraits<mozilla::layers::LayerHandle>
   }
 };
 
-template<>
-struct ParamTraits<mozilla::layers::CompositableHandle>
-{
-  typedef mozilla::layers::CompositableHandle paramType;
-
-  static void Write(Message* msg, const paramType& param) {
-    WriteParam(msg, param.mHandle);
-  }
-  static bool Read(const Message* msg, PickleIterator* iter, paramType* result) {
-    return ReadParam(msg, iter, &result->mHandle);
-  }
-};
-
 
 
 template <typename ParamType>
@@ -1340,24 +1326,12 @@ struct ParamTraits<mozilla::layers::CompositorOptions>
 
   static void Write(Message* aMsg, const paramType& aParam) {
     WriteParam(aMsg, aParam.mUseAPZ);
+    WriteParam(aMsg, aParam.mUseWebRender);
   }
 
   static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult) {
-    return ReadParam(aMsg, aIter, &aResult->mUseAPZ);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::layers::SimpleLayerAttributes>
-{
-  typedef mozilla::layers::SimpleLayerAttributes paramType;
-
-  static void Write(Message* aMsg, const paramType& aParam) {
-    aMsg->WriteBytes(&aParam, sizeof(aParam));
-  }
-
-  static bool Read(const Message* aMsg, PickleIterator* aIter, paramType* aResult) {
-    return aMsg->ReadBytesInto(aIter, aResult, sizeof(paramType));
+    return ReadParam(aMsg, aIter, &aResult->mUseAPZ)
+        && ReadParam(aMsg, aIter, &aResult->mUseWebRender);
   }
 };
 
