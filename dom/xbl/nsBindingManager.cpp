@@ -675,7 +675,6 @@ nsBindingManager::WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
   do {
     nsXBLBinding *binding = content->GetXBLBinding();
     if (binding) {
-      aData->mTreeMatchContext.mScopedRoot = content;
       binding->WalkRules(aFunc, aData);
       
       
@@ -697,9 +696,6 @@ nsBindingManager::WalkRules(nsIStyleRuleProcessor::EnumFunc aFunc,
   
   
   *aCutOffInheritance = (content != nullptr);
-
-  
-  aData->mTreeMatchContext.mScopedRoot = nullptr;
 
   return NS_OK;
 }

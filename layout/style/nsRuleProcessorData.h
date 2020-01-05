@@ -344,10 +344,6 @@ struct MOZ_STACK_CLASS TreeMatchContext {
 
   
   
-  nsIContent* mScopedRoot;
-
-  
-  
   
   const bool mIsHTMLDocument;
 
@@ -396,7 +392,6 @@ struct MOZ_STACK_CLASS TreeMatchContext {
     , mHaveSpecifiedScope(false)
     , mVisitedHandling(aVisitedHandling)
     , mDocument(aDocument)
-    , mScopedRoot(nullptr)
     , mIsHTMLDocument(aDocument->IsHTMLDocument())
     , mCompatMode(aDocument->GetCompatibilityMode())
     , mUsingPrivateBrowsing(false)
