@@ -556,7 +556,8 @@ class BaseBootstrapper(object):
             
             
             
-            cmd = 'export PATH=%s:$PATH' % self.win_to_msys_path(cargo_bin)
+            cargo_bin = self.win_to_msys_path(cargo_bin)
+            cmd = 'export PATH=%s:$PATH' % cargo_bin
         print(template % {
             'cargo_bin': cargo_bin,
             'cmd': cmd,
