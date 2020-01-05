@@ -6,6 +6,9 @@
 
 
 
+
+requestLongerTimeout(2);
+
 add_task(function* () {
   let manager = ResponsiveUIManager;
   let done;
