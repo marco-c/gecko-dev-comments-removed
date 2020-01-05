@@ -1,0 +1,31 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+Components.utils.import("resource://gre/modules/Services.jsm");
+Components.utils.import("resource://pdf.js/PdfJs.jsm");
+
+if (Services.appinfo.processType === Services.appinfo.PROCESS_TYPE_CONTENT) {
+  
+  PdfJs.ensureRegistered();
+}
