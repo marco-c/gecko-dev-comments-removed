@@ -69,6 +69,9 @@ SECStatus SSLInt_UpdateSSLv2ClientRandom(PRFileDesc *fd, uint8_t *rnd,
   }
 
   
+  rnd_len = PR_MIN(SSL3_RANDOM_LENGTH, rnd_len);
+
+  
   PORT_Memset(&ss->ssl3.hs.client_random, 0, SSL3_RANDOM_LENGTH);
 
   

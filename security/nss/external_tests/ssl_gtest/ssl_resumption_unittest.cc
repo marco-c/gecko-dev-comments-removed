@@ -421,7 +421,6 @@ TEST_F(TlsConnectTest, TestTls13ResumptionTwice) {
   EXPECT_TRUE(client_->cipher_suite(&resumed_suite));
   EXPECT_EQ(original_suite, resumed_suite);
 
-  
-  ASSERT_EQ(initialTicket, c2->extension());
+  ASSERT_NE(initialTicket, c2->extension());
 }
 }  

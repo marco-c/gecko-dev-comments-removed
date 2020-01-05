@@ -5,6 +5,7 @@
 
 
 #include "ssl.h"
+#include "ssl3prot.h"
 #include "sslerr.h"
 #include "sslproto.h"
 
@@ -181,6 +182,16 @@ class TlsExtensionTest13 : public TlsExtensionTestBase,
   TlsExtensionTest13()
       : TlsExtensionTestBase(TlsConnectTestBase::ToMode(GetParam()),
                              SSL_LIBRARY_VERSION_TLS_1_3) {}
+
+  void ConnectWithReplacementVersionList(uint16_t version) {
+    DataBuffer versions_buf;
+
+    size_t index = versions_buf.Write(0, 2, 1);
+    versions_buf.Write(index, version, 2);
+    client_->SetPacketFilter(new TlsExtensionReplacer(
+        ssl_tls13_supported_versions_xtn, versions_buf));
+    ConnectExpectFail();
+  }
 };
 
 class TlsExtensionTest13Stream : public TlsExtensionTestBase {
@@ -491,42 +502,6 @@ TEST_P(TlsExtensionTest13, EmptyClientKeyShare) {
                        kTlsAlertHandshakeFailure);
 }
 
-TEST_P(TlsExtensionTest13, DropDraftVersion) {
-  EnsureTlsSetup();
-  client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
-                           SSL_LIBRARY_VERSION_TLS_1_3);
-  server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
-                           SSL_LIBRARY_VERSION_TLS_1_3);
-  client_->SetPacketFilter(
-      new TlsExtensionDropper(ssl_tls13_draft_version_xtn));
-  ConnectExpectFail();
-  
-  
-  EXPECT_EQ(SSL_ERROR_DECRYPT_ERROR_ALERT, client_->error_code());
-  EXPECT_EQ(SSL_ERROR_BAD_HANDSHAKE_HASH_VALUE, server_->error_code());
-}
-
-TEST_P(TlsExtensionTest13, DropDraftVersionAndFail) {
-  EnsureTlsSetup();
-  
-  
-  client_->SetPacketFilter(
-      new TlsExtensionDropper(ssl_tls13_draft_version_xtn));
-  ConnectExpectFail();
-  EXPECT_EQ(SSL_ERROR_PROTOCOL_VERSION_ALERT, client_->error_code());
-  EXPECT_EQ(SSL_ERROR_UNSUPPORTED_VERSION, server_->error_code());
-}
-
-TEST_P(TlsExtensionTest13, ModifyDraftVersionAndFail) {
-  EnsureTlsSetup();
-  
-  client_->SetPacketFilter(
-      new TlsExtensionDamager(ssl_tls13_draft_version_xtn, 1));
-  ConnectExpectFail();
-  EXPECT_EQ(SSL_ERROR_PROTOCOL_VERSION_ALERT, client_->error_code());
-  EXPECT_EQ(SSL_ERROR_UNSUPPORTED_VERSION, server_->error_code());
-}
-
 
 
 
@@ -710,6 +685,43 @@ TEST_F(TlsExtensionTest13Stream, ResumeBogusAuthModes) {
   ConnectExpectFail();
   client_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
   server_->CheckErrorCode(SSL_ERROR_BAD_MAC_READ);
+}
+
+
+
+
+
+TEST_P(TlsExtensionTest13, RemoveTls13FromVersionList) {
+  ConnectWithReplacementVersionList(SSL_LIBRARY_VERSION_TLS_1_2);
+  client_->CheckErrorCode(SSL_ERROR_PROTOCOL_VERSION_ALERT);
+  server_->CheckErrorCode(SSL_ERROR_UNSUPPORTED_VERSION);
+}
+
+
+
+TEST_P(TlsExtensionTest13, RemoveTls13FromVersionListServerV12) {
+  server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
+                           SSL_LIBRARY_VERSION_TLS_1_3);
+  ConnectWithReplacementVersionList(SSL_LIBRARY_VERSION_TLS_1_2);
+  client_->CheckErrorCode(SSL_ERROR_NO_CYPHER_OVERLAP);
+  server_->CheckErrorCode(SSL_ERROR_NO_CYPHER_OVERLAP);
+}
+
+
+
+TEST_P(TlsExtensionTest13, RemoveTls13FromVersionListBothV12) {
+  client_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
+                           SSL_LIBRARY_VERSION_TLS_1_3);
+  server_->SetVersionRange(SSL_LIBRARY_VERSION_TLS_1_2,
+                           SSL_LIBRARY_VERSION_TLS_1_3);
+  ConnectWithReplacementVersionList(SSL_LIBRARY_VERSION_TLS_1_2);
+#ifndef TLS_1_3_DRAFT_VERSION
+  client_->CheckErrorCode(SSL_ERROR_RX_MALFORMED_SERVER_HELLO);
+  server_->CheckErrorCode(SSL_ERROR_ILLEGAL_PARAMETER_ALERT);
+#else
+  client_->CheckErrorCode(SSL_ERROR_DECRYPT_ERROR_ALERT);
+  server_->CheckErrorCode(SSL_ERROR_BAD_HANDSHAKE_HASH_VALUE);
+#endif
 }
 
 INSTANTIATE_TEST_CASE_P(ExtensionStream, TlsExtensionTestGeneric,

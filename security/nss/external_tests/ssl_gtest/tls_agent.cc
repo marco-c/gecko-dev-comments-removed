@@ -142,11 +142,6 @@ bool TlsAgent::EnsureTlsSetup(PRFileDesc* modelSocket) {
   EXPECT_EQ(SECSuccess, rv);
   if (rv != SECSuccess) return false;
 
-  
-  rv = SSL_OptionSet(ssl_fd_, SSL_NO_STEP_DOWN, PR_TRUE);
-  EXPECT_EQ(SECSuccess, rv);
-  if (rv != SECSuccess) return false;
-
   if (role_ == SERVER) {
     EXPECT_TRUE(ConfigServerCert(name_, true));
 

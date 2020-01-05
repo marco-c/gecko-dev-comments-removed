@@ -86,10 +86,6 @@ static PRInt32 ssl3_ServerSendSignedCertTimestampXtn(sslSocket *ss,
 static SECStatus ssl3_ServerHandleSignedCertTimestampXtn(sslSocket *ss,
                                                          PRUint16 ex_type,
                                                          SECItem *data);
-static PRInt32 ssl3_ClientSendDraftVersionXtn(sslSocket *ss, PRBool append,
-                                              PRUint32 maxBytes);
-static SECStatus ssl3_ServerHandleDraftVersionXtn(sslSocket *ss, PRUint16 ex_type,
-                                                  SECItem *data);
 static PRInt32 ssl3_SendExtendedMasterSecretXtn(sslSocket *ss, PRBool append,
                                                 PRUint32 maxBytes);
 static SECStatus ssl3_HandleExtendedMasterSecretXtn(sslSocket *ss,
@@ -123,6 +119,9 @@ static SECStatus tls13_ClientHandleTicketEarlyDataInfoXtn(
     SECItem *data);
 static SECStatus tls13_ClientHandleSigAlgsXtn(sslSocket *ss, PRUint16 ex_type,
                                               SECItem *data);
+static PRInt32 tls13_ClientSendSupportedVersionsXtn(sslSocket *ss,
+                                                    PRBool append,
+                                                    PRUint32 maxBytes);
 
 
 
@@ -260,7 +259,6 @@ static const ssl3ExtensionHandler clientHelloHandlers[] = {
     { ssl_use_srtp_xtn, &ssl3_ServerHandleUseSRTPXtn },
     { ssl_cert_status_xtn, &ssl3_ServerHandleStatusRequestXtn },
     { ssl_signature_algorithms_xtn, &ssl3_ServerHandleSigAlgsXtn },
-    { ssl_tls13_draft_version_xtn, &ssl3_ServerHandleDraftVersionXtn },
     { ssl_extended_master_secret_xtn, &ssl3_HandleExtendedMasterSecretXtn },
     { ssl_signed_cert_timestamp_xtn, &ssl3_ServerHandleSignedCertTimestampXtn },
     { ssl_tls13_key_share_xtn, &tls13_ServerHandleKeyShareXtn },
@@ -322,7 +320,6 @@ static const ssl3HelloExtensionSender clientHelloSendersTLS[SSL_MAX_EXTENSIONS] 
       { ssl_app_layer_protocol_xtn, &ssl3_ClientSendAppProtoXtn },
       { ssl_use_srtp_xtn, &ssl3_ClientSendUseSRTPXtn },
       { ssl_cert_status_xtn, &ssl3_ClientSendStatusRequestXtn },
-      { ssl_tls13_draft_version_xtn, &ssl3_ClientSendDraftVersionXtn },
       { ssl_signed_cert_timestamp_xtn, &ssl3_ClientSendSignedCertTimestampXtn },
       { ssl_tls13_key_share_xtn, &tls13_ClientSendKeyShareXtn },
       { ssl_tls13_pre_shared_key_xtn, &tls13_ClientSendPreSharedKeyXtn },
@@ -331,6 +328,7 @@ static const ssl3HelloExtensionSender clientHelloSendersTLS[SSL_MAX_EXTENSIONS] 
 
 
 
+      { ssl_tls13_supported_versions_xtn, &tls13_ClientSendSupportedVersionsXtn },
       { ssl_signature_algorithms_xtn, &ssl3_ClientSendSigAlgsXtn }
       
     };
@@ -2075,14 +2073,89 @@ ssl3_ParseEncryptedSessionTicket(sslSocket *ss, SECItem *data,
 
 
 
+SECStatus
+ssl3_ParseExtensions(sslSocket *ss, SSL3Opaque **b, PRUint32 *length)
+{
+    
+    ssl3_DestroyRemoteExtensions(&ss->ssl3.hs.remoteExtensions);
+
+    while (*length) {
+        SECStatus rv;
+        PRInt32 extension_type;
+        SECItem extension_data = { siBuffer, NULL, 0 };
+        TLSExtension *extension;
+        PRCList *cursor;
+
+        
+        extension_type = ssl3_ConsumeHandshakeNumber(ss, 2, b, length);
+        if (extension_type < 0) { 
+            return SECFailure;    
+        }
+
+        
+        for (cursor = PR_NEXT_LINK(&ss->ssl3.hs.remoteExtensions);
+             cursor != &ss->ssl3.hs.remoteExtensions;
+             cursor = PR_NEXT_LINK(cursor)) {
+            if (((TLSExtension *)cursor)->type == extension_type) {
+                (void)SSL3_SendAlert(ss, alert_fatal, illegal_parameter);
+                PORT_SetError(SSL_ERROR_RX_UNEXPECTED_EXTENSION);
+                return SECFailure;
+            }
+        }
+
+        
+        rv = ssl3_ConsumeHandshakeVariable(ss, &extension_data, 2, b, length);
+        if (rv != SECSuccess) {
+            return rv; 
+        }
+
+        extension = PORT_ZNew(TLSExtension);
+        if (!extension) {
+            return SECFailure;
+        }
+
+        extension->type = (PRUint16)extension_type;
+        extension->data = extension_data;
+        PR_APPEND_LINK(&extension->link, &ss->ssl3.hs.remoteExtensions);
+    }
+
+    return SECSuccess;
+}
+
+TLSExtension *
+ssl3_FindExtension(sslSocket *ss, SSLExtensionType extension_type)
+{
+    PRCList *cursor;
+
+    for (cursor = PR_NEXT_LINK(&ss->ssl3.hs.remoteExtensions);
+         cursor != &ss->ssl3.hs.remoteExtensions;
+         cursor = PR_NEXT_LINK(cursor)) {
+        TLSExtension *extension = (TLSExtension *)cursor;
+
+        if (extension->type == extension_type) {
+            return extension;
+        }
+    }
+
+    return NULL;
+}
+
+
+
+
+
+
+
+
 
 
 SECStatus
-ssl3_HandleExtensions(sslSocket *ss, SSL3Opaque **b, PRUint32 *length,
-                      SSL3HandshakeType handshakeMessage)
+ssl3_HandleParsedExtensions(sslSocket *ss,
+                            SSL3HandshakeType handshakeMessage)
 {
     const ssl3ExtensionHandler *handlers;
     PRBool isTLS13 = ss->version >= SSL_LIBRARY_VERSION_TLS_1_3;
+    PRCList *cursor;
 
     switch (handshakeMessage) {
         case client_hello:
@@ -2108,26 +2181,16 @@ ssl3_HandleExtensions(sslSocket *ss, SSL3Opaque **b, PRUint32 *length,
             return SECFailure;
     }
 
-    while (*length) {
+    for (cursor = PR_NEXT_LINK(&ss->ssl3.hs.remoteExtensions);
+         cursor != &ss->ssl3.hs.remoteExtensions;
+         cursor = PR_NEXT_LINK(cursor)) {
+        TLSExtension *extension = (TLSExtension *)cursor;
         const ssl3ExtensionHandler *handler;
-        SECStatus rv;
-        PRInt32 extension_type;
-        SECItem extension_data;
-
-        
-        extension_type = ssl3_ConsumeHandshakeNumber(ss, 2, b, length);
-        if (extension_type < 0) 
-            return SECFailure;  
-
-        
-        rv = ssl3_ConsumeHandshakeVariable(ss, &extension_data, 2, b, length);
-        if (rv != SECSuccess)
-            return rv; 
 
         
 
         if (!ss->sec.isServer &&
-            !ssl3_ClientExtensionAdvertised(ss, extension_type) &&
+            !ssl3_ClientExtensionAdvertised(ss, extension->type) &&
             (handshakeMessage != new_session_ticket)) {
             (void)SSL3_SendAlert(ss, alert_fatal, unsupported_extension);
             PORT_SetError(SSL_ERROR_RX_UNEXPECTED_EXTENSION);
@@ -2135,14 +2198,7 @@ ssl3_HandleExtensions(sslSocket *ss, SSL3Opaque **b, PRUint32 *length,
         }
 
         
-        if (ssl3_ExtensionNegotiated(ss, extension_type)) {
-            (void)SSL3_SendAlert(ss, alert_fatal, illegal_parameter);
-            PORT_SetError(SSL_ERROR_RX_UNEXPECTED_EXTENSION);
-            return SECFailure;
-        }
-
-        
-        if (isTLS13 && !tls13_ExtensionAllowed(extension_type, handshakeMessage)) {
+        if (isTLS13 && !tls13_ExtensionAllowed(extension->type, handshakeMessage)) {
             if (handshakeMessage == client_hello) {
                 
                 continue;
@@ -2155,9 +2211,11 @@ ssl3_HandleExtensions(sslSocket *ss, SSL3Opaque **b, PRUint32 *length,
         
         for (handler = handlers; handler->ex_type >= 0; handler++) {
             
-            if (handler->ex_type == extension_type) {
-                rv = (*handler->ex_handler)(ss, (PRUint16)extension_type,
-                                            &extension_data);
+            if (handler->ex_type == extension->type) {
+                SECStatus rv;
+
+                rv = (*handler->ex_handler)(ss, (PRUint16)extension->type,
+                                            &extension->data);
                 if (rv != SECSuccess) {
                     if (!ss->ssl3.fatalAlertSent) {
                         
@@ -2168,6 +2226,27 @@ ssl3_HandleExtensions(sslSocket *ss, SSL3Opaque **b, PRUint32 *length,
             }
         }
     }
+    return SECSuccess;
+}
+
+
+
+SECStatus
+ssl3_HandleExtensions(sslSocket *ss,
+                      SSL3Opaque **b, PRUint32 *length,
+                      SSL3HandshakeType handshakeMessage)
+{
+    SECStatus rv;
+
+    rv = ssl3_ParseExtensions(ss, b, length);
+    if (rv != SECSuccess)
+        return rv;
+
+    rv = ssl3_HandleParsedExtensions(ss, handshakeMessage);
+    if (rv != SECSuccess)
+        return rv;
+
+    ssl3_DestroyRemoteExtensions(&ss->ssl3.hs.remoteExtensions);
     return SECSuccess;
 }
 
@@ -2687,83 +2766,6 @@ ssl3_AppendPaddingExtension(sslSocket *ss, unsigned int extensionLen,
         return -1;
 
     return extensionLen;
-}
-
-
-
-
-static PRInt32
-ssl3_ClientSendDraftVersionXtn(sslSocket *ss, PRBool append, PRUint32 maxBytes)
-{
-    PRInt32 extension_length;
-
-    if (ss->version != SSL_LIBRARY_VERSION_TLS_1_3) {
-        return 0;
-    }
-
-    extension_length = 6; 
-    if (maxBytes < (PRUint32)extension_length) {
-        PORT_Assert(0);
-        return 0;
-    }
-    if (append) {
-        SECStatus rv;
-        rv = ssl3_AppendHandshakeNumber(ss, ssl_tls13_draft_version_xtn, 2);
-        if (rv != SECSuccess)
-            goto loser;
-        rv = ssl3_AppendHandshakeNumber(ss, extension_length - 4, 2);
-        if (rv != SECSuccess)
-            goto loser;
-        rv = ssl3_AppendHandshakeNumber(ss, TLS_1_3_DRAFT_VERSION, 2);
-        if (rv != SECSuccess)
-            goto loser;
-        ss->xtnData.advertised[ss->xtnData.numAdvertised++] =
-            ssl_tls13_draft_version_xtn;
-    }
-
-    return extension_length;
-
-loser:
-    return -1;
-}
-
-
-
-
-static SECStatus
-ssl3_ServerHandleDraftVersionXtn(sslSocket *ss, PRUint16 ex_type,
-                                 SECItem *data)
-{
-    PRInt32 draft_version;
-
-    
-    if (ss->version != SSL_LIBRARY_VERSION_TLS_1_3) {
-        return SECSuccess;
-    }
-
-    if (data->len != 2) {
-        (void)ssl3_DecodeError(ss);
-        return SECFailure;
-    }
-
-    
-    draft_version = ssl3_ConsumeHandshakeNumber(ss, 2,
-                                                &data->data, &data->len);
-    if (draft_version < 0) {
-        return SECFailure;
-    }
-
-    if (draft_version == TLS_1_3_DRAFT_VERSION) {
-        
-
-        ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
-    } else {
-        SSL_TRC(30, ("%d: SSL3[%d]: Incompatible version of TLS 1.3 (%d), "
-                     "expected %d",
-                     SSL_GETPID(), ss->fd, draft_version, TLS_1_3_DRAFT_VERSION));
-    }
-
-    return SECSuccess;
 }
 
 static PRInt32
@@ -3691,7 +3693,6 @@ tls13_ServerSendSigAlgsXtn(sslSocket *ss,
 
     if (maxBytes < 4) {
         PORT_Assert(0);
-        return 0;
     }
 
     if (append) {
@@ -3732,4 +3733,70 @@ tls13_ClientHandleSigAlgsXtn(sslSocket *ss, PRUint16 ex_type,
     ss->xtnData.negotiated[ss->xtnData.numNegotiated++] = ex_type;
 
     return SECSuccess;
+}
+
+
+
+
+
+
+static PRInt32
+tls13_ClientSendSupportedVersionsXtn(sslSocket *ss, PRBool append,
+                                     PRUint32 maxBytes)
+{
+    PRInt32 extensions_len;
+    PRUint16 version;
+    SECStatus rv;
+
+    if (ss->version < SSL_LIBRARY_VERSION_TLS_1_3) {
+        return 0;
+    }
+
+    SSL_TRC(3, ("%d: TLS13[%d]: send supported_versions extension",
+                SSL_GETPID(), ss->fd));
+
+    
+
+    extensions_len = 2 + 2 + 1 +
+                     2 * (ss->vrange.max - ss->vrange.min + 1);
+
+    if (maxBytes < extensions_len) {
+        PORT_Assert(0);
+        return 0;
+    }
+
+    if (append) {
+        rv = ssl3_AppendHandshakeNumber(ss, ssl_tls13_supported_versions_xtn, 2);
+        if (rv != SECSuccess)
+            return -1;
+
+        rv = ssl3_AppendHandshakeNumber(ss, extensions_len - 4, 2);
+        if (rv != SECSuccess)
+            return -1;
+
+        rv = ssl3_AppendHandshakeNumber(ss, extensions_len - 5, 1);
+        if (rv != SECSuccess)
+            return -1;
+
+        for (version = ss->vrange.max; version >= ss->vrange.min; --version) {
+            rv = ssl3_AppendHandshakeNumber(
+                ss, tls13_EncodeDraftVersion(version), 2);
+            if (rv != SECSuccess)
+                return -1;
+        }
+    }
+
+    return extensions_len;
+}
+
+void
+ssl3_DestroyRemoteExtensions(PRCList *list)
+{
+    PRCList *cur_p;
+
+    while (!PR_CLIST_IS_EMPTY(list)) {
+        cur_p = PR_LIST_TAIL(list);
+        PR_REMOVE_LINK(cur_p);
+        PORT_Free(cur_p);
+    }
 }

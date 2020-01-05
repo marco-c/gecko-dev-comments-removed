@@ -46,11 +46,6 @@ queue.filter(task => {
 queue.map(task => {
   if (task.collection == "asan") {
     
-    if (task.tests == "bogo") {
-      task.env.ASAN_OPTIONS = "detect_leaks=0";
-    }
-
-    
     if (task.tests == "crmf" || task.tests == "fips") {
       task.env.ASAN_OPTIONS = "detect_leaks=0";
     }
@@ -67,6 +62,10 @@ queue.map(task => {
       task.maxRunTime = 14400;
     }
   }
+
+  
+  task.env = task.env || {};
+  task.env.NSS_ENABLE_TLS_1_3 = "1";
 
   return task;
 });

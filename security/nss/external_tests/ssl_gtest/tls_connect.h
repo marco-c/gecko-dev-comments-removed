@@ -198,6 +198,13 @@ class TlsConnectTls12 : public TlsConnectTestBase,
 };
 
 
+class TlsConnectStreamTls12 : public TlsConnectTestBase {
+ public:
+  TlsConnectStreamTls12()
+      : TlsConnectTestBase(STREAM, SSL_LIBRARY_VERSION_TLS_1_2) {}
+};
+
+
 class TlsConnectTls12Plus
     : public TlsConnectTestBase,
       public ::testing::WithParamInterface<std::tuple<std::string, uint16_t>> {
@@ -210,6 +217,13 @@ class TlsConnectTls13 : public TlsConnectTestBase,
                         public ::testing::WithParamInterface<std::string> {
  public:
   TlsConnectTls13();
+};
+
+
+class TlsConnectStreamTls13 : public TlsConnectTestBase {
+ public:
+  TlsConnectStreamTls13()
+      : TlsConnectTestBase(STREAM, SSL_LIBRARY_VERSION_TLS_1_3) {}
 };
 
 class TlsConnectDatagram13 : public TlsConnectTestBase {
