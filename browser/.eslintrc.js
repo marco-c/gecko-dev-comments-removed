@@ -8,7 +8,7 @@ module.exports = {
   "rules": {
     
     
-    "complexity": ["error", {"max": 40}],
+    "complexity": ["error", {"max": 42}],
 
     "no-shadow": "error",
   }
