@@ -233,7 +233,7 @@ public:
   bool PreTraverse();
 
   
-  void PreTraverse(dom::Element* aElement, nsIAtom* aPseudoTagOrNull);
+  bool PreTraverse(dom::Element* aElement, nsIAtom* aPseudoTagOrNull);
 
 private:
   ~EffectCompositor() = default;
