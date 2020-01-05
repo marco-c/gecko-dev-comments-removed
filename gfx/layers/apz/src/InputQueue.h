@@ -143,7 +143,8 @@ private:
 
 
 
-  void CancelAnimationsForNewBlock(CancelableBlockState* aBlock);
+  void CancelAnimationsForNewBlock(CancelableBlockState* aBlock,
+                                   CancelAnimationFlags aExtraFlags = Default);
 
   
 
