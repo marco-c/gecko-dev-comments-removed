@@ -497,8 +497,10 @@ bitflags! {
         #[doc = "Whether this flow is right-floated. This is checked all over layout, so a"]
         #[doc = "virtual call is too expensive."]
         const FLOATS_RIGHT = 0b0000_0100_0000_0000,
-        #[doc = "Text alignment."]
-        const TEXT_ALIGN = 0b0000_1000_0000_0000,
+        #[doc = "Text alignment. \
+
+                 NB: If you update this, update `TEXT_ALIGN_SHIFT` below."]
+        const TEXT_ALIGN = 0b0111_1000_0000_0000,
     }
 }
 
@@ -510,10 +512,8 @@ static HAS_FLOATED_DESCENDANTS_BITMASK: FlowFlags = FlowFlags { bits: 0b0000_001
 
 
 
-static TEXT_ALIGN_BITMASK: FlowFlags = FlowFlags { bits: 0b0011_0000 };
 
-
-static TEXT_ALIGN_SHIFT: uint = 4;
+static TEXT_ALIGN_SHIFT: uint = 11;
 
 impl FlowFlags {
     
@@ -526,17 +526,18 @@ impl FlowFlags {
 
     #[inline]
     pub fn text_align(self) -> text_align::T {
-        FromPrimitive::from_u16((self & TEXT_ALIGN_BITMASK).bits() >> TEXT_ALIGN_SHIFT).unwrap()
+        FromPrimitive::from_u16((self & TEXT_ALIGN).bits() >> TEXT_ALIGN_SHIFT).unwrap()
     }
 
     #[inline]
     pub fn set_text_align(&mut self, value: text_align::T) {
-        *self = (*self & !TEXT_ALIGN_BITMASK) | FlowFlags::from_bits(value as u16 << TEXT_ALIGN_SHIFT).unwrap();
+        *self = (*self & !TEXT_ALIGN) |
+            FlowFlags::from_bits(value as u16 << TEXT_ALIGN_SHIFT).unwrap();
     }
 
     #[inline]
     pub fn set_text_align_override(&mut self, parent: FlowFlags) {
-        self.insert(parent & TEXT_ALIGN_BITMASK);
+        self.insert(parent & TEXT_ALIGN);
     }
 
     #[inline]
