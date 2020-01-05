@@ -339,6 +339,16 @@ public:
     mPostTraversalTasks.AppendElement(aTask);
   }
 
+  
+
+
+
+
+
+
+
+  bool MightHaveAttributeDependency(nsIAtom* aAttribute);
+
 private:
   
   
