@@ -137,6 +137,11 @@ public:
     return mGPUChild;
   }
 
+  
+  bool AttemptedGPUProcess() const {
+    return mNumProcessAttempts > 0;
+  }
+
 private:
   
   void OnXPCOMShutdown();
