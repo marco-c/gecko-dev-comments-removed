@@ -417,6 +417,7 @@ class RecursiveMakeBackend(CommonBackend):
             'libs': set(),
             'misc': set(),
             'tools': set(),
+            'check': set(),
         }
 
     def summary(self):
@@ -706,6 +707,7 @@ class RecursiveMakeBackend(CommonBackend):
             ('libs', libs_filter),
             ('misc', parallel_filter),
             ('tools', tools_filter),
+            ('check', parallel_filter),
         ]
 
         root_deps_mk = Makefile()
@@ -860,6 +862,12 @@ class RecursiveMakeBackend(CommonBackend):
                         if objdir == self.environment.topobjdir:
                             continue
                         self._no_skip['tools'].add(mozpath.relpath(objdir,
+                            self.environment.topobjdir))
+
+                    
+                    
+                    if re.search('(?:^|\s)check.*::', content, re.M):
+                        self._no_skip['check'].add(mozpath.relpath(objdir,
                             self.environment.topobjdir))
 
                     
