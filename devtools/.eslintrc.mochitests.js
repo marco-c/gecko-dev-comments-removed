@@ -13,12 +13,6 @@ module.exports = {
     "waitForTick": true,
   },
 
-  "parserOptions": {
-    "ecmaFeatures": {
-      "jsx": true,
-    }
-  },
-
   "rules": {
     
     "mozilla/reject-some-requires": 0,
