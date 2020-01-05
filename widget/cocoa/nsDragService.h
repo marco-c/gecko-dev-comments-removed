@@ -7,6 +7,7 @@
 #define nsDragService_h_
 
 #include "nsBaseDragService.h"
+#include "nsChildView.h"
 
 #include <Cocoa/Cocoa.h>
 
@@ -48,7 +49,7 @@ private:
   NSString* GetFilePath(NSPasteboardItem* item);
 
   nsCOMPtr<nsIArray> mDataItems; 
-  NSView* mNativeDragView;
+  ChildView* mNativeDragView;
   NSEvent* mNativeDragEvent;
 };
 
