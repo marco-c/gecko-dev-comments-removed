@@ -121,6 +121,12 @@ add_task(function* () {
     ["extensions.webextPermissionPrompts", true],
   ]});
 
+  
+  
+  
+  const ICON_URL = "chrome://mozapps/skin/extensions/category-extensions.svg";
+  const DEFAULT_ICON_URL = "chrome://mozapps/skin/extensions/extensionGeneric.svg";
+
   const ID1 = "addon1@tests.mozilla.org";
   let mock1 = new MockAddon({
     id: ID1,
@@ -131,6 +137,7 @@ add_task(function* () {
       permissions: ["history"],
       hosts: ["https://*/*"],
     },
+    iconURL: ICON_URL,
   });
 
   const ID2 = "addon2@tests.mozilla.org";
@@ -198,6 +205,9 @@ add_task(function* () {
 
   
   let panel = yield popupPromise;
+  let icon = panel.getAttribute("icon");
+  is(icon, ICON_URL, "Permissions notification has the addon icon");
+
   let disablePromise = promiseSetDisabled(mock1);
   panel.secondaryButton.click();
 
@@ -234,6 +244,8 @@ add_task(function* () {
 
   
   panel = yield popupPromise;
+  icon = panel.getAttribute("icon");
+  is(icon, DEFAULT_ICON_URL, "Permissions notification has the default icon");
   disablePromise = promiseSetDisabled(mock2);
   panel.button.click();
 
