@@ -64,10 +64,7 @@ class MachCommands(CommandBase):
             with cd(path.join(apk_builder_dir, "apk-builder")):
                 subprocess.call(["cargo", "build"], env=self.build_env())
 
-            
-            
-            opts += ["--target", "arm-linux-androideabi", "--no-default-features"]
-            features += ["glutin"]
+            opts += ["--target", "arm-linux-androideabi"]
 
         if debug_mozjs or self.config["build"]["debug-mozjs"]:
             features += ["script/debugmozjs"]
