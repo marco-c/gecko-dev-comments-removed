@@ -143,7 +143,11 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
   nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
 
   nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
-  if (changeHint) {
+  
+  
+  
+  
+  if ((primaryFrame || changeHint & nsChangeHint_ReconstructFrame) && changeHint) {
     aChangeListToProcess.AppendChange(primaryFrame, aElement, changeHint);
   }
 
