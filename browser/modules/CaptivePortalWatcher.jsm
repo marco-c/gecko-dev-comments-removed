@@ -119,12 +119,12 @@ this.CaptivePortalWatcher = {
 
     
     if (!tab || tab.closing || !tab.parentNode) {
-      tab = win.gBrowser.addTab(this.canonicalURL);
+      tab = win.gBrowser.addTab(this.canonicalURL,
+                                { ownerTab: win.gBrowser.selectedTab });
+      this._captivePortalTab = Cu.getWeakReference(tab);
     }
 
-    this._captivePortalTab = Cu.getWeakReference(tab);
     win.gBrowser.selectedTab = tab;
-    return tab;
   },
 
   
