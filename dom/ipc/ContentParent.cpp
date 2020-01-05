@@ -2056,7 +2056,7 @@ ContentParent::InitInternal(ProcessPriority aInitialPriority,
     nsCString vendor(gAppData->vendor);
 
     
-    Unused << SendAppInfo(version, buildID, name, UAName, ID, vendor, gSafeMode);
+    Unused << SendAppInfo(version, buildID, name, UAName, ID, vendor);
   }
 
   
