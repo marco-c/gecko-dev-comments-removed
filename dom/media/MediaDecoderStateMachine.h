@@ -755,11 +755,6 @@ private:
   bool mMinimizePreroll;
 
   
-  
-  
-  bool mDecodeThreadWaiting;
-
-  
   Maybe<MediaInfo> mInfo;
 
   nsAutoPtr<MetadataTags> mMetadataTags;
