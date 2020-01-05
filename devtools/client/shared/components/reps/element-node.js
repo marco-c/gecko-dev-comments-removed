@@ -9,9 +9,10 @@
 define(function (require, exports, module) {
   
   const React = require("devtools/client/shared/vendor/react");
-  const { isGrip } = require("./rep-utils");
 
   
+  const { isGrip } = require("./rep-utils");
+  const { MODE } = require("./constants");
   const nodeConstants = require("devtools/shared/dom-node-constants");
 
   
@@ -25,7 +26,8 @@ define(function (require, exports, module) {
 
     propTypes: {
       object: React.PropTypes.object.isRequired,
-      mode: React.PropTypes.string,
+      
+      mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
     },
 
     getElements: function (grip, mode) {
@@ -34,7 +36,7 @@ define(function (require, exports, module) {
         className: "tag-name theme-fg-color3"
       }, nodeName);
 
-      if (mode === "tiny") {
+      if (mode === MODE.TINY) {
         let elements = [nodeNameElement];
         if (attributes.id) {
           elements.push(

@@ -9,6 +9,7 @@ define(function (require, exports, module) {
   const React = require("devtools/client/shared/vendor/react");
   
   const { isGrip } = require("./rep-utils");
+  const { MODE } = require("./constants");
   
   const { span } = React.DOM;
 
@@ -20,7 +21,8 @@ define(function (require, exports, module) {
 
     propTypes: {
       object: React.PropTypes.object.isRequired,
-      mode: React.PropTypes.string
+      
+      mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
     },
 
     render: function () {
@@ -30,11 +32,11 @@ define(function (require, exports, module) {
         ? preview.name
         : "Error";
 
-      let content = this.props.mode === "tiny"
+      let content = this.props.mode === MODE.TINY
         ? name
         : `${name}: ${preview.message}`;
 
-      if (preview.stack && this.props.mode !== "tiny") {
+      if (preview.stack && this.props.mode !== MODE.TINY) {
         
 
 

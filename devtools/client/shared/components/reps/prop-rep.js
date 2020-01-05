@@ -7,8 +7,11 @@
 
 
 define(function (require, exports, module) {
+  
   const React = require("devtools/client/shared/vendor/react");
   const { createFactories } = require("./rep-utils");
+  const { MODE } = require("./constants");
+  
   const { span } = React.DOM;
 
   
@@ -29,7 +32,8 @@ define(function (require, exports, module) {
       equal: React.PropTypes.string,
       
       delim: React.PropTypes.string,
-      mode: React.PropTypes.string,
+      
+      mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
     },
 
     render: function () {
@@ -44,7 +48,7 @@ define(function (require, exports, module) {
       } else {
         key = Rep({
           object: this.props.name,
-          mode: this.props.mode || "tiny",
+          mode: this.props.mode || MODE.TINY,
           defaultRep: Grip,
           objectLink: this.props.objectLink,
         });

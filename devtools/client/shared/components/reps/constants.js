@@ -1,0 +1,15 @@
+
+
+
+"use strict";
+
+
+define(function (require, exports, module) {
+  module.exports = {
+    MODE: {
+      TINY: Symbol("TINY"),
+      SHORT: Symbol("SHORT"),
+      LONG: Symbol("LONG"),
+    }
+  };
+});

@@ -12,6 +12,7 @@ define(function (require, exports, module) {
   const React = require("devtools/client/shared/vendor/react");
 
   const { isGrip } = require("./rep-utils");
+  const { MODE } = require("./constants");
 
   
   const { Undefined } = require("./undefined");
@@ -90,7 +91,8 @@ define(function (require, exports, module) {
     propTypes: {
       object: React.PropTypes.any,
       defaultRep: React.PropTypes.object,
-      mode: React.PropTypes.string
+      
+      mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
     },
 
     render: function () {

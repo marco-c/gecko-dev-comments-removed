@@ -12,7 +12,7 @@ define(function (require, exports, module) {
   const { createFactories, isGrip } = require("./rep-utils");
   const { Caption } = createFactories(require("./caption"));
   const { PropRep } = createFactories(require("./prop-rep"));
-
+  const { MODE } = require("./constants");
   
   const { span } = React.DOM;
   
@@ -24,7 +24,8 @@ define(function (require, exports, module) {
 
     propTypes: {
       object: React.PropTypes.object,
-      mode: React.PropTypes.string,
+      
+      mode: React.PropTypes.oneOf(Object.keys(MODE).map(key => MODE[key])),
     },
 
     getTitle: function (object) {
@@ -111,7 +112,7 @@ define(function (require, exports, module) {
           
           
           delim: (i < indexes.length - 1 || indexes.length < entries.length) ? ", " : "",
-          mode: "tiny",
+          mode: MODE.TINY,
           objectLink: this.props.objectLink,
         });
       });
@@ -146,10 +147,10 @@ define(function (require, exports, module) {
     render: function () {
       let object = this.props.object;
       let props = this.safeEntriesIterator(object,
-        (this.props.mode == "long") ? 10 : 3);
+        (this.props.mode === MODE.LONG) ? 10 : 3);
 
       let objectLink = this.props.objectLink || span;
-      if (this.props.mode == "tiny") {
+      if (this.props.mode === MODE.TINY) {
         return (
           span({className: "objectBox objectBox-object"},
             this.getTitle(object),
