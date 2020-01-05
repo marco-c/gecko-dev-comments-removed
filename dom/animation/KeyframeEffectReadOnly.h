@@ -409,8 +409,19 @@ protected:
   
   
   
+  already_AddRefed<nsStyleContext> GetTargetStyleContext();
+
+  
+  
   already_AddRefed<nsStyleContext>
-  GetTargetStyleContext();
+  GetTargetStyleContextWithoutAnimation();
+
+  enum AnimationStyle {
+    Skip,
+    Include
+  };
+  template<AnimationStyle aAnimationStyle>
+  already_AddRefed<nsStyleContext> DoGetTargetStyleContext();
 
   
   
