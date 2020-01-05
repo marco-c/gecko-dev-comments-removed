@@ -6,9 +6,6 @@ add_task(function* testDownloadFailures() {
   ]});
   let updateParams = "badURL=1";
 
-  
-  let extraWindow = yield BrowserTestUtils.openNewBrowserWindow();
-
   yield runUpdateTest(updateParams, 1, [
     {
       
@@ -32,6 +29,4 @@ add_task(function* testDownloadFailures() {
       }
     },
   ]);
-
-  yield BrowserTestUtils.closeWindow(extraWindow);
 });

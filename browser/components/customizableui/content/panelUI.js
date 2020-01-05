@@ -40,7 +40,6 @@ const PanelUI = {
       addonNotificationContainer: gPhotonStructure ? "appMenu-addon-banners" : "PanelUI-footer-addons",
 
       overflowFixedList: gPhotonStructure ? "widget-overflow-fixed-list" : "",
-      navbar: "nav-bar",
     };
   },
 
@@ -58,6 +57,7 @@ const PanelUI = {
     Services.obs.addObserver(this, "panelUI-notification-dismissed");
 
     window.addEventListener("fullscreen", this);
+    window.addEventListener("activate", this);
     window.matchMedia("(-moz-overlay-scrollbars)").addListener(this._overlayScrollListenerBoundFn);
     CustomizableUI.addListener(this);
 
@@ -86,10 +86,6 @@ const PanelUI = {
       this.overflowFixedList.hidden = false;
       this.overflowFixedList.nextSibling.hidden = false;
       CustomizableUI.registerMenuPanel(this.overflowFixedList, CustomizableUI.AREA_FIXED_OVERFLOW_PANEL);
-      this.navbar.setAttribute("photon-structure", "true");
-      this.updateOverflowStatus();
-    } else {
-      this.navbar.removeAttribute("photon-structure");
     }
   },
 
@@ -143,6 +139,7 @@ const PanelUI = {
     Services.obs.removeObserver(this, "panelUI-notification-dismissed");
 
     window.removeEventListener("fullscreen", this);
+    window.removeEventListener("activate", this);
     this.menuButton.removeEventListener("mousedown", this);
     this.menuButton.removeEventListener("keypress", this);
     window.matchMedia("(-moz-overlay-scrollbars)").removeListener(this._overlayScrollListenerBoundFn);
@@ -356,6 +353,7 @@ const PanelUI = {
         this.toggle(aEvent);
         break;
       case "fullscreen":
+      case "activate":
         this._updateNotifications();
         break;
     }
@@ -601,20 +599,7 @@ const PanelUI = {
     this.reinit();
   },
 
-  updateOverflowStatus() {
-    let hasKids = this.overflowFixedList.hasChildNodes();
-    if (hasKids && !this.navbar.hasAttribute("nonemptyoverflow")) {
-      this.navbar.setAttribute("nonemptyoverflow", "true");
-    } else if (!hasKids && this.navbar.hasAttribute("nonemptyoverflow")) {
-      this.navbar.removeAttribute("nonemptyoverflow");
-    }
-  },
-
   onWidgetAfterDOMChange(aNode, aNextNode, aContainer, aWasRemoval) {
-    if (gPhotonStructure && aContainer == this.overflowFixedList) {
-      this.updateOverflowStatus();
-      return;
-    }
     if (aContainer != this.contents) {
       return;
     }
@@ -767,7 +752,8 @@ const PanelUI = {
         this._showBannerItem(this.notifications[0]);
       }
     } else if (doorhangers.length > 0) {
-      if (window.fullScreen) {
+      
+      if (window.fullScreen || Services.focus.activeWindow !== window) {
         this._hidePopup();
         this._showBadge(doorhangers[0]);
         this._showBannerItem(doorhangers[0]);
