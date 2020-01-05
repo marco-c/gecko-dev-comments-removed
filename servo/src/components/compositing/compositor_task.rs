@@ -96,10 +96,9 @@ impl RenderListener for CompositorChan {
 
     fn paint(&self,
              pipeline_id: PipelineId,
-             layer_id: LayerId,
-             layer_buffer_set: Box<LayerBufferSet>,
-             epoch: Epoch) {
-        self.chan.send(Paint(pipeline_id, layer_id, layer_buffer_set, epoch))
+             epoch: Epoch,
+             replies: Vec<(LayerId, Box<LayerBufferSet>)>) {
+        self.chan.send(Paint(pipeline_id, epoch, replies));
     }
 
     fn initialize_layers_for_pipeline(&self,
@@ -180,7 +179,7 @@ pub enum Msg {
     
     ScrollFragmentPoint(PipelineId, LayerId, Point2D<f32>),
     
-    Paint(PipelineId, LayerId, Box<LayerBufferSet>, Epoch),
+    Paint(PipelineId, Epoch, Vec<(LayerId, Box<LayerBufferSet>)>),
     
     ChangeReadyState(ReadyState),
     

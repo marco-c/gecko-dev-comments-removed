@@ -102,9 +102,8 @@ pub trait RenderListener {
     
     fn paint(&self,
              pipeline_id: PipelineId,
-             layer_id: LayerId,
-             layer_buffer_set: Box<LayerBufferSet>,
-             epoch: Epoch);
+             epoch: Epoch,
+             replies: Vec<(LayerId, Box<LayerBufferSet>)>);
 
     fn set_render_state(&self, render_state: RenderState);
 }
