@@ -10,6 +10,7 @@
 #include "mozilla/Hal.h"
 #include "mozilla/dom/ScreenOrientation.h"  
 #include "mozilla/dom/TabChild.h"       
+#include "mozilla/dom/TabGroup.h"       
 #include "mozilla/hal_sandbox/PHal.h"   
 #include "mozilla/layers/CompositableClient.h"
 #include "mozilla/layers/CompositorBridgeChild.h" 
@@ -152,6 +153,17 @@ ClientLayerManager::Destroy()
 
   
   mWidget = nullptr;
+}
+
+TabGroup*
+ClientLayerManager::GetTabGroup()
+{
+  if (mWidget) {
+    if (TabChild* tabChild = mWidget->GetOwningTabChild()) {
+      return tabChild->TabGroup();
+    }
+  }
+  return nullptr;
 }
 
 int32_t
