@@ -449,12 +449,12 @@ public class Tabs implements BundleEventListener {
             nextTab = getPreviousTabFrom(tab, getPrivate, type);
         if (nextTab == null && getPrivate) {
             
-            Tab lastTab = mOrder.get(mOrder.size() - 1);
-            if (!lastTab.isPrivate()) {
-                nextTab = lastTab;
-            } else {
-                nextTab = getPreviousTabFrom(lastTab, false, type);
-            }
+            nextTab = getFallbackNextTab(type);
+        }
+        if (nextTab == null && type != TabType.BROWSING) {
+            
+            
+            nextTab = getFallbackNextTab(TabType.BROWSING);
         }
 
         Tab parent = getTab(tab.getParentId());
@@ -464,6 +464,26 @@ public class Tabs implements BundleEventListener {
                 return nextTab;
             else
                 return parent;
+        }
+        return nextTab;
+    }
+
+    
+
+
+
+
+
+
+
+
+    private Tab getFallbackNextTab(TabType type) {
+        Tab nextTab;
+        Tab lastTab = mOrder.get(mOrder.size() - 1);
+        if (!lastTab.isPrivate() && lastTab.getType() == type) {
+            nextTab = lastTab;
+        } else {
+            nextTab = getPreviousTabFrom(lastTab, false, type);
         }
         return nextTab;
     }
