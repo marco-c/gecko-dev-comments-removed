@@ -5394,7 +5394,7 @@ CanvasRenderingContext2D::GetImageData(JSContext* aCx, double aSx,
       
       
       
-      !nsContentUtils::IsSystemCaller(aCx))
+      !nsContentUtils::CallerHasPermission(aCx, NS_LITERAL_STRING("<all_urls>")))
   {
     
     aError.Throw(NS_ERROR_DOM_SECURITY_ERR);
