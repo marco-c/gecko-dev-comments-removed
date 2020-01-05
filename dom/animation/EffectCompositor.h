@@ -19,6 +19,7 @@
 #include "nsTArray.h"
 
 class nsCSSPropertyIDSet;
+class nsIAtom;
 class nsIFrame;
 class nsIStyleRule;
 class nsPresContext;
@@ -237,6 +238,9 @@ public:
   
   
   void PreTraverse();
+
+  
+  void PreTraverse(dom::Element* aElement, nsIAtom* aPseudoTagOrNull);
 
 private:
   ~EffectCompositor() = default;
