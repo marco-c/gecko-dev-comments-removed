@@ -2,12 +2,6 @@
 
 
 
-use self::ContextFrameType::*;
-use self::CredentialsMode::*;
-use self::Referer::*;
-use self::RequestMode::*;
-use self::ResponseTainting::*;
-
 use url::Url;
 use hyper::method::{Get, Method};
 use hyper::mime::{Mime, Text, Html, Charset, Utf8};
@@ -101,19 +95,19 @@ impl Request {
             preserve_content_codings: false,
             skip_service_worker: false,
             context: context,
-            context_frame_type: ContextNone,
+            context_frame_type: ContextFrameType::ContextNone,
             origin: None,
             force_origin_header: false,
             same_origin_data: false,
-            referer: Client,
+            referer: Referer::Client,
             authentication: false,
             sync: false,
-            mode: NoCORS,
-            credentials_mode: Omit,
+            mode: RequestMode::NoCORS,
+            credentials_mode: CredentialsMode::Omit,
             use_url_credentials: false,
             manual_redirect: false,
             redirect_count: 0,
-            response_tainting: Basic,
+            response_tainting: ResponseTainting::Basic,
             cache: None
         }
     }
