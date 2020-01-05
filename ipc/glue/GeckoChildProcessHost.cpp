@@ -841,6 +841,27 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
   }
 #endif 
 
+#if defined(XP_LINUX) && defined(MOZ_SANDBOX)
+  
+  
+  
+  
+  {
+    nsAutoCString preload;
+    
+    
+    preload.AssignLiteral("libmozsandbox.so");
+    if (const char* oldPreload = PR_GetEnv("LD_PRELOAD")) {
+      
+      preload.Append(' ');
+      preload.Append(oldPreload);
+    }
+    
+    
+    newEnvVars["LD_PRELOAD"] = std::string(preload.get());
+  }
+#endif
+
   
   
   int srcChannelFd, dstChannelFd;
