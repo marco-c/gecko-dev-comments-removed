@@ -24,6 +24,12 @@ using namespace mozilla::layers;
 
 namespace media {
 
+
+
+
+
+static const int64_t FAILOVER_UPDATE_INTERVAL_US = 1000000 / 30;
+
 VideoSink::VideoSink(AbstractThread* aThread,
                      MediaSink* aAudioSink,
                      MediaQueue<MediaData>& aVideoQueue,
@@ -441,8 +447,10 @@ VideoSink::UpdateRenderedVideoFrames()
   }
 
   int64_t nextFrameTime = frames[1]->mTime;
+  int64_t delta = (nextFrameTime > clockTime) ? (nextFrameTime - clockTime)
+                                              : FAILOVER_UPDATE_INTERVAL_US;
   TimeStamp target = nowTime + TimeDuration::FromMicroseconds(
-    (nextFrameTime - clockTime) / mAudioSink->GetPlaybackParams().mPlaybackRate);
+     delta / mAudioSink->GetPlaybackParams().mPlaybackRate);
 
   RefPtr<VideoSink> self = this;
   mUpdateScheduler.Ensure(target, [self] () {
