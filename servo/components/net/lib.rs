@@ -45,7 +45,7 @@ pub mod image_cache_task;
 pub mod pub_domains;
 pub mod resource_task;
 pub mod storage_task;
-mod mime_classifier;
+pub mod mime_classifier;
 
 
 pub mod fetch {
