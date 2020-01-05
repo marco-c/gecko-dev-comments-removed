@@ -112,10 +112,6 @@ ClientLayerManager::ClientLayerManager(nsIWidget* aWidget)
 
 ClientLayerManager::~ClientLayerManager()
 {
-  if (mTransactionIdAllocator) {
-    TimeStamp now = TimeStamp::Now();
-    DidComposite(mLatestTransactionId, now, now);
-  }
   mMemoryPressureObserver->Destroy();
   ClearCachedResources();
   
@@ -137,6 +133,19 @@ ClientLayerManager::Destroy()
   
   ClearCachedResources();
   LayerManager::Destroy();
+
+  if (mTransactionIdAllocator) {
+    
+    
+    
+    RefPtr<TransactionIdAllocator> allocator = mTransactionIdAllocator;
+    uint64_t id = mLatestTransactionId;
+
+    RefPtr<Runnable> task = NS_NewRunnableFunction([allocator, id] () -> void {
+      allocator->NotifyTransactionCompleted(id);
+    });
+    NS_DispatchToMainThread(task.forget());
+  }
 }
 
 int32_t
