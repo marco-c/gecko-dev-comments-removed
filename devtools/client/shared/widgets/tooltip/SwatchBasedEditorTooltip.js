@@ -7,6 +7,9 @@
 const EventEmitter = require("devtools/shared/event-emitter");
 const KeyShortcuts = require("devtools/client/shared/key-shortcuts");
 const {HTMLTooltip} = require("devtools/client/shared/widgets/tooltip/HTMLTooltip");
+const InlineTooltip = require("devtools/client/shared/widgets/tooltip/InlineTooltip");
+
+const INLINE_TOOLTIP_CLASS = "inline-tooltip-container";
 
 
 
@@ -17,18 +20,29 @@ const {HTMLTooltip} = require("devtools/client/shared/widgets/tooltip/HTMLToolti
 
 
 
-function SwatchBasedEditorTooltip(document, stylesheet) {
+
+
+
+
+function SwatchBasedEditorTooltip(document, stylesheet, useInline) {
   EventEmitter.decorate(this);
+
+  this.useInline = useInline;
+
   
-  
-  
-  
-  this.tooltip = new HTMLTooltip(document, {
-    type: "arrow",
-    consumeOutsideClicks: true,
-    useXulWrapper: true,
-    stylesheet
-  });
+  if (useInline) {
+    this.tooltip = new InlineTooltip(document);
+  } else {
+    
+    
+    
+    this.tooltip = new HTMLTooltip(document, {
+      type: "arrow",
+      consumeOutsideClicks: true,
+      useXulWrapper: true,
+      stylesheet
+    });
+  }
 
   
   
@@ -73,9 +87,13 @@ SwatchBasedEditorTooltip.prototype = {
 
 
   show: function () {
-    if (this.activeSwatch) {
+    let tooltipAnchor = this.useInline ?
+      this.activeSwatch.closest(`.${INLINE_TOOLTIP_CLASS}`) :
+      this.activeSwatch;
+
+    if (tooltipAnchor) {
       let onShown = this.tooltip.once("shown");
-      this.tooltip.show(this.activeSwatch, "topcenter bottomleft");
+      this.tooltip.show(tooltipAnchor, "topcenter bottomleft");
 
       
       
