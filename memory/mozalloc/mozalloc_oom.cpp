@@ -29,6 +29,14 @@ mozalloc_handle_oom(size_t size)
     
     
     
+    
+    
+    
+    
+    
+    
+    
+    
 
     if (gAbortHandler)
         gAbortHandler(size);
