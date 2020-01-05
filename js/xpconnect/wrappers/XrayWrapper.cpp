@@ -639,10 +639,6 @@ JSXrayTraits::resolveOwnProperty(JSContext* cx, const Wrapper& jsWrapper,
     }
 
     
-    if (key == JSProto_RegExp && id == GetJSIDByIndex(cx, XPCJSContext::IDX_LASTINDEX))
-        return getOwnPropertyFromWrapperIfSafe(cx, wrapper, id, desc);
-
-    
     const js::Class* clasp = js::GetObjectClass(target);
     MOZ_ASSERT(clasp->specDefined());
 
@@ -881,10 +877,6 @@ JSXrayTraits::enumerateNames(JSContext* cx, HandleObject wrapper, unsigned flags
 
     
     if (!props.append(GetJSIDByIndex(cx, XPCJSContext::IDX_CONSTRUCTOR)))
-        return false;
-
-    
-    if (key == JSProto_RegExp && !props.append(GetJSIDByIndex(cx, XPCJSContext::IDX_LASTINDEX)))
         return false;
 
     
