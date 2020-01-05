@@ -714,13 +714,13 @@ U2FRegisterRunnable::Run()
       status->WaitGroupAdd();
 
       registerTask->Execute()->Then(mAbstractMainThread, __func__,
-        [&status, this] (nsString aResponse) {
+        [&status] (nsString aResponse) {
           if (!status->IsStopped()) {
             status->Stop(ErrorCode::OK, aResponse);
           }
           status->WaitGroupDone();
         },
-        [&status, this] (ErrorCode aErrorCode) {
+        [&status] (ErrorCode aErrorCode) {
           
           
           
@@ -900,13 +900,13 @@ U2FSignRunnable::Run()
       status->WaitGroupAdd();
 
       signTask->Execute()->Then(mAbstractMainThread, __func__,
-        [&status, this] (nsString aResponse) {
+        [&status] (nsString aResponse) {
           if (!status->IsStopped()) {
             status->Stop(ErrorCode::OK, aResponse);
           }
           status->WaitGroupDone();
         },
-        [&status, this] (ErrorCode aErrorCode) {
+        [&status] (ErrorCode aErrorCode) {
           
           
           
