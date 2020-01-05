@@ -215,6 +215,7 @@ public:
     , mExtraData(aOther.mExtraData)
     , mRotation(aOther.mRotation)
     , mImageRect(aOther.mImageRect)
+    , mAlphaPresent(aOther.mAlphaPresent)
   {
   }
 
@@ -236,6 +237,16 @@ public:
   UniquePtr<TrackInfo> Clone() const override
   {
     return MakeUnique<VideoInfo>(*this);
+  }
+
+  void SetAlpha(bool aAlphaPresent)
+  {
+    mAlphaPresent = aAlphaPresent;
+  }
+
+  bool HasAlpha() const
+  {
+    return mAlphaPresent;
   }
 
   nsIntRect ImageRect() const
@@ -309,6 +320,9 @@ private:
   
   
   nsIntRect mImageRect;
+
+  
+  bool mAlphaPresent = false;
 };
 
 class AudioInfo : public TrackInfo {
