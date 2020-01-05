@@ -574,19 +574,75 @@ CSSToLayoutDeviceScale nsIWidget::GetDefaultScale()
 }
 
 
-double nsIWidget::DefaultScaleOverride()
-{
-  
-  
-  
-  double devPixelsPerCSSPixel = -1.0;
 
+
+static double sDevPixelsPerCSSPixel = -1.0;
+
+
+void nsIWidget::ScaleOverrideChanged()
+{
   nsAdoptingCString prefString = Preferences::GetCString("layout.css.devPixelsPerPx");
   if (!prefString.IsEmpty()) {
-    devPixelsPerCSSPixel = PR_strtod(prefString, nullptr);
+    sDevPixelsPerCSSPixel = PR_strtod(prefString, nullptr);
+  } else {
+    sDevPixelsPerCSSPixel = -1.0;
+  }
+}
+
+class ProfileChangeObserver final : public nsIObserver
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+  static void Init();
+private:
+  ProfileChangeObserver();
+  ~ProfileChangeObserver();
+};
+
+ProfileChangeObserver::ProfileChangeObserver()
+{
+}
+
+ProfileChangeObserver::~ProfileChangeObserver()
+{
+}
+
+
+void ProfileChangeObserver::Init()
+{
+  nsCOMPtr<nsIObserver> profileChangeObserver = new ProfileChangeObserver();
+  nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
+  obs->AddObserver(profileChangeObserver, "profile-do-change", false);
+  
+  
+  
+}
+
+NS_IMPL_ISUPPORTS(ProfileChangeObserver,
+                  nsIObserver)
+
+NS_IMETHODIMP
+ProfileChangeObserver::Observe(nsISupports* aSubject, const char* aTopic,
+                               const char16_t* aData)
+{
+  if (!strcmp(aTopic, "profile-do-change")) {
+    nsIWidget::ScaleOverrideChanged();
+  }
+  return NS_OK;
+}
+
+
+double nsIWidget::DefaultScaleOverride()
+{
+  static bool valueCached = false;
+  if (!valueCached) {
+    ScaleOverrideChanged();
+    ProfileChangeObserver::Init();
+    valueCached = true;
   }
 
-  return devPixelsPerCSSPixel;
+  return sDevPixelsPerCSSPixel;
 }
 
 

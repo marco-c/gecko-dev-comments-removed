@@ -575,6 +575,12 @@ class nsIWidget : public nsISupports
 
 
 
+    static void ScaleOverrideChanged();
+
+    
+
+
+
 
 
 
