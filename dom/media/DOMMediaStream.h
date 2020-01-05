@@ -635,6 +635,9 @@ protected:
   class PlaybackStreamListener;
   friend class PlaybackStreamListener;
 
+  class PlaybackTrackListener;
+  friend class PlaybackTrackListener;
+
   
 
 
@@ -703,6 +706,9 @@ protected:
   
   
   RefPtr<PlaybackStreamListener> mPlaybackListener;
+
+  
+  RefPtr<PlaybackTrackListener> mPlaybackTrackListener;
 
   nsTArray<nsAutoPtr<OnTracksAvailableCallback> > mRunOnTracksAvailable;
 

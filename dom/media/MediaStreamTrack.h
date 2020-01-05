@@ -233,6 +233,27 @@ protected:
 
 
 
+
+class MediaStreamTrackConsumer : public nsISupports
+{
+public:
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTION_CLASS(MediaStreamTrackConsumer)
+
+  
+
+
+
+
+  virtual void NotifyEnded(MediaStreamTrack* aTrack) {};
+
+protected:
+  virtual ~MediaStreamTrackConsumer() {}
+};
+
+
+
+
 class MediaStreamTrack : public DOMEventTargetHelper,
                          public MediaStreamTrackSource::Sink
 {
@@ -323,6 +344,12 @@ public:
   
 
 
+
+  void NotifyEnded();
+
+  
+
+
   CORSMode GetCORSMode() const { return GetSource().GetCORSMode(); }
 
   
@@ -362,6 +389,18 @@ public:
 
 
   bool RemovePrincipalChangeObserver(PrincipalChangeObserver<MediaStreamTrack>* aObserver);
+
+  
+
+
+
+
+  void AddConsumer(MediaStreamTrackConsumer* aConsumer);
+
+  
+
+
+  void RemoveConsumer(MediaStreamTrackConsumer* aConsumer);
 
   
 
@@ -428,6 +467,8 @@ protected:
                                                            TrackID aTrackID) = 0;
 
   nsTArray<PrincipalChangeObserver<MediaStreamTrack>*> mPrincipalChangeObservers;
+
+  nsTArray<RefPtr<MediaStreamTrackConsumer>> mConsumers;
 
   RefPtr<DOMMediaStream> mOwningStream;
   TrackID mTrackID;
