@@ -113,10 +113,21 @@ impl Cookie {
 
     
     pub fn path_match(request_path: &str, cookie_path: &str) -> bool {
+        
+        
+
+        
         request_path == cookie_path ||
-        ( request_path.starts_with(cookie_path) &&
-            ( request_path.ends_with("/") || request_path[cookie_path.len()..].starts_with("/"))
-        )
+
+        (request_path.starts_with(cookie_path) && (
+            
+            
+            cookie_path.ends_with("/") ||
+            
+            
+            
+            request_path[cookie_path.len()..].starts_with("/")
+        ))
     }
 
     
