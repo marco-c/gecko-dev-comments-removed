@@ -1,0 +1,15 @@
+
+
+
+
+function t()
+{
+  var x = y => z => {} 
+  /Q/;
+  return 42;
+}
+
+assertEq(t(), 42);
+
+if (typeof reportCompare === "function")
+  reportCompare(true, true);
