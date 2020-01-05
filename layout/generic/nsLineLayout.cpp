@@ -1293,7 +1293,7 @@ nsLineLayout::CanPlaceFrame(PerFrameData* pfd,
 
 
 
-  if ((NS_FRAME_IS_NOT_COMPLETE(aStatus) ||
+  if ((aStatus.IsIncomplete() ||
        pfd->mFrame->LastInFlow()->GetNextContinuation() ||
        pfd->mFrame->FrameIsNonLastInIBSplit()) &&
       !pfd->mIsLetterFrame &&

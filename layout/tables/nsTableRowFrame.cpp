@@ -936,7 +936,7 @@ nsTableRowFrame::ReflowChildren(nsPresContext*           aPresContext,
 
         
         
-        if (NS_FRAME_IS_NOT_COMPLETE(status)) {
+        if (status.IsIncomplete()) {
           aStatus = NS_FRAME_NOT_COMPLETE;
         }
       } else {

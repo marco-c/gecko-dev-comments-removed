@@ -912,7 +912,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
   }
   if (aFloat->GetPrevInFlow())
     floatMargin.BStart(wm) = 0;
-  if (NS_FRAME_IS_NOT_COMPLETE(reflowStatus))
+  if (reflowStatus.IsIncomplete())
     floatMargin.BEnd(wm) = 0;
 
   
@@ -980,7 +980,7 @@ BlockReflowInput::FlowAndPlaceFloat(nsIFrame* aFloat)
     nsFloatManager::CalculateRegionFor(wm, aFloat, floatMargin,
                                        ContainerSize());
   
-  if (NS_FRAME_IS_NOT_COMPLETE(reflowStatus) &&
+  if (reflowStatus.IsIncomplete() &&
       (NS_UNCONSTRAINEDSIZE != ContentBSize())) {
     region.BSize(wm) = std::max(region.BSize(wm),
                                 ContentBSize() - floatPos.B(wm));

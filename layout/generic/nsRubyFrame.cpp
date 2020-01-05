@@ -217,7 +217,7 @@ nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,
     
     return;
   }
-  if (NS_FRAME_IS_NOT_COMPLETE(aStatus)) {
+  if (aStatus.IsIncomplete()) {
     
     
     
