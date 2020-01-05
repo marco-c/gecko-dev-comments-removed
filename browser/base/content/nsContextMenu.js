@@ -146,14 +146,14 @@ nsContextMenu.prototype = {
     }
 
     var inContainer = false;
-    var userContextId = this.browser.contentPrincipal.originAttributes.userContextId;
-    if (userContextId) {
+    if (gContextMenuContentData.userContextId) {
       inContainer = true;
       var item = document.getElementById("context-openlinkincontainertab");
 
-      item.setAttribute("data-usercontextid", userContextId);
+      item.setAttribute("data-usercontextid", gContextMenuContentData.userContextId);
 
-      var label = ContextualIdentityService.getUserContextLabel(userContextId);
+      var label =
+        ContextualIdentityService.getUserContextLabel(gContextMenuContentData.userContextId);
       item.setAttribute("label",
          gBrowserBundle.formatStringFromName("userContextOpenLink.label",
                                              [label], 1));
@@ -975,7 +975,7 @@ nsContextMenu.prototype = {
     
     
     if ("userContextId" in params &&
-        params.userContextId != this.principal.originAttributes.userContextId) {
+        params.userContextId != gContextMenuContentData.userContextId) {
       params.noReferrer = true;
     }
 
@@ -1864,7 +1864,7 @@ nsContextMenu.prototype = {
   },
 
   createContainerMenu: function(aEvent) {
-    var userContextId = this.browser.contentPrincipal.originAttributes.userContextId;
-    return createUserContextMenu(aEvent, false, userContextId);
+    return createUserContextMenu(aEvent, false,
+                                 gContextMenuContentData.userContextId);
   },
 };
