@@ -30,6 +30,13 @@ public:
     if (mModule) {
       mFunction = reinterpret_cast<FunctionPtrT>(
                     ::GetProcAddress(mModule, aFuncName));
+
+      if (!mFunction) {
+        
+        
+        ::FreeLibrary(mModule);
+        mModule = NULL;
+      }
     }
   }
 
@@ -46,7 +53,7 @@ public:
     }
   }
 
-  R operator()(Args... args)
+  R operator()(Args... args) const
   {
     return mFunction(mozilla::Forward<Args>(args)...);
   }
