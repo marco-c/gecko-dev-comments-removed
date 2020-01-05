@@ -123,7 +123,7 @@ pub fn dispatch_event(target: &EventTarget,
     }
 
     
-    event.set_dispatching(true);
+    event.mark_as_dispatching();
 
     
     
@@ -159,13 +159,7 @@ pub fn dispatch_event(target: &EventTarget,
     }
 
     
-    event.set_dispatching(false);
-
-    
-    event.set_phase(EventPhase::None);
-
-    
-    event.clear_current_target();
+    event.clear_dispatching_flags();
 
     
     !event.DefaultPrevented()
