@@ -6,7 +6,6 @@
 
 const { addons, createClass, DOM: dom, PropTypes } =
   require("devtools/client/shared/vendor/react");
-const { throttle } = require("devtools/client/inspector/shared/utils");
 
 const Types = require("../types");
 
@@ -14,7 +13,7 @@ const COLUMNS = "cols";
 const ROWS = "rows";
 
 
-const GRID_CELL_MOUSEOVER_TIMEOUT = 150;
+const GRID_HIGHLIGHTING_DEBOUNCE = 50;
 
 
 
@@ -45,13 +44,6 @@ module.exports = createClass({
       height: 0,
       width: 0,
     };
-  },
-
-  componentWillMount() {
-    
-    
-    
-    this.highlightCell = throttle(this.highlightCell, GRID_CELL_MOUSEOVER_TIMEOUT);
   },
 
   componentWillReceiveProps({ grids }) {
@@ -135,7 +127,21 @@ module.exports = createClass({
     return height;
   },
 
-  highlightCell({ target }) {
+  highlightCell(e) {
+    
+    
+    
+    
+    if (this.highlightTimeout) {
+      clearTimeout(this.highlightTimeout);
+    }
+    this.highlightTimeout = setTimeout(() => {
+      this.doHighlightCell(e);
+      this.highlightTimeout = null;
+    }, GRID_HIGHLIGHTING_DEBOUNCE);
+  },
+
+  doHighlightCell({ target }) {
     const {
       grids,
       onShowGridAreaHighlight,
