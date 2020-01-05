@@ -769,6 +769,13 @@ video > .caption-box {
 
 
 
+input[type="time"] > xul|datetimebox {
+  display: flex;
+  -moz-binding: url("chrome://global/content/bindings/datetimebox.xml#time-input");
+}
+
+
+
 @supports -moz-bool-pref("dom.details_element.enabled") {
   details > summary:first-of-type,
   details > summary:-moz-native-anonymous {

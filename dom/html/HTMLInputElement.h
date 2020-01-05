@@ -772,7 +772,24 @@ public:
   void MozSetFileArray(const Sequence<OwningNonNull<File>>& aFiles);
   void MozSetDirectory(const nsAString& aDirectoryPath, ErrorResult& aRv);
 
+  
+
+
+
+  void GetDateTimeInputBoxValue(DateTimeValue& aValue);
+  void UpdateDateTimeInputBox(const DateTimeValue& aValue);
+  void SetDateTimePickerState(bool aOpen);
+
+  
+
+
+
+  void OpenDateTimePicker(const DateTimeValue& aInitialValue);
+  void UpdateDateTimePicker(const DateTimeValue& aValue);
+  void CloseDateTimePicker();
+
   HTMLInputElement* GetOwnerNumberControl();
+  HTMLInputElement* GetOwnerDateTimeControl();
 
   void StartNumberControlSpinnerSpin();
   enum SpinnerStopState {
@@ -803,7 +820,8 @@ public:
 
   nsIEditor* GetEditor();
 
-  
+  void SetUserInput(const nsAString& aInput,
+                    const mozilla::Maybe<nsIPrincipal*>& aPrincipal);
 
   
 
@@ -1475,6 +1493,12 @@ protected:
 
 
 
+  nsAutoPtr<DateTimeValue> mDateTimeInputBoxValue;
+
+  
+
+
+
 
   nsTextEditorState::SelectionProperties mSelectionProperties;
 
@@ -1561,7 +1585,8 @@ private:
   static bool MayFireChangeOnBlur(uint8_t aType) {
     return IsSingleLineTextControl(false, aType) ||
            aType == NS_FORM_INPUT_RANGE ||
-           aType == NS_FORM_INPUT_NUMBER;
+           aType == NS_FORM_INPUT_NUMBER ||
+           aType == NS_FORM_INPUT_TIME;
   }
 
   struct nsFilePickerFilter {
