@@ -109,39 +109,7 @@ this.BrowserTestUtils = {
 
 
 
-
-
-
-
-
-  openNewForegroundTab(tabbrowser, ...args) {
-    let options;
-    if (tabbrowser instanceof Ci.nsIDOMXULElement) {
-      
-      let [
-        opening = "about:blank",
-        waitForLoad = true,
-        waitForStateStop = false,
-      ] = args;
-
-      options = { opening, waitForLoad, waitForStateStop };
-    } else {
-      if ("url" in tabbrowser && !("opening" in tabbrowser)) {
-        tabbrowser.opening = tabbrowser.url;
-      }
-
-      let {
-        opening = "about:blank",
-        waitForLoad = true,
-        waitForStateStop = false,
-      } = tabbrowser;
-
-      tabbrowser = tabbrowser.gBrowser;
-      options = { opening, waitForLoad, waitForStateStop };
-    }
-
-    let { opening: opening, waitForLoad: aWaitForLoad, waitForStateStop: aWaitForStateStop } = options;
-
+  openNewForegroundTab(tabbrowser, opening = "about:blank", aWaitForLoad = true, aWaitForStateStop = false) {
     let tab;
     let promises = [
       BrowserTestUtils.switchTab(tabbrowser, function () {
