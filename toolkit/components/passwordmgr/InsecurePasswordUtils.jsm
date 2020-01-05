@@ -22,6 +22,21 @@ XPCOMUtils.defineLazyGetter(this, "WebConsoleUtils", () => {
   return this.devtools.require("devtools/server/actors/utils/webconsole-utils").WebConsoleUtils;
 });
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 this.InsecurePasswordUtils = {
   _formRootsWarned: new WeakMap(),
   _sendWebConsoleMessage(messageTag, domDoc) {
@@ -76,13 +91,6 @@ this.InsecurePasswordUtils = {
 
   isFormSecure(aForm) {
     
-    
-    
-    
-    
-    
-    
-    
     let isSafePage = aForm.ownerDocument.defaultView.isSecureContextIfOpenerIgnored;
     let { isFormSubmitSecure, isFormSubmitHTTP } = this._checkFormSecurity(aForm);
 
@@ -101,7 +109,8 @@ this.InsecurePasswordUtils = {
     }
 
     let domDoc = aForm.ownerDocument;
-    let isSafePage = domDoc.defaultView.isSecureContext;
+    
+    let isSafePage = domDoc.defaultView.isSecureContextIfOpenerIgnored;
 
     let { isFormSubmitHTTP, isFormSubmitSecure } = this._checkFormSecurity(aForm);
 
