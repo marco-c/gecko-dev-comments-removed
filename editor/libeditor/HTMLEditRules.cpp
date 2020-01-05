@@ -7699,7 +7699,9 @@ HTMLEditRules::RemoveEmptyNodes()
     if (idx != skipList.NoIndex) {
       
       
-      skipList[idx] = parent;
+      if (parent) {
+        skipList[idx] = parent;
+      }
     } else {
       bool bIsCandidate = false;
       bool bIsEmptyNode = false;
@@ -7746,7 +7748,7 @@ HTMLEditRules::RemoveEmptyNodes()
         }
       }
 
-      if (!bIsEmptyNode) {
+      if (!bIsEmptyNode && parent) {
         
         skipList.AppendElement(*parent);
       }
