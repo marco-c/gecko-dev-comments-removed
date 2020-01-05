@@ -155,9 +155,13 @@ XPCOMUtils.defineLazyGetter(this, "PopupNotifications", function() {
   try {
     
     
+    
+    
+    
     let shouldSuppress = () => {
-      return gURLBar.getAttribute("pageproxystate") != "valid" &&
-             gURLBar.focused;
+      return window.windowState == window.STATE_MINIMIZED ||
+             (gURLBar.getAttribute("pageproxystate") != "valid" &&
+             gURLBar.focused);
     };
     return new tmp.PopupNotifications(gBrowser,
                                       document.getElementById("notification-popup"),
@@ -1499,6 +1503,15 @@ var gBrowserInit = {
     gMenuButtonUpdateBadge.init();
 
     gExtensionsNotifications.init();
+
+    let wasMinimized = window.windowState == window.STATE_MINIMIZED;
+    window.addEventListener("sizemodechange", () => {
+      let isMinimized = window.windowState == window.STATE_MINIMIZED;
+      if (wasMinimized != isMinimized) {
+        wasMinimized = isMinimized;
+        UpdatePopupNotificationsVisibility();
+      }
+    });
 
     window.addEventListener("mousemove", MousePosTracker);
     window.addEventListener("dragover", MousePosTracker);
