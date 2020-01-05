@@ -954,8 +954,7 @@ class nsIWidget : public nsISupports
 
 
 
-
-    NS_IMETHOD SetCursor(nsCursor aCursor) = 0;
+    virtual void SetCursor(nsCursor aCursor) = 0;
 
     
 
@@ -973,8 +972,8 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD SetCursor(imgIContainer* aCursor,
-                         uint32_t aHotspotX, uint32_t aHotspotY) = 0;
+    virtual nsresult SetCursor(imgIContainer* aCursor,
+                               uint32_t aHotspotX, uint32_t aHotspotY) = 0;
 
     
 
