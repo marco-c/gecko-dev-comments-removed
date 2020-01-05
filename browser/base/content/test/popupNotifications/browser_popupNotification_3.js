@@ -270,7 +270,6 @@ var tests = [
   
   { id: "Test#10",
     run: function () {
-      let callbackCount = 0;
       this.testNotif1 = new BasicNotification(this.id);
       this.testNotif1.message += " 1";
       this.notification1 = showNotification(this.testNotif1);
