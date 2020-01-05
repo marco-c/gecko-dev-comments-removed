@@ -50,7 +50,7 @@ def main(output, *filenames):
     
     
     
-    print("enum ID : uint32_t {", file=output)
+    print("enum HistogramID : uint32_t {", file=output)
     seen_use_counters = False
     for (use_counter_group, histograms) in groups:
         if use_counter_group:

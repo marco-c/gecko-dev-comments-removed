@@ -172,7 +172,7 @@ private:
 
 private:
   
-  void WaitForPreload(mozilla::Telemetry::ID aTelemetryID);
+  void WaitForPreload(mozilla::Telemetry::HistogramID aTelemetryID);
 
   
   Data& DataSet(const Storage* aStorage);

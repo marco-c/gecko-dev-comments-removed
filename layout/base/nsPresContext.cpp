@@ -80,7 +80,6 @@
 #include "mozilla/Telemetry.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceTiming.h"
-#include "mozilla/layers/APZThreadUtils.h"
 
 #if defined(MOZ_WIDGET_GTK)
 #include "gfxPlatformGtk.h" 
@@ -166,7 +165,7 @@ nsPresContext::IsDOMPaintEventPending()
     
     
     
-    NotifyInvalidation(drpc->mRefreshDriver->LastTransactionId() + 1, nsRect(0, 0, 0, 0));
+    NotifyInvalidation(nsRect(0, 0, 0, 0), 0);
     NS_ASSERTION(mFireAfterPaintEvents, "Why aren't we planning to fire the event?");
     return true;
   }
@@ -268,6 +267,7 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
     mPendingMediaFeatureValuesChanged(false),
     mPrefChangePendingNeedsReflow(false),
     mIsEmulatingMedia(false),
+    mAllInvalidated(false),
     mIsGlyph(false),
     mUsesRootEMUnits(false),
     mUsesExChUnits(false),
@@ -401,7 +401,7 @@ void
 nsPresContext::LastRelease()
 {
   if (IsRoot()) {
-    static_cast<nsRootPresContext*>(this)->CancelAllDidPaintTimers();
+    static_cast<nsRootPresContext*>(this)->CancelDidPaintTimer();
   }
   if (mMissingFonts) {
     mMissingFonts->Clear();
@@ -1038,7 +1038,7 @@ nsPresContext::DetachShell()
     thisRoot->CancelApplyPluginGeometryTimer();
 
     
-    thisRoot->CancelAllDidPaintTimers();
+    thisRoot->CancelDidPaintTimer();
   }
 }
 
@@ -1556,6 +1556,9 @@ nsPresContext::Detach()
 {
   SetContainer(nullptr);
   SetLinkHandler(nullptr);
+  if (mShell) {
+    mShell->CancelInvalidatePresShellIfHidden();
+  }
 }
 
 bool
@@ -1660,7 +1663,7 @@ nsPresContext::RecordInteractionTime(InteractionType aType,
 
   
   
-  Telemetry::ID histogramIds[] = {
+  Telemetry::HistogramID histogramIds[] = {
     Telemetry::TIME_TO_FIRST_CLICK_MS,
     Telemetry::TIME_TO_FIRST_KEY_INPUT_MS,
     Telemetry::TIME_TO_FIRST_MOUSE_MOVE_MS,
@@ -2314,7 +2317,7 @@ nsPresContext::EnsureSafeToHandOutCSSRules()
 }
 
 void
-nsPresContext::FireDOMPaintEvent(nsTArray<nsRect>* aList, uint64_t aTransactionId,
+nsPresContext::FireDOMPaintEvent(nsInvalidateRequestList* aList, uint64_t aTransactionId,
                                  mozilla::TimeStamp aTimeStamp )
 {
   nsPIDOMWindowInner* ourWindow = mDocument->GetInnerWindow();
@@ -2446,7 +2449,15 @@ nsPresContext::MayHavePaintEventListenerInSubDocument()
 }
 
 void
-nsPresContext::NotifyInvalidation(uint64_t aTransactionId, const nsIntRect& aRect)
+nsPresContext::NotifyInvalidation(uint32_t aFlags)
+{
+  nsIFrame* rootFrame = PresShell()->FrameManager()->GetRootFrame();
+  NotifyInvalidation(rootFrame->GetVisualOverflowRect(), aFlags);
+  mAllInvalidated = true;
+}
+
+void
+nsPresContext::NotifyInvalidation(const nsIntRect& aRect, uint32_t aFlags)
 {
   
   
@@ -2463,11 +2474,11 @@ nsPresContext::NotifyInvalidation(uint64_t aTransactionId, const nsIntRect& aRec
               DevPixelsToAppUnits(clampedRect.y),
               DevPixelsToAppUnits(clampedRect.width),
               DevPixelsToAppUnits(clampedRect.height));
-  NotifyInvalidation(aTransactionId, rect);
+  NotifyInvalidation(rect, aFlags);
 }
 
 void
-nsPresContext::NotifyInvalidation(uint64_t aTransactionId, const nsRect& aRect)
+nsPresContext::NotifyInvalidation(const nsRect& aRect, uint32_t aFlags)
 {
   MOZ_ASSERT(GetContainerWeak(), "Invalidation in detached pres context");
 
@@ -2476,6 +2487,10 @@ nsPresContext::NotifyInvalidation(uint64_t aTransactionId, const nsRect& aRect)
   
   
   
+
+  if (mAllInvalidated) {
+    return;
+  }
 
   nsPresContext* pc;
   for (pc = this; pc; pc = pc->GetParentPresContext()) {
@@ -2486,23 +2501,17 @@ nsPresContext::NotifyInvalidation(uint64_t aTransactionId, const nsRect& aRect)
   if (!pc) {
     nsRootPresContext* rpc = GetRootPresContext();
     if (rpc) {
-      rpc->EnsureEventualDidPaintEvent(aTransactionId);
+      rpc->EnsureEventualDidPaintEvent();
     }
   }
 
-  TransactionInvalidations* transaction = nullptr;
-  for (TransactionInvalidations& t : mTransactions) {
-    if (t.mTransactionId == aTransactionId) {
-      transaction = &t;
-      break;
-    }
-  }
-  if (!transaction) {
-    transaction = mTransactions.AppendElement();
-    transaction->mTransactionId = aTransactionId;
-  }
+  nsInvalidateRequestList::Request* request =
+    mInvalidateRequestsSinceLastPaint.mRequests.AppendElement();
+  if (!request)
+    return;
 
-  transaction->mInvalidations.AppendElement(aRect);
+  request->mRect = aRect;
+  request->mFlags = aFlags;
 }
 
  void
@@ -2524,7 +2533,7 @@ nsPresContext::NotifySubDocInvalidation(ContainerLayer* aContainer,
     
     
     rect.MoveBy(-topLeft);
-    data->mPresContext->NotifyInvalidation(aContainer->Manager()->GetLastTransactionId(), rect);
+    data->mPresContext->NotifyInvalidation(rect, 0);
   }
 }
 
@@ -2543,12 +2552,13 @@ nsPresContext::ClearNotifySubDocInvalidationData(ContainerLayer* aContainer)
 }
 
 struct NotifyDidPaintSubdocumentCallbackClosure {
+  uint32_t mFlags;
   uint64_t mTransactionId;
   const mozilla::TimeStamp& mTimeStamp;
   bool mNeedsAnotherDidPaintNotification;
 };
- bool
-nsPresContext::NotifyDidPaintSubdocumentCallback(nsIDocument* aDocument, void* aData)
+static bool
+NotifyDidPaintSubdocumentCallback(nsIDocument* aDocument, void* aData)
 {
   NotifyDidPaintSubdocumentCallbackClosure* closure =
     static_cast<NotifyDidPaintSubdocumentCallbackClosure*>(aData);
@@ -2556,9 +2566,9 @@ nsPresContext::NotifyDidPaintSubdocumentCallback(nsIDocument* aDocument, void* a
   if (shell) {
     nsPresContext* pc = shell->GetPresContext();
     if (pc) {
-      pc->NotifyDidPaintForSubtree(closure->mTransactionId,
+      pc->NotifyDidPaintForSubtree(closure->mFlags, closure->mTransactionId,
                                    closure->mTimeStamp);
-      if (pc->mFireAfterPaintEvents) {
+      if (pc->IsDOMPaintEventPending()) {
         closure->mNeedsAnotherDidPaintNotification = true;
       }
     }
@@ -2569,7 +2579,7 @@ nsPresContext::NotifyDidPaintSubdocumentCallback(nsIDocument* aDocument, void* a
 class DelayedFireDOMPaintEvent : public Runnable {
 public:
   DelayedFireDOMPaintEvent(nsPresContext* aPresContext,
-                           nsTArray<nsRect>* aList,
+                           nsInvalidateRequestList* aList,
                            uint64_t aTransactionId,
                            const mozilla::TimeStamp& aTimeStamp = mozilla::TimeStamp())
     : mPresContext(aPresContext)
@@ -2578,7 +2588,7 @@ public:
   {
     MOZ_ASSERT(mPresContext->GetContainerWeak(),
                "DOMPaintEvent requested for a detached pres context");
-    mList.SwapElements(*aList);
+    mList.TakeFrom(aList);
   }
   NS_IMETHOD Run() override
   {
@@ -2593,15 +2603,15 @@ public:
   RefPtr<nsPresContext> mPresContext;
   uint64_t mTransactionId;
   const mozilla::TimeStamp mTimeStamp;
-  nsTArray<nsRect> mList;
+  nsInvalidateRequestList mList;
 };
 
 void
-nsPresContext::NotifyDidPaintForSubtree(uint64_t aTransactionId,
+nsPresContext::NotifyDidPaintForSubtree(uint32_t aFlags, uint64_t aTransactionId,
                                         const mozilla::TimeStamp& aTimeStamp)
 {
   if (IsRoot()) {
-    static_cast<nsRootPresContext*>(this)->CancelDidPaintTimers(aTransactionId);
+    static_cast<nsRootPresContext*>(this)->CancelDidPaintTimer();
 
     if (!mFireAfterPaintEvents) {
       return;
@@ -2618,36 +2628,30 @@ nsPresContext::NotifyDidPaintForSubtree(uint64_t aTransactionId,
   
   
 
-  bool sent = false;
-  uint32_t i = 0;
-  while (i < mTransactions.Length()) {
-    if (mTransactions[i].mTransactionId <= aTransactionId) {
-      nsCOMPtr<nsIRunnable> ev =
-        new DelayedFireDOMPaintEvent(this, &mTransactions[i].mInvalidations,
-                                     mTransactions[i].mTransactionId, aTimeStamp);
-      nsContentUtils::AddScriptRunner(ev);
-      sent = true;
-      mTransactions.RemoveElementAt(i);
-    } else {
-      i++;
-    }
+  if (aFlags & nsIPresShell::PAINT_LAYERS) {
+    mUndeliveredInvalidateRequestsBeforeLastPaint.TakeFrom(
+        &mInvalidateRequestsSinceLastPaint);
+    mAllInvalidated = false;
   }
-
-  if (!sent) {
-    nsTArray<nsRect> dummy;
+  if (aFlags & nsIPresShell::PAINT_COMPOSITE) {
     nsCOMPtr<nsIRunnable> ev =
-      new DelayedFireDOMPaintEvent(this, &dummy,
+      new DelayedFireDOMPaintEvent(this, &mUndeliveredInvalidateRequestsBeforeLastPaint,
                                    aTransactionId, aTimeStamp);
     nsContentUtils::AddScriptRunner(ev);
   }
 
-  NotifyDidPaintSubdocumentCallbackClosure closure = { aTransactionId, aTimeStamp, false };
-  mDocument->EnumerateSubDocuments(nsPresContext::NotifyDidPaintSubdocumentCallback, &closure);
+  NotifyDidPaintSubdocumentCallbackClosure closure = { aFlags, aTransactionId, aTimeStamp, false };
+  mDocument->EnumerateSubDocuments(NotifyDidPaintSubdocumentCallback, &closure);
 
   if (!closure.mNeedsAnotherDidPaintNotification &&
-      mTransactions.IsEmpty()) {
+      mInvalidateRequestsSinceLastPaint.IsEmpty() &&
+      mUndeliveredInvalidateRequestsBeforeLastPaint.IsEmpty()) {
     
     mFireAfterPaintEvents = false;
+  } else {
+    if (IsRoot()) {
+      static_cast<nsRootPresContext*>(this)->EnsureEventualDidPaintEvent();
+    }
   }
 }
 
@@ -2995,14 +2999,14 @@ nsRootPresContext::~nsRootPresContext()
 {
   NS_ASSERTION(mRegisteredPlugins.Count() == 0,
                "All plugins should have been unregistered");
-  CancelAllDidPaintTimers();
+  CancelDidPaintTimer();
   CancelApplyPluginGeometryTimer();
 }
 
  void
 nsRootPresContext::Detach()
 {
-  CancelAllDidPaintTimers();
+  CancelDidPaintTimer();
   
   nsPresContext::Detach();
 }
@@ -3257,51 +3261,26 @@ nsRootPresContext::CollectPluginGeometryUpdates(LayerManager* aLayerManager)
 #endif  
 }
 
-void
-nsRootPresContext::EnsureEventualDidPaintEvent(uint64_t aTransactionId)
+static void
+NotifyDidPaintForSubtreeCallback(nsITimer *aTimer, void *aClosure)
 {
-  for (NotifyDidPaintTimer& t : mNotifyDidPaintTimers) {
-    if (t.mTransactionId == aTransactionId) {
-      return;
-    }
-  }
-
-  nsCOMPtr<nsITimer> timer = do_CreateInstance("@mozilla.org/timer;1");
-  if (timer) {
-    nsresult rv = timer->InitWithCallback(NewTimerCallback([=](){
-      nsAutoScriptBlocker blockScripts;
-      this->NotifyDidPaintForSubtree(aTransactionId);
-    }), 100, nsITimer::TYPE_ONE_SHOT);
-
-    if (NS_SUCCEEDED(rv)) {
-      NotifyDidPaintTimer* t = mNotifyDidPaintTimers.AppendElement();
-      t->mTransactionId = aTransactionId;
-      t->mTimer = timer;
-    }
-  }
+  nsPresContext* presContext = (nsPresContext*)aClosure;
+  nsAutoScriptBlocker blockScripts;
+  
+  
+  presContext->NotifyDidPaintForSubtree(
+      nsIPresShell::PAINT_LAYERS | nsIPresShell::PAINT_COMPOSITE);
 }
 
 void
-nsRootPresContext::CancelDidPaintTimers(uint64_t aTransactionId)
+nsRootPresContext::EnsureEventualDidPaintEvent()
 {
-  uint32_t i = 0;
-  while (i < mNotifyDidPaintTimers.Length()) {
-    if (mNotifyDidPaintTimers[i].mTransactionId <= aTransactionId) {
-      mNotifyDidPaintTimers[i].mTimer->Cancel();
-      mNotifyDidPaintTimers.RemoveElementAt(i);
-    } else {
-      i++;
-    }
-  }
-}
+  if (mNotifyDidPaintTimer)
+    return;
 
-void
-nsRootPresContext::CancelAllDidPaintTimers()
-{
-  for (uint32_t i = 0; i < mNotifyDidPaintTimers.Length(); i++) {
-    mNotifyDidPaintTimers[i].mTimer->Cancel();
-  }
-  mNotifyDidPaintTimers.Clear();
+  mNotifyDidPaintTimer = CreateTimer(NotifyDidPaintForSubtreeCallback,
+                                     "NotifyDidPaintForSubtreeCallback",
+                                     100);
 }
 
 void

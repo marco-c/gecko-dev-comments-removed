@@ -68,7 +68,7 @@ public:
 
   
   bool accumulateResult;
-  Telemetry::ID certPinningResultHistogram;
+  Telemetry::HistogramID certPinningResultHistogram;
   int32_t certPinningResultBucket;
   
   bool accumulateForRoot;

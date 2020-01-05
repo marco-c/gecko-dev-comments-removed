@@ -933,7 +933,7 @@ nsCacheProfilePrefObserver::MemoryCacheCapacity()
     }
 
     static uint64_t bytes = PR_GetPhysicalMemorySize();
-    CACHE_LOG_DEBUG(("Physical Memory size is %" PRIu64 "\n", bytes));
+    CACHE_LOG_DEBUG(("Physical Memory size is %llu\n", bytes));
 
     
     
@@ -1776,8 +1776,7 @@ nsCacheService::CreateCustomOfflineDevice(nsIFile *aProfileDir,
 
     nsresult rv = (*aDevice)->InitWithSqlite(mStorageService);
     if (NS_FAILED(rv)) {
-        CACHE_LOG_DEBUG(("OfflineDevice->InitWithSqlite() failed (0x%.8" PRIx32 ")\n",
-                         static_cast<uint32_t>(rv)));
+        CACHE_LOG_DEBUG(("OfflineDevice->InitWithSqlite() failed (0x%.8x)\n", rv));
         CACHE_LOG_DEBUG(("    - disabling offline cache for this session.\n"));
 
         NS_RELEASE(*aDevice);
@@ -2190,7 +2189,7 @@ nsCacheService::SearchCacheDevices(nsCString * key, nsCacheStoragePolicy policy,
         if (mMemoryDevice) {
             entry = mMemoryDevice->FindEntry(key, collision);
             CACHE_LOG_DEBUG(("Searching mMemoryDevice for key %s found: 0x%p, "
-                             "collision: %d\n", key->get(), entry, *collision));
+                             "collision: %d\n", key->get(), entry, collision));
         }
     }
 
@@ -2646,10 +2645,10 @@ nsCacheService::Lock()
 }
 
 void
-nsCacheService::Lock(mozilla::Telemetry::ID mainThreadLockerID)
+nsCacheService::Lock(mozilla::Telemetry::HistogramID mainThreadLockerID)
 {
-    mozilla::Telemetry::ID lockerID;
-    mozilla::Telemetry::ID generalID;
+    mozilla::Telemetry::HistogramID lockerID;
+    mozilla::Telemetry::HistogramID generalID;
 
     if (NS_IsMainThread()) {
         lockerID = mainThreadLockerID;
