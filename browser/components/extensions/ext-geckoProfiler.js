@@ -136,11 +136,13 @@ async function spawnProcess(name, cmdArgs, processData, stdin = null) {
   await readAllData(proc.stdout, processData);
 }
 
-async function getSymbolsFromNM(path) {
+async function getSymbolsFromNM(path, arch) {
   const parser = new NMParser();
 
   const args = [path];
-  if (Services.appinfo.OS !== "Darwin") {
+  if (Services.appinfo.OS === "Darwin") {
+    args.unshift("-arch", arch);
+  } else {
     
     
     args.unshift("--demangle");
@@ -209,8 +211,8 @@ function filePathForSymFileInObjDir(binaryPath, debugName, breakpadId) {
 const symbolCache = new Map();
 
 function primeSymbolStore(libs) {
-  for (const {debugName, breakpadId, path} of libs) {
-    symbolCache.set(urlForSymFile(debugName, breakpadId), path);
+  for (const {debugName, breakpadId, path, arch} of libs) {
+    symbolCache.set(urlForSymFile(debugName, breakpadId), {path, arch});
   }
 }
 
@@ -305,10 +307,10 @@ this.geckoProfiler = class extends ExtensionAPI {
             primeSymbolStore(Services.profiler.sharedLibraries);
           }
 
-          const path = symbolCache.get(urlForSymFile(debugName, breakpadId));
+          const cachedLibInfo = symbolCache.get(urlForSymFile(debugName, breakpadId));
 
           const symbolRules = Services.prefs.getCharPref(PREF_GET_SYMBOL_RULES, "localBreakpad,remoteBreakpad");
-          const haveAbsolutePath = path && OS.Path.split(path).absolute;
+          const haveAbsolutePath = cachedLibInfo && OS.Path.split(cachedLibInfo.path).absolute;
 
           
           
@@ -322,6 +324,7 @@ this.geckoProfiler = class extends ExtensionAPI {
               switch (rule) {
                 case "localBreakpad":
                   if (haveAbsolutePath) {
+                    const {path} = cachedLibInfo;
                     const filepath = filePathForSymFileInObjDir(path, debugName, breakpadId);
                     if (filepath) {
                       
@@ -335,7 +338,11 @@ this.geckoProfiler = class extends ExtensionAPI {
                   const url = urlForSymFile(debugName, breakpadId);
                   return await parseSym({url});
                 case "nm":
-                  return await getSymbolsFromNM(path);
+                  if (haveAbsolutePath) {
+                    const {path, arch} = cachedLibInfo;
+                    return await getSymbolsFromNM(path, arch);
+                  }
+                  break;
               }
             } catch (e) {
               
