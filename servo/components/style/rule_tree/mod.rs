@@ -438,27 +438,59 @@ impl StrongRuleNode {
         
         
         
-        debug_assert!(!thread_state::get().is_worker() &&
-                      (thread_state::get().is_layout() ||
-                       thread_state::get().is_script()));
-        let current = me.next_free.load(Ordering::SeqCst);
+        if !cfg!(feature = "testing") {
+            debug_assert!(!thread_state::get().is_worker() &&
+                          (thread_state::get().is_layout() ||
+                           thread_state::get().is_script()));
+        }
 
+        let current = me.next_free.load(Ordering::SeqCst);
         if current == FREE_LIST_SENTINEL {
             return None;
         }
 
-        let current = WeakRuleNode { ptr: current };
+        debug_assert!(!current.is_null(),
+                      "Multiple threads are operating on the free list at the \
+                       same time?");
+        debug_assert!(current != self.ptr,
+                      "How did the root end up in the free list?");
 
-        let node = &*current.ptr();
-        let next = node.next_free.swap(ptr::null_mut(), Ordering::SeqCst);
+        let next = (*current).next_free.swap(ptr::null_mut(), Ordering::SeqCst);
+
+        debug_assert!(!next.is_null(),
+                      "How did a null pointer end up in the free list?");
+
         me.next_free.store(next, Ordering::SeqCst);
 
-        debug!("Popping from free list: cur: {:?}, next: {:?}", current.ptr(), next);
+        debug!("Popping from free list: cur: {:?}, next: {:?}", current, next);
 
-        Some(current)
+        Some(WeakRuleNode { ptr: current })
+    }
+
+    unsafe fn assert_free_list_has_no_duplicates_or_null(&self) {
+        assert!(cfg!(debug_assertions), "This is an expensive check!");
+        use std::collections::HashSet;
+
+        let me = &*self.ptr;
+        assert!(me.is_root());
+
+        let mut current = self.ptr;
+        let mut seen = HashSet::new();
+        while current != FREE_LIST_SENTINEL {
+            let next = (*current).next_free.load(Ordering::SeqCst);
+            assert!(!next.is_null());
+            assert!(!seen.contains(&next));
+            seen.insert(next);
+
+            current = next;
+        }
     }
 
     unsafe fn gc(&self) {
+        if cfg!(debug_assertions) {
+            self.assert_free_list_has_no_duplicates_or_null();
+        }
+
         
         
         let me = &*self.ptr;
@@ -552,29 +584,41 @@ impl Drop for StrongRuleNode {
             return;
         }
 
+        let root = unsafe { &*node.root.as_ref().unwrap().ptr() };
+        let free_list = &root.next_free;
+
         
         if node.next_free.load(Ordering::SeqCst) != ptr::null_mut() {
             return;
         }
 
-        let root = unsafe { &*node.root.as_ref().unwrap().ptr() };
-        let free_list = &root.next_free;
+        
+        let mut old_head = free_list.load(Ordering::SeqCst);
         loop {
-            let next_free = free_list.load(Ordering::SeqCst);
-            debug_assert!(!next_free.is_null());
-
-            node.next_free.store(next_free, Ordering::SeqCst);
-
-            let existing =
-                free_list.compare_and_swap(next_free,
-                                           self.ptr(),
-                                           Ordering::SeqCst);
-            if existing == next_free {
-                
-                root.free_count.fetch_add(1, Ordering::Relaxed);
-                break;
+            match free_list.compare_exchange_weak(old_head,
+                                                  ptr::null_mut(),
+                                                  Ordering::SeqCst,
+                                                  Ordering::Relaxed) {
+                Ok(..) => {
+                    if old_head != ptr::null_mut() {
+                        break;
+                    }
+                },
+                Err(new) => old_head = new,
             }
         }
+
+        
+        
+        if node.next_free.load(Ordering::SeqCst) != ptr::null_mut() {
+            free_list.store(old_head, Ordering::SeqCst);
+            return;
+        }
+
+        
+        
+        node.next_free.store(old_head, Ordering::SeqCst);
+        free_list.store(self.ptr(), Ordering::SeqCst);
     }
 }
 
