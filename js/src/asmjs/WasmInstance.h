@@ -139,6 +139,25 @@ class Instance
 
 typedef UniquePtr<Instance> UniqueInstance;
 
+
+
+
+bool
+ReadCustomFloat32NaNObject(JSContext* cx, HandleValue v, uint32_t* ret);
+
+
+
+
+bool
+ReadCustomDoubleNaNObject(JSContext* cx, HandleValue v, uint64_t* ret);
+
+
+
+
+template<typename T>
+JSObject*
+CreateCustomNaNObject(JSContext* cx, T* addr);
+
 } 
 } 
 
