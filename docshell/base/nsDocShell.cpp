@@ -1708,12 +1708,14 @@ nsDocShell::FirePageHideNotification(bool aIsUnload)
   return NS_OK;
 }
 
-void
+bool
 nsDocShell::MaybeInitTiming()
 {
   if (mTiming && !mBlankTiming) {
-    return;
+    return false;
   }
+
+  bool canBeReset = false;
 
   if (mScriptGlobal && mBlankTiming) {
     nsPIDOMWindowInner* innerWin =
@@ -1726,11 +1728,22 @@ nsDocShell::MaybeInitTiming()
 
   if (!mTiming) {
     mTiming = new nsDOMNavigationTiming();
+    canBeReset = true;
   }
 
   mTiming->NotifyNavigationStart(
     mIsActive ? nsDOMNavigationTiming::DocShellState::eActive
               : nsDOMNavigationTiming::DocShellState::eInactive);
+
+  return canBeReset;
+}
+
+void
+nsDocShell::MaybeResetInitTiming(bool aReset)
+{
+  if (aReset) {
+    mTiming = nullptr;
+  }
 }
 
 
@@ -7286,7 +7299,7 @@ nsDocShell::OnStateChange(nsIWebProgress* aProgress, nsIRequest* aRequest,
 
     
     if (this == aProgress && !wcwgChannel) {
-      MaybeInitTiming();
+      mozilla::Unused << MaybeInitTiming();
       mTiming->NotifyFetchStart(uri,
                                 ConvertLoadTypeToNavigationType(mLoadType));
     }
@@ -7968,7 +7981,7 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
   
   
   bool hadTiming = mTiming;
-  MaybeInitTiming();
+  bool toBeReset = MaybeInitTiming();
   if (mContentViewer) {
     
     
@@ -7984,6 +7997,7 @@ nsDocShell::CreateAboutBlankContentViewer(nsIPrincipal* aPrincipal,
 
     if (NS_SUCCEEDED(rv) && !okToUnload) {
       
+      MaybeResetInitTiming(toBeReset);
       return NS_ERROR_FAILURE;
     }
 
@@ -10482,11 +10496,9 @@ nsDocShell::InternalLoad(nsIURI* aURI,
 
   
   
-  
-  
-  
+  bool toBeReset = false;
   if (!isJavaScript) {
-    MaybeInitTiming();
+    toBeReset = MaybeInitTiming();
   }
   bool timeBeforeUnload = aFileName.IsVoid();
   if (mTiming && timeBeforeUnload) {
@@ -10501,6 +10513,7 @@ nsDocShell::InternalLoad(nsIURI* aURI,
     if (NS_SUCCEEDED(rv) && !okToUnload) {
       
       
+      MaybeResetInitTiming(toBeReset);
       return NS_OK;
     }
   }

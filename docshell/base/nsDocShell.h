@@ -749,7 +749,13 @@ protected:
 
 
 
-  void MaybeInitTiming();
+
+
+
+
+
+  MOZ_MUST_USE bool MaybeInitTiming();
+  void MaybeResetInitTiming(bool aReset);
 
   bool DisplayLoadError(nsresult aError, nsIURI* aURI, const char16_t* aURL,
                         nsIChannel* aFailedChannel)
