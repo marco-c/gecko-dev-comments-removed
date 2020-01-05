@@ -51,7 +51,7 @@ module.exports = {
 
 
 
-  getAST: function(sourceText) {
+  getAST(sourceText) {
     
     
     var config = this.getPermissiveConfig();
@@ -68,7 +68,7 @@ module.exports = {
 
 
 
-  getASTSource: function(node) {
+  getASTSource(node) {
     switch (node.type) {
       case "MemberExpression":
         if (node.computed) {
@@ -179,7 +179,7 @@ module.exports = {
 
 
 
-  convertWorkerExpressionToGlobals: function(node, isGlobal, repository,
+  convertWorkerExpressionToGlobals(node, isGlobal, repository,
                                              dirname) {
     var getGlobalsForFile = require("./globals").getGlobalsForFile;
 
@@ -216,7 +216,7 @@ module.exports = {
     return results;
   },
 
-  convertExpressionToGlobals: function(node, isGlobal, repository) {
+  convertExpressionToGlobals(node, isGlobal, repository) {
     if (!modules) {
       modules = require(path.join(repository,
         "tools", "lint", "eslint", "modules.json"));
@@ -270,7 +270,7 @@ module.exports = {
 
 
 
-  addVarToScope: function(name, scope, writable) {
+  addVarToScope(name, scope, writable) {
     scope.__defineGeneric(name, scope.set, scope.variables, null, null);
 
     let variable = scope.set.get(name);
@@ -304,7 +304,7 @@ module.exports = {
 
 
 
-  addGlobals: function(globalVars, scope) {
+  addGlobals(globalVars, scope) {
     globalVars.forEach(v => this.addVarToScope(v.name, scope, v.writable));
   },
 
@@ -315,7 +315,7 @@ module.exports = {
 
 
 
-  getPermissiveConfig: function() {
+  getPermissiveConfig() {
     return {
       range: true,
       loc: true,
@@ -339,7 +339,7 @@ module.exports = {
 
 
 
-  getIsGlobalScope: function(ancestors) {
+  getIsGlobalScope(ancestors) {
     for (let parent of ancestors) {
       if (parent.type == "FunctionExpression" ||
           parent.type == "FunctionDeclaration") {
@@ -359,7 +359,7 @@ module.exports = {
 
 
 
-  getIsHeadFile: function(scope) {
+  getIsHeadFile(scope) {
     var pathAndFilename = this.cleanUpPath(scope.getFilename());
 
     return /.*[\\/]head(_.+)?\.js$/.test(pathAndFilename);
@@ -375,7 +375,7 @@ module.exports = {
 
 
 
-  getTestHeadFiles: function(scope) {
+  getTestHeadFiles(scope) {
     if (!this.getIsTest(scope)) {
       return [];
     }
@@ -399,7 +399,7 @@ module.exports = {
 
 
 
-  getManifestsForDirectory: function(dir) {
+  getManifestsForDirectory(dir) {
     if (directoryManifests.has(dir)) {
       return directoryManifests.get(dir);
     }
@@ -413,7 +413,7 @@ module.exports = {
       }
 
       try {
-        let manifest = ini.parse(fs.readFileSync(path.join(dir, name), 'utf8'));
+        let manifest = ini.parse(fs.readFileSync(path.join(dir, name), "utf8"));
 
         manifests.push({
           file: path.join(dir, name),
@@ -437,7 +437,7 @@ module.exports = {
 
 
 
-  getTestManifest: function(scope) {
+  getTestManifest(scope) {
     let filepath = this.cleanUpPath(scope.getFilename());
 
     let dir = path.dirname(filepath);
@@ -462,7 +462,7 @@ module.exports = {
 
 
 
-  getIsTest: function(scope) {
+  getIsTest(scope) {
     
     let manifest = this.getTestManifest(scope);
     if (manifest) {
@@ -482,7 +482,7 @@ module.exports = {
 
 
 
-  getTestType: function(scope) {
+  getTestType(scope) {
     let manifest = this.getTestManifest(scope);
     if (manifest) {
       let name = path.basename(manifest);
@@ -507,7 +507,7 @@ module.exports = {
     return null;
   },
 
-  getIsWorker: function(filePath) {
+  getIsWorker(filePath) {
     let filename = path.basename(this.cleanUpPath(filePath)).toLowerCase();
 
     return filename.includes("worker");
@@ -521,7 +521,7 @@ module.exports = {
 
 
 
-  getRootDir: function(fileName) {
+  getRootDir(fileName) {
     var dirName = path.dirname(fileName);
 
     while (dirName && !fs.existsSync(path.join(dirName, ".eslintignore"))) {
@@ -545,7 +545,7 @@ module.exports = {
 
 
 
-  getAbsoluteFilePath: function(context) {
+  getAbsoluteFilePath(context) {
     var fileName = this.cleanUpPath(context.getFilename());
     var cwd = process.cwd();
 
@@ -558,13 +558,13 @@ module.exports = {
       
       
       return path.join(cwd, fileName);
-    } else {
-      
-      
-      
-      var dirName = path.dirname(fileName);
-      return cwd.slice(0, cwd.length - dirName.length) + fileName;
     }
+      
+      
+      
+    var dirName = path.dirname(fileName);
+    return cwd.slice(0, cwd.length - dirName.length) + fileName;
+
   },
 
   
@@ -572,7 +572,7 @@ module.exports = {
 
 
 
-  cleanUpPath: function(path) {
+  cleanUpPath(path) {
     return path.replace(/^"/, "").replace(/"$/, "");
   }
 };

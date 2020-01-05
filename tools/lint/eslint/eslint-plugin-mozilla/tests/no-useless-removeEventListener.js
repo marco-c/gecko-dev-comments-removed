@@ -16,7 +16,7 @@ var rule = require("../lib/rules/no-useless-removeEventListener");
 function invalidCode(code) {
   let message = "use {once: true} instead of removeEventListener " +
                 "as the first instruction of the listener";
-  return {code: code, errors: [{message: message, type: "CallExpression"}]};
+  return {code, errors: [{message, type: "CallExpression"}]};
 }
 
 exports.runTest = function(ruleTester) {

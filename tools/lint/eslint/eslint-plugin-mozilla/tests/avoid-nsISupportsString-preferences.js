@@ -16,7 +16,7 @@ var rule = require("../lib/rules/avoid-nsISupportsString-preferences");
 function invalidCode(code, accessType = "get") {
   let message = "use " + accessType + "StringPref instead of " +
                 accessType + "ComplexValue with nsISupportsString";
-  return {code: code, errors: [{message: message, type: "CallExpression"}]};
+  return {code, errors: [{message, type: "CallExpression"}]};
 }
 
 exports.runTest = function(ruleTester) {

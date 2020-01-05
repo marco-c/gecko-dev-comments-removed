@@ -14,7 +14,7 @@ var rule = require("../lib/rules/no-useless-parameters");
 
 
 function callError(message) {
-  return [{message: message, type: "CallExpression"}];
+  return [{message, type: "CallExpression"}];
 }
 
 exports.runTest = function(ruleTester) {

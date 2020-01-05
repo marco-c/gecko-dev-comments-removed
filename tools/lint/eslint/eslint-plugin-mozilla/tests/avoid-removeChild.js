@@ -18,7 +18,7 @@ function invalidCode(code, message) {
     message = "use element.remove() instead of " +
               "element.parentNode.removeChild(element)";
   }
-  return {code: code, errors: [{message: message, type: "CallExpression"}]};
+  return {code, errors: [{message, type: "CallExpression"}]};
 }
 
 exports.runTest = function(ruleTester) {

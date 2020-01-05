@@ -15,7 +15,7 @@ var rule = require("../lib/rules/use-default-preference-values");
 
 function invalidCode(code) {
   let message = "provide a default value instead of using a try/catch block";
-  return {code: code, errors: [{message: message, type: "TryStatement"}]};
+  return {code, errors: [{message, type: "TryStatement"}]};
 }
 
 let types = ["Bool", "Char", "Float", "Int"];

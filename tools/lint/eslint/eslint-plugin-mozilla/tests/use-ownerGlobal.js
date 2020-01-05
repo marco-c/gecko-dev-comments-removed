@@ -15,7 +15,7 @@ var rule = require("../lib/rules/use-ownerGlobal");
 
 function invalidCode(code) {
   let message = "use .ownerGlobal instead of .ownerDocument.defaultView";
-  return {code: code, errors: [{message: message, type: "MemberExpression"}]};
+  return {code, errors: [{message, type: "MemberExpression"}]};
 }
 
 exports.runTest = function(ruleTester) {

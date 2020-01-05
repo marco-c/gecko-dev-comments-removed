@@ -15,8 +15,8 @@ var rule = require("../lib/rules/balanced-listeners");
 
 function error(code, message) {
   return {
-    code: code,
-    errors: [{message: message, type: "Identifier"}]
+    code,
+    errors: [{message, type: "Identifier"}]
   };
 }
 

@@ -46,7 +46,7 @@ function parseBooleanConfig(string, comment) {
 
     items[name] = {
       value: (value === "true"),
-      comment: comment
+      comment
     };
   });
 
@@ -143,9 +143,8 @@ module.exports = {
       
       
       return [];
-    } else {
-      globalDiscoveryInProgressForFiles.add(path);
     }
+    globalDiscoveryInProgressForFiles.add(path);
 
     let content = fs.readFileSync(path, "utf8");
 
@@ -169,7 +168,7 @@ module.exports = {
       
       if (type == "BlockComment") {
         let value = node.value.trim();
-        value = value.replace(/\n/g, '');
+        value = value.replace(/\n/g, "");
         let match = /^globals?\s+(.+)/.exec(value);
         if (match) {
           let values = parseBooleanConfig(match[1].trim(), node);
