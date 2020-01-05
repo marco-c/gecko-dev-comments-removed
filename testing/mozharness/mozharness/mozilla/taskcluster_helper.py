@@ -227,20 +227,27 @@ class TaskClusterArtifactFinderMixin(object):
         
         child_task = self.get_task(child_task_id)
 
+        properties = child_task['payload']['properties']
+
         
-        if child_task['payload']['properties'].get('parent_task_id'):
+        
+        if any(k in properties for k in ('parent_task_id', 'installer_path')):
             
             
-            parent_id = child_task['payload']['properties']['parent_task_id']
+            parent_id = properties.get('parent_task_id', self.find_parent_task_id(child_task_id))
 
             
             parent_task = self.get_task(parent_id)
 
             
-            if parent_task['extra'].get('locations'):
-                
-                installer_path = parent_task['extra']['locations']['build']
+            
+            installer_path = properties.get(
+                'installer_path',
+                parent_task['extra'].get('locations', {}).get('build')
+            )
 
+            
+            if installer_path:
                 self.set_artifacts(
                     self.url_to_artifact(parent_id, installer_path),
                     self.url_to_artifact(parent_id, 'public/build/test_packages.json'),
@@ -253,7 +260,6 @@ class TaskClusterArtifactFinderMixin(object):
                     task_id=parent_id,
                     properties_file_path='public/build/buildbot_properties.json'
                 )
-
         else:
             
             
