@@ -10,9 +10,6 @@ if (typeof Reflect !== "undefined" && Reflect.parse) {
     assertEq(Reflect.parse("() => {}").body[0].async, undefined);
 
     
-    assertThrows(() => Reflect.parse("async function* a() {}"), SyntaxError);
-
-    
     assertEq(Reflect.parse("async\nfunction a(){}").body[0].expression.name, "async");
 
     
