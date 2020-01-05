@@ -168,7 +168,7 @@ impl Layout {
                     };
                     
                     
-                    layout_root.build_display_list(&builder, &copy layout_root.data.position, &dlist);
+                    layout_root.build_display_list(&builder, &copy layout_root.d().position, &dlist);
                     self.render_task.send(render_task::RenderMsg(dlist));
                 } 
             } 

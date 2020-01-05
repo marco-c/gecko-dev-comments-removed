@@ -22,7 +22,6 @@ fn BlockFlowData() -> BlockFlowData {
 
 trait BlockLayout {
     pure fn starts_block_flow() -> bool;
-    pure fn access_block<T>(fn(&&BlockFlowData) -> T) -> T;
     pure fn with_block_box(fn(&&@RenderBox) -> ()) -> ();
 
     fn bubble_widths_block(ctx: &LayoutContext);
@@ -36,36 +35,25 @@ trait BlockLayout {
 impl FlowContext : BlockLayout {
 
     pure fn starts_block_flow() -> bool {
-        match self.kind {
+        match self {
             RootFlow(*) | BlockFlow(*) | InlineBlockFlow(*) => true,
             _ => false 
-        }
-    }
-
-    pure fn access_block<T>(cb:fn(&&BlockFlowData) -> T) -> T {
-        match self.kind {
-            BlockFlow(d) => cb(d),
-            _  => fail fmt!("Tried to access() data of BlockFlow, but this is a %?", self.kind)
         }
     }
 
     /* Get the current flow's corresponding block box, if it exists, and do something with it. 
        This works on both BlockFlow and RootFlow, since they are mostly the same. */
     pure fn with_block_box(cb:fn(&&@RenderBox) -> ()) -> () {
-        match self.kind {
-            BlockFlow(*) => { 
-                do self.access_block |d| {
-                    let mut box = d.box;
-                    box.iter(cb)
-                }
-            },
+        match self {
+            BlockFlow(*) => {
+                let mut box = self.block().box;
+                box.iter(cb);
+            },                
             RootFlow(*) => {
-                do self.access_root |d| {
-                    let mut box = d.box;
-                    box.iter(cb)
-                }
+                let mut box = self.root().box;
+                box.iter(cb);
             },
-            _  => fail fmt!("Tried to do something with_block_box(), but this is a %?", self.kind)
+            _  => fail fmt!("Tried to do something with_block_box(), but this is a %?", self)
         }
     }
 
@@ -75,9 +63,9 @@ impl FlowContext : BlockLayout {
     min/pref widths based on child context widths and dimensions of
     any boxes it is responsible for flowing.  */
 
-    /* TODO: floats */
-    /* TODO: absolute contexts */
-    /* TODO: inline-blocks */
+    
+    
+    
     fn bubble_widths_block(_ctx: &LayoutContext) {
         assert self.starts_block_flow();
 
@@ -88,32 +76,32 @@ impl FlowContext : BlockLayout {
         for FlowTree.each_child(@self) |child_ctx| {
             assert child_ctx.starts_block_flow() || child_ctx.starts_inline_flow();
 
-            min_width  = au::max(min_width, child_ctx.data.min_width);
-            pref_width = au::max(pref_width, child_ctx.data.pref_width);
+            min_width  = au::max(min_width, child_ctx.d().min_width);
+            pref_width = au::max(pref_width, child_ctx.d().pref_width);
         }
 
-        /* if not an anonymous block context, add in block box's widths.
-           these widths will not include child elements, just padding etc. */
+        
+
         do self.with_block_box |box| {
             min_width = min_width.add(box.get_min_width());
             pref_width = pref_width.add(box.get_pref_width());
         }
 
-        self.data.min_width = min_width;
-        self.data.pref_width = pref_width;
+        self.d().min_width = min_width;
+        self.d().pref_width = pref_width;
     }
  
-    
+    /* Recursively (top-down) determines the actual width of child
+    contexts and boxes. When called on this context, the context has
+    had its width set by the parent context.
 
-
-
-
-
+    Dual boxes consume some width first, and the remainder is assigned to
+    all child (block) contexts. */
 
     fn assign_widths_block(_ctx: &LayoutContext) { 
         assert self.starts_block_flow();
 
-        let mut remaining_width = self.data.position.size.width;
+        let mut remaining_width = self.d().position.size.width;
         let mut _right_used = au(0);
         let mut left_used = au(0);
 
@@ -127,8 +115,8 @@ impl FlowContext : BlockLayout {
 
         for FlowTree.each_child(@self) |child_ctx| {
             assert child_ctx.starts_block_flow() || child_ctx.starts_inline_flow();
-            child_ctx.data.position.origin.x = left_used;
-            child_ctx.data.position.size.width = remaining_width;
+            child_ctx.d().position.origin.x = left_used;
+            child_ctx.d().position.size.width = remaining_width;
         }
     }
 
@@ -138,11 +126,11 @@ impl FlowContext : BlockLayout {
         let mut cur_y = au(0);
 
         for FlowTree.each_child(@self) |child_ctx| {
-            child_ctx.data.position.origin.y = cur_y;
-            cur_y = cur_y.add(child_ctx.data.position.size.height);
+            child_ctx.d().position.origin.y = cur_y;
+            cur_y = cur_y.add(child_ctx.d().position.size.height);
         }
 
-        self.data.position.size.height = cur_y;
+        self.d().position.size.height = cur_y;
 
         let _used_top = au(0);
         let _used_bot = au(0);
