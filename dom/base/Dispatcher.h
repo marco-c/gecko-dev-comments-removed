@@ -14,6 +14,7 @@ class nsIEventTarget;
 class nsIRunnable;
 
 namespace mozilla {
+class AbstractThread;
 namespace dom {
 
 class TabGroup;
@@ -60,6 +61,10 @@ public:
   
   
   virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const;
+
+  
+  
+  virtual AbstractThread* AbstractMainThreadFor(TaskCategory aCategory);
 };
 
 
@@ -73,6 +78,10 @@ public:
   
   
   virtual nsIEventTarget* EventTargetFor(TaskCategory aCategory) const = 0;
+
+  
+  
+  virtual AbstractThread* AbstractMainThreadFor(TaskCategory aCategory) = 0;
 
   
   

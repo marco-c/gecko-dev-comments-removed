@@ -5,6 +5,8 @@
 
 
 #include "mozilla/dom/Dispatcher.h"
+
+#include "mozilla/AbstractThread.h"
 #include "mozilla/Move.h"
 #include "nsINamed.h"
 #include "nsQueryObject.h"
@@ -34,6 +36,13 @@ DispatcherTrait::EventTargetFor(TaskCategory aCategory) const
 {
   nsCOMPtr<nsIEventTarget> main = do_GetMainThread();
   return main;
+}
+
+AbstractThread*
+DispatcherTrait::AbstractMainThreadFor(TaskCategory aCategory)
+{
+  
+  return AbstractThread::MainThread();
 }
 
 namespace {
