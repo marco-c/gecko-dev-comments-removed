@@ -2,22 +2,32 @@
 
 
 
-use font::{Font, FontDescriptor, FontGroup, FontHandleMethods,
-           SelectorPlatformIdentifier};
+use font::{Font, FontDescriptor, FontGroup, FontHandleMethods, SelectorPlatformIdentifier};
 use font::{SpecifiedFontStyle, UsedFontStyle};
 use font_list::FontList;
-use servo_util::cache::{Cache, LRUCache};
-use servo_util::time::ProfilerChan;
-
 use platform::font::FontHandle;
 use platform::font_context::FontContextHandle;
 
 use azure::azure_hl::BackendType;
+use servo_util::cache::{Cache, LRUCache};
+use servo_util::time::ProfilerChan;
 use std::hashmap::HashMap;
 
 use std::rc::Rc;
 use std::cell::RefCell;
 
+
+#[deriving(Clone)]
+pub struct FontContextInfo {
+    
+    backend: BackendType,
+
+    
+    needs_font_list: bool,
+
+    
+    profiler_chan: ProfilerChan,
+}
 
 pub trait FontContextHandleMethods {
     fn create_font_from_identifier(&self, ~str, UsedFontStyle) -> Result<FontHandle, ()>;
@@ -34,14 +44,13 @@ pub struct FontContext {
 }
 
 impl FontContext {
-    pub fn new(backend: BackendType,
-           needs_font_list: bool,
-           profiler_chan: ProfilerChan)
-           -> FontContext {
+    pub fn new(info: FontContextInfo) -> FontContext {
         let handle = FontContextHandle::new();
-        let font_list = if needs_font_list {
-                            Some(FontList::new(&handle, profiler_chan.clone())) }
-                        else { None };
+        let font_list = if info.needs_font_list {
+            Some(FontList::new(&handle, info.profiler_chan.clone()))
+        } else {
+            None
+        };
 
         // TODO: Allow users to specify these.
         let mut generic_fonts = HashMap::with_capacity(5);
@@ -56,9 +65,9 @@ impl FontContext {
             font_list: font_list,
             group_cache: LRUCache::new(10),
             handle: handle,
-            backend: backend,
+            backend: info.backend,
             generic_fonts: generic_fonts,
-            profiler_chan: profiler_chan,
+            profiler_chan: info.profiler_chan.clone(),
         }
     }
 

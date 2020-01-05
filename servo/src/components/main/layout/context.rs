@@ -5,18 +5,36 @@
 
 
 use extra::arc::MutexArc;
-use geom::rect::Rect;
+use layout::flow::LeafSet;
+
+use geom::size::Size2D;
 use gfx::font_context::FontContext;
 use servo_msg::constellation_msg::ConstellationChan;
 use servo_net::local_image_cache::LocalImageCache;
 use servo_util::geometry::Au;
 
 
-pub struct LayoutContext {
-    font_ctx: ~FontContext,
+#[deriving(Clone)]
+pub struct SharedLayoutInfo {
+    
     image_cache: MutexArc<LocalImageCache>,
-    screen_size: Rect<Au>,
+
+    
+    screen_size: Size2D<Au>,
 
     
     constellation_chan: ConstellationChan,
+
+    
+    leaf_set: MutexArc<LeafSet>,
 }
+
+
+pub struct LayoutContext {
+    
+    shared: SharedLayoutInfo,
+
+    
+    font_ctx: ~FontContext,
+}
+

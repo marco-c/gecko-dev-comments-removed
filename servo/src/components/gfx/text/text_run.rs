@@ -2,14 +2,13 @@
 
 
 
-use std::vec::VecIterator;
-
-use servo_util::geometry::Au;
-use text::glyph::GlyphStore;
-use font::{Font, FontDescriptor, RunMetrics, FontStyle, FontMetrics};
-use servo_util::range::Range;
 use extra::arc::Arc;
+use font::{Font, FontDescriptor, RunMetrics, FontStyle, FontMetrics};
+use servo_util::geometry::Au;
+use servo_util::range::Range;
+use std::vec::VecIterator;
 use style::computed_values::text_decoration;
+use text::glyph::GlyphStore;
 
 
 #[deriving(Clone)]
@@ -168,7 +167,7 @@ impl<'a> TextRun {
 
         glyphs
     }
-    
+
     pub fn char_len(&self) -> uint {
         self.glyphs.get().iter().fold(0u, |len, slice_glyphs| {
             len + slice_glyphs.get().char_len()
