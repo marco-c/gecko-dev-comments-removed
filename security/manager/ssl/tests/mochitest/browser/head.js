@@ -2,10 +2,41 @@
 
 "use strict";
 
-function whenNewWindowLoaded(aOptions, aCallback) {
-  let win = OpenBrowserWindow(aOptions);
-  win.addEventListener("load", function onLoad() {
-    win.removeEventListener("load", onLoad, false);
-    aCallback(win);
-  }, false);
+
+
+
+function pemToBase64(pem) {
+  return pem.replace(/-----BEGIN CERTIFICATE-----/, "")
+            .replace(/-----END CERTIFICATE-----/, "")
+            .replace(/[\r\n]/g, "");
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+function readCertificate(filename, trustString, certificates) {
+  return OS.File.read(getTestFilePath(filename)).then(data => {
+    let decoder = new TextDecoder();
+    let pem = decoder.decode(data);
+    let certdb = Cc["@mozilla.org/security/x509certdb;1"]
+                   .getService(Ci.nsIX509CertDB);
+    let base64 = pemToBase64(pem);
+    certdb.addCertFromBase64(base64, trustString, "unused");
+    let cert = certdb.constructX509FromBase64(base64);
+    certificates.push(cert);
+    return cert;
+  }, error => { throw error; });
 }
