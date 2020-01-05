@@ -177,49 +177,49 @@ public:
 
   struct ReflowInputFlags {
     ReflowInputFlags() { memset(this, 0, sizeof(*this)); }
-    uint32_t mSpecialBSizeReflow:1;  
+    bool mSpecialBSizeReflow : 1;    
                                      
-    uint32_t mNextInFlowUntouched:1; 
+    bool mNextInFlowUntouched : 1;   
                                      
-    uint32_t mIsTopOfPage:1;         
+    bool mIsTopOfPage : 1;           
                                      
                                      
                                      
-    uint32_t mAssumingHScrollbar:1;  
+    bool mAssumingHScrollbar : 1;    
                                      
-    uint32_t mAssumingVScrollbar:1;  
-                                     
-
-    uint32_t mIsIResize:1;           
+    bool mAssumingVScrollbar : 1;    
                                      
 
-    uint32_t mIsBResize:1;           
+    bool mIsIResize : 1;             
+                                     
+
+    bool mIsBResize : 1;             
                                      
                                      
                                      
                                      
-    uint32_t mTableIsSplittable:1;   
+    bool mTableIsSplittable : 1;     
                                      
-    uint32_t mHeightDependsOnAncestorCell:1;   
+    bool mHeightDependsOnAncestorCell : 1;     
                                                
-    uint32_t mIsColumnBalancing:1;   
-    uint32_t mIsFlexContainerMeasuringHeight:1; 
+    bool mIsColumnBalancing : 1;     
+    bool mIsFlexContainerMeasuringHeight : 1;   
                                                 
                                                 
-    uint32_t mDummyParentReflowInput:1; 
+    bool mDummyParentReflowInput : 1;   
                                         
                                         
-    uint32_t mMustReflowPlaceholders:1; 
+    bool mMustReflowPlaceholders : 1;   
                                         
                                         
                                         
                                         
                                         
-    uint32_t mShrinkWrap:1; 
-    uint32_t mUseAutoBSize:1; 
-    uint32_t mStaticPosIsCBOrigin:1; 
-    uint32_t mIClampMarginBoxMinSize:1; 
-    uint32_t mBClampMarginBoxMinSize:1; 
+    bool mShrinkWrap : 1; 
+    bool mUseAutoBSize : 1; 
+    bool mStaticPosIsCBOrigin : 1; 
+    bool mIClampMarginBoxMinSize : 1; 
+    bool mBClampMarginBoxMinSize : 1; 
 
     
     
@@ -234,8 +234,8 @@ public:
     
     
     
-    uint32_t mIOffsetsNeedCSSAlign:1;
-    uint32_t mBOffsetsNeedCSSAlign:1;
+    bool mIOffsetsNeedCSSAlign : 1;
+    bool mBOffsetsNeedCSSAlign : 1;
   };
 
 #ifdef DEBUG
