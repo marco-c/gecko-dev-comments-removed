@@ -427,7 +427,7 @@ HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
                  mCSSEditUtils->IsCSSEditableProperty(&aNode, &aProperty,
                                                       aAttribute)) ||
                 
-                aAttribute->EqualsLiteral("bgcolor");
+                attrAtom == nsGkAtoms::bgcolor;
 
   if (useCSS) {
     nsCOMPtr<dom::Element> tmp;
@@ -442,12 +442,9 @@ HTMLEditor::SetInlinePropertyOnNodeImpl(nsIContent& aNode,
     }
 
     
-    int32_t count;
-    nsresult rv =
-      mCSSEditUtils->SetCSSEquivalentToHTMLStyle(tmp->AsDOMNode(),
-                                                 &aProperty, aAttribute,
-                                                 &aValue, &count, false);
-    NS_ENSURE_SUCCESS(rv, rv);
+    mCSSEditUtils->SetCSSEquivalentToHTMLStyle(tmp,
+                                               &aProperty, attrAtom,
+                                               &aValue, false);
     return NS_OK;
   }
 
@@ -572,8 +569,9 @@ HTMLEditor::SplitStyleAbovePoint(nsCOMPtr<nsINode>* aNode,
       
       
       nsAutoString firstValue;
-      mCSSEditUtils->IsCSSEquivalentToHTMLInlineStyleSet(GetAsDOMNode(node),
-        aProperty, aAttribute, isSet, firstValue, CSSEditUtils::eSpecified);
+      isSet = mCSSEditUtils->IsCSSEquivalentToHTMLInlineStyleSet(
+                node, aProperty, aAttribute, firstValue,
+                CSSEditUtils::eSpecified);
     }
     if (
         (aProperty && node->IsHTMLElement(aProperty)) ||
@@ -784,15 +782,17 @@ HTMLEditor::RemoveStyleInside(nsIContent& aNode,
     
     
     
+    nsCOMPtr<nsIAtom> attribute =
+      aAttribute ? NS_Atomize(*aAttribute) : nullptr;
     nsAutoString propertyValue;
     bool isSet = mCSSEditUtils->IsCSSEquivalentToHTMLInlineStyleSet(&aNode,
-      aProperty, aAttribute, propertyValue, CSSEditUtils::eSpecified);
+      aProperty, attribute, propertyValue, CSSEditUtils::eSpecified);
     if (isSet && aNode.IsElement()) {
       
       
       mCSSEditUtils->RemoveCSSEquivalentToHTMLStyle(aNode.AsElement(),
                                                     aProperty,
-                                                    aAttribute,
+                                                    attribute,
                                                     &propertyValue,
                                                     false);
       
