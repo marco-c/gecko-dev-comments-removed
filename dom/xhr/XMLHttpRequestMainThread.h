@@ -530,6 +530,9 @@ public:
                           Blob* aBlob,
                           nsresult aResult) override;
 
+  void
+  LocalFileToBlobCompleted(Blob* aBlob);
+
 protected:
   
   
@@ -551,7 +554,6 @@ protected:
                                    uint32_t *writeCount);
   nsresult CreateResponseParsedJSON(JSContext* aCx);
   void CreatePartialBlob(ErrorResult& aRv);
-  bool CreateDOMBlob(nsIRequest *request);
   
   
   nsresult ChangeState(State aState, bool aBroadcast = true);
@@ -640,12 +642,7 @@ protected:
   
   RefPtr<Blob> mResponseBlob;
   
-  
-  RefPtr<Blob> mDOMBlob;
-  
-  
   RefPtr<MutableBlobStorage> mBlobStorage;
-  
   
   nsAutoPtr<BlobSet> mBlobSet;
 
