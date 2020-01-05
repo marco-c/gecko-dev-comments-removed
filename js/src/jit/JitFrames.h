@@ -100,6 +100,7 @@ ScriptFromCalleeToken(CalleeToken token)
 
 
 
+
 class LSafepoint;
 
 
@@ -435,15 +436,6 @@ class JitFrameLayout : public CommonFrameLayout
 
     static inline size_t Size() {
         return sizeof(JitFrameLayout);
-    }
-};
-
-
-class EntryFrameLayout : public JitFrameLayout
-{
-  public:
-    static inline size_t Size() {
-        return sizeof(EntryFrameLayout);
     }
 };
 

@@ -40,8 +40,6 @@ SizeOfFramePrefix = {
     'JitFrame_BaselineJS': 'JitFrameLayout',
     'JitFrame_BaselineStub': 'BaselineStubFrameLayout',
     'JitFrame_IonStub': 'JitStubFrameLayout',
-    
-    
     'JitFrame_Entry': 'JitFrameLayout',
     'JitFrame_Rectifier': 'RectifierFrameLayout',
     'JitFrame_IonAccessorIC': 'IonAccessorICFrameLayout',
