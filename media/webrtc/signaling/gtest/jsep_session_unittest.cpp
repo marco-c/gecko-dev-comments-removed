@@ -5013,15 +5013,22 @@ TEST_F(JsepSessionTest, AudioCallForceDtlsRoles)
   AddTracks(mSessionOff, "audio");
   AddTracks(mSessionAns, "audio");
   std::string offer = CreateOffer();
+
   std::string actpass = "\r\na=setup:actpass";
   size_t match = offer.find(actpass);
   ASSERT_NE(match, std::string::npos);
   offer.replace(match, actpass.length(), "\r\na=setup:passive");
+
   SetLocalOffer(offer);
   SetRemoteOffer(offer);
+  ASSERT_EQ(kJsepStateHaveRemoteOffer, mSessionAns.GetState());
   std::string answer = CreateAnswer();
   match = answer.find("\r\na=setup:active");
   ASSERT_NE(match, std::string::npos);
+
+  SetLocalAnswer(answer);
+  SetRemoteAnswer(answer);
+  ASSERT_EQ(kJsepStateStable, mSessionAns.GetState());
 }
 
 
@@ -5032,15 +5039,22 @@ TEST_F(JsepSessionTest, AudioCallReverseDtlsRoles)
   AddTracks(mSessionOff, "audio");
   AddTracks(mSessionAns, "audio");
   std::string offer = CreateOffer();
+
   std::string actpass = "\r\na=setup:actpass";
   size_t match = offer.find(actpass);
   ASSERT_NE(match, std::string::npos);
   offer.replace(match, actpass.length(), "\r\na=setup:active");
+
   SetLocalOffer(offer);
   SetRemoteOffer(offer);
+  ASSERT_EQ(kJsepStateHaveRemoteOffer, mSessionAns.GetState());
   std::string answer = CreateAnswer();
   match = answer.find("\r\na=setup:passive");
   ASSERT_NE(match, std::string::npos);
+
+  SetLocalAnswer(answer);
+  SetRemoteAnswer(answer);
+  ASSERT_EQ(kJsepStateStable, mSessionAns.GetState());
 }
 
 
@@ -5052,63 +5066,53 @@ TEST_F(JsepSessionTest, AudioCallMismatchDtlsRoles)
   AddTracks(mSessionOff, "audio");
   AddTracks(mSessionAns, "audio");
   std::string offer = CreateOffer();
+
   std::string actpass = "\r\na=setup:actpass";
   size_t match = offer.find(actpass);
   ASSERT_NE(match, std::string::npos);
   SetLocalOffer(offer);
   SetRemoteOffer(offer);
+  ASSERT_EQ(kJsepStateHaveRemoteOffer, mSessionAns.GetState());
   std::string answer = CreateAnswer();
+  SetLocalAnswer(answer);
+
   std::string active = "\r\na=setup:active";
   match = answer.find(active);
   ASSERT_NE(match, std::string::npos);
-  SetLocalAnswer(answer);
   answer.replace(match, active.length(), "\r\na=setup:passive");
   SetRemoteAnswer(answer);
+
+  
+  ASSERT_EQ(JsepDtlsTransport::kJsepDtlsClient,
+      mSessionOff.GetTransports()[0]->mDtls->GetRole());
+  ASSERT_EQ(JsepDtlsTransport::kJsepDtlsClient,
+      mSessionAns.GetTransports()[0]->mDtls->GetRole());
 }
 
 
-
-
-TEST_F(JsepSessionTest, AudioCallGarbageSetup)
+TEST_F(JsepSessionTest, AudioCallOffererNoSetup)
 {
   types.push_back(SdpMediaSection::kAudio);
   AddTracks(mSessionOff, "audio");
   AddTracks(mSessionAns, "audio");
   std::string offer = CreateOffer();
-  std::string actpass = "\r\na=setup:actpass";
-  size_t match = offer.find(actpass);
-  ASSERT_NE(match, std::string::npos);
-  offer.replace(match, actpass.length(), "\r\na=setup:G4rb4g3V4lu3");
   SetLocalOffer(offer);
-  SetRemoteOffer(offer);
-  std::string answer = CreateAnswer();
-  match = answer.find("\r\na=setup:active");
-  ASSERT_NE(match, std::string::npos);
-}
 
-
-
-TEST_F(JsepSessionTest, AudioCallOfferNoSetupOrConnection)
-{
-  types.push_back(SdpMediaSection::kAudio);
-  AddTracks(mSessionOff, "audio");
-  AddTracks(mSessionAns, "audio");
-  std::string offer = CreateOffer();
   std::string actpass = "\r\na=setup:actpass";
   size_t match = offer.find(actpass);
   ASSERT_NE(match, std::string::npos);
   offer.replace(match, actpass.length(), "");
-  SetLocalOffer(offer);
-  SetRemoteOffer(offer);
-  std::string answer = CreateAnswer();
-  match = answer.find("\r\na=setup:active");
-  ASSERT_NE(match, std::string::npos);
+
+  
+  
+  SetRemoteOffer(offer, NO_CHECKS);
+  ASSERT_EQ(kJsepStateStable, mSessionAns.GetState());
+  ASSERT_EQ(kJsepStateHaveLocalOffer, mSessionOff.GetState());
 }
 
 
 
-
-TEST_F(JsepSessionTest, AudioCallAnswerNoSetupOrConnection)
+TEST_F(JsepSessionTest, AudioCallAnswerNoSetup)
 {
   types.push_back(SdpMediaSection::kAudio);
   AddTracks(mSessionOff, "audio");
@@ -5119,13 +5123,67 @@ TEST_F(JsepSessionTest, AudioCallAnswerNoSetupOrConnection)
 
   SetLocalOffer(offer);
   SetRemoteOffer(offer);
+  ASSERT_EQ(kJsepStateHaveRemoteOffer, mSessionAns.GetState());
   std::string answer = CreateAnswer();
+  SetLocalAnswer(answer);
+
   std::string active = "\r\na=setup:active";
   match = answer.find(active);
   ASSERT_NE(match, std::string::npos);
   answer.replace(match, active.length(), "");
-  SetLocalAnswer(answer);
   SetRemoteAnswer(answer);
+  ASSERT_EQ(kJsepStateStable, mSessionAns.GetState());
+
+  
+  ASSERT_EQ(JsepDtlsTransport::kJsepDtlsServer,
+      mSessionOff.GetTransports()[0]->mDtls->GetRole());
+  ASSERT_EQ(JsepDtlsTransport::kJsepDtlsClient,
+      mSessionAns.GetTransports()[0]->mDtls->GetRole());
+}
+
+
+TEST_F(JsepSessionTest, AudioCallDtlsRoleHoldconn)
+{
+  types.push_back(SdpMediaSection::kAudio);
+  AddTracks(mSessionOff, "audio");
+  AddTracks(mSessionAns, "audio");
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer);
+
+  std::string actpass = "\r\na=setup:actpass";
+  size_t match = offer.find(actpass);
+  ASSERT_NE(match, std::string::npos);
+  offer.replace(match, actpass.length(), "\r\na=setup:holdconn");
+
+  
+  
+  SetRemoteOffer(offer, NO_CHECKS);
+  ASSERT_EQ(kJsepStateStable, mSessionAns.GetState());
+  ASSERT_EQ(kJsepStateHaveLocalOffer, mSessionOff.GetState());
+}
+
+
+TEST_F(JsepSessionTest, AudioCallAnswererUsesActpass)
+{
+  types.push_back(SdpMediaSection::kAudio);
+  AddTracks(mSessionOff, "audio");
+  AddTracks(mSessionAns, "audio");
+  std::string offer = CreateOffer();
+  SetLocalOffer(offer);
+  SetRemoteOffer(offer);
+  std::string answer = CreateAnswer();
+  SetLocalAnswer(answer);
+
+  std::string active = "\r\na=setup:active";
+  size_t match = answer.find(active);
+  ASSERT_NE(match, std::string::npos);
+  answer.replace(match, active.length(), "\r\na=setup:actpass");
+
+  
+  
+  SetRemoteAnswer(answer, NO_CHECKS);
+  ASSERT_EQ(kJsepStateStable, mSessionAns.GetState());
+  ASSERT_EQ(kJsepStateHaveLocalOffer, mSessionOff.GetState());
 }
 
 
