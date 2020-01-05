@@ -1867,6 +1867,7 @@ nsCSSFrameConstructor::CreateGeneratedContentItem(nsFrameConstructorState& aStat
   if (NS_FAILED(rv))
     return;
   container->SetIsNativeAnonymousRoot();
+  container->SetPseudoElementType(aPseudoElement);
 
   
   
@@ -4251,10 +4252,8 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
 
   if (ServoStyleSet* styleSet = mPresShell->StyleSet()->GetAsServo()) {
     
-    
-    
     for (auto& info : aContent) {
-      if (!info.mStyleContext && info.mContent->IsElement()) {
+      if (info.mContent->IsElement()) {
         styleSet->StyleNewSubtree(info.mContent->AsElement());
       }
     }
@@ -5034,24 +5033,37 @@ nsCSSFrameConstructor::ResolveStyleContext(const InsertionPoint&    aInsertion,
 already_AddRefed<nsStyleContext>
 nsCSSFrameConstructor::ResolveStyleContext(nsStyleContext* aParentStyleContext,
                                            nsIContent* aContent,
-                                           nsFrameConstructorState* aState)
+                                           nsFrameConstructorState* aState,
+                                           Element* aOriginatingElementOrNull)
 {
   StyleSetHandle styleSet = mPresShell->StyleSet();
   aContent->OwnerDoc()->FlushPendingLinkUpdates();
 
   RefPtr<nsStyleContext> result;
   if (aContent->IsElement()) {
-    if (aState) {
-      result = styleSet->ResolveStyleFor(aContent->AsElement(),
-                                         aParentStyleContext,
-                                         LazyComputeBehavior::Assert,
-                                         aState->mTreeMatchContext);
+    auto pseudoType = aContent->AsElement()->GetPseudoElementType();
+    if (pseudoType == CSSPseudoElementType::NotPseudo) {
+      MOZ_ASSERT(!aOriginatingElementOrNull);
+      if (aState) {
+        result = styleSet->ResolveStyleFor(aContent->AsElement(),
+                                           aParentStyleContext,
+                                           LazyComputeBehavior::Assert,
+                                           aState->mTreeMatchContext);
+      } else {
+        result = styleSet->ResolveStyleFor(aContent->AsElement(),
+                                           aParentStyleContext,
+                                           LazyComputeBehavior::Assert);
+      }
     } else {
-      result = styleSet->ResolveStyleFor(aContent->AsElement(),
-                                         aParentStyleContext,
-                                         LazyComputeBehavior::Assert);
+      MOZ_ASSERT(aOriginatingElementOrNull);
+      MOZ_ASSERT(aContent->IsInNativeAnonymousSubtree());
+      result = styleSet->ResolvePseudoElementStyle(aOriginatingElementOrNull,
+                                                   pseudoType,
+                                                   aParentStyleContext,
+                                                   aContent->AsElement());
     }
   } else {
+    MOZ_ASSERT(!aOriginatingElementOrNull);
     NS_ASSERTION(aContent->IsNodeOfType(nsINode::eTEXT),
                  "shouldn't waste time creating style contexts for "
                  "comments and processing instructions");
@@ -10725,24 +10737,95 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
     RefPtr<nsStyleContext> styleContext;
     TreeMatchContext::AutoParentDisplayBasedStyleFixupSkipper
       parentDisplayBasedStyleFixupSkipper(aState.mTreeMatchContext);
-    if (aAnonymousItems[i].mStyleContext) {
-      
-      
-      
-      
-      
-      
-      MOZ_ASSERT_IF(content->IsStyledByServo(),
-                    !content->IsElement() || !content->AsElement()->HasServoData());
-      styleContext = aAnonymousItems[i].mStyleContext.forget();
-    } else {
-      
-      
-      
-      MOZ_ASSERT_IF(content->IsStyledByServo() && content->IsElement(),
-                    content->AsElement()->HasServoData());
-      styleContext = ResolveStyleContext(aFrame, content, &aState);
+
+    
+    
+    MOZ_ASSERT_IF(content->IsStyledByServo() && content->IsElement(),
+                  content->AsElement()->HasServoData());
+
+    
+    nsIAtom* pseudo = nullptr;
+    if (content->IsElement()) {
+      auto pseudoType = content->AsElement()->GetPseudoElementType();
+      if (pseudoType != CSSPseudoElementType::NotPseudo) {
+        pseudo = nsCSSPseudoElements::GetPseudoAtom(pseudoType);
+      }
     }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    nsIFrame* inheritFrame = aFrame;
+    while (inheritFrame->GetContent()->IsNativeAnonymous()) {
+      inheritFrame = inheritFrame->GetParent();
+    }
+    if (inheritFrame->GetType() == nsGkAtoms::canvasFrame) {
+      
+      
+    } else {
+      inheritFrame = nsFrame::CorrectStyleParentFrame(inheritFrame, pseudo);
+    }
+    Element* originating = pseudo ? inheritFrame->GetContent()->AsElement() : nullptr;
+
+    styleContext =
+      ResolveStyleContext(inheritFrame->StyleContext(), content, &aState, originating);
 
     nsTArray<nsIAnonymousContentCreator::ContentInfo>* anonChildren = nullptr;
     if (!aAnonymousItems[i].mChildren.IsEmpty()) {

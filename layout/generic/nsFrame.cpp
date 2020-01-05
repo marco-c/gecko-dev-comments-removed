@@ -9066,6 +9066,8 @@ GetIBSplitSiblingForAnonymousBlock(const nsIFrame* aFrame)
 
 
 
+
+
 static nsIFrame*
 GetCorrectedParent(const nsIFrame* aFrame)
 {
@@ -9090,6 +9092,31 @@ GetCorrectedParent(const nsIFrame* aFrame)
   if (pseudo == nsCSSAnonBoxes::tableWrapper) {
     pseudo = aFrame->PrincipalChildList().FirstChild()->StyleContext()->GetPseudo();
   }
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  nsIContent* content = aFrame->GetContent();
+  Element* element = content->IsElement() ? content->AsElement() : nullptr;
+  if (element && element->IsNativeAnonymous() &&
+      element->GetPseudoElementType() == aFrame->StyleContext()->GetPseudoType()) {
+    while (parent->GetContent() && parent->GetContent()->IsNativeAnonymous()) {
+      parent = parent->GetParent();
+    }
+  }
+
   return nsFrame::CorrectStyleParentFrame(parent, pseudo);
 }
 
@@ -9160,6 +9187,9 @@ nsFrame::DoGetParentStyleContext(nsIFrame** aProviderFrame) const
 {
   *aProviderFrame = nullptr;
   nsFrameManager* fm = PresContext()->FrameManager();
+
+  
+  
   if (MOZ_LIKELY(mContent)) {
     nsIContent* parentContent = mContent->GetFlattenedTreeParent();
     if (MOZ_LIKELY(parentContent)) {
