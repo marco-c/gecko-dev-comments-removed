@@ -617,7 +617,6 @@ private:
 
   
   SeekJob mQueuedSeek;
-  SeekJob mCurrentSeek;
 
   
   int64_t mFragmentEndTime;
