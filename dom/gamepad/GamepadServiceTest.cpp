@@ -122,10 +122,8 @@ GamepadServiceTest::AddGamepad(const nsAString& aID,
     return nullptr;
   }
 
-  
-  
   GamepadAdded a(nsString(aID), 0,
-                 static_cast<GamepadMappingType>(aMapping),
+                 aMapping,
                  GamepadServiceType::Standard,
                  aNumButtons, aNumAxes);
   GamepadChangeEvent e(a);
