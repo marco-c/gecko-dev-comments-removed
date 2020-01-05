@@ -2890,6 +2890,9 @@ namespace detail {
 JS_FRIEND_API(bool)
 IsWindowSlow(JSObject* obj);
 
+JS_FRIEND_API(JSObject*)
+ToWindowProxyIfWindowSlow(JSObject* obj);
+
 } 
 
 
@@ -2915,8 +2918,13 @@ IsWindowProxy(JSObject* obj);
 
 
 
-extern JS_FRIEND_API(JSObject*)
-ToWindowProxyIfWindow(JSObject* obj);
+MOZ_ALWAYS_INLINE JSObject*
+ToWindowProxyIfWindow(JSObject* obj)
+{
+    if (GetObjectClass(obj)->flags & JSCLASS_IS_GLOBAL)
+        return detail::ToWindowProxyIfWindowSlow(obj);
+    return obj;
+}
 
 
 
