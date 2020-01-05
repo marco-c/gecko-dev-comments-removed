@@ -2779,9 +2779,6 @@ pref("layout.css.unset-value.enabled", true);
 pref("layout.css.all-shorthand.enabled", true);
 
 
-pref("layout.css.variables.enabled", true);
-
-
 pref("layout.css.overflow-clip-box.enabled", false);
 
 

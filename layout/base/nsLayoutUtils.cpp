@@ -183,7 +183,6 @@ typedef nsStyleTransformMatrix::TransformReferenceBox TransformReferenceBox;
  uint32_t nsLayoutUtils::sZoomMaxPercent;
  uint32_t nsLayoutUtils::sZoomMinPercent;
  bool nsLayoutUtils::sInvalidationDebuggingIsEnabled;
- bool nsLayoutUtils::sCSSVariablesEnabled;
  bool nsLayoutUtils::sInterruptibleReflowEnabled;
  bool nsLayoutUtils::sSVGTransformBoxEnabled;
  bool nsLayoutUtils::sTextCombineUprightDigitsEnabled;
@@ -7721,8 +7720,6 @@ nsLayoutUtils::Initialize()
                                "zoom.minPercent", 30);
   Preferences::AddBoolVarCache(&sInvalidationDebuggingIsEnabled,
                                "nglayout.debug.invalidation");
-  Preferences::AddBoolVarCache(&sCSSVariablesEnabled,
-                               "layout.css.variables.enabled");
   Preferences::AddBoolVarCache(&sInterruptibleReflowEnabled,
                                "layout.interruptible-reflow.enabled");
   Preferences::AddBoolVarCache(&sSVGTransformBoxEnabled,
