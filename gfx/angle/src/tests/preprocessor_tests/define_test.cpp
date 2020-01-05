@@ -971,3 +971,18 @@ TEST_F(DefineTest, UndefineInInvocationPreLParen)
 
     preprocess(input, expected);
 }
+
+
+
+TEST_F(DefineTest, RecursiveMacroNameInsideIncompleteMacroInvocationInMacroExpansion)
+{
+    const char *input =
+        "#define m(a)\n"
+        "#define a m((a)\n"
+        "a)\n";
+    const char *expected =
+        "\n"
+        "\n"
+        "\n";
+    preprocess(input, expected);
+}
