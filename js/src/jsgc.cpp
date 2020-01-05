@@ -3751,6 +3751,23 @@ RelazifyFunctions(Zone* zone, AllocKind kind)
     }
 }
 
+static bool
+ShouldCollectZone(Zone* zone, JS::gcreason::Reason reason)
+{
+    
+    if (reason != JS::gcreason::COMPARTMENT_REVIVED)
+        return zone->isGCScheduled();
+
+    
+    
+    for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
+        if (comp->scheduledForDestruction)
+            return true;
+    }
+
+    return false;
+}
+
 bool
 GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAccess& lock)
 {
@@ -3774,7 +3791,7 @@ GCRuntime::beginMarkPhase(JS::gcreason::Reason reason, AutoLockForExclusiveAcces
 #endif
 
         
-        if (zone->isGCScheduled()) {
+        if (ShouldCollectZone(zone, reason)) {
             if (!zone->isAtomsZone()) {
                 any = true;
                 zone->setGCState(Zone::Mark);
@@ -6280,6 +6297,20 @@ GCRuntime::checkIfGCAllowedInCurrentState(JS::gcreason::Reason reason)
     return true;
 }
 
+bool
+GCRuntime::shouldRepeatForDeadZone()
+{
+    if (!isIncremental || isIncrementalGCInProgress())
+        return false;
+
+    for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
+        if (c->scheduledForDestruction)
+            return true;
+    }
+
+    return false;
+}
+
 void
 GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::Reason reason)
 {
@@ -6310,25 +6341,19 @@ GCRuntime::collect(bool nonincrementalByAPI, SliceBudget budget, JS::gcreason::R
         poked = false;
         bool wasReset = gcCycle(nonincrementalByAPI, budget, reason);
 
-        
-        if (poked && cleanUpEverything)
-            JS::PrepareForFullGC(rt->contextFromMainThread());
-
-        
-
-
-
-
         bool repeatForDeadZone = false;
-        if (!nonincrementalByAPI && !isIncrementalGCInProgress()) {
-            for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
-                if (c->scheduledForDestruction) {
-                    nonincrementalByAPI = true;
-                    repeatForDeadZone = true;
-                    reason = JS::gcreason::COMPARTMENT_REVIVED;
-                    c->zone()->scheduleGC();
-                }
-            }
+        if (poked && cleanUpEverything) {
+            
+            JS::PrepareForFullGC(rt->contextFromMainThread());
+        } else if (shouldRepeatForDeadZone() && !wasReset) {
+            
+
+
+
+
+            repeatForDeadZone = true;
+            reason = JS::gcreason::COMPARTMENT_REVIVED;
+            nonincrementalByAPI = true;
         }
 
         
