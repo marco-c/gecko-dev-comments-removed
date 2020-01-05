@@ -381,9 +381,9 @@ extern "C" {
 
 
 
-#define SQLITE_VERSION        "3.15.2"
-#define SQLITE_VERSION_NUMBER 3015002
-#define SQLITE_SOURCE_ID      "2016-11-28 19:13:37 bbd85d235f7037c6a033a9690534391ffeacecc8"
+#define SQLITE_VERSION        "3.15.1"
+#define SQLITE_VERSION_NUMBER 3015001
+#define SQLITE_SOURCE_ID      "2016-11-04 12:08:49 1136863c76576110e710dd5d69ab6bf347c65e36"
 
 
 
@@ -15583,6 +15583,7 @@ struct Parse {
   } aColCache[SQLITE_N_COLCACHE];  
   int aTempReg[8];        
   Token sNameToken;       
+  Token sLastToken;       
 
   
 
@@ -15591,7 +15592,6 @@ struct Parse {
 
 
 
-  Token sLastToken;       
   ynVar nVar;               
   int nzVar;                
   u8 iPkSortOrder;          
@@ -15625,7 +15625,7 @@ struct Parse {
 
 
 #define PARSE_HDR_SZ offsetof(Parse,aColCache) /* Recursive part w/o aColCache*/
-#define PARSE_RECURSE_SZ offsetof(Parse,sLastToken)    /* Recursive part */
+#define PARSE_RECURSE_SZ offsetof(Parse,nVar)  /* Recursive part */
 #define PARSE_TAIL_SZ (sizeof(Parse)-PARSE_RECURSE_SZ) /* Non-recursive part */
 #define PARSE_TAIL(X) (((char*)(X))+PARSE_RECURSE_SZ)  /* Pointer to tail */
 
@@ -88585,10 +88585,6 @@ static int lookupName(
             sqlite3ErrorMsg(pParse, "misuse of aliased aggregate %s", zAs);
             return WRC_Abort;
           }
-          if( sqlite3ExprVectorSize(pOrig)!=1 ){
-            sqlite3ErrorMsg(pParse, "row value misused");
-            return WRC_Abort;
-          }
           resolveAlias(pParse, pEList, j, pExpr, "", nSubquery);
           cnt = 1;
           pMatch = 0;
@@ -88965,7 +88961,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
       notValid(pParse, pNC, "parameters", NC_IsCheck|NC_PartIdx|NC_IdxExpr);
       break;
     }
-    case TK_BETWEEN:
     case TK_EQ:
     case TK_NE:
     case TK_LT:
@@ -88976,17 +88971,10 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
     case TK_ISNOT: {
       int nLeft, nRight;
       if( pParse->db->mallocFailed ) break;
+      assert( pExpr->pRight!=0 );
       assert( pExpr->pLeft!=0 );
       nLeft = sqlite3ExprVectorSize(pExpr->pLeft);
-      if( pExpr->op==TK_BETWEEN ){
-        nRight = sqlite3ExprVectorSize(pExpr->x.pList->a[0].pExpr);
-        if( nRight==nLeft ){
-          nRight = sqlite3ExprVectorSize(pExpr->x.pList->a[1].pExpr);
-        }
-      }else{
-        assert( pExpr->pRight!=0 );
-        nRight = sqlite3ExprVectorSize(pExpr->pRight);
-      }
+      nRight = sqlite3ExprVectorSize(pExpr->pRight);
       if( nLeft!=nRight ){
         testcase( pExpr->op==TK_EQ );
         testcase( pExpr->op==TK_NE );
@@ -88996,7 +88984,6 @@ static int resolveExprStep(Walker *pWalker, Expr *pExpr){
         testcase( pExpr->op==TK_GE );
         testcase( pExpr->op==TK_IS );
         testcase( pExpr->op==TK_ISNOT );
-        testcase( pExpr->op==TK_BETWEEN );
         sqlite3ErrorMsg(pParse, "row value misused");
       }
       break; 
@@ -93025,7 +93012,7 @@ static int exprCodeVector(Parse *pParse, Expr *p, int *piFreeable){
       iResult = pParse->nMem+1;
       pParse->nMem += nResult;
       for(i=0; i<nResult; i++){
-        sqlite3ExprCodeFactorable(pParse, p->x.pList->a[i].pExpr, i+iResult);
+        sqlite3ExprCode(pParse, p->x.pList->a[i].pExpr, i+iResult);
       }
     }
   }
@@ -97777,7 +97764,6 @@ static void codeAttach(
   sqlite3* db = pParse->db;
   int regArgs;
 
-  if( pParse->nErr ) goto attach_end;
   memset(&sName, 0, sizeof(NameContext));
   sName.pParse = pParse;
 
@@ -104323,8 +104309,6 @@ static void instrFunc(
     zHaystack = sqlite3_value_text(argv[0]);
     zNeedle = sqlite3_value_text(argv[1]);
     isText = 1;
-    if( zNeedle==0 ) return;
-    assert( zHaystack );
   }
   while( nNeedle<=nHaystack && memcmp(zHaystack, zNeedle, nNeedle)!=0 ){
     N++;
@@ -124787,7 +124771,6 @@ static int codeEqualityTerm(
     }else{
       Select *pSelect = pX->x.pSelect;
       sqlite3 *db = pParse->db;
-      u16 savedDbOptFlags = db->dbOptFlags;
       ExprList *pOrigRhs = pSelect->pEList;
       ExprList *pOrigLhs = pX->pLeft->x.pList;
       ExprList *pRhs = 0;         
@@ -124831,9 +124814,7 @@ static int codeEqualityTerm(
           testcase( aiMap==0 );
         }
         pSelect->pEList = pRhs;
-        db->dbOptFlags |= SQLITE_QueryFlattener;
         eType = sqlite3FindInIndex(pParse, pX, IN_INDEX_LOOP, 0, aiMap);
-        db->dbOptFlags = savedDbOptFlags;
         testcase( aiMap!=0 && aiMap[0]!=0 );
         pSelect->pEList = pOrigRhs;
         pLeft->x.pList = pOrigLhs;
@@ -127652,8 +127633,6 @@ static void exprAnalyze(
   
 
 
-  testcase( pTerm!=&pWC->a[idxTerm] );
-  pTerm = &pWC->a[idxTerm];
   pTerm->prereqRight |= extraRight;
 }
 
@@ -165406,20 +165385,20 @@ SQLITE_PRIVATE int sqlite3IcuInit(sqlite3 *db){
     void *pContext;                           
     void (*xFunc)(sqlite3_context*,int,sqlite3_value**);
   } scalars[] = {
-    {"regexp", 2, SQLITE_ANY|SQLITE_DETERMINISTIC,          0, icuRegexpFunc},
+    {"regexp", 2, SQLITE_ANY,          0, icuRegexpFunc},
 
-    {"lower",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC,        0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF16|SQLITE_DETERMINISTIC, (void*)1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF16,        0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF16,        0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF16, (void*)1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF16, (void*)1, icuCaseFunc16},
 
-    {"lower",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
-    {"lower",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuCaseFunc16},
-    {"upper",  1, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
-    {"upper",  2, SQLITE_UTF8|SQLITE_DETERMINISTIC,  (void*)1, icuCaseFunc16},
+    {"lower",  1, SQLITE_UTF8,         0, icuCaseFunc16},
+    {"lower",  2, SQLITE_UTF8,         0, icuCaseFunc16},
+    {"upper",  1, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
+    {"upper",  2, SQLITE_UTF8,  (void*)1, icuCaseFunc16},
 
-    {"like",   2, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
-    {"like",   3, SQLITE_UTF8|SQLITE_DETERMINISTIC,         0, icuLikeFunc},
+    {"like",   2, SQLITE_UTF8,         0, icuLikeFunc},
+    {"like",   3, SQLITE_UTF8,         0, icuLikeFunc},
 
     {"icu_load_collation",  2, SQLITE_UTF8, (void*)db, icuLoadCollation},
   };
@@ -176437,15 +176416,13 @@ SQLITE_EXTENSION_INIT1
 #ifdef sqlite3Isdigit
    
 
-#  define safe_isdigit(x)  sqlite3Isdigit(x)
-#  define safe_isalnum(x)  sqlite3Isalnum(x)
-#  define safe_isxdigit(x) sqlite3Isxdigit(x)
+#  define safe_isdigit(x) sqlite3Isdigit(x)
+#  define safe_isalnum(x) sqlite3Isalnum(x)
 #else
    
 #include <ctype.h>  
-#  define safe_isdigit(x)  isdigit((unsigned char)(x))
-#  define safe_isalnum(x)  isalnum((unsigned char)(x))
-#  define safe_isxdigit(x) isxdigit((unsigned char)(x))
+#  define safe_isdigit(x) isdigit((unsigned char)(x))
+#  define safe_isalnum(x) isalnum((unsigned char)(x))
 #endif
 
 
@@ -177095,15 +177072,6 @@ static int jsonParseAddNode(
 
 
 
-static int jsonIs4Hex(const char *z){
-  int i;
-  for(i=0; i<4; i++) if( !safe_isxdigit(z[i]) ) return 0;
-  return 1;
-}
-
-
-
-
 
 
 
@@ -177175,13 +177143,8 @@ static int jsonParseValue(JsonParse *pParse, u32 i){
       if( c==0 ) return -1;
       if( c=='\\' ){
         c = pParse->zJson[++j];
-        if( c=='"' || c=='\\' || c=='/' || c=='b' || c=='f'
-           || c=='n' || c=='r' || c=='t'
-           || (c=='u' && jsonIs4Hex(pParse->zJson+j+1)) ){
-          jnFlags = JNODE_ESCAPE;
-        }else{
-          return -1;
-        }
+        if( c==0 ) return -1;
+        jnFlags = JNODE_ESCAPE;
       }else if( c=='"' ){
         break;
       }
@@ -178049,7 +178012,7 @@ static void jsonObjectFinal(sqlite3_context *ctx){
   if( pStr ){
     jsonAppendChar(pStr, '}');
     if( pStr->bErr ){
-      if( pStr->bErr==1 ) sqlite3_result_error_nomem(ctx);
+      if( pStr->bErr==0 ) sqlite3_result_error_nomem(ctx);
       assert( pStr->bStatic );
     }else{
       sqlite3_result_text(ctx, pStr->zBuf, pStr->nUsed,
@@ -178327,9 +178290,9 @@ static int jsonEachColumn(
       
 
     }
-    default: {
+    case JEACH_ROOT: {
       const char *zRoot = p->zRoot;
-      if( zRoot==0 ) zRoot = "$";
+       if( zRoot==0 ) zRoot = "$";
       sqlite3_result_text(ctx, zRoot, -1, SQLITE_STATIC);
       break;
     }
@@ -184256,7 +184219,7 @@ static int fts5ExprNodeTest_STRING(
           }
         }else{
           Fts5IndexIter *pIter = pPhrase->aTerm[j].pIter;
-          if( pIter->iRowid==iLast || pIter->bEof ) continue;
+          if( pIter->iRowid==iLast ) continue;
           bMatch = 0;
           if( fts5ExprAdvanceto(pIter, bDesc, &iLast, &rc, &pNode->bEof) ){
             return rc;
@@ -189396,7 +189359,6 @@ static void fts5MultiIterNext(
   i64 iFrom                       
 ){
   int bUseFrom = bFrom;
-  assert( pIter->base.bEof==0 );
   while( p->rc==SQLITE_OK ){
     int iFirst = pIter->aFirst[1].iFirst;
     int bNewTerm = 0;
@@ -195661,7 +195623,7 @@ static void fts5SourceIdFunc(
 ){
   assert( nArg==0 );
   UNUSED_PARAM2(nArg, apUnused);
-  sqlite3_result_text(pCtx, "fts5: 2016-11-28 19:13:37 bbd85d235f7037c6a033a9690534391ffeacecc8", -1, SQLITE_TRANSIENT);
+  sqlite3_result_text(pCtx, "fts5: 2016-11-04 12:08:49 1136863c76576110e710dd5d69ab6bf347c65e36", -1, SQLITE_TRANSIENT);
 }
 
 static int fts5Init(sqlite3 *db){
