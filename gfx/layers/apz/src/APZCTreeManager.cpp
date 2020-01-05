@@ -14,6 +14,7 @@
 #include "InputData.h"                  
 #include "Layers.h"                     
 #include "mozilla/dom/Touch.h"          
+#include "mozilla/gfx/GPUParent.h"      
 #include "mozilla/gfx/Logging.h"        
 #include "mozilla/gfx/Point.h"          
 #include "mozilla/layers/APZThreadUtils.h"  
@@ -138,10 +139,17 @@ APZCTreeManager::CheckerboardFlushObserver::Observe(nsISupports* aSubject,
           }
         });
   }
-  MOZ_ASSERT(XRE_IsParentProcess());
-  nsCOMPtr<nsIObserverService> obsSvc = mozilla::services::GetObserverService();
-  if (obsSvc) {
-    obsSvc->NotifyObservers(nullptr, "APZ:FlushActiveCheckerboard:Done", nullptr);
+  if (XRE_IsGPUProcess()) {
+    if (gfx::GPUParent* gpu = gfx::GPUParent::GetSingleton()) {
+      nsCString topic("APZ:FlushActiveCheckerboard:Done");
+      Unused << gpu->SendNotifyUiObservers(topic);
+    }
+  } else {
+    MOZ_ASSERT(XRE_IsParentProcess());
+    nsCOMPtr<nsIObserverService> obsSvc = mozilla::services::GetObserverService();
+    if (obsSvc) {
+      obsSvc->NotifyObservers(nullptr, "APZ:FlushActiveCheckerboard:Done", nullptr);
+    }
   }
   return NS_OK;
 }
