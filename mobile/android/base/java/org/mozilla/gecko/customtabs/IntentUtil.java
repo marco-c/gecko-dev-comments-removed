@@ -13,6 +13,9 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.customtabs.CustomTabsIntent;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 
 
@@ -117,6 +120,41 @@ class IntentUtil {
 
 
 
+
+
+    static List<String> getMenuItemsTitle(@NonNull Intent intent) {
+        final List<Bundle> bundles = getMenuItemsBundle(intent);
+        final List<String> titles = new ArrayList<>();
+        for (Bundle b : bundles) {
+            titles.add(b.getString(CustomTabsIntent.KEY_MENU_ITEM_TITLE));
+        }
+        return titles;
+    }
+
+    
+
+
+
+
+
+
+
+    static List<PendingIntent> getMenuItemsPendingIntent(@NonNull Intent intent) {
+        final List<Bundle> bundles = getMenuItemsBundle(intent);
+        final List<PendingIntent> intents = new ArrayList<>();
+        for (Bundle b : bundles) {
+            PendingIntent p = b.getParcelable(CustomTabsIntent.KEY_PENDING_INTENT);
+            intents.add(p);
+        }
+        return intents;
+    }
+
+    
+
+
+
+
+
     static boolean hasExitAnimation(@NonNull Intent intent) {
         final Bundle bundle = getAnimationBundle(intent);
         return (bundle != null)
@@ -163,5 +201,19 @@ class IntentUtil {
 
     private static Bundle getAnimationBundle(@NonNull Intent intent) {
         return intent.getBundleExtra(CustomTabsIntent.EXTRA_EXIT_ANIMATION_BUNDLE);
+    }
+
+    
+
+
+
+
+
+
+
+    private static List<Bundle> getMenuItemsBundle(@NonNull Intent intent) {
+        ArrayList<Bundle> extra = intent.getParcelableArrayListExtra(
+                CustomTabsIntent.EXTRA_MENU_ITEMS);
+        return (extra == null) ? new ArrayList<Bundle>() : extra;
     }
 }
