@@ -20,7 +20,7 @@ function setupRangeTests() {
 	selection = getSelection();
 	testDiv = document.querySelector("#test");
 	if (testDiv) {
-		testDiv.parentNode.removeChild(testDiv);
+		testDiv.remove();
 	}
 	testDiv = document.createElement("div");
 	testDiv.id = "test";
@@ -884,7 +884,7 @@ function myInsertNode(range, node) {
 
     
     if (node.parentNode) {
-        node.parentNode.removeChild(node);
+        node.remove();
     }
 
     

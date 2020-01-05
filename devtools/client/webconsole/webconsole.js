@@ -861,7 +861,7 @@ WebConsoleFrame.prototype = {
     tempLabel.textContent = "x";
     doc.documentElement.appendChild(tempLabel);
     this._inputCharWidth = tempLabel.offsetWidth;
-    tempLabel.parentNode.removeChild(tempLabel);
+    tempLabel.remove();
     
     
     this._chevronWidth = +doc.defaultView.getComputedStyle(this.inputNode)

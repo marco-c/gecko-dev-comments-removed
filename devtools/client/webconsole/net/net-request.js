@@ -143,7 +143,7 @@ NetRequest.prototype = {
 
 
   closeBody: function () {
-    this.netInfoBodyBox.parentNode.removeChild(this.netInfoBodyBox);
+    this.netInfoBodyBox.remove();
   },
 
   

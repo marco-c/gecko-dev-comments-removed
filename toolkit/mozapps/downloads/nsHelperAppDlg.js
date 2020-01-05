@@ -535,7 +535,7 @@ nsUnknownContentTypeDialog.prototype = {
 
       
       var openHandler = this.dialogElement("openHandler");
-      openHandler.parentNode.removeChild(openHandler);
+      openHandler.remove();
       var openHandlerBox = this.dialogElement("openHandlerBox");
       openHandlerBox.appendChild(openHandler);
     }

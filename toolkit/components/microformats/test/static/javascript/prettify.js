@@ -940,7 +940,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
             breakAfter(node);
             
             if (node.parentNode) {
-              node.parentNode.removeChild(node);
+              node.remove();
             }
           } else {
             for (var child = node.firstChild; child; child = child.nextSibling) {
@@ -964,7 +964,7 @@ var REGEXP_PRECEDER_PATTERN = '(?:^^\\.?|[+-]|\\!|\\!=|\\!==|\\#|\\%|\\%=|&|&&|&
               breakAfter(node);
               if (!firstLine) {
                 
-                node.parentNode.removeChild(node);
+                node.remove();
               }
             }
           }

@@ -30,7 +30,7 @@
       logger("Listener receive event: " + event.type);
       if(event.type == "gotpointercapture") {
         test_listener_got = true;
-        listener.parentNode.removeChild(listener);
+        listener.remove();
       }
       if(event.type == "lostpointercapture")
         test_listener_lost = true;

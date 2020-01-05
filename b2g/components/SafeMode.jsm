@@ -104,7 +104,7 @@ this.SafeMode = {
             break;
           case "mozContentEvent":
             content.removeEventListener("mozContentEvent", handleEvent, true);
-            contentBrowser.parentNode.removeChild(contentBrowser);
+            contentBrowser.remove();
 
             if (e.detail == "safemode-yes")  {
               

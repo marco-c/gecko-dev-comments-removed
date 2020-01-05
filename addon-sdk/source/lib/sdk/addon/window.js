@@ -61,5 +61,5 @@ exports.window = window;
 
 unload(function() {
   window.close()
-  frame.parentNode.removeChild(frame);
+  frame.remove();
 });

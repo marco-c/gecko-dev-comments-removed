@@ -138,7 +138,7 @@ var gUpdater = {
           let node = aSite.node;
 
           
-          node.parentNode.removeChild(node);
+          node.remove();
           resolve();
         });
       }));

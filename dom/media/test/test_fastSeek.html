@@ -58,7 +58,7 @@
       v.keyframeIndex++
       if (v.keyframeIndex == v.keyframes.length) {
         v.src = "";
-        v.parentNode.removeChild(v);
+        v.remove();
         manager.finished(v.token);
       } else {
         doSeek(v);

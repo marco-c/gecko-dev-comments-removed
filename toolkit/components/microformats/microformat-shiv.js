@@ -2781,7 +2781,7 @@ var Microformats;
 
         removeChild(childNode) {
             if (childNode.parentNode) {
-                return childNode.parentNode.removeChild(childNode);
+                return childNode.remove();
             }
             return null;
         },

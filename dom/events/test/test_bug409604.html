@@ -182,7 +182,7 @@
   function destroyUnfocusableElement() {
     var el = document.getElementById(unfocusableElementId);
     ok(el != null, "unfocusable element not found");
-    el.parentNode.removeChild(el);
+    el.remove();
     ok(document.getElementById(unfocusableElementId) == null, "unfocusable element not properly removed");
   }
 

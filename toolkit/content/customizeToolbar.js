@@ -703,7 +703,7 @@ function onToolbarDrop(aEvent) {
       return;
 
     
-    wrapper.parentNode.removeChild(wrapper);
+    wrapper.remove();
 
     
     var dropToolbar = null;
@@ -775,7 +775,7 @@ function onPaletteDrop(aEvent) {
     }
 
     
-    wrapper.parentNode.removeChild(wrapper);
+    wrapper.remove();
   }
 
   toolboxChanged();

@@ -51,7 +51,7 @@ exports.testMembranelessMode = function(assert, done) {
 
     worker.port.on("done", () => {
       
-      element.parentNode.removeChild(element);
+      element.remove();
       worker.destroy();
       loader.unload();
 
