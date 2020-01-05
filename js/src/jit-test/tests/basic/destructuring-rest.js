@@ -12,13 +12,7 @@ assertThrowsInstanceOf(() => new Function('[...!a] = []'), SyntaxError, 'unary e
 assertThrowsInstanceOf(() => new Function('[...a+b] = []'), SyntaxError, 'binary expression');
 assertThrowsInstanceOf(() => new Function('var [...a.x] = []'), SyntaxError, 'lvalue expression in declaration');
 assertThrowsInstanceOf(() => new Function('var [...(b)] = []'), SyntaxError);
-
-
-
-
-assertThrowsInstanceOf(() =>
-	assertThrowsInstanceOf(() => new Function('[...b,] = []'), SyntaxError)
-	, Error);
+assertThrowsInstanceOf(() => new Function('[...b,] = []'), SyntaxError);
 
 assertThrowsInstanceOf(() => {
   try {
