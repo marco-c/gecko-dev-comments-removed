@@ -62,7 +62,6 @@ pub struct CallbackInterface {
 
 
 
-#[allow(raw_pointer_derive)]
 #[derive(JSTraceable)]
 struct CallbackObject {
     

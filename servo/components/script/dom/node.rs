@@ -179,7 +179,6 @@ pub struct SharedLayoutData {
 }
 
 
-#[allow(raw_pointer_derive)]
 #[derive(HeapSizeOf)]
 pub struct LayoutData {
     _shared_data: SharedLayoutData,
@@ -2319,7 +2318,6 @@ impl NodeMethods for Node {
 
 
 
-#[allow(raw_pointer_derive)]
 #[derive(Clone, PartialEq, Eq, Copy)]
 pub struct TrustedNodeAddress(pub *const c_void);
 
