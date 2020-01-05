@@ -5,6 +5,7 @@
 "use strict";
 
 const Services = require("Services");
+const { Task } = require("devtools/shared/task");
 const { createFactory, createElement } = require("devtools/client/shared/vendor/react");
 const { Provider } = require("devtools/client/shared/vendor/react-redux");
 
@@ -13,19 +14,35 @@ const Store = require("./store");
 
 const { LocalizationHelper } = require("devtools/shared/l10n");
 const INSPECTOR_L10N =
-      new LocalizationHelper("devtools/client/locales/inspector.properties");
+  new LocalizationHelper("devtools/client/locales/inspector.properties");
 
 function LayoutView(inspector, window) {
-  this.inspector = inspector;
   this.document = window.document;
+  this.inspector = inspector;
   this.store = null;
+  this.walker = this.inspector.walker;
+
+  this.onGridLayoutChange = this.onGridLayoutChange.bind(this);
+  this.onSidebarSelect = this.onSidebarSelect.bind(this);
+
+  this.inspector.sidebar.on("select", this.onSidebarSelect);
 
   this.init();
 }
 
 LayoutView.prototype = {
 
-  init() {
+  
+
+
+
+  init: Task.async(function* () {
+    if (!this.inspector) {
+      return;
+    }
+
+    this.layoutInspector = yield this.inspector.walker.getLayoutInspector();
+
     let store = this.store = Store();
     let provider = createElement(Provider, {
       store,
@@ -42,14 +59,93 @@ LayoutView.prototype = {
       provider,
       defaultTab == "layoutview"
     );
-  },
+  }),
+
+  
+
+
 
   destroy() {
-    this.inspector = null;
+    this.inspector.sidebar.off("select", this.onSidebarSelect);
+    this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
+
     this.document = null;
+    this.inspector = null;
+    this.layoutInspector = null;
     this.store = null;
+    this.walker = null;
   },
+
+  
+
+
+  isPanelVisible() {
+    return this.inspector.toolbox.currentToolId === "inspector" &&
+           this.inspector.sidebar &&
+           this.inspector.sidebar.getCurrentTabID() === "layoutview";
+  },
+
+  
+
+
+
+
+
+
+  refresh: Task.async(function* (gridFronts) {
+    
+    if (!this.inspector || !this.store) {
+      return;
+    }
+
+    
+    if (!gridFronts) {
+      gridFronts = yield this.layoutInspector.getAllGrids(this.walker.rootNode);
+    }
+
+    let grids = [];
+    for (let i = 0; i < gridFronts.length; i++) {
+      let grid = gridFronts[i];
+      let nodeFront = yield this.walker.getNodeFromActor(grid.actorID, ["containerEl"]);
+
+      grids.push({
+        id: i,
+        nodeFront,
+        gridFragments: grid.gridFragments
+      });
+    }
+
+    
+  }),
+
+  
+
+
+
+
+
+  onGridLayoutChange(grids) {
+    if (this.isPanelVisible()) {
+      this.refresh(grids);
+    }
+  },
+
+  
+
+
+
+
+
+  onSidebarSelect() {
+    if (!this.isPanelVisible()) {
+      this.layoutInspector.off("grid-layout-changed", this.onGridLayoutChange);
+      return;
+    }
+
+    this.layoutInspector.on("grid-layout-changed", this.onGridLayoutChange);
+    this.refresh();
+  },
+
 };
 
 exports.LayoutView = LayoutView;
-
