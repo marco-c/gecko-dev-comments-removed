@@ -461,6 +461,12 @@ public:
 
 protected:
 
+  explicit
+  nsTString_CharT(uint32_t aFlags)
+    : substring_type(aFlags)
+  {
+  }
+
   
   nsTString_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
     : substring_type(aData, aLength, aFlags)

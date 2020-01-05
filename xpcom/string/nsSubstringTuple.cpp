@@ -7,6 +7,9 @@
 #include "nsSubstringTuple.h"
 
 
+#define TO_SUBSTRING(_v) (*(_v))
+
+
 #include "string-template-def-unichar.h"
 #include "nsTSubstringTuple.cpp"
 #include "string-template-undef.h"

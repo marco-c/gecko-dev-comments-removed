@@ -50,8 +50,6 @@ public:
 
 class nsTSubstringSplitter_CharT;
 
-namespace mozilla {
-namespace detail {
 
 
 
@@ -64,13 +62,7 @@ namespace detail {
 
 
 
-
-
-
-
-
-
-class nsTStringRepr_CharT
+class nsTSubstring_CharT
 {
 public:
   typedef mozilla::fallible_t                 fallible_t;
@@ -80,10 +72,11 @@ public:
   typedef nsCharTraits<char_type>             char_traits;
   typedef char_traits::incompatible_char_type incompatible_char_type;
 
-  typedef nsTStringRepr_CharT                 self_type;
+  typedef nsTSubstring_CharT                  self_type;
+  typedef self_type                           abstract_string_type;
   typedef self_type                           base_string_type;
 
-  typedef nsTSubstring_CharT                  substring_type;
+  typedef self_type                           substring_type;
   typedef nsTSubstringTuple_CharT             substring_tuple_type;
   typedef nsTString_CharT                     string_type;
 
@@ -95,8 +88,16 @@ public:
   typedef char_type*                          char_iterator;
   typedef const char_type*                    const_char_iterator;
 
-  typedef uint32_t                            index_type;
   typedef uint32_t                            size_type;
+  typedef uint32_t                            index_type;
+
+public:
+
+  
+  ~nsTSubstring_CharT()
+  {
+    Finalize();
+  }
 
   
 
@@ -139,6 +140,81 @@ public:
   const_char_iterator& EndReading(const_char_iterator& aIter) const
   {
     return aIter = mData + mLength;
+  }
+
+
+  
+
+
+
+  char_iterator BeginWriting()
+  {
+    if (!EnsureMutable()) {
+      AllocFailed(mLength);
+    }
+
+    return mData;
+  }
+
+  char_iterator BeginWriting(const fallible_t&)
+  {
+    return EnsureMutable() ? mData : char_iterator(0);
+  }
+
+  char_iterator EndWriting()
+  {
+    if (!EnsureMutable()) {
+      AllocFailed(mLength);
+    }
+
+    return mData + mLength;
+  }
+
+  char_iterator EndWriting(const fallible_t&)
+  {
+    return EnsureMutable() ? (mData + mLength) : char_iterator(0);
+  }
+
+  char_iterator& BeginWriting(char_iterator& aIter)
+  {
+    return aIter = BeginWriting();
+  }
+
+  char_iterator& BeginWriting(char_iterator& aIter, const fallible_t& aFallible)
+  {
+    return aIter = BeginWriting(aFallible);
+  }
+
+  char_iterator& EndWriting(char_iterator& aIter)
+  {
+    return aIter = EndWriting();
+  }
+
+  char_iterator& EndWriting(char_iterator& aIter, const fallible_t& aFallible)
+  {
+    return aIter = EndWriting(aFallible);
+  }
+
+  
+
+
+
+  iterator& BeginWriting(iterator& aIter)
+  {
+    char_type* data = BeginWriting();
+    aIter.mStart = data;
+    aIter.mEnd = data + mLength;
+    aIter.mPosition = aIter.mStart;
+    return aIter;
+  }
+
+  iterator& EndWriting(iterator& aIter)
+  {
+    char_type* data = BeginWriting();
+    aIter.mStart = data;
+    aIter.mEnd = data + mLength;
+    aIter.mPosition = aIter.mEnd;
+    return aIter;
   }
 
   
@@ -215,10 +291,6 @@ public:
   bool NS_FASTCALL Equals(const self_type&) const;
   bool NS_FASTCALL Equals(const self_type&, const comparator_type&) const;
 
-  bool NS_FASTCALL Equals(const substring_tuple_type& aTuple) const;
-  bool NS_FASTCALL Equals(const substring_tuple_type& aTuple,
-                          const comparator_type& aComp) const;
-
   bool NS_FASTCALL Equals(const char_type* aData) const;
   bool NS_FASTCALL Equals(const char_type* aData,
                           const comparator_type& aComp) const;
@@ -278,195 +350,6 @@ public:
   inline bool LowerCaseEqualsLiteral(const char (&aStr)[N]) const
   {
     return LowerCaseEqualsASCII(aStr, N - 1);
-  }
-
-  
-
-
-  bool IsDependentOn(const char_type* aStart, const char_type* aEnd) const
-  {
-    
-
-
-
-
-
-
-
-    return (aStart < (mData + mLength) && aEnd > mData);
-  }
-
-protected:
-  nsTStringRepr_CharT() = delete; 
-
-  constexpr
-  nsTStringRepr_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
-    : mData(aData)
-    , mLength(aLength)
-    , mFlags(aFlags)
-  {
-  }
-
-  char_type*  mData;
-  size_type   mLength;
-  uint32_t    mFlags;
-
-public:
-  
-  
-  
-  
-  
-
-  enum
-  {
-    F_NONE         = 0,       
-
-    
-    F_TERMINATED   = 1 << 0,  
-    F_VOIDED       = 1 << 1,  
-    F_SHARED       = 1 << 2,  
-    F_OWNED        = 1 << 3,  
-    F_FIXED        = 1 << 4,  
-    F_LITERAL      = 1 << 5,  
-
-    
-    F_CLASS_FIXED  = 1 << 16   
-  };
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-};
-
-} 
-} 
-
-
-
-
-
-
-
-
-
-
-
-
-
-class nsTSubstring_CharT : public mozilla::detail::nsTStringRepr_CharT
-{
-public:
-  typedef nsTSubstring_CharT                  self_type;
-
-  
-  ~nsTSubstring_CharT()
-  {
-    Finalize();
-  }
-
-  
-
-
-
-  char_iterator BeginWriting()
-  {
-    if (!EnsureMutable()) {
-      AllocFailed(mLength);
-    }
-
-    return mData;
-  }
-
-  char_iterator BeginWriting(const fallible_t&)
-  {
-    return EnsureMutable() ? mData : char_iterator(0);
-  }
-
-  char_iterator EndWriting()
-  {
-    if (!EnsureMutable()) {
-      AllocFailed(mLength);
-    }
-
-    return mData + mLength;
-  }
-
-  char_iterator EndWriting(const fallible_t&)
-  {
-    return EnsureMutable() ? (mData + mLength) : char_iterator(0);
-  }
-
-  char_iterator& BeginWriting(char_iterator& aIter)
-  {
-    return aIter = BeginWriting();
-  }
-
-  char_iterator& BeginWriting(char_iterator& aIter, const fallible_t& aFallible)
-  {
-    return aIter = BeginWriting(aFallible);
-  }
-
-  char_iterator& EndWriting(char_iterator& aIter)
-  {
-    return aIter = EndWriting();
-  }
-
-  char_iterator& EndWriting(char_iterator& aIter, const fallible_t& aFallible)
-  {
-    return aIter = EndWriting(aFallible);
-  }
-
-  
-
-
-
-  iterator& BeginWriting(iterator& aIter)
-  {
-    char_type* data = BeginWriting();
-    aIter.mStart = data;
-    aIter.mEnd = data + mLength;
-    aIter.mPosition = aIter.mStart;
-    return aIter;
-  }
-
-  iterator& EndWriting(iterator& aIter)
-  {
-    char_type* data = BeginWriting();
-    aIter.mStart = data;
-    aIter.mEnd = data + mLength;
-    aIter.mPosition = aIter.mEnd;
-    return aIter;
   }
 
   
@@ -968,10 +851,32 @@ public:
 
 
   MOZ_IMPLICIT nsTSubstring_CharT(const substring_tuple_type& aTuple)
-    : nsTStringRepr_CharT(nullptr, 0, F_NONE)
+    : mData(nullptr)
+    , mLength(0)
+    , mFlags(F_NONE)
   {
     Assign(aTuple);
   }
+
+  
+
+
+
+
+
+  
+#if defined(DEBUG) || defined(FORCE_BUILD_REFCNT_LOGGING)
+#define XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
+  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags);
+#else
+#undef XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
+  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
+    : mData(aData)
+    , mLength(aLength)
+    , mFlags(aFlags)
+  {
+  }
+#endif 
 
   size_t SizeOfExcludingThisIfUnshared(mozilla::MallocSizeOf aMallocSizeOf)
   const;
@@ -1005,34 +910,37 @@ public:
 
 protected:
 
+  friend class nsTObsoleteAStringThunk_CharT;
+  friend class nsTSubstringTuple_CharT;
+  friend class nsTPromiseFlatString_CharT;
+
+  char_type*  mData;
+  size_type   mLength;
+  uint32_t    mFlags;
+
   
   nsTSubstring_CharT()
-    : nsTStringRepr_CharT(char_traits::sEmptyBuffer, 0, F_TERMINATED)
+    : mData(char_traits::sEmptyBuffer)
+    ,  mLength(0)
+    ,  mFlags(F_TERMINATED)
+  {
+  }
+
+  
+  explicit
+  nsTSubstring_CharT(uint32_t aFlags)
+    : mFlags(aFlags)
   {
   }
 
   
   
   nsTSubstring_CharT(const self_type& aStr)
-    : nsTStringRepr_CharT(aStr.mData, aStr.mLength,
-                          aStr.mFlags & (F_TERMINATED | F_VOIDED))
+    : mData(aStr.mData)
+    ,  mLength(aStr.mLength)
+    ,  mFlags(aStr.mFlags & (F_TERMINATED | F_VOIDED))
   {
   }
-
- 
-
-
-  
-#if defined(DEBUG) || defined(FORCE_BUILD_REFCNT_LOGGING)
-#define XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
-  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags);
-#else
-#undef XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
-  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
-    : nsTStringRepr_CharT(aData, aLength, aFlags)
-  {
-  }
-#endif 
 
   
 
@@ -1111,6 +1019,22 @@ protected:
   
 
 
+  bool IsDependentOn(const char_type* aStart, const char_type* aEnd) const
+  {
+    
+
+
+
+
+
+
+
+    return (aStart < (mData + mLength) && aEnd > mData);
+  }
+
+  
+
+
   void SetDataFlags(uint32_t aDataFlags)
   {
     NS_ASSERTION((aDataFlags & 0xFFFF0000) == 0, "bad flags");
@@ -1125,12 +1049,63 @@ public:
   
   
   void NS_FASTCALL AssignLiteral(const char_type* aData, size_type aLength);
-};
 
-static_assert(sizeof(nsTSubstring_CharT) ==
-              sizeof(mozilla::detail::nsTStringRepr_CharT),
-              "Don't add new data fields to nsTSubstring_CharT. "
-              "Add to nsTStringRepr_CharT instead.");
+  
+  
+  
+  
+  
+
+  enum
+  {
+    F_NONE         = 0,       
+
+    
+    F_TERMINATED   = 1 << 0,  
+    F_VOIDED       = 1 << 1,  
+    F_SHARED       = 1 << 2,  
+    F_OWNED        = 1 << 3,  
+    F_FIXED        = 1 << 4,  
+    F_LITERAL      = 1 << 5,  
+
+    
+    F_CLASS_FIXED  = 1 << 16   
+  };
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+};
 
 int NS_FASTCALL
 Compare(const nsTSubstring_CharT::base_string_type& aLhs,

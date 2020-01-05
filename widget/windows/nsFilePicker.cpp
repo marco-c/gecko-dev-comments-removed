@@ -499,11 +499,13 @@ nsFilePicker::ShowFilePicker(const nsString& aInitialDir)
     dialog->SetFileName(mDefaultFilename.get());
   }
   
+  NS_NAMED_LITERAL_STRING(htmExt, "html");
+
   
   if (!mDefaultExtension.IsEmpty()) {
     dialog->SetDefaultExtension(mDefaultExtension.get());
   } else if (IsDefaultPathHtml()) {
-    dialog->SetDefaultExtension(L"html");
+    dialog->SetDefaultExtension(htmExt.get());
   }
 
   

@@ -953,7 +953,7 @@ nsNativeAppSupportWin::HandleDDENotification( UINT uType,
                     do {
                         
                         nsCOMPtr<mozIDOMWindowProxy> navWin;
-                        GetMostRecentWindow( u"navigator:browser",
+                        GetMostRecentWindow( NS_LITERAL_STRING( "navigator:browser" ).get(),
                                              getter_AddRefs( navWin ) );
                         nsCOMPtr<nsPIDOMWindowOuter> piNavWin = do_QueryInterface(navWin);
                         if ( !piNavWin ) {
@@ -1430,7 +1430,7 @@ nsNativeAppSupportWin::OpenBrowserWindow()
     
 
     nsCOMPtr<mozIDOMWindowProxy> navWin;
-    GetMostRecentWindow( u"navigator:browser", getter_AddRefs( navWin ) );
+    GetMostRecentWindow( NS_LITERAL_STRING( "navigator:browser" ).get(), getter_AddRefs( navWin ) );
 
     
     

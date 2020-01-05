@@ -583,7 +583,7 @@ XRE_InitChildProcess(int aArgc,
       nsString appId;
       appId.AssignWithConversion(nsDependentCString(appModelUserId));
       
-      appId.Trim("\"");
+      appId.Trim(NS_LITERAL_CSTRING("\"").get());
       
       SetTaskbarGroupId(appId);
     }

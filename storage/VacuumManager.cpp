@@ -29,8 +29,8 @@
 
 
 #define OBSERVER_TOPIC_HEAVY_IO "heavy-io-task"
-#define OBSERVER_DATA_VACUUM_BEGIN u"vacuum-begin"
-#define OBSERVER_DATA_VACUUM_END u"vacuum-end"
+#define OBSERVER_DATA_VACUUM_BEGIN NS_LITERAL_STRING("vacuum-begin")
+#define OBSERVER_DATA_VACUUM_END NS_LITERAL_STRING("vacuum-end")
 
 
 
@@ -191,7 +191,7 @@ Vacuumer::execute()
   if (os) {
     rv =
       os->NotifyObservers(nullptr, OBSERVER_TOPIC_HEAVY_IO,
-                          OBSERVER_DATA_VACUUM_BEGIN);
+                          OBSERVER_DATA_VACUUM_BEGIN.get());
     MOZ_ASSERT(NS_SUCCEEDED(rv), "Should be able to notify");
   }
 
@@ -289,7 +289,7 @@ Vacuumer::notifyCompletion(bool aSucceeded)
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
     os->NotifyObservers(nullptr, OBSERVER_TOPIC_HEAVY_IO,
-                        OBSERVER_DATA_VACUUM_END);
+                        OBSERVER_DATA_VACUUM_END.get());
   }
 
   nsresult rv = mParticipant->OnEndVacuum(aSucceeded);

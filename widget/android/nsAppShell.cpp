@@ -167,7 +167,8 @@ public:
             mozilla::services::GetObserverService();
         obsServ->NotifyObservers(nullptr, "application-background", nullptr);
 
-        obsServ->NotifyObservers(nullptr, "memory-pressure", u"heap-minimize");
+        NS_NAMED_LITERAL_STRING(minimize, "heap-minimize");
+        obsServ->NotifyObservers(nullptr, "memory-pressure", minimize.get());
 
         
         
