@@ -540,20 +540,15 @@ class BaseBootstrapper(object):
                 print(RUST_PATH_ADVICE % { 'cargo_home': cargo_home })
                 sys.exit(1)
 
+        print('Your version of Rust (%s) is too old.' % version)
+
         rustup = self.which('rustup')
         if rustup:
             rustup_version = self._parse_version(rustup)
             if not rustup_version:
                 print(RUSTUP_OLD)
                 sys.exit(1)
-            if not version:
-                
-                
-                print('Found rustup. Will try to upgrade.')
-            else:
-                
-                print('Your version of Rust (%s) is too old. Will try to upgrade.' %
-                  version)
+            print('Found rustup. Will try to upgrade.')
             self.upgrade_rust(rustup)
 
             modern, after = self.is_rust_modern()
