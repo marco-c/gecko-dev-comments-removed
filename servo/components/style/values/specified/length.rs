@@ -1170,6 +1170,14 @@ impl LengthOrPercentageOrAuto {
     pub fn parse_non_negative(input: &mut Parser) -> Result<LengthOrPercentageOrAuto, ()> {
         LengthOrPercentageOrAuto::parse_internal(input, AllowedNumericType::NonNegative)
     }
+
+    
+    #[inline]
+    pub fn parse_non_negative_with_context(_context: &ParserContext,
+                                           input: &mut Parser)
+                                           -> Result<LengthOrPercentageOrAuto, ()> {
+        LengthOrPercentageOrAuto::parse_non_negative(input)
+    }
 }
 
 impl Parse for LengthOrPercentageOrAuto {
@@ -1271,6 +1279,16 @@ pub enum LengthOrPercentageOrAutoOrContent {
     Auto,
     
     Content
+}
+
+impl LengthOrPercentageOrAutoOrContent {
+    
+    
+    
+    
+    pub fn parse_non_negative_with_context(context: &ParserContext, input: &mut Parser) -> Result<Self, ()> {
+        Self::parse(context, input)
+    }
 }
 
 impl HasViewportPercentage for LengthOrPercentageOrAutoOrContent {
