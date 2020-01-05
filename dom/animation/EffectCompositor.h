@@ -29,6 +29,7 @@ namespace mozilla {
 class EffectSet;
 class RestyleTracker;
 class StyleAnimationValue;
+class ServoAnimationRule;
 struct AnimationPerformanceWarning;
 struct AnimationProperty;
 struct NonOwningAnimationTarget;
@@ -149,6 +150,21 @@ public:
                                  CSSPseudoElementType aPseudoType,
                                  CascadeLevel aCascadeLevel,
                                  nsStyleContext* aStyleContext);
+
+  
+  
+  
+  ServoAnimationRule* GetServoAnimationRule(const dom::Element* aElement,
+                                            CSSPseudoElementType aPseudoType,
+                                            CascadeLevel aCascadeLevel);
+
+  
+  
+  
+  
+  
+  
+  void ClearElementsToRestyle();
 
   bool HasPendingStyleUpdates() const;
   bool HasThrottledStyleUpdates() const;
