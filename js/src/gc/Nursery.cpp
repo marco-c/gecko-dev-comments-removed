@@ -134,19 +134,19 @@ js::Nursery::Nursery(JSRuntime* rt)
 bool
 js::Nursery::init(uint32_t maxNurseryBytes, AutoLockGC& lock)
 {
-    
-    maxNurseryChunks_ = maxNurseryBytes >> ChunkShift;
-
-    
-    if (maxNurseryChunks_ == 0)
-        return true;
-
     if (!mallocedBuffers.init())
         return false;
 
     freeMallocedBuffersTask = js_new<FreeMallocedBuffersTask>(runtime()->defaultFreeOp());
     if (!freeMallocedBuffersTask || !freeMallocedBuffersTask->init())
         return false;
+
+    
+    maxNurseryChunks_ = maxNurseryBytes >> ChunkShift;
+
+    
+    if (maxNurseryChunks_ == 0)
+        return true;
 
     AutoMaybeStartBackgroundAllocation maybeBgAlloc;
     updateNumChunksLocked(1, maybeBgAlloc, lock);
