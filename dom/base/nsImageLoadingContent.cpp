@@ -766,13 +766,8 @@ nsImageLoadingContent::LoadImage(const nsAString& aNewURI,
   
   nsCOMPtr<nsIURI> imageURI;
   nsresult rv = StringToURI(aNewURI, doc, getter_AddRefs(imageURI));
-  if (NS_FAILED(rv)) {
-    
-    CancelImageRequests(aNotify);
-    FireEvent(NS_LITERAL_STRING("error"));
-    FireEvent(NS_LITERAL_STRING("loadend"));
-    return NS_OK;
-  }
+  NS_ENSURE_SUCCESS(rv, rv);
+  
 
   NS_TryToSetImmutable(imageURI);
 
