@@ -11,8 +11,6 @@
 #include "mozilla/layers/AsyncCompositionManager.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
 #include "mozilla/widget/PlatformWidgetTypes.h"
-#include "nsDirectoryService.h"
-#include "nsDirectoryServiceDefs.h"
 #include "nsThreadUtils.h"
 #include "TreeTraversal.h"
 #include "WebRenderCanvasLayer.h"
@@ -145,20 +143,7 @@ WebRenderLayerManager::Initialize(PCompositorBridgeChild* aCBChild, uint64_t aLa
 {
   MOZ_ASSERT(mWRChild == nullptr);
 
-  
-  
-  
-  
-  
-  nsAutoString resourcePath;
-  if (XRE_IsParentProcess()) {
-    nsCOMPtr<nsIFile> greDir;
-    nsDirectoryService::gService->Get(NS_GRE_DIR, NS_GET_IID(nsIFile), getter_AddRefs(greDir));
-    greDir->Append(NS_LITERAL_STRING("webrender"));
-    greDir->GetPath(resourcePath);
-  }
-
-  PWebRenderBridgeChild* bridge = aCBChild->SendPWebRenderBridgeConstructor(aLayersId, resourcePath);
+  PWebRenderBridgeChild* bridge = aCBChild->SendPWebRenderBridgeConstructor(aLayersId);
   MOZ_ASSERT(bridge);
   mWRChild = static_cast<WebRenderBridgeChild*>(bridge);
   LayoutDeviceIntSize size = mWidget->GetClientSize();
