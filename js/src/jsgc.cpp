@@ -5093,30 +5093,42 @@ GCRuntime::joinTask(GCParallelTask& task, gcstats::Phase phase, AutoLockHelperTh
 
 using WeakCacheTaskVector = mozilla::Vector<SweepWeakCacheTask, 0, SystemAllocPolicy>;
 
-static void
-SweepWeakCachesFromActiveCooperatingThread(JSRuntime* rt)
+template <typename Functor>
+static bool
+IterateWeakCaches(JSRuntime* rt, Functor f)
 {
     for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
         for (JS::WeakCache<void*>* cache : zone->weakCaches()) {
-            SweepWeakCacheTask task(rt, *cache);
-            task.runFromActiveCooperatingThread(rt);
+            if (!f(cache))
+                return false;
         }
     }
+
+    for (JS::WeakCache<void*>* cache : rt->weakCaches()) {
+        if (!f(cache))
+            return false;
+    }
+
+    return true;
 }
 
 static WeakCacheTaskVector
 PrepareWeakCacheTasks(JSRuntime* rt)
 {
+    
     WeakCacheTaskVector out;
-    for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
-        for (JS::WeakCache<void*>* cache : zone->weakCaches()) {
-            if (!out.append(SweepWeakCacheTask(rt, *cache))) {
-                SweepWeakCachesFromActiveCooperatingThread(rt);
-                return WeakCacheTaskVector();
-            }
-        }
+    if (IterateWeakCaches(rt, [&] (JS::WeakCache<void*>* cache) {
+        return out.emplaceBack(rt, *cache);
+    })) {
+        return out;
     }
-    return out;
+
+    
+    IterateWeakCaches(rt, [&] (JS::WeakCache<void*>* cache) {
+        SweepWeakCacheTask(rt, *cache).runFromActiveCooperatingThread(rt);
+        return true;
+    });
+    return WeakCacheTaskVector();
 }
 
 void
@@ -5220,10 +5232,6 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
             
             
             jit::JitRuntime::SweepJitcodeGlobalTable(rt);
-
-            
-            for (JS::WeakCache<void*>* cache : rt->weakCaches())
-                cache->sweep();
         }
 
         {
