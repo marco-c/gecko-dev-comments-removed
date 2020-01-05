@@ -65,11 +65,6 @@ class PaintCounter;
 
 static const int kVisualWarningDuration = 150; 
 
-struct ImageCompositeNotificationInfo {
-  base::ProcessId mImageBridgeProcessId;
-  ImageCompositeNotification mNotification;
-};
-
 
 
 class HostLayerManager : public LayerManager
@@ -109,8 +104,6 @@ public:
   {
     MOZ_CRASH("GFX: Shouldn't be called for composited layer manager");
   }
-  virtual TextureFactoryIdentifier GetTextureFactoryIdentifier() = 0;
-
 
   virtual void ForcePresent() = 0;
   virtual void AddInvalidRegion(const nsIntRegion& aRegion) = 0;
@@ -133,7 +126,7 @@ public:
   
   virtual void ChangeCompositor(Compositor* aNewCompositor) = 0;
 
-  void ExtractImageCompositeNotifications(nsTArray<ImageCompositeNotificationInfo>* aNotifications)
+  void ExtractImageCompositeNotifications(nsTArray<ImageCompositeNotification>* aNotifications)
   {
     aNotifications->AppendElements(Move(mImageCompositeNotifications));
   }
@@ -170,13 +163,14 @@ public:
 
 protected:
   bool mDebugOverlayWantsNextFrame;
-  nsTArray<ImageCompositeNotificationInfo> mImageCompositeNotifications;
+  nsTArray<ImageCompositeNotification> mImageCompositeNotifications;
   
   
   float mWarningLevel;
   mozilla::TimeStamp mWarnTime;
 
   bool mWindowOverlayChanged;
+  RefPtr<PaintCounter> mPaintCounter;
   TimeDuration mLastPaintTime;
   TimeStamp mRenderStartTime;
 };
@@ -351,8 +345,7 @@ public:
 
   bool AsyncPanZoomEnabled() const override;
 
-public:
-  void AppendImageCompositeNotification(const ImageCompositeNotificationInfo& aNotification)
+  void AppendImageCompositeNotification(const ImageCompositeNotification& aNotification)
   {
     
     
@@ -363,8 +356,6 @@ public:
       mImageCompositeNotifications.AppendElement(aNotification);
     }
   }
-
-public:
   virtual TextureFactoryIdentifier GetTextureFactoryIdentifier() override
   {
     return mCompositor->GetTextureFactoryIdentifier();
@@ -392,6 +383,11 @@ private:
 #if defined(MOZ_WIDGET_ANDROID)
   void RenderToPresentationSurface();
 #endif
+
+  
+
+
+  void DrawPaintTimes(Compositor* aCompositor);
 
   
 
@@ -438,14 +434,6 @@ private:
   RefPtr<CompositingRenderTarget> mTwoPassTmpTarget;
   RefPtr<TextRenderer> mTextRenderer;
   bool mGeometryChanged;
-
-#ifdef USE_SKIA
-  
-
-
-  void DrawPaintTimes(Compositor* aCompositor);
-  RefPtr<PaintCounter> mPaintCounter;
-#endif
 };
 
 
@@ -531,7 +519,7 @@ public:
   gfx::Matrix4x4 GetShadowTransform();
   bool GetShadowTransformSetByAnimation() { return mShadowTransformSetByAnimation; }
   bool GetShadowOpacitySetByAnimation() { return mShadowOpacitySetByAnimation; }
-
+  
   
 
 
@@ -585,7 +573,6 @@ public:
 
 
   virtual void Destroy();
-  virtual void Cleanup() {}
 
   
 
@@ -596,8 +583,7 @@ public:
   virtual void Prepare(const RenderTargetIntRect& aClipRect) {}
 
   
-  virtual void RenderLayer(const gfx::IntRect& aClipRect,
-                           const Maybe<gfx::Polygon>& aGeometry) = 0;
+  virtual void RenderLayer(const gfx::IntRect& aClipRect) = 0;
 
   virtual bool SetCompositableHost(CompositableHost*)
   {

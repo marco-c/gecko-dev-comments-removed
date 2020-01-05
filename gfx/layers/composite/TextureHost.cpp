@@ -202,7 +202,8 @@ TextureHost::Create(const SurfaceDescriptor& aDesc,
       return CreateTextureHostOGL(aDesc, aDeallocator, aFlags);
 
     case SurfaceDescriptor::TSurfaceDescriptorMacIOSurface:
-      if (aBackend == LayersBackend::LAYERS_OPENGL) {
+      if (aBackend == LayersBackend::LAYERS_OPENGL ||
+          aBackend == LayersBackend::LAYERS_WR) {
         return CreateTextureHostOGL(aDesc, aDeallocator, aFlags);
       } else {
         return CreateTextureHostBasic(aDesc, aDeallocator, aFlags);
@@ -577,13 +578,8 @@ BufferTextureHost::EnsureWrappingTextureSource()
 {
   MOZ_ASSERT(!mHasIntermediateBuffer);
 
-  if (mFirstSource && mFirstSource->IsOwnedBy(this)) {
-    return true;
-  }
-  
   if (mFirstSource) {
-    mNeedsFullUpdate = true;
-    mFirstSource = nullptr;
+    return true;
   }
 
   if (!mCompositor) {

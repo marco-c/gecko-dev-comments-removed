@@ -285,8 +285,8 @@ RenderFrameParent::GetTextureFactoryIdentifier(TextureFactoryIdentifier* aTextur
 {
   RefPtr<LayerManager> lm = mFrameLoader ? GetFrom(mFrameLoader) : nullptr;
   
-  if (lm && lm->AsClientLayerManager()) {
-    *aTextureFactoryIdentifier = lm->AsClientLayerManager()->GetTextureFactoryIdentifier();
+  if (lm) {
+    *aTextureFactoryIdentifier = lm->GetTextureFactoryIdentifier();
   } else {
     *aTextureFactoryIdentifier = TextureFactoryIdentifier();
   }
