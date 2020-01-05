@@ -2,7 +2,6 @@
 
 
 
-extern crate content_blocker;
 extern crate cookie as cookie_rs;
 extern crate devtools_traits;
 extern crate flate2;

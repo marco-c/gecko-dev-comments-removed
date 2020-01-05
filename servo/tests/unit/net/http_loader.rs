@@ -2,7 +2,6 @@
 
 
 
-use content_blocker::parse_list;
 use cookie_rs::Cookie as CookiePair;
 use devtools_traits::{ChromeToDevtoolsControlMsg, DevtoolsControlMsg, NetworkEvent};
 use devtools_traits::HttpRequest as DevtoolsHttpRequest;
