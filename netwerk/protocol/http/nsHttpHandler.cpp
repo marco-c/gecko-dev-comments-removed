@@ -532,19 +532,24 @@ nsHttpHandler::InitConnectionMgr()
 nsresult
 nsHttpHandler::AddStandardRequestHeaders(nsHttpRequestHead *request, bool isSecure)
 {
+    
+    
+    
+
     nsresult rv;
 
     
-    rv = request->SetHeader(nsHttp::User_Agent, UserAgent(),
-                            false, nsHttpHeaderArray::eVarietyRequestDefault);
+    rv = request->SetHeaderNonThreadSafe(nsHttp::User_Agent, UserAgent(),
+                                         false,
+                                         nsHttpHeaderArray::eVarietyRequestDefault);
     if (NS_FAILED(rv)) return rv;
 
     
     
     
     
-    rv = request->SetHeader(nsHttp::Accept, mAccept,
-                            false, nsHttpHeaderArray::eVarietyRequestOverride);
+    rv = request->SetHeaderNonThreadSafe(nsHttp::Accept, mAccept,
+                                         false, nsHttpHeaderArray::eVarietyRequestOverride);
     if (NS_FAILED(rv)) return rv;
 
     
@@ -556,29 +561,29 @@ nsHttpHandler::AddStandardRequestHeaders(nsHttpRequestHead *request, bool isSecu
 
     
     if (!mAcceptLanguages.IsEmpty()) {
-        rv = request->SetHeader(nsHttp::Accept_Language, mAcceptLanguages,
-                                false,
-                                nsHttpHeaderArray::eVarietyRequestOverride);
+        rv = request->SetHeaderNonThreadSafe(nsHttp::Accept_Language, mAcceptLanguages,
+                                             false,
+                                             nsHttpHeaderArray::eVarietyRequestOverride);
         if (NS_FAILED(rv)) return rv;
     }
 
     
     if (isSecure) {
-        rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
-                                false,
-                                nsHttpHeaderArray::eVarietyRequestDefault);
+        rv = request->SetHeaderNonThreadSafe(nsHttp::Accept_Encoding, mHttpsAcceptEncodings,
+                                             false,
+                                             nsHttpHeaderArray::eVarietyRequestDefault);
     } else {
-        rv = request->SetHeader(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
-                                false,
-                                nsHttpHeaderArray::eVarietyRequestDefault);
+        rv = request->SetHeaderNonThreadSafe(nsHttp::Accept_Encoding, mHttpAcceptEncodings,
+                                             false,
+                                             nsHttpHeaderArray::eVarietyRequestDefault);
     }
     if (NS_FAILED(rv)) return rv;
 
     
     if (mSafeHintEnabled || mParentalControlEnabled) {
-      rv = request->SetHeader(nsHttp::Prefer, NS_LITERAL_CSTRING("safe"),
-                              false,
-                              nsHttpHeaderArray::eVarietyRequestDefault);
+      rv = request->SetHeaderNonThreadSafe(nsHttp::Prefer, NS_LITERAL_CSTRING("safe"),
+                                           false,
+                                           nsHttpHeaderArray::eVarietyRequestDefault);
       if (NS_FAILED(rv)) return rv;
     }
     return NS_OK;

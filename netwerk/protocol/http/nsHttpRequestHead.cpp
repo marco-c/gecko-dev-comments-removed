@@ -164,6 +164,25 @@ nsHttpRequestHead::SetHeader(nsHttpAtom h, const nsACString &v, bool m,
 {
     ReentrantMonitorAutoEnter mon(mReentrantMonitor);
 
+#ifdef DEBUG
+    AutoEnableCallingSetHeaderNonThreadSafe enabler(this);
+#endif
+
+    return SetHeaderNonThreadSafe(h, v, m, variety);
+}
+
+
+
+
+
+nsresult
+nsHttpRequestHead::SetHeaderNonThreadSafe(nsHttpAtom h,
+                                          const nsACString &v,
+                                          bool m,
+                                          nsHttpHeaderArray::HeaderVariety variety)
+{
+    MOZ_ASSERT(mCanCallSetHeaderNonThreadSafe);
+
     if (mInVisitHeaders) {
         return NS_ERROR_FAILURE;
     }
