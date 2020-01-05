@@ -36,7 +36,6 @@
 #include <unistd.h>
 #endif
 
-#include "base/child_privileges.h"
 #include "base/command_line.h"
 #include "base/process.h"
 
@@ -143,6 +142,13 @@ void SetAllFDsToCloseOnExec();
 
 void CloseSuperfluousFds(const base::InjectiveMultimap& saved_map);
 #endif
+
+enum ChildPrivileges {
+  PRIVILEGES_DEFAULT,
+  PRIVILEGES_UNPRIVILEGED,
+  PRIVILEGES_INHERIT,
+  PRIVILEGES_LAST
+};
 
 #if defined(OS_WIN)
 
