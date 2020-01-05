@@ -5238,7 +5238,7 @@ pref("layout.accessiblecaret.timeout_ms", 0);
 
 
 
-pref("layout.accessiblecaret.use_long_tap_injector", true);
+pref("layout.accessiblecaret.use_long_tap_injector", false);
 
 
 pref("layout.accessiblecaret.always_tilt", false);

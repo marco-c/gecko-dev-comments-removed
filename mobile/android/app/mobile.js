@@ -849,9 +849,6 @@ pref("layout.accessiblecaret.margin-left", "-11.5");
 pref("layout.accessiblecaret.caret_shown_when_long_tapping_on_empty_content", true);
 
 
-pref("layout.accessiblecaret.use_long_tap_injector", false);
-
-
 pref("layout.accessiblecaret.always_tilt", true);
 
 

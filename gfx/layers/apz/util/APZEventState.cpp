@@ -230,17 +230,15 @@ APZEventState::FireContextmenuEvents(const nsCOMPtr<nsIPresShell>& aPresShell,
     
     
     mActiveElementManager->ClearActivation();
+#ifndef XP_WIN
   } else {
     
-    LayoutDevicePoint ldPoint = aPoint * aScale;
-    int time = 0;
-    nsEventStatus status =
-        APZCCallbackHelper::DispatchSynthesizedMouseEvent(eMouseLongTap, time,
-                                                          ldPoint, aModifiers,
-                                                           1,
-                                                          aWidget);
+    nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
+        eMouseLongTap,  0, aPoint * aScale, aModifiers,
+         1, aWidget);
     eventHandled = (status == nsEventStatus_eConsumeNoDefault);
-    APZES_LOG("MOZLONGTAP event handled: %d\n", eventHandled);
+    APZES_LOG("eMouseLongTap event handled: %d\n", eventHandled);
+#endif
   }
 
   return eventHandled;
@@ -267,7 +265,13 @@ APZEventState::ProcessLongTap(const nsCOMPtr<nsIPresShell>& aPresShell,
   
   
   
-  bool eventHandled = false;
+  
+  
+  nsEventStatus status = APZCCallbackHelper::DispatchSynthesizedMouseEvent(
+      eMouseLongTap,  0, aPoint * aScale, aModifiers,  1,
+      widget);
+
+  bool eventHandled = (status == nsEventStatus_eConsumeNoDefault);
 #else
   bool eventHandled = FireContextmenuEvents(aPresShell, aPoint, aScale,
         aModifiers, widget);
