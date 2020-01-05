@@ -61,7 +61,7 @@ public:
   
 
 
-  static void DebugVerifyStyleTree(nsIFrame* aFrame);
+  void DebugVerifyStyleTree(nsIFrame* aFrame);
 #endif
 
   void FlushOverflowChangedTracker() {
