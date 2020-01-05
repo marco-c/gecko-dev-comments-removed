@@ -144,6 +144,8 @@ this.setBasicCredentials =
 
 
 
+
+
 this.makeIdentityConfig = function(overrides) {
   
   let result = {
@@ -249,13 +251,28 @@ this.configureFxAccountIdentity = function(authService,
   authService._account = config.fxaccount.user.email;
 }
 
-this.configureIdentity = async function(identityOverrides) {
-  let config = makeIdentityConfig(identityOverrides);
+this.configureIdentity = async function(identityOverrides, server) {
+  let config = makeIdentityConfig(identityOverrides, server);
   let ns = {};
   Cu.import("resource://services-sync/service.js", ns);
 
+  if (server) {
+    ns.Service.serverURL = server.baseURI;
+  }
+
   if (ns.Service.identity instanceof BrowserIDManager) {
     
+
+    
+    if (server && !config.fxaccount.token.endpoint) {
+      let ep = server.baseURI;
+      if (!ep.endsWith("/")) {
+        ep += "/";
+      }
+      ep += "1.1/" + config.username + "/";
+      config.fxaccount.token.endpoint = ep;
+    }
+
     configureFxAccountIdentity(ns.Service.identity, config);
     await ns.Service.identity.initializeWithCurrentIdentity();
     

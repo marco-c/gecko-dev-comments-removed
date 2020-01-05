@@ -377,7 +377,7 @@ this.BrowserIDManager.prototype = {
 
 
   set basicPassword(value) {
-    throw "basicPassword setter should be not used in BrowserIDManager";
+    throw new Error("basicPassword setter should be not used in BrowserIDManager");
   },
 
   

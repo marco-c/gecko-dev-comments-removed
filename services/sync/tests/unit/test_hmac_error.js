@@ -21,10 +21,6 @@ function shared_setup() {
   hmacErrorCount = 0;
 
   
-  ensureLegacyIdentityManager();
-  setBasicCredentials("foo", "foo", "aabcdeabcdeabcdeabcdeabcde");
-
-  
   Service.engineManager._engines = {};
   Service.engineManager.register(RotaryEngine);
   let engine = Service.engineManager.get("rotary");
@@ -79,7 +75,9 @@ add_task(async function hmac_error_during_404() {
   };
 
   let server = sync_httpd_setup(handlers);
-  Service.serverURL = server.baseURI;
+  
+  await configureIdentity({ username: "foo" }, server);
+  Service.login();
 
   try {
     _("Syncing.");
@@ -102,7 +100,7 @@ add_task(async function hmac_error_during_404() {
   }
 });
 
-add_test(function hmac_error_during_node_reassignment() {
+add_task(async function hmac_error_during_node_reassignment() {
   _("Attempt to replicate an HMAC error during node reassignment.");
   let [engine, rotaryColl, clientsColl, keysWBO, global] = shared_setup();
 
@@ -156,7 +154,9 @@ add_test(function hmac_error_during_node_reassignment() {
   };
 
   let server = sync_httpd_setup(handlers);
-  Service.serverURL = server.baseURI;
+  
+  await configureIdentity({ username: "foo" }, server);
+
   _("Syncing.");
   
   
@@ -202,44 +202,46 @@ add_test(function hmac_error_during_node_reassignment() {
   }
 
   _("Make sure that syncing again causes recovery.");
-  onSyncFinished = function() {
-    _("== First sync done.");
-    _("---------------------------");
+  await new Promise(resolve => {
     onSyncFinished = function() {
-      _("== Second (automatic) sync done.");
-      hasData = rotaryColl.wbo("flying") ||
-                rotaryColl.wbo("scotsman");
-      hasKeys = keysWBO.modified;
-      do_check_true(!hasData == !hasKeys);
+      _("== First sync done.");
+      _("---------------------------");
+      onSyncFinished = function() {
+        _("== Second (automatic) sync done.");
+        hasData = rotaryColl.wbo("flying") ||
+                  rotaryColl.wbo("scotsman");
+        hasKeys = keysWBO.modified;
+        do_check_true(!hasData == !hasKeys);
 
-      
-      
-      Utils.nextTick(function() {
-        _("Now a fresh sync will get no HMAC errors.");
-        _("Partially resetting client, as if after a restart, and forcing redownload.");
-        Service.collectionKeys.clear();
-        engine.lastSync = 0;
-        hmacErrorCount = 0;
+        
+        
+        Utils.nextTick(function() {
+          _("Now a fresh sync will get no HMAC errors.");
+          _("Partially resetting client, as if after a restart, and forcing redownload.");
+          Service.collectionKeys.clear();
+          engine.lastSync = 0;
+          hmacErrorCount = 0;
 
-        onSyncFinished = function() {
-          
-          do_check_eq(hmacErrorCount, 0)
+          onSyncFinished = function() {
+            
+            do_check_eq(hmacErrorCount, 0)
 
-          Svc.Obs.remove("weave:service:sync:finish", obs);
-          Svc.Obs.remove("weave:service:sync:error", obs);
+            Svc.Obs.remove("weave:service:sync:finish", obs);
+            Svc.Obs.remove("weave:service:sync:error", obs);
 
-          Svc.Prefs.resetBranch("");
-          Service.recordManager.clearCache();
-          server.stop(run_next_test);
-        };
+            Svc.Prefs.resetBranch("");
+            Service.recordManager.clearCache();
+            server.stop(resolve);
+          };
 
-        Service.sync();
-      },
-      this);
+          Service.sync();
+        },
+        this);
+      };
     };
-  };
 
-  onwards();
+    onwards();
+  });
 });
 
 function run_test() {

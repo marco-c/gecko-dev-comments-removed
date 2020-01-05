@@ -37,7 +37,19 @@ function check_record_version(user, id) {
     equal("1.5", cleartext.protocols[1]);
 }
 
-add_test(function test_bad_hmac() {
+
+
+
+function compareCommands(actual, expected, description) {
+  let tweakedActual = JSON.parse(JSON.stringify(actual));
+  tweakedActual.map(elt => delete elt.flowID);
+  deepEqual(tweakedActual, expected, description);
+  
+  let allIDs = new Set(actual.map(elt => elt.flowID).filter(fid => !!fid));
+  equal(allIDs.size, actual.length, "all items have unique IDs");
+}
+
+add_task(async function test_bad_hmac() {
   _("Ensure that Clients engine deletes corrupt records.");
   let contents = {
     meta: {global: {engines: {clients: {version: engine.version,
@@ -81,10 +93,8 @@ add_test(function test_bad_hmac() {
   }
 
   try {
-    ensureLegacyIdentityManager();
-    let passphrase     = "abcdeabcdeabcdeabcdeabcdea";
-    Service.serverURL  = server.baseURI;
-    Service.login("foo", "ilovejane", passphrase);
+    await configureIdentity({username: "foo"}, server);
+    Service.login("foo");
 
     generateNewKeys(Service.collectionKeys);
 
@@ -174,7 +184,7 @@ add_test(function test_bad_hmac() {
   } finally {
     Svc.Prefs.resetBranch("");
     Service.recordManager.clearCache();
-    server.stop(run_next_test);
+    await promiseStopServer(server);
   }
 });
 
