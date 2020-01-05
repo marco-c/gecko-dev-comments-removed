@@ -154,7 +154,7 @@ public:
     , mFeatureThreads(false)
     , mBuffer(nullptr)
     , mIsPaused(false)
-#if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux)
     , mWasPaused(false)
 #endif
     , mSamplerThread(nullptr)
@@ -213,7 +213,7 @@ public:
 
   GET_AND_SET(bool, IsPaused)
 
-#if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux)
   GET_AND_SET(bool, WasPaused)
 #endif
 
@@ -305,7 +305,7 @@ private:
   
   bool mIsPaused;
 
-#if defined(GP_OS_linux) || defined(GP_OS_android)
+#if defined(GP_OS_linux)
   
   
   bool mWasPaused;
