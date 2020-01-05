@@ -2,7 +2,6 @@
 
 
 
-#![feature(core)]
 #![feature(int_uint)]
 
 extern crate devtools_traits;

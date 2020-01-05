@@ -2,11 +2,11 @@
 
 
 
+#![feature(alloc)]
 #![feature(plugin)]
 #![feature(int_uint)]
 #![feature(box_syntax)]
 #![feature(core)]
-#![feature(std_misc)]
 #![feature(collections)]
 #![feature(rustc_private)]
 

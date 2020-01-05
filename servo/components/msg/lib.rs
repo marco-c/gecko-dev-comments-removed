@@ -2,7 +2,6 @@
 
 
 
-#![feature(hash)]
 #![feature(int_uint)]
 
 extern crate azure;

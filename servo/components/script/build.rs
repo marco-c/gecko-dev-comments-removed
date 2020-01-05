@@ -2,17 +2,12 @@
 
 
 
-#![feature(io)]
-
-use std::old_io::process::{Command, ProcessExit, StdioContainer};
-
+use std::process::Command;
 
 fn main() {
-    let result = Command::new("make")
+    assert!(Command::new("make")
         .args(&["-f", "makefile.cargo"])
-        .stdout(StdioContainer::InheritFd(1))
-        .stderr(StdioContainer::InheritFd(2))
         .status()
-        .unwrap();
-    assert_eq!(result, ProcessExit::ExitStatus(0));
+        .unwrap()
+        .success());
 }

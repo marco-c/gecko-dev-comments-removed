@@ -14,7 +14,7 @@
 
 
 
-#![deny(unsafe_blocks)]
+#![deny(unsafe_code)]
 
 use display_list::optimizer::DisplayListOptimizer;
 use paint_context::{PaintContext, ToAzureRect};
