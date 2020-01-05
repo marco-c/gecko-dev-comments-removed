@@ -875,7 +875,12 @@ function getDir(aKey, aIFace) {
 
 
 function getLocale() {
-  return Services.locale.getRequestedLocale();
+  let locale = getLocalizedPref(LOCALE_PREF);
+  if (locale)
+    return locale;
+
+  
+  return Services.prefs.getCharPref(LOCALE_PREF);
 }
 
 
