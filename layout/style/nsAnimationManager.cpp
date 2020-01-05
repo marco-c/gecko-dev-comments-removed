@@ -33,11 +33,15 @@ using mozilla::dom::AnimationPlayState;
 using mozilla::dom::KeyframeEffectReadOnly;
 using mozilla::dom::CSSAnimation;
 
+typedef mozilla::ComputedTiming::AnimationPhase AnimationPhase;
+
 namespace {
 
-
-
-typedef Pair<EventMessage, StickyTimeDuration> EventPair;
+struct AnimationEventParams {
+  EventMessage mMessage;
+  StickyTimeDuration mElapsedTime;
+  TimeStamp mTimeStamp;
+};
 
 } 
 
@@ -193,69 +197,94 @@ CSSAnimation::QueueEvents()
     return;
   }
   nsAnimationManager* manager = presContext->AnimationManager();
-
   ComputedTiming computedTiming = mEffect->GetComputedTiming();
 
-  if (computedTiming.mPhase == ComputedTiming::AnimationPhase::Null) {
-    return; 
+  ComputedTiming::AnimationPhase currentPhase = computedTiming.mPhase;
+  uint64_t currentIteration  = computedTiming.mCurrentIteration;
+  if (currentPhase == mPreviousPhase &&
+      currentIteration == mPreviousIteration) {
+    return;
   }
 
-  
-  
-  
-  
-  
-  
+  const StickyTimeDuration zeroDuration;
+  StickyTimeDuration intervalStartTime =
+    std::max(std::min(StickyTimeDuration(-mEffect->SpecifiedTiming().mDelay),
+                      computedTiming.mActiveDuration),
+             zeroDuration);
+  StickyTimeDuration intervalEndTime =
+    std::max(std::min((EffectEnd() - mEffect->SpecifiedTiming().mDelay),
+                      computedTiming.mActiveDuration),
+             zeroDuration);
 
-  bool wasActive = mPreviousPhaseOrIteration != PREVIOUS_PHASE_BEFORE &&
-                   mPreviousPhaseOrIteration != PREVIOUS_PHASE_AFTER;
-  bool isActive =
-    computedTiming.mPhase == ComputedTiming::AnimationPhase::Active;
-  bool isSameIteration =
-         computedTiming.mCurrentIteration == mPreviousPhaseOrIteration;
-  bool skippedActivePhase =
-    (mPreviousPhaseOrIteration == PREVIOUS_PHASE_BEFORE &&
-     computedTiming.mPhase == ComputedTiming::AnimationPhase::After) ||
-    (mPreviousPhaseOrIteration == PREVIOUS_PHASE_AFTER &&
-     computedTiming.mPhase == ComputedTiming::AnimationPhase::Before);
+  uint64_t iterationBoundary = mPreviousIteration > currentIteration
+                               ? currentIteration + 1
+                               : currentIteration;
+  StickyTimeDuration iterationStartTime  =
+    computedTiming.mDuration.MultDouble(
+      (iterationBoundary - computedTiming.mIterationStart));
 
-  MOZ_ASSERT(!skippedActivePhase || (!isActive && !wasActive),
-             "skippedActivePhase only makes sense if we were & are inactive");
+  TimeStamp startTimeStamp     = ElapsedTimeToTimeStamp(intervalStartTime);
+  TimeStamp endTimeStamp       = ElapsedTimeToTimeStamp(intervalEndTime);
+  TimeStamp iterationTimeStamp = ElapsedTimeToTimeStamp(iterationStartTime);
 
-  if (computedTiming.mPhase == ComputedTiming::AnimationPhase::Before) {
-    mPreviousPhaseOrIteration = PREVIOUS_PHASE_BEFORE;
-  } else if (computedTiming.mPhase == ComputedTiming::AnimationPhase::Active) {
-    mPreviousPhaseOrIteration = computedTiming.mCurrentIteration;
-  } else if (computedTiming.mPhase == ComputedTiming::AnimationPhase::After) {
-    mPreviousPhaseOrIteration = PREVIOUS_PHASE_AFTER;
+  AutoTArray<AnimationEventParams, 2> events;
+  switch (mPreviousPhase) {
+    case AnimationPhase::Null:
+    case AnimationPhase::Before:
+      if (currentPhase == AnimationPhase::Active) {
+        events.AppendElement(AnimationEventParams{ eAnimationStart,
+                                                   intervalStartTime,
+                                                   startTimeStamp });
+      } else if (currentPhase == AnimationPhase::After) {
+        events.AppendElement(AnimationEventParams{ eAnimationStart,
+                                                   intervalStartTime,
+                                                   startTimeStamp });
+        events.AppendElement(AnimationEventParams{ eAnimationEnd,
+                                                   intervalEndTime,
+                                                   endTimeStamp });
+      }
+      break;
+    case AnimationPhase::Active:
+      if (currentPhase == AnimationPhase::Before) {
+        events.AppendElement(AnimationEventParams{ eAnimationEnd,
+                                                   intervalStartTime,
+                                                   startTimeStamp });
+      } else if (currentPhase == AnimationPhase::Active) {
+        
+        
+        MOZ_ASSERT(currentIteration != mPreviousIteration);
+        events.AppendElement(AnimationEventParams{ eAnimationIteration,
+                                                   iterationStartTime,
+                                                   iterationTimeStamp });
+      } else if (currentPhase == AnimationPhase::After) {
+        events.AppendElement(AnimationEventParams{ eAnimationEnd,
+                                                   intervalEndTime,
+                                                   endTimeStamp });
+      }
+      break;
+    case AnimationPhase::After:
+      if (currentPhase == AnimationPhase::Before) {
+        events.AppendElement(AnimationEventParams{ eAnimationStart,
+                                                   intervalEndTime,
+                                                   startTimeStamp});
+        events.AppendElement(AnimationEventParams{ eAnimationEnd,
+                                                   intervalStartTime,
+                                                   endTimeStamp });
+      } else if (currentPhase == AnimationPhase::Active) {
+        events.AppendElement(AnimationEventParams{ eAnimationStart,
+                                                   intervalEndTime,
+                                                   endTimeStamp });
+      }
+      break;
   }
+  mPreviousPhase = currentPhase;
+  mPreviousIteration = currentIteration;
 
-  AutoTArray<EventPair, 2> events;
-  StickyTimeDuration initialAdvance = StickyTimeDuration(InitialAdvance());
-  StickyTimeDuration iterationStart = computedTiming.mDuration *
-                                      computedTiming.mCurrentIteration;
-  const StickyTimeDuration& activeDuration = computedTiming.mActiveDuration;
-
-  if (!wasActive && isActive) {
-    events.AppendElement(EventPair(eAnimationStart, initialAdvance));
-  } else if (wasActive && !isActive) {
-    events.AppendElement(EventPair(eAnimationEnd, activeDuration));
-  } else if (wasActive && isActive && !isSameIteration) {
-    events.AppendElement(EventPair(eAnimationIteration, iterationStart));
-  } else if (skippedActivePhase) {
-    events.AppendElement(EventPair(eAnimationStart,
-                                   std::min(initialAdvance, activeDuration)));
-    events.AppendElement(EventPair(eAnimationEnd, activeDuration));
-  } else {
-    return; 
-  }
-
-  for (const EventPair& pair : events){
+  for (const AnimationEventParams& event : events){
     manager->QueueEvent(
                AnimationEventInfo(owningElement, owningPseudoType,
-                                  pair.first(), mAnimationName,
-                                  pair.second(),
-                                  ElapsedTimeToTimeStamp(pair.second()),
+                                  event.mMessage, mAnimationName,
+                                  event.mElapsedTime, event.mTimeStamp,
                                   this));
   }
 }

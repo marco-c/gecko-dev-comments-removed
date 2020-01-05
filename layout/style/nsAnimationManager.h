@@ -76,7 +76,8 @@ public:
     , mIsStylePaused(false)
     , mPauseShouldStick(false)
     , mNeedsNewAnimationIndexWhenRun(false)
-    , mPreviousPhaseOrIteration(PREVIOUS_PHASE_BEFORE)
+    , mPreviousPhase(ComputedTiming::AnimationPhase::Null)
+    , mPreviousIteration(0)
   {
     
     
@@ -257,13 +258,10 @@ protected:
   
   bool mNeedsNewAnimationIndexWhenRun;
 
-  enum {
-    PREVIOUS_PHASE_BEFORE = uint64_t(-1),
-    PREVIOUS_PHASE_AFTER = uint64_t(-2)
-  };
   
   
-  uint64_t mPreviousPhaseOrIteration;
+  ComputedTiming::AnimationPhase mPreviousPhase;
+  uint64_t mPreviousIteration;
 };
 
 } 
