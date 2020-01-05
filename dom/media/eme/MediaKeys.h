@@ -134,6 +134,10 @@ public:
 private:
 
   
+  
+  already_AddRefed<CDMProxy> CreateCDMProxy();
+
+  
   already_AddRefed<DetailedPromise> RetrievePromise(PromiseId aId);
 
   
