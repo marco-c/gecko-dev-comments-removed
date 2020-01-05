@@ -1,3 +1,3 @@
 
 registerProcessor("sure!", () => {});
-console.log("So far so good");
+console.log(this instanceof AudioWorkletGlobalScope ? "So far so good" : "error");
