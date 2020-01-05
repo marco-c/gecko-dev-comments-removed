@@ -13,6 +13,8 @@
 #include <CoreFoundation/CoreFoundation.h>
 #endif
 
+#include "nsCocoaFeatures.h"
+
 
 
 template<class T>
@@ -54,6 +56,12 @@ static CFDictionaryRef
 CreateVariationDictionaryOrNull(CGFontRef aCGFont, uint32_t aVariationCount,
   const mozilla::gfx::ScaledFont::VariationSetting* aVariations)
 {
+  
+  
+  if (!nsCocoaFeatures::OnSierraOrLater()) {
+    return nullptr;
+  }
+
   AutoRelease<CTFontRef>
     ctFont(CTFontCreateWithGraphicsFont(aCGFont, 0, nullptr, nullptr));
   AutoRelease<CFArrayRef> axes(CTFontCopyVariationAxes(ctFont));

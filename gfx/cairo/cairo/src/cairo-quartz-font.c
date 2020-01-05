@@ -340,6 +340,13 @@ const cairo_font_face_backend_t _cairo_quartz_font_face_backend = {
 static CTFontRef
 CreateCTFontFromCGFontWithVariations(CGFontRef aCGFont, CGFloat aSize)
 {
+    
+    
+    
+    extern bool Gecko_OnSierraOrLater();
+    if (!Gecko_OnSierraOrLater()) {
+        return CTFontCreateWithGraphicsFont(aCGFont, aSize, NULL, NULL);
+    }
     CFDictionaryRef vars = CGFontCopyVariations(aCGFont);
     CTFontRef ctFont;
     if (vars) {

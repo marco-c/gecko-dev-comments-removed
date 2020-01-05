@@ -39,4 +39,10 @@ private:
 
   static int32_t mOSXVersion;
 };
+
+
+extern "C" {
+    bool Gecko_OnSierraOrLater();
+}
+
 #endif 
