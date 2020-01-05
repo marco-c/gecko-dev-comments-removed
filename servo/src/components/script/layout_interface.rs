@@ -7,8 +7,7 @@
 
 
 use dom::node::{AbstractNode, ScriptView, LayoutView};
-use script_task::{ScriptMsg, ScriptChan};
-
+use script_task::{ScriptChan};
 use std::comm::{Chan, SharedChan};
 use geom::rect::Rect;
 use geom::size::Size2D;
@@ -31,9 +30,6 @@ pub enum Msg {
     
     
     QueryMsg(LayoutQuery),
-
-    
-    RouteScriptMsg(ScriptMsg),
 
     
     ExitMsg,
