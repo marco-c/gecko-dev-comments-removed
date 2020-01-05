@@ -2,6 +2,8 @@
 
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/FormHistory.jsm");
 Cu.import("resource://services-common/async.js");
 Cu.import("resource://services-common/utils.js");
 
@@ -9,13 +11,28 @@ _("Make sure querySpinningly will synchronously fetch rows for a query asyncly")
 
 const SQLITE_CONSTRAINT_VIOLATION = 19;  
 
-var Svc = {};
-XPCOMUtils.defineLazyServiceGetter(Svc, "Form",
-                                   "@mozilla.org/satchel/form-history;1",
-                                   "nsIFormHistory2");
+
+
+
+
+
+
+
+FormHistory.schemaVersion;
+
+
+let dbFile = Services.dirsvc.get("ProfD", Ci.nsIFile).clone();
+dbFile.append("formhistory.sqlite");
+let dbConnection = Services.storage.openUnsharedDatabase(dbFile);
+
+do_register_cleanup(() => {
+  let cb = Async.makeSpinningCallback();
+  dbConnection.asyncClose(cb);
+  cb.wait();
+});
 
 function querySpinningly(query, names) {
-  let q = Svc.Form.DBConnection.createStatement(query);
+  let q = dbConnection.createStatement(query);
   let r = Async.querySpinningly(q, names);
   q.finalize();
   return r;
@@ -84,7 +101,7 @@ function run_test() {
 
   _("Generate an execution error");
   let query = "INSERT INTO moz_formhistory (fieldname, value) VALUES ('one', NULL)";
-  let stmt = Svc.Form.DBConnection.createStatement(query);
+  let stmt = dbConnection.createStatement(query);
   let except;
   try {
     Async.querySpinningly(stmt);

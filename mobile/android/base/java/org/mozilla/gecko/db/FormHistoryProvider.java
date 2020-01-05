@@ -30,7 +30,6 @@ public class FormHistoryProvider extends SQLiteBridgeContentProvider {
     private static final UriMatcher URI_MATCHER;
 
 
-    
     private static final int DB_VERSION = 4;
     private static final String DB_FILENAME = "formhistory.sqlite";
     private static final String TELEMETRY_TAG = "SQLITEBRIDGE_PROVIDER_FORMS";
