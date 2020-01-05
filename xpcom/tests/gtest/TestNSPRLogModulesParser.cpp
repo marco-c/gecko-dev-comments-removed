@@ -5,6 +5,7 @@
 
 
 #include "NSPRLogModulesParser.h"
+#include "mozilla/ArrayUtils.h"
 #include "gtest/gtest.h"
 
 using namespace mozilla;
