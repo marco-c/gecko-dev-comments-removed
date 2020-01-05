@@ -203,7 +203,7 @@ public class LayerView extends FrameLayout {
     }
 
      void handleToolbarAnimatorMessage(int message) {
-        switch(message) {
+        switch (message) {
             case STATIC_TOOLBAR_NEEDS_UPDATE:
                 
                 Bitmap bm = mToolbarAnimator.getBitmapOfToolbarChrome();
@@ -245,7 +245,7 @@ public class LayerView extends FrameLayout {
                 mToolbarAnimator.notifyCompositorControllerOpen();
                 break;
             default:
-                Log.e(LOGTAG,"Unhandled Toolbar Animator Message: " + message);
+                Log.e(LOGTAG, "Unhandled Toolbar Animator Message: " + message);
                 break;
         }
     }
