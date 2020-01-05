@@ -1843,6 +1843,11 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
   }
 
   
+  
+  
+  
+  
+  
   nsCOMPtr<Element> newNode =
     DeleteSelectionAndCreateElement(*nsGkAtoms::span);
 
@@ -1855,8 +1860,15 @@ HTMLEditor::InsertAsPlaintextQuotation(const nsAString& aQuotedText,
     newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::mozquote,
                      NS_LITERAL_STRING("true"), true);
     
-    newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
-                     NS_LITERAL_STRING("white-space: pre-wrap;"), true);
+    nsCOMPtr<nsINode> parent = newNode->GetParentNode();
+    if (parent && parent->IsHTMLElement(nsGkAtoms::body)) {
+      newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
+        NS_LITERAL_STRING("white-space: pre-wrap; display: block; width: 98vw;"),
+        true);
+    } else {
+      newNode->SetAttr(kNameSpaceID_None, nsGkAtoms::style,
+        NS_LITERAL_STRING("white-space: pre-wrap;"), true);
+    }
 
     
     selection->Collapse(newNode, 0);
