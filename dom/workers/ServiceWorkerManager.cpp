@@ -3206,10 +3206,12 @@ ServiceWorkerManager::CreateNewRegistration(const nsCString& aScope,
                                             nsIPrincipal* aPrincipal,
                                             nsLoadFlags aLoadFlags)
 {
+  nsresult rv;
+
 #ifdef DEBUG
   AssertIsOnMainThread();
   nsCOMPtr<nsIURI> scopeURI;
-  nsresult rv = NS_NewURI(getter_AddRefs(scopeURI), aScope, nullptr, nullptr);
+  rv = NS_NewURI(getter_AddRefs(scopeURI), aScope, nullptr, nullptr);
   MOZ_ASSERT(NS_SUCCEEDED(rv));
 
   RefPtr<ServiceWorkerRegistrationInfo> tmp =
@@ -3217,8 +3219,35 @@ ServiceWorkerManager::CreateNewRegistration(const nsCString& aScope,
   MOZ_ASSERT(!tmp);
 #endif
 
+  
+  
+  
+  
+  
+  
+  
+  
+  PrincipalInfo principalInfo;
+  rv = PrincipalToPrincipalInfo(aPrincipal, &principalInfo);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  nsCOMPtr<nsIPrincipal> cleanPrincipal =
+    PrincipalInfoToPrincipal(principalInfo, &rv);
+  if (NS_WARN_IF(NS_FAILED(rv))) {
+    return nullptr;
+  }
+
+  
+#if defined(DEBUG) || !defined(RELEASE_OR_BETA)
+  nsCOMPtr<nsIContentSecurityPolicy> csp;
+  MOZ_ALWAYS_SUCCEEDS(cleanPrincipal->GetCsp(getter_AddRefs(csp)));
+  MOZ_DIAGNOSTIC_ASSERT(!csp);
+#endif
+
   RefPtr<ServiceWorkerRegistrationInfo> registration =
-    new ServiceWorkerRegistrationInfo(aScope, aPrincipal, aLoadFlags);
+    new ServiceWorkerRegistrationInfo(aScope, cleanPrincipal, aLoadFlags);
   
   
   AddScopeAndRegistration(aScope, registration);
