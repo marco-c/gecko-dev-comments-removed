@@ -1,7 +1,7 @@
-/* -*- Mode: Java; c-basic-offset: 4; tab-width: 4; indent-tabs-mode: nil; -*-
- * This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
+
 
 package org.mozilla.gecko.push;
 
@@ -14,7 +14,6 @@ import android.util.Log;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.mozilla.gecko.EventDispatcher;
-import org.mozilla.gecko.GeckoApp;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.GeckoProfile;
 import org.mozilla.gecko.GeckoService;
@@ -36,18 +35,18 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Class that handles messages used in the Google Cloud Messaging and DOM push API integration.
- * <p/>
- * This singleton services Gecko messages from dom/push/PushServiceAndroidGCM.jsm and Google Cloud
- * Messaging requests.
- * <p/>
- * It is expected that Gecko is started (if not already running) soon after receiving GCM messages
- * otherwise there is a greater risk that pending messages that have not been handle by Gecko will
- * be lost if this service is killed.
- * <p/>
- * It's worth noting that we allow the DOM push API in restricted profiles.
- */
+
+
+
+
+
+
+
+
+
+
+
+
 @ReflectionTarget
 public class PushService implements BundleEventListener {
     private static final String LOG_TAG = "GeckoPushService";
@@ -97,7 +96,7 @@ public class PushService implements BundleEventListener {
 
     protected final PushManager pushManager;
 
-    // NB: These are not thread-safe, we're depending on these being access from the same background thread.
+    
     private boolean isReadyPushServiceAndroidGCM = false;
     private boolean isReadyFxAccountsPush = false;
     private final List<JSONObject> pendingPushMessages;
@@ -156,8 +155,8 @@ public class PushService implements BundleEventListener {
 
         final PushSubscription subscription = registration.getSubscription(chid);
         if (subscription == null) {
-            // This should never happen.  There's not much to be done; in the future, perhaps we
-            // could try to drop the remote subscription?
+            
+            
             Log.e(LOG_TAG, "No subscription found for chid: " + chid + "; ignoring message.");
             return;
         }
@@ -201,8 +200,8 @@ public class PushService implements BundleEventListener {
             data.put("channelID", chid);
             data.put("con", bundle.getString("con"));
             data.put("enc", bundle.getString("enc"));
-            // Only one of cryptokey (newer) and enckey (deprecated) should be set, but the
-            // Gecko handler will verify this.
+            
+            
             data.put("cryptokey", bundle.getString("cryptokey"));
             data.put("enckey", bundle.getString("enckey"));
             data.put("message", bundle.getString("body"));
@@ -246,12 +245,12 @@ public class PushService implements BundleEventListener {
 
     protected void registerGeckoEventListener() {
         Log.d(LOG_TAG, "Registered Gecko event listener.");
-        GeckoApp.getEventDispatcher().registerBackgroundThreadListener(this, GECKO_EVENTS);
+        EventDispatcher.getInstance().registerBackgroundThreadListener(this, GECKO_EVENTS);
     }
 
     protected void unregisterGeckoEventListener() {
         Log.d(LOG_TAG, "Unregistered Gecko event listener.");
-        GeckoApp.getEventDispatcher().unregisterBackgroundThreadListener(this, GECKO_EVENTS);
+        EventDispatcher.getInstance().unregisterBackgroundThreadListener(this, GECKO_EVENTS);
     }
 
     @Override
@@ -260,8 +259,8 @@ public class PushService implements BundleEventListener {
         ThreadUtils.assertOnBackgroundThread();
 
         final Context context = GeckoAppShell.getApplicationContext();
-        // We're invoked in response to a Gecko message on a background thread.  We should always
-        // be able to safely retrieve the current Gecko profile.
+        
+        
         final GeckoProfile geckoProfile = GeckoProfile.get(context);
 
         if (callback == null) {
@@ -292,13 +291,13 @@ public class PushService implements BundleEventListener {
                     return;
                 }
                 final boolean debug = message.getBoolean("debug", false);
-                pushManager.configure(geckoProfile.getName(), endpoint, debug, System.currentTimeMillis()); // For side effects.
+                pushManager.configure(geckoProfile.getName(), endpoint, debug, System.currentTimeMillis()); 
                 callback.sendSuccess(null);
                 return;
             }
             if ("PushServiceAndroidGCM:DumpRegistration".equals(event)) {
-                // In the future, this might be used to interrogate the Java Push Manager
-                // registration state from JavaScript.
+                
+                
                 callback.sendError("Not yet implemented!");
                 return;
             }
@@ -318,7 +317,7 @@ public class PushService implements BundleEventListener {
             }
             if ("PushServiceAndroidGCM:RegisterUserAgent".equals(event)) {
                 try {
-                    pushManager.registerUserAgent(geckoProfile.getName(), System.currentTimeMillis()); // For side-effects.
+                    pushManager.registerUserAgent(geckoProfile.getName(), System.currentTimeMillis()); 
                     callback.sendSuccess(null);
                 } catch (PushManager.ProfileNeedsConfigurationException | AutopushClientException | PushClient.LocalException | IOException e) {
                     Log.e(LOG_TAG, "Got exception in " + event, e);
@@ -327,10 +326,10 @@ public class PushService implements BundleEventListener {
                 return;
             }
             if ("PushServiceAndroidGCM:UnregisterUserAgent".equals(event)) {
-                // In the future, this might be used to tell the Java Push Manager to unregister
-                // a User Agent entirely from JavaScript.  Right now, however, everything is
-                // subscription based; there's no concept of unregistering all subscriptions
-                // simultaneously.
+                
+                
+                
+                
                 callback.sendError("Not yet implemented!");
                 return;
             }
@@ -380,7 +379,7 @@ public class PushService implements BundleEventListener {
                     return;
                 }
 
-                // Fire and forget.  See comments in the function itself.
+                
                 final PushSubscription pushSubscription = pushManager.unsubscribeChannel(channelID);
                 if (pushSubscription != null) {
                     Telemetry.sendUIEvent(TelemetryContract.Event.UNSAVE, TelemetryContract.Method.SERVICE, "dom-push-api");
@@ -405,17 +404,17 @@ public class PushService implements BundleEventListener {
                     callback.sendError("prePath must not be null in " + event);
                     return;
                 }
-                // We're on a background thread, so we can be synchronous.
+                
                 final long millis = BrowserDB.from(geckoProfile).getPrePathLastVisitedTimeMilliseconds(
                         context.getContentResolver(), prePath);
                 callback.sendSuccess(millis);
                 return;
             }
         } catch (GcmTokenClient.NeedsGooglePlayServicesException e) {
-            // TODO: improve this.  Can we find a point where the user is *definitely* interacting
-            // with the WebPush?  Perhaps we can show a dialog when interacting with the Push
-            // permissions, and then be more aggressive showing this notification when we have
-            // registrations and subscriptions that can't be advanced.
+            
+            
+            
+            
             callback.sendError("To handle event [" + event + "], user interaction is needed to enable Google Play Services.");
         }
     }
@@ -428,7 +427,7 @@ public class PushService implements BundleEventListener {
             isReadyPushServiceAndroidGCM = isReady;
         }
 
-        // Send all pending messages to Gecko.
+        
         if (canSendPushMessagesToGecko()) {
             sendPushMessagesToGecko(pendingPushMessages);
             pendingPushMessages.clear();
