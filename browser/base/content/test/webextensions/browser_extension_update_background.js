@@ -35,9 +35,6 @@ add_task(function* setup() {
     
     ["extensions.install.requireBuiltInCerts", false],
     ["extensions.update.requireBuiltInCerts", false],
-
-    
-    ["extensions.webextPermissionPrompts", true],
   ]});
 
   

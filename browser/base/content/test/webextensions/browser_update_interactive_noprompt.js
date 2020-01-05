@@ -8,9 +8,6 @@ add_task(function* setup() {
 
     
     ["extensions.update.url", `${BASE}/browser_webext_update.json`],
-
-    
-    ["extensions.webextPermissionPrompts", true],
   ]});
 });
 

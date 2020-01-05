@@ -82,11 +82,6 @@ let cleanup;
 
 add_task(function* () {
   
-  yield SpecialPowers.pushPrefEnv({set: [
-    ["extensions.webextPermissionPrompts", true],
-  ]});
-
-  
   
   
   const ICON_URL = "chrome://mozapps/skin/extensions/category-extensions.svg";

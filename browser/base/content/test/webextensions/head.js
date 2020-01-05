@@ -217,9 +217,6 @@ async function testInstallMethod(installFn, telemetryBase) {
   await SpecialPowers.pushPrefEnv({set: [
     ["extensions.webapi.testing", true],
     ["extensions.install.requireBuiltInCerts", false],
-
-    
-    ["extensions.webextPermissionPrompts", true],
   ]});
 
   if (telemetryBase !== undefined) {
