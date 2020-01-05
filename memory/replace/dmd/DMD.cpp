@@ -1546,6 +1546,22 @@ NopStackWalkCallback(uint32_t aFrameNumber, void* aPc, void* aSp,
 }
 #endif
 
+static void
+prefork()
+{
+  if (gStateLock) {
+    gStateLock->Lock();
+  }
+}
+
+static void
+postfork()
+{
+  if (gStateLock) {
+    gStateLock->Unlock();
+  }
+}
+
 
 
 
@@ -1555,6 +1571,16 @@ Init(const malloc_table_t* aMallocTable)
 {
   gMallocTable = aMallocTable;
   gDMDBridge = InfallibleAllocPolicy::new_<DMDBridge>();
+
+#ifndef XP_WIN
+  
+  
+  
+  
+  
+  
+  pthread_atfork(prefork, postfork, postfork);
+#endif
 
   
   const char* e = getenv("DMD");
