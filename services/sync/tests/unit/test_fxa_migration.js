@@ -3,6 +3,7 @@ Services.prefs.setCharPref("identity.fxaccounts.auth.uri", "http://localhost");
 
 
 Cu.import("resource://services-sync/FxaMigrator.jsm");
+Cu.import("resource://gre/modules/Promise.jsm");
 
 
 Services.prefs.setCharPref("services.sync.username", "foo");
@@ -22,6 +23,24 @@ Cu.import("resource://testing-common/services/common/logging.js");
 Cu.import("resource://testing-common/services/sync/rotaryengine.js");
 
 const FXA_USERNAME = "someone@somewhere";
+
+
+function promiseOneObserver(topic) {
+  return new Promise((resolve, reject) => {
+    let observer = function(subject, topic, data) {
+      Services.obs.removeObserver(observer, topic);
+      resolve({ subject: subject, data: data });
+    }
+    Services.obs.addObserver(observer, topic, false);
+  });
+}
+
+function promiseStopServer(server) {
+  return new Promise((resolve, reject) => {
+    server.stop(resolve);
+  });
+}
+
 
 
 function configureLegacySync() {
@@ -61,7 +80,7 @@ function configureLegacySync() {
   return [engine, server];
 }
 
-add_task(async function testMigrationUnlinks() {
+add_task(function *testMigrationUnlinks() {
 
   
   let oldValue = Services.prefs.getBoolPref("services.sync-testing.startOverKeepIdentity");
@@ -82,8 +101,8 @@ add_task(async function testMigrationUnlinks() {
   Service.sync();
   _("Finished sync");
 
-  await promiseStartOver;
-  await promiseMigration;
+  yield promiseStartOver;
+  yield promiseMigration;
   
   Assert.ok(!Services.prefs.prefHasUserValue("services.sync.username"));
 });

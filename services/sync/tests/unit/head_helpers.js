@@ -438,27 +438,6 @@ function sync_engine_and_validate_telem(engine, allowErrorPings, onError) {
 
 
 
-function promiseOneObserver(topic, callback) {
-  return new Promise((resolve, reject) => {
-    let observer = function(subject, data) {
-      Svc.Obs.remove(topic, observer);
-      resolve({ subject: subject, data: data });
-    }
-    Svc.Obs.add(topic, observer)
-  });
-}
-
-function promiseStopServer(server) {
-  return new Promise(resolve => server.stop(resolve));
-}
-
-function promiseNextTick() {
-  return new Promise(resolve => {
-    Utils.nextTick(resolve);
-  });
-}
-
-
 
 Utils.getDefaultDeviceName = function() {
   return "Test device name";
