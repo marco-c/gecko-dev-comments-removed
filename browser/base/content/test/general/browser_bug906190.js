@@ -99,9 +99,9 @@ function waitForSomeTabToLoad() {
 
 
 add_task(function* test_initialize() {
-  yield new Promise(resolve => SpecialPowers.pushPrefEnv({
+  yield SpecialPowers.pushPrefEnv({
     "set": [["security.mixed_content.block_active_content", true]],
-  }, resolve));
+  });
 });
 
 

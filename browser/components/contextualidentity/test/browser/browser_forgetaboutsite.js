@@ -318,11 +318,9 @@ function* test_storage_cleared() {
 
 add_task(function* setup() {
   
-  yield new Promise(resolve => {
-    SpecialPowers.pushPrefEnv({"set": [
-      ["privacy.userContext.enabled", true]
-    ]}, resolve);
-  });
+  yield SpecialPowers.pushPrefEnv({"set": [
+    ["privacy.userContext.enabled", true]
+  ]});
 
   
   if (!gHttpServer) {

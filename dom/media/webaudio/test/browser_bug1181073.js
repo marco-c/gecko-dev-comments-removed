@@ -1,8 +1,8 @@
 add_task(function*() {
   
-  yield new Promise(resolve => SpecialPowers.pushPrefEnv({
+  yield SpecialPowers.pushPrefEnv({
     'set': [['dom.min_background_timeout_value', 3000]]
-  }, resolve));
+  });
 
   
   yield BrowserTestUtils.withNewTab("about:blank", function*(browser) {

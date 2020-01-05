@@ -28,7 +28,7 @@ add_task(function* () {
 
 add_task(function* () {
   let input = "To be or not to be-that is the question";
-  yield new Promise(resolve => SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]}, resolve));
+  yield SpecialPowers.pushPrefEnv({set: [["keyword.enabled", false]]});
   let tab = yield BrowserTestUtils.openNewForegroundTab(gBrowser, "about:newtab", false);
   
   
