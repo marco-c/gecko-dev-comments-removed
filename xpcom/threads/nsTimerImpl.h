@@ -146,12 +146,12 @@ public:
   Name mName;
 
   
+  
   CallbackType          mCallbackType;
-
-  
-  
   uint8_t               mType;
 
+  
+  
   
   
   
