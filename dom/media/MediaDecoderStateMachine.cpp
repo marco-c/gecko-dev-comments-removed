@@ -2991,10 +2991,6 @@ MediaDecoderStateMachine::DispatchDecodeTasksIfNeeded()
   const bool needToDecodeAudio = NeedToDecodeAudio();
   const bool needToDecodeVideo = NeedToDecodeVideo();
 
-  
-  MOZ_ASSERT(mState != DECODER_STATE_COMPLETED ||
-             (!needToDecodeAudio && !needToDecodeVideo));
-
   SAMPLE_LOG("DispatchDecodeTasksIfNeeded needAudio=%d audioStatus=%s needVideo=%d videoStatus=%s",
              needToDecodeAudio, AudioRequestStatus(),
              needToDecodeVideo, VideoRequestStatus());
