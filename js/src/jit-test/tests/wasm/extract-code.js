@@ -1,4 +1,3 @@
-
 load(libdir + "wasm.js");
 
 var module = new WebAssembly.Module(wasmTextToBinary(`(module (func (nop)))`));

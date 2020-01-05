@@ -1,4 +1,3 @@
-
 load(libdir + "wasm.js");
 
 function linearModule(min, max, ops) {

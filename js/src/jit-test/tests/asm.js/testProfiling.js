@@ -2,6 +2,10 @@ load(libdir + "asm.js");
 load(libdir + "asserts.js");
 
 
+if (!isAsmJSCompilationAvailable())
+    quit();
+
+
 if (!getBuildConfiguration()["arm-simulator"])
     quit();
 

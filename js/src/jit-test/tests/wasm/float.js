@@ -1,4 +1,3 @@
-
 load(libdir + "wasm.js");
 
 wasmFullPass('(module (func (result f32) (f32.const -1)) (export "run" 0))', -1);

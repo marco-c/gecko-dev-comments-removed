@@ -1,4 +1,3 @@
-
 load(libdir + "wasm.js");
 
 var code = `(module

@@ -1,4 +1,3 @@
-
 load(libdir + "wasm.js");
 
 assertErrorMessage(() => wasmEvalText('(module (func) (start 0) (start 0))'), SyntaxError, /wasm text error/);
