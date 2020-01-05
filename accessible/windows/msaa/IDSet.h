@@ -28,10 +28,20 @@ namespace a11y {
 
 
 
+
+
+
+
 class IDSet
 {
 public:
-  constexpr IDSet() : mBitSet(), mIdx(0) {}
+  constexpr explicit IDSet(const uint32_t aMaxIdBits)
+    : mBitSet()
+    , mIdx(0)
+    , mMaxId((1UL << aMaxIdBits) - 1UL)
+    , mMaxIdx(mMaxId / bitsPerElt)
+  {
+  }
 
   
 
@@ -46,7 +56,7 @@ public:
 
         elt->mBitvec[0] |= (1ull << i);
         mIdx = idx;
-        return ~(elt->mIdx * bitsPerElt + i);
+        return (elt->mIdx * bitsPerElt + i);
       }
 
       if (elt->mBitvec[1] != UINT64_MAX) {
@@ -54,11 +64,11 @@ public:
 
         elt->mBitvec[1] |= (1ull << i);
         mIdx = idx;
-        return ~(elt->mIdx * bitsPerElt + bitsPerWord + i);
+        return (elt->mIdx * bitsPerElt + bitsPerWord + i);
       }
 
       idx++;
-      if (idx > sMaxIdx) {
+      if (idx > mMaxIdx) {
         idx = 0;
       }
 
@@ -73,8 +83,7 @@ public:
 
   void ReleaseID(uint32_t aID)
   {
-    aID = ~aID;
-    MOZ_ASSERT(aID < static_cast<uint32_t>(INT32_MAX));
+    MOZ_ASSERT(aID < mMaxId);
 
     uint32_t idx = aID / bitsPerElt;
     mIdx = idx;
@@ -92,7 +101,6 @@ private:
   static const unsigned int wordsPerElt = 2;
   static const unsigned int bitsPerWord = 64;
   static const unsigned int bitsPerElt = wordsPerElt * bitsPerWord;
-  static const uint32_t sMaxIdx = INT32_MAX / bitsPerElt;
 
   struct BitSetElt : mozilla::SplayTreeNode<BitSetElt>
   {
@@ -118,6 +126,8 @@ private:
 
   SplayTree<BitSetElt, BitSetElt> mBitSet;
   uint32_t mIdx;
+  const uint32_t mMaxId;
+  const uint32_t mMaxIdx;
 };
 
 }
