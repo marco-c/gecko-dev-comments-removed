@@ -4162,6 +4162,19 @@ Parser<ParseHandler>::initializerInNameDeclaration(Node decl, Node binding,
             *forHeadKind = PNK_FORHEAD;
         } else {
             MOZ_ASSERT(*forHeadKind == PNK_FORHEAD);
+
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            TokenKind ignored;
+            if (!tokenStream.peekToken(&ignored))
+                return false;
         }
 
         
