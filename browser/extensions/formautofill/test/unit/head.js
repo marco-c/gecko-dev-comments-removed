@@ -2,7 +2,7 @@
 
 
 
- 
+
 
 "use strict";
 
@@ -10,27 +10,19 @@ const {classes: Cc, interfaces: Ci, utils: Cu, results: Cr} = Components;
 
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
+Cu.import("resource://gre/modules/NetUtil.jsm");
 Cu.import("resource://testing-common/MockDocument.jsm");
-
-
-let defineLazyModuleGetter = XPCOMUtils.defineLazyModuleGetter;
-XPCOMUtils.defineLazyModuleGetter = function() {
-  let result = /^resource\:\/\/formautofill\/(.+)$/.exec(arguments[2]);
-  if (result) {
-    arguments[2] = Services.io.newFileURI(do_get_file(result[1])).spec;
-  }
-  return defineLazyModuleGetter.apply(this, arguments);
-};
-
-
-function importAutofillModule(module) {
-  return Cu.import(Services.io.newFileURI(do_get_file(module)).spec);
-}
 
 XPCOMUtils.defineLazyModuleGetter(this, "DownloadPaths",
                                   "resource://gre/modules/DownloadPaths.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "FileUtils",
                                   "resource://gre/modules/FileUtils.jsm");
+
+
+let resHandler = Services.io.getProtocolHandler("resource")
+                            .QueryInterface(Ci.nsISubstitutingProtocolHandler);
+let dataURI = NetUtil.newURI(do_get_file(".", true));
+resHandler.setSubstitution("formautofill", dataURI);
 
 
 
