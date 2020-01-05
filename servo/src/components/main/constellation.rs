@@ -58,20 +58,12 @@ struct FrameTree {
     pub children: RefCell<Vec<ChildFrameTree>>,
 }
 
+#[deriving(Clone)]
 struct ChildFrameTree {
     frame_tree: Rc<FrameTree>,
     
     
     pub rect: Option<Rect<f32>>,
-}
-
-impl Clone for ChildFrameTree {
-    fn clone(&self) -> ChildFrameTree {
-        ChildFrameTree {
-            frame_tree: self.frame_tree.clone(),
-            rect: self.rect.clone(),
-        }
-    }
 }
 
 pub struct SendableFrameTree {
