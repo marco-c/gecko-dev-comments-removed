@@ -58,10 +58,13 @@ impl<T: Ord> Range<T> {
     }
 }
 
+
 #[derive(PartialEq, Copy, Debug)]
 pub enum Expression {
+    
     Width(Range<specified::Length>),
 }
+
 
 #[derive(PartialEq, Eq, Copy, Debug)]
 pub enum Qualifier {
@@ -86,6 +89,7 @@ impl MediaQuery {
         }
     }
 }
+
 
 #[derive(PartialEq, Eq, Copy, Debug)]
 pub enum MediaQueryType {

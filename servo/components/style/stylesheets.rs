@@ -21,10 +21,18 @@ use font_face::{FontFaceRule, parse_font_face_block};
 use util::smallvec::{SmallVec, SmallVec2};
 
 
+
+
+
 #[derive(Clone, PartialEq, Eq, Copy, Debug)]
 pub enum Origin {
+    
     UserAgent,
+
+    
     Author,
+
+    
     User,
 }
 
