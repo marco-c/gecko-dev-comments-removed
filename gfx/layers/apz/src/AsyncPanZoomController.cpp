@@ -1273,6 +1273,9 @@ nsEventStatus AsyncPanZoomController::OnTouchEnd(const MultiTouchInput& aEvent) 
         flingVelocity.Length().value, gfxPrefs::APZFlingMinVelocityThreshold());
 
     if (flingVelocity.Length() < gfxPrefs::APZFlingMinVelocityThreshold()) {
+      
+      
+      GetCurrentTouchBlock()->GetOverscrollHandoffChain()->SnapBackOverscrolledApzc(this);
       return nsEventStatus_eConsumeNoDefault;
     }
 

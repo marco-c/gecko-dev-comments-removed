@@ -314,6 +314,23 @@ TEST_F(APZCBasicTester, OverScroll_Bug1152051b) {
   SampleAnimationUntilRecoveredFromOverscroll(expectedScrollOffset);
 }
 
+
+
+TEST_F(APZCBasicTester, OverScrollAfterLowVelocityPan_Bug1343775) {
+  SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
+
+  
+  
+  Pan(apzc, 10, 30);
+
+  EXPECT_TRUE(apzc->IsOverscrolled());
+
+  apzc->AdvanceAnimationsUntilEnd();
+
+  
+  EXPECT_FALSE(apzc->IsOverscrolled());
+}
+
 TEST_F(APZCBasicTester, OverScrollAbort) {
   SCOPED_GFX_PREF(APZOverscrollEnabled, bool, true);
 
