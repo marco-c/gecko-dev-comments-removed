@@ -1726,6 +1726,24 @@ HttpChannelParent::DoSendDeleteSelf()
   return rv;
 }
 
+bool
+HttpChannelParent::RecvDeletingChannel()
+{
+  
+  
+  
+  return DoSendDeleteSelf();
+}
+
+bool
+HttpChannelParent::RecvFinishInterceptedRedirect()
+{
+  
+  
+  mIPCClosed = true;
+  return SendFinishInterceptedRedirect();
+}
+
 
 
 

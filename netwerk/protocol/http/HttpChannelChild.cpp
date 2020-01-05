@@ -207,8 +207,8 @@ NS_IMETHODIMP_(MozExternalRefCountType) HttpChannelChild::Release()
     mKeptAlive = false;
     
     
-    PHttpChannelChild::Send__delete__(this);
-    return 0;
+    SendDeletingChannel();
+    return 1;
   }
 
   if (mRefCnt == 0) {
@@ -938,7 +938,7 @@ HttpChannelChild::OnStopRequest(const nsresult& channelStatus,
   } else {
     
     
-    PHttpChannelChild::Send__delete__(this);
+    SendDeletingChannel();
   }
 }
 
@@ -1122,12 +1122,8 @@ HttpChannelChild::FailedAsyncOpen(const nsresult& status)
   HandleAsyncAbort();
 
   if (mIPCOpen) {
-    PHttpChannelChild::Send__delete__(this);
+    SendDeletingChannel();
   }
-  
-  
-  
-  
 }
 
 void
@@ -1158,10 +1154,83 @@ HttpChannelChild::RecvDeleteSelf()
   return true;
 }
 
+HttpChannelChild::OverrideRunnable::OverrideRunnable(HttpChannelChild* aChannel,
+                                                     HttpChannelChild* aNewChannel,
+                                                     InterceptStreamListener* aListener,
+                                                     nsIInputStream* aInput,
+                                                     nsAutoPtr<nsHttpResponseHead>& aHead)
+{
+  mChannel = aChannel;
+  mNewChannel = aNewChannel;
+  mListener = aListener;
+  mInput = aInput;
+  mHead = aHead;
+}
+
+void
+HttpChannelChild::OverrideRunnable::OverrideWithSynthesizedResponse()
+{
+  mNewChannel->OverrideWithSynthesizedResponse(mHead, mInput, mListener);
+}
+
+NS_IMETHODIMP
+HttpChannelChild::OverrideRunnable::Run()
+{
+  bool ret = mChannel->Redirect3Complete(this);
+
+  
+  
+  
+  
+  
+  if (ret) {
+    OverrideWithSynthesizedResponse();
+  }
+
+  return NS_OK;
+}
+
+bool
+HttpChannelChild::RecvFinishInterceptedRedirect()
+{
+  
+  RefPtr<HttpChannelChild> self(this);
+  Send__delete__(this);
+
+  
+  
+  NS_DispatchToMainThread(NewRunnableMethod(this, &HttpChannelChild::FinishInterceptedRedirect));
+
+  return true;
+}
+
 void
 HttpChannelChild::DeleteSelf()
 {
   Send__delete__(this);
+}
+
+void HttpChannelChild::FinishInterceptedRedirect()
+{
+  nsresult rv;
+  if (mLoadInfo && mLoadInfo->GetEnforceSecurity()) {
+    MOZ_ASSERT(!mInterceptedRedirectContext, "the context should be null!");
+    rv = AsyncOpen2(mInterceptedRedirectListener);
+  } else {
+    rv = AsyncOpen(mInterceptedRedirectListener, mInterceptedRedirectContext);
+  }
+  mInterceptedRedirectListener = nullptr;
+  mInterceptedRedirectContext = nullptr;
+
+  if (mInterceptingChannel) {
+    mInterceptingChannel->CleanupRedirectingChannel(rv);
+    mInterceptingChannel = nullptr;
+  }
+
+  if (mOverrideRunnable) {
+    mOverrideRunnable->OverrideWithSynthesizedResponse();
+    mOverrideRunnable = nullptr;
+  }
 }
 
 bool
@@ -1365,7 +1434,7 @@ class Redirect3Event : public ChannelEvent
 {
  public:
   explicit Redirect3Event(HttpChannelChild* child) : mChild(child) {}
-  void Run() { mChild->Redirect3Complete(); }
+  void Run() { mChild->Redirect3Complete(nullptr); }
  private:
   HttpChannelChild* mChild;
 };
@@ -1441,17 +1510,45 @@ HttpChannelChild::RecvDivertMessages()
   return true;
 }
 
-void
-HttpChannelChild::Redirect3Complete()
+
+
+
+
+
+bool
+HttpChannelChild::Redirect3Complete(OverrideRunnable* aRunnable)
 {
   LOG(("HttpChannelChild::Redirect3Complete [this=%p]\n", this));
   nsresult rv = NS_OK;
 
+  nsCOMPtr<nsIHttpChannelChild> chan = do_QueryInterface(mRedirectChannelChild);
+  RefPtr<HttpChannelChild> httpChannelChild = static_cast<HttpChannelChild*>(chan.get());
   
-  if (mRedirectChannelChild)
+  if (mRedirectChannelChild) {
+    if (httpChannelChild) {
+      httpChannelChild->mOverrideRunnable = aRunnable;
+      httpChannelChild->mInterceptingChannel = this;
+    }
     rv = mRedirectChannelChild->CompleteRedirectSetup(mListener,
                                                       mListenerContext);
+  }
 
+  if (!httpChannelChild || !httpChannelChild->mShouldParentIntercept) {
+    
+    
+    CleanupRedirectingChannel(rv);
+    if (httpChannelChild) {
+      httpChannelChild->mOverrideRunnable = nullptr;
+      httpChannelChild->mInterceptingChannel = nullptr;
+    }
+    return true;
+  }
+  return false;
+}
+
+void
+HttpChannelChild::CleanupRedirectingChannel(nsresult rv)
+{
   
   if (mLoadGroup)
     mLoadGroup->RemoveRequest(this, nullptr, NS_BINDING_ABORTED);
@@ -1529,12 +1626,26 @@ HttpChannelChild::CompleteRedirectSetup(nsIStreamListener *listener,
     
     
     
-    PHttpChannelChild::Send__delete__(this);
-    if (mLoadInfo && mLoadInfo->GetEnforceSecurity()) {
-        MOZ_ASSERT(!aContext, "aContext should be null!");
-        return AsyncOpen2(listener);
-    }
-    return AsyncOpen(listener, aContext);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    mInterceptedRedirectListener = listener;
+    mInterceptedRedirectContext = aContext;
+
+    
+    
+    
+    SendFinishInterceptedRedirect();
+
+    
+    
+    return NS_OK;
   }
 
   
@@ -1562,34 +1673,6 @@ HttpChannelChild::CompleteRedirectSetup(nsIStreamListener *listener,
 
 
 
-
-class OverrideRunnable : public Runnable {
-  RefPtr<HttpChannelChild> mChannel;
-  RefPtr<HttpChannelChild> mNewChannel;
-  RefPtr<InterceptStreamListener> mListener;
-  nsCOMPtr<nsIInputStream> mInput;
-  nsAutoPtr<nsHttpResponseHead> mHead;
-
-public:
-  OverrideRunnable(HttpChannelChild* aChannel,
-                   HttpChannelChild* aNewChannel,
-                   InterceptStreamListener* aListener,
-                   nsIInputStream* aInput,
-                   nsAutoPtr<nsHttpResponseHead>& aHead)
-  : mChannel(aChannel)
-  , mNewChannel(aNewChannel)
-  , mListener(aListener)
-  , mInput(aInput)
-  , mHead(aHead)
-  {
-  }
-
-  NS_IMETHOD Run() override {
-    mChannel->Redirect3Complete();
-    mNewChannel->OverrideWithSynthesizedResponse(mHead, mInput, mListener);
-    return NS_OK;
-  }
-};
 
 NS_IMETHODIMP
 HttpChannelChild::OnRedirectVerifyCallback(nsresult result)

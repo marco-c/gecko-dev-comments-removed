@@ -38,7 +38,6 @@ namespace net {
 
 class InterceptedChannelContent;
 class InterceptStreamListener;
-class OverrideRunnable;
 
 class HttpChannelChild final : public PHttpChannelChild
                              , public HttpBaseChannel
@@ -146,6 +145,7 @@ protected:
   bool RecvFlushedForDiversion() override;
   bool RecvDivertMessages() override;
   bool RecvDeleteSelf() override;
+  bool RecvFinishInterceptedRedirect() override;
 
   bool RecvReportSecurityMessage(const nsString& messageTag,
                                  const nsString& messageCategory) override;
@@ -159,6 +159,25 @@ protected:
   NS_IMETHOD GetResponseSynthesized(bool* aSynthesized) override;
 
 private:
+
+  class OverrideRunnable : public Runnable {
+  public:
+    OverrideRunnable(HttpChannelChild* aChannel,
+                     HttpChannelChild* aNewChannel,
+                     InterceptStreamListener* aListener,
+                     nsIInputStream* aInput,
+                     nsAutoPtr<nsHttpResponseHead>& aHead);
+
+    NS_IMETHOD Run() override;
+    void OverrideWithSynthesizedResponse();
+  private:
+    RefPtr<HttpChannelChild> mChannel;
+    RefPtr<HttpChannelChild> mNewChannel;
+    RefPtr<InterceptStreamListener> mListener;
+    nsCOMPtr<nsIInputStream> mInput;
+    nsAutoPtr<nsHttpResponseHead> mHead;
+  };
+
   nsresult ContinueAsyncOpen();
 
   void DoOnStartRequest(nsIRequest* aRequest, nsISupports* aContext);
@@ -247,6 +266,17 @@ private:
   bool mSuspendParentAfterSynthesizeResponse;
 
   
+  nsCOMPtr<nsIStreamListener> mInterceptedRedirectListener;
+  nsCOMPtr<nsISupports> mInterceptedRedirectContext;
+  
+  RefPtr<HttpChannelChild> mInterceptingChannel;
+  
+  RefPtr<OverrideRunnable> mOverrideRunnable;
+
+  void FinishInterceptedRedirect();
+  void CleanupRedirectingChannel(nsresult rv);
+
+  
   bool RemoteChannelExists() { return mIPCOpen && !mKeptAlive; }
 
   void AssociateApplicationCache(const nsCString &groupID,
@@ -286,7 +316,7 @@ private:
                       const nsHttpResponseHead& responseHead,
                       const nsACString& securityInfoSerialization,
                       const nsACString& channelId);
-  void Redirect3Complete();
+  bool Redirect3Complete(OverrideRunnable* aRunnable);
   void DeleteSelf();
 
   
@@ -318,7 +348,6 @@ private:
   friend class HttpAsyncAborter<HttpChannelChild>;
   friend class InterceptStreamListener;
   friend class InterceptedChannelContent;
-  friend class OverrideRunnable;
 };
 
 

@@ -185,6 +185,9 @@ protected:
   
   
   bool DoSendDeleteSelf();
+  
+  virtual bool RecvDeletingChannel() override;
+  virtual bool RecvFinishInterceptedRedirect() override;
 
 private:
   void UpdateAndSerializeSecurityInfo(nsACString& aSerializedSecurityInfoOut);
