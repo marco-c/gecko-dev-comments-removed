@@ -128,30 +128,6 @@ function CreatePocketWidget(reason) {
       CustomizableUI.moveWidgetWithinArea("pocket-button", bmbtn + 1);
     }
   }
-
-  
-  
-  
-  
-  let SocialService;
-  try {
-    
-    SocialService = Cu.import("resource:///modules/SocialService.jsm", {}).SocialService;
-  } catch (e) {
-    SocialService = Cu.import("resource://gre/modules/SocialService.jsm", {}).SocialService;
-  }
-
-  let origin = "https://getpocket.com";
-  SocialService.getProvider(origin, provider => {
-    if (provider) {
-      let pref = "social.backup.getpocket-com";
-      if (!Services.prefs.prefHasUserValue(pref)) {
-        Services.prefs.setStringPref(pref, JSON.stringify(provider.manifest));
-        SocialService.uninstallProvider(origin, () => {});
-      }
-    }
-  });
-
 }
 
 
