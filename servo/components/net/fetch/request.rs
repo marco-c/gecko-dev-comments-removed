@@ -11,10 +11,13 @@ use hyper::header::{QualityItem, q, qitem};
 use hyper::method::Method;
 use hyper::mime::{Attr, Mime, SubLevel, TopLevel, Value};
 use hyper::status::StatusCode;
-use net_traits::{AsyncFetchListener, Response, ResponseType, Metadata};
+use net_traits::{AsyncFetchListener, Response};
+use net_traits::{ResponseType, Metadata};
 use std::ascii::AsciiExt;
+use std::cell::RefCell;
+use std::rc::Rc;
 use std::str::FromStr;
-use url::Url;
+use url::{Url, UrlParser};
 use util::task::spawn_named;
 
 
@@ -90,7 +93,8 @@ pub enum ResponseTainting {
 
 pub struct Request {
     pub method: Method,
-    pub url: Url,
+    
+    pub url_list: Vec<Url>,
     pub headers: Headers,
     pub unsafe_request: bool,
     pub body: Option<Vec<u8>>,
@@ -101,7 +105,7 @@ pub struct Request {
     pub skip_service_worker: bool,
     pub context: Context,
     pub context_frame_type: ContextFrameType,
-    pub origin: Option<Url>,
+    pub origin: Option<Url>, 
     pub force_origin_header: bool,
     pub same_origin_data: bool,
     pub referer: Referer,
@@ -121,7 +125,7 @@ impl Request {
     pub fn new(url: Url, context: Context, is_service_worker_global_scope: bool) -> Request {
          Request {
             method: Method::Get,
-            url: url,
+            url_list: vec![url],
             headers: Headers::new(),
             unsafe_request: false,
             body: None,
@@ -147,13 +151,17 @@ impl Request {
         }
     }
 
+    fn get_last_url_string(&self) -> String {
+        self.url_list.last().unwrap().serialize()
+    }
+
     pub fn fetch_async(mut self,
                        cors_flag: bool,
                        listener: Box<AsyncFetchListener + Send>) {
-        spawn_named(format!("fetch for {:?}", self.url.serialize()), move || {
+        spawn_named(format!("fetch for {:?}", self.get_last_url_string()), move || {
             let res = self.fetch(cors_flag);
             listener.response_available(res);
-        });
+        })
     }
 
     
@@ -211,17 +219,21 @@ impl Request {
 
     
     pub fn basic_fetch(&mut self) -> Response {
-        match &*self.url.scheme {
-            "about" => match self.url.non_relative_scheme_data() {
-                Some(s) if &*s == "blank" => {
-                    let mut response = Response::new();
-                    response.headers.set(ContentType(Mime(
-                        TopLevel::Text, SubLevel::Html,
-                        vec![(Attr::Charset, Value::Utf8)])));
-                    response
-                },
-                _ => Response::network_error()
-            },
+        let scheme = self.url_list.last().unwrap().scheme.clone();
+        match &*scheme {
+            "about" => {
+                let url = self.url_list.last().unwrap();
+                match url.non_relative_scheme_data() {
+                    Some(s) if &*s == "blank" => {
+                        let mut response = Response::new();
+                        response.headers.set(ContentType(Mime(
+                            TopLevel::Text, SubLevel::Html,
+                            vec![(Attr::Charset, Value::Utf8)])));
+                        response
+                    },
+                    _ => Response::network_error()
+                }
+            }
             "http" | "https" => {
                 self.http_fetch(false, false, false)
             },
@@ -234,21 +246,52 @@ impl Request {
         }
     }
 
+    pub fn http_fetch_async(mut self, cors_flag: bool,
+                            cors_preflight_flag: bool,
+                            authentication_fetch_flag: bool,
+                            listener: Box<AsyncFetchListener + Send>) {
+        spawn_named(format!("http_fetch for {:?}", self.get_last_url_string()), move || {
+            let res = self.http_fetch(cors_flag, cors_preflight_flag,
+                                      authentication_fetch_flag);
+            listener.response_available(res);
+        });
+    }
+
     
     pub fn http_fetch(&mut self, cors_flag: bool, cors_preflight_flag: bool,
                       authentication_fetch_flag: bool) -> Response {
         
-        let mut response: Option<Response> = None;
+        let mut response: Option<Rc<RefCell<Response>>> = None;
+        
+        let mut actual_response: Option<Rc<RefCell<Response>>> = None;
         
         if !self.skip_service_worker && !self.is_service_worker_global_scope {
             
-            
             if let Some(ref res) = response {
-                if (res.response_type == ResponseType::Opaque && self.mode != RequestMode::NoCORS) ||
-                   res.response_type == ResponseType::Error {
+                let resp = res.borrow();
+                
+                actual_response = match resp.internal_response {
+                    Some(ref internal_res) => Some(internal_res.clone()),
+                    None => Some(res.clone())
+                };
+                
+                if (resp.response_type == ResponseType::Opaque &&
+                    self.mode != RequestMode::NoCORS) ||
+                   (resp.response_type == ResponseType::OpaqueRedirect &&
+                    self.redirect_mode != RedirectMode::Manual) ||
+                   resp.response_type == ResponseType::Error {
                     return Response::network_error();
                 }
             }
+            
+            if let Some(ref res) = actual_response {
+                let mut resp = res.borrow_mut();
+                if resp.url_list.is_empty() {
+                    resp.url_list = self.url_list.clone();
+                }
+            }
+            
+            
         }
         
         if response.is_none() {
@@ -257,8 +300,10 @@ impl Request {
                 let mut method_mismatch = false;
                 let mut header_mismatch = false;
                 if let Some(ref mut cache) = self.cache {
+                    
+                    
                     let origin = self.origin.clone().unwrap_or(Url::parse("").unwrap());
-                    let url = self.url.clone();
+                    let url = self.url_list.last().unwrap().clone();
                     let credentials = self.credentials_mode == CredentialsMode::Include;
                     let method_cache_match = cache.match_method(CacheRequestDetails {
                         origin: origin.clone(),
@@ -280,7 +325,7 @@ impl Request {
                     if preflight_result.response_type == ResponseType::Error {
                         return Response::network_error();
                     }
-                    response = Some(preflight_result);
+                    response = Some(Rc::new(RefCell::new(preflight_result)));
                 }
             }
             
@@ -288,31 +333,24 @@ impl Request {
             
             let credentials = match self.credentials_mode {
                 CredentialsMode::Include => true,
-                CredentialsMode::CredentialsSameOrigin if !cors_flag => true,
+                CredentialsMode::CredentialsSameOrigin if (!cors_flag ||
+                    self.response_tainting == ResponseTainting::Opaque)
+                    => true,
                 _ => false
             };
-            
-            if self.cache_mode == CacheMode::Default && is_no_store_cache(&self.headers) {
-                self.cache_mode = CacheMode::NoStore;
-            }
             
             let fetch_result = self.http_network_or_cache_fetch(credentials, authentication_fetch_flag);
             
             if cors_flag && self.cors_check(&fetch_result).is_err() {
                 return Response::network_error();
             }
-            response = Some(fetch_result);
+            response = Some(Rc::new(RefCell::new(fetch_result)));
+            actual_response = response.clone();
         }
         
-        let mut response = response.unwrap();
-        match response.status.unwrap() {
-            
-            StatusCode::NotModified => match self.cache_mode {
-                CacheMode::Default | CacheMode::NoCache => {
-                    
-                }
-                _ => { }
-            },
+        let mut actual_response = Rc::try_unwrap(actual_response.unwrap()).ok().unwrap().into_inner();
+        let mut response = Rc::try_unwrap(response.unwrap()).ok().unwrap();
+        match actual_response.status.unwrap() {
             
             StatusCode::MovedPermanently | StatusCode::Found | StatusCode::SeeOther |
             StatusCode::TemporaryRedirect | StatusCode::PermanentRedirect => {
@@ -321,19 +359,20 @@ impl Request {
                     return Response::network_error();
                 }
                 
-                if !response.headers.has::<Location>() {
-                    return response;
+                if !actual_response.headers.has::<Location>() {
+                    return actual_response;
                 }
-                let location = match response.headers.get::<Location>() {
-                    None => return Response::network_error(),
-                    Some(location) => location,
+                let location = match actual_response.headers.get::<Location>() {
+                    Some(&Location(ref location)) => location.clone(),
+                    _ => return Response::network_error(),
                 };
                 
-                let location_url = Url::parse(location);
+                let location_url = UrlParser::new().base_url(self.url_list.last().unwrap()).parse(&*location);
                 
                 let location_url = match location_url {
+                    Ok(ref url) if url.scheme == "data" => { return Response::network_error(); }
                     Ok(url) => url,
-                    Err(_) => return Response::network_error()
+                    _ => { return Response::network_error(); }
                 };
                 
                 if self.redirect_count == 20 {
@@ -341,37 +380,50 @@ impl Request {
                 }
                 
                 self.redirect_count += 1;
-                
-                self.same_origin_data = false;
-                
-                if self.redirect_mode == RedirectMode::Follow {
+                match self.redirect_mode {
                     
-                    
-
-                    
-                    
-                    
-                    if cors_flag && (!location_url.username().unwrap_or("").is_empty() ||
-                                      location_url.password().is_some()) {
-                        return Response::network_error();
+                    RedirectMode::Manual => {
+                        *response.borrow_mut() = actual_response.to_filtered(ResponseType::Opaque);
                     }
                     
-                    if response.status.unwrap() == StatusCode::MovedPermanently ||
-                       response.status.unwrap() == StatusCode::SeeOther ||
-                       (response.status.unwrap() == StatusCode::Found && self.method == Method::Post) {
-                        self.method = Method::Get;
+                    RedirectMode::Follow => {
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        
+                        if cors_flag && has_credentials(&location_url) {
+                            return Response::network_error();
+                        }
+                        
+                        
+                        
+                        
+                        
+                        
+                        if actual_response.status.unwrap() == StatusCode::SeeOther ||
+                           ((actual_response.status.unwrap() == StatusCode::MovedPermanently ||
+                             actual_response.status.unwrap() == StatusCode::Found) &&
+                            self.method == Method::Post) {
+                            self.method = Method::Get;
+                        }
+                        
+                        self.url_list.push(location_url);
+                        
+                        return self.main_fetch(cors_flag);
                     }
-                    
-                    self.url = location_url;
-                    
-                    return self.fetch(cors_flag);
+                    RedirectMode::Error => { panic!("RedirectMode is Error after step 8") }
                 }
             }
             
             StatusCode::Unauthorized => {
                 
-                if !self.authentication || cors_flag {
-                    return response;
+                
+                if cors_flag {
+                    return response.into_inner();
                 }
                 
                 
@@ -379,6 +431,7 @@ impl Request {
                 if !self.use_url_credentials || authentication_fetch_flag {
                     
                 }
+                
                 return self.http_fetch(cors_flag, cors_preflight_flag, true);
             }
             
@@ -388,10 +441,13 @@ impl Request {
                 
                 
                 
+                
+                
                 return self.http_fetch(cors_flag, cors_preflight_flag, authentication_fetch_flag);
             }
             _ => { }
         }
+        let mut response = response.into_inner();
         
         if authentication_fetch_flag {
             
@@ -419,6 +475,10 @@ impl Request {
         
         Err(())
     }
+}
+
+fn has_credentials(url: &Url) -> bool {
+    !url.username().unwrap_or("").is_empty() || url.password().is_some()
 }
 
 fn is_no_store_cache(headers: &Headers) -> bool {
