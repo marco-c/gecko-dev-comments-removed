@@ -71,10 +71,6 @@ loader.lazyGetter(this, "registerHarOverlay", () => {
 
 
 const ToolboxButtons = exports.ToolboxButtons = [
-  { id: "command-button-pick",
-    isTargetSupported: target =>
-      target.getTrait("highlightable")
-  },
   { id: "command-button-frames",
     isTargetSupported: target => {
       return target.activeTab && target.activeTab.traits.frames;
@@ -958,7 +954,7 @@ Toolbox.prototype = {
 
 
   _buildButtons: function () {
-    if (!this.target.isAddon || this.target.isWebExtension) {
+    if (this.target.getTrait("highlightable")) {
       this._buildPickerButton();
     }
 
@@ -1003,7 +999,6 @@ Toolbox.prototype = {
     this._pickerButton.className =
       "command-button command-button-invertable devtools-button";
     this._pickerButton.setAttribute("title", L10N.getStr("pickButton.tooltip"));
-    this._pickerButton.setAttribute("hidden", "true");
 
     let container = this.doc.querySelector("#toolbox-picker-container");
     container.appendChild(this._pickerButton);

@@ -88,10 +88,11 @@ function testToggleToolboxButtons() {
   let toggleableTools = toolbox.toolboxButtons;
 
   
+  
   toggleableTools = toggleableTools.filter(
-    tool => tool.id != "command-button-noautohide");
+    tool => tool.id != "command-button-noautohide" && tool.id != "command-button-pick");
   toolboxButtonNodes = toolboxButtonNodes.filter(
-    btn => btn.id != "command-button-noautohide");
+    btn => btn.id != "command-button-noautohide" && btn.id != "command-button-pick");
 
   is(checkNodes.length, toggleableTools.length,
     "All of the buttons are toggleable.");
