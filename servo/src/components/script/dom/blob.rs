@@ -1,0 +1,17 @@
+
+
+
+
+use dom::bindings::utils::{WrapperCache};
+
+pub struct Blob {
+    wrapper: WrapperCache
+}
+
+impl Blob {
+    pub fn new() -> @mut Blob {
+        @mut Blob {
+            wrapper: WrapperCache::new()
+        }
+    }
+}
