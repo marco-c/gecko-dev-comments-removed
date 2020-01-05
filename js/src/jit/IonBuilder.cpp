@@ -11154,6 +11154,7 @@ IonBuilder::testCommonGetterSetter(TemporaryTypeSet* types, PropertyName* name,
                                    Shape* globalShape,
                                    MDefinition** globalGuard)
 {
+    MOZ_ASSERT(foundProto);
     MOZ_ASSERT_IF(globalShape, globalGuard);
     bool guardGlobal;
 
@@ -12140,7 +12141,7 @@ IonBuilder::addShapeGuardsForGetterSetter(MDefinition* obj, JSObject* holder, Sh
                 const BaselineInspector::ObjectGroupVector& convertUnboxedGroups,
                 bool isOwnProperty)
 {
-    MOZ_ASSERT(holder);
+    MOZ_ASSERT(isOwnProperty == !holder);
     MOZ_ASSERT(holderShape);
 
     obj = convertUnboxedObjects(obj, convertUnboxedGroups);
@@ -12179,10 +12180,14 @@ IonBuilder::getPropTryCommonGetter(bool* emitted, MDefinition* obj, PropertyName
     TemporaryTypeSet* objTypes = obj->resultTypeSet();
     MDefinition* guard = nullptr;
     MDefinition* globalGuard = nullptr;
-    bool canUseTIForGetter =
-        testCommonGetterSetter(objTypes, name,  true,
-                               foundProto, lastProperty, commonGetter, &guard,
-                               globalShape, &globalGuard);
+    bool canUseTIForGetter = false;
+    if (!isOwnProperty) {
+        
+        
+        canUseTIForGetter = testCommonGetterSetter(objTypes, name,  true,
+                                                   foundProto, lastProperty, commonGetter, &guard,
+                                                   globalShape, &globalGuard);
+    }
     if (!canUseTIForGetter) {
         
         
@@ -12750,9 +12755,13 @@ IonBuilder::setPropTryCommonSetter(bool* emitted, MDefinition* obj,
 
     TemporaryTypeSet* objTypes = obj->resultTypeSet();
     MDefinition* guard = nullptr;
-    bool canUseTIForSetter =
-        testCommonGetterSetter(objTypes, name,  false,
-                               foundProto, lastProperty, commonSetter, &guard);
+    bool canUseTIForSetter = false;
+    if (!isOwnProperty) {
+        
+        
+        canUseTIForSetter = testCommonGetterSetter(objTypes, name,  false,
+                                                   foundProto, lastProperty, commonSetter, &guard);
+    }
     if (!canUseTIForSetter) {
         
         
