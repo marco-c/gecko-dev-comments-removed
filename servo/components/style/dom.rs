@@ -326,6 +326,21 @@ pub trait TElement : Eq + PartialEq + Debug + Hash + Sized + Copy + Clone +
     }
 
     
+    
+    
+    
+    
+    fn inheritance_parent(&self) -> Option<Self> {
+        self.parent_element()
+    }
+
+    
+    
+    fn closest_non_native_anonymous_ancestor(&self) -> Option<Self> {
+        unreachable!("Servo doesn't know about NAC");
+    }
+
+    
     fn style_attribute(&self) -> Option<&Arc<Locked<PropertyDeclarationBlock>>>;
 
     
