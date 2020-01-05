@@ -1114,10 +1114,7 @@ pref("print.print_edge_right", 0);
 pref("print.print_edge_bottom", 0);
 
 
-
-#if defined(XP_WIN)
-pref("print.print_via_parent", true);
-#elif defined(XP_MACOSX) && defined(NIGHTLY_BUILD)
+#if defined(XP_WIN) || defined(XP_MACOSX)
 pref("print.print_via_parent", true);
 #else
 pref("print.print_via_parent", false);
@@ -2141,9 +2138,6 @@ pref("security.notification_enable_delay", 500);
 
 pref("security.csp.enable", true);
 pref("security.csp.experimentalEnabled", false);
-
-
-pref("security.apps.privileged.CSP.default", "default-src * data: blob:; script-src 'self'; object-src 'none'; style-src 'self' 'unsafe-inline'");
 
 
 pref("security.signed_content.CSP.default", "script-src 'self'; style-src 'self'");
