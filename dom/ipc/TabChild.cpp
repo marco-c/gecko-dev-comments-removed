@@ -40,6 +40,8 @@
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/MouseEvents.h"
 #include "mozilla/Move.h"
+#include "mozilla/ProcessHangMonitor.h"
+#include "mozilla/ScopeExit.h"
 #include "mozilla/Services.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TextEvents.h"
@@ -2585,6 +2587,17 @@ TabChild::RecvSetDocShellIsActive(const bool& aIsActive,
   MOZ_ASSERT(mPuppetWidget->GetLayerManager());
   MOZ_ASSERT(mPuppetWidget->GetLayerManager()->GetBackendType() ==
              LayersBackend::LAYERS_CLIENT);
+
+  auto clearForcePaint = MakeScopeExit([&] {
+    
+    
+    
+    
+    
+    if (aIsActive) {
+      ProcessHangMonitor::ClearForcePaint();
+    }
+  });
 
   
   
