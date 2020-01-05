@@ -33,10 +33,16 @@ public:
 #if defined(XP_WIN)
                                       , mEmulatedWindowHandle(nullptr)
 #endif 
-  { MOZ_COUNT_CTOR_INHERITED(DocAccessibleParent, ProxyAccessible); }
+  {
+    MOZ_COUNT_CTOR_INHERITED(DocAccessibleParent, ProxyAccessible);
+    sMaxDocID++;
+    mActorID = sMaxDocID;
+    MOZ_ASSERT(!LiveDocs().Get(mActorID));
+    LiveDocs().Put(mActorID, this);
+  }
   ~DocAccessibleParent()
   {
-    LiveDocs().Remove(IProtocol::Id());
+    LiveDocs().Remove(mActorID);
     MOZ_COUNT_DTOR_INHERITED(DocAccessibleParent, ProxyAccessible);
     MOZ_ASSERT(mChildDocs.Length() == 0);
     MOZ_ASSERT(!ParentDoc());
@@ -58,11 +64,6 @@ public:
     MOZ_ASSERT(mAccessibles.Count() == 0);
     mShutdown = true;
   }
-
-  
-
-
-  void AddToMap() { LiveDocs().Put(IProtocol::Id(), this); }
 
   
 
@@ -118,7 +119,7 @@ public:
 
 
   DocAccessibleParent* ParentDoc() const;
-  static const int32_t kNoParentDoc = INT32_MIN;
+  static const int32_t kNoParentDoc = UINT64_MAX;
 
   
 
@@ -138,7 +139,7 @@ public:
     if (parent) {
       aChildDoc->Parent()->ClearChildDoc(aChildDoc);
     }
-    DebugOnly<bool> result = mChildDocs.RemoveElement(aChildDoc->IProtocol::Id());
+    DebugOnly<bool> result = mChildDocs.RemoveElement(aChildDoc->mActorID);
     aChildDoc->mParentDoc = kNoParentDoc;
     MOZ_ASSERT(result);
     MOZ_ASSERT(aChildDoc->mChildDocs.Length() == 0);
@@ -230,9 +231,11 @@ private:
 
 
   nsTHashtable<ProxyEntry> mAccessibles;
+  uint64_t mActorID;
   bool mTopLevel;
   bool mShutdown;
 
+  static uint64_t sMaxDocID;
   static nsDataHashtable<nsUint64HashKey, DocAccessibleParent*>&
     LiveDocs()
     {
