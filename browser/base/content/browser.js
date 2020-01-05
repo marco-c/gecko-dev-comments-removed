@@ -1541,12 +1541,12 @@ var gBrowserInit = {
     }
 
     
-    setTimeout(() => {
+    requestIdleCallback(() => {
       this.gmpInstallManager = new GMPInstallManager();
       
       
       this.gmpInstallManager.simpleCheckAndInstall().then(null, () => {});
-    }, 1000 * 60);
+    }, {timeout: 1000 * 60});
 
     
     
