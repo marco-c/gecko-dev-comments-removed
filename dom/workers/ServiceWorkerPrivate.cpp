@@ -2072,7 +2072,11 @@ ServiceWorkerPrivate::ReleaseToken()
   --mTokenCount;
   if (!mTokenCount) {
     TerminateWorker();
-  } else if (IsIdle()) {
+  }
+
+  
+  
+  else if (mInfo && IsIdle()) {
     RefPtr<ServiceWorkerManager> swm = ServiceWorkerManager::GetInstance();
     if (swm) {
       swm->WorkerIsIdle(mInfo);
