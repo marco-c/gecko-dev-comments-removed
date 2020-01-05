@@ -466,6 +466,8 @@ public:
 
   RefPtr<MediaDecoder::SeekPromise> HandleSeek(SeekTarget aTarget) override;
 
+  bool HandleDormant(bool aDormant) override;
+
   void HandleVideoSuspendTimeout() override
   {
     
@@ -1250,6 +1252,21 @@ DecodingFirstFrameState::HandleSeek(SeekTarget aTarget)
   SeekJob seekJob;
   seekJob.mTarget = aTarget;
   return SetState<SeekingState>(Move(seekJob));
+}
+
+bool
+MediaDecoderStateMachine::
+DecodingFirstFrameState::HandleDormant(bool aDormant)
+{
+  if (aDormant) {
+    
+    
+    
+    
+    
+    SetState<DormantState>();
+  }
+  return true;
 }
 
 void
