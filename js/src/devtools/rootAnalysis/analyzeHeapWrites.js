@@ -1075,6 +1075,13 @@ function isSafeVariable(entry, variable)
         }
 
         
+        if (isDirectCall(edge, /AsAString/) &&
+            isEdgeSafeArgument(entry, edge.PEdgeCallInstance.Exp))
+        {
+            return true;
+        }
+
+        
         var rhsVariable = variableAssignRhs(edge);
         if (rhsVariable)
             return isSafeVariable(entry, rhsVariable);
