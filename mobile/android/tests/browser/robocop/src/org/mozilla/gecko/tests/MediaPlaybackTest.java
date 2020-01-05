@@ -27,6 +27,7 @@ import com.robotium.solo.Condition;
 abstract class MediaPlaybackTest extends BaseTest {
     private Context mContext;
     private int mPrevIcon = 0;
+    protected String mPrevURL = "";
     private JavascriptBridge mJs;
 
     private static final int UI_CHANGED_WAIT_MS = 6000;
@@ -57,15 +58,25 @@ abstract class MediaPlaybackTest extends BaseTest {
                     getContext().getSystemService(Context.NOTIFICATION_SERVICE);
                 StatusBarNotification[] sbns = notificationManager.getActiveNotifications();
                 
+
+
+
+
+
+
+
                 boolean findCorrectNotification = false;
                 for (int idx = 0; idx < sbns.length; idx++) {
                     if (sbns[idx].getId() != R.id.mediaControlNotification) {
                        continue;
                     }
                     findCorrectNotification = true;
-                    if (sbns[idx].getNotification().actions.length == 1 &&
-                        sbns[idx].getNotification().actions[0].icon != mPrevIcon) {
-                        mPrevIcon = sbns[idx].getNotification().actions[0].icon;
+                    final Notification notification = sbns[idx].getNotification();
+                    if ((notification.actions.length == 1 &&
+                         notification.actions[0].icon != mPrevIcon) ||
+                         notification.extras.getString(Notification.EXTRA_TEXT) != mPrevURL) {
+                        mPrevIcon = notification.actions[0].icon;
+                        mPrevURL = notification.extras.getString(Notification.EXTRA_TEXT);
                         return true;
                     }
                 }
@@ -73,6 +84,7 @@ abstract class MediaPlaybackTest extends BaseTest {
                 
                 if (!findCorrectNotification && mPrevIcon != 0) {
                     mPrevIcon = 0;
+                    mPrevURL = "";
                     return true;
                 }
                 return false;
@@ -175,6 +187,11 @@ abstract class MediaPlaybackTest extends BaseTest {
     
 
 
+
+    protected final void checkMediaNotificationStatesAfterChanged(final Tab tab,
+                                                                  final boolean isTabPlaying) {
+        checkMediaNotificationStatesAfterChanged(tab, isTabPlaying, false);
+    }
 
     protected final void checkMediaNotificationStatesAfterChanged(final Tab tab,
                                                                   final boolean isTabPlaying,
