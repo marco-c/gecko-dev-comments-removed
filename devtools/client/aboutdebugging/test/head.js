@@ -113,7 +113,7 @@ function getTabList(document) {
 function* installAddon({document, path, name, isWebExtension}) {
   
   let MockFilePicker = SpecialPowers.MockFilePicker;
-  MockFilePicker.init(null);
+  MockFilePicker.init(window);
   let file = getSupportsFile(path);
   MockFilePicker.returnFiles = [file.file];
 
