@@ -337,6 +337,12 @@ private:
 
 
 
+    void ReplaceNativeLineBreakers();
+
+    
+
+
+
 
 
 

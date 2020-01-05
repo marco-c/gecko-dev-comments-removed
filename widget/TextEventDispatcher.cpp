@@ -660,21 +660,19 @@ TextEventDispatcher::PendingComposition::Set(const nsAString& aString,
 {
   Clear();
 
-  nsAutoString str(aString);
-  
-  str.ReplaceSubstring(NS_LITERAL_STRING("\r\n"), NS_LITERAL_STRING("\n"));
-  nsresult rv = SetString(str);
+  nsresult rv = SetString(aString);
   if (NS_WARN_IF(NS_FAILED(rv))) {
     return rv;
   }
 
   if (!aRanges || aRanges->IsEmpty()) {
     
-    if (!aString.IsEmpty()) {
-      rv = AppendClause(str.Length(), TextRangeType::eRawClause);
+    if (!mString.IsEmpty()) {
+      rv = AppendClause(mString.Length(), TextRangeType::eRawClause);
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return rv;
       }
+      ReplaceNativeLineBreakers();
     }
     return NS_OK;
   }
@@ -682,7 +680,6 @@ TextEventDispatcher::PendingComposition::Set(const nsAString& aString,
   
   for (uint32_t i = 0; i < aRanges->Length(); ++i) {
     TextRange range = aRanges->ElementAt(i);
-    AdjustRange(range, aString);
     if (range.mRangeType == TextRangeType::eCaret) {
       mCaret = range;
     } else {
@@ -690,7 +687,36 @@ TextEventDispatcher::PendingComposition::Set(const nsAString& aString,
       mClauses->AppendElement(range);
     }
   }
+  ReplaceNativeLineBreakers();
   return NS_OK;
+}
+
+void
+TextEventDispatcher::PendingComposition::ReplaceNativeLineBreakers()
+{
+  
+  if (mString.IsEmpty()) {
+    return;
+  }
+
+  nsAutoString nativeString(mString);
+  
+  mString.ReplaceSubstring(NS_LITERAL_STRING("\r\n"), NS_LITERAL_STRING("\n"));
+
+  
+  
+  if (nativeString.Length() == mString.Length()) {
+    return;
+  }
+
+  if (mClauses) {
+    for (TextRange& clause : *mClauses) {
+      AdjustRange(clause, nativeString);
+    }
+  }
+  if (mCaret.mRangeType == TextRangeType::eCaret) {
+    AdjustRange(mCaret, nativeString);
+  }
 }
 
 
