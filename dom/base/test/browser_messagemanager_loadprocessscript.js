@@ -51,6 +51,13 @@ function promiseMessage(messageManager, message) {
 
 add_task(function*(){
   
+  yield SpecialPowers.pushPrefEnv({"set": [
+    ["dom.ipc.processPrelaunch.enabled", false],
+  ]});
+})
+
+add_task(function*(){
+  
   if (!gMultiProcessBrowser)
     return;
 
