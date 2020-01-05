@@ -12,7 +12,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Semaphore;
 
 import org.json.JSONObject;
 import org.mozilla.gecko.AppConstants.Versions;
@@ -54,9 +53,10 @@ final class GeckoEditable extends JNIObject
     
     private InputFilter[] mFilters;
 
-    private final SpannableStringBuilder mText;
+    private final AsyncText mText;
     private final Editable mProxy;
-    private final ActionQueue mActionQueue;
+    private final ConcurrentLinkedQueue<Action> mActions;
+    private KeyCharacterMap mKeyMap;
 
     
     
@@ -67,7 +67,6 @@ final class GeckoEditable extends JNIObject
      GeckoEditableListener mListener;
      GeckoView mView;
      boolean mInBatchMode; 
-    private boolean mFocused; 
     private boolean mGeckoFocused; 
     private boolean mIgnoreSelectionChange; 
     private volatile boolean mSuppressKeyUp;
@@ -427,162 +426,121 @@ final class GeckoEditable extends JNIObject
         }
     }
 
-    
-
-    private final class ActionQueue {
-        private final ConcurrentLinkedQueue<Action> mActions;
-        private final Semaphore mActionsActive;
-        private KeyCharacterMap mKeyMap;
-
-        ActionQueue() {
-            mActions = new ConcurrentLinkedQueue<Action>();
-            mActionsActive = new Semaphore(1);
+    private void icOfferAction(final Action action) {
+        if (DEBUG) {
+            assertOnIcThread();
+            Log.d(LOGTAG, "offer: Action(" +
+                          getConstantName(Action.class, "TYPE_", action.mType) + ")");
         }
 
-        void offer(Action action) {
-            if (DEBUG) {
-                assertOnIcThread();
-                Log.d(LOGTAG, "offer: Action(" +
-                              getConstantName(Action.class, "TYPE_", action.mType) + ")");
-            }
+        if (mListener == null) {
+            
+            return;
+        }
 
-            if (mListener == null) {
-                
-                return;
-            }
+        mActions.offer(action);
 
-            if (mActions.isEmpty()) {
-                mActionsActive.acquireUninterruptibly();
-                mActions.offer(action);
-            } else synchronized (this) {
-                
-                mActionsActive.tryAcquire();
-                mActions.offer(action);
-            }
+        switch (action.mType) {
+        case Action.TYPE_EVENT:
+        case Action.TYPE_SET_HANDLER:
+            onImeSynchronize();
+            break;
 
-            switch (action.mType) {
-            case Action.TYPE_EVENT:
-            case Action.TYPE_SET_SPAN:
-            case Action.TYPE_REMOVE_SPAN:
-            case Action.TYPE_SET_HANDLER:
+        case Action.TYPE_SET_SPAN:
+            mText.shadowSetSpan(action.mSpanObject, action.mStart,
+                                action.mEnd, action.mSpanFlags);
+            action.mSequence = TextUtils.substring(
+                    mText.getShadowText(), action.mStart, action.mEnd);
+
+            if ((action.mSpanFlags & Spanned.SPAN_INTERMEDIATE) == 0 && (
+                    (action.mSpanFlags & Spanned.SPAN_COMPOSING) != 0 ||
+                    action.mSpanObject == Selection.SELECTION_START ||
+                    action.mSpanObject == Selection.SELECTION_END)) {
+                icMaybeSendComposition(
+                        mText.getShadowText(),  false,  true);
+            } else {
                 onImeSynchronize();
-                break;
-
-            case Action.TYPE_REPLACE_TEXT:
-                
-                
-                if (!icMaybeSendComposition(
-                        action.mSequence,  true,  false)) {
-                    
-                    sendCharKeyEvents(action);
-                }
-                onImeReplaceText(action.mStart, action.mEnd, action.mSequence.toString());
-                break;
-
-            case Action.TYPE_ACKNOWLEDGE_FOCUS:
-                onImeAcknowledgeFocus();
-                break;
-
-
-            default:
-                throw new IllegalStateException("Action not processed");
             }
+            break;
+
+        case Action.TYPE_REMOVE_SPAN:
+            final int flags = mText.getShadowText().getSpanFlags(action.mSpanObject);
+            mText.shadowRemoveSpan(action.mSpanObject);
+
+            if ((flags & Spanned.SPAN_INTERMEDIATE) == 0 &&
+                    (flags & Spanned.SPAN_COMPOSING) != 0) {
+                icMaybeSendComposition(
+                        mText.getShadowText(),  false,  true);
+            } else {
+                onImeSynchronize();
+            }
+            break;
+
+        case Action.TYPE_REPLACE_TEXT:
+
+            
+            
+            if (!icMaybeSendComposition(
+                    action.mSequence,  true,  false)) {
+                
+                sendCharKeyEvents(action);
+            }
+            mText.shadowReplace(action.mStart, action.mEnd, action.mSequence);
+            onImeReplaceText(action.mStart, action.mEnd, action.mSequence.toString());
+            break;
+
+        case Action.TYPE_ACKNOWLEDGE_FOCUS:
+            onImeAcknowledgeFocus();
+            break;
+
+        default:
+            throw new IllegalStateException("Action not processed");
         }
+    }
 
-        private KeyEvent [] synthesizeKeyEvents(CharSequence cs) {
-            try {
-                if (mKeyMap == null) {
-                    mKeyMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
-                }
-            } catch (Exception e) {
-                
-                
-                
-                return null;
+    private KeyEvent [] synthesizeKeyEvents(CharSequence cs) {
+        try {
+            if (mKeyMap == null) {
+                mKeyMap = KeyCharacterMap.load(KeyCharacterMap.VIRTUAL_KEYBOARD);
             }
-            KeyEvent [] keyEvents = mKeyMap.getEvents(cs.toString().toCharArray());
-            if (keyEvents == null || keyEvents.length == 0) {
-                return null;
-            }
-            return keyEvents;
+        } catch (Exception e) {
+            
+            
+            
+            return null;
         }
-
-        private void sendCharKeyEvents(Action action) {
-            if (action.mSequence.length() != 1 ||
-                (action.mSequence instanceof Spannable &&
-                ((Spannable)action.mSequence).nextSpanTransition(
-                    -1, Integer.MAX_VALUE, null) < Integer.MAX_VALUE)) {
-                
-                
-                return;
-            }
-            KeyEvent [] keyEvents = synthesizeKeyEvents(action.mSequence);
-            if (keyEvents == null) {
-                return;
-            }
-            for (KeyEvent event : keyEvents) {
-                if (KeyEvent.isModifierKey(event.getKeyCode())) {
-                    continue;
-                }
-                if (event.getAction() == KeyEvent.ACTION_UP && mSuppressKeyUp) {
-                    continue;
-                }
-                if (DEBUG) {
-                    Log.d(LOGTAG, "sending: " + event);
-                }
-                onKeyEvent(event, event.getAction(),
-                            0,  true);
-            }
+        KeyEvent [] keyEvents = mKeyMap.getEvents(cs.toString().toCharArray());
+        if (keyEvents == null || keyEvents.length == 0) {
+            return null;
         }
+        return keyEvents;
+    }
 
-        
-
-
-        void poll() {
+    private void sendCharKeyEvents(Action action) {
+        if (action.mSequence.length() != 1 ||
+            (action.mSequence instanceof Spannable &&
+            ((Spannable)action.mSequence).nextSpanTransition(
+                -1, Integer.MAX_VALUE, null) < Integer.MAX_VALUE)) {
+            
+            
+            return;
+        }
+        KeyEvent [] keyEvents = synthesizeKeyEvents(action.mSequence);
+        if (keyEvents == null) {
+            return;
+        }
+        for (KeyEvent event : keyEvents) {
+            if (KeyEvent.isModifierKey(event.getKeyCode())) {
+                continue;
+            }
+            if (event.getAction() == KeyEvent.ACTION_UP && mSuppressKeyUp) {
+                continue;
+            }
             if (DEBUG) {
-                ThreadUtils.assertOnGeckoThread();
+                Log.d(LOGTAG, "sending: " + event);
             }
-            if (mActions.poll() == null) {
-                throw new IllegalStateException("empty actions queue");
-            }
-
-            synchronized (this) {
-                if (mActions.isEmpty()) {
-                    mActionsActive.release();
-                }
-            }
-        }
-
-        
-
-
-
-
-        Action peek() {
-            if (DEBUG) {
-                ThreadUtils.assertOnGeckoThread();
-            }
-            return mActions.peek();
-        }
-
-        void syncWithGecko() {
-            if (DEBUG) {
-                assertOnIcThread();
-            }
-            if (mFocused && !mActions.isEmpty()) {
-                if (DEBUG) {
-                    Log.d(LOGTAG, "syncWithGecko blocking on thread " +
-                                  Thread.currentThread().getName());
-                }
-                mActionsActive.acquireUninterruptibly();
-                mActionsActive.release();
-            } else if (DEBUG && !mFocused) {
-                Log.d(LOGTAG, "skipped syncWithGecko (no focus)");
-            }
-        }
-
-        boolean isEmpty() {
-            return mActions.isEmpty();
+            onKeyEvent(event, event.getAction(),
+                        0,  true);
         }
     }
 
@@ -592,9 +550,9 @@ final class GeckoEditable extends JNIObject
             
             ThreadUtils.assertOnGeckoThread();
         }
-        mActionQueue = new ActionQueue();
 
-        mText = new SpannableStringBuilder();
+        mText = new AsyncText();
+        mActions = new ConcurrentLinkedQueue<Action>();
 
         final Class<?>[] PROXY_INTERFACES = { Editable.class };
         mProxy = (Editable)Proxy.newProxyInstance(
@@ -627,15 +585,12 @@ final class GeckoEditable extends JNIObject
                     Log.d(LOGTAG, "onViewChange (set listener)");
                 }
 
-                if (newListener != null) {
-                    
-                    mActionQueue.syncWithGecko();
-                    mListener = newListener;
-                } else {
+                mListener = newListener;
+
+                if (newListener == null) {
                     
                     
                     
-                    mListener = null;
                     GeckoEditable.this.disposeNative();
                 }
             }
@@ -867,7 +822,7 @@ final class GeckoEditable extends JNIObject
 
 
         onKeyEvent(event, action, metaState,  false);
-        mActionQueue.offer(new Action(Action.TYPE_EVENT));
+        icOfferAction(new Action(Action.TYPE_EVENT));
     }
 
     @Override
@@ -928,8 +883,7 @@ final class GeckoEditable extends JNIObject
         
         
         
-        mActionQueue.offer(Action.newSetHandler(handler));
-        mActionQueue.syncWithGecko();
+        icOfferAction(Action.newSetHandler(handler));
         return handler;
     }
 
@@ -974,33 +928,36 @@ final class GeckoEditable extends JNIObject
         });
     }
 
+    private void geckoActionReply(final Action action) {
+        if (!mGeckoFocused) {
+            if (DEBUG) {
+                Log.d(LOGTAG, "discarding stale reply");
+            }
+            return;
+        }
 
-    private void geckoActionReply() {
         if (DEBUG) {
             
             ThreadUtils.assertOnGeckoThread();
-        }
-
-        final Action action = mActionQueue.peek();
-        if (action == null) {
-            throw new IllegalStateException("empty actions queue");
-        }
-
-        if (DEBUG) {
             Log.d(LOGTAG, "reply: Action(" +
                           getConstantName(Action.class, "TYPE_", action.mType) + ")");
         }
         switch (action.mType) {
         case Action.TYPE_SET_SPAN:
-            mText.setSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
+            final int len = mText.getCurrentText().length();
+            if (action.mStart > len || action.mEnd > len ||
+                    !TextUtils.substring(mText.getCurrentText(), action.mStart,
+                                         action.mEnd).equals(action.mSequence)) {
+                if (DEBUG) {
+                    Log.d(LOGTAG, "discarding stale set span call");
+                }
+                break;
+            }
+            mText.currentSetSpan(action.mSpanObject, action.mStart, action.mEnd, action.mSpanFlags);
             break;
 
         case Action.TYPE_REMOVE_SPAN:
-            if (action.mSpanObject != null) {
-                mText.removeSpan(action.mSpanObject);
-            } else {
-                mText.clearSpans();
-            }
+            mText.currentRemoveSpan(action.mSpanObject);
             break;
 
         case Action.TYPE_SET_HANDLER:
@@ -1020,9 +977,10 @@ final class GeckoEditable extends JNIObject
         
         
         if (DEBUG) {
-            final Object[] spans = mText.getSpans(0, mText.length(), Object.class);
+            final Spanned text = mText.getCurrentText();
+            final Object[] spans = text.getSpans(0, text.length(), Object.class);
             for (Object span : spans) {
-                if ((mText.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
+                if ((text.getSpanFlags(span) & Spanned.SPAN_COMPOSING) != 0) {
                     throw new IllegalStateException("composition not cancelled");
                 }
             }
@@ -1043,19 +1001,7 @@ final class GeckoEditable extends JNIObject
         }
 
         if (type == GeckoEditableListener.NOTIFY_IME_REPLY_EVENT) {
-            try {
-                if (mGeckoFocused) {
-                    
-                    
-                    geckoActionReply();
-                } else if (DEBUG) {
-                    Log.d(LOGTAG, "discarding stale reply");
-                }
-            } finally {
-                
-                
-                mActionQueue.poll();
-            }
+            geckoActionReply(mActions.poll());
             return;
         } else if (type == GeckoEditableListener.NOTIFY_IME_TO_COMMIT_COMPOSITION) {
             notifyCommitComposition();
@@ -1069,23 +1015,12 @@ final class GeckoEditable extends JNIObject
             @Override
             public void run() {
                 if (type == GeckoEditableListener.NOTIFY_IME_OF_FOCUS) {
-                    mFocused = true;
                     
-                    mActionQueue.offer(new Action(Action.TYPE_ACKNOWLEDGE_FOCUS));
+                    icOfferAction(new Action(Action.TYPE_ACKNOWLEDGE_FOCUS));
                 }
 
-                
-                
-                
-                mActionQueue.syncWithGecko();
                 if (mListener != null) {
                     mListener.notifyIME(type);
-                }
-
-                
-                
-                if (type == NOTIFY_IME_OF_BLUR) {
-                    mFocused = false;
                 }
             }
         });
@@ -1126,23 +1061,20 @@ final class GeckoEditable extends JNIObject
             ThreadUtils.assertOnGeckoThread();
             Log.d(LOGTAG, "onSelectionChange(" + start + ", " + end + ")");
         }
-        if (start < 0 || start > mText.length() || end < 0 || end > mText.length()) {
+
+        final int currentLength = mText.getCurrentText().length();
+        if (start < 0 || start > currentLength || end < 0 || end > currentLength) {
             Log.e(LOGTAG, "invalid selection notification range: " +
-                  start + " to " + end + ", length: " + mText.length());
+                  start + " to " + end + ", length: " + currentLength);
             throw new IllegalArgumentException("invalid selection notification range");
         }
 
         if (mIgnoreSelectionChange) {
-            start = Selection.getSelectionStart(mText);
-            end = Selection.getSelectionEnd(mText);
             mIgnoreSelectionChange = false;
-
         } else {
-            Selection.setSelection(mText, start, end);
+            mText.currentSetSelection(start, end);
         }
 
-        final int newStart = start;
-        final int newEnd = end;
         geckoPostToIc(new Runnable() {
             @Override
             public void run() {
@@ -1154,13 +1086,9 @@ final class GeckoEditable extends JNIObject
         });
     }
 
-    private void geckoReplaceText(int start, int oldEnd, CharSequence newText) {
-        mText.replace(start, oldEnd, newText);
-    }
-
     private boolean geckoIsSameText(int start, int oldEnd, CharSequence newText) {
         return oldEnd - start == newText.length() &&
-               TextUtils.regionMatches(mText, start, newText, 0, oldEnd - start);
+               TextUtils.regionMatches(mText.getCurrentText(), start, newText, 0, oldEnd - start);
     }
 
     @WrapForJNI(calledFrom = "gecko")
@@ -1181,22 +1109,25 @@ final class GeckoEditable extends JNIObject
                   start + " to " + unboundedOldEnd);
             throw new IllegalArgumentException("invalid text notification range");
         }
+
+        final int currentLength = mText.getCurrentText().length();
+
         
 
-        final int oldEnd = unboundedOldEnd > mText.length() ? mText.length() : unboundedOldEnd;
+        final int oldEnd = unboundedOldEnd > currentLength ? currentLength : unboundedOldEnd;
         
-        if (unboundedOldEnd <= mText.length() &&
-                unboundedNewEnd != (start + text.length())) {
+        if (unboundedOldEnd <= currentLength && unboundedNewEnd != (start + text.length())) {
             Log.e(LOGTAG, "newEnd does not match text: " + unboundedNewEnd + " vs " +
                   (start + text.length()));
             throw new IllegalArgumentException("newEnd does not match text");
         }
+
         final int newEnd = start + text.length();
-        final Action action = mActionQueue.peek();
+        final Action action = mActions.peek();
 
         if (action != null && action.mType == Action.TYPE_ACKNOWLEDGE_FOCUS) {
             
-            mText.replace(0, mText.length(), text);
+            mText.currentReplace(0, currentLength, text);
 
         } else if (action != null &&
                 action.mType == Action.TYPE_REPLACE_TEXT &&
@@ -1215,7 +1146,7 @@ final class GeckoEditable extends JNIObject
 
             if (indexInText < 0) {
                 
-                geckoReplaceText(start, oldEnd, text);
+                mText.currentReplace(start, oldEnd, text);
 
                 
                 
@@ -1223,7 +1154,7 @@ final class GeckoEditable extends JNIObject
 
             } else if (indexInText == 0 && text.length() == action.mSequence.length()) {
                 
-                geckoReplaceText(start, oldEnd, action.mSequence);
+                mText.currentReplace(start, oldEnd, action.mSequence);
 
                 
                 
@@ -1232,17 +1163,21 @@ final class GeckoEditable extends JNIObject
             } else {
                 
                 
-                geckoReplaceText(start, action.mStart, text.subSequence(0, indexInText));
+                mText.currentReplace(start, action.mStart, text.subSequence(0, indexInText));
 
                 
                 final int actionStart = indexInText + start;
-                geckoReplaceText(actionStart, actionStart + action.mEnd - action.mStart,
-                                 action.mSequence);
+                mText.currentReplace(actionStart, actionStart + action.mEnd - action.mStart,
+                                     action.mSequence);
 
                 
                 final int actionEnd = actionStart + action.mSequence.length();
-                geckoReplaceText(actionEnd, actionEnd + oldEnd - action.mEnd,
-                                 text.subSequence(actionEnd - start, text.length()));
+                mText.currentReplace(actionEnd, actionEnd + oldEnd - action.mEnd,
+                                     text.subSequence(actionEnd - start, text.length()));
+
+                
+                
+                mIgnoreSelectionChange = true;
             }
 
         } else if (geckoIsSameText(start, oldEnd, text)) {
@@ -1250,12 +1185,12 @@ final class GeckoEditable extends JNIObject
             
             
             mIgnoreSelectionChange = mIgnoreSelectionChange ||
-                    (action != null && action.mType == Action.TYPE_UPDATE_COMPOSITION);
+                    (action != null && action.mType == Action.TYPE_REPLACE_TEXT);
             return;
 
         } else {
             
-            geckoReplaceText(start, oldEnd, text);
+            mText.currentReplace(start, oldEnd, text);
         }
 
         geckoPostToIc(new Runnable() {
@@ -1360,10 +1295,7 @@ final class GeckoEditable extends JNIObject
             
             target = this;
         } else {
-            
-            
-            mActionQueue.syncWithGecko();
-            target = mText;
+            target = mText.getShadowText();
         }
         Object ret;
         try {
@@ -1425,12 +1357,12 @@ final class GeckoEditable extends JNIObject
             Log.w(LOGTAG, "selection removed with removeSpan()");
         }
 
-        mActionQueue.offer(Action.newRemoveSpan(what));
+        icOfferAction(Action.newRemoveSpan(what));
     }
 
     @Override
     public void setSpan(Object what, int start, int end, int flags) {
-        mActionQueue.offer(Action.newSetSpan(what, start, end, flags));
+        icOfferAction(Action.newSetSpan(what, start, end, flags));
     }
 
     
@@ -1467,7 +1399,7 @@ final class GeckoEditable extends JNIObject
         
 
         Log.w(LOGTAG, "selection cleared with clearSpans()");
-        mActionQueue.offer(Action.newRemoveSpan( null));
+        icOfferAction(Action.newRemoveSpan( null));
     }
 
     @Override
@@ -1497,8 +1429,7 @@ final class GeckoEditable extends JNIObject
             
             text = new SpannableString(source);
         }
-        mActionQueue.offer(Action.newReplaceText(text,
-                Math.min(st, en), Math.max(st, en)));
+        icOfferAction(Action.newReplaceText(text, Math.min(st, en), Math.max(st, en)));
         return mProxy;
     }
 
