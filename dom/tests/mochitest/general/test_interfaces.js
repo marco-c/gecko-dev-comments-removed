@@ -382,6 +382,8 @@ var interfaceNamesInGlobalScope =
 
     "GamepadEvent",
 
+    {name: "GamepadHapticActuator", release: false},
+
     {name: "GamepadPose", release: false},
 
     "HashChangeEvent",
