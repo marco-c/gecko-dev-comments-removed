@@ -6,11 +6,12 @@ use compositor_task::LayerProperties;
 use events;
 use pipeline::CompositionPipeline;
 
-use azure::azure_hl::Color;
+use azure::azure_hl;
 use geom::point::TypedPoint2D;
 use geom::size::Size2D;
 use geom::rect::Rect;
 use gfx::render_task::UnusedBufferMsg;
+use layers::color::Color;
 use layers::geometry::LayerPixel;
 use layers::layers::{Layer, LayerBufferSet};
 use layers::platform::surface::NativeSurfaceMethods;
@@ -33,9 +34,6 @@ pub struct CompositorData {
     pub scroll_policy: ScrollPolicy,
 
     
-    pub background_color: Color,
-
-    
     
     pub epoch: Epoch,
 
@@ -50,6 +48,10 @@ pub enum WantsScrollEventsFlag {
     DoesntWantScrollEvents,
 }
 
+fn to_layers_color(color: &azure_hl::Color) -> Color {
+    Color { r: color.r, g: color.g, b: color.b, a: color.a }
+}
+
 impl CompositorData {
     pub fn new_layer(pipeline: CompositionPipeline,
                      layer_properties: LayerProperties,
@@ -61,20 +63,23 @@ impl CompositorData {
             id: layer_properties.id,
             wants_scroll_events: wants_scroll_events,
             scroll_policy: layer_properties.scroll_policy,
-            background_color: layer_properties.background_color,
             epoch: layer_properties.epoch,
             scroll_offset: TypedPoint2D(0., 0.),
         };
 
         Rc::new(Layer::new(Rect::from_untyped(&layer_properties.rect),
-                           tile_size, new_compositor_data))
+                           tile_size,
+                           to_layers_color(&layer_properties.background_color),
+                           new_compositor_data))
     }
 
     pub fn update_layer_except_size(layer: Rc<Layer<CompositorData>>,
                                     layer_properties: LayerProperties) {
         layer.extra_data.borrow_mut().epoch = layer_properties.epoch;
         layer.extra_data.borrow_mut().scroll_policy = layer_properties.scroll_policy;
-        layer.extra_data.borrow_mut().background_color = layer_properties.background_color;
+
+        *layer.background_color.borrow_mut() = to_layers_color(&layer_properties.background_color);
+
         layer.contents_changed();
     }
 
