@@ -734,6 +734,7 @@ Engine.prototype = {
 
   finalize() {
     
+    this._tracker._saveChangedIDs();
     Async.promiseSpinningly(this._tracker._storage.finalize());
   },
 };
