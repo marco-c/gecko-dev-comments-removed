@@ -301,7 +301,6 @@ PROFILER_FUNC_VOID(profiler_log(const char *str))
 #include "mozilla/Sprintf.h"
 #include "mozilla/ThreadLocal.h"
 #include "nscore.h"
-#include "PseudoStack.h"
 #include "nsIMemoryReporter.h"
 
 
@@ -311,19 +310,7 @@ PROFILER_FUNC_VOID(profiler_log(const char *str))
 
 class nsISupports;
 class ProfilerMarkerPayload;
-
-
-
-
-
-
-
-
-
-
-
-
-extern MOZ_THREAD_LOCAL(PseudoStack*) tlsPseudoStack;
+class PseudoStack;
 
 #ifndef SAMPLE_FUNCTION_NAME
 # if defined(__GNUC__) || defined(_MSC_VER)
@@ -335,37 +322,11 @@ extern MOZ_THREAD_LOCAL(PseudoStack*) tlsPseudoStack;
 
 
 
-static inline void*
-profiler_call_enter(const char* aInfo,
-                    js::ProfileEntry::Category aCategory,
-                    void *aFrameAddress, bool aCopy, uint32_t line,
-                    const char* aDynamicString = nullptr)
-{
-  
-
-  PseudoStack* stack = tlsPseudoStack.get();
-  if (!stack) {
-    return stack;
-  }
-  stack->push(aInfo, aCategory, aFrameAddress, aCopy, line, aDynamicString);
-
-  
-  
-  return stack;
-}
-
-static inline void
-profiler_call_exit(void* aHandle)
-{
-  
-
-  if (!aHandle) {
-    return;
-  }
-
-  PseudoStack *stack = (PseudoStack*)aHandle;
-  stack->pop();
-}
+void* profiler_call_enter(const char* aInfo,
+                          js::ProfileEntry::Category aCategory,
+                          void* aFrameAddress, bool aCopy, uint32_t aLine,
+                          const char* aDynamicString = nullptr);
+void profiler_call_exit(void* aHandle);
 
 
 
@@ -477,13 +438,7 @@ private:
 
 } 
 
-inline PseudoStack*
-profiler_get_pseudo_stack(void)
-{
-  
-
-  return tlsPseudoStack.get();
-}
+PseudoStack* profiler_get_pseudo_stack();
 
 void profiler_set_js_context(JSContext* aCx);
 void profiler_clear_js_context();

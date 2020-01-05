@@ -197,7 +197,7 @@ void ProfilerJSEventMarker(const char* aEvent);
 
 
 
-struct PseudoStack
+class PseudoStack
 {
 public:
   PseudoStack()

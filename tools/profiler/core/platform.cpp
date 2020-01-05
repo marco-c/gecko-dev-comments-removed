@@ -105,9 +105,6 @@ public:
 };
 #endif
 
-
-MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
-
 class PSMutex : public mozilla::StaticMutex {};
 
 typedef mozilla::BaseAutoLock<PSMutex> PSAutoLock;
@@ -516,6 +513,19 @@ uint32_t ActivePS::sNextGeneration = 0;
 
 
 static PSMutex gPSMutex;
+
+
+
+
+
+
+
+
+
+
+
+
+static MOZ_THREAD_LOCAL(PseudoStack *) tlsPseudoStack;
 
 
 static const char* const kMainThreadName = "GeckoMain";
@@ -2992,6 +3002,14 @@ profiler_log(const char* aStr)
   profiler_tracing("log", aStr);
 }
 
+PseudoStack*
+profiler_get_pseudo_stack()
+{
+  
+
+  return tlsPseudoStack.get();
+}
+
 void
 profiler_set_js_context(JSContext* aCx)
 {
@@ -3046,6 +3064,39 @@ profiler_clear_js_context()
   
 
   pseudoStack->mContext = nullptr;
+}
+
+void*
+profiler_call_enter(const char* aInfo,
+                    js::ProfileEntry::Category aCategory,
+                    void* aFrameAddress, bool aCopy, uint32_t aLine,
+                    const char* aDynamicString)
+{
+  
+
+  PseudoStack* pseudoStack = tlsPseudoStack.get();
+  if (!pseudoStack) {
+    return pseudoStack;
+  }
+  pseudoStack->push(aInfo, aCategory, aFrameAddress, aCopy, aLine,
+                    aDynamicString);
+
+  
+  
+  return pseudoStack;
+}
+
+void
+profiler_call_exit(void* aHandle)
+{
+  
+
+  if (!aHandle) {
+    return;
+  }
+
+  PseudoStack* pseudoStack = static_cast<PseudoStack*>(aHandle);
+  pseudoStack->pop();
 }
 
 
