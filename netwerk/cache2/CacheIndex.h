@@ -922,10 +922,6 @@ private:
   void ReleaseBuffer();
 
   
-  void InsertRecordToFrecencyArray(CacheIndexRecord *aRecord);
-  void RemoveRecordFromFrecencyArray(CacheIndexRecord *aRecord);
-
-  
   void AddRecordToIterators(CacheIndexRecord *aRecord);
   void RemoveRecordFromIterators(CacheIndexRecord *aRecord);
   void ReplaceRecordInIterators(CacheIndexRecord *aOldRecord,
@@ -1035,8 +1031,75 @@ private:
   
   
   
-  nsTArray<CacheIndexRecord *>  mFrecencyArray;
-  bool                          mFrecencyArraySorted;
+  
+  
+  
+  
+  class FrecencyArray
+  {
+    class Iterator
+    {
+    public:
+      explicit Iterator(nsTArray<CacheIndexRecord *> *aRecs)
+        : mRecs(aRecs)
+        , mIdx(0)
+      {
+        while (!Done() && !(*mRecs)[mIdx]) {
+          mIdx++;
+        }
+      }
+
+      bool Done() const { return mIdx == mRecs->Length(); }
+
+      CacheIndexRecord* Get() const
+      {
+        MOZ_ASSERT(!Done());
+        return (*mRecs)[mIdx];
+      }
+
+      void Next()
+      {
+        MOZ_ASSERT(!Done());
+        ++mIdx;
+        while (!Done() && !(*mRecs)[mIdx]) {
+          mIdx++;
+        }
+      }
+
+    private:
+      nsTArray<CacheIndexRecord *> *mRecs;
+      uint32_t mIdx;
+    };
+
+  public:
+    Iterator Iter() { return Iterator(&mRecs); }
+
+    FrecencyArray() : mUnsortedElements(0)
+                    , mRemovedElements(0) {}
+
+    
+    void AppendRecord(CacheIndexRecord *aRecord);
+    void RemoveRecord(CacheIndexRecord *aRecord);
+    void ReplaceRecord(CacheIndexRecord *aOldRecord,
+                       CacheIndexRecord *aNewRecord);
+    void SortIfNeeded();
+
+    size_t Length() const { return mRecs.Length() - mRemovedElements; }
+    void Clear() { mRecs.Clear(); }
+
+  private:
+    friend class CacheIndex;
+
+    nsTArray<CacheIndexRecord *> mRecs;
+    uint32_t                     mUnsortedElements;
+    
+    
+    
+    
+    uint32_t                     mRemovedElements;
+  };
+
+  FrecencyArray mFrecencyArray;
 
   nsTArray<CacheIndexIterator *> mIterators;
 
