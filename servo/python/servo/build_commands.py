@@ -216,6 +216,12 @@ class MachCommands(CommandBase):
         build_start = time()
         env = self.build_env(target=target, is_build=True)
 
+        
+        
+        
+        if env.get("SERVO_ENABLE_DEBUG_ASSERTIONS", None):
+            env["RUSTFLAGS"] = "-C debug_assertions"
+
         if android:
             
             make_cmd = ["make"]
