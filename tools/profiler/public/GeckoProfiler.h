@@ -16,6 +16,7 @@
 
 
 
+
 #ifndef GeckoProfiler_h
 #define GeckoProfiler_h
 
@@ -109,6 +110,64 @@ using UniqueProfilerBacktrace =
 
 #else   
 
+
+
+
+#define PROFILER_FOR_EACH_FEATURE(macro)
+ \
+  macro(0, "displaylistdump", DisplayListDump) \
+  \
+  /* GPU Profiling (may not be supported by the GL). */ \
+  macro(1, "gpu", GPU) \
+  \
+  /* Profile Java code (Android only). */ \
+  macro(2, "java", Java) \
+  \
+  /* Get the JS engine to emit pseudostack entries in prologues/epilogues */ \
+  macro(3, "js", JS) \
+  \
+  /* Dump the layer tree with the textures. */ \
+  macro(4, "layersdump", LayersDump) \
+  \
+  /* Include the C++ leaf node if not stackwalking. */ \
+  /* The DevTools profiler doesn't want the native addresses. */ \
+  macro(5, "leaf", Leaf) \
+  \
+  /* Add main thread I/O to the profile. */ \
+  macro(6, "mainthreadio", MainThreadIO) \
+  \
+  /* Add memory measurements (e.g. RSS). */ \
+  macro(7, "memory", Memory) \
+  \
+  /* Do not include user-identifiable information. */ \
+  macro(8, "privacy", Privacy) \
+  \
+  /* Restyle profiling. */ \
+  macro(9, "restyle", Restyle) \
+  \
+  /* Walk the C++ stack. Not available on all platforms. */ \
+  macro(10, "stackwalk", StackWalk) \
+  \
+  /* Start profiling with feature TaskTracer. */ \
+  macro(11, "tasktracer", TaskTracer) \
+  \
+  /* Profile the registered secondary threads. */ \
+  macro(12, "threads", Threads)
+
+struct ProfilerFeature
+{
+  #define DECLARE(n_, str_, Name_) \
+    static const uint32_t Name_ = (1u << n_); \
+    static bool Has##Name_(uint32_t aFeatures) { return aFeatures & Name_; } \
+    static void Set##Name_(uint32_t& aFeatures) { aFeatures |= Name_; } \
+    static void Clear##Name_(uint32_t& aFeatures) { aFeatures &= ~Name_; }
+
+  
+  PROFILER_FOR_EACH_FEATURE(DECLARE)
+
+  #undef DECLARE
+};
+
 #if defined(__GNUC__) || defined(_MSC_VER)
 # define PROFILER_FUNCTION_NAME __FUNCTION__
 #else
@@ -172,11 +231,11 @@ PROFILER_FUNC_VOID(profiler_shutdown())
 
 
 
+
+
 PROFILER_FUNC_VOID(profiler_start(int aEntries, double aInterval,
-                                  const char** aFeatures,
-                                  uint32_t aFeatureCount,
-                                  const char** aFilters,
-                                  uint32_t aFilterCount))
+                                  uint32_t aFeatures,
+                                  const char** aFilters, uint32_t aFilterCount))
 
 
 
@@ -228,9 +287,7 @@ PROFILER_FUNC(bool profiler_is_active(), false)
 
 
 
-
-
-PROFILER_FUNC(bool profiler_feature_active(const char*), false)
+PROFILER_FUNC(bool profiler_feature_active(uint32_t aFeature), false)
 
 
 
@@ -245,9 +302,11 @@ PROFILER_FUNC(bool profiler_stream_json_for_this_process(SpliceableJSONWriter& a
 
 
 
+
+
 PROFILER_FUNC_VOID(profiler_get_start_params(int* aEntrySize,
                                              double* aInterval,
-                                             mozilla::Vector<const char*>* aFeatures,
+                                             uint32_t* aFeatures,
                                              mozilla::Vector<const char*>* aFilters))
 
 
@@ -263,7 +322,7 @@ PROFILER_FUNC_VOID(profiler_save_profile_to_file(const char* aFilename))
 
 
 
-PROFILER_FUNC(const char** profiler_get_available_features(), nullptr)
+PROFILER_FUNC(uint32_t profiler_get_available_features(), 0)
 
 
 

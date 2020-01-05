@@ -881,13 +881,6 @@ TextureClient::InitIPDLActor(CompositableForwarder* aForwarder)
         gfxCriticalError() << "Attempt to move a texture to different compositor backend.";
         return false;
       }
-      if (ShadowLayerForwarder* forwarder = aForwarder->AsLayerForwarder()) {
-        
-        if (nsIEventTarget* target = forwarder->GetEventTarget()) {
-          forwarder->GetCompositorBridgeChild()->ReplaceEventTargetForActor(
-            mActor, target);
-        }
-      }
       mActor->mCompositableForwarder = aForwarder;
     }
     return true;
@@ -902,20 +895,12 @@ TextureClient::InitIPDLActor(CompositableForwarder* aForwarder)
   
   mExternalImageId = aForwarder->GetTextureForwarder()->GetNextExternalImageId();
 
-  nsIEventTarget* target = nullptr;
-  
-  if (ShadowLayerForwarder* forwarder = aForwarder->AsLayerForwarder()) {
-    target = forwarder->GetEventTarget();
-  }
-
   PTextureChild* actor = aForwarder->GetTextureForwarder()->CreateTexture(
     desc,
     aForwarder->GetCompositorBackendType(),
     GetFlags(),
     mSerial,
-    mExternalImageId,
-    target);
-
+    mExternalImageId);
   if (!actor) {
     gfxCriticalNote << static_cast<int32_t>(desc.type()) << ", "
                     << static_cast<int32_t>(aForwarder->GetCompositorBackendType()) << ", "
@@ -1374,7 +1359,8 @@ TextureClient::PrintInfo(std::stringstream& aStream, const char* aPrefix)
   AppendToString(aStream, mFlags, " [flags=", "]");
 
 #ifdef MOZ_DUMP_PAINTING
-  if (gfxPrefs::LayersDumpTexture() || profiler_feature_active("layersdump")) {
+  if (gfxPrefs::LayersDumpTexture() ||
+      profiler_feature_active(ProfilerFeature::LayersDump)) {
     nsAutoCString pfx(aPrefix);
     pfx += "  ";
 

@@ -17,29 +17,20 @@ ANRReporter::RequestNativeStack(bool aUnwind)
         
         return false;
     }
-    
-    
-    
-    
-    const char *NATIVE_STACK_FEATURES[] =
-        {"leaf", "threads", "privacy"};
-    const char *NATIVE_STACK_UNWIND_FEATURES[] =
-        {"leaf", "threads", "privacy", "stackwalk"};
 
-    const char **features = NATIVE_STACK_FEATURES;
-    size_t features_size = sizeof(NATIVE_STACK_FEATURES);
-    if (aUnwind) {
-        features = NATIVE_STACK_UNWIND_FEATURES;
-        features_size = sizeof(NATIVE_STACK_UNWIND_FEATURES);
-        
-        putenv("MOZ_PROFILER_NEW=1");
-    }
-
-    const char *NATIVE_STACK_THREADS[] =
-        {"GeckoMain", "Compositor"};
     
-    profiler_start( 100,  10000,
-                   features, features_size / sizeof(char*),
+    
+    
+    
+    uint32_t features = ProfilerFeature::Leaf |
+                        ProfilerFeature::Privacy |
+                        (aUnwind ? ProfilerFeature::StackWalk : 0) |
+                        ProfilerFeature::Threads;
+
+    const char *NATIVE_STACK_THREADS[] = {"GeckoMain", "Compositor"};
+
+    
+    profiler_start( 100,  10000, features,
                    NATIVE_STACK_THREADS,
                    sizeof(NATIVE_STACK_THREADS) / sizeof(char*));
     return true;
