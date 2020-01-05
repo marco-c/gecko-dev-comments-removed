@@ -311,6 +311,50 @@ Compositor::DrawTriangles(const nsTArray<gfx::TexturedTriangle>& aTriangles,
   }
 }
 
+static nsTArray<gfx::TexturedTriangle>
+GenerateTexturedTriangles(const gfx::Polygon& aPolygon,
+                          const gfx::Rect& aRect,
+                          const gfx::Rect& aTexRect)
+{
+  nsTArray<gfx::TexturedTriangle> texturedTriangles;
+
+  gfx::Rect layerRects[4];
+  gfx::Rect textureRects[4];
+  size_t rects = DecomposeIntoNoRepeatRects(aRect, aTexRect,
+                                            &layerRects, &textureRects);
+  for (size_t i = 0; i < rects; ++i) {
+    const gfx::Rect& rect = layerRects[i];
+    const gfx::Rect& texRect = textureRects[i];
+    const gfx::Polygon clipped = aPolygon.ClipPolygon(rect);
+
+    if (clipped.IsEmpty()) {
+      continue;
+    }
+
+    for (const gfx::Triangle& triangle : clipped.ToTriangles()) {
+      const gfx::Rect intersection = rect.Intersect(triangle.BoundingBox());
+
+      
+      if (intersection.IsEmpty()) {
+        continue;
+      }
+
+      MOZ_ASSERT(rect.width > 0.0f && rect.height > 0.0f);
+      MOZ_ASSERT(intersection.width > 0.0f && intersection.height > 0.0f);
+
+      
+      
+      gfx::TexturedTriangle t(triangle);
+      t.width = rect.width;
+      t.height = rect.height;
+      UpdateTextureCoordinates(t, rect, intersection, texRect);
+      texturedTriangles.AppendElement(Move(t));
+    }
+  }
+
+  return texturedTriangles;
+}
+
 void
 Compositor::DrawPolygon(const gfx::Polygon& aPolygon,
                         const gfx::Rect& aRect,
@@ -322,32 +366,21 @@ Compositor::DrawPolygon(const gfx::Polygon& aPolygon,
 {
   nsTArray<gfx::TexturedTriangle> texturedTriangles;
 
-  for (gfx::Triangle& triangle : aPolygon.ToTriangles()) {
-    const gfx::Rect intersection = aRect.Intersect(triangle.BoundingBox());
+  TexturedEffect* texturedEffect =
+    aEffectChain.mPrimaryEffect->AsTexturedEffect();
 
-    
-    if (intersection.IsEmpty()) {
-      continue;
+  if (texturedEffect) {
+    texturedTriangles =
+      GenerateTexturedTriangles(aPolygon, aRect, texturedEffect->mTextureCoords);
+  } else {
+    for (const gfx::Triangle& triangle : aPolygon.ToTriangles()) {
+      texturedTriangles.AppendElement(gfx::TexturedTriangle(triangle));
     }
+  }
 
-    MOZ_ASSERT(aRect.width > 0.0f && aRect.height > 0.0f);
-    MOZ_ASSERT(intersection.width > 0.0f && intersection.height > 0.0f);
-
-    gfx::TexturedTriangle texturedTriangle(Move(triangle));
-    texturedTriangle.width = aRect.width;
-    texturedTriangle.height = aRect.height;
-
+  if (texturedTriangles.IsEmpty()) {
     
-    
-    TexturedEffect* texturedEffect =
-      aEffectChain.mPrimaryEffect->AsTexturedEffect();
-
-    if (texturedEffect) {
-      UpdateTextureCoordinates(texturedTriangle, aRect, intersection,
-                               texturedEffect->mTextureCoords);
-    }
-
-    texturedTriangles.AppendElement(Move(texturedTriangle));
+    return;
   }
 
   DrawTriangles(texturedTriangles, aRect, aClipRect, aEffectChain,
