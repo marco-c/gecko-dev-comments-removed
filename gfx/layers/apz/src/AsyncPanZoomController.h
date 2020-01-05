@@ -240,15 +240,6 @@ public:
 
 
 
-
-  void FlushActiveCheckerboardReport();
-
-  
-
-
-
-
-
   bool IsCurrentlyCheckerboarding() const;
 
   
@@ -1176,10 +1167,6 @@ private:
 
 
 private:
-  
-  void UpdateCheckerboardEvent(const MutexAutoLock& aProofOfLock,
-                               uint32_t aMagnitude);
-
   
   Mutex mCheckerboardEventLock;
   

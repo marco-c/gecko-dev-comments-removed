@@ -129,10 +129,6 @@ public:
   void RemoveListener(GPUProcessListener* aListener);
 
   
-  
-  bool NotifyGpuObservers(const char* aTopic);
-
-  
   GPUChild* GetGPUChild() {
     return mGPUChild;
   }

@@ -518,10 +518,6 @@ private:
 
   gfx::TreeLog mApzcTreeLog;
 
-  class CheckerboardFlushObserver;
-  friend class CheckerboardFlushObserver;
-  RefPtr<CheckerboardFlushObserver> mFlushObserver;
-
   static float sDPI;
 };
 
