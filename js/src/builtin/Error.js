@@ -29,8 +29,3 @@ function ErrorToString()
   
   return name + ": " + msg;
 }
-
-function ErrorToStringWithTrailingNewline()
-{
-  return FUN_APPLY(ErrorToString, this, []) + "\n";
-}
