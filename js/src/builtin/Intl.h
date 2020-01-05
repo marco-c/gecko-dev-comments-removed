@@ -389,6 +389,48 @@ intl_FormatDateTime(JSContext* cx, unsigned argc, Value* vp);
 extern MOZ_MUST_USE bool
 intl_GetCalendarInfo(JSContext* cx, unsigned argc, Value* vp);
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+extern MOZ_MUST_USE bool
+intl_ComputeDisplayNames(JSContext* cx, unsigned argc, Value* vp);
+
 #if ENABLE_INTL_API
 
 
@@ -403,6 +445,18 @@ inline UChar*
 Char16ToUChar(char16_t* chars)
 {
   return reinterpret_cast<UChar*>(chars);
+}
+
+inline char16_t*
+UCharToChar16(UChar* chars)
+{
+  return reinterpret_cast<char16_t*>(chars);
+}
+
+inline const char16_t*
+UCharToChar16(const UChar* chars)
+{
+  return reinterpret_cast<const char16_t*>(chars);
 }
 #endif 
 
