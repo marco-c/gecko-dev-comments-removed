@@ -179,7 +179,7 @@ var MessageListener = {
 
       onLoadStarted() {
         
-        sendSyncMessage("SessionStore:restoreTabContentStarted", {epoch});
+        sendAsyncMessage("SessionStore:restoreTabContentStarted", {epoch});
       },
 
       onLoadFinished() {
