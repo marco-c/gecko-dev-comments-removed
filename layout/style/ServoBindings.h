@@ -378,6 +378,8 @@ nsCSSFontFaceRule* Gecko_CSSFontFaceRule_Create();
 void Gecko_CSSFontFaceRule_GetCssText(const nsCSSFontFaceRule* rule, nsAString* result);
 NS_DECL_FFI_REFCOUNTING(nsCSSFontFaceRule, CSSFontFaceRule);
 
+RawGeckoElementBorrowedOrNull Gecko_GetBody(RawGeckoPresContextBorrowed pres_context);
+
 
 
 nscolor Gecko_GetLookAndFeelSystemColor(int32_t color_id,

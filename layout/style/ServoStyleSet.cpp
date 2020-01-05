@@ -176,8 +176,21 @@ ServoStyleSet::GetContext(already_AddRefed<ServoComputedValues> aComputedValues,
   
   bool skipFixup = false;
 
-  return NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag,
-                            aPseudoType, Move(aComputedValues), skipFixup);
+  RefPtr<nsStyleContext> result = NS_NewStyleContext(aParentContext, mPresContext, aPseudoTag,
+                                                     aPseudoType, Move(aComputedValues), skipFixup);
+
+  
+  if (aElementForAnimation &&
+      aElementForAnimation->IsHTMLElement(nsGkAtoms::body) &&
+      aPseudoType == CSSPseudoElementType::NotPseudo &&
+      mPresContext->CompatibilityMode() == eCompatibility_NavQuirks) {
+    nsIDocument* doc = aElementForAnimation->GetUncomposedDoc();
+    if (doc && doc->GetBodyElement() == aElementForAnimation) {
+      
+      mPresContext->SetBodyTextColor(result->StyleColor()->mColor);
+    }
+  }
+  return result.forget();
 }
 
 void
