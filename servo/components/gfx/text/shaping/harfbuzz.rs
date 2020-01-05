@@ -306,7 +306,7 @@ impl Shaper {
         }
 
         debug!("(glyph idx) -> (text byte offset)");
-        for i in range(0, glyph_data.len()) {
+        for i in 0..glyph_data.len() {
             
             let loc = glyph_data.byte_offset_of_glyph(i);
             if loc < byte_max {
@@ -481,7 +481,7 @@ impl Shaper {
                 }
 
                 
-                glyphs.add_glyphs_for_char_index(char_idx, datas.as_slice());
+                glyphs.add_glyphs_for_char_index(char_idx, &datas);
 
                 
                 let mut i = covered_byte_span.begin();
