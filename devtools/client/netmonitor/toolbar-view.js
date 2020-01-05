@@ -1,10 +1,14 @@
 
 "use strict";
 
-const { createFactory } = require("devtools/client/shared/vendor/react");
+const { createFactory, DOM } = require("devtools/client/shared/vendor/react");
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const Provider = createFactory(require("devtools/client/shared/vendor/react-redux").Provider);
 const FilterButtons = createFactory(require("./components/filter-buttons"));
+const { L10N } = require("./l10n");
+
+
+const { button } = DOM;
 
 
 
@@ -22,8 +26,20 @@ ToolbarView.prototype = {
   initialize: function (store) {
     dumpn("Initializing the ToolbarView");
 
+    this._clearContainerNode = $("#react-clear-button-hook");
     this._filterContainerNode = $("#react-filter-buttons-hook");
 
+    
+    ReactDOM.render(button({
+      id: "requests-menu-clear-button",
+      className: "devtools-button devtools-clear-icon",
+      title: L10N.getStr("netmonitor.toolbar.clear"),
+      onClick: () => {
+        NetMonitorView.RequestsMenu.clear();
+      }
+    }), this._clearContainerNode);
+
+    
     ReactDOM.render(Provider(
       { store },
       FilterButtons()
@@ -40,6 +56,7 @@ ToolbarView.prototype = {
   destroy: function () {
     dumpn("Destroying the ToolbarView");
 
+    ReactDOM.unmountComponentAtNode(this._clearContainerNode);
     ReactDOM.unmountComponentAtNode(this._filterContainerNode);
 
     this._detailsPaneToggleButton.removeEventListener("mousedown",
