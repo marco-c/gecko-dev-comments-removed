@@ -79,70 +79,6 @@ Thread::GetCurrentId()
   return gettid();
 }
 
-#if !defined(GP_OS_android)
-
-
-
-
-
-
-
-
-
-
-
-
-
-static void
-paf_prepare()
-{
-  
-
-  MOZ_RELEASE_ASSERT(gPS);
-
-  PS::AutoLock lock(gPSMutex);
-
-  gPS->SetWasPaused(lock, gPS->IsPaused(lock));
-  gPS->SetIsPaused(lock, true);
-}
-
-
-static void
-paf_parent()
-{
-  
-
-  MOZ_RELEASE_ASSERT(gPS);
-
-  PS::AutoLock lock(gPSMutex);
-
-  gPS->SetIsPaused(lock, gPS->WasPaused(lock));
-  gPS->SetWasPaused(lock, false);
-}
-
-
-static void
-paf_child()
-{
-  
-
-  MOZ_RELEASE_ASSERT(gPS);
-
-  PS::AutoLock lock(gPSMutex);
-
-  gPS->SetWasPaused(lock, false);
-}
-
-
-static void*
-setup_atfork()
-{
-  pthread_atfork(paf_prepare, paf_parent, paf_child);
-  return nullptr;
-}
-
-#endif 
-
 static void SetSampleContext(TickSample* sample, mcontext_t& mcontext)
 {
   
@@ -581,6 +517,7 @@ SamplerThread::SigHandlerCoordinator* SamplerThread::sSigHandlerCoordinator =
   nullptr;
 
 #if defined(GP_OS_android)
+
 static struct sigaction gOldSigstartHandler;
 const int SIGSTART = SIGUSR2;
 
@@ -694,13 +631,55 @@ PlatformInit(PS::LockRef aLock)
   }
 }
 
-#else
+#else 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+static void
+paf_prepare()
+{
+  
+
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  gPS->SetWasPaused(lock, gPS->IsPaused(lock));
+  gPS->SetIsPaused(lock, true);
+}
+
+
+static void
+paf_parent()
+{
+  
+
+  MOZ_RELEASE_ASSERT(gPS);
+
+  PS::AutoLock lock(gPSMutex);
+
+  gPS->SetIsPaused(lock, gPS->WasPaused(lock));
+  gPS->SetWasPaused(lock, false);
+}
 
 static void
 PlatformInit(PS::LockRef aLock)
 {
   
-  setup_atfork();
+  pthread_atfork(paf_prepare, paf_parent, nullptr);
 }
 
 #endif
