@@ -83,7 +83,7 @@ public:
     MOZ_MUST_USE nsresult Activate(nsAHttpTransaction *, uint32_t caps,
                                    int32_t pri);
 
-    void SetFastOpen(PRFileDesc *aFastOpen) { mFastOpen = aFastOpen; }
+    void SetFastOpen(bool aFastOpen) { mFastOpen = aFastOpen; }
     
     
     
@@ -403,7 +403,7 @@ private:
     
     bool                           mResumeRecvOnUnthrottle;
 
-    PRFileDesc                    *mFastOpen;
+    bool                           mFastOpen;
     uint8_t                        mFastOpenStatus;
 
     bool                           mForceSendDuringFastOpenPending;

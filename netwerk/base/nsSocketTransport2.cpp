@@ -614,6 +614,21 @@ nsSocketOutputStream::Write(const char *buf, uint32_t count, uint32_t *countWrit
         fastOpenInProgress = mTransport->FastOpenInProgress();
     }
 
+    if (fastOpenInProgress) {
+        
+        
+        
+        uint32_t availableSpace = TCPFastOpenGetBufferSizeLeft(fd);
+        count = (count > availableSpace) ? availableSpace : count;
+        if (!count) {
+            {
+                MutexAutoLock lock(mTransport->mLock);
+                mTransport->ReleaseFD_Locked(fd);
+            }
+            return NS_BASE_STREAM_WOULD_BLOCK;
+        }
+    }
+
     SOCKET_LOG(("  calling PR_Write [count=%u]\n", count));
 
     
@@ -1528,7 +1543,7 @@ nsSocketTransport::InitiateSocket()
             mFDFastOpenInProgress = true;
         }
         SOCKET_LOG(("Using TCP Fast Open."));
-        rv = mFastOpenCallback->StartFastOpen(fd);
+        rv = mFastOpenCallback->StartFastOpen();
         status = PR_FAILURE;
         connectCalled = false;
         bool fastOpenNotSupported = false;
@@ -2256,6 +2271,17 @@ nsSocketTransport::OnSocketDetached(PRFileDesc *fd)
         mState = STATE_CLOSED;
 
         
+        
+        
+        
+        
+        
+        if (mFDFastOpenInProgress && mFastOpenCallback) {
+            mFastOpenCallback->SetFastOpenConnected(mCondition);
+        }
+        mFastOpenCallback = nullptr;
+
+        
         if (mDNSRequest) {
             mDNSRequest->Cancel(NS_ERROR_ABORT);
             mDNSRequest = nullptr;
@@ -2274,17 +2300,6 @@ nsSocketTransport::OnSocketDetached(PRFileDesc *fd)
     nsCOMPtr<nsISSLSocketControl> secCtrl = do_QueryInterface(mSecInfo);
     if (secCtrl)
         secCtrl->SetNotificationCallbacks(nullptr);
-
-    
-    
-    
-    
-    
-    
-    if (mFDFastOpenInProgress && mFastOpenCallback) {
-        mFastOpenCallback->SetFastOpenConnected(mCondition);
-    }
-    mFastOpenCallback = nullptr;
 
     
     

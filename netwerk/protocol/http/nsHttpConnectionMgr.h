@@ -375,13 +375,13 @@ private:
         void Unclaim();
 
         bool FastOpenEnabled() override;
-        nsresult StartFastOpen(PRFileDesc *) override;
+        nsresult StartFastOpen() override;
         void SetFastOpenConnected(nsresult) override;
         void FastOpenNotSupported() override;
         void SetFastOpenStatus(uint8_t tfoStatus) override;
     private:
         nsresult SetupConn(nsIAsyncOutputStream *out,
-                           PRFileDesc *aFastOpen);
+                           bool aFastOpen);
 
         
         

@@ -32,7 +32,7 @@ public:
   
   
   
-  virtual nsresult StartFastOpen(PRFileDesc *fd) = 0;
+  virtual nsresult StartFastOpen() = 0;
   
   
   
