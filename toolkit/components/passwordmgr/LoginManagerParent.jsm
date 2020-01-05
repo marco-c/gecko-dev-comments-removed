@@ -38,6 +38,37 @@ var LoginManagerParent = {
 
   
   
+  _lastMPLoginCancelled: Math.NEGATIVE_INFINITY,
+
+  _searchAndDedupeLogins(formOrigin, actionOrigin) {
+    let logins;
+    try {
+      logins = LoginHelper.searchLoginsWithObject({
+        hostname: formOrigin,
+        formSubmitURL: actionOrigin,
+        schemeUpgrades: LoginHelper.schemeUpgrades,
+      });
+    } catch (e) {
+      
+      
+      if (e.result == Cr.NS_ERROR_ABORT) {
+        log("User cancelled master password prompt.");
+        this._lastMPLoginCancelled = Date.now();
+        return [];
+      }
+      throw e;
+    }
+
+    
+    let resolveBy = [
+      "scheme",
+      "timePasswordChanged",
+    ];
+    return LoginHelper.dedupeLogins(logins, ["username"], resolveBy, formOrigin);
+  },
+
+  
+  
   
   
   init() {
@@ -201,16 +232,8 @@ var LoginManagerParent = {
       return;
     }
 
-    let logins = LoginHelper.searchLoginsWithObject({
-      formSubmitURL: actionOrigin,
-      hostname: formOrigin,
-      schemeUpgrades: LoginHelper.schemeUpgrades,
-    });
-    let resolveBy = [
-      "scheme",
-      "timePasswordChanged",
-    ];
-    logins = LoginHelper.dedupeLogins(logins, ["username"], resolveBy, formOrigin);
+    let logins = this._searchAndDedupeLogins(formOrigin, actionOrigin);
+
     log("sendLoginDataToChild:", logins.length, "deduped logins");
     
     
@@ -229,6 +252,22 @@ var LoginManagerParent = {
     
     
 
+    
+    if (!Services.logins.isLoggedIn) {
+      let timeDiff = Date.now() - this._lastMPLoginCancelled;
+      if (timeDiff < this._repromptTimeout) {
+        log("Not searching logins for autocomplete since the master password " +
+            `prompt was last cancelled ${Math.round(timeDiff / 1000)} seconds ago.`);
+        
+        
+        target.messageManager.sendAsyncMessage("RemoteLogins:loginsAutoCompleted", {
+          requestId,
+          logins: [],
+        });
+        return;
+      }
+    }
+
     let searchStringLower = searchString.toLowerCase();
     let logins;
     if (previousResult &&
@@ -241,17 +280,7 @@ var LoginManagerParent = {
     } else {
       log("Creating new autocomplete search result.");
 
-      
-      logins = LoginHelper.searchLoginsWithObject({
-        formSubmitURL: actionOrigin,
-        hostname: formOrigin,
-        schemeUpgrades: LoginHelper.schemeUpgrades,
-      });
-      let resolveBy = [
-        "scheme",
-        "timePasswordChanged",
-      ];
-      logins = LoginHelper.dedupeLogins(logins, ["username"], resolveBy, formOrigin);
+      logins = this._searchAndDedupeLogins(formOrigin, actionOrigin);
     }
 
     let matchingLogins = logins.filter(function(fullMatch) {
@@ -310,20 +339,9 @@ var LoginManagerParent = {
                    (usernameField ? usernameField.name : ""),
                    newPasswordField.name);
 
-    let logins = LoginHelper.searchLoginsWithObject({
-      formSubmitURL,
-      hostname,
-      schemeUpgrades: LoginHelper.schemeUpgrades,
-    });
-
     
     
-    
-    let resolveBy = [
-      "scheme",
-      "timePasswordChanged",
-    ];
-    logins = LoginHelper.dedupeLogins(logins, ["username"], resolveBy, hostname);
+    let logins = this._searchAndDedupeLogins(hostname, formSubmitURL);
 
     
     
@@ -483,3 +501,6 @@ XPCOMUtils.defineLazyGetter(LoginManagerParent, "recipeParentPromise", function(
   });
   return this._recipeManager.initializationPromise;
 });
+
+XPCOMUtils.defineLazyPreferenceGetter(LoginManagerParent, "_repromptTimeout",
+  "signon.masterPasswordReprompt.timeout_ms", 900000); 
