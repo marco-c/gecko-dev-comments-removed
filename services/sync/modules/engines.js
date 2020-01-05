@@ -250,7 +250,20 @@ Tracker.prototype = {
           this.onEngineEnabledChanged(this.engine.enabled);
         }
     }
-  }
+  },
+
+  async finalize() {
+    
+    
+    Svc.Obs.remove("weave:engine:start-tracking", this);
+    Svc.Obs.remove("weave:engine:stop-tracking", this);
+    Svc.Prefs.ignore("engine." + this.engine.prefName, this);
+
+    
+    
+    this._saveChangedIDs();
+    await this._storage.finalize();
+  },
 };
 
 
@@ -733,9 +746,7 @@ Engine.prototype = {
   },
 
   finalize() {
-    
-    this._tracker._saveChangedIDs();
-    Async.promiseSpinningly(this._tracker._storage.finalize());
+    Async.promiseSpinningly(this._tracker.finalize());
   },
 };
 
