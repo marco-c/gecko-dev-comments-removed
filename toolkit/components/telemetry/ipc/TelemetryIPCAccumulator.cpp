@@ -43,9 +43,6 @@ const uint32_t kBatchTimeoutMs = 2000;
 const size_t kHistogramAccumulationsArrayHighWaterMark = 5 * 1024;
 
 
-const size_t kEventsArrayHighWaterMark = 10000;
-
-
 nsITimer* gIPCTimer = nullptr;
 mozilla::Atomic<bool, mozilla::Relaxed> gIPCTimerArmed(false);
 mozilla::Atomic<bool, mozilla::Relaxed> gIPCTimerArming(false);
@@ -187,17 +184,9 @@ TelemetryIPCAccumulator::RecordChildEvent(double timestamp,
                                           const nsTArray<mozilla::Telemetry::EventExtraEntry>& extra)
 {
   StaticMutexAutoLock locker(gTelemetryIPCAccumulatorMutex);
-
   if (!gChildEvents) {
     gChildEvents = new nsTArray<ChildEventData>();
   }
-
-  if (gChildEvents->Length() == kEventsArrayHighWaterMark) {
-    TelemetryIPCAccumulator::DispatchToMainThread(NS_NewRunnableFunction([]() -> void {
-      TelemetryIPCAccumulator::IPCTimerFired(nullptr, nullptr);
-    }));
-  }
-
   
   gChildEvents->AppendElement(ChildEventData{timestamp, nsCString(category),
                                              nsCString(method), nsCString(object),
