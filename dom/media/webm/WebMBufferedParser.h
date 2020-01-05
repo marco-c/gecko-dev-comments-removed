@@ -96,7 +96,8 @@ struct WebMBufferedParser
   
   
   
-  void Append(const unsigned char* aBuffer, uint32_t aLength,
+  
+  bool Append(const unsigned char* aBuffer, uint32_t aLength,
               nsTArray<WebMTimeDataOffset>& aMapping,
               ReentrantMonitor& aReentrantMonitor);
 
