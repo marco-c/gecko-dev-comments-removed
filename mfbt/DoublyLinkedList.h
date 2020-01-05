@@ -12,6 +12,8 @@
 #include <algorithm>
 #include <iterator>
 
+#include "mozilla/Assertions.h"
+
 
 
 
