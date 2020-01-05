@@ -700,8 +700,7 @@ GlobalManager = {
 
       shouldInject(namespace, name, restrictions) {
         
-        if (context.envType === "content_parent" &&
-            (!restrictions || !restrictions.includes("content"))) {
+        if (context.envType === "content_parent" && !restrictions.includes("content")) {
           return false;
         }
         return findPathInObject(apis, namespace) !== null;
