@@ -120,6 +120,7 @@ class JitTest:
         self.test_join = [] 
         self.expect_error = '' 
         self.expect_status = 0 
+        self.expect_crash = False 
         self.is_module = False
         self.test_reflect_stringify = None  
 
@@ -141,6 +142,7 @@ class JitTest:
         t.test_join = self.test_join
         t.expect_error = self.expect_error
         t.expect_status = self.expect_status
+        t.expect_crash = self.expect_crash
         t.test_reflect_stringify = self.test_reflect_stringify
         t.enable = True
         t.is_module = self.is_module
@@ -231,6 +233,8 @@ class JitTest:
                         test.test_join.append([name[len('test-join='):]])
                     elif name == 'module':
                         test.is_module = True
+                    elif name == 'crash':
+                        test.expect_crash = True
                     elif name.startswith('--'):
                         
                         test.jitflags.append(name)
@@ -369,6 +373,19 @@ def check_output(out, err, rc, timed_out, test, options):
     for line in err.split('\n'):
         if 'Assertion failed:' in line:
             return False
+
+    if test.expect_crash:
+        if sys.platform == 'win32' and rc == 3 - 2 ** 31:
+            return True
+
+        if sys.platform != 'win32' and rc == -11:
+            return True
+
+        
+        
+        
+        if rc == 1 and ("Hit MOZ_CRASH" in err or "Assertion failure:" in err):
+            return True
 
     if rc != test.expect_status:
         
