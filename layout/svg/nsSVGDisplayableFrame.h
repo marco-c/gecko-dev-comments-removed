@@ -82,9 +82,12 @@ public:
 
 
 
+
+
   virtual DrawResult PaintSVG(gfxContext& aContext,
                               const gfxMatrix& aTransform,
-                              const nsIntRect* aDirtyRect = nullptr) = 0;
+                              const nsIntRect* aDirtyRect = nullptr,
+                              uint32_t aFlags = 0) = 0;
 
   
 
