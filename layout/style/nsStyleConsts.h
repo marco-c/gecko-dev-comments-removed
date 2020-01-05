@@ -682,8 +682,10 @@ enum class StyleDisplay : uint8_t {
 
 
 
-#define NS_STYLE_GRID_TRACK_BREADTH_MAX_CONTENT 1
-#define NS_STYLE_GRID_TRACK_BREADTH_MIN_CONTENT 2
+enum class StyleGridTrackBreadth : uint8_t {
+  MaxContent = 1,
+  MinContent = 2,
+};
 
 
 #define NS_STYLE_GRID_REPEAT_AUTO_FILL          0
