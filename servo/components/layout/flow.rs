@@ -684,6 +684,9 @@ pub struct AbsolutePositionInfo {
     pub relative_containing_block_size: LogicalSize<Au>,
 
     
+    pub relative_containing_block_mode: WritingMode,
+
+    
     
     
     pub stacking_relative_position_of_absolute_containing_block: Point2D<Au>,
@@ -700,6 +703,7 @@ impl AbsolutePositionInfo {
         
         AbsolutePositionInfo {
             relative_containing_block_size: LogicalSize::zero(writing_mode),
+            relative_containing_block_mode: writing_mode,
             stacking_relative_position_of_absolute_containing_block: Point2D::zero(),
             layers_needed_for_positioned_flows: false,
         }
@@ -757,6 +761,13 @@ pub struct BaseFlow {
     
     
     pub block_container_inline_size: Au,
+
+    
+    
+    
+    
+    
+    pub block_container_writing_mode: WritingMode,
 
     
     
@@ -924,6 +935,7 @@ impl BaseFlow {
             absolute_static_i_offset: Au(0),
             fixed_static_i_offset: Au(0),
             block_container_inline_size: Au(0),
+            block_container_writing_mode: writing_mode,
             block_container_explicit_block_size: None,
             absolute_cb: ContainingBlockLink::new(),
             display_list_building_result: DisplayListBuildingResult::None,
