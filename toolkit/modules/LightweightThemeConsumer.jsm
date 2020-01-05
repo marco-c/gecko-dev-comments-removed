@@ -104,12 +104,12 @@ LightweightThemeConsumer.prototype = {
     
     
     
-    root.style.removeProperty("--lwt-textcolor");
-    root.style.removeProperty("--lwt-accentcolor");
+    root.style.removeProperty("--lwt-text-color");
+    root.style.removeProperty("--lwt-accent-color");
     if (active) {
       let textcolor = aData.textcolor || "black";
-      root.style.setProperty("--lwt-textcolor", textcolor);
-      root.style.setProperty("--lwt-accentcolor", aData.accentcolor || "white");
+      root.style.setProperty("--lwt-text-color", textcolor);
+      root.style.setProperty("--lwt-accent-color", aData.accentcolor || "white");
       let dummy = this._doc.createElement("dummy");
       dummy.style.color = textcolor;
       let [r, g, b] = _parseRGB(this._doc.defaultView.getComputedStyle(dummy).color);
