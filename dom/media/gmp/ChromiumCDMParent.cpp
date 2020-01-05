@@ -1070,6 +1070,17 @@ ChromiumCDMParent::Shutdown()
   
   
   
+  
+  
+  if (mProxy) {
+    RefPtr<Runnable> task =
+      NewRunnableMethod(mProxy, &ChromiumCDMProxy::Shutdown);
+    NS_DispatchToMainThread(task.forget());
+  }
+
+  
+  
+  
   mProxy = nullptr;
 
   for (RefPtr<DecryptJob>& decrypt : mDecrypts) {
