@@ -13630,7 +13630,7 @@ nsGlobalWindow::DispatchVRDisplayPresentChange(uint32_t aDisplayID)
 {
   
   
-  for (const& auto display : mVRDisplays) {
+  for (auto display : mVRDisplays) {
     if (display->DisplayId() == aDisplayID) {
       
       VRDisplayEventInit init;
