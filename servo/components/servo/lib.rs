@@ -2,7 +2,7 @@
 
 
 
-#![feature(core, env, libc, path, rustc_private, std_misc, thread_local)]
+#![feature(libc, path, rustc_private, thread_local)]
 
 #[macro_use]
 extern crate log;

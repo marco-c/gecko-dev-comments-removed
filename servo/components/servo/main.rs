@@ -2,7 +2,7 @@
 
 
 
-#![feature(env, os, start)]
+#![feature(start)]
 
 #[cfg(target_os="android")]
 extern crate libc;
