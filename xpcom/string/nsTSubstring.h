@@ -73,7 +73,6 @@ public:
   typedef char_traits::incompatible_char_type incompatible_char_type;
 
   typedef nsTSubstring_CharT                  self_type;
-  typedef self_type                           abstract_string_type;
   typedef self_type                           base_string_type;
 
   typedef self_type                           substring_type;
@@ -858,26 +857,6 @@ public:
     Assign(aTuple);
   }
 
-  
-
-
-
-
-
-  
-#if defined(DEBUG) || defined(FORCE_BUILD_REFCNT_LOGGING)
-#define XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
-  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags);
-#else
-#undef XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
-  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
-    : mData(aData)
-    , mLength(aLength)
-    , mFlags(aFlags)
-  {
-  }
-#endif 
-
   size_t SizeOfExcludingThisIfUnshared(mozilla::MallocSizeOf aMallocSizeOf)
   const;
   size_t SizeOfIncludingThisIfUnshared(mozilla::MallocSizeOf aMallocSizeOf)
@@ -910,9 +889,7 @@ public:
 
 protected:
 
-  friend class nsTObsoleteAStringThunk_CharT;
   friend class nsTSubstringTuple_CharT;
-  friend class nsTPromiseFlatString_CharT;
 
   char_type*  mData;
   size_type   mLength;
@@ -927,13 +904,6 @@ protected:
   }
 
   
-  explicit
-  nsTSubstring_CharT(uint32_t aFlags)
-    : mFlags(aFlags)
-  {
-  }
-
-  
   
   nsTSubstring_CharT(const self_type& aStr)
     : mData(aStr.mData)
@@ -941,6 +911,23 @@ protected:
     ,  mFlags(aStr.mFlags & (F_TERMINATED | F_VOIDED))
   {
   }
+
+ 
+
+
+  
+#if defined(DEBUG) || defined(FORCE_BUILD_REFCNT_LOGGING)
+#define XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
+  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags);
+#else
+#undef XPCOM_STRING_CONSTRUCTOR_OUT_OF_LINE
+  nsTSubstring_CharT(char_type* aData, size_type aLength, uint32_t aFlags)
+    : mData(aData)
+    , mLength(aLength)
+    , mFlags(aFlags)
+  {
+  }
+#endif 
 
   
 
