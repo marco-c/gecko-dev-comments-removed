@@ -6,8 +6,7 @@
 
 #![allow(unsafe_code)]
 
-use atomic_refcell::{AtomicRef, AtomicRefMut};
-use data::PersistentStyleData;
+use data::PseudoStyles;
 use element_state::ElementState;
 use parking_lot::RwLock;
 use properties::{ComputedValues, PropertyDeclarationBlock};
@@ -148,12 +147,24 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     fn did_process_child(&self) -> isize;
 
     
-    #[inline(always)]
-    fn borrow_data(&self) -> Option<AtomicRef<PersistentStyleData>>;
+    
+    
+    
+    
+    
+    
+    
+    fn get_existing_style(&self) -> Option<Arc<ComputedValues>>;
 
     
-    #[inline(always)]
-    fn mutate_data(&self) -> Option<AtomicRefMut<PersistentStyleData>>;
+    fn set_style(&self, style: Option<Arc<ComputedValues>>);
+
+    
+    
+    fn take_pseudo_styles(&self) -> PseudoStyles;
+
+    
+    fn set_pseudo_styles(&self, styles: PseudoStyles);
 
     
     fn restyle_damage(self) -> Self::ConcreteRestyleDamage;
@@ -170,11 +181,6 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     fn prev_sibling(&self) -> Option<Self>;
 
     fn next_sibling(&self) -> Option<Self>;
-
-    
-    fn unstyle(self) {
-        self.mutate_data().unwrap().style = None;
-    }
 
     
     

@@ -10,13 +10,14 @@ use std::collections::HashMap;
 use std::hash::BuildHasherDefault;
 use std::sync::Arc;
 
+pub type PseudoStyles = HashMap<PseudoElement, Arc<ComputedValues>,
+                                BuildHasherDefault<::fnv::FnvHasher>>;
 pub struct PersistentStyleData {
     
     pub style: Option<Arc<ComputedValues>>,
 
     
-    pub per_pseudo: HashMap<PseudoElement, Arc<ComputedValues>,
-                            BuildHasherDefault<::fnv::FnvHasher>>,
+    pub per_pseudo: PseudoStyles,
 }
 
 impl PersistentStyleData {
