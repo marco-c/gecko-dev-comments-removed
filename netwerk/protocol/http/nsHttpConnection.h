@@ -87,7 +87,7 @@ public:
     
     
     
-    nsAHttpTransaction * CloseConnectionFastOpenTakesTooLongOrError(bool aCloseocketTransport);
+    nsAHttpTransaction * CloseConnectionFastOpenTakesTooLongOrError();
 
     
     void Close(nsresult reason, bool aIsShutdown = false);

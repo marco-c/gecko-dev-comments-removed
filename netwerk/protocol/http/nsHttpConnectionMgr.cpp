@@ -3298,11 +3298,7 @@ nsHttpConnectionMgr::nsHalfOpenSocket::Abandon()
 
     
     if (mStreamOut) {
-        if (!mConnectionNegotiatingFastOpen) {
-            
-            
-            gHttpHandler->ConnMgr()->RecvdConnect();
-        }
+        gHttpHandler->ConnMgr()->RecvdConnect();
         mStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
         mStreamOut = nullptr;
     }
@@ -3408,12 +3404,8 @@ nsHalfOpenSocket::OnOutputStreamReady(nsIAsyncOutputStream *out)
         
         mSocketTransport->SetFastOpenCallback(nullptr);
         RefPtr<nsAHttpTransaction> trans =
-            mConnectionNegotiatingFastOpen->CloseConnectionFastOpenTakesTooLongOrError(true);
+            mConnectionNegotiatingFastOpen->CloseConnectionFastOpenTakesTooLongOrError();
         mConnectionNegotiatingFastOpen = nullptr;
-        mSocketTransport = nullptr;
-        mStreamOut = nullptr;
-        mStreamIn = nullptr;
-
         if (trans && trans->QueryHttpTransaction()) {
             mTransaction = trans;
             RefPtr<PendingTransactionInfo> pendingTransInfo =
@@ -3496,13 +3488,7 @@ nsHalfOpenSocket::StartFastOpen(PRFileDesc *fd)
     mStreamOut->AsyncWait(nullptr, 0, 0, nullptr);
     mSocketTransport->SetEventSink(nullptr, nullptr);
     gHttpHandler->ConnMgr()->RecvdConnect();
-    nsresult rv = SetupConn(mStreamOut, fd);
-    if (NS_FAILED(rv)) {
-        mStreamOut = nullptr;
-        mStreamIn = nullptr;
-        mSocketTransport = nullptr;
-    }
-    return rv;
+    return SetupConn(mStreamOut, fd);
 }
 
 void
@@ -3510,10 +3496,15 @@ nsHttpConnectionMgr::
 nsHalfOpenSocket::FastOpenConnected(nsresult aError)
 {
     RefPtr<nsHalfOpenSocket> deleteProtector(this);
-
-    
-    if ((aError == NS_ERROR_CONNECTION_REFUSED) ||
-        (aError == NS_ERROR_NET_TIMEOUT)) {
+    CancelBackupTimer();
+    if (NS_SUCCEEDED(aError)) {
+        NetAddr peeraddr;
+        if (NS_SUCCEEDED(mSocketTransport->GetPeerAddr(&peeraddr))) {
+            mEnt->RecordIPFamilyPreference(peeraddr.raw.family);
+        }
+        gHttpHandler->ResetFastOpenConsecutiveFailureCounter();
+    } else if ((aError == NS_ERROR_CONNECTION_REFUSED) ||
+               (aError == NS_ERROR_NET_TIMEOUT)) {
         if (mEnt->mUseFastOpen) {
             gHttpHandler->IncrementFastOpenConsecutiveFailureCounter();
             mEnt->mUseFastOpen = false;
@@ -3521,47 +3512,12 @@ nsHalfOpenSocket::FastOpenConnected(nsresult aError)
         
         
         MOZ_ASSERT(mConnectionNegotiatingFastOpen);
-        RefPtr<nsAHttpTransaction> trans = mConnectionNegotiatingFastOpen->CloseConnectionFastOpenTakesTooLongOrError(false);
-        if (trans && trans->QueryHttpTransaction()) {
-            mTransaction = trans;
-            RefPtr<PendingTransactionInfo> pendingTransInfo =
-                new PendingTransactionInfo(trans->QueryHttpTransaction());
-            pendingTransInfo->mHalfOpen =
-                do_GetWeakReference(static_cast<nsISupportsWeakReference*>(this));
-            if (trans->Caps() & NS_HTTP_URGENT_START) {
-                gHttpHandler->ConnMgr()->InsertTransactionSorted(mEnt->mUrgentStartQ,
-                                                                 pendingTransInfo);
-            } else {
-                mEnt->InsertTransaction(pendingTransInfo);
-            }
-        }
-
-        
-        
-        
-        
-        
-        gHttpHandler->ConnMgr()->StartedConnect();
-        mStreamOut->AsyncWait(this, 0, 0, nullptr);
-        mSocketTransport->SetEventSink(this, nullptr);
-        mSocketTransport->SetFastOpenCallback(nullptr);
-    } else {
-        
-        
-        CancelBackupTimer();
-        if (NS_SUCCEEDED(aError)) {
-            NetAddr peeraddr;
-            if (NS_SUCCEEDED(mSocketTransport->GetPeerAddr(&peeraddr))) {
-                mEnt->RecordIPFamilyPreference(peeraddr.raw.family);
-            }
-            gHttpHandler->ResetFastOpenConsecutiveFailureCounter();
-        }
-        mSocketTransport = nullptr;
-        mStreamOut = nullptr;
-        mStreamIn = nullptr;
+        Unused << mConnectionNegotiatingFastOpen->Transaction()->RestartOnFastOpenError();
     }
-
-    mConnectionNegotiatingFastOpen = nullptr;
+    if (mConnectionNegotiatingFastOpen) {
+        mSocketTransport = nullptr;
+        mConnectionNegotiatingFastOpen = nullptr;
+    }
 }
 
 void
@@ -3611,9 +3567,9 @@ nsHalfOpenSocket::SetupConn(nsIAsyncOutputStream *out,
         }
 
         
+        mStreamOut = nullptr;
+        mStreamIn = nullptr;
         if (!aFastOpen) {
-            mStreamOut = nullptr;
-            mStreamIn = nullptr;
             mSocketTransport = nullptr;
         }
         conn->SetFastOpen(aFastOpen);
@@ -3745,8 +3701,8 @@ nsHalfOpenSocket::SetupConn(nsIAsyncOutputStream *out,
 
     
     
-    if (conn->Transaction() && !conn->Transaction()->IsNullTransaction()) {
-        Claim();
+    if (conn->Transaction() && conn->Transaction()->IsNullTransaction()) {
+        mSpeculative = false;
     }
 
     return rv;
