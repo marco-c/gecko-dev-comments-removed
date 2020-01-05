@@ -34,6 +34,9 @@ add_task(function* () {
         title: "child",
       });
 
+      browser.test.onMessage.addListener(() => {
+        browser.test.sendMessage("pong");
+      });
       browser.test.notifyPass("contextmenus-icons");
     },
   });
@@ -55,6 +58,10 @@ add_task(function* () {
 
   let childToDelete = extensionMenu.getElementsByAttribute("label", "child-to-delete")[0];
   yield closeExtensionContextMenu(childToDelete);
+  
+  
+  extension.sendMessage("ping");
+  yield extension.awaitMessage("pong");
 
   yield openExtensionContextMenu();
 
