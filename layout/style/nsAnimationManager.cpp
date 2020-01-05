@@ -1064,12 +1064,17 @@ nsAnimationManager::UpdateAnimations(
   CSSPseudoElementType pseudoType =
     nsCSSPseudoElements::GetPseudoType(aPseudoTagOrNull,
                                        CSSEnabledState::eForAllContent);
+  if (!aComputedValues) {
+    
+    
+    
+    StopAnimationsForElement(aElement, pseudoType);
+    return;
+  }
+
   NonOwningAnimationTarget target(aElement, pseudoType);
   ServoCSSAnimationBuilder builder(aComputedValues, aParentComputedValues);
 
-  
-  
-  
   const nsStyleDisplay *disp = Servo_GetStyleDisplay(aComputedValues);
   DoUpdateAnimations(target, *disp, builder);
 }
