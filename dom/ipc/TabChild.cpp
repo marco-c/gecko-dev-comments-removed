@@ -389,13 +389,6 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mNativeWindowHandle(0)
 #endif
 {
-  
-  
-  
-  
-  
-  mAsyncPanZoomEnabled = gfxPlatform::AsyncPanZoomEnabled();
-
   nsWeakPtr weakPtrThis(do_GetWeakReference(static_cast<nsITabChild*>(this)));  
   mSetAllowedTouchBehaviorCallback = [weakPtrThis](uint64_t aInputBlockId,
                                                    const nsTArray<TouchBehaviorFlags>& aFlags)
@@ -430,6 +423,15 @@ TabChild::TabChild(nsIContentChild* aManager,
   for (uint32_t idx = 0; idx < NUMBER_OF_AUDIO_CHANNELS; idx++) {
     mAudioChannelsActive.AppendElement(false);
   }
+}
+
+bool
+TabChild::AsyncPanZoomEnabled() const
+{
+  
+  
+  return mCompositorOptions ? mCompositorOptions->UseAPZ()
+                            : gfxPlatform::AsyncPanZoomEnabled();
 }
 
 NS_IMETHODIMP
@@ -1201,7 +1203,7 @@ TabChild::ApplyShowInfo(const ShowInfo& aInfo)
             NS_LITERAL_CSTRING("mozprivatebrowsing"),
             nullptr);
         } else {
-          DocShellOriginAttributes attrs(nsDocShell::Cast(docShell)->GetOriginAttributes());
+          OriginAttributes attrs(nsDocShell::Cast(docShell)->GetOriginAttributes());
           attrs.SyncAttributesWithPrivateBrowsing(true);
           nsDocShell::Cast(docShell)->SetOriginAttributes(attrs);
         }
@@ -2501,6 +2503,10 @@ TabChild::InitRenderingState(const TextureFactoryIdentifier& aTextureFactoryIden
       return;
     }
 
+    CompositorOptions options;
+    Unused << compositorChild->SendGetCompositorOptions(aLayersId, &options);
+    mCompositorOptions = Some(options);
+
     ShadowLayerForwarder* lf =
         mPuppetWidget->GetLayerManager(
             nullptr, mTextureFactoryIdentifier.mParentBackend)
@@ -2555,11 +2561,10 @@ TabChild::InitRenderingState(const TextureFactoryIdentifier& aTextureFactoryIden
 void
 TabChild::InitAPZState()
 {
-  auto cbc = CompositorBridgeChild::Get();
-
-  if (!cbc->GetAPZEnabled(mLayersId)) {
+  if (!mCompositorOptions->UseAPZ()) {
     return;
   }
+  auto cbc = CompositorBridgeChild::Get();
 
   
   PAPZCTreeManagerChild* baseProtocol = cbc->SendPAPZCTreeManagerConstructor(mLayersId);
@@ -2895,6 +2900,12 @@ TabChild::ReinitRendering()
   SendEnsureLayersConnected();
 
   RefPtr<CompositorBridgeChild> cb = CompositorBridgeChild::Get();
+
+  
+  
+  CompositorOptions options;
+  Unused << cb->SendGetCompositorOptions(mLayersId, &options);
+  mCompositorOptions = Some(options);
 
   bool success;
   nsTArray<LayersBackend> ignored;
