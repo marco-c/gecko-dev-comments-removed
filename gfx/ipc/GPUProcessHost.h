@@ -83,14 +83,6 @@ public:
   }
 
   
-  
-  
-  
-  TimeStamp GetLaunchTime() const {
-    return mLaunchTime;
-  }
-
-  
   void OnChannelConnected(int32_t peer_pid) override;
   void OnChannelError() override;
 
@@ -130,8 +122,6 @@ private:
 
   bool mShutdownRequested;
   bool mChannelClosed;
-
-  TimeStamp mLaunchTime;
 };
 
 } 
