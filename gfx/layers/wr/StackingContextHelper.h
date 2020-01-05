@@ -28,12 +28,14 @@ public:
   
   
   
-  StackingContextHelper(wr::DisplayListBuilder& aBuilder,
+  StackingContextHelper(const StackingContextHelper& aParentSC,
+                        wr::DisplayListBuilder& aBuilder,
                         WebRenderLayer* aLayer,
                         const Maybe<gfx::Matrix4x4>& aTransform = Nothing());
   
   
-  StackingContextHelper(wr::DisplayListBuilder& aBuilder,
+  StackingContextHelper(const StackingContextHelper& aParentSC,
+                        wr::DisplayListBuilder& aBuilder,
                         WebRenderLayer* aLayer,
                         uint64_t aAnimationsId,
                         float* aOpacityPtr,
