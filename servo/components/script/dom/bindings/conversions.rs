@@ -322,7 +322,8 @@ pub unsafe fn private_from_proto_check<F>(mut obj: *mut JSObject, proto_check: F
     }
 }
 
-fn native_from_object<T>(obj: *mut JSObject) -> Result<*const T, ()>
+
+pub fn native_from_object<T>(obj: *mut JSObject) -> Result<*const T, ()>
     where T: Reflectable + IDLInterface
 {
     unsafe {
