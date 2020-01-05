@@ -78,11 +78,6 @@
 
 
 
-
-
-
-
-
 #include "wasm/WasmBaselineCompile.h"
 
 #include "mozilla/MathAlgorithms.h"
@@ -4096,7 +4091,6 @@ BaseCompiler::emitSubtractF64()
 void
 BaseCompiler::emitMultiplyI32()
 {
-    
     RegI32 r0, r1;
     pop2xI32ForIntMulDiv(&r0, &r1);
     masm.mul32(r1, r0);
@@ -4107,7 +4101,6 @@ BaseCompiler::emitMultiplyI32()
 void
 BaseCompiler::emitMultiplyI64()
 {
-    
     RegI64 r0, r1;
     RegI32 temp;
 #if defined(JS_CODEGEN_X64)
