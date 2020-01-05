@@ -497,18 +497,15 @@ add_task(function* ensureKeysFor_posts_new_keys() {
       yield cryptoCollection._clear();
       server.clearPosts();
       
-      server.addRecordInPast("storage-sync-crypto", post.body.data);
+      const firstPostedKeyring = Object.assign({}, post.body.data, {last_modified: server.etag});
+      server.addRecordInPast("storage-sync-crypto", firstPostedKeyring);
       const extensionId2 = uuid();
       newKeys = yield ExtensionStorageSync.ensureKeysFor([extensionId2]);
       ok(newKeys.hasKeysFor([extensionId]), `didn't forget key for ${extensionId}`);
       ok(newKeys.hasKeysFor([extensionId2]), `new key generated for ${extensionId2}`);
 
       posts = server.getPosts();
-      
-      
-      
-      
-      
+      equal(posts.length, 1);
       const newPost = posts[posts.length - 1];
       const newBody = yield assertPostedEncryptedKeys(newPost);
       ok(newBody.keys.collections[extensionId], `keys object should have a key for ${extensionId}`);
