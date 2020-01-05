@@ -442,7 +442,13 @@ protected:
 
 
 
-  void EnsureComposition(WidgetCompositionEvent* aCompositionEvent);
+
+
+
+
+
+
+  bool EnsureComposition(WidgetCompositionEvent* aCompositionEvent);
 
   nsresult GetSelection(SelectionType aSelectionType,
                         nsISelection** aSelection);
