@@ -4,6 +4,11 @@
 
 
 
+Services.prefs.setBoolPref("devtools.webconsole.new-frontend-enabled", false);
+registerCleanupFunction(function* () {
+  Services.prefs.clearUserPref("devtools.webconsole.new-frontend-enabled");
+});
+
 function test()
 {
   waitForExplicitFinish();
