@@ -1623,9 +1623,8 @@ FunctionConstructor(JSContext* cx, const CallArgs& args, GeneratorKind generator
         introducerFilename = maybeScript->scriptSource()->introducerFilename();
 
     CompileOptions options(cx);
-    
     options.setMutedErrors(mutedErrors)
-           .setFileAndLine(filename, 0)
+           .setFileAndLine(filename, 1)
            .setNoScriptRval(false)
            .setIntroductionInfo(introducerFilename, introductionType, lineno, maybeScript, pcOffset);
 
