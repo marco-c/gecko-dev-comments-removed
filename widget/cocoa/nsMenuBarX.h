@@ -15,18 +15,9 @@
 #include "nsINativeMenuService.h"
 #include "nsString.h"
 
-class nsMenuBarX;
 class nsMenuX;
 class nsIWidget;
 class nsIContent;
-
-
-@interface ApplicationMenuDelegate : NSObject<NSMenuDelegate>
-{
-  nsMenuBarX* mApplicationMenu; 
-}
-- (id)initWithApplicationMenu:(nsMenuBarX*)aApplicationMenu;
-@end
 
 
 class nsNativeMenuServiceX : public nsINativeMenuService
@@ -117,8 +108,6 @@ public:
   void              ForceNativeMenuReload(); 
   static char       GetLocalizedAccelKey(const char *shortcutID);
   static void       ResetNativeApplicationMenu();
-  void              SetNeedsRebuild();
-  void              ApplicationMenuOpened();
 
 protected:
   void              ConstructNativeMenus();
@@ -134,8 +123,6 @@ protected:
   nsTArray<mozilla::UniquePtr<nsMenuX>> mMenuArray;
   nsIWidget*         mParentWindow;        
   GeckoNSMenu*       mNativeMenu;            
-  bool               mNeedsRebuild;
-  ApplicationMenuDelegate* mApplicationMenuDelegate;
 };
 
 #endif 
