@@ -714,6 +714,12 @@ MacroAssembler::addStackPtrTo(T t)
     addPtr(getStackPointer(), t);
 }
 
+void
+MacroAssembler::reserveStack(uint32_t amount)
+{
+    subFromStackPtr(Imm32(amount));
+    adjustFrame(amount);
+}
 #endif 
 
 template <typename T>

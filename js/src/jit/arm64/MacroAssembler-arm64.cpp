@@ -307,6 +307,15 @@ template void
 MacroAssemblerCompat::atomicExchangeToTypedIntArray(Scalar::Type arrayType, const BaseIndex& mem,
                                                     Register value, Register temp, AnyRegister output);
 
+void
+MacroAssembler::reserveStack(uint32_t amount)
+{
+    
+    
+    vixl::MacroAssembler::Claim(Operand(amount));
+    adjustFrame(amount);
+}
+
 
 
 
@@ -468,15 +477,6 @@ MacroAssembler::Pop(const ValueOperand& val)
 {
     pop(val);
     adjustFrame(-1 * int64_t(sizeof(int64_t)));
-}
-
-void
-MacroAssembler::reserveStack(uint32_t amount)
-{
-    
-    
-    vixl::MacroAssembler::Claim(Operand(amount));
-    adjustFrame(amount);
 }
 
 

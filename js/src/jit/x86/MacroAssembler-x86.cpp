@@ -324,20 +324,16 @@ MacroAssemblerX86::asMasm() const
     return *static_cast<const MacroAssembler*>(this);
 }
 
-
-
-
-
 void
-MacroAssembler::reserveStack(uint32_t amount)
+MacroAssembler::subFromStackPtr(Imm32 imm32)
 {
-    if (amount) {
+    if (imm32.value) {
         
         
         
         
         
-        uint32_t amountLeft = amount;
+        uint32_t amountLeft = imm32.value;
         while (amountLeft > 4096) {
             subl(Imm32(4096), StackPointer);
             store32(Imm32(0), Address(StackPointer, 0));
@@ -345,8 +341,8 @@ MacroAssembler::reserveStack(uint32_t amount)
         }
         subl(Imm32(amountLeft), StackPointer);
     }
-    framePushed_ += amount;
 }
+
 
 
 
