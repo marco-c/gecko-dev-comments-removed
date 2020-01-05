@@ -690,24 +690,15 @@ protected:
       nBytes += numPrefixBytes;
       if (origBytes[nBytes] >= 0x88 && origBytes[nBytes] <= 0x8B) {
         
-        unsigned char b = origBytes[nBytes + 1];
-        if (((b & 0xc0) == 0xc0) ||
-            (((b & 0xc0) == 0x00) &&
-             ((b & 0x07) != 0x04) && ((b & 0x07) != 0x05))) {
-          
-          nBytes += 2;
-        } else if ((b & 0xc0) == 0x40) {
-          if ((b & 0x07) == 0x04) {
-            
-            nBytes += 4;
-          } else {
-            
-            nBytes += 3;
-          }
-        } else {
-          
+        ++nBytes;
+        int len = CountModRmSib(origBytes + nBytes);
+        if (len < 0) {
           return;
         }
+        nBytes += len;
+      } else if (origBytes[nBytes] == 0xA1) {
+        
+        nBytes += 5;
       } else if (origBytes[nBytes] == 0xB8) {
         
         nBytes += 5;
@@ -829,25 +820,13 @@ protected:
             return;
           }
         } else if ((origBytes[nBytes] & 0xfd) == 0x89) {
+          ++nBytes;
           
-          if ((origBytes[nBytes + 1] & 0xc0) == 0x40) {
-            if ((origBytes[nBytes + 1] & 0x7) == 0x04) {
-              
-              nBytes += 4;
-            } else {
-              
-              nBytes += 3;
-            }
-          } else if (((origBytes[nBytes + 1] & 0xc0) == 0xc0) ||
-                     (((origBytes[nBytes + 1] & 0xc0) == 0x00) &&
-                      ((origBytes[nBytes + 1] & 0x07) != 0x04) &&
-                      ((origBytes[nBytes + 1] & 0x07) != 0x05))) {
-            
-            nBytes += 2;
-          } else {
-            
+          int len = CountModRmSib(origBytes + nBytes);
+          if (len < 0) {
             return;
           }
+          nBytes += len;
         } else if (origBytes[nBytes] == 0xc7) {
           
           if (origBytes[nBytes + 1] == 0x44) {
