@@ -77,9 +77,8 @@ AllocateCodeSegment(JSContext* cx, uint32_t codeLength)
     
     
     if (!p) {
-        JSRuntime* rt = cx->runtime();
-        if (rt->largeAllocationFailureCallback) {
-            rt->largeAllocationFailureCallback(rt->largeAllocationFailureCallbackData);
+        if (OnLargeAllocationFailure) {
+            OnLargeAllocationFailure();
             p = AllocateExecutableMemory(codeLength, ProtectionSetting::Writable);
         }
     }

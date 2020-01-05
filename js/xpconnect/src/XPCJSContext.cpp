@@ -1447,12 +1447,85 @@ XPCJSContext::CustomOutOfMemoryCallback()
 }
 
 void
-XPCJSContext::CustomLargeAllocationFailureCallback()
+XPCJSContext::OnLargeAllocationFailure()
 {
+    CycleCollectedJSContext::SetLargeAllocationFailure(OOMState::Reporting);
+
     nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
     if (os) {
         os->NotifyObservers(nullptr, "memory-pressure", u"heap-minimize");
     }
+
+    CycleCollectedJSContext::SetLargeAllocationFailure(OOMState::Reported);
+}
+
+class LargeAllocationFailureRunnable final : public Runnable
+{
+    Mutex mMutex;
+    CondVar mCondVar;
+    bool mWaiting;
+
+    virtual ~LargeAllocationFailureRunnable()
+    {
+        MOZ_ASSERT(!mWaiting);
+    }
+
+  protected:
+    NS_IMETHOD Run() override
+    {
+        MOZ_ASSERT(NS_IsMainThread());
+
+        XPCJSContext::Get()->OnLargeAllocationFailure();
+
+        MutexAutoLock lock(mMutex);
+        MOZ_ASSERT(mWaiting);
+
+        mWaiting = false;
+        mCondVar.Notify();
+        return NS_OK;
+    }
+
+  public:
+    LargeAllocationFailureRunnable()
+      : mMutex("LargeAllocationFailureRunnable::mMutex"),
+        mCondVar(mMutex, "LargeAllocationFailureRunnable::mCondVar"),
+        mWaiting(true)
+    {
+        MOZ_ASSERT(!NS_IsMainThread());
+    }
+
+    void BlockUntilDone()
+    {
+        MOZ_ASSERT(!NS_IsMainThread());
+
+        MutexAutoLock lock(mMutex);
+        while (mWaiting) {
+            mCondVar.Wait();
+        }
+    }
+};
+
+static void
+OnLargeAllocationFailureCallback()
+{
+    
+    
+    
+    
+    
+    
+
+    if (NS_IsMainThread()) {
+        XPCJSContext::Get()->OnLargeAllocationFailure();
+        return;
+    }
+
+    RefPtr<LargeAllocationFailureRunnable> r = new LargeAllocationFailureRunnable;
+    if (NS_WARN_IF(NS_FAILED(NS_DispatchToMainThread(r)))) {
+        return;
+    }
+
+    r->BlockUntilDone();
 }
 
 size_t
@@ -3541,6 +3614,7 @@ XPCJSContext::Initialize()
     js::SetActivityCallback(cx, ActivityCallback, this);
     JS_AddInterruptCallback(cx, InterruptCallback);
     js::SetWindowProxyClass(cx, &OuterWindowProxyClass);
+    JS::SetProcessLargeAllocationFailureCallback(OnLargeAllocationFailureCallback);
 
     
     

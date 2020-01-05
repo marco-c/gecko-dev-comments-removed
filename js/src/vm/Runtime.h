@@ -977,10 +977,6 @@ struct JSRuntime : public js::MallocProvider<JSRuntime>
     }
 
     
-    js::ActiveThreadData<JS::LargeAllocationFailureCallback> largeAllocationFailureCallback;
-    js::ActiveThreadData<void*> largeAllocationFailureCallbackData;
-
-    
     js::ActiveThreadData<JS::OutOfMemoryCallback> oomCallback;
     js::ActiveThreadData<void*> oomCallbackData;
 
@@ -1340,6 +1336,10 @@ ZoneGroup::callAfterMinorGC(void (*thunk)(void* data), void* data)
 {
     nursery().queueSweepAction(thunk, data);
 }
+
+
+
+extern mozilla::Atomic<JS::LargeAllocationFailureCallback> OnLargeAllocationFailure;
 
 } 
 
