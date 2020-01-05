@@ -63,25 +63,40 @@ fn top_down_dom<N, C>(unsafe_nodes: UnsafeNodeList,
         
         let node = unsafe { N::from_unsafe(&unsafe_node) };
 
+        if !context.should_process(node) {
+            continue;
+        }
+
         
         context.process_preorder(node);
 
-        let child_count = node.children_count();
+        
+        let mut children_to_process = 0isize;
+        for kid in node.children() {
+            
+            
+            
+            
+            
+            
+            context.pre_process_child_hook(node, kid);
+            if context.should_process(kid) {
+                children_to_process += 1;
+                discovered_child_nodes.push(kid.to_unsafe())
+            }
+        }
 
         
         {
             let data = node.mutate_data().unwrap();
-            data.parallel.children_count.store(child_count as isize,
-                                               Ordering::Relaxed);
+            data.parallel.children_to_process
+                         .store(children_to_process,
+                                Ordering::Relaxed);
         }
 
+
         
-        if child_count != 0 {
-            for kid in node.children() {
-                discovered_child_nodes.push(kid.to_unsafe())
-            }
-        } else {
-            
+        if children_to_process == 0 {
             bottom_up_dom::<N, C>(unsafe_nodes.1, unsafe_node, proxy)
         }
     }
@@ -128,7 +143,7 @@ fn bottom_up_dom<N, C>(root: OpaqueNode,
 
         if parent_data
             .parallel
-            .children_count
+            .children_to_process
             .fetch_sub(1, Ordering::Relaxed) != 1 {
             
             break
@@ -138,4 +153,3 @@ fn bottom_up_dom<N, C>(root: OpaqueNode,
         node = parent;
     }
 }
-

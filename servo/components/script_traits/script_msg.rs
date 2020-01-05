@@ -72,10 +72,6 @@ pub enum ScriptMsg {
                            GLContextAttributes,
                            IpcSender<Result<(IpcSender<CanvasMsg>, GLLimits), String>>),
     
-    
-    
-    DOMLoad(PipelineId),
-    
     Focus(PipelineId),
     
     ForwardMouseButtonEvent(PipelineId, MouseEventType, MouseButton, Point2D<f32>),
@@ -85,6 +81,7 @@ pub enum ScriptMsg {
     GetClipboardContents(IpcSender<String>),
     
     HeadParsed,
+    
     
     LoadComplete(PipelineId),
     

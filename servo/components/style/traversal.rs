@@ -147,6 +147,30 @@ pub trait DomTraversalContext<N: TNode>  {
     fn process_preorder(&self, node: N);
     
     fn process_postorder(&self, node: N);
+
+    
+    
+    
+    
+    
+    fn should_process(&self, node: N) -> bool {
+        node.is_dirty() || node.has_dirty_descendants()
+    }
+
+    
+    
+    
+    #[allow(unsafe_code)]
+    fn pre_process_child_hook(&self, parent: N, kid: N) {
+        
+        
+        if parent.is_dirty() {
+            unsafe {
+                kid.set_dirty(true);
+                parent.set_dirty_descendants(true);
+            }
+        }
+    }
 }
 
 
@@ -245,21 +269,16 @@ pub fn recalc_style_at<'a, N, C>(context: &'a C,
     put_thread_local_bloom_filter(bf, &unsafe_layout_node, context.shared_context());
 
     
-    match node.as_element() {
-        Some(element) => {
-            match *element.style_attribute() {
-                Some(ref property_declaration_block) => {
-                    if property_declaration_block.declarations().any(|d| d.0.has_viewport_percentage()) {
-                        unsafe {
-                            node.set_dirty_on_viewport_size_changed();
-                        }
-                        node.set_descendants_dirty_on_viewport_size_changed();
+    
+    if !node.needs_dirty_on_viewport_size_changed() {
+        if let Some(element) = node.as_element() {
+            if let Some(ref property_declaration_block) = *element.style_attribute() {
+                if property_declaration_block.declarations().any(|d| d.0.has_viewport_percentage()) {
+                    unsafe {
+                        node.set_dirty_on_viewport_size_changed();
                     }
-                },
-                None => {}
+                }
             }
-        },
-        None => {}
+        }
     }
 }
-
