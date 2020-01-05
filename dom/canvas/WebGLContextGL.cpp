@@ -170,9 +170,9 @@ WebGLContext::BindRenderbuffer(GLenum target, WebGLRenderbuffer* wrb)
     if (!ValidateObjectAllowDeletedOrNull("bindRenderbuffer", wrb))
         return;
 
-    
-    if (wrb && wrb->IsDeleted())
-        return;
+    if (wrb && wrb->IsDeleted()) {
+        return ErrorInvalidOperation("BindRenderbuffer: bind a deleted buffer");
+    }
 
     
     
