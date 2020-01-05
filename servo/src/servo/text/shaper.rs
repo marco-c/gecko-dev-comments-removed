@@ -4,5 +4,14 @@
 
 
 
+use font::Font;
 
 pub type Shaper/& = harfbuzz::shaper::HarfbuzzShaper;
+
+
+
+impl Shaper {
+    static pub fn new(font: @Font) -> Shaper {
+        harfbuzz::shaper::HarfbuzzShaper::new(font)
+    }
+}
