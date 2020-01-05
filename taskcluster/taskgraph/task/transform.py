@@ -103,7 +103,11 @@ class TransformTask(base.Task):
                 return True, None
 
         
-        if self.task.get('provisionerId') == 'buildbot-bridge':
+        if self.task.get('extra', {}).get('treeherder', {}).get('jobKind', '') == 'build':
+            return False, None
+
+        
+        if self.task.get('provisionerId', '') == 'buildbot-bridge':
             self.label = self.task.get('payload').get('buildername')
             bbb_task = True
 
