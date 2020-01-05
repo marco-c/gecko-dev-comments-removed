@@ -240,7 +240,7 @@ public:
 
 
 
-  bool GetMaxLength(int32_t* aMaxLength);
+  int32_t GetMaxLength();
 
   void ClearValueCache() { mCachedValue.Truncate(); }
 
