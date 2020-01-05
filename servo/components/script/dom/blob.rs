@@ -18,7 +18,6 @@ use ipc_channel::ipc;
 use net_traits::{CoreResourceMsg, IpcSend};
 use net_traits::blob_url_store::{BlobBuf, get_blob_origin};
 use net_traits::filemanager_thread::{FileManagerThreadMsg, ReadFileProgress, RelativePos};
-use std::cell::Cell;
 use std::mem;
 use std::ops::Index;
 use std::path::PathBuf;
@@ -75,7 +74,6 @@ pub struct Blob {
     blob_impl: DOMRefCell<BlobImpl>,
     
     type_string: String,
-    is_closed: Cell<bool>,
 }
 
 impl Blob {
@@ -95,7 +93,6 @@ impl Blob {
             
             
             type_string: normalize_type_string(&type_string),
-            is_closed: Cell::new(false),
         }
     }
 
@@ -297,9 +294,7 @@ impl Blob {
 
 impl Drop for Blob {
     fn drop(&mut self) {
-        if !self.IsClosed() {
-            self.clean_up_file_resource();
-        }
+        self.clean_up_file_resource();
     }
 }
 
@@ -374,25 +369,6 @@ impl BlobMethods for Blob {
              -> Root<Blob> {
         let rel_pos = RelativePos::from_opts(start, end);
         Blob::new_sliced(self, rel_pos, content_type.unwrap_or(DOMString::from("")))
-    }
-
-    
-    fn IsClosed(&self) -> bool {
-        self.is_closed.get()
-    }
-
-    
-    fn Close(&self) {
-        
-        if self.is_closed.get() {
-            return;
-        }
-
-        
-        self.is_closed.set(true);
-
-        
-        self.clean_up_file_resource();
     }
 }
 
