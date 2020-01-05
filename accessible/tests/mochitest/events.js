@@ -536,7 +536,16 @@ function eventQueue(aEventType)
       }
 
       
+      var haveUnmatchedAsync = false;
       for (idx = 0; idx < eventSeq.length; idx++) {
+        if (eventSeq[idx] instanceof orderChecker && haveUnmatchedAsync) {
+            break;
+        }
+
+        if (!eventSeq[idx].wasCaught) {
+          haveUnmatchedAsync = true;
+        }
+
         if (!eventSeq[idx].unexpected && eventSeq[idx].async) {
           if (eventQueue.compareEvents(eventSeq[idx], aEvent)) {
             this.processMatchedChecker(aEvent, eventSeq[idx], scnIdx, idx);
@@ -551,6 +560,16 @@ function eventQueue(aEventType)
       var invoker = this.getInvoker();
       if ("check" in invoker)
         invoker.check(aEvent);
+    }
+
+    for (idx = 0; idx < eventSeq.length; idx++) {
+      if (!eventSeq[idx].wasCaught) {
+        if (eventSeq[idx] instanceof orderChecker) {
+          eventSeq[idx].wasCaught++;
+        } else {
+          break;
+        }
+      }
     }
 
     
@@ -596,6 +615,7 @@ function eventQueue(aEventType)
            (aEventSeq[aEventSeq.idx].unexpected ||
             aEventSeq[aEventSeq.idx].todo ||
             aEventSeq[aEventSeq.idx].async ||
+            aEventSeq[aEventSeq.idx] instanceof orderChecker ||
             aEventSeq[aEventSeq.idx].wasCaught > 0)) {
       aEventSeq.idx++;
     }
@@ -612,7 +632,7 @@ function eventQueue(aEventType)
       
       for (var idx = 0; idx < aEventSeq.length; idx++) {
         if (!aEventSeq[idx].unexpected && !aEventSeq[idx].todo &&
-            !aEventSeq[idx].wasCaught)
+            !aEventSeq[idx].wasCaught && !(aEventSeq[idx] instanceof orderChecker))
           return true;
       }
 
@@ -1677,6 +1697,15 @@ function invokerChecker(aEventType, aTargetOrFunc, aTargetFuncArg, aIsAsync)
 
   this.mTarget = aTargetOrFunc;
   this.mTargetFuncArg = aTargetFuncArg;
+}
+
+
+
+
+
+function orderChecker()
+{
+  this.__proto__ = new invokerChecker(null, null, null, false);
 }
 
 
