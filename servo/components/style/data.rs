@@ -9,7 +9,7 @@
 use dom::TElement;
 use properties::ComputedValues;
 use properties::longhands::display::computed_value as display;
-use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
+use restyle_hints::{RESTYLE_CSS_ANIMATIONS, RESTYLE_DESCENDANTS, RESTYLE_LATER_SIBLINGS, RESTYLE_SELF, RestyleHint};
 use rule_tree::StrongRuleNode;
 use selector_parser::{PseudoElement, RestyleDamage, Snapshot};
 use std::collections::HashMap;
@@ -136,7 +136,12 @@ pub struct StoredRestyleHint(RestyleHint);
 impl StoredRestyleHint {
     
     pub fn propagate(&self) -> Self {
-        StoredRestyleHint(if self.0.contains(RESTYLE_DESCENDANTS) {
+        
+        
+        
+        StoredRestyleHint(if self.0.contains(RESTYLE_CSS_ANIMATIONS) {
+            RestyleHint::empty()
+        } else if self.0.contains(RESTYLE_DESCENDANTS) {
             RESTYLE_SELF | RESTYLE_DESCENDANTS
         } else {
             RestyleHint::empty()
@@ -173,6 +178,16 @@ impl StoredRestyleHint {
     
     pub fn insert(&mut self, other: &Self) {
         self.0 |= other.0
+    }
+
+    
+    pub fn remove_animation_hint(&mut self) {
+        self.0.remove(RESTYLE_CSS_ANIMATIONS)
+    }
+
+    
+    pub fn has_animation_hint(&self) -> bool {
+        self.0.contains(RESTYLE_CSS_ANIMATIONS)
     }
 }
 

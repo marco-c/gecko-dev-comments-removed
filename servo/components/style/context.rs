@@ -87,6 +87,9 @@ pub struct SharedStyleContext<'a> {
 
     
     pub quirks_mode: QuirksMode,
+
+    
+    pub animation_only_restyle: bool,
 }
 
 impl<'a> SharedStyleContext<'a> {
