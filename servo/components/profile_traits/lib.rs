@@ -6,5 +6,12 @@
 
 
 
+#![feature(custom_derive, plugin)]
+#![plugin(serde_macros)]
+
+extern crate ipc_channel;
+extern crate serde;
+
 pub mod mem;
 pub mod time;
+

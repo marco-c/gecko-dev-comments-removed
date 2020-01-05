@@ -6,12 +6,12 @@
 
 #![deny(missing_docs)]
 
-use std::sync::mpsc::Sender;
+use ipc_channel::ipc::IpcSender;
 
 
 
 #[derive(Clone)]
-pub struct ProfilerChan(pub Sender<ProfilerMsg>);
+pub struct ProfilerChan(pub IpcSender<ProfilerMsg>);
 
 impl ProfilerChan {
     
@@ -24,6 +24,7 @@ impl ProfilerChan {
 }
 
 
+#[derive(Deserialize, Serialize)]
 pub struct Report {
     
     pub path: Vec<String>,
@@ -33,8 +34,8 @@ pub struct Report {
 }
 
 
-#[derive(Clone)]
-pub struct ReportsChan(pub Sender<Vec<Report>>);
+#[derive(Clone, Deserialize, Serialize)]
+pub struct ReportsChan(pub IpcSender<Vec<Report>>);
 
 impl ReportsChan {
     
@@ -47,12 +48,29 @@ impl ReportsChan {
 }
 
 
-
-
-
-pub trait Reporter {
+#[derive(Deserialize, Serialize)]
+pub struct ReporterRequest {
     
-    fn collect_reports(&self, reports_chan: ReportsChan) -> bool;
+    pub reports_channel: ReportsChan,
+}
+
+
+
+
+
+
+
+
+#[derive(Deserialize, Serialize)]
+pub struct Reporter(pub IpcSender<ReporterRequest>);
+
+impl Reporter {
+    
+    pub fn collect_reports(&self, reports_chan: ReportsChan) {
+        self.0.send(ReporterRequest {
+            reports_channel: reports_chan,
+        }).unwrap()
+    }
 }
 
 
@@ -65,11 +83,12 @@ macro_rules! path {
 }
 
 
+#[derive(Deserialize, Serialize)]
 pub enum ProfilerMsg {
     
     
     
-    RegisterReporter(String, Box<Reporter + Send>),
+    RegisterReporter(String, Reporter),
 
     
     
@@ -82,3 +101,4 @@ pub enum ProfilerMsg {
     
     Exit,
 }
+

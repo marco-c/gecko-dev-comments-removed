@@ -39,13 +39,14 @@ use gfx::display_list::StackingContext;
 use gfx::font_cache_task::FontCacheTask;
 use gfx::paint_task::Msg as PaintMsg;
 use gfx::paint_task::{PaintChan, PaintLayer};
-use ipc_channel::ipc::IpcReceiver;
+use ipc_channel::ipc::{self, IpcReceiver};
+use ipc_channel::router::ROUTER;
 use layout_traits::LayoutTaskFactory;
 use log;
 use msg::compositor_msg::{Epoch, ScrollPolicy, LayerId};
 use msg::constellation_msg::Msg as ConstellationMsg;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineExitType, PipelineId};
-use profile_traits::mem::{self, Report, ReportsChan};
+use profile_traits::mem::{self, Report, Reporter, ReporterRequest, ReportsChan};
 use profile_traits::time::{self, ProfilerMetadata, profile};
 use profile_traits::time::{TimerMetadataFrameType, TimerMetadataReflowType};
 use net_traits::{load_bytes_iter, PendingAsyncLoad};
@@ -243,10 +244,19 @@ impl LayoutTaskFactory for LayoutTask {
                                              mem_profiler_chan.clone());
 
                 
-                let reporter = box layout_chan.clone();
                 let reporter_name = format!("layout-reporter-{}", id.0);
-                let msg = mem::ProfilerMsg::RegisterReporter(reporter_name.clone(), reporter);
-                mem_profiler_chan.send(msg);
+                let (reporter_sender, reporter_receiver) =
+                    ipc::channel::<ReporterRequest>().unwrap();
+                let layout_chan_for_reporter = layout_chan.clone();
+                ROUTER.add_route(reporter_receiver.to_opaque(), box move |message| {
+                    // Just injects an appropriate event into the layout task's queue.
+                    let request: ReporterRequest = message.to().unwrap();
+                    layout_chan_for_reporter.0.send(Msg::CollectReports(request.reports_channel))
+                                              .unwrap();
+                });
+                mem_profiler_chan.send(mem::ProfilerMsg::RegisterReporter(
+                        reporter_name.clone(),
+                        Reporter(reporter_sender)));
 
                 layout.start();
 
@@ -258,14 +268,14 @@ impl LayoutTaskFactory for LayoutTask {
     }
 }
 
-
-
-
+/// The `LayoutTask` `rw_data` lock must remain locked until the first reflow,
+/// as RPC calls don't make sense until then. Use this in combination with
+/// `LayoutTask::lock_rw_data` and `LayoutTask::return_rw_data`.
 enum RWGuard<'a> {
-    
+    /// If the lock was previously held, from when the task started.
     Held(MutexGuard<'a, LayoutTaskData>),
-    
-    
+    /// If the lock was just used, and has been returned since there has been
+    /// a reflow already.
     Used(MutexGuard<'a, LayoutTaskData>),
 }
 
@@ -289,7 +299,7 @@ impl<'a> DerefMut for RWGuard<'a> {
 }
 
 impl LayoutTask {
-    
+    /// Creates a new `LayoutTask` structure.
     fn new(id: PipelineId,
            url: Url,
            is_iframe: bool,
@@ -315,12 +325,12 @@ impl LayoutTask {
             None
         };
 
-        
+        // Create the channel on which new animations can be sent.
         let (new_animations_sender, new_animations_receiver) = channel();
         let (image_cache_sender, image_cache_receiver) = channel();
         let (canvas_layers_sender, canvas_layers_receiver) = channel();
 
-        
+        // Start a thread to proxy IPC messages from the layout thread to us.
         let (pipeline_sender, pipeline_receiver) = channel();
         thread::spawn(move || {
             while let Ok(message) = pipeline_port.recv() {

@@ -22,6 +22,8 @@ use gfx::paint_task::Msg as PaintMsg;
 use gfx::paint_task::PaintRequest;
 use gleam::gl::types::{GLint, GLsizei};
 use gleam::gl;
+use ipc_channel::ipc;
+use ipc_channel::router::ROUTER;
 use layers::geometry::{DevicePixel, LayerPixel};
 use layers::layers::{BufferRequest, Layer, LayerBuffer, LayerBufferSet};
 use layers::platform::surface::NativeDisplay;
@@ -37,7 +39,7 @@ use msg::constellation_msg::{ConstellationChan, NavigationDirection};
 use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData};
 use msg::constellation_msg::{PipelineId, WindowSizeData};
 use png;
-use profile_traits::mem;
+use profile_traits::mem::{self, Reporter, ReporterRequest};
 use profile_traits::time::{self, ProfilerCategory, profile};
 use script_traits::{ConstellationControlMsg, LayoutControlMsg, ScriptControlChan};
 use std::collections::HashMap;
@@ -257,7 +259,13 @@ impl<Window: WindowMethods> IOCompositor<Window> {
            -> IOCompositor<Window> {
 
         
-        let reporter = box CompositorMemoryReporter(sender.clone_compositor_proxy());
+        let (reporter_sender, reporter_receiver) = ipc::channel().unwrap();
+        let compositor_proxy_for_memory_reporter = sender.clone_compositor_proxy();
+        ROUTER.add_route(reporter_receiver.to_opaque(), box move |reporter_request| {
+            let reporter_request: ReporterRequest = reporter_request.to().unwrap();
+            compositor_proxy_for_memory_reporter.send(Msg::CollectMemoryReports(reporter_request.reports_channel));
+        });
+        let reporter = Reporter(reporter_sender);
         mem_profiler_chan.send(mem::ProfilerMsg::RegisterReporter(reporter_name(), reporter));
 
         let window_size = window.framebuffer_size();
@@ -319,10 +327,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                                                time_profiler_chan,
                                                mem_profiler_chan);
 
-        
+        // Set the size of the root layer.
         compositor.update_zoom_transform();
 
-        
+        // Tell the constellation about the initial window size.
         compositor.send_window_size();
 
         compositor
@@ -419,14 +427,14 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             (Msg::LoadComplete(back, forward), ShutdownState::NotShuttingDown) => {
                 self.got_load_complete_message = true;
 
-                
+                // If we're painting in headless mode, schedule a recomposite.
                 if opts::get().output_file.is_some() || opts::get().exit_after_load {
                     self.composite_if_necessary(CompositingReason::Headless);
                 }
 
-                
-                
-                
+                // Inform the embedder that the load has finished.
+                //
+                // TODO(pcwalton): Specify which frame's load completed.
                 self.window.load_end(back, forward);
             }
 
@@ -502,17 +510,17 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 reports_chan.send(reports);
             }
 
-            
-            
-            
+            // When we are shutting_down, we need to avoid performing operations
+            // such as Paint that may crash because we have begun tearing down
+            // the rest of our resources.
             (_, ShutdownState::ShuttingDown) => { }
         }
 
         true
     }
 
-    
-    
+    /// Sets or unsets the animations-running flag for the given pipeline, and schedules a
+    /// recomposite if necessary.
     fn change_running_animations_state(&mut self,
                                        pipeline_id: PipelineId,
                                        animation_state: AnimationState) {
@@ -578,7 +586,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
         self.root_pipeline = Some(frame_tree.pipeline.clone());
 
-        
+        // If we have an old root layer, release all old tiles before replacing it.
         let old_root_layer = self.scene.root.take();
         if let Some(ref old_root_layer) = old_root_layer {
             old_root_layer.clear_all_tiles(self)
@@ -587,7 +595,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         self.scene.root = Some(self.create_frame_tree_root_layers(frame_tree, None));
         self.scene.set_root_layer_size(self.window_size.as_f32());
 
-        
+        // Initialize the new constellation channel by sending it the root window size.
         self.constellation_chan = new_constellation_chan;
         self.send_window_size();
 
@@ -617,7 +625,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
         self.get_or_create_pipeline_details(pipeline.id).pipeline = Some(pipeline.clone());
 
-        
+        // All root layers mask to bounds.
         *root_layer.masks_to_bounds.borrow_mut() = true;
 
         if let Some(ref frame_rect) = frame_rect {
@@ -654,8 +662,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             None => return,
         };
 
-        
-        
+        // Remove all the compositor layers for this pipeline and recache
+        // any buffers that they owned.
         root_layer.remove_root_layer_with_pipeline_id(self, pipeline_id);
         self.pipeline_details.remove(&pipeline_id);
     }
@@ -693,10 +701,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 WantsScrollEventsFlag::DoesntWantScrollEvents,
                 opts::get().tile_size);
 
-            
-            
-            
-            
+            // Add the base layer to the front of the child list, so that child
+            // iframe layers are painted on top of the base layer. These iframe
+            // layers were added previously when creating the layer tree
+            // skeleton in create_frame_tree_root_layers.
             root_layer.children().insert(0, base_layer);
         }
 
@@ -801,11 +809,11 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                               new_layer_buffer_set: Box<LayerBufferSet>,
                               epoch: Epoch,
                               frame_tree_id: FrameTreeId) {
-        
-        
-        
-        
-        
+        // If the frame tree id has changed since this paint request was sent,
+        // reject the buffers and send them back to the paint task. If this isn't handled
+        // correctly, the content_age in the tile grid can get out of sync when iframes are
+        // loaded and the frame tree changes. This can result in the compositor thinking it
+        // has already drawn the most recently painted buffer, and missing a frame.
         if frame_tree_id == self.frame_tree_id {
             if let Some(layer) = self.find_layer_with_pipeline_and_layer_id(pipeline_id, layer_id) {
                 let requested_epoch = layer.extra_data.borrow().requested_epoch;
@@ -833,12 +841,12 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                self.window_size.width.get(),
                self.window_size.height.get());
 
-        
+        // From now on, if we destroy the buffers, they will leak.
         let mut new_layer_buffer_set = new_layer_buffer_set;
         new_layer_buffer_set.mark_will_leak();
 
-        
-        
+        // FIXME(pcwalton): This is going to cause problems with inconsistent frames since
+        // we only composite one layer at a time.
         layer.add_buffers(self, new_layer_buffer_set, epoch);
         self.composite_if_necessary(CompositingReason::NewPaintedBuffers);
     }
@@ -921,7 +929,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
     fn on_resize_window_event(&mut self, new_size: TypedSize2D<DevicePixel, u32>) {
         debug!("compositor resizing to {:?}", new_size.to_untyped());
 
-        
+        // A size change could also mean a resolution change.
         let new_hidpi_factor = self.window.hidpi_factor();
         if self.hidpi_factor != new_hidpi_factor {
             self.hidpi_factor = new_hidpi_factor;
@@ -1001,8 +1009,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    
-    
+    /// Computes new display ports for each layer, taking the scroll position into account, and
+    /// sends them to layout as necessary. This ultimately triggers a rerender of the content.
     fn send_updated_display_ports_to_layout(&mut self) {
         fn process_layer(layer: &Layer<CompositorData>,
                          window_size: &TypedSize2D<LayerPixel, f32>,
@@ -1048,8 +1056,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    
-    
+    /// Performs buffer requests and starts the scrolling timer or schedules a recomposite as
+    /// necessary.
     fn perform_updates_after_scroll(&mut self) {
         self.send_updated_display_ports_to_layout();
         if self.send_buffer_requests_for_all_layers() {
@@ -1059,7 +1067,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    
+    /// If there are any animations running, dispatches appropriate messages to the constellation.
     fn process_animations(&mut self) {
         for (pipeline_id, pipeline_details) in self.pipeline_details.iter() {
             if pipeline_details.animations_running ||
@@ -1077,7 +1085,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         });
 
         if is_root {
-            
+            // TODO: actual viewport size
 
             self.viewport_zoom = constraints.initial_zoom;
             self.min_viewport_zoom = constraints.min_zoom;
@@ -1104,8 +1112,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         let scale = self.device_pixels_per_page_px();
         self.scene.scale = ScaleFactor::new(scale.get());
 
-        
-        
+        // We need to set the size of the root layer again, since the window size
+        // has changed in unscaled layer pixels.
         self.scene.set_root_layer_size(self.window_size.as_f32());
     }
 
@@ -1121,7 +1129,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         self.send_window_size();
     }
 
-    
+    // TODO(pcwalton): I think this should go through the same queuing as scroll events do.
     fn on_pinch_zoom_window_event(&mut self, magnification: f32) {
         use num::Float;
 
@@ -1142,13 +1150,13 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
         self.update_zoom_transform();
 
-        
+        // Scroll as needed
         let window_size = self.window_size.as_f32();
         let page_delta: TypedPoint2D<LayerPixel, f32> = Point2D::typed(
             window_size.width.get() * (viewport_zoom.inv() - old_viewport_zoom.inv()).get() * 0.5,
             window_size.height.get() * (viewport_zoom.inv() - old_viewport_zoom.inv()).get() * 0.5);
 
-        let cursor = Point2D::typed(-1f32, -1f32);  
+        let cursor = Point2D::typed(-1f32, -1f32);  // Make sure this hits the base layer.
         match self.scene.root {
             Some(ref mut layer) => {
                 layer.handle_scroll_event(page_delta, cursor);
@@ -1209,8 +1217,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                 }
             };
 
-            
-            
+            // All the BufferRequests are in layer/device coordinates, but the paint task
+            // wants to know the page coordinates. We scale them before sending them.
             for request in layer_requests.iter_mut() {
                 request.page_rect = request.page_rect / scale.get();
             }
@@ -1256,7 +1264,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    
+    /// Returns true if any buffer requests were sent or false otherwise.
     fn send_buffer_requests_for_all_layers(&mut self) -> bool {
         if let Some(ref root_layer) = self.scene.root {
             root_layer.update_transform_state(&Matrix4::identity(),
@@ -1268,15 +1276,15 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         let mut unused_buffers = Vec::new();
         self.scene.get_buffer_requests(&mut layers_and_requests, &mut unused_buffers);
 
-        
+        // Return unused tiles first, so that they can be reused by any new BufferRequests.
         self.cache_unused_buffers(unused_buffers);
 
         if layers_and_requests.len() == 0 {
             return false;
         }
 
-        
-        
+        // We want to batch requests for each pipeline to avoid race conditions
+        // when handling the resulting BufferRequest responses.
         let pipeline_requests =
             self.convert_buffer_requests_to_pipeline_requests_map(layers_and_requests);
 
@@ -1288,17 +1296,17 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         true
     }
 
-    
-    
+    /// Check if a layer (or its children) have any outstanding paint
+    /// results to arrive yet.
     fn does_layer_have_outstanding_paint_messages(&self, layer: &Rc<Layer<CompositorData>>) -> bool {
         let layer_data = layer.extra_data.borrow();
         let current_epoch = self.pipeline_details.get(&layer_data.pipeline_id).unwrap().current_epoch;
 
-        
-        
-        
-        
-        
+        // Only check layers that have requested the current epoch, as there may be
+        // layers that are not visible in the current viewport, and therefore
+        // have not requested a paint of the current epoch.
+        // If a layer has sent a request for the current epoch, but it hasn't
+        // arrived yet then this layer is waiting for a paint message.
         if layer_data.requested_epoch == current_epoch && layer_data.painted_epoch != current_epoch {
             return true;
         }
@@ -1312,17 +1320,17 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         false
     }
 
-    
-    
-    
+    /// Query the constellation to see if the current compositor
+    /// output matches the current frame tree output, and if the
+    /// associated script tasks are idle.
     fn is_ready_to_paint_image_output(&mut self) -> bool {
         match self.ready_to_save_state {
             ReadyState::Unknown => {
-                
+                // Unsure if the output image is stable.
 
-                
-                
-                
+                // Check if any layers are waiting for paints to complete
+                // of their current epoch request. If so, early exit
+                // from this check.
                 match self.scene.root {
                     Some(ref root_layer) => {
                         if self.does_layer_have_outstanding_paint_messages(root_layer) {
@@ -1334,14 +1342,14 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                     }
                 }
 
-                
-                
-                
-                
+                // Collect the currently painted epoch of each pipeline that is
+                // complete (i.e. has *all* layers painted to the requested epoch).
+                // This gets sent to the constellation for comparison with the current
+                // frame tree.
                 let mut pipeline_epochs = HashMap::new();
                 for (id, details) in self.pipeline_details.iter() {
-                    
-                    
+                    // If animations are currently running, then don't bother checking
+                    // with the constellation if the output image is stable.
                     if details.animations_running || details.animation_callbacks_running {
                         return false;
                     }
@@ -1349,24 +1357,24 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                     pipeline_epochs.insert(*id, details.current_epoch);
                 }
 
-                
-                
+                // Pass the pipeline/epoch states to the constellation and check
+                // if it's safe to output the image.
                 let ConstellationChan(ref chan) = self.constellation_chan;
                 chan.send(ConstellationMsg::IsReadyToSaveImage(pipeline_epochs)).unwrap();
                 self.ready_to_save_state = ReadyState::WaitingForConstellationReply;
                 false
             }
             ReadyState::WaitingForConstellationReply => {
-                
-                
+                // If waiting on a reply from the constellation to the last
+                // query if the image is stable, then assume not ready yet.
                 false
             }
             ReadyState::ReadyToSaveImage => {
-                
-                
-                
-                
-                
+                // Constellation has replied at some point in the past
+                // that the current output image is stable and ready
+                // for saving.
+                // Reset the flag so that we check again in the future
+                // TODO: only reset this if we load a new document?
                 self.ready_to_save_state = ReadyState::Unknown;
                 true
             }
@@ -1408,13 +1416,13 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
         profile(ProfilerCategory::Compositing, None, self.time_profiler_chan.clone(), || {
             debug!("compositor: compositing");
-            
+            // Adjust the layer dimensions as necessary to correspond to the size of the window.
             self.scene.viewport = Rect {
                 origin: Point2D::zero(),
                 size: self.window_size.as_f32(),
             };
 
-            
+            // Paint the scene.
             if let Some(ref layer) = self.scene.root {
                 match self.context {
                     Some(context) => rendergl::render_scene(layer.clone(), context, &self.scene),
@@ -1446,7 +1454,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             self.shutdown_state = ShutdownState::ShuttingDown;
         }
 
-        
+        // Perform the page flip. This will likely block for a while.
         self.window.present();
 
         self.last_composite_time = precise_time_ns();
@@ -1473,7 +1481,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         gl::delete_buffers(&texture_ids);
         gl::delete_frame_buffers(&framebuffer_ids);
 
-        
+        // flip image vertically (texture is upside down)
         let orig_pixels = pixels.clone();
         let stride = width * 3;
         for y in 0..height {
@@ -1527,7 +1535,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
         let child_point = point - layer_bounds.origin;
         for child in layer.children().iter().rev() {
-            
+            // Translate the clip rect into the child's coordinate system.
             let clip_rect_for_child =
                 clip_rect_for_children.translate(&-*child.content_offset.borrow());
             let result = self.find_topmost_layer_at_point_for_layer(child.clone(),
@@ -1607,7 +1615,7 @@ fn find_layer_with_pipeline_and_layer_id_for_layer(layer: Rc<Layer<CompositorDat
 
 impl<Window> CompositorEventListener for IOCompositor<Window> where Window: WindowMethods {
     fn handle_events(&mut self, messages: Vec<WindowEvent>) -> bool {
-        
+        // Check for new messages coming from the other tasks in the system.
         loop {
             match self.port.try_recv_compositor_msg() {
                 None => break,
@@ -1620,8 +1628,8 @@ impl<Window> CompositorEventListener for IOCompositor<Window> where Window: Wind
         }
 
         if self.shutdown_state == ShutdownState::FinishedShuttingDown {
-            
-            
+            // We have exited the compositor and passing window
+            // messages to script may crash.
             debug!("Exiting the compositor due to a request from script.");
             return false;
         }
@@ -1723,19 +1731,3 @@ pub enum CompositingReason {
     Zoom,
 }
 
-struct CompositorMemoryReporter(Box<CompositorProxy+'static+Send>);
-
-impl CompositorMemoryReporter {
-    pub fn send(&self, message: Msg) {
-        let CompositorMemoryReporter(ref proxy) = *self;
-        proxy.send(message);
-    }
-}
-
-impl mem::Reporter for CompositorMemoryReporter {
-    fn collect_reports(&self, reports_chan: mem::ReportsChan) -> bool {
-        
-        self.send(Msg::CollectMemoryReports(reports_chan));
-        true
-    }
-}
