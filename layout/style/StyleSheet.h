@@ -124,7 +124,7 @@ public:
                                     DocumentAssociationMode aMode);
   inline void ClearAssociatedDocument();
   nsINode* GetOwnerNode() const { return mOwningNode; }
-  inline StyleSheet* GetParentSheet() const;
+  inline StyleSheet* GetParentSheet() const { return mParent; }
 
   inline void AppendStyleSheet(StyleSheet* aSheet);
 
@@ -226,6 +226,8 @@ protected:
 
   
   void EnabledStateChanged();
+
+  StyleSheet*           mParent;    
 
   nsString              mTitle;
   nsIDocument*          mDocument; 

@@ -115,8 +115,6 @@ public:
 
   bool HasRules() const;
 
-  
-  CSSStyleSheet* GetParentSheet() const;  
   void SetAssociatedDocument(nsIDocument* aDocument,
                              DocumentAssociationMode aAssociationMode);
 
@@ -236,7 +234,6 @@ protected:
   void EnabledStateChangedInternal();
 
   RefPtr<CSSStyleSheet> mNext;
-  CSSStyleSheet*        mParent;    
   css::ImportRule*      mOwnerRule; 
 
   RefPtr<CSSRuleListImpl> mRuleCollection;

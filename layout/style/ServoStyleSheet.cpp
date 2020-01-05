@@ -67,15 +67,6 @@ ServoStyleSheet::SetAssociatedDocument(nsIDocument* aDocument,
   mDocumentAssociationMode = aAssociationMode;
 }
 
-ServoStyleSheet*
-ServoStyleSheet::GetParentSheet() const
-{
-  
-  
-  
-  MOZ_CRASH("stylo: not implemented");
-}
-
 void
 ServoStyleSheet::AppendStyleSheet(ServoStyleSheet* aSheet)
 {
