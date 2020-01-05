@@ -141,7 +141,7 @@ pub enum Msg {
     
     ChangeRenderState(RenderState),
     
-    SetIds(SendableFrameTree),
+    SetIds(SendableFrameTree, Chan<()>),
 }
 
 
@@ -345,8 +345,9 @@ impl CompositorTask {
                     ChangeReadyState(ready_state) => window.set_ready_state(ready_state),
                     ChangeRenderState(render_state) => window.set_render_state(render_state),
 
-                    SetIds(frame_tree) => {
+                    SetIds(frame_tree, response_chan) => {
                         pipeline = Some(frame_tree.pipeline);
+                        response_chan.send(());
                     }
 
                     GetSize(chan) => {
