@@ -38,7 +38,7 @@ pub struct Stylist {
     element_map: PerPseudoElementSelectorMap,
     before_map: PerPseudoElementSelectorMap,
     after_map: PerPseudoElementSelectorMap,
-    rules_source_order: uint,
+    rules_source_order: usize,
 }
 
 impl Stylist {
@@ -52,11 +52,11 @@ impl Stylist {
             element_map: PerPseudoElementSelectorMap::new(),
             before_map: PerPseudoElementSelectorMap::new(),
             after_map: PerPseudoElementSelectorMap::new(),
-            rules_source_order: 0u,
+            rules_source_order: 0,
         };
-        // FIXME: Add iso-8859-9.css when the document’s encoding is ISO-8859-8.
-        // FIXME: presentational-hints.css should be at author origin with zero specificity.
-        //        (Does it make a difference?)
+        
+        
+        
         for &filename in ["user-agent.css", "servo.css", "presentational-hints.css"].iter() {
             let ua_stylesheet = Stylesheet::from_bytes(
                 &read_resource_file(&[filename]).unwrap(),
@@ -96,8 +96,8 @@ impl Stylist {
                 };
                 let mut rules_source_order = self.rules_source_order;
 
-                // Take apart the StyleRule into individual Rules and insert
-                // them into the SelectorMap of that priority.
+                
+                
                 macro_rules! append(
                     ($style_rule: ident, $priority: ident) => {
                         if $style_rule.declarations.$priority.len() > 0 {
@@ -163,12 +163,12 @@ impl Stylist {
         self.is_dirty = true;
     }
 
-    /// Returns the applicable CSS declarations for the given element. This corresponds to
-    /// `ElementRuleCollector` in WebKit.
-    ///
-    /// The returned boolean indicates whether the style is *shareable*; that is, whether the
-    /// matched selectors are simple enough to allow the matching logic to be reduced to the logic
-    /// in `css::matching::PrivateMatchMethods::candidate_element_allows_for_style_sharing`.
+    
+    
+    
+    
+    
+    
     pub fn push_applicable_declarations<'a,N,V>(
                                         &self,
                                         element: &N,
