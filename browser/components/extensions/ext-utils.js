@@ -156,7 +156,6 @@ class TabTracker extends TabTrackerBase {
 
     windowTracker.addListener("TabClose", this);
     windowTracker.addListener("TabOpen", this);
-    windowTracker.addListener("TabSelect", this);
     windowTracker.addOpenListener(this._handleWindowOpen);
     windowTracker.addCloseListener(this._handleWindowClose);
 
@@ -264,14 +263,6 @@ class TabTracker extends TabTrackerBase {
           this.emitRemoved(nativeTab, false);
         }
         break;
-
-      case "TabSelect":
-        
-        
-        Promise.resolve().then(() => {
-          this.emitActivated(nativeTab);
-        });
-        break;
     }
   }
 
@@ -317,9 +308,6 @@ class TabTracker extends TabTrackerBase {
       for (let nativeTab of window.gBrowser.tabs) {
         this.emitCreated(nativeTab);
       }
-
-      
-      this.emitActivated(window.gBrowser.tabs[0]);
     }
   }
 
@@ -339,19 +327,6 @@ class TabTracker extends TabTrackerBase {
         this.emitRemoved(nativeTab, true);
       }
     }
-  }
-
-  
-
-
-
-
-
-
-  emitActivated(nativeTab) {
-    this.emit("tab-activated", {
-      tabId: this.getId(nativeTab),
-      windowId: windowTracker.getId(nativeTab.ownerGlobal)});
   }
 
   

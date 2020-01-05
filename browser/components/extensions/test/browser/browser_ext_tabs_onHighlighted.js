@@ -25,14 +25,6 @@ add_task(function* testTabEvents() {
       }
     });
 
-    browser.tabs.onCreated.addListener((info) => {
-      if (info.id in events) {
-        events[info.id].push("onCreated");
-      } else {
-        events[info.id] = ["onCreated"];
-      }
-    });
-
     browser.tabs.onHighlighted.addListener((info) => {
       if (info.tabIds[0] in events) {
         events[info.tabIds[0]].push("onHighlighted");
@@ -51,10 +43,7 @@ add_task(function* testTabEvents() {
     async function expectEvents(tabId, expectedEvents) {
       browser.test.log(`Expecting events: ${expectedEvents.join(", ")}`);
 
-      
-      for (let i = 0; i < 5 && (!events[tabId] || events[tabId].length < expectedEvents.length); i++) {
-        await new Promise(resolve => setTimeout(resolve, 0));
-      }
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       browser.test.assertEq(expectedEvents.length, events[tabId].length,
                             `Got expected number of events for ${tabId}`);
@@ -72,16 +61,12 @@ add_task(function* testTabEvents() {
 
 
     async function openTab(windowId) {
-      browser.test.assertEq(0, Object.keys(events).length,
-                           "No events remaining before testing openTab.");
-
       let tab = await browser.tabs.create({windowId});
 
       tabIds.push(tab.id);
       browser.test.log(`Opened tab ${tab.id}`);
 
       await expectEvents(tab.id, [
-        "onCreated",
         "onActivated",
         "onHighlighted",
       ]);
@@ -92,38 +77,7 @@ add_task(function* testTabEvents() {
 
 
 
-    async function openWindow(urls) {
-      browser.test.assertEq(0, Object.keys(events).length,
-                           "No events remaining before testing openWindow.");
-
-      let window = await browser.windows.create({url: urls});
-      browser.test.log(`Opened new window ${window.id}`);
-
-      for (let [i] of urls.entries()) {
-        let tab = window.tabs[i];
-        tabIds.push(tab.id);
-
-        let expectedEvents = [
-            "onCreated",
-            "onActivated",
-            "onHighlighted",
-        ];
-        if (i !== 0) {
-          expectedEvents.splice(1);
-        }
-        await expectEvents(window.tabs[i].id, expectedEvents);
-      }
-    }
-
-    
-
-
-
-
     async function highlightTab(tabId) {
-      browser.test.assertEq(0, Object.keys(events).length,
-                           "No events remaining before testing highlightTab.");
-
       browser.test.log(`Highlighting tab ${tabId}`);
       let tab = await browser.tabs.update(tabId, {active: true});
 
@@ -152,15 +106,6 @@ add_task(function* testTabEvents() {
       highlightTab(tabIds[1]),
       highlightTab(tabIds[2]),
     ]);
-
-    await Promise.all([
-      openWindow(["http://example.com"]),
-      openWindow(["http://example.com", "http://example.org"]),
-      openWindow(["http://example.com", "http://example.org", "http://example.net"]),
-    ]);
-
-    browser.test.assertEq(0, Object.keys(events).length,
-                          "No events remaining after tests.");
 
     await Promise.all(tabIds.map(id => browser.tabs.remove(id)));
 
