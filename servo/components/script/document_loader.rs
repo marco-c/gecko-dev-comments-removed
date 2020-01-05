@@ -7,7 +7,7 @@
 
 use msg::constellation_msg::PipelineId;
 use net_traits::AsyncResponseTarget;
-use net_traits::{PendingAsyncLoad, ResourceTask, LoadContext};
+use net_traits::{PendingAsyncLoad, ResourceThread, LoadContext};
 use std::sync::Arc;
 use url::Url;
 
@@ -46,7 +46,7 @@ pub struct DocumentLoader {
     
     
     #[ignore_heap_size_of = "channels are hard"]
-    pub resource_task: Arc<ResourceTask>,
+    pub resource_thread: Arc<ResourceThread>,
     pipeline: Option<PipelineId>,
     blocking_loads: Vec<LoadType>,
     events_inhibited: bool,
@@ -54,19 +54,19 @@ pub struct DocumentLoader {
 
 impl DocumentLoader {
     pub fn new(existing: &DocumentLoader) -> DocumentLoader {
-        DocumentLoader::new_with_task(existing.resource_task.clone(), None, None)
+        DocumentLoader::new_with_thread(existing.resource_thread.clone(), None, None)
     }
 
     
     
-    pub fn new_with_task(resource_task: Arc<ResourceTask>,
+    pub fn new_with_thread(resource_thread: Arc<ResourceThread>,
                          pipeline: Option<PipelineId>,
                          initial_load: Option<Url>)
                          -> DocumentLoader {
         let initial_loads = initial_load.into_iter().map(LoadType::PageSource).collect();
 
         DocumentLoader {
-            resource_task: resource_task,
+            resource_thread: resource_thread,
             pipeline: pipeline,
             blocking_loads: initial_loads,
             events_inhibited: false,
@@ -79,7 +79,7 @@ impl DocumentLoader {
         let context = load.to_load_context();
         let url = load.url().clone();
         self.blocking_loads.push(load);
-        PendingAsyncLoad::new(context, (*self.resource_task).clone(), url, self.pipeline)
+        PendingAsyncLoad::new(context, (*self.resource_thread).clone(), url, self.pipeline)
     }
 
     

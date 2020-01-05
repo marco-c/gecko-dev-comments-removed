@@ -4,7 +4,7 @@
 
 
 
-use compositor_task::{CompositorProxy, Msg};
+use compositor_thread::{CompositorProxy, Msg};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::thread::{self, Builder};
 use time;

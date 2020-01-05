@@ -20,7 +20,7 @@ use hyper::mime::{Mime, SubLevel, TopLevel};
 use hyper::status::StatusClass::Success;
 use net_traits::{AsyncResponseListener, Metadata, ResponseAction};
 use network_listener::{NetworkListener, PreInvoke};
-use script_task::ScriptChan;
+use script_thread::ScriptChan;
 use std::ascii::AsciiExt;
 use std::borrow::ToOwned;
 use std::sync::{Arc, Mutex};
@@ -28,7 +28,7 @@ use time::{self, Timespec, now};
 use unicase::UniCase;
 use url::{SchemeData, Url};
 use util::mem::HeapSizeOf;
-use util::task::spawn_named;
+use util::thread::spawn_named;
 
 
 

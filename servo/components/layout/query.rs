@@ -12,7 +12,7 @@ use flow;
 use flow_ref::FlowRef;
 use fragment::{Fragment, FragmentBorderBoxIterator, SpecificFragmentInfo};
 use gfx::display_list::{DisplayItemMetadata, OpaqueNode};
-use layout_task::LayoutTaskData;
+use layout_thread::LayoutThreadData;
 use msg::constellation_msg::ConstellationChan;
 use opaque_node::OpaqueNodeMethods;
 use script::layout_interface::{ContentBoxResponse, ContentBoxesResponse, NodeGeometryResponse};
@@ -32,7 +32,7 @@ use util::cursor::Cursor;
 use util::logical_geometry::WritingMode;
 use wrapper::{LayoutNode, ThreadSafeLayoutNode};
 
-pub struct LayoutRPCImpl(pub Arc<Mutex<LayoutTaskData>>);
+pub struct LayoutRPCImpl(pub Arc<Mutex<LayoutThreadData>>);
 
 impl LayoutRPC for LayoutRPCImpl {
 

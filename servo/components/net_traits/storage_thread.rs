@@ -13,7 +13,7 @@ pub enum StorageType {
 
 
 #[derive(Deserialize, Serialize)]
-pub enum StorageTaskMsg {
+pub enum StorageThreadMsg {
     
     Length(IpcSender<usize>, Url, StorageType),
 
@@ -40,6 +40,6 @@ pub enum StorageTaskMsg {
 }
 
 
-pub type StorageTask = IpcSender<StorageTaskMsg>;
+pub type StorageThread = IpcSender<StorageThreadMsg>;
 
 

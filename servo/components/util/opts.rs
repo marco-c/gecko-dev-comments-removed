@@ -334,7 +334,7 @@ pub fn print_debug_usage(app: &str) -> ! {
     print_option("dump-layer-tree", "Print the layer tree whenever it changes.");
     print_option("relayout-event", "Print notifications when there is a relayout.");
     print_option("profile-script-events", "Enable profiling of script-related events.");
-    print_option("profile-heartbeats", "Enable heartbeats for all task categories.");
+    print_option("profile-heartbeats", "Enable heartbeats for all thread categories.");
     print_option("show-compositor-borders", "Paint borders along layer and tile boundaries.");
     print_option("show-fragment-borders", "Paint borders along fragment boundaries.");
     print_option("show-parallel-paint", "Overlay tiles with colors showing which thread painted them.");
@@ -507,7 +507,7 @@ pub fn from_cmdline_args(args: &[String]) -> ArgumentParsingResult {
     opts.optmulti("", "user-stylesheet",
                   "A user stylesheet to be added to every document", "file.css");
     opts.optflag("z", "headless", "Headless mode");
-    opts.optflag("f", "hard-fail", "Exit on task failure instead of displaying about:failure");
+    opts.optflag("f", "hard-fail", "Exit on thread failure instead of displaying about:failure");
     opts.optflagopt("", "devtools", "Start remote devtools server on port", "6000");
     opts.optflagopt("", "webdriver", "Start remote WebDriver server on port", "7000");
     opts.optopt("", "resolution", "Set window resolution.", "800x600");

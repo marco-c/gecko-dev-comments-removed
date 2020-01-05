@@ -27,7 +27,7 @@ use model::{self, IntrinsicISizes, IntrinsicISizesContribution, MaybeAuto, speci
 use msg::compositor_msg::LayerType;
 use msg::constellation_msg::PipelineId;
 use net_traits::image::base::Image;
-use net_traits::image_cache_task::UsePlaceholder;
+use net_traits::image_cache_thread::UsePlaceholder;
 use rustc_serialize::{Encodable, Encoder};
 use script::dom::htmlcanvaselement::HTMLCanvasData;
 use std::borrow::ToOwned;

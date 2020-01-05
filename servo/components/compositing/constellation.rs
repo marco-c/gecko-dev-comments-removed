@@ -10,22 +10,22 @@
 
 
 use CompositorMsg as FromCompositorMsg;
-use canvas::canvas_paint_task::CanvasPaintTask;
-use canvas::webgl_paint_task::WebGLPaintTask;
+use canvas::canvas_paint_thread::CanvasPaintThread;
+use canvas::webgl_paint_thread::WebGLPaintThread;
 use canvas_traits::CanvasMsg;
 use clipboard::ClipboardContext;
-use compositor_task::CompositorProxy;
-use compositor_task::Msg as ToCompositorMsg;
+use compositor_thread::CompositorProxy;
+use compositor_thread::Msg as ToCompositorMsg;
 use devtools_traits::{ChromeToDevtoolsControlMsg, DevtoolsControlMsg};
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::{Size2D, TypedSize2D};
 use gaol;
 use gaol::sandbox::{self, Sandbox, SandboxMethods};
-use gfx::font_cache_task::FontCacheTask;
+use gfx::font_cache_thread::FontCacheThread;
 use gfx_traits::PaintMsg as FromPaintMsg;
 use ipc_channel::ipc::{self, IpcOneShotServer, IpcSender};
 use ipc_channel::router::ROUTER;
-use layout_traits::{LayoutControlChan, LayoutTaskFactory};
+use layout_traits::{LayoutControlChan, LayoutThreadFactory};
 use msg::compositor_msg::Epoch;
 use msg::constellation_msg::AnimationState;
 use msg::constellation_msg::WebDriverCommandMsg;
@@ -36,16 +36,16 @@ use msg::constellation_msg::{PipelineNamespace, PipelineNamespaceId};
 use msg::constellation_msg::{SubpageId, WindowSizeData};
 use msg::constellation_msg::{self, ConstellationChan, Failure};
 use msg::webdriver_msg;
-use net_traits::image_cache_task::ImageCacheTask;
-use net_traits::storage_task::{StorageTask, StorageTaskMsg};
-use net_traits::{self, ResourceTask};
+use net_traits::image_cache_thread::ImageCacheThread;
+use net_traits::storage_thread::{StorageThread, StorageThreadMsg};
+use net_traits::{self, ResourceThread};
 use offscreen_gl_context::GLContextAttributes;
 use pipeline::{CompositionPipeline, InitialPipelineState, Pipeline, UnprivilegedPipelineContent};
 use profile_traits::mem;
 use profile_traits::time;
 use sandboxing;
 use script_traits::{CompositorEvent, ConstellationControlMsg, LayoutControlMsg};
-use script_traits::{LayoutMsg as FromLayoutMsg, ScriptMsg as FromScriptMsg, ScriptTaskFactory};
+use script_traits::{LayoutMsg as FromLayoutMsg, ScriptMsg as FromScriptMsg, ScriptThreadFactory};
 use script_traits::{TimerEventRequest};
 use std::borrow::ToOwned;
 use std::collections::HashMap;
@@ -60,7 +60,7 @@ use timer_scheduler::TimerScheduler;
 use url::Url;
 use util::cursor::Cursor;
 use util::geometry::PagePx;
-use util::task::spawn_named;
+use util::thread::spawn_named;
 use util::{opts, prefs};
 
 #[derive(Debug, PartialEq)]
@@ -110,16 +110,16 @@ pub struct Constellation<LTF, STF> {
     pub compositor_proxy: Box<CompositorProxy>,
 
     
-    pub resource_task: ResourceTask,
+    pub resource_thread: ResourceThread,
 
     
-    pub image_cache_task: ImageCacheTask,
+    pub image_cache_thread: ImageCacheThread,
 
     
     devtools_chan: Option<Sender<DevtoolsControlMsg>>,
 
     
-    storage_task: StorageTask,
+    storage_thread: StorageThread,
 
     
     pipelines: HashMap<PipelineId, Pipeline>,
@@ -134,7 +134,7 @@ pub struct Constellation<LTF, STF> {
     subpage_map: HashMap<(PipelineId, SubpageId), PipelineId>,
 
     
-    font_cache_task: FontCacheTask,
+    font_cache_thread: FontCacheThread,
 
     
     root_frame_id: Option<FrameId>,
@@ -168,10 +168,10 @@ pub struct Constellation<LTF, STF> {
     webdriver: WebDriverData,
 
     
-    canvas_paint_tasks: Vec<Sender<CanvasMsg>>,
+    canvas_paint_threads: Vec<Sender<CanvasMsg>>,
 
     
-    webgl_paint_tasks: Vec<Sender<CanvasMsg>>,
+    webgl_paint_threads: Vec<Sender<CanvasMsg>>,
 
     scheduler_chan: IpcSender<TimerEventRequest>,
 
@@ -189,13 +189,13 @@ pub struct InitialConstellationState {
     
     pub devtools_chan: Option<Sender<DevtoolsControlMsg>>,
     
-    pub image_cache_task: ImageCacheTask,
+    pub image_cache_thread: ImageCacheThread,
     
-    pub font_cache_task: FontCacheTask,
+    pub font_cache_thread: FontCacheThread,
     
-    pub resource_task: ResourceTask,
+    pub resource_thread: ResourceThread,
     
-    pub storage_task: StorageTask,
+    pub storage_thread: StorageThread,
     
     pub time_profiler_chan: time::ProfilerChan,
     
@@ -288,7 +288,7 @@ enum ChildProcess {
     Unsandboxed(process::Child),
 }
 
-impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
+impl<LTF: LayoutThreadFactory, STF: ScriptThreadFactory> Constellation<LTF, STF> {
     pub fn start(state: InitialConstellationState) -> Sender<FromCompositorMsg> {
         let (ipc_script_receiver, ipc_script_sender) = ConstellationChan::<FromScriptMsg>::new();
         let script_receiver = ROUTER.route_ipc_receiver_to_new_mpsc_receiver(ipc_script_receiver);
@@ -310,10 +310,10 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 painter_receiver: painter_receiver,
                 compositor_proxy: state.compositor_proxy,
                 devtools_chan: state.devtools_chan,
-                resource_task: state.resource_task,
-                image_cache_task: state.image_cache_task,
-                font_cache_task: state.font_cache_task,
-                storage_task: state.storage_task,
+                resource_thread: state.resource_thread,
+                image_cache_thread: state.image_cache_thread,
+                font_cache_thread: state.font_cache_thread,
+                storage_thread: state.storage_thread,
                 pipelines: HashMap::new(),
                 frames: HashMap::new(),
                 pipeline_to_frame_map: HashMap::new(),
@@ -340,8 +340,8 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                     None
                 },
                 webdriver: WebDriverData::new(),
-                canvas_paint_tasks: Vec::new(),
-                webgl_paint_tasks: Vec::new(),
+                canvas_paint_threads: Vec::new(),
+                webgl_paint_threads: Vec::new(),
                 scheduler_chan: TimerScheduler::start(),
                 child_processes: Vec::new(),
                 document_states: HashMap::new(),
@@ -386,10 +386,10 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 scheduler_chan: self.scheduler_chan.clone(),
                 compositor_proxy: self.compositor_proxy.clone_compositor_proxy(),
                 devtools_chan: self.devtools_chan.clone(),
-                image_cache_task: self.image_cache_task.clone(),
-                font_cache_task: self.font_cache_task.clone(),
-                resource_task: self.resource_task.clone(),
-                storage_task: self.storage_task.clone(),
+                image_cache_thread: self.image_cache_thread.clone(),
+                font_cache_thread: self.font_cache_thread.clone(),
+                resource_thread: self.resource_thread.clone(),
+                storage_thread: self.storage_thread.clone(),
                 time_profiler_chan: self.time_profiler_chan.clone(),
                 mem_profiler_chan: self.mem_profiler_chan.clone(),
                 window_size: initial_window_size,
@@ -400,7 +400,7 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
             });
 
         if spawning_paint_only {
-            privileged_pipeline_content.start_paint_task();
+            privileged_pipeline_content.start_paint_thread();
         } else {
             privileged_pipeline_content.start_all();
 
@@ -681,13 +681,13 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                 debug!("constellation got head parsed message");
                 self.compositor_proxy.send(ToCompositorMsg::HeadParsed);
             }
-            Request::Script(FromScriptMsg::CreateCanvasPaintTask(size, sender)) => {
-                debug!("constellation got create-canvas-paint-task message");
-                self.handle_create_canvas_paint_task_msg(&size, sender)
+            Request::Script(FromScriptMsg::CreateCanvasPaintThread(size, sender)) => {
+                debug!("constellation got create-canvas-paint-thread message");
+                self.handle_create_canvas_paint_thread_msg(&size, sender)
             }
-            Request::Script(FromScriptMsg::CreateWebGLPaintTask(size, attributes, sender)) => {
-                debug!("constellation got create-WebGL-paint-task message");
-                self.handle_create_webgl_paint_task_msg(&size, attributes, sender)
+            Request::Script(FromScriptMsg::CreateWebGLPaintThread(size, attributes, sender)) => {
+                debug!("constellation got create-WebGL-paint-thread message");
+                self.handle_create_webgl_paint_thread_msg(&size, attributes, sender)
             }
             Request::Script(FromScriptMsg::NodeStatus(message)) => {
                 debug!("constellation got NodeStatus message");
@@ -734,14 +734,14 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         for (_id, ref pipeline) in &self.pipelines {
             pipeline.exit();
         }
-        self.image_cache_task.exit();
-        self.resource_task.send(net_traits::ControlMsg::Exit).unwrap();
+        self.image_cache_thread.exit();
+        self.resource_thread.send(net_traits::ControlMsg::Exit).unwrap();
         self.devtools_chan.as_ref().map(|chan| {
             chan.send(DevtoolsControlMsg::FromChrome(
                     ChromeToDevtoolsControlMsg::ServerExitMsg)).unwrap();
         });
-        self.storage_task.send(StorageTaskMsg::Exit).unwrap();
-        self.font_cache_task.exit();
+        self.storage_thread.send(StorageThreadMsg::Exit).unwrap();
+        self.font_cache_thread.exit();
         self.compositor_proxy.send(ToCompositorMsg::ShutdownComplete);
     }
 
@@ -1171,25 +1171,25 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
         }
     }
 
-    fn handle_create_canvas_paint_task_msg(
+    fn handle_create_canvas_paint_thread_msg(
             &mut self,
             size: &Size2D<i32>,
             response_sender: IpcSender<(IpcSender<CanvasMsg>, usize)>) {
-        let id = self.canvas_paint_tasks.len();
-        let (out_of_process_sender, in_process_sender) = CanvasPaintTask::start(*size);
-        self.canvas_paint_tasks.push(in_process_sender);
+        let id = self.canvas_paint_threads.len();
+        let (out_of_process_sender, in_process_sender) = CanvasPaintThread::start(*size);
+        self.canvas_paint_threads.push(in_process_sender);
         response_sender.send((out_of_process_sender, id)).unwrap()
     }
 
-    fn handle_create_webgl_paint_task_msg(
+    fn handle_create_webgl_paint_thread_msg(
             &mut self,
             size: &Size2D<i32>,
             attributes: GLContextAttributes,
             response_sender: IpcSender<Result<(IpcSender<CanvasMsg>, usize), String>>) {
-        let response = match WebGLPaintTask::start(*size, attributes) {
+        let response = match WebGLPaintThread::start(*size, attributes) {
             Ok((out_of_process_sender, in_process_sender)) => {
-                let id = self.webgl_paint_tasks.len();
-                self.webgl_paint_tasks.push(in_process_sender);
+                let id = self.webgl_paint_threads.len();
+                self.webgl_paint_threads.push(in_process_sender);
                 Ok((out_of_process_sender, id))
             },
             Err(msg) => Err(msg.to_owned()),
@@ -1457,8 +1457,8 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
                         let (sender, receiver) = ipc::channel().unwrap();
                         let LayoutControlChan(ref layout_chan) = pipeline.layout_chan;
                         layout_chan.send(LayoutControlMsg::GetCurrentEpoch(sender)).unwrap();
-                        let layout_task_epoch = receiver.recv().unwrap();
-                        if layout_task_epoch != *compositor_epoch {
+                        let layout_thread_epoch = receiver.recv().unwrap();
+                        if layout_thread_epoch != *compositor_epoch {
                             return ReadyToSave::EpochMismatch;
                         }
                     }

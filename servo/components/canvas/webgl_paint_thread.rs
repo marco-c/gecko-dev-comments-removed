@@ -14,17 +14,17 @@ use layers::platform::surface::NativeSurface;
 use offscreen_gl_context::{ColorAttachmentType, GLContext, GLContextAttributes, NativeGLContext};
 use std::borrow::ToOwned;
 use std::sync::mpsc::{Sender, channel};
-use util::task::spawn_named;
+use util::thread::spawn_named;
 use util::vec::byte_swap;
 
-pub struct WebGLPaintTask {
+pub struct WebGLPaintThread {
     size: Size2D<i32>,
     original_context_size: Size2D<i32>,
     gl_context: GLContext<NativeGLContext>,
 }
 
-impl WebGLPaintTask {
-    fn new(size: Size2D<i32>, attrs: GLContextAttributes) -> Result<WebGLPaintTask, &'static str> {
+impl WebGLPaintThread {
+    fn new(size: Size2D<i32>, attrs: GLContextAttributes) -> Result<WebGLPaintThread, &'static str> {
         let context = try!(GLContext::new(size, attrs, ColorAttachmentType::Texture, None));
 
         
@@ -32,7 +32,7 @@ impl WebGLPaintTask {
         
         let real_size = context.borrow_draw_buffer().unwrap().size();
 
-        Ok(WebGLPaintTask {
+        Ok(WebGLPaintThread {
             size: real_size,
             original_context_size: real_size,
             gl_context: context
@@ -191,11 +191,11 @@ impl WebGLPaintTask {
         let (in_process_chan, in_process_port) = channel();
         let (result_chan, result_port) = channel();
         ROUTER.route_ipc_receiver_to_mpsc_sender(out_of_process_port, in_process_chan.clone());
-        spawn_named("WebGLTask".to_owned(), move || {
-            let mut painter = match WebGLPaintTask::new(size, attrs) {
-                Ok(task) => {
+        spawn_named("WebGLThread".to_owned(), move || {
+            let mut painter = match WebGLPaintThread::new(size, attrs) {
+                Ok(thread) => {
                     result_chan.send(Ok(())).unwrap();
-                    task
+                    thread
                 },
                 Err(e) => {
                     result_chan.send(Err(e)).unwrap();
@@ -225,7 +225,7 @@ impl WebGLPaintTask {
                                 painter.send_native_surface(chan),
                         }
                     }
-                    CanvasMsg::Canvas2d(_) => panic!("Wrong message sent to WebGLTask"),
+                    CanvasMsg::Canvas2d(_) => panic!("Wrong message sent to WebGLThread"),
                 }
             }
         });
@@ -279,7 +279,7 @@ impl WebGLPaintTask {
     }
 
     fn create_texture(&self, chan: IpcSender<Option<NonZero<u32>>>) {
-        let texture = gl::gen_textures(1)[0];
+        let texture = gl::gen_framebuffers(1)[0];
         let texture = if texture == 0 {
             None
         } else {

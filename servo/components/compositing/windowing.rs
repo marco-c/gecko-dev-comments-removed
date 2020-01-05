@@ -4,7 +4,7 @@
 
 
 
-use compositor_task::{CompositorProxy, CompositorReceiver};
+use compositor_thread::{CompositorProxy, CompositorReceiver};
 use euclid::point::TypedPoint2D;
 use euclid::scale_factor::ScaleFactor;
 use euclid::size::TypedSize2D;

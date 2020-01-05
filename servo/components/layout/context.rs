@@ -10,13 +10,13 @@ use app_units::Au;
 use canvas_traits::CanvasMsg;
 use euclid::Rect;
 use fnv::FnvHasher;
-use gfx::font_cache_task::FontCacheTask;
+use gfx::font_cache_thread::FontCacheThread;
 use gfx::font_context::FontContext;
 use gfx_traits::LayerId;
 use ipc_channel::ipc::{self, IpcSender};
 use net_traits::image::base::Image;
-use net_traits::image_cache_task::{ImageCacheChan, ImageCacheTask, ImageResponse, ImageState};
-use net_traits::image_cache_task::{UsePlaceholder};
+use net_traits::image_cache_thread::{ImageCacheChan, ImageCacheThread, ImageResponse, ImageState};
+use net_traits::image_cache_thread::{UsePlaceholder};
 use std::cell::{RefCell, RefMut};
 use std::collections::HashMap;
 use std::collections::hash_state::DefaultState;
@@ -59,13 +59,13 @@ fn create_or_get_local_context(shared_layout_context: &SharedLayoutContext)
             }
             context
         } else {
-            let font_cache_task = shared_layout_context.font_cache_task.lock().unwrap().clone();
+            let font_cache_thread = shared_layout_context.font_cache_thread.lock().unwrap().clone();
             let context = Rc::new(LocalLayoutContext {
                 style_context: LocalStyleContext {
                     applicable_declarations_cache: RefCell::new(ApplicableDeclarationsCache::new()),
                     style_sharing_candidate_cache: RefCell::new(StyleSharingCandidateCache::new()),
                 },
-                font_context: RefCell::new(FontContext::new(font_cache_task)),
+                font_context: RefCell::new(FontContext::new(font_cache_thread)),
             });
             *r = Some(context.clone());
             context
@@ -79,13 +79,13 @@ pub struct SharedLayoutContext {
     pub style_context: SharedStyleContext,
 
     
-    pub image_cache_task: ImageCacheTask,
+    pub image_cache_thread: ImageCacheThread,
 
     
     pub image_cache_sender: Mutex<ImageCacheChan>,
 
     
-    pub font_cache_task: Mutex<FontCacheTask>,
+    pub font_cache_thread: Mutex<FontCacheThread>,
 
     
     pub url: Url,
@@ -131,7 +131,7 @@ impl<'a> LayoutContext<'a> {
     pub fn get_or_request_image(&self, url: Url, use_placeholder: UsePlaceholder)
                                 -> Option<Arc<Image>> {
         
-        let result = self.shared.image_cache_task.find_image(url.clone(),
+        let result = self.shared.image_cache_thread.find_image(url.clone(),
                                                              use_placeholder);
 
         match result {
@@ -148,7 +148,7 @@ impl<'a> LayoutContext<'a> {
                     
                     (_, true) => {
                         let (sync_tx, sync_rx) = ipc::channel().unwrap();
-                        self.shared.image_cache_task.request_image(url,
+                        self.shared.image_cache_thread.request_image(url,
                                                                    ImageCacheChan(sync_tx),
                                                                    None);
                         match sync_rx.recv().unwrap().image_response {
@@ -160,7 +160,7 @@ impl<'a> LayoutContext<'a> {
                     
                     (ImageState::NotRequested, false) => {
                         let sender = self.shared.image_cache_sender.lock().unwrap().clone();
-                        self.shared.image_cache_task.request_image(url, sender, None);
+                        self.shared.image_cache_thread.request_image(url, sender, None);
                         None
                     }
                     

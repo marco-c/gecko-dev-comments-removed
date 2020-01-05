@@ -21,11 +21,11 @@ extern crate util;
 
 
 
-use gfx::font_cache_task::FontCacheTask;
-use gfx::paint_task::LayoutToPaintMsg;
+use gfx::font_cache_thread::FontCacheThread;
+use gfx::paint_thread::LayoutToPaintMsg;
 use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId};
-use net_traits::image_cache_task::ImageCacheTask;
+use net_traits::image_cache_thread::ImageCacheThread;
 use profile_traits::{mem, time};
 use script_traits::LayoutMsg as ConstellationMsg;
 use script_traits::{LayoutControlMsg, ConstellationControlMsg, OpaqueScriptLayoutChannel};
@@ -38,7 +38,7 @@ pub struct LayoutControlChan(pub IpcSender<LayoutControlMsg>);
 
 
 
-pub trait LayoutTaskFactory {
+pub trait LayoutThreadFactory {
     
     fn create(_phantom: Option<&mut Self>,
               id: PipelineId,
@@ -50,8 +50,8 @@ pub trait LayoutTaskFactory {
               failure_msg: Failure,
               script_chan: IpcSender<ConstellationControlMsg>,
               layout_to_paint_chan: OptionalIpcSender<LayoutToPaintMsg>,
-              image_cache_task: ImageCacheTask,
-              font_cache_task: FontCacheTask,
+              image_cache_thread: ImageCacheThread,
+              font_cache_thread: FontCacheThread,
               time_profiler_chan: time::ProfilerChan,
               mem_profiler_chan: mem::ProfilerChan,
               shutdown_chan: IpcSender<()>,

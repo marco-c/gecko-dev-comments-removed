@@ -32,5 +32,5 @@ pub trait PaintListener {
     fn ignore_buffer_requests(&mut self, buffer_requests: Vec<BufferRequest>);
 
     
-    fn notify_paint_task_exiting(&mut self, pipeline_id: PipelineId);
+    fn notify_paint_thread_exiting(&mut self, pipeline_id: PipelineId);
 }

@@ -87,16 +87,16 @@ pub enum UsePlaceholder {
 
 
 #[derive(Clone, Deserialize, Serialize)]
-pub struct ImageCacheTask {
+pub struct ImageCacheThread {
     chan: IpcSender<ImageCacheCommand>,
 }
 
 
-impl ImageCacheTask {
+impl ImageCacheThread {
 
     
-    pub fn new(chan: IpcSender<ImageCacheCommand>) -> ImageCacheTask {
-        ImageCacheTask {
+    pub fn new(chan: IpcSender<ImageCacheCommand>) -> ImageCacheThread {
+        ImageCacheThread {
             chan: chan,
         }
     }

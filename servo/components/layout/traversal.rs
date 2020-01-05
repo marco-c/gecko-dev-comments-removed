@@ -15,7 +15,7 @@ use std::mem;
 use style::context::StyleContext;
 use style::matching::MatchMethods;
 use style::traversal::{DomTraversalContext, STYLE_BLOOM};
-use style::traversal::{put_task_local_bloom_filter, recalc_style_at};
+use style::traversal::{put_thread_local_bloom_filter, recalc_style_at};
 use util::opts;
 use util::tid::tid;
 use wrapper::{LayoutNode, ThreadSafeLayoutNode};
@@ -126,7 +126,7 @@ fn construct_flows_at<'a, 'ln, N: LayoutNode<'ln>>(context: &'a LayoutContext<'a
             
             node.remove_from_bloom_filter(&mut *bf);
             let unsafe_parent = parent.to_unsafe();
-            put_task_local_bloom_filter(bf, &unsafe_parent, &context.shared_context());
+            put_thread_local_bloom_filter(bf, &unsafe_parent, &context.shared_context());
         },
     };
 }

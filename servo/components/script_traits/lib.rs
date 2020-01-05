@@ -44,9 +44,9 @@ use msg::constellation_msg::{Key, KeyModifiers, KeyState, LoadData, SubpageId};
 use msg::constellation_msg::{MouseButton, MouseEventType};
 use msg::constellation_msg::{MozBrowserEvent, PipelineNamespaceId};
 use msg::webdriver_msg::WebDriverScriptCommand;
-use net_traits::ResourceTask;
-use net_traits::image_cache_task::ImageCacheTask;
-use net_traits::storage_task::StorageTask;
+use net_traits::ResourceThread;
+use net_traits::image_cache_thread::ImageCacheThread;
+use net_traits::storage_thread::StorageThread;
 use profile_traits::mem;
 use std::any::Any;
 use util::ipc::OptionalOpaqueIpcSender;
@@ -257,11 +257,11 @@ pub struct InitialScriptState {
     
     pub failure_info: Failure,
     
-    pub resource_task: ResourceTask,
+    pub resource_thread: ResourceThread,
     
-    pub storage_task: StorageTask,
+    pub storage_thread: StorageThread,
     
-    pub image_cache_task: ImageCacheTask,
+    pub image_cache_thread: ImageCacheThread,
     
     pub time_profiler_chan: profile_traits::time::ProfilerChan,
     
@@ -282,7 +282,7 @@ pub struct ScriptControlChan(pub IpcSender<ConstellationControlMsg>);
 
 
 
-pub trait ScriptTaskFactory {
+pub trait ScriptThreadFactory {
     
     fn create(_phantom: Option<&mut Self>,
               state: InitialScriptState,

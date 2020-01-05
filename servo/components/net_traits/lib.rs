@@ -37,10 +37,10 @@ use util::mem::HeapSizeOf;
 use websocket::header;
 
 pub mod hosts;
-pub mod image_cache_task;
+pub mod image_cache_thread;
 pub mod net_error_list;
 pub mod response;
-pub mod storage_task;
+pub mod storage_thread;
 
 
 
@@ -161,7 +161,7 @@ pub enum LoadConsumer {
 }
 
 
-pub type ResourceTask = IpcSender<ControlMsg>;
+pub type ResourceThread = IpcSender<ControlMsg>;
 
 #[derive(PartialEq, Copy, Clone, Deserialize, Serialize)]
 pub enum IncludeSubdomains {
@@ -223,7 +223,7 @@ pub enum ControlMsg {
 
 
 pub struct PendingAsyncLoad {
-    resource_task: ResourceTask,
+    resource_thread: ResourceThread,
     url: Url,
     pipeline: Option<PipelineId>,
     guard: PendingLoadGuard,
@@ -249,10 +249,10 @@ impl Drop for PendingLoadGuard {
 }
 
 impl PendingAsyncLoad {
-    pub fn new(context: LoadContext, resource_task: ResourceTask, url: Url, pipeline: Option<PipelineId>)
+    pub fn new(context: LoadContext, resource_thread: ResourceThread, url: Url, pipeline: Option<PipelineId>)
                -> PendingAsyncLoad {
         PendingAsyncLoad {
-            resource_task: resource_task,
+            resource_thread: resource_thread,
             url: url,
             pipeline: pipeline,
             guard: PendingLoadGuard { loaded: false, },
@@ -265,7 +265,7 @@ impl PendingAsyncLoad {
         self.guard.neuter();
         let load_data = LoadData::new(self.context, self.url, self.pipeline);
         let consumer = LoadConsumer::Listener(listener);
-        self.resource_task.send(ControlMsg::Load(load_data, consumer, None)).unwrap();
+        self.resource_thread.send(ControlMsg::Load(load_data, consumer, None)).unwrap();
     }
 }
 
@@ -360,12 +360,12 @@ pub enum ProgressMsg {
 
 
 pub fn load_whole_resource(context: LoadContext,
-                           resource_task: &ResourceTask,
+                           resource_thread: &ResourceThread,
                            url: Url,
                            pipeline_id: Option<PipelineId>)
         -> Result<(Metadata, Vec<u8>), String> {
     let (start_chan, start_port) = ipc::channel().unwrap();
-    resource_task.send(ControlMsg::Load(LoadData::new(context, url, pipeline_id),
+    resource_thread.send(ControlMsg::Load(LoadData::new(context, url, pipeline_id),
                        LoadConsumer::Channel(start_chan), None)).unwrap();
     let response = start_port.recv().unwrap();
 

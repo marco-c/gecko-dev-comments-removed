@@ -35,10 +35,10 @@ pub enum ScriptMsg {
     ChangeRunningAnimationsState(PipelineId, AnimationState),
     
     
-    CreateCanvasPaintTask(Size2D<i32>, IpcSender<(IpcSender<CanvasMsg>, usize)>),
+    CreateCanvasPaintThread(Size2D<i32>, IpcSender<(IpcSender<CanvasMsg>, usize)>),
     
     
-    CreateWebGLPaintTask(Size2D<i32>,
+    CreateWebGLPaintThread(Size2D<i32>,
                          GLContextAttributes,
                          IpcSender<Result<(IpcSender<CanvasMsg>, usize), String>>),
     

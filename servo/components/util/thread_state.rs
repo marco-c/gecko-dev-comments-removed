@@ -11,7 +11,7 @@
 pub use self::imp::{enter, exit, get, initialize};
 
 bitflags! {
-    flags TaskState: u32 {
+    flags ThreadState: u32 {
         const SCRIPT          = 0x01,
         const LAYOUT          = 0x02,
         const PAINT           = 0x04,
@@ -22,8 +22,8 @@ bitflags! {
     }
 }
 
-macro_rules! task_types ( ( $( $fun:ident = $flag:ident ; )* ) => (
-    impl TaskState {
+macro_rules! thread_types ( ( $( $fun:ident = $flag:ident ; )* ) => (
+    impl ThreadState {
         $(
             #[cfg(debug_assertions)]
             pub fn $fun(self) -> bool {
@@ -37,11 +37,11 @@ macro_rules! task_types ( ( $( $fun:ident = $flag:ident ; )* ) => (
     }
 
     #[cfg(debug_assertions)]
-    static TYPES: &'static [TaskState]
+    static TYPES: &'static [ThreadState]
         = &[ $( $flag ),* ];
 ));
 
-task_types! {
+thread_types! {
     is_script = SCRIPT;
     is_layout = LAYOUT;
     is_paint = PAINT;
@@ -50,14 +50,14 @@ task_types! {
 #[cfg(debug_assertions)]
 mod imp {
     use std::cell::RefCell;
-    use super::{TYPES, TaskState};
+    use super::{TYPES, ThreadState};
 
-    thread_local!(static STATE: RefCell<Option<TaskState>> = RefCell::new(None));
+    thread_local!(static STATE: RefCell<Option<ThreadState>> = RefCell::new(None));
 
-    pub fn initialize(x: TaskState) {
+    pub fn initialize(x: ThreadState) {
         STATE.with(|ref k| {
             match *k.borrow() {
-                Some(s) => panic!("Task state already initialized as {:?}", s),
+                Some(s) => panic!("Thread state already initialized as {:?}", s),
                 None => ()
             };
             *k.borrow_mut() = Some(x);
@@ -65,10 +65,10 @@ mod imp {
         get(); 
     }
 
-    pub fn get() -> TaskState {
+    pub fn get() -> ThreadState {
         let state = STATE.with(|ref k| {
             match *k.borrow() {
-                None => panic!("Task state not initialized"),
+                None => panic!("Thread state not initialized"),
                 Some(s) => s,
             }
         });
@@ -78,7 +78,7 @@ mod imp {
         state
     }
 
-    pub fn enter(x: TaskState) {
+    pub fn enter(x: ThreadState) {
         let state = get();
         assert!(!state.intersects(x));
         STATE.with(|ref k| {
@@ -86,7 +86,7 @@ mod imp {
         })
     }
 
-    pub fn exit(x: TaskState) {
+    pub fn exit(x: ThreadState) {
         let state = get();
         assert!(state.contains(x));
         STATE.with(|ref k| {
@@ -97,9 +97,9 @@ mod imp {
 
 #[cfg(not(debug_assertions))]
 mod imp {
-    use super::TaskState;
-    #[inline(always)] pub fn initialize(_: TaskState) { }
-    #[inline(always)] pub fn get() -> TaskState { TaskState::empty() }
-    #[inline(always)] pub fn enter(_: TaskState) { }
-    #[inline(always)] pub fn exit(_: TaskState) { }
+    use super::ThreadState;
+    #[inline(always)] pub fn initialize(_: ThreadState) { }
+    #[inline(always)] pub fn get() -> ThreadState { ThreadState::empty() }
+    #[inline(always)] pub fn enter(_: ThreadState) { }
+    #[inline(always)] pub fn exit(_: ThreadState) { }
 }

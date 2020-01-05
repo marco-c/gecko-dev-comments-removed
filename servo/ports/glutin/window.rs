@@ -5,7 +5,7 @@
 
 
 use NestedEventLoopListener;
-use compositing::compositor_task::{self, CompositorProxy, CompositorReceiver};
+use compositing::compositor_thread::{self, CompositorProxy, CompositorReceiver};
 #[cfg(feature = "window")]
 use compositing::windowing::{MouseWindowEvent, WindowNavigateMsg};
 use compositing::windowing::{WindowEvent, WindowMethods};
@@ -848,7 +848,7 @@ impl WindowMethods for Window {
 }
 
 struct GlutinCompositorProxy {
-    sender: Sender<compositor_task::Msg>,
+    sender: Sender<compositor_thread::Msg>,
     window_proxy: Option<glutin::WindowProxy>,
 }
 
@@ -856,7 +856,7 @@ struct GlutinCompositorProxy {
 unsafe impl Send for GlutinCompositorProxy {}
 
 impl CompositorProxy for GlutinCompositorProxy {
-    fn send(&self, msg: compositor_task::Msg) {
+    fn send(&self, msg: compositor_thread::Msg) {
         // Send a message and kick the OS event loop awake.
         self.sender.send(msg).unwrap();
         if let Some(ref window_proxy) = self.window_proxy {

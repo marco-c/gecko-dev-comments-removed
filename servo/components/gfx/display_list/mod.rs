@@ -25,7 +25,7 @@ use gfx_traits::{color, LayerId, LayerKind, ScrollPolicy};
 use msg::constellation_msg::PipelineId;
 use net_traits::image::base::Image;
 use paint_context::PaintContext;
-use paint_task::{PaintLayerContents, PaintLayer};
+use paint_thread::{PaintLayerContents, PaintLayer};
 use self::DisplayItem::*;
 use self::DisplayItemIterator::*;
 use smallvec::SmallVec;

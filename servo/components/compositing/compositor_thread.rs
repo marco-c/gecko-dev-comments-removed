@@ -146,8 +146,8 @@ impl PaintListener for Box<CompositorProxy + 'static + Send> {
         self.send(Msg::InitializeLayersForPipeline(pipeline_id, epoch, properties));
     }
 
-    fn notify_paint_task_exiting(&mut self, pipeline_id: PipelineId) {
-        self.send(Msg::PaintTaskExited(pipeline_id))
+    fn notify_paint_thread_exiting(&mut self, pipeline_id: PipelineId) {
+        self.send(Msg::PaintThreadExited(pipeline_id))
     }
 }
 
@@ -200,7 +200,7 @@ pub enum Msg {
     
     CreatePng(IpcSender<Option<Image>>),
     
-    PaintTaskExited(PipelineId),
+    PaintThreadExited(PipelineId),
     
     ViewportConstrained(PipelineId, ViewportConstraints),
     
@@ -247,7 +247,7 @@ impl Debug for Msg {
             Msg::TouchEventProcessed(..) => write!(f, "TouchEventProcessed"),
             Msg::SetCursor(..) => write!(f, "SetCursor"),
             Msg::CreatePng(..) => write!(f, "CreatePng"),
-            Msg::PaintTaskExited(..) => write!(f, "PaintTaskExited"),
+            Msg::PaintThreadExited(..) => write!(f, "PaintThreadExited"),
             Msg::ViewportConstrained(..) => write!(f, "ViewportConstrained"),
             Msg::IsReadyToSaveImageReply(..) => write!(f, "IsReadyToSaveImageReply"),
             Msg::NewFavicon(..) => write!(f, "NewFavicon"),
@@ -263,9 +263,9 @@ impl Debug for Msg {
     }
 }
 
-pub struct CompositorTask;
+pub struct CompositorThread;
 
-impl CompositorTask {
+impl CompositorThread {
     pub fn create<Window>(window: Option<Rc<Window>>,
                           state: InitialCompositorState)
                           -> Box<CompositorEventListener + 'static>

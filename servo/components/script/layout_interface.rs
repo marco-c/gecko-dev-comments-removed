@@ -15,7 +15,7 @@ use ipc_channel::ipc::{IpcReceiver, IpcSender};
 use msg::compositor_msg::Epoch;
 use msg::constellation_msg::{ConstellationChan, Failure, PipelineId};
 use msg::constellation_msg::{WindowSizeData};
-use net_traits::image_cache_task::ImageCacheTask;
+use net_traits::image_cache_thread::ImageCacheThread;
 use profile_traits::mem::ReportsChan;
 use script_traits::{ConstellationControlMsg, LayoutControlMsg, LayoutMsg as ConstellationMsg};
 use script_traits::{OpaqueScriptLayoutChannel, UntrustedNodeAddress};
@@ -84,7 +84,7 @@ pub enum Msg {
     
     
     
-    CreateLayoutTask(NewLayoutTaskInfo),
+    CreateLayoutThread(NewLayoutThreadInfo),
 
     
     SetFinalUrl(Url),
@@ -217,7 +217,7 @@ impl ScriptLayoutChan for OpaqueScriptLayoutChannel {
     }
 }
 
-pub struct NewLayoutTaskInfo {
+pub struct NewLayoutThreadInfo {
     pub id: PipelineId,
     pub url: Url,
     pub is_parent: bool,
@@ -226,7 +226,7 @@ pub struct NewLayoutTaskInfo {
     pub constellation_chan: ConstellationChan<ConstellationMsg>,
     pub failure: Failure,
     pub script_chan: IpcSender<ConstellationControlMsg>,
-    pub image_cache_task: ImageCacheTask,
+    pub image_cache_thread: ImageCacheThread,
     pub paint_chan: OptionalOpaqueIpcSender,
     pub layout_shutdown_chan: IpcSender<()>,
     pub content_process_shutdown_chan: IpcSender<()>,

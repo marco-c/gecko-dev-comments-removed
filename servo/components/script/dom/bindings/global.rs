@@ -19,9 +19,9 @@ use js::jsapi::GetGlobalForObjectCrossCompartment;
 use js::jsapi::{JSContext, JSObject, JS_GetClass, MutableHandleValue};
 use js::{JSCLASS_IS_DOMJSCLASS, JSCLASS_IS_GLOBAL};
 use msg::constellation_msg::{ConstellationChan, PipelineId};
-use net_traits::ResourceTask;
+use net_traits::ResourceThread;
 use profile_traits::mem;
-use script_task::{CommonScriptMsg, ScriptChan, ScriptPort, ScriptTask};
+use script_thread::{CommonScriptMsg, ScriptChan, ScriptPort, ScriptThread};
 use script_traits::{MsDuration, ScriptMsg as ConstellationMsg, TimerEventRequest};
 use timers::{ScheduledCallback, TimerHandle};
 use url::Url;
@@ -116,15 +116,15 @@ impl<'a> GlobalRef<'a> {
     }
 
     
-    pub fn resource_task(&self) -> ResourceTask {
+    pub fn resource_thread(&self) -> ResourceThread {
         match *self {
             GlobalRef::Window(ref window) => {
                 let doc = window.Document();
                 let doc = doc.r();
                 let loader = doc.loader();
-                (*loader.resource_task).clone()
+                (*loader.resource_thread).clone()
             }
-            GlobalRef::Worker(ref worker) => worker.resource_task().clone(),
+            GlobalRef::Worker(ref worker) => worker.resource_thread().clone(),
         }
     }
 
@@ -154,45 +154,45 @@ impl<'a> GlobalRef<'a> {
 
     
     
-    pub fn dom_manipulation_task_source(&self) -> Box<ScriptChan + Send> {
+    pub fn dom_manipulation_thread_source(&self) -> Box<ScriptChan + Send> {
         match *self {
-            GlobalRef::Window(ref window) => window.dom_manipulation_task_source(),
+            GlobalRef::Window(ref window) => window.dom_manipulation_thread_source(),
             GlobalRef::Worker(ref worker) => worker.script_chan(),
         }
     }
 
     
     
-    pub fn user_interaction_task_source(&self) -> Box<ScriptChan + Send> {
+    pub fn user_interaction_thread_source(&self) -> Box<ScriptChan + Send> {
         match *self {
-            GlobalRef::Window(ref window) => window.user_interaction_task_source(),
+            GlobalRef::Window(ref window) => window.user_interaction_thread_source(),
             GlobalRef::Worker(ref worker) => worker.script_chan(),
         }
     }
 
     
     
-    pub fn networking_task_source(&self) -> Box<ScriptChan + Send> {
+    pub fn networking_thread_source(&self) -> Box<ScriptChan + Send> {
         match *self {
-            GlobalRef::Window(ref window) => window.networking_task_source(),
+            GlobalRef::Window(ref window) => window.networking_thread_source(),
             GlobalRef::Worker(ref worker) => worker.script_chan(),
         }
     }
 
     
     
-    pub fn history_traversal_task_source(&self) -> Box<ScriptChan + Send> {
+    pub fn history_traversal_thread_source(&self) -> Box<ScriptChan + Send> {
         match *self {
-            GlobalRef::Window(ref window) => window.history_traversal_task_source(),
+            GlobalRef::Window(ref window) => window.history_traversal_thread_source(),
             GlobalRef::Worker(ref worker) => worker.script_chan(),
         }
     }
 
     
     
-    pub fn file_reading_task_source(&self) -> Box<ScriptChan + Send> {
+    pub fn file_reading_thread_source(&self) -> Box<ScriptChan + Send> {
         match *self {
-            GlobalRef::Window(ref window) => window.file_reading_task_source(),
+            GlobalRef::Window(ref window) => window.file_reading_thread_source(),
             GlobalRef::Worker(ref worker) => worker.script_chan(),
         }
     }
@@ -211,7 +211,7 @@ impl<'a> GlobalRef<'a> {
     
     pub fn process_event(&self, msg: CommonScriptMsg) {
         match *self {
-            GlobalRef::Window(_) => ScriptTask::process_event(msg),
+            GlobalRef::Window(_) => ScriptThread::process_event(msg),
             GlobalRef::Worker(ref worker) => worker.process_event(msg),
         }
     }

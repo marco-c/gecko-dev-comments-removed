@@ -197,7 +197,7 @@ impl CORSCache for BasicCORSCache {
 }
 
 
-pub enum CORSCacheTaskMsg {
+pub enum CORSCacheThreadMsg {
     Clear(CacheRequestDetails, Sender<()>),
     Cleanup(Sender<()>),
     MatchHeader(CacheRequestDetails, String, Sender<bool>),
@@ -212,48 +212,48 @@ pub enum CORSCacheTaskMsg {
 
 
 
-pub type CORSCacheSender = Sender<CORSCacheTaskMsg>;
+pub type CORSCacheSender = Sender<CORSCacheThreadMsg>;
 
 impl CORSCache for CORSCacheSender {
     fn clear (&mut self, request: CacheRequestDetails) {
         let (tx, rx) = channel();
-        let _ = self.send(CORSCacheTaskMsg::Clear(request, tx));
+        let _ = self.send(CORSCacheThreadMsg::Clear(request, tx));
         let _ = rx.recv();
     }
 
     fn cleanup(&mut self) {
         let (tx, rx) = channel();
-        let _ = self.send(CORSCacheTaskMsg::Cleanup(tx));
+        let _ = self.send(CORSCacheThreadMsg::Cleanup(tx));
         let _ = rx.recv();
     }
 
     fn match_header(&mut self, request: CacheRequestDetails, header_name: &str) -> bool {
         let (tx, rx) = channel();
-        let _ = self.send(CORSCacheTaskMsg::MatchHeader(request, header_name.to_owned(), tx));
+        let _ = self.send(CORSCacheThreadMsg::MatchHeader(request, header_name.to_owned(), tx));
         rx.recv().unwrap_or(false)
     }
 
     fn match_header_and_update(&mut self, request: CacheRequestDetails, header_name: &str, new_max_age: u32) -> bool {
         let (tx, rx) = channel();
-        let _ = self.send(CORSCacheTaskMsg::MatchHeaderUpdate(request, header_name.to_owned(), new_max_age, tx));
+        let _ = self.send(CORSCacheThreadMsg::MatchHeaderUpdate(request, header_name.to_owned(), new_max_age, tx));
         rx.recv().unwrap_or(false)
     }
 
     fn match_method(&mut self, request: CacheRequestDetails, method: Method) -> bool {
         let (tx, rx) = channel();
-        let _ = self.send(CORSCacheTaskMsg::MatchMethod(request, method, tx));
+        let _ = self.send(CORSCacheThreadMsg::MatchMethod(request, method, tx));
         rx.recv().unwrap_or(false)
     }
 
     fn match_method_and_update(&mut self, request: CacheRequestDetails, method: Method, new_max_age: u32) -> bool {
         let (tx, rx) = channel();
-        let _ = self.send(CORSCacheTaskMsg::MatchMethodUpdate(request, method, new_max_age, tx));
+        let _ = self.send(CORSCacheThreadMsg::MatchMethodUpdate(request, method, new_max_age, tx));
         rx.recv().unwrap_or(false)
     }
 
     fn insert(&mut self, entry: CORSCacheEntry) {
         let (tx, rx) = channel();
-        let _ = self.send(CORSCacheTaskMsg::Insert(entry, tx));
+        let _ = self.send(CORSCacheThreadMsg::Insert(entry, tx));
         let _ = rx.recv();
     }
 }
@@ -268,16 +268,16 @@ impl CORSCache for CORSCacheSender {
 
 
 
-pub struct CORSCacheTask {
-    receiver: Receiver<CORSCacheTaskMsg>,
+pub struct CORSCacheThread {
+    receiver: Receiver<CORSCacheThreadMsg>,
     cache: BasicCORSCache,
     sender: CORSCacheSender
 }
 
-impl CORSCacheTask {
-    pub fn new() -> CORSCacheTask {
+impl CORSCacheThread {
+    pub fn new() -> CORSCacheThread {
         let (tx, rx) = channel();
-        CORSCacheTask {
+        CORSCacheThread {
             receiver: rx,
             cache: BasicCORSCache(vec![]),
             sender: tx
@@ -296,31 +296,31 @@ impl CORSCacheTask {
     pub fn run(&mut self) {
         loop {
             match self.receiver.recv().unwrap() {
-                CORSCacheTaskMsg::Clear(request, tx) => {
+                CORSCacheThreadMsg::Clear(request, tx) => {
                     self.cache.clear(request);
                     let _ = tx.send(());
                 },
-                CORSCacheTaskMsg::Cleanup(tx) => {
+                CORSCacheThreadMsg::Cleanup(tx) => {
                     self.cache.cleanup();
                     let _ = tx.send(());
                 },
-                CORSCacheTaskMsg::MatchHeader(request, header, tx) => {
+                CORSCacheThreadMsg::MatchHeader(request, header, tx) => {
                     let _ = tx.send(self.cache.match_header(request, &header));
                 },
-                CORSCacheTaskMsg::MatchHeaderUpdate(request, header, new_max_age, tx) => {
+                CORSCacheThreadMsg::MatchHeaderUpdate(request, header, new_max_age, tx) => {
                     let _ = tx.send(self.cache.match_header_and_update(request, &header, new_max_age));
                 },
-                CORSCacheTaskMsg::MatchMethod(request, method, tx) => {
+                CORSCacheThreadMsg::MatchMethod(request, method, tx) => {
                     let _ = tx.send(self.cache.match_method(request, method));
                 },
-                CORSCacheTaskMsg::MatchMethodUpdate(request, method, new_max_age, tx) => {
+                CORSCacheThreadMsg::MatchMethodUpdate(request, method, new_max_age, tx) => {
                     let _ = tx.send(self.cache.match_method_and_update(request, method, new_max_age));
                 },
-                CORSCacheTaskMsg::Insert(entry, tx) => {
+                CORSCacheThreadMsg::Insert(entry, tx) => {
                     self.cache.insert(entry);
                     let _ = tx.send(());
                 },
-                CORSCacheTaskMsg::ExitMsg => break
+                CORSCacheThreadMsg::ExitMsg => break
             }
         }
     }

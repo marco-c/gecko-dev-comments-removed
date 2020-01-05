@@ -7,8 +7,8 @@
 use dom::bindings::trace::JSTraceable;
 use js::jsapi::JSTracer;
 use std::cell::{BorrowState, Ref, RefCell, RefMut};
-use util::task_state;
-use util::task_state::SCRIPT;
+use util::thread_state;
+use util::thread_state::SCRIPT;
 
 
 
@@ -28,7 +28,7 @@ impl<T> DOMRefCell<T> {
     
     #[allow(unsafe_code)]
     pub unsafe fn borrow_for_layout(&self) -> &T {
-        debug_assert!(task_state::get().is_layout());
+        debug_assert!(thread_state::get().is_layout());
         &*self.value.as_unsafe_cell().get()
     }
 
@@ -48,7 +48,7 @@ impl<T> DOMRefCell<T> {
     
     #[allow(unsafe_code)]
     pub unsafe fn borrow_for_script_deallocation(&self) -> &mut T {
-        debug_assert!(task_state::get().contains(SCRIPT));
+        debug_assert!(thread_state::get().contains(SCRIPT));
         &mut *self.value.as_unsafe_cell().get()
     }
 
@@ -70,7 +70,7 @@ impl<T> DOMRefCell<T> {
     
     
     pub fn try_borrow(&self) -> Option<Ref<T>> {
-        debug_assert!(task_state::get().is_script());
+        debug_assert!(thread_state::get().is_script());
         match self.value.borrow_state() {
             BorrowState::Writing => None,
             _ => Some(self.value.borrow()),
@@ -88,7 +88,7 @@ impl<T> DOMRefCell<T> {
     
     
     pub fn try_borrow_mut(&self) -> Option<RefMut<T>> {
-        debug_assert!(task_state::get().is_script());
+        debug_assert!(thread_state::get().is_script());
         match self.value.borrow_state() {
             BorrowState::Unused => Some(self.value.borrow_mut()),
             _ => None,
@@ -98,7 +98,7 @@ impl<T> DOMRefCell<T> {
     
     
     pub fn borrow_mut_for_layout(&self) -> RefMut<T> {
-        debug_assert!(task_state::get().is_layout());
+        debug_assert!(thread_state::get().is_layout());
         self.value.borrow_mut()
     }
 }
