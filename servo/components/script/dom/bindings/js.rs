@@ -342,51 +342,47 @@ impl<T: HeapGCValue+Copy> MutHeap<T> {
 
 
 
+
 #[must_root]
 #[jstraceable]
-pub struct MutNullableJS<T: Reflectable> {
-    ptr: Cell<Option<JS<T>>>
+pub struct MutNullableHeap<T: HeapGCValue+Copy> {
+    ptr: Cell<Option<T>>
 }
 
-impl<U: Reflectable> MutNullableJS<U> {
+impl<T: HeapGCValue+Copy> MutNullableHeap<T> {
     
-    pub fn new<T: Assignable<U>>(initial: Option<T>) -> MutNullableJS<U> {
-        MutNullableJS {
-            ptr: Cell::new(initial.map(|initial| {
-                unsafe { initial.get_js() }
-            }))
+    pub fn new(initial: Option<T>) -> MutNullableHeap<T> {
+        MutNullableHeap {
+            ptr: Cell::new(initial)
         }
     }
+
+    
+    
+    pub fn set(&self, val: Option<T>) {
+        self.ptr.set(val);
+    }
+
+    
+    pub fn get(&self) -> Option<T> {
+        self.ptr.get()
+    }
 }
 
-impl<T: Reflectable> Default for MutNullableJS<T> {
-    fn default() -> MutNullableJS<T> {
-        MutNullableJS {
-            ptr: Cell::new(None)
+impl<T: Reflectable> MutNullableHeap<JS<T>> {
+    
+    
+    pub fn or_init<F>(&self, cb: F) -> Temporary<T>
+        where F: FnOnce() -> Temporary<T>
+    {
+        match self.get() {
+            Some(inner) => Temporary::new(inner),
+            None => {
+                let inner = cb();
+                self.set(Some(JS::from_rooted(inner.clone())));
+                inner
+            },
         }
-    }
-}
-
-impl<T: Reflectable> MutNullableJS<T> {
-    
-    
-    
-    
-    pub fn assign<U: Assignable<T>>(&self, val: Option<U>) {
-        self.ptr.set(val.map(|val| {
-            unsafe { val.get_js() }
-        }));
-    }
-
-    
-    
-    pub fn clear(&self) {
-        self.assign(None::<JS<T>>);
-    }
-
-    
-    pub fn get(&self) -> Option<Temporary<T>> {
-        self.ptr.get().map(Temporary::new)
     }
 
     
@@ -394,19 +390,12 @@ impl<T: Reflectable> MutNullableJS<T> {
     pub unsafe fn get_inner_as_layout(&self) -> Option<LayoutJS<T>> {
         self.ptr.get().map(|js| js.to_layout())
     }
+}
 
-    
-    
-    pub fn or_init<F>(&self, cb: F) -> Temporary<T>
-        where F: FnOnce() -> Temporary<T>
-    {
-        match self.get() {
-            Some(inner) => inner,
-            None => {
-                let inner = cb();
-                self.assign(Some(inner.clone()));
-                inner
-            },
+impl<T: HeapGCValue+Copy> Default for MutNullableHeap<T> {
+    fn default() -> MutNullableHeap<T> {
+        MutNullableHeap {
+            ptr: Cell::new(None)
         }
     }
 }
