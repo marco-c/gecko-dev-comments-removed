@@ -374,6 +374,15 @@ public:
   
 
 
+  bool UpdateTransitions(
+    mozilla::dom::Element *aElement,
+    mozilla::CSSPseudoElementType aPseudoType,
+    const mozilla::ServoComputedValuesWithParent& aOldStyle,
+    const mozilla::ServoComputedValuesWithParent& aNewStyle);
+
+  
+
+
 
 
 
@@ -415,13 +424,14 @@ protected:
   
   
   
+  
   template<typename StyleType> bool
-  UpdateTransitions(const nsStyleDisplay* aDisp,
-                    mozilla::dom::Element* aElement,
-                    mozilla::CSSPseudoElementType aPseudoType,
-                    CSSTransitionCollection*& aElementTransitions,
-                    StyleType aOldStyle,
-                    StyleType aNewStyle);
+  DoUpdateTransitions(const nsStyleDisplay* aDisp,
+                      mozilla::dom::Element* aElement,
+                      mozilla::CSSPseudoElementType aPseudoType,
+                      CSSTransitionCollection*& aElementTransitions,
+                      StyleType aOldStyle,
+                      StyleType aNewStyle);
 
   template<typename StyleType> void
   ConsiderInitiatingTransition(nsCSSPropertyID aProperty,
