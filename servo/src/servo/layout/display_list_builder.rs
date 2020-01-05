@@ -16,6 +16,7 @@ use geom::rect::Rect;
 use gfx::display_list::DisplayList;
 use gfx::geometry::Au;
 use gfx;
+use newcss;
 use servo_util::tree::TreeNodeRef;
 
 
@@ -70,6 +71,22 @@ impl FlowDisplayListBuilderMethods for FlowContext {
                 debug!("build_display_list_for_child: Did not intersect...");
             }
         }
+    }
+}
+
+
+
+
+
+
+pub trait ToGfxColor {
+    
+    fn to_gfx_color(&self) -> gfx::color::Color;
+}
+
+impl ToGfxColor for newcss::color::Color {
+    fn to_gfx_color(&self) -> gfx::color::Color {
+        gfx::color::rgba(self.red, self.green, self.blue, self.alpha)
     }
 }
 
