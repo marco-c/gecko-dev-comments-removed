@@ -72,34 +72,40 @@ NewConsoleOutputWrapper.prototype = {
 
     this.body = ReactDOM.render(provider, this.parentNode);
   },
-  dispatchMessageAdd: function(message, waitForResponse) {
-      let action = actions.messageAdd(message);
-      let messageId = action.message.get("id");
-      batchedMessageAdd(action);
 
-      
-      
-      
-      if (waitForResponse) {
-        return new Promise(resolve => {
-          let jsterm = this.jsterm;
-          jsterm.hud.on("new-messages", function onThisMessage(e, messages) {
-            for (let m of messages) {
-              if (m.messageId == messageId) {
-                resolve(m.node);
-                jsterm.hud.off("new-messages", onThisMessage);
-                return;
-              }
+  dispatchMessageAdd: function (message, waitForResponse) {
+    let action = actions.messageAdd(message);
+    batchedMessageAdd(action);
+
+    
+    
+    
+    
+    if (waitForResponse && action.message) {
+      let messageId = action.message.get("id");
+      return new Promise(resolve => {
+        let jsterm = this.jsterm;
+        jsterm.hud.on("new-messages", function onThisMessage(e, messages) {
+          for (let m of messages) {
+            if (m.messageId == messageId) {
+              resolve(m.node);
+              jsterm.hud.off("new-messages", onThisMessage);
+              return;
             }
-          });
+          }
         });
-      }
+      });
+    }
+
+    return Promise.resolve();
   },
-  dispatchMessagesAdd: function(messages) {
+
+  dispatchMessagesAdd: function (messages) {
     const batchedActions = messages.map(message => actions.messageAdd(message));
     store.dispatch(actions.batchActions(batchedActions));
   },
-  dispatchMessagesClear: function() {
+
+  dispatchMessagesClear: function () {
     store.dispatch(actions.messagesClear());
   },
 };
