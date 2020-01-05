@@ -313,7 +313,7 @@ pub enum MozBrowserEvent {
     
     Error,
     
-    IconChange,
+    IconChange(String, String, String),
     
     LoadEnd,
     
@@ -341,7 +341,7 @@ impl MozBrowserEvent {
             MozBrowserEvent::Close => "mozbrowserclose",
             MozBrowserEvent::ContextMenu => "mozbrowsercontextmenu",
             MozBrowserEvent::Error => "mozbrowsererror",
-            MozBrowserEvent::IconChange => "mozbrowsericonchange",
+            MozBrowserEvent::IconChange(_, _, _) => "mozbrowsericonchange",
             MozBrowserEvent::LoadEnd => "mozbrowserloadend",
             MozBrowserEvent::LoadStart => "mozbrowserloadstart",
             MozBrowserEvent::LocationChange(_) => "mozbrowserlocationchange",
@@ -351,17 +351,6 @@ impl MozBrowserEvent {
             MozBrowserEvent::TitleChange(_) => "mozbrowsertitlechange",
             MozBrowserEvent::UsernameAndPasswordRequired => "mozbrowserusernameandpasswordrequired",
             MozBrowserEvent::OpenSearch => "mozbrowseropensearch"
-        }
-    }
-    pub fn detail(&self) -> Option<String> {
-        match *self {
-            MozBrowserEvent::AsyncScroll | MozBrowserEvent::Close | MozBrowserEvent::ContextMenu |
-            MozBrowserEvent::Error | MozBrowserEvent::IconChange | MozBrowserEvent::LoadEnd |
-            MozBrowserEvent::LoadStart | MozBrowserEvent::OpenWindow | MozBrowserEvent::SecurityChange |
-            MozBrowserEvent::ShowModalPrompt | MozBrowserEvent::UsernameAndPasswordRequired |
-            MozBrowserEvent::OpenSearch => None,
-            MozBrowserEvent::LocationChange(ref new_location) => Some(new_location.clone()),
-            MozBrowserEvent::TitleChange(ref new_title) => Some(new_title.clone()),
         }
     }
 }
