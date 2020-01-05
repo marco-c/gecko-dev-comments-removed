@@ -312,7 +312,8 @@ EffectCompositor::PostRestyleForAnimation(dom::Element* aElement,
 
   
   
-  if (mPresContext->StyleSet()->IsServo()) {
+  if (mPresContext->StyleSet()->IsServo() &&
+      !mPresContext->RestyleManager()->AsBase()->IsInStyleRefresh()) {
     hint = eRestyle_Self | eRestyle_Subtree;
   }
   mPresContext->PresShell()->RestyleForAnimation(element, hint);
