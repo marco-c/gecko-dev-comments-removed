@@ -121,6 +121,16 @@ var gAdvancedPane = {
       return;
     var advancedPrefs = document.getElementById("advancedPrefs");
     var preference = document.getElementById("browser.preferences.advanced.selectedTabIndex");
+
+    
+    
+    
+    if (preference.valueFromPreferences != advancedPrefs.selectedIndex) {
+      Services.telemetry
+              .getHistogramById("FX_PREFERENCES_CATEGORY_OPENED")
+              .add(telemetryBucketForCategory("advanced"));
+    }
+
     preference.valueFromPreferences = advancedPrefs.selectedIndex;
   },
 
