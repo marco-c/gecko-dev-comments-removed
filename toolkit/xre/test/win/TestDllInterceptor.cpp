@@ -209,20 +209,15 @@ int main()
       TestHook("kernel32.dll", "VirtualAlloc") &&
       TestHook("kernel32.dll", "MapViewOfFile") &&
       TestHook("gdi32.dll", "CreateDIBSection") &&
-      TestHook("kernel32.dll", "CreateFileW") &&    
+      TestHook("kernel32.dll", "CreateFileW") &&
 #endif
-      TestHook("kernel32.dll", "CreateFileA") &&
       TestDetour("user32.dll", "CreateWindowExW") &&
       TestHook("user32.dll", "InSendMessageEx") &&
       TestHook("imm32.dll", "ImmGetContext") &&
-      
       TestHook("imm32.dll", "ImmGetCompositionStringW") &&
       TestHook("imm32.dll", "ImmSetCandidateWindow") &&
-      TestHook("imm32.dll", "ImmNotifyIME") &&
-      TestHook("comdlg32.dll", "GetSaveFileNameW") &&
-      TestHook("comdlg32.dll", "GetOpenFileNameW") &&
 #ifdef _M_X64
-      TestHook("user32.dll", "GetKeyState") &&    
+      TestHook("user32.dll", "GetKeyState") &&
 #endif
       MaybeTestHook(ShouldTestTipTsf(), "tiptsf.dll", "ProcessCaretEvents") &&
 #ifdef _M_IX86
