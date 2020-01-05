@@ -71,7 +71,12 @@ class GeckoInstance(object):
         "hangmonitor.timeout": 0,
 
         "javascript.options.showInConsole": True,
+
+        
         "marionette.enabled": True,
+        
+        "marionette.prefs.recommended": False,
+
         "media.volume_scale": "0.01",
 
         
