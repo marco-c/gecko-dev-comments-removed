@@ -16,10 +16,11 @@
 
 
 
-#ifndef wasm_binary_format_h
-#define wasm_binary_format_h
+#ifndef wasm_validate_h
+#define wasm_validate_h
 
 #include "wasm/WasmCode.h"
+#include "wasm/WasmTypes.h"
 
 namespace js {
 namespace wasm {
@@ -710,7 +711,10 @@ DecodeDataSection(Decoder& d, const ModuleEnvironment& env, DataSegmentVector* s
 MOZ_MUST_USE bool
 DecodeUnknownSections(Decoder& d);
 
-} 
-} 
+MOZ_MUST_USE bool
+ValidateFunctionBody(const ModuleEnvironment& env, uint32_t funcIndex, Decoder& d);
+
+}  
+}  
 
 #endif 
