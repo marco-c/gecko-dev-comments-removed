@@ -3636,10 +3636,12 @@ public:
                             const nsStyleCoord& aCoord,
                             ComputeSizeFlags    aFlags = eDefault);
 protected:
-  static void ReparentFrameViewTo(nsIFrame* aFrame,
-                                  nsViewManager* aViewManager,
-                                  nsView*        aNewParentView,
-                                  nsView*        aOldParentView);
+  
+
+
+  void ReparentFrameViewTo(nsViewManager* aViewManager,
+                           nsView*        aNewParentView,
+                           nsView*        aOldParentView);
 
   
   nsRect           mRect;

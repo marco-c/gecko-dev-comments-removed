@@ -981,19 +981,18 @@ nsFrame::DidSetStyleContext(nsStyleContext* aOldStyleContext)
 }
 
 void
-nsIFrame::ReparentFrameViewTo(nsIFrame* aFrame,
-                              nsViewManager* aViewManager,
+nsIFrame::ReparentFrameViewTo(nsViewManager* aViewManager,
                               nsView*        aNewParentView,
                               nsView*        aOldParentView)
 {
-  if (aFrame->HasView()) {
+  if (HasView()) {
 #ifdef MOZ_XUL
-    if (aFrame->GetType() == nsGkAtoms::menuPopupFrame) {
+    if (GetType() == nsGkAtoms::menuPopupFrame) {
       
       return;
     }
 #endif
-    nsView* view = aFrame->GetView();
+    nsView* view = GetView();
     
     
     
@@ -1001,17 +1000,17 @@ nsIFrame::ReparentFrameViewTo(nsIFrame* aFrame,
     aViewManager->RemoveChild(view);
     
     
-    nsView* insertBefore = nsLayoutUtils::FindSiblingViewFor(aNewParentView, aFrame);
+    nsView* insertBefore = nsLayoutUtils::FindSiblingViewFor(aNewParentView, this);
     aViewManager->InsertChild(aNewParentView, view, insertBefore, insertBefore != nullptr);
-  } else if (aFrame->GetStateBits() & NS_FRAME_HAS_CHILD_WITH_VIEW) {
-    nsIFrame::ChildListIterator lists(aFrame);
+  } else if (GetStateBits() & NS_FRAME_HAS_CHILD_WITH_VIEW) {
+    nsIFrame::ChildListIterator lists(this);
     for (; !lists.IsDone(); lists.Next()) {
       
       
       nsFrameList::Enumerator childFrames(lists.CurrentList());
       for (; !childFrames.AtEnd(); childFrames.Next()) {
-        ReparentFrameViewTo(childFrames.get(), aViewManager,
-                            aNewParentView, aOldParentView);
+        childFrames.get()->ReparentFrameViewTo(aViewManager, aNewParentView,
+                                               aOldParentView);
       }
     }
   }
@@ -1085,7 +1084,7 @@ nsFrame::CreateView()
   
   
   
-  ReparentFrameViewTo(this, viewManager, view, parentView);
+  ReparentFrameViewTo(viewManager, view, parentView);
 
   
   SetView(view);
