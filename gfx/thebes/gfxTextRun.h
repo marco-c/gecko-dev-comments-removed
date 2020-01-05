@@ -177,8 +177,17 @@ public:
 
     enum class HyphenType : uint8_t {
       None,
-      Manual,
-      Auto
+      Explicit,
+      Soft,
+      AutoWithManualInSameWord,
+      AutoWithoutManualInSameWord
+    };
+
+    struct HyphenationState {
+      uint32_t mostRecentBoundary = 0;
+      bool     hasManualHyphen = false;
+      bool     hasExplicitHyphen = false;
+      bool     hasAutoHyphen = false;
     };
 
     
@@ -343,6 +352,10 @@ public:
       
       eSuppressAllBreaks
     };
+
+    void ClassifyAutoHyphenations(uint32_t aStart, Range aRange,
+                                  nsTArray<HyphenType>& aHyphenBuffer,
+                                  HyphenationState* aWordState);
 
     
 

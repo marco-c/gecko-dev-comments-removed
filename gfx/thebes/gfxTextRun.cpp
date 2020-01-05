@@ -841,6 +841,73 @@ gfxTextRun::MeasureText(Range aRange,
 
 #define MEASUREMENT_BUFFER_SIZE 100
 
+void
+gfxTextRun::ClassifyAutoHyphenations(uint32_t aStart, Range aRange,
+                                     nsTArray<HyphenType>& aHyphenBuffer,
+                                     HyphenationState* aWordState)
+{
+  NS_PRECONDITION(aRange.end - aStart <= aHyphenBuffer.Length() &&
+                  aRange.start >= aStart, "Range out of bounds");
+  MOZ_ASSERT(aWordState->mostRecentBoundary >= aStart,
+             "Unexpected aMostRecentWordBoundary!!");
+
+  uint32_t start = std::min<uint32_t>(aRange.start, aWordState->mostRecentBoundary);
+
+  for (uint32_t i = start; i < aRange.end; ++i) {
+    if (aHyphenBuffer[i - aStart] == HyphenType::Explicit &&
+        !aWordState->hasExplicitHyphen) {
+      aWordState->hasExplicitHyphen = true;
+    }
+    if (!aWordState->hasManualHyphen &&
+        (aHyphenBuffer[i - aStart] == HyphenType::Soft ||
+         aHyphenBuffer[i - aStart] == HyphenType::Explicit)) {
+      aWordState->hasManualHyphen = true;
+      
+      
+      
+      
+      if (aWordState->hasAutoHyphen) {
+        for (uint32_t j = aWordState->mostRecentBoundary; j < i; j++) {
+          if (aHyphenBuffer[j - aStart] == HyphenType::AutoWithoutManualInSameWord) {
+            aHyphenBuffer[j - aStart] = HyphenType::AutoWithManualInSameWord;
+          }
+        }
+      }
+    }
+    if (aHyphenBuffer[i - aStart] == HyphenType::AutoWithoutManualInSameWord) {
+      if (!aWordState->hasAutoHyphen) {
+        aWordState->hasAutoHyphen = true;
+      }
+      if (aWordState->hasManualHyphen) {
+        aHyphenBuffer[i - aStart] = HyphenType::AutoWithManualInSameWord;
+      }
+    }
+
+    
+    if (mCharacterGlyphs[i].CharIsSpace() ||
+        mCharacterGlyphs[i].CharIsTab() ||
+        mCharacterGlyphs[i].CharIsNewline() ||
+        
+        
+        i == GetLength() - 1) {
+      
+      
+      
+      if (!aWordState->hasAutoHyphen && aWordState->hasExplicitHyphen) {
+        for (uint32_t j = aWordState->mostRecentBoundary; j <= i; j++) {
+          if (aHyphenBuffer[j - aStart] == HyphenType::Explicit) {
+            aHyphenBuffer[j - aStart] = HyphenType::None;
+          }
+        }
+      }
+      aWordState->mostRecentBoundary = i;
+      aWordState->hasManualHyphen = false;
+      aWordState->hasAutoHyphen = false;
+      aWordState->hasExplicitHyphen = false;
+    }
+  }
+}
+
 uint32_t
 gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
                                 bool aLineBreakBefore, gfxFloat aWidth,
@@ -868,6 +935,8 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
         GetAdjustedSpacing(this, bufferRange, aProvider, spacingBuffer);
     }
     AutoTArray<HyphenType, 4096> hyphenBuffer;
+    HyphenationState wordState;
+    wordState.mostRecentBoundary = aStart;
     bool haveHyphenation = aProvider &&
         (aProvider->GetHyphensOption() == StyleHyphens::Auto ||
          (aProvider->GetHyphensOption() == StyleHyphens::Manual &&
@@ -875,6 +944,10 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
     if (haveHyphenation) {
         if (hyphenBuffer.AppendElements(bufferRange.Length(), fallible)) {
             aProvider->GetHyphenationBreaks(bufferRange, hyphenBuffer.Elements());
+            if (aProvider->GetHyphensOption() == StyleHyphens::Auto) {
+                ClassifyAutoHyphenations(aStart, bufferRange, hyphenBuffer,
+                                         &wordState);
+            }
         } else {
             haveHyphenation = false;
         }
@@ -889,10 +962,15 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
     int32_t lastBreak = -1;
     int32_t lastBreakTrimmableChars = -1;
     gfxFloat lastBreakTrimmableAdvance = -1;
+    
+    int32_t lastCandidateBreak = -1;
+    int32_t lastCandidateBreakTrimmableChars = -1;
+    gfxFloat lastCandidateBreakTrimmableAdvance = -1;
+    bool lastCandidateBreakUsedHyphenation = false;
+    gfxBreakPriority lastCandidateBreakPriority = gfxBreakPriority::eNoBreak;
     bool aborted = false;
     uint32_t end = aStart + aMaxLength;
     bool lastBreakUsedHyphenation = false;
-
     Range ligatureRange(aStart, end);
     ShrinkToLigatureBoundaries(&ligatureRange);
 
@@ -920,6 +998,19 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
                 if (hyphenBuffer.AppendElements(bufferRange.Length(), fallible)) {
                     aProvider->GetHyphenationBreaks(
                         bufferRange, hyphenBuffer.Elements() + oldHyphenBufferLength);
+                    if (aProvider->GetHyphensOption() == StyleHyphens::Auto) {
+                        uint32_t prevMostRecentWordBoundary = wordState.mostRecentBoundary;
+                        ClassifyAutoHyphenations(aStart, bufferRange, hyphenBuffer,
+                                                 &wordState);
+                        
+                        
+                        
+                        
+                        if (prevMostRecentWordBoundary < oldHyphenBufferLength) {
+                            i = prevMostRecentWordBoundary - 1;
+                            continue;
+                        }
+                    }
                 } else {
                     haveHyphenation = false;
                 }
@@ -935,6 +1026,8 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
             bool atNaturalBreak = mCharacterGlyphs[i].CanBreakBefore() == 1;
             bool atHyphenationBreak = !atNaturalBreak && haveHyphenation &&
                 hyphenBuffer[i - aStart] != HyphenType::None;
+            bool atAutoHyphenWithManualHyphenInSameWord = atHyphenationBreak &&
+                hyphenBuffer[i - aStart] == HyphenType::AutoWithManualInSameWord;
             bool atBreak = atNaturalBreak || atHyphenationBreak;
             bool wordWrapping =
                 aCanWordWrap && mCharacterGlyphs[i].IsClusterStart() &&
@@ -946,7 +1039,8 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
                     hyphenatedAdvance += aProvider->GetHyphenWidth();
                 }
 
-                if (lastBreak < 0 || width + hyphenatedAdvance - trimmableAdvance <= aWidth) {
+                if (lastBreak < 0 ||
+                    width + hyphenatedAdvance - trimmableAdvance <= aWidth) {
                     
                     lastBreak = i;
                     lastBreakTrimmableChars = trimmableChars;
@@ -962,6 +1056,26 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
                     
                     aborted = true;
                     break;
+                }
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                
+                if (wordWrapping ||
+                    !atAutoHyphenWithManualHyphenInSameWord) {
+                    lastCandidateBreak = lastBreak;
+                    lastCandidateBreakTrimmableChars = lastBreakTrimmableChars;
+                    lastCandidateBreakTrimmableAdvance = lastBreakTrimmableAdvance;
+                    lastCandidateBreakUsedHyphenation = lastBreakUsedHyphenation;
+                    lastCandidateBreakPriority = *aBreakPriority;
                 }
             }
         }
@@ -1004,6 +1118,13 @@ gfxTextRun::BreakAndMeasureText(uint32_t aStart, uint32_t aMaxLength,
     if (width - trimmableAdvance <= aWidth) {
         charsFit = aMaxLength;
     } else if (lastBreak >= 0) {
+        if (lastCandidateBreak >= 0 && lastCandidateBreak != lastBreak) {
+            lastBreak = lastCandidateBreak;
+            lastBreakTrimmableChars = lastCandidateBreakTrimmableChars;
+            lastBreakTrimmableAdvance = lastCandidateBreakTrimmableAdvance;
+            lastBreakUsedHyphenation = lastCandidateBreakUsedHyphenation;
+            *aBreakPriority = lastCandidateBreakPriority;
+        }
         charsFit = lastBreak - aStart;
         trimmableChars = lastBreakTrimmableChars;
         trimmableAdvance = lastBreakTrimmableAdvance;
