@@ -16,6 +16,9 @@ XPCOMUtils.defineLazyModuleGetter(this, "console",
   "resource://gre/modules/Console.jsm");
 
 
+const DOM_STORAGE_LIMIT_PREF = "browser.sessionstore.dom_storage_limit";
+
+
 function getPrincipalForFrame(docShell, frame) {
   let ssm = Services.scriptSecurityManager;
   let uri = frame.document.documentURIObject;
@@ -179,14 +182,25 @@ var SessionStorageInternal = {
       storage = null;
     }
 
-    if (storage && storage.length) {
-       for (let i = 0; i < storage.length; i++) {
-        try {
-          let key = storage.key(i);
-          hostData[key] = storage.getItem(key);
-        } catch (e) {
-          
-        }
+    if (!storage || !storage.length) {
+      return hostData;
+    }
+
+    
+    let usage = window.QueryInterface(Ci.nsIInterfaceRequestor)
+                      .getInterface(Ci.nsIDOMWindowUtils)
+                      .getStorageUsage(storage);
+    Services.telemetry.getHistogramById("FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS").add(usage);
+    if (usage > Services.prefs.getIntPref(DOM_STORAGE_LIMIT_PREF)) {
+      return hostData;
+    }
+
+    for (let i = 0; i < storage.length; i++) {
+      try {
+        let key = storage.key(i);
+        hostData[key] = storage.getItem(key);
+      } catch (e) {
+        
       }
     }
 

@@ -27,7 +27,7 @@ add_task(function* test_telemetry() {
   
   
   yield BrowserTestUtils.waitForCondition(() => {
-    return histogram.snapshot().counts[5] > snap1.counts[5];
+    return histogram.snapshot().counts[4] > snap1.counts[4];
   });
 
   Assert.ok(true);

@@ -49,7 +49,7 @@ XPCOMUtils.defineLazyGetter(this, "gContentRestore",
 var gCurrentEpoch = 0;
 
 
-const DOM_STORAGE_MAX_CHARS = 10000000; 
+const DOM_STORAGE_LIMIT_PREF = "browser.sessionstore.dom_storage_limit";
 
 
 
@@ -585,37 +585,6 @@ var SessionStorageListener = {
   
   
   
-  
-  
-  
-  
-  
-  
-  
-  estimateStorageSize(collected) {
-    if (!collected) {
-      return 0;
-    }
-
-    let size = 0;
-    for (let host of Object.keys(collected)) {
-      size += host.length;
-      let perHost = collected[host];
-      for (let key of Object.keys(perHost)) {
-        size += key.length;
-        let perKey = perHost[key];
-        size += perKey.length;
-      }
-    }
-
-    return size;
-  },
-
-  
-  
-  
-  
-  
   _changes: undefined,
 
   resetChanges() {
@@ -623,55 +592,56 @@ var SessionStorageListener = {
   },
 
   collectFromEvent(event) {
-    
-    if (docShell) {
-      let {url, key, newValue} = event;
-      let uri = Services.io.newURI(url);
-      let domain = uri.prePath;
-      if (!this._changes) {
-        this._changes = {};
-      }
-      if (!this._changes[domain]) {
-        this._changes[domain] = {};
-      }
-      this._changes[domain][key] = newValue;
-
-      MessageQueue.push("storagechange", () => {
-        let tmp = this._changes;
-        
-        
-        
-        this.resetChanges();
-        return tmp;
-      });
+    if (!docShell) {
+      return;
     }
-  },
 
-  collect() {
-    if (docShell) {
+    
+    let usage = content.QueryInterface(Ci.nsIInterfaceRequestor)
+                       .getInterface(Ci.nsIDOMWindowUtils)
+                       .getStorageUsage(event.storageArea);
+    Services.telemetry.getHistogramById("FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS").add(usage);
+
+    
+    
+    if (usage > Preferences.get(DOM_STORAGE_LIMIT_PREF)) {
+      MessageQueue.push("storage", () => null);
+      return;
+    }
+
+    let {url, key, newValue} = event;
+    let uri = Services.io.newURI(url);
+    let domain = uri.prePath;
+    if (!this._changes) {
+      this._changes = {};
+    }
+    if (!this._changes[domain]) {
+      this._changes[domain] = {};
+    }
+    this._changes[domain][key] = newValue;
+
+    MessageQueue.push("storagechange", () => {
+      let tmp = this._changes;
+      
       
       
       this.resetChanges();
-      MessageQueue.push("storage", () => {
-        let collected = SessionStorage.collect(docShell, gFrameTree);
+      return tmp;
+    });
+  },
 
-        if (collected == null) {
-          return collected;
-        }
-
-        let size = this.estimateStorageSize(collected);
-        Services.telemetry.getHistogramById("FX_SESSION_RESTORE_DOM_STORAGE_SIZE_ESTIMATE_CHARS").add(size);
-
-        if (size > Preferences.get("browser.sessionstore.dom_storage_limit", DOM_STORAGE_MAX_CHARS)) {
-          
-          
-          
-          return {};
-        }
-
-        return collected;
-      });
+  collect() {
+    if (!docShell) {
+      return;
     }
+
+    
+    
+    this.resetChanges();
+
+    MessageQueue.push("storage", () => {
+      return SessionStorage.collect(docShell, gFrameTree);
+    });
   },
 
   onFrameTreeCollected() {
