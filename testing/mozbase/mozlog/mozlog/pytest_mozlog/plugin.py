@@ -83,22 +83,27 @@ class MozLog(object):
         if report.skipped:
             status = 'SKIP' if not hasattr(report, 'wasxfail') else 'FAIL'
         if report.longrepr is not None:
-            if isinstance(report.longrepr, basestring):
+            longrepr = report.longrepr
+            if isinstance(longrepr, basestring):
                 
-                message = stack = report.longrepr
-                if report.longrepr.startswith('[XPASS(strict)]'):
+                message = stack = longrepr
+                if longrepr.startswith('[XPASS(strict)]'):
                     
                     
                     expected, status = ('FAIL', 'PASS')
+            elif hasattr(longrepr, "reprcrash"):
+                
+                crash = longrepr.reprcrash
+                message = "{0} (line {1})".format(crash.message, crash.lineno)
+                stack = longrepr.reprtraceback
+            elif hasattr(longrepr, "errorstring"):
+                message = longrepr.errorstring
+                stack = longrepr.errorstring
+            elif hasattr(longrepr, "__getitem__") and len(longrepr) == 3:
+                
+                message = report.longrepr[-1]
             else:
-                try:
-                    
-                    crash = report.longrepr.reprcrash
-                    message = "{0} (line {1})".format(crash.message, crash.lineno)
-                    stack = report.longrepr.reprtraceback
-                except AttributeError:
-                    
-                    message = report.longrepr[-1]
+                raise ValueError, "Unable to convert longrepr to message:\ntype %s\nfields:" % (longrepr.__class__, dir(longrepr))
         if status != expected or expected != 'PASS':
             self.results[test] = (status, expected, message, stack)
         if report.when == 'teardown':
