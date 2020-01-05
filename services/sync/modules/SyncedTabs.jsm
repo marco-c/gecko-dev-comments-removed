@@ -172,7 +172,7 @@ let SyncedTabsInternal = {
     
     
     return new Promise((resolve, reject) => {
-      Services.tm.currentThread.dispatch(() => {
+      Services.tm.dispatchToMainThread(() => {
         try {
           log.info("Doing a tab sync.");
           Weave.Service.sync(["tabs"]);
@@ -181,7 +181,7 @@ let SyncedTabsInternal = {
           log.error("Sync failed", ex);
           reject(ex);
         }
-      }, Ci.nsIThread.DISPATCH_NORMAL);
+      });
     });
   },
 

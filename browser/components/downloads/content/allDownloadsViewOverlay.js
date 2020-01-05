@@ -1092,11 +1092,11 @@ DownloadsPlacesView.prototype = {
         
         
         firstDownloadElement._shell.ensureActive();
-        Services.tm.mainThread.dispatch(() => {
+        Services.tm.dispatchToMainThread(() => {
           this._richlistbox.selectedItem = firstDownloadElement;
           this._richlistbox.currentItem = firstDownloadElement;
           this._initiallySelectedElement = firstDownloadElement;
-        }, Ci.nsIThread.DISPATCH_NORMAL);
+        });
       }
     }
   },

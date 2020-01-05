@@ -957,7 +957,7 @@ TabActor.prototype = {
     let force = request && request.options && request.options.force;
     
     
-    Services.tm.currentThread.dispatch(DevToolsUtils.makeInfallible(() => {
+    Services.tm.dispatchToMainThread(DevToolsUtils.makeInfallible(() => {
       
       
       if (Services.startup.shuttingDown) {
@@ -966,7 +966,7 @@ TabActor.prototype = {
       this.webNavigation.reload(force ?
         Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_CACHE :
         Ci.nsIWebNavigation.LOAD_FLAGS_NONE);
-    }, "TabActor.prototype.onReload's delayed body"), 0);
+    }, "TabActor.prototype.onReload's delayed body"));
     return {};
   },
 
@@ -976,9 +976,9 @@ TabActor.prototype = {
   onNavigateTo(request) {
     
     
-    Services.tm.currentThread.dispatch(DevToolsUtils.makeInfallible(() => {
+    Services.tm.dispatchToMainThread(DevToolsUtils.makeInfallible(() => {
       this.window.location = request.url;
-    }, "TabActor.prototype.onNavigateTo's delayed body"), 0);
+    }, "TabActor.prototype.onNavigateTo's delayed body"));
     return {};
   },
 

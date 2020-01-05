@@ -232,7 +232,7 @@ HashCompleter.prototype = {
 
     
     
-    Services.tm.currentThread.dispatch(this, Ci.nsIThread.DISPATCH_NORMAL);
+    Services.tm.dispatchToMainThread(this);
   },
 
   
@@ -273,7 +273,7 @@ HashCompleter.prototype = {
   
   finishRequest: function(url, aStatus) {
     this._backoffs[url].noteServerResponse(aStatus);
-    Services.tm.currentThread.dispatch(this, Ci.nsIThread.DISPATCH_NORMAL);
+    Services.tm.dispatchToMainThread(this);
   },
 
   

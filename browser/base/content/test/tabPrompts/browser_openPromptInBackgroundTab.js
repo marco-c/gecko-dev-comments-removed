@@ -43,7 +43,7 @@ add_task(function*() {
   ourPrompt.onButtonClick(0);
   
   yield new Promise(function(resolve) {
-    Services.tm.mainThread.dispatch(resolve, Ci.nsIThread.DISPATCH_NORMAL);
+    Services.tm.dispatchToMainThread(resolve);
   });
   
   let ps = Services.perms;
