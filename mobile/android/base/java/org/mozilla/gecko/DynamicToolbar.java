@@ -67,7 +67,7 @@ public class DynamicToolbar {
         }
         
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.LOLLIPOP
-            && (Build.MODEL.startsWith("SM-910"))) {
+            && (Build.MODEL.startsWith("SM-N910"))) {
             return true;
         }
         return false;
