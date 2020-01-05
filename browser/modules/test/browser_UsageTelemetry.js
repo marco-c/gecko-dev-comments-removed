@@ -11,9 +11,6 @@ const UNFILTERED_URI_COUNT = "browser.engagement.unfiltered_uri_count";
 const TELEMETRY_SUBSESSION_TOPIC = "internal-telemetry-after-subsession-split";
 
 
-Services.obs.notifyObservers(null, TELEMETRY_SUBSESSION_TOPIC, "");
-
-
 
 
 
@@ -64,8 +61,7 @@ let checkScalar = (scalars, scalarName, value, msg) => {
 
 
 let checkScalars = (countsObject) => {
-  const scalars =
-    Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
+  const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
 
   
   checkScalar(scalars, MAX_CONCURRENT_TABS, countsObject.maxTabs,
@@ -187,8 +183,7 @@ add_task(function* test_URIAndDomainCounts() {
 
   let checkCounts = (countsObject) => {
     
-    const scalars =
-      Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
+    const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
     checkScalar(scalars, TOTAL_URI_COUNT, countsObject.totalURIs,
                 "The URI scalar must contain the expected value.");
     checkScalar(scalars, UNIQUE_DOMAINS_COUNT, countsObject.domainCount,

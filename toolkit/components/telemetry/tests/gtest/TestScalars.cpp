@@ -121,7 +121,14 @@ GetScalarsSnapshot(bool aKeyed, JSContext* aCx, JS::MutableHandle<JS::Value> aRe
   ASSERT_EQ(rv, NS_OK) << "Creating a snapshot of the data must not fail.";
   ASSERT_TRUE(scalarsSnapshot.isObject()) << "The snapshot must be an object.";
 
-  aResult.set(scalarsSnapshot);
+  
+  JS::RootedValue parentScalars(aCx);
+  JS::RootedObject scalarObj(aCx, &scalarsSnapshot.toObject());
+  
+  
+  Unused << JS_GetProperty(aCx, scalarObj, "default", &parentScalars);
+
+  aResult.set(parentScalars);
 }
 
 } 

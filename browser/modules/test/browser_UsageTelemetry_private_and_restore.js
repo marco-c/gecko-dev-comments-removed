@@ -27,8 +27,7 @@ add_task(function* test_privateMode() {
   yield BrowserTestUtils.browserLoaded(privateWin.gBrowser.selectedBrowser);
 
   
-  const scalars =
-    Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
+  const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
 
   ok(!(TOTAL_URI_COUNT in scalars), "We should not track URIs in private mode.");
   ok(!(UNFILTERED_URI_COUNT in scalars), "We should not track URIs in private mode.");
@@ -76,8 +75,7 @@ add_task(function* test_sessionRestore() {
   yield tabRestored;
 
   
-  const scalars =
-    Services.telemetry.snapshotScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
+  const scalars = getParentProcessScalars(Ci.nsITelemetry.DATASET_RELEASE_CHANNEL_OPTIN);
 
   ok(!(TOTAL_URI_COUNT in scalars), "We should not track URIs from restored sessions.");
   ok(!(UNFILTERED_URI_COUNT in scalars), "We should not track URIs from restored sessions.");
