@@ -3700,8 +3700,7 @@ var SessionStoreInternal = {
       userTypedClear: tabData.userTypedClear || 0
     });
 
-    browser.messageManager.sendAsyncMessage("SessionStore:restoreHistory",
-                                            {tabData, epoch, loadArguments});
+    this._sendRestoreHistory(browser, {tabData, epoch, loadArguments});
 
     
     
@@ -3784,7 +3783,7 @@ var SessionStoreInternal = {
       
       let epoch = this.startNextEpoch(browser);
 
-      browser.messageManager.sendAsyncMessage("SessionStore:restoreHistory", {
+      this._sendRestoreHistory(browser, {
         tabData,
         epoch,
         loadArguments: aLoadArguments,
@@ -4720,7 +4719,40 @@ var SessionStoreInternal = {
     
     promise.then(() => timer.cancel(), () => timer.cancel());
     return promise;
-  }
+  },
+
+  
+
+
+
+
+
+
+
+
+
+  _sendRestoreHistory(browser, options) {
+    
+    
+    
+    if (options.tabData.storage) {
+      for (let origin of Object.getOwnPropertyNames(options.tabData.storage)) {
+        try {
+          let {frameLoader} = browser.QueryInterface(Components.interfaces.nsIFrameLoaderOwner);
+          if (frameLoader.tabParent) {
+            let attrs = browser.contentPrincipal.originAttributes;
+            let dataPrincipal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin);
+            let principal = Services.scriptSecurityManager.createCodebasePrincipal(dataPrincipal.URI, attrs);
+            frameLoader.tabParent.transmitPermissionsForPrincipal(principal);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    browser.messageManager.sendAsyncMessage("SessionStore:restoreHistory", options);
+  },
 };
 
 

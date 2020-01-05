@@ -127,6 +127,9 @@ var SessionStorageInternal = {
         
         
         
+        
+        
+        
         let attrs = aDocShell.getOriginAttributes();
         let dataPrincipal = Services.scriptSecurityManager.createCodebasePrincipalFromOrigin(origin);
         principal = Services.scriptSecurityManager.createCodebasePrincipal(dataPrincipal.URI, attrs);
