@@ -165,16 +165,30 @@ SharedArrayRawBuffer::New(JSContext* cx, uint32_t length)
     return rawbuf;
 }
 
-void
+bool
 SharedArrayRawBuffer::addReference()
 {
-    MOZ_ASSERT(this->refcount_ > 0);
-    ++this->refcount_; 
+    MOZ_RELEASE_ASSERT(this->refcount_ > 0);
+
+    
+    for (;;) {
+        uint32_t old_refcount = this->refcount_;
+        uint32_t new_refcount = old_refcount+1;
+        if (new_refcount == 0)
+            return false;
+        if (this->refcount_.compareExchange(old_refcount, new_refcount))
+            return true;
+    }
 }
 
 void
 SharedArrayRawBuffer::dropReference()
 {
+    
+    
+    
+    MOZ_RELEASE_ASSERT(this->refcount_ > 0);
+
     
     uint32_t refcount = --this->refcount_; 
     if (refcount)
