@@ -84,7 +84,13 @@ pref("app.update.checkInstallTime", true);
 
 
 
+
 pref("app.update.timerMinimumDelay", 120);
+
+
+
+
+pref("app.update.timerFirstInterval", 30000);
 
 
 
@@ -103,12 +109,6 @@ pref("app.update.log", false);
 
 
 pref("app.update.backgroundMaxErrors", 10);
-
-
-
-
-
-pref("app.update.cert.requireBuiltIn", false);
 
 
 pref("app.update.enabled", true);
