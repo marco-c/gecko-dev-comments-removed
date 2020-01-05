@@ -84,36 +84,36 @@ pub struct LayerMetadata {
 
 
 
-pub trait RenderListener {
-    fn get_graphics_metadata(&self) -> Option<NativeGraphicsMetadata>;
+pub trait RenderListener for Sized? {
+    fn get_graphics_metadata(&mut self) -> Option<NativeGraphicsMetadata>;
 
     
     
-    fn initialize_layers_for_pipeline(&self,
+    fn initialize_layers_for_pipeline(&mut self,
                                       pipeline_id: PipelineId,
                                       metadata: Vec<LayerMetadata>,
                                       epoch: Epoch);
 
     
-    fn paint(&self,
+    fn paint(&mut self,
              pipeline_id: PipelineId,
              epoch: Epoch,
              replies: Vec<(LayerId, Box<LayerBufferSet>)>);
 
-    fn render_msg_discarded(&self);
-    fn set_render_state(&self, PipelineId, RenderState);
+    fn render_msg_discarded(&mut self);
+    fn set_render_state(&mut self, PipelineId, RenderState);
 }
 
 
 
-pub trait ScriptListener : Clone {
-    fn set_ready_state(&self, PipelineId, ReadyState);
-    fn scroll_fragment_point(&self,
+pub trait ScriptListener {
+    fn set_ready_state(&mut self, PipelineId, ReadyState);
+    fn scroll_fragment_point(&mut self,
                              pipeline_id: PipelineId,
                              layer_id: LayerId,
                              point: Point2D<f32>);
-    fn close(&self);
-    fn dup(&self) -> Box<ScriptListener+'static>;
+    fn close(&mut self);
+    fn dup(&mut self) -> Box<ScriptListener+'static>;
 }
 
 impl<E, S: Encoder<E>> Encodable<S, E> for Box<ScriptListener+'static> {

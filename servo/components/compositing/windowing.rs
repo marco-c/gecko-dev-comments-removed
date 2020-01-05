@@ -4,6 +4,8 @@
 
 
 
+use compositor_task::{CompositorProxy, CompositorReceiver};
+
 use geom::point::TypedPoint2D;
 use geom::scale_factor::ScaleFactor;
 use geom::size::TypedSize2D;
@@ -11,6 +13,8 @@ use layers::geometry::DevicePixel;
 use layers::platform::surface::NativeGraphicsMetadata;
 use servo_msg::compositor_msg::{ReadyState, RenderState};
 use servo_util::geometry::ScreenPx;
+use std::fmt::{FormatError, Formatter, Show};
+use std::rc::Rc;
 
 pub enum MouseWindowEvent {
     MouseWindowClickEvent(uint, TypedPoint2D<DevicePixel, f32>),
@@ -25,6 +29,8 @@ pub enum WindowNavigateMsg {
 
 
 pub enum WindowEvent {
+    
+    
     
     
     
@@ -54,6 +60,25 @@ pub enum WindowEvent {
     QuitWindowEvent,
 }
 
+impl Show for WindowEvent {
+    fn fmt(&self, f: &mut Formatter) -> Result<(),FormatError> {
+        match *self {
+            IdleWindowEvent => write!(f, "Idle"),
+            RefreshWindowEvent => write!(f, "Refresh"),
+            ResizeWindowEvent(..) => write!(f, "Resize"),
+            LoadUrlWindowEvent(..) => write!(f, "LoadUrl"),
+            MouseWindowEventClass(..) => write!(f, "Mouse"),
+            MouseWindowMoveEventClass(..) => write!(f, "MouseMove"),
+            ScrollWindowEvent(..) => write!(f, "Scroll"),
+            ZoomWindowEvent(..) => write!(f, "Zoom"),
+            PinchZoomWindowEvent(..) => write!(f, "PinchZoom"),
+            NavigationWindowEvent(..) => write!(f, "Navigation"),
+            FinishedWindowEvent => write!(f, "Finished"),
+            QuitWindowEvent => write!(f, "Quit"),
+        }
+    }
+}
+
 pub trait WindowMethods {
     
     fn framebuffer_size(&self) -> TypedSize2D<DevicePixel, uint>;
@@ -61,9 +86,6 @@ pub trait WindowMethods {
     fn size(&self) -> TypedSize2D<ScreenPx, f32>;
     
     fn present(&self);
-
-    
-    fn recv(&self) -> WindowEvent;
 
     
     fn set_ready_state(&self, ready_state: ReadyState);
@@ -75,5 +97,13 @@ pub trait WindowMethods {
 
     
     fn native_metadata(&self) -> NativeGraphicsMetadata;
+
+    
+    
+    
+    
+    
+    fn create_compositor_channel(_: &Option<Rc<Self>>)
+                                 -> (Box<CompositorProxy+Send>, Box<CompositorReceiver>);
 }
 

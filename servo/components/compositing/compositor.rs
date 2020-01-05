@@ -7,21 +7,23 @@ use compositor_layer::{ScrollPositionChanged, WantsScrollEvents};
 use compositor_task::{Msg, CompositorTask, Exit, ChangeReadyState, SetIds, LayerProperties};
 use compositor_task::{GetGraphicsMetadata, CreateOrUpdateRootLayer, CreateOrUpdateDescendantLayer};
 use compositor_task::{SetLayerOrigin, Paint, ScrollFragmentPoint, LoadComplete};
-use compositor_task::{ShutdownComplete, ChangeRenderState, RenderMsgDiscarded};
+use compositor_task::{ShutdownComplete, ChangeRenderState, RenderMsgDiscarded, ScrollTimeout};
+use compositor_task::{CompositorEventListener, CompositorProxy, CompositorReceiver};
 use constellation::SendableFrameTree;
 use pipeline::CompositionPipeline;
+use scrolling::ScrollingTimerProxy;
 use windowing;
 use windowing::{FinishedWindowEvent, IdleWindowEvent, LoadUrlWindowEvent, MouseWindowClickEvent};
 use windowing::{MouseWindowEvent, MouseWindowEventClass, MouseWindowMouseDownEvent};
 use windowing::{MouseWindowMouseUpEvent, MouseWindowMoveEventClass, NavigationWindowEvent};
 use windowing::{QuitWindowEvent, RefreshWindowEvent, ResizeWindowEvent, ScrollWindowEvent};
 use windowing::{WindowEvent, WindowMethods, WindowNavigateMsg, ZoomWindowEvent};
-use windowing::PinchZoomWindowEvent;
+use windowing::{PinchZoomWindowEvent};
 
 use azure::azure_hl;
 use std::cmp;
+use std::mem;
 use std::num::Zero;
-use std::time::duration::Duration;
 use geom::point::{Point2D, TypedPoint2D};
 use geom::rect::{Rect, TypedRect};
 use geom::size::TypedSize2D;
@@ -45,20 +47,18 @@ use servo_util::memory::MemoryProfilerChan;
 use servo_util::opts;
 use servo_util::time::{profile, TimeProfilerChan};
 use servo_util::{memory, time};
-use std::io::timer::sleep;
 use std::collections::hashmap::HashMap;
 use std::path::Path;
 use std::rc::Rc;
-use time::precise_time_s;
+use time::{precise_time_ns, precise_time_s};
 use url::Url;
-
 
 pub struct IOCompositor<Window: WindowMethods> {
     
     window: Rc<Window>,
 
     
-    port: Receiver<Msg>,
+    port: Box<CompositorReceiver>,
 
     
     context: RenderContext,
@@ -83,17 +83,20 @@ pub struct IOCompositor<Window: WindowMethods> {
     hidpi_factor: ScaleFactor<ScreenPx, DevicePixel, f32>,
 
     
-    composite_ready: bool,
+    scrolling_timer: ScrollingTimerProxy,
+
+    
+    composition_request: CompositionRequest,
 
     
     
     shutdown_state: ShutdownState,
 
     
-    recomposite: bool,
+    outstanding_render_msgs: uint,
 
     
-    outstanding_render_msgs: uint,
+    last_composite_time: u64,
 
     
     zoom_action: bool,
@@ -113,6 +116,9 @@ pub struct IOCompositor<Window: WindowMethods> {
     got_load_complete_message: bool,
 
     
+    got_set_ids_message: bool,
+
+    
     constellation_chan: ConstellationChan,
 
     
@@ -122,10 +128,25 @@ pub struct IOCompositor<Window: WindowMethods> {
     memory_profiler_chan: MemoryProfilerChan,
 
     
-    fragment_point: Option<Point2D<f32>>
+    fragment_point: Option<Point2D<f32>>,
+
+    
+    pending_scroll_events: Vec<ScrollEvent>,
+}
+
+pub struct ScrollEvent {
+    delta: TypedPoint2D<DevicePixel,f32>,
+    cursor: TypedPoint2D<DevicePixel,i32>,
 }
 
 #[deriving(PartialEq)]
+enum CompositionRequest {
+    NoCompositingNecessary,
+    CompositeOnScrollTimeout(u64),
+    CompositeNow,
+}
+
+#[deriving(PartialEq, Show)]
 enum ShutdownState {
     NotShuttingDown,
     ShuttingDown,
@@ -139,11 +160,12 @@ struct HitTestResult {
 
 impl<Window: WindowMethods> IOCompositor<Window> {
     fn new(window: Rc<Window>,
-           port: Receiver<Msg>,
+           sender: Box<CompositorProxy+Send>,
+           receiver: Box<CompositorReceiver>,
            constellation_chan: ConstellationChan,
            time_profiler_chan: TimeProfilerChan,
-           memory_profiler_chan: MemoryProfilerChan) -> IOCompositor<Window> {
-
+           memory_profiler_chan: MemoryProfilerChan)
+           -> IOCompositor<Window> {
         
         
         
@@ -155,7 +177,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         let show_debug_borders = opts::get().show_debug_borders;
         IOCompositor {
             window: window,
-            port: port,
+            port: receiver,
             context: rendergl::RenderContext::new(context, show_debug_borders),
             root_pipeline: None,
             scene: Scene::new(Rect {
@@ -164,9 +186,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             }),
             window_size: window_size,
             hidpi_factor: hidpi_factor,
-            composite_ready: false,
+            scrolling_timer: ScrollingTimerProxy::new(sender),
+            composition_request: NoCompositingNecessary,
+            pending_scroll_events: Vec::new(),
             shutdown_state: NotShuttingDown,
-            recomposite: false,
             page_zoom: ScaleFactor(1.0),
             viewport_zoom: ScaleFactor(1.0),
             zoom_action: false,
@@ -174,167 +197,129 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             ready_states: HashMap::new(),
             render_states: HashMap::new(),
             got_load_complete_message: false,
+            got_set_ids_message: false,
             constellation_chan: constellation_chan,
             time_profiler_chan: time_profiler_chan,
             memory_profiler_chan: memory_profiler_chan,
             fragment_point: None,
             outstanding_render_msgs: 0,
+            last_composite_time: 0,
         }
     }
 
     pub fn create(window: Rc<Window>,
-                  port: Receiver<Msg>,
+                  sender: Box<CompositorProxy+Send>,
+                  receiver: Box<CompositorReceiver>,
                   constellation_chan: ConstellationChan,
                   time_profiler_chan: TimeProfilerChan,
-                  memory_profiler_chan: MemoryProfilerChan) {
+                  memory_profiler_chan: MemoryProfilerChan)
+                  -> IOCompositor<Window> {
         let mut compositor = IOCompositor::new(window,
-                                               port,
+                                               sender,
+                                               receiver,
                                                constellation_chan,
                                                time_profiler_chan,
                                                memory_profiler_chan);
+
+        
         compositor.update_zoom_transform();
 
         
-        compositor.run();
+        compositor.send_window_size();
+
+        compositor
     }
 
-    fn run (&mut self) {
-        
-        self.send_window_size();
+    fn handle_browser_message(&mut self, msg: Msg) -> bool {
+        match (msg, self.shutdown_state) {
+            (_, FinishedShuttingDown) =>
+                fail!("compositor shouldn't be handling messages after shutting down"),
 
-        
-        while self.shutdown_state != FinishedShuttingDown {
-            
-            self.handle_message();
+            (Exit(chan), _) => {
+                debug!("shutting down the constellation");
+                let ConstellationChan(ref con_chan) = self.constellation_chan;
+                con_chan.send(ExitMsg);
+                chan.send(());
+                self.shutdown_state = ShuttingDown;
+            }
 
-            if self.shutdown_state == FinishedShuttingDown {
+            (ShutdownComplete, _) => {
+                debug!("constellation completed shutdown");
+                self.shutdown_state = FinishedShuttingDown;
+                return false;
+            }
+
+            (ChangeReadyState(pipeline_id, ready_state), NotShuttingDown) => {
+                self.change_ready_state(pipeline_id, ready_state);
+            }
+
+            (ChangeRenderState(pipeline_id, render_state), NotShuttingDown) => {
+                self.change_render_state(pipeline_id, render_state);
+            }
+
+            (RenderMsgDiscarded, NotShuttingDown) => {
+                self.remove_outstanding_render_msg();
+            }
+
+            (SetIds(frame_tree, response_chan, new_constellation_chan), NotShuttingDown) => {
+                self.set_frame_tree(&frame_tree,
+                                    response_chan,
+                                    new_constellation_chan);
+            }
+
+            (CreateOrUpdateRootLayer(layer_properties), NotShuttingDown) => {
+                self.create_or_update_root_layer(layer_properties);
+            }
+
+            (CreateOrUpdateDescendantLayer(layer_properties), NotShuttingDown) => {
+                self.create_or_update_descendant_layer(layer_properties);
+            }
+
+            (GetGraphicsMetadata(chan), NotShuttingDown) => {
+                chan.send(Some(self.window.native_metadata()));
+            }
+
+            (SetLayerOrigin(pipeline_id, layer_id, origin), NotShuttingDown) => {
+                self.set_layer_origin(pipeline_id, layer_id, origin);
+            }
+
+            (Paint(pipeline_id, epoch, replies), NotShuttingDown) => {
+                for (layer_id, new_layer_buffer_set) in replies.into_iter() {
+                    self.paint(pipeline_id, layer_id, new_layer_buffer_set, epoch);
+                }
+                self.remove_outstanding_render_msg();
+            }
+
+            (ScrollFragmentPoint(pipeline_id, layer_id, point), NotShuttingDown) => {
+                self.scroll_fragment_to_point(pipeline_id, layer_id, point);
+            }
+
+            (LoadComplete(..), NotShuttingDown) => {
+                self.got_load_complete_message = true;
+
                 
-                
-                debug!("Exiting the compositor due to a request from script.");
-                break;
+                if opts::get().output_file.is_some() {
+                    self.composite_if_necessary();
+                }
             }
 
-            
-            let msg = self.window.recv();
-            self.handle_window_message(msg);
-
-            
-            if self.recomposite && self.composite_ready {
-                self.recomposite = false;
-                self.composite();
-            }
-
-            sleep(Duration::milliseconds(10));
-
-            
-            if self.zoom_action && precise_time_s() - self.zoom_time > 0.3 {
-                self.zoom_action = false;
-                self.scene.mark_layer_contents_as_changed_recursively();
-                self.send_buffer_requests_for_all_layers();
-            }
-
-        }
-
-        
-        match self.scene.root {
-            None => {}
-            Some(ref layer) => layer.forget_all_tiles(),
-        }
-
-        
-        
-        loop {
-            match self.port.try_recv() {
-                Err(_) => break,
-                Ok(_) => {},
-            }
-        }
-
-        
-        let TimeProfilerChan(ref time_profiler_chan) = self.time_profiler_chan;
-        time_profiler_chan.send(time::ExitMsg);
-
-        let MemoryProfilerChan(ref memory_profiler_chan) = self.memory_profiler_chan;
-        memory_profiler_chan.send(memory::ExitMsg);
-    }
-
-    fn handle_message(&mut self) {
-        loop {
-            match (self.port.try_recv(), self.shutdown_state) {
-                (_, FinishedShuttingDown) =>
-                    fail!("compositor shouldn't be handling messages after shutting down"),
-
-                (Err(_), _) => break,
-
-                (Ok(Exit(chan)), _) => {
-                    debug!("shutting down the constellation");
-                    let ConstellationChan(ref con_chan) = self.constellation_chan;
-                    con_chan.send(ExitMsg);
-                    chan.send(());
-                    self.shutdown_state = ShuttingDown;
-                }
-
-                (Ok(ShutdownComplete), _) => {
-                    debug!("constellation completed shutdown");
-                    self.shutdown_state = FinishedShuttingDown;
-                    break;
-                }
-
-                (Ok(ChangeReadyState(pipeline_id, ready_state)), NotShuttingDown) => {
-                    self.change_ready_state(pipeline_id, ready_state);
-                }
-
-                (Ok(ChangeRenderState(pipeline_id, render_state)), NotShuttingDown) => {
-                    self.change_render_state(pipeline_id, render_state);
-                }
-
-                (Ok(RenderMsgDiscarded), NotShuttingDown) => {
-                    self.remove_outstanding_render_msg();
-                }
-
-                (Ok(SetIds(frame_tree, response_chan, new_constellation_chan)), _) => {
-                    self.set_frame_tree(&frame_tree,
-                                        response_chan,
-                                        new_constellation_chan);
-                }
-
-                (Ok(GetGraphicsMetadata(chan)), NotShuttingDown) => {
-                    chan.send(Some(self.window.native_metadata()));
-                }
-
-                (Ok(CreateOrUpdateRootLayer(layer_properties)), NotShuttingDown) => {
-                    self.create_or_update_root_layer(layer_properties);
-                }
-
-                (Ok(CreateOrUpdateDescendantLayer(layer_properties)), NotShuttingDown) => {
-                    self.create_or_update_descendant_layer(layer_properties);
-                }
-
-                (Ok(SetLayerOrigin(pipeline_id, layer_id, origin)), NotShuttingDown) => {
-                    self.set_layer_origin(pipeline_id, layer_id, origin);
-                }
-
-                (Ok(Paint(pipeline_id, epoch, replies)), NotShuttingDown) => {
-                    for (layer_id, new_layer_buffer_set) in replies.into_iter() {
-                        self.paint(pipeline_id, layer_id, new_layer_buffer_set, epoch);
+            (ScrollTimeout(timestamp), NotShuttingDown) => {
+                debug!("scroll timeout, drawing unrendered content!");
+                match self.composition_request {
+                    CompositeOnScrollTimeout(this_timestamp) if timestamp == this_timestamp => {
+                        self.composition_request = CompositeNow
                     }
-                    self.remove_outstanding_render_msg();
+                    _ => {}
                 }
-
-                (Ok(ScrollFragmentPoint(pipeline_id, layer_id, point)), NotShuttingDown) => {
-                    self.scroll_fragment_to_point(pipeline_id, layer_id, point);
-                }
-
-                (Ok(LoadComplete(..)), NotShuttingDown) => {
-                    self.got_load_complete_message = true;
-                }
-
-                
-                
-                
-                (_, ShuttingDown) => { }
             }
+
+            
+            
+            
+            (_, ShuttingDown) => { }
         }
+
+        true
     }
 
     fn change_ready_state(&mut self, pipeline_id: PipelineId, ready_state: ReadyState) {
@@ -342,6 +327,11 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                                                 ready_state,
                                                 |_key, value| *value = ready_state);
         self.window.set_ready_state(self.get_earliest_pipeline_ready_state());
+
+        
+        if opts::get().output_file.is_some() {
+            self.composite_if_necessary()
+        }
     }
 
     fn get_earliest_pipeline_ready_state(&self) -> ReadyState {
@@ -357,9 +347,6 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                                                  render_state,
                                                  |_key, value| *value = render_state);
         self.window.set_render_state(render_state);
-        if render_state == IdleRenderState {
-            self.composite_ready = true;
-        }
     }
 
     fn all_pipelines_in_idle_render_state(&self) -> bool {
@@ -417,6 +404,9 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         
         self.constellation_chan = new_constellation_chan;
         self.send_window_size();
+
+        self.got_set_ids_message = true;
+        self.composite_if_necessary();
     }
 
     fn create_frame_tree_root_layers(&mut self,
@@ -529,7 +519,6 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }));
     }
 
-
     pub fn move_layer(&self,
                       pipeline_id: PipelineId,
                       layer_id: LayerId,
@@ -555,10 +544,21 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                     fail!("Compositor: Tried to scroll to fragment with unknown layer.");
                 }
 
-                self.recomposite = true;
+                self.start_scrolling_timer_if_necessary();
             }
             None => {}
-        };
+        }
+    }
+
+    fn start_scrolling_timer_if_necessary(&mut self) {
+        match self.composition_request {
+            CompositeNow | CompositeOnScrollTimeout(_) => return,
+            NoCompositingNecessary => {}
+        }
+
+        let timestamp = precise_time_ns();
+        self.scrolling_timer.scroll_event_processed(timestamp);
+        self.composition_request = CompositeOnScrollTimeout(timestamp);
     }
 
     fn set_layer_origin(&mut self,
@@ -580,7 +580,9 @@ impl<Window: WindowMethods> IOCompositor<Window> {
              layer_id: LayerId,
              new_layer_buffer_set: Box<LayerBufferSet>,
              epoch: Epoch) {
-        debug!("compositor received new frame");
+        debug!("compositor received new frame at size {}x{}",
+               self.window_size.width.get(),
+               self.window_size.height.get());
 
         
         let mut new_layer_buffer_set = new_layer_buffer_set;
@@ -588,8 +590,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
         match self.find_layer_with_pipeline_and_layer_id(pipeline_id, layer_id) {
             Some(ref layer) => {
+                
+                
                 assert!(layer.add_buffers(new_layer_buffer_set, epoch));
-                self.recomposite = true;
+                self.composite_if_necessary();
             }
             None => {
                 
@@ -605,8 +609,9 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                                 layer_id: LayerId,
                                 point: Point2D<f32>) {
         if self.move_layer(pipeline_id, layer_id, Point2D::from_untyped(&point)) {
-            self.recomposite = true;
-            self.send_buffer_requests_for_all_layers();
+            if self.send_buffer_requests_for_all_layers() {
+                self.start_scrolling_timer_if_necessary();
+            }
         } else {
             self.fragment_point = Some(point);
         }
@@ -617,7 +622,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             IdleWindowEvent => {}
 
             RefreshWindowEvent => {
-                self.recomposite = true;
+                self.composite_if_necessary()
             }
 
             ResizeWindowEvent(size) => {
@@ -685,6 +690,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
 
         debug!("osmain: window resized to {:?}", new_size);
         self.window_size = new_size;
+
         self.scene.set_root_layer_size(new_size.as_f32());
         self.send_window_size();
     }
@@ -698,7 +704,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
                            layers"),
         };
 
-        let msg = LoadUrlMsg(root_pipeline_id, LoadData::new(Url::parse(url_string.as_slice()).unwrap()));
+        let msg = LoadUrlMsg(root_pipeline_id,
+                             LoadData::new(Url::parse(url_string.as_slice()).unwrap()));
         let ConstellationChan(ref chan) = self.constellation_chan;
         chan.send(msg);
     }
@@ -725,18 +732,29 @@ impl<Window: WindowMethods> IOCompositor<Window> {
     fn on_scroll_window_event(&mut self,
                               delta: TypedPoint2D<DevicePixel, f32>,
                               cursor: TypedPoint2D<DevicePixel, i32>) {
-        let delta = delta / self.scene.scale;
-        let cursor = cursor.as_f32() / self.scene.scale;
+        self.pending_scroll_events.push(ScrollEvent {
+            delta: delta,
+            cursor: cursor,
+        });
 
-        let mut scroll = false;
-        match self.scene.root {
-            Some(ref mut layer) => {
-                scroll = layer.handle_scroll_event(delta, cursor) == ScrollPositionChanged;
-            }
-            None => { }
+        self.composite_if_necessary();
+    }
+
+    fn process_pending_scroll_events(&mut self) {
+        for scroll_event in mem::replace(&mut self.pending_scroll_events, Vec::new()).into_iter() {
+            let delta = scroll_event.delta / self.scene.scale;
+            let cursor = scroll_event.cursor.as_f32() / self.scene.scale;
+
+            let scrolled = match self.scene.root {
+                Some(ref mut layer) => {
+                    layer.handle_scroll_event(delta, cursor) == ScrollPositionChanged
+                }
+                None => false,
+            };
+
+            self.start_scrolling_timer_if_necessary();
+            self.send_buffer_requests_for_all_layers();
         }
-        self.recomposite_if(scroll);
-        self.send_buffer_requests_for_all_layers();
     }
 
     fn device_pixels_per_screen_px(&self) -> ScaleFactor<ScreenPx, DevicePixel, f32> {
@@ -768,6 +786,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         self.send_window_size();
     }
 
+    
     fn on_pinch_zoom_window_event(&mut self, magnification: f32) {
         self.zoom_action = true;
         self.zoom_time = precise_time_s();
@@ -792,7 +811,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             None => { }
         }
 
-        self.recomposite = true;
+        self.composite_if_necessary();
     }
 
     fn on_navigation_window_event(&self, direction: WindowNavigateMsg) {
@@ -840,9 +859,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         match self.root_pipeline {
             Some(ref pipeline) => {
                 let unused_buffers = self.scene.collect_unused_buffers();
-                let have_unused_buffers = unused_buffers.len() > 0;
-                self.recomposite = self.recomposite || have_unused_buffers;
-                if have_unused_buffers {
+                if unused_buffers.len() != 0 {
                     let message = UnusedBufferMsg(unused_buffers);
                     let _ = pipeline.render_chan.send_opt(message);
                 }
@@ -851,7 +868,8 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
     }
 
-    fn send_buffer_requests_for_all_layers(&mut self) {
+    
+    fn send_buffer_requests_for_all_layers(&mut self) -> bool {
         let mut layers_and_requests = Vec::new();
         self.scene.get_buffer_requests(&mut layers_and_requests,
                                        Rect(TypedPoint2D(0f32, 0f32), self.window_size.as_f32()));
@@ -860,7 +878,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         self.send_back_unused_buffers();
 
         if layers_and_requests.len() == 0 {
-            return;
+            return false;
         }
 
         
@@ -875,6 +893,7 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         }
 
         self.add_outstanding_render_msg(num_render_msgs_sent);
+        true
     }
 
     fn is_ready_to_render_image_output(&self) -> bool {
@@ -893,6 +912,11 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         if !self.all_pipelines_in_idle_render_state() {
             return false;
         }
+
+        if !self.got_set_ids_message {
+            return false;
+        }
+
         return true;
     }
 
@@ -939,10 +963,11 @@ impl<Window: WindowMethods> IOCompositor<Window> {
         });
 
         if output_image {
-            let path = from_str::<Path>(opts::get().output_file.as_ref().unwrap().as_slice()).unwrap();
+            let path =
+                from_str::<Path>(opts::get().output_file.as_ref().unwrap().as_slice()).unwrap();
             let mut pixels = gl::read_pixels(0, 0,
-                                             width as GLsizei,
-                                             height as GLsizei,
+                                             width as gl::GLsizei,
+                                             height as gl::GLsizei,
                                              gl::RGB, gl::UNSIGNED_BYTE);
 
             gl::bind_framebuffer(gl::FRAMEBUFFER, 0);
@@ -976,7 +1001,10 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             self.shutdown_state = ShuttingDown;
         }
 
+        
         self.window.present();
+
+        self.last_composite_time = precise_time_ns();
 
         let exit = opts::get().exit_after_load;
         if exit {
@@ -984,10 +1012,15 @@ impl<Window: WindowMethods> IOCompositor<Window> {
             let ConstellationChan(ref chan) = self.constellation_chan;
             chan.send(ExitMsg);
         }
+
+        self.composition_request = NoCompositingNecessary;
+        self.process_pending_scroll_events();
     }
 
-    fn recomposite_if(&mut self, result: bool) {
-        self.recomposite = result || self.recomposite;
+    fn composite_if_necessary(&mut self) {
+        if self.composition_request == NoCompositingNecessary {
+            self.composition_request = CompositeNow
+        }
     }
 
     fn find_topmost_layer_at_point_for_layer(&self,
@@ -1054,3 +1087,87 @@ fn find_layer_with_pipeline_and_layer_id_for_layer(layer: Rc<Layer<CompositorDat
 
     return None;
 }
+
+impl<Window> CompositorEventListener for IOCompositor<Window> where Window: WindowMethods {
+    fn handle_event(&mut self, msg: WindowEvent) -> bool {
+        
+        loop {
+            match self.port.try_recv_compositor_msg() {
+                None => break,
+                Some(msg) => {
+                    if !self.handle_browser_message(msg) {
+                        break
+                    }
+                }
+            }
+        }
+
+        if self.shutdown_state == FinishedShuttingDown {
+            
+            
+            debug!("Exiting the compositor due to a request from script.");
+            return false;
+        }
+
+        
+        self.handle_window_message(msg);
+
+        
+        if self.zoom_action && precise_time_s() - self.zoom_time > 0.3 {
+            self.zoom_action = false;
+            self.scene.mark_layer_contents_as_changed_recursively();
+            self.send_buffer_requests_for_all_layers();
+        }
+
+        match self.composition_request {
+            NoCompositingNecessary | CompositeOnScrollTimeout(_) => {}
+            CompositeNow => self.composite(),
+        }
+
+        self.shutdown_state != FinishedShuttingDown
+    }
+
+    
+    
+    
+    
+    fn repaint_synchronously(&mut self) {
+        while self.shutdown_state != ShuttingDown {
+            let msg = self.port.recv_compositor_msg();
+            let is_paint = match msg {
+                Paint(..) => true,
+                _ => false,
+            };
+            let keep_going = self.handle_browser_message(msg);
+            if is_paint {
+                self.composite();
+                break
+            }
+            if !keep_going {
+                break
+            }
+        }
+    }
+
+    fn shutdown(&mut self) {
+        
+        match self.scene.root {
+            None => {}
+            Some(ref layer) => layer.forget_all_tiles(),
+        }
+
+        
+        
+        while self.port.try_recv_compositor_msg().is_some() {}
+
+        
+        let TimeProfilerChan(ref time_profiler_chan) = self.time_profiler_chan;
+        time_profiler_chan.send(time::ExitMsg);
+
+        let MemoryProfilerChan(ref memory_profiler_chan) = self.memory_profiler_chan;
+        memory_profiler_chan.send(memory::ExitMsg);
+
+        self.scrolling_timer.shutdown();
+    }
+}
+
