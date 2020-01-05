@@ -140,7 +140,6 @@ nsXULPopupManager::nsXULPopupManager() :
   mCachedModifiers(0),
   mActiveMenuBar(nullptr),
   mPopups(nullptr),
-  mNoHidePanels(nullptr),
   mTimerMenu(nullptr)
 {
   nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
@@ -153,7 +152,7 @@ nsXULPopupManager::nsXULPopupManager() :
 
 nsXULPopupManager::~nsXULPopupManager() 
 {
-  NS_ASSERTION(!mPopups && !mNoHidePanels, "XUL popups still open");
+  NS_ASSERTION(!mPopups, "XUL popups still open");
 }
 
 nsresult
@@ -434,12 +433,12 @@ nsXULPopupManager::AdjustPopupsOnWindowChange(nsPIDOMWindowOuter* aWindow)
   
   nsTArray<nsMenuPopupFrame *> list;
 
-  nsMenuChainItem* item = mNoHidePanels;
+  nsMenuChainItem* item = mPopups;
   while (item) {
     
     
     nsMenuPopupFrame* frame = item->Frame();
-    if (frame->GetAutoPosition()) {
+    if (item->IsNoAutoHide() && frame->GetAutoPosition()) {
       nsIContent* popup = frame->GetContent();
       if (popup) {
         nsIDocument* document = popup->GetUncomposedDoc();
@@ -580,9 +579,14 @@ nsMenuChainItem*
 nsXULPopupManager::GetTopVisibleMenu()
 {
   nsMenuChainItem* item = mPopups;
-  while (item && item->Frame()->PopupState() == ePopupInvisible)
+  while (item) {
+    if (!item->IsNoAutoHide() && item->Frame()->PopupState() != ePopupInvisible) {
+      return item;
+    }
     item = item->GetParent();
-  return item;
+  }
+
+  return nullptr;
 }
 
 void
@@ -910,8 +914,14 @@ nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
   nsPopupType popupType = aPopupFrame->PopupType();
   bool ismenu = (popupType == ePopupTypeMenu);
 
+  
+  
+  
+  
+  bool isNoAutoHide = aPopupFrame->IsNoAutoHide() || popupType == ePopupTypeTooltip;
+
   nsMenuChainItem* item =
-    new nsMenuChainItem(aPopupFrame, aIsContextMenu, popupType);
+    new nsMenuChainItem(aPopupFrame, isNoAutoHide, aIsContextMenu, popupType);
   if (!item)
     return;
 
@@ -944,18 +954,13 @@ nsXULPopupManager::ShowPopupCallback(nsIContent* aPopup,
   
   
   
-  if (aPopupFrame->IsNoAutoHide() || popupType == ePopupTypeTooltip) {
-    item->SetParent(mNoHidePanels);
-    mNoHidePanels = item;
+  nsIContent* oldmenu = nullptr;
+  if (mPopups) {
+    oldmenu = mPopups->Content();
   }
-  else {
-    nsIContent* oldmenu = nullptr;
-    if (mPopups)
-      oldmenu = mPopups->Content();
-    item->SetParent(mPopups);
-    mPopups = item;
-    SetCaptureState(oldmenu);
-  }
+  item->SetParent(mPopups);
+  mPopups = item;
+  SetCaptureState(oldmenu);
 
   item->UpdateFollowAnchor();
 
@@ -980,120 +985,101 @@ nsXULPopupManager::HidePopup(nsIContent* aPopup,
                              bool aIsCancel,
                              nsIContent* aLastPopup)
 {
-  
-  
-  nsMenuPopupFrame* popupFrame = nullptr;
-  bool foundPanel = false;
-  nsMenuChainItem* item = mNoHidePanels;
-  while (item) {
-    if (item->Content() == aPopup) {
-      foundPanel = true;
-      popupFrame = item->Frame();
-      break;
-    }
-    item = item->GetParent();
+  nsMenuPopupFrame* popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
+  if (!popupFrame) {
+    return;
   }
 
-  
-  nsMenuChainItem* foundMenu = nullptr;
-  item = mPopups;
-  while (item) {
-    if (item->Content() == aPopup) {
-      foundMenu = item;
+  nsMenuChainItem* foundPopup = mPopups;
+  while (foundPopup) {
+    if (foundPopup->Content() == aPopup) {
       break;
     }
-    item = item->GetParent();
+    foundPopup = foundPopup->GetParent();
   }
 
-  nsPopupType type = ePopupTypePanel;
   bool deselectMenu = false;
   nsCOMPtr<nsIContent> popupToHide, nextPopup, lastPopup;
-  if (foundMenu) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
 
-    nsMenuChainItem* topMenu = foundMenu;
-    
-    
-    
-    if (foundMenu->IsMenu()) {
-      item = topMenu->GetChild();
-      while (item && item->IsMenu()) {
-        topMenu = item;
-        item = item->GetChild();
+  if (foundPopup) {
+    if (foundPopup->IsNoAutoHide()) {
+      
+      popupToHide = aPopup;
+    } else {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+
+      nsMenuChainItem* topMenu = foundPopup;
+      
+      
+      
+      if (foundPopup->IsMenu()) {
+        nsMenuChainItem* child = foundPopup->GetChild();
+        while (child && child->IsMenu()) {
+          topMenu = child;
+          child = child->GetChild();
+        }
       }
+      
+      deselectMenu = aDeselectMenu;
+      popupToHide = topMenu->Content();
+      popupFrame = topMenu->Frame();
+
+      
+      
+      nsMenuChainItem* parent = topMenu->GetParent();
+      if (parent && (aHideChain || topMenu != foundPopup)) {
+        nextPopup = parent->Content();
+      }
+
+      lastPopup = aLastPopup ? aLastPopup : (aHideChain ? nullptr : aPopup);
     }
+  } else if (popupFrame->PopupState() == ePopupPositioning) {
+    
+    
     
     deselectMenu = aDeselectMenu;
-    popupToHide = topMenu->Content();
-    popupFrame = topMenu->Frame();
-    type = popupFrame->PopupType();
-
-    nsMenuChainItem* parent = topMenu->GetParent();
-
-    
-    
-    if (parent && (aHideChain || topMenu != foundMenu))
-      nextPopup = parent->Content();
-
-    lastPopup = aLastPopup ? aLastPopup : (aHideChain ? nullptr : aPopup);
-  }
-  else if (foundPanel) {
     popupToHide = aPopup;
-  } else {
-    
-    
-    
-    popupFrame = do_QueryFrame(aPopup->GetPrimaryFrame());
-    if (popupFrame) {
-      if (popupFrame->PopupState() == ePopupPositioning) {
-        
-        
-        deselectMenu = aDeselectMenu;
-        popupToHide = aPopup;
-        type = popupFrame->PopupType();
-      } else {
-        
-        
-        popupFrame = nullptr;
-      }
-    }
   }
 
-  if (popupFrame) {
+  if (popupToHide) {
     nsPopupState state = popupFrame->PopupState();
     
-    if (state == ePopupHiding)
+    if (state == ePopupHiding) {
       return;
+    }
+
     
     
     
-    if (state != ePopupInvisible)
+    if (state != ePopupInvisible) {
       popupFrame->SetPopupState(ePopupHiding);
+    }
 
     
     if (aAsynchronous) {
       nsCOMPtr<nsIRunnable> event =
         new nsXULPopupHidingEvent(popupToHide, nextPopup, lastPopup,
-                                  type, deselectMenu, aIsCancel);
+                                  popupFrame->PopupType(), deselectMenu, aIsCancel);
         NS_DispatchToCurrentThread(event);
     }
     else {
       FirePopupHidingEvent(popupToHide, nextPopup, lastPopup,
-                           popupFrame->PresContext(), type, deselectMenu, aIsCancel);
+                           popupFrame->PresContext(), popupFrame->PopupType(),
+                           deselectMenu, aIsCancel);
     }
   }
 }
@@ -1164,25 +1150,14 @@ nsXULPopupManager::HidePopupCallback(nsIContent* aPopup,
   
   
   
-  nsMenuChainItem* item = mNoHidePanels;
+  nsMenuChainItem* item = mPopups;
   while (item) {
     if (item->Content() == aPopup) {
-      item->Detach(&mNoHidePanels);
+      item->Detach(&mPopups);
+      SetCaptureState(aPopup);
       break;
     }
     item = item->GetParent();
-  }
-
-  if (!item) {
-    item = mPopups;
-    while (item) {
-      if (item->Content() == aPopup) {
-        item->Detach(&mPopups);
-        SetCaptureState(aPopup);
-        break;
-      }
-      item = item->GetParent();
-    }
   }
 
   delete item;
@@ -1288,33 +1263,19 @@ void
 nsXULPopupManager::EnableRollup(nsIContent* aPopup, bool aShouldRollup)
 {
 #ifndef MOZ_GTK
-  if (aShouldRollup) {
-    nsMenuChainItem* item = mNoHidePanels;
-    while (item) {
-      if (item->Content() == aPopup) {
-        item->Detach(&mNoHidePanels);
-        nsIContent* oldmenu = nullptr;
-        if (mPopups)
-          oldmenu = mPopups->Content();
-        item->SetParent(mPopups);
-        mPopups = item;
-        SetCaptureState(oldmenu);
-        return;
+  nsMenuChainItem* item = mPopups;
+  while (item) {
+    if (item->Content() == aPopup) {
+      nsIContent* oldmenu = nullptr;
+      if (mPopups) {
+        oldmenu = mPopups->Content();
       }
-      item = item->GetParent();
+
+      item->SetNoAutoHide(!aShouldRollup);
+      SetCaptureState(oldmenu);
+      return;
     }
-  } else {
-    nsMenuChainItem* item = mPopups;
-    while (item) {
-      if (item->Content() == aPopup) {
-        item->Detach(&mPopups);
-        item->SetParent(mNoHidePanels);
-        mNoHidePanels = item;
-        SetCaptureState(nullptr);
-        return;
-      }
-      item = item->GetParent();
-    }
+    item = item->GetParent();
   }
 #endif
 }
@@ -1354,55 +1315,33 @@ nsXULPopupManager::HidePopupsInDocShell(nsIDocShellTreeItem* aDocShellToHide)
     item = parent;
   }
 
-  
-  item = mNoHidePanels;
-  while (item) {
-    nsMenuChainItem* parent = item->GetParent();
-    if (item->Frame()->PopupState() != ePopupInvisible &&
-        IsChildOfDocShell(item->Content()->OwnerDoc(), aDocShellToHide)) {
-      nsMenuPopupFrame* frame = item->Frame();
-      item->Detach(&mNoHidePanels);
-      delete item;
-      popupsToHide.AppendElement(frame);
-    }
-    item = parent;
-  }
-
   HidePopupsInList(popupsToHide);
 }
 
 void
 nsXULPopupManager::UpdatePopupPositions(nsRefreshDriver* aRefreshDriver)
 {
-  if (!mPopups && !mNoHidePanels) {
-    return;
-  }
-
-  for (int32_t i = 0; i < 2; i++) {
-    nsMenuChainItem* item = i == 0 ? mPopups : mNoHidePanels;
-    while (item) {
-      if (item->Frame()->PresContext()->RefreshDriver() == aRefreshDriver) {
-        item->CheckForAnchorChange();
-      }
-
-      item = item->GetParent();
+  nsMenuChainItem* item = mPopups;
+  while (item) {
+    if (item->Frame()->PresContext()->RefreshDriver() == aRefreshDriver) {
+      item->CheckForAnchorChange();
     }
+
+    item = item->GetParent();
   }
 }
 
 void
 nsXULPopupManager::UpdateFollowAnchor(nsMenuPopupFrame* aPopup)
 {
-  for (int32_t i = 0; i < 2; i++) {
-    nsMenuChainItem* item = i == 0 ? mPopups : mNoHidePanels;
-    while (item) {
-      if (item->Frame() == aPopup) {
-        item->UpdateFollowAnchor();
-        break;
-      }
-
-      item = item->GetParent();
+  nsMenuChainItem* item = mPopups;
+  while (item) {
+    if (item->Frame() == aPopup) {
+      item->UpdateFollowAnchor();
+      break;
     }
+
+    item = item->GetParent();
   }
 }
 
@@ -1679,18 +1618,6 @@ nsXULPopupManager::IsPopupOpen(nsIContent* aPopup)
     item = item->GetParent();
   }
 
-  item = mNoHidePanels;
-  while (item) {
-    if (item->Content() == aPopup) {
-      NS_ASSERTION(item->Frame()->IsOpen() ||
-                   item->Frame()->PopupState() == ePopupHiding ||
-                   item->Frame()->PopupState() == ePopupInvisible,
-                   "popup in open list not actually open");
-      return true;
-    }
-    item = item->GetParent();
-  }
-
   return false;
 }
 
@@ -1715,13 +1642,13 @@ nsXULPopupManager::IsPopupOpenForMenuParent(nsMenuParent* aMenuParent)
 nsIFrame*
 nsXULPopupManager::GetTopPopup(nsPopupType aType)
 {
-  if ((aType == ePopupTypePanel || aType == ePopupTypeTooltip) && mNoHidePanels)
-    return mNoHidePanels->Frame();
-
-  nsMenuChainItem* item = GetTopVisibleMenu();
+  nsMenuChainItem* item = mPopups;
   while (item) {
-    if (item->PopupType() == aType || aType == ePopupTypeAny)
+    if (item->Frame()->IsVisible() &&
+        (item->PopupType() == aType || aType == ePopupTypeAny)) {
       return item->Frame();
+    }
+
     item = item->GetParent();
   }
 
@@ -1733,20 +1660,15 @@ nsXULPopupManager::GetVisiblePopups(nsTArray<nsIFrame *>& aPopups)
 {
   aPopups.Clear();
 
-  
   nsMenuChainItem* item = mPopups;
-  for (int32_t list = 0; list < 2; list++) {
-    while (item) {
-      
-      
-      if (item->Frame()->IsVisible() && !item->Frame()->IsMouseTransparent()) {
-        aPopups.AppendElement(item->Frame());
-      }
-
-      item = item->GetParent();
+  while (item) {
+    
+    
+    if (item->Frame()->IsVisible() && !item->Frame()->IsMouseTransparent()) {
+      aPopups.AppendElement(item->Frame());
     }
 
-    item = mNoHidePanels;
+    item = item->GetParent();
   }
 }
 
@@ -1766,7 +1688,7 @@ nsXULPopupManager::GetLastTriggerNode(nsIDocument* aDocument, bool aIsTooltip)
     node = do_QueryInterface(nsMenuPopupFrame::GetTriggerContent(GetPopupFrameForContent(mOpeningPopup, false)));
   }
   else {
-    nsMenuChainItem* item = aIsTooltip ? mNoHidePanels : mPopups;
+    nsMenuChainItem* item = mPopups;
     while (item) {
       
       if ((item->PopupType() == ePopupTypeTooltip) == aIsTooltip &&
@@ -1887,23 +1809,14 @@ nsXULPopupManager::PopupDestroyed(nsMenuPopupFrame* aPopup)
     mTimerMenu = nullptr;
   }
 
-  nsMenuChainItem* item = mNoHidePanels;
-  while (item) {
-    if (item->Frame() == aPopup) {
-      item->Detach(&mNoHidePanels);
-      delete item;
-      break;
-    }
-    item = item->GetParent();
-  }
-
   nsTArray<nsMenuPopupFrame *> popupsToHide;
 
-  item = mPopups;
+  nsMenuChainItem* item = mPopups;
   while (item) {
     nsMenuPopupFrame* frame = item->Frame();
     if (frame == aPopup) {
-      if (frame->PopupState() != ePopupInvisible) {
+      
+      if (!item->IsNoAutoHide() && frame->PopupState() != ePopupInvisible) {
         
         
         
@@ -2379,7 +2292,7 @@ nsXULPopupManager::HandleKeyboardEventWithKeyCode(
     return true;
   }
 
-  bool consume = (mPopups || mActiveMenuBar);
+  bool consume = (aTopVisibleMenuItem || mActiveMenuBar);
   switch (keyCode) {
     case nsIDOMKeyEvent::DOM_VK_UP:
     case nsIDOMKeyEvent::DOM_VK_DOWN:
@@ -2744,7 +2657,7 @@ nsXULPopupManager::KeyDown(nsIDOMKeyEvent* aKeyEvent)
         
         
         nsMenuChainItem* item = GetTopVisibleMenu();
-        if (mPopups && item && !item->Frame()->IsMenuList()) {
+        if (item && !item->Frame()->IsMenuList()) {
           Rollup(0, false, nullptr, nullptr);
         } else if (mActiveMenuBar) {
           mActiveMenuBar->MenuClosed();
@@ -2776,7 +2689,7 @@ nsXULPopupManager::KeyPress(nsIDOMKeyEvent* aKeyEvent)
   nsCOMPtr<nsIDOMKeyEvent> keyEvent = do_QueryInterface(aKeyEvent);
   NS_ENSURE_TRUE(keyEvent, NS_ERROR_UNEXPECTED);
   
-  bool consume = (mPopups || mActiveMenuBar);
+  bool consume = (item || mActiveMenuBar);
 
   WidgetInputEvent* evt = aKeyEvent->AsEvent()->WidgetEventPtr()->AsInputEvent();
   bool isAccel = evt && evt->IsAccel();

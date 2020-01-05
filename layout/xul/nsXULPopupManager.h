@@ -46,7 +46,6 @@
 
 
 
-
 class nsContainerFrame;
 class nsMenuFrame;
 class nsMenuPopupFrame;
@@ -135,6 +134,7 @@ class nsMenuChainItem
 private:
   nsMenuPopupFrame* mFrame; 
   nsPopupType mPopupType; 
+  bool mNoAutoHide; 
   bool mIsContext; 
   bool mOnMenuBar; 
   nsIgnoreKeys mIgnoreKeys; 
@@ -150,9 +150,11 @@ private:
   nsMenuChainItem* mChild;
 
 public:
-  nsMenuChainItem(nsMenuPopupFrame* aFrame, bool aIsContext, nsPopupType aPopupType)
+  nsMenuChainItem(nsMenuPopupFrame* aFrame, bool aNoAutoHide, bool aIsContext,
+                  nsPopupType aPopupType)
     : mFrame(aFrame),
       mPopupType(aPopupType),
+      mNoAutoHide(aNoAutoHide),
       mIsContext(aIsContext),
       mOnMenuBar(false),
       mIgnoreKeys(eIgnoreKeys_False),
@@ -172,6 +174,8 @@ public:
   nsIContent* Content();
   nsMenuPopupFrame* Frame() { return mFrame; }
   nsPopupType PopupType() { return mPopupType; }
+  bool IsNoAutoHide() { return mNoAutoHide; }
+  void SetNoAutoHide(bool aNoAutoHide) { mNoAutoHide = aNoAutoHide; }
   bool IsMenu() { return mPopupType == ePopupTypeMenu; }
   bool IsContextMenu() { return mIsContext; }
   nsIgnoreKeys IgnoreKeys() { return mIgnoreKeys; }
@@ -828,9 +832,6 @@ protected:
 
   
   nsMenuChainItem* mPopups;
-
-  
-  nsMenuChainItem* mNoHidePanels;
 
   
   nsCOMPtr<nsITimer> mCloseTimer;
