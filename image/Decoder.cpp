@@ -190,33 +190,31 @@ Decoder::CompleteDecode()
     PostError();
   }
 
-  
-  if (IsMetadataDecode() && !HasSize()) {
-    PostError();
+  if (IsMetadataDecode()) {
+    
+    if (!HasSize()) {
+      PostError();
+    }
+    return;
   }
 
   
-  if (mInFrame && !HasError()) {
+  
+  if (mInFrame) {
+    PostHasTransparency();
     PostFrameStop();
   }
 
   
   
-  if (!mDecodeDone && !IsMetadataDecode()) {
+  if (!mDecodeDone) {
+    
     mShouldReportError = true;
 
-    
-    
     if (GetCompleteFrameCount() > 0) {
       
       
-
-      
       PostHasTransparency();
-
-      if (mInFrame) {
-        PostFrameStop();
-      }
       PostDecodeDone();
     } else {
       
@@ -224,7 +222,7 @@ Decoder::CompleteDecode()
     }
   }
 
-  if (mDecodeDone && !IsMetadataDecode()) {
+  if (mDecodeDone) {
     MOZ_ASSERT(HasError() || mCurrentFrame, "Should have an error or a frame");
 
     
@@ -510,8 +508,12 @@ Decoder::PostError()
 {
   mError = true;
 
-  if (mInFrame && mCurrentFrame) {
+  if (mInFrame) {
+    MOZ_ASSERT(mCurrentFrame);
+    MOZ_ASSERT(mFrameCount > 0);
     mCurrentFrame->Abort();
+    mInFrame = false;
+    --mFrameCount;
   }
 }
 

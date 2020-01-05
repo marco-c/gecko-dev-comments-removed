@@ -1617,13 +1617,13 @@ RasterImage::NotifyDecodeComplete(const DecoderFinalStatus& aStatus,
     mAnimationState->SetDoneDecoding(true);
   }
 
-  if (!aStatus.mWasMetadataDecode && aTelemetry.mChunkCount) {
-    Telemetry::Accumulate(Telemetry::IMAGE_DECODE_CHUNKS, aTelemetry.mChunkCount);
-  }
+  
+  if (!aStatus.mWasMetadataDecode) {
+    if (aTelemetry.mChunkCount) {
+      Telemetry::Accumulate(Telemetry::IMAGE_DECODE_CHUNKS, aTelemetry.mChunkCount);
+    }
 
-  if (aStatus.mFinished) {
-    
-    if (!aStatus.mWasMetadataDecode) {
+    if (aStatus.mFinished) {
       Telemetry::Accumulate(Telemetry::IMAGE_DECODE_TIME,
                             int32_t(aTelemetry.mDecodeTime.ToMicroseconds()));
 
@@ -1631,26 +1631,30 @@ RasterImage::NotifyDecodeComplete(const DecoderFinalStatus& aStatus,
         Telemetry::Accumulate(*aTelemetry.mSpeedHistogram, aTelemetry.Speed());
       }
     }
+  }
 
-    
-    if (aStatus.mHadError) {
-      DoError();
-    } else if (aStatus.mWasMetadataDecode && !mHasSize) {
-      DoError();
-    }
+  
+  if (aStatus.mHadError &&
+      (!mAnimationState || mAnimationState->KnownFrameCount() == 0)) {
+    DoError();
+  } else if (aStatus.mWasMetadataDecode && !mHasSize) {
+    DoError();
+  }
 
+  
+  if (aStatus.mFinished && aStatus.mWasMetadataDecode) {
     
-    if (mLoadProgress && aStatus.mWasMetadataDecode) {
+    if (mLoadProgress) {
       NotifyForLoadEvent(*mLoadProgress);
       mLoadProgress = Nothing();
       NotifyProgress(FLAG_ONLOAD_UNBLOCKED);
     }
-  }
 
-  
-  if (aStatus.mFinished && aStatus.mWasMetadataDecode && mWantFullDecode) {
-    mWantFullDecode = false;
-    RequestDecodeForSize(mSize, DECODE_FLAGS_DEFAULT);
+    
+    if (mWantFullDecode) {
+      mWantFullDecode = false;
+      RequestDecodeForSize(mSize, DECODE_FLAGS_DEFAULT);
+    }
   }
 }
 
