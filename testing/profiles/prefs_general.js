@@ -365,3 +365,8 @@ user_pref("signon.rememberSignons", false);
 
 
 user_pref("browser.formautofill.experimental", true);
+
+
+
+
+user_pref("marionette.prefs.recommended", false);
