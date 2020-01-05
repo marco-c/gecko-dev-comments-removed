@@ -43,7 +43,7 @@ use gfx::geometry::Au;
 
 
  
-enum FlowContext {
+pub enum FlowContext {
     AbsoluteFlow(FlowData), 
     BlockFlow(FlowData, BlockFlowData),
     FloatFlow(FlowData),
@@ -63,22 +63,8 @@ enum FlowContextType {
     Flow_Table
 }
 
-trait FlowContextMethods {
-    pure fn d(&self) -> &self/FlowData;
-    pure fn inline(&self) -> &self/InlineFlowData;
-    pure fn block(&self) -> &self/BlockFlowData;
-    pure fn root(&self) -> &self/RootFlowData;
-    fn bubble_widths(@self, &LayoutContext);
-    fn assign_widths(@self, &LayoutContext);
-    fn assign_height(@self, &LayoutContext);
-    fn build_display_list_recurse(@self, &DisplayListBuilder, dirty: &Rect<Au>,
-                                  offset: &Point2D<Au>, &mut DisplayList);
-    pure fn foldl_boxes_for_node<B: Copy>(Node, +seed: B, cb: pure fn&(+a: B,@RenderBox) -> B) -> B;
-    pure fn iter_boxes_for_node<T>(Node, cb: pure fn&(@RenderBox) -> T);
-}
 
-/* A particular kind of layout context. It manages the positioning of
-   render boxes within the context.  */
+
 struct FlowData {
     mut node: Option<Node>,
     /* reference to parent, children flow contexts */
@@ -106,7 +92,7 @@ fn FlowData(id: int) -> FlowData {
     }
 }
 
-impl FlowContext : FlowContextMethods {
+impl FlowContext  {
     pure fn d(&self) -> &self/FlowData {
         match *self {
             AbsoluteFlow(ref d)    => d,
@@ -216,22 +202,27 @@ impl FlowContext : FlowContextMethods {
 }
 
 /* The tree holding FlowContexts */
-enum FlowTree { FlowTree }
+pub enum FlowTree { FlowTree }
 
-impl FlowTree : tree::ReadMethods<@FlowContext> {
+impl FlowTree {
     fn each_child(ctx: @FlowContext, f: fn(box: @FlowContext) -> bool) {
         tree::each_child(&self, &ctx, |box| f(*box) )
     }
+}
 
+impl FlowTree : tree::ReadMethods<@FlowContext> {
     fn with_tree_fields<R>(box: &@FlowContext, f: fn(&tree::Tree<@FlowContext>) -> R) -> R {
         f(&box.d().tree)
     }
 }
 
-impl FlowTree : tree::WriteMethods<@FlowContext> {
+impl FlowTree {
     fn add_child(parent: @FlowContext, child: @FlowContext) {
         tree::add_child(&self, parent, child)
     }
+}
+
+impl FlowTree : tree::WriteMethods<@FlowContext> {
 
     pure fn eq(a: &@FlowContext, b: &@FlowContext) -> bool { core::box::ptr_eq(*a, *b) }
 

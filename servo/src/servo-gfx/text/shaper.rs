@@ -9,14 +9,14 @@ use text::glyph::GlyphStore;
 
 pub type Shaper/& = harfbuzz::shaper::HarfbuzzShaper;
 
-trait ShaperMethods {
+pub trait ShaperMethods {
     fn shape_text(text: &str, glyphs: &mut GlyphStore);
 
 }
 
 
 
-impl Shaper {
+pub impl Shaper {
     static pub fn new(font: @Font) -> Shaper {
         harfbuzz::shaper::HarfbuzzShaper::new(font)
     }

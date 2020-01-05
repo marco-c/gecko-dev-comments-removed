@@ -1,7 +1,7 @@
 use azure::azure_hl::{DrawTarget};
 use geom::rect::Rect;
 
-struct LayerBuffer {
+pub struct LayerBuffer {
     draw_target: DrawTarget,
 
     
@@ -13,7 +13,7 @@ struct LayerBuffer {
 
 
 
-struct LayerBufferSet {
+pub struct LayerBufferSet {
     buffers: ~[LayerBuffer]
 }
 
@@ -21,7 +21,7 @@ struct LayerBufferSet {
 
 
 
-trait Compositor {
+pub trait Compositor {
     fn begin_drawing(next_dt: pipes::Chan<LayerBufferSet>);
     fn draw(next_dt: pipes::Chan<LayerBufferSet>, +draw_me: LayerBufferSet);
 }

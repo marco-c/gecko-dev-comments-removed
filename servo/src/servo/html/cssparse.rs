@@ -12,7 +12,7 @@ use std::net::url::Url;
 use std::net::url;
 
 
-enum StylesheetProvenance {
+pub enum StylesheetProvenance {
     UrlProvenance(Url),
     InlineProvenance(Url, ~str),
 }
