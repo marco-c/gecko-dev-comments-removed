@@ -765,15 +765,6 @@ class TypedArrayObjectTemplate : public TypedArrayObject
     fromBufferWithProto(JSContext* cx, HandleObject bufobj, uint32_t byteOffset, int32_t lengthInt,
                         HandleObject proto)
     {
-        ESClass cls;
-        if (!GetBuiltinClass(cx, bufobj, &cls))
-            return nullptr;
-        if (cls != ESClass::ArrayBuffer && cls != ESClass::SharedArrayBuffer) {
-            JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
-            return nullptr;
-        }
-
-        MOZ_ASSERT(IsArrayBuffer(bufobj) || IsSharedArrayBuffer(bufobj) || bufobj->is<ProxyObject>());
         if (bufobj->is<ProxyObject>()) {
             
 
@@ -791,44 +782,48 @@ class TypedArrayObjectTemplate : public TypedArrayObject
                 JS_ReportErrorASCII(cx, "Permission denied to access object");
                 return nullptr;
             }
-            if (IsArrayBuffer(wrapped) || IsSharedArrayBuffer(wrapped)) {
-                
 
-
-
-
-
-
-
-
-
-
-
-
-
-                RootedObject protoRoot(cx, proto);
-                if (!protoRoot) {
-                    if (!GetBuiltinPrototype(cx, JSCLASS_CACHED_PROTO_KEY(instanceClass()), &protoRoot))
-                        return nullptr;
-                }
-
-                FixedInvokeArgs<3> args(cx);
-
-                args[0].setNumber(byteOffset);
-                args[1].setInt32(lengthInt);
-                args[2].setObject(*protoRoot);
-
-                RootedValue fval(cx);
-                if (!getOrCreateCreateArrayFromBufferFunction(cx, &fval))
-                    return nullptr;
-
-                RootedValue thisv(cx, ObjectValue(*bufobj));
-                RootedValue rval(cx);
-                if (!js::Call(cx, fval, thisv, args, &rval))
-                    return nullptr;
-
-                return &rval.toObject();
+            if (!IsArrayBuffer(wrapped) && !IsSharedArrayBuffer(wrapped)) {
+                JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr, JSMSG_TYPED_ARRAY_BAD_ARGS);
+                return nullptr; 
             }
+
+            
+
+
+
+
+
+
+
+
+
+
+
+
+
+            RootedObject protoRoot(cx, proto);
+            if (!protoRoot) {
+                if (!GetBuiltinPrototype(cx, JSCLASS_CACHED_PROTO_KEY(instanceClass()), &protoRoot))
+                    return nullptr;
+            }
+
+            FixedInvokeArgs<3> args(cx);
+
+            args[0].setNumber(byteOffset);
+            args[1].setInt32(lengthInt);
+            args[2].setObject(*protoRoot);
+
+            RootedValue fval(cx);
+            if (!getOrCreateCreateArrayFromBufferFunction(cx, &fval))
+                return nullptr;
+
+            RootedValue thisv(cx, ObjectValue(*bufobj));
+            RootedValue rval(cx);
+            if (!js::Call(cx, fval, thisv, args, &rval))
+                return nullptr;
+
+            return &rval.toObject();
         }
 
         if (!IsArrayBuffer(bufobj) && !IsSharedArrayBuffer(bufobj)) {
