@@ -29,6 +29,8 @@
 
 
 
+
+
 #include <stdio.h>
 #include <math.h>
 
@@ -361,8 +363,6 @@ static void
 PlatformStart()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
-
-  LOG("Sampler started");
 
 #if defined(USE_EHABI_STACKWALK)
   mozilla::EHABIStackWalkInit();
