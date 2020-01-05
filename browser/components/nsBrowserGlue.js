@@ -1568,7 +1568,7 @@ BrowserGlue.prototype = {
   },
 
   _migrateUI: function BG__migrateUI() {
-    const UI_VERSION = 43;
+    const UI_VERSION = 44;
     const BROWSER_DOCURL = "chrome://browser/content/browser.xul";
 
     let currentUIVersion;
@@ -1846,6 +1846,20 @@ BrowserGlue.prototype = {
           "firefox-compact-dark@mozilla.org" : "firefox-compact-light@mozilla.org";
         Services.prefs.setCharPref("lightweightThemes.selectedThemeID", newTheme);
       }
+    }
+
+    if (currentUIVersion < 44) {
+      
+      
+      let animate = Services.prefs.getBoolPref("browser.tabs.animate", true) &&
+                    Services.prefs.getBoolPref("browser.fullscreen.animate", true) &&
+                    !Services.prefs.getBoolPref("alerts.disableSlidingEffect", false);
+
+      Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", animate);
+
+      Services.prefs.clearUserPref("browser.tabs.animate");
+      Services.prefs.clearUserPref("browser.fullscreen.animate");
+      Services.prefs.clearUserPref("browser.tabs.animate");
     }
 
     

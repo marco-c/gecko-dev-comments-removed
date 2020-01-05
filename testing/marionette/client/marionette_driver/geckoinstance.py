@@ -459,7 +459,7 @@ class DesktopInstance(GeckoInstance):
         "browser.startup.page": 0,
 
         
-        "browser.tabs.animate": False,
+        "toolkit.cosmeticAnimations.enabled": False,
 
         
         "browser.tabs.warnOnClose": False,

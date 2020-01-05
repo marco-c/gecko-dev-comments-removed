@@ -3,9 +3,9 @@
 
 
 function test() {
-  Services.prefs.setBoolPref("browser.tabs.animate", false);
+  Services.prefs.setBoolPref("toolkit.cosmeticAnimations.enabled", false);
   registerCleanupFunction(function() {
-    Services.prefs.clearUserPref("browser.tabs.animate");
+    Services.prefs.clearUserPref("toolkit.cosmeticAnimations.enabled");
   });
 
   
