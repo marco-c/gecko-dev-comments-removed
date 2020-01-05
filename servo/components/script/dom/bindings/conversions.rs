@@ -32,7 +32,6 @@
 
 
 
-use core::nonzero::NonZero;
 use dom::bindings::error::throw_type_error;
 use dom::bindings::inheritance::Castable;
 use dom::bindings::js::Root;
@@ -657,7 +656,7 @@ pub fn is_dom_proxy(obj: *mut JSObject) -> bool {
 pub const DOM_OBJECT_SLOT: u32 = 0;
 
 
-unsafe fn private_from_reflector(obj: *mut JSObject) -> *const libc::c_void {
+pub unsafe fn private_from_object(obj: *mut JSObject) -> *const libc::c_void {
     let clasp = JS_GetClass(obj);
     let value = if is_dom_class(clasp) {
         JS_GetReservedSlot(obj, DOM_OBJECT_SLOT)
@@ -670,11 +669,6 @@ unsafe fn private_from_reflector(obj: *mut JSObject) -> *const libc::c_void {
     } else {
         value.to_private()
     }
-}
-
-
-pub unsafe fn native_from_reflector<T>(obj: *mut JSObject) -> *const T {
-    private_from_reflector(obj) as *const T
 }
 
 
@@ -727,41 +721,52 @@ pub unsafe fn private_from_proto_check<F>(mut obj: *mut JSObject, proto_check: F
 
     if proto_check(dom_class) {
         debug!("good prototype");
-        Ok(private_from_reflector(obj))
+        Ok(private_from_object(obj))
     } else {
         debug!("bad prototype");
         Err(())
     }
 }
 
-
-
-
-
-
-
-pub fn native_from_reflector_jsmanaged<T>(obj: *mut JSObject) -> Result<Root<T>, ()>
+fn native_from_object<T>(obj: *mut JSObject) -> Result<*const T, ()>
     where T: Reflectable + IDLInterface
 {
     unsafe {
-        private_from_proto_check(obj, T::derives).map(|obj| {
-            Root::new(NonZero::new(obj as *const T))
-        })
+        private_from_proto_check(obj, T::derives).map(|ptr| ptr as *const T)
     }
 }
 
 
-pub fn native_from_handlevalue<T>(v: HandleValue) -> Result<Root<T>, ()>
+
+
+
+
+
+pub fn root_from_object<T>(obj: *mut JSObject) -> Result<Root<T>, ()>
     where T: Reflectable + IDLInterface
 {
-    native_from_reflector_jsmanaged(v.get().to_object())
+    native_from_object(obj).map(|ptr| unsafe { Root::from_ref(&*ptr) })
 }
 
 
-pub fn native_from_handleobject<T>(obj: HandleObject) -> Result<Root<T>, ()>
+pub fn native_from_handlevalue<T>(v: HandleValue) -> Result<*const T, ()>
     where T: Reflectable + IDLInterface
 {
-    native_from_reflector_jsmanaged(obj.get())
+    native_from_object(v.get().to_object())
+}
+
+
+pub fn root_from_handlevalue<T>(v: HandleValue) -> Result<Root<T>, ()>
+    where T: Reflectable + IDLInterface
+{
+    root_from_object(v.get().to_object())
+}
+
+
+pub fn root_from_handleobject<T>(obj: HandleObject) -> Result<Root<T>, ()>
+    where T: Reflectable + IDLInterface
+{
+    root_from_object(obj.get())
 }
 
 impl<T: Reflectable> ToJSValConvertible for Root<T> {
