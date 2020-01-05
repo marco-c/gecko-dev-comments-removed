@@ -41,6 +41,8 @@ XPCOMUtils.defineLazyServiceGetter(this, "AlertsService", "@mozilla.org/alerts-s
 
 
 
+let initializedModules = {};
+
 [
   ["AboutHome", "resource:///modules/AboutHome.jsm"],
   ["AboutNewTab", "resource:///modules/AboutNewTab.jsm"],
@@ -87,9 +89,19 @@ XPCOMUtils.defineLazyServiceGetter(this, "AlertsService", "@mozilla.org/alerts-s
   ["UITour", "resource:///modules/UITour.jsm"],
   ["WebChannel", "resource://gre/modules/WebChannel.jsm"],
   ["WindowsRegistry", "resource://gre/modules/WindowsRegistry.jsm"],
-  ["webrtcUI", "resource:///modules/webrtcUI.jsm"],
+  ["webrtcUI", "resource:///modules/webrtcUI.jsm", "init"],
   ["UserAgentOverrides", "resource://gre/modules/UserAgentOverrides.jsm"],
-].forEach(([name, resource]) => XPCOMUtils.defineLazyModuleGetter(this, name, resource));
+].forEach(([name, resource, init]) => {
+  if (init) {
+    XPCOMUtils.defineLazyGetter(this, name, () => {
+      Cu.import(resource, initializedModules);
+      initializedModules[name][init]();
+      return initializedModules[name];
+    });
+  } else {
+    XPCOMUtils.defineLazyModuleGetter(this, name, resource);
+  }
+});
 
 if (AppConstants.MOZ_CRASHREPORTER) {
   XPCOMUtils.defineLazyModuleGetter(this, "PluginCrashReporter",
@@ -107,6 +119,63 @@ XPCOMUtils.defineLazyGetter(this, "gBrandBundle", function() {
 XPCOMUtils.defineLazyGetter(this, "gBrowserBundle", function() {
   return Services.strings.createBundle("chrome://browser/locale/browser.properties");
 });
+
+const global = this;
+
+const listeners = {
+  observers: {
+  },
+
+  ppmm: {
+    "webrtc:UpdateGlobalIndicators": ["webrtcUI"],
+    "webrtc:UpdatingIndicators": ["webrtcUI"],
+  },
+
+  mm: {
+    "rtcpeer:CancelRequest": ["webrtcUI"],
+    "rtcpeer:Request": ["webrtcUI"],
+    "webrtc:CancelRequest": ["webrtcUI"],
+    "webrtc:Request": ["webrtcUI"],
+    "webrtc:StopRecording": ["webrtcUI"],
+    "webrtc:UpdateBrowserIndicators": ["webrtcUI"],
+  },
+
+  observe(subject, topic, data) {
+    for (let module of this.observers[topic]) {
+      try {
+        this[module].observe(subject, topic, data);
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    }
+  },
+
+  receiveMessage(modules, data) {
+    for (let module of modules[data.name]) {
+      try {
+        global[module].receiveMessage(data);
+      } catch (e) {
+        Cu.reportError(e);
+      }
+    }
+  },
+
+  init() {
+    for (let observer of Object.keys(this.observers)) {
+      Services.obs.addObserver(this, observer);
+    }
+
+    let receiveMessageMM = this.receiveMessage.bind(this, this.mm);
+    for (let message of Object.keys(this.mm)) {
+      Services.mm.addMessageListener(message, receiveMessageMM);
+    }
+
+    let receiveMessagePPMM = this.receiveMessage.bind(this, this.ppmm);
+    for (let message of Object.keys(this.ppmm)) {
+      Services.ppmm.addMessageListener(message, receiveMessagePPMM);
+    }
+  }
+};
 
 
 const BOOKMARKS_BACKUP_IDLE_TIME_SEC = 8 * 60;
@@ -499,8 +568,10 @@ BrowserGlue.prototype = {
     
     this._migrateUI();
 
+    listeners.init();
+
     PageThumbs.init();
-    webrtcUI.init();
+
     AboutHome.init();
 
     DirectoryLinksProvider.init();
@@ -757,14 +828,11 @@ BrowserGlue.prototype = {
     if (!win)
       return;
 
-    
-    
-    
-    let message = "Due to performance testing, we have disabled some of your add-ons. They can be re-enabled in your browser settings.";
+    let message = win.gNavigatorBundle.getString("nonMpcDisabled.message");
     let buttons = [
       {
-        label: "Manage Add-Ons",
-        accessKey: "M",
+        label: win.gNavigatorBundle.getString("nonMpcDisabled.manage.label"),
+        accessKey: win.gNavigatorBundle.getString("nonMpcDisabled.manage.accessKey"),
         callback() {
           win.BrowserOpenAddonsMgr("addons://list/extension");
         }
@@ -893,12 +961,17 @@ BrowserGlue.prototype = {
       delete this._bookmarksBackupIdleTime;
     }
 
+    for (let mod of Object.values(initializedModules)) {
+      if (mod.uninit) {
+        mod.uninit();
+      }
+    }
+
     BrowserUsageTelemetry.uninit();
     SelfSupportBackend.uninit();
     PageThumbs.uninit();
     AboutNewTab.uninit();
     NewTabUtils.uninit();
-    webrtcUI.uninit();
     FormValidationHandler.uninit();
     AutoCompletePopup.uninit();
     DateTimePickerHelper.uninit();
