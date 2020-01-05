@@ -25,8 +25,6 @@ use url::Url;
 use serialize::{Encodable, Encoder};
 
 
-
-
 pub enum Msg {
     
     AddStylesheetMsg(Stylesheet),
@@ -35,9 +33,7 @@ pub enum Msg {
     ReflowMsg(Box<Reflow>),
 
     
-    
-    
-    QueryMsg(LayoutQuery),
+    GetRPCMsg(Sender<Box<LayoutRPC + Send>>),
 
     
     
@@ -55,14 +51,21 @@ pub enum Msg {
 }
 
 
-pub enum LayoutQuery {
+
+
+
+
+
+
+
+pub trait LayoutRPC {
     
-    ContentBoxQuery(TrustedNodeAddress, Sender<ContentBoxResponse>),
+    fn content_box(&self, node: TrustedNodeAddress) -> ContentBoxResponse;
     
-    ContentBoxesQuery(TrustedNodeAddress, Sender<ContentBoxesResponse>),
+    fn content_boxes(&self, node: TrustedNodeAddress) -> ContentBoxesResponse;
     
-    HitTestQuery(TrustedNodeAddress, Point2D<f32>, Sender<Result<HitTestResponse, ()>>),
-    MouseOverQuery(TrustedNodeAddress, Point2D<f32>, Sender<Result<MouseOverResponse, ()>>),
+    fn hit_test(&self, node: TrustedNodeAddress, point: Point2D<f32>) -> Result<HitTestResponse, ()>;
+    fn mouse_over(&self, node: TrustedNodeAddress, point: Point2D<f32>) -> Result<MouseOverResponse, ()>;
 }
 
 
