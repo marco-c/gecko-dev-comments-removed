@@ -42,10 +42,7 @@ public:
 
   
   virtual GMPErr GMPInit(const GMPPlatformAPI* aPlatformAPI) = 0;
-  virtual GMPErr GMPGetAPI(const char* aAPIName,
-                           void* aHostAPI,
-                           void** aPluginAPI,
-                           uint32_t aDecryptorId) = 0;
+  virtual GMPErr GMPGetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI) = 0;
   virtual void GMPShutdown() = 0;
   virtual void GMPSetNodeId(const char* aNodeId, uint32_t aLength) = 0;
 };
@@ -86,10 +83,7 @@ public:
                     GMPAdapter* aAdapter = nullptr) = 0;
 
   
-  virtual GMPErr GetAPI(const char* aAPIName,
-                        void* aHostAPI,
-                        void** aPluginAPI,
-                        uint32_t aDecryptorId) = 0;
+  virtual GMPErr GetAPI(const char* aAPIName, void* aHostAPI, void** aPluginAPI) = 0;
 
   
   
