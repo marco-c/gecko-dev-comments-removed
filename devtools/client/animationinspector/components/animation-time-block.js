@@ -68,8 +68,11 @@ AnimationTimeBlock.prototype = {
     
     
     
-    const {x, delayX, delayW, endDelayX, endDelayW} =
+    let {x, iterationW, delayX, delayW, negativeDelayW, endDelayX, endDelayW} =
       TimeScale.getAnimationDimensions(animation);
+
+    
+    let backgroundIterations = TimeScale.getIterationsBackgroundData(animation);
 
     
     const summaryEl = createNode({
