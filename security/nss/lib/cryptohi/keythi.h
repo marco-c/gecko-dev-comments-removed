@@ -4,7 +4,6 @@
 #ifndef _KEYTHI_H_
 #define _KEYTHI_H_ 1
 
-#include "eccutil.h"
 #include "plarena.h"
 #include "pkcs11t.h"
 #include "secmodt.h"
@@ -127,7 +126,12 @@ struct SECKEYECPublicKeyStr {
     SECKEYECParams DEREncodedParams;
     int size;            
     SECItem publicValue; 
-    ECPointEncoding encoding;
+    
+
+
+
+
+
 };
 typedef struct SECKEYECPublicKeyStr SECKEYECPublicKey;
 

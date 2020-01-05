@@ -20,6 +20,9 @@
 #include "prinit.h"
 #include "prtime.h" 
 
+#define SET_ERROR_CODE
+#define TEST_FOR_FAILURE
+
 
 
 
@@ -168,7 +171,8 @@ ssl_BeginClientHandshake(sslSocket *ss)
             PORT_Assert(!ss->sec.localCert);
             ss->sec.localCert = CERT_DupCertificate(sid->localCert);
         } else {
-            ss->sec.uncache(sid);
+            if (ss->sec.uncache)
+                ss->sec.uncache(sid);
             ssl_FreeSID(sid);
             sid = NULL;
         }
@@ -217,7 +221,6 @@ ssl_BeginServerHandshake(sslSocket *ss)
     SECStatus rv;
 
     ss->sec.isServer = PR_TRUE;
-    ss->ssl3.hs.ws = wait_client_hello;
     ssl_ChooseSessionIDProcs(&ss->sec);
 
     rv = ssl_CheckConfigSanity(ss);

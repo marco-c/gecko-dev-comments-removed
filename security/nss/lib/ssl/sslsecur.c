@@ -15,6 +15,11 @@
 #include "nss.h"      
 #include "prinit.h"   
 
+#define MAX_BLOCK_CYPHER_SIZE 32
+
+#define TEST_FOR_FAILURE
+#define SET_ERROR_CODE
+
 
 
 
@@ -1108,7 +1113,7 @@ SSL_InvalidateSession(PRFileDesc *fd)
         ssl_Get1stHandshakeLock(ss);
         ssl_GetSSL3HandshakeLock(ss);
 
-        if (ss->sec.ci.sid) {
+        if (ss->sec.ci.sid && ss->sec.uncache) {
             ss->sec.uncache(ss->sec.ci.sid);
             rv = SECSuccess;
         }

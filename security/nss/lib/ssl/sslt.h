@@ -45,7 +45,6 @@ typedef enum {
     ssl_kea_ecdh = 4,
     ssl_kea_ecdh_psk = 5,
     ssl_kea_dh_psk = 6,
-    ssl_kea_tls13_any = 7,
     ssl_kea_size 
 } SSLKEAType;
 
@@ -104,7 +103,6 @@ typedef enum {
     ssl_auth_rsa_sign = 7,   
     ssl_auth_rsa_pss = 8,
     ssl_auth_psk = 9,
-    ssl_auth_tls13_any = 10,
     ssl_auth_size 
 } SSLAuthType;
 
@@ -199,13 +197,6 @@ typedef struct SSLChannelInfoStr {
     PRBool earlyDataAccepted;
 
     
-    
-    SSLKEAType keaType;
-    SSLCipherAlgorithm symCipher;
-    SSLMACAlgorithm macAlgorithm;
-    SSLAuthType authType;
-
-    
 
 } SSLChannelInfo;
 
@@ -267,7 +258,7 @@ typedef struct SSLCipherSuiteInfoStr {
     PRUint16 macBits;
 
     PRUintn isFIPS : 1;
-    PRUintn isExportable : 1; 
+    PRUintn isExportable : 1;
     PRUintn nonStandard : 1;
     PRUintn reservedBits : 29;
 
@@ -318,15 +309,10 @@ typedef enum {
     ssl_tls13_draft_version_xtn = 0xff02 
 } SSLExtensionType;
 
-typedef enum {
-    ssl_tls13_ticket_early_data_info_xtn = 1
-} TLS13TicketExtensionType;
-
 
 #define ssl_elliptic_curves_xtn ssl_supported_groups_xtn
 
-#define SSL_MAX_EXTENSIONS 16 /* doesn't include ssl_padding_xtn or \
-                               * TLS 1.3 NewSessionTicket extensions. */
+#define SSL_MAX_EXTENSIONS 16 /* doesn't include ssl_padding_xtn. */
 
 
 typedef enum {
@@ -365,8 +351,7 @@ typedef enum {
     ssl_grp_ec_secp256r1 = 23,
     ssl_grp_ec_secp384r1 = 24,
     ssl_grp_ec_secp521r1 = 25,
-    ssl_grp_ec_curve25519 = 29, 
-    ssl_grp_ffdhe_2048 = 256,   
+    ssl_grp_ffdhe_2048 = 256, 
     ssl_grp_ffdhe_3072 = 257,
     ssl_grp_ffdhe_4096 = 258,
     ssl_grp_ffdhe_6144 = 259,

@@ -4543,14 +4543,6 @@ sftk_PairwiseConsistencyCheck(CK_SESSION_HANDLE hSession,
     
 
     canSignVerify = sftk_isTrue(privateKey, CKA_SIGN);
-    
-
-    if (canSignVerify && keyType == CKK_EC) {
-        NSSLOWKEYPrivateKey *privKey = sftk_GetPrivKey(privateKey, CKK_EC, &crv);
-        if (privKey && privKey->u.ec.ecParams.name == ECCurve25519) {
-            canSignVerify = PR_FALSE;
-        }
-    }
 
     if (canSignVerify) {
         
@@ -5065,22 +5057,19 @@ NSC_GenerateKeyPair(CK_SESSION_HANDLE hSession,
                 break;
             }
             rv = EC_NewKey(ecParams, &ecPriv);
+            PORT_FreeArena(ecParams->arena, PR_TRUE);
             if (rv != SECSuccess) {
                 if (PORT_GetError() == SEC_ERROR_LIBRARY_FAILURE) {
                     sftk_fatalError = PR_TRUE;
                 }
-                PORT_FreeArena(ecParams->arena, PR_TRUE);
                 crv = sftk_MapCryptError(PORT_GetError());
                 break;
             }
 
-            if (PR_GetEnvSecure("NSS_USE_DECODED_CKA_EC_POINT") ||
-                ecParams->fieldID.type == ec_field_plain) {
-                PORT_FreeArena(ecParams->arena, PR_TRUE);
+            if (PR_GetEnvSecure("NSS_USE_DECODED_CKA_EC_POINT")) {
                 crv = sftk_AddAttributeType(publicKey, CKA_EC_POINT,
                                             sftk_item_expand(&ecPriv->publicValue));
             } else {
-                PORT_FreeArena(ecParams->arena, PR_TRUE);
                 SECItem *pubValue = SEC_ASN1EncodeItem(NULL, NULL,
                                                        &ecPriv->publicValue,
                                                        SEC_ASN1_GET(SEC_OctetStringTemplate));
@@ -6261,6 +6250,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
     unsigned int outLen;
     unsigned char sha_out[SHA1_LENGTH];
     unsigned char key_block[NUM_MIXERS * SFTK_MAX_MAC_LENGTH];
+    unsigned char key_block2[MD5_LENGTH];
     PRBool isFIPS;
     HASH_HashType hashType;
     PRBool extractValue = PR_TRUE;
@@ -6678,7 +6668,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             }
             sha = SHA1_NewContext();
             if (sha == NULL) {
-                MD5_DestroyContext(md5, PR_TRUE);
+                PORT_Free(md5);
                 crv = CKR_HOST_MEMORY;
                 break;
             }
@@ -6712,16 +6702,8 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             if (keySize == 0) {
                 effKeySize = keySize;
             }
-
-            
-            if (ssl3_keys->bIsExport) {
-                MD5_DestroyContext(md5, PR_TRUE);
-                SHA1_DestroyContext(sha, PR_TRUE);
-                crv = CKR_MECHANISM_PARAM_INVALID;
-                break;
-            }
-
-            block_needed = 2 * (macSize + effKeySize + IVSize);
+            block_needed = 2 * (macSize + effKeySize +
+                                ((!ssl3_keys->bIsExport) * IVSize));
             PORT_Assert(block_needed <= sizeof key_block);
             if (block_needed > sizeof key_block)
                 block_needed = sizeof key_block;
@@ -6809,45 +6791,177 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             i += macSize;
 
             if (keySize) {
-                
+                if (!ssl3_keys->bIsExport) {
+                    
 
 
 
-                crv = sftk_buildSSLKey(hSession, key, PR_FALSE, &key_block[i],
-                                       keySize, &ssl3_keys_out->hClientKey);
-                if (crv != CKR_OK) {
-                    goto key_and_mac_derive_fail;
+                    crv = sftk_buildSSLKey(hSession, key, PR_FALSE, &key_block[i],
+                                           keySize, &ssl3_keys_out->hClientKey);
+                    if (crv != CKR_OK) {
+                        goto key_and_mac_derive_fail;
+                    }
+                    i += keySize;
+
+                    
+
+
+                    crv = sftk_buildSSLKey(hSession, key, PR_FALSE, &key_block[i],
+                                           keySize, &ssl3_keys_out->hServerKey);
+                    if (crv != CKR_OK) {
+                        goto key_and_mac_derive_fail;
+                    }
+                    i += keySize;
+
+                    
+
+
+                    if (IVSize > 0) {
+                        PORT_Memcpy(ssl3_keys_out->pIVClient,
+                                    &key_block[i], IVSize);
+                        i += IVSize;
+                    }
+
+                    
+
+
+                    if (IVSize > 0) {
+                        PORT_Memcpy(ssl3_keys_out->pIVServer,
+                                    &key_block[i], IVSize);
+                        i += IVSize;
+                    }
+                    PORT_Assert(i <= sizeof key_block);
+
+                } else if (!isTLS) {
+
+                    
+
+
+
+
+
+                    MD5_Begin(md5);
+                    MD5_Update(md5, &key_block[i], effKeySize);
+                    MD5_Update(md5, crsrdata, sizeof crsrdata);
+                    MD5_End(md5, key_block2, &outLen, MD5_LENGTH);
+                    i += effKeySize;
+                    crv = sftk_buildSSLKey(hSession, key, PR_FALSE, key_block2,
+                                           keySize, &ssl3_keys_out->hClientKey);
+                    if (crv != CKR_OK) {
+                        goto key_and_mac_derive_fail;
+                    }
+
+                    
+
+
+
+
+                    MD5_Begin(md5);
+                    MD5_Update(md5, &key_block[i], effKeySize);
+                    MD5_Update(md5, srcrdata, sizeof srcrdata);
+                    MD5_End(md5, key_block2, &outLen, MD5_LENGTH);
+                    i += effKeySize;
+                    crv = sftk_buildSSLKey(hSession, key, PR_FALSE, key_block2,
+                                           keySize, &ssl3_keys_out->hServerKey);
+                    if (crv != CKR_OK) {
+                        goto key_and_mac_derive_fail;
+                    }
+
+                    
+
+
+
+                    MD5_Begin(md5);
+                    MD5_Update(md5, crsrdata, sizeof crsrdata);
+                    MD5_End(md5, key_block2, &outLen, MD5_LENGTH);
+                    PORT_Memcpy(ssl3_keys_out->pIVClient, key_block2, IVSize);
+
+                    
+
+
+
+                    MD5_Begin(md5);
+                    MD5_Update(md5, srcrdata, sizeof srcrdata);
+                    MD5_End(md5, key_block2, &outLen, MD5_LENGTH);
+                    PORT_Memcpy(ssl3_keys_out->pIVServer, key_block2, IVSize);
+
+                } else {
+
+                    
+
+
+                    SECStatus status;
+                    SECItem secret = { siBuffer, NULL, 0 };
+                    SECItem crsr = { siBuffer, NULL, 0 };
+                    SECItem keyblk = { siBuffer, NULL, 0 };
+
+                    
+
+
+
+
+
+                    secret.data = &key_block[i];
+                    secret.len = effKeySize;
+                    i += effKeySize;
+                    crsr.data = crsrdata;
+                    crsr.len = sizeof crsrdata;
+                    keyblk.data = key_block2;
+                    keyblk.len = sizeof key_block2;
+                    status = TLS_PRF(&secret, "client write key", &crsr, &keyblk,
+                                     isFIPS);
+                    if (status != SECSuccess) {
+                        goto key_and_mac_derive_fail;
+                    }
+                    crv = sftk_buildSSLKey(hSession, key, PR_FALSE, key_block2,
+                                           keySize, &ssl3_keys_out->hClientKey);
+                    if (crv != CKR_OK) {
+                        goto key_and_mac_derive_fail;
+                    }
+
+                    
+
+
+
+
+
+                    secret.data = &key_block[i];
+                    secret.len = effKeySize;
+                    i += effKeySize;
+                    keyblk.data = key_block2;
+                    keyblk.len = sizeof key_block2;
+                    status = TLS_PRF(&secret, "server write key", &crsr, &keyblk,
+                                     isFIPS);
+                    if (status != SECSuccess) {
+                        goto key_and_mac_derive_fail;
+                    }
+                    crv = sftk_buildSSLKey(hSession, key, PR_FALSE, key_block2,
+                                           keySize, &ssl3_keys_out->hServerKey);
+                    if (crv != CKR_OK) {
+                        goto key_and_mac_derive_fail;
+                    }
+
+                    
+
+
+
+
+
+                    if (IVSize) {
+                        secret.data = NULL;
+                        secret.len = 0;
+                        keyblk.data = &key_block[i];
+                        keyblk.len = 2 * IVSize;
+                        status = TLS_PRF(&secret, "IV block", &crsr, &keyblk,
+                                         isFIPS);
+                        if (status != SECSuccess) {
+                            goto key_and_mac_derive_fail;
+                        }
+                        PORT_Memcpy(ssl3_keys_out->pIVClient, keyblk.data, IVSize);
+                        PORT_Memcpy(ssl3_keys_out->pIVServer, keyblk.data + IVSize,
+                                    IVSize);
+                    }
                 }
-                i += keySize;
-
-                
-
-
-                crv = sftk_buildSSLKey(hSession, key, PR_FALSE, &key_block[i],
-                                       keySize, &ssl3_keys_out->hServerKey);
-                if (crv != CKR_OK) {
-                    goto key_and_mac_derive_fail;
-                }
-                i += keySize;
-
-                
-
-
-                if (IVSize > 0) {
-                    PORT_Memcpy(ssl3_keys_out->pIVClient,
-                                &key_block[i], IVSize);
-                    i += IVSize;
-                }
-
-                
-
-
-                if (IVSize > 0) {
-                    PORT_Memcpy(ssl3_keys_out->pIVServer,
-                                &key_block[i], IVSize);
-                    i += IVSize;
-                }
-                PORT_Assert(i <= sizeof key_block);
             }
 
             crv = CKR_OK;
@@ -7189,7 +7303,7 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             PRBool withCofactor = PR_FALSE;
             unsigned char *secret;
             unsigned char *keyData = NULL;
-            unsigned int secretlen, pubKeyLen;
+            unsigned int secretlen, curveLen, pubKeyLen;
             CK_ECDH1_DERIVE_PARAMS *mechParams;
             NSSLOWKEYPrivateKey *privKey;
             PLArenaPool *arena = NULL;
@@ -7215,7 +7329,8 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
             ecPoint.data = mechParams->pPublicData;
             ecPoint.len = mechParams->ulPublicDataLen;
 
-            pubKeyLen = privKey->u.ec.ecParams.pointSize;
+            curveLen = (privKey->u.ec.ecParams.fieldID.size + 7) / 8;
+            pubKeyLen = (2 * curveLen) + 1;
 
             
             if (ecPoint.len < pubKeyLen) {
