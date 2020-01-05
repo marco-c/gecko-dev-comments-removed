@@ -36,7 +36,7 @@
 #include <vector>
 #include "GeckoProfiler.h"              
 #ifdef MOZ_GECKO_PROFILER
-#include "ProfilerMarkers.h"            
+#include "ProfilerMarkerPayload.h"      
 #endif
 
 #define CULLING_LOG(...)
