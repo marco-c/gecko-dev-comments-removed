@@ -543,12 +543,19 @@ class RustLibrary(StaticLibrary):
                                      basename.replace('-', '_'),
                                      context.config.rust_lib_suffix)
         self.dependencies = dependencies
+        self.features = features
+        self.target_dir = target_dir
+        
+        
+        
+        
+        
+        if not context.config.substs.get('COMPILE_ENVIRONMENT'):
+            return
         build_dir = mozpath.join(target_dir,
                                  cargo_output_directory(context, self.TARGET_SUBST_VAR))
         self.import_name = mozpath.join(build_dir, self.lib_name)
         self.deps_path = mozpath.join(build_dir, 'deps')
-        self.features = features
-        self.target_dir = target_dir
 
 
 class SharedLibrary(Library):
