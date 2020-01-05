@@ -249,7 +249,7 @@ nsUnknownContentTypeDialog.prototype = {
       }
     }
 
-    Task.spawn(function() {
+    Task.spawn(function*() {
       if (!aForcePrompt) {
         
         

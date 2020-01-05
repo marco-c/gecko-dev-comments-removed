@@ -114,23 +114,6 @@ var reference_fetch_file = function reference_fetch_file(path, test) {
   return promise.promise;
 };
 
-
-
-
-
-
-
-
-
-
-
-var reference_compare_files = function reference_compare_files(a, b, test) {
-  test.info("Comparing files " + a + " and " + b);
-  let a_contents = yield reference_fetch_file(a, test);
-  let b_contents = yield reference_fetch_file(b, test);
-  is(a_contents, b_contents, "Contents of files " + a + " and " + b + " match");
-};
-
 var reference_dir_contents = function reference_dir_contents(path) {
   let result = [];
   let entries = new FileUtils.File(path).directoryEntries;
@@ -150,7 +133,7 @@ function toggleDebugTest (pref, consoleListener) {
 }
 
 var test = maketest("Main", function main(test) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     SimpleTest.waitForExplicitFinish();
     yield test_stat();
     yield test_debug();
@@ -174,7 +157,7 @@ var EXISTING_FILE = OS.Path.join("chrome", "toolkit", "components",
 
 
 var test_stat = maketest("stat", function stat(test) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     
     let file = yield OS.File.open(EXISTING_FILE);
     let stat1;
@@ -226,7 +209,7 @@ var test_info_features_detect = maketest("features_detect", function features_de
 
 
 var test_position = maketest("position", function position(test) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     let file = yield OS.File.open(EXISTING_FILE);
 
     try {
@@ -257,7 +240,7 @@ var test_position = maketest("position", function position(test) {
 
 
 var test_iter = maketest("iter", function iter(test) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     let currentDir = yield OS.File.getCurrentDirectory();
 
     
@@ -382,7 +365,7 @@ var test_iter = maketest("iter", function iter(test) {
 
 
 var test_exists = maketest("exists", function exists(test) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     let fileExists = yield OS.File.exists(EXISTING_FILE);
     test.ok(fileExists, "file exists");
     fileExists = yield OS.File.exists(EXISTING_FILE + ".tmp");
@@ -394,7 +377,7 @@ var test_exists = maketest("exists", function exists(test) {
 
 
 var test_debug = maketest("debug", function debug(test) {
-  return Task.spawn(function() {
+  return Task.spawn(function*() {
     function testSetDebugPref (pref) {
       try {
         Services.prefs.setBoolPref("toolkit.osfile.log", pref);
@@ -419,7 +402,7 @@ var test_debug = maketest("debug", function debug(test) {
 
 
 var test_debug_test = maketest("debug_test", function debug_test(test) {
-  return Task.spawn(function () {
+  return Task.spawn(function* () {
     
     let consoleListener = {
       observe: function (aMessage) {
