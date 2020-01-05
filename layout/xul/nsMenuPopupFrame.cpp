@@ -560,7 +560,9 @@ nsMenuPopupFrame::LayoutPopup(nsBoxLayoutState& aState, nsIFrame* aParentMenu,
 
     
     nsCOMPtr<nsIRunnable> event = new nsXULPopupShownEvent(GetContent(), pc);
-    NS_DispatchToCurrentThread(event);
+    mContent->OwnerDoc()->Dispatch("nsXULPopupShownEvent",
+                                   TaskCategory::Other,
+                                   event.forget());
   }
 
   if (needCallback && !mReflowCallbackData.mPosted) {
