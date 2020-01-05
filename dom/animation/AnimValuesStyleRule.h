@@ -10,6 +10,8 @@
 #include "mozilla/StyleAnimationValue.h"
 #include "nsCSSPropertyID.h"
 #include "nsCSSPropertyIDSet.h"
+#include "nsDataHashtable.h"
+#include "nsHashKeys.h" 
 #include "nsIStyleRule.h"
 #include "nsISupportsImpl.h" 
 #include "nsRuleNode.h" 
@@ -38,27 +40,16 @@ public:
   void List(FILE* out = stdout, int32_t aIndent = 0) const override;
 #endif
 
-  void AddValue(nsCSSPropertyID aProperty, const StyleAnimationValue &aStartValue)
-  {
-    PropertyStyleAnimationValuePair pair = { aProperty, aStartValue };
-    mPropertyValuePairs.AppendElement(pair);
-    mStyleBits |=
-      nsCachedStyleData::GetBitForSID(nsCSSProps::kSIDTable[aProperty]);
-  }
-
-  void AddValue(nsCSSPropertyID aProperty, StyleAnimationValue&& aStartValue)
-  {
-    PropertyStyleAnimationValuePair* pair = mPropertyValuePairs.AppendElement();
-    pair->mProperty = aProperty;
-    pair->mValue = Move(aStartValue);
-    mStyleBits |=
-      nsCachedStyleData::GetBitForSID(nsCSSProps::kSIDTable[aProperty]);
-  }
+  
+  
+  void AddValue(nsCSSPropertyID aProperty, const StyleAnimationValue &aValue);
+  void AddValue(nsCSSPropertyID aProperty, StyleAnimationValue&& aValue);
 
 private:
   ~AnimValuesStyleRule() {}
 
-  InfallibleTArray<PropertyStyleAnimationValuePair> mPropertyValuePairs;
+  nsDataHashtable<nsUint32HashKey, StyleAnimationValue> mAnimationValues;
+
   uint32_t mStyleBits;
 };
 
