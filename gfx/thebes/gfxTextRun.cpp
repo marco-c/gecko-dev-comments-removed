@@ -217,16 +217,21 @@ gfxTextRun::SetPotentialLineBreaks(Range aRange, uint8_t *aBreakBefore)
     NS_ASSERTION(aRange.end <= GetLength(), "Overflow");
 
     uint32_t changed = 0;
-    uint32_t i;
-    CompressedGlyph *charGlyphs = mCharacterGlyphs + aRange.start;
-    for (i = 0; i < aRange.Length(); ++i) {
-        uint8_t canBreak = aBreakBefore[i];
-        if (canBreak && !charGlyphs[i].IsClusterStart()) {
+    CompressedGlyph* cg = mCharacterGlyphs + aRange.start;
+    const CompressedGlyph* const end = cg + aRange.Length();
+    while (cg < end) {
+        uint8_t canBreak = *aBreakBefore++;
+        if (canBreak && !cg->IsClusterStart()) {
             
             
-            canBreak = CompressedGlyph::FLAG_BREAK_TYPE_NONE;
+            
+            
+            if (cg == mCharacterGlyphs || !(cg - 1)->CharIsSpace()) {
+                canBreak = CompressedGlyph::FLAG_BREAK_TYPE_NONE;
+            }
         }
-        changed |= charGlyphs[i].SetCanBreakBefore(canBreak);
+        changed |= cg->SetCanBreakBefore(canBreak);
+        ++cg;
     }
     return changed != 0;
 }
