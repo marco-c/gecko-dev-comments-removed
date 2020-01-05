@@ -523,7 +523,7 @@ class nsIWidget : public nsISupports
 
 
 
-    NS_IMETHOD SetParent(nsIWidget* aNewParent) = 0;
+    virtual void SetParent(nsIWidget* aNewParent) = 0;
 
     
 

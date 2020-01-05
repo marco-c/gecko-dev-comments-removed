@@ -1632,11 +1632,11 @@ nsWindow::RedrawAll()
     }
 }
 
-NS_IMETHODIMP
+void
 nsWindow::SetParent(nsIWidget *aNewParent)
 {
     if ((nsIWidget*)mParent == aNewParent)
-        return NS_OK;
+        return;
 
     
     
@@ -1651,8 +1651,6 @@ nsWindow::SetParent(nsIWidget *aNewParent)
     
     if (FindTopLevel() == nsWindow::TopWindow())
         RedrawAll();
-
-    return NS_OK;
 }
 
 nsIWidget*

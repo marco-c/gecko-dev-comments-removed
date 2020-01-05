@@ -543,18 +543,6 @@ void nsBaseWidget::Destroy()
 
 
 
-
-NS_IMETHODIMP nsBaseWidget::SetParent(nsIWidget* aNewParent)
-{
-  return NS_ERROR_NOT_IMPLEMENTED;
-}
-
-
-
-
-
-
-
 nsIWidget* nsBaseWidget::GetParent(void)
 {
   return nullptr;
