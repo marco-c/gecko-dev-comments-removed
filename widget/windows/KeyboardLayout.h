@@ -340,6 +340,7 @@ private:
   }
 
   void InitWithAppCommand();
+  void InitWithKeyChar();
 
   
 
