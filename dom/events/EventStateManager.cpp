@@ -757,8 +757,12 @@ EventStateManager::PreHandleEvent(nsPresContext* aPresContext,
     }
     
     MOZ_FALLTHROUGH;
+  case eBeforeKeyDown:
   case eKeyDown:
+  case eAfterKeyDown:
+  case eBeforeKeyUp:
   case eKeyUp:
+  case eAfterKeyUp:
     {
       nsIContent* content = GetFocusedContent();
       if (content)
@@ -3327,6 +3331,20 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     {
       NS_ASSERTION(aEvent->mClass == eDragEventClass, "Expected a drag event");
 
+      
+      
+      if (mCurrentTarget && aEvent->mMessage == eDragOver) {
+        nsIFrame* checkFrame = mCurrentTarget;
+        while (checkFrame) {
+          nsIScrollableFrame* scrollFrame = do_QueryFrame(checkFrame);
+          
+          if (scrollFrame && scrollFrame->DragScroll(aEvent)) {
+            break;
+          }
+          checkFrame = checkFrame->GetParent();
+        }
+      }
+
       nsCOMPtr<nsIDragSession> dragSession = nsContentUtils::GetDragSession();
       if (!dragSession)
         break;
@@ -3449,7 +3467,9 @@ EventStateManager::PostHandleEvent(nsPresContext* aPresContext,
     GenerateDragDropEnterExit(presContext, aEvent->AsDragEvent());
     break;
 
+  case eBeforeKeyUp:
   case eKeyUp:
+  case eAfterKeyUp:
     break;
 
   case eKeyPress:

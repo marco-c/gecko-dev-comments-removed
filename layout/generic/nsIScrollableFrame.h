@@ -475,6 +475,14 @@ public:
   virtual ScrollSnapInfo GetScrollSnapInfo() const = 0;
 
   virtual void SetScrollsClipOnUnscrolledOutOfFlow() = 0;
+
+  
+
+
+
+
+
+  virtual bool DragScroll(mozilla::WidgetEvent* aEvent) = 0;
 };
 
 #endif
