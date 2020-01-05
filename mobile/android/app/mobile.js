@@ -615,6 +615,10 @@ pref("media.cache_readahead_limit", 30);
 
 pref("media.video-queue.default-size", 3);
 
+
+
+pref("media.video-queue.send-to-compositor-size", 1);
+
 #ifdef NIGHTLY_BUILD
 
 pref("media.decoder.recycle.enabled", true);
