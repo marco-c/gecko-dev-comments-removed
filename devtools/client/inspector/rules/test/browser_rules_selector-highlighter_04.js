@@ -1,0 +1,53 @@
+
+
+
+
+"use strict";
+
+
+
+
+
+
+
+const TEST_URI = `
+<p>Testing the selector highlighter for the 'element {}' rule</p>
+`;
+
+add_task(function* () {
+  yield addTab("data:text/html;charset=utf-8," + encodeURIComponent(TEST_URI));
+  let {inspector, view} = yield openRuleView();
+
+  
+  let HighlighterFront = {
+    isShown: false,
+    nodeFront: null,
+    options: null,
+    show: function (nodeFront, options) {
+      this.nodeFront = nodeFront;
+      this.options = options;
+      this.isShown = true;
+    },
+    hide: function () {
+      this.nodeFront = null;
+      this.options = null;
+      this.isShown = false;
+    }
+  };
+  
+  view.selectorHighlighter = HighlighterFront;
+
+  info("Checking that the right NodeFront reference and options are passed");
+  yield selectNode("p", inspector);
+  let icon = getRuleViewSelectorHighlighterIcon(view, "element");
+
+  yield clickSelectorIcon(icon, view);
+  is(HighlighterFront.nodeFront.tagName, "P",
+     "The right NodeFront is passed to the highlighter (1)");
+  is(HighlighterFront.options.selector, "body > p:nth-child(1)",
+     "The right selector option is passed to the highlighter (1)");
+  ok(HighlighterFront.isShown, "The toggle event says the highlighter is visible");
+
+  yield clickSelectorIcon(icon, view);
+  ok(!HighlighterFront.isShown, "The toggle event says the highlighter is not visible");
+});

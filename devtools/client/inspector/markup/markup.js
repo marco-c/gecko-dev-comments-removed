@@ -436,8 +436,6 @@ MarkupView.prototype = {
 
 
 
-
-
   _hideBoxModel: function (forceHide) {
     return this._inspector.toolbox.highlighterUtils.unhighlight(forceHide);
   },

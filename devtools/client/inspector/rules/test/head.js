@@ -822,6 +822,17 @@ function waitForStyleModification(inspector) {
 
 
 
+function* clickSelectorIcon(icon, view) {
+  let onToggled = view.once("ruleview-selectorhighlighter-toggled");
+  EventUtils.synthesizeMouseAtCenter(icon, {}, view.styleWindow);
+  yield onToggled;
+}
+
+
+
+
+
+
 function focusAndSendKey(win, key) {
   win.document.documentElement.focus();
   EventUtils.sendKey(key, win);
