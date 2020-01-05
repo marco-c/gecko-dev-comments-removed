@@ -14,11 +14,10 @@ use geom::point::Point2D;
 use geom::rect::Rect;
 use js::jsapi::JSTracer;
 use libc::c_void;
-use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel};
+use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel, UntrustedNodeAddress};
 use servo_msg::constellation_msg::WindowSizeData;
 use servo_util::geometry::Au;
 use std::any::{Any, AnyRefExt};
-use std::cmp;
 use std::comm::{channel, Receiver, Sender};
 use std::owned::BoxAny;
 use style::Stylesheet;
@@ -85,47 +84,13 @@ impl JSTraceable for TrustedNodeAddress {
     }
 }
 
-
-
-pub type UntrustedNodeAddress = *const c_void;
-
 pub struct ContentBoxResponse(pub Rect<Au>);
 pub struct ContentBoxesResponse(pub Vec<Rect<Au>>);
 pub struct HitTestResponse(pub UntrustedNodeAddress);
 pub struct MouseOverResponse(pub Vec<UntrustedNodeAddress>);
 
 
-#[deriving(PartialEq, PartialOrd, Eq, Ord)]
-#[jstraceable]
-pub enum DocumentDamageLevel {
-    
-    ReflowDocumentDamage,
-    
-    MatchSelectorsDocumentDamage,
-    
-    ContentChangedDocumentDamage,
-}
-
-impl DocumentDamageLevel {
-    
-    pub fn add(&mut self, new_damage: DocumentDamageLevel) {
-        *self = cmp::max(*self, new_damage);
-    }
-}
-
-
-
-
-#[jstraceable]
-pub struct DocumentDamage {
-    
-    pub root: TrustedNodeAddress,
-    
-    pub level: DocumentDamageLevel,
-}
-
-
-#[deriving(PartialEq)]
+#[deriving(PartialEq, Show)]
 pub enum ReflowGoal {
     
     ReflowForDisplay,
@@ -137,8 +102,6 @@ pub enum ReflowGoal {
 pub struct Reflow {
     
     pub document_root: TrustedNodeAddress,
-    
-    pub damage: DocumentDamage,
     
     pub goal: ReflowGoal,
     
@@ -189,22 +152,4 @@ impl ScriptLayoutChan for OpaqueScriptLayoutChannel {
         let OpaqueScriptLayoutChannel((_, receiver)) = self;
         *receiver.downcast::<Receiver<Msg>>().unwrap()
     }
-}
-
-#[test]
-fn test_add_damage() {
-    fn assert_add(mut a: DocumentDamageLevel, b: DocumentDamageLevel,
-                  result: DocumentDamageLevel) {
-        a.add(b);
-        assert!(a == result);
-    }
-
-    assert_add(ReflowDocumentDamage, ReflowDocumentDamage, ReflowDocumentDamage);
-    assert_add(ContentChangedDocumentDamage, ContentChangedDocumentDamage, ContentChangedDocumentDamage);
-    assert_add(ReflowDocumentDamage, MatchSelectorsDocumentDamage, MatchSelectorsDocumentDamage);
-    assert_add(MatchSelectorsDocumentDamage, ReflowDocumentDamage, MatchSelectorsDocumentDamage);
-    assert_add(ReflowDocumentDamage, ContentChangedDocumentDamage, ContentChangedDocumentDamage);
-    assert_add(ContentChangedDocumentDamage, ReflowDocumentDamage, ContentChangedDocumentDamage);
-    assert_add(MatchSelectorsDocumentDamage, ContentChangedDocumentDamage, ContentChangedDocumentDamage);
-    assert_add(ContentChangedDocumentDamage, MatchSelectorsDocumentDamage, ContentChangedDocumentDamage);
 }

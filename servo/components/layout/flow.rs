@@ -474,6 +474,13 @@ pub trait PreorderFlowTraversal {
     
     
     
+    fn should_process(&mut self, _flow: &mut Flow) -> bool {
+        true
+    }
+
+    
+    
+    
     fn should_prune(&mut self, _flow: &mut Flow) -> bool {
         false
     }
@@ -1031,6 +1038,10 @@ impl<'a> MutableFlowUtils for &'a mut Flow + 'a {
             return true
         }
 
+        if !traversal.should_process(self) {
+            return true
+        }
+
         if !traversal.process(self) {
             return false
         }
@@ -1240,4 +1251,3 @@ impl ContainingBlockLink {
         }
     }
 }
-

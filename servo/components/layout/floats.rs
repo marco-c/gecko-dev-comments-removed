@@ -190,6 +190,10 @@ impl Floats {
         }
     }
 
+    pub fn len(&self) -> uint {
+        self.list.list.as_ref().map(|list| list.floats.len()).unwrap_or(0)
+    }
+
     
     
     
@@ -437,4 +441,3 @@ impl Floats {
         clearance
     }
 }
-

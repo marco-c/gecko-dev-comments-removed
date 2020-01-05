@@ -6,12 +6,14 @@
 
 
 
+use css::node_style::StyledNode;
 use css::matching::{ApplicableDeclarations, CannotShare, MatchMethods, StyleWasShared};
 use construct::FlowConstructor;
 use context::{LayoutContext, SharedLayoutContext};
 use flow::{Flow, MutableFlowUtils, PreorderFlowTraversal, PostorderFlowTraversal};
 use flow;
 use flow_ref::FlowRef;
+use incremental::RestyleDamage;
 use layout_task::{AssignBSizesAndStoreOverflowTraversal, AssignISizesTraversal};
 use layout_task::{BubbleISizesTraversal};
 use url::Url;
@@ -179,8 +181,10 @@ trait ParallelPreorderFlowTraversal : PreorderFlowTraversal {
             
             let flow: &mut FlowRef = mem::transmute(&unsafe_flow);
 
-            
-            self.process(flow.get_mut());
+            if self.should_process(flow.get_mut()) {
+                
+                self.process(flow.get_mut());
+            }
 
             
             for kid in flow::child_iter(flow.get_mut()) {
@@ -296,21 +300,12 @@ fn insert_ancestors_into_bloom_filter(
         ancestors += 1;
 
         n.insert_into_bloom_filter(bf);
-        n = match parent_node(&n, layout_context) {
+        n = match n.layout_parent_node(layout_context.shared) {
             None => break,
             Some(p) => p,
         };
     }
     debug!("[{}] Inserted {} ancestors.", tid(), ancestors);
-}
-
-fn parent_node<'ln>(node: &LayoutNode<'ln>, layout_context: &LayoutContext) -> Option<LayoutNode<'ln>> {
-    let opaque_node: OpaqueNode = OpaqueNodeMethods::from_layout_node(node);
-    if opaque_node == layout_context.shared.reflow_root {
-        None
-    } else {
-        node.parent_node()
-    }
 }
 
 fn recalc_style_for_node(mut unsafe_layout_node: UnsafeLayoutNode,
@@ -330,45 +325,46 @@ fn recalc_style_for_node(mut unsafe_layout_node: UnsafeLayoutNode,
     node.initialize_layout_data(layout_context.shared.layout_chan.clone());
 
     
-    let parent_opt = parent_node(&node, &layout_context);
+    let parent_opt = node.layout_parent_node(layout_context.shared);
 
     
     let bf = take_task_local_bloom_filter(parent_opt, &layout_context);
 
     
-    let style_sharing_candidate_cache = layout_context.style_sharing_candidate_cache();
-    let sharing_result = unsafe {
-        node.share_style_if_possible(style_sharing_candidate_cache,
-                                     parent_opt.clone())
-    };
-
-    
     let some_bf = Some(bf);
 
-    
-    match sharing_result {
-        CannotShare(mut shareable) => {
-            let mut applicable_declarations = ApplicableDeclarations::new();
+    if node.is_dirty() {
+        
+        let style_sharing_candidate_cache = layout_context.style_sharing_candidate_cache();
+        let sharing_result = unsafe {
+            node.share_style_if_possible(style_sharing_candidate_cache,
+                                         parent_opt.clone())
+        };
+        
+        match sharing_result {
+            CannotShare(mut shareable) => {
+                let mut applicable_declarations = ApplicableDeclarations::new();
 
-            if node.is_element() {
+                if node.is_element() {
+                    
+                    let stylist = unsafe { &*layout_context.shared.stylist };
+                    node.match_node(stylist, &some_bf, &mut applicable_declarations, &mut shareable);
+                }
+
                 
-                let stylist = unsafe { &*layout_context.shared.stylist };
-                node.match_node(stylist, &some_bf, &mut applicable_declarations, &mut shareable);
-            }
+                unsafe {
+                    node.cascade_node(parent_opt,
+                                      &applicable_declarations,
+                                      layout_context.applicable_declarations_cache());
+                }
 
-            
-            unsafe {
-                node.cascade_node(parent_opt,
-                                  &applicable_declarations,
-                                  layout_context.applicable_declarations_cache());
+                
+                if shareable {
+                    style_sharing_candidate_cache.insert_if_possible(&node);
+                }
             }
-
-            
-            if shareable {
-                style_sharing_candidate_cache.insert_if_possible(&node);
-            }
+            StyleWasShared(index) => style_sharing_candidate_cache.touch(index),
         }
-        StyleWasShared(index) => style_sharing_candidate_cache.touch(index),
     }
 
     
@@ -427,8 +423,18 @@ fn construct_flows<'a>(unsafe_layout_node: &mut UnsafeLayoutNode,
 
         
         {
+            let node = ThreadSafeLayoutNode::new(&node);
             let mut flow_constructor = FlowConstructor::new(layout_context);
-            flow_constructor.process(&ThreadSafeLayoutNode::new(&node));
+            flow_constructor.process(&node);
+
+            
+            
+            node.set_restyle_damage(RestyleDamage::empty());
+        }
+
+        unsafe {
+            node.set_dirty(false);
+            node.set_dirty_descendants(false);
         }
 
         
