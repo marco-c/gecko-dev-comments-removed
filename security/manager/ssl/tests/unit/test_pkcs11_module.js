@@ -59,29 +59,12 @@ function checkTestModuleExists() {
 }
 
 function run_test() {
-  let libraryFile = Services.dirsvc.get("CurWorkD", Ci.nsILocalFile);
-  libraryFile.append("pkcs11testmodule");
-  libraryFile.append(ctypes.libraryName("pkcs11testmodule"));
-  ok(libraryFile.exists(), "The pkcs11testmodule file should exist");
-
   
   
   checkTestModuleNotPresent();
 
   
-  let pkcs11 = Cc["@mozilla.org/security/pkcs11;1"].getService(Ci.nsIPKCS11);
-  do_register_cleanup(() => {
-    try {
-      pkcs11.deleteModule("PKCS11 Test Module");
-    } catch (e) {
-      
-      
-      
-      
-      
-    }
-  });
-  pkcs11.addModule("PKCS11 Test Module", libraryFile.path, 0, 0);
+  loadPKCS11TestModule(true);
   let testModule = checkTestModuleExists();
 
   
@@ -124,6 +107,7 @@ function run_test() {
          "Non-present 'slot' should not be findable by name via the module DB");
 
   
+  let pkcs11 = Cc["@mozilla.org/security/pkcs11;1"].getService(Ci.nsIPKCS11);
   pkcs11.deleteModule("PKCS11 Test Module");
   checkTestModuleNotPresent();
 
