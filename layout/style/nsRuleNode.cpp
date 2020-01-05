@@ -8461,25 +8461,11 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
            NS_STYLE_ALIGN_NORMAL);
 
   
-  const auto& alignSelfValue = *aRuleData->ValueForAlignSelf();
-  if (MOZ_UNLIKELY(alignSelfValue.GetUnit() == eCSSUnit_Inherit)) {
-    if (MOZ_LIKELY(parentContext)) {
-      nsStyleContext* grandparentContext = parentContext->GetParent();
-      if (MOZ_LIKELY(grandparentContext)) {
-        parentContext->AddStyleBit(NS_STYLE_CHILD_USES_GRANDANCESTOR_STYLE);
-      }
-      pos->mAlignSelf = parentPos->ComputedAlignSelf(grandparentContext);
-    } else {
-      pos->mAlignSelf = NS_STYLE_ALIGN_NORMAL;
-    }
-    conditions.SetUncacheable();
-  } else {
-    SetValue(alignSelfValue,
-             pos->mAlignSelf, conditions,
-             SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
-             parentPos->mAlignSelf, 
-             NS_STYLE_ALIGN_AUTO);
-  }
+  SetValue(*aRuleData->ValueForAlignSelf(),
+           pos->mAlignSelf, conditions,
+           SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
+           parentPos->mAlignSelf,
+           NS_STYLE_ALIGN_AUTO);
 
   
   SetValue(*aRuleData->ValueForJustifyContent(),
@@ -8507,25 +8493,11 @@ nsRuleNode::ComputePositionData(void* aStartStruct,
   }
 
   
-  const auto& justifySelfValue = *aRuleData->ValueForJustifySelf();
-  if (MOZ_UNLIKELY(justifySelfValue.GetUnit() == eCSSUnit_Inherit)) {
-    if (MOZ_LIKELY(parentContext)) {
-      nsStyleContext* grandparentContext = parentContext->GetParent();
-      if (MOZ_LIKELY(grandparentContext)) {
-        parentContext->AddStyleBit(NS_STYLE_CHILD_USES_GRANDANCESTOR_STYLE);
-      }
-      pos->mJustifySelf = parentPos->ComputedJustifySelf(grandparentContext);
-    } else {
-      pos->mJustifySelf = NS_STYLE_JUSTIFY_NORMAL;
-    }
-    conditions.SetUncacheable();
-  } else {
-    SetValue(justifySelfValue,
-             pos->mJustifySelf, conditions,
-             SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
-             parentPos->mJustifySelf, 
-             NS_STYLE_JUSTIFY_AUTO);
-  }
+  SetValue(*aRuleData->ValueForJustifySelf(),
+           pos->mJustifySelf, conditions,
+           SETVAL_ENUMERATED | SETVAL_UNSET_INITIAL,
+           parentPos->mJustifySelf,
+           NS_STYLE_JUSTIFY_AUTO);
 
   
   

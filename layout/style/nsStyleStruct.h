@@ -1760,11 +1760,13 @@ private:
 
   uint16_t      mAlignContent;          
   uint8_t       mAlignItems;            
+public:
   uint8_t       mAlignSelf;             
+private:
   uint16_t      mJustifyContent;        
   uint8_t       mJustifyItems;          
-  uint8_t       mJustifySelf;           
 public:
+  uint8_t       mJustifySelf;           
   uint8_t       mFlexDirection;         
   uint8_t       mFlexWrap;              
   uint8_t       mObjectFit;             
