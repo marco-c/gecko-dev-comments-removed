@@ -287,7 +287,11 @@ Tester.prototype = {
 
     
     if (window.gBrowser) {
-      gBrowser.addTab("about:blank", { skipAnimation: true });
+      
+      let newTab = gBrowser.addTab("about:blank", {
+        skipAnimation: true,
+        relatedBrowser: gBrowser.selectedTab.linkedBrowser
+      });
       gBrowser.removeTab(gBrowser.selectedTab, { skipPermitUnload: true });
       gBrowser.stop();
     }
