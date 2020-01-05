@@ -3220,9 +3220,14 @@ var SessionStoreInternal = {
       let userContextId = winData.tabs[t].userContextId;
       let reuseExisting = t < openTabCount &&
                           (tabbrowser.tabs[t].getAttribute("usercontextid") == (userContextId || ""));
-      let tab = reuseExisting ? this._maybeUpdateBrowserRemoteness(tabbrowser.tabs[t])
-                              : tabbrowser.addTab("about:blank",
+      
+      
+      
+      let forceNotRemote = !winData.tabs[t].pinned;
+      let tab = reuseExisting ? tabbrowser.tabs[t] :
+                                tabbrowser.addTab("about:blank",
                                                   {skipAnimation: true,
+                                                   forceNotRemote,
                                                    userContextId});
 
       
@@ -3489,6 +3494,9 @@ var SessionStoreInternal = {
     if (!willRestoreImmediately && !forceOnDemand) {
       TabRestoreQueue.add(tab);
     }
+
+    this._maybeUpdateBrowserRemoteness({ tabbrowser, tab,
+                                         willRestoreImmediately });
 
     
     this._setWindowStateBusy(window);
@@ -3935,15 +3943,40 @@ var SessionStoreInternal = {
 
 
 
-  _maybeUpdateBrowserRemoteness(tab) {
-    let win = tab.ownerGlobal;
-    let tabbrowser = win.gBrowser;
-    let browser = tab.linkedBrowser;
-    if (win.gMultiProcessBrowser && !browser.isRemoteBrowser) {
-      tabbrowser.updateBrowserRemoteness(browser, true);
-    }
 
-    return tab;
+
+
+
+
+
+
+  _maybeUpdateBrowserRemoteness({ tabbrowser, tab,
+                                  willRestoreImmediately }) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    let browser = tab.linkedBrowser;
+
+    
+    
+    
+    
+    
+    
+    let willRestore = willRestoreImmediately ||
+                      TabRestoreQueue.willRestoreSoon(tab);
+
+    if (browser.isRemoteBrowser && !willRestore) {
+      tabbrowser.updateBrowserRemoteness(browser, false);
+    }
   },
 
   

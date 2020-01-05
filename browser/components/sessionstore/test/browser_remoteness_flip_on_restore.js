@@ -104,8 +104,7 @@ const PINNED_STATE = {
 
 
 function* runScenarios(scenarios) {
-  for (let [scenarioIndex, scenario] of scenarios.entries()) {
-    info("Running scenario " + scenarioIndex);
+  for (let scenario of scenarios) {
     
     Assert.equal(scenario.expectedFlips.length,
                  scenario.expectedRemoteness.length,
@@ -236,10 +235,9 @@ add_task(function*() {
       
       
       
+      expectedFlips: [true, false, true],
       
-      expectedFlips: [false, false, false],
-      
-      expectedRemoteness: [true, true, true],
+      expectedRemoteness: [false, false, true],
     },
 
     
@@ -254,7 +252,7 @@ add_task(function*() {
       
       expectedFlips: [false, false, false],
       
-      expectedRemoteness: [true, true, true],
+      expectedRemoteness: [true, false, false],
     },
 
     
@@ -270,7 +268,7 @@ add_task(function*() {
       
       expectedFlips: [false, false, false],
       
-      expectedRemoteness: [true, true, true],
+      expectedRemoteness: [true, false, false],
     },
 
     
@@ -286,7 +284,7 @@ add_task(function*() {
       
       
       
-      expectedFlips: [false, false, false],
+      expectedFlips: [false, false, true],
       
       
       expectedRemoteness: [true, true, true],
@@ -301,9 +299,9 @@ add_task(function*() {
       
       
       
-      expectedFlips: [true, false, false],
+      expectedFlips: [false, true, false],
       
-      expectedRemoteness: [true, true, true],
+      expectedRemoteness: [false, true, false],
     },
 
     
@@ -315,9 +313,9 @@ add_task(function*() {
       
       
       
-      expectedFlips: [false, true, false],
+      expectedFlips: [true, false, false],
       
-      expectedRemoteness: [true, true, true],
+      expectedRemoteness: [false, false, true],
     },
 
     
@@ -333,7 +331,8 @@ add_task(function*() {
       
       
       
-      expectedFlips: [true, false, false],
+      expectedFlips: [true, false, true],
+      
       
       expectedRemoteness: [true, true, true],
     },
