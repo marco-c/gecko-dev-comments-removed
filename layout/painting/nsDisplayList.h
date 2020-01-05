@@ -153,6 +153,68 @@ struct AnimatedGeometryRoot
   AnimatedGeometryRoot* mParentAGR;
 };
 
+namespace mozilla {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+struct ActiveScrolledRoot {
+  ActiveScrolledRoot(const ActiveScrolledRoot* aParent,
+                     nsIScrollableFrame* aScrollableFrame)
+    : mParent(aParent)
+    , mScrollableFrame(aScrollableFrame)
+    , mDepth(mParent ? mParent->mDepth + 1 : 1)
+  {
+  }
+
+  static const ActiveScrolledRoot* PickAncestor(const ActiveScrolledRoot* aOne,
+                                                const ActiveScrolledRoot* aTwo)
+  {
+    MOZ_ASSERT(IsAncestor(aOne, aTwo) || IsAncestor(aTwo, aOne));
+    return Depth(aOne) <= Depth(aTwo) ? aOne : aTwo;
+  }
+
+  static const ActiveScrolledRoot* PickDescendant(const ActiveScrolledRoot* aOne,
+                                                  const ActiveScrolledRoot* aTwo)
+  {
+    MOZ_ASSERT(IsAncestor(aOne, aTwo) || IsAncestor(aTwo, aOne));
+    return Depth(aOne) >= Depth(aTwo) ? aOne : aTwo;
+  }
+
+  static bool IsAncestor(const ActiveScrolledRoot* aAncestor,
+                         const ActiveScrolledRoot* aDescendant);
+
+  static nsCString ToString(const mozilla::ActiveScrolledRoot* aActiveScrolledRoot);
+
+  
+  void IncrementDepth() { mDepth++; }
+
+  const ActiveScrolledRoot* mParent;
+  nsIScrollableFrame* mScrollableFrame;
+
+private:
+  static uint32_t Depth(const ActiveScrolledRoot* aActiveScrolledRoot) {
+    return aActiveScrolledRoot ? aActiveScrolledRoot->mDepth : 0;
+  }
+
+  uint32_t mDepth;
+};
+
+}
+
 enum class nsDisplayListBuilderMode : uint8_t {
   PAINTING,
   EVENT_DELIVERY,
@@ -219,6 +281,7 @@ public:
   typedef mozilla::DisplayItemClip DisplayItemClip;
   typedef mozilla::DisplayListClipState DisplayListClipState;
   typedef mozilla::DisplayItemScrollClip DisplayItemScrollClip;
+  typedef mozilla::ActiveScrolledRoot ActiveScrolledRoot;
   typedef nsIWidget::ThemeGeometry ThemeGeometry;
   typedef mozilla::layers::Layer Layer;
   typedef mozilla::layers::FrameMetrics FrameMetrics;
@@ -667,6 +730,13 @@ public:
 
 
 
+  ActiveScrolledRoot* AllocateActiveScrolledRoot(const ActiveScrolledRoot* aParent,
+                                                 nsIScrollableFrame* aScrollableFrame);
+
+  
+
+
+
   const DisplayItemClip* AllocateDisplayItemClip(const DisplayItemClip& aOriginal);
 
   
@@ -875,6 +945,88 @@ public:
 
 
 
+  class AutoCurrentActiveScrolledRootSetter;
+  friend class AutoCurrentActiveScrolledRootSetter;
+  class AutoCurrentActiveScrolledRootSetter {
+  public:
+    explicit AutoCurrentActiveScrolledRootSetter(nsDisplayListBuilder* aBuilder)
+      : mBuilder(aBuilder)
+      , mSavedActiveScrolledRoot(aBuilder->mCurrentActiveScrolledRoot)
+      , mDescendantsStartIndex(aBuilder->mActiveScrolledRoots.Length())
+      , mUsed(false)
+    {
+    }
+
+    ~AutoCurrentActiveScrolledRootSetter()
+    {
+      mBuilder->mCurrentActiveScrolledRoot = mSavedActiveScrolledRoot;
+    }
+
+    void SetCurrentActiveScrolledRoot(const ActiveScrolledRoot* aActiveScrolledRoot)
+    {
+      MOZ_ASSERT(!mUsed);
+      mBuilder->mCurrentActiveScrolledRoot = aActiveScrolledRoot;
+      mBuilder->mCurrentContainerASR = ActiveScrolledRoot::PickAncestor(
+        mBuilder->mCurrentContainerASR, aActiveScrolledRoot);
+      mUsed = true;
+    }
+
+    void EnterScrollFrame(nsIScrollableFrame* aScrollableFrame)
+    {
+      MOZ_ASSERT(!mUsed);
+      ActiveScrolledRoot* asr = mBuilder->AllocateActiveScrolledRoot(
+        mBuilder->mCurrentActiveScrolledRoot, aScrollableFrame);
+      mBuilder->mCurrentActiveScrolledRoot = asr;
+      mUsed = true;
+    }
+
+    void InsertScrollFrame(nsIScrollableFrame* aScrollableFrame);
+
+  private:
+    nsDisplayListBuilder* mBuilder;
+    const ActiveScrolledRoot* mSavedActiveScrolledRoot;
+    size_t mDescendantsStartIndex;
+    bool mUsed;
+  };
+
+  
+
+
+
+
+
+
+  class AutoContainerASRTracker;
+  friend class AutoContainerASRTracker;
+  class AutoContainerASRTracker {
+  public:
+    explicit AutoContainerASRTracker(nsDisplayListBuilder* aBuilder)
+      : mBuilder(aBuilder)
+      , mSavedContainerASR(aBuilder->mCurrentContainerASR)
+    {
+      mBuilder->mCurrentContainerASR = mBuilder->mCurrentActiveScrolledRoot;
+    }
+
+    const ActiveScrolledRoot* GetContainerASR()
+    {
+      return mBuilder->mCurrentContainerASR;
+    }
+
+    ~AutoContainerASRTracker()
+    {
+      mBuilder->mCurrentContainerASR = ActiveScrolledRoot::PickAncestor(
+        mBuilder->mCurrentContainerASR, mSavedContainerASR);
+    }
+
+  private:
+    nsDisplayListBuilder* mBuilder;
+    const ActiveScrolledRoot* mSavedContainerASR;
+  };
+
+  
+
+
+
   class AutoCurrentScrollbarInfoSetter;
   friend class AutoCurrentScrollbarInfoSetter;
   class AutoCurrentScrollbarInfoSetter {
@@ -1072,6 +1224,8 @@ public:
   uint32_t AllocatePerspectiveItemIndex() { return mPerspectiveItemIndex++; }
 
   DisplayListClipState& ClipState() { return mClipState; }
+  const ActiveScrolledRoot* CurrentActiveScrolledRoot() { return mCurrentActiveScrolledRoot; }
+  const ActiveScrolledRoot* CurrentAncestorASRStackingContextContents() { return mCurrentContainerASR; }
 
   
 
@@ -1217,6 +1371,8 @@ private:
   AutoTArray<ThemeGeometry,2>  mThemeGeometries;
   nsDisplayTableItem*            mCurrentTableItem;
   DisplayListClipState           mClipState;
+  const ActiveScrolledRoot*      mCurrentActiveScrolledRoot;
+  const ActiveScrolledRoot*      mCurrentContainerASR;
   
   
   const nsIFrame*                mCurrentFrame;
@@ -1257,6 +1413,7 @@ private:
   nsDisplayList*                 mScrollInfoItemsForHoisting;
   nsTArray<DisplayItemScrollClip*> mScrollClipsToDestroy;
   nsTArray<DisplayItemClip*>     mDisplayItemClipsToDestroy;
+  nsTArray<ActiveScrolledRoot*>  mActiveScrolledRoots;
   nsDisplayListBuilderMode       mMode;
   ViewID                         mCurrentScrollParentId;
   ViewID                         mCurrentScrollbarTarget;
@@ -1334,6 +1491,7 @@ public:
   typedef mozilla::ContainerLayerParameters ContainerLayerParameters;
   typedef mozilla::DisplayItemClip DisplayItemClip;
   typedef mozilla::DisplayItemScrollClip DisplayItemScrollClip;
+  typedef mozilla::ActiveScrolledRoot ActiveScrolledRoot;
   typedef mozilla::layers::FrameMetrics FrameMetrics;
   typedef mozilla::layers::ScrollMetadata ScrollMetadata;
   typedef mozilla::layers::FrameMetrics::ViewID ViewID;
