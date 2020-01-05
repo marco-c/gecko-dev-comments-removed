@@ -65,6 +65,10 @@ typedef struct _MaiAtkSocketClass
   AtkSocketClass parent_class;
 } MaiAtkSocketClass;
 
+
+
+extern "C" GType (*gAtkTableCellGetTypeFunc)();
+
 mozilla::a11y::AccessibleWrap* GetAccessibleWrap(AtkObject* aAtkObj);
 mozilla::a11y::ProxyAccessible* GetProxy(AtkObject* aAtkObj);
 mozilla::a11y::AccessibleOrProxy GetInternalObj(AtkObject* aObj);
