@@ -3877,7 +3877,6 @@ class JS_FRIEND_API(TransitiveCompileOptions)
         asmJSOption(AsmJSOption::Disabled),
         throwOnAsmJSValidationFailureOption(false),
         forceAsync(false),
-        installedFile(false),
         sourceIsLazy(false),
         allowHTMLComments(true),
         introductionType(nullptr),
@@ -3914,7 +3913,6 @@ class JS_FRIEND_API(TransitiveCompileOptions)
     AsmJSOption asmJSOption;
     bool throwOnAsmJSValidationFailureOption;
     bool forceAsync;
-    bool installedFile;  
     bool sourceIsLazy;
     bool allowHTMLComments;
 
@@ -6241,16 +6239,10 @@ enum AsmJSCacheResult
 
 
 
-
-
-
-
-
-
 typedef AsmJSCacheResult
-(* OpenAsmJSCacheEntryForWriteOp)(HandleObject global, bool installed,
-                                  const char16_t* begin, const char16_t* end,
-                                  size_t size, uint8_t** memory, intptr_t* handle);
+(* OpenAsmJSCacheEntryForWriteOp)(HandleObject global, const char16_t* begin,
+                                  const char16_t* end, size_t size,
+                                  uint8_t** memory, intptr_t* handle);
 typedef void
 (* CloseAsmJSCacheEntryForWriteOp)(size_t size, uint8_t* memory, intptr_t handle);
 

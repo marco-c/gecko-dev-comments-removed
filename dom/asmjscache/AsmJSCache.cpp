@@ -31,7 +31,6 @@
 #include "nsIAtom.h"
 #include "nsIFile.h"
 #include "nsIIPCBackgroundChildCreateCallback.h"
-#include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsIRunnable.h"
 #include "nsISimpleEnumerator.h"
@@ -350,11 +349,11 @@ public:
     mPrincipalInfo(aPrincipalInfo),
     mOpenMode(aOpenMode),
     mWriteParams(aWriteParams),
-    mPersistence(quota::PERSISTENCE_TYPE_INVALID),
     mState(eInitial),
     mResult(JS::AsmJSCache_InternalError),
     mIsApp(false),
     mEnforcingQuota(true),
+    mDeleteReceived(false),
     mActorDestroyed(false),
     mOpened(false)
   {
@@ -395,31 +394,6 @@ private:
 
   
   
-  
-  
-  void
-  CacheMiss()
-  {
-    AssertIsOnOwningThread();
-    MOZ_ASSERT(mState == eFailedToReadMetadata ||
-               mState == eWaitingToOpenCacheFileForRead);
-    MOZ_ASSERT(mOpenMode == eOpenForRead);
-
-    if (mPersistence == quota::PERSISTENCE_TYPE_TEMPORARY) {
-      Fail();
-      return;
-    }
-
-    
-    
-    MOZ_ASSERT(mPersistence == quota::PERSISTENCE_TYPE_PERSISTENT);
-    FinishOnOwningThread();
-    mState = eInitial;
-    NS_DispatchToMainThread(this);
-  }
-
-  
-  
   void
   Close()
   {
@@ -447,7 +421,7 @@ private:
 
     FinishOnOwningThread();
 
-    if (!mActorDestroyed) {
+    if (!mDeleteReceived && !mActorDestroyed) {
       Unused << Send__delete__(this, mResult);
     }
   }
@@ -465,9 +439,6 @@ private:
     mState = eFailing;
     MOZ_ALWAYS_SUCCEEDS(mOwningThread->Dispatch(this, NS_DISPATCH_NORMAL));
   }
-
-  void
-  InitPersistenceType();
 
   nsresult
   InitOnMainThread();
@@ -519,6 +490,9 @@ private:
   {
     AssertIsOnOwningThread();
     MOZ_ASSERT(mState != eFinished);
+    MOZ_ASSERT(!mDeleteReceived);
+
+    mDeleteReceived = true;
 
     if (mOpened) {
       Close();
@@ -571,23 +545,12 @@ private:
     return IPC_OK();
   }
 
-  mozilla::ipc::IPCResult
-  RecvCacheMiss() override
-  {
-    AssertIsOnOwningThread();
-
-    CacheMiss();
-
-    return IPC_OK();
-  }
-
   nsCOMPtr<nsIEventTarget> mOwningThread;
   const PrincipalInfo mPrincipalInfo;
   const OpenMode mOpenMode;
   const WriteParams mWriteParams;
 
   
-  quota::PersistenceType mPersistence;
   nsCString mSuffix;
   nsCString mGroup;
   nsCString mOrigin;
@@ -607,7 +570,6 @@ private:
     eWaitingToOpenDirectory, 
     eWaitingToOpenMetadata, 
     eReadyToReadMetadata, 
-    eFailedToReadMetadata, 
     eSendingMetadataForRead, 
     eWaitingToOpenCacheFileForRead, 
     eReadyToOpenCacheFileForRead, 
@@ -621,55 +583,10 @@ private:
 
   bool mIsApp;
   bool mEnforcingQuota;
+  bool mDeleteReceived;
   bool mActorDestroyed;
   bool mOpened;
 };
-
-void
-ParentRunnable::InitPersistenceType()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(mState == eInitial);
-
-  if (mOpenMode == eOpenForWrite) {
-    MOZ_ASSERT(mPersistence == quota::PERSISTENCE_TYPE_INVALID);
-
-    
-    
-    
-    
-    
-    
-    
-
-    MOZ_ASSERT_IF(mWriteParams.mInstalled, mIsApp);
-
-    if (mWriteParams.mInstalled &&
-        !QuotaManager::IsQuotaEnforced(quota::PERSISTENCE_TYPE_PERSISTENT,
-                                       mOrigin, mIsApp)) {
-      mPersistence = quota::PERSISTENCE_TYPE_PERSISTENT;
-    } else {
-      mPersistence = quota::PERSISTENCE_TYPE_TEMPORARY;
-    }
-
-    return;
-  }
-
-  
-  
-  
-  
-  
-
-  MOZ_ASSERT_IF(mPersistence != quota::PERSISTENCE_TYPE_INVALID,
-                mIsApp && mPersistence == quota::PERSISTENCE_TYPE_PERSISTENT);
-
-  if (mPersistence == quota::PERSISTENCE_TYPE_INVALID && mIsApp) {
-    mPersistence = quota::PERSISTENCE_TYPE_PERSISTENT;
-  } else {
-    mPersistence = quota::PERSISTENCE_TYPE_TEMPORARY;
-  }
-}
 
 nsresult
 ParentRunnable::InitOnMainThread()
@@ -689,10 +606,9 @@ ParentRunnable::InitOnMainThread()
                                           &mOrigin, &mIsApp);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  InitPersistenceType();
-
   mEnforcingQuota =
-    QuotaManager::IsQuotaEnforced(mPersistence, mOrigin, mIsApp);
+    QuotaManager::IsQuotaEnforced(quota::PERSISTENCE_TYPE_TEMPORARY, mOrigin,
+                                  mIsApp);
 
   return NS_OK;
 }
@@ -708,7 +624,7 @@ ParentRunnable::OpenDirectory()
   mState = eWaitingToOpenMetadata;
 
   
-  QuotaManager::Get()->OpenDirectory(mPersistence,
+  QuotaManager::Get()->OpenDirectory(quota::PERSISTENCE_TYPE_TEMPORARY,
                                      mGroup,
                                      mOrigin,
                                      mIsApp,
@@ -727,8 +643,9 @@ ParentRunnable::ReadMetadata()
   MOZ_ASSERT(qm, "We are on the QuotaManager's IO thread");
 
   nsresult rv =
-    qm->EnsureOriginIsInitialized(mPersistence, mSuffix, mGroup, mOrigin,
-                                  mIsApp, getter_AddRefs(mDirectory));
+    qm->EnsureOriginIsInitialized(quota::PERSISTENCE_TYPE_TEMPORARY, mSuffix,
+                                  mGroup, mOrigin, mIsApp,
+                                  getter_AddRefs(mDirectory));
   if (NS_WARN_IF(NS_FAILED(rv))) {
     mResult = JS::AsmJSCache_StorageInitFailure;
     return rv;
@@ -803,7 +720,8 @@ ParentRunnable::OpenCacheFileForWrite()
     
     
     
-    mQuotaObject = qm->GetQuotaObject(mPersistence, mGroup, mOrigin, file);
+    mQuotaObject = qm->GetQuotaObject(quota::PERSISTENCE_TYPE_TEMPORARY, mGroup,
+                                      mOrigin, file);
     NS_ENSURE_STATE(mQuotaObject);
 
     if (!mQuotaObject->MaybeUpdateSize(mWriteParams.mSize,
@@ -857,7 +775,8 @@ ParentRunnable::OpenCacheFileForRead()
     
     
     
-    mQuotaObject = qm->GetQuotaObject(mPersistence, mGroup, mOrigin, file);
+    mQuotaObject = qm->GetQuotaObject(quota::PERSISTENCE_TYPE_TEMPORARY, mGroup,
+                                      mOrigin, file);
     NS_ENSURE_STATE(mQuotaObject);
   }
 
@@ -956,8 +875,7 @@ ParentRunnable::Run()
 
       rv = ReadMetadata();
       if (NS_FAILED(rv)) {
-        mState = eFailedToReadMetadata;
-        MOZ_ALWAYS_SUCCEEDS(mOwningThread->Dispatch(this, NS_DISPATCH_NORMAL));
+        FailOnNonOwningThread();
         return NS_OK;
       }
 
@@ -976,18 +894,6 @@ ParentRunnable::Run()
 
       mState = eSendingCacheFile;
       MOZ_ALWAYS_SUCCEEDS(mOwningThread->Dispatch(this, NS_DISPATCH_NORMAL));
-      return NS_OK;
-    }
-
-    case eFailedToReadMetadata: {
-      AssertIsOnOwningThread();
-
-      if (mOpenMode == eOpenForRead) {
-        CacheMiss();
-        return NS_OK;
-      }
-
-      Fail();
       return NS_OK;
     }
 
@@ -1289,14 +1195,13 @@ private:
     MOZ_ASSERT(mState == eOpening);
 
     uint32_t moduleIndex;
-    if (FindHashMatch(aMetadata, mReadParams, &moduleIndex)) {
-      if (!SendSelectCacheFileToRead(moduleIndex)) {
-        return IPC_FAIL_NO_REASON(this);
-      }
+    if (!FindHashMatch(aMetadata, mReadParams, &moduleIndex)) {
+      Fail(JS::AsmJSCache_InternalError);
+      Send__delete__(this, JS::AsmJSCache_InternalError);
       return IPC_OK();
     }
 
-    if (!SendCacheMiss()) {
+    if (!SendSelectCacheFileToRead(moduleIndex)) {
       return IPC_FAIL_NO_REASON(this);
     }
     return IPC_OK();
@@ -1651,7 +1556,6 @@ CloseEntryForRead(size_t aSize,
 
 JS::AsmJSCacheResult
 OpenEntryForWrite(nsIPrincipal* aPrincipal,
-                  bool aInstalled,
                   const char16_t* aBegin,
                   const char16_t* aEnd,
                   size_t aSize,
@@ -1668,7 +1572,6 @@ OpenEntryForWrite(nsIPrincipal* aPrincipal,
   static_assert(sNumFastHashChars < sMinCachedModuleLength, "HashString safe");
 
   WriteParams writeParams;
-  writeParams.mInstalled = aInstalled;
   writeParams.mSize = aSize;
   writeParams.mFastHash = HashString(aBegin, sNumFastHashChars);
   writeParams.mNumChars = aEnd - aBegin;
@@ -1890,7 +1793,6 @@ ParamTraits<WriteParams>::Write(Message* aMsg, const paramType& aParam)
   WriteParam(aMsg, aParam.mFastHash);
   WriteParam(aMsg, aParam.mNumChars);
   WriteParam(aMsg, aParam.mFullHash);
-  WriteParam(aMsg, aParam.mInstalled);
 }
 
 bool
@@ -1900,8 +1802,7 @@ ParamTraits<WriteParams>::Read(const Message* aMsg, PickleIterator* aIter,
   return ReadParam(aMsg, aIter, &aResult->mSize) &&
          ReadParam(aMsg, aIter, &aResult->mFastHash) &&
          ReadParam(aMsg, aIter, &aResult->mNumChars) &&
-         ReadParam(aMsg, aIter, &aResult->mFullHash) &&
-         ReadParam(aMsg, aIter, &aResult->mInstalled);
+         ReadParam(aMsg, aIter, &aResult->mFullHash);
 }
 
 void
@@ -1911,7 +1812,6 @@ ParamTraits<WriteParams>::Log(const paramType& aParam, std::wstring* aLog)
   LogParam(aParam.mFastHash, aLog);
   LogParam(aParam.mNumChars, aLog);
   LogParam(aParam.mFullHash, aLog);
-  LogParam(aParam.mInstalled, aLog);
 }
 
 } 
