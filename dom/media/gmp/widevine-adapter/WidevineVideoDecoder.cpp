@@ -383,10 +383,18 @@ void
 WidevineVideoDecoder::DecodingComplete()
 {
   Log("WidevineVideoDecoder::DecodingComplete()");
+
   if (mCDMWrapper) {
-    CDM()->DeinitializeDecoder(kStreamTypeVideo);
+    
+    if (mCallback) {
+      CDM()->DeinitializeDecoder(kStreamTypeVideo);
+    } else {
+      Log("WideVineDecoder::DecodingComplete() Decoder was not fully initialized!");
+    }
+
     mCDMWrapper = nullptr;
   }
+
   
   Release();
 }
