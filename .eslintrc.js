@@ -8,6 +8,7 @@ module.exports = {
   "rules": {
     "mozilla/import-globals": "warn",
     "mozilla/no-import-into-var-and-global": "error",
+    "mozilla/no-useless-parameters": "error",
 
     
     "no-unsafe-negation": "error",
