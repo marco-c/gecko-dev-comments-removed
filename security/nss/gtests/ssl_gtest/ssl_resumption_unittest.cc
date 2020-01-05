@@ -557,4 +557,26 @@ TEST_F(TlsConnectTest, TestTls13ResumptionTwice) {
   ASSERT_NE(initialTicket, c2->extension());
 }
 
+
+TEST_F(TlsConnectTest, TestTls13ResumptionDuplicateNST) {
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
+  Connect();
+
+  
+  SSLInt_ClearSessionTicketKey();
+  SSLInt_SendNewSessionTicket(server_->ssl_fd());
+
+  SendReceive();  
+  CheckKeys();
+
+  
+  Reset();
+  ConfigureSessionCache(RESUME_BOTH, RESUME_TICKET);
+  ConfigureVersion(SSL_LIBRARY_VERSION_TLS_1_3);
+  ExpectResumption(RESUME_TICKET);
+  Connect();
+  SendReceive();
+}
+
 }  
