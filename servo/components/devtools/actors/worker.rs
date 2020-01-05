@@ -2,7 +2,7 @@
 
 
 
-use actor::{Actor, ActorRegistry};
+use actor::{Actor, ActorRegistry, ActorMessageStatus};
 use msg::constellation_msg::WorkerId;
 use rustc_serialize::json;
 use std::net::TcpStream;
@@ -21,7 +21,7 @@ impl Actor for WorkerActor {
                       _: &ActorRegistry,
                       _: &str,
                       _: &json::Object,
-                      _: &mut TcpStream) -> Result<bool, ()> {
-        Ok(true)
+                      _: &mut TcpStream) -> Result<ActorMessageStatus, ()> {
+        Ok(ActorMessageStatus::Processed)
     }
 }

@@ -7,7 +7,7 @@
 
 
 
-use actor::{Actor, ActorRegistry};
+use actor::{Actor, ActorRegistry, ActorMessageStatus};
 use actors::tab::{TabActor, TabActorMsg};
 use protocol::JsonPacketStream;
 
@@ -55,7 +55,7 @@ impl Actor for RootActor {
                       registry: &ActorRegistry,
                       msg_type: &str,
                       _msg: &json::Object,
-                      stream: &mut TcpStream) -> Result<bool, ()> {
+                      stream: &mut TcpStream) -> Result<ActorMessageStatus, ()> {
         Ok(match msg_type {
             "listAddons" => {
                 let actor = ErrorReply {
@@ -64,7 +64,7 @@ impl Actor for RootActor {
                     message: "This root actor has no browser addons.".to_string(),
                 };
                 stream.write_json_packet(&actor);
-                true
+                ActorMessageStatus::Processed
             }
 
             
@@ -77,10 +77,10 @@ impl Actor for RootActor {
                     }).collect()
                 };
                 stream.write_json_packet(&actor);
-                true
+                ActorMessageStatus::Processed
             }
 
-            _ => false
+            _ => ActorMessageStatus::Ignored
         })
     }
 }

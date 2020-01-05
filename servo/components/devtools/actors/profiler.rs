@@ -2,7 +2,7 @@
 
 
 
-use actor::{Actor, ActorRegistry};
+use actor::{Actor, ActorRegistry, ActorMessageStatus};
 
 use rustc_serialize::json;
 use std::net::TcpStream;
@@ -20,8 +20,8 @@ impl Actor for ProfilerActor {
                       _registry: &ActorRegistry,
                       _msg_type: &str,
                       _msg: &json::Object,
-                      _stream: &mut TcpStream) -> Result<bool, ()> {
-        Ok(false)
+                      _stream: &mut TcpStream) -> Result<ActorMessageStatus, ()> {
+        Ok(ActorMessageStatus::Ignored)
     }
 }
 

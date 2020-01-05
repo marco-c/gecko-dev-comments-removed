@@ -2,7 +2,7 @@
 
 
 
-use actor::{Actor, ActorRegistry};
+use actor::{Actor, ActorRegistry, ActorMessageStatus};
 use rustc_serialize::json;
 use std::net::TcpStream;
 
@@ -19,8 +19,8 @@ impl Actor for ObjectActor {
                       _: &ActorRegistry,
                       _: &str,
                       _: &json::Object,
-                      _: &mut TcpStream) -> Result<bool, ()> {
-        Ok(false)
+                      _: &mut TcpStream) -> Result<ActorMessageStatus, ()> {
+        Ok(ActorMessageStatus::Ignored)
     }
 }
 
