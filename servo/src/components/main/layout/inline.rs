@@ -50,7 +50,7 @@ use style::computed_values::{text_align, vertical_align, white_space};
 
 
 
-struct LineBox {
+pub struct LineBox {
     range: Range,
     bounds: Rect<Au>,
     green_zone: Size2D<Au>
