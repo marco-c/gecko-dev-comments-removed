@@ -7,7 +7,7 @@
 
 
 
-const { ConsoleMessage } = require("devtools/client/webconsole/new-console-output/types");
+const { ConsoleMessage, NetworkEventMessage } = require("devtools/client/webconsole/new-console-output/types");
 
 let stubPreparedMessages = new Map();
 let stubPackets = new Map();
