@@ -87,10 +87,9 @@ test_description_schema = Schema({
     'description': basestring,
 
     
-    Required('suite'): Any(
-        basestring,
-        {'by-test-platform': {basestring: basestring}},
-    ),
+    Required('suite'): optionally_keyed_by(
+        'test-platform',
+        basestring),
 
     
     
@@ -115,24 +114,21 @@ test_description_schema = Schema({
     
     
     
-    Optional('run-on-projects', default=['all']): Any(
-        [basestring],
-        {'by-test-platform': {basestring: [basestring]}},
-    ),
+    Optional('run-on-projects', default=['all']): optionally_keyed_by(
+        'test-platform',
+        [basestring]),
 
     
-    Optional('tier'): Any(
-        int,
-        {'by-test-platform': {basestring: int}},
-    ),
+    Optional('tier'): optionally_keyed_by(
+        'test-platform',
+        Any(int, 'default')),
 
     
     
     
-    Required('chunks', default=1): Any(
-        int,
-        {'by-test-platform': {basestring: int}},
-    ),
+    Required('chunks', default=1): optionally_keyed_by(
+        'test-platform',
+        int),
 
     
     
@@ -142,16 +138,14 @@ test_description_schema = Schema({
     
     
     
-    Required('e10s', default='both'): Any(
-        bool, 'both',
-        {'by-test-platform': {basestring: Any(bool, 'both')}},
-    ),
+    Required('e10s', default='both'): optionally_keyed_by(
+        'test-platform',
+        Any(bool, 'both')),
 
     
-    Required('instance-size', default='default'): Any(
-        Any('default', 'large', 'xlarge', 'legacy'),
-        {'by-test-platform': {basestring: Any('default', 'large', 'xlarge', 'legacy')}},
-    ),
+    Required('instance-size', default='default'): optionally_keyed_by(
+        'test-platform',
+        Any('default', 'large', 'xlarge', 'legacy')),
 
     
     
@@ -179,19 +173,21 @@ test_description_schema = Schema({
     
     
     
-    Required('docker-image', default={'in-tree': 'desktop-test'}): Any(
-        
-        basestring,
-        
-        {'in-tree': basestring}
+    Required('docker-image', default={'in-tree': 'desktop-test'}): optionally_keyed_by(
+        'test-platform', 'test-platform-phylum',
+        Any(
+            
+            basestring,
+            
+            {'in-tree': basestring}
+        )
     ),
 
     
     
-    Required('max-run-time', default=3600): Any(
-        int,
-        {'by-test-platform': {basestring: int}},
-    ),
+    Required('max-run-time', default=3600): optionally_keyed_by(
+        'test-platform',
+        int),
 
     
     Optional('retry-exit-status'): int,
@@ -200,25 +196,24 @@ test_description_schema = Schema({
     Required('checkout', default=False): bool,
 
     
-    Required('mozharness'): Any({
+    Required('mozharness'): optionally_keyed_by(
+        'test-platform', 'test-platform-phylum', {
         
         Required('script'): basestring,
 
         
-        Required('config'): Any(
-            [basestring],
-            {'by-test-platform': {basestring: [basestring]}},
-        ),
+        Required('config'): optionally_keyed_by(
+            'test-platform',
+            [basestring]),
 
         
         Optional('actions'): [basestring],
 
         
         
-        Required('extra-options', default=[]): Any(
-            [basestring],
-            {'by-test-platform': {basestring: [basestring]}},
-        ),
+        Required('extra-options', default=[]): optionally_keyed_by(
+            'test-platform',
+            [basestring]),
 
         
         
@@ -267,11 +262,9 @@ test_description_schema = Schema({
 
     
     
-    Optional('os-groups', default=[]): Any(
-        [basestring],
-        
-        {'by-test-platform': {basestring: [basestring]}},
-    ),
+    Optional('os-groups', default=[]): optionally_keyed_by(
+        'test-platform',
+        [basestring]),
 
     
 
@@ -301,6 +294,14 @@ def validate(config, tests):
 
 
 @transforms.add
+def resolve_keyed_by_mozharness(config, tests):
+    """Resolve a mozharness field if it is keyed by something"""
+    for test in tests:
+        test['mozharness'] = get_keyed_by(item=test, field='mozharness', item_name=test['test-name'])
+        yield test
+
+
+@transforms.add
 def set_defaults(config, tests):
     for test in tests:
         build_platform = test['build-platform']
@@ -310,9 +311,13 @@ def set_defaults(config, tests):
             test['mozharness']['actions'] = ['get-secrets']
             
             test['e10s'] = False
+            
+            
+            test['loopback-video'] = True
         else:
             
             test['mozharness']['set-moz-node-path'] = True
+            test.setdefault('e10s', 'both')
 
         
         if test['test-platform'].startswith('linux'):
@@ -320,7 +325,6 @@ def set_defaults(config, tests):
         else:
             test['allow-software-gl-layers'] = False
 
-        test.setdefault('e10s', 'both')
         test.setdefault('os-groups', [])
         test.setdefault('chunks', 1)
         test.setdefault('run-on-projects', ['all'])
@@ -398,8 +402,11 @@ def set_tier(config, tests):
     """Set the tier based on policy for all test descriptions that do not
     specify a tier otherwise."""
     for test in tests:
+        if 'tier' in test:
+            test['tier'] = get_keyed_by(item=test, field='tier', item_name=test['test-name'])
+
         
-        if 'tier' not in test:
+        if 'tier' not in test or test['tier'] == 'default':
             if test['test-platform'] in ['linux64/debug',
                                          'linux64-asan/opt',
                                          'android-4.3-arm7-api-15/debug',
@@ -446,13 +453,13 @@ def resolve_keyed_by(config, tests):
     """Resolve fields that can be keyed by platform, etc."""
     fields = [
         'instance-size',
+        'docker-image',
         'max-run-time',
         'chunks',
         'e10s',
         'suite',
         'run-on-projects',
         'os-groups',
-        'tier',
     ]
     mozharness_fields = [
         'config',
