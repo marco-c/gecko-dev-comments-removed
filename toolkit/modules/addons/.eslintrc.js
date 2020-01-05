@@ -8,6 +8,7 @@ module.exports = {
     "addMessageListener": false,
     "removeEventListener": false,
     "sendAsyncMessage": false,
+    "AddonManagerPermissions": false,
 
     "initialProcessData": true,
   },
