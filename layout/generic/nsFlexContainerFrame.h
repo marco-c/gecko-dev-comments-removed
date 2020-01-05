@@ -58,6 +58,10 @@ public:
   struct StrutInfo;
 
   
+  void Init(nsIContent*       aContent,
+            nsContainerFrame* aParent,
+            nsIFrame*         aPrevInFlow) override;
+
   virtual void BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                 const nsRect&           aDirtyRect,
                                 const nsDisplayListSet& aLists) override;

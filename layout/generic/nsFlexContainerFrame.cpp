@@ -87,6 +87,8 @@ IsDisplayValueLegacyBox(const nsStyleDisplay* aStyleDisp)
     aStyleDisp->mDisplay == mozilla::StyleDisplay::WebkitInlineBox;
 }
 
+
+
  bool
 nsFlexContainerFrame::IsLegacyBox(const nsIFrame* aFrame)
 {
@@ -2272,6 +2274,21 @@ NS_NewFlexContainerFrame(nsIPresShell* aPresShell,
 
 nsFlexContainerFrame::~nsFlexContainerFrame()
 {
+}
+
+
+void
+nsFlexContainerFrame::Init(nsIContent*       aContent,
+                           nsContainerFrame* aParent,
+                           nsIFrame*         aPrevInFlow)
+{
+  nsContainerFrame::Init(aContent, aParent, aPrevInFlow);
+
+  if (nsFlexContainerFrame::IsLegacyBox(this)) {
+    
+    
+    AddStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX);
+  }
 }
 
 template<bool IsLessThanOrEqual(nsIFrame*, nsIFrame*)>
