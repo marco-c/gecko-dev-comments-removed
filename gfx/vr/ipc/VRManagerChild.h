@@ -23,7 +23,6 @@ class VRDisplay;
 class VREventObserver;
 } 
 namespace layers {
-class PCompositableChild;
 class TextureClient;
 }
 namespace gfx {

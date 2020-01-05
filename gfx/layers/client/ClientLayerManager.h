@@ -32,7 +32,6 @@ namespace layers {
 class ClientPaintedLayer;
 class CompositorBridgeChild;
 class ImageLayer;
-class PLayerChild;
 class FrameUniformityData;
 
 class ClientLayerManager final : public LayerManager
