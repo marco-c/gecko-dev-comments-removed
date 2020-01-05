@@ -713,7 +713,7 @@ impl HTMLScriptElementMethods for HTMLScriptElement {
 
     
     fn Text(&self) -> DOMString {
-        Node::collect_text_contents(self.upcast::<Node>().children())
+        self.upcast::<Node>().child_text_content()
     }
 
     
