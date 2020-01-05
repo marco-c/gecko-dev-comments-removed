@@ -586,6 +586,11 @@ struct AnimationValue
 {
   StyleAnimationValue mGecko;
   RefPtr<RawServoAnimationValue> mServo;
+
+  bool operator==(const AnimationValue& aOther) const {
+    
+    return mGecko == aOther.mGecko && mServo == aOther.mServo;
+  }
 };
 
 struct PropertyStyleAnimationValuePair

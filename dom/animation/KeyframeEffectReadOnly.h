@@ -60,9 +60,7 @@ struct AnimationPropertySegment
   float mFromKey, mToKey;
   
   
-  StyleAnimationValue mFromValue, mToValue;
-  
-  RefPtr<RawServoAnimationValue> mServoFromValue, mServoToValue;
+  AnimationValue mFromValue, mToValue;
 
   Maybe<ComputedTimingFunction> mTimingFunction;
   dom::CompositeOperation mFromComposite = dom::CompositeOperation::Replace;

@@ -542,8 +542,8 @@ KeyframeEffectReadOnly::ComposeStyle(
 
       
       
-      RawServoAnimationValue* servoFromValue = segment->mServoFromValue;
-      RawServoAnimationValue* servoToValue = segment->mServoToValue;
+      RawServoAnimationValue* servoFromValue = segment->mFromValue.mServo;
+      RawServoAnimationValue* servoToValue = segment->mToValue.mServo;
 
       
       if (!servoFromValue || !servoToValue) {
@@ -599,11 +599,11 @@ KeyframeEffectReadOnly::ComposeStyle(
 
       StyleAnimationValue fromValue =
         CompositeValue(prop.mProperty, aStyleRule.mGecko,
-                       segment->mFromValue,
+                       segment->mFromValue.mGecko,
                        segment->mFromComposite);
       StyleAnimationValue toValue =
         CompositeValue(prop.mProperty, aStyleRule.mGecko,
-                       segment->mToValue,
+                       segment->mToValue.mGecko,
                        segment->mToComposite);
 
       
@@ -614,9 +614,9 @@ KeyframeEffectReadOnly::ComposeStyle(
           prop.mSegments.LastElement();
         
         
-        StyleAnimationValue lastValue = lastSegment.mToValue.IsNull()
+        StyleAnimationValue lastValue = lastSegment.mToValue.mGecko.IsNull()
           ? GetUnderlyingStyle(prop.mProperty, aStyleRule.mGecko)
-          : lastSegment.mToValue;
+          : lastSegment.mToValue.mGecko;
         fromValue =
           StyleAnimationValue::Accumulate(prop.mProperty,
                                           lastValue,
@@ -1015,10 +1015,10 @@ DumpAnimationProperties(nsTArray<AnimationProperty>& aAnimationProperties)
     for (auto& s : p.mSegments) {
       nsString fromValue, toValue;
       Unused << StyleAnimationValue::UncomputeValue(p.mProperty,
-                                                    s.mFromValue,
+                                                    s.mFromValue.mGecko,
                                                     fromValue);
       Unused << StyleAnimationValue::UncomputeValue(p.mProperty,
-                                                    s.mToValue,
+                                                    s.mToValue.mGecko,
                                                     toValue);
       printf("  %f..%f: %s..%s\n", s.mFromKey, s.mToKey,
              NS_ConvertUTF16toUTF8(fromValue).get(),
@@ -1135,7 +1135,7 @@ KeyframeEffectReadOnly::GetProperties(
 
       binding_detail::FastAnimationPropertyValueDetails fromValue;
       CreatePropertyValue(property.mProperty, segment.mFromKey,
-                          segment.mTimingFunction, segment.mFromValue,
+                          segment.mTimingFunction, segment.mFromValue.mGecko,
                           segment.mFromComposite, fromValue);
       
       
@@ -1152,10 +1152,11 @@ KeyframeEffectReadOnly::GetProperties(
       
       
       if (segmentIdx == segmentLen - 1 ||
-          property.mSegments[segmentIdx + 1].mFromValue != segment.mToValue) {
+          property.mSegments[segmentIdx + 1].mFromValue.mGecko !=
+            segment.mToValue.mGecko) {
         binding_detail::FastAnimationPropertyValueDetails toValue;
         CreatePropertyValue(property.mProperty, segment.mToKey,
-                            Nothing(), segment.mToValue,
+                            Nothing(), segment.mToValue.mGecko,
                             segment.mToComposite, toValue);
         
         
@@ -1621,11 +1622,13 @@ KeyframeEffectReadOnly::CalculateCumulativeChangeHint(
       }
       RefPtr<nsStyleContext> fromContext =
         CreateStyleContextForAnimationValue(property.mProperty,
-                                            segment.mFromValue, aStyleContext);
+                                            segment.mFromValue.mGecko,
+                                            aStyleContext);
 
       RefPtr<nsStyleContext> toContext =
         CreateStyleContextForAnimationValue(property.mProperty,
-                                            segment.mToValue, aStyleContext);
+                                            segment.mToValue.mGecko,
+                                            aStyleContext);
 
       uint32_t equalStructs = 0;
       uint32_t samePointerStructs = 0;
