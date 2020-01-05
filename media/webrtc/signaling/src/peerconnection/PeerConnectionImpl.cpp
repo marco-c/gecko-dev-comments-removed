@@ -3661,22 +3661,36 @@ PeerConnectionImpl::ExecuteStatsQuery_s(RTCStatsQuery *query) {
           s.mBytesSent.Construct(mp.rtp_bytes_sent());
 
           
+          webrtc::RtcpPacketTypeCounter counters;
+          if (mp.Conduit()->GetPacketTypeStats(&counters)) {
+            s.mNackCount.Construct(counters.nack_packets);
+            
+            if (!isAudio) {
+              s.mFirCount.Construct(counters.fir_packets);
+              s.mPliCount.Construct(counters.pli_packets);
+            }
+          }
+
+          
           if (!isAudio) {
             double framerateMean;
             double framerateStdDev;
             double bitrateMean;
             double bitrateStdDev;
             uint32_t droppedFrames;
+            uint32_t framesEncoded;
             if (mp.Conduit()->GetVideoEncoderStats(&framerateMean,
                                                    &framerateStdDev,
                                                    &bitrateMean,
                                                    &bitrateStdDev,
-                                                   &droppedFrames)) {
+                                                   &droppedFrames,
+                                                   &framesEncoded)) {
               s.mFramerateMean.Construct(framerateMean);
               s.mFramerateStdDev.Construct(framerateStdDev);
               s.mBitrateMean.Construct(bitrateMean);
               s.mBitrateStdDev.Construct(bitrateStdDev);
               s.mDroppedFrames.Construct(droppedFrames);
+              s.mFramesEncoded.Construct(framesEncoded);
             }
           }
           query->report->mOutboundRTPStreamStats.Value().AppendElement(s,
@@ -3746,6 +3760,16 @@ PeerConnectionImpl::ExecuteStatsQuery_s(RTCStatsQuery *query) {
                                        &avSyncDelta)) {
             s.mMozJitterBufferDelay.Construct(jitterBufferDelay);
             s.mMozAvSyncDelay.Construct(avSyncDelta);
+          }
+        }
+        
+        webrtc::RtcpPacketTypeCounter counters;
+        if (mp.Conduit()->GetPacketTypeStats(&counters)) {
+          s.mNackCount.Construct(counters.nack_packets);
+          
+          if (!isAudio) {
+            s.mFirCount.Construct(counters.fir_packets);
+            s.mPliCount.Construct(counters.pli_packets);
           }
         }
         

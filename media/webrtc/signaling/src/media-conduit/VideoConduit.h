@@ -297,15 +297,19 @@ public:
 
   std::vector<unsigned int> GetLocalSSRCs() const override;
   bool SetLocalSSRCs(const std::vector<unsigned int> & ssrcs) override;
-
   bool GetRemoteSSRC(unsigned int* ssrc) override;
   bool SetRemoteSSRC(unsigned int ssrc) override;
   bool SetLocalCNAME(const char* cname) override;
+
+  bool
+  GetPacketTypeStats(webrtc::RtcpPacketTypeCounter* aPacketCounts) override;
+
   bool GetVideoEncoderStats(double* framerateMean,
                             double* framerateStdDev,
                             double* bitrateMean,
                             double* bitrateStdDev,
-                            uint32_t* droppedFrames) override;
+                            uint32_t* droppedFrames,
+                            uint32_t* framesEncoded) override;
   bool GetVideoDecoderStats(double* framerateMean,
                             double* framerateStdDev,
                             double* bitrateMean,
@@ -360,16 +364,21 @@ private:
 
 
     void DroppedFrames(uint32_t& aOutDroppedFrames) const;
+    
+
+
+    uint32_t FramesEncoded() const {
+      return mFramesEncoded;
+    }
     void Update(const webrtc::VideoSendStream::Stats& aStats);
     
 
 
-    void SentFrame() {
-      ++mSentFrames;
-    }
+    void FrameDeliveredToEncoder() { ++mFramesDeliveredToEncoder; }
   private:
     uint32_t mDroppedFrames = 0;
-    mozilla::Atomic<int32_t> mSentFrames;
+    uint32_t mFramesEncoded = 0;
+    mozilla::Atomic<int32_t> mFramesDeliveredToEncoder;
   };
 
   
@@ -463,6 +472,8 @@ private:
   bool mInReconfig;
   SendStreamStatistics mSendStreamStats;
   ReceiveStreamStatistics mRecvStreamStats;
+  webrtc::RtcpPacketTypeCounter mPacketCounts;
+
   
   webrtc::VideoReceiveStream* mRecvStream;
   webrtc::VideoSendStream* mSendStream;

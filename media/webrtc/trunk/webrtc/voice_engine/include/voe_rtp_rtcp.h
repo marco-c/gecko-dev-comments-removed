@@ -180,6 +180,10 @@ class WEBRTC_DLLEXPORT VoERTP_RTCP {
   virtual int GetRTCPStatistics(int channel, CallStatistics& stats) = 0;
 
   
+  virtual int GetRTCPPacketTypeCounters(int channel,
+                                        RtcpPacketTypeCounter& stats) = 0;
+
+  
   
   
   
