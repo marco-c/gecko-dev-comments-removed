@@ -1105,7 +1105,8 @@ this.Download.prototype = {
     };
 
     let saver = this.saver.toSerializable();
-    if (!saver) {
+    if (!serializable.source || !saver) {
+      
       
       return null;
     }
@@ -1280,8 +1281,30 @@ this.DownloadSource.prototype = {
 
 
 
+
+
+
+
+
+
+
+
+
+
+   adjustChannel: null,
+
+  
+
+
+
+
   toSerializable: function ()
   {
+    if (this.adjustChannel) {
+      
+      return null;
+    }
+
     
     if (!this.isPrivate && !this.referrer && !this._unknownProperties) {
       return this.url;
@@ -1299,6 +1322,10 @@ this.DownloadSource.prototype = {
     return serializable;
   },
 };
+
+
+
+
 
 
 
@@ -1337,6 +1364,9 @@ this.DownloadSource.fromSerializable = function (aSerializable) {
     }
     if ("referrer" in aSerializable) {
       source.referrer = aSerializable.referrer;
+    }
+    if ("adjustChannel" in aSerializable) {
+      source.adjustChannel = aSerializable.adjustChannel;
     }
 
     deserializeUnknownProperties(source, aSerializable, property =>
@@ -2011,6 +2041,11 @@ this.DownloadCopySaver.prototype = {
             },
             onStatus: function () { },
           };
+
+          
+          if (download.source.adjustChannel) {
+            yield download.source.adjustChannel(channel);
+          }
 
           
           backgroundFileSaver.QueryInterface(Ci.nsIStreamListener);
@@ -2843,4 +2878,3 @@ this.DownloadPDFSaver.prototype = {
 this.DownloadPDFSaver.fromSerializable = function (aSerializable) {
   return new DownloadPDFSaver();
 };
-

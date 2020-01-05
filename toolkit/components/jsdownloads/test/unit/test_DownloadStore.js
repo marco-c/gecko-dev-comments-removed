@@ -66,6 +66,15 @@ add_task(function* test_save_reload()
   });
   listForSave.add(pdfDownload);
 
+  
+  
+  let adjustedDownload = yield Downloads.createDownload({
+    source: { url: httpUrl("empty.txt"),
+              adjustChannel: () => Promise.resolve() },
+    target: getTempFile(TEST_TARGET_FILE_NAME),
+  });
+  listForSave.add(adjustedDownload);
+
   let legacyDownload = yield promiseStartLegacyDownload();
   yield legacyDownload.cancel();
   listForSave.add(legacyDownload);
@@ -74,6 +83,7 @@ add_task(function* test_save_reload()
   yield storeForLoad.load();
 
   
+  listForSave.remove(adjustedDownload);
   listForSave.remove(pdfDownload);
 
   let itemsForSave = yield listForSave.getAll();
