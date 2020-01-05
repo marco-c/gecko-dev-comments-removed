@@ -5,7 +5,9 @@
 
 
 
-var { DER } = Cu.import("resource://gre/modules/psm/DER.jsm", {});
+
+
+var { DER } = Cu.import("resource://testing-common/psm/DER.jsm", {});
 
 function run_simple_tests() {
   throws(() => new DER.DER("this is not an array"), /invalid input/,
