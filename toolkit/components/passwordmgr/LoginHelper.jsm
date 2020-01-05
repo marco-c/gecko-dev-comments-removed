@@ -552,11 +552,14 @@ this.LoginHelper = {
 
 
 
+
+
+
   maybeImportLogin(loginData) {
     
     let login = Cc["@mozilla.org/login-manager/loginInfo;1"].createInstance(Ci.nsILoginInfo);
     login.init(loginData.hostname,
-               loginData.submitURL || (typeof(loginData.httpRealm) == "string" ? null : ""),
+               loginData.formSubmitURL || (typeof(loginData.httpRealm) == "string" ? null : ""),
                typeof(loginData.httpRealm) == "string" ? loginData.httpRealm : null,
                loginData.username,
                loginData.password,
@@ -575,22 +578,19 @@ this.LoginHelper = {
                                                     login.httpRealm);
     
     
-    
-    if (existingLogins.some(l => login.matches(l, true))) {
-      return;
+    if (existingLogins.some(l => login.matches(l, false ))) {
+      return null;
     }
+    
     
     let foundMatchingLogin = false;
     for (let existingLogin of existingLogins) {
       if (login.username == existingLogin.username) {
-        
-        
         foundMatchingLogin = true;
+        existingLogin.QueryInterface(Ci.nsILoginMetaInfo);
         if (login.password != existingLogin.password &
            login.timePasswordChanged > existingLogin.timePasswordChanged) {
           
-          
-
           
           let propBag = Cc["@mozilla.org/hash-property-bag;1"].
                         createInstance(Ci.nsIWritablePropertyBag);
@@ -602,9 +602,9 @@ this.LoginHelper = {
     }
     
     if (foundMatchingLogin) {
-      return;
+      return null;
     }
-    Services.logins.addLogin(login);
+    return Services.logins.addLogin(login);
   },
 
   
