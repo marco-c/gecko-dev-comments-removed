@@ -40,12 +40,14 @@
 #include "nsFrameManager.h"
 #include "nsError.h"
 #include "nsCSSFrameConstructor.h"
+#include "mozilla/ServoStyleSet.h"
 #include "mozilla/StyleSetHandle.h"
 #include "mozilla/StyleSetHandleInlines.h"
 #include "nsDisplayList.h"
 #include "nsIScrollableFrame.h"
 #include "nsCSSProps.h"
 #include "RestyleTracker.h"
+#include "nsStyleChangeList.h"
 #include <algorithm>
 
 using namespace mozilla;
@@ -7676,4 +7678,44 @@ nsTableFrame::InvalidateTableFrame(nsIFrame* aFrame,
     parent->InvalidateFrameWithRect(aOrigRect);
     parent->InvalidateFrame();
   }
+}
+
+void
+nsTableFrame::DoUpdateStyleOfOwnedAnonBoxes(ServoStyleSet& aStyleSet,
+                                            nsStyleChangeList& aChangeList,
+                                            nsChangeHint aHintForThisFrame)
+{
+  nsIFrame* wrapper = GetParent();
+
+  MOZ_ASSERT(wrapper->StyleContext()->GetPseudo() ==
+               nsCSSAnonBoxes::tableWrapper,
+             "What happened to our parent?");
+
+  RefPtr<nsStyleContext> newContext =
+    aStyleSet.ResolveAnonymousBoxStyle(nsCSSAnonBoxes::tableWrapper,
+                                       StyleContext());
+
+  
+  
+  
+  
+  
+  uint32_t equalStructs, samePointerStructs; 
+  nsChangeHint wrapperHint = wrapper->StyleContext()->CalcStyleDifference(
+    newContext,
+    
+    
+    nsChangeHint_Hints_NotHandledForDescendants,
+    &equalStructs,
+    &samePointerStructs);
+  if (wrapperHint) {
+    aChangeList.AppendChange(wrapper, wrapper->GetContent(), wrapperHint);
+  }
+
+  for (nsIFrame* cur = wrapper; cur; cur = cur->GetNextContinuation()) {
+    cur->SetStyleContext(newContext);
+  }
+
+  MOZ_ASSERT(!(wrapper->GetStateBits() & NS_FRAME_OWNS_ANON_BOXES),
+             "Wrapper frame doesn't have any anon boxes of its own!");
 }

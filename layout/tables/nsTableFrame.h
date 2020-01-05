@@ -601,6 +601,11 @@ public:
 
   virtual bool ComputeCustomOverflow(nsOverflowAreas& aOverflowAreas) override;
 
+  
+  virtual void DoUpdateStyleOfOwnedAnonBoxes(
+    mozilla::ServoStyleSet& aStyleSet,
+    nsStyleChangeList& aChangeList,
+    nsChangeHint aHintForThisFrame) override;
 protected:
 
   

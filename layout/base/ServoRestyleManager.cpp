@@ -129,20 +129,6 @@ ClearRestyleStateFromSubtree(Element* aElement)
   aElement->UnsetHasDirtyDescendantsForServo();
 }
 
-static void
-UpdateStyleContextForTableWrapper(nsIFrame* aTableWrapper,
-                                  nsStyleContext* aTableStyleContext,
-                                  ServoStyleSet* aStyleSet)
-{
-  MOZ_ASSERT(aTableWrapper->GetType() == nsGkAtoms::tableWrapperFrame);
-  MOZ_ASSERT(aTableWrapper->StyleContext()->GetPseudo() ==
-             nsCSSAnonBoxes::tableWrapper);
-  RefPtr<nsStyleContext> newContext =
-    aStyleSet->ResolveAnonymousBoxStyle(nsCSSAnonBoxes::tableWrapper,
-                                        aTableStyleContext);
-  aTableWrapper->SetStyleContext(newContext);
-}
-
 void
 ServoRestyleManager::RecreateStyleContexts(Element* aElement,
                                            nsStyleContext* aParentContext,
@@ -150,7 +136,6 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
                                            nsStyleChangeList& aChangeListToProcess)
 {
   nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aElement);
-  bool isTable = styleFrame != aElement->GetPrimaryFrame();
 
   nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
   
@@ -158,22 +143,7 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
   
   
   if ((styleFrame || (changeHint & nsChangeHint_ReconstructFrame)) && changeHint) {
-    if (isTable) {
-      
-      
-      
-      
-      MOZ_ASSERT(styleFrame, "Or else GetPrimaryFrame() would be null too");
-      MOZ_ASSERT(styleFrame->GetParent() == aElement->GetPrimaryFrame(),
-                 "How did that happen?");
-      aChangeListToProcess.AppendChange(aElement->GetPrimaryFrame(), aElement,
-                                        changeHint);
-      
-      
-      aChangeListToProcess.AppendChange(styleFrame, aElement, changeHint);
-    } else {
-      aChangeListToProcess.AppendChange(styleFrame, aElement, changeHint);
-    }
+    aChangeListToProcess.AppendChange(styleFrame, aElement, changeHint);
   }
 
   
@@ -241,14 +211,6 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
     for (nsIFrame* f = styleFrame; f;
          f = GetNextContinuationWithSameStyle(f, oldStyleContext)) {
       f->SetStyleContext(newContext);
-    }
-
-    if (isTable) {
-      nsIFrame* primaryFrame = aElement->GetPrimaryFrame();
-      MOZ_ASSERT(primaryFrame->StyleContext()->GetPseudo() ==
-                   nsCSSAnonBoxes::tableWrapper,
-                 "What sort of frame is this?");
-      UpdateStyleContextForTableWrapper(primaryFrame, newContext, aStyleSet);
     }
 
     if (MOZ_UNLIKELY(displayContentsNode)) {
