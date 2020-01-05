@@ -273,39 +273,21 @@ WebRenderBridgeParent::RecvDPGetSnapshot(PTextureParent* aTexture,
 
   MOZ_ASSERT(bufferTexture->GetBufferDescriptor().type() == BufferDescriptor::TRGBDescriptor);
   uint32_t stride = ImageDataSerializer::GetRGBStride(bufferTexture->GetBufferDescriptor().get_RGBDescriptor());
-  RefPtr<DrawTarget> target =
-    Factory::CreateDrawTargetForData(gfx::BackendType::SKIA,
-                                     bufferTexture->GetBuffer(),
-                                     bufferTexture->GetSize(),
-                                     stride,
-                                     bufferTexture->GetFormat());
-  MOZ_ASSERT(target);
-  if (!target) {
-    
-    
-    
-    return IPC_FAIL_NO_REASON(this);
-  }
+  uint8_t* buffer = bufferTexture->GetBuffer();
+  IntSize size = bufferTexture->GetSize();
+
+  
+  MOZ_ASSERT(buffer);
+  MOZ_ASSERT(bufferTexture->GetFormat() == SurfaceFormat::B8G8R8A8);
+  uint32_t buffer_size = size.width * size.height * 4;
+
+  
+  MOZ_ASSERT(size == aRect.Size());
+  MOZ_ASSERT((uint32_t)(size.width * 4) == stride);
 
   MOZ_ASSERT(mWRState);
   mGLContext->MakeCurrent();
-
-  uint32_t length = 0;
-  uint32_t capacity = 0;
-  const uint8_t* webrenderSnapshot = wr_readback_buffer(mWRWindowState, aRect.width, aRect.height, &length, &capacity);
-
-  
-  RefPtr<DataSourceSurface> snapshot =
-    Factory::CreateWrappingDataSourceSurface(const_cast<uint8_t*>(webrenderSnapshot),
-                                             aRect.width * 4,
-                                             IntSize(aRect.width, aRect.height),
-                                             SurfaceFormat::B8G8R8A8);
-
-  Rect floatRect = Rect(0, 0, aRect.width, aRect.height);
-  target->DrawSurface(snapshot, floatRect, floatRect, DrawSurfaceOptions(), DrawOptions(1.0f, CompositionOp::OP_SOURCE));
-  target->Flush();
-
-  wr_free_buffer(webrenderSnapshot, length, capacity);
+  wr_readback_into_buffer(mWRWindowState, aRect.width, aRect.height, buffer, buffer_size);
 
   return IPC_OK();
 }
