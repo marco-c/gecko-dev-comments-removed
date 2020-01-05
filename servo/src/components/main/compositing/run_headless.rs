@@ -2,10 +2,10 @@
 
 
 
-use geom::size::Size2D;
-use std::ptr;
-
 use compositing::*;
+
+use geom::size::Size2D;
+use std::unstable::intrinsics;
 
 
 
@@ -20,8 +20,10 @@ pub fn run_compositor(compositor: &CompositorTask) {
                 chan.send(Size2D(500, 500));
             }
 
-            GetGLContext(chan) => {
-                chan.send(ptr::null());
+            GetGraphicsMetadata(chan) => {
+                unsafe {
+                    chan.send(intrinsics::uninit());
+                }
             }
 
             SetIds(_, response_chan, _) => {

@@ -2,16 +2,17 @@
 
 
 
-use azure::azure_hl::DrawTarget;
-use azure::azure::AzGLContext;
 use geom::rect::Rect;
 use geom::size::Size2D;
+use layers::platform::surface::{NativeGraphicsMetadata, NativePaintingGraphicsContext};
+use layers::platform::surface::{NativeSurface, NativeSurfaceMethods};
 
 use constellation_msg::PipelineId;
 
-#[deriving(Clone)]
 pub struct LayerBuffer {
-    draw_target: DrawTarget,
+    
+    
+    native_surface: NativeSurface,
 
     
     rect: Rect<f32>,
@@ -24,14 +25,21 @@ pub struct LayerBuffer {
 
     
     stride: uint,
-        
 }
 
 
 
-#[deriving(Clone)]
 pub struct LayerBufferSet {
     buffers: ~[~LayerBuffer]
+}
+
+impl LayerBufferSet {
+    
+    pub fn mark_will_leak(&mut self) {
+        for buffer in self.buffers.mut_iter() {
+            buffer.native_surface.mark_will_leak()
+        }
+    }
 }
 
 
@@ -66,7 +74,7 @@ impl Epoch {
 
 
 pub trait RenderListener {
-    fn get_gl_context(&self) -> AzGLContext;
+    fn get_graphics_metadata(&self) -> NativeGraphicsMetadata;
     fn new_layer(&self, PipelineId, Size2D<uint>);
     fn set_layer_page_size(&self, PipelineId, Size2D<uint>, Epoch);
     fn set_layer_clip_rect(&self, PipelineId, Rect<uint>);
@@ -91,6 +99,13 @@ pub trait Tile {
     fn is_valid(&self, f32) -> bool;
     
     fn get_size_2d(&self) -> Size2D<uint>;
+
+    
+    
+    fn mark_wont_leak(&mut self);
+
+    
+    fn destroy(self, graphics_context: &NativePaintingGraphicsContext);
 }
 
 impl Tile for ~LayerBuffer {
@@ -104,4 +119,12 @@ impl Tile for ~LayerBuffer {
     fn get_size_2d(&self) -> Size2D<uint> {
         self.screen_pos.size
     }
+    fn mark_wont_leak(&mut self) {
+        self.native_surface.mark_wont_leak()
+    }
+    fn destroy(self, graphics_context: &NativePaintingGraphicsContext) {
+        let mut this = self;
+        this.native_surface.destroy(graphics_context)
+    }
 }
+

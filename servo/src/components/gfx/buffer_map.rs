@@ -2,10 +2,12 @@
 
 
 
+use geom::size::Size2D;
+use layers::platform::surface::NativePaintingGraphicsContext;
+use servo_msg::compositor_msg::Tile;
 use std::hashmap::HashMap;
 use std::to_bytes::Cb;
-use geom::size::Size2D;
-use servo_msg::compositor_msg::Tile;
+use std::util;
 
 
 
@@ -64,8 +66,8 @@ impl<T: Tile> BufferMap<T> {
         }
     }
     
-    // Insert a new buffer into the map.
-    pub fn insert(&mut self, new_buffer: T) {
+    /// Insert a new buffer into the map.
+    pub fn insert(&mut self, graphics_context: &NativePaintingGraphicsContext, new_buffer: T) {
         let new_key = BufferKey::get(new_buffer.get_size_2d());
 
         // If all our buffers are the same size and we're already at our
@@ -95,7 +97,9 @@ impl<T: Tile> BufferMap<T> {
             };
             if {
                 let list = &mut self.map.get_mut(&old_key).buffers;
-                self.mem -= list.pop().get_mem();
+                let condemned_buffer = list.pop();
+                self.mem -= condemned_buffer.get_mem();
+                condemned_buffer.destroy(graphics_context);
                 list.is_empty()
             }
             { 
@@ -131,5 +135,16 @@ impl<T: Tile> BufferMap<T> {
         }
 
         ret
+    }
+
+    
+    pub fn clear(&mut self, graphics_context: &NativePaintingGraphicsContext) {
+        let map = util::replace(&mut self.map, HashMap::new());
+        for (_, value) in map.move_iter() {
+            for tile in value.buffers.move_iter() {
+                tile.destroy(graphics_context)
+            }
+        }
+        self.mem = 0
     }
 }
