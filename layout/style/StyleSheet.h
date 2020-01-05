@@ -67,6 +67,17 @@ public:
   bool IsComplete() const;
   void SetComplete();
 
+  
+
+
+
+
+
+
+
+
+  void SetEnabled(bool aEnabled);
+
   MOZ_DECL_STYLO_METHODS(CSSStyleSheet, ServoStyleSheet)
 
   
@@ -197,6 +208,9 @@ protected:
 
   
   void DropMedia();
+
+  
+  void EnabledStateChanged();
 
   nsString              mTitle;
   nsIDocument*          mDocument; 

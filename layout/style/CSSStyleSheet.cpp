@@ -600,19 +600,9 @@ CSSStyleSheet::HasRules() const
 }
 
 void
-CSSStyleSheet::SetEnabled(bool aEnabled)
+CSSStyleSheet::EnabledStateChangedInternal()
 {
-  
-  bool oldDisabled = mDisabled;
-  mDisabled = !aEnabled;
-
-  if (mInner->mComplete && oldDisabled != mDisabled) {
-    ClearRuleCascades();
-
-    if (mDocument) {
-      mDocument->SetStyleSheetApplicableState(this, !mDisabled);
-    }
-  }
+  ClearRuleCascades();
 }
 
 CSSStyleSheet*

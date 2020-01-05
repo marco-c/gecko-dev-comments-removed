@@ -116,17 +116,6 @@ public:
   bool HasRules() const;
 
   
-
-
-
-
-
-
-
-
-  void SetEnabled(bool aEnabled);
-
-  
   CSSStyleSheet* GetParentSheet() const;  
   void SetOwningDocument(nsIDocument* aDocument);
 
@@ -242,6 +231,8 @@ protected:
   uint32_t InsertRuleInternal(const nsAString& aRule,
                               uint32_t aIndex, ErrorResult& aRv);
   void DeleteRuleInternal(uint32_t aIndex, ErrorResult& aRv);
+
+  void EnabledStateChangedInternal();
 
   RefPtr<CSSStyleSheet> mNext;
   CSSStyleSheet*        mParent;    
