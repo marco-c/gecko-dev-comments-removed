@@ -334,20 +334,24 @@ var SessionHistoryListener = {
   },
 
   OnHistoryNewEntry(newURI, oldIndex) {
+    
     this.collectFrom(oldIndex);
   },
 
   OnHistoryGoBack(backURI) {
+    
     this.collectFrom(kLastIndex);
     return true;
   },
 
   OnHistoryGoForward(forwardURI) {
+    
     this.collectFrom(kLastIndex);
     return true;
   },
 
   OnHistoryGotoIndex(index, gotoURI) {
+    
     this.collectFrom(kLastIndex);
     return true;
   },
