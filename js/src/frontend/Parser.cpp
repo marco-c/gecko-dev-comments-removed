@@ -3724,20 +3724,18 @@ Parser<ParseHandler>::PossibleError::PossibleError(Parser<ParseHandler>& parser)
 {}
 
 template <typename ParseHandler>
-bool
+void
 Parser<ParseHandler>::PossibleError::setPending(Node pn, unsigned errorNumber)
 {
     
     if (hasError())
-        return false;
+        return;
 
     
     
     offset_      = (pn ? parser_.handler.getPosition(pn) : parser_.pos()).begin;
     errorNumber_ = errorNumber;
     state_       = ErrorState::Pending;
-
-    return true;
 }
 
 template <typename ParseHandler>
@@ -6981,19 +6979,14 @@ Parser<ParseHandler>::expr(InHandling inHandling, YieldHandling yieldHandling,
         if (!pn)
             return null();
 
-        
-        
-        if (possibleErrorInner.hasError())  {
-
+        if (!possibleError) {
             
-            
-            if (possibleError && !possibleError->checkForExprErrors())
+            if (!possibleErrorInner.checkForExprErrors())
                 return null();
-
-            
-            possibleErrorInner.checkForExprErrors();
-            return null();
+        } else {
+            possibleErrorInner.transferErrorTo(possibleError);
         }
+
         handler.addList(seq, pn);
 
         if (!tokenStream.matchToken(&matched, TOK_COMMA))
@@ -8440,7 +8433,7 @@ Parser<ParseHandler>::newRegExp()
 
 template <typename ParseHandler>
 typename ParseHandler::Node
-Parser<ParseHandler>::arrayInitializer(YieldHandling yieldHandling)
+Parser<ParseHandler>::arrayInitializer(YieldHandling yieldHandling, PossibleError* possibleError)
 {
     MOZ_ASSERT(tokenStream.isCurrentTokenType(TOK_LB));
 
@@ -8487,13 +8480,15 @@ Parser<ParseHandler>::arrayInitializer(YieldHandling yieldHandling)
             } else if (tt == TOK_TRIPLEDOT) {
                 tokenStream.consumeKnownToken(TOK_TRIPLEDOT, TokenStream::Operand);
                 uint32_t begin = pos().begin;
-                Node inner = assignExpr(InAllowed, yieldHandling, TripledotProhibited);
+                Node inner = assignExpr(InAllowed, yieldHandling, TripledotProhibited,
+                                        possibleError);
                 if (!inner)
                     return null();
                 if (!handler.addSpreadElement(literal, begin, inner))
                     return null();
             } else {
-                Node element = assignExpr(InAllowed, yieldHandling, TripledotProhibited);
+                Node element = assignExpr(InAllowed, yieldHandling, TripledotProhibited,
+                                          possibleError);
                 if (!element)
                     return null();
                 if (foldConstants && !FoldConstants(context, &element, this))
@@ -8747,7 +8742,8 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
             return null();
 
         if (propType == PropertyType::Normal) {
-            Node propExpr = assignExpr(InAllowed, yieldHandling, TripledotProhibited);
+            Node propExpr = assignExpr(InAllowed, yieldHandling, TripledotProhibited,
+                                       possibleError);
             if (!propExpr)
                 return null();
 
@@ -8842,11 +8838,7 @@ Parser<ParseHandler>::objectLiteral(YieldHandling yieldHandling, PossibleError* 
                 
                 
                 
-                if (!possibleError->setPending(null(), JSMSG_COLON_AFTER_ID)) {
-                    
-                    possibleError->checkForExprErrors();
-                    return null();
-                }
+                possibleError->setPending(null(), JSMSG_COLON_AFTER_ID);
             }
 
             Node rhs;
@@ -8980,7 +8972,7 @@ Parser<ParseHandler>::primaryExpr(YieldHandling yieldHandling, TripledotHandling
         return classDefinition(yieldHandling, ClassExpression, NameRequired);
 
       case TOK_LB:
-        return arrayInitializer(yieldHandling);
+        return arrayInitializer(yieldHandling, possibleError);
 
       case TOK_LC:
         return objectLiteral(yieldHandling, possibleError);

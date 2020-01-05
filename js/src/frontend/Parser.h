@@ -772,7 +772,7 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
 
         
         
-        bool setPending(Node pn, unsigned errorNumber);
+        void setPending(Node pn, unsigned errorNumber);
 
         
         void setResolved();
@@ -1310,7 +1310,7 @@ class Parser final : private JS::AutoGCRooter, public StrictModeGetter
     Node propertyName(YieldHandling yieldHandling, Node propList,
                       PropertyType* propType, MutableHandleAtom propAtom);
     Node computedPropertyName(YieldHandling yieldHandling, Node literal);
-    Node arrayInitializer(YieldHandling yieldHandling);
+    Node arrayInitializer(YieldHandling yieldHandling, PossibleError* possibleError);
     Node newRegExp();
 
     Node objectLiteral(YieldHandling yieldHandling, PossibleError* possibleError);
