@@ -445,7 +445,7 @@ var Printing = {
     let data = message.data;
     switch (message.name) {
       case "Printing:Preview:Enter": {
-        this.enterPrintPreview(Services.wm.getOuterWindowWithId(data.windowID), data.simplifiedMode, data.defaultPrinterName);
+        this.enterPrintPreview(Services.wm.getOuterWindowWithId(data.windowID), data.simplifiedMode, data.changingBrowsers, data.defaultPrinterName);
         break;
       }
 
@@ -622,7 +622,7 @@ var Printing = {
     });
   },
 
-  enterPrintPreview(contentWindow, simplifiedMode, defaultPrinterName) {
+  enterPrintPreview(contentWindow, simplifiedMode, changingBrowsers, defaultPrinterName) {
     
     
     
@@ -630,6 +630,7 @@ var Printing = {
       removeEventListener("printPreviewUpdate", onPrintPreviewReady);
       sendAsyncMessage("Printing:Preview:Entered", {
         failed: !!error,
+        changingBrowsers,
       });
     };
 
