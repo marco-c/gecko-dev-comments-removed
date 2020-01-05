@@ -8,6 +8,7 @@ const {classes: Cc, interfaces: Ci, utils: Cu} = Components;
 
 Cu.import("resource://gre/modules/AppConstants.jsm");
 Cu.import("resource://gre/modules/Preferences.jsm");
+Cu.import("resource://gre/modules/Services.jsm");
 
 Cu.import("chrome://marionette/content/error.js");
 
@@ -30,7 +31,7 @@ this.assert = {};
 
 
 assert.firefox = function (msg = "") {
-  msg = msg || "Expected Firefox";
+  msg = msg || "Only supported in Firefox";
   assert.that(isFirefox, msg, UnsupportedOperationError)();
 };
 
@@ -44,7 +45,7 @@ assert.firefox = function (msg = "") {
 
 
 assert.fennec = function (msg = "") {
-  msg = msg || "Expected Fennec";
+  msg = msg || "Only supported in Fennec";
   assert.that(isFennec, msg, UnsupportedOperationError)();
 };
 
@@ -58,7 +59,7 @@ assert.fennec = function (msg = "") {
 
 
 assert.b2g = function (msg = "") {
-  msg = msg || "Expected B2G"
+  msg = msg || "Only supported in B2G";
   assert.that(isB2G, msg, UnsupportedOperationError)();
 };
 
@@ -72,8 +73,27 @@ assert.b2g = function (msg = "") {
 
 
 
+
+
+
+
+assert.content = function (context, msg = "") {
+  msg = msg || "Only supported in content context";
+  assert.that(c => c.toString() == "content", msg, UnsupportedOperationError)(context);
+}
+
+
+
+
+
+
+
+
+
+
+
 assert.mobile = function (msg = "") {
-  msg = msg || "Expected Fennec or B2G";
+  msg = msg || "Only supported in Fennec or B2G";
   assert.that(() => isFennec() || isB2G(), msg, UnsupportedOperationError)();
 };
 
