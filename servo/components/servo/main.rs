@@ -23,6 +23,8 @@ extern crate android_glue;
 
 extern crate glutin_app as app;
 extern crate env_logger;
+#[macro_use]
+extern crate log;
 
 extern crate servo;
 extern crate time;
@@ -128,11 +130,39 @@ fn setup_logging() {
 }
 
 #[cfg(target_os = "android")]
+
+
+
+
+
 fn args() -> Vec<String> {
-    vec![
-        "servo".to_owned(),
-        "http://en.wikipedia.org/wiki/Rust".to_owned()
-    ]
+    use std::error::Error;
+    use std::fs::File;
+    use std::io::{BufRead, BufReader};
+
+    const PARAMS_FILE: &'static str = "/sdcard/servo/android_params";
+    match File::open(PARAMS_FILE) {
+        Ok(f) => {
+            let mut vec = Vec::new();
+            let file = BufReader::new(&f);
+            for line in file.lines() {
+                let l = line.unwrap().trim().to_owned();
+                
+                match l.is_empty() || l.as_bytes()[0] == b'#' {
+                    true => (),
+                    false => vec.push(l),
+                }
+            }
+            vec
+        },
+        Err(e) => {
+            debug!("Failed to open params file '{}': {}", PARAMS_FILE, Error::description(&e));
+            vec![
+                "servo".to_owned(),
+                "http://en.wikipedia.org/wiki/Rust".to_owned()
+            ]
+        },
+    }
 }
 
 #[cfg(not(target_os = "android"))]
