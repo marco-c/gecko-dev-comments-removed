@@ -3493,16 +3493,8 @@ var SessionStoreInternal = {
     }
 
     
-    let selectedIndex = aTabs.indexOf(tabbrowser.selectedTab);
-    if (selectedIndex > -1) {
-      this.restoreTab(tabbrowser.selectedTab, aTabData[selectedIndex]);
-    }
-
-    
     for (let t = 0; t < aTabs.length; t++) {
-      if (t != selectedIndex) {
-        this.restoreTab(aTabs[t], aTabData[t]);
-      }
+      this.restoreTab(aTabs[t], aTabData[t]);
     }
   },
 
