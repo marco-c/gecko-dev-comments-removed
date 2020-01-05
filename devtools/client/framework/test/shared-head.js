@@ -563,8 +563,16 @@ function stopRecordingTelemetryLogs(Telemetry) {
 
 
 
+
 function emptyClipboard() {
   let clipboard = Cc["@mozilla.org/widget/clipboard;1"]
     .getService(SpecialPowers.Ci.nsIClipboard);
-  clipboard.emptyClipboard(1);
+  clipboard.emptyClipboard(clipboard.kGlobalClipboard);
+}
+
+
+
+
+function isWindows() {
+  return Services.appinfo.OS === "WINNT";
 }

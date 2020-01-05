@@ -9,13 +9,15 @@ add_task(function* () {
   let toolbox = yield openNewTabAndToolbox(URL, "inspector");
   let textboxContextMenu = toolbox.textboxContextMenuPopup;
 
+  emptyClipboard();
+
   
   let inspector = toolbox.getPanel("inspector");
+  let onFocus = once(inspector.searchBox, "focus");
   inspector.searchBox.focus();
+  yield onFocus;
 
   ok(textboxContextMenu, "The textbox context menu is loaded in the toolbox");
-
-  emptyClipboard();
 
   let cmdUndo = textboxContextMenu.querySelector("[command=cmd_undo]");
   let cmdDelete = textboxContextMenu.querySelector("[command=cmd_delete]");
@@ -35,7 +37,10 @@ add_task(function* () {
   is(cmdSelectAll.getAttribute("disabled"), "true", "cmdSelectAll is disabled");
   is(cmdCut.getAttribute("disabled"), "true", "cmdCut is disabled");
   is(cmdCopy.getAttribute("disabled"), "true", "cmdCopy is disabled");
-  is(cmdPaste.getAttribute("disabled"), "true", "cmdPaste is disabled");
+  if (isWindows()) {
+    
+    is(cmdPaste.getAttribute("disabled"), "true", "cmdPaste is disabled");
+  }
 
   yield cleanup(toolbox);
 });
