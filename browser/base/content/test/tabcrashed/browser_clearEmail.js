@@ -21,6 +21,12 @@ add_task(function* setup() {
   env.set("MOZ_CRASHREPORTER_NO_REPORT", "");
   env.set("MOZ_CRASHREPORTER_URL", SERVER_URL);
 
+  
+  
+  yield SpecialPowers.pushPrefEnv({
+    set: [["browser.tabs.crashReporting.requestEmail", true]],
+  });
+
   registerCleanupFunction(function() {
     env.set("MOZ_CRASHREPORTER_NO_REPORT", noReport);
     env.set("MOZ_CRASHREPORTER_URL", serverUrl);

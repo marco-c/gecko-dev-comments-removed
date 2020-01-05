@@ -84,13 +84,7 @@ pref("app.update.checkInstallTime", true);
 
 
 
-
 pref("app.update.timerMinimumDelay", 120);
-
-
-
-
-pref("app.update.timerFirstInterval", 30000);
 
 
 
@@ -109,6 +103,12 @@ pref("app.update.log", false);
 
 
 pref("app.update.backgroundMaxErrors", 10);
+
+
+
+
+
+pref("app.update.cert.requireBuiltIn", false);
 
 
 pref("app.update.enabled", true);
@@ -1438,6 +1438,7 @@ pref("browser.tabs.remote.autostart.2", true);
 
 pref("browser.tabs.crashReporting.sendReport", true);
 pref("browser.tabs.crashReporting.includeURL", false);
+pref("browser.tabs.crashReporting.requestEmail", false);
 pref("browser.tabs.crashReporting.emailMe", false);
 pref("browser.tabs.crashReporting.email", "");
 
