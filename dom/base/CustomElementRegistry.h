@@ -26,6 +26,7 @@ struct CustomElementData;
 struct ElementDefinitionOptions;
 struct LifecycleCallbacks;
 class CallbackFunction;
+class CustomElementReaction;
 class Function;
 class Promise;
 
@@ -103,6 +104,13 @@ struct CustomElementData
   int32_t mAssociatedMicroTask;
   
   State mState;
+  
+  
+  
+  
+  
+  
+  AutoTArray<nsAutoPtr<CustomElementReaction>, 3> mReactionQueue;
 
   
   void RunCallbackQueue();
@@ -215,17 +223,6 @@ public:
 
 private:
   ~CustomElementReactionsStack() {};
-
-  
-  
-  
-  
-  
-  typedef AutoTArray<nsAutoPtr<CustomElementReaction>, 3> ReactionQueue;
-  typedef nsClassHashtable<nsISupportsHashKey, ReactionQueue>
-    ElementReactionQueueMap;
-
-  ElementReactionQueueMap mElementReactionQueueMap;
 
   
   AutoTArray<ElementQueue, 8> mReactionsStack;
