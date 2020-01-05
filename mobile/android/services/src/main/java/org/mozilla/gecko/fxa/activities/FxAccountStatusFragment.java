@@ -229,11 +229,6 @@ public class FxAccountStatusFragment
     super.onResume();
   }
 
-  
-
-
-
-
   @Override
   public boolean onPreferenceClick(Preference preference) {
     if (preference == profilePreference) {

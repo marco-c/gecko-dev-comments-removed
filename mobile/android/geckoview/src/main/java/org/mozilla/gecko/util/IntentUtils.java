@@ -6,14 +6,12 @@
 
 package org.mozilla.gecko.util;
 
-import android.content.ComponentName;
 import android.content.Intent;
 import android.os.Bundle;
 import android.support.annotation.CheckResult;
 import android.support.annotation.NonNull;
 import android.text.TextUtils;
 
-import org.mozilla.gecko.AppConstants;
 import org.mozilla.gecko.mozglue.SafeIntent;
 
 import java.util.HashMap;
@@ -107,25 +105,5 @@ public class IntentUtils {
     public static boolean getIsInAutomationFromEnvironment(final SafeIntent intent) {
         final HashMap<String, String> envVars = IntentUtils.getEnvVarMap(intent);
         return !TextUtils.isEmpty(envVars.get(IntentUtils.ENV_VAR_IN_AUTOMATION));
-    }
-
-    
-
-
-
-
-
-
-    public static boolean checkIfGeckoActivity(Intent intent) {
-        
-        
-        
-        
-        ComponentName component = intent.getComponent();
-        String action = intent.getAction();
-        return (component != null &&
-                AppConstants.ANDROID_PACKAGE_NAME.equals(component.getPackageName()) ||
-                action != null &&
-                action.startsWith(AppConstants.ANDROID_PACKAGE_NAME + ".ACTION_FXA_"));
     }
 }

@@ -4,10 +4,9 @@
 
 package org.mozilla.gecko;
 
+import android.content.ComponentName;
 import android.content.Intent;
 import android.support.v7.app.AppCompatActivity;
-
-import org.mozilla.gecko.util.IntentUtils;
 
 public abstract class GeckoActivity extends AppCompatActivity implements GeckoActivityStatus {
     
@@ -59,14 +58,23 @@ public abstract class GeckoActivity extends AppCompatActivity implements GeckoAc
 
     @Override
     public void startActivity(Intent intent) {
-        mGeckoActivityOpened = IntentUtils.checkIfGeckoActivity(intent);
+        mGeckoActivityOpened = checkIfGeckoActivity(intent);
         super.startActivity(intent);
     }
 
     @Override
     public void startActivityForResult(Intent intent, int request) {
-        mGeckoActivityOpened = IntentUtils.checkIfGeckoActivity(intent);
+        mGeckoActivityOpened = checkIfGeckoActivity(intent);
         super.startActivityForResult(intent, request);
+    }
+
+    private static boolean checkIfGeckoActivity(Intent intent) {
+        
+        
+        
+        ComponentName component = intent.getComponent();
+        return (component != null &&
+                AppConstants.ANDROID_PACKAGE_NAME.equals(component.getPackageName()));
     }
 
     @Override
