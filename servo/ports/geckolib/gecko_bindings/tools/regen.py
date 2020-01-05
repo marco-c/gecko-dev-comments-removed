@@ -80,6 +80,7 @@ COMPILATION_TARGETS = {
             "/Types.h",   
             "/utility",   
             "nsINode.h",  
+            "UniquePtr.h"
         ],
         "blacklist": [
             "IsDestructibleFallbackImpl", "IsDestructibleFallback",
@@ -90,13 +91,17 @@ COMPILATION_TARGETS = {
             "FastAnimationEffectTimingProperties", "ComputedTimingProperties",
             "FastComputedTimingProperties",
             "nsINode",
+            "HasPointerType"
         ],
         "opaque_types": [
             "nsIntMargin", "nsIntPoint", "nsIntRect", "nsCOMArray",
             "nsDependentString", "EntryStore", "gfxFontFeatureValueSet",
             "imgRequestProxy", "imgRequestProxyStatic", "CounterStyleManager",
             "ImageValue", "URLValue", "URLValueData", "nsIPrincipal",
-            "nsDataHashtable", "imgIRequest"
+            "nsDataHashtable", "imgIRequest",
+            "Maybe",  
+                      
+                      
         ],
     },
     
@@ -128,7 +133,7 @@ COMPILATION_TARGETS = {
             "nsStyleCoord::Calc", "nsRestyleHint", "ServoElementSnapshot",
             "nsChangeHint", "SheetParsingMode", "nsMainThreadPtrHandle",
             "nsMainThreadPtrHolder", "nscolor", "nsFont", "FontFamilyList",
-            "FontFamilyType", "nsIAtom",
+            "FontFamilyType", "nsIAtom", "nsStyleContext"
         ],
         "void_types": [
             "nsINode", "nsIDocument", "nsIPrincipal", "nsIURI",

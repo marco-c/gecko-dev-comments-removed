@@ -188,6 +188,12 @@ pub const NS_ERROR_MODULE_BASE_OFFSET: ::std::os::raw::c_uint = 69;
 pub const MOZ_STRING_WITH_OBSOLETE_API: ::std::os::raw::c_uint = 1;
 pub const NSID_LENGTH: ::std::os::raw::c_uint = 39;
 pub const NS_NUMBER_OF_FLAGS_IN_REFCNT: ::std::os::raw::c_uint = 2;
+pub const _STL_PAIR_H: ::std::os::raw::c_uint = 1;
+pub const _GLIBCXX_UTILITY: ::std::os::raw::c_uint = 1;
+pub const __cpp_lib_tuple_element_t: ::std::os::raw::c_uint = 201402;
+pub const __cpp_lib_tuples_by_type: ::std::os::raw::c_uint = 201304;
+pub const __cpp_lib_exchange_function: ::std::os::raw::c_uint = 201304;
+pub const __cpp_lib_integer_sequence: ::std::os::raw::c_uint = 201304;
 pub const NS_EVENT_STATE_HIGHEST_SERVO_BIT: ::std::os::raw::c_uint = 6;
 pub const DOM_USER_DATA: ::std::os::raw::c_uint = 1;
 pub const SMIL_MAPPED_ATTR_ANIMVAL: ::std::os::raw::c_uint = 2;
@@ -1484,6 +1490,53 @@ pub enum nsresult {
     NS_OK_NO_NAME_CLAUSE_HANDLED = 7864354,
 }
 pub type nsrefcnt = MozRefCountType;
+#[repr(C)]
+#[derive(Debug, Copy)]
+pub struct HasPointerTypeHelper;
+impl ::std::clone::Clone for HasPointerTypeHelper {
+    fn clone(&self) -> Self { *self }
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct PointerType<T, D> {
+    pub _phantom0: ::std::marker::PhantomData<T>,
+    pub _phantom1: ::std::marker::PhantomData<D>,
+}
+
+
+
+
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct UniquePtr<T, Deleter> {
+    pub mPtr: *mut T,
+    pub _phantom0: ::std::marker::PhantomData<Deleter>,
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct DefaultDelete<T> {
+    pub _phantom0: ::std::marker::PhantomData<T>,
+}
+#[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct UniqueSelector<T> {
+    pub _phantom0: ::std::marker::PhantomData<T>,
+}
 
 
 
@@ -2682,6 +2735,12 @@ impl ::std::clone::Clone for nsIExpandedPrincipal {
     fn clone(&self) -> Self { *self }
 }
 #[repr(C)]
+#[derive(Debug, Copy, Clone)]
+pub struct _Make_integer_sequence<_Tp, _ISeq> {
+    pub _phantom0: ::std::marker::PhantomData<_Tp>,
+    pub _phantom1: ::std::marker::PhantomData<_ISeq>,
+}
+#[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsIURI {
     pub _base: nsISupports,
@@ -2733,7 +2792,7 @@ impl ::std::clone::Clone for nsIRequest {
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct EventStates {
-    pub mStates: ::std::os::raw::c_ulonglong,
+    pub mStates: ::std::os::raw::c_ulong,
 }
 impl ::std::clone::Clone for EventStates {
     fn clone(&self) -> Self { *self }
@@ -2797,11 +2856,6 @@ pub enum nsNodeSupportsWeakRefTearoff { }
 pub enum nsNodeWeakReference { }
 pub enum nsDOMMutationObserver { }
 pub enum ServoNodeData { }
-#[repr(C)]
-#[derive(Debug, Copy, Clone)]
-pub struct DefaultDelete<> {
-    pub _phantom0: ::std::marker::PhantomData<ServoNodeData>,
-}
 pub enum EventListenerManager { }
 pub enum BoxQuadOptions { }
 pub enum ConvertCoordinateOptions { }
@@ -2846,12 +2900,12 @@ pub enum nsINode_h_unnamed_8 {
     NODE_SHARED_RESTYLE_BIT_2 = 16777216,
     NODE_TYPE_SPECIFIC_BITS_OFFSET = 23,
 }
-/**
- * Class used to detect unexpected mutations. To use the class create an
- * nsMutationGuard on the stack before unexpected mutations could occur.
- * You can then at any time call Mutated to check if any unexpected mutations
- * have occurred.
- */
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsMutationGuard {
@@ -2868,7 +2922,7 @@ fn bindgen_test_layout_nsMutationGuard() {
 extern "C" {
     #[link_name = "_ZN15nsMutationGuard11sGenerationE"]
     pub static mut nsMutationGuard_consts_sGeneration:
-               ::std::os::raw::c_ulonglong;
+               ::std::os::raw::c_ulong;
 }
 pub type Float = f32;
 #[repr(i8)]
@@ -3142,15 +3196,15 @@ fn bindgen_test_layout_nsIntPoint() {
     assert_eq!(::std::mem::size_of::<nsIntPoint>() , 8usize);
     assert_eq!(::std::mem::align_of::<nsIntPoint>() , 4usize);
 }
-/**
- * These *_Simple types are used to map Gecko types to layout-equivalent but
- * simpler Rust types, to aid Rust binding generation.
- *
- * If something in this types or the assertions below needs to change, ask
- * bholley, heycam or emilio before!
- *
- * <div rustbindgen="true" replaces="nsPoint">
- */
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsPoint {
@@ -3165,9 +3219,9 @@ fn bindgen_test_layout_nsPoint() {
     assert_eq!(::std::mem::size_of::<nsPoint>() , 8usize);
     assert_eq!(::std::mem::align_of::<nsPoint>() , 4usize);
 }
-/**
- * <div rustbindgen="true" replaces="nsMargin">
- */
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsMargin {
@@ -3202,9 +3256,9 @@ fn bindgen_test_layout_nsIntRect() {
     assert_eq!(::std::mem::size_of::<nsIntRect>() , 16usize);
     assert_eq!(::std::mem::align_of::<nsIntRect>() , 4usize);
 }
-/**
- * <div rustbindgen="true" replaces="nsRect">
- */
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsRect {
@@ -3259,21 +3313,21 @@ pub type nscolor = u32;
 #[repr(i8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum nsHexColorType { NoAlpha = 0, AllowAlpha = 1, }
-pub enum nsStyledElementNotElementCSSInlineStyle { }
+pub enum nsStyledElement { }
 pub enum MiscContainer { }
 pub enum ServoDeclarationBlock { }
 pub enum Declaration { }
-/**
- * A class used to construct a nsString from a nsStringBuffer (we might
- * want to move this to nsString at some point).
- *
- * WARNING: Note that nsCheapString doesn't take an explicit length -- it
- * assumes the string is maximally large, given the nsStringBuffer's storage
- * size.  This means the given string buffer *must* be sized exactly correctly
- * for the string it contains (including one byte for a null terminator).  If
- * it has any unused storage space, then that will result in bogus characters
- * at the end of our nsCheapString.
- */
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsCheapString {
@@ -3322,22 +3376,22 @@ pub enum nsAttrValue_ValueType {
     eSVGTransformList = 33,
     eSVGViewBox = 34,
 }
-/**
-   * Structure for a mapping from int (enum) values to strings.  When you use
-   * it you generally create an array of them.
-   * Instantiate like this:
-   * EnumTable myTable[] = {
-   *   { "string1", 1 },
-   *   { "string2", 2 },
-   *   { 0 }
-   * }
-   */
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsAttrValue_EnumTable {
-    /** The string the value maps to */
+    
     pub tag: *const ::std::os::raw::c_char,
-    /** The enum value that maps to this string */
+    
     pub value: i16,
 }
 impl ::std::clone::Clone for nsAttrValue_EnumTable {
@@ -3399,24 +3453,24 @@ pub enum nsChangeHint {
     nsChangeHint_UpdateBackgroundPosition = 67108864,
 }
 pub type nsChangeHint_size_t = ::std::os::raw::c_int;
-/**
- * |nsRestyleHint| is a bitfield for the result of
- * |HasStateDependentStyle| and |HasAttributeDependentStyle|.  When no
- * restyling is necessary, use |nsRestyleHint(0)|.
- *
- * Without eRestyle_Force or eRestyle_ForceDescendants, the restyling process
- * can stop processing at a frame when it detects no style changes and it is
- * known that the styles of the subtree beneath it will not change, leaving
- * the old style context on the frame.  eRestyle_Force can be used to skip this
- * optimization on a frame, and to force its new style context to be used.
- *
- * Similarly, eRestyle_ForceDescendants will cause the frame and all of its
- * descendants to be traversed and for the new style contexts that are created
- * to be set on the frames.
- *
- * NOTE: When adding new restyle hints, please also add them to
- * RestyleManager::RestyleHintToString.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum nsRestyleHint {
@@ -3434,10 +3488,10 @@ pub enum nsRestyleHint {
     eRestyle_AllHintsWithAnimations = 368,
 }
 pub type nsRestyleHint_size_t = ::std::os::raw::c_int;
-/**
- * Additional data used in conjunction with an nsRestyleHint to control the
- * restyle process.
- */
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct RestyleHintData {
@@ -3448,11 +3502,11 @@ fn bindgen_test_layout_RestyleHintData() {
     assert_eq!(::std::mem::size_of::<RestyleHintData>() , 8usize);
     assert_eq!(::std::mem::align_of::<RestyleHintData>() , 8usize);
 }
-/**
- * A structure representing a single attribute name and value.
- *
- * This is pretty similar to the private nsAttrAndChildArray::InternalAttr.
- */
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct ServoAttrSnapshot {
@@ -3464,25 +3518,20 @@ fn bindgen_test_layout_ServoAttrSnapshot() {
     assert_eq!(::std::mem::size_of::<ServoAttrSnapshot>() , 16usize);
     assert_eq!(::std::mem::align_of::<ServoAttrSnapshot>() , 8usize);
 }
-/**
- * A bitflags enum class used to determine what data does a ServoElementSnapshot
- * contains.
- */
+
+
+
+
 #[repr(i8)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
-pub enum ServoElementSnapshotFlags {
-    State = 1,
-    Attributes = 2,
-    HTMLElementInHTMLDocument = 4,
-    All = 7,
-}
-/**
- * This class holds all non-tree-structural state of an element that might be
- * used for selector matching eventually.
- *
- * This means the attributes, and the element state, such as :hover, :active,
- * etc...
- */
+pub enum ServoElementSnapshotFlags { State = 1, Attributes = 2, All = 3, }
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct ServoElementSnapshot {
@@ -3492,6 +3541,7 @@ pub struct ServoElementSnapshot {
     pub mExplicitRestyleHint: nsRestyleHint,
     pub mExplicitChangeHint: nsChangeHint,
     pub mIsHTMLElementInHTMLDocument: bool,
+    pub mIsInChromeDocument: bool,
 }
 #[test]
 fn bindgen_test_layout_ServoElementSnapshot() {
@@ -3664,9 +3714,9 @@ pub enum CSSVariableResolver { }
 #[repr(C)]
 pub struct CSSVariableValues {
     pub mVariableIDs: [u64; 5usize],
-    /**
-   * Array of variables, indexed by variable ID.
-   */
+    
+
+
     pub mVariables: nsTArray<CSSVariableValues_Variable>,
 }
 #[repr(C)]
@@ -3703,26 +3753,26 @@ pub enum SheetType {
     Count = 10,
     Unknown = -1,
 }
-/**
- * StaticAutoPtr and StaticRefPtr are like nsAutoPtr and nsRefPtr, except they
- * are suitable for use as global variables.
- *
- * In particular, a global instance of Static{Auto,Ref}Ptr doesn't cause the
- * compiler to emit  a static initializer (in release builds, anyway).
- *
- * In order to accomplish this, Static{Auto,Ref}Ptr must have a trivial
- * constructor and destructor.  As a consequence, it cannot initialize its raw
- * pointer to 0 on construction, and it cannot delete/release its raw pointer
- * upon destruction.
- *
- * Since the compiler guarantees that all global variables are initialized to
- * 0, these trivial constructors are safe.  Since we rely on this, the clang
- * plugin, run as part of our "static analysis" builds, makes it a compile-time
- * error to use Static{Auto,Ref}Ptr as anything except a global variable.
- *
- * Static{Auto,Ref}Ptr have a limited interface as compared to ns{Auto,Ref}Ptr;
- * this is intentional, since their range of acceptable uses is smaller.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct StaticAutoPtr<T> {
@@ -3740,11 +3790,11 @@ pub const eFamily_generic_last: FontFamilyType =
     FontFamilyType::eFamily_fantasy;
 pub const eFamily_generic_count: FontFamilyType =
     FontFamilyType::eFamily_monospace;
-/**
- * type of font family name, either a name (e.g. Helvetica) or a
- * generic (e.g. serif, sans-serif), with the ability to distinguish
- * between unquoted and quoted names for serializaiton
- */
+
+
+
+
+
 #[repr(i32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum FontFamilyType {
@@ -3762,10 +3812,10 @@ pub enum FontFamilyType {
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum QuotedName { eQuotedName = 0, eUnquotedName = 1, }
-/**
- * font family name, a string for the name if not a generic and
- * a font type indicated named family or which generic family
- */
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct FontFamilyName {
@@ -3777,11 +3827,11 @@ fn bindgen_test_layout_FontFamilyName() {
     assert_eq!(::std::mem::size_of::<FontFamilyName>() , 24usize);
     assert_eq!(::std::mem::align_of::<FontFamilyName>() , 8usize);
 }
-/**
- * font family list, array of font families and a default font type.
- * font family names are either named strings or generics. the default
- * font type is used to preserve the variable font fallback behavior
- */
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct FontFamilyList {
@@ -4409,44 +4459,44 @@ pub enum nsCSSPropertyLogicalGroup {
     eCSSPropertyLogicalGroup_Size = 8,
     eCSSPropertyLogicalGroup_COUNT = 9,
 }
-/**
- * Class to safely handle main-thread-only pointers off the main thread.
- *
- * Classes like XPCWrappedJS are main-thread-only, which means that it is
- * forbidden to call methods on instances of these classes off the main thread.
- * For various reasons (see bug 771074), this restriction recently began to
- * apply to AddRef/Release as well.
- *
- * This presents a problem for consumers that wish to hold a callback alive
- * on non-main-thread code. A common example of this is the proxy callback
- * pattern, where non-main-thread code holds a strong-reference to the callback
- * object, and dispatches new Runnables (also with a strong reference) to the
- * main thread in order to execute the callback. This involves several AddRef
- * and Release calls on the other thread, which is (now) verboten.
- *
- * The basic idea of this class is to introduce a layer of indirection.
- * nsMainThreadPtrHolder is a threadsafe reference-counted class that internally
- * maintains one strong reference to the main-thread-only object. It must be
- * instantiated on the main thread (so that the AddRef of the underlying object
- * happens on the main thread), but consumers may subsequently pass references
- * to the holder anywhere they please. These references are meant to be opaque
- * when accessed off-main-thread (assertions enforce this).
- *
- * The semantics of RefPtr<nsMainThreadPtrHolder<T> > would be cumbersome, so
- * we also introduce nsMainThreadPtrHandle<T>, which is conceptually identical
- * to the above (though it includes various convenience methods). The basic
- * pattern is as follows.
- *
- * // On the main thread:
- * nsCOMPtr<nsIFooCallback> callback = ...;
- * nsMainThreadPtrHandle<nsIFooCallback> callbackHandle =
- *   new nsMainThreadPtrHolder<nsIFooCallback>(callback);
- * // Pass callbackHandle to structs/classes that might be accessed on other
- * // threads.
- *
- * All structs and classes that might be accessed on other threads should store
- * an nsMainThreadPtrHandle<T> rather than an nsCOMPtr<T>.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsMainThreadPtrHolder<T> {
@@ -4945,32 +4995,32 @@ fn bindgen_test_layout_CounterStyleManager() {
     assert_eq!(::std::mem::size_of::<CounterStyleManager>() , 64usize);
     assert_eq!(::std::mem::align_of::<CounterStyleManager>() , 8usize);
 }
-/**
- * A class for holding strong references to nsPresArena-allocated
- * objects.
- *
- * Since the arena's lifetime is not related to the refcounts
- * of the objects allocated within it, it is possible to have a strong
- * reference to an arena-allocated object that lives until the
- * destruction of the arena.  An ArenaRefPtr acts like a weak reference
- * in that it will clear its referent if the arena is about to go away.
- *
- * T must be a class that has these two methods:
- *
- *   static mozilla::ArenaObjectID ArenaObjectID();
- *   U* Arena();
- *
- * where U is a class that has these two methods:
- *
- *   void RegisterArenaRefPtr(ArenaRefPtr<T>*);
- *   void DeregisterArenaRefPtr(ArenaRefPtr<T>*);
- *
- * Currently, both nsPresArena and nsIPresShell can be used as U.
- *
- * The ArenaObjectID method must return the mozilla::ArenaObjectID that
- * uniquely identifies T, and the Arena method must return the nsPresArena
- * (or a proxy for it) in which the object was allocated.
- */
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct ArenaRefPtr<T> {
@@ -5121,15 +5171,15 @@ fn bindgen_test_layout_nsStyleCoord_h_unnamed_18() {
     assert_eq!(::std::mem::align_of::<nsStyleCoord_h_unnamed_18>() , 8usize);
 }
 pub type nsStyleUnion = nsStyleCoord_h_unnamed_18;
-/**
- * Class that hold a single size specification used by the style
- * system.  The size specification consists of two parts -- a number
- * and a unit.  The number is an integer, a floating point value, an
- * nscoord, or undefined, and the unit is an nsStyleUnit.  Checking
- * the unit is a must before asking for the value in any particular
- * form.
- */
- /** <div rustbindgen private accessor="unsafe"></div> */
+
+
+
+
+
+
+
+
+ 
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleCoord {
@@ -5182,12 +5232,12 @@ fn bindgen_test_layout_nsStyleCoord() {
     assert_eq!(::std::mem::size_of::<nsStyleCoord>() , 16usize);
     assert_eq!(::std::mem::align_of::<nsStyleCoord>() , 8usize);
 }
-/**
- * Class that represents a set of top/right/bottom/left nsStyleCoords.
- * This is commonly used to hold the widths of the borders, margins,
- * or paddings of a box.
- */
- /** <div rustbindgen private accessor="unsafe"></div> */
+
+
+
+
+
+ 
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleSides {
@@ -5213,12 +5263,12 @@ fn bindgen_test_layout_nsStyleSides() {
     assert_eq!(::std::mem::size_of::<nsStyleSides>() , 40usize);
     assert_eq!(::std::mem::align_of::<nsStyleSides>() , 8usize);
 }
-/**
- * Class that represents a set of top-left/top-right/bottom-left/bottom-right
- * nsStyleCoord pairs.  This is used to hold the dimensions of the
- * corners of a box (for, e.g., border-radius and outline-radius).
- */
- /** <div rustbindgen private accessor="unsafe"></div> */
+
+
+
+
+
+ 
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleCorners {
@@ -5341,22 +5391,33 @@ pub enum nsStyleImageType {
     eStyleImageType_Gradient = 2,
     eStyleImageType_Element = 3,
 }
-/**
- * Represents a paintable image of one of the following types.
- * (1) A real image loaded from an external source.
- * (2) A CSS linear or radial gradient.
- * (3) An element within a document, or an <img>, <video>, or <canvas> element
- *     not in a document.
- * (*) Optionally a crop rect can be set to paint a partial (rectangular)
- * region of an image. (Currently, this feature is only supported with an
- * image of type (1)).
- */
+#[repr(C)]
+pub struct CachedBorderImageData {
+    pub mCachedSVGViewportSize: [u64; 2usize],
+    pub mSubImages: u64,
+}
+#[test]
+fn bindgen_test_layout_CachedBorderImageData() {
+    assert_eq!(::std::mem::size_of::<CachedBorderImageData>() , 24usize);
+    assert_eq!(::std::mem::align_of::<CachedBorderImageData>() , 8usize);
+}
+
+
+
+
+
+
+
+
+
+
 #[repr(C)]
 pub struct nsStyleImage {
-    pub mSubImages: u64,
+    pub mCachedBIData: UniquePtr<CachedBorderImageData,
+                                 DefaultDelete<CachedBorderImageData>>,
     pub mType: nsStyleImageType,
     pub nsStyleImage_nsStyleStruct_h_unnamed_21: nsStyleImage_nsStyleStruct_h_unnamed_21,
-    pub mCropRect: nsAutoPtr<nsStyleSides>,
+    pub mCropRect: UniquePtr<nsStyleSides, DefaultDelete<nsStyleSides>>,
 }
 #[repr(C)]
 #[derive(Debug, Copy)]
@@ -5392,10 +5453,10 @@ fn bindgen_test_layout_nsStyleColor() {
     assert_eq!(::std::mem::size_of::<nsStyleColor>() , 4usize);
     assert_eq!(::std::mem::align_of::<nsStyleColor>() , 4usize);
 }
-/**
- * An array of objects, similar to AutoTArray<T,1> but which is memmovable. It
- * always has length >= 1.
- */
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleAutoArray<T> {
@@ -5653,11 +5714,11 @@ fn bindgen_test_layout_nsStyleOutline() {
     assert_eq!(::std::mem::size_of::<nsStyleOutline>() , 112usize);
     assert_eq!(::std::mem::align_of::<nsStyleOutline>() , 8usize);
 }
-/**
- * An object that allows sharing of arrays that store 'quotes' property
- * values.  This is particularly important for inheritance, where we want
- * to share the same 'quotes' value with a parent style context.
- */
+
+
+
+
+
 #[repr(C)]
 #[derive(Debug)]
 pub struct nsStyleQuoteValues {
@@ -6238,6 +6299,17 @@ extern "C" {
     #[link_name = "_ZN13nsStyleColumn15kMaxColumnCountE"]
     pub static nsStyleColumn_consts_kMaxColumnCount: ::std::os::raw::c_uint;
 }
+#[repr(C)]
+#[derive(Debug)]
+pub struct FragmentOrURL {
+    pub mURL: nsCOMPtr<nsIURI>,
+    pub mIsLocalRef: bool,
+}
+#[test]
+fn bindgen_test_layout_FragmentOrURL() {
+    assert_eq!(::std::mem::size_of::<FragmentOrURL>() , 16usize);
+    assert_eq!(::std::mem::align_of::<FragmentOrURL>() , 8usize);
+}
 #[repr(u32)]
 #[derive(Debug, Copy, Clone, Eq, PartialEq, Hash)]
 pub enum nsStyleSVGPaintType {
@@ -6265,7 +6337,7 @@ pub struct nsStyleSVGPaint {
 #[derive(Debug, Copy)]
 pub struct nsStyleSVGPaint_nsStyleStruct_h_unnamed_27 {
     pub mColor: __BindgenUnionField<nscolor>,
-    pub mPaintServer: __BindgenUnionField<*mut nsIURI>,
+    pub mPaintServer: __BindgenUnionField<*mut FragmentOrURL>,
     pub _bindgen_data_: u64,
 }
 impl nsStyleSVGPaint_nsStyleStruct_h_unnamed_27 { }
@@ -6289,9 +6361,9 @@ fn bindgen_test_layout_nsStyleSVGPaint() {
 pub struct nsStyleSVG {
     pub mFill: nsStyleSVGPaint,
     pub mStroke: nsStyleSVGPaint,
-    pub mMarkerEnd: nsCOMPtr<nsIURI>,
-    pub mMarkerMid: nsCOMPtr<nsIURI>,
-    pub mMarkerStart: nsCOMPtr<nsIURI>,
+    pub mMarkerEnd: FragmentOrURL,
+    pub mMarkerMid: FragmentOrURL,
+    pub mMarkerStart: FragmentOrURL,
     pub mStrokeDasharray: nsTArray<nsStyleCoord>,
     pub mStrokeDashoffset: nsStyleCoord,
     pub mStrokeWidth: nsStyleCoord,
@@ -6322,7 +6394,7 @@ pub enum nsStyleSVG_nsStyleStruct_h_unnamed_28 {
 }
 #[test]
 fn bindgen_test_layout_nsStyleSVG() {
-    assert_eq!(::std::mem::size_of::<nsStyleSVG>() , 120usize);
+    assert_eq!(::std::mem::size_of::<nsStyleSVG>() , 144usize);
     assert_eq!(::std::mem::align_of::<nsStyleSVG>() , 8usize);
 }
 #[repr(C)]
@@ -6360,7 +6432,7 @@ pub struct nsStyleClipPath {
 #[derive(Debug, Copy)]
 pub struct nsStyleClipPath_nsStyleStruct_h_unnamed_29 {
     pub mBasicShape: __BindgenUnionField<*mut nsStyleBasicShape>,
-    pub mURL: __BindgenUnionField<*mut nsIURI>,
+    pub mURL: __BindgenUnionField<*mut FragmentOrURL>,
     pub _bindgen_data_: u64,
 }
 impl nsStyleClipPath_nsStyleStruct_h_unnamed_29 { }
@@ -6389,7 +6461,7 @@ pub struct nsStyleFilter {
 #[repr(C)]
 #[derive(Debug, Copy)]
 pub struct nsStyleFilter_nsStyleStruct_h_unnamed_30 {
-    pub mURL: __BindgenUnionField<*mut nsIURI>,
+    pub mURL: __BindgenUnionField<*mut FragmentOrURL>,
     pub mDropShadow: __BindgenUnionField<*mut nsCSSShadowArray>,
     pub _bindgen_data_: u64,
 }
@@ -6450,4 +6522,21 @@ pub struct nsStyleEffects {
 fn bindgen_test_layout_nsStyleEffects() {
     assert_eq!(::std::mem::size_of::<nsStyleEffects>() , 40usize);
     assert_eq!(::std::mem::align_of::<nsStyleEffects>() , 8usize);
+}
+
+
+
+#[repr(C)]
+#[derive(Debug, Copy)]
+pub struct nsSize {
+    pub width: nscoord,
+    pub height: nscoord,
+}
+impl ::std::clone::Clone for nsSize {
+    fn clone(&self) -> Self { *self }
+}
+#[test]
+fn bindgen_test_layout_nsSize() {
+    assert_eq!(::std::mem::size_of::<nsSize>() , 8usize);
+    assert_eq!(::std::mem::align_of::<nsSize>() , 4usize);
 }

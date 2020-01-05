@@ -46,7 +46,19 @@ impl OpaqueNode {
 }
 
 pub trait TRestyleDamage : BitOr<Output=Self> + Copy {
-    fn compute(old: Option<&Arc<ComputedValues>>, new: &ComputedValues) -> Self;
+    
+    
+    
+    
+    
+    
+    
+    
+    type PreExistingComputedValues;
+
+    fn compute(old: Option<&Self::PreExistingComputedValues>,
+               new: &Arc<ComputedValues>) -> Self;
+
     fn rebuild_and_reflow() -> Self;
 }
 
@@ -159,6 +171,13 @@ pub trait TNode : Sized + Copy + Clone {
     fn unstyle(self) {
         self.mutate_data().unwrap().style = None;
     }
+
+    
+    
+    
+    fn existing_style_for_restyle_damage<'a>(&'a self,
+                                             current_computed_values: Option<&'a Arc<ComputedValues>>)
+        -> Option<&'a <Self::ConcreteRestyleDamage as TRestyleDamage>::PreExistingComputedValues>;
 }
 
 pub trait TDocument : Sized + Copy + Clone {
