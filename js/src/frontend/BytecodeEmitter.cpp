@@ -5886,7 +5886,7 @@ BytecodeEmitter::emitDestructuringOpsObject(ParseNode* pattern, DestructuringFla
 
     MOZ_ASSERT(this->stackDepth > 0);                             
 
-    if (!emit1(JSOP_CHECKOBJCOERCIBLE))                           
+    if (!emitRequireObjectCoercible())                            
         return false;
 
     bool needsRestPropertyExcludedSet = pattern->pn_count > 1 &&
@@ -6919,6 +6919,42 @@ BytecodeEmitter::emitWith(ParseNode* pn)
         return false;
 
     return emitterScope.leave(this);
+}
+
+bool
+BytecodeEmitter::emitRequireObjectCoercible()
+{
+    
+    
+    
+
+#ifdef DEBUG
+    auto depth = this->stackDepth;
+#endif
+    MOZ_ASSERT(depth > 0);                 
+    if (!emit1(JSOP_DUP))                  
+        return false;
+
+    
+    
+    if (!emitAtomOp(cx->names().RequireObjectCoercible,
+                    JSOP_GETINTRINSIC))    
+    {
+        return false;
+    }
+    if (!emit1(JSOP_UNDEFINED))            
+        return false;
+    if (!emit2(JSOP_PICK, 2))              
+        return false;
+    if (!emitCall(JSOP_CALL_IGNORES_RV, 1))
+        return false;
+    checkTypeSet(JSOP_CALL_IGNORES_RV);
+
+    if (!emit1(JSOP_POP))                  
+        return false;
+
+    MOZ_ASSERT(depth == this->stackDepth);
+    return true;
 }
 
 bool
