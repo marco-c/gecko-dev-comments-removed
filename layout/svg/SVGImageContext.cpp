@@ -10,6 +10,7 @@
 
 #include "gfxUtils.h"
 #include "mozilla/Preferences.h"
+#include "nsIFrame.h"
 #include "nsPresContext.h"
 
 namespace mozilla {
