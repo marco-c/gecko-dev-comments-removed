@@ -866,6 +866,8 @@ ObjectGroup::newArrayObject(ExclusiveContext* cx,
     
     
     ShouldUpdateTypes updateTypes = ShouldUpdateTypes::DontUpdate;
+    if (!MaybeAnalyzeBeforeCreatingLargeArray(cx, group, vp, length))
+        return nullptr;
     if (group->maybePreliminaryObjects())
         group->maybePreliminaryObjects()->maybeAnalyze(cx, group);
     if (group->maybeUnboxedLayout()) {
