@@ -100,6 +100,8 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
         final Tab playingTab = mTabReference.get();
         switch (msg) {
             case MEDIA_PLAYING_CHANGE:
+                
+                
                 if (playingTab != tab && tab.isMediaPlaying()) {
                     mTabReference = new WeakReference<>(tab);
                     mController.getTransportControls().sendCustomAction(ACTION_START, null);
@@ -107,7 +109,13 @@ public class MediaControlService extends Service implements Tabs.OnTabsChangedLi
                     mController.getTransportControls().stop();
                 }
                 break;
-
+            case MEDIA_PLAYING_RESUME:
+                
+                
+                if (playingTab == tab && !isMediaPlaying()) {
+                    mController.getTransportControls().play();
+                }
+                break;
             case CLOSED:
                 if (playingTab == null || playingTab == tab) {
                     
