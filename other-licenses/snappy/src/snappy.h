@@ -36,8 +36,8 @@
 
 
 
-#ifndef UTIL_SNAPPY_SNAPPY_H__
-#define UTIL_SNAPPY_SNAPPY_H__
+#ifndef THIRD_PARTY_SNAPPY_SNAPPY_H__
+#define THIRD_PARTY_SNAPPY_SNAPPY_H__
 
 #include <stddef.h>
 #include <string>
@@ -56,6 +56,13 @@ namespace snappy {
   
   size_t Compress(Source* source, Sink* sink);
 
+  
+  
+  
+  
+  
+  
+  
   bool GetUncompressedLength(Source* source, uint32* result);
 
   
@@ -77,6 +84,18 @@ namespace snappy {
   bool Uncompress(const char* compressed, size_t compressed_length,
                   string* uncompressed);
 
+  
+  
+  
+  bool Uncompress(Source* compressed, Sink* uncompressed);
+
+  
+  
+  
+  
+  
+  
+  size_t UncompressAsMuchAsPossible(Source* compressed, Sink* uncompressed);
 
   
   
@@ -119,6 +138,28 @@ namespace snappy {
 
   
   
+  
+  
+  
+  
+  
+  
+  bool RawUncompressToIOVec(const char* compressed, size_t compressed_length,
+                            const struct iovec* iov, size_t iov_cnt);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  bool RawUncompressToIOVec(Source* compressed, const struct iovec* iov,
+                            size_t iov_cnt);
+
+  
+  
   size_t MaxCompressedLength(size_t source_bytes);
 
   
@@ -141,15 +182,22 @@ namespace snappy {
   
   
   
+  bool IsValidCompressed(Source* compressed);
+
   
   
-  static const int kBlockLog = 15;
+  
+  
+  
+  
+  
+  
+  
+  static const int kBlockLog = 16;
   static const size_t kBlockSize = 1 << kBlockLog;
 
   static const int kMaxHashTableBits = 14;
   static const size_t kMaxHashTableSize = 1 << kMaxHashTableBits;
-
 }  
-
 
 #endif  

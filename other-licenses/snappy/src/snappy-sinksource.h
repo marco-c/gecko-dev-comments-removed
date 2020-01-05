@@ -26,11 +26,10 @@
 
 
 
-#ifndef UTIL_SNAPPY_SNAPPY_SINKSOURCE_H_
-#define UTIL_SNAPPY_SNAPPY_SINKSOURCE_H_
+#ifndef THIRD_PARTY_SNAPPY_SNAPPY_SINKSOURCE_H_
+#define THIRD_PARTY_SNAPPY_SNAPPY_SINKSOURCE_H_
 
 #include <stddef.h>
-
 
 namespace snappy {
 
@@ -59,6 +58,48 @@ class Sink {
   
   
   virtual char* GetAppendBuffer(size_t length, char* scratch);
+
+  
+  
+  
+  
+
+  
+  
+  
+  
+  
+  
+  virtual void AppendAndTakeOwnership(
+      char* bytes, size_t n, void (*deleter)(void*, const char*, size_t),
+      void *deleter_arg);
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  virtual char* GetAppendBufferVariable(
+      size_t min_size, size_t desired_size_hint, char* scratch,
+      size_t scratch_size, size_t* allocated_size);
 
  private:
   
@@ -121,6 +162,12 @@ class UncheckedByteArraySink : public Sink {
   virtual ~UncheckedByteArraySink();
   virtual void Append(const char* data, size_t n);
   virtual char* GetAppendBuffer(size_t len, char* scratch);
+  virtual char* GetAppendBufferVariable(
+      size_t min_size, size_t desired_size_hint, char* scratch,
+      size_t scratch_size, size_t* allocated_size);
+  virtual void AppendAndTakeOwnership(
+      char* bytes, size_t n, void (*deleter)(void*, const char*, size_t),
+      void *deleter_arg);
 
   
   
@@ -130,7 +177,6 @@ class UncheckedByteArraySink : public Sink {
   char* dest_;
 };
 
-
-} 
+}  
 
 #endif  
