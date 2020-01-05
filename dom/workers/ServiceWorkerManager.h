@@ -131,25 +131,6 @@ public:
   bool
   IsControlled(nsIDocument* aDocument, ErrorResult& aRv);
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  bool
-  MayHaveActiveServiceWorkerInstance(ContentParent* aContent,
-                                     nsIPrincipal* aPrincipal);
-
   void
   DispatchFetchEvent(const PrincipalOriginAttributes& aOriginAttributes,
                      nsIDocument* aDoc,
@@ -287,8 +268,8 @@ public:
   static already_AddRefed<ServiceWorkerManager>
   GetInstance();
 
-  void
-  LoadRegistration(const ServiceWorkerRegistrationData& aRegistration);
+ void
+ LoadRegistration(const ServiceWorkerRegistrationData& aRegistration);
 
   void
   LoadRegistrations(const nsTArray<ServiceWorkerRegistrationData>& aRegistrations);
