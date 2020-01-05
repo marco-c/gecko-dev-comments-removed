@@ -75,7 +75,6 @@ public:
     : mBlobStorage(aBlobStorage)
     , mFD(aFD)
   {
-    MOZ_ASSERT(!NS_IsMainThread());
     MOZ_ASSERT(aBlobStorage);
     MOZ_ASSERT(aFD);
   }
@@ -111,6 +110,7 @@ public:
     : mBlobStorage(aBlobStorage)
   {
     MOZ_ASSERT(NS_IsMainThread());
+    MOZ_ASSERT(XRE_IsParentProcess());
     MOZ_ASSERT(aBlobStorage);
   }
 
@@ -118,14 +118,11 @@ public:
   Run() override
   {
     MOZ_ASSERT(!NS_IsMainThread());
+    MOZ_ASSERT(XRE_IsParentProcess());
 
     PRFileDesc* tempFD = nullptr;
     nsresult rv = NS_OpenAnonymousTemporaryFile(&tempFD);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      
-      
-      
-      
       return NS_OK;
     }
 
@@ -534,9 +531,20 @@ MutableBlobStorage::ShouldBeTemporaryStorage(uint64_t aSize) const
 nsresult
 MutableBlobStorage::MaybeCreateTemporaryFile()
 {
-  nsresult rv = DispatchToIOThread(new CreateTemporaryFileRunnable(this));
-  if (NS_WARN_IF(NS_FAILED(rv))) {
-    return rv;
+  if (XRE_IsParentProcess()) {
+    nsresult rv = DispatchToIOThread(new CreateTemporaryFileRunnable(this));
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return rv;
+    }
+  } else {
+    RefPtr<MutableBlobStorage> self(this);
+    ContentChild::GetSingleton()->
+      AsyncOpenAnonymousTemporaryFile([self](PRFileDesc* prfile) {
+        if (prfile) {
+          
+          NS_DispatchToMainThread(new FileCreatedRunnable(self, prfile));
+        }
+      });
   }
 
   mStorageState = eWaitingForTemporaryFile;
