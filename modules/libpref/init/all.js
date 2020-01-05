@@ -1854,6 +1854,10 @@ pref("network.standard-url.encode-utf8", true);
 pref("network.standard-url.max-length", 1048576);
 
 
+
+pref("network.standard-url.enable-rust", false);
+
+
 pref("network.ftp.idleConnectionTimeout", 300);
 
 
