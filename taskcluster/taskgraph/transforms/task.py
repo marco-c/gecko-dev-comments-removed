@@ -104,6 +104,8 @@ task_description_schema = Schema({
                 Required('gecko-v2'): basestring,
             }
         ),
+
+        'rank': Any('by-tier', int, 'pushdate')
     },
 
     
@@ -434,11 +436,19 @@ def add_index_routes(config, tasks):
                 routes.append(tpl.format(**subs))
 
         
-        
-        tier = task.get('treeherder', {}).get('tier', 3)
-        task.setdefault('extra', {})['index'] = {
-            'rank': 0 if tier > 1 else int(config.params['pushdate'])
-        }
+        extra_index = task.setdefault('extra', {}).setdefault('index', {})
+        rank = index.get('rank', 'by-tier')
+
+        if rank == 'by-tier':
+            
+            
+            tier = task.get('treeherder', {}).get('tier', 3)
+            extra_index['rank'] = 0 if tier > 1 else int(config.params['pushdate'])
+        elif rank == 'pushdate':
+            extra_index['rank'] = int(config.params['pushdate'])
+        else:
+            extra_index['rank'] = rank
+
         del task['index']
         yield task
 
