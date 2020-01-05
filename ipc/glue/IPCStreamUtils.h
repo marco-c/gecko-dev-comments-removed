@@ -13,7 +13,7 @@
 namespace mozilla {
 
 namespace dom {
-class PContentChild;
+class nsIContentChild;
 class PContentParent;
 }
 
@@ -147,7 +147,7 @@ public:
   
   
   void
-  Serialize(nsIInputStream* aStream, dom::PContentChild* aManager);
+  Serialize(nsIInputStream* aStream, dom::nsIContentChild* aManager);
 
   
   

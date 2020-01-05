@@ -90,6 +90,18 @@ ContentBridgeChild::SendPBrowserConstructor(PBrowserChild* aActor,
                                                       aIsForBrowser);
 }
 
+PFileDescriptorSetChild*
+ContentBridgeChild::SendPFileDescriptorSetConstructor(const FileDescriptor& aFD)
+{
+  return PContentBridgeChild::SendPFileDescriptorSetConstructor(aFD);
+}
+
+PSendStreamChild*
+ContentBridgeChild::SendPSendStreamConstructor(PSendStreamChild* aActor)
+{
+  return PContentBridgeChild::SendPSendStreamConstructor(aActor);
+}
+
 
 
 
@@ -164,6 +176,30 @@ bool
 ContentBridgeChild::DeallocPBlobChild(PBlobChild* aActor)
 {
   return nsIContentChild::DeallocPBlobChild(aActor);
+}
+
+PSendStreamChild*
+ContentBridgeChild::AllocPSendStreamChild()
+{
+  return nsIContentChild::AllocPSendStreamChild();
+}
+
+bool
+ContentBridgeChild::DeallocPSendStreamChild(PSendStreamChild* aActor)
+{
+  return nsIContentChild::DeallocPSendStreamChild(aActor);
+}
+
+PFileDescriptorSetChild*
+ContentBridgeChild::AllocPFileDescriptorSetChild(const FileDescriptor& aFD)
+{
+  return nsIContentChild::AllocPFileDescriptorSetChild(aFD);
+}
+
+bool
+ContentBridgeChild::DeallocPFileDescriptorSetChild(PFileDescriptorSetChild* aActor)
+{
+  return nsIContentChild::DeallocPFileDescriptorSetChild(aActor);
 }
 
 } 
