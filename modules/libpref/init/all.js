@@ -189,13 +189,6 @@ pref("dom.enable_performance_observer", false);
 #endif
 
 
-#ifdef NIGHTLY_BUILD
-pref("dom.requestIdleCallback.enabled", true);
-#else
-pref("dom.requestIdleCallback.enabled", false);
-#endif
-
-
 pref("dom.gamepad.enabled", true);
 pref("dom.gamepad.test.enabled", false);
 #ifdef RELEASE_OR_BETA
@@ -2700,14 +2693,6 @@ pref("layout.float-fragments-inside-column.enabled", true);
 
 
 
-pref("layout.idle_period.required_quiescent_frames", 2);
-
-
-
-pref("layout.idle_period.time_limit", 3);
-
-
-
 
 
 #ifdef RELEASE_OR_BETA
@@ -2754,12 +2739,6 @@ pref("dom.global_stop_script", true);
 
 
 pref("dom.archivereader.enabled", false);
-
-
-pref("dom.idle_period.throttled_length", 10000);
-
-
-pref("idle_queue.long_period", 50);
 
 
 

@@ -205,8 +205,6 @@ protected:
   
   
   
-  
-  
   mozilla::Mutex mLock;
 
   nsCOMPtr<nsIThreadObserver> mObserver;

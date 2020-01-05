@@ -138,7 +138,6 @@ class RefreshDriverTimer {
 public:
   RefreshDriverTimer()
     : mLastFireEpoch(0)
-    , mLastFireSkipped(false)
   {
   }
 
@@ -222,35 +221,6 @@ public:
     aNewTimer->mLastFireTime = mLastFireTime;
   }
 
-  virtual TimeDuration GetTimerRate() = 0;
-
-  bool LastTickSkippedAnyPaints() const
-  {
-    return mLastFireSkipped;
-  }
-
-  Maybe<TimeStamp> GetIdleDeadlineHint()
-  {
-    MOZ_ASSERT(NS_IsMainThread());
-
-    if (LastTickSkippedAnyPaints()) {
-      return Some(TimeStamp());
-    }
-
-    TimeStamp mostRecentRefresh = MostRecentRefresh();
-    TimeDuration refreshRate = GetTimerRate();
-    TimeStamp idleEnd = mostRecentRefresh + refreshRate;
-
-    if (idleEnd +
-          refreshRate * nsLayoutUtils::QuiescentFramesBeforeIdlePeriod() <
-        TimeStamp::Now()) {
-      return Nothing();
-    }
-
-    return Some(idleEnd - TimeDuration::FromMilliseconds(
-                            nsLayoutUtils::IdlePeriodDeadlineLimit()));
-  }
-
 protected:
   virtual void StartTimer() = 0;
   virtual void StopTimer() = 0;
@@ -292,8 +262,6 @@ protected:
       }
 
       TickDriver(driver, aJsNow, aNow);
-
-      mLastFireSkipped = mLastFireSkipped || driver->mSkippedPaints;
     }
   }
 
@@ -306,7 +274,6 @@ protected:
 
     mLastFireEpoch = jsnow;
     mLastFireTime = now;
-    mLastFireSkipped = false;
 
     LOG("[%p] ticking drivers...", this);
     
@@ -326,7 +293,6 @@ protected:
   }
 
   int64_t mLastFireEpoch;
-  bool mLastFireSkipped;
   TimeStamp mLastFireTime;
   TimeStamp mTargetTime;
 
@@ -379,14 +345,9 @@ public:
     return mRateMilliseconds;
   }
 
-  virtual TimeDuration GetTimerRate() override
-  {
-    return mRateDuration;
-  }
-
 protected:
 
-  virtual void StartTimer() override
+  virtual void StartTimer()
   {
     
     mLastFireEpoch = JS_Now();
@@ -398,7 +359,7 @@ protected:
     mTimer->InitWithFuncCallback(TimerTick, this, delay, nsITimer::TYPE_ONE_SHOT);
   }
 
-  virtual void StopTimer() override
+  virtual void StopTimer()
   {
     mTimer->Cancel();
   }
@@ -425,7 +386,6 @@ public:
     RefPtr<mozilla::gfx::VsyncSource> vsyncSource = gfxPlatform::GetPlatform()->GetHardwareVsync();
     MOZ_ALWAYS_TRUE(mVsyncDispatcher = vsyncSource->GetRefreshTimerVsyncDispatcher());
     mVsyncDispatcher->SetParentRefreshTimer(mVsyncObserver);
-    mVsyncRate = vsyncSource->GetGlobalDisplay().GetVsyncRate();
   }
 
   explicit VsyncRefreshDriverTimer(VsyncChild* aVsyncChild)
@@ -436,23 +396,6 @@ public:
     MOZ_ASSERT(mVsyncChild);
     mVsyncObserver = new RefreshDriverVsyncObserver(this);
     mVsyncChild->SetVsyncObserver(mVsyncObserver);
-    mVsyncRate = mVsyncChild->GetVsyncRate();
-  }
-
-  virtual TimeDuration GetTimerRate() override
-  {
-    if (mVsyncRate != TimeDuration::Forever()) {
-      return mVsyncRate;
-    }
-
-    if (mVsyncChild) {
-      mVsyncRate = mVsyncChild->GetVsyncRate();
-    }
-
-    
-    return mVsyncRate != TimeDuration::Forever()
-             ? mVsyncRate
-             : TimeDuration::FromMilliseconds(1000.0 / 60.0);
   }
 
 private:
@@ -515,6 +458,7 @@ private:
         mLastChildTick = TimeStamp::Now();
       }
     }
+
   private:
     virtual ~RefreshDriverVsyncObserver() {}
 
@@ -669,7 +613,6 @@ private:
   
   
   RefPtr<VsyncChild> mVsyncChild;
-  TimeDuration mVsyncRate;
 }; 
 
 
@@ -734,7 +677,7 @@ public:
   {
   }
 
-  virtual void AddRefreshDriver(nsRefreshDriver* aDriver) override
+  virtual void AddRefreshDriver(nsRefreshDriver* aDriver)
   {
     RefreshDriverTimer::AddRefreshDriver(aDriver);
 
@@ -752,18 +695,13 @@ public:
     StartTimer();
   }
 
-  virtual TimeDuration GetTimerRate() override
-  {
-    return TimeDuration::FromMilliseconds(mNextTickDuration);
-  }
-
 protected:
   uint32_t GetRefreshDriverCount()
   {
     return mContentRefreshDrivers.Length() + mRootRefreshDrivers.Length();
   }
 
-  virtual void StartTimer() override
+  virtual void StartTimer()
   {
     mLastFireEpoch = JS_Now();
     mLastFireTime = TimeStamp::Now();
@@ -774,12 +712,12 @@ protected:
     mTimer->InitWithFuncCallback(TimerTickOne, this, delay, nsITimer::TYPE_ONE_SHOT);
   }
 
-  virtual void StopTimer() override
+  virtual void StopTimer()
   {
     mTimer->Cancel();
   }
 
-  virtual void ScheduleNextTick(TimeStamp aNowTime) override
+  virtual void ScheduleNextTick(TimeStamp aNowTime)
   {
     if (mDisableAfterMilliseconds > 0.0 &&
         mNextTickDuration > mDisableAfterMilliseconds)
@@ -814,7 +752,6 @@ protected:
 
     mLastFireEpoch = jsnow;
     mLastFireTime = now;
-    mLastFireSkipped = false;
 
     nsTArray<RefPtr<nsRefreshDriver> > drivers(mContentRefreshDrivers);
     drivers.AppendElements(mRootRefreshDrivers);
@@ -823,7 +760,6 @@ protected:
         !drivers[mNextDriverIndex]->IsTestControllingRefreshesEnabled())
     {
       TickDriver(drivers[mNextDriverIndex], jsnow, now);
-      mLastFireSkipped = mLastFireSkipped || drivers[mNextDriverIndex]->SkippedPaints();
     }
 
     mNextDriverIndex++;
@@ -2290,24 +2226,6 @@ nsRefreshDriver::CancelPendingEvents(nsIDocument* aDocument)
       mPendingEvents.RemoveElementAt(i);
     }
   }
-}
-
- Maybe<TimeStamp>
-nsRefreshDriver::GetIdleDeadlineHint()
-{
-  MOZ_ASSERT(NS_IsMainThread());
-
-  if (!sRegularRateTimer) {
-    return Nothing();
-  }
-
-  
-  
-  
-  
-  
-  
-  return sRegularRateTimer->GetIdleDeadlineHint();
 }
 
 void
