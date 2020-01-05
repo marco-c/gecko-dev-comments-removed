@@ -48,6 +48,13 @@ function getConsole() {
 
 XPCOMUtils.defineLazyGetter(this, "console", getConsole);
 
+let nextId = 0;
+const {uniqueProcessID} = Services.appinfo;
+
+function getUniqueId() {
+  return `${nextId++}-${uniqueProcessID}`;
+}
+
 
 
 
@@ -1176,6 +1183,7 @@ this.ExtensionUtils = {
   getConsole,
   getInnerWindowID,
   getMessageManager,
+  getUniqueId,
   ignoreEvent,
   injectAPI,
   instanceOf,
