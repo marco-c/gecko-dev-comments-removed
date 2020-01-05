@@ -49,6 +49,8 @@ class nsListControlFrame final : public nsHTMLScrollFrame,
                                  public nsISelectControlFrame
 {
 public:
+  typedef mozilla::dom::HTMLOptionElement HTMLOptionElement;
+
   friend nsContainerFrame* NS_NewListControlFrame(nsIPresShell* aPresShell,
                                                   nsStyleContext* aContext);
 
@@ -118,7 +120,7 @@ public:
     
   virtual void SetComboboxFrame(nsIFrame* aComboboxFrame) override;
   virtual int32_t GetSelectedIndex() override;
-  virtual mozilla::dom::HTMLOptionElement* GetCurrentOption() override;
+  virtual HTMLOptionElement* GetCurrentOption() override;
 
   
 
@@ -180,7 +182,7 @@ public:
   
 
 
-  mozilla::dom::HTMLOptionElement* GetOption(uint32_t aIndex) const;
+  HTMLOptionElement* GetOption(uint32_t aIndex) const;
 
   static void ComboboxFocusSet();
 
@@ -261,6 +263,13 @@ protected:
 
 
 
+  HTMLOptionElement* GetNonDisabledOptionFrom(int32_t aFromIndex,
+                                              int32_t* aFoundIndex = nullptr);
+
+  
+
+
+
 
   bool       UpdateSelection();
 
@@ -282,7 +291,7 @@ protected:
   
 
 
-  void ScrollToFrame(mozilla::dom::HTMLOptionElement& aOptElement);
+  void ScrollToFrame(HTMLOptionElement& aOptElement);
   
 
 
