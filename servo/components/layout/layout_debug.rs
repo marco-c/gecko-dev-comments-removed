@@ -92,8 +92,8 @@ impl Drop for Scope {
 
 
 
-pub fn generate_unique_debug_id() -> uint {
-    unsafe { DEBUG_ID_COUNTER.fetch_add(1, SeqCst) }
+pub fn generate_unique_debug_id() -> u16 {
+    unsafe { DEBUG_ID_COUNTER.fetch_add(1, SeqCst) as u16 }
 }
 
 
