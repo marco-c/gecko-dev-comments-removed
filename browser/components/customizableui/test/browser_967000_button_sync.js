@@ -120,9 +120,6 @@ function* asyncCleanup() {
 add_task(() => openPrefsFromMenuPanel("PanelUI-remotetabs-setupsync", "synced-tabs"));
 add_task(asyncCleanup);
 
-add_task(() => openPrefsFromMenuPanel("PanelUI-remotetabs-setupsync", "uitour"));
-add_task(asyncCleanup);
-
 
 add_task(function* () {
   

@@ -345,13 +345,6 @@ var gFxAccounts = {
   },
 
   openAccountsPage: function (action, urlParams={}) {
-    
-    
-    
-    if (UITour.tourBrowsersByWindow.get(window) &&
-        UITour.tourBrowsersByWindow.get(window).has(gBrowser.selectedBrowser)) {
-      urlParams.entrypoint = "uitour";
-    }
     let params = new URLSearchParams();
     if (action) {
       params.set("action", action);
