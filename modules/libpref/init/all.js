@@ -4508,7 +4508,7 @@ pref("network.tcp.keepalive.retry_interval", 1);
 #endif
 
 
-#ifdef XP_UNIX && !defined(XP_MACOSX)
+#if defined(XP_UNIX) && !defined(XP_MACOSX)
 pref("network.tcp.keepalive.probe_count", 4);
 #endif
 
