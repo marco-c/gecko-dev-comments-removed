@@ -185,6 +185,21 @@ pub trait DomTraversal<E: TElement> : Sync {
                 
                 
                 
+                if el.is_native_anonymous() {
+                    if let Some(parent) = el.parent_element() {
+                        let parent_data = parent.borrow_data().unwrap();
+                        if let Some(r) = parent_data.get_restyle() {
+                            if (r.damage | r.damage_handled()).contains(RestyleDamage::reconstruct()) {
+                                debug!("Element {:?} is in doomed NAC subtree - culling traversal", el);
+                                return false;
+                            }
+                        }
+                    }
+                }
+
+                
+                
+                
                 if animation_only {
                     if el.has_animation_only_dirty_descendants() {
                         return true;

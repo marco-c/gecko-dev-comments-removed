@@ -388,6 +388,10 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
 
     
     
+    fn is_native_anonymous(&self) -> bool { false }
+
+    
+    
     fn store_children_to_process(&self, n: isize);
 
     
