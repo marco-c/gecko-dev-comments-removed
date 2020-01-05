@@ -1148,7 +1148,7 @@ public abstract class GeckoApp
             enableStrictMode();
         }
 
-        if (!HardwareUtils.isSupportedSystem() || !GeckoLoader.neonCompatible()) {
+        if (!HardwareUtils.isSupportedSystem()) {
             
             mIsAbortingAppLaunch = true;
             super.onCreate(savedInstanceState);
