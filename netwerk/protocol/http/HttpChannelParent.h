@@ -175,6 +175,7 @@ protected:
   virtual mozilla::ipc::IPCResult RecvDivertComplete() override;
   virtual mozilla::ipc::IPCResult RecvRemoveCorsPreflightCacheEntry(const URIParams& uri,
                                                                     const mozilla::ipc::PrincipalInfo& requestingPrincipal) override;
+  virtual mozilla::ipc::IPCResult RecvApplyConversion(const bool& applyConversion)  override;
   virtual void ActorDestroy(ActorDestroyReason why) override;
 
   
@@ -259,6 +260,26 @@ private:
   bool mSuspendAfterSynthesizeResponse;
   
   bool mWillSynthesizeResponse;
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  bool mWaitingForApplyConversionResponse;
 
   dom::TabId mNestedFrameId;
 

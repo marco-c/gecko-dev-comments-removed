@@ -178,6 +178,8 @@ public:
     void SetWarningReporter(HttpChannelSecurityWarningReporter* aReporter)
       { mWarningReporter = aReporter; }
 
+    void ApplyContentConversions();
+
 public: 
 
     void InternalSetUploadStream(nsIInputStream *uploadStream)
