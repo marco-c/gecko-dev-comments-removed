@@ -5,14 +5,7 @@ load(libdir + "asserts.js");
 Object.prototype.localeMatcher = "invalid matcher option";
 
 
-
-
 if (this.hasOwnProperty("Intl")) {
-    
-    Intl.Collator.prototype.compare("a", "b");
-    Intl.NumberFormat.prototype.format(10);
-    Intl.DateTimeFormat.prototype.format(new Date);
-
     
     
     assertThrowsInstanceOf(() => new Intl.Collator(), RangeError);
