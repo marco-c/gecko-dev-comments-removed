@@ -473,11 +473,6 @@ const load = iced(function load(loader, module) {
     
     
     sandbox = new loader.sharedGlobalSandbox.Object();
-    
-    getOwnIdentifiers(globals).forEach(function(name) {
-      descriptors[name] = getOwnPropertyDescriptor(globals, name)
-      descriptors[name].configurable = true;
-    });
     descriptors.lazyRequire = {
       configurable: true,
       value: lazyRequire.bind(sandbox),
@@ -486,6 +481,20 @@ const load = iced(function load(loader, module) {
       configurable: true,
       value: lazyRequireModule.bind(sandbox),
     };
+
+    if ("console" in globals) {
+      descriptors.console = {
+        configurable: true,
+        get() {
+          return globals.console;
+        },
+      };
+    }
+    let define = Object.getOwnPropertyDescriptor(globals, "define");
+    if (define && define.value)
+      descriptors.define = define;
+    if ("DOMParser" in globals)
+      descriptors.DOMParser = Object.getOwnPropertyDescriptor(globals, "DOMParser");
     Object.defineProperties(sandbox, descriptors);
   }
   else {
@@ -1137,8 +1146,17 @@ function Loader(options) {
       addonID: options.id,
       URI: "Addon-SDK"
     },
-    prototype: options.sandboxPrototype || {}
+    prototype: options.sandboxPrototype || globals,
   });
+
+  if (options.sandboxPrototype) {
+    
+    
+    
+    for (let name of getOwnIdentifiers(globals))
+      Object.defineProperty(sharedGlobalSandbox, name,
+                            getOwnPropertyDescriptor(globals, name));
+  }
 
   
   

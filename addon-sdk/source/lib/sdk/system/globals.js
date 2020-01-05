@@ -14,6 +14,8 @@ var { stdout } = require('../system');
 var ScriptError = CC('@mozilla.org/scripterror;1', 'nsIScriptError');
 var consoleService = Cc['@mozilla.org/consoleservice;1'].getService(Ci.nsIConsoleService);
 
+exports = module.exports = {};
+
 
 
 
