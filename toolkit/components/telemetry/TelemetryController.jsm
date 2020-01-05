@@ -34,7 +34,6 @@ const PREF_LOG_LEVEL = PREF_BRANCH_LOG + "level";
 const PREF_LOG_DUMP = PREF_BRANCH_LOG + "dump";
 const PREF_CACHED_CLIENTID = PREF_BRANCH + "cachedClientID";
 const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
-const PREF_SESSIONS_BRANCH = "datareporting.sessions.";
 const PREF_UNIFIED = PREF_BRANCH + "unified";
 
 
@@ -69,8 +68,6 @@ XPCOMUtils.defineLazyModuleGetter(this, "ThirdPartyCookieProbe",
                                   "resource://gre/modules/ThirdPartyCookieProbe.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryEnvironment",
                                   "resource://gre/modules/TelemetryEnvironment.jsm");
-XPCOMUtils.defineLazyModuleGetter(this, "SessionRecorder",
-                                  "resource://gre/modules/SessionRecorder.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "UpdateUtils",
                                   "resource://gre/modules/UpdateUtils.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "TelemetryArchive",
@@ -304,14 +301,6 @@ this.TelemetryController = Object.freeze({
 
 
 
-  getSessionRecorder() {
-    return Impl._sessionRecorder;
-  },
-
-  
-
-
-
 
   promiseInitialized() {
     return Impl.promiseInitialized();
@@ -333,8 +322,6 @@ var Impl = {
   
   _delayedInitTaskDeferred: null,
 
-  
-  _sessionRecorder: null,
   
   
   
@@ -690,12 +677,6 @@ var Impl = {
     if (!this.enableTelemetryRecording()) {
       this._log.config("setupChromeProcess - Telemetry recording is disabled, skipping Chrome process setup.");
       return Promise.resolve();
-    }
-
-    
-    if (!this._sessionRecorder) {
-      this._sessionRecorder = new SessionRecorder(PREF_SESSIONS_BRANCH);
-      this._sessionRecorder.onStartup();
     }
 
     this._attachObservers();

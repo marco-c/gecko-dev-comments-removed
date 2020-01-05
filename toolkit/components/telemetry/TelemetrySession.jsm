@@ -605,6 +605,8 @@ this.TelemetrySession = Object.freeze({
     Impl._subsessionCounter = 0;
     Impl._profileSubsessionCounter = 0;
     Impl._subsessionStartActiveTicks = 0;
+    Impl._sessionActiveTicks = 0;
+    Impl._isUserActive = true;
     Impl._subsessionStartTimeMonotonic = 0;
     Impl._lastEnvironmentChangeDate = Policy.monotonicNow();
     this.testUninstall();
@@ -661,6 +663,10 @@ var Impl = {
   _slowSQLStartup: {},
   _hasWindowRestoredObserver: false,
   _hasXulWindowVisibleObserver: false,
+  _hasActiveTicksObservers: false,
+  
+  
+  _isUserActive: true,
   _startupIO: {},
   
   
@@ -702,6 +708,8 @@ var Impl = {
   _subsessionStartTimeMonotonic: 0,
   
   _subsessionStartActiveTicks: 0,
+  
+  _sessionActiveTicks: 0,
   
   _delayedInitTask: null,
   
@@ -805,20 +813,16 @@ var Impl = {
 
     ret.savedPings = TelemetryStorage.pendingPingCount;
 
-    ret.activeTicks = -1;
-    let sr = TelemetryController.getSessionRecorder();
-    if (sr) {
-      let activeTicks = sr.activeTicks;
-      if (isSubsession) {
-        activeTicks = sr.activeTicks - this._subsessionStartActiveTicks;
-      }
-
-      if (clearSubsession) {
-        this._subsessionStartActiveTicks = activeTicks;
-      }
-
-      ret.activeTicks = activeTicks;
+    let activeTicks = this._sessionActiveTicks;
+    if (isSubsession) {
+      activeTicks = this._sessionActiveTicks - this._subsessionStartActiveTicks;
     }
+
+    if (clearSubsession) {
+      this._subsessionStartActiveTicks = activeTicks;
+    }
+
+    ret.activeTicks = activeTicks;
 
     ret.pingsOverdue = TelemetrySend.overduePingsCount;
 
@@ -1417,6 +1421,25 @@ var Impl = {
     return TelemetryController.submitExternalPing(getPingType(payload), payload, options);
   },
 
+  
+
+
+
+  attachEarlyObservers() {
+    Services.obs.addObserver(this, "sessionstore-windows-restored");
+    if (AppConstants.platform === "android") {
+      Services.obs.addObserver(this, "application-background");
+    }
+    Services.obs.addObserver(this, "xul-window-visible");
+    this._hasWindowRestoredObserver = true;
+    this._hasXulWindowVisibleObserver = true;
+
+    
+    Services.obs.addObserver(this, "user-interaction-active");
+    Services.obs.addObserver(this, "user-interaction-inactive");
+    this._hasActiveTicksObservers = true;
+  },
+
   attachObservers: function attachObservers() {
     if (!this._initialized)
       return;
@@ -1482,13 +1505,7 @@ var Impl = {
       Preferences.set(PREF_PREVIOUS_BUILDID, thisBuildID);
     }
 
-    Services.obs.addObserver(this, "sessionstore-windows-restored");
-    if (AppConstants.platform === "android") {
-      Services.obs.addObserver(this, "application-background");
-    }
-    Services.obs.addObserver(this, "xul-window-visible");
-    this._hasWindowRestoredObserver = true;
-    this._hasXulWindowVisibleObserver = true;
+    this.attachEarlyObservers();
 
     ppml.addMessageListener(MESSAGE_TELEMETRY_PAYLOAD, this);
     ppml.addMessageListener(MESSAGE_TELEMETRY_THREAD_HANGS, this);
@@ -1804,7 +1821,6 @@ var Impl = {
     return Promise.all(p);
   },
 
-
   testSavePendingPing() {
     let payload = this.getSessionPayload(REASON_SAVED_SESSION, false);
     let options = {
@@ -1830,6 +1846,11 @@ var Impl = {
     }
     if (AppConstants.platform === "android") {
       Services.obs.removeObserver(this, "application-background");
+    }
+    if (this._hasActiveTicksObservers) {
+      Services.obs.removeObserver(this, "user-interaction-active");
+      Services.obs.removeObserver(this, "user-interaction-inactive");
+      this._hasActiveTicksObservers = false;
     }
     GCTelemetry.shutdown();
   },
@@ -1911,6 +1932,20 @@ var Impl = {
   
 
 
+  _onActiveTick(aUserActive) {
+    const needsUpdate = aUserActive && this._isUserActive;
+    this._isUserActive = aUserActive;
+
+    
+    
+    if (needsUpdate) {
+      this._sessionActiveTicks++;
+    }
+  },
+
+  
+
+
   observe(aSubject, aTopic, aData) {
     
     if (aTopic != TOPIC_CYCLE_COLLECTOR_BEGIN) {
@@ -1987,6 +2022,12 @@ var Impl = {
         overwrite: true,
       };
       TelemetryController.addPendingPing(getPingType(payload), payload, options);
+      break;
+    case "user-interaction-active":
+      this._onActiveTick(true);
+      break;
+    case "user-interaction-inactive":
+      this._onActiveTick(false);
       break;
     }
     return undefined;
