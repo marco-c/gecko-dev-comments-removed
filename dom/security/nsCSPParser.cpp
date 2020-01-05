@@ -42,8 +42,6 @@ static const char16_t UNDERLINE    = '_';
 static const char16_t TILDE        = '~';
 static const char16_t WILDCARD     = '*';
 static const char16_t SINGLEQUOTE  = '\'';
-static const char16_t OPEN_CURL    = '{';
-static const char16_t CLOSE_CURL   = '}';
 static const char16_t NUMBER_SIGN  = '#';
 static const char16_t QUESTIONMARK = '?';
 static const char16_t PERCENT_SIGN = '%';
@@ -527,26 +525,6 @@ nsCSPParser::host()
 }
 
 
-nsCSPHostSrc*
-nsCSPParser::appHost()
-{
-  CSPPARSERLOG(("nsCSPParser::appHost, mCurToken: %s, mCurValue: %s",
-               NS_ConvertUTF16toUTF8(mCurToken).get(),
-               NS_ConvertUTF16toUTF8(mCurValue).get()));
-
-  while (hostChar()) {  }
-
-  
-  if (!accept(CLOSE_CURL)) {
-    const char16_t* params[] = { mCurToken.get() };
-    logWarningErrorToConsole(nsIScriptError::warningFlag, "couldntParseInvalidSource",
-                             params, ArrayLength(params));
-    return nullptr;
-  }
-  return new nsCSPHostSrc(mCurValue);
-}
-
-
 nsCSPBaseSrc*
 nsCSPParser::keywordSource()
 {
@@ -614,13 +592,6 @@ nsCSPParser::hostSource()
   CSPPARSERLOG(("nsCSPParser::hostSource, mCurToken: %s, mCurValue: %s",
                NS_ConvertUTF16toUTF8(mCurToken).get(),
                NS_ConvertUTF16toUTF8(mCurValue).get()));
-
-  
-  if (accept(OPEN_CURL)) {
-    
-    
-    return appHost();
-  }
 
   nsCSPHostSrc* cspHost = host();
   if (!cspHost) {
