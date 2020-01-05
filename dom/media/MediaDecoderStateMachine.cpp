@@ -963,7 +963,12 @@ private:
     }
 
     
-    mMaster->UpdatePlaybackPositionInternal(newCurrentTime);
+    if (!mSeekJob.mTarget.IsVideoOnly()) {
+      
+      
+      
+      mMaster->UpdatePlaybackPositionInternal(newCurrentTime);
+    }
 
     
     SLOG("Seek completed, mCurrentPosition=%lld", mMaster->mCurrentPosition.Ref());
