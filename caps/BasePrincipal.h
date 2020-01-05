@@ -48,12 +48,16 @@ public:
   
   
   void CreateSuffix(nsACString& aStr) const;
+
+  
+  void CreateAnonymizedSuffix(nsACString& aStr) const;
+
   MOZ_MUST_USE bool PopulateFromSuffix(const nsACString& aStr);
 
   
   
   MOZ_MUST_USE bool PopulateFromOrigin(const nsACString& aOrigin,
-                          nsACString& aOriginNoSuffix);
+                                       nsACString& aOriginNoSuffix);
 
   
   
