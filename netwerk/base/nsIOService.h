@@ -176,8 +176,6 @@ private:
 
     bool                                 mNetworkNotifyChanged;
 
-    static bool                          sTelemetryEnabled;
-
     static bool                          sDataURIInheritSecurityContext;
 
     
