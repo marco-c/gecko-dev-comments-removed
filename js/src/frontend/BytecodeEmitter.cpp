@@ -4047,6 +4047,29 @@ BytecodeEmitter::emitPropIncDec(ParseNode* pn)
 }
 
 bool
+BytecodeEmitter::emitGetNameAtLocationForCompoundAssignment(JSAtom* name, const NameLocation& loc)
+{
+    if (loc.kind() == NameLocation::Kind::Dynamic) {
+        
+        
+        
+        
+        
+        
+        
+        if (!emit1(JSOP_DUP))                              
+            return false;
+        if (!emitAtomOp(name, JSOP_GETBOUNDNAME))          
+            return false;
+    } else {
+        if (!emitGetNameAtLocation(name, loc))             
+            return false;
+    }
+
+    return true;
+}
+
+bool
 BytecodeEmitter::emitNameIncDec(ParseNode* pn)
 {
     MOZ_ASSERT(pn->pn_kid->isKind(PNK_NAME));
@@ -4058,7 +4081,7 @@ BytecodeEmitter::emitNameIncDec(ParseNode* pn)
                                      bool emittedBindOp)
     {
         JSAtom* name = pn->pn_kid->name();
-        if (!bce->emitGetNameAtLocation(name, loc, false)) 
+        if (!bce->emitGetNameAtLocationForCompoundAssignment(name, loc)) 
             return false;
         if (!bce->emit1(JSOP_POS))                         
             return false;
@@ -5865,19 +5888,8 @@ BytecodeEmitter::emitAssignment(ParseNode* lhs, JSOp op, ParseNode* rhs)
             
             
             if (op != JSOP_NOP) {
-                if (lhsLoc.kind() == NameLocation::Kind::Dynamic) {
-                    
-                    
-                    
-                    
-                    if (!bce->emit1(JSOP_DUP))
-                        return false;
-                    if (!bce->emitAtomOp(lhs, JSOP_GETBOUNDNAME))
-                        return false;
-                } else {
-                    if (!bce->emitGetNameAtLocation(lhs->name(), lhsLoc))
-                        return false;
-                }
+                if (!bce->emitGetNameAtLocationForCompoundAssignment(lhs->name(), lhsLoc))
+                    return false;
             }
 
             
