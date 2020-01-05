@@ -170,8 +170,7 @@ RenderFrameParent::BuildLayer(nsDisplayListBuilder* aBuilder,
     return nullptr;
   }
 
-  uint64_t id = GetLayerTreeId();
-  if (!id) {
+  if (!mLayersId) {
     return nullptr;
   }
 
@@ -185,7 +184,7 @@ RenderFrameParent::BuildLayer(nsDisplayListBuilder* aBuilder,
     
     return nullptr;
   }
-  static_cast<RefLayer*>(layer.get())->SetReferentId(id);
+  static_cast<RefLayer*>(layer.get())->SetReferentId(mLayersId);
   nsIntPoint offset = GetContentRectLayerOffset(aFrame, aBuilder);
   
   
@@ -249,12 +248,6 @@ RenderFrameParent::TriggerRepaint()
   }
 
   docFrame->InvalidateLayer(nsDisplayItem::TYPE_REMOTE);
-}
-
-uint64_t
-RenderFrameParent::GetLayerTreeId() const
-{
-  return mLayersId;
 }
 
 void
