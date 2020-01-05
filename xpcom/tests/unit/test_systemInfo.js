@@ -3,7 +3,7 @@
 
 
 function run_test() {
-  const PROPERTIES = ["name", "host", "arch", "version", "pagesize",
+  const PROPERTIES = ["name", "arch", "version", "pagesize",
                       "pageshift", "memmapalign", "cpucount", "memsize"];
   let sysInfo = Components.classes["@mozilla.org/system-info;1"].
                 getService(Components.interfaces.nsIPropertyBag2);
