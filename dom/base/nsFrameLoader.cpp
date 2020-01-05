@@ -2089,7 +2089,10 @@ nsFrameLoader::MaybeCreateDocShell()
     PrincipalOriginAttributes poa = BasePrincipal::Cast(doc->NodePrincipal())->OriginAttributesRef();
 
     
-    MOZ_ASSERT_IF(mIsTopLevelContent, attrs.mFirstPartyDomain.IsEmpty());
+    if (mIsTopLevelContent) {
+      MOZ_ASSERT(attrs.mFirstPartyDomain.IsEmpty(),
+                 "top-level docshell shouldn't have firstPartyDomain attribute.");
+    }
 
     
     
