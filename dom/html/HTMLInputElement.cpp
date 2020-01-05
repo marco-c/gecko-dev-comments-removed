@@ -1163,7 +1163,7 @@ static nsresult FireEventForAccessibility(nsIDOMHTMLInputElement* aTarget,
 
 
 HTMLInputElement::HTMLInputElement(already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo,
-                                   FromParser aFromParser)
+                                   FromParser aFromParser, FromClone aFromClone)
   : nsGenericHTMLFormElementWithState(aNodeInfo)
   , mType(kInputDefaultType->value)
   , mAutocompleteAttrState(nsContentUtils::eAutocompleteAttrState_Unknown)
@@ -1174,7 +1174,8 @@ HTMLInputElement::HTMLInputElement(already_AddRefed<mozilla::dom::NodeInfo>& aNo
   , mChecked(false)
   , mHandlingSelectEvent(false)
   , mShouldInitChecked(false)
-  , mParserCreating(aFromParser != NOT_FROM_PARSER)
+  , mDoneCreating(aFromParser == NOT_FROM_PARSER &&
+                  aFromClone == FromClone::no)
   , mInInternalActivate(false)
   , mCheckedIsToggled(false)
   , mIndeterminate(false)
@@ -1309,7 +1310,8 @@ HTMLInputElement::Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult) co
   *aResult = nullptr;
 
   already_AddRefed<mozilla::dom::NodeInfo> ni = RefPtr<mozilla::dom::NodeInfo>(aNodeInfo).forget();
-  RefPtr<HTMLInputElement> it = new HTMLInputElement(ni, NOT_FROM_PARSER);
+  RefPtr<HTMLInputElement> it = new HTMLInputElement(ni, NOT_FROM_PARSER,
+                                                     FromClone::yes);
 
   nsresult rv = const_cast<HTMLInputElement*>(this)->CopyInnerTo(it);
   NS_ENSURE_SUCCESS(rv, rv);
@@ -1351,6 +1353,8 @@ HTMLInputElement::Clone(mozilla::dom::NodeInfo* aNodeInfo, nsINode** aResult) co
       break;
   }
 
+  it->DoneCreatingElement();
+
   it->mLastValueChangeWasInteractive = mLastValueChangeWasInteractive;
   it.forget(aResult);
   return NS_OK;
@@ -1370,7 +1374,7 @@ HTMLInputElement::BeforeSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     if ((aName == nsGkAtoms::name ||
          (aName == nsGkAtoms::type && !mForm)) &&
         mType == NS_FORM_INPUT_RADIO &&
-        (mForm || !mParserCreating)) {
+        (mForm || mDoneCreating)) {
       WillRemoveFromRadioGroup();
     } else if (aNotify && aName == nsGkAtoms::src &&
                mType == NS_FORM_INPUT_IMAGE) {
@@ -1420,7 +1424,7 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     if ((aName == nsGkAtoms::name ||
          (aName == nsGkAtoms::type && !mForm)) &&
         mType == NS_FORM_INPUT_RADIO &&
-        (mForm || !mParserCreating)) {
+        (mForm || mDoneCreating)) {
       AddedToRadioGroup();
       UpdateValueMissingValidityStateForRadio(false);
     }
@@ -1440,7 +1444,7 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
     if (aName == nsGkAtoms::checked && !mCheckedChanged) {
       
       
-      if (mParserCreating) {
+      if (!mDoneCreating) {
         mShouldInitChecked = true;
       } else {
         DoSetChecked(DefaultChecked(), true, true);
@@ -1494,7 +1498,7 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       UpdateTooLongValidityState();
     } else if (MinOrMaxLengthApplies() && aName == nsGkAtoms::minlength) {
       UpdateTooShortValidityState();
-    } else if (aName == nsGkAtoms::pattern && !mParserCreating) {
+    } else if (aName == nsGkAtoms::pattern && mDoneCreating) {
       UpdatePatternMismatchValidityState();
     } else if (aName == nsGkAtoms::multiple) {
       UpdateTypeMismatchValidityState();
@@ -1523,7 +1527,7 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       
       
       UpdateRangeOverflowValidityState();
-      MOZ_ASSERT(mParserCreating ||
+      MOZ_ASSERT(!mDoneCreating ||
                  mType != NS_FORM_INPUT_RANGE ||
                  !GetValidityState(VALIDITY_STATE_RANGE_UNDERFLOW),
                  "HTML5 spec does not allow underflow for type=range");
@@ -1540,7 +1544,7 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       
       UpdateRangeUnderflowValidityState();
       UpdateStepMismatchValidityState();
-      MOZ_ASSERT(mParserCreating ||
+      MOZ_ASSERT(!mDoneCreating ||
                  mType != NS_FORM_INPUT_RANGE ||
                  !GetValidityState(VALIDITY_STATE_RANGE_UNDERFLOW),
                  "HTML5 spec does not allow underflow for type=range");
@@ -1555,7 +1559,7 @@ HTMLInputElement::AfterSetAttr(int32_t aNameSpaceID, nsIAtom* aName,
       }
       
       UpdateStepMismatchValidityState();
-      MOZ_ASSERT(mParserCreating ||
+      MOZ_ASSERT(!mDoneCreating ||
                  mType != NS_FORM_INPUT_RANGE ||
                  !GetValidityState(VALIDITY_STATE_RANGE_UNDERFLOW),
                  "HTML5 spec does not allow underflow for type=range");
@@ -3249,7 +3253,7 @@ HTMLInputElement::SetValueInternal(const nsAString& aValue, uint32_t aFlags)
       
       nsAutoString value(aValue);
 
-      if (!mParserCreating) {
+      if (mDoneCreating) {
         SanitizeValue(value);
       }
       
@@ -3264,7 +3268,7 @@ HTMLInputElement::SetValueInternal(const nsAString& aValue, uint32_t aFlags)
           return NS_ERROR_OUT_OF_MEMORY;
         }
         if (mType == NS_FORM_INPUT_EMAIL) {
-          UpdateAllValidityStates(mParserCreating);
+          UpdateAllValidityStates(!mDoneCreating);
         }
       } else {
         free(mInputData.mValue);
@@ -3292,7 +3296,7 @@ HTMLInputElement::SetValueInternal(const nsAString& aValue, uint32_t aFlags)
             frame->UpdateInputBoxValue();
           }
         }
-        if (!mParserCreating) {
+        if (mDoneCreating) {
           OnValueChanged( true,
                           false);
         }
@@ -5164,7 +5168,7 @@ HTMLInputElement::HandleTypeChange(uint8_t aNewType)
 void
 HTMLInputElement::SanitizeValue(nsAString& aValue)
 {
-  NS_ASSERTION(!mParserCreating, "The element parsing should be finished!");
+  NS_ASSERTION(mDoneCreating, "The element creation should be finished!");
 
   switch (mType) {
     case NS_FORM_INPUT_TEXT:
@@ -6712,7 +6716,7 @@ HTMLInputElement::SaveState()
 void
 HTMLInputElement::DoneCreatingElement()
 {
-  mParserCreating = false;
+  mDoneCreating = true;
 
   
   
@@ -6949,7 +6953,7 @@ HTMLInputElement::AddedToRadioGroup()
   }
 
   
-  bool notify = !mParserCreating;
+  bool notify = mDoneCreating;
 
   
   
@@ -7710,7 +7714,7 @@ HTMLInputElement::UpdateTooShortValidityState()
 void
 HTMLInputElement::UpdateValueMissingValidityStateForRadio(bool aIgnoreSelf)
 {
-  bool notify = !mParserCreating;
+  bool notify = mDoneCreating;
   nsCOMPtr<nsIDOMHTMLInputElement> selection = GetSelectedRadioButton();
 
   aIgnoreSelf = aIgnoreSelf || !IsMutable();
@@ -8233,7 +8237,7 @@ HTMLInputElement::GetDefaultValueFromContent(nsAString& aValue)
     GetDefaultValue(aValue);
     
     
-    if (!mParserCreating) {
+    if (mDoneCreating) {
       SanitizeValue(aValue);
     }
   }
