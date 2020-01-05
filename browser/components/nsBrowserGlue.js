@@ -40,6 +40,7 @@ XPCOMUtils.defineLazyServiceGetter(this, "AlertsService", "@mozilla.org/alerts-s
 
 
 
+
 [
   ["AboutHome", "resource:///modules/AboutHome.jsm"],
   ["AboutNewTab", "resource:///modules/AboutNewTab.jsm"],

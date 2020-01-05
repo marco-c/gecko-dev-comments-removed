@@ -1,0 +1,12 @@
+"use strict";
+
+module.exports = {
+  "env": {
+    
+    "mozilla/places-overlay": true
+  },
+
+  "plugins": [
+    "mozilla",
+  ]
+};

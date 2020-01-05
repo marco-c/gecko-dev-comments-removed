@@ -286,9 +286,13 @@ var gEditItemOverlay = {
     
     
     
+    
+    
     let elt;
     if (focusedElement === "preferred") {
+      
       elt = this._element(gPrefService.getCharPref("browser.bookmarks.editDialog.firstEditField"));
+      
     } else if (focusedElement === "first") {
       elt = document.querySelector("textbox:not([collapsed=true])");
     }
@@ -899,7 +903,7 @@ var gEditItemOverlay = {
 
     let tagsInField = this._getTagsArrayFromTagsInputField();
     let allTags = PlacesUtils.tagging.allTags;
-    for (tag of allTags) {
+    for (let tag of allTags) {
       let elt = document.createElement("listitem");
       elt.setAttribute("type", "checkbox");
       elt.setAttribute("label", tag);
@@ -1064,7 +1068,7 @@ var gEditItemOverlay = {
       
       
       let menupopup = this._folderMenuList.menupopup;
-      for (menuitem of menupopup.childNodes) {
+      for (let menuitem of menupopup.childNodes) {
         if ("folderId" in menuitem && menuitem.folderId == aItemId) {
           menuitem.label = aNewTitle;
           break;

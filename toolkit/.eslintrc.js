@@ -247,6 +247,9 @@ module.exports = {
     "browser": true,
   },
   "globals": {
+    "BroadcastChannel": false,
+    
+    "ChromeWindow": false,
     "ChromeWorker": false,
     "ChromeUtils": false,
     "Components": false,
@@ -257,6 +260,8 @@ module.exports = {
     "KeyEvent": false,
     "openDialog": false,
     "MenuBoxObject": false,
+    
+    "MozSelfSupport": false,
     "SimpleGestureEvent": false,
     "sizeToContent": false,
     "SharedArrayBuffer": false,
@@ -265,6 +270,7 @@ module.exports = {
     "StopIteration": false,
     
     
-    "uneval": false
+    "uneval": false,
+    "XULElement": false,
   }
 };

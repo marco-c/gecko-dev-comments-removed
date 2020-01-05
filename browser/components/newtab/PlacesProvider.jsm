@@ -242,4 +242,3 @@ let PlacesProvider = {
 
 XPCOMUtils.defineLazyGetter(PlacesProvider, "LinkChecker",
   () => NewTabUtils.linkChecker);
-
