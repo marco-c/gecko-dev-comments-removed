@@ -1084,11 +1084,7 @@ protected:
   
 
 
-  bool DoesValueAsNumberApply() const
-  {
-    
-    return DoesMinMaxApply() && mType != NS_FORM_INPUT_DATETIME_LOCAL;
-  }
+  bool DoesValueAsNumberApply() const { return DoesMinMaxApply(); }
 
   
 
@@ -1296,6 +1292,7 @@ protected:
 
 
   void NormalizeDateTimeLocal(nsAString& aValue) const;
+
   
 
 
@@ -1325,6 +1322,13 @@ protected:
 
 
   uint32_t MaximumWeekInYear(uint32_t aYear) const;
+
+  
+
+
+
+  bool GetTimeFromMs(double aValue, uint16_t* aHours, uint16_t* aMinutes,
+                     uint16_t* aSeconds, uint16_t* aMilliseconds) const;
 
   
 

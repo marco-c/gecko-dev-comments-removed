@@ -136,6 +136,14 @@ MakeDate(double year, unsigned month, unsigned day);
 
 
 
+
+
+
+JS_PUBLIC_API(double)
+MakeDate(double year, unsigned month, unsigned day, double time);
+
+
+
 JS_PUBLIC_API(double)
 YearFromTime(double time);
 
