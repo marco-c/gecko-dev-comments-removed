@@ -7094,40 +7094,6 @@ BuildTargetChainForBeforeAfterKeyboardEvent(nsINode* aTarget,
 }
 
 void
-PresShell::DispatchBeforeKeyboardEventInternal(const nsTArray<nsCOMPtr<Element> >& aChain,
-                                               const WidgetKeyboardEvent& aEvent,
-                                               size_t& aChainIndex,
-                                               bool& aDefaultPrevented)
-{
-  size_t length = aChain.Length();
-  if (!CanDispatchEvent(&aEvent) || !length) {
-    return;
-  }
-
-  EventMessage message =
-    (aEvent.mMessage == eKeyDown) ? eBeforeKeyDown : eBeforeKeyUp;
-  nsCOMPtr<EventTarget> eventTarget;
-  
-  for (int32_t i = length - 1; i >= 0; i--) {
-    eventTarget = do_QueryInterface(aChain[i]->OwnerDoc()->GetWindow());
-    if (!eventTarget || !CanDispatchEvent(&aEvent)) {
-      return;
-    }
-
-    aChainIndex = i;
-    InternalBeforeAfterKeyboardEvent beforeEvent(aEvent.IsTrusted(),
-                                                 message, aEvent.mWidget);
-    beforeEvent.AssignBeforeAfterKeyEventData(aEvent, false);
-    EventDispatcher::Dispatch(eventTarget, mPresContext, &beforeEvent);
-
-    if (beforeEvent.DefaultPrevented()) {
-      aDefaultPrevented = true;
-      return;
-    }
-  }
-}
-
-void
 PresShell::DispatchAfterKeyboardEventInternal(const nsTArray<nsCOMPtr<Element> >& aChain,
                                               const WidgetKeyboardEvent& aEvent,
                                               bool aEmbeddedCancelled,
@@ -7216,31 +7182,6 @@ PresShell::HandleKeyboardEvent(nsINode* aTarget,
   AutoTArray<nsCOMPtr<Element>, 5> chain;
   BuildTargetChainForBeforeAfterKeyboardEvent(aTarget, chain, targetIsIframe);
 
-  
-  
-  
-  
-  
-  size_t chainIndex;
-  bool defaultPrevented = false;
-  DispatchBeforeKeyboardEventInternal(chain, aEvent, chainIndex,
-                                      defaultPrevented);
-
-  
-  
-  if (defaultPrevented) {
-    *aStatus = nsEventStatus_eConsumeNoDefault;
-    DispatchAfterKeyboardEventInternal(chain, aEvent, false, chainIndex);
-    
-    aEvent.StopCrossProcessForwarding();
-    return;
-  }
-
-  
-  if (!CanDispatchEvent()) {
-    return;
-  }
-
   if (ForwardKeyToInputMethodAppOrDispatch(targetIsIframe, aTarget, aEvent,
                                            aStatus, aEventCB)) {
     return;
@@ -7251,7 +7192,7 @@ PresShell::HandleKeyboardEvent(nsINode* aTarget,
     
     
     
-    DispatchAfterKeyboardEventInternal(chain, aEvent, !targetIsIframe, chainIndex);
+    DispatchAfterKeyboardEventInternal(chain, aEvent, !targetIsIframe, 0);
     return;
   }
 
