@@ -104,6 +104,7 @@ impl CallbackInterface {
             if !callable.is_object() ||
                JS_ObjectIsCallable(cx, callable.to_object()) == 0 {
                 
+                
                 return Err(());
             }
         }
