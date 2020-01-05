@@ -3728,7 +3728,7 @@ nsCSSFrameConstructor::FindInputData(Element* aElement,
   nsCOMPtr<nsIFormControl> control = do_QueryInterface(aElement);
   NS_ASSERTION(control, "input doesn't implement nsIFormControl?");
 
-  auto controlType = control->GetType();
+  auto controlType = control->ControlType();
 
   
   
@@ -7170,10 +7170,7 @@ nsCSSFrameConstructor::MaybeConstructLazily(Operation aOperation,
     }
   }
 
-  if (mozilla::GeckoRestyleManager* geckoRM = RestyleManager()->GetAsGecko()) {
-    geckoRM->PostRestyleEventForLazyConstruction();
-  }
-
+  RestyleManager()->PostRestyleEventForLazyConstruction();
   return true;
 }
 
@@ -7413,7 +7410,6 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
                                        TreeMatchContext* aProvidedTreeMatchContext)
 {
   MOZ_ASSERT_IF(aProvidedTreeMatchContext, !aAllowLazyConstruction);
-  MOZ_ASSERT_IF(aAllowLazyConstruction, !RestyleManager()->IsInStyleRefresh());
 
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
   NS_PRECONDITION(mUpdateCount != 0,
@@ -7813,9 +7809,6 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
                                             bool aAllowLazyConstruction,
                                             TreeMatchContext* aProvidedTreeMatchContext)
 {
-  MOZ_ASSERT_IF(aProvidedTreeMatchContext, !aAllowLazyConstruction);
-  MOZ_ASSERT_IF(aAllowLazyConstruction, !RestyleManager()->IsInStyleRefresh());
-
   AUTO_LAYOUT_PHASE_ENTRY_POINT(mPresShell->GetPresContext(), FrameC);
   NS_PRECONDITION(mUpdateCount != 0,
                   "Should be in an update while creating frames");

@@ -92,6 +92,10 @@ static_assert(static_cast<uint32_t>(eInputElementTypesMax) < 1<<8,
 class nsIFormControl : public nsISupports
 {
 public:
+  nsIFormControl(uint8_t aType)
+  : mType(aType)
+  {
+  }
 
   NS_DECLARE_STATIC_IID_ACCESSOR(NS_IFORMCONTROL_IID)
 
@@ -130,7 +134,7 @@ public:
 
 
 
-  NS_IMETHOD_(uint32_t) GetType() const = 0 ;
+  uint32_t ControlType() const { return mType; }
 
   
 
@@ -226,12 +230,14 @@ protected:
 
 
   inline bool IsAutofocusable() const;
+
+  uint8_t                  mType;
 };
 
 bool
 nsIFormControl::IsSubmitControl() const
 {
-  uint32_t type = GetType();
+  uint32_t type = ControlType();
   return type == NS_FORM_INPUT_SUBMIT ||
          type == NS_FORM_INPUT_IMAGE ||
          type == NS_FORM_BUTTON_SUBMIT;
@@ -240,7 +246,7 @@ nsIFormControl::IsSubmitControl() const
 bool
 nsIFormControl::IsTextControl(bool aExcludePassword) const
 {
-  uint32_t type = GetType();
+  uint32_t type = ControlType();
   return type == NS_FORM_TEXTAREA ||
          IsSingleLineTextControl(aExcludePassword, type);
 }
@@ -248,13 +254,13 @@ nsIFormControl::IsTextControl(bool aExcludePassword) const
 bool
 nsIFormControl::IsTextOrNumberControl(bool aExcludePassword) const
 {
-  return IsTextControl(aExcludePassword) || GetType() == NS_FORM_INPUT_NUMBER;
+  return IsTextControl(aExcludePassword) || ControlType() == NS_FORM_INPUT_NUMBER;
 }
 
 bool
 nsIFormControl::IsSingleLineTextControl(bool aExcludePassword) const
 {
-  return IsSingleLineTextControl(aExcludePassword, GetType());
+  return IsSingleLineTextControl(aExcludePassword, ControlType());
 }
 
 
@@ -282,7 +288,7 @@ bool
 nsIFormControl::IsSubmittableControl() const
 {
   
-  uint32_t type = GetType();
+  uint32_t type = ControlType();
   return type == NS_FORM_OBJECT ||
          type == NS_FORM_TEXTAREA ||
          type == NS_FORM_SELECT ||
@@ -294,7 +300,7 @@ nsIFormControl::IsSubmittableControl() const
 bool
 nsIFormControl::AllowDraggableChildren() const
 {
-  uint32_t type = GetType();
+  uint32_t type = ControlType();
   return type == NS_FORM_OBJECT ||
          type == NS_FORM_FIELDSET ||
          type == NS_FORM_OUTPUT;
@@ -303,7 +309,7 @@ nsIFormControl::AllowDraggableChildren() const
 bool
 nsIFormControl::IsAutofocusable() const
 {
-  uint32_t type = GetType();
+  uint32_t type = ControlType();
   return type & NS_FORM_INPUT_ELEMENT ||
          type & NS_FORM_BUTTON_ELEMENT ||
          type == NS_FORM_TEXTAREA ||

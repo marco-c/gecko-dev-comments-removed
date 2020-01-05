@@ -29,7 +29,7 @@ HTMLFormControlsCollection::ShouldBeInElements(nsIFormControl* aFormControl)
   
   
 
-  switch (aFormControl->GetType()) {
+  switch (aFormControl->ControlType()) {
   case NS_FORM_BUTTON_BUTTON :
   case NS_FORM_BUTTON_RESET :
   case NS_FORM_BUTTON_SUBMIT :
