@@ -70,6 +70,9 @@ public class CustomTabsActivity extends GeckoApp implements Tabs.OnTabsChangedLi
             toolbarTitle = AppConstants.MOZ_APP_BASENAME;
         }
 
+        
+        toolbarColor = 0xFF000000 | toolbarColor;
+
         setThemeFromToolbarColor();
 
         final Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
