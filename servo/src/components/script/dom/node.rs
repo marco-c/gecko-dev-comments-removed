@@ -1217,20 +1217,6 @@ pub trait PostorderNodeTraversal {
     }
 }
 
-
-pub trait PostorderNodeMutTraversal {
-    
-    fn process(&mut self, node: AbstractNode<LayoutView>) -> bool;
-
-    
-    
-    
-    fn should_prune(&self, _node: AbstractNode<LayoutView>) -> bool {
-        false
-    }
-}
-
-
 impl AbstractNode<LayoutView> {
     
     
@@ -1255,29 +1241,4 @@ impl AbstractNode<LayoutView> {
 
         traversal.process(self)
     }
-
-    
-    
-    
-    pub fn traverse_postorder_mut<T:PostorderNodeMutTraversal>(mut self, traversal: &mut T) -> bool {
-        if traversal.should_prune(self) {
-            return true
-        }
-
-        let mut opt_kid = self.first_child();
-        loop {
-            match opt_kid {
-                None => break,
-                Some(kid) => {
-                    if !kid.traverse_postorder_mut(traversal) {
-                        return false
-                    }
-                    opt_kid = kid.next_sibling()
-                }
-            }
-        }
-
-        traversal.process(self)
-    }
-
 }

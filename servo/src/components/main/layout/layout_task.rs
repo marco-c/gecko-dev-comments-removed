@@ -78,20 +78,21 @@ struct LayoutTask {
     local_image_cache: MutexArc<LocalImageCache>,
 
     
+    font_ctx: @mut FontContext,
+
+    /// The size of the viewport.
     screen_size: Option<Size2D<Au>>,
 
-    
+    /// A cached display list.
     display_list: Option<Arc<DisplayList<AbstractNode<()>>>>,
 
     stylist: RWArc<Stylist>,
 
-    
+    /// The channel on which messages can be sent to the profiler.
     profiler_chan: ProfilerChan,
-
-    opts: Opts
 }
 
-
+/// The damage computation traversal.
 #[deriving(Clone)]
 struct ComputeDamageTraversal;
 
@@ -107,9 +108,9 @@ impl PostorderFlowTraversal for ComputeDamageTraversal {
     }
 }
 
-
-
-
+/// Propagates restyle damage up and down the tree as appropriate.
+///
+/// FIXME(pcwalton): Merge this with flow tree building and/or other traversals.
 struct PropagateDamageTraversal {
     all_style_damage: bool,
 }
@@ -131,8 +132,8 @@ impl PreorderFlowTraversal for PropagateDamageTraversal {
     }
 }
 
-
-
+/// The bubble-widths traversal, the first part of layout computation. This computes preferred
+/// and intrinsic widths and bubbles them up the tree.
 struct BubbleWidthsTraversal<'self>(&'self mut LayoutContext);
 
 impl<'self> PostorderFlowTraversal for BubbleWidthsTraversal<'self> {
@@ -148,7 +149,7 @@ impl<'self> PostorderFlowTraversal for BubbleWidthsTraversal<'self> {
     }
 }
 
-
+/// The assign-widths traversal. In Gecko this corresponds to `Reflow`.
 struct AssignWidthsTraversal<'self>(&'self mut LayoutContext);
 
 impl<'self> PreorderFlowTraversal for AssignWidthsTraversal<'self> {
@@ -159,9 +160,9 @@ impl<'self> PreorderFlowTraversal for AssignWidthsTraversal<'self> {
     }
 }
 
-
-
-
+/// The assign-heights-and-store-overflow traversal, the last (and most expensive) part of layout
+/// computation. Determines the final heights for all layout objects, computes positions, and
+/// computes overflow regions. In Gecko this corresponds to `FinishAndStoreOverflow`.
 struct AssignHeightsAndStoreOverflowTraversal<'self>(&'self mut LayoutContext);
 
 impl<'self> PostorderFlowTraversal for AssignHeightsAndStoreOverflowTraversal<'self> {
@@ -228,6 +229,7 @@ impl LayoutTask {
            opts: &Opts,
            profiler_chan: ProfilerChan)
            -> LayoutTask {
+        let fctx = @mut FontContext::new(opts.render_backend, true, profiler_chan.clone());
 
         LayoutTask {
             id: id,
@@ -237,13 +239,13 @@ impl LayoutTask {
             render_chan: render_chan,
             image_cache_task: image_cache_task.clone(),
             local_image_cache: MutexArc::new(LocalImageCache(image_cache_task)),
+            font_ctx: fctx,
             screen_size: None,
 
             display_list: None,
 
             stylist: RWArc::new(new_stylist()),
             profiler_chan: profiler_chan,
-            opts: opts.clone()
         }
     }
 
@@ -257,8 +259,7 @@ impl LayoutTask {
     // Create a layout context for use in building display lists, hit testing, &c.
     fn build_layout_context(&self) -> LayoutContext {
         let image_cache = self.local_image_cache.clone();
-        let font_ctx = ~FontContext::new(self.opts.render_backend, true,
-                                            self.profiler_chan.clone());
+        let font_ctx = self.font_ctx;
         let screen_size = self.screen_size.unwrap();
 
         LayoutContext {
@@ -343,9 +344,9 @@ impl LayoutTask {
     /// is intertwined with selector matching, making it difficult to compare directly. It is
     /// marked `#[inline(never)]` to aid benchmarking in sampling profilers.
     #[inline(never)]
-    fn construct_flow_tree(&self, layout_context: &mut LayoutContext, node: AbstractNode<LayoutView>)
+    fn construct_flow_tree(&self, layout_context: &LayoutContext, node: AbstractNode<LayoutView>)
                            -> ~Flow: {
-        node.traverse_postorder_mut(&mut FlowConstructor::init(layout_context));
+        node.traverse_postorder(&FlowConstructor::init(layout_context));
 
         let result = match *node.mutate_layout_data().ptr {
             Some(ref mut layout_data) => {
@@ -440,7 +441,7 @@ impl LayoutTask {
         // Construct the flow tree.
         let mut layout_root = profile(time::LayoutTreeBuilderCategory,
                                       self.profiler_chan.clone(),
-                                      || self.construct_flow_tree(&mut layout_ctx, *node));
+                                      || self.construct_flow_tree(&layout_ctx, *node));
 
         // Propagate damage.
         layout_root.traverse_preorder(&mut PropagateDamageTraversal {
