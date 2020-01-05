@@ -37,7 +37,12 @@ class ProfileEntry
     
 
     
+    
+    
     const char * volatile string;
+
+    
+    const char * volatile dynamicString;
 
     
     void * volatile spOrScript;
@@ -107,6 +112,9 @@ class ProfileEntry
 
     void setLabel(const char* aString) volatile { string = aString; }
     const char* label() const volatile { return string; }
+
+    void setDynamicString(const char* aDynamicString) volatile { dynamicString = aDynamicString; }
+    const char* getDynamicString() const volatile { return dynamicString; }
 
     void initJsFrame(JSScript* aScript, jsbytecode* aPc) volatile {
         flags_ = 0;

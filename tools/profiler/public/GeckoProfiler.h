@@ -27,6 +27,7 @@
 #include "mozilla/GuardObjects.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/Vector.h"
+#include "nsString.h"
 
 namespace mozilla {
 class TimeStamp;
@@ -69,6 +70,8 @@ using UniqueProfilerBacktrace =
 
 
 
+
+
 #define PROFILER_LABEL(name_space, info, category) do {} while (0)
 
 
@@ -79,7 +82,19 @@ using UniqueProfilerBacktrace =
 
 
 
-#define PROFILER_LABEL_PRINTF(name_space, info, category, format, ...) do {} while (0)
+
+
+
+
+
+
+
+
+
+
+
+
+#define PROFILER_LABEL_DYNAMIC(name_space, info, category, str) do {} while (0)
 
 
 
@@ -100,7 +115,7 @@ using UniqueProfilerBacktrace =
 
 #define PROFILER_LABEL_FUNC(category) MOZ_PLATFORM_TRACING(SAMPLE_FUNCTION_NAME) mozilla::SamplerStackFrameRAII SAMPLER_APPEND_LINE_NUMBER(sampler_raii)(SAMPLE_FUNCTION_NAME, category, __LINE__)
 
-#define PROFILER_LABEL_PRINTF(name_space, info, category, ...) MOZ_PLATFORM_TRACING(name_space "::" info) mozilla::SamplerStackFramePrintfRAII SAMPLER_APPEND_LINE_NUMBER(sampler_raii)(name_space "::" info, category, __LINE__, __VA_ARGS__)
+#define PROFILER_LABEL_DYNAMIC(name_space, info, category, str) MOZ_PLATFORM_TRACING(name_space "::" info) mozilla::SamplerStackFrameDynamicRAII SAMPLER_APPEND_LINE_NUMBER(sampler_raii)(name_space "::" info, category, __LINE__, str)
 
 #define PROFILER_MARKER(info) profiler_add_marker(info)
 #define PROFILER_MARKER_PAYLOAD(info, payload) profiler_add_marker(info, payload)
@@ -343,7 +358,8 @@ extern ProfilerState* gPS;
 static inline void*
 profiler_call_enter(const char* aInfo,
                     js::ProfileEntry::Category aCategory,
-                    void *aFrameAddress, bool aCopy, uint32_t line)
+                    void *aFrameAddress, bool aCopy, uint32_t line,
+                    const char* aAnnotationString = nullptr)
 {
   
 
@@ -353,7 +369,7 @@ profiler_call_enter(const char* aInfo,
   if (!stack) {
     return stack;
   }
-  stack->push(aInfo, aCategory, aFrameAddress, aCopy, line);
+  stack->push(aInfo, aCategory, aFrameAddress, aCopy, line, aAnnotationString);
 
   
   
@@ -477,35 +493,41 @@ private:
   void* mHandle;
 };
 
-static const int SAMPLER_MAX_STRING = 128;
-class MOZ_RAII SamplerStackFramePrintfRAII {
+class MOZ_RAII SamplerStackFrameDynamicRAII {
 public:
-  
-  
-  SamplerStackFramePrintfRAII(const char *aInfo,
-    js::ProfileEntry::Category aCategory, uint32_t line, const char *aFormat, ...)
-    : mHandle(nullptr)
+  SamplerStackFrameDynamicRAII(const char* aInfo,
+    js::ProfileEntry::Category aCategory, uint32_t aLine,
+    const char* aDynamicString)
   {
-    if (profiler_is_active_and_not_in_privacy_mode()) {
-      va_list args;
-      va_start(args, aFormat);
-      char buff[SAMPLER_MAX_STRING];
-
-      
-      VsprintfLiteral(buff, aFormat, args);
-      SprintfLiteral(mDest, "%s %s", aInfo, buff);
-
-      mHandle = profiler_call_enter(mDest, aCategory, this, true, line);
-      va_end(args);
-    } else {
-      mHandle = profiler_call_enter(aInfo, aCategory, this, false, line);
-    }
+    mHandle = Enter(aInfo, aCategory, aLine, aDynamicString);
   }
-  ~SamplerStackFramePrintfRAII() {
+
+  
+  
+  SamplerStackFrameDynamicRAII(const char* aInfo,
+    js::ProfileEntry::Category aCategory, uint32_t aLine,
+    nsCString&& aDynamicString)
+    : mDynamicStorage(aDynamicString)
+  {
+    mHandle = Enter(aInfo, aCategory, aLine, mDynamicStorage.get());
+  }
+
+  ~SamplerStackFrameDynamicRAII() {
     profiler_call_exit(mHandle);
   }
+
 private:
-  char mDest[SAMPLER_MAX_STRING];
+  void* Enter(const char* aInfo, js::ProfileEntry::Category aCategory,
+              uint32_t aLine, const char* aDynamicString)
+  {
+    if (profiler_is_active_and_not_in_privacy_mode()) {
+      return profiler_call_enter(aInfo, aCategory, this, true, aLine, aDynamicString);
+    } else {
+      return profiler_call_enter(aInfo, aCategory, this, false, aLine);
+    }
+  }
+
+  nsCString mDynamicStorage;
   void* mHandle;
 };
 
