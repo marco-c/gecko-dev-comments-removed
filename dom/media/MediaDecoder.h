@@ -665,6 +665,10 @@ protected:
 
   
   
+  bool mMediaSeekableOnlyInBufferedRanges = false;
+
+  
+  
   nsAutoPtr<MediaInfo> mInfo;
 
   
@@ -763,10 +767,6 @@ protected:
   Canonical<int64_t> mDecoderPosition;
 
   
-  
-  Canonical<bool> mMediaSeekableOnlyInBufferedRanges;
-
-  
   Canonical<bool> mIsVisible;
 
 public:
@@ -806,9 +806,6 @@ public:
   }
   AbstractCanonical<int64_t>* CanonicalDecoderPosition() {
     return &mDecoderPosition;
-  }
-  AbstractCanonical<bool>* CanonicalMediaSeekableOnlyInBufferedRanges() {
-    return &mMediaSeekableOnlyInBufferedRanges;
   }
   AbstractCanonical<bool>* CanonicalIsVisible() {
     return &mIsVisible;
