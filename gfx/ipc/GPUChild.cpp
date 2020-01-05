@@ -18,6 +18,7 @@
 # include "mozilla/gfx/DeviceManagerDx.h"
 #endif
 #include "mozilla/ipc/CrashReporterHost.h"
+#include "mozilla/layers/LayerTreeOwnerTracker.h"
 #include "mozilla/Unused.h"
 #ifdef MOZ_GECKO_PROFILER
 #include "CrossProcessProfilerController.h"
@@ -25,6 +26,8 @@
 
 namespace mozilla {
 namespace gfx {
+
+using namespace layers;
 
 GPUChild::GPUChild(GPUProcessHost* aHost)
  : mHost(aHost),
@@ -65,12 +68,17 @@ GPUChild::Init()
   devicePrefs.oglCompositing() = gfxConfig::GetValue(Feature::OPENGL_COMPOSITING);
   devicePrefs.useD2D1() = gfxConfig::GetValue(Feature::DIRECT2D);
 
-  SendInit(prefs, updates, devicePrefs);
+  nsTArray<LayerTreeIdMapping> mappings;
+  LayerTreeOwnerTracker::Get()->Iterate([&](uint64_t aLayersId, base::ProcessId aProcessId) {
+    mappings.AppendElement(LayerTreeIdMapping(aLayersId, aProcessId));
+  });
+
+  SendInit(prefs, updates, devicePrefs, mappings);
 
   gfxVars::AddReceiver(this);
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
-  mProfilerController = CrossProcessProfilerController::ForProtocol(this);
+#ifdef MOZ_GECKO_PROFILER
+  mProfilerController = MakeUnique<CrossProcessProfilerController>(this);
 #endif
 }
 
@@ -286,7 +294,7 @@ GPUChild::ActorDestroy(ActorDestroyReason aWhy)
 
   }
 
-#ifdef MOZ_ENABLE_PROFILER_SPS
+#ifdef MOZ_GECKO_PROFILER
   mProfilerController = nullptr;
 #endif
 
