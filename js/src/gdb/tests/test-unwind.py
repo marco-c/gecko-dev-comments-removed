@@ -17,6 +17,8 @@ def do_unwinder_test():
     found_entry = False
     found_exit = False
     found_main = False
+    found_inner = False
+    found_outer = False
     frames = list(gdb.frames.execute_frame_filters(gdb.newest_frame(), 0, -1))
     for frame in frames:
         print("examining " + frame.function())
@@ -29,6 +31,10 @@ def do_unwinder_test():
             found_entry = True
         elif frame.function() == "main":
             found_main = True
+        elif "unwindFunctionInner" in frame.function():
+            found_inner = True
+        elif "unwindFunctionOuter" in frame.function():
+            found_outer = True
 
     
     assert_eq(first, False)
@@ -37,6 +43,9 @@ def do_unwinder_test():
     
     assert_eq(found_exit, True)
     assert_eq(found_entry, True)
+    
+    assert_eq(found_inner, True)
+    assert_eq(found_outer, True)
 
 
 if platform.machine() == 'x86_64' and platform.system() == 'Linux':

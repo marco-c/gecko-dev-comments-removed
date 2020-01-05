@@ -1,6 +1,7 @@
 
 
 import gdb
+import gdb.types
 from gdb.FrameDecorator import FrameDecorator
 import re
 import platform
@@ -83,14 +84,32 @@ class UnwinderTypeCache(object):
         self.d['void_starstar'] = gdb.lookup_type('void').pointer().pointer()
         self.d['mod_ExecutableAllocator'] = jsjitExecutableAllocatorCache()
 
+        jitframe = gdb.lookup_type("js::jit::JitFrameLayout")
+        self.d['jitFrameLayoutPointer'] = jitframe.pointer()
+
+        self.d['CalleeToken_Function'] = self.value("CalleeToken_Function")
+        self.d['CalleeToken_FunctionConstructing'] = self.value("CalleeToken_FunctionConstructing")
+        self.d['CalleeToken_Script'] = self.value("CalleeToken_Script")
+        self.d['JSFunction'] = gdb.lookup_type("JSFunction").pointer()
+        self.d['JSScript'] = gdb.lookup_type("JSScript").pointer()
+        self.d['Value'] = gdb.lookup_type("JS::Value")
+
+        self.d['SOURCE_SLOT'] = long(gdb.parse_and_eval('js::ScriptSourceObject::SOURCE_SLOT'))
+        self.d['NativeObject'] = gdb.lookup_type("js::NativeObject").pointer()
+        self.d['HeapSlot'] = gdb.lookup_type("js::HeapSlot").pointer()
+        self.d['ScriptSource'] = gdb.lookup_type("js::ScriptSource").pointer()
+
     
     def compute_frame_info(self):
         t = gdb.lookup_type('enum js::jit::FrameType')
         for field in t.fields():
             
             name = field.name[9:]
-            self.d[name] = long(field.enumval)
-            self.frame_enum_names[long(field.enumval)] = name
+            enumval = long(field.enumval)
+            self.d[name] = enumval
+            self.frame_enum_names[enumval] = name
+            class_type = gdb.lookup_type('js::jit::' + SizeOfFramePrefix[name])
+            self.frame_class_types[enumval] = class_type.pointer()
 
 
 
@@ -119,17 +138,107 @@ def parse_proc_maps():
     return mappings
 
 
+class FrameSymbol(object):
+    def __init__(self, sym, val):
+        self.sym = sym
+        self.val = val
+
+    def symbol(self):
+        return self.sym
+
+    def value(self):
+        return self.val
+
+
 
 
 class JitFrameDecorator(FrameDecorator):
-    def __init__(self, base, info):
+    def __init__(self, base, info, cache):
         super(JitFrameDecorator, self).__init__(base)
         self.info = info
+        self.cache = cache
+
+    def _decode_jitframe(self, this_frame):
+        calleetoken = long(this_frame['calleeToken_'])
+        tag = calleetoken & 3
+        calleetoken = calleetoken ^ tag
+        function = None
+        script = None
+        if tag == self.cache.CalleeToken_Function or tag == self.cache.CalleeToken_FunctionConstructing:
+            fptr = gdb.Value(calleetoken).cast(self.cache.JSFunction)
+            try:
+                atom = fptr['atom_']
+                if atom:
+                    function = str(atom)
+            except gdb.MemoryError:
+                function = "(could not read function name)"
+            script = fptr['u']['i']['s']['script_']
+        elif tag == self.cache.CalleeToken_Script:
+            script = gdb.Value(calleetoken).cast(self.cache.JSScript)
+        return {"function": function, "script": script}
 
     def function(self):
-        if "name" in self.info:
-            return "<<" + self.info["name"] + ">>"
-        return FrameDecorator.function(self)
+        if self.info["name"] is None:
+            return FrameDecorator.function(self)
+        name = self.info["name"]
+        result = "<<" + name
+        
+        
+        this_frame = self.info["this_frame"]
+        if this_frame is not None:
+            if gdb.types.has_field(this_frame.type.target(), "calleeToken_"):
+                function = self._decode_jitframe(this_frame)["function"]
+                if function is not None:
+                    result = result + " " + function
+        return result + ">>"
+
+    def filename(self):
+        this_frame = self.info["this_frame"]
+        if this_frame is not None:
+            if gdb.types.has_field(this_frame.type.target(), "calleeToken_"):
+                script = self._decode_jitframe(this_frame)["script"]
+                if script is not None:
+                    obj = script['sourceObject_']['value']
+                    
+                    
+                    nativeobj = obj.cast(self.cache.NativeObject)
+                    
+                    
+                    class_name = nativeobj['group_']['value']['clasp_']['name'].string("ISO-8859-1")
+                    if class_name != "ScriptSource":
+                        return FrameDecorator.filename(self)
+                    scriptsourceobj = (nativeobj + 1).cast(self.cache.HeapSlot)[self.cache.SOURCE_SLOT]
+                    scriptsource = scriptsourceobj['value']['data']['asBits'] << 1
+                    scriptsource = scriptsource.cast(self.cache.ScriptSource)
+                    return scriptsource['filename_']['mTuple']['mFirstA'].string()
+        return FrameDecorator.filename(self)
+
+    def frame_args(self):
+        this_frame = self.info["this_frame"]
+        if this_frame is None:
+            return FrameDecorator.frame_args(self)
+        if not gdb.types.has_field(this_frame.type.target(), "numActualArgs_"):
+            return FrameDecorator.frame_args(self)
+        
+        if self._decode_jitframe(this_frame)["function"] is None:
+            return FrameDecorator.frame_args(self)
+        
+        result = []
+        num_args = long(this_frame["numActualArgs_"])
+        
+        
+        if num_args > 10:
+            num_args = 10
+        args_ptr = (this_frame + 1).cast(self.cache.Value.pointer())
+        for i in range(num_args + 1):
+            
+            
+            if i == 0:
+                name = 'this'
+            else:
+                name = 'arg%d' % i
+            result.append(FrameSymbol(name, args_ptr[i]))
+        return result
 
 
 class SpiderMonkeyFrameFilter(object):
@@ -137,11 +246,12 @@ class SpiderMonkeyFrameFilter(object):
     
     
     
-    def __init__(self, state_holder):
+    def __init__(self, cache, state_holder):
         self.name = "SpiderMonkey"
         self.enabled = True
         self.priority = 100
         self.state_holder = state_holder
+        self.cache = cache
 
     def maybe_wrap_frame(self, frame):
         if self.state_holder is None or self.state_holder.unwinder_state is None:
@@ -150,7 +260,7 @@ class SpiderMonkeyFrameFilter(object):
         info = self.state_holder.unwinder_state.get_frame(base)
         if info is None:
             return frame
-        return JitFrameDecorator(frame, info)
+        return JitFrameDecorator(frame, info, self.cache)
 
     def filter(self, frame_iter):
         return imap(self.maybe_wrap_frame, frame_iter)
@@ -204,8 +314,8 @@ class UnwinderState(object):
     
     
     
-    def add_frame(self, sp, name):
-        self.frame_map[long(sp)] = { "name": name }
+    def add_frame(self, sp, name = None, this_frame = None):
+        self.frame_map[long(sp)] = { "name": name, "this_frame": this_frame }
 
     
     
@@ -284,17 +394,21 @@ class UnwinderState(object):
         
         
         
-        
-        frame_name = self.typecache.frame_enum_names[frame_type]
-        self.add_frame(sp, name = frame_name)
-
-        
-        
-        
         common = frame.cast(self.typecache.typeCommonFrameLayoutPointer)
         next_pc = common['returnAddress_']
         (local_size, header_size, next_type) = self.unpack_descriptor(common)
         next_sp = frame + header_size + local_size
+
+        
+        this_class_type = self.typecache.frame_class_types[frame_type]
+        this_frame = frame.cast(this_class_type)
+
+        
+        
+        
+        
+        frame_name = self.typecache.frame_enum_names[frame_type]
+        self.add_frame(sp, name = frame_name, this_frame = this_frame)
 
         
         self.next_sp = next_sp
@@ -457,14 +571,15 @@ class SpiderMonkeyUnwinder(Unwinder):
 
 
 def register_unwinder(objfile):
+    type_cache = UnwinderTypeCache()
     unwinder = None
     
     if _have_unwinder and platform.system() == "Linux":
-        unwinder = SpiderMonkeyUnwinder(UnwinderTypeCache())
+        unwinder = SpiderMonkeyUnwinder(type_cache)
         gdb.unwinder.register_unwinder(objfile, unwinder, replace=True)
     
     
-    filt = SpiderMonkeyFrameFilter(unwinder)
+    filt = SpiderMonkeyFrameFilter(type_cache, unwinder)
     if objfile is None:
         objfile = gdb
     objfile.frame_filters[filt.name] = filt
