@@ -458,10 +458,6 @@ protected:
 
   
   
-  void MaybeStartBuffering();
-
-  
-  
   
   
   void DecodeError(const MediaResult& aError);

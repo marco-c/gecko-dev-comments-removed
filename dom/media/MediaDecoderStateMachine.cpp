@@ -456,7 +456,7 @@ public:
                mMaster->IsStateMachineScheduled(),
                "Must have timer scheduled");
 
-    mMaster->MaybeStartBuffering();
+    MaybeStartBuffering();
   }
 
   State GetState() const override
@@ -503,6 +503,8 @@ public:
   }
 
 private:
+  void MaybeStartBuffering();
+
   void CheckSlowDecoding(TimeStamp aDecodeStart)
   {
     
@@ -1125,6 +1127,43 @@ DecodingState::HandleEndOfStream()
     MaybeStopPrerolling();
   }
   return true;
+}
+
+void
+MediaDecoderStateMachine::
+DecodingState::MaybeStartBuffering()
+{
+  
+  MOZ_ASSERT(mMaster->mSentFirstFrameLoadedEvent);
+
+  
+  if (mMaster->mPlayState != MediaDecoder::PLAY_STATE_PLAYING) {
+    return;
+  }
+
+  
+  
+  if (!mMaster->IsPlaying()) {
+    return;
+  }
+
+  
+  if (!Resource()->IsExpectingMoreData()) {
+    return;
+  }
+
+  bool shouldBuffer;
+  if (Reader()->UseBufferingHeuristics()) {
+    shouldBuffer = mMaster->HasLowDecodedData() && mMaster->HasLowBufferedData();
+  } else {
+    MOZ_ASSERT(Reader()->IsWaitForDataSupported());
+    shouldBuffer =
+      (mMaster->OutOfDecodedAudio() && Reader()->IsWaitingAudioData()) ||
+      (mMaster->OutOfDecodedVideo() && Reader()->IsWaitingVideoData());
+  }
+  if (shouldBuffer) {
+    SetState<BufferingState>();
+  }
 }
 
 bool
@@ -1934,43 +1973,6 @@ void MediaDecoderStateMachine::MaybeStartPlayback()
   }
 
   DispatchDecodeTasksIfNeeded();
-}
-
-void
-MediaDecoderStateMachine::MaybeStartBuffering()
-{
-  MOZ_ASSERT(OnTaskQueue());
-  
-  MOZ_ASSERT(mSentFirstFrameLoadedEvent);
-  MOZ_ASSERT(mState == DECODER_STATE_DECODING);
-
-  
-  if (mPlayState != MediaDecoder::PLAY_STATE_PLAYING) {
-    return;
-  }
-
-  
-  
-  if (!IsPlaying()) {
-    return;
-  }
-
-  
-  if (!mResource->IsExpectingMoreData()) {
-    return;
-  }
-
-  bool shouldBuffer;
-  if (mReader->UseBufferingHeuristics()) {
-    shouldBuffer = HasLowDecodedData() && HasLowBufferedData();
-  } else {
-    MOZ_ASSERT(mReader->IsWaitForDataSupported());
-    shouldBuffer = (OutOfDecodedAudio() && mReader->IsWaitingAudioData()) ||
-                   (OutOfDecodedVideo() && mReader->IsWaitingVideoData());
-  }
-  if (shouldBuffer) {
-    mStateObj->SetState<BufferingState>();
-  }
 }
 
 void MediaDecoderStateMachine::UpdatePlaybackPositionInternal(int64_t aTime)
