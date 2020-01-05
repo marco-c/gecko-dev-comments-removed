@@ -58,7 +58,10 @@ public:
   
   
   
+  
+  
   bool Get(const mozilla::pkix::CertID& aCertID,
+           const char* aFirstPartyDomain,
             mozilla::pkix::Result& aResult,
             mozilla::pkix::Time& aValidThrough);
 
@@ -71,7 +74,10 @@ public:
   
   
   
+  
+  
   mozilla::pkix::Result Put(const mozilla::pkix::CertID& aCertID,
+                            const char* aFirstPartyDomain,
                             mozilla::pkix::Result aResult,
                             mozilla::pkix::Time aThisUpdate,
                             mozilla::pkix::Time aValidThrough);
@@ -91,7 +97,8 @@ private:
       , mValidThrough(aValidThrough)
     {
     }
-    mozilla::pkix::Result Init(const mozilla::pkix::CertID& aCertID);
+    mozilla::pkix::Result Init(const mozilla::pkix::CertID& aCertID,
+                               const char* aFirstPartyDomain);
 
     mozilla::pkix::Result mResult;
     mozilla::pkix::Time mThisUpdate;
@@ -99,10 +106,14 @@ private:
     
     
     
+    
+    
     SHA384Buffer mIDHash;
   };
 
-  bool FindInternal(const mozilla::pkix::CertID& aCertID,  size_t& index,
+  bool FindInternal(const mozilla::pkix::CertID& aCertID,
+                    const char* aFirstPartyDomain,
+                     size_t& index,
                     const MutexAutoLock& aProofOfLock);
   void MakeMostRecentlyUsed(size_t aIndex, const MutexAutoLock& aProofOfLock);
 
