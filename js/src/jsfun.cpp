@@ -1091,7 +1091,9 @@ js::FunctionToString(JSContext* cx, HandleFunction fun, bool prettyPrint)
         }
     } else {
         
-        MOZ_ASSERT(!fun->infallibleIsDefaultClassConstructor(cx));
+        
+        MOZ_ASSERT(!fun->infallibleIsDefaultClassConstructor(cx) ||
+                   fun->compartment()->behaviors().discardSource());
 
         if (!AppendPrelude() ||
             !out.append("() {\n    "))
