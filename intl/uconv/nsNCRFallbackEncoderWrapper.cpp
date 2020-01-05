@@ -47,6 +47,10 @@ nsNCRFallbackEncoderWrapper::Encode(const nsAString& aUtf16,
                                     nsACString& aBytes)
 {
   
+  if (!mEncoder) {
+    return false;
+  }
+  
   if (aUtf16.Length() > INT32_MAX) {
     return false;
   }
