@@ -16,7 +16,7 @@ use syntax::attr::mark_used;
 
 pub fn match_ty_unwrap<'a>(ty: &'a Ty, segments: &[&str]) -> Option<&'a [P<Ty>]> {
     match ty.node {
-        TyPath(Path {segments: ref seg, ..}, _) => {
+        TyPath(_, Path {segments: ref seg, ..}) => {
             
             
             
@@ -38,13 +38,13 @@ pub fn match_ty_unwrap<'a>(ty: &'a Ty, segments: &[&str]) -> Option<&'a [P<Ty>]>
 
 
 pub fn match_lang_ty(cx: &Context, ty: &Ty, value: &str) -> bool {
-    let ty_id = match ty.node {
-        TyPath(_, ty_id) => ty_id,
+    match ty.node {
+        TyPath(..) => {},
         _ => return false,
-    };
+    }
 
-    let def_id = match cx.tcx.def_map.borrow().get(&ty_id).cloned() {
-        Some(def::DefTy(def_id, _)) => def_id,
+    let def_id = match cx.tcx.def_map.borrow().get(&ty.id) {
+        Some(&def::PathResolution { base_def: def::DefTy(def_id, _), .. }) => def_id,
         _ => return false,
     };
 

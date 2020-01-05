@@ -2,7 +2,7 @@
 
 
 
-#![feature(path, io, env)]
+#![feature(env, old_io, old_path)]
 
 use std::env;
 use std::old_path::Path;
@@ -28,6 +28,6 @@ fn main() {
         .output()
         .unwrap();
     assert_eq!(result.status, ProcessExit::ExitStatus(0));
-    let out = Path::new(env::var_string("OUT_DIR").unwrap());
+    let out = Path::new(env::var("OUT_DIR").unwrap());
     File::create(&out.join("properties.rs")).unwrap().write_all(&*result.output).unwrap();
 }

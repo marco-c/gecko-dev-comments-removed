@@ -35,25 +35,11 @@ pub fn null_str_as_empty_ref<'a>(s: &'a Option<DOMString>) -> &'a str {
 }
 
 
-struct Whitespace;
 
-impl CharEq for Whitespace {
-    #[inline]
-    fn matches(&mut self, ch: char) -> bool {
-        match ch {
-            ' ' | '\t' | '\x0a' | '\x0c' | '\x0d' => true,
-            _ => false,
-        }
-    }
-
-    #[inline]
-    fn only_ascii(&self) -> bool {
-        true
-    }
-}
+const WHITESPACE: &'static [char] = &[' ', '\t', '\x0a', '\x0c', '\x0d'];
 
 pub fn is_whitespace(s: &str) -> bool {
-    s.chars().all(|c| Whitespace.matches(c))
+    s.chars().all(|c| WHITESPACE.contains(&c))
 }
 
 
@@ -144,7 +130,7 @@ pub enum LengthOrPercentageOrAuto {
 
 
 pub fn parse_length(mut value: &str) -> LengthOrPercentageOrAuto {
-    value = value.trim_left_matches(Whitespace);
+    value = value.trim_left_matches(WHITESPACE);
     if value.len() == 0 {
         return LengthOrPercentageOrAuto::Auto
     }
@@ -200,7 +186,7 @@ pub fn parse_legacy_color(mut input: &str) -> Result<RGBA,()> {
     }
 
     
-    input = input.trim_left_matches(Whitespace).trim_right_matches(Whitespace);
+    input = input.trim_matches(WHITESPACE);
 
     
     if input.eq_ignore_ascii_case("transparent") {

@@ -38,7 +38,7 @@ use std::old_io::net::tcp::TcpListener;
 static mut HOST_TABLE: Option<*mut HashMap<String, String>> = None;
 
 pub fn global_init() {
-    if let Ok(host_file_path) = env::var_string("HOST_FILE") {
+    if let Ok(host_file_path) = env::var("HOST_FILE") {
         
         let path = Path::new(host_file_path);
         let mut file = BufferedReader::new(File::open(&path));
@@ -241,7 +241,7 @@ pub fn parse_hostsfile(hostsfile_content: &str) -> Box<HashMap<String, String>> 
             let address = ip_host[0].to_owned();
 
             for token in ip_host.iter().skip(1) {
-                if token[].as_bytes()[0] == b'#' {
+                if token.as_bytes()[0] == b'#' {
                     break;
                 }
                 host_table.insert(token.to_owned().to_string(), address.clone());
@@ -326,7 +326,7 @@ impl ResourceManager {
 
         fn from_factory(factory: fn(LoadData, Sender<TargetedLoadResponse>))
                         -> Box<Invoke<(LoadData, Sender<TargetedLoadResponse>)> + Send> {
-            box move |&:(load_data, start_chan)| {
+            box move |(load_data, start_chan)| {
                 factory(load_data, start_chan)
             }
         }
@@ -349,7 +349,7 @@ impl ResourceManager {
     }
 }
 
-/// Load a URL asynchronously and iterate over chunks of bytes from the response.
+
 pub fn load_bytes_iter(resource_task: &ResourceTask, url: Url) -> (Metadata, ProgressMsgPortIterator) {
     let (input_chan, input_port) = channel();
     resource_task.send(ControlMsg::Load(LoadData::new(url, input_chan))).unwrap();
@@ -359,7 +359,7 @@ pub fn load_bytes_iter(resource_task: &ResourceTask, url: Url) -> (Metadata, Pro
     (response.metadata, iter)
 }
 
-/// Iterator that reads chunks of bytes from a ProgressMsg port
+
 pub struct ProgressMsgPortIterator {
     progress_port: Receiver<ProgressMsg>
 }
@@ -528,12 +528,12 @@ fn test_replace_hosts() {
 
     let host_table: *mut HashMap<String, String> = unsafe {mem::transmute(host_table_box)};
 
-    //Start the TCP server
+    
     let mut listener = TcpListener::bind("127.0.0.1:0").unwrap();
     let port = listener.socket_name().unwrap().port;
     let mut acceptor = listener.listen().unwrap();
 
-    //Start the resource task and make a request to our TCP server
+    
     let resource_task = new_resource_task(None);
     let (start_chan, _) = channel();
     let mut raw_url: String = "http://foo.bar.com:".to_string();

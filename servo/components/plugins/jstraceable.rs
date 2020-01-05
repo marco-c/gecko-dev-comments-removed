@@ -34,7 +34,7 @@ pub fn expand_dom_struct(_: &mut ExtCtxt, _: Span, _: &MetaItem, item: P<Item>) 
 
 
 
-pub fn expand_jstraceable(cx: &mut ExtCtxt, span: Span, mitem: &MetaItem, item: &Item, mut push: Box<FnMut(P<Item>)>) {
+pub fn expand_jstraceable(cx: &mut ExtCtxt, span: Span, mitem: &MetaItem, item: &Item, push: &mut FnMut(P<Item>)) {
     let trait_def = TraitDef {
         span: span,
         attributes: Vec::new(),

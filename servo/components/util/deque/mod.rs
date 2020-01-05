@@ -78,6 +78,8 @@ struct Deque<T> {
     pool: BufferPool<T>,
 }
 
+unsafe impl<T> Send for Deque<T> {}
+
 
 
 
@@ -144,7 +146,7 @@ struct Buffer<T> {
 
 unsafe impl<T: 'static> Send for Buffer<T> { }
 
-impl<T: Send> BufferPool<T> {
+impl<T: Send + 'static> BufferPool<T> {
     
     
     pub fn new() -> BufferPool<T> {
@@ -182,7 +184,7 @@ impl<T: Send> Clone for BufferPool<T> {
     fn clone(&self) -> BufferPool<T> { BufferPool { pool: self.pool.clone() } }
 }
 
-impl<T: Send> Worker<T> {
+impl<T: Send + 'static> Worker<T> {
     
     pub fn push(&self, t: T) {
         unsafe { self.deque.push(t) }
@@ -201,7 +203,7 @@ impl<T: Send> Worker<T> {
     }
 }
 
-impl<T: Send> Stealer<T> {
+impl<T: Send + 'static> Stealer<T> {
     
     pub fn steal(&self) -> Stolen<T> {
         unsafe { self.deque.steal() }
@@ -224,7 +226,7 @@ impl<T: Send> Clone for Stealer<T> {
 
 
 
-impl<T: Send> Deque<T> {
+impl<T: Send + 'static> Deque<T> {
     fn new(mut pool: BufferPool<T>) -> Deque<T> {
         let buf = pool.alloc(MIN_BITS);
         Deque {
@@ -330,7 +332,7 @@ impl<T: Send> Deque<T> {
 
 
 #[unsafe_destructor]
-impl<T: Send> Drop for Deque<T> {
+impl<T: Send + 'static> Drop for Deque<T> {
     fn drop(&mut self) {
         let t = self.top.load(SeqCst);
         let b = self.bottom.load(SeqCst);

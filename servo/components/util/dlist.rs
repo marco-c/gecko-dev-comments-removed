@@ -4,14 +4,14 @@
 
 
 
-use std::collections::DList;
+use std::collections::LinkedList;
 use std::mem;
 
 
-pub fn split_off_head<T>(list: &mut DList<T>) -> DList<T> {
+pub fn split_off_head<T>(list: &mut LinkedList<T>) -> LinkedList<T> {
     
     if list.len() == 1 {
-        return mem::replace(list, DList::new());
+        return mem::replace(list, LinkedList::new());
     }
     let tail = list.split_off(1);
     mem::replace(list, tail)
@@ -19,7 +19,7 @@ pub fn split_off_head<T>(list: &mut DList<T>) -> DList<T> {
 
 
 #[inline]
-pub fn prepend_from<T>(this: &mut DList<T>, other: &mut DList<T>) {
+pub fn prepend_from<T>(this: &mut LinkedList<T>, other: &mut LinkedList<T>) {
     other.append(this);
     mem::swap(this, other);
 }

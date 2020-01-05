@@ -47,7 +47,7 @@ struct ImageState {
     last_response: ImageResponseMsg
 }
 
-impl<NodeAddress: Send> LocalImageCache<NodeAddress> {
+impl<NodeAddress: Send + 'static> LocalImageCache<NodeAddress> {
     
     
     pub fn next_round(&mut self, on_image_available: Box<ImageResponder<NodeAddress> + Send>) {

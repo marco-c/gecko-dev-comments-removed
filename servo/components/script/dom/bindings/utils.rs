@@ -577,7 +577,10 @@ pub extern fn outerize_global(_cx: *mut JSContext, obj: JSHandleObject) -> *mut 
         debug!("outerizing");
         let obj = *obj.unnamed_field1;
         let win: Root<window::Window> = native_from_reflector_jsmanaged(obj).unwrap().root();
-        win.r().browser_context().as_ref().unwrap().window_proxy()
+        
+        let win = win.r();
+        let context = win.browser_context();
+        context.as_ref().unwrap().window_proxy()
     }
 }
 

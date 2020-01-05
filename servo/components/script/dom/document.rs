@@ -365,10 +365,13 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
     
     fn find_fragment_node(self, fragid: DOMString) -> Option<Temporary<Element>> {
         self.GetElementById(fragid.clone()).or_else(|| {
-            let check_anchor = |&:&node: &JSRef<HTMLAnchorElement>| {
+            let check_anchor = |&node: &JSRef<HTMLAnchorElement>| {
                 let elem: JSRef<Element> = ElementCast::from_ref(node);
                 elem.get_attribute(ns!(""), &atom!("name")).root().map_or(false, |attr| {
-                    attr.r().value().as_slice() == fragid.as_slice()
+                    
+                    let attr = attr.r();
+                    let value = attr.value();
+                    value.as_slice() == fragid.as_slice()
                 })
             };
             let doc_node: JSRef<Node> = NodeCast::from_ref(self);
@@ -417,7 +420,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         }
     }
 
-    // https://html.spec.whatwg.org/multipage/dom.html#current-document-readiness
+    
     fn set_ready_state(self, state: DocumentReadyState) {
         self.ready_state.set(state);
 
@@ -429,39 +432,42 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         let _ = event.r().fire(target);
     }
 
-    /// Return whether scripting is enabled or not
+    
     fn is_scripting_enabled(self) -> bool {
         self.scripting_enabled.get()
     }
 
-    /// Return the element that currently has focus.
-    // https://dvcs.w3.org/hg/dom3events/raw-file/tip/html/DOM3-Events.html#events-focusevent-doc-focus
+    
+    
     fn get_focused_element(self) -> Option<Temporary<Element>> {
         self.focused.get()
     }
 
-    /// Initiate a new round of checking for elements requesting focus. The last element to call
-    /// `request_focus` before `commit_focus_transaction` is called will receive focus.
+    
+    
     fn begin_focus_transaction(self) {
         self.possibly_focused.clear();
     }
 
-    /// Request that the given element receive focus once the current transaction is complete.
+    
     fn request_focus(self, elem: JSRef<Element>) {
         self.possibly_focused.assign(Some(elem))
     }
 
-    /// Reassign the focus context to the element that last requested focus during this
-    /// transaction, or none if no elements requested it.
+    
+    
     fn commit_focus_transaction(self) {
-        //TODO: dispatch blur, focus, focusout, and focusin events
+        
         self.focused.assign(self.possibly_focused.get());
     }
 
-    /// Sends this document's title to the compositor.
+    
     fn send_title_to_compositor(self) {
         let window = self.window().root();
-        window.r().compositor().set_title(window.r().pipeline(), Some(self.Title()));
+        
+        let window = window.r();
+        let mut compositor = window.compositor();
+        compositor.set_title(window.pipeline(), Some(self.Title()));
     }
 
     fn dirty_all_nodes(self) {
@@ -497,7 +503,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
 
         let node: JSRef<Node> = NodeCast::from_ref(el);
         debug!("clicked on {:?}", node.debug_str());
-        // Prevent click event if form control element is disabled.
+        
         if node.click_event_filter_by_disabled_state() {
             return;
         }
@@ -506,7 +512,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
 
         let window = self.window.root();
 
-        // https://dvcs.w3.org/hg/dom3events/raw-file/tip/html/DOM3-Events.html#event-type-click
+        
         let x = point.x as i32;
         let y = point.y as i32;
         let event = MouseEvent::new(window.r(),
@@ -521,20 +527,20 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
                                     None).root();
         let event: JSRef<Event> = EventCast::from_ref(event.r());
 
-        // https://dvcs.w3.org/hg/dom3events/raw-file/tip/html/DOM3-Events.html#trusted-events
+        
         event.set_trusted(true);
-        // https://html.spec.whatwg.org/multipage/interaction.html#run-authentic-click-activation-steps
+        
         el.authentic_click_activation(event);
 
         self.commit_focus_transaction();
         window.r().reflow(ReflowGoal::ForDisplay, ReflowQueryType::NoQuery, ReflowReason::MouseEvent);
     }
 
-    /// Return need force reflow or not
+    
     fn handle_mouse_move_event(self, js_runtime: *mut JSRuntime, point: Point2D<f32>,
                                prev_mouse_over_targets: &mut Vec<JS<Node>>) -> bool {
         let mut needs_reflow = false;
-        // Build a list of elements that are currently under the mouse.
+        
         let mouse_over_addresses = self.get_nodes_under_mouse(&point);
         let mouse_over_targets: Vec<JS<Node>> = mouse_over_addresses.iter()
                                                                     .filter_map(|node_address| {
@@ -542,8 +548,8 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
             node.root().r().inclusive_ancestors().find(|node| node.is_element()).map(JS::from_rooted)
         }).collect();
 
-        // Remove hover from any elements in the previous list that are no longer
-        // under the mouse.
+        
+        
         for target in prev_mouse_over_targets.iter() {
             if !mouse_over_targets.contains(target) {
                 target.root().r().set_hover_state(false);
@@ -551,9 +557,9 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
             }
         }
 
-        // Set hover state for any elements in the current mouse over list.
-        // Check if any of them changed state to determine whether to
-        // force a reflow below.
+        
+        
+        
         for target in mouse_over_targets.iter() {
             let target = target.root();
             let target_ref = target.r();
@@ -563,7 +569,7 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
             }
         }
 
-        // Send mousemove event to topmost target
+        
         if mouse_over_addresses.len() > 0 {
             let top_most_node =
                 node::from_untrusted_node_address(js_runtime, mouse_over_addresses[0]).root();
@@ -588,12 +594,12 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
             event.fire(target);
         }
 
-        // Store the current mouse over targets for next frame
+        
         *prev_mouse_over_targets = mouse_over_targets;
         needs_reflow
     }
 
-    /// The entry point for all key processing for web content
+    
     fn dispatch_key_event(self, key: Key,
                           state: KeyState,
                           modifiers: KeyModifiers,
@@ -632,9 +638,9 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
         event.fire(target);
         let mut prevented = event.DefaultPrevented();
 
-        // https://dvcs.w3.org/hg/dom3events/raw-file/tip/html/DOM3-Events.html#keys-cancelable-keys
+        
         if state != KeyState::Released && props.is_printable() && !prevented {
-            // https://dvcs.w3.org/hg/dom3events/raw-file/tip/html/DOM3-Events.html#keypress-event-order
+            
             let event = KeyboardEvent::new(window.r(), "keypress".to_owned(),
                                            true, true, Some(window.r()),
                                            0, props.key.to_owned(), props.code.to_owned(),
@@ -644,18 +650,18 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
             let ev = EventCast::from_ref(event.r());
             ev.fire(target);
             prevented = ev.DefaultPrevented();
-            // TODO: if keypress event is canceled, prevent firing input events
+            
         }
 
         if !prevented {
             compositor.send_key_event(key, state, modifiers);
         }
 
-        // This behavior is unspecced
-        // We are supposed to dispatch synthetic click activation for Space and/or Return,
-        // however *when* we do it is up to us
-        // I'm dispatching it after the key event so the script has a chance to cancel it
-        // https://www.w3.org/Bugs/Public/show_bug.cgi?id=27337
+        
+        
+        
+        
+        
         match key {
             Key::Space if !prevented && state == KeyState::Released => {
                 let maybe_elem: Option<JSRef<Element>> = ElementCast::to_ref(target);
@@ -718,17 +724,17 @@ impl Document {
             content_type: match content_type {
                 Some(string) => string.clone(),
                 None => match is_html_document {
-                    // http://dom.spec.whatwg.org/#dom-domimplementation-createhtmldocument
+                    
                     IsHTMLDocument::HTMLDocument => "text/html".to_owned(),
-                    // http://dom.spec.whatwg.org/#concept-document-content-type
+                    
                     IsHTMLDocument::NonHTMLDocument => "application/xml".to_owned()
                 }
             },
             last_modified: last_modified,
             url: url,
-            // http://dom.spec.whatwg.org/#concept-document-quirks
+            
             quirks_mode: Cell::new(NoQuirks),
-            // http://dom.spec.whatwg.org/#concept-document-encoding
+            
             encoding_name: DOMRefCell::new("UTF-8".to_owned()),
             is_html_document: is_html_document == IsHTMLDocument::HTMLDocument,
             images: Default::default(),
@@ -746,7 +752,7 @@ impl Document {
         }
     }
 
-    // http://dom.spec.whatwg.org/#dom-document
+    
     pub fn Constructor(global: GlobalRef) -> Fallible<Temporary<Document>> {
         Ok(Document::new(global.as_window(), None,
                          IsHTMLDocument::NonHTMLDocument, None,
@@ -843,12 +849,16 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
 
     // http://dom.spec.whatwg.org/#dom-document-characterset
     fn CharacterSet(self) -> DOMString {
-        self.encoding_name.borrow().clone()
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
+        let encoding_name = self.encoding_name.borrow();
+        encoding_name.clone()
     }
 
     // http://dom.spec.whatwg.org/#dom-document-inputencoding
     fn InputEncoding(self) -> DOMString {
-        self.encoding_name.borrow().clone()
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
+        let encoding_name = self.encoding_name.borrow();
+        encoding_name.clone()
     }
 
     // http://dom.spec.whatwg.org/#dom-document-content_type
@@ -893,7 +903,9 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
     // http://dom.spec.whatwg.org/#dom-nonelementparentnode-getelementbyid
     fn GetElementById(self, id: DOMString) -> Option<Temporary<Element>> {
         let id = Atom::from_slice(id.as_slice());
-        match self.idmap.borrow().get(&id) {
+        // FIXME(https://github.com/rust-lang/rust/issues/23338)
+        let idmap = self.idmap.borrow();
+        match idmap.get(&id) {
             None => None,
             Some(ref elements) => Some(Temporary::new((*elements)[0].clone())),
         }
@@ -1218,7 +1230,10 @@ impl<'a> DocumentMethods for JSRef<'a, Document> {
                 None => return false,
             };
             element.get_attribute(ns!(""), &atom!("name")).root().map_or(false, |attr| {
-                attr.r().value().as_slice() == name.as_slice()
+                // FIXME(https://github.com/rust-lang/rust/issues/23338)
+                let attr = attr.r();
+                let value = attr.value();
+                value.as_slice() == name.as_slice()
             })
         })
     }

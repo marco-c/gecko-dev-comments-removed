@@ -5,7 +5,8 @@
 
 
 use std::default::Default;
-use std::hash::{Hasher, Writer};
+use std::hash::Hasher;
+use std::num::wrapping::WrappingOps;
 
 
 
@@ -22,17 +23,12 @@ impl Default for FnvHasher {
 }
 
 impl Hasher for FnvHasher {
-    type Output = u64;
-    fn reset(&mut self) { *self = Default::default(); }
     fn finish(&self) -> u64 { self.0 }
-}
-
-impl Writer for FnvHasher {
     fn write(&mut self, bytes: &[u8]) {
         let FnvHasher(mut hash) = *self;
         for byte in bytes.iter() {
             hash = hash ^ (*byte as u64);
-            hash = hash * 0x100000001b3;
+            hash = hash.wrapping_mul(0x100000001b3);
         }
         *self = FnvHasher(hash);
     }

@@ -96,6 +96,7 @@ pub struct LayoutTaskData {
     
     pub stacking_context: Option<Arc<StackingContext>>,
 
+    
     pub stylist: Box<Stylist>,
 
     
@@ -178,7 +179,7 @@ impl ImageResponder<UntrustedNodeAddress> for LayoutImageResponder {
     fn respond(&self) -> Box<Fn(ImageResponseMsg, UntrustedNodeAddress)+Send> {
         let id = self.id.clone();
         let script_chan = self.script_chan.clone();
-        box move |&:_, node_address| {
+        box move |_, node_address| {
             let ScriptControlChan(ref chan) = script_chan;
             debug!("Dirtying {:x}", node_address.0 as uint);
             let mut nodes = SmallVec1::new();
@@ -190,7 +191,7 @@ impl ImageResponder<UntrustedNodeAddress> for LayoutImageResponder {
 }
 
 impl LayoutTaskFactory for LayoutTask {
-    /// Spawns a new layout task.
+    
     fn create(_phantom: Option<&mut LayoutTask>,
                   id: PipelineId,
                   url: Url,
@@ -208,7 +209,7 @@ impl LayoutTaskFactory for LayoutTask {
                   shutdown_chan: Sender<()>) {
         let ConstellationChan(con_chan) = constellation_chan.clone();
         spawn_named_with_send_on_failure("LayoutTask", task_state::LAYOUT, move || {
-            { // Ensures layout task is destroyed before we send shutdown message
+            { 
                 let sender = chan.sender();
                 let layout =
                     LayoutTask::new(
@@ -232,14 +233,14 @@ impl LayoutTaskFactory for LayoutTask {
     }
 }
 
-/// The `LayoutTask` `rw_data` lock must remain locked until the first reflow,
-/// as RPC calls don't make sense until then. Use this in combination with
-/// `LayoutTask::lock_rw_data` and `LayoutTask::return_rw_data`.
+
+
+
 enum RWGuard<'a> {
-    /// If the lock was previously held, from when the task started.
+    
     Held(MutexGuard<'a, LayoutTaskData>),
-    /// If the lock was just used, and has been returned since there has been
-    /// a reflow already.
+    
+    
     Used(MutexGuard<'a, LayoutTaskData>),
 }
 
@@ -263,7 +264,7 @@ impl<'a> DerefMut for RWGuard<'a> {
 }
 
 impl LayoutTask {
-    /// Creates a new `LayoutTask` structure.
+    
     fn new(id: PipelineId,
            url: Url,
            port: Receiver<Msg>,
@@ -281,15 +282,18 @@ impl LayoutTask {
         let local_image_cache =
             Arc::new(Mutex::new(LocalImageCache::new(image_cache_task.clone())));
         let screen_size = Size2D(Au(0), Au(0));
-        let device = Device::new(MediaType::Screen, opts::get().initial_window_size.as_f32() * ScaleFactor(1.0));
+        let device = Device::new(
+            MediaType::Screen,
+            opts::get().initial_window_size.as_f32() * ScaleFactor::new(1.0));
         let parallel_traversal = if opts::get().layout_threads != 1 {
             Some(WorkQueue::new("LayoutWorker", task_state::LAYOUT,
-                                opts::get().layout_threads, SharedLayoutContextWrapper(ptr::null())))
+                                opts::get().layout_threads,
+                                SharedLayoutContextWrapper(ptr::null())))
         } else {
             None
         };
 
-        // Register this thread as a memory reporter, via its own channel.
+        
         let reporter = Box::new(chan.clone());
         let reporter_name = format!("layout-reporter-{}", id.0);
         memory_profiler_chan.send(MemoryProfilerMsg::RegisterMemoryReporter(reporter_name.clone(),
@@ -568,7 +572,7 @@ impl LayoutTask {
         let mut rw_data = self.lock_rw_data(possibly_locked_rw_data);
 
         if mq.evaluate(&rw_data.stylist.device) {
-            iter_font_face_rules(&sheet, &rw_data.stylist.device, &|&:family, src| {
+            iter_font_face_rules(&sheet, &rw_data.stylist.device, &|family, src| {
                 self.font_cache_task.add_web_font(family.to_owned(), (*src).clone());
             });
             rw_data.stylist.add_stylesheet(sheet);

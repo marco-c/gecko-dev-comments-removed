@@ -2,8 +2,6 @@
 
 
 
-#![allow(missing_copy_implementations)]
-
 extern crate gfx;
 extern crate script_traits;
 extern crate msg;

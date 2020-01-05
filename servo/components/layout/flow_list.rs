@@ -5,21 +5,21 @@
 use flow::Flow;
 use flow_ref::FlowRef;
 
-use std::collections::{dlist, DList};
+use std::collections::{linked_list, LinkedList};
 
 
 
 
 pub struct FlowList {
-    flows: DList<FlowRef>,
+    flows: LinkedList<FlowRef>,
 }
 
 pub struct FlowListIterator<'a> {
-    it: dlist::Iter<'a, FlowRef>,
+    it: linked_list::Iter<'a, FlowRef>,
 }
 
 pub struct MutFlowListIterator<'a> {
-    it: dlist::IterMut<'a, FlowRef>,
+    it: linked_list::IterMut<'a, FlowRef>,
 }
 
 impl FlowList {
@@ -72,7 +72,7 @@ impl FlowList {
     #[inline]
     pub fn new() -> FlowList {
         FlowList {
-            flows: DList::new(),
+            flows: LinkedList::new(),
         }
     }
 

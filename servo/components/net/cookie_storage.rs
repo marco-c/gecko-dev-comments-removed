@@ -93,22 +93,22 @@ impl CookieStorage {
 
     
     pub fn cookies_for_url(&mut self, url: &Url, source: CookieSource) -> Option<String> {
-        let filterer = |&:c: &&mut Cookie| -> bool {
+        let filterer = |c: &&mut Cookie| -> bool {
             info!(" === SENT COOKIE : {} {} {:?} {:?}", c.cookie.name, c.cookie.value, c.cookie.domain, c.cookie.path);
             info!(" === SENT COOKIE RESULT {}", c.appropriate_for_url(url, source));
-            // Step 1
+            
             c.appropriate_for_url(url, source)
         };
 
-        // Step 2
+        
         let mut url_cookies: Vec<&mut Cookie> = self.cookies.iter_mut().filter(filterer).collect();
         url_cookies.sort_by(|a, b| CookieStorage::cookie_comparator(*a, *b));
 
-        let reducer = |&:acc: String, c: &mut &mut Cookie| -> String {
-            // Step 3
+        let reducer = |acc: String, c: &mut &mut Cookie| -> String {
+            
             c.touch();
 
-            // Step 4
+            
             (match acc.len() {
                 0 => acc,
                 _ => acc + ";"

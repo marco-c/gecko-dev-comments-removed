@@ -54,11 +54,12 @@ use js::jsval::{StringValue, ObjectValue, ObjectOrNullValue};
 use libc;
 use std::borrow::ToOwned;
 use std::default;
+use std::marker::MarkerTrait;
 use std::slice;
 
 
 
-pub trait IDLInterface {
+pub trait IDLInterface: MarkerTrait {
     
     fn get_prototype_id() -> PrototypeList::ID;
     
@@ -74,6 +75,7 @@ pub trait ToJSValConvertible {
 
 
 pub trait FromJSValConvertible {
+    
     type Config;
     
     
