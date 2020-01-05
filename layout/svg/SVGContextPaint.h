@@ -114,12 +114,6 @@ public:
     return 0;
   }
 
-  
-
-
-
-  static bool IsAllowedForImageFromURI(nsIURI* aURI);
-
 private:
   
   FallibleTArray<gfxFloat> mDashes;

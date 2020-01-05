@@ -901,11 +901,8 @@ VectorImage::Draw(gfxContext* aContext,
   Maybe<AutoSetRestoreSVGContextPaint> autoContextPaint;
   if (aSVGContext &&
       aSVGContext->GetContextPaint()) {
-    nsCOMPtr<nsIURI> uri = mURI->ToIURI();
-    if (SVGContextPaint::IsAllowedForImageFromURI(uri)) {
-      autoContextPaint.emplace(aSVGContext->GetContextPaint(),
-                               mSVGDocumentWrapper->GetDocument());
-    }
+    autoContextPaint.emplace(aSVGContext->GetContextPaint(),
+                             mSVGDocumentWrapper->GetDocument());
   }
 
   
