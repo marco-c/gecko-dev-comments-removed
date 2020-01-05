@@ -241,7 +241,7 @@ add_task(function* test_on_created_navigation_target_from_context_menu_subframe(
     extension,
     async openNavTarget() {
       await clickContextMenuItem({
-        pageElementSelector() {
+        pageElementSelector: function() {
           
           
           return this.content.frames[0] 
@@ -263,7 +263,7 @@ add_task(function* test_on_created_navigation_target_from_context_menu_subframe(
     extension,
     async openNavTarget() {
       await clickContextMenuItem({
-        pageElementSelector() {
+        pageElementSelector: function() {
           
           
           return this.content.frames[0] 
