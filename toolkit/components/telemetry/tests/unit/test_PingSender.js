@@ -10,6 +10,7 @@ Cu.import("resource://gre/modules/osfile.jsm", this);
 Cu.import("resource://gre/modules/Preferences.jsm", this);
 Cu.import("resource://gre/modules/PromiseUtils.jsm", this);
 Cu.import("resource://gre/modules/Services.jsm", this);
+Cu.import("resource://gre/modules/TelemetrySend.jsm", this);
 Cu.import("resource://gre/modules/TelemetryStorage.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/Timer.jsm", this);
@@ -83,8 +84,8 @@ add_task(function* test_pingSender() {
 
   
   const errorUrl = "http://localhost:" + failingServer.identity.primaryPort + "/lookup_fail";
-  Telemetry.runPingSender(errorUrl, pingPath);
-  Telemetry.runPingSender(errorUrl, pingPath);
+  TelemetrySend.testRunPingSender(errorUrl, pingPath);
+  TelemetrySend.testRunPingSender(errorUrl, pingPath);
 
   
   
@@ -94,7 +95,7 @@ add_task(function* test_pingSender() {
 
   
   const url = "http://localhost:" + PingServer.port + "/submit/telemetry/";
-  Telemetry.runPingSender(url, pingPath);
+  TelemetrySend.testRunPingSender(url, pingPath);
 
   let req = yield PingServer.promiseNextRequest();
   let ping = decodeRequestPayload(req);
