@@ -7,7 +7,11 @@
 
 from __future__ import absolute_import, print_function, unicode_literals
 
-from voluptuous import Schema, Any, Required, All, MultipleInvalid
+from voluptuous import Schema, Any, Required, All
+from taskgraph.util.schema import (
+    optionally_keyed_by,
+    validate_schema,
+)
 
 
 def even_15_minutes(minutes):
@@ -45,16 +49,14 @@ cron_yml_schema = Schema({
 
         
         
-        'when': [{'hour': int, 'minute': All(int, even_15_minutes)}],
+        
+        
+        'when': optionally_keyed_by(
+            'project',
+            [{'hour': int, 'minute': All(int, even_15_minutes)}]),
     }],
 })
 
 
 def validate(cron_yml):
-    try:
-        cron_yml_schema(cron_yml)
-    except MultipleInvalid as exc:
-        msg = ["Invalid .cron.yml:"]
-        for error in exc.errors:
-            msg.append(str(error))
-        raise Exception('\n'.join(msg))
+    validate_schema(cron_yml_schema, cron_yml, "Invalid .cron.yml:")
