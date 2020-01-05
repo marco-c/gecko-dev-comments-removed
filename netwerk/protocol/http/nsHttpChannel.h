@@ -666,7 +666,7 @@ private:
 
     
     
-    nsresult MaybeRaceNetworkWithCache();
+    nsresult MaybeRaceCacheWithNetwork();
 
     nsresult TriggerNetwork(int32_t aTimeout);
     void CancelNetworkRequest(nsresult aStatus);
@@ -681,7 +681,7 @@ private:
     
     
     
-    Atomic<bool> mRacingNetAndCache;
+    Atomic<bool> mRaceCacheWithNetwork;
 
 protected:
     virtual void DoNotifyListenerCleanup() override;
