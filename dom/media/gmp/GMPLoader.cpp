@@ -201,11 +201,9 @@ public:
   {
     if (mozilla::SandboxInfo::Get().CanSandboxMedia()) {
       return MakeUnique<LinuxSandboxStarter>();
-    } else {
-      
-      
-      return nullptr;
     }
+    
+    
     return nullptr;
   }
   bool Start(const char *aLibPath) override

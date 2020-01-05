@@ -72,7 +72,8 @@ extern "C" {
       
       return GMPGenericErr;
 #if defined(GMP_FAKE_SUPPORT_DECRYPT)
-    } else if (!strcmp (aApiName, GMP_API_DECRYPTOR)) {
+    }
+    if (!strcmp (aApiName, GMP_API_DECRYPTOR)) {
       *aPluginApi = new FakeDecryptor();
       return GMPNoErr;
 #endif
