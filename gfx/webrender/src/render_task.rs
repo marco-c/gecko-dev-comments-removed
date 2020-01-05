@@ -68,12 +68,11 @@ pub struct AlphaRenderTask {
 #[repr(C)]
 pub enum MaskSegment {
     
-    
     All = 0,
-    Corner_TopLeft,
-    Corner_TopRight,
-    Corner_BottomLeft,
-    Corner_BottomRight,
+    TopLeftCorner,
+    TopRightCorner,
+    BottomLeftCorner,
+    BottomRightCorner,
 }
 
 #[derive(Debug, Copy, Clone)]

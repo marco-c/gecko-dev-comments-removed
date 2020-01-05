@@ -24,6 +24,8 @@ pub enum RendererKind {
     OSMesa,
 }
 
+pub type TileSize = u16;
+
 #[derive(Clone, Deserialize, Serialize)]
 pub enum ApiMsg {
     AddRawFont(FontKey, Vec<u8>),
@@ -31,7 +33,7 @@ pub enum ApiMsg {
     
     GetGlyphDimensions(Vec<GlyphKey>, MsgSender<Vec<Option<GlyphDimensions>>>),
     
-    AddImage(ImageKey, ImageDescriptor, ImageData),
+    AddImage(ImageKey, ImageDescriptor, ImageData, Option<TileSize>),
     
     UpdateImage(ImageKey, ImageDescriptor, Vec<u8>),
     
@@ -166,6 +168,7 @@ pub struct AuxiliaryLists {
 
 
 
+#[repr(C)]
 #[derive(Clone, Copy, Debug, Deserialize, Serialize)]
 pub struct AuxiliaryListsDescriptor {
     gradient_stops_size: usize,
@@ -287,14 +290,11 @@ pub struct BuiltDisplayList {
 
 
 
+#[repr(C)]
 #[derive(Copy, Clone, Deserialize, Serialize)]
 pub struct BuiltDisplayListDescriptor {
-    pub mode: DisplayListMode,
-
     
     display_list_items_size: usize,
-    
-    display_items_size: usize,
 }
 
 #[repr(C)]
@@ -363,7 +363,25 @@ pub struct ImageDescriptor {
     pub width: u32,
     pub height: u32,
     pub stride: Option<u32>,
+    pub offset: u32,
     pub is_opaque: bool,
+}
+
+impl ImageDescriptor {
+    pub fn new(width: u32, height: u32, format: ImageFormat, is_opaque: bool) -> Self {
+        ImageDescriptor {
+            width: width,
+            height: height,
+            format: format,
+            stride: None,
+            offset: 0,
+            is_opaque: is_opaque,
+        }
+    }
+
+    pub fn compute_stride(&self) -> u32 {
+        self.stride.unwrap_or(self.width * self.format.bytes_per_pixel().unwrap())
+    }
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]
@@ -393,14 +411,6 @@ pub struct DisplayItem {
     pub item: SpecificDisplayItem,
     pub rect: LayoutRect,
     pub clip: ClipRegion,
-}
-
-#[repr(u32)]
-#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
-pub enum DisplayListMode {
-    Default                 = 0,
-    PseudoFloat             = 1,
-    PseudoPositionedContent = 2,
 }
 
 #[repr(C)]
