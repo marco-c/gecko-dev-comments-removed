@@ -43,7 +43,8 @@ nsIDocument::FindDocStyleSheetInsertionPoint(
     
     if (sheetDocIndex < 0) {
       if (sheetService) {
-        auto& authorSheets = *sheetService->AuthorStyleSheets();
+        auto& authorSheets =
+          *sheetService->AuthorStyleSheets(GetStyleBackendType());
         if (authorSheets.IndexOf(sheetHandle) != authorSheets.NoIndex) {
           break;
         }
