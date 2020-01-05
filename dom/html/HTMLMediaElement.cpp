@@ -655,9 +655,10 @@ public:
   }
 
   void
-  NotifyPlayStarted()
+  NotifyPlayStateChanged()
   {
     MOZ_ASSERT(!mIsShutDown);
+    
     
     
     
@@ -7132,7 +7133,7 @@ HTMLMediaElement::UpdateCustomPolicyAfterPlayed()
 {
   OpenUnsupportedMediaWithExternalAppIfNeeded();
   if (mAudioChannelWrapper) {
-    mAudioChannelWrapper->NotifyPlayStarted();
+    mAudioChannelWrapper->NotifyPlayStateChanged();
   }
 }
 
