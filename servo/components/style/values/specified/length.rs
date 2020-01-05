@@ -990,6 +990,34 @@ impl LengthOrPercentage {
     
     
     
+    pub fn parse_numbers_are_pixels(input: &mut Parser) -> Result<LengthOrPercentage, ()> {
+        if let Ok(lop) = input.try(|i| Self::parse_internal(i, AllowedNumericType::All)) {
+            Ok(lop)
+        } else {
+            let num = input.expect_number()?;
+            Ok(LengthOrPercentage::Length(NoCalcLength::Absolute(Au((AU_PER_PX * num) as i32))))
+        }
+    }
+
+    
+    
+    
+    pub fn parse_numbers_are_pixels_non_negative(input: &mut Parser) -> Result<LengthOrPercentage, ()> {
+        if let Ok(lop) = input.try(|i| Self::parse_internal(i, AllowedNumericType::NonNegative)) {
+            Ok(lop)
+        } else {
+            let num = input.expect_number()?;
+            if num >= 0. {
+                Ok(LengthOrPercentage::Length(NoCalcLength::Absolute(Au((AU_PER_PX * num) as i32))))
+            } else {
+                Err(())
+            }
+        }
+    }
+
+    
+    
+    
     #[inline]
     pub fn take(&mut self) -> Self {
         mem::replace(self, LengthOrPercentage::zero())

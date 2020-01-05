@@ -264,6 +264,9 @@ impl_threadsafe_refcount!(::gecko_bindings::structs::nsStyleQuoteValues,
 impl_threadsafe_refcount!(::gecko_bindings::structs::nsCSSValueSharedList,
                           Gecko_AddRefCSSValueSharedListArbitraryThread,
                           Gecko_ReleaseCSSValueSharedListArbitraryThread);
+impl_threadsafe_refcount!(::gecko_bindings::structs::mozilla::css::URLValue,
+                          Gecko_AddRefCSSURLValueArbitraryThread,
+                          Gecko_ReleaseCSSURLValueArbitraryThread);
 
 
 pub type GeckoArcPrincipal = RefPtr<::gecko_bindings::structs::ThreadSafePrincipalHolder>;

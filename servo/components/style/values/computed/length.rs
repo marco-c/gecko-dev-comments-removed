@@ -4,7 +4,7 @@
 
 
 
-use app_units::Au;
+use app_units::{Au, AU_PER_PX};
 use ordered_float::NotNaN;
 use std::fmt;
 use style_traits::ToCss;
@@ -193,6 +193,12 @@ impl LengthOrPercentage {
     #[allow(missing_docs)]
     pub fn zero() -> LengthOrPercentage {
         LengthOrPercentage::Length(Au(0))
+    }
+
+    #[inline]
+    
+    pub fn one() -> LengthOrPercentage {
+        LengthOrPercentage::Length(Au(AU_PER_PX))
     }
 
     
