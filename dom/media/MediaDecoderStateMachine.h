@@ -383,9 +383,7 @@ protected:
 
   
   
-  
-  
-  bool HasLowDecodedData(int64_t aAudioUsecs);
+  bool HasLowDecodedData();
 
   bool OutOfDecodedAudio();
 
