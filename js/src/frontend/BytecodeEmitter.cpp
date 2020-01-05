@@ -4955,7 +4955,7 @@ BytecodeEmitter::emitIteratorClose(Maybe<JumpTarget> yieldStarTryStart, bool all
 
 template <typename InnerEmitter>
 bool
-BytecodeEmitter::wrapWithIteratorCloseTryNote(int32_t iterDepth, InnerEmitter emitter)
+BytecodeEmitter::wrapWithDestructuringIteratorCloseTryNote(int32_t iterDepth, InnerEmitter emitter)
 {
     MOZ_ASSERT(this->stackDepth >= iterDepth);
 
@@ -4964,7 +4964,7 @@ BytecodeEmitter::wrapWithIteratorCloseTryNote(int32_t iterDepth, InnerEmitter em
         return false;
     ptrdiff_t end = offset();
     if (start != end)
-        return tryNoteList.append(JSTRY_ITERCLOSE, iterDepth, start, end);
+        return tryNoteList.append(JSTRY_DESTRUCTURING_ITERCLOSE, iterDepth, start, end);
     return true;
 }
 
@@ -5140,6 +5140,13 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
     
     
     
+    
+    
+    
+    
+    
+    
+    
 
     
     
@@ -5148,25 +5155,61 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
     if (!emitIterator())                                          
         return false;
 
+    
+    
+    if (!pattern->pn_head)
+        return emitIteratorClose();                               
+
+    
+    if (!emit1(JSOP_FALSE))                                       
+        return false;
+
+    
+    
+    
+    int32_t tryNoteDepth = stackDepth;
+
     for (ParseNode* member = pattern->pn_head; member; member = member->pn_next) {
-        bool isHead = member == pattern->pn_head;
-        bool hasNext = !!member->pn_next;
+        bool isFirst = member == pattern->pn_head;
+        DebugOnly<bool> hasNext = !!member->pn_next;
+
+        size_t emitted = 0;
+
+        
+        ParseNode* lhsPattern = member;
+        if (lhsPattern->isKind(PNK_ASSIGN))
+            lhsPattern = lhsPattern->pn_left;
+
+        bool isElision = lhsPattern->isKind(PNK_ELISION);
+        if (!isElision) {
+            auto emitLHSRef = [lhsPattern, &emitted](BytecodeEmitter* bce) {
+                return bce->emitDestructuringLHSRef(lhsPattern, &emitted); 
+            };
+            if (!wrapWithDestructuringIteratorCloseTryNote(tryNoteDepth, emitLHSRef))
+                return false;
+        }
+
+        
+        if (emitted) {
+            if (!emit2(JSOP_PICK, emitted))                       
+                return false;
+        }
+
+        if (isFirst) {
+            
+            
+            
+            
+            if (!emit1(JSOP_POP))                                 
+                return false;
+        }
 
         if (member->isKind(PNK_SPREAD)) {
-            size_t emitted = 0;
-            if (!emitDestructuringLHSRef(member, &emitted))       
-                return false;
-
             IfThenElseEmitter ifThenElse(this);
-            if (!isHead) {
+            if (!isFirst) {
                 
                 
-                
-                if (emitted) {
-                    if (!emit2(JSOP_PICK, emitted))               
-                        return false;
-                }
-
+                                                                  
                 if (!ifThenElse.emitIfElse())                     
                     return false;
 
@@ -5189,13 +5232,22 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
             if (!emit1(JSOP_POP))                                 
                 return false;
 
-            if (!isHead) {
+            if (!isFirst) {
                 if (!ifThenElse.emitEnd())
                     return false;
                 MOZ_ASSERT(ifThenElse.pushed() == 1);
             }
 
-            if (!emitSetOrInitializeDestructuring(member, flav))  
+            
+            if (!emit1(JSOP_TRUE))                                
+                return false;
+            if (!emit2(JSOP_UNPICK, emitted + 1))                 
+                return false;
+
+            auto emitAssignment = [member, flav](BytecodeEmitter* bce) {
+                return bce->emitSetOrInitializeDestructuring(member, flav); 
+            };
+            if (!wrapWithDestructuringIteratorCloseTryNote(tryNoteDepth, emitAssignment))
                 return false;
 
             MOZ_ASSERT(!hasNext);
@@ -5203,44 +5255,14 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         }
 
         ParseNode* pndefault = nullptr;
-        ParseNode* subpattern = member;
-        if (subpattern->isKind(PNK_ASSIGN)) {
-            pndefault = subpattern->pn_right;
-            subpattern = subpattern->pn_left;
-        }
+        if (member->isKind(PNK_ASSIGN))
+            pndefault = member->pn_right;
 
-        bool isElision = subpattern->isKind(PNK_ELISION);
-
-        MOZ_ASSERT(!subpattern->isKind(PNK_SPREAD));
-
-        size_t emitted = 0;
-        if (!isElision) {
-            if (!emitDestructuringLHSRef(subpattern, &emitted))   
-                return false;
-        }
+        MOZ_ASSERT(!member->isKind(PNK_SPREAD));
 
         IfThenElseEmitter ifAlreadyDone(this);
-        if (!isHead) {
-            
-            
-            
-            if (emitted) {
-                if (hasNext) {
-                    if (!emitDupAt(emitted))                      
-                        return false;
-                } else {
-                    if (!emit2(JSOP_PICK, emitted))               
-                        return false;
-                }
-            } else {
-                if (hasNext) {
-                    
-                    
-                    
-                    if (!emit1(JSOP_DUP))                         
-                        return false;
-                }
-            }
+        if (!isFirst) {
+                                                                  
             if (!ifAlreadyDone.emitIfElse())                      
                 return false;
 
@@ -5249,17 +5271,14 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
             if (!emit1(JSOP_NOP_DESTRUCTURING))                   
                 return false;
 
-            if (!ifAlreadyDone.emitElse())                        
+            
+            if (!emit1(JSOP_TRUE))                                
+                return false;
+            if (!emit2(JSOP_UNPICK, emitted + 1))                 
                 return false;
 
-            if (hasNext) {
-                if (emitted) {
-                    if (!emit2(JSOP_PICK, emitted))               
-                        return false;
-                }
-                if (!emit1(JSOP_POP))                             
-                    return false;
-            }
+            if (!ifAlreadyDone.emitElse())                        
+                return false;
         }
 
         if (emitted) {
@@ -5276,12 +5295,10 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
         if (!emitAtomOp(cx->names().done, JSOP_GETPROP))          
             return false;
 
-        if (hasNext) {
-            if (!emit1(JSOP_DUP))                                 
-                return false;
-            if (!emit2(JSOP_UNPICK, emitted + 2))                 
-                return false;
-        }
+        if (!emit1(JSOP_DUP))                                     
+            return false;
+        if (!emit2(JSOP_UNPICK, emitted + 2))                     
+            return false;
 
         IfThenElseEmitter ifDone(this);
         if (!ifDone.emitIfElse())                                 
@@ -5304,30 +5321,47 @@ BytecodeEmitter::emitDestructuringOpsArray(ParseNode* pattern, DestructuringFlav
             return false;
         MOZ_ASSERT(ifDone.pushed() == 0);
 
-        if (!isHead) {
+        if (!isFirst) {
             if (!ifAlreadyDone.emitEnd())
                 return false;
-            MOZ_ASSERT(ifAlreadyDone.pushed() == 1);
+            MOZ_ASSERT(ifAlreadyDone.pushed() == 2);
         }
 
         if (pndefault) {
-            if (!emitDefault(pndefault, subpattern))              
+            auto emitDefault = [pndefault, lhsPattern](BytecodeEmitter* bce) {
+                return bce->emitDefault(pndefault, lhsPattern);    
+            };
+
+            if (!wrapWithDestructuringIteratorCloseTryNote(tryNoteDepth, emitDefault))
                 return false;
         }
 
         if (!isElision) {
-            if (!emitSetOrInitializeDestructuring(subpattern,
-                                                  flav))          
-            {
+            auto emitAssignment = [lhsPattern, flav](BytecodeEmitter* bce) {
+                return bce->emitSetOrInitializeDestructuring(lhsPattern, flav); 
+            };
+
+            if (!wrapWithDestructuringIteratorCloseTryNote(tryNoteDepth, emitAssignment))
                 return false;
-            }
         } else {
             if (!emit1(JSOP_POP))                                 
                 return false;
         }
     }
 
+    
+    
+                                                                  
+    IfThenElseEmitter ifDone(this);
+    if (!ifDone.emitIfElse())                                     
+        return false;
     if (!emit1(JSOP_POP))                                         
+        return false;
+    if (!ifDone.emitElse())                                       
+        return false;
+    if (!emitIteratorClose())                                     
+        return false;
+    if (!ifDone.emitEnd())
         return false;
 
     return true;
