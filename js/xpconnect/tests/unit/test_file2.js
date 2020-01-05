@@ -16,9 +16,9 @@ function run_test() {
   file.append("xpcshell.ini");
 
   
-  var f1 = new File(file.path);
+  var f1 = File.createFromFileName(file.path);
   
-  var f2 = new File(file);
+  var f2 = File.createFromNsIFile(file);
 
   
   do_check_true(f1 instanceof File, "Should be a DOM File");
@@ -54,7 +54,7 @@ function run_test() {
     var dir = Components.classes["@mozilla.org/file/directory_service;1"]
                         .getService(Ci.nsIProperties)
                         .get("CurWorkD", Ci.nsIFile);
-    var f7 = File(dir)
+    var f7 = File.createFromNsIFile(dir)
   } catch (e) {
     threw = true;
   }

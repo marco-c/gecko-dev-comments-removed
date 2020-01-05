@@ -31,9 +31,9 @@ FileComponent.prototype =
     file.append("xpcshell.ini");
 
     
-    var f1 = new File(file.path);
+    var f1 = File.createFromFileName(file.path);
     
-    var f2 = new File(file);
+    var f2 = File.createFromNsIFile(file);
 
     
     do_check_true(f1 instanceof File, "Should be a DOM File");
@@ -69,7 +69,7 @@ FileComponent.prototype =
       var dir = Components.classes["@mozilla.org/file/directory_service;1"]
                           .getService(Ci.nsIProperties)
                           .get("CurWorkD", Ci.nsIFile);
-      var f7 = new File(dir)
+      var f7 = File.createFromNsIFile(dir)
     } catch (e) {
       threw = true;
     }

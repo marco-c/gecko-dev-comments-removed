@@ -213,24 +213,17 @@ public:
 
   
   static already_AddRefed<File>
-  Constructor(const GlobalObject& aGlobal,
-              Blob& aData,
-              const ChromeFilePropertyBag& aBag,
-              ErrorResult& aRv);
+  CreateFromFileName(const GlobalObject& aGlobal,
+                     const nsAString& aData,
+                     const ChromeFilePropertyBag& aBag,
+                     ErrorResult& aRv);
 
   
   static already_AddRefed<File>
-  Constructor(const GlobalObject& aGlobal,
-              const nsAString& aData,
-              const ChromeFilePropertyBag& aBag,
-              ErrorResult& aRv);
-
-  
-  static already_AddRefed<File>
-  Constructor(const GlobalObject& aGlobal,
-              nsIFile* aData,
-              const ChromeFilePropertyBag& aBag,
-              ErrorResult& aRv);
+  CreateFromNsIFile(const GlobalObject& aGlobal,
+                    nsIFile* aData,
+                    const ChromeFilePropertyBag& aBag,
+                    ErrorResult& aRv);
 
   void GetName(nsAString& aName) const;
 
