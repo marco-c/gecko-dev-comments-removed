@@ -2583,8 +2583,8 @@ ClampColorStops(nsTArray<ColorStop>& aStops)
     }
   }
 
-  MOZ_ASSERT(aStops[0].mPosition >= 0);
-  MOZ_ASSERT(aStops.LastElement().mPosition <= 1);
+  MOZ_ASSERT(aStops[0].mPosition >= -1e6);
+  MOZ_ASSERT(aStops.LastElement().mPosition - 1 <= 1e6);
 
   
   
@@ -3239,7 +3239,6 @@ nsCSSRendering::PaintBackgroundWithSC(const PaintBGParams& aParams,
           if (!clipBorderArea.IsEqualEdges(aParams.borderArea)) {
             
             
-            
             gfxRect clip =
               nsLayoutUtils::RectToGfxRect(aParams.borderArea, appUnitsPerPixel);
             autoSR.EnsureSaved(ctx);
@@ -3260,8 +3259,7 @@ nsCSSRendering::PaintBackgroundWithSC(const PaintBGParams& aParams,
         if (!state.mFillArea.IsEmpty()) {
           if (co != CompositionOp::OP_OVER) {
             NS_ASSERTION(ctx->CurrentOp() == CompositionOp::OP_OVER,
-                         "It is assumed the initial op is OP_OVER, when it is "
-                         "restored later");
+                         "It is assumed the initial op is OP_OVER, when it is restored later");
             ctx->SetOp(co);
           }
 
