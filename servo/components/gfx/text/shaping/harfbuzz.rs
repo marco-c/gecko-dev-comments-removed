@@ -164,7 +164,7 @@ impl Shaper {
             let hb_font: *mut hb_font_t = hb_font_create(hb_face);
 
             
-            let pt_size = font.actual_pt_size;
+            let pt_size = font.actual_pt_size.to_subpx();
             hb_font_set_ppem(hb_font, pt_size as c_uint, pt_size as c_uint);
 
             
