@@ -80,14 +80,16 @@ this.FxAccountsProfileClient.prototype = {
 
 
 
-  _createRequest: Task.async(function* (path, method = "GET") {
+
+
+  _createRequest: Task.async(function* (path, method = "GET", etag = null) {
     let token = this.token;
     if (!token) {
       
       token = yield this.fxa.getOAuthToken(this.oauthOptions);
     }
     try {
-      return (yield this._rawRequest(path, method, token));
+      return (yield this._rawRequest(path, method, token, etag));
     } catch (ex) {
       if (!(ex instanceof FxAccountsProfileClientError) || ex.code != 401) {
         throw ex;
@@ -103,7 +105,7 @@ this.FxAccountsProfileClient.prototype = {
       
       
       try {
-        return (yield this._rawRequest(path, method, token));
+        return (yield this._rawRequest(path, method, token, etag));
       } catch (ex) {
         if (!(ex instanceof FxAccountsProfileClientError) || ex.code != 401) {
           throw ex;
@@ -128,7 +130,8 @@ this.FxAccountsProfileClient.prototype = {
 
 
 
-  _rawRequest(path, method, token) {
+
+  _rawRequest(path, method, token, etag) {
     return new Promise((resolve, reject) => {
       let profileDataUrl = this.serverURL + path;
       let request = new this._Request(profileDataUrl);
@@ -136,6 +139,9 @@ this.FxAccountsProfileClient.prototype = {
 
       request.setHeader("Authorization", "Bearer " + token);
       request.setHeader("Accept", "application/json");
+      if (etag) {
+        request.setHeader("If-None-Match", etag);
+      }
 
       request.onComplete = function(error) {
         if (error) {
@@ -160,7 +166,10 @@ this.FxAccountsProfileClient.prototype = {
 
         
         if (request.response.success) {
-          return resolve(body);
+          return resolve({
+            body,
+            etag: request.response.headers["etag"]
+          });
         } else {
           return reject(new FxAccountsProfileClientError({
             error: body.error || ERROR_UNKNOWN,
@@ -192,21 +201,11 @@ this.FxAccountsProfileClient.prototype = {
 
 
 
-  fetchProfile() {
+
+
+  fetchProfile(etag) {
     log.debug("FxAccountsProfileClient: Requested profile");
-    return this._createRequest("/profile", "GET");
-  },
-
-  
-
-
-
-
-
-
-  fetchProfileImage() {
-    log.debug("FxAccountsProfileClient: Requested avatar");
-    return this._createRequest("/avatar", "GET");
+    return this._createRequest("/profile", "GET", etag);
   }
 };
 

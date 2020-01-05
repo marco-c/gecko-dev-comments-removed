@@ -19,7 +19,7 @@ const STATUS_SUCCESS = 200;
 
 
 
-var mockResponse = function(response) {
+let mockResponse = function(response) {
   let Request = function(requestUri) {
     
     Request._requestUri = requestUri;
@@ -41,7 +41,7 @@ var mockResponse = function(response) {
 
 
 
-var mockResponseError = function(error) {
+let mockResponseError = function(error) {
   return function() {
     return {
       setHeader() {},
@@ -52,7 +52,7 @@ var mockResponseError = function(error) {
   };
 };
 
-var mockClient = function(fxa) {
+let mockClient = function(fxa) {
   let options = {
     serverURL: "http://127.0.0.1:1111/v1",
     fxa,
@@ -76,10 +76,19 @@ FxaMock.prototype = {
 
   getSignedInUser() {
     return Promise.resolve(ACCOUNT_DATA);
+  },
+
+  getProfileCache() {
+    return Promise.resolve(this.profileCache);
+  },
+
+  setProfileCache(profileCache) {
+    this.profileCache = profileCache;
+    return Promise.resolve();
   }
 };
 
-var mockFxa = function() {
+let mockFxa = function() {
   return new FxaMock();
 };
 
@@ -97,71 +106,59 @@ function CreateFxAccountsProfile(fxa = null, client = null) {
   return new FxAccountsProfile(options);
 }
 
-add_test(function getCachedProfile() {
-  let profile = CreateFxAccountsProfile();
-  
-  profile._cachedProfile = { avatar: "myurl" };
-
-  return profile._getCachedProfile()
-    .then(function(cached) {
-      do_check_eq(cached.avatar, "myurl");
-      run_next_test();
-    });
-});
-
 add_test(function cacheProfile_change() {
+  let setProfileCacheCalled = false;
   let fxa = mockFxa();
-
-
-
-
-
-
-
-
+  fxa.setProfileCache = (data) => {
+    setProfileCacheCalled = true;
+    do_check_eq(data.profile.avatar, "myurl");
+    do_check_eq(data.etag, "bogusetag");
+    return Promise.resolve();
+  }
   let profile = CreateFxAccountsProfile(fxa);
+  profile._cachedAt = 12345;
 
   makeObserver(ON_PROFILE_CHANGE_NOTIFICATION, function(subject, topic, data) {
     do_check_eq(data, ACCOUNT_DATA.uid);
-
+    do_check_neq(profile._cachedAt, 12345, "cachedAt has been bumped");
+    do_check_true(setProfileCacheCalled);
     run_next_test();
   });
 
-  return profile._cacheProfile({ avatar: "myurl" });
-});
-
-add_test(function cacheProfile_no_change() {
-  let fxa = mockFxa();
-  let profile = CreateFxAccountsProfile(fxa)
-  profile._cachedProfile = { avatar: "myurl" };
-
-
-  fxa.setSignedInUser = function(data) {
-    throw new Error("should not update account data");
-  };
-
-  return profile._cacheProfile({ avatar: "myurl" })
-    .then((result) => {
-      do_check_false(!!result);
-      run_next_test();
-    });
+  return profile._cacheProfile({ body: { avatar: "myurl" }, etag: "bogusetag" });
 });
 
 add_test(function fetchAndCacheProfile_ok() {
   let client = mockClient(mockFxa());
   client.fetchProfile = function() {
-    return Promise.resolve({ avatar: "myimg"});
+    return Promise.resolve({ body: { avatar: "myimg"} });
   };
   let profile = CreateFxAccountsProfile(null, client);
 
   profile._cacheProfile = function(toCache) {
-    do_check_eq(toCache.avatar, "myimg");
-    return Promise.resolve();
+    do_check_eq(toCache.body.avatar, "myimg");
+    return Promise.resolve(toCache.body);
   };
 
   return profile._fetchAndCacheProfile()
     .then(result => {
       do_check_eq(result.avatar, "myimg");
+      run_next_test();
+    });
+});
+
+add_test(function fetchAndCacheProfile_sendsETag() {
+  let fxa = mockFxa();
+  fxa.profileCache = { profile: {}, etag: "bogusETag" };
+  let client = mockClient(fxa);
+  client.fetchProfile = function(etag) {
+    do_check_eq(etag, "bogusETag");
+    return Promise.resolve({ body: { avatar: "myimg"} });
+  };
+  let profile = CreateFxAccountsProfile(fxa, client);
+
+  return profile._fetchAndCacheProfile()
+    .then(result => {
       run_next_test();
     });
 });
@@ -181,7 +178,17 @@ add_task(function* fetchAndCacheProfileOnce() {
     numFetches += 1;
     return promiseProfile;
   };
-  let profile = CreateFxAccountsProfile(null, client);
+  let fxa = mockFxa();
+  fxa.getProfileCache = () => {
+    
+    
+    return {
+      then(thenFunc) {
+        return thenFunc();
+      }
+    }
+  };
+  let profile = CreateFxAccountsProfile(fxa, client);
 
   let request1 = profile._fetchAndCacheProfile();
   let request2 = profile._fetchAndCacheProfile();
@@ -191,7 +198,7 @@ add_task(function* fetchAndCacheProfileOnce() {
   do_check_eq(numFetches, 1);
 
   
-  resolveProfile({ avatar: "myimg"});
+  resolveProfile({ body: { avatar: "myimg"} });
 
   
   let got1 = yield request1;
@@ -218,7 +225,17 @@ add_task(function* fetchAndCacheProfileOnce() {
     numFetches += 1;
     return promiseProfile;
   };
-  let profile = CreateFxAccountsProfile(null, client);
+  let fxa = mockFxa();
+  fxa.getProfileCache = () => {
+    
+    
+    return {
+      then(thenFunc) {
+        return thenFunc();
+      }
+    }
+  };
+  let profile = CreateFxAccountsProfile(fxa, client);
 
   let request1 = profile._fetchAndCacheProfile();
   let request2 = profile._fetchAndCacheProfile();
@@ -250,7 +267,7 @@ add_task(function* fetchAndCacheProfileOnce() {
 
   
   client.fetchProfile = function() {
-    return Promise.resolve({ avatar: "myimg"});
+    return Promise.resolve({body: { avatar: "myimg"}});
   };
 
   let got = yield profile._fetchAndCacheProfile();
@@ -322,10 +339,9 @@ add_test(function getProfile_ok() {
   let cachedUrl = "myurl";
   let didFetch = false;
 
-  let profile = CreateFxAccountsProfile();
-  profile._getCachedProfile = function() {
-    return Promise.resolve({ avatar: cachedUrl });
-  };
+  let fxa = mockFxa();
+  fxa.profileCache = { profile: { avatar: cachedUrl } };
+  let profile = CreateFxAccountsProfile(fxa);
 
   profile._fetchAndCacheProfile = function() {
     didFetch = true;
@@ -342,10 +358,9 @@ add_test(function getProfile_ok() {
 
 add_test(function getProfile_no_cache() {
   let fetchedUrl = "newUrl";
-  let profile = CreateFxAccountsProfile();
-  profile._getCachedProfile = function() {
-    return Promise.resolve();
-  };
+  let fxa = mockFxa();
+  fxa.profileCache = null;
+  let profile = CreateFxAccountsProfile(fxa);
 
   profile._fetchAndCacheProfile = function() {
     return Promise.resolve({ avatar: fetchedUrl });
@@ -364,11 +379,11 @@ add_test(function getProfile_has_cached_fetch_deleted() {
   let fxa = mockFxa();
   let client = mockClient(fxa);
   client.fetchProfile = function() {
-    return Promise.resolve({ avatar: null });
+    return Promise.resolve({ body: { avatar: null } });
   };
 
   let profile = CreateFxAccountsProfile(fxa, client);
-  profile._cachedProfile = { avatar: cachedUrl };
+  fxa.profileCache = { profile: { avatar: cachedUrl } };
 
 
 
@@ -383,6 +398,22 @@ add_test(function getProfile_has_cached_fetch_deleted() {
   return profile.getProfile()
     .then(result => {
       do_check_eq(result.avatar, "myurl");
+    });
+});
+
+add_test(function getProfile_fetchAndCacheProfile_throws() {
+  let fxa = mockFxa();
+  fxa.profileCache = { profile: { avatar: "myimg" } };
+  let profile = CreateFxAccountsProfile(fxa);
+
+  profile._cachedAt = 12345;
+  profile._fetchAndCacheProfile = () => Promise.reject(new Error());
+
+  return profile.getProfile()
+    .then(result => {
+      do_check_neq(profile._cachedAt, 12345);
+      do_check_eq(result.avatar, "myimg");
+      run_next_test();
     });
 });
 

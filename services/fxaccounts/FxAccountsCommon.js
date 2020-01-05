@@ -235,7 +235,7 @@ exports.ERROR_MSG_METHOD_NOT_ALLOWED         = "METHOD_NOT_ALLOWED";
 
 exports.FXA_PWDMGR_PLAINTEXT_FIELDS = new Set(
   ["email", "verified", "authAt", "sessionToken", "uid", "oauthTokens", "profile",
-  "deviceId", "deviceRegistrationVersion"]);
+  "deviceId", "deviceRegistrationVersion", "profileCache"]);
 
 
 exports.FXA_PWDMGR_SECURE_FIELDS = new Set(
