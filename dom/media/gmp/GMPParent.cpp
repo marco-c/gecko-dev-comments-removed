@@ -725,7 +725,7 @@ GMPParent::ReadChromiumManifestFile(nsIFile* aFile)
   }
 
   
-  return InvokeAsync<nsString&&>(
+  return InvokeAsync(
     mMainThread, this, __func__,
     &GMPParent::ParseChromiumManifest, NS_ConvertUTF8toUTF16(json));
 }
