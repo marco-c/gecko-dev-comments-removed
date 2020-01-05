@@ -1,6 +1,6 @@
-
-
-
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #ifndef MOZ_PROFILE_GATHERER_H
 #define MOZ_PROFILE_GATHERER_H
@@ -10,12 +10,11 @@
 
 namespace mozilla {
 
-
-class ProfileGatherer final : public nsIObserver
+// This class holds the state for an async profile-gathering request.
+class ProfileGatherer final : public nsISupports
 {
 public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
 
   explicit ProfileGatherer();
   void WillGatherOOPProfile();
@@ -40,6 +39,6 @@ private:
   bool mGathering;
 };
 
-} 
+} // namespace mozilla
 
 #endif

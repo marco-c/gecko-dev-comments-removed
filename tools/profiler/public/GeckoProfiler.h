@@ -31,6 +31,8 @@
 #include "mozilla/Vector.h"
 #include "nsString.h"
 
+class SpliceableJSONWriter;
+
 namespace mozilla {
 class TimeStamp;
 
@@ -214,6 +216,12 @@ PROFILER_FUNC_VOID(profiler_set_frame_number(int frameNumber))
 
 PROFILER_FUNC(mozilla::UniquePtr<char[]> profiler_get_profile(double aSinceTime = 0),
               nullptr)
+
+
+
+PROFILER_FUNC(bool profiler_stream_json_for_this_process(SpliceableJSONWriter& aWriter,
+                                                         double aSinceTime = 0),
+              false)
 
 
 

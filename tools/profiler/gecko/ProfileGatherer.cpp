@@ -8,9 +8,9 @@
 
 #include "mozilla/Services.h"
 #include "nsIObserverService.h"
-#include "nsIProfileSaveEvent.h"
 #include "nsLocalFile.h"
 #include "nsIFileStreams.h"
+#include "ProfileJSONWriter.h"
 
 using mozilla::dom::AutoJSAPI;
 using mozilla::dom::Promise;
@@ -26,7 +26,7 @@ namespace mozilla {
 
 static const uint32_t MAX_SUBPROCESS_EXIT_PROFILES = 5;
 
-NS_IMPL_ISUPPORTS(ProfileGatherer, nsIObserver)
+NS_IMPL_ISUPPORTS0(ProfileGatherer)
 
 ProfileGatherer::ProfileGatherer()
   : mSinceTime(0)
@@ -127,10 +127,7 @@ ProfileGatherer::Start2(double aSinceTime)
   nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
   if (os) {
     DebugOnly<nsresult> rv =
-      os->AddObserver(this, "profiler-subprocess", false);
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "AddObserver failed");
-
-    rv = os->NotifyObservers(this, "profiler-subprocess-gather", nullptr);
+      os->NotifyObservers(this, "profiler-subprocess-gather", nullptr);
     NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "NotifyObservers failed");
   }
 
@@ -144,24 +141,44 @@ ProfileGatherer::Finish()
 {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (!profiler_is_active()) {
-    Cancel();
-    return;
-  }
+  SpliceableChunkedJSONWriter b;
+  b.Start(SpliceableJSONWriter::SingleLineStyle);
+  {
+    if (!profiler_stream_json_for_this_process(b, mSinceTime)) {
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      
+      Cancel();
+      return;
+    }
 
-  UniquePtr<char[]> buf = profiler_get_profile(mSinceTime);
+    b.StartArrayProperty("processes");
+    for (size_t i = 0; i < mExitProfiles.Length(); ++i) {
+      if (!mExitProfiles[i].IsEmpty()) {
+        b.Splice(mExitProfiles[i].get());
+      }
+    }
+    mExitProfiles.Clear();
+    for (size_t i = 0; i < mResponseProfiles.Length(); ++i) {
+      if (!mResponseProfiles[i].IsEmpty()) {
+        b.Splice(mResponseProfiles[i].get());
+      }
+    }
+    mResponseProfiles.Clear();
+    b.EndArray();
+  }
+  b.End();
+
+  UniquePtr<char[]> buf = b.WriteFunc()->CopyData();
 
   if (mFile) {
     nsCOMPtr<nsIFileOutputStream> of =
@@ -172,12 +189,6 @@ ProfileGatherer::Finish()
     of->Close();
     Reset();
     return;
-  }
-
-  nsCOMPtr<nsIObserverService> os = mozilla::services::GetObserverService();
-  if (os) {
-    DebugOnly<nsresult> rv = os->RemoveObserver(this, "profiler-subprocess");
-    NS_WARNING_ASSERTION(NS_SUCCEEDED(rv), "RemoveObserver failed");
   }
 
   AutoJSAPI jsapi;
@@ -242,31 +253,6 @@ ProfileGatherer::OOPExitProfile(const nsACString& aProfile)
     mExitProfiles.RemoveElementAt(0);
   }
   mExitProfiles.AppendElement(aProfile);
-}
-
-NS_IMETHODIMP
-ProfileGatherer::Observe(nsISupports* aSubject,
-                         const char* aTopic,
-                         const char16_t *someData)
-{
-  if (!strcmp(aTopic, "profiler-subprocess")) {
-    nsCOMPtr<nsIProfileSaveEvent> pse = do_QueryInterface(aSubject);
-    if (pse) {
-      for (size_t i = 0; i < mExitProfiles.Length(); ++i) {
-        if (!mExitProfiles[i].IsEmpty()) {
-          pse->AddSubProfile(mExitProfiles[i].get());
-        }
-      }
-      mExitProfiles.Clear();
-      for (size_t i = 0; i < mResponseProfiles.Length(); ++i) {
-        if (!mResponseProfiles[i].IsEmpty()) {
-          pse->AddSubProfile(mResponseProfiles[i].get());
-        }
-      }
-      mResponseProfiles.Clear();
-    }
-  }
-  return NS_OK;
 }
 
 } 
