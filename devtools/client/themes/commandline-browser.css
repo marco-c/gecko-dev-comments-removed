@@ -122,7 +122,13 @@ html|*#gcli-output-frame {
 #gcli-tooltip {
   border-width: 0;
   background-color: transparent;
-  -moz-appearance: none; appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+
+  
+
+
+  width: 80vw;
 }
 
 .gclitoolbar-input-node,
