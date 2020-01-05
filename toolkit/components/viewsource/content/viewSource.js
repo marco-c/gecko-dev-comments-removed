@@ -515,7 +515,7 @@ ViewSourceChrome.prototype = {
     
     
     let types = event.dataTransfer.types;
-    if (types.contains("text/x-moz-text-internal") && !types.contains("text/plain")) {
+    if (types.includes("text/x-moz-text-internal") && !types.includes("text/plain")) {
         event.dataTransfer.dropEffect = "none";
         event.stopPropagation();
         event.preventDefault();

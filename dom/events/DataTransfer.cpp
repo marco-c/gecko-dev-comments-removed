@@ -310,14 +310,16 @@ DataTransfer::GetFiles(nsIDOMFileList** aFileList)
   return NS_OK;
 }
 
-already_AddRefed<DOMStringList>
-DataTransfer::GetTypes(ErrorResult& aRv) const
+void
+DataTransfer::GetTypes(nsTArray<nsString>& aTypes) const
 {
-  RefPtr<DOMStringList> types = new DOMStringList();
-
+  
+  
+  aTypes.Clear();
+  
   const nsTArray<RefPtr<DataTransferItem>>* items = mItems->MozItemsAt(0);
   if (NS_WARN_IF(!items)) {
-    return types.forget();
+    return;
   }
 
   for (uint32_t i = 0; i < items->Length(); i++) {
@@ -332,10 +334,7 @@ DataTransfer::GetTypes(ErrorResult& aRv) const
     item->GetType(type);
     if (item->Kind() == DataTransferItem::KIND_STRING || type.EqualsASCII(kFileMime)) {
       
-      if (NS_WARN_IF(!types->Add(type))) {
-        aRv.Throw(NS_ERROR_FAILURE);
-        return nullptr;
-      }
+      aTypes.AppendElement(type);
     }
   }
 
@@ -346,14 +345,9 @@ DataTransfer::GetTypes(ErrorResult& aRv) const
     if (item->Kind() != DataTransferItem::KIND_FILE) {
       continue;
     }
-    if (NS_WARN_IF(!types->Add(NS_LITERAL_STRING("Files")))) {
-      aRv.Throw(NS_ERROR_FAILURE);
-      return nullptr;
-    }
+    aTypes.AppendElement(NS_LITERAL_STRING("Files"));
     break;
   }
-
-  return types.forget();
 }
 
 void
@@ -670,8 +664,7 @@ DataTransfer::PrincipalMaySetData(const nsAString& aType,
 void
 DataTransfer::TypesListMayHaveChanged()
 {
-  
-  
+  DataTransferBinding::ClearCachedTypesValue(this);
 }
 
 nsresult
