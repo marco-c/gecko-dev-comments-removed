@@ -121,7 +121,6 @@ pub struct LayerMetadata {
 
 pub trait RenderListener {
     fn get_graphics_metadata(&self) -> Option<NativeGraphicsMetadata>;
-    fn create_layer_group_for_pipeline(&self, PipelineId, Size2D<uint>);
 
     
     
