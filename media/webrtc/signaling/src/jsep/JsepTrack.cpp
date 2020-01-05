@@ -52,7 +52,9 @@ JsepTrack::EnsureNoDuplicatePayloadTypes(
   for (JsepCodecDescription* codec : *codecs) {
     
     
-    if (!codec->mEnabled) {
+    if (!codec->mEnabled ||
+        
+        !codec->mName.compare("webrtc-datachannel")) {
       continue;
     }
 

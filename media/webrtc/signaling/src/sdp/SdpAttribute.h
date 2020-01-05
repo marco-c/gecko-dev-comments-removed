@@ -74,7 +74,9 @@ public:
     kSimulcastAttribute,
     kSsrcAttribute,
     kSsrcGroupAttribute,
-    kLastAttribute = kSsrcGroupAttribute
+    kSctpPortAttribute,
+    kMaxMessageSizeAttribute,
+    kLastAttribute = kMaxMessageSizeAttribute
   };
 
   explicit SdpAttribute(AttributeType type) : mType(type) {}
@@ -1455,9 +1457,6 @@ public:
 
 
 
-
-
-
 class SdpSctpmapAttributeList : public SdpAttribute
 {
 public:
@@ -1491,14 +1490,9 @@ public:
   }
 
   const Sctpmap&
-  GetEntry(const std::string& pt) const
+  GetFirstEntry() const
   {
-    for (auto it = mSctpmaps.begin(); it != mSctpmaps.end(); ++it) {
-      if (it->pt == pt) {
-        return *it;
-      }
-    }
-    MOZ_CRASH();
+    return mSctpmaps[0];
   }
 
   std::vector<Sctpmap> mSctpmaps;

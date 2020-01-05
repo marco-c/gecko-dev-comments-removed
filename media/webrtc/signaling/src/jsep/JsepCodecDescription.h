@@ -93,12 +93,7 @@ class JsepCodecDescription {
     if (mEnabled && msection.GetMediaType() == mType) {
       
       if (!msection.HasFormat(mDefaultPt)) {
-        if (mType == SdpMediaSection::kApplication) {
-          
-          msection.AddDataChannel(mDefaultPt, mName, mChannels);
-        } else {
-          msection.AddCodec(mDefaultPt, mName, mClock, mChannels);
-        }
+        msection.AddCodec(mDefaultPt, mName, mClock, mChannels);
       }
 
       AddParametersToMSection(msection);
@@ -744,13 +739,16 @@ class JsepVideoCodecDescription : public JsepCodecDescription {
 };
 
 class JsepApplicationCodecDescription : public JsepCodecDescription {
+  
  public:
-  JsepApplicationCodecDescription(const std::string& defaultPt,
-                                  const std::string& name,
+  JsepApplicationCodecDescription(const std::string& name,
                                   uint16_t channels,
+                                  uint16_t localPort,
                                   bool enabled = true)
-      : JsepCodecDescription(mozilla::SdpMediaSection::kApplication, defaultPt,
-                             name, 0, channels, enabled)
+      : JsepCodecDescription(mozilla::SdpMediaSection::kApplication, "",
+                             name, 0, channels, enabled),
+        mLocalPort(localPort),
+        mRemotePort(0)
   {
   }
 
@@ -765,14 +763,60 @@ class JsepApplicationCodecDescription : public JsepCodecDescription {
       return false;
     }
 
-    const SdpSctpmapAttributeList::Sctpmap* entry(
-        remoteMsection.FindSctpmap(fmt));
-
-    if (entry && !nsCRT::strcasecmp(mName.c_str(), entry->name.c_str())) {
+    int sctp_port = remoteMsection.GetSctpPort();
+    bool fmt_matches = nsCRT::strcasecmp(mName.c_str(),
+                          remoteMsection.GetFormats()[0].c_str()) == 0;
+    if (sctp_port && fmt_matches) {
+      
       return true;
     }
+
+    const SdpSctpmapAttributeList::Sctpmap* sctp_map(
+        remoteMsection.GetSctpmap());
+    if (sctp_map) {
+      
+      return nsCRT::strcasecmp(mName.c_str(), sctp_map->name.c_str()) == 0;
+    }
+
     return false;
   }
+
+  virtual void
+  AddToMediaSection(SdpMediaSection& msection) const override
+  {
+    if (mEnabled && msection.GetMediaType() == mType) {
+      if (msection.GetFormats().empty()) {
+        msection.AddDataChannel(mName, mLocalPort, mChannels);
+      }
+
+      AddParametersToMSection(msection);
+    }
+  }
+
+  bool
+  Negotiate(const std::string& pt, const SdpMediaSection& remoteMsection) override
+  {
+    JsepCodecDescription::Negotiate(pt, remoteMsection);
+
+    int sctp_port = remoteMsection.GetSctpPort();
+    if (sctp_port) {
+      mRemotePort = sctp_port;
+      return true;
+    }
+
+    const SdpSctpmapAttributeList::Sctpmap* sctp_map(
+        remoteMsection.GetSctpmap());
+    if (sctp_map) {
+      mRemotePort = std::stoi(sctp_map->pt);
+      return true;
+    }
+
+    return false;
+  }
+
+
+  uint16_t mLocalPort;
+  uint16_t mRemotePort;
 };
 
 } 
