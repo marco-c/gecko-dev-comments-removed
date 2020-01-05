@@ -143,6 +143,17 @@ TableWidget.prototype = {
     }
   },
 
+
+
+
+
+
+
+  get hasSelectedRow() {
+    return this.columns.get(this.uniqueId) &&
+           this.columns.get(this.uniqueId).selectedRow;
+  },
+
   
 
 
