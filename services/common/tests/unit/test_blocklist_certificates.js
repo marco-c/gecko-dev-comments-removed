@@ -12,10 +12,9 @@ const BinaryInputStream = CC("@mozilla.org/binaryinputstream;1",
 let server;
 
 
-let sqliteHandle;
-const KINTO_FILENAME = "kinto.sqlite";
+const kintoFilename = "kinto.sqlite";
 
-function do_get_kinto_collection(collectionName) {
+function do_get_kinto_collection(collectionName, sqliteHandle) {
   let config = {
     
     
@@ -36,8 +35,8 @@ add_task(function* test_something() {
   const configPath = "/v1/";
   const recordsPath = "/v1/buckets/blocklists/collections/certificates/records";
 
-  const dummyServerURL = `http://localhost:${server.identity.primaryPort}/v1`;
-  Services.prefs.setCharPref("services.settings.server", dummyServerURL);
+  Services.prefs.setCharPref("services.settings.server",
+                             `http://localhost:${server.identity.primaryPort}/v1`);
 
   
   function handleResponse(request, response) {
@@ -67,45 +66,24 @@ add_task(function* test_something() {
   
   yield OneCRLBlocklistClient.maybeSync(2000, Date.now());
 
-  sqliteHandle = yield FirefoxAdapter.openConnection({path: KINTO_FILENAME});
-  const collection = do_get_kinto_collection("certificates");
-
   
+  
+  let sqliteHandle = yield FirefoxAdapter.openConnection({path: kintoFilename});
+  let collection = do_get_kinto_collection("certificates", sqliteHandle);
   let list = yield collection.list();
-  
-  
-  do_check_true(list.data.length >= 363);
-
-  
-  Services.prefs.clearUserPref("services.settings.server");
-  Services.prefs.setIntPref("services.blocklist.onecrl.checked", 0);
-  
-  yield OneCRLBlocklistClient.maybeSync(123456, Date.now());
-  
-  do_check_neq(0, Services.prefs.getIntPref("services.blocklist.onecrl.checked"));
-
-  
-  Services.prefs.setCharPref("services.settings.server", dummyServerURL);
-  
-  
-  yield collection.clear();
-  
-  
-  yield collection.db.saveLastModified(1000);
-  yield OneCRLBlocklistClient.maybeSync(2000, Date.now());
-
-  
-  
-  list = yield collection.list();
   do_check_eq(list.data.length, 1);
+  yield sqliteHandle.close();
 
   
   yield OneCRLBlocklistClient.maybeSync(4000, Date.now());
 
   
   
+  sqliteHandle = yield FirefoxAdapter.openConnection({path: kintoFilename});
+  collection = do_get_kinto_collection("certificates", sqliteHandle);
   list = yield collection.list();
   do_check_eq(list.data.length, 3);
+  yield sqliteHandle.close();
 
   
   
@@ -126,7 +104,8 @@ add_task(function* test_something() {
   
   
   
-  Services.prefs.setCharPref("services.settings.server", dummyServerURL);
+  Services.prefs.setCharPref("services.settings.server",
+                             `http://localhost:${server.identity.primaryPort}/v1`);
   yield OneCRLBlocklistClient.maybeSync(5000, Date.now());
 });
 
@@ -143,7 +122,6 @@ function run_test() {
 
   do_register_cleanup(function() {
     server.stop(() => { });
-    return sqliteHandle.close();
   });
 }
 
@@ -172,17 +150,6 @@ function getSampleResponse(req, port) {
       "responseBody": JSON.stringify({"settings":{"batch_max_requests":25}, "url":`http://localhost:${port}/v1/`, "documentation":"https://kinto.readthedocs.org/", "version":"1.5.1", "commit":"cbc6f58", "hello":"kinto"})
     },
     "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified": {
-      "sampleHeaders": [
-        "Access-Control-Allow-Origin: *",
-        "Access-Control-Expose-Headers: Retry-After, Content-Length, Alert, Backoff",
-        "Content-Type: application/json; charset=UTF-8",
-        "Server: waitress",
-        "Etag: \"1000\""
-      ],
-      "status": {status: 200, statusText: "OK"},
-      "responseBody": JSON.stringify({"data":[{}]})
-    },
-    "GET:/v1/buckets/blocklists/collections/certificates/records?_sort=-last_modified&_since=1000": {
       "sampleHeaders": [
         "Access-Control-Allow-Origin: *",
         "Access-Control-Expose-Headers: Retry-After, Content-Length, Alert, Backoff",
