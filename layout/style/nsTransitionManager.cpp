@@ -894,12 +894,11 @@ nsTransitionManager::ConsiderInitiatingTransition(
     reversePortion = valuePortion;
   }
 
-  TimingParams timing;
-  timing.mDuration.emplace(StickyTimeDuration::FromMilliseconds(duration));
-  timing.mDelay = TimeDuration::FromMilliseconds(delay);
-  timing.mIterations = 1.0;
-  timing.mDirection = dom::PlaybackDirection::Normal;
-  timing.mFill = dom::FillMode::Backwards;
+  TimingParams timing =
+    TimingParamsFromCSSParams(duration, delay,
+                              1.0 ,
+                              dom::PlaybackDirection::Normal,
+                              dom::FillMode::Backwards);
 
   
   Maybe<OwningAnimationTarget> target;
