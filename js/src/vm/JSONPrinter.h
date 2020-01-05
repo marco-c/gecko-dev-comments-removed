@@ -1,0 +1,65 @@
+
+
+
+
+
+
+#ifndef vm_JSONPrinter_h
+#define vm_JSONPrinter_h
+
+#include <stdio.h>
+
+#include "js/TypeDecls.h"
+#include "vm/Printer.h"
+
+namespace js {
+
+class JSONPrinter
+{
+  protected:
+    int indentLevel_;
+    bool first_;
+    GenericPrinter& out_;
+
+    void indent();
+
+  public:
+    explicit JSONPrinter(GenericPrinter& out)
+      : indentLevel_(0),
+        first_(true),
+        out_(out)
+    { }
+
+    void beginObject();
+    void beginObjectProperty(const char* name);
+    void beginListProperty(const char* name);
+
+    void value(const char* format, ...) MOZ_FORMAT_PRINTF(2, 3);
+    void value(int value);
+
+    void property(const char* name, const char* format, ...) MOZ_FORMAT_PRINTF(3, 4);
+    void property(const char* name, int32_t value);
+    void property(const char* name, uint32_t value);
+    void property(const char* name, int64_t value);
+    void property(const char* name, uint64_t value);
+#ifdef XP_DARWIN
+    
+    
+    
+    void property(const char* name, size_t value);
+#endif
+    void property(const char* name, double value);
+
+    void beginStringProperty(const char* name);
+    void endStringProperty();
+
+    void endObject();
+    void endList();
+
+  protected:
+    void propertyName(const char* name);
+};
+
+} 
+
+#endif 
