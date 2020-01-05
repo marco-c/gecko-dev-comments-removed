@@ -70,7 +70,7 @@ pub enum FlowContextType {
 
 
 pub struct FlowData {
-    node: Option<AbstractNode>,
+    node: AbstractNode,
     
     tree: tree::Tree<@mut FlowContext>,
     /* TODO (Issue #87): debug only */
@@ -84,9 +84,9 @@ pub struct FlowData {
     position: Rect<Au>,
 }
 
-pub fn FlowData(id: int) -> FlowData {
+pub fn FlowData(id: int, node: AbstractNode) -> FlowData {
     FlowData {
-        node: None,
+        node: node,
         tree: tree::empty(),
         id: id,
 

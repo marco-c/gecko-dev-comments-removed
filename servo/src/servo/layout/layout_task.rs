@@ -40,13 +40,15 @@ use std::net::url::Url;
 pub type LayoutTask = SharedChan<Msg>;
 
 pub enum LayoutQuery {
-    ContentBox(AbstractNode)
+    ContentBox(AbstractNode),
+    ContentBoxes(AbstractNode)
 }
 
 pub type LayoutQueryResponse = Result<LayoutQueryResponse_, ()>;
 
-enum LayoutQueryResponse_ {
-    ContentSize(Size2D<int>)
+pub enum LayoutQueryResponse_ {
+    ContentRect(Rect<Au>),
+    ContentRects(~[Rect<Au>])
 }
 
 pub enum Msg {
@@ -231,8 +233,8 @@ impl Layout {
 
             let display_list = @Cell(DisplayList::new());
             
-            
-            
+            // TODO: set options on the builder before building
+            // TODO: be smarter about what needs painting
             layout_root.build_display_list(&builder,
                                            &copy layout_root.d().position,
                                            display_list);
@@ -244,9 +246,9 @@ impl Layout {
             };
 
             self.render_task.send(RenderMsg(render_layer));
-        } 
+        } // time(layout: display list building)
 
-        
+        // Tell content we're done
         data.content_join_chan.send(());
     }
 
@@ -256,7 +258,10 @@ impl Layout {
         match query {
             ContentBox(node) => {
                 let response = match node.layout_data().flow {
-                    None => Err(()),
+                    None => {
+                        error!("no flow present");
+                        Err(())
+                    }
                     Some(flow) => {
                         let start_val: Option<Rect<Au>> = None;
                         let rect = do flow.foldl_boxes_for_node(node, start_val) |acc, box| {
@@ -267,13 +272,27 @@ impl Layout {
                         };
                         
                         match rect {
-                            None => Err(()),
-                            Some(rect) => {
-                                let size = Size2D(rect.size.width.to_px(),
-                                                  rect.size.height.to_px());
-                                Ok(ContentSize(size))
+                            None => {
+                                error!("no boxes for node");
+                                Err(())
                             }
+                            Some(rect) => Ok(ContentRect(rect))
                         }
+                    }
+                };
+
+                reply_chan.send(response)
+            }
+            ContentBoxes(node) => {
+                let response = match node.layout_data().flow {
+                    None => Err(()),
+                    Some(flow) => {
+                        let mut boxes = ~[];
+                        for flow.iter_boxes_for_node(node) |box| {
+                            boxes.push(box.content_box());
+                        }
+
+                        Ok(ContentRects(boxes))
                     }
                 };
 
