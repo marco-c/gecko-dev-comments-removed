@@ -1504,6 +1504,7 @@ static malloc_zone_t * szone = (malloc_zone_t*)(&l_szone);
 static lion_malloc_introspection l_ozone_introspect;
 static malloc_introspection_t * const ozone_introspect =
 	(malloc_introspection_t*)(&l_ozone_introspect);
+static malloc_zone_t *get_default_zone();
 static void szone2ozone(malloc_zone_t *zone, size_t size);
 static size_t zone_version_size(int version);
 #else
@@ -6081,7 +6082,7 @@ MALLOC_OUT:
 	
 
 
-	default_zone = malloc_default_zone();
+	default_zone = get_default_zone();
 
 	
 
@@ -7060,6 +7061,32 @@ zone_version_size(int version)
         case LION_MALLOC_ZONE_T_VERSION:
             return sizeof(lion_malloc_zone);
     }
+}
+
+static malloc_zone_t *get_default_zone()
+{
+  malloc_zone_t **zones = NULL;
+  unsigned int num_zones = 0;
+
+  
+
+
+
+
+
+
+
+
+
+  if (KERN_SUCCESS != malloc_get_all_zones(0, NULL, (vm_address_t**) &zones,
+                                           &num_zones)) {
+    
+    num_zones = 0;
+  }
+  if (num_zones) {
+    return zones[0];
+  }
+  return malloc_default_zone();
 }
 
 
