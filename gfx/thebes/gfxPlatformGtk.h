@@ -133,11 +133,6 @@ public:
     }
 
     bool AccelerateLayersByDefault() override {
-#ifdef NIGHTLY_BUILD
-      
-      
-      return true;
-#endif
       return false;
     }
 
