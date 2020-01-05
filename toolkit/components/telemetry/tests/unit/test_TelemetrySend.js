@@ -255,7 +255,7 @@ add_task(function* test_discardBigPings() {
   const TEST_PING_TYPE = "test-ping-type";
 
   
-  const OVERSIZED_PAYLOAD = generateRandomString(2 * 1024 * 1024);
+  const OVERSIZED_PAYLOAD = {"data": generateRandomString(2 * 1024 * 1024)};
 
   
   Telemetry.getHistogramById("TELEMETRY_PING_SIZE_EXCEEDED_SEND").clear();
