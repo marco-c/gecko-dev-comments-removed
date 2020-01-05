@@ -101,12 +101,13 @@ FFmpegVideoDecoder<LIBAV_VER>::PtsCorrectionContext::Reset()
 
 FFmpegVideoDecoder<LIBAV_VER>::FFmpegVideoDecoder(
   FFmpegLibWrapper* aLib, TaskQueue* aTaskQueue, const VideoInfo& aConfig,
-  ImageContainer* aImageContainer)
+  ImageContainer* aImageContainer, bool aLowLatency)
   : FFmpegDataDecoder(aLib, aTaskQueue, GetCodecId(aConfig.mMimeType))
   , mImageContainer(aImageContainer)
   , mInfo(aConfig)
   , mCodecParser(nullptr)
   , mLastInputDts(INT64_MIN)
+  , mLowLatency(aLowLatency)
 {
   MOZ_COUNT_CTOR(FFmpegVideoDecoder);
   
@@ -143,11 +144,18 @@ FFmpegVideoDecoder<LIBAV_VER>::InitCodecContext()
     decode_threads = 2;
   }
 
-  decode_threads = std::min(decode_threads, PR_GetNumberOfProcessors() - 1);
-  decode_threads = std::max(decode_threads, 1);
-  mCodecContext->thread_count = decode_threads;
-  if (decode_threads > 1) {
-    mCodecContext->thread_type = FF_THREAD_SLICE | FF_THREAD_FRAME;
+  if (mLowLatency) {
+    mCodecContext->flags |= CODEC_FLAG_LOW_DELAY;
+    
+    
+    mCodecContext->thread_type = FF_THREAD_SLICE;
+  } else {
+    decode_threads = std::min(decode_threads, PR_GetNumberOfProcessors() - 1);
+    decode_threads = std::max(decode_threads, 1);
+    mCodecContext->thread_count = decode_threads;
+    if (decode_threads > 1) {
+      mCodecContext->thread_type = FF_THREAD_SLICE | FF_THREAD_FRAME;
+    }
   }
 
   
