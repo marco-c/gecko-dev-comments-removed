@@ -11,9 +11,8 @@ use geom::matrix::identity;
 use geom::point::TypedPoint2D;
 use geom::rect::Rect;
 use geom::size::{Size2D, TypedSize2D};
-use gfx::render_task::{ReRenderRequest, RenderChan, UnusedBufferMsg};
-use layers::layers::{Layer, Flip, LayerBuffer, LayerBufferSet, NoFlip, TextureLayer};
-use layers::quadtree::Tile;
+use gfx::render_task::{ReRenderRequest, ReRenderMsg, RenderChan, UnusedBufferMsg};
+use layers::layers::{Layer, Flip, LayerBuffer, LayerBufferSet, NoFlip, TextureLayer, Tile};
 use layers::platform::surface::{NativeCompositingGraphicsContext, NativeSurfaceMethods};
 use layers::texturegl::{Texture, TextureTarget};
 use servo_msg::compositor_msg::{Epoch, FixedPosition, LayerId};
@@ -112,11 +111,9 @@ impl CompositorData {
                                                       layer_properties.scroll_policy,
                                                       layer_properties.background_color);
         let new_kid = Rc::new(Layer::new(layer_properties.rect,
-                                         Layer::tile_size(layer.clone()),
+                                         layer.tile_size,
                                          new_compositor_data));
-
-        
-        Layer::add_child(layer.clone(), new_kid.clone());
+        layer.add_child(new_kid.clone());
     }
 
     
@@ -129,7 +126,7 @@ impl CompositorData {
                                            window_rect: Rect<f32>,
                                            scale: f32)
                                            -> bool {
-        let (request, unused) = Layer::get_tile_rects_page(layer.clone(), window_rect, scale);
+        let (request, unused) = layer.get_tile_rects_page(window_rect, scale);
         let redisplay = !unused.is_empty();
         if redisplay {
             
@@ -207,7 +204,6 @@ impl CompositorData {
                                                                  new_rect))
 
             }
-
         }
     }
 
@@ -215,11 +211,8 @@ impl CompositorData {
         layer.extra_data.borrow_mut().epoch = layer_properties.epoch;
         layer.extra_data.borrow_mut().unrendered_color = layer_properties.background_color;
 
-        let unused_buffers = Layer::resize(layer.clone(), layer_properties.rect.size);
-        if !unused_buffers.is_empty() {
-            let msg = UnusedBufferMsg(unused_buffers);
-            let _ = layer.extra_data.borrow().pipeline.render_chan.send_opt(msg);
-        }
+        layer.resize(layer_properties.rect.size);
+        layer.contents_changed();
 
         
         
@@ -300,7 +293,7 @@ impl CompositorData {
         layer.tiles.borrow_mut().clear();
 
         
-        Layer::do_for_all_tiles(layer.clone(), |buffer: &Box<LayerBuffer>| {
+        layer.do_for_all_tiles(|buffer: &Box<LayerBuffer>| {
             debug!("osmain: compositing buffer rect {}", buffer.rect);
 
             let size = Size2D(buffer.screen_pos.size.width as int,
@@ -354,13 +347,26 @@ impl CompositorData {
         }
 
         {
-            let mut unused_tiles = vec!();
             for buffer in new_buffers.buffers.move_iter().rev() {
-                unused_tiles.push_all_move(Layer::add_tile_pixel(layer.clone(), buffer));
+                layer.add_tile_pixel(buffer);
             }
+
+            let unused_tiles = layer.collect_unused_tiles();
             if !unused_tiles.is_empty() { 
                 let msg = UnusedBufferMsg(unused_tiles);
                 let _ = layer.extra_data.borrow().pipeline.render_chan.send_opt(msg);
+            }
+
+            let (pending_buffer_requests, scale) = layer.flush_pending_buffer_requests();
+            if !pending_buffer_requests.is_empty() {
+                let mut requests = Vec::new();
+                requests.push(ReRenderRequest {
+                    buffer_requests: pending_buffer_requests,
+                    scale: scale,
+                    layer_id: layer.extra_data.borrow().id,
+                    epoch: layer.extra_data.borrow().epoch,
+                });
+                let _ = layer.extra_data.borrow().pipeline.render_chan.send_opt(ReRenderMsg(requests));
             }
         }
 
@@ -371,7 +377,7 @@ impl CompositorData {
     
     
     fn clear(layer: Rc<Layer<CompositorData>>) {
-        let mut tiles = Layer::collect_tiles(layer.clone());
+        let mut tiles = layer.collect_tiles();
 
         if !tiles.is_empty() {
             
@@ -400,7 +406,7 @@ impl CompositorData {
     
     
     pub fn forget_all_tiles(layer: Rc<Layer<CompositorData>>) {
-        let tiles = Layer::collect_tiles(layer.clone());
+        let tiles = layer.collect_tiles();
         for tile in tiles.move_iter() {
             let mut tile = tile;
             tile.mark_wont_leak()
