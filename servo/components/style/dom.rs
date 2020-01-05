@@ -64,7 +64,33 @@ pub trait TRestyleDamage : Debug + PartialEq + BitOr<Output=Self> + Copy {
     fn rebuild_and_reflow() -> Self;
 }
 
-pub trait TNode : Sized + Copy + Clone {
+
+
+
+
+pub trait NodeInfo {
+    fn is_element(&self) -> bool;
+    fn is_text_node(&self) -> bool;
+
+    
+    fn needs_layout(&self) -> bool { self.is_element() || self.is_text_node() }
+}
+
+pub struct LayoutIterator<T>(pub T);
+impl<T, I> Iterator for LayoutIterator<T> where T: Iterator<Item=I>, I: NodeInfo {
+    type Item = I;
+    fn next(&mut self) -> Option<I> {
+        loop {
+            
+            let n = self.0.next();
+            if n.is_none() || n.as_ref().unwrap().needs_layout() {
+                return n
+            }
+        }
+    }
+}
+
+pub trait TNode : Sized + Copy + Clone + NodeInfo {
     type ConcreteElement: TElement<ConcreteNode = Self, ConcreteDocument = Self::ConcreteDocument>;
     type ConcreteDocument: TDocument<ConcreteNode = Self, ConcreteElement = Self::ConcreteElement>;
     type ConcreteRestyleDamage: TRestyleDamage;
@@ -73,19 +99,12 @@ pub trait TNode : Sized + Copy + Clone {
     fn to_unsafe(&self) -> UnsafeNode;
     unsafe fn from_unsafe(n: &UnsafeNode) -> Self;
 
-    
-    
-    
-    fn is_text_node(&self) -> bool;
-
-    fn is_element(&self) -> bool;
-
     fn dump(self);
 
     fn dump_style(self);
 
     
-    fn children(self) -> Self::ConcreteChildrenIterator;
+    fn children(self) -> LayoutIterator<Self::ConcreteChildrenIterator>;
 
     
     fn opaque(&self) -> OpaqueNode;
