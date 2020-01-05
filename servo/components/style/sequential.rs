@@ -24,8 +24,9 @@ pub fn traverse_dom<N, C>(root: N,
 
             C::traverse_children(el, |kid| doit::<N, C>(context, kid, data));
 
-            
-            
+            if let Some(ref mut depth) = data.current_dom_depth {
+                *depth -= 1;
+            }
         }
 
         if context.needs_postorder_traversal() {
