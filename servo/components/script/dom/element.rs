@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! Element nodes.
 
 use dom::activation::Activatable;
 use dom::attr::{Attr, ReplacedAttr, FirstSetAttr, AttrHelpers, AttrHelpersForLayout};
@@ -35,7 +35,7 @@ use dom::event::Event;
 use dom::eventtarget::{EventTarget, NodeTargetTypeId, EventTargetHelpers};
 use dom::htmlbodyelement::{HTMLBodyElement, HTMLBodyElementHelpers};
 use dom::htmlcollection::HTMLCollection;
-use dom::htmlinputelement::{HTMLInputElement, RawLayoutHTMLInputElementHelpers};
+use dom::htmlinputelement::{HTMLInputElement, RawLayoutHTMLInputElementHelpers, HTMLInputElementHelpers};
 use dom::htmlserializer::serialize;
 use dom::htmltableelement::{HTMLTableElement, HTMLTableElementHelpers};
 use dom::htmltablecellelement::{HTMLTableCellElement, HTMLTableCellElementHelpers};
@@ -171,9 +171,9 @@ pub enum ElementCreator {
     ScriptCreated,
 }
 
-
-
-
+//
+// Element methods
+//
 impl Element {
     pub fn create(name: QualName, prefix: Option<DOMString>,
                   document: JSRef<Document>, creator: ElementCreator)
@@ -212,6 +212,7 @@ pub trait RawLayoutElementHelpers {
     unsafe fn get_integer_attribute_for_layout(&self, integer_attribute: IntegerAttribute)
                                                -> Option<i32>;
     unsafe fn get_checked_state_for_layout(&self) -> bool;
+    unsafe fn get_indeterminate_state_for_layout(&self) -> bool;
     unsafe fn get_unsigned_integer_attribute_for_layout(&self, attribute: UnsignedIntegerAttribute)
                                                         -> Option<u32>;
     unsafe fn get_simple_color_attribute_for_layout(&self, attribute: SimpleColorAttribute)
@@ -351,6 +352,18 @@ impl RawLayoutElementHelpers for Element {
         let this: &HTMLInputElement = mem::transmute(self);
         this.get_checked_state_for_layout()
     }
+
+    #[inline]
+    #[allow(unrooted_must_root)]
+    unsafe fn get_indeterminate_state_for_layout(&self) -> bool {
+        // TODO progress elements can also be matched with :indeterminate
+        if !self.is_htmlinputelement() {
+            return false
+        }
+        let this: &HTMLInputElement = mem::transmute(self);
+        this.get_indeterminate_state_for_layout()
+    }
+
 
     unsafe fn get_unsigned_integer_attribute_for_layout(&self,
                                                         attribute: UnsignedIntegerAttribute)
@@ -1289,6 +1302,12 @@ impl<'a> style::TElement<'a> for JSRef<'a, Element> {
             None => false,
         }
     }
+    fn get_indeterminate_state(self) -> bool {
+        match HTMLInputElementCast::to_ref(self) {
+            Some(input) => input.get_indeterminate_state(),
+            None => false,
+        }
+    }
     fn has_class(self, name: &Atom) -> bool {
         // FIXME(zwarich): Remove this when UFCS lands and there is a better way
         // of disambiguating methods.
@@ -1358,7 +1377,7 @@ impl<'a> ActivationElementHelpers<'a> for JSRef<'a, Element> {
         node.set_flag(CLICK_IN_PROGRESS, click)
     }
 
-    
+    // https://html.spec.whatwg.org/multipage/interaction.html#nearest-activatable-element
     fn nearest_activable_element(self) -> Option<Temporary<Element>> {
         match self.as_maybe_activatable() {
             Some(el) => Some(Temporary::from_rooted(*el.as_element().root())),
@@ -1372,45 +1391,45 @@ impl<'a> ActivationElementHelpers<'a> for JSRef<'a, Element> {
         }
     }
 
-    
-    
-    
-    
-    
-    
+    /// Please call this method *only* for real click events
+    ///
+    /// https://html.spec.whatwg.org/multipage/interaction.html#run-authentic-click-activation-steps
+    ///
+    /// Use an element's synthetic click activation (or handle_event) for any script-triggered clicks.
+    /// If the spec says otherwise, check with Manishearth first
     fn authentic_click_activation<'b>(self, event: JSRef<'b, Event>) {
-        
-        
-        
-        
+        // Not explicitly part of the spec, however this helps enforce the invariants
+        // required to save state between pre-activation and post-activation
+        // since we cannot nest authentic clicks (unlike synthetic click activation, where
+        // the script can generate more click events from the handler)
         assert!(!self.click_in_progress());
 
         let target: JSRef<EventTarget> = EventTargetCast::from_ref(self);
-        
-        
+        // Step 2 (requires canvas support)
+        // Step 3
         self.set_click_in_progress(true);
-        
+        // Step 4
         let e = self.nearest_activable_element().root();
         match e {
             Some(el) => match el.as_maybe_activatable() {
                 Some(elem) => {
-                    
+                    // Step 5-6
                     elem.pre_click_activation();
                     target.dispatch_event(event);
                     if !event.DefaultPrevented() {
-                        
+                        // post click activation
                         elem.activation_behavior();
                     } else {
                         elem.canceled_activation();
                     }
                 }
-                
+                // Step 6
                 None => {target.dispatch_event(event);}
             },
-            
+            // Step 6
             None => {target.dispatch_event(event);}
         }
-        
+        // Step 7
         self.set_click_in_progress(false);
     }
 }
