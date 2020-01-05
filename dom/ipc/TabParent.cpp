@@ -917,6 +917,14 @@ TabParent::RecvPDocAccessibleConstructor(PDocAccessibleParent* aDoc,
 {
 #ifdef ACCESSIBILITY
   auto doc = static_cast<a11y::DocAccessibleParent*>(aDoc);
+
+  
+  
+  if (mIsDestroyed) {
+    doc->MarkAsShutdown();
+    return IPC_OK();
+  }
+
   if (aParentDoc) {
     
     

@@ -50,6 +50,18 @@ public:
 
 
 
+
+  void MarkAsShutdown()
+  {
+    MOZ_ASSERT(mChildDocs.IsEmpty());
+    MOZ_ASSERT(mAccessibles.Count() == 0);
+    mShutdown = true;
+  }
+
+  
+
+
+
   virtual mozilla::ipc::IPCResult RecvEvent(const uint64_t& aID, const uint32_t& aType)
     override;
 
