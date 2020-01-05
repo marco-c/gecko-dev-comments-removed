@@ -112,39 +112,85 @@ impl MemoryProfiler {
         match nbytes {
             Some(nbytes) => {
                 let mebi = 1024f64 * 1024f64;
-                println!("{:16}: {:12.2}", path, (nbytes as f64) / mebi);
+                println!("{:24}: {:12.2}", path, (nbytes as f64) / mebi);
             }
             None => {
-                println!("{:16}: {:>12}", path, "???");
+                println!("{:24}: {:>12}", path, "???");
             }
         }
     }
 
     fn handle_print_msg(&self) {
-        println!("{:16}: {:12}", "_category_", "_size (MiB)_");
+        println!("{:24}: {:12}", "_category_", "_size (MiB)_");
 
         
-        MemoryProfiler::print_measurement("vsize",          get_vsize());
-        MemoryProfiler::print_measurement("resident",       get_resident());
-
-        
-        
-
-        
-        MemoryProfiler::print_measurement("heap-allocated", get_jemalloc_stat("stats.allocated"));
+        MemoryProfiler::print_measurement("vsize", get_vsize());
+        MemoryProfiler::print_measurement("resident", get_resident());
 
         
         
+        MemoryProfiler::print_measurement("system-heap-allocated",
+                                          get_system_heap_allocated());
+
         
-        MemoryProfiler::print_measurement("heap-active",    get_jemalloc_stat("stats.active"));
+        
+
+        
+        MemoryProfiler::print_measurement("jemalloc-heap-allocated",
+                                          get_jemalloc_stat("stats.allocated"));
 
         
         
         
-        MemoryProfiler::print_measurement("heap-mapped",    get_jemalloc_stat("stats.mapped"));
+        MemoryProfiler::print_measurement("jemalloc-heap-active",
+                                          get_jemalloc_stat("stats.active"));
+
+        
+        
+        
+        MemoryProfiler::print_measurement("jemalloc-heap-mapped",
+                                          get_jemalloc_stat("stats.mapped"));
 
         println!("");
     }
+}
+
+#[cfg(target_os="linux")]
+extern {
+    fn mallinfo() -> struct_mallinfo;
+}
+
+#[cfg(target_os="linux")]
+#[repr(C)]
+pub struct struct_mallinfo {
+    arena:    c_int,
+    ordblks:  c_int,
+    smblks:   c_int,
+    hblks:    c_int,
+    hblkhd:   c_int,
+    usmblks:  c_int,
+    fsmblks:  c_int,
+    uordblks: c_int,
+    fordblks: c_int,
+    keepcost: c_int,
+}
+
+#[cfg(target_os="linux")]
+fn get_system_heap_allocated() -> Option<u64> {
+    let mut info: struct_mallinfo;
+    unsafe {
+        info = mallinfo();
+    }
+    
+    
+    
+    
+    Some((info.hblkhd + info.uordblks) as u64)
+}
+
+#[cfg(not(target_os="linux"))]
+fn get_system_heap_allocated() -> Option<u64> {
+    None
 }
 
 extern {
