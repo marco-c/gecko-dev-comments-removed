@@ -55,8 +55,8 @@
 #include "mozilla/DeclarationBlock.h"
 #include "mozilla/DeclarationBlockInlines.h"
 #include "mozilla/Unused.h"
-#include "mozilla/RestyleManagerHandle.h"
-#include "mozilla/RestyleManagerHandleInlines.h"
+#include "mozilla/RestyleManager.h"
+#include "mozilla/RestyleManagerInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -930,7 +930,7 @@ nsSVGElement::WalkAnimatedContentStyleRules(nsRuleWalker* aRuleWalker)
   
   
   
-  RestyleManagerHandle restyleManager =
+  RestyleManager* restyleManager =
     aRuleWalker->PresContext()->RestyleManager();
   MOZ_ASSERT(restyleManager->IsGecko(),
              "stylo: Servo-backed style system should not be calling "
