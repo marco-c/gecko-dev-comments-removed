@@ -380,7 +380,7 @@ protected:
   
   
   
-  void UpdatePlaybackPositionInternal(int64_t aTime);
+  void UpdatePlaybackPositionInternal(const media::TimeUnit& aTime);
 
   
   
