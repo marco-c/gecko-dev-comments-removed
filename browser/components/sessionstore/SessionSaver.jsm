@@ -31,21 +31,26 @@ XPCOMUtils.defineLazyModuleGetter(this, "PrivateBrowsingUtils",
   "resource://gre/modules/PrivateBrowsingUtils.jsm");
 
 
-XPCOMUtils.defineLazyGetter(this, "gInterval", function() {
-  const PREF = "browser.sessionstore.interval";
 
-  
-  Services.prefs.addObserver(PREF, () => {
-    this.gInterval = Services.prefs.getIntPref(PREF);
 
-    
-    
-    SessionSaverInternal.cancel();
-    SessionSaverInternal.runDelayed(0);
-  }, false);
 
-  return Services.prefs.getIntPref(PREF);
-});
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+const PREF_INTERVAL_ACTIVE = "browser.sessionstore.interval";
+const PREF_INTERVAL_IDLE = "browser.sessionstore.interval.idle";
+const PREF_IDLE_DELAY = "browser.sessionstore.idleDelay";
 
 
 function notify(subject, topic) {
@@ -121,6 +126,36 @@ var SessionSaverInternal = {
   
 
 
+
+
+  _isIdle: false,
+
+  
+
+
+
+  _wasIdle: false,
+
+  
+
+
+
+  _intervalWhileActive: null,
+
+  
+
+
+
+  _intervalWhileIdle: null,
+
+  
+
+
+  _idleDelay: null,
+
+  
+
+
   run() {
     return this._saveState(true );
   },
@@ -141,9 +176,11 @@ var SessionSaverInternal = {
     }
 
     
-    delay = Math.max(this._lastSaveTime + gInterval - Date.now(), delay, 0);
+    let interval = this._isIdle ? this._intervalWhileIdle : this._intervalWhileActive;
+    delay = Math.max(this._lastSaveTime + interval - Date.now(), delay, 0);
 
     
+    this._wasIdle = this._isIdle;
     this._timeoutID = setTimeout(() => this._saveStateAsync(), delay);
   },
 
@@ -161,6 +198,29 @@ var SessionSaverInternal = {
   cancel() {
     clearTimeout(this._timeoutID);
     this._timeoutID = null;
+  },
+
+  
+
+
+  observe(subject, topic, data) {
+    switch (topic) {
+      case "idle":
+        this._isIdle = true;
+        break;
+      case "active":
+        this._isIdle = false;
+        if (this._timeoutID && this._wasIdle) {
+          
+          
+          clearTimeout(this._timeoutID);
+          this._timeoutID = null;
+          this.runDelayed();
+        }
+        break;
+      default:
+        throw new Error(`Unexpected change value ${topic}`);
+    }
   },
 
   
@@ -268,3 +328,33 @@ var SessionSaverInternal = {
     }, console.error);
   },
 };
+
+XPCOMUtils.defineLazyPreferenceGetter(SessionSaverInternal, "_intervalWhileActive", PREF_INTERVAL_ACTIVE,
+  15000 , () => {
+  
+  
+  SessionSaverInternal.cancel();
+  SessionSaverInternal.runDelayed(0);
+});
+
+XPCOMUtils.defineLazyPreferenceGetter(SessionSaverInternal, "_intervalWhileIdle", PREF_INTERVAL_IDLE,
+  3600000 );
+
+XPCOMUtils.defineLazyPreferenceGetter(SessionSaverInternal, "_idleDelay", PREF_IDLE_DELAY,
+  180000 , (key, previous, latest) => {
+  
+  
+  
+  
+  var idleService = Cc["@mozilla.org/widget/idleservice;1"].getService(Ci.nsIIdleService);
+  if (previous != undefined) {
+    idleService.removeIdleObserver(SessionSaverInternal, previous);
+  }
+  if (latest != undefined) {
+    idleService.addIdleObserver(SessionSaverInternal, latest);
+  }
+});
+
+var idleService = Cc["@mozilla.org/widget/idleservice;1"].getService(Ci.nsIIdleService);
+idleService.addIdleObserver(SessionSaverInternal, SessionSaverInternal._idleDelay);
+

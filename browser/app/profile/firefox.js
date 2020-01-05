@@ -790,7 +790,15 @@ pref("browser.sessionstore.resume_from_crash", true);
 pref("browser.sessionstore.resume_session_once", false);
 
 
-pref("browser.sessionstore.interval", 15000);
+pref("browser.sessionstore.interval", 15000); 
+
+
+pref("browser.sessionstore.interval.idle", 3600000); 
+
+
+
+pref("browser.sessionstore.idleDelay", 180000); 
+
 
 
 pref("browser.sessionstore.privacy_level", 0);
