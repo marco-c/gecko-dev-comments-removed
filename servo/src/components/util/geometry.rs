@@ -16,6 +16,7 @@ use std::fmt;
 
 
 
+#[deriving(Encodable)]
 pub enum DevicePixel {}
 
 
@@ -42,6 +43,7 @@ pub enum ScreenPx {}
 
 
 
+#[deriving(Encodable)]
 pub enum ViewportPx {}
 
 
@@ -50,6 +52,7 @@ pub enum ViewportPx {}
 
 
 
+#[deriving(Encodable)]
 pub enum PagePx {}
 
 
