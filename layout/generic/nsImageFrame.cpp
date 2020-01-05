@@ -2210,7 +2210,7 @@ nsImageFrame::LoadIcon(const nsAString& aSpec,
 
 
                        nullptr,      
-                       mozilla::net::RP_Default,
+                       mozilla::net::RP_Unset,
                        nullptr,      
                        loadGroup,
                        gIconLoad,

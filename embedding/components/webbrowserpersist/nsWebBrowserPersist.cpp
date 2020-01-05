@@ -630,7 +630,7 @@ nsWebBrowserPersist::SerializeNextFile()
             
             
             rv = SaveURIInternal(uri, nullptr, nullptr,
-                                 mozilla::net::RP_Default, nullptr, nullptr,
+                                 mozilla::net::RP_Unset, nullptr, nullptr,
                                  fileAsURI, true, mIsPrivate);
             
             
