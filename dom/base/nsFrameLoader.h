@@ -190,8 +190,6 @@ public:
 
   void SetRemoteBrowser(nsITabParent* aTabParent);
 
-  nsresult SwapRemoteBrowser(nsITabParent* aTabParent);
-
   
 
 
@@ -327,8 +325,7 @@ private:
   void DestroyBrowserFrameScripts();
 
   nsresult GetNewTabContext(mozilla::dom::MutableTabContext* aTabContext,
-                            nsIURI* aURI = nullptr,
-                            const nsACString& aPackageId = EmptyCString());
+                            nsIURI* aURI = nullptr);
 
   enum TabParentChange {
     eTabParentRemoved,

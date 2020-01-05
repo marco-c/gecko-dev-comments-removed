@@ -130,12 +130,6 @@ public:
 
 
 
-  const nsACString& SignedPkgOriginNoSuffix() const;
-
-  
-
-
-
   const nsAString& PresentationURL() const;
 
   UIStateChangeType ShowAccelerators() const;
@@ -177,7 +171,6 @@ protected:
                      UIStateChangeType aShowAccelerators,
                      UIStateChangeType aShowFocusRings,
                      const DocShellOriginAttributes& aOriginAttributes,
-                     const nsACString& aSignedPkgOriginNoSuffix,
                      const nsAString& aPresentationURL);
 
   
@@ -236,14 +229,6 @@ private:
   
 
 
-
-
-
-  nsCString mSignedPkgOriginNoSuffix;
-
-  
-
-
   nsString mPresentationURL;
 
   
@@ -274,7 +259,6 @@ public:
                 UIStateChangeType aShowAccelerators,
                 UIStateChangeType aShowFocusRings,
                 const DocShellOriginAttributes& aOriginAttributes,
-                const nsACString& aSignedPkgOriginNoSuffix = EmptyCString(),
                 const nsAString& aPresentationURL = EmptyString())
   {
     return TabContext::SetTabContext(aIsMozBrowserElement,
@@ -284,7 +268,6 @@ public:
                                      aShowAccelerators,
                                      aShowFocusRings,
                                      aOriginAttributes,
-                                     aSignedPkgOriginNoSuffix,
                                      aPresentationURL);
   }
 };

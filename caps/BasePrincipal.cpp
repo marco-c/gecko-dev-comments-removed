@@ -43,11 +43,6 @@ PrincipalOriginAttributes::InheritFromDocShellToDoc(const DocShellOriginAttribut
   
   mUserContextId = aAttrs.mUserContextId;
 
-  
-  
-  
-  mSignedPkg = aAttrs.mSignedPkg;
-
   mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
   mFirstPartyDomain = aAttrs.mFirstPartyDomain;
 }
@@ -60,7 +55,6 @@ PrincipalOriginAttributes::InheritFromNecko(const NeckoOriginAttributes& aAttrs)
 
   
   mUserContextId = aAttrs.mUserContextId;
-  mSignedPkg = aAttrs.mSignedPkg;
 
   mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
   mFirstPartyDomain = aAttrs.mFirstPartyDomain;
@@ -82,11 +76,6 @@ DocShellOriginAttributes::InheritFromDocToChildDocShell(const PrincipalOriginAtt
   
   mUserContextId = aAttrs.mUserContextId;
 
-  
-  
-  
-  mSignedPkg = aAttrs.mSignedPkg;
-
   mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
   mFirstPartyDomain = aAttrs.mFirstPartyDomain;
 }
@@ -99,10 +88,6 @@ NeckoOriginAttributes::InheritFromDocToNecko(const PrincipalOriginAttributes& aA
 
   
   mUserContextId = aAttrs.mUserContextId;
-
-  
-  
-  
 
   mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
   mFirstPartyDomain = aAttrs.mFirstPartyDomain;
@@ -118,10 +103,6 @@ NeckoOriginAttributes::InheritFromDocShellToNecko(const DocShellOriginAttributes
 
   
   mUserContextId = aAttrs.mUserContextId;
-
-  
-  
-  
 
   mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
 
@@ -183,10 +164,6 @@ OriginAttributes::CreateSuffix(nsACString& aStr) const
     params->Set(NS_LITERAL_STRING("userContextId"), value);
   }
 
-  if (!mSignedPkg.IsEmpty()) {
-    MOZ_RELEASE_ASSERT(mSignedPkg.FindCharInSet(dom::quota::QuotaManager::kReplaceChars) == kNotFound);
-    params->Set(NS_LITERAL_STRING("signedPkg"), mSignedPkg);
-  }
 
   if (mPrivateBrowsingId) {
     value.Truncate();
@@ -269,12 +246,6 @@ public:
       return true;
     }
 
-    if (aName.EqualsLiteral("signedPkg")) {
-      MOZ_RELEASE_ASSERT(mOriginAttributes->mSignedPkg.IsEmpty());
-      mOriginAttributes->mSignedPkg.Assign(aValue);
-      return true;
-    }
-
     if (aName.EqualsLiteral("privateBrowsingId")) {
       nsresult rv;
       int64_t val = aValue.ToInteger64(&rv);
@@ -349,7 +320,6 @@ OriginAttributes::SetFromGenericAttributes(const GenericOriginAttributes& aAttrs
   mInIsolatedMozBrowser = aAttrs.mInIsolatedMozBrowser;
   mAddonId = aAttrs.mAddonId;
   mUserContextId = aAttrs.mUserContextId;
-  mSignedPkg = aAttrs.mSignedPkg;
   mPrivateBrowsingId = aAttrs.mPrivateBrowsingId;
   mFirstPartyDomain = aAttrs.mFirstPartyDomain;
 }
