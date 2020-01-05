@@ -118,7 +118,20 @@ assertSyntaxError("function* g() { yield 3 + yield 4; }");
 assertSyntaxError("function f() { 'use strict'; var yield = 13; }");
 
 
-assertSyntaxError("function* g() { yield (function yield() {}); }");
+function f() { (function yield() {}); }
+function* g() { (function yield() {}); }
+
+
+assertSyntaxError("function f() { (function* yield() {}); }");
+assertSyntaxError("function* g() { (function* yield() {}); }");
+
+
+function f() { function yield() {} }
+function f() { function* yield() {} }
+
+
+assertSyntaxError("function* g() { function yield() {} }");
+assertSyntaxError("function* g() { function* yield() {} }");
 
 
 assertSyntaxError("function* g(yield) { yield (10); }");
