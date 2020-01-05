@@ -41,6 +41,11 @@ public:
   static bool IsH264(const nsACString& aMimeType);
 
   
+  
+  
+  static bool IsAAC(const nsACString& aMimeType);
+
+  
   static bool IsEnabled();
 
   static already_AddRefed<dom::Promise>
