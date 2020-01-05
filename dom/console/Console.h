@@ -85,7 +85,7 @@ public:
   GroupCollapsed(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
 
   static void
-  GroupEnd(const GlobalObject& aGlobal, const Sequence<JS::Value>& aData);
+  GroupEnd(const GlobalObject& aGlobal);
 
   static void
   Time(const GlobalObject& aGlobal, const JS::Handle<JS::Value> aTime);
@@ -200,7 +200,7 @@ private:
   void
   NotifyHandler(JSContext* aCx,
                 const Sequence<JS::Value>& aArguments,
-                ConsoleCallData* aData) const;
+                ConsoleCallData* aData);
 
   
   
@@ -218,7 +218,7 @@ private:
                                               const Sequence<JS::Value>& aArguments,
                                               JSObject* aTargetScope,
                                               JS::MutableHandle<JS::Value> aValue,
-                                              ConsoleCallData* aData) const;
+                                              ConsoleCallData* aData);
 
   
   
@@ -250,8 +250,13 @@ private:
   
   
   void
-  ComposeGroupName(JSContext* aCx, const Sequence<JS::Value>& aData,
-                   nsAString& aName) const;
+  ComposeAndStoreGroupName(JSContext* aCx, const Sequence<JS::Value>& aData,
+                           nsAString& aName);
+
+  
+  
+  bool
+  UnstoreGroupName(nsAString& aName);
 
   
   
@@ -372,6 +377,9 @@ private:
   nsTArray<RefPtr<ConsoleCallData>> mCallDataStoragePending;
 
   RefPtr<AnyCallback> mConsoleEventNotifier;
+
+  
+  nsTArray<nsString> mGroupStack;
 
 #ifdef DEBUG
   PRThread* mOwningThread;
