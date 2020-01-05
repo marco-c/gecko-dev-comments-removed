@@ -485,7 +485,7 @@ JSContext::setCompartment(JSCompartment* comp,
                   comp->zone()->usedByExclusiveThread);
 
     
-    MOZ_ASSERT_IF(this == runtime()->unsafeContextFromAnyThread() && comp,
+    MOZ_ASSERT_IF(this == runtime()->activeContext() && comp,
                   !comp->zone()->usedByExclusiveThread);
 
     
