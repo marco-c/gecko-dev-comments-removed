@@ -268,13 +268,24 @@ TEST(Layers, TextureYCbCrSerialization) {
   clientData.mPicX = 0;
 
   ImageBridgeChild::InitSameProcess();
-  
-#ifdef XP_WIN
-  Sleep(1);
-#else
-  sleep(1);
-#endif
+
   RefPtr<ImageBridgeChild> imageBridge = ImageBridgeChild::GetSingleton();
+  static int retry = 5;
+  while(!imageBridge->IPCOpen() && retry) {
+    
+    
+#ifdef XP_WIN
+    Sleep(1);
+#else
+    sleep(1);
+#endif
+    retry--;
+  }
+
+  
+  if (!retry && !imageBridge->IPCOpen()) {
+    return;
+  }
 
   RefPtr<TextureClient> client = TextureClient::CreateForYCbCr(imageBridge, clientData.mYSize, clientData.mCbCrSize,
                                                                StereoMode::MONO, YUVColorSpace::BT601,
