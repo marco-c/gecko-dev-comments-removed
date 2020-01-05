@@ -246,12 +246,6 @@ impl<T: BluetoothResponseListener> Action<T> for BluetoothResponseResult {
 }
 
 
-#[derive(Deserialize, Serialize)]
-pub enum LoadConsumer {
-    Channel(IpcSender<LoadResponse>),
-}
-
-
 pub type CoreResourceThread = IpcSender<CoreResourceMsg>;
 
 pub type IpcSendResult = Result<(), IOError>;
@@ -401,19 +395,6 @@ pub fn fetch_async<F>(request: RequestInit,
     core_resource_thread.send(CoreResourceMsg::Fetch(request, action_sender)).unwrap();
 }
 
-/// Message sent in response to `Load`.  Contains metadata, and a port
-/// for receiving the data.
-///
-/// Even if loading fails immediately, we send one of these and the
-/// progress_port will provide the error.
-#[derive(Serialize, Deserialize)]
-pub struct LoadResponse {
-    /// Metadata, such as from HTTP headers.
-    pub metadata: Metadata,
-    /// Port for reading data.
-    pub progress_port: IpcReceiver<ProgressMsg>,
-}
-
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
 pub struct ResourceCorsData {
     /// CORS Preflight flag
@@ -497,15 +478,6 @@ pub enum CookieSource {
     HTTP,
     /// A non-HTTP API
     NonHTTP,
-}
-
-/// Messages sent in response to a `Load` message
-#[derive(PartialEq, Debug, Deserialize, Serialize)]
-pub enum ProgressMsg {
-    /// Binary data - there may be multiple of these
-    Payload(Vec<u8>),
-    /// Indicates loading is complete, either successfully or not
-    Done(Result<(), NetworkError>),
 }
 
 /// Convenience function for synchronously loading a whole resource.
