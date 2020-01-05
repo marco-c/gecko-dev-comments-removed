@@ -3304,7 +3304,7 @@ function Intl_getDisplayNames(locales, options) {
     for (let i = 0; i < len; i++) {
         
         
-        callFunction(std_Array_push, processedKeys, ToString(keys[i]));
+        _DefineDataProperty(processedKeys, i, ToString(keys[i]));
     }
 
     
