@@ -207,6 +207,35 @@ function makeSafe(aCallback) {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+function promiseOrCallback(promise, callback) {
+  if (!callback)
+    return promise;
+
+  if (typeof callback !== "function")
+    throw Components.Exception("Callback must be a function",
+                               Cr.NS_ERROR_INVALID_ARG);
+
+  promise.then(makeSafe(callback)).catch(error => {
+    logger.error(error);
+  });
+
+  return undefined;
+}
+
+
+
+
 function reportProviderError(aProvider, aMethod, aError) {
   let method = `provider ${providerName(aProvider)}.${aMethod}`;
   AddonManagerPrivate.recordException("AMI", method, aError);
@@ -338,52 +367,6 @@ function webAPIForAddon(addon) {
 
   return result;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-function AsyncObjectCaller(aObjects, aMethod, aListener) {
-  this.objects = [...aObjects];
-  this.method = aMethod;
-  this.listener = aListener;
-
-  this.callNext();
-}
-
-AsyncObjectCaller.prototype = {
-  objects: null,
-  method: null,
-  listener: null,
-
-  
-
-
-
-  callNext: function() {
-    if (this.objects.length == 0) {
-      this.listener.noMoreObjects(this);
-      return;
-    }
-
-    let object = this.objects.shift();
-    if (!this.method || this.method in object)
-      this.listener.nextObject(this, object);
-    else
-      this.callNext();
-  }
-};
 
 
 
@@ -1446,7 +1429,7 @@ var AddonManagerInternal = {
         Components.utils.import("resource://gre/modules/LightweightThemeManager.jsm", scope);
         scope.LightweightThemeManager.updateCurrentTheme();
 
-        let allAddons = yield new Promise((resolve, reject) => this.getAllAddons(resolve));
+        let allAddons = yield this.getAllAddons();
 
         
         
@@ -1824,29 +1807,19 @@ var AddonManagerInternal = {
 
 
 
-
-
-
-  updateAddonRepositoryData: function(aCallback) {
+  updateAddonRepositoryData: function() {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
 
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
-
-    new AsyncObjectCaller(this.providers, "updateAddonRepositoryData", {
-      nextObject: function(aCaller, aProvider) {
-        callProviderAsync(aProvider, "updateAddonRepositoryData",
-                          aCaller.callNext.bind(aCaller));
-      },
-      noMoreObjects: function(aCaller) {
-        safeCall(aCallback);
-        
-        Services.obs.notifyObservers(null, "TEST:addon-repository-data-updated", null);
+    return Task.spawn(function*() {
+      for (let provider of this.providers) {
+        yield promiseCallProvider(provider, "updateAddonRepositoryData");
       }
-    });
+
+      
+      Services.obs.notifyObservers(null, "TEST:addon-repository-data-updated", null);
+    }.bind(this));
   },
 
   
@@ -1937,9 +1910,7 @@ var AddonManagerInternal = {
 
 
 
-
-
-  getInstallForFile: function(aFile, aCallback, aMimetype) {
+  getInstallForFile: function(aFile, aMimetype) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
@@ -1948,29 +1919,21 @@ var AddonManagerInternal = {
       throw Components.Exception("aFile must be a nsIFile",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
-
     if (aMimetype && typeof aMimetype != "string")
       throw Components.Exception("aMimetype must be a string or null",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    new AsyncObjectCaller(this.providers, "getInstallForFile", {
-      nextObject: function(aCaller, aProvider) {
-        callProviderAsync(aProvider, "getInstallForFile", aFile,
-                          function(aInstall) {
-          if (aInstall)
-            safeCall(aCallback, aInstall);
-          else
-            aCaller.callNext();
-        });
-      },
+    return Task.spawn(function*() {
+      for (let provider of this.providers) {
+        let install = yield promiseCallProvider(
+          provider, "getInstallForFile", aFile);
 
-      noMoreObjects: function(aCaller) {
-        safeCall(aCallback, null);
+        if (install)
+          return install;
       }
-    });
+
+      return null;
+    }.bind(this));
   },
 
   
@@ -1981,9 +1944,7 @@ var AddonManagerInternal = {
 
 
 
-
-
-  getInstallsByTypes: function(aTypes, aCallback) {
+  getInstallsByTypes: function(aTypes) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
@@ -1992,41 +1953,30 @@ var AddonManagerInternal = {
       throw Components.Exception("aTypes must be an array or null",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    return Task.spawn(function*() {
+      let installs = [];
 
-    let installs = [];
+      for (let provider of this.providers) {
+        let providerInstalls = yield promiseCallProvider(
+          provider, "getInstallsByTypes", aTypes);
 
-    new AsyncObjectCaller(this.providers, "getInstallsByTypes", {
-      nextObject: function(aCaller, aProvider) {
-        callProviderAsync(aProvider, "getInstallsByTypes", aTypes,
-                          function(aProviderInstalls) {
-          if (aProviderInstalls) {
-            installs = installs.concat(aProviderInstalls);
-          }
-          aCaller.callNext();
-        });
-      },
-
-      noMoreObjects: function(aCaller) {
-        safeCall(aCallback, installs);
+        if (providerInstalls)
+          installs.push(...providerInstalls);
       }
-    });
+
+      return installs;
+    }.bind(this));
   },
 
   
 
 
-
-
-
-  getAllInstalls: function(aCallback) {
+  getAllInstalls: function() {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
 
-    this.getInstallsByTypes(null, aCallback);
+    return this.getInstallsByTypes(null);
   },
 
   
@@ -2472,9 +2422,7 @@ var AddonManagerInternal = {
 
 
 
-
-
-  getAddonBySyncGUID: function(aGUID, aCallback) {
+  getAddonBySyncGUID: function(aGUID) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
@@ -2483,26 +2431,17 @@ var AddonManagerInternal = {
       throw Components.Exception("aGUID must be a non-empty string",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    return Task.spawn(function*() {
+      for (let provider of this.providers) {
+        let addon = yield promiseCallProvider(
+          provider, "getAddonBySyncGUID", aGUID);
 
-    new AsyncObjectCaller(this.providers, "getAddonBySyncGUID", {
-      nextObject: function(aCaller, aProvider) {
-        callProviderAsync(aProvider, "getAddonBySyncGUID", aGUID,
-                          function(aAddon) {
-          if (aAddon) {
-            safeCall(aCallback, aAddon);
-          } else {
-            aCaller.callNext();
-          }
-        });
-      },
-
-      noMoreObjects: function(aCaller) {
-        safeCall(aCallback, null);
+        if (addon)
+          return addon;
       }
-    });
+
+      return null;
+    }.bind(this));
   },
 
   
@@ -2534,10 +2473,7 @@ var AddonManagerInternal = {
 
 
 
-
-
-
-  getAddonsByTypes: function(aTypes, aCallback) {
+  getAddonsByTypes: function(aTypes) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
@@ -2546,45 +2482,30 @@ var AddonManagerInternal = {
       throw Components.Exception("aTypes must be an array or null",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    return Task.spawn(function*() {
+      let addons = [];
 
-    let addons = [];
+      for (let provider of this.providers) {
+        let providerAddons = yield promiseCallProvider(
+          provider, "getAddonsByTypes", aTypes);
 
-    new AsyncObjectCaller(this.providers, "getAddonsByTypes", {
-      nextObject: function(aCaller, aProvider) {
-        callProviderAsync(aProvider, "getAddonsByTypes", aTypes,
-                          function(aProviderAddons) {
-          if (aProviderAddons) {
-            addons = addons.concat(aProviderAddons);
-          }
-          aCaller.callNext();
-        });
-      },
-
-      noMoreObjects: function(aCaller) {
-        safeCall(aCallback, addons);
+        if (providerAddons)
+          addons.push(...providerAddons);
       }
-    });
+
+      return addons;
+    }.bind(this));
   },
 
   
 
 
-
-
-
-  getAllAddons: function(aCallback) {
+  getAllAddons: function() {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
 
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
-
-    this.getAddonsByTypes(null, aCallback);
+    return this.getAddonsByTypes(null);
   },
 
   
@@ -2594,10 +2515,7 @@ var AddonManagerInternal = {
 
 
 
-
-
-
-  getAddonsWithOperationsByTypes: function(aTypes, aCallback) {
+  getAddonsWithOperationsByTypes: function(aTypes) {
     if (!gStarted)
       throw Components.Exception("AddonManager is not initialized",
                                  Cr.NS_ERROR_NOT_INITIALIZED);
@@ -2606,27 +2524,19 @@ var AddonManagerInternal = {
       throw Components.Exception("aTypes must be an array or null",
                                  Cr.NS_ERROR_INVALID_ARG);
 
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
+    return Task.spawn(function*() {
+      let addons = [];
 
-    let addons = [];
+      for (let provider of this.providers) {
+        let providerAddons = yield promiseCallProvider(
+          provider, "getAddonsWithOperationsByTypes", aTypes);
 
-    new AsyncObjectCaller(this.providers, "getAddonsWithOperationsByTypes", {
-      nextObject: function(aCaller, aProvider) {
-        callProviderAsync(aProvider, "getAddonsWithOperationsByTypes", aTypes,
-                          function(aProviderAddons) {
-          if (aProviderAddons) {
-            addons = addons.concat(aProviderAddons);
-          }
-          aCaller.callNext();
-        });
-      },
-
-      noMoreObjects: function(caller) {
-        safeCall(aCallback, addons);
+        if (providerAddons)
+          addons.push(...providerAddons);
       }
-    });
+
+      return addons;
+    }.bind(this));
   },
 
   
@@ -3073,7 +2983,9 @@ this.AddonManagerPrivate = {
   },
 
   updateAddonRepositoryData: function(aCallback) {
-    AddonManagerInternal.updateAddonRepositoryData(aCallback);
+    return promiseOrCallback(
+      AddonManagerInternal.updateAddonRepositoryData(),
+      aCallback);
   },
 
   callInstallListeners: function(...aArgs) {
@@ -3439,7 +3351,7 @@ this.AddonManager = {
   },
 
   getInstallForFile: function(aFile, aCallback, aMimetype) {
-    AddonManagerInternal.getInstallForFile(aFile, aCallback, aMimetype);
+    AddonManagerInternal.getInstallForFile(aFile, aMimetype).then(aCallback);
   },
 
   
@@ -3456,47 +3368,51 @@ this.AddonManager = {
   },
 
   getAddonByID: function(aID, aCallback) {
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
-
-    AddonManagerInternal.getAddonByID(aID)
-                        .then(makeSafe(aCallback))
-                        .catch(logger.error);
+    return promiseOrCallback(
+      AddonManagerInternal.getAddonByID(aID),
+      aCallback);
   },
 
   getAddonBySyncGUID: function(aGUID, aCallback) {
-    AddonManagerInternal.getAddonBySyncGUID(aGUID, aCallback);
+    return promiseOrCallback(
+      AddonManagerInternal.getAddonBySyncGUID(aGUID),
+      aCallback);
   },
 
   getAddonsByIDs: function(aIDs, aCallback) {
-    if (typeof aCallback != "function")
-      throw Components.Exception("aCallback must be a function",
-                                 Cr.NS_ERROR_INVALID_ARG);
-
-    AddonManagerInternal.getAddonsByIDs(aIDs)
-                        .then(makeSafe(aCallback))
-                        .catch(logger.error);
+    return promiseOrCallback(
+      AddonManagerInternal.getAddonsByIDs(aIDs),
+      aCallback);
   },
 
   getAddonsWithOperationsByTypes: function(aTypes, aCallback) {
-    AddonManagerInternal.getAddonsWithOperationsByTypes(aTypes, aCallback);
+    return promiseOrCallback(
+      AddonManagerInternal.getAddonsWithOperationsByTypes(aTypes),
+      aCallback);
   },
 
   getAddonsByTypes: function(aTypes, aCallback) {
-    AddonManagerInternal.getAddonsByTypes(aTypes, aCallback);
+    return promiseOrCallback(
+      AddonManagerInternal.getAddonsByTypes(aTypes),
+      aCallback);
   },
 
   getAllAddons: function(aCallback) {
-    AddonManagerInternal.getAllAddons(aCallback);
+    return promiseOrCallback(
+      AddonManagerInternal.getAllAddons(),
+      aCallback);
   },
 
   getInstallsByTypes: function(aTypes, aCallback) {
-    AddonManagerInternal.getInstallsByTypes(aTypes, aCallback);
+    return promiseOrCallback(
+      AddonManagerInternal.getInstallsByTypes(aTypes),
+      aCallback);
   },
 
   getAllInstalls: function(aCallback) {
-    AddonManagerInternal.getAllInstalls(aCallback);
+    return promiseOrCallback(
+      AddonManagerInternal.getAllInstalls(),
+      aCallback);
   },
 
   mapURIToAddonID: function(aURI) {
