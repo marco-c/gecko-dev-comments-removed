@@ -882,7 +882,7 @@
 
 
      File.DirectoryIterator.Entry.toMsg = function toMsg(value) {
-       if (!value instanceof File.DirectoryIterator.Entry) {
+       if (!(value instanceof File.DirectoryIterator.Entry)) {
          throw new TypeError("parameter of " +
            "File.DirectoryIterator.Entry.toMsg must be a " +
            "File.DirectoryIterator.Entry");
@@ -931,7 +931,7 @@
 
 
      File.Info.toMsg = function toMsg(stat) {
-       if (!stat instanceof File.Info) {
+       if (!(stat instanceof File.Info)) {
          throw new TypeError("parameter of File.Info.toMsg must be a File.Info");
        }
        let serialized = {};

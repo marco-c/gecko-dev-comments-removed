@@ -43,7 +43,7 @@ WBORecord.prototype = {
   
   
   fetch: function fetch(resource) {
-    if (!resource instanceof Resource) {
+    if (!(resource instanceof Resource)) {
       throw new Error("First argument must be a Resource instance.");
     }
 
@@ -56,7 +56,7 @@ WBORecord.prototype = {
   },
 
   upload: function upload(resource) {
-    if (!resource instanceof Resource) {
+    if (!(resource instanceof Resource)) {
       throw new Error("First argument must be a Resource instance.");
     }
 
