@@ -692,8 +692,6 @@ private:
             VideoPrerollFrames() * mPlaybackRate + 1;
   }
 
-  void MaybeStopPrerolling();
-
   
   
   
