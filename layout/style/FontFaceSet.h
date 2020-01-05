@@ -232,7 +232,7 @@ private:
 
   void DispatchLoadingFinishedEvent(
                                 const nsAString& aType,
-                                const nsTArray<FontFace*>& aFontFaces);
+                                nsTArray<OwningNonNull<FontFace>>&& aFontFaces);
 
   
   
