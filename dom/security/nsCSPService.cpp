@@ -73,9 +73,15 @@ subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   if (NS_SUCCEEDED(rv) && match) {
     return true;
   }
+
+  
   
   
   rv = aURI->SchemeIs("about", &match);
+  if (NS_SUCCEEDED(rv) && match) {
+    return false;
+  }
+  rv = aURI->SchemeIs("javascript", &match);
   if (NS_SUCCEEDED(rv) && match) {
     return false;
   }
@@ -86,14 +92,7 @@ subjectToCSP(nsIURI* aURI, nsContentPolicyType aContentType) {
   
   
   
-  
-  
-  
   rv = NS_URIChainHasFlags(aURI, nsIProtocolHandler::URI_IS_LOCAL_RESOURCE, &match);
-  if (NS_SUCCEEDED(rv) && match) {
-    return false;
-  }
-  rv = NS_URIChainHasFlags(aURI, nsIProtocolHandler::URI_INHERITS_SECURITY_CONTEXT, &match);
   if (NS_SUCCEEDED(rv) && match) {
     return false;
   }
