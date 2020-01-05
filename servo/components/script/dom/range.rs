@@ -797,7 +797,7 @@ impl RangeMethods for Range {
 
         
         match new_parent.type_id() {
-            NodeTypeId::Document |
+            NodeTypeId::Document(_) |
             NodeTypeId::DocumentType |
             NodeTypeId::DocumentFragment => return Err(Error::InvalidNodeType),
             _ => ()
