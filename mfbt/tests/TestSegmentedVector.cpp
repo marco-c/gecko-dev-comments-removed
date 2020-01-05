@@ -279,7 +279,7 @@ TestIterator()
   MOZ_RELEASE_ASSERT(iter.Done());
   MOZ_RELEASE_ASSERT(iterFromLast.Done());
 
-  v.Append(1);
+  gDummy = v.Append(1);
   iter = v.Iter();
   iterFromLast = v.IterFromLast();
   MOZ_RELEASE_ASSERT(!iter.Done());
@@ -301,10 +301,10 @@ TestIterator()
   MOZ_RELEASE_ASSERT(iterFromLast.Done());
 
   
-  v.Append(1);
-  v.Append(1);
-  v.Append(1);
-  v.Append(1);
+  gDummy = v.Append(1);
+  gDummy = v.Append(1);
+  gDummy = v.Append(1);
+  gDummy = v.Append(1);
 
   iter = v.Iter();
   iterFromLast = v.IterFromLast();
@@ -336,9 +336,9 @@ TestIterator()
 
   
   iterFromLast = v.IterFromLast();
-  v.Append(2);
-  v.Append(3);
-  v.Append(4);
+  gDummy = v.Append(2);
+  gDummy = v.Append(3);
+  gDummy = v.Append(4);
   iterFromLast.Next();
   MOZ_RELEASE_ASSERT(!iterFromLast.Done());
   MOZ_RELEASE_ASSERT(iterFromLast.Get() == 2);
