@@ -1074,10 +1074,7 @@ JS_ResolveStandardClass(JSContext* cx, HandleObject obj, HandleId id, bool* reso
     
     
     
-    if (!global->getOrCreateObjectPrototype(cx))
-        return false;
-
-    return true;
+    return global->getOrCreateObjectPrototype(cx);
 }
 
 JS_PUBLIC_API(bool)
