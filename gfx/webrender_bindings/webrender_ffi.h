@@ -601,10 +601,6 @@ WR_INLINE void
 wr_api_add_raw_font(WrAPI* api, WrFontKey key, uint8_t* font_buffer, size_t buffer_size)
 WR_FUNC;
 
-WR_INLINE void
-wr_api_delete_font(WrAPI* api, WrFontKey key)
-WR_FUNC;
-
 WR_INLINE WrIdNamespace
 wr_api_get_namespace(WrAPI* api)
 WR_FUNC;
@@ -664,6 +660,7 @@ WR_FUNC;
 
 WR_INLINE void
 wr_dp_push_image(WrState* wrState, WrRect bounds, WrClipRegion clip,
+                 WrSize stretch_size, WrSize tile_spacing,
                  WrImageRendering filter, WrImageKey key)
 WR_FUNC;
 
