@@ -2738,6 +2738,7 @@ pref("dom.animations.offscreen-throttling", true);
 
 
 
+pref("layout.animation.prerender.partial", false);
 pref("layout.animation.prerender.viewport-ratio-limit-x", "1.125");
 pref("layout.animation.prerender.viewport-ratio-limit-y", "1.125");
 pref("layout.animation.prerender.absolute-limit-x", 4096);
