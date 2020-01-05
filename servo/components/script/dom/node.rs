@@ -2606,13 +2606,7 @@ impl<'a> ::selectors::Node<&'a Element> for &'a Node {
     }
 
     fn is_document(&self) -> bool {
-        
-        
-        fn is_document<'a, T: DocumentDerived>(this: &T) -> bool {
-            this.is_document()
-        }
-
-        is_document(*self)
+        DocumentDerived::is_document(*self)
     }
 
     fn as_element(&self) -> Option<&'a Element> {
