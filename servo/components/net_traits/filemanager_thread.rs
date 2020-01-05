@@ -128,8 +128,7 @@ pub enum FileManagerThreadMsg {
     SelectFiles(Vec<FilterPattern>, IpcSender<FileManagerResult<Vec<SelectedFile>>>, FileOrigin, Option<Vec<String>>),
 
     
-    
-    ReadFile(IpcSender<FileManagerResult<BlobBuf>>, SelectedFileId, bool, FileOrigin),
+    ReadFile(IpcSender<FileManagerResult<ReadFileProgress>>, SelectedFileId, bool, FileOrigin),
 
     
     
@@ -153,6 +152,13 @@ pub enum FileManagerThreadMsg {
 
     
     Exit,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub enum ReadFileProgress {
+    Meta(BlobBuf),
+    Partial(Vec<u8>),
+    EOF
 }
 
 pub type FileManagerResult<T> = Result<T, FileManagerThreadError>;
