@@ -329,6 +329,16 @@ public:
 
 
 
+
+
+  static bool
+  ContentIsFlattenedTreeDescendantOf(const nsINode* aPossibleDescendant,
+                                     const nsINode* aPossibleAncestor);
+
+  
+
+
+
   static nsresult GetAncestors(nsINode* aNode,
                                nsTArray<nsINode*>& aArray);
 

@@ -2400,6 +2400,24 @@ nsContentUtils::ContentIsCrossDocDescendantOf(nsINode* aPossibleDescendant,
 }
 
 
+bool
+nsContentUtils::ContentIsFlattenedTreeDescendantOf(
+  const nsINode* aPossibleDescendant,
+  const nsINode* aPossibleAncestor)
+{
+  NS_PRECONDITION(aPossibleDescendant, "The possible descendant is null!");
+  NS_PRECONDITION(aPossibleAncestor, "The possible ancestor is null!");
+
+  do {
+    if (aPossibleDescendant == aPossibleAncestor) {
+      return true;
+    }
+    aPossibleDescendant = aPossibleDescendant->GetFlattenedTreeParentNode();
+  } while (aPossibleDescendant);
+
+  return false;
+}
+
 
 nsresult
 nsContentUtils::GetAncestors(nsINode* aNode,
