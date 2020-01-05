@@ -306,7 +306,7 @@ public:
 
 
 
-  void NotifyEnded();
+  void OverrideEnded();
 
   
 
