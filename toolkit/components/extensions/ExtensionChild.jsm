@@ -4,7 +4,7 @@
 
 "use strict";
 
-this.EXPORTED_SYMBOLS = ["ExtensionContext"];
+this.EXPORTED_SYMBOLS = ["ExtensionChild"];
 
 
 
@@ -22,6 +22,8 @@ const Cr = Components.results;
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
 Cu.import("resource://gre/modules/Services.jsm");
 
+XPCOMUtils.defineLazyModuleGetter(this, "MessageChannel",
+                                  "resource://gre/modules/MessageChannel.jsm");
 XPCOMUtils.defineLazyModuleGetter(this, "Schemas",
                                   "resource://gre/modules/Schemas.jsm");
 
@@ -29,6 +31,7 @@ const CATEGORY_EXTENSION_SCRIPTS_ADDON = "webextension-scripts-addon";
 
 Cu.import("resource://gre/modules/ExtensionUtils.jsm");
 var {
+  getInnerWindowID,
   BaseContext,
   ChildAPIManager,
   LocalAPIImplementation,
@@ -41,6 +44,8 @@ var {
 
 XPCOMUtils.defineLazyGetter(this, "findPathInObject",
   () => Cu.import("resource://gre/modules/Extension.jsm", {}).findPathInObject);
+XPCOMUtils.defineLazyGetter(this, "GlobalManager",
+  () => Cu.import("resource://gre/modules/Extension.jsm", {}).GlobalManager);
 XPCOMUtils.defineLazyGetter(this, "Management",
   () => Cu.import("resource://gre/modules/Extension.jsm", {}).Management);
 XPCOMUtils.defineLazyGetter(this, "ParentAPIManager",
@@ -132,7 +137,7 @@ class WannabeChildAPIManager extends ChildAPIManager {
 
 
 
-this.ExtensionContext = class extends BaseContext {
+class ExtensionContext extends BaseContext {
   constructor(extension, params) {
     super("addon_child", extension);
     if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
@@ -222,6 +227,102 @@ this.ExtensionContext = class extends BaseContext {
       this.extension.views.delete(this);
     }
   }
+}
+
+this.ExtensionChild = {
+  
+  extensionContexts: new Map(),
+
+  initOnce() {
+    
+    
+    
+    
+    MessageChannel.setupMessageManagers([Services.cpmm]);
+  },
+
+  
+
+
+
+
+
+
+  createExtensionContext(extension, contentWindow) {
+    
+    
+    
+    extension = GlobalManager.extensionMap.get(extension.id);
+    let windowId = getInnerWindowID(contentWindow);
+    let context = this.extensionContexts.get(windowId);
+    if (context) {
+      if (context.extension !== extension) {
+        
+        Cu.reportError("A different extension context already exists in this frame!");
+      } else {
+        
+        Cu.reportError("The extension context was already initialized in this frame.");
+      }
+      return;
+    }
+
+    let docShell = contentWindow.QueryInterface(Ci.nsIInterfaceRequestor)
+                                .getInterface(Ci.nsIDocShell);
+
+    let parentDocument = docShell.parent.QueryInterface(Ci.nsIDocShell)
+                                 .contentViewer.DOMDocument;
+
+    let browser = docShell.chromeEventHandler;
+    
+    
+    if (contentWindow.frameElement && parentDocument.documentURI == "about:addons") {
+      browser = contentWindow.frameElement;
+    }
+
+    let viewType = "tab";
+    if (browser.hasAttribute("webextension-view-type")) {
+      viewType = browser.getAttribute("webextension-view-type");
+    } else if (browser.classList.contains("inline-options-browser")) {
+      
+      
+      
+      viewType = "popup";
+    }
+
+    let uri = contentWindow.document.documentURIObject;
+
+    context = new ExtensionContext(extension, {viewType, contentWindow, uri, docShell});
+    this.extensionContexts.set(windowId, context);
+  },
+
+  
+
+
+
+
+  destroyExtensionContext(windowId) {
+    let context = this.extensionContexts.get(windowId);
+    if (context) {
+      context.unload();
+      this.extensionContexts.delete(windowId);
+    }
+  },
+
+  shutdownExtension(extensionId) {
+    for (let [windowId, context] of this.extensionContexts) {
+      if (context.extension.id == extensionId) {
+        context.shutdown();
+        this.extensionContexts.delete(windowId);
+      }
+    }
+  },
 };
 
 
+if (Services.appinfo.processType != Services.appinfo.PROCESS_TYPE_DEFAULT) {
+  Object.keys(ExtensionChild).forEach(function(key) {
+    if (typeof ExtensionChild[key] == "function") {
+      ExtensionChild[key] = () => {};
+    }
+  });
+}
