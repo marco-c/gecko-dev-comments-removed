@@ -16,6 +16,7 @@
 
 #include "mozilla/Assertions.h"
 
+#include "GeckoProfiler.h"
 #include "jsapi.h"
 #include "jsfriendapi.h"
 #include "js/Conversions.h"
@@ -63,6 +64,95 @@ public:
                                   const char** aArgArray,
                                   const nsAString& aBody,
                                   JSObject** aFunctionObject);
+
+
+  
+  class MOZ_STACK_CLASS ExecutionContext {
+    
+    mozilla::SamplerStackFrameRAII mSamplerRAII;
+
+    JSContext* mCx;
+
+    
+    JSAutoCompartment mCompartment;
+
+    
+    JS::Rooted<JS::Value> mRetValue;
+
+    
+    JS::AutoObjectVector mScopeChain;
+
+    
+    
+    nsresult mRv;
+
+    
+    
+    bool mSkip;
+
+    
+    bool mCoerceToString;
+
+#ifdef DEBUG
+    
+    bool mWantsReturnValue;
+
+    bool mExpectScopeChain;
+#endif
+
+   public:
+
+    
+    
+    
+    ExecutionContext(JSContext* aCx, JS::Handle<JSObject*> aGlobal);
+
+    ExecutionContext(const ExecutionContext&) = delete;
+    ExecutionContext(ExecutionContext&&) = delete;
+
+    ~ExecutionContext() {
+      
+      MOZ_ASSERT(!mWantsReturnValue);
+    }
+
+    
+    
+    ExecutionContext& SetCoerceToString(bool aCoerceToString) {
+      mCoerceToString = aCoerceToString;
+      return *this;
+    }
+
+    
+    void SetScopeChain(const JS::AutoObjectVector& aScopeChain);
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    MOZ_MUST_USE nsresult
+    ExtractReturnValue(JS::MutableHandle<JS::Value> aRetValue);
+
+    
+    
+    
+    
+    
+    MOZ_MUST_USE nsresult SyncAndExec(void **aOffThreadToken,
+                                      JS::MutableHandle<JSScript*> aScript);
+
+    
+    nsresult CompileAndExec(JS::CompileOptions& aCompileOptions,
+                            JS::SourceBufferHolder& aSrcBuf);
+
+    
+    nsresult CompileAndExec(JS::CompileOptions& aCompileOptions,
+                            const nsAString& aScript);
+  };
 
   struct MOZ_STACK_CLASS EvaluateOptions {
     bool coerceToString;
