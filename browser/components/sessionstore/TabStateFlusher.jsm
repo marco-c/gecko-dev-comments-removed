@@ -84,6 +84,11 @@ var TabStateFlusherInternal = {
 
 
   flush(browser) {
+    let tabbrowser = browser.ownerGlobal.gBrowser;
+    if (!tabbrowser.getTabForBrowser(browser).linkedPanel) {
+      return;
+    }
+
     let id = ++this._lastRequestID;
     let mm = browser.messageManager;
     mm.sendAsyncMessage("SessionStore:flush", {id});
