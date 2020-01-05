@@ -33,9 +33,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 @RobocopTarget
 public final class EventDispatcher extends JNIObject {
     private static final String LOGTAG = "GeckoEventDispatcher";
-     static final String GUID = "__guid__";
-    private static final String STATUS_ERROR = "error";
-    private static final String STATUS_SUCCESS = "success";
 
     private static final EventDispatcher INSTANCE = new EventDispatcher();
 
@@ -45,9 +42,9 @@ public final class EventDispatcher extends JNIObject {
 
 
 
-    private static final int DEFAULT_GECKO_EVENTS_COUNT = 256; 
-    private static final int DEFAULT_UI_EVENTS_COUNT = 0; 
-    private static final int DEFAULT_BACKGROUND_EVENTS_COUNT = 0; 
+    private static final int DEFAULT_GECKO_EVENTS_COUNT = 64; 
+    private static final int DEFAULT_UI_EVENTS_COUNT = 128; 
+    private static final int DEFAULT_BACKGROUND_EVENTS_COUNT = 64; 
 
     
     private final Map<String, List<BundleEventListener>> mGeckoThreadListeners =
