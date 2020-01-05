@@ -828,6 +828,23 @@ function parseHue(lexer, colorArray) {
 
 
 
+
+
+
+function requireComma(lexer, token) {
+  if (!token || token.tokenType !== "symbol" || token.text !== ",") {
+    return null;
+  }
+  return getToken(lexer);
+}
+
+
+
+
+
+
+
+
 function parseHsl(lexer) {
   
   
