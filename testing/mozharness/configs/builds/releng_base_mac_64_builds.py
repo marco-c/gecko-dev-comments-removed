@@ -15,8 +15,7 @@ config = {
         'upload-files',
         'sendchange',
         'check-test',
-        'generate-balrog-properties',
-        
+        'update',  
     ],
     "buildbot_json_path": "buildprops.json",
     'exes': {
