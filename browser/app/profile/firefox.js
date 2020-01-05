@@ -999,6 +999,13 @@ pref("security.sandbox.content.level", 1);
 
 pref("security.sandbox.windows.log.stackTraceDepth", 0);
 #endif
+
+
+
+
+
+
+pref("security.sandbox.gpu.level", 1);
 #endif
 
 #if defined(XP_MACOSX) && defined(MOZ_SANDBOX) && defined(MOZ_CONTENT_SANDBOX)

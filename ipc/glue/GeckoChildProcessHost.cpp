@@ -1077,6 +1077,13 @@ GeckoChildProcessHost::PerformAsyncLaunchInternal(std::vector<std::string>& aExt
       }
       break;
     case GeckoProcessType_GPU:
+      if (mSandboxLevel > 0 && !PR_GetEnv("MOZ_DISABLE_GPU_SANDBOX")) {
+        
+        
+        
+        mSandboxBroker.SetSecurityLevelForGPUProcess(mSandboxLevel);
+        shouldSandboxCurrentProcess = true;
+      }
       break;
     case GeckoProcessType_Default:
     default:
