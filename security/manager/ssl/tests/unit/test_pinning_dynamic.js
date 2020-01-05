@@ -11,6 +11,8 @@ function writeLine(aLine, aOutputStream) {
 }
 
 var gSSService = null;
+var gSSSStateSeen = false;
+var gPreloadStateSeen = false;
 
 var profileDir = do_get_profile();
 var certdb;
@@ -53,6 +55,16 @@ function run_test() {
   writeLine(`b.pinning2.example.com:HPKP\t0\t0\t${now + 100000},1,1,${PINNING_ROOT_KEY_HASH}\n`, outputStream);
 
   outputStream.close();
+
+  let preloadFile = profileDir.clone();
+  preloadFile.append(PRELOAD_STATE_FILE_NAME);
+  ok(!preloadFile.exists(),
+     "Preload file should not exist when working with a clean slate");
+
+  outputStream = FileUtils.openFileOutputStream(preloadFile);
+  writeLine(`a.preload.example.com:HPKP\t0\t0\t${now + 100000},1,1,${PINNING_ROOT_KEY_HASH}\n`, outputStream);
+  outputStream.close();
+
   Services.obs.addObserver(checkStateRead, "data-storage-ready", false);
   do_test_pending();
   gSSService = Cc["@mozilla.org/ssservice;1"]
@@ -78,8 +90,20 @@ function checkDefaultSiteHPKPStatus() {
 }
 
 function checkStateRead(aSubject, aTopic, aData) {
-  equal(aData, SSS_STATE_FILE_NAME,
-        "Observed data should be the Site Security Service state file name");
+  if (aData == SSS_STATE_FILE_NAME) {
+    gSSSStateSeen = true;
+  } else if (aData == PRELOAD_STATE_FILE_NAME) {
+    gPreloadStateSeen = true;
+  } else {
+    throw new Error("Observed data should either be the Site Security " +
+                    "Service state file name or the preload file name");
+    return;
+  }
+
+  if (!gSSSStateSeen || !gPreloadStateSeen) {
+    return;
+  }
+
   notEqual(gSSService, null, "SiteSecurityService should be initialized");
 
   
@@ -108,7 +132,8 @@ function checkStateRead(aSubject, aTopic, aData) {
 
 
   
-  gSSService.setKeyPins("a.pinning2.example.com", true, 1000, 2,
+  gSSService.setKeyPins("a.pinning2.example.com", true,
+                        new Date().getTime() + 1000000, 2,
                         [NON_ISSUED_KEY_HASH, PINNING_ROOT_KEY_HASH]);
   checkFail(certFromFile('a.pinning2.example.com-badca'), "a.pinning2.example.com");
   checkOK(certFromFile('a.pinning2.example.com-pinningroot'), "a.pinning2.example.com");
@@ -129,7 +154,8 @@ function checkStateRead(aSubject, aTopic, aData) {
      " includeSubdomains to a.pinning2.example.com");
 
   
-  gSSService.setKeyPins("a.pinning2.example.com", false, 1000, 2,
+  gSSService.setKeyPins("a.pinning2.example.com", false,
+                        new Date().getTime() + 1000000, 2,
                         [NON_ISSUED_KEY_HASH, PINNING_ROOT_KEY_HASH]);
   checkFail(certFromFile('a.pinning2.example.com-badca'), "a.pinning2.example.com");
   checkOK(certFromFile('a.pinning2.example.com-pinningroot'), "a.pinning2.example.com");
@@ -145,8 +171,8 @@ function checkStateRead(aSubject, aTopic, aData) {
 
   
   throws(() => {
-    gSSService.setKeyPins("a.pinning2.example.com", true, 1000, 1,
-                          ["not a hash"]);
+    gSSService.setKeyPins("a.pinning2.example.com", true,
+                          new Date().getTime() + 1000000, 1, ["not a hash"]);
   }, /NS_ERROR_ILLEGAL_VALUE/, "Attempting to set an invalid pin should fail");
   checkFail(certFromFile('a.pinning2.example.com-badca'), "a.pinning2.example.com");
   checkOK(certFromFile('a.pinning2.example.com-pinningroot'), "a.pinning2.example.com");
@@ -162,8 +188,8 @@ function checkStateRead(aSubject, aTopic, aData) {
 
   
   throws(() => {
-    gSSService.setKeyPins("a.pinning2.example.com", true, 1000, 2,
-                          ["not a hash"]);
+    gSSService.setKeyPins("a.pinning2.example.com", true,
+                          new Date().getTime() + 1000000, 2, ["not a hash"]);
   }, /NS_ERROR_XPC_NOT_ENOUGH_ELEMENTS_IN_ARRAY/,
      "Attempting to set a pin with an incorrect size should fail");
 
@@ -175,8 +201,22 @@ function checkStateRead(aSubject, aTopic, aData) {
                              "include-subdomains.pinning.example.com", 0),
      "Built-in include-subdomains.pinning.example.com should have HPKP status");
 
-  gSSService.setKeyPins("a.pinning2.example.com", false, 0, 1,
-                        [NON_ISSUED_KEY_HASH]);
+  gSSService.setKeyPins("a.pinning2.example.com", false, new Date().getTime(),
+                        1, [NON_ISSUED_KEY_HASH]);
+
+  
+  checkFail(certFromFile("a.preload.example.com-badca"), "a.preload.example.com");
+  checkOK(certFromFile("a.preload.example.com-pinningroot"), "a.preload.example.com");
+
+  
+  
+  checkOK(certFromFile('b.preload.example.com-badca'), "b.preload.example.com");
+  
+  
+  gSSService.setKeyPins("b.preload.example.com", false,
+                        new Date().getTime() + 1000000, 2,
+                        [NON_ISSUED_KEY_HASH, PINNING_ROOT_KEY_HASH], true);
+  checkFail(certFromFile('b.preload.example.com-badca'), "b.preload.example.com");
 
   do_timeout(1250, checkExpiredState);
 }
@@ -191,6 +231,17 @@ function checkExpiredState() {
   checkOK(certFromFile('b.pinning2.example.com-pinningroot'), "b.pinning2.example.com");
   checkFail(certFromFile('x.b.pinning2.example.com-badca'), "x.b.pinning2.example.com");
   checkOK(certFromFile('x.b.pinning2.example.com-pinningroot'), "x.b.pinning2.example.com");
+  checkPreloadClear();
+}
+
+function checkPreloadClear() {
+  
+  gSSService.clearAll();
+  checkFail(certFromFile('b.preload.example.com-badca'), "b.preload.example.com");
+
+  
+  gSSService.clearPreloads();
+  checkOK(certFromFile('b.preload.example.com-badca'), "b.preload.example.com");
 
   do_test_finished();
 }
