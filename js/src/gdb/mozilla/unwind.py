@@ -525,6 +525,12 @@ class SpiderMonkeyUnwinder(Unwinder):
         self.enabled = False
         gdb.write("SpiderMonkey unwinder is disabled by default, to enable it type:\n" +
                   "\tenable unwinder .* SpiderMonkey\n")
+        
+        
+        
+        
+        if not hasattr(gdb.events, "breakpoint_created"):
+            gdb.write("\tflushregs\n")
 
         
         
