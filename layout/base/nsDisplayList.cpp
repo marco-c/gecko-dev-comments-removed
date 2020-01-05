@@ -7154,20 +7154,6 @@ bool nsDisplayMask::ShouldPaintOnMaskLayer(LayerManager* aManager)
     return false;
   }
 
-  
-  
-  nsIFrame* firstFrame =
-    nsLayoutUtils::FirstContinuationOrIBSplitSibling(mFrame);
-  nsSVGEffects::EffectProperties effectProperties =
-    nsSVGEffects::GetEffectProperties(firstFrame);
-  nsTArray<nsSVGMaskFrame *> maskFrames = effectProperties.GetMaskFrames();
-  for (size_t i = 0; i < maskFrames.Length() ; i++) {
-    nsSVGMaskFrame *maskFrame = maskFrames[i];
-    if (maskFrame) {
-      return false; 
-    }
-  }
-
   if (gfxPrefs::DrawMaskLayer()) {
     return false;
   }
