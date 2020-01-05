@@ -53,7 +53,6 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/Preferences.h"
-#include "mozilla/ServoStyleSet.h"
 #include "mozilla/dom/Event.h"
 #include "mozilla/dom/Element.h"
 
@@ -409,24 +408,6 @@ nsXBLService::IsChromeOrResourceURI(nsIURI* aURI)
 
 
 
-class MOZ_STACK_CLASS AutoStyleNewChildren
-{
-public:
-  AutoStyleNewChildren(Element* aElement) : mElement(aElement) { MOZ_ASSERT(mElement); }
-  ~AutoStyleNewChildren()
-  {
-    nsIPresShell* presShell = mElement->OwnerDoc()->GetShell();
-    ServoStyleSet* servoSet = presShell ? presShell->StyleSet()->GetAsServo() : nullptr;
-    if (servoSet) {
-      servoSet->StyleNewChildren(mElement);
-    }
-  }
-
-private:
-  Element* mElement;
-};
-
-
 
 nsresult
 nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
@@ -454,15 +435,6 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
     
     return NS_OK;
   }
-
-  
-  
-  
-  
-  
-  
-  
-  AutoStyleNewChildren styleNewChildren(aContent->AsElement());
 
   nsXBLBinding *binding = aContent->GetXBLBinding();
   if (binding) {
