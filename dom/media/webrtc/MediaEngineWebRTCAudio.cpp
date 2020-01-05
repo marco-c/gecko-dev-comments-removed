@@ -298,6 +298,10 @@ MediaEngineWebRTCMicrophoneSource::UpdateSingleSource(
           LOG(("Audio engine is not initalized"));
           return NS_ERROR_FAILURE;
         }
+      } else {
+        
+        
+        return NS_ERROR_FAILURE;
       }
       if (!AllocChannel()) {
         LOG(("Audio device is not initalized"));
