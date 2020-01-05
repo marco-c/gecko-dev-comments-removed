@@ -224,6 +224,24 @@ RasterImage::GetHeight(int32_t* aHeight)
 }
 
 
+nsresult
+RasterImage::GetNativeSizes(nsTArray<IntSize>& aNativeSizes) const
+{
+  if (mError) {
+    return NS_ERROR_FAILURE;
+  }
+
+  if (mNativeSizes.IsEmpty()) {
+    aNativeSizes.Clear();
+    aNativeSizes.AppendElement(mSize);
+  } else {
+    aNativeSizes = mNativeSizes;
+  }
+
+  return NS_OK;
+}
+
+
 NS_IMETHODIMP
 RasterImage::GetIntrinsicSize(nsSize* aSize)
 {
@@ -706,6 +724,7 @@ RasterImage::SetMetadata(const ImageMetadata& aMetadata,
     
     mSize = size;
     mOrientation = orientation;
+    mNativeSizes = aMetadata.GetNativeSizes();
     mHasSize = true;
   }
 
@@ -1135,19 +1154,19 @@ LaunchDecodingTask(IDecodingTask* aTask,
                    bool aHaveSourceData)
 {
   if (aHaveSourceData) {
-    nsCString uri(aImage->GetURIString());
-
     
     if (aFlags & imgIContainer::FLAG_SYNC_DECODE) {
-      PROFILER_LABEL_DYNAMIC("DecodePool", "SyncRunIfPossible",
-        js::ProfileEntry::Category::GRAPHICS, uri.get());
+      PROFILER_LABEL_PRINTF("DecodePool", "SyncRunIfPossible",
+        js::ProfileEntry::Category::GRAPHICS,
+        "%s", aImage->GetURIString().get());
       DecodePool::Singleton()->SyncRunIfPossible(aTask);
       return true;
     }
 
     if (aFlags & imgIContainer::FLAG_SYNC_DECODE_IF_FAST) {
-      PROFILER_LABEL_DYNAMIC("DecodePool", "SyncRunIfPreferred",
-        js::ProfileEntry::Category::GRAPHICS, uri.get());
+      PROFILER_LABEL_PRINTF("DecodePool", "SyncRunIfPreferred",
+        js::ProfileEntry::Category::GRAPHICS,
+        "%s", aImage->GetURIString().get());
       return DecodePool::Singleton()->SyncRunIfPreferred(aTask);
     }
   }

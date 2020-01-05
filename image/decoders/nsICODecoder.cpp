@@ -242,6 +242,8 @@ nsICODecoder::ReadDirEntry(const char* aData)
     }
   }
 
+  mImageMetadata.AddNativeSize(entrySize);
+
   if (desiredSize) {
     
     
