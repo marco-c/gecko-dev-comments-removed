@@ -11,31 +11,38 @@
 #include "ssl.h"
 
 #include "shared.h"
-#include "tls_client_config.h"
 #include "tls_common.h"
+#include "tls_server_certs.h"
+#include "tls_server_config.h"
 #include "tls_socket.h"
 
-static SECStatus AuthCertificateHook(void* arg, PRFileDesc* fd, PRBool checksig,
-                                     PRBool isServer) {
-  assert(!isServer);
-  auto config = reinterpret_cast<ClientConfig*>(arg);
-  return config->FailCertificateAuthentication() ? SECFailure : SECSuccess;
-}
+class SSLServerSessionCache {
+ public:
+  SSLServerSessionCache() {
+    assert(SSL_ConfigServerSessionIDCache(1024, 0, 0, ".") == SECSuccess);
+  }
+
+  ~SSLServerSessionCache() {
+    assert(SSL_ShutdownServerSessionIDCache() == SECSuccess);
+  }
+};
 
 static void SetSocketOptions(PRFileDesc* fd,
-                             std::unique_ptr<ClientConfig>& config) {
+                             std::unique_ptr<ServerConfig>& config) {
   SECStatus rv = SSL_OptionSet(fd, SSL_NO_CACHE, config->EnableCache());
+  assert(rv == SECSuccess);
+
+  rv = SSL_OptionSet(fd, SSL_REUSE_SERVER_ECDHE_KEY, false);
   assert(rv == SECSuccess);
 
   rv = SSL_OptionSet(fd, SSL_ENABLE_EXTENDED_MASTER_SECRET,
                      config->EnableExtendedMasterSecret());
   assert(rv == SECSuccess);
 
-  rv = SSL_OptionSet(fd, SSL_REQUIRE_DH_NAMED_GROUPS,
-                     config->RequireDhNamedGroups());
+  rv = SSL_OptionSet(fd, SSL_REQUEST_CERTIFICATE, config->RequestCertificate());
   assert(rv == SECSuccess);
 
-  rv = SSL_OptionSet(fd, SSL_ENABLE_FALSE_START, config->EnableFalseStart());
+  rv = SSL_OptionSet(fd, SSL_REQUIRE_CERTIFICATE, config->RequireCertificate());
   assert(rv == SECSuccess);
 
   rv = SSL_OptionSet(fd, SSL_ENABLE_DEFLATE, config->EnableDeflate());
@@ -53,28 +60,25 @@ static void SetSocketOptions(PRFileDesc* fd,
   assert(rv == SECSuccess);
 }
 
+static PRStatus InitModelSocket(void* arg) {
+  PRFileDesc* fd = reinterpret_cast<PRFileDesc*>(arg);
 
+  EnableAllProtocolVersions();
+  EnableAllCipherSuites(fd);
+  InstallServerCertificates(fd);
 
-static SECStatus CanFalseStartCallback(PRFileDesc* fd, void* arg,
-                                       PRBool* canFalseStart) {
-  *canFalseStart = true;
-  return SECSuccess;
-}
-
-static void SetupCallbacks(PRFileDesc* fd, ClientConfig* config) {
-  SECStatus rv = SSL_AuthCertificateHook(fd, AuthCertificateHook, config);
-  assert(rv == SECSuccess);
-
-  rv = SSL_SetCanFalseStartCallback(fd, CanFalseStartCallback, nullptr);
-  assert(rv == SECSuccess);
+  return PR_SUCCESS;
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t len) {
   static std::unique_ptr<NSSDatabase> db(new NSSDatabase());
   assert(db != nullptr);
 
-  EnableAllProtocolVersions();
-  std::unique_ptr<ClientConfig> config(new ClientConfig(data, len));
+  static std::unique_ptr<SSLServerSessionCache> cache(
+      new SSLServerSessionCache());
+  assert(cache != nullptr);
+
+  std::unique_ptr<ServerConfig> config(new ServerConfig(data, len));
 
   
   SSL_ClearSessionCache();
@@ -85,19 +89,22 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t len) {
 #endif
 
   
-  std::unique_ptr<DummyPrSocket> socket(new DummyPrSocket(data, len));
-  static PRDescIdentity id = PR_GetUniqueIdentity("fuzz-client");
-  ScopedPRFileDesc fd(DummyIOLayerMethods::CreateFD(id, socket.get()));
-  PRFileDesc* ssl_fd = SSL_ImportFD(nullptr, fd.get());
-  assert(ssl_fd == fd.get());
+  static ScopedPRFileDesc model(SSL_ImportFD(nullptr, PR_NewTCPSocket()));
+  assert(model);
 
   
-  SSL_SetURL(ssl_fd, "server");
+  static PRCallOnceType initModelOnce;
+  PR_CallOnceWithArg(&initModelOnce, InitModelSocket, model.get());
+
+  
+  std::unique_ptr<DummyPrSocket> socket(new DummyPrSocket(data, len));
+  static PRDescIdentity id = PR_GetUniqueIdentity("fuzz-server");
+  ScopedPRFileDesc fd(DummyIOLayerMethods::CreateFD(id, socket.get()));
+  PRFileDesc* ssl_fd = SSL_ImportFD(model.get(), fd.get());
+  assert(ssl_fd == fd.get());
 
   SetSocketOptions(ssl_fd, config);
-  EnableAllCipherSuites(ssl_fd);
-  SetupCallbacks(ssl_fd, config.get());
-  DoHandshake(ssl_fd, false);
+  DoHandshake(ssl_fd, true);
 
   return 0;
 }

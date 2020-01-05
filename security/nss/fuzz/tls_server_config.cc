@@ -1,0 +1,46 @@
+
+
+
+
+#include "tls_server_config.h"
+
+const uint64_t CONFIG_ENABLE_EXTENDED_MS = 0x01;
+const uint64_t CONFIG_REQUEST_CERTIFICATE = 0x02;
+const uint64_t CONFIG_REQUIRE_CERTIFICATE = 0x04;
+const uint64_t CONFIG_ENABLE_DEFLATE = 0x08;
+const uint64_t CONFIG_ENABLE_CBC_RANDOM_IV = 0x10;
+const uint64_t CONFIG_REQUIRE_SAFE_NEGOTIATION = 0x20;
+const uint64_t CONFIG_ENABLE_CACHE = 0x40;
+
+
+
+
+ServerConfig::ServerConfig(const uint8_t* data, size_t len) {
+  for (size_t i = 0; i < len; i++) {
+    config_ ^= static_cast<uint64_t>(data[i]) << (8 * (i % 8));
+  }
+}
+
+bool ServerConfig::EnableExtendedMasterSecret() {
+  return config_ & CONFIG_ENABLE_EXTENDED_MS;
+}
+
+bool ServerConfig::RequestCertificate() {
+  return config_ & CONFIG_REQUEST_CERTIFICATE;
+}
+
+bool ServerConfig::RequireCertificate() {
+  return config_ & CONFIG_REQUIRE_CERTIFICATE;
+}
+
+bool ServerConfig::EnableDeflate() { return config_ & CONFIG_ENABLE_DEFLATE; }
+
+bool ServerConfig::EnableCbcRandomIv() {
+  return config_ & CONFIG_ENABLE_CBC_RANDOM_IV;
+}
+
+bool ServerConfig::RequireSafeNegotiation() {
+  return config_ & CONFIG_REQUIRE_SAFE_NEGOTIATION;
+}
+
+bool ServerConfig::EnableCache() { return config_ & CONFIG_ENABLE_CACHE; }

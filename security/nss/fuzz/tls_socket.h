@@ -2,8 +2,8 @@
 
 
 
-#ifndef tls_client_socket_h__
-#define tls_client_socket_h__
+#ifndef tls_socket_h__
+#define tls_socket_h__
 
 #include "dummy_io.h"
 

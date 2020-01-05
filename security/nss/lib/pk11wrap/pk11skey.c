@@ -18,6 +18,8 @@
 #include "secerr.h"
 #include "hasht.h"
 
+static ECPointEncoding pk11_ECGetPubkeyEncoding(const SECKEYPublicKey *pubKey);
+
 static void
 pk11_EnterKeyMonitor(PK11SymKey *symKey)
 {
@@ -2005,7 +2007,7 @@ PK11_PubDerive(SECKEYPrivateKey *privKey, SECKEYPublicKey *pubKey,
 
             
 
-            if (crv != CKR_OK) {
+            if (crv != CKR_OK && pk11_ECGetPubkeyEncoding(pubKey) != ECPoint_XOnly) {
                 SECItem *pubValue = SEC_ASN1EncodeItem(NULL, NULL,
                                                        &pubKey->u.ec.publicValue,
                                                        SEC_ASN1_GET(SEC_OctetStringTemplate));
@@ -2211,6 +2213,11 @@ pk11_PubDeriveECKeyWithKDF(
     
 
     if (crv != CKR_OK) {
+        
+
+        if (pk11_ECGetPubkeyEncoding(pubKey) == ECPoint_XOnly) {
+            goto loser;
+        }
         SECItem *pubValue = SEC_ASN1EncodeItem(NULL, NULL,
                                                &pubKey->u.ec.publicValue,
                                                SEC_ASN1_GET(SEC_OctetStringTemplate));

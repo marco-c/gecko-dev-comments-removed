@@ -1,0 +1,12 @@
+
+
+
+
+#ifndef tls_server_certs_h__
+#define tls_server_certs_h__
+
+#include "prio.h"
+
+void InstallServerCertificates(PRFileDesc* fd);
+
+#endif  
