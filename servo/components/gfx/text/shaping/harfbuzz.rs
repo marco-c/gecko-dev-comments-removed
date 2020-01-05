@@ -41,7 +41,6 @@ use harfbuzz::{hb_position_t, hb_tag_t};
 use libc::{c_uint, c_int, c_void, c_char};
 use std::char;
 use std::cmp;
-use std::mem;
 use std::ptr;
 use util::geometry::Au;
 use util::range::Range;
@@ -616,16 +615,19 @@ extern fn get_font_table_func(_: *mut hb_face_t,
         
         match (*(*font_and_shaping_options).font).get_table_for_tag(tag as FontTableTag) {
             None => ptr::null_mut(),
-            Some(ref font_table) => {
-                let skinny_font_table_ptr: *const FontTable = font_table;   
+            Some(font_table) => {
+                
+                
+                
+                let font_table_ptr = Box::into_raw(font_table);
 
                 let mut blob: *mut hb_blob_t = ptr::null_mut();
-                (*skinny_font_table_ptr).with_buffer(|buf: *const u8, len: usize| {
+                (*font_table_ptr).with_buffer(|buf: *const u8, len: usize| {
                     
                     blob = RUST_hb_blob_create(buf as *const c_char,
                                                len as c_uint,
                                                HB_MEMORY_MODE_READONLY,
-                                               mem::transmute(skinny_font_table_ptr),
+                                               font_table_ptr as *mut c_void,
                                                destroy_blob_func);
                 });
 
@@ -636,10 +638,8 @@ extern fn get_font_table_func(_: *mut hb_face_t,
     }
 }
 
-
-
-
-
-extern fn destroy_blob_func(_: *mut c_void) {
-    
+extern fn destroy_blob_func(font_table_ptr: *mut c_void) {
+    unsafe {
+        drop(Box::from_raw(font_table_ptr as *mut FontTable));
+    }
 }
