@@ -9,6 +9,8 @@
 
 #include <stdio.h>
 
+#include "mozilla/TimeStamp.h"
+
 #include "js/TypeDecls.h"
 #include "vm/Printer.h"
 
@@ -49,6 +51,12 @@ class JSONPrinter
     void property(const char* name, size_t value);
 #endif
     void property(const char* name, double value);
+
+    
+    
+    
+    enum TimePrecision { SECONDS, MILLISECONDS };
+    void property(const char* name, const mozilla::TimeDuration& dur, TimePrecision precision);
 
     void beginStringProperty(const char* name);
     void endStringProperty();
