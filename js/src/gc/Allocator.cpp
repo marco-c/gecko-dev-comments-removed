@@ -288,34 +288,25 @@ GCRuntime::refillFreeListFromAnyThread(ExclusiveContext* cx, AllocKind thingKind
  TenuredCell*
 GCRuntime::refillFreeListFromMainThread(JSContext* cx, AllocKind thingKind, size_t thingSize)
 {
-    ArenaLists *arenas = cx->arenas();
+    
+    
     Zone *zone = cx->zone();
     MOZ_ASSERT(!cx->runtime()->isHeapBusy(), "allocating while under GC");
 
     AutoMaybeStartBackgroundAllocation maybeStartBGAlloc;
-
-    return arenas->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
+    return cx->arenas()->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
 }
 
  TenuredCell*
 GCRuntime::refillFreeListOffMainThread(ExclusiveContext* cx, AllocKind thingKind)
 {
-    ArenaLists* arenas = cx->arenas();
+    
+    
     Zone* zone = cx->zone();
-    JSRuntime* rt = zone->runtimeFromAnyThread();
+    MOZ_ASSERT(!zone->wasGCStarted());
 
     AutoMaybeStartBackgroundAllocation maybeStartBGAlloc;
-
-    
-    
-    
-    AutoLockHelperThreadState lock;
-    while (rt->isHeapCollecting()) {
-        HelperThreadState().wait(lock, GlobalHelperThreadState::PRODUCER);
-        HelperThreadState().notifyOne(GlobalHelperThreadState::PRODUCER, lock);
-    }
-
-    return arenas->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
+    return cx->arenas()->allocateFromArena(zone, thingKind, maybeStartBGAlloc);
 }
 
  TenuredCell*
