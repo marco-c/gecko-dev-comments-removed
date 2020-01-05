@@ -1,6 +1,6 @@
-/* This Source Code Form is subject to the terms of the Mozilla Public
- * License, v. 2.0. If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
+
+
+
 
 #include "CompositorWidget.h"
 #include "GLConsts.h"
@@ -9,6 +9,11 @@
 
 namespace mozilla {
 namespace widget {
+
+CompositorWidget::CompositorWidget(const layers::CompositorOptions& aOptions)
+  : mOptions(aOptions)
+{
+}
 
 CompositorWidget::~CompositorWidget()
 {
@@ -38,7 +43,7 @@ CompositorWidget::GetBackBufferDrawTarget(gfx::DrawTarget* aScreenTarget,
   gfx::IntSize clientSize(GetClientSize().ToUnknownSize());
 
   RefPtr<gfx::DrawTarget> target;
-  // Re-use back buffer if possible
+  
   if (mLastBackBuffer &&
       mLastBackBuffer->GetBackendType() == aScreenTarget->GetBackendType() &&
       mLastBackBuffer->GetFormat() == format &&
@@ -73,12 +78,12 @@ CompositorWidget::GetGLFrameBufferFormat()
 RefPtr<VsyncObserver>
 CompositorWidget::GetVsyncObserver() const
 {
-  // This should only used when the widget is in the GPU process, and should be
-  // implemented by IPDL-enabled CompositorWidgets.
-  // GPU process does not have a CompositorVsyncDispatcher.
+  
+  
+  
   MOZ_ASSERT_UNREACHABLE("Must be implemented by derived class");
   return nullptr;
 }
 
-} // namespace widget
-} // namespace mozilla
+} 
+} 

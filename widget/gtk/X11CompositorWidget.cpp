@@ -15,8 +15,10 @@ namespace mozilla {
 namespace widget {
 
 X11CompositorWidget::X11CompositorWidget(const CompositorWidgetInitData& aInitData,
+                                         const CompositorOptions& aOptions,
                                          nsWindow* aWindow)
-      : mWidget(aWindow)
+      : CompositorWidget(aOptions)
+      , mWidget(aWindow)
 {
   
   

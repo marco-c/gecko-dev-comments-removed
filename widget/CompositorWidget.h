@@ -9,6 +9,7 @@
 #include "mozilla/RefPtr.h"
 #include "Units.h"
 #include "mozilla/gfx/2D.h"
+#include "mozilla/layers/CompositorOptions.h"
 #include "mozilla/layers/LayersTypes.h"
 
 class nsIWidget;
@@ -77,7 +78,9 @@ public:
 
 
 
-  static RefPtr<CompositorWidget> CreateLocal(const CompositorWidgetInitData& aInitData, nsIWidget* aWidget);
+  static RefPtr<CompositorWidget> CreateLocal(const CompositorWidgetInitData& aInitData,
+                                              const layers::CompositorOptions& aOptions,
+                                              nsIWidget* aWidget);
 
   
 
@@ -254,6 +257,14 @@ public:
   
 
 
+
+  const layers::CompositorOptions& GetCompositorOptions() {
+    return mOptions;
+  }
+
+  
+
+
   virtual RefPtr<VsyncObserver> GetVsyncObserver() const;
 
   virtual WinCompositorWidget* AsWindows() {
@@ -274,10 +285,13 @@ public:
   }
 
 protected:
+  explicit CompositorWidget(const layers::CompositorOptions& aOptions);
   virtual ~CompositorWidget();
 
   
   RefPtr<gfx::DrawTarget> mLastBackBuffer;
+
+  layers::CompositorOptions mOptions;
 };
 
 } 
