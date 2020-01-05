@@ -8,7 +8,7 @@ use layout::display_list_builder::{DisplayListBuilder, ExtraDisplayListData};
 use layout::display_list_builder::{FlowDisplayListBuilderMethods};
 use layout::flow::{FloatFlow, FlowData};
 use layout::model::{MaybeAuto};
-use layout::float_context::{FloatContext, PlacementInfo, FloatLeft};
+use layout::float_context::{FloatContext, PlacementInfo, FloatType};
 
 use std::cell::Cell;
 use geom::point::Point2D;
@@ -31,17 +31,21 @@ pub struct FloatFlowData {
     rel_pos: Point2D<Au>,
 
     
+    float_type: FloatType,
+
+    
     index: Option<uint>,
 
 }
 
 impl FloatFlowData {
-    pub fn new(common: FlowData) -> FloatFlowData {
+    pub fn new(common: FlowData, float_type: FloatType) -> FloatFlowData {
         FloatFlowData {
             common: common,
             containing_width: Au(0),
             box: None,
             index: None,
+            float_type: float_type,
             rel_pos: Point2D(Au(0), Au(0)),
         }
     }
@@ -210,7 +214,7 @@ impl FloatFlowData {
             height: height,
             ceiling: Au(0),
             max_width: self.containing_width,
-            f_type: FloatLeft,
+            f_type: self.float_type,
         };
 
         
