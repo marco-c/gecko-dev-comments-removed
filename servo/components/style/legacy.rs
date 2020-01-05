@@ -6,8 +6,8 @@
 
 
 use node::{TElement, TElementAttributes, TNode};
-use properties::{BackgroundColorDeclaration, BorderBottomWidthDeclaration};
-use properties::{BorderLeftWidthDeclaration, BorderRightWidthDeclaration};
+use properties::{BackgroundColorDeclaration, BorderBottomWidthDeclaration, CSSFloat};
+use properties::{BorderLeftWidthDeclaration, BorderRightWidthDeclaration, HeightDeclaration};
 use properties::{BorderTopWidthDeclaration, SpecifiedValue, WidthDeclaration, specified};
 use selector_matching::{DeclarationBlock, Stylist};
 
@@ -26,6 +26,8 @@ pub enum LengthAttribute {
 pub enum IntegerAttribute {
     
     SizeIntegerAttribute,
+    ColsIntegerAttribute,
+    RowsIntegerAttribute,
 }
 
 
@@ -154,6 +156,36 @@ impl PresentationalHintSynthesis for Stylist {
                         };
                         matching_rules_list.vec_push(DeclarationBlock::from_declaration(
                                 WidthDeclaration(SpecifiedValue(specified::LPA_Length(
+                                            value)))));
+                        *shareable = false
+                    }
+                    Some(_) | None => {}
+                }
+            }
+            name if *name == atom!("textarea") => {
+                match element.get_integer_attribute(ColsIntegerAttribute) {
+                    Some(value) if value != 0 => {
+                        
+                        
+                        
+                        
+                        
+                        let value = specified::ServoCharacterWidth(value);
+                        matching_rules_list.vec_push(DeclarationBlock::from_declaration(
+                                WidthDeclaration(SpecifiedValue(specified::LPA_Length(
+                                            value)))));
+                        *shareable = false
+                    }
+                    Some(_) | None => {}
+                }
+                match element.get_integer_attribute(RowsIntegerAttribute) {
+                    Some(value) if value != 0 => {
+                        
+                        
+                        
+                        let value = specified::Em(value as CSSFloat);
+                        matching_rules_list.vec_push(DeclarationBlock::from_declaration(
+                                HeightDeclaration(SpecifiedValue(specified::LPA_Length(
                                             value)))));
                         *shareable = false
                     }
