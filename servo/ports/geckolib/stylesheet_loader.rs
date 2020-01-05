@@ -4,18 +4,44 @@
 
 use parking_lot::RwLock;
 use std::sync::Arc;
+use style::gecko_bindings::bindings::Gecko_LoadStyleSheet;
+use style::gecko_bindings::structs::{Loader, ServoStyleSheet};
+use style::gecko_bindings::sugar::ownership::HasArcFFI;
 use style::stylesheets::{ImportRule, StylesheetLoader as StyleStylesheetLoader};
+use style_traits::ToCss;
 
-pub struct StylesheetLoader;
+pub struct StylesheetLoader(*mut Loader, *mut ServoStyleSheet);
 
 impl StylesheetLoader {
-    pub fn new() -> Self {
-        StylesheetLoader
+    pub fn new(loader: *mut Loader, parent: *mut ServoStyleSheet) -> Self {
+        StylesheetLoader(loader, parent)
     }
 }
 
 impl StyleStylesheetLoader for StylesheetLoader {
-    fn request_stylesheet(&self, _import: &Arc<RwLock<ImportRule>>) {
+    fn request_stylesheet(&self, import_rule: &Arc<RwLock<ImportRule>>) {
+        let import = import_rule.read();
+        let (spec_bytes, spec_len) = import.url.as_slice_components()
+            .expect("Import only loads valid URLs");
+
         
+        
+        
+        
+        
+        
+        
+        
+        let media = import.stylesheet.media.read().to_css_string();
+
+        unsafe {
+            Gecko_LoadStyleSheet(self.0,
+                                 self.1,
+                                 HasArcFFI::arc_as_borrowed(import_rule),
+                                 spec_bytes,
+                                 spec_len as u32,
+                                 media.as_bytes().as_ptr(),
+                                 media.len() as u32);
+        }
     }
 }
