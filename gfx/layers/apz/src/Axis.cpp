@@ -53,9 +53,7 @@ Axis::Axis(AsyncPanZoomController* aAsyncPanZoomController)
     mAxisLocked(false),
     mAsyncPanZoomController(aAsyncPanZoomController),
     mOverscroll(0),
-    mFirstOverscrollAnimationSample(0),
-    mLastOverscrollPeak(0),
-    mOverscrollScale(1.0f)
+    mMSDModel(0.0, 0.0, 0.0, 400.0, 1.2)
 {
 }
 
@@ -211,9 +209,10 @@ ParentLayerCoord Axis::ApplyResistance(ParentLayerCoord aRequestedOverscroll) co
   
   
   
-  
-  float resistanceFactor = 1 - fabsf(GetOverscroll()) / GetCompositionLength();
-  return resistanceFactor < 0 ? ParentLayerCoord(0) : aRequestedOverscroll * resistanceFactor;
+  float resistanceFactor = (1 - fabsf(GetOverscroll()) / GetCompositionLength()) / 16;
+  float result = resistanceFactor < 0 ? ParentLayerCoord(0) : aRequestedOverscroll * resistanceFactor;
+  result = clamped(result, -8.0f, 8.0f);
+  return result;
 }
 
 void Axis::OverscrollBy(ParentLayerCoord aOverscroll) {
@@ -250,137 +249,27 @@ void Axis::OverscrollBy(ParentLayerCoord aOverscroll) {
 }
 
 ParentLayerCoord Axis::GetOverscroll() const {
-  ParentLayerCoord result = (mOverscroll - mLastOverscrollPeak) / mOverscrollScale;
-
-  
-#ifdef DEBUG
-  if ((result.value * mFirstOverscrollAnimationSample.value) < 0.0f) {
-    nsPrintfCString message("GetOverscroll() (%f) and first overscroll animation sample (%f) have different signs\n",
-                            result.value, mFirstOverscrollAnimationSample.value);
-    NS_ASSERTION(false, message.get());
-    MOZ_CRASH("GFX: Overscroll issue");
-  }
-#endif
-
-  return result;
+  return mOverscroll;
 }
 
 void Axis::StartOverscrollAnimation(float aVelocity) {
-  
-  MOZ_ASSERT(mFirstOverscrollAnimationSample == 0 &&
-             mLastOverscrollPeak == 0 &&
-             mOverscrollScale == 1);
-
+  aVelocity = clamped(aVelocity / 2.0f, -20.0f, 20.0f);
   SetVelocity(aVelocity);
+  mMSDModel.SetPosition(mOverscroll);
+  
+  mMSDModel.SetVelocity(mVelocity * 1000.0);
 }
 
 void Axis::EndOverscrollAnimation() {
-  ParentLayerCoord overscroll = GetOverscroll();
-  mFirstOverscrollAnimationSample = 0;
-  mLastOverscrollPeak = 0;
-  mOverscrollScale = 1.0f;
-  mOverscroll = overscroll;
-}
-
-void Axis::StepOverscrollAnimation(double aStepDurationMilliseconds) {
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  const float kSpringStiffness = gfxPrefs::APZOverscrollSpringStiffness();
-  const float kSpringFriction = gfxPrefs::APZOverscrollSpringFriction();
-
-  
-  float springForce = -1 * kSpringStiffness * mOverscroll;
-  
-  float oldVelocity = mVelocity;
-  mVelocity += springForce * aStepDurationMilliseconds;
-
-  
-  mVelocity *= pow(double(1 - kSpringFriction), aStepDurationMilliseconds);
-  AXIS_LOG("%p|%s sampled overscroll animation, leaving velocity at %f\n",
-    mAsyncPanZoomController, Name(), mVelocity);
-
-  
-  
-  
-  
-  
-  
-  bool velocitySignChange = (oldVelocity * mVelocity) < 0 || mVelocity == 0;
-  if (mFirstOverscrollAnimationSample == 0.0f) {
-    mFirstOverscrollAnimationSample = mOverscroll;
-
-    
-    
-    
-    if (mOverscroll != 0 && ((mOverscroll > 0 ? oldVelocity : -oldVelocity) <= 0.0f)) {
-      velocitySignChange = true;
-    }
-  }
-  if (velocitySignChange) {
-    bool oddOscillation = (mOverscroll.value * mFirstOverscrollAnimationSample.value) < 0.0f;
-    mLastOverscrollPeak = oddOscillation ? mOverscroll : -mOverscroll;
-    mOverscrollScale = 2.0f;
-  }
-
-  
-  
-  mOverscroll += (mVelocity * aStepDurationMilliseconds);
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (mLastOverscrollPeak != 0 && fabs(mOverscroll) > fabs(mLastOverscrollPeak)) {
-    mOverscroll = (mOverscroll >= 0) ? fabs(mLastOverscrollPeak) : -fabs(mLastOverscrollPeak);
-  }
+  mMSDModel.SetPosition(0.0);
+  mMSDModel.SetVelocity(0.0);
 }
 
 bool Axis::SampleOverscrollAnimation(const TimeDuration& aDelta) {
-  
-  if (mVelocity == 0.0f && mOverscroll == 0.0f) {
-    return false;
-  }
+  mMSDModel.Simulate(aDelta);
+  mOverscroll = mMSDModel.GetPosition();
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  double milliseconds = aDelta.ToMilliseconds();
-  int wholeMilliseconds = (int) aDelta.ToMilliseconds();
-  double fractionalMilliseconds = milliseconds - wholeMilliseconds;
-  for (int i = 0; i < wholeMilliseconds; ++i) {
-    StepOverscrollAnimation(1);
-  }
-  StepOverscrollAnimation(fractionalMilliseconds);
-
-  
-  
-  
-  if (fabs(mOverscroll) < gfxPrefs::APZOverscrollStopDistanceThreshold() &&
-      fabs(mVelocity) < gfxPrefs::APZOverscrollStopVelocityThreshold()) {
+  if (mMSDModel.IsFinished(1.0)) {
     
     
     AXIS_LOG("%p|%s oscillation dropped below threshold, going to rest\n",

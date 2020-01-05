@@ -9,6 +9,7 @@
 
 #include <sys/types.h>                  
 #include "APZUtils.h"
+#include "AxisPhysicsMSDModel.h"
 #include "Units.h"
 #include "mozilla/TimeStamp.h"          
 #include "nsTArray.h"                   
@@ -273,21 +274,10 @@ protected:
   AsyncPanZoomController* mAsyncPanZoomController;
 
   
-  
   ParentLayerCoord mOverscroll;
+
   
-  ParentLayerCoord mFirstOverscrollAnimationSample;
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  ParentLayerCoord mLastOverscrollPeak;
-  float mOverscrollScale;
+  AxisPhysicsMSDModel mMSDModel;
 
   
   
