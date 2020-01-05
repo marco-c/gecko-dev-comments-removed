@@ -401,7 +401,6 @@ impl VecRootableType for *mut JSObject {
 
 
 #[allow(unrooted_must_root)]
-#[jstraceable]
 pub struct RootedVec<T> {
     v: Vec<T>
 }
