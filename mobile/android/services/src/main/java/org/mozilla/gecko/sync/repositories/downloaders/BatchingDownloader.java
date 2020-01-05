@@ -58,6 +58,7 @@ public class BatchingDownloader {
     private final RepositorySession repositorySession;
     private final DelayedWorkTracker workTracker = new DelayedWorkTracker();
     private final Uri baseCollectionUri;
+    private final long fetchDeadline;
     private final boolean allowMultipleBatches;
 
      final AuthHeaderProvider authHeaderProvider;
@@ -70,12 +71,14 @@ public class BatchingDownloader {
     public BatchingDownloader(
             AuthHeaderProvider authHeaderProvider,
             Uri baseCollectionUri,
+            long fetchDeadline,
             boolean allowMultipleBatches,
             RepositorySession repositorySession) {
         this.repositorySession = repositorySession;
         this.authHeaderProvider = authHeaderProvider;
         this.baseCollectionUri = baseCollectionUri;
         this.allowMultipleBatches = allowMultipleBatches;
+        this.fetchDeadline = fetchDeadline;
     }
 
     @VisibleForTesting
@@ -218,6 +221,12 @@ public class BatchingDownloader {
         });
 
         
+        if (!mayProceedWithBatching(fetchDeadline)) {
+            this.abort(fetchRecordsDelegate, new Exception("Not enough time to complete next batch"));
+            return;
+        }
+
+        
         try {
             final SyncStorageCollectionRequest newRequest = makeSyncStorageCollectionRequest(newer,
                     limit, full, sort, ids, offset);
@@ -293,6 +302,14 @@ public class BatchingDownloader {
             }
         });
     }
+
+    private static boolean mayProceedWithBatching(long deadline) {
+        
+        
+        final long timeLeft = deadline - SystemClock.elapsedRealtime();
+        return timeLeft > TimeUnit.MINUTES.toMillis(1);
+    }
+
     @VisibleForTesting
     public static URI buildCollectionURI(Uri baseCollectionUri, boolean full, long newer, long limit, String sort, String ids, String offset) throws URISyntaxException {
         Uri.Builder uriBuilder = baseCollectionUri.buildUpon();
