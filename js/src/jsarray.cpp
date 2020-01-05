@@ -206,24 +206,30 @@ ToId(JSContext* cx, double index, MutableHandleId id)
     return ValueToId<CanGC>(cx, HandleValue::fromMarkedLocation(&tmp), id);
 }
 
+
+
+
+
 static bool
-ToId(JSContext* cx, uint32_t index, MutableHandleId id)
+GetElement(JSContext* cx, HandleObject obj, HandleObject receiver, uint32_t index, bool* hole,
+           MutableHandleValue vp)
 {
-    return IndexToId(cx, index, id);
-}
+    if (index < GetAnyBoxedOrUnboxedInitializedLength(obj)) {
+        vp.set(GetAnyBoxedOrUnboxedDenseElement(obj, index));
+        if (!vp.isMagic(JS_ELEMENTS_HOLE)) {
+            *hole = false;
+            return true;
+        }
+    }
+    if (obj->is<ArgumentsObject>()) {
+        if (obj->as<ArgumentsObject>().maybeGetElement(index, vp)) {
+            *hole = false;
+            return true;
+        }
+    }
 
-
-
-
-
-
-
-static inline bool
-DoGetElement(JSContext* cx, HandleObject obj, HandleObject receiver,
-             uint32_t index, bool* hole, MutableHandleValue vp)
-{
     RootedId id(cx);
-    if (!ToId(cx, index, &id))
+    if (!IndexToId(cx, index, &id))
         return false;
 
     bool found;
@@ -240,31 +246,25 @@ DoGetElement(JSContext* cx, HandleObject obj, HandleObject receiver,
     return true;
 }
 
-static bool
-GetElement(JSContext* cx, HandleObject obj, HandleObject receiver,
-           uint32_t index, bool* hole, MutableHandleValue vp)
-{
-    if (index < GetAnyBoxedOrUnboxedInitializedLength(obj)) {
-        vp.set(GetAnyBoxedOrUnboxedDenseElement(obj, uint32_t(index)));
-        if (!vp.isMagic(JS_ELEMENTS_HOLE)) {
-            *hole = false;
-            return true;
-        }
-    }
-    if (obj->is<ArgumentsObject>()) {
-        if (obj->as<ArgumentsObject>().maybeGetElement(uint32_t(index), vp)) {
-            *hole = false;
-            return true;
-        }
-    }
-
-    return DoGetElement(cx, obj, receiver, index, hole, vp);
-}
-
 static inline bool
 GetElement(JSContext* cx, HandleObject obj, uint32_t index, bool* hole, MutableHandleValue vp)
 {
     return GetElement(cx, obj, obj, index, hole, vp);
+}
+
+static bool
+GetElement(JSContext* cx, HandleObject obj, uint32_t index, MutableHandleValue vp)
+{
+    if (index < GetAnyBoxedOrUnboxedInitializedLength(obj)) {
+        vp.set(GetAnyBoxedOrUnboxedDenseElement(obj, index));
+        if (!vp.isMagic(JS_ELEMENTS_HOLE))
+            return true;
+    }
+    if (obj->is<ArgumentsObject>()) {
+        if (obj->as<ArgumentsObject>().maybeGetElement(index, vp))
+            return true;
+    }
+    return GetElement(cx, obj, obj, index, vp);
 }
 
 bool
@@ -1138,12 +1138,11 @@ ArrayJoinKernel(JSContext* cx, SeparatorOp sepOp, HandleObject obj, uint32_t len
                 return false;
 
             
-            bool hole;
-            if (!GetElement(cx, obj, i, &hole, &v))
+            if (!GetElement(cx, obj, i, &v))
                 return false;
 
             
-            if (!hole && !v.isNullOrUndefined()) {
+            if (!v.isNullOrUndefined()) {
                 if (!ValueToStringBuffer(cx, v, sb))
                     return false;
             }
@@ -2167,12 +2166,11 @@ js::array_pop(JSContext* cx, unsigned argc, Value* vp)
         index--;
 
         
-        bool hole;
-        if (!GetElement(cx, obj, index, &hole, args.rval()))
+        if (!GetElement(cx, obj, index, args.rval()))
             return false;
 
         
-        if (!hole && !DeletePropertyOrThrow(cx, obj, index))
+        if (!DeletePropertyOrThrow(cx, obj, index))
             return false;
     }
 
@@ -2317,8 +2315,7 @@ js::array_shift(JSContext* cx, unsigned argc, Value* vp)
     }
 
     
-    bool hole;
-    if (!GetElement(cx, obj, 0, &hole, args.rval()))
+    if (!GetElement(cx, obj, 0, args.rval()))
         return false;
 
     
@@ -2326,6 +2323,7 @@ js::array_shift(JSContext* cx, unsigned argc, Value* vp)
     for (uint32_t i = 0; i < newlen; i++) {
         if (!CheckForInterrupt(cx))
             return false;
+        bool hole;
         if (!GetElement(cx, obj, i + 1, &hole, &value))
             return false;
         if (hole) {
@@ -2406,9 +2404,9 @@ js::array_unshift(JSContext* cx, unsigned argc, Value* vp)
                 RootedValue value(cx);
                 do {
                     --last, --upperIndex;
-                    bool hole;
                     if (!CheckForInterrupt(cx))
                         return false;
+                    bool hole;
                     if (!GetElement(cx, obj, last, &hole, &value))
                         return false;
                     if (hole) {
