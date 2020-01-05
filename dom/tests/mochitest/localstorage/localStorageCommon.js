@@ -43,3 +43,11 @@ function notify(top)
 {
   os().notifyObservers(null, top, null);
 }
+
+
+
+
+function localStorageEnableTestingMode(cb)
+{
+  SpecialPowers.pushPrefEnv({ "set": [["dom.storage.testing", true]] }, cb);
+}
