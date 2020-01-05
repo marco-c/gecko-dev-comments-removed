@@ -7,10 +7,10 @@ config = {
         'checkout-sources',
         'setup-mock',
         'build',
+        
         'upload-files',
 
         'check-test',
-        
         
     ],
     'stage_platform': 'linux64-add-on-devel',

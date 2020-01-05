@@ -9,10 +9,10 @@ config = {
         'checkout-sources',
         'setup-mock',
         'build',
+        
         'upload-files',
         'sendchange',
         'check-test',
-        
         
     ],
     'stage_platform': 'linux64-asan-debug',

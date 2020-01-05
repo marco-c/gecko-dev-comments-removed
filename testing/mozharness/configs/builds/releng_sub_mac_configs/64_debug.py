@@ -9,10 +9,10 @@ config = {
         'checkout-sources',
         
         'build',
+        'generate-build-stats',
         'upload-files',
         'sendchange',
         'check-test',
-        'generate-build-stats',
         'update',  
     ],
     'stage_platform': 'macosx64-debug',

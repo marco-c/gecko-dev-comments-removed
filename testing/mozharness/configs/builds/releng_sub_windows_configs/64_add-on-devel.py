@@ -7,10 +7,10 @@ config = {
         'checkout-sources',
         
         'build',
+
         'upload-files',
 
         'check-test',
-
 
     ],
     'stage_platform': 'win64-add-on-devel',

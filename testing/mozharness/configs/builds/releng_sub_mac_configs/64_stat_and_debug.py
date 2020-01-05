@@ -9,9 +9,9 @@ config = {
         'checkout-sources',
         
         'build',
+        
         'upload-files',
         'sendchange',
-        
         'update',  
     ],
     'debug_build': True,

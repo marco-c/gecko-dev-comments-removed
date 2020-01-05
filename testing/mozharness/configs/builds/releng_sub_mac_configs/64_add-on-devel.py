@@ -7,10 +7,10 @@ config = {
         'checkout-sources',
 
         'build',
+
         'upload-files',
 
         'check-test',
-
 
     ],
     'stage_platform': 'macosx64-add-on-devel',
