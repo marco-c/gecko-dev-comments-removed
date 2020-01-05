@@ -225,9 +225,7 @@ ServoStyleSet::PreTraverse()
 
 bool
 ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
-                                         TraversalRootBehavior aRootBehavior,
-                                         TraversalRestyleBehavior
-                                           aRestyleBehavior)
+                                         mozilla::TraversalRootBehavior aRootBehavior)
 {
   
   
@@ -239,14 +237,13 @@ ServoStyleSet::PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
 
   bool isInitial = !aRoot->HasServoData();
   bool postTraversalRequired =
-    Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior, aRestyleBehavior);
+    Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior);
   MOZ_ASSERT_IF(isInitial, !postTraversalRequired);
 
   
   
   if (mPresContext->EffectCompositor()->PreTraverse()) {
-    if (Servo_TraverseSubtree(aRoot, mRawSet.get(),
-                              aRootBehavior, aRestyleBehavior)) {
+    if (Servo_TraverseSubtree(aRoot, mRawSet.get(), aRootBehavior)) {
       if (isInitial) {
         
         
@@ -711,9 +708,7 @@ ServoStyleSet::StyleDocument()
   bool postTraversalRequired = false;
   DocumentStyleRootIterator iter(mPresContext->Document());
   while (Element* root = iter.GetNextStyleRoot()) {
-    if (PrepareAndTraverseSubtree(root,
-                                  TraversalRootBehavior::Normal,
-                                  TraversalRestyleBehavior::Normal)) {
+    if (PrepareAndTraverseSubtree(root, TraversalRootBehavior::Normal)) {
       postTraversalRequired = true;
     }
   }
@@ -728,9 +723,7 @@ ServoStyleSet::StyleNewSubtree(Element* aRoot)
   PreTraverse();
 
   DebugOnly<bool> postTraversalRequired =
-    PrepareAndTraverseSubtree(aRoot,
-                              TraversalRootBehavior::Normal,
-                              TraversalRestyleBehavior::Normal);
+    PrepareAndTraverseSubtree(aRoot, TraversalRootBehavior::Normal);
   MOZ_ASSERT(!postTraversalRequired);
 }
 
@@ -739,9 +732,7 @@ ServoStyleSet::StyleNewChildren(Element* aParent)
 {
   PreTraverse();
 
-  PrepareAndTraverseSubtree(aParent,
-                            TraversalRootBehavior::UnstyledChildrenOnly,
-                            TraversalRestyleBehavior::Normal);
+  PrepareAndTraverseSubtree(aParent, TraversalRootBehavior::UnstyledChildrenOnly);
   
   
 }

@@ -302,8 +302,7 @@ private:
 
 
   bool PrepareAndTraverseSubtree(RawGeckoElementBorrowed aRoot,
-                                 TraversalRootBehavior aRootBehavior,
-                                 TraversalRestyleBehavior aRestyleBehavior);
+                                 mozilla::TraversalRootBehavior aRootBehavior);
 
   
 

@@ -324,8 +324,7 @@ SERVO_BINDING_FUNC(Servo_ResolveStyleLazily, ServoComputedValuesStrong,
 
 SERVO_BINDING_FUNC(Servo_TraverseSubtree, bool,
                    RawGeckoElementBorrowed root, RawServoStyleSetBorrowed set,
-                   mozilla::TraversalRootBehavior root_behavior,
-                   mozilla::TraversalRestyleBehavior restyle_behavior)
+                   mozilla::TraversalRootBehavior root_behavior)
 
 
 SERVO_BINDING_FUNC(Servo_AssertTreeIsClean, void, RawGeckoElementBorrowed root)
