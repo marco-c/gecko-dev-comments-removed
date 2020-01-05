@@ -4814,6 +4814,9 @@ pref("dom.w3c_touch_events.enabled", 2);
 pref("dom.w3c_pointer_events.enabled", false);
 
 
+pref("dom.w3c_pointer_events.implicit_capture", false);
+
+
 pref("dom.imagecapture.enabled", false);
 
 
