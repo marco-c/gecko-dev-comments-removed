@@ -238,21 +238,29 @@ nsShmImage::DestroyImage()
     mShmSeg = XCB_NONE;
   }
   DestroyShmSegment();
+  
+  
+  WaitIfPendingReply();
+}
+
+
+
+
+void
+nsShmImage::WaitIfPendingReply()
+{
+  if (mRequestPending) {
+    xcb_get_input_focus_reply_t* reply =
+      xcb_get_input_focus_reply(mConnection, mSyncRequest, nullptr);
+    free(reply);
+    mRequestPending = false;
+  }
 }
 
 already_AddRefed<DrawTarget>
 nsShmImage::CreateDrawTarget(const mozilla::LayoutDeviceIntRegion& aRegion)
 {
-  
-  
-  
-  if (mRequestPending) {
-    xcb_get_input_focus_reply_t* reply;
-    if ((reply = xcb_get_input_focus_reply(mConnection, mSyncRequest, nullptr))) {
-      free(reply);
-    }
-    mRequestPending = false;
-  }
+  WaitIfPendingReply();
 
   
   
