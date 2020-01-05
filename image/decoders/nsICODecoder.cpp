@@ -79,6 +79,8 @@ nsICODecoder::FinishInternal()
 nsresult
 nsICODecoder::FinishWithErrorInternal()
 {
+  
+  
   return GetFinalStateFromContainedDecoder();
 }
 
