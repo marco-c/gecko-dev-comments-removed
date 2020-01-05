@@ -1296,6 +1296,10 @@ static_assert(LastCharKind < (1 << (sizeof(firstCharKinds[0]) * 8)),
 bool
 TokenStream::getTokenInternal(TokenKind* ttp, Modifier modifier)
 {
+    
+    
+    AutoTraceLog tokenizerLog(TraceLoggerForCurrentThread(cx), TraceLogger_Tokenizing);
+
     int c;
     uint32_t qc;
     Token* tp;
