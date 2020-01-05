@@ -370,8 +370,6 @@ public:
     mShadow = nullptr;
   }
 
-  virtual void ClearCachedResources() { }
-
   
   
   virtual void HandleMemoryPressure() { }

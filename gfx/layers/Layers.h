@@ -1807,6 +1807,8 @@ public:
   AsyncPanZoomController* GetAsyncPanZoomController(uint32_t aIndex) const;
   
   
+
+  virtual void ClearCachedResources() {}
 private:
   void ScrollMetadataChanged();
 public:

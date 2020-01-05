@@ -146,11 +146,13 @@ public:
   WebRenderBridgeChild* WRBridge() const { return mWRChild; }
 
 private:
- 
+  
 
 
 
- void MakeSnapshotIfRequired(LayoutDeviceIntSize aSize);
+  void MakeSnapshotIfRequired(LayoutDeviceIntSize aSize);
+
+  void ClearLayer(Layer* aLayer);
 
 private:
   nsIWidget* MOZ_NON_OWNING_REF mWidget;
