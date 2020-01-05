@@ -978,6 +978,14 @@ nsFormFillController::MaybeStartControllingInput(nsIDOMHTMLInputElement* aInput)
   if (mPwmgrInputs.Get(inputNode))
       isPwmgrInput = true;
 
+  
+  
+  
+  
+  if (formControl->GetType() == NS_FORM_INPUT_PASSWORD && !isPwmgrInput) {
+    return;
+  }
+
   if (isPwmgrInput || hasList || autocomplete) {
     StartControllingInput(aInput);
   }
