@@ -167,6 +167,8 @@ var gPlayTests = [
   { name:"wavedata_ulaw.wav", type:"audio/x-wav", duration:1.0 },
   
   { name:"bug1301226.wav", type:"audio/x-wav", duration:0.003673 },
+  
+  { name:"bug1301226-odd.wav", type:"audio/x-wav", duration:0.003673 },
 
   
   { name:"bug461281.ogg", type:"application/ogg", duration:2.208 },

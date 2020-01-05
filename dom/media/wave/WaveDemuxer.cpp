@@ -133,8 +133,11 @@ WAVTrackDemuxer::Init()
       }
       break;
     } else {
+      mOffset += aChunkSize; 
+    }
+    if (mOffset & 1) {
       
-      mOffset += (aChunkSize + 1) & ~1; 
+      mOffset += 1;
     }
     mHeaderParser.Reset();
   }
