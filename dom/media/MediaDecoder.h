@@ -41,7 +41,6 @@ class nsIPrincipal;
 namespace mozilla {
 
 namespace dom {
-class Promise;
 class HTMLMediaElement;
 }
 
@@ -179,8 +178,7 @@ public:
   
   
   
-  virtual nsresult Seek(double aTime, SeekTarget::Type aSeekType,
-                        dom::Promise* aPromise = nullptr);
+  virtual nsresult Seek(double aTime, SeekTarget::Type aSeekType);
 
   
   nsresult InitializeStateMachine();
@@ -642,7 +640,7 @@ private:
 
 protected:
   void DiscardOngoingSeekIfExists();
-  virtual void CallSeek(const SeekTarget& aTarget, dom::Promise* aPromise);
+  virtual void CallSeek(const SeekTarget& aTarget);
 
   MozPromiseRequestHolder<SeekPromise> mSeekRequest;
 
