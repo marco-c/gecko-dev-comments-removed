@@ -31,7 +31,6 @@ const int CBvLayerQuad = 10;
 
 const int CBfLayerOpacity = 0;
 const int CBvColor = 0;
-const int CBmYuvColorMatrix = 1;
 
 enum DeviceManagerState {
   

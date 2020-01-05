@@ -7,7 +7,6 @@
 #define GFX_UTILS_H
 
 #include "gfxTypes.h"
-#include "ImageTypes.h"
 #include "imgIContainer.h"
 #include "mozilla/gfx/2D.h"
 #include "mozilla/RefPtr.h"
@@ -42,7 +41,6 @@ public:
     typedef mozilla::gfx::SourceSurface SourceSurface;
     typedef mozilla::gfx::SurfaceFormat SurfaceFormat;
     typedef mozilla::image::ImageRegion ImageRegion;
-    typedef mozilla::YUVColorSpace YUVColorSpace;
 
     
 
@@ -135,13 +133,6 @@ public:
 
 
     static void ClearThebesSurface(gfxASurface* aSurface);
-
-    
-
-
-    static float* Get4x3YuvColorMatrix(YUVColorSpace aYUVColorSpace);
-
-    static float* Get3x3YuvColorMatrix(YUVColorSpace aYUVColorSpace);
 
     
 
