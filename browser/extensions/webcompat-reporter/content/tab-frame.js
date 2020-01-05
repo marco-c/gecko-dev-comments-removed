@@ -2,6 +2,8 @@
 
 
 
+
+
 let { utils: Cu } = Components;
 
 const TABDATA_MESSAGE = "WebCompat:SendTabData";
