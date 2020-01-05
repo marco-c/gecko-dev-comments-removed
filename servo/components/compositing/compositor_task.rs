@@ -212,6 +212,7 @@ pub enum Msg {
     
     
     ScrollTimeout(u64),
+    RecompositeAfterScroll,
     
     KeyEvent(Key, KeyState, KeyModifiers),
     
@@ -240,6 +241,7 @@ impl Debug for Msg {
             Msg::SetFrameTree(..) => write!(f, "SetFrameTree"),
             Msg::LoadComplete => write!(f, "LoadComplete"),
             Msg::ScrollTimeout(..) => write!(f, "ScrollTimeout"),
+            Msg::RecompositeAfterScroll => write!(f, "RecompositeAfterScroll"),
             Msg::KeyEvent(..) => write!(f, "KeyEvent"),
             Msg::SetCursor(..) => write!(f, "SetCursor"),
             Msg::PaintTaskExited(..) => write!(f, "PaintTaskExited"),
