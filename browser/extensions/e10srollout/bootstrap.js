@@ -18,7 +18,7 @@ const TEST_THRESHOLD = {
 
 const ADDON_ROLLOUT_POLICY = {
   "beta"    : "50allmpc", 
-  "release" : "49a", 
+  "release" : "50allmpc", 
 };
 
 const PREF_COHORT_SAMPLE       = "e10s.rollout.cohortSample";
