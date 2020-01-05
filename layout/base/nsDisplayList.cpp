@@ -422,16 +422,14 @@ AddAnimationForProperty(nsIFrame* aFrame, const AnimationProperty& aProperty,
   Nullable<TimeDuration> startTime = aAnimation->GetCurrentOrPendingStartTime();
   animation->startTime() = startTime.IsNull()
                            ? TimeStamp()
-                           : aAnimation->GetTimeline()->
-                              ToTimeStamp(startTime.Value());
+                           : aAnimation->AnimationTimeToTimeStamp(
+                              StickyTimeDuration(timing.mDelay));
   animation->initialCurrentTime() = aAnimation->GetCurrentTime().Value()
                                     - timing.mDelay;
-  animation->delay() = timing.mDelay;
   animation->duration() = computedTiming.mDuration;
   animation->iterations() = computedTiming.mIterations;
   animation->iterationStart() = computedTiming.mIterationStart;
   animation->direction() = static_cast<uint8_t>(timing.mDirection);
-  animation->fillMode() = static_cast<uint8_t>(timing.mFill);
   animation->property() = aProperty.mProperty;
   animation->playbackRate() = aAnimation->PlaybackRate();
   animation->data() = aData;
@@ -483,7 +481,7 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSPropertyID aProperty,
   
   for (size_t animIdx = 0; animIdx < aAnimations.Length(); animIdx++) {
     dom::Animation* anim = aAnimations[animIdx];
-    if (!anim->IsPlayableOnCompositor()) {
+    if (!anim->IsPlaying()) {
       continue;
     }
 
@@ -2432,9 +2430,11 @@ static void
 RegisterThemeGeometry(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                       nsITheme::ThemeGeometryType aType)
 {
-  if (aBuilder->IsInRootChromeDocumentOrPopup() && !aBuilder->IsInTransform()) {
+  if (aBuilder->IsInChromeDocumentOrPopup() && !aBuilder->IsInTransform()) {
     nsIFrame* displayRoot = nsLayoutUtils::GetDisplayRootFrame(aFrame);
-    nsRect borderBox(aFrame->GetOffsetTo(displayRoot), aFrame->GetSize());
+    nsPoint offset = aBuilder->IsInSubdocument() ? aBuilder->ToReferenceFrame(aFrame)
+                                                 : aFrame->GetOffsetTo(displayRoot);
+    nsRect borderBox = nsRect(offset, aFrame->GetSize());
     aBuilder->RegisterThemeGeometry(aType,
       LayoutDeviceIntRect::FromUnknownRect(
         borderBox.ToNearestPixels(
@@ -2664,7 +2664,7 @@ nsDisplayBackgroundImage::AppendBackgroundItemsToTop(nsDisplayListBuilder* aBuil
   if (isThemed) {
     nsITheme* theme = presContext->GetTheme();
     if (theme->NeedToClearBackgroundBehindWidget(aFrame, aFrame->StyleDisplay()->mAppearance) &&
-        aBuilder->IsInRootChromeDocumentOrPopup() && !aBuilder->IsInTransform()) {
+        aBuilder->IsInChromeDocumentOrPopup() && !aBuilder->IsInTransform()) {
       bgItemList.AppendNewToTop(
         new (aBuilder) nsDisplayClearBackground(aBuilder, aFrame));
     }
@@ -6789,8 +6789,8 @@ nsDisplaySVGEffects::ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
                                                const nsDisplayItemGeometry* aGeometry,
                                                nsRegion* aInvalidRegion)
 {
-  const nsDisplayMaskGeometry* geometry =
-    static_cast<const nsDisplayMaskGeometry*>(aGeometry);
+  const nsDisplaySVGEffectsGeometry* geometry =
+    static_cast<const nsDisplaySVGEffectsGeometry*>(aGeometry);
   bool snap;
   nsRect bounds = GetBounds(aBuilder, &snap);
   if (geometry->mFrameOffsetToReferenceFrame != ToReferenceFrame() ||
@@ -6803,6 +6803,11 @@ nsDisplaySVGEffects::ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
     
     
     aInvalidRegion->Or(bounds, geometry->mBounds);
+  }
+
+  if (aBuilder->ShouldSyncDecodeImages() &&
+      geometry->ShouldInvalidateToSyncDecodeImages()) {
+    aInvalidRegion->Or(*aInvalidRegion, bounds);
   }
 }
 
@@ -6952,21 +6957,6 @@ nsDisplayMask::nsDisplayMask(nsDisplayListBuilder* aBuilder,
   : nsDisplaySVGEffects(aBuilder, aFrame, aList, aHandleOpacity, aScrollClip)
 {
   MOZ_COUNT_CTOR(nsDisplayMask);
-
-  nsPresContext* presContext = mFrame->PresContext();
-  uint32_t flags = aBuilder->GetBackgroundPaintFlags() |
-                   nsCSSRendering::PAINTBG_MASK_IMAGE;
-  const nsStyleSVGReset *svgReset = aFrame->StyleSVGReset();
-  NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, svgReset->mMask) {
-    bool isTransformedFixed;
-    nsBackgroundLayerState state =
-      nsCSSRendering::PrepareImageLayer(presContext, aFrame, flags,
-                                        mFrame->GetRectRelativeToSelf(),
-                                        mFrame->GetRectRelativeToSelf(),
-                                        svgReset->mMask.mLayers[i],
-                                        &isTransformedFixed);
-    mDestRects.AppendElement(state.mDestArea);
-  }
 }
 
 #ifdef NS_BUILD_REFCNT_LOGGING
@@ -7061,43 +7051,6 @@ bool nsDisplayMask::ComputeVisibility(nsDisplayListBuilder* aBuilder,
 }
 
 void
-nsDisplayMask::ComputeInvalidationRegion(nsDisplayListBuilder* aBuilder,
-                                               const nsDisplayItemGeometry* aGeometry,
-                                               nsRegion* aInvalidRegion)
-{
-  nsDisplaySVGEffects::ComputeInvalidationRegion(aBuilder, aGeometry,
-                                                 aInvalidRegion);
-
-  const nsDisplayMaskGeometry* geometry =
-    static_cast<const nsDisplayMaskGeometry*>(aGeometry);
-  bool snap;
-  nsRect bounds = GetBounds(aBuilder, &snap);
-
-  if (mDestRects.Length() != geometry->mDestRects.Length()) {
-    aInvalidRegion->Or(bounds, geometry->mBounds);
-  } else {
-    for (size_t i = 0; i < mDestRects.Length(); i++) {
-      if (!mDestRects[i].IsEqualInterior(geometry->mDestRects[i])) {
-        aInvalidRegion->Or(bounds, geometry->mBounds);
-        break;
-      }
-    }
-  }
-
-  if (aBuilder->ShouldSyncDecodeImages() &&
-      geometry->ShouldInvalidateToSyncDecodeImages()) {
-    const nsStyleSVGReset *svgReset = mFrame->StyleSVGReset();
-    NS_FOR_VISIBLE_IMAGE_LAYERS_BACK_TO_FRONT(i, svgReset->mMask) {
-      const nsStyleImage& image = svgReset->mMask.mLayers[i].mImage;
-      if (image.GetType() == eStyleImageType_Image ) {
-        aInvalidRegion->Or(*aInvalidRegion, bounds);
-        break;
-      }
-    }
-  }
-}
-
-void
 nsDisplayMask::PaintAsLayer(nsDisplayListBuilder* aBuilder,
                             nsRenderingContext* aCtx,
                             LayerManager* aManager)
@@ -7123,7 +7076,7 @@ nsDisplayMask::PaintAsLayer(nsDisplayListBuilder* aBuilder,
 
   context->PopClip();
 
-  nsDisplayMaskGeometry::UpdateDrawResult(this, result);
+  nsDisplaySVGEffectsGeometry::UpdateDrawResult(this, result);
 }
 
 #ifdef MOZ_DUMP_PAINTING
@@ -7277,8 +7230,10 @@ nsDisplayFilter::PaintAsLayer(nsDisplayListBuilder* aBuilder,
                                                   aManager,
                                                   mHandleOpacity);
 
-  image::DrawResult result = nsSVGIntegrationUtils::PaintFilter(params);
-  nsDisplayFilterGeometry::UpdateDrawResult(this, result);
+  image::DrawResult result =
+    nsSVGIntegrationUtils::PaintFilter(params);
+
+  nsDisplaySVGEffectsGeometry::UpdateDrawResult(this, result);
 }
 
 #ifdef MOZ_DUMP_PAINTING
