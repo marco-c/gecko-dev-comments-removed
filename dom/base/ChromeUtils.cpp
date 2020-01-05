@@ -190,21 +190,10 @@ ChromeUtils::IsOriginAttributesEqual(const dom::OriginAttributesDictionary& aA,
 }
 
  bool
-ChromeUtils::IsOriginAttributesEqualIgnoringAddonId(const dom::OriginAttributesDictionary& aA,
-                                                    const dom::OriginAttributesDictionary& aB)
-{
-  return aA.mAppId == aB.mAppId &&
-         aA.mInIsolatedMozBrowser == aB.mInIsolatedMozBrowser &&
-         aA.mUserContextId == aB.mUserContextId &&
-         aA.mPrivateBrowsingId == aB.mPrivateBrowsingId;
-}
-
- bool
 ChromeUtils::IsOriginAttributesEqualIgnoringFPD(const dom::OriginAttributesDictionary& aA,
                                                 const dom::OriginAttributesDictionary& aB)
 {
-  return aA.mAddonId == aB.mAddonId &&
-         aA.mAppId == aB.mAppId &&
+  return aA.mAppId == aB.mAppId &&
          aA.mInIsolatedMozBrowser == aB.mInIsolatedMozBrowser &&
          aA.mUserContextId == aB.mUserContextId &&
          aA.mPrivateBrowsingId == aB.mPrivateBrowsingId;
