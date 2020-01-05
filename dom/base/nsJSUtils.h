@@ -144,7 +144,7 @@ public:
     
     
     
-    MOZ_MUST_USE nsresult SyncAndExec(void **aOffThreadToken,
+    MOZ_MUST_USE nsresult JoinAndExec(void **aOffThreadToken,
                                       JS::MutableHandle<JSScript*> aScript);
 
     
@@ -154,6 +154,22 @@ public:
     
     nsresult CompileAndExec(JS::CompileOptions& aCompileOptions,
                             const nsAString& aScript);
+
+    
+    MOZ_MUST_USE nsresult DecodeAndExec(JS::CompileOptions& aCompileOptions,
+                                        mozilla::Vector<uint8_t>& aBytecodeBuf,
+                                        size_t aBytecodeIndex);
+
+    
+    
+    
+    MOZ_MUST_USE nsresult DecodeJoinAndExec(void **aOffThreadToken);
+
+    
+    
+    MOZ_MUST_USE nsresult JoinEncodeAndExec(void **aOffThreadToken,
+                                            mozilla::Vector<uint8_t>& aBytecodeBuf,
+                                            JS::MutableHandle<JSScript*> aScript);
   };
 
   static nsresult CompileModule(JSContext* aCx,

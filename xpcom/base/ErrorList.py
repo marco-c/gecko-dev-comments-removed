@@ -673,6 +673,11 @@ with modules["DOM"]:
     
     
     
+    errors["NS_ERROR_DOM_JS_DECODING_ERROR"] = FAILURE(1026)
+
+    
+    
+    
     errors["NS_SUCCESS_DOM_NO_OPERATION"] = SUCCESS(1)
 
     
