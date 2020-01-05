@@ -856,6 +856,7 @@ public:
   
   
   nsTAdoptingString_CharT(const self_type& aStr)
+    : nsTXPIDLString_CharT()
   {
     *this = aStr;
   }
