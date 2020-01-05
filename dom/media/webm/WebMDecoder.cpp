@@ -5,11 +5,11 @@
 
 
 #include "mozilla/Preferences.h"
+#include "MediaContentType.h"
 #include "MediaDecoderStateMachine.h"
 #include "WebMDemuxer.h"
 #include "WebMDecoder.h"
 #include "VideoUtils.h"
-#include "nsContentTypeParser.h"
 
 namespace mozilla {
 
@@ -22,69 +22,39 @@ MediaDecoderStateMachine* WebMDecoder::CreateStateMachine()
 
 
 bool
-WebMDecoder::IsEnabled()
+WebMDecoder::IsSupportedType(const MediaContentType& aContentType)
 {
-  return Preferences::GetBool("media.webm.enabled");
-}
-
-
-bool
-WebMDecoder::CanHandleMediaType(const nsACString& aMIMETypeExcludingCodecs,
-                                const nsAString& aCodecs)
-{
-  if (!IsEnabled()) {
+  if (!Preferences::GetBool("media.webm.enabled")) {
     return false;
   }
 
-  const bool isWebMAudio = aMIMETypeExcludingCodecs.EqualsASCII("audio/webm");
-  const bool isWebMVideo = aMIMETypeExcludingCodecs.EqualsASCII("video/webm");
-  if (!isWebMAudio && !isWebMVideo) {
+  bool isVideo = aContentType.Type() == MEDIAMIMETYPE("video/webm");
+  if (aContentType.Type() != MEDIAMIMETYPE("audio/webm") && !isVideo) {
     return false;
   }
 
-  nsTArray<nsCString> codecMimes;
-  if (aCodecs.IsEmpty()) {
+  const MediaCodecs& codecs = aContentType.ExtendedType().Codecs();
+  if (codecs.IsEmpty()) {
     
     return true;
   }
   
   
-  nsTArray<nsString> codecs;
-  if (!ParseCodecsString(aCodecs, codecs)) {
-    return false;
-  }
-  for (const nsString& codec : codecs) {
+  for (const auto& codec : codecs.Range()) {
     if (codec.EqualsLiteral("opus") || codec.EqualsLiteral("vorbis")) {
       continue;
     }
     
     
-    if (isWebMVideo &&
+    if (isVideo &&
         (codec.EqualsLiteral("vp8") || codec.EqualsLiteral("vp8.0") ||
          codec.EqualsLiteral("vp9") || codec.EqualsLiteral("vp9.0"))) {
-
       continue;
     }
     
     return false;
   }
   return true;
-}
-
- bool
-WebMDecoder::CanHandleMediaType(const nsAString& aContentType)
-{
-  nsContentTypeParser parser(aContentType);
-  nsAutoString mimeType;
-  nsresult rv = parser.GetType(mimeType);
-  if (NS_FAILED(rv)) {
-    return false;
-  }
-  nsString codecs;
-  parser.GetParameter("codecs", codecs);
-
-  return CanHandleMediaType(NS_ConvertUTF16toUTF8(mimeType),
-                            codecs);
 }
 
 void

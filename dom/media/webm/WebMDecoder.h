@@ -11,6 +11,8 @@
 
 namespace mozilla {
 
+class MediaContentType;
+
 class WebMDecoder : public MediaDecoder
 {
 public:
@@ -24,16 +26,9 @@ public:
   MediaDecoderStateMachine* CreateStateMachine() override;
 
   
-  static bool IsEnabled();
-
   
   
-  
-  
-  static bool CanHandleMediaType(const nsACString& aMIMETypeExcludingCodecs,
-                                 const nsAString& aCodecs);
-
-  static bool CanHandleMediaType(const nsAString& aContentType);
+  static bool IsSupportedType(const MediaContentType& aContentType);
 
   void GetMozDebugReaderData(nsAString& aString) override;
 
