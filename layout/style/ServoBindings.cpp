@@ -604,8 +604,7 @@ Gecko_AtomEqualsUTF8(nsIAtom* aAtom, const char* aString, uint32_t aLength)
 {
   
   
-  nsAutoString atomStr;
-  aAtom->ToString(atomStr);
+  nsDependentAtomString atomStr(aAtom);
   NS_ConvertUTF8toUTF16 inStr(nsDependentCSubstring(aString, aLength));
   return atomStr.Equals(inStr);
 }
@@ -615,8 +614,7 @@ Gecko_AtomEqualsUTF8IgnoreCase(nsIAtom* aAtom, const char* aString, uint32_t aLe
 {
   
   
-  nsAutoString atomStr;
-  aAtom->ToString(atomStr);
+  nsDependentAtomString atomStr(aAtom);
   NS_ConvertUTF8toUTF16 inStr(nsDependentCSubstring(aString, aLength));
   return nsContentUtils::EqualsIgnoreASCIICase(atomStr, inStr);
 }
