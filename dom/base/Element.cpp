@@ -648,8 +648,9 @@ Element::GetScrollFrame(nsIFrame **aStyledFrame, bool aFlushLayout)
 
   
   
-  FrameType type = frame->Type();
-  if (type != FrameType::Menu && type != FrameType::ComboboxControl) {
+  LayoutFrameType type = frame->Type();
+  if (type != LayoutFrameType::Menu &&
+      type != LayoutFrameType::ComboboxControl) {
     nsIScrollableFrame *scrollFrame = frame->GetScrollTargetFrame();
     if (scrollFrame)
       return scrollFrame;

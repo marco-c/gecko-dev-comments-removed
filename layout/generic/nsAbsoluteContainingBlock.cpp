@@ -425,15 +425,15 @@ OffsetToAlignedStaticPos(const ReflowInput& aKidReflowInput,
                         ? GetOrthogonalAxis(aAbsPosCBAxis)
                         : aAbsPosCBAxis);
 
-  FrameType parentType = aPlaceholderContainer->Type();
+  LayoutFrameType parentType = aPlaceholderContainer->Type();
   LogicalSize alignAreaSize(pcWM);
-  if (parentType == FrameType::FlexContainer) {
+  if (parentType == LayoutFrameType::FlexContainer) {
     
     alignAreaSize = aPlaceholderContainer->GetLogicalSize(pcWM);
     LogicalMargin pcBorderPadding =
       aPlaceholderContainer->GetLogicalUsedBorderAndPadding(pcWM);
     alignAreaSize -= pcBorderPadding.Size(pcWM);
-  } else if (parentType == FrameType::GridContainer) {
+  } else if (parentType == LayoutFrameType::GridContainer) {
     
     
     

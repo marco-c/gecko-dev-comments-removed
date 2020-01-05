@@ -466,12 +466,12 @@ nsLineLayout::AttachFrameToBaseLineLayout(PerFrameData* aFrame)
   MOZ_ASSERT(!aFrame->mIsLinkedToBase,
              "The frame must not have been linked with the base");
 #ifdef DEBUG
-  FrameType baseType = baseFrame->mFrame->Type();
-  FrameType annotationType = aFrame->mFrame->Type();
-  MOZ_ASSERT((baseType == FrameType::RubyBaseContainer &&
-              annotationType == FrameType::RubyTextContainer) ||
-             (baseType == FrameType::RubyBase &&
-              annotationType == FrameType::RubyText));
+  LayoutFrameType baseType = baseFrame->mFrame->Type();
+  LayoutFrameType annotationType = aFrame->mFrame->Type();
+  MOZ_ASSERT((baseType == LayoutFrameType::RubyBaseContainer &&
+              annotationType == LayoutFrameType::RubyTextContainer) ||
+             (baseType == LayoutFrameType::RubyBase &&
+              annotationType == LayoutFrameType::RubyText));
 #endif
 
   aFrame->mNextAnnotation = baseFrame->mNextAnnotation;
@@ -711,8 +711,8 @@ IsPercentageAware(const nsIFrame* aFrame)
 {
   NS_ASSERTION(aFrame, "null frame is not allowed");
 
-  FrameType fType = aFrame->Type();
-  if (fType == FrameType::Text) {
+  LayoutFrameType fType = aFrame->Type();
+  if (fType == LayoutFrameType::Text) {
     
     return false;
   }
@@ -751,10 +751,10 @@ IsPercentageAware(const nsIFrame* aFrame)
     const nsStyleDisplay* disp = aFrame->StyleDisplay();
     if (disp->mDisplay == StyleDisplay::InlineBlock ||
         disp->mDisplay == StyleDisplay::InlineTable ||
-        fType == FrameType::HTMLButtonControl ||
-        fType == FrameType::GfxButtonControl ||
-        fType == FrameType::FieldSet ||
-        fType == FrameType::ComboboxDisplay) {
+        fType == LayoutFrameType::HTMLButtonControl ||
+        fType == LayoutFrameType::GfxButtonControl ||
+        fType == LayoutFrameType::FieldSet ||
+        fType == LayoutFrameType::ComboboxDisplay) {
       return true;
     }
 
@@ -838,8 +838,8 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
   bool notSafeToBreak = LineIsEmpty() && !mImpactedByFloats;
 
   
-  FrameType frameType = aFrame->Type();
-  bool isText = frameType == FrameType::Text;
+  LayoutFrameType frameType = aFrame->Type();
+  bool isText = frameType == LayoutFrameType::Text;
 
   
   
@@ -934,10 +934,10 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
   
   bool placedFloat = false;
   bool isEmpty;
-  if (frameType == FrameType::None) {
+  if (frameType == LayoutFrameType::None) {
     isEmpty = pfd->mFrame->IsEmpty();
   } else {
-    if (FrameType::Placeholder == frameType) {
+    if (LayoutFrameType::Placeholder == frameType) {
       isEmpty = true;
       pfd->mSkipWhenTrimmingWhitespace = true;
       nsIFrame* outOfFlowFrame = nsLayoutUtils::GetFloatFromPlaceholder(aFrame);
@@ -979,11 +979,11 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
           pfd->mIsNonWhitespaceTextFrame = !content->TextIsOnlyWhitespace();
         }
       }
-    } else if (FrameType::Br == frameType) {
+    } else if (LayoutFrameType::Br == frameType) {
       pfd->mSkipWhenTrimmingWhitespace = true;
       isEmpty = false;
     } else {
-      if (FrameType::Letter == frameType) {
+      if (LayoutFrameType::Letter == frameType) {
         pfd->mIsLetterFrame = true;
       }
       if (pfd->mSpan) {
@@ -1090,7 +1090,7 @@ nsLineLayout::ReflowFrame(nsIFrame* aFrame,
           
           mLineAtStart = false;
         }
-        if (FrameType::Ruby == frameType) {
+        if (LayoutFrameType::Ruby == frameType) {
           mHasRuby = true;
           SyncAnnotationBounds(pfd);
         }
@@ -1723,7 +1723,7 @@ GetInflationForBlockDirAlignment(nsIFrame* aFrame,
 {
   if (nsSVGUtils::IsInSVGTextSubtree(aFrame)) {
     const nsIFrame* container =
-      nsLayoutUtils::GetClosestFrameOfType(aFrame, FrameType::SVGText);
+      nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::SVGText);
     NS_ASSERTION(container, "expected to find an ancestor SVGTextFrame");
     return
       static_cast<const SVGTextFrame*>(container)->GetFontSizeScaleFactor();
@@ -2810,9 +2810,9 @@ nsLineLayout::AdvanceAnnotationInlineBounds(PerFrameData* aPFD,
                                             nscoord aDeltaISize)
 {
   nsIFrame* frame = aPFD->mFrame;
-  FrameType frameType = frame->Type();
-  MOZ_ASSERT(frameType == FrameType::RubyText ||
-             frameType == FrameType::RubyTextContainer);
+  LayoutFrameType frameType = frame->Type();
+  MOZ_ASSERT(frameType == LayoutFrameType::RubyText ||
+             frameType == LayoutFrameType::RubyTextContainer);
   MOZ_ASSERT(aPFD->mSpan, "rt and rtc should have span.");
 
   PerSpanData* psd = aPFD->mSpan;
@@ -2827,13 +2827,13 @@ nsLineLayout::AdvanceAnnotationInlineBounds(PerFrameData* aPFD,
   
   
   
-  if (frameType == FrameType::RubyText ||
+  if (frameType == LayoutFrameType::RubyText ||
       
       (psd->mFirstFrame == psd->mLastFrame && psd->mFirstFrame &&
        !psd->mFirstFrame->mIsLinkedToBase)) {
     
     
-    if (frameType != FrameType::RubyText ||
+    if (frameType != LayoutFrameType::RubyText ||
         !static_cast<nsRubyTextFrame*>(frame)->IsAutoHidden()) {
       nscoord reservedISize = RubyUtils::GetReservedISize(frame);
       RubyUtils::SetReservedISize(frame, reservedISize + aDeltaISize);

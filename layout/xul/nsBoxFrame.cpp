@@ -116,7 +116,7 @@ NS_QUERYFRAME_TAIL_INHERITING(nsContainerFrame)
 #endif
 
 nsBoxFrame::nsBoxFrame(nsStyleContext* aContext,
-                       FrameType aType,
+                       LayoutFrameType aType,
                        bool aIsRoot,
                        nsBoxLayout* aLayoutManager)
   : nsContainerFrame(aContext, aType)
@@ -2001,8 +2001,7 @@ nsBoxFrame::XULRelayoutChildAtOrdinal(nsIFrame* aChild)
 
 
 
-class nsDisplayXULEventRedirector final : public nsDisplayWrapList
-{
+class nsDisplayXULEventRedirector : public nsDisplayWrapList {
 public:
   nsDisplayXULEventRedirector(nsDisplayListBuilder* aBuilder,
                               nsIFrame* aFrame, nsDisplayItem* aItem,
@@ -2054,7 +2053,7 @@ void nsDisplayXULEventRedirector::HitTest(nsDisplayListBuilder* aBuilder,
   }
 }
 
-class nsXULEventRedirectorWrapper final : public nsDisplayWrapper
+class nsXULEventRedirectorWrapper : public nsDisplayWrapper
 {
 public:
   explicit nsXULEventRedirectorWrapper(nsIFrame* aTargetFrame)

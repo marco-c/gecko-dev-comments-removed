@@ -343,8 +343,9 @@ IsAnonymousFlexOrGridItem(const nsIFrame* aFrame)
 static inline bool
 IsFlexOrGridContainer(const nsIFrame* aFrame)
 {
-  const FrameType t = aFrame->Type();
-  return t == FrameType::FlexContainer || t == FrameType::GridContainer;
+  const LayoutFrameType t = aFrame->Type();
+  return t == LayoutFrameType::FlexContainer ||
+         t == LayoutFrameType::GridContainer;
 }
 
 
@@ -1971,27 +1972,27 @@ IsTableOrRubyPseudo(nsIFrame* aFrame)
 
 
 nsCSSFrameConstructor::ParentType
-nsCSSFrameConstructor::GetParentType(FrameType aFrameType)
+nsCSSFrameConstructor::GetParentType(LayoutFrameType aFrameType)
 {
-  if (aFrameType == FrameType::Table) {
+  if (aFrameType == LayoutFrameType::Table) {
     return eTypeTable;
   }
-  if (aFrameType == FrameType::TableRowGroup) {
+  if (aFrameType == LayoutFrameType::TableRowGroup) {
     return eTypeRowGroup;
   }
-  if (aFrameType == FrameType::TableRow) {
+  if (aFrameType == LayoutFrameType::TableRow) {
     return eTypeRow;
   }
-  if (aFrameType == FrameType::TableColGroup) {
+  if (aFrameType == LayoutFrameType::TableColGroup) {
     return eTypeColGroup;
   }
-  if (aFrameType == FrameType::RubyBaseContainer) {
+  if (aFrameType == LayoutFrameType::RubyBaseContainer) {
     return eTypeRubyBaseContainer;
   }
-  if (aFrameType == FrameType::RubyTextContainer) {
+  if (aFrameType == LayoutFrameType::RubyTextContainer) {
     return eTypeRubyTextContainer;
   }
-  if (aFrameType == FrameType::Ruby) {
+  if (aFrameType == LayoutFrameType::Ruby) {
     return eTypeRuby;
   }
 
@@ -4235,8 +4236,8 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
 
     ConnectAnonymousTreeDescendants(content, aContent[i].mChildren);
 
-    FrameType parentFrameType = aParentFrame->Type();
-    if (parentFrameType == FrameType::SVGUse) {
+    LayoutFrameType parentFrameType = aParentFrame->Type();
+    if (parentFrameType == LayoutFrameType::SVGUse) {
       
       
       content->SetFlags(NODE_IS_ANONYMOUS_ROOT);
@@ -4252,7 +4253,7 @@ nsCSSFrameConstructor::GetAnonymousContent(nsIContent* aParent,
       
       
       
-      if (!(parentFrameType == FrameType::Canvas &&
+      if (!(parentFrameType == LayoutFrameType::Canvas &&
             content == static_cast<nsCanvasFrame*>(aParentFrame)
                          ->GetCustomContentContainer())) {
         SetNativeAnonymousBitOnDescendants(content);
@@ -6292,8 +6293,8 @@ nsCSSFrameConstructor::GetAbsoluteContainingBlock(nsIFrame* aFrame,
 
     
     if (aType == FIXED_POS) {
-      FrameType t = frame->Type();
-      if (t == FrameType::Viewport || t == FrameType::PageContent) {
+      LayoutFrameType t = frame->Type();
+      if (t == LayoutFrameType::Viewport || t == LayoutFrameType::PageContent) {
         return static_cast<nsContainerFrame*>(frame);
       }
     }
@@ -6312,15 +6313,15 @@ nsCSSFrameConstructor::GetAbsoluteContainingBlock(nsIFrame* aFrame,
       continue;
     }
     nsIFrame* absPosCBCandidate = frame;
-    FrameType type = absPosCBCandidate->Type();
-    if (type == FrameType::FieldSet) {
+    LayoutFrameType type = absPosCBCandidate->Type();
+    if (type == LayoutFrameType::FieldSet) {
       absPosCBCandidate = static_cast<nsFieldSetFrame*>(absPosCBCandidate)->GetInner();
       if (!absPosCBCandidate) {
         continue;
       }
       type = absPosCBCandidate->Type();
     }
-    if (type == FrameType::Scroll) {
+    if (type == LayoutFrameType::Scroll) {
       nsIScrollableFrame* scrollFrame = do_QueryFrame(absPosCBCandidate);
       absPosCBCandidate = scrollFrame->GetScrolledFrame();
       if (!absPosCBCandidate) {
@@ -6336,7 +6337,7 @@ nsCSSFrameConstructor::GetAbsoluteContainingBlock(nsIFrame* aFrame,
     }
 
     
-    if (type == FrameType::Table) {
+    if (type == LayoutFrameType::Table) {
       continue;
     }
     
@@ -6627,7 +6628,7 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
                                       StyleDisplay&          aDisplay)
 {
   nsIFrame* parentFrame = aSibling->GetParent();
-  FrameType parentType = parentFrame->Type();
+  LayoutFrameType parentType = parentFrame->Type();
 
   StyleDisplay siblingDisplay = aSibling->GetDisplay();
   if (StyleDisplay::TableColumnGroup == siblingDisplay ||
@@ -6636,7 +6637,7 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
       StyleDisplay::TableHeaderGroup == siblingDisplay ||
       StyleDisplay::TableRowGroup    == siblingDisplay ||
       StyleDisplay::TableFooterGroup == siblingDisplay ||
-      FrameType::Menu == parentType) {
+      LayoutFrameType::Menu == parentType) {
     
     if (UNSET_DISPLAY == aDisplay) {
       nsIFrame* styleParent;
@@ -6661,7 +6662,7 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
       const nsStyleDisplay* display = styleContext->StyleDisplay();
       aDisplay = display->mDisplay;
     }
-    if (FrameType::Menu == parentType) {
+    if (LayoutFrameType::Menu == parentType) {
       return
         (StyleDisplay::MozPopup == aDisplay) ==
         (StyleDisplay::MozPopup == siblingDisplay);
@@ -6702,11 +6703,11 @@ nsCSSFrameConstructor::IsValidSibling(nsIFrame*              aSibling,
     if (nsContainerFrame* cif = aSibling->GetContentInsertionFrame()) {
       aSibling = cif;
     }
-    FrameType sibType = aSibling->Type();
+    LayoutFrameType sibType = aSibling->Type();
     bool legendContent = aContent->IsHTMLElement(nsGkAtoms::legend);
 
-    if ((legendContent && (FrameType::Legend != sibType)) ||
-        (!legendContent && (FrameType::Legend == sibType)))
+    if ((legendContent && (LayoutFrameType::Legend != sibType)) ||
+        (!legendContent && (LayoutFrameType::Legend == sibType)))
       return false;
   }
 
@@ -7647,7 +7648,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
     RemoveLetterFrames(state.mPresShell, containingBlock);
   }
 
-  FrameType frameType = parentFrame->Type();
+  LayoutFrameType frameType = parentFrame->Type();
 
   FlattenedChildIterator iter(aContainer);
   bool haveNoXBLChildren = (!iter.XBLInvolved() || !iter.GetNextChild());
@@ -7722,7 +7723,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   
   nsFrameItems captionItems;
-  if (FrameType::Table == frameType) {
+  if (LayoutFrameType::Table == frameType) {
     
     
     
@@ -7743,7 +7744,7 @@ nsCSSFrameConstructor::ContentAppended(nsIContent* aContainer,
   
   
   if (captionItems.NotEmpty()) { 
-    NS_ASSERTION(FrameType::Table == frameType, "how did that happen?");
+    NS_ASSERTION(LayoutFrameType::Table == frameType, "how did that happen?");
     nsContainerFrame* outerTable = parentFrame->GetParent();
     AppendFrames(outerTable, nsIFrame::kCaptionList, captionItems);
   }
@@ -8070,7 +8071,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   nsIContent* container = insertion.mParentFrame->GetContent();
 
-  FrameType frameType = insertion.mParentFrame->Type();
+  LayoutFrameType frameType = insertion.mParentFrame->Type();
   LAYOUT_PHASE_TEMP_EXIT();
   if (MaybeRecreateForFrameset(insertion.mParentFrame, aStartChild, aEndChild)) {
     LAYOUT_PHASE_TEMP_REENTER();
@@ -8080,7 +8081,7 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   
   
-  NS_ASSERTION(isSingleInsert || frameType != FrameType::FieldSet,
+  NS_ASSERTION(isSingleInsert || frameType != LayoutFrameType::FieldSet,
                "Unexpected parent");
   if (IsFrameForFieldSet(insertion.mParentFrame) &&
       aStartChild->NodeInfo()->NameAtom() == nsGkAtoms::legend) {
@@ -8099,8 +8100,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
 
   
   
-  MOZ_ASSERT(isSingleInsert || frameType != FrameType::Details);
-  if (frameType == FrameType::Details) {
+  MOZ_ASSERT(isSingleInsert || frameType != LayoutFrameType::Details);
+  if (frameType == LayoutFrameType::Details) {
     
     
     
@@ -8291,7 +8292,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
       InvalidateCanvasIfNeeded(mPresShell, child);
     }
 
-    if (FrameType::Table == frameType || FrameType::TableWrapper == frameType) {
+    if (LayoutFrameType::Table == frameType ||
+        LayoutFrameType::TableWrapper == frameType) {
       PullOutCaptionFrames(frameItems, captionItems);
     }
   }
@@ -8360,8 +8362,8 @@ nsCSSFrameConstructor::ContentRangeInserted(nsIContent* aContainer,
   
   
   if (captionItems.NotEmpty()) {
-    NS_ASSERTION(FrameType::Table == frameType ||
-                 FrameType::TableWrapper == frameType,
+    NS_ASSERTION(LayoutFrameType::Table == frameType ||
+                 LayoutFrameType::TableWrapper == frameType,
                  "parent for caption is not table?");
     
     
@@ -8625,9 +8627,10 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
 
     
     nsIFrame* parentFrame = childFrame->GetParent();
-    FrameType parentType = parentFrame->Type();
+    LayoutFrameType parentType = parentFrame->Type();
 
-    if (parentType == FrameType::FrameSet && IsSpecialFramesetChild(aChild)) {
+    if (parentType == LayoutFrameType::FrameSet &&
+        IsSpecialFramesetChild(aChild)) {
       
       *aDidReconstruct = true;
       LAYOUT_PHASE_TEMP_EXIT();
@@ -8640,8 +8643,9 @@ nsCSSFrameConstructor::ContentRemoved(nsIContent*  aContainer,
     
     
     
-    nsIFrame* possibleMathMLAncestor =
-      parentType == FrameType::Block ? parentFrame->GetParent() : parentFrame;
+    nsIFrame* possibleMathMLAncestor = parentType == LayoutFrameType::Block
+                                         ? parentFrame->GetParent()
+                                         : parentFrame;
     if (possibleMathMLAncestor->IsFrameOfType(nsIFrame::eMathML)) {
       *aDidReconstruct = true;
       LAYOUT_PHASE_TEMP_EXIT();
@@ -9137,53 +9141,53 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
   nsIFrame*                  nextInFlow = aFrame->GetNextInFlow();
 
   
-  FrameType frameType = aFrame->Type();
+  LayoutFrameType frameType = aFrame->Type();
   nsIContent* content = aFrame->GetContent();
 
   NS_ASSERTION(aFrame->GetSplittableType() != NS_FRAME_NOT_SPLITTABLE,
                "why CreateContinuingFrame for a non-splittable frame?");
 
-  if (FrameType::Text == frameType) {
+  if (LayoutFrameType::Text == frameType) {
     newFrame = NS_NewContinuingTextFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::Inline == frameType) {
+  } else if (LayoutFrameType::Inline == frameType) {
     newFrame = NS_NewInlineFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::Block == frameType) {
+  } else if (LayoutFrameType::Block == frameType) {
     MOZ_ASSERT(!aFrame->IsTableCaption(),
                "no support for fragmenting table captions yet");
     newFrame = NS_NewBlockFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
 #ifdef MOZ_XUL
-  } else if (FrameType::XULLabel == frameType) {
+  } else if (LayoutFrameType::XULLabel == frameType) {
     newFrame = NS_NewXULLabelFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
 #endif
-  } else if (FrameType::ColumnSet == frameType) {
+  } else if (LayoutFrameType::ColumnSet == frameType) {
     MOZ_ASSERT(!aFrame->IsTableCaption(),
                "no support for fragmenting table captions yet");
     newFrame = NS_NewColumnSetFrame(shell, styleContext, nsFrameState(0));
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::Page == frameType) {
+  } else if (LayoutFrameType::Page == frameType) {
     nsContainerFrame* canvasFrame;
     newFrame = ConstructPageFrame(shell, aParentFrame, aFrame, canvasFrame);
-  } else if (FrameType::TableWrapper == frameType) {
+  } else if (LayoutFrameType::TableWrapper == frameType) {
     newFrame =
       CreateContinuingOuterTableFrame(shell, aPresContext, aFrame, aParentFrame,
                                       content, styleContext);
 
-  } else if (FrameType::Table == frameType) {
+  } else if (LayoutFrameType::Table == frameType) {
     newFrame =
       CreateContinuingTableFrame(shell, aFrame, aParentFrame,
                                  content, styleContext);
 
-  } else if (FrameType::TableRowGroup == frameType) {
+  } else if (LayoutFrameType::TableRowGroup == frameType) {
     newFrame = NS_NewTableRowGroupFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
     if (newFrame->GetStateBits() & NS_FRAME_CAN_HAVE_ABSPOS_CHILDREN) {
       nsTableFrame::RegisterPositionedTablePart(newFrame);
     }
-  } else if (FrameType::TableRow == frameType) {
+  } else if (LayoutFrameType::TableRow == frameType) {
     nsTableRowFrame* rowFrame = NS_NewTableRowFrame(shell, styleContext);
 
     rowFrame->Init(content, aParentFrame, aFrame);
@@ -9229,19 +9233,19 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
 
     SetInitialSingleChild(cellFrame, continuingBlockFrame);
     newFrame = cellFrame;
-  } else if (FrameType::Line == frameType) {
+  } else if (LayoutFrameType::Line == frameType) {
     newFrame = NS_NewFirstLineFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::Letter == frameType) {
+  } else if (LayoutFrameType::Letter == frameType) {
     newFrame = NS_NewFirstLetterFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::Image == frameType) {
+  } else if (LayoutFrameType::Image == frameType) {
     newFrame = NS_NewImageFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::ImageControl == frameType) {
+  } else if (LayoutFrameType::ImageControl == frameType) {
     newFrame = NS_NewImageControlFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::Placeholder == frameType) {
+  } else if (LayoutFrameType::Placeholder == frameType) {
     
     nsIFrame* oofFrame = nsPlaceholderFrame::GetRealFrameForPlaceholder(aFrame);
     nsIFrame* oofContFrame =
@@ -9250,7 +9254,7 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
       CreatePlaceholderFrameFor(shell, content, oofContFrame,
                                 aParentFrame, aFrame,
                                 aFrame->GetStateBits() & PLACEHOLDER_TYPE_MASK);
-  } else if (FrameType::FieldSet == frameType) {
+  } else if (LayoutFrameType::FieldSet == frameType) {
     nsContainerFrame* fieldset = NS_NewFieldSetFrame(shell, styleContext);
 
     fieldset->Init(content, aParentFrame, aFrame);
@@ -9268,25 +9272,25 @@ nsCSSFrameConstructor::CreateContinuingFrame(nsPresContext*    aPresContext,
                  "FieldSet block may only be null for overflow containers");
     }
     newFrame = fieldset;
-  } else if (FrameType::Legend == frameType) {
+  } else if (LayoutFrameType::Legend == frameType) {
     newFrame = NS_NewLegendFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::FlexContainer == frameType) {
+  } else if (LayoutFrameType::FlexContainer == frameType) {
     newFrame = NS_NewFlexContainerFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::GridContainer == frameType) {
+  } else if (LayoutFrameType::GridContainer == frameType) {
     newFrame = NS_NewGridContainerFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::Ruby == frameType) {
+  } else if (LayoutFrameType::Ruby == frameType) {
     newFrame = NS_NewRubyFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::RubyBaseContainer == frameType) {
+  } else if (LayoutFrameType::RubyBaseContainer == frameType) {
     newFrame = NS_NewRubyBaseContainerFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::RubyTextContainer == frameType) {
+  } else if (LayoutFrameType::RubyTextContainer == frameType) {
     newFrame = NS_NewRubyTextContainerFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
-  } else if (FrameType::Details == frameType) {
+  } else if (LayoutFrameType::Details == frameType) {
     newFrame = NS_NewDetailsFrame(shell, styleContext);
     newFrame->Init(content, aParentFrame, aFrame);
   } else {
@@ -9702,8 +9706,8 @@ nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(nsIFrame* aFrame,
   }
 
   
-  FrameType parentType = parent->Type();
-  if (parentType == FrameType::Ruby ||
+  LayoutFrameType parentType = parent->Type();
+  if (parentType == LayoutFrameType::Ruby ||
       RubyUtils::IsRubyContainerBox(parentType)) {
     
     
@@ -10129,9 +10133,9 @@ nsCSSFrameConstructor::CreateNeededAnonFlexOrGridItems(
   if (aItems.IsEmpty()) {
     return;
   }
-  const FrameType parentType = aParentFrame->Type();
-  if (parentType != FrameType::FlexContainer &&
-      parentType != FrameType::GridContainer) {
+  const LayoutFrameType parentType = aParentFrame->Type();
+  if (parentType != LayoutFrameType::FlexContainer &&
+      parentType != LayoutFrameType::GridContainer) {
     return;
   }
 
@@ -10805,9 +10809,9 @@ static bool
 FrameWantsToBeInAnonymousItem(const nsIFrame* aContainerFrame,
                               const nsIFrame* aFrame)
 {
-  FrameType containerType = aContainerFrame->Type();
-  MOZ_ASSERT(containerType == FrameType::FlexContainer ||
-             containerType == FrameType::GridContainer);
+  LayoutFrameType containerType = aContainerFrame->Type();
+  MOZ_ASSERT(containerType == LayoutFrameType::FlexContainer ||
+             containerType == LayoutFrameType::GridContainer);
 
   
   
@@ -10817,7 +10821,7 @@ FrameWantsToBeInAnonymousItem(const nsIFrame* aContainerFrame,
 
   
   
-  if (containerType == FrameType::FlexContainer &&
+  if (containerType == LayoutFrameType::FlexContainer &&
       aContainerFrame->HasAnyStateBits(NS_STATE_FLEX_IS_LEGACY_WEBKIT_BOX) &&
       aFrame->IsPlaceholderFrame()) {
     return true;
@@ -10833,8 +10837,8 @@ VerifyGridFlexContainerChildren(nsIFrame* aParentFrame,
 {
 #ifdef DEBUG
   auto parentType = aParentFrame->Type();
-  if (parentType != FrameType::FlexContainer &&
-      parentType != FrameType::GridContainer) {
+  if (parentType != LayoutFrameType::FlexContainer &&
+      parentType != LayoutFrameType::GridContainer) {
     return;
   }
 
@@ -11758,8 +11762,8 @@ nsCSSFrameConstructor::WrapFramesInFirstLetterFrame(
   while (frame) {
     nsIFrame* nextFrame = frame->GetNextSibling();
 
-    FrameType frameType = frame->Type();
-    if (FrameType::Text == frameType) {
+    LayoutFrameType frameType = frame->Type();
+    if (LayoutFrameType::Text == frameType) {
       
       nsIContent* textContent = frame->GetContent();
       if (IsFirstLetterContent(textContent)) {
@@ -11774,7 +11778,7 @@ nsCSSFrameConstructor::WrapFramesInFirstLetterFrame(
         *aStopLooking = true;
         return;
       }
-    } else if (IsInlineFrame(frame) && frameType != FrameType::Br) {
+    } else if (IsInlineFrame(frame) && frameType != LayoutFrameType::Br) {
       nsIFrame* kids = frame->PrincipalChildList().FirstChild();
       WrapFramesInFirstLetterFrame(aBlockFrame, aBlockContinuation,
                                    static_cast<nsContainerFrame*>(frame),
@@ -12532,9 +12536,9 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
   
   
   
-  FrameType frameType = aFrame->Type();
-  if (frameType == FrameType::FlexContainer ||
-      frameType == FrameType::GridContainer) {
+  LayoutFrameType frameType = aFrame->Type();
+  if (frameType == LayoutFrameType::FlexContainer ||
+      frameType == LayoutFrameType::GridContainer) {
     FCItemIterator iter(aItems);
 
     
@@ -12603,7 +12607,7 @@ nsCSSFrameConstructor::WipeContainingBlock(nsFrameConstructorState& aState,
   
   
   
-  if (IsRubyPseudo(aFrame) || frameType == FrameType::Ruby ||
+  if (IsRubyPseudo(aFrame) || frameType == LayoutFrameType::Ruby ||
       RubyUtils::IsRubyContainerBox(frameType)) {
     
     

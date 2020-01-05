@@ -3538,8 +3538,8 @@ PresShell::DoScrollContentIntoView()
 
   
   
-  nsIFrame* container =
-    nsLayoutUtils::GetClosestFrameOfType(frame->GetParent(), FrameType::Scroll);
+  nsIFrame* container = nsLayoutUtils::GetClosestFrameOfType(
+    frame->GetParent(), LayoutFrameType::Scroll);
   if (!container) {
     
     return;
@@ -5313,39 +5313,20 @@ PresShell::AddCanvasBackgroundColorItem(nsDisplayListBuilder& aBuilder,
   
   
   
-  
-  
-  bool addedScrollingBackgroundColor = (aFlags & APPEND_UNSCROLLED_ONLY);
-  if (!aFrame->GetParent() && !addedScrollingBackgroundColor) {
+  if (!aFrame->GetParent()) {
     nsIScrollableFrame* sf =
       aFrame->PresContext()->PresShell()->GetRootScrollFrameAsScrollable();
     if (sf) {
       nsCanvasFrame* canvasFrame = do_QueryFrame(sf->GetScrolledFrame());
       if (canvasFrame && canvasFrame->IsVisibleForPainting(&aBuilder)) {
-        addedScrollingBackgroundColor =
-          AddCanvasBackgroundColor(aList, canvasFrame, bgcolor, mHasCSSBackgroundColor);
+        if (AddCanvasBackgroundColor(aList, canvasFrame, bgcolor, mHasCSSBackgroundColor))
+          return;
       }
     }
   }
 
-  
-  
-  
-  
-  
-  bool forceUnscrolledItem = nsLayoutUtils::UsesAsyncScrolling(aFrame) &&
-                             NS_GET_A(bgcolor) == 255;
-  if ((aFlags & ADD_FOR_SUBDOC) && gfxPrefs::LayoutUseContainersForRootFrames()) {
-    
-    
-    
-    forceUnscrolledItem = false;
-  }
-
-  if (!addedScrollingBackgroundColor || forceUnscrolledItem) {
-    aList.AppendNewToBottom(
-      new (&aBuilder) nsDisplaySolidColor(&aBuilder, aFrame, aBounds, bgcolor));
-  }
+  aList.AppendNewToBottom(
+    new (&aBuilder) nsDisplaySolidColor(&aBuilder, aFrame, aBounds, bgcolor));
 }
 
 static bool IsTransparentContainerElement(nsPresContext* aPresContext)

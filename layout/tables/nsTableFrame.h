@@ -34,10 +34,10 @@ struct TableReflowInput;
 struct BCPropertyData;
 
 static inline bool
-IS_TABLE_CELL(mozilla::FrameType frameType)
+IS_TABLE_CELL(mozilla::LayoutFrameType frameType)
 {
-  return frameType == mozilla::FrameType::TableCell ||
-         frameType == mozilla::FrameType::BCTableCell;
+  return frameType == mozilla::LayoutFrameType::TableCell ||
+         frameType == mozilla::LayoutFrameType::BCTableCell;
 }
 
 class nsDisplayTableItem : public nsDisplayItem
@@ -252,7 +252,7 @@ public:
   
   static nsIFrame* GetFrameAtOrBefore(nsIFrame* aParentFrame,
                                       nsIFrame* aPriorChildFrame,
-                                      mozilla::FrameType aChildType);
+                                      mozilla::LayoutFrameType aChildType);
   bool IsAutoBSize(mozilla::WritingMode aWM);
 
   

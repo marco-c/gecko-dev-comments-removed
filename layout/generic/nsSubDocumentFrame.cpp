@@ -59,7 +59,7 @@ GetDocumentFromView(nsView* aView)
 }
 
 nsSubDocumentFrame::nsSubDocumentFrame(nsStyleContext* aContext)
-  : nsAtomicContainerFrame(aContext, FrameType::SubDocument)
+  : nsAtomicContainerFrame(aContext, LayoutFrameType::SubDocument)
   , mOuterView(nullptr)
   , mInnerView(nullptr)
   , mIsInline(false)
@@ -494,7 +494,7 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
         
         
         
-        uint32_t flags = nsIPresShell::FORCE_DRAW | nsIPresShell::ADD_FOR_SUBDOC;
+        uint32_t flags = nsIPresShell::FORCE_DRAW;
         presShell->AddCanvasBackgroundColorItem(
           *aBuilder, childItems, frame, bounds, NS_RGBA(0,0,0,0), flags);
       }
@@ -547,29 +547,6 @@ nsSubDocumentFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
       &childItems, flags);
     childItems.AppendToTop(layerItem);
   }
-
-  
-  
-  
-  
-  if (!aBuilder->IsForEventDelivery() &&
-      gfxPrefs::LayoutUseContainersForRootFrames() &&
-      !nsLayoutUtils::NeedsPrintPreviewBackground(presContext)) {
-     nsRect bounds = GetContentRectRelativeToSelf() +
-       aBuilder->ToReferenceFrame(this);
-
-    
-    
-    
-    nsDisplayListBuilder::AutoBuildingDisplayList
-      building(aBuilder, this, dirty, true);
-    
-    
-    
-    uint32_t flags = nsIPresShell::FORCE_DRAW | nsIPresShell::APPEND_UNSCROLLED_ONLY;
-    presShell->AddCanvasBackgroundColorItem(
-      *aBuilder, childItems, this, bounds, NS_RGBA(0,0,0,0), flags);
-   }
 
   if (aBuilder->IsForFrameVisibility()) {
     

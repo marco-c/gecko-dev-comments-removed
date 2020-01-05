@@ -76,7 +76,7 @@ public:
 
 
 
-  nsIFrame* GetReferencedFrame(mozilla::FrameType aFrameType, bool* aOK);
+  nsIFrame* GetReferencedFrame(mozilla::LayoutFrameType aFrameType, bool* aOK);
 
   Element* GetReferencedElement();
 

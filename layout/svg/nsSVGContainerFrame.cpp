@@ -34,7 +34,7 @@ NS_NewSVGContainerFrame(nsIPresShell* aPresShell,
                         nsStyleContext* aContext)
 {
   nsIFrame* frame =
-    new (aPresShell) nsSVGContainerFrame(aContext, FrameType::None);
+    new (aPresShell) nsSVGContainerFrame(aContext, LayoutFrameType::None);
   
   
   
@@ -117,12 +117,12 @@ nsSVGContainerFrame::ReflowSVGNonDisplayText(nsIFrame* aContainer)
                "it is wasteful to call ReflowSVGNonDisplayText on a container "
                "frame that is not NS_FRAME_IS_NONDISPLAY");
   for (nsIFrame* kid : aContainer->PrincipalChildList()) {
-    FrameType type = kid->Type();
-    if (type == FrameType::SVGText) {
+    LayoutFrameType type = kid->Type();
+    if (type == LayoutFrameType::SVGText) {
       static_cast<SVGTextFrame*>(kid)->ReflowSVGNonDisplayText();
     } else {
       if (kid->IsFrameOfType(nsIFrame::eSVG | nsIFrame::eSVGContainer) ||
-          type == FrameType::SVGForeignObject ||
+          type == LayoutFrameType::SVGForeignObject ||
           !kid->IsFrameOfType(nsIFrame::eSVG)) {
         ReflowSVGNonDisplayText(kid);
       }

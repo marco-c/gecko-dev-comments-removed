@@ -2717,7 +2717,7 @@ nsFocusManager::DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
     
     if (frame) {
       popupFrame =
-        nsLayoutUtils::GetClosestFrameOfType(frame, FrameType::MenuPopup);
+        nsLayoutUtils::GetClosestFrameOfType(frame, LayoutFrameType::MenuPopup);
     }
 
     if (popupFrame && !forDocumentNavigation) {
@@ -2943,8 +2943,8 @@ nsFocusManager::DetermineElementToMoveFocus(nsPIDOMWindowOuter* aWindow,
       
       
       if (!forDocumentNavigation) {
-        popupFrame =
-          nsLayoutUtils::GetClosestFrameOfType(frame, FrameType::MenuPopup);
+        popupFrame = nsLayoutUtils::GetClosestFrameOfType(
+          frame, LayoutFrameType::MenuPopup);
         if (popupFrame) {
           rootContent = popupFrame->GetContent();
           NS_ASSERTION(rootContent, "Popup frame doesn't have a content node");

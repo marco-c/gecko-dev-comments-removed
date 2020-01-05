@@ -3899,7 +3899,8 @@ nsFlexContainerFrame::SizeItemInCrossAxis(
     
     
     
-    NS_WARNING_ASSERTION(aItem.Frame()->Type() == FrameType::None,
+    NS_WARNING_ASSERTION(
+      aItem.Frame()->Type() == LayoutFrameType::None,
       "Child should at least request space for border/padding");
     aItem.SetCrossSize(0);
   } else {

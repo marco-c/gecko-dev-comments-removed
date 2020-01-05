@@ -2580,7 +2580,7 @@ nsDocumentViewer::FindContainerView()
   
   
   if (!subdocFrame->IsSubDocumentFrame()) {
-    NS_WARNING_ASSERTION(subdocFrame->Type() == FrameType::None,
+    NS_WARNING_ASSERTION(subdocFrame->Type() == LayoutFrameType::None,
                          "Subdocument container has non-subdocument frame");
     return nullptr;
   }

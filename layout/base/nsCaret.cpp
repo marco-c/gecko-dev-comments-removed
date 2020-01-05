@@ -375,7 +375,7 @@ nsCaret::GetGeometryForFrame(nsIFrame* aFrame,
   
   
   nsIFrame* scrollFrame =
-    nsLayoutUtils::GetClosestFrameOfType(aFrame, FrameType::Scroll);
+    nsLayoutUtils::GetClosestFrameOfType(aFrame, LayoutFrameType::Scroll);
   if (scrollFrame) {
     
     nsIScrollableFrame *sf = do_QueryFrame(scrollFrame);
