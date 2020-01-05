@@ -2339,7 +2339,15 @@ ContainerState::GetLayerCreationHint(AnimatedGeometryRoot* aAnimatedGeometryRoot
       break;
     }
     nsIScrollableFrame* scrollable = do_QueryFrame(fParent);
-    if (scrollable) {
+    if (scrollable
+  #ifdef MOZ_B2G
+        && scrollable->WantAsyncScroll()
+  #endif
+       ) {
+      
+      
+      
+      
       return LayerManager::SCROLLABLE;
     }
   }
@@ -3652,7 +3660,7 @@ ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
   PaintedLayerData data;
   data.mAnimatedGeometryRoot = aAnimatedGeometryRoot;
   data.mASR = aASR;
-  data.mClipChain = aClipChain,
+  data.mClipChain = aClipChain;
   data.mAnimatedGeometryRootOffset = aTopLeft;
   data.mReferenceFrame = aItem->ReferenceFrame();
   data.mBackfaceHidden = aItem->Frame()->In3DContextAndBackfaceIsHidden();
@@ -3662,7 +3670,7 @@ ContainerState::NewPaintedLayerData(nsDisplayItem* aItem,
   newLayerEntry->mAnimatedGeometryRoot = aAnimatedGeometryRoot;
   newLayerEntry->mASR = aASR;
   newLayerEntry->mScrollMetadataASR = aScrollMetadataASR;
-  newLayerEntry->mClipChain = aClipChain,
+  newLayerEntry->mClipChain = aClipChain;
   
   
 
