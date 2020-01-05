@@ -82,12 +82,12 @@ function Readability(uri, doc, options) {
       return rv + elDesc;
     };
     this.log = function () {
-      if (typeof dump !== undefined) {
+      if (typeof dump !== "undefined") {
         var msg = Array.prototype.map.call(arguments, function(x) {
           return (x && x.nodeName) ? logEl(x) : x;
         }).join(" ");
         dump("Reader: (Readability) " + msg + "\n");
-      } else if (typeof console !== undefined) {
+      } else if (typeof console !== "undefined") {
         var args = ["Reader: (Readability) "].concat(arguments);
         console.log.apply(console, args);
       }
@@ -119,7 +119,7 @@ Readability.prototype = {
   
   
   REGEXPS: {
-    unlikelyCandidates: /banner|combx|comment|community|cover-wrap|disqus|extra|foot|header|legends|menu|modal|related|remark|rss|shoutbox|sidebar|skyscraper|sponsor|ad-break|agegate|pagination|pager|popup|yom-remote/i,
+    unlikelyCandidates: /banner|breadcrumbs|combx|comment|community|cover-wrap|disqus|extra|foot|header|legends|menu|modal|related|remark|replies|rss|shoutbox|sidebar|skyscraper|social|sponsor|ad-break|agegate|pagination|pager|popup|yom-remote/i,
     okMaybeItsACandidate: /and|article|body|column|main|shadow/i,
     positive: /article|body|content|entry|hentry|h-entry|main|page|pagination|post|text|blog|story/i,
     negative: /hidden|^hid$| hid$| hid |^hid |banner|combx|comment|com-|contact|foot|footer|footnote|masthead|media|meta|modal|outbrain|promo|related|scroll|share|shoutbox|sidebar|skyscraper|sponsor|shopping|tags|tool|widget/i,
@@ -477,6 +477,7 @@ Readability.prototype = {
 
     
     this._cleanConditionally(articleContent, "form");
+    this._cleanConditionally(articleContent, "fieldset");
     this._clean(articleContent, "object");
     this._clean(articleContent, "embed");
     this._clean(articleContent, "h1");
@@ -494,6 +495,10 @@ Readability.prototype = {
       this._clean(articleContent, "h2");
 
     this._clean(articleContent, "iframe");
+    this._clean(articleContent, "input");
+    this._clean(articleContent, "textarea");
+    this._clean(articleContent, "select");
+    this._clean(articleContent, "button");
     this._cleanHeaders(articleContent);
 
     
@@ -848,6 +853,33 @@ Readability.prototype = {
       } else if (topCandidate) {
         
         
+        var alternativeCandidateAncestors = [];
+        for (var i = 1; i < topCandidates.length; i++) {
+          if (topCandidates[i].readability.contentScore / topCandidate.readability.contentScore >= 0.75) {
+            alternativeCandidateAncestors.push(this._getNodeAncestors(topCandidates[i]));
+          }
+        }
+        var MINIMUM_TOPCANDIDATES = 3;
+        if (alternativeCandidateAncestors.length >= MINIMUM_TOPCANDIDATES) {
+          parentOfTopCandidate = topCandidate.parentNode;
+          while (parentOfTopCandidate.tagName !== "BODY") {
+            var listsContainingThisAncestor = 0;
+            for (var ancestorIndex = 0; ancestorIndex < alternativeCandidateAncestors.length && listsContainingThisAncestor < MINIMUM_TOPCANDIDATES; ancestorIndex++) {
+              listsContainingThisAncestor += Number(alternativeCandidateAncestors[ancestorIndex].includes(parentOfTopCandidate));
+            }
+            if (listsContainingThisAncestor >= MINIMUM_TOPCANDIDATES) {
+              topCandidate = parentOfTopCandidate;
+              break;
+            }
+            parentOfTopCandidate = parentOfTopCandidate.parentNode;
+          }
+        }
+        if (!topCandidate.readability) {
+          this._initializeNode(topCandidate);
+        }
+
+        
+        
         
         
         
@@ -857,7 +889,11 @@ Readability.prototype = {
         var lastScore = topCandidate.readability.contentScore;
         
         var scoreThreshold = lastScore / 3;
-        while (parentOfTopCandidate && parentOfTopCandidate.readability) {
+        while (parentOfTopCandidate.tagName !== "BODY") {
+          if (!parentOfTopCandidate.readability) {
+            parentOfTopCandidate = parentOfTopCandidate.parentNode;
+            continue;
+          }
           var parentScore = parentOfTopCandidate.readability.contentScore;
           if (parentScore < scoreThreshold)
             break;
@@ -1240,11 +1276,6 @@ Readability.prototype = {
         if (!possibleType.match(/[^a-zA-Z]/))
           segment = segment.split(".")[0];
       }
-
-      
-      
-      if (segment.indexOf(',00') !== -1)
-        segment = segment.replace(',00', '');
 
       
       if (segment.match(/((_|-)?p[a-z]*|(_|-))[0-9]{1,2}$/i) && ((i === 1) || (i === 0)))
@@ -1713,11 +1744,10 @@ Readability.prototype = {
         var contentLength = this._getInnerText(node).length;
 
         var haveToRemove =
-          
-          (img > p && !this._hasAncestorTag(node, "figure")) ||
+          (img > 1 && img > p && !this._hasAncestorTag(node, "figure")) ||
           (!isList && li > p) ||
           (input > Math.floor(p/3)) ||
-          (!isList && contentLength < 25 && (img === 0 || img > 2)) ||
+          (!isList && contentLength < 25 && (img === 0 || img > 2) && !this._hasAncestorTag(node, "figure")) ||
           (!isList && weight < 25 && linkDensity > 0.2) ||
           (weight >= 25 && linkDensity > 0.5) ||
           ((embedCount === 1 && contentLength < 75) || embedCount > 1);
@@ -1912,3 +1942,7 @@ Readability.prototype = {
     };
   }
 };
+
+if (typeof module === "object") {
+  module.exports = Readability;
+}
