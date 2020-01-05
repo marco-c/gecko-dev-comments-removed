@@ -952,9 +952,9 @@ gfxPlatform::InitLayersIPC()
 
     if (XRE_IsParentProcess())
     {
-#ifdef MOZ_ENABLE_WEBRENDER
-        wr::RenderThread::Start();
-#endif
+        if (gfxVars::UseWebRender()) {
+            wr::RenderThread::Start();
+        }
         layers::CompositorThreadHolder::Start();
     }
 }
@@ -983,9 +983,9 @@ gfxPlatform::ShutdownLayersIPC()
 #endif 
         
         layers::CompositorThreadHolder::Shutdown();
-#ifdef MOZ_ENABLE_WEBRENDER
-        wr::RenderThread::ShutDown();
-#endif
+        if (gfxVars::UseWebRender()) {
+            wr::RenderThread::ShutDown();
+        }
     } else {
       
       
