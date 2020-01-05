@@ -282,7 +282,6 @@ bool nsContentUtils::sEncodeDecodeURLHash = false;
 bool nsContentUtils::sGettersDecodeURLHash = false;
 bool nsContentUtils::sPrivacyResistFingerprinting = false;
 bool nsContentUtils::sSendPerformanceTimingNotifications = false;
-bool nsContentUtils::sAppendLFInSerialization = false;
 bool nsContentUtils::sUseActivityCursor = false;
 
 uint32_t nsContentUtils::sHandlingInputTimeout = 1000;
@@ -600,8 +599,6 @@ nsContentUtils::Init()
                                "network.cookie.cookieBehavior",
                                nsICookieService::BEHAVIOR_ACCEPT);
 
-  Preferences::AddBoolVarCache(&sAppendLFInSerialization,
-                               "dom.html_fragment_serialisation.appendLF");
 #if !(defined(DEBUG) || defined(MOZ_ENABLE_JS_DUMP))
   Preferences::AddBoolVarCache(&sDOMWindowDumpEnabled,
                                "browser.dom.window.dump.enabled");
@@ -9102,25 +9099,25 @@ StartElement(Element* aContent, StringBuilder& aBuilder)
 
   aBuilder.Append(">");
 
+  
 
-  
-  
-  
-  
-  if (nsContentUtils::AppendLFInSerialization() && aContent->IsHTMLElement()) {
-    if (localName == nsGkAtoms::pre || localName == nsGkAtoms::textarea ||
-        localName == nsGkAtoms::listing) {
-      nsIContent* fc = aContent->GetFirstChild();
-      if (fc &&
-          (fc->NodeType() == nsIDOMNode::TEXT_NODE ||
-           fc->NodeType() == nsIDOMNode::CDATA_SECTION_NODE)) {
-        const nsTextFragment* text = fc->GetText();
-        if (text && text->GetLength() && text->CharAt(0) == char16_t('\n')) {
-          aBuilder.Append("\n");
-        }
-      }
-    }
-  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 }
 
 static inline bool
