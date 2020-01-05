@@ -358,6 +358,11 @@ public:
       mIsTrackingResource = true;
     }
 
+    void SetTopLevelOuterContentWindowId(uint64_t aTopLevelOuterContentWindowId)
+    {
+      mTopLevelOuterContentWindowId = aTopLevelOuterContentWindowId;
+    }
+
 protected:
   
   void     DoNotifyListener();
@@ -586,6 +591,9 @@ protected:
   
   
   uint64_t mContentWindowId;
+
+  uint64_t mTopLevelOuterContentWindowId;
+  void EnsureTopLevelOuterContentWindowId();
 
   bool                              mRequireCORSPreflight;
   nsTArray<nsCString>               mUnsafeHeaders;

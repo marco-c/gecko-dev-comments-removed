@@ -79,6 +79,9 @@ public:
     
     
     
+    
+    
+    
     MOZ_MUST_USE nsresult Init(uint32_t               caps,
                                nsHttpConnectionInfo  *connInfo,
                                nsHttpRequestHead     *reqHeaders,
@@ -87,6 +90,7 @@ public:
                                nsIEventTarget        *consumerTarget,
                                nsIInterfaceRequestor *callbacks,
                                nsITransportEventSink *eventsink,
+                               uint64_t               topLevelOuterContentWindowId,
                                nsIAsyncInputStream  **responseBody);
 
     
@@ -166,6 +170,11 @@ public:
 
     MOZ_MUST_USE bool Do0RTT() override;
     MOZ_MUST_USE nsresult Finish0RTT(bool aRestart, bool aAlpnChanged ) override;
+
+    uint64_t TopLevelOuterContentWindowId()
+    {
+        return mTopLevelOuterContentWindowId;
+    }
 private:
     friend class DeleteHttpTransaction;
     virtual ~nsHttpTransaction();
@@ -332,6 +341,8 @@ private:
 
     
     TimeStamp                       mPendingTime;
+
+    uint64_t                        mTopLevelOuterContentWindowId;
 
 
 public:

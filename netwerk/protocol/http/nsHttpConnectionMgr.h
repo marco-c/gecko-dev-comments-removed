@@ -192,6 +192,8 @@ public:
     
     void ActivateTimeoutTick();
 
+    nsresult UpdateCurrentTopLevelOuterContentWindowId(uint64_t aWindowId);
+
 private:
     virtual ~nsHttpConnectionMgr();
 
@@ -444,6 +446,7 @@ private:
     void OnMsgUpdateRequestTokenBucket (int32_t, ARefBase *);
     void OnMsgVerifyTraffic (int32_t, ARefBase *);
     void OnMsgPruneNoTraffic (int32_t, ARefBase *);
+    void OnMsgUpdateCurrentTopLevelOuterContentWindowId (int32_t, ARefBase *);
 
     
     
@@ -488,6 +491,7 @@ private:
     void OnMsgPrintDiagnostics(int32_t, ARefBase *);
 
     nsCString mLogData;
+    uint64_t mCurrentTopLevelOuterContentWindowId;
 };
 
 } 
