@@ -1749,6 +1749,10 @@ MediaCacheStream::NotifyDataReceived(int64_t aSize, const char* aData,
 {
   NS_ASSERTION(NS_IsMainThread(), "Only call on main thread");
 
+  if (mClosed) {
+    return;
+  }
+
   
   
   
