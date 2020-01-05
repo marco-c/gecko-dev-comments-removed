@@ -550,10 +550,20 @@ ImageDocument::SetModeClass(eModeClasses mode)
 nsresult
 ImageDocument::OnSizeAvailable(imgIRequest* aRequest, imgIContainer* aImage)
 {
+  int32_t oldWidth = mImageWidth;
+  int32_t oldHeight = mImageHeight;
+
   
   
   aImage->GetWidth(&mImageWidth);
   aImage->GetHeight(&mImageHeight);
+
+  
+  
+  
+  if (oldWidth == mImageWidth && oldHeight == mImageHeight) {
+    return NS_OK;
+  }
 
   nsCOMPtr<nsIRunnable> runnable =
     NewRunnableMethod(this, &ImageDocument::DefaultCheckOverflowing);
