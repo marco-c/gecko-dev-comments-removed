@@ -252,7 +252,7 @@ this.SitePermissions = {
 
 
   isSupportedURI(uri) {
-    return uri && (uri.schemeIs("http") || uri.schemeIs("https"));
+    return uri && ["http", "https", "moz-extension"].includes(uri.scheme);
   },
 
   
