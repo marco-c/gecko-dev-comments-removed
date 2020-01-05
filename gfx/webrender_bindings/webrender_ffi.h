@@ -78,7 +78,6 @@ void* get_proc_address_from_glcontext(void* glcontext_ptr, const char* procname)
 
 
 typedef uint64_t WrExternalImageId;
-typedef mozilla::gfx::Point Point2D;    
 
 
 
