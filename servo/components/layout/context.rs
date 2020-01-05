@@ -4,9 +4,6 @@
 
 
 
-
-#![allow(unsafe_code)]
-
 use fnv::FnvHasher;
 use gfx::display_list::WebRenderImageInfo;
 use gfx::font_cache_thread::FontCacheThread;

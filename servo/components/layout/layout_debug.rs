@@ -5,9 +5,6 @@
 
 
 
-
-#![allow(unsafe_code)]
-
 use flow;
 use flow_ref::FlowRef;
 use serde_json::{to_string, to_value, Value};
