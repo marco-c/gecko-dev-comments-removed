@@ -127,23 +127,36 @@ ClearRestyleStateFromSubtree(Element* aElement)
 
   Unused << Servo_TakeChangeHint(aElement);
   aElement->UnsetHasDirtyDescendantsForServo();
+  aElement->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES);
 }
 
 void
-ServoRestyleManager::RecreateStyleContexts(Element* aElement,
-                                           nsStyleContext* aParentContext,
-                                           ServoStyleSet* aStyleSet,
-                                           nsStyleChangeList& aChangeListToProcess)
+ServoRestyleManager::ProcessPostTraversal(Element* aElement,
+                                          nsStyleContext* aParentContext,
+                                          ServoStyleSet* aStyleSet,
+                                          nsStyleChangeList& aChangeList)
 {
   nsIFrame* styleFrame = nsLayoutUtils::GetStyleFrame(aElement);
 
+  
   nsChangeHint changeHint = Servo_TakeChangeHint(aElement);
+
+  
+  
+  if (aElement->HasFlag(NODE_NEEDS_FRAME)) {
+    changeHint |= nsChangeHint_ReconstructFrame;
+    
+    
+    MOZ_ASSERT_IF(styleFrame, styleFrame->GetType() == nsGkAtoms::imageFrame);
+    styleFrame = nullptr;
+  }
+
   
   
   
   
   if ((styleFrame || (changeHint & nsChangeHint_ReconstructFrame)) && changeHint) {
-    aChangeListToProcess.AppendChange(styleFrame, aElement, changeHint);
+    aChangeList.AppendChange(styleFrame, aElement, changeHint);
   }
 
   
@@ -219,8 +232,7 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
     }
 
     if (styleFrame) {
-      styleFrame->UpdateStyleOfOwnedAnonBoxes(*aStyleSet, aChangeListToProcess,
-                                              changeHint);
+      styleFrame->UpdateStyleOfOwnedAnonBoxes(*aStyleSet, aChangeList, changeHint);
     }
 
     
@@ -258,8 +270,10 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
     }
   }
 
-  bool traverseElementChildren = aElement->HasDirtyDescendantsForServo();
-  bool traverseTextChildren = recreateContext;
+  bool descendantsNeedFrames = aElement->HasFlag(NODE_DESCENDANTS_NEED_FRAMES);
+  bool traverseElementChildren =
+    aElement->HasDirtyDescendantsForServo() || descendantsNeedFrames;
+  bool traverseTextChildren = recreateContext || descendantsNeedFrames;
   if (traverseElementChildren || traverseTextChildren) {
     nsStyleContext* upToDateContext =
       recreateContext ? newContext : oldStyleContext;
@@ -267,22 +281,31 @@ ServoRestyleManager::RecreateStyleContexts(Element* aElement,
     StyleChildrenIterator it(aElement);
     for (nsIContent* n = it.GetNextChild(); n; n = it.GetNextChild()) {
       if (traverseElementChildren && n->IsElement()) {
-        RecreateStyleContexts(n->AsElement(), upToDateContext,
-                              aStyleSet, aChangeListToProcess);
+        ProcessPostTraversal(n->AsElement(), upToDateContext,
+                             aStyleSet, aChangeList);
       } else if (traverseTextChildren && n->IsNodeOfType(nsINode::eTEXT)) {
-        RecreateStyleContextsForText(n, upToDateContext, aStyleSet);
+        ProcessPostTraversalForText(n, upToDateContext, aStyleSet, aChangeList);
       }
     }
   }
 
   aElement->UnsetHasDirtyDescendantsForServo();
+  aElement->UnsetFlags(NODE_DESCENDANTS_NEED_FRAMES);
 }
 
 void
-ServoRestyleManager::RecreateStyleContextsForText(nsIContent* aTextNode,
-                                                  nsStyleContext* aParentContext,
-                                                  ServoStyleSet* aStyleSet)
+ServoRestyleManager::ProcessPostTraversalForText(nsIContent* aTextNode,
+                                                 nsStyleContext* aParentContext,
+                                                 ServoStyleSet* aStyleSet,
+                                                 nsStyleChangeList& aChangeList)
 {
+  
+  if (aTextNode->HasFlag(NODE_NEEDS_FRAME)) {
+    aChangeList.AppendChange(nullptr, aTextNode, nsChangeHint_ReconstructFrame);
+    return;
+  }
+
+  
   nsIFrame* primaryFrame = aTextNode->GetPrimaryFrame();
   if (primaryFrame) {
     RefPtr<nsStyleContext> oldStyleContext = primaryFrame->StyleContext();
@@ -360,24 +383,14 @@ ServoRestyleManager::ProcessPendingRestyles()
   
   mInStyleRefresh = true;
   while (styleSet->StyleDocument()) {
-
     PresContext()->EffectCompositor()->ClearElementsToRestyle();
 
     
     
-    
-    
-    
-    
-    
-    
-    PresContext()->FrameConstructor()->CreateNeededFrames();
-
-    
     nsStyleChangeList currentChanges;
     DocumentStyleRootIterator iter(doc);
     while (Element* root = iter.GetNextStyleRoot()) {
-      RecreateStyleContexts(root, nullptr, styleSet, currentChanges);
+      ProcessPostTraversal(root, nullptr, styleSet, currentChanges);
     }
 
     

@@ -102,15 +102,15 @@ private:
   
 
 
+  void ProcessPostTraversal(Element* aElement,
+                            nsStyleContext* aParentContext,
+                            ServoStyleSet* aStyleSet,
+                            nsStyleChangeList& aChangeList);
 
-  void RecreateStyleContexts(Element* aElement,
-                             nsStyleContext* aParentContext,
-                             ServoStyleSet* aStyleSet,
-                             nsStyleChangeList& aChangeList);
-
-  void RecreateStyleContextsForText(nsIContent* aTextNode,
-                                    nsStyleContext* aParentContext,
-                                    ServoStyleSet* aStyleSet);
+  void ProcessPostTraversalForText(nsIContent* aTextNode,
+                                   nsStyleContext* aParentContext,
+                                   ServoStyleSet* aStyleSet,
+                                   nsStyleChangeList& aChangeList);
 
   inline ServoStyleSet* StyleSet() const
   {
