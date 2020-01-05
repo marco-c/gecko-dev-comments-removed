@@ -63,10 +63,6 @@ public:
 
   
   
-  virtual bool IsDispatchReliable() { return true; }
-
-  
-  
   
   
   
