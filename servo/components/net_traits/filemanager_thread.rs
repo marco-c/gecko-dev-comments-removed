@@ -139,16 +139,13 @@ pub enum FileManagerThreadMsg {
     AddSlicedURLEntry(SelectedFileId, RelativePos, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
 
     
-    RevokeBlobURL(SelectedFileId, FileOrigin, IpcSender<Result<(), BlobURLStoreError>>),
-
-    
     DecRef(SelectedFileId, FileOrigin, IpcSender<Result<(), BlobURLStoreError>>),
 
     
-    IncRef(SelectedFileId, FileOrigin),
+    ActivateBlobURL(SelectedFileId, IpcSender<Result<(), BlobURLStoreError>>, FileOrigin),
 
     
-    ActivateBlobURL(SelectedFileId, IpcSender<Result<(), BlobURLStoreError>>, FileOrigin),
+    RevokeBlobURL(SelectedFileId, FileOrigin, IpcSender<Result<(), BlobURLStoreError>>),
 
     
     Exit,

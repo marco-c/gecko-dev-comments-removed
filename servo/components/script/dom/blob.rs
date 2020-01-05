@@ -18,6 +18,7 @@ use net_traits::IpcSend;
 use net_traits::blob_url_store::{BlobBuf, get_blob_origin};
 use net_traits::filemanager_thread::{FileManagerThreadMsg, SelectedFileId, RelativePos, ReadFileProgress};
 use std::cell::Cell;
+use std::mem;
 use std::ops::Index;
 use std::path::PathBuf;
 use uuid::Uuid;
@@ -26,7 +27,7 @@ use uuid::Uuid;
 #[derive(JSTraceable)]
 pub struct FileBlob {
     id: SelectedFileId,
-    name: PathBuf,
+    name: Option<PathBuf>,
     cache: DOMRefCell<Option<Vec<u8>>>,
     size: u64,
 }
@@ -57,7 +58,7 @@ impl BlobImpl {
     pub fn new_from_file(file_id: SelectedFileId, name: PathBuf, size: u64) -> BlobImpl {
         BlobImpl::File(FileBlob {
             id: file_id,
-            name: name,
+            name: Some(name),
             cache: DOMRefCell::new(None),
             size: size,
         })
@@ -98,9 +99,7 @@ impl Blob {
                   relativeContentType: DOMString) -> Root<Blob> {
         let global = parent.global();
         let blob_impl = match *parent.blob_impl.borrow() {
-            BlobImpl::File(ref f) => {
-                inc_ref_id(global.r(), f.id.clone());
-
+            BlobImpl::File(_) => {
                 
                 BlobImpl::Sliced(JS::from_ref(parent), rel_pos)
             }
@@ -110,13 +109,7 @@ impl Blob {
             }
             BlobImpl::Sliced(ref grandparent, ref old_rel_pos) => {
                 
-                let new_rel_pos = old_rel_pos.slice_inner(&rel_pos);
-
-                if let BlobImpl::File(ref f) = *grandparent.blob_impl.borrow() {
-                    inc_ref_id(global.r(), f.id.clone());
-                }
-
-                BlobImpl::Sliced(grandparent.clone(), new_rel_pos)
+                BlobImpl::Sliced(grandparent.clone(), old_rel_pos.slice_inner(&rel_pos))
             }
         };
 
@@ -173,39 +166,16 @@ impl Blob {
     
     
     pub fn get_blob_url_id(&self) -> SelectedFileId {
-        match *self.blob_impl.borrow() {
-            BlobImpl::File(ref f) => {
-                let global = self.global();
-                let origin = get_blob_origin(&global.r().get_url());
-                let filemanager = global.r().resource_threads().sender();
-                let (tx, rx) = ipc::channel().unwrap();
-
-                let _ = filemanager.send(FileManagerThreadMsg::ActivateBlobURL(f.id.clone(), tx, origin.clone()));
-
-                match rx.recv().unwrap() {
-                    Ok(_) => f.id.clone(),
-                    Err(_) => SelectedFileId(Uuid::new_v4().simple().to_string()) 
-                }
-            }
-            BlobImpl::Memory(ref slice) => {
-                self.promote(slice, true)
-            }
+        let opt_sliced_parent = match *self.blob_impl.borrow() {
             BlobImpl::Sliced(ref parent, ref rel_pos) => {
-                match *parent.blob_impl.borrow() {
-                    BlobImpl::Sliced(_, _) => {
-                        debug!("Sliced can't have a sliced parent");
-                        
-                        SelectedFileId(Uuid::new_v4().simple().to_string())
-                    }
-                    BlobImpl::File(ref f) =>
-                        self.create_sliced_url_id(&f.id, rel_pos),
-                    BlobImpl::Memory(ref bytes) => {
-                        let parent_id = parent.promote(bytes, false);
-                        *self.blob_impl.borrow_mut() = BlobImpl::Sliced(parent.clone(), rel_pos.clone());
-                        self.create_sliced_url_id(&parent_id, rel_pos)
-                    }
-                }
+                Some((parent.promote( false), rel_pos.clone(), parent.Size()))
             }
+            _ => None
+        };
+
+        match opt_sliced_parent {
+            Some((parent_id, rel_pos, size)) => self.create_sliced_url_id(&parent_id, &rel_pos, size),
+            None => self.promote( true),
         }
     }
 
@@ -213,7 +183,39 @@ impl Blob {
     
     
     
-    fn promote(&self, bytes: &[u8], set_valid: bool) -> SelectedFileId {
+    
+    fn promote(&self, set_valid: bool) -> SelectedFileId {
+        let mut bytes = vec![];
+
+        match *self.blob_impl.borrow_mut() {
+            BlobImpl::Sliced(_, _) => {
+                debug!("Sliced can't have a sliced parent");
+                
+                return SelectedFileId(Uuid::new_v4().simple().to_string());
+            }
+            BlobImpl::File(ref f) => {
+                if set_valid {
+                    let global = self.global();
+                    let origin = get_blob_origin(&global.r().get_url());
+                    let filemanager = global.r().resource_threads().sender();
+                    let (tx, rx) = ipc::channel().unwrap();
+
+                    let msg = FileManagerThreadMsg::ActivateBlobURL(f.id.clone(), tx, origin.clone());
+                    let _ = filemanager.send(msg);
+
+                    match rx.recv().unwrap() {
+                        Ok(_) => return f.id.clone(),
+                        
+                        Err(_) => return SelectedFileId(Uuid::new_v4().simple().to_string())
+                    }
+                } else {
+                    
+                    return f.id.clone();
+                }
+            }
+            BlobImpl::Memory(ref mut bytes_in) => mem::swap(bytes_in, &mut bytes),
+        };
+
         let global = self.global();
         let origin = get_blob_origin(&global.r().get_url());
         let filemanager = global.r().resource_threads().sender();
@@ -221,7 +223,7 @@ impl Blob {
         let blob_buf = BlobBuf {
             filename: None,
             type_string: self.typeString.clone(),
-            size: self.Size(),
+            size: bytes.len() as u64,
             bytes: bytes.to_vec(),
         };
 
@@ -229,7 +231,16 @@ impl Blob {
         let _ = filemanager.send(FileManagerThreadMsg::PromoteMemory(blob_buf, set_valid, tx, origin.clone()));
 
         match rx.recv().unwrap() {
-            Ok(new_id) => SelectedFileId(new_id.0),
+            Ok(id) => {
+                let id = SelectedFileId(id.0);
+                *self.blob_impl.borrow_mut() = BlobImpl::File(FileBlob {
+                    id: id.clone(),
+                    name: None,
+                    cache: DOMRefCell::new(Some(bytes.to_vec())),
+                    size: bytes.len() as u64,
+                });
+                id
+            }
             
             Err(_) => SelectedFileId(Uuid::new_v4().simple().to_string()),
         }
@@ -237,7 +248,7 @@ impl Blob {
 
     
     fn create_sliced_url_id(&self, parent_id: &SelectedFileId,
-                            rel_pos: &RelativePos) -> SelectedFileId {
+                            rel_pos: &RelativePos, parent_len: u64) -> SelectedFileId {
         let global = self.global();
 
         let origin = get_blob_origin(&global.r().get_url());
@@ -248,10 +259,25 @@ impl Blob {
                                                           rel_pos.clone(),
                                                           tx, origin.clone());
         let _ = filemanager.send(msg);
-        let new_id = rx.recv().unwrap().unwrap();
+        match rx.recv().expect("File manager thread is down") {
+            Ok(new_id) => {
+                let new_id = SelectedFileId(new_id.0);
 
-        
-        SelectedFileId(new_id.0)
+                *self.blob_impl.borrow_mut() = BlobImpl::File(FileBlob {
+                    id: new_id.clone(),
+                    name: None,
+                    cache: DOMRefCell::new(None),
+                    size: rel_pos.to_abs_range(parent_len as usize).len() as u64,
+                });
+
+                
+                new_id
+            }
+            Err(_) => {
+                
+                SelectedFileId(Uuid::new_v4().simple().to_string())
+            }
+        }
     }
 
     
@@ -391,12 +417,4 @@ fn is_ascii_printable(string: &str) -> bool {
     
     
     string.chars().all(|c| c >= '\x20' && c <= '\x7E')
-}
-
-
-fn inc_ref_id(global: GlobalRef, id: SelectedFileId) {
-    let file_manager = global.filemanager_thread();
-    let origin = get_blob_origin(&global.get_url());
-    let msg = FileManagerThreadMsg::IncRef(id, origin);
-    let _ = file_manager.send(msg);
 }
