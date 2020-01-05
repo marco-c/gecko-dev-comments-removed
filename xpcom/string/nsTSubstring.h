@@ -687,6 +687,8 @@ public:
 
 
 
+
+
   void AppendPrintf(const char* aFormat, ...) MOZ_FORMAT_PRINTF(2, 3);
   void AppendPrintf(const char* aFormat, va_list aAp);
   void AppendInt(int32_t aInteger)
