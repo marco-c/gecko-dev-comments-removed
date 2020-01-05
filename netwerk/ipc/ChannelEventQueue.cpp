@@ -5,12 +5,11 @@
 
 
 
-#include "ChannelEventQueue.h"
-
-#include "mozilla/Assertions.h"
-#include "mozilla/Unused.h"
 #include "nsISupports.h"
+#include "mozilla/net/ChannelEventQueue.h"
+#include "mozilla/Unused.h"
 #include "nsThreadUtils.h"
+#include "mozilla/Unused.h"
 
 namespace mozilla {
 namespace net {
@@ -40,94 +39,29 @@ ChannelEventQueue::FlushQueue()
   nsCOMPtr<nsISupports> kungFuDeathGrip(mOwner);
   mozilla::Unused << kungFuDeathGrip; 
 
-  bool needResumeOnOtherThread = false;
+  
   {
-    
-    
-    ReentrantMonitorAutoEnter monitor(mRunningMonitor);
-
-    
-    {
-      MutexAutoLock lock(mMutex);
-      MOZ_ASSERT(!mFlushing);
-      mFlushing = true;
-    }
-
-    while (true) {
-      UniquePtr<ChannelEvent> event(TakeEvent());
-      if (!event) {
-        break;
-      }
-
-      nsCOMPtr<nsIEventTarget> target = event->GetEventTarget();
-      MOZ_ASSERT(target);
-
-      bool isCurrentThread = false;
-      nsresult rv = target->IsOnCurrentThread(&isCurrentThread);
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        
-        
-        MOZ_DIAGNOSTIC_ASSERT(false);
-        isCurrentThread = true;
-      }
-
-      if (!isCurrentThread) {
-        
-        
-        Suspend();
-        PrependEvent(event);
-
-        needResumeOnOtherThread = true;
-        break;
-      }
-
-      event->Run();
-    }
-
-    {
-      MutexAutoLock lock(mMutex);
-      MOZ_ASSERT(mFlushing);
-      mFlushing = false;
-      MOZ_ASSERT(mEventQueue.IsEmpty() || (needResumeOnOtherThread || mSuspended || !!mForcedCount));
-    }
+    MutexAutoLock lock(mMutex);
+    mFlushing = true;
   }
 
-  
-  
-  
-  
-  
-  if (needResumeOnOtherThread) {
-    Resume();
+  while (true) {
+    UniquePtr<ChannelEvent> event(TakeEvent());
+    if (!event) {
+      break;
+    }
+
+    event->Run();
   }
+
+  MutexAutoLock lock(mMutex);
+  mFlushing = false;
 }
 
 void
-ChannelEventQueue::Suspend()
+ChannelEventQueue::Resume()
 {
   MutexAutoLock lock(mMutex);
-  SuspendInternal();
-}
-
-void
-ChannelEventQueue::SuspendInternal()
-{
-  mMutex.AssertCurrentThreadOwns();
-
-  mSuspended = true;
-  mSuspendCount++;
-}
-
-void ChannelEventQueue::Resume()
-{
-  MutexAutoLock lock(mMutex);
-  ResumeInternal();
-}
-
-void
-ChannelEventQueue::ResumeInternal()
-{
-  mMutex.AssertCurrentThreadOwns();
 
   
   MOZ_ASSERT(mSuspendCount > 0);
@@ -136,23 +70,43 @@ ChannelEventQueue::ResumeInternal()
   }
 
   if (!--mSuspendCount) {
-    if (mEventQueue.IsEmpty()) {
-      
-      mSuspended = false;
-      return;
-    }
-
-    
     RefPtr<Runnable> event =
-      NewCancelableRunnableMethod(this, &ChannelEventQueue::CompleteResume);
-
-    nsCOMPtr<nsIEventTarget> target;
-      target = mEventQueue[0]->GetEventTarget();
-    MOZ_ASSERT(target);
-
-    Unused << NS_WARN_IF(NS_FAILED(target->Dispatch(event.forget(),
-                                                    NS_DISPATCH_NORMAL)));
+      NewRunnableMethod(this, &ChannelEventQueue::CompleteResume);
+    if (mTargetThread) {
+      mTargetThread->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
+    } else {
+      MOZ_RELEASE_ASSERT(NS_IsMainThread());
+      Unused << NS_WARN_IF(NS_FAILED(NS_DispatchToCurrentThread(event.forget())));
+    }
   }
+}
+
+nsresult
+ChannelEventQueue::RetargetDeliveryTo(nsIEventTarget* aTargetThread)
+{
+  MOZ_RELEASE_ASSERT(NS_IsMainThread());
+  MOZ_RELEASE_ASSERT(!mTargetThread);
+  MOZ_RELEASE_ASSERT(aTargetThread);
+
+  mTargetThread = do_QueryInterface(aTargetThread);
+  MOZ_RELEASE_ASSERT(mTargetThread);
+
+  return NS_OK;
+}
+
+nsresult
+ChannelEventQueue::ResetDeliveryTarget()
+{
+  MutexAutoLock lock(mMutex);
+
+  MOZ_RELEASE_ASSERT(mEventQueue.IsEmpty());
+  MOZ_RELEASE_ASSERT(mSuspendCount == 0);
+  MOZ_RELEASE_ASSERT(!mSuspended);
+  MOZ_RELEASE_ASSERT(!mForced);
+  MOZ_RELEASE_ASSERT(!mFlushing);
+  mTargetThread = nullptr;
+
+  return NS_OK;
 }
 
 } 

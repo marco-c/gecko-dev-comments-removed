@@ -10,15 +10,11 @@
 
 #include "nsTArray.h"
 #include "nsAutoPtr.h"
-#include "nsIEventTarget.h"
-#include "nsThreadUtils.h"
-#include "mozilla/DebugOnly.h"
 #include "mozilla/Mutex.h"
-#include "mozilla/ReentrantMonitor.h"
 #include "mozilla/UniquePtr.h"
-#include "mozilla/Unused.h"
 
 class nsISupports;
+class nsIEventTarget;
 
 namespace mozilla {
 namespace net {
@@ -29,20 +25,6 @@ class ChannelEvent
   ChannelEvent() { MOZ_COUNT_CTOR(ChannelEvent); }
   virtual ~ChannelEvent() { MOZ_COUNT_DTOR(ChannelEvent); }
   virtual void Run() = 0;
-  virtual already_AddRefed<nsIEventTarget> GetEventTarget() = 0;
-};
-
-class MainThreadChannelEvent : public ChannelEvent
-{
- public:
-  MainThreadChannelEvent() { MOZ_COUNT_CTOR(MainThreadChannelEvent); }
-  virtual ~MainThreadChannelEvent() { MOZ_COUNT_DTOR(MainThreadChannelEvent); }
-
-  already_AddRefed<nsIEventTarget>
-  GetEventTarget() override
-  {
-    return do_GetMainThread();
-  }
 };
 
 
@@ -60,11 +42,10 @@ class ChannelEventQueue final
   explicit ChannelEventQueue(nsISupports *owner)
     : mSuspendCount(0)
     , mSuspended(false)
-    , mForcedCount(0)
+    , mForced(false)
     , mFlushing(false)
     , mOwner(owner)
     , mMutex("ChannelEventQueue::mMutex")
-    , mRunningMonitor("ChannelEventQueue::mRunningMonitor")
   {}
 
   
@@ -75,9 +56,6 @@ class ChannelEventQueue final
   
   inline void RunOrEnqueue(ChannelEvent* aCallback,
                            bool aAssertionWhenNotQueued = false);
-
-  
-  inline nsresult PrependEvent(UniquePtr<ChannelEvent>& aEvent);
   inline nsresult PrependEvents(nsTArray<UniquePtr<ChannelEvent>>& aEvents);
 
   
@@ -91,19 +69,24 @@ class ChannelEventQueue final
   
   
   
-  void Suspend();
+  inline void Suspend();
   
   
   void Resume();
+
+  
+  nsresult RetargetDeliveryTo(nsIEventTarget* aTargetThread);
+
+  
+  
+  
+  nsresult ResetDeliveryTarget();
 
  private:
   
   ~ChannelEventQueue()
   {
   }
-
-  void SuspendInternal();
-  void ResumeInternal();
 
   inline void MaybeFlushQueue();
   void FlushQueue();
@@ -114,18 +97,17 @@ class ChannelEventQueue final
   nsTArray<UniquePtr<ChannelEvent>> mEventQueue;
 
   uint32_t mSuspendCount;
-  bool mSuspended;
-  uint32_t mForcedCount; 
+  bool     mSuspended;
+  bool mForced;
   bool mFlushing;
 
   
   nsISupports *mOwner;
 
-  
   Mutex mMutex;
 
   
-  ReentrantMonitor mRunningMonitor;
+  nsCOMPtr<nsIEventTarget> mTargetThread;
 
   friend class AutoEventEnqueuer;
 };
@@ -137,41 +119,17 @@ ChannelEventQueue::RunOrEnqueue(ChannelEvent* aCallback,
   MOZ_ASSERT(aCallback);
 
   
-  
-  
-  nsCOMPtr<nsISupports> kungFuDeathGrip(mOwner);
-  Unused << kungFuDeathGrip; 
-
-  
   UniquePtr<ChannelEvent> event(aCallback);
-
-  
-  
-  ReentrantMonitorAutoEnter monitor(mRunningMonitor);
 
   {
     MutexAutoLock lock(mMutex);
 
-    bool enqueue =  !!mForcedCount || mSuspended || mFlushing || !mEventQueue.IsEmpty();
+    bool enqueue =  mForced || mSuspended || mFlushing;
+    MOZ_ASSERT(enqueue == true || mEventQueue.IsEmpty(),
+               "Should always enqueue if ChannelEventQueue not empty");
 
     if (enqueue) {
       mEventQueue.AppendElement(Move(event));
-      return;
-    }
-
-    nsCOMPtr<nsIEventTarget> target = event->GetEventTarget();
-    MOZ_ASSERT(target);
-
-    bool isCurrentThread = false;
-    DebugOnly<nsresult> rv = target->IsOnCurrentThread(&isCurrentThread);
-    MOZ_ASSERT(NS_SUCCEEDED(rv));
-
-    if (!isCurrentThread) {
-      
-      
-      SuspendInternal();
-      mEventQueue.AppendElement(Move(event));
-      ResumeInternal();
       return;
     }
   }
@@ -184,57 +142,24 @@ inline void
 ChannelEventQueue::StartForcedQueueing()
 {
   MutexAutoLock lock(mMutex);
-  ++mForcedCount;
+  mForced = true;
 }
 
 inline void
 ChannelEventQueue::EndForcedQueueing()
 {
-  bool tryFlush = false;
   {
     MutexAutoLock lock(mMutex);
-    MOZ_ASSERT(mForcedCount > 0);
-    if(!--mForcedCount) {
-      tryFlush = true;
-    }
+    mForced = false;
   }
 
-  if (tryFlush) {
-    MaybeFlushQueue();
-  }
-}
-
-inline nsresult
-ChannelEventQueue::PrependEvent(UniquePtr<ChannelEvent>& aEvent)
-{
-  MutexAutoLock lock(mMutex);
-
-  
-  
-  
-  
-  MOZ_ASSERT(mSuspended || !!mForcedCount);
-
-  UniquePtr<ChannelEvent>* newEvent =
-    mEventQueue.InsertElementAt(0, Move(aEvent));
-
-  if (!newEvent) {
-    return NS_ERROR_OUT_OF_MEMORY;
-  }
-
-  return NS_OK;
+  MaybeFlushQueue();
 }
 
 inline nsresult
 ChannelEventQueue::PrependEvents(nsTArray<UniquePtr<ChannelEvent>>& aEvents)
 {
   MutexAutoLock lock(mMutex);
-
-  
-  
-  
-  
-  MOZ_ASSERT(mSuspended || !!mForcedCount);
 
   UniquePtr<ChannelEvent>* newEvents =
     mEventQueue.InsertElementsAt(0, aEvents.Length());
@@ -250,9 +175,17 @@ ChannelEventQueue::PrependEvents(nsTArray<UniquePtr<ChannelEvent>>& aEvents)
 }
 
 inline void
+ChannelEventQueue::Suspend()
+{
+  MutexAutoLock lock(mMutex);
+
+  mSuspended = true;
+  mSuspendCount++;
+}
+
+inline void
 ChannelEventQueue::CompleteResume()
 {
-  bool tryFlush = false;
   {
     MutexAutoLock lock(mMutex);
 
@@ -263,13 +196,10 @@ ChannelEventQueue::CompleteResume()
       
       
       mSuspended = false;
-      tryFlush = true;
     }
   }
 
-  if (tryFlush) {
-    MaybeFlushQueue();
-  }
+  MaybeFlushQueue();
 }
 
 inline void
@@ -281,7 +211,7 @@ ChannelEventQueue::MaybeFlushQueue()
 
   {
     MutexAutoLock lock(mMutex);
-    flushQueue = !mForcedCount && !mFlushing && !mSuspended &&
+    flushQueue = !mForced && !mFlushing && !mSuspended &&
                  !mEventQueue.IsEmpty();
   }
 

@@ -18,7 +18,6 @@
 #include "nsIResumableChannel.h"
 #include "nsIChildChannel.h"
 #include "nsIDivertableChannel.h"
-#include "nsIEventTarget.h"
 
 #include "nsIStreamListener.h"
 #include "PrivateBrowsingChannel.h"
@@ -124,13 +123,9 @@ protected:
   friend class FTPStopRequestEvent;
   friend class MaybeDivertOnStopFTPEvent;
   friend class FTPFailedAsyncOpenEvent;
-  friend class FTPFlushedForDiversionEvent;
   friend class FTPDeleteSelfEvent;
 
 private:
-  
-  already_AddRefed<nsIEventTarget> GetNeckoTarget();
-
   nsCOMPtr<nsIInputStream> mUploadStream;
 
   bool mIPCOpen;
@@ -158,9 +153,6 @@ private:
   
   
   bool mSuspendSent;
-
-  
-  nsCOMPtr<nsIEventTarget> mNeckoTarget;
 
   RefPtr<Dispatcher> mDispatcher;
 
