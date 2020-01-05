@@ -300,10 +300,8 @@ ClientEngine.prototype = {
       
       delete this._incomingClients[this.localID];
       let names = new Set([this.localName]);
-      for (let [id, serverLastModified] of Object.entries(this._incomingClients)) {
+      for (let id in this._incomingClients) {
         let record = this._store._remoteClients[id];
-        
-        record.serverLastModified = serverLastModified;
         if (!names.has(record.name)) {
           names.add(record.name);
           continue;
@@ -327,14 +325,7 @@ ClientEngine.prototype = {
         this._modified.set(clientId, 0);
       }
     }
-    let updatedIDs = this._modified.ids();
     SyncEngine.prototype._uploadOutgoing.call(this);
-    
-    for (let id of updatedIDs) {
-      if (id != this.localID) {
-        this.remoteClient(id).serverLastModified = this.lastSync;
-      }
-    }
   },
 
   _onRecordsWritten(succeeded, failed) {
@@ -756,8 +747,7 @@ ClientStore.prototype = {
       
       
     } else {
-      record.cleartext = Object.assign({}, this._remoteClients[id]);
-      delete record.cleartext.serverLastModified; 
+      record.cleartext = this._remoteClients[id];
 
       
       if (commandsChanges && commandsChanges.length) {
