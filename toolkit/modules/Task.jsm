@@ -315,20 +315,24 @@ TaskImpl.prototype = {
       gCurrentTask = this;
 
       if (this._isStarGenerator) {
-        try {
-          let result = aSendResolved ? this._iterator.next(aSendValue)
-                                     : this._iterator.throw(aSendValue);
+        if (Cu.isDeadWrapper(this._iterator)) {
+          this.deferred.resolve(undefined);
+        } else {
+          try {
+            let result = aSendResolved ? this._iterator.next(aSendValue)
+                                       : this._iterator.throw(aSendValue);
 
-          if (result.done) {
+            if (result.done) {
+              
+              this.deferred.resolve(result.value);
+            } else {
+              
+              this._handleResultValue(result.value);
+            }
+          } catch (ex) {
             
-            this.deferred.resolve(result.value);
-          } else {
-            
-            this._handleResultValue(result.value);
+            this._handleException(ex);
           }
-        } catch (ex) {
-          
-          this._handleException(ex);
         }
       } else {
         try {
