@@ -24,6 +24,8 @@ loader.loadSubScript("resource://devtools/shared/transport/transport.js");
 
 const logger = Log.repository.getLogger("Marionette");
 
+const {KeepWhenOffline, LoopbackOnly} = Ci.nsIServerSocket;
+
 this.EXPORTED_SYMBOLS = ["server"];
 this.server = {};
 
@@ -269,12 +271,8 @@ server.TCPListener = class {
 
 
 
-
-
-
-  constructor (port, forceLocal = true) {
+  constructor (port) {
     this.port = port;
-    this.forceLocal = forceLocal;
     this.conns = new Set();
     this.nextConnID = 0;
     this.alive = false;
@@ -321,11 +319,9 @@ server.TCPListener = class {
       }
     }
 
-    let flags = Ci.nsIServerSocket.KeepWhenOffline;
-    if (this.forceLocal) {
-      flags |= Ci.nsIServerSocket.LoopbackOnly;
-    }
-    this.listener = new ServerSocket(this.port, flags, 1);
+    const flags = KeepWhenOffline | LoopbackOnly;
+    const backlog = 1;
+    this.listener = new ServerSocket(this.port, flags, backlog);
     this.listener.asyncListen(this);
 
     this.alive = true;
