@@ -8,6 +8,7 @@
 #define MOZILLA_LAYERS_WEBRENDERAPI_H
 
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/Range.h"
 #include "mozilla/gfx/webrender.h"
 #include "mozilla/layers/WebRenderTypes.h"
 
@@ -19,6 +20,7 @@ class CompositorWidget;
 
 namespace layers {
 
+class DisplayListBuilder;
 class CompositorBridgeParentBase;
 class RendererOGL;
 class NewRenderer;
@@ -46,6 +48,65 @@ protected:
   gfx::WindowId mId;
 
   friend class NewRenderer;
+  friend class DisplayListBuilder;
+};
+
+
+
+
+class DisplayListBuilder {
+public:
+  DisplayListBuilder(const LayerIntSize& aSize, gfx::PipelineId aId);
+  DisplayListBuilder(DisplayListBuilder&&) = default;
+
+  ~DisplayListBuilder();
+
+  void Begin(const LayerIntSize& aSize);
+
+  void End(WebRenderAPI& aApi, gfx::Epoch aEpoch);
+
+  void PushStackingContext(const WRRect& aBounds, 
+                           const WRRect& aOverflow,
+                           const WRImageMask* aMask, 
+                           const gfx::Matrix4x4& aTransform);
+
+  void PopStackingContext();
+
+  void PushRect(const WRRect& aBounds,
+                const WRRect& aClip,
+                const gfx::Color& aColor);
+
+  void PushImage(const WRRect& aBounds,
+                 const WRRect& aClip,
+                 const WRImageMask* aMask,
+                 WRImageKey aImage);
+
+  void PushIFrame(const WRRect& aBounds,
+                  const WRRect& aClip,
+                  gfx::PipelineId aPipeline);
+
+  void PushBorder(const WRRect& bounds,
+                  const WRRect& clip,
+                  const WRBorderSide& top,
+                  const WRBorderSide& right,
+                  const WRBorderSide& bottom,
+                  const WRBorderSide& left,
+                  const WRLayoutSize& top_left_radius,
+                  const WRLayoutSize& top_right_radius,
+                  const WRLayoutSize& bottom_left_radius,
+                  const WRLayoutSize& bottom_right_radius);
+
+  void PushText(const WRRect& aBounds,
+                const WRRect& aClip,
+                const gfx::Color& aColor,
+                gfx::FontKey aFontKey,
+                Range<const WRGlyphInstance> aGlyphBuffer,
+                float aGlyphSize);
+
+  
+  WRState* Raw() { return mWRState; }
+protected:
+  WRState* mWRState;
 };
 
 } 
