@@ -248,7 +248,8 @@ CrossProcessCompositorBridgeParent::DeallocPAPZParent(PAPZParent* aActor)
 }
 
 PWebRenderBridgeParent*
-CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const uint64_t& aPipelineId)
+CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const uint64_t& aPipelineId,
+                                                                const nsString& aResourcePath)
 {
 #ifndef MOZ_ENABLE_WEBRENDER
   
@@ -268,7 +269,7 @@ CrossProcessCompositorBridgeParent::AllocPWebRenderBridgeParent(const uint64_t& 
   WebRenderBridgeParent* root = sIndirectLayerTrees[cbp->RootLayerTreeId()].mWRBridge.get();
 
   WebRenderBridgeParent* parent = new WebRenderBridgeParent(
-    aPipelineId, nullptr, root->GLContext(), root->WindowState());
+    aPipelineId, nullptr, nullptr, root->GLContext(), root->WindowState());
   parent->AddRef(); 
   sIndirectLayerTrees[aPipelineId].mWRBridge = parent;
 
