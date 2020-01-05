@@ -60,6 +60,22 @@ impl From<Vec<CssRule>> for CssRules {
     }
 }
 
+pub enum RulesMutateError {
+    Syntax,
+    IndexSize,
+    HierarchyRequest,
+    InvalidState,
+}
+
+impl From<SingleRuleParseError> for RulesMutateError {
+    fn from(other: SingleRuleParseError) -> Self {
+        match other {
+            SingleRuleParseError::Syntax => RulesMutateError::Syntax,
+            SingleRuleParseError::Hierarchy => RulesMutateError::HierarchyRequest,
+        }
+    }
+}
+
 impl CssRules {
     
     pub fn only_ns_or_import(rules: &[CssRule]) -> bool {
@@ -72,35 +88,73 @@ impl CssRules {
     }
 
     
-    pub fn state_at_index(rules: &[CssRule], at: usize) -> State {
-        let mut state = State::Start;
-        if at > 0 {
-            if let Some(rule) = rules.get(at - 1) {
-                state = match *rule {
-                    
-                    
-                    CssRule::Namespace(..) => State::Namespaces,
-                    _ => State::Body,
-                };
+    pub fn insert_rule(&self, rule: &str, base_url: ServoUrl, index: usize, nested: bool)
+                       -> Result<CssRule, RulesMutateError> {
+        let mut rules = self.0.write();
+
+        
+        if index > rules.len() {
+            return Err(RulesMutateError::IndexSize);
+        }
+
+        
+        let state = if nested {
+            None
+        } else if index == 0 {
+            Some(State::Start)
+        } else {
+            rules.get(index - 1).map(CssRule::rule_state)
+        };
+
+        
+        
+        let (new_rule, new_state) = try!(CssRule::parse(&rule, Origin::Author, base_url,
+                                                        ParserContextExtraData::default(), state));
+
+        
+        
+        let rev_state = rules.get(index).map_or(State::Body, CssRule::rule_state);
+        if new_state > rev_state {
+            
+            
+            return Err(RulesMutateError::HierarchyRequest);
+        }
+
+        
+        if let CssRule::Namespace(..) = new_rule {
+            if !CssRules::only_ns_or_import(&rules) {
+                return Err(RulesMutateError::InvalidState);
             }
         }
-        state
+
+        rules.insert(index, new_rule.clone());
+        Ok(new_rule)
     }
 
     
-    
-    
-    pub fn state_at_index_rev(rules: &[CssRule], at: usize) -> State {
-        if let Some(rule) = rules.get(at) {
-            match *rule {
-                
-                
-                CssRule::Namespace(..) => State::Namespaces,
-                _ => State::Body,
-            }
-        } else {
-            State::Body
+    pub fn remove_rule(&self, index: usize) -> Result<(), RulesMutateError> {
+        let mut rules = self.0.write();
+
+        
+        if index >= rules.len() {
+            return Err(RulesMutateError::IndexSize);
         }
+
+        {
+            
+            let ref rule = rules[index];
+
+            
+            if let CssRule::Namespace(..) = *rule {
+                if !CssRules::only_ns_or_import(&rules) {
+                    return Err(RulesMutateError::InvalidState);
+                }
+            }
+        }
+
+        
+        rules.remove(index);
+        Ok(())
     }
 }
 
@@ -190,6 +244,15 @@ impl CssRule {
             CssRule::Keyframes(_) => CssRuleType::Keyframes,
             CssRule::Namespace(_) => CssRuleType::Namespace,
             CssRule::Viewport(_)  => CssRuleType::Viewport,
+        }
+    }
+
+    fn rule_state(&self) -> State {
+        match *self {
+            
+            
+            CssRule::Namespace(..) => State::Namespaces,
+            _ => State::Body,
         }
     }
 
