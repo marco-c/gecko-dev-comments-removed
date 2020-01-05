@@ -1,14 +1,38 @@
 use super::ToTokens;
 use std::fmt::{self, Display};
+use std::str::FromStr;
+
 
 #[derive(Debug, Clone, Eq, PartialEq)]
 pub struct Tokens(String);
 
 impl Tokens {
+    
     pub fn new() -> Self {
         Tokens(String::new())
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn append(&mut self, token: &str) {
         if !self.0.is_empty() && !token.is_empty() {
             self.0.push(' ');
@@ -16,6 +40,25 @@ impl Tokens {
         self.0.push_str(token);
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn append_all<T, I>(&mut self, iter: I)
         where T: ToTokens,
               I: IntoIterator<Item = T>
@@ -25,6 +68,25 @@ impl Tokens {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn append_separated<T, I>(&mut self, iter: I, sep: &str)
         where T: ToTokens,
               I: IntoIterator<Item = T>
@@ -37,6 +99,25 @@ impl Tokens {
         }
     }
 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
     pub fn append_terminated<T, I>(&mut self, iter: I, term: &str)
         where T: ToTokens,
               I: IntoIterator<Item = T>
@@ -45,6 +126,14 @@ impl Tokens {
             token.to_tokens(self);
             self.append(term);
         }
+    }
+
+    pub fn as_str(&self) -> &str {
+        &self.0
+    }
+
+    pub fn parse<T: FromStr>(&self) -> Result<T, T::Err> {
+        FromStr::from_str(&self.0)
     }
 }
 

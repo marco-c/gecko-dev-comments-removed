@@ -70,6 +70,10 @@ impl ClipRegion {
             image_mask: None,
         }
     }
+
+    pub fn is_complex(&self) -> bool {
+        self.complex.length !=0 || self.image_mask.is_some()
+    }
 }
 
 impl ColorF {
@@ -104,7 +108,7 @@ impl ComplexClipRegion {
     
     
     pub fn get_inner_rect(&self) -> Option<Rect<f32>> {
-        let k = 0.5; 
+        let k = 0.3; 
         let xl = self.rect.origin.x +
             k * self.radii.top_left.width.max(self.radii.bottom_left.width);
         let xr = self.rect.origin.x + self.rect.size.width -

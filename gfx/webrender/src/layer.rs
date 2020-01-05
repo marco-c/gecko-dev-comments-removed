@@ -2,9 +2,10 @@
 
 
 
-use euclid::{Matrix4D, Point2D, Rect, Size2D};
 use spring::{DAMPING, STIFFNESS, Spring};
 use webrender_traits::{PipelineId, ScrollLayerId};
+use webrender_traits::{LayerRect, LayerPoint, LayerSize};
+use webrender_traits::{LayerToScrollTransform, LayerToWorldTransform};
 
 
 #[derive(Clone)]
@@ -13,22 +14,22 @@ pub struct Layer {
     pub scrolling: ScrollingState,
 
     
-    pub content_size: Size2D<f32>,
+    pub content_size: LayerSize,
 
     
-    pub local_viewport_rect: Rect<f32>,
+    pub local_viewport_rect: LayerRect,
 
     
-    pub combined_local_viewport_rect: Rect<f32>,
+    pub combined_local_viewport_rect: LayerRect,
 
     
-    pub world_viewport_transform: Matrix4D<f32>,
+    pub world_viewport_transform: LayerToWorldTransform,
 
     
-    pub world_content_transform: Matrix4D<f32>,
+    pub world_content_transform: LayerToWorldTransform,
 
     
-    pub local_transform: Matrix4D<f32>,
+    pub local_transform: LayerToScrollTransform,
 
     
     pub pipeline_id: PipelineId,
@@ -38,9 +39,9 @@ pub struct Layer {
 }
 
 impl Layer {
-    pub fn new(local_viewport_rect: &Rect<f32>,
-               content_size: Size2D<f32>,
-               local_transform: &Matrix4D<f32>,
+    pub fn new(local_viewport_rect: &LayerRect,
+               content_size: LayerSize,
+               local_transform: &LayerToScrollTransform,
                pipeline_id: PipelineId)
                -> Layer {
         Layer {
@@ -48,8 +49,8 @@ impl Layer {
             content_size: content_size,
             local_viewport_rect: *local_viewport_rect,
             combined_local_viewport_rect: *local_viewport_rect,
-            world_viewport_transform: Matrix4D::identity(),
-            world_content_transform: Matrix4D::identity(),
+            world_viewport_transform: LayerToWorldTransform::identity(),
+            world_content_transform: LayerToWorldTransform::identity(),
             local_transform: *local_transform,
             children: Vec::new(),
             pipeline_id: pipeline_id,
@@ -64,7 +65,7 @@ impl Layer {
         self.scrolling = *scrolling;
     }
 
-    pub fn overscroll_amount(&self) -> Size2D<f32> {
+    pub fn overscroll_amount(&self) -> LayerSize {
         let overscroll_x = if self.scrolling.offset.x > 0.0 {
             -self.scrolling.offset.x
         } else if self.scrolling.offset.x < self.local_viewport_rect.size.width - self.content_size.width {
@@ -82,7 +83,27 @@ impl Layer {
             0.0
         };
 
-        Size2D::new(overscroll_x, overscroll_y)
+        LayerSize::new(overscroll_x, overscroll_y)
+    }
+
+    pub fn set_scroll_origin(&mut self, origin: &LayerPoint) -> bool {
+        if self.content_size.width <= self.local_viewport_rect.size.width &&
+           self.content_size.height <= self.local_viewport_rect.size.height {
+            return false;
+        }
+
+        let new_offset = LayerPoint::new(
+            (-origin.x).max(-self.content_size.width + self.local_viewport_rect.size.width),
+            (-origin.y).max(-self.content_size.height + self.local_viewport_rect.size.height));
+        let new_offset = LayerPoint::new(new_offset.x.min(0.0).round(), new_offset.y.min(0.0).round());
+        if new_offset == self.scrolling.offset {
+            return false;
+        }
+
+        self.scrolling.offset = new_offset;
+        self.scrolling.bouncing_back = false;
+        self.scrolling.started_bouncing_back = false;
+        return true;
     }
 
     pub fn stretch_overscroll_spring(&mut self) {
@@ -103,7 +124,7 @@ impl Layer {
 
 #[derive(Copy, Clone)]
 pub struct ScrollingState {
-    pub offset: Point2D<f32>,
+    pub offset: LayerPoint,
     pub spring: Spring,
     pub started_bouncing_back: bool,
     pub bouncing_back: bool,
@@ -112,8 +133,8 @@ pub struct ScrollingState {
 impl ScrollingState {
     pub fn new() -> ScrollingState {
         ScrollingState {
-            offset: Point2D::new(0.0, 0.0),
-            spring: Spring::at(Point2D::new(0.0, 0.0), STIFFNESS, DAMPING),
+            offset: LayerPoint::zero(),
+            spring: Spring::at(LayerPoint::zero(), STIFFNESS, DAMPING),
             started_bouncing_back: false,
             bouncing_back: false,
         }

@@ -1,8 +1,72 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 mod tokens;
 pub use tokens::Tokens;
 
 mod to_tokens;
-pub use to_tokens::{ToTokens, ByteStr};
+pub use to_tokens::{ToTokens, ByteStr, Hex};
+
+mod ident;
+pub use ident::Ident;
+
 
 #[macro_export]
 macro_rules! quote {
@@ -12,8 +76,6 @@ macro_rules! quote {
 
     ($($tt:tt)+) => {
         {
-            #[allow(unused_imports)]
-            use $crate::ToTokens;
             let mut _s = $crate::Tokens::new();
             quote_each_token!(_s $($tt)*);
             _s
@@ -158,7 +220,7 @@ macro_rules! quote_each_token {
     };
 
     ($tokens:ident # $first:ident $($rest:tt)*) => {
-        $first.to_tokens(&mut $tokens);
+        $crate::ToTokens::to_tokens(&$first, &mut $tokens);
         quote_each_token!($tokens $($rest)*);
     };
 

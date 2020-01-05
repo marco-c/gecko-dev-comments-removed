@@ -2,7 +2,7 @@
 
 
 
-use euclid::Point2D;
+use webrender_traits::LayerPoint;
 
 
 pub const EPSILON: f32 = 0.1;
@@ -16,11 +16,11 @@ pub const DAMPING: f32 = 1.0;
 #[derive(Copy, Clone, Debug)]
 pub struct Spring {
     
-    cur: Point2D<f32>,
+    cur: LayerPoint,
     
-    prev: Point2D<f32>,
+    prev: LayerPoint,
     
-    dest: Point2D<f32>,
+    dest: LayerPoint,
     
     stiffness: f32,
     
@@ -29,7 +29,7 @@ pub struct Spring {
 
 impl Spring {
     
-    pub fn at(pos: Point2D<f32>, stiffness: f32, damping: f32) -> Spring {
+    pub fn at(pos: LayerPoint, stiffness: f32, damping: f32) -> Spring {
         Spring {
             cur: pos,
             prev: pos,
@@ -40,13 +40,13 @@ impl Spring {
     }
 
     
-    pub fn coords(&mut self, cur: Point2D<f32>, prev: Point2D<f32>, dest: Point2D<f32>) {
+    pub fn coords(&mut self, cur: LayerPoint, prev: LayerPoint, dest: LayerPoint) {
         self.cur = cur;
         self.prev = prev;
         self.dest = dest
     }
 
-    pub fn current(&self) -> Point2D<f32> {
+    pub fn current(&self) -> LayerPoint {
         self.cur
     }
 
@@ -54,16 +54,16 @@ impl Spring {
     pub fn animate(&mut self) -> bool {
         if !is_resting(self.cur.x, self.prev.x, self.dest.x) ||
                 !is_resting(self.cur.y, self.prev.y, self.dest.y) {
-            let next = Point2D::new(next(self.cur.x,
-                                         self.prev.x,
-                                         self.dest.x,
-                                         self.stiffness,
-                                         self.damping),
-                                    next(self.cur.y,
-                                         self.prev.y,
-                                         self.dest.y,
-                                         self.stiffness,
-                                         self.damping));
+            let next = LayerPoint::new(next(self.cur.x,
+                                            self.prev.x,
+                                            self.dest.x,
+                                            self.stiffness,
+                                            self.damping),
+                                       next(self.cur.y,
+                                            self.prev.y,
+                                            self.dest.y,
+                                            self.stiffness,
+                                            self.damping));
             let (cur, dest) = (self.cur, self.dest);
             self.coords(next, cur, dest);
             false
