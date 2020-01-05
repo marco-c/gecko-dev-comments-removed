@@ -7,6 +7,7 @@
 #define GFX_LayerManagerComposite_H
 
 #include <stdint.h>                     
+#include "CompositableHost.h"           
 #include "GLDefs.h"                     
 #include "Layers.h"
 #include "Units.h"                      
@@ -49,7 +50,6 @@ namespace layers {
 
 class CanvasLayerComposite;
 class ColorLayerComposite;
-class CompositableHost;
 class Compositor;
 class ContainerLayerComposite;
 struct EffectChain;
@@ -64,11 +64,6 @@ struct FPSState;
 class PaintCounter;
 
 static const int kVisualWarningDuration = 150; 
-
-struct ImageCompositeNotificationInfo {
-  base::ProcessId mImageBridgeProcessId;
-  ImageCompositeNotification mNotification;
-};
 
 
 

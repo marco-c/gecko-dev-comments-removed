@@ -16,6 +16,7 @@
 #include "mozilla/gfx/Rect.h"           
 #include "mozilla/gfx/Types.h"          
 #include "mozilla/layers/CompositorTypes.h"  
+#include "mozilla/layers/ImageComposite.h"  
 #include "mozilla/layers/LayersSurfaces.h"  
 #include "mozilla/layers/LayersTypes.h"  
 #include "mozilla/layers/TextureHost.h"  
@@ -30,12 +31,12 @@ namespace layers {
 
 class Compositor;
 struct EffectChain;
-class ImageContainerParent;
 
 
 
 
-class ImageHost : public CompositableHost
+class ImageHost : public CompositableHost,
+                  public ImageComposite
 {
 public:
   explicit ImageHost(const TextureInfo& aTextureInfo);
@@ -86,42 +87,11 @@ public:
 
   virtual void CleanupResources() override;
 
-  virtual void BindTextureSource() override;
-
-  int32_t GetFrameID()
-  {
-    const TimedImage* img = ChooseImage();
-    return img ? img->mFrameID : -1;
-  }
-
-  int32_t GetProducerID()
-  {
-    const TimedImage* img = ChooseImage();
-    return img ? img->mProducerID : -1;
-  }
-
-  int32_t GetLastFrameID() const { return mLastFrameID; }
-  int32_t GetLastProducerID() const { return mLastProducerID; }
-
-  enum Bias {
-    
-    BIAS_NONE,
-    
-    BIAS_NEGATIVE,
-    
-    BIAS_POSITIVE,
-  };
-
   bool IsOpaque();
 
 protected:
-  struct TimedImage {
-    CompositableTextureHostRef mTextureHost;
-    TimeStamp mTimeStamp;
-    gfx::IntRect mPictureRect;
-    int32_t mFrameID;
-    int32_t mProducerID;
-  };
+  
+  virtual TimeStamp GetCompositionTime() const override;
 
   
   
@@ -132,24 +102,6 @@ protected:
   
   
   RefPtr<TextureSource> mExtraTextureSource;
-
-  
-
-
-
-
-
-  const TimedImage* ChooseImage() const;
-  TimedImage* ChooseImage();
-  int ChooseImageIndex() const;
-
-  nsTArray<TimedImage> mImages;
-  int32_t mLastFrameID;
-  int32_t mLastProducerID;
-  
-
-
-  Bias mBias;
 
   bool mLocked;
 };

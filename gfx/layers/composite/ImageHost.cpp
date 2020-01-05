@@ -16,8 +16,6 @@
 #include "nsPrintfCString.h"            
 #include "nsString.h"                   
 
-#define BIAS_TIME_MS 1.0
-
 namespace mozilla {
 
 using namespace gfx;
@@ -28,9 +26,7 @@ class ISurfaceAllocator;
 
 ImageHost::ImageHost(const TextureInfo& aTextureInfo)
   : CompositableHost(aTextureInfo)
-  , mLastFrameID(-1)
-  , mLastProducerID(-1)
-  , mBias(BIAS_NONE)
+  , ImageComposite()
   , mLocked(false)
 {}
 
@@ -152,97 +148,14 @@ ImageHost::RemoveTextureHost(TextureHost* aTexture)
   }
 }
 
-static TimeStamp
-GetBiasedTime(const TimeStamp& aInput, ImageHost::Bias aBias)
+TimeStamp
+ImageHost::GetCompositionTime() const
 {
-  switch (aBias) {
-  case ImageHost::BIAS_NEGATIVE:
-    return aInput - TimeDuration::FromMilliseconds(BIAS_TIME_MS);
-  case ImageHost::BIAS_POSITIVE:
-    return aInput + TimeDuration::FromMilliseconds(BIAS_TIME_MS);
-  default:
-    return aInput;
+  TimeStamp time;
+  if (GetCompositor()) {
+    time = GetCompositor()->GetCompositionTime();
   }
-}
-
-static ImageHost::Bias
-UpdateBias(const TimeStamp& aCompositionTime,
-           const TimeStamp& aCompositedImageTime,
-           const TimeStamp& aNextImageTime, 
-           ImageHost::Bias aBias)
-{
-  if (aCompositedImageTime.IsNull()) {
-    return ImageHost::BIAS_NONE;
-  }
-  TimeDuration threshold = TimeDuration::FromMilliseconds(1.0);
-  if (aCompositionTime - aCompositedImageTime < threshold &&
-      aCompositionTime - aCompositedImageTime > -threshold) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return ImageHost::BIAS_NEGATIVE;
-  }
-  if (!aNextImageTime.IsNull() &&
-      aNextImageTime - aCompositionTime < threshold &&
-      aNextImageTime - aCompositionTime > -threshold) {
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    return ImageHost::BIAS_POSITIVE;
-  }
-  return ImageHost::BIAS_NONE;
-}
-
-int ImageHost::ChooseImageIndex() const
-{
-  if (!GetCompositor() || mImages.IsEmpty()) {
-    return -1;
-  }
-  TimeStamp now = GetCompositor()->GetCompositionTime();
-
-  if (now.IsNull()) {
-    
-    
-    for (uint32_t i = 0; i < mImages.Length(); ++i) {
-      if (mImages[i].mFrameID == mLastFrameID &&
-          mImages[i].mProducerID == mLastProducerID) {
-        return i;
-      }
-    }
-    return -1;
-  }
-
-  uint32_t result = 0;
-  while (result + 1 < mImages.Length() &&
-      GetBiasedTime(mImages[result + 1].mTimeStamp, mBias) <= now) {
-    ++result;
-  }
-  return result;
-}
-
-const ImageHost::TimedImage* ImageHost::ChooseImage() const
-{
-  int index = ChooseImageIndex();
-  return index >= 0 ? &mImages[index] : nullptr;
-}
-
-ImageHost::TimedImage* ImageHost::ChooseImage()
-{
-  int index = ChooseImageIndex();
-  return index >= 0 ? &mImages[index] : nullptr;
+  return time;
 }
 
 TextureHost*
@@ -421,31 +334,6 @@ ImageHost::Composite(LayerComposite* aLayer,
   
   
   
-  mBias = UpdateBias(
-      GetCompositor()->GetCompositionTime(), mImages[imageIndex].mTimeStamp,
-      uint32_t(imageIndex + 1) < mImages.Length() ?
-          mImages[imageIndex + 1].mTimeStamp : TimeStamp(),
-      mBias);
-}
-
-void
-ImageHost::BindTextureSource()
-{
-  int imageIndex = ChooseImageIndex();
-  if (imageIndex < 0) {
-    return;
-  }
-
-  if (uint32_t(imageIndex) + 1 < mImages.Length()) {
-    GetCompositor()->CompositeUntil(mImages[imageIndex + 1].mTimeStamp + TimeDuration::FromMilliseconds(BIAS_TIME_MS));
-  }
-
-  TimedImage* img = &mImages[imageIndex];
-  img->mTextureHost->SetCompositor(GetCompositor());
-  SetCurrentTextureHost(img->mTextureHost);
-
-  
-
   mBias = UpdateBias(
       GetCompositor()->GetCompositionTime(), mImages[imageIndex].mTimeStamp,
       uint32_t(imageIndex + 1) < mImages.Length() ?
