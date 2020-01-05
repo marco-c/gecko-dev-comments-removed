@@ -40,7 +40,6 @@ public:
   using nsINode::QuerySelectorAll;
   
   using nsINode::GetElementById;
-  using nsINode::AppendChild;
 
   
   NS_DECL_ISUPPORTS_INHERITED
