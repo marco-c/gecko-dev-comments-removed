@@ -226,7 +226,6 @@ impl CollectionFilter for AppletsFilter {
     }
 }
 
-
 impl Document {
     #[inline]
     pub fn loader(&self) -> Ref<DocumentLoader> {
@@ -269,16 +268,16 @@ impl Document {
     }
 
     
-    pub fn url(&self) -> Url {
-        self.url.clone()
+    pub fn url<'a>(&'a self) -> &'a Url {
+        &self.url
     }
 
     
-    pub fn fallback_base_url(&self) -> Url {
+    pub fn fallback_base_url<'a>(&'a self) -> Url {
         
         
         
-        self.url()
+        self.url().clone()
     }
 
     
@@ -1735,7 +1734,7 @@ impl DocumentMethods for Document {
         }
         let window = self.window.root();
         let (tx, rx) = ipc::channel().unwrap();
-        let _ = window.r().resource_task().send(GetCookiesForUrl(url, tx, NonHTTP));
+        let _ = window.r().resource_task().send(GetCookiesForUrl((*url).clone(), tx, NonHTTP));
         let cookies = rx.recv().unwrap();
         Ok(cookies.unwrap_or("".to_owned()))
     }
@@ -1744,11 +1743,11 @@ impl DocumentMethods for Document {
     fn SetCookie(&self, cookie: DOMString) -> ErrorResult {
         //TODO: ignore for cookie-averse Document
         let url = self.url();
-        if !is_scheme_host_port_tuple(&url) {
+        if !is_scheme_host_port_tuple(url) {
             return Err(Security);
         }
         let window = self.window.root();
-        let _ = window.r().resource_task().send(SetCookiesForUrl(url, cookie, NonHTTP));
+        let _ = window.r().resource_task().send(SetCookiesForUrl((*url).clone(), cookie, NonHTTP));
         Ok(())
     }
 
