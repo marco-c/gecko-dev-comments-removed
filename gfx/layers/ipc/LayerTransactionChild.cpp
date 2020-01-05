@@ -7,8 +7,6 @@
 
 #include "LayerTransactionChild.h"
 #include "mozilla/gfx/Logging.h"
-#include "mozilla/layers/CompositableChild.h"
-#include "mozilla/layers/PCompositableChild.h"  
 #include "mozilla/layers/ShadowLayers.h"  
 #include "mozilla/mozalloc.h"           
 #include "nsDebug.h"                    

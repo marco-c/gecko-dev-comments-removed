@@ -24,7 +24,6 @@
 #include "mozilla/layers/LayerManagerComposite.h"
 #include "mozilla/layers/LayersMessages.h"  
 #include "mozilla/layers/LayersTypes.h"  
-#include "mozilla/layers/PCompositableParent.h"
 #include "mozilla/layers/TextureHostOGL.h"  
 #include "mozilla/layers/PaintedLayerComposite.h"
 #include "mozilla/mozalloc.h"           
