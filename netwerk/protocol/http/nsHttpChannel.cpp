@@ -4898,6 +4898,9 @@ nsHttpChannel::InitCacheEntry()
 
     if (recreate) {
         LOG(("  we have a ready entry, but reading it again from the server -> recreating cache entry\n"));
+        
+        mAvailableCachedAltDataType.Truncate();
+
         nsCOMPtr<nsICacheEntry> currentEntry;
         currentEntry.swap(mCacheEntry);
         rv = currentEntry->Recreate(dontPersist, getter_AddRefs(mCacheEntry));
