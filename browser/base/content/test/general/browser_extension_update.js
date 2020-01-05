@@ -3,6 +3,21 @@ const {AddonManagerPrivate} = Cu.import("resource://gre/modules/AddonManager.jsm
 const URL_BASE = "https://example.com/browser/browser/base/content/test/general";
 const ID = "update@tests.mozilla.org";
 
+function promiseInstallAddon(url) {
+  return AddonManager.getInstallForURL(url, null, "application/x-xpinstall")
+                     .then(install => {
+                       ok(install, "Created install");
+                       return new Promise(resolve => {
+                         install.addListener({
+                           onInstallEnded(_install, addon) {
+                             resolve(addon);
+                           },
+                         });
+                         install.install();
+                       });
+                     });
+}
+
 function promiseViewLoaded(tab, viewid) {
   let win = tab.linkedBrowser.contentWindow;
   if (win.gViewController && !win.gViewController.isLoading &&
@@ -44,42 +59,22 @@ function getBadgeStatus() {
   return menuButton.getAttribute("badge-status");
 }
 
-function promiseUpdateDownloaded(addon) {
+function promiseInstallEvent(addon, event) {
   return new Promise(resolve => {
-    let listener = {
-      onDownloadEnded(install) {
-        if (install.addon.id == addon.id) {
-          AddonManager.removeInstallListener(listener);
-          resolve();
-        }
-      },
+    let listener = {};
+    listener[event] = (install, ...args) => {
+      if (install.addon.id == addon.id) {
+        AddonManager.removeInstallListener(listener);
+        resolve(...args);
+      }
     };
     AddonManager.addInstallListener(listener);
   });
 }
 
-function promiseUpgrade(addon) {
-  return new Promise(resolve => {
-    let listener = {
-      onInstallEnded(install, newAddon) {
-        if (newAddon.id == addon.id) {
-          AddonManager.removeInstallListener(listener);
-          resolve(newAddon);
-        }
-      },
-    };
-    AddonManager.addInstallListener(listener);
-  });
-}
 
-add_task(function* () {
-  yield SpecialPowers.pushPrefEnv({set: [
-    
-    ["extensions.update.enabled", true],
-
-    
-    ["extensions.update.background.url", `${URL_BASE}/browser_webext_update.json`],
-
+add_task(function setup() {
+  return SpecialPowers.pushPrefEnv({set: [
     
     ["extensions.install.requireBuiltInCerts", false],
     ["extensions.update.requireBuiltInCerts", false],
@@ -87,27 +82,27 @@ add_task(function* () {
     
     ["extensions.webextPermissionPrompts", true],
   ]});
+});
+
+add_task(function* test_background_update() {
+  yield SpecialPowers.pushPrefEnv({set: [
+    
+    ["extensions.update.enabled", true],
+
+    
+    ["extensions.update.background.url", `${URL_BASE}/browser_webext_update.json`],
+  ]});
 
   
-  let url1 = `${URL_BASE}/browser_webext_update1.xpi`;
-  let install = yield AddonManager.getInstallForURL(url1, null, "application/x-xpinstall");
-  ok(install, "Created install");
-
-  let addon = yield new Promise(resolve => {
-    install.addListener({
-      onInstallEnded(_install, _addon) {
-        resolve(_addon);
-      },
-    });
-    install.install();
-  });
+  let addon = yield promiseInstallAddon(`${URL_BASE}/browser_webext_update1.xpi`);
 
   ok(addon, "Addon was installed");
   is(getBadgeStatus(), "", "Should not start out with an addon alert badge");
 
   
   
-  let updatePromise = promiseUpdateDownloaded(addon);
+  let updatePromise = promiseInstallEvent(addon, "onDownloadEnded");
+
   AddonManagerPrivate.backgroundUpdateCheck();
   yield updatePromise;
 
@@ -152,7 +147,7 @@ add_task(function* () {
   yield PanelUI.hide();
 
   
-  updatePromise = promiseUpdateDownloaded(addon);
+  updatePromise = promiseInstallEvent(addon, "onDownloadEnded");
   yield AddonManagerPrivate.backgroundUpdateCheck();
   yield updatePromise;
 
@@ -179,7 +174,7 @@ add_task(function* () {
   is(win.gViewController.currentViewId, VIEW, "about:addons is at extensions list");
 
   
-  updatePromise = promiseUpgrade(addon);
+  updatePromise = promiseInstallEvent(addon, "onInstallEnded");
   panel = yield popupPromise;
   panel.button.click();
 
@@ -189,4 +184,119 @@ add_task(function* () {
   yield BrowserTestUtils.removeTab(tab);
 
   is(getBadgeStatus(), "", "Addon alert badge should be gone");
+
+  addon.uninstall();
+  yield SpecialPowers.popPrefEnv();
 });
+
+
+
+
+
+function* interactiveUpdateTest(autoUpdate, checkFn) {
+  yield SpecialPowers.pushPrefEnv({set: [
+    ["extensions.update.autoUpdateDefault", autoUpdate],
+
+    
+    ["extensions.update.url", `${URL_BASE}/browser_webext_update.json`],
+  ]});
+
+  
+  
+  function* triggerUpdate(win, addon) {
+    let manualUpdatePromise;
+    if (!autoUpdate) {
+      manualUpdatePromise = new Promise(resolve => {
+        let listener = {
+          onNewInstall() {
+            AddonManager.removeInstallListener(listener);
+            resolve();
+          },
+        };
+        AddonManager.addInstallListener(listener);
+      });
+    }
+
+    checkFn(win, addon);
+
+    if (manualUpdatePromise) {
+      yield manualUpdatePromise;
+
+      let item = win.document.getElementById("addon-list")
+                    .children.find(_item => _item.value == ID);
+      EventUtils.synthesizeMouseAtCenter(item._updateBtn, {}, win);
+    }
+  }
+
+  
+  let addon = yield promiseInstallAddon(`${URL_BASE}/browser_webext_update1.xpi`);
+  ok(addon, "Addon was installed");
+  is(addon.version, "1.0", "Version 1 of the addon is installed");
+
+  
+  let loadPromise = new Promise(resolve => {
+    let listener = (subject, topic) => {
+      if (subject.location.href == "about:addons") {
+        Services.obs.removeObserver(listener, topic);
+        resolve(subject);
+      }
+    };
+    Services.obs.addObserver(listener, "EM-loaded", false);
+  });
+  let tab = gBrowser.addTab("about:addons");
+  gBrowser.selectedTab = tab;
+  let win = yield loadPromise;
+
+  const VIEW = "addons://list/extension";
+  let viewPromise = promiseViewLoaded(tab, VIEW);
+  win.loadView(VIEW);
+  yield viewPromise;
+
+  
+  let popupPromise = promisePopupNotificationShown("addon-webext-permissions");
+  yield triggerUpdate(win, addon);
+  let panel = yield popupPromise;
+
+  
+  let cancelPromise = promiseInstallEvent(addon, "onInstallCancelled");
+  panel.secondaryButton.click();
+  yield cancelPromise;
+
+  addon = yield AddonManager.getAddonByID(ID);
+  is(addon.version, "1.0", "Should still be running the old version");
+
+  
+  popupPromise = promisePopupNotificationShown("addon-webext-permissions");
+  yield triggerUpdate(win, addon);
+
+  
+  let updatePromise = promiseInstallEvent(addon, "onInstallEnded");
+  panel = yield popupPromise;
+  panel.button.click();
+
+  addon = yield updatePromise;
+  is(addon.version, "2.0", "Should have upgraded");
+
+  yield BrowserTestUtils.removeTab(tab);
+  addon.uninstall();
+  yield SpecialPowers.popPrefEnv();
+}
+
+
+function checkAll(win) {
+  win.gViewController.doCommand("cmd_findAllUpdates");
+}
+
+
+add_task(() => interactiveUpdateTest(true, checkAll));
+add_task(() => interactiveUpdateTest(false, checkAll));
+
+
+
+function checkOne(win, addon) {
+  win.gViewController.doCommand("cmd_findItemUpdates", addon);
+}
+
+
+add_task(() => interactiveUpdateTest(true, checkOne));
+add_task(() => interactiveUpdateTest(false, checkOne));
