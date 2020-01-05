@@ -3,19 +3,13 @@
 
 
 use construct::ConstructionResult;
-use script_layout_interface::restyle_damage::RestyleDamage;
-use style::data::PersistentStyleData;
+use script_layout_interface::PartialPersistentLayoutData;
 
 
 pub struct PersistentLayoutData {
     
     
-    
-    
-    pub style_data: PersistentStyleData,
-
-    
-    pub restyle_damage: RestyleDamage,
+    pub base: PartialPersistentLayoutData,
 
     
     
@@ -38,8 +32,7 @@ impl PersistentLayoutData {
     
     pub fn new() -> PersistentLayoutData {
         PersistentLayoutData {
-            style_data: PersistentStyleData::new(),
-            restyle_damage: RestyleDamage::empty(),
+            base: PartialPersistentLayoutData::new(),
             flow_construction_result: ConstructionResult::None,
             before_flow_construction_result: ConstructionResult::None,
             after_flow_construction_result: ConstructionResult::None,

@@ -94,7 +94,6 @@ pub struct GeckoNode<'ln>(pub &'ln RawGeckoNode);
 
 impl<'ln> GeckoNode<'ln> {
     fn from_content(content: &'ln nsIContent) -> Self {
-        use std::mem;
         GeckoNode(&content._base)
     }
 
@@ -300,6 +299,14 @@ impl<'ln> TNode for GeckoNode<'ln> {
     unsafe fn set_can_be_fragmented(&self, _value: bool) {
         
         
+    }
+
+    fn store_children_to_process(&self, _: isize) {
+        
+    }
+
+    fn did_process_child(&self) -> isize {
+        panic!("Atomic child count not implemented in Gecko");
     }
 
     #[inline(always)]

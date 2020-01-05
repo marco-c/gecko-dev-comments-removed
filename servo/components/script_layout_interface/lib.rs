@@ -52,12 +52,32 @@ use core::nonzero::NonZero;
 use ipc_channel::ipc::IpcSender;
 use libc::c_void;
 use restyle_damage::RestyleDamage;
+use std::sync::atomic::AtomicIsize;
 use style::atomic_refcell::AtomicRefCell;
 use style::data::PersistentStyleData;
 
 pub struct PartialPersistentLayoutData {
+    
+    
+    
+    
     pub style_data: PersistentStyleData,
+
+    
     pub restyle_damage: RestyleDamage,
+
+    
+    pub parallel: DomParallelInfo,
+}
+
+impl PartialPersistentLayoutData {
+    pub fn new() -> Self {
+        PartialPersistentLayoutData {
+            style_data: PersistentStyleData::new(),
+            restyle_damage: RestyleDamage::empty(),
+            parallel: DomParallelInfo::new(),
+        }
+    }
 }
 
 #[derive(Copy, Clone, HeapSizeOf)]
@@ -69,6 +89,22 @@ pub struct OpaqueStyleAndLayoutData {
 
 #[allow(unsafe_code)]
 unsafe impl Send for OpaqueStyleAndLayoutData {}
+
+
+#[derive(HeapSizeOf)]
+pub struct DomParallelInfo {
+    
+    pub children_to_process: AtomicIsize,
+}
+
+impl DomParallelInfo {
+    pub fn new() -> DomParallelInfo {
+        DomParallelInfo {
+            children_to_process: AtomicIsize::new(0),
+        }
+    }
+}
+
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
 pub enum LayoutNodeType {

@@ -107,10 +107,7 @@ fn top_down_dom<N, C>(unsafe_nodes: UnsafeNodeList,
         
         
         if context.needs_postorder_traversal() {
-            node.mutate_data().unwrap()
-                .parallel.children_to_process
-                         .store(children_to_process,
-                                Ordering::Relaxed);
+            node.store_children_to_process(children_to_process);
 
             
             if children_to_process == 0 {
@@ -161,12 +158,8 @@ fn bottom_up_dom<N, C>(root: OpaqueNode,
             Some(parent) => parent,
         };
 
-        let parent_data = parent.borrow_data().unwrap();
-
-        if parent_data
-            .parallel
-            .children_to_process
-            .fetch_sub(1, Ordering::Relaxed) != 1 {
+        let remaining = parent.did_process_child();
+        if remaining != 0 {
             
             break
         }

@@ -140,6 +140,14 @@ pub trait TNode : Sized + Copy + Clone + NodeInfo {
     unsafe fn set_can_be_fragmented(&self, value: bool);
 
     
+    
+    fn store_children_to_process(&self, n: isize);
+
+    
+    
+    fn did_process_child(&self) -> isize;
+
+    
     #[inline(always)]
     fn borrow_data(&self) -> Option<AtomicRef<PersistentStyleData>>;
 
