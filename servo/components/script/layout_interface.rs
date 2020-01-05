@@ -11,7 +11,7 @@ use dom::node::LayoutData;
 use geom::point::Point2D;
 use geom::rect::Rect;
 use msg::constellation_msg::{PipelineExitType, WindowSizeData};
-use profile::mem::{MemoryReporter, MemoryReportsChan};
+use profile::mem::{Reporter, ReportsChan};
 use script_traits::{ScriptControlChan, OpaqueScriptLayoutChannel, UntrustedNodeAddress};
 use std::any::Any;
 use std::sync::mpsc::{channel, Receiver, Sender};
@@ -47,7 +47,7 @@ pub enum Msg {
 
     
     
-    CollectMemoryReports(MemoryReportsChan),
+    CollectReports(ReportsChan),
 
     
     
@@ -133,11 +133,11 @@ impl LayoutChan {
     }
 }
 
-impl MemoryReporter for LayoutChan {
+impl Reporter for LayoutChan {
     
-    fn collect_reports(&self, reports_chan: MemoryReportsChan) -> bool {
+    fn collect_reports(&self, reports_chan: ReportsChan) -> bool {
         let LayoutChan(ref c) = *self;
-        c.send(Msg::CollectMemoryReports(reports_chan)).is_ok()
+        c.send(Msg::CollectReports(reports_chan)).is_ok()
     }
 }
 

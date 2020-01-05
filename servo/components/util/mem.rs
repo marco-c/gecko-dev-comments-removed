@@ -38,11 +38,11 @@ pub fn heap_size_of(ptr: *const c_void) -> usize {
 
 
 
-pub trait SizeOf {
+pub trait HeapSizeOf {
     
     
     
-    fn size_of_excluding_self(&self) -> usize;
+    fn heap_size_of_children(&self) -> usize;
 }
 
 
@@ -60,38 +60,38 @@ pub trait SizeOf {
 
 
 
-impl<T: SizeOf> SizeOf for Box<T> {
-    fn size_of_excluding_self(&self) -> usize {
+impl<T: HeapSizeOf> HeapSizeOf for Box<T> {
+    fn heap_size_of_children(&self) -> usize {
         
-        heap_size_of(&**self as *const T as *const c_void) + (**self).size_of_excluding_self()
+        heap_size_of(&**self as *const T as *const c_void) + (**self).heap_size_of_children()
     }
 }
 
-impl SizeOf for String {
-    fn size_of_excluding_self(&self) -> usize {
+impl HeapSizeOf for String {
+    fn heap_size_of_children(&self) -> usize {
         heap_size_of(self.as_ptr() as *const c_void)
     }
 }
 
-impl<T: SizeOf> SizeOf for Option<T> {
-    fn size_of_excluding_self(&self) -> usize {
+impl<T: HeapSizeOf> HeapSizeOf for Option<T> {
+    fn heap_size_of_children(&self) -> usize {
         match *self {
             None => 0,
-            Some(ref x) => x.size_of_excluding_self()
+            Some(ref x) => x.heap_size_of_children()
         }
     }
 }
 
-impl<T: SizeOf> SizeOf for Arc<T> {
-    fn size_of_excluding_self(&self) -> usize {
-        (**self).size_of_excluding_self()
+impl<T: HeapSizeOf> HeapSizeOf for Arc<T> {
+    fn heap_size_of_children(&self) -> usize {
+        (**self).heap_size_of_children()
     }
 }
 
-impl<T: SizeOf> SizeOf for Vec<T> {
-    fn size_of_excluding_self(&self) -> usize {
+impl<T: HeapSizeOf> HeapSizeOf for Vec<T> {
+    fn heap_size_of_children(&self) -> usize {
         heap_size_of(self.as_ptr() as *const c_void) +
-            self.iter().fold(0, |n, elem| n + elem.size_of_excluding_self())
+            self.iter().fold(0, |n, elem| n + elem.heap_size_of_children())
     }
 }
 
@@ -99,10 +99,10 @@ impl<T: SizeOf> SizeOf for Vec<T> {
 
 
 
-impl<T: SizeOf> SizeOf for LinkedList<T> {
-    fn size_of_excluding_self(&self) -> usize {
+impl<T: HeapSizeOf> HeapSizeOf for LinkedList<T> {
+    fn heap_size_of_children(&self) -> usize {
         let list2: &LinkedList2<T> = unsafe { transmute(self) };
-        list2.size_of_excluding_self()
+        list2.heap_size_of_children()
     }
 }
 
@@ -124,21 +124,21 @@ struct Node<T> {
     value: T,
 }
 
-impl<T: SizeOf> SizeOf for Node<T> {
+impl<T: HeapSizeOf> HeapSizeOf for Node<T> {
     
     
     
-    fn size_of_excluding_self(&self) -> usize {
-        self.value.size_of_excluding_self()
+    fn heap_size_of_children(&self) -> usize {
+        self.value.heap_size_of_children()
     }
 }
 
-impl<T: SizeOf> SizeOf for LinkedList2<T> {
-    fn size_of_excluding_self(&self) -> usize {
+impl<T: HeapSizeOf> HeapSizeOf for LinkedList2<T> {
+    fn heap_size_of_children(&self) -> usize {
         let mut size = 0;
         let mut curr: &Link<T> = &self.list_head;
         while curr.is_some() {
-            size += (*curr).size_of_excluding_self();
+            size += (*curr).heap_size_of_children();
             curr = &curr.as_ref().unwrap().next;
         }
         size
