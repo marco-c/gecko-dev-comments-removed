@@ -151,6 +151,8 @@ NS_IMPL_ISUPPORTS(TabChildSHistoryListener,
                   nsIPartialSHistoryListener,
                   nsISupportsWeakReference)
 
+static const CSSSize kDefaultViewportSize(980, 480);
+
 static const char BEFORE_FIRST_PAINT[] = "before-first-paint";
 
 typedef nsDataHashtable<nsUint64HashKey, TabChild*> TabChildMap;
@@ -381,6 +383,7 @@ TabChild::TabChild(nsIContentChild* aManager,
   , mDidSetRealShowInfo(false)
   , mDidLoadURLInit(false)
   , mIsFreshProcess(false)
+  , mSkipKeyPress(false)
   , mLayerObserverEpoch(0)
 #if defined(XP_WIN) && defined(ACCESSIBILITY)
   , mNativeWindowHandle(0)
@@ -1776,10 +1779,52 @@ TabChild::RecvNativeSynthesisResponse(const uint64_t& aObserverId,
   return IPC_OK();
 }
 
+
+bool
+TabChild::SkipRepeatedKeyEvent(const WidgetKeyboardEvent& aEvent)
+{
+  if (mRepeatedKeyEventTime.IsNull() ||
+      !aEvent.mIsRepeat ||
+      (aEvent.mMessage != eKeyDown && aEvent.mMessage != eKeyPress)) {
+    mRepeatedKeyEventTime = TimeStamp();
+    mSkipKeyPress = false;
+    return false;
+  }
+
+  if ((aEvent.mMessage == eKeyDown &&
+       (mRepeatedKeyEventTime > aEvent.mTimeStamp)) ||
+      (mSkipKeyPress && (aEvent.mMessage == eKeyPress))) {
+    
+    
+    mSkipKeyPress |= aEvent.mMessage == eKeyDown;
+    return true;
+  }
+
+  if (aEvent.mMessage == eKeyDown) {
+    
+    mRepeatedKeyEventTime = TimeStamp();
+    mSkipKeyPress = false;
+  }
+  return false;
+}
+
+void
+TabChild::UpdateRepeatedKeyEventEndTime(const WidgetKeyboardEvent& aEvent)
+{
+  if (aEvent.mIsRepeat &&
+      (aEvent.mMessage == eKeyDown || aEvent.mMessage == eKeyPress)) {
+    mRepeatedKeyEventTime = TimeStamp::Now();
+  }
+}
+
 mozilla::ipc::IPCResult
 TabChild::RecvRealKeyEvent(const WidgetKeyboardEvent& event,
                            const MaybeNativeKeyBinding& aBindings)
 {
+  if (SkipRepeatedKeyEvent(event)) {
+    return IPC_OK();
+  }
+
   AutoCacheNativeKeyCommands autoCache(mPuppetWidget);
 
   if (event.mMessage == eKeyPress) {
@@ -1801,6 +1846,10 @@ TabChild::RecvRealKeyEvent(const WidgetKeyboardEvent& event,
   WidgetKeyboardEvent localEvent(event);
   localEvent.mWidget = mPuppetWidget;
   nsEventStatus status = APZCCallbackHelper::DispatchWidgetEvent(localEvent);
+
+  
+  
+  UpdateRepeatedKeyEventEndTime(localEvent);
 
   if (event.mMessage == eKeyDown) {
     mIgnoreKeyPressEvent = status == nsEventStatus_eConsumeNoDefault;

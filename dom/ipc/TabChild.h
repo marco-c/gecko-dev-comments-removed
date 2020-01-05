@@ -747,6 +747,10 @@ private:
     mUnscaledInnerSize = aSize;
   }
 
+  bool SkipRepeatedKeyEvent(const WidgetKeyboardEvent& aEvent);
+
+  void UpdateRepeatedKeyEventEndTime(const WidgetKeyboardEvent& aEvent);
+
   class DelayedDeleteRunnable;
 
   TextureFactoryIdentifier mTextureFactoryIdentifier;
@@ -794,6 +798,13 @@ private:
   bool mDidSetRealShowInfo;
   bool mDidLoadURLInit;
   bool mIsFreshProcess;
+
+  bool mSkipKeyPress;
+
+  
+  
+  
+  mozilla::TimeStamp mRepeatedKeyEventTime;
 
   AutoTArray<bool, NUMBER_OF_AUDIO_CHANNELS> mAudioChannelsActive;
 
