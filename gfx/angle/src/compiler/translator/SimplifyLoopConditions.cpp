@@ -40,6 +40,7 @@ class SimplifyLoopConditionsTraverser : public TLValueTrackingTraverser
     bool visitBinary(Visit visit, TIntermBinary *node) override;
     bool visitAggregate(Visit visit, TIntermAggregate *node) override;
     bool visitTernary(Visit visit, TIntermTernary *node) override;
+    bool visitDeclaration(Visit visit, TIntermDeclaration *node) override;
 
     void nextIteration();
     bool foundLoopToChange() const { return mFoundLoopToChange; }
@@ -48,7 +49,7 @@ class SimplifyLoopConditionsTraverser : public TLValueTrackingTraverser
     
     
     bool mFoundLoopToChange;
-    bool mInsideLoopConditionOrExpression;
+    bool mInsideLoopInitConditionOrExpression;
     IntermNodePatternMatcher mConditionsToSimplify;
 };
 
@@ -58,7 +59,7 @@ SimplifyLoopConditionsTraverser::SimplifyLoopConditionsTraverser(
     int shaderVersion)
     : TLValueTrackingTraverser(true, false, false, symbolTable, shaderVersion),
       mFoundLoopToChange(false),
-      mInsideLoopConditionOrExpression(false),
+      mInsideLoopInitConditionOrExpression(false),
       mConditionsToSimplify(conditionsToSimplifyMask)
 {
 }
@@ -66,24 +67,25 @@ SimplifyLoopConditionsTraverser::SimplifyLoopConditionsTraverser(
 void SimplifyLoopConditionsTraverser::nextIteration()
 {
     mFoundLoopToChange               = false;
-    mInsideLoopConditionOrExpression = false;
+    mInsideLoopInitConditionOrExpression = false;
     nextTemporaryIndex();
 }
 
+
+
+
+
+
+
+
+
 bool SimplifyLoopConditionsTraverser::visitBinary(Visit visit, TIntermBinary *node)
 {
-    
-    
-    
-    
-    
-    
-    
 
     if (mFoundLoopToChange)
         return false;
 
-    if (!mInsideLoopConditionOrExpression)
+    if (!mInsideLoopInitConditionOrExpression)
         return false;
 
     mFoundLoopToChange = mConditionsToSimplify.match(node, getParentNode(), isLValueRequiredHere());
@@ -95,8 +97,7 @@ bool SimplifyLoopConditionsTraverser::visitAggregate(Visit visit, TIntermAggrega
     if (mFoundLoopToChange)
         return false;
 
-    
-    if (!mInsideLoopConditionOrExpression)
+    if (!mInsideLoopInitConditionOrExpression)
         return false;
 
     mFoundLoopToChange = mConditionsToSimplify.match(node, getParentNode());
@@ -108,8 +109,19 @@ bool SimplifyLoopConditionsTraverser::visitTernary(Visit visit, TIntermTernary *
     if (mFoundLoopToChange)
         return false;
 
-    
-    if (!mInsideLoopConditionOrExpression)
+    if (!mInsideLoopInitConditionOrExpression)
+        return false;
+
+    mFoundLoopToChange = mConditionsToSimplify.match(node);
+    return !mFoundLoopToChange;
+}
+
+bool SimplifyLoopConditionsTraverser::visitDeclaration(Visit visit, TIntermDeclaration *node)
+{
+    if (mFoundLoopToChange)
+        return false;
+
+    if (!mInsideLoopInitConditionOrExpression)
         return false;
 
     mFoundLoopToChange = mConditionsToSimplify.match(node);
@@ -127,136 +139,122 @@ void SimplifyLoopConditionsTraverser::traverseLoop(TIntermLoop *node)
 
     
 
-    mInsideLoopConditionOrExpression = true;
-    TLoopType loopType               = node->getType();
+    mInsideLoopInitConditionOrExpression = true;
+    TLoopType loopType                   = node->getType();
 
-    if (node->getCondition())
+    if (!mFoundLoopToChange && node->getInit())
+    {
+        node->getInit()->traverse(this);
+    }
+
+    if (!mFoundLoopToChange && node->getCondition())
     {
         node->getCondition()->traverse(this);
-
-        if (mFoundLoopToChange)
-        {
-            
-            if (loopType == ELoopWhile)
-            {
-                
-                
-                
-                
-                
-                TIntermSequence tempInitSeq;
-                tempInitSeq.push_back(createTempInitDeclaration(node->getCondition()->deepCopy()));
-                insertStatementsInParentBlock(tempInitSeq);
-
-                TIntermBlock *newBody = new TIntermBlock();
-                if (node->getBody())
-                {
-                    newBody->getSequence()->push_back(node->getBody());
-                }
-                newBody->getSequence()->push_back(
-                    createTempAssignment(node->getCondition()->deepCopy()));
-
-                
-                
-                
-                node->setBody(newBody);
-                node->setCondition(createTempSymbol(node->getCondition()->getType()));
-            }
-            else if (loopType == ELoopDoWhile)
-            {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                TIntermSequence tempInitSeq;
-                tempInitSeq.push_back(createTempInitDeclaration(CreateBoolConstantNode(true)));
-                insertStatementsInParentBlock(tempInitSeq);
-
-                TIntermBlock *newBody = new TIntermBlock();
-                if (node->getBody())
-                {
-                    newBody->getSequence()->push_back(node->getBody());
-                }
-                newBody->getSequence()->push_back(
-                    createTempAssignment(node->getCondition()->deepCopy()));
-
-                
-                
-                
-                node->setBody(newBody);
-                node->setCondition(createTempSymbol(node->getCondition()->getType()));
-            }
-            else if (loopType == ELoopFor)
-            {
-                
-                
-                
-                
-                
-                
-                
-                
-                
-                TIntermBlock *loopScope = new TIntermBlock();
-                if (node->getInit())
-                {
-                    loopScope->getSequence()->push_back(node->getInit());
-                }
-                loopScope->getSequence()->push_back(
-                    createTempInitDeclaration(node->getCondition()->deepCopy()));
-
-                TIntermBlock *whileLoopBody = new TIntermBlock();
-                if (node->getBody())
-                {
-                    whileLoopBody->getSequence()->push_back(node->getBody());
-                }
-                if (node->getExpression())
-                {
-                    whileLoopBody->getSequence()->push_back(node->getExpression());
-                }
-                whileLoopBody->getSequence()->push_back(
-                    createTempAssignment(node->getCondition()->deepCopy()));
-                TIntermLoop *whileLoop = new TIntermLoop(
-                    ELoopWhile, nullptr, createTempSymbol(node->getCondition()->getType()), nullptr,
-                    whileLoopBody);
-                loopScope->getSequence()->push_back(whileLoop);
-                queueReplacementWithParent(getAncestorNode(1), node, loopScope,
-                                           OriginalNode::IS_DROPPED);
-            }
-        }
     }
 
     if (!mFoundLoopToChange && node->getExpression())
     {
         node->getExpression()->traverse(this);
+    }
 
-        if (mFoundLoopToChange)
+    if (mFoundLoopToChange)
+    {
+        
+        if (loopType == ELoopWhile)
         {
-            ASSERT(loopType == ELoopFor);
             
             
             
             
             
-            TIntermTyped *loopExpression = node->getExpression();
-            node->setExpression(nullptr);
-            TIntermBlock *oldBody = node->getBody();
-            node->setBody(new TIntermBlock());
-            if (oldBody != nullptr)
+            TIntermSequence tempInitSeq;
+            tempInitSeq.push_back(createTempInitDeclaration(node->getCondition()->deepCopy()));
+            insertStatementsInParentBlock(tempInitSeq);
+
+            TIntermBlock *newBody = new TIntermBlock();
+            if (node->getBody())
             {
-                node->getBody()->getSequence()->push_back(oldBody);
+                newBody->getSequence()->push_back(node->getBody());
             }
-            node->getBody()->getSequence()->push_back(loopExpression);
+            newBody->getSequence()->push_back(
+                createTempAssignment(node->getCondition()->deepCopy()));
+
+            
+            
+            
+            node->setBody(newBody);
+            node->setCondition(createTempSymbol(node->getCondition()->getType()));
+        }
+        else if (loopType == ELoopDoWhile)
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            TIntermSequence tempInitSeq;
+            tempInitSeq.push_back(createTempInitDeclaration(CreateBoolConstantNode(true)));
+            insertStatementsInParentBlock(tempInitSeq);
+
+            TIntermBlock *newBody = new TIntermBlock();
+            if (node->getBody())
+            {
+                newBody->getSequence()->push_back(node->getBody());
+            }
+            newBody->getSequence()->push_back(
+                createTempAssignment(node->getCondition()->deepCopy()));
+
+            
+            
+            
+            node->setBody(newBody);
+            node->setCondition(createTempSymbol(node->getCondition()->getType()));
+        }
+        else if (loopType == ELoopFor)
+        {
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            TIntermBlock *loopScope = new TIntermBlock();
+            if (node->getInit())
+            {
+                loopScope->getSequence()->push_back(node->getInit());
+            }
+            loopScope->getSequence()->push_back(
+                createTempInitDeclaration(node->getCondition()->deepCopy()));
+
+            TIntermBlock *whileLoopBody = new TIntermBlock();
+            if (node->getBody())
+            {
+                whileLoopBody->getSequence()->push_back(node->getBody());
+            }
+            if (node->getExpression())
+            {
+                whileLoopBody->getSequence()->push_back(node->getExpression());
+            }
+            whileLoopBody->getSequence()->push_back(
+                createTempAssignment(node->getCondition()->deepCopy()));
+            TIntermLoop *whileLoop = new TIntermLoop(
+                ELoopWhile, nullptr, createTempSymbol(node->getCondition()->getType()), nullptr,
+                whileLoopBody);
+            loopScope->getSequence()->push_back(whileLoop);
+            queueReplacementWithParent(getAncestorNode(1), node, loopScope,
+                                       OriginalNode::IS_DROPPED);
         }
     }
 
-    mInsideLoopConditionOrExpression = false;
+    mInsideLoopInitConditionOrExpression = false;
 
     if (!mFoundLoopToChange && node->getBody())
         node->getBody()->traverse(this);

@@ -119,6 +119,9 @@ class ProgramD3DMetadata final : angle::NonCopyable
     GLint getMajorShaderVersion() const;
     const ShaderD3D *getFragmentShader() const;
 
+    
+    void updatePackingBuiltins(ShaderType shaderType, VaryingPacking *packing);
+
   private:
     const int mRendererMajorShaderModel;
     const std::string mShaderModelSuffix;
@@ -248,6 +251,12 @@ class ProgramD3D : public ProgramImpl
     bool isSamplerMappingDirty() { return mDirtySamplerMapping; }
 
   private:
+    
+    class GetExecutableTask;
+    class GetVertexExecutableTask;
+    class GetPixelExecutableTask;
+    class GetGeometryExecutableTask;
+
     class VertexExecutable
     {
       public:

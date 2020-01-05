@@ -58,7 +58,9 @@ void TranslatorGLSL::translate(TIntermNode *root, ShCompileOptions compileOption
     
     
     
-    if ((compileOptions & SH_FLATTEN_PRAGMA_STDGL_INVARIANT_ALL) && getPragma().stdgl.invariantAll)
+    if ((compileOptions & SH_FLATTEN_PRAGMA_STDGL_INVARIANT_ALL) != 0 &&
+        getPragma().stdgl.invariantAll &&
+        !sh::RemoveInvariant(getShaderType(), getShaderVersion(), getOutputType(), compileOptions))
     {
         ASSERT(wereVariablesCollected());
 
@@ -251,13 +253,14 @@ void TranslatorGLSL::writeExtensionBehavior(TIntermNode *root)
     }
 
     
-    if (getShaderVersion() >= 300 && getOutputType() < SH_GLSL_330_CORE_OUTPUT)
+    if (getShaderVersion() >= 300 && getOutputType() < SH_GLSL_330_CORE_OUTPUT &&
+        getShaderType() != GL_COMPUTE_SHADER)
     {
         sink << "#extension GL_ARB_explicit_attrib_location : require\n";
     }
 
     
-    if (getOutputType() != SH_ESSL_OUTPUT && getOutputType() < SH_GLSL_400_CORE_OUTPUT  &&
+    if (getOutputType() != SH_ESSL_OUTPUT && getOutputType() < SH_GLSL_400_CORE_OUTPUT &&
         getShaderVersion() == 100)
     {
         

@@ -139,6 +139,10 @@ PlatformParameters ES3_OPENGLES(EGLint major, EGLint minor);
 PlatformParameters ES31_OPENGLES();
 PlatformParameters ES31_OPENGLES(EGLint major, EGLint minor);
 
+PlatformParameters ES2_NULL();
+PlatformParameters ES3_NULL();
+PlatformParameters ES31_NULL();
+
 } 
 
 #endif 

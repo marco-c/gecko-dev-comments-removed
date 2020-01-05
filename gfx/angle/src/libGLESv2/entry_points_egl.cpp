@@ -1536,7 +1536,7 @@ __eglMustCastToProperFunctionPointerType EGLAPIENTRY GetProcAddress(const char *
         INSERT_PROC_ADDRESS(gl, CompressedCopyTextureCHROMIUM);
 
         
-        INSERT_PROC_ADDRESS(gl, EnableExtensionANGLE);
+        INSERT_PROC_ADDRESS(gl, RequestExtensionANGLE);
 
         
         INSERT_PROC_ADDRESS(gl, GetBooleanvRobustANGLE);

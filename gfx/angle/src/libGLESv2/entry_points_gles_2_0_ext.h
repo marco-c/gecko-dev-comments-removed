@@ -263,7 +263,7 @@ ANGLE_EXPORT void GL_APIENTRY CopySubTextureCHROMIUM(GLuint sourceId,
 ANGLE_EXPORT void GL_APIENTRY CompressedCopyTextureCHROMIUM(GLuint sourceId, GLuint destId);
 
 
-GL_APICALL GLboolean GL_APIENTRY EnableExtensionANGLE(const GLchar *name);
+GL_APICALL void GL_APIENTRY RequestExtensionANGLE(const GLchar *name);
 
 
 ANGLE_EXPORT void GL_APIENTRY GetBooleanvRobustANGLE(GLenum pname,

@@ -15,10 +15,12 @@
 #include <vector>
 
 
-
+using ShCompileOptions = uint64_t;
 
 namespace sh
 {
+
+typedef unsigned int GLenum;
 
 
 enum InterpolationType

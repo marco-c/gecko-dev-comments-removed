@@ -595,6 +595,7 @@ void GenerateCaps(IDirect3D9 *d3d9,
     extensions->unpackSubimage         = true;
     extensions->packSubimage           = true;
     extensions->syncQuery              = extensions->fence;
+    extensions->copyTexture            = true;
 
     
     

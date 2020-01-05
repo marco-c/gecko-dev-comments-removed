@@ -16,15 +16,35 @@
 class PreprocessorTest : public testing::Test
 {
   protected:
-    PreprocessorTest() : mPreprocessor(&mDiagnostics, &mDirectiveHandler) { }
-
-    
-    
-    void preprocess(const char* input, const char* expected);
+    PreprocessorTest()
+        : mPreprocessor(&mDiagnostics, &mDirectiveHandler, pp::PreprocessorSettings())
+    {
+    }
 
     MockDiagnostics mDiagnostics;
     MockDirectiveHandler mDirectiveHandler;
     pp::Preprocessor mPreprocessor;
+};
+
+class SimplePreprocessorTest : public testing::Test
+{
+  protected:
+    
+    void preprocess(const char *input);
+    void preprocess(const char *input, const pp::PreprocessorSettings &settings);
+
+    
+    void preprocess(const char *input, const char *expected);
+
+    
+    void lexSingleToken(const char *input, pp::Token *token);
+    void lexSingleToken(size_t count, const char *const input[], pp::Token *token);
+
+    MockDiagnostics mDiagnostics;
+    MockDirectiveHandler mDirectiveHandler;
+
+  private:
+    void preprocess(const char *input, std::stringstream *output, pp::Preprocessor *preprocessor);
 };
 
 #endif  

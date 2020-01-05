@@ -39,15 +39,18 @@ void TranslatorHLSL::translate(TIntermNode *root, ShCompileOptions compileOption
 
     sh::AddDefaultReturnStatements(root);
 
-    SeparateDeclarations(root);
-
     
     
     SimplifyLoopConditions(root,
                            IntermNodePatternMatcher::kExpressionReturningArray |
                                IntermNodePatternMatcher::kUnfoldedShortCircuitExpression |
-                               IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue,
+                               IntermNodePatternMatcher::kDynamicIndexingOfVectorOrMatrixInLValue |
+                               IntermNodePatternMatcher::kMultiDeclaration,
                            getTemporaryIndex(), getSymbolTable(), getShaderVersion());
+
+    
+    
+    SeparateDeclarations(root);
 
     SplitSequenceOperator(root,
                           IntermNodePatternMatcher::kExpressionReturningArray |

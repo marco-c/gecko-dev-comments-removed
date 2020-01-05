@@ -364,6 +364,8 @@ bool ValidateCopyBufferSubData(ValidationContext *context,
                                GLintptr writeOffset,
                                GLsizeiptr size);
 
+bool ValidateGetStringi(Context *context, GLenum name, GLuint index);
+
 }  
 
 #endif 

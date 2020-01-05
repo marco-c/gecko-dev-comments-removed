@@ -10,7 +10,6 @@
 #include <set>
 
 #include "compiler/translator/IntermNode.h"
-#include "compiler/translator/LoopInfo.h"
 #include "compiler/translator/ParseContext.h"
 
 namespace sh
@@ -36,6 +35,7 @@ class TOutputGLSLBase : public TIntermTraverser
 
   protected:
     TInfoSinkBase &objSink() { return mObjSink; }
+    void writeFloat(TInfoSinkBase &out, float f);
     void writeTriplet(Visit visit, const char *preStr, const char *inStr, const char *postStr);
     void writeLayoutQualifier(const TType &type);
     void writeInvariantQualifier(const TType &type);
@@ -90,9 +90,6 @@ class TOutputGLSLBase : public TIntermTraverser
 
     
     std::set<int> mDeclaredStructs;
-
-    
-    TLoopStack mLoopUnrollStack;
 
     ShArrayIndexClampingStrategy mClampingStrategy;
 

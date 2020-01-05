@@ -86,7 +86,7 @@ egl::Error DisplayGL::makeCurrent(egl::Surface *drawSurface, egl::Surface *readS
 
     
     ContextGL *glContext = GetImplAs<ContextGL>(context);
-    glContext->getStateManager()->pauseTransformFeedback(context->getContextState());
+    glContext->getStateManager()->pauseTransformFeedback();
 
     SurfaceGL *glDrawSurface = GetImplAs<SurfaceGL>(drawSurface);
     ANGLE_TRY(glDrawSurface->makeCurrent());

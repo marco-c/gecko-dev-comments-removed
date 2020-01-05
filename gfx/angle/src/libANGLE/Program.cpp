@@ -624,7 +624,7 @@ Error Program::link(const ContextState &data)
             return NoError();
         }
 
-        if (!linkAttributes(data, mInfoLog, mAttributeBindings, mState.mAttachedVertexShader))
+        if (!linkAttributes(data, mInfoLog))
         {
             return NoError();
         }
@@ -2004,11 +2004,10 @@ bool Program::linkValidateInterfaceBlockFields(InfoLog &infoLog,
 }
 
 
-bool Program::linkAttributes(const ContextState &data,
-                             InfoLog &infoLog,
-                             const Bindings &attributeBindings,
-                             const Shader *vertexShader)
+bool Program::linkAttributes(const ContextState &data, InfoLog &infoLog)
 {
+    const auto *vertexShader = mState.getAttachedVertexShader();
+
     unsigned int usedLocations = 0;
     mState.mAttributes         = vertexShader->getActiveAttributes();
     GLuint maxAttribs          = data.getCaps().maxVertexAttributes;
@@ -2028,7 +2027,7 @@ bool Program::linkAttributes(const ContextState &data,
         
         ASSERT(attribute.staticUse);
 
-        int bindingLocation = attributeBindings.getBinding(attribute.name);
+        int bindingLocation = mAttributeBindings.getBinding(attribute.name);
         if (attribute.location == -1 && bindingLocation != -1)
         {
             attribute.location = bindingLocation;

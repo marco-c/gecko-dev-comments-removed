@@ -101,24 +101,42 @@ TEST_P(RendererTest, RequestedRendererCreated)
         ASSERT_TRUE(found);
     }
 
+    if (platform.renderer == EGL_PLATFORM_ANGLE_TYPE_NULL_ANGLE)
+    {
+        ASSERT_TRUE(IsNULL());
+    }
+
     EGLint glesMajorVersion = GetParam().majorVersion;
+    EGLint glesMinorVersion = GetParam().minorVersion;
 
     
-    if (glesMajorVersion == 3)
+    if (glesMajorVersion == 3 && glesMinorVersion == 1)
+    {
+        ASSERT_NE(versionString.find(std::string("es 3.1")), std::string::npos);
+    }
+    else if (glesMajorVersion == 3 && glesMinorVersion == 0)
     {
         ASSERT_NE(versionString.find(std::string("es 3.0")), std::string::npos);
     }
-
-    
-    if (glesMajorVersion == 2)
+    else if (glesMajorVersion == 2 && glesMinorVersion == 0)
     {
         ASSERT_NE(versionString.find(std::string("es 2.0")), std::string::npos);
+    }
+    else
+    {
+        FAIL() << "Unhandled GL ES client version.";
     }
 }
 
 
 TEST_P(RendererTest, SimpleOperation)
 {
+    if (IsNULL())
+    {
+        std::cout << "ANGLE NULL backend clears are not functional" << std::endl;
+        return;
+    }
+
     glClearColor(0.0f, 1.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT);
     EXPECT_PIXEL_EQ(0, 0, 0, 255, 0, 255);
@@ -206,5 +224,10 @@ ANGLE_INSTANTIATE_TEST(RendererTest,
                        ES3_OPENGLES(),
                        ES3_OPENGLES(3, 0),
                        ES3_OPENGLES(3, 1),
-                       ES3_OPENGLES(3, 2));
+                       ES3_OPENGLES(3, 2),
+
+                       
+                       ES2_NULL(),
+                       ES3_NULL(),
+                       ES31_NULL());
 }

@@ -17,6 +17,8 @@
 namespace gl
 {
 class Framebuffer;
+class Texture;
+struct Extents;
 struct Offset;
 }
 
@@ -36,12 +38,23 @@ class Blit9 : angle::NonCopyable
     
     
     gl::Error copy2D(const gl::Framebuffer *framebuffer, const RECT &sourceRect, GLenum destFormat, const gl::Offset &destOffset, TextureStorage *storage, GLint level);
-    gl::Error copyCube(const gl::Framebuffer *framebuffer, const RECT &sourceRect, GLenum destFormat, const gl::Offset &destOffset, TextureStorage *storage, GLenum target, GLint level);
-
-    
-    
-    
-    gl::Error formatConvert(IDirect3DSurface9 *source, const RECT &sourceRect, GLenum destFormat, const gl::Offset &destOffset, IDirect3DSurface9 *dest);
+    gl::Error copyCube(const gl::Framebuffer *framebuffer,
+                       const RECT &sourceRect,
+                       GLenum destFormat,
+                       const gl::Offset &destOffset,
+                       TextureStorage *storage,
+                       GLenum target,
+                       GLint level);
+    gl::Error copyTexture2D(const gl::Texture *source,
+                            GLint sourceLevel,
+                            const RECT &sourceRect,
+                            GLenum destFormat,
+                            const gl::Offset &destOffset,
+                            TextureStorage *storage,
+                            GLint destLevel,
+                            bool flipY,
+                            bool premultiplyAlpha,
+                            bool unmultiplyAlpha);
 
     
     
@@ -54,23 +67,56 @@ class Blit9 : angle::NonCopyable
     IDirect3DVertexBuffer9 *mQuadVertexBuffer;
     IDirect3DVertexDeclaration9 *mQuadVertexDeclaration;
 
-    gl::Error setFormatConvertShaders(GLenum destFormat);
+    
+    
+    
+    
+    gl::Error formatConvert(IDirect3DBaseTexture9 *source,
+                            const RECT &sourceRect,
+                            const gl::Extents &sourceSize,
+                            GLenum destFormat,
+                            const gl::Offset &destOffset,
+                            IDirect3DSurface9 *dest,
+                            bool flipY,
+                            bool premultiplyAlpha,
+                            bool unmultiplyAlpha);
+    gl::Error setFormatConvertShaders(GLenum destFormat,
+                                      bool flipY,
+                                      bool premultiplyAlpha,
+                                      bool unmultiplyAlpha);
 
-    gl::Error copy(IDirect3DSurface9 *source, const RECT &sourceRect, GLenum destFormat, const gl::Offset &destOffset, IDirect3DSurface9 *dest);
-    gl::Error copySurfaceToTexture(IDirect3DSurface9 *surface, const RECT &sourceRect, IDirect3DTexture9 **outTexture);
-    void setViewport(const RECT &sourceRect, const gl::Offset &offset);
+    gl::Error copy(IDirect3DSurface9 *source,
+                   IDirect3DBaseTexture9 *sourceTexture,
+                   const RECT &sourceRect,
+                   GLenum destFormat,
+                   const gl::Offset &destOffset,
+                   IDirect3DSurface9 *dest,
+                   bool flipY,
+                   bool premultiplyAlpha,
+                   bool unmultiplyAlpha);
+    gl::Error copySurfaceToTexture(IDirect3DSurface9 *surface,
+                                   const RECT &sourceRect,
+                                   IDirect3DBaseTexture9 **outTexture);
+    void setViewportAndShaderConstants(const RECT &sourceRect,
+                                       const gl::Extents &sourceSize,
+                                       const gl::Offset &offset,
+                                       bool flipY);
     void setCommonBlitState();
     RECT getSurfaceRect(IDirect3DSurface9 *surface) const;
+    gl::Extents getSurfaceSize(IDirect3DSurface9 *surface) const;
 
     
     enum ShaderId
     {
         SHADER_VS_STANDARD,
-        SHADER_VS_FLIPY,
         SHADER_PS_PASSTHROUGH,
         SHADER_PS_LUMINANCE,
+        SHADER_PS_LUMINANCE_PREMULTIPLY_ALPHA,
+        SHADER_PS_LUMINANCE_UNMULTIPLY_ALPHA,
         SHADER_PS_COMPONENTMASK,
-        SHADER_COUNT
+        SHADER_PS_COMPONENTMASK_PREMULTIPLY_ALPHA,
+        SHADER_PS_COMPONENTMASK_UNMULTIPLY_ALPHA,
+        SHADER_COUNT,
     };
 
     

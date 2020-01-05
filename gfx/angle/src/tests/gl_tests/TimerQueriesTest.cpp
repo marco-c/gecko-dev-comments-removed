@@ -311,8 +311,9 @@ TEST_P(TimerQueriesTest, TimeElapsedValidationTest)
 
 TEST_P(TimerQueriesTest, TimeElapsedMulticontextTest)
 {
-    if (IsAMD() && IsOpenGL() && IsWindows() && IsDebug())
+    if (IsAMD() && IsOpenGL() && IsWindows())
     {
+        
         
         std::cout << "Test skipped on Windows AMD OpenGL Debug." << std::endl;
         return;

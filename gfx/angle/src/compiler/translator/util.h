@@ -17,17 +17,21 @@
 
 
 
-
-
-bool strtof_clamp(const std::string &str, float *value);
-
-
-
 bool atoi_clamp(const char *str, unsigned int *value);
 
 namespace sh
 {
 class TSymbolTable;
+
+float NumericLexFloat32OutOfRangeToInfinity(const std::string &str);
+
+
+
+
+
+
+
+bool strtof_clamp(const std::string &str, float *value);
 
 GLenum GLVariableType(const TType &type);
 GLenum GLVariablePrecision(const TType &type);

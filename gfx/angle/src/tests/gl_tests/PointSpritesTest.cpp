@@ -49,6 +49,14 @@ TEST_P(PointSpritesTest, PointCoordAndPointSizeCompliance)
         return;
     }
 
+    
+    
+    if (IsAMD() && IsDesktopOpenGL() && IsWindows())
+    {
+        std::cout << "Test skipped on desktop GL AMD Windows." << std::endl;
+        return;
+    }
+
     const std::string fs = SHADER_SOURCE
     (
         precision mediump float;
@@ -155,6 +163,22 @@ TEST_P(PointSpritesTest, PointCoordAndPointSizeCompliance)
 TEST_P(PointSpritesTest, PointWithoutAttributesCompliance)
 {
     
+    
+    if (IsAMD() && IsDesktopOpenGL() && IsWindows())
+    {
+        std::cout << "Test skipped on desktop GL AMD Windows." << std::endl;
+        return;
+    }
+
+    
+    
+    if (IsIntel() && IsWindows() && (IsD3D11() || IsD3D9()))
+    {
+        std::cout << "Test skipped on Intel Windows D3D." << std::endl;
+        return;
+    }
+
+    
     const std::string fs = SHADER_SOURCE
     (
         precision mediump float;
@@ -191,6 +215,14 @@ TEST_P(PointSpritesTest, PointWithoutAttributesCompliance)
 
 TEST_P(PointSpritesTest, PointCoordRegressionTest)
 {
+    
+    
+    if (IsAMD() && IsDesktopOpenGL() && IsWindows())
+    {
+        std::cout << "Test skipped on desktop GL AMD Windows." << std::endl;
+        return;
+    }
+
     const std::string fs = SHADER_SOURCE
     (
         precision mediump float;
@@ -276,6 +308,14 @@ TEST_P(PointSpritesTest, PointCoordRegressionTest)
 
 TEST_P(PointSpritesTest, PointSizeEnabledCompliance)
 {
+    
+    
+    if (IsAMD() && IsDesktopOpenGL() && IsWindows())
+    {
+        std::cout << "Test skipped on desktop GL AMD Windows." << std::endl;
+        return;
+    }
+
     const std::string fs = SHADER_SOURCE
     (
         precision mediump float;

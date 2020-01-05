@@ -779,6 +779,9 @@ class FunctionsGL
     PFNGLEGLIMAGETARGETRENDERBUFFERSTORAGEOESPROC eglImageTargetRenderbufferStorageOES;
     PFNGLEGLIMAGETARGETTEXTURE2DOESPROC eglImageTargetTexture2DOES;
 
+    
+    PFNGLDISCARDFRAMEBUFFEREXTPROC discardFramebuffer;
+
   private:
     void initializeProcsDesktopGL();
     void initializeProcsGLES();

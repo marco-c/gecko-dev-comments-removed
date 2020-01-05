@@ -336,6 +336,11 @@ inline GLenum FramebufferBindingToEnum(FramebufferBinding binding)
             return GL_NONE;
     }
 }
-}
+}  
+
+namespace gl
+{
+class ContextState;
+}  
 
 #endif 

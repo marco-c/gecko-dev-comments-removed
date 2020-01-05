@@ -18,6 +18,7 @@ class TIntermAggregate;
 class TIntermBinary;
 class TIntermNode;
 class TIntermTernary;
+class TIntermDeclaration;
 
 class IntermNodePatternMatcher
 {
@@ -34,7 +35,10 @@ class IntermNodePatternMatcher
         kExpressionReturningArray = 0x0002,
 
         
-        kDynamicIndexingOfVectorOrMatrixInLValue = 0x0004
+        kDynamicIndexingOfVectorOrMatrixInLValue = 0x0004,
+
+        
+        kMultiDeclaration = 0x0008,
     };
     IntermNodePatternMatcher(const unsigned int mask);
 
@@ -46,6 +50,7 @@ class IntermNodePatternMatcher
 
     bool match(TIntermAggregate *node, TIntermNode *parentNode);
     bool match(TIntermTernary *node);
+    bool match(TIntermDeclaration *node);
 
   private:
     const unsigned int mMask;
