@@ -126,7 +126,7 @@ var TabStateInternal = {
 
     
     if (!("iconLoadingPrincipal" in tabData)) {
-      tabData.iconLoadingPrincipal = Utils.serializePrincipal(browser.contentPrincipal);
+      tabData.iconLoadingPrincipal = Utils.serializePrincipal(browser.mIconLoadingPrincipal);
     }
 
     
