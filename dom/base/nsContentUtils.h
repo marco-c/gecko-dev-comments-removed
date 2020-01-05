@@ -369,15 +369,8 @@ public:
 
 
 
-
-  static nsINode* GetCommonAncestor(nsINode* aNode1, nsINode* aNode2);
-
-  
-
-
-
-  static nsIContent* GetCommonFlattenedTreeAncestor(nsIContent* aContent1,
-                                                    nsIContent* aContent2);
+  static nsINode* GetCommonAncestor(nsINode* aNode1,
+                                    nsINode* aNode2);
 
   
 
@@ -2934,6 +2927,13 @@ public:
   static bool
   SkipCursorMoveForSameValueSet() { return sSkipCursorMoveForSameValueSet; }
 
+  
+
+
+
+  static bool
+  GetUserIsInteracting();
+
 private:
   static bool InitializeEventTable();
 
@@ -3065,6 +3065,9 @@ private:
 
   static int32_t sPrivacyMaxInnerWidth;
   static int32_t sPrivacyMaxInnerHeight;
+
+  class UserInteractionObserver;
+  static UserInteractionObserver* sUserInteractionObserver;
 
   static nsHtml5StringParser* sHTMLFragmentParser;
   static nsIParser* sXMLFragmentParser;

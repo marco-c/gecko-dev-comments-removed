@@ -219,6 +219,7 @@
 #include "mozilla/dom/TabGroup.h"
 #include "nsIWebNavigationInfo.h"
 #include "nsPluginHost.h"
+#include "mozilla/HangAnnotations.h"
 
 #include "nsIBidiKeyboard.h"
 
@@ -302,6 +303,9 @@ bool nsContentUtils::sRequestIdleCallbackEnabled = false;
 
 int32_t nsContentUtils::sPrivacyMaxInnerWidth = 1000;
 int32_t nsContentUtils::sPrivacyMaxInnerHeight = 1000;
+
+nsContentUtils::UserInteractionObserver*
+nsContentUtils::sUserInteractionObserver = nullptr;
 
 uint32_t nsContentUtils::sHandlingInputTimeout = 1000;
 
@@ -495,6 +499,32 @@ private:
 } 
 
 
+
+
+
+
+
+
+
+
+class nsContentUtils::UserInteractionObserver final : public nsIObserver
+                                                    , public HangMonitor::Annotator
+{
+public:
+  NS_DECL_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  void Init();
+  void Shutdown();
+  virtual void AnnotateHang(HangMonitor::HangAnnotations& aAnnotations) override;
+
+  static Atomic<bool> sUserActive;
+
+private:
+  ~UserInteractionObserver() {}
+};
+
+
 TimeDuration
 nsContentUtils::HandlingUserInputTimeout()
 {
@@ -662,6 +692,10 @@ nsContentUtils::Init()
     return rv;
   }
   uuidGenerator.forget(&sUUIDGenerator);
+
+  RefPtr<UserInteractionObserver> uio = new UserInteractionObserver();
+  uio->Init();
+  uio.forget(&sUserInteractionObserver);
 
   sInitialized = true;
 
@@ -2029,6 +2063,11 @@ nsContentUtils::Shutdown()
 
   NS_IF_RELEASE(sSameOriginChecker);
 
+  if (sUserInteractionObserver) {
+    sUserInteractionObserver->Shutdown();
+    NS_RELEASE(sUserInteractionObserver);
+  }
+
   HTMLInputElement::Shutdown();
   nsMappedAttributes::Shutdown();
 }
@@ -2500,35 +2539,34 @@ nsContentUtils::GetCommonAncestor(nsIDOMNode *aNode,
   return CallQueryInterface(common, aCommonAncestor);
 }
 
-template <typename Node, typename GetParentFunc>
-static Node*
-GetCommonAncestorInternal(Node* aNode1,
-                          Node* aNode2,
-                          GetParentFunc aGetParentFunc)
+
+nsINode*
+nsContentUtils::GetCommonAncestor(nsINode* aNode1,
+                                  nsINode* aNode2)
 {
   if (aNode1 == aNode2) {
     return aNode1;
   }
 
   
-  AutoTArray<Node*, 30> parents1, parents2;
+  AutoTArray<nsINode*, 30> parents1, parents2;
   do {
     parents1.AppendElement(aNode1);
-    aNode1 = aGetParentFunc(aNode1);
+    aNode1 = aNode1->GetParentNode();
   } while (aNode1);
   do {
     parents2.AppendElement(aNode2);
-    aNode2 = aGetParentFunc(aNode2);
+    aNode2 = aNode2->GetParentNode();
   } while (aNode2);
 
   
   uint32_t pos1 = parents1.Length();
   uint32_t pos2 = parents2.Length();
-  Node* parent = nullptr;
+  nsINode* parent = nullptr;
   uint32_t len;
   for (len = std::min(pos1, pos2); len > 0; --len) {
-    Node* child1 = parents1.ElementAt(--pos1);
-    Node* child2 = parents2.ElementAt(--pos2);
+    nsINode* child1 = parents1.ElementAt(--pos1);
+    nsINode* child2 = parents2.ElementAt(--pos2);
     if (child1 != child2) {
       break;
     }
@@ -2536,25 +2574,6 @@ GetCommonAncestorInternal(Node* aNode1,
   }
 
   return parent;
-}
-
-
-nsINode*
-nsContentUtils::GetCommonAncestor(nsINode* aNode1, nsINode* aNode2)
-{
-  return GetCommonAncestorInternal(aNode1, aNode2, [](nsINode* aNode) {
-    return aNode->GetParentNode();
-  });
-}
-
-
-nsIContent*
-nsContentUtils::GetCommonFlattenedTreeAncestor(nsIContent* aContent1,
-                                               nsIContent* aContent2)
-{
-  return GetCommonAncestorInternal(aContent1, aContent2, [](nsIContent* aContent) {
-    return aContent->GetFlattenedTreeParent();
-  });
 }
 
 
@@ -10365,5 +10384,71 @@ nsContentUtils::GenerateTabId()
   uint64_t tabBits = tabId & ((uint64_t(1) << kTabIdTabBits) - 1);
 
   return (processBits << kTabIdTabBits) | tabBits;
-
 }
+
+ bool
+nsContentUtils::GetUserIsInteracting()
+{
+  return UserInteractionObserver::sUserActive;
+}
+
+static const char* kUserInteractionInactive = "user-interaction-inactive";
+static const char* kUserInteractionActive = "user-interaction-active";
+
+void
+nsContentUtils::UserInteractionObserver::Init()
+{
+  
+  
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  obs->AddObserver(this, kUserInteractionInactive, false);
+  obs->AddObserver(this, kUserInteractionActive, false);
+
+  
+  
+  
+  HangMonitor::RegisterAnnotator(*this);
+}
+
+void
+nsContentUtils::UserInteractionObserver::Shutdown()
+{
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    obs->RemoveObserver(this, kUserInteractionInactive);
+    obs->RemoveObserver(this, kUserInteractionActive);
+  }
+
+  HangMonitor::UnregisterAnnotator(*this);
+}
+
+
+
+
+
+void
+nsContentUtils::UserInteractionObserver::AnnotateHang(HangMonitor::HangAnnotations& aAnnotations)
+{
+  
+  if (sUserActive) {
+    aAnnotations.AddAnnotation(NS_LITERAL_STRING("UserInteracting"), true);
+  }
+}
+
+NS_IMETHODIMP
+nsContentUtils::UserInteractionObserver::Observe(nsISupports* aSubject,
+                                                 const char* aTopic,
+                                                 const char16_t* aData)
+{
+  if (!strcmp(aTopic, kUserInteractionInactive)) {
+    sUserActive = false;
+  } else if (!strcmp(aTopic, kUserInteractionActive)) {
+    sUserActive = true;
+  } else {
+    NS_WARNING("Unexpected observer notification");
+  }
+  return NS_OK;
+}
+
+Atomic<bool> nsContentUtils::UserInteractionObserver::sUserActive(false);
+NS_IMPL_ISUPPORTS(nsContentUtils::UserInteractionObserver, nsIObserver)
