@@ -201,6 +201,10 @@ private:
 
   
   
+  bool ShouldBlockInsecureRequests() const;
+
+  
+  
   
   
   

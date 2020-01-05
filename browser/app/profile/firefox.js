@@ -1029,11 +1029,7 @@ pref("security.sandbox.content.tempDirSuffix", "");
 #if defined(MOZ_SANDBOX)
 
 
-#if defined(XP_WIN)
-pref("security.sandbox.logging.enabled", false);
-#else
 pref("security.sandbox.logging.enabled", true);
-#endif
 #endif
 
 
@@ -1260,6 +1256,8 @@ pref("plain_text.wrap_long_lines", true);
 pref("dom.debug.propagate_gesture_events_through_content", false);
 
 
+
+
 #ifdef RELEASE_OR_BETA
 pref("geo.wifi.uri", "https://www.googleapis.com/geolocation/v1/geolocate?key=%GOOGLE_API_KEY%");
 #else
@@ -1287,6 +1285,11 @@ pref("geo.provider.use_gpsd", true);
 #endif
 #endif
 #endif
+
+
+
+
+pref("geo.security.allowinsecure", true);
 
 
 
