@@ -336,7 +336,7 @@ TabActor.prototype = {
   get webextensionsContentScriptGlobals() {
     
     if (this.window) {
-      return ExtensionContent.getContentScriptGlobalsForWindow(this.window);
+      return ExtensionContent.getContentScriptGlobals(this.window);
     }
 
     return [];

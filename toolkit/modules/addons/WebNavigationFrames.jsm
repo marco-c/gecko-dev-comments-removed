@@ -38,18 +38,13 @@ function docShellToWindow(docShell) {
 
 
 
-
 function* iterateDocShellTree(docShell) {
   let docShellsEnum = docShell.getDocShellEnumerator(
-    Ci.nsIDocShellTreeItem.typeContent,
-    Ci.nsIDocShell.ENUMERATE_FORWARDS
-  );
+    docShell.typeContent, docShell.ENUMERATE_FORWARDS);
 
   while (docShellsEnum.hasMoreElements()) {
     yield docShellsEnum.getNext();
   }
-
-  return null;
 }
 
 

@@ -1099,14 +1099,6 @@ ExtensionChild = {
   
   extensionContexts: new Map(),
 
-  initOnce() {
-    
-    
-    
-    
-    MessageChannel.setupMessageManagers([Services.cpmm]);
-  },
-
   init(global) {
     if (!ExtensionManagement.isExtensionProcess) {
       throw new Error("Cannot init extension page global in current process");
@@ -1127,7 +1119,7 @@ ExtensionChild = {
 
 
 
-  createExtensionContext(extension, contentWindow) {
+  initExtensionContext(extension, contentWindow) {
     if (!ExtensionManagement.isExtensionProcess) {
       throw new Error("Cannot create an extension page context in current process");
     }
