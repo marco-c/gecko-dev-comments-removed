@@ -1,8 +1,17 @@
 use gecko_bindings::structs::nsIAtom;
 
 use Atom;
+use WeakAtom;
 
-pub fn unsafe_atom_from_static(ptr: *mut nsIAtom) -> Atom { unsafe { Atom::from_static(ptr) } }
+
+
+
+
+
+
+pub fn unsafe_atom_from_static(ptr: *mut nsIAtom) -> Atom {
+    Atom(ptr as *mut WeakAtom)
+}
 
 cfg_if! {
     if #[cfg(not(target_env = "msvc"))] {
