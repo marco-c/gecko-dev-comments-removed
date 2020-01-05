@@ -1952,11 +1952,25 @@ MediaFormatReader::SetSeekTarget(const SeekTarget& aTarget)
   
   if (!ForceZeroStartTime()) {
     target.SetTime(aTarget.GetTime() - TimeUnit::FromMicroseconds(StartTime())
-                   + mInfo.mStartTime);
+                   + DemuxStartTime());
   }
 
   mOriginalSeekTarget = target;
   mFallbackSeekTime = mPendingSeekTime = Some(target.GetTime());
+}
+
+TimeUnit
+MediaFormatReader::DemuxStartTime()
+{
+  MOZ_ASSERT(OnTaskQueue());
+  MOZ_ASSERT(!ForceZeroStartTime());
+  MOZ_ASSERT(HasAudio() || HasVideo());
+
+  const TimeUnit startTime =
+    std::min(mAudio.mFirstDemuxedSampleTime.refOr(TimeUnit::FromInfinity()),
+             mVideo.mFirstDemuxedSampleTime.refOr(TimeUnit::FromInfinity()));
+
+  return startTime.IsInfinite() ? TimeUnit::FromMicroseconds(0) : startTime;
 }
 
 void
