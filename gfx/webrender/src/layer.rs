@@ -7,6 +7,7 @@ use spring::{DAMPING, STIFFNESS, Spring};
 use webrender_traits::{PipelineId, ScrollLayerId};
 
 
+#[derive(Clone)]
 pub struct Layer {
     
     pub scrolling: ScrollingState,

@@ -3,10 +3,9 @@
 
 
 use app_units::Au;
-use device::{TextureId, TextureFilter};
-use euclid::{Point2D, Rect, Size2D, TypedRect, TypedPoint2D, TypedSize2D, Length, UnknownUnit};
+use device::TextureFilter;
+use euclid::{Size2D, TypedRect, TypedPoint2D, TypedSize2D, Length, UnknownUnit};
 use fnv::FnvHasher;
-use freelist::{FreeListItem, FreeListItemId};
 use offscreen_gl_context::{NativeGLContext, NativeGLContextHandle};
 use offscreen_gl_context::{GLContext, NativeGLContextMethods, GLContextDispatcher};
 use offscreen_gl_context::{OSMesaContext, OSMesaContextHandle};
@@ -15,13 +14,41 @@ use profiler::BackendProfileCounters;
 use std::collections::{HashMap, HashSet};
 use std::f32;
 use std::hash::BuildHasherDefault;
-use std::i32;
+use std::{i32, usize};
 use std::path::PathBuf;
 use std::sync::Arc;
 use tiling;
 use webrender_traits::{Epoch, ColorF, PipelineId};
-use webrender_traits::{ImageFormat, MixBlendMode, NativeFontHandle, DisplayItem};
+use webrender_traits::{ImageFormat, MixBlendMode, NativeFontHandle};
 use webrender_traits::{ScrollLayerId, WebGLCommand};
+
+
+
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub struct CacheTextureId(pub usize);
+
+
+
+
+
+
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
+pub enum SourceTexture {
+    Invalid,
+    TextureCache(CacheTextureId),
+    WebGL(u32),                         
+
+    
+    
+}
 
 pub enum GLContextHandleWrapper {
     Native(NativeGLContextHandle),
@@ -162,11 +189,11 @@ pub enum FontTemplate {
     Native(NativeFontHandle),
 }
 
-pub type DrawListId = FreeListItemId;
-
 #[derive(Debug, PartialEq, Eq)]
 pub enum TextureSampler {
-    Color,
+    Color0,
+    Color1,
+    Color2,
     Mask,
     Cache,
     Data16,
@@ -177,6 +204,37 @@ pub enum TextureSampler {
     RenderTasks,
     Geometry,
 }
+
+impl TextureSampler {
+    pub fn color(n: usize) -> TextureSampler {
+        match n {
+            0 => TextureSampler::Color0,
+            1 => TextureSampler::Color1,
+            2 => TextureSampler::Color2,
+            _ => {
+                panic!("There are only 3 color samplers.");
+            }
+        }
+    }
+}
+
+
+
+#[derive(Copy, Clone, Debug)]
+pub struct BatchTextures {
+    pub colors: [SourceTexture; 3],
+}
+
+impl BatchTextures {
+    pub fn no_texture() -> Self {
+        BatchTextures {
+            colors: [SourceTexture::Invalid; 3],
+        }
+    }
+}
+
+
+pub const DEFAULT_TEXTURE: TextureSampler = TextureSampler::Color0;
 
 pub enum VertexAttribute {
     Position,
@@ -300,28 +358,14 @@ pub enum RenderTargetMode {
     LayerRenderTarget(i32),      
 }
 
-#[derive(Debug)]
-pub enum TextureUpdateDetails {
-    Raw,
-    Blit(Vec<u8>, Option<u32>),
-}
-
-#[derive(Clone, Copy, Debug)]
-pub struct TextureImage {
-    pub texture_id: TextureId,
-    pub texel_uv: Rect<f32>,
-    pub pixel_uv: Point2D<u32>,
-}
-
 pub enum TextureUpdateOp {
     Create(u32, u32, ImageFormat, TextureFilter, RenderTargetMode, Option<Vec<u8>>),
-    Update(u32, u32, u32, u32, TextureUpdateDetails),
+    Update(u32, u32, u32, u32, Vec<u8>, Option<u32>),
     Grow(u32, u32, ImageFormat, TextureFilter, RenderTargetMode),
-    Remove
 }
 
 pub struct TextureUpdate {
-    pub id: TextureId,
+    pub id: CacheTextureId,
     pub op: TextureUpdateOp,
 }
 
@@ -380,38 +424,8 @@ pub enum AxisDirection {
     Vertical,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Eq, Hash, PartialEq)]
 pub struct StackingContextIndex(pub usize);
-
-#[derive(Debug)]
-pub struct DrawList {
-    pub items: Vec<DisplayItem>,
-    pub stacking_context_index: Option<StackingContextIndex>,
-    pub pipeline_id: PipelineId,
-    
-    next_free_id: Option<FreeListItemId>,
-}
-
-impl DrawList {
-    pub fn new(items: Vec<DisplayItem>, pipeline_id: PipelineId) -> DrawList {
-        DrawList {
-            items: items,
-            stacking_context_index: None,
-            pipeline_id: pipeline_id,
-            next_free_id: None,
-        }
-    }
-}
-
-impl FreeListItem for DrawList {
-    fn next_free_id(&self) -> Option<FreeListItemId> {
-        self.next_free_id
-    }
-
-    fn set_next_free_id(&mut self, id: Option<FreeListItemId>) {
-        self.next_free_id = id;
-    }
-}
 
 #[derive(Clone, Copy, Debug)]
 pub struct RectUv<T, U = UnknownUnit> {
