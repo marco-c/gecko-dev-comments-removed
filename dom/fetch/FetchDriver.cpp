@@ -614,6 +614,31 @@ FetchDriver::OnStartRequest(nsIRequest* aRequest,
   return NS_OK;
 }
 
+namespace {
+
+
+class DataAvailableRunnable final : public Runnable
+{
+  RefPtr<FetchDriverObserver> mObserver;
+
+public:
+  explicit DataAvailableRunnable(FetchDriverObserver* aObserver)
+    : mObserver(aObserver)
+  {
+     MOZ_ASSERT(aObserver);
+  }
+
+  NS_IMETHOD
+  Run() override
+  {
+    mObserver->OnDataAvailable();
+    mObserver = nullptr;
+    return NS_OK;
+  }
+};
+
+} 
+
 NS_IMETHODIMP
 FetchDriver::OnDataAvailable(nsIRequest* aRequest,
                              nsISupports* aContext,
@@ -624,6 +649,18 @@ FetchDriver::OnDataAvailable(nsIRequest* aRequest,
   
   
   
+
+  if (mObserver) {
+    if (NS_IsMainThread()) {
+      mObserver->OnDataAvailable();
+    } else {
+      RefPtr<Runnable> runnable = new DataAvailableRunnable(mObserver);
+      nsresult rv = NS_DispatchToMainThread(runnable);
+      if (NS_WARN_IF(NS_FAILED(rv))) {
+        return rv;
+      }
+    }
+  }
 
   uint32_t aRead;
   MOZ_ASSERT(mResponse);
