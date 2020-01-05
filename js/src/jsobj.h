@@ -179,14 +179,6 @@ class JSObject : public js::gc::Cell
     inline js::Shape* ensureShape(JSContext* cx);
 
     
-
-
-
-    static inline JS::Result<JSObject*, JS::OOM&>
-    create(JSContext* cx, js::gc::AllocKind kind, js::gc::InitialHeap heap,
-           js::HandleShape shape, js::HandleObjectGroup group);
-
-    
     
     
     
@@ -352,6 +344,15 @@ class JSObject : public js::gc::Cell
         
         return group_;
     }
+
+#ifdef DEBUG
+    static void debugCheckNewObject(js::ObjectGroup* group, js::Shape* shape,
+                                    js::gc::AllocKind allocKind, js::gc::InitialHeap heap);
+#else
+    static void debugCheckNewObject(js::ObjectGroup* group, js::Shape* shape,
+                                    js::gc::AllocKind allocKind, js::gc::InitialHeap heap)
+    {}
+#endif
 
     
 

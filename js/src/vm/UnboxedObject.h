@@ -220,6 +220,14 @@ class UnboxedLayout : public mozilla::LinkedListElement<UnboxedLayout>
     static bool makeConstructorCode(JSContext* cx, HandleObjectGroup group);
 };
 
+class UnboxedObject : public JSObject
+{
+  protected:
+    static JS::Result<UnboxedObject*, JS::OOM&>
+    createInternal(JSContext* cx, js::gc::AllocKind kind, js::gc::InitialHeap heap,
+                   js::HandleObjectGroup group);
+};
+
 
 
 
@@ -233,7 +241,7 @@ class UnboxedExpandoObject : public NativeObject
 
 
 
-class UnboxedPlainObject : public JSObject
+class UnboxedPlainObject : public UnboxedObject
 {
     
     
@@ -337,7 +345,7 @@ UnboxedLayout::getAllocKind() const
 }
 
 
-class UnboxedArrayObject : public JSObject
+class UnboxedArrayObject : public UnboxedObject
 {
     
     uint8_t* elements_;
