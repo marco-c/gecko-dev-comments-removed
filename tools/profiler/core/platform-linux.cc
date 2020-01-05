@@ -265,8 +265,6 @@ SigprofSender(void* aArg)
   int vm_tgid_ = getpid();
   DebugOnly<int> my_tid = gettid();
 
-  unsigned int nSignalsSent = 0;
-
   TimeDuration lastSleepOverhead = 0;
   TimeStamp sampleStart = TimeStamp::Now();
   while (gIsActive) {
@@ -324,18 +322,15 @@ SigprofSender(void* aArg)
         
         sem_wait(&gSignalHandlingDone);
         isFirstProfiledThread = false;
-
-        
-        
-        
-        
-        
-        if ((++nSignalsSent & 0xF) == 0) {
-#          if defined(USE_LUL_STACKWALK)
-           gLUL->MaybeShowStats();
-#          endif
-        }
       }
+#if defined(USE_LUL_STACKWALK)
+      
+      
+      
+      
+      
+      gLUL->MaybeShowStats();
+#endif
     }
 
     
