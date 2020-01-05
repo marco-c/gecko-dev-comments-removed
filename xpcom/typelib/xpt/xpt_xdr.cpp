@@ -6,7 +6,6 @@
 
 
 #include "xpt_xdr.h"
-#include "nspr.h"
 #include "nscore.h"
 #include <string.h>             
 #include "mozilla/EndianUtils.h"
