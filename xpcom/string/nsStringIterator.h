@@ -45,13 +45,6 @@ public:
   
   
 
-  inline void normalize_forward()
-  {
-  }
-  inline void normalize_backward()
-  {
-  }
-
   pointer start() const
   {
     return mStart;
@@ -171,13 +164,6 @@ public:
   }
   
   
-
-  inline void normalize_forward()
-  {
-  }
-  inline void normalize_backward()
-  {
-  }
 
   pointer start() const
   {
