@@ -165,7 +165,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
     static {
         sTables = new Table[] {
             
-            new URLMetadataTable()
+            new URLImageDataTable()
         };
         
         HashMap<String, String> map;
@@ -370,8 +370,8 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
     
     
-    private URLMetadataTable getURLMetadataTable() {
-        return (URLMetadataTable) sTables[0];
+    private URLImageDataTable getURLImageDataTable() {
+        return (URLImageDataTable) sTables[0];
     }
 
     private static boolean hasFaviconsInProjection(String[] projection) {
@@ -2204,7 +2204,7 @@ public class BrowserProvider extends SharedBrowserDatabaseProvider {
 
         return deleteFavicons(uri, faviconSelection, null) +
                deleteThumbnails(uri, thumbnailSelection, null) +
-               getURLMetadataTable().deleteUnused(getWritableDatabase(uri));
+               getURLImageDataTable().deleteUnused(getWritableDatabase(uri));
     }
 
     @Override
