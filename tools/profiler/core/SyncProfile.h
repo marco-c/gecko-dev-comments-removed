@@ -23,18 +23,6 @@ public:
 
 private:
   friend class ProfilerBacktrace;
-
-  enum OwnerState
-  {
-    REFERENCED,       
-    OWNED,            
-    OWNER_DESTROYING, 
-    ORPHANED          
-  };
-
-  bool ShouldDestroy();
-
-  OwnerState mOwnerState;
 };
 
 #endif 

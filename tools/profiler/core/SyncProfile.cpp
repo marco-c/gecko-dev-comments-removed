@@ -9,7 +9,6 @@
 SyncProfile::SyncProfile(int aThreadId, PseudoStack* aStack)
   : ThreadInfo("SyncProfile", aThreadId,  false, aStack,
                 nullptr)
-  , mOwnerState(REFERENCED)
 {
   MOZ_COUNT_CTOR(SyncProfile);
   SetProfile(new ProfileBuffer(GET_BACKTRACE_DEFAULT_ENTRIES));
@@ -20,30 +19,10 @@ SyncProfile::~SyncProfile()
   MOZ_COUNT_DTOR(SyncProfile);
 }
 
-bool
-SyncProfile::ShouldDestroy()
-{
-  mozilla::MutexAutoLock lock(GetMutex());
-  if (mOwnerState == OWNED) {
-    mOwnerState = OWNER_DESTROYING;
-    return true;
-  }
-  mOwnerState = ORPHANED;
-  return false;
-}
-
 void
 SyncProfile::EndUnwind()
 {
-  if (mOwnerState != ORPHANED) {
-    mOwnerState = OWNED;
-  }
-  
-  OwnerState ownerState = mOwnerState;
   ThreadInfo::EndUnwind();
-  if (ownerState == ORPHANED) {
-    delete this;
-  }
 }
 
 
