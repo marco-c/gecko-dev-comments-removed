@@ -128,6 +128,15 @@ public class ActionBarPresenter {
 
 
 
+    public void setTextLongClickListener(View.OnLongClickListener listener) {
+        mTitleView.setOnLongClickListener(listener);
+        mUrlView.setOnLongClickListener(listener);
+    }
+
+    
+
+
+
 
     @ColorInt
     public int getTextPrimaryColor() {
