@@ -1495,6 +1495,8 @@ HttpChannelChild::ConnectParent(uint32_t registrarId)
     return NS_ERROR_FAILURE;
   }
 
+  HttpBaseChannel::SetDocshellUserAgentOverride();
+
   
   
   AddIPDLReference();
