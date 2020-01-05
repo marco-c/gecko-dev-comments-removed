@@ -211,7 +211,6 @@ EXPORTS.mozilla.dom += [
     'StructuredCloneTags.h',
     'StyleSheetList.h',
     'SubtleCrypto.h',
-    'TabGroup.h',
     'Text.h',
     'Timeout.h',
     'TreeWalker.h',
@@ -355,7 +354,6 @@ UNIFIED_SOURCES += [
     'StructuredCloneHolder.cpp',
     'StyleSheetList.cpp',
     'SubtleCrypto.cpp',
-    'TabGroup.cpp',
     'Text.cpp',
     'TextInputProcessor.cpp',
     'ThirdPartyUtil.cpp',
@@ -421,8 +419,6 @@ EXTRA_JS_MODULES += [
 
 LOCAL_INCLUDES += [
     '../battery',
-    '../bluetooth/common',
-    '../bluetooth/common/webapi',
     '../events',
     '../media',
     '../network',

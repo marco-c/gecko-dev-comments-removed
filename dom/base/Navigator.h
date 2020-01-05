@@ -72,12 +72,6 @@ namespace network {
 class Connection;
 } 
 
-#ifdef MOZ_B2G_BT
-namespace bluetooth {
-class BluetoothManager;
-} 
-#endif 
-
 #ifdef MOZ_B2G_RIL
 class MobileConnectionArray;
 #endif
@@ -235,9 +229,6 @@ public:
 #endif 
   already_AddRefed<Promise> GetVRDisplays(ErrorResult& aRv);
   void GetActiveVRDisplays(nsTArray<RefPtr<VRDisplay>>& aDisplays) const;
-#ifdef MOZ_B2G_BT
-  bluetooth::BluetoothManager* GetMozBluetooth(ErrorResult& aRv);
-#endif 
 #ifdef MOZ_TIME_MANAGER
   time::TimeManager* GetMozTime(ErrorResult& aRv);
 #endif 
@@ -325,9 +316,6 @@ private:
   RefPtr<network::Connection> mConnection;
 #ifdef MOZ_B2G_RIL
   RefPtr<MobileConnectionArray> mMobileConnections;
-#endif
-#ifdef MOZ_B2G_BT
-  RefPtr<bluetooth::BluetoothManager> mBluetooth;
 #endif
 #ifdef MOZ_AUDIO_CHANNEL_MANAGER
   RefPtr<system::AudioChannelManager> mAudioChannelManager;

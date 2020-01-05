@@ -135,8 +135,7 @@ public:
   GetNewOrUsedBrowserProcess(bool aForBrowserElement = false,
                              hal::ProcessPriority aPriority =
                              hal::ProcessPriority::PROCESS_PRIORITY_FOREGROUND,
-                             ContentParent* aOpener = nullptr,
-                             bool aFreshProcess = false);
+                             ContentParent* aOpener = nullptr);
 
   
 
@@ -151,8 +150,7 @@ public:
   static TabParent*
   CreateBrowserOrApp(const TabContext& aContext,
                      Element* aFrameElement,
-                     ContentParent* aOpenerContentParent,
-                     bool aFreshProcess = false);
+                     ContentParent* aOpenerContentParent);
 
   static void GetAll(nsTArray<ContentParent*>& aArray);
 
@@ -575,7 +573,6 @@ protected:
 private:
   static nsDataHashtable<nsStringHashKey, ContentParent*> *sAppContentParents;
   static nsTArray<ContentParent*>* sNonAppContentParents;
-  static nsTArray<ContentParent*>* sLargeAllocationContentParents;
   static nsTArray<ContentParent*>* sPrivateContent;
   static StaticAutoPtr<LinkedList<ContentParent> > sContentParents;
 
@@ -846,12 +843,6 @@ private:
   virtual bool DeallocPMediaParent(PMediaParent* aActor) override;
 
   virtual bool DeallocPStorageParent(PStorageParent* aActor) override;
-
-  virtual PBluetoothParent* AllocPBluetoothParent() override;
-
-  virtual bool DeallocPBluetoothParent(PBluetoothParent* aActor) override;
-
-  virtual bool RecvPBluetoothConstructor(PBluetoothParent* aActor) override;
 
   virtual PPresentationParent* AllocPPresentationParent() override;
 

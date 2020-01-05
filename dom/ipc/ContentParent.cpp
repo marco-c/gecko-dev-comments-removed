@@ -57,7 +57,6 @@
 #include "mozilla/dom/PCycleCollectWithLogsParent.h"
 #include "mozilla/dom/PMemoryReportRequestParent.h"
 #include "mozilla/dom/ServiceWorkerRegistrar.h"
-#include "mozilla/dom/bluetooth/PBluetoothParent.h"
 #include "mozilla/dom/devicestorage/DeviceStorageRequestParent.h"
 #include "mozilla/dom/icc/IccParent.h"
 #include "mozilla/dom/mobileconnection/MobileConnectionParent.h"
@@ -225,11 +224,6 @@ using namespace mozilla::system;
 #include <gdk/gdk.h>
 #endif
 
-#ifdef MOZ_B2G_BT
-#include "BluetoothParent.h"
-#include "BluetoothService.h"
-#endif
-
 #include "mozilla/RemoteSpellCheckEngineParent.h"
 
 #include "Crypto.h"
@@ -284,7 +278,6 @@ using mozilla::ProfileGatherer;
 #ifdef MOZ_CRASHREPORTER
 using namespace CrashReporter;
 #endif
-using namespace mozilla::dom::bluetooth;
 using namespace mozilla::dom::devicestorage;
 using namespace mozilla::dom::icc;
 using namespace mozilla::dom::power;
@@ -519,7 +512,6 @@ ContentParentsMemoryReporter::CollectReports(
 
 nsDataHashtable<nsStringHashKey, ContentParent*>* ContentParent::sAppContentParents;
 nsTArray<ContentParent*>* ContentParent::sNonAppContentParents;
-nsTArray<ContentParent*>* ContentParent::sLargeAllocationContentParents;
 nsTArray<ContentParent*>* ContentParent::sPrivateContent;
 StaticAutoPtr<LinkedList<ContentParent> > ContentParent::sContentParents;
 #if defined(XP_LINUX) && defined(MOZ_CONTENT_SANDBOX)
@@ -749,44 +741,25 @@ ContentParent::JoinAllSubprocesses()
  already_AddRefed<ContentParent>
 ContentParent::GetNewOrUsedBrowserProcess(bool aForBrowserElement,
                                           ProcessPriority aPriority,
-                                          ContentParent* aOpener,
-                                          bool aFreshProcess)
+                                          ContentParent* aOpener)
 {
-  nsTArray<ContentParent*>* contentParents;
-  int32_t maxContentParents;
+  if (!sNonAppContentParents)
+    sNonAppContentParents = new nsTArray<ContentParent*>();
 
-  
-  
-  if (aFreshProcess) {
-    if (!sLargeAllocationContentParents) {
-      sLargeAllocationContentParents = new nsTArray<ContentParent*>();
-    }
-    contentParents = sLargeAllocationContentParents;
+  int32_t maxContentProcesses = Preferences::GetInt("dom.ipc.processCount", 1);
+  if (maxContentProcesses < 1)
+    maxContentProcesses = 1;
 
-    maxContentParents = Preferences::GetInt("dom.ipc.dedicatedProcessCount", 2);
-  } else {
-    if (!sNonAppContentParents) {
-      sNonAppContentParents = new nsTArray<ContentParent*>();
-    }
-    contentParents = sNonAppContentParents;
-
-    maxContentParents = Preferences::GetInt("dom.ipc.processCount", 1);
-  }
-
-  if (maxContentParents < 1) {
-    maxContentParents = 1;
-  }
-
-  if (contentParents->Length() >= uint32_t(maxContentParents)) {
-    uint32_t startIdx = rand() % contentParents->Length();
+  if (sNonAppContentParents->Length() >= uint32_t(maxContentProcesses)) {
+    uint32_t startIdx = rand() % sNonAppContentParents->Length();
     uint32_t currIdx = startIdx;
     do {
-      RefPtr<ContentParent> p = (*contentParents)[currIdx];
-      NS_ASSERTION(p->IsAlive(), "Non-alive contentparent in sNonAppContntParents?");
-      if (p->mOpener == aOpener) {
-        return p.forget();
-      }
-      currIdx = (currIdx + 1) % contentParents->Length();
+    RefPtr<ContentParent> p = (*sNonAppContentParents)[currIdx];
+    NS_ASSERTION(p->IsAlive(), "Non-alive contentparent in sNonAppContntParents?");
+    if (p->mOpener == aOpener) {
+      return p.forget();
+    }
+    currIdx = (currIdx + 1) % sNonAppContentParents->Length();
     } while (currIdx != startIdx);
   }
 
@@ -799,7 +772,7 @@ ContentParent::GetNewOrUsedBrowserProcess(bool aForBrowserElement,
     p = new ContentParent( nullptr,
                           aOpener,
                           aForBrowserElement,
-                           false);
+                            false);
 
     if (!p->LaunchSubprocess(aPriority)) {
       return nullptr;
@@ -809,7 +782,7 @@ ContentParent::GetNewOrUsedBrowserProcess(bool aForBrowserElement,
   }
   p->ForwardKnownInfo();
 
-  contentParents->AppendElement(p);
+  sNonAppContentParents->AppendElement(p);
   return p.forget();
 }
 
@@ -1068,8 +1041,7 @@ ContentParent::RecvInitVideoDecoderManager(Endpoint<PVideoDecoderManagerChild>* 
  TabParent*
 ContentParent::CreateBrowserOrApp(const TabContext& aContext,
                                   Element* aFrameElement,
-                                  ContentParent* aOpenerContentParent,
-                                  bool aFreshProcess)
+                                  ContentParent* aOpenerContentParent)
 {
   PROFILER_LABEL_FUNC(js::ProfileEntry::Category::OTHER);
 
@@ -1104,9 +1076,7 @@ ContentParent::CreateBrowserOrApp(const TabContext& aContext,
       } else {
         constructorSender =
           GetNewOrUsedBrowserProcess(aContext.IsMozBrowserElement(),
-                                     initialPriority,
-                                     nullptr,
-                                     aFreshProcess);
+                                     initialPriority);
         if (!constructorSender) {
           return nullptr;
         }
@@ -1153,10 +1123,6 @@ ContentParent::CreateBrowserOrApp(const TabContext& aContext,
         constructorSender->ChildID(),
         constructorSender->IsForApp(),
         constructorSender->IsForBrowser());
-
-      if (aFreshProcess) {
-        Unused << browser->SendSetFreshProcess();
-      }
 
       if (browser) {
         RefPtr<TabParent> constructedTabParent = TabParent::GetFrom(browser);
@@ -1269,10 +1235,6 @@ ContentParent::CreateBrowserOrApp(const TabContext& aContext,
     parent->ChildID(),
     parent->IsForApp(),
     parent->IsForBrowser());
-
-  if (aFreshProcess) {
-    Unused << browser->SendSetFreshProcess();
-  }
 
   if (browser) {
     RefPtr<TabParent> constructedTabParent = TabParent::GetFrom(browser);
@@ -1635,21 +1597,11 @@ ContentParent::MarkAsDead()
         sAppContentParents = nullptr;
       }
     }
-  } else {
-    if (sNonAppContentParents) {
-      sNonAppContentParents->RemoveElement(this);
-      if (!sNonAppContentParents->Length()) {
-        delete sNonAppContentParents;
-        sNonAppContentParents = nullptr;
-      }
-    }
-
-    if (sLargeAllocationContentParents) {
-      sLargeAllocationContentParents->RemoveElement(this);
-      if (!sLargeAllocationContentParents->Length()) {
-        delete sLargeAllocationContentParents;
-        sLargeAllocationContentParents = nullptr;
-      }
+  } else if (sNonAppContentParents) {
+    sNonAppContentParents->RemoveElement(this);
+    if (!sNonAppContentParents->Length()) {
+      delete sNonAppContentParents;
+      sNonAppContentParents = nullptr;
     }
   }
 
@@ -2174,10 +2126,8 @@ ContentParent::~ContentParent()
   
   MOZ_ASSERT(!sPrivateContent || !sPrivateContent->Contains(this));
   if (mAppManifestURL.IsEmpty()) {
-    MOZ_ASSERT((!sNonAppContentParents ||
-                !sNonAppContentParents->Contains(this)) &&
-               (!sLargeAllocationContentParents ||
-                !sLargeAllocationContentParents->Contains(this)));
+    MOZ_ASSERT(!sNonAppContentParents ||
+               !sNonAppContentParents->Contains(this));
   } else {
     
     
@@ -3485,43 +3435,6 @@ ContentParent::DeallocPStorageParent(PStorageParent* aActor)
   DOMStorageDBParent* child = static_cast<DOMStorageDBParent*>(aActor);
   child->ReleaseIPDLReference();
   return true;
-}
-
-PBluetoothParent*
-ContentParent::AllocPBluetoothParent()
-{
-#ifdef MOZ_B2G_BT
-  if (!AssertAppProcessPermission(this, "bluetooth")) {
-  return nullptr;
-  }
-  return new mozilla::dom::bluetooth::BluetoothParent();
-#else
-  MOZ_CRASH("No support for bluetooth on this platform!");
-#endif
-}
-
-bool
-ContentParent::DeallocPBluetoothParent(PBluetoothParent* aActor)
-{
-#ifdef MOZ_B2G_BT
-  delete aActor;
-  return true;
-#else
-  MOZ_CRASH("No support for bluetooth on this platform!");
-#endif
-}
-
-bool
-ContentParent::RecvPBluetoothConstructor(PBluetoothParent* aActor)
-{
-#ifdef MOZ_B2G_BT
-  RefPtr<BluetoothService> btService = BluetoothService::Get();
-  NS_ENSURE_TRUE(btService, false);
-
-  return static_cast<BluetoothParent*>(aActor)->InitWithService(btService);
-#else
-  MOZ_CRASH("No support for bluetooth on this platform!");
-#endif
 }
 
 PPresentationParent*
