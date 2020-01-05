@@ -3,7 +3,6 @@
 
 
 #![allow(unsafe_code)]
-#![deny(missing_docs)]
 
 
 
@@ -18,6 +17,11 @@ use std::sync::Arc;
 use std::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use stylesheets::StyleRule;
 use thread_state;
+
+
+
+
+
 
 
 
@@ -445,8 +449,11 @@ impl RuleNode {
                self as *const RuleNode, self.parent.as_ref().map(|p| p.ptr()));
         
         
-        let prev_sibling = self.prev_sibling.swap(ptr::null_mut(), Ordering::Relaxed);
-        let next_sibling = self.next_sibling.swap(ptr::null_mut(), Ordering::Relaxed);
+        let prev_sibling =
+            self.prev_sibling.swap(ptr::null_mut(), Ordering::Relaxed);
+
+        let next_sibling =
+            self.next_sibling.swap(ptr::null_mut(), Ordering::Relaxed);
 
         
         
@@ -474,7 +481,7 @@ impl RuleNode {
         }
 
         let _ = writeln!(writer, " - {:?} (ref: {:?}, parent: {:?})",
-                         self as *const _, self.refcount.load(Ordering::SeqCst),
+                         self as *const _, self.refcount.load(Ordering::Relaxed),
                          self.parent.as_ref().map(|p| p.ptr()));
 
         for _ in 0..indent {
@@ -501,7 +508,7 @@ impl RuleNode {
 
     fn iter_children(&self) -> RuleChildrenListIter {
         
-        let first_child = self.first_child.load(Ordering::SeqCst);
+        let first_child = self.first_child.load(Ordering::Acquire);
         RuleChildrenListIter {
             current: if first_child.is_null() {
                 None
@@ -551,7 +558,7 @@ impl StrongRuleNode {
     fn next_sibling(&self) -> Option<WeakRuleNode> {
         
         
-        let ptr = self.get().next_sibling.load(Ordering::SeqCst);
+        let ptr = self.get().next_sibling.load(Ordering::Acquire);
         if ptr.is_null() {
             None
         } else {
@@ -570,6 +577,7 @@ impl StrongRuleNode {
                     source: StyleSource,
                     level: CascadeLevel) -> StrongRuleNode {
         let mut last = None;
+        
         for child in self.get().iter_children() {
             if child .get().level == level &&
                 child.get().source.as_ref().unwrap().ptr_equals(&source) {
@@ -593,10 +601,12 @@ impl StrongRuleNode {
                     None => &self.get().first_child,
                 };
 
+                
+                
                 let existing =
                     next_sibling_ptr.compare_and_swap(ptr::null_mut(),
                                                       new_ptr,
-                                                      Ordering::SeqCst);
+                                                      Ordering::AcqRel);
 
                 if existing == ptr::null_mut() {
                     
@@ -615,6 +625,7 @@ impl StrongRuleNode {
 
                 if strong.get().source.as_ref().unwrap().ptr_equals(&source) {
                     
+                    
                     return strong;
                 }
             }
@@ -631,7 +642,7 @@ impl StrongRuleNode {
     fn get(&self) -> &RuleNode {
         if cfg!(debug_assertions) {
             let node = unsafe { &*self.ptr };
-            assert!(node.refcount.load(Ordering::SeqCst) > 0);
+            assert!(node.refcount.load(Ordering::Relaxed) > 0);
         }
         unsafe { &*self.ptr }
     }
@@ -660,6 +671,12 @@ impl StrongRuleNode {
         }
     }
 
+    
+    
+    pub unsafe fn has_children_for_testing(&self) -> bool {
+        !self.get().first_child.load(Ordering::Relaxed).is_null()
+    }
+
     unsafe fn pop_from_free_list(&self) -> Option<WeakRuleNode> {
         
         
@@ -678,7 +695,7 @@ impl StrongRuleNode {
                            thread_state::get().is_script()));
         }
 
-        let current = me.next_free.load(Ordering::SeqCst);
+        let current = me.next_free.load(Ordering::Relaxed);
         if current == FREE_LIST_SENTINEL {
             return None;
         }
@@ -689,12 +706,12 @@ impl StrongRuleNode {
         debug_assert!(current != self.ptr,
                       "How did the root end up in the free list?");
 
-        let next = (*current).next_free.swap(ptr::null_mut(), Ordering::SeqCst);
+        let next = (*current).next_free.swap(ptr::null_mut(), Ordering::Relaxed);
 
         debug_assert!(!next.is_null(),
                       "How did a null pointer end up in the free list?");
 
-        me.next_free.store(next, Ordering::SeqCst);
+        me.next_free.store(next, Ordering::Relaxed);
 
         debug!("Popping from free list: cur: {:?}, next: {:?}", current, next);
 
@@ -711,7 +728,7 @@ impl StrongRuleNode {
         let mut current = self.ptr;
         let mut seen = HashSet::new();
         while current != FREE_LIST_SENTINEL {
-            let next = (*current).next_free.load(Ordering::SeqCst);
+            let next = (*current).next_free.load(Ordering::Relaxed);
             assert!(!next.is_null());
             assert!(!seen.contains(&next));
             seen.insert(next);
@@ -734,7 +751,7 @@ impl StrongRuleNode {
         while let Some(weak) = self.pop_from_free_list() {
             let needs_drop = {
                 let node = &*weak.ptr();
-                if node.refcount.load(Ordering::SeqCst) == 0 {
+                if node.refcount.load(Ordering::Relaxed) == 0 {
                     node.remove_from_child_list();
                     true
                 } else {
@@ -748,14 +765,14 @@ impl StrongRuleNode {
             }
         }
 
-        me.free_count.store(0, Ordering::SeqCst);
+        me.free_count.store(0, Ordering::Relaxed);
 
-        debug_assert!(me.next_free.load(Ordering::SeqCst) == FREE_LIST_SENTINEL);
+        debug_assert!(me.next_free.load(Ordering::Relaxed) == FREE_LIST_SENTINEL);
     }
 
     unsafe fn maybe_gc(&self) {
         debug_assert!(self.get().is_root(), "Can't call GC on a non-root node!");
-        if self.get().free_count.load(Ordering::SeqCst) > RULE_TREE_GC_INTERVAL {
+        if self.get().free_count.load(Ordering::Relaxed) > RULE_TREE_GC_INTERVAL {
             self.gc();
         }
     }
@@ -787,9 +804,9 @@ impl<'a> Iterator for SelfAndAncestors<'a> {
 
 impl Clone for StrongRuleNode {
     fn clone(&self) -> Self {
-        debug!("{:?}: {:?}+", self.ptr(), self.get().refcount.load(Ordering::SeqCst));
-        debug_assert!(self.get().refcount.load(Ordering::SeqCst) > 0);
-        self.get().refcount.fetch_add(1, Ordering::SeqCst);
+        debug!("{:?}: {:?}+", self.ptr(), self.get().refcount.load(Ordering::Relaxed));
+        debug_assert!(self.get().refcount.load(Ordering::Relaxed) > 0);
+        self.get().refcount.fetch_add(1, Ordering::Relaxed);
         StrongRuleNode {
             ptr: self.ptr,
         }
@@ -800,21 +817,21 @@ impl Drop for StrongRuleNode {
     fn drop(&mut self) {
         let node = unsafe { &*self.ptr };
 
-        debug!("{:?}: {:?}-", self.ptr(), node.refcount.load(Ordering::SeqCst));
+        debug!("{:?}: {:?}-", self.ptr(), node.refcount.load(Ordering::Relaxed));
         debug!("Dropping node: {:?}, root: {:?}, parent: {:?}",
                self.ptr,
                node.root.as_ref().map(|r| r.ptr()),
                node.parent.as_ref().map(|p| p.ptr()));
         let should_drop = {
-            debug_assert!(node.refcount.load(Ordering::SeqCst) > 0);
-            node.refcount.fetch_sub(1, Ordering::SeqCst) == 1
+            debug_assert!(node.refcount.load(Ordering::Relaxed) > 0);
+            node.refcount.fetch_sub(1, Ordering::Relaxed) == 1
         };
 
         if !should_drop {
             return
         }
 
-        debug_assert_eq!(node.first_child.load(Ordering::SeqCst),
+        debug_assert_eq!(node.first_child.load(Ordering::Acquire),
                          ptr::null_mut());
         if node.parent.is_none() {
             debug!("Dropping root node!");
@@ -830,16 +847,23 @@ impl Drop for StrongRuleNode {
         let free_list = &root.next_free;
 
         
-        if node.next_free.load(Ordering::SeqCst) != ptr::null_mut() {
+        
+        
+        if node.next_free.load(Ordering::Relaxed) != ptr::null_mut() {
             return;
         }
 
         
-        let mut old_head = free_list.load(Ordering::SeqCst);
+        
+        
+        
+        
+        
+        let mut old_head = free_list.load(Ordering::Relaxed);
         loop {
             match free_list.compare_exchange_weak(old_head,
                                                   ptr::null_mut(),
-                                                  Ordering::SeqCst,
+                                                  Ordering::Acquire,
                                                   Ordering::Relaxed) {
                 Ok(..) => {
                     if old_head != ptr::null_mut() {
@@ -852,15 +876,25 @@ impl Drop for StrongRuleNode {
 
         
         
-        if node.next_free.load(Ordering::SeqCst) != ptr::null_mut() {
-            free_list.store(old_head, Ordering::SeqCst);
+        
+        
+        
+        
+        if node.next_free.load(Ordering::Relaxed) != ptr::null_mut() {
+            free_list.store(old_head, Ordering::Release);
             return;
         }
 
         
         
-        node.next_free.store(old_head, Ordering::SeqCst);
-        free_list.store(self.ptr(), Ordering::SeqCst);
+        
+        
+        node.next_free.store(old_head, Ordering::Relaxed);
+
+        
+        
+        
+        free_list.store(self.ptr(), Ordering::Release);
     }
 }
 
@@ -877,7 +911,7 @@ impl WeakRuleNode {
         debug!("Upgrading weak node: {:p}", self.ptr());
 
         let node = unsafe { &*self.ptr };
-        node.refcount.fetch_add(1, Ordering::SeqCst);
+        node.refcount.fetch_add(1, Ordering::Relaxed);
         StrongRuleNode {
             ptr: self.ptr,
         }
