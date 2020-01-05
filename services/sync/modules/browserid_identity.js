@@ -254,7 +254,7 @@ this.BrowserIDManager.prototype = {
   observe(subject, topic, data) {
     this._log.debug("observed " + topic);
     switch (topic) {
-    case fxAccountsCommon.ONLOGIN_NOTIFICATION:
+    case fxAccountsCommon.ONLOGIN_NOTIFICATION: {
       
       
       
@@ -264,8 +264,27 @@ this.BrowserIDManager.prototype = {
       
       
       
-      this.initializeWithCurrentIdentity(true);
-      break;
+      
+      
+      let firstLogin = !this.username;
+      this.initializeWithCurrentIdentity(firstLogin);
+
+      if (!firstLogin) {
+        
+        
+        
+        
+        
+        this.whenReadyToAuthenticate.promise.then(() => {
+          Services.obs.notifyObservers(null, "weave:service:setup-complete", null);
+          return new Promise(resolve => { Weave.Utils.nextTick(resolve, null); })
+        }).then(() => {
+          Weave.Service.sync();
+        }).catch(e => {
+          this._log.warn("Failed to trigger setup complete notification", e);
+        });
+      }
+    } break;
 
     case fxAccountsCommon.ONLOGOUT_NOTIFICATION:
       Weave.Service.startOver();
