@@ -1935,6 +1935,9 @@ nsScriptLoader::AttemptAsyncScriptCompile(nsScriptLoadRequest* aRequest)
   }
 
   mDocument->BlockOnload();
+
+  
+  
   aRequest->mProgress = nsScriptLoadRequest::Progress::Compiling;
 
   Unused << runnable.forget();
@@ -2178,6 +2181,8 @@ nsScriptLoader::FillCompileOptionsForRequest(const AutoJSAPI&jsapi,
 nsresult
 nsScriptLoader::EvaluateScript(nsScriptLoadRequest* aRequest)
 {
+  MOZ_ASSERT(aRequest->IsReadyToRun());
+
   
   if (!mDocument) {
     return NS_ERROR_FAILURE;
@@ -2716,6 +2721,7 @@ nsScriptLoader::PrepareLoadedRequest(nsScriptLoadRequest* aRequest,
   if (aRequest->IsCanceled()) {
     return NS_BINDING_ABORTED;
   }
+  MOZ_ASSERT(aRequest->IsLoading());
 
   
   
@@ -2936,7 +2942,9 @@ nsScriptLoadHandler::nsScriptLoadHandler(nsScriptLoader *aScriptLoader,
     mSRIDataVerifier(aSRIDataVerifier),
     mSRIStatus(NS_OK),
     mDecoder()
-{}
+{
+  MOZ_ASSERT(mRequest->IsLoading());
+}
 
 nsScriptLoadHandler::~nsScriptLoadHandler()
 {}
