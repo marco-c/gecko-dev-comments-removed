@@ -99,7 +99,7 @@ impl<E: TElement> StyleBloom<E> {
     }
 
     
-    pub fn rebuild(&mut self, mut element: E) -> usize {
+    pub fn rebuild(&mut self, mut element: E) {
         self.clear();
 
         while let Some(parent) = element.parent_element() {
@@ -110,7 +110,6 @@ impl<E: TElement> StyleBloom<E> {
 
         
         self.elements.reverse();
-        return self.elements.len();
     }
 
     
@@ -139,12 +138,12 @@ impl<E: TElement> StyleBloom<E> {
     
     pub fn insert_parents_recovering(&mut self,
                                      element: E,
-                                     element_depth: Option<usize>)
-                                     -> usize
+                                     element_depth: usize)
     {
         
         if self.elements.is_empty() {
-            return self.rebuild(element);
+            self.rebuild(element);
+            return;
         }
 
         let parent_element = match element.parent_element() {
@@ -152,23 +151,19 @@ impl<E: TElement> StyleBloom<E> {
             None => {
                 
                 self.clear();
-                return 0;
+                return;
             }
         };
 
         if self.elements.last().map(|el| **el) == Some(parent_element) {
             
-            return self.elements.len();
+            return;
         }
 
-        let element_depth = match element_depth {
-            Some(depth) => depth,
-            
-            
-            None => {
-                return self.rebuild(element);
-            }
-        };
+        if element_depth == 0 {
+            self.clear();
+            return;
+        }
 
         
         debug_assert!(element_depth != 0,
@@ -250,6 +245,5 @@ impl<E: TElement> StyleBloom<E> {
         debug_assert_eq!(self.elements.len(), element_depth);
 
         
-        return self.elements.len();
     }
 }

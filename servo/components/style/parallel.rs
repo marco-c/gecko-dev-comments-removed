@@ -39,7 +39,6 @@ pub const CHUNK_SIZE: usize = 64;
 #[allow(unsafe_code)]
 pub fn traverse_dom<E, D>(traversal: &D,
                           root: E,
-                          known_root_dom_depth: Option<usize>,
                           token: PreTraverseToken,
                           queue: &rayon::ThreadPool)
     where E: TElement,
@@ -60,9 +59,9 @@ pub fn traverse_dom<E, D>(traversal: &D,
                 children.push(unsafe { SendNode::new(kid) });
             }
         }
-        (children, known_root_dom_depth.map(|x| x + 1))
+        (children, root.depth() + 1)
     } else {
-        (vec![unsafe { SendNode::new(root.as_node()) }], known_root_dom_depth)
+        (vec![unsafe { SendNode::new(root.as_node()) }], root.depth())
     };
 
     let traversal_data = PerLevelTraversalData {
@@ -121,25 +120,12 @@ fn top_down_dom<'a, 'scope, E, D>(nodes: &'a [SendNode<E::ConcreteNode>],
                 });
             }
 
-            
-            
-            if D::needs_postorder_traversal() {
-                if children_to_process == 0 {
-                    
-                    bottom_up_dom(traversal, &mut *tlc, root, node)
-                } else {
-                    
-                    
-                    node.as_element().unwrap().store_children_to_process(children_to_process);
-                }
-            }
+            traversal.handle_postorder_traversal(&mut *tlc, root, node,
+                                                 children_to_process);
         }
     }
 
-    if let Some(ref mut depth) = traversal_data.current_dom_depth {
-        *depth += 1;
-    }
-
+    traversal_data.current_dom_depth += 1;
     traverse_nodes(discovered_child_nodes, root, traversal_data, scope, traversal, tls);
 }
 
@@ -171,47 +157,5 @@ fn traverse_nodes<'a, 'scope, E, D>(nodes: Vec<SendNode<E::ConcreteNode>>, root:
             let nodes = nodes;
             top_down_dom(&nodes, root, traversal_data, scope, traversal, tls)
         })
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-fn bottom_up_dom<E, D>(traversal: &D,
-                       thread_local: &mut D::ThreadLocalContext,
-                       root: OpaqueNode,
-                       mut node: E::ConcreteNode)
-    where E: TElement,
-          D: DomTraversal<E>,
-{
-    loop {
-        
-        traversal.process_postorder(thread_local, node);
-
-        if node.opaque() == root {
-            break;
-        }
-
-        let parent = match node.parent_element() {
-            None => unreachable!("How can this happen after the break above?"),
-            Some(parent) => parent,
-        };
-
-        let remaining = parent.did_process_child();
-        if remaining != 0 {
-            
-            break
-        }
-
-        
-        node = parent.as_node();
     }
 }

@@ -9,7 +9,7 @@
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use context::{SharedStyleContext, StyleContext, ThreadLocalStyleContext};
 use data::{ElementData, ElementStyles, StoredRestyleHint};
-use dom::{DirtyDescendants, NodeInfo, TElement, TNode};
+use dom::{DirtyDescendants, NodeInfo, OpaqueNode, TElement, TNode};
 use matching::{MatchMethods, StyleSharingBehavior};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_SELF};
 use selector_parser::RestyleDamage;
@@ -27,7 +27,7 @@ pub struct PerLevelTraversalData {
     
     
     
-    pub current_dom_depth: Option<usize>,
+    pub current_dom_depth: usize,
 }
 
 bitflags! {
@@ -126,7 +126,7 @@ pub trait DomTraversal<E: TElement> : Sync {
     type ThreadLocalContext: Send + BorrowMut<ThreadLocalStyleContext<E>>;
 
     
-    fn process_preorder(&self, data: &mut PerLevelTraversalData,
+    fn process_preorder(&self, data: &PerLevelTraversalData,
                         thread_local: &mut Self::ThreadLocalContext,
                         node: E::ConcreteNode);
 
@@ -142,6 +142,56 @@ pub trait DomTraversal<E: TElement> : Sync {
     
     
     fn needs_postorder_traversal() -> bool { true }
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    fn handle_postorder_traversal(&self,
+                                  thread_local: &mut Self::ThreadLocalContext,
+                                  root: OpaqueNode,
+                                  mut node: E::ConcreteNode,
+                                  children_to_process: isize)
+    {
+        
+        if !Self::needs_postorder_traversal() {
+            return;
+        }
+
+        if children_to_process == 0 {
+            
+            loop {
+                self.process_postorder(thread_local, node);
+                if node.opaque() == root {
+                    break;
+                }
+                let parent = node.parent_element().unwrap();
+                let remaining = parent.did_process_child();
+                if remaining != 0 {
+                    
+                    
+                    
+                    break
+                }
+
+                node = parent.as_node();
+            }
+        } else {
+            
+            
+            node.as_element().unwrap()
+                .store_children_to_process(children_to_process);
+        }
+    }
 
     
     
@@ -506,7 +556,7 @@ pub fn resolve_style<E, F, G, H>(context: &mut StyleContext<E>, element: E,
 #[inline]
 #[allow(unsafe_code)]
 pub fn recalc_style_at<E, D>(traversal: &D,
-                             traversal_data: &mut PerLevelTraversalData,
+                             traversal_data: &PerLevelTraversalData,
                              context: &mut StyleContext<E>,
                              element: E,
                              mut data: &mut AtomicRefMut<ElementData>)
@@ -619,7 +669,7 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 }
 
 fn compute_style<E, D>(_traversal: &D,
-                       traversal_data: &mut PerLevelTraversalData,
+                       traversal_data: &PerLevelTraversalData,
                        context: &mut StyleContext<E>,
                        element: E,
                        mut data: &mut AtomicRefMut<ElementData>)
@@ -650,16 +700,8 @@ fn compute_style<E, D>(_traversal: &D,
     match kind {
         MatchAndCascade => {
             
-            let dom_depth =
-                context.thread_local.bloom_filter
-                       .insert_parents_recovering(element,
-                                                  traversal_data.current_dom_depth);
-
-            
-            
-            
-            
-            traversal_data.current_dom_depth = Some(dom_depth);
+            context.thread_local.bloom_filter
+                   .insert_parents_recovering(element, traversal_data.current_dom_depth);
 
             context.thread_local.bloom_filter.assert_complete(element);
             context.thread_local.statistics.elements_matched += 1;

@@ -282,6 +282,18 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     fn as_node(&self) -> Self::ConcreteNode;
 
     
+    fn depth(&self) -> usize {
+        let mut depth = 0;
+        let mut curr = *self;
+        while let Some(parent) = curr.parent_element() {
+            depth += 1;
+            curr = parent;
+        }
+
+        depth
+    }
+
+    
     
     fn layout_parent_element(self, reflow_root: OpaqueNode) -> Option<Self> {
         if self.as_node().opaque() == reflow_root {
