@@ -120,43 +120,6 @@ typedef uint8_t* Address;
 
 
 
-class Mutex {
- public:
-  virtual ~Mutex() {}
-
-  
-  
-  
-  
-  virtual int Lock() = 0;
-
-  
-  
-  virtual int Unlock() = 0;
-};
-
-class MutexAutoLock {
- public:
-  explicit MutexAutoLock(::Mutex& aMutex)
-    : mMutex(&aMutex)
-  {
-    mMutex->Lock();
-  }
-
-  ~MutexAutoLock() {
-    mMutex->Unlock();
-  }
-
- private:
-  Mutex* mMutex;
-};
-
-
-
-
-
-
-
 
 class OS {
  public:
@@ -169,8 +132,6 @@ class OS {
 
   
   static void Startup();
-
-  static mozilla::UniquePtr< ::Mutex> CreateMutex(const char* aDesc);
 
  private:
   static const int msPerSecond = 1000;
@@ -392,7 +353,7 @@ class Sampler {
   static GeckoSampler* GetActiveSampler() { return sActiveSampler; }
   static void SetActiveSampler(GeckoSampler* sampler) { sActiveSampler = sampler; }
 
-  static mozilla::UniquePtr<Mutex> sRegisteredThreadsMutex;
+  static mozilla::UniquePtr<mozilla::Mutex> sRegisteredThreadsMutex;
 
   static bool CanNotifyObservers() {
 #ifdef MOZ_WIDGET_GONK

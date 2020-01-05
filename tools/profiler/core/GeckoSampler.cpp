@@ -212,7 +212,7 @@ GeckoSampler::GeckoSampler(double aInterval, int aEntrySize,
   sStartTime = mozilla::TimeStamp::ProcessCreation(ignore);
 
   {
-    ::MutexAutoLock lock(*sRegisteredThreadsMutex);
+    MutexAutoLock lock(*sRegisteredThreadsMutex);
 
     
     for (uint32_t i = 0; i < sRegisteredThreads->size(); i++) {
@@ -242,7 +242,7 @@ GeckoSampler::~GeckoSampler()
 
   
   {
-    ::MutexAutoLock lock(*sRegisteredThreadsMutex);
+    MutexAutoLock lock(*sRegisteredThreadsMutex);
 
     for (uint32_t i = 0; i < sRegisteredThreads->size(); i++) {
       ThreadInfo* info = sRegisteredThreads->at(i);
@@ -295,7 +295,7 @@ void GeckoSampler::StreamTaskTracer(SpliceableJSONWriter& aWriter)
   aWriter.EndArray();
 
   aWriter.StartArrayProperty("threads");
-    ::MutexAutoLock lock(*sRegisteredThreadsMutex);
+    MutexAutoLock lock(*sRegisteredThreadsMutex);
     for (size_t i = 0; i < sRegisteredThreads->size(); i++) {
       
       ThreadInfo* info = sRegisteredThreads->at(i);
@@ -527,7 +527,7 @@ void GeckoSampler::StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
       SetPaused(true);
 
       {
-        ::MutexAutoLock lock(*sRegisteredThreadsMutex);
+        MutexAutoLock lock(*sRegisteredThreadsMutex);
 
         for (size_t i = 0; i < sRegisteredThreads->size(); i++) {
           
@@ -537,7 +537,7 @@ void GeckoSampler::StreamJSON(SpliceableJSONWriter& aWriter, double aSinceTime)
           
           
 
-          ::MutexAutoLock lock(sRegisteredThreads->at(i)->Profile()->GetMutex());
+          MutexAutoLock lock(sRegisteredThreads->at(i)->Profile()->GetMutex());
 
           sRegisteredThreads->at(i)->Profile()->StreamJSON(aWriter, aSinceTime);
         }
@@ -580,7 +580,7 @@ void GeckoSampler::FlushOnJSShutdown(JSContext* aContext)
   SetPaused(true);
 
   {
-    ::MutexAutoLock lock(*sRegisteredThreadsMutex);
+    MutexAutoLock lock(*sRegisteredThreadsMutex);
 
     for (size_t i = 0; i < sRegisteredThreads->size(); i++) {
       
@@ -594,7 +594,7 @@ void GeckoSampler::FlushOnJSShutdown(JSContext* aContext)
         continue;
       }
 
-      ::MutexAutoLock lock(sRegisteredThreads->at(i)->Profile()->GetMutex());
+      MutexAutoLock lock(sRegisteredThreads->at(i)->Profile()->GetMutex());
       sRegisteredThreads->at(i)->Profile()->FlushSamplesAndMarkers();
     }
   }
