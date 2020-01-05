@@ -2,6 +2,8 @@
 
 
 
+#[allow(uppercase_variables)];
+
 extern crate freetype;
 extern crate fontconfig;
 

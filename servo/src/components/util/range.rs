@@ -6,7 +6,7 @@ use std::cmp::{max, min};
 use std::iter;
 use std::fmt;
 
-enum RangeRelation {
+pub enum RangeRelation {
     OverlapsBegin( uint),
     OverlapsEnd( uint),
     ContainedBy,

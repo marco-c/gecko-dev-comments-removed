@@ -2,10 +2,6 @@
 
 
 
-#[feature(phase)];
-#[phase(syntax, link)]
-extern crate log;
-
 use std::io;
 use std::io::Writer;
 use std::cast::transmute;

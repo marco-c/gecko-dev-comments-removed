@@ -3,7 +3,7 @@
 
 
 #[deriving(Eq)]
-enum CompressionMode {
+pub enum CompressionMode {
     CompressNone,
     CompressWhitespace,
     CompressWhitespaceNewline,
