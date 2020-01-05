@@ -66,6 +66,7 @@ fn is_unrooted_ty(cx: &LateContext, ty: &ty::TyS, in_new_function: bool) -> bool
             ty::TyBox(..) if in_new_function => false, 
             ty::TyRef(..) => false, 
             ty::TyRawPtr(..) => false, 
+            ty::TyFnDef(..) | ty::TyFnPtr(_) => false,
             _ => true
         }
     });

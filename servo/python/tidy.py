@@ -204,7 +204,7 @@ def check_lock(file_name, contents):
         raise StopIteration
 
     
-    exceptions = []
+    exceptions = ["bitflags"]
 
     import toml
     content = toml.loads(contents)
