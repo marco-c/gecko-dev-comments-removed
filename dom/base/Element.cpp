@@ -1742,7 +1742,7 @@ Element::BindToTree(nsIDocument* aDocument, nsIContent* aParent,
   
   
   if (IsStyledByServo() && IsInComposedDoc()) {
-    MOZ_ASSERT(!ServoData().get());
+    MOZ_ASSERT(!HasServoData());
     SetIsDirtyForServo();
   }
 
@@ -1857,10 +1857,10 @@ Element::UnbindFromTree(bool aDeep, bool aNullParent)
   
   
   if (IsStyledByServo()) {
-    ServoData().reset();
+    ClearServoData();
   } else {
 #ifdef MOZ_STYLO
-    MOZ_ASSERT(!ServoData());
+    MOZ_ASSERT(!HasServoData());
 #endif
   }
 

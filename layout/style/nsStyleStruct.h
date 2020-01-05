@@ -47,6 +47,11 @@ class nsTextFrame;
 class imgIContainer;
 struct nsStyleVisibility;
 
+typedef nsINode RawGeckoNode;
+typedef mozilla::dom::Element RawGeckoElement;
+typedef nsIDocument RawGeckoDocument;
+struct ServoNodeData;
+
 
 #include "nsStyleStructFwd.h"
 
@@ -818,7 +823,7 @@ struct nsStyleImageLayers {
   }
 
   nsChangeHint CalcDifference(const nsStyleImageLayers& aNewLayers,
-                              nsStyleImageLayers::LayerType aType) const;
+                              nsChangeHint aPositionChangeHint) const;
 
   bool HasLayerWithImage() const;
 

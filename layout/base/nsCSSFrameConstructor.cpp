@@ -10593,13 +10593,13 @@ nsCSSFrameConstructor::AddFCItemsForAnonymousContent(
       
       
       
-      MOZ_ASSERT_IF(content->IsStyledByServo(), !content->ServoData());
+      MOZ_ASSERT_IF(content->IsStyledByServo(), !content->HasServoData());
       styleContext = aAnonymousItems[i].mStyleContext.forget();
     } else {
       
       
       
-      MOZ_ASSERT_IF(content->IsStyledByServo(), !!content->ServoData());
+      MOZ_ASSERT_IF(content->IsStyledByServo(), content->HasServoData());
       styleContext = ResolveStyleContext(aFrame, content, &aState);
     }
 

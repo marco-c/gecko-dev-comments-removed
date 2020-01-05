@@ -386,7 +386,7 @@ ServoRestyleManager::ContentInserted(nsINode* aContainer, nsIContent* aChild)
     return;
   }
 
-  if (!aContainer->ServoData().get()) {
+  if (!aContainer->HasServoData()) {
     
     
     return;
@@ -417,7 +417,7 @@ void
 ServoRestyleManager::ContentAppended(nsIContent* aContainer,
                                      nsIContent* aFirstNewContent)
 {
-  if (!aContainer->ServoData().get()) {
+  if (!aContainer->HasServoData()) {
     
     
     return;
