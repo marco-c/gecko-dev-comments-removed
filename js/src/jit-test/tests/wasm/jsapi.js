@@ -19,24 +19,33 @@ assertEq(String(WebAssembly), "[object WebAssembly]");
 
 
 const compileErrorDesc = Object.getOwnPropertyDescriptor(WebAssembly, 'CompileError');
+const linkErrorDesc = Object.getOwnPropertyDescriptor(WebAssembly, 'LinkError');
 const runtimeErrorDesc = Object.getOwnPropertyDescriptor(WebAssembly, 'RuntimeError');
 assertEq(typeof compileErrorDesc.value, "function");
+assertEq(typeof linkErrorDesc.value, "function");
 assertEq(typeof runtimeErrorDesc.value, "function");
 assertEq(compileErrorDesc.writable, true);
+assertEq(linkErrorDesc.writable, true);
 assertEq(runtimeErrorDesc.writable, true);
 assertEq(compileErrorDesc.enumerable, false);
+assertEq(linkErrorDesc.enumerable, false);
 assertEq(runtimeErrorDesc.enumerable, false);
 assertEq(compileErrorDesc.configurable, true);
+assertEq(linkErrorDesc.configurable, true);
 assertEq(runtimeErrorDesc.configurable, true);
 
 
 const CompileError = WebAssembly.CompileError;
+const LinkError = WebAssembly.LinkError;
 const RuntimeError = WebAssembly.RuntimeError;
 assertEq(CompileError, compileErrorDesc.value);
+assertEq(LinkError, linkErrorDesc.value);
 assertEq(RuntimeError, runtimeErrorDesc.value);
 assertEq(CompileError.length, 1);
+assertEq(LinkError.length, 1);
 assertEq(RuntimeError.length, 1);
 assertEq(CompileError.name, "CompileError");
+assertEq(LinkError.name, "LinkError");
 assertEq(RuntimeError.name, "RuntimeError");
 
 
