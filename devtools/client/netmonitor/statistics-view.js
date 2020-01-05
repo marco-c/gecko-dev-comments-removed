@@ -7,7 +7,6 @@
 
 "use strict";
 
-const { XPCOMUtils } = require("resource://gre/modules/XPCOMUtils.jsm");
 const { PluralForm } = require("devtools/shared/plural-form");
 const { Filters } = require("./filter-predicates");
 const { L10N } = require("./l10n");
@@ -16,9 +15,7 @@ const { DOM } = require("devtools/client/shared/vendor/react");
 const { button } = DOM;
 const ReactDOM = require("devtools/client/shared/vendor/react-dom");
 const Actions = require("./actions/index");
-
-XPCOMUtils.defineLazyModuleGetter(this, "Chart",
-  "resource://devtools/client/shared/widgets/Chart.jsm");
+const { Chart } = require("devtools/client/shared/widgets/Chart");
 
 const REQUEST_TIME_DECIMALS = 2;
 const CONTENT_SIZE_DECIMALS = 2;
@@ -38,6 +35,7 @@ StatisticsView.prototype = {
 
   initialize: function (store) {
     this.store = store;
+    this.Chart = Chart;
     this._backButton = $("#react-statistics-back-hook");
 
     let backStr = L10N.getStr("netmonitor.backButton");
@@ -160,7 +158,7 @@ StatisticsView.prototype = {
     }
 
     
-    let chart = Chart.PieTable(document, {
+    let chart = this.Chart.PieTable(document, {
       diameter: NETWORK_ANALYSIS_PIE_CHART_DIAMETER,
       title: L10N.getStr(title),
       data: data,
