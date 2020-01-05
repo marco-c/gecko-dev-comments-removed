@@ -1598,7 +1598,7 @@ public:
                                     nsIPrincipal* aSubjectPrincipal);
 
   
-  bool CanMoveResizeWindows(bool aCallerIsChrome);
+  bool CanMoveResizeWindows(mozilla::dom::CallerType aCallerType);
 
   
   

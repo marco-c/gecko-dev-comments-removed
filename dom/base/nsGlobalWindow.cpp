@@ -6880,12 +6880,12 @@ nsGlobalWindow::MakeScriptDialogTitle(nsAString& aOutTitle,
 }
 
 bool
-nsGlobalWindow::CanMoveResizeWindows(bool aCallerIsChrome)
+nsGlobalWindow::CanMoveResizeWindows(CallerType aCallerType)
 {
   MOZ_ASSERT(IsOuterWindow());
 
   
-  if (!aCallerIsChrome) {
+  if (aCallerType != CallerType::System) {
     
     
     if (!mHadOriginalOpener) {
@@ -7539,7 +7539,7 @@ nsGlobalWindow::MoveToOuter(int32_t aXPos, int32_t aYPos,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType == CallerType::System) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
     return;
   }
 
@@ -7607,7 +7607,7 @@ nsGlobalWindow::MoveByOuter(int32_t aXDif, int32_t aYDif,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType == CallerType::System) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
     return;
   }
 
@@ -7686,7 +7686,7 @@ nsGlobalWindow::ResizeToOuter(int32_t aWidth, int32_t aHeight,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType == CallerType::System) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
     return;
   }
 
@@ -7745,7 +7745,7 @@ nsGlobalWindow::ResizeByOuter(int32_t aWidthDif, int32_t aHeightDif,
 
 
 
-  if (!CanMoveResizeWindows(aCallerType == CallerType::System) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
     return;
   }
 
@@ -7802,7 +7802,7 @@ nsGlobalWindow::SizeToContentOuter(CallerType aCallerType, ErrorResult& aError)
 
 
 
-  if (!CanMoveResizeWindows(aCallerType == CallerType::System) || IsFrame()) {
+  if (!CanMoveResizeWindows(aCallerType) || IsFrame()) {
     return;
   }
 
@@ -14048,7 +14048,7 @@ nsGlobalWindow::SetReplaceableWindowCoord(JSContext* aCx,
 
   nsGlobalWindow* outer = GetOuterWindowInternal();
   if (!outer ||
-      !outer->CanMoveResizeWindows(aCallerType == CallerType::System) ||
+      !outer->CanMoveResizeWindows(aCallerType) ||
       outer->IsFrame()) {
     RedefineProperty(aCx, aPropName, aValue, aError);
     return;
