@@ -67,7 +67,7 @@ public:
   
   nsresult ResetTimersForThrottleReduction();
 
-  int32_t DOMMinTimeoutValue() const;
+  int32_t DOMMinTimeoutValue(bool aIsTracking) const;
 
   
   
@@ -129,7 +129,7 @@ private:
     };
     void Insert(mozilla::dom::Timeout* aTimeout, SortBy aSortBy);
     nsresult ResetTimersForThrottleReduction(int32_t aPreviousThrottleDelayMS,
-                                             int32_t aMinTimeoutValueMS,
+                                             const TimeoutManager& aTimeoutManager,
                                              SortBy aSortBy,
                                              nsIEventTarget* aQueue);
 
