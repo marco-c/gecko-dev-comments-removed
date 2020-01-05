@@ -263,7 +263,7 @@ impl<'le> GeckoElement<'le> {
         
         
         
-        self.borrow_data().and_then(|data| data.current_or_previous_styles().pseudos
+        self.borrow_data().and_then(|data| data.styles().pseudos
                                                .get(pseudo).map(|c| c.values.clone()))
     }
 
@@ -273,8 +273,7 @@ impl<'le> GeckoElement<'le> {
             Some(x) => x,
             None => {
                 debug!("Creating ElementData for {:?}", self);
-                let existing = self.get_styles_from_frame();
-                let ptr = Box::into_raw(Box::new(AtomicRefCell::new(ElementData::new(existing))));
+                let ptr = Box::into_raw(Box::new(AtomicRefCell::new(ElementData::new(None))));
                 self.0.mServoData.set(ptr);
                 unsafe { &* ptr }
             },

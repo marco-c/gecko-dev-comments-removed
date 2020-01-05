@@ -15,7 +15,7 @@ use std::mem;
 use style::atomic_refcell::AtomicRefCell;
 use style::context::{LocalStyleContext, SharedStyleContext, StyleContext};
 use style::data::ElementData;
-use style::dom::{StylingMode, TElement, TNode};
+use style::dom::{TElement, TNode};
 use style::selector_parser::RestyleDamage;
 use style::servo::restyle_damage::{BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT};
 use style::traversal::{DomTraversalContext, recalc_style_at, remove_from_bloom_filter};
@@ -73,14 +73,15 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
         }
     }
 
-    fn process_preorder(&self, node: N, data: &mut PerLevelTraversalData) {
+    fn process_preorder(&self, node: N, traversal_data: &mut PerLevelTraversalData) {
         
         
         node.initialize_data();
 
         if !node.is_text_node() {
             let el = node.as_element().unwrap();
-            recalc_style_at::<_, _, Self>(&self.context, data, el);
+            let mut data = el.mutate_data().unwrap();
+            recalc_style_at::<_, _, Self>(&self.context, traversal_data, el, &mut data);
         }
     }
 
@@ -88,19 +89,13 @@ impl<'lc, N> DomTraversalContext<N> for RecalcStyleAndConstructFlows<'lc>
         construct_flows_at(&self.context, self.root, node);
     }
 
-    fn should_traverse_child(child: N) -> bool {
-        match child.as_element() {
-            
-            Some(el) => el.styling_mode() != StylingMode::Stop ||
-                        el.as_node().to_threadsafe().restyle_damage() != RestyleDamage::empty(),
-
-            
-            
-            
-            
-            None => child.get_raw_data().is_none() ||
-                    child.parent_node().unwrap().to_threadsafe().restyle_damage() != RestyleDamage::empty(),
-        }
+    fn text_node_needs_traversal(node: N) -> bool {
+        
+        
+        
+        
+        node.get_raw_data().is_none() ||
+        node.parent_node().unwrap().to_threadsafe().restyle_damage() != RestyleDamage::empty()
     }
 
     unsafe fn ensure_element_data(element: &N::ConcreteElement) -> &AtomicRefCell<ElementData> {

@@ -17,6 +17,10 @@ use string_cache::Atom;
 #[derive(Debug)]
 pub struct GeckoElementSnapshot(bindings::ServoElementSnapshotOwned);
 
+
+
+unsafe impl Sync for GeckoElementSnapshot {}
+
 impl Drop for GeckoElementSnapshot {
     fn drop(&mut self) {
         unsafe {

@@ -3,7 +3,6 @@
 
 
 use computed_values::display;
-use dom::TRestyleDamage;
 use heapsize::HeapSizeOf;
 use properties::ServoComputedValues;
 use std::fmt;
@@ -53,16 +52,9 @@ impl HeapSizeOf for ServoRestyleDamage {
     fn heap_size_of_children(&self) -> usize { 0 }
 }
 
-impl TRestyleDamage for ServoRestyleDamage {
-    
-    type PreExistingComputedValues = Arc<ServoComputedValues>;
-
-    fn empty() -> Self {
-        ServoRestyleDamage::empty()
-    }
-
-    fn compute(old: &Arc<ServoComputedValues>,
-               new: &Arc<ServoComputedValues>) -> ServoRestyleDamage {
+impl ServoRestyleDamage {
+    pub fn compute(old: &Arc<ServoComputedValues>,
+                   new: &Arc<ServoComputedValues>) -> ServoRestyleDamage {
         compute_damage(old, new)
     }
 
@@ -72,13 +64,11 @@ impl TRestyleDamage for ServoRestyleDamage {
     
     
     
-    fn rebuild_and_reflow() -> ServoRestyleDamage {
+    pub fn rebuild_and_reflow() -> ServoRestyleDamage {
         REPAINT | REPOSITION | STORE_OVERFLOW | BUBBLE_ISIZES | REFLOW_OUT_OF_FLOW | REFLOW |
             RECONSTRUCT_FLOW
     }
-}
 
-impl ServoRestyleDamage {
     
     
     pub fn damage_for_parent(self, child_is_absolutely_positioned: bool) -> ServoRestyleDamage {

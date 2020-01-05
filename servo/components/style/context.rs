@@ -39,14 +39,6 @@ pub struct SharedStyleContext {
     pub screen_size_changed: bool,
 
     
-    
-    
-    
-    
-    #[cfg(feature = "gecko")]
-    pub skip_root: bool,
-
-    
     pub stylist: Arc<Stylist>,
 
     
