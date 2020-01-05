@@ -202,11 +202,17 @@ pub trait Flow: fmt::Debug + Sync {
     
     
     
+    
+    
+    
+    
     fn assign_block_size_for_inorder_child_if_necessary<'a>(&mut self,
-                                                            layout_context: &'a LayoutContext<'a>)
+                                                            layout_context: &'a LayoutContext<'a>,
+                                                            parent_thread_id: u8)
                                                             -> bool {
         let impacted = base(self).flags.impacted_by_floats();
         if impacted {
+            mut_base(self).thread_id = parent_thread_id;
             self.assign_block_size(layout_context);
             mut_base(self).restyle_damage.remove(REFLOW_OUT_OF_FLOW | REFLOW);
         }
@@ -778,6 +784,9 @@ pub struct BaseFlow {
     pub writing_mode: WritingMode,
 
     
+    pub thread_id: u8,
+
+    
     pub flags: FlowFlags,
 }
 
@@ -918,6 +927,7 @@ impl BaseFlow {
             clip: ClippingRegion::max(),
             flags: flags,
             writing_mode: writing_mode,
+            thread_id: 0,
         }
     }
 

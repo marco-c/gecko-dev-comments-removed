@@ -766,6 +766,18 @@ impl<T> BorderRadii<T> where T: PartialEq + Zero {
     }
 }
 
+impl<T> BorderRadii<T> where T: PartialEq + Zero + Clone {
+    
+    pub fn all_same(value: T) -> BorderRadii<T> {
+        BorderRadii {
+            top_left: value.clone(),
+            top_right: value.clone(),
+            bottom_right: value.clone(),
+            bottom_left: value.clone(),
+        }
+    }
+}
+
 
 #[derive(Clone)]
 pub struct LineDisplayItem {
