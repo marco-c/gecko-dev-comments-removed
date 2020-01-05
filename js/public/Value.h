@@ -332,7 +332,9 @@ class MOZ_NON_PARAM alignas(8) Value
     }
 
     void setDoubleNoCheck(double d) {
-        data.asDouble = d;
+        
+        
+        data = layout(d);
     }
 
     void setNaN() {
