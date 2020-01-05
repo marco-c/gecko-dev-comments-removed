@@ -237,7 +237,7 @@ typedef enum JSWhyMagic
     JS_WHY_MAGIC_COUNT
 } JSWhyMagic;
 
-#if defined(MOZ_LITTLE_ENDIAN)
+#if defined(IS_LITTLE_ENDIAN)
 # if defined(JS_NUNBOX32)
 typedef union jsval_layout
 {
