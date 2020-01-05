@@ -171,7 +171,8 @@ public:
 
 
 
-    virtual bool SetPotentialLineBreaks(Range aRange, uint8_t *aBreakBefore);
+    virtual bool SetPotentialLineBreaks(Range aRange,
+                                        const uint8_t* aBreakBefore);
 
     
 
