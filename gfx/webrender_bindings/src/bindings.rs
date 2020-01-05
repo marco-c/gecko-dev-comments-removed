@@ -675,6 +675,14 @@ pub struct WrRect
     height: f32
 }
 
+impl WrRect
+{
+    pub fn to_rect(&self) -> LayoutRect
+    {
+        LayoutRect::new(LayoutPoint::new(self.x, self.y), LayoutSize::new(self.width, self.height))
+    }
+}
+
 #[repr(C)]
 pub struct WrImageMask
 {
@@ -683,11 +691,11 @@ pub struct WrImageMask
     repeat: bool
 }
 
-impl WrRect
+impl WrImageMask
 {
-    pub fn to_rect(&self) -> LayoutRect
+    pub fn to_image_mask(&self) -> ImageMask
     {
-        LayoutRect::new(LayoutPoint::new(self.x, self.y), LayoutSize::new(self.width, self.height))
+        ImageMask { image: self.image, rect: self.rect.to_rect(), repeat: self.repeat }
     }
 }
 
@@ -699,7 +707,7 @@ pub extern fn wr_dp_push_image(state:&mut WrState, bounds: WrRect, clip : WrRect
     let clip = clip.to_rect();
 
     
-    let mask = unsafe { mask.as_ref().map(|&WrImageMask{image, ref rect,repeat}| ImageMask{image: image, rect: rect.to_rect(), repeat: repeat}) };
+    let mask = unsafe { mask.as_ref().map(|m| m.to_image_mask()) };
 
     let clip_region = state.frame_builder.dl_builder.new_clip_region(&clip, Vec::new(), mask);
     state.frame_builder.dl_builder.push_image(
