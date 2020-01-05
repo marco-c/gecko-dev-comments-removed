@@ -121,6 +121,9 @@ pub struct Document {
     focused: MutNullableJS<Element>,
     
     current_script: MutNullableJS<HTMLScriptElement>,
+    
+    
+    scripting_enabled: Cell<bool>,
 }
 
 impl DocumentDerived for EventTarget {
@@ -206,6 +209,7 @@ pub trait DocumentHelpers<'a> {
     fn get_nodes_under_mouse(self, point: &Point2D<f32>) -> Vec<UntrustedNodeAddress>;
     fn set_ready_state(self, state: DocumentReadyState);
     fn get_focused_element(self) -> Option<Temporary<Element>>;
+    fn is_scripting_enabled(self) -> bool;
     fn begin_focus_transaction(self);
     fn request_focus(self, elem: JSRef<Element>);
     fn commit_focus_transaction(self);
@@ -428,6 +432,11 @@ impl<'a> DocumentHelpers<'a> for JSRef<'a, Document> {
                                EventCancelable::NotCancelable).root();
         let target: JSRef<EventTarget> = EventTargetCast::from_ref(self);
         let _ = event.r().fire(target);
+    }
+
+    /// Return whether scripting is enabled or not
+    fn is_scripting_enabled(self) -> bool {
+        self.scripting_enabled.get()
     }
 
     /// Return the element that currently has focus.
@@ -737,6 +746,7 @@ impl Document {
             possibly_focused: Default::default(),
             focused: Default::default(),
             current_script: Default::default(),
+            scripting_enabled: Cell::new(true),
         }
     }
 
