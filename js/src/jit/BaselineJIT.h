@@ -593,6 +593,10 @@ struct BaselineBailoutInfo
     jsbytecode* resumePC;
 
     
+    jsbytecode* tryPC;
+    jsbytecode* faultPC;
+
+    
     
     
     

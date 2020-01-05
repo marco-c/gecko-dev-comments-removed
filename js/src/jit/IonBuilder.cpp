@@ -1172,6 +1172,9 @@ IonBuilder::initEnvironmentChain(MDefinition* callee)
         env = constant(ObjectValue(script()->global().lexicalEnvironment()));
     }
 
+    
+    
+    
     current->setEnvironmentChain(env);
     return Ok();
 }
