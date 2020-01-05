@@ -318,6 +318,10 @@ var gCSSProperties = {
       { type: 'discrete', options: [ [ 'top', 'bottom' ] ] }
     ]
   },
+  'caret-color': {
+    
+    types: [ 'color' ]
+  },
   'clear': {
     
     types: [
