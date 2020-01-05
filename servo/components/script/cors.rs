@@ -235,7 +235,7 @@ impl CORSRequest {
             _ => return error,
         };
         
-        if methods.is_empty() || preflight.mode == RequestMode::ForcedPreflight {
+        if methods.is_empty() && preflight.mode == RequestMode::ForcedPreflight {
             methods = &methods_substep4;
         }
         
