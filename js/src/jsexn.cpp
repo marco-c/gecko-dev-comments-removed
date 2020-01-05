@@ -209,8 +209,13 @@ ErrorObject::classes[JSEXN_ERROR_LIMIT] = {
 size_t
 ExtraMallocSize(JSErrorReport* report)
 {
-    if (report->linebuf())
-        return (report->linebufLength() + 1) * sizeof(char16_t);
+    if (report->linebuf()) {
+        
+
+
+
+        return (report->linebufLength() + 1) * sizeof(char16_t) + 1;
+    }
 
     return 0;
 }
@@ -225,10 +230,20 @@ bool
 CopyExtraData(JSContext* cx, uint8_t** cursor, JSErrorReport* copy, JSErrorReport* report)
 {
     if (report->linebuf()) {
+        
+
+
+
+        size_t alignment_backlog = 0;
+        if (size_t(*cursor) % 2)
+            (*cursor)++;
+        else
+            alignment_backlog = 1;
+
         size_t linebufSize = (report->linebufLength() + 1) * sizeof(char16_t);
         const char16_t* linebufCopy = (const char16_t*)(*cursor);
         js_memcpy(*cursor, report->linebuf(), linebufSize);
-        *cursor += linebufSize;
+        *cursor += linebufSize + alignment_backlog;
         copy->initBorrowedLinebuf(linebufCopy, report->linebufLength(), report->tokenOffset());
     }
 
