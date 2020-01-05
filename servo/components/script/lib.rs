@@ -3,7 +3,6 @@
 
 
 #![feature(unsafe_destructor, plugin, box_syntax, int_uint)]
-#![feature(old_impl_check)]
 
 #![deny(unsafe_blocks)]
 #![deny(unused_imports)]
