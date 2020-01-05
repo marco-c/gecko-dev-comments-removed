@@ -86,6 +86,15 @@ class DeviceManagerADB(DeviceManager):
             self._verifyDevice()
 
             
+            try:
+                proc = self._runCmd(["shell", "getprop", "ro.build.version.sdk"],
+                                    timeout=self.short_timeout)
+                self._sdk_version = int(proc.output[0])
+            except (OSError, ValueError):
+                self._sdk_version = 0
+            self._logger.info("Detected Android sdk %d" % self._sdk_version)
+
+            
             
             
             
@@ -759,11 +768,7 @@ class DeviceManagerADB(DeviceManager):
             re_version = re.compile(r'Android Debug Bridge version (.*)')
             proc = self._runCmd(["version"], timeout=self.short_timeout)
             self._adb_version = re_version.match(proc.output[0]).group(1)
-            self._logger.info("Detected adb %s", self._adb_version)
-            proc = self._runCmd(["shell", "getprop", "ro.build.version.sdk"],
-                                timeout=self.short_timeout)
-            self._sdk_version = int(proc.output[0])
-            self._logger.info("Detected Android sdk %s", self._sdk_version)
+            self._logger.info("Detected adb %s" % self._adb_version)
         except os.error as err:
             raise DMError(
                 "unable to execute ADB (%s): ensure Android SDK is installed "
