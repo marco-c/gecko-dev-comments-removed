@@ -8,7 +8,6 @@ use num_traits::ToPrimitive;
 use std::cmp::{max, min};
 use std::ops::Range;
 use std::path::PathBuf;
-use super::{LoadConsumer, LoadData};
 
 
 
@@ -129,14 +128,12 @@ pub enum FileManagerThreadMsg {
     SelectFiles(Vec<FilterPattern>, IpcSender<FileManagerResult<Vec<SelectedFile>>>, FileOrigin, Option<Vec<String>>),
 
     
-    ReadFile(IpcSender<FileManagerResult<Vec<u8>>>, SelectedFileId, FileOrigin),
+    
+    ReadFile(IpcSender<FileManagerResult<BlobBuf>>, SelectedFileId, bool, FileOrigin),
 
     
-    LoadBlob(LoadData, LoadConsumer),
-
     
-    
-    PromoteMemory(BlobBuf, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
+    PromoteMemory(BlobBuf, bool, IpcSender<Result<SelectedFileId, BlobURLStoreError>>, FileOrigin),
 
     
     

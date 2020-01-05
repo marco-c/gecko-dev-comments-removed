@@ -2,6 +2,7 @@
 
 
 
+use filemanager_thread::FileOrigin;
 use std::str::FromStr;
 use url::Url;
 use uuid::Uuid;
@@ -20,7 +21,7 @@ pub enum BlobURLStoreError {
 }
 
 
-#[derive(Clone, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct BlobBuf {
     pub filename: Option<String>,
     
@@ -33,13 +34,25 @@ pub struct BlobBuf {
 
 
 
-pub fn parse_blob_url(url: &Url) -> Option<(Uuid, Option<&str>)> {
-    url.path_segments().and_then(|mut segments| {
-        let id_str = match (segments.next(), segments.next()) {
-            (Some(s), None) => s,
-            _ => return None,
-        };
+pub fn parse_blob_url(url: &Url) -> Result<(Uuid, FileOrigin, Option<String>), ()> {
+    let url_inner = try!(Url::parse(url.path()).map_err(|_| ()));
+    let fragment = url_inner.fragment().map(|s| s.to_string());
+    let mut segs = try!(url_inner.path_segments().ok_or(()));
+    let id = try!(segs.nth(0).ok_or(()));
+    let id = try!(Uuid::from_str(id).map_err(|_| ()));
+    Ok((id, get_blob_origin(&url_inner), fragment))
+}
 
-        Uuid::from_str(id_str).map(|id| (id, url.fragment())).ok()
-    })
+
+
+
+
+
+pub fn get_blob_origin(url: &Url) -> FileOrigin {
+    if url.scheme() == "file" {
+        
+        "file://".to_string()
+    } else {
+        url.origin().unicode_serialization()
+    }
 }
