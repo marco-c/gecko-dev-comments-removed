@@ -546,6 +546,9 @@ pref("media.getusermedia.audiocapture.enabled", false);
 pref("media.webvtt.regions.enabled", false);
 
 
+pref("media.webvtt.pseudo.enabled", true);
+
+
 pref("media.track.enabled", false);
 
 
