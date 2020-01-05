@@ -122,16 +122,9 @@ AndroidFlingAnimation::AndroidFlingAnimation(AsyncPanZoomController& aApzc,
   if (!state->mLastFling.IsNull()) {
     
     
-    
-    
     TimeDuration flingDuration = TimeStamp::Now() - state->mLastFling;
-    if (flingDuration.ToMilliseconds() < gfxPrefs::APZFlingAccelInterval()
-        && velocity.Length() >= gfxPrefs::APZFlingAccelMinVelocity()) {
-      bool unused = false;
-      mOverScroller->ComputeScrollOffset(flingDuration.ToMilliseconds(), &unused);
-    } else {
-      mOverScroller->ForceFinished(true);
-    }
+    bool unused = false;
+    mOverScroller->ComputeScrollOffset(flingDuration.ToMilliseconds(), &unused);
   }
   mOverScroller->Fling(originX, originY,
                        
