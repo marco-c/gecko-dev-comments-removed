@@ -33,11 +33,6 @@ var WindowListener = {
 };
 
 function startup(data, reason) {
-  
-  if (Services.appinfo.widgetToolkit == "gonk") {
-    return;
-  }
-
   if (Services.appinfo.OS == "Android") {
     Cm.addBootstrappedManifestLocation(data.installPath);
     Services.wm.addListener(WindowListener);
@@ -66,10 +61,6 @@ function startup(data, reason) {
 }
 
 function shutdown(data, reason) {
-  if (Services.appinfo.widgetToolkit == "gonk") {
-    return;
-  }
-
   if (Services.appinfo.OS == "Android") {
     Services.wm.removeListener(WindowListener);
     Cm.removedBootstrappedManifestLocation(data.installPath);

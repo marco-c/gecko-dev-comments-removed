@@ -105,8 +105,6 @@ class OutputHandler(object):
     def __init__(self, log, utilityPath, symbolsPath=None):
         self.stack_fixer_function = get_stack_fixer_function(utilityPath, symbolsPath)
         self.log = log
-        
-        self.suite_finished = False
 
     def __call__(self, line):
         
@@ -120,9 +118,6 @@ class OutputHandler(object):
             return [line]
 
         if isinstance(data, dict) and 'action' in data:
-            if data['action'] == 'suite_end':
-                self.suite_finished = True
-
             self.log.log_raw(data)
         else:
             self.verbatim(json.dumps(data))

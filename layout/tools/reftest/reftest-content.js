@@ -100,9 +100,7 @@ function PaintWaitFinishedListener(event)
 
 function OnInitialLoad()
 {
-#ifndef REFTEST_B2G
     removeEventListener("load", OnInitialLoad, true);
-#endif
 
     gDebug = CC[DEBUG_CONTRACTID].getService(CI.nsIDebug2);
     var env = CC[ENVIRONMENT_CONTRACTID].getService(CI.nsIEnvironment);
@@ -182,16 +180,11 @@ function resetZoom() {
 }
 
 function doPrintMode(contentRootElement) {
-#if REFTEST_B2G
-    
-    return false;
-#else
     
     return contentRootElement &&
            contentRootElement.hasAttribute('class') &&
            contentRootElement.getAttribute('class').split(/\s+/)
                              .indexOf("reftest-print") != -1;
-#endif
 }
 
 function setupPrintMode() {
@@ -1162,13 +1155,9 @@ function SendUpdateCanvasForEvent(event, contentRootElement)
         sendAsyncMessage("reftest:UpdateCanvasForInvalidation", { rects: rects });
     }
 }
-#if REFTEST_B2G
-OnInitialLoad();
-#else
 if (content.document.readyState == "complete") {
   
   OnInitialLoad();
 } else {
   addEventListener("load", OnInitialLoad, true);
 }
-#endif
