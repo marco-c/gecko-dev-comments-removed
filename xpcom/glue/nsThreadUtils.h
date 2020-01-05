@@ -697,7 +697,7 @@ struct SmartPointerStorageClass
   : mozilla::Conditional<IsRefcountedSmartPointer<T>::value,
                          StorensRefPtrPassByPtr<
                            typename StripSmartPointer<T>::Type>,
-                         StoreCopyPassByValue<T>>
+                         StoreCopyPassByConstLRef<T>>
 {};
 
 template<typename T>
