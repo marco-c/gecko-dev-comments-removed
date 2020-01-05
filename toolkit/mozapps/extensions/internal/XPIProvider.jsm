@@ -4775,9 +4775,11 @@ this.XPIProvider = {
 
 
 
+
+
   loadBootstrapScope: function(aId, aFile, aVersion, aType,
                                aMultiprocessCompatible, aRunInSafeMode,
-                               aDependencies) {
+                               aDependencies, hasEmbeddedWebExtension) {
     
     this.bootstrappedAddons[aId] = {
       version: aVersion,
@@ -4786,6 +4788,7 @@ this.XPIProvider = {
       multiprocessCompatible: aMultiprocessCompatible,
       runInSafeMode: aRunInSafeMode,
       dependencies: aDependencies,
+      hasEmbeddedWebExtension,
     };
     this.persistBootstrappedAddons();
     this.addAddonsToCrashReporter();
@@ -4942,7 +4945,8 @@ this.XPIProvider = {
       if (!activeAddon) {
         this.loadBootstrapScope(aAddon.id, aFile, aAddon.version, aAddon.type,
                                 aAddon.multiprocessCompatible || false,
-                                runInSafeMode, aAddon.dependencies);
+                                runInSafeMode, aAddon.dependencies,
+                                aAddon.hasEmbeddedWebExtension || false);
         activeAddon = this.activeAddons.get(aAddon.id);
       }
 
@@ -5162,6 +5166,7 @@ this.XPIProvider = {
             multiprocessCompatible: aAddon.multiprocessCompatible,
             runInSafeMode: canRunInSafeMode(aAddon),
             dependencies: aAddon.dependencies,
+            hasEmbeddedWebExtension: aAddon.hasEmbeddedWebExtension,
           };
           this.persistBootstrappedAddons();
         }
