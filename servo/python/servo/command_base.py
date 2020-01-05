@@ -102,7 +102,20 @@ def check_call(*args, **kwargs):
         print(' '.join(args[0]))
     
     
-    return subprocess.check_call(*args, shell=sys.platform == 'win32', **kwargs)
+    proc = subprocess.Popen(*args, shell=sys.platform == 'win32', **kwargs)
+    status = None
+    
+    
+    
+    
+    while status is None:
+        try:
+            status = proc.wait()
+        except KeyboardInterrupt:
+            pass
+
+    if status:
+        raise subprocess.CalledProcessError(status, ' '.join(*args))
 
 
 def is_windows():
