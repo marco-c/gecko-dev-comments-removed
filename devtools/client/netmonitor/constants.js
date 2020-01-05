@@ -1,0 +1,11 @@
+
+
+
+"use strict";
+
+const actionTypes = {
+  TOGGLE_FILTER: "TOGGLE_FILTER",
+  ENABLE_FILTER_ONLY: "ENABLE_FILTER_ONLY",
+};
+
+module.exports = actionTypes;
