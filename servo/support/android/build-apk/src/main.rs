@@ -47,7 +47,7 @@ fn main() {
     let debug = passthrough.contains(&"-d".to_string());
 
     
-    let directory = args.root_path.join("support").join("android").join("apk");
+    let directory = args.target_path.join("apk");
     let resdir = args.root_path.join("resources/");
 
     
