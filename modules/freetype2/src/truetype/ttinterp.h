@@ -408,6 +408,14 @@ FT_BEGIN_HEADER
 
 #endif 
 
+    
+    
+    
+    FT_ULong           loopcall_counter;
+    FT_ULong           loopcall_counter_max;
+    FT_ULong           neg_jump_counter;
+    FT_ULong           neg_jump_counter_max;
+
   } TT_ExecContextRec;
 
 

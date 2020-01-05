@@ -235,6 +235,7 @@
 
 
   
+  
 
   
   static void
@@ -246,12 +247,18 @@
 
     FT_Bool  needExtraSetup = FALSE;
 
+    CFF_VStoreRec*  vstore;
+    FT_Bool         hasVariations = FALSE;
+
     
     CF2_Fixed  boldenX = font->syntheticEmboldeningAmountX;
     CF2_Fixed  boldenY = font->syntheticEmboldeningAmountY;
 
     CFF_SubFont  subFont;
     CF2_Fixed    ppem;
+
+    CF2_UInt   lenNormalizedV = 0;
+    FT_Fixed*  normalizedV    = NULL;
 
 
     
@@ -264,6 +271,48 @@
     {
       font->lastSubfont = subFont;
       needExtraSetup    = TRUE;
+    }
+
+    
+    vstore        = cf2_getVStore( decoder );
+    hasVariations = ( vstore->dataCount != 0 );
+
+    if ( hasVariations )
+    {
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+      
+      font->error = cf2_getNormalizedVector( decoder,
+                                             &lenNormalizedV,
+                                             &normalizedV );
+      if ( font->error )
+        return;
+
+      if ( cff_blend_check_vector( &subFont->blend,
+                                   subFont->private_dict.vsindex,
+                                   lenNormalizedV,
+                                   normalizedV ) )
+      {
+        
+        cff_load_private_dict( decoder->cff,
+                               subFont,
+                               lenNormalizedV,
+                               normalizedV );
+        needExtraSetup = TRUE;
+      }
+#endif
+
+      
+      font->blend.font = subFont->blend.font;
+
+      
+      font->blend.usedBV = FALSE;
+
+      
+      font->vsindex = subFont->private_dict.vsindex;
+
+      
+      font->lenNDV = lenNormalizedV;
+      font->NDV    = normalizedV;
     }
 
     
@@ -423,7 +472,8 @@
 
       
       cf2_blues_init( &font->blues, font );
-    }
+
+    } 
   }
 
 

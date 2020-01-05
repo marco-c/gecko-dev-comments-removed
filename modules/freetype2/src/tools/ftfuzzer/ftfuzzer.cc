@@ -52,16 +52,84 @@
   static int         InitResult;
 
 
-  struct FT_Global {
-    FT_Global() {
+  struct FT_Global
+  {
+    FT_Global()
+    {
       InitResult = FT_Init_FreeType( &library );
+      if ( InitResult )
+        return;
+
+      
+      unsigned int  cff_hinting_engine = FT_CFF_HINTING_ADOBE;
+      FT_Property_Set( library,
+                       "cff",
+                       "hinting-engine", &cff_hinting_engine );
     }
-    ~FT_Global() {
+
+    ~FT_Global()
+    {
       FT_Done_FreeType( library );
     }
   };
 
   FT_Global  global_ft;
+
+
+  
+  
+  
+  struct Random
+  {
+    int  n;
+    int  N;
+
+    int  t; 
+    int  m; 
+
+    uint32_t  r; 
+
+    Random( int n_,
+            int N_ )
+    : n( n_ ),
+      N( N_ )
+    {
+      t = 0;
+      m = 0;
+
+      
+      
+      
+      r = 12345;
+    }
+
+    int get()
+    {
+      if ( m >= n )
+        return -1;
+
+    Redo:
+      
+      
+      
+      r ^= r << 13;
+      r ^= r >> 17;
+      r ^= r << 5;
+
+      double  U = double( r ) / UINT32_MAX;
+
+      if ( ( N - t ) * U >= ( n - m ) )
+      {
+        t++;
+        goto Redo;
+      }
+
+      t++;
+      m++;
+
+      return t;
+    }
+  };
 
 
   static int
@@ -248,21 +316,31 @@
 
         
         
-        for ( int  fixed_sizes_index = 0;
-              fixed_sizes_index < face->num_fixed_sizes + 1;
-              fixed_sizes_index++ )
+        int  max_idx = face->num_fixed_sizes < 10
+                         ? face->num_fixed_sizes
+                         : 10;
+
+        Random pool( max_idx, face->num_fixed_sizes );
+
+        for ( int  idx = 0; idx <= max_idx; idx++ )
         {
           FT_Int32  flags = load_flags;
 
-          if ( !fixed_sizes_index )
+          if ( !idx )
           {
             
-            FT_Set_Char_Size( face, 20, 20, 72, 72 );
+            if ( FT_Set_Char_Size( face, 20 * 64, 20 * 64, 72, 72 ) )
+              continue;
             flags |= FT_LOAD_NO_BITMAP;
           }
           else
           {
-            FT_Select_Size( face, fixed_sizes_index - 1 );
+            
+            if ( instance_index )
+              continue;
+
+            if ( FT_Select_Size( face, pool.get() - 1 ) )
+              continue;
             flags |= FT_LOAD_COLOR;
           }
 

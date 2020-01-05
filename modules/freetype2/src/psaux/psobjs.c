@@ -344,7 +344,7 @@
       FT_Byte  c = *cur;
 
 
-      ++cur;
+      cur++;
 
       if ( c == '\\' )
       {
@@ -370,17 +370,17 @@
         case '\\':
         case '(':
         case ')':
-          ++cur;
+          cur++;
           break;
 
         default:
           
-          for ( i = 0; i < 3 && cur < limit; ++i )
+          for ( i = 0; i < 3 && cur < limit; i++ )
           {
             if ( !IS_OCTAL_DIGIT( *cur ) )
               break;
 
-            ++cur;
+            cur++;
           }
         }
       }
@@ -455,19 +455,19 @@
 
     FT_ASSERT( **acur == '{' );
 
-    for ( cur = *acur; cur < limit && error == FT_Err_Ok; ++cur )
+    for ( cur = *acur; cur < limit && error == FT_Err_Ok; cur++ )
     {
       switch ( *cur )
       {
       case '{':
-        ++embed;
+        embed++;
         break;
 
       case '}':
-        --embed;
+        embed--;
         if ( embed == 0 )
         {
-          ++cur;
+          cur++;
           goto end;
         }
         break;
@@ -695,7 +695,7 @@
       
     default:
       token->start = cur;
-      token->type  = ( *cur == '/' ? T1_TOKEN_TYPE_KEY : T1_TOKEN_TYPE_ANY );
+      token->type  = ( *cur == '/' ) ? T1_TOKEN_TYPE_KEY : T1_TOKEN_TYPE_ANY;
       ps_parser_skip_PS_token( parser );
       cur = parser->cursor;
       if ( !parser->error )
@@ -750,7 +750,7 @@
         if ( !token.type )
           break;
 
-        if ( tokens != NULL && cur < limit )
+        if ( tokens && cur < limit )
           *cur = token;
 
         cur++;
@@ -815,12 +815,12 @@
 
       old_cur = cur;
 
-      if ( coords != NULL && count >= max_coords )
+      if ( coords && count >= max_coords )
         break;
 
       
       
-      *( coords != NULL ? &coords[count] : &dummy ) =
+      *( coords ? &coords[count] : &dummy ) =
         (FT_Short)( PS_Conv_ToFixed( &cur, limit, 0 ) >> 16 );
 
       if ( old_cur == cur )
@@ -895,12 +895,12 @@
 
       old_cur = cur;
 
-      if ( values != NULL && count >= max_values )
+      if ( values && count >= max_values )
         break;
 
       
       
-      *( values != NULL ? &values[count] : &dummy ) =
+      *( values ? &values[count] : &dummy ) =
         PS_Conv_ToFixed( &cur, limit, power_ten );
 
       if ( old_cur == cur )
@@ -1172,7 +1172,7 @@
 
           
           
-          if ( *(FT_String**)q != NULL )
+          if ( *(FT_String**)q )
           {
             FT_TRACE0(( "ps_parser_load_field: overwriting field %s\n",
                         field->ident ));

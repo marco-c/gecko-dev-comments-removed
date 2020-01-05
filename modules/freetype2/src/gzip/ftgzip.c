@@ -51,17 +51,29 @@
 
 #else 
 
- 
- 
- 
- 
- 
- 
+  
+  
+  
+  
+  
+  
 
 #ifndef USE_ZLIB_ZCALLOC
 #define MY_ZCALLOC
 #endif
 
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 #include "zlib.h"
 
 #undef  SLOW
@@ -305,7 +317,7 @@
     zstream->next_in  = zip->buffer;
 
     if ( inflateInit2( zstream, -MAX_WBITS ) != Z_OK ||
-         zstream->next_in == NULL                     )
+         !zstream->next_in                           )
       error = FT_THROW( Invalid_File_Format );
 
   Exit:

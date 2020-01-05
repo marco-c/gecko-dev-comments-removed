@@ -56,7 +56,7 @@
   {
     FT_Error       error;
     unsigned char  head[16], head2[16];
-    FT_Long        map_pos, rdata_len;
+    FT_Long        map_pos, map_len, rdata_len;
     int            allzeros, allmatch, i;
     FT_Long        type_list;
 
@@ -67,12 +67,15 @@
     if ( error )
       return error;
 
-    error = FT_Stream_Read( stream, (FT_Byte *)head, 16 );
+    error = FT_Stream_Read( stream, (FT_Byte*)head, 16 );
     if ( error )
       return error;
 
     
-    if ( head[0] >= 0x80 || head[4] >= 0x80 || head[8] >= 0x80 )
+    if ( head[0]  >= 0x80 ||
+         head[4]  >= 0x80 ||
+         head[8]  >= 0x80 ||
+         head[12] >= 0x80 )
       return FT_THROW( Unknown_File_Format );
 
     *rdata_pos = ( head[ 0] << 24 ) |
@@ -87,14 +90,36 @@
                  ( head[ 9] << 16 ) |
                  ( head[10] <<  8 ) |
                    head[11];
+    map_len    = ( head[12] << 24 ) |
+                 ( head[13] << 16 ) |
+                 ( head[14] <<  8 ) |
+                   head[15];
 
     
-
-    if ( *rdata_pos != map_pos - rdata_len || map_pos == 0 )
+    if ( !map_pos )
       return FT_THROW( Unknown_File_Format );
 
-    if ( FT_LONG_MAX - rfork_offset < *rdata_pos ||
-         FT_LONG_MAX - rfork_offset < map_pos    )
+    
+    if ( *rdata_pos < map_pos )
+    {
+      if ( *rdata_pos > map_pos - rdata_len )
+        return FT_THROW( Unknown_File_Format );
+    }
+    else
+    {
+      if ( map_pos > *rdata_pos - map_len )
+        return FT_THROW( Unknown_File_Format );
+    }
+
+    
+    if ( FT_LONG_MAX - rdata_len < *rdata_pos                               ||
+         FT_LONG_MAX - map_len < map_pos                                    ||
+
+         FT_LONG_MAX - ( *rdata_pos + rdata_len ) < rfork_offset            ||
+         FT_LONG_MAX - ( map_pos + map_len ) < rfork_offset                 ||
+
+         (FT_ULong)( rfork_offset + *rdata_pos + rdata_len ) > stream->size ||
+         (FT_ULong)( rfork_offset + map_pos + map_len ) > stream->size      )
       return FT_THROW( Unknown_File_Format );
 
     *rdata_pos += rfork_offset;
@@ -112,7 +137,7 @@
 
     allzeros = 1;
     allmatch = 1;
-    for ( i = 0; i < 16; ++i )
+    for ( i = 0; i < 16; i++ )
     {
       if ( head2[i] != 0 )
         allzeros = 0;
@@ -124,15 +149,14 @@
 
     
     
-    
-    
+
     (void)FT_STREAM_SKIP( 4        
                           + 2      
                           + 2 );   
 
-    if ( FT_READ_USHORT( type_list ) )
+    if ( FT_READ_SHORT( type_list ) )
       return error;
-    if ( type_list == -1 )
+    if ( type_list < 0 )
       return FT_THROW( Unknown_File_Format );
 
     error = FT_Stream_Seek( stream, (FT_ULong)( map_pos + type_list ) );
@@ -181,15 +205,34 @@
     if ( error )
       return error;
 
-    if ( FT_READ_USHORT( cnt ) )
+    if ( FT_READ_SHORT( cnt ) )
       return error;
     cnt++;
 
-    for ( i = 0; i < cnt; ++i )
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    if ( cnt > 4079 )
+      return FT_THROW( Invalid_Table );
+
+    for ( i = 0; i < cnt; i++ )
     {
       if ( FT_READ_LONG( tag_internal ) ||
-           FT_READ_USHORT( subcnt )     ||
-           FT_READ_USHORT( rpos )       )
+           FT_READ_SHORT( subcnt )      ||
+           FT_READ_SHORT( rpos )        )
         return error;
 
       FT_TRACE2(( "Resource tags: %c%c%c%c\n",
@@ -205,6 +248,11 @@
         *count = subcnt + 1;
         rpos  += map_offset;
 
+        
+        
+        if ( *count < 1 || *count > 2727 )
+          return FT_THROW( Invalid_Table );
+
         error = FT_Stream_Seek( stream, (FT_ULong)rpos );
         if ( error )
           return error;
@@ -212,35 +260,44 @@
         if ( FT_NEW_ARRAY( ref, *count ) )
           return error;
 
-        for ( j = 0; j < *count; ++j )
+        for ( j = 0; j < *count; j++ )
         {
-          if ( FT_READ_USHORT( ref[j].res_id ) )
+          if ( FT_READ_SHORT( ref[j].res_id ) )
             goto Exit;
-          if ( FT_STREAM_SKIP( 2 ) ) 
+          if ( FT_STREAM_SKIP( 2 ) )  
             goto Exit;
-          if ( FT_READ_LONG( temp ) )
+          if ( FT_READ_LONG( temp ) ) 
             goto Exit;
-          if ( FT_STREAM_SKIP( 4 ) ) 
+          if ( FT_STREAM_SKIP( 4 ) )  
             goto Exit;
 
+          if ( ref[j].res_id < 0 || temp < 0 )
+          {
+            error = FT_THROW( Invalid_Table );
+            goto Exit;
+          }
+
           ref[j].offset = temp & 0xFFFFFFL;
+
           FT_TRACE3(( "             [%d]:"
                       " resource_id=0x%04x, offset=0x%08x\n",
                       j, ref[j].res_id, ref[j].offset ));
         }
 
-        if (sort_by_res_id)
+        if ( sort_by_res_id )
         {
-          ft_qsort( ref, (size_t)*count, sizeof ( FT_RFork_Ref ),
-                    ( int(*)(const void*, const void*) )
-                    ft_raccess_sort_ref_by_id );
+          ft_qsort( ref,
+                    (size_t)*count,
+                    sizeof ( FT_RFork_Ref ),
+                    ( int(*)(const void*,
+                             const void*) )ft_raccess_sort_ref_by_id );
 
           FT_TRACE3(( "             -- sort resources by their ids --\n" ));
-          for ( j = 0; j < *count; ++ j ) {
+
+          for ( j = 0; j < *count; j++ )
             FT_TRACE3(( "             [%d]:"
                         " resource_id=0x%04x, offset=0x%08x\n",
                         j, ref[j].res_id, ref[j].offset ));
-          }
         }
 
         if ( FT_NEW_ARRAY( offsets_internal, *count ) )
@@ -250,7 +307,7 @@
 
 
 
-        for ( j = 0; j < *count; ++j )
+        for ( j = 0; j < *count; j++ )
           offsets_internal[j] = rdata_pos + ref[j].offset;
 
         *offsets = offsets_internal;

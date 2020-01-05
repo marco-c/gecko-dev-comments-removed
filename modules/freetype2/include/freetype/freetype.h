@@ -1030,6 +1030,10 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
   typedef struct  FT_FaceRec_
   {
     FT_Long           num_faces;
@@ -1587,6 +1591,11 @@ FT_BEGIN_HEADER
   typedef struct FT_Slot_InternalRec_*  FT_Slot_Internal;
 
 
+  
+  
+  
+  
+  
   
   
   
@@ -2334,6 +2343,23 @@ FT_BEGIN_HEADER
   
   
   
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   FT_EXPORT( FT_Error )
   FT_Select_Size( FT_Face  face,
                   FT_Int   strike_index );
@@ -2814,6 +2840,14 @@ FT_BEGIN_HEADER
 
 
 
+
+
+
+
+
+
+
+
 #define FT_LOAD_DEFAULT                      0x0
 #define FT_LOAD_NO_SCALE                     ( 1L << 0 )
 #define FT_LOAD_NO_HINTING                   ( 1L << 1 )
@@ -2832,6 +2866,7 @@ FT_BEGIN_HEADER
   
 #define FT_LOAD_COLOR                        ( 1L << 20 )
 #define FT_LOAD_COMPUTE_METRICS              ( 1L << 21 )
+#define FT_LOAD_BITMAP_METRICS_ONLY          ( 1L << 22 )
 
   
 
@@ -4206,7 +4241,7 @@ FT_BEGIN_HEADER
 
 #define FREETYPE_MAJOR  2
 #define FREETYPE_MINOR  7
-#define FREETYPE_PATCH  0
+#define FREETYPE_PATCH  1
 
 
   

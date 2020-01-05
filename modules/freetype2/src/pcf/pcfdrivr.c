@@ -492,8 +492,6 @@
     PCF_Metric  metric;
     FT_ULong    bytes;
 
-    FT_UNUSED( load_flags );
-
 
     FT_TRACE1(( "PCF_Glyph_Load: glyph index %d\n", glyph_index ));
 
@@ -550,6 +548,24 @@
       return FT_THROW( Invalid_File_Format );
     }
 
+    slot->format      = FT_GLYPH_FORMAT_BITMAP;
+    slot->bitmap_left = metric->leftSideBearing;
+    slot->bitmap_top  = metric->ascent;
+
+    slot->metrics.horiAdvance  = (FT_Pos)( metric->characterWidth * 64 );
+    slot->metrics.horiBearingX = (FT_Pos)( metric->leftSideBearing * 64 );
+    slot->metrics.horiBearingY = (FT_Pos)( metric->ascent * 64 );
+    slot->metrics.width        = (FT_Pos)( ( metric->rightSideBearing -
+                                             metric->leftSideBearing ) * 64 );
+    slot->metrics.height       = (FT_Pos)( bitmap->rows * 64 );
+
+    ft_synthesize_vertical_metrics( &slot->metrics,
+                                    ( face->accel.fontAscent +
+                                      face->accel.fontDescent ) * 64 );
+
+    if ( load_flags & FT_LOAD_BITMAP_METRICS_ONLY )
+      goto Exit;
+
     
     bytes = (FT_ULong)bitmap->pitch * bitmap->rows;
 
@@ -582,21 +598,6 @@
       }
     }
 
-    slot->format      = FT_GLYPH_FORMAT_BITMAP;
-    slot->bitmap_left = metric->leftSideBearing;
-    slot->bitmap_top  = metric->ascent;
-
-    slot->metrics.horiAdvance  = (FT_Pos)( metric->characterWidth * 64 );
-    slot->metrics.horiBearingX = (FT_Pos)( metric->leftSideBearing * 64 );
-    slot->metrics.horiBearingY = (FT_Pos)( metric->ascent * 64 );
-    slot->metrics.width        = (FT_Pos)( ( metric->rightSideBearing -
-                                             metric->leftSideBearing ) * 64 );
-    slot->metrics.height       = (FT_Pos)( bitmap->rows * 64 );
-
-    ft_synthesize_vertical_metrics( &slot->metrics,
-                                    ( face->accel.fontAscent +
-                                      face->accel.fontDescent ) * 64 );
-
   Exit:
     return error;
   }
@@ -617,7 +618,7 @@
 
 
     prop = pcf_find_property( face, prop_name );
-    if ( prop != NULL )
+    if ( prop )
     {
       if ( prop->isString )
       {
@@ -700,10 +701,10 @@
       0x10000L,
       0x20000L,
 
-      0,    
+      NULL,    
 
-      0,                        
-      0,                        
+      NULL,                     
+      NULL,                     
       pcf_driver_requester      
     },
 
@@ -713,16 +714,16 @@
 
     PCF_Face_Init,              
     PCF_Face_Done,              
-    0,                          
-    0,                          
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
+    NULL,                       
+    NULL,                       
 
     PCF_Glyph_Load,             
 
-    0,                          
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
+    NULL,                       
 
     PCF_Size_Request,           
     PCF_Size_Select             

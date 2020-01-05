@@ -36,7 +36,7 @@
     if ( flags & FT_LOAD_NO_SCALE )
       return FT_Err_Ok;
 
-    if ( face->size == NULL )
+    if ( !face->size )
       return FT_THROW( Invalid_Size_Handle );
 
     if ( flags & FT_LOAD_VERTICAL_LAYOUT )
@@ -61,11 +61,12 @@
    
    
    
+   
+   
 
-#define LOAD_ADVANCE_FAST_CHECK( face, flags )                          \
-          ( ( flags & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING )    ||   \
-              FT_LOAD_TARGET_MODE( flags ) == FT_RENDER_MODE_LIGHT ) && \
-            !FT_HAS_MULTIPLE_MASTERS( face )                         )
+#define LOAD_ADVANCE_FAST_CHECK( face, flags )                      \
+          ( flags & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_HINTING )    || \
+            FT_LOAD_TARGET_MODE( flags ) == FT_RENDER_MODE_LIGHT )
 
 
   

@@ -95,9 +95,11 @@
 
   FT_DEFINE_PSHINTER_INTERFACE(
     pshinter_interface,
+
     pshinter_get_globals_funcs,
     pshinter_get_t1_funcs,
-    pshinter_get_t2_funcs )
+    pshinter_get_t2_funcs
+  )
 
 
   FT_DEFINE_MODULE(
@@ -111,9 +113,9 @@
 
     &PSHINTER_INTERFACE_GET,              
 
-    (FT_Module_Constructor)ps_hinter_init,
-    (FT_Module_Destructor) ps_hinter_done,
-    (FT_Module_Requester)  NULL )   
-
+    (FT_Module_Constructor)ps_hinter_init,  
+    (FT_Module_Destructor) ps_hinter_done,  
+    (FT_Module_Requester)  NULL             
+  )
 
 

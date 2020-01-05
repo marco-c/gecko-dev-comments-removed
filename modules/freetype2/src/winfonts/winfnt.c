@@ -1000,8 +1000,6 @@
     FT_ULong    offset;
     FT_Bool     new_format;
 
-    FT_UNUSED( load_flags );
-
 
     if ( !face )
     {
@@ -1055,6 +1053,26 @@
       goto Exit;
     }
 
+    bitmap->rows       = font->header.pixel_height;
+    bitmap->pixel_mode = FT_PIXEL_MODE_MONO;
+
+    slot->bitmap_left     = 0;
+    slot->bitmap_top      = font->header.ascent;
+    slot->format          = FT_GLYPH_FORMAT_BITMAP;
+
+    
+    slot->metrics.width        = (FT_Pos)( bitmap->width << 6 );
+    slot->metrics.height       = (FT_Pos)( bitmap->rows << 6 );
+    slot->metrics.horiAdvance  = (FT_Pos)( bitmap->width << 6 );
+    slot->metrics.horiBearingX = 0;
+    slot->metrics.horiBearingY = slot->bitmap_top << 6;
+
+    ft_synthesize_vertical_metrics( &slot->metrics,
+                                    (FT_Pos)( bitmap->rows << 6 ) );
+
+    if ( load_flags & FT_LOAD_BITMAP_METRICS_ONLY )
+      goto Exit;
+
     
     p = font->fnt_frame +  + offset;
 
@@ -1066,10 +1084,7 @@
       FT_Byte*   write;
 
 
-      bitmap->pitch      = (int)pitch;
-      bitmap->rows       = font->header.pixel_height;
-      bitmap->pixel_mode = FT_PIXEL_MODE_MONO;
-
+      bitmap->pitch = (int)pitch;
       if ( !pitch                                                 ||
            offset + pitch * bitmap->rows > font->header.file_size )
       {
@@ -1093,22 +1108,9 @@
         for ( write = column; p < limit; p++, write += bitmap->pitch )
           *write = *p;
       }
+
+      slot->internal->flags = FT_GLYPH_OWN_BITMAP;
     }
-
-    slot->internal->flags = FT_GLYPH_OWN_BITMAP;
-    slot->bitmap_left     = 0;
-    slot->bitmap_top      = font->header.ascent;
-    slot->format          = FT_GLYPH_FORMAT_BITMAP;
-
-    
-    slot->metrics.width        = (FT_Pos)( bitmap->width << 6 );
-    slot->metrics.height       = (FT_Pos)( bitmap->rows << 6 );
-    slot->metrics.horiAdvance  = (FT_Pos)( bitmap->width << 6 );
-    slot->metrics.horiBearingX = 0;
-    slot->metrics.horiBearingY = slot->bitmap_top << 6;
-
-    ft_synthesize_vertical_metrics( &slot->metrics,
-                                    (FT_Pos)( bitmap->rows << 6 ) );
 
   Exit:
     return error;
@@ -1170,10 +1172,10 @@
       0x10000L,
       0x20000L,
 
-      0,    
+      NULL, 
 
-      0,                        
-      0,                        
+      NULL,                     
+      NULL,                     
       winfnt_get_service        
     },
 
@@ -1183,16 +1185,16 @@
 
     FNT_Face_Init,              
     FNT_Face_Done,              
-    0,                          
-    0,                          
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
+    NULL,                       
+    NULL,                       
 
     FNT_Load_Glyph,             
 
-    0,                          
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
+    NULL,                       
 
     FNT_Size_Request,           
     FNT_Size_Select             

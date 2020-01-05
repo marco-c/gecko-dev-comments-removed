@@ -237,12 +237,14 @@
   {
     {
       sizeof ( FTC_BasicFamilyRec ),
-      ftc_basic_family_compare,
-      ftc_basic_family_init,
-      0,                        
-      0                         
+
+      ftc_basic_family_compare, 
+      ftc_basic_family_init,    
+      NULL,                     
+      NULL                      
     },
-    ftc_basic_family_load_glyph
+
+    ftc_basic_family_load_glyph 
   };
 
 
@@ -250,16 +252,17 @@
   const FTC_GCacheClassRec  ftc_basic_image_cache_class =
   {
     {
-      ftc_inode_new,
-      ftc_inode_weight,
-      ftc_gnode_compare,
-      ftc_basic_gnode_compare_faceid,
-      ftc_inode_free,
+      ftc_inode_new,                  
+      ftc_inode_weight,               
+      ftc_gnode_compare,              
+      ftc_basic_gnode_compare_faceid, 
+      ftc_inode_free,                 
 
       sizeof ( FTC_GCacheRec ),
-      ftc_gcache_init,
-      ftc_gcache_done
+      ftc_gcache_init,                
+      ftc_gcache_done                 
     },
+
     (FTC_MruListClass)&ftc_basic_image_family_class
   };
 
@@ -419,11 +422,12 @@
   {
     {
       sizeof ( FTC_BasicFamilyRec ),
-      ftc_basic_family_compare,
-      ftc_basic_family_init,
-      0,                            
-      0                             
+      ftc_basic_family_compare,     
+      ftc_basic_family_init,        
+      NULL,                         
+      NULL                          
     },
+
     ftc_basic_family_get_count,
     ftc_basic_family_load_bitmap
   };
@@ -433,16 +437,17 @@
   const FTC_GCacheClassRec  ftc_basic_sbit_cache_class =
   {
     {
-      ftc_snode_new,
-      ftc_snode_weight,
-      ftc_snode_compare,
-      ftc_basic_gnode_compare_faceid,
-      ftc_snode_free,
+      ftc_snode_new,                  
+      ftc_snode_weight,               
+      ftc_snode_compare,              
+      ftc_basic_gnode_compare_faceid, 
+      ftc_snode_free,                 
 
       sizeof ( FTC_GCacheRec ),
-      ftc_gcache_init,
-      ftc_gcache_done
+      ftc_gcache_init,                
+      ftc_gcache_done                 
     },
+
     (FTC_MruListClass)&ftc_basic_sbit_family_class
   };
 

@@ -271,11 +271,11 @@
     0x10000L,
     0x20000L,
 
-    0,              
+    NULL,              
 
-    (FT_Module_Constructor)0,
-    (FT_Module_Destructor) 0,
-    (FT_Module_Requester)  otvalid_get_service
+    (FT_Module_Constructor)NULL,                
+    (FT_Module_Destructor) NULL,                
+    (FT_Module_Requester)  otvalid_get_service  
   };
 
 

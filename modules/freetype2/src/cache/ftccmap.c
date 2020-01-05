@@ -201,15 +201,15 @@
   static
   const FTC_CacheClassRec  ftc_cmap_cache_class =
   {
-    ftc_cmap_node_new,
-    ftc_cmap_node_weight,
-    ftc_cmap_node_compare,
-    ftc_cmap_node_remove_faceid,
-    ftc_cmap_node_free,
+    ftc_cmap_node_new,           
+    ftc_cmap_node_weight,        
+    ftc_cmap_node_compare,       
+    ftc_cmap_node_remove_faceid, 
+    ftc_cmap_node_free,          
 
     sizeof ( FTC_CacheRec ),
-    ftc_cache_init,
-    ftc_cache_done,
+    ftc_cache_init,              
+    ftc_cache_done,              
   };
 
 

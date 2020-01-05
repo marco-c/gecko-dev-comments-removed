@@ -61,6 +61,77 @@ FT_BEGIN_HEADER
   } GX_AVarSegmentRec, *GX_AVarSegment;
 
 
+  typedef struct  GX_HVarDataRec_
+  {
+    FT_UInt    itemCount;      
+    FT_UInt    regionIdxCount; 
+    FT_UInt*   regionIndices;  
+                               
+    FT_Short*  deltaSet;       
+                               
+
+  } GX_HVarDataRec, *GX_HVarData;
+
+
+  
+  typedef struct  GX_AxisCoordsRec_
+  {
+    FT_Fixed  startCoord;
+    FT_Fixed  peakCoord;      
+    FT_Fixed  endCoord;
+
+  } GX_AxisCoordsRec, *GX_AxisCoords;
+
+
+  typedef struct  GX_HVarRegionRec_
+  {
+    GX_AxisCoords  axisList;               
+
+  } GX_HVarRegionRec, *GX_HVarRegion;
+
+
+  
+  typedef struct  GX_HVStoreRec_
+  {
+    FT_UInt        dataCount;
+    GX_HVarData    varData;            
+                                       
+    FT_UShort      axisCount;
+    FT_UInt        regionCount;        
+    GX_HVarRegion  varRegionList;
+
+  } GX_HVStoreRec, *GX_HVStore;
+
+
+  typedef struct  GX_WidthMapRec_
+  {
+    FT_UInt   mapCount;
+    FT_UInt*  outerIndex;             
+    FT_UInt*  innerIndex;             
+
+  } GX_WidthMapRec, *GX_WidthMap;
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef struct  GX_HVarTableRec_
+  {
+    GX_HVStoreRec   itemStore;        
+    GX_WidthMapRec  widthMap;         
+#if 0
+    GX_LSBMap       LsbMap;           
+    GX_RSBMap       RsbMap;           
+#endif
+
+  } GX_HVarTableRec, *GX_HVarTable;
+
+
   
   
   
@@ -88,6 +159,11 @@ FT_BEGIN_HEADER
 
     FT_Bool         avar_checked;
     GX_AVarSegment  avar_segment;
+
+    FT_Bool         hvar_loaded;
+    FT_Bool         hvar_checked;
+    FT_Error        hvar_error;
+    GX_HVarTable    hvar_table;
 
     FT_UInt         tuplecount;      
     FT_Fixed*       tuplecoords;     
@@ -149,6 +225,11 @@ FT_BEGIN_HEADER
                    FT_Fixed*  coords );
 
   FT_LOCAL( FT_Error )
+  TT_Get_MM_Blend( TT_Face    face,
+                   FT_UInt    num_coords,
+                   FT_Fixed*  coords );
+
+  FT_LOCAL( FT_Error )
   TT_Set_Var_Design( TT_Face    face,
                      FT_UInt    num_coords,
                      FT_Fixed*  coords );
@@ -157,6 +238,10 @@ FT_BEGIN_HEADER
   TT_Get_MM_Var( TT_Face      face,
                  FT_MM_Var*  *master );
 
+  FT_LOCAL( FT_Error )
+  TT_Get_Var_Design( TT_Face    face,
+                     FT_UInt    num_coords,
+                     FT_Fixed*  coords );
 
   FT_LOCAL( FT_Error )
   tt_face_vary_cvt( TT_Face    face,
@@ -169,10 +254,19 @@ FT_BEGIN_HEADER
                               FT_Outline*  outline,
                               FT_UInt      n_points );
 
+  FT_LOCAL( FT_Error )
+  tt_hadvance_adjust( TT_Face  face,
+                      FT_UInt  gindex,
+                      FT_Int  *adelta );
+
+  FT_LOCAL( FT_Error )
+  tt_get_var_blend( TT_Face      face,
+                    FT_UInt     *num_coords,
+                    FT_Fixed*   *coords,
+                    FT_MM_Var*  *mm_var );
 
   FT_LOCAL( void )
-  tt_done_blend( FT_Memory  memory,
-                 GX_Blend   blend );
+  tt_done_blend( TT_Face  face );
 
 
 FT_END_HEADER

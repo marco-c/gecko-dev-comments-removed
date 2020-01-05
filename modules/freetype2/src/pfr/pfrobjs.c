@@ -185,7 +185,7 @@
 
 
       pfrface->family_name = phy_font->family_name;
-      if ( pfrface->family_name == NULL )
+      if ( !pfrface->family_name )
         pfrface->family_name = phy_font->font_id;
 
       
@@ -342,8 +342,12 @@
     
     if ( ( load_flags & ( FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP ) ) == 0 )
     {
-      error = pfr_slot_load_bitmap( slot, size, gindex );
-      if ( error == 0 )
+      error = pfr_slot_load_bitmap(
+                slot,
+                size,
+                gindex,
+                ( load_flags & FT_LOAD_BITMAP_METRICS_ONLY ) != 0 );
+      if ( !error )
         goto Exit;
     }
 

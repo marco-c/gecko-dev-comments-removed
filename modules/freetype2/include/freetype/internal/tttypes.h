@@ -1069,6 +1069,150 @@ FT_BEGIN_HEADER
   
   
   
+
+  
+#define TT_FACE_FLAG_VAR_FVAR  ( 1 << 0 )
+
+  
+#define TT_FACE_FLAG_VAR_HADVANCE  ( 1 << 1 )
+#define TT_FACE_FLAG_VAR_LSB       ( 1 << 2 )
+#define TT_FACE_FLAG_VAR_RSB       ( 1 << 3 )
+
+  
+#define TT_FACE_FLAG_VAR_VADVANCE  ( 1 << 4 )
+#define TT_FACE_FLAG_VAR_TSB       ( 1 << 5 )
+#define TT_FACE_FLAG_VAR_BSB       ( 1 << 6 )
+#define TT_FACE_FLAG_VAR_VORG      ( 1 << 7 )
+
+  
+#define TT_FACE_FLAG_VAR_GASP_0  ( 1 << 20 )
+#define TT_FACE_FLAG_VAR_GASP_1  ( 1 << 21 )
+#define TT_FACE_FLAG_VAR_GASP_2  ( 1 << 22 )
+#define TT_FACE_FLAG_VAR_GASP_3  ( 1 << 23 )
+#define TT_FACE_FLAG_VAR_GASP_4  ( 1 << 24 )
+#define TT_FACE_FLAG_VAR_GASP_5  ( 1 << 25 )
+#define TT_FACE_FLAG_VAR_GASP_6  ( 1 << 26 )
+#define TT_FACE_FLAG_VAR_GASP_7  ( 1 << 27 )
+#define TT_FACE_FLAG_VAR_GASP_8  ( 1 << 28 )
+#define TT_FACE_FLAG_VAR_GASP_9  ( 1 << 29 )
+
+  
+
+  
+#define TT_FACE_FLAG_VAR_CPHT  ( 1 <<  0 )
+#define TT_FACE_FLAG_VAR_HASC  ( 1 <<  1 )
+#define TT_FACE_FLAG_VAR_HCLA  ( 1 <<  2 )
+#define TT_FACE_FLAG_VAR_HCLD  ( 1 <<  3 )
+#define TT_FACE_FLAG_VAR_HCOF  ( 1 <<  4 )
+#define TT_FACE_FLAG_VAR_HCRN  ( 1 <<  5 )
+#define TT_FACE_FLAG_VAR_HCRS  ( 1 <<  6 )
+#define TT_FACE_FLAG_VAR_HDSC  ( 1 <<  7 )
+#define TT_FACE_FLAG_VAR_HLGP  ( 1 <<  8 )
+#define TT_FACE_FLAG_VAR_SBXO  ( 1 <<  9 )
+#define TT_FACE_FLAG_VAR_SBXS  ( 1 << 10 )
+#define TT_FACE_FLAG_VAR_SBYO  ( 1 << 11 )
+#define TT_FACE_FLAG_VAR_SBYS  ( 1 << 12 )
+#define TT_FACE_FLAG_VAR_SPXO  ( 1 << 13 )
+#define TT_FACE_FLAG_VAR_SPXS  ( 1 << 14 )
+#define TT_FACE_FLAG_VAR_SPYO  ( 1 << 15 )
+#define TT_FACE_FLAG_VAR_SPYS  ( 1 << 16 )
+#define TT_FACE_FLAG_VAR_STRO  ( 1 << 17 )
+#define TT_FACE_FLAG_VAR_STRS  ( 1 << 18 )
+#define TT_FACE_FLAG_VAR_UNDO  ( 1 << 19 )
+#define TT_FACE_FLAG_VAR_UNDS  ( 1 << 20 )
+#define TT_FACE_FLAG_VAR_VASC  ( 1 << 21 )
+#define TT_FACE_FLAG_VAR_VCOF  ( 1 << 22 )
+#define TT_FACE_FLAG_VAR_VCRN  ( 1 << 23 )
+#define TT_FACE_FLAG_VAR_VCRS  ( 1 << 24 )
+#define TT_FACE_FLAG_VAR_VDSC  ( 1 << 25 )
+#define TT_FACE_FLAG_VAR_VLGP  ( 1 << 26 )
+#define TT_FACE_FLAG_VAR_XHGT  ( 1 << 27 )
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
   
   
   
@@ -1288,6 +1432,16 @@ FT_BEGIN_HEADER
     
     void*                 psnames;
 
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+    
+    
+    void*                 mm;
+
+    
+    
+    void*                 var;
+#endif
+
 
     
     
@@ -1344,18 +1498,22 @@ FT_BEGIN_HEADER
     const char*           postscript_name;
 
     FT_ULong              glyf_len;
+    FT_ULong              glyf_offset;    
+
+    FT_Bool               isCFF2;         
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
     FT_Bool               doblend;
     GX_Blend              blend;
+
+    FT_Bool               is_default_instance;   
+    FT_UInt32             variation_support;     
+    FT_UInt32             mvar_support;          
 #endif
 
     
 
-    FT_Byte*              horz_metrics;
     FT_ULong              horz_metrics_size;
-
-    FT_Byte*              vert_metrics;
     FT_ULong              vert_metrics_size;
 
     FT_ULong              num_locations; 
@@ -1371,6 +1529,7 @@ FT_BEGIN_HEADER
     FT_ULong              sbit_table_size;
     TT_SbitTableType      sbit_table_type;
     FT_UInt               sbit_num_strikes;
+    FT_UInt*              sbit_strike_map;
 
     FT_Byte*              kern_table;
     FT_ULong              kern_table_size;
@@ -1490,8 +1649,6 @@ FT_BEGIN_HEADER
     FT_Bool          linear_def;
     FT_Vector        pp1;
     FT_Vector        pp2;
-
-    FT_ULong         glyf_offset;
 
     
     TT_GlyphZoneRec  base;

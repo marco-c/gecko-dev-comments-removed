@@ -132,16 +132,18 @@
   }
 
 
-  FT_DEFINE_GLYPH(ft_bitmap_glyph_class,
+  FT_DEFINE_GLYPH(
+    ft_bitmap_glyph_class,
+
     sizeof ( FT_BitmapGlyphRec ),
     FT_GLYPH_FORMAT_BITMAP,
 
-    ft_bitmap_glyph_init,
-    ft_bitmap_glyph_done,
-    ft_bitmap_glyph_copy,
-    0,                          
-    ft_bitmap_glyph_bbox,
-    0                           
+    ft_bitmap_glyph_init,    
+    ft_bitmap_glyph_done,    
+    ft_bitmap_glyph_copy,    
+    NULL,                    
+    ft_bitmap_glyph_bbox,    
+    NULL                     
   )
 
 
@@ -260,16 +262,18 @@
   }
 
 
-  FT_DEFINE_GLYPH( ft_outline_glyph_class,
+  FT_DEFINE_GLYPH(
+    ft_outline_glyph_class,
+
     sizeof ( FT_OutlineGlyphRec ),
     FT_GLYPH_FORMAT_OUTLINE,
 
-    ft_outline_glyph_init,
-    ft_outline_glyph_done,
-    ft_outline_glyph_copy,
-    ft_outline_glyph_transform,
-    ft_outline_glyph_bbox,
-    ft_outline_glyph_prepare
+    ft_outline_glyph_init,      
+    ft_outline_glyph_done,      
+    ft_outline_glyph_copy,      
+    ft_outline_glyph_transform, 
+    ft_outline_glyph_bbox,      
+    ft_outline_glyph_prepare    
   )
 
 
@@ -542,8 +546,8 @@
     
     
 
-    FT_MEM_ZERO( &dummy, sizeof ( dummy ) );
-    FT_MEM_ZERO( &dummy_internal, sizeof ( dummy_internal ) );
+    FT_ZERO( &dummy );
+    FT_ZERO( &dummy_internal );
     dummy.internal = &dummy_internal;
     dummy.library  = library;
     dummy.format   = clazz->glyph_format;

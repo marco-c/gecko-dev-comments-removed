@@ -181,10 +181,10 @@
       0x10000L,
       0x20000L,
 
-      0,    
+      NULL,    
 
-      0,                        
-      0,                        
+      NULL,                     
+      NULL,                     
       pfr_get_service           
     },
 
@@ -194,19 +194,19 @@
 
     pfr_face_init,              
     pfr_face_done,              
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
     pfr_slot_init,              
     pfr_slot_done,              
 
     pfr_slot_load,              
 
     pfr_get_kerning,            
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
 
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
   };
 
 

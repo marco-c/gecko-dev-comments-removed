@@ -64,6 +64,7 @@ FT_BEGIN_HEADER
   {
     FT_Stream  stream;
     FT_ULong   start;
+    FT_UInt    hdr_size;
     FT_UInt    count;
     FT_Byte    off_size;
     FT_ULong   data_offset;
@@ -100,6 +101,79 @@ FT_BEGIN_HEADER
     FT_UInt     num_glyphs;
 
   } CFF_CharsetRec, *CFF_Charset;
+
+
+  
+
+  typedef struct  CFF_VarData_
+  {
+#if 0
+    FT_UInt  itemCount;       
+    FT_UInt  shortDeltaCount; 
+#endif
+
+    FT_UInt   regionIdxCount; 
+    FT_UInt*  regionIndices;  
+                              
+  } CFF_VarData;
+
+
+  
+  typedef struct  CFF_AxisCoords_
+  {
+    FT_Fixed  startCoord;
+    FT_Fixed  peakCoord;      
+    FT_Fixed  endCoord;
+
+  } CFF_AxisCoords;
+
+
+  typedef struct  CFF_VarRegion_
+  {
+    CFF_AxisCoords*  axisList;      
+
+  } CFF_VarRegion;
+
+
+  typedef struct  CFF_VStoreRec_
+  {
+    FT_UInt         dataCount;
+    CFF_VarData*    varData;        
+                                    
+    FT_UShort       axisCount;
+    FT_UInt         regionCount;    
+    CFF_VarRegion*  varRegionList;
+
+  } CFF_VStoreRec, *CFF_VStore;
+
+
+  
+  typedef struct CFF_FontRec_*  CFF_Font;
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  typedef struct  CFF_BlendRec_
+  {
+    FT_Bool    builtBV;        
+    FT_Bool    usedBV;         
+    CFF_Font   font;           
+    FT_UInt    lastVsindex;    
+    FT_UInt    lenNDV;         
+    FT_Fixed*  lastNDV;        
+    FT_UInt    lenBV;          
+    FT_Int32*  BV;             
+
+  } CFF_BlendRec, *CFF_Blend;
 
 
   typedef struct  CFF_FontRecDictRec_
@@ -151,7 +225,15 @@ FT_BEGIN_HEADER
     FT_UShort  num_designs;
     FT_UShort  num_axes;
 
+    
+    FT_ULong   vstore_offset;
+    FT_UInt    maxstack;
+
   } CFF_FontRecDictRec, *CFF_FontRecDict;
+
+
+  
+  typedef struct CFF_SubFontRec_*  CFF_SubFont;
 
 
   typedef struct  CFF_PrivateRec_
@@ -186,6 +268,10 @@ FT_BEGIN_HEADER
     FT_Pos    default_width;
     FT_Pos    nominal_width;
 
+    
+    FT_UInt      vsindex;
+    CFF_SubFont  subfont;
+
   } CFF_PrivateRec, *CFF_Private;
 
 
@@ -213,10 +299,29 @@ FT_BEGIN_HEADER
     CFF_FontRecDictRec  font_dict;
     CFF_PrivateRec      private_dict;
 
-    CFF_IndexRec        local_subrs_index;
-    FT_Byte**           local_subrs; 
+    
+    CFF_BlendRec  blend;      
+    FT_UInt       lenNDV;     
+    FT_Fixed*     NDV;        
 
-  } CFF_SubFontRec, *CFF_SubFont;
+    
+    
+    
+    
+    
+    
+    
+
+    FT_Byte*  blend_stack;    
+    FT_Byte*  blend_top;      
+    FT_UInt   blend_used;     
+    FT_UInt   blend_alloc;    
+
+    CFF_IndexRec  local_subrs_index;
+    FT_Byte**     local_subrs; 
+                               
+
+  } CFF_SubFontRec;
 
 
 #define CFF_MAX_CID_FONTS  256
@@ -224,16 +329,20 @@ FT_BEGIN_HEADER
 
   typedef struct  CFF_FontRec_
   {
+    FT_Library       library;
     FT_Stream        stream;
-    FT_Memory        memory;
+    FT_Memory        memory;        
+    FT_ULong         base_offset;   
     FT_UInt          num_faces;
     FT_UInt          num_glyphs;
 
     FT_Byte          version_major;
     FT_Byte          version_minor;
     FT_Byte          header_size;
-    FT_Byte          absolute_offsize;
 
+    FT_UInt          top_dict_length;   
+
+    FT_Bool          cff2;
 
     CFF_IndexRec     name_index;
     CFF_IndexRec     top_dict_index;
@@ -280,7 +389,9 @@ FT_BEGIN_HEADER
     
     FT_Generic       cf2_instance;
 
-  } CFF_FontRec, *CFF_Font;
+    CFF_VStoreRec    vstore;        
+
+  } CFF_FontRec;
 
 
 FT_END_HEADER

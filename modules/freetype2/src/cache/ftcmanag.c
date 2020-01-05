@@ -156,10 +156,11 @@
   const FTC_MruListClassRec  ftc_size_list_class =
   {
     sizeof ( FTC_SizeNodeRec ),
-    ftc_size_node_compare,
-    ftc_size_node_init,
-    ftc_size_node_reset,
-    ftc_size_node_done
+
+    ftc_size_node_compare,  
+    ftc_size_node_init,     
+    ftc_size_node_reset,    
+    ftc_size_node_done      
   };
 
 
@@ -296,10 +297,10 @@
   {
     sizeof ( FTC_FaceNodeRec),
 
-    ftc_face_node_compare,
-    ftc_face_node_init,
-    0,                          
-    ftc_face_node_done
+    ftc_face_node_compare,  
+    ftc_face_node_init,     
+    NULL,                   
+    ftc_face_node_done      
   };
 
 
@@ -552,7 +553,7 @@
                 manager->num_nodes ));
 #endif
 
-    if ( manager->cur_weight < manager->max_weight || first == NULL )
+    if ( manager->cur_weight < manager->max_weight || !first )
       return;
 
     
@@ -637,7 +638,7 @@
 
 
     
-    if ( first == NULL )  
+    if ( !first )  
       return 0;
 
     

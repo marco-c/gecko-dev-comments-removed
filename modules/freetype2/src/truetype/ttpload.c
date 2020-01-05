@@ -73,9 +73,21 @@
     
     
     if ( FT_ERR_EQ( error, Table_Missing ) )
-      face->glyf_len = 0;
+    {
+      face->glyf_len    = 0;
+      face->glyf_offset = 0;
+    }
     else if ( error )
       goto Exit;
+    else
+    {
+#ifdef FT_CONFIG_OPTION_INCREMENTAL
+      if ( face->root.internal->incremental_interface )
+        face->glyf_offset = 0;
+      else
+#endif
+        face->glyf_offset = FT_STREAM_POS();
+    }
 
     FT_TRACE2(( "Locations " ));
     error = face->goto_table( face, TTAG_loca, stream, &table_len );
@@ -92,8 +104,7 @@
       if ( table_len >= 0x40000L )
       {
         FT_TRACE2(( "table too large\n" ));
-        error = FT_THROW( Invalid_Table );
-        goto Exit;
+        table_len = 0x3FFFFL;
       }
       face->num_locations = table_len >> shift;
     }
@@ -104,8 +115,7 @@
       if ( table_len >= 0x20000L )
       {
         FT_TRACE2(( "table too large\n" ));
-        error = FT_THROW( Invalid_Table );
-        goto Exit;
+        table_len = 0x1FFFFL;
       }
       face->num_locations = table_len >> shift;
     }
@@ -226,9 +236,9 @@
     if ( pos1 > face->glyf_len )
     {
       FT_TRACE1(( "tt_face_get_location:"
-                  " too large offset=0x%08lx found for gid=0x%04lx,\n"
+                  " too large offset (0x%08lx) found for glyph index %ld,\n"
                   "                     "
-                  " exceeding the end of glyf table (0x%08lx)\n",
+                  " exceeding the end of `glyf' table (0x%08lx)\n",
                   pos1, gindex, face->glyf_len ));
       *asize = 0;
       return 0;
@@ -236,12 +246,26 @@
 
     if ( pos2 > face->glyf_len )
     {
-      FT_TRACE1(( "tt_face_get_location:"
-                  " too large offset=0x%08lx found for gid=0x%04lx,\n"
-                  "                     "
-                  " truncate at the end of glyf table (0x%08lx)\n",
-                  pos2, gindex + 1, face->glyf_len ));
-      pos2 = face->glyf_len;
+      
+      if ( gindex == face->num_locations - 1 )
+      {
+        FT_TRACE1(( "tt_face_get_location:"
+                    " too large offset (0x%08lx) found for glyph index %ld,\n"
+                    "                     "
+                    " truncating at the end of `glyf' table (0x%08lx)\n",
+                    pos2, gindex + 1, face->glyf_len ));
+        pos2 = face->glyf_len;
+      }
+      else
+      {
+        FT_TRACE1(( "tt_face_get_location:"
+                    " too large offset (0x%08lx) found for glyph index %ld,\n"
+                    "                     "
+                    " exceeding the end of `glyf' table (0x%08lx)\n",
+                    pos2, gindex + 1, face->glyf_len ));
+        *asize = 0;
+        return 0;
+      }
     }
 
     
@@ -500,7 +524,7 @@
   {
     FT_Error   error;
     FT_Memory  memory = stream->memory;
-    FT_UInt    version, nn, num_records;
+    FT_UInt    nn, num_records;
     FT_ULong   table_size, record_size;
     FT_Byte*   p;
     FT_Byte*   limit;
@@ -517,7 +541,10 @@
     p     = face->hdmx_table;
     limit = p + table_size;
 
-    version     = FT_NEXT_USHORT( p );
+    
+    
+    
+    p          += 2;
     num_records = FT_NEXT_USHORT( p );
     record_size = FT_NEXT_ULONG( p );
 
@@ -536,10 +563,10 @@
       record_size &= 0xFFFFU;
 
     
-    if ( version != 0           ||
-         num_records > 255      ||
-         record_size > 0x10001L ||
-         record_size < 4        )
+    if ( num_records > 255              ||
+         ( num_records > 0            &&
+           ( record_size > 0x10001L ||
+             record_size < 4        ) ) )
     {
       error = FT_THROW( Invalid_File_Format );
       goto Fail;

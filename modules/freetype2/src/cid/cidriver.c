@@ -206,7 +206,7 @@
       0x10000L,  
       0x20000L,  
 
-      0,    
+      NULL,    
 
       cid_driver_init,          
       cid_driver_done,          
@@ -226,12 +226,12 @@
 
     cid_slot_load_glyph,        
 
-    0,                          
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
+    NULL,                       
 
     cid_size_request,           
-    0                           
+    NULL                        
   };
 
 

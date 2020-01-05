@@ -25,6 +25,7 @@
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
 #include FT_MULTIPLE_MASTERS_H
 #include FT_SERVICE_MULTIPLE_MASTERS_H
+#include FT_SERVICE_METRICS_VARIATIONS_H
 #endif
 
 #include FT_SERVICE_TRUETYPE_ENGINE_H
@@ -144,8 +145,10 @@
 
   FT_DEFINE_SERVICE_PROPERTIESREC(
     tt_service_properties,
+
     (FT_Properties_SetFunc)tt_property_set,     
-    (FT_Properties_GetFunc)tt_property_get )    
+    (FT_Properties_GetFunc)tt_property_get      
+  )
 
 
   
@@ -221,13 +224,20 @@
                    FT_Fixed  *advances )
   {
     FT_UInt  nn;
-    TT_Face  face = (TT_Face) ttface;
+    TT_Face  face = (TT_Face)ttface;
 
 
     
 
     if ( flags & FT_LOAD_VERTICAL_LAYOUT )
     {
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+      
+      if ( !face->is_default_instance                               &&
+           !( face->variation_support & TT_FACE_FLAG_VAR_VADVANCE ) )
+        return FT_THROW( Unimplemented_Feature );
+#endif
+
       for ( nn = 0; nn < count; nn++ )
       {
         FT_Short   tsb;
@@ -241,6 +251,13 @@
     }
     else
     {
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+      
+      if ( !face->is_default_instance                               &&
+           !( face->variation_support & TT_FACE_FLAG_VAR_HADVANCE ) )
+        return FT_THROW( Unimplemented_Feature );
+#endif
+
       for ( nn = 0; nn < count; nn++ )
       {
         FT_Short   lsb;
@@ -291,7 +308,7 @@
     }
     else
     {
-      SFNT_Service      sfnt    = (SFNT_Service) ttface->sfnt;
+      SFNT_Service      sfnt    = (SFNT_Service)ttface->sfnt;
       FT_Size_Metrics*  metrics = &size->metrics;
 
 
@@ -319,7 +336,7 @@
     if ( FT_HAS_FIXED_SIZES( size->face ) )
     {
       TT_Face       ttface = (TT_Face)size->face;
-      SFNT_Service  sfnt   = (SFNT_Service) ttface->sfnt;
+      SFNT_Service  sfnt   = (SFNT_Service)ttface->sfnt;
       FT_ULong      strike_index;
 
 
@@ -462,14 +479,38 @@
   
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+
   FT_DEFINE_SERVICE_MULTIMASTERSREC(
     tt_service_gx_multi_masters,
+
     (FT_Get_MM_Func)        NULL,                   
     (FT_Set_MM_Design_Func) NULL,                   
     (FT_Set_MM_Blend_Func)  TT_Set_MM_Blend,        
+    (FT_Get_MM_Blend_Func)  TT_Get_MM_Blend,        
     (FT_Get_MM_Var_Func)    TT_Get_MM_Var,          
-    (FT_Set_Var_Design_Func)TT_Set_Var_Design )     
-#endif
+    (FT_Set_Var_Design_Func)TT_Set_Var_Design,      
+    (FT_Get_Var_Design_Func)TT_Get_Var_Design,      
+
+    (FT_Get_Var_Blend_Func) tt_get_var_blend,       
+    (FT_Done_Blend_Func)    tt_done_blend           
+  )
+
+  FT_DEFINE_SERVICE_METRICSVARIATIONSREC(
+    tt_service_metrics_variations,
+
+    (FT_HAdvance_Adjust_Func)tt_hadvance_adjust,     
+    (FT_LSB_Adjust_Func)     NULL,                   
+    (FT_RSB_Adjust_Func)     NULL,                   
+
+    (FT_VAdvance_Adjust_Func)NULL,                   
+    (FT_TSB_Adjust_Func)     NULL,                   
+    (FT_BSB_Adjust_Func)     NULL,                   
+    (FT_VOrg_Adjust_Func)    NULL,                   
+
+    (FT_Metrics_Adjust_Func) NULL                    
+  )
+
+#endif 
 
 
   static const FT_Service_TrueTypeEngineRec  tt_service_truetype_engine =
@@ -488,20 +529,25 @@
 
   FT_DEFINE_SERVICE_TTGLYFREC(
     tt_service_truetype_glyf,
-    (TT_Glyf_GetLocationFunc)tt_face_get_location )    
+
+    (TT_Glyf_GetLocationFunc)tt_face_get_location      
+  )
 
 
 #ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
-  FT_DEFINE_SERVICEDESCREC5(
+  FT_DEFINE_SERVICEDESCREC6(
     tt_services,
-    FT_SERVICE_ID_FONT_FORMAT,     FT_FONT_FORMAT_TRUETYPE,
-    FT_SERVICE_ID_MULTI_MASTERS,   &TT_SERVICE_GX_MULTI_MASTERS_GET,
-    FT_SERVICE_ID_TRUETYPE_ENGINE, &tt_service_truetype_engine,
-    FT_SERVICE_ID_TT_GLYF,         &TT_SERVICE_TRUETYPE_GLYF_GET,
-    FT_SERVICE_ID_PROPERTIES,      &TT_SERVICE_PROPERTIES_GET )
+
+    FT_SERVICE_ID_FONT_FORMAT,        FT_FONT_FORMAT_TRUETYPE,
+    FT_SERVICE_ID_MULTI_MASTERS,      &TT_SERVICE_GX_MULTI_MASTERS_GET,
+    FT_SERVICE_ID_METRICS_VARIATIONS, &TT_SERVICE_METRICS_VARIATIONS_GET,
+    FT_SERVICE_ID_TRUETYPE_ENGINE,    &tt_service_truetype_engine,
+    FT_SERVICE_ID_TT_GLYF,            &TT_SERVICE_TRUETYPE_GLYF_GET,
+    FT_SERVICE_ID_PROPERTIES,         &TT_SERVICE_PROPERTIES_GET )
 #else
   FT_DEFINE_SERVICEDESCREC4(
     tt_services,
+
     FT_SERVICE_ID_FONT_FORMAT,     FT_FONT_FORMAT_TRUETYPE,
     FT_SERVICE_ID_TRUETYPE_ENGINE, &tt_service_truetype_engine,
     FT_SERVICE_ID_TT_GLYF,         &TT_SERVICE_TRUETYPE_GLYF_GET,
@@ -529,7 +575,7 @@
 #endif
 
     result = ft_service_list_lookup( TT_SERVICES_GET, tt_interface );
-    if ( result != NULL )
+    if ( result )
       return result;
 
 #ifndef FT_CONFIG_OPTION_PIC
@@ -580,7 +626,7 @@
       0x10000L,        
       0x20000L,        
 
-      0,    
+      NULL,    
 
       tt_driver_init,           
       tt_driver_done,           
@@ -595,12 +641,12 @@
     tt_size_init,               
     tt_size_done,               
     tt_slot_init,               
-    0,                          
+    NULL,                       
 
     tt_glyph_load,              
 
     tt_get_kerning,             
-    0,                          
+    NULL,                       
     tt_get_advances,            
 
     tt_size_request,            

@@ -58,7 +58,7 @@
 
 
         
-        if ( entry->stringLength > 0 && entry->string == NULL )
+        if ( entry->stringLength > 0 && !entry->string )
         {
           FT_Memory  memory = face->memory;
           FT_Stream  stream = face->stream;

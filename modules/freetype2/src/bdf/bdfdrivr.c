@@ -276,7 +276,7 @@
 
         len = lengths[nn];
 
-        if ( src == NULL )
+        if ( !src )
           continue;
 
         
@@ -423,7 +423,7 @@
       else
         bdfface->family_name = NULL;
 
-      if ( ( error = bdf_interpret_style( face ) ) != 0 )
+      if ( FT_SET_ERROR( bdf_interpret_style( face ) ) )
         goto Exit;
 
       
@@ -439,7 +439,7 @@
         FT_Short         resolution_x = 0, resolution_y = 0;
 
 
-        FT_MEM_ZERO( bsize, sizeof ( FT_Bitmap_Size ) );
+        FT_ZERO( bsize );
 
         bsize->height = (FT_Short)( font->font_ascent + font->font_descent );
 
@@ -866,10 +866,10 @@
       0x10000L,
       0x20000L,
 
-      0,    
+      NULL,    
 
-      0,                        
-      0,                        
+      NULL,                     
+      NULL,                     
       bdf_driver_requester      
     },
 
@@ -879,16 +879,16 @@
 
     BDF_Face_Init,              
     BDF_Face_Done,              
-    0,                          
-    0,                          
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
+    NULL,                       
+    NULL,                       
 
     BDF_Glyph_Load,             
 
-    0,                          
-    0,                          
-    0,                          
+    NULL,                       
+    NULL,                       
+    NULL,                       
 
     BDF_Size_Request,           
     BDF_Size_Select             

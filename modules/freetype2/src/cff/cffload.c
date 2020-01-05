@@ -23,10 +23,18 @@
 #include FT_TRUETYPE_TAGS_H
 #include FT_TYPE1_TABLES_H
 
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+#include FT_MULTIPLE_MASTERS_H
+#include FT_SERVICE_MULTIPLE_MASTERS_H
+#endif
+
 #include "cffload.h"
 #include "cffparse.h"
 
 #include "cfferrs.h"
+
+
+#define FT_FIXED_ONE  ( (FT_Fixed)0x10000 )
 
 
 #if 1
@@ -225,19 +233,33 @@
   static FT_Error
   cff_index_init( CFF_Index  idx,
                   FT_Stream  stream,
-                  FT_Bool    load )
+                  FT_Bool    load,
+                  FT_Bool    cff2 )
   {
     FT_Error   error;
     FT_Memory  memory = stream->memory;
-    FT_UShort  count;
+    FT_UInt    count;
 
 
-    FT_MEM_ZERO( idx, sizeof ( *idx ) );
+    FT_ZERO( idx );
 
     idx->stream = stream;
     idx->start  = FT_STREAM_POS();
-    if ( !FT_READ_USHORT( count ) &&
-         count > 0                )
+
+    if ( cff2 )
+    {
+      if ( FT_READ_ULONG( count ) )
+        goto Exit;
+      idx->hdr_size = 5;
+    }
+    else
+    {
+      if ( FT_READ_USHORT( count ) )
+        goto Exit;
+      idx->hdr_size = 3;
+    }
+
+    if ( count > 0 )
     {
       FT_Byte   offsize;
       FT_ULong  size;
@@ -258,7 +280,7 @@
       idx->off_size = offsize;
       size          = (FT_ULong)( count + 1 ) * offsize;
 
-      idx->data_offset = idx->start + 3 + size;
+      idx->data_offset = idx->start + idx->hdr_size + size;
 
       if ( FT_STREAM_SKIP( size - offsize ) )
         goto Exit;
@@ -310,7 +332,7 @@
         FT_FRAME_RELEASE( idx->bytes );
 
       FT_FREE( idx->offsets );
-      FT_MEM_ZERO( idx, sizeof ( *idx ) );
+      FT_ZERO( idx );
     }
   }
 
@@ -323,7 +345,7 @@
     FT_Memory  memory = stream->memory;
 
 
-    if ( idx->count > 0 && idx->offsets == NULL )
+    if ( idx->count > 0 && !idx->offsets )
     {
       FT_Byte    offsize = idx->off_size;
       FT_ULong   data_size;
@@ -335,7 +357,7 @@
       data_size = (FT_ULong)( idx->count + 1 ) * offsize;
 
       if ( FT_NEW_ARRAY( idx->offsets, idx->count + 1 ) ||
-           FT_STREAM_SEEK( idx->start + 3 )             ||
+           FT_STREAM_SEEK( idx->start + idx->hdr_size ) ||
            FT_FRAME_ENTER( data_size )                  )
         goto Exit;
 
@@ -395,7 +417,7 @@
 
     *table = NULL;
 
-    if ( idx->offsets == NULL )
+    if ( !idx->offsets )
     {
       error = cff_index_load_offsets( idx );
       if ( error )
@@ -493,7 +515,7 @@
         FT_ULong  pos = element * idx->off_size;
 
 
-        if ( FT_STREAM_SEEK( idx->start + 3 + pos ) )
+        if ( FT_STREAM_SEEK( idx->start + idx->hdr_size + pos ) )
           goto Exit;
 
         off1 = cff_index_read_offset( idx, &error );
@@ -589,12 +611,17 @@
                       FT_UInt   element )
   {
     CFF_Index   idx = &font->name_index;
-    FT_Memory   memory = idx->stream->memory;
+    FT_Memory   memory;
     FT_Byte*    bytes;
     FT_ULong    byte_len;
     FT_Error    error;
     FT_String*  name = 0;
 
+
+    if ( !idx->stream )  
+      goto Exit;
+
+    memory = idx->stream->memory;
 
     error = cff_index_access_element( idx, element, &bytes, &byte_len );
     if ( error )
@@ -725,6 +752,11 @@
     FT_Byte  fd = 0;
 
 
+    
+    
+    if ( !fdselect->data )
+      goto Exit;
+
     switch ( fdselect->format )
     {
     case 0:
@@ -777,6 +809,7 @@
       ;
     }
 
+  Exit:
     return fd;
   }
 
@@ -1055,6 +1088,491 @@
 
 
   static void
+  cff_vstore_done( CFF_VStoreRec*  vstore,
+                   FT_Memory       memory )
+  {
+    FT_UInt  i;
+
+
+    
+    if ( vstore->varRegionList )
+    {
+      for ( i = 0; i < vstore->regionCount; i++ )
+        FT_FREE( vstore->varRegionList[i].axisList );
+    }
+    FT_FREE( vstore->varRegionList );
+
+    
+    if ( vstore->varData )
+    {
+      for ( i = 0; i < vstore->dataCount; i++ )
+        FT_FREE( vstore->varData[i].regionIndices );
+    }
+    FT_FREE( vstore->varData );
+  }
+
+
+  
+  #define FT_fdot14ToFixed( x )  ( ( (FT_Fixed)( (FT_Int16)(x) ) ) << 2 )
+
+
+  static FT_Error
+  cff_vstore_load( CFF_VStoreRec*  vstore,
+                   FT_Stream       stream,
+                   FT_ULong        base_offset,
+                   FT_ULong        offset )
+  {
+    FT_Memory  memory = stream->memory;
+    FT_Error   error  = FT_ERR( Invalid_File_Format );
+
+    FT_ULong*  dataOffsetArray = NULL;
+    FT_UInt    i, j;
+
+
+    
+    if ( offset )
+    {
+      FT_UInt   vsOffset;
+      FT_UInt   format;
+      FT_ULong  regionListOffset;
+
+
+      
+      
+      if ( FT_STREAM_SEEK( base_offset + offset ) ||
+           FT_STREAM_SKIP( 2 )                    )
+        goto Exit;
+
+      
+      vsOffset = FT_STREAM_POS();
+
+      
+      if ( FT_READ_USHORT( format ) )
+        goto Exit;
+      if ( format != 1 )
+      {
+        error = FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+
+      
+      if ( FT_READ_ULONG( regionListOffset )   ||
+           FT_READ_USHORT( vstore->dataCount ) )
+        goto Exit;
+
+      
+      
+      if ( FT_NEW_ARRAY( dataOffsetArray, vstore->dataCount ) )
+        goto Exit;
+
+      for ( i = 0; i < vstore->dataCount; i++ )
+      {
+        if ( FT_READ_ULONG( dataOffsetArray[i] ) )
+          goto Exit;
+      }
+
+      
+      if ( FT_STREAM_SEEK( vsOffset + regionListOffset ) ||
+           FT_READ_USHORT( vstore->axisCount )           ||
+           FT_READ_USHORT( vstore->regionCount )         )
+        goto Exit;
+
+      if ( FT_NEW_ARRAY( vstore->varRegionList, vstore->regionCount ) )
+        goto Exit;
+
+      for ( i = 0; i < vstore->regionCount; i++ )
+      {
+        CFF_VarRegion*  region = &vstore->varRegionList[i];
+
+
+        if ( FT_NEW_ARRAY( region->axisList, vstore->axisCount ) )
+          goto Exit;
+
+        for ( j = 0; j < vstore->axisCount; j++ )
+        {
+          CFF_AxisCoords*  axis = &region->axisList[j];
+
+          FT_Int16  start14, peak14, end14;
+
+
+          if ( FT_READ_SHORT( start14 ) ||
+               FT_READ_SHORT( peak14 )  ||
+               FT_READ_SHORT( end14 )   )
+            goto Exit;
+
+          axis->startCoord = FT_fdot14ToFixed( start14 );
+          axis->peakCoord  = FT_fdot14ToFixed( peak14 );
+          axis->endCoord   = FT_fdot14ToFixed( end14 );
+        }
+      }
+
+      
+      if ( FT_NEW_ARRAY( vstore->varData, vstore->dataCount ) )
+        goto Exit;
+
+      for ( i = 0; i < vstore->dataCount; i++ )
+      {
+        CFF_VarData*  data = &vstore->varData[i];
+
+
+        if ( FT_STREAM_SEEK( vsOffset + dataOffsetArray[i] ) )
+          goto Exit;
+
+        
+        
+        if ( FT_STREAM_SKIP( 4 ) )
+          goto Exit;
+
+        
+        
+
+        if ( FT_READ_USHORT( data->regionIdxCount ) )
+          goto Exit;
+
+        if ( FT_NEW_ARRAY( data->regionIndices, data->regionIdxCount ) )
+          goto Exit;
+
+        for ( j = 0; j < data->regionIdxCount; j++ )
+        {
+          if ( FT_READ_USHORT( data->regionIndices[j] ) )
+            goto Exit;
+        }
+      }
+    }
+
+    error = FT_Err_Ok;
+
+  Exit:
+    FT_FREE( dataOffsetArray );
+    if ( error )
+      cff_vstore_done( vstore, memory );
+
+    return error;
+  }
+
+
+  
+  
+  
+  
+  
+  
+  FT_LOCAL_DEF( void )
+  cff_blend_clear( CFF_SubFont  subFont )
+  {
+    subFont->blend_top  = subFont->blend_stack;
+    subFont->blend_used = 0;
+  }
+
+
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  FT_LOCAL_DEF( FT_Error )
+  cff_blend_doBlend( CFF_SubFont  subFont,
+                     CFF_Parser   parser,
+                     FT_UInt      numBlends )
+  {
+    FT_UInt  delta;
+    FT_UInt  base;
+    FT_UInt  i, j;
+    FT_UInt  size;
+
+    CFF_Blend  blend = &subFont->blend;
+
+    FT_Memory  memory = subFont->blend.font->memory; 
+    FT_Error   error  = FT_Err_Ok;                   
+
+    
+    FT_UInt  numOperands = (FT_UInt)( numBlends * blend->lenBV );
+    FT_UInt  count       = (FT_UInt)( parser->top - 1 - parser->stack );
+
+
+    if ( numOperands > count )
+    {
+      FT_TRACE4(( " cff_blend_doBlend: Stack underflow %d args\n", count ));
+
+      error = FT_THROW( Stack_Underflow );
+      goto Exit;
+    }
+
+    
+    size = 5 * numBlends;           
+    if ( subFont->blend_used + size > subFont->blend_alloc )
+    {
+      
+      
+      if ( FT_REALLOC( subFont->blend_stack,
+                       subFont->blend_alloc,
+                       subFont->blend_alloc + size ) )
+        goto Exit;
+
+      subFont->blend_top    = subFont->blend_stack + subFont->blend_used;
+      subFont->blend_alloc += size;
+    }
+    subFont->blend_used += size;
+
+    base  = count - numOperands;     
+    delta = base + numBlends;        
+
+    for ( i = 0; i < numBlends; i++ )
+    {
+      const FT_Int32*  weight = &blend->BV[1];
+      FT_Int32         sum;
+
+
+      
+      sum = cff_parse_num( parser, &parser->stack[i + base] ) << 16;
+
+      for ( j = 1; j < blend->lenBV; j++ )
+        sum += FT_MulFix( *weight++,
+                          cff_parse_num( parser,
+                                         &parser->stack[delta++] ) << 16 );
+
+      
+      parser->stack[i + base] = subFont->blend_top;
+
+      
+      
+      
+      
+      
+      *subFont->blend_top++             = 255;
+      *((FT_UInt32*)subFont->blend_top) = (FT_UInt32)sum; 
+      subFont->blend_top               += 4;
+    }
+
+    
+    parser->top = &parser->stack[base + numBlends];
+
+  Exit:
+    return error;
+  }
+
+
+  
+  
+  
+  
+  FT_LOCAL_DEF( FT_Error )
+  cff_blend_build_vector( CFF_Blend  blend,
+                          FT_UInt    vsindex,
+                          FT_UInt    lenNDV,
+                          FT_Fixed*  NDV )
+  {
+    FT_Error   error  = FT_Err_Ok;            
+    FT_Memory  memory = blend->font->memory;  
+
+    FT_UInt       len;
+    CFF_VStore    vs;
+    CFF_VarData*  varData;
+    FT_UInt       master;
+
+
+    FT_ASSERT( lenNDV == 0 || NDV );
+
+    blend->builtBV = FALSE;
+
+    vs = &blend->font->vstore;
+
+    
+    if ( lenNDV != 0 && lenNDV != vs->axisCount )
+    {
+      FT_TRACE4(( " cff_blend_build_vector: Axis count mismatch\n" ));
+      error = FT_THROW( Invalid_File_Format );
+      goto Exit;
+    }
+
+    if ( vsindex >= vs->dataCount )
+    {
+      FT_TRACE4(( " cff_blend_build_vector: vsindex out of range\n" ));
+      error = FT_THROW( Invalid_File_Format );
+      goto Exit;
+    }
+
+    
+    varData = &vs->varData[vsindex];
+
+    
+    len = varData->regionIdxCount + 1;    
+    if ( FT_REALLOC( blend->BV,
+                     blend->lenBV * sizeof( *blend->BV ),
+                     len * sizeof( *blend->BV ) ) )
+      goto Exit;
+
+    blend->lenBV = len;
+
+    
+    for ( master = 0; master < len; master++ )
+    {
+      FT_UInt         j;
+      FT_UInt         idx;
+      CFF_VarRegion*  varRegion;
+
+
+      
+      if ( master == 0 )
+      {
+        blend->BV[master] = FT_FIXED_ONE;
+        FT_TRACE4(( "   build blend vector len %d\n"
+                    "   [ %f ",
+                    len,
+                    blend->BV[master] / 65536.0 ));
+        continue;
+      }
+
+      
+      idx       = varData->regionIndices[master - 1];
+      varRegion = &vs->varRegionList[idx];
+
+      if ( idx >= vs->regionCount )
+      {
+        FT_TRACE4(( " cff_blend_build_vector:"
+                    " region index out of range\n" ));
+        error = FT_THROW( Invalid_File_Format );
+        goto Exit;
+      }
+
+      
+      
+      
+      
+      if ( lenNDV != 0 )
+        blend->BV[master] = FT_FIXED_ONE; 
+
+      
+      for ( j = 0; j < lenNDV; j++ )
+      {
+        CFF_AxisCoords*  axis = &varRegion->axisList[j];
+        FT_Fixed         axisScalar;
+
+
+        
+        
+        if ( axis->startCoord > axis->peakCoord ||
+             axis->peakCoord > axis->endCoord   )
+          axisScalar = FT_FIXED_ONE;
+
+        else if ( axis->startCoord < 0 &&
+                  axis->endCoord > 0   &&
+                  axis->peakCoord != 0 )
+          axisScalar = FT_FIXED_ONE;
+
+        
+        else if ( axis->peakCoord == 0 )
+          axisScalar = FT_FIXED_ONE;
+
+        
+        else if ( NDV[j] < axis->startCoord ||
+                  NDV[j] > axis->endCoord   )
+          axisScalar = 0;
+
+        
+        else
+        {
+          if ( NDV[j] == axis->peakCoord )
+            axisScalar = FT_FIXED_ONE;
+          else if ( NDV[j] < axis->peakCoord )
+            axisScalar = FT_DivFix( NDV[j] - axis->startCoord,
+                                    axis->peakCoord - axis->startCoord );
+          else
+            axisScalar = FT_DivFix( axis->endCoord - NDV[j],
+                                    axis->endCoord - axis->peakCoord );
+        }
+
+        
+        blend->BV[master] = FT_MulFix( blend->BV[master], axisScalar );
+      }
+
+      FT_TRACE4(( ", %f ",
+                  blend->BV[master] / 65536.0 ));
+    }
+
+    FT_TRACE4(( "]\n" ));
+
+    
+    blend->lastVsindex = vsindex;
+
+    if ( lenNDV != 0 )
+    {
+      
+      if ( FT_REALLOC( blend->lastNDV,
+                       blend->lenNDV * sizeof ( *NDV ),
+                       lenNDV * sizeof ( *NDV ) ) )
+        goto Exit;
+
+      blend->lenNDV = lenNDV;
+      FT_MEM_COPY( blend->lastNDV,
+                   NDV,
+                   lenNDV * sizeof ( *NDV ) );
+    }
+
+    blend->builtBV = TRUE;
+
+  Exit:
+    return error;
+  }
+
+
+  
+  
+  FT_LOCAL_DEF( FT_Bool )
+  cff_blend_check_vector( CFF_Blend  blend,
+                          FT_UInt    vsindex,
+                          FT_UInt    lenNDV,
+                          FT_Fixed*  NDV )
+  {
+    if ( !blend->builtBV                             ||
+         blend->lastVsindex != vsindex               ||
+         blend->lenNDV != lenNDV                     ||
+         ( lenNDV                                  &&
+           memcmp( NDV,
+                   blend->lastNDV,
+                   lenNDV * sizeof ( *NDV ) ) != 0 ) )
+    {
+      
+      return TRUE;
+    }
+
+    return FALSE;
+  }
+
+
+#ifdef TT_CONFIG_OPTION_GX_VAR_SUPPORT
+
+  FT_LOCAL_DEF( FT_Error )
+  cff_get_var_blend( CFF_Face     face,
+                     FT_UInt     *num_coords,
+                     FT_Fixed*   *coords,
+                     FT_MM_Var*  *mm_var )
+  {
+    FT_Service_MultiMasters  mm = (FT_Service_MultiMasters)face->mm;
+
+
+    return mm->get_var_blend( FT_FACE( face ), num_coords, coords, mm_var );
+  }
+
+
+  FT_LOCAL_DEF( void )
+  cff_done_blend( CFF_Face  face )
+  {
+    FT_Service_MultiMasters  mm = (FT_Service_MultiMasters)face->mm;
+
+
+    mm->done_blend( FT_FACE( face ) );
+  }
+
+#endif 
+
+
+  static void
   cff_encoding_done( CFF_Encoding  encoding )
   {
     encoding->format = 0;
@@ -1306,31 +1824,127 @@
   }
 
 
+  
+  
+  
+  
+  FT_LOCAL_DEF( FT_Error )
+  cff_load_private_dict( CFF_Font     font,
+                         CFF_SubFont  subfont,
+                         FT_UInt      lenNDV,
+                         FT_Fixed*    NDV )
+  {
+    FT_Error         error  = FT_Err_Ok;
+    CFF_ParserRec    parser;
+    CFF_FontRecDict  top    = &subfont->font_dict;
+    CFF_Private      priv   = &subfont->private_dict;
+    FT_Stream        stream = font->stream;
+    FT_UInt          stackSize;
+
+
+    
+    
+    subfont->blend.font   = font;
+    subfont->blend.usedBV = FALSE;  
+
+    if ( !top->private_offset || !top->private_size )
+      goto Exit2;       
+
+    
+    FT_ZERO( priv );
+
+    priv->blue_shift       = 7;
+    priv->blue_fuzz        = 1;
+    priv->lenIV            = -1;
+    priv->expansion_factor = (FT_Fixed)( 0.06 * 0x10000L );
+    priv->blue_scale       = (FT_Fixed)( 0.039625 * 0x10000L * 1000 );
+
+    
+    priv->subfont   = subfont;
+    subfont->lenNDV = lenNDV;
+    subfont->NDV    = NDV;
+
+    stackSize = font->cff2 ? font->top_font.font_dict.maxstack
+                           : CFF_MAX_STACK_DEPTH + 1;
+
+    if ( cff_parser_init( &parser,
+                          font->cff2 ? CFF2_CODE_PRIVATE : CFF_CODE_PRIVATE,
+                          priv,
+                          font->library,
+                          stackSize,
+                          top->num_designs,
+                          top->num_axes ) )
+      goto Exit;
+
+    if ( FT_STREAM_SEEK( font->base_offset + top->private_offset ) ||
+         FT_FRAME_ENTER( top->private_size )                       )
+      goto Exit;
+
+    FT_TRACE4(( " private dictionary:\n" ));
+    error = cff_parser_run( &parser,
+                            (FT_Byte*)stream->cursor,
+                            (FT_Byte*)stream->limit );
+    FT_FRAME_EXIT();
+
+    if ( error )
+      goto Exit;
+
+    
+    priv->num_blue_values &= ~1;
+
+  Exit:
+    
+    cff_blend_clear( subfont ); 
+    cff_parser_done( &parser ); 
+
+  Exit2:
+    
+    return error;
+  }
+
+
+  
+  
+  
+  
+  
+
   static FT_Error
-  cff_subfont_load( CFF_SubFont  font,
+  cff_subfont_load( CFF_SubFont  subfont,
                     CFF_Index    idx,
                     FT_UInt      font_index,
                     FT_Stream    stream,
                     FT_ULong     base_offset,
-                    FT_Library   library )
+                    FT_UInt      code,
+                    CFF_Font     font )
   {
     FT_Error         error;
     CFF_ParserRec    parser;
     FT_Byte*         dict = NULL;
     FT_ULong         dict_len;
-    CFF_FontRecDict  top  = &font->font_dict;
-    CFF_Private      priv = &font->private_dict;
+    CFF_FontRecDict  top  = &subfont->font_dict;
+    CFF_Private      priv = &subfont->private_dict;
 
+    FT_Bool  cff2      = FT_BOOL( code == CFF2_CODE_TOPDICT  ||
+                                  code == CFF2_CODE_FONTDICT );
+    FT_UInt  stackSize = cff2 ? CFF2_DEFAULT_STACK
+                              : CFF_MAX_STACK_DEPTH;
 
-    cff_parser_init( &parser,
-                     CFF_CODE_TOPDICT,
-                     &font->font_dict,
-                     library,
-                     0,
-                     0 );
 
     
-    FT_MEM_ZERO( top, sizeof ( *top ) );
+    
+    error = cff_parser_init( &parser,
+                             code,
+                             &subfont->font_dict,
+                             font->library,
+                             stackSize,
+                             0,
+                             0 );
+    if ( error )
+      goto Exit;
+
+    
+    FT_ZERO( top );
 
     top->underline_position  = -( 100L << 16 );
     top->underline_thickness = 50L << 16;
@@ -1353,14 +1967,35 @@
     top->cid_ordering        = 0xFFFFU;
     top->cid_font_name       = 0xFFFFU;
 
-    error = cff_index_access_element( idx, font_index, &dict, &dict_len );
+    
+    top->maxstack            = cff2 ? CFF2_DEFAULT_STACK : 48;
+
+    if ( idx->count )   
+      error = cff_index_access_element( idx, font_index, &dict, &dict_len );
+    else
+    {
+      
+      
+
+      
+      if ( FT_STREAM_SEEK( idx->data_offset )       ||
+           FT_FRAME_EXTRACT( idx->data_size, dict ) )
+        goto Exit;
+
+      dict_len = idx->data_size;
+    }
+
     if ( !error )
     {
       FT_TRACE4(( " top dictionary:\n" ));
       error = cff_parser_run( &parser, dict, dict + dict_len );
     }
 
-    cff_index_forget_element( idx, &dict );
+    
+    if ( idx->count )
+      cff_index_forget_element( idx, &dict );
+    else
+      FT_FRAME_RELEASE( dict );
 
     if ( error )
       goto Exit;
@@ -1370,39 +2005,13 @@
       goto Exit;
 
     
-    if ( top->private_offset && top->private_size )
-    {
-      
-      FT_MEM_ZERO( priv, sizeof ( *priv ) );
-
-      priv->blue_shift       = 7;
-      priv->blue_fuzz        = 1;
-      priv->lenIV            = -1;
-      priv->expansion_factor = (FT_Fixed)( 0.06 * 0x10000L );
-      priv->blue_scale       = (FT_Fixed)( 0.039625 * 0x10000L * 1000 );
-
-      cff_parser_init( &parser,
-                       CFF_CODE_PRIVATE,
-                       priv,
-                       library,
-                       top->num_designs,
-                       top->num_axes );
-
-      if ( FT_STREAM_SEEK( base_offset + font->font_dict.private_offset ) ||
-           FT_FRAME_ENTER( font->font_dict.private_size )                 )
-        goto Exit;
-
-      FT_TRACE4(( " private dictionary:\n" ));
-      error = cff_parser_run( &parser,
-                              (FT_Byte*)stream->cursor,
-                              (FT_Byte*)stream->limit );
-      FT_FRAME_EXIT();
-      if ( error )
-        goto Exit;
-
-      
-      priv->num_blue_values &= ~1;
-    }
+    
+    
+    
+    
+    error = cff_load_private_dict( font, subfont, 0, 0 );
+    if ( error )
+      goto Exit;
 
     
     if ( priv->local_subrs_offset )
@@ -1411,17 +2020,19 @@
                            priv->local_subrs_offset ) )
         goto Exit;
 
-      error = cff_index_init( &font->local_subrs_index, stream, 1 );
+      error = cff_index_init( &subfont->local_subrs_index, stream, 1, cff2 );
       if ( error )
         goto Exit;
 
-      error = cff_index_get_pointers( &font->local_subrs_index,
-                                      &font->local_subrs, NULL, NULL );
+      error = cff_index_get_pointers( &subfont->local_subrs_index,
+                                      &subfont->local_subrs, NULL, NULL );
       if ( error )
         goto Exit;
     }
 
   Exit:
+    cff_parser_done( &parser ); 
+
     return error;
   }
 
@@ -1434,6 +2045,10 @@
     {
       cff_index_done( &subfont->local_subrs_index );
       FT_FREE( subfont->local_subrs );
+
+      FT_FREE( subfont->blend.lastNDV );
+      FT_FREE( subfont->blend.BV );
+      FT_FREE( subfont->blend_stack );
     }
   }
 
@@ -1443,18 +2058,18 @@
                  FT_Stream  stream,
                  FT_Int     face_index,
                  CFF_Font   font,
-                 FT_Bool    pure_cff )
+                 FT_Bool    pure_cff,
+                 FT_Bool    cff2 )
   {
     static const FT_Frame_Field  cff_header_fields[] =
     {
 #undef  FT_STRUCTURE
 #define FT_STRUCTURE  CFF_FontRec
 
-      FT_FRAME_START( 4 ),
+      FT_FRAME_START( 3 ),
         FT_FRAME_BYTE( version_major ),
         FT_FRAME_BYTE( version_minor ),
         FT_FRAME_BYTE( header_size ),
-        FT_FRAME_BYTE( absolute_offsize ),
       FT_FRAME_END
     };
 
@@ -1469,43 +2084,112 @@
     FT_ZERO( font );
     FT_ZERO( &string_index );
 
-    font->stream = stream;
-    font->memory = memory;
-    dict         = &font->top_font.font_dict;
-    base_offset  = FT_STREAM_POS();
+    dict        = &font->top_font.font_dict;
+    base_offset = FT_STREAM_POS();
+
+    font->library     = library;
+    font->stream      = stream;
+    font->memory      = memory;
+    font->cff2        = cff2;
+    font->base_offset = base_offset;
 
     
     if ( FT_STREAM_READ_FIELDS( cff_header_fields, font ) )
       goto Exit;
 
-    
-    if ( font->version_major   != 1 ||
-         font->header_size      < 4 ||
-         font->absolute_offsize > 4 )
+    if ( cff2 )
     {
-      FT_TRACE2(( "  not a CFF font header\n" ));
-      error = FT_THROW( Unknown_File_Format );
-      goto Exit;
+      if ( font->version_major != 2 ||
+           font->header_size < 5    )
+      {
+        FT_TRACE2(( "  not a CFF2 font header\n" ));
+        error = FT_THROW( Unknown_File_Format );
+        goto Exit;
+      }
+
+      if ( FT_READ_USHORT( font->top_dict_length ) )
+        goto Exit;
+    }
+    else
+    {
+      FT_Byte  absolute_offset;
+
+
+      if ( FT_READ_BYTE( absolute_offset ) )
+        goto Exit;
+
+      if ( font->version_major != 1 ||
+           font->header_size < 4    ||
+           absolute_offset > 4      )
+      {
+        FT_TRACE2(( "  not a CFF font header\n" ));
+        error = FT_THROW( Unknown_File_Format );
+        goto Exit;
+      }
     }
 
     
-    if ( FT_STREAM_SKIP( font->header_size - 4 ) )
+    if ( FT_STREAM_SEEK( base_offset + font->header_size ) )
+    {
+      
+      
+      
+      if ( pure_cff )
+      {
+        FT_TRACE2(( "  not a CFF file\n" ));
+        error = FT_THROW( Unknown_File_Format );
+      }
       goto Exit;
+    }
 
-    
-    if ( FT_SET_ERROR( cff_index_init( &font->name_index,
-                                       stream, 0 ) )                       ||
-         FT_SET_ERROR( cff_index_init( &font->font_dict_index,
-                                       stream, 0 ) )                       ||
-         FT_SET_ERROR( cff_index_init( &string_index,
-                                       stream, 1 ) )                       ||
-         FT_SET_ERROR( cff_index_init( &font->global_subrs_index,
-                                       stream, 1 ) )                       ||
-         FT_SET_ERROR( cff_index_get_pointers( &string_index,
-                                               &font->strings,
-                                               &font->string_pool,
-                                               &font->string_pool_size ) ) )
-      goto Exit;
+    if ( cff2 )
+    {
+      
+      
+      
+      
+      
+      
+      FT_ZERO( &font->font_dict_index );
+
+      font->font_dict_index.data_offset = FT_STREAM_POS();
+      font->font_dict_index.data_size   = font->top_dict_length;
+
+      
+      if ( FT_STREAM_SKIP( font->top_dict_length ) )
+        goto Exit;
+
+      
+      if ( FT_SET_ERROR( cff_index_init( &font->global_subrs_index,
+                                         stream, 1, cff2 ) ) )
+        goto Exit;
+    }
+    else
+    {
+      
+      if ( FT_SET_ERROR( cff_index_init( &font->name_index,
+                                         stream, 0, cff2 ) ) )
+      {
+        if ( pure_cff )
+        {
+          FT_TRACE2(( "  not a CFF file\n" ));
+          error = FT_THROW( Unknown_File_Format );
+        }
+        goto Exit;
+      }
+
+      if ( FT_SET_ERROR( cff_index_init( &font->font_dict_index,
+                                         stream, 0, cff2 ) )                 ||
+           FT_SET_ERROR( cff_index_init( &string_index,
+                                         stream, 1, cff2 ) )                 ||
+           FT_SET_ERROR( cff_index_init( &font->global_subrs_index,
+                                         stream, 1, cff2 ) )                 ||
+           FT_SET_ERROR( cff_index_get_pointers( &string_index,
+                                                 &font->strings,
+                                                 &font->string_pool,
+                                                 &font->string_pool_size ) ) )
+        goto Exit;
+    }
 
     font->num_strings = string_index.count;
 
@@ -1551,19 +2235,21 @@
                               subfont_index,
                               stream,
                               base_offset,
-                              library );
+                              cff2 ? CFF2_CODE_TOPDICT : CFF_CODE_TOPDICT,
+                              font );
     if ( error )
       goto Exit;
 
     if ( FT_STREAM_SEEK( base_offset + dict->charstrings_offset ) )
       goto Exit;
 
-    error = cff_index_init( &font->charstrings_index, stream, 0 );
+    error = cff_index_init( &font->charstrings_index, stream, 0, cff2 );
     if ( error )
       goto Exit;
 
     
-    if ( dict->cid_registry != 0xFFFFU )
+    if ( dict->cid_registry != 0xFFFFU ||
+         cff2                          )
     {
       CFF_IndexRec  fd_index;
       CFF_SubFont   sub = NULL;
@@ -1572,13 +2258,24 @@
 
       
       
-      if ( FT_STREAM_SEEK( base_offset + dict->cid_fd_array_offset ) )
-        goto Exit;
-
-      error = cff_index_init( &fd_index, stream, 0 );
+      error = cff_vstore_load( &font->vstore,
+                               stream,
+                               base_offset,
+                               dict->vstore_offset );
       if ( error )
         goto Exit;
 
+      
+      
+      if ( FT_STREAM_SEEK( base_offset + dict->cid_fd_array_offset ) )
+        goto Exit;
+
+      error = cff_index_init( &fd_index, stream, 0, cff2 );
+      if ( error )
+        goto Exit;
+
+      
+      
       if ( fd_index.count > CFF_MAX_CID_FONTS )
       {
         FT_TRACE0(( "cff_font_load: FD array too large in CID font\n" ));
@@ -1599,17 +2296,25 @@
       {
         sub = font->subfonts[idx];
         FT_TRACE4(( "parsing subfont %u\n", idx ));
-        error = cff_subfont_load( sub, &fd_index, idx,
-                                  stream, base_offset, library );
+        error = cff_subfont_load( sub,
+                                  &fd_index,
+                                  idx,
+                                  stream,
+                                  base_offset,
+                                  cff2 ? CFF2_CODE_FONTDICT
+                                       : CFF_CODE_TOPDICT,
+                                  font );
         if ( error )
           goto Fail_CID;
       }
 
       
-      error = CFF_Load_FD_Select( &font->fd_select,
-                                  font->charstrings_index.count,
-                                  stream,
-                                  base_offset + dict->cid_fd_select_offset );
+      
+      if ( !cff2 || fd_index.count > 1 )
+        error = CFF_Load_FD_Select( &font->fd_select,
+                                    font->charstrings_index.count,
+                                    stream,
+                                    base_offset + dict->cid_fd_select_offset );
 
     Fail_CID:
       cff_index_done( &fd_index );
@@ -1637,7 +2342,7 @@
       goto Exit;
 
     
-    if ( font->num_glyphs > 0 )
+    if ( !cff2 && font->num_glyphs > 0 )
     {
       FT_Bool  invert = FT_BOOL( dict->cid_registry != 0xFFFFU && pure_cff );
 
@@ -1697,6 +2402,7 @@
 
     cff_encoding_done( &font->encoding );
     cff_charset_done( &font->charset, font->stream );
+    cff_vstore_done( &font->vstore, memory );
 
     cff_subfont_done( memory, &font->top_font );
 
