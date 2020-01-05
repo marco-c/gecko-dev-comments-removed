@@ -68,18 +68,6 @@ class nsScanner {
 
 
 
-      nsresult Peek(char16_t& ch, uint32_t aOffset=0);
-
-      nsresult Peek(nsAString& aStr, int32_t aNumChars, int32_t aOffset = 0);
-
-      
-
-
-
-
-
-
-
 
       int32_t Mark(void);
 
