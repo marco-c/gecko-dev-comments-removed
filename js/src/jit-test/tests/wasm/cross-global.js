@@ -4,8 +4,8 @@ const Module = WebAssembly.Module;
 
 
 var g = newGlobal();
-var code1 = g.eval("wasmTextToBinary('(module)')");
-var code2 = g.eval("wasmTextToBinary('(module)').buffer");
+var code1 = g.eval("wasmTextToBinary('(module)', 'new-format')");
+var code2 = g.eval("wasmTextToBinary('(module)', 'new-format').buffer");
 
 
 assertEq(new Module(code1) instanceof Module, true);
