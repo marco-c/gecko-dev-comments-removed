@@ -6,16 +6,14 @@
 
 #![deny(unsafe_blocks)]
 
-use block::BlockFlow;
-use block::ISizeAndMarginsComputer;
+use block::{BlockFlow, ISizeAndMarginsComputer, MarginsMayNotCollapse};
 use construct::FlowConstructor;
 use context::LayoutContext;
 use flow::{TableRowGroupFlowClass, FlowClass, Flow, ImmutableFlowUtils};
-use flow;
 use fragment::{Fragment, FragmentBoundsIterator};
 use layout_debug;
 use model::IntrinsicISizesContribution;
-use table::{ColumnInlineSize, InternalTable, TableFlow};
+use table::{ColumnComputedInlineSize, ColumnIntrinsicInlineSize, InternalTable, TableFlow};
 use wrapper::ThreadSafeLayoutNode;
 
 use servo_util::geometry::Au;
@@ -29,25 +27,28 @@ pub struct TableRowGroupFlow {
     pub block_flow: BlockFlow,
 
     
-    pub column_inline_sizes: Vec<ColumnInlineSize>,
+    pub column_intrinsic_inline_sizes: Vec<ColumnIntrinsicInlineSize>,
+
+    
+    pub column_computed_inline_sizes: Vec<ColumnComputedInlineSize>,
 }
 
 impl TableRowGroupFlow {
-    pub fn from_node_and_fragment(node: &ThreadSafeLayoutNode,
-                                  fragment: Fragment)
+    pub fn from_node_and_fragment(node: &ThreadSafeLayoutNode, fragment: Fragment)
                                   -> TableRowGroupFlow {
         TableRowGroupFlow {
             block_flow: BlockFlow::from_node_and_fragment(node, fragment),
-            column_inline_sizes: Vec::new(),
+            column_intrinsic_inline_sizes: Vec::new(),
+            column_computed_inline_sizes: Vec::new(),
         }
     }
 
-    pub fn from_node(constructor: &mut FlowConstructor,
-                     node: &ThreadSafeLayoutNode)
+    pub fn from_node(constructor: &mut FlowConstructor, node: &ThreadSafeLayoutNode)
                      -> TableRowGroupFlow {
         TableRowGroupFlow {
             block_flow: BlockFlow::from_node(constructor, node),
-            column_inline_sizes: Vec::new(),
+            column_intrinsic_inline_sizes: Vec::new(),
+            column_computed_inline_sizes: Vec::new(),
         }
     }
 
@@ -55,41 +56,13 @@ impl TableRowGroupFlow {
         &self.block_flow.fragment
     }
 
-    fn initialize_offsets(&mut self) -> (Au, Au, Au) {
-        
-        
-        (Au(0), Au(0), Au(0))
-    }
-
-    
-    
     
     
     
     
     #[inline(always)]
     fn assign_block_size_table_rowgroup_base<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
-        let (block_start_offset, _, _) = self.initialize_offsets();
-
-        let mut cur_y = block_start_offset;
-
-        for kid in self.block_flow.base.child_iter() {
-            kid.place_float_if_applicable(layout_context);
-            if !flow::base(kid).flags.is_float() {
-                kid.assign_block_size_for_inorder_child_if_necessary(layout_context);
-            }
-
-            let child_node = flow::mut_base(kid);
-            child_node.position.start.b = cur_y;
-            cur_y = cur_y + child_node.position.size.block;
-        }
-
-        let block_size = cur_y - block_start_offset;
-
-        let mut position = self.block_flow.fragment.border_box;
-        position.size.block = block_size;
-        self.block_flow.fragment.border_box = position;
-        self.block_flow.base.position.size.block = block_size;
+        self.block_flow.assign_block_size_block_base(layout_context, MarginsMayNotCollapse)
     }
 }
 
@@ -110,9 +83,14 @@ impl Flow for TableRowGroupFlow {
         &mut self.block_flow
     }
 
-    fn column_inline_sizes<'a>(&'a mut self) -> &'a mut Vec<ColumnInlineSize> {
-        &mut self.column_inline_sizes
+    fn column_intrinsic_inline_sizes<'a>(&'a mut self) -> &'a mut Vec<ColumnIntrinsicInlineSize> {
+        &mut self.column_intrinsic_inline_sizes
     }
+
+    fn column_computed_inline_sizes<'a>(&'a mut self) -> &'a mut Vec<ColumnComputedInlineSize> {
+        &mut self.column_computed_inline_sizes
+    }
+
 
     
     
@@ -132,20 +110,19 @@ impl Flow for TableRowGroupFlow {
             assert!(kid.is_table_row());
 
             
-            if self.column_inline_sizes.is_empty() {
+            if self.column_intrinsic_inline_sizes.is_empty() {
                 
-                debug_assert!(self.column_inline_sizes.is_empty());
-                self.column_inline_sizes = kid.column_inline_sizes().clone();
+                self.column_intrinsic_inline_sizes = kid.column_intrinsic_inline_sizes().clone();
             } else {
                 let mut child_intrinsic_sizes =
-                    TableFlow::update_column_inline_sizes(&mut self.column_inline_sizes,
-                                                          kid.column_inline_sizes());
+                    TableFlow::update_column_inline_sizes(&mut self.column_intrinsic_inline_sizes,
+                                                          kid.column_intrinsic_inline_sizes());
 
                 
-                let column_count = self.column_inline_sizes.len();
-                let child_column_count = kid.column_inline_sizes().len();
+                let column_count = self.column_intrinsic_inline_sizes.len();
+                let child_column_count = kid.column_intrinsic_inline_sizes().len();
                 for i in range(column_count, child_column_count) {
-                    let this_column_inline_size = (*kid.column_inline_sizes())[i];
+                    let this_column_inline_size = (*kid.column_intrinsic_inline_sizes())[i];
 
                     
                     child_intrinsic_sizes.minimum_inline_size =
@@ -154,7 +131,7 @@ impl Flow for TableRowGroupFlow {
                     child_intrinsic_sizes.preferred_inline_size =
                         child_intrinsic_sizes.preferred_inline_size +
                         this_column_inline_size.preferred;
-                    self.column_inline_sizes.push(this_column_inline_size);
+                    self.column_intrinsic_inline_sizes.push(this_column_inline_size);
                 }
 
                 computation.union_block(&child_intrinsic_sizes)
@@ -186,7 +163,7 @@ impl Flow for TableRowGroupFlow {
         self.block_flow.propagate_assigned_inline_size_to_children(
             inline_start_content_edge,
             content_inline_size,
-            Some(self.column_inline_sizes.as_slice()));
+            Some(self.column_computed_inline_sizes.as_slice()));
     }
 
     fn assign_block_size<'a>(&mut self, ctx: &'a LayoutContext<'a>) {

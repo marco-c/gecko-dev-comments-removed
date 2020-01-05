@@ -47,8 +47,6 @@ impl TableCellFlow {
     
     
     
-    
-    
     #[inline(always)]
     fn assign_block_size_table_cell_base<'a>(&mut self, layout_context: &'a LayoutContext<'a>) {
         self.block_flow.assign_block_size_block_base(layout_context, MarginsMayNotCollapse)
