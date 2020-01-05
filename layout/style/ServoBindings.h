@@ -234,10 +234,6 @@ void Gecko_CopyCursorArrayFrom(nsStyleUserInterface* dest,
                                const nsStyleUserInterface* src);
 
 
-void Gecko_SetMozBinding(nsStyleDisplay* style_struct, ServoBundledURI bundled_uri);
-void Gecko_CopyMozBindingFrom(nsStyleDisplay* des, const nsStyleDisplay* src);
-
-
 uint32_t Gecko_GetNodeFlags(RawGeckoNodeBorrowed node);
 void Gecko_SetNodeFlags(RawGeckoNodeBorrowed node, uint32_t flags);
 void Gecko_UnsetNodeFlags(RawGeckoNodeBorrowed node, uint32_t flags);
@@ -302,6 +298,9 @@ void Gecko_nsStyleFilter_SetURLValue(nsStyleFilter* effects, ServoBundledURI uri
 void Gecko_nsStyleSVGPaint_CopyFrom(nsStyleSVGPaint* dest, const nsStyleSVGPaint* src);
 void Gecko_nsStyleSVGPaint_SetURLValue(nsStyleSVGPaint* paint, ServoBundledURI uri);
 void Gecko_nsStyleSVGPaint_Reset(nsStyleSVGPaint* paint);
+
+mozilla::css::URLValue* Gecko_NewURLValue(ServoBundledURI uri);
+NS_DECL_THREADSAFE_FFI_REFCOUNTING(mozilla::css::URLValue, CSSURLValue);
 
 void Gecko_FillAllBackgroundLists(nsStyleImageLayers* layers, uint32_t max_len);
 void Gecko_FillAllMaskLists(nsStyleImageLayers* layers, uint32_t max_len);
