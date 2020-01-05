@@ -4,10 +4,9 @@
 
 
 
-use alert::{Alert, AlertMethods};
 use compositing::compositor_task::{mod, CompositorProxy, CompositorReceiver};
 use compositing::windowing::{WindowEvent, WindowMethods};
-use compositing::windowing::{IdleWindowEvent, ResizeWindowEvent, LoadUrlWindowEvent};
+use compositing::windowing::{IdleWindowEvent, ResizeWindowEvent};
 use compositing::windowing::{MouseWindowEventClass,  MouseWindowMoveEventClass, ScrollWindowEvent};
 use compositing::windowing::{ZoomWindowEvent, PinchZoomWindowEvent, NavigationWindowEvent};
 use compositing::windowing::{FinishedWindowEvent, QuitWindowEvent, MouseWindowClickEvent};
@@ -327,7 +326,7 @@ impl Window {
         self.key_modifiers.set(modifiers);
     }
 
-    /// Helper function to send a scroll event.
+    
     fn scroll_window(&self, dx: f32, dy: f32) {
         let mouse_pos = self.mouse_pos.get();
         let event = ScrollWindowEvent(TypedPoint2D(dx as f32, dy as f32),
@@ -335,23 +334,20 @@ impl Window {
         self.event_queue.borrow_mut().push(event);
     }
 
-    /// Helper function to handle keyboard events.
+    
     fn handle_key(&self, key: glutin::VirtualKeyCode) -> bool {
         match key {
             glutin::Escape => return true,
-            glutin::L if self.ctrl_pressed() => {
-                self.load_url(); // Ctrl+L
-            }
-            glutin::Equals if self.ctrl_pressed() => { // Ctrl-+
+            glutin::Equals if self.ctrl_pressed() => { 
                 self.event_queue.borrow_mut().push(ZoomWindowEvent(1.1));
             }
-            glutin::Minus if self.ctrl_pressed() => { // Ctrl--
+            glutin::Minus if self.ctrl_pressed() => { 
                 self.event_queue.borrow_mut().push(ZoomWindowEvent(1.0/1.1));
             }
-            glutin::Back if self.shift_pressed() => { // Shift-Backspace
+            glutin::Back if self.shift_pressed() => { 
                 self.event_queue.borrow_mut().push(NavigationWindowEvent(Forward));
             }
-            glutin::Back => { // Backspace
+            glutin::Back => { 
                 self.event_queue.borrow_mut().push(NavigationWindowEvent(Back));
             }
             glutin::PageDown => {
@@ -366,9 +362,9 @@ impl Window {
         false
     }
 
-    /// Helper function to handle a click
+    
     fn handle_mouse(&self, button: glutin::MouseButton, action: glutin::ElementState, x: int, y: int) {
-        // FIXME(tkuehn): max pixel dist should be based on pixel density
+        
         let max_pixel_dist = 10f64;
         let event = match action {
             glutin::Pressed => {
@@ -396,19 +392,6 @@ impl Window {
             }
         };
         self.event_queue.borrow_mut().push(MouseWindowEventClass(event));
-    }
-
-    /// Helper function to pop up an alert box prompting the user to load a URL.
-    fn load_url(&self) {
-        let mut alert: Alert = AlertMethods::new("Navigate to:");
-        alert.add_prompt();
-        alert.run();
-        let value = alert.prompt_value();
-        if "" == value.as_slice() {    // To avoid crashing on Linux.
-            self.event_queue.borrow_mut().push(LoadUrlWindowEvent("http://purple.com/".to_string()))
-        } else {
-            self.event_queue.borrow_mut().push(LoadUrlWindowEvent(value.clone()))
-        }
     }
 
     pub unsafe fn set_nested_event_loop_listener(
