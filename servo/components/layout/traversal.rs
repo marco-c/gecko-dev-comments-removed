@@ -7,8 +7,8 @@
 use construct::FlowConstructor;
 use context::{LayoutContext, SharedLayoutContext};
 use display_list_builder::DisplayListBuildState;
-use flow::{PostorderFlowTraversal, PreorderFlowTraversal};
-use flow::{self, Flow, CAN_BE_FRAGMENTED};
+use flow::{CAN_BE_FRAGMENTED, Flow, ImmutableFlowUtils, PostorderFlowTraversal};
+use flow::{PreorderFlowTraversal, self};
 use gfx::display_list::OpaqueNode;
 use incremental::{BUBBLE_ISIZES, REFLOW, REFLOW_OUT_OF_FLOW, REPAINT, RestyleDamage};
 use std::mem;
@@ -182,7 +182,9 @@ impl<'a> PostorderFlowTraversal for AssignBSizes<'a> {
         
         
         
-        if flow::base(flow).flags.impacted_by_floats() {
+        
+        
+        if flow.floats_might_flow_through() {
             return
         }
 

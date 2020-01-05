@@ -20,8 +20,7 @@ use context::LayoutContext;
 use display_list_builder::DisplayListBuildState;
 use euclid::Point2D;
 use floats::FloatKind;
-use flow::{Flow, FlowClass, ImmutableFlowUtils};
-use flow::{IMPACTED_BY_LEFT_FLOATS, IMPACTED_BY_RIGHT_FLOATS, INLINE_POSITION_IS_STATIC, OpaqueFlow};
+use flow::{Flow, FlowClass, ImmutableFlowUtils, INLINE_POSITION_IS_STATIC, OpaqueFlow};
 use fragment::{Fragment, FragmentBorderBoxIterator, Overflow};
 use gfx::display_list::{StackingContext, StackingContextId};
 use model::MaybeAuto;
@@ -335,11 +334,6 @@ impl Flow for TableWrapperFlow {
                 percentage: column_intrinsic_inline_size.percentage,
             }
         }).collect::<Vec<_>>();
-
-        
-        
-        self.block_flow.base.flags.remove(IMPACTED_BY_LEFT_FLOATS);
-        self.block_flow.base.flags.remove(IMPACTED_BY_RIGHT_FLOATS);
 
         
         

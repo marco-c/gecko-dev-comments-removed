@@ -1027,6 +1027,24 @@ impl Fragment {
         }
     }
 
+    
+    
+    
+    
+    pub fn guess_inline_content_edge_offsets(&self) -> SpeculatedInlineContentEdgeOffsets {
+        let logical_margin = self.style.logical_margin();
+        let logical_padding = self.style.logical_padding();
+        let border_width = self.border_width();
+        SpeculatedInlineContentEdgeOffsets {
+            start: MaybeAuto::from_style(logical_margin.inline_start, Au(0)).specified_or_zero() +
+                model::specified(logical_padding.inline_start, Au(0)) +
+                border_width.inline_start,
+            end: MaybeAuto::from_style(logical_margin.inline_end, Au(0)).specified_or_zero() +
+                model::specified(logical_padding.inline_end, Au(0)) +
+                border_width.inline_end,
+        }
+    }
+
     pub fn calculate_line_height(&self, layout_context: &LayoutContext) -> Au {
         let font_style = self.style.get_font_arc();
         let font_metrics = text::font_metrics_for_style(&mut layout_context.font_context(), font_style);
@@ -2634,3 +2652,13 @@ bitflags! {
         const HAS_LAYER = 0x01,
     }
 }
+
+
+
+
+#[derive(Copy, Clone, Debug)]
+pub struct SpeculatedInlineContentEdgeOffsets {
+    pub start: Au,
+    pub end: Au,
+}
+
