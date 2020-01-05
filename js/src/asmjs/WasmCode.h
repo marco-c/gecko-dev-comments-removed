@@ -19,7 +19,7 @@
 #ifndef wasm_code_h
 #define wasm_code_h
 
-#include "asmjs/WasmBinaryToExperimentalText.h"
+#include "asmjs/WasmGeneratedSourceMap.h"
 #include "asmjs/WasmTypes.h"
 
 namespace js {
@@ -235,16 +235,7 @@ typedef Vector<FuncImport, 0, SystemAllocPolicy> FuncImportVector;
 class CodeRange
 {
   public:
-    enum Kind {
-        Function,          
-        Entry,             
-        ImportJitExit,     
-        ImportInterpExit,  
-        TrapExit,          
-        FarJumpIsland,     
-        Inline             
-                           
-    };
+    enum Kind { Function, Entry, ImportJitExit, ImportInterpExit, Inline, CallThunk };
 
   private:
     
@@ -287,9 +278,6 @@ class CodeRange
     bool isImportExit() const {
         return kind() == ImportJitExit || kind() == ImportInterpExit;
     }
-    bool isTrapExit() const {
-        return kind() == TrapExit;
-    }
     bool isInline() const {
         return kind() == Inline;
     }
@@ -298,7 +286,7 @@ class CodeRange
     
 
     uint32_t profilingReturn() const {
-        MOZ_ASSERT(isFunction() || isImportExit() || isTrapExit());
+        MOZ_ASSERT(isFunction() || isImportExit());
         return profilingReturn_;
     }
 
@@ -470,7 +458,6 @@ struct Metadata : ShareableBase<Metadata>, MetadataCacheablePod
     GlobalDescVector      globals;
     TableDescVector       tables;
     MemoryAccessVector    memoryAccesses;
-    MemoryPatchVector     memoryPatches;
     BoundsCheckVector     boundsChecks;
     CodeRangeVector       codeRanges;
     CallSiteVector        callSites;
@@ -541,7 +528,9 @@ class Code
 
     const CallSite* lookupCallSite(void* returnAddress) const;
     const CodeRange* lookupRange(void* pc) const;
+#ifdef WASM_HUGE_MEMORY
     const MemoryAccess* lookupMemoryAccess(void* pc) const;
+#endif
 
     
     
