@@ -1,9 +1,9 @@
 "use strict";
 
+
 const { Ci } = require("chrome");
 const { KeyCodes } = require("devtools/client/shared/keycodes");
 const { Task } = require("devtools/shared/task");
-const NetworkHelper = require("devtools/shared/webconsole/network-helper");
 
 
 
@@ -18,9 +18,7 @@ const NetworkHelper = require("devtools/shared/webconsole/network-helper");
 
 
 
-
-
-exports.getKeyWithEvent = function (callback, onlySpaceOrReturn) {
+function getKeyWithEvent(callback, onlySpaceOrReturn) {
   return function (event) {
     let key = event.target.getAttribute("data-key");
     let filterKeyboardEvent = !onlySpaceOrReturn ||
@@ -31,7 +29,7 @@ exports.getKeyWithEvent = function (callback, onlySpaceOrReturn) {
       callback.call(null, key);
     }
   };
-};
+}
 
 
 
@@ -43,12 +41,7 @@ exports.getKeyWithEvent = function (callback, onlySpaceOrReturn) {
 
 
 
-
-
-
-
-
-exports.getFormDataSections = Task.async(function* (headers, uploadHeaders, postData,
+const getFormDataSections = Task.async(function* (headers, uploadHeaders, postData,
                                                     getString) {
   let formDataSections = [];
 
@@ -89,13 +82,13 @@ exports.getFormDataSections = Task.async(function* (headers, uploadHeaders, post
 
 
 
-exports.formDataURI = function (mimeType, encoding, text) {
+function formDataURI(mimeType, encoding, text) {
   if (!encoding) {
     encoding = "base64";
     text = btoa(text);
   }
   return "data:" + mimeType + ";" + encoding + "," + text;
-};
+}
 
 
 
@@ -103,11 +96,9 @@ exports.formDataURI = function (mimeType, encoding, text) {
 
 
 
-
-
-exports.writeHeaderText = function (headers) {
+function writeHeaderText(headers) {
   return headers.map(({name, value}) => name + ": " + value).join("\n");
-};
+}
 
 
 
@@ -115,12 +106,28 @@ exports.writeHeaderText = function (headers) {
 
 
 
-exports.getAbbreviatedMimeType = function (mimeType) {
+
+function decodeUnicodeUrl(string) {
+  try {
+    return decodeURIComponent(string);
+  } catch (err) {
+    
+  }
+  return string;
+}
+
+
+
+
+
+
+
+function getAbbreviatedMimeType(mimeType) {
   if (!mimeType) {
     return "";
   }
   return (mimeType.split(";")[0].split("/")[1] || "").split("+")[0];
-};
+}
 
 
 
@@ -128,28 +135,73 @@ exports.getAbbreviatedMimeType = function (mimeType) {
 
 
 
-exports.getUriNameWithQuery = function (url) {
-  if (!(url instanceof Ci.nsIURL)) {
-    url = NetworkHelper.nsIURL(url);
+
+
+function getUrlBaseName(url) {
+  const pathname = (new URL(url)).pathname;
+  return decodeUnicodeUrl(
+    pathname.replace(/\S*\//, "") || pathname || "/");
+}
+
+
+
+
+
+
+
+function getUrlQuery(url) {
+  return decodeUnicodeUrl((new URL(url)).search.replace(/^\?/, ""));
+}
+
+
+
+
+
+
+
+function getUrlBaseNameWithQuery(url) {
+  return getUrlBaseName(url) + decodeUnicodeUrl((new URL(url)).search);
+}
+
+
+
+
+
+
+
+function getUrlHostName(url) {
+  return decodeUnicodeUrl((new URL(url)).hostname);
+}
+
+
+
+
+
+
+
+function getUrlHost(url) {
+  return decodeUnicodeUrl((new URL(url)).host);
+}
+
+
+
+
+
+
+
+function parseQueryString(query) {
+  if (!query) {
+    return null;
   }
 
-  let name = NetworkHelper.convertToUnicode(
-    unescape(url.fileName || url.filePath || "/"));
-  let query = NetworkHelper.convertToUnicode(unescape(url.query));
-
-  return name + (query ? "?" + query : "");
-};
-
-exports.getUriHostPort = function (url) {
-  if (!(url instanceof Ci.nsIURL)) {
-    url = NetworkHelper.nsIURL(url);
-  }
-  return NetworkHelper.convertToUnicode(unescape(url.hostPort));
-};
-
-exports.getUriHost = function (url) {
-  return exports.getUriHostPort(url).replace(/:\d+$/, "");
-};
+  return query.replace(/^[?&]/, "").split("&").map(e => {
+    let param = e.split("=");
+    return {
+      name: param[0] ? decodeUnicodeUrl(param[0]) : "",
+      value: param[1] ? decodeUnicodeUrl(param[1]) : "",
+    };
+  });
+}
 
 
 
@@ -180,6 +232,22 @@ const LOAD_CAUSE_STRINGS = {
   [Ci.nsIContentPolicy.TYPE_WEB_MANIFEST]: "webManifest"
 };
 
-exports.loadCauseString = function (causeType) {
+function loadCauseString(causeType) {
   return LOAD_CAUSE_STRINGS[causeType] || "unknown";
+}
+
+module.exports = {
+  getKeyWithEvent,
+  getFormDataSections,
+  formDataURI,
+  writeHeaderText,
+  decodeUnicodeUrl,
+  getAbbreviatedMimeType,
+  getUrlBaseName,
+  getUrlQuery,
+  getUrlBaseNameWithQuery,
+  getUrlHostName,
+  getUrlHost,
+  parseQueryString,
+  loadCauseString,
 };
