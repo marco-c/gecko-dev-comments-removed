@@ -3605,6 +3605,23 @@ Parser<ParseHandler>::maybeParseDirective(Node list, Node pn, bool* cont)
         if (directive == context->names().useStrict) {
             
             
+            
+            if (pc->isFunctionBox()) {
+                FunctionBox* funbox = pc->functionBox();
+                if (!funbox->hasSimpleParameterList()) {
+                    const char* parameterKind = funbox->hasDestructuringArgs
+                                                ? "destructuring"
+                                                : funbox->hasParameterExprs
+                                                ? "default"
+                                                : "rest";
+                    reportWithOffset(ParseError, false, directivePos.begin,
+                                     JSMSG_STRICT_NON_SIMPLE_PARAMS, parameterKind);
+                    return false;
+                }
+            }
+
+            
+            
             pc->sc()->setExplicitUseStrict();
             if (!pc->sc()->strict()) {
                 if (pc->isFunctionBox()) {
