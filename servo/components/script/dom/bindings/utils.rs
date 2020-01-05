@@ -50,7 +50,7 @@ use std::default::Default;
 use std::ffi::CString;
 use std::ptr;
 use util::mem::HeapSizeOf;
-use util::str::jsstring_to_str;
+use util::non_geckolib::jsstring_to_str;
 
 
 pub struct WindowProxyHandler(pub *const libc::c_void);
