@@ -184,11 +184,12 @@ impl RuleTree {
     
     
     
+    
     pub fn update_rule_at_level(&self,
                                 level: CascadeLevel,
                                 pdb: Option<&Arc<RwLock<PropertyDeclarationBlock>>>,
-                                path: StrongRuleNode)
-                                -> StrongRuleNode {
+                                path: &StrongRuleNode)
+                                -> Option<StrongRuleNode> {
         debug_assert!(level.is_unique_per_element());
         
         
@@ -231,7 +232,7 @@ impl RuleTree {
 
                 if is_here_already {
                     debug!("Picking the fast path in rule replacement");
-                    return path;
+                    return None;
                 }
             }
             current = current.parent().unwrap().clone();
@@ -262,7 +263,7 @@ impl RuleTree {
 
         
         
-        self.insert_ordered_rules_from(current, children.into_iter().rev())
+        Some(self.insert_ordered_rules_from(current, children.into_iter().rev()))
     }
 }
 
@@ -501,7 +502,7 @@ struct WeakRuleNode {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct StrongRuleNode {
     ptr: *mut RuleNode,
 }

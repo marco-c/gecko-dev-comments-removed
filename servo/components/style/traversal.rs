@@ -8,9 +8,9 @@
 
 use atomic_refcell::{AtomicRefCell, AtomicRefMut};
 use context::{SharedStyleContext, StyleContext, ThreadLocalStyleContext};
-use data::{ElementData, ElementStyles, RestyleKind, StoredRestyleHint};
+use data::{ElementData, ElementStyles, StoredRestyleHint};
 use dom::{NodeInfo, TElement, TNode};
-use matching::{MatchMethods, StyleSharingResult};
+use matching::{MatchMethods, MatchResults};
 use restyle_hints::{RESTYLE_DESCENDANTS, RESTYLE_SELF};
 use selector_parser::RestyleDamage;
 use servo_config::opts;
@@ -246,7 +246,7 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         if cfg!(feature = "gecko") && thread_local.is_initial_style() &&
-           parent_data.styles().primary.values.has_moz_binding() {
+           parent_data.styles().primary.values().has_moz_binding() {
             if log.allow() { debug!("Parent {:?} has XBL binding, deferring traversal", parent); }
             return false;
         }
@@ -339,12 +339,9 @@ fn resolve_style_internal<E, F>(context: &mut StyleContext<E>, element: E, ensur
         }
 
         
-        let match_results = element.match_element(context);
-        let shareable = match_results.primary_is_shareable();
-        element.cascade_node(context, &mut data, element.parent_element(),
-                             match_results.primary,
-                             match_results.per_pseudo,
-                             shareable);
+        let match_results = element.match_element(context, &mut data);
+        element.cascade_element(context, &mut data,
+                                match_results.primary_is_shareable());
 
         
         
@@ -428,7 +425,18 @@ pub fn recalc_style_at<E, D>(traversal: &D,
 
     
     if compute_self {
-        inherited_style_changed = compute_style(traversal, traversal_data, context, element, &mut data);
+        compute_style(traversal, traversal_data, context, element, &mut data);
+
+        
+        
+        let display_none = data.styles().is_display_none();
+        if display_none {
+            debug!("New element style is display:none - clearing data from descendants.");
+            clear_descendant_data(element, &|e| unsafe { D::clear_element_data(&e) });
+        }
+
+        
+        inherited_style_changed = true;
     }
 
     
@@ -464,101 +472,86 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     }
 }
 
-
-
 fn compute_style<E, D>(_traversal: &D,
                        traversal_data: &mut PerLevelTraversalData,
                        context: &mut StyleContext<E>,
                        element: E,
-                       mut data: &mut AtomicRefMut<ElementData>) -> bool
+                       mut data: &mut AtomicRefMut<ElementData>)
     where E: TElement,
           D: DomTraversal<E>,
 {
+    use data::RestyleKind::*;
+    use matching::StyleSharingResult::*;
+
     context.thread_local.statistics.elements_styled += 1;
     let shared_context = context.shared;
+    let kind = data.restyle_kind();
 
     
     
-    let cascade_input = match data.restyle_kind() {
-        RestyleKind::MatchAndCascade => {
+    if let MatchAndCascade = kind {
+        let sharing_result = unsafe {
+            let cache = &mut context.thread_local.style_sharing_candidate_cache;
+            element.share_style_if_possible(cache, shared_context, &mut data)
+        };
+        if let StyleWasShared(index) = sharing_result {
+            context.thread_local.statistics.styles_shared += 1;
+            context.thread_local.style_sharing_candidate_cache.touch(index);
+            return;
+        }
+    }
+
+    let match_results = match kind {
+        MatchAndCascade => {
             
-            let sharing_result = unsafe {
-                element.share_style_if_possible(&mut context.thread_local.style_sharing_candidate_cache,
-                                                shared_context,
-                                                &mut data)
-            };
+            let dom_depth =
+                context.thread_local.bloom_filter
+                       .insert_parents_recovering(element,
+                                                  traversal_data.current_dom_depth);
 
-            match sharing_result {
-                StyleSharingResult::StyleWasShared(index) => {
-                    context.thread_local.statistics.styles_shared += 1;
-                    context.thread_local.style_sharing_candidate_cache.touch(index);
-                    None
-                }
-                StyleSharingResult::CannotShare => {
-                    
-                    let dom_depth =
-                        context.thread_local.bloom_filter
-                               .insert_parents_recovering(element,
-                                                          traversal_data.current_dom_depth);
+            
+            
+            
+            
+            traversal_data.current_dom_depth = Some(dom_depth);
 
-                    
-                    
-                    
-                    
-                    traversal_data.current_dom_depth = Some(dom_depth);
+            context.thread_local.bloom_filter.assert_complete(element);
 
-                    context.thread_local.bloom_filter.assert_complete(element);
 
-                    
-                    context.thread_local.statistics.elements_matched += 1;
-
-                    Some(element.match_element(context))
-                }
+            
+            context.thread_local.statistics.elements_matched += 1;
+            element.match_element(context, &mut data)
+        }
+        CascadeWithReplacements(hint) => {
+            let rule_nodes_changed =
+                element.cascade_with_replacements(hint, context, &mut data);
+            MatchResults {
+                primary_relations: None,
+                rule_nodes_changed: rule_nodes_changed,
             }
         }
-        RestyleKind::CascadeWithReplacements(hint) => {
-            Some(element.cascade_with_replacements(hint, context, &mut data))
-        }
-        RestyleKind::CascadeOnly => {
-            
-            
-            Some(element.match_results_from_current_style(&*data))
+        CascadeOnly => {
+            MatchResults {
+                primary_relations: None,
+                rule_nodes_changed: false,
+            }
         }
     };
 
-    if let Some(match_results) = cascade_input {
-        
-        let shareable = match_results.primary_is_shareable();
-        unsafe {
-            element.cascade_node(context, &mut data,
-                                 element.parent_element(),
-                                 match_results.primary,
-                                 match_results.per_pseudo,
-                                 shareable);
-        }
-
-        if shareable {
-            
-            context.thread_local
-                   .style_sharing_candidate_cache
-                   .insert_if_possible(&element,
-                                       &data.styles().primary.values,
-                                       match_results.relations);
-        }
+    
+    let shareable = match_results.primary_is_shareable();
+    unsafe {
+        element.cascade_element(context, &mut data, shareable);
     }
 
     
-    
-    let display_none = data.styles().is_display_none();
-    if display_none {
-        debug!("New element style is display:none - clearing data from descendants.");
-        clear_descendant_data(element, &|e| unsafe { D::clear_element_data(&e) });
+    if shareable {
+        context.thread_local
+               .style_sharing_candidate_cache
+               .insert_if_possible(&element,
+                                   data.styles().primary.values(),
+                                   match_results.primary_relations.unwrap());
     }
-
-    
-    let inherited_styles_changed = true;
-
-    inherited_styles_changed
 }
 
 fn preprocess_children<E, D>(traversal: &D,

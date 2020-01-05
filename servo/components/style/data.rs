@@ -31,7 +31,8 @@ pub struct ComputedStyle {
 
     
     
-    pub values: Arc<ComputedValues>,
+    
+    pub values: Option<Arc<ComputedValues>>,
 }
 
 impl ComputedStyle {
@@ -39,8 +40,28 @@ impl ComputedStyle {
     pub fn new(rules: StrongRuleNode, values: Arc<ComputedValues>) -> Self {
         ComputedStyle {
             rules: rules,
-            values: values,
+            values: Some(values),
         }
+    }
+
+    
+    
+    pub fn new_partial(rules: StrongRuleNode) -> Self {
+        ComputedStyle {
+            rules: rules,
+            values: None,
+        }
+    }
+
+    
+    
+    pub fn values(&self) -> &Arc<ComputedValues> {
+        self.values.as_ref().unwrap()
+    }
+
+    
+    pub fn values_mut(&mut self) -> &mut Arc<ComputedValues> {
+        self.values.as_mut().unwrap()
     }
 }
 
@@ -59,13 +80,6 @@ type PseudoStylesInner = HashMap<PseudoElement, ComputedStyle,
 
 
 
-pub type PseudoRuleNodes = HashMap<PseudoElement, StrongRuleNode,
-                                   BuildHasherDefault<::fnv::FnvHasher>>;
-
-
-
-
-
 
 
 #[derive(Clone, Debug)]
@@ -75,19 +89,6 @@ impl PseudoStyles {
     
     pub fn empty() -> Self {
         PseudoStyles(HashMap::with_hasher(Default::default()))
-    }
-
-    
-    
-    
-    
-    
-    pub fn get_rules(&self) -> PseudoRuleNodes {
-        let mut rules = HashMap::with_hasher(Default::default());
-        for (pseudo, style) in &self.0 {
-            rules.insert(pseudo.clone(), style.rules.clone());
-        }
-        rules
     }
 }
 
@@ -121,7 +122,7 @@ impl ElementStyles {
 
     
     pub fn is_display_none(&self) -> bool {
-        self.primary.values.get_box().clone_display() == display::T::none
+        self.primary.values().get_box().clone_display() == display::T::none
     }
 }
 
@@ -446,7 +447,14 @@ impl ElementData {
     
     
     pub fn styles_mut(&mut self) -> &mut ElementStyles {
-        self.styles.as_mut().expect("Caling styles_mut() on unstyled ElementData")
+        self.styles.as_mut().expect("Calling styles_mut() on unstyled ElementData")
+    }
+
+    
+    pub fn styles_and_restyle_mut(&mut self) -> (&mut ElementStyles,
+                                                 Option<&mut RestyleData>) {
+        (self.styles.as_mut().unwrap(),
+         self.restyle.as_mut().map(|r| &mut **r))
     }
 
     
