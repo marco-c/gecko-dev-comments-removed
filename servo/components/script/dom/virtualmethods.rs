@@ -93,6 +93,14 @@ pub trait VirtualMethods {
 
     
     
+    fn after_remove_attr(&self, name: &Atom) {
+        if let Some(ref s) = self.super_type() {
+            s.after_remove_attr(name);
+        }
+    }
+
+    
+    
     fn parse_plain_attribute(&self, name: &Atom, value: DOMString) -> AttrValue {
         match self.super_type() {
             Some(ref s) => s.parse_plain_attribute(name, value),
