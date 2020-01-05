@@ -50,6 +50,12 @@ public:
     return PR_SecondsToInterval(15);
   }
 
+  
+  
+  
+  
+  uint64_t TopLevelOuterContentWindowId() override { return 0; }
+
 protected:
   virtual ~NullHttpTransaction();
 

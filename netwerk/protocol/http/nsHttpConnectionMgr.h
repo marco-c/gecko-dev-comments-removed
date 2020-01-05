@@ -221,7 +221,13 @@ private:
 
         RefPtr<nsHttpConnectionInfo> mConnInfo;
         nsTArray<RefPtr<PendingTransactionInfo> > mUrgentStartQ;
-        nsTArray<RefPtr<PendingTransactionInfo> > mPendingQ;    
+
+        
+        
+        
+        
+        nsClassHashtable<nsUint64HashKey,
+                         nsTArray<RefPtr<PendingTransactionInfo>>> mPendingTransactionTable;
         nsTArray<RefPtr<nsHttpConnection> >  mActiveConns; 
         nsTArray<RefPtr<nsHttpConnection> >  mIdleConns;   
         nsTArray<nsHalfOpenSocket*>  mHalfOpens;   
@@ -269,6 +275,33 @@ private:
         void RecordIPFamilyPreference(uint16_t family);
         
         void ResetIPFamilyPreference();
+
+        
+        size_t PendingQLength() const;
+
+        
+        
+        
+        void InsertTransaction(PendingTransactionInfo *info);
+
+        
+        
+        
+        void AppendPendingQForFocusedWindow(
+            uint64_t windowId,
+            nsTArray<RefPtr<PendingTransactionInfo>> &result,
+            uint32_t maxCount = 0);
+
+        
+        
+        
+        void AppendPendingQForNonFocusedWindows(
+            uint64_t windowId,
+            nsTArray<RefPtr<PendingTransactionInfo>> &result,
+            uint32_t maxCount = 0);
+
+        
+        void RemoveEmptyPendingQ();
     };
 
 public:
@@ -327,8 +360,14 @@ private:
 
         void PrintDiagnostics(nsCString &log);
     private:
+        
+        
+        
+        already_AddRefed<PendingTransactionInfo>
+        FindTransactionHelper(bool removeWhenFound);
+
         nsConnectionEntry              *mEnt;
-        RefPtr<nsAHttpTransaction>   mTransaction;
+        RefPtr<nsAHttpTransaction>     mTransaction;
         bool                           mDispatchedMTransaction;
         nsCOMPtr<nsISocketTransport>   mSocketTransport;
         nsCOMPtr<nsIAsyncOutputStream> mStreamOut;
@@ -419,10 +458,14 @@ private:
 
     MOZ_MUST_USE bool ProcessPendingQForEntry(nsConnectionEntry *,
                                               bool considerAll);
-    void DispatchPendingQ(nsTArray<RefPtr<PendingTransactionInfo>> &pendingQ,
+    bool DispatchPendingQ(nsTArray<RefPtr<PendingTransactionInfo>> &pendingQ,
                                    nsConnectionEntry *ent,
-                                   bool &dispatchedSuccessfully,
                                    bool considerAll);
+
+    
+    
+    
+    uint32_t AvailableNewConnectionCount(nsConnectionEntry * ent);
     bool     AtActiveConnectionLimit(nsConnectionEntry *, uint32_t caps);
     MOZ_MUST_USE nsresult TryDispatchTransaction(nsConnectionEntry *ent,
                                                  bool onlyReusedConnection,
@@ -483,6 +526,14 @@ private:
     MOZ_MUST_USE nsresult PostEvent(nsConnEventHandler  handler,
                                     int32_t             iparam = 0,
                                     ARefBase            *vparam = nullptr);
+
+    
+    
+    void CancelTransactionsHelper(
+        nsTArray<RefPtr<PendingTransactionInfo>> &pendingQ,
+        const nsHttpConnectionInfo *ci,
+        const nsConnectionEntry *ent,
+        nsresult reason);
 
     
     void OnMsgShutdown             (int32_t, ARefBase *);

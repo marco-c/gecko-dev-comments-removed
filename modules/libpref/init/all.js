@@ -1626,6 +1626,10 @@ pref("network.http.max_response_header_size", 393216);
 
 
 
+pref("network.http.focused_window_transaction_ratio", "0.9");
+
+
+
 
 
 pref("network.ftp.data.qos", 0);
@@ -5669,8 +5673,5 @@ pref("fuzzing.enabled", false);
 
 
 pref("layers.advanced.border-layers", 2);
-pref("layers.advanced.boxshadow-inset-layers", 2);
 pref("layers.advanced.boxshadow-outer-layers", 2);
 pref("layers.advanced.caret-layers", 2);
-pref("layers.advanced.displaybuttonborder-layers", 2);
-pref("layers.advanced.outline-layers", 2);

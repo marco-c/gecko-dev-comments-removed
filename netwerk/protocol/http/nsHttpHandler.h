@@ -358,6 +358,11 @@ public:
         return mMaxHttpResponseHeaderSize;
     }
 
+    float FocusedWindowTransactionRatio() const
+    {
+        return mFocusedWindowTransactionRatio;
+    }
+
 private:
     virtual ~nsHttpHandler();
 
@@ -565,6 +570,9 @@ private:
 
     
     uint32_t mMaxHttpResponseHeaderSize;
+
+    
+    float mFocusedWindowTransactionRatio;
 
 private:
     
