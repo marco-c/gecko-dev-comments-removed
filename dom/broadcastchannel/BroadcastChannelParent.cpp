@@ -5,6 +5,7 @@
 
 
 #include "BroadcastChannelParent.h"
+#include "BroadcastChannelParentMessage.h"
 #include "BroadcastChannelService.h"
 #include "mozilla/dom/File.h"
 #include "mozilla/dom/ipc/BlobParent.h"
@@ -21,6 +22,7 @@ namespace dom {
 BroadcastChannelParent::BroadcastChannelParent(const nsAString& aOriginChannelKey)
   : mService(BroadcastChannelService::GetOrCreate())
   , mOriginChannelKey(aOriginChannelKey)
+  , mStatus(eInitializing)
 {
   AssertIsOnBackgroundThread();
   mService->RegisterActor(this, mOriginChannelKey);
@@ -29,6 +31,48 @@ BroadcastChannelParent::BroadcastChannelParent(const nsAString& aOriginChannelKe
 BroadcastChannelParent::~BroadcastChannelParent()
 {
   AssertIsOnBackgroundThread();
+}
+
+void
+BroadcastChannelParent::Start()
+{
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(mStatus == eInitializing || mStatus == eClosing);
+
+  
+  for (uint32_t i = 0; i < mPendingMessages.Length(); ++i) {
+    mService->PostMessage(this, mPendingMessages[i], mOriginChannelKey);
+  }
+  mPendingMessages.Clear();
+
+  
+  for (uint32_t i = 0; i < mDeliveringMessages.Length(); ++i) {
+    DeliverInternal(mDeliveringMessages[i]);
+  }
+  mDeliveringMessages.Clear();
+
+  
+  if (mStatus == eClosing) {
+    Shutdown();
+    return;
+  }
+
+  
+  mStatus = eInitialized;
+}
+
+void
+BroadcastChannelParent::Shutdown()
+{
+  AssertIsOnBackgroundThread();
+
+  if (mService) {
+    mService->UnregisterActor(this, mOriginChannelKey);
+    mService = nullptr;
+  }
+
+  Unused << Send__delete__(this);
+  mStatus = eDestroyed;
 }
 
 mozilla::ipc::IPCResult
@@ -40,7 +84,35 @@ BroadcastChannelParent::RecvPostMessage(const ClonedMessageData& aData)
     return IPC_FAIL_NO_REASON(this);
   }
 
-  mService->PostMessage(this, aData, mOriginChannelKey);
+  
+  
+  if (mStatus == eDestroyed) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+
+  RefPtr<BroadcastChannelParentMessage> msg =
+    new BroadcastChannelParentMessage(aData);
+
+  
+  if (mStatus == eInitializing) {
+
+    mPendingMessages.AppendElement(msg);
+    return IPC_OK();
+  }
+
+  
+  if (mStatus == eClosing) {
+    return IPC_OK();
+  }
+
+  
+  MOZ_ASSERT(mStatus == eInitialized);
+
+  if (NS_WARN_IF(!mPendingMessages.IsEmpty())) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+
+  mService->PostMessage(this, msg, mOriginChannelKey);
   return IPC_OK();
 }
 
@@ -53,11 +125,28 @@ BroadcastChannelParent::RecvClose()
     return IPC_FAIL_NO_REASON(this);
   }
 
-  mService->UnregisterActor(this, mOriginChannelKey);
-  mService = nullptr;
+  
+  
+  if (mStatus == eDestroyed || mStatus == eClosing) {
+    return IPC_FAIL_NO_REASON(this);
+  }
 
-  Unused << Send__delete__(this);
+  
+  if (mStatus == eInitializing) {
+    mStatus = eClosing;
+    return IPC_OK();
+  }
 
+  MOZ_ASSERT(mStatus == eInitialized);
+
+  
+  
+  if (NS_WARN_IF(!mPendingMessages.IsEmpty()) ||
+      NS_WARN_IF(!mDeliveringMessages.IsEmpty())) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+
+  Shutdown();
   return IPC_OK();
 }
 
@@ -71,15 +160,37 @@ BroadcastChannelParent::ActorDestroy(ActorDestroyReason aWhy)
     
     mService->UnregisterActor(this, mOriginChannelKey);
   }
+
+  mStatus = eDestroyed;
 }
 
 void
-BroadcastChannelParent::Deliver(const ClonedMessageData& aData)
+BroadcastChannelParent::Deliver(BroadcastChannelParentMessage* aMsg)
 {
   AssertIsOnBackgroundThread();
+  MOZ_ASSERT(aMsg);
 
   
-  ClonedMessageData newData(aData);
+  if (mStatus == eInitializing) {
+    RefPtr<BroadcastChannelParentMessage> msg =
+      new BroadcastChannelParentMessage(aMsg->Data());
+    mDeliveringMessages.AppendElement(msg);
+    return;
+  }
+
+  
+  if (mStatus == eInitialized) {
+    DeliverInternal(aMsg);
+    return;
+  }
+
+  
+}
+
+void
+BroadcastChannelParent::DeliverInternal(BroadcastChannelParentMessage* aMsg)
+{
+  ClonedMessageData newData(aMsg->Data());
 
   
   for (uint32_t i = 0, len = newData.blobsParent().Length(); i < len; ++i) {

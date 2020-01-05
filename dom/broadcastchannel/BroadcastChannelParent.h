@@ -18,16 +18,26 @@ class PrincipalInfo;
 
 namespace dom {
 
+class BroadcastChannelParentMessage;
 class BroadcastChannelService;
 
 class BroadcastChannelParent final : public PBroadcastChannelParent
 {
+  NS_INLINE_DECL_REFCOUNTING(BroadcastChannelParent)
+
   friend class mozilla::ipc::BackgroundParentImpl;
 
   typedef mozilla::ipc::PrincipalInfo PrincipalInfo;
 
 public:
-  void Deliver(const ClonedMessageData& aData);
+  void Deliver(BroadcastChannelParentMessage* aMsg);
+
+  bool Destroyed() const
+  {
+    return mStatus == eDestroyed;
+  }
+
+  void Start();
 
 private:
   explicit BroadcastChannelParent(const nsAString& aOriginChannelKey);
@@ -40,8 +50,41 @@ private:
 
   virtual void ActorDestroy(ActorDestroyReason aWhy) override;
 
+  void DeliverInternal(BroadcastChannelParentMessage* aMsg);
+
+  void Shutdown();
+
   RefPtr<BroadcastChannelService> mService;
   const nsString mOriginChannelKey;
+
+  
+  nsTArray<RefPtr<BroadcastChannelParentMessage>> mPendingMessages;
+
+  
+  nsTArray<RefPtr<BroadcastChannelParentMessage>> mDeliveringMessages;
+
+  enum {
+    
+    
+    
+    
+    
+    eInitializing,
+
+    
+    
+    
+    eInitialized,
+
+    
+    
+    
+    
+    eClosing,
+
+    
+    eDestroyed
+  } mStatus;
 };
 
 } 
