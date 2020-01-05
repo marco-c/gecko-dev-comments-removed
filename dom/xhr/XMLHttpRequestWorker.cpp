@@ -1828,15 +1828,17 @@ XMLHttpRequestWorker::SendInternal(SendRunnable* aRunnable,
 
   autoUnpin.Clear();
 
+  bool succeeded = autoSyncLoop->Run();
+  mStateData.mFlagSend = false;
+
   
   
   
   
   
-  if (!autoSyncLoop->Run() && !aRv.Failed()) {
+  if (!succeeded && !aRv.Failed()) {
     aRv.Throw(NS_ERROR_FAILURE);
   }
-  mStateData.mFlagSend = false;
 }
 
 bool
