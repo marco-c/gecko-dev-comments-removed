@@ -719,6 +719,10 @@ class MOZ_RAII GetPropIRGenerator
 
     
     
+    bool idempotent() const { return pc_ == nullptr; }
+
+    
+    
     void maybeEmitIdGuard(jsid id);
 
     GetPropIRGenerator(const GetPropIRGenerator&) = delete;
