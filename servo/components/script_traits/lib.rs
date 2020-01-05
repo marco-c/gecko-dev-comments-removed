@@ -146,6 +146,8 @@ pub struct NewLayoutInfo {
     pub layout_to_constellation_chan: IpcSender<LayoutMsg>,
     
     pub content_process_shutdown_chan: IpcSender<()>,
+    
+    pub layout_threads: usize,
 }
 
 
