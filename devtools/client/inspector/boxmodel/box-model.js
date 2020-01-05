@@ -183,6 +183,10 @@ BoxModel.prototype = {
 
 
   onHideBoxModelHighlighter() {
+    if (!this.inspector) {
+      return;
+    }
+
     let toolbox = this.inspector.toolbox;
     toolbox.highlighterUtils.unhighlight();
   },
@@ -305,6 +309,10 @@ BoxModel.prototype = {
           return;
         }
 
+        if (!this.inspector) {
+          return;
+        }
+
         let node = this.inspector.selection.nodeFront;
         this.inspector.pageStyle.getLayout(node, {
           autoMargins: true,
@@ -324,6 +332,10 @@ BoxModel.prototype = {
 
 
   onShowBoxModelHighlighter(options = {}) {
+    if (!this.inspector) {
+      return;
+    }
+
     let toolbox = this.inspector.toolbox;
     let nodeFront = this.inspector.selection.nodeFront;
 
