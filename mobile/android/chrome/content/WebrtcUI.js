@@ -156,13 +156,13 @@ var WebrtcUI = {
         if (inputs && inputs.audioDevice != undefined)
           audioId = inputs.audioDevice;
         if (audioDevices[audioId])
-          allowedDevices.appendElement(audioDevices[audioId],  false);
+          allowedDevices.appendElement(audioDevices[audioId]);
 
         let videoId = 0;
         if (inputs && inputs.videoSource != undefined)
           videoId = inputs.videoSource;
         if (videoDevices[videoId]) {
-          allowedDevices.appendElement(videoDevices[videoId],  false);
+          allowedDevices.appendElement(videoDevices[videoId]);
           let perms = Services.perms;
           
           
