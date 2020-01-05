@@ -2020,11 +2020,29 @@ public:
   };
 
   struct InlinePrefISizeData : public InlineIntrinsicISizeData {
+    typedef mozilla::StyleClear StyleClear;
+
     InlinePrefISizeData()
       : mLineIsEmpty(true)
     {}
 
-    void ForceBreak();
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    void ForceBreak(StyleClear aBreakType = StyleClear::Both);
 
     
     void DefaultAddInlinePrefISize(nscoord aISize);
