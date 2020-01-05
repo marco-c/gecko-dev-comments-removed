@@ -662,9 +662,16 @@ function stripHttpAndTrim(spec) {
 
 
 
-function makeKeyForURL(actionUrl) {
+function makeKeyForURL(match) {
+  let actionUrl = match.value;
+
   
   if (!actionUrl.startsWith("moz-action:")) {
+    
+    
+    if (match.hasOwnProperty("style") && match.style.includes("autofill")) {
+      return stripHttpAndTrim(match.comment);
+    }
     return stripHttpAndTrim(actionUrl);
   }
   let [, type, params] = actionUrl.match(/^moz-action:([^,]+),(.*)$/);
@@ -1620,7 +1627,7 @@ Search.prototype = {
       return;
 
     
-    let urlMapKey = makeKeyForURL(match.value);
+    let urlMapKey = makeKeyForURL(match);
     if ((match.placeId && this._usedPlaceIds.has(match.placeId)) ||
         this._usedURLs.has(urlMapKey)) {
       return;
@@ -1705,9 +1712,16 @@ Search.prototype = {
     }
 
     match.value = this._strippedPrefix + trimmedHost;
-    
-    match.comment = stripHttpAndTrim(trimmedHost);
     match.finalCompleteValue = untrimmedHost;
+
+    
+    
+    
+    
+    
+    
+    match.comment = stripHttpAndTrim(match.finalCompleteValue || match.value);
+
     if (faviconUrl) {
       match.icon = PlacesUtils.favicons
                               .getFaviconLinkForIcon(NetUtil.newURI(faviconUrl)).spec;
