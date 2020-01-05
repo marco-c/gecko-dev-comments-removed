@@ -26,15 +26,15 @@ function debug(msg) {
 
 
 this.SessionHistory = Object.freeze({
-  isEmpty: function (docShell) {
+  isEmpty(docShell) {
     return SessionHistoryInternal.isEmpty(docShell);
   },
 
-  collect: function (docShell, aFromIdx = -1) {
+  collect(docShell, aFromIdx = -1) {
     return SessionHistoryInternal.collect(docShell, aFromIdx);
   },
 
-  restore: function (docShell, tabData) {
+  restore(docShell, tabData) {
     SessionHistoryInternal.restore(docShell, tabData);
   }
 });
@@ -54,7 +54,7 @@ var SessionHistoryInternal = {
 
 
 
-  isEmpty: function (docShell) {
+  isEmpty(docShell) {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory;
     if (!webNavigation.currentURI) {
@@ -73,7 +73,7 @@ var SessionHistoryInternal = {
 
 
 
-  collect: function (docShell, aFromIdx = -1) {
+  collect(docShell, aFromIdx = -1) {
     let loadContext = docShell.QueryInterface(Ci.nsILoadContext);
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory.QueryInterface(Ci.nsISHistoryInternal);
@@ -141,7 +141,7 @@ var SessionHistoryInternal = {
 
 
 
-  serializeEntry: function (shEntry) {
+  serializeEntry(shEntry) {
     let entry = { url: shEntry.URI.spec };
 
     
@@ -276,7 +276,7 @@ var SessionHistoryInternal = {
 
 
 
-  restore: function (docShell, tabData) {
+  restore(docShell, tabData) {
     let webNavigation = docShell.QueryInterface(Ci.nsIWebNavigation);
     let history = webNavigation.sessionHistory;
     if (history.count > 0) {
@@ -313,7 +313,7 @@ var SessionHistoryInternal = {
 
 
 
-  deserializeEntry: function (entry, idMap, docIdentMap) {
+  deserializeEntry(entry, idMap, docIdentMap) {
 
     var shEntry = Cc["@mozilla.org/browser/session-history-entry;1"].
                   createInstance(Ci.nsISHEntry);
@@ -401,10 +401,9 @@ var SessionHistoryInternal = {
       
       let matchingEntry = docIdentMap[entry.docIdentifier];
       if (!matchingEntry) {
-        matchingEntry = {shEntry: shEntry, childDocIdents: childDocIdents};
+        matchingEntry = {shEntry, childDocIdents};
         docIdentMap[entry.docIdentifier] = matchingEntry;
-      }
-      else {
+      } else {
         shEntry.adoptBFCacheEntry(matchingEntry.shEntry);
         childDocIdents = matchingEntry.childDocIdents;
       }
