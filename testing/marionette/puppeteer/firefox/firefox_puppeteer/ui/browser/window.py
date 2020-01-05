@@ -45,9 +45,6 @@ class BrowserWindow(BaseWindow):
         self._navbar = None
         self._tabbar = None
 
-        
-        self.timeout_page_load = 30
-
     @property
     def default_homepage(self):
         """The default homepage as used by the current locale.

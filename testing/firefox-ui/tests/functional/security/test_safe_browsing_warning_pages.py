@@ -69,7 +69,7 @@ class TestSafeBrowsingWarningPages(PuppeteerMixin, MarionetteTestCase):
         button = self.marionette.find_element(By.ID, "getMeOutButton")
         button.click()
 
-        Wait(self.marionette, timeout=self.browser.timeout_page_load).until(
+        Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
             lambda mn: self.browser.default_homepage in mn.get_url())
 
     def check_report_button(self, unsafe_page):
@@ -86,12 +86,12 @@ class TestSafeBrowsingWarningPages(PuppeteerMixin, MarionetteTestCase):
 
         
         
-        Wait(self.marionette, timeout=self.browser.timeout_page_load).until(
+        Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
             expected.element_stale(button))
 
         
         
-        Wait(self.marionette, timeout=self.browser.timeout_page_load).until(
+        Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
             lambda mn: mn.execute_script('return document.readyState == "DOMContentLoaded" ||'
                                          '       document.readyState == "complete";')
         )
@@ -103,7 +103,7 @@ class TestSafeBrowsingWarningPages(PuppeteerMixin, MarionetteTestCase):
         button = self.marionette.find_element(By.ID, 'ignoreWarningButton')
         button.click()
 
-        Wait(self.marionette, timeout=self.browser.timeout_page_load).until(
+        Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
             expected.element_present(By.ID, 'main-feature'))
         self.assertEquals(self.marionette.get_url(), self.browser.get_final_url(unsafe_page))
 

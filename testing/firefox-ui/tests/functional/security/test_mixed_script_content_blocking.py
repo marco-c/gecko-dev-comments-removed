@@ -45,7 +45,7 @@ class TestMixedScriptContentBlocking(PuppeteerMixin, MarionetteTestCase):
             )
 
         
-        Wait(self.marionette, timeout=self.browser.timeout_page_load).until(
+        Wait(self.marionette, timeout=self.marionette.timeout.page_load).until(
             lambda _: self.locationbar.identity_box.get_attribute('className') == identity,
             message='Expected identity "{}" not found'.format(identity)
         )
