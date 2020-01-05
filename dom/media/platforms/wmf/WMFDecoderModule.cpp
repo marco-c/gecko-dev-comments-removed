@@ -25,6 +25,7 @@
 #include "prsystem.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/StaticMutex.h"
+#include "mozilla/WindowsVersion.h"
 #include "MP4Decoder.h"
 #include "VPXDecoder.h"
 
@@ -193,24 +194,50 @@ bool
 WMFDecoderModule::SupportsMimeType(const nsACString& aMimeType,
                                    DecoderDoctorDiagnostics* aDiagnostics) const
 {
-  if ((aMimeType.EqualsLiteral("audio/mp4a-latm") ||
-       aMimeType.EqualsLiteral("audio/mp4")) &&
+  UniquePtr<TrackInfo> trackInfo = CreateTrackInfoWithMIMEType(aMimeType);
+  if (!trackInfo) {
+    return false;
+  }
+  return Supports(*trackInfo, aDiagnostics);
+}
+
+bool
+WMFDecoderModule::Supports(const TrackInfo& aTrackInfo,
+                           DecoderDoctorDiagnostics* aDiagnostics) const
+{
+  if ((aTrackInfo.mMimeType.EqualsLiteral("audio/mp4a-latm") ||
+       aTrackInfo.mMimeType.EqualsLiteral("audio/mp4")) &&
        WMFDecoderModule::HasAAC()) {
     return true;
   }
-  if (MP4Decoder::IsH264(aMimeType) && WMFDecoderModule::HasH264()) {
+  if (MP4Decoder::IsH264(aTrackInfo.mMimeType) && WMFDecoderModule::HasH264()) {
+    const VideoInfo* videoInfo = aTrackInfo.GetAsVideoInfo();
+    MOZ_ASSERT(videoInfo);
+    
+    
+    if (IsWin8OrLater()) {
+      
+      if (videoInfo->mImage.width > 4096 || videoInfo->mImage.height > 2304) {
+        return false;
+      }
+    } else {
+      
+      if (videoInfo->mImage.width > 1920 || videoInfo->mImage.height > 1088) {
+        return false;
+      }
+    }
     return true;
   }
-  if (aMimeType.EqualsLiteral("audio/mpeg") &&
+  if (aTrackInfo.mMimeType.EqualsLiteral("audio/mpeg") &&
       CanCreateWMFDecoder<CLSID_CMP3DecMediaObject>()) {
     return true;
   }
   if (MediaPrefs::PDMWMFIntelDecoderEnabled() && sDXVAEnabled) {
-    if (VPXDecoder::IsVP8(aMimeType) &&
+    if (VPXDecoder::IsVP8(aTrackInfo.mMimeType) &&
         CanCreateWMFDecoder<CLSID_WebmMfVp8Dec>()) {
       return true;
     }
-    if (VPXDecoder::IsVP9(aMimeType) &&
+    if (VPXDecoder::IsVP9(aTrackInfo.mMimeType) &&
         CanCreateWMFDecoder<CLSID_WebmMfVp9Dec>()) {
       return true;
     }
