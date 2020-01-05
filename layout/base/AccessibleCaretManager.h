@@ -162,7 +162,12 @@ protected:
   void SetSelectionDragState(bool aState) const;
 
   
+  bool IsPhoneNumber(nsAString& aCandidate) const;
+
+  
+  
   void SelectMoreIfPhoneNumber() const;
+
   
   void ExtendPhoneNumberSelection(const nsAString& aDirection) const;
 

@@ -927,16 +927,29 @@ AccessibleCaretManager::SetSelectionDragState(bool aState) const
   #endif
 }
 
+bool
+AccessibleCaretManager::IsPhoneNumber(nsAString& aCandidate) const
+{
+  RefPtr<nsIDocument> doc = mPresShell->GetDocument();
+  nsAutoString phoneNumberRegex(
+    NS_LITERAL_STRING("(^\\+)?[0-9 ,\\-.()*#pw]{1,30}$"));
+  return nsContentUtils::IsPatternMatching(aCandidate, phoneNumberRegex, doc);
+}
+
 void
 AccessibleCaretManager::SelectMoreIfPhoneNumber() const
 {
-  SetSelectionDirection(eDirNext);
-  ExtendPhoneNumberSelection(NS_LITERAL_STRING("forward"));
+  nsAutoString selectedText = StringifiedSelection();
 
-  SetSelectionDirection(eDirPrevious);
-  ExtendPhoneNumberSelection(NS_LITERAL_STRING("backward"));
+  if (IsPhoneNumber(selectedText)) {
+    SetSelectionDirection(eDirNext);
+    ExtendPhoneNumberSelection(NS_LITERAL_STRING("forward"));
 
-  SetSelectionDirection(eDirNext);
+    SetSelectionDirection(eDirPrevious);
+    ExtendPhoneNumberSelection(NS_LITERAL_STRING("backward"));
+
+    SetSelectionDirection(eDirNext);
+  }
 }
 
 void
@@ -945,8 +958,6 @@ AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) 
   if (!mPresShell) {
     return;
   }
-
-  RefPtr<nsIDocument> doc = mPresShell->GetDocument();
 
   
   RefPtr<Selection> selection = GetSelection();
@@ -987,10 +998,8 @@ AccessibleCaretManager::ExtendPhoneNumberSelection(const nsAString& aDirection) 
     
     
     nsAutoString selectedText = StringifiedSelection();
-    nsAutoString phoneRegex(NS_LITERAL_STRING("(^\\+)?[0-9 ,\\-.()*#pw]{1,30}$"));
 
-    if (!nsContentUtils::IsPatternMatching(selectedText, phoneRegex, doc) ||
-        oldSelectedText == selectedText) {
+    if (!IsPhoneNumber(selectedText) || oldSelectedText == selectedText) {
       
       
       selection->SetAnchorFocusToRange(oldAnchorFocusRange);
