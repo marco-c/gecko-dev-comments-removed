@@ -3163,7 +3163,7 @@ public:
     return mFontMetrics;
   }
 
-  void CalcTabWidths(Range aTransformedRange);
+  void CalcTabWidths(Range aTransformedRange, gfxFloat aTabWidth);
 
   const gfxSkipCharsIterator& GetEndHint() { return mTempIterator; }
 
@@ -3349,6 +3349,28 @@ CanAddSpacingAfter(const gfxTextRun* aTextRun, uint32_t aOffset)
     aTextRun->IsLigatureGroupStart(aOffset + 1);
 }
 
+static gfxFloat
+ComputeTabWidthAppUnits(nsIFrame* aFrame, gfxTextRun* aTextRun)
+{
+  const nsStyleText* textStyle = aFrame->StyleText();
+  if (textStyle->mTabSize.GetUnit() != eStyleUnit_Factor) {
+    nscoord w = textStyle->mTabSize.GetCoordValue();
+    MOZ_ASSERT(w >= 0);
+    return w;
+  }
+
+  gfxFloat spaces = textStyle->mTabSize.GetFactorValue();
+  MOZ_ASSERT(spaces >= 0);
+
+  
+  
+  gfxFloat spaceWidthAppUnits =
+    NS_round(GetFirstFontMetrics(aTextRun->GetFontGroup(),
+                                 aTextRun->IsVertical()).spaceWidth *
+             aTextRun->GetAppUnitsPerDevUnit());
+  return spaces * spaceWidthAppUnits;
+}
+
 void
 PropertyProvider::GetSpacingInternal(Range aRange, Spacing* aSpacing,
                                      bool aIgnoreTabs)
@@ -3397,16 +3419,15 @@ PropertyProvider::GetSpacingInternal(Range aRange, Spacing* aSpacing,
   }
 
   
-  if (!aIgnoreTabs)
-    aIgnoreTabs = mFrame->StyleText()->mTabSize == 0;
-
-  
   if (!aIgnoreTabs) {
-    CalcTabWidths(aRange);
-    if (mTabWidths) {
-      mTabWidths->ApplySpacing(aSpacing,
-                               aRange.start - mStart.GetSkippedOffset(),
-                               aRange.Length());
+    gfxFloat tabWidth = ComputeTabWidthAppUnits(mFrame, mTextRun);
+    if (tabWidth > 0) {
+      CalcTabWidths(aRange, tabWidth);
+      if (mTabWidths) {
+        mTabWidths->ApplySpacing(aSpacing,
+                                 aRange.start - mStart.GetSkippedOffset(),
+                                 aRange.Length());
+      }
     }
   }
 
@@ -3429,33 +3450,23 @@ PropertyProvider::GetSpacingInternal(Range aRange, Spacing* aSpacing,
   }
 }
 
-static gfxFloat
-ComputeTabWidthAppUnits(nsIFrame* aFrame, const gfxTextRun* aTextRun)
-{
-  
-  const nsStyleText* textStyle = aFrame->StyleText();
-
-  return textStyle->mTabSize * GetSpaceWidthAppUnits(aTextRun);
-}
-
 
 static gfxFloat
 AdvanceToNextTab(gfxFloat aX, nsIFrame* aFrame,
-                 const gfxTextRun* aTextRun, gfxFloat* aCachedTabWidth)
+                 gfxTextRun* aTextRun, gfxFloat aTabWidth)
 {
-  if (*aCachedTabWidth < 0) {
-    *aCachedTabWidth = ComputeTabWidthAppUnits(aFrame, aTextRun);
-  }
 
   
   
   
-  return ceil((aX + 1)/(*aCachedTabWidth))*(*aCachedTabWidth);
+  return ceil((aX + 1) / aTabWidth) * aTabWidth;
 }
 
 void
-PropertyProvider::CalcTabWidths(Range aRange)
+PropertyProvider::CalcTabWidths(Range aRange, gfxFloat aTabWidth)
 {
+  MOZ_ASSERT(aTabWidth > 0);
+
   if (!mTabWidths) {
     if (mReflowing && !mLineContainer) {
       
@@ -3490,7 +3501,6 @@ PropertyProvider::CalcTabWidths(Range aRange)
     NS_ASSERTION(mReflowing,
                  "We need precomputed tab widths, but don't have enough.");
 
-    gfxFloat tabWidth = -1;
     for (uint32_t i = tabsEnd; i < aRange.end; ++i) {
       Spacing spacing;
       GetSpacingInternal(Range(i, i + 1), &spacing, true);
@@ -3512,7 +3522,7 @@ PropertyProvider::CalcTabWidths(Range aRange)
           mFrame->Properties().Set(TabWidthProperty(), mTabWidths);
         }
         double nextTab = AdvanceToNextTab(mOffsetFromBlockOriginForTabs,
-                mFrame, mTextRun, &tabWidth);
+                mFrame, mTextRun, aTabWidth);
         mTabWidths->mWidths.AppendElement(TabWidth(i - startOffset, 
                 NSToIntRound(nextTab - mOffsetFromBlockOriginForTabs)));
         mOffsetFromBlockOriginForTabs = nextTab;
@@ -4525,11 +4535,29 @@ nsTextFrame::GetCursor(const nsPoint& aPoint,
 {
   FillCursorInformationFromStyle(StyleUserInterface(), aCursor);
   if (NS_STYLE_CURSOR_AUTO == aCursor.mCursor) {
-    if (!IsSelectable(nullptr)) {
-      aCursor.mCursor = NS_STYLE_CURSOR_DEFAULT;
-    } else {
-      aCursor.mCursor = GetWritingMode().IsVertical()
-        ? NS_STYLE_CURSOR_VERTICAL_TEXT : NS_STYLE_CURSOR_TEXT;
+    aCursor.mCursor = GetWritingMode().IsVertical()
+                      ? NS_STYLE_CURSOR_VERTICAL_TEXT : NS_STYLE_CURSOR_TEXT;
+    
+    if (mContent->IsEditable()) {
+      return NS_OK;
+    }
+
+    
+    nsIFrame *ancestorFrame = this;
+    while ((ancestorFrame = ancestorFrame->GetParent()) != nullptr) {
+      nsIContent *ancestorContent = ancestorFrame->GetContent();
+      if (ancestorContent && ancestorContent->HasAttr(kNameSpaceID_None, nsGkAtoms::tabindex)) {
+        nsAutoString tabIndexStr;
+        ancestorContent->GetAttr(kNameSpaceID_None, nsGkAtoms::tabindex, tabIndexStr);
+        if (!tabIndexStr.IsEmpty()) {
+          nsresult rv;
+          int32_t tabIndexVal = tabIndexStr.ToInteger(&rv);
+          if (NS_SUCCEEDED(rv) && tabIndexVal >= 0) {
+            aCursor.mCursor = NS_STYLE_CURSOR_DEFAULT;
+            break;
+          }
+        }
+      }
     }
     return NS_OK;
   } else {
@@ -7851,8 +7879,9 @@ nsTextFrame::PeekOffsetCharacter(bool aForward, int32_t* aOffset,
   int32_t contentLength = GetContentLength();
   NS_ASSERTION(aOffset && *aOffset <= contentLength, "aOffset out of range");
 
+  bool selectable;
   StyleUserSelect selectStyle;
-  IsSelectable(&selectStyle);
+  IsSelectable(&selectable, &selectStyle);
   if (selectStyle == StyleUserSelect::All)
     return CONTINUE_UNSELECTABLE;
 
@@ -8039,8 +8068,9 @@ nsTextFrame::PeekOffsetWord(bool aForward, bool aWordSelectEatSpace, bool aIsKey
   int32_t contentLength = GetContentLength();
   NS_ASSERTION (aOffset && *aOffset <= contentLength, "aOffset out of range");
 
+  bool selectable;
   StyleUserSelect selectStyle;
-  IsSelectable(&selectStyle);
+  IsSelectable(&selectable, &selectStyle);
   if (selectStyle == StyleUserSelect::All)
     return CONTINUE_UNSELECTABLE;
 
@@ -8414,9 +8444,11 @@ nsTextFrame::AddInlineMinISizeForFlow(nsRenderingContext *aRenderingContext,
       PropertyProvider::Spacing spacing;
       provider.GetSpacing(Range(i, i + 1), &spacing);
       aData->mCurrentLine += nscoord(spacing.mBefore);
+      if (tabWidth < 0) {
+        tabWidth = ComputeTabWidthAppUnits(this, textRun);
+      }
       gfxFloat afterTab =
-        AdvanceToNextTab(aData->mCurrentLine, this,
-                         textRun, &tabWidth);
+        AdvanceToNextTab(aData->mCurrentLine, this, textRun, tabWidth);
       aData->mCurrentLine = nscoord(afterTab + spacing.mAfter);
       wordStart = i + 1;
     } else if (i < flowEndInTextRun ||
@@ -8575,9 +8607,11 @@ nsTextFrame::AddInlinePrefISizeForFlow(nsRenderingContext *aRenderingContext,
       PropertyProvider::Spacing spacing;
       provider.GetSpacing(Range(i, i + 1), &spacing);
       aData->mCurrentLine += nscoord(spacing.mBefore);
+      if (tabWidth < 0) {
+        tabWidth = ComputeTabWidthAppUnits(this, textRun);
+      }
       gfxFloat afterTab =
-        AdvanceToNextTab(aData->mCurrentLine, this,
-                         textRun, &tabWidth);
+        AdvanceToNextTab(aData->mCurrentLine, this, textRun, tabWidth);
       aData->mCurrentLine = nscoord(afterTab + spacing.mAfter);
       aData->mLineIsEmpty = false;
       lineStart = i + 1;
