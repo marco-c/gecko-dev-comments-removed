@@ -147,7 +147,12 @@ WebRenderBridgeChild::AllocExternalImageIdForCompositable(CompositableClient* aC
 void
 WebRenderBridgeChild::DeallocExternalImageId(uint64_t aImageId)
 {
-  MOZ_ASSERT(!mDestroyed);
+  if (mDestroyed) {
+    
+    
+    return;
+  }
+
   MOZ_ASSERT(aImageId);
   SendRemoveExternalImageId(aImageId);
 }
@@ -156,11 +161,13 @@ struct FontFileData
 {
   wr::ByteBuffer mFontBuffer;
   uint32_t mFontIndex;
+  float mGlyphSize;
 };
 
 static void
 WriteFontFileData(const uint8_t* aData, uint32_t aLength, uint32_t aIndex,
-                  void* aBaton)
+                  float aGlyphSize, uint32_t aVariationCount,
+                  const ScaledFont::VariationSetting* aVariations, void* aBaton)
 {
   FontFileData* data = static_cast<FontFileData*>(aBaton);
 
@@ -170,6 +177,7 @@ WriteFontFileData(const uint8_t* aData, uint32_t aLength, uint32_t aIndex,
   memcpy(data->mFontBuffer.mData, aData, aLength);
 
   data->mFontIndex = aIndex;
+  data->mGlyphSize = aGlyphSize;
 }
 
 void
@@ -225,7 +233,7 @@ WebRenderBridgeChild::GetFontKeyForScaledFont(gfx::ScaledFont* aScaledFont)
   }
 
   FontFileData data;
-  if (!unscaled->GetFontFileData(WriteFontFileData, &data) ||
+  if (!aScaledFont->GetFontFileData(WriteFontFileData, &data) ||
       !data.mFontBuffer.mData) {
     return key;
   }
