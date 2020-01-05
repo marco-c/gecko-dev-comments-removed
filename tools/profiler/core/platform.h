@@ -284,9 +284,6 @@ public:
   void Stop();
 
   
-  bool IsProfiling() const { return profiling_; }
-
-  
   bool IsActive() const { return active_; }
 
   
@@ -387,7 +384,6 @@ private:
   static std::vector<ThreadInfo*>* sRegisteredThreads;
 
   const double interval_;
-  const bool profiling_;
   Atomic32 paused_;
   Atomic32 active_;
   const int entrySize_;

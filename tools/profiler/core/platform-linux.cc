@@ -246,10 +246,7 @@ void ProfilerSignalHandler(int signal, siginfo_t* info, void* context) {
   sample->context = context;
 
   
-  
-  if (gSampler->IsProfiling()) {
-    SetSampleContext(sample, context);
-  }
+  SetSampleContext(sample, context);
   sample->threadProfile = sCurrentThreadProfile;
   sample->timestamp = mozilla::TimeStamp::Now();
   sample->rssMemory = sample->threadProfile->mRssMemory;
