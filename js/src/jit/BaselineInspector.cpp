@@ -28,12 +28,6 @@ SetElemICInspector::sawOOBDenseWrite() const
         return false;
 
     
-    for (ICStub* stub = icEntry_->firstStub(); stub; stub = stub->next()) {
-        if (stub->isSetElem_DenseOrUnboxedArrayAdd())
-            return true;
-    }
-
-    
     ICStub* stub = icEntry_->fallbackStub();
     if (stub->isSetElem_Fallback())
         return stub->toSetElem_Fallback()->hasArrayWriteHole();

@@ -1069,10 +1069,6 @@ class ICStubCompiler
 
     
     
-    MOZ_MUST_USE bool callTypeUpdateIC(MacroAssembler& masm, uint32_t objectOffset);
-
-    
-    
     
     void enterStubFrame(MacroAssembler& masm, Register scratch);
     void leaveStubFrame(MacroAssembler& masm, bool calledIntoIon = false);

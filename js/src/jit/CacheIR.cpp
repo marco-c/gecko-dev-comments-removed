@@ -1916,7 +1916,11 @@ SetPropIRGenerator::tryAttachStub()
         if (maybeGuardInt32Index(idVal_, setElemKeyValueId(), &index, &indexId)) {
             if (tryAttachSetDenseElement(obj, objId, index, indexId, rhsValId))
                 return true;
+            if (tryAttachSetDenseElementHole(obj, objId, index, indexId, rhsValId))
+                return true;
             if (tryAttachSetUnboxedArrayElement(obj, objId, index, indexId, rhsValId))
+                return true;
+            if (tryAttachSetUnboxedArrayElementHole(obj, objId, index, indexId, rhsValId))
                 return true;
             return false;
         }
@@ -2266,9 +2270,126 @@ SetPropIRGenerator::tryAttachSetDenseElement(HandleObject obj, ObjOperandId objI
     return true;
 }
 
+static bool
+CanAttachAddElement(JSObject* obj, bool isInit)
+{
+    
+    
+    do {
+        
+        if (obj->isIndexed())
+            return false;
+
+        const Class* clasp = obj->getClass();
+        if ((clasp != &ArrayObject::class_ && clasp != &UnboxedArrayObject::class_) &&
+            (clasp->getAddProperty() ||
+             clasp->getResolve() ||
+             clasp->getOpsLookupProperty() ||
+             clasp->getSetProperty() ||
+             clasp->getOpsSetProperty()))
+        {
+            return false;
+        }
+
+        
+        
+        if (isInit)
+            break;
+
+        JSObject* proto = obj->staticPrototype();
+        if (!proto)
+            break;
+
+        if (!proto->isNative())
+            return false;
+
+        obj = proto;
+    } while (true);
+
+    return true;
+}
+
+static void
+ShapeGuardProtoChain(CacheIRWriter& writer, JSObject* obj, ObjOperandId objId)
+{
+    while (true) {
+        
+        
+        
+        bool guardProto = obj->hasUncacheableProto() && !obj->isSingleton();
+
+        obj = obj->staticPrototype();
+        if (!obj)
+            return;
+
+        objId = writer.loadProto(objId);
+        if (guardProto)
+            writer.guardSpecificObject(objId, obj);
+        writer.guardShape(objId, obj->as<NativeObject>().shape());
+    }
+}
+
 bool
-SetPropIRGenerator::tryAttachSetUnboxedArrayElement(HandleObject obj, ObjOperandId objId, uint32_t index,
-                                                    Int32OperandId indexId, ValOperandId rhsId)
+SetPropIRGenerator::tryAttachSetDenseElementHole(HandleObject obj, ObjOperandId objId,
+                                                 uint32_t index, Int32OperandId indexId,
+                                                 ValOperandId rhsId)
+{
+    if (!obj->isNative() || rhsVal_.isMagic(JS_ELEMENTS_HOLE))
+        return false;
+
+    JSOp op = JSOp(*pc_);
+    MOZ_ASSERT(IsPropertySetOp(op) || IsPropertyInitOp(op));
+
+    if (op == JSOP_INITHIDDENELEM)
+        return false;
+
+    NativeObject* nobj = &obj->as<NativeObject>();
+    if (nobj->getElementsHeader()->isFrozen())
+        return false;
+
+    uint32_t capacity = nobj->getDenseCapacity();
+    uint32_t initLength = nobj->getDenseInitializedLength();
+
+    
+    
+    
+    bool isAdd = index == initLength;
+    bool isHoleInBounds = index < initLength && !nobj->containsDenseElement(index);
+    if (!isAdd && !isHoleInBounds)
+        return false;
+
+    
+    
+    if (index >= capacity)
+        return false;
+
+    MOZ_ASSERT(!nobj->is<TypedArrayObject>());
+
+    
+    if (!CanAttachAddElement(nobj, IsPropertyInitOp(op)))
+        return false;
+
+    writer.guardGroup(objId, nobj->group());
+    writer.guardShape(objId, nobj->shape());
+
+    
+    if (IsPropertySetOp(op))
+        ShapeGuardProtoChain(writer, obj, objId);
+
+    writer.storeDenseElementHole(objId, indexId, rhsId, isAdd);
+    writer.returnFromIC();
+
+    
+    setUpdateStubInfo(nobj->group(), JSID_VOID);
+
+    trackAttached(isAdd ? "AddDenseElement" : "StoreDenseElementHole");
+    return true;
+}
+
+bool
+SetPropIRGenerator::tryAttachSetUnboxedArrayElement(HandleObject obj, ObjOperandId objId,
+                                                    uint32_t index, Int32OperandId indexId,
+                                                    ValOperandId rhsId)
 {
     if (!obj->is<UnboxedArrayObject>())
         return false;
@@ -2291,6 +2412,52 @@ SetPropIRGenerator::tryAttachSetUnboxedArrayElement(HandleObject obj, ObjOperand
     setUpdateStubInfo(obj->group(), JSID_VOID);
 
     trackAttached("SetUnboxedArrayElement");
+    return true;
+}
+
+bool
+SetPropIRGenerator::tryAttachSetUnboxedArrayElementHole(HandleObject obj, ObjOperandId objId,
+                                                        uint32_t index, Int32OperandId indexId,
+                                                        ValOperandId rhsId)
+{
+    if (!obj->is<UnboxedArrayObject>() || rhsVal_.isMagic(JS_ELEMENTS_HOLE))
+        return false;
+
+    if (!cx_->runtime()->jitSupportsFloatingPoint)
+        return false;
+
+    JSOp op = JSOp(*pc_);
+    MOZ_ASSERT(IsPropertySetOp(op) || IsPropertyInitOp(op));
+
+    if (op == JSOP_INITHIDDENELEM)
+        return false;
+
+    
+    
+    UnboxedArrayObject* aobj = &obj->as<UnboxedArrayObject>();
+    if (index != aobj->initializedLength() || index >= aobj->capacity())
+        return false;
+
+    
+    if (!CanAttachAddElement(aobj, IsPropertyInitOp(op)))
+        return false;
+
+    writer.guardGroup(objId, aobj->group());
+
+    JSValueType elementType = aobj->group()->unboxedLayoutDontCheckGeneration().elementType();
+    EmitGuardUnboxedPropertyType(writer, elementType, rhsId);
+
+    
+    if (IsPropertySetOp(op))
+        ShapeGuardProtoChain(writer, aobj, objId);
+
+    writer.storeUnboxedArrayElementHole(objId, indexId, rhsId, elementType);
+    writer.returnFromIC();
+
+    
+    setUpdateStubInfo(aobj->group(), JSID_VOID);
+
+    trackAttached("StoreUnboxedArrayElementHole");
     return true;
 }
 
@@ -2419,24 +2586,7 @@ SetPropIRGenerator::tryAttachAddSlotStub(HandleObjectGroup oldGroup, HandleShape
     }
     writer.guardShape(holderId, oldShape);
 
-    
-    JSObject* lastObj = obj;
-    ObjOperandId lastObjId = objId;
-    while (true) {
-        
-        
-        
-        bool guardProto = lastObj->hasUncacheableProto() && !lastObj->isSingleton();
-
-        lastObj = lastObj->staticPrototype();
-        if (!lastObj)
-            break;
-
-        lastObjId = writer.loadProto(lastObjId);
-        if (guardProto)
-            writer.guardSpecificObject(lastObjId, lastObj);
-        writer.guardShape(lastObjId, lastObj->as<NativeObject>().shape());
-    }
+    ShapeGuardProtoChain(writer, obj, objId);
 
     ObjectGroup* newGroup = obj->group();
 
