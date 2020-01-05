@@ -3043,7 +3043,7 @@ nsHttpChannel::IsResumable(int64_t partialLen, int64_t contentLength,
     bool hasContentEncoding =
         mCachedResponseHead->HasHeader(nsHttp::Content_Encoding);
 
-    nsAutoCString etag;
+    nsAutoCString etag; 
     mCachedResponseHead->GetHeader(nsHttp::ETag, etag);
     bool hasWeakEtag = !etag.IsEmpty() &&
                        StringBeginsWith(etag, NS_LITERAL_CSTRING("W/"));
@@ -3708,9 +3708,11 @@ nsHttpChannel::OpenCacheEntry(bool isHttps)
         if (!mCacheOpenDelay) {
             rv = cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, this);
         } else {
-            mCacheOpenRunnable = NS_NewRunnableFunction([openURI, extension, cacheEntryOpenFlags, cacheStorage, this] () -> void {
-                cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, this);
-            });
+            
+            
+            mCacheOpenFunc = [openURI, extension, cacheEntryOpenFlags, cacheStorage] (nsHttpChannel* self) -> void {
+                cacheStorage->AsyncOpenURI(openURI, extension, cacheEntryOpenFlags, self);
+            };
 
             mCacheOpenTimer = do_CreateInstance(NS_TIMER_CONTRACTID);
             
@@ -6113,11 +6115,6 @@ nsHttpChannel::BeginConnect()
         channelClassifier->ShouldEnableTrackingProtection(&tpEnabled);
         if (classifier && tpEnabled) {
             
-            
-            
-            
-            
-
             
             
             
@@ -8674,7 +8671,7 @@ nsHttpChannel::Test_triggerDelayedOpenCacheEntry()
         
         return NS_ERROR_NOT_AVAILABLE;
     }
-    if (!mCacheOpenRunnable) {
+    if (!mCacheOpenFunc) {
         
         return NS_ERROR_FAILURE;
     }
@@ -8685,10 +8682,11 @@ nsHttpChannel::Test_triggerDelayedOpenCacheEntry()
         }
         mCacheOpenTimer = nullptr;
     }
-    nsCOMPtr<nsIRunnable> runnable;
-    mCacheOpenRunnable.swap(runnable);
     mCacheOpenDelay = 0;
-    runnable->Run();
+    
+    std::function<void(nsHttpChannel*)> cacheOpenFunc = nullptr;
+    std::swap(cacheOpenFunc, mCacheOpenFunc);
+    cacheOpenFunc(this);
 
     return NS_OK;
 }

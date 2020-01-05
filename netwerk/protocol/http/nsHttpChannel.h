@@ -621,7 +621,7 @@ private:
     
     
     nsCOMPtr<nsITimer> mCacheOpenTimer;
-    nsCOMPtr<nsIRunnable> mCacheOpenRunnable;
+    std::function<void(nsHttpChannel*)> mCacheOpenFunc;
     uint32_t mCacheOpenDelay = 0;
 
     
