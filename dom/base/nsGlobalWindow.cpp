@@ -3267,7 +3267,11 @@ nsGlobalWindow::DispatchDOMWindowCreated()
 
   nsCOMPtr<nsIObserverService> observerService =
     mozilla::services::GetObserverService();
-  if (observerService) {
+
+  
+  
+  
+  if (observerService && mDoc) {
     nsAutoString origin;
     nsIPrincipal* principal = mDoc->NodePrincipal();
     nsContentUtils::GetUTFOrigin(principal, origin);
