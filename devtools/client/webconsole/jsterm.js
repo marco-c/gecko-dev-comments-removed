@@ -1637,6 +1637,12 @@ JSTerm.prototype = {
     this.lastCompletion = { value: null };
     this.updateCompleteNode("");
     if (this.autocompletePopup.isOpen) {
+      
+      
+      this.inputNode.blur();
+      this.autocompletePopup.once("popup-closed", () => {
+        this.inputNode.focus();
+      });
       this.autocompletePopup.hidePopup();
       this._autocompletePopupNavigated = false;
     }
