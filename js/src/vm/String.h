@@ -468,6 +468,10 @@ class JSString : public js::gc::TenuredCell
     }
 
     
+    
+    static bool fillWithRepresentatives(JSContext* cx, js::HandleArrayObject array);
+
+    
 
     inline bool hasBase() const {
         return d.u1.flags & HAS_BASE_BIT;
