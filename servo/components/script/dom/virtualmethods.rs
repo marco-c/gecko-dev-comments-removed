@@ -2,6 +2,7 @@
 
 
 
+use dom::attr::Attr;
 use dom::attr::{AttrValue, StringAttrValue};
 use dom::bindings::codegen::InheritTypes::ElementCast;
 use dom::bindings::codegen::InheritTypes::HTMLAnchorElementCast;
@@ -62,7 +63,6 @@ use dom::htmltextareaelement::HTMLTextAreaElement;
 use dom::node::{Node, NodeHelpers, ElementNodeTypeId};
 
 use servo_util::str::DOMString;
-use string_cache::Atom;
 
 
 
@@ -73,18 +73,18 @@ pub trait VirtualMethods {
 
     
     
-    fn after_set_attr(&self, name: &Atom, value: DOMString) {
+    fn after_set_attr(&self, attr: JSRef<Attr>) {
         match self.super_type() {
-            Some(ref s) => s.after_set_attr(name, value),
+            Some(ref s) => s.after_set_attr(attr),
             _ => (),
         }
     }
 
     
     
-    fn before_remove_attr(&self, name: &Atom, value: DOMString) {
+    fn before_remove_attr(&self, attr: JSRef<Attr>) {
         match self.super_type() {
-            Some(ref s) => s.before_remove_attr(name, value),
+            Some(ref s) => s.before_remove_attr(attr),
             _ => (),
         }
     }
