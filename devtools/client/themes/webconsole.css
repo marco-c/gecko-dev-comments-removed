@@ -801,6 +801,17 @@ a.learn-more-link.webconsole-learn-more-link {
 }
 
 
+
+
+
+.webconsole-output-wrapper .open-inspector {
+  background: unset;
+  padding-left: unset;
+  margin-left: unset;
+  cursor: unset;
+}
+
+
 .new-consoletable {
   width: 100%;
   border-collapse: collapse;
