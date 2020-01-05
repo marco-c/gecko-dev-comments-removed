@@ -356,8 +356,17 @@ ArrayPushDense(JSContext* cx, HandleObject obj, HandleValue v, uint32_t* length)
         return result == DenseElementResult::Success;
     }
 
+    
+    
+    
+    
+    JitFrameIterator it(cx);
+    MOZ_ASSERT(it.type() == JitFrame_Exit);
+    ++it;
+    IonScript* ionScript = it.ionScript();
+
     JS::AutoValueArray<3> argv(cx);
-    AutoDetectInvalidation adi(cx, argv[0]);
+    AutoDetectInvalidation adi(cx, argv[0], ionScript);
     argv[0].setUndefined();
     argv[1].setObject(*obj);
     argv[2].set(v);
