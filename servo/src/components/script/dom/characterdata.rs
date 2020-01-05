@@ -1,8 +1,8 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-
-
-
-
+//! DOM bindings for `CharacterData`.
 
 use dom::bindings::codegen::InheritTypes::{CharacterDataDerived, NodeCast};
 use dom::bindings::error::{Fallible, ErrorResult, IndexSize};
@@ -99,11 +99,11 @@ impl<'a> CharacterDataMethods for JSRef<'a, CharacterData> {
         data.push_str(arg.as_slice());
         data.push_str(self.data.deref().borrow().as_slice().slice((offset + count) as uint, length as uint));
         *self.data.deref().borrow_mut() = data.into_owned();
-        
+        // FIXME: Once we have `Range`, we should implement step7 to step11
         Ok(())
     }
 
-    
+    // http://dom.spec.whatwg.org/#dom-childnode-remove
     fn Remove(&self) {
         let node: &JSRef<Node> = NodeCast::from_ref(self);
         node.remove_self();
@@ -113,9 +113,5 @@ impl<'a> CharacterDataMethods for JSRef<'a, CharacterData> {
 impl Reflectable for CharacterData {
     fn reflector<'a>(&'a self) -> &'a Reflector {
         self.node.reflector()
-    }
-
-    fn mut_reflector<'a>(&'a mut self) -> &'a mut Reflector {
-        self.node.mut_reflector()
     }
 }
