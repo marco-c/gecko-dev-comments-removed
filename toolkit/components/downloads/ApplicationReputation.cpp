@@ -158,8 +158,8 @@ LookupTablesInPrefs(const nsACString& tables, const char* aPref)
 
     
     
-    if (StringBeginsWith(prefToken, NS_LITERAL_CSTRING("goog"))) {
-      if (StringEndsWith(prefToken, NS_LITERAL_CSTRING("-proto"))) {
+    if (StringBeginsWith(table, NS_LITERAL_CSTRING("goog"))) {
+      if (StringEndsWith(table, NS_LITERAL_CSTRING("-proto"))) {
         telemetryInfo |= TelemetryMatchInfo::eV4Match;
       } else {
         telemetryInfo |= TelemetryMatchInfo::eV2Match;
