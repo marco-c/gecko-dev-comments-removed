@@ -4762,19 +4762,16 @@ nsFrame::ComputeSize(nsRenderingContext* aRenderingContext,
     if (inlineStyleCoord->IsCoordPercentCalcUnit()) {
       minISize = std::min(minISize, result.ISize(aWM));
     } else if (aFlags & eIClampMarginBoxMinSize) {
-      auto cbSize = aCBSize.ISize(aWM);
-      if (cbSize != NS_UNCONSTRAINEDSIZE) {
-        
-        
-        
-        
-        
-        auto maxMinISize = std::max(nscoord(0), cbSize -
-                                                aPadding.ISize(aWM) -
-                                                aBorder.ISize(aWM) -
-                                                aMargin.ISize(aWM));
-        minISize = std::min(minISize, maxMinISize);
-      }
+      
+      
+      
+      
+      
+      auto maxMinISize = std::max(nscoord(0), aCBSize.ISize(aWM) -
+                                              aPadding.ISize(aWM) -
+                                              aBorder.ISize(aWM) -
+                                              aMargin.ISize(aWM));
+      minISize = std::min(minISize, maxMinISize);
     }
   } else {
     
