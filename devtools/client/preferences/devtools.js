@@ -66,6 +66,15 @@ pref("devtools.inspector.showAllAnonymousContent", false);
 pref("devtools.inspector.mdnDocsTooltip.enabled", true);
 
 
+pref("devtools.fontinspector.enabled", true);
+
+
+pref("devtools.layoutview.enabled", false);
+
+
+pref("devtools.eyedropper.zoom", 6);
+
+
 pref("devtools.markup.collapseAttributes", true);
 
 
@@ -323,9 +332,6 @@ pref("devtools.hud.loglimit.exception", 1000);
 pref("devtools.hud.loglimit.console", 1000);
 
 
-pref("devtools.eyedropper.zoom", 6);
-
-
 
 
 
@@ -339,9 +345,6 @@ pref("devtools.editor.autoclosebrackets", true);
 pref("devtools.editor.detectindentation", true);
 pref("devtools.editor.enableCodeFolding", true);
 pref("devtools.editor.autocomplete", true);
-
-
-pref("devtools.fontinspector.enabled", true);
 
 
 

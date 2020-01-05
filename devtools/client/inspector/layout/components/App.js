@@ -1,0 +1,24 @@
+
+
+
+
+"use strict";
+
+const { createClass, DOM: dom } = require("devtools/client/shared/vendor/react");
+const { connect } = require("devtools/client/shared/vendor/react-redux");
+
+let App = createClass({
+
+  displayName: "App",
+
+  render() {
+    return dom.div(
+      {
+        id: "app",
+      }
+    );
+  },
+
+});
+
+module.exports = connect(state => state)(App);
