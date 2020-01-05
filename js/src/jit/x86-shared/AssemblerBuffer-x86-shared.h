@@ -186,7 +186,7 @@ namespace jit {
         }
 
 #ifndef RELEASE_OR_BETA
-        PageProtectingVector<unsigned char, 256, SystemAllocPolicy,
+        PageProtectingVector<unsigned char, 256, ProtectedReallocPolicy,
                               false,  false,
                               true,  true,
                               32 * 1024> m_buffer;
