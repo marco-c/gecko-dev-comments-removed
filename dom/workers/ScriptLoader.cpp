@@ -1141,7 +1141,17 @@ private:
       
       mWorkerPrivate->InitChannelInfo(channel);
 
+      
+      
       MOZ_DIAGNOSTIC_ASSERT(mWorkerPrivate->FinalChannelPrincipalIsValid(channel));
+
+      
+      
+      
+      
+      
+      rv = mWorkerPrivate->SetPrincipalFromChannel(channel);
+      NS_ENSURE_SUCCESS(rv, rv);
 
       
       
@@ -1231,6 +1241,7 @@ private:
       nsILoadGroup* loadGroup = mWorkerPrivate->GetLoadGroup();
       MOZ_DIAGNOSTIC_ASSERT(loadGroup);
 
+      
       
       
       
