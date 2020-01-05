@@ -138,15 +138,20 @@ nsHostObjectURI::Deserialize(const mozilla::ipc::URIParams& aParams)
     return false;
   }
 
-  
-  
-
   if (hostParams.principal().type() == OptionalPrincipalInfo::Tvoid_t) {
     return true;
   }
 
   mPrincipal = PrincipalInfoToPrincipal(hostParams.principal().get_PrincipalInfo());
-  return mPrincipal != nullptr;
+  if (!mPrincipal) {
+    return false;
+  }
+
+  
+  
+  NS_GetBlobForBlobURI(this, getter_AddRefs(mBlobImpl));
+
+  return true;
 }
 
 NS_IMETHODIMP
