@@ -7,7 +7,6 @@
 #define mozilla_intl_LocaleService_h__
 
 #include "mozilla/StaticPtr.h"
-#include "nsIObserver.h"
 #include "nsString.h"
 #include "nsTArray.h"
 
@@ -38,12 +37,10 @@ namespace intl {
 
 
 
-class LocaleService : public mozILocaleService,
-                      public nsIObserver
+class LocaleService : public mozILocaleService
 {
 public:
   NS_DECL_ISUPPORTS
-  NS_DECL_NSIOBSERVER
   NS_DECL_MOZILOCALESERVICE
 
   
@@ -93,26 +90,6 @@ public:
 
 
   void GetAppLocales(nsTArray<nsCString>& aRetVal);
-
-  
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-  bool GetRequestedLocales(nsTArray<nsCString>& aRetVal);
 
   
 
@@ -192,7 +169,7 @@ private:
                      LangNegStrategy aStrategy,
                      nsTArray<nsCString>& aRetVal);
 
-  virtual ~LocaleService();
+  virtual ~LocaleService() {};
 
   nsTArray<nsCString> mAppLocales;
 

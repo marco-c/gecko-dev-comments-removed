@@ -8,8 +8,6 @@
 #include <algorithm>  
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/Services.h"
-#include "mozilla/Preferences.h"
-#include "mozilla/intl/OSPreferences.h"
 #include "nsIObserverService.h"
 #include "nsIToolkitChromeRegistry.h"
 
@@ -17,18 +15,9 @@
 #include "unicode/uloc.h"
 #endif
 
-#define MATCH_OS_LOCALE_PREF "intl.locale.matchOS"
-#define SELECTED_LOCALE_PREF "general.useragent.locale"
-
-static const char* kObservedPrefs[] = {
-  MATCH_OS_LOCALE_PREF,
-  SELECTED_LOCALE_PREF,
-  nullptr
-};
-
 using namespace mozilla::intl;
 
-NS_IMPL_ISUPPORTS(LocaleService, mozILocaleService, nsIObserver)
+NS_IMPL_ISUPPORTS(LocaleService, mozILocaleService)
 
 mozilla::StaticRefPtr<LocaleService> LocaleService::sInstance;
 
@@ -64,19 +53,9 @@ LocaleService::GetInstance()
 {
   if (!sInstance) {
     sInstance = new LocaleService();
-
-    
-    
-    nsresult rv = Preferences::AddStrongObservers(sInstance, kObservedPrefs);
-    MOZ_ASSERT(NS_SUCCEEDED(rv), "Adding observers failed.");
     ClearOnShutdown(&sInstance);
   }
   return sInstance;
-}
-
-LocaleService::~LocaleService()
-{
-  Preferences::RemoveObservers(sInstance, kObservedPrefs);
 }
 
 void
@@ -86,43 +65,6 @@ LocaleService::GetAppLocales(nsTArray<nsCString>& aRetVal)
     ReadAppLocales(mAppLocales);
   }
   aRetVal = mAppLocales;
-}
-
-bool
-LocaleService::GetRequestedLocales(nsTArray<nsCString>& aRetVal)
-{
-  nsAutoCString locale;
-
-  nsCOMPtr<nsIPrefBranch> prefs(do_GetService("@mozilla.org/preferences-service;1"));
-
-  
-  bool matchOSLocale = Preferences::GetBool(MATCH_OS_LOCALE_PREF);
-
-  if (matchOSLocale) {
-    
-    if (OSPreferences::GetInstance()->GetSystemLocales(aRetVal)) {
-      
-      return true;
-    }
-  }
-
-  
-
-  
-  
-  
-  if (!NS_SUCCEEDED(Preferences::GetLocalizedCString(SELECTED_LOCALE_PREF, &locale))) {
-    
-    
-    if (!NS_SUCCEEDED(Preferences::GetCString(SELECTED_LOCALE_PREF, &locale))) {
-      return false;
-    }
-  }
-
-  
-  
-  aRetVal.AppendElement(locale);
-  return true;
 }
 
 void
@@ -303,36 +245,9 @@ LocaleService::NegotiateLanguages(const nsTArray<nsCString>& aRequested,
   return true;
 }
 
-NS_IMETHODIMP
-LocaleService::Observe(nsISupports *aSubject, const char *aTopic,
-                      const char16_t *aData)
-{
-  
-  
-  NS_ConvertUTF16toUTF8 pref(aData);
-  if (pref.EqualsLiteral(MATCH_OS_LOCALE_PREF) || pref.EqualsLiteral(SELECTED_LOCALE_PREF)) {
-    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
-    if (obs) {
-      obs->NotifyObservers(nullptr, "intl:requested-locales-changed", nullptr);
-    }
-  }
-  return NS_OK;
-}
 
 
 
-
-
-static char**
-CreateOutArray(const nsTArray<nsCString>& aArray)
-{
-  uint32_t n = aArray.Length();
-  char** result = static_cast<char**>(moz_xmalloc(n * sizeof(char*)));
-  for (uint32_t i = 0; i < n; i++) {
-    result[i] = moz_xstrdup(aArray[i].get());
-  }
-  return result;
-}
 
 NS_IMETHODIMP
 LocaleService::GetAppLocales(uint32_t* aCount, char*** aOutArray)
@@ -342,7 +257,11 @@ LocaleService::GetAppLocales(uint32_t* aCount, char*** aOutArray)
   }
 
   *aCount = mAppLocales.Length();
-  *aOutArray = CreateOutArray(mAppLocales);
+  *aOutArray = static_cast<char**>(moz_xmalloc(*aCount * sizeof(char*)));
+
+  for (uint32_t i = 0; i < *aCount; i++) {
+    (*aOutArray)[i] = moz_xstrdup(mAppLocales[i].get());
+  }
 
   return NS_OK;
 }
@@ -550,21 +469,4 @@ LocaleService::Locale::AddLikelySubtags()
 #else
   return false;
 #endif
-}
-
-NS_IMETHODIMP
-LocaleService::GetRequestedLocales(uint32_t* aCount, char*** aOutArray)
-{
-  AutoTArray<nsCString, 16> requestedLocales;
-  bool res = GetRequestedLocales(requestedLocales);
-
-  if (!res) {
-    NS_ERROR("Couldn't retrieve selected locales from prefs!");
-    return NS_ERROR_FAILURE;
-  }
-
-  *aCount = requestedLocales.Length();
-  *aOutArray = CreateOutArray(requestedLocales);
-
-  return NS_OK;
 }
