@@ -118,6 +118,11 @@ public:
   
   virtual uint16_t Type() const = 0;
   virtual void GetCssTextImpl(nsAString& aCssText) const = 0;
+  
+  
+  Rule* GetParentRule() const;
+  StyleSheet* GetParentStyleSheet() const { return GetStyleSheet(); }
+  nsIDocument* GetParentObject() const { return GetDocument(); }
 
 protected:
   
@@ -134,6 +139,20 @@ protected:
   uint32_t          mColumnNumber;
 };
 
+} 
+} 
+
+
+
+
+
+#include "js/TypeDecls.h"
+
+namespace mozilla {
+namespace dom {
+template <>
+nsresult
+UnwrapArg(JS::Handle<JSObject*> src, css::Rule** ppArg);
 } 
 } 
 
