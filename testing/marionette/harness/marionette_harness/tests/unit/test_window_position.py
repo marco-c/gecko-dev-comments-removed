@@ -8,6 +8,16 @@ from marionette_harness import MarionetteTestCase
 
 
 class TestWindowPosition(MarionetteTestCase):
+
+    def setUp(self):
+        MarionetteTestCase.setUp(self)
+        self.original_position = self.marionette.get_window_position()
+
+    def tearDown(self):
+        x, y = self.original_position["x"], self.original_position["y"]
+        self.marionette.set_window_position(x, y)
+        MarionetteTestCase.tearDown(self)
+
     def test_get_types(self):
         position = self.marionette.get_window_position()
         self.assertIsInstance(position["x"], int)
@@ -16,12 +26,6 @@ class TestWindowPosition(MarionetteTestCase):
     def test_set_types(self):
         for x, y in (["a", "b"], [1.2, 3.4], [True, False], [[], []], [{}, {}]):
             print("testing invalid type position ({},{})".format(x, y))
-            with self.assertRaises(InvalidArgumentException):
-                self.marionette.set_window_position(x, y)
-
-    def test_out_of_bounds_arguments(self):
-        for x, y in [(-1,0), (0,-1), (-1,-1)]:
-            print("testing out of bounds position ({},{})".format(x, y))
             with self.assertRaises(InvalidArgumentException):
                 self.marionette.set_window_position(x, y)
 
@@ -38,3 +42,47 @@ class TestWindowPosition(MarionetteTestCase):
         new_position = self.marionette.get_window_position()
         self.assertEqual(old_position["x"], new_position["x"])
         self.assertEqual(old_position["y"], new_position["y"])
+
+    def test_move_to_negative_coordinates(self):
+        print("Current position: {}".format(
+            self.marionette.get_window_position()))
+        self.marionette.set_window_position(-8, -8)
+        position = self.marionette.get_window_position()
+        print("Position after requesting move to negative coordinates: {}".format(position))
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+
+        os = self.marionette.session_capabilities["platformName"]
+
+        
+        
+        
+        if os == "linux":
+            
+            self.assertLessEqual(position["x"], 0)
+            self.assertLessEqual(position["y"], 0)
+
+        
+        
+        
+        elif os == "darwin":
+            self.assertEqual(-8, position["x"])
+            self.assertEqual(23, position["y"])
+
+        
+        
+        elif os == "windows_nt":
+            self.assertEqual(-8, position["x"])
+            self.assertEqual(-8, position["y"])
