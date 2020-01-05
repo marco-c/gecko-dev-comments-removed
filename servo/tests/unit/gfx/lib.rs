@@ -3,5 +3,8 @@
 
 
 extern crate gfx;
+extern crate ipc_channel;
+extern crate style;
 
+#[cfg(test)] mod font_cache_task;
 #[cfg(test)] mod text_util;
