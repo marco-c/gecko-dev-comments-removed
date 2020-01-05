@@ -1,8 +1,6 @@
 
 
 
-
-
 importScripts("worker_sqlite_shared.js",
   "resource://gre/modules/workers/require.js");
 

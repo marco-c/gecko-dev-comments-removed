@@ -9,8 +9,6 @@
 
 
 
-
-
 "use strict";
 
 importScripts("resource://gre/modules/osfile.jsm");
@@ -175,3 +173,4 @@ var Agent = {
     return File.exists(path);
   },
 };
+

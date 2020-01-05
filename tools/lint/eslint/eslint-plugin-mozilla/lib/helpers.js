@@ -172,10 +172,6 @@ module.exports = {
 
 
 
-
-
-
-
   convertWorkerExpressionToGlobals: function(node, isGlobal, repository, dirname) {
     var getGlobalsForFile = require("./globals").getGlobalsForFile;
 
@@ -200,14 +196,11 @@ module.exports = {
               results = results.concat(additionalGlobals);
             }
           } else if (match[2] in modules) {
-            results = results.concat(modules[match[2]].map(name => {
-              return { name, writable: true };
-            }));
+            results.push(modules[match[2]]);
           }
         }
       }
     }
-
     return results;
   },
 

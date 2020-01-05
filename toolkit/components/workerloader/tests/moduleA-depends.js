@@ -2,8 +2,6 @@
 
 
 
-
-
 var B = require("chrome://mochitests/content/chrome/toolkit/components/workerloader/tests/moduleB-dependency.js");
 
 

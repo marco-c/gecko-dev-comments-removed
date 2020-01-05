@@ -15,8 +15,6 @@
 
 
 
-
-
 "use strict";
 
 if (typeof Components != "undefined") {

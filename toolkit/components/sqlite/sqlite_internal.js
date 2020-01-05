@@ -12,8 +12,6 @@
 
 
 
-
-
 "use strict";
 
 importScripts("resource://gre/modules/workers/require.js");

@@ -2,8 +2,6 @@
 
 
 
-
-
 "use strict";
 
 importScripts("ClusterLib.js", "ColorConversion.js");
