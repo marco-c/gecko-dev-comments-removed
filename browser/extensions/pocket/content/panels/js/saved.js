@@ -2,9 +2,6 @@
 
 
 
-
-
-
 var PKT_SAVED_OVERLAY = function(options) {
     var myself = this;
     this.inited = false;
@@ -174,7 +171,7 @@ var PKT_SAVED_OVERLAY = function(options) {
                 if ($.trim(text).length > 25 || !$.trim(text).length) {
                     if (text.length > 25) {
                         myself.showTagsError(myself.dictJSON.maxtaglength);
-                        this.changestamp = Date.now();
+                        changestamp = Date.now();
                         setTimeout(function() {
                             $(".token-input-input-token input").val(text).focus();
                         }, 10);
@@ -206,7 +203,7 @@ var PKT_SAVED_OVERLAY = function(options) {
                     }
                 }).on("keypress", "input", function(e) {
                     if (e.which == 13) {
-                        if (typeof this.changestamp == "undefined" || (Date.now() - this.changestamp > 250)) {
+                        if (typeof changestamp == "undefined" || (Date.now() - changestamp > 250)) {
                             e.preventDefault();
                             myself.wrapper.find(".pkt_ext_btn").trigger("click");
                         }
@@ -218,13 +215,13 @@ var PKT_SAVED_OVERLAY = function(options) {
             },
             onAdd() {
                 myself.checkValidTagSubmit();
-                this.changestamp = Date.now();
+                changestamp = Date.now();
                 myself.hideInactiveTags();
                 myself.checkPlaceholderStatus();
             },
             onDelete() {
                 myself.checkValidTagSubmit();
-                this.changestamp = Date.now();
+                changestamp = Date.now();
                 myself.showActiveTags();
                 myself.checkPlaceholderStatus();
             },
@@ -536,7 +533,6 @@ PKT_SAVED.prototype = {
 $(function() {
     if (!window.thePKT_SAVED) {
         var thePKT_SAVED = new PKT_SAVED();
-        
         window.thePKT_SAVED = thePKT_SAVED;
         thePKT_SAVED.init();
     }
