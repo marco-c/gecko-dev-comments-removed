@@ -942,6 +942,8 @@ impl ScriptTask {
                 self.handle_webdriver_msg(pipeline_id, msg),
             ConstellationControlMsg::TickAllAnimations(pipeline_id) =>
                 self.handle_tick_all_animations(pipeline_id),
+            ConstellationControlMsg::WebFontLoaded(pipeline_id) =>
+                self.handle_web_font_loaded(pipeline_id),
             ConstellationControlMsg::StylesheetLoadComplete(id, url, responder) => {
                 responder.respond();
                 self.handle_resource_loaded(id, LoadType::Stylesheet(url));
@@ -1476,6 +1478,15 @@ impl ScriptTask {
         let page = get_page(&self.root_page(), id);
         let document = page.document();
         document.r().run_the_animation_frame_callbacks();
+    }
+
+    
+    fn handle_web_font_loaded(&self, pipeline_id: PipelineId) {
+        if let Some(page) = self.page.borrow().as_ref() {
+            if let Some(page) = page.find(pipeline_id) {
+                self.rebuild_and_force_reflow(&*page, ReflowReason::WebFontLoaded);
+            }
+        }
     }
 
     

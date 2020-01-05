@@ -52,6 +52,9 @@ pub enum Msg {
     TickAnimations,
 
     
+    ReflowWithNewlyLoadedWebFont,
+
+    
     
     SetVisibleRects(Vec<(LayerId, Rect<Au>)>),
 
@@ -75,6 +78,10 @@ pub enum Msg {
 
     
     GetCurrentEpoch(IpcSender<Epoch>),
+
+    
+    
+    GetWebFontLoadState(IpcSender<bool>),
 
     
     

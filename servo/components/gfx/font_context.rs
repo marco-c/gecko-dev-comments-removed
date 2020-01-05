@@ -24,6 +24,7 @@ use std::default::Default;
 use std::hash::{Hash, Hasher};
 use std::rc::Rc;
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering, ATOMIC_USIZE_INIT};
 use string_cache::Atom;
 use style::computed_values::{font_style, font_variant};
 use util::cache::HashCache;
@@ -63,6 +64,10 @@ struct PaintFontCacheEntry {
 
 
 
+static FONT_CACHE_EPOCH: AtomicUsize = ATOMIC_USIZE_INIT;
+
+
+
 
 
 pub struct FontContext {
@@ -79,6 +84,8 @@ pub struct FontContext {
 
     layout_font_group_cache:
         HashMap<LayoutFontGroupCacheKey, Rc<FontGroup>, DefaultState<FnvHasher>>,
+
+    epoch: usize,
 }
 
 impl FontContext {
@@ -91,6 +98,7 @@ impl FontContext {
             fallback_font_cache: vec!(),
             paint_font_cache: vec!(),
             layout_font_group_cache: HashMap::with_hash_state(Default::default()),
+            epoch: 0,
         }
     }
 
@@ -127,11 +135,26 @@ impl FontContext {
         })
     }
 
+    fn expire_font_caches_if_necessary(&mut self) {
+        let current_epoch = FONT_CACHE_EPOCH.load(Ordering::SeqCst);
+        if current_epoch == self.epoch {
+            return
+        }
+
+        self.layout_font_cache.clear();
+        self.fallback_font_cache.clear();
+        self.paint_font_cache.clear();
+        self.layout_font_group_cache.clear();
+        self.epoch = current_epoch
+    }
+
     
     
     
     pub fn layout_font_group_for_style(&mut self, style: Arc<SpecifiedFontStyle>)
                                             -> Rc<FontGroup> {
+        self.expire_font_caches_if_necessary();
+
         let address = &*style as *const SpecifiedFontStyle as usize;
         if let Some(ref cached_font_group) = self.layout_font_group_cache.get(&address) {
             return (*cached_font_group).clone()
@@ -142,10 +165,10 @@ impl FontContext {
             size: style.font_size,
             address: address,
         };
-        if let Some(ref cached_font_group) =
-            self.layout_font_group_cache.get(&layout_font_group_cache_key) {
-                return (*cached_font_group).clone()
-            }
+        if let Some(ref cached_font_group) = self.layout_font_group_cache.get(
+                &layout_font_group_cache_key) {
+            return (*cached_font_group).clone()
+        }
 
         
         
@@ -319,3 +342,9 @@ impl borrow::Borrow<usize> for LayoutFontGroupCacheKey {
         &self.address
     }
 }
+
+#[inline]
+pub fn invalidate_font_caches() {
+    FONT_CACHE_EPOCH.fetch_add(1, Ordering::SeqCst);
+}
+

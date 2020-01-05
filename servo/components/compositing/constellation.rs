@@ -1221,6 +1221,15 @@ impl<LTF: LayoutTaskFactory, STF: ScriptTaskFactory> Constellation<LTF, STF> {
 
             
             
+            let (sender, receiver) = ipc::channel().unwrap();
+            let msg = LayoutControlMsg::GetWebFontLoadState(sender);
+            pipeline.layout_chan.0.send(msg).unwrap();
+            if receiver.recv().unwrap() {
+                return false;
+            }
+
+            
+            
             
             match pipeline.rect {
                 Some(rect) => {

@@ -58,6 +58,9 @@ pub enum LayoutControlMsg {
     TickAnimations,
     
     SetVisibleRects(Vec<(LayerId, Rect<Au>)>),
+    
+    
+    GetWebFontLoadState(IpcSender<bool>),
 }
 
 
@@ -133,6 +136,9 @@ pub enum ConstellationControlMsg {
     WebDriverScriptCommand(PipelineId, WebDriverScriptCommand),
     
     TickAllAnimations(PipelineId),
+    
+    
+    WebFontLoaded(PipelineId),
     
     StylesheetLoadComplete(PipelineId, Url, Box<StylesheetLoadResponder + Send>),
     
