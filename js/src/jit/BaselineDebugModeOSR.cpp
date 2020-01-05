@@ -712,6 +712,13 @@ CloneOldBaselineStub(JSContext* cx, DebugModeOSREntryVector& entries, size_t ent
     ICStub* oldStub = entry.oldStub;
     MOZ_ASSERT(oldStub->makesGCCalls());
 
+    
+    
+    if (!entry.recompiled()) {
+        entry.newStub = nullptr;
+        return true;
+    }
+
     if (entry.frameKind == ICEntry::Kind_Invalid) {
         
         
