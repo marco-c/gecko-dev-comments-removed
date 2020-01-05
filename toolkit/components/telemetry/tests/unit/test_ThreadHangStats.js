@@ -85,7 +85,7 @@ function run_test() {
       equal(typeof endHangs.hangs[0].stack[0], "string");
 
       
-      if (mozinfo.os == "win") {
+      if (mozinfo.os == "win" && mozinfo.bits == 32) {
         
         
         ok(endHangs.hangs.some((hang) => (
