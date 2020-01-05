@@ -74,16 +74,7 @@ MediaShutdownManager::EnsureCorrectShutdownObserverState()
       nsresult rv = GetShutdownBarrier()->AddBlocker(
         this, NS_LITERAL_STRING(__FILE__), __LINE__,
         NS_LITERAL_STRING("MediaShutdownManager shutdown"));
-      if (NS_FAILED(rv)) {
-        
-        
-        
-        const size_t CAPACITY = 256;
-        auto buf = new char[CAPACITY];
-        snprintf(buf, CAPACITY, "Failed to add shutdown blocker! rv=%x", rv);
-        MOZ_CRASH_ANNOTATE(buf);
-        MOZ_REALLY_CRASH();
-      }
+      MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv));
     } else {
       GetShutdownBarrier()->RemoveBlocker(this);
       
@@ -98,7 +89,7 @@ void
 MediaShutdownManager::Register(MediaDecoder* aDecoder)
 {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_RELEASE_ASSERT(!mIsDoingXPCOMShutDown);
+  MOZ_DIAGNOSTIC_ASSERT(!mIsDoingXPCOMShutDown);
   
   
   MOZ_ASSERT(!mDecoders.Contains(aDecoder));
