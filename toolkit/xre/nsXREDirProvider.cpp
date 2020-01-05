@@ -746,7 +746,14 @@ GetContentProcessTempBaseDirKey()
 nsresult
 nsXREDirProvider::LoadContentProcessTempDir()
 {
-  mContentTempDir = GetContentProcessSandboxTempDir();
+  
+  if (XRE_IsParentProcess()) {
+    mContentProcessSandboxTempDir = CreateContentProcessSandboxTempDir();
+    mContentTempDir = mContentProcessSandboxTempDir;
+  } else {
+    mContentTempDir = GetContentProcessSandboxTempDir();
+  }
+
   if (mContentTempDir) {
     return NS_OK;
   } else {
@@ -1203,9 +1210,10 @@ nsXREDirProvider::DoStartup()
 
 #if (defined(XP_WIN) || defined(XP_MACOSX)) && defined(MOZ_CONTENT_SANDBOX)
     
-    if (XRE_IsParentProcess()) {
-      mContentProcessSandboxTempDir = CreateContentProcessSandboxTempDir();
-      mContentTempDir = mContentProcessSandboxTempDir;
+    
+    
+    if (!mContentTempDir) {
+      mozilla::Unused << NS_WARN_IF(NS_FAILED(LoadContentProcessTempDir()));
     }
 #endif
   }
