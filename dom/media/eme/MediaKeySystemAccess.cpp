@@ -37,9 +37,7 @@
 #include "mozilla/ClearOnShutdown.h"
 #include "nsUnicharUtils.h"
 #include "mozilla/dom/MediaSource.h"
-#ifdef MOZ_WIDGET_ANDROID
-#include "FennecJNIWrappers.h"
-#endif
+
 namespace mozilla {
 namespace dom {
 
@@ -97,8 +95,7 @@ MediaKeySystemAccess::CreateMediaKeys(ErrorResult& aRv)
   RefPtr<MediaKeys> keys(new MediaKeys(mParent,
                                        mKeySystem,
                                        mCDMVersion,
-                                       mConfig.mDistinctiveIdentifier == MediaKeysRequirement::Required,
-                                       mConfig.mPersistentState == MediaKeysRequirement::Required));
+                                       mConfig));
   return keys->Init(aRv);
 }
 
@@ -299,8 +296,8 @@ MediaKeySystemAccess::GetKeySystemStatus(const nsAString& aKeySystem,
     }
   }
 
-  if (IsWidevineKeySystem(aKeySystem)) {
-    if (Preferences::GetBool("media.gmp-widevinecdm.visible", false)) {
+  if (Preferences::GetBool("media.gmp-widevinecdm.visible", false)) {
+    if (IsWidevineKeySystem(aKeySystem)) {
 #ifdef XP_WIN
       
       if (!IsVistaOrLater()) {
@@ -313,51 +310,41 @@ MediaKeySystemAccess::GetKeySystemStatus(const nsAString& aKeySystem,
         return MediaKeySystemStatus::Cdm_disabled;
       }
       return EnsureMinCDMVersion(mps, aKeySystem, aMinCdmVersion, aOutMessage, aOutCdmVersion);
-#ifdef MOZ_WIDGET_ANDROID
-    } else if (Preferences::GetBool("media.mediadrm-widevinecdm.visible", false)) {
-        nsCString keySystem = NS_ConvertUTF16toUTF8(aKeySystem);
-        bool supported = mozilla::java::MediaDrmProxy::IsSchemeSupported(keySystem);
-        if (!supported) {
-          aOutMessage = NS_LITERAL_CSTRING("Widevine CDM is not available");
-          return MediaKeySystemStatus::Cdm_not_installed;
-        }
-        return MediaKeySystemStatus::Available;
-#endif
     }
   }
 
   return MediaKeySystemStatus::Cdm_not_supported;
 }
 
-typedef nsCString EMECodecString;
+typedef nsCString GMPCodecString;
 
-static NS_NAMED_LITERAL_CSTRING(EME_CODEC_AAC, "aac");
-static NS_NAMED_LITERAL_CSTRING(EME_CODEC_OPUS, "opus");
-static NS_NAMED_LITERAL_CSTRING(EME_CODEC_VORBIS, "vorbis");
-static NS_NAMED_LITERAL_CSTRING(EME_CODEC_H264, "h264");
-static NS_NAMED_LITERAL_CSTRING(EME_CODEC_VP8, "vp8");
-static NS_NAMED_LITERAL_CSTRING(EME_CODEC_VP9, "vp9");
+#define GMP_CODEC_AAC NS_LITERAL_CSTRING("aac")
+#define GMP_CODEC_OPUS NS_LITERAL_CSTRING("opus")
+#define GMP_CODEC_VORBIS NS_LITERAL_CSTRING("vorbis")
+#define GMP_CODEC_H264 NS_LITERAL_CSTRING("h264")
+#define GMP_CODEC_VP8 NS_LITERAL_CSTRING("vp8")
+#define GMP_CODEC_VP9 NS_LITERAL_CSTRING("vp9")
 
-EMECodecString
-ToEMEAPICodecString(const nsString& aCodec)
+GMPCodecString
+ToGMPAPICodecString(const nsString& aCodec)
 {
   if (IsAACCodecString(aCodec)) {
-    return EME_CODEC_AAC;
+    return GMP_CODEC_AAC;
   }
   if (aCodec.EqualsLiteral("opus")) {
-    return EME_CODEC_OPUS;
+    return GMP_CODEC_OPUS;
   }
   if (aCodec.EqualsLiteral("vorbis")) {
-    return EME_CODEC_VORBIS;
+    return GMP_CODEC_VORBIS;
   }
   if (IsH264CodecString(aCodec)) {
-    return EME_CODEC_H264;
+    return GMP_CODEC_H264;
   }
   if (IsVP8CodecString(aCodec)) {
-    return EME_CODEC_VP8;
+    return GMP_CODEC_VP8;
   }
   if (IsVP9CodecString(aCodec)) {
-    return EME_CODEC_VP9;
+    return GMP_CODEC_VP9;
   }
   return EmptyCString();
 }
@@ -373,18 +360,18 @@ struct KeySystemContainerSupport
 
   
   
-  bool DecryptsAndDecodes(EMECodecString aCodec) const
+  bool DecryptsAndDecodes(GMPCodecString aCodec) const
   {
     return mCodecsDecoded.Contains(aCodec);
   }
 
   
-  bool Decrypts(EMECodecString aCodec) const
+  bool Decrypts(GMPCodecString aCodec) const
   {
     return mCodecsDecrypted.Contains(aCodec);
   }
 
-  void SetCanDecryptAndDecode(EMECodecString aCodec)
+  void SetCanDecryptAndDecode(GMPCodecString aCodec)
   {
     
     MOZ_ASSERT(!Decrypts(aCodec));
@@ -393,7 +380,7 @@ struct KeySystemContainerSupport
     mCodecsDecoded.AppendElement(aCodec);
   }
 
-  void SetCanDecrypt(EMECodecString aCodec)
+  void SetCanDecrypt(GMPCodecString aCodec)
   {
     
     MOZ_ASSERT(!Decrypts(aCodec));
@@ -403,8 +390,8 @@ struct KeySystemContainerSupport
   }
 
 private:
-  nsTArray<EMECodecString> mCodecsDecoded;
-  nsTArray<EMECodecString> mCodecsDecrypted;
+  nsTArray<GMPCodecString> mCodecsDecoded;
+  nsTArray<GMPCodecString> mCodecsDecrypted;
 };
 
 enum class KeySystemFeatureSupport
@@ -427,33 +414,16 @@ struct KeySystemConfig
   KeySystemContainerSupport mWebM;
 };
 
-bool
-HavePluginForKeySystem(const nsCString& aKeySystem)
-{
-  bool havePlugin = false;
-  nsCOMPtr<mozIGeckoMediaPluginService> mps =
-    do_GetService("@mozilla.org/gecko-media-plugin-service;1");
-  if (mps) {
-    havePlugin = HaveGMPFor(mps,
-                            aKeySystem,
-                            NS_LITERAL_CSTRING(GMP_API_DECRYPTOR));
-  }
-#ifdef MOZ_WIDGET_ANDROID
-  
-  if (!havePlugin) {
-     havePlugin = mozilla::java::MediaDrmProxy::IsSchemeSupported(aKeySystem);
-  }
-#endif
-  return havePlugin;
-}
+StaticAutoPtr<nsTArray<KeySystemConfig>> sKeySystemConfigs;
 
-static nsTArray<KeySystemConfig>
+static const nsTArray<KeySystemConfig>&
 GetSupportedKeySystems()
 {
-  nsTArray<KeySystemConfig> keySystemConfigs;
+  if (!sKeySystemConfigs) {
+    sKeySystemConfigs = new nsTArray<KeySystemConfig>();
+    ClearOnShutdown(&sKeySystemConfigs);
 
-  {
-    if (HavePluginForKeySystem(kEMEKeySystemClearkey)) {
+    {
       KeySystemConfig clearkey;
       clearkey.mKeySystem = NS_ConvertUTF8toUTF16(kEMEKeySystemClearkey);
       clearkey.mInitDataTypes.AppendElement(NS_LITERAL_STRING("cenc"));
@@ -466,28 +436,26 @@ GetSupportedKeySystems()
 #if defined(XP_WIN)
       
       if (WMFDecoderModule::HasAAC()) {
-        clearkey.mMP4.SetCanDecryptAndDecode(EME_CODEC_AAC);
+        clearkey.mMP4.SetCanDecryptAndDecode(GMP_CODEC_AAC);
       } else {
-        clearkey.mMP4.SetCanDecrypt(EME_CODEC_AAC);
+        clearkey.mMP4.SetCanDecrypt(GMP_CODEC_AAC);
       }
       if (WMFDecoderModule::HasH264()) {
-        clearkey.mMP4.SetCanDecryptAndDecode(EME_CODEC_H264);
+        clearkey.mMP4.SetCanDecryptAndDecode(GMP_CODEC_H264);
       } else {
-        clearkey.mMP4.SetCanDecrypt(EME_CODEC_H264);
+        clearkey.mMP4.SetCanDecrypt(GMP_CODEC_H264);
       }
 #else
-      clearkey.mMP4.SetCanDecrypt(EME_CODEC_AAC);
-      clearkey.mMP4.SetCanDecrypt(EME_CODEC_H264);
+      clearkey.mMP4.SetCanDecrypt(GMP_CODEC_AAC);
+      clearkey.mMP4.SetCanDecrypt(GMP_CODEC_H264);
 #endif
-      clearkey.mWebM.SetCanDecrypt(EME_CODEC_VORBIS);
-      clearkey.mWebM.SetCanDecrypt(EME_CODEC_OPUS);
-      clearkey.mWebM.SetCanDecrypt(EME_CODEC_VP8);
-      clearkey.mWebM.SetCanDecrypt(EME_CODEC_VP9);
-      keySystemConfigs.AppendElement(Move(clearkey));
+      clearkey.mWebM.SetCanDecrypt(GMP_CODEC_VORBIS);
+      clearkey.mWebM.SetCanDecrypt(GMP_CODEC_OPUS);
+      clearkey.mWebM.SetCanDecrypt(GMP_CODEC_VP8);
+      clearkey.mWebM.SetCanDecrypt(GMP_CODEC_VP9);
+      sKeySystemConfigs->AppendElement(Move(clearkey));
     }
-  }
-  {
-    if (HavePluginForKeySystem(kEMEKeySystemWidevine)) {
+    {
       KeySystemConfig widevine;
       widevine.mKeySystem = NS_ConvertUTF8toUTF16(kEMEKeySystemWidevine);
       widevine.mInitDataTypes.AppendElement(NS_LITERAL_STRING("cenc"));
@@ -496,9 +464,6 @@ GetSupportedKeySystems()
       widevine.mPersistentState = KeySystemFeatureSupport::Requestable;
       widevine.mDistinctiveIdentifier = KeySystemFeatureSupport::Prohibited;
       widevine.mSessionTypes.AppendElement(MediaKeySessionType::Temporary);
-#ifdef MOZ_WIDGET_ANDROID
-      widevine.mSessionTypes.AppendElement(MediaKeySessionType::Persistent_license);
-#endif
       widevine.mAudioRobustness.AppendElement(NS_LITERAL_STRING("SW_SECURE_CRYPTO"));
       widevine.mVideoRobustness.AppendElement(NS_LITERAL_STRING("SW_SECURE_DECODE"));
 #if defined(XP_WIN)
@@ -508,82 +473,42 @@ GetSupportedKeySystems()
       
       
       if (WMFDecoderModule::HasAAC()) {
-        widevine.mMP4.SetCanDecrypt(EME_CODEC_AAC);
-      }
-#elif !defined(MOZ_WIDGET_ANDROID)
-      widevine.mMP4.SetCanDecrypt(EME_CODEC_AAC);
-#endif
-
-#if defined(MOZ_WIDGET_ANDROID)
-      using namespace mozilla::java;
-      
-      
-      
-      
-      typedef struct {
-        const nsCString& mMimeType;
-        const nsCString& mEMECodecType;
-        const char16_t* mCodecType;
-        KeySystemContainerSupport* mSupportType;
-      } DataForValidation;
-
-      DataForValidation validationList[] = {
-        { nsCString("video/mp4"), EME_CODEC_H264, MediaDrmProxy::AVC, &widevine.mMP4 },
-        { nsCString("audio/mp4"), EME_CODEC_AAC, MediaDrmProxy::AAC, &widevine.mMP4 },
-        { nsCString("video/webm"), EME_CODEC_VP8, MediaDrmProxy::VP8, &widevine.mWebM },
-        { nsCString("video/webm"), EME_CODEC_VP9, MediaDrmProxy::VP9, &widevine.mWebM},
-        { nsCString("audio/webm"), EME_CODEC_VORBIS, MediaDrmProxy::VORBIS, &widevine.mWebM},
-        { nsCString("audio/webm"), EME_CODEC_OPUS, MediaDrmProxy::OPUS, &widevine.mWebM},
-      };
-
-      for (const auto& data: validationList) {
-        if (MediaDrmProxy::IsCryptoSchemeSupported(kEMEKeySystemWidevine,
-                                                   data.mMimeType)) {
-          if (MediaDrmProxy::CanDecode(data.mCodecType)) {
-            data.mSupportType->SetCanDecryptAndDecode(data.mEMECodecType);
-          } else {
-            data.mSupportType->SetCanDecrypt(data.mEMECodecType);
-          }
-        }
+        widevine.mMP4.SetCanDecrypt(GMP_CODEC_AAC);
       }
 #else
-      widevine.mMP4.SetCanDecryptAndDecode(EME_CODEC_H264);
-      widevine.mWebM.SetCanDecrypt(EME_CODEC_VORBIS);
-      widevine.mWebM.SetCanDecrypt(EME_CODEC_OPUS);
-      widevine.mWebM.SetCanDecryptAndDecode(EME_CODEC_VP8);
-      widevine.mWebM.SetCanDecryptAndDecode(EME_CODEC_VP9);
+      widevine.mMP4.SetCanDecrypt(GMP_CODEC_AAC);
 #endif
-      keySystemConfigs.AppendElement(Move(widevine));
+      widevine.mMP4.SetCanDecryptAndDecode(GMP_CODEC_H264);
+      widevine.mWebM.SetCanDecrypt(GMP_CODEC_VORBIS);
+      widevine.mWebM.SetCanDecrypt(GMP_CODEC_OPUS);
+      widevine.mWebM.SetCanDecryptAndDecode(GMP_CODEC_VP8);
+      widevine.mWebM.SetCanDecryptAndDecode(GMP_CODEC_VP9);
+      sKeySystemConfigs->AppendElement(Move(widevine));
     }
-  }
-  {
-    if (HavePluginForKeySystem(kEMEKeySystemPrimetime)) {
+    {
       KeySystemConfig primetime;
       primetime.mKeySystem = NS_ConvertUTF8toUTF16(kEMEKeySystemPrimetime);
       primetime.mInitDataTypes.AppendElement(NS_LITERAL_STRING("cenc"));
       primetime.mPersistentState = KeySystemFeatureSupport::Required;
       primetime.mDistinctiveIdentifier = KeySystemFeatureSupport::Required;
       primetime.mSessionTypes.AppendElement(MediaKeySessionType::Temporary);
-      primetime.mMP4.SetCanDecryptAndDecode(EME_CODEC_AAC);
-      primetime.mMP4.SetCanDecryptAndDecode(EME_CODEC_H264);
-      keySystemConfigs.AppendElement(Move(primetime));
+      primetime.mMP4.SetCanDecryptAndDecode(GMP_CODEC_AAC);
+      primetime.mMP4.SetCanDecryptAndDecode(GMP_CODEC_H264);
+      sKeySystemConfigs->AppendElement(Move(primetime));
     }
   }
-
-  return keySystemConfigs;
+  return *sKeySystemConfigs;
 }
 
-static bool
-GetKeySystemConfig(const nsAString& aKeySystem, KeySystemConfig& aOutKeySystemConfig)
+static const KeySystemConfig*
+GetKeySystemConfig(const nsAString& aKeySystem)
 {
-  for (auto&& config : GetSupportedKeySystems()) {
+  for (const KeySystemConfig& config : GetSupportedKeySystems()) {
     if (config.mKeySystem.Equals(aKeySystem)) {
-      aOutKeySystemConfig = mozilla::Move(config);
-      return true;
+      return &config;
     }
   }
-  
-  return false;
+  return nullptr;
 }
 
 
@@ -591,9 +516,9 @@ bool
 MediaKeySystemAccess::KeySystemSupportsInitDataType(const nsAString& aKeySystem,
                                                     const nsAString& aInitDataType)
 {
-  KeySystemConfig implementation;
-  return GetKeySystemConfig(aKeySystem, implementation) &&
-         implementation.mInitDataTypes.Contains(aInitDataType);
+  const KeySystemConfig* implementation = GetKeySystemConfig(aKeySystem);
+  return implementation &&
+         implementation->mInitDataTypes.Contains(aInitDataType);
 }
 
 enum CodecType
@@ -604,18 +529,28 @@ enum CodecType
 };
 
 static bool
-CanDecryptAndDecode(const nsString& aKeySystem,
+CanDecryptAndDecode(mozIGeckoMediaPluginService* aGMPService,
+                    const nsString& aKeySystem,
                     const nsString& aContentType,
                     CodecType aCodecType,
                     const KeySystemContainerSupport& aContainerSupport,
-                    const nsTArray<EMECodecString>& aCodecs,
+                    const nsTArray<GMPCodecString>& aCodecs,
                     DecoderDoctorDiagnostics* aDiagnostics)
 {
   MOZ_ASSERT(aCodecType != Invalid);
-  for (const EMECodecString& codec : aCodecs) {
+  MOZ_ASSERT(HaveGMPFor(aGMPService,
+                        NS_ConvertUTF16toUTF8(aKeySystem),
+                        NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)));
+  for (const GMPCodecString& codec : aCodecs) {
     MOZ_ASSERT(!codec.IsEmpty());
 
-    if (aContainerSupport.DecryptsAndDecodes(codec)) {
+    nsCString api = (aCodecType == Audio) ? NS_LITERAL_CSTRING(GMP_API_AUDIO_DECODER)
+                                          : NS_LITERAL_CSTRING(GMP_API_VIDEO_DECODER);
+    if (aContainerSupport.DecryptsAndDecodes(codec) &&
+        HaveGMPFor(aGMPService,
+                   NS_ConvertUTF16toUTF8(aKeySystem),
+                   api,
+                   codec)) {
       
       continue;
     }
@@ -636,7 +571,7 @@ CanDecryptAndDecode(const nsString& aKeySystem,
     
     
     
-    if (codec == EME_CODEC_AAC &&
+    if (codec == GMP_CODEC_AAC &&
         IsWidevineKeySystem(aKeySystem) &&
         !WMFDecoderModule::HasAAC()) {
       if (aDiagnostics) {
@@ -689,25 +624,25 @@ GetMajorType(const nsAString& aContentType)
 }
 
 static CodecType
-GetCodecType(const EMECodecString& aCodec)
+GetCodecType(const GMPCodecString& aCodec)
 {
-  if (aCodec.Equals(EME_CODEC_AAC) ||
-      aCodec.Equals(EME_CODEC_OPUS) ||
-      aCodec.Equals(EME_CODEC_VORBIS)) {
+  if (aCodec.Equals(GMP_CODEC_AAC) ||
+      aCodec.Equals(GMP_CODEC_OPUS) ||
+      aCodec.Equals(GMP_CODEC_VORBIS)) {
     return Audio;
   }
-  if (aCodec.Equals(EME_CODEC_H264) ||
-      aCodec.Equals(EME_CODEC_VP8) ||
-      aCodec.Equals(EME_CODEC_VP9)) {
+  if (aCodec.Equals(GMP_CODEC_H264) ||
+      aCodec.Equals(GMP_CODEC_VP8) ||
+      aCodec.Equals(GMP_CODEC_VP9)) {
     return Video;
   }
   return Invalid;
 }
 
 static bool
-AllCodecsOfType(const nsTArray<EMECodecString>& aCodecs, const CodecType aCodecType)
+AllCodecsOfType(const nsTArray<GMPCodecString>& aCodecs, const CodecType aCodecType)
 {
-  for (const EMECodecString& codec : aCodecs) {
+  for (const GMPCodecString& codec : aCodecs) {
     if (GetCodecType(codec) != aCodecType) {
       return false;
     }
@@ -749,6 +684,7 @@ IsParameterUnrecognized(const nsAString& aContentType)
 
 static Sequence<MediaKeySystemMediaCapability>
 GetSupportedCapabilities(const CodecType aCodecType,
+                         mozIGeckoMediaPluginService* aGMPService,
                          const nsTArray<MediaKeySystemMediaCapability>& aRequestedCapabilities,
                          const MediaKeySystemConfiguration& aPartialConfig,
                          const KeySystemConfig& aKeySystem,
@@ -793,10 +729,10 @@ GetSupportedCapabilities(const CodecType aCodecType,
       continue;
     }
     bool invalid = false;
-    nsTArray<EMECodecString> codecs;
+    nsTArray<GMPCodecString> codecs;
     for (const nsString& codecString : codecStrings) {
-      EMECodecString emeCodec = ToEMEAPICodecString(codecString);
-      if (emeCodec.IsEmpty()) {
+      GMPCodecString gmpCodec = ToGMPAPICodecString(codecString);
+      if (gmpCodec.IsEmpty()) {
         invalid = true;
         EME_LOG("MediaKeySystemConfiguration (label='%s') "
                 "MediaKeySystemMediaCapability('%s','%s') unsupported; "
@@ -807,7 +743,7 @@ GetSupportedCapabilities(const CodecType aCodecType,
                 NS_ConvertUTF16toUTF8(codecString).get());
         break;
       }
-      codecs.AppendElement(emeCodec);
+      codecs.AppendElement(gmpCodec);
     }
     if (invalid) {
       continue;
@@ -868,15 +804,15 @@ GetSupportedCapabilities(const CodecType aCodecType,
       
       if (isMP4) {
         if (aCodecType == Audio) {
-          codecs.AppendElement(EME_CODEC_AAC);
+          codecs.AppendElement(GMP_CODEC_AAC);
         } else if (aCodecType == Video) {
-          codecs.AppendElement(EME_CODEC_H264);
+          codecs.AppendElement(GMP_CODEC_H264);
         }
       } else if (isWebM) {
         if (aCodecType == Audio) {
-          codecs.AppendElement(EME_CODEC_VORBIS);
+          codecs.AppendElement(GMP_CODEC_VORBIS);
         } else if (aCodecType == Video) {
-          codecs.AppendElement(EME_CODEC_VP8);
+          codecs.AppendElement(GMP_CODEC_VP8);
         }
       }
       
@@ -934,7 +870,8 @@ GetSupportedCapabilities(const CodecType aCodecType,
     
     
     const auto& containerSupport = isMP4 ? aKeySystem.mMP4 : aKeySystem.mWebM;
-    if (!CanDecryptAndDecode(aKeySystem.mKeySystem,
+    if (!CanDecryptAndDecode(aGMPService,
+                             aKeySystem.mKeySystem,
                              contentType,
                              majorType,
                              containerSupport,
@@ -1036,7 +973,8 @@ UnboxSessionTypes(const Optional<Sequence<nsString>>& aSessionTypes)
 
 
 static bool
-GetSupportedConfig(const KeySystemConfig& aKeySystem,
+GetSupportedConfig(mozIGeckoMediaPluginService* aGMPService,
+                   const KeySystemConfig& aKeySystem,
                    const MediaKeySystemConfiguration& aCandidate,
                    MediaKeySystemConfiguration& aOutConfig,
                    DecoderDoctorDiagnostics* aDiagnostics)
@@ -1155,6 +1093,7 @@ GetSupportedConfig(const KeySystemConfig& aKeySystem,
     
     Sequence<MediaKeySystemMediaCapability> caps =
       GetSupportedCapabilities(Video,
+                               aGMPService,
                                aCandidate.mVideoCapabilities,
                                config,
                                aKeySystem,
@@ -1180,6 +1119,7 @@ GetSupportedConfig(const KeySystemConfig& aKeySystem,
     
     Sequence<MediaKeySystemMediaCapability> caps =
       GetSupportedCapabilities(Audio,
+                               aGMPService,
                                aCandidate.mAudioCapabilities,
                                config,
                                aKeySystem,
@@ -1262,12 +1202,21 @@ MediaKeySystemAccess::GetSupportedConfig(const nsAString& aKeySystem,
                                          MediaKeySystemConfiguration& aOutConfig,
                                          DecoderDoctorDiagnostics* aDiagnostics)
 {
-  KeySystemConfig implementation;
-  if (!GetKeySystemConfig(aKeySystem, implementation)) {
+  nsCOMPtr<mozIGeckoMediaPluginService> mps =
+    do_GetService("@mozilla.org/gecko-media-plugin-service;1");
+  if (NS_WARN_IF(!mps)) {
+    return false;
+  }
+  const KeySystemConfig* implementation = nullptr;
+  if (!HaveGMPFor(mps,
+                  NS_ConvertUTF16toUTF8(aKeySystem),
+                  NS_LITERAL_CSTRING(GMP_API_DECRYPTOR)) ||
+      !(implementation = GetKeySystemConfig(aKeySystem))) {
     return false;
   }
   for (const MediaKeySystemConfiguration& candidate : aConfigs) {
-    if (mozilla::dom::GetSupportedConfig(implementation,
+    if (mozilla::dom::GetSupportedConfig(mps,
+                                         *implementation,
                                          candidate,
                                          aOutConfig,
                                          aDiagnostics)) {
