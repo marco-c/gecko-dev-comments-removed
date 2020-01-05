@@ -200,7 +200,7 @@ nsStyleFont::ZoomText(const nsPresContext* aPresContext, nscoord aSize)
 {
   
   
-  return NSToCoordTruncClamped(float(aSize) * aPresContext->TextZoom());
+  return NSToCoordTruncClamped(float(aSize) * aPresContext->EffectiveTextZoom());
 }
 
  nscoord
@@ -208,7 +208,7 @@ nsStyleFont::UnZoomText(nsPresContext *aPresContext, nscoord aSize)
 {
   
   
-  return NSToCoordTruncClamped(float(aSize) / aPresContext->TextZoom());
+  return NSToCoordTruncClamped(float(aSize) / aPresContext->EffectiveTextZoom());
 }
 
  already_AddRefed<nsIAtom>

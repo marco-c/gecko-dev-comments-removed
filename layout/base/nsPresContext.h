@@ -535,6 +535,30 @@ public:
   nsIAtom* GetLanguageFromCharset() const { return mLanguage; }
   already_AddRefed<nsIAtom> GetContentLanguage() const;
 
+  
+
+
+
+  float GetSystemFontScale() const { return mSystemFontScale; }
+  void SetSystemFontScale(float aFontScale) {
+    MOZ_ASSERT(aFontScale > 0.0f, "invalid font scale");
+    if (aFontScale == mSystemFontScale || IsPrintingOrPrintPreview()) {
+      return;
+    }
+
+    mSystemFontScale = aFontScale;
+    UpdateEffectiveTextZoom();
+  }
+
+  
+
+
+
+
+
+
+
+
   float TextZoom() const { return mTextZoom; }
   void SetTextZoom(float aZoom) {
     MOZ_ASSERT(aZoom > 0.0f, "invalid zoom factor");
@@ -542,13 +566,22 @@ public:
       return;
 
     mTextZoom = aZoom;
-    if (HasCachedStyleData()) {
-      
-      
-      MediaFeatureValuesChanged(eRestyle_ForceDescendants,
-                                NS_STYLE_HINT_REFLOW);
-    }
+    UpdateEffectiveTextZoom();
   }
+
+protected:
+  void UpdateEffectiveTextZoom();
+
+public:
+  
+
+
+
+
+
+
+
+  float EffectiveTextZoom() const { return mEffectiveTextZoom; }
 
   
 
@@ -931,6 +964,7 @@ public:
   bool IsScreen() { return (mMedium == nsGkAtoms::screen ||
                               mType == eContext_PageLayout ||
                               mType == eContext_PrintPreview); }
+  bool IsPrintingOrPrintPreview() { return (mType == eContext_Print || mType == eContext_PrintPreview); }
 
   
   bool IsChrome() const { return mIsChrome; }
@@ -1300,7 +1334,9 @@ protected:
 
   
   int32_t               mBaseMinFontSize;
+  float                 mSystemFontScale; 
   float                 mTextZoom;      
+  float                 mEffectiveTextZoom; 
   float                 mFullZoom;      
   float                 mOverrideDPPX;   
   gfxSize               mLastFontInflationScreenSize;

@@ -1708,6 +1708,17 @@ protected:
 
   void RecomputeFontSizeInflationEnabled();
 
+  
+
+
+  bool DetermineFontSizeInflationState();
+
+  
+
+
+
+  void HandleSystemFontScale();
+
   void RecordAlloc(void* aPtr) {
 #ifdef DEBUG
     MOZ_ASSERT(!mAllocatedPointers.Contains(aPtr));
@@ -1915,10 +1926,11 @@ protected:
   bool mFontSizeInflationForceEnabled;
   bool mFontSizeInflationDisabledInMasterProcess;
   bool mFontSizeInflationEnabled;
-  bool mPaintingIsFrozen;
 
   
   bool mFontSizeInflationEnabledIsDirty;
+
+  bool mPaintingIsFrozen;
 
   
   

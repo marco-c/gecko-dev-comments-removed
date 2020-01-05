@@ -210,7 +210,9 @@ nsPresContext::nsPresContext(nsIDocument* aDocument, nsPresContextType aType)
     mLinkHandler(nullptr),
     mInflationDisabledForShrinkWrap(false),
     mBaseMinFontSize(0),
+    mSystemFontScale(1.0),
     mTextZoom(1.0),
+    mEffectiveTextZoom(1.0),
     mFullZoom(1.0),
     mOverrideDPPX(0.0),
     mLastFontInflationScreenSize(gfxSize(-1.0, -1.0)),
@@ -1316,6 +1318,29 @@ nsPresContext::GetContentLanguage() const
     
   }
   return nullptr;
+}
+
+void
+nsPresContext::UpdateEffectiveTextZoom()
+{
+  float newZoom = mSystemFontScale * mTextZoom;
+  float minZoom = nsLayoutUtils::MinZoom();
+  float maxZoom = nsLayoutUtils::MaxZoom();
+
+  if (newZoom < minZoom) {
+    newZoom = minZoom;
+  } else if (newZoom > maxZoom) {
+    newZoom = maxZoom;
+  }
+
+  mEffectiveTextZoom = newZoom;
+
+  if (HasCachedStyleData()) {
+    
+    
+    MediaFeatureValuesChanged(eRestyle_ForceDescendants,
+                              NS_STYLE_HINT_REFLOW);
+  }
 }
 
 void
