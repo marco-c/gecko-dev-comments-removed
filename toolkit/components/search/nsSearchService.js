@@ -3635,22 +3635,24 @@ SearchService.prototype = {
       return;
     }
 
-    let jarNames = new Set();
-    for (let region in searchSettings) {
-      
-      
-      if (!("visibleDefaultEngines" in searchSettings[region])) {
-        continue;
-      }
-      for (let engine of searchSettings[region]["visibleDefaultEngines"]) {
-        jarNames.add(engine);
-      }
-    }
-
+    
+    
     
     let engineNames;
     let visibleDefaultEngines = this.getVerifiedGlobalAttr("visibleDefaultEngines");
     if (visibleDefaultEngines) {
+      let jarNames = new Set();
+      for (let region in searchSettings) {
+        
+        
+        if (!("visibleDefaultEngines" in searchSettings[region])) {
+          continue;
+        }
+        for (let engine of searchSettings[region]["visibleDefaultEngines"]) {
+          jarNames.add(engine);
+        }
+      }
+
       engineNames = visibleDefaultEngines.split(",");
       for (let engineName of engineNames) {
         
