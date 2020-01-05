@@ -152,7 +152,7 @@ pub struct LoadData {
     
     pub preserved_headers: Headers,
     pub data: Option<Vec<u8>>,
-    pub cors: Option<ResourceCORSData>,
+    pub cors: Option<ResourceCorsData>,
     pub pipeline_id: Option<PipelineId>,
     
     pub credentials_flag: bool,
@@ -472,7 +472,7 @@ pub struct LoadResponse {
 }
 
 #[derive(Clone, Deserialize, Serialize, HeapSizeOf)]
-pub struct ResourceCORSData {
+pub struct ResourceCorsData {
     /// CORS Preflight flag
     pub preflight: bool,
     /// Origin of CORS Request
