@@ -1985,6 +1985,9 @@ static void PlatformStart();
 static void PlatformStop();
 
 
+class Sampler {};
+
+
 void
 profiler_start(int aProfileEntries, double aInterval,
                const char** aFeatures, uint32_t aFeatureCount,
@@ -2031,6 +2034,27 @@ profiler_start(int aProfileEntries, double aInterval,
   gInterval = aInterval ? aInterval : PROFILE_DEFAULT_INTERVAL;
   gBuffer = new ProfileBuffer(gEntrySize);
   gSampler = new Sampler();
+
+  bool ignore;
+  sStartTime = mozilla::TimeStamp::ProcessCreation(ignore);
+
+  {
+    StaticMutexAutoLock lock(sRegisteredThreadsMutex);
+
+    
+    for (uint32_t i = 0; i < sRegisteredThreads->size(); i++) {
+      ThreadInfo* info = sRegisteredThreads->at(i);
+
+      MaybeSetProfile(info);
+    }
+  }
+
+#ifdef MOZ_TASK_TRACER
+  if (mTaskTracer) {
+    mozilla::tasktracer::StartLogging();
+  }
+#endif
+
   gGatherer = new mozilla::ProfileGatherer(gSampler);
 
   bool mainThreadIO = hasFeature(aFeatures, aFeatureCount, "mainthreadio");
@@ -2164,6 +2188,33 @@ profiler_stop()
   gProfileRestyle   = false;
   gProfileThreads   = false;
   gUseStackWalk     = false;
+
+  if (gIsActive)
+    PlatformStop();
+
+  
+  {
+    StaticMutexAutoLock lock(sRegisteredThreadsMutex);
+
+    for (uint32_t i = 0; i < sRegisteredThreads->size(); i++) {
+      ThreadInfo* info = sRegisteredThreads->at(i);
+      
+      
+      if (info->IsPendingDelete()) {
+        
+        MOZ_ASSERT(!info->Stack());
+        delete info;
+        sRegisteredThreads->erase(sRegisteredThreads->begin() + i);
+        i--;
+      }
+    }
+  }
+
+#ifdef MOZ_TASK_TRACER
+  if (mTaskTracer) {
+    mozilla::tasktracer::StopLogging();
+  }
+#endif
 
   delete gSampler;
   gSampler = nullptr;
@@ -2625,10 +2676,38 @@ profiler_add_marker(const char *aMarker, ProfilerMarkerPayload *aPayload)
 
 
 
+void PseudoStack::flushSamplerOnJSShutdown()
+{
+  MOZ_ASSERT(mContext);
 
+  if (!gIsActive) {
+    return;
+  }
 
+  gIsPaused = true;
 
-#include "Sampler.cpp"
+  {
+    StaticMutexAutoLock lock(sRegisteredThreadsMutex);
+
+    for (size_t i = 0; i < sRegisteredThreads->size(); i++) {
+      
+      ThreadInfo* info = sRegisteredThreads->at(i);
+      if (!info->hasProfile() || info->IsPendingDelete()) {
+        continue;
+      }
+
+      
+      if (info->Stack()->mContext != mContext) {
+        continue;
+      }
+
+      MutexAutoLock lock(info->GetMutex());
+      info->FlushSamplesAndMarkers();
+    }
+  }
+
+  gIsPaused = false;
+}
 
 
 

@@ -185,25 +185,7 @@ bool is_native_unwinding_avail();
 
 
 
-
-
-
-
-class ThreadInfo;
-
-struct JSContext;
-class JSObject;
 class PlatformData;
-class ProfileBuffer;
-struct PseudoStack;
-class SpliceableJSONWriter;
-class SyncProfile;
-
-namespace mozilla {
-namespace dom {
-class Promise;
-}
-}
 
 
 
@@ -216,12 +198,5 @@ typedef mozilla::UniquePtr<PlatformData, PlatformDataDestructor>
 UniquePlatformData AllocPlatformData(int aThreadId);
 
 mozilla::UniquePtr<char[]> ToJSON(double aSinceTime);
-
-class Sampler {
-public:
-  
-  Sampler();
-  ~Sampler();
-};
 
 #endif 
