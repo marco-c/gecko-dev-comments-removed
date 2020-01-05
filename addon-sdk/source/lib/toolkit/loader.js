@@ -53,8 +53,10 @@ defineLazyGetter(this, "XulApp", () => {
 const bind = Function.call.bind(Function.bind);
 const getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const prototypeOf = Object.getPrototypeOf;
-const getOwnIdentifiers = x => [...Object.getOwnPropertyNames(x),
-                                ...Object.getOwnPropertySymbols(x)];
+function* getOwnIdentifiers(x) {
+  yield* Object.getOwnPropertyNames(x);
+  yield* Object.getOwnPropertySymbols(x);
+}
 
 const NODE_MODULES = new Set([
   "assert",
@@ -125,9 +127,8 @@ function freeze(object) {
 
 const descriptor = iced(function descriptor(object) {
   let value = {};
-  getOwnIdentifiers(object).forEach(function(name) {
+  for (let name of getOwnIdentifiers(object))
     value[name] = getOwnPropertyDescriptor(object, name)
-  });
   return value;
 });
 Loader.descriptor = descriptor;
@@ -160,11 +161,11 @@ function iced(f) {
 
 
 const override = iced(function override(target, source) {
-  let properties = descriptor(target)
-  let extension = descriptor(source || {})
-  getOwnIdentifiers(extension).forEach(function(name) {
-    properties[name] = extension[name];
-  });
+  let properties = descriptor(target);
+
+  for (let name of getOwnIdentifiers(source || {}))
+    properties[name] = getOwnPropertyDescriptor(source, name);
+
   return Object.defineProperties({}, properties);
 });
 Loader.override = override;
@@ -569,7 +570,7 @@ const load = iced(function load(loader, module) {
   
   
   if (module.exports === originalExports)
-    freeze(module.exports);
+    Object.freeze(module.exports);
 
   return module;
 });
@@ -585,26 +586,18 @@ function normalizeExt(uri) {
 
 
 
-function stripBase(rootURI, string) {
-  return string.replace(rootURI, './');
-}
-
-
-
 
 const resolve = iced(function resolve(id, base) {
   if (!isRelative(id))
     return id;
 
   let baseDir = dirname(base);
-  if (!baseDir)
-    return normalize(id);
 
   let resolved = join(baseDir, id);
 
   
   
-  if (isRelative(base))
+  if (base.startsWith('./'))
     resolved = './' + resolved;
 
   return resolved;
@@ -650,7 +643,7 @@ function resolveRelative(rootURI, modulesDir, id) {
   let resolvedPath = (resolveAsFile(fullId) ||
                       resolveAsDirectory(fullId));
   if (resolvedPath) {
-    return stripBase(rootURI, resolvedPath);
+    return './' + resolvedPath.slice(rootURI.length);
   }
 
   return null;
@@ -901,7 +894,7 @@ const Require = iced(function Require(loader, requirer) {
       
       module = modules[uri] = Module(requirement, uri);
       try {
-        freeze(load(loader, module));
+        Object.freeze(load(loader, module));
       }
       catch (e) {
         
@@ -928,12 +921,6 @@ const Require = iced(function Require(loader, requirer) {
     
     
     if (isNative) {
-      
-      
-      
-      if (requireMap && requireMap[requirer.id])
-        requirement = requireMap[requirer.id][id];
-
       let { overrides } = manifest.jetpack;
       for (let key in overrides) {
         
@@ -956,8 +943,6 @@ const Require = iced(function Require(loader, requirer) {
       if (!requirement && modules[id])
         uri = requirement = id;
 
-      
-      
       if (!requirement && !NODE_MODULES.has(id)) {
         
         
@@ -1225,7 +1210,6 @@ function Loader(options) {
   if (isNative) {
     returnObj.isNative = { enumerable: false, value: true };
     returnObj.manifest = { enumerable: false, value: manifest };
-    returnObj.requireMap = { enumerable: false, value: requireMap };
     returnObj.rootURI = { enumerable: false, value: addTrailingSlash(rootURI) };
   }
 
@@ -1238,9 +1222,7 @@ var isSystemURI = uri => /^resource:\/\/(gre|devtools|testing-common)\//.test(ur
 var isJSONURI = uri => uri.endsWith('.json');
 var isJSMURI = uri => uri.endsWith('.jsm');
 var isJSURI = uri => uri.endsWith('.js');
-var isAbsoluteURI = uri => uri.startsWith("resource://") ||
-                           uri.startsWith("chrome://") ||
-                           uri.startsWith("file://");
+var isAbsoluteURI = uri => /^(resource|chrome|file|jar):/.test(uri);
 var isRelative = id => id.startsWith(".");
 
 
