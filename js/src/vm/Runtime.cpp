@@ -304,6 +304,7 @@ JSRuntime::destroyRuntime()
 
         CancelOffThreadIonCompile(this);
         CancelOffThreadParses(this);
+        CancelOffThreadCompressions(this);
 
         
         gc.finishRoots();
