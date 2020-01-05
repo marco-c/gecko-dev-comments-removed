@@ -260,8 +260,10 @@ class MachCommands(CommandBase):
                 if "msvc" in (target or host_triple()):
                     msvc_x64 = "64" if "x86_64" in (target or host_triple()) else ""
                     
-                    call(["editbin", "/nologo", "/subsystem:windows", path.join(servo_exe_dir, "servo.exe")],
-                         verbose=verbose)
+                    
+                    if not dev:
+                        call(["editbin", "/nologo", "/subsystem:windows", path.join(servo_exe_dir, "servo.exe")],
+                             verbose=verbose)
                     
                     for ssl_lib in ["ssleay32md.dll", "libeay32md.dll"]:
                         shutil.copy(path.join(env['OPENSSL_LIB_DIR'], "../bin" + msvc_x64, ssl_lib),
