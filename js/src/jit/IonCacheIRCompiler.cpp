@@ -530,10 +530,6 @@ IonCacheIRCompiler::compile()
                                            ImmPtr((void*)-1));
     }
 
-    
-    if (cx_->zone()->needsIncrementalBarrier())
-        newStubCode->togglePreBarriers(true, DontReprotect);
-
     return newStubCode;
 }
 

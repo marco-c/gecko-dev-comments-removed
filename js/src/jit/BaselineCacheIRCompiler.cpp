@@ -207,10 +207,6 @@ BaselineCacheIRCompiler::compile()
         return nullptr;
     }
 
-    
-    if (cx_->zone()->needsIncrementalBarrier())
-        newStubCode->togglePreBarriers(true, DontReprotect);
-
     return newStubCode;
 }
 

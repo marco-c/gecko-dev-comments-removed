@@ -240,7 +240,7 @@ EmitPreBarrier(MacroAssembler& masm, const AddrType& addr, MIRType type)
 {
     
     masm.push(lr);
-    masm.patchableCallPreBarrier(addr, type);
+    masm.guardedCallPreBarrier(addr, type);
     masm.pop(lr);
 }
 

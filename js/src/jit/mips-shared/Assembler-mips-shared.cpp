@@ -134,13 +134,6 @@ AssemblerMIPSShared::copyDataRelocationTable(uint8_t* dest)
 }
 
 void
-AssemblerMIPSShared::copyPreBarrierTable(uint8_t* dest)
-{
-    if (preBarriers_.length())
-        memcpy(dest, preBarriers_.buffer(), preBarriers_.length());
-}
-
-void
 AssemblerMIPSShared::processCodeLabels(uint8_t* rawCode)
 {
     for (size_t i = 0; i < codeLabels_.length(); i++) {
@@ -240,8 +233,7 @@ AssemblerMIPSShared::oom() const
     return AssemblerShared::oom() ||
            m_buffer.oom() ||
            jumpRelocations_.oom() ||
-           dataRelocations_.oom() ||
-           preBarriers_.oom();
+           dataRelocations_.oom();
 }
 
 
@@ -264,20 +256,13 @@ AssemblerMIPSShared::dataRelocationTableBytes() const
     return dataRelocations_.length();
 }
 
-size_t
-AssemblerMIPSShared::preBarrierTableBytes() const
-{
-    return preBarriers_.length();
-}
-
 
 size_t
 AssemblerMIPSShared::bytesNeeded() const
 {
     return size() +
            jumpRelocationTableBytes() +
-           dataRelocationTableBytes() +
-           preBarrierTableBytes();
+           dataRelocationTableBytes();
 }
 
 

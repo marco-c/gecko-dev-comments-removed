@@ -43,18 +43,12 @@ class JitCode : public gc::TenuredCell
     uint32_t dataSize_;               
     uint32_t jumpRelocTableBytes_;    
     uint32_t dataRelocTableBytes_;    
-    uint32_t preBarrierTableBytes_;   
     uint8_t headerSize_ : 5;          
     uint8_t kind_ : 3;                
     bool invalidated_ : 1;            
                                       
     bool hasBytecodeMap_ : 1;         
                                       
-
-#if JS_BITS_PER_WORD == 32
-    
-    uint32_t padding_;
-#endif
 
     JitCode()
       : code_(nullptr),
@@ -69,7 +63,6 @@ class JitCode : public gc::TenuredCell
         dataSize_(0),
         jumpRelocTableBytes_(0),
         dataRelocTableBytes_(0),
-        preBarrierTableBytes_(0),
         headerSize_(headerSize),
         kind_(kind),
         invalidated_(false),
@@ -87,9 +80,6 @@ class JitCode : public gc::TenuredCell
     }
     uint32_t dataRelocTableOffset() const {
         return jumpRelocTableOffset() + jumpRelocTableBytes_;
-    }
-    uint32_t preBarrierTableOffset() const {
-        return dataRelocTableOffset() + dataRelocTableBytes_;
     }
 
   public:
@@ -512,7 +502,6 @@ struct IonScript
     size_t runtimeSize() const {
         return runtimeSize_;
     }
-    void toggleBarriers(bool enabled, ReprotectCode reprotect = Reprotect);
     void purgeICs(Zone* zone);
     void unlinkFromRuntime(FreeOp* fop);
     void copySnapshots(const SnapshotWriter* writer);
