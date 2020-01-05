@@ -260,7 +260,7 @@ public class GeckoView extends LayerView
         init(context, newSettings);
     }
 
-    private void init(Context context, final GeckoViewSettings settings) {
+    private void init(final Context context, final GeckoViewSettings settings) {
         if (GeckoAppShell.getApplicationContext() == null) {
             GeckoAppShell.setApplicationContext(context.getApplicationContext());
         }
@@ -270,6 +270,14 @@ public class GeckoView extends LayerView
         if (context instanceof Activity && getGeckoInterface() == null) {
             setGeckoInterface(new BaseGeckoInterface(context));
             GeckoAppShell.setContextGetter(this);
+        }
+
+        final GeckoProfile profile = GeckoProfile.get(
+            context.getApplicationContext());
+        if (GeckoThread.initMainProcess(profile,
+                                         null,
+                                         false)) {
+            GeckoThread.launch();
         }
 
         
