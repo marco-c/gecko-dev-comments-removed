@@ -127,6 +127,12 @@ enum class MediaEventType : int8_t
   CancelVideoSuspendTimer
 };
 
+enum class VideoDecodeMode : uint8_t
+{
+  Normal,
+  Suspend
+};
+
 
 
 
@@ -226,6 +232,9 @@ public:
 
   size_t SizeOfAudioQueue() const;
 
+  
+  void SetVideoDecodeMode(VideoDecodeMode aMode);
+
 private:
   class StateObject;
   class DecodeMetadataState;
@@ -306,6 +315,8 @@ private:
   
   void ResetDecode(TrackSet aTracks = TrackSet(TrackInfo::kAudioTrack,
                                                TrackInfo::kVideoTrack));
+
+  void SetVideoDecodeModeInternal(VideoDecodeMode aMode);
 
 protected:
   virtual ~MediaDecoderStateMachine();
@@ -675,6 +686,9 @@ private:
 
   
   RefPtr<MediaResource> mResource;
+
+  
+  VideoDecodeMode mVideoDecodeMode;
 
   
   MozPromiseRequestHolder<GenericPromise> mMediaSinkAudioPromise;
