@@ -24,6 +24,7 @@ namespace wasm {
 
 class FunctionGenerator;
 class CompileTask;
+class FuncCompileUnit;
 
 
 
@@ -39,7 +40,7 @@ BaselineCanCompile(const FunctionGenerator* fg);
 
 
 bool
-BaselineCompileFunction(CompileTask* task);
+BaselineCompileFunction(CompileTask* task, FuncCompileUnit* unit);
 
 } 
 } 

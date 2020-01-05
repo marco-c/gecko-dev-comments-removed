@@ -25,10 +25,11 @@ namespace js {
 namespace wasm {
 
 class CompileTask;
+class FuncCompileUnit;
 
 
 MOZ_MUST_USE bool
-IonCompileFunction(CompileTask* task);
+IonCompileFunction(CompileTask* task, FuncCompileUnit* unit);
 
 } 
 } 

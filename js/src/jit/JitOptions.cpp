@@ -239,6 +239,16 @@ DefaultJitOptions::DefaultJitOptions()
 
     
     
+    SET_DEFAULT(wasmBatchThreshold, 10000);
+
+    
+    
+    
+    
+    SET_DEFAULT(wasmBatchIonScaleFactor, 9);
+
+    
+    
     SET_DEFAULT(ionInterruptWithoutSignals, false);
 }
 
