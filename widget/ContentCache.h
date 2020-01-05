@@ -415,7 +415,10 @@ private:
   
   uint32_t mPendingEventsNeedingAck;
 
-  bool mIsComposing;
+  
+  
+  
+  bool mWidgetHasComposition;
 
   
 
