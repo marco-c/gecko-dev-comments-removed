@@ -3546,7 +3546,7 @@ XPCJSContext::Initialize()
     
     
     
-    UniquePtr<XPCJSSourceHook> hook(new XPCJSSourceHook);
+    mozilla::UniquePtr<XPCJSSourceHook> hook(new XPCJSSourceHook);
     js::SetSourceHook(cx, Move(hook));
 
     
