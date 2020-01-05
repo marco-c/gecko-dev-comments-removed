@@ -171,6 +171,8 @@ public:
   
   void AdjustPriority(imgRequestProxy* aProxy, int32_t aDelta);
 
+  void BoostPriority(uint32_t aCategory);
+
   
   nsIRequest* GetRequest() const { return mRequest; }
 
@@ -223,6 +225,8 @@ private:
   
   bool IsDecodeRequested() const;
 
+  void AdjustPriorityInternal(int32_t aDelta);
+
   
   imgLoader* mLoader;
   nsCOMPtr<nsIRequest> mRequest;
@@ -274,6 +278,9 @@ private:
   ReferrerPolicy mReferrerPolicy;
 
   nsresult mImageErrorCode;
+
+  
+  uint32_t mBoostCategoriesRequested = 0;
 
   mutable mozilla::Mutex mMutex;
 
