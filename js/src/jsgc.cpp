@@ -327,6 +327,20 @@ struct js::gc::FinalizePhase
 
 
 
+static const FinalizePhase ForegroundObjectFinalizePhase = {
+    gcstats::PHASE_SWEEP_OBJECT, {
+        AllocKind::OBJECT0,
+        AllocKind::OBJECT2,
+        AllocKind::OBJECT4,
+        AllocKind::OBJECT8,
+        AllocKind::OBJECT12,
+        AllocKind::OBJECT16
+    }
+};
+
+
+
+
 static const FinalizePhase IncrementalFinalizePhases[] = {
     {
         gcstats::PHASE_SWEEP_STRING, {
@@ -2746,29 +2760,6 @@ ArenaLists::~ArenaLists()
 }
 
 void
-ArenaLists::finalizeNow(FreeOp* fop, AllocKind thingKind, Arena** empty)
-{
-    MOZ_ASSERT(!IsBackgroundFinalized(thingKind));
-    MOZ_ASSERT(backgroundFinalizeState(thingKind) == BFS_DONE);
-    MOZ_ASSERT(empty);
-
-    Arena* arenas = arenaLists(thingKind).head();
-    if (!arenas)
-        return;
-    arenaLists(thingKind).clear();
-
-    size_t thingsPerArena = Arena::thingsPerArena(thingKind);
-    SortedArenaList finalizedSorted(thingsPerArena);
-
-    auto unlimited = SliceBudget::unlimited();
-    FinalizeArenas(fop, &arenas, finalizedSorted, thingKind, unlimited, KEEP_ARENAS);
-    MOZ_ASSERT(!arenas);
-
-    finalizedSorted.extractEmpty(empty);
-    arenaLists(thingKind) = finalizedSorted.toArenaList();
-}
-
-void
 ArenaLists::queueForForegroundSweep(FreeOp* fop, const FinalizePhase& phase)
 {
     gcstats::AutoPhase ap(fop->runtime()->gc.stats(), phase.statsPhase);
@@ -2857,39 +2848,6 @@ ArenaLists::backgroundFinalize(FreeOp* fop, Arena* listHead, Arena** empty)
     }
 
     lists->backgroundFinalizeState(thingKind) = BFS_DONE;
-}
-
-void
-ArenaLists::queueForegroundObjectsForSweep(FreeOp* fop)
-{
-    gcstats::AutoPhase ap(fop->runtime()->gc.stats(), gcstats::PHASE_SWEEP_OBJECT);
-
-#ifdef DEBUG
-    for (auto i : ObjectAllocKinds())
-        MOZ_ASSERT(savedObjectArenas(i).isEmpty());
-    MOZ_ASSERT(savedEmptyObjectArenas == nullptr);
-#endif
-
-    
-    
-    
-    
-    finalizeNow(fop, AllocKind::OBJECT0, &savedEmptyObjectArenas.ref());
-    finalizeNow(fop, AllocKind::OBJECT2, &savedEmptyObjectArenas.ref());
-    finalizeNow(fop, AllocKind::OBJECT4, &savedEmptyObjectArenas.ref());
-    finalizeNow(fop, AllocKind::OBJECT8, &savedEmptyObjectArenas.ref());
-    finalizeNow(fop, AllocKind::OBJECT12, &savedEmptyObjectArenas.ref());
-    finalizeNow(fop, AllocKind::OBJECT16, &savedEmptyObjectArenas.ref());
-
-    
-    
-    
-    savedObjectArenas(AllocKind::OBJECT0) = arenaLists(AllocKind::OBJECT0).copyAndClear();
-    savedObjectArenas(AllocKind::OBJECT2) = arenaLists(AllocKind::OBJECT2).copyAndClear();
-    savedObjectArenas(AllocKind::OBJECT4) = arenaLists(AllocKind::OBJECT4).copyAndClear();
-    savedObjectArenas(AllocKind::OBJECT8) = arenaLists(AllocKind::OBJECT8).copyAndClear();
-    savedObjectArenas(AllocKind::OBJECT12) = arenaLists(AllocKind::OBJECT12).copyAndClear();
-    savedObjectArenas(AllocKind::OBJECT16) = arenaLists(AllocKind::OBJECT16).copyAndClear();
 }
 
 void
@@ -5298,14 +5256,9 @@ GCRuntime::beginSweepingSweepGroup(AutoLockForExclusiveAccess& lock)
 
 
 
-
-
     for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
         gcstats::AutoSCC scc(stats(), sweepGroupIndex);
-        zone->arenas.queueForegroundObjectsForSweep(&fop);
-    }
-    for (GCSweepGroupIter zone(rt); !zone.done(); zone.next()) {
-        gcstats::AutoSCC scc(stats(), sweepGroupIndex);
+        zone->arenas.queueForForegroundSweep(&fop, ForegroundObjectFinalizePhase);
         for (unsigned i = 0; i < ArrayLength(IncrementalFinalizePhases); ++i)
             zone->arenas.queueForForegroundSweep(&fop, IncrementalFinalizePhases[i]);
     }
@@ -5395,11 +5348,14 @@ bool
 ArenaLists::foregroundFinalize(FreeOp* fop, AllocKind thingKind, SliceBudget& sliceBudget,
                                SortedArenaList& sweepList)
 {
+    MOZ_ASSERT_IF(IsObjectAllocKind(thingKind), savedObjectArenas(thingKind).isEmpty());
+
     if (!arenaListsToSweep(thingKind) && incrementalSweptArenas.ref().isEmpty())
         return true;
 
+    KeepArenasEnum keepArenas = IsObjectAllocKind(thingKind) ? KEEP_ARENAS : RELEASE_ARENAS;
     if (!FinalizeArenas(fop, &arenaListsToSweep(thingKind), sweepList,
-                        thingKind, sliceBudget, RELEASE_ARENAS))
+                        thingKind, sliceBudget, keepArenas))
     {
         incrementalSweptArenaKind = thingKind;
         incrementalSweptArenas = sweepList.toArenaList();
@@ -5409,10 +5365,16 @@ ArenaLists::foregroundFinalize(FreeOp* fop, AllocKind thingKind, SliceBudget& sl
     
     incrementalSweptArenas.ref().clear();
 
-    
-    ArenaList finalized = sweepList.toArenaList();
-    arenaLists(thingKind) =
-        finalized.insertListWithCursorAtEnd(arenaLists(thingKind));
+    if (IsObjectAllocKind(thingKind)) {
+        
+        sweepList.extractEmpty(&savedEmptyObjectArenas.ref());
+        savedObjectArenas(thingKind) = sweepList.toArenaList();
+    } else {
+        
+        ArenaList finalized = sweepList.toArenaList();
+        arenaLists(thingKind) =
+            finalized.insertListWithCursorAtEnd(arenaLists(thingKind));
+    }
 
     return true;
 }
@@ -5568,6 +5530,10 @@ AddSweepAction(bool* ok, SweepAction::Func func, AllocKind kind = AllocKind::LIM
 GCRuntime::initializeSweepActions()
 {
     bool ok = true;
+
+    AddSweepPhase(&ok);
+    for (auto kind : ForegroundObjectFinalizePhase.kinds)
+        AddSweepAction(&ok, GCRuntime::finalizeAllocKind, kind);
 
     AddSweepPhase(&ok);
     AddSweepAction(&ok, GCRuntime::sweepTypeInformation);
