@@ -118,6 +118,12 @@ public:
   virtual nsPIDOMWindowOuter* GetScriptableParent() = 0;
   virtual already_AddRefed<nsPIWindowRoot> GetTopWindowRoot() = 0;
 
+  bool IsRootOuterWindow()
+  {
+    MOZ_ASSERT(IsOuterWindow());
+    return mIsRootOuterWindow;
+  }
+
   
 
 
@@ -665,6 +671,8 @@ protected:
 
   
   bool                   mDesktopModeViewport;
+
+  bool                   mIsRootOuterWindow;
 
   
   nsPIDOMWindowInner* MOZ_NON_OWNING_REF mInnerWindow;

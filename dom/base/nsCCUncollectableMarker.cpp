@@ -28,6 +28,7 @@
 #include "nsJSEnvironment.h"
 #include "nsInProcessTabChildGlobal.h"
 #include "nsFrameLoader.h"
+#include "mozilla/CycleCollectedJSContext.h"
 #include "mozilla/EventListenerManager.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ProcessGlobal.h"
@@ -313,6 +314,8 @@ MarkWindowList(nsISimpleEnumerator* aWindowList, bool aCleanupJS,
         nsCOMPtr<nsIContentFrameMessageManager> mm;
         tabChild->GetMessageManager(getter_AddRefs(mm));
         if (mm) {
+          
+          
           mm->MarkForCC();
         }
       }
@@ -489,6 +492,13 @@ mozilla::dom::TraceBlackJS(JSTracer* aTrc, uint32_t aGCNumber, bool aIsShutdownG
     return;
   }
 
+  if (nsFrameMessageManager::GetChildProcessManager()) {
+    nsIContentProcessMessageManager* pg = ProcessGlobal::Get();
+    if (pg) {
+      mozilla::TraceScriptHolder(pg, aTrc);
+    }
+  }
+
   
   nsGlobalWindow::WindowByIdTable* windowsById =
     nsGlobalWindow::GetWindowsTable();
@@ -500,6 +510,31 @@ mozilla::dom::TraceBlackJS(JSTracer* aTrc, uint32_t aGCNumber, bool aIsShutdownG
         EventListenerManager* elm = window->GetExistingListenerManager();
         if (elm) {
           elm->TraceListeners(aTrc);
+        }
+
+        if (window->IsRootOuterWindow()) {
+          
+          
+          
+          nsIDocShell* ds = window->GetDocShell();
+          if (ds) {
+            nsCOMPtr<nsITabChild> tabChild = ds->GetTabChild();
+            if (tabChild) {
+              nsCOMPtr<nsIContentFrameMessageManager> mm;
+              tabChild->GetMessageManager(getter_AddRefs(mm));
+              nsCOMPtr<EventTarget> et = do_QueryInterface(mm);
+              if (et) {
+                nsCOMPtr<nsISupports> tabChildAsSupports =
+                  do_QueryInterface(tabChild);
+                mozilla::TraceScriptHolder(tabChildAsSupports, aTrc);
+                EventListenerManager* elm = et->GetExistingListenerManager();
+                if (elm) {
+                  elm->TraceListeners(aTrc);
+                }
+                
+              }
+            }
+          }
         }
 
 #ifdef MOZ_XUL
