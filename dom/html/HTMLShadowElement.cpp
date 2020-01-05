@@ -8,10 +8,31 @@
 
 #include "ChildIterator.h"
 #include "nsContentUtils.h"
+#include "nsDocument.h"
 #include "mozilla/dom/HTMLShadowElement.h"
+#include "mozilla/dom/HTMLUnknownElement.h"
 #include "mozilla/dom/HTMLShadowElementBinding.h"
 
-NS_IMPL_NS_NEW_HTML_ELEMENT(Shadow)
+
+
+nsGenericHTMLElement*
+NS_NewHTMLShadowElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                        mozilla::dom::FromParser aFromParser)
+{
+  
+  
+  
+  
+  
+  RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
+  if (!nsDocument::IsWebComponentsEnabled(nodeInfo)) {
+    already_AddRefed<mozilla::dom::NodeInfo> nodeInfoArg(nodeInfo.forget());
+    return new mozilla::dom::HTMLUnknownElement(nodeInfoArg);
+  }
+
+  already_AddRefed<mozilla::dom::NodeInfo> nodeInfoArg(nodeInfo.forget());
+  return new mozilla::dom::HTMLShadowElement(nodeInfoArg);
+}
 
 using namespace mozilla::dom;
 
