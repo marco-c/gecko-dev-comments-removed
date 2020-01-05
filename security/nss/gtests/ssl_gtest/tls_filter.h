@@ -163,6 +163,19 @@ class TlsInspectorReplaceHandshakeMessage : public TlsHandshakeFilter {
 };
 
 
+class TlsConversationRecorder : public TlsRecordFilter {
+ public:
+  TlsConversationRecorder(DataBuffer& buffer) : buffer_(buffer) {}
+
+  virtual PacketFilter::Action FilterRecord(const RecordHeader& header,
+                                            const DataBuffer& input,
+                                            DataBuffer* output);
+
+ private:
+  DataBuffer& buffer_;
+};
+
+
 
 class TlsAlertRecorder : public TlsRecordFilter {
  public:

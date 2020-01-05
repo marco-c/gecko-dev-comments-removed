@@ -2,8 +2,10 @@
 
 
 
+#include "blapi.h"
 #include "ssl.h"
 #include "sslimpl.h"
+#include "tls_connect.h"
 
 #include "gtest/gtest.h"
 
@@ -13,11 +15,85 @@ namespace nss_test {
 
 class TlsFuzzTest : public ::testing::Test {};
 
+void ResetState() {
+  
+  BL_Cleanup();
+
+  
+  EXPECT_EQ(SECSuccess, BL_Init());
+
+  
+  EXPECT_EQ(SECSuccess, RNG_ResetForFuzzing());
+}
+
 
 TEST_F(TlsFuzzTest, Fuzz_SSL_Time_Constant) {
   PRInt32 now = ssl_Time();
   PR_Sleep(PR_SecondsToInterval(2));
   EXPECT_EQ(ssl_Time(), now);
+}
+
+
+
+TEST_P(TlsConnectGeneric, Fuzz_DeterministicExporter) {
+  const char kLabel[] = "label";
+  std::vector<unsigned char> out1(32), out2(32);
+
+  ConfigureSessionCache(RESUME_NONE, RESUME_NONE);
+  DisableECDHEServerKeyReuse();
+
+  ResetState();
+  Connect();
+
+  
+  SECStatus rv =
+      SSL_ExportKeyingMaterial(client_->ssl_fd(), kLabel, strlen(kLabel), false,
+                               NULL, 0, out1.data(), out1.size());
+  EXPECT_EQ(SECSuccess, rv);
+
+  Reset();
+  ConfigureSessionCache(RESUME_NONE, RESUME_NONE);
+  DisableECDHEServerKeyReuse();
+
+  ResetState();
+  Connect();
+
+  
+  rv = SSL_ExportKeyingMaterial(client_->ssl_fd(), kLabel, strlen(kLabel),
+                                false, NULL, 0, out2.data(), out2.size());
+  EXPECT_EQ(SECSuccess, rv);
+
+  
+  EXPECT_EQ(out1, out2);
+}
+
+
+
+TEST_P(TlsConnectGeneric, Fuzz_DeterministicTranscript) {
+  
+  DataBuffer last;
+  for (size_t i = 0; i < 5; i++) {
+    Reset();
+    ConfigureSessionCache(RESUME_NONE, RESUME_NONE);
+    DisableECDHEServerKeyReuse();
+
+    DataBuffer buffer;
+    client_->SetPacketFilter(new TlsConversationRecorder(buffer));
+    server_->SetPacketFilter(new TlsConversationRecorder(buffer));
+
+    ResetState();
+    Connect();
+
+    
+    client_->SetPacketFilter(nullptr);
+    server_->SetPacketFilter(nullptr);
+
+    if (last.len() > 0) {
+      EXPECT_EQ(last, buffer);
+    }
+
+    last = buffer;
+  }
 }
 
 #endif

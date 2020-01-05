@@ -40,6 +40,11 @@ queue.filter(task => {
     }
   }
 
+  
+  if (task.collection == "gyp" && task.tests == "chains") {
+    return false;
+  }
+
   return true;
 });
 
