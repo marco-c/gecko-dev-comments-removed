@@ -897,7 +897,7 @@ impl BaseDisplayItem {
 
 
 
-#[derive(Clone, PartialEq, Debug, HeapSizeOf, Deserialize, Serialize)]
+#[derive(Clone, PartialEq, HeapSizeOf, Deserialize, Serialize)]
 pub struct ClippingRegion {
     
     pub main: Rect<Au>,
@@ -1039,6 +1039,20 @@ impl ClippingRegion {
                     radii: complex.radii,
                 }
             }).collect(),
+        }
+    }
+}
+
+impl fmt::Debug for ClippingRegion {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        if *self == ClippingRegion::max() {
+            write!(f, "ClippingRegion::Max")
+        } else if *self == ClippingRegion::empty() {
+            write!(f, "ClippingRegion::Empty")
+        } else if self.main == max_rect() {
+            write!(f, "ClippingRegion(Complex={:?})", self.complex)
+        } else {
+            write!(f, "ClippingRegion(Rect={:?}, Complex={:?})", self.main, self.complex)
         }
     }
 }
