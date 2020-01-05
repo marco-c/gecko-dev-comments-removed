@@ -412,11 +412,11 @@ nsSVGUtils::GetCanvasTM(nsIFrame *aFrame)
     return GetCSSPxToDevPxMatrix(aFrame);
   }
 
-  LayoutFrameType type = aFrame->Type();
-  if (type == LayoutFrameType::SVGForeignObject) {
+  FrameType type = aFrame->Type();
+  if (type == FrameType::SVGForeignObject) {
     return static_cast<nsSVGForeignObjectFrame*>(aFrame)->GetCanvasTM();
   }
-  if (type == LayoutFrameType::SVGOuterSVG) {
+  if (type == FrameType::SVGOuterSVG) {
     return GetCSSPxToDevPxMatrix(aFrame);
   }
 
@@ -1304,16 +1304,15 @@ nsSVGUtils::CanOptimizeOpacity(nsIFrame *aFrame)
   if (!(aFrame->GetStateBits() & NS_FRAME_SVG_LAYOUT)) {
     return false;
   }
-  LayoutFrameType type = aFrame->Type();
-  if (type != LayoutFrameType::SVGImage &&
-      type != LayoutFrameType::SVGGeometry) {
+  FrameType type = aFrame->Type();
+  if (type != FrameType::SVGImage && type != FrameType::SVGGeometry) {
     return false;
   }
   if (aFrame->StyleEffects()->HasFilters()) {
     return false;
   }
   
-  if (type == LayoutFrameType::SVGImage) {
+  if (type == FrameType::SVGImage) {
     return true;
   }
   const nsStyleSVG *style = aFrame->StyleSVG();
@@ -1454,10 +1453,18 @@ nsSVGUtils::GetFallbackOrPaintColor(nsStyleContext *aStyleContext,
 {
   const nsStyleSVGPaint &paint = aStyleContext->StyleSVG()->*aFillOrStroke;
   nsStyleContext *styleIfVisited = aStyleContext->GetStyleIfVisited();
-  bool isServer = paint.Type() == eStyleSVGPaintType_Server ||
-                  paint.Type() == eStyleSVGPaintType_ContextFill ||
-                  paint.Type() == eStyleSVGPaintType_ContextStroke;
-  nscolor color = isServer ? paint.GetFallbackColor() : paint.GetColor();
+  nscolor color;
+  switch (paint.Type()) {
+    case eStyleSVGPaintType_Server:
+    case eStyleSVGPaintType_ContextFill:
+    case eStyleSVGPaintType_ContextStroke:
+      color = paint.GetFallbackType() == eStyleSVGFallbackType_Color ?
+                paint.GetFallbackColor() : NS_RGBA(0, 0, 0, 0);
+      break;
+    default:
+      color = paint.GetColor();
+      break;
+  }
   if (styleIfVisited) {
     const nsStyleSVGPaint &paintIfVisited =
       styleIfVisited->StyleSVG()->*aFillOrStroke;
@@ -1543,6 +1550,10 @@ nsSVGUtils::MakeFillPatternFor(nsIFrame* aFrame,
     }
   }
 
+  if (style->mFill.GetFallbackType() == eStyleSVGFallbackType_None) {
+    return DrawResult::SUCCESS;
+  }
+
   
   
   
@@ -1617,6 +1628,10 @@ nsSVGUtils::MakeStrokePatternFor(nsIFrame* aFrame,
       aOutPattern->Init(*pattern->GetPattern(dt));
       return result;
     }
+  }
+
+  if (style->mStroke.GetFallbackType() == eStyleSVGFallbackType_None) {
+    return DrawResult::SUCCESS;
   }
 
   
