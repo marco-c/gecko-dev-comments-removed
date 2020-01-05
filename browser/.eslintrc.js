@@ -18,9 +18,6 @@ module.exports = {
     "no-empty": "error",
 
     
-    "no-spaced-func": "error",
-
-    
     "max-nested-callbacks": ["error", 8],
 
     

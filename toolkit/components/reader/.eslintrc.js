@@ -134,9 +134,6 @@ module.exports = {
     "no-shadow-restricted-names": "error",
 
     
-    "no-spaced-func": "error",
-
-    
     "no-trailing-spaces": "error",
 
     

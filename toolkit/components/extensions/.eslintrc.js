@@ -103,9 +103,6 @@ module.exports = {
     "no-multi-spaces": "warn",
 
     
-    "no-spaced-func": "warn",
-
-    
     "no-unused-expressions": "error",
 
     
