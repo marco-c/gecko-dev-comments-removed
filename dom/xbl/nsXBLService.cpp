@@ -462,7 +462,14 @@ nsXBLService::LoadBindings(nsIContent* aContent, nsIURI* aURL,
   
   
   
-  AutoStyleNewChildren styleNewChildren(aContent->AsElement());
+  
+  
+  
+  
+  Maybe<AutoStyleNewChildren> styleNewChildren;
+  if (aContent->IsInComposedDoc()) {
+    styleNewChildren.emplace(aContent->AsElement());
+  }
 
   nsXBLBinding *binding = aContent->GetXBLBinding();
   if (binding) {
