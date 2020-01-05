@@ -232,8 +232,15 @@ class XPCStringConvert
         
         
         
-        void* mBuffer;
-        JSString* mString;
+        
+        
+        
+        
+        
+        
+        void* mBuffer = nullptr;
+        uint32_t mLength = 0;
+        JSString* mString = nullptr;
     };
 
 public:
@@ -252,7 +259,7 @@ public:
     {
         JS::Zone* zone = js::GetContextZone(cx);
         ZoneStringCache* cache = static_cast<ZoneStringCache*>(JS_GetZoneUserData(zone));
-        if (cache && buf == cache->mBuffer) {
+        if (cache && buf == cache->mBuffer && length == cache->mLength) {
             MOZ_ASSERT(JS::GetStringZone(cache->mString) == zone);
             JS::MarkStringAsLive(zone, cache->mString);
             rval.setString(cache->mString);
@@ -272,6 +279,7 @@ public:
             JS_SetZoneUserData(zone, cache);
         }
         cache->mBuffer = buf;
+        cache->mLength = length;
         cache->mString = str;
         *sharedBuffer = true;
         return true;
