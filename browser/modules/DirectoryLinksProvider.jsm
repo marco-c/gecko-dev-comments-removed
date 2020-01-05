@@ -587,7 +587,7 @@ var DirectoryLinksProvider = {
     let scheme = "", base = "";
     try {
       
-      let uri = Services.io.newURI(url, null, null);
+      let uri = Services.io.newURI(url);
       scheme = uri.scheme;
 
       

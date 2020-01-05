@@ -1849,7 +1849,7 @@ var gApplicationsPane = {
   },
 
   _getIconURLForWebApp(aWebAppURITemplate) {
-    var uri = this._ioSvc.newURI(aWebAppURITemplate, null, null);
+    var uri = this._ioSvc.newURI(aWebAppURITemplate);
 
     
     

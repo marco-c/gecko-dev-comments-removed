@@ -791,7 +791,7 @@ WindowsVaultFormPasswords.prototype = {
           let url = item.contents.pResourceElement.contents.itemValue.readString();
           let realURL;
           try {
-            realURL = Services.io.newURI(url, null, null);
+            realURL = Services.io.newURI(url);
           } catch (ex) {  }
           if (!realURL || ["http", "https", "ftp"].indexOf(realURL.scheme) == -1) {
             

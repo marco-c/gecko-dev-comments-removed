@@ -86,7 +86,7 @@ var gTests = [
 
       let promiseEcho = new Promise((resolve, reject) => {
 
-        let webChannelOrigin = Services.io.newURI(properUrl, null, null);
+        let webChannelOrigin = Services.io.newURI(properUrl);
         
         
         

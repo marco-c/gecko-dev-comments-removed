@@ -25,7 +25,7 @@ var gTests = [
     *run() {
       return new Promise(function(resolve, reject) {
         let tab;
-        let channel = new WebChannel("generic", Services.io.newURI(HTTP_PATH, null, null));
+        let channel = new WebChannel("generic", Services.io.newURI(HTTP_PATH));
         channel.listen(function(id, message, target) {
           is(id, "generic");
           is(message.something.nested, "hello");
@@ -42,7 +42,7 @@ var gTests = [
     desc: "WebChannel generic message in a private window.",
     *run() {
       let promiseTestDone = new Promise(function(resolve, reject) {
-        let channel = new WebChannel("generic", Services.io.newURI(HTTP_PATH, null, null));
+        let channel = new WebChannel("generic", Services.io.newURI(HTTP_PATH));
         channel.listen(function(id, message, target) {
           is(id, "generic");
           is(message.something.nested, "hello");
@@ -63,7 +63,7 @@ var gTests = [
     *run() {
       return new Promise(function(resolve, reject) {
         let tab;
-        let channel = new WebChannel("twoway", Services.io.newURI(HTTP_PATH, null, null));
+        let channel = new WebChannel("twoway", Services.io.newURI(HTTP_PATH));
 
         channel.listen(function(id, message, sender) {
           is(id, "twoway", "bad id");
@@ -88,8 +88,8 @@ var gTests = [
   {
     desc: "WebChannel two way communication in an iframe",
     *run() {
-      let parentChannel = new WebChannel("echo", Services.io.newURI(HTTP_PATH, null, null));
-      let iframeChannel = new WebChannel("twoway", Services.io.newURI(HTTP_IFRAME_PATH, null, null));
+      let parentChannel = new WebChannel("echo", Services.io.newURI(HTTP_PATH));
+      let iframeChannel = new WebChannel("twoway", Services.io.newURI(HTTP_IFRAME_PATH));
       let promiseTestDone = new Promise(function(resolve, reject) {
         parentChannel.listen(function(id, message, sender) {
           reject(new Error("WebChannel message incorrectly sent to parent"));
@@ -145,8 +145,8 @@ var gTests = [
 
 
 
-      let preRedirectChannel = new WebChannel("pre_redirect", Services.io.newURI(HTTP_IFRAME_PATH, null, null));
-      let postRedirectChannel = new WebChannel("post_redirect", Services.io.newURI(HTTP_REDIRECTED_IFRAME_PATH, null, null));
+      let preRedirectChannel = new WebChannel("pre_redirect", Services.io.newURI(HTTP_IFRAME_PATH));
+      let postRedirectChannel = new WebChannel("post_redirect", Services.io.newURI(HTTP_REDIRECTED_IFRAME_PATH));
 
       let promiseTestDone = new Promise(function(resolve, reject) {
         preRedirectChannel.listen(function(id, message, preRedirectSender) {
@@ -188,7 +188,7 @@ var gTests = [
     *run() {
       return new Promise(function(resolve, reject) {
         let tab;
-        let channel = new WebChannel("multichannel", Services.io.newURI(HTTP_PATH, null, null));
+        let channel = new WebChannel("multichannel", Services.io.newURI(HTTP_PATH));
 
         channel.listen(function(id, message, sender) {
           is(id, "multichannel");
@@ -203,7 +203,7 @@ var gTests = [
   {
     desc: "WebChannel unsolicited send, using system principal",
     *run() {
-      let channel = new WebChannel("echo", Services.io.newURI(HTTP_PATH, null, null));
+      let channel = new WebChannel("echo", Services.io.newURI(HTTP_PATH));
 
       
       
@@ -233,7 +233,7 @@ var gTests = [
   {
     desc: "WebChannel unsolicited send, using target origin's principal",
     *run() {
-      let targetURI = Services.io.newURI(HTTP_PATH, null, null);
+      let targetURI = Services.io.newURI(HTTP_PATH);
       let channel = new WebChannel("echo", targetURI);
 
       
@@ -266,7 +266,7 @@ var gTests = [
   {
     desc: "WebChannel unsolicited send with principal mismatch",
     *run() {
-      let targetURI = Services.io.newURI(HTTP_PATH, null, null);
+      let targetURI = Services.io.newURI(HTTP_PATH);
       let channel = new WebChannel("echo", targetURI);
 
       
@@ -290,7 +290,7 @@ var gTests = [
         url: HTTP_PATH + HTTP_ENDPOINT + "?unsolicited"
       }, function* (targetBrowser) {
 
-        let mismatchURI = Services.io.newURI(HTTP_MISMATCH_PATH, null, null);
+        let mismatchURI = Services.io.newURI(HTTP_MISMATCH_PATH);
         let mismatchPrincipal = Services.scriptSecurityManager.getNoAppCodebasePrincipal(mismatchURI);
 
         
@@ -327,7 +327,7 @@ var gTests = [
 
 
 
-      let channel = new WebChannel("not_a_window", Services.io.newURI(HTTP_PATH, null, null));
+      let channel = new WebChannel("not_a_window", Services.io.newURI(HTTP_PATH));
 
       let testDonePromise = new Promise(function(resolve, reject) {
         channel.listen(function(id, message, sender) {
@@ -360,7 +360,7 @@ var gTests = [
 
 
 
-      let channel = new WebChannel("objects", Services.io.newURI(HTTP_PATH, null, null));
+      let channel = new WebChannel("objects", Services.io.newURI(HTTP_PATH));
       let testDonePromise = new Promise((resolve, reject) => {
         channel.listen((id, message, sender) => {
           is(id, "objects");
@@ -384,7 +384,7 @@ var gTests = [
 
 
 
-      let channel = new WebChannel("objects", Services.io.newURI(HTTP_PATH, null, null));
+      let channel = new WebChannel("objects", Services.io.newURI(HTTP_PATH));
 
       let testDonePromise = new Promise((resolve, reject) => {
         let sawObject = false;
@@ -425,9 +425,9 @@ var gTests = [
       const ERRNO_UNKNOWN_ERROR              = 999; 
 
       
-      let channel = new WebChannel("error", Services.io.newURI(HTTP_PATH, null, null));
+      let channel = new WebChannel("error", Services.io.newURI(HTTP_PATH));
       
-      let echoChannel = new WebChannel("echo", Services.io.newURI(HTTP_PATH, null, null));
+      let echoChannel = new WebChannel("echo", Services.io.newURI(HTTP_PATH));
 
       let testDonePromise = new Promise((resolve, reject) => {
         
@@ -460,7 +460,7 @@ var gTests = [
     *run() {
       const ERRNO_NO_SUCH_CHANNEL            = 2; 
       
-      let echoChannel = new WebChannel("echo", Services.io.newURI(HTTP_PATH, null, null));
+      let echoChannel = new WebChannel("echo", Services.io.newURI(HTTP_PATH));
 
       let testDonePromise = new Promise((resolve, reject) => {
         

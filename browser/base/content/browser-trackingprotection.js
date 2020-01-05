@@ -141,8 +141,7 @@ var TrackingProtection = {
     
     
     let normalizedUrl = Services.io.newURI(
-      "https://" + gBrowser.selectedBrowser.currentURI.hostPort,
-      null, null);
+      "https://" + gBrowser.selectedBrowser.currentURI.hostPort);
 
     
     
@@ -168,8 +167,7 @@ var TrackingProtection = {
     
     
     let normalizedUrl = Services.io.newURI(
-      "https://" + gBrowser.selectedBrowser.currentURI.hostPort,
-      null, null);
+      "https://" + gBrowser.selectedBrowser.currentURI.hostPort);
 
     if (PrivateBrowsingUtils.isBrowserPrivate(gBrowser.selectedBrowser)) {
       PrivateBrowsingUtils.removeFromTrackingAllowlist(normalizedUrl);

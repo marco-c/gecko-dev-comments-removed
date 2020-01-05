@@ -85,7 +85,7 @@ this.E10SUtils = {
         return aPreferredRemoteType;
       }
 
-      let url = Services.io.newURI(aURL, null, null);
+      let url = Services.io.newURI(aURL);
       let module = getAboutModule(url);
       
       
@@ -111,7 +111,7 @@ this.E10SUtils = {
       try {
         
         
-        url = Services.io.newURI(aURL, null, null);
+        url = Services.io.newURI(aURL);
       } catch (ex) {
         return aPreferredRemoteType;
       }

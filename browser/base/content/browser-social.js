@@ -394,7 +394,7 @@ SocialShare = {
     
     
     let pageData = graphData ? graphData : this.currentShare;
-    let sharedURI = pageData ? Services.io.newURI(pageData.url, null, null) :
+    let sharedURI = pageData ? Services.io.newURI(pageData.url) :
                                 gBrowser.currentURI;
     if (!SocialUI.canSharePage(sharedURI))
       return;
@@ -474,7 +474,7 @@ SocialShare = {
     iframe.purgeSessionHistory();
 
     
-    let uri = Services.io.newURI(shareEndpoint, null, null);
+    let uri = Services.io.newURI(shareEndpoint);
     iframe.setAttribute("origin", provider.origin);
     iframe.setAttribute("src", shareEndpoint);
     this._openPanel(anchor);

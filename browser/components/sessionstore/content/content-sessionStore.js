@@ -601,7 +601,7 @@ var SessionStorageListener = {
     
     if (docShell) {
       let {url, key, newValue} = event;
-      let uri = Services.io.newURI(url, null, null);
+      let uri = Services.io.newURI(url);
       let domain = uri.prePath;
       if (!this._changes) {
         this._changes = {};
