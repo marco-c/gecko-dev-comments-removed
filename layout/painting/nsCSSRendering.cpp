@@ -61,6 +61,7 @@
 #include "nsRubyTextContainerFrame.h"
 #include <algorithm>
 #include "SVGImageContext.h"
+#include "mozilla/layers/WebRenderDisplayItemLayer.h"
 
 using namespace mozilla;
 using namespace mozilla::css;
@@ -1235,11 +1236,11 @@ nsCSSRendering::FindNonTransparentBackgroundFrame(nsIFrame* aFrame,
 bool
 nsCSSRendering::IsCanvasFrame(nsIFrame* aFrame)
 {
-  LayoutFrameType frameType = aFrame->Type();
-  return frameType == LayoutFrameType::Canvas ||
-         frameType == LayoutFrameType::Root ||
-         frameType == LayoutFrameType::PageContent ||
-         frameType == LayoutFrameType::Viewport;
+  FrameType frameType = aFrame->Type();
+  return frameType == FrameType::Canvas ||
+         frameType == FrameType::Root ||
+         frameType == FrameType::PageContent ||
+         frameType == FrameType::Viewport;
 }
 
 nsIFrame*
@@ -1943,7 +1944,8 @@ nsCSSRendering::PaintStyleImageLayer(const PaintBGParams& aParams,
 }
 
 bool
-nsCSSRendering::CanBuildWebRenderDisplayItemsForStyleImageLayer(nsPresContext& aPresCtx,
+nsCSSRendering::CanBuildWebRenderDisplayItemsForStyleImageLayer(LayerManager* aManager,
+                                                                nsPresContext& aPresCtx,
                                                                 nsIFrame *aFrame,
                                                                 const nsStyleBackground* aBackgroundStyle,
                                                                 int32_t aLayer)
@@ -1967,9 +1969,23 @@ nsCSSRendering::CanBuildWebRenderDisplayItemsForStyleImageLayer(nsPresContext& a
     }
   }
 
+  const nsStyleImage* styleImage = &aBackgroundStyle->mImage.mLayers[aLayer].mImage;
+
   
-  return aBackgroundStyle->mImage.mLayers[aLayer].mImage.GetType() == eStyleImageType_Gradient ||
-         aBackgroundStyle->mImage.mLayers[aLayer].mImage.GetType() == eStyleImageType_Image;
+  if (!styleImage->IsEmpty() && styleImage->GetType() == eStyleImageType_Image) {
+    imgRequestProxy* requestProxy = styleImage->GetImageData();
+    if (requestProxy) {
+      nsCOMPtr<imgIContainer> srcImage;
+      requestProxy->GetImage(getter_AddRefs(srcImage));
+      if (srcImage && !srcImage->IsImageContainerAvailable(aManager, imgIContainer::FLAG_NONE)) {
+        return false;
+      }
+    }
+  }
+
+  
+  return styleImage->GetType() == eStyleImageType_Gradient ||
+         styleImage->GetType() == eStyleImageType_Image;
 }
 
 DrawResult
@@ -2721,7 +2737,8 @@ nsCSSRendering::BuildWebRenderDisplayItemsForStyleImageLayerWithSC(const PaintBG
                                                                    nsStyleContext *aBackgroundSC,
                                                                    const nsStyleBorder& aBorder)
 {
-  MOZ_ASSERT(CanBuildWebRenderDisplayItemsForStyleImageLayer(aParams.presCtx,
+  MOZ_ASSERT(CanBuildWebRenderDisplayItemsForStyleImageLayer(aLayer->WrManager(),
+                                                             aParams.presCtx,
                                                              aParams.frame,
                                                              aBackgroundSC->StyleBackground(),
                                                              aParams.layer));
@@ -2809,9 +2826,9 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
   MOZ_ASSERT(!aForFrame->IsFrameOfType(nsIFrame::eSVG) ||
              aForFrame->IsSVGOuterSVGFrame());
 
-  LayoutFrameType frameType = aForFrame->Type();
+  FrameType frameType = aForFrame->Type();
   nsIFrame* geometryFrame = aForFrame;
-  if (MOZ_UNLIKELY(frameType == LayoutFrameType::Scroll &&
+  if (MOZ_UNLIKELY(frameType == FrameType::Scroll &&
                    NS_STYLE_IMAGELAYER_ATTACHMENT_LOCAL == aLayer.mAttachment)) {
     nsIScrollableFrame* scrollableFrame = do_QueryFrame(aForFrame);
     positionArea = nsRect(
@@ -2838,7 +2855,7 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
     return positionArea;
   }
 
-  if (MOZ_UNLIKELY(frameType == LayoutFrameType::Canvas)) {
+  if (MOZ_UNLIKELY(frameType == FrameType::Canvas)) {
     geometryFrame = aForFrame->PrincipalChildList().FirstChild();
     
     
@@ -2881,8 +2898,8 @@ nsCSSRendering::ComputeImageLayerPositioningArea(nsPresContext* aPresContext,
     NS_ASSERTION(attachedToFrame, "no root frame");
     nsIFrame* pageContentFrame = nullptr;
     if (aPresContext->IsPaginated()) {
-      pageContentFrame = nsLayoutUtils::GetClosestFrameOfType(
-        aForFrame, LayoutFrameType::PageContent);
+      pageContentFrame =
+        nsLayoutUtils::GetClosestFrameOfType(aForFrame, FrameType::PageContent);
       if (pageContentFrame) {
         attachedToFrame = pageContentFrame;
       }

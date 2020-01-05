@@ -283,15 +283,6 @@ class nsDisplayListBuilder {
     nsRect mDirtyRect;
   };
 
-  
-
-
-
-
-
-
-  enum AGRState { AGR_NO, AGR_YES, AGR_MAYBE };
-
 public:
   typedef mozilla::FrameLayerBuilder FrameLayerBuilder;
   typedef mozilla::DisplayItemClip DisplayItemClip;
@@ -827,9 +818,8 @@ public:
           aBuilder->FindReferenceFrameFor(aForChild,
               &aBuilder->mCurrentOffsetToReferenceFrame);
       }
-      mCurrentAGRState = aBuilder->IsAnimatedGeometryRoot(aForChild);
       if (aBuilder->mCurrentFrame == aForChild->GetParent()) {
-        if (mCurrentAGRState == AGR_YES) {
+        if (aBuilder->IsAnimatedGeometryRoot(aForChild)) {
           aBuilder->mCurrentAGR = aBuilder->WrapAGRForFrame(aForChild, aBuilder->mCurrentAGR);
         }
       } else if (aForChild != aBuilder->mCurrentFrame) {
@@ -853,10 +843,8 @@ public:
       return mPrevAnimatedGeometryRoot;
     }
     bool IsAnimatedGeometryRoot() const {
-      return mCurrentAGRState == AGR_YES;
-    }
-    bool MaybeAnimatedGeometryRoot() const {
-      return mCurrentAGRState == AGR_MAYBE;
+      return *mBuilder->mCurrentAGR == mBuilder->mCurrentFrame;
+
     }
     void RestoreBuildingInvisibleItemsValue() {
       mBuilder->mBuildingInvisibleItems = mPrevBuildingInvisibleItems;
@@ -874,7 +862,6 @@ public:
     }
   private:
     nsDisplayListBuilder* mBuilder;
-    AGRState              mCurrentAGRState;
     const nsIFrame*       mPrevFrame;
     const nsIFrame*       mPrevReferenceFrame;
     nsIFrame*             mPrevAnimatedGeometryRoot;
@@ -1411,8 +1398,7 @@ private:
 
 
 
-  AGRState IsAnimatedGeometryRoot(nsIFrame* aFrame,
-                                  nsIFrame** aParent = nullptr);
+  bool IsAnimatedGeometryRoot(nsIFrame* aFrame, nsIFrame** aParent = nullptr);
 
   
 
@@ -3085,9 +3071,7 @@ public:
                                          const nsRect& aBackgroundRect,
                                          nsDisplayList* aList,
                                          bool aAllowWillPaintBorderOptimization = true,
-                                         nsStyleContext* aStyleContext = nullptr,
-                                         const nsRect& aBackgroundOriginRect = nsRect(),
-                                         nsIFrame* aSecondaryReferenceFrame = nullptr);
+                                         nsStyleContext* aStyleContext = nullptr);
 
   virtual LayerState GetLayerState(nsDisplayListBuilder* aBuilder,
                                    LayerManager* aManager,
@@ -3157,14 +3141,12 @@ protected:
   typedef class mozilla::layers::ImageContainer ImageContainer;
   typedef class mozilla::layers::ImageLayer ImageLayer;
 
-  bool CanBuildWebRenderDisplayItems();
+  bool CanBuildWebRenderDisplayItems(LayerManager* aManager);
   bool TryOptimizeToImageLayer(LayerManager* aManager, nsDisplayListBuilder* aBuilder);
   nsRect GetBoundsInternal(nsDisplayListBuilder* aBuilder);
 
   void PaintInternal(nsDisplayListBuilder* aBuilder, nsRenderingContext* aCtx,
                      const nsRect& aBounds, nsRect* aClipRect);
-
-  virtual nsIFrame* StyleFrame() { return mFrame; }
 
   
   
@@ -3191,55 +3173,6 @@ protected:
   bool mShouldFixToViewport;
 };
 
-enum class TableType : uint8_t {
-  TABLE,
-  TABLE_COL,
-  TABLE_COL_GROUP,
-  TABLE_ROW,
-  TABLE_ROW_GROUP,
-  TABLE_CELL,
-
-  TABLE_TYPE_MAX
-};
-
-enum class TableTypeBits : uint8_t {
-  COUNT = 3
-};
-
-static_assert(
-  static_cast<uint8_t>(TableType::TABLE_TYPE_MAX) < (1 << (static_cast<uint8_t>(TableTypeBits::COUNT) + 1)),
-  "TableType cannot fit with TableTypeBits::COUNT");
-TableType GetTableTypeFromFrame(nsIFrame* aFrame);
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-class nsDisplayTableBackgroundImage : public nsDisplayBackgroundImage {
-public:
-  nsDisplayTableBackgroundImage(const InitData& aInitData, nsIFrame* aCellFrame);
-
-  virtual uint32_t GetPerFrameKey() override {
-    return (static_cast<uint8_t>(mTableType) << nsDisplayItem::TYPE_BITS) |
-           nsDisplayItem::GetPerFrameKey();
-  }
-
-  virtual bool IsInvalid(nsRect& aRect) override;
-protected:
-  virtual nsIFrame* StyleFrame() override { return mStyleFrame; }
-
-  nsIFrame* mStyleFrame;
-  TableType mTableType;
-};
 
 
 
@@ -4177,7 +4110,7 @@ public:
                                    LayerManager* aManager,
                                    const ContainerLayerParameters& aParameters) override
   {
-    return mozilla::LAYER_ACTIVE_FORCE;
+    return mozilla::LAYER_ACTIVE;
   }
   virtual bool TryMerge(nsDisplayItem* aItem) override;
 
@@ -4189,7 +4122,7 @@ public:
     return mAnimatedGeometryRootForScrollMetadata;
   }
 
-protected:
+private:
   
   nsDisplayFixedPosition(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
                          nsDisplayList* aList, uint32_t aIndex);
@@ -4198,27 +4131,6 @@ protected:
   AnimatedGeometryRoot* mAnimatedGeometryRootForScrollMetadata;
   uint32_t mIndex;
   bool mIsFixedBackground;
-};
-
-class nsDisplayTableFixedPosition : public nsDisplayFixedPosition
-{
-public:
-  static nsDisplayTableFixedPosition* CreateForFixedBackground(nsDisplayListBuilder* aBuilder,
-                                                               nsIFrame* aFrame,
-                                                               nsDisplayBackgroundImage* aImage,
-                                                               uint32_t aIndex,
-                                                               nsIFrame* aAncestorFrame);
-
-  virtual uint32_t GetPerFrameKey() override {
-    return (mIndex << (nsDisplayItem::TYPE_BITS + static_cast<uint8_t>(TableTypeBits::COUNT))) |
-           (static_cast<uint8_t>(mTableType) << nsDisplayItem::TYPE_BITS) |
-           nsDisplayItem::GetPerFrameKey();
-  }
-protected:
-  nsDisplayTableFixedPosition(nsDisplayListBuilder* aBuilder, nsIFrame* aFrame,
-                              nsDisplayList* aList, uint32_t aIndex, nsIFrame* aAncestorFrame);
-
-  TableType mTableType;
 };
 
 
