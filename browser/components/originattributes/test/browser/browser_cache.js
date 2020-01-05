@@ -158,12 +158,6 @@ function* doTest(aBrowser) {
     let audioTrack = content.document.createElement('track');
 
     
-    audioSource.setAttribute("src", audioURL + URLSuffix);
-    audioSource.setAttribute("type", "audio/ogg");
-    audioTrack.setAttribute("src", trackURL);
-    audioTrack.setAttribute("kind", "subtitles");
-
-    
     yield new Promise(resolve => {
       let audioLoaded = false;
       let trackLoaded = false;
@@ -186,12 +180,20 @@ function* doTest(aBrowser) {
         }
       };
 
+      
+      audioTrack.addEventListener("load", trackListener, false);
+      audio.addEventListener("canplaythrough", audioListener, false);
+
+      
+      audioSource.setAttribute("src", audioURL + URLSuffix);
+      audioSource.setAttribute("type", "audio/ogg");
+      audioTrack.setAttribute("src", trackURL);
+      audioTrack.setAttribute("kind", "subtitles");
+
       audio.appendChild(audioSource);
       audio.appendChild(audioTrack);
       audio.autoplay = true;
 
-      audioTrack.addEventListener("load", trackListener, false);
-      audio.addEventListener("canplaythrough", audioListener, false);
       content.document.body.appendChild(audio);
     });
 
@@ -203,10 +205,12 @@ function* doTest(aBrowser) {
       };
 
       
+      video.addEventListener("canplaythrough", listener, false);
+
+      
       video.setAttribute("src", videoURL + URLSuffix);
       video.setAttribute("type", "video/ogg");
 
-      video.addEventListener("canplaythrough", listener, false);
       content.document.body.appendChild(video);
     });
   });
