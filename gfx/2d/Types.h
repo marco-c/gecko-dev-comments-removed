@@ -7,6 +7,8 @@
 #define MOZILLA_GFX_TYPES_H_
 
 #include "mozilla/EndianUtils.h"
+#include "mozilla/MacroArgs.h" 
+#include "nsDebug.h"
 
 #include <stddef.h>
 #include <stdint.h>
@@ -397,11 +399,33 @@ enum SideBits {
   eSideBitsAll = eSideBitsTopBottom | eSideBitsLeftRight
 };
 
-} 
-
 #define NS_SIDE_TOP    mozilla::eSideTop
 #define NS_SIDE_RIGHT  mozilla::eSideRight
 #define NS_SIDE_BOTTOM mozilla::eSideBottom
 #define NS_SIDE_LEFT   mozilla::eSideLeft
+
+namespace css {
+typedef mozilla::Side Side;
+} 
+
+
+
+
+
+#define NS_FOR_CSS_SIDES(var_)                                           \
+  int32_t MOZ_CONCAT(var_,__LINE__) = NS_SIDE_TOP;                       \
+  for (mozilla::css::Side var_;                                          \
+       MOZ_CONCAT(var_,__LINE__) <= NS_SIDE_LEFT &&                      \
+         ((var_ = mozilla::css::Side(MOZ_CONCAT(var_,__LINE__))), true); \
+       MOZ_CONCAT(var_,__LINE__)++)
+
+static inline css::Side operator++(css::Side& side, int) {
+    NS_PRECONDITION(side >= NS_SIDE_TOP &&
+                    side <= NS_SIDE_LEFT, "Out of range side");
+    side = css::Side(side + 1);
+    return side;
+}
+
+} 
 
 #endif 
