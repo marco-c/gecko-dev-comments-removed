@@ -74,6 +74,12 @@ public:
     return do_QueryFrame(GetInner());
   }
 
+  
+  virtual void DoUpdateStyleOfOwnedAnonBoxes(
+    mozilla::ServoStyleSet& aStyleSet,
+    nsStyleChangeList& aChangeList,
+    nsChangeHint aHintForThisFrame) override;
+
 #ifdef ACCESSIBILITY  
   virtual mozilla::a11y::AccType AccessibleType() override;
 #endif
@@ -85,6 +91,7 @@ public:
 #endif
 
   
+
 
 
 
