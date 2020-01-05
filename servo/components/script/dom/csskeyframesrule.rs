@@ -5,7 +5,7 @@
 use cssparser::Parser;
 use dom::bindings::codegen::Bindings::CSSKeyframesRuleBinding;
 use dom::bindings::codegen::Bindings::CSSKeyframesRuleBinding::CSSKeyframesRuleMethods;
-use dom::bindings::error::{Error, ErrorResult};
+use dom::bindings::error::ErrorResult;
 use dom::bindings::inheritance::Castable;
 use dom::bindings::js::{MutNullableJS, Root};
 use dom::bindings::reflector::{DomObject, reflect_dom_object};
@@ -16,11 +16,11 @@ use dom::cssrulelist::{CSSRuleList, RulesSource};
 use dom::cssstylesheet::CSSStyleSheet;
 use dom::window::Window;
 use dom_struct::dom_struct;
-use servo_atoms::Atom;
 use std::sync::Arc;
 use style::keyframes::{Keyframe, KeyframeSelector};
 use style::shared_lock::{Locked, ToCssWithGuard};
 use style::stylesheets::KeyframesRule;
+use style::values::KeyframesName;
 
 #[dom_struct]
 pub struct CSSKeyframesRule {
@@ -57,13 +57,13 @@ impl CSSKeyframesRule {
         })
     }
 
-    /// Given a keyframe selector, finds the index of the first corresponding rule if any
+    
     fn find_rule(&self, selector: &str) -> Option<usize> {
         let mut input = Parser::new(selector);
         if let Ok(sel) = KeyframeSelector::parse(&mut input) {
             let guard = self.cssrule.shared_lock().read();
-            // This finds the *last* element matching a selector
-            // because that's the rule that applies. Thus, rposition
+            
+            
             self.keyframesrule.read_with(&guard)
                 .keyframes.iter().rposition(|frame| {
                     frame.read_with(&guard).selector == sel
@@ -75,12 +75,12 @@ impl CSSKeyframesRule {
 }
 
 impl CSSKeyframesRuleMethods for CSSKeyframesRule {
-    // https://drafts.csswg.org/css-animations/#dom-csskeyframesrule-cssrules
+    
     fn CssRules(&self) -> Root<CSSRuleList> {
         self.rulelist()
     }
 
-    // https://drafts.csswg.org/css-animations/#dom-csskeyframesrule-appendrule
+    
     fn AppendRule(&self, rule: DOMString) {
         let rule = Keyframe::parse(&rule, self.cssrule.parent_stylesheet().style_stylesheet());
         if let Ok(rule) = rule {
@@ -90,40 +90,34 @@ impl CSSKeyframesRuleMethods for CSSKeyframesRule {
         }
     }
 
-    // https://drafts.csswg.org/css-animations/#dom-csskeyframesrule-deleterule
+    
     fn DeleteRule(&self, selector: DOMString) {
         if let Some(idx) = self.find_rule(&selector) {
             let _ = self.rulelist().remove_rule(idx as u32);
         }
     }
 
-    // https://drafts.csswg.org/css-animations/#dom-csskeyframesrule-findrule
+    
     fn FindRule(&self, selector: DOMString) -> Option<Root<CSSKeyframeRule>> {
         self.find_rule(&selector).and_then(|idx| {
             self.rulelist().item(idx as u32)
         }).and_then(Root::downcast)
     }
 
-    // https://drafts.csswg.org/css-animations/#dom-csskeyframesrule-name
+    
     fn Name(&self) -> DOMString {
         let guard = self.cssrule.shared_lock().read();
-        DOMString::from(&*self.keyframesrule.read_with(&guard).name)
+        DOMString::from(&**self.keyframesrule.read_with(&guard).name.as_atom())
     }
 
-    // https://drafts.csswg.org/css-animations/#dom-csskeyframesrule-name
+    
     fn SetName(&self, value: DOMString) -> ErrorResult {
-        // https://github.com/w3c/csswg-drafts/issues/801
-        // Setting this property to a CSS-wide keyword or `none` will
-        // throw a Syntax Error.
-        match_ignore_ascii_case! { &value,
-            "initial" => return Err(Error::Syntax),
-            "inherit" => return Err(Error::Syntax),
-            "unset" => return Err(Error::Syntax),
-            "none" => return Err(Error::Syntax),
-            _ => ()
-        }
+        
+        
+        
+        let name = KeyframesName::from_ident(value.into());
         let mut guard = self.cssrule.shared_lock().write();
-        self.keyframesrule.write_with(&mut guard).name = Atom::from(value);
+        self.keyframesrule.write_with(&mut guard).name = name;
         Ok(())
     }
 }
