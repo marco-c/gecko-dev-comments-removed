@@ -377,13 +377,19 @@ PushArena(GCMarker* gcmarker, Arena* arena);
 
 
 
-template <typename T>
-bool
-IsMarkedUnbarriered(T* thingp);
+
+
 
 template <typename T>
 bool
-IsMarked(WriteBarrieredBase<T>* thingp);
+IsMarkedUnbarriered(JSRuntime* rt, T* thingp);
+
+
+
+
+template <typename T>
+bool
+IsMarked(JSRuntime* rt, WriteBarrieredBase<T>* thingp);
 
 template <typename T>
 bool

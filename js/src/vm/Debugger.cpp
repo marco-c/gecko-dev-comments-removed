@@ -806,7 +806,7 @@ Debugger::getHook(Hook hook) const
 }
 
 bool
-Debugger::hasAnyLiveHooks() const
+Debugger::hasAnyLiveHooks(JSRuntime* rt) const
 {
     if (!enabled)
         return false;
@@ -821,7 +821,7 @@ Debugger::hasAnyLiveHooks() const
 
     
     for (Breakpoint* bp = firstBreakpoint(); bp; bp = bp->nextInDebugger()) {
-        if (IsMarkedUnbarriered(&bp->site->script))
+        if (IsMarkedUnbarriered(rt, &bp->site->script))
             return true;
     }
 
@@ -3004,7 +3004,7 @@ Debugger::markIteratively(GCMarker* marker)
     for (CompartmentsIter c(rt, SkipAtoms); !c.done(); c.next()) {
         if (c->isDebuggee()) {
             GlobalObject* global = c->unsafeUnbarrieredMaybeGlobal();
-            if (!IsMarkedUnbarriered(&global))
+            if (!IsMarkedUnbarriered(rt, &global))
                 continue;
 
             
@@ -3026,8 +3026,8 @@ Debugger::markIteratively(GCMarker* marker)
                 if (!dbgobj->zone()->isGCMarking())
                     continue;
 
-                bool dbgMarked = IsMarked(&dbgobj);
-                if (!dbgMarked && dbg->hasAnyLiveHooks()) {
+                bool dbgMarked = IsMarked(rt, &dbgobj);
+                if (!dbgMarked && dbg->hasAnyLiveHooks(rt)) {
                     
 
 
@@ -3040,12 +3040,12 @@ Debugger::markIteratively(GCMarker* marker)
                 if (dbgMarked) {
                     
                     for (Breakpoint* bp = dbg->firstBreakpoint(); bp; bp = bp->nextInDebugger()) {
-                        if (IsMarkedUnbarriered(&bp->site->script)) {
+                        if (IsMarkedUnbarriered(rt, &bp->site->script)) {
                             
 
 
 
-                            if (!IsMarked(&bp->getHandlerRef())) {
+                            if (!IsMarked(rt, &bp->getHandlerRef())) {
                                 TraceEdge(marker, &bp->getHandlerRef(), "breakpoint handler");
                                 markedAny = true;
                             }

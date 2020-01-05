@@ -1275,7 +1275,7 @@ RegExpShared::needsSweep(JSRuntime* rt)
     
     
     
-    bool keep = marked() && IsMarked(&source);
+    bool keep = marked() && IsMarked(rt, &source);
     for (size_t i = 0; i < ArrayLength(compilationArray); i++) {
         RegExpShared::RegExpCompilation& compilation = compilationArray[i];
         if (compilation.jitCode && gc::IsAboutToBeFinalized(&compilation.jitCode))
