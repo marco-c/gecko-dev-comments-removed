@@ -1372,6 +1372,19 @@ class BuildReader(object):
         """
         paths, _ = self.read_relevant_mozbuilds(paths)
 
+        
+        
+        
+        
+        defaults_cache = {}
+        def test_defaults_for_path(ctxs):
+            key = tuple(ctx.current_path or ctx.main_path for ctx in ctxs)
+
+            if key not in defaults_cache:
+                defaults_cache[key] = self.test_defaults_for_path(ctxs)
+
+            return defaults_cache[key]
+
         r = {}
 
         for path, ctxs in paths.items():
@@ -1392,7 +1405,7 @@ class BuildReader(object):
                     flags += ctx
 
             if not any([flags.test_tags, flags.test_files, flags.test_flavors]):
-                flags += self.test_defaults_for_path(ctxs)
+                flags += test_defaults_for_path(ctxs)
 
             r[path] = flags
 
