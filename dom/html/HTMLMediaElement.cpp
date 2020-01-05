@@ -4513,6 +4513,15 @@ void HTMLMediaElement::UnbindFromTree(bool aDeep,
   RunInStableState(task);
 }
 
+static bool
+IsVP9InMP4(const MediaContainerType& aContainerType)
+{
+  const MediaContainerType mimeType(aContainerType.Type());
+  return DecoderTraits::IsMP4SupportedType(mimeType,
+                                            nullptr)
+         && IsVP9CodecString(aContainerType.ExtendedType().Codecs().AsString());
+}
+
 
 CanPlayStatus
 HTMLMediaElement::GetCanPlay(const nsAString& aType,
@@ -4522,7 +4531,16 @@ HTMLMediaElement::GetCanPlay(const nsAString& aType,
   if (!containerType) {
     return CANPLAY_NO;
   }
-  return DecoderTraits::CanHandleContainerType(*containerType, aDiagnostics);
+  CanPlayStatus status = DecoderTraits::CanHandleContainerType(*containerType, aDiagnostics);
+  if (status == CANPLAY_YES && IsVP9InMP4(*containerType)) {
+    
+    
+    
+    
+    
+    return CANPLAY_NO;
+  }
+  return status;
 }
 
 NS_IMETHODIMP
