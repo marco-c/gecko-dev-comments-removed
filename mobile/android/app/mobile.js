@@ -624,6 +624,8 @@ pref("media.android-remote-codec.enabled", false);
 
 pref("media.mediasource.enabled", true);
 
+pref("media.mediadrm-widevinecdm.visible", true);
+
 
 pref("image.downscale-during-decode.enabled", true);
 
