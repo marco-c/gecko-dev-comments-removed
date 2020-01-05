@@ -533,7 +533,7 @@ nsIdentifierMapEntry::HasIdElementExposedAsHTMLDocumentProperty()
 size_t
 nsIdentifierMapEntry::SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const
 {
-  return mKey.mString.SizeOfExcludingThisIfUnshared(aMallocSizeOf);
+  return nsStringHashKey::SizeOfExcludingThis(aMallocSizeOf);
 }
 
 
@@ -2891,7 +2891,8 @@ nsDocument::AddToNameTable(Element *aElement, nsIAtom* aName)
              "Only put elements that need to be exposed as document['name'] in "
              "the named table.");
 
-  nsIdentifierMapEntry* entry = mIdentifierMap.PutEntry(aName);
+  nsIdentifierMapEntry *entry =
+    mIdentifierMap.PutEntry(nsDependentAtomString(aName));
 
   
   if (entry) {
@@ -2910,7 +2911,8 @@ nsDocument::RemoveFromNameTable(Element *aElement, nsIAtom* aName)
   if (mIdentifierMap.Count() == 0)
     return;
 
-  nsIdentifierMapEntry* entry = mIdentifierMap.GetEntry(aName);
+  nsIdentifierMapEntry *entry =
+    mIdentifierMap.GetEntry(nsDependentAtomString(aName));
   if (!entry) 
     return;
 
@@ -2924,7 +2926,8 @@ nsDocument::RemoveFromNameTable(Element *aElement, nsIAtom* aName)
 void
 nsDocument::AddToIdTable(Element *aElement, nsIAtom* aId)
 {
-  nsIdentifierMapEntry* entry = mIdentifierMap.PutEntry(aId);
+  nsIdentifierMapEntry *entry =
+    mIdentifierMap.PutEntry(nsDependentAtomString(aId));
 
   if (entry) { 
     if (nsGenericHTMLElement::ShouldExposeIdAsHTMLDocumentProperty(aElement) &&
@@ -2946,7 +2949,8 @@ nsDocument::RemoveFromIdTable(Element *aElement, nsIAtom* aId)
     return;
   }
 
-  nsIdentifierMapEntry* entry = mIdentifierMap.GetEntry(aId);
+  nsIdentifierMapEntry *entry =
+    mIdentifierMap.GetEntry(nsDependentAtomString(aId));
   if (!entry) 
     return;
 
@@ -5162,7 +5166,7 @@ nsDocument::AddIDTargetObserver(nsIAtom* aID, IDTargetObserver aObserver,
   if (!CheckGetElementByIdArg(id))
     return nullptr;
 
-  nsIdentifierMapEntry* entry = mIdentifierMap.PutEntry(aID);
+  nsIdentifierMapEntry *entry = mIdentifierMap.PutEntry(id);
   NS_ENSURE_TRUE(entry, nullptr);
 
   entry->AddContentChangeCallback(aObserver, aData, aForImage);
@@ -5178,7 +5182,7 @@ nsDocument::RemoveIDTargetObserver(nsIAtom* aID, IDTargetObserver aObserver,
   if (!CheckGetElementByIdArg(id))
     return;
 
-  nsIdentifierMapEntry* entry = mIdentifierMap.GetEntry(aID);
+  nsIdentifierMapEntry *entry = mIdentifierMap.GetEntry(id);
   if (!entry) {
     return;
   }
@@ -6475,15 +6479,9 @@ nsDocument::EnableStyleSheetsForSetInternal(const nsAString& aSheetSet,
     StyleSheet* sheet = GetStyleSheetAt(index);
     NS_ASSERTION(sheet, "Null sheet in sheet list!");
 
-    
-    if (sheet->IsServo()) {
-      NS_ERROR("stylo: can't handle alternate ServoStyleSheets yet");
-      continue;
-    }
-
-    sheet->AsGecko()->GetTitle(title);
+    sheet->GetTitle(title);
     if (!title.IsEmpty()) {
-      sheet->AsGecko()->SetEnabled(title.Equals(aSheetSet));
+      sheet->SetEnabled(title.Equals(aSheetSet));
     }
   }
   if (aUpdateCSSLoader) {
