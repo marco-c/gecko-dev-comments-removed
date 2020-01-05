@@ -37,11 +37,12 @@ static float ExtractValueFromCurve(double startTime, float* aCurve, uint32_t aCu
   if (ratio >= 1.0) {
     return aCurve[aCurveLength - 1];
   }
-  uint32_t current = uint32_t(aCurveLength * ratio);
+  uint32_t current = uint32_t(floor((aCurveLength - 1) * ratio));
   uint32_t next = current + 1;
+  double step = duration / double(aCurveLength - 1);
   if (next < aCurveLength) {
-    double t0 = double(current) / double(aCurveLength) * duration ;
-    double t1 = double(next) / double(aCurveLength) * duration ;
+    double t0 = current * step;
+    double t1 = next * step;
     return LinearInterpolate(t0, aCurve[current], t1, aCurve[next], t - startTime);
   } else {
     return aCurve[current];
@@ -50,6 +51,98 @@ static float ExtractValueFromCurve(double startTime, float* aCurve, uint32_t aCu
 
 namespace mozilla {
 namespace dom {
+
+template <class ErrorResult> bool
+AudioEventTimeline::ValidateEvent(AudioTimelineEvent& aEvent,
+                                  ErrorResult& aRv)
+{
+  MOZ_ASSERT(NS_IsMainThread());
+
+  auto TimeOf = [](const AudioTimelineEvent& aEvent) -> double {
+    return aEvent.template Time<double>();
+  };
+
+  
+  if (!WebAudioUtils::IsTimeValid(TimeOf(aEvent)) ||
+      !WebAudioUtils::IsTimeValid(aEvent.mTimeConstant)) {
+    aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+    return false;
+  }
+
+  if (aEvent.mType == AudioTimelineEvent::SetValueCurve) {
+    if (!aEvent.mCurve || !aEvent.mCurveLength) {
+      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+      return false;
+    }
+    for (uint32_t i = 0; i < aEvent.mCurveLength; ++i) {
+      if (!IsValid(aEvent.mCurve[i])) {
+        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+        return false;
+      }
+    }
+  }
+
+  bool timeAndValueValid = IsValid(aEvent.mValue) &&
+                           IsValid(aEvent.mDuration);
+  if (!timeAndValueValid) {
+    aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+    return false;
+  }
+
+  
+  
+  for (unsigned i = 0; i < mEvents.Length(); ++i) {
+    if (mEvents[i].mType == AudioTimelineEvent::SetValueCurve &&
+        !(aEvent.mType == AudioTimelineEvent::SetValueCurve &&
+          TimeOf(aEvent) == TimeOf(mEvents[i])) &&
+        TimeOf(mEvents[i]) <= TimeOf(aEvent) &&
+        TimeOf(mEvents[i]) + mEvents[i].mDuration >= TimeOf(aEvent)) {
+      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+      return false;
+    }
+  }
+
+  
+  
+  if (aEvent.mType == AudioTimelineEvent::SetValueCurve) {
+    for (unsigned i = 0; i < mEvents.Length(); ++i) {
+      
+      if (mEvents[i].mType == AudioTimelineEvent::SetValueCurve &&
+          TimeOf(mEvents[i]) == TimeOf(aEvent)) {
+        continue;
+      }
+      if (TimeOf(mEvents[i]) > TimeOf(aEvent) &&
+          TimeOf(mEvents[i]) < TimeOf(aEvent) + aEvent.mDuration) {
+        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+        return false;
+      }
+    }
+  }
+
+  
+  if (aEvent.mType == AudioTimelineEvent::ExponentialRamp) {
+    if (aEvent.mValue <= 0.f) {
+      aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+      return false;
+    }
+    const AudioTimelineEvent* previousEvent = GetPreviousEvent(TimeOf(aEvent));
+    if (previousEvent) {
+      if (previousEvent->mValue <= 0.f) {
+        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+        return false;
+      }
+    } else {
+      if (mValue <= 0.f) {
+        aRv.Throw(NS_ERROR_DOM_SYNTAX_ERR);
+        return false;
+      }
+    }
+  }
+  return true;
+}
+template bool
+AudioEventTimeline::ValidateEvent(AudioTimelineEvent& aEvent,
+                                  ErrorResult& aRv);
 
 
 template<class TimeType> void
