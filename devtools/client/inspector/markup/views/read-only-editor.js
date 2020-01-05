@@ -23,6 +23,9 @@ function ReadOnlyEditor(container, node) {
   } else {
     this.tag.textContent = node.nodeName;
   }
+
+  
+  this.tag.setAttribute("tabindex", "-1");
 }
 
 ReadOnlyEditor.prototype = {
