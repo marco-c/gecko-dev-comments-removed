@@ -106,7 +106,6 @@ let apiManager = new class extends SchemaAPIManager {
 
 ProxyMessenger = {
   _initialized: false,
-
   init() {
     if (this._initialized) {
       return;
@@ -116,11 +115,15 @@ ProxyMessenger = {
     
     
     
+    let pipmm = Services.ppmm.getChildAt(0);
     
     
     
     
-    let messageManagers = [Services.mm, Services.ppmm];
+    
+    
+    
+    let messageManagers = [Services.mm, pipmm];
 
     MessageChannel.addListener(messageManagers, "Extension:Connect", this);
     MessageChannel.addListener(messageManagers, "Extension:Message", this);
@@ -144,9 +147,8 @@ ProxyMessenger = {
       
       return;
     }
-
     let extension = GlobalManager.extensionMap.get(sender.extensionId);
-    let receiverMM = this.getMessageManagerForRecipient(recipient);
+    let receiverMM = this._getMessageManagerForRecipient(recipient);
     if (!extension || !receiverMM) {
       return Promise.reject({
         result: MessageChannel.RESULT_NO_HANDLER,
@@ -172,9 +174,8 @@ ProxyMessenger = {
 
 
 
-
-  getMessageManagerForRecipient(recipient) {
-    let {tabId} = recipient;
+  _getMessageManagerForRecipient(recipient) {
+    let {extensionId, tabId} = recipient;
     
     if (tabId) {
       
@@ -184,9 +185,10 @@ ProxyMessenger = {
     }
 
     
-    let extension = GlobalManager.extensionMap.get(recipient.extensionId);
-    if (extension) {
-      return extension.parentMessageManager;
+    if (extensionId) {
+      
+      
+      return Services.ppmm.getChildAt(0);
     }
 
     return null;
@@ -227,19 +229,6 @@ GlobalManager = {
         ExtensionContent.uninit(this);
       });
     `, false);
-
-    let viewType = browser.getAttribute("webextension-view-type");
-    if (viewType) {
-      let data = {viewType};
-
-      let {getBrowserInfo} = apiManager.global;
-      if (getBrowserInfo) {
-        Object.assign(data, getBrowserInfo(browser));
-      }
-
-      browser.messageManager.sendAsyncMessage("Extension:InitExtensionView",
-                                              data);
-    }
   },
 
   getExtension(extensionId) {
@@ -348,13 +337,12 @@ class ExtensionPageContextParent extends ProxyContextParent {
   }
 
   get tabId() {
-    let {getBrowserInfo} = apiManager.global;
-
-    if (getBrowserInfo) {
-      
-      return getBrowserInfo(this.xulBrowser).tabId;
+    if (!apiManager.global.TabManager) {
+      return;  
     }
-    return undefined;
+    let {gBrowser} = this.xulBrowser.ownerGlobal;
+    let tab = gBrowser && gBrowser.getTabForBrowser(this.xulBrowser);
+    return tab && apiManager.global.TabManager.getId(tab);
   }
 
   onBrowserChange(browser) {
@@ -438,6 +426,12 @@ ParentAPIManager = {
 
     let context;
     if (envType == "addon_parent") {
+      
+      
+      if (principal.URI.prePath !== extension.baseURI.prePath ||
+          !target.contentPrincipal.subsumes(principal)) {
+        throw new Error(`Refused to create privileged WebExtension context for ${principal.URI.spec}`);
+      }
       context = new ExtensionPageContextParent(envType, extension, data, target);
     } else if (envType == "content_parent") {
       context = new ContentScriptContextParent(envType, extension, data, target, principal);
@@ -537,7 +531,9 @@ ParentAPIManager = {
   getContextById(childId) {
     let context = this.proxyContexts.get(childId);
     if (!context) {
-      throw new Error("WebExtension context not found!");
+      let error = new Error("WebExtension context not found!");
+      Cu.reportError(error);
+      throw error;
     }
     return context;
   },

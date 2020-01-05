@@ -2579,23 +2579,7 @@ nsFrameLoader::TryRemoteBrowser()
   
   if (!OwnerIsMozBrowserFrame()) {
     if (parentDocShell->ItemType() != nsIDocShellTreeItem::typeChrome) {
-      
-      
-      
-      
-      
-      
-      
-      nsCOMPtr<nsIWebNavigation> parentWebNav;
-      nsCOMPtr<nsIURI> aboutAddons;
-      nsCOMPtr<nsIURI> parentURI;
-      bool equals;
-      if (!((parentWebNav = do_GetInterface(parentDocShell)) &&
-            NS_SUCCEEDED(NS_NewURI(getter_AddRefs(aboutAddons), "about:addons")) &&
-            NS_SUCCEEDED(parentWebNav->GetCurrentURI(getter_AddRefs(parentURI))) &&
-            NS_SUCCEEDED(parentURI->EqualsExceptRef(aboutAddons, &equals)) && equals)) {
-        return false;
-      }
+      return false;
     }
 
     if (!mOwnerContent->IsXULElement()) {

@@ -2,19 +2,6 @@
 
 
 
-
-
-if (location.pathname.includes("test-oop-extensions")) {
-  add_task(() => {
-    return SpecialPowers.pushPrefEnv({set: [
-      ["dom.ipc.processCount", 1],
-      ["extensions.webextensions.remote", true],
-    ]});
-  });
-}
-
-
-
 function waitForLoad(win) {
   return new Promise(resolve => {
     win.addEventListener("load", function listener() {

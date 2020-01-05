@@ -25,21 +25,29 @@ var {
 
 
 function getSender(extension, target, sender) {
-  let tabId;
   if ("tabId" in sender) {
     
     
     
-    tabId = sender.tabId;
+    let tab = TabManager.getTab(sender.tabId, null, null);
     delete sender.tabId;
-  } else if (target instanceof Ci.nsIDOMXULElement) {
-    tabId = getBrowserInfo(target).tabId;
-  }
-
-  if (tabId) {
-    let tab = TabManager.getTab(tabId, null, null);
     if (tab) {
       sender.tab = TabManager.convert(extension, tab);
+      return;
+    }
+  }
+  if (target instanceof Ci.nsIDOMXULElement) {
+    
+    
+    let tabbrowser = target.ownerGlobal.gBrowser;
+    if (tabbrowser) {
+      let tab = tabbrowser.getTabForBrowser(target);
+
+      
+      
+      if (tab) {
+        sender.tab = TabManager.convert(extension, tab);
+      }
     }
   }
 }
@@ -68,13 +76,10 @@ extensions.on("page-shutdown", (type, context) => {
 });
 
 extensions.on("fill-browser-data", (type, browser, data) => {
-  let tabId, windowId;
-  if (browser) {
-    ({tabId, windowId} = getBrowserInfo(browser));
-  }
-
-  data.tabId = tabId || -1;
-  data.windowId = windowId || -1;
+  let gBrowser = browser && browser.ownerGlobal.gBrowser;
+  let tab = gBrowser && gBrowser.getTabForBrowser(browser);
+  data.tabId = tab ? TabManager.getId(tab) : -1;
+  data.windowId = tab ? WindowManager.getId(tab.ownerGlobal) : -1;
 });
 
 
