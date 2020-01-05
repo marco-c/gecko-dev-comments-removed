@@ -14,6 +14,7 @@ use element_state::ElementState;
 use parking_lot::RwLock;
 use properties::{ComputedValues, PropertyDeclarationBlock};
 use selector_parser::{ElementExt, PreExistingComputedValues, PseudoElement};
+use selectors::matching::ElementSelectorFlags;
 use sink::Push;
 use std::fmt;
 use std::fmt::Debug;
@@ -321,6 +322,19 @@ pub trait TElement : PartialEq + Debug + Sized + Copy + Clone + ElementExt + Pre
     
     
     fn skip_root_and_item_based_display_fixup(&self) -> bool;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    unsafe fn set_selector_flags(&self, flags: ElementSelectorFlags);
+
+    
+    fn has_selector_flags(&self, flags: ElementSelectorFlags) -> bool;
 }
 
 

@@ -313,6 +313,15 @@ pub trait ThreadSafeLayoutElement: Clone + Copy + Sized + Debug +
     
     fn type_id(&self) -> Option<LayoutNodeType>;
 
+    
+    
+    
+    
+    
+    
+    unsafe fn unsafe_get(self) ->
+        <<Self::ConcreteThreadSafeLayoutNode as ThreadSafeLayoutNode>::ConcreteNode as TNode>::ConcreteElement;
+
     #[inline]
     fn get_attr(&self, namespace: &Namespace, name: &LocalName) -> Option<&str>;
 
@@ -413,7 +422,7 @@ pub trait ThreadSafeLayoutElement: Clone + Copy + Sized + Debug +
                             let new_style =
                                 context.stylist
                                        .lazily_compute_pseudo_element_style(
-                                           self,
+                                           unsafe { &self.unsafe_get() },
                                            &style_pseudo,
                                            &data.styles().primary.values,
                                            &context.default_computed_values);

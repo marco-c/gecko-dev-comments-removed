@@ -9,12 +9,14 @@ use animation::Animation;
 use app_units::Au;
 use bloom::StyleBloom;
 use data::ElementData;
-use dom::{OpaqueNode, TNode, TElement};
+use dom::{OpaqueNode, TNode, TElement, SendElement};
 use error_reporting::ParseErrorReporter;
 use euclid::Size2D;
 use matching::StyleSharingCandidateCache;
 use parking_lot::RwLock;
 use properties::ComputedValues;
+use selectors::matching::ElementSelectorFlags;
+use servo_config::opts;
 use std::collections::HashMap;
 use std::env;
 use std::fmt;
@@ -22,6 +24,7 @@ use std::ops::Add;
 use std::sync::{Arc, Mutex};
 use std::sync::mpsc::Sender;
 use stylist::Stylist;
+use thread_state;
 use timer::Timer;
 
 
@@ -160,7 +163,35 @@ lazy_static! {
 impl TraversalStatistics {
     
     pub fn should_dump() -> bool {
-        *DUMP_STYLE_STATISTICS
+        *DUMP_STYLE_STATISTICS || opts::get().style_sharing_stats
+    }
+}
+
+
+
+
+pub enum SequentialTask<E: TElement> {
+    
+    
+    SetSelectorFlags(SendElement<E>, ElementSelectorFlags),
+}
+
+impl<E: TElement> SequentialTask<E> {
+    
+    pub fn execute(self) {
+        use self::SequentialTask::*;
+        debug_assert!(thread_state::get() == thread_state::LAYOUT);
+        match self {
+            SetSelectorFlags(el, flags) => {
+                unsafe { el.set_selector_flags(flags) };
+            }
+        }
+    }
+
+    
+    pub fn set_selector_flags(el: E, flags: ElementSelectorFlags) -> Self {
+        use self::SequentialTask::*;
+        SetSelectorFlags(unsafe { SendElement::new(el) }, flags)
     }
 }
 
@@ -178,6 +209,10 @@ pub struct ThreadLocalStyleContext<E: TElement> {
     
     pub new_animations_sender: Sender<Animation>,
     
+    
+    
+    pub tasks: Vec<SequentialTask<E>>,
+    
     pub statistics: TraversalStatistics,
     
     current_element_info: Option<CurrentElementInfo>,
@@ -190,6 +225,7 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
             style_sharing_candidate_cache: StyleSharingCandidateCache::new(),
             bloom_filter: StyleBloom::new(),
             new_animations_sender: shared.local_context_creation_data.lock().unwrap().new_animations_sender.clone(),
+            tasks: Vec::new(),
             statistics: TraversalStatistics::default(),
             current_element_info: None,
         }
@@ -221,10 +257,15 @@ impl<E: TElement> ThreadLocalStyleContext<E> {
     }
 }
 
-#[cfg(debug_assertions)]
 impl<E: TElement> Drop for ThreadLocalStyleContext<E> {
     fn drop(&mut self) {
         debug_assert!(self.current_element_info.is_none());
+
+        
+        debug_assert!(thread_state::get() == thread_state::LAYOUT);
+        for task in self.tasks.drain(..) {
+            task.execute();
+        }
     }
 }
 

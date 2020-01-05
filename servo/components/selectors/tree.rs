@@ -5,7 +5,6 @@
 
 
 
-use matching::ElementFlags;
 use parser::{AttrSelector, SelectorImpl};
 use std::ascii::AsciiExt;
 
@@ -162,16 +161,4 @@ pub trait Element: MatchAttr + Sized {
     
     
     fn each_class<F>(&self, callback: F) where F: FnMut(&<Self::Impl as SelectorImpl>::ClassName);
-
-    
-    
-    
-    
-    
-    fn insert_flags(&self, _flags: ElementFlags) {}
-
-    
-    
-    
-    fn clear_flags(&self) {}
 }
