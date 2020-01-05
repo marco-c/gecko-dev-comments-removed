@@ -3,7 +3,7 @@
 
 
 use ipc_channel::ipc::{self, IpcReceiver, IpcSender};
-use net_traits::storage_thread::{StorageThread, StorageThreadMsg, StorageType};
+use net_traits::storage_thread::{StorageThreadMsg, StorageType};
 use resource_thread;
 use std::borrow::ToOwned;
 use std::collections::BTreeMap;
@@ -18,9 +18,9 @@ pub trait StorageThreadFactory {
     fn new() -> Self;
 }
 
-impl StorageThreadFactory for StorageThread {
+impl StorageThreadFactory for IpcSender<StorageThreadMsg> {
     
-    fn new() -> StorageThread {
+    fn new() -> IpcSender<StorageThreadMsg> {
         let (chan, port) = ipc::channel().unwrap();
         spawn_named("StorageManager".to_owned(), move || {
             StorageManager::new(port).start();
