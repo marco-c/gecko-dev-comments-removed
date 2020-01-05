@@ -28,12 +28,6 @@ const PLATFORM_VERSION = "1.9.2";
 const APP_VERSION = "1";
 const APP_NAME = "XPCShell";
 
-const PREF_BRANCH = "toolkit.telemetry.";
-const PREF_ENABLED = PREF_BRANCH + "enabled";
-const PREF_ARCHIVE_ENABLED = PREF_BRANCH + "archive.enabled";
-const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
-const PREF_UNIFIED = PREF_BRANCH + "unified";
-
 var gClientID = null;
 
 function sendPing(aSendClientId, aSendEnvironment) {
@@ -98,8 +92,8 @@ add_task(function* test_setup() {
   
   yield setEmptyPrefWatchlist();
 
-  Services.prefs.setBoolPref(PREF_ENABLED, true);
-  Services.prefs.setBoolPref(PREF_FHR_UPLOAD_ENABLED, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
   yield new Promise(resolve =>
     Telemetry.asyncFetchTelemetryData(wrapWithExceptionHandler(resolve)));
@@ -123,7 +117,7 @@ add_task(function* test_simplePing() {
   
   
   
-  Preferences.set(TelemetryController.Constants.PREF_SERVER, "http://localhost:" + PingServer.port);
+  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
 
   yield sendPing(false, false);
   let request = yield PingServer.promiseNextRequest();
@@ -140,7 +134,7 @@ add_task(function* test_simplePing() {
 });
 
 add_task(function* test_disableDataUpload() {
-  const isUnified = Preferences.get(PREF_UNIFIED, false);
+  const isUnified = Preferences.get(TelemetryUtils.Preferences.Unified, false);
   if (!isUnified) {
     
     
@@ -148,7 +142,7 @@ add_task(function* test_disableDataUpload() {
   }
 
   
-  Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
+  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
 
   let ping = yield PingServer.promiseNextPing();
   checkPingFormat(ping, DELETION_PING_TYPE, true, false);
@@ -156,7 +150,7 @@ add_task(function* test_disableDataUpload() {
   yield TelemetrySend.testWaitOnOutgoingPings();
 
   
-  Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
+  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
   
   yield PingServer.stop();
@@ -165,7 +159,7 @@ add_task(function* test_disableDataUpload() {
   TelemetryController.submitExternalPing(TEST_PING_TYPE, {});
 
   
-  Preferences.set(PREF_FHR_UPLOAD_ENABLED, false);
+  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, false);
 
   
   yield TelemetrySend.testWaitOnOutgoingPings();
@@ -184,7 +178,7 @@ add_task(function* test_disableDataUpload() {
   PingServer.start();
   
   
-  Preferences.set(TelemetryController.Constants.PREF_SERVER, "http://localhost:" + PingServer.port);
+  Preferences.set(TelemetryUtils.Preferences.Server, "http://localhost:" + PingServer.port);
 
   
   yield TelemetrySend.shutdown();
@@ -200,15 +194,14 @@ add_task(function* test_disableDataUpload() {
   
   yield TelemetrySend.testWaitOnOutgoingPings();
   
-  Preferences.set(PREF_FHR_UPLOAD_ENABLED, true);
+  Preferences.set(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 });
 
 add_task(function* test_pingHasClientId() {
-  const PREF_CACHED_CLIENTID = "toolkit.telemetry.cachedClientID";
 
   
   
-  Preferences.reset(PREF_CACHED_CLIENTID);
+  Preferences.reset(TelemetryUtils.Preferences.CachedClientId);
   yield TelemetryController.testShutdown();
   yield ClientID._reset();
   yield TelemetryStorage.testClearPendingPings();
@@ -254,7 +247,7 @@ add_task(function* test_pingHasClientId() {
 
   
   
-  Preferences.reset(PREF_CACHED_CLIENTID);
+  Preferences.reset(TelemetryUtils.Preferences.CachedClientId);
   yield TelemetryController.testShutdown();
   yield TelemetryStorage.testClearPendingPings();
   yield TelemetryController.testReset();
@@ -294,8 +287,8 @@ add_task(function* test_archivePings() {
   
   
   
-  const isUnified = Preferences.get(PREF_UNIFIED, false);
-  const uploadPref = isUnified ? PREF_FHR_UPLOAD_ENABLED : PREF_ENABLED;
+  const isUnified = Preferences.get(TelemetryUtils.Preferences.Unified, false);
+  const uploadPref = isUnified ? TelemetryUtils.Preferences.FhrUploadEnabled : TelemetryUtils.Preferences.TelemetryEnabled;
   Preferences.set(uploadPref, false);
 
   
@@ -316,7 +309,7 @@ add_task(function* test_archivePings() {
   
   now = new Date(2010, 10, 18, 12, 0, 0);
   fakeNow(now);
-  Preferences.set(PREF_ARCHIVE_ENABLED, false);
+  Preferences.set(TelemetryUtils.Preferences.ArchiveEnabled, false);
   pingId = yield sendPing(true, true);
   let promise = TelemetryArchive.promiseArchivedPingById(pingId);
   Assert.ok((yield promiseRejects(promise)),
@@ -324,7 +317,7 @@ add_task(function* test_archivePings() {
 
   
   Preferences.set(uploadPref, true);
-  Preferences.set(PREF_ARCHIVE_ENABLED, true);
+  Preferences.set(TelemetryUtils.Preferences.ArchiveEnabled, true);
 
   now = new Date(2014, 6, 18, 22, 0, 0);
   fakeNow(now);
@@ -430,32 +423,32 @@ add_task(function* test_telemetryEnabledUnexpectedValue() {
   
   
   let defaultPrefBranch = Services.prefs.getDefaultBranch(null);
-  defaultPrefBranch.deleteBranch(PREF_ENABLED);
+  defaultPrefBranch.deleteBranch(TelemetryUtils.Preferences.TelemetryEnabled);
 
   
-  Preferences.set(PREF_ENABLED, "false");
+  Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, "false");
   
   yield TelemetryController.testReset();
   Assert.equal(Telemetry.canRecordExtended, false,
                "Invalid values must not enable Telemetry recording.");
 
   
-  defaultPrefBranch.deleteBranch(PREF_ENABLED);
+  defaultPrefBranch.deleteBranch(TelemetryUtils.Preferences.TelemetryEnabled);
 
   
-  Preferences.set(PREF_ENABLED, true);
+  Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, true);
   yield TelemetryController.testReset();
   Assert.equal(Telemetry.canRecordExtended, true,
                "True must enable Telemetry recording.");
 
   
-  Preferences.set(PREF_ENABLED, false);
+  Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, false);
   yield TelemetryController.testReset();
   Assert.equal(Telemetry.canRecordExtended, false,
                "False must disable Telemetry recording.");
 
   
-  Preferences.set(PREF_ENABLED, true);
+  Preferences.set(TelemetryUtils.Preferences.TelemetryEnabled, true);
 });
 
 add_task(function* test_telemetryCleanFHRDatabase() {

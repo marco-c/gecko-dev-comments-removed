@@ -19,9 +19,10 @@ Cu.import("resource://gre/modules/Services.jsm", this);
 Cu.import("resource://gre/modules/TelemetryController.jsm", this);
 Cu.import("resource://gre/modules/TelemetrySession.jsm", this);
 Cu.import("resource://gre/modules/XPCOMUtils.jsm");
+Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 
 
-Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
+Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
 
 
 Cu.import("resource://testing-common/AppInfo.jsm", this);

@@ -14,9 +14,6 @@ Cu.import("resource://gre/modules/TelemetryStorage.jsm", this);
 Cu.import("resource://gre/modules/TelemetryUtils.jsm", this);
 Cu.import("resource://gre/modules/Timer.jsm", this);
 
-const PREF_FHR_UPLOAD_ENABLED = "datareporting.healthreport.uploadEnabled";
-const PREF_TELEMETRY_SERVER = "toolkit.telemetry.server";
-
 
 
 
@@ -41,8 +38,8 @@ add_task(function* setup() {
   
   do_get_profile(true);
 
-  Services.prefs.setBoolPref(PREF_TELEMETRY_ENABLED, true);
-  Services.prefs.setBoolPref(PREF_FHR_UPLOAD_ENABLED, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.TelemetryEnabled, true);
+  Services.prefs.setBoolPref(TelemetryUtils.Preferences.FhrUploadEnabled, true);
 
   
   PingServer.start();
