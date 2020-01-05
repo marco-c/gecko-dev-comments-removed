@@ -16,6 +16,7 @@
 #include "nsIContentSecurityPolicy.h"
 #include "nsIURI.h"
 #include "nsPrintfCString.h"
+#include <cctype>
 
 using namespace mozilla;
 
@@ -328,6 +329,24 @@ nsStyleUtil::AppendPaintOrderValue(uint8_t aValue,
 }
 
  void
+nsStyleUtil::AppendFontTagAsString(uint32_t aTag, nsAString& aResult)
+{
+  
+  
+  
+  
+  
+  nsAutoString tagStr;
+  for (int shiftAmount = 24; shiftAmount >= 0; shiftAmount -= 8) {
+    char c = (aTag >> shiftAmount) & 0xff;
+    MOZ_ASSERT(isascii(c) && isprint(c),
+               "parser should have restricted tag to printable ASCII chars");
+    tagStr.Append(c);
+  }
+  AppendEscapedCSSString(tagStr, aResult);
+}
+
+ void
 nsStyleUtil::AppendFontFeatureSettings(const nsTArray<gfxFontFeature>& aFeatures,
                                        nsAString& aResult)
 {
@@ -338,16 +357,7 @@ nsStyleUtil::AppendFontFeatureSettings(const nsTArray<gfxFontFeature>& aFeatures
         aResult.AppendLiteral(", ");
     }
 
-    
-    char tag[7];
-    tag[0] = '"';
-    tag[1] = (feat.mTag >> 24) & 0xff;
-    tag[2] = (feat.mTag >> 16) & 0xff;
-    tag[3] = (feat.mTag >> 8) & 0xff;
-    tag[4] = feat.mTag & 0xff;
-    tag[5] = '"';
-    tag[6] = 0;
-    aResult.AppendASCII(tag);
+    AppendFontTagAsString(feat.mTag, aResult);
 
     
     if (feat.mValue == 0) {
