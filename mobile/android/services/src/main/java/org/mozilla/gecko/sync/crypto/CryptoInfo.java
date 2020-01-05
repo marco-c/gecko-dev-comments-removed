@@ -18,6 +18,7 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.mozilla.apache.commons.codec.binary.Base64;
+import org.mozilla.gecko.sync.Utils;
 
 
 
@@ -158,7 +159,13 @@ public class CryptoInfo {
 
       
       if (getIV() == null || getIV().length == 0) {
-        cipher.init(Cipher.ENCRYPT_MODE, spec);
+        cipher.init(
+                Cipher.ENCRYPT_MODE,
+                spec,
+                new IvParameterSpec(
+                        Utils.generateRandomBytes(cipher.getBlockSize())
+                )
+        );
       } else {
         cipher.init(Cipher.ENCRYPT_MODE, spec, new IvParameterSpec(getIV()));
       }
