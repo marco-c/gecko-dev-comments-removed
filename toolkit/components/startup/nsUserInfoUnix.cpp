@@ -105,8 +105,7 @@ nsUserInfo::GetDomain(char * *aDomain)
     struct utsname buf;
     char *domainname = nullptr;
 
-    
-    if (uname(&buf)) { 
+    if (uname(&buf) < 0) { 
         return rv;
     }
 

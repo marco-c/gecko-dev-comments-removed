@@ -135,7 +135,7 @@ GfxInfo::GetData()
     
     
     struct utsname unameobj;
-    if (!uname(&unameobj))
+    if (uname(&unameobj) >= 0)
     {
       mOS.Assign(unameobj.sysname);
       mOSRelease.Assign(unameobj.release);
