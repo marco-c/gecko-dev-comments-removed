@@ -296,6 +296,7 @@ function runNextCompletion() {
   finishedCompletions = 0;
   for (let completion of completionSets[currentCompletionSet]) {
     completer.complete(completion.hash.substring(0,4), gethashUrl,
+                       "test-phish-shavar", 
                        (new callback(completion)));
   }
 }
