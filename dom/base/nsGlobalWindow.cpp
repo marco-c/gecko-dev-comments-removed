@@ -11015,7 +11015,7 @@ nsGlobalWindow::ShowSlowScriptDialog()
   
   
   if (!nsContentUtils::IsSafeToRunScript()) {
-    JS_ReportWarning(cx, "A long running script was terminated");
+    JS_ReportWarningASCII(cx, "A long running script was terminated");
     return KillSlowScript;
   }
 
