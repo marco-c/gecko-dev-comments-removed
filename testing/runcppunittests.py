@@ -5,7 +5,8 @@
 
 
 from __future__ import with_statement
-import sys, os, tempfile, shutil
+import sys
+import os
 from optparse import OptionParser
 import manifestparser
 import mozprocess
@@ -13,10 +14,9 @@ import mozinfo
 import mozcrash
 import mozfile
 import mozlog
-from contextlib import contextmanager
-from subprocess import PIPE
 
 SCRIPT_DIR = os.path.abspath(os.path.realpath(os.path.dirname(__file__)))
+
 
 class CPPUnitTests(object):
     
@@ -80,7 +80,7 @@ class CPPUnitTests(object):
                 self.log.test_end(basename, status='PASS', expected='PASS')
             return result
 
-    def build_core_environment(self, env = {}):
+    def build_core_environment(self, env={}):
         """
         Add environment variables likely to be used across all platforms, including remote systems.
         """
@@ -134,7 +134,7 @@ class CPPUnitTests(object):
 
             
             
-            assert not 'ASAN_OPTIONS' in env
+            assert 'ASAN_OPTIONS' not in env
             env['ASAN_OPTIONS'] = 'detect_leaks=0:detect_odr_violation=0'
 
         return env
@@ -175,21 +175,23 @@ class CPPUnitTests(object):
         self.log.info("cppunittests INFO | Failed: %d" % fail_count)
         return fail_count == 0
 
+
 class CPPUnittestOptions(OptionParser):
     def __init__(self):
         OptionParser.__init__(self)
         self.add_option("--xre-path",
-                        action = "store", type = "string", dest = "xre_path",
-                        default = None,
-                        help = "absolute path to directory containing XRE (probably xulrunner)")
+                        action="store", type="string", dest="xre_path",
+                        default=None,
+                        help="absolute path to directory containing XRE (probably xulrunner)")
         self.add_option("--symbols-path",
-                        action = "store", type = "string", dest = "symbols_path",
-                        default = None,
-                        help = "absolute path to directory containing breakpad symbols, or the URL of a zip file containing symbols")
+                        action="store", type="string", dest="symbols_path",
+                        default=None,
+                        help="absolute path to directory containing breakpad symbols, or the URL of a zip file containing symbols")
         self.add_option("--manifest-path",
-                        action = "store", type = "string", dest = "manifest_path",
-                        default = None,
-                        help = "path to test manifest, if different from the path to test binaries")
+                        action="store", type="string", dest="manifest_path",
+                        default=None,
+                        help="path to test manifest, if different from the path to test binaries")
+
 
 def extract_unittests_from_args(args, environ, manifest_path):
     """Extract unittests from args, expanding directories as needed"""
@@ -226,6 +228,7 @@ def extract_unittests_from_args(args, environ, manifest_path):
 
     return tests
 
+
 def update_mozinfo():
     """walk up directories to find mozinfo.json update the info"""
     path = SCRIPT_DIR
@@ -237,6 +240,7 @@ def update_mozinfo():
         path = os.path.split(path)[0]
     mozinfo.find_and_update_from_json(*dirs)
 
+
 def run_test_harness(options, args):
     update_mozinfo()
     progs = extract_unittests_from_args(args, mozinfo.info, options.manifest_path)
@@ -245,6 +249,7 @@ def run_test_harness(options, args):
     result = tester.run_tests(progs, options.xre_path, options.symbols_path)
 
     return result
+
 
 def main():
     parser = CPPUnittestOptions()
@@ -268,6 +273,7 @@ def main():
         result = False
 
     sys.exit(0 if result else 1)
+
 
 if __name__ == '__main__':
     main()
