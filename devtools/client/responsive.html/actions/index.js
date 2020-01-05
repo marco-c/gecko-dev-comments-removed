@@ -54,6 +54,9 @@ createEnum([
   "LOAD_DEVICE_LIST_END",
 
   
+  "REMOVE_DEVICE",
+
+  
   "REMOVE_DEVICE_ASSOCIATION",
 
   
