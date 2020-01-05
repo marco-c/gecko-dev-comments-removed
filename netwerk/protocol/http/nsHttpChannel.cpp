@@ -8908,12 +8908,6 @@ nsHttpChannel::TriggerNetwork(int32_t aTimeout)
 
     if (!aTimeout) {
         mNetworkTriggered = true;
-        if (!mOnCacheAvailableCalled) {
-            
-            
-            
-            mRaceCacheWithNetwork = true;
-        }
         if (mNetworkTriggerTimer) {
             mNetworkTriggerTimer->Cancel();
             mNetworkTriggerTimer = nullptr;
@@ -8959,6 +8953,13 @@ nsHttpChannel::MaybeRaceCacheWithNetwork()
 
     MOZ_ASSERT(sRCWNEnabled, "The pref must be truned on.");
     LOG(("nsHttpChannel::MaybeRaceCacheWithNetwork [this=%p]\n", this));
+
+    if (!mOnCacheAvailableCalled) {
+        
+        
+        mRaceCacheWithNetwork = true;
+    }
+
     return TriggerNetwork(0);
 }
 
@@ -8966,6 +8967,11 @@ NS_IMETHODIMP
 nsHttpChannel::Test_triggerNetwork(int32_t aTimeout)
 {
     MOZ_ASSERT(NS_IsMainThread(), "Must be called on the main thread");
+    if (!mOnCacheAvailableCalled) {
+        
+        
+        mRaceCacheWithNetwork = true;
+    }
     return TriggerNetwork(aTimeout);
 }
 

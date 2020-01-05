@@ -685,7 +685,6 @@ private:
     Atomic<bool> mOnCacheAvailableCalled;
     
     
-    
     Atomic<bool> mRaceCacheWithNetwork;
 
 protected:
