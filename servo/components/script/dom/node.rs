@@ -1452,7 +1452,7 @@ impl Node {
                         0 => (),
                         
                         1 => {
-                            if !parent.child_elements().is_empty() {
+                            if !parent.child_elements().peek().is_none() {
                                 return Err(Error::HierarchyRequest);
                             }
                             if let Some(child) = child {
@@ -1468,7 +1468,7 @@ impl Node {
                 },
                 
                 NodeTypeId::Element(_) => {
-                    if !parent.child_elements().is_empty() {
+                    if !parent.child_elements().peek().is_none() {
                         return Err(Error::HierarchyRequest);
                     }
                     if let Some(ref child) = child {
@@ -1495,7 +1495,7 @@ impl Node {
                             }
                         },
                         None => {
-                            if !parent.child_elements().is_empty() {
+                            if !parent.child_elements().peek().is_none() {
                                 return Err(Error::HierarchyRequest);
                             }
                         },
