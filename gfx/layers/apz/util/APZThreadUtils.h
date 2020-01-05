@@ -7,6 +7,7 @@
 #define mozilla_layers_APZThreadUtils_h
 
 #include "base/message_loop.h"
+#include "nsINamed.h"
 #include "nsITimer.h"
 
 namespace mozilla {
@@ -96,6 +97,68 @@ template <typename Function>
 GenericTimerCallback<Function>* NewTimerCallback(const Function& aFunction)
 {
   return new GenericTimerCallback<Function>(aFunction);
+}
+
+
+
+
+class GenericNamedTimerCallbackBase : public nsITimerCallback,
+                                      public nsINamed
+{
+public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+
+protected:
+  virtual ~GenericNamedTimerCallbackBase() {}
+};
+
+
+
+template <typename Function>
+class GenericNamedTimerCallback final : public GenericNamedTimerCallbackBase
+{
+public:
+  explicit GenericNamedTimerCallback(const Function& aFunction,
+                                     const char* aName)
+    : mFunction(aFunction)
+    , mName(aName)
+  {
+  }
+
+  NS_IMETHOD Notify(nsITimer*) override
+  {
+    mFunction();
+    return NS_OK;
+  }
+
+  NS_IMETHOD GetName(nsACString& aName) override
+  {
+    aName = mName;
+    return NS_OK;
+  }
+
+  NS_IMETHOD SetName(const char * aName) override
+  {
+    mName.Assign(aName);
+    return NS_OK;
+  }
+
+private:
+  Function mFunction;
+  nsCString mName;
+};
+
+
+
+
+
+
+template <typename Function>
+GenericNamedTimerCallback<Function>*
+  NewNamedTimerCallback(const Function& aFunction,
+                        const char* aName)
+{
+  return new GenericNamedTimerCallback<Function>(aFunction, aName);
 }
 
 } 
