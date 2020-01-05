@@ -31,12 +31,14 @@ pub struct PerLevelTraversalData {
 }
 
 bitflags! {
-    /// Represents that target elements of the traversal.
+    /// Flags that control the traversal process.
     pub flags TraversalFlags: u8 {
         /// Traverse only unstyled children.
         const UNSTYLED_CHILDREN_ONLY = 0x01,
-        /// Traverse only elements for animation restyles
+        /// Traverse only elements for animation restyles.
         const ANIMATION_ONLY = 0x02,
+        /// Traverse without generating any change hints.
+        const FOR_RECONSTRUCT = 0x04,
     }
 }
 
@@ -49,6 +51,11 @@ impl TraversalFlags {
     
     pub fn for_unstyled_children_only(&self) -> bool {
         self.contains(UNSTYLED_CHILDREN_ONLY)
+    }
+
+    
+    pub fn for_reconstruct(&self) -> bool {
+        self.contains(FOR_RECONSTRUCT)
     }
 }
 
@@ -148,7 +155,17 @@ pub trait DomTraversal<E: TElement> : Sync {
     fn pre_traverse(root: E, stylist: &Stylist, traversal_flags: TraversalFlags)
                     -> PreTraverseToken
     {
+        debug_assert!(!(traversal_flags.for_reconstruct() &&
+                        traversal_flags.for_unstyled_children_only()),
+                      "must not specify FOR_RECONSTRUCT in combination with UNSTYLED_CHILDREN_ONLY");
+
         if traversal_flags.for_unstyled_children_only() {
+            if root.borrow_data().map_or(true, |d| d.has_styles() && d.styles().is_display_none()) {
+                return PreTraverseToken {
+                    traverse: false,
+                    unstyled_children_only: false,
+                };
+            }
             return PreTraverseToken {
                 traverse: true,
                 unstyled_children_only: true,
@@ -160,16 +177,22 @@ pub trait DomTraversal<E: TElement> : Sync {
         
         
         
-        
         if let Some(mut data) = root.mutate_data() {
             if let Some(r) = data.get_restyle_mut() {
-                debug_assert!(root.next_sibling_element().is_none());
-                let _later_siblings = r.compute_final_hint(root, stylist);
+                let later_siblings = r.compute_final_hint(root, stylist);
+                if later_siblings {
+                    if let Some(next) = root.next_sibling_element() {
+                        if let Some(mut next_data) = next.mutate_data() {
+                            let hint = StoredRestyleHint::subtree_and_later_siblings();
+                            next_data.ensure_restyle().hint.insert(&hint);
+                        }
+                    }
+                }
             }
         }
 
         PreTraverseToken {
-            traverse: Self::node_needs_traversal(root.as_node(), traversal_flags.for_animation_only()),
+            traverse: Self::node_needs_traversal(root.as_node(), traversal_flags),
             unstyled_children_only: false,
         }
     }
@@ -183,9 +206,13 @@ pub trait DomTraversal<E: TElement> : Sync {
     }
 
     
-    fn node_needs_traversal(node: E::ConcreteNode, animation_only: bool) -> bool {
+    fn node_needs_traversal(node: E::ConcreteNode, traversal_flags: TraversalFlags) -> bool {
         
         if is_servo_nonincremental_layout() {
+            return true;
+        }
+
+        if traversal_flags.for_reconstruct() {
             return true;
         }
 
@@ -210,7 +237,7 @@ pub trait DomTraversal<E: TElement> : Sync {
                 
                 
                 
-                if animation_only {
+                if traversal_flags.for_animation_only() {
                     if el.has_animation_only_dirty_descendants() {
                         return true;
                     }
@@ -258,7 +285,11 @@ pub trait DomTraversal<E: TElement> : Sync {
                 
                 
                 
-                if cfg!(feature = "servo") &&
+                
+                
+                
+                if (cfg!(feature = "servo") ||
+                    traversal_flags.for_reconstruct()) &&
                    data.get_restyle().map_or(false, |r| r.damage != RestyleDamage::empty())
                 {
                     return true;
@@ -335,12 +366,16 @@ pub trait DomTraversal<E: TElement> : Sync {
         }
 
         for kid in parent.as_node().children() {
-            if Self::node_needs_traversal(kid, self.shared_context().animation_only_restyle) {
-                let el = kid.as_element();
-                if el.as_ref().and_then(|el| el.borrow_data())
-                              .map_or(false, |d| d.has_styles())
-                {
-                    unsafe { parent.set_dirty_descendants(); }
+            if Self::node_needs_traversal(kid, self.shared_context().traversal_flags) {
+                
+                
+                
+                if !self.shared_context().traversal_flags.for_reconstruct() {
+                    let el = kid.as_element();
+                    if el.as_ref().and_then(|el| el.borrow_data())
+                                  .map_or(false, |d| d.has_styles()) {
+                        unsafe { parent.set_dirty_descendants(); }
+                    }
                 }
                 f(thread_local, kid);
             }
@@ -511,7 +546,7 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     let propagated_hint = match data.get_restyle_mut() {
         None => StoredRestyleHint::empty(),
         Some(r) => {
-            debug_assert!(context.shared.animation_only_restyle ||
+            debug_assert!(context.shared.traversal_flags.for_animation_only() ||
                           !r.hint.has_animation_hint(),
                           "animation restyle hint should be handled during \
                            animation-only restyles");
@@ -519,13 +554,14 @@ pub fn recalc_style_at<E, D>(traversal: &D,
             r.hint.propagate()
         },
     };
-    debug_assert!(data.has_current_styles() || context.shared.animation_only_restyle,
+    debug_assert!(data.has_current_styles() ||
+                  context.shared.traversal_flags.for_animation_only(),
                   "Should have computed style or haven't yet valid computed style in case of animation-only restyle");
     trace!("propagated_hint={:?}, inherited_style_changed={:?}",
            propagated_hint, inherited_style_changed);
 
     let has_dirty_descendants_for_this_restyle =
-        if context.shared.animation_only_restyle {
+        if context.shared.traversal_flags.for_animation_only() {
             element.has_animation_only_dirty_descendants()
         } else {
             element.has_dirty_descendants()
@@ -550,7 +586,14 @@ pub fn recalc_style_at<E, D>(traversal: &D,
                             inherited_style_changed);
     }
 
-    if context.shared.animation_only_restyle {
+    
+    
+    
+    if context.shared.traversal_flags.for_reconstruct() {
+        data.clear_restyle();
+    }
+
+    if context.shared.traversal_flags.for_animation_only() {
         unsafe { element.unset_animation_only_dirty_descendants(); }
     }
 
@@ -563,7 +606,14 @@ pub fn recalc_style_at<E, D>(traversal: &D,
     
     
     
-    if data.styles().is_display_none() {
+    
+    
+    
+    
+    
+    
+    
+    if data.styles().is_display_none() || context.shared.traversal_flags.for_reconstruct() {
         unsafe { element.unset_dirty_descendants(); }
     }
 }
