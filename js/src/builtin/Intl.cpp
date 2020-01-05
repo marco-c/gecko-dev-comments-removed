@@ -977,65 +977,35 @@ static const JSPropertySpec collator_properties[] = {
 
 
 static bool
-Collator(JSContext* cx, const CallArgs& args, bool construct)
+Collator(JSContext* cx, const CallArgs& args)
 {
-    RootedObject obj(cx);
+    
 
     
-    
-    
-    if (!construct) {
-        
-        JSObject* intl = GlobalObject::getOrCreateIntlObject(cx, cx->global());
-        if (!intl)
+    RootedObject proto(cx);
+    if (args.isConstructing() && !GetPrototypeFromCallableConstructor(cx, args, &proto))
+        return false;
+
+    if (!proto) {
+        proto = GlobalObject::getOrCreateCollatorPrototype(cx, cx->global());
+        if (!proto)
             return false;
-        RootedValue self(cx, args.thisv());
-        if (!self.isUndefined() && (!self.isObject() || self.toObject() != *intl)) {
-            
-            obj = ToObject(cx, self);
-            if (!obj)
-                return false;
-
-            
-            bool extensible;
-            if (!IsExtensible(cx, obj, &extensible))
-                return false;
-            if (!extensible)
-                return Throw(cx, obj, JSMSG_OBJECT_NOT_EXTENSIBLE);
-        } else {
-            
-            construct = true;
-        }
     }
 
-    if (construct) {
-        
-        RootedObject proto(cx);
-        if (args.isConstructing() && !GetPrototypeFromCallableConstructor(cx, args, &proto))
-            return false;
+    Rooted<CollatorObject*> collator(cx, NewObjectWithGivenProto<CollatorObject>(cx, proto));
+    if (!collator)
+        return false;
 
-        if (!proto) {
-            proto = GlobalObject::getOrCreateCollatorPrototype(cx, cx->global());
-            if (!proto)
-                return false;
-        }
-
-        obj = NewObjectWithGivenProto<CollatorObject>(cx, proto);
-        if (!obj)
-            return false;
-
-        obj->as<CollatorObject>().setReservedSlot(CollatorObject::UCOLLATOR_SLOT,
-                                                  PrivateValue(nullptr));
-    }
+    collator->setReservedSlot(CollatorObject::UCOLLATOR_SLOT, PrivateValue(nullptr));
 
     RootedValue locales(cx, args.get(0));
     RootedValue options(cx, args.get(1));
 
     
-    if (!IntlInitialize(cx, obj, cx->names().InitializeCollator, locales, options))
+    if (!IntlInitialize(cx, collator, cx->names().InitializeCollator, locales, options))
         return false;
 
-    args.rval().setObject(*obj);
+    args.rval().setObject(*collator);
     return true;
 }
 
@@ -1043,7 +1013,7 @@ static bool
 Collator(JSContext* cx, unsigned argc, Value* vp)
 {
     CallArgs args = CallArgsFromVp(argc, vp);
-    return Collator(cx, args, args.isConstructing());
+    return Collator(cx, args);
 }
 
 bool
@@ -1052,9 +1022,8 @@ js::intl_Collator(JSContext* cx, unsigned argc, Value* vp)
     CallArgs args = CallArgsFromVp(argc, vp);
     MOZ_ASSERT(args.length() == 2);
     MOZ_ASSERT(!args.isConstructing());
-    
-    
-    return Collator(cx, args, true);
+
+    return Collator(cx, args);
 }
 
 void
@@ -1202,7 +1171,7 @@ js::intl_availableCollations(JSContext* cx, unsigned argc, Value* vp)
 
 
 static UCollator*
-NewUCollator(JSContext* cx, HandleObject collator)
+NewUCollator(JSContext* cx, Handle<CollatorObject*> collator)
 {
     RootedValue value(cx);
 
@@ -1380,46 +1349,23 @@ js::intl_CompareStrings(JSContext* cx, unsigned argc, Value* vp)
     MOZ_ASSERT(args[1].isString());
     MOZ_ASSERT(args[2].isString());
 
-    RootedObject collator(cx, &args[0].toObject());
+    Rooted<CollatorObject*> collator(cx, &args[0].toObject().as<CollatorObject>());
 
     
     
-    bool isCollatorInstance = collator->is<CollatorObject>();
-    UCollator* coll;
-    if (isCollatorInstance) {
-        void* priv =
-            collator->as<CollatorObject>().getReservedSlot(CollatorObject::UCOLLATOR_SLOT)
-                                          .toPrivate();
-        coll = static_cast<UCollator*>(priv);
-        if (!coll) {
-            coll = NewUCollator(cx, collator);
-            if (!coll)
-                return false;
-            collator->as<CollatorObject>().setReservedSlot(CollatorObject::UCOLLATOR_SLOT,
-                                                           PrivateValue(coll));
-        }
-    } else {
-        
-        
-        
-        
+    void* priv = collator->getReservedSlot(CollatorObject::UCOLLATOR_SLOT).toPrivate();
+    UCollator* coll = static_cast<UCollator*>(priv);
+    if (!coll) {
         coll = NewUCollator(cx, collator);
         if (!coll)
             return false;
+        collator->setReservedSlot(CollatorObject::UCOLLATOR_SLOT, PrivateValue(coll));
     }
 
     
     RootedString str1(cx, args[1].toString());
     RootedString str2(cx, args[2].toString());
-    RootedValue result(cx);
-    bool success = intl_CompareStrings(cx, coll, str1, str2, &result);
-
-    if (!isCollatorInstance)
-        ucol_close(coll);
-    if (!success)
-        return false;
-    args.rval().set(result);
-    return true;
+    return intl_CompareStrings(cx, coll, str1, str2, args.rval());
 }
 
 

@@ -1398,8 +1398,7 @@ var collatorKeyMappings = {
 
 
 
-function resolveCollatorInternals(lazyCollatorData)
-{
+function resolveCollatorInternals(lazyCollatorData) {
     assert(IsObject(lazyCollatorData), "lazy data not an object?");
 
     var internalProps = std_Object_create(null);
@@ -1487,8 +1486,10 @@ function resolveCollatorInternals(lazyCollatorData)
 
 
 
-
 function getCollatorInternals(obj, methodName) {
+    assert(IsObject(obj), "getCollatorInternals called with non-object");
+    assert(IsCollator(obj), "getCollatorInternals called with non-Collator");
+
     var internals = getIntlObjectInternals(obj, "Collator", methodName);
     assert(internals.type === "Collator", "bad type escaped getIntlObjectInternals");
 
@@ -1516,11 +1517,12 @@ function getCollatorInternals(obj, methodName) {
 
 
 function InitializeCollator(collator, locales, options) {
-    assert(IsObject(collator), "InitializeCollator");
+    assert(IsObject(collator), "InitializeCollator called with non-object");
+    assert(IsCollator(collator), "InitializeCollator called with non-Collator");
 
     
-    if (isInitializedIntlObject(collator))
-        ThrowTypeError(JSMSG_INTL_OBJECT_REINITED);
+    
+    assert(!isInitializedIntlObject(collator), "collator mustn't be initialized");
 
     
     var internals = initializeIntlObject(collator);
@@ -1689,6 +1691,9 @@ function collatorCompareToBind(x, y) {
 
 function Intl_Collator_compare_get() {
     
+    if (!IsObject(this) || !IsCollator(this))
+        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "Collator", "compare", "Collator");
+
     var internals = getCollatorInternals(this, "compare");
 
     
@@ -1714,6 +1719,9 @@ _SetCanonicalName(Intl_Collator_compare_get, "get compare");
 
 function Intl_Collator_resolvedOptions() {
     
+    if (!IsObject(this) || !IsCollator(this))
+        ThrowTypeError(JSMSG_INTL_OBJECT_NOT_INITED, "Collator", "resolvedOptions", "Collator");
+
     var internals = getCollatorInternals(this, "resolvedOptions");
 
     var result = {
