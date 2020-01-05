@@ -574,7 +574,10 @@ struct nsGridContainerFrame::GridItemInfo
     eContentBaseline =       0x10,
     eAllBaselineBits = eIsBaselineAligned | eSelfBaseline | eContentBaseline,
     
-    eClampMarginBoxMinSize = 0x20,
+    
+    eApplyAutoMinSize =      0x20,
+    
+    eClampMarginBoxMinSize = 0x40,
   };
 
   explicit GridItemInfo(nsIFrame* aFrame,
@@ -608,9 +611,9 @@ struct nsGridContainerFrame::GridItemInfo
 
   
   
-  bool ShouldClampMinSize(WritingMode aContainerWM,
-                          LogicalAxis aContainerAxis,
-                          nscoord aPercentageBasis) const
+  bool ShouldApplyAutoMinSize(WritingMode aContainerWM,
+                              LogicalAxis aContainerAxis,
+                              nscoord aPercentageBasis) const
   {
     const auto pos = mFrame->StylePosition();
     const auto& size = aContainerAxis == eLogicalAxisInline ?
@@ -3744,9 +3747,9 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSizeStep1(
   WritingMode wm = aState.mWM;
   
   bool needed = ((sz.mState & TrackSize::eIntrinsicMinSizing) ||
-                 aConstraint == SizingConstraint::eNoConstraint);
-  if (needed && TrackSize::IsDefiniteMaxSizing(sz.mState) &&
-      aGridItem.ShouldClampMinSize(wm, mAxis, aPercentageBasis)) {
+                 aConstraint == SizingConstraint::eNoConstraint) &&
+                (aGridItem.mState[mAxis] & ItemState::eApplyAutoMinSize);
+  if (needed && TrackSize::IsDefiniteMaxSizing(sz.mState)) {
     if (sz.mState & TrackSize::eIntrinsicMinSizing) {
       auto maxCoord = aFunctions.MaxSizingFor(aRange.mStart);
       cache.mMinSizeClamp =
@@ -4149,6 +4152,14 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
   iter.Reset();
   for (; !iter.AtEnd(); iter.Next()) {
     auto& gridItem = aGridItems[iter.ItemIndex()];
+
+    
+    MOZ_ASSERT(!(gridItem.mState[mAxis] & ItemState::eApplyAutoMinSize),
+               "Why is eApplyAutoMinSize set already?");
+    if (gridItem.ShouldApplyAutoMinSize(wm, mAxis, aPercentageBasis)) {
+      gridItem.mState[mAxis] |= ItemState::eApplyAutoMinSize;
+    }
+
     const GridArea& area = gridItem.mArea;
     const LineRange& lineRange = area.*aRange;
     uint32_t span = lineRange.Extent();
@@ -4174,9 +4185,9 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
         CachedIntrinsicSizes cache;
         
         bool needed = ((state & TrackSize::eIntrinsicMinSizing) ||
-                       aConstraint == SizingConstraint::eNoConstraint);
-        if (needed && TrackSize::IsDefiniteMaxSizing(state) &&
-            gridItem.ShouldClampMinSize(wm, mAxis, aPercentageBasis)) {
+                       aConstraint == SizingConstraint::eNoConstraint) &&
+                      (gridItem.mState[mAxis] & ItemState::eApplyAutoMinSize);
+        if (needed && TrackSize::IsDefiniteMaxSizing(state)) {
           nscoord minSizeClamp = 0;
           for (auto i = lineRange.mStart, end = lineRange.mEnd; i < end; ++i) {
             auto maxCoord = aFunctions.MaxSizingFor(i);
@@ -4212,11 +4223,14 @@ nsGridContainerFrame::Tracks::ResolveIntrinsicSize(
           gridItem.mState[mAxis] |= ItemState::eIsFlexing;
         } else if (aConstraint == SizingConstraint::eNoConstraint &&
                    TrackSize::IsDefiniteMaxSizing(state) &&
-                   gridItem.ShouldClampMinSize(wm, mAxis, aPercentageBasis)) {
+                   (gridItem.mState[mAxis] & ItemState::eApplyAutoMinSize)) {
           gridItem.mState[mAxis] |= ItemState::eClampMarginBoxMinSize;
         }
       }
     }
+    MOZ_ASSERT(!(gridItem.mState[mAxis] & ItemState::eClampMarginBoxMinSize) ||
+               (gridItem.mState[mAxis] & ItemState::eApplyAutoMinSize),
+               "clamping only applies to Automatic Minimum Size");
   }
 
   
