@@ -923,10 +923,6 @@ Animation::ComposeStyle(RefPtr<AnimValuesStyleRule>& aStyleRule,
     return;
   }
 
-  if (!IsInEffect()) {
-    return;
-  }
-
   
   
   

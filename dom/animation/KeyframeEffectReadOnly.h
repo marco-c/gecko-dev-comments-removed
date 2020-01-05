@@ -427,6 +427,11 @@ protected:
   
   void SetNeedsBaseStyle(nsCSSPropertyID aProperty);
 
+  
+  
+  void EnsureBaseStylesForCompositor(
+    const nsCSSPropertyIDSet& aPropertiesToSkip);
+
   Maybe<OwningAnimationTarget> mTarget;
 
   KeyframeEffectParams mEffectOptions;

@@ -388,6 +388,49 @@ KeyframeEffectReadOnly::CompositeValue(
 }
 
 void
+KeyframeEffectReadOnly::EnsureBaseStylesForCompositor(
+  const nsCSSPropertyIDSet& aPropertiesToSkip)
+{
+  if (!mTarget) {
+    return;
+  }
+
+  RefPtr<nsStyleContext> styleContext;
+
+  for (const AnimationProperty& property : mProperties) {
+    if (!nsCSSProps::PropHasFlags(property.mProperty,
+                                  CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR)) {
+      continue;
+    }
+
+    if (aPropertiesToSkip.HasProperty(property.mProperty)) {
+      continue;
+    }
+
+    for (const AnimationPropertySegment& segment : property.mSegments) {
+      if (segment.mFromComposite == dom::CompositeOperation::Replace &&
+          segment.mToComposite == dom::CompositeOperation::Replace) {
+        continue;
+      }
+
+      if (!styleContext) {
+        styleContext = GetTargetStyleContext();
+      }
+      MOZ_RELEASE_ASSERT(styleContext);
+
+      Unused << EffectCompositor::GetBaseStyle(property.mProperty,
+                                               styleContext,
+                                               *mTarget->mElement,
+                                               mTarget->mPseudoType);
+      
+      
+      SetNeedsBaseStyle(property.mProperty);
+      break;
+    }
+  }
+}
+
+void
 KeyframeEffectReadOnly::ComposeStyle(
   RefPtr<AnimValuesStyleRule>& aStyleRule,
   const nsCSSPropertyIDSet& aPropertiesToSkip)
@@ -406,6 +449,19 @@ KeyframeEffectReadOnly::ComposeStyle(
   
   
   if (computedTiming.mProgress.IsNull()) {
+    
+    
+    
+    
+
+    
+    
+    
+    
+    
+    if (computedTiming.mPhase == ComputedTiming::AnimationPhase::Before) {
+      EnsureBaseStylesForCompositor(aPropertiesToSkip);
+    }
     return;
   }
 
