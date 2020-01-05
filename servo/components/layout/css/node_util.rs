@@ -2,7 +2,6 @@
 
 
 
-use incremental::RestyleDamage;
 use util::LayoutDataAccess;
 use wrapper::ThreadSafeLayoutNode;
 use wrapper::{After, Before, Normal};
@@ -15,9 +14,6 @@ pub trait NodeUtil {
     fn get_css_select_results<'a>(&'a self) -> &'a Arc<ComputedValues>;
     fn have_css_select_results(&self) -> bool;
     fn remove_css_select_results(self);
-
-    fn get_restyle_damage(self) -> RestyleDamage;
-    fn set_restyle_damage(self, damage: RestyleDamage);
 }
 
 impl<'ln> NodeUtil for ThreadSafeLayoutNode<'ln> {
@@ -75,23 +71,5 @@ impl<'ln> NodeUtil for ThreadSafeLayoutNode<'ln> {
 
         *style = None;
     }
-
-    
-    
-    fn get_restyle_damage(self) -> RestyleDamage {
-        let layout_data_ref = self.borrow_layout_data();
-        layout_data_ref
-            .as_ref().unwrap()
-            .data
-            .restyle_damage
-    }
-
-    
-    fn set_restyle_damage(self, damage: RestyleDamage) {
-        let mut layout_data_ref = self.mutate_layout_data();
-        match &mut *layout_data_ref {
-            &Some(ref mut layout_data) => layout_data.data.restyle_damage = damage,
-            _ => fail!("no layout data for this node"),
-        }
-    }
 }
+
