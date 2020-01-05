@@ -258,7 +258,8 @@ nsRangeFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
                                const nsRect&           aDirtyRect,
                                const nsDisplayListSet& aLists)
 {
-  if (IsThemed()) {
+  const nsStyleDisplay* disp = StyleDisplay();
+  if (IsThemed(disp)) {
     DisplayBorderBackgroundOutline(aBuilder, aLists);
     
     
@@ -298,7 +299,6 @@ nsRangeFrame::BuildDisplayList(nsDisplayListBuilder*   aBuilder,
     return;
   }
 
-  const nsStyleDisplay *disp = StyleDisplay();
   if (IsThemed(disp) &&
       PresContext()->GetTheme()->ThemeDrawsFocusForWidget(disp->UsedAppearance())) {
     return; 
