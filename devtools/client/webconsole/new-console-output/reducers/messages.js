@@ -7,24 +7,44 @@
 
 const Immutable = require("devtools/client/shared/vendor/immutable");
 const constants = require("devtools/client/webconsole/new-console-output/constants");
+const {isGroupType} = require("devtools/client/webconsole/new-console-output/utils/messages");
 
 const MessageState = Immutable.Record({
+  
   messagesById: Immutable.List(),
+  
   messagesUiById: Immutable.List(),
+  
+  
   messagesTableDataById: Immutable.Map(),
+  
+  
+  groupsById: Immutable.Map(),
+  
+  currentGroup: null,
 });
 
 function messages(state = new MessageState(), action) {
-  const messagesById = state.messagesById;
-  const messagesUiById = state.messagesUiById;
-  const messagesTableDataById = state.messagesTableDataById;
+  const {
+    messagesById,
+    messagesUiById,
+    messagesTableDataById,
+    groupsById,
+    currentGroup
+  } = state;
 
   switch (action.type) {
     case constants.MESSAGE_ADD:
       let newMessage = action.message;
 
       if (newMessage.type === constants.MESSAGE_TYPE.NULL_MESSAGE) {
+        
         return state;
+      }
+
+      if (newMessage.type === constants.MESSAGE_TYPE.END_GROUP) {
+        
+        return state.set("currentGroup", getNewCurrentGroup(currentGroup, groupsById));
       }
 
       if (newMessage.allowRepeating && messagesById.size > 0) {
@@ -39,15 +59,36 @@ function messages(state = new MessageState(), action) {
       }
 
       return state.withMutations(function (record) {
-        record.set("messagesById", messagesById.push(newMessage));
+        
+        record.set(
+          "messagesById",
+          messagesById.push(newMessage.set("groupId", currentGroup))
+        );
+
         if (newMessage.type === "trace") {
+          
           record.set("messagesUiById", messagesUiById.push(newMessage.id));
+        } else if (isGroupType(newMessage.type)) {
+          record.set("currentGroup", newMessage.id);
+          record.set("groupsById",
+            groupsById.set(
+              newMessage.id,
+              getParentGroups(currentGroup, groupsById)
+            )
+          );
+
+          if (newMessage.type === constants.MESSAGE_TYPE.START_GROUP) {
+            
+            record.set("messagesUiById", messagesUiById.push(newMessage.id));
+          }
         }
       });
     case constants.MESSAGES_CLEAR:
       return state.withMutations(function (record) {
         record.set("messagesById", Immutable.List());
         record.set("messagesUiById", Immutable.List());
+        record.set("groupsById", Immutable.Map());
+        record.set("currentGroup", null);
       });
     case constants.MESSAGE_OPEN:
       return state.set("messagesUiById", messagesUiById.push(action.id));
@@ -60,6 +101,35 @@ function messages(state = new MessageState(), action) {
   }
 
   return state;
+}
+
+function getNewCurrentGroup(currentGoup, groupsById) {
+  let newCurrentGroup = null;
+  if (currentGoup) {
+    
+    let parents = groupsById.get(currentGoup);
+    if (Array.isArray(parents) && parents.length > 0) {
+      
+      newCurrentGroup = parents[0];
+    }
+  }
+  return newCurrentGroup;
+}
+
+function getParentGroups(currentGroup, groupsById) {
+  let groups = [];
+  if (currentGroup) {
+    
+    groups = [currentGroup];
+
+    
+    let parentGroups = groupsById.get(currentGroup);
+    if (Array.isArray(parentGroups) && parentGroups.length > 0) {
+      groups = groups.concat(parentGroups);
+    }
+  }
+
+  return groups;
 }
 
 exports.messages = messages;

@@ -14,20 +14,33 @@ const {
 } = require("devtools/client/webconsole/new-console-output/constants");
 
 function getAllMessages(state) {
-  let messages = state.messages.messagesById;
+  let messages = getAllMessagesById(state);
   let logLimit = getLogLimit(state);
   let filters = getAllFilters(state);
 
+  let groups = getAllGroupsById(state);
+  let messagesUI = getAllMessagesUiById(state);
+
   return prune(
-    search(
-      filterNetwork(
-        filterLevel(messages, filters),
-        filters
-      ),
-      filters.text
-    ),
+    messages.filter(message => {
+      return (
+        isInOpenedGroup(message, groups, messagesUI)
+        && (
+          isUnfilterable(message)
+          || (
+            matchLevelFilters(message, filters)
+            && matchNetworkFilters(message, filters)
+            && matchSearchFilters(message, filters)
+          )
+        )
+      );
+    }),
     logLimit
   );
+}
+
+function getAllMessagesById(state) {
+  return state.messages.messagesById;
 }
 
 function getAllMessagesUiById(state) {
@@ -38,64 +51,82 @@ function getAllMessagesTableDataById(state) {
   return state.messages.messagesTableDataById;
 }
 
-function filterLevel(messages, filters) {
-  return messages.filter((message) => {
-    return filters.get(message.level) === true
-      || [MESSAGE_TYPE.COMMAND, MESSAGE_TYPE.RESULT].includes(message.type);
-  });
+function getAllGroupsById(state) {
+  return state.messages.groupsById;
 }
 
-function filterNetwork(messages, filters) {
-  return messages.filter((message) => {
-    return (
-      message.source !== MESSAGE_SOURCE.NETWORK
-      || (filters.get("net") === true && message.isXHR === false)
-      || (filters.get("netxhr") === true && message.isXHR === true)
-      || [MESSAGE_TYPE.COMMAND, MESSAGE_TYPE.RESULT].includes(message.type)
+function getCurrentGroup(state) {
+  return state.messages.currentGroup;
+}
+
+function isUnfilterable(message) {
+  return [
+    MESSAGE_TYPE.COMMAND,
+    MESSAGE_TYPE.RESULT,
+    MESSAGE_TYPE.START_GROUP,
+    MESSAGE_TYPE.START_GROUP_COLLAPSED,
+  ].includes(message.type);
+}
+
+function isInOpenedGroup(message, groups, messagesUI) {
+  return !message.groupId
+    || (
+      !isGroupClosed(message.groupId, messagesUI)
+      && !hasClosedParentGroup(groups.get(message.groupId), messagesUI)
     );
-  });
 }
 
-function search(messages, text = "") {
-  if (text === "") {
-    return messages;
-  }
+function hasClosedParentGroup(group, messagesUI) {
+  return group.some(groupId => isGroupClosed(groupId, messagesUI));
+}
 
-  return messages.filter(function (message) {
+function isGroupClosed(groupId, messagesUI) {
+  return messagesUI.includes(groupId) === false;
+}
+
+function matchLevelFilters(message, filters) {
+  return filters.get(message.level) === true;
+}
+
+function matchNetworkFilters(message, filters) {
+  return (
+    message.source !== MESSAGE_SOURCE.NETWORK
+    || (filters.get("net") === true && message.isXHR === false)
+    || (filters.get("netxhr") === true && message.isXHR === true)
+  );
+}
+
+function matchSearchFilters(message, filters) {
+  let text = filters.text || "";
+  return (
+    text === ""
     
-    if ([ MESSAGE_TYPE.RESULT, MESSAGE_TYPE.COMMAND ].includes(message.type)) {
-      return true;
-    }
-
-    return (
-      
-      
-      message.parameters !== null && !Array.isArray(message.parameters)
-      
-      || isTextInFrame(text, message.frame)
-      
-      || (
-        Array.isArray(message.stacktrace) &&
-        message.stacktrace.some(frame => isTextInFrame(text,
-          
-          
-          {
-            functionName: frame.functionName ||
-              l10n.getStr("stacktrace.anonymousFunction"),
-            filename: frame.filename,
-            lineNumber: frame.lineNumber,
-            columnNumber: frame.columnNumber
-          }))
-      )
-      
-      || (message.messageText !== null
-            && message.messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase()))
-      
-      || (message.parameters !== null
-          && message.parameters.join("").toLocaleLowerCase()
-              .includes(text.toLocaleLowerCase()))
-    );
-  });
+    
+    || (message.parameters !== null && !Array.isArray(message.parameters))
+    
+    || isTextInFrame(text, message.frame)
+    
+    || (
+      Array.isArray(message.stacktrace) &&
+      message.stacktrace.some(frame => isTextInFrame(text,
+        
+        
+        {
+          functionName: frame.functionName ||
+            l10n.getStr("stacktrace.anonymousFunction"),
+          filename: frame.filename,
+          lineNumber: frame.lineNumber,
+          columnNumber: frame.columnNumber
+        }))
+    )
+    
+    || (message.messageText !== null
+          && message.messageText.toLocaleLowerCase().includes(text.toLocaleLowerCase()))
+    
+    || (message.parameters !== null
+        && message.parameters.join("").toLocaleLowerCase()
+            .includes(text.toLocaleLowerCase()))
+  );
 }
 
 function isTextInFrame(text, frame) {
@@ -113,7 +144,18 @@ function isTextInFrame(text, frame) {
 function prune(messages, logLimit) {
   let messageCount = messages.count();
   if (messageCount > logLimit) {
-    return messages.splice(0, messageCount - logLimit);
+    
+    
+    let firstIndex = messages.size - logLimit;
+    let groupId = messages.get(firstIndex + 1).groupId;
+
+    if (groupId) {
+      return messages.splice(0, firstIndex + 1)
+        .unshift(
+          messages.findLast((message) => message.id === groupId)
+        );
+    }
+    return messages.splice(0, firstIndex);
   }
 
   return messages;
@@ -122,3 +164,5 @@ function prune(messages, logLimit) {
 exports.getAllMessages = getAllMessages;
 exports.getAllMessagesUiById = getAllMessagesUiById;
 exports.getAllMessagesTableDataById = getAllMessagesTableDataById;
+exports.getAllGroupsById = getAllGroupsById;
+exports.getCurrentGroup = getCurrentGroup;

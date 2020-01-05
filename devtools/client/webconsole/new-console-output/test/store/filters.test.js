@@ -20,7 +20,7 @@ describe("Filtering", () => {
   let numMessages;
   
   
-  const numUnfilterableMessages = 2;
+  const numUnfilterableMessages = 3;
 
   beforeEach(() => {
     store = prepareBaseStore();
@@ -204,7 +204,8 @@ function prepareBaseStore() {
     
     "new Date(0)",
     
-    "ReferenceError: asdf is not defined"
+    "ReferenceError: asdf is not defined",
+    "console.group('bar')"
   ]);
 
   
