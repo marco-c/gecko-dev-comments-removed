@@ -434,8 +434,14 @@ struct Zone : public JS::shadow::Zone,
   private:
     
     js::ZoneGroupOrGCTaskData<js::SparseBitmap> markedAtoms_;
+
+    
+    js::ZoneGroupOrGCTaskData<js::AtomSet> atomCache_;
+
   public:
     js::SparseBitmap& markedAtoms() { return markedAtoms_.ref(); }
+
+    js::AtomSet& atomCache() { return atomCache_.ref(); }
 
     
     js::gc::HeapUsage usage;

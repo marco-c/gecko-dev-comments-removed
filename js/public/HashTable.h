@@ -201,6 +201,10 @@ class HashMap
 
     
     
+    void clearAndShrink()                             { impl.clearAndShrink(); }
+
+    
+    
     void finish()                                     { impl.finish(); }
 
     
@@ -441,6 +445,10 @@ class HashSet
     
     
     void clear()                                      { impl.clear(); }
+
+    
+    
+    void clearAndShrink()                             { impl.clearAndShrink(); }
 
     
     
@@ -1674,6 +1682,12 @@ class HashTable : private AllocPolicy
 #ifdef JS_DEBUG
         mutationCount++;
 #endif
+    }
+
+    void clearAndShrink()
+    {
+        clear();
+        compactIfUnderloaded();
     }
 
     void finish()

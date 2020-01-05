@@ -12,6 +12,7 @@
 
 #include "mozilla/ArrayUtils.h"
 #include "mozilla/RangedPtr.h"
+#include "mozilla/Unused.h"
 
 #include <string.h>
 
@@ -304,9 +305,27 @@ static JSAtom*
 AtomizeAndCopyChars(JSContext* cx, const CharT* tbchars, size_t length, PinningBehavior pin)
 {
     if (JSAtom* s = cx->staticStrings().lookup(tbchars, length))
-         return s;
+        return s;
 
     AtomHasher::Lookup lookup(tbchars, length);
+
+    
+    
+    
+    
+    Zone* zone = cx->zone();
+    Maybe<AtomSet::AddPtr> zonePtr;
+    if (MOZ_LIKELY(zone && pin == DoNotPinAtom)) {
+        zonePtr.emplace(zone->atomCache().lookupForAdd(lookup));
+        if (zonePtr.ref()) {
+            
+            
+            
+            JSAtom* atom = zonePtr.ref()->asPtrUnbarriered();
+            MOZ_ASSERT(AtomIsMarked(zone, atom));
+            return atom;
+        }
+    }
 
     
     
@@ -315,8 +334,12 @@ AtomizeAndCopyChars(JSContext* cx, const CharT* tbchars, size_t length, PinningB
     
     if (cx->isPermanentAtomsInitialized()) {
         AtomSet::Ptr pp = cx->permanentAtoms().readonlyThreadsafeLookup(lookup);
-        if (pp)
-            return pp->asPtr(cx);
+        if (pp) {
+            JSAtom* atom = pp->asPtr(cx);
+            if (zonePtr)
+                mozilla::Unused << zone->atomCache().add(*zonePtr, AtomStateEntry(atom, false));
+            return atom;
+        }
     }
 
     AutoLockForExclusiveAccess lock(cx);
@@ -327,6 +350,8 @@ AtomizeAndCopyChars(JSContext* cx, const CharT* tbchars, size_t length, PinningB
         JSAtom* atom = p->asPtr(cx);
         p->setPinned(bool(pin));
         cx->atomMarking().inlinedMarkAtom(cx, atom);
+        if (zonePtr)
+            mozilla::Unused << zone->atomCache().add(*zonePtr, AtomStateEntry(atom, false));
         return atom;
     }
 
@@ -359,6 +384,8 @@ AtomizeAndCopyChars(JSContext* cx, const CharT* tbchars, size_t length, PinningB
     }
 
     cx->atomMarking().inlinedMarkAtom(cx, atom);
+    if (zonePtr)
+        mozilla::Unused << zone->atomCache().add(*zonePtr, AtomStateEntry(atom, false));
     return atom;
 }
 
