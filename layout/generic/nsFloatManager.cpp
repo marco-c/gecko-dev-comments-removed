@@ -689,6 +689,13 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
     return;
   }
 
+  if (shapeOutside.GetType() == StyleShapeSourceType::URL) {
+    
+    
+    
+    return;
+  }
+
   
   LogicalRect rect = aMarginRect;
 
@@ -723,8 +730,6 @@ nsFloatManager::FloatInfo::FloatInfo(nsIFrame* aFrame,
       mShapeInfo = MakeUnique<CircleShapeInfo>(basicShape, aLineLeft, aBlockStart,
                                                rect, aWM, aContainerSize);
     }
-  } else if (shapeOutside.GetType() == StyleShapeSourceType::URL) {
-    
   } else {
     MOZ_ASSERT_UNREACHABLE("Unknown StyleShapeSourceType!");
   }
