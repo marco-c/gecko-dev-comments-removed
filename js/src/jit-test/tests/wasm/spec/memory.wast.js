@@ -1,4 +1,6 @@
 
 
+
+
 quit();
 var importedArgs = ['memory.wast']; load(scriptdir + '../spec.js');
