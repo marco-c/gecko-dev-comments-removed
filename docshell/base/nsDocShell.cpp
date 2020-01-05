@@ -9086,13 +9086,20 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
 
     
     nsCOMPtr<nsIURI> failedURI;
+    nsCOMPtr<nsIPrincipal> triggeringPrincipal;
     if (failedChannel) {
       NS_GetFinalChannelURI(failedChannel, getter_AddRefs(failedURI));
+    }
+    else {
+      
+      
+      triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
     }
 
     if (!failedURI) {
       failedURI = mFailedURI;
     }
+
     if (!failedURI) {
       
       NS_NewURI(getter_AddRefs(failedURI), "about:blank");
@@ -9108,7 +9115,8 @@ nsDocShell::CreateContentViewer(const nsACString& aContentType,
     
     if (failedURI) {
       bool errorOnLocationChangeNeeded = OnNewURI(
-        failedURI, failedChannel, nullptr, nullptr, mLoadType, false, false, false);
+        failedURI, failedChannel, triggeringPrincipal, nullptr,
+        mLoadType, false, false, false);
 
       if (errorOnLocationChangeNeeded) {
         FireOnLocationChange(this, failedChannel, failedURI,
@@ -11993,8 +12001,9 @@ nsDocShell::AddState(JS::Handle<JS::Value> aData, const nsAString& aTitle,
 
     
     
-    rv = AddToSessionHistory(newURI, nullptr, nullptr, nullptr, true,
-                             getter_AddRefs(newSHEntry));
+    rv = AddToSessionHistory(newURI, nullptr, 
+                             document->NodePrincipal(), 
+                             nullptr, true, getter_AddRefs(newSHEntry));
     NS_ENSURE_SUCCESS(rv, rv);
 
     NS_ENSURE_TRUE(newSHEntry, NS_ERROR_FAILURE);
@@ -12519,11 +12528,10 @@ nsDocShell::LoadHistoryEntry(nsISHEntry* aEntry, uint32_t aLoadType)
   }
 
   
-  
-  
-  
+  MOZ_ASSERT(triggeringPrincipal,
+             "need a valid triggeringPrincipal to load from history");
   if (!triggeringPrincipal) {
-    triggeringPrincipal = nsContentUtils::GetSystemPrincipal();
+    return NS_ERROR_FAILURE;
   }
 
   
