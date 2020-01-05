@@ -185,6 +185,9 @@ nsHostRecord::nsHostRecord(const nsHostKey *key)
     netInterface = host + strlen(key->host) + 1;
     memcpy((char *) netInterface, key->netInterface,
            strlen(key->netInterface) + 1);
+    originSuffix = netInterface + strlen(key->netInterface) + 1;
+    memcpy((char *) originSuffix, key->originSuffix,
+           strlen(key->originSuffix) + 1);
     PR_INIT_CLIST(this);
     PR_INIT_CLIST(&callbacks);
 }
@@ -194,7 +197,8 @@ nsHostRecord::Create(const nsHostKey *key, nsHostRecord **result)
 {
     size_t hostLen = strlen(key->host) + 1;
     size_t netInterfaceLen = strlen(key->netInterface) + 1;
-    size_t size = hostLen + netInterfaceLen + sizeof(nsHostRecord);
+    size_t originSuffixLen = strlen(key->originSuffix) + 1;
+    size_t size = hostLen + netInterfaceLen + originSuffixLen + sizeof(nsHostRecord);
 
     
     
@@ -403,7 +407,7 @@ HostDB_HashKey(const void *key)
 {
     const nsHostKey *hk = static_cast<const nsHostKey *>(key);
     return AddToHash(HashString(hk->host), RES_KEY_FLAGS(hk->flags), hk->af,
-                     HashString(hk->netInterface));
+                     HashString(hk->netInterface), HashString(hk->originSuffix));
 }
 
 static bool
@@ -417,7 +421,8 @@ HostDB_MatchEntry(const PLDHashEntryHdr *entry,
                    hk->host ? hk->host : "") &&
             RES_KEY_FLAGS (he->rec->flags) == RES_KEY_FLAGS(hk->flags) &&
             he->rec->af == hk->af &&
-            !strcmp(he->rec->netInterface, hk->netInterface);
+            !strcmp(he->rec->netInterface, hk->netInterface) &&
+            !strcmp(he->rec->originSuffix, hk->originSuffix);
 }
 
 static void
@@ -722,11 +727,12 @@ nsHostResolver::MoveQueue(nsHostRecord *aRec, PRCList &aDestQ)
 }
 
 nsresult
-nsHostResolver::ResolveHost(const char            *host,
-                            uint16_t               flags,
-                            uint16_t               af,
-                            const char            *netInterface,
-                            nsResolveHostCallback *callback)
+nsHostResolver::ResolveHost(const char             *host,
+                            const OriginAttributes &aOriginAttributes,
+                            uint16_t                flags,
+                            uint16_t                af,
+                            const char             *netInterface,
+                            nsResolveHostCallback  *callback)
 {
     NS_ENSURE_TRUE(host && *host, NS_ERROR_UNEXPECTED);
     NS_ENSURE_TRUE(netInterface, NS_ERROR_UNEXPECTED);
@@ -761,8 +767,10 @@ nsHostResolver::ResolveHost(const char            *host,
             
             
             
+            nsAutoCString originSuffix;
+            aOriginAttributes.CreateSuffix(originSuffix);
 
-            nsHostKey key = { host, flags, af, netInterface };
+            nsHostKey key = { host, flags, af, netInterface, originSuffix.get() };
             auto he = static_cast<nsHostDBEnt*>(mDB.Add(&key, fallible));
 
             
@@ -840,7 +848,7 @@ nsHostResolver::ResolveHost(const char            *host,
                     ((af == PR_AF_INET) || (af == PR_AF_INET6))) {
                     
                     const nsHostKey unspecKey = { host, flags, PR_AF_UNSPEC,
-                                                  netInterface };
+                                                  netInterface, originSuffix.get() };
                     auto unspecHe =
                         static_cast<nsHostDBEnt*>(mDB.Search(&unspecKey));
                     NS_ASSERTION(!unspecHe ||
@@ -968,18 +976,22 @@ nsHostResolver::ResolveHost(const char            *host,
 }
 
 void
-nsHostResolver::DetachCallback(const char            *host,
-                               uint16_t               flags,
-                               uint16_t               af,
-                               const char            *netInterface,
-                               nsResolveHostCallback *callback,
-                               nsresult               status)
+nsHostResolver::DetachCallback(const char             *host,
+                               const OriginAttributes &aOriginAttributes,
+                               uint16_t                flags,
+                               uint16_t                af,
+                               const char             *netInterface,
+                               nsResolveHostCallback  *callback,
+                               nsresult                status)
 {
     RefPtr<nsHostRecord> rec;
     {
         MutexAutoLock lock(mLock);
 
-        nsHostKey key = { host, flags, af, netInterface };
+        nsAutoCString originSuffix;
+        aOriginAttributes.CreateSuffix(originSuffix);
+
+        nsHostKey key = { host, flags, af, netInterface, originSuffix.get() };
         auto he = static_cast<nsHostDBEnt*>(mDB.Search(&key));
         if (he) {
             
@@ -1371,18 +1383,22 @@ nsHostResolver::OnLookupComplete(nsHostRecord* rec, nsresult status, AddrInfo* n
 }
 
 void
-nsHostResolver::CancelAsyncRequest(const char            *host,
-                                   uint16_t               flags,
-                                   uint16_t               af,
-                                   const char            *netInterface,
-                                   nsIDNSListener        *aListener,
-                                   nsresult               status)
+nsHostResolver::CancelAsyncRequest(const char             *host,
+                                   const OriginAttributes &aOriginAttributes,
+                                   uint16_t                flags,
+                                   uint16_t                af,
+                                   const char             *netInterface,
+                                   nsIDNSListener         *aListener,
+                                   nsresult                status)
 
 {
     MutexAutoLock lock(mLock);
 
+    nsAutoCString originSuffix;
+    aOriginAttributes.CreateSuffix(originSuffix);
+
     
-    nsHostKey key = { host, flags, af, netInterface };
+    nsHostKey key = { host, flags, af, netInterface, originSuffix.get() };
     auto he = static_cast<nsHostDBEnt*>(mDB.Search(&key));
     if (he) {
         nsHostRecord* recPtr = nullptr;

@@ -39,6 +39,7 @@ struct nsHostKey
     uint16_t    flags;
     uint16_t    af;
     const char *netInterface;
+    const char *originSuffix;
 };
 
 
@@ -240,11 +241,12 @@ public:
 
 
 
-    nsresult ResolveHost(const char            *hostname,
-                         uint16_t               flags,
-                         uint16_t               af,
-                         const char            *netInterface,
-                         nsResolveHostCallback *callback);
+    nsresult ResolveHost(const char                      *hostname,
+                         const mozilla::OriginAttributes &aOriginAttributes,
+                         uint16_t                         flags,
+                         uint16_t                         af,
+                         const char                      *netInterface,
+                         nsResolveHostCallback           *callback);
 
     
 
@@ -252,12 +254,13 @@ public:
 
 
 
-    void DetachCallback(const char            *hostname,
-                        uint16_t               flags,
-                        uint16_t               af,
-                        const char            *netInterface,
-                        nsResolveHostCallback *callback,
-                        nsresult               status);
+    void DetachCallback(const char                      *hostname,
+                        const mozilla::OriginAttributes &aOriginAttributes,
+                        uint16_t                         flags,
+                        uint16_t                         af,
+                        const char                      *netInterface,
+                        nsResolveHostCallback           *callback,
+                        nsresult                         status);
 
     
 
@@ -266,12 +269,13 @@ public:
 
 
 
-    void CancelAsyncRequest(const char            *host,
-                            uint16_t               flags,
-                            uint16_t               af,
-                            const char            *netInterface,
-                            nsIDNSListener        *aListener,
-                            nsresult               status);
+    void CancelAsyncRequest(const char                      *host,
+                            const mozilla::OriginAttributes &aOriginAttributes,
+                            uint16_t                         flags,
+                            uint16_t                         af,
+                            const char                      *netInterface,
+                            nsIDNSListener                  *aListener,
+                            nsresult                         status);
     
 
 
