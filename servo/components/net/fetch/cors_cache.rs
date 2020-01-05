@@ -94,7 +94,7 @@ impl CORSCache {
     }
 
     
-    pub fn clear (&mut self, request: &Request) {
+    pub fn clear(&mut self, request: &Request) {
         let CORSCache(buf) = self.clone();
         let new_buf: Vec<CORSCacheEntry> =
             buf.into_iter().filter(|e| e.origin == *request.origin.borrow() &&
