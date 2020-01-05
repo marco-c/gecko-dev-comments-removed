@@ -11,7 +11,7 @@ function run_test() {
 
     p.StartProfiler(100, 10, ["js"], 1);
     
-    (function (){
+    (function() {
 	p.StopProfiler();
 	let n = 10000;
 	while (--n);  

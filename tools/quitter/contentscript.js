@@ -2,6 +2,8 @@
 
 
 
+
+
 var Ci = Components.interfaces;
 var Cc = Components.classes;
 var Cu = Components.utils;
@@ -10,8 +12,8 @@ function Quitter() {
 }
 
 Quitter.prototype = {
-  toString: function() { return "[Quitter]"; },
-  quit: function() { sendSyncMessage('Quitter.Quit', {}); }
+  toString() { return "[Quitter]"; },
+  quit() { sendSyncMessage("Quitter.Quit", {}); }
 };
 
 

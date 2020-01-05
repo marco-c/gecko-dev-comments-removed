@@ -18,7 +18,7 @@ function run_test() {
     const ms = 5;
     p.StartProfiler(100, ms, ["js"], 1);
 
-    function arbitrary_name(){
+    function arbitrary_name() {
         
         
         var delayMS = 5;
@@ -35,7 +35,7 @@ function run_test() {
                 return pr;
             delayMS *= 2;
         }
-    };
+    }
 
     var profile = arbitrary_name();
 
