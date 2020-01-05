@@ -886,6 +886,7 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
   AsyncDrawing requestAsyncDrawing = AD_NONE;
 
   bool requestWindow = false;
+  bool alreadyHasSalign = false;
   
   for (int i = 0; i < argc; i++) {
     if (strcmp(argn[i], "drawmode") == 0) {
@@ -1001,7 +1002,21 @@ NPP_New(NPMIMEType pluginType, NPP instance, uint16_t mode, int16_t argc, char* 
     if (strcasecmp(argn[i], "codebase") == 0) {
       instanceData->javaCodebase = argv[i];
     }
-  }
+
+    
+    
+    
+    
+    if (strcmp(argn[i], "scale") == 0) {
+      if (alreadyHasSalign) {
+        
+        return NPERR_GENERIC_ERROR;
+      }
+    }
+    if (strcmp(argn[i], "salign") == 0) {
+      alreadyHasSalign = true;
+    }
+}
 
   if (!browserSupportsWindowless || !pluginSupportsWindowlessMode()) {
     requestWindow = true;
