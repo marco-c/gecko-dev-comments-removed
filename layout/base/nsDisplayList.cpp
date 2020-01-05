@@ -55,7 +55,6 @@
 #include "mozilla/AnimationPerformanceWarning.h"
 #include "mozilla/AnimationUtils.h"
 #include "mozilla/EffectCompositor.h"
-#include "mozilla/EffectSet.h"
 #include "mozilla/EventStates.h"
 #include "mozilla/LookAndFeel.h"
 #include "mozilla/OperatorNewExtensions.h"
@@ -472,9 +471,6 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSPropertyID aProperty,
                                       CSS_PROPERTY_CAN_ANIMATE_ON_COMPOSITOR),
              "inconsistent property flags");
 
-  DebugOnly<EffectSet*> effects = EffectSet::GetEffectSet(aFrame);
-  MOZ_ASSERT(effects);
-
   
   for (size_t animIdx = 0; animIdx < aAnimations.Length(); animIdx++) {
     dom::Animation* anim = aAnimations[animIdx];
@@ -496,12 +492,13 @@ AddAnimationsForProperty(nsIFrame* aFrame, nsCSSPropertyID aProperty,
     
     
     
-    MOZ_ASSERT(anim->CascadeLevel() !=
-                 EffectCompositor::CascadeLevel::Animations ||
-               !effects->PropertiesWithImportantRules()
-                  .HasProperty(aProperty),
-               "GetAnimationOfProperty already tested the property is not "
-               "overridden by !important rules");
+    
+    
+    
+    
+    
+    MOZ_ASSERT(property->mWinsInCascade,
+               "GetAnimationOfProperty already tested mWinsInCascade");
 
     
     
@@ -2026,10 +2023,6 @@ GetMouseThrough(const nsIFrame* aFrame)
 static bool
 IsFrameReceivingPointerEvents(nsIFrame* aFrame)
 {
-  nsSubDocumentFrame* frame = do_QueryFrame(aFrame);
-  if (frame && frame->PassPointerEventsToChildren()) {
-    return true;
-  }
   return NS_STYLE_POINTER_EVENTS_NONE !=
     aFrame->StyleUserInterface()->GetEffectivePointerEvents(aFrame);
 }

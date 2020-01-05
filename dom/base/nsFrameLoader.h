@@ -218,9 +218,6 @@ public:
 
   void GetURL(nsString& aURL);
 
-  void ActivateUpdateHitRegion();
-  void DeactivateUpdateHitRegion();
-
   
   nsresult GetWindowDimensions(nsIntRect& aRect);
 
