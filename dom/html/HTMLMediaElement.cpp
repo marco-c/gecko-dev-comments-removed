@@ -5474,7 +5474,7 @@ HTMLMediaElement::UpdateReadyStateInternal()
       
       
       
-    } else if (mDecoder && !mDecoder->IsEnded()) {
+    } else if (mDecoder) {
       nextFrameStatus = mDecoder->NextFrameBufferedStatus();
     }
   }
