@@ -1157,6 +1157,10 @@ public abstract class GeckoApp
             enableStrictMode();
         }
 
+        
+        
+        GeckoLoader.loadMozGlue(getApplicationContext());
+
         if (!HardwareUtils.isSupportedSystem() || !GeckoLoader.neonCompatible()) {
             
             mIsAbortingAppLaunch = true;
