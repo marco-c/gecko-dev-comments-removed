@@ -262,16 +262,8 @@ FileReaderSync::ReadAsDataURL(Blob& aBlob, nsAString& aResult,
     return;
   }
 
-  
-  nsCOMPtr<nsIInputStream> bufferedStream;
-  aRv = NS_NewBufferedInputStream(getter_AddRefs(bufferedStream),
-                                  syncStream, 4096);
-  if (NS_WARN_IF(aRv.Failed())) {
-    return;
-  }
-
   uint64_t size;
-  aRv = bufferedStream->Available(&size);
+  aRv = syncStream->Available(&size);
   if (NS_WARN_IF(aRv.Failed())) {
     return;
   }
@@ -287,7 +279,7 @@ FileReaderSync::ReadAsDataURL(Blob& aBlob, nsAString& aResult,
   }
 
   nsAutoString encodedData;
-  aRv = Base64EncodeInputStream(bufferedStream, encodedData, size);
+  aRv = Base64EncodeInputStream(syncStream, encodedData, size);
   if (NS_WARN_IF(aRv.Failed())){
     return;
   }
@@ -479,9 +471,7 @@ FileReaderSync::ConvertAsyncToSyncStream(nsIInputStream* aAsyncStream,
   
   nsCOMPtr<nsIAsyncInputStream> asyncStream = do_QueryInterface(aAsyncStream);
   if (!asyncStream) {
-    nsCOMPtr<nsIInputStream> stream = aAsyncStream;
-    stream.forget(aSyncStream);
-    return NS_OK;
+    return NS_NewBufferedInputStream(aSyncStream, aAsyncStream, 4096);
   }
 
   uint64_t length;
