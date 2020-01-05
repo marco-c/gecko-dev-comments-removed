@@ -469,9 +469,7 @@ KeyframeUtils::GetKeyframesFromObject(JSContext* aCx,
     return keyframes;
   }
 
-  
-  if ((!AnimationUtils::IsCoreAPIEnabled() ||
-       aDocument->IsStyledByServo()) &&
+  if (!AnimationUtils::IsCoreAPIEnabled() &&
       RequiresAdditiveAnimation(keyframes, aDocument)) {
     keyframes.Clear();
     aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
@@ -1444,8 +1442,6 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     return;
   }
 
-  bool isServoBackend = aDocument->IsStyledByServo();
-
   
   nsCSSParser parser(aDocument->CSSLoader());
   nsClassHashtable<nsFloatHashKey, Keyframe> processedKeyframes;
@@ -1459,8 +1455,7 @@ GetKeyframeListFromPropertyIndexedKeyframe(JSContext* aCx,
     
     
     
-    
-    if ((!AnimationUtils::IsCoreAPIEnabled() || isServoBackend) &&
+    if ((!AnimationUtils::IsCoreAPIEnabled()) &&
         count == 1) {
       aRv.Throw(NS_ERROR_DOM_ANIM_MISSING_PROPS_ERR);
       return;
