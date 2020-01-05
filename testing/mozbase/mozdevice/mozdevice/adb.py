@@ -614,8 +614,26 @@ class ADBDevice(ADBCommand):
         except ADBError:
             self._ls += " -a"
 
+        self._logger.info("%s supported" % self._ls)
+
         
         self._have_cp = self.shell_bool("type cp", timeout=timeout)
+        self._logger.info("Native cp support: %s" % self._have_cp)
+
+        
+        try:
+            self._chmod_R = False
+            re_recurse = re.compile(r'[-]R')
+            chmod_output = self.shell_output("chmod --help", timeout=timeout)
+            match = re_recurse.search(chmod_output)
+            if match:
+                self._chmod_R = True
+        except (ADBError, ADBTimeoutError) as e:
+            self._logger.debug('Check chmod -R: %s' % e)
+            match = re_recurse.search(e.message)
+            if match:
+                self._chmod_R = True
+        self._logger.info("Native chmod -R support: %s" % self._chmod_R)
 
         self._logger.debug("ADBDevice: %s" % self.__dict__)
 
@@ -1417,9 +1435,30 @@ class ADBDevice(ADBCommand):
                  * ADBRootError
                  * ADBError
         """
+        
+        
+        
+        
+        
+        
+        
+        
+        
         path = posixpath.normpath(path.strip())
         self._logger.debug('chmod: path=%s, recursive=%s, mask=%s, root=%s' %
                            (path, recursive, mask, root))
+        if recursive and self._chmod_R:
+            try:
+                self.shell_output("chmod -R %s %s" % (mask, path),
+                                  timeout=timeout, root=root)
+            except ADBError, e:
+                if e.message.find('No such file or directory') != -1:
+                    self._logger.warning('chmod -R %s %s: Ignoring Error: %s' %
+                                         (mask, path, e.message))
+                else:
+                    raise
+            return
+
         self.shell_output("chmod %s %s" % (mask, path),
                           timeout=timeout, root=root)
         if recursive and self.is_dir(path, timeout=timeout, root=root):
