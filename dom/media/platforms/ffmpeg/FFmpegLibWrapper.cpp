@@ -47,6 +47,11 @@ FFmpegLibWrapper::Link()
     Unlink();
     return false;
   }
+  if (micro < 100 && version < (54u << 16 | 35u << 8 | 1u)) {
+    
+    Unlink();
+    return false;
+  }
 
   enum {
     AV_FUNC_AVUTIL_MASK = 1 << 8,
