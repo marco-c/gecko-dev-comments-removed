@@ -202,32 +202,29 @@ class nsReflowStatus final {
 public:
   nsReflowStatus()
     : mBreakType(StyleClear::None)
+    , mInlineBreak(InlineBreak::None)
     , mCompletion(Completion::FullyComplete)
     , mNextInFlowNeedsReflow(false)
     , mTruncated(false)
-    , mInlineBreak(false)
-    , mInlineBreakAfter(false)
     , mFirstLetterComplete(false)
   {}
 
   
   void Reset() {
     mBreakType = StyleClear::None;
+    mInlineBreak = InlineBreak::None;
     mCompletion = Completion::FullyComplete;
     mNextInFlowNeedsReflow = false;
     mTruncated = false;
-    mInlineBreak = false;
-    mInlineBreakAfter = false;
     mFirstLetterComplete = false;
   }
 
   
   bool IsEmpty() const {
     return (IsFullyComplete() &&
+            !IsInlineBreak() &&
             !mNextInFlowNeedsReflow &&
             !mTruncated &&
-            !mInlineBreak &&
-            !mInlineBreakAfter &&
             !mFirstLetterComplete);
   }
 
@@ -306,13 +303,27 @@ public:
   }
 
   
-  bool IsInlineBreak() const { return mInlineBreak; }
+  
+  
+  
+  
+  
+  
+  
+  
+  enum class InlineBreak : uint8_t {
+    None,
+    Before,
+    After,
+  };
 
-  
-  
-  
-  bool IsInlineBreakBefore() const { return mInlineBreak && !mInlineBreakAfter; }
-  bool IsInlineBreakAfter() const { return mInlineBreak && mInlineBreakAfter; }
+  bool IsInlineBreak() const { return mInlineBreak != InlineBreak::None; }
+  bool IsInlineBreakBefore() const {
+    return mInlineBreak == InlineBreak::Before;
+  }
+  bool IsInlineBreakAfter() const {
+    return mInlineBreak == InlineBreak::After;
+  }
   StyleClear BreakType() const { return mBreakType; }
 
   
@@ -321,16 +332,16 @@ public:
   void SetInlineLineBreakBeforeAndReset() {
     Reset();
     mBreakType = StyleClear::Line;
-    mInlineBreak = true;
-    mInlineBreakAfter = false;
+    mInlineBreak = InlineBreak::Before;
   }
 
   
   
   void SetInlineLineBreakAfter(StyleClear aBreakType = StyleClear::Line) {
+    MOZ_ASSERT(aBreakType != StyleClear::None,
+               "Break-after with StyleClear::None is meaningless!");
     mBreakType = aBreakType;
-    mInlineBreak = true;
-    mInlineBreakAfter = true;
+    mInlineBreak = InlineBreak::After;
   }
 
   
@@ -340,13 +351,10 @@ public:
 
 private:
   StyleClear mBreakType;
+  InlineBreak mInlineBreak;
   Completion mCompletion;
   bool mNextInFlowNeedsReflow : 1;
   bool mTruncated : 1;
-
-  
-  bool mInlineBreak : 1;
-  bool mInlineBreakAfter : 1;
   bool mFirstLetterComplete : 1;
 };
 
