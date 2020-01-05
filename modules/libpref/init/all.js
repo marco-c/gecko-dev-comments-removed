@@ -2033,6 +2033,13 @@ pref("network.auth.subresource-http-auth-allow", 2);
 
 
 
+pref("network.auth.subresource-img-cross-origin-http-auth-allow", true);
+
+
+
+
+
+
 
 
 
@@ -2391,7 +2398,6 @@ pref("security.ssl.enable_ocsp_must_staple", true);
 
 
 pref("security.insecure_field_warning.contextual.enabled", false);
-pref("security.insecure_field_warning.ignore_local_ip_address", true);
 
 
 pref("security.cert_pinning.enforcement_level", 0);

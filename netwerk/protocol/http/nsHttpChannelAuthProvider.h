@@ -186,6 +186,7 @@ private:
     
     
     static uint32_t                   sAuthAllowPref;
+    static bool                       sImgCrossOriginAuthAllowPref;
     nsCOMPtr<nsICancelable>           mGenerateCredentialsCancelable;
 };
 
