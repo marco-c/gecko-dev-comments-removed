@@ -425,6 +425,7 @@ FrameAnimator::RequestRefresh(AnimationState& aState,
   
   if (*currentFrameEndTime > aTime) {
     aState.mCompositedFrameInvalid = false;
+    ret.mDirtyRect = IntRect(IntPoint(0,0), mSize);
   }
 
   MOZ_ASSERT(!aState.mIsCurrentlyDecoded || !aState.mCompositedFrameInvalid);
