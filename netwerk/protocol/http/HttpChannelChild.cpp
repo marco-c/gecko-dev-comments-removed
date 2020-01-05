@@ -1317,6 +1317,16 @@ HttpChannelChild::BeginNonIPCRedirect(nsIURI* responseURI,
                               getter_AddRefs(newChannel));
 
   if (NS_SUCCEEDED(rv)) {
+    
+    
+    
+    
+    nsCOMPtr<nsIHttpChannelChild> channelChild = do_QueryInterface(newChannel);
+    if (channelChild) {
+      HttpChannelChild* httpChannelChild = static_cast<HttpChannelChild*>(channelChild.get());
+      httpChannelChild->OverrideSecurityInfoForNonIPCRedirect(mSecurityInfo);
+    }
+
     rv = gHttpHandler->AsyncOnChannelRedirect(this,
                                               newChannel,
                                               nsIChannelEventSink::REDIRECT_INTERNAL);
@@ -1324,6 +1334,13 @@ HttpChannelChild::BeginNonIPCRedirect(nsIURI* responseURI,
 
   if (NS_FAILED(rv))
     OnRedirectVerifyCallback(rv);
+}
+
+void
+HttpChannelChild::OverrideSecurityInfoForNonIPCRedirect(nsISupports* securityInfo)
+{
+  mResponseCouldBeSynthesized = true;
+  OverrideSecurityInfo(securityInfo);
 }
 
 class Redirect3Event : public ChannelEvent
